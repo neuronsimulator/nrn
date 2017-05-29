@@ -13,8 +13,6 @@ ParallelContext
 
 
     Syntax:
-        ``objref pc``
-
         ``pc = h.ParallelContext()``
 
         ``pc = h.ParallelContext(nhost)``
@@ -64,27 +62,31 @@ ParallelContext
         .. code-block::
             python
 
-            def f():               #a function with no context that *CHANGES* 
-               return $1*$1         #except its argument 
-            
-             
-            pc = h.ParallelContext() 
-            pc.runworker()          # master returns immediately, workers in 
-                                    # infinite loop running and jobs from bulletin board 
-            s = 0 
-            if pc.nhost == 1:    # use the serial form 
-               for i in range(1, 21): 
-                  s += f(i) 
-                
-            else:                  # use the bulletin board form 
-               for i in range(1, 21):      # scatter processes 
-                  pc.submit("f", i) # any context needed by f had better be 
-               		              # the same on all hosts 
-               while pc.working:  # gather results 
-                  s += pc.retval    # the return value for the executed function 
-               
-            print s 
-            pc.done                 # tell workers to quit 
+            from mpi4py import MPI
+            # importing MPI must come before loading NEURON
+            from neuron import h
+
+            def f(x):
+                """a function with no context that changes except its argument"""
+                return x * x
+
+            pc = h.ParallelContext()
+            pc.runworker() # master returns immediately, workers in an
+                           # infinite loop running jobs from bulletin board
+
+            s = 0
+            if pc.nhost() == 1:          # use the serial form
+                for i in range(20):
+                    s += f(i)
+            else:                        # use the bulleting board form
+                for i in range(20):      # scatter processes
+                    pc.submit(f, i)      # any context needed by f had better be
+                                         # the same on all hosts
+                while pc.working():      # gather results
+                    s += pc.pyret()      # the return value for the executed function
+
+            print s
+            pc.done()                    # tell workers to quit
 
          
         Several things need to be highlighted: 
@@ -99,9 +101,9 @@ ParallelContext
         .. code-block::
             none
 
-            for i in range (1,n+1):
-                pc.submit(...) #scatter a set of tasks 
-            while pc.working:   #gather them all 
+            for i in range(n):
+                pc.submit(...)          # scatter a set of tasks 
+            while pc.working():         # gather them all 
 
          
         Earlier submitted tasks tend to complete before later submitted tasks, even 
@@ -116,13 +118,13 @@ ParallelContext
         whose results are returned only to that task. Therefore you can 
         submit tasks which themselves submit tasks. 
          
-        The pc.working call checks to see if a result is ready. If so it returns 
+        The ``pc.working()`` call checks to see if a result is ready. If so it returns 
         the unique system generated task id (a positive integer) 
         and the return value of the task 
         function is accessed via 
-        the pc.retval function. The arguments to the function executed by the 
+        the ``pc.pyret()`` function. The arguments to the function executed by the 
         submit call are also available. If all submissions have been computed and all 
-        results have been returned, pc.working returns 0. If results are 
+        results have been returned, ``pc.working()`` returns 0. If results are 
         pending, working executes tasks from ANY ParallelContext until a 
         result is ready. This last feature keeps cpus busy but places stringent 
         requirements on how the user changes global context without 
@@ -131,29 +133,29 @@ ParallelContext
         ParallelContext.working may not return results in the order of 
         submission. 
          
-        Hoc code subsequent to pc.runworker() is executed only by the 
+        Python code subsequent to pc.runworker() is executed only by the 
         master since that call returns immediately if the process is 
         the master and otherwise starts an infinite loop on each worker 
         which requests and executes submit tasks from ANY ParallelContext 
         instance. This is the standard way to seed the bulletin board with 
         submissions. Note that workers may also execute tasks that themselves 
-        cause submissions. If subsidiary tasks call pc.runworker, the call 
+        cause submissions. If subsidiary tasks call ``pc.runworker()``, the call 
         returns immediately. Otherwise the task 
         it is working on would never complete! 
-        The pc.runworker() function is also called for each worker after all hoc files 
+        The pc.runworker() function is also called for each worker after all code files 
         are read in and executed. 
          
         The basic organization of a simulation is: 
 
         .. code-block::
-            none
+            python
 
-            //setup which is exactly the same on every machine. 
-            // ie declaration of all functions, procedures, setup of neurons 
+            # setup which is exactly the same on every machine. 
+            # ie declaration of all functions, procedures, setup of neurons 
              
-            pc.runworker() to start the execute loop if this machine is a worker 
+            pc.runworker() # to start the execute loop if this machine is a worker 
              
-            // the master scatters tasks onto the bulletin board and gathers results 
+            # the master scatters tasks onto the bulletin board and gathers results 
              
             pc.done() 
 
@@ -162,7 +164,7 @@ ParallelContext
         Don't fall into the trap of a context transfer which takes longer 
         than the computation itself. Remember, you can do thousands of 
         c statements in the time it takes to transfer a few doubles. 
-        Also, with a single cpu, it is often the case that  statements 
+        Also, with a single cpu, it is often the case that statements 
         can be moved out of an innermost loop, but can't be in a parallel 
         computation. eg. 
 
@@ -170,12 +172,12 @@ ParallelContext
             python
 
             # pretend g is a Vector assigned earlier to conductances to test 
-            for i in range(1, 21): 
-               forall gnabar_hh = g.x[i] 
-               for j in range(1, 6): 
-                  stim.amp = s[j] 
-                  run() 
-
+            for i in range(20): 
+                for sec in h.allsec():
+                    sec.gnabar_hh = g.x[i]
+                for j in range(5):
+                    stim.amp = s[j]
+                    h.run()
 
         ie we only need to set gnabar_hh 20 times. But the first pass at 
         parallelization would look like: 
@@ -183,85 +185,29 @@ ParallelContext
         .. code-block::
             python
 
-            for i in range(1, 21):
-               for j in range(1, 6):
-                  sprint(cmd, "{forall gnabar_hh = g[%d]} stim.amp = s[%d] run()\n", i, j) 
-                  pc.submit(cmd) 
+            def single_run(i, j):
+                for sec in h.allsec():
+                    sec.gnabar_hh = g.x[i]
+                stim.amp = s[j]
+                h.run()
+
+            for i in range(1, 20):
+               for j in range(5):
+                  pc.submit(single_run, i, j) 
                
             
-            while pc.working:
+            while pc.working(): pass
             
 
-        and not only do we take the hit of repeated evaluation of gnabar_hh 
-        but the statement must be interpreted each time. A run must be quite 
-        lengthy to amortize this overhead. 
-         
-        Python version 
-         
-        Here we re-implement the first example above as a Python program 
+        and we take the hit of repeated evaluation of gnabar_hh.
+        A run must be quite lengthy to amortize this overhead. 
 
-        .. code-block::
-            none
+        To run under MPI, be sure to include the ``from mpi4py import MPI`` and then
+        launch your script via, e.g. ``mpiexec -n 4 python myscript.py``. NEURON
+        also supports running via the PVM (parallel virtual machine), but the launch
+        setup is different.
 
-            from neuron import h 
-             
-            def f(arg):             # a function with no context that *CHANGES* 
-               return arg*arg       #except its argument 
-             
-            pc = h.ParallelContext() 
-            pc.runworker()          # master returns immediately, workers in 
-                                    # infinite loop 
-            s = 0 
-            if pc.nhost() == 1:     # use the serial form 
-               for i in range(1, 21): 
-                  s += f(i) 
-            else:                   # use the bulletin board form 
-               for i in range(1, 21): # scatter processes 
-                  pc.submit(f, i)   # any context needed by f had better be the same on all$ 
-               while pc.working():  # gather results 
-                  s += pc.pyret()   # the return value for the executed function 
-            print s 
-            pc.done()               # wait for workers to finish printing 
-
-        Note the replacement of the string "f" in the submit method by a Python 
-        Callable object and the retrieval of the result by the pyret() method 
-        instead of retval(). 
-         
-        The PVM (parallel virtual machine) 
-        should be setup so that it allows 
-        execution on all hosts of the csh script :file:`$NEURONHOME/bin/bbsworker.sh`. 
-        (Simulations may also be run under :ref:`ParallelContext_MPI` but the launch 
-        mechanisms are quite different) 
-        The simulation hoc files should be available on each machine with 
-        the same relative path with respect to the user's $HOME directory. 
-        For example, I start my 3 machine pvm with the command 
-
-        .. code-block::
-            none
-
-               pvm hineshf 
-
-        where hineshf is a text file with the contents: 
-
-        .. code-block::
-            none
-
-            hines ep=$HOME/nrn/bin 
-            spine ep=$HOME/nrn/bin 
-            pinky ep=$HOME/nrn/bin 
-
-        Again, the purpose of the ep=$HOME/nrn/bin tokens is to specify the path 
-        to find bbsworker.sh 
-         
-        A simulation is started by moving to the proper working directory 
-        (should be a descendant of your $HOME directory) and launching neuron as in 
-
-        .. code-block::
-            none
-
-            special init.hoc 
-
-        The exact same hoc files should exist in the same relative locations 
+        The exact same Python files should exist in the same relative locations 
         on all host machines. 
 
     .. warning::
@@ -282,23 +228,27 @@ ParallelContext
 
     Description:
         Returns number of host neuron processes (master + workers). 
-        If PVM (or MPI) is not being used then nhost == 1 and all ParallelContext 
+        If MPI (or PVM) is not being used then nhost == 1 and all ParallelContext 
         methods still work properly. 
 
         .. code-block::
             python
 
-            if pc.nhost == 1:
-               for i in range(1, 21):
+            if pc.nhost() == 1:
+               for i in range(20):
                   print i, sin(i) 
                
             else: 
-               for i in range(1,21):
-                  pc.submit(i, "sin", i) 
+               for i in range(20):
+                  pc.submit(i, math.sin, i) 
                
              
-               while pc.working:
-                  print pc.userid, pc.retval 
+               while pc.working():
+                  print pc.userid(), pc.pyret()
+
+    .. note::
+
+        The return value in Python is of type ``float``; it is thus often useful to use ``n = int(pc.nhost())`` instead.
                
             
 
@@ -317,14 +267,17 @@ ParallelContext
 
 
     Description:
-        The ihost index which ranges from 0 to pc.nhost-1 . Otherwise 
-        it is 0. The master machine always has an pc.id == 0. 
+        The ihost index which ranges from 0 to pc.nhost()-1 . Otherwise 
+        it is 0. The master machine always has an pc.id() == 0. 
 
     .. warning::
-        For MPI, the pc.id is the rank from 
-        MPI_Comm_rank.  For PVM the pc.id is the order that the HELLO message was 
+        For MPI, the pc.id() is the rank from 
+        MPI_Comm_rank.  For PVM the pc.id() is the order that the HELLO message was 
         received by the master. 
 
+    .. note::
+
+        The return value in Python is of type ``float``; it is thus often useful to use ``n = int(pc.id())`` instead.
          
 
 ----
@@ -335,15 +288,10 @@ ParallelContext
 
 
     Syntax:
-        ``pc.submit("statement\n")``
-
-        ``pc.submit("function_name", arg1, ...)``
-
-        ``pc.submit(object, "function_name", arg1, ...)``
-
-        ``pc.submit(userid, ..as above..)``
 
         ``pc.submit(python_callable, arg1, ...)``
+
+        ``pc.submit(userid, ..as above..)``
 
 
     Description:
@@ -373,52 +321,12 @@ ParallelContext
         Saving args is time efficient since it does not imply extra communication 
         with the server. 
          
-        The argument form causes function_name(copyofarg1, ...) to execute 
-        on some indeterminate host in the PVM. Args must be scalars, strings, or 
-        Vectors. Note that they are *COPIES* so that even string and Vector 
-        arguments are call by value and not call by reference. (This is different 
-        from the normal semantics of a direct function call). In this case 
-        efficiency was chosen at the expense of pedantic consistency 
-        since it is expected 
-        that in most cases the user does not need the return copy. In the event 
-        more than a single scalar return value is required use :meth:`ParallelContext.post` 
-        within the function_name body with a key equal to the id of the task. 
-        For example: 
 
-        .. code-block::
-            python
-
-            def function_name(): 
-               id = hoc_ac_ 
-               $o1.reverse() 
-               pc.post(id, $o1) 
-               return 0 
-            
-            ... 
-            while (id = pc.working) != 0:
-               pc.take(id) 
-               pc.upkvec.printf 
-            
-
-        The object form executes the function_name(copyofarg1, ...) in the 
-        context of the object. IT MUST BE THE CASE that the string result 
-
-        .. code-block::
-            none
-
-               print object 
-
-        identifies the "same" object on the host executing the function 
-        as on the host that submitted the task. This is guaranteed only if 
-        all hosts, when they start up, execute the same code that creates 
-        these objects. If you start creating these objects after the worker 
-        code diverges from the master (after pc.runworker) you really have to 
-        know what you are doing and the bugs will be VERY subtle. 
-         
-        The python_callable form allows args to be any Python objects as well 
-        as numbers, strings, or hoc Vectors. The return is a Python object 
-        and can only be retrieved with :func:`pyret` . The Python objects must be 
-        pickleable (hoc objects are not presently pickleable). Python object arguments 
+        Arguments may be any pickleable objects (NEURON objects like :class:`Vector` are
+        not currently pickleable, but most built-in Python objects and user-defined
+        classes are pickleable). The callable is executed on some indeterminate MPI/PVM
+        host. The return value is a Python object and may be retrieved with
+        :meth:`pyret`.  Python object arguments 
         may be retrieved with :func:`upkpyobj`. 
 
     .. seealso::
@@ -441,16 +349,16 @@ ParallelContext
         .. code-block::
             python
 
-            for i in range(1,11):
+            for i in range(10):
                 pc1.submit(...) 
-            for i in range(1,11):
+            for i in range(10):
                 pc2.submit(...) 
-            for i in range(1,11):
+            for i in range(10):
                 pc1.working() ...
-            for i in range(1,11):
+            for i in range(10):
                 pc2.working() ...
 
-        since pc1.working may get a result from a pc2 submission 
+        since pc1.working() may get a result from a pc2 submission 
         If this behavior is at all inconvenient, I will change the semantics 
         so that pc1 results only are gathered by pc1.working calls and by no 
         others. 
@@ -487,14 +395,13 @@ ParallelContext
 
         .. code-block::
             python
-            			
-            while (id = pc.working) > 0:
-               # gather results of previous pc.submit calls 
-               print id, pc.retval 
 
-        Note that if the submitted task was specified as a Python callable, then 
-        :func:`pyret` would have to be used in place of :func:`retval` . 
-         
+            while True:
+                id = pc.working()
+                if id == 0: break
+                # gather results of previous pc.submit calls
+                print id, pc.pyret()            			
+        
         Note that if the submission did not have an explicit userid then 
         all the arguments of the executed function may be unpacked. 
          
@@ -511,7 +418,7 @@ ParallelContext
 
             def f():
                ... write some values to some global variables ... 
-               pc.submit("g", ...) 
+               pc.submit(g, ...) 
                # when g is executed on another host it will not in general 
                # see the same global variable values you set above. 
                pc.working() # get back result of execution of g(...) 
@@ -531,7 +438,7 @@ ParallelContext
                id = hoc_ac_
                # write some values to some global variables ... 
                pc.post(id, the, global, variables) 
-               pc.submit("g", ...) 
+               pc.submit(g, ...) 
                pc.working() 
                pc.take(id) 
                # unpack the info back into the global variables 
@@ -571,6 +478,10 @@ ParallelContext
         If the statement form of the submit is used then the return value 
         is the value of :data:`hoc_ac_` when the statement completes on the executing host. 
 
+    .. warning::
+
+        Use :meth:`ParallelContext.pyret` for tasks submitted as Python callables; do not use
+        ``pc.retval()`` which only works for tasks submitted as HOC strings.
          
 
 ----
@@ -651,7 +562,7 @@ ParallelContext
          
         The runworker method is called automatically for each worker after 
         all files have been read in and executed --- i.e. if the user never 
-        calls it explicitly from hoc. Otherwise the workers would exit since 
+        calls it explicitly from Python. Otherwise the workers would exit since 
         the standard input is at the end of file for workers. 
         This is useful in those cases where 
         the only distinction between master and workers is that code 
@@ -685,19 +596,14 @@ ParallelContext
 
 
     Syntax:
-        ``pc.context("statement\n")``
-
-        ``pc.context("function_name", arg1, ...])``
-
-        ``pc.context(object, "function_name", arg1, ...)``
-
-        ``pc.context(userid, ..as above..)``
 
         ``pc.context(python_callable, arg1, ...)``
 
+        ``pc.context(userid, ..as above..)``
+
 
     Description:
-        The arguments have the same semantics as those of the :meth:`ParallelContext.submit` method. 
+        The arguments have the same semantics as those of :meth:`ParallelContext.submit`. 
         The function or statement is executed on every worker host 
         but is not executed on the master. pc.context can only be 
         called by the master. The workers will execute the context statement 
@@ -707,23 +613,6 @@ ParallelContext
         There is no return in the 
         sense that :meth:`ParallelContext.working` does not return when one 
         of these tasks completes. 
-         
-        This method was introduced with the following protocol in mind 
-
-        .. code-block::
-            python
-
-            def save_context(): # executed on master 
-               sprint(tstr, "%s", this) 
-               pc.look_take(tstr) # remove previous context if it exists 
-               # master packs a possibly complicated context from within 
-               # an object whose counterpart exists on all workers 
-               pc.post(tstr) 
-               pc.context(this, "restore_context", tstr) # all workers do this 
-             
-            def restore_context():
-               pc.look($s1) # don't remove! Others need it as well. 
-               # worker unpacks possibly complicated context 
 
 
     .. warning::
@@ -807,7 +696,7 @@ ParallelContext
         be retrieved without unpacking earlier items first. Optional arguments 
         get the first unpacked values. Scalar, Vectors, and strdef may be 
         unpacked. Scalar arguments must be pointers to 
-        a variable. eg \ ``&x``. Unpacked Vectors will be resized to the 
+        a variable. eg  ``_ref_x``. Unpacked Vectors will be resized to the 
         correct size of the vector item of the message. 
         To unpack Python objects, :func:`upkpyobj` must be used. 
 
@@ -908,8 +797,8 @@ ParallelContext
         agree with the order in which the message was constructed with post 
         and pack. 
         Note that scalar items must be retrieved with pointer syntax as in 
-        \ ``&soma.gnabar_hh(.3)`` 
-        To unpack Python objects, :func:`upkpyobj` must be used. 
+        ``soma(0.3).hh._ref_gnabar`` 
+        To unpack Python objects, :meth:`upkpyobj` must be used. 
 
     .. seealso::
         :meth:`ParallelContext.upkscalar`
@@ -950,6 +839,11 @@ ParallelContext
         Copy the next item in the unpacking 
         sequence into str and return that strdef. 
 
+    .. note::
+
+        ``str`` here is a ``strdef`` not a Python string. One may be created via e.g. ``s = h.ref('')``; the stored string
+        can then be accessed via ``s[0]``.
+
          
 
 ----
@@ -968,7 +862,7 @@ ParallelContext
     Description:
         Copy the next item in the unpacking 
         sequence into vecsrc (if that arg exists, it will be resized if necessary). 
-        If the arg does not exist return a new Vector. 
+        If the arg does not exist return a new :class:`Vector`. 
 
          
 
@@ -1007,11 +901,11 @@ ParallelContext
         Normal usage is 
 
         .. code-block::
-            none
+            python
 
-            st = pc.time 
+            st = pc.time() 
             ... 
-            print pc.time - st 
+            print(pc.time() - st)
 
 
     .. warning::
@@ -1040,7 +934,7 @@ ParallelContext
         the idiom: 
 
         .. code-block::
-            none
+            python
 
             wait = pc.wait_time() 
             pc.solve(tstop) 
@@ -1192,7 +1086,7 @@ Description:
     expected in the context of your problem. 
      
     The master NEURON process contains the server for the bulletin board system. 
-    Communication between normal hoc code executing on the master NEURON 
+    Communication between normal Python  code executing on the master NEURON 
     process and the 
     server is direct with no overhead except packing and unpacking 
     messages and manipulating the send and receive buffers with pvm commands. 
@@ -1463,7 +1357,7 @@ Description:
         result as sum over all value, maximum 
         value, or minimum value respectively 
          
-        If the first arg is a Vector the reduce is done element-wise. ie 
+        If the first arg is a :class:`Vector` the reduce is done element-wise. ie 
         min of each rank's v.x[0] returned in each rank's v.x[0], etc. Note that 
         each vector must have the same size. 
 
@@ -1517,14 +1411,14 @@ Description:
             # then the following is a parallel sort such that vdest is sorted on 
             # host i and for i < j, all the elements of vdest on host i are < 
             # than all the elements on host j. 
-            vsrc.sort 
-            cnts = h.Vector(pc.nhost) 
+            vsrc.sort()
+            cnts = h.Vector(pc.nhost()) 
             j = 0 
-            for i in range(0, pc.nhost-1):
-              x = (i+1)*tvl 
+            for i in range(pc.nhost()):
+              x = (i + 1) * tvl 
               k = 0 
-              while j < s.size: 
-                if s.x[j] < x:
+              while j < s.size(): 
+                if s[j] < x:
                   j += 1 
                   k += 1 
                 else:
@@ -1771,42 +1665,45 @@ Description:
         .. code-block::
             python
  
- 			from neuron import h
- 			
+            from mpi4py import MPI
+            from neuron import h
+            import time
+
             pc = h.ParallelContext() 
-            #{pc.subworlds(3)} 
-            def f():
-              ret = pc.id_world*100 + pc.id_bbs*10 + pc.id  
-              printf( \ 
-               "userid=%d arg=%d ret=%03d  world %d of %d  bbs %d of %d  net %d of %d\n", \  
-               hoc_ac_, $1, ret, \ 
-               pc.id_world, pc.nhost_world, pc.id_bbs, pc.nhost_bbs, pc.id, pc.nhost) 
-              system("sleep 1") 
-              return ret 
-            
-            hoc_ac_ = -1 
-            if (pc.id_world == 0):
-            print("before runworker\n")
+            pc.subworlds(3)
+
+            def f(arg):
+                ret = pc.id_world() * 100 + pc.id_bbs() * 10 + pc.id()
+                print( 
+                    "userid=%d arg=%d ret=%03d  world %d of %d  bbs %d of %d  net %d of %d" %
+                    (h.hoc_ac_, arg, ret, pc.id_world(), pc.nhost_world(), pc.id_bbs(), pc.nhost_bbs(), pc.id(), pc.nhost()))
+                time.sleep(1)
+                return ret
+
+            h.hoc_ac_ = -1 
+            if (pc.id_world() == 0):
+                print("before runworker")
             f(1)
             pc.runworker()
-            print("\nafter runworker\n") 
+            print("\nafter runworker") 
             f(2)
              
-            print("\nbefore submit\n")
+            print("\nbefore submit")
             for i in range(3, 7):
-                pc.submit("f", i)
-                print("after submit\n")
+                pc.submit(f, i)
+            print("after submit") 
              
-            while (userid = pc.working()) != 0):
-              arg = pc.upkscalar() 
-              print("result userid=%d arg=%d return=%03d\n", \ 
-                userid, arg, pc.retval) 
-            
+            while True:
+                userid = pc.working()
+                if not userid: break
+                arg = pc.upkscalar()
+                print("result userid=%d arg=%d return=%03d" % (userid, arg, pc.pyret()))
+
              
-            printf("\nafter working\n") 
+            print("\nafter working") 
             f(7)
             pc.done() 
-            quit() 
+
 
          
         If the above code is saved in :file:`temp.py` and executed with 6 processes using 
@@ -1816,44 +1713,44 @@ Description:
         .. code-block::
             none
 
-            $ mpiexec -n 6 nrniv -mpi temp.py 
-            numprocs=6 
-            NEURON -- VERSION 7.2 (454:bb5c4f755f59) 2010-07-30 
-            Duke, Yale, and the BlueBrain Project -- Copyright 1984-2008 
-            See http://www.neuron.yale.edu/credits.html 
-             
-            before runworker 
-            userid=-1 arg=1 ret=000  world 0 of 6  bbs 0 of 2  net 0 of 3 
-            userid=-1 arg=1 ret=192  world 2 of 6  bbs -1 of -1  net 2 of 3 
-            userid=-1 arg=1 ret=492  world 5 of 6  bbs -1 of -1  net 2 of 3 
-            userid=-1 arg=1 ret=391  world 4 of 6  bbs -1 of -1  net 1 of 3 
-            userid=-1 arg=1 ret=091  world 1 of 6  bbs -1 of -1  net 1 of 3 
-            userid=-1 arg=1 ret=310  world 3 of 6  bbs 1 of 2  net 0 of 3 
-             
-            after runworker 
-            userid=-1 arg=2 ret=000  world 0 of 6  bbs 0 of 2  net 0 of 3 
-             
-            before submit 
-            after submit 
-            userid=21 arg=4 ret=000  world 0 of 6  bbs 0 of 2  net 0 of 3 
-            userid=20 arg=3 ret=310  world 3 of 6  bbs 1 of 2  net 0 of 3 
-            userid=20 arg=3 ret=391  world 4 of 6  bbs -1 of -1  net 1 of 3 
-            userid=21 arg=4 ret=091  world 1 of 6  bbs -1 of -1  net 1 of 3 
-            userid=21 arg=4 ret=192  world 2 of 6  bbs -1 of -1  net 2 of 3 
-            userid=20 arg=3 ret=492  world 5 of 6  bbs -1 of -1  net 2 of 3 
-            result userid=21 arg=4 return=000 
-            userid=22 arg=5 ret=091  world 1 of 6  bbs -1 of -1  net 1 of 3 
-            userid=22 arg=5 ret=000  world 0 of 6  bbs 0 of 2  net 0 of 3 
-            userid=22 arg=5 ret=192  world 2 of 6  bbs -1 of -1  net 2 of 3 
-            result userid=22 arg=5 return=000 
-            userid=23 arg=6 ret=000  world 0 of 6  bbs 0 of 2  net 0 of 3 
-            userid=23 arg=6 ret=192  world 2 of 6  bbs -1 of -1  net 2 of 3 
-            userid=23 arg=6 ret=091  world 1 of 6  bbs -1 of -1  net 1 of 3 
-            result userid=23 arg=6 return=000 
-            result userid=20 arg=3 return=310 
-             
-            after working 
-            userid=0 arg=7 ret=000  world 0 of 6  bbs 0 of 2  net 0 of 3 
+            $  mpirun -n 6 python temp.py
+            numprocs=6
+            NEURON -- VERSION 7.5 master (266b5a0) 2017-05-22
+            Duke, Yale, and the BlueBrain Project -- Copyright 1984-2016
+            See http://neuron.yale.edu/neuron/credits
+
+            before runworker
+            userid=-1 arg=1 ret=000  world 0 of 6  bbs 0 of 2  net 0 of 3
+            userid=-1 arg=1 ret=091  world 1 of 6  bbs -1 of -1  net 1 of 3
+            userid=-1 arg=1 ret=492  world 5 of 6  bbs -1 of -1  net 2 of 3
+            userid=-1 arg=1 ret=192  world 2 of 6  bbs -1 of -1  net 2 of 3
+            userid=-1 arg=1 ret=310  world 3 of 6  bbs 1 of 2  net 0 of 3
+            userid=-1 arg=1 ret=391  world 4 of 6  bbs -1 of -1  net 1 of 3
+
+            after runworker
+            userid=-1 arg=2 ret=000  world 0 of 6  bbs 0 of 2  net 0 of 3
+
+            before submit
+            after submit
+            userid=21 arg=4 ret=000  world 0 of 6  bbs 0 of 2  net 0 of 3
+            userid=21 arg=4 ret=091  world 1 of 6  bbs -1 of -1  net 1 of 3
+            userid=20 arg=3 ret=391  world 4 of 6  bbs -1 of -1  net 1 of 3
+            userid=20 arg=3 ret=492  world 5 of 6  bbs -1 of -1  net 2 of 3
+            userid=21 arg=4 ret=192  world 2 of 6  bbs -1 of -1  net 2 of 3
+            userid=20 arg=3 ret=310  world 3 of 6  bbs 1 of 2  net 0 of 3
+            result userid=21 arg=4 return=000
+            result userid=20 arg=3 return=310
+            userid=23 arg=6 ret=000  world 0 of 6  bbs 0 of 2  net 0 of 3
+            userid=23 arg=6 ret=091  world 1 of 6  bbs -1 of -1  net 1 of 3
+            userid=22 arg=5 ret=391  world 4 of 6  bbs -1 of -1  net 1 of 3
+            userid=22 arg=5 ret=492  world 5 of 6  bbs -1 of -1  net 2 of 3
+            userid=23 arg=6 ret=192  world 2 of 6  bbs -1 of -1  net 2 of 3
+            userid=22 arg=5 ret=310  world 3 of 6  bbs 1 of 2  net 0 of 3
+            result userid=23 arg=6 return=000
+            result userid=22 arg=5 return=310
+
+            after working
+            userid=0 arg=7 ret=000  world 0 of 6  bbs 0 of 2  net 0 of 3
             $ 
 
         One can see from the output that before the runworker call, all the 
@@ -2030,7 +1927,7 @@ Description:
         If the id is equal to pc.id then this machine "owns" the gid and 
         the associated cell 
         should be eventually created only on this machine. 
-        Note that id must be in the range 0 to pc.nhost-1. The global id (gid) 
+        Note that id must be in the range 0 to pc.nhost()-1. The global id (gid) 
         can be any unique integer >= 0 but generally ranges from 0 to ncell-1 where 
         ncell is the total number of real and artificial cells. 
          
@@ -2117,10 +2014,10 @@ Description:
         The NetCon source defines the spike generation location. 
         Note that it is an error if the gid does not exist on this machine. The 
         normal idiom is to use a NetCon returned by a call to the cell's 
-        connect2target(nil, netcon) method or else, if the cell is an unwrapped 
-        artificial cell, use a \ ``netcon = new NetCon(cell, nil)`` statement to 
-        get a temporary netcon which can be destroyed after its use in the 
-        pc.cell call. The weight and delay of this temporary netcon are 
+        connect2target(None, netcon) method or else, if the cell is an unwrapped 
+        artificial cell, use a \ ``netcon = h.NetCon(cell, None)`` statement to 
+        get a temporary :class:`NetCon` which can be destroyed after its use in the 
+        pc.cell call. The weight and delay of this temporary NetCon are 
         not relevant; they come into the picture with 
         :meth:`ParallelContext.gid_connect` . 
          
@@ -2397,7 +2294,7 @@ Description:
 
 
     Syntax:
-        ``nsendmax = pc.spike_statistics(&nsend, &nrecv, &nrecv_useful)``
+        ``nsendmax = pc.spike_statistics(_ref_nsend, _ref_nrecv, _ref_nrecv_useful)``
 
 
     Description:
@@ -2419,7 +2316,11 @@ Description:
     .. seealso::
         :meth:`ParallelContext.wait_time`, :meth:`ParallelContext.set_maxstep`
 
-         
+    .. note::
+
+        The arguments for this function must be NEURON references to numbers; these can be
+        created via, e.g. ``_ref_nsend = h.ref(0)`` and then dereferenced to get their
+        values via ``_ref_nsend[0]``.
 
 ----
 
@@ -2436,7 +2337,7 @@ Description:
         The vector, vec, of size maxspikes, is used to accumulate histogram information about the 
         maximum number of spikes sent by any cpu during the spike exchange process. 
         Every spike exchange, vec.x[max_spikes_sent_by_any_host] is incremented by 1. 
-        It only makes sense to do this on one cpu, normally pc.id == 0. 
+        It only makes sense to do this on one cpu, normally pc.id() == 0. 
         If some host sends more than maxspikes at the end of an
         integration interval, no element of vec is incremented.
          
@@ -2515,7 +2416,7 @@ Parallel Transfer
 
 
     Syntax:
-        ``section pc.source_var(&v(x), source_global_index)``
+        ``pc.source_var(_ref_v, source_global_index, sec=section)``
 
 
     Description:
@@ -2530,7 +2431,7 @@ Parallel Transfer
 
     .. warning::
         An error will be generated if the the first arg pointer is not a
-        voltage in the currently accessed section. This was not an error prior
+        voltage in ``section``. This was not an error prior
         to version 1096:294dac40175f trunk 19 May 2014
 
 ----
@@ -2541,9 +2442,9 @@ Parallel Transfer
 
 
     Syntax:
-        ``pc.target_var(&target_variable, source_global_index)``
+        ``pc.target_var(_ref_target_variable, source_global_index)``
 
-        ``pc.target_var(targetPointProcess, &target_variable, source_global_index)``
+        ``pc.target_var(targetPointProcess, _ref_target_variable, source_global_index)``
 
 
     Description:
@@ -2594,16 +2495,16 @@ Parallel Transfer
 
 
     Syntax:
-        ``rootsection pc.splitcell_connect(host_with_other_subtree)``
+        ``pc.splitcell_connect(host_with_other_subtree, sec=rootsection)``
 
 
     Description:
-        The root of the subtree specified by the currently accessed section 
+        The root of the subtree specified by ``rootsection``
         is connected to the root of the 
         corresponding subtree located on the 
         host indicated by the argument. The method is very restrictive but 
         is adequate to solve the load balance problem. 
-        The host_with_other_subtree must be either pc.id + 1 or pc.id - 1 
+        The host_with_other_subtree must be either pc.id() + 1 or pc.id() - 1 
         and there can be only one split cell between hosts i and i+1. 
         A rootsection is defined as a section in which 
         :meth:`SectionRef.has_parent` returns 0. 
@@ -2631,9 +2532,9 @@ Parallel Transfer
 
 
     Syntax:
-        ``section pc.multisplit(x, sid)``
+        ``pc.multisplit(section(x), sid)``
 
-        ``section pc.multisplit(x, sid, backbone_style)``
+        ``pc.multisplit(section(x), sid, backbone_style)``
 
         ``pc.multisplit()``
 
@@ -2714,6 +2615,11 @@ Parallel Transfer
         be used with variable step 
         methods, or models with :func:`LinearMechanism`, or :func:`extracellular` . 
 
+    .. note::
+
+        Prior to NEURON 7.5, the segment form was not supported and ``pc.multisplit(section(x), sid)``
+        would instead be written ``pc.multisplit(x, sid, sec=section)``.
+
          
 
 ----
@@ -2775,9 +2681,9 @@ Parallel Transfer
         a file scope LOCAL along with the possibility of passing values back 
         to hoc in response to calling a PROCEDURE, use the THREADSAFE keyword 
         in the NEURON block to automatically treat those GLOBAL variables 
-        as thread specific variables. Hoc assigns and evaluates only 
+        as thread specific variables. NEURON assigns and evaluates only 
         the thread 0 version and if FUNCTIONs and PROCEDUREs are called from 
-        Hoc, the thread 0 version of these globals are used. 
+        Python, the thread 0 version of these globals are used. 
 
 
 ----
@@ -2884,11 +2790,11 @@ Parallel Transfer
 
 
     Syntax:
-        ``sec  i = pc.sec_in_thread()``
+        ``i = pc.sec_in_thread(sec=section)``
 
 
     Description:
-        The currently accessed section resides in the thread indicated by the 
+        Whether or not ``section`` resides in the thread indicated by the 
         return value. 
 
 
@@ -2972,3 +2878,56 @@ Parallel Transfer
               netreceive index, srcgid or type name of source object, active, delay, weight vector
 
 
+----
+
+..  method:: ParallelContext.nrnbbcore_write
+
+    Syntax:
+        ``pc.nrnbbcore_write([path[, gidgroup_vec]])``
+
+    Description:
+        Writes files describing the existing model in such a way that those
+        files can be read by CoreNEURON to simulate the model and produce
+        exactly the same results as if the model were simulated in NEURON.
+
+        The files are written in the directory specified by the path argument
+        (default '.').
+
+        Rank 0 writes a file called bbcore_mech.dat (into path) which lists
+        all the membrane mechanisms in ascii format of:
+
+        name type pointtype artificial is_ion param_size dparam_size charge_if_ion
+
+        At the end of the bbcore_mech.dat file is a binary value that is
+        used by the CoreNEURON reader to determine if byteswapping is needed
+        in case of machine endianness difference between writing and reading.
+
+        Each rank also writes pc.nthread() pairs of model data files containing
+        mixed ascii and binary data that completely defines the model
+        specification within a thread, The pair of files in each thread are
+        named <gidgroup>_1.dat and <gidgroup>_2.dat  where gidgroup is one
+        of the gids in the thread (the files contain data for all the gids
+        in a thread). <gidgroup>_1.dat contains network topology data and
+        <gidgroup>_2.dat contains all the data needed to actually construct
+        the cells and synapses and specify connection weights and delays.
+
+        If the second argument does not exist, 
+        rank 0 writes a "files.dat" file with a first value that
+        specifies the total number of gidgroups and one gidgroup value per
+        line for all threads of all ranks.
+
+        If the model is too large to exist in NEURON (models typcially use
+        an order of magnitude less memory in CoreNEURON) the model can
+        be constructed in NEURON as a series of submodels.
+        When one piece is constructed
+        on each rank, this function can be called with a second argument which
+        must be a Vector. In this case, rank 0 will NOT write a files.dat
+        and instead the pc.nthread() gidgroup values for the rank will be
+        returned in the Vector. 
+
+        This function requires cvode.cache_efficient(1) . Multisplit is not
+        supported. The model cannot be more complicated than a spike or gap
+        junction coupled parallel network model of real and artificial cells.
+        Real cells must have gids, Artificial cells without gids connect
+        only to cells in the same thread. No POINTER to data outside of the
+        thread that holds the pointer. 
