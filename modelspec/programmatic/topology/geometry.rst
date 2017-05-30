@@ -70,20 +70,20 @@ Stylized specification of geometry
 For simulations one needs to specify L, nseg, diam, Ra, and connectivity. 
 
 
-L 
+section.L 
     For each section, L is the length of the entire section in microns. 
 
-nseg 
+section.nseg 
     The section is divided into nseg compartments of length L/nseg. 
     Membrane potential will be computed at the ends of the section and the 
     middle of each compartment. 
 
-diam 
+seg.diam 
     The diameter in microns. 
     Note that diam is a range variable and 
     therefore must be respecified whenever :data:`nseg` is changed. 
 
-Ra 
+section.Ra 
     Axial resistivity in ohm-cm. 
 
 connectivity 
@@ -98,7 +98,7 @@ In the stylized specification, the shape model used for a section is
 a sequence of right circular cylinders of length, L/nseg, with diameter 
 given by the diam range variable at the center of each segment. 
 The area of a segment is PI*diam*L/nseg (micron2) and the half-segment axial 
-resistance is \ ``.01*Ra*(L/2/nseg)/(PI*(diam/2)^2)``. The .01 factor is necessary 
+resistance is \ ``.01*sec.Ra*(L/2/sec.nseg)/(PI*(seg.diam/2)^2)``. The .01 factor is necessary 
 to convert ohm-cm micron/micron2 to MegOhms. Ends of cylinders are not 
 counted in the area and, in fact, the areas are very close to those of 
 truncated cones as long as the diameter does not change too much. 
@@ -107,14 +107,37 @@ truncated cones as long as the diameter does not change too much.
 .. code-block::
     python
 
-    forall delete_section() 
-    create a 
-    access a 
-    nseg = 10 
-    Ra = 100 
-    L=1000 
-    diam(0:1)=10:100 
-    for (x) print x, diam(x), area(x), PI*diam(x)*L/nseg, ri(x), .01*Ra*(L/2/nseg)/(PI*(diam(x)/2)^2) 
+    from neuron import h
+    import numpy
+
+    sec = h.Section(name='sec')
+    sec.nseg = 10
+    sec.Ra = 100
+    sec.L = 1000
+    # linearly interpolate diameters from 10 to 100
+    for seg in sec:
+        seg.diam = numpy.interp(seg.x, [0, 1], [10, 100])
+
+    for seg in sec.allseg():
+        print seg.x, seg.diam, seg.area(), h.PI * seg.diam * sec.L / sec.nseg, seg.ri(), 0.01 * sec.Ra * sec.L / 2 / sec.nseg / (h.PI * (seg.diam / 2) ** 2)
+
+Output:
+
+    .. code-block::
+        none
+
+        0.0 14.5 0.0 4555.30934771 1e+30 0.30279180612
+        0.05 14.5 4555.30934771 4555.30934771 0.30279180612 0.30279180612
+        0.15 23.5 7382.74273594 7382.74273594 0.418069266033 0.115277459913
+        0.25 32.5 10210.1761242 10210.1761242 0.175549154338 0.0602716944253
+        0.35 41.5 13037.6095124 13037.6095124 0.0972361172657 0.0369644228403
+        0.45 50.5 15865.0429006 15865.0429006 0.0619274567534 0.0249630339131
+        0.55 59.5 18692.4762889 18692.4762889 0.0429453733627 0.0179823394497
+        0.65 68.5 21519.9096771 21519.9096771 0.0315498128871 0.0135674734374
+        0.75 77.5 24347.3430653 24347.3430653 0.0241667620512 0.0105992886138
+        0.85 86.5 27174.7764536 27174.7764536 0.0191076887925 0.00850840017866
+        0.95 95.5 30002.2098418 30002.2098418 0.0154886887932 0.00698028861454
+        1.0 95.5 0.0 30002.2098418 0.00698028861454 0.00698028861454        
 
 Note that the area (and length) of the 0,1 terminal ends is equal to 0 
 and the axial resistance 
@@ -126,8 +149,8 @@ ends and all branches should be connected at the ends or centers of segments.
 Note that if one increases nseg by a factor of 3, old centers are preserved. 
  
 For single compartment simulations it is most convenient to choose 
-a membrane area of 100 micron2 so that point process currents (nanoamps) 
-are equivalent to density currents (milliamps/cm2). 
+a membrane area of 100 micron\ :sup:`2` so that point process currents (nanoamps) 
+are equivalent to density currents (milliamps/cm\ :sup:`2`\ ). 
  
 Also note that a single compartment of length = diameter has the same 
 effective area as that of a sphere of the same diameter. 
@@ -151,28 +174,32 @@ Example:
     .. code-block::
         python
         
-        from neuron import h
+        from neuron import h, gui
+        import numpy
 
-        forall delete_section() 
-        create a, b, c, d, e 
-        connect b(0), a(1) 
-        connect c(1), b(1) 
-        connect d(0), b(1) 
-        connect e(0), a(0) 
-        forall nseg=20 
-        forall L=100 
-        forall diam(0:1) = 10:40 
-        
-        s = h.Shape() 
-        s.show(0) 
-        a s.color(2) 
-        topology() 
-        finitialize() 
-        forall:
-        	print secname() 
-        	for i in range(n3d()): 
-        	    print i, x3d(i), y3d(i), z3d(i), diam3d(i) 
-        
+        a, b, c, d, e = [h.Section(name=n) for n in ['a', 'b', 'c', 'd', 'e']]
+        b.connect(a)
+        c.connect(b(1), 1) # connect the 1 end of c to the 1 end of b
+        d.connect(b)
+        e.connect(a(0)) # connect the 0 end of e to the 0 end of a
+        for sec in h.allsec():
+            sec.nseg = 20
+            sec.L = 100
+            for seg in sec:
+                seg.diam = numpy.interp(seg.x, [0, 1], [10, 40])
+
+        s = h.Shape()
+        s.show(0)
+        s.color(2, sec=a) # color section "a" red
+        h.topology()
+        h.finitialize()
+        for sec in h.allsec():
+            print sec
+            for i in range(sec.n3d()):
+                print i, sec.x3d(i), sec.y3d(i), sec.z3d(i), sec.diam3d(i)
+
+    .. image:: ../../../images/geometry1.png
+        :align: center
 
      
     If you change the diameter or length, the Shape instances are 
@@ -201,47 +228,48 @@ Example:
     .. code-block::
         python
         
-        from neuron import h
+        from neuron import h, gui
 
-        forall delete_section() 
-        def pr():
-            pt3dclear() 
-            nseg = $1 
-            diam = 10 
-            diam(.34:.66) = 20:20 
-            define_shape() 
-            for(x):
-                print x*L, diam(x), area(x), ri(x) 
-          
-         
-        h.xpanel("change nseg") 
-        h.xradiobutton("nseg = 3", "pr(3)") 
-        h.xradiobutton("nseg = 11", "pr(11)") 
-        h.xradiobutton("nseg = 101", "pr(101)") 
-        h.xpanel() 
+        def pr(nseg):
+            h.pt3dclear(sec=sec)
+            sec.nseg = nseg
+            setup_diam()
+            h.define_shape()
+            print_stats()
 
+        def setup_diam():
+            for seg in sec:
+                seg.diam = 20 if 0.34 <= seg.x <= 0.66 else 10
 
-        create a 
-        access a  
-        nseg=3 
-        {Ra=100 L=100} 
+        def print_stats():
+            for seg in sec.allseg():
+                print seg.x * sec.L, seg.diam, seg.area(), seg.ri()
+
+        h.xpanel("change nseg")
+        h.xradiobutton("nseg = 3", (pr, 3))
+        h.xradiobutton("nseg = 11", (pr, 11))
+        h.xradiobutton("nseg = 101", (pr, 101))
+        h.xpanel()
+
+        sec = h.Section(name='sec')
+        sec.Ra = 100
+        sec.L = 100
+        sec.nseg = 3
+        setup_diam()
+        print_stats()
+
+        s = h.Shape()
+        s.show(0)
+
+        for i in range(sec.n3d()):
+            print i, sec.arc3d(i), sec.diam3d(i)
+
+        print "L=", sec.L
+        print_stats()
+
          
-         
-        diam=10 
-        diam(.34:.66) = 20:20 
-         
-        for(x):
-            print x*L, diam(x), area(x), ri(x) 
-         
-        s = h.Shape() 
-        s.show(0) 
-         
-        for i in range(n3d()):
-            print i, arc3d(i), diam3d(i) 
-        print "L=", L 
-        for(x):
-            print x*L, diam(x), area(x), ri(x) 
-         
+    .. image:: ../../../images/geometry2.png
+        :align: center
 
 The difference is that the 3-d points define a series of truncated cones 
 instead of a series of right circular cylinders. The difference is reduced 
@@ -268,15 +296,15 @@ correspond to the new position.  So, assuming the soma is the root
 section, to translate an entire cell to another location it suffices to 
 change only the location of the soma.  It will avoid confusion if, 
 except for good reason, one attaches only the 0 end of a child section 
-to a parent.  This will ensure that the diam(x) as x ranges from 0 to 1 
-has the same sense as diam3d(i) as i ranges from 0 to n3d()-1. 
+to a parent.  This will ensure that the sec(x).diam as x ranges from 0 to 1 
+has the same sense as sec.diam3d(i) as i ranges from 0 to sec.n3d()-1. 
  
-The shape model used for a section  when the pt3d list is non-empty 
+The shape model used for a section when the pt3d list is non-empty 
 is that of a sequence of truncated cones in which the pt3d points define 
 the location and diameter of the ends. From this sequence of points, 
 the effective area, diameter, and resistance is computed for each segment 
 via a trapezoidal integration across the segment length. This takes 
-into account the extra area due to \ ``sqrt(dx^2 + dy^2)`` for fast changing 
+into account the extra area due to ``sqrt(dx^2 + dy^2)`` for fast changing 
 diameters (even degenerate cones of 0 length can be specified, ie. two 
 points with same coordinates but different diameters) 
 but no attempt is made to deal with centroid curvature effects 
@@ -299,22 +327,25 @@ Example:
     .. code-block::
         python
 
-        forall delete_section() 
+        from neuron import h, gui
+        from math import sin, cos
 
-        create a 
-        access a 
-        Ra=100 
-        nseg = 10 
-        pt3dclear() 
+        sec = h.Section(name='sec')
+        sec.Ra=100 
+        sec.nseg = 10 
+        h.pt3dclear(sec=sec) 
         for i in range(31): 
-        	x = PI*i/30 
-        	pt3dadd(200*sin(x), 200*cos(x), 0, 100*sin(4*x)) 
-         
+            x = h.PI * i / 30.
+            h.pt3dadd(200 * sin(x), 200 * cos(x), 0, 100 * sin(4 * x), sec=sec) 
+
         s = h.Shape() 
         s.show(0) 
-        print L 
-        for (x):
-        print x, diam(x), area(x), PI*diam(x)*L/nseg, ri(x), .01*Ra*(L/2/nseg)/(PI*(diam(x)/2)^2) 
+        print sec.L 
+        for seg in sec.allseg():
+            print seg.x, seg.diam, seg.area(), h.PI * seg.diam * sec.L / sec.nseg, seg.ri(), 0.01 * sec.Ra * sec.L / 2 / sec.nseg / (h.PI * (seg.diam / 2) ** 2)
+
+    .. image:: ../../../images/geometry3.png
+        :align: center
 
     Note that at one point the diameter is numerically 0 and 
     the axial resistance becomes 
@@ -326,29 +357,32 @@ Example:
      
     The following loads the pyramidal cell 3-d reconstruction from the demo 
     directory of your neuron system. 
-    Notice that you can modify the length only if the pt3dconst mode is 1. 
+    Notice that you can modify the length only if the pt3dconst mode is 0. 
 
 
     .. code-block::
         python
         
-        from neuron import h
-
-        forall delete_section() 
+        from neuron import h, gui
+        import __main__
 
         h.xopen("$(NEURONHOME)/demo/pyramid.nrn") 
-        mode = 1 
-        pt3dconst(mode) 
+        mode = 1
+        h.pt3dconst(mode) # uses default section from pyramid.nrn
         s = h.Shape() 
-        s.action("dendrite_1[8] s.select()") 
-         
-        dendrite_1[8] s.color(2) 
-         
+        s.action(lambda: s.select(sec=h.dendrite_1[8]))
+        s.color(2, sec=h.dendrite_1[8])
+
         h.xpanel("Change Length") 
-        h.xvalue("dendrite_1[8].L", "dendrite_1[8].L", 1) 
-        h.xcheckbox("Can't change length", &mode, "pt3dconst(mode)") 
+        h.xvalue("dendrite_1[8].L", "dendrite_1[8].L", 1) # using HOC syntax
+                                                          # to directly access
+                                                          # the length
+        h.xcheckbox("Can't change length", (__main__, 'mode'),
+                    lambda: h.pt3dconst(mode, sec=h.dendrite_1[8]))
         h.xpanel() 
 
+    .. image:: ../../../images/geometry4.png
+        :align: center
 
 .. seealso::
     :func:`pt3dclear`, :func:`pt3dadd`, :func:`pt3dconst`, :func:`pt3dstyle`, :func:`n3d`, :func:`x3d`, :func:`y3d`, :func:`z3d`, :func:`diam3d`, :func:`arc3d`
@@ -380,13 +414,13 @@ Defining the 3D Shape
 
 
     Syntax:
-        ``buffersize =  pt3dclear()``
+        ``buffersize =  h.pt3dclear(sec=section)``
 
-        ``buffersize =  pt3dclear(buffersize)``
+        ``buffersize =  h.pt3dclear(buffersize, sec=section)``
 
 
     Description:
-        Destroy the 3d location info in the currently accessed section. 
+        Destroy the 3d location info in ``section``.
         With an argument, that amount of space is allocated for storage of 
         3-d points in that section. 
 
@@ -400,17 +434,17 @@ Defining the 3D Shape
 
 
     Syntax:
-        ``pt3dadd(x,y,z,d)``
+        ``h.pt3dadd(x, y, z, d, sec=section)``
 
 
     Description:
          
         Add the 3d location and diameter point at the end of the current pt3d 
         list. Assume that successive additions increase the arc length 
-        monotonically. When pt3d points exist in a section they are used 
-        to compute *diam* and *L*. When *diam* or *L* are changed and \ ``pt3dconst()==0`` 
+        monotonically. When pt3d points exist in ``section`` they are used 
+        to compute *diam* and *L*. When *diam* or *L* are changed and \ ``h.pt3dconst(sec=section)==0`` 
         the 3-d info is changed to be consistent with the new values of 
-        *L* and *diam*. (Note: When *L* is changed, \ ``diam_shape()`` should be executed 
+        *L* and *diam*. (Note: When *L* is changed, \ ``h.define_shape()`` should be executed 
         to adjust the 3-d info so that branches appear connected.) 
         The existence of a spine at this point is signaled 
         by a negative value for *d*. 
@@ -425,9 +459,9 @@ Defining the 3D Shape
 
 
     Syntax:
-        ``pt3dconst(0)``
+        ``h.pt3dconst(0, sec=section)``
 
-        ``pt3dconst(1)``
+        ``h.pt3dconst(1, sec=section)``
 
 
     Description:
@@ -439,9 +473,9 @@ Defining the 3D Shape
         comes from the current diameter of the segments and does not change 
         the number of 3d points.  Thus if there are a lot of 3d points the 
         shape will appear as a string of uniform diameter cylinders each of 
-        length L/nseg. ie. after transfer \ ``diam3d(i) == diam(arc3d(i))``. 
+        length L/nseg. ie. after transfer \ ``sec.diam3d(i) == sec(sec.arc3d(i)/sec.L).diam``. 
         Then, after a call to an internal function such as \ ``area()`` or 
-        \ ``finitialize()``, the 3d point info will be used to determine the values 
+        \ ``h.finitialize()``, the 3d point info will be used to determine the values 
         of the segment diameters. 
          
         Because of the three separate interpolations: 
@@ -451,13 +485,11 @@ Defining the 3D Shape
          
         Because of the surprises noted above, when using 3d points 
         consider treating them as the authoritative diameter info and set 
-        \ ``pt3dconst(1)``. 
+        \ ``h.pt3dconst(1, sec=section)``. 
          
         3d points are automatically generated when one uses 
-        the nrniv Shape class. If you want the flexibility of being able 
-        to specify 3d diameter using range variable notation 
-        (eg diam(0:1) = 10:20) you will need to experiment with \ ``nseg`` and 
-        \ ``n3d()`` in order to understand the exact consequences of interpolation. 
+        the NEURON Shape class. Experiment with ``sec.nseg`` and 
+        ``sec.n3d()`` in order to understand the exact consequences of interpolation. 
 
     .. seealso::
         :func:`pt3dstyle`
@@ -472,20 +504,20 @@ Defining the 3D Shape
 
 
     Syntax:
-        ``style = pt3dstyle()``
+        ``style = h.pt3dstyle(sec=section)``
 
-        ``style = pt3dstyle(0)``
+        ``style = h.pt3dstyle(0, sec=section)``
 
-        ``style = pt3dstyle(1, x, y, z)``
+        ``style = h.pt3dstyle(1, x, y, z, sec=section)``
 
-        ``style = pt3dstyle(1, &x, &y, &z)``
+        ``style = h.pt3dstyle(1, _ref_x, _ref_y, _ref_z, sec=section)``
 
 
     Description:
-        With no args, returns 1 if using a logical connection point. 
+        With no args besides the ``sec=`` keyword, returns 1 if using a logical connection point. 
          
         With a first arg of 0, then style is NO logical connection point 
-        and (with :func:`pt3dconst` == 0 and define_shape is executed) 
+        and (with :func:`pt3dconst` == 0 and ``h.define_shape()`` is executed) 
         the 3-d location info is translated so the first 3-d point coincides with 
         the parent connection location. This is the classical and default behavior. 
          
@@ -521,12 +553,12 @@ Defining the 3D Shape
 
 
     Syntax:
-        ``pt3dinsert(i, x, y, z, diam)``
+        ``h.pt3dinsert(i, x, y, z, diam, sec=section)``
 
 
     Description:
-        Insert the point (so it becomes the i'th point). If i is equal to 
-        :func:`n3d` the point is appended (equivalent to :func:`pt3dadd`). 
+        Insert the point (so it becomes the i'th point) to ``section``. If i is equal to 
+        ``section.n3d()``, the point is appended (equivalent to :func:`pt3dadd`). 
 
          
 
@@ -538,11 +570,11 @@ Defining the 3D Shape
 
 
     Syntax:
-        ``pt3dremove(i)``
+        ``h.pt3dremove(i, sec=section)``
 
 
     Description:
-        Remove the i'th point. 
+        Remove the i'th 3D point from ``section``.
 
          
 
@@ -554,9 +586,9 @@ Defining the 3D Shape
 
 
     Syntax:
-        ``pt3dchange(i, x, y, z, diam)``
+        ``h.pt3dchange(i, x, y, z, diam, sec=section)``
 
-        ``pt3dchange(i, diam)``
+        ``h.pt3dchange(i, diam, sec=section)``
 
 
     Description:
@@ -564,9 +596,11 @@ Defining the 3D Shape
         is the diameter and the location is unchanged. 
 
         .. code-block::
-            none
+            python
 
-            pt3dchange(5, x3d(5), y3d(5), z3d(5), (spine3d(5)+1)/2 * diam3d(5)) 
+            h.pt3dchange(5, section.x3d(5), section.y3d(5), section.z3d(5),
+                         section.diam3d(5) if not h.spine3d(sec=section) else -section.diam3d(5),
+                         sec=section) 
 
         leaves the pt3d info unchanged. 
 
@@ -582,11 +616,17 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``n3d()``
+        ``section.n3d()``
+
+        ``h.n3d(sec=section)``
 
 
     Description:
-        Return the number of 3d locations stored in the currently accessed section. 
+        Return the number of 3d locations stored in the ``section``. The ``section.n3d()`` syntax returns an
+        integer and is generally clearer than the ``h.n3d(sec=section)`` which returns a float and therefore
+        has to be cast to an int to use with ``range``. The latter form is, however, slightly more efficient
+        when used with ``section.push()`` and ``h.pop_section()`` to set a default section used for many
+        morphology queries (in which case the sec= would be omitted).
 
          
 
@@ -598,12 +638,18 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``x3d(i)``
+        ``section.x3d(i)``
+
+        ``h.x3d(i, sec=section)``
 
 
     Description:
         Returns the x coordinate of the ith point in the 3-d list of the 
-        currently accessed section. 
+        ``section`` (or in the second form, if no section is specified of
+        NEURON's current default section). As with :func:`n3d`, temporarily
+        setting the default section is slightly more efficient when dealing
+        with large numbers of queries about the same section; the tradeoff is
+        a loss of code clarity.
 
     .. seealso::
         :func:`y3d`, :func:`z3d`, :func:`arc3d`, :func:`diam3d`
@@ -617,7 +663,9 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``y3d(i)``
+        ``section.y3d(i)``
+
+        ``h.y3d(i, sec=section)``
 
 
     .. seealso::
@@ -632,7 +680,9 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``z3d(i)``
+        ``section.z3d(i)``
+
+        ``h.z3d(i, sec=section)``
 
 
     .. seealso::
@@ -648,12 +698,14 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``diam3d(i)``
+        ``section.diam3d(i)``
+
+        ``h.x3d(diam, sec=section)``
 
 
     Description:
-        Returns the diameter of the ith 3d point of the currently accessed 
-        section. 
+        Returns the diameter of the ith 3d point of ``section`` (or of
+        NEURON's current default if no ``sec=`` argument is provided).
         \ ``diam3d(i)`` will always be positive even 
         if there is a spine at the ith point. 
 
@@ -669,12 +721,14 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``arc3d(i)``
+        ``section.arc3d(i)``
+
+        ``h.arc3d(i, sec=section)``
 
 
     Description:
         This is the arc length position of the ith point in the 3d list. 
-        \ ``arc3d(n3d()-1) == L`` 
+        ``section.arc3d(section.n3d()-1) == section.L`` 
 
          
 
@@ -686,7 +740,7 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``spine3d(i)``
+        ``h.spine3d(i, sec=section)``
 
 
     Description:
@@ -702,12 +756,16 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``setSpineArea(area)``
+        ``h.setSpineArea(area)``
 
 
     Description:
-        The area of an average spine in um2. \ ``setSpineArea`` merely adds to 
-        the total area of a segment. 
+        The area of an average spine in um\ :sup:`2`. ``setSpineArea`` merely adds to 
+        the total area of a segment.
+
+    .. note::
+
+        This value affects all sections on the current compute node.
 
          
 
@@ -719,11 +777,12 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``getSpineArea()``
+        ``h.getSpineArea()``
 
 
     Description:
-        Return the area of the average spine. 
+        Return the area of the average spine. This value is the same
+        for all sections.
 
          
 
@@ -735,7 +794,7 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``define_shape()``
+        ``h.define_shape()``
 
 
     Description:
@@ -760,13 +819,15 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``area(x)``
+        ``h.area(x, sec=section)``
+
+        ``section(x).area()``
 
 
     Description:
-        Return the area (in square microns) of the segment which contains *x*. 
+        Return the area (in square microns) of the segment ``section(x)``. 
          
-        \ ``area(0)`` and \ ``area(1)`` = 0 
+        ``section(0).area()`` and ``section(1).area()`` = 0 
 
          
 
@@ -778,11 +839,13 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``ri(x)``
+        ``h.ri(x, sec=section)``
+
+        ``section(x).ri()``
 
 
     Description:
-        Return the resistance (in megohms) between the center of the segment containing x 
+        Return the resistance (in megohms) between the center of the segment ``section(x)``
         and its parent segment. This can be used to compute axial current 
         given the voltage at two adjacent points. If there is no parent 
         the "infinite" resistance returned is 1e30. 
@@ -793,8 +856,8 @@ Reading 3D Data from NEURON
         .. code-block::
             python
 
-            for (x):
-                print x, area(x), ri(x) 
+            for seg in sec.allseg():
+                print seg.x * sec.L, seg.area(), seg.ri()
 
         will print the arc length, the segment area at that arc length, and the resistance along that length 
         for the currently accessed section. 
@@ -810,9 +873,9 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``distance() or distance(0, x)``
+        ``h.distance(sec=section)`` or ``h.distance(0, x, sec=section)``
 
-        ``len = distance(x) or len = distance(1, x)``
+        ``len = distance(x, sec=section)`` or ``len = distance(1, x, sec=section)``
 
 
 
@@ -822,17 +885,17 @@ Reading 3D Data from NEURON
          
 
 
-        \ ``distance()`` with no arguments 
+        ``h.distance(sec=section)``
             specifies the origin as location 0 
-            of the currently accessed section. 
+            of ``section``
 
-        \ ``distance(x) (0<=x<=1)`` 
+        ``h.distance(x, sec=section) (0<=x<=1)`` 
             returns the distance (in microns) from the origin to 
-            this point on the currently accessed section. 
+            ``section(x)``.
 
          
         To overcome the 
-        old initialization restriction, distance(0, x) can be used to set the 
+        old initialization restriction, ``h.distance(0, x, sec=section)`` can be used to set the 
         origin. Note that distance is measured from the centers of 
         segments. 
 
@@ -854,7 +917,7 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``diam_changed``
+        ``h.diam_changed = 1``
 
 
     Description:
@@ -866,6 +929,36 @@ Reading 3D Data from NEURON
         changed. 
         Changing diam or any pt3d value will cause it to be set automatically. 
 
+    .. note::
+
+        The value is automatically reset to 0 when NEURON has recalculated the coefficient matrix,
+        so reading it may not always produce the result you expect.
+
+        If it is important to monitor changes to the diameter, look at the internal variable
+        ``diam_change_cnt`` which increments every time ``h.diam_changed`` is automatically reset to 0:
+
+        .. code-block::
+            python
+
+            from neuron import h, gui
+            import neuron
+            import ctypes
+            import time
+
+            diam_change_cnt = neuron.nrn_dll_sym('diam_change_cnt', ctypes.c_int)
+            print h.diam_changed, diam_change_cnt.value        # 1 0
+
+            s = h.Section()
+            print h.diam_changed, diam_change_cnt.value        # 1 0
+
+            time.sleep(0.2)
+            print h.diam_changed, diam_change_cnt.value        # 0 1
+
+            s.diam = 42
+            print h.diam_changed, diam_change_cnt.value        # 1 1
+            time.sleep(0.2)
+            print h.diam_changed, diam_change_cnt.value        # 1 2
+
          
          
 
@@ -875,6 +968,8 @@ Reading 3D Data from NEURON
 
 .. data:: L
 
+    ``section.L``
+
         Length of a section in microns. 
          
 
@@ -883,6 +978,8 @@ Reading 3D Data from NEURON
 
 
 .. data:: diam
+
+    ``section(x).diam``
 
         Diameter range variable of a section in microns. 
          
@@ -895,15 +992,14 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``Ra``
+        ``section.Ra``
 
 
     Description:
         Axial resistivity in ohm-cm. This used to be a global variable 
         so that it was the same for all sections. Now, it is a section 
         variable and must be set individually for each section. A simple 
-        way to set its value is 
-        \ ``forall Ra=35.4`` 
+        way to set its value is ``for sec in h.allsec(): sec.Ra = 35.4``
          
         Prior to 1/6/95 the default value for Ra was 34.5. Presently it is 
         35.4. 

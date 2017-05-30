@@ -1,6 +1,5 @@
 157   modelspec/programmatic/electrod.rst // issues <-- No idea where this comes from
 874   programming/python.rst //finished <-- this should probably be replaced entirely?
-903   modelspec/programmatic/topology/geometry.rst  //mostly done <-- needs a lot of rework
 
 
 Needs edits:
@@ -74,3 +73,4 @@ simctrl/bbsavestate.rst
 391   visualization/oldgrph.rst     //mostly done... eh
 1053    modelspec/programmatic/mechanisms/mech.rst //mostly done 
 2972    modelspec/programmatic/network/parcon.rst  //done <-- going to need a bunch of edits, look at sprint, $ arguments
+903   modelspec/programmatic/topology/geometry.rst  //mostly done <-- needs a lot of rework
