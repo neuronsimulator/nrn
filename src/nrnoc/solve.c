@@ -228,14 +228,14 @@ void distance(void) {
 		setup_topology();
 	}
 			
-	sec = chk_access();
 	if (ifarg(2)) {
-		d = chkarg(2, 0., 1.);
+		nrn_seg_or_x_arg(2, &sec, &d);
 		mode = (int) chkarg(1, 0., 1.);
 	}else if (ifarg(1)) {
-		d = chkarg(1, 0., 1.);
+		nrn_seg_or_x_arg(1, &sec, &d);
 		mode = 1;
 	}else{
+		sec = chk_access();
 		d = 0.;
 		mode = 0;
 	}
