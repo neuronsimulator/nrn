@@ -1558,11 +1558,10 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
     }
     return 0;
   }
-  if (!po->sym_) {
+  if (!po->sym_ || po->type_ != PyHoc::HocArray) {
     PyErr_SetString(PyExc_TypeError, "unsubscriptable object");
     return -1;
   }
-  assert(po->type_ == PyHoc::HocArray);
   Arrayinfo* a = hocobj_aray(po->sym_, po->ho_);
   if (a->nsub - 1 != po->nindex_) {
     PyErr_SetString(PyExc_TypeError, "wrong number of subscripts");
