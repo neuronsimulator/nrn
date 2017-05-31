@@ -25,57 +25,108 @@ Syntax:
 
 Description:
     Builds NEURON with Python embedded as an alternative interpreter to HOC. 
-    The python version used is that found from ``which python``. 
-     
-    NEURON can be used as an extension to Python if, after building as above, 
-    one goes to the src/nrnpython directory containing the Makefile and types 
-    something analogous to 
+    The Python version used is that found from ``which python``. 
+
+    "make install" automatically does a (``cd src/nrnpython ; python setup.py install --home=<prefix>``)
+    which generally puts the neuron module under <prefix>/lib/python. *Note:* This
+    path then needs to be added to your ``PYTHONPATH`` environment variable.
+    To install in the default system Python directory, manually do the ``cd`` and run
+    ``python setup.py install`` (possibly with a ``sudo``). Be advised that this
+    installs only for one version of Python, so if you use both Python 2 and 3,
+    keep reading.
+
+    Other python related configure arguments are:
+      ``--enable-pysetup=installoption``
+                              Execute 'python setup.py install installoption' as
+                              the last installation step. --disable-pysetup or an
+                              installoption of 'no' means do NOT execute 'python
+                              setup.py...' The default installoption is
+                              '--home=<prefix>'
+                              
+      ``--disable-rx3d``          Do not compile the cython translated 3-d rxd
+                              features
+                              
+      ``--with-nrnpython-only``   configure and make only the nrnpython folder
+
+      ``--with-nrnpython=``desired python binary or ``dynamic``
+                              Python interpreter can be used (default is NO)
+                              Probably need to set PYLIBDIR to find libpython...
+                              and PYINCDIR to find Python.h
+
+      ``--with-pyexe``=desired python binary (when ``--with-nrnpython=dynamic``)
+
+      ``--disable-pysetup``   skips the automatic invocation of ``python setup.py``;
+                              to use Python, this will have to be done manually.
+
+
+
+    I use this script to build a version of NEURON that works with python2.5-7 and python3.5-6
 
     .. code-block::
-        none
+        console
 
-        python setup.py install --home=$HOME 
+        hines@hines-T7500:~/neuron$ cat bld-nrndynam.sh
+        #!/bin/bash
 
-    Which on my machine installs in :file:`/home/hines/lib64/python/neuron`
-    and can be imported into NEURON with 
+        cd $HOME/neuron/nrndynam
 
+        ../nrn/configure --prefix=`pwd` --with-paranrn=dynamic \
+          --with-nrnpython=dynamic --with-pyexe=python3 --disable-rx3d
+        rm -r -f src/nrnpython/build
+        make -j 6 install
+
+        ../nrn/configure --prefix=`pwd` --with-paranrn=dynamic \
+          --with-nrnpython=dynamic --with-pyexe=python2 --disable-rx3d \
+          --with-nrnpython-only
+        rm -r -f src/nrnpython/build
+        make -j 6 install
+
+        cd lib/python/neuron
+        cp hoc.cpython-35m-x86_64-linux-gnu.so hoc.cpython-36m-x86_64-linux-gnu.so
+        cd ../../..
+        # or alternatively configure ..; rm...; make... with other versions for --with-pyexe
+
+    Originally I thought that ``nrniv -python ...`` was the best way to launch (and perhaps is
+    for parallel and on many supercomputers). Now, especially with the possibility of many python versions and
+    one (--with-nrnpython=dynamic) version is it is simpler to launch the correct python with only the necessity
+    of a uniform ``export PYTHONPATH=<prefix>/lib/python`` (and it is then a bad idea to install the neuron module
+    in a specific python's site-packages). This gives the possibility of
+    python foo.py
+    python2 foo.py
+    python3.5 foo.py
+    python3.6 foo.py
+    Whereas launching ``nrniv`` would require an environment with the proper ``PYTHONHOME`` and ``PYNRNLIB``
+    The former to avoid the dreaded "site" problem and the latter to ensure the right python library is loaded.
+    In vicious cases of failure to launch due to site problems, the first diagnostic info needed to fix the
+    problem is
+    
     .. code-block::
         python
 
-        ipython 
-        import sys 
-        sys.path.append("/home/hines/lib64/python") 
-        import neuron 
+        import site
+        print (site.__file__)
 
-    It is probably better to avoid the incessant ``import sys``... and instead 
-    add to your shell environment something analogous to 
+    For launching ``nrniv``,there is a script nrnpyenv.sh that helps determine a correct PYTHONHOME, etc for the
+    default ``python`` executable.
 
-    .. code-block::
-        none
+    If launching Python and using parallel neuron simulations there is the issue of who calls MPI_Initial.
+    Default assumes Python will call it (perhaps via ``from mpi4py import MPI``). If that is not the case, force the
+    neuron module to initialize MPI when the neuron module is loaded by setting the environment variable
+    NEURON_INIT_MPI
 
-        export PYTHONPATH=$PYTHONPATH:/home/hines/lib64/python 
+    If you just can't seem to get nrniv to launch and you don't need Python, you can try
+    ``nrniv -nopython ...``
+    or permanently add
+    ``nopython``: on
+    to $HOME/.nrn.defaults or :file:`<prefix>/share/nrn/lib/nrn.defaults` (c:/nrn/lib/nrn.def on windows)
 
-    since when launching NEURON and embedding Python, the path is automatically 
-    defined so that ``import neuron`` does not require any prerequisites. 
-    If there is a ``@<host-cpu@>/.libs/libnrnmech.so`` file in your working 
-    directory, those nmodl mechanisms will be loaded as well. 
-    After this, you will probably want to: 
-
-    .. code-block::
-        python
-
-        h = neuron.h # neuron imports hoc and does a  h = hoc.HocObject() 
-
-    In the past we also recommended an "import nrn" but this is no longer 
-    necessary as everything in that module is also directly available from 
-    the "h" object. 
     You can use the hoc function :func:`nrn_load_dll` to load mechanism files 
     as well, e.g. if neurondemo was used earlier so the shared object exists, 
 
     .. code-block::
         python
 
-        h = hoc.HocObject() 
+        from neuron import h
         h('nrn_load_dll("$(NEURONHOME)/demo/release/x86_64/.libs/libnrnmech.so")') 
 
 
@@ -106,60 +157,33 @@ Description:
 
 ----
 
+.. note::
 
-
-.. method:: neuron.hoc.execute
-
-
-    Syntax:
-        ``import neuron``
-
-        ``neuron.hoc.execute('any hoc statement')``
-
-
-    Description:
-        Execute any statement or expression using the Hoc interpreter. This is 
-        obsolete since the same thing can be accomplished with HocObject with 
-        less typing. 
-        Note that triple quotes can be used for multiple line statements. 
-        A '\n' should be escaped as '\\n'. 
-
-        .. code-block::
-            python
-
-            hoc.execute('load_file("nrngui.hoc")') 
-
-
-    .. seealso::
-        :func:`nrnpython`
-
-         
-
-----
-
+    Most of the following is from the perspective of someone familiar
+    with HOC; for a Python-based introduction to NEURON, see
+    http://neuron.yale.edu/neuron/static/docs/neuronpython/index.html
 
 
 .. class:: neuron.hoc.HocObject
 
 
     Syntax:
-        ``import neuron``
+        ``from neuron import h``
 
         ``h = neuron.hoc.HocObject()``
 
 
     Description:
+        
         Allow access to anything in the Hoc interpreter. 
-        Note that ``h = neuron.h`` is the typical statement used since the 
-        neuron module creates an h field. 
-        When created via ``hoc.HocObject()`` its print string is "TopLevelHocInterpreter". 
+        ``h`` is an instance of a ``neuron.hoc.HocObject`` object. Note that
+        there is only one Hoc interpreter, no matter how many interface
+        objects are created, so there is no advantage to creating another.
 
         .. code-block::
             python
 
             h("any hoc statement") 
-
-        is the same as hoc.execute(...) 
          
         Any hoc variable or string in the Hoc world can be accessed 
         in the Python world: 
@@ -183,7 +207,10 @@ Description:
             h.s = 'goodbye' 
             h('print x, s')    #prints 25 goodbye 
 
-         
+        Note, however, that new Hoc variables cannot be defined from Python except via, e.g.
+        ``h('strdef s')``.
+
+
         Any hoc object can be handled in Python. 
 
         .. code-block::
@@ -191,8 +218,18 @@ Description:
 
             h('objref vec') 
             h('vec = new Vector(5)') 
-            print h.vec        # prints Vector[0] 
-            print h.vec.size() # prints 5.0 
+            print(h.vec)        # prints Vector[0] 
+            print(h.vec.size()) # prints 5.0 
+
+        There is, however, often no need to create a hoc object; e.g. if no HOC code
+        needed to access the :class:`Vector`, the above is equivalent to
+
+        .. code-block::
+            python
+
+            vec = h.Vector(5)
+            print(vec)
+            print(vec.size())
 
         Note that any hoc object method or field may be called, or evaluated/assigned 
         using the normal dot notation which is consistent between hoc and python. 
@@ -627,10 +664,8 @@ Description:
             {p.sec.push() psection() pop_section()} 
             ''') 
             #or 
-            sec.push() 
-            h.secname() 
-            h.psection() 
-            h.pop_section() 
+            print(str(sec))
+            h.psection(sec=sec) 
 
         When calling a hoc function it is generally preferred to named sec arg style 
         to automatically push and pop the section stack during the scope of the 
@@ -647,8 +682,8 @@ Description:
         .. code-block::
             python
 
-            h.dend[2].push() ; sr = h.SectionRef() ; h.pop_section() 
-            sr.root.push() ; print h.secname() ; h.pop_section() 
+            sr = h.SectionRef(sec=h.dend[2])
+            sr.root.push(); print h.secname(); h.pop_section() 
 
         or, more compactly, 
         
@@ -664,12 +699,12 @@ Description:
         .. code-block::
             python
 
-            for s in h.allsec() : 
-              print h.secname() 
+            for s in h.allsec(): 
+              print(str(s))
              
-            sl = h.SectionList() ; sl.wholetree() 
-            for s in sl : 
-              print h.secname() 
+            sl = h.SectionList(); sl.wholetree() 
+            for s in sl: 
+              print(str(s))
 
 
          
@@ -683,9 +718,9 @@ Description:
             childsec.connect(parentsegment, childx) 
 
         In the first form parentx and childx are optional with default values of 
-        1 and 0 respectively. Parentx must be 0 or 1. In the second form, childx 
-        is optional and by default is 0. The parentsegment must be either 
-        parentsec(0) or parentsec(1). 
+        1 and 0 respectively. ``childx`` must be 0 or 1 (orientation of the child). Parentx is in the
+        range [0 - 1] but will actually be connected to the center of the parent segment
+        that contains parentx (or exactly at 0 or 1).
          
         sec.cell() returns the cell object that 'owns' the section. The return 
         value is None if no object owns the section (a top level section), the 
@@ -711,7 +746,8 @@ Segment
         the location x. The x value of the segment is seg.x and the section is 
         seg.sec . From a Segment one can obtain a Mechanism. 
 
-         
+        To iterate over segments, use ``for seg in sec: print ("%s(%g)" % (seg.sec.name, seg.x))``
+        This does not include 0 area segments at 0 and 1. For those use ``for seg in sec.allseg():...``
 
 ----
 
@@ -730,7 +766,8 @@ Mechanism
         obtain a range variable. The range variable can also be obtained from the 
         segment by using the hoc range variable name that has the mechanism suffix. 
 
-         
+        To iterate over density mechanisms, use: ``for mech in seg: print (mech)``
+        To get a python list of point processes in a segment: ``pplist = seg.point_processes()``
 
 ----
 
@@ -741,14 +778,14 @@ HOC accessing Python
 
 
     Syntax:
-        ``nrniv [file.hoc...]``
+        ``nrniv [file.py|file.hoc...]``
 
 
     Description:
         The absence of a -python argument causes NEURON to launch with Hoc 
-        as the command line interpreter. At present, no :file:`file.py` arguments 
-        are allowed as all named files are treated as hoc files. Nevertheless, 
-        from the hoc world any python statement can be executed and anything 
+        as the command line interpreter. Python files (or Hoc files) are run
+        with the appropriate interpreter before presenting a Hoc user-interface.
+        From the hoc world any python statement can be executed and anything 
         in the python world can be assigned or evaluated. 
 
 
@@ -780,8 +817,8 @@ HOC accessing Python
             nrnpython("print sys.path") 
             nrnpython("a = [1,2,3]") 
             nrnpython("print a") 
-            nrnpython("import hoc") 
-            nrnpython("hoc.execute('print PI')") 
+            nrnpython("from neuron import h") 
+            nrnpython("h('print PI')") 
             
 
          
@@ -822,9 +859,8 @@ HOC accessing Python
             print tup._[2]            // the 2th tuple element is 3 
             print tup._[0]            // the 0th tuple element is xyz 
              
-            nrnpython("import hoc")   // back in the Python world 
-            nrnpython("h = hoc.HocObject()") // tup is a Python Tuple object 
-            nrnpython("print h.tup")   // prints ('xyz', 2, 3) 
+            nrnpython("from neuron import h")   // back in the Python world 
+            nrnpython("print h.tup")  // prints ('xyz', 2, 3) 
 
         Note that one needs the '_' method, equivalent to 'this', because trying to 
         get at an element through the built-in python method name via 
@@ -872,3 +908,31 @@ HOC accessing Python
 
          
 
+----
+
+.. method:: neuron.hoc.execute
+
+
+    Syntax:
+        ``import neuron``
+
+        ``neuron.hoc.execute('any hoc statement')``
+
+
+    Description:
+        Execute any statement or expression using the Hoc interpreter. This is 
+        obsolete since the same thing can be accomplished with HocObject with 
+        less typing. 
+        Note that triple quotes can be used for multiple line statements. 
+        A '\n' should be escaped as '\\n'. 
+
+        .. code-block::
+            python
+
+            hoc.execute('load_file("nrngui.hoc")') 
+
+
+    .. seealso::
+        :func:`nrnpython`
+
+    
