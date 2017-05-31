@@ -860,7 +860,7 @@ Reading 3D Data from NEURON
                 print seg.x * sec.L, seg.area(), seg.ri()
 
         will print the arc length, the segment area at that arc length, and the resistance along that length 
-        for the currently accessed section. 
+        for the section ``sec``. 
 
          
          
