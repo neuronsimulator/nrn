@@ -436,10 +436,12 @@ Defining the 3D Shape
     Syntax:
         ``h.pt3dadd(x, y, z, d, sec=section)``
 
+        ``h.pt3dadd(xvec, yvec, zvec, dvec, sec=section)``
 
     Description:
          
-        Add the 3d location and diameter point at the end of the current pt3d 
+        Add the 3d location and diameter point (or points in the second form)
+        at the end of the current pt3d 
         list. Assume that successive additions increase the arc length 
         monotonically. When pt3d points exist in ``section`` they are used 
         to compute *diam* and *L*. When *diam* or *L* are changed and \ ``h.pt3dconst(sec=section)==0`` 
@@ -448,6 +450,39 @@ Defining the 3D Shape
         to adjust the 3-d info so that branches appear connected.) 
         The existence of a spine at this point is signaled 
         by a negative value for *d*. 
+
+        The vectorized form is more efficient than looping over
+        lists in Python.
+
+    Example of vectorized specification:
+
+        .. code-block::
+            python
+
+            from neuron import h, gui
+            import numpy
+
+            # compute vectors defining a geometry
+            theta = numpy.linspace(0, 6.28, 63)
+            xvec = h.Vector(4 * numpy.cos(theta))
+            yvec = h.Vector(4 * numpy.sin(theta))
+            zvec = h.Vector(theta)
+            dvec = h.Vector([1] * len(theta))
+
+            dend = h.Section(name='dend')
+            h.pt3dadd(xvec, yvec, zvec, dvec, sec=dend)
+
+            s = h.Shape()
+            s.show(0)
+
+
+        .. image:: ../../../images/geometry5.png
+            :align: center
+
+
+    .. note::
+
+        The vectorized form was added in NEURON 7.5.
 
          
 
