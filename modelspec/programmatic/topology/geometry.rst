@@ -873,7 +873,7 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``h.distance(sec=section)`` or ``h.distance(0, x, sec=section)``
+        ``h.distance(sec=section)`` or ``h.distance(0, x, sec=section)`` or ``h.distance(0, section(x))``
 
         ``len = distance(x, sec=section)`` or ``len = distance(1, x, sec=section)``
 
@@ -889,19 +889,25 @@ Reading 3D Data from NEURON
             specifies the origin as location 0 
             of ``section``
 
-        ``h.distance(x, sec=section) (0<=x<=1)`` 
+        ``h.distance(x, sec=section)`` or ``h.distance(section(x))`` for 0 <= x <= 1
             returns the distance (in microns) from the origin to 
             ``section(x)``.
 
          
         To overcome the 
-        old initialization restriction, ``h.distance(0, x, sec=section)`` can be used to set the 
+        old initialization restriction, ``h.distance(0, x, sec=section)``
+        or the shorter ``h.distance(0, section(x))`` can be used to set the 
         origin. Note that distance is measured from the centers of 
         segments. 
 
     .. warning::
         When subtrees are connected by :meth:`ParallelContext.multisplit` , the 
         distance function returns 1e20 if the path spans the split location. 
+
+    .. note::
+
+        Support for the variants of this function using a segment (i.e. with ``section(x)``)
+        was added in NEURON 7.5.
 
     .. seealso::
         :class:`RangeVarPlot`
