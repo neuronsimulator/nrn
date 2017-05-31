@@ -1,4 +1,6 @@
 #!/bin/sh
+
+exit 1
 # how to build from just the cvs sources
 # takes us only to the distribution level.
 # must still run a ./configure commmand (see examples after autoconf command)
