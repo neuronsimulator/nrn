@@ -11,12 +11,18 @@ set -x
 @BUILD_NRNJAVA_FALSE@nrnjvm='no'
 @BUILD_NRNMPI_DYNAMIC_TRUE@nrnmpi='yes'
 
+NPYVER=@npy_pyver10@
+
+@NRNPYTHON_ONLY_TRUE@NPYONLY='yes'
+@NRNPYTHON_ONLY_FALSE@NPYONLY='no'
 
 if test mingw = 'yes' ; then
   ltlibs=
 else
   ltlibs=
 fi
+
+if test "$NPYONLY" = "no" ; then
 
 #all the .o files
 find .. -name \*.o -print | sed '
@@ -83,6 +89,8 @@ if test "$mpicc" = "mpicc" ; then
 fi
 
 obj=`cat temp`
+
+fi # NPYONLY no
 
 CXX=@CXX@
 
@@ -152,6 +160,7 @@ if test "$CFLAGS" != "-mno-cygwin" ; then
 
   if test "$mingw" = "yes" ; then
 
+if test "$NPYONLY" = "no" ; then
     echo 'make nrniv.dll for mingw under mingw'
     $CXX -shared $obj \
       -L${IVLIBDIR} -lIVhines \
@@ -175,32 +184,35 @@ if test "$CFLAGS" != "-mno-cygwin" ; then
 
     fi # if test $nrnmpi = 'yes'
 
+fi # NPYONLY no
+
     if test $nrnpy = 'yes' ; then
 
-      echo 'make libnrnpython@npy_apiver@.dll'
-      $CXX -shared ../nrnpython/${ltlibs}/*.o -L. -lnrniv -o libnrnpython@npy_apiver@.dll \
+      echo 'make libnrnpython${NPYVER}.dll'
+      $CXX -shared ../nrnpython/${ltlibs}/*.o -L. -lnrniv -o libnrnpython${NPYVER}.dll \
         @NRNPYTHON_PYLIBLINK@ \
         -L${IVLIBDIR} -lIVhines \
         -lreadline -lpthread \
         -Wl,--enable-auto-image-base \
         ${LDFLAGS} \
-        -Xlinker --out-implib -Xlinker libnrnpython@npy_apiver@.dll.a
+        -Xlinker --out-implib -Xlinker libnrnpython${NPYVER}.dll.a
 
-      echo 'make hocmodule.dll'
+      echo "make hocmodule${NPYVER}.dll"
       $CXX -shared \
         ../nrnpython/${ltlibs}/inithoc.o \
-        -L. -lnrniv -lnrnpython@npy_apiver@\
+        -L. -lnrniv -lnrnpython${NPYVER}\
         @NRNPYTHON_PYLIBLINK@ \
-        -o hocmodule.dll \
+        -o hocmodule${NPYVER}.dll \
         -Wl,--enable-auto-image-base \
         ${LDFLAGS} \
-        -Xlinker --out-implib -Xlinker libhocmodule.dll.a
+        -Xlinker --out-implib -Xlinker libhocmodule${NPYVER}.dll.a
 
-      LHOCMODULE='-lhocmodule'
+      LHOCMODULE="-lhocmodule${NPYVER}"
     else # if test $nrnpy = 'yes'
       LHOCMODULE=''
     fi # if test $nrnpy = 'yes'
 
+if test "$NPYONLY" = "no" ; then
     echo 'make nrniv.exe'
 
     $CXX -g -O2 -o nrniv.exe \
@@ -225,6 +237,8 @@ if test "$CFLAGS" != "-mno-cygwin" ; then
 
     fi # enthought manifest
 
+fi # NPYONLY no
+
   fi # mingw = yes
 
 else # if test "$CFLAGS" != "-mno-cygwin"
@@ -244,7 +258,7 @@ else # if test "$CFLAGS" != "-mno-cygwin"
     -o hocmodule.dll \
     -Wl,--enable-auto-image-base \
     ${LDFLAGS} \
-    -Xlinker --out-implib -Xlinker libhocmodule.dll.a
+    -Xlinker --out-implib -Xlinker libhocmodule${NPYVER}.dll.a
 
   $CXX -g -O2 -mno-cygwin -e _mainCRTStartup -o nrniv.exe \
     ../ivoc/nrnmain.o ../oc/modlreg.o \
@@ -257,5 +271,3 @@ fi # if test "$CFLAGS" != "-mno-cygwin"
 #mv nrniv.exe c:/nrn61/bin
 #cd ..
 #mv hocmodule.dll c:/nrn61/bin
-
-

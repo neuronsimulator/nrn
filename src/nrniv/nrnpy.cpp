@@ -271,7 +271,24 @@ static void* load_nrnpython_helper(const char* npylib) {
 }
 
 static void load_nrnpython(int pyver10, const char* pylib) {
-	void* handle = load_nrnpython_helper("libnrnpython3");
+	void* handle = NULL;
+#if defined(__MINGW32__)
+	if (pyver10 >= 30) {
+		handle = load_nrnpython_helper("libnrnpython3");
+	} else if (pyver10 >= 25) {
+		handle = load_nrnpython_helper("libnrnpython2");
+	} else if (pylib && strstr(pylib, "ython3") != NULL) {
+		handle = load_nrnpython_helper("libnrnpython3");
+	} else {
+		handle = load_nrnpython_helper("libnrnpython2");
+	}
+	if (!handle) {
+printf("Could not load either libnrnpython3 or libnrnpython2\n");
+printf("pyver10=%d pylib=%s\n", pyver10, pylib ? pylib : "NULL");
+		return;
+	}
+#else
+	handle = load_nrnpython_helper("libnrnpython3");
 	if (!handle) {
 		handle = load_nrnpython_helper("libnrnpython2");
 		if (!handle) {
@@ -280,6 +297,7 @@ printf("pyver10=%d pylib=%s\n", pyver10, pylib ? pylib : "NULL");
 			return;
 		}
 	}
+#endif
 	p_nrnpython_start = (void(*)(int))load_sym(handle, "nrnpython_start");
 	p_nrnpython_real = (void(*)())load_sym(handle, "nrnpython_real");
 	p_nrnpython_reg_real = (void(*)())load_sym(handle, "nrnpython_reg_real");

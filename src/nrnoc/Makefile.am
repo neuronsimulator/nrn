@@ -125,19 +125,13 @@ $(MODFILES_C): $(NMODL)
 ## Force make to make hocusr.h even before it's done dependency scanning.
 hocusr.lo: hocusr.h
 
-
-## This uses a truly antique unix tool to convert a .h file into
-## the static data necessary for hoc to link to all its functions.
-## This wouldn't be hard to replace with a perl script....
-if BUILD_MINGW
-else
 hocusr.h: $(nsrc)/nrnoc/neuron.h $(nsrc)/oc/mk_hocusr_h.py $(nsrc)/nrnoc/options.h
 	cat $(nsrc)/nrnoc/neuron.h > tmp.c
 	@CPP@ -E -I$(nsrc)/nrnoc -I$(nsrc)/oc tmp.c | sed '/^#/d' > neuron.tmp
 	$(PYTHON_BLD) $(nsrc)/oc/mk_hocusr_h.py < neuron.tmp > temp2hoc
 	cat neuron.tmp temp2hoc |sed 's/"nrnhoc_topology"/"topology"/' > hocusr.h
 	rm -f temp1hoc temp2hoc neuron.tmp tmp.c
-endif
+
 ## Header files that need to be installed:
 pkginclude_HEADERS = neuron.h md1redef.h md2redef.h section.h nrnoc_ml.h \
 	cabvars.h membdef.h membfunc.h nrniv_mf.h nrn_ansi.h nrncvode.h \

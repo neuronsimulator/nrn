@@ -86,7 +86,7 @@ if NMODL_ONLY
 SUBDIRS = $(nmodlbuild)
 else
 if NRNPYTHON_ONLY
-SUBDIRS = $(nrnpythonbuild)
+SUBDIRS = $(nrnpythonbuild) mswin
 else
 SUBDIRS = $(readlinebuild) $(memacsbuild) $(nmodlbuild) $(NRNOC_SUBDIRS) \
 	$(nrnjavabuild) $(ivosbuild) $(nrnpythonbuild) \

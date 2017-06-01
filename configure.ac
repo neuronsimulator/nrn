@@ -584,9 +584,12 @@ AC_CONFIG_FILES([
 fi	
 
 if test "$with_nmodl_only" != "yes"; then
-AC_CONFIG_HEADERS([src/nrnpython/nrnpython_config.h])
+AC_CONFIG_HEADERS([
+	src/nrnpython/nrnpython_config.h
+])
 AC_CONFIG_FILES([
 	src/nrnpython/Makefile
+	src/mswin/nrncygso.sh
 ])
 AC_CONFIG_FILES([src/nrnpython/setup.py share/lib/python/neuron/rxd/geometry3d/setup.py],
   [if test $NRNPYTHON_PYMAJOR -gt 2 ; then $PY2TO3 -w src/nrnpython/setup.py ; $PY2TO3 share/lib/python/neuron/rxd/geometry3d/setup.py ; fi],
@@ -623,7 +626,7 @@ AC_CONFIG_FILES([
 	src/ni_pci_6229/Makefile
 	src/mac/Makefile src/mswin/Makefile src/mswin/batch/Makefile
 	src/mac/macdist.pkgproj src/mac/postinstall.sh
-	src/mswin/nrnsetup.nsi src/mswin/nrncygso.sh src/mswin/lib/mknrndll.mak
+	src/mswin/nrnsetup.nsi src/mswin/lib/mknrndll.mak
 	src/mswin/nrnsetupmingw.nsi
 	src/mswin/EnvVarUpdate.nsh src/mswin/AddToPath.nsh
 	src/mswin/extra/Makefile src/mswin/rdln/Makefile

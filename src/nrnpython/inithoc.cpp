@@ -3,6 +3,9 @@
 #include <stdint.h>
 #include "nrnmpi.h"
 #include "nrnpython_config.h"
+#if defined(__MINGW32__)
+#define _hypot hypot
+#endif
 #include <Python.h>
 #include <stdlib.h>
 
@@ -50,11 +53,32 @@ static void nrnpython_finalize() {
 }
 
 static char* env[] = {0};
+
+#if defined(__MINGW32__)
+
+// The problem is that the hoc.dll name is the same for python2 and 3.
+// The work around is to name them hoc2.dll and hoc3.dll when manually
+// created by nrncygso.sh and use if version clauses in the neuron
+// module to import the correct one as hoc.  Generalizable in the
+// future to 27, 34, 35, 36 with try except clauses.
+// It is conceivable that this strategy will work for linux and mac as well,
+// but for now setup.py names them differently anyway.
+#if PY_MAJOR_VERSION >= 3
+PyObject* PyInit_hoc3() {
+#else //!PY_MAJOR_VERSION >= 3
+void inithoc2() {
+#endif //!PY_MAJOR_VERSION >= 3
+
+#else // ! defined __MINGW32__
+
 #if PY_MAJOR_VERSION >= 3
 PyObject* PyInit_hoc() {
 #else //!PY_MAJOR_VERSION >= 3
 void inithoc() {
 #endif //!PY_MAJOR_VERSION >= 3
+
+#endif // ! defined __MINGW32__
+
   char buf[200];
 
   int argc = argc_nompi;

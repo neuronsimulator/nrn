@@ -99,11 +99,19 @@ $Id: __init__.py,v 1.1 2008/05/26 11:39:44 hines Exp hines $
 #except:
 #  pass
 
+import sys
+
 try:
     import hoc
 except:
-  #Python3.1 extending needs to look into the module explicitly
-  import neuron.hoc
+  try:
+    #Python3.1 extending needs to look into the module explicitly
+    import neuron.hoc
+  except: # mingw name strategy
+    if sys.version_info[0] == 2:
+      import neuron.hoc2 as hoc
+    else:
+      import neuron.hoc3 as hoc
 
 import nrn
 import _neuron_section
@@ -145,7 +153,6 @@ def test():
 # using the idiom self.basemethod = self.baseattr('methodname')
 # ------------------------------------------------------------------------------
 
-import sys
 if sys.version_info[0] == 2:
   from neuron.hclass2 import hclass
 else:
@@ -388,7 +395,8 @@ def nrn_dll_sym_nt(name, type):
       if h.nrnversion(8).find('i686') is 0:
         b = 'bin'
       path = os.path.join(h.neuronhome().replace('/','\\'), b)
-      for dllname in ['nrniv.dll', 'libnrnpython1013.dll']:
+      p = sys.version_info[0]
+      for dllname in ['nrniv.dll', 'libnrnpython%d.dll'%p]:
         p = os.path.join(path, dllname)
         nt_dlls.append(ctypes.cdll[p])
     for dll in nt_dlls:
@@ -416,10 +424,22 @@ def nrn_dll(printpath=False):
     import platform
     import glob
 
+    try:
+        #extended? if there is a __file__, then use that
+        if printpath: print ("hoc.__file__ %s" % hoc.__file__)
+        the_dll = ctypes.cdll[hoc.__file__]
+        return the_dll        
+    except:
+      pass
+
     neuron_home = os.path.split(os.path.split(h.neuronhome())[0])[0]
 
     success = False
-    base_path = os.path.join(neuron_home, 'lib' , 'python', 'neuron', 'hoc')
+    if sys.platform == 'msys' or sys.platform == 'win32':
+      p = 'hoc%d' % sys.version_info[0]
+    else:
+      p = 'hoc'
+    base_path = os.path.join(neuron_home, 'lib' , 'python', 'neuron', p)
     for extension in ['', '.dll', '.so', '.dylib']:
         dlls = glob.glob(base_path + '*' + extension)
         for dll in dlls:
@@ -534,7 +554,6 @@ def _pkl(arg):
   return h.Vector(0)
 
 def nrnpy_pr(s):
-  import sys
   sys.stdout.write(s.decode())
   return 0
 
