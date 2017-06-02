@@ -130,6 +130,11 @@ static PyTypeObject nrnpy_SegmentType = {
     NPySegObj_new,                            /* tp_new */
 };
 
+
+static PySequenceMethods rv_seqmeth = {
+    rv_len, NULL, NULL, rv_getitem, NULL, rv_setitem, NULL, NULL, NULL, NULL
+};
+
 static PyTypeObject nrnpy_RangeType = {
     PyObject_HEAD_INIT(NULL)0,                /*ob_size*/
     ccast "nrn.RangeVar",                     /*tp_name*/

@@ -1581,9 +1581,6 @@ static PyMethodDef NPyRangeVar_methods[] = {
 
 static PyMemberDef NPyMechObj_members[] = {{NULL}};
 
-static PySequenceMethods rv_seqmeth = {
-    rv_len, NULL, NULL, rv_getitem, NULL, rv_setitem, NULL, NULL, NULL, NULL};
-
 PyObject* nrnpy_cas(PyObject* self, PyObject* args) {
   Section* sec = chk_access();
   // printf("nrnpy_cas %s\n", secname(sec));
@@ -1624,25 +1621,41 @@ myPyMODINIT_FUNC nrnpy_nrn(void) {
     return m;
   }
 #endif
+#if PY_MAJOR_VERSION >= 3
+  psection_type = (PyTypeObject*)PyType_FromSpec(&nrnpy_SectionType_spec);
+#else
   psection_type = &nrnpy_SectionType;
-  nrnpy_SectionType.tp_new = PyType_GenericNew;
-  if (PyType_Ready(&nrnpy_SectionType) < 0) goto fail;
-  Py_INCREF(&nrnpy_SectionType);
+#endif
+  psection_type->tp_new = PyType_GenericNew;
+  if (PyType_Ready(psection_type) < 0) goto fail;
+  Py_INCREF(psection_type);
 
+#if PY_MAJOR_VERSION >= 3
+  pallsegiter_type = (PyTypeObject*)PyType_FromSpec(&nrnpy_AllsegIterType_spec);
+#else
   pallsegiter_type = &nrnpy_AllsegIterType;
-  nrnpy_AllsegIterType.tp_new = PyType_GenericNew;
-  if (PyType_Ready(&nrnpy_AllsegIterType) < 0) goto fail;
-  Py_INCREF(&nrnpy_AllsegIterType);
+#endif
+  pallsegiter_type->tp_new = PyType_GenericNew;
+  if (PyType_Ready(pallsegiter_type) < 0) goto fail;
+  Py_INCREF(pallsegiter_type);
 
+#if PY_MAJOR_VERSION >= 3
+  psegment_type = (PyTypeObject*)PyType_FromSpec(&nrnpy_SegmentType_spec);
+#else
   psegment_type = &nrnpy_SegmentType;
-  nrnpy_SegmentType.tp_new = PyType_GenericNew;
-  if (PyType_Ready(&nrnpy_SegmentType) < 0) goto fail;
-  Py_INCREF(&nrnpy_SegmentType);
+#endif
+  psegment_type->tp_new = PyType_GenericNew;
+  if (PyType_Ready(psegment_type) < 0) goto fail;
+  Py_INCREF(psegment_type);
 
+#if PY_MAJOR_VERSION >= 3
+  range_type = (PyTypeObject*)PyType_FromSpec(&nrnpy_RangeType_spec);
+#else
   range_type = &nrnpy_RangeType;
-  nrnpy_RangeType.tp_new = PyType_GenericNew;
-  if (PyType_Ready(&nrnpy_RangeType) < 0) goto fail;
-  Py_INCREF(&nrnpy_RangeType);
+#endif
+  range_type->tp_new = PyType_GenericNew;
+  if (PyType_Ready(range_type) < 0) goto fail;
+  Py_INCREF(range_type);
 
 #if PY_MAJOR_VERSION >= 3
   m = PyModule_Create(
@@ -1666,11 +1679,14 @@ myPyMODINIT_FUNC nrnpy_nrn(void) {
   PyModule_AddObject(m, "Section", (PyObject*)psection_type);
   PyModule_AddObject(m, "Segment", (PyObject*)psegment_type);
 
-#if 1
+#if PY_MAJOR_VERSION >= 3
+  pmech_generic_type = (PyTypeObject*)PyType_FromSpec(&nrnpy_MechanismType_spec);
+#else
   pmech_generic_type = &nrnpy_MechanismType;
-  nrnpy_MechanismType.tp_new = PyType_GenericNew;
-  if (PyType_Ready(&nrnpy_MechanismType) < 0) goto fail;
-  Py_INCREF(&nrnpy_MechanismType);
+#endif
+  pmech_generic_type->tp_new = PyType_GenericNew;
+  if (PyType_Ready(pmech_generic_type) < 0) goto fail;
+  Py_INCREF(pmech_generic_type);
   PyModule_AddObject(m, "Mechanism", (PyObject*)pmech_generic_type);
   remake_pmech_types();
   nrnpy_reg_mech_p_ = nrnpy_reg_mech;
@@ -1680,7 +1696,7 @@ myPyMODINIT_FUNC nrnpy_nrn(void) {
   nrnpy_pysec_name_p_ = pysec_name;
   nrnpy_pysec_cell_p_ = pysec_cell;
   nrnpy_pysec_cell_equals_p_ = pysec_cell_equals;
-#endif
+
 #if PY_MAJOR_VERSION >= 3
   err = PyDict_SetItemString(modules, "nrn", m);
   assert(err == 0);
@@ -1737,7 +1753,7 @@ void nrnpy_reg_mech(int type) {
   if (PyDict_GetItemString(pmech_types, s)) {
     hoc_execerror(s, "mechanism already exists");
   }
-  Py_INCREF(&nrnpy_MechanismType);
+  Py_INCREF(pmech_generic_type);
   PyModule_AddObject(nrnmodule_, s, (PyObject*)pmech_generic_type);
   PyDict_SetItemString(pmech_types, s, Py_BuildValue("i", type));
   for (i = 0; i < mf->sym->s_varn; ++i) {

@@ -1742,10 +1742,6 @@ static PyObject* hocobj_same(PyHocObject* pself, PyObject* args) {
   return NULL;
 }
 
-static PySequenceMethods hocobj_seqmeth = {
-    hocobj_len,     NULL, NULL, hocobj_getitem, NULL,
-    hocobj_setitem, NULL, NULL, NULL,           NULL};
-
 static char* double_array_interface(PyObject* po, long& stride) {
   void* data = 0;
   PyObject* pstride;
@@ -2168,7 +2164,11 @@ myPyMODINIT_FUNC nrnpy_hoc() {
 #endif // PY_MAJOR_VERSION
   assert(m);
   Symbol* s = NULL;
+#if PY_MAJOR_VERSION >= 3
+  hocobject_type = (PyTypeObject*)PyType_FromSpec(&nrnpy_HocObjectType_spec);
+#else
   hocobject_type = &nrnpy_HocObjectType;
+#endif
   if (PyType_Ready(hocobject_type) < 0) goto fail;
   Py_INCREF(hocobject_type);
   // printf("AddObject HocObject\n");

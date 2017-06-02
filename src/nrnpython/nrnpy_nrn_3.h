@@ -1,227 +1,111 @@
-static PyTypeObject nrnpy_SectionType = {
-    /* The ob_type field must be initialized in the module init function
-     * to be portable to Windows without using C++. */
-    PyVarObject_HEAD_INIT(NULL, 0) "nrn.Section", /*tp_name*/
-    sizeof(NPySecObj),                            /*tp_basicsize*/
-    0,                                            /*tp_itemsize*/
-    /* methods */
-    (destructor)NPySecObj_dealloc,            /*tp_dealloc*/
-    0,                                        /*tp_print*/
-    (getattrfunc)0,                           /*tp_getattr*/
-    (setattrfunc)0,                           /*tp_setattr*/
-    0,                                        /*tp_reserved*/
-    (reprfunc)pysec_repr,                     /*tp_repr*/
-    0,                                        /*tp_as_number*/
-    0,                                        /*tp_as_sequence*/
-    0,                                        /*tp_as_mapping*/
-    (hashfunc)pysec_hash,                     /*tp_hash*/
-    (ternaryfunc)NPySecObj_call,              /*tp_call*/
-    0,                                        /*tp_str*/
-    (getattrofunc)section_getattro,           /*tp_getattro*/
-    (setattrofunc)section_setattro,           /*tp_setattro*/
-    0,                                        /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
-    "Section objects",                        /*tp_doc*/
-    0,                                        /*tp_traverse*/
-    0,                                        /*tp_clear*/
-    (richcmpfunc)pysec_richcmp,               /*tp_richcompare*/
-    0,                                        /*tp_weaklistoffset*/
-    (getiterfunc)section_iter,                /*tp_iter*/
-    0,                                        /*tp_iternext*/
-    NPySecObj_methods,                        /*tp_methods*/
-    0,                                        /*tp_members*/
-    0,                                        /*tp_getset*/
-    0,                                        /*tp_base*/
-    0,                                        /*tp_dict*/
-    0,                                        /*tp_descr_get*/
-    0,                                        /*tp_descr_set*/
-    0,                                        /*tp_dictoffset*/
-    (initproc)NPySecObj_init,                 /*tp_init*/
-    0,                                        /*tp_alloc*/
-    NPySecObj_new,                            /*tp_new*/
-    0,                                        /*tp_free*/
-    0,                                        /*tp_is_gc*/
+static PyType_Slot nrnpy_SectionType_slots[] = {
+    {Py_tp_dealloc, (void*)NPySecObj_dealloc},
+    {Py_tp_repr, (void*)pysec_repr},
+    {Py_tp_hash, (void*)pysec_hash},
+    {Py_tp_call, (void*)NPySecObj_call},
+    {Py_tp_getattro, (void*)section_getattro},
+    {Py_tp_setattro, (void*)section_setattro},
+    {Py_tp_richcompare, (void*)pysec_richcmp},
+    {Py_tp_iter, (void*)section_iter},
+    {Py_tp_methods, (void*)NPySecObj_methods},
+    {Py_tp_init, (void*)NPySecObj_init},
+    {Py_tp_new, (void*)NPySecObj_new},
+    {Py_tp_doc, (void*)"Section objects"},
+    {0, 0},
+};
+static PyType_Spec nrnpy_SectionType_spec = {
+    "nrn.Section",
+    sizeof(NPySecObj),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    nrnpy_SectionType_slots,
 };
 
-static PyTypeObject nrnpy_AllsegIterType = {
-    /* The ob_type field must be initialized in the module init function
-     * to be portable to Windows without using C++. */
-    PyVarObject_HEAD_INIT(NULL, 0) "nrn.AllsegIter", /*tp_name*/
-    sizeof(NPyAllsegIter),                           /*tp_basicsize*/
-    0,                                               /*tp_itemsize*/
-    /* methods */
-    (destructor)NPyAllsegIter_dealloc,        /*tp_dealloc*/
-    0,                                        /*tp_print*/
-    (getattrfunc)0,                           /*tp_getattr*/
-    (setattrfunc)0,                           /*tp_setattr*/
-    0,                                        /*tp_reserved*/
-    0,                                        /*tp_repr*/
-    0,                                        /*tp_as_number*/
-    0,                                        /*tp_as_sequence*/
-    0,                                        /*tp_as_mapping*/
-    (hashfunc)0,                              /*tp_hash*/
-    (ternaryfunc)0,                           /*tp_call*/
-    0,                                        /*tp_str*/
-    (getattrofunc)0,                          /*tp_getattro*/
-    (setattrofunc)0,                          /*tp_setattro*/
-    0,                                        /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
-    "Iterate over all Segments of a Section, including x=0 and 1", /*tp_doc*/
-    0,                            /*tp_traverse*/
-    0,                            /*tp_clear*/
-    (richcmpfunc)0,               /*tp_richcompare*/
-    0,                            /*tp_weaklistoffset*/
-    (getiterfunc)allseg_iter,     /*tp_iter*/
-    (iternextfunc)allseg_next,    /*tp_iternext*/
-    0,                            /*tp_methods*/
-    0,                            /*tp_members*/
-    0,                            /*tp_getset*/
-    0,                            /*tp_base*/
-    0,                            /*tp_dict*/
-    0,                            /*tp_descr_get*/
-    0,                            /*tp_descr_set*/
-    0,                            /*tp_dictoffset*/
-    (initproc)NPyAllsegIter_init, /*tp_init*/
-    0,                            /*tp_alloc*/
-    NPyAllsegIter_new,            /*tp_new*/
-    0,                            /*tp_free*/
-    0,                            /*tp_is_gc*/
+
+static PyType_Slot nrnpy_AllsegIterType_slots[] = {
+    {Py_tp_dealloc, (void*)NPyAllsegIter_dealloc},
+    {Py_tp_iter, (void*)allseg_iter},
+    {Py_tp_iternext, (void*)allseg_next},
+    {Py_tp_init, (void*)NPyAllsegIter_init},
+    {Py_tp_new, (void*)NPyAllsegIter_new},
+    {Py_tp_doc, (void*)"Iterate over all Segments of a Section, including x=0 and 1"},
+    {0, 0},
+};
+static PyType_Spec nrnpy_AllsegIterType_spec = {
+    "nrn.AllsegIter",
+    sizeof(NPyAllsegIter),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    nrnpy_AllsegIterType_slots,
 };
 
-static PyTypeObject nrnpy_SegmentType = {
-    /* The ob_type field must be initialized in the module init function
-     * to be portable to Windows without using C++. */
-    PyVarObject_HEAD_INIT(NULL, 0) "nrn.Segment", /*tp_name*/
-    sizeof(NPySegObj),                            /*tp_basicsize*/
-    0,                                            /*tp_itemsize*/
-    /* methods */
-    (destructor)NPySegObj_dealloc,            /*tp_dealloc*/
-    0,                                        /*tp_print*/
-    (getattrfunc)0,                           /*tp_getattr*/
-    (setattrfunc)0,                           /*tp_setattr*/
-    0,                                        /*tp_reserved*/
-    (reprfunc)pyseg_repr,                     /*tp_repr*/
-    0,                                        /*tp_as_number*/
-    0,                                        /*tp_as_sequence*/
-    0,                                        /*tp_as_mapping*/
-    (hashfunc)pyseg_hash,                     /*tp_hash*/
-    0,                                        /*tp_call*/
-    0,                                        /*tp_str*/
-    (getattrofunc)segment_getattro,           /*tp_getattro*/
-    (setattrofunc)segment_setattro,           /*tp_setattro*/
-    0,                                        /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
-    "Segment objects",                        /*tp_doc*/
-    0,                                        /*tp_traverse*/
-    0,                                        /*tp_clear*/
-    (richcmpfunc)pyseg_richcmp,               /* tp_richcompare */
-    0,                                        /*tp_weaklistoffset*/
-    (getiterfunc)segment_iter,                /*tp_iter*/
-    (iternextfunc)segment_next,               /*tp_iternext*/
-    NPySegObj_methods,                        /*tp_methods*/
-    NPySegObj_members,                        /*tp_members*/
-    0,                                        /*tp_getset*/
-    0,                                        /*tp_base*/
-    0,                                        /*tp_dict*/
-    0,                                        /*tp_descr_get*/
-    0,                                        /*tp_descr_set*/
-    0,                                        /*tp_dictoffset*/
-    (initproc)NPySegObj_init,                 /*tp_init*/
-    0,                                        /*tp_alloc*/
-    NPySegObj_new,                            /*tp_new*/
-    0,                                        /*tp_free*/
-    0,                                        /*tp_is_gc*/
+
+static PyType_Slot nrnpy_SegmentType_slots[] = {
+    {Py_tp_dealloc, (void*)NPySegObj_dealloc},
+    {Py_tp_repr, (void*)pyseg_repr},
+    {Py_tp_hash, (void*)pyseg_hash},
+    {Py_tp_getattro, (void*)segment_getattro},
+    {Py_tp_setattro, (void*)segment_setattro},
+    {Py_tp_richcompare, (void*)pyseg_richcmp},
+    {Py_tp_iter, (void*)segment_iter},
+    {Py_tp_iternext, (void*)segment_next},
+    {Py_tp_methods, (void*)NPySegObj_methods},
+    {Py_tp_members, (void*)NPySegObj_members},
+    {Py_tp_init, (void*)NPySegObj_init},
+    {Py_tp_new, (void*)NPySegObj_new},
+    {Py_tp_doc, (void*)"Segment objects"},
+    {0, 0},
+};
+static PyType_Spec nrnpy_SegmentType_spec = {
+    "nrn.Segment",
+    sizeof(NPySegObj),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    nrnpy_SegmentType_slots,
 };
 
-static PyTypeObject nrnpy_RangeType = {
-    /* The ob_type field must be initialized in the module init function
-     * to be portable to Windows without using C++. */
-    PyVarObject_HEAD_INIT(NULL, 0) "nrn.RangeVar", /*tp_name*/
-    sizeof(NPyRangeVar),                           /*tp_basicsize*/
-    0,                                             /*tp_itemsize*/
-    /* methods */
-    (destructor)NPyRangeVar_dealloc,          /*tp_dealloc*/
-    0,                                        /*tp_print*/
-    (getattrfunc)0,                           /*tp_getattr*/
-    (setattrfunc)0,                           /*tp_setattr*/
-    0,                                        /*tp_reserved*/
-    0,                                        /*tp_repr*/
-    0,                                        /*tp_as_number*/
-    &rv_seqmeth,                              /*tp_as_sequence*/
-    0,                                        /*tp_as_mapping*/
-    0,                                        /*tp_hash*/
-    0,                                        /*tp_call*/
-    0,                                        /*tp_str*/
-    0,                                        /*tp_getattro*/
-    0,                                        /*tp_setattro*/
-    0,                                        /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
-    "Range Variable Array objects",           /*tp_doc*/
-    0,                                        /*tp_traverse*/
-    0,                                        /*tp_clear*/
-    0,                                        /*tp_richcompare*/
-    0,                                        /*tp_weaklistoffset*/
-    0,                                        /*tp_iter*/
-    0,                                        /*tp_iternext*/
-    NPyRangeVar_methods,                      /*tp_methods*/
-    0,                                        /*tp_members*/
-    0,                                        /*tp_getset*/
-    0,                                        /*tp_base*/
-    0,                                        /*tp_dict*/
-    0,                                        /*tp_descr_get*/
-    0,                                        /*tp_descr_set*/
-    0,                                        /*tp_dictoffset*/
-    (initproc)NPyRangeVar_init,               /*tp_init*/
-    0,                                        /*tp_alloc*/
-    NPyRangeVar_new,                          /*tp_new*/
-    0,                                        /*tp_free*/
-    0,                                        /*tp_is_gc*/
+
+static PyType_Slot nrnpy_RangeType_slots[] = {
+    {Py_tp_dealloc, (void*)NPyRangeVar_dealloc},
+    {Py_tp_methods, (void*)NPyRangeVar_methods},
+    {Py_tp_init, (void*)NPyRangeVar_init},
+    {Py_tp_new, (void*)NPyRangeVar_new},
+    {Py_tp_doc, (void*)"Range Variable Array objects"},
+    {Py_sq_length, (void*)rv_len},
+    {Py_sq_item, (void*)rv_getitem},
+    {Py_sq_ass_item, (void*)rv_setitem},
+    {0, 0},
+};
+static PyType_Spec nrnpy_RangeType_spec = {
+    "nrn.RangeVar",
+    sizeof(NPyRangeVar),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    nrnpy_RangeType_slots,
 };
 
-static PyTypeObject nrnpy_MechanismType = {
-    /* The ob_type field must be initialized in the module init function
-     * to be portable to Windows without using C++. */
-    PyVarObject_HEAD_INIT(NULL, 0) "nrn.Mechanism", /*tp_name*/
-    sizeof(NPyMechObj),                             /*tp_basicsize*/
-    0,                                              /*tp_itemsize*/
-    /* methods */
-    (destructor)NPyMechObj_dealloc,           /*tp_dealloc*/
-    0,                                        /*tp_print*/
-    (getattrfunc)0,                           /*tp_getattr*/
-    (setattrfunc)0,                           /*tp_setattr*/
-    0,                                        /*tp_reserved*/
-    (reprfunc)pymech_repr,                    /*tp_repr*/
-    0,                                        /*tp_as_number*/
-    0,                                        /*tp_as_sequence*/
-    0,                                        /*tp_as_mapping*/
-    0,                                        /*tp_hash*/
-    0,                                        /*tp_call*/
-    0,                                        /*tp_str*/
-    (getattrofunc)mech_getattro,              /*tp_getattro*/
-    (setattrofunc)mech_setattro,              /*tp_setattro*/
-    0,                                        /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
-    "Mechanism objects",                      /*tp_doc*/
-    0,                                        /*tp_traverse*/
-    0,                                        /*tp_clear*/
-    0,                                        /*tp_richcompare*/
-    0,                                        /*tp_weaklistoffset*/
-    0,                                        /*tp_iter*/
-    (iternextfunc)mech_next,                  /*tp_iternext*/
-    NPyMechObj_methods,                       /*tp_methods*/
-    NPyMechObj_members,                       /*tp_members*/
-    0,                                        /*tp_getset*/
-    0,                                        /*tp_base*/
-    0,                                        /*tp_dict*/
-    0,                                        /*tp_descr_get*/
-    0,                                        /*tp_descr_set*/
-    0,                                        /*tp_dictoffset*/
-    (initproc)NPyMechObj_init,                /*tp_init*/
-    0,                                        /*tp_alloc*/
-    NPyMechObj_new,                           /*tp_new*/
-    0,                                        /*tp_free*/
-    0,                                        /*tp_is_gc*/
+
+static PyType_Slot nrnpy_MechanismType_slots[] = {
+    {Py_tp_dealloc, (void*)NPyMechObj_dealloc},
+    {Py_tp_repr, (void*)pymech_repr},
+    {Py_tp_getattro, (void*)mech_getattro},
+    {Py_tp_setattro, (void*)mech_setattro},
+    {Py_tp_iternext, (void*)mech_next},
+    {Py_tp_methods, (void*)NPyMechObj_methods},
+    {Py_tp_members, (void*)NPyMechObj_members},
+    {Py_tp_init, (void*)NPyMechObj_init},
+    {Py_tp_new, (void*)NPyMechObj_new},
+    {Py_tp_doc, (void*)"Mechanism objects"},
+    {0, 0},
 };
+static PyType_Spec nrnpy_MechanismType_spec = {
+    "nrn.Mechanism",
+    sizeof(NPyMechObj),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    nrnpy_MechanismType_slots,
+};
+
 
 static struct PyModuleDef nrnmodule = {PyModuleDef_HEAD_INIT, "nrn",
                                        "NEURON interaction with Python", -1,
@@ -232,5 +116,6 @@ limited namespace version of nrn module which will not have the mechanism
 names added. (At least one ModelDB model has a mechanism called 'cas')
 */
 static struct PyModuleDef nrnsectionmodule = {
-    PyModuleDef_HEAD_INIT, "_neuron_section", "NEURON interaction with Python",
+    PyModuleDef_HEAD_INIT,
+    "_neuron_section", "NEURON interaction with Python",
     -1, nrnpy_methods, NULL, NULL, NULL, NULL};
