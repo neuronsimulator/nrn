@@ -4,10 +4,10 @@ Extensions of the nrn.Section class.
 $Id:$
 """
 
-import nrn
 import neuron
+from neuron import nrn
 import sys
-import StringIO
+import io
 
 class ExtendedSection(nrn.Section):
     
@@ -34,14 +34,14 @@ class ExtendedSection(nrn.Section):
         return self._name
     
     def _set_name(self, name):
-        assert isinstance(name, basestring)
+        assert isinstance(name, str)
         self._name = name
         
     name = property(fget=_get_name, fset=_set_name)
         
     def psection(self):
         if self.name != self.hoc_name:
-            print "%s: " % self.name,
+            sys.stdout.write("%s:  " % self.name)
         neuron.psection(self)
 
 
@@ -85,3 +85,4 @@ class AllSegments(object):
             return self.__getattribute__(name)
         except AttributeError:
             return [getattr(getattr(seg, self.mech_name), name) for seg in self.sec if hasattr(seg, self.mech_name)]
+

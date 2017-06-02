@@ -15,7 +15,7 @@ class NeuronTestCase(unittest.TestCase):
     def testHClass(self):
         """Test subclass of hoc class."""
 
-        from _subclass import A1
+        from ._subclass import A1
         a = A1(5)
         assert a.x == 5.0
         assert a.p() == 6.0
@@ -41,6 +41,33 @@ class NeuronTestCase(unittest.TestCase):
 
         s = h.Section(name='soma')
         neuron.psection(s)
+
+    def testABI(self):
+        """Test use of some  Py_LIMITED_API for python3."""
+
+        # Py_nb_bool
+        assert True if h else False
+        assert False if h.List else True
+        l = h.List()
+        assert True if h.List else False
+        assert False if l else True
+        v = h.Vector(1)
+        l.append(v)
+        assert True if l else False
+
+        # Py_sq_length
+        assert len(l) == 1
+        # Py_sq_item
+        assert l[0] == v
+        # Py_sq_ass_item
+        v.x[0] = 5
+        assert v.x[0] == 5
+
+    def testExtendedSection(self):
+        """test prsection (modified print statement)"""
+        from neuron.sections import ExtendedSection
+        s = ExtendedSection(name="test")
+        s.psection()
 
 def suite():
 

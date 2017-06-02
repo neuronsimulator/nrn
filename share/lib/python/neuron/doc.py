@@ -25,7 +25,7 @@ a feature whose implementation is based on the neuron.doc module.
 
 """
 
-import pydoc,sys,StringIO,inspect
+import pydoc,sys,io,inspect
 from neuron import h
 
 
@@ -69,8 +69,8 @@ def doc_asstring(thing, title='Python Library Documentation: %s', forceload=0):
             object = type(object)
             desc += ' object'
         return title % desc + '\n\n' + pydoc.text.document(object, name)
-    except (ImportError, ErrorDuringImport), value:
-        print value
+    except (ImportError, ErrorDuringImport) as value:
+        print(value)
 
 
 
@@ -712,10 +712,10 @@ def get_docstring(objtype, symbol):
         import neuron
         import os
         import zlib
-        import cPickle
+        import pickle
         
         f = open(os.path.join(os.path.split(neuron.__file__)[0], 'help_data.dat'), 'rb')
-        _help_dict = cPickle.loads(zlib.decompress(f.read()))
+        _help_dict = pickle.loads(zlib.decompress(f.read()))
         f.close() 
         
     if (objtype,symbol)==('',''):

@@ -18,7 +18,7 @@ class Bench(object):
         t = 0
         for i in range(repeat):
             t1 = time()
-            exec cmd in self.g,self.l
+            exec(cmd, self.g, self.l)
             t2 = time()
             t += t2-t1
 
@@ -39,19 +39,22 @@ class VectorTestCase(unittest.TestCase):
         assert sys_endian == v.__array_interface__['typestr'][0]
 
     def testBytesize(self):
-        """Test that Vector.__array_interface__ returns the proper bytesize (of a double)"""
+      """Test that Vector.__array_interface__ returns the proper bytesize (of a double)"""
 
+      try:
         import numpy
-        
+
         v = h.Vector(10)
         a = numpy.array([],dtype=float)
         assert a.__array_interface__['typestr'] == v.__array_interface__['typestr']
-
+      except:
+        pass
 
     
     def testPerformance(self):
-        """Test performance of Vector<->list,array"""
+      """Test performance of Vector<->list,array"""
 
+      try:
         import numpy
         
         bench = Bench(globals(),locals())
@@ -71,10 +74,13 @@ class VectorTestCase(unittest.TestCase):
         bench('v.to_python(l2)')
         bench('v2 = h.Vector(a[::-1])')
         bench('a2 = numpy.array(v2)')
+      except:
+        pass
 
     def testNumpyInteraction(self):
-        """Testing numpy.array <=> hoc.Vector interaction"""
+      """Testing numpy.array <=> hoc.Vector interaction"""
 
+      try:
         import numpy
         from numpy import alltrue, array
 
@@ -90,7 +96,8 @@ class VectorTestCase(unittest.TestCase):
         # inplace operations
 
         # todo
-
+      except:
+        pass
 
 def suite():
 
