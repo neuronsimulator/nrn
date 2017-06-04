@@ -69,6 +69,23 @@ class NeuronTestCase(unittest.TestCase):
         s = ExtendedSection(name="test")
         s.psection()
 
+    def testRxDexistence(self):
+        """test import rxd and geometry3d if scipy"""
+        a = 1
+        try:
+            import scipy
+        except:
+            print ("scipy not available")
+        else:
+            try:
+                from neuron import rxd
+                from neuron.rxd import geometry
+                print("has_geometry3d is " + str(geometry.has_geometry3d))
+            except:
+                print("'from neuron import rxd' failed")
+                a = 0
+        assert a == 1
+
 def suite():
 
     suite = unittest.makeSuite(NeuronTestCase,'test')

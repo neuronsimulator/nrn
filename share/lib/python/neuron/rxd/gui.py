@@ -1,7 +1,7 @@
 from neuron import h, hoc
 import numpy
 import neuron
-from rxdException import RxDException
+from .rxdException import RxDException
 
 regions = {}
 
@@ -24,7 +24,7 @@ default_region = {'morphology': 'No Sections', 'geometry': 'Inside'}
 
 def _instantiate_regions(regions):
     seclist_names, seclist_map = get_sectionlists()
-    for name, data in zip(regions.keys(), regions.values()):
+    for name, data in zip(list(regions.keys()), list(regions.values())):
         region_spec = ''
         seclist = data.get('morphology', 'No Sections')
         if seclist == 'No Sections':
@@ -55,14 +55,14 @@ def _instantiate_regions(regions):
             raise RxDException('Unrecognized geometry: %s' % geo)
         nrn_region = data.get('nrn_region', None)
         command = '%s = rxd.Region(%s, geometry=rxd.%s, nrn_region=%r)' % (name, seclist, geo, nrn_region)
-        exec command in globals()
+        exec(command, globals())
 
 def _instantiate_species(species):
-    for name, data in zip(species.keys(), species.values()):
+    for name, data in zip(list(species.keys()), list(species.values())):
         regions = data.get('regions', [])
         regions = '[%s]' % ','.join(regions)
         command = '%s = rxd.Species(%s, d=%g, name="%s", charge=%g)' % (name, regions, data.get('d', 0), name, data.get('charge', 0))
-        exec command in globals()
+        exec(command, globals())
 
 def _construct_side(items):
     result = []
@@ -77,7 +77,7 @@ def _construct_schema(lhs, rhs):
     return '%s <> %s' % (_construct_side(lhs), _construct_side(rhs))
 
 def _instantiate_reactions(reactions):
-    for name, data in zip(reactions.keys(), reactions.values()):
+    for name, data in zip(list(reactions.keys()), list(reactions.values())):
         reaction_spec = ''
         if 'type' not in data:
             raise RxDException('No reaction type for: %r' % data)
@@ -90,7 +90,7 @@ def _instantiate_reactions(reactions):
         elif kind == 'reaction':
             reaction_spec = 'Reaction(%s, %s, %s, custom_dynamics=%r)' % (_construct_schema(data['lhs'], data['rhs']), data.get('kf', 0), data.get('kb', 0), not data.get('massaction', True))
         command = '%s = rxd.%s' % (name, reaction_spec)
-        exec command in globals()
+        exec(command, globals())
 
 def _instantiate():
     global has_instantiated
@@ -98,7 +98,7 @@ def _instantiate():
         h.continue_dialog('Cannot reinstantiate yet.')
     else:
         has_instantiated = True
-        exec 'from neuron import rxd' in globals()
+        exec('from neuron import rxd', globals())
         _instantiate_regions(regions)
         _instantiate_species(species)
         _instantiate_reactions(all_reactions)
@@ -124,7 +124,7 @@ def get_sectionlists():
     # add Python names, if any
     # TODO: is there a better place to look besides globals?
     g = globals()
-    for item, value in zip(g.keys(), g.values()):
+    for item, value in zip(list(g.keys()), list(g.values())):
         if type(value) == hoc.HocObject:
             try:
                 name = value.hname()
@@ -143,7 +143,7 @@ def get_sectionlists():
 
     # handle any sectionlists without good hoc names
     ell = h.List('SectionList')
-    for i in xrange(int(ell.count())):
+    for i in range(int(ell.count())):
         name = ell.object(i).hname()
         if name not in found_sectionlists:
             result_mapping[name] = int(name[12:].split(']')[0])
@@ -468,7 +468,7 @@ class RegionPane:
         # update the names
         self.region_list.select_action('')
         selected = self.region_list.selected()
-        region_names = sorted(regions.keys(), key=lambda s: s.lower())
+        region_names = sorted(list(regions.keys()), key=lambda s: s.lower())
         region_names = ['(NEW)'] + region_names
         self.region_list.set_list(region_names)
         if selected is not None:
@@ -708,7 +708,7 @@ class MembraneSelector(_PartialSelector):
         selected = self.selected()
         boundary_types = ('Membrane', 'Constant 2D Area/Length')
         self.ell.remove_all()
-        self.names = [name for name, data in zip(regions.keys(), regions.values()) if data['geometry'] in boundary_types]
+        self.names = [name for name, data in zip(list(regions.keys()), list(regions.values())) if data['geometry'] in boundary_types]
         self.names = sorted(self.names, key=lambda s: s.lower())
         for name in self.names: self._append(name)
         self.select(selected)
@@ -790,7 +790,7 @@ class _MorphologyPane:
         # update the names
         self.region_list.select_action('')
         selected = self.region_list.selected()
-        region_names = sorted(regions.keys(), key=lambda s: s.lower())
+        region_names = sorted(list(regions.keys()), key=lambda s: s.lower())
         self.region_list.set_list(region_names)
         if selected is not None:
             self.region_list.select(selected)
@@ -906,7 +906,7 @@ class SpeciesPanel:
         self.vbox.intercept(0)
         self.vbox.map()
     def regions(self):
-        return dict([(name, loc.regions()) for name, loc in zip(self.species_locs.keys(), self.species_locs.values())])
+        return dict([(name, loc.regions()) for name, loc in zip(list(self.species_locs.keys()), list(self.species_locs.values()))])
 
         
 class _SpeciesEditor:
@@ -999,7 +999,7 @@ class _SpeciesEditor:
     def _set_list(self, do_update=True):
         self.ell.remove_all()
         self.append('(NEW)')
-        self._names = species.keys()
+        self._names = list(species.keys())
         self._names.sort()
         for name in self._names:
             self.append(name)
@@ -1103,7 +1103,7 @@ class SpeciesMultiSelector:
         if allow_without_region:
             self.names += list(species.keys())
         if allow_with_region:
-            for s in species.keys():
+            for s in list(species.keys()):
                 for r in species[s]['regions']:
                     self.names.append('%s[%s]' % (s, r))
                 
@@ -1445,7 +1445,7 @@ class _ReactionPane(object):
     def _update_panel(self):
         self.deck.remove_last()
         self.deck.intercept(1)
-        self.reaction_names = sorted(all_reactions.keys(), key=lambda s: s.lower())
+        self.reaction_names = sorted(list(all_reactions.keys()), key=lambda s: s.lower())
         for i, name in enumerate(self.reaction_names):
             self.__setattr__('include_list%d' % i, 1 if all_reactions[name]['active'] else 0)
         h.xpanel('')
@@ -1537,7 +1537,7 @@ class _ReactionEditor:
         selected = self.selected()
         self.ell.remove_all()
         self._append('(NEW)')
-        self._names = sorted(all_reactions.keys(), key=lambda s: s.lower())
+        self._names = sorted(list(all_reactions.keys()), key=lambda s: s.lower())
         for name in self._names:
             self._append(name)
         try:

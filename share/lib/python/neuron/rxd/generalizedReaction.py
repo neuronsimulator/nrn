@@ -21,7 +21,7 @@ molecules_per_mM_um3 = 602214.129
 
 def ref_list_with_mult(obj):
     result = []
-    for i, p in zip(obj.keys(), obj.values()):
+    for i, p in zip(list(obj.keys()), list(obj.values())):
         w = _weakref_ref(i)
         result += [w] * p
     return result

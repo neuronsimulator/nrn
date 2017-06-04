@@ -7,7 +7,8 @@ import numpy
 import warnings
 import itertools
 from .rxdException import RxDException
-import initializer
+from . import initializer
+import collections
 
 # The difference here is that defined species only exists after rxd initialization
 _all_species = []
@@ -26,7 +27,7 @@ def _1d_submatrix_n():
     elif not _has_3d:
         return len(node._states)
     else:
-        return numpy.min([sp()._indices3d() for sp in _get_all_species().values() if sp() is not None])
+        return numpy.min([sp()._indices3d() for sp in list(_get_all_species().values()) if sp() is not None])
             
 
 
@@ -92,7 +93,7 @@ class _SpeciesMathable(object):
     
     @d.setter
     def d(self, value):
-        import rxd
+        from . import rxd
         if hasattr(self, '_allow_setting'):
             self._d = value
         else:
@@ -296,7 +297,7 @@ class Species(_SpeciesMathable):
         self._do_init5()
         
     def _do_init1(self):
-        import rxd
+        from . import rxd
         # TODO: if a list of sections is passed in, make that one region
         # _species_count is used to create a unique _real_name for the species
         global _species_count
@@ -375,7 +376,7 @@ class Species(_SpeciesMathable):
                         _3doffset = node._allocate(len(xs))
                     self._3doffset_by_region[r] = _3doffset
                     
-                    for i, x, y, z, seg in zip(xrange(len(xs)), xs, ys, zs, segs):
+                    for i, x, y, z, seg in zip(range(len(xs)), xs, ys, zs, segs):
                         self._nodes.append(node.Node3D(i + _3doffset, x, y, z, r, seg, selfref))
                     # the region is now responsible for computing the correct volumes and surface areas
                         # this is done so that multiple species can use the same region without recomputing it
@@ -434,11 +435,11 @@ class Species(_SpeciesMathable):
             xs, ys, zs = region_mesh.nonzero()
             diffs = node._diffs
             offset = self._3doffset_by_region[r]
-            for i in xrange(len(xs)):
+            for i in range(len(xs)):
                 indices[(xs[i], ys[i], zs[i])] = i + offset
             dx = self._regions[0]._dx
             naf = self._regions[0]._geometry.neighbor_area_fraction
-            if not callable(naf):
+            if not isinstance(naf, collections.Callable):
                 areazl = areazr = areayl = areayr = areaxl = areaxr = dx * dx * naf 
                 for nodeobj in self._nodes:
                     i, j, k, index, vol = nodeobj._i, nodeobj._j, nodeobj._k, nodeobj._index, nodeobj.volume
@@ -494,7 +495,7 @@ class Species(_SpeciesMathable):
                 nrn_region = r._nrn_region
                 if nrn_region is not None:
                     ion = '_ref_' + self.name + nrn_region
-                    current_region_segs = r._nodes_by_seg.keys()
+                    current_region_segs = list(r._nodes_by_seg.keys())
                     self._seg_order += current_region_segs
                     for seg in current_region_segs:
                         self._concentration_ptrs.append(seg.__getattribute__(ion))    
@@ -538,13 +539,13 @@ class Species(_SpeciesMathable):
                 self._region_indices[s._region] = []
             self._region_indices[s._region] += s.indices
         # a list of all indices
-        self._region_indices[None] = list(itertools.chain.from_iterable(self._region_indices.values()))
+        self._region_indices[None] = list(itertools.chain.from_iterable(list(self._region_indices.values())))
     
     def _indices3d(self, r=None):
         """return the indices of just the 3D nodes corresponding to this species in the given region"""
         # TODO: this will need changed if 3D is to support more than one region
         if r is None or r == self._regions[0]:
-            return range(self._3doffset, self._3doffset + len(self._nodes))
+            return list(range(self._3doffset, self._3doffset + len(self._nodes)))
         else:
             return []
 
@@ -568,11 +569,11 @@ class Species(_SpeciesMathable):
     def _setup_c_matrix(self, c):
         # TODO: this will need to be changed for three dimensions, or stochastic
         for s in self._secs:
-            for i in xrange(s._offset, s._offset + s.nseg):
+            for i in range(s._offset, s._offset + s.nseg):
                 c[i, i] = 1.
     
     def _setup_currents(self, indices, scales, ptrs, cur_map):
-        import rxd
+        from . import rxd
         if self.name:
             cur_map[self.name + 'i'] = {}
             cur_map[self.name + 'o'] = {}
@@ -608,7 +609,7 @@ class Species(_SpeciesMathable):
                             continue
                         indices.append(local_indices[i])
                         if volumes[i + offset] == 0:
-                            print '0 volume at position %d; surface area there: %g' % (i + offset, surface_area[i + offset])
+                            print('0 volume at position %d; surface area there: %g' % (i + offset, surface_area[i + offset]))
                         scales.append(sign * tenthousand_over_charge_faraday * surface_area[i + offset] / volumes[i + offset])
                         ptrs.append(seg.__getattribute__(ion_curr))
 
@@ -643,7 +644,7 @@ class Species(_SpeciesMathable):
     
     def _finitialize(self, skip_transfer=False):
         if self.initial is not None:
-            if callable(self.initial):
+            if isinstance(self.initial, collections.Callable):
                 for node in self.nodes:
                     node.concentration = self.initial(node)
             else:

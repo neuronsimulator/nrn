@@ -1,7 +1,7 @@
-import ctng
-import scalarField
+from . import ctng
+from . import scalarField
 import numpy
-from surfaces import chunkify
+from .surfaces import chunkify
 
 _max_chunks = 10000000
 
@@ -67,7 +67,7 @@ def voxelize(source, dx=0.25, xlo=None, xhi=None, ylo=None, yhi=None, zlo=None, 
      
         from neuron import h
         from matplotlib import pyplot
-        import geometry3d
+        from . import geometry3d
 
         s1, s2, s3 = [h.Section() for i in xrange(3)]
         for sec in [s2, s3]: ignore_return = sec.connect(s1)

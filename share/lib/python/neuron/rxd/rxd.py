@@ -8,9 +8,9 @@ import scipy.sparse
 import scipy.sparse.linalg
 import ctypes
 import atexit
-import options
+from . import options
 from .rxdException import RxDException
-import initializer 
+from . import initializer 
 import collections
 
 # aliases to avoid repeatedly doing multiple hash-table lookups
@@ -144,14 +144,14 @@ def re_init():
     
         # update current pointers
         section1d._purge_cptrs()
-        for sr in _species_get_all_species().values():
+        for sr in list(_species_get_all_species().values()):
             s = sr()
             if s is not None:
                 s._register_cptrs()
         
         # update matrix equations
         _setup_matrices()
-    for sr in _species_get_all_species().values():
+    for sr in list(_species_get_all_species().values()):
         s = sr()
         if s is not None: s.re_init()
     # TODO: is this safe?        
@@ -170,7 +170,7 @@ _rxd_offset = None
 
 def _atolscale(y):
     real_index_lookup = {item: index for index, item in enumerate(_nonzero_volume_indices)}
-    for sr in _species_get_all_species().values():
+    for sr in list(_species_get_all_species().values()):
         s = sr()
         if s is not None:
             shifted_i = [real_index_lookup[i] + _rxd_offset for i in s.indices() if i in real_index_lookup]
@@ -221,7 +221,7 @@ def _ode_fun(t, y, ydot):
     """
     # TODO: make this so that the section1d parts use cptrs (can't do this directly for 3D because sum, but could maybe move that into the C)
     # the old way: _section1d_transfer_to_legacy()
-    for sr in _species_get_all_species().values():
+    for sr in list(_species_get_all_species().values()):
         s = sr()
         if s is not None: s._transfer_to_legacy()
 
@@ -391,7 +391,7 @@ def _fixed_step_solve(raw_dt):
         # clear the zero-volume "nodes"
         states[_zero_volume_indices] = 0
 
-        for sr in _species_get_all_species().values():
+        for sr in list(_species_get_all_species().values()):
             s = sr()
             if s is not None: s._transfer_to_legacy()
 
@@ -454,7 +454,7 @@ def _diffusion_matrix_solve(dt, rhs):
             _diffusion_b_base = _numpy_zeros(n)
             # TODO: the int32 bit may be machine specific
             _diffusion_p = _numpy_array([-1] * n, dtype=numpy.int32)
-            for j in xrange(n):
+            for j in range(n):
                 col = _diffusion_matrix[:, j]
                 col_nonzero = col.nonzero()
                 for i in col_nonzero[0]:
@@ -487,8 +487,8 @@ def _get_jac(dt, states):
     # this works as long as (I - dt(Jdiff + Jreact)) \approx (I - dtJreact)(I - dtJdiff)
     count = 0
     n = len(states)
-    rows = range(n)
-    cols = range(n)
+    rows = list(range(n))
+    cols = list(range(n))
     data = [1] * n
     for rptr in _all_reactions:
         r = rptr()
@@ -618,10 +618,10 @@ def _update_node_data(force=False):
         last_structure_change_cnt = _structure_change_count.value
         #if not species._has_3d:
         # TODO: merge this with the 3d/hybrid case?
-        for sr in _species_get_all_species().values():
+        for sr in list(_species_get_all_species().values()):
             s = sr()
             if s is not None: s._update_node_data()
-        for sr in _species_get_all_species().values():
+        for sr in list(_species_get_all_species().values()):
             s = sr()
             if s is not None: s._update_region_indices()
         #end#if
@@ -631,7 +631,7 @@ def _update_node_data(force=False):
         _curr_indices = []
         _curr_scales = []
         _curr_ptrs = []
-        for sr in _species_get_all_species().values():
+        for sr in list(_species_get_all_species().values()):
             s = sr()
             if s is not None: s._setup_currents(_curr_indices, _curr_scales, _curr_ptrs, _cur_map)
         
@@ -665,7 +665,7 @@ def _setup_matrices():
     if species._has_3d:
         _euler_matrix = _scipy_sparse_dok_matrix((n, n), dtype=float)
 
-        for sr in _species_get_all_species().values():
+        for sr in list(_species_get_all_species().values()):
             s = sr()
             if s is not None: s._setup_matrices3d(_euler_matrix)
 
@@ -676,7 +676,7 @@ def _setup_matrices():
 
         # NOTE: if we also have 1D, this will be replaced with the correct values below
         _zero_volume_indices = []
-        _nonzero_volume_indices = range(len(_node_get_states()))
+        _nonzero_volume_indices = list(range(len(_node_get_states())))
         
 
     if species._has_1d:
@@ -687,7 +687,7 @@ def _setup_matrices():
         _last_dt = None
         _c_diagonal = None
         
-        for sr in _species_get_all_species().values():
+        for sr in list(_species_get_all_species().values()):
             s = sr()
             if s is not None:
                 s._assign_parents()
@@ -708,7 +708,7 @@ def _setup_matrices():
             if not species._has_3d:
                 # if we have both, then put the 1D stuff into the matrix that already exists for 3D
                 _diffusion_matrix = _scipy_sparse_dok_matrix((n, n))
-            for sr in _species_get_all_species().values():
+            for sr in list(_species_get_all_species().values()):
                 s = sr()
                 if s is not None:
                     #print '_diffusion_matrix.shape = %r, n = %r, species._has_3d = %r' % (_diffusion_matrix.shape, n, species._has_3d)
@@ -717,7 +717,7 @@ def _setup_matrices():
             
             # modify C for cases where no diffusive coupling of 0, 1 ends
             # TODO: is there a better way to handle no diffusion?
-            for i in xrange(n):
+            for i in range(n):
                 if not _diffusion_matrix[i, i]:
                     _linmodadd_c[i, i] = 1
 
@@ -751,7 +751,7 @@ def _setup_matrices():
         hybrid_neighbors = collections.defaultdict(lambda: [])
         hybrid_diams = {}
         dxs = set()
-        for sr in _species_get_all_species().values():
+        for sr in list(_species_get_all_species().values()):
             s = sr()
             if s is not None:
                 if s._nodes and s._secs:
@@ -788,7 +788,7 @@ def _setup_matrices():
         diffs = node._diffs
         n = len(_node_get_states())
         # TODO: validate that we're doing the right thing at boundaries
-        for index1d in hybrid_neighbors.keys():
+        for index1d in list(hybrid_neighbors.keys()):
             neighbors3d = set(hybrid_neighbors[index1d])
             # NOTE: splitting the connection area equally across all the connecting nodes
             area = (numpy.pi * 0.25 * hybrid_diams[index1d] ** 2) / len(neighbors3d)
@@ -873,7 +873,7 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
         # TODO: make this whole thing more efficient
         # the parent node is the nonzero index on the first row before the diagonal
         first_row = min([node._index for node in species.nodes(region)(sec1d)])
-        for j in xrange(first_row):
+        for j in range(first_row):
             if _euler_matrix[first_row, j] != 0:
                 index_1d = j
                 break
@@ -897,7 +897,7 @@ def _init():
     if species._has_1d:
         section1d._purge_cptrs()
     
-    for sr in _species_get_all_species().values():
+    for sr in list(_species_get_all_species().values()):
         s = sr()
         if s is not None:
             # TODO: are there issues with hybrid or 3D here? (I don't think so, but here's a bookmark just in case)

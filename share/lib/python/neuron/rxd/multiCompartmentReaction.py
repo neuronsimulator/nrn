@@ -10,7 +10,7 @@ FARADAY = h.FARADAY
 
 def _ref_list_with_mult(obj):
     result = []
-    for i, p in zip(obj.keys(), obj.values()):
+    for i, p in zip(list(obj.keys()), list(obj.values())):
         w = weakref.ref(i)
         result += [w] * p
     return result
@@ -103,7 +103,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
         rate_f = self._original_rate_f
         rate_b = self._original_rate_b
         if not self._custom_dynamics:
-            for k, v in zip(lhs.keys(), lhs.values()):
+            for k, v in zip(list(lhs.keys()), list(lhs.values())):
                 if v == 1:
                     rate_f = rate_f * k
                 else:
@@ -112,7 +112,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
             if self._dir in ('<', '>'):
                 raise RxDException('unidirectional Reaction can have only one rate constant')
             if not self._custom_dynamics:
-                for k, v in zip(rhs.keys(), rhs.values()):
+                for k, v in zip(list(rhs.keys()), list(rhs.values())):
                     if v == 1:
                         rate_b = rate_b * k
                     else:
@@ -171,7 +171,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
             areas = numpy.array(itertools.chain.from_iterable([list(self._regions[0]._geometry.volumes1d(sec) for sec in self._regions[0].secs)]))
         neuron_areas = []
         for sec in self._regions[0].secs:
-            neuron_areas += [h.area((i + 0.5) / sec.nseg, sec=sec) for i in xrange(sec.nseg)]
+            neuron_areas += [h.area((i + 0.5) / sec.nseg, sec=sec) for i in range(sec.nseg)]
         neuron_areas = numpy.array(neuron_areas)
         # area_ratios is usually a vector of 1s
         area_ratios = areas / neuron_areas
@@ -222,7 +222,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
         self._cur_mapped = []
         
         for sec in self._regions[0].secs:
-            for i in xrange(sec.nseg):
+            for i in range(sec.nseg):
                 local_ptrs = []
                 local_mapped = []
                 for sp in itertools.chain(self._sources, self._dests):

@@ -82,7 +82,7 @@ class MorphologyDB:
     def connections(self, secs):
         """Return a list of pairwise connections within secs"""
         result = []
-        for pts in self._connection_pts.values():
+        for pts in list(self._connection_pts.values()):
             for pt1, pt2 in _itertools_combinations(pts, 2):
                 if pt1[0] in secs and pt2[0] in secs:
                     result.append([pt1, pt2])
@@ -95,7 +95,7 @@ class MorphologyDB:
             
 def main():
     # create 13 sections: s[0] -- s[12]
-    s = [h.Section(name='s[%d]' % i) for i in xrange(13)]
+    s = [h.Section(name='s[%d]' % i) for i in range(13)]
 
     """
         Create the tree
@@ -118,17 +118,17 @@ def main():
     # now try it our way
     morph = MorphologyDB()
     for sec in s:
-        print sec.name() + ':'
-        print '  children:', ', '.join(child.name() for child in morph.children(sec))
-        print '  parent:', morph.parent(sec).name() if morph.parent(sec) is not None else 'None'
+        print(sec.name() + ':')
+        print('  children:', ', '.join(child.name() for child in morph.children(sec)))
+        print('  parent:', morph.parent(sec).name() if morph.parent(sec) is not None else 'None')
     
     conns = morph.connections([s[i] for i in [2, 3, 4, 5, 6, 7, 9, 10, 11, 12]])
     for p1, p2 in conns:
-        print '%s(%g)    %s(%g)' % (p1[0].name(), p1[1], p2[0].name(), p2[1])
+        print('%s(%g)    %s(%g)' % (p1[0].name(), p1[1], p2[0].name(), p2[1]))
     
-    print
-    print
-    print 'roots:', morph.roots
+    print()
+    print()
+    print('roots:', morph.roots)
     return 0
     
 if __name__ == '__main__':

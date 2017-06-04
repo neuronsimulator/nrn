@@ -5,7 +5,7 @@ import numpy.linalg
 #from mayavi import mlab
 
 # TODO: remove circular dependency
-import surfaces
+from . import surfaces
 
 def _register_on_neighbor_map(the_map, pt, neighbor):
     # does not assume neighbor relations are bidirectional
@@ -46,7 +46,7 @@ class TriangularMesh:
     @property
     def faces(self):
         """A list of the triangles, described as lists of the indices of three points."""
-        return [(i, i + 1, i + 2) for i in xrange(0, len(self.data) / 3, 3)]
+        return [(i, i + 1, i + 2) for i in range(0, len(self.data) / 3, 3)]
 
     @property
     def area(self):
@@ -66,15 +66,15 @@ class TriangularMesh:
         
         data = self.data
         pt_neighbor_map = {}
-        for i in xrange(0, len(self.data), 9):
+        for i in range(0, len(self.data), 9):
             pts = {}
-            for j in xrange(3):
+            for j in range(3):
                 pts[tuple((scale_factor * data[i + 3 * j : i + 3 * j + 3]).round() / scale_factor)] = 0
             pts = list(pts.keys())
             if len(pts) == 3:
                 # only consider triangles of nonzero area
-                for j in xrange(3):
-                    for k in xrange(3):
+                for j in range(3):
+                    for k in range(3):
                         if j != k:
                             _register_on_neighbor_map(pt_neighbor_map, pts[j], pts[k])
             #else:
@@ -82,14 +82,14 @@ class TriangularMesh:
         edge_count = 0
         bad_pts = []
         # if no holes, each point should have each neighbor listed more than once
-        for pt, neighbor_list in zip(pt_neighbor_map.keys(), pt_neighbor_map.values()):
+        for pt, neighbor_list in zip(list(pt_neighbor_map.keys()), list(pt_neighbor_map.values())):
             count = {}
             for neighbor in neighbor_list:
                 if neighbor not in count:
                     count[neighbor] = 1
                 else:
                     count[neighbor] += 1
-            for neighbor, ncount in zip(count.keys(), count.values()):
+            for neighbor, ncount in zip(list(count.keys()), list(count.values())):
                 if ncount <= 1:
                     if pt < neighbor:
                         # only print one direction of it
@@ -98,7 +98,7 @@ class TriangularMesh:
                         if pt not in bad_pts: bad_pts.append(pt)
                         if neighbor not in bad_pts: bad_pts.append(neighbor)
                         # TODO: remove this; should never get here anyways
-                        print 'exposed edge: (%g, %g, %g)' % pt, ' to (%g, %g, %g)'%  neighbor
+                        print('exposed edge: (%g, %g, %g) to (%g, %g, %g)' % (pt + neighbor))
 
         if edge_count: return True
         #print 'total exposed edges: ', edge_count

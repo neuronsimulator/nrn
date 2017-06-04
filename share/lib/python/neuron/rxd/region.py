@@ -9,7 +9,7 @@ import itertools
 import numpy
 from . import geometry as geo
 import weakref
-import initializer
+from . import initializer
 import warnings
 
 _all_regions = []
@@ -125,7 +125,7 @@ class Region(object):
                 closest = None
                 closest_dist = float('inf')
                 myx, myy, myz = mesh_xs[x], mesh_ys[y], mesh_zs[z]
-                for s, obs in zip(self._objs.keys(), self._objs.values()):
+                for s, obs in zip(list(self._objs.keys()), list(self._objs.values())):
                     for o in obs:
                         # _distance is like distance except ignores end plates
                         # when inside

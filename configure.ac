@@ -590,11 +590,9 @@ AC_CONFIG_HEADERS([
 AC_CONFIG_FILES([
 	src/nrnpython/Makefile
 	src/mswin/nrncygso.sh
+	src/nrnpython/setup.py
+        share/lib/python/neuron/rxd/geometry3d/setup.py
 ])
-AC_CONFIG_FILES([src/nrnpython/setup.py share/lib/python/neuron/rxd/geometry3d/setup.py],
-  [if test $NRNPYTHON_PYMAJOR -gt 2 ; then $PY2TO3 -w src/nrnpython/setup.py ; $PY2TO3 share/lib/python/neuron/rxd/geometry3d/setup.py ; fi],
-  [NRNPYTHON_PYMAJOR=$NRNPYTHON_PYMAJOR PY2TO3=$PY2TO3]
-)
 fi	
 
 

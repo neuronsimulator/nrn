@@ -70,11 +70,11 @@ class Section1D(rxdsection.RxDSection):
 
     @property
     def indices(self):
-        return range(self._offset, self._offset + self.nseg)
+        return list(range(self._offset, self._offset + self.nseg))
 
         
     def _setup_currents(self, indices, scales, ptrs, cur_map):
-        import rxd
+        from . import rxd
         if self.nrn_region is not None and self.species.name is not None and self.species.charge != 0:
             ion_curr = '_ref_i%s' % self.species.name
             indices.extend(self.indices)
@@ -88,19 +88,19 @@ class Section1D(rxdsection.RxDSection):
             else:
                 raise RxDException('bad nrn_region for setting up currents (should never get here)')
             scales.extend(sign * surface_area[self.indices] * 10000. / (self.species.charge * rxd.FARADAY * volumes[self.indices]))
-            for i in xrange(self.nseg):
+            for i in range(self.nseg):
                 cur_map[self.species.name + self.nrn_region][self._sec((i + 0.5) / self.nseg)] = len(ptrs) + i
-            ptrs.extend([self._sec((i + 0.5) / self.nseg).__getattribute__(ion_curr) for i in xrange(self.nseg)])
+            ptrs.extend([self._sec((i + 0.5) / self.nseg).__getattribute__(ion_curr) for i in range(self.nseg)])
 
     @property
     def nodes(self):
         dx = self.L / self.nseg
-        return nodelist.NodeList([node.Node1D(self, i, ((i + 0.5) * dx) / self.L) for i in xrange(self.nseg)])
+        return nodelist.NodeList([node.Node1D(self, i, ((i + 0.5) * dx) / self.L) for i in range(self.nseg)])
             
     def _transfer_to_legacy(self):
         states = node._get_states()
         if self._concentration_ptrs is not None:
-            for i, ptr in zip(xrange(self._offset, self._offset + self.nseg), self._concentration_ptrs):
+            for i, ptr in zip(range(self._offset, self._offset + self.nseg), self._concentration_ptrs):
                 ptr[0] = states[i]
         
     def _register_cptrs(self):
@@ -108,7 +108,7 @@ class Section1D(rxdsection.RxDSection):
         if self.nrn_region is not None and self.species.name is not None:
             ion = '_ref_' + self.species.name + self.nrn_region
             nseg = self.nseg
-            for i in xrange(nseg):
+            for i in range(nseg):
                 x = (i + 0.5) / nseg
                 _all_cptrs.append(self._sec(x).__getattribute__(ion))
                 _all_cindices.append(self._offset + i)
@@ -122,7 +122,7 @@ class Section1D(rxdsection.RxDSection):
         dx = self.L / self.nseg
         #print 'volumes:', _volumes
         #print 'areas:', self._neighbor_areas
-        for i in xrange(self.nseg):
+        for i in range(self.nseg):
             io = i + offset
             if i > 0:
                 il = io - 1
@@ -156,7 +156,7 @@ class Section1D(rxdsection.RxDSection):
                 g[io, io + 1] -= rate_r
                 g[io, il] -= rate_l
             except IndexError:
-                print 'indexerror: g.shape = %r, io = %r, il = %r, len(node._states) = %r' % (g.shape, io, il, len(node._states))
+                print('indexerror: g.shape = %r, io = %r, il = %r, len(node._states) = %r' % (g.shape, io, il, len(node._states)))
                 raise
             # TODO: verify that these are correct
             if i == 0:
@@ -178,12 +178,12 @@ class Section1D(rxdsection.RxDSection):
         """imports concentration from NEURON; else 0s it if not in NEURON"""
         states = node._get_states()
         if self.nrn_region is not None and self.species.name is not None:
-            for i, ptr in zip(xrange(self._offset, self._offset + self.nseg), self._concentration_ptrs):
+            for i, ptr in zip(range(self._offset, self._offset + self.nseg), self._concentration_ptrs):
                 states[i] = ptr[0]
 
         elif init:
             # TODO: think about if this is the desired behavior
-            for i in xrange(self.nseg):
+            for i in range(self.nseg):
                 states[i + self._offset] = 0
 
     def _assign_parents(self, root_id, missing, root_children):

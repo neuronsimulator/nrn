@@ -28,12 +28,12 @@ def _volumes1d(sec):
     if not isinstance(sec, nrn.Section):
         sec = sec._sec
     arc3d = [h.arc3d(i, sec=sec)
-             for i in xrange(int(h.n3d(sec=sec)))]
+             for i in range(int(h.n3d(sec=sec)))]
     diam3d = [h.diam3d(i, sec=sec)
-              for i in xrange(int(h.n3d(sec=sec)))]
+              for i in range(int(h.n3d(sec=sec)))]
     vols = numpy.zeros(sec.nseg)
     dx = sec.L / sec.nseg
-    for iseg in xrange(sec.nseg):
+    for iseg in range(sec.nseg):
         # get a list of all pts in the segment, including end points
         lo = iseg * dx
         hi = (iseg + 1) * dx
@@ -43,7 +43,7 @@ def _volumes1d(sec):
         
         # sum the volume of the constituent frusta
         volume = 0
-        for i in xrange(len(pts) - 1):
+        for i in range(len(pts) - 1):
             diam0, diam1 = diams[i : i + 2]
             pt0, pt1 = pts[i : i + 2]
             volume += numpy.pi * (pt1 - pt0) / 12. * (diam0 ** 2 + diam0 * diam1 + diam1 ** 2)
@@ -56,12 +56,12 @@ def _make_surfacearea1d_function(scale):
         if not isinstance(sec, nrn.Section):
             sec = sec._sec
         arc3d = [h.arc3d(i, sec=sec)
-                for i in xrange(int(h.n3d(sec=sec)))]
+                for i in range(int(h.n3d(sec=sec)))]
         diam3d = [h.diam3d(i, sec=sec)
-                for i in xrange(int(h.n3d(sec=sec)))]
+                for i in range(int(h.n3d(sec=sec)))]
         sas = numpy.zeros(sec.nseg)
         dx = sec.L / sec.nseg
-        for iseg in xrange(sec.nseg):
+        for iseg in range(sec.nseg):
             # get a list of all pts in the segment, including end points
             lo = iseg * dx
             hi = (iseg + 1) * dx
@@ -71,7 +71,7 @@ def _make_surfacearea1d_function(scale):
             
             # sum the surface areas of the constituent frusta
             sa = 0
-            for i in xrange(len(pts) - 1):
+            for i in range(len(pts) - 1):
                 diam0, diam1 = diams[i : i + 2]
                 pt0, pt1 = pts[i : i + 2]
                 sa += scale * 0.5 * (diam0 + diam1) * numpy.sqrt(0.25 * (diam0 - diam1) ** 2 + (pt1 - pt0) ** 2)
@@ -84,9 +84,9 @@ def _make_perimeter_function(scale):
         if not isinstance(sec, nrn.Section):
             sec = sec._sec
             arc3d = [h.arc3d(i, sec=sec)
-                     for i in xrange(int(h.n3d(sec=sec)))]
+                     for i in range(int(h.n3d(sec=sec)))]
             diam3d = [h.diam3d(i, sec=sec)
-                      for i in xrange(int(h.n3d(sec=sec)))]
+                      for i in range(int(h.n3d(sec=sec)))]
             area_pos = numpy.linspace(0, sec.L, sec.nseg + 1)
             diams = numpy.interp(area_pos, arc3d, diam3d)
             return scale * diams  
@@ -99,15 +99,15 @@ def _neighbor_areas1d(sec):
     if not isinstance(sec, nrn.Section):
         sec = sec._sec
     arc3d = [h.arc3d(i, sec=sec)
-             for i in xrange(int(h.n3d(sec=sec)))]
+             for i in range(int(h.n3d(sec=sec)))]
     diam3d = [h.diam3d(i, sec=sec)
-              for i in xrange(int(h.n3d(sec=sec)))]
+              for i in range(int(h.n3d(sec=sec)))]
     area_pos = numpy.linspace(0, sec.L, sec.nseg + 1)
     diams = numpy.interp(area_pos, arc3d, diam3d)
     return numpy.pi * 0.25 * diams ** 2
 
 def constant_function_per_length(value):
-    return lambda sec: [value * sec.L / sec.nseg for i in xrange(sec.nseg)]
+    return lambda sec: [value * sec.L / sec.nseg for i in range(sec.nseg)]
 
 def constant_everywhere_1d(value):
     return lambda sec: value * numpy.ones(sec.nseg)
@@ -337,9 +337,9 @@ class Shell(RxDGeometry):
         if not isinstance(sec, nrn.Section):
             sec = sec._sec
         arc3d = [h.arc3d(i, sec=sec)
-                 for i in xrange(int(h.n3d(sec=sec)))]
+                 for i in range(int(h.n3d(sec=sec)))]
         diam3d = [h.diam3d(i, sec=sec)
-                  for i in xrange(int(h.n3d(sec=sec)))]
+                  for i in range(int(h.n3d(sec=sec)))]
         area_pos = numpy.linspace(0, sec.L, sec.nseg + 1)
         diams = numpy.interp(area_pos, arc3d, diam3d)
         if self._type == _lo_hi_shell:
@@ -352,12 +352,12 @@ class Shell(RxDGeometry):
         if not isinstance(sec, nrn.Section):
             sec = sec._sec
         arc3d = [h.arc3d(i, sec=sec)
-                 for i in xrange(int(h.n3d(sec=sec)))]
+                 for i in range(int(h.n3d(sec=sec)))]
         diam3d = [h.diam3d(i, sec=sec)
-                  for i in xrange(int(h.n3d(sec=sec)))]
+                  for i in range(int(h.n3d(sec=sec)))]
         vols = numpy.zeros(sec.nseg)
         dx = sec.L / sec.nseg
-        for iseg in xrange(sec.nseg):
+        for iseg in range(sec.nseg):
             # get a list of all pts in the segment, including end points
             lo = iseg * dx
             hi = (iseg + 1) * dx
@@ -367,7 +367,7 @@ class Shell(RxDGeometry):
             
             # sum the volume of the constituent frusta, hollowing out by the inside
             volume = 0
-            for i in xrange(len(pts) - 1):
+            for i in range(len(pts) - 1):
                 diam0h, diam1h = self._hi * diams[i : i + 2]
                 diam0l, diam1l = self._lo * diams[i : i + 2]
                 pt0, pt1 = pts[i : i + 2]

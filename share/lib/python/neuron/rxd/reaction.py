@@ -92,13 +92,13 @@ class Reaction(GeneralizedReaction):
         rate_b = copy.copy(self._original_rate_b)
         
         if not self._custom_dynamics:
-            for k, v in zip(lhs.keys(), lhs.values()):
+            for k, v in zip(list(lhs.keys()), list(lhs.values())):
                 if v == 1:
                     rate_f *= k
                 else:
                     rate_f *= k ** v
             if self._dir == '<>':
-                for k, v in zip(rhs.keys(), rhs.values()):
+                for k, v in zip(list(rhs.keys()), list(rhs.values())):
                     if v == 1:
                         rate_b *= k
                     else:

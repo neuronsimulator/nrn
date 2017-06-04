@@ -1,1 +1,1 @@
-from rdxml import *
+from .rdxml import *

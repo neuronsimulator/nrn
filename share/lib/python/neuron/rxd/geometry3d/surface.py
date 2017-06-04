@@ -1,6 +1,6 @@
-import ctng
-import surfaces
-import triangularMesh
+from . import ctng
+from . import surfaces
+from . import triangularMesh
 import numpy
 from numpy import sqrt, fabs
 
