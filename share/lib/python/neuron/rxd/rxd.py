@@ -612,11 +612,11 @@ def _c_compile(formula):
         gcc = "gcc"
     #TODO: Check this works on non-Linux machines
     gcc_cmd =  "%s -I%s -I%s " % (gcc, sysconfig.get_python_inc(), os.path.join(h.neuronhome(), "..", "..", "include", "nrn"))
-    gcc_cmd += "-shared -fPIC  %s.c -L%s " % (filename, os.path.join(h.neuronhome(), "..", "..", platform.machine(), "lib", "librxdmath.so"))
+    gcc_cmd += "-shared -fPIC  %s.c %s " % (filename, os.path.join(h.neuronhome(), "..", "..", platform.machine(), "lib", "librxdmath.so"))
     gcc_cmd += "-o %s.so -lpython%i.%i -lm" % (filename, sys.version_info.major, sys.version_info.minor)
     os.system(gcc_cmd)
     #os.system('%s -I%s -lpython%i.%i -shared -o %s.so -fPIC %s.c -lm' % (gcc,sysconfig.get_python_inc(), sys.version_info.major, sys.version_info.minor, filename, filename))
-
+    rxdmath_dll = ctypes.cdll[os.path.join(h.neuronhome(), "..", "..", platform.machine(), "lib", "librxdmath.so")]
     dll = ctypes.cdll['./%s.so' % filename]
     reaction = dll.reaction
     reaction.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double)] 
@@ -1002,7 +1002,7 @@ def _compile_reactions():
                 species_involved.append(s)
         
             for reg in react_regions:
-                if isinstance(reg,rxd.region.Extracellular):
+                if isinstance(reg, region.Extracellular):
                     continue
                 
                 if reg in regions_inv.keys():
