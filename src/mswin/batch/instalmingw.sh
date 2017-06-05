@@ -114,6 +114,7 @@ do
   cp /usr/bin/$i.exe $D/bin
 done    
 fi
+cp /usr/bin/cygcheck.exe $D/bin
 
 # Determine what msys64 dlls are needed by the bin programs and copy them
 (cd $DB
@@ -186,6 +187,7 @@ for f in $DB/hocmodule*.dll ; do
   x=`echo $f | sed "s/.*hocmodule\([0-9]*\)\.dll/\1/"`
   mv $f $D/lib/python/neuron/hoc${x}.pyd
 done
+cp $B/share/lib/python/neuron/rxd/geometry3d/*.pyd $D/lib/python/neuron/rxd/geometry3d
 fi
 
 if true ; then
