@@ -272,6 +272,11 @@ class Node(object):
         _node_fluxes['source'].append(source)
         _node_fluxes['scale'].append(scale)
         _has_node_fluxes = True
+    
+    @value.getter
+    def _state_index(self):
+        return self._index
+
         
     
 _h_n3d = h.n3d

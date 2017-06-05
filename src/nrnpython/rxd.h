@@ -1,9 +1,12 @@
 #include <pthread.h>
+/*borrowed from Meschach Version 1.2b*/
+#define	v_get_val(x,i)		((x)->ve[(i)])
+#define	m_get_val(A,i,j)	((A)->me[(i)][(j)])
 
 typedef void (*fptr)(void);
 
 typedef struct {
-	Grid_node* grid;
+	Reaction* reaction;
 	int idx;
 } ReactSet;
 
@@ -28,6 +31,8 @@ typedef struct {
 } AdiGridData;
 
 void set_num_threads(int);
+void _fadvance(void);
+void _fadvance_fixed_step_ecs(void);
 
 int get_num_threads(void);
 static int dg_adi(Grid_node);
@@ -39,8 +44,17 @@ void run_threaded_dg_adi(AdiGridData*, pthread_t*, const int, const int, Grid_no
 ReactGridData* create_threaded_reactions(void);
 void* do_reactions(void*);
 
+typedef void (*fptr)(void);
+void current_reaction(double *states);
+
 
 /*Variable step function declarations*/
+void _rhs_variable_step(const double, const double*, double*);
+
+void _ode_reinit(double*);
+
+int ode_count(const int);
+
 void scatter_concentrations(void);
 
 static void update_boundaries_x(int i, int j, int k, int dj, int dk, double rate_x,

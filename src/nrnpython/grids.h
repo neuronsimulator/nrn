@@ -13,7 +13,7 @@ and Flux_pair structs and their respective functions
 #endif
 
 #define DIE(msg) exit(fprintf(stderr, "%s\n", msg))
-
+#define SAFE_FREE(ptr){if(ptr!=NULL) free(ptr);}
 #define IDX(x,y,z)  ((z) + (y) * g.size_z + (x) * g.size_z * g.size_y)
 #define INDEX(x,y,z)  ((z) + (y) * grid->size_z + (x) * grid->size_z * grid->size_y)
 #define ALPHA(x,y,z) (g.get_alpha(g.alpha,IDX(x,y,z)))
@@ -25,6 +25,7 @@ and Flux_pair structs and their respective functions
 #define TORTUOSITY			2
 #define VOLUME_FRACTION 	3
 
+#define MAX(a,b)	((a)>(b)?(a):(b))
 
 
 typedef struct {
@@ -68,14 +69,14 @@ typedef struct {
     double scale_factor;
 } Current_Triple;
 
-typedef double (*ReactionRate)(double*);
+typedef void (*ReactionRate)(double*, double*);
 typedef struct Reaction {
 	struct Reaction* next;
 	ReactionRate reaction;
 	unsigned int num_species_involved;
 	double** species_states;
 	unsigned char* subregion;
-	unsigned int subregion_size;
+	unsigned int region_size;
 } Reaction;
 
 typedef struct Grid_node {
@@ -107,8 +108,6 @@ typedef struct Grid_node {
 	 * the single value or the value at a given index*/ 
 	double (*get_alpha)(double*,int);
 	double (*get_lambda)(double*,int);
-	
-	Reaction* reactions;
 } Grid_node;
 
 static double get_alpha_scalar(double*, int);

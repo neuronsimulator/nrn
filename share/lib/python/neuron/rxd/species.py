@@ -12,7 +12,8 @@ import initializer
 import ctypes
 
 dll = neuron.nrn_dll()
-set_nonvint_block = neuron.nrn_dll_sym('set_nonvint_block')
+#Now set in rxd.py
+#set_nonvint_block = neuron.nrn_dll_sym('set_nonvint_block')
 
 fptr_prototype = ctypes.CFUNCTYPE(None)
 
@@ -92,7 +93,7 @@ def _ensure_extracellular():
     global _extracellular_exists, do_setup_fptr, do_initialize_fptr
     if not _extracellular_exists:
         from neuron import nrn_dll
-        set_nonvint_block(nrn_dll().rxd_nonvint_block)
+        #set_nonvint_block(nrn_dll().rxd_nonvint_block)
         do_setup_fptr = fptr_prototype(_extracellular_do_setup)
         do_initialize_fptr = fptr_prototype(_extracellular_do_initialize)
         _extracellular_set_setup(do_setup_fptr)
@@ -151,7 +152,7 @@ class _SpeciesMathable(object):
 
     @property
     def _semi_compile(self):
-        return 'species%d' % (self._id)
+        return 'species[%d]' % (self._id)
 
     def _involved_species(self, the_dict):
         the_dict[self._semi_compile] = weakref.ref(self)

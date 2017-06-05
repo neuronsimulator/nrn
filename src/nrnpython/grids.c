@@ -53,7 +53,7 @@ Grid_node *make_Grid(PyHocObject* my_states, int my_num_states_x,
     new_Grid->dy = my_dy;
     new_Grid->dz = my_dz;
     new_Grid->old_states = (double *) malloc(sizeof(double) * new_Grid->size_x * 
-        new_Grid->size_y * new_Grid->size_z);
+    new_Grid->size_y * new_Grid->size_z);
 
     assert(new_Grid->old_states);
 
@@ -99,7 +99,6 @@ Grid_node *make_Grid(PyHocObject* my_states, int my_num_states_x,
 
 	}
 
-	new_Grid->reactions = NULL;
     return new_Grid;
 }
 

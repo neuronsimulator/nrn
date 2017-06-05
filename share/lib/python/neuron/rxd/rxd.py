@@ -1,5 +1,5 @@
 import neuron
-from neuron import h, nrn
+from neuron import h, nrn, nrn_dll_sym, nrn_dll
 from . import species, node, section1d, region, morphology
 from .nodelist import NodeList
 import weakref
@@ -12,7 +12,14 @@ import options
 from .rxdException import RxDException
 import initializer 
 import collections
-
+import os
+from distutils import sysconfig
+import uuid
+import sys
+import itertools
+from numpy.ctypeslib import ndpointer
+import re
+import platform
 # aliases to avoid repeatedly doing multiple hash-table lookups
 _numpy_array = numpy.array
 _numpy_zeros = numpy.zeros
@@ -27,9 +34,39 @@ _node_get_states = node._get_states
 _section1d_transfer_to_legacy = section1d._transfer_to_legacy
 _ctypes_c_int = ctypes.c_int
 _weakref_ref = weakref.ref
+_states = node._states
 
 _external_solver = None
 _external_solver_initialized = False
+
+dll = neuron.nrn_dll()
+_double_ptr = ctypes.POINTER(ctypes.c_double)
+_int_ptr = ctypes.POINTER(_ctypes_c_int)
+
+
+fptr_prototype = ctypes.CFUNCTYPE(None)
+set_nonvint_block = nrn_dll_sym('set_nonvint_block')
+set_nonvint_block(dll.rxd_nonvint_block)
+
+set_setup = dll.set_setup
+set_setup.argtypes = [fptr_prototype]
+set_initialize = dll.set_initialize
+set_initialize.argtypes = [fptr_prototype]
+
+setup_solver = dll.setup_solver
+setup_solver.argtypes = [ndpointer(ctypes.c_double), ctypes.py_object, ctypes.c_int]
+
+clear_rates = dll.clear_rates
+register_rate = dll.register_rate
+
+set_reaction_indices = dll.set_reaction_indices
+set_reaction_indices.argtypes = [ctypes.c_int, _int_ptr, _int_ptr, _int_ptr, _int_ptr]
+
+ecs_register_reaction = dll.ecs_register_reaction
+ecs_register_reaction.argtype = [ctypes.c_int, ctypes.c_int, _int_ptr, fptr_prototype]
+
+def _list_to_cint_array(data):
+    return (ctypes.c_int * len(data))(*tuple(data))
 
 def byeworld():
     # needed to prevent a seg-fault error at shudown in at least some
@@ -71,9 +108,6 @@ _all_reactions = []
 
 _zero_volume_indices = []
 _nonzero_volume_indices = []
-
-_double_ptr = ctypes.POINTER(ctypes.c_double)
-_int_ptr = ctypes.POINTER(_ctypes_c_int)
 
 
 nrn_tree_solve = neuron.nrn_dll_sym('nrn_tree_solve')
@@ -228,7 +262,7 @@ def _ode_fun(t, y, ydot):
     
     if ydot is not None:
         # diffusion_matrix = - jacobian    
-        ydot[lo : hi] = (_rxd_reaction(states) - _diffusion_matrix * states)[_nonzero_volume_indices]
+        ydot[lo : hi] = (- _diffusion_matrix * states)[_nonzero_volume_indices]
         
     states[_zero_volume_indices] = 0
 
@@ -360,13 +394,14 @@ def _fixed_step_solve(raw_dt):
     if _diffusion_matrix is None and _euler_matrix is None: _setup_matrices()
 
     states = _node_get_states()[:]
-
-    b = _rxd_reaction(states) - _diffusion_matrix * states
+    if _diffusion_matrix is None:
+        return None
+    b = - _diffusion_matrix * states
     
 
     if not species._has_3d:
         # use Hines solver since 1D only
-        states[:] += _reaction_matrix_solve(dt, states, _diffusion_matrix_solve(dt, dt * b))
+        states[:] += _diffusion_matrix_solve(dt, dt * b)
 
         # clear the zero-volume "nodes"
         states[_zero_volume_indices] = 0
@@ -557,11 +592,39 @@ def _reaction_matrix_setup(dt, unexpanded_states):
         _react_matrix_solver = lambda x: x
 
 def _setup():
-    initializer._do_init()
+    global states
     # TODO: this is when I should resetup matrices (structure changed event)
     global _last_dt, _external_solver_initialized
     _last_dt = None
     _external_solver_initialized = False
+    
+    # Using C-code for reactions
+    options.use_reaction_contribution_to_jacobian = False
+
+    
+def _c_compile(formula):
+    filename = 'rxddll' + str(uuid.uuid1())
+    with open(filename + '.c', 'w') as f:
+        f.write(formula)
+    try:
+        gcc = os.environ["CC"]
+    except:
+        gcc = "gcc"
+    #TODO: Check this works on non-Linux machines
+    gcc_cmd =  "%s -I%s -I%s " % (gcc, sysconfig.get_python_inc(), os.path.join(h.neuronhome(), "..", "..", "include", "nrn"))
+    gcc_cmd += "-shared -fPIC  %s.c -L%s " % (filename, os.path.join(h.neuronhome(), "..", "..", platform.machine(), "lib", "librxdmath.so"))
+    gcc_cmd += "-o %s.so -lpython%i.%i -lm" % (filename, sys.version_info.major, sys.version_info.minor)
+    os.system(gcc_cmd)
+    #os.system('%s -I%s -lpython%i.%i -shared -o %s.so -fPIC %s.c -lm' % (gcc,sysconfig.get_python_inc(), sys.version_info.major, sys.version_info.minor, filename, filename))
+
+    dll = ctypes.cdll['./%s.so' % filename]
+    reaction = dll.reaction
+    reaction.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double)] 
+    reaction.restype = ctypes.c_double
+    os.remove(filename + '.c')
+    os.remove(filename + '.so')
+    return reaction
+
 
 def _conductance(d):
     pass
@@ -887,8 +950,195 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
         raise RxDException('should never get here; _get_node_indices apparently only partly converted to allow connecting to 1d in middle')
     #print '1d index is %d' % index_1d
     return index_1d, indices3d
+
+def _compile_reactions():
+    #clear all previous reactions (intracellular & extracellular) and the
+    #supporting indexes
+    clear_rates()
     
+    regions_inv = dict() #regions -> reactions that occur there
+    species_by_region = dict()
+    all_species_involed = set()
+    location_count = 0
+    
+    ecs_regions_inv = dict()
+    ecs_species_by_region = dict()
+    ecs_all_species_involed = set()
+
+
+    #all_rates = []
+    #for rptr in _all_reactions:
+    #    r = rptr()
+    #    try:
+    #        all_rates.append(weakref(r.f_rate))
+    #        if r.b_rate is not None:
+    #            all_rates.append(weakref(r.b_rate))
+    #    except:
+    #         all_rates.append(rptr)
+
+    for rptr in _all_reactions:
+        r = rptr()
+        
+        try:
+            sptrs  = set(r._involved_species + r._dests + r._sources)
+        except:
+            sptrs = r._involved_species + [r._species]
+
+        if None not in r._regions:
+            react_regions = r._regions
+        else:
+            react_regions = set()
+            for sp in r._involved_species:
+                s = sp()
+                if None not in s._regions:
+                    [react_regions.add(reg) for reg in s._regions + s._extracellular_regions]
+
+        #any intracellular regions
+        if not all([isinstance(x, region.Extracellular) for x in react_regions]):
+            species_involved = []
+            for sp in sptrs:
+                s = sp()
+                all_species_involed.add(s)
+                species_involved.append(s)
+        
+            for reg in react_regions:
+                if isinstance(reg,rxd.region.Extracellular):
+                    continue
+                
+                if reg in regions_inv.keys():
+                    regions_inv[reg].append(rptr)
+                else:
+                    regions_inv[reg] = [rptr]
+                if reg in species_by_region.keys():
+                    species_by_region[reg] = species_by_region[reg].union(species_involved)
+                else:
+                    species_by_region[reg] = set(species_involved)
+                    for sec in reg._secs:
+                        location_count += sec.nseg
+        #any extracellular regions
+        if any([isinstance(x, region.Extracellular) for x in react_regions]):
+            ecs_species_involved = []
+            for sp in sptrs:
+                s = sp()
+                ecs_all_species_involed.add(s)
+                ecs_species_involved.append(s)
+
+            for reg in react_regions:
+                if not isinstance(reg, region.Extracellular):
+                    continue
+                
+                if reg in ecs_regions_inv.keys():
+                    ecs_regions_inv[reg].append(rptr)
+                else:
+                    ecs_regions_inv[reg] = [rptr]
+                if reg in species_by_region.keys():
+                    ecs_species_by_region[reg] = eca_species_by_region[reg].union(ecs_species_involved)
+                else:
+                    ecs_species_by_region[reg] = set(ecs_species_involved)
+
+
+
+    #Create lists of indexes for intracellular reactions and rates
+    nseg_by_region = []     # a list of the number of segments for each region
+    # a table for location,species -> state index
+    location_index = []
+    for reg in regions_inv.keys():
+        seg_idx = 0;
+        for sec in reg.secs:
+            for seg in sec:
+                for s in species_by_region[reg]:
+                    for node in s.nodes:
+                        if node.segment == seg:
+                            location_index.append(node._state_index)
+                seg_idx += 1
+        nseg_by_region.append(seg_idx)
+
+    # now setup the reactions
+    #if there are no reactions
+    if location_count == 0 and len(ecs_regions_inv) == 0:
+        setup_solver(_states, h._ref_dt, location_count)
+        return None
+
+
+    species_per_region = []
+    species_ids = []
+    species_lookup = dict()
+    for reg in regions_inv.keys():
+        species_per_region.append(len(species_by_region[reg]))
+        s_index = 0
+        for s in species_by_region[reg]:
+            species_ids.append(s_index)
+            species_lookup[s._id] = s_index
+            s_index += 1
+
+        fxn_string = '#include <math.h>\n'
+        fxn_string += '#include <rxdmath.h>\n'
+        #TODO: find the nrn include path in python
+        #TODO: install rxdmath.h into the include path
+        #It is necessary for a couple of function in python that are not in math.h
+        fxn_string += 'void reaction(double* species, double* rhs)\n{'
+        for rptr in regions_inv[reg]:
+            r = rptr()
+            # replace global species._id in rate string with local index in location_index
+            rate_str = re.sub(r'species\[(\d+)\]',lambda m: "species[%i]" %  species_lookup.get(int(m.groups()[0])), r._rate)
+            try:
+                #TODO: Check r._mult is only used for reactions - not rates
+                fxn_string += "\n\trhs[%d] = %s;" % (species_lookup.get(r._species()._id), rate_str)
+            except:
+                idx = 0
+                #TODO: Check the order of r._mult is reliable
+                for sp in r._sources + r._dests:
+                    s = sp()
+                    fxn_string += "\n\trhs[%d] = (%s)*(%s);" % (species_lookup.get(s._id), r._mult[idx],rate_str)
+                    idx+=1
+
+        fxn_string += "\n}\n"
+        register_rate(_c_compile(fxn_string))
+
+    #set_reaction_indices with
+    #location_count  -   the number of segments to loop over
+    #nseg_by_region  -   the number of segments in each region
+    #species_per_region     -   the species involved involved in each region
+    #   NOTE: each region has exactly one aggregated reaction function
+    #species_ids    -   the species index used in the reaction function to
+    #                   lookup a state index in location_index
+    #location_index a table (segment,species) -> state index
+    set_reaction_indices(location_count ,_list_to_cint_array(nseg_by_region), _list_to_cint_array(species_per_region), _list_to_cint_array(species_ids),  _list_to_cint_array(location_index))
+    setup_solver(_states, h._ref_dt, location_count)
+
+    #Setup extracellular reactions
+    for reg in ecs_regions_inv.keys():
+        grid_ids = []
+        for s in ecs_species_by_region[reg]:
+            ecs_s = [x for x in s._extracellular_instances if x._region == reg][0]
+            grid_ids.append(ecs_s._grid_id)
+        for s in ecs_species_by_region[reg]:
+            fxn_string = '#include <math.h>\n'
+            fxn_string += '#include <rxdmath.h>\n'
+            #TODO: find the nrn include path in python
+            #TODO: install rxdmath.h into the include path
+            #It is necessary for a couple of function in python that are not in math.h
+            fxn_string += 'void reaction(double* species, double* rhs)\n{'
+            for rptr in ecs_regions_inv[reg]:
+                r = rptr()
+                try:
+                    s = r._species()
+                    grid_id = [x for x in s._extracellular_instances if x._region == reg][0]._grid_id
+
+                    fxn_string += "\n\trhs[%d] = %s;" % (grid_id, r._rate)
+                except:
+                    idx = 0
+                   #TODO: Check the order of r._mult is reliable
+                    for sp in r._sources + r._dests:
+                        s = sp()
+                        grid_id = [x for x in s._extracellular_instances if x._region == reg][0]._grid_id
+                        fxn_string += "\n\trhs[%d] = (%s)*(%s);" % (s._id, r._mult[idx],r._rate)
+                        idx+=1
+                fxn_string += "\n}\n"
+            ecs_register_reaction(0, len(grid_ids), _list_to_cint_array(grid_ids), _c_compile(fxn_string))
+
 def _init():
+    global states
     initializer._do_init()
     
     # TODO: check about the 0<x<1 problem alluded to in the documentation
@@ -904,6 +1154,9 @@ def _init():
             s._register_cptrs()
             s._finitialize()
     _setup_matrices()
+    _compile_reactions()
+
+ 
 
 _has_nbs_registered = False
 _nbs = None
@@ -927,3 +1180,9 @@ def _do_nbs_register():
         #
         _cvode_object.extra_scatter_gather(0, _after_advance)
 
+
+# register the Python callbacks
+do_setup_fptr = fptr_prototype(_setup)
+do_initialize_fptr = fptr_prototype(_init)
+set_setup(do_setup_fptr)
+set_initialize(do_initialize_fptr)

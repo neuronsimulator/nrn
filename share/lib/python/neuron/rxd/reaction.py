@@ -108,9 +108,14 @@ class Reaction(GeneralizedReaction):
         self._dests = ref_list_with_mult(rhs)
         self._rate, self._involved_species = rxdmath._compile(rate)
         
+        
         trans_membrane = any(isinstance(s(), species.SpeciesOnRegion) for s in self._involved_species)
         if trans_membrane:
             raise RxDException('Reaction does not support multi-compartment dynamics. Use MultiCompartmentReaction.')
+        
+        #Recompile all the reactions in C
+        if hasattr(self, '_mult'):
+            rxd._compile_reactions()
 
     
     @property

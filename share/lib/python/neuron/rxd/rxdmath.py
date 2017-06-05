@@ -52,6 +52,8 @@ def analyze_reaction(r):
         print '   dir: ', r._dir
         
 # TODO: change this so that inputs are all automatically converted to numpy.array(s)
+#_compile is called by the reaction (Reaction._update_rates)
+# returns the rate and the species involved
 def _compile(arith):
     initializer._do_init()
     try:
@@ -63,7 +65,13 @@ def _compile(arith):
         s = str(arith)
     all_names = ['numpy', 'rxdmath'] + species_dict.keys()
     command = 'lambda %s: %s ' % (', '.join(all_names), s)
-    return (functools.partial(eval(command), numpy, sys.modules[__name__]), species_dict.values())
+    species_index = [int(''.join(x for x in r if x.isdigit())) for r in species_dict.keys()]
+    #C-version
+    #Get the index rather than the key
+    return (s, species_dict.values())
+    #(functools.partial(eval(command), numpy, sys.modules[__name__]), species_dict.values())
+
+
     
 
 def _ensure_arithmeticed(other):
@@ -99,7 +107,7 @@ class _Function:
             return self.__repr__()
     @property
     def _semi_compile(self):
-        return '%s(%s)' % (self._f, self._obj._semi_compile)
+        return '%s(%s)' % (self._fname, self._obj._semi_compile)
     def _involved_species(self, the_dict):
         self._obj._involved_species(the_dict)
 
@@ -118,7 +126,7 @@ class _Function2:
             return self.__repr__()
     @property
     def _semi_compile(self):
-        return '%s(%s, %s)' % (self._f, self._obj1._semi_compile, self._obj2._semi_compile)
+        return '%s(%s, %s)' % (self._fname, self._obj1._semi_compile, self._obj2._semi_compile)
     def _involved_species(self, the_dict):
         self._obj1._involved_species(the_dict)
         self._obj2._involved_species(the_dict)
@@ -157,7 +165,7 @@ def exp(obj):
 def expm1(obj):
     return _Arithmeticed(_Function(obj, 'numpy.expm1', 'expm1'), valid_reaction_term=False)
 def fabs(obj):
-    return _Arithmeticed(_Function(obj, 'numpy.abs', 'fabs'), valid_reaction_term=False)
+    return _Arithmeticed(_Function(obj, 'abs', 'fabs'), valid_reaction_term=False)
 def factorial(obj):
     return _Arithmeticed(_Function(obj, 'rxdmath._factorial', 'factorial'), valid_reaction_term=False)
 def floor(obj):
@@ -311,7 +319,6 @@ class _Arithmeticed:
                 else:
                     items.append(repr(item))
                     counts.append(count)
-        result = ''
         for i, c in zip(items, counts):
             if result and c > 0:
                 result += '+'
