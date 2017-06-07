@@ -100,6 +100,7 @@ $Id: __init__.py,v 1.1 2008/05/26 11:39:44 hines Exp hines $
 #  pass
 
 import sys
+embedded = True if 'hoc' in sys.modules else False
 
 try:
     import hoc
@@ -557,16 +558,17 @@ def nrnpy_pr(s):
   sys.stdout.write(s.decode())
   return 0
 
-try:
-  # callback in place of hoc printf
-  # ensures consistent with python stdout even with jupyter notebook.
-  nrnpy_pr_proto = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_char_p)
-  nrnpy_set_pr = nrn_dll_sym('nrnpy_set_pr')
-  nrnpy_set_pr.argtypes = [nrnpy_pr_proto]
+if not embedded:
+  try:
+    # callback in place of hoc printf
+    # ensures consistent with python stdout even with jupyter notebook.
+    nrnpy_pr_proto = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_char_p)
+    nrnpy_set_pr = nrn_dll_sym('nrnpy_set_pr')
+    nrnpy_set_pr.argtypes = [nrnpy_pr_proto]
 
-  nrnpy_pr_callback = nrnpy_pr_proto(nrnpy_pr)
-  nrnpy_set_pr(nrnpy_pr_callback)
-except:
-  print("Failed to setup nrnpy_pr")
-  pass
+    nrnpy_pr_callback = nrnpy_pr_proto(nrnpy_pr)
+    nrnpy_set_pr(nrnpy_pr_callback)
+  except:
+    print("Failed to setup nrnpy_pr")
+    pass
 
