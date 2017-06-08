@@ -9,6 +9,15 @@
 #include "nrnpy_utils.h"
 #include <vector>
 
+#if defined(__MINGW32__) && NRNPYTHON_DYNAMICLOAD > 0
+// want to end up with a string like "hoc36"
+#define HOCMOD_1(s) HOCMOD_2(s)
+#define HOCMOD_2(s) #s
+#define HOCMOD "hoc" HOCMOD_1(NRNPYTHON_DYNAMICLOAD)
+#else
+#define HOCMOD hoc
+#endif
+
 extern "C" {
 
 #include "parse.h"
@@ -2147,8 +2156,8 @@ myPyMODINIT_FUNC nrnpy_hoc() {
 #if PY_MAJOR_VERSION >= 3
   int err = 0;
   PyObject* modules = PyImport_GetModuleDict();
-#if defined __MINGW32__
-  if ((m = PyDict_GetItemString(modules, "hoc3")) != NULL && PyModule_Check(m)) {
+#if defined(__MINGW32__)
+  if ((m = PyDict_GetItemString(modules, HOCMOD)) != NULL && PyModule_Check(m)) {
 #else
   if ((m = PyDict_GetItemString(modules, "hoc")) != NULL && PyModule_Check(m)) {
 #endif // __MINGW32__
@@ -2156,8 +2165,8 @@ myPyMODINIT_FUNC nrnpy_hoc() {
   }
   m = PyModule_Create(&hocmodule);
 #else // PY_MAJOR_VERSION
-#if defined __MINGW32__
-  m = Py_InitModule3("hoc2", HocMethods, "HOC interaction with Python");
+#if defined(__MINGW32__)
+  m = Py_InitModule3(HOCMOD, HocMethods, "HOC interaction with Python");
 #else
   m = Py_InitModule3("hoc", HocMethods, "HOC interaction with Python");
 #endif // __MINGW32__

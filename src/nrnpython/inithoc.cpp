@@ -29,6 +29,10 @@ extern char* nrnmpi_load(int is_python);
 #endif
 #if NRNPYTHON_DYNAMICLOAD
 extern int nrnpy_site_problem;
+#define HOCMOD(a, b) HOCMOD_(a, b)
+#define HOCMOD_(a, b) a ## b
+#else
+#define HOCMOD(a, b) a
 #endif
 
 extern int nrn_is_python_extension;
@@ -57,16 +61,19 @@ static char* env[] = {0};
 #if defined(__MINGW32__)
 
 // The problem is that the hoc.dll name is the same for python2 and 3.
-// The work around is to name them hoc2.dll and hoc3.dll when manually
+// The work around is to name them hoc27.dll and hoc36.dll when manually
 // created by nrncygso.sh and use if version clauses in the neuron
 // module to import the correct one as hoc.  Generalizable in the
 // future to 27, 34, 35, 36 with try except clauses.
+// It seems that since these dlls refer to python3x.dll explicitly,
+// it is not possible for differen minor versions of python3x to share
+// hoc module dlls.
 // It is conceivable that this strategy will work for linux and mac as well,
 // but for now setup.py names them differently anyway.
 #if PY_MAJOR_VERSION >= 3
-PyObject* PyInit_hoc3() {
+PyObject* HOCMOD(PyInit_hoc, NRNPYTHON_DYNAMICLOAD)() {
 #else //!PY_MAJOR_VERSION >= 3
-void inithoc2() {
+void HOCMOD(inithoc, NRNPYTHON_DYNAMICLOAD)() {
 #endif //!PY_MAJOR_VERSION >= 3
 
 #else // ! defined __MINGW32__

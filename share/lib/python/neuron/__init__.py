@@ -109,10 +109,7 @@ except:
     #Python3.1 extending needs to look into the module explicitly
     import neuron.hoc
   except: # mingw name strategy
-    if sys.version_info[0] == 2:
-      import neuron.hoc2 as hoc
-    else:
-      import neuron.hoc3 as hoc
+    exec("import neuron.hoc%d%d as hoc" % (sys.version_info[0], sys.version_info[1]))
 
 import nrn
 import _neuron_section
@@ -396,7 +393,7 @@ def nrn_dll_sym_nt(name, type):
       if h.nrnversion(8).find('i686') is 0:
         b = 'bin'
       path = os.path.join(h.neuronhome().replace('/','\\'), b)
-      p = sys.version_info[0]
+      p = sys.version_info[0]*10 + sys.version_info[1]
       for dllname in ['nrniv.dll', 'libnrnpython%d.dll'%p]:
         p = os.path.join(path, dllname)
         nt_dlls.append(ctypes.cdll[p])
@@ -437,7 +434,7 @@ def nrn_dll(printpath=False):
 
     success = False
     if sys.platform == 'msys' or sys.platform == 'win32':
-      p = 'hoc%d' % sys.version_info[0]
+      p = 'hoc%d%d' % (sys.version_info[0], sys.version_info[1])
     else:
       p = 'hoc'
     base_path = os.path.join(neuron_home, 'lib' , 'python', 'neuron', p)

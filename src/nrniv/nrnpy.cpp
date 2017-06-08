@@ -273,17 +273,18 @@ static void* load_nrnpython_helper(const char* npylib) {
 static void load_nrnpython(int pyver10, const char* pylib) {
 	void* handle = NULL;
 #if defined(__MINGW32__)
-	if (pyver10 >= 30) {
-		handle = load_nrnpython_helper("libnrnpython3");
-	} else if (pyver10 >= 25) {
-		handle = load_nrnpython_helper("libnrnpython2");
-	} else if (pylib && strstr(pylib, "ython3") != NULL) {
-		handle = load_nrnpython_helper("libnrnpython3");
+	char name[256];
+	if (pyver10 > 1) {
+		sprintf(name, "libnrnpython%d", pyver10);
+	} else if (pylib && strstr(pylib, "ython") != NULL) {
+		char* cp = strstr(pylib, "ython") + 5;
+		sprintf(name, "libnrnpython%c%c", cp[0], cp[1]);
 	} else {
-		handle = load_nrnpython_helper("libnrnpython2");
+		sprintf(name, "libnrnpython27");
 	}
+	handle = load_nrnpython_helper(name);
 	if (!handle) {
-printf("Could not load either libnrnpython3 or libnrnpython2\n");
+printf("Could not load %s\n", name);
 printf("pyver10=%d pylib=%s\n", pyver10, pylib ? pylib : "NULL");
 		return;
 	}

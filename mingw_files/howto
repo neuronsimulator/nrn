@@ -34,30 +34,14 @@ fi
 cd ~/neuron/nrnwinobj
 
 
-if true ; then
-PYVER=36
-PYDIR=/e/python${PYVER}
-../nrn/configure --prefix=`pwd` -with-nrnpython=dynamic \
- --with-pyexe=$PYDIR/python \
- --host=x86_64-w64-mingw32 PYINCDIR="$PYDIR/include" \
- --with-paranrn=dynamic MPICC=x86_64-w64-mingw32-gcc \
- MPICXX=x86_64-w64-mingw32-g++ \
- CFLAGS='-DMSMPI_NO_SAL -I/c/ms-mpi/include' LIBS='-L/c/ms-mpi/lib/x64 -lmsmpi' \
-  PYINCDIR=$PYDIR/include \
-  PYLIBDIR=$PYDIR/libs \
-  PYLIB="-L$PYDIR/libs -lpython${PYVER}" \
-  PYLIBLINK="-L$PYDIR/libs -lpython${PYVER}" \
-  MPILIBS='-L/c/ms-mpi/lib/x64 -lmsmpi' # --disable-maintainer-mode
+PYVS="py"
 
-make
-
-fi
-
-if test "$1" == "27" ; then
+bld () {
 PYVER=$1
+PYVS=${PYVS}-${PYVER}
 PYDIR=/e/python${PYVER}
 ../nrn/configure --prefix=`pwd` -with-nrnpython=dynamic \
- --with-pyexe=$PYDIR/python --with-nrnpython-only \
+ --with-pyexe=$PYDIR/python $2 \
  --host=x86_64-w64-mingw32 PYINCDIR="$PYDIR/include" \
  --with-paranrn=dynamic MPICC=x86_64-w64-mingw32-gcc \
  MPICXX=x86_64-w64-mingw32-g++ \
@@ -69,12 +53,17 @@ PYDIR=/e/python${PYVER}
   MPILIBS='-L/c/ms-mpi/lib/x64 -lmsmpi' # --disable-maintainer-mode
 
 make
+}
 
-fi
+bld $1 ""
+shift
+for i in $* ; do
+  bld $i "--with-nrnpython-only"
+done
 
 ver="`sh ../nrn/nrnversion.sh 3`"
 n1=nrn"${ver}"setup-x86_64.exe
-n2=nrn-"`sh ../nrn/nrnversion.sh 2`".x86_64-w64-mingw32-setup.exe
+n2=nrn-"`sh ../nrn/nrnversion.sh 2`".w64-mingw-${PYVS}-setup.exe
 rm -f src/mswin/$n1
 make mswin
 
@@ -86,7 +75,7 @@ echo "scp src/mswin/$n1  hines@neuron.yale.edu:/home/htdocs/ftp/neuron/versions/
 
 h=hines@10.10.0.2
 scp src/mswin/$n1 $h:vmshared/$n2
-if false ; then
+if true ; then
 ssh $h scp vmshared/$n2 hines@neuron.yale.edu:/home/htdocs/ftp/neuron/versions/alpha/$n2
 fi
 
