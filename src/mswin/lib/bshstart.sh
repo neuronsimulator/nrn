@@ -43,7 +43,10 @@ if test "$PYTHONPATH" != "" ; then #convert dos (';' separated) to posix pathspe
 export PYTHONPATH=`echo "$PYTHONPATH" | sed -e 's,\([A-Za-z]\):,/\1,g' -e 's,\\\\,/,g' -e 's/;/:/g'`
 fi #PYTHONPATH
 
-source set_nrnpyenv.sh
+#source set_nrnpyenv.sh
+if python -c 'quit()' >& /dev/null ; then
+  eval "`nrnpyenv.sh`"
+fi
 export NEURONHOME=$N
 if test "$PYTHONPATH" = "" ; then
   export PYTHONPATH=$N/lib/python

@@ -16,6 +16,11 @@
 #export PYTHONPATH=...
 #export LD_LIBRARY_PATH=...
 #export PATH=...
+#export NRN_PYLIB=...
+ 
+#with NRN_PYLIB as a full path to the Python library,
+#it may not be necessary to change LD_LIBRARY_PATH
+
 
 
 #Some python installations, such as enthought canopy, do not have site
@@ -37,7 +42,7 @@ if test "$PYTHONHOME" != "" ; then
 fi
 
 PYTHON=python
-$PYTHON -c '
+$PYTHON << 'here'
 ###########################################
 
 import sys, os, site
@@ -61,6 +66,21 @@ def upath(path):
     plist[i] = p
   p = upathsep.join(plist)
   return p
+
+def nrnpylib_mswin():
+  import os, sys, re
+  e = '/'.join(sys.executable.split(os.path.sep))
+  cmd = 'cygcheck "%s"' % e
+  f = os.popen(cmd)
+  nrn_pylib = None
+  for line in f:
+    if re.search('ython..\.dll', line):
+      nrn_pylib = '/'.join(line.split(os.path.sep)).strip()
+  return nrn_pylib
+
+nrn_pylib = None
+if 'win' in sys.platform:
+  nrn_pylib = nrnpylib_mswin()
 
 #there is a question about whether to use sys.prefix for PYTHONHOME
 #or whether to derive from site.__file__.
@@ -130,8 +150,10 @@ if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
     print ("export LD_LIBRARY_PATH=" + dq + ldpath + upathsep + "$LD_LIBRARY_PATH" + dq)
   if path:
     print ("export PATH=" + dq + path + "$PATH" + dq)
+  if nrn_pylib != None:
+    print ('export NRN_PYLIB="%s"' % nrn_pylib)
 
 quit()
 
 ###################################
-'
+here
