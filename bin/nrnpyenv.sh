@@ -17,11 +17,9 @@
 #export LD_LIBRARY_PATH=...
 #export PATH=...
 #export NRN_PYLIB=...
- 
+
 #with NRN_PYLIB as a full path to the Python library,
 #it may not be necessary to change LD_LIBRARY_PATH
-
-
 
 #Some python installations, such as enthought canopy, do not have site
 #in a subfolder of prefix. In that case, the site folder defines home and
@@ -42,6 +40,9 @@ if test "$PYTHONHOME" != "" ; then
 fi
 
 PYTHON=python
+if test "$1" != "" ; then
+  PYTHON="$1"
+fi
 $PYTHON << 'here'
 ###########################################
 
@@ -78,9 +79,66 @@ def nrnpylib_mswin():
       nrn_pylib = '/'.join(line.split(os.path.sep)).strip()
   return nrn_pylib
 
+def nrnpylib_linux():
+  import os, sys, re, subprocess
+  #in case it was dynamically loaded by python
+  pid = os.getpid()
+  cmd = "lsof -p %d"%pid
+  f = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout
+  nrn_pylib = None
+  for bline in f:
+    fields = bline.decode().split()
+    if len(fields) > 8:
+      line = fields[8]
+      if re.search(r'libpython.*\.so', line):
+        print ("from lsof: %s" % line)
+        nrn_pylib = line.strip()
+        return nrn_pylib
+  else: # figure it out from the os path
+    p = os.path.sep.join(os.__file__.split(os.path.sep)[:-1])
+    name = "libpython%d.%d" % (sys.version_info[0], sys.version_info[1])
+    cmd = r'find %s -name %s\*.so' % (p, name)
+    print (cmd)
+    f = os.popen(cmd)
+    libs = []
+    for line in f:
+      libs.append(line.strip())
+    if len(libs) == 0: # try again searching the parent folder
+      p = os.path.sep.join(os.__file__.split(os.path.sep)[:-2])
+      cmd = r'find %s -name %s\*.so' % (p, name)
+      print (cmd)
+      f = os.popen(cmd)
+      for line in f:
+        libs.append(line.strip())
+    print (libs)
+    if len(libs) == 1:
+      return libs[0]
+    if len(libs) > 1:
+      # which one do we want? Check the name of an imported shared object
+      try:
+        import _ctypes
+      except:
+        import ctypes
+      for i in sys.modules.values():
+        try:
+          s = i.__file__
+          if s.endswith('.so'):
+            match = re.search(r'-%d%d([^-]*)-' % (sys.version_info[0], sys.version_info[1]), s)
+            if match:
+              name = name + match.group(1) + '.so'
+            break
+        except:
+          pass
+      for i in libs:
+        if name in i:
+          return i
+  return nrn_pylib
+
 nrn_pylib = None
 if 'win' in sys.platform:
   nrn_pylib = nrnpylib_mswin()
+if 'linux' in sys.platform:
+  nrn_pylib = nrnpylib_linux()
 
 #there is a question about whether to use sys.prefix for PYTHONHOME
 #or whether to derive from site.__file__.
