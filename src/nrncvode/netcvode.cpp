@@ -5874,7 +5874,11 @@ void VecRecordDt::frecord_init(TQItem* q) {
 void VecRecordDt::deliver(double tt, NetCvode* nc) {
 	int j = y_->capacity();
 	y_->resize_chunk(j + 1);
-	y_->elem(j) = tt;
+	if (pd_ == &t) {
+		y_->elem(j) = tt;
+	}else{
+		y_->elem(j) = *pd_;
+	}
 	e_->send(tt + dt_, nc, nrn_threads);
 }
 
