@@ -98,11 +98,15 @@ class Region(object):
         else:
             return self.__repr__()
 
-    
     def _do_init(self):
         global _region_count
-        
-        del self._allow_setting
+       
+        #_do_init can be called multiple times due to a change in geometry
+        if hasattr(self,'_allow_setting'):
+            #here are things that must only happen once
+            del self._allow_setting
+            self._id = _region_count
+            _region_count += 1
         
         from . import rxd
         
@@ -110,9 +114,8 @@ class Region(object):
         # TODO: remove need for this bit
         nrn_region = self.nrn_region
 
-
         # TODO: self.dx needs to be removed... eventually that should be on a per-section basis
-        #       right now, it has to be consistent but this is unenforced
+        #       right now, it has to be consistent but 2this is unenforced
         if self.dx is None:
             self.dx = 0.25
         dx = self.dx
@@ -138,8 +141,7 @@ class Region(object):
         if self._secs3d and not(hasattr(self._geometry, 'volumes3d')):
             raise RxDException('selected geometry (%r) does not support 3d mode' % self._geometry)
         
-        self._id = _region_count
-        _region_count += 1
+
         if self._secs3d:
             if nrn_region == 'o':
                 raise RxDException('3d simulations do not support nrn_region="o" yet')

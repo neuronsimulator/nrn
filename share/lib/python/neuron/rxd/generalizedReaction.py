@@ -112,12 +112,18 @@ class GeneralizedReaction(object):
         
     def _update_indices(self):
         # this is called anytime the geometry changes as well as at init
-        
+        from . import species 
         self._indices_dict = {}
+
+        sources = [r for r in self._sources if not isinstance(r(),species.SpeciesOnExtracellular)]
+        dests = [r for r in self._dests if not isinstance(r(),species.SpeciesOnExtracellular)]
+        
+        sources_ecs = [r for r in self._sources if isinstance(r(),species.SpeciesOnExtracellular)]
+        dests_ecs = [r for r in self._dests if isinstance(r(),species.SpeciesOnExtracellular)]
         
         # locate the regions containing all species (including the one that changes)
-        if all(sptr() for sptr in self._sources) and all(dptr() for dptr in self._dests):
-            active_regions = [r for r in self._regions if all(sptr().indices(r) for sptr in self._sources + self._dests)]
+        if all(sptr() for sptr in sources) and all(dptr() for dptr in dests):
+            active_regions = [r for r in self._regions if all(sptr().indices(r) for sptr in sources + dests)]
         else:
             active_regions = []
         for sptr in self._involved_species:
@@ -133,8 +139,8 @@ class GeneralizedReaction(object):
         for sptr in self._involved_species:
             s = sptr()
             self._indices_dict[s] = list(_itertools_chain.from_iterable(s.indices(r) for r in active_regions))
-        sources_indices = [list(_itertools_chain.from_iterable(sptr().indices(r) for r in active_regions)) for sptr in self._sources]
-        dests_indices = [list(_itertools_chain.from_iterable(dptr().indices(r) for r in active_regions)) for dptr in self._dests]
+        sources_indices = [list(_itertools_chain.from_iterable(sptr().indices(r) for r in active_regions)) for sptr in sources]
+        dests_indices = [list(_itertools_chain.from_iterable(dptr().indices(r) for r in active_regions)) for dptr in dests]
         self._indices = sources_indices + dests_indices
         volumes, surface_area, diffs = node._get_data()
         #self._mult = [list(-1. / volumes[sources_indices]) + list(1. / volumes[dests_indices])]
@@ -149,8 +155,7 @@ class GeneralizedReaction(object):
             self._mult = list(-1 for v in sources_indices) + list(1 for v in dests_indices)
         self._mult = _numpy_array(self._mult)
         self._update_jac_cache()
-
-
+        
     def _evaluate(self, states):
         """returns: (list of lists (lol) of increase indices, lol of decr indices, list of changes)"""
         args = self._get_args(states)

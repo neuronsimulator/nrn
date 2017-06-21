@@ -6,6 +6,28 @@
 typedef void (*fptr)(void);
 
 typedef struct {
+    PyObject_HEAD
+	struct OcPtrVector (*newOcPtrVector)();
+	void (*deleteOcPtrVector)();
+	int (*size)(int);
+	void (*resize)();
+	void (*pset)(int, double*);
+	double (*getval)(int);
+	void (*setval)(int,double);
+	void (*scatter)(double*,int);
+	void (*gather)(double*, int);
+	void (*ptr_update_cmd)(void*);
+	void (*ptr_update)();
+	void* update_cmd_;
+	int size_;
+	double ** pd_;
+} OcPtrVector;		
+/*
+		OcPtrVector* newOcPtrVector();
+		} ;
+*/
+
+typedef struct {
 	Reaction* reaction;
 	int idx;
 } ReactSet;

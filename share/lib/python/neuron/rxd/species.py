@@ -46,6 +46,7 @@ _set_grid_currents = dll.set_grid_currents
 _set_grid_currents.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.py_object, ctypes.py_object, ctypes.py_object]
 
 
+
 # The difference here is that defined species only exists after rxd initialization
 _all_species = []
 _defined_species = {}
@@ -172,7 +173,7 @@ class _SpeciesMathable(object):
             _diffs[self.indices()] = value
             rxd._setup_matrices()
 
-class SpeciesOnExtracellular:
+class SpeciesOnExtracellular(_SpeciesMathable):
     def __init__(self, species, extracellular):
         """The restriction of a Species to a Region."""
         self._species = weakref.ref(species)
@@ -479,6 +480,7 @@ class _ExtracellularSpecies(rxdmath._Arithmeticed):
                 if i is not None:
                     neuron_pointers.append(seg.__getattribute__(ispecies))
                     scale_factors.append(float(scale_factor * surface_area))
+        #TODO: MultiCompartment reactions ?
         _set_grid_currents(grid_list, self._grid_id, grid_indices, neuron_pointers, scale_factors)
 
 
@@ -561,6 +563,7 @@ class Species(_SpeciesMathable):
         self._do_init3()
         self._do_init4()
         self._do_init5()
+        self._do_init6()
         
     def _do_init1(self):
         import rxd
@@ -573,7 +576,7 @@ class Species(_SpeciesMathable):
         self._real_name = self._name
         initial = self.initial
         charge = self._charge
-        
+
         # invalidate any old initialization of external solvers
         rxd._external_solver_initialized = False
         
@@ -659,7 +662,8 @@ class Species(_SpeciesMathable):
 
     def _do_init4(self):
         self._extracellular_instances = [_ExtracellularSpecies(r, d=self._d, name=self.name, charge=self.charge, initial=self.initial) for r in self._extracellular_regions]
-
+    
+    def _do_init5(self):
         # final initialization
         for sec in self._secs:
             # NOTE: can only init_diffusion_rates after the roots (parents)
@@ -667,7 +671,7 @@ class Species(_SpeciesMathable):
             sec._init_diffusion_rates()
         self._update_region_indices()
 
-    def _do_init5(self):
+    def _do_init6(self):
         self._register_cptrs()
 
 
@@ -995,6 +999,7 @@ class Species(_SpeciesMathable):
         """A NodeList of all the nodes corresponding to the species.
         
         This can then be further restricted using the callable property of NodeList objects."""
+
         initializer._do_init()
         
         # The first part here is for the 1D -- which doesn't keep live node objects -- the second part is for 3D

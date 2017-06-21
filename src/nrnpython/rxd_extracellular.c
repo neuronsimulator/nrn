@@ -21,6 +21,8 @@ ReactGridData* threaded_reactions_tasks;
 
 extern int NUM_THREADS;
 
+extern double* states;
+
 Reaction* ecs_reactions = NULL;
 
 static int states_cvode_offset;
@@ -283,12 +285,12 @@ void* ecs_do_reactions(void* dataptr)
 						states_cache_dx[j] = react->species_states[j][i];
 					}
 
-					react->reaction(states_cache,results_array);
+					react->reaction(states_cache, results_array, NULL);
 
 					for(j = 0; j < react->num_species_involved; j++)
 					{
 						states_cache_dx[j] += dx;
-						react->reaction(states_cache_dx,results_array_dx);
+						react->reaction(states_cache_dx, results_array_dx, NULL);
 						v_set_val(b, j, dt*results_array[j]);
 
 						for(k = 0; k < react->num_species_involved; k++)

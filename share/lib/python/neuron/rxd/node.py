@@ -1,11 +1,12 @@
 import neuron
-from neuron import h, nrn, hoc
+from neuron import h, nrn, hoc, nrn_dll_sym
 import region
 import rxdsection
 import numpy
 import weakref
 from .rxdException import RxDException
 import warnings
+import ctypes
 
 # data storage
 _volumes = numpy.array([])
