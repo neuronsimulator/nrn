@@ -69,6 +69,8 @@ libdirs = [destdir + "@NRN_LIBDIR@",
 ]
 epre='-Wl,-R'
 
+@MAC_DARWIN_FALSE@readline="readline"
+@MAC_DARWIN_TRUE@readline="edit"
 
 
 hoc_module = Extension(
@@ -84,7 +86,7 @@ hoc_module = Extension(
 	"meschach", "neuron_gnu",
 	@BUILD_NRNMPI_DYNAMIC_FALSE@"nrnmpi",
         "scopmath", "sparse13", "sundials",
-	"readline",
+	readline,
 	"@IVHINES@",
       ],
       include_dirs = include_dirs,

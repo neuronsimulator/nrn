@@ -43,6 +43,21 @@ PYTHON=python
 if test "$1" != "" ; then
   PYTHON="$1"
 fi
+
+# what is the python library for Darwin
+z=`uname`
+if test "$z" = "Darwin" ; then
+  DYLD_PRINT_LIBRARIES=1
+  export DYLD_PRINT_LIBRARIES
+  z=`$PYTHON -c 'quit()' 2>&1 | sed -n 's/^dyld: loaded: //p' | sed -n /libpython/p`
+  if test "$z" = "" ; then
+    z=`$PYTHON -c 'quit()' 2>&1 | sed -n 's/^dyld: loaded: //p' | sed -n 2p`
+  fi
+  unset DYLD_PRINT_LIBRARIES  
+  PYLIB_DARWIN=$z
+  export PYLIB_DARWIN
+fi
+
 $PYTHON << 'here'
 ###########################################
 
@@ -68,6 +83,11 @@ def upath(path):
   p = upathsep.join(plist)
   return p
 
+def nrnpylib_darwin():
+  import os
+  nrn_pylib = os.getenv("PYLIB_DARWIN")
+  return nrn_pylib
+  
 def nrnpylib_mswin():
   import os, sys, re
   e = '/'.join(sys.executable.split(os.path.sep))
@@ -98,7 +118,7 @@ def nrnpylib_linux():
     p = os.path.sep.join(os.__file__.split(os.path.sep)[:-1])
     name = "libpython%d.%d" % (sys.version_info[0], sys.version_info[1])
     cmd = r'find %s -name %s\*.so' % (p, name)
-    print (cmd)
+    print ('# %s'%cmd)
     f = os.popen(cmd)
     libs = []
     for line in f:
@@ -106,11 +126,11 @@ def nrnpylib_linux():
     if len(libs) == 0: # try again searching the parent folder
       p = os.path.sep.join(os.__file__.split(os.path.sep)[:-2])
       cmd = r'find %s -name %s\*.so' % (p, name)
-      print (cmd)
+      print ('# %s'%cmd)
       f = os.popen(cmd)
       for line in f:
         libs.append(line.strip())
-    print (libs)
+    print ('# %s'%str(libs))
     if len(libs) == 1:
       return libs[0]
     if len(libs) > 1:
@@ -135,9 +155,11 @@ def nrnpylib_linux():
   return nrn_pylib
 
 nrn_pylib = None
-if 'win' in sys.platform:
+if 'darwin' in sys.platform:
+  nrn_pylib = nrnpylib_darwin()
+elif 'win' in sys.platform:
   nrn_pylib = nrnpylib_mswin()
-if 'linux' in sys.platform:
+elif 'linux' in sys.platform:
   nrn_pylib = nrnpylib_linux()
 
 #there is a question about whether to use sys.prefix for PYTHONHOME
@@ -200,11 +222,13 @@ if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
     pass
 
   dq = "\""
+  if pythonpath:
+    print ("\n# if launch python, then need:")
+    print ("export PYTHONPATH=" + dq + pythonpath + dq)
+  print ("\n# if launch nrniv, then likely need:")
   if pythonhome:
     print ("export PYTHONHOME=" + dq + pythonhome + dq)
-  if pythonpath:
-    print ("export PYTHONPATH=" + dq + pythonpath + dq)
-  if ldpath:
+  if ldpath and nrn_pylib == None:
     print ("export LD_LIBRARY_PATH=" + dq + ldpath + upathsep + "$LD_LIBRARY_PATH" + dq)
   if path:
     print ("export PATH=" + dq + path + "$PATH" + dq)
