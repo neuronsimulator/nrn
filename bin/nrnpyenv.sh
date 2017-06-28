@@ -45,7 +45,10 @@ if test "$1" != "" ; then
 fi
 
 # what is the python library for Darwin
-z=`uname`
+z=''
+if type -P uname > /dev/null ; then
+  z=`uname`
+fi
 if test "$z" = "Darwin" ; then
   DYLD_PRINT_LIBRARIES=1
   export DYLD_PRINT_LIBRARIES

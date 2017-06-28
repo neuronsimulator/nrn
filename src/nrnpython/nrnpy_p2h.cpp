@@ -23,6 +23,10 @@ extern int hoc_ipop();
 PyObject* nrnpy_hoc2pyobject(Object*);
 Object* nrnpy_pyobject_in_obj(PyObject*);
 int nrnpy_ho_eq_po(Object*, PyObject*);
+extern void* (*nrnpy_save_thread)();
+extern void (*nrnpy_restore_thread)(void*);
+static void* save_thread() { return PyEval_SaveThread(); }
+static void restore_thread(void* g) {PyEval_RestoreThread((PyThreadState*)g); }
 extern Symbol* nrnpy_pyobj_sym_;
 extern void (*nrnpy_py2n_component)(Object*, Symbol*, int, int);
 extern void (*nrnpy_hpoasgn)(Object*, int);
@@ -131,6 +135,8 @@ void nrnpython_reg_real() {
   nrnpy_callpicklef = call_picklef;
   nrnpympi_alltoall = py_alltoall;
   nrnpy_pysame = pysame;
+  nrnpy_save_thread = save_thread;
+  nrnpy_restore_thread = restore_thread;
   dlist = hoc_l_newlist();
 #if NRNPYTHON_DYNAMICLOAD
   nrnpy_site_problem_p = &nrnpy_site_problem;

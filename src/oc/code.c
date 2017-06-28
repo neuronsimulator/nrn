@@ -2359,9 +2359,9 @@ void print(void) /* pop top value from stack, print it */
 	}else
 #endif
 	{
-	NOT_PARALLEL_SUB(Fprintf(stdout, "\t");)
+	nrnpy_pr("\t");
 	prexpr();
-	NOT_PARALLEL_SUB(Fprintf(stdout, "\n");)
+	nrnpy_pr("\n");
 	}
 }
 
