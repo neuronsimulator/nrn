@@ -155,7 +155,7 @@ rl_add_funmap_entry (name, function)
 static int funmap_initialized = 0;
 
 /* Make the funmap contain all of the default entries. */
-rl_initialize_funmap ()
+void rl_initialize_funmap ()
 {
   register int i;
 
