@@ -61,10 +61,9 @@ int nrn_feenableexcept() {
 }
 #endif
 
-int main1(int argc, const char* argv[], char** env);
-void nrn_init_and_load_data(int argc, const char* argv[], bool run_setup_cleanup=true);
+int main1(int argc, char* argv[], char** env);
 void call_prcellstate_for_prcellgid(int prcellgid, int compute_gpu, int is_init);
-void nrn_init_and_load_data(int argc, char** argv, bool run_setup_cleanup) {
+void nrn_init_and_load_data(int argc, char* argv[], bool run_setup_cleanup=true) {
 #if defined(NRN_FEEXCEPT)
     nrn_feenableexcept();
 #endif
@@ -257,7 +256,7 @@ int main1(int argc, char** argv, char** env) {
             } else {
                 r = new ReportGenerator(nrnopt_get_int("--report"), nrnopt_get_int("--tstart"),
                                         nrnopt_get_dbl("--tstop"), nrnopt_get_int("--dt"), nrnopt_get_dbl("--mindelay"),
-                                        nrnopt_get_dbl("--dt_report"), nrnopt_get_str("--outpath");
+                                        nrnopt_get_dbl("--dt_report"), nrnopt_get_str("--outpath"));
                 r->register_report();
             }
 #else

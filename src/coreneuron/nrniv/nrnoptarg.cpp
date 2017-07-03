@@ -31,13 +31,32 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include "coreneuron/nrnmpi/nrnmpi.h"
 #include "coreneuron/nrniv/nrnoptarg.h"
-#include "coreneuron/utils/ezOptionParser.hpp"
+#include "coreneuron/utils/ezoption/ezOptionParser.hpp"
 
-static struct param_int {
+struct param_int {
     const char* names; /* space separated (includes - or --) */
     int dflt, low, high;
     const char* usage;
-} param_int_args[] = {
+};
+
+struct param_dbl {
+    const char* names; /* space separated (includes - or --) */
+    double dflt, low, high;
+    const char* usage;
+};
+
+struct param_flag {
+    const char* names; /* space separated (includes - or --) */
+    const char* usage;
+};
+
+struct param_str {
+    const char* names; /* space separated (includes - or --) */
+    const char* dflt;
+    const char* usage;
+};
+
+static param_int param_int_args[] = {
     {"--spikebuf -b", 100000, 1, 2000000000, "Spike buffer size. (100000)"},
     {"--spkcompress", 0, 0, 100000, "Spike compression. Up to ARG are exchanged during MPI_Allgather. (0)"},
     {"--prcellgid -g", -1, -1, 2000000000, "Output prcellstate information for the gid NUMBER."},
@@ -54,16 +73,12 @@ static struct param_int {
      "Number of extra random connections in each thread to other duplicate models (int)."},
     {NULL, 0, 0, 0, NULL}};
 
-static struct param_dbl {
-    const char* names; /* space separated (includes - or --) */
-    double dflt, low, high;
-    const char* usage;
-} param_dbl_args[] = {
+static param_dbl param_dbl_args[] = {
     {"--tstart -s", 0., -1e9, 1e9, "Start time (ms). (0)"},
     {"--tstop -e", 100.0, 0.0, 1e9, "Stop time (ms). (100)"},
     {"--dt -dt", -1000., -1000., 1e9, "Fixed time step. The default value is set by defaults.dat or is 0.025."},
     {"--dt_io -i", 0.1, 1e-9, 1e9, "Dt of I/O. (0.1)"},
-    {"--voltage -v", -65.0, 1e-9, 1e9,
+    {"--voltage -v", -65.0, -1e9, 1e9,
      "Initial voltage used for nrn_finitialize(1, v_init). If 1000, then nrn_finitialize(0,...). (-65.)"},
     {"--celsius -l", -1000., -1000., 1000.,
      "Temperature in degC. The default value is set in defaults.dat or else is 34.0."},
@@ -73,10 +88,7 @@ static struct param_dbl {
      "Maximum integration interval (likely reduced by minimum NetCon delay). (10)"},
     {NULL, 0., 0., 0., NULL}};
 
-static struct param_flag {
-    const char* names; /* space separated (includes - or --) */
-    const char* usage;
-} param_flag_args[] = {
+static param_flag param_flag_args[] = {
     {"--help -h", "Print a usage message briefly summarizing these command-line options, then exit."},
     {"--threading -c", "Parallel threads. The default is serial threads."},
     {"--gpu -gpu", "Enable use of GPUs. The default implies cpu only run."},
@@ -86,11 +98,7 @@ static struct param_flag {
     {"--binqueue", "Use bin queue."},
     {NULL, NULL}};
 
-static struct param_str {
-    const char* names; /* space separated (includes - or --) */
-    const char* dflt;
-    const char* usage;
-} param_str_args[] = {
+static param_str param_str_args[] = {
     {"--pattern -p", "", "Apply patternstim using the specified spike file."},
     {"--datpath -d", ".", "Path containing CoreNeuron data files. (.)"},
     {"--filesdat -f", "files.dat", "Name for the distribution file. (files.dat)"},

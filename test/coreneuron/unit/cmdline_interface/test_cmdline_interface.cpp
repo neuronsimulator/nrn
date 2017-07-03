@@ -26,7 +26,6 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
 #define BOOST_TEST_MODULE cmdline_interface
 #define BOOST_TEST_MAIN
 
@@ -34,52 +33,170 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "nrniv/nrnoptarg.h"
 #include <float.h>
 
-BOOST_AUTO_TEST_CASE(cmdline_interface)
-{
-  cn_input_params input_params;
-  int argc = 18;
-  char ** argv = new char*[argc];
-  argv[0] = (char*)"executable";
-  argv[1] = (char*)"--tstart=0.001";
-  argv[2] = (char*)"--tstop=0.1";
-  argv[3] = (char*)"--dt=0.02";
-  argv[4] = (char*)"--dt_io=0.2";
-  argv[5] = (char*)"--celsius=25.12";
-  argv[6] = (char*)"--pattern=filespike.dat";
-  argv[7] = (char*)"--spikebuf=100";
-  argv[8] = (char*)"--prcellgid=12";
-  argv[9] = (char*)"--threading";
-  argv[10] = (char*)"--datpath=/this/is/the/path";
-  argv[11] = (char*)"--filesdat=/this/is/the/path";
-  argv[12] = (char*)"--outpath=/this/is/the/path";
-  argv[13] = (char*)"--forwardskip=0.02";
-  argv[14] = (char*)"--multiple=3";
-  argv[15] = (char*)"--extracon=10";
-  argv[16] = (char*)"--dt_report=0.25";
-  argv[17] = (char*)"--report=2";
+BOOST_AUTO_TEST_CASE(cmdline_interface) {
 
-  input_params.read_cb_opts(argc,argv);
+    const char* argv[] = {
 
-  BOOST_CHECK_CLOSE(input_params.tstart,0.001,DBL_EPSILON);
-  BOOST_CHECK_CLOSE(input_params.tstop,0.1, DBL_EPSILON);
-  BOOST_CHECK_CLOSE(input_params.dt,0.02, DBL_EPSILON);
-  BOOST_CHECK_CLOSE(input_params.dt_io,0.2, DBL_EPSILON);
-  BOOST_CHECK_CLOSE(input_params.celsius,25.12, DBL_EPSILON);
-  BOOST_CHECK(input_params.prcellgid==12);
-  BOOST_CHECK_CLOSE(input_params.forwardskip,0.02, DBL_EPSILON);
-  BOOST_CHECK(!strcmp(input_params.outpath,(char*)"/this/is/the/path"));
-  BOOST_CHECK(!strcmp(input_params.datpath,(char*)"/this/is/the/path"));
-  BOOST_CHECK(input_params.threading==1);
-  BOOST_CHECK(!strcmp(input_params.patternstim,(char*)"filespike.dat"));
-  BOOST_CHECK(!strcmp(input_params.filesdat,(char*)"/this/is/the/path"));
-  BOOST_CHECK(input_params.spikebuf==100);
-  BOOST_CHECK(!strcmp(input_params.outpath,(char*)"/this/is/the/path"));
-  BOOST_CHECK_CLOSE(input_params.forwardskip,0.02,DBL_EPSILON);
-  BOOST_CHECK(input_params.multiple==3);
-  BOOST_CHECK(input_params.extracon==10);
-  BOOST_CHECK_CLOSE(input_params.dt_report,0.25,DBL_EPSILON);
-  BOOST_CHECK(input_params.report==2);
+        "coreneuron_exec",
 
-  delete [] argv;
+        "--spikebuf",
+        "100",
+
+        "--threading",
+
+        "--datpath",
+        "/this/is/the/data/path",
+
+        "--dt",
+        "0.02",
+
+        "--tstop",
+        "0.1",
+
+        "--filesdat",
+        "/this/is/the/file/path",
+
+        "--prcellgid",
+        "12",
+
+        "--gpu",
+
+        "--dt_io",
+        "0.2",
+
+        "--forwardskip",
+        "0.02",
+
+        "--celsius",
+        "25.12",
+
+        "-mpi",
+
+        "--outpath",
+        "/this/is/the/output/path",
+
+        "--pattern",
+        "filespike.dat",
+
+        "--report",
+        "2",
+
+        "--cell-permute",
+        "2",
+
+        "--tstart",
+        "0.001",
+
+        "--voltage",
+        "-32",
+
+        "--dt_report",
+        "0.25",
+
+        "--nwarp",
+        "8",
+
+        "--extracon",
+        "1000",
+
+        "--multiple",
+        "3",
+
+        "--binqueue",
+
+        "--mindelay",
+        "0.1",
+
+        "--ms-phases",
+        "1",
+
+        "--ms-subintervals",
+        "2",
+
+        "--spkcompress",
+        "32",
+
+        "--multisend"};
+
+    int argc = 0;
+
+    for (; strcmp(argv[argc], "--multisend"); argc++)
+        ;
+
+    argc++;
+
+    nrnopt_parse(argc, argv);
+
+    BOOST_CHECK(nrnopt_get_int("--spikebuf") == 100);
+
+    BOOST_CHECK(nrnopt_get_flag("--threading") == true);
+
+    BOOST_CHECK(!strcmp(nrnopt_get_str("--datpath").c_str(), "/this/is/the/data/path"));
+
+    BOOST_CHECK(nrnopt_get_dbl("--dt") == 0.02);
+
+    BOOST_CHECK(nrnopt_get_dbl("--tstop") == 0.1);
+
+    BOOST_CHECK(!strcmp(nrnopt_get_str("--filesdat").c_str(), "/this/is/the/file/path"));
+
+    BOOST_CHECK(nrnopt_get_int("--prcellgid") == 12);
+
+    BOOST_CHECK(nrnopt_get_flag("--gpu") == true);
+
+    BOOST_CHECK(nrnopt_get_dbl("--dt_io") == 0.2);
+
+    BOOST_CHECK(nrnopt_get_dbl("--forwardskip") == 0.02);
+
+    BOOST_CHECK(nrnopt_get_dbl("--celsius") == 25.12);
+
+    BOOST_CHECK(nrnopt_get_flag("-mpi") == true);
+
+    BOOST_CHECK(!strcmp(nrnopt_get_str("--outpath").c_str(), "/this/is/the/output/path"));
+
+    BOOST_CHECK(!strcmp(nrnopt_get_str("--pattern").c_str(), "filespike.dat"));
+
+    BOOST_CHECK(nrnopt_get_int("--report") == 2);
+
+    BOOST_CHECK(nrnopt_get_int("--cell-permute") == 2);
+
+    BOOST_CHECK(nrnopt_get_dbl("--tstart") == 0.001);
+
+    BOOST_CHECK(nrnopt_get_dbl("--voltage") == -32);
+
+    BOOST_CHECK(nrnopt_get_dbl("--dt_report") == 0.25);
+
+    BOOST_CHECK(nrnopt_get_int("--nwarp") == 8);
+
+    BOOST_CHECK(nrnopt_get_int("--extracon") == 1000);
+
+    BOOST_CHECK(nrnopt_get_int("--multiple") == 3);
+
+    BOOST_CHECK(nrnopt_get_flag("--binqueue") == true);
+
+    BOOST_CHECK(nrnopt_get_dbl("--mindelay") == 0.1);
+
+    BOOST_CHECK(nrnopt_get_int("--ms-phases") == 1);
+
+    BOOST_CHECK(nrnopt_get_int("--ms-subintervals") == 2);
+
+    BOOST_CHECK(nrnopt_get_int("--spkcompress") == 32);
+
+    BOOST_CHECK(nrnopt_get_flag("--multisend") == true);
+
+
+    // check if nrnopt_modify_dbl works properly
+    nrnopt_modify_dbl("--dt", 18.1);
+    BOOST_CHECK(nrnopt_get_dbl("--dt") == 18.1);
+
+    // check if default flags are false
+    const char* argv_empty[] = {"coreneuron_exec"};
+    argc = 1;
+
+    nrnopt_parse(argc, argv_empty);
+
+    BOOST_CHECK(nrnopt_get_flag("--threading") == false);
+    BOOST_CHECK(nrnopt_get_flag("--gpu") == false);
+    BOOST_CHECK(nrnopt_get_flag("-mpi") == false);
+    BOOST_CHECK(nrnopt_get_flag("--binqueue") == false);
+    BOOST_CHECK(nrnopt_get_flag("--multisend") == false);
 }
-

@@ -603,8 +603,10 @@ void nrn_setup(const char* filesdat, int byte_swap, bool run_setup_cleanup) {
 
     data_reader* file_reader = new data_reader[ngroup];
 
+    std::string datapath = nrnopt_get_str("--datpath");
+
     /* nrn_multithread_job supports serial, pthread, and openmp. */
-    store_phase_args(ngroup, gidgroups, imult, file_reader, nrnopt_get_str("--datpath").c_str(), byte_swap);
+    store_phase_args(ngroup, gidgroups, imult, file_reader, datapath.c_str(), byte_swap);
 
     // gap junctions
     if (nrn_have_gaps) {

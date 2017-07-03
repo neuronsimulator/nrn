@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <math.h>
+#include "coreneuron/utils/randoms/nrnran123.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/nrniv/multisend.h"
 #include "coreneuron/nrnmpi/nrnmpidec.h"
@@ -214,7 +215,6 @@ void TarList::alloc() {
 
 // for two phase
 
-#include <coreneuron/utils/randoms/nrnran123.h>
 static nrnran123_State* ranstate;
 
 static void random_init(int i) {
