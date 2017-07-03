@@ -556,10 +556,22 @@ ENDGUI
 #endif
 	return 0.;
 }
+#if defined(MINGW)
+static void pwman_iconify1(void* v) {
+	((PrintableWindow*)v)->dismiss();
+}
+#endif
+
 static double pwman_iconify(void* v) {
 #if HAVE_IV
 IFGUI
 	PrintableWindow* pw = PrintableWindow::leader();
+#if defined(MINGW)
+	if (!nrn_is_gui_thread()) {
+		nrn_gui_exec(pwman_iconify1, pw);
+		return 0.;
+	}
+#endif
 	pw->dismiss();
 ENDGUI
 #endif
@@ -690,11 +702,25 @@ ENDGUI
 	return -1;
 }
 
+#if defined(MINGW)
+static double scale_;
+static void pwman_scale1(void*) {
+	iv_display_scale(scale_);
+}
+#endif
+
 static double pwman_scale(void*) {
 	double scale = chkarg(1, .01, 100);
 #if HAVE_IV
 IFGUI
 #if defined(WIN32)
+#if defined(MINGW)
+	if (!nrn_is_gui_thread()) {
+		scale_ = scale;
+		nrn_gui_exec(pwman_scale1, (void*)((intptr_t)1));
+		return scale;
+	}
+#endif
 	iv_display_scale(scale);
 #endif
 ENDGUI

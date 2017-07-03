@@ -81,15 +81,44 @@ void Oc::cleanup() {
 	}
 }
 
+#if defined(MINGW)
+static void hidewindow(void* v) {
+	HWND w = (HWND)v;
+	ShowWindow(w, SW_HIDE);
+}
+
+static int gui_thread_xmove_x;
+static int gui_thread_xmove_y;
+void gui_thread_xmove(void* v) {
+	PrintableWindow* w = (PrintableWindow*)v;
+	w->xmove(gui_thread_xmove_x, gui_thread_xmove_y);
+}
+
+#endif
+
 void PrintableWindow::hide() {
 	if (is_mapped()) {
 		HWND hwnd = Window::rep()->msWindow();
 //printf("hide %p\n", this);
-      ShowWindow(hwnd, SW_HIDE);
+#if defined(MINGW)
+		if (!nrn_is_gui_thread()) {
+			nrn_gui_exec(hidewindow, hwnd);
+			return;
+		}
+#endif
+		ShowWindow(hwnd, SW_HIDE);
 	}
 }
 
 void PrintableWindow::xmove(int x, int y) {
+#if defined(MINGW)
+	if (!nrn_is_gui_thread()) {
+		gui_thread_xmove_x = x;
+		gui_thread_xmove_y = y;
+		nrn_gui_exec(gui_thread_xmove, this);
+		return;
+	}
+#endif
 	HWND hwnd = Window::rep()->msWindow();
 	//int width = canvas()->pwidth();
 	//int height = canvas()->pheight();
@@ -191,53 +220,57 @@ int stdin_event_ready() {
 extern "C" {
 static int bind_tid_;
 void nrniv_bind_thread(void);
-extern int (*iv_bind_enqueue_)(void* w, int type);
+extern int (*iv_bind_enqueue_)(void(*)(void*), void* w);
 extern void iv_bind_call(void* w, int type);
+extern void nrnpy_setwindowtext(void*);
 
 extern void* (*nrnpy_save_thread)();
 extern void (*nrnpy_restore_thread)(void*);
 
 static void* w_;
-static int type_;
+static void (*nrn_gui_exec_)(void*);
+
 static pthread_mutex_t* mut_;
 static pthread_cond_t* cond_;
 
-int nrn_is_gui_thread() {
+bool nrn_is_gui_thread() {
 	if (cond_ && GetCurrentThreadId() != bind_tid_) {
-		return 0;
+		return false;
 	}
-	return 1;
+	return true;
 }
 
-static int iv_bind_enqueue(void* w, int type) {
+int iv_bind_enqueue(void(*cb)(void*), void* w) {
 	//printf("iv_bind_enqueue %p thread %d\n", w, GetCurrentThreadId());
 	if (GetCurrentThreadId() == bind_tid_) {
 		return 0;
 	}
+	nrn_gui_exec(cb, w);
+	return 1;
+}
+
+void nrn_gui_exec(void (*cb)(void*), void* v) {
+	assert(GetCurrentThreadId() != bind_tid_);
 	// wait for the gui thread to handle the operation
 	void* gs = (*nrnpy_save_thread)();
 	pthread_mutex_lock(mut_);
-	w_ = w;
-	type_ = type;
+	w_ = v;
+	nrn_gui_exec_ = cb;
 	while (w_) {
 		pthread_cond_wait(cond_, mut_);
 	}
 	pthread_mutex_unlock(mut_);
 	(*nrnpy_restore_thread)(gs);
-	return 1;
 }
 
 void nrniv_bind_call() {
 	if (!cond_) { return; }
 	void* w;
-	int type;
 	pthread_mutex_lock(mut_);
 	w = w_;
-	type = type_;
-	if (w) {
+	if (w_) {
 		w_ = NULL;
-		type_ = 0;
-		iv_bind_call(w, type);
+		(*nrn_gui_exec_)(w);
 		pthread_cond_signal(cond_);
 	}
 	pthread_mutex_unlock(mut_);
@@ -253,7 +286,6 @@ IFGUI
 	pthread_cond_init(cond_, NULL);
 	pthread_mutex_init(mut_, NULL);
 	w_ = NULL;
-	type_ = 0;
 ENDGUI
         hoc_pushx(1.);
         hoc_ret();

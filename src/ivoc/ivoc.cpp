@@ -451,7 +451,6 @@ void single_event_run() {
 #ifdef MINGW
 extern "C" {
 extern void nrniv_bind_call(void);
-extern int nrn_is_gui_thread(void);
 }
 #endif
 
