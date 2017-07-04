@@ -146,7 +146,7 @@ static NrnMappingInfo mapinfo;
 
 // to avoid incompatible dataset between neuron and coreneuron
 // add version string to the dataset files
-static const char *bbcore_write_version = "1.0";
+const char *bbcore_write_version = "1.0";
 
 // accessible from ParallelContext.total_bytes()
 size_t nrnbbcore_write() {
