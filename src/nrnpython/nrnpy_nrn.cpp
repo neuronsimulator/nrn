@@ -1062,7 +1062,7 @@ static int section_setattro(NPySecObj* self, PyObject* pyname,
     if (PyArg_Parse(value, "i", &nseg) == 1 && nseg > 0 && nseg <= 32767) {
       nrn_change_nseg(self->sec_, nseg);
     } else {
-      PyErr_SetString(PyExc_ValueError, "nseg must be in range 1 to 32767");
+      PyErr_SetString(PyExc_ValueError, "nseg must be an integer in range 1 to 32767");
       err = -1;
     }
     // printf("section_setattro err=%d nseg=%d nnode\n", err, nseg,
