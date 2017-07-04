@@ -144,6 +144,10 @@ PVoid2Int* artdata2index_;
 /** mapping information */
 static NrnMappingInfo mapinfo;
 
+// to avoid incompatible dataset between neuron and coreneuron
+// add version string to the dataset files
+static const char *bbcore_write_version = "1.0";
+
 // accessible from ParallelContext.total_bytes()
 size_t nrnbbcore_write() {
   if (!use_cachevec) {
@@ -797,6 +801,7 @@ static void write_memb_mech_types(const char* fname) {
   if (!f) {
     hoc_execerror("nrnbbcore_write write_mem_mech_types could not open for writing: %s\n", fname);
   }
+  fprintf(f, "%s\n", bbcore_write_version);
   fprintf(f, "%d\n", n_memb_func);
   for (int type=2; type < n_memb_func; ++type) {
     Memb_func& mf = memb_func[type];
@@ -831,6 +836,7 @@ static void write_globals(const char* fname) {
     hoc_execerror("nrnbbcore_write write_globals could not open for writing: %s\n", fname);
   }
 
+  fprintf(f, "%s\n", bbcore_write_version);
   for (Symbol* sp = hoc_built_in_symlist->first; sp; sp = sp->next) {
     if (sp->type == VAR && sp->subtype == USERDOUBLE) {
       if (ISARRAY(sp)) {
@@ -949,6 +955,7 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
   if (!f) {
     hoc_execerror("nrnbbcore_write write_nrnthread could not open for writing:", fname);
   }
+  fprintf(f, "%s\n", bbcore_write_version);
   fprintf(f, "%d npresyn\n", cg.n_presyn);
   fprintf(f, "%d nnetcon\n", cg.n_netcon);
   writeint(cg.output_gid, cg.n_presyn);
@@ -961,6 +968,7 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     hoc_execerror("nrnbbcore_write write_nrnthread could not open for writing:", fname);
   }
 
+  fprintf(f, "%s\n", bbcore_write_version);
   NrnThreadMembList* tml;
   // sizes and data offset
   int* ml_data_offset = new int[n_memb_func];
@@ -1205,6 +1213,7 @@ void write_nrnthread_task(const char* path, CellGroup* cgs)
     if (!fp) {
       hoc_execerror("nrnbbcore_write write_nrnthread_task could not open for writing:", fname);
     }
+    fprintf(fp, "%s\n", bbcore_write_version);
     // temporary? expedient to notify coreneuron that this model involves
     // gap junctions
     if (nrnthread_v_transfer_) {
@@ -1352,6 +1361,8 @@ void nrn_write_mapping_info(const char *path, int gid, NrnMappingInfo &minfo) {
     if (!f) {
         hoc_execerror("nrnbbcore_write could not open for writing:", fname.c_str());
     }
+
+    fprintf(f, "%s\n", bbcore_write_version);
 
     /** number of gids in NrnThread */
     fprintf(f, "%zd\n", minfo.size());
