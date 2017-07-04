@@ -40,6 +40,7 @@ int v_structure_change;
 int diam_changed;
 #define MAXERRCOUNT 5
 int hoc_errno_count;
+const char* bbcore_write_version = "1.0";
 
 char* pnt_name(Point_process* pnt) {
     return memb_func[pnt->_type].sym;
@@ -149,4 +150,19 @@ double hoc_Exp(double x) {
         return exp(700.);
     }
     return exp(x);
+}
+
+/* check for version bbcore_write version between NEURON and CoreNEURON
+ * abort in case of missmatch
+ */
+void check_bbcore_write_version(const char* version) {
+    extern int nrnmpi_myid;
+
+    if (strcmp(version, bbcore_write_version) != 0) {
+        if (nrnmpi_myid == 0)
+            fprintf(stderr,
+                    "Error: Incompatible binary input dataset version (expected %s, input %s)\n",
+                    bbcore_write_version, version);
+        abort();
+    }
 }

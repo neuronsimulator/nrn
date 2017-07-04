@@ -48,6 +48,9 @@ void set_globals(const char* path) {
     double val;
     int n;
 
+    fscanf(f, "%s\n", line);
+    check_bbcore_write_version(line);
+
     for (;;) {
         nrn_assert(fgets(line, 256, f) != NULL);
         N2V::iterator it;

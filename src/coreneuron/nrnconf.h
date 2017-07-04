@@ -62,6 +62,7 @@ extern double t, dt;
 extern int rev_dt;
 extern int secondorder;
 extern int stoprun;
+extern const char *bbcore_write_version;
 #define tstopbit (1 << 15)
 #define tstopset stoprun |= tstopbit
 #define tstopunset stoprun &= (~tstopbit)
@@ -79,6 +80,7 @@ extern void* erealloc(void* ptr, size_t size);
 extern void* emalloc_align(size_t size, size_t alignment);
 extern void* ecalloc_align(size_t n, size_t alignment, size_t size);
 extern double hoc_Exp(double x);
+extern void check_bbcore_write_version(const char *);
 
 /* will go away at some point */
 typedef struct Point_process {

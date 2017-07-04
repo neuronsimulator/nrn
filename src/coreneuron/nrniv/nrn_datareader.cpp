@@ -29,6 +29,8 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include "coreneuron/nrniv/nrn_datareader.h"
 
+extern "C" int check_bbcore_write_version(const char *);
+
 data_reader::data_reader(const char* filename, bool reorder) {
     this->open(filename, reorder);
     checkpoint(0);
@@ -39,6 +41,11 @@ void data_reader::open(const char* filename, bool reorder) {
 
     close();
     F.open(filename);
+
+    char version[256];
+    F.getline(version, sizeof(version));
+    nrn_assert(!F.fail());
+    check_bbcore_write_version(version);
 }
 
 int data_reader::read_int() {

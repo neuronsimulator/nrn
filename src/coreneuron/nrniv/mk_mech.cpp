@@ -77,6 +77,11 @@ void mk_mech(const char* datpath) {
     }
 
     nrn_assert(f);
+
+    char version[256];
+    fscanf(f, "%s\n", version);
+    check_bbcore_write_version(version);
+
     //  printf("reading %s\n", fname);
     int n = 0;
     nrn_assert(fscanf(f, "%d\n", &n) == 1);

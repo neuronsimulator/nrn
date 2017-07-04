@@ -208,6 +208,10 @@ void nrn_read_filesdat(int& ngrp, int*& grp, int multiple, int*& imult, const ch
         nrn_fatal_error("No input file with nrnthreads, exiting...");
     }
 
+    char version[256];
+    fscanf(fp, "%s\n", version);
+    check_bbcore_write_version(version);
+
     int iNumFiles = 0;
     nrn_assert(fscanf(fp, "%d\n", &iNumFiles) == 1);
 
