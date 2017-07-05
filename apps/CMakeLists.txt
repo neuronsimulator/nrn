@@ -30,9 +30,7 @@ include_directories(${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/coreneuron ${CMA
 # The mechanism registration function will be always defined from extra mechanisms in test directory
 add_definitions(-DADDITIONAL_MECHS)
 
-FILE(GLOB coreneuron_exec_src "*.c*")
-
-add_executable(coreneuron_exec ${coreneuron_exec_src})
+add_executable(coreneuron_exec "${CMAKE_CURRENT_SOURCE_DIR}/coreneuron.cpp")
 
 set_target_properties(coreneuron_exec PROPERTIES
                             OUTPUT_NAME "coreneuron_exec"
