@@ -122,6 +122,12 @@ macro(mod2c_from_file name modlist searchpath)
 	    message(WARNING "Unable to locate MOD file: ${mod_}")
         endif()
     endforeach()
+
+    # mod file for gap junction test (need better way to handle this)
+    set(GAPMOD "${PROJECT_SOURCE_DIR}/tests/integration/ring_gap/mod/halfgap.mod")
+    mod2c_target(${name} "${GAPMOD}")
+    list(APPEND MOD_PATHS ${GAPMOD})
+
 endmacro()
 
 # Standard MOD files are always built
@@ -155,6 +161,7 @@ if(EXISTS ${ADDITIONAL_MECHS})
         list(APPEND MECH_FILE_LISTS "${ADDITIONAL_MECHS}")
     endif()
 endif()
+
 mod2c_from_file(OPTMECH "${ADDITIONAL_MECHS}" "${ADDITIONAL_MECHPATH}")
 
 # For 'non-standard' mod files, need to generate registering function in mod_func.c
