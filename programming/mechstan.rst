@@ -52,9 +52,8 @@ MechanismStandard (Parameter Control)
             ms1.panel()
             ms2.panel()
 
-            objref ms1, ms2 
-            ms1 = new MechanismStandard("hh") 
-            ms2 = new MechanismStandard("AlphaSynapse") 
+            ms1 = h.MechanismStandard("hh") 
+            ms2 = h.MechanismStandard("AlphaSynapse") 
             ms2.set("gmax", .3) 
             ms1.panel() 
             ms2.panel() 
@@ -166,42 +165,51 @@ MechanismStandard (Parameter Control)
         .. code-block::
             python
             
-            ms.action("hoc_command")
+            ms.action(py_callback)
 
 
     Description:
-        action to be executed when any variable is changed in the panel. 
-        The hoc variable :data:`hoc_ac_` is set to the index of the variable (0 to count-1). 
+        `py_callback` is executed when any variable is changed in the panel.
+        The callback is sent three parameters; in order: the MechanismStandard object,
+        the index of the changed item in the object, and a third argument indicating
+        position in an array (or 0 if the parameter is not an array; this is the usual
+        case). The value is in `h.hoc_ac_` and this value may also be read via
+        ``nameref = h.ref(""); ms.name(nameref, i);  value = ms.get(nameref[0], j)``
 
-    .. Warning::
-       
-        Currently only takes a HOC string and does not work with a Python callable.
+    Example:
 
-..    Example:
-..        forall delete_section() 
+        .. code-block::
+            python
 
-        .. code-block
-..            none
+            from neuron import h, gui
 
-..            create soma, axon, dend[3] 
-..            forsec "a" insert hh 
-..            forsec "d" insert pas 
-..            xpanel("Updated when MechanismStandard is changed") 
-..            xvalue("dend[0].g_pas") 
-..            xvalue("dend[1].g_pas") 
-..            xvalue("dend[2].g_pas") 
-..            xpanel() 
-..            objref ms 
-..            ms = new MechanismStandard("pas") 
-..            ms.action("change_pas()") 
-..            ms.panel() 
-             
-..            proc change_pas() { 
-..            	forall if(ismembrane("pas")) { 
-..           		ms.out() 
-..            	} 
-..            } 
+            soma = h.Section(name='soma')
+            axon = h.Section(name='axon')
+            dend = [h.Section(name='dend[%d]' % i) for i in range(3)]
 
+            axon.insert('hh')
+            for sec in dend:
+                sec.insert('pas')
+
+            h.xpanel("Updated when MechanismStandard is changed")
+            for i, sec in enumerate(dend):
+                h.xvalue("dend[%d](0.5).pas.g" % i, sec(0.5).pas._ref_g)
+
+            h.xpanel()
+
+            def change_pas(ms, i, j):
+                for sec in h.allsec():
+                    if sec.has_membrane('pas'):
+                        ms.out()
+
+            ms = h.MechanismStandard('pas')
+            ms.action(change_pas)
+            ms.panel()
+
+
+    .. note::
+
+        Support for Python callbacks for this method was added in NEURON 7.5.
 
          
 
