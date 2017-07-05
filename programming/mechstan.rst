@@ -61,7 +61,9 @@ MechanismStandard (Parameter Control)
 
         .. image:: ../images/mechanismstandard.png
             :align: center
-                     
+
+    Example:
+
         The following example prints all the names associated with POINT_PROCESS 
         and SUFFIX mechanisms. 
 
@@ -73,18 +75,18 @@ MechanismStandard (Parameter Control)
             soma = h.Section()
             def pname(msname):
                 s = h.ref('')
-                for i in xrange(-1, 4):
+                for i in range(-1, 4):
                     ms = h.MechanismStandard(msname, i)
                     print '\n', msname, '  vartype=%d' % i
-                    for j in xrange(int(ms.count())):
+                    for j in range(int(ms.count())):
                         k = ms.name(s, j)
-                        print '%-5d %-20s size=%d' % (j, s[0], k)
+                        print('%-5d %-20s size=%d' % (j, s[0], k))
 
             def ptype():
                 msname = h.ref('')
-                for i in xrange(2):
+                for i in range(2):
                     mt = h.MechanismType(i)
-                    for j in xrange(int(mt.count())):
+                    for j in range(int(mt.count())):
                         mt.select(j)
                         mt.selected(msname)
                         print '\n\n', msname[0], ' mechanismtype=%d' % j
@@ -93,6 +95,32 @@ MechanismStandard (Parameter Control)
 
             ptype() 
              
+    Example:
+
+        The following example provides a function ``get_mech_globals`` that returns a
+        list of all of a mechanism's global (or per-thread-global) variables. As running the
+        code shows, there are six such variables (all per-thread-global) for the ``hh``
+        mechanism. These are used to temporarily share limiting values and time constant information
+        between functions in the NMODL file; their per-thread-global nature means that
+        the memory is reused for subsequent locations within a given thread, but that different
+        threads do not interfere with each other.
+
+        .. code-block::
+            python
+
+            from neuron import h
+             
+            def get_mech_globals(mechname):
+                ms = h.MechanismStandard(mechname, -1)
+                name = h.ref('')
+                mech_globals = []
+                for j in range(int(ms.count())):
+                    ms.name(name, j)
+                    mech_globals.append(name[0])
+                return mech_globals
+             
+            print(get_mech_globals('hh'))
+
 
 
     .. seealso::
