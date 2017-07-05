@@ -14,7 +14,7 @@ a linked list of Grid_nodes
 #endif
 
 
-double *dt_ptr;
+extern double *dt_ptr;
 double* t_ptr;
 Grid_node *Parallel_grids[100] = {NULL};
 

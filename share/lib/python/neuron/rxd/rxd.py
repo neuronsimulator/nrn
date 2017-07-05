@@ -634,6 +634,20 @@ def _setup():
     # Using C-code for reactions
     options.use_reaction_contribution_to_jacobian = False
 
+def _find_librxdmath():
+    import glob
+    base_path = os.path.join(h.neuronhome(), "..", "..", platform.machine(), "lib", "librxdmath")
+    success = False 
+    for extension in ['', '.dll', '.so', '.dylib']:
+        dll = base_path  + extension
+        try:
+            success = os.path.exists(dll) 
+        except:
+            pass
+        if success: break
+    if not success:
+        raise RxDException('unable to connect to the librxdmath library')
+    return dll
     
 def _c_compile(formula):
     filename = 'rxddll' + str(uuid.uuid1())
@@ -645,11 +659,9 @@ def _c_compile(formula):
         gcc = "gcc"
     #TODO: Check this works on non-Linux machines
     gcc_cmd =  "%s -I%s -I%s " % (gcc, sysconfig.get_python_inc(), os.path.join(h.neuronhome(), "..", "..", "include", "nrn"))
-    gcc_cmd += "-shared -fPIC  %s.c %s " % (filename, os.path.join(h.neuronhome(), "..", "..", platform.machine(), "lib", "librxdmath.so"))
+    gcc_cmd += "-shared -fPIC  %s.c %s " % (filename, _find_librxdmath())
     gcc_cmd += "-o %s.so -lpython%i.%i -lm" % (filename, sys.version_info.major, sys.version_info.minor)
     os.system(gcc_cmd)
-    #os.system('%s -I%s -lpython%i.%i -shared -o %s.so -fPIC %s.c -lm' % (gcc,sysconfig.get_python_inc(), sys.version_info.major, sys.version_info.minor, filename, filename))
-    rxdmath_dll = ctypes.cdll[os.path.join(h.neuronhome(), "..", "..", platform.machine(), "lib", "librxdmath.so")]
     dll = ctypes.cdll['./%s.so' % filename]
     reaction = dll.reaction
     reaction.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double)] 
