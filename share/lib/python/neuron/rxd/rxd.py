@@ -1093,13 +1093,13 @@ def _compile_reactions():
         try:
             sptrs  = set(r._involved_species + r._dests + r._sources)
         except:
-            sptrs = r._involved_species + [r._species]
+            sptrs = set(r._involved_species + [r._species])
 
         if None not in r._regions:
             react_regions = r._regions
         else:
             react_regions = set()
-            for sp in r._involved_species:
+            for sp in sptrs:
                 s = sp()
                 if None not in s._regions:
                     [react_regions.add(reg) for reg in s._regions + s._extracellular_regions]
@@ -1192,30 +1192,49 @@ def _compile_reactions():
         #TODO: install rxdmath.h into the include path
         #It is necessary for a couple of function in python that are not in math.h
         fxn_string += 'void reaction(double* species, double* rhs, double* mult)\n{'
+        needs_defined_rate = False
+        species_ids_used = set()
+        for rptr in regions_inv[reg]:
+            r = rptr()
+            if isinstance(r,rate.Rate):
+                species_ids_used.add(species_lookup.get(r._species()._id))
+            else:
+                for sp in r._sources + r._dests:
+                    species_ids_used.add(species_lookup.get(sp()._id))
+                needs_defined_rate = True
+        if needs_defined_rate:
+            fxn_string += '\n\tdouble rate;'
+        if max(species_ids_used) == 0:
+            fxn_string += '\n\trhs[0] = 0;'
+        else:
+            fxn_string += '\n\tint i;\n\tfor (i = 0; i < %d; i++) rhs[i] = 0;' % (max(species_ids_used) + 1)
         for rptr in regions_inv[reg]:
             r = rptr()
             # replace global species._id in rate string with local index in location_index
             rate_str = re.sub(r'species\[(\d+)\]',lambda m: "species[%i]" %  species_lookup.get(int(m.groups()[0])), r._rate)
             if isinstance(r,rate.Rate):
                 #TODO: Check r._mult is only used for reactions - not rates
-                fxn_string += "\n\trhs[%d] = %s;" % (species_lookup.get(r._species()._id), rate_str)
+                fxn_string += "\n\trhs[%d] += %s;" % (species_lookup.get(r._species()._id), rate_str)
             elif isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
                 #TODO: Check the order of r._mult is reliable
                 idx = 0
                 for sp in r._sources + r._dests:
+                    # TODO: to handle cases like 2Ca + Buf <> CaBuf, probably need to do like below
                     s = sp()
-                    fxn_string += "\n\trhs[%d] = (mult[%d])*(%s);" % (species_lookup.get(s._id),mc_mult_count,rate_str)
+                    fxn_string += "\n\trhs[%d] += (mult[%d])*(%s);" % (species_lookup.get(s._id),mc_mult_count,rate_str)
 
                     mc_mult_count+=1
                     mc_mult_list.extend(r._mult[idx].tolist())
                     idx += 1
             else:
-                idx = 0
                 #TODO: Check the order of r._mult is reliable
-                for sp in r._sources + r._dests:
-                    s = sp()
-                    fxn_string += "\n\trhs[%d] = (%s)*(%s);" % (species_lookup.get(s._id), r._mult[idx], rate_str)
-                    idx+=1
+                fxn_string += "\n\trate = %s;" % rate_str
+                summed_mults = collections.defaultdict(lambda: 0)
+                # TODO: is r._mult a list? if so, then can zip instead of getting idx and doing lookups
+                for idx, sp in enumerate(r._sources + r._dests):
+                    summed_mults[species_lookup.get(sp()._id)] += r._mult[idx]
+                for idx in sorted(summed_mults.keys()):
+                    fxn_string += "\n\trhs[%d] += (%g) * rate;" % (idx, summed_mults[idx])
         fxn_string += "\n}\n"
         register_rate(_c_compile(fxn_string))
         mc_mult_count_list.append(mc_mult_count)
