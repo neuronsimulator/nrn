@@ -1154,14 +1154,15 @@ def _compile_reactions():
     # a table for location,species -> state index
     location_index = []
     for reg in regions_inv.keys():
+        nodes = [s.nodes for s in species_by_region[reg]]
         seg_idx = 0;
         for sec in reg.secs:
             for seg in sec:
-                for s in species_by_region[reg]:
-                    for node in s.nodes:
+                for s, mynodes in zip(species_by_region[reg], nodes):
+                    for node in mynodes:
                         if node.segment == seg:
                             location_index.append(node._state_index)
-                seg_idx += 1
+            seg_idx += sec.nseg
         nseg_by_region.append(seg_idx)
 
     # now setup the reactions
