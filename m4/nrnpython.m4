@@ -277,7 +277,10 @@ PYLIB="${PYLIBLINK} ${PYLINKFORSHARED} -R${PYLIBDIR}"
 		fi
 	fi
 
+
+	rxd_mingw_args='-c mingw32'
 	if test $NRNPYTHON_PYMAJOR -gt 2 ; then
+		rxd_mingw_args=''
 		pypath=`dirname $NRNPYTHON_EXEC`
 		if test -x $pypath/2to3 ; then
 			PY2TO3=$pypath/2to3
@@ -293,6 +296,7 @@ PYLIB="${PYLIBLINK} ${PYLINKFORSHARED} -R${PYLIBDIR}"
 	AC_SUBST(NRNPYTHON_EXEC)
 	AC_SUBST(NRNPYTHON_PYLIBLINK)
 	AC_SUBST(setup_extra_link_args)
+	AC_SUBST(rxd_mingw_args)
 	AC_SUBST(NRNPYTHON_PYMAJOR)
 	AC_SUBST(NRNPYTHON_PYVER)
 	AC_SUBST(PY2TO3)

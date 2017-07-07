@@ -12,13 +12,30 @@ if nrn_srcdir[0] != '/' :
 
 from distutils.core import setup
 from distutils.extension import Extension
+
+def have_vc():
+    if not mingw:
+        return False
+    try:
+        from distutils import spawn
+        x = spawn.find_executable("cl")
+        x = True if x is not None and "Microsoft" in x else False
+    except:
+        x = False
+    return x
+
 try:
     import numpy
 except:
     setup()
 else:
-    mpicc_bin = "@CC@"
-    mpicxx_bin = "@CXX@"
+    use_vc = have_vc()
+    if use_vc:
+        mpicc_bin = 'cl'
+        mpicxx_bin = 'cl'
+    else:
+        mpicc_bin = "@CC@"
+        mpicxx_bin = "@CXX@"
     print (mpicxx_bin)
     import os
     os.environ["CC"]=mpicc_bin

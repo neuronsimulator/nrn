@@ -1,6 +1,6 @@
 #!/bin/bash
-# howto    # builds for 3.6
-# howto 27 # builds for 3.6 and 2.7
+# howto 36   # builds for 3.6
+# howto 36 27 # builds for 3.6 and 2.7
 #see nrn/howtomingw
 
 set -e
@@ -33,6 +33,7 @@ fi
 
 cd ~/neuron/nrnwinobj
 
+. ../vcenv.sh  #visual c environment allows cl for python (rxd for 35)
 
 PYVS="py"
 

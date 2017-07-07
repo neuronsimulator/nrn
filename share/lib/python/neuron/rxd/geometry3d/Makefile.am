@@ -24,7 +24,8 @@ EXTRA_DIST = ctng.cpp ctng.pyx surfaces.cpp surfaces.pyx \
 if BUILD_RX3D
 if BUILD_MINGW
 BUILT_SOURCES = force setup.py ctng.cpp surfaces.cpp graphicsPrimitives.cpp
-mingwargs = -c mingw32
+#"-c mingw32" only for python2 (do not use visual c 10)
+mingwargs = @rxd_mingw_args@
 force: ctng.cpp surfaces.cpp graphicsPrimitives.cpp
 else
 mingwargs =
