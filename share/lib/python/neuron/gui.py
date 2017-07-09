@@ -11,9 +11,10 @@ from neuron import h
 import threading
 import time
 def process_events() :
-  #h.doEvents()
-  h.doNotify()
-  #print "timer"
+  try:
+    h.doNotify()
+  except:
+    print ("Exception in gui thread")
 
 class LoopTimer(threading.Thread) :
   """
