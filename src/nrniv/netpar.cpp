@@ -1042,8 +1042,9 @@ int BBS::gid_exists(int gid) {return nrn_gid_exists(gid);}
 double BBS::threshold() {
 	int gid = int(chkarg(1, 0., MD));
 	PreSyn* ps;
-	assert(gid2out_->find(gid, ps));
-	assert(ps);
+	if (!gid2out_->find(gid, ps) || ps == NULL) {
+		hoc_execerror("gid not associated with spike generation location", 0);
+	}
 	if (ifarg(2)) {
 		ps->threshold_ = *getarg(2);
 	}
