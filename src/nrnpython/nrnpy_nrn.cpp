@@ -975,6 +975,11 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
   Py_INCREF(pyname);
   Py2NRNString name(pyname);
   char* n = name.c_str();
+  if (!n) {
+    PyErr_SetString(PyExc_TypeError, "attribute name must be a string");
+    Py_DECREF(pyname);
+    return NULL;
+  }
   // printf("section_getattr %s\n", n);
   PyObject* result = 0;
   if (strcmp(n, "L") == 0) {
@@ -1033,6 +1038,11 @@ static int section_setattro(NPySecObj* self, PyObject* pyname,
   Py_INCREF(pyname);
   Py2NRNString name(pyname);
   char* n = name.c_str();
+  if (!n) {
+    PyErr_SetString(PyExc_TypeError, "attribute name must be a string");
+    Py_DECREF(pyname);
+    return -1;
+  }
   // printf("section_setattro %s\n", n);
   if (strcmp(n, "L") == 0) {
     double x;
@@ -1175,6 +1185,11 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
   Py_INCREF(pyname);
   Py2NRNString name(pyname);
   char* n = name.c_str();
+  if (!n) {
+    PyErr_SetString(PyExc_TypeError, "attribute name must be a string");
+    Py_DECREF(pyname);
+    return NULL;
+  }
   // printf("segment_getattr %s\n", n);
   PyObject* result = NULL;
   PyObject* otype = NULL;
@@ -1282,6 +1297,11 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname,
   Py_INCREF(pyname);
   Py2NRNString name(pyname);
   char* n = name.c_str();
+  if (!n) {
+    PyErr_SetString(PyExc_TypeError, "attribute name must be a string");
+    Py_DECREF(pyname);
+    return -1;
+  }
   // printf("segment_setattro %s\n", n);
   if (strcmp(n, "x") == 0) {
     int nseg;
@@ -1337,6 +1357,11 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
   Py_INCREF(pyname);
   Py2NRNString name(pyname);
   char* n = name.c_str();
+  if (!n) {
+    PyErr_SetString(PyExc_TypeError, "attribute name must be a string");
+    Py_DECREF(pyname);
+    return NULL;
+  }
   // printf("mech_getattro %s\n", n);
   PyObject* result = NULL;
   NrnProperty np(self->prop_);
@@ -1382,6 +1407,11 @@ static int mech_setattro(NPyMechObj* self, PyObject* pyname, PyObject* value) {
   Py_INCREF(pyname);
   Py2NRNString name(pyname);
   char* n = name.c_str();
+  if (!n) {
+    PyErr_SetString(PyExc_TypeError, "attribute name must be a string");
+    Py_DECREF(pyname);
+    return -1;
+  }
   // printf("mech_setattro %s\n", n);
   NrnProperty np(self->prop_);
   char buf[200];
@@ -1410,13 +1440,16 @@ static int mech_setattro(NPyMechObj* self, PyObject* pyname, PyObject* value) {
 
 double** nrnpy_setpointer_helper(PyObject* pyname, PyObject* mech) {
   if (PyObject_TypeCheck(mech, pmech_generic_type) == 0) {
-    return 0;
+    return NULL;
   }
   NPyMechObj* m = (NPyMechObj*)mech;
   NrnProperty np(m->prop_);
   char buf[200];
   Py2NRNString name(pyname);
   char* n = name.c_str();
+  if (!n) {
+    return NULL;
+  }
   sprintf(buf, "%s_%s", n, memb_func[m->prop_->type].sym->name);
   Symbol* sym = np.find(buf);
   if (!sym || sym->type != RANGEVAR || sym->subtype != NRNPOINTER) {

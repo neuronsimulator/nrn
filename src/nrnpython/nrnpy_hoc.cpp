@@ -815,6 +815,10 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
   int isptr = 0;
   Py2NRNString name(pyname);
   char* n = name.c_str();
+  if (!n) {
+    PyErr_SetString(PyExc_TypeError, "attribute name must be a string");
+    return NULL;
+  }
   // printf("hocobj_getattr %s\n", n);
 
   Symbol* sym = getsym(n, self->ho_, 0);
@@ -1138,6 +1142,10 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname,
   }
   Py2NRNString name(pyname);
   char* n = name.c_str();
+  if (!n) {
+    PyErr_SetString(PyExc_TypeError, "attribute name must be a string");
+    return -1;
+  }
   // printf("hocobj_setattro %s\n", n);
   Symbol* sym = getsym(n, self->ho_, 0);
   if (!sym) {
@@ -1696,6 +1704,9 @@ static PyObject* setpointer(PyObject* self, PyObject* args) {
       }
       Py2NRNString str(name);
       char* n = str.c_str();
+      if (!n) {
+        goto done;
+      }
       Symbol* sym = getsym(n, hpp->ho_, 0);
       if (!sym || sym->type != RANGEVAR || sym->subtype != NRNPOINTER) {
         goto done;
