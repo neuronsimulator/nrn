@@ -1,3 +1,33 @@
+The mingw cross environment was used when there was a <bug?> in the old
+msys build where trying to save a session with, eg, a cellbuild crashed.
+This is no longer the case with the latest msys2 and mingw so mxe is
+no longer being used. Nevertheless, the technology might be useful again,
+so these notes explain how to build a windows version of nrniv on linux.
+
+git clone https://github.com/mxe/mxe.git
+if
+Missing requirement: autopoint
+Missing requirement: gperf
+Missing requirement: intltoolize
+Missing requirement: libtool
+Missing requirement: ruby
+Missing requirement: scons
+Missing requirement: 7za
+Missing requirement: gdk-pixbuf-csource
+then
+sudo apt-get install autopoint gperf intltool libtool-bin ruby
+sudo apt-get install scons p7zip-full libgdk-pixbuf2.0-dev
+
+settings.mk: MXE_TARGETS :=  x86_64-w64-mingw32.shared
+make gcc
+
+Microsoft MPI v7.1
+"make neuron" needs ms-mpi mxe subfolder with Bin, Include, Lib changed
+ to lower case for --with-paranrn=dynamic
+edit mpi.h so that __int64 is defined. ie. #include <stdint.h>
+
+"make neuron" needs Python27 mxe subfolder for --with-nrnpython=dynamic
+
 http://mxe.cc/
 cp ./usr/bin/x86_64-w64-mingw32.shared-windres ./usr/bin/windres
 
