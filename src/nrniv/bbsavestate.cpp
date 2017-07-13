@@ -570,8 +570,10 @@ static double save_request(void* v) {
 		gidvec->elem(i) = double(gids[i]);
 		sizevec->elem(i) = double(sizes[i]);
 	}
-	delete [] gids;
-	delete [] sizes;
+	if (len) {
+		free(gids);
+		free(sizes);
+	}
 	return double(len);
 }
 
@@ -602,6 +604,10 @@ static double save_test(void* v) {
 		ss->f = io;
 		ss->gidobj(gids[i]);
 		delete io;
+	}
+	if (len) {
+		free(gids);
+		free(sizes);
 	}
 	return 0.;
 }
@@ -642,7 +648,10 @@ static double save_test_bin(void* v) {//only for whole cells
 		fprintf(f, "%d\n", sizes[i]);
 		fclose(f);
 	}
-	if (len) { delete [] gids; delete [] sizes; }
+	if (len) {
+        free(gids);
+        free(sizes);
+    }
 	bbss_save_done(ref);
 	return 0.;
 }
@@ -658,7 +667,7 @@ static double ppignore(void* v) {
 			pp_ignore_map = new PointProcessMap(100);
 		}
 		(*pp_ignore_map)[pp] = 0; // naive set instead of map
-	}else{ // clear
+	}else if (pp_ignore_map) { // clear
 		delete pp_ignore_map;
 		pp_ignore_map = 0;
 	}
@@ -849,6 +858,10 @@ static double restore_test(void* v) {
 		}
 		delete io;
 	}
+	if (len) {
+        free(gids);
+        free(sizes);
+	}
 	bbss_restore_done(0);
 	return 0.;
 }
@@ -901,7 +914,10 @@ static double restore_test_bin(void* v) { //assumes whole cells
 		delete [] buf;
 	}
 
-	if (len) { delete [] gids; delete [] sizes; }
+	if (len) {
+        free(gids);
+        free(sizes);
+    }
 	bbss_restore_done(ref);
 	return 0.;
 }
@@ -1047,6 +1063,10 @@ SEWrap::SEWrap(const TQItem* tq, DEList* dl) {
 }
 SEWrap::~SEWrap() {}
 
+declarePtrList(SEWrapList, SEWrap)
+implementPtrList(SEWrapList, SEWrap)
+static SEWrapList* sewrap_list;
+
 declareNrnHash(Int2Int, int, int)
 implementNrnHash(Int2Int, int, int)
 static Int2Int* base2spgid; // base gids are the host independent key for a cell which was multisplit
@@ -1124,6 +1144,7 @@ static void tqcallback(const TQItem* tq, int i) {
 				sew = 0;
 			}
 			if (sew) {
+				sewrap_list->append(sew);
 				DEList* dl = new DEList;
 				dl->next = 0;
 				dl->de = sew;
@@ -1277,6 +1298,7 @@ void BBSaveState::mk_pp2de() {
 	assert(!pp2de); // one only or make it a field.
 	int n = nct->count;
 	pp2de = new PP2DE(n+1);
+	sewrap_list = new SEWrapList(1000);
 	ITERATE(q, nct->olist) {
 		NetCon* nc = (NetCon*)OBJ(q)->u.this_pointer;
 		// ignore NetCon with no PreSyn.
@@ -1331,11 +1353,22 @@ void BBSaveState::del_pp2de() {
 	NrnHashIterate(PP2DE, pp2de, DEList*, dl) {
 		for (; dl; dl = dl1) {
 			dl1 = dl->next;
+			// need to delete SEWrap items but dl->de that
+			// are not SEWrap may already be deleted.
+			// Hence the extra sewrap_list and items are
+			// deleted below.
 			delete dl;
 		}
 	}}}
 	delete pp2de;
 	pp2de = 0;
+	if (sewrap_list) {
+		for (int i=0; i < sewrap_list->count(); ++i) {
+			delete sewrap_list->item(i);
+		}
+		delete sewrap_list;
+		sewrap_list = NULL;
+	}
 	del_presyn_info();
 }
 
@@ -1418,8 +1451,17 @@ int BBSaveState::counts(int** gids, int** cnts) {
 	NrnHashIterateKeyValue(Int2Int, base2spgid, int, base, int, spgid) {
 		++gidcnt;
 	}}}		
-	*gids = new int[gidcnt];
-	*cnts = new int[gidcnt];
+	if (gidcnt) {
+        // using malloc instead of new as we might need to
+        // deallocate from c code (of mod files)
+		*gids = (int *) malloc(gidcnt * sizeof(int));
+		*cnts = (int *) malloc(gidcnt * sizeof(int));
+
+        if(*gids==NULL || *cnts==NULL) {
+            printf("Error : Memory allocation failure in BBSaveState\n");
+            abort();
+        }
+	}
 	gidcnt = 0;
 	NrnHashIterateKeyValue(Int2Int, base2spgid, int, base, int, spgid) {
 		(*gids)[gidcnt] = base;
@@ -2048,8 +2090,8 @@ static void allgatherv_helper(int cnt, int* rcnt, int* rdspl) {
 static void spikes_on_correct_host(int cnt, int* g, int* dcnts, int tscnt, double* ts, Int2DblList* m) {
 	// tscnt is the sum of the dcnts.
 	// i.e. the send times and undelivered NetCon counts.
-	int i, rsize, *rg=0, *rtscnts;
-	double *rts=0;
+	int i, rsize, *rg=NULL, *rtscnts=NULL;
+	double *rts=NULL;
 	// not at all space efficient
 	if (nrnmpi_numprocs > 1) {
 
@@ -2087,10 +2129,13 @@ static void spikes_on_correct_host(int cnt, int* g, int* dcnts, int tscnt, doubl
 		}
 		tsoff += rtscnts[i];
 	}
-	if (nrnmpi_numprocs > 1 && rg) {
-		delete [] rg;
-		delete [] rtscnts;
-		delete [] rts;
+	if (nrnmpi_numprocs > 1) {
+        if(rg)
+            delete [] rg;
+        if(rtscnts)
+            delete [] rtscnts;
+        if(rts)
+            delete [] rts;
 	}
 }
 
