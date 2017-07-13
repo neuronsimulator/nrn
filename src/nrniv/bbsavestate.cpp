@@ -571,8 +571,8 @@ static double save_request(void* v) {
 		sizevec->elem(i) = double(sizes[i]);
 	}
 	if (len) {
-		delete [] gids;
-		delete [] sizes;
+		free(gids);
+		free(sizes);
 	}
 	return double(len);
 }
@@ -606,8 +606,8 @@ static double save_test(void* v) {
 		delete io;
 	}
 	if (len) {
-		delete [] gids;
-		delete [] sizes;
+		free(gids);
+		free(sizes);
 	}
 	return 0.;
 }
@@ -648,7 +648,10 @@ static double save_test_bin(void* v) {//only for whole cells
 		fprintf(f, "%d\n", sizes[i]);
 		fclose(f);
 	}
-	if (len) { delete [] gids; delete [] sizes; }
+	if (len) {
+        free(gids);
+        free(sizes);
+    }
 	bbss_save_done(ref);
 	return 0.;
 }
@@ -856,8 +859,8 @@ static double restore_test(void* v) {
 		delete io;
 	}
 	if (len) {
-        delete [] gids;
-        delete [] sizes;
+        free(gids);
+        free(sizes);
 	}
 	bbss_restore_done(0);
 	return 0.;
@@ -911,7 +914,10 @@ static double restore_test_bin(void* v) { //assumes whole cells
 		delete [] buf;
 	}
 
-	if (len) { delete [] gids; delete [] sizes; }
+	if (len) {
+        free(gids);
+        free(sizes);
+    }
 	bbss_restore_done(ref);
 	return 0.;
 }
@@ -1450,6 +1456,11 @@ int BBSaveState::counts(int** gids, int** cnts) {
         // deallocate from c code (of mod files)
 		*gids = (int *) malloc(gidcnt * sizeof(int));
 		*cnts = (int *) malloc(gidcnt * sizeof(int));
+
+        if(*gids==NULL || *cnts==NULL) {
+            printf("Error : Memory allocation failure in BBSaveState\n");
+            abort();
+        }
 	}
 	gidcnt = 0;
 	NrnHashIterateKeyValue(Int2Int, base2spgid, int, base, int, spgid) {
