@@ -8,11 +8,11 @@ The solution of A->G->bath with rate constants 1/tau1 and 1/tau2 is
  G = a*tau2/(tau2-tau1)*(-exp(-t/tau1) + exp(-t/tau2))
 	where tau1 < tau2
 
-If tau2-tau1 -> 0 then we have a alphasynapse.
-and if tau1 -> 0 then we have just single exponential decay.
+If tau2-tau1 is very small compared to tau1, this is an alphasynapse with time constant tau2.
+If tau1/tau2 is very small, this is single exponential decay with time constant tau2.
 
-The factor is evaluated in the
-initial block such that an event of weight 1 generates a
+The factor is evaluated in the initial block 
+such that an event of weight 1 generates a
 peak conductance of 1.
 
 Because the solution is a sum of exponentials, the
@@ -36,7 +36,7 @@ UNITS {
 }
 
 PARAMETER {
-	tau1=.1 (ms) <1e-9,1e9>
+	tau1 = 0.1 (ms) <1e-9,1e9>
 	tau2 = 10 (ms) <1e-9,1e9>
 	e=0	(mV)
 }
@@ -55,8 +55,11 @@ STATE {
 
 INITIAL {
 	LOCAL tp
-	if (tau1/tau2 > .9999) {
-		tau1 = .9999*tau2
+	if (tau1/tau2 > 0.9999) {
+		tau1 = 0.9999*tau2
+	}
+	if (tau1/tau2 < 1e-9) {
+		tau1 = tau2*1e-9
 	}
 	A = 0
 	B = 0
