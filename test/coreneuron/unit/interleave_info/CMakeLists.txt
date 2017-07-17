@@ -25,32 +25,10 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 
 
-include(FindSLURM)
-include(TestHelpers)
+FILE(GLOB interleave_info_src "*.cpp")
 
-include_directories(${CMAKE_SOURCE_DIR}/coreneuron ${CMAKE_SOURCE_DIR} ${Boost_INCLUDE_DIRS})
+add_executable(interleave_info_bin ${interleave_info_src})
+target_link_libraries(interleave_info_bin ${MPI_C_LIBRARIES} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} coreneuron ${reportinglib_LIBRARY})
 
-if(NOT Boost_USE_STATIC_LIBS)
-    add_definitions(-DBOOST_TEST_DYN_LINK=TRUE)
-endif()
+add_test(NAME interleave_info_constructor_test COMMAND ${TEST_EXEC_PREFIX} ${CMAKE_CURRENT_BINARY_DIR}/interleave_info_bin)
 
-
-if(UNIT_TESTS)
-
-add_subdirectory(unit/endian)
-add_subdirectory(unit/sdprintf)
-add_subdirectory(unit/mechbuild)
-add_subdirectory(unit/omp)
-add_subdirectory(unit/cmdline_interface)
-add_subdirectory(unit/interleave_info)
-add_subdirectory(unit/alignment)
-add_subdirectory(unit/queueing)
-
-endif()
-
-if(FUNCTIONAL_TESTS)
-
-add_subdirectory(integration)
-add_subdirectory(regression)
-
-endif()
