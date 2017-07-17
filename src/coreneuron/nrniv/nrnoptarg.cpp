@@ -159,7 +159,7 @@ int nrnopt_parse(int argc, const char* argv[]) {
     std::string cfg("config");
     if (!opt->importFile(cfg.c_str(), '#')) {
         if (nrnmpi_myid == 0)
-            std::cerr << "Notice: Failed to open default configuration file: " << cfg << std::endl;
+            std::cerr << "Info: No default arguments file provided: " << cfg << std::endl;
     } else {
         if (nrnmpi_myid == 0)
             std::cout << "Read default configuration file: " << cfg << std::endl;

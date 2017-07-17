@@ -400,13 +400,13 @@ int* node_order(int ncell,
         admin2(ncell, nodevec, nwarp, nstride, stridedispl, stride, firstnode, lastnode, cellsize);
     }
 
-#if 1
     int ntopol = 1;
     for (int i = 1; i < ncell; ++i) {
         if (nodevec[i - 1]->hash != nodevec[i]->hash) {
             ntopol += 1;
         }
     }
+#ifdef DEBUG
     printf("%d distinct tree topologies\n", ntopol);
 #endif
 

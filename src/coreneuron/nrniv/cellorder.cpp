@@ -229,6 +229,7 @@ static void warp_balance(int ith, InterleaveInfo& ii) {
         v[i] = ii.ncycle[i];
     }
     double bal = load_balance(v);
+#ifdef DEBUG
     printf("thread %d nwarp=%ld  balance=%g  warp_efficiency %g to %g\n", ith, nwarp, bal, emin,
            emax);
     const char* cp[4] = {"nodes", "idle", "ca", "cr"};
@@ -236,6 +237,7 @@ static void warp_balance(int ith, InterleaveInfo& ii) {
         printf("  %s=%ld (%ld:%ld)", cp[i], smm[i][0], smm[i][1], smm[i][2]);
     }
     printf("\n");
+#endif
 }
 
 int* interleave_order(int ith, int ncell, int nnode, int* parent) {
