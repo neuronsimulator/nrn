@@ -77,6 +77,22 @@ macro(mod2c_target name input)
       WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 endmacro()
 
+# Function to check if mod file of specific filename is already added
+# to the target. When user specify multiple search directory paths then
+# it's important to check if unique filenames exist.
+# Parameters:
+#   filepath_list   list of absolute filepath of all mod files found
+#   filename        (only) filename of mod file
+
+function(file_in_filepath_list filepath_list filename if_exist)
+    foreach(filepath ${filepath_list})
+        get_filename_component(newfile "${filepath}" NAME)
+        if("${newfile}" MATCHES "${filename}")
+            set(${if_exist} TRUE PARENT_SCOPE)
+        endif()
+    endforeach()
+endfunction()
+
 # Macro mod2c_from_file attempts to add modules specified in a file.
 # Parameters:
 #     name        Key for mod2c_target
@@ -89,44 +105,64 @@ endmacro()
 macro(mod2c_from_file name modlist searchpath)
     unset(tmp_path_ CACHE)
     if(NOT EXISTS "${modlist}")
-	string(REGEX REPLACE ":" ";" spath "${searchpath}")
-	foreach(path_ ${spath})
+        string(REGEX REPLACE ":" ";" spath "${searchpath}")
+        foreach(path_ ${spath})
             file(GLOB_RECURSE mod_files "${path_}/*.mod")
             list(APPEND mods_ "${mod_files};")
         endforeach()
     else()
-	file(READ "${modlist}" mods_)
+        file(READ "${modlist}" mods_)
     endif()
     string(REGEX REPLACE "[ \t\n]+" ";" mods_ "${mods_}")
     list(REMOVE_ITEM mods_ "")
+    list(APPEND added_mod_files "")
 
     foreach(mod_ ${mods_})
         unset(modpath_)
         if(NOT IS_ABSOLUTE "${mod_}")
             find_path(tmp_path_ "${mod_}" PATH ${searchpath} NO_DEFAULT_PATH)
-	    if(tmp_path_)
-	        set(modpath_ "${tmp_path_}/${mod_}")
-	    endif()
-	    unset(tmp_path_ CACHE)
+            if(tmp_path_)
+                set(modpath_ "${tmp_path_}/${mod_}")
+            endif()
+            unset(tmp_path_ CACHE)
         else()
             set(modpath_ "${mod_}")
-	endif()
-	if((NOT EXISTS "${modpath_}") OR (IS_DIRECTORY "${modpath_}"))
-	    unset(modpath_)
+        endif()
+        if((NOT EXISTS "${modpath_}") OR (IS_DIRECTORY "${modpath_}"))
+            unset(modpath_)
         endif()
 
         if(modpath_)
-            mod2c_target(${name} "${modpath_}")
-            list(APPEND MOD_PATHS ${modpath_})
+            get_filename_component(filename "${modpath_}" NAME)
+            set(if_exist FALSE)
+            file_in_filepath_list("${added_mod_files}" ${filename} if_exist)
+            if(${if_exist})
+                message(FATAL_ERROR "Multiple ${filename} exist in the search path, list of mod files found : ${modpath_} ${added_mod_files}")
+            else()
+                list(APPEND added_mod_files "${modpath_}")
+                mod2c_target(${name} "${modpath_}")
+                list(APPEND MOD_PATHS ${modpath_})
+            endif()
+
         else()
-	    message(WARNING "Unable to locate MOD file: ${mod_}")
+            message(WARNING "Unable to locate MOD file: ${mod_}")
         endif()
+
     endforeach()
 
-    # mod file for gap junction test (need better way to handle this)
-    set(GAPMOD "${PROJECT_SOURCE_DIR}/tests/integration/ring_gap/mod/halfgap.mod")
-    mod2c_target(${name} "${GAPMOD}")
-    list(APPEND MOD_PATHS ${GAPMOD})
+    # mod file for gap junction test. this mod file needs to be
+    # added only if not found in external directories.
+    set(if_exist FALSE)
+    file_in_filepath_list("${mods_}" "halfgap.mod" if_exist)
+
+    if(${if_exist})
+        message(WARNING "Note: halfgap.mod is found in specified mechanism search directory!")
+    else()
+        set(GAPMOD "${PROJECT_SOURCE_DIR}/tests/integration/ring_gap/mod/halfgap.mod")
+        mod2c_target(${name} "${GAPMOD}")
+        list(APPEND MOD_PATHS ${GAPMOD})
+        message(STATUS "Adding halfgap.mod mod file for tests!")
+    endif()
 
 endmacro()
 
