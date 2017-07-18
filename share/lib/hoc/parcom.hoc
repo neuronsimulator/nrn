@@ -253,8 +253,10 @@ $o2.object(id).sec { si = new ParallelComputeToolSplitInfo() }
 	}
 }
 
-proc split() {local i, j, sidoff  localobj si, sil
+proc split() {local i, j, sidoff, nhost, rank  localobj si, sil
 	sidoff = 100*splitinfo_.count-1
+	nhost = pc.nhost
+	rank = pc.id
 	sil = splitinfo_.o(splitinfo_.count-1)
 	for i=0, sil.count-1 {
 		si = sil.o(i)
@@ -272,14 +274,14 @@ proc split() {local i, j, sidoff  localobj si, sil
 		si = sil.o(i)
 		if (si.first) {
 			si.psec.sec {
-				pc.multisplit(si.px, si.sid + sidoff)
-//				printf("%s pc.multisplit(%g, %d)\n", secname(), si.px, si.sid + sidoff)
+				pc.multisplit(si.px, (si.sid + sidoff)*nhost + rank)
+//				printf("%s pc.multisplit(%g, %d)\n", secname(), si.px, (si.sid + sidoff)*nhost + rank)
 			}
 		}
 		if (si.spx < 0) {
 			si.sec.sec {
-				pc.multisplit(si.x, si.sid + sidoff)
-//				printf("%s pc.multisplit(%g, %d)\n", secname(), si.x, si.sid + sidoff)
+				pc.multisplit(si.x, (si.sid + sidoff)*nhost + rank)
+//				printf("%s pc.multisplit(%g, %d)\n", secname(), si.x, (si.sid + sidoff)*nhost + rank)
 			}
 		}
 	}
