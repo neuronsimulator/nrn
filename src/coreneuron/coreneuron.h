@@ -44,6 +44,8 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnoc/nrnoc_ml.h"               //Memb_list and mechs info
 
 #if defined(__cplusplus)
+#include "coreneuron/nrniv/memory.h"                 //Memory alignemnts and padding
+
 extern "C" {
 #endif
 
