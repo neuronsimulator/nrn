@@ -42,6 +42,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/scopmath_core/newton_struct.h"  //Newton Struct
 #include "coreneuron/nrnoc/membdef.h"                //static definitions
 #include "coreneuron/nrnoc/nrnoc_ml.h"               //Memb_list and mechs info
+#include "coreneuron/utils/randoms/nrnran123.h"      //Random Number Generator
 
 #if defined(__cplusplus)
 #include "coreneuron/nrniv/memory.h"                 //Memory alignemnts and padding
