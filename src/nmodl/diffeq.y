@@ -90,7 +90,7 @@ e:	  ATOM {$$ = $1;}
 
 		if (!zero(a($1)) && !zero(a($3))) {b3 "%s - %s", a($1), a($3));
 		}else if (!zero(a($1))) {b3 "%s", a($1));
-		}else if (!zero(a($3))) {b3 "( - %s)", a($3));}
+		}else if (!zero(a($3))) {b3 "( - %s )", a($3));}
 
 		if (!zero(b($1)) && !zero(b($3))) {b4 "%s - %s", b($1), b($3));
 		}else if (!zero(b($1))) {b4 "%s", b($1));
@@ -100,18 +100,18 @@ e:	  ATOM {$$ = $1;}
 	| e '*' e { $$ = $1; initbuf();
 		b1 "%s * %s", expr($1), expr($3));
 		if (!zero(de($1)) && !zero(de($3))) {
-b2 "((%s)*(%s) + (%s)*(%s))", de($1), expr($3), expr($1), de($3));
-		}else if (!zero(de($1))) {b2 "(%s)*(%s)", de($1), expr($3));
-		}else if (!zero(de($3))) {b2 "(%s)*(%s)", expr($1), de($3));}
+b2 "(( %s )*( %s ) + ( %s )*( %s ))", de($1), expr($3), expr($1), de($3));
+		}else if (!zero(de($1))) {b2 "( %s )*( %s )", de($1), expr($3));
+		}else if (!zero(de($3))) {b2 "( %s )*( %s )", expr($1), de($3));}
 
 		if (!zero(a($1)) && !zero(a($3))) {eq_invalid = 1;
 		}else if (!zero(a($1))) {
-			if (!zero(b($3))) {b3 "(%s)*(%s)", a($1),b($3));}
+			if (!zero(b($3))) {b3 "( %s )*( %s )", a($1),b($3));}
 		}else if (!zero(a($3))) {
-			if (!zero(b($1))) {b3 "(%s)*(%s)", b($1),a($3));}}
+			if (!zero(b($1))) {b3 "( %s )*( %s )", b($1),a($3));}}
 
 		if (!zero(b($1)) && !zero(b($3))) {
-			b4 "(%s)*(%s)", b($1), b($3));}
+			b4 "( %s )*( %s )", b( $1 ), b( $3 ));}
 		free4($3); replace($$);
 	    }
 	| e '/' e { $$ = $1; initbuf();

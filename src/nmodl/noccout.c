@@ -554,6 +554,25 @@ void debugprintitem(q) Item* q; {
 		}
 }
 
+/* does not include q2 */
+char* items_as_string(Item* q1, Item* q2) {
+  Item* q;
+  buf[0] = '\0';
+  for (q = q1; q != q2; q = q->next) {
+    if (buf[0] != '\0') {
+      strcat(buf, " ");
+    }
+    if (q->itemtype == SYMBOL) {
+      strcat(buf, SYM(q)->name);
+    }else if (q->itemtype == STRING) {
+      strcat(buf, STR(q));
+    }else{
+      assert(0);
+    }
+  }
+  return strdup(buf);
+}
+
 void printlist(s)
 	List           *s;
 {

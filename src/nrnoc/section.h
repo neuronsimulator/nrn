@@ -129,6 +129,8 @@ the notify_free_val parameter in node_free in solve.c
 
 extern int use_sparse13;
 extern int use_cachevec;
+extern int secondorder;
+extern int cvode_active_;
 
 typedef struct Node {
 #if CACHEVEC == 0

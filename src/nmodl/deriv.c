@@ -16,6 +16,7 @@ extern int sens_parm, numlist;
 int dtsav_for_nrn_state;
 static void copylist();
 List* massage_list_;
+List* netrec_cnexp;
 
 #if VECTORIZE
 extern int vectorize;
@@ -1042,11 +1043,19 @@ int cvode_cnexp_success(q1, q2) Item* q1, *q2; {
 			s = SYM(qeq); qeq = qeq->next; a = STR(qeq);
 			qeq = qeq->next; b = STR(qeq); qeq = qeq->next;
 			q = q->next; q1=ITM(q); q = q->next; q2 = ITM(q);
+			if (!netrec_cnexp) { netrec_cnexp = newlist(); }
+			lappendsym(netrec_cnexp, s);
 			if (strcmp(a, "0.0") == 0) {
 				assert(b[strlen(b) - 9] == '/');
 				b[strlen(b) - 9] = '\0';
+sprintf(buf," __primary -= 0.5*dt*( %s )", b);
+				lappendstr(netrec_cnexp, buf);
 sprintf(buf," %s = %s - dt*(%s)", s->name, s->name, b);
 			}else{
+sprintf(buf," __primary += ( 1. - exp( 0.5*dt*( %s ) ) )*( %s - __primary )",
+					a, b
+			);
+				lappendstr(netrec_cnexp, buf);
 sprintf(buf," %s = %s + (1. - exp(dt*(%s)))*(%s - %s)",
 					s->name, s->name,
 					a, b,

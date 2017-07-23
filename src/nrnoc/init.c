@@ -73,6 +73,7 @@ int secondorder=0;
 int state_discon_allowed_;
 extern int nrn_nobanner_;
 double t, dt, clamp_resist, celsius, htablemin, htablemax;
+int nrn_netrec_state_adjust = 0;
 hoc_List* section_list;
 int nrn_global_ncell = 0; /* used to be rootnodecount */
 extern double hoc_default_dll_loaded_;

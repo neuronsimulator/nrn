@@ -522,6 +522,10 @@ asgn:	varname '=' expr
 			&& (SYM($1)->subtype & STAT)) {
 			SYM($1)->used++;
 			}
+		  if (blocktype == NETRECEIVE) {
+			/* STATE discontinuity adjustment */
+			netrec_asgn($1, $2, $3, lastok);
+		  }
 #if NOCMODL
 		  nrn_var_assigned(SYM($1));
 #endif

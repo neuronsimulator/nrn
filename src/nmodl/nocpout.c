@@ -130,6 +130,7 @@ List* toplocal_;
 extern int protect_;
 extern int protect_include_;
 extern List *set_ion_variables(), *get_ion_variables();
+extern int netrec_need_v;
 
 static int decode_limits();
 static int decode_tolerance();
@@ -2426,10 +2427,10 @@ static void _ode_synonym(int _cnt, double** _pp, Datum** _ppd) {");
 			Lappendstr(procfunc, "}}\n");
 		}
 
-		Lappendstr(procfunc, "\nstatic void _ode_matsol(_NrnThread* _nt, _Memb_list* _ml, int _type) {\n");
-		out_nt_ml_frag(procfunc);
-		lst = get_ion_variables(1);
-		if (lst->next->itemtype) movelist(lst->next, lst->prev, procfunc);
+		sprintf(buf, "static void _ode_matsol_instance%d(_threadargsproto_);\n", cvode_num_);
+		Lappendstr(defs_list, buf);
+		sprintf(buf, "\nstatic void _ode_matsol_instance%d(_threadargsproto_) {\n", cvode_num_);
+		Lappendstr(procfunc, buf);
 		if (cvode_fun_->subtype == KINF) {
 			int i = cvode_num_;
 sprintf(buf, "_cvode_sparse(&_cvsparseobj%d, %d, _dlist%d, _p, _ode_matsol%d, &_coef%d);\n",
@@ -2438,15 +2439,21 @@ sprintf(buf, "_cvode_sparse(&_cvsparseobj%d, %d, _dlist%d, _p, _ode_matsol%d, &_
 sprintf(buf, "_cvode_sparse_thread(&_thread[_cvspth%d]._pvoid, %d, _dlist%d, _p, _ode_matsol%d, _ppvar, _thread, _nt);\n",
 				i, cvode_neq_, i, i);
 			vectorize_substitute(procfunc->prev, buf);
-			
 		}else{
 			sprintf(buf, "_ode_matsol%d", cvode_num_);
 			Lappendstr(procfunc, buf);
 			vectorize_substitute(lappendstr(procfunc, "();\n"), "(_p, _ppvar, _thread, _nt);\n");
 		}
+		Lappendstr(procfunc, "}\n");
+		Lappendstr(procfunc, "\nstatic void _ode_matsol(_NrnThread* _nt, _Memb_list* _ml, int _type) {\n");
+		out_nt_ml_frag(procfunc);
+		lst = get_ion_variables(1);
+		if (lst->next->itemtype) movelist(lst->next, lst->prev, procfunc);
+		sprintf(buf, "_ode_matsol_instance%d(_threadargs_);\n", cvode_num_);
+		Lappendstr(procfunc, buf);
 		Lappendstr(procfunc, "}}\n");
 	}
-	/* handle the state_discontinuities */
+	/* handle the state_discontinuities  (obsolete in NET_RECEIVE)*/
 	if (state_discon_list_) ITERATE(q, state_discon_list_) {
 		Symbol* s;
 		int sindex;
@@ -2584,10 +2591,12 @@ void net_receive(qarg, qp1, qp2, qstmt, qend)
 		   But no need to do so if it is not used.
 		*/
 		Symbol* vsym = lookup("v");
+		netrec_need_v = 1;
 		for (q = qstmt; q != qend; q = q->next) {
 			if (q->itemtype == SYMBOL && SYM(q) == vsym) {
 				insertstr(qstmt, " v = NODEV(_pnt->node);\n");
 				insertstr(qend, "\n NODEV(_pnt->node) = v;\n");
+				netrec_need_v = 0;
 				break;
 			}
 		}

@@ -55,6 +55,7 @@ typedef struct NrnThread {
 	double _dt;
 	double cj;
 	NrnThreadMembList* tml;
+	Memb_list** _ml_list;
         int ncell; /* analogous to old rootnodecount */
 	int end;    /* 1 + position of last in v_node array. Now v_node_count. */
 	int id; /* this is nrn_threads[id] */

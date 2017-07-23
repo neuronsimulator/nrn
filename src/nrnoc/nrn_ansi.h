@@ -131,6 +131,7 @@ extern void nrn_seg_or_x_arg(int iarg, Section** psec, double* px);
 extern void nrn_pt3dclear(Section*);
 extern void nrn_length_change(Section*, double);
 extern void stor_pt3d(Section*, double x, double y, double z, double d);
+extern int nrn_netrec_state_adjust;
 
 #if defined(__cplusplus)
 }

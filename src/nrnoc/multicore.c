@@ -517,6 +517,7 @@ void nrn_threads_create(int n, int parallel) {
 				nt->id = i;
 				nt->_stop_stepping = 0;
 				nt->tml = (NrnThreadMembList*)0;
+				nt->_ml_list = NULL;
 				nt->roots = (hoc_List*)0;
 				nt->userpart = 0;
 				nt->ncell = 0;
@@ -643,6 +644,7 @@ void nrn_threads_free() {
 			free((char*)ml);
 			free((char*)tml);
 		}
+		if (nt->_ml_list) { free((char*)nt->_ml_list); nt->_ml_list = NULL; }
 		for (i=0; i < BEFORE_AFTER_SIZE; ++i) {
 			NrnThreadBAList* tbl, *tbl2;
 			for (tbl = nt->tbl[i]; tbl; tbl = tbl2) {
@@ -743,6 +745,10 @@ hoc_execerror(memb_func[i].sym->name, "is not thread safe");
 			}
 			tml->ml->nodecount = 0; /* counted again below */
 		}
+	}
+	CACHELINE_CALLOC(_nt->_ml_list, Memb_list*, n_memb_func);
+	for (tml = _nt->tml; tml; tml = tml->next) {
+		_nt->_ml_list[tml->index] = tml->ml;
 	}
 
 	/* fill */
