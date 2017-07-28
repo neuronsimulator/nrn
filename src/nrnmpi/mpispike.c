@@ -506,7 +506,7 @@ static MPI_Comm bgp_comm;
 
 void nrnmpi_bgp_comm() {
 	if (!bgp_comm) {
-		MPI_Comm_dup(MPI_COMM_WORLD, &bgp_comm);
+		MPI_Comm_dup(nrnmpi_comm, &bgp_comm);
 	}
 }
 
