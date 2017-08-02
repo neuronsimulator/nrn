@@ -13,6 +13,7 @@ static char Derivimplicit[] = "derivimplicit";
 extern Symbol *indepsym;
 extern List *indeplist;
 extern int sens_parm, numlist;
+int dtsav_for_nrn_state;
 static void copylist();
 List* massage_list_;
 
@@ -136,6 +137,13 @@ dindepname, fun->name, listnum);
    }
 #endif
 	}
+	dtsav_for_nrn_state = 1;
+	sprintf(buf,"   if (secondorder) {\n"
+	  "    int _i;\n"
+	  "    for (_i = 0; _i < %d; ++_i) {\n"
+	  "      _p[_slist%d[_i]] += dt*_p[_dlist%d[_i]];\n"
+	  "    }}\n", numeqn, listnum, listnum);
+	insertstr(qsol->next, buf);
 }
 
 /* addition of higher order derivatives
