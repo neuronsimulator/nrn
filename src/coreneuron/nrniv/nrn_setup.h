@@ -128,6 +128,6 @@ namespace coreneuron {
     inline static void phase_wrapper() {
         nrn_multithread_job(phase_wrapper_w<P>);
     }
-}
+}  // namespace coreneuron
 
 #endif

@@ -66,9 +66,9 @@ double nrn_mallinfo(void) {
 #elif defined(__APPLE__) && defined(__MACH__)
     struct mach_task_basic_info info;
     mach_msg_type_number_t infoCount = MACH_TASK_BASIC_INFO_COUNT;
-    if ( task_info( mach_task_self( ), MACH_TASK_BASIC_INFO,
-        (task_info_t)&info, &infoCount ) != KERN_SUCCESS )
-        return (size_t)0L;      /* Can't access? */
+    if (task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t)&info, &infoCount) !=
+        KERN_SUCCESS)
+        return (size_t)0L; /* Can't access? */
     return info.resident_size / (1024.0 * 1024.0);
 #elif defined HAVE_MALLOC_H
     struct mallinfo m;

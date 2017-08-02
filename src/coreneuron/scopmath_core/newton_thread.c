@@ -123,7 +123,7 @@ int nrn_newton_thread(NewtonSpace* ns,
             max_dev = 0.0;
             for (i = 0; i < n; i++) {
                 value[ix(i)] = -value[ix(i)]; /* Required correction to function
-                                       * values */
+                                               * values */
                 if ((temp = fabs(value[ix(i)])) > max_dev)
                     max_dev = temp;
             }

@@ -286,7 +286,6 @@ static void warp_balance(int ith, InterleaveInfo& ii) {
 }
 
 int* interleave_order(int ith, int ncell, int nnode, int* parent) {
-
     // return if there are no nodes to permute
     if (nnode <= 0)
         return NULL;
@@ -485,7 +484,7 @@ static void triang_interleaved2(NrnThread* nt, int icore, int ncycle, int* strid
 #if !defined(_OPENACC)
     int ii = i;
 #endif
-
+// clang-format off
     #pragma acc loop seq
     for (;;) {  // ncycle loop
 #if !defined(_OPENACC)
@@ -515,6 +514,7 @@ static void triang_interleaved2(NrnThread* nt, int icore, int ncycle, int* strid
         ii -= istride;
 #endif
     }
+    // clang-format on
 }
 
 // icore ranges [0:warpsize) ; stride[ncycle]
@@ -528,7 +528,9 @@ static void bksub_interleaved2(NrnThread* nt,
 #if !defined(_OPENACC)
     for (int i = root; i < lastroot; i += 1) {
 #else
+// clang-format off
     #pragma acc loop seq
+    // clang-format on
     for (int i = root; i < lastroot; i += warpsize) {
 #endif
         GPU_RHS(i) /= GPU_D(i);  // the root
@@ -591,15 +593,13 @@ void solve_interleaved2(int ith) {
     solve_interleaved2_launcher(d_nt, d_info);
 #else
 #ifdef _OPENACC
-//    #pragma acc kernels loop gang(1), vector(32) present(nt[0:1], strides[0:nstride],...
-    #pragma acc parallel loop present(                                                          \
-        nt[0 : 1],                                                                              \
-            strides[0 : nstride],                                                               \
-               ncycles[0 : nwarp],                                                              \
-                       stridedispl[0 : nwarp + 1],                                              \
-                                   rootbegin[0 : nwarp + 1],                                    \
-                                             nodebegin[0 : nwarp + 1]) if (nt->compute_gpu)     \
-                                                                               async(stream_id)
+// clang-format off
+    #pragma acc parallel loop present(                  \
+        nt[0:1], strides[0:nstride],                    \
+        ncycles[0:nwarp], stridedispl[0:nwarp+1],       \
+        rootbegin[0:nwarp+1], nodebegin[0:nwarp+1])     \
+        if (nt->compute_gpu) async(stream_id)
+// clang-format on
 #endif
     for (int icore = 0; icore < ncore; ++icore) {
         int iwarp = icore / warpsize;     // figure out the >> value
@@ -657,11 +657,13 @@ void solve_interleaved1(int ith) {
     solve_interleaved_launcher(d_nt, d_info, ncell);
 #else
 #ifdef _OPENACC
-    #pragma acc parallel loop present(                                                         \
-        nt[0 : 1], stride[0 : nstride],                                                        \
-                      firstnode[0 : ncell], lastnode[0 : ncell],                               \
-                                                     cellsize[0 : ncell]) if (nt->compute_gpu) \
-                                                                                  async(stream_id)
+// clang-format off
+    #pragma acc parallel loop present(              \
+        nt[0:1], stride[0:nstride],                 \
+        firstnode[0:ncell], lastnode[0:ncell],      \
+        cellsize[0:ncell]) if (nt->compute_gpu)     \
+        async(stream_id)
+// clang-format on
 #endif
     for (int icell = 0; icell < ncell; ++icell) {
         int icellsize = cellsize[icell];

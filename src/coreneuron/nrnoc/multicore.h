@@ -104,10 +104,10 @@ typedef struct NrnThread {
     double* _actual_v;
     double* _actual_area;
     double* _actual_diam; /* NULL if no mechanism has dparam with diam semantics */
-    double* _shadow_rhs; /* Not pointer into _data. Avoid race for multiple POINT_PROCESS in same
-                            compartment */
-    double* _shadow_d;   /* Not pointer into _data. Avoid race for multiple POINT_PROCESS in same
-                            compartment */
+    double* _shadow_rhs;  /* Not pointer into _data. Avoid race for multiple POINT_PROCESS in same
+                             compartment */
+    double* _shadow_d;    /* Not pointer into _data. Avoid race for multiple POINT_PROCESS in same
+                             compartment */
     int* _v_parent_index;
     int* _permute;
     char* _sp13mat;                     /* handle to general sparse matrix */
@@ -125,7 +125,7 @@ typedef struct NrnThread {
     int* _net_send_buffer;
 
     int* _watch_types; /* NULL or 0 terminated array of integers */
-    void* mapping; /* section to segment mapping information */
+    void* mapping;     /* section to segment mapping information */
 
 } NrnThread;
 

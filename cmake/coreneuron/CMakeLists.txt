@@ -177,8 +177,15 @@ if(CLANG_FORMAT_FOUND)
     file(COPY ${PROJECT_SOURCE_DIR}/.clang-format DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
     #to indent files using clang-format
-    file(GLOB_RECURSE SRC_FILES_FOR_CLANG_FORMAT ${PROJECT_SOURCE_DIR}/coreneuron/*.c*
-        ${PROJECT_SOURCE_DIR}/coreneuron/*.h* ${PROJECT_SOURCE_DIR}/coreneuron/*.ipp*)
+    file(GLOB_RECURSE SRC_FILES_FOR_CLANG_FORMAT
+        ${PROJECT_SOURCE_DIR}/coreneuron/*.c
+        ${PROJECT_SOURCE_DIR}/coreneuron/*.cpp
+        ${PROJECT_SOURCE_DIR}/coreneuron/*.h*
+        ${PROJECT_SOURCE_DIR}/coreneuron/*.ipp*)
+
+    # exclude ezoption header file
+    list(REMOVE_ITEM SRC_FILES_FOR_CLANG_FORMAT
+        "${PROJECT_SOURCE_DIR}/coreneuron/utils/ezoption/ezOptionParser.hpp")
 
     add_custom_target(formatsource COMMAND ${CMAKE_COMMAND}
         -DSOURCE_FILES:STRING="${SRC_FILES_FOR_CLANG_FORMAT}"

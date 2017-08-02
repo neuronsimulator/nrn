@@ -29,7 +29,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include "coreneuron/nrniv/nrn_datareader.h"
 
-extern "C" int check_bbcore_write_version(const char *);
+extern "C" int check_bbcore_write_version(const char*);
 
 data_reader::data_reader(const char* filename, bool reorder) {
     this->open(filename, reorder);
@@ -61,10 +61,7 @@ int data_reader::read_int() {
     return i;
 }
 
-void data_reader::read_mapping_count(int* gid,
-                                     int* nsec,
-                                     int* nseg,
-                                     int* nseclist) {
+void data_reader::read_mapping_count(int* gid, int* nsec, int* nseg, int* nseclist) {
     char line_buf[max_line_length];
 
     F.getline(line_buf, sizeof(line_buf));

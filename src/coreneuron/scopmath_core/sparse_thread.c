@@ -54,7 +54,7 @@ static char RCSid[] = "sparse.c,v 1.7 1998/03/12 13:17:17 hines Exp";
  *
  *  Files accessed:  none
  *
-*/
+ */
 
 #if LINT
 #define IGNORE(arg) \

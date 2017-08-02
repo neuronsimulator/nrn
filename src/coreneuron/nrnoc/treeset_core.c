@@ -53,8 +53,11 @@ static void nrn_rhs(NrnThread* _nt) {
     double* vec_v = &(VEC_V(0));
     int* parent_index = _nt->_v_parent_index;
 
-    #pragma acc parallel loop present(vec_rhs[0 : i3], \
-                                          vec_d[0 : i3]) if (_nt->compute_gpu) async(stream_id)
+// clang-format off
+    #pragma acc parallel loop present(          \
+        vec_rhs[0:i3], vec_d[0:i3])             \
+        if (_nt->compute_gpu) async(stream_id)
+    // clang-format on
     for (i = i1; i < i3; ++i) {
         vec_rhs[i] = 0.;
         vec_d[i] = 0.;
@@ -77,21 +80,21 @@ static void nrn_rhs(NrnThread* _nt) {
 The extracellular mechanism contribution is already done.
         rhs += ai_j*(vi_j - vi)
 */
-    #pragma acc parallel loop present(       \
-        vec_rhs[0 : i3],                     \
-            vec_d[0 : i3],                   \
-                  vec_a[0 : i3],             \
-                        vec_b[0 : i3],       \
-                              vec_v[0 : i3], \
-                                    parent_index[0 : i3]) if (_nt->compute_gpu) async(stream_id)
+// clang-format off
+    #pragma acc parallel loop present(          \
+        vec_rhs[0:i3], vec_d[0:i3],             \
+        vec_a[0:i3], vec_b[0:i3],               \
+        vec_v[0:i3], parent_index[0:i3])        \
+        if (_nt->compute_gpu) async(stream_id)
     for (i = i2; i < i3; ++i) {
         double dv = vec_v[parent_index[i]] - vec_v[i];
-/* our connection coefficients are negative so */
+        /* our connection coefficients are negative so */
         #pragma acc atomic update
         vec_rhs[i] -= vec_b[i] * dv;
         #pragma acc atomic update
         vec_rhs[parent_index[i]] += vec_a[i] * dv;
     }
+    // clang-format on
 }
 
 /* calculate left hand side of
@@ -139,15 +142,18 @@ static void nrn_lhs(NrnThread* _nt) {
     int* parent_index = _nt->_v_parent_index;
 
 /* now add the axial currents */
-    #pragma acc parallel loop present(                                                           \
-        vec_d[0 : i3], vec_a[0 : i3], vec_b[0 : i3], parent_index[0 : i3]) if (_nt->compute_gpu) \
-                                                                               async(stream_id)
+// clang-format off
+    #pragma acc parallel loop present(          \
+        vec_d[0:i3], vec_a[0:i3],               \
+        vec_b[0:i3], parent_index[0:i3])        \
+        if (_nt->compute_gpu) async(stream_id)
     for (i = i2; i < i3; ++i) {
         #pragma acc atomic update
         vec_d[i] -= vec_b[i];
         #pragma acc atomic update
         vec_d[parent_index[i]] -= vec_a[i];
     }
+    // clang-format on
 }
 
 /* for the fixed step method */

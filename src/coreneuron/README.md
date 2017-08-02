@@ -233,7 +233,7 @@ If you have installed `clang-format`, you can reformat/reindent generated .c fil
 make formatbuild
 ```
 
-The `.clang-format` file in the source repository is compatible with version 3.9.
+The `.clang-format` file in the source repository is compatible with version 3.9 and 4.0.
 
 ## License
 * See LICENSE.txt

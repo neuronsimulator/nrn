@@ -82,8 +82,7 @@ extern NRNMPI_Spikebuf* spbufout_;
 extern NRNMPI_Spikebuf* spbufin_;
 #endif
 
-
-#endif // NRNMPI
+#endif  // NRNMPI
 
 #if defined(__cplusplus)
 }

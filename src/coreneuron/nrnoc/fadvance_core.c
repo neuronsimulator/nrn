@@ -144,14 +144,20 @@ void update(NrnThread* _nt) {
 
     /* do not need to worry about linmod or extracellular*/
     if (secondorder) {
-        #pragma acc parallel loop present(vec_v[0 : i2], \
-                                        vec_rhs[0 : i2]) if (_nt->compute_gpu) async(stream_id)
+// clang-format off
+        #pragma acc parallel loop present(          \
+            vec_v[0:i2], vec_rhs[0:i2])             \
+            if (_nt->compute_gpu) async(stream_id)
+        // clang-format on
         for (i = i1; i < i2; ++i) {
             vec_v[i] += 2. * vec_rhs[i];
         }
     } else {
-        #pragma acc parallel loop present(vec_v[0 : i2], \
-                                        vec_rhs[0 : i2]) if (_nt->compute_gpu) async(stream_id)
+// clang-format off
+        #pragma acc parallel loop present(              \
+                vec_v[0:i2], vec_rhs[0:i2])             \
+                if (_nt->compute_gpu) async(stream_id)
+        // clang-format on
         for (i = i1; i < i2; ++i) {
             vec_v[i] += vec_rhs[i];
         }
@@ -204,9 +210,11 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
     if (nth->ncell) {
 #if defined(_OPENACC)
         int stream_id = nth->stream_id;
-        /*@todo: do we need to update nth->_t on GPU: Yes (Michael, but can launch kernel) */
+/*@todo: do we need to update nth->_t on GPU: Yes (Michael, but can launch kernel) */
+// clang-format off
         #pragma acc update device(nth->_t) if (nth->compute_gpu) async(stream_id)
         #pragma acc wait(stream_id)
+// clang-format on
 #endif
 
         fixed_play_continuous(nth);
@@ -227,15 +235,17 @@ void* nrn_fixed_step_lastpart(NrnThread* nth) {
     if (nth->ncell) {
 #if defined(_OPENACC)
         int stream_id = nth->stream_id;
-        /*@todo: do we need to update nth->_t on GPU */
+/*@todo: do we need to update nth->_t on GPU */
+// clang-format off
         #pragma acc update device(nth->_t) if (nth->compute_gpu) async(stream_id)
         #pragma acc wait(stream_id)
+// clang-format on
 #endif
 
         fixed_play_continuous(nth);
         nonvint(nth);
         nrn_ba(nth, AFTER_SOLVE);
-	nrn_ba(nth, BEFORE_STEP);
+        nrn_ba(nth, BEFORE_STEP);
     }
 
     nrn_deliver_events(nth); /* up to but not past texit */

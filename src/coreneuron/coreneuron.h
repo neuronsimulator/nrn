@@ -30,7 +30,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
  * Includes all headers required to communicate and run all methods
  * described in CoreNeuron, neurox, and mod2c C-generated mechanisms
  * functions.
-**/
+ **/
 
 #ifndef CORENEURON_H
 #define CORENEURON_H
@@ -45,7 +45,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/utils/randoms/nrnran123.h"      //Random Number Generator
 
 #if defined(__cplusplus)
-#include "coreneuron/nrniv/memory.h"                 //Memory alignemnts and padding
+#include "coreneuron/nrniv/memory.h"  //Memory alignemnts and padding
 
 extern "C" {
 #endif

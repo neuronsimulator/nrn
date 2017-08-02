@@ -36,6 +36,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
 extern MPI_Comm nrnmpi_world_comm;
 extern MPI_Comm nrnmpi_comm;
 
-#endif // NRNMPI
+#endif  // NRNMPI
 
 #endif

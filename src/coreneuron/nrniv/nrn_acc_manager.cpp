@@ -804,7 +804,9 @@ extern "C" {
 void update_matrix_from_gpu(NrnThread* _nt) {
 #ifdef _OPENACC
     if (_nt->compute_gpu && (_nt->end > 0)) {
-        /* before copying, make sure all computations in the stream are completed */
+/* before copying, make sure all computations in the stream are completed */
+
+// clang-format off
         #pragma acc wait(_nt->stream_id)
 
         /* openacc routine doesn't allow asyn, use pragma */
@@ -818,6 +820,7 @@ void update_matrix_from_gpu(NrnThread* _nt) {
 
         #pragma acc update host(rhs[0 : 2 * ne]) async(_nt->stream_id)
         #pragma acc wait(_nt->stream_id)
+        // clang-format on
     }
 #else
     (void)_nt;
@@ -827,7 +830,9 @@ void update_matrix_from_gpu(NrnThread* _nt) {
 void update_matrix_to_gpu(NrnThread* _nt) {
 #ifdef _OPENACC
     if (_nt->compute_gpu && (_nt->end > 0)) {
-        /* before copying, make sure all computations in the stream are completed */
+/* before copying, make sure all computations in the stream are completed */
+
+// clang-format off
         #pragma acc wait(_nt->stream_id)
 
         /* while discussion with Michael we found that RHS is also needed on
@@ -841,6 +846,7 @@ void update_matrix_to_gpu(NrnThread* _nt) {
         #pragma acc update device(v[0 : ne]) async(_nt->stream_id)
         #pragma acc update device(rhs[0 : ne]) async(_nt->stream_id)
         #pragma acc wait(_nt->stream_id)
+        // clang-format on
     }
 #else
     (void)_nt;

@@ -156,7 +156,7 @@ void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
                 int ixnew = p_target[ix];
                 *pd = ixnew + area0;
             }
-        }else if (s == -9) {                               // diam
+        } else if (s == -9) {                        // diam
             int diam0 = nt._actual_diam - nt._data;  // includes padding if relevant
             int* p_target = nt._permute;
             for (int iml = 0; iml < cnt; ++iml) {

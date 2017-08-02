@@ -66,8 +66,8 @@ namespace endian {
                 *d_++ = *s_++;
             return d;
         }
-    }
-}
+    }  // namespace impl
+}  // namespace endian
 #endif
 
 namespace endian {
@@ -409,7 +409,7 @@ namespace endian {
                     swap_endian<sizeof(V), 1, false>::eval((unsigned char*)b++);
             }
         }
-    }
+    }  // namespace impl
 
     /** Reverse the endianness of a value in-place.
      *
@@ -437,7 +437,7 @@ namespace endian {
                 swap_endian_unroll(b, e);
             }
         };
-    }
+    }  // namespace impl
 
     /** Reverse the endianness of the values in the given range.
      *

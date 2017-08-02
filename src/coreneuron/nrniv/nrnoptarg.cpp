@@ -58,7 +58,8 @@ struct param_str {
 
 static param_int param_int_args[] = {
     {"--spikebuf -b", 100000, 1, 2000000000, "Spike buffer size. (100000)"},
-    {"--spkcompress", 0, 0, 100000, "Spike compression. Up to ARG are exchanged during MPI_Allgather. (0)"},
+    {"--spkcompress", 0, 0, 100000,
+     "Spike compression. Up to ARG are exchanged during MPI_Allgather. (0)"},
     {"--prcellgid -g", -1, -1, 2000000000, "Output prcellstate information for the gid NUMBER."},
     {"--cell-permute -R", 1, 0, 3,
      "Cell permutation, 0 No; 1 optimise node adjacency; 2 optimize parent adjacency. (1)"},
@@ -76,7 +77,8 @@ static param_int param_int_args[] = {
 static param_dbl param_dbl_args[] = {
     {"--tstart -s", 0., -1e9, 1e9, "Start time (ms). (0)"},
     {"--tstop -e", 100.0, 0.0, 1e9, "Stop time (ms). (100)"},
-    {"--dt -dt", -1000., -1000., 1e9, "Fixed time step. The default value is set by defaults.dat or is 0.025."},
+    {"--dt -dt", -1000., -1000., 1e9,
+     "Fixed time step. The default value is set by defaults.dat or is 0.025."},
     {"--dt_io -i", 0.1, 1e-9, 1e9, "Dt of I/O. (0.1)"},
     {"--voltage -v", -65.0, -1e9, 1e9,
      "Initial voltage used for nrn_finitialize(1, v_init). If 1000, then nrn_finitialize(0,...). (-65.)"},
@@ -89,7 +91,8 @@ static param_dbl param_dbl_args[] = {
     {NULL, 0., 0., 0., NULL}};
 
 static param_flag param_flag_args[] = {
-    {"--help -h", "Print a usage message briefly summarizing these command-line options, then exit."},
+    {"--help -h",
+     "Print a usage message briefly summarizing these command-line options, then exit."},
     {"--threading -c", "Parallel threads. The default is serial threads."},
     {"--gpu -gpu", "Enable use of GPUs. The default implies cpu only run."},
     {"-mpi", "Enable MPI. In order to initialize MPI environment this argument must be specified."},

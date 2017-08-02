@@ -50,13 +50,13 @@ namespace coreneuron {
     }
 
     /** Check for the pointer alignment.
-    */
+     */
     inline bool is_aligned(void* pointer, size_t alignment) {
         return (((uintptr_t)(const void*)(pointer)) % (alignment) == 0);
     }
 
     /** Allocate the aligned memory.
-    */
+     */
     inline void* emalloc_align(size_t size, size_t alignment) {
         void* memptr;
         nrn_assert(posix_memalign(&memptr, alignment, size) == 0);
@@ -65,7 +65,7 @@ namespace coreneuron {
     }
 
     /** Allocate the aligned memory and set it to 1.
-    */
+     */
     inline void* ecalloc_align(size_t n, size_t alignment, size_t size) {
         void* p;
         if (n == 0) {
@@ -76,6 +76,6 @@ namespace coreneuron {
         memset(p, 1, n * size);  // Avoid native division by zero (cyme...)
         return p;
     }
-}  // end name space
+}  // namespace coreneuron
 
 #endif

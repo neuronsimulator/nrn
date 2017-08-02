@@ -49,7 +49,7 @@ int* node_order(int ncell,
 template <typename T>
 void copy_array(T*& dest, T* src, size_t n) {
     dest = new T[n];
-    std::copy(src, src+n, dest);
+    std::copy(src, src + n, dest);
 }
 
 #define INTERLEAVE_DEBUG 0

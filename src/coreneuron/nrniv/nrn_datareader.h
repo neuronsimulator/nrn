@@ -107,11 +107,7 @@ class data_reader {
      * Reads neuron mapping info which is represented by
      * gid, #sections, #segments, #section lists
      */
-    void read_mapping_count(int* gid,
-                            int* nsec,
-                            int* nseg,
-                            int* nseclist);
-
+    void read_mapping_count(int* gid, int* nsec, int* nseg, int* nseclist);
 
     /** Reads number of cells in parsing file */
     void read_mapping_cell_count(int* count);
@@ -122,51 +118,50 @@ class data_reader {
      */
     template <typename T>
     int read_mapping_info(T* mapinfo) {
+        int nsec, nseg, n_scan;
+        char line_buf[max_line_length], name[max_line_length];
 
-      int nsec, nseg, n_scan;
-      char line_buf[max_line_length], name[max_line_length];
+        F.getline(line_buf, sizeof(line_buf));
+        n_scan = sscanf(line_buf, "%s %d %d", name, &nsec, &nseg);
 
-      F.getline(line_buf, sizeof(line_buf));
-      n_scan = sscanf(line_buf, "%s %d %d", name, &nsec, &nseg);
+        nrn_assert(n_scan == 3);
 
-      nrn_assert(n_scan == 3);
+        mapinfo->name = std::string(name);
 
-      mapinfo->name = std::string(name);
+        if (nseg) {
+            std::vector<int> sec, seg;
+            sec.reserve(nseg);
+            seg.reserve(nseg);
 
-      if(nseg) {
-          std::vector<int> sec, seg;
-          sec.reserve(nseg);
-          seg.reserve(nseg);
+            read_array<int>(&sec[0], nseg);
+            read_array<int>(&seg[0], nseg);
 
-          read_array<int>(&sec[0], nseg);
-          read_array<int>(&seg[0], nseg);
-
-          for (int i = 0; i < nseg; i++) {
-              mapinfo->add_segment(sec[i], seg[i]);
+            for (int i = 0; i < nseg; i++) {
+                mapinfo->add_segment(sec[i], seg[i]);
             }
         }
-      return nseg;
+        return nseg;
     }
 
     /** Defined flag values for parse_array() */
     typedef enum parse_action { read, seek } parse_action;
 
     /** Generic parse function for an array of fixed length.
-      *
-      * \tparam T the array element type: may be \c int or \c double.
-      * \param p pointer to the target in memory for reading into.
-      * \param count number of items of type \a T to parse.
-      * \param action whether to validate and skip (\c seek) or
-      *    copy array into memory (\c read).
-      * \return the supplied pointer value.
-      *
-      * Error if \a count is non-zero, \a flag is \c read, and
-      * the supplied pointer \p is null.
-      *
-      * Arrays are represented by a checkpoint line followed by
-      * the array items in increasing index order, in the native binary
-      * representation of the writing process.
-      */
+     *
+     * \tparam T the array element type: may be \c int or \c double.
+     * \param p pointer to the target in memory for reading into.
+     * \param count number of items of type \a T to parse.
+     * \param action whether to validate and skip (\c seek) or
+     *    copy array into memory (\c read).
+     * \return the supplied pointer value.
+     *
+     * Error if \a count is non-zero, \a flag is \c read, and
+     * the supplied pointer \p is null.
+     *
+     * Arrays are represented by a checkpoint line followed by
+     * the array items in increasing index order, in the native binary
+     * representation of the writing process.
+     */
     template <typename T>
     inline T* parse_array(T* p, size_t count, parse_action flag) {
         if (count > 0 && flag != seek)

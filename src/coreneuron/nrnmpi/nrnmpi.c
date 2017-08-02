@@ -191,7 +191,7 @@ double nrn_wtime() {
     {
         struct timeval time1;
         gettimeofday(&time1, NULL);
-        return (time1.tv_sec + time1.tv_usec/1.e6);
+        return (time1.tv_sec + time1.tv_usec / 1.e6);
     }
 }
 

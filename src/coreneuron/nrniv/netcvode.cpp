@@ -663,12 +663,13 @@ void NetCvode::check_thresh(NrnThread* nt) {  // for default method
 //#endif
 
 // on GPU...
-    #pragma acc parallel loop present(                 \
-        nt[0 : 1],                                     \
-            presyns_helper[0 : nt->n_presyn],          \
-                      presyns[0 : nt->n_presyn],       \
-                              actual_v[0 : nt->end])   \
-                                  copy(net_send_buf_count) if (nt->compute_gpu) async(stream_id)
+// clang-format off
+    #pragma acc parallel loop present(                  \
+        nt[0:1], presyns_helper[0:nt->n_presyn],        \
+        presyns[0:nt->n_presyn], actual_v[0:nt->end])   \
+        copy(net_send_buf_count) if (nt->compute_gpu)   \
+        async(stream_id)
+    // clang-format on
     for (i = 0; i < nt->ncell; ++i) {
         PreSyn* ps = presyns + i;
         PreSynHelper* psh = presyns_helper + i;
@@ -688,23 +689,28 @@ void NetCvode::check_thresh(NrnThread* nt) {  // for default method
             }
 #endif
 
+// clang-format off
             #pragma acc atomic capture
+            // clang-format on
             idx = net_send_buf_count++;
 
             nt->_net_send_buffer[idx] = i;
         }
     }
 
+// clang-format off
     #pragma acc wait(stream_id)
+    // clang-format on
     nt->_net_send_buffer_cnt = net_send_buf_count;
 
     if (nt->_net_send_buffer_cnt) {
 #ifdef _OPENACC
         int* nsbuffer = nt->_net_send_buffer;
 #endif
-        #pragma acc update host(nsbuffer[0 : nt->_net_send_buffer_cnt]) if (nt->compute_gpu) \
-                                                                        async(stream_id)
+// clang-format off
+        #pragma acc update host(nsbuffer[0:nt->_net_send_buffer_cnt]) if (nt->compute_gpu) async(stream_id)
         #pragma acc wait(stream_id)
+        // clang-format on
     }
 
     // on CPU...

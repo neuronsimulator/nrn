@@ -32,12 +32,12 @@ THE POSSIBILITY OF SUCH DAMAGE.
 /* define to 1 if you want MPI specific features activated
    (optionally provided by CMake option NRNMPI) */
 #ifndef NRNMPI
-  #define NRNMPI 1
+#define NRNMPI 1
 #endif
 
 /* define to 1 if want multisend spike exchange available */
 #ifndef NRN_MULTISEND
- #define NRN_MULTISEND 1
+#define NRN_MULTISEND 1
 #endif
 
 /* define to 1 if you want parallel distributed cells (and gap junctions) */

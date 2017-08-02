@@ -63,7 +63,7 @@ int nrn_feenableexcept() {
 
 int main1(int argc, char* argv[], char** env);
 void call_prcellstate_for_prcellgid(int prcellgid, int compute_gpu, int is_init);
-void nrn_init_and_load_data(int argc, char* argv[], bool run_setup_cleanup=true) {
+void nrn_init_and_load_data(int argc, char* argv[], bool run_setup_cleanup = true) {
 #if defined(NRN_FEEXCEPT)
     nrn_feenableexcept();
 #endif
@@ -72,7 +72,7 @@ void nrn_init_and_load_data(int argc, char* argv[], bool run_setup_cleanup=true)
     stop_profile();
 #endif
 
-    // mpi initialisation
+// mpi initialisation
 #if NRNMPI
     nrnmpi_init(1, &argc, &argv);
 #endif
@@ -92,7 +92,7 @@ void nrn_init_and_load_data(int argc, char* argv[], bool run_setup_cleanup=true)
     // set global variables
     // precedence is: set by user, globals.dat, 34.0
     celsius = nrnopt_get_dbl("--celsius");
-    t = celsius; // later will read globals.dat and compare with this.
+    t = celsius;  // later will read globals.dat and compare with this.
 
 #if _OPENACC
     if (!nrnopt_get_flag("--gpu") && nrnopt_get_int("--cell-permute") == 2) {
@@ -103,7 +103,7 @@ void nrn_init_and_load_data(int argc, char* argv[], bool run_setup_cleanup=true)
     }
 #endif
 
-    // if multi-threading enabled, make sure mpi library supports it
+// if multi-threading enabled, make sure mpi library supports it
 #if NRNMPI
     if (nrnopt_get_flag("--threading")) {
         nrnmpi_check_threading_support();
@@ -235,7 +235,9 @@ int main1(int argc, char** argv, char** env) {
     // nrnopt_get... still available until call nrnopt_delete()
 
     bool compute_gpu = nrnopt_get_flag("-gpu");
+// clang-format off
     #pragma acc data copyin(celsius, secondorder) if (compute_gpu)
+    // clang-format on
     {
         double v = nrnopt_get_dbl("--voltage");
         nrn_finitialize(v != 1000., v);
@@ -255,8 +257,9 @@ int main1(int argc, char** argv, char** env) {
                         "\n WARNING! : Can't enable reports with model duplications feature! \n");
             } else {
                 r = new ReportGenerator(nrnopt_get_int("--report"), nrnopt_get_int("--tstart"),
-                                        nrnopt_get_dbl("--tstop"), nrnopt_get_int("--dt"), nrnopt_get_dbl("--mindelay"),
-                                        nrnopt_get_dbl("--dt_report"), nrnopt_get_str("--outpath"));
+                                        nrnopt_get_dbl("--tstop"), nrnopt_get_int("--dt"),
+                                        nrnopt_get_dbl("--mindelay"), nrnopt_get_dbl("--dt_report"),
+                                        nrnopt_get_str("--outpath"));
                 r->register_report();
             }
 #else
@@ -302,7 +305,7 @@ int main1(int argc, char** argv, char** env) {
     // Cleaning the memory
     nrn_cleanup();
 
-    // mpi finalize
+// mpi finalize
 #if NRNMPI
     nrnmpi_finalize();
 #endif
