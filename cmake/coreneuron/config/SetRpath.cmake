@@ -2,7 +2,7 @@
 set(CMAKE_MACOSX_RPATH 1)
 
 # on bg-q we do static linking and xlc doesnt like RPATH settings in this case
-IF( NOT BLUEGENE)
+IF( NOT BLUEGENE AND NOT CRAY_SYSTEM)
 
     # use, i.e. don't skip the full RPATH for the build tree
     SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
