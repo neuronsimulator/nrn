@@ -63,7 +63,10 @@ int nrn_feenableexcept() {
 
 int main1(int argc, char* argv[], char** env);
 void call_prcellstate_for_prcellgid(int prcellgid, int compute_gpu, int is_init);
-void nrn_init_and_load_data(int argc, char* argv[], bool run_setup_cleanup = true) {
+void nrn_init_and_load_data(int argc,
+                            char* argv[],
+                            bool nrnmpi_under_nrncontrol = true,
+                            bool run_setup_cleanup = true) {
 #if defined(NRN_FEEXCEPT)
     nrn_feenableexcept();
 #endif
@@ -74,7 +77,7 @@ void nrn_init_and_load_data(int argc, char* argv[], bool run_setup_cleanup = tru
 
 // mpi initialisation
 #if NRNMPI
-    nrnmpi_init(1, &argc, &argv);
+    nrnmpi_init(nrnmpi_under_nrncontrol ? 1 : 0, &argc, &argv);
 #endif
 
     // memory footprint after mpi initialisation

@@ -30,7 +30,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
  * Includes all headers required to communicate and run all methods
  * described in CoreNeuron, neurox, and mod2c C-generated mechanisms
  * functions.
- **/
+**/
 
 #ifndef CORENEURON_H
 #define CORENEURON_H
@@ -45,16 +45,10 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/utils/randoms/nrnran123.h"      //Random Number Generator
 
 #if defined(__cplusplus)
-#include "coreneuron/nrniv/memory.h"  //Memory alignemnts and padding
+#include "coreneuron/nrniv/memory.h"  //Memory alignments and padding
 
 extern "C" {
 #endif
-
-// global variables required by mechanisms
-// TODO requires #include coreneuron/coreneuron.h in all mechs
-// extern double celsius; //from coreneuron/coreneuron/nrnconf.h
-// extern int nrn_ion_global_map_size; //from coreneuron/nrnoc/membfunc.h
-// extern double** nrn_ion_global_map; //from coreneuron/nrnoc/membfunc.h
 
 #ifdef EXPORT_MECHS_FUNCTIONS
 // from (auto-generated) mod_func_ptrs.c

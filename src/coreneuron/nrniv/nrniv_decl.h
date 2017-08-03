@@ -53,7 +53,7 @@ extern void nrn_p_construct(void);
 extern void nrn_setup(const char* filesdat, int byte_swap, bool run_setup_cleanup = true);
 extern int nrn_setup_multiple;
 extern int nrn_setup_extracon;
-extern void nrn_cleanup();
+extern void nrn_cleanup(bool clean_ion_global_map = true);
 extern void BBS_netpar_solve(double);
 extern void nrn_mkPatternStim(const char* filename);
 extern int nrn_extra_thread0_vdata;

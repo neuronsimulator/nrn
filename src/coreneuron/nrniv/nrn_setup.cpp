@@ -269,7 +269,6 @@ void read_phase1(data_reader& F, int imult, NrnThread& nt) {
     // the extra netcon_srcgid will be filled in later
     netcon_srcgid[nt.id] = new int[nt.n_netcon + nrn_setup_extracon];
     F.read_array<int>(netcon_srcgid[nt.id], nt.n_netcon);
-    F.close();
 
 #if 0
   // for checking whether negative gids fit into the gid space
@@ -784,10 +783,23 @@ inline void mech_layout(data_reader& F, T* data, int cnt, int sz, int layout) {
  * allocated with malloc(). This is not the case here, so let's try and fix
  * things up first. */
 
-void nrn_cleanup() {
+void nrn_cleanup(bool clean_ion_global_map) {
     gid2in.clear();
     gid2out.clear();
 
+    // clean ezOpt parser allocated memory (if any)
+    nrnopt_delete();
+
+    // clean ions global maps
+    if (clean_ion_global_map) {
+        for (int i = 0; i < nrn_ion_global_map_size; i++)
+            free(nrn_ion_global_map[i]);
+        free(nrn_ion_global_map);
+        nrn_ion_global_map = NULL;
+        nrn_ion_global_map_size = 0;
+    }
+
+    // clean NrnThreads
     for (int it = 0; it < nrn_nthread; ++it) {
         NrnThread* nt = nrn_threads + it;
         NrnThreadMembList* next_tml = NULL;
