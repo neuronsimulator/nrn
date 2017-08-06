@@ -72,7 +72,7 @@ static int isend(s, buf)
 	char           *s, *buf;
 {
 	/* if first chars in buf form a keyword return 1 */
-	char           *cp, word[100], *wp, test[30];
+	char           *cp, word[256], *wp, test[256];
 	int             yesno = 0;
 
 	cp = buf;
@@ -280,7 +280,7 @@ void enquextern(sym)
 
 FILE *dequextern()
 {
-	char            fname[20];
+	char            fname[256];
 	FILE           *f;
 	Symbol         *s;
 

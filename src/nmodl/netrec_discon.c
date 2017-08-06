@@ -58,6 +58,7 @@ that only dsi/dt that is affected by sj will change si.
 #include "modl.h"
 #include "parse1.h"
 
+extern int vectorize;
 extern List* netrec_cnexp;  /* STATE symbol and cnexp expr pairs */
 static List* info;
 static void general_discon_adjust(Item* varname, Item* equal, Item* expr, Item* lastok);
@@ -170,8 +171,8 @@ static void general_discon_adjust(Item* varname, Item* equal, Item* expr, Item* 
   }else{
     needv = strdup("");
   }
-  if (netrec_need_thread) {
-    needthread = strdup("    _thread = _nt->_ml_list[_mechtype]->_thread;\n");
+  if (netrec_need_thread && vectorize) {
+    needthread = strdup("#if NRN_VECTORIZED\n    _thread = _nt->_ml_list[_mechtype]->_thread;\n#endif\n");
   }else{
     needthread = strdup("");
   }

@@ -40,8 +40,8 @@ void solv_diffeq(qsol, fun, method, numeqn, listnum, steadystate, btype)
 	int numeqn, listnum, steadystate;
 	int btype;
 {
-	char *maxerr_str, dindepname[50];
-	char deriv1_advance[30], deriv2_advance[30];
+	char *maxerr_str, dindepname[256];
+	char deriv1_advance[256], deriv2_advance[256];
 	char ssprefix[8];
 	
 	if (method && strcmp(method->name, "cnexp") == 0) {
@@ -233,13 +233,13 @@ Implementation :
 base state first. Will install PRIME if necessary.
 */
 static Symbol	*forderiv;	/* base state */
-static char	base_units[50];	/*base state units */
+static char	base_units[256];	/*base state units */
 static int	indx, maxindx;	/* current indx, and indx of dstate */
 
 static Symbol * init_forderiv(prime)
 	Symbol *prime;
 {
-	char name[100];
+	char name[256];
 	double d1, d2;
 
 	assert(prime->type == PRIME);
@@ -269,7 +269,7 @@ static Symbol * init_forderiv(prime)
 static char *name_forderiv(i)
 	int i;
 {
-	static char name[100];
+	static char name[256];
 	
 	assert(i > 0  && forderiv);
 	if (i > 1) {
@@ -286,7 +286,7 @@ We make use of the tools here to reconstruct the original prime name.
 char *reprime(sym)
 	Symbol *sym;
 {
-	static char name[100];
+	static char name[256];
 	int i;
 	char *cp;
 	
@@ -310,7 +310,7 @@ static Symbol *next_forderiv()
 {
 	char *name;
 	Symbol *s;
-	char units[50];
+	char units[256];
 	
 	if (++indx >= maxindx) {
 		return SYM0;
@@ -425,7 +425,7 @@ void massagederiv(q1, q2, q3, q4, sensused)
 	Item *q1, *q2, *q3, *q4; int sensused;
 {
 	int count = 0, deriv_implicit, solve_seen;
-	char units[50];
+	char units[256];
 	Item *qs, *q, *mixed_eqns();
 	Symbol *s, *derfun, *state;
 

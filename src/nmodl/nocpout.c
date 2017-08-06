@@ -145,7 +145,7 @@ static List *rangedep;
 static List *rangestate;
 static List *nrnpointers;
 static List* uip; /* void _update_ion_pointer(Datum* _ppvar){...} text */
-static char suffix[50];
+static char suffix[256];
 static char *rsuffix;	/* point process range and functions don't have suffix*/
 static char *mechname;
 int point_process; /* 1 if a point process model */
@@ -1013,7 +1013,7 @@ Sprintf(buf, "\"%s\", %g,\n", s->name, d1);
 	}
 	Lappendstr(defs_list, "\
 extern Symbol* hoc_lookup(const char*);\n\
-extern void _nrn_thread_reg(int, int, void(*f)(Datum*));\n\
+extern void _nrn_thread_reg(int, int, void(*)(Datum*));\n\
 extern void _nrn_thread_table_reg(int, void(*)(double*, Datum*, Datum*, _NrnThread*, int));\n\
 extern void hoc_register_tolerance(int, HocStateTolerance*, Symbol***);\n\
 extern void _cvode_abstol( Symbol**, double*, int);\n\n\
@@ -1980,7 +1980,7 @@ static int iondef(p_pointercount) int *p_pointercount; {
 	int ioncount, it, need_style;
 	Item *q, *q1, *q2;
 	Symbol *sion;
-	char ionname[100];
+	char ionname[256];
 
 	ioncount = 0;
 	if (point_process) {
@@ -2547,7 +2547,7 @@ void net_receive(qarg, qp1, qp2, qstmt, qend)
 	Item* q, *q1;
 	Symbol* s;
 	int i, b;
-	char snew[100];
+	char snew[256];
 	if (net_receive_) {
 		diag("Only one NET_RECEIVE block allowed", (char*)0);
 	}
@@ -2671,7 +2671,7 @@ void fornetcon(keyword, par1, args, par2, stmt, qend)
 {
 	Item* q, *q1;
 	Symbol* s;
-	char snew[100];
+	char snew[256];
 	int i;
 	/* follows net_receive pretty closely */
 	++for_netcons_;

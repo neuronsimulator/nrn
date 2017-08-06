@@ -355,7 +355,7 @@ void statdefault(n, index, units, qs, makeconst)
 	char           *units;
 	Item           *qs;
 {
-	char            nam[30], *un;
+	char            nam[256], *un;
 	Symbol         *s;
 
 	if (n->type != NAME && n->type != PRIME) {

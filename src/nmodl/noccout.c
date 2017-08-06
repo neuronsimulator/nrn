@@ -120,7 +120,7 @@ void c_out(const char* prefix)
 	}
 #endif
 #if VECTORIZE
-	P("/* NOT VECTORIZED */\n");
+	P("/* NOT VECTORIZED */\n#define NRN_VECTORIZED 0\n");
 #endif
 	Fflush(fcout);
 	/* things which must go first and most declarations */
@@ -646,7 +646,7 @@ void c_out_vectorize(const char* prefix)
 	Item *q;
 	
 	/* things which must go first and most declarations */
-	P("/* VECTORIZED */\n");
+	P("/* VECTORIZED */\n#define NRN_VECTORIZED 1\n");
 	P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"scoplib_ansi.h\"\n");
 	P("#undef PI\n");
 	P("#define nil 0\n");
