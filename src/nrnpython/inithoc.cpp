@@ -1,4 +1,5 @@
 #include "nrnmpiuse.h"
+#include "nrnpthread.h"
 #include <stdio.h>
 #include <stdint.h>
 #include "nrnmpi.h"
@@ -49,8 +50,20 @@ static int argc_mpi = 2;
 static const char* argv_nompi[] = {"NEURON", "-dll", 0};
 static int argc_nompi = 1;
 
+#if USE_PTHREAD
+#include <pthread.h>
+static pthread_t main_thread_;
+#endif
+
 static void nrnpython_finalize() {
-  Py_Finalize();
+#if USE_PTHREAD
+  pthread_t now = pthread_self();
+  if (pthread_equal(main_thread_, now)) {
+#else
+  {
+#endif
+    Py_Finalize();
+  }
 #if linux
   system("stty sane");
 #endif
@@ -66,7 +79,7 @@ static char* env[] = {0};
 // module to import the correct one as hoc.  Generalizable in the
 // future to 27, 34, 35, 36 with try except clauses.
 // It seems that since these dlls refer to python3x.dll explicitly,
-// it is not possible for differen minor versions of python3x to share
+// it is not possible for different minor versions of python3x to share
 // hoc module dlls.
 // It is conceivable that this strategy will work for linux and mac as well,
 // but for now setup.py names them differently anyway.
@@ -90,6 +103,9 @@ void inithoc() {
 
   int argc = argc_nompi;
   char** argv = (char**)argv_nompi;
+#if USE_PTHREAD
+  main_thread_ = pthread_self();
+#endif
 
   if (nrn_global_argv) {  // ivocmain was already called so already loaded
 #if PY_MAJOR_VERSION >= 3
