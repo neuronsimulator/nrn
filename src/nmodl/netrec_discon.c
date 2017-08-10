@@ -59,6 +59,7 @@ that only dsi/dt that is affected by sj will change si.
 #include "parse1.h"
 
 extern int vectorize;
+extern int cvode_not_allowed;
 extern List* netrec_cnexp;  /* STATE symbol and cnexp expr pairs */
 static List* info;
 static void general_discon_adjust(Item* varname, Item* equal, Item* expr, Item* lastok);
@@ -156,7 +157,12 @@ static void general_discon_adjust(Item* varname, Item* equal, Item* expr, Item* 
   int neq = netrec_state_count/10;
   int i;
   Symbol* sym = SYM(varname);
-  int sindex = slist_search(listnum, sym);
+  int sindex;
+  if (cvode_not_allowed) {
+    fprintf(stderr, "Notice: %s discontinuity adjustment not available.\n", sym->name);
+    return;
+  }
+  sindex = slist_search(listnum, sym);
 
 #if 0
   printf("general_discon_adjust listnum=%d sindex=%d neq=%d\n", listnum, sindex, neq);

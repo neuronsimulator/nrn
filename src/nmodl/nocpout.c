@@ -172,7 +172,8 @@ static List* ba_list_;
 
 #if CVODE
 List* state_discon_list_;
-static int cvode_emit, cvode_not_allowed, cvode_ieq_index;
+int cvode_not_allowed;
+static int cvode_emit, cvode_ieq_index;
 static int cond_index;
 static int tqitem_index;
 static int watch_index;
