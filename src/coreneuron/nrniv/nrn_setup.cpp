@@ -246,6 +246,7 @@ void nrn_read_filesdat(int& ngrp, int*& grp, int multiple, int*& imult, const ch
         }
         if ((iNum + 1) % iNumFiles == 0) {
             rewind(fp);
+            fscanf(fp, "%*s\n");
             fscanf(fp, "%*d\n");
         }
     }
