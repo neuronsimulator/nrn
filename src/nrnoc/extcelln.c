@@ -293,6 +293,16 @@ void nrn_rhs_ext(NrnThread* _nt)
 						NODERHS(pnd) += NODEA(nd)*dv;
 					}
 				}
+			}else{ /* no extracellular in parent but still need
+				to take care of vi = vm + vx in this node.
+				Note that we are NOT grounding the parent
+				side of xraxial so equivalent to sealed.
+				Also note that when children of this node
+				do not have extracellular, we deal with
+				that, at end of this function. */
+				double dv = - nde->v[0];
+				NODERHS(nd) -= NODEB(nd)*dv;
+				NODERHS(pnd) += NODEA(nd)*dv;
 			}
 	
 			/* series resistance and battery to ground */
@@ -305,6 +315,15 @@ void nrn_rhs_ext(NrnThread* _nt)
 				*nde->_rhs[j+1] += x;
 			}
 		}
+	}
+	cnt = _nt->_ecell_child_cnt;
+	for (i = 0; i < cnt; ++i) {
+		double dv;
+		nd = _nt->_ecell_children[i];
+		pnd = _nt->_v_parent[nd->v_node_index];
+		dv = pnd->extnode->v[0];
+		NODERHS(nd) -= NODEB(nd)*dv;
+		NODERHS(pnd) += NODEA(nd)*dv;
 	}
 }
 
