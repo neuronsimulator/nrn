@@ -42,6 +42,8 @@ THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <stdio.h>
+#include <fstream>
+#include <unistd.h>
 #include "memory_utils.h"
 #include "coreneuron/nrnmpi/nrnmpi.h"
 
@@ -70,12 +72,24 @@ double nrn_mallinfo(void) {
         KERN_SUCCESS)
         return (size_t)0L; /* Can't access? */
     return info.resident_size / (1024.0 * 1024.0);
-#elif defined HAVE_MALLOC_H
-    struct mallinfo m;
-    m = mallinfo();
-    mbs = (m.hblkhd + m.uordblks) / (1024.0 * 1024.0);
+#else
+    std::ifstream file;
+    file.open("/proc/self/statm");
+    if (file.is_open()) {
+        unsigned long long int data_size;
+        file >> data_size >> data_size;
+        file.close();
+        mbs = (data_size * sysconf(_SC_PAGESIZE)) / (1024.0 * 1024.0);
+    } else {
+#if defined HAVE_MALLOC_H
+        struct mallinfo m;
+        m = mallinfo();
+        mbs = (m.hblkhd + m.uordblks) / (1024.0 * 1024.0);
+#else
+        mbs = -1;
 #endif
-
+    }
+#endif
     return mbs;
 }
 

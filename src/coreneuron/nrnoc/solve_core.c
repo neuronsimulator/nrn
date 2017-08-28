@@ -32,7 +32,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 int use_solve_interleave;
 
-static void triang(NrnThread*), bksub(NrnThread*);
+static void triang(NrnThread *), bksub(NrnThread *);
 
 /* solve the matrix equation */
 void nrn_solve_minimal(NrnThread* _nt) {
