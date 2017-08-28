@@ -35,14 +35,14 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <stdio.h>
 #include <climits>
+#include <vector>
 #include "nrn_stats.h"
 #include "coreneuron/nrnmpi/nrnmpi.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrniv/netcvode.h"
 #include "coreneuron/nrniv/partrans.h"
 
-extern int spikevec_size;
-extern int* spikevec_gid;
+extern std::vector<int> spikevec_gid;
 extern NetCvode* net_cvode_instance;
 
 const int NUM_STATS = 12;
@@ -66,10 +66,10 @@ void report_cell_stats(void) {
             stat_array[11] += (long)ntar;  // number of transfer (gap) targets
         }
     }
-    stat_array[5] = (long)spikevec_size;  // number of spikes
+    stat_array[5] = (long)spikevec_gid.size();  // number of spikes
 
     int spikevec_positive_gid_size = 0;
-    for (int i = 0; i < spikevec_size; ++i)
+    for (int i = 0; i < spikevec_gid.size(); ++i)
         if (spikevec_gid[i] > -1)
             spikevec_positive_gid_size++;
 

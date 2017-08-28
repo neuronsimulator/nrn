@@ -27,6 +27,8 @@ THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <iostream>
+#include <stdexcept> // std::lenght_error
+#include <vector>
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/nrniv/output_spikes.h"
@@ -34,19 +36,19 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/nrnmutdec.h"
 #include "coreneuron/utils/sdprintf.h"
 
-int spikevec_buffer_size;
-int spikevec_size;
-double* spikevec_time;
-int* spikevec_gid;
+std::vector<double> spikevec_time;
+std::vector<int> spikevec_gid;
 
 static MUTDEC
 
     void
     mk_spikevec_buffer(int sz) {
-    spikevec_buffer_size = sz;
-    spikevec_size = 0;
-    spikevec_time = new double[sz];
-    spikevec_gid = new int[sz];
+    try {
+      spikevec_time.reserve(sz);
+      spikevec_gid.reserve(sz);
+    } catch (const std::length_error& le) {
+      std::cerr << "Lenght error" << le.what() << std::endl;
+    }
     MUTCONSTRUCT(1);
 }
 
@@ -66,7 +68,7 @@ void output_spikes(const char* outpath) {
         return;
     }
 
-    for (int i = 0; i < spikevec_size; ++i)
+    for (int i = 0; i < spikevec_gid.size(); ++i)
         if (spikevec_gid[i] > -1)
             fprintf(f, "%.8g\t%d\n", spikevec_time[i], spikevec_gid[i]);
 
@@ -74,7 +76,7 @@ void output_spikes(const char* outpath) {
 }
 
 void validation(std::vector<std::pair<double, int> >& res) {
-    for (int i = 0; i < spikevec_size; ++i)
+    for (int i = 0; i < spikevec_gid.size(); ++i)
         if (spikevec_gid[i] > -1)
             res.push_back(std::make_pair(spikevec_time[i], spikevec_gid[i]));
 }
