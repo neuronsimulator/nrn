@@ -158,11 +158,6 @@ endif()
 # using this macro for CoreNeuron build
 add_definitions(-DCORENEURON_BUILD)
 
-CHECK_INCLUDE_FILES("spi/include/kernel/memory.h" have_memory_h)
-if(have_memory_h)
-  add_definitions("-DHAVE_MEMORY_H")
-endif()
-
 option (ENABLE_SELECTIVE_GPU_PROFILING "Enable GPU profiling only for Solver" ON)
 option (ENABLE_OPENACC "Enable use of OpenACC" OFF)
 
