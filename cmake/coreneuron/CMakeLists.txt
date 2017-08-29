@@ -80,6 +80,7 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake
 
 set(Boost_NO_BOOST_CMAKE TRUE)
 
+include(CheckIncludeFiles)
 include(ReleaseDebugAutoFlags)
 include(CrayPortability)
 include(BlueGenePortability)
@@ -148,7 +149,6 @@ if(ENABLE_REPORTINGLIB)
     endif(reportinglib_FOUND)
 endif(ENABLE_REPORTINGLIB)
 
-include(CheckIncludeFiles)
 CHECK_INCLUDE_FILES (malloc.h have_malloc_h)
 if(have_malloc_h)
   add_definitions("-DHAVE_MALLOC_H")
