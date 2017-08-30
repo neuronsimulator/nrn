@@ -8,8 +8,9 @@ cmakecache="@CMAKE_BINARY_DIR@/CMakeCache.txt"
 cmakeopts=(@BACM_CMAKEOPTS@)
 shoudhave=(@BACM_MUST_HAVE@)
 shoudnthave=(@BACM_MUST_NOT_HAVE@)
-
-
+cmakedir1=(@BACM_DIR1@)
+cmakedir2=(@BACM_DIR2@)
+cmakemechlist=(@BACM_LIST@)
 # Perform a dummy build of coreneuron with various
 # configuration options. Print out the mechanisms
 # found by scanning the generated mod_func.c file.
@@ -21,7 +22,6 @@ shoudnthave=(@BACM_MUST_NOT_HAVE@)
 # Remaining arguments are passed to CMake.
 #
 # It does not clean up after itself.
-
 function check_modl_reg_mechs() {
     cmcache="$1"
     shift
@@ -44,12 +44,10 @@ function check_modl_reg_mechs() {
     fi
 
     cd "$tmpdir" || exit 1
-
     if ! cmake "$topdir" "$@" >& cmake.out; then
 	echo "CMake failed" >&2
 	exit 1;
     fi
-
     make coreneuron >& make.out
 
     if [ -e coreneuron/mod_func.c ]; then

@@ -36,20 +36,11 @@ file(GLOB_RECURSE coreneuron_cuda_files "*.cu")
 
 # Compile and include MOD files
 
-find_program(MOD2C mod2c_core)
-if(MOD2C STREQUAL "MOD2C-NOTFOUND")
-message(FATAL_ERROR "Unable to locate mod2c_core executable")
-endif()
-
-# mod2c_core wants MODLUNIT set to point to its units file,
-# but CMake does not support setting an environment for custom_commands.
-
+# set mod2c binary and files from built in
+set (MOD2C ${PROJECT_BINARY_DIR}/external/mod2c/bin/mod2c_core)
 get_filename_component(mod2c_install_prefix ${MOD2C} DIRECTORY)
-find_file(MOD2C_UNITS nrnunits.lib HINT "${mod2c_install_prefix}" PATH_SUFFIXES "share")
-if(NOT MOD2C_UNITS STREQUAL "MOD2C_UNITS-NOTFOUND")
+set (MOD2C_UNITS "${PROJECT_BINARY_DIR}/external/mod2c/share/nrnunits.lib")
 set(MOD2C env "MODLUNIT=${MOD2C_UNITS}" ${MOD2C})
-endif()
-
 # Macro sets up build rule for .c files from .mod files.
 # Parameters:
 #    name     An arbitrary name to keep track of output .c files
@@ -71,7 +62,7 @@ macro(mod2c_target name input)
     list(APPEND MOD2C_${name}_MODS "${mod2c_modname_}")
 
     add_custom_command(OUTPUT "${mod2c_output_}"
-      DEPENDS ${input} "${mod2c_install_prefix}/mod2c_core"
+      DEPENDS ${input} mod2c
       COMMAND ${CMAKE_COMMAND} -E copy "${mod2c_source_}" "${CMAKE_CURRENT_BINARY_DIR}"
       COMMAND ${MOD2C} "${mod2c_modname_}"
       WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
@@ -149,7 +140,6 @@ macro(mod2c_from_file name modlist searchpath)
         endif()
 
     endforeach()
-
     # mod file for gap junction test. this mod file needs to be
     # added only if not found in external directories.
     set(if_exist FALSE)

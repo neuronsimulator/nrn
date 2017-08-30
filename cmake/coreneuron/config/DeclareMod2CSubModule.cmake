@@ -1,4 +1,4 @@
-# Copyright (c) 2016, Blue Brain Project
+# Copyright (c) 2017, Blue Brain Project
 # All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without modification,
@@ -23,50 +23,26 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
+include (ExternalProject)
+include(FindPkgConfig)
 
+find_path(MOD2C_PROJ NAMES CMakeLists.txt PATHS "${PROJECT_SOURCE_DIR}/external/mod2c")
+find_package_handle_standard_args(MOD2C REQUIRED_VARS MOD2C_PROJ)
+if (NOT MOD2C_FOUND)
+  message (FATAL_ERROR "missing mod2c submodule :run on top directory of your sources (git > 1.8.2 required):
+      git submodule update --init --remote
+      ")
+endif()
+set(ExternalProjectCMakeArgs
+     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+     -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}/external/mod2c
+     -DCMAKE_C_COMPILER=${FRONTEND_C_COMPILER} -DCMAKE_CXX_COMPILER=${FRONTEND_CXX_COMPILER}
+   )
 
-# Findmod2c
-# -------------
-#
-# Find mod2c
-#
-# Find the mod2c Blue Brain HPC utils library
-#
-# Using mod2c:
-#
-# ::
-#
-#   find_package(mod2c REQUIRED)
-#   include_directories(${mod2c_INCLUDE_DIRS})
-#   target_link_libraries(foo ${mod2c_LIBRARIES})
-#
-# This module sets the following variables:
-#
-# ::
-#
-#   mod2c_FOUND - set to true if the library is found
-#   mod2c_INCLUDE_DIRS - list of required include directories
-#   mod2c_LIBRARIES - list of libraries to be linked
-
-#=============================================================================
-# Copyright 2015 Adrien Devresse <adrien.devresse@epfl.ch>
-#
-#=============================================================================
-# (To distribute this file outside of CMake, substitute the full
-#  License text for the above reference.)
-
-
-# UNIX paths are standard, no need to write.
-find_program(mod2c_BINARY
-  NAMES mod2c_core
-  PATHS "/usr/bin"
+ExternalProject_Add(mod2c
+  SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/mod2c
+  GIT_SUBMODULES
+  CMAKE_ARGS ${ExternalProjectCMakeArgs}
+  CMAKE_CACHE_ARGS ${ExternalProjectCMakeArgs}
   )
 
-
-# Checks 'REQUIRED', 'QUIET' and versions.
-include(FindPackageHandleStandardArgs)
-
-find_package_handle_standard_args(mod2c
-  FOUND_VAR mod2c_FOUND
-  REQUIRED_VARS mod2c_BINARY)
-  

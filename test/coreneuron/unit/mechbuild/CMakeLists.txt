@@ -31,7 +31,7 @@ set(TEST_LABEL unit modinclude)
 
 # Additional mechs for testing mech inclusion are stored in extra_mech and extra_mech2.
 
-set(extra_mechs_file "${CMAKE_CURRENT_BINARY_DIR}/extra_mechs")
+set(extra_mechs_file "${CMAKE_CURRENT_SOURCE_DIR}/extra_mechs")
 set(extra_mechs_dir1 "${CMAKE_CURRENT_SOURCE_DIR}/extra_mech1")
 set(extra_mechs_dir2 "${CMAKE_CURRENT_SOURCE_DIR}/extra_mech2")
 
@@ -58,14 +58,16 @@ endmacro()
 # Test: no Neurodamus mechs, but all customs 
 
 set(BACM_CMAKEOPTS "-DADDITIONAL_MECHS=${extra_mechs_file} -DADDITIONAL_MECHPATH='${extra_mechs_dir1};${extra_mechs_dir2}'")
-
 set(BACM_MUST_HAVE ${all_extra_mods})
+set(BACM_LIST ${extra_mechs_file})
+set(BACM_DIR1 ${extra_mechs_dir1})
+set(BACM_DIR2 ${extra_mechs_dir2})
 list_to_spacesep(BACM_MUST_HAVE)
 
 set(BACM_MUST_NOT_HAVE ${nd_mods}) # Neurodamus-derived module
 list_to_spacesep(BACM_MUST_NOT_HAVE)
 
-make_bacm_test(bacm-extra-no-nd)
+#make_bacm_test(bacm-extra-no-nd)
 
 # Test: Neurodamus mechs, only part of extra 
 
@@ -77,7 +79,7 @@ list_to_spacesep(BACM_MUST_HAVE)
 set(BACM_MUST_NOT_HAVE ${extra_mechs1})
 list_to_spacesep(BACM_MUST_NOT_HAVE)
 
-make_bacm_test(bacm-nd-extra2only)
+#make_bacm_test(bacm-nd-extra2only)
 
 #
 
