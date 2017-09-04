@@ -86,11 +86,86 @@ def upath(path):
   p = upathsep.join(plist)
   return p
 
+#a copy of nrnpylib_linux() but with some os x specific modifications
+def nrnpylib_darwin_helper():
+  import os, sys, re, subprocess
+  #in case it was dynamically loaded by python
+  pid = os.getpid()
+  cmd = "lsof -p %d"%pid
+  f = []
+  try: # in case lsof does not exist
+    f = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout
+  except:
+    pass
+  nrn_pylib = None
+  cnt = 0
+  for bline in f:
+    fields = bline.decode().split()
+    if len(fields) > 8:
+      line = fields[8]
+      if re.search(r'libpython.*\.[ds]', line):
+        print ("from lsof: %s" % line)
+        nrn_pylib = line.strip()
+        return nrn_pylib
+      if re.search(r'[Ll][Ii][Bb].*[Pp]ython', line):
+        cnt += 1  
+        if cnt == 1: # skip 1st since it is the python executable
+          continue
+        print ("from lsof: %s" % line)
+        nrn_pylib = line.strip()
+        return nrn_pylib
+  else: # figure it out from the os path
+    p = os.path.sep.join(os.__file__.split(os.path.sep)[:-1])
+    name = "libpython%d.%d" % (sys.version_info[0], sys.version_info[1])
+    cmd = r'find %s -name %s\*.dylib' % (p, name)
+    print ('# %s'%cmd)
+    f = os.popen(cmd)
+    libs = []
+    for line in f:
+      libs.append(line.strip())
+    if len(libs) == 0: # try again searching the parent folder
+      p = os.path.sep.join(os.__file__.split(os.path.sep)[:-2])
+      cmd = r'find %s -name %s\*.dylib' % (p, name)
+      print ('# %s'%cmd)
+      f = os.popen(cmd)
+      for line in f:
+        libs.append(line.strip())
+    print ('# %s'%str(libs))
+    if len(libs) == 1:
+      return libs[0]
+    if len(libs) > 1:
+      # which one do we want? Check the name of an imported shared object
+      try:
+        import _ctypes
+      except:
+        import ctypes
+      for i in sys.modules.values():
+        try:
+          s = i.__file__
+          if s.endswith('.dylib'):
+            match = re.search(r'-%d%d([^-]*)-' % (sys.version_info[0], sys.version_info[1]), s)
+            if match:
+              name = name + match.group(1) + '.dylib'
+            break
+          elif s.endswith('.so'):
+            match = re.search(r'-%d%d([^-]*)-' % (sys.version_info[0], sys.version_info[1]), s)
+            if match:
+              name = name + match.group(1) + '.so'
+            break
+        except:
+          pass
+      for i in libs:
+        if name in i:
+          return i
+  return nrn_pylib
+
 def nrnpylib_darwin():
   import os
   nrn_pylib = os.getenv("PYLIB_DARWIN")
-  return nrn_pylib
-  
+  if nrn_pylib is not "":
+    return nrn_pylib
+  return nrnpylib_darwin_helper()
+          
 def nrnpylib_mswin():
   import os, sys, re
   e = '/'.join(sys.executable.split(os.path.sep))
