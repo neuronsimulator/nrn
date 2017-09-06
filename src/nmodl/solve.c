@@ -198,7 +198,7 @@ void solvhandler()
 			}
 			if (btype == BREAKPOINT && !steadystate) {
 				/* derivatives recalculated after while loop */
-if (strcmp(method->name, "cnexp") != 0 && strcmp(method->name, "derivimplicit") != 0) {
+if (strcmp(method->name, "cnexp") != 0 && strcmp(method->name, "derivimplicit") != 0 && strcmp(method->name, "euler") != 0) {
 fprintf(stderr, "Notice: %s is not thread safe. Complain to Hines\n", method->name);
 				vectorize = 0;
 				Sprintf(buf, " %s();\n", fun->name);
@@ -219,7 +219,7 @@ fprintf(stderr, "Notice: %s is not thread safe. Complain to Hines\n", method->na
 			}
 			if (btype == BREAKPOINT && (method->subtype & DERF)) {
 #if VECTORIZE
-fprintf(stderr, "Notice: KINETIC with is thread safe only with METHOD sparse. Complain to Hines\n");
+fprintf(stderr, "Notice: KINETIC is thread safe only with METHOD sparse. Complain to Hines\n");
 				vectorize = 0;
 #endif
 				/* derivatives recalculated after while loop */

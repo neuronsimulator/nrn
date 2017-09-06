@@ -33,10 +33,6 @@ STATE {
 
 
 INITIAL {
-	VERBATIM
-	nai = _ion_nai;
-	nao = _ion_nao;
-	ENDVERBATIM
 }
 
 BREAKPOINT {

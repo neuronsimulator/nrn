@@ -19,7 +19,6 @@ proc run() {
 	nai0_na_ion = 1
 	nao0_na_ion = 10
 	finitialize(0)
-	fcurrent()
 	g.color(1)
 	g.size(0,1,0,10)
 	g.beginline()

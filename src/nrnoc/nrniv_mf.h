@@ -79,6 +79,8 @@ extern int _ss_derivimplicit(int, int, int*, int*, double*, double*, double,
   int(*)(), double**);
 extern int _ss_derivimplicit_thread(int, int*, int*, double*,
    int(*)(double*, union Datum*, union Datum*, struct NrnThread*), void*, void*, void*);
+extern int euler_thread(int, int*, int*, double*,
+   int(*)(double*, union Datum*, union Datum*, struct NrnThread*), union Datum*, union Datum*, struct NrnThread*);
 
 #if defined(__cplusplus)
 }
