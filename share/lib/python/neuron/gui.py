@@ -10,11 +10,23 @@ from neuron import h
 
 import threading
 import time
+
+#recursive, especially in case stop/start pairs called from doNotify code.
+_lock = threading.RLock()
+
+def stop():
+  _lock.acquire()
+
+def start():
+  _lock.release()
+
 def process_events() :
+  _lock.acquire()
   try:
     h.doNotify()
   except:
     print ("Exception in gui thread")
+  _lock.release()
 
 class LoopTimer(threading.Thread) :
   """
