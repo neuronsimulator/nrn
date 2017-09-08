@@ -63,11 +63,11 @@ int nrnpy_pyrun(const char* fname) {
 #ifdef MINGW
 #if PY_MAJOR_VERSION >= 3
   // perhaps this should be the generic implementation
-  char* cmd = new char[strlen(fname) + 30];
-  sprintf(cmd, "exec(open(%s).read, globals())", fname);
+  char* cmd = new char[strlen(fname) + 40];
+  sprintf(cmd, "exec(open(\"%s\").read(), globals())", fname);
   int err = PyRun_SimpleString(cmd);
   delete [] cmd;
-  if (PyRun_SimpleString(cmd) != 0) {
+  if (err != 0) {
     PyErr_Print();
     PyErr_Clear();
     return 0;
