@@ -513,7 +513,9 @@ void determine_inputpresyn() {
     // with gid to InputPreSyn and PreSyn maps we can setup the multisend
     // target lists.
     if (use_multisend_) {
+#if NRN_MULTISEND
         nrn_multisend_setup();
+#endif
     }
 
     // fill the netcon_in_presyn_order and recompute nc_cnt_
@@ -936,7 +938,9 @@ void nrn_cleanup(bool clean_ion_global_map) {
         free(nt->_ml_list);
     }
 
+#if NRN_MULTISEND
     nrn_multisend_cleanup();
+#endif
 
     netcon_in_presyn_order_.clear();
 

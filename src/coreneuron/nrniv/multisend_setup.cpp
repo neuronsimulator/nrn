@@ -15,6 +15,8 @@ we construct a gid target host list on host gid%nhost and copy that list to
 the source host owning the gid.
 */
 
+#if NRN_MULTISEND
+
 typedef std::map<int, InputPreSyn*> Gid2IPS;
 typedef std::map<int, PreSyn*> Gid2PS;
 
@@ -700,3 +702,5 @@ static int setup_target_lists(int use_phase2, int** r_return) {
     *r_return = r;
     return sz;
 }
+
+#endif //NRN_MULTISEND

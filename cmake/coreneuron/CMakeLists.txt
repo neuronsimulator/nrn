@@ -97,6 +97,7 @@ if (ENABLE_MPI)
 else()
     message(STATUS "Use of MPI disabled by user-provided option")
     add_definitions("-DNRNMPI=0")
+    add_definitions("-DNRN_MULTISEND=0")
 endif()
 
 #Memory layout transformation: 0 for SoA and 1 for AoS

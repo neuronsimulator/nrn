@@ -42,7 +42,12 @@ of spikes sent is equal to the number of spikes sent.
 // which has the greatest amount of overlap between computation
 // and communication.
 
+
 int use_multisend_;
+int use_phase2_;
+int n_multisend_interval = 2;
+
+#if NRN_MULTISEND
 
 static int n_xtra_cons_check_;
 #define MAXNCONS 10
@@ -99,7 +104,6 @@ class Multisend_ReceiveBuffer {
     Phase2Buffer* phase2_buffer_;
 };
 
-int use_phase2_;
 
 #define MULTISEND_INTERVAL 2
 static Multisend_ReceiveBuffer* multisend_receive_buffer[MULTISEND_INTERVAL];
@@ -312,7 +316,6 @@ static int max_ntarget_host;
 // For two phase sending, it is the maximum of all the
 // ntarget_hosts_phase1 and ntarget_hosts_phase2.
 static int max_multisend_targets;
-int n_multisend_interval = 2;
 
 void nrn_multisend_init() {
     for (int i = 0; i < n_multisend_interval; ++i) {
@@ -464,3 +467,5 @@ void nrn_multisend_setup() {
     }
 #endif
 }
+
+#endif //NRN_MULTISEND
