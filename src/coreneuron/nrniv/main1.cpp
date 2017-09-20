@@ -259,8 +259,8 @@ int main1(int argc, char** argv, char** env) {
                     printf(
                         "\n WARNING! : Can't enable reports with model duplications feature! \n");
             } else {
-                r = new ReportGenerator(nrnopt_get_int("--report"), nrnopt_get_int("--tstart"),
-                                        nrnopt_get_dbl("--tstop"), nrnopt_get_int("--dt"),
+                r = new ReportGenerator(nrnopt_get_int("--report"), nrnopt_get_dbl("--tstart"),
+                                        nrnopt_get_dbl("--tstop"), nrnopt_get_dbl("--dt"),
                                         nrnopt_get_dbl("--mindelay"), nrnopt_get_dbl("--dt_report"),
                                         nrnopt_get_str("--outpath"));
                 r->register_report();
