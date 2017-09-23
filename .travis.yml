@@ -1,18 +1,70 @@
-language: cpp
-sudo: false
-dist: trusty
-compiler:
-  - clang
-  - gcc
+#=============================================================================
+# Travis NEURON settings
+#=============================================================================
+
+#=============================================================================
+# Environment
+#=============================================================================
 env:
-  - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2)"
-  - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python3)"
-os:
-  - linux
-before_install:
-  - echo $LANG
-  - echo $LC_ALL
-  - $CXX -v
+  global:
+    - SPACK_ROOT=$TRAVIS_BUILD_DIR/spack
+    - PATH=$SPACK_ROOT/bin:$PATH
+
+#=============================================================================
+# Build matrix
+#   - Do not use osx_image otherwise brew fails
+#     (mpich depends on gcc and brew link fails)
+#=============================================================================
+matrix:
+  fast_finish: true
+  include:
+    - language: cpp
+      os: linux
+      dist: trusty
+      sudo: true
+      env: [ MPI=mpich]
+    - language: cpp
+      os: osx
+      sudo: false
+      env: [ MPI=openmpi]
+
+#=============================================================================
+# Common Packages
+#=============================================================================
+addons:
+  apt:
+    packages:
+      - libncurses-dev
+      - environment-modules
+
+#=============================================================================
+# Install dependencies / setup Spack
+#=============================================================================
+install:
+  - .travis/install_dependencies.sh $MPI
+  - .travis/setup_spack.sh
+
+#=============================================================================
+# Build NEURON
+#=============================================================================
 script:
-  - ./travis_build.sh .
-  - ./travis_build.sh build_out_of_tree
+  - echo "------- SHOW SPACK CONFIGURATIONS -------"
+  - spack compilers
+  - spack config get packages
+
+  - echo "------- INSTALL ALL NEURON VERSIONS -------"
+  - .travis/install_neuron.sh
+
+  - echo "------- INSTALLED VERSIONS (WITH DEPENDENCY DAG) -------"
+  - spack find -d -v neuron
+
+  - echo "------- INSTALLED VERSIONS LIST  -------"
+  - spack find -v neuron
+#=============================================================================
+# Notifications
+#=============================================================================
+notifications:
+  email:
+    recipients: pramod.s.kumbhar@gmail.com
+    on_success: change
+    on_failure: always
