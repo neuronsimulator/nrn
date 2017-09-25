@@ -1,0 +1,31 @@
+language: cpp
+sudo: false
+dist: trusty
+virtualenv:
+    system_site_packages: true 
+
+compiler:
+  - clang
+  - gcc
+env:
+  - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2)"
+    PYTHON="$(which python2)"
+    PIP="$(which pip)"
+  - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python3)"
+    PYTHON="$(which python3)"
+    PIP="$(which pip3)"
+os:
+  - linux
+before_install:
+  - echo $LANG
+  - echo $LC_ALL
+  - $CXX -v
+  - export PYTHONPATH=$PYTHONPATH:$(pwd)/install/lib/python/
+install:
+  - $PIP install numpy 
+  - $PIP install scipy
+  - $PIP install matplotlib
+script:
+  - ./travis_build.sh build_out_of_tree
+  - ./travis_build.sh .
+  - $PYTHON share/lib/python/neuron/rxdtests/run_all.py
