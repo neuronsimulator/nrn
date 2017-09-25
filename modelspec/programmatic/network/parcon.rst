@@ -2015,11 +2015,14 @@ Description:
         Note that it is an error if the gid does not exist on this machine. The 
         normal idiom is to use a NetCon returned by a call to the cell's 
         connect2target(None, netcon) method or else, if the cell is an unwrapped 
-        artificial cell, use a \ ``netcon = h.NetCon(cell, None)`` statement to 
-        get a temporary :class:`NetCon` which can be destroyed after its use in the 
-        pc.cell call. The weight and delay of this temporary NetCon are 
-        not relevant; they come into the picture with 
-        :meth:`ParallelContext.gid_connect` . 
+        artificial cell, use a \ ``netcon = h.NetCon(cell, None)`` statement.
+        In either case, after
+        ParallelContext.cell() has been called, this NetCon can be
+        destroyed to save memory; the spike detection threshold
+        can be accessed by :meth:`ParallelContext.threshold`, and the
+        weights and delays of projections to synaptic targets
+        are specified by the parameters of the NetCons created
+        by :meth:`ParallelContext.gid_connect`.
          
         Note that cells which do not send spikes to other machines are not required 
         to call this and in fact do not need a gid. However the administrative 
@@ -2093,8 +2096,14 @@ Description:
         may or may not 
         be owned by this machine) and the target (a synapse or artificial cell object) 
         which EXISTS on this machine. A :class:`NetCon` object is returned and the 
-        full delay for the connection should be given to it (as well as the weight). 
-         
+        full delay for the connection should be given to it (as well as the weight).
+        This is not the NetCon that
+        monitors the spike source variable for threshold crossings, so its
+        threshold parameter will not affect simulations.  Threshold crossings
+        are determined by the detector that belonged to the NetCon used to
+        associate the presynaptic spike source with a gid (see
+        :meth:`ParallelContext.cell` and :meth:`ParallelContext.threshold`).         
+
         Note that if the srcgid is owned by this machine then :func:`cell` must be called 
         earlier to make sure that the srcgid is associated with a NetCon source 
         location. 

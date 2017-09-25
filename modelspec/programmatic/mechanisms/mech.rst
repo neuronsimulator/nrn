@@ -528,7 +528,7 @@ General
 
 
     Syntax:
-        ``s = h.NetStim(section(x))``
+        ``s = h.NetStim()``
 
         ``s.interval ms (mean) time between spikes``
 
@@ -566,7 +566,7 @@ General
             
             from neuron import h
 
-            nc = h.NetStim(section(0.5))
+            nc = h.NetStim()
             ns = h.NetCon(nc, target...) 
 
         That is, do not use ``nc._ref_y`` as the source for the netcon. 
@@ -593,7 +593,7 @@ General
 
 
     Syntax:
-        ``c = h.IntFire1(section(x))``
+        ``c = h.IntFire1()``
 
         ``c.tau --- ms time constant``
 
@@ -634,7 +634,7 @@ General
 
 
     Syntax:
-        ``c = h.IntFire2(section(x))``
+        ``c = h.IntFire2()``
 
         ``c.taum --- ms membrane time constant``
 
@@ -677,7 +677,7 @@ General
 
 
     Syntax:
-        ``c = h.IntFire4(section(x))``
+        ``c = h.IntFire4()``
 
         ``c.taue --- ms excitatory input time constant``
 
@@ -751,14 +751,14 @@ Mechanisms
 **setdata**
 
     Syntax:
-        ``setdata_suffix(section(x))``
+        ``h.setdata_suffix(section(x))``
 
 
     Description:
         If a mechanism function is called that uses RANGE variables, then the 
         appropriate data needed by the function must first be indicated via a setdata call. 
         This is unnecessary if the function uses only GLOBAL variables. 
-        The suffix refers to the name of the mechanism. E.g. ``setdata_hh(soma(0.5)).`` 
+        The suffix refers to the name of the mechanism. E.g. ``h.setdata_hh(soma(0.5)).`` 
 
     .. warning::
         The THREADSAFE mechanism case is a bit more complicated if the mechanism 
