@@ -8,10 +8,12 @@ compiler:
   - clang
   - gcc
 env:
-  - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2)"
+  - pyenv global system 2.7
+    CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2)"
     PYTHON="$(which python2)"
     PIP="$(which pip)"
-  - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python3)"
+  - pyenv global system 3.4
+    CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python3)"
     PYTHON="$(which python3)"
     PIP="$(which pip3)"
 os:
