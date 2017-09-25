@@ -123,7 +123,6 @@ h  = hoc.HocObject()
 # (thus replacing the dummy)
 def help(request=None):
     global help
-    print("Enabling NEURON+Python help system.")
     from neuron import doc
     doc.help(request)
     help = doc.help
