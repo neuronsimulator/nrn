@@ -29,7 +29,7 @@ MODFILES_C = hh.c feature.c passive.c stim.c syn.c \
     expsyn.c exp2syn.c ppmark.c pattern.c
 
 libnrnoc_la_SOURCES = $(MODFILES_C) cabcode.c capac.c clamp.c eion.c      \
-    extcelln.c fadvance.c fstim.c init.c nrnnemo.c point.c                \
+    extcelln.c fadvance.c fstim.c init.c nrnnemo.c point.c		\
     psection.c solve.c synapse.c treeset.c hoc_init.c code.c hoc_oop.c    \
     seclist.c method3.c hocprax.c secref.c ldifus.c hocusr.c nrnversion.c \
     nrnversion.h nrntimeout.c passive0.c
@@ -59,13 +59,13 @@ FORCE:
 $(srcdir)/nrnversion.h: FORCE
 	if test -d $(top_srcdir)/.git ; then \
 		sh $(top_srcdir)/git2nrnversion_h.sh $(top_srcdir) > $(srcdir)/nrnversion.h.tmp ; \
-                if cmp $(srcdir)/nrnversion.h.tmp $(srcdir)/nrnversion.h ; then \
-                        echo "nrnversion.h not changed" ; \
-                        rm $(srcdir)/nrnversion.h.tmp ; \
-                else \
-                        mv $(srcdir)/nrnversion.h.tmp $(srcdir)/nrnversion.h ; \
-                        echo "updated nrnversion.h" ; \
-                fi \
+		if cmp $(srcdir)/nrnversion.h.tmp $(srcdir)/nrnversion.h ; then \
+			echo "nrnversion.h not changed" ; \
+			rm $(srcdir)/nrnversion.h.tmp ; \
+		else \
+			mv $(srcdir)/nrnversion.h.tmp $(srcdir)/nrnversion.h ; \
+			echo "updated nrnversion.h" ; \
+		fi \
 	elif test -d $(top_srcdir)/.hg ; then \
 		sh $(top_srcdir)/hg2nrnversion_h.sh $(top_srcdir) > $(srcdir)/nrnversion.h.tmp ; \
 		if cmp $(srcdir)/nrnversion.h.tmp $(srcdir)/nrnversion.h ; then \
@@ -75,43 +75,27 @@ $(srcdir)/nrnversion.h: FORCE
 			mv $(srcdir)/nrnversion.h.tmp $(srcdir)/nrnversion.h ; \
 			echo "updated nrnversion.h" ; \
 		fi \
-	else \
-		if test -d $(top_srcdir)/.svn && svnversion $(top_srcdir) ; then \
-			if test "`svnversion $(top_srcdir)`" != "`sed -n 's/.*SVN_CHANGESET.*(\([^)]*\).*/\1/p' $(srcdir)/nrnversion.h`" ; then \
-	   			sh $(top_srcdir)/svn2nrn_h.sh $(top_srcdir) > $(srcdir)/nrnversion.h.tmp; \
-	   			if test -s $(srcdir)/nrnversion.h.tmp ; then \
+	elif test -d $(top_srcdir)/.svn && svnversion $(top_srcdir) ; then \
+		if test "`svnversion $(top_srcdir)`" != "`sed -n 's/.*SVN_CHANGESET.*(\([^)]*\).*/\1/p' $(srcdir)/nrnversion.h`" ; then \
+			sh $(top_srcdir)/svn2nrn_h.sh $(top_srcdir) > $(srcdir)/nrnversion.h.tmp; \
+			if test -s $(srcdir)/nrnversion.h.tmp ; then \
 				mv $(srcdir)/nrnversion.h.tmp $(srcdir)/nrnversion.h ; \
-	   			fi ; \
-	   			echo "updated nrnversion.h" ; \
-			else \
-				echo "nrnversion.h not changed" ; \
-			fi \
+	   		fi ; \
+	   		echo "updated nrnversion.h" ; \
+		else \
+			echo "nrnversion.h not changed" ; \
+		fi \
+	else \
+		if test ! -f $(srcdir)/nrnversion.h ; then \
+			echo '#define GIT_DATE "unknown"' > $(srcdir)/nrnversion.h ; \
+			echo '#define GIT_BRANCH "unknown"' >> $(srcdir)/nrnversion.h ; \
+			echo '#define GIT_CHANGESET "?"' >> $(srcdir)/nrnversion.h ; \
+			echo '#define GIT_LOCAL "?"' >> $(srcdir)/nrnversion.h ; \
+			echo "nrnversion.h created" ; \
+		else \
+			echo "nrnversion.h not changed" ; \
 		fi \
 	fi
-
-#$(srcdir)/nrnversion.h: FORCE
-#	if test -d $(top_srcdir)/.hg ; then \
-#		sh $(top_srcdir)/hg2nrnversion_h.sh $(top_srcdir) > $(srcdir)/nrnversion.h.tmp ; \
-#		if cmp $(srcdir)/nrnversion.h.tmp $(srcdir)/nrnversion.h ; then \
-#			echo "nrnversion.h not changed" ; \
-#			rm $(srcdir)/nrnversion.h.tmp ; \
-#		else \
-#			mv $(srcdir)/nrnversion.h.tmp $(srcdir)/nrnversion.h ; \
-#			echo "updated nrnversion.h" ; \
-#		fi \
-#	else \
-#	if test -d $(top_srcdir)/.svn && svnversion $(top_srcdir) ; then \
-#	if test "`svnversion $(top_srcdir)`" != "`sed -n 's/.*SVN_CHANGESET.*(\([^)]*\).*/\1/p' $(srcdir)/nrnversion.h`" ; then \
-#	    sh $(top_srcdir)/svn2nrn_h.sh $(top_srcdir) > $(srcdir)/nrnversion.h.tmp; \
-#	    if test -s $(srcdir)/nrnversion.h.tmp ; then \
-#		mv $(srcdir)/nrnversion.h.tmp $(srcdir)/nrnversion.h ; \
-#	    fi ; \
-#	    echo "updated nrnversion.h" ; \
-#	else \
-#		echo "nrnversion.h not changed" ; \
-#	fi \
-#	fi \
-#	fi
 
 nrnversion.o nrnversion.lo: nrnversion.h
 
