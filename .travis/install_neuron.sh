@@ -6,7 +6,7 @@ if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
 
     if [ "$TRAVIS_OS_NAME" == "linux" ]; then
         packages=(
-                "neuron@develop +python +mpi -shared %gcc ^python@2.7"
+                "neuron@develop +python +mpi +shared %gcc ^python@2.7"
                 "neuron@develop +python +mpi -shared %gcc ^python@3"
                 "neuron@develop -python -mpi -shared %gcc"
                 "neuron@develop +python +mpi +shared %gcc"
@@ -15,7 +15,7 @@ if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
         )
     else
         packages=(
-                "neuron@develop +python +mpi -shared %clang ^python@2.7"
+                "neuron@develop +python +mpi +shared %clang ^python@2.7"
                 "neuron@develop -python -mpi -shared %clang"
                 "neuron@develop +python +mpi +shared %clang ^python@3"
                 "neuron@develop +python +mpi +shared %gcc ^python@2.7"

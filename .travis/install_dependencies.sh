@@ -10,6 +10,12 @@ case "$TRAVIS_OS_NAME" in
         brew install flex bison modules
         brew install python3
 
+        # NOTE: brew installed python3 on OSX has known issue
+        # See https://stackoverflow.com/questions/24257803/
+        rm -f ~/.pydistutils.cfg
+        echo "[install]" > ~/.pydistutils.cfg
+        echo "prefix=" >> ~/.pydistutils.cfg
+
         case "$MPI_LIB_NAME" in
             mpich|mpich3)
                 brew install mpich
