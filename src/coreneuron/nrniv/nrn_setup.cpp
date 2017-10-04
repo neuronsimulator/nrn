@@ -1554,7 +1554,11 @@ for (int i=0; i < nt.end; ++i) {
     for (int i = 0; i < nnetcon; ++i) {
         NetCon& nc = nt.netcons[i];
         nc.u.weight_index_ = iw;
-        iw += pnt_receive_size[pnttype[i]];
+        if (pnttype[i] != 0) {
+            iw += pnt_receive_size[pnttype[i]];
+        } else {
+            iw += 1;
+        }
     }
     assert(iw == nweight);
     delete[] pnttype;
