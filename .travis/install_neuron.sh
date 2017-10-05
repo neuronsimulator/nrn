@@ -29,13 +29,13 @@ else
         packages=(
                 "neuron@develop -python -mpi -shared %gcc"
                 "neuron@develop +python +mpi +shared %gcc ^python@2.7"
-                "neuron@develop +python +mpi +shared %gcc ^python@3"
+                "neuron@develop +python +mpi +shared %clang ^python@3"
                  )
     else
         packages=(
                 "neuron@develop -python -mpi -shared %clang"
                 "neuron@develop +python +mpi +shared %clang ^python@2.7"
-                "neuron@develop +python +mpi +shared %clang ^python@3"
+                "neuron@develop +python +mpi +shared %gcc ^python@3"
                  )
     fi
 
@@ -119,9 +119,9 @@ module avail
 
 # show generated module
 if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-    name="neuron/develop-gcc-mpi-python3-shared"
+    name="neuron/develop-gcc-mpi-python2-shared"
 else
-    name="neuron/develop-clang-mpi-python3-shared"
+    name="neuron/develop-clang-mpi-python2-shared"
 fi
 
 

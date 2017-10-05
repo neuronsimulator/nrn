@@ -9,6 +9,7 @@ env:
   global:
     - SPACK_ROOT=$TRAVIS_BUILD_DIR/spack
     - PATH=$SPACK_ROOT/bin:$PATH
+    - ARCHFLAGS="-arch x86_64"
 
 #=============================================================================
 # Build matrix
