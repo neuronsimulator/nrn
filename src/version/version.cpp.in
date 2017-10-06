@@ -1,0 +1,6 @@
+#include "version/version.h"
+
+using namespace nocmodl;
+
+const std::string version::GIT_REVISION = "@GIT_REVISION@";
+const std::string version::NOCMODL_VERSION = "@PROJECT_VERSION@";
