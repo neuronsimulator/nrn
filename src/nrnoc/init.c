@@ -5,7 +5,7 @@ extern char* nrn_version();
 
 /* change this to correspond to the ../nmodl/nocpout nmodl_version_ string*/
 static char nmodl_version_[] =
-"6.2.0";
+"7.5.0";
 
 static char banner[] =
 "Duke, Yale, and the BlueBrain Project -- Copyright 1984-2016\n\
@@ -482,7 +482,7 @@ void nrn_register_mech_common(
 	
 /*printf("%s %s\n", m[0], m[1]);*/
 	if (strcmp(m[0], "0") == 0) { /* valid by nature */
-	}else if (m[0][0] != '6') { /* must be 5.1 or before */
+	}else if (m[0][0] > '9') { /* must be 5.1 or before */
 fprintf(stderr, "Mechanism %s needs to be re-translated.\n\
 It's pre version 6.0 \"c\" code is incompatible with this neuron version.\n", m[0]);
 		nrn_exit(1);
