@@ -166,7 +166,7 @@ def load_mechanisms(path):
 
     This function will not load a mechanism path twice.
 
-    The path should specify the directory in which nrnmodliv was run,
+    The path should specify the directory in which nrnivmodl or mknrndll was run,
     and in which the directory 'i686' (or 'x86_64' or 'powerpc' depending on your platform)
     was created"""
 
@@ -175,21 +175,29 @@ def load_mechanisms(path):
     global nrn_dll_loaded
     if path in nrn_dll_loaded:
         print("Mechanisms already loaded from path: %s.  Aborting." % path)
-        return
+        return True
     
     # in case NEURON is assuming a different architecture to Python,
     # we try multiple possibilities
 
+    libname = 'libnrnmech.so'
+    libsubdir = '.libs'
     arch_list = [platform.machine(), 'i686', 'x86_64', 'powerpc', 'umac']
 
+    # windows loads nrnmech.dll
+    if h.unix_mac_pc() == 3:
+        libname = 'nrnmech.dll'
+        libsubdir = ''
+        arch_list = ['']
+
     for arch in arch_list:
-        lib_path = os.path.join(path, arch, '.libs', 'libnrnmech.so')
+        lib_path = os.path.join(path, arch, libsubdir, libname)
         if os.path.exists(lib_path):
             h.nrn_load_dll(lib_path)
             nrn_dll_loaded.append(path)
-            return
+            return True
     print("NEURON mechanisms not found in %s." % path)
-
+    return False
 
 import os,sys
 if 'NRN_NMODL_PATH' in os.environ:
