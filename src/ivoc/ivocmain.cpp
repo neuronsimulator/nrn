@@ -602,7 +602,7 @@ ENDGUI
 #if defined(USE_PYTHON)
 #if HAVE_IV
 	nrn_nopython = 0;
-	if (session && session->style()->value_is_on("nopython")) {
+	if (!nrn_is_python_extension && session && session->style()->value_is_on("nopython")) {
 		nrn_nopython = 1;
 	}
 #endif
