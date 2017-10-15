@@ -1,37 +1,59 @@
-#ifndef _MODL_H_
-#define _MODL_H_
+#pragma once
 
-/* subtypes */
-#define KEYWORD 01
-#define PARM 02
-#define INDEP 04
-#define DEP 010 /* also in usage field */
-#define STAT 020
+/**
+ * Original implementation of nocmodl use various flags to help
+ * code generation. These flags are implemented as bit masks in
+ * the token whic are later checked during code printing. We are
+ * using ast and hence don't need all bit masks. These are defined
+ * in modl.h file of original nocmodl implementation.
+ *
+ * \todo Remove these bit masks as we incorporate type information
+ * into corresponding ast types. */
+
+/// subtypes of the token
 #define ARRAY 040
-#define FUNCT 0100 /* also in usage field */
-#define PROCED 0200
+#define DEP 010
+#define FUNCT 0100
+#define INDEP 04
+#define KEYWORD 01
 #define NEGATIVE 0400
-#define SEMI 01 /* ";" */
+#define PARM 02
+#define PROCED 0200
+#define SEMI 01
+#define STAT 020
 
-/* @todo: we define these are now as tokens, probably we dont need it (?) */
-//#define BEGINBLK 02		/* "{" */
-//#define ENDBLK	04		/* "}" */
+#define DISCF 010000
 
+/// usage field (variable occurs in input file)
+#define EXPLICIT_DECL 01
+
+/// external definition
+#define EXTDEF 0100000
+
+//// functions that can take array or function name as an arguments
+#define EXTDEF2 01000000L
+
+/// function that takes two extra reset arguments at beginning
+#define EXTDEF3 04000000L
+
+/// function that takes an extra NrnThread* arg at beginning
+#define EXTDEF4 020000000L
+
+//// not threadsafe
+#define EXTDEF5 040000000L
+
+/// must be cast to double in expression
+#define INTGER 010000000L
+
+/// method subtypes
 #define DERF 01000
 #define KINF 02000
-#define NLINF 04000
-#define DISCF 010000
-#define STEP1 020000
-#define PARF 040000
-#define EXTDEF 0100000
 #define LINF 0200000
-#define UNITDEF 0400000L
-#define EXTDEF2 01000000L    /* functions that can take array or function name arguments */
-#define nmodlCONST 02000000L /* constants that do not appear in .var file */
-#define EXTDEF3 04000000L    /* get two extra reset arguments at beginning */
-#define INTGER 010000000L    /* must be cast to double in expr */
-#define EXTDEF4 020000000L   /* get extra NrnThread* arg at beginning */
-#define EXTDEF5 040000000L   /* not threadsafe from the extdef list */
-#define EXPLICIT_DECL 01     /* usage field, variable occurs in input file */
+#define NLINF 04000
 
-#endif
+//// constants that do not appear in .var file
+#define nmodlCONST 02000000L
+
+#define PARF 040000
+#define STEP1 020000
+#define UNITDEF 0400000L
