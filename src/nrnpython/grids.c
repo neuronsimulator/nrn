@@ -14,19 +14,14 @@ a linked list of Grid_nodes
 #endif
 
 
-extern double *dt_ptr;
+double *dt_ptr;
 double* t_ptr;
 Grid_node *Parallel_grids[100] = {NULL};
 
-// Set ∆t, t pointers
+// Set dt, t pointers
 void make_time_ptr(PyHocObject* my_dt_ptr, PyHocObject* my_t_ptr) {
     dt_ptr = my_dt_ptr -> u.px_;
     t_ptr = my_t_ptr -> u.px_;
-}
-
-// Add Flux * "flux" to a given grid *grid
-void add_flux(Grid_node **grid, Flux* flux) {
-    (*grid)->flux_list = flux;
 }
 
 // Make a new Grid_node given required Grid_node parameters

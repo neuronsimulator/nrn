@@ -30,9 +30,6 @@ insert.argtypes = [ctypes.c_int, ctypes.py_object, ctypes.c_int, ctypes.c_int, c
 
 insert.restype = ctypes.c_int
 
-make_time_ptr = dll.make_time_ptr
-make_time_ptr.argtypes = [ctypes.py_object, ctypes.py_object]
-
 #states = None
 _set_num_threads = dll.set_num_threads 
 _set_num_threads.argtypes = [ctypes.c_int]
@@ -57,6 +54,8 @@ _extracellular_diffusion_objects = weakref.WeakKeyDictionary()
 
 _species_count = 0
 
+_species_on_regions = []
+
 _has_1d = False
 _has_3d = False
 
@@ -73,7 +72,6 @@ _extracellular_exists = False
 
 def _extracellular_do_setup():
     global _extracellular_has_setup
-    make_time_ptr(h._ref_dt, h._ref_t);
     _extracellular_has_setup = True
 
 
@@ -153,7 +151,7 @@ class _SpeciesMathable(object):
 
     @property
     def _semi_compile(self):
-        return 'species[%d]' % (self._id)
+        return 'species[%d][]' % (self._id)
 
     def _involved_species(self, the_dict):
         the_dict[self._semi_compile] = weakref.ref(self)
@@ -194,16 +192,19 @@ class SpeciesOnExtracellular(_SpeciesMathable):
             return [e._ylo, e._yhi, e._zlo, e._zhi]
         else:
             raise RxDException('unknown axes2d argument; valid options: xy, xz, and yz')
-
+    @property
+    def _semi_compile(self):
+        return 'species_ecs[%d]' % (self._extracellular()._grid_id)
 
 class SpeciesOnRegion(_SpeciesMathable):
     def __init__(self, species, region):
         """The restriction of a Species to a Region."""
-        global _species_count
+        global _species_on_regions
         self._species = weakref.ref(species)
         self._region = weakref.ref(region)
-        self._id = _species_count
-        _species_count += 1
+        if hasattr(species,'_id'):  
+            self._id = species._id
+        _species_on_regions.append(weakref.ref(self))
         
     def __eq__(self, other):
         """test for equality.
@@ -289,7 +290,9 @@ class SpeciesOnRegion(_SpeciesMathable):
         
         This is equivalent to s.nodes.concentration = value"""
         self.nodes.concentration = value
-
+    @property
+    def _semi_compile(self):
+        return 'species[%d][%d]' % (self._id, self._region()._id)
 
 # 3d matrix stuff
 def _setup_matrices_process_neighbors(pt1, pt2, indices, euler_matrix, index, diffs, vol, areal, arear, dx):
@@ -327,7 +330,7 @@ def _xyz(seg):
 
 
 
-class _ExtracellularSpecies(rxdmath._Arithmeticed):
+class _ExtracellularSpecies(_SpeciesMathable):
     def __init__(self, region, d=0, name=None, charge=0, initial=0):
         """
             region = Extracellular object (TODO? or list of objects)
@@ -377,7 +380,6 @@ class _ExtracellularSpecies(rxdmath._Arithmeticed):
         # TODO: if allowing different diffusion rates in different directions, verify that they go to the right ones
         self._grid_id = insert(0, self._states._ref_x[0], self._nx, self._ny, self._nz, self._d, self._d, self._d, self._dx, self._dx, self._dx, self._alpha, self._tortuosity)
 
-        self._str = '_species[%d]' % self._grid_id
         self._name = name
 
 
@@ -482,6 +484,10 @@ class _ExtracellularSpecies(rxdmath._Arithmeticed):
                     scale_factors.append(float(scale_factor * surface_area))
         #TODO: MultiCompartment reactions ?
         _set_grid_currents(grid_list, self._grid_id, grid_indices, neuron_pointers, scale_factors)
+    @property
+    def _semi_compile(self):
+        return 'species_ecs[%d]' % (self._grid_id)
+
 
 
 
@@ -614,12 +620,19 @@ class Species(_SpeciesMathable):
         
         # TODO: remove this line when certain no longer need it (commented out 2013-04-17)
         # self._real_secs = region._sort_secs(sum([r.secs for r in regions], []))
+
+        #Set the SpeciesOnRegion id
+        for sp in _species_on_regions:
+            s = sp()
+            if s and s._species() == self:
+                s._id = self._id
     
     def _do_init2(self):
         # 1D section objects; NOT all sections this species lives on
         # TODO: this may be a problem... debug thoroughly
         global _has_1d
         d = self._d
+
         self._secs = [Section1D(self, sec, d, r) for r in self._regions for sec in r._secs1d]
         if self._secs:
             self._offset = self._secs[0]._offset
@@ -933,8 +946,9 @@ class Species(_SpeciesMathable):
     
     
     def _finitialize(self, skip_transfer=False):
-        for r in self._extracellular_instances:
-            r._finitialize()
+        if hasattr(self,'_extracellular_instances'):
+            for r in self._extracellular_instances:
+                r._finitialize()
         if self.initial is not None:
             if callable(self.initial):
                 for node in self.nodes:

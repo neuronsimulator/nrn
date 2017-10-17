@@ -13,7 +13,7 @@ and Flux_pair structs and their respective functions
 #endif
 
 #define DIE(msg) exit(fprintf(stderr, "%s\n", msg))
-#define SAFE_FREE(ptr){if(ptr!=NULL) free(ptr);}
+#define SAFE_FREE(ptr){if((ptr)!=NULL) free(ptr);}
 #define IDX(x,y,z)  ((z) + (y) * g.size_z + (x) * g.size_z * g.size_y)
 #define INDEX(x,y,z)  ((z) + (y) * grid->size_z + (x) * grid->size_z * grid->size_y)
 #define ALPHA(x,y,z) (g.get_alpha(g.alpha,IDX(x,y,z)))
@@ -69,10 +69,11 @@ typedef struct {
     double scale_factor;
 } Current_Triple;
 
-typedef void (*ReactionRate)(double*, double*, double*);
+typedef void (*ReactionRate)(double**, double**, double*, double**, double**);
+typedef void (*ECSReactionRate)(double*, double*, double*, double*, double*);
 typedef struct Reaction {
 	struct Reaction* next;
-	ReactionRate reaction;
+	ECSReactionRate reaction;
 	unsigned int num_species_involved;
 	double** species_states;
 	unsigned char* subregion;

@@ -1,7 +1,9 @@
 #include <pthread.h>
+#include <matrix.h>
 /*borrowed from Meschach Version 1.2b*/
 #define	v_get_val(x,i)		((x)->ve[(i)])
 #define	m_get_val(A,i,j)	((A)->me[(i)][(j)])
+#define SPECIES_ABSENT      -1
 
 typedef void (*fptr)(void);
 
@@ -52,6 +54,43 @@ typedef struct {
     double* scratchpad;
 } AdiGridData;
 
+typedef struct ICSReactions{
+    ReactionRate reaction;
+    int num_species;
+    int num_regions;
+    int num_segments;
+    int*** state_idx;   /*[segment][species][region]*/
+    int icsN;   /*total number species*regions per segment*/
+    /*NOTE: icsN != num_species*num_regions as every species may not be defined
+     *on every region - the missing elements of state_idx are SPECIES_ABSENT*/
+
+    /*ECS for MultiCompartment reactions*/
+    int num_ecs_species;
+    double**** ecs_state;    /*[segment][ecs_species][region]*/
+    int ecsN;    /*total number of ecs species*regions per segment*/
+    
+    int num_mult;
+    double **mc_multiplier;
+    struct ICSReactions* next;
+} ICSReactions;
+
+typedef struct {
+    /*variables for reactions*/
+    double* states_for_reaction;
+    double* states_for_reaction_dx;
+    double* ecs_states_for_reaction;
+    double* ecs_states_for_reaction_dx;
+	double* result_array;
+	double* result_array_dx;
+	double* result_ecs;
+	double* result_ecs_dx;
+    MAT *jacobian;
+    VEC *x;
+    VEC *b;
+    PERM *pivot;
+
+} ReactionVariables;
+
 void set_num_threads(int);
 void _fadvance(void);
 void _fadvance_fixed_step_ecs(void);
@@ -99,3 +138,11 @@ int find(const int, const int, const int, const int, const int);
 void _rhs_variable_step_helper_tort(Grid_node*, const double const*, double*);
 
 void _rhs_variable_step_helper_vol(Grid_node*, const double const*, double*);
+
+void ecs_refresh_reactions(int);
+
+void _rhs_variable_step_ecs(const double, const double*, double*);
+
+void clear_rates_ecs();
+void do_ics_reactions(const double, const double*, double*);
+void _ecs_ode_reinit(double*); 

@@ -54,8 +54,11 @@ def analyze_reaction(r):
 # TODO: change this so that inputs are all automatically converted to numpy.array(s)
 #_compile is called by the reaction (Reaction._update_rates)
 # returns the rate and the species involved
-def _compile(arith):
+def _compile(arith, extracellular=None):
     initializer._do_init()
+    #for extracellular reactions ensure the species are _ExtracellularSpecies
+    arith = _ensure_arithmeticed(arith)
+    arith._ensure_extracellular(extracellular)
     try:
         s = arith._semi_compile
         species_dict = {}
@@ -63,6 +66,7 @@ def _compile(arith):
     except AttributeError:
         species_dict = {}
         s = str(arith)
+
     all_names = ['numpy', 'rxdmath'] + species_dict.keys()
     command = 'lambda %s: %s ' % (', '.join(all_names), s)
     species_index = [int(''.join(x for x in r if x.isdigit())) for r in species_dict.keys()]
@@ -221,6 +225,19 @@ class _Product:
         self._b = b
     def __repr__(self):
         return '(%r)*(%r)' % (self._a, self._b)
+
+    #Change any Species to _ExtracellularSpecies so _semi_compile gives the
+    #_grid_id and not the species _id
+    def _ensure_extracellular(self, extracellular = None):
+        if extracellular:
+            import species 
+            for item in [self._a, self._b]:
+                if isinstance(item,species.Species):
+                    ecs_species = item[extracellular]._extracellular()
+                    items = ecs_species
+                elif hasattr(item,'_ensure_extracellular'):
+                    item._ensure_extracellular(extracellular=extracellular)
+
     @property
     def _semi_compile(self):
         return '(%s)*(%s)' % (self._a._semi_compile, self._b._semi_compile)
@@ -234,6 +251,19 @@ class _Quotient:
         self._b = b
     def __repr__(self):
         return '(%r)/(%r)' % (self._a, self._b)
+
+    #Change any Species to _ExtracellularSpecies so _semi_compile gives the
+    #_grid_id and not the species _id
+    def _ensure_extracellular(self, extracellular = None):
+        if extracellular:
+            import species 
+            for item in [self._a, self._b]:
+                if isinstance(item,species.Species):
+                    ecs_species = item[extracellular]._extracellular()
+                    items = ecs_species
+                elif hasattr(item,'_ensure_extracellular'):
+                    item._ensure_extracellular(extracellular=extracellular)
+
     @property
     def _semi_compile(self):
         return '(%s)/(%s)' % (self._a._semi_compile, self._b._semi_compile)
@@ -276,6 +306,23 @@ class _Arithmeticed:
             # this could happen in 3D
             raise RxDException('found %d values; expected 1.' % len(value))
         return value[0]
+
+    #Change any Species to _ExtracellularSpecies so _semi_compile gives the
+    #_grid_id and not the species _id
+    def _ensure_extracellular(self, extracellular = None):
+        if extracellular and hasattr(self,'_items'):
+            import species 
+            for item, count in zip(self._items.keys(), self._items.values()):
+                if count:
+                    if isinstance(item,species.Species):
+                        ecs_species = item[extracellular]._extracellular()
+                        self._items.pop(item)
+                        self._items[ecs_species] = count
+                    elif hasattr(item,'_ensure_extracellular'):
+                        item._ensure_extracellular(extracellular=extracellular)
+
+
+
     
     def _short_repr(self):
         import species
@@ -331,8 +378,7 @@ class _Arithmeticed:
         if not result:
             result = '0'
         return result
-    
-    @property
+    @property 
     def _semi_compile(self):
         items = []
         counts = []

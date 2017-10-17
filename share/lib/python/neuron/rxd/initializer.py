@@ -14,6 +14,8 @@ has_initialized = False
 def _do_init():
     global has_initialized
     from . import rxd
+    from neuron import h
+    h.define_shape()
     if has_initialized and rxd.last_structure_change_cnt == rxd._structure_change_count.value: return
     from . import species, region
     if len(species._all_species) > 0:

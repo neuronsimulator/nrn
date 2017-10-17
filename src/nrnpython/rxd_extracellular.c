@@ -3,7 +3,7 @@
 #include <string.h>
 #include "grids.h"
 #include "rxd.h"
-#include <matrix.h>
+#include <matrix2.h>
 #include <pthread.h>
 #ifdef __APPLE__
 #include <Python/Python.h>
@@ -78,11 +78,11 @@ void clear_rates_ecs(void)
 /*Create a reaction
  * list_idx - the index for the linked list in the global array Parallel_grids
  * grid_id - the grid id within the linked list
- * ReactionRate - the reaction function
+ * ECSReactionRate - the reaction function
  * subregion - either NULL or a boolean array the same size as the grid
  * 	indicating if reaction occurs at a specific voxel
  */
-Reaction* ecs_create_reaction(int list_idx, int num_species, int* species_ids, ReactionRate f, unsigned char* subregion)
+Reaction* ecs_create_reaction(int list_idx, int num_species, int* species_ids, ECSReactionRate f, unsigned char* subregion)
 {
 	Grid_node *grid;
 	Reaction* r;
@@ -137,9 +137,9 @@ Reaction* ecs_create_reaction(int list_idx, int num_species, int* species_ids, R
  * list_idx - the index for the linked list in the global array Parallel_grids
  * 	(currently this is always 0)
  * grid_id - the grid id within the linked list - this corresponds to species
- * ReactionRate - the reaction function
+ * ECSReactionRate - the reaction function
  */
-void ecs_register_reaction(int list_idx, int num_species, int* species_id, ReactionRate f)
+void ecs_register_reaction(int list_idx, int num_species, int* species_id, ECSReactionRate f)
 {
 	ecs_create_reaction(list_idx, num_species, species_id, f, NULL);
 	ecs_refresh_reactions(NUM_THREADS);
@@ -151,9 +151,9 @@ void ecs_register_reaction(int list_idx, int num_species, int* species_id, React
  * 	(currently this is always 0)
  * grid_id - the grid id within the linked list - this corresponds to species
  * my_subregion - a boolean array indicating the voxels where a reaction occurs
- * ReactionRate - the reaction function
+ * ECSReactionRate - the reaction function
  */
-void ecs_register_subregion_reaction_ecs(int list_idx, int num_species, int* species_id, unsigned char* my_subregion, ReactionRate f)
+void ecs_register_subregion_reaction_ecs(int list_idx, int num_species, int* species_id, unsigned char* my_subregion, ECSReactionRate f)
 {
 	ecs_create_reaction(list_idx, num_species, species_id, f,  my_subregion);
 	ecs_refresh_reactions(NUM_THREADS);
@@ -285,12 +285,12 @@ void* ecs_do_reactions(void* dataptr)
 						states_cache_dx[j] = react->species_states[j][i];
 					}
 
-					react->reaction(states_cache, results_array, NULL);
+					react->reaction(states_cache, results_array, NULL, NULL, NULL);
 
 					for(j = 0; j < react->num_species_involved; j++)
 					{
 						states_cache_dx[j] += dx;
-						react->reaction(states_cache_dx, results_array_dx, NULL);
+						react->reaction(states_cache_dx, results_array_dx, NULL, NULL, NULL);
 						v_set_val(b, j, dt*results_array[j]);
 
 						for(k = 0; k < react->num_species_involved; k++)
@@ -436,7 +436,7 @@ int find(const int x, const int y, const int z, const int size_y, const int size
 
 }
 
-void _ode_reinit(double* y) {
+void _ecs_ode_reinit(double* y) {
     Grid_node* grid;
     Py_ssize_t i;
     int grid_size;
@@ -454,7 +454,7 @@ void _ode_reinit(double* y) {
 }
 
 
-void _rhs_variable_step(const double t, const double* states, double* ydot) {
+void _rhs_variable_step_ecs(const double t, const double* states, double* ydot) {
 	Grid_node *grid;
     Py_ssize_t n, i;
     int grid_size;
@@ -462,7 +462,7 @@ void _rhs_variable_step(const double t, const double* states, double* ydot) {
     Current_Triple* c;
     double* grid_states;
     const double const* orig_states = states + states_cvode_offset;
-    const int calculate_rhs = ydot == NULL ? 0 : 1;
+    const unsigned char calculate_rhs = ydot == NULL ? 0 : 1;
     double* const orig_ydot = ydot + states_cvode_offset;
     states = orig_states;
     ydot = orig_ydot;

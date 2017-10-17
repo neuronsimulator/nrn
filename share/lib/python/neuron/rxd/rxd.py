@@ -37,8 +37,16 @@ _weakref_ref = weakref.ref
 
 _external_solver = None
 _external_solver_initialized = False
+_windows_dll_files = []
+_windows_dll = []
+
 
 dll = neuron.nrn_dll()
+
+make_time_ptr = dll.make_time_ptr
+make_time_ptr.argtypes = [ctypes.py_object, ctypes.py_object]
+make_time_ptr(h._ref_dt, h._ref_t)
+
 _double_ptr = ctypes.POINTER(ctypes.c_double)
 _int_ptr = ctypes.POINTER(_ctypes_c_int)
 
@@ -57,9 +65,16 @@ setup_solver.argtypes = [ndpointer(ctypes.c_double), ctypes.py_object, ctypes.c_
 
 clear_rates = dll.clear_rates
 register_rate = dll.register_rate
+register_rate.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int,  
+        numpy.ctypeslib.ndpointer(ctypes.c_int, flags='contiguous'),
+        ctypes.c_int, numpy.ctypeslib.ndpointer(ctypes.c_int, flags='contiguous'),
+        numpy.ctypeslib.ndpointer(ctypes.c_int, flags='contiguous'),
+        ctypes.c_int, numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),]
 
 set_reaction_indices = dll.set_reaction_indices
-set_reaction_indices.argtypes = [ctypes.c_int, _int_ptr, _int_ptr, _int_ptr, _int_ptr,_int_ptr,_double_ptr]
+set_reaction_indices.argtypes = [ctypes.c_int, _int_ptr, _int_ptr, _int_ptr, 
+    _int_ptr,_int_ptr,_double_ptr, ctypes.c_int, _int_ptr, _int_ptr, _int_ptr,
+    _int_ptr]
 
 ecs_register_reaction = dll.ecs_register_reaction
 ecs_register_reaction.argtype = [ctypes.c_int, ctypes.c_int, _int_ptr, fptr_prototype]
@@ -87,7 +102,10 @@ set_euler_matrix.argtypes = [
     ctypes.POINTER(ctypes.py_object)
 ]
 def _list_to_cint_array(data):
-    return (ctypes.c_int * len(data))(*tuple(data))
+    if len(data) == 0:
+        return None
+    else:
+        return (ctypes.c_int * len(data))(*tuple(data))
 
 def _list_to_pyobject_array(data):
     return (ctypes.py_object * len(data))(*tuple(data))
@@ -102,6 +120,7 @@ def byeworld():
     except NameError:
         # if it already didn't exist, that's fine
         pass
+    _windows_remove_dlls()
     
 atexit.register(byeworld)
 
@@ -656,7 +675,13 @@ def _c_compile(formula):
     try:
         gcc = os.environ["CC"]
     except:
-        gcc = "gcc"
+        #when running on windows try and used the gcc included with NEURON
+        if sys.platform.lower().startswith("win"):
+            gcc = os.path.join(h.neuronhome(),"mingw","bin","x86_64-w64-mingw32-gcc.exe")
+            if not gcc.isfile():
+                raise RxDException("unable to locate a C compiler. Please `set CC=<path to C compiler>`")
+        else:
+            gcc = "gcc"
     #TODO: Check this works on non-Linux machines
     gcc_cmd =  "%s -I%s -I%s " % (gcc, sysconfig.get_python_inc(), os.path.join(h.neuronhome(), "..", "..", "include", "nrn"))
     gcc_cmd += "-shared -fPIC  %s.c %s " % (filename, _find_librxdmath())
@@ -669,7 +694,12 @@ def _c_compile(formula):
     reaction.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double)] 
     reaction.restype = ctypes.c_double
     os.remove(filename + '.c')
-    os.remove(filename + '.so')
+    if sys.platform.lower().startswith("win"):
+        #cannot remove dll that are in use
+        _windows_dll.append(weakref.ref(reaction))
+        _windows_dll_files.append(filesname + ".so")
+    else:
+        os.remove(filename + '.so')
     return reaction
 
 
@@ -966,16 +996,18 @@ def _setup_matrices():
             #print 'index1d col sum:', sum(_euler_matrix[j, index1d] for j in xrange(n))
    
     #CRxD
-    if _euler_matrix is not None:
+    if _euler_matrix is not None and _euler_matrix.nnz > 0:
         _euler_matrix_nrow, _euler_matrix_nnonzero, _euler_matrix_i, _euler_matrix_j, _euler_matrix_nonzero = _matrix_to_rxd_sparse(_euler_matrix)
-    elif _diffusion_matrix is not None:
+        _calculate_diffusion_bases()
+        _update_node_data()
+        _send_euler_matrix_to_c(_euler_matrix_nrow, _euler_matrix_nnonzero, _euler_matrix_i, _euler_matrix_j, _euler_matrix_nonzero, _zero_volume_indices)
+    elif _diffusion_matrix is not None and _diffusion_matrix.nnz > 0:
         _euler_matrix_nrow, _euler_matrix_nnonzero, _euler_matrix_i, _euler_matrix_j, _euler_matrix_nonzero = _matrix_to_rxd_sparse(-_diffusion_matrix)
-    else:
-        raise RxDException('Diffusion matrix is None.')
+        _calculate_diffusion_bases()
+        _update_node_data()
+        _send_euler_matrix_to_c(_euler_matrix_nrow, _euler_matrix_nnonzero, _euler_matrix_i, _euler_matrix_j, _euler_matrix_nonzero, _zero_volume_indices)
 
-    _calculate_diffusion_bases()
-    _update_node_data()
-    _send_euler_matrix_to_c(_euler_matrix_nrow, _euler_matrix_nnonzero, _euler_matrix_i, _euler_matrix_j, _euler_matrix_nonzero, _zero_volume_indices)
+
 
 
     # we do this last because of performance issues with changing sparsity of csr matrices
@@ -1065,6 +1097,7 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
 def _compile_reactions():
     #clear all previous reactions (intracellular & extracellular) and the
     #supporting indexes
+    _windows_remove_dlls()
     clear_rates()
     
     regions_inv = dict() #regions -> reactions that occur there
@@ -1075,47 +1108,55 @@ def _compile_reactions():
     ecs_regions_inv = dict()
     ecs_species_by_region = dict()
     ecs_all_species_involed = set()
+    ecs_mc_species_involved = set()   
+    from . import rate, multiCompartmentReaction
 
-
-    #all_rates = []
-    #for rptr in _all_reactions:
-    #    r = rptr()
-    #    try:
-    #        all_rates.append(weakref(r.f_rate))
-    #        if r.b_rate is not None:
-    #            all_rates.append(weakref(r.b_rate))
-    #    except:
-    #         all_rates.append(rptr)
+    from region import _c_region
+    matched_regions = [] # the different combinations of regions that arise in different sections
+    for nrnsec in section1d._rxd_sec_lookup.keys():
+        set_of_regions = set() # a set of the regions that occur in a given section
+        for sec in section1d._rxd_sec_lookup[nrnsec]:
+            if sec(): set_of_regions.add(sec()._region)
+        if set_of_regions not in matched_regions:
+            matched_regions.append(set_of_regions)
+    region._c_region_lookup = dict()
+    c_region_list = []
+    for sets in matched_regions:
+        c_region_list.append(_c_region(sets))
 
     for rptr in _all_reactions:
         r = rptr()
-        
-        try:
-            sptrs  = set(r._involved_species + r._dests + r._sources)
-        except:
+        if not r:
+            continue
+        if isinstance(r,rate.Rate):
             sptrs = set(r._involved_species + [r._species])
-
-        if None not in r._regions:
+        else:
+            sptrs  = set(r._involved_species + r._dests + r._sources)
+        
+        if isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
+            react_regions = [s()._extracellular()._region for s in r._sources + r._dests if isinstance(s(),species.SpeciesOnExtracellular)] + [s()._region() for s in r._sources + r._dests if not isinstance(s(),species.SpeciesOnExtracellular)]
+            react_regions +=  [sptr()._region() for sptr in sptrs if isinstance(sptr(),species.SpeciesOnRegion)]
+        elif None not in r._regions:
             react_regions = r._regions
         else:
             react_regions = set()
             for sp in sptrs:
                 s = sp()
-                if None not in s._regions:
+                if isinstance(s,species.SpeciesOnRegion):
+                    react_regions.add(s._region())
+                elif None not in s._regions:
                     [react_regions.add(reg) for reg in s._regions + s._extracellular_regions]
-
         #any intracellular regions
         if not all([isinstance(x, region.Extracellular) for x in react_regions]):
             species_involved = []
             for sp in sptrs:
                 s = sp()
-                all_species_involed.add(s)
-                species_involved.append(s)
-        
+                if not isinstance(s, species.SpeciesOnExtracellular):
+                    all_species_involed.add(s)
+                    species_involved.append(s)
             for reg in react_regions:
                 if isinstance(reg, region.Extracellular):
                     continue
-                
                 if reg in regions_inv.keys():
                     regions_inv[reg].append(rptr)
                 else:
@@ -1127,7 +1168,14 @@ def _compile_reactions():
                     for sec in reg._secs:
                         location_count += sec.nseg
         #any extracellular regions
-        if any([isinstance(x, region.Extracellular) for x in react_regions]):
+        if isinstance(r, multiCompartmentReaction.MultiCompartmentReaction) and any([isinstance(x, region.Extracellular) for x in react_regions]):
+            for sp in sptrs:
+                s = sp()
+                if isinstance(s,species._ExtracellularSpecies):
+                    ecs_mc_species_involved.add(s)
+                elif isinstance(s,species.SpeciesOnExtracellular):
+                    ecs_mc_species_involved.add(s._extracellular())
+        elif any([isinstance(x, region.Extracellular) for x in react_regions]):
             ecs_species_involved = []
             for sp in sptrs:
                 s = sp()
@@ -1137,7 +1185,7 @@ def _compile_reactions():
             for reg in react_regions:
                 if not isinstance(reg, region.Extracellular):
                     continue
-                
+
                 if reg in ecs_regions_inv.keys():
                     ecs_regions_inv[reg].append(rptr)
                 else:
@@ -1147,141 +1195,120 @@ def _compile_reactions():
                 else:
                     ecs_species_by_region[reg] = set(ecs_species_involved)
 
-
-
     #Create lists of indexes for intracellular reactions and rates
     nseg_by_region = []     # a list of the number of segments for each region
     # a table for location,species -> state index
     location_index = []
+        
     for reg in regions_inv.keys():
-        nodes = [s.nodes for s in species_by_region[reg]]
-        seg_idx = 0;
-        for sec in reg.secs:
-            for seg in sec:
-                for s, mynodes in zip(species_by_region[reg], nodes):
-                    for node in mynodes:
-                        if node.segment == seg:
-                            location_index.append(node._state_index)
-            seg_idx += sec.nseg
-        nseg_by_region.append(seg_idx)
+        rptr = weakref.ref(reg)
+        for c_region in region._c_region_lookup[rptr]:
+            for react in regions_inv[reg]:
+                c_region.add_reaction(react,regions_inv[reg])
+                c_region.add_species(species_by_region[reg])
 
+    
     # now setup the reactions
     #if there are no reactions
     if location_count == 0 and len(ecs_regions_inv) == 0:
         setup_solver(_node_get_states(), h._ref_dt, location_count)
         return None
 
-    mc_mult_list = []
-    mc_mult_count_list = []
-    species_per_region = []
-    species_ids = []
-    species_lookup = dict()
-    mc_mult_count = 0
-    for reg in regions_inv.keys():
-        species_per_region.append(len(species_by_region[reg]))
-        s_index = 0
-        for s in species_by_region[reg]:
-            species_ids.append(s_index)
-            species_lookup[s._id] = s_index
-            s_index += 1
-
-        from . import rate, multiCompartmentReaction
+    from . import rate, multiCompartmentReaction
+    for creg in c_region_list:
+        creg._initalize()
+        mc_mult_count = 0
+        mc_mult_list = []
+        species_ids_used = numpy.zeros((creg.num_species,creg.num_regions),bool)
+        ecs_species_ids_used = numpy.zeros((creg.num_ecs_species,creg.num_regions),bool)
         fxn_string = '#include <math.h>\n'
         fxn_string += '#include <rxdmath.h>\n'
-        #TODO: find the nrn include path in python
-        #TODO: install rxdmath.h into the include path
-        #It is necessary for a couple of function in python that are not in math.h
-        fxn_string += 'void reaction(double* species, double* rhs, double* mult)\n{'
+        fxn_string += 'void reaction(double** species, double** rhs, double* mult, double** species_ecs, double** rhs_ecs)\n{'
         # declare the "rate" variable if any reactions (non-rates)
-        for rptr in regions_inv[reg]:
-            r = rptr()
-            if not isinstance(r,rate.Rate):
+        for rprt in creg._react_regions.keys():
+            if not isinstance(rprt(),rate.Rate):
                 fxn_string += '\n\tdouble rate;'
                 break
-        species_ids_used = set()
-        for rptr in regions_inv[reg]:
+        for rptr in  creg._react_regions.keys():
             r = rptr()
-            # replace global species._id in rate string with local index in location_index
-            rate_str = re.sub(r'species\[(\d+)\]',lambda m: "species[%i]" %  species_lookup.get(int(m.groups()[0])), r._rate)
             if isinstance(r,rate.Rate):
-                #TODO: Check r._mult is only used for reactions - not rates
-                species_id = species_lookup.get(r._species()._id)
-                operator = '+=' if species_id in species_ids_used else '='
-                fxn_string += "\n\trhs[%d] %s %s;" % (species_id, operator, rate_str)
-                species_ids_used.add(species_id)
+                s = r._species()
+                species_id = creg._species_ids.get(s._id)
+                if isinstance(s,species.SpeciesOnRegion):
+                    region_ids = [creg._region_ids.get(s._region()._id)]
+                else:
+                    region_ids = creg._react_regions[rptr]
+                for region_id in region_ids:
+                    rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate)
+                    rate_str = re.sub(r'species\[(\d+)\]\[\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), region_id), rate_str)
+                    operator = '+=' if species_ids_used[species_id][region_id] else '='
+                    fxn_string += "\n\trhs[%d][%d] %s %s;" % (species_id, region_id, operator, rate_str)
+                    species_ids_used[species_id][region_id] = True
             elif isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
-                #TODO: Check the order of r._mult is reliable
-                idx = 0
-                for sp in r._sources + r._dests:
-                    # TODO: to handle cases like 2Ca + Buf <> CaBuf, probably need to do like below
-                    s = sp()
-                    species_id = species_lookup.get(s._id)
-                    operator = '+=' if species_id in species_ids_used else '='
-                    species_ids_used.add(species_id)
-                    fxn_string += "\n\trhs[%d] %s (mult[%d])*(%s);" % (species_id, operator, mc_mult_count,rate_str)
-
-                    mc_mult_count+=1
-                    mc_mult_list.extend(r._mult[idx].tolist())
-                    idx += 1
-            else:
-                #TODO: Check the order of r._mult is reliable
+                rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate)
+                rate_str = re.sub(r'species\[(\d+)\]\[\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), region_id), rate_str)
                 fxn_string += "\n\trate = %s;" % rate_str
-                summed_mults = collections.defaultdict(lambda: 0)
-                # TODO: is r._mult a list? if so, then can zip instead of getting idx and doing lookups
-                for idx, sp in enumerate(r._sources + r._dests):
-                    summed_mults[species_lookup.get(sp()._id)] += r._mult[idx]
-                for idx in sorted(summed_mults.keys()):
-                    operator = '+=' if idx in species_ids_used else '='
-                    species_ids_used.add(idx)
-                    fxn_string += "\n\trhs[%d] %s (%g) * rate;" % (idx, operator, summed_mults[idx])
+                for sptr in r._sources + r._dests:
+                    s = sptr()
+                    region_id = creg._region_ids.get(s._region()._id)
+                    if isinstance(s,species.SpeciesOnExtracellular):
+                        operator = '+=' if ecs_species_ids_used[species_id][region_id] else '='
+                        fxn_string += "\n\trhs_ecs[%d][%d] %s mult[%d] * rate;" % (species_id, region_id, operator, mc_mult_count)
+                        ecs_species_ids_used[species_id][region_id] = True
+                    else:
+                        species_id = creg._species_ids.get(s._id)
+                        operator = '+=' if species_ids_used[species_id][region_id] else '='
+                        fxn_string += "\n\trhs[%d][%d] %s mult[%d] * rate;" % (species_id, region_id, operator, mc_mult_count)
+                        species_ids_used[species_id][region_id] = True
+                    #TODO: Fix problem if the whole region isn't part of the same aggregate c_region
+                    mc_mult_count += 1
+                mc_mult_list.extend(r._mult)
+            else:
+                for region_id in creg._react_regions[rptr]:
+                    rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate)
+                    rate_str = re.sub(r'species\[(\d+)\]\[\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), region_id), rate_str)
+                    fxn_string += "\n\trate = %s;" % rate_str
+                    summed_mults = collections.defaultdict(lambda: 0)
+                    for (mult, sp) in zip(r._mult, r._sources + r._dests):
+                        summed_mults[creg._species_ids.get(sp()._id)] += mult
+                    for idx in sorted(summed_mults.keys()):
+                        operator = '+=' if species_ids_used[idx][region_id] else '='
+                        species_ids_used[idx][region_id] = True
+                        fxn_string += "\n\trhs[%d][%d] %s (%g) * rate;" % (idx, region_id, operator, summed_mults[idx])
+          
         fxn_string += "\n}\n"
-        register_rate(_c_compile(fxn_string))
-        mc_mult_count_list.append(mc_mult_count)
-    mc_mult = numpy.array(mc_mult_list)
-    #set_reaction_indices with
-    #location_count  -   the number of segments to loop over
-    #nseg_by_region  -   the number of segments in each region
-    #species_per_region     -   the species involved involved in each region
-    #   NOTE: each region has exactly one aggregated reaction function
-    #species_ids    -   the species index used in the reaction function to
-    #                   lookup a state index in location_index
-    #location_index a table (segment,species) -> state index
-    #mc_mult_count_list - a list of the number of multipliers used in 
-    #                MultiCompartment reactions by region
-    #mc_mult_list   - the multipliers used by MultiCompartment reactions
-    set_reaction_indices(location_count ,_list_to_cint_array(nseg_by_region),
-        _list_to_cint_array(species_per_region),
-        _list_to_cint_array(species_ids),  _list_to_cint_array(location_index),
-        _list_to_cint_array(mc_mult_count_list),
-        mc_mult.ctypes.data_as(_double_ptr))
+        register_rate(creg.num_species, creg.num_regions, creg.num_segments, creg.get_state_index(),
+                      creg.num_ecs_species, creg.get_ecs_species_ids(), creg.get_ecs_index(),
+                      mc_mult_count, numpy.array(mc_mult_list), 
+                      _c_compile(fxn_string))
+
     setup_solver(_node_get_states(), h._ref_dt, location_count)
 
     #Setup extracellular reactions
     for reg in ecs_regions_inv.keys():
         grid_ids = []
         for s in ecs_species_by_region[reg]:
-            ecs_s = [x for x in s._extracellular_instances if x._region == reg][0]
-            grid_ids.append(ecs_s._grid_id)
+            if isinstance(s,species.Species): s = s[reg]._extracellular()
+            elif isinstance(s,species.SpeciesOnExtracellular): s = s._extracellular()
         for s in ecs_species_by_region[reg]:
             fxn_string = '#include <math.h>\n'
             fxn_string += '#include <rxdmath.h>\n'
             #TODO: find the nrn include path in python
             #TODO: install rxdmath.h into the include path
             #It is necessary for a couple of function in python that are not in math.h
-            fxn_string += 'void reaction(double* species, double* rhs)\n{'
+            fxn_string += 'void reaction(double* species_ecs, double* rhs)\n{'
             for rptr in ecs_regions_inv[reg]:
                 r = rptr()
                 if isinstance(r,rate.Rate):
                     s = r._species()
-                    grid_id = [x for x in s._extracellular_instances if x._region == reg][0]._grid_id
-                    fxn_string += "\n\trhs[%d] = %s;" % (grid_id, r._rate)
+                    if isinstance(s,species.Species): s = s[reg]._extracellular()
+                    fxn_string += "\n\trhs[%d] = %s;" % (s._grid_id, r._ecs_rate)
                 else:
                     idx = 0
                    #TODO: Check the order of r._mult is reliable
                     for sp in r._sources + r._dests:
                         s = sp()
-                        grid_id = [x for x in s._extracellular_instances if x._region == reg][0]._grid_id
-                        fxn_string += "\n\trhs[%d] = (%s)*(%s);" % (s._id, r._mult[idx], r._rate)
+                        fxn_string += "\n\trhs[%d] = (%s)*(%s);" % (s._grid_id, r._mult[idx], r._rate)
                         idx+=1
                 fxn_string += "\n}\n"
             ecs_register_reaction(0, len(grid_ids), _list_to_cint_array(grid_ids), _c_compile(fxn_string))
@@ -1339,3 +1366,16 @@ do_setup_fptr = fptr_prototype(_setup)
 do_initialize_fptr = fptr_prototype(_init)
 set_setup(do_setup_fptr)
 set_initialize(do_initialize_fptr)
+
+def _windows_remove_dlls():
+    global _windows_dll_files, _windows_dll
+    for (dll_ptr,filepath) in zip(_windows_dll,_windows_dll_files):
+        dll = dll_prt()
+        if dll:
+            del dll
+        sys.remove(filepath)
+    _windows_dll_files = []
+    _windows_dll = []
+        
+        
+

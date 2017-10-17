@@ -12,9 +12,11 @@ import weakref
 import initializer
 import warnings
 import math
+import ctypes
 
 _all_regions = []
 _region_count = 0
+_c_region_lookup = None 
 
 def _sort_secs(secs):
     # sort the sections
@@ -28,6 +30,123 @@ def _sort_secs(secs):
         if h.section_orientation(sec=sec):
             raise RxDException('still need to deal with backwards sections')
     return [secs_names[sec.hoc_internal_name()] for sec in all_sorted if sec.hoc_internal_name() in secs_names]
+class _c_region:
+    def __init__(self,regions):
+        global _c_region_lookup
+        self._regions = list(regions)
+        self._overlap = set(self._regions[0]._secs)
+        self.num_regions = len(self._regions)
+        self.num_species = 0
+        self.num_ecs_species = 0
+        self.num_segments = numpy.sum([x.nseg for x in self._overlap])
+        self._ecs_react_species = set()
+        self._react_species = set()
+        self._react_regions = dict()
+        self._initialized = False
+        self.location_index = None
+        self.ecs_location_index = None
+        self._ecs_species_ids = None
+        for r in self._regions:
+            self._overlap.intersection(r._secs)
+            rptr = weakref.ref(r)
+            if rptr in _c_region_lookup.keys():
+                _c_region_lookup[rptr].append(self)
+            else:
+                _c_region_lookup[rptr] = [self]
+
+    def add_reaction(self,rptr,regions):
+        self._react_regions[rptr] = regions
+        self._initialized = False
+
+    def add_species(self,species_set):
+        from species import SpeciesOnRegion
+        for s in species_set:
+            if isinstance(s,SpeciesOnRegion):
+                self._react_species.add(s._species())
+            else:
+                self._react_species.add(s)
+        self.num_species = len(self._react_species)
+        self._initilized = False
+
+    def add_ecs_species(self,sptr):
+        self._ecs_react_species.add(sptr)
+        self.num_ecs_species = len(self._ecs_react_species)
+        self._initialized = False
+
+    def get_ecs_index(self):
+        if not self._initialized:
+            self._initalize()
+        if self.ecs_location_index:
+            return self.ecs_location_index.flatten()
+        else:
+            return numpy.ndarray(0,ctypes.c_int)
+    
+    def get_state_index(self):
+        if not self._initialized:
+            self._initalize()
+        return self.location_index.flatten()
+
+    def get_ecs_species_ids(self):
+        ret = numpy.ndarray(self.num_ecs_species,ctypes.c_int)
+        if self.num_ecs_species > 0:
+            for i in self._ecs_species_ids.keys():
+                ret[self._ecs_species_ids[i]] = i
+        return ret
+    def _ecs_initalize(self):
+        self.location_index = -numpy.ones((self.num_regions,self.num_ecs_species,numpy.sum([x.nseg for x in self._overlap])),ctypes.c_int)
+
+        #Set the local ids of the regions and species involved in the reactions
+        self._ecs_species_ids = dict()
+        for sid, s in (xrange(self.num_ecs_species), self._ecs_react_species):   
+            self._ecs_species_ids.append(s._id)
+
+        #Setup the matrix to the ECS grid points
+        for rid,r in zip(xrange(self.num_regions), self._regions):
+            for sid, s in (xrange(self.num_ecs_species), self._ecs_react_species):
+                for rxdsec in r.secs:
+                    if rxdsec._sec == sec:
+                        for seg in rxdsec._sec:
+                            (x,y,z) = s._xyz(seg)
+                            self.ecs_location_index[rid][sid][seg_idx] = s.index_from_xyz(x,y,z)
+                            seg_idx+=1
+        self.ecs_location_index = self.ecs_location_index.transpose()
+
+    def _initalize(self):
+        from species import Species
+        self.location_index = -numpy.ones((self.num_regions,self.num_species,self.num_segments),ctypes.c_int)
+        from species import SpeciesOnExtracellular, SpeciesOnRegion 
+        #Set the local ids of the regions and species involved in the reactions
+        self._species_ids = dict()
+        self._region_ids = dict()
+        
+        for rid,r in zip(xrange(len(self._regions)), self._regions):  
+            self._region_ids[r._id] = rid
+        for sid, s in zip(xrange(self.num_species), self._react_species):
+            self._species_ids[s._id] = sid
+            
+        
+        #Setup the array to the state index 
+        for rid,r in zip(xrange(self.num_regions), self._regions):
+            for sid, s in zip(xrange(self.num_species), self._react_species):
+                indices = s.indices(r)
+                if indices == []:
+                   self.location_index[rid][sid][:] = -1
+                else: 
+                   self.location_index[rid][sid][:] = indices
+        self.location_index=self.location_index.transpose()
+
+        #Setup the matrix to the ECS grid points
+        if self.num_ecs_species > 0:
+            self._ecs_initalize()
+                                  
+        for rptr in self._react_regions:
+            reagions = self._react_regions[rptr]
+            rids = []
+            for r in self._regions:
+                rids.append(self._region_ids[r._id])
+            self._react_regions[rptr] = rids
+        self._initialized = True
+
 
 class Extracellular:
     """Declare an extracellular region
