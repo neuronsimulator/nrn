@@ -221,16 +221,17 @@ if test "$NPYONLY" = "no" ; then
       ${LDFLAGS}
 
     #without msvcr90.dll and a manifest, cannot 'import numpy' from enthought.
+    # also 2.7 problem with matplotlib.pyplot
     #To allow this,  create an alternative executable.
     manifest=Microsoft.VC90.CRT.manifest
-    if test -f /c/Python27/$manifest ; then
-      cp /c/Python27/$manifest .
+    if test -f /e/Python27/$manifest ; then
+      cp /e/Python27/$manifest .
       echo '#include "winuser.h"
 1 RT_MANIFEST '$manifest'
 ' > msvcr.rc
       windres --input msvcr.rc --output msvcr.o
 
-      $CXX -g -O2 -o nrniv_enthought.exe \
+      $CXX -g -O2 -o nrniv_crt90.exe \
         ../ivoc/nrnmain.o msvcr.o\
         -L. -lnrniv \
         ${LDFLAGS}

@@ -74,8 +74,9 @@ mkdir $D/tmp
 cp $B/src/nrniv/mos2nrn.exe $DB/mos2nrn.exe
 cp $B/src/nrniv/neuron.exe $DB/neuron.exe
 cp $B/src/mswin/nrniv.exe $DB/nrniv.exe
-if test -f $B/src/mswin/nrniv_enthought.exe ; then
-  cp $B/src/mswin/nrniv_enthought.exe $DB/nrniv_enthought.exe
+if test -f $B/src/mswin/nrniv_crt90.exe ; then
+  # overwrite (avoids R6034 error from python2.7 on certain imports)
+  cp $B/src/mswin/nrniv_crt90.exe $DB/nrniv.exe
   cp /e/Python27/Microsoft.VC90.CRT.manifest $DB
   cp /e/Python27/msvcr90.dll $DB
 fi
