@@ -467,7 +467,7 @@ static MapNode2PDbl* mk_svibuf() {
 		int isrc = poutsrc_indices_[i];
 		Node* nd = visources_->item(isrc);
 		double* pd = NULL;
-		it = non_vsrc_update_info_.find(sgids_->item(i));
+		it = non_vsrc_update_info_.find(sgids_->item(isrc));
 		if (nd->extnode	&& it == non_vsrc_update_info_.end()) {
 			assert(ndvi2pd->find(nd, pd));
 			poutsrc_[i] = pd;
