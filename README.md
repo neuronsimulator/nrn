@@ -7,8 +7,8 @@ and a discusson forum.
 
 Basic installation on Linux from the nrn...tar.gz file is:
 
-  Build InterViews first from the mercurial repository at
-  http://neuron.yale.edu/hg/neuron/iv or the iv...tar.gz file at
+  Build InterViews first from the git repository at
+  http://github.org/nrnhines/iv or the iv...tar.gz file at
   http://neuron.yale.edu/ftp/neuron/versions/alpha/
 
 ```
@@ -16,6 +16,11 @@ Basic installation on Linux from the nrn...tar.gz file is:
   make
   make install
 ```
+
+If sources are obtained from the git repository,
+http://github.org/nrnhines/nrn ,
+create the automake, autoconf, libtool generated files by:
+  sh build.sh
 
 Particularly useful configure options:
 
@@ -33,11 +38,6 @@ Particularly useful configure options:
     HOC interpreter). This is required to use the Reaction-Diffusion
     extension.
 ```
-
-If sources are obtained from the mercurial repository,
-http://neuron.yale.edu/hg/neuron/nrn ,
-create the automake, autoconf, libtool generated files by:
-  sh build.sh
 
 For more installation information see:
 http://neuron.yale.edu/neuron/download/getdevel
