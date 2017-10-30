@@ -1,6 +1,9 @@
-#pragma once
+#ifndef ASTUTILS_HPP
+#define ASTUTILS_HPP
 
 #include <string>
+
+#include "lexer/modtoken.hpp"
 
 namespace ast {
 
@@ -72,9 +75,11 @@ namespace ast {
             return "";
         }
         virtual ModToken* getToken() { /*std::cout << "\n ERROR: getToken not implemented!";*/
-            return NULL;
+            return nullptr;
         }
         // virtual AST* clone() { std::cout << "\n ERROR: clone() not implemented! \n"; abort(); }
     };
 
 }  // namespace ast
+
+#endif
