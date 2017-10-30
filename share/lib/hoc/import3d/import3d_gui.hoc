@@ -8,6 +8,8 @@ external hoc_sf_
 objref swc, g, box, this, rotmat, m2, origin, tobj, rotmatold
 objref raworigin, rotsav, viewsec, rawsel, deck
 objref file, nil, problist, types, editbox
+objref spine_displ, spine_raw, spine_xyz
+public spine_displ, spine_raw, spine_xyz, sel_spine_ipt, sel_spine_index
 strdef tstr, tstr1, typelabel_, filename
 
 proc init() {
@@ -29,6 +31,9 @@ proc init() {
 	undo_type_ = 0
 	show_point_ = 1
 	show_diam_ = 1
+	show_spines_ = 0
+	sel_spine_ipt = 0
+	sel_spine_index = -1
 	if ($o1 == nil) { build() map() return }
 	init1($o1)
 	build()
@@ -114,6 +119,11 @@ proc build_panel() {local i
 	xcheckbox("Rotated (vs Raw view)", &rotated_, "rotraw()")
 	xcheckbox("Show Points", &show_point_, "pl()")
 	xcheckbox("Show Diam", &show_diam_, "pl()")
+	if (strcmp(swc.filetype, "Neurolucida V3") == 0) {
+		if (swc.spines.count > 0) {
+			xcheckbox("Show Spines", &show_spines_, "show_spines()")
+		}
+	}
 	xvarlabel(typelabel_)
 	xmenu("View type")
 	xradiobutton("All", "showtype(-10000) pl()", 1)
@@ -156,6 +166,13 @@ proc build_panel() {local i
 	deck.flip_to(0)
 }
 
+
+proc show_spines() {
+	sel_spine_index = -1
+	if (show_spines_) {
+		rotraw()
+	}
+}
 
 proc map_edit() {
 	if (editbox == nil) {
@@ -457,22 +474,69 @@ proc pl_centroid() {local i
 		swc.sections.object(i).pl_centroid(g)
 	}
 }
+
 proc pl_diam() {local i   localobj sec
 	for i=0, viewsec.count-1 {
 		viewsec.object(i).pl_diam(g)
 	}
 }
-proc pl() { localobj tobj
+
+proc pl_spines() {local i  localobj spine
+	for i=0, swc.spines.count() - 1 {
+		g.beginline(4, 1)
+		for j = spine_displ.x[i], spine_displ.x[i+1] - 1 {
+			g.line(spine_xyz.x[0][j], spine_xyz.x[1][j])
+		}
+	}
+}
+
+proc pl() { local i   localobj tobj, s, spine
 	g.erase_all
 	if (show_diam_) {pl_diam()}
 	pl_centroid()
 	if (show_point_) {pl_point()}
-	if (selpoint_ >= 0) {
+	if (sel_spine_index >= 0) {
+		i = sel_spine_ipt
+		g.mark(spine_xyz.x[0][i], spine_xyz.x[1][i], "O", 12, 2, 1)
+		spine = swc.spines.o(sel_spine_index)
+		s = new String()
+		sprint(s.s, "Line %d:   %s", spine.iline, spine.fline.s)
+		g.label(.1, .05, s.s, 2, 1, 0, 0, 1)
+	} else if (selpoint_ >= 0) {
 		tobj = m2.mulv(rawsel)
 		g.mark(tobj.x[0], tobj.x[1], "O", 12, 2, 1)
 		swc.label(selpoint_, tstr)
 		g.label(.1, .05, tstr, 2, 1, 0, 0, 1)
 	}
+	if (show_spines_) {
+		pl_spines()
+	}
+	g.flush
+}
+
+proc spine_rot() {local i, j, k, n  localobj spine
+	if (object_id(spine_raw) == 0) {
+		spine_displ = new Vector(swc.spines.count() + 1)
+		spine_displ.x[0] = 0
+		for i=0, swc.spines.count()-1 {
+			spine = swc.spines.o(i)
+			n += spine.x.size()
+			spine_displ.x[i+1] = n
+		}	
+		spine_xyz = new Matrix(3, n)
+		spine_raw = new Matrix(3, n)
+		k = 0
+		for i=0, swc.spines.count()-1 {
+			spine = swc.spines.o(i)
+			for j=0, spine.x.size - 1 {
+				spine_raw.x[0][k] = spine.x.x[j]
+				spine_raw.x[1][k] = spine.y.x[j]
+				spine_raw.x[2][k] = spine.z.x[j]
+				k += 1
+			}
+		}
+	}
+	m2.mulm(spine_raw, spine_xyz)
 }
 
 proc redraw() { local i  localobj sec
@@ -594,13 +658,21 @@ proc selpoint1() { // deselection not supported by menu_tool
 		selpoint_ = -1
 	}
 }
-proc selpoint() {local i, j
+proc selpoint() {local i, j, dp, ds
 	if ($1 == 2) {
-		nearest_point($2, $3, &i, &j)
+		dp = nearest_point($2, $3, &i, &j)
 		selpoint_ = swc.sec2pt(i, j)
 		selpoint_dependent_show()
 		swc.sections.object(i).raw.getcol(j, rawsel)
 		selid_ = swc.pt2id(selpoint_)
+		if (show_spines_) {
+			sel_spine_index = -1
+			ds = nearest_spine($2, $3, &i, &j)
+			if (ds < dp) {
+				sel_spine_index = i
+				sel_spine_ipt = j
+			}
+		}
 		pl()
 	}
 }
@@ -675,6 +747,23 @@ func nearest_point() { local i, j, xmin    localobj m, v1
 			$&3 = i
 			$&4 = j
 		}
+	}
+	return xmin
+}
+
+func nearest_spine() { local i, j, xmin    localobj m, v1
+	// return spine index in $3, spine_xyz point in $4
+	xmin = 1e9
+	m = spine_xyz
+	v1 = m.getrow(0).sub($1).pow(2).add(m.getrow(1).sub($2).pow(2))
+	i = v1.min_ind
+	// only if tip of spine
+	j = spine_displ.indwhere("==", i+1)
+	$&3 = -1
+	if (j != -1) {
+		xmin = v1.x[i]
+		$&3 = j
+		$&4 = i
 	}
 	return xmin
 }
@@ -776,6 +865,9 @@ proc rot() {local s, c, i   localobj sec
 	for i=0, swc.sections.count-1 {
 		sec = swc.sections.object(i)
 		sec.rotate(m2)
+	}
+	if (show_spines_) {
+		spine_rot()
 	}
 }
 
