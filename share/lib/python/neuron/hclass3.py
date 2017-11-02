@@ -6,6 +6,7 @@
 # ------------------------------------------------------------------------------
       
 from neuron import h, hoc
+import nrn
 
 class MetaHocObject(type):
   """Provides Exception for Inheritance of multiple HocObject"""
