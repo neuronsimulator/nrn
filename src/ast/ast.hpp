@@ -5,8 +5,8 @@
 #include <vector>
 
 #include "ast/ast_utils.hpp"
+#include "utils/common_utils.hpp"
 #include "lexer/modtoken.hpp"
-#include "utils/commonutils.hpp"
 
 /* all classes representing Abstract Syntax Tree (AST) nodes */
 namespace ast {

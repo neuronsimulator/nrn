@@ -5,7 +5,7 @@
 #include "lexer/modtoken.hpp"
 #include "lexer/nmodl_utils.hpp"
 #include "lexer/token_mapping.hpp"
-#include "utils/stringutils.hpp"
+#include "utils/string_utils.hpp"
 
 namespace nmodl {
 

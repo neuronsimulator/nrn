@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
     try {
         TCLAP::CmdLine cmd("NMODL Parser: Standalone parser program for NMODL");
         TCLAP::ValueArg<std::string> filearg(
-            "", "file", "NMODL input file path", false, "../test/input/example1.mod", "string");
+            "", "file", "NMODL input file path", false, "../test/input/channel.mod", "string");
 
         cmd.add(filearg);
         cmd.parse(argc, argv);
