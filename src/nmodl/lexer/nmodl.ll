@@ -5,7 +5,7 @@
     #include "lexer/nmodl_utils.hpp"
     #include "lexer/token_mapping.hpp"
     #include "parser/nmodl_driver.hpp"
-    #include "utils/stringutils.hpp"
+    #include "utils/string_utils.hpp"
 
     /** YY_USER_ACTION is called before each of token actions and
       * we update columns by length of the token. Node that position
