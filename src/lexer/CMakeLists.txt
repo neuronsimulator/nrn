@@ -1,7 +1,3 @@
-# Important : make sure to have latest flex header
-# included otherwise get strange compilation issue
-include_directories(${FLEX_INCLUDE_DIRS})
-
 set (BISON_GENERATED_SOURCE_FILES
     ${PROJECT_SOURCE_DIR}/src/parser/nmodl_parser.cpp
     ${PROJECT_SOURCE_DIR}/src/parser/verbatim_parser.cpp
@@ -63,7 +59,7 @@ add_custom_command(
     COMMENT "-- NOCMODL : GENERATING VERBATIM LEXER WITH FLEX! --"
 )
 
-srt(LEXER_SOURCE_FILES
+set(LEXER_SOURCE_FILES
     token_mapping.cpp
     nmodl_utils.cpp
     modtoken.cpp
