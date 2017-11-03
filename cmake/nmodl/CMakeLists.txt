@@ -23,6 +23,12 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/src/ext/
 )
 
+# Important : make sure to have flex header included
+# at top level. Otherwise get strange compilation and
+# runtime memory errors due to inclusion of older version
+# from /usr/include (which is always present!)
+include_directories(${FLEX_INCLUDE_DIRS})
+
 set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 
 # generate file with version number from git
@@ -31,6 +37,11 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/version/version.cpp.in
 
 add_subdirectory(src/lexer)
 add_subdirectory(src/parser)
+add_subdirectory(test)
+
+enable_testing ()
+add_test (NAME ModToken COMMAND testmodtoken)
+add_test (NAME Lexer COMMAND testlexer)
 
 add_executable(nocmodl
                src/main.cpp
