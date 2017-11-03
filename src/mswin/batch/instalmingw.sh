@@ -147,7 +147,14 @@ if test "$PARANEURON"="yes" ; then
 	#cp /c/Windows/System32/mpich2mpi.dll $DB
 	#cp $S/../mpich2mpi.dll $DB
 	if test $host_cpu = x86_64 ; then
-		cp $mpiinstalled/lib/x64/msmpi.dll $DB
+		if test -f $mpiinstalled/lib/x64/msmpi.dll ; then
+			cp $mpiinstalled/lib/x64/msmpi.dll $DB
+		else
+			zz=`cygcheck $DB/libnrnmpi.dll | grep msmpi.dll`
+			if test "$zz" != "" ; then
+				cp $zz $DB
+			fi
+		fi
 	else
 		cp $mpiinstalled/lib/x86/msmpi.dll $DB
 	fi
