@@ -17,8 +17,62 @@ nmodl::Parser::token_type token_type(std::string name) {
     nmodl::Driver driver;
     nmodl::Lexer scanner(driver, &in);
 
-    nmodl::Parser::symbol_type sym = scanner.next_token();
-    return sym.token();
+    using TokenType = nmodl::Parser::token_type;
+    using SymbolType = nmodl::Parser::symbol_type;
+
+    SymbolType sym = scanner.next_token();
+    TokenType token = sym.token();
+
+    /** Lexer returns raw pointers for some AST types
+     * and we need to clean-up memory for those.
+     * Todo: add tests later for checking values */
+    switch (token) {
+        case Token::NAME:
+        case Token::METHOD:
+        case Token::SUFFIX:
+        case Token::VALENCE:
+        case Token::DEL:
+        case Token::DEL2: {
+            auto value = sym.value.as<ast::name_ptr>();
+            delete value;
+            break;
+        }
+
+        case Token::PRIME: {
+            auto value = sym.value.as<ast::primename_ptr>();
+            delete value;
+            break;
+        }
+
+        case Token::INTEGER: {
+            auto value = sym.value.as<ast::integer_ptr>();
+            delete value;
+            break;
+        }
+
+        case Token::REAL: {
+            auto value = sym.value.as<ast::double_ptr>();
+            delete value;
+            break;
+        }
+
+        case Token::STRING: {
+            auto value = sym.value.as<ast::string_ptr>();
+            delete value;
+            break;
+        }
+
+        case Token::VERBATIM:
+        case Token::COMMENT:
+        case Token::LINE_PART: {
+            auto value = sym.value.as<std::string>();
+            break;
+        }
+
+        default: { auto value = sym.value.as<ModToken>(); }
+    }
+
+    return token;
 }
 
 TEST_CASE("Lexer tests for valid tokens", "[Lexer]") {

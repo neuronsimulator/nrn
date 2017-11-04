@@ -34,7 +34,7 @@ cmake ..
 make -j
 ```
 
-If you flex / bison is in non-standard location then add flex/bison binaries to `PATH` env variable or use `CMAKE_PREFIX_PATH`:
+If flex / bison is installed in non-standard location then set `PATH` env variable to have latest flex/bison in `PATH` or use `CMAKE_PREFIX_PATH`:
 
 ```
  cmake .. -DCMAKE_PREFIX_PATH="/usr/local/opt/bison/;/usr/local/opt/flex"
@@ -65,3 +65,11 @@ If you flex / bison is in non-standard location then add flex/bison binaries to 
  ./bin/testmodtoken -s
  ```
 
+
+#### Memory Leaks
+
+Test memory leaks using :
+
+```
+valgrind --leak-check=full --track-origins=yes  ./bin/nocmodl_lexer
+```
