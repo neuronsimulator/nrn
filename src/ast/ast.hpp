@@ -5,8 +5,8 @@
 #include <vector>
 
 #include "ast/ast_utils.hpp"
-#include "utils/common_utils.hpp"
 #include "lexer/modtoken.hpp"
+#include "utils/common_utils.hpp"
 
 /* all classes representing Abstract Syntax Tree (AST) nodes */
 namespace ast {
@@ -440,6 +440,7 @@ namespace ast {
         public:
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitStatement(this); }
+            virtual ~Statement() {}
             virtual std::string getType() { return "Statement"; }
             virtual Statement* clone() { return new Statement(*this); }
     };
@@ -448,6 +449,7 @@ namespace ast {
         public:
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitExpression(this); }
+            virtual ~Expression() {}
             virtual std::string getType() { return "Expression"; }
             virtual Expression* clone() { return new Expression(*this); }
     };
@@ -456,6 +458,7 @@ namespace ast {
         public:
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitBlock(this); }
+            virtual ~Block() {}
             virtual std::string getType() { return "Block"; }
             virtual Block* clone() { return new Block(*this); }
     };
@@ -464,6 +467,7 @@ namespace ast {
         public:
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitIdentifier(this); }
+            virtual ~Identifier() {}
             virtual std::string getType() { return "Identifier"; }
             virtual Identifier* clone() { return new Identifier(*this); }
             virtual void setName(std::string name) { std::cout << "ERROR : setName() not implemented! "; abort(); }
@@ -473,6 +477,7 @@ namespace ast {
         public:
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitNumber(this); }
+            virtual ~Number() {}
             virtual std::string getType() { return "Number"; }
             virtual Number* clone() { return new Number(*this); }
             virtual void negate() { std::cout << "ERROR : negate() not implemented! "; abort(); } 
@@ -489,6 +494,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitString(this); }
+            virtual ~String() {}
             virtual std::string getType() { return "String"; }
             virtual String* clone() { return new String(*this); }
             virtual ModToken* getToken() { return token.get(); }
@@ -509,6 +515,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitInteger(this); }
+            virtual ~Integer() {}
             virtual std::string getType() { return "Integer"; }
             virtual Integer* clone() { return new Integer(*this); }
             virtual ModToken* getToken() { return token.get(); }
@@ -528,6 +535,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitFloat(this); }
+            virtual ~Float() {}
             virtual std::string getType() { return "Float"; }
             virtual Float* clone() { return new Float(*this); }
             void negate() { value = -value; }
@@ -546,6 +554,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitDouble(this); }
+            virtual ~Double() {}
             virtual std::string getType() { return "Double"; }
             virtual Double* clone() { return new Double(*this); }
             virtual ModToken* getToken() { return token.get(); }
@@ -565,6 +574,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitBoolean(this); }
+            virtual ~Boolean() {}
             virtual std::string getType() { return "Boolean"; }
             virtual Boolean* clone() { return new Boolean(*this); }
             void negate() { value = !value; }
@@ -584,6 +594,7 @@ namespace ast {
             virtual std::string getName() { return value->eval(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitName(this); }
+            virtual ~Name() {}
             virtual std::string getType() { return "Name"; }
             virtual Name* clone() { return new Name(*this); }
             virtual ModToken* getToken() { return token.get(); }
@@ -605,6 +616,7 @@ namespace ast {
             virtual int getOrder() { return order->eval(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitPrimeName(this); }
+            virtual ~PrimeName() {}
             virtual std::string getType() { return "PrimeName"; }
             virtual PrimeName* clone() { return new PrimeName(*this); }
             virtual ModToken* getToken() { return token.get(); }
@@ -624,6 +636,7 @@ namespace ast {
             virtual ModToken* getToken() { return name->getToken(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitVarName(this); }
+            virtual ~VarName() {}
             virtual std::string getType() { return "VarName"; }
             virtual VarName* clone() { return new VarName(*this); }
     };
@@ -641,6 +654,7 @@ namespace ast {
             virtual ModToken* getToken() { return name->getToken(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitIndexedName(this); }
+            virtual ~IndexedName() {}
             virtual std::string getType() { return "IndexedName"; }
             virtual IndexedName* clone() { return new IndexedName(*this); }
     };
@@ -658,6 +672,7 @@ namespace ast {
             virtual ModToken* getToken() { return name->getToken(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitArgument(this); }
+            virtual ~Argument() {}
             virtual std::string getType() { return "Argument"; }
             virtual Argument* clone() { return new Argument(*this); }
     };
@@ -675,6 +690,7 @@ namespace ast {
             virtual ModToken* getToken() { return name->getToken(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitReactVarName(this); }
+            virtual ~ReactVarName() {}
             virtual std::string getType() { return "ReactVarName"; }
             virtual ReactVarName* clone() { return new ReactVarName(*this); }
     };
@@ -691,6 +707,7 @@ namespace ast {
             virtual ModToken* getToken() { return name->getToken(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitReadIonVar(this); }
+            virtual ~ReadIonVar() {}
             virtual std::string getType() { return "ReadIonVar"; }
             virtual ReadIonVar* clone() { return new ReadIonVar(*this); }
     };
@@ -707,6 +724,7 @@ namespace ast {
             virtual ModToken* getToken() { return name->getToken(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitWriteIonVar(this); }
+            virtual ~WriteIonVar() {}
             virtual std::string getType() { return "WriteIonVar"; }
             virtual WriteIonVar* clone() { return new WriteIonVar(*this); }
     };
@@ -723,6 +741,7 @@ namespace ast {
             virtual ModToken* getToken() { return name->getToken(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitNonspeCurVar(this); }
+            virtual ~NonspeCurVar() {}
             virtual std::string getType() { return "NonspeCurVar"; }
             virtual NonspeCurVar* clone() { return new NonspeCurVar(*this); }
     };
@@ -739,6 +758,7 @@ namespace ast {
             virtual ModToken* getToken() { return name->getToken(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitElectrodeCurVar(this); }
+            virtual ~ElectrodeCurVar() {}
             virtual std::string getType() { return "ElectrodeCurVar"; }
             virtual ElectrodeCurVar* clone() { return new ElectrodeCurVar(*this); }
     };
@@ -755,6 +775,7 @@ namespace ast {
             virtual ModToken* getToken() { return name->getToken(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitSectionVar(this); }
+            virtual ~SectionVar() {}
             virtual std::string getType() { return "SectionVar"; }
             virtual SectionVar* clone() { return new SectionVar(*this); }
     };
@@ -771,6 +792,7 @@ namespace ast {
             virtual ModToken* getToken() { return name->getToken(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitRangeVar(this); }
+            virtual ~RangeVar() {}
             virtual std::string getType() { return "RangeVar"; }
             virtual RangeVar* clone() { return new RangeVar(*this); }
     };
@@ -787,6 +809,7 @@ namespace ast {
             virtual ModToken* getToken() { return name->getToken(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitGlobalVar(this); }
+            virtual ~GlobalVar() {}
             virtual std::string getType() { return "GlobalVar"; }
             virtual GlobalVar* clone() { return new GlobalVar(*this); }
     };
@@ -803,6 +826,7 @@ namespace ast {
             virtual ModToken* getToken() { return name->getToken(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitPointerVar(this); }
+            virtual ~PointerVar() {}
             virtual std::string getType() { return "PointerVar"; }
             virtual PointerVar* clone() { return new PointerVar(*this); }
     };
@@ -819,6 +843,7 @@ namespace ast {
             virtual ModToken* getToken() { return name->getToken(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitBbcorePointerVar(this); }
+            virtual ~BbcorePointerVar() {}
             virtual std::string getType() { return "BbcorePointerVar"; }
             virtual BbcorePointerVar* clone() { return new BbcorePointerVar(*this); }
     };
@@ -835,6 +860,7 @@ namespace ast {
             virtual ModToken* getToken() { return name->getToken(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitExternVar(this); }
+            virtual ~ExternVar() {}
             virtual std::string getType() { return "ExternVar"; }
             virtual ExternVar* clone() { return new ExternVar(*this); }
     };
@@ -851,6 +877,7 @@ namespace ast {
             virtual ModToken* getToken() { return name->getToken(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitThreadsafeVar(this); }
+            virtual ~ThreadsafeVar() {}
             virtual std::string getType() { return "ThreadsafeVar"; }
             virtual ThreadsafeVar* clone() { return new ThreadsafeVar(*this); }
     };
@@ -868,6 +895,7 @@ namespace ast {
             std::string getName() { return getType(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitParamBlock(this); }
+            virtual ~ParamBlock() {}
             virtual std::string getType() { return "ParamBlock"; }
             virtual ParamBlock* clone() { return new ParamBlock(*this); }
             virtual void setBlockSymbolTable(void *s) { symtab = s; }
@@ -887,6 +915,7 @@ namespace ast {
             std::string getName() { return getType(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitStepBlock(this); }
+            virtual ~StepBlock() {}
             virtual std::string getType() { return "StepBlock"; }
             virtual StepBlock* clone() { return new StepBlock(*this); }
             virtual void setBlockSymbolTable(void *s) { symtab = s; }
@@ -906,6 +935,7 @@ namespace ast {
             std::string getName() { return getType(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitIndependentBlock(this); }
+            virtual ~IndependentBlock() {}
             virtual std::string getType() { return "IndependentBlock"; }
             virtual IndependentBlock* clone() { return new IndependentBlock(*this); }
             virtual void setBlockSymbolTable(void *s) { symtab = s; }
@@ -925,6 +955,7 @@ namespace ast {
             std::string getName() { return getType(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitDependentBlock(this); }
+            virtual ~DependentBlock() {}
             virtual std::string getType() { return "DependentBlock"; }
             virtual DependentBlock* clone() { return new DependentBlock(*this); }
             virtual void setBlockSymbolTable(void *s) { symtab = s; }
@@ -944,6 +975,7 @@ namespace ast {
             std::string getName() { return getType(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitStateBlock(this); }
+            virtual ~StateBlock() {}
             virtual std::string getType() { return "StateBlock"; }
             virtual StateBlock* clone() { return new StateBlock(*this); }
             virtual void setBlockSymbolTable(void *s) { symtab = s; }
@@ -963,6 +995,7 @@ namespace ast {
             std::string getName() { return getType(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitPlotBlock(this); }
+            virtual ~PlotBlock() {}
             virtual std::string getType() { return "PlotBlock"; }
             virtual PlotBlock* clone() { return new PlotBlock(*this); }
             virtual void setBlockSymbolTable(void *s) { symtab = s; }
@@ -982,6 +1015,7 @@ namespace ast {
             std::string getName() { return getType(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitInitialBlock(this); }
+            virtual ~InitialBlock() {}
             virtual std::string getType() { return "InitialBlock"; }
             virtual InitialBlock* clone() { return new InitialBlock(*this); }
             virtual void setBlockSymbolTable(void *s) { symtab = s; }
@@ -1001,6 +1035,7 @@ namespace ast {
             std::string getName() { return getType(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitConstructorBlock(this); }
+            virtual ~ConstructorBlock() {}
             virtual std::string getType() { return "ConstructorBlock"; }
             virtual ConstructorBlock* clone() { return new ConstructorBlock(*this); }
             virtual void setBlockSymbolTable(void *s) { symtab = s; }
@@ -1020,6 +1055,7 @@ namespace ast {
             std::string getName() { return getType(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitDestructorBlock(this); }
+            virtual ~DestructorBlock() {}
             virtual std::string getType() { return "DestructorBlock"; }
             virtual DestructorBlock* clone() { return new DestructorBlock(*this); }
             virtual void setBlockSymbolTable(void *s) { symtab = s; }
@@ -1040,6 +1076,7 @@ namespace ast {
             std::string getName() { return getType(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitStatementBlock(this); }
+            virtual ~StatementBlock() {}
             virtual std::string getType() { return "StatementBlock"; }
             virtual StatementBlock* clone() { return new StatementBlock(*this); }
             virtual ModToken* getToken() { return token.get(); }
@@ -1063,6 +1100,7 @@ namespace ast {
             virtual std::string getName() { return name->getName(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitDerivativeBlock(this); }
+            virtual ~DerivativeBlock() {}
             virtual std::string getType() { return "DerivativeBlock"; }
             virtual DerivativeBlock* clone() { return new DerivativeBlock(*this); }
             virtual ModToken* getToken() { return token.get(); }
@@ -1087,6 +1125,7 @@ namespace ast {
             virtual std::string getName() { return name->getName(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitLinearBlock(this); }
+            virtual ~LinearBlock() {}
             virtual std::string getType() { return "LinearBlock"; }
             virtual LinearBlock* clone() { return new LinearBlock(*this); }
             virtual ModToken* getToken() { return token.get(); }
@@ -1111,6 +1150,7 @@ namespace ast {
             virtual std::string getName() { return name->getName(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitNonLinearBlock(this); }
+            virtual ~NonLinearBlock() {}
             virtual std::string getType() { return "NonLinearBlock"; }
             virtual NonLinearBlock* clone() { return new NonLinearBlock(*this); }
             virtual ModToken* getToken() { return token.get(); }
@@ -1134,6 +1174,7 @@ namespace ast {
             virtual std::string getName() { return name->getName(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitDiscreteBlock(this); }
+            virtual ~DiscreteBlock() {}
             virtual std::string getType() { return "DiscreteBlock"; }
             virtual DiscreteBlock* clone() { return new DiscreteBlock(*this); }
             virtual ModToken* getToken() { return token.get(); }
@@ -1157,6 +1198,7 @@ namespace ast {
             virtual std::string getName() { return name->getName(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitPartialBlock(this); }
+            virtual ~PartialBlock() {}
             virtual std::string getType() { return "PartialBlock"; }
             virtual PartialBlock* clone() { return new PartialBlock(*this); }
             virtual ModToken* getToken() { return token.get(); }
@@ -1181,6 +1223,7 @@ namespace ast {
             virtual std::string getName() { return name->getName(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitFunctionTableBlock(this); }
+            virtual ~FunctionTableBlock() {}
             virtual std::string getType() { return "FunctionTableBlock"; }
             virtual FunctionTableBlock* clone() { return new FunctionTableBlock(*this); }
             virtual ModToken* getToken() { return token.get(); }
@@ -1206,6 +1249,7 @@ namespace ast {
             virtual std::string getName() { return name->getName(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitFunctionBlock(this); }
+            virtual ~FunctionBlock() {}
             virtual std::string getType() { return "FunctionBlock"; }
             virtual FunctionBlock* clone() { return new FunctionBlock(*this); }
             virtual ModToken* getToken() { return token.get(); }
@@ -1231,6 +1275,7 @@ namespace ast {
             virtual std::string getName() { return name->getName(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitProcedureBlock(this); }
+            virtual ~ProcedureBlock() {}
             virtual std::string getType() { return "ProcedureBlock"; }
             virtual ProcedureBlock* clone() { return new ProcedureBlock(*this); }
             virtual ModToken* getToken() { return token.get(); }
@@ -1253,6 +1298,7 @@ namespace ast {
             std::string getName() { return getType(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitNetReceiveBlock(this); }
+            virtual ~NetReceiveBlock() {}
             virtual std::string getType() { return "NetReceiveBlock"; }
             virtual NetReceiveBlock* clone() { return new NetReceiveBlock(*this); }
             virtual void setBlockSymbolTable(void *s) { symtab = s; }
@@ -1274,6 +1320,7 @@ namespace ast {
             std::string getName() { return getType(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitSolveBlock(this); }
+            virtual ~SolveBlock() {}
             virtual std::string getType() { return "SolveBlock"; }
             virtual SolveBlock* clone() { return new SolveBlock(*this); }
             virtual void setBlockSymbolTable(void *s) { symtab = s; }
@@ -1293,6 +1340,7 @@ namespace ast {
             std::string getName() { return getType(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitBreakpointBlock(this); }
+            virtual ~BreakpointBlock() {}
             virtual std::string getType() { return "BreakpointBlock"; }
             virtual BreakpointBlock* clone() { return new BreakpointBlock(*this); }
             virtual void setBlockSymbolTable(void *s) { symtab = s; }
@@ -1312,6 +1360,7 @@ namespace ast {
             std::string getName() { return getType(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitTerminalBlock(this); }
+            virtual ~TerminalBlock() {}
             virtual std::string getType() { return "TerminalBlock"; }
             virtual TerminalBlock* clone() { return new TerminalBlock(*this); }
             virtual void setBlockSymbolTable(void *s) { symtab = s; }
@@ -1331,6 +1380,7 @@ namespace ast {
             std::string getName() { return getType(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitBeforeBlock(this); }
+            virtual ~BeforeBlock() {}
             virtual std::string getType() { return "BeforeBlock"; }
             virtual BeforeBlock* clone() { return new BeforeBlock(*this); }
             virtual void setBlockSymbolTable(void *s) { symtab = s; }
@@ -1350,6 +1400,7 @@ namespace ast {
             std::string getName() { return getType(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitAfterBlock(this); }
+            virtual ~AfterBlock() {}
             virtual std::string getType() { return "AfterBlock"; }
             virtual AfterBlock* clone() { return new AfterBlock(*this); }
             virtual void setBlockSymbolTable(void *s) { symtab = s; }
@@ -1370,6 +1421,7 @@ namespace ast {
             std::string getName() { return getType(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitBABlock(this); }
+            virtual ~BABlock() {}
             virtual std::string getType() { return "BABlock"; }
             virtual BABlock* clone() { return new BABlock(*this); }
             virtual void setBlockSymbolTable(void *s) { symtab = s; }
@@ -1390,6 +1442,7 @@ namespace ast {
             std::string getName() { return getType(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitForNetcon(this); }
+            virtual ~ForNetcon() {}
             virtual std::string getType() { return "ForNetcon"; }
             virtual ForNetcon* clone() { return new ForNetcon(*this); }
             virtual void setBlockSymbolTable(void *s) { symtab = s; }
@@ -1412,6 +1465,7 @@ namespace ast {
             virtual std::string getName() { return name->getName(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitKineticBlock(this); }
+            virtual ~KineticBlock() {}
             virtual std::string getType() { return "KineticBlock"; }
             virtual KineticBlock* clone() { return new KineticBlock(*this); }
             virtual ModToken* getToken() { return token.get(); }
@@ -1433,6 +1487,7 @@ namespace ast {
             std::string getName() { return getType(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitMatchBlock(this); }
+            virtual ~MatchBlock() {}
             virtual std::string getType() { return "MatchBlock"; }
             virtual MatchBlock* clone() { return new MatchBlock(*this); }
             virtual void setBlockSymbolTable(void *s) { symtab = s; }
@@ -1452,6 +1507,7 @@ namespace ast {
             std::string getName() { return getType(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitUnitBlock(this); }
+            virtual ~UnitBlock() {}
             virtual std::string getType() { return "UnitBlock"; }
             virtual UnitBlock* clone() { return new UnitBlock(*this); }
             virtual void setBlockSymbolTable(void *s) { symtab = s; }
@@ -1471,6 +1527,7 @@ namespace ast {
             std::string getName() { return getType(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitConstantBlock(this); }
+            virtual ~ConstantBlock() {}
             virtual std::string getType() { return "ConstantBlock"; }
             virtual ConstantBlock* clone() { return new ConstantBlock(*this); }
             virtual void setBlockSymbolTable(void *s) { symtab = s; }
@@ -1490,6 +1547,7 @@ namespace ast {
             std::string getName() { return getType(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitNeuronBlock(this); }
+            virtual ~NeuronBlock() {}
             virtual std::string getType() { return "NeuronBlock"; }
             virtual NeuronBlock* clone() { return new NeuronBlock(*this); }
             virtual void setBlockSymbolTable(void *s) { symtab = s; }
@@ -1508,6 +1566,7 @@ namespace ast {
             virtual ModToken* getToken() { return name->getToken(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitUnit(this); }
+            virtual ~Unit() {}
             virtual std::string getType() { return "Unit"; }
             virtual Unit* clone() { return new Unit(*this); }
     };
@@ -1523,6 +1582,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitDoubleUnit(this); }
+            virtual ~DoubleUnit() {}
             virtual std::string getType() { return "DoubleUnit"; }
             virtual DoubleUnit* clone() { return new DoubleUnit(*this); }
     };
@@ -1539,6 +1599,7 @@ namespace ast {
             virtual ModToken* getToken() { return name->getToken(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitLocalVariable(this); }
+            virtual ~LocalVariable() {}
             virtual std::string getType() { return "LocalVariable"; }
             virtual LocalVariable* clone() { return new LocalVariable(*this); }
     };
@@ -1554,6 +1615,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitLimits(this); }
+            virtual ~Limits() {}
             virtual std::string getType() { return "Limits"; }
             virtual Limits* clone() { return new Limits(*this); }
     };
@@ -1569,6 +1631,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitNumberRange(this); }
+            virtual ~NumberRange() {}
             virtual std::string getType() { return "NumberRange"; }
             virtual NumberRange* clone() { return new NumberRange(*this); }
     };
@@ -1584,6 +1647,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitPlotVariable(this); }
+            virtual ~PlotVariable() {}
             virtual std::string getType() { return "PlotVariable"; }
             virtual PlotVariable* clone() { return new PlotVariable(*this); }
     };
@@ -1600,6 +1664,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitBinaryOperator(this); }
+            virtual ~BinaryOperator() {}
             virtual std::string getType() { return "BinaryOperator"; }
             virtual BinaryOperator* clone() { return new BinaryOperator(*this); }
             std::string  eval() { return BinaryOpNames[value]; }
@@ -1617,6 +1682,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitUnaryOperator(this); }
+            virtual ~UnaryOperator() {}
             virtual std::string getType() { return "UnaryOperator"; }
             virtual UnaryOperator* clone() { return new UnaryOperator(*this); }
             std::string  eval() { return UnaryOpNames[value]; }
@@ -1634,6 +1700,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitReactionOperator(this); }
+            virtual ~ReactionOperator() {}
             virtual std::string getType() { return "ReactionOperator"; }
             virtual ReactionOperator* clone() { return new ReactionOperator(*this); }
             std::string  eval() { return ReactionOpNames[value]; }
@@ -1651,6 +1718,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitBinaryExpression(this); }
+            virtual ~BinaryExpression() {}
             virtual std::string getType() { return "BinaryExpression"; }
             virtual BinaryExpression* clone() { return new BinaryExpression(*this); }
     };
@@ -1666,6 +1734,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitUnaryExpression(this); }
+            virtual ~UnaryExpression() {}
             virtual std::string getType() { return "UnaryExpression"; }
             virtual UnaryExpression* clone() { return new UnaryExpression(*this); }
     };
@@ -1681,6 +1750,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitNonLinEuation(this); }
+            virtual ~NonLinEuation() {}
             virtual std::string getType() { return "NonLinEuation"; }
             virtual NonLinEuation* clone() { return new NonLinEuation(*this); }
     };
@@ -1696,6 +1766,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitLinEquation(this); }
+            virtual ~LinEquation() {}
             virtual std::string getType() { return "LinEquation"; }
             virtual LinEquation* clone() { return new LinEquation(*this); }
     };
@@ -1711,6 +1782,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitFunctionCall(this); }
+            virtual ~FunctionCall() {}
             virtual std::string getType() { return "FunctionCall"; }
             virtual FunctionCall* clone() { return new FunctionCall(*this); }
     };
@@ -1725,6 +1797,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitFirstLastTypeIndex(this); }
+            virtual ~FirstLastTypeIndex() {}
             virtual std::string getType() { return "FirstLastTypeIndex"; }
             virtual FirstLastTypeIndex* clone() { return new FirstLastTypeIndex(*this); }
             std::string  eval() { return FirstLastTypeNames[value]; }
@@ -1741,6 +1814,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitWatch(this); }
+            virtual ~Watch() {}
             virtual std::string getType() { return "Watch"; }
             virtual Watch* clone() { return new Watch(*this); }
     };
@@ -1755,6 +1829,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitQueueExpressionType(this); }
+            virtual ~QueueExpressionType() {}
             virtual std::string getType() { return "QueueExpressionType"; }
             virtual QueueExpressionType* clone() { return new QueueExpressionType(*this); }
             std::string  eval() { return QueueTypeNames[value]; }
@@ -1771,6 +1846,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitMatch(this); }
+            virtual ~Match() {}
             virtual std::string getType() { return "Match"; }
             virtual Match* clone() { return new Match(*this); }
     };
@@ -1785,6 +1861,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitBABlockType(this); }
+            virtual ~BABlockType() {}
             virtual std::string getType() { return "BABlockType"; }
             virtual BABlockType* clone() { return new BABlockType(*this); }
             std::string  eval() { return BATypeNames[value]; }
@@ -1803,6 +1880,7 @@ namespace ast {
             virtual ModToken* getToken() { return unit1->getToken(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitUnitDef(this); }
+            virtual ~UnitDef() {}
             virtual std::string getType() { return "UnitDef"; }
             virtual UnitDef* clone() { return new UnitDef(*this); }
     };
@@ -1823,6 +1901,7 @@ namespace ast {
             virtual std::string getName() { return name->getName(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitFactorDef(this); }
+            virtual ~FactorDef() {}
             virtual std::string getType() { return "FactorDef"; }
             virtual FactorDef* clone() { return new FactorDef(*this); }
             virtual ModToken* getToken() { return token.get(); }
@@ -1840,6 +1919,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitValence(this); }
+            virtual ~Valence() {}
             virtual std::string getType() { return "Valence"; }
             virtual Valence* clone() { return new Valence(*this); }
     };
@@ -1854,6 +1934,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitUnitState(this); }
+            virtual ~UnitState() {}
             virtual std::string getType() { return "UnitState"; }
             virtual UnitState* clone() { return new UnitState(*this); }
             std::string  eval() { return UnitStateTypeNames[value]; }
@@ -1869,6 +1950,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitLocalListStatement(this); }
+            virtual ~LocalListStatement() {}
             virtual std::string getType() { return "LocalListStatement"; }
             virtual LocalListStatement* clone() { return new LocalListStatement(*this); }
     };
@@ -1883,6 +1965,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitModel(this); }
+            virtual ~Model() {}
             virtual std::string getType() { return "Model"; }
             virtual Model* clone() { return new Model(*this); }
     };
@@ -1898,6 +1981,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitDefine(this); }
+            virtual ~Define() {}
             virtual std::string getType() { return "Define"; }
             virtual Define* clone() { return new Define(*this); }
     };
@@ -1912,6 +1996,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitInclude(this); }
+            virtual ~Include() {}
             virtual std::string getType() { return "Include"; }
             virtual Include* clone() { return new Include(*this); }
     };
@@ -1931,6 +2016,7 @@ namespace ast {
             virtual ModToken* getToken() { return name->getToken(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitParamAssign(this); }
+            virtual ~ParamAssign() {}
             virtual std::string getType() { return "ParamAssign"; }
             virtual ParamAssign* clone() { return new ParamAssign(*this); }
     };
@@ -1947,6 +2033,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitStepped(this); }
+            virtual ~Stepped() {}
             virtual std::string getType() { return "Stepped"; }
             virtual Stepped* clone() { return new Stepped(*this); }
     };
@@ -1967,6 +2054,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitIndependentDef(this); }
+            virtual ~IndependentDef() {}
             virtual std::string getType() { return "IndependentDef"; }
             virtual IndependentDef* clone() { return new IndependentDef(*this); }
     };
@@ -1989,6 +2077,7 @@ namespace ast {
             virtual ModToken* getToken() { return name->getToken(); }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitDependentDef(this); }
+            virtual ~DependentDef() {}
             virtual std::string getType() { return "DependentDef"; }
             virtual DependentDef* clone() { return new DependentDef(*this); }
     };
@@ -2004,6 +2093,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitPlotDeclaration(this); }
+            virtual ~PlotDeclaration() {}
             virtual std::string getType() { return "PlotDeclaration"; }
             virtual PlotDeclaration* clone() { return new PlotDeclaration(*this); }
     };
@@ -2019,6 +2109,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitConductanceHint(this); }
+            virtual ~ConductanceHint() {}
             virtual std::string getType() { return "ConductanceHint"; }
             virtual ConductanceHint* clone() { return new ConductanceHint(*this); }
     };
@@ -2033,6 +2124,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitExpressionStatement(this); }
+            virtual ~ExpressionStatement() {}
             virtual std::string getType() { return "ExpressionStatement"; }
             virtual ExpressionStatement* clone() { return new ExpressionStatement(*this); }
     };
@@ -2047,6 +2139,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitProtectStatement(this); }
+            virtual ~ProtectStatement() {}
             virtual std::string getType() { return "ProtectStatement"; }
             virtual ProtectStatement* clone() { return new ProtectStatement(*this); }
     };
@@ -2065,6 +2158,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitFromStatement(this); }
+            virtual ~FromStatement() {}
             virtual std::string getType() { return "FromStatement"; }
             virtual FromStatement* clone() { return new FromStatement(*this); }
     };
@@ -2080,6 +2174,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitForAllStatement(this); }
+            virtual ~ForAllStatement() {}
             virtual std::string getType() { return "ForAllStatement"; }
             virtual ForAllStatement* clone() { return new ForAllStatement(*this); }
     };
@@ -2095,6 +2190,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitWhileStatement(this); }
+            virtual ~WhileStatement() {}
             virtual std::string getType() { return "WhileStatement"; }
             virtual WhileStatement* clone() { return new WhileStatement(*this); }
     };
@@ -2112,6 +2208,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitIfStatement(this); }
+            virtual ~IfStatement() {}
             virtual std::string getType() { return "IfStatement"; }
             virtual IfStatement* clone() { return new IfStatement(*this); }
     };
@@ -2127,6 +2224,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitElseIfStatement(this); }
+            virtual ~ElseIfStatement() {}
             virtual std::string getType() { return "ElseIfStatement"; }
             virtual ElseIfStatement* clone() { return new ElseIfStatement(*this); }
     };
@@ -2141,6 +2239,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitElseStatement(this); }
+            virtual ~ElseStatement() {}
             virtual std::string getType() { return "ElseStatement"; }
             virtual ElseStatement* clone() { return new ElseStatement(*this); }
     };
@@ -2158,6 +2257,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitPartialEquation(this); }
+            virtual ~PartialEquation() {}
             virtual std::string getType() { return "PartialEquation"; }
             virtual PartialEquation* clone() { return new PartialEquation(*this); }
     };
@@ -2179,6 +2279,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitPartialBoundary(this); }
+            virtual ~PartialBoundary() {}
             virtual std::string getType() { return "PartialBoundary"; }
             virtual PartialBoundary* clone() { return new PartialBoundary(*this); }
     };
@@ -2196,6 +2297,7 @@ namespace ast {
             }
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitWatchStatement(this); }
+            virtual ~WatchStatement() {}
             virtual std::string getType() { return "WatchStatement"; }
             virtual WatchStatement* clone() { return new WatchStatement(*this); }
     };
@@ -2204,6 +2306,7 @@ namespace ast {
         public:
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitMutexLock(this); }
+            virtual ~MutexLock() {}
             virtual std::string getType() { return "MutexLock"; }
             virtual MutexLock* clone() { return new MutexLock(*this); }
     };
@@ -2212,6 +2315,7 @@ namespace ast {
         public:
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitMutexUnlock(this); }
+            virtual ~MutexUnlock() {}
             virtual std::string getType() { return "MutexUnlock"; }
             virtual MutexUnlock* clone() { return new MutexUnlock(*this); }
     };
@@ -2220,6 +2324,7 @@ namespace ast {
         public:
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitReset(this); }
+            virtual ~Reset() {}
             virtual std::string getType() { return "Reset"; }
             virtual Reset* clone() { return new Reset(*this); }
     };
@@ -2234,6 +2339,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitSens(this); }
+            virtual ~Sens() {}
             virtual std::string getType() { return "Sens"; }
             virtual Sens* clone() { return new Sens(*this); }
     };
@@ -2249,6 +2355,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitConserve(this); }
+            virtual ~Conserve() {}
             virtual std::string getType() { return "Conserve"; }
             virtual Conserve* clone() { return new Conserve(*this); }
     };
@@ -2265,6 +2372,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitCompartment(this); }
+            virtual ~Compartment() {}
             virtual std::string getType() { return "Compartment"; }
             virtual Compartment* clone() { return new Compartment(*this); }
     };
@@ -2281,6 +2389,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitLDifuse(this); }
+            virtual ~LDifuse() {}
             virtual std::string getType() { return "LDifuse"; }
             virtual LDifuse* clone() { return new LDifuse(*this); }
     };
@@ -2299,6 +2408,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitReactionStatement(this); }
+            virtual ~ReactionStatement() {}
             virtual std::string getType() { return "ReactionStatement"; }
             virtual ReactionStatement* clone() { return new ReactionStatement(*this); }
     };
@@ -2314,6 +2424,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitLagStatement(this); }
+            virtual ~LagStatement() {}
             virtual std::string getType() { return "LagStatement"; }
             virtual LagStatement* clone() { return new LagStatement(*this); }
     };
@@ -2329,6 +2440,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitQueueStatement(this); }
+            virtual ~QueueStatement() {}
             virtual std::string getType() { return "QueueStatement"; }
             virtual QueueStatement* clone() { return new QueueStatement(*this); }
     };
@@ -2345,6 +2457,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitConstantStatement(this); }
+            virtual ~ConstantStatement() {}
             virtual std::string getType() { return "ConstantStatement"; }
             virtual ConstantStatement* clone() { return new ConstantStatement(*this); }
     };
@@ -2363,6 +2476,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitTableStatement(this); }
+            virtual ~TableStatement() {}
             virtual std::string getType() { return "TableStatement"; }
             virtual TableStatement* clone() { return new TableStatement(*this); }
     };
@@ -2378,6 +2492,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitNrnSuffix(this); }
+            virtual ~NrnSuffix() {}
             virtual std::string getType() { return "NrnSuffix"; }
             virtual NrnSuffix* clone() { return new NrnSuffix(*this); }
     };
@@ -2395,6 +2510,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitNrnUseion(this); }
+            virtual ~NrnUseion() {}
             virtual std::string getType() { return "NrnUseion"; }
             virtual NrnUseion* clone() { return new NrnUseion(*this); }
     };
@@ -2409,6 +2525,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitNrnNonspecific(this); }
+            virtual ~NrnNonspecific() {}
             virtual std::string getType() { return "NrnNonspecific"; }
             virtual NrnNonspecific* clone() { return new NrnNonspecific(*this); }
     };
@@ -2423,6 +2540,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitNrnElctrodeCurrent(this); }
+            virtual ~NrnElctrodeCurrent() {}
             virtual std::string getType() { return "NrnElctrodeCurrent"; }
             virtual NrnElctrodeCurrent* clone() { return new NrnElctrodeCurrent(*this); }
     };
@@ -2437,6 +2555,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitNrnSection(this); }
+            virtual ~NrnSection() {}
             virtual std::string getType() { return "NrnSection"; }
             virtual NrnSection* clone() { return new NrnSection(*this); }
     };
@@ -2451,6 +2570,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitNrnRange(this); }
+            virtual ~NrnRange() {}
             virtual std::string getType() { return "NrnRange"; }
             virtual NrnRange* clone() { return new NrnRange(*this); }
     };
@@ -2465,6 +2585,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitNrnGlobal(this); }
+            virtual ~NrnGlobal() {}
             virtual std::string getType() { return "NrnGlobal"; }
             virtual NrnGlobal* clone() { return new NrnGlobal(*this); }
     };
@@ -2479,6 +2600,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitNrnPointer(this); }
+            virtual ~NrnPointer() {}
             virtual std::string getType() { return "NrnPointer"; }
             virtual NrnPointer* clone() { return new NrnPointer(*this); }
     };
@@ -2493,6 +2615,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitNrnBbcorePtr(this); }
+            virtual ~NrnBbcorePtr() {}
             virtual std::string getType() { return "NrnBbcorePtr"; }
             virtual NrnBbcorePtr* clone() { return new NrnBbcorePtr(*this); }
     };
@@ -2507,6 +2630,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitNrnExternal(this); }
+            virtual ~NrnExternal() {}
             virtual std::string getType() { return "NrnExternal"; }
             virtual NrnExternal* clone() { return new NrnExternal(*this); }
     };
@@ -2521,6 +2645,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitNrnThreadSafe(this); }
+            virtual ~NrnThreadSafe() {}
             virtual std::string getType() { return "NrnThreadSafe"; }
             virtual NrnThreadSafe* clone() { return new NrnThreadSafe(*this); }
     };
@@ -2535,6 +2660,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitVerbatim(this); }
+            virtual ~Verbatim() {}
             virtual std::string getType() { return "Verbatim"; }
             virtual Verbatim* clone() { return new Verbatim(*this); }
     };
@@ -2549,6 +2675,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitComment(this); }
+            virtual ~Comment() {}
             virtual std::string getType() { return "Comment"; }
             virtual Comment* clone() { return new Comment(*this); }
     };
@@ -2574,6 +2701,7 @@ namespace ast {
 
             virtual void visitChildren(Visitor* v);
             virtual void accept(Visitor* v) { v->visitProgram(this); }
+            virtual ~Program() {}
             virtual std::string getType() { return "Program"; }
             virtual Program* clone() { return new Program(*this); }
             virtual void setBlockSymbolTable(void *s) { symtab = s; }
