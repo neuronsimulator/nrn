@@ -94,6 +94,7 @@ void _nrn_free_watch(Datum*, int, int);
 extern int hoc_araypt(Symbol*, int);
 extern int hoc_stacktype();
 extern Point_process* ob2pntproc(Object*);
+extern Point_process* ob2pntproc_0(Object*);
 void nrn_use_daspk(int);
 extern int nrn_use_daspk_;
 int linmod_extra_eqn_count();
@@ -4918,7 +4919,8 @@ PreSyn::~PreSyn() {
 		nrn_notify_pointer_disconnect(this);
 #endif
 		if (!thvar_) {
-			Point_process* pnt = ob2pntproc(osrc_);
+			// even if the point process section was deleted earlier
+			Point_process* pnt = ob2pntproc_0(osrc_);
 			if (pnt) {
 				pnt->presyn_ = nil;
 			}
