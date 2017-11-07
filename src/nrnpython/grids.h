@@ -6,7 +6,7 @@ and Flux_pair structs and their respective functions
 ******************************************************************/
 #include <stdio.h>
 #include <assert.h>
-#ifdef __APPLE__
+#if 0 && defined(__APPLE__)
 #include <Python/Python.h>
 #else
 #include <Python.h>

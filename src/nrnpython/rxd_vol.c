@@ -3,7 +3,7 @@
 #include "grids.h"
 #include "rxd.h"
 #include <pthread.h>
-#ifdef __APPLE__
+#if 0 && defined(__APPLE__)
 #include <Python/Python.h>
 #else
 #include <Python.h>
