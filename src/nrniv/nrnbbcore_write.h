@@ -3,6 +3,9 @@
 
 #define DatumIndices nrncore_DatumIndices
 #define CellGroup nrncore_CellGroup
+
+#include <vector>
+
 struct Memb_list;
 
 // assume all Datum.pval point into this cell. In practice, this holds because
@@ -46,6 +49,12 @@ public:
   int ntype;
   DatumIndices* datumindices;
 };
+
+// returns start pointer of the container's data
+template <typename T>
+inline T* begin_ptr(std::vector<T>& v) {
+    return v.empty() ? NULL : &v[0];
+}
 
 #if defined(__cplusplus)
 extern "C" {

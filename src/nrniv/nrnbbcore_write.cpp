@@ -1149,29 +1149,58 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
 }
 
 
-/// Writing the number of threads per MPI task
+/** Write all dataset ids to files.dat.
+ *
+ * Format of the files.dat file is:
+ *
+ *     version string
+ *     -1 (if model uses gap junction)
+ *     n (number of datasets)
+ *     id1
+ *     id2
+ *     ...
+ *     idN
+ */
 void write_nrnthread_task(const char* path, CellGroup* cgs)
 {
-  int *iRecv, *iRecvVec, *iDispl;
+  // ids of datasets that will be created
+  std::vector<int> iSend;
+
+  // ignore empty nrnthread (has -1 id)
+  for (int iInt = 0; iInt < nrn_nthread; ++iInt)
+  {
+    if ( cgs[iInt].group_id >= 0) {
+        iSend.push_back(cgs[iInt].group_id);
+    }
+  }
+
+  // receive and displacement buffers for mpi
+  std::vector<int> iRecv, iDispl;
+
   if (nrnmpi_myid == 0)
   {
-    iRecv = new int[nrnmpi_numprocs];
-    iDispl = new int[nrnmpi_numprocs];
+    iRecv.resize(nrnmpi_numprocs);
+    iDispl.resize(nrnmpi_numprocs);
   }
 
-  int iSumThread = 0;
-  int *iSend = new int[nrn_nthread];
+  // number of datasets on the current rank
+  int num_datasets = iSend.size();
+
 #ifdef NRNMPI
-  /// Getting the number of threads for each task
+  // gather number of datasets from each task
   if (nrnmpi_numprocs > 1) {
-    nrnmpi_int_gather(&nrn_nthread, iRecv, 1, 0);
+    nrnmpi_int_gather(&num_datasets, begin_ptr(iRecv), 1, 0);
   }else{
-    iRecv[0] = nrn_nthread;
+    iRecv[0] = num_datasets;
   }
 #else
-  iRecv[0] = nrn_nthread;
+  iRecv[0] = num_datasets;
 #endif
 
+  // total number of datasets across all ranks
+  int iSumThread = 0;
+
+  // calculate mpi displacements
   if (nrnmpi_myid == 0)
   {
     for (int iInt = 0; iInt < nrnmpi_numprocs; ++iInt)
@@ -1179,26 +1208,23 @@ void write_nrnthread_task(const char* path, CellGroup* cgs)
       iDispl[iInt] = iSumThread;
       iSumThread += iRecv[iInt];
     }
-    iRecvVec = new int[iSumThread];
   }
 
-  for (int iInt = 0; iInt < nrn_nthread; ++iInt) 
-  {  
-    iSend[iInt] = cgs[iInt].group_id;
-  }
+  // buffer for receiving all dataset ids
+  std::vector<int> iRecvVec(iSumThread);
 
 #ifdef NRNMPI
-  /// Getting all the first gids (per thread) into the array with correspondent offsets
+  // gather ids into the array with correspondent offsets
   if (nrnmpi_numprocs > 1) {
-    nrnmpi_int_gatherv(iSend, nrn_nthread, iRecvVec, iRecv, iDispl, 0);
+    nrnmpi_int_gatherv(begin_ptr(iSend), num_datasets, begin_ptr(iRecvVec), begin_ptr(iRecv), begin_ptr(iDispl), 0);
   }else{
-    for (int iInt = 0; iInt < nrn_nthread; ++iInt)
+    for (int iInt = 0; iInt < num_datasets; ++iInt)
     {
       iRecvVec[iInt] = iSend[iInt];
     }
   }
 #else
-  for (int iInt = 0; iInt < nrn_nthread; ++iInt)
+  for (int iInt = 0; iInt < num_datasets; ++iInt)
   {
     iRecvVec[iInt] = iSend[iInt];
   }
@@ -1207,37 +1233,35 @@ void write_nrnthread_task(const char* path, CellGroup* cgs)
   /// Writing the file with task, correspondent number of threads and list of correspondent first gids
   if (nrnmpi_myid == 0)
   {
-    char fname[1000];
-    sprintf(fname, "%s/%s", path, "files.dat");
-    FILE *fp = fopen(fname, "w");
+    std::stringstream ss;
+    ss << path << "/files.dat";
+
+    std::string filename = ss.str();
+
+    FILE *fp = fopen(filename.c_str(), "w");
     if (!fp) {
-      hoc_execerror("nrnbbcore_write write_nrnthread_task could not open for writing:", fname);
+      hoc_execerror("nrnbbcore_write write_nrnthread_task could not open for writing:", filename.c_str());
     }
+
     fprintf(fp, "%s\n", bbcore_write_version);
-    // temporary? expedient to notify coreneuron that this model involves
-    // gap junctions
+
+    // notify coreneuron that this model involves gap junctions
     if (nrnthread_v_transfer_) {
       fprintf(fp, "-1\n");
     }
+
+    // total number of datasets
     fprintf(fp, "%d\n", iSumThread);
-    for (int iInt = 0; iInt < nrnmpi_numprocs; ++iInt)
+
+    // write all dataset ids
+    for (int i = 0; i < iRecvVec.size(); ++i)
     {
-      //fprintf(fp, "%d\t%d\n", iInt, iRecv[iInt]);
-      for (int jInt = 0; jInt < iRecv[iInt]; ++jInt)
-      {
-        fprintf(fp, "%d\n", iRecvVec[jInt+iDispl[iInt]]);
-      }
+        fprintf(fp, "%d\n", iRecvVec[i]);
     }
+
     fclose(fp);
   }
 
-  delete [] iSend;
-  if (nrnmpi_myid == 0)
-  {
-    delete [] iRecv;
-    delete [] iDispl;
-    delete [] iRecvVec;
-  }
 }
 
 
