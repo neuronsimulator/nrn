@@ -39,7 +39,7 @@ add_subdirectory(src/lexer)
 add_subdirectory(src/parser)
 add_subdirectory(test)
 
-enable_testing ()
+include (CTest)
 add_test (NAME ModToken COMMAND testmodtoken)
 add_test (NAME Lexer COMMAND testlexer)
 
