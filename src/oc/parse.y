@@ -612,7 +612,7 @@ stmtlist: /* nothing */
 		{
 			prog_parse_recover = progp;
 			prog_error = $$;
-			if (nrn_fw_eq(fin, stdin) && !pipeflag)
+			if (fin && nrn_fw_eq(fin, stdin) && !pipeflag)
 			{	int i;
 				Printf(">");
 				for (i = 0; i < ntab; i++)
