@@ -253,3 +253,7 @@ The `.clang-format` file in the source repository is compatible with version 3.9
 To facilitate the future distributions of the software the Blue Brain Project wishes to remain the sole
 owner of the copyright. Therefore we will ask contributors to not modify the existing copyright.
 Contributors will however be gratefully acknowledged in the corresponding CREDIT.txt file.
+
+## Funding
+
+This work has been partially funded by the European Union Seventh Framework Program (FP7/2007­2013) under grant agreement no. 604102 (HBP).
