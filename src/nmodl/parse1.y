@@ -1124,7 +1124,11 @@ factordef: NAME '=' real unit
 		    Unit_push($3);
 			Unit_push($4); unit_div();
 		    SYM($1)->subtype |= nmodlCONST;
+#if defined(LegacyFR) && LegacyFR == 1
 		    Sprintf(buf, "static double %s = %g;\n", SYM($1)->name,
+#else
+		    Sprintf(buf, "static double %s = %.12g;\n", SYM($1)->name,
+#endif
 			unit_mag());
 		    Lappendstr(firstlist, buf);
 		    unit_pop();

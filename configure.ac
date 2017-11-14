@@ -572,6 +572,27 @@ fi
 echo "NRNOC_X11 = $NRNOC_X11"
 AC_DEFINE_UNQUOTED(NRNOC_X11,$NRNOC_X11, if nrnoc can use X11)
 
+dnl Use legacy values for FARADAY and R, or 2017 NIST values?
+AC_ARG_ENABLE([LegacyFR],
+	AC_HELP_STRING([--enable-LegacyFR], [Use legacy instead of NIST (as of 2017) values for FARADAY and gas constant R. (default is legacy enabled)]),[
+	if test "$enable_LegacyFR" != "yes" ; then
+		enable_LegacyFR="no"
+	fi
+],[
+	enable_LegacyFR="yes"
+])
+if test "$enable_LegacyFR" = "yes" ; then
+	LegacyY=""
+	LegacyN="/"
+	LegacyFR=1
+	AC_DEFINE_UNQUOTED(LegacyFR,1,[1 for legacy, undef for NIST (as of 2017), for FARADAY and R])
+else
+	LegacyY="/"
+	LegacyN=""
+fi
+AC_SUBST(LegacyY)
+AC_SUBST(LegacyN)
+
 dnl This list specifies what files configure actually makes.
 AC_CONFIG_FILES([
 	Makefile src/Makefile
@@ -580,6 +601,7 @@ if test "$nmodl_build" = "yes" ; then
 AC_CONFIG_HEADERS([nmodlconf.h])
 AC_CONFIG_FILES([
 	src/modlunit/Makefile src/nmodl/Makefile
+	share/lib/nrnunits.lib
 ])
 fi	
 

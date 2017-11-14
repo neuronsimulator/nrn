@@ -185,8 +185,15 @@ the USEION statement of any model using this ion\n", s->name);
 	}
 }
 
+#if defined(LegacyFR) && LegacyFR == 1
 #define FARADAY 96485.309
-#define ktf (1000.*8.3134*(celsius + 273.15)/FARADAY)
+#define gasconstant 8.3134
+#else
+#define FARADAY 96485.33289
+#define gasconstant 8.3144598
+#endif
+
+#define ktf (1000.*gasconstant*(celsius + 273.15)/FARADAY)
 double nrn_nernst(ci, co, z) double z, ci, co; {
 /*printf("nrn_nernst %g %g %g\n", ci, co, z);*/
 	if (z == 0) {

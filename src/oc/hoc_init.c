@@ -87,8 +87,15 @@ static struct {	/* Constants */
 	"GAMMA",0.57721566490153286060,	/* Euler */
 	"DEG", 57.29577951308232087680,	/* deg/radian */
 	"PHI",	1.61803398874989484820,	/* golden ratio */
+#if defined(LegacyFR) && LegacyFR == 1
 	"FARADAY", 96485.309,	/*coulombs/mole*/
 	"R", 8.31441,		/*molar gas constant, joules/mole/deg-K*/
+#else
+	/* Nov, 2017, from https://physics.nist.gov/cuu/Constants/index.html */
+	/* also see FARADAY and gasconstant in ../nrnoc/eion.c */
+	"FARADAY", 96485.33289,	/*coulombs/mole*/
+	"R", 8.3144598,		/*molar gas constant, joules/mole/deg-K*/
+#endif
 	0,	0
 };
 

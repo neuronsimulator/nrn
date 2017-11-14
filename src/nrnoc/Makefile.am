@@ -53,6 +53,7 @@ nsrc=$(top_srcdir)/src
 includes = -I$(top_builddir)/src/oc -I$(nsrc)/oc -I$(nsrc)/scopmath -I$(nsrc)/sparse13 -I$(nsrc)/nrnmpi
 AM_CPPFLAGS = -DCABLE=1 -DOOP=1 $(includes)
 NMODL = ../nmodl/nocmodl
+NRNUNITSLIB = $(top_builddir)/share/lib/nrnunits.lib
 
 FORCE:
 
@@ -99,10 +100,10 @@ $(srcdir)/nrnversion.h: FORCE
 
 nrnversion.o nrnversion.lo: nrnversion.h
 
-$(MODFILES_C): $(NMODL)
+$(MODFILES_C): $(NMODL) $(NRNUNITSLIB)
 
 %.c: %.mod
-	(export MODLUNIT=$(top_srcdir)/share/lib/nrnunits.lib; $(NMODL) $<)
+	(export MODLUNIT=$(NRNUNITSLIB); $(NMODL) $<)
 	sed "s/_reg()/_reg_()/" $(srcdir)/$(notdir $@) > $(srcdir)/$(notdir $@).tmp
 	mv $(srcdir)/$(notdir $@).tmp $(srcdir)/$(notdir $@)
 
