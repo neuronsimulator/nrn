@@ -118,7 +118,7 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
         dptr = d__data + 5 * ne;
         acc_memcpy_to_device(&(d_nt->_actual_area), &(dptr), sizeof(double*));
 
-        if (d_nt->_actual_diam) {
+        if (nt->_actual_diam) {
             dptr = d__data + 6 * ne;
             acc_memcpy_to_device(&(d_nt->_actual_diam), &(dptr), sizeof(double*));
         }
