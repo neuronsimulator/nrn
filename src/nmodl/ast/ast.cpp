@@ -430,7 +430,7 @@ namespace ast {
     }
 
     /* constructor for ParamBlock ast node */
-    ParamBlock::ParamBlock(ParamAssignList statements)
+    ParamBlock::ParamBlock(ParamAssignVector statements)
     :    statements(statements)
     {
     }
@@ -451,7 +451,7 @@ namespace ast {
     }
 
     /* constructor for StepBlock ast node */
-    StepBlock::StepBlock(SteppedList statements)
+    StepBlock::StepBlock(SteppedVector statements)
     :    statements(statements)
     {
     }
@@ -472,7 +472,7 @@ namespace ast {
     }
 
     /* constructor for IndependentBlock ast node */
-    IndependentBlock::IndependentBlock(IndependentDefList definitions)
+    IndependentBlock::IndependentBlock(IndependentDefVector definitions)
     :    definitions(definitions)
     {
     }
@@ -493,7 +493,7 @@ namespace ast {
     }
 
     /* constructor for DependentBlock ast node */
-    DependentBlock::DependentBlock(DependentDefList definitions)
+    DependentBlock::DependentBlock(DependentDefVector definitions)
     :    definitions(definitions)
     {
     }
@@ -514,7 +514,7 @@ namespace ast {
     }
 
     /* constructor for StateBlock ast node */
-    StateBlock::StateBlock(DependentDefList definitions)
+    StateBlock::StateBlock(DependentDefVector definitions)
     :    definitions(definitions)
     {
     }
@@ -613,7 +613,7 @@ namespace ast {
     }
 
     /* constructor for StatementBlock ast node */
-    StatementBlock::StatementBlock(StatementList statements)
+    StatementBlock::StatementBlock(StatementVector statements)
     :    statements(statements)
     {
     }
@@ -666,7 +666,7 @@ namespace ast {
     }
 
     /* constructor for LinearBlock ast node */
-    LinearBlock::LinearBlock(Name* name, NameList solvefor, StatementBlock* statementblock)
+    LinearBlock::LinearBlock(Name* name, NameVector solvefor, StatementBlock* statementblock)
     :    solvefor(solvefor)
     {
         this->name = std::shared_ptr<Name>(name);
@@ -699,7 +699,7 @@ namespace ast {
     }
 
     /* constructor for NonLinearBlock ast node */
-    NonLinearBlock::NonLinearBlock(Name* name, NameList solvefor, StatementBlock* statementblock)
+    NonLinearBlock::NonLinearBlock(Name* name, NameVector solvefor, StatementBlock* statementblock)
     :    solvefor(solvefor)
     {
         this->name = std::shared_ptr<Name>(name);
@@ -784,7 +784,7 @@ namespace ast {
     }
 
     /* constructor for FunctionTableBlock ast node */
-    FunctionTableBlock::FunctionTableBlock(Name* name, ArgumentList arguments, Unit* unit)
+    FunctionTableBlock::FunctionTableBlock(Name* name, ArgumentVector arguments, Unit* unit)
     :    arguments(arguments)
     {
         this->name = std::shared_ptr<Name>(name);
@@ -820,7 +820,7 @@ namespace ast {
     }
 
     /* constructor for FunctionBlock ast node */
-    FunctionBlock::FunctionBlock(Name* name, ArgumentList arguments, Unit* unit, StatementBlock* statementblock)
+    FunctionBlock::FunctionBlock(Name* name, ArgumentVector arguments, Unit* unit, StatementBlock* statementblock)
     :    arguments(arguments)
     {
         this->name = std::shared_ptr<Name>(name);
@@ -859,7 +859,7 @@ namespace ast {
     }
 
     /* constructor for ProcedureBlock ast node */
-    ProcedureBlock::ProcedureBlock(Name* name, ArgumentList arguments, Unit* unit, StatementBlock* statementblock)
+    ProcedureBlock::ProcedureBlock(Name* name, ArgumentVector arguments, Unit* unit, StatementBlock* statementblock)
     :    arguments(arguments)
     {
         this->name = std::shared_ptr<Name>(name);
@@ -894,7 +894,7 @@ namespace ast {
     }
 
     /* constructor for NetReceiveBlock ast node */
-    NetReceiveBlock::NetReceiveBlock(ArgumentList arguments, StatementBlock* statementblock)
+    NetReceiveBlock::NetReceiveBlock(ArgumentVector arguments, StatementBlock* statementblock)
     :    arguments(arguments)
     {
         this->statementblock = std::shared_ptr<StatementBlock>(statementblock);
@@ -1051,7 +1051,7 @@ namespace ast {
     }
 
     /* constructor for ForNetcon ast node */
-    ForNetcon::ForNetcon(ArgumentList arguments, StatementBlock* statementblock)
+    ForNetcon::ForNetcon(ArgumentVector arguments, StatementBlock* statementblock)
     :    arguments(arguments)
     {
         this->statementblock = std::shared_ptr<StatementBlock>(statementblock);
@@ -1079,7 +1079,7 @@ namespace ast {
     }
 
     /* constructor for KineticBlock ast node */
-    KineticBlock::KineticBlock(Name* name, NameList solvefor, StatementBlock* statementblock)
+    KineticBlock::KineticBlock(Name* name, NameVector solvefor, StatementBlock* statementblock)
     :    solvefor(solvefor)
     {
         this->name = std::shared_ptr<Name>(name);
@@ -1108,7 +1108,7 @@ namespace ast {
     }
 
     /* constructor for MatchBlock ast node */
-    MatchBlock::MatchBlock(MatchList matchs)
+    MatchBlock::MatchBlock(MatchVector matchs)
     :    matchs(matchs)
     {
     }
@@ -1129,7 +1129,7 @@ namespace ast {
     }
 
     /* constructor for UnitBlock ast node */
-    UnitBlock::UnitBlock(ExpressionList definitions)
+    UnitBlock::UnitBlock(ExpressionVector definitions)
     :    definitions(definitions)
     {
     }
@@ -1150,7 +1150,7 @@ namespace ast {
     }
 
     /* constructor for ConstantBlock ast node */
-    ConstantBlock::ConstantBlock(ConstantStatementList statements)
+    ConstantBlock::ConstantBlock(ConstantStatementVector statements)
     :    statements(statements)
     {
     }
@@ -1449,7 +1449,7 @@ namespace ast {
     }
 
     /* constructor for FunctionCall ast node */
-    FunctionCall::FunctionCall(Name* name, ExpressionList arguments)
+    FunctionCall::FunctionCall(Name* name, ExpressionVector arguments)
     :    arguments(arguments)
     {
         this->name = std::shared_ptr<Name>(name);
@@ -1657,7 +1657,7 @@ namespace ast {
     }
 
     /* constructor for LocalListStatement ast node */
-    LocalListStatement::LocalListStatement(LocalVariableList variables)
+    LocalListStatement::LocalListStatement(LocalVariableVector variables)
     :    variables(variables)
     {
     }
@@ -1774,7 +1774,7 @@ namespace ast {
     }
 
     /* constructor for Stepped ast node */
-    Stepped::Stepped(Name* name, NumberList values, Unit* unit)
+    Stepped::Stepped(Name* name, NumberVector values, Unit* unit)
     :    values(values)
     {
         this->name = std::shared_ptr<Name>(name);
@@ -1902,7 +1902,7 @@ namespace ast {
     }
 
     /* constructor for PlotDeclaration ast node */
-    PlotDeclaration::PlotDeclaration(PlotVariableList pvlist, PlotVariable* name)
+    PlotDeclaration::PlotDeclaration(PlotVariableVector pvlist, PlotVariable* name)
     :    pvlist(pvlist)
     {
         this->name = std::shared_ptr<PlotVariable>(name);
@@ -2079,7 +2079,7 @@ namespace ast {
     }
 
     /* constructor for IfStatement ast node */
-    IfStatement::IfStatement(Expression* condition, StatementBlock* statementblock, ElseIfStatementList elseifs, ElseStatement* elses)
+    IfStatement::IfStatement(Expression* condition, StatementBlock* statementblock, ElseIfStatementVector elseifs, ElseStatement* elses)
     :    elseifs(elseifs)
     {
         this->condition = std::shared_ptr<Expression>(condition);
@@ -2243,7 +2243,7 @@ namespace ast {
     }
 
     /* constructor for WatchStatement ast node */
-    WatchStatement::WatchStatement(WatchList statements)
+    WatchStatement::WatchStatement(WatchVector statements)
     :    statements(statements)
     {
     }
@@ -2267,7 +2267,7 @@ namespace ast {
     }
 
     /* constructor for Sens ast node */
-    Sens::Sens(VarNameList senslist)
+    Sens::Sens(VarNameVector senslist)
     :    senslist(senslist)
     {
     }
@@ -2314,7 +2314,7 @@ namespace ast {
     }
 
     /* constructor for Compartment ast node */
-    Compartment::Compartment(Name* name, Expression* expression, NameList names)
+    Compartment::Compartment(Name* name, Expression* expression, NameVector names)
     :    names(names)
     {
         this->name = std::shared_ptr<Name>(name);
@@ -2345,7 +2345,7 @@ namespace ast {
     }
 
     /* constructor for LDifuse ast node */
-    LDifuse::LDifuse(Name* name, Expression* expression, NameList names)
+    LDifuse::LDifuse(Name* name, Expression* expression, NameVector names)
     :    names(names)
     {
         this->name = std::shared_ptr<Name>(name);
@@ -2487,7 +2487,7 @@ namespace ast {
     }
 
     /* constructor for TableStatement ast node */
-    TableStatement::TableStatement(NameList tablst, NameList dependlst, Expression* from, Expression* to, Integer* with)
+    TableStatement::TableStatement(NameVector tablst, NameVector dependlst, Expression* from, Expression* to, Integer* with)
     :    tablst(tablst),
 dependlst(dependlst)
     {
@@ -2550,7 +2550,7 @@ dependlst(dependlst)
     }
 
     /* constructor for NrnUseion ast node */
-    NrnUseion::NrnUseion(Name* name, ReadIonVarList readlist, WriteIonVarList writelist, Valence* valence)
+    NrnUseion::NrnUseion(Name* name, ReadIonVarVector readlist, WriteIonVarVector writelist, Valence* valence)
     :    readlist(readlist),
 writelist(writelist)
     {
@@ -2581,7 +2581,7 @@ writelist(writelist)
     }
 
     /* constructor for NrnNonspecific ast node */
-    NrnNonspecific::NrnNonspecific(NonspeCurVarList currents)
+    NrnNonspecific::NrnNonspecific(NonspeCurVarVector currents)
     :    currents(currents)
     {
     }
@@ -2602,7 +2602,7 @@ writelist(writelist)
     }
 
     /* constructor for NrnElctrodeCurrent ast node */
-    NrnElctrodeCurrent::NrnElctrodeCurrent(ElectrodeCurVarList ecurrents)
+    NrnElctrodeCurrent::NrnElctrodeCurrent(ElectrodeCurVarVector ecurrents)
     :    ecurrents(ecurrents)
     {
     }
@@ -2623,7 +2623,7 @@ writelist(writelist)
     }
 
     /* constructor for NrnSection ast node */
-    NrnSection::NrnSection(SectionVarList sections)
+    NrnSection::NrnSection(SectionVarVector sections)
     :    sections(sections)
     {
     }
@@ -2644,7 +2644,7 @@ writelist(writelist)
     }
 
     /* constructor for NrnRange ast node */
-    NrnRange::NrnRange(RangeVarList range_vars)
+    NrnRange::NrnRange(RangeVarVector range_vars)
     :    range_vars(range_vars)
     {
     }
@@ -2665,7 +2665,7 @@ writelist(writelist)
     }
 
     /* constructor for NrnGlobal ast node */
-    NrnGlobal::NrnGlobal(GlobalVarList global_vars)
+    NrnGlobal::NrnGlobal(GlobalVarVector global_vars)
     :    global_vars(global_vars)
     {
     }
@@ -2686,7 +2686,7 @@ writelist(writelist)
     }
 
     /* constructor for NrnPointer ast node */
-    NrnPointer::NrnPointer(PointerVarList pointers)
+    NrnPointer::NrnPointer(PointerVarVector pointers)
     :    pointers(pointers)
     {
     }
@@ -2707,7 +2707,7 @@ writelist(writelist)
     }
 
     /* constructor for NrnBbcorePtr ast node */
-    NrnBbcorePtr::NrnBbcorePtr(BbcorePointerVarList bbcore_pointers)
+    NrnBbcorePtr::NrnBbcorePtr(BbcorePointerVarVector bbcore_pointers)
     :    bbcore_pointers(bbcore_pointers)
     {
     }
@@ -2728,7 +2728,7 @@ writelist(writelist)
     }
 
     /* constructor for NrnExternal ast node */
-    NrnExternal::NrnExternal(ExternVarList externals)
+    NrnExternal::NrnExternal(ExternVarVector externals)
     :    externals(externals)
     {
     }
@@ -2749,7 +2749,7 @@ writelist(writelist)
     }
 
     /* constructor for NrnThreadSafe ast node */
-    NrnThreadSafe::NrnThreadSafe(ThreadsafeVarList threadsafe)
+    NrnThreadSafe::NrnThreadSafe(ThreadsafeVarVector threadsafe)
     :    threadsafe(threadsafe)
     {
     }
@@ -2809,7 +2809,7 @@ writelist(writelist)
     }
 
     /* constructor for Program ast node */
-    Program::Program(StatementList statements, BlockList blocks)
+    Program::Program(StatementVector statements, BlockVector blocks)
     :    statements(statements),
 blocks(blocks)
     {

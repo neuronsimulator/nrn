@@ -143,139 +143,139 @@ namespace ast {
     class Program;
 
     /* std::vector for convenience */
-    using StatementList = std::vector<std::shared_ptr<Statement>>;
-    using ExpressionList = std::vector<std::shared_ptr<Expression>>;
-    using BlockList = std::vector<std::shared_ptr<Block>>;
-    using IdentifierList = std::vector<std::shared_ptr<Identifier>>;
-    using NumberList = std::vector<std::shared_ptr<Number>>;
-    using StringList = std::vector<std::shared_ptr<String>>;
-    using IntegerList = std::vector<std::shared_ptr<Integer>>;
-    using FloatList = std::vector<std::shared_ptr<Float>>;
-    using DoubleList = std::vector<std::shared_ptr<Double>>;
-    using BooleanList = std::vector<std::shared_ptr<Boolean>>;
-    using NameList = std::vector<std::shared_ptr<Name>>;
-    using PrimeNameList = std::vector<std::shared_ptr<PrimeName>>;
-    using VarNameList = std::vector<std::shared_ptr<VarName>>;
-    using IndexedNameList = std::vector<std::shared_ptr<IndexedName>>;
-    using ArgumentList = std::vector<std::shared_ptr<Argument>>;
-    using ReactVarNameList = std::vector<std::shared_ptr<ReactVarName>>;
-    using ReadIonVarList = std::vector<std::shared_ptr<ReadIonVar>>;
-    using WriteIonVarList = std::vector<std::shared_ptr<WriteIonVar>>;
-    using NonspeCurVarList = std::vector<std::shared_ptr<NonspeCurVar>>;
-    using ElectrodeCurVarList = std::vector<std::shared_ptr<ElectrodeCurVar>>;
-    using SectionVarList = std::vector<std::shared_ptr<SectionVar>>;
-    using RangeVarList = std::vector<std::shared_ptr<RangeVar>>;
-    using GlobalVarList = std::vector<std::shared_ptr<GlobalVar>>;
-    using PointerVarList = std::vector<std::shared_ptr<PointerVar>>;
-    using BbcorePointerVarList = std::vector<std::shared_ptr<BbcorePointerVar>>;
-    using ExternVarList = std::vector<std::shared_ptr<ExternVar>>;
-    using ThreadsafeVarList = std::vector<std::shared_ptr<ThreadsafeVar>>;
-    using ParamBlockList = std::vector<std::shared_ptr<ParamBlock>>;
-    using StepBlockList = std::vector<std::shared_ptr<StepBlock>>;
-    using IndependentBlockList = std::vector<std::shared_ptr<IndependentBlock>>;
-    using DependentBlockList = std::vector<std::shared_ptr<DependentBlock>>;
-    using StateBlockList = std::vector<std::shared_ptr<StateBlock>>;
-    using PlotBlockList = std::vector<std::shared_ptr<PlotBlock>>;
-    using InitialBlockList = std::vector<std::shared_ptr<InitialBlock>>;
-    using ConstructorBlockList = std::vector<std::shared_ptr<ConstructorBlock>>;
-    using DestructorBlockList = std::vector<std::shared_ptr<DestructorBlock>>;
-    using StatementBlockList = std::vector<std::shared_ptr<StatementBlock>>;
-    using DerivativeBlockList = std::vector<std::shared_ptr<DerivativeBlock>>;
-    using LinearBlockList = std::vector<std::shared_ptr<LinearBlock>>;
-    using NonLinearBlockList = std::vector<std::shared_ptr<NonLinearBlock>>;
-    using DiscreteBlockList = std::vector<std::shared_ptr<DiscreteBlock>>;
-    using PartialBlockList = std::vector<std::shared_ptr<PartialBlock>>;
-    using FunctionTableBlockList = std::vector<std::shared_ptr<FunctionTableBlock>>;
-    using FunctionBlockList = std::vector<std::shared_ptr<FunctionBlock>>;
-    using ProcedureBlockList = std::vector<std::shared_ptr<ProcedureBlock>>;
-    using NetReceiveBlockList = std::vector<std::shared_ptr<NetReceiveBlock>>;
-    using SolveBlockList = std::vector<std::shared_ptr<SolveBlock>>;
-    using BreakpointBlockList = std::vector<std::shared_ptr<BreakpointBlock>>;
-    using TerminalBlockList = std::vector<std::shared_ptr<TerminalBlock>>;
-    using BeforeBlockList = std::vector<std::shared_ptr<BeforeBlock>>;
-    using AfterBlockList = std::vector<std::shared_ptr<AfterBlock>>;
-    using BABlockList = std::vector<std::shared_ptr<BABlock>>;
-    using ForNetconList = std::vector<std::shared_ptr<ForNetcon>>;
-    using KineticBlockList = std::vector<std::shared_ptr<KineticBlock>>;
-    using MatchBlockList = std::vector<std::shared_ptr<MatchBlock>>;
-    using UnitBlockList = std::vector<std::shared_ptr<UnitBlock>>;
-    using ConstantBlockList = std::vector<std::shared_ptr<ConstantBlock>>;
-    using NeuronBlockList = std::vector<std::shared_ptr<NeuronBlock>>;
-    using UnitList = std::vector<std::shared_ptr<Unit>>;
-    using DoubleUnitList = std::vector<std::shared_ptr<DoubleUnit>>;
-    using LocalVariableList = std::vector<std::shared_ptr<LocalVariable>>;
-    using LimitsList = std::vector<std::shared_ptr<Limits>>;
-    using NumberRangeList = std::vector<std::shared_ptr<NumberRange>>;
-    using PlotVariableList = std::vector<std::shared_ptr<PlotVariable>>;
-    using BinaryOperatorList = std::vector<std::shared_ptr<BinaryOperator>>;
-    using UnaryOperatorList = std::vector<std::shared_ptr<UnaryOperator>>;
-    using ReactionOperatorList = std::vector<std::shared_ptr<ReactionOperator>>;
-    using BinaryExpressionList = std::vector<std::shared_ptr<BinaryExpression>>;
-    using UnaryExpressionList = std::vector<std::shared_ptr<UnaryExpression>>;
-    using NonLinEuationList = std::vector<std::shared_ptr<NonLinEuation>>;
-    using LinEquationList = std::vector<std::shared_ptr<LinEquation>>;
-    using FunctionCallList = std::vector<std::shared_ptr<FunctionCall>>;
-    using FirstLastTypeIndexList = std::vector<std::shared_ptr<FirstLastTypeIndex>>;
-    using WatchList = std::vector<std::shared_ptr<Watch>>;
-    using QueueExpressionTypeList = std::vector<std::shared_ptr<QueueExpressionType>>;
-    using MatchList = std::vector<std::shared_ptr<Match>>;
-    using BABlockTypeList = std::vector<std::shared_ptr<BABlockType>>;
-    using UnitDefList = std::vector<std::shared_ptr<UnitDef>>;
-    using FactorDefList = std::vector<std::shared_ptr<FactorDef>>;
-    using ValenceList = std::vector<std::shared_ptr<Valence>>;
-    using UnitStateList = std::vector<std::shared_ptr<UnitState>>;
-    using LocalListStatementList = std::vector<std::shared_ptr<LocalListStatement>>;
-    using ModelList = std::vector<std::shared_ptr<Model>>;
-    using DefineList = std::vector<std::shared_ptr<Define>>;
-    using IncludeList = std::vector<std::shared_ptr<Include>>;
-    using ParamAssignList = std::vector<std::shared_ptr<ParamAssign>>;
-    using SteppedList = std::vector<std::shared_ptr<Stepped>>;
-    using IndependentDefList = std::vector<std::shared_ptr<IndependentDef>>;
-    using DependentDefList = std::vector<std::shared_ptr<DependentDef>>;
-    using PlotDeclarationList = std::vector<std::shared_ptr<PlotDeclaration>>;
-    using ConductanceHintList = std::vector<std::shared_ptr<ConductanceHint>>;
-    using ExpressionStatementList = std::vector<std::shared_ptr<ExpressionStatement>>;
-    using ProtectStatementList = std::vector<std::shared_ptr<ProtectStatement>>;
-    using FromStatementList = std::vector<std::shared_ptr<FromStatement>>;
-    using ForAllStatementList = std::vector<std::shared_ptr<ForAllStatement>>;
-    using WhileStatementList = std::vector<std::shared_ptr<WhileStatement>>;
-    using IfStatementList = std::vector<std::shared_ptr<IfStatement>>;
-    using ElseIfStatementList = std::vector<std::shared_ptr<ElseIfStatement>>;
-    using ElseStatementList = std::vector<std::shared_ptr<ElseStatement>>;
-    using PartialEquationList = std::vector<std::shared_ptr<PartialEquation>>;
-    using PartialBoundaryList = std::vector<std::shared_ptr<PartialBoundary>>;
-    using WatchStatementList = std::vector<std::shared_ptr<WatchStatement>>;
-    using MutexLockList = std::vector<std::shared_ptr<MutexLock>>;
-    using MutexUnlockList = std::vector<std::shared_ptr<MutexUnlock>>;
-    using ResetList = std::vector<std::shared_ptr<Reset>>;
-    using SensList = std::vector<std::shared_ptr<Sens>>;
-    using ConserveList = std::vector<std::shared_ptr<Conserve>>;
-    using CompartmentList = std::vector<std::shared_ptr<Compartment>>;
-    using LDifuseList = std::vector<std::shared_ptr<LDifuse>>;
-    using ReactionStatementList = std::vector<std::shared_ptr<ReactionStatement>>;
-    using LagStatementList = std::vector<std::shared_ptr<LagStatement>>;
-    using QueueStatementList = std::vector<std::shared_ptr<QueueStatement>>;
-    using ConstantStatementList = std::vector<std::shared_ptr<ConstantStatement>>;
-    using TableStatementList = std::vector<std::shared_ptr<TableStatement>>;
-    using NrnSuffixList = std::vector<std::shared_ptr<NrnSuffix>>;
-    using NrnUseionList = std::vector<std::shared_ptr<NrnUseion>>;
-    using NrnNonspecificList = std::vector<std::shared_ptr<NrnNonspecific>>;
-    using NrnElctrodeCurrentList = std::vector<std::shared_ptr<NrnElctrodeCurrent>>;
-    using NrnSectionList = std::vector<std::shared_ptr<NrnSection>>;
-    using NrnRangeList = std::vector<std::shared_ptr<NrnRange>>;
-    using NrnGlobalList = std::vector<std::shared_ptr<NrnGlobal>>;
-    using NrnPointerList = std::vector<std::shared_ptr<NrnPointer>>;
-    using NrnBbcorePtrList = std::vector<std::shared_ptr<NrnBbcorePtr>>;
-    using NrnExternalList = std::vector<std::shared_ptr<NrnExternal>>;
-    using NrnThreadSafeList = std::vector<std::shared_ptr<NrnThreadSafe>>;
-    using VerbatimList = std::vector<std::shared_ptr<Verbatim>>;
-    using CommentList = std::vector<std::shared_ptr<Comment>>;
-    using ProgramList = std::vector<std::shared_ptr<Program>>;
-    using NumberList = std::vector<std::shared_ptr<Number>>;
-    using IdentifierList = std::vector<std::shared_ptr<Identifier>>;
-    using BlockList = std::vector<std::shared_ptr<Block>>;
-    using ExpressionList = std::vector<std::shared_ptr<Expression>>;
-    using StatementList = std::vector<std::shared_ptr<Statement>>;
+    using StatementVector = std::vector<std::shared_ptr<Statement>>;
+    using ExpressionVector = std::vector<std::shared_ptr<Expression>>;
+    using BlockVector = std::vector<std::shared_ptr<Block>>;
+    using IdentifierVector = std::vector<std::shared_ptr<Identifier>>;
+    using NumberVector = std::vector<std::shared_ptr<Number>>;
+    using StringVector = std::vector<std::shared_ptr<String>>;
+    using IntegerVector = std::vector<std::shared_ptr<Integer>>;
+    using FloatVector = std::vector<std::shared_ptr<Float>>;
+    using DoubleVector = std::vector<std::shared_ptr<Double>>;
+    using BooleanVector = std::vector<std::shared_ptr<Boolean>>;
+    using NameVector = std::vector<std::shared_ptr<Name>>;
+    using PrimeNameVector = std::vector<std::shared_ptr<PrimeName>>;
+    using VarNameVector = std::vector<std::shared_ptr<VarName>>;
+    using IndexedNameVector = std::vector<std::shared_ptr<IndexedName>>;
+    using ArgumentVector = std::vector<std::shared_ptr<Argument>>;
+    using ReactVarNameVector = std::vector<std::shared_ptr<ReactVarName>>;
+    using ReadIonVarVector = std::vector<std::shared_ptr<ReadIonVar>>;
+    using WriteIonVarVector = std::vector<std::shared_ptr<WriteIonVar>>;
+    using NonspeCurVarVector = std::vector<std::shared_ptr<NonspeCurVar>>;
+    using ElectrodeCurVarVector = std::vector<std::shared_ptr<ElectrodeCurVar>>;
+    using SectionVarVector = std::vector<std::shared_ptr<SectionVar>>;
+    using RangeVarVector = std::vector<std::shared_ptr<RangeVar>>;
+    using GlobalVarVector = std::vector<std::shared_ptr<GlobalVar>>;
+    using PointerVarVector = std::vector<std::shared_ptr<PointerVar>>;
+    using BbcorePointerVarVector = std::vector<std::shared_ptr<BbcorePointerVar>>;
+    using ExternVarVector = std::vector<std::shared_ptr<ExternVar>>;
+    using ThreadsafeVarVector = std::vector<std::shared_ptr<ThreadsafeVar>>;
+    using ParamBlockVector = std::vector<std::shared_ptr<ParamBlock>>;
+    using StepBlockVector = std::vector<std::shared_ptr<StepBlock>>;
+    using IndependentBlockVector = std::vector<std::shared_ptr<IndependentBlock>>;
+    using DependentBlockVector = std::vector<std::shared_ptr<DependentBlock>>;
+    using StateBlockVector = std::vector<std::shared_ptr<StateBlock>>;
+    using PlotBlockVector = std::vector<std::shared_ptr<PlotBlock>>;
+    using InitialBlockVector = std::vector<std::shared_ptr<InitialBlock>>;
+    using ConstructorBlockVector = std::vector<std::shared_ptr<ConstructorBlock>>;
+    using DestructorBlockVector = std::vector<std::shared_ptr<DestructorBlock>>;
+    using StatementBlockVector = std::vector<std::shared_ptr<StatementBlock>>;
+    using DerivativeBlockVector = std::vector<std::shared_ptr<DerivativeBlock>>;
+    using LinearBlockVector = std::vector<std::shared_ptr<LinearBlock>>;
+    using NonLinearBlockVector = std::vector<std::shared_ptr<NonLinearBlock>>;
+    using DiscreteBlockVector = std::vector<std::shared_ptr<DiscreteBlock>>;
+    using PartialBlockVector = std::vector<std::shared_ptr<PartialBlock>>;
+    using FunctionTableBlockVector = std::vector<std::shared_ptr<FunctionTableBlock>>;
+    using FunctionBlockVector = std::vector<std::shared_ptr<FunctionBlock>>;
+    using ProcedureBlockVector = std::vector<std::shared_ptr<ProcedureBlock>>;
+    using NetReceiveBlockVector = std::vector<std::shared_ptr<NetReceiveBlock>>;
+    using SolveBlockVector = std::vector<std::shared_ptr<SolveBlock>>;
+    using BreakpointBlockVector = std::vector<std::shared_ptr<BreakpointBlock>>;
+    using TerminalBlockVector = std::vector<std::shared_ptr<TerminalBlock>>;
+    using BeforeBlockVector = std::vector<std::shared_ptr<BeforeBlock>>;
+    using AfterBlockVector = std::vector<std::shared_ptr<AfterBlock>>;
+    using BABlockVector = std::vector<std::shared_ptr<BABlock>>;
+    using ForNetconVector = std::vector<std::shared_ptr<ForNetcon>>;
+    using KineticBlockVector = std::vector<std::shared_ptr<KineticBlock>>;
+    using MatchBlockVector = std::vector<std::shared_ptr<MatchBlock>>;
+    using UnitBlockVector = std::vector<std::shared_ptr<UnitBlock>>;
+    using ConstantBlockVector = std::vector<std::shared_ptr<ConstantBlock>>;
+    using NeuronBlockVector = std::vector<std::shared_ptr<NeuronBlock>>;
+    using UnitVector = std::vector<std::shared_ptr<Unit>>;
+    using DoubleUnitVector = std::vector<std::shared_ptr<DoubleUnit>>;
+    using LocalVariableVector = std::vector<std::shared_ptr<LocalVariable>>;
+    using LimitsVector = std::vector<std::shared_ptr<Limits>>;
+    using NumberRangeVector = std::vector<std::shared_ptr<NumberRange>>;
+    using PlotVariableVector = std::vector<std::shared_ptr<PlotVariable>>;
+    using BinaryOperatorVector = std::vector<std::shared_ptr<BinaryOperator>>;
+    using UnaryOperatorVector = std::vector<std::shared_ptr<UnaryOperator>>;
+    using ReactionOperatorVector = std::vector<std::shared_ptr<ReactionOperator>>;
+    using BinaryExpressionVector = std::vector<std::shared_ptr<BinaryExpression>>;
+    using UnaryExpressionVector = std::vector<std::shared_ptr<UnaryExpression>>;
+    using NonLinEuationVector = std::vector<std::shared_ptr<NonLinEuation>>;
+    using LinEquationVector = std::vector<std::shared_ptr<LinEquation>>;
+    using FunctionCallVector = std::vector<std::shared_ptr<FunctionCall>>;
+    using FirstLastTypeIndexVector = std::vector<std::shared_ptr<FirstLastTypeIndex>>;
+    using WatchVector = std::vector<std::shared_ptr<Watch>>;
+    using QueueExpressionTypeVector = std::vector<std::shared_ptr<QueueExpressionType>>;
+    using MatchVector = std::vector<std::shared_ptr<Match>>;
+    using BABlockTypeVector = std::vector<std::shared_ptr<BABlockType>>;
+    using UnitDefVector = std::vector<std::shared_ptr<UnitDef>>;
+    using FactorDefVector = std::vector<std::shared_ptr<FactorDef>>;
+    using ValenceVector = std::vector<std::shared_ptr<Valence>>;
+    using UnitStateVector = std::vector<std::shared_ptr<UnitState>>;
+    using LocalListStatementVector = std::vector<std::shared_ptr<LocalListStatement>>;
+    using ModelVector = std::vector<std::shared_ptr<Model>>;
+    using DefineVector = std::vector<std::shared_ptr<Define>>;
+    using IncludeVector = std::vector<std::shared_ptr<Include>>;
+    using ParamAssignVector = std::vector<std::shared_ptr<ParamAssign>>;
+    using SteppedVector = std::vector<std::shared_ptr<Stepped>>;
+    using IndependentDefVector = std::vector<std::shared_ptr<IndependentDef>>;
+    using DependentDefVector = std::vector<std::shared_ptr<DependentDef>>;
+    using PlotDeclarationVector = std::vector<std::shared_ptr<PlotDeclaration>>;
+    using ConductanceHintVector = std::vector<std::shared_ptr<ConductanceHint>>;
+    using ExpressionStatementVector = std::vector<std::shared_ptr<ExpressionStatement>>;
+    using ProtectStatementVector = std::vector<std::shared_ptr<ProtectStatement>>;
+    using FromStatementVector = std::vector<std::shared_ptr<FromStatement>>;
+    using ForAllStatementVector = std::vector<std::shared_ptr<ForAllStatement>>;
+    using WhileStatementVector = std::vector<std::shared_ptr<WhileStatement>>;
+    using IfStatementVector = std::vector<std::shared_ptr<IfStatement>>;
+    using ElseIfStatementVector = std::vector<std::shared_ptr<ElseIfStatement>>;
+    using ElseStatementVector = std::vector<std::shared_ptr<ElseStatement>>;
+    using PartialEquationVector = std::vector<std::shared_ptr<PartialEquation>>;
+    using PartialBoundaryVector = std::vector<std::shared_ptr<PartialBoundary>>;
+    using WatchStatementVector = std::vector<std::shared_ptr<WatchStatement>>;
+    using MutexLockVector = std::vector<std::shared_ptr<MutexLock>>;
+    using MutexUnlockVector = std::vector<std::shared_ptr<MutexUnlock>>;
+    using ResetVector = std::vector<std::shared_ptr<Reset>>;
+    using SensVector = std::vector<std::shared_ptr<Sens>>;
+    using ConserveVector = std::vector<std::shared_ptr<Conserve>>;
+    using CompartmentVector = std::vector<std::shared_ptr<Compartment>>;
+    using LDifuseVector = std::vector<std::shared_ptr<LDifuse>>;
+    using ReactionStatementVector = std::vector<std::shared_ptr<ReactionStatement>>;
+    using LagStatementVector = std::vector<std::shared_ptr<LagStatement>>;
+    using QueueStatementVector = std::vector<std::shared_ptr<QueueStatement>>;
+    using ConstantStatementVector = std::vector<std::shared_ptr<ConstantStatement>>;
+    using TableStatementVector = std::vector<std::shared_ptr<TableStatement>>;
+    using NrnSuffixVector = std::vector<std::shared_ptr<NrnSuffix>>;
+    using NrnUseionVector = std::vector<std::shared_ptr<NrnUseion>>;
+    using NrnNonspecificVector = std::vector<std::shared_ptr<NrnNonspecific>>;
+    using NrnElctrodeCurrentVector = std::vector<std::shared_ptr<NrnElctrodeCurrent>>;
+    using NrnSectionVector = std::vector<std::shared_ptr<NrnSection>>;
+    using NrnRangeVector = std::vector<std::shared_ptr<NrnRange>>;
+    using NrnGlobalVector = std::vector<std::shared_ptr<NrnGlobal>>;
+    using NrnPointerVector = std::vector<std::shared_ptr<NrnPointer>>;
+    using NrnBbcorePtrVector = std::vector<std::shared_ptr<NrnBbcorePtr>>;
+    using NrnExternalVector = std::vector<std::shared_ptr<NrnExternal>>;
+    using NrnThreadSafeVector = std::vector<std::shared_ptr<NrnThreadSafe>>;
+    using VerbatimVector = std::vector<std::shared_ptr<Verbatim>>;
+    using CommentVector = std::vector<std::shared_ptr<Comment>>;
+    using ProgramVector = std::vector<std::shared_ptr<Program>>;
+    using NumberVector = std::vector<std::shared_ptr<Number>>;
+    using IdentifierVector = std::vector<std::shared_ptr<Identifier>>;
+    using BlockVector = std::vector<std::shared_ptr<Block>>;
+    using ExpressionVector = std::vector<std::shared_ptr<Expression>>;
+    using StatementVector = std::vector<std::shared_ptr<Statement>>;
     using statement_ptr = Statement*;
     using expression_ptr = Expression*;
     using block_ptr = Block*;
@@ -305,13 +305,13 @@ namespace ast {
     using externvar_ptr = ExternVar*;
     using threadsafevar_ptr = ThreadsafeVar*;
     using paramblock_ptr = ParamBlock*;
-    using paramassign_list = ParamAssignList;
+    using paramassign_list = ParamAssignVector;
     using stepblock_ptr = StepBlock*;
-    using stepped_list = SteppedList;
+    using stepped_list = SteppedVector;
     using independentblock_ptr = IndependentBlock*;
-    using independentdef_list = IndependentDefList;
+    using independentdef_list = IndependentDefVector;
     using dependentblock_ptr = DependentBlock*;
-    using dependentdef_list = DependentDefList;
+    using dependentdef_list = DependentDefVector;
     using stateblock_ptr = StateBlock*;
     using plotblock_ptr = PlotBlock*;
     using plotdeclaration_ptr = PlotDeclaration*;
@@ -319,15 +319,15 @@ namespace ast {
     using statementblock_ptr = StatementBlock*;
     using constructorblock_ptr = ConstructorBlock*;
     using destructorblock_ptr = DestructorBlock*;
-    using statement_list = StatementList;
+    using statement_list = StatementVector;
     using derivativeblock_ptr = DerivativeBlock*;
     using linearblock_ptr = LinearBlock*;
-    using name_list = NameList;
+    using name_list = NameVector;
     using nonlinearblock_ptr = NonLinearBlock*;
     using discreteblock_ptr = DiscreteBlock*;
     using partialblock_ptr = PartialBlock*;
     using functiontableblock_ptr = FunctionTableBlock*;
-    using argument_list = ArgumentList;
+    using argument_list = ArgumentVector;
     using functionblock_ptr = FunctionBlock*;
     using procedureblock_ptr = ProcedureBlock*;
     using netreceiveblock_ptr = NetReceiveBlock*;
@@ -341,11 +341,11 @@ namespace ast {
     using fornetcon_ptr = ForNetcon*;
     using kineticblock_ptr = KineticBlock*;
     using matchblock_ptr = MatchBlock*;
-    using match_list = MatchList;
+    using match_list = MatchVector;
     using unitblock_ptr = UnitBlock*;
-    using expression_list = ExpressionList;
+    using expression_list = ExpressionVector;
     using constantblock_ptr = ConstantBlock*;
-    using constantstatement_list = ConstantStatementList;
+    using constantstatement_list = ConstantStatementVector;
     using neuronblock_ptr = NeuronBlock*;
     using doubleunit_ptr = DoubleUnit*;
     using localvariable_ptr = LocalVariable*;
@@ -369,16 +369,16 @@ namespace ast {
     using valence_ptr = Valence*;
     using unitstate_ptr = UnitState*;
     using localliststatement_ptr = LocalListStatement*;
-    using localvariable_list = LocalVariableList;
+    using localvariable_list = LocalVariableVector;
     using model_ptr = Model*;
     using define_ptr = Define*;
     using include_ptr = Include*;
     using paramassign_ptr = ParamAssign*;
     using stepped_ptr = Stepped*;
-    using number_list = NumberList;
+    using number_list = NumberVector;
     using independentdef_ptr = IndependentDef*;
     using dependentdef_ptr = DependentDef*;
-    using plotvariable_list = PlotVariableList;
+    using plotvariable_list = PlotVariableVector;
     using conductancehint_ptr = ConductanceHint*;
     using expressionstatement_ptr = ExpressionStatement*;
     using protectstatement_ptr = ProtectStatement*;
@@ -386,18 +386,18 @@ namespace ast {
     using forallstatement_ptr = ForAllStatement*;
     using whilestatement_ptr = WhileStatement*;
     using ifstatement_ptr = IfStatement*;
-    using elseifstatement_list = ElseIfStatementList;
+    using elseifstatement_list = ElseIfStatementVector;
     using elsestatement_ptr = ElseStatement*;
     using elseifstatement_ptr = ElseIfStatement*;
     using partialequation_ptr = PartialEquation*;
     using partialboundary_ptr = PartialBoundary*;
     using watchstatement_ptr = WatchStatement*;
-    using watch_list = WatchList;
+    using watch_list = WatchVector;
     using mutexlock_ptr = MutexLock*;
     using mutexunlock_ptr = MutexUnlock*;
     using reset_ptr = Reset*;
     using sens_ptr = Sens*;
-    using varname_list = VarNameList;
+    using varname_list = VarNameVector;
     using conserve_ptr = Conserve*;
     using compartment_ptr = Compartment*;
     using ldifuse_ptr = LDifuse*;
@@ -408,30 +408,30 @@ namespace ast {
     using tablestatement_ptr = TableStatement*;
     using nrnsuffix_ptr = NrnSuffix*;
     using nrnuseion_ptr = NrnUseion*;
-    using readionvar_list = ReadIonVarList;
-    using writeionvar_list = WriteIonVarList;
+    using readionvar_list = ReadIonVarVector;
+    using writeionvar_list = WriteIonVarVector;
     using nrnnonspecific_ptr = NrnNonspecific*;
-    using nonspecurvar_list = NonspeCurVarList;
+    using nonspecurvar_list = NonspeCurVarVector;
     using nrnelctrodecurrent_ptr = NrnElctrodeCurrent*;
-    using electrodecurvar_list = ElectrodeCurVarList;
+    using electrodecurvar_list = ElectrodeCurVarVector;
     using nrnsection_ptr = NrnSection*;
-    using sectionvar_list = SectionVarList;
+    using sectionvar_list = SectionVarVector;
     using nrnrange_ptr = NrnRange*;
-    using rangevar_list = RangeVarList;
+    using rangevar_list = RangeVarVector;
     using nrnglobal_ptr = NrnGlobal*;
-    using globalvar_list = GlobalVarList;
+    using globalvar_list = GlobalVarVector;
     using nrnpointer_ptr = NrnPointer*;
-    using pointervar_list = PointerVarList;
+    using pointervar_list = PointerVarVector;
     using nrnbbcoreptr_ptr = NrnBbcorePtr*;
-    using bbcorepointervar_list = BbcorePointerVarList;
+    using bbcorepointervar_list = BbcorePointerVarVector;
     using nrnexternal_ptr = NrnExternal*;
-    using externvar_list = ExternVarList;
+    using externvar_list = ExternVarVector;
     using nrnthreadsafe_ptr = NrnThreadSafe*;
-    using threadsafevar_list = ThreadsafeVarList;
+    using threadsafevar_list = ThreadsafeVarVector;
     using verbatim_ptr = Verbatim*;
     using comment_ptr = Comment*;
     using program_ptr = Program*;
-    using block_list = BlockList;
+    using block_list = BlockVector;
 
     #include <visitors/visitor.hpp>
 
@@ -886,11 +886,11 @@ namespace ast {
     class ParamBlock : public Block {
         public:
             /* member variables */
-            ParamAssignList statements;
+            ParamAssignVector statements;
             void* symtab = nullptr;
 
             /* constructors */
-            ParamBlock(ParamAssignList statements);
+            ParamBlock(ParamAssignVector statements);
             ParamBlock(const ParamBlock& obj);
 
             std::string getName() { return getType(); }
@@ -906,11 +906,11 @@ namespace ast {
     class StepBlock : public Block {
         public:
             /* member variables */
-            SteppedList statements;
+            SteppedVector statements;
             void* symtab = nullptr;
 
             /* constructors */
-            StepBlock(SteppedList statements);
+            StepBlock(SteppedVector statements);
             StepBlock(const StepBlock& obj);
 
             std::string getName() { return getType(); }
@@ -926,11 +926,11 @@ namespace ast {
     class IndependentBlock : public Block {
         public:
             /* member variables */
-            IndependentDefList definitions;
+            IndependentDefVector definitions;
             void* symtab = nullptr;
 
             /* constructors */
-            IndependentBlock(IndependentDefList definitions);
+            IndependentBlock(IndependentDefVector definitions);
             IndependentBlock(const IndependentBlock& obj);
 
             std::string getName() { return getType(); }
@@ -946,11 +946,11 @@ namespace ast {
     class DependentBlock : public Block {
         public:
             /* member variables */
-            DependentDefList definitions;
+            DependentDefVector definitions;
             void* symtab = nullptr;
 
             /* constructors */
-            DependentBlock(DependentDefList definitions);
+            DependentBlock(DependentDefVector definitions);
             DependentBlock(const DependentBlock& obj);
 
             std::string getName() { return getType(); }
@@ -966,11 +966,11 @@ namespace ast {
     class StateBlock : public Block {
         public:
             /* member variables */
-            DependentDefList definitions;
+            DependentDefVector definitions;
             void* symtab = nullptr;
 
             /* constructors */
-            StateBlock(DependentDefList definitions);
+            StateBlock(DependentDefVector definitions);
             StateBlock(const StateBlock& obj);
 
             std::string getName() { return getType(); }
@@ -1066,12 +1066,12 @@ namespace ast {
     class StatementBlock : public Block {
         public:
             /* member variables */
-            StatementList statements;
+            StatementVector statements;
             std::shared_ptr<ModToken> token;
             void* symtab = nullptr;
 
             /* constructors */
-            StatementBlock(StatementList statements);
+            StatementBlock(StatementVector statements);
             StatementBlock(const StatementBlock& obj);
 
             std::string getName() { return getType(); }
@@ -1114,13 +1114,13 @@ namespace ast {
         public:
             /* member variables */
             std::shared_ptr<Name> name;
-            NameList solvefor;
+            NameVector solvefor;
             std::shared_ptr<StatementBlock> statementblock;
             std::shared_ptr<ModToken> token;
             void* symtab = nullptr;
 
             /* constructors */
-            LinearBlock(Name* name, NameList solvefor, StatementBlock* statementblock);
+            LinearBlock(Name* name, NameVector solvefor, StatementBlock* statementblock);
             LinearBlock(const LinearBlock& obj);
 
             virtual std::string getName() { return name->getName(); }
@@ -1139,13 +1139,13 @@ namespace ast {
         public:
             /* member variables */
             std::shared_ptr<Name> name;
-            NameList solvefor;
+            NameVector solvefor;
             std::shared_ptr<StatementBlock> statementblock;
             std::shared_ptr<ModToken> token;
             void* symtab = nullptr;
 
             /* constructors */
-            NonLinearBlock(Name* name, NameList solvefor, StatementBlock* statementblock);
+            NonLinearBlock(Name* name, NameVector solvefor, StatementBlock* statementblock);
             NonLinearBlock(const NonLinearBlock& obj);
 
             virtual std::string getName() { return name->getName(); }
@@ -1212,13 +1212,13 @@ namespace ast {
         public:
             /* member variables */
             std::shared_ptr<Name> name;
-            ArgumentList arguments;
+            ArgumentVector arguments;
             std::shared_ptr<Unit> unit;
             std::shared_ptr<ModToken> token;
             void* symtab = nullptr;
 
             /* constructors */
-            FunctionTableBlock(Name* name, ArgumentList arguments, Unit* unit);
+            FunctionTableBlock(Name* name, ArgumentVector arguments, Unit* unit);
             FunctionTableBlock(const FunctionTableBlock& obj);
 
             virtual std::string getName() { return name->getName(); }
@@ -1237,14 +1237,14 @@ namespace ast {
         public:
             /* member variables */
             std::shared_ptr<Name> name;
-            ArgumentList arguments;
+            ArgumentVector arguments;
             std::shared_ptr<Unit> unit;
             std::shared_ptr<StatementBlock> statementblock;
             std::shared_ptr<ModToken> token;
             void* symtab = nullptr;
 
             /* constructors */
-            FunctionBlock(Name* name, ArgumentList arguments, Unit* unit, StatementBlock* statementblock);
+            FunctionBlock(Name* name, ArgumentVector arguments, Unit* unit, StatementBlock* statementblock);
             FunctionBlock(const FunctionBlock& obj);
 
             virtual std::string getName() { return name->getName(); }
@@ -1263,14 +1263,14 @@ namespace ast {
         public:
             /* member variables */
             std::shared_ptr<Name> name;
-            ArgumentList arguments;
+            ArgumentVector arguments;
             std::shared_ptr<Unit> unit;
             std::shared_ptr<StatementBlock> statementblock;
             std::shared_ptr<ModToken> token;
             void* symtab = nullptr;
 
             /* constructors */
-            ProcedureBlock(Name* name, ArgumentList arguments, Unit* unit, StatementBlock* statementblock);
+            ProcedureBlock(Name* name, ArgumentVector arguments, Unit* unit, StatementBlock* statementblock);
             ProcedureBlock(const ProcedureBlock& obj);
 
             virtual std::string getName() { return name->getName(); }
@@ -1288,12 +1288,12 @@ namespace ast {
     class NetReceiveBlock : public Block {
         public:
             /* member variables */
-            ArgumentList arguments;
+            ArgumentVector arguments;
             std::shared_ptr<StatementBlock> statementblock;
             void* symtab = nullptr;
 
             /* constructors */
-            NetReceiveBlock(ArgumentList arguments, StatementBlock* statementblock);
+            NetReceiveBlock(ArgumentVector arguments, StatementBlock* statementblock);
             NetReceiveBlock(const NetReceiveBlock& obj);
 
             std::string getName() { return getType(); }
@@ -1432,12 +1432,12 @@ namespace ast {
     class ForNetcon : public Block {
         public:
             /* member variables */
-            ArgumentList arguments;
+            ArgumentVector arguments;
             std::shared_ptr<StatementBlock> statementblock;
             void* symtab = nullptr;
 
             /* constructors */
-            ForNetcon(ArgumentList arguments, StatementBlock* statementblock);
+            ForNetcon(ArgumentVector arguments, StatementBlock* statementblock);
             ForNetcon(const ForNetcon& obj);
 
             std::string getName() { return getType(); }
@@ -1454,13 +1454,13 @@ namespace ast {
         public:
             /* member variables */
             std::shared_ptr<Name> name;
-            NameList solvefor;
+            NameVector solvefor;
             std::shared_ptr<StatementBlock> statementblock;
             std::shared_ptr<ModToken> token;
             void* symtab = nullptr;
 
             /* constructors */
-            KineticBlock(Name* name, NameList solvefor, StatementBlock* statementblock);
+            KineticBlock(Name* name, NameVector solvefor, StatementBlock* statementblock);
             KineticBlock(const KineticBlock& obj);
 
             virtual std::string getName() { return name->getName(); }
@@ -1478,11 +1478,11 @@ namespace ast {
     class MatchBlock : public Block {
         public:
             /* member variables */
-            MatchList matchs;
+            MatchVector matchs;
             void* symtab = nullptr;
 
             /* constructors */
-            MatchBlock(MatchList matchs);
+            MatchBlock(MatchVector matchs);
             MatchBlock(const MatchBlock& obj);
 
             std::string getName() { return getType(); }
@@ -1498,11 +1498,11 @@ namespace ast {
     class UnitBlock : public Block {
         public:
             /* member variables */
-            ExpressionList definitions;
+            ExpressionVector definitions;
             void* symtab = nullptr;
 
             /* constructors */
-            UnitBlock(ExpressionList definitions);
+            UnitBlock(ExpressionVector definitions);
             UnitBlock(const UnitBlock& obj);
 
             std::string getName() { return getType(); }
@@ -1518,11 +1518,11 @@ namespace ast {
     class ConstantBlock : public Block {
         public:
             /* member variables */
-            ConstantStatementList statements;
+            ConstantStatementVector statements;
             void* symtab = nullptr;
 
             /* constructors */
-            ConstantBlock(ConstantStatementList statements);
+            ConstantBlock(ConstantStatementVector statements);
             ConstantBlock(const ConstantBlock& obj);
 
             std::string getName() { return getType(); }
@@ -1776,9 +1776,9 @@ namespace ast {
         public:
             /* member variables */
             std::shared_ptr<Name> name;
-            ExpressionList arguments;
+            ExpressionVector arguments;
             /* constructors */
-            FunctionCall(Name* name, ExpressionList arguments);
+            FunctionCall(Name* name, ExpressionVector arguments);
             FunctionCall(const FunctionCall& obj);
 
             virtual void visitChildren(Visitor* v);
@@ -1944,9 +1944,9 @@ namespace ast {
     class LocalListStatement : public Statement {
         public:
             /* member variables */
-            LocalVariableList variables;
+            LocalVariableVector variables;
             /* constructors */
-            LocalListStatement(LocalVariableList variables);
+            LocalListStatement(LocalVariableVector variables);
             LocalListStatement(const LocalListStatement& obj);
 
             virtual void visitChildren(Visitor* v);
@@ -2026,10 +2026,10 @@ namespace ast {
         public:
             /* member variables */
             std::shared_ptr<Name> name;
-            NumberList values;
+            NumberVector values;
             std::shared_ptr<Unit> unit;
             /* constructors */
-            Stepped(Name* name, NumberList values, Unit* unit);
+            Stepped(Name* name, NumberVector values, Unit* unit);
             Stepped(const Stepped& obj);
 
             virtual void visitChildren(Visitor* v);
@@ -2086,10 +2086,10 @@ namespace ast {
     class PlotDeclaration : public Statement {
         public:
             /* member variables */
-            PlotVariableList pvlist;
+            PlotVariableVector pvlist;
             std::shared_ptr<PlotVariable> name;
             /* constructors */
-            PlotDeclaration(PlotVariableList pvlist, PlotVariable* name);
+            PlotDeclaration(PlotVariableVector pvlist, PlotVariable* name);
             PlotDeclaration(const PlotDeclaration& obj);
 
             virtual void visitChildren(Visitor* v);
@@ -2201,10 +2201,10 @@ namespace ast {
             /* member variables */
             std::shared_ptr<Expression> condition;
             std::shared_ptr<StatementBlock> statementblock;
-            ElseIfStatementList elseifs;
+            ElseIfStatementVector elseifs;
             std::shared_ptr<ElseStatement> elses;
             /* constructors */
-            IfStatement(Expression* condition, StatementBlock* statementblock, ElseIfStatementList elseifs, ElseStatement* elses);
+            IfStatement(Expression* condition, StatementBlock* statementblock, ElseIfStatementVector elseifs, ElseStatement* elses);
             IfStatement(const IfStatement& obj);
 
             virtual void visitChildren(Visitor* v);
@@ -2288,9 +2288,9 @@ namespace ast {
     class WatchStatement : public Statement {
         public:
             /* member variables */
-            WatchList statements;
+            WatchVector statements;
             /* constructors */
-            WatchStatement(WatchList statements);
+            WatchStatement(WatchVector statements);
             WatchStatement(const WatchStatement& obj);
 
             void addWatch(Watch *s) {
@@ -2333,9 +2333,9 @@ namespace ast {
     class Sens : public Statement {
         public:
             /* member variables */
-            VarNameList senslist;
+            VarNameVector senslist;
             /* constructors */
-            Sens(VarNameList senslist);
+            Sens(VarNameVector senslist);
             Sens(const Sens& obj);
 
             virtual void visitChildren(Visitor* v);
@@ -2366,9 +2366,9 @@ namespace ast {
             /* member variables */
             std::shared_ptr<Name> name;
             std::shared_ptr<Expression> expression;
-            NameList names;
+            NameVector names;
             /* constructors */
-            Compartment(Name* name, Expression* expression, NameList names);
+            Compartment(Name* name, Expression* expression, NameVector names);
             Compartment(const Compartment& obj);
 
             virtual void visitChildren(Visitor* v);
@@ -2383,9 +2383,9 @@ namespace ast {
             /* member variables */
             std::shared_ptr<Name> name;
             std::shared_ptr<Expression> expression;
-            NameList names;
+            NameVector names;
             /* constructors */
-            LDifuse(Name* name, Expression* expression, NameList names);
+            LDifuse(Name* name, Expression* expression, NameVector names);
             LDifuse(const LDifuse& obj);
 
             virtual void visitChildren(Visitor* v);
@@ -2466,13 +2466,13 @@ namespace ast {
     class TableStatement : public Statement {
         public:
             /* member variables */
-            NameList tablst;
-            NameList dependlst;
+            NameVector tablst;
+            NameVector dependlst;
             std::shared_ptr<Expression> from;
             std::shared_ptr<Expression> to;
             std::shared_ptr<Integer> with;
             /* constructors */
-            TableStatement(NameList tablst, NameList dependlst, Expression* from, Expression* to, Integer* with);
+            TableStatement(NameVector tablst, NameVector dependlst, Expression* from, Expression* to, Integer* with);
             TableStatement(const TableStatement& obj);
 
             virtual void visitChildren(Visitor* v);
@@ -2502,11 +2502,11 @@ namespace ast {
         public:
             /* member variables */
             std::shared_ptr<Name> name;
-            ReadIonVarList readlist;
-            WriteIonVarList writelist;
+            ReadIonVarVector readlist;
+            WriteIonVarVector writelist;
             std::shared_ptr<Valence> valence;
             /* constructors */
-            NrnUseion(Name* name, ReadIonVarList readlist, WriteIonVarList writelist, Valence* valence);
+            NrnUseion(Name* name, ReadIonVarVector readlist, WriteIonVarVector writelist, Valence* valence);
             NrnUseion(const NrnUseion& obj);
 
             virtual void visitChildren(Visitor* v);
@@ -2519,9 +2519,9 @@ namespace ast {
     class NrnNonspecific : public Statement {
         public:
             /* member variables */
-            NonspeCurVarList currents;
+            NonspeCurVarVector currents;
             /* constructors */
-            NrnNonspecific(NonspeCurVarList currents);
+            NrnNonspecific(NonspeCurVarVector currents);
             NrnNonspecific(const NrnNonspecific& obj);
 
             virtual void visitChildren(Visitor* v);
@@ -2534,9 +2534,9 @@ namespace ast {
     class NrnElctrodeCurrent : public Statement {
         public:
             /* member variables */
-            ElectrodeCurVarList ecurrents;
+            ElectrodeCurVarVector ecurrents;
             /* constructors */
-            NrnElctrodeCurrent(ElectrodeCurVarList ecurrents);
+            NrnElctrodeCurrent(ElectrodeCurVarVector ecurrents);
             NrnElctrodeCurrent(const NrnElctrodeCurrent& obj);
 
             virtual void visitChildren(Visitor* v);
@@ -2549,9 +2549,9 @@ namespace ast {
     class NrnSection : public Statement {
         public:
             /* member variables */
-            SectionVarList sections;
+            SectionVarVector sections;
             /* constructors */
-            NrnSection(SectionVarList sections);
+            NrnSection(SectionVarVector sections);
             NrnSection(const NrnSection& obj);
 
             virtual void visitChildren(Visitor* v);
@@ -2564,9 +2564,9 @@ namespace ast {
     class NrnRange : public Statement {
         public:
             /* member variables */
-            RangeVarList range_vars;
+            RangeVarVector range_vars;
             /* constructors */
-            NrnRange(RangeVarList range_vars);
+            NrnRange(RangeVarVector range_vars);
             NrnRange(const NrnRange& obj);
 
             virtual void visitChildren(Visitor* v);
@@ -2579,9 +2579,9 @@ namespace ast {
     class NrnGlobal : public Statement {
         public:
             /* member variables */
-            GlobalVarList global_vars;
+            GlobalVarVector global_vars;
             /* constructors */
-            NrnGlobal(GlobalVarList global_vars);
+            NrnGlobal(GlobalVarVector global_vars);
             NrnGlobal(const NrnGlobal& obj);
 
             virtual void visitChildren(Visitor* v);
@@ -2594,9 +2594,9 @@ namespace ast {
     class NrnPointer : public Statement {
         public:
             /* member variables */
-            PointerVarList pointers;
+            PointerVarVector pointers;
             /* constructors */
-            NrnPointer(PointerVarList pointers);
+            NrnPointer(PointerVarVector pointers);
             NrnPointer(const NrnPointer& obj);
 
             virtual void visitChildren(Visitor* v);
@@ -2609,9 +2609,9 @@ namespace ast {
     class NrnBbcorePtr : public Statement {
         public:
             /* member variables */
-            BbcorePointerVarList bbcore_pointers;
+            BbcorePointerVarVector bbcore_pointers;
             /* constructors */
-            NrnBbcorePtr(BbcorePointerVarList bbcore_pointers);
+            NrnBbcorePtr(BbcorePointerVarVector bbcore_pointers);
             NrnBbcorePtr(const NrnBbcorePtr& obj);
 
             virtual void visitChildren(Visitor* v);
@@ -2624,9 +2624,9 @@ namespace ast {
     class NrnExternal : public Statement {
         public:
             /* member variables */
-            ExternVarList externals;
+            ExternVarVector externals;
             /* constructors */
-            NrnExternal(ExternVarList externals);
+            NrnExternal(ExternVarVector externals);
             NrnExternal(const NrnExternal& obj);
 
             virtual void visitChildren(Visitor* v);
@@ -2639,9 +2639,9 @@ namespace ast {
     class NrnThreadSafe : public Statement {
         public:
             /* member variables */
-            ThreadsafeVarList threadsafe;
+            ThreadsafeVarVector threadsafe;
             /* constructors */
-            NrnThreadSafe(ThreadsafeVarList threadsafe);
+            NrnThreadSafe(ThreadsafeVarVector threadsafe);
             NrnThreadSafe(const NrnThreadSafe& obj);
 
             virtual void visitChildren(Visitor* v);
@@ -2684,12 +2684,12 @@ namespace ast {
     class Program : public  AST {
         public:
             /* member variables */
-            StatementList statements;
-            BlockList blocks;
+            StatementVector statements;
+            BlockVector blocks;
             void* symtab = nullptr;
 
             /* constructors */
-            Program(StatementList statements, BlockList blocks);
+            Program(StatementVector statements, BlockVector blocks);
             Program(const Program& obj);
 
             void addStatement(Statement *s) {
