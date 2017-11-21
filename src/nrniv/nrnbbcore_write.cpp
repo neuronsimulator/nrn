@@ -80,6 +80,7 @@ nt->tml->pdata is not cache_efficient
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <nrnran123.h> // globalindex written to globals.dat
 #include <section.h>
 #include <parse.h>
 #include <nrnmpi.h>
@@ -856,6 +857,7 @@ static void write_globals(const char* fname) {
   }
   fprintf(f, "0 0\n"); 
   fprintf(f, "secondorder %d\n", secondorder);
+  fprintf(f, "Random123_globalindex %d\n", nrnran123_get_globalindex());
 
   fclose(f);
 }
