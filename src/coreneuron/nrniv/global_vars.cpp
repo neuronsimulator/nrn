@@ -4,6 +4,7 @@
 #include <string>
 #include <algorithm>
 
+#include "coreneuron/utils/randoms/nrnran123.h"
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/nrnoc/membfunc.h"
@@ -83,10 +84,12 @@ void set_globals(const char* path) {
         }
     }
 
-    if (fgets(line, 256, f) != NULL) {
+    while (fgets(line, 256, f)) {
         if (sscanf(line, "%s %d", name, &n) == 2) {
             if (strcmp(name, "secondorder") == 0) {
                 secondorder = n;
+            } else if (strcmp(name, "Random123_globalindex") == 0) {
+                nrnran123_set_globalindex((uint32_t)n);
             }
         }
     }
