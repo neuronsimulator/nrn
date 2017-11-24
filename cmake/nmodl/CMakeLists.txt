@@ -35,6 +35,7 @@ set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/version/version.cpp.in
                ${CMAKE_CURRENT_BINARY_DIR}/version.cpp @ONLY)
 
+add_subdirectory(src/language)
 add_subdirectory(src/lexer)
 add_subdirectory(src/parser)
 add_subdirectory(test)
