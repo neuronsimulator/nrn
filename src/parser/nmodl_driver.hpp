@@ -50,18 +50,22 @@ namespace nmodl {
         /// enable debug output in the bison parser
         bool trace_parser = false;
 
-      public:
         /// pointer to the lexer instance being used
         Lexer* lexer = nullptr;
 
         /// pointer to the parser instance being used
         Parser* parser = nullptr;
 
-        /// root of the ast
-        std::shared_ptr<ast::Program> astRoot = nullptr;
+        /// print messages from lexer/parser
+        bool verbose = false;
+
+      public:
 
         /// file or input stream name (used by scanner for position), see todo
         std::string streamname;
+
+        /// root of the ast
+        std::shared_ptr<ast::Program> astRoot = nullptr;
 
         Driver(){};
         Driver(bool strace, bool ptrace);
@@ -77,6 +81,18 @@ namespace nmodl {
 
         bool parse_string(const std::string& input);
         bool parse_file(const std::string& filename);
+
+        void set_verbose(bool b) {
+            verbose = b;
+        }
+
+        bool is_verbose() const {
+            return verbose;
+        }
+
+        std::shared_ptr<ast::Program> ast() const {
+            return astRoot;
+        }
 
     };
 

@@ -8,9 +8,9 @@ AST tree nodes.
 
 import sys
 import yaml
-from ast import Node
 from argument import Argument
-from node_types import *
+from nodes import Node
+from node_info import *
 
 
 class LanguageParser:

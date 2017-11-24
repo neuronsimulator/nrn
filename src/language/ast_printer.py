@@ -1,6 +1,6 @@
 import itertools
-from base_printer import *
-from node_types import ORDER_VAR_NAME
+from printer import *
+from node_info import ORDER_VAR_NAME
 
 
 class AstDeclarationPrinter(DeclarationPrinter):
