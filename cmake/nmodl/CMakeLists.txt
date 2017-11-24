@@ -38,6 +38,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/version/version.cpp.in
 add_subdirectory(src/language)
 add_subdirectory(src/lexer)
 add_subdirectory(src/parser)
+add_subdirectory(src/visitors)
 add_subdirectory(test)
 
 include (CTest)
@@ -48,7 +49,7 @@ add_executable(nocmodl
                src/main.cpp
                ${CMAKE_CURRENT_BINARY_DIR}/version.cpp)
 
-target_link_libraries(nocmodl lexer)
+target_link_libraries(nocmodl lexer visitor)
 
 add_custom_target(clangformat
                   COMMAND

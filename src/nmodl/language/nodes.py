@@ -6,7 +6,7 @@ is represented by ChildNode.
 """
 
 from argument import Argument
-from node_types import *
+from node_info import *
 
 
 class BaseNode:

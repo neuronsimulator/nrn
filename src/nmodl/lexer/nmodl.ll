@@ -364,11 +364,13 @@ ELSE                    {
                             std::string str(yytext);
                             stringutils::trim(str);
 
-                            if(str.length()) {
-                                stringutils::trimnewline(str);
-                                std::cout << "LINE "<< yylineno << ": " << str << std::endl;
-                            } else {
-                                std::cout << "LINE " << yylineno << ": " << std::endl;
+                            if (driver.is_verbose()) {
+                                if(str.length()) {
+                                    stringutils::trimnewline(str);
+                                    std::cout << "LINE "<< yylineno << ": " << str << std::endl;
+                                } else {
+                                    std::cout << "LINE " << yylineno << ": " << std::endl;
+                                }
                             }
 
                             /** Pass back entire string except newline charactear */

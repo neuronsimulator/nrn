@@ -22,3 +22,13 @@ AbstractVisitorPrinter(
     "../visitors/visitor.hpp",
     "Visitor",
     nodes).write()
+
+AstVisitorDeclarationPrinter(
+    "../visitors/astvisitor.hpp",
+    "AstVisitor",
+    nodes).write()
+
+AstVisitorDefinitionPrinter(
+    "../visitors/astvisitor.cpp",
+    "AstVisitor",
+    nodes).write()
