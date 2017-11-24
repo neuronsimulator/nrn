@@ -236,7 +236,7 @@
 %type   <ast::statement_ptr>                astmt
 %type   <ast::statementblock_ptr>           stmtlist
 %type   <ast::localliststatement_ptr>       locallist
-%type   <ast::localvariable_list>           locallist1
+%type   <ast::localvar_list>                locallist1
 %type   <ast::varname_ptr>                  varname
 %type   <ast::expression_list>              exprlist
 %type   <ast::define_ptr>                   define1
@@ -275,7 +275,7 @@
 %type   <ast::watch_ptr>                    watch1
 %type   <ast::fornetcon_ptr>                fornetcon
 %type   <ast::plotdeclaration_ptr>          plotdecl
-%type   <ast::plotvariable_list>            pvlist
+%type   <ast::plotvar_list>                 pvlist
 %type   <ast::constantblock_ptr>            constblk
 %type   <ast::constantstatement_list>       conststmt
 %type   <ast::matchblock_ptr>               matchblk
@@ -305,7 +305,7 @@
 %type   <ast::argument_list>                arglist1
 %type   <ast::integer_ptr>                  locoptarray
 %type   <ast::neuronblock_ptr>              neuronblk
-%type   <ast::nrnuseion_ptr>                nrnuse
+%type   <ast::useion_ptr>                   nrnuse
 %type   <ast::statement_list>               nrnstmt
 %type   <ast::readionvar_list>              nrnionrlist
 %type   <ast::writeionvar_list>             nrnionwlist
@@ -741,7 +741,7 @@ stateblk        :   STATE  "{" depbody "}"
 
 plotdecl        :   PLOT pvlist VS name optindex
                     {
-                        $$ = new ast::PlotDeclaration($2, new ast::PlotVariable($4,$5));
+                        $$ = new ast::PlotDeclaration($2, new ast::PlotVar($4,$5));
                     }
                 |   PLOT error
                     {
@@ -752,15 +752,15 @@ plotdecl        :   PLOT pvlist VS name optindex
 
 pvlist          :   name optindex
                     {
-                        $$ = ast::PlotVariableVector();
-                        auto variable = new ast::PlotVariable($1, $2);
-                        $$.push_back(std::shared_ptr<ast::PlotVariable>(variable));
+                        $$ = ast::PlotVarVector();
+                        auto variable = new ast::PlotVar($1, $2);
+                        $$.push_back(std::shared_ptr<ast::PlotVar>(variable));
                     }
                 |   pvlist "," name optindex
                     {
                         $$ = $1;
-                        auto variable = new ast::PlotVariable($3, $4);
-                        $$.push_back(std::shared_ptr<ast::PlotVariable>(variable));
+                        auto variable = new ast::PlotVar($3, $4);
+                        $$.push_back(std::shared_ptr<ast::PlotVar>(variable));
                     }
                 ;
 
@@ -855,23 +855,23 @@ locallist       :   LOCAL locallist1
 
 locallist1      :   NAME locoptarray
                     {
-                        $$ = ast::LocalVariableVector();
+                        $$ = ast::LocalVarVector();
                         if($2) {
-                            auto variable = new ast::LocalVariable(new ast::IndexedName($1, $2));
-                            $$.push_back(std::shared_ptr<ast::LocalVariable>(variable));
+                            auto variable = new ast::LocalVar(new ast::IndexedName($1, $2));
+                            $$.push_back(std::shared_ptr<ast::LocalVar>(variable));
                         } else {
-                            auto variable = new ast::LocalVariable($1);
-                            $$.push_back(std::shared_ptr<ast::LocalVariable>(variable));
+                            auto variable = new ast::LocalVar($1);
+                            $$.push_back(std::shared_ptr<ast::LocalVar>(variable));
                         }
                     }
                 |   locallist1 "," NAME locoptarray
                     {
                         if($4) {
-                            auto variable = new ast::LocalVariable(new ast::IndexedName($3, $4));
-                            $1.push_back(std::shared_ptr<ast::LocalVariable>(variable));
+                            auto variable = new ast::LocalVar(new ast::IndexedName($3, $4));
+                            $1.push_back(std::shared_ptr<ast::LocalVar>(variable));
                         } else {
-                            auto variable = new ast::LocalVariable($3);
-                            $1.push_back(std::shared_ptr<ast::LocalVariable>(variable));
+                            auto variable = new ast::LocalVar($3);
+                            $1.push_back(std::shared_ptr<ast::LocalVar>(variable));
                         }
                         $$ = $1;
                     }
@@ -1862,7 +1862,7 @@ neuronblk       :   NEURON OPEN_BRACE nrnstmt CLOSE_BRACE
 nrnstmt         :   { $$ = ast::StatementVector(); }
                 |   nrnstmt SUFFIX NAME
                     {
-                        auto statement = new ast::NrnSuffix($2, $3);
+                        auto statement = new ast::Suffix($2, $3);
                         $1.push_back(std::shared_ptr<ast::Statement>(statement));
                         $$ = $1;
                     }
@@ -1873,55 +1873,55 @@ nrnstmt         :   { $$ = ast::StatementVector(); }
                     }
                 |   nrnstmt NONSPECIFIC nrnonspeclist
                     {
-                        auto statement = new ast::NrnNonspecific($3);
+                        auto statement = new ast::Nonspecific($3);
                         $1.push_back(std::shared_ptr<ast::Statement>(statement));
                         $$ = $1;
                     }
                 |   nrnstmt ELECTRODE_CURRENT nrneclist
                     {
-                        auto statement = new ast::NrnElctrodeCurrent($3);
+                        auto statement = new ast::ElctrodeCurrent($3);
                         $1.push_back(std::shared_ptr<ast::Statement>(statement));
                         $$ = $1;
                     }
                 |   nrnstmt SECTION nrnseclist
                     {
-                        auto statement = new ast::NrnSection($3);
+                        auto statement = new ast::Section($3);
                         $1.push_back(std::shared_ptr<ast::Statement>(statement));
                         $$ = $1;
                     }
                 |   nrnstmt RANGE nrnrangelist
                     {
-                        auto statement = new ast::NrnRange($3);
+                        auto statement = new ast::Range($3);
                         $1.push_back(std::shared_ptr<ast::Statement>(statement));
                         $$ = $1;
                     }
                 |   nrnstmt GLOBAL nrnglobalist
                     {
-                        auto statement = new ast::NrnGlobal($3);
+                        auto statement = new ast::Global($3);
                         $1.push_back(std::shared_ptr<ast::Statement>(statement));
                         $$ = $1;
                     }
                 |   nrnstmt POINTER nrnptrlist
                     {
-                        auto statement = new ast::NrnPointer($3);
+                        auto statement = new ast::Pointer($3);
                         $1.push_back(std::shared_ptr<ast::Statement>(statement));
                         $$ = $1;
                     }
                 |   nrnstmt BBCOREPOINTER nrnbbptrlist
                     {
-                        auto statement = new ast::NrnBbcorePtr($3);
+                        auto statement = new ast::BbcorePtr($3);
                         $1.push_back(std::shared_ptr<ast::Statement>(statement));
                         $$ = $1;
                     }
                 |   nrnstmt EXTERNAL nrnextlist
                     {
-                        auto statement = new ast::NrnExternal($3);
+                        auto statement = new ast::External($3);
                         $1.push_back(std::shared_ptr<ast::Statement>(statement));
                         $$ = $1;
                     }
                 |   nrnstmt THREADSAFE opthsafelist
                     {
-                        auto statement = new ast::NrnThreadSafe($3);
+                        auto statement = new ast::ThreadSafe($3);
                         $1.push_back(std::shared_ptr<ast::Statement>(statement));
                         $$ = $1;
                     }
@@ -1930,15 +1930,15 @@ nrnstmt         :   { $$ = ast::StatementVector(); }
 
 nrnuse          :   USEION NAME READ nrnionrlist valence
                     {
-                        $$ = new ast::NrnUseion($2, $4, ast::WriteIonVarVector(), $5);
+                        $$ = new ast::Useion($2, $4, ast::WriteIonVarVector(), $5);
                     }
                 |   USEION NAME WRITE nrnionwlist valence
                     {
-                        $$ = new ast::NrnUseion($2, ast::ReadIonVarVector(), $4, $5);
+                        $$ = new ast::Useion($2, ast::ReadIonVarVector(), $4, $5);
                     }
                 |   USEION NAME READ nrnionrlist WRITE nrnionwlist valence
                     {
-                        $$ = new ast::NrnUseion($2, $4, $6, $7);
+                        $$ = new ast::Useion($2, $4, $6, $7);
                     }
                 |   USEION error
                     {

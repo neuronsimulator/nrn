@@ -11,6 +11,11 @@ set(NMODL_DRIVER_FILES
     ${PROJECT_SOURCE_DIR}/src/parser/nmodl_driver.cpp
 )
 
+set_source_files_properties(
+    ${PROJECT_SOURCE_DIR}/src/ast/ast.cpp
+    PROPERTIES GENERATED TRUE
+)
+
 # command to generate nmodl parser
 add_custom_command (
     COMMAND ${BISON_EXECUTABLE}
@@ -22,6 +27,7 @@ add_custom_command (
     OUTPUT ${PROJECT_SOURCE_DIR}/src/parser/position.hh
     OUTPUT ${PROJECT_SOURCE_DIR}/src/parser/stack.hh
     DEPENDS ${PROJECT_SOURCE_DIR}/src/parser/nmodl.yy
+    DEPENDS pyastgen
     COMMENT "-- NOCMODL : GENERATING NMODL_CORE PARSER WITH BISON! --"
 )
 
@@ -34,7 +40,6 @@ add_custom_command (
     OUTPUT ${PROJECT_SOURCE_DIR}/src/parser/verbatim_parser.hpp
     COMMENT "-- NOCMODL : GENERATING VERBATIM PARSER WITH BISON! --"
 )
-
 
 # command to generate nmodl lexer
 add_custom_command(
