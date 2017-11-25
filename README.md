@@ -40,6 +40,13 @@ If flex / bison is installed in non-standard location then set `PATH` env variab
  cmake .. -DCMAKE_PREFIX_PATH="/usr/local/opt/bison/;/usr/local/opt/flex"
  ```
 
+ On Lugano system we have to use newer version using:
+
+ ```
+ export PATH=/gpfs/bbp.cscs.ch/project/proj16/software/viz/hpc/bison-3.0.4-/bin:$PATH
+ export PATH=/gpfs/bbp.cscs.ch/project/proj16/software/viz/hpc/flex-2.6.4/bin:$PATH
+ ```
+
  #### Running NOCMODL
 
  You can independently run lexer, parser as:
@@ -72,4 +79,10 @@ Test memory leaks using :
 
 ```
 valgrind --leak-check=full --track-origins=yes  ./bin/nocmodl_lexer
+```
+
+Or using CTest as:
+
+```
+ctest -T memcheck
 ```
