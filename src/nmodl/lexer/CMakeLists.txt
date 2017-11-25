@@ -1,3 +1,6 @@
+#=============================================================================
+# Various project components and their source files
+#=============================================================================
 set (BISON_GENERATED_SOURCE_FILES
     ${PROJECT_SOURCE_DIR}/src/parser/nmodl_parser.cpp
     ${PROJECT_SOURCE_DIR}/src/parser/verbatim_parser.cpp
@@ -16,6 +19,18 @@ set_source_files_properties(
     PROPERTIES GENERATED TRUE
 )
 
+set(LEXER_SOURCE_FILES
+    token_mapping.cpp
+    nmodl_utils.cpp
+    modtoken.cpp
+    nmodl_base_lexer.cpp
+    verbatim_lexer.cpp
+    ${NMODL_DRIVER_FILES}
+)
+
+#=============================================================================
+# Lexer & Parser commands
+#=============================================================================
 # command to generate nmodl parser
 add_custom_command (
     COMMAND ${BISON_EXECUTABLE}
@@ -64,15 +79,9 @@ add_custom_command(
     COMMENT "-- NOCMODL : GENERATING VERBATIM LEXER WITH FLEX! --"
 )
 
-set(LEXER_SOURCE_FILES
-    token_mapping.cpp
-    nmodl_utils.cpp
-    modtoken.cpp
-    nmodl_base_lexer.cpp
-    verbatim_lexer.cpp
-	${NMODL_DRIVER_FILES}
-)
-
+#=============================================================================
+# Libraries & executables
+#=============================================================================
 add_library(lexer
             STATIC
             ${LEXER_SOURCE_FILES}

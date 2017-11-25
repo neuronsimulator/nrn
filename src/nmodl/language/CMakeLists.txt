@@ -1,4 +1,6 @@
-# generate AST/Visitor classes from language definition
+#=============================================================================
+# Command to generate AST/Visitor classes from language definition
+#=============================================================================
 add_custom_command (
     COMMAND ${PYTHON_EXECUTABLE}
     ARGS ${PROJECT_SOURCE_DIR}/src/language/code_generator.py
@@ -19,4 +21,7 @@ add_custom_command (
     COMMENT "-- NMODLX : GENERATING AST CLASSES WITH PYTHON GENERATOR! --"
 )
 
+#=============================================================================
+# Target to propogate dependencies properly to lexer
+#=============================================================================
 add_custom_target (pyastgen DEPENDS ${PROJECT_SOURCE_DIR}/src/ast/ast.cpp)
