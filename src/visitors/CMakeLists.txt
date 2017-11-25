@@ -1,5 +1,6 @@
 set(VISITOR_SOURCE_FILES
     ${PROJECT_SOURCE_DIR}/src/visitors/astvisitor.cpp
+    ${PROJECT_SOURCE_DIR}/src/visitors/verbatim_visitor.cpp
 )
 
 set_source_files_properties(

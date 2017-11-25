@@ -23,3 +23,9 @@ std::ostream& operator<<(std::ostream& stream, const ModToken& mt) {
     stream << std::setw(15) << mt.name << " at " << mt.position();
     return stream << " type " << mt.token;
 }
+
+std::string ModToken::to_string() const {
+    std::stringstream ss;
+    ss << *this;
+    return ss.str();
+}

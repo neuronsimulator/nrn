@@ -412,14 +412,14 @@ ELSE                    {
 <COPY_MODE>"ENDVERBATIM" {
                             /** For verbatim block we construct entire block again, resent end
                              * column position to 0 and return token. We do same for comment. */
-                            auto str = "VERBATIM " + std::string(yytext);
+                            auto str = "VERBATIM" + std::string(yytext);
                             BEGIN(INITIAL);
                             reset_end_position();
                             return nmodl::Parser::make_VERBATIM(str, loc);
                          }
 
 <COPY_MODE>"ENDCOMMENT" {
-                            auto str = "COMMENT " + std::string(yytext);
+                            auto str = "COMMENT" + std::string(yytext);
                             BEGIN(INITIAL);
                             reset_end_position();
                             return nmodl::Parser::make_COMMENT(str, loc);

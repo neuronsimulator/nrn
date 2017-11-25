@@ -39,11 +39,9 @@ add_subdirectory(src/language)
 add_subdirectory(src/lexer)
 add_subdirectory(src/parser)
 add_subdirectory(src/visitors)
-add_subdirectory(test)
 
-include (CTest)
-add_test (NAME ModToken COMMAND testmodtoken)
-add_test (NAME Lexer COMMAND testlexer)
+enable_testing()
+add_subdirectory(test)
 
 add_executable(nocmodl
                src/main.cpp
