@@ -3,6 +3,7 @@
 
 #include "parser/nmodl_driver.hpp"
 #include "visitors/astvisitor.hpp"
+#include "visitors/verbatim_visitor.hpp"
 
 #include "tclap/CmdLine.h"
 
@@ -34,11 +35,22 @@ int main(int argc, char* argv[]) {
         /// shared_ptr to ast constructed from parsing nmodl file
         auto ast = driver.ast();
 
-        /// run basic AST visitor
-        AstVisitor v;
-        v.visitProgram(ast.get());
+        {
+            /// run basic AST visitor
+            AstVisitor v;
+            v.visitProgram(ast.get());
 
-        std::cout << "----AST VISITOR FINISHED----" << std::endl;
+            std::cout << "----AST VISITOR FINISHED----" << std::endl;
+        }
+
+        {
+            /// run basic Verbatim visitor
+            /// constructor takes true/false argument for printing blocks
+            VerbatimVisitor v;
+            v.visitProgram(ast.get());
+
+            std::cout << "----VERBATIM VISITOR FINISHED----" << std::endl;
+        }
 
     } catch (TCLAP::ArgException& e) {
         std::cout << "Argument Error: " << e.error() << " for arg " << e.argId() << std::endl;

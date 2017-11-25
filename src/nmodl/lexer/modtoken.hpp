@@ -68,6 +68,8 @@ class ModToken {
     std::string position() const;
 
     friend std::ostream& operator<<(std::ostream& stream, const ModToken& mt);
+
+    std::string to_string() const;
 };
 
 #endif
