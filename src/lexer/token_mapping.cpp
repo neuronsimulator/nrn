@@ -7,12 +7,11 @@
 #include "parser/nmodl_parser.hpp"
 
 namespace nmodl {
-
     using Token = nmodl::Parser::token;
     using TokenType = nmodl::Parser::token_type;
 
     namespace internal {
-
+        // clang-format off
         /** Keywords from NMODL language : name and token pair
          *
          * \todo Some keywords have different token names, e.g. TITLE
@@ -111,7 +110,7 @@ namespace nmodl {
             {"PROTECT", Token::PROTECT},
             {"MUTEXLOCK", Token::NRNMUTEXLOCK},
             {"MUTEXUNLOCK", Token::NRNMUTEXUNLOCK}};
-
+        // clang-format on
 
         /// numerical methods supported in nmodl
         struct MethodInfo {
@@ -121,10 +120,13 @@ namespace nmodl {
             /// if it's a variable timestep method
             int varstep = 0;
 
-            MethodInfo() {}
-            MethodInfo(long s, int v) : subtype(s), varstep(v) {}
+            MethodInfo() {
+            }
+            MethodInfo(long s, int v) : subtype(s), varstep(v) {
+            }
         };
 
+        // clang-format off
         static std::map<std::string, MethodInfo> methods = {{"adams", MethodInfo(DERF | KINF, 0)},
                                                             {"runge", MethodInfo(DERF | KINF, 0)},
                                                             {"euler", MethodInfo(DERF | KINF, 0)},
@@ -144,7 +146,7 @@ namespace nmodl {
                                                             {"after_cvode", MethodInfo(0, 0)},
                                                             {"cvode_t", MethodInfo(0, 0)},
                                                             {"cvode_t_v", MethodInfo(0, 0)}};
-
+        // clang-format on
 
         /** In the original implementation different vectors were created for
          * extdef, extdef2, extdef3, extdef4 etc. Instead of that we are changing
@@ -167,6 +169,7 @@ namespace nmodl {
 
         enum class DefinitionType { EXT_DOUBLE, EXT_2, EXT_3, EXT_4, EXT_5 };
 
+        // clang-format off
         static std::map<std::string, DefinitionType> extern_definitions = {
             {"first_time", DefinitionType::EXT_DOUBLE},
             {"error", DefinitionType::EXT_DOUBLE},
@@ -270,7 +273,7 @@ namespace nmodl {
             {"schedule", DefinitionType::EXT_5},
             {"set_seed", DefinitionType::EXT_5},
             {"nrn_random_play", DefinitionType::EXT_5}};
-
+        // clang-format on
 
         /** Internal NEURON variables that can be used in nmod files. The compiler
          * passes like scope checker need to know if certain variable is undefined.
@@ -297,11 +300,9 @@ namespace nmodl {
             return extern_definitions[name];
         }
 
-    }    // namespace internal
-
+    }  // namespace internal
 
     /// methods exposed to lexer, parser and compilers passes
-
 
     bool is_keyword(std::string name) {
         return (internal::keywords.find(name) != internal::keywords.end());
@@ -335,4 +336,4 @@ namespace nmodl {
         return result;
     }
 
-}    // namespace nmodl
+}  // namespace nmodl

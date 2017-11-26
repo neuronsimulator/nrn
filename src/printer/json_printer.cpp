@@ -1,24 +1,22 @@
 #include "printer/json_printer.hpp"
 
 /// By default dump output to std::cout
-JSONPrinter::JSONPrinter() :
-    result_stream(new std::ostream(std::cout.rdbuf()))
-{}
+JSONPrinter::JSONPrinter() : result_stream(new std::ostream(std::cout.rdbuf())) {
+}
 
 // Dumpt output to stringstream
-JSONPrinter::JSONPrinter(std::stringstream& ss) :
-    result_stream(new std::ostream(ss.rdbuf()))
-{}
+JSONPrinter::JSONPrinter(std::stringstream& ss) : result_stream(new std::ostream(ss.rdbuf())) {
+}
 
 /// Dump output to provided file
 JSONPrinter::JSONPrinter(std::string fname) {
-    if(fname.empty()) {
+    if (fname.empty()) {
         throw std::runtime_error("Empty filename for JSONPrinter");
     }
 
     ofs.open(fname.c_str());
 
-    if(ofs.fail()) {
+    if (ofs.fail()) {
         auto msg = "Error while opening file '" + fname + "' for JSONPrinter";
         throw std::runtime_error(msg);
     }
@@ -29,7 +27,7 @@ JSONPrinter::JSONPrinter(std::string fname) {
 
 /// Add node to json (typically basic type)
 void JSONPrinter::addNode(std::string name) {
-    if(!block) {
+    if (!block) {
         auto text = "Block not initialized (pushBlock missing?)";
         throw std::logic_error(text);
     }
@@ -42,7 +40,7 @@ void JSONPrinter::addNode(std::string name) {
 /// Add new json object (typically start of new block)
 /// name here is type of new block encountered
 void JSONPrinter::pushBlock(std::string name) {
-    if(block) {
+    if (block) {
         stack.push(block);
     }
 
@@ -64,8 +62,8 @@ void JSONPrinter::popBlock() {
 /// Dump json object to stream (typically at the end)
 /// nspaces is number of spaces used for indentation
 void JSONPrinter::flush() {
-    if(block) {
-        if(compact) {
+    if (block) {
+        if (compact) {
             *result_stream << (*block).dump();
         } else {
             *result_stream << (*block).dump(2);

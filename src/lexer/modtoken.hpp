@@ -42,8 +42,10 @@ class ModToken {
 
   public:
     ModToken() : pos(nullptr, 0){};
-    explicit ModToken(bool ext) : pos(nullptr, 0), external(ext) {}
-    ModToken(std::string str, int tok, nmodl::location& loc) : name(str), token(tok), pos(loc) {}
+    explicit ModToken(bool ext) : pos(nullptr, 0), external(ext) {
+    }
+    ModToken(std::string str, int tok, nmodl::location& loc) : name(str), token(tok), pos(loc) {
+    }
 
     ModToken* clone() const {
         return new ModToken(*this);

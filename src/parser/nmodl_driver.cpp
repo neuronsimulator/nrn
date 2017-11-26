@@ -5,8 +5,8 @@
 #include "parser/nmodl_driver.hpp"
 
 namespace nmodl {
-
-    Driver::Driver(bool strace, bool ptrace) : trace_scanner(strace), trace_parser(ptrace) {}
+    Driver::Driver(bool strace, bool ptrace) : trace_scanner(strace), trace_parser(ptrace) {
+    }
 
     /// parse nmodl file provided as istream
     bool Driver::parse_stream(std::istream& in) {
@@ -64,4 +64,4 @@ namespace nmodl {
         throw std::runtime_error("Trying to get undefined macro / define :" + name);
     }
 
-}    // namespace nmodl
+}  // namespace nmodl

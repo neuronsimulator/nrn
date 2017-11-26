@@ -7,3 +7,13 @@
 
 add_executable(nocmodl_parser main.cpp)
 target_link_libraries(nocmodl_parser lexer)
+
+#=============================================================================
+# Files for clang-format
+#=============================================================================
+set(FILES_FOR_CLANG_FORMAT
+    ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/verbatim_context.hpp
+    ${FILES_FOR_CLANG_FORMAT}
+    PARENT_SCOPE
+)

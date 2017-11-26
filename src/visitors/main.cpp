@@ -7,7 +7,6 @@
 #include "visitors/json_visitor.hpp"
 #include "visitors/verbatim_visitor.hpp"
 
-
 #include "tclap/CmdLine.h"
 
 /**
@@ -18,8 +17,8 @@
 int main(int argc, char* argv[]) {
     try {
         TCLAP::CmdLine cmd("NMODL Visitor: Standalone visitor program for NMODL");
-        TCLAP::ValueArg<std::string> filearg(
-            "", "file", "NMODL input file path", false, "../test/input/channel.mod", "string");
+        TCLAP::ValueArg<std::string> filearg("", "file", "NMODL input file path", false,
+                                             "../test/input/channel.mod", "string");
         TCLAP::SwitchArg verbosearg("", "verbose", "Enable verbose output", false);
 
         cmd.add(filearg);
@@ -71,12 +70,11 @@ int main(int argc, char* argv[]) {
 
             std::cout << "----JSON VISITOR FINISHED----" << std::endl;
 
-            if(verbose) {
+            if (verbose) {
                 std::cout << "RESULT OF JSON VISITOR : " << std::endl;
                 std::cout << ss.str();
             }
         }
-
     } catch (TCLAP::ArgException& e) {
         std::cout << "Argument Error: " << e.error() << " for arg " << e.argId() << std::endl;
         return 1;

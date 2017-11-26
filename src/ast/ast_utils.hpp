@@ -6,7 +6,6 @@
 #include "lexer/modtoken.hpp"
 
 namespace ast {
-
     /* enumaration of all binary operators in the language */
     typedef enum {
         BOP_ADDITION,
@@ -78,7 +77,10 @@ namespace ast {
             return nullptr;
         }
 
-        virtual AST* clone() { std::cout << "\n ERROR: clone() not implemented! \n"; abort(); }
+        virtual AST* clone() {
+            std::cout << "\n ERROR: clone() not implemented! \n";
+            abort();
+        }
     };
 
 }  // namespace ast

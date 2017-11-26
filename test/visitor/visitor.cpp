@@ -83,7 +83,7 @@ TEST_CASE("JSON Visitor") {
         auto json_text = run_json_visitor(nmodl_text);
         json result = json::parse(json_text);
 
-        REQUIRE( expected == result);
+        REQUIRE(expected == result);
     }
 
     SECTION("JSON text test (compact format)") {
@@ -91,6 +91,6 @@ TEST_CASE("JSON Visitor") {
         std::string expected = "{\"Program\":[{\"NeuronBlock\":[{\"StatementBlock\":[]}]}]}";
 
         auto result = run_json_visitor(nmodl_text, true);
-        REQUIRE( result == expected);
+        REQUIRE(result == expected);
     }
 }

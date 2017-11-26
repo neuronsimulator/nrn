@@ -3,7 +3,7 @@
 void VerbatimVisitor::visitVerbatim(Verbatim* node) {
     std::string block;
 
-    if(node->statement) {
+    if (node->statement) {
         block = node->statement->eval();
     }
 

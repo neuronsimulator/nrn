@@ -8,7 +8,6 @@
 /** The nmodl namespace encapsulates everything related to nmodl parsing
  * which includes lexer, parser, driver, keywords, token mapping etc. */
 namespace nmodl {
-
     /**
      * \class Driver
      * \brief Class that binds all pieces together for parsing nmodl file
@@ -60,7 +59,6 @@ namespace nmodl {
         bool verbose = false;
 
       public:
-
         /// file or input stream name (used by scanner for position), see todo
         std::string streamname;
 
@@ -93,7 +91,6 @@ namespace nmodl {
         std::shared_ptr<ast::Program> ast() const {
             return astRoot;
         }
-
     };
 
-}    // namespace nmodl
+}  // namespace nmodl

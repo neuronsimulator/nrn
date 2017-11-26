@@ -16,8 +16,8 @@
 int main(int argc, char* argv[]) {
     try {
         TCLAP::CmdLine cmd("NMODL Lexer: Standalone lexer program for NMODL");
-        TCLAP::ValueArg<std::string> filearg(
-            "", "file", "NMODL input file path", false, "../test/input/channel.mod", "string");
+        TCLAP::ValueArg<std::string> filearg("", "file", "NMODL input file path", false,
+                                             "../test/input/channel.mod", "string");
 
         cmd.add(filearg);
         cmd.parse(argc, argv);
@@ -118,7 +118,6 @@ int main(int argc, char* argv[]) {
                 }
             }
         }
-
     } catch (TCLAP::ArgException& e) {
         std::cout << std::endl << "Argument Error: " << e.error() << " for arg " << e.argId();
         return 1;
