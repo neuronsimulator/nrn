@@ -18,9 +18,7 @@
  * in ModelDB.
  */
 
-
 class VerbatimVisitor : public AstVisitor {
-
   private:
     /// flag to enable/disable printing blocks as we visit them
     bool verbose = false;
@@ -41,6 +39,5 @@ class VerbatimVisitor : public AstVisitor {
         return blocks;
     }
 };
-
 
 #endif

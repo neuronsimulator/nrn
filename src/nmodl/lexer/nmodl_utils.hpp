@@ -14,7 +14,6 @@
  */
 
 namespace nmodl {
-
     using PositionType = nmodl::location;
     using SymbolType = nmodl::Parser::symbol_type;
     using Token = nmodl::Parser::token;
@@ -27,4 +26,4 @@ namespace nmodl {
     SymbolType string_symbol(std::string text, PositionType& pos);
     SymbolType token_symbol(std::string text, PositionType& pos, TokenType token = Token::UNKNOWN);
 
-}    // namespace nmodl
+}  // namespace nmodl

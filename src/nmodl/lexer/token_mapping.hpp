@@ -9,4 +9,4 @@ namespace nmodl {
     nmodl::Parser::token_type token_type(std::string name);
     std::vector<std::string> all_external_variables();
 
-}    // namespace nmodl
+}  // namespace nmodl

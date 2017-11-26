@@ -12,7 +12,6 @@
  */
 
 namespace stringutils {
-
     /// Trim from start
     static inline std::string& ltrim(std::string& s) {
         s.erase(s.begin(),
@@ -52,7 +51,7 @@ namespace stringutils {
                 case '"':
                 case '\\':
                     after += '\\';
-                    /// don't break here as we want to append actual character
+                /// don't break here as we want to append actual character
 
                 default:
                     after += c;
@@ -75,4 +74,4 @@ namespace stringutils {
         return elems;
     }
 
-}    // namespace stringutils
+}  // namespace stringutils

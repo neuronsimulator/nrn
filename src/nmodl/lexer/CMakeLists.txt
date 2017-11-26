@@ -11,6 +11,7 @@ set(AST_SOURCE_FILES
 )
 
 set(NMODL_DRIVER_FILES
+    ${PROJECT_SOURCE_DIR}/src/parser/nmodl_driver.hpp
     ${PROJECT_SOURCE_DIR}/src/parser/nmodl_driver.cpp
 )
 
@@ -20,11 +21,15 @@ set_source_files_properties(
 )
 
 set(LEXER_SOURCE_FILES
-    token_mapping.cpp
-    nmodl_utils.cpp
-    modtoken.cpp
-    nmodl_base_lexer.cpp
-    verbatim_lexer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/modl.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/token_mapping.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/token_mapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/nmodl_utils.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/nmodl_utils.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/modtoken.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/modtoken.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/nmodl_base_lexer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/verbatim_lexer.cpp
     ${NMODL_DRIVER_FILES}
 )
 
@@ -90,3 +95,13 @@ add_library(lexer
 
 add_executable(nocmodl_lexer main.cpp)
 target_link_libraries(nocmodl_lexer lexer)
+
+#=============================================================================
+# Files for clang-format
+#=============================================================================
+set(FILES_FOR_CLANG_FORMAT
+    ${LEXER_SOURCE_FILES}
+    ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
+    ${FILES_FOR_CLANG_FORMAT}
+    PARENT_SCOPE
+)

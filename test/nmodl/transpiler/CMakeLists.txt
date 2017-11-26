@@ -21,3 +21,15 @@ add_test (NAME ModToken COMMAND testmodtoken)
 add_test (NAME Lexer COMMAND testlexer)
 add_test (NAME Visitor COMMAND testvisitor)
 add_test (NAME Printer COMMAND testprinter)
+
+#=============================================================================
+# Files for clang-format
+#=============================================================================
+set(FILES_FOR_CLANG_FORMAT
+    ${CMAKE_CURRENT_SOURCE_DIR}/modtoken/modtoken.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/lexer/tokens.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/visitor/visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/printer/printer.cpp
+    ${FILES_FOR_CLANG_FORMAT}
+    PARENT_SCOPE
+)

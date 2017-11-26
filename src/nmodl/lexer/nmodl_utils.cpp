@@ -8,7 +8,6 @@
 #include "utils/string_utils.hpp"
 
 namespace nmodl {
-
     /// create symbol for double/real ast class
     SymbolType double_symbol(double value, PositionType& pos) {
         ModToken token(std::to_string(value), Token::REAL, pos);
@@ -319,4 +318,4 @@ namespace nmodl {
         }
     }
 
-}    // namespace nmodl
+}  // namespace nmodl

@@ -15,8 +15,8 @@
 int main(int argc, char* argv[]) {
     try {
         TCLAP::CmdLine cmd("NMODL Parser: Standalone parser program for NMODL");
-        TCLAP::ValueArg<std::string> filearg(
-            "", "file", "NMODL input file path", false, "../test/input/channel.mod", "string");
+        TCLAP::ValueArg<std::string> filearg("", "file", "NMODL input file path", false,
+                                             "../test/input/channel.mod", "string");
 
         cmd.add(filearg);
         cmd.parse(argc, argv);
@@ -41,7 +41,6 @@ int main(int argc, char* argv[]) {
         // driver.parse_file(filename);
 
         std::cout << "----PARSING FINISHED----" << std::endl;
-
     } catch (TCLAP::ArgException& e) {
         std::cout << "Argument Error: " << e.error() << " for arg " << e.argId() << std::endl;
         return 1;
