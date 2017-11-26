@@ -5,9 +5,17 @@
 #include "catch/catch.hpp"
 #include "parser/nmodl_driver.hpp"
 #include "visitors/verbatim_visitor.hpp"
+#include "visitors/json_visitor.hpp"
 
+#include "json/json.hpp"
 
-std::vector<std::string> verbatim_visitor_process(std::string text) {
+using json = nlohmann::json;
+
+//=============================================================================
+// Verbatim visitor tests
+//=============================================================================
+
+std::vector<std::string> run_verbatim_visitor(std::string text) {
     nmodl::Driver driver;
     driver.parse_string(text);
     auto ast = driver.ast();
@@ -17,11 +25,10 @@ std::vector<std::string> verbatim_visitor_process(std::string text) {
     return v.verbatim_blocks();
 }
 
-/// test verbatim visitor
 TEST_CASE("Verbatim Visitor") {
     SECTION("Single Block") {
         std::string text = "VERBATIM int a; ENDVERBATIM";
-        auto blocks = verbatim_visitor_process(text);
+        auto blocks = run_verbatim_visitor(text);
 
         REQUIRE(blocks.size() == 1);
         REQUIRE(blocks.front().compare(" int a; ") == 0);
@@ -29,10 +36,49 @@ TEST_CASE("Verbatim Visitor") {
 
     SECTION("Multiple Blocks") {
         std::string text = "VERBATIM int a; ENDVERBATIM VERBATIM float b; ENDVERBATIM";
-        auto blocks = verbatim_visitor_process(text);
+        auto blocks = run_verbatim_visitor(text);
 
         REQUIRE(blocks.size() == 2);
-        REQUIRE(blocks.front().compare(" int a; ") == 0);
-        REQUIRE(blocks.back().compare(" float b; ") == 0);
+        REQUIRE(blocks[0].compare(" int a; ") == 0);
+        REQUIRE(blocks[1].compare(" float b; ") == 0);
+    }
+}
+
+//=============================================================================
+// JSON visitor tests
+//=============================================================================
+
+std::string run_json_visitor(std::string text) {
+    nmodl::Driver driver;
+    driver.parse_string(text);
+    auto ast = driver.ast();
+
+    std::stringstream ss;
+    JSONVisitor v(ss);
+    v.visitProgram(ast.get());
+    return ss.str();
+}
+
+TEST_CASE("JSON Visitor") {
+    SECTION("Empty NEURON block") {
+        std::string nmodl_text = "NEURON {}";
+        json expected = R"(
+            {
+              "Program": [
+                {
+                  "NeuronBlock": [
+                    {
+                      "StatementBlock": []
+                    }
+                  ]
+                }
+              ]
+            }
+        )"_json;
+
+        auto json_text = run_json_visitor(nmodl_text);
+        json result = json::parse(json_text);
+
+        REQUIRE( expected == result);
     }
 }

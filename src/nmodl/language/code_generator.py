@@ -24,11 +24,21 @@ AbstractVisitorPrinter(
     nodes).write()
 
 AstVisitorDeclarationPrinter(
-    "../visitors/astvisitor.hpp",
+    "../visitors/ast_visitor.hpp",
     "AstVisitor",
     nodes).write()
 
 AstVisitorDefinitionPrinter(
-    "../visitors/astvisitor.cpp",
+    "../visitors/ast_visitor.cpp",
     "AstVisitor",
+    nodes).write()
+
+JSONVisitorDeclarationPrinter(
+    "../visitors/json_visitor.hpp",
+    "JSONVisitor",
+    nodes).write()
+
+JSONVisitorDefinitionPrinter(
+    "../visitors/json_visitor.cpp",
+    "JSONVisitor",
     nodes).write()

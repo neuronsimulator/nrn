@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "ast/ast.hpp"
-#include "visitors/astvisitor.hpp"
+#include "visitors/ast_visitor.hpp"
 
 /**
  * \class VerbatimVisitor

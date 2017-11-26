@@ -47,6 +47,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/version/version.cpp.in
 add_subdirectory(src/language)
 add_subdirectory(src/lexer)
 add_subdirectory(src/parser)
+add_subdirectory(src/printer)
 add_subdirectory(src/visitors)
 
 #=============================================================================
