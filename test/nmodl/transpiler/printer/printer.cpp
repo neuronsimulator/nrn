@@ -9,11 +9,12 @@ TEST_CASE("JSON Printer Tests", "[JSONPrinter]") {
     SECTION("Stringstream test 1") {
         std::stringstream ss;
         JSONPrinter p(ss);
+        p.compact_json(true);
 
         p.pushBlock("A");
         p.addNode("B");
         p.popBlock();
-        p.flush(0);
+        p.flush();
 
         auto result = "{\"A\":[{\"value\":\"B\"}]}";
         REQUIRE(ss.str() == result);
@@ -22,6 +23,7 @@ TEST_CASE("JSON Printer Tests", "[JSONPrinter]") {
     SECTION("Stringstream test 2") {
         std::stringstream ss;
         JSONPrinter p(ss);
+        p.compact_json(true);
 
         p.pushBlock("A");
         p.addNode("B");
@@ -30,7 +32,7 @@ TEST_CASE("JSON Printer Tests", "[JSONPrinter]") {
         p.addNode("E");
         p.popBlock();
         p.popBlock();
-        p.flush(0);
+        p.flush();
 
         auto result = "{\"A\":[{\"value\":\"B\"},{\"value\":\"C\"},{\"D\":[{\"value\":\"E\"}]}]}";
         REQUIRE(ss.str() == result);

@@ -48,19 +48,23 @@ TEST_CASE("Verbatim Visitor") {
 // JSON visitor tests
 //=============================================================================
 
-std::string run_json_visitor(std::string text) {
+std::string run_json_visitor(std::string text, bool compact = false) {
     nmodl::Driver driver;
     driver.parse_string(text);
     auto ast = driver.ast();
 
     std::stringstream ss;
     JSONVisitor v(ss);
+
+    /// if compact is true then we get compact json output
+    v.compact_json(compact);
+
     v.visitProgram(ast.get());
     return ss.str();
 }
 
 TEST_CASE("JSON Visitor") {
-    SECTION("Empty NEURON block") {
+    SECTION("JSON object test") {
         std::string nmodl_text = "NEURON {}";
         json expected = R"(
             {
@@ -80,5 +84,13 @@ TEST_CASE("JSON Visitor") {
         json result = json::parse(json_text);
 
         REQUIRE( expected == result);
+    }
+
+    SECTION("JSON text test (compact format)") {
+        std::string nmodl_text = "NEURON {}";
+        std::string expected = "{\"Program\":[{\"NeuronBlock\":[{\"StatementBlock\":[]}]}]}";
+
+        auto result = run_json_visitor(nmodl_text, true);
+        REQUIRE( result == expected);
     }
 }
