@@ -20,11 +20,16 @@ int main(int argc, char* argv[]) {
         TCLAP::CmdLine cmd("NMODL Visitor: Standalone visitor program for NMODL");
         TCLAP::ValueArg<std::string> filearg(
             "", "file", "NMODL input file path", false, "../test/input/channel.mod", "string");
+        TCLAP::SwitchArg verbosearg("", "verbose", "Enable verbose output", false);
 
         cmd.add(filearg);
+        cmd.add(verbosearg);
+
         cmd.parse(argc, argv);
 
         std::string filename = filearg.getValue();
+        bool verbose = verbosearg.getValue();
+
         std::ifstream file(filename);
 
         if (!file.good()) {
@@ -58,9 +63,18 @@ int main(int argc, char* argv[]) {
         {
             std::stringstream ss;
             JSONVisitor v(ss);
+
+            /// to get compact json we can set compact mode
+            /// v.compact_json(true);
+
             v.visitProgram(ast.get());
 
             std::cout << "----JSON VISITOR FINISHED----" << std::endl;
+
+            if(verbose) {
+                std::cout << "RESULT OF JSON VISITOR : " << std::endl;
+                std::cout << ss.str();
+            }
         }
 
     } catch (TCLAP::ArgException& e) {

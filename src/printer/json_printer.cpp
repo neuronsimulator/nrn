@@ -63,12 +63,12 @@ void JSONPrinter::popBlock() {
 
 /// Dump json object to stream (typically at the end)
 /// nspaces is number of spaces used for indentation
-void JSONPrinter::flush(int nspaces) {
+void JSONPrinter::flush() {
     if(block) {
-        if(nspaces) {
-            *result_stream << (*block).dump(nspaces);
-        } else {
+        if(compact) {
             *result_stream << (*block).dump();
+        } else {
+            *result_stream << (*block).dump(2);
         }
         ofs.close();
         block = nullptr;

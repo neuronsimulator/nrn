@@ -42,6 +42,9 @@ class JSONPrinter {
     /// stack that holds all parent blocks / statements
     std::stack<std::shared_ptr<json>> stack;
 
+    /// true if need to print json in compact format
+    bool compact = false;
+
   public:
     JSONPrinter();
     JSONPrinter(std::string filename);
@@ -54,7 +57,12 @@ class JSONPrinter {
     void pushBlock(std::string);
     void addNode(std::string);
     void popBlock();
-    void flush(int nspaces = 4);
+    void flush();
+
+    /// print json in compact mode
+    void compact_json(bool flag) {
+        compact = flag;
+    }
 };
 
 #endif

@@ -94,6 +94,8 @@ class JSONVisitorDeclarationPrinter(DeclarationPrinter):
         self.writer.write_line(line, newline=2)
 
         line = "void flush() { printer->flush(); }"
+        self.writer.write_line(line)
+        line = "void compact_json(bool flag) { printer->compact_json(flag); } "
         self.writer.write_line(line, newline=2)
 
         for node in self.nodes:
