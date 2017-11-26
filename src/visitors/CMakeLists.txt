@@ -2,7 +2,8 @@
 # Visitor sources
 #=============================================================================
 set(VISITOR_SOURCE_FILES
-    ${PROJECT_SOURCE_DIR}/src/visitors/astvisitor.cpp
+    ${PROJECT_SOURCE_DIR}/src/visitors/ast_visitor.cpp
+    ${PROJECT_SOURCE_DIR}/src/visitors/json_visitor.cpp
     ${PROJECT_SOURCE_DIR}/src/visitors/verbatim_visitor.cpp
 )
 
@@ -21,4 +22,4 @@ add_library(visitor
 add_dependencies(visitor lexer)
 
 add_executable(nocmodl_visitor main.cpp)
-target_link_libraries(nocmodl_visitor lexer visitor)
+target_link_libraries(nocmodl_visitor lexer printer visitor)

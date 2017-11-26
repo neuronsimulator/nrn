@@ -1,9 +1,12 @@
 #include <fstream>
 #include <iostream>
+#include <sstream>
 
 #include "parser/nmodl_driver.hpp"
-#include "visitors/astvisitor.hpp"
+#include "visitors/ast_visitor.hpp"
+#include "visitors/json_visitor.hpp"
 #include "visitors/verbatim_visitor.hpp"
+
 
 #include "tclap/CmdLine.h"
 
@@ -50,6 +53,14 @@ int main(int argc, char* argv[]) {
             v.visitProgram(ast.get());
 
             std::cout << "----VERBATIM VISITOR FINISHED----" << std::endl;
+        }
+
+        {
+            std::stringstream ss;
+            JSONVisitor v(ss);
+            v.visitProgram(ast.get());
+
+            std::cout << "----JSON VISITOR FINISHED----" << std::endl;
         }
 
     } catch (TCLAP::ArgException& e) {
