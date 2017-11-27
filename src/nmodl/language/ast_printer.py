@@ -1,10 +1,20 @@
-import itertools
 from printer import *
+from utils import *
 from node_info import ORDER_VAR_NAME
 
 
 class AstDeclarationPrinter(DeclarationPrinter):
     """Prints all AST nodes class declarations"""
+
+    def ast_types(self):
+        """ print ast type for every ast node """
+        self.writer.write_line("enum class Type {", post_gutter=1)
+        for node in self.nodes[:-1]:
+            name = node_ast_type(node.class_name) + ","
+            self.writer.write_line(name)
+        name = node_ast_type(self.nodes[-1].class_name)
+        self.writer.write_line(name)
+        self.writer.write_line("};", pre_gutter=-1)
 
     def headers(self):
         self.writer.write_line("#include <iostream>")
@@ -25,16 +35,20 @@ class AstDeclarationPrinter(DeclarationPrinter):
             self.writer.write_line("class " + node.class_name + ";")
 
         self.writer.write_line()
+        self.writer.write_line("/* Type for every ast node */")
+        self.ast_types()
+
+        self.writer.write_line()
         self.writer.write_line("/* std::vector for convenience */")
 
-        for node in itertools.chain(self.nodes):
-            type_name = "std::vector<std::shared_ptr<" + node.class_name + ">>"
-            self.writer.write_line("using " + node.class_name + "Vector = " + type_name + ";")
+        for node in self.nodes:
+            typename = "std::vector<std::shared_ptr<" + node.class_name + ">>"
+            self.writer.write_line("using " + node.class_name + "Vector = " + typename + ";")
 
         created_types = []
 
         # iterate over all node types
-        for node in itertools.chain(self.nodes):
+        for node in self.nodes:
             type = (node.get_typename(), node.class_name.lower() + "_ptr")
             if type not in created_types:
                 created_types.append(type)
@@ -151,12 +165,12 @@ class AstDeclarationPrinter(DeclarationPrinter):
                     else:
                         method = "getName"
 
-                    self.writer.write_line("std::string getName() override {")
+                    self.writer.write_line("virtual std::string getName() override {")
                     self.writer.write_line("    return " + varname + "->" + method + "();")
                     self.writer.write_line("}")
 
                     if not node.has_token:
-                        self.writer.write_line(virtual + "ModToken* getToken()" + override + " {")
+                        self.writer.write_line(virtual + "ModToken* getToken() override {")
                         self.writer.write_line("    return " + varname + "->getToken();")
                         self.writer.write_line("}")
 
@@ -166,16 +180,16 @@ class AstDeclarationPrinter(DeclarationPrinter):
                     self.writer.write_line("int getOrder() " + " { return " + ORDER_VAR_NAME + "->eval(); }")
 
             # TODO: returning typename for name? check the usage of this and fix in better way
-            if node.has_parent_block_node() and not get_method_added:
-                self.writer.write_line("std::string getName() override { return getType(); }")
+            self.writer.write_line("virtual std::string getTypeName() override { return \"" + node.class_name + "\"; }")
 
             # all member functions
-            self.writer.write_line(virtual + "void visitChildren (Visitor* v) " + override + ";")
-            self.writer.write_line(virtual + "void accept(Visitor* v) " + override + " { v->visit" + node.class_name + "(this); }")
+            self.writer.write_line(virtual + "void visitChildren (Visitor* v) override;")
+            self.writer.write_line(virtual + "void accept(Visitor* v) override { v->visit" + node.class_name + "(this); }")
 
             # TODO: type should declared as enum class
-            self.writer.write_line(virtual + "std::string getType() " + override + " { return \"" + node.class_name + "\"; }")
-            self.writer.write_line(virtual + node.class_name + "* clone() " + override + " { return new " + node.class_name + "(*this); }")
+            typename = node_ast_type(node.class_name)
+            self.writer.write_line(virtual + "Type getType() override { return Type::" + typename + "; }")
+            self.writer.write_line(virtual + node.class_name + "* clone() override { return new " + node.class_name + "(*this); }")
 
             if node.has_token:
                 self.writer.write_line(virtual + "ModToken* getToken() " + override + " { return token.get(); }")
@@ -300,8 +314,8 @@ class AstDefinitionPrinter(DefinitionPrinter):
 
                 for member in ptr_members:
                     # bit hack here : remove pointer because we are creating smart pointer
-                    type_name = member[0].replace("*", "")
-                    self.writer.write_line("    this->" + member[1] + " = std::shared_ptr<" + type_name + ">(" + member[1] + ");")
+                    typename = member[0].replace("*", "")
+                    self.writer.write_line("    this->" + member[1] + " = std::shared_ptr<" + typename + ">(" + member[1] + ");")
 
                 self.writer.write_line("}", newline=2)
 

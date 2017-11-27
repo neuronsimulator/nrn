@@ -118,7 +118,7 @@ class JSONVisitorDefinitionPrinter(DefinitionPrinter):
             self.writer.write_line(line, post_gutter=1)
 
             if node.has_children():
-                self.writer.write_line("printer->pushBlock(node->getType());")
+                self.writer.write_line("printer->pushBlock(node->getTypeName());")
                 self.writer.write_line("node->visitChildren(this);")
 
                 if node.is_data_type_node():

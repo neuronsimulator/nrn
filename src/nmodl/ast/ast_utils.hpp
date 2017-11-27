@@ -54,6 +54,9 @@ namespace ast {
     /* base class for all visitors implementation */
     class Visitor;
 
+    /* enum class for ast types */
+    enum class Type;
+
     /* define abstract base class for all AST nodes
      * this also serves to define the visitable objects.
      */
@@ -68,19 +71,23 @@ namespace ast {
         /* all AST nodes provide visit children and accept methods */
         virtual void visitChildren(Visitor* v) = 0;
         virtual void accept(Visitor* v) = 0;
-        virtual std::string getType() = 0;
-        /* @todo: please revisit this. adding quickly for symtab */
+        virtual Type getType() = 0;
+        virtual std::string getTypeName() = 0;
+
         virtual std::string getName() {
-            return "";
+            throw std::logic_error("getName() not implemented");
         }
+
+        virtual AST* clone() {
+            throw std::logic_error("clone() not implemented");
+        }
+
+        /* @todo: please revisit this. adding quickly for symtab */
         virtual ModToken* getToken() { /*std::cout << "\n ERROR: getToken not implemented!";*/
             return nullptr;
         }
 
-        virtual AST* clone() {
-            std::cout << "\n ERROR: clone() not implemented! \n";
-            abort();
-        }
+        virtual ~AST() {}
     };
 
 }  // namespace ast
