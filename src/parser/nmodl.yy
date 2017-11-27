@@ -476,7 +476,7 @@ model           :   MODEL LINE_PART
 define1         :   DEFINE1 NAME INTEGER
                     {
                         $$ = new ast::Define($2, $3);
-                        driver.add_defined_var($2->getName(), $3->eval());
+                        driver.add_defined_var($2->getTypeName(), $3->eval());
                     }
                 |   DEFINE1 error
                     {
