@@ -6,6 +6,9 @@ set(VISITOR_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/json_visitor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/verbatim_visitor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/verbatim_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/symtab_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/symtab_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/symtab_visitor_helper.hpp
 )
 
 set_source_files_properties(
@@ -23,7 +26,7 @@ add_library(visitor
 add_dependencies(visitor lexer)
 
 add_executable(nocmodl_visitor main.cpp)
-target_link_libraries(nocmodl_visitor lexer printer visitor)
+target_link_libraries(nocmodl_visitor printer visitor symtab lexer)
 
 #=============================================================================
 # Files for clang-format

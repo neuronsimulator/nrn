@@ -42,3 +42,13 @@ JSONVisitorDefinitionPrinter(
     "../visitors/json_visitor.cpp",
     "JSONVisitor",
     nodes).write()
+
+SymtabVisitorDeclarationPrinter(
+    "../visitors/symtab_visitor.hpp",
+    "SymtabVisitor",
+    nodes).write()
+
+SymtabVisitorDefinitionPrinter(
+    "../visitors/symtab_visitor.cpp",
+    "SymtabVisitor",
+    nodes).write()

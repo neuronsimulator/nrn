@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
         using SymbolType = nmodl::Parser::symbol_type;
 
         /// parse nmodl file untile EOF, print each token
-        while (1) {
+        while (true) {
             SymbolType sym = scanner.next_token();
             TokenType token = sym.token();
 

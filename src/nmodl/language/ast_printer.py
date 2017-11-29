@@ -24,7 +24,11 @@ class AstDeclarationPrinter(DeclarationPrinter):
 
         self.writer.write_line('#include "ast/ast_utils.hpp"')
         self.writer.write_line('#include "lexer/modtoken.hpp"')
-        self.writer.write_line('#include "utils/common_utils.hpp"')
+        self.writer.write_line('#include "utils/common_utils.hpp"', newline=2)
+
+        self.writer.write_line('namespace symtab {')
+        self.writer.write_line('    class SymbolTable;')
+        self.writer.write_line('}')
 
     def class_comment(self):
         self.writer.write_line("/* all classes representing Abstract Syntax Tree (AST) nodes */")
@@ -130,7 +134,7 @@ class AstDeclarationPrinter(DeclarationPrinter):
 
 
             if node.is_symtab_needed():
-                self.writer.write_line("void* symtab = nullptr;", newline=2)
+                self.writer.write_line("std::shared_ptr<symtab::SymbolTable> symtab;", newline=2)
 
             if members:
                 self.writer.write_line("/* constructors */")
@@ -182,6 +186,13 @@ class AstDeclarationPrinter(DeclarationPrinter):
             # TODO: returning typename for name? check the usage of this and fix in better way
             self.writer.write_line("virtual std::string getTypeName() override { return \"" + node.class_name + "\"; }")
 
+            # TODO : symbol table needs to know the name of every node
+            # For nodes without any children with name, name is typename itself
+            if not get_method_added:
+                self.writer.write_line("virtual std::string getName() override {")
+                self.writer.write_line("    return getTypeName();")
+                self.writer.write_line("}")
+
             # all member functions
             self.writer.write_line(virtual + "void visitChildren (Visitor* v) override;")
             self.writer.write_line(virtual + "void accept(Visitor* v) override { v->visit" + node.class_name + "(this); }")
@@ -189,6 +200,7 @@ class AstDeclarationPrinter(DeclarationPrinter):
             # TODO: type should declared as enum class
             typename = node_ast_type(node.class_name)
             self.writer.write_line(virtual + "Type getType() override { return Type::" + typename + "; }")
+            self.writer.write_line("bool is" + node.class_name + " () override { return true; }")
             self.writer.write_line(virtual + node.class_name + "* clone() override { return new " + node.class_name + "(*this); }")
 
             if node.has_token:
@@ -196,8 +208,8 @@ class AstDeclarationPrinter(DeclarationPrinter):
                 self.writer.write_line("void setToken(ModToken& tok) " + " { token = std::shared_ptr<ModToken>(new ModToken(tok)); }")
 
             if node.is_symtab_needed():
-                self.writer.write_line("void setBlockSymbolTable(void *s) " + " { symtab = s; }")
-                self.writer.write_line("void* getBlockSymbolTable() " + " { return symtab; }")
+                self.writer.write_line("void setBlockSymbolTable(std::shared_ptr<symtab::SymbolTable> newsymtab) " + " { symtab = newsymtab; }")
+                self.writer.write_line("std::shared_ptr<symtab::SymbolTable> getBlockSymbolTable() " + " { return symtab; }")
 
             if node.is_number_node():
                 self.writer.write_line(virtual + "void negate()" + override + " { std::cout << \"ERROR : negate() not implemented! \"; abort(); } ")

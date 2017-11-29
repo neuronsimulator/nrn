@@ -8,11 +8,11 @@
 std::string ModToken::position() const {
     std::stringstream ss;
     if (external) {
-        ss << "[EXTERNAL]";
+        ss << "EXTERNAL";
     } else if (start_line() == 0) {
-        ss << "[UNKNOWN]";
+        ss << "UNKNOWN";
     } else {
-        ss << "[" << pos << "]";
+        ss << pos;
     }
     return ss.str();
 }
@@ -20,7 +20,7 @@ std::string ModToken::position() const {
 /** Print token as : token at [line.start_column-end_column] type token
  * Example: v at [118.9-14] type 376 */
 std::ostream& operator<<(std::ostream& stream, const ModToken& mt) {
-    stream << std::setw(15) << mt.name << " at " << mt.position();
+    stream << std::setw(15) << mt.name << " at [" << mt.position() << "]";
     return stream << " type " << mt.token;
 }
 
