@@ -11,6 +11,8 @@ add_custom_command (
     OUTPUT ${PROJECT_SOURCE_DIR}/src/visitors/ast_visitor.cpp
     OUTPUT ${PROJECT_SOURCE_DIR}/src/visitors/json_visitor.hpp
     OUTPUT ${PROJECT_SOURCE_DIR}/src/visitors/json_visitor.cpp
+    OUTPUT ${PROJECT_SOURCE_DIR}/src/visitors/symtab_visitor.hpp
+    OUTPUT ${PROJECT_SOURCE_DIR}/src/visitors/symtab_visitor.cpp
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/language
     DEPENDS ${PROJECT_SOURCE_DIR}/src/language/nmodl.yaml
     DEPENDS ${PROJECT_SOURCE_DIR}/src/language/argument.py

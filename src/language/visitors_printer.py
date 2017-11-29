@@ -1,4 +1,5 @@
 from printer import *
+from utils import *
 
 
 class AbstractVisitorPrinter(DeclarationPrinter):
@@ -143,3 +144,102 @@ class JSONVisitorDefinitionPrinter(DefinitionPrinter):
             self.writer.write_line("}", pre_gutter=-1, newline=2)
 
         self.writer.decrease_gutter()
+
+
+class SymtabVisitorDeclarationPrinter(DeclarationPrinter):
+    """Prints visitor class declaration for printing Symbol table in JSON format"""
+
+    def headers(self):
+        line = '#include "visitors/json_visitor.hpp"'
+        self.writer.write_line(line)
+        line = '#include "visitors/ast_visitor.hpp"'
+        self.writer.write_line(line)
+        line = '#include "symtab/symbol_table.hpp"'
+        self.writer.write_line(line, newline=2)
+
+    def class_comment(self):
+        self.writer.write_line("/* Concrete visitor for printing Symbol table in JSON format */")
+
+    def class_name_declaration(self):
+
+        self.writer.write_line("using namespace symtab;")
+        self.writer.write_line("class " + self.classname + " : public AstVisitor {")
+
+    def private_declaration(self):
+        self.writer.write_line("private:", post_gutter=1)
+        self.writer.write_line("std::unique_ptr<JSONPrinter> printer;")
+        self.writer.write_line("ModelSymbolTable* modsymtab;", newline=2, post_gutter=-1)
+
+    def public_declaration(self):
+        self.writer.write_line("public:", post_gutter=1)
+
+        line = self.classname + "(ModelSymbolTable* symtab) : modsymtab(symtab), printer(new JSONPrinter()) {} "
+        self.writer.write_line(line)
+
+        line = self.classname + "( ModelSymbolTable* symtab, std::stringstream &ss) : modsymtab(symtab), printer(new JSONPrinter(ss)) {}"
+        self.writer.write_line(line)
+
+        line = self.classname + "( ModelSymbolTable* symtab, std::string filename) : modsymtab(symtab), printer(new JSONPrinter(filename)) {}"
+        self.writer.write_line(line, newline=2)
+
+        self.writer.write_line("template<typename T>")
+        self.writer.write_line("void setupSymbol(T* node, symtab::details::NmodlInfo property, int order = 0);", newline=2)
+
+        self.writer.write_line("template<typename T>")
+        line = "void setupSymbolTable(T *node, bool global_block);"
+        self.writer.write_line(line)
+
+        self.writer.write_line("template<typename T>")
+        line = "void setupSymbolTable(T *node, symtab::details::NmodlInfo property, bool global_block);"
+        self.writer.write_line(line, newline=2)
+
+        for node in self.nodes:
+            if node.is_symtab_method_required():
+                line = "virtual void visit" + node.class_name + "(" + node.class_name + "* node) override;"
+                self.writer.write_line(line)
+
+
+        self.writer.decrease_gutter()
+
+    def post_declaration(self):
+        self.writer.write_line()
+        self.writer.write_line('#include "visitors/symtab_visitor_helper.hpp"')
+
+
+class SymtabVisitorDefinitionPrinter(DefinitionPrinter):
+    """Prints visitor class definition for printing Symbol table in JSON format"""
+
+    def headers(self):
+        line = '#include "symtab/symbol_table.hpp"'
+        self.writer.write_line(line)
+        line = '#include "visitors/symtab_visitor.hpp"'
+        self.writer.write_line(line, newline=2)
+
+    def definitions(self):
+        for node in self.nodes:
+            if node.is_symtab_method_required():
+
+                line = "void " + self.classname + "::visit" + node.class_name + "(" + node.class_name + "* node) {"
+                self.writer.write_line(line, post_gutter=1)
+
+                type_name = node_property_type(node.class_name)
+                property_name = "symtab::details::NmodlInfo::" + type_name
+
+                if node.is_symbol_var_node() or node.is_prime_node():
+                    is_prime = ", node->getOrder()" if node.is_prime_node() else "";
+                    self.writer.write_line("setupSymbol(node, " + property_name + is_prime + ");")
+
+                else:
+                    """ setupBlock has node*, symbol*, symbol_block, program_block, global_block"""
+                    if node.is_symbol_block_node():
+                        fun_call = "setupSymbolTable(node, " + property_name + ", false);"
+
+                    elif node.is_program_node() or node.is_global_block_node():
+                        fun_call = "setupSymbolTable(node, true);"
+
+                    else:
+                        """this is for nodes which has parent class as Block node"""
+                        fun_call = "setupSymbolTable(node, false);"
+
+                    self.writer.write_line(fun_call)
+                self.writer.write_line("}", pre_gutter=-1, newline=2)

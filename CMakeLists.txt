@@ -49,6 +49,7 @@ add_subdirectory(src/language)
 add_subdirectory(src/lexer)
 add_subdirectory(src/parser)
 add_subdirectory(src/printer)
+add_subdirectory(src/symtab)
 add_subdirectory(src/utils)
 add_subdirectory(src/visitors)
 

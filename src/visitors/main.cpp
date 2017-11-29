@@ -6,8 +6,11 @@
 #include "visitors/ast_visitor.hpp"
 #include "visitors/json_visitor.hpp"
 #include "visitors/verbatim_visitor.hpp"
+#include "visitors/symtab_visitor.hpp"
 
 #include "tclap/CmdLine.h"
+
+using namespace symtab;
 
 /**
  * Standlone visitor program for NMODL. This demonstrate basic
@@ -75,6 +78,23 @@ int main(int argc, char* argv[]) {
                 std::cout << ss.str();
             }
         }
+
+        {
+            ModelSymbolTable symtab;
+            std::stringstream ss1;
+
+            SymtabVisitor v(&symtab, ss1);
+            v.visitProgram(ast.get());
+
+            // std::cout << ss1.str();
+
+            std::stringstream ss2;
+            symtab.print(ss2);
+            std::cout << ss2.str();
+
+            std::cout << "----SYMTAB VISITOR FINISHED----" << std::endl;
+        }
+
     } catch (TCLAP::ArgException& e) {
         std::cout << "Argument Error: " << e.error() << " for arg " << e.argId() << std::endl;
         return 1;

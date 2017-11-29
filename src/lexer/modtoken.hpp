@@ -22,7 +22,7 @@
  * can distinguish them from other tokens produced by lexer.
  *
  * \todo location object is copyable except if we specify the
- * stream name. It would be good to trackfilenames when we go
+ * stream name. It would be good to track filename when we go
  * for multi-channel optimization and code generation.
  */
 
@@ -42,8 +42,10 @@ class ModToken {
 
   public:
     ModToken() : pos(nullptr, 0){};
+
     explicit ModToken(bool ext) : pos(nullptr, 0), external(ext) {
     }
+
     ModToken(std::string str, int tok, nmodl::location& loc) : name(str), token(tok), pos(loc) {
     }
 
