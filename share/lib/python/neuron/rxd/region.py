@@ -13,6 +13,7 @@ import initializer
 import warnings
 import math
 import ctypes
+import species
 
 _all_regions = []
 _region_count = 0
@@ -53,7 +54,7 @@ class _c_region:
                 _c_region_lookup[rptr].append(self)
             else:
                 _c_region_lookup[rptr] = [self]
-
+   
     def add_reaction(self,rptr,regions):
         self._react_regions[rptr] = regions
         self._initialized = False
@@ -68,18 +69,19 @@ class _c_region:
         self.num_species = len(self._react_species)
         self._initilized = False
 
-    def add_ecs_species(self,sptr):
-        self._ecs_react_species.add(sptr)
+    def add_ecs_species(self,species_set):
+        for s in species_set:
+            self._ecs_react_species.add(s)
         self.num_ecs_species = len(self._ecs_react_species)
         self._initialized = False
 
     def get_ecs_index(self):
         if not self._initialized:
             self._initalize()
-        if self.ecs_location_index:
-            return self.ecs_location_index.flatten()
-        else:
+        if self.ecs_location_index is None:
             return numpy.ndarray(0,ctypes.c_int)
+        else:
+            return self.ecs_location_index.flatten()
     
     def get_state_index(self):
         if not self._initialized:
@@ -93,28 +95,29 @@ class _c_region:
                 ret[self._ecs_species_ids[i]] = i
         return ret
     def _ecs_initalize(self):
-        self.location_index = -numpy.ones((self.num_regions,self.num_ecs_species,numpy.sum([x.nseg for x in self._overlap])),ctypes.c_int)
+        self.ecs_location_index = -numpy.ones((self.num_regions,self.num_ecs_species,self.num_segments),ctypes.c_int)
 
         #Set the local ids of the regions and species involved in the reactions
         self._ecs_species_ids = dict()
-        for sid, s in (xrange(self.num_ecs_species), self._ecs_react_species):   
-            self._ecs_species_ids.append(s._id)
+        for sid, s in zip(xrange(self.num_ecs_species), self._ecs_react_species):   
+            self._ecs_species_ids[sid]= s._grid_id
 
         #Setup the matrix to the ECS grid points
         for rid,r in zip(xrange(self.num_regions), self._regions):
-            for sid, s in (xrange(self.num_ecs_species), self._ecs_react_species):
-                for rxdsec in r.secs:
-                    if rxdsec._sec == sec:
-                        for seg in rxdsec._sec:
-                            (x,y,z) = s._xyz(seg)
-                            self.ecs_location_index[rid][sid][seg_idx] = s.index_from_xyz(x,y,z)
-                            seg_idx+=1
+            for sid, s in zip(xrange(self.num_ecs_species), self._ecs_react_species):
+                seg_idx = 0
+                for sec in self._overlap:
+                       for seg in sec:
+                        (x,y,z) = species._xyz(seg)
+                        self.ecs_location_index[rid][sid][seg_idx] = s.index_from_xyz(x,y,z)
+                        seg_idx+=1
         self.ecs_location_index = self.ecs_location_index.transpose()
 
     def _initalize(self):
         from species import Species
         self.location_index = -numpy.ones((self.num_regions,self.num_species,self.num_segments),ctypes.c_int)
-        from species import SpeciesOnExtracellular, SpeciesOnRegion 
+        from species import SpeciesOnExtracellular, SpeciesOnRegion
+        
         #Set the local ids of the regions and species involved in the reactions
         self._species_ids = dict()
         self._region_ids = dict()

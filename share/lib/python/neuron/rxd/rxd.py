@@ -65,11 +65,16 @@ setup_solver.argtypes = [ndpointer(ctypes.c_double), ctypes.py_object, ctypes.c_
 
 clear_rates = dll.clear_rates
 register_rate = dll.register_rate
-register_rate.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int,  
-        numpy.ctypeslib.ndpointer(ctypes.c_int, flags='contiguous'),
-        ctypes.c_int, numpy.ctypeslib.ndpointer(ctypes.c_int, flags='contiguous'),
-        numpy.ctypeslib.ndpointer(ctypes.c_int, flags='contiguous'),
-        ctypes.c_int, numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),]
+register_rate.argtypes = [ 
+        ctypes.c_int,                                                              #num species
+        ctypes.c_int,                                                               #num regions
+        ctypes.c_int,                                                               #num seg
+        numpy.ctypeslib.ndpointer(ctypes.c_int, flags='contiguous'),                #species ids
+        ctypes.c_int, numpy.ctypeslib.ndpointer(ctypes.c_int, flags='contiguous'),  #num ecs species
+        numpy.ctypeslib.ndpointer(ctypes.c_int, flags='contiguous'),                #ecs species ids
+        ctypes.c_int,                                                               #num multicompartment reactions
+        numpy.ctypeslib.ndpointer(ctypes.c_double, flags='contiguous'),             #multicompartment multipliers
+        ]                                                                           #Reaction rate function
 
 set_reaction_indices = dll.set_reaction_indices
 set_reaction_indices.argtypes = [ctypes.c_int, _int_ptr, _int_ptr, _int_ptr, 
@@ -1175,6 +1180,12 @@ def _compile_reactions():
                     ecs_mc_species_involved.add(s)
                 elif isinstance(s,species.SpeciesOnExtracellular):
                     ecs_mc_species_involved.add(s._extracellular())
+            for reg in react_regions:
+                if reg in ecs_species_by_region.keys():
+                    ecs_species_by_region[reg] = ecs_species_by_region[reg].union(ecs_mc_species_involved)
+                else:
+                    ecs_species_by_region[reg] = set(ecs_mc_species_involved)
+
         elif any([isinstance(x, region.Extracellular) for x in react_regions]):
             ecs_species_involved = []
             for sp in sptrs:
@@ -1191,7 +1202,7 @@ def _compile_reactions():
                 else:
                     ecs_regions_inv[reg] = [rptr]
                 if reg in species_by_region.keys():
-                    ecs_species_by_region[reg] = eca_species_by_region[reg].union(ecs_species_involved)
+                    ecs_species_by_region[reg] = ecs_species_by_region[reg].union(ecs_species_involved)
                 else:
                     ecs_species_by_region[reg] = set(ecs_species_involved)
 
@@ -1199,15 +1210,16 @@ def _compile_reactions():
     nseg_by_region = []     # a list of the number of segments for each region
     # a table for location,species -> state index
     location_index = []
-        
+    
     for reg in regions_inv.keys():
         rptr = weakref.ref(reg)
         for c_region in region._c_region_lookup[rptr]:
             for react in regions_inv[reg]:
                 c_region.add_reaction(react,regions_inv[reg])
                 c_region.add_species(species_by_region[reg])
+                if ecs_species_by_region.has_key(reg):
+                    c_region.add_ecs_species(ecs_species_by_region[reg])
 
-    
     # now setup the reactions
     #if there are no reactions
     if location_count == 0 and len(ecs_regions_inv) == 0:
@@ -1245,13 +1257,21 @@ def _compile_reactions():
                     fxn_string += "\n\trhs[%d][%d] %s %s;" % (species_id, region_id, operator, rate_str)
                     species_ids_used[species_id][region_id] = True
             elif isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
+                #Lookup the region_id for the reaction
+                for sptr in r._sources + r._dests:
+                    if isinstance(sptr(),species.SpeciesOnExtracellular):
+                        continue
+                    region_id = creg._region_ids.get(sptr()._region()._id)
                 rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate)
                 rate_str = re.sub(r'species\[(\d+)\]\[\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), region_id), rate_str)
+                rate_str = re.sub(r'species_ecs\[(\d+)\]',lambda m: "species_ecs[%i][%i]" %  (int(m.groups()[0]), region_id), rate_str)
+
                 fxn_string += "\n\trate = %s;" % rate_str
+
                 for sptr in r._sources + r._dests:
                     s = sptr()
-                    region_id = creg._region_ids.get(s._region()._id)
                     if isinstance(s,species.SpeciesOnExtracellular):
+                        species_id = s._extracellular()._grid_id
                         operator = '+=' if ecs_species_ids_used[species_id][region_id] else '='
                         fxn_string += "\n\trhs_ecs[%d][%d] %s mult[%d] * rate;" % (species_id, region_id, operator, mc_mult_count)
                         ecs_species_ids_used[species_id][region_id] = True
@@ -1261,8 +1281,8 @@ def _compile_reactions():
                         fxn_string += "\n\trhs[%d][%d] %s mult[%d] * rate;" % (species_id, region_id, operator, mc_mult_count)
                         species_ids_used[species_id][region_id] = True
                     #TODO: Fix problem if the whole region isn't part of the same aggregate c_region
-                    mc_mult_count += 1
-                mc_mult_list.extend(r._mult)
+                mc_mult_count += 1
+                mc_mult_list.extend(r._mult.flatten())
             else:
                 for region_id in creg._react_regions[rptr]:
                     rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate)
@@ -1277,15 +1297,18 @@ def _compile_reactions():
                         fxn_string += "\n\trhs[%d][%d] %s (%g) * rate;" % (idx, region_id, operator, summed_mults[idx])
           
         fxn_string += "\n}\n"
+        """print "num_species=%i\t num_regions=%i\t num_segments=%i\n" % (creg.num_species, creg.num_regions, creg.num_segments) 
+        print "state_index %s \t num_ecs_species=%i\t ecs_species_ids %s\n" % (creg.get_state_index().shape, creg.num_ecs_species, creg.get_ecs_species_ids().shape)
+        print "ecs_index %s\t mc_mult_count=%i \t mc_mult_list %s\n" % (creg.get_ecs_index().shape, mc_mult_count, numpy.array(mc_mult_list, dtype=ctypes.c_double).shape)
+        print mc_mult_list
+        print fxn_string"""
         register_rate(creg.num_species, creg.num_regions, creg.num_segments, creg.get_state_index(),
                       creg.num_ecs_species, creg.get_ecs_species_ids(), creg.get_ecs_index(),
-                      mc_mult_count, numpy.array(mc_mult_list), 
+                      mc_mult_count, numpy.array(mc_mult_list, dtype=ctypes.c_double), 
                       _c_compile(fxn_string))
-
     setup_solver(_node_get_states(), h._ref_dt, location_count)
-
     #Setup extracellular reactions
-    for reg in ecs_regions_inv.keys():
+    """for reg in ecs_regions_inv.keys():
         grid_ids = []
         for s in ecs_species_by_region[reg]:
             if isinstance(s,species.Species): s = s[reg]._extracellular()
@@ -1311,8 +1334,9 @@ def _compile_reactions():
                         fxn_string += "\n\trhs[%d] = (%s)*(%s);" % (s._grid_id, r._mult[idx], r._rate)
                         idx+=1
                 fxn_string += "\n}\n"
+            print fxn_string
             ecs_register_reaction(0, len(grid_ids), _list_to_cint_array(grid_ids), _c_compile(fxn_string))
-
+"""
 def _init():
     if len(species._all_species) == 0:
         return None

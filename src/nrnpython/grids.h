@@ -149,6 +149,9 @@ int insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x,
     double my_dc_z, double my_dx, double my_dy, double my_dz, 
 	PyHocObject* my_alpha, PyHocObject* my_lambda);
 
+// Set the diffusion coefficients for a given grid_id 
+int set_diffusion(int grid_list_index, int grid_id, double dc_x, double dc_y, double dc_z);
+
 // Delete a specific Grid_node "find" from the list "head"
 int delete(Grid_node **head, Grid_node *find);
 

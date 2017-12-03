@@ -545,7 +545,6 @@ class Species(_SpeciesMathable):
         self.initial = initial
         self._atolscale = atolscale
         _all_species.append(weakref.ref(self))
-
         # declare an update to the structure of the model (the number of differential equations has changed)
         neuron.nrn_dll_sym('structure_change_cnt', ctypes.c_int).value += 1
 
@@ -675,6 +674,14 @@ class Species(_SpeciesMathable):
 
     def _do_init4(self):
         self._extracellular_instances = [_ExtracellularSpecies(r, d=self._d, name=self.name, charge=self.charge, initial=self.initial) for r in self._extracellular_regions]
+        self._extracellular_nodes = []
+        sp_ref = weakref.ref(self)
+        for r in self._extracellular_regions:
+            for i in xrange(r._nx):
+                for j in xrange(r._ny):
+                    for k in xrange(r._nz):
+                        self._extracellular_nodes.append(node.NodeExtracellular((i * r._ny + j) * r._nz + k, i, j, k, r, sp_ref))
+           
     
     def _do_init5(self):
         # final initialization
@@ -756,6 +763,8 @@ class Species(_SpeciesMathable):
         if isinstance(r, region.Region):
             return SpeciesOnRegion(self, r)
         elif isinstance(r, region.Extracellular):
+            if not hasattr(self,'_extracellular_instances'):
+                initializer._do_init()
             for e in self._extracellular_instances:
                 if e._region == r:
                     return SpeciesOnExtracellular(self, e)
@@ -1017,7 +1026,7 @@ class Species(_SpeciesMathable):
         initializer._do_init()
         
         # The first part here is for the 1D -- which doesn't keep live node objects -- the second part is for 3D
-        return nodelist.NodeList(list(itertools.chain.from_iterable([s.nodes for s in self._secs])) + self._nodes)
+        return nodelist.NodeList(list(itertools.chain.from_iterable([s.nodes for s in self._secs])) + self._nodes + self._extracellular_nodes)
 
 
     @property

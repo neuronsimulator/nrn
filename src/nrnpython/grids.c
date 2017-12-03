@@ -139,6 +139,24 @@ int insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x,
     return i;
 }
 
+/*Set the diffusion coefficients*/
+int set_diffusion(int grid_list_index, int grid_id, double dc_x, double dc_y, double dc_z)
+{
+    int id = 0;
+    Grid_node* node = Parallel_grids[grid_list_index];
+    while(id < grid_id)
+    {
+        node = node->next;
+        id++;
+        if(node == NULL)
+            return -1;
+    }
+    node->dc_x = dc_x;
+    node->dc_y = dc_y;
+    node->dc_z = dc_z;
+    return 0;
+}
+
 /* TODO: make this work with Grid_node ptrs instead of pairs of list indices */
 void set_grid_concentrations(int grid_list_index, int index_in_list, PyObject* grid_indices, PyObject* neuron_pointers) {
     /*
