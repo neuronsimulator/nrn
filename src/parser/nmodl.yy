@@ -402,11 +402,6 @@ top             :   all
 all             :   {
                         $$ = new ast::Program();
                     }
-                |   all astmt
-                    {
-                        $1->addStatement($2);
-                        $$ = $1;
-                    }
                 |   all model
                     {
                         $1->addStatement($2);
