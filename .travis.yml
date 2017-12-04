@@ -1,6 +1,14 @@
 language: cpp
 sudo: false
 dist: trusty
+addons:
+    apt:
+        packages:
+        - python3-pip
+        - python-pip
+        - python3-scipy
+        - python-scipy
+        - python-tk
 virtualenv:
     system_site_packages: true 
 
@@ -22,9 +30,9 @@ before_install:
   - $CXX -v
   - export PYTHONPATH=$PYTHONPATH:$(pwd)/install/lib/python/
 install:
-  - $PIP install numpy 
-  - $PIP install scipy
-  - $PIP install matplotlib
+  - $PIP install --user numpy 
+  - $PIP install --user matplotlib
+  - export PYTHONPATH=$PYTHONPATH:$HOME/.local/lib/python*/
 script:
   - ./travis_build.sh build_out_of_tree
   - ./travis_build.sh .
