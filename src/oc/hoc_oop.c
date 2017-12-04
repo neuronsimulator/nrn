@@ -159,7 +159,7 @@ assert(sym->public != 2);
 #else
 	    b = (hoc_fin == stdin);
 #endif	    
-	    if (nrnmpi_myid_world == 0 &&(hoc_print_first_instance || b)) {
+	    if (nrnmpi_myid_world == 0 &&(hoc_print_first_instance && b)) {
 	        NOT_PARALLEL_SUB(printf("first instance of %s\n", sym->name);)
 	    }
 		sym->defined_on_the_fly = 1;
