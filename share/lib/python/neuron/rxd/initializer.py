@@ -39,6 +39,10 @@ def _do_init():
             obj = obj()
             if obj is not None:
                 obj._do_init4()
+        for obj in species._all_species:
+            obj = obj()
+            if obj is not None:
+                obj._do_init5()
         for obj in rxd._all_reactions:
             obj = obj()
             if obj is not None:

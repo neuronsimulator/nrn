@@ -1277,11 +1277,12 @@ def _compile_reactions():
                         ecs_species_ids_used[species_id][region_id] = True
                     else:
                         species_id = creg._species_ids.get(s._id)
+                        region_id = creg._region_ids.get(sptr()._region()._id)
                         operator = '+=' if species_ids_used[species_id][region_id] else '='
                         fxn_string += "\n\trhs[%d][%d] %s mult[%d] * rate;" % (species_id, region_id, operator, mc_mult_count)
                         species_ids_used[species_id][region_id] = True
                     #TODO: Fix problem if the whole region isn't part of the same aggregate c_region
-                mc_mult_count += 1
+                    mc_mult_count += 1
                 mc_mult_list.extend(r._mult.flatten())
             else:
                 for region_id in creg._react_regions[rptr]:
