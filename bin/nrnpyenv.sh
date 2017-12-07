@@ -104,16 +104,17 @@ def nrnpylib_darwin_helper():
     if len(fields) > 8:
       line = fields[8]
       if re.search(r'libpython.*\.[ds]', line):
-        print ("from lsof: %s" % line)
+        print ("# nrn_pylib from lsof: %s" % line)
         nrn_pylib = line.strip()
         return nrn_pylib
       if re.search(r'[Ll][Ii][Bb].*[Pp]ython', line):
         cnt += 1  
         if cnt == 1: # skip 1st since it is the python executable
           continue
-        print ("from lsof: %s" % line)
-        nrn_pylib = line.strip()
-        return nrn_pylib
+        if re.search(r'[Pp]ython', line.split('/')[-1]):
+          print ("# nrn_pylib from lsof: %s" % line)
+          nrn_pylib = line.strip()
+          return nrn_pylib
   else: # figure it out from the os path
     p = os.path.sep.join(os.__file__.split(os.path.sep)[:-1])
     name = "libpython%d.%d" % (sys.version_info[0], sys.version_info[1])
@@ -132,6 +133,7 @@ def nrnpylib_darwin_helper():
         libs.append(line.strip())
     print ('# %s'%str(libs))
     if len(libs) == 1:
+      print ("# nrn_pylib from os.path %s"%str(libs[0]))
       return libs[0]
     if len(libs) > 1:
       # which one do we want? Check the name of an imported shared object
@@ -156,13 +158,16 @@ def nrnpylib_darwin_helper():
           pass
       for i in libs:
         if name in i:
+          print ("# nrn_pylib from os.path %s" % i)
           return i
+      print ("# nrn_pylib from os.path %s" % str(nrn_pylib))
   return nrn_pylib
 
 def nrnpylib_darwin():
   import os
   nrn_pylib = os.getenv("PYLIB_DARWIN")
   if nrn_pylib is not "":
+    print ("# nrn_pylib from PYLIB_DARWIN %s"%nrn_pylib)
     return nrn_pylib
   return nrnpylib_darwin_helper()
           
