@@ -51,7 +51,7 @@ fi
 if [ "$TRAVIS_OS_NAME" == "linux" ]; then
     source /etc/profile.d/modules.sh
 else
-    source /usr/local/opt/modules/Modules/init/bash
+    source /usr/local/opt/modules/init/bash
 fi
 
 
@@ -77,11 +77,12 @@ do
     echo " == > PACKAGE SPEC : spack spec -I $package"
     spack spec -I $package
 
-
     # install package: travis has 4MB limit of stdout log and hence not using `-v`
     echo " == > INSTALLING PACKAGE : spack install $package"
     spack install $options $package
 
+    # store old path env (moudle purge workaround)
+    export OLD_PATH=$PATH
 
     # check if package installed properly
     echo " == > LOADING INSTALLED PACKAGE : spack load $package "
@@ -103,12 +104,7 @@ do
     # clean up
     spack clean -s
     module purge
-
-
-    # temporary workaround for module purge
-    export PATH=/usr/bin:/usr/local/bin:$PATH
-    PATH=$(echo "$PATH" | awk -v RS=':' -v ORS=":" '!a[$1]++')
-
+    export PATH=$OLD_PATH
 done
 
 
