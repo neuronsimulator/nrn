@@ -35,6 +35,8 @@ THE POSSIBILITY OF SUCH DAMAGE.
 // PatternStim ARTIFICIAL_CELL in thread 0 and attaches the spike raster
 // data to it.
 
+#include <algorithm>
+
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
@@ -56,7 +58,7 @@ extern void pattern_stim_setup_helper(int size,
                                       double v);
 }
 
-static int read_raster_file(const char* fname, double** tvec, int** gidvec);
+static size_t read_raster_file(const char* fname, double** tvec, int** gidvec);
 
 int nrn_extra_thread0_vdata;
 
@@ -74,6 +76,7 @@ void nrn_set_extra_thread0_vdata() {
 }
 
 // fname is the filename of an output_spikes.h format raster file.
+// todo : add function for memory cleanup (to be called at the end of simulation)
 void nrn_mkPatternStim(const char* fname) {
     int type = nrn_get_mechtype("PatternStim");
     if (!memb_func[type].sym) {
@@ -81,16 +84,20 @@ void nrn_mkPatternStim(const char* fname) {
         assert(0);
     }
 
+    // if there is empty thread then return, don't need patternstim
+    if(nrn_threads == NULL || nrn_threads->ncell == 0) {
+        return;
+    }
+
     double* tvec;
     int* gidvec;
-    int size = read_raster_file(fname, &tvec, &gidvec);
-    printf("raster size = %d\n", size);
-#if 0
-  for (int i=0; i < size; ++i) { printf("%g %d\n", tvec[i], gidvec[i]);}
-#endif
+
+    // todo : handle when spike raster will be very large (int < size_t)
+    size_t size = read_raster_file(fname, &tvec, &gidvec);
 
     Point_process* pnt = nrn_artcell_instantiate("PatternStim");
     NrnThread* nt = nrn_threads + pnt->_tid;
+
     Memb_list* ml = nt->_ml_list[type];
     int layout = nrn_mech_data_layout_[type];
     int sz = nrn_prop_param_size_[type];
@@ -110,30 +117,47 @@ void nrn_mkPatternStim(const char* fname) {
     pattern_stim_setup_helper(size, tvec, gidvec, _iml, _cntml, _p, _ppvar, NULL, nt, 0.0);
 }
 
-int read_raster_file(const char* fname, double** tvec, int** gidvec) {
-    FILE* f = fopen(fname, "r");
-    assert(f);
-    int size = 0;
-    int bufsize = 10000;
-    *tvec = (double*)emalloc(bufsize * sizeof(double));
-    *gidvec = (int*)emalloc(bufsize * sizeof(int));
+// comparator to sort spikes based on time
+typedef std::pair<double, int> spike_type;
+static bool spike_comparator(const spike_type& l, const spike_type& r) {
+        return l.first < r.first;
+}
 
-    double st;
-    int gid;
+size_t read_raster_file(const char* fname, double** tvec, int** gidvec) {
+    FILE* f = fopen(fname, "r");
+    nrn_assert(f);
+
+    // skip first line containing "scatter" string
     char dummy[100];
     nrn_assert(fgets(dummy, 100, f));
-    while (fscanf(f, "%lf %d\n", &st, &gid) == 2) {
-        if (size >= bufsize) {
-            bufsize *= 2;
-            *tvec = (double*)erealloc(*tvec, bufsize * sizeof(double));
-            *gidvec = (int*)erealloc(*gidvec, bufsize * sizeof(int));
-        }
-        (*tvec)[size] = st;
-        (*gidvec)[size] = gid;
-        ++size;
+
+    std::vector<spike_type> spikes;
+    spikes.reserve(10000);
+
+    double stime;
+    int gid;
+
+    while (fscanf(f, "%lf %d\n", &stime, &gid) == 2) {
+        spikes.push_back(std::make_pair(stime, gid));
     }
+
     fclose(f);
-    return size;
+
+    // pattern.mod expects sorted spike raster (this is to avoid
+    // injecting all events at the begining of the simulation).
+    // sort spikes according to time
+    std::sort(spikes.begin(), spikes.end(),  spike_comparator);
+
+    // fill gid and time vectors
+    *tvec = (double*)emalloc(spikes.size() * sizeof(double));
+    *gidvec = (int*)emalloc(spikes.size() * sizeof(int));
+
+    for(size_t i = 0; i < spikes.size(); i++) {
+         (*tvec)[i] = spikes[i].first;
+         (*gidvec)[i] = spikes[i].second;
+    }
+
+    return spikes.size();
 }
 
 // Opportunistically implemented to create a single PatternStim.
@@ -145,8 +169,9 @@ int read_raster_file(const char* fname, double** tvec, int** gidvec) {
 
 Point_process* nrn_artcell_instantiate(const char* mechname) {
     int type = nrn_get_mechtype(mechname);
-    printf("nrn_artcell_instantiate %s type=%d\n", mechname, type);
     NrnThread* nt = nrn_threads + 0;
+
+    //printf("nrn_artcell_instantiate %s type=%d\n", mechname, type);
 
     // see nrn_setup.cpp:read_phase2 for how it creates NrnThreadMembList instances.
     // create and append to nt.tml

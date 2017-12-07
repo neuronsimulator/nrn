@@ -218,12 +218,12 @@ void call_prcellstate_for_prcellgid(int prcellgid, int compute_gpu, int is_init)
             if (is_init)
                 sprintf(prcellname, "%s_gpu_init", prprefix);
             else
-                sprintf(prcellname, "%s_gpu_t%g", prprefix, t);
+                sprintf(prcellname, "%s_gpu_t%f", prprefix, t);
         } else {
             if (is_init)
                 strcpy(prcellname, "cpu_init");
             else
-                sprintf(prcellname, "cpu_t%g", t);
+                sprintf(prcellname, "cpu_t%f", t);
         }
         update_nrnthreads_on_host(nrn_threads, nrn_nthread);
         prcellstate(prcellgid, prcellname);
