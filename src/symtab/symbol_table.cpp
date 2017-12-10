@@ -30,6 +30,13 @@ namespace symtab {
         parent = nullptr;
     }
 
+    void SymbolTable::insert_table(std::string name, std::shared_ptr<SymbolTable> table) {
+        if (childrens.find(name) != childrens.end()) {
+            throw std::runtime_error("Trying to re-insert SymbolTable " + name);
+        }
+        childrens[name] = table;
+    }
+
     /** Get all symbols which can be used in global scope. Note that
      *  this is different from GLOBAL variable type in the mod file. Here
      *  global meaning all variables that can be used in entire mod file.
@@ -44,8 +51,9 @@ namespace symtab {
         std::vector<std::shared_ptr<Symbol>> variables;
         for (auto& syminfo : table.symbols) {
             auto symbol = syminfo.second;
-            auto node = symbol->get_node();
-            if ((node->isRangeVar() || node->isDependentDef() || node->isParamAssign())) {
+            SymbolInfo property = NmodlInfo::range_var;
+            property |= NmodlInfo::dependent_def | NmodlInfo::param_assign;
+            if (symbol->has_common_properties(property)) {
                 variables.push_back(symbol);
             }
         }
@@ -111,14 +119,11 @@ namespace symtab {
         return symbol;
     }
 
-    void SymbolTable::insert_table(std::string name, std::shared_ptr<SymbolTable> table) {
-        if (childrens.find(name) != childrens.end()) {
-            throw std::runtime_error("Trying to re-insert SymbolTable " + name);
-        }
-        childrens[name] = table;
-    }
-
     void ModelSymbolTable::insert(std::shared_ptr<Symbol> symbol) {
+        if (parent_symtab == nullptr) {
+            throw std::logic_error("Can not insert symbol without entering scope");
+        }
+
         symbol->set_scope(parent_symtab->name());
         std::string name = symbol->get_name();
         auto search_symbol = lookup(name);
@@ -131,7 +136,11 @@ namespace symtab {
 
         // properties and type information for error reporting
         auto properties = to_string(search_symbol->get_properties());
-        auto type = symbol->get_node()->getTypeName();
+        auto node = symbol->get_node();
+        std::string type = "UNKNOWN";
+        if (node) {
+            type = node->getTypeName();
+        }
 
         /** For global symbol tables, same variable can appear in multiple
          *  nmodl "global" blocks. It's an error if it appears multiple times
@@ -139,12 +148,14 @@ namespace symtab {
          *  which are bit flags. If they are not same that means, we have to
          *  add new properties to existing symbol. If the properties are same
          *  that means symbol are duplicate.
+         *
+         *  \todo Error handling should go to logger instead of exception
          */
         if (parent_symtab->global_scope()) {
             if (search_symbol->has_common_properties(symbol->get_properties())) {
-                std::string msg = "SYMTAB ERROR: _NMODL_GLOBAL_ has re-declaration of ";
+                std::string msg = "_NMODL_GLOBAL_ has re-declaration of ";
                 msg += name + " <" + type + "> " + properties;
-                std::cout << msg << "\n";
+                throw std::runtime_error(msg);
             } else {
                 search_symbol->combine_properties(symbol->get_properties());
             }
@@ -156,10 +167,10 @@ namespace symtab {
              *  emit the warning and insert the symbol.
              */
             if (search_symbol->get_scope() == parent_symtab->name()) {
-                std::string msg = "SYMTAB ERROR: Re-declaration of " + name;
-                msg += " [" + type + "]" + " <" + properties + "> in ";
-                msg += parent_symtab->name() + " with one in " + search_symbol->get_scope();
-                std::cout << msg << "\n";
+                std::string msg = "Re-declaration of " + name + " [" + type + "]";
+                msg += "<" + properties + "> in " + parent_symtab->name();
+                msg += " with one in " + search_symbol->get_scope();
+                throw std::runtime_error(msg);
             } else {
                 std::string msg = "SYMTAB WARNING: " + name + " [" + type + "] in ";
                 msg += parent_symtab->name() + " shadows <" + properties;
@@ -183,16 +194,6 @@ namespace symtab {
         return name;
     }
 
-    /// \todo : Remove this: used from setupBlock which could also use enter_scope
-    std::shared_ptr<SymbolTable> ModelSymbolTable::initialize_scope(std::string scope,
-                                                                    AST* node,
-                                                                    bool global) {
-        if (global) {
-            scope = "_NMODL_GLOBAL_";
-        }
-        return enter_scope(scope, node, global);
-    }
-
     /** Callback at the entry of every block in nmodl file
      *  Every block starts a new scope and hence new symbol table is created.
      *  The same symbol table is returned so that visitor can store pointer to
@@ -201,10 +202,19 @@ namespace symtab {
     std::shared_ptr<SymbolTable> ModelSymbolTable::enter_scope(std::string name,
                                                                AST* node,
                                                                bool global) {
+        if (node == nullptr) {
+            throw std::runtime_error("Can't enter with empty node");
+        }
+
         /// all global blocks in mod file have same symbol table
-        if (symtab && name == "_NMODL_GLOBAL_") {
+        if (symtab && global) {
             parent_symtab = symtab;
             return parent_symtab;
+        }
+
+        /// change name for global symbol table
+        if (global) {
+            name = global_symtab_name;
         }
 
         /// statement block within global scope is part of global block itself
@@ -236,10 +246,18 @@ namespace symtab {
      *  same symbol table. Otherwise traverse back to prent.
      */
     void ModelSymbolTable::leave_scope() {
+        if (parent_symtab == nullptr && symtab == nullptr) {
+            throw std::logic_error("Trying leave scope without entering");
+        }
+
+        /// if has parent scope, setup new parent symbol table
         if (parent_symtab) {
             parent_symtab = parent_symtab->get_parent_table();
         }
 
+        /// \todo : when parent is nullptr, parent should not be reset to
+        ///         current symbol table. this is happening for global
+        ///         scope symbol table
         if (parent_symtab == nullptr) {
             parent_symtab = symtab;
         }
@@ -255,17 +273,19 @@ namespace symtab {
     std::string format_text(std::string text, int width, alignment type) {
         std::string left, right;
         // count excess room to pad
-        auto padding = width - text.size();
-        if (type == alignment::left) {
-            right = std::string(padding, ' ');
-        } else if (type == alignment::right) {
-            left = std::string(padding, ' ');
-        } else {
-            left = std::string(padding / 2, ' ');
-            right = std::string(padding / 2, ' ');
-            // if odd #, add one more space
-            if (padding > 0 && padding % 2 != 0) {
-                right += " ";
+        int padding = width - text.size();
+        if (padding > 0) {
+            if (type == alignment::left) {
+                right = std::string(padding, ' ');
+            } else if (type == alignment::right) {
+                left = std::string(padding, ' ');
+            } else {
+                left = std::string(padding / 2, ' ');
+                right = std::string(padding / 2, ' ');
+                // if odd #, add one more space
+                if (padding > 0 && padding % 2 != 0) {
+                    right += " ";
+                }
             }
         }
         return left + text + right;
@@ -332,17 +352,23 @@ namespace symtab {
     }
 
     void SymbolTable::print(std::stringstream& ss, int level) {
-        auto title = symtab_name + " [" + type() + " IN " + get_parent_table_name() + "] ";
-        title += "POSITION : " + position();
-        title += global ? " SCOPE : GLOBAL" : " SCOPE : LOCAL";
+        /// construct title for symbol table
+        auto name = symtab_name + " [" + type() + " IN " + get_parent_table_name() + "] ";
+        auto location = "POSITION : " + position();
+        auto scope = global ? "GLOBAL" : "LOCAL";
+        auto title = name + location + " SCOPE : " + scope;
 
         table.print(ss, title, level);
 
+        /// when current symbol table is empty, the childrens
+        /// can be printed from the same indentation level
+        /// (this is to avoid unnecessary empty indentations)
         auto next_level = level;
         if (table.symbols.size() == 0) {
             next_level--;
         }
 
+        /// recursively print all childrens
         for (const auto& item : childrens) {
             if (item.second->symbol_count() >= 0) {
                 (item.second)->print(ss, ++next_level);

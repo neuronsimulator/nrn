@@ -18,6 +18,10 @@ namespace symtab {
         properties = properties | property;
     }
 
+    void Symbol::add_property(SymbolInfo& property) {
+        properties = properties | property;
+    }
+
     /** Prime variable will appear in different block and could have
      *  multiple derivative orders. We have to store highest order.
      *

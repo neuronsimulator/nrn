@@ -104,8 +104,6 @@ namespace symtab {
             return write_count;
         }
 
-        void set_as_extern_token();
-
         bool is_extern_token_only();
 
         bool has_common_properties(SymbolInfo& prop);
@@ -113,6 +111,8 @@ namespace symtab {
         void combine_properties(SymbolInfo& prop);
 
         void add_property(NmodlInfo property);
+
+        void add_property(SymbolInfo& property);
 
         void set_order(int order);
     };
