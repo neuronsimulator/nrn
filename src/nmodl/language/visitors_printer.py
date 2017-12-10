@@ -186,18 +186,17 @@ class SymtabVisitorDeclarationPrinter(DeclarationPrinter):
         self.writer.write_line("void setupSymbol(T* node, symtab::details::NmodlInfo property, int order = 0);", newline=2)
 
         self.writer.write_line("template<typename T>")
-        line = "void setupSymbolTable(T *node, bool global_block);"
+        line = "void setupSymbolTable(T *node, bool global);"
         self.writer.write_line(line)
 
         self.writer.write_line("template<typename T>")
-        line = "void setupSymbolTable(T *node, symtab::details::NmodlInfo property, bool global_block);"
+        line = "void setupSymbolTable(T *node, symtab::details::NmodlInfo property, bool global);"
         self.writer.write_line(line, newline=2)
 
         for node in self.nodes:
             if node.is_symtab_method_required():
-                line = "virtual void visit" + node.class_name + "(" + node.class_name + "* node) override;"
+                line = "void visit" + node.class_name + "(" + node.class_name + "* node) override;"
                 self.writer.write_line(line)
-
 
         self.writer.decrease_gutter()
 
@@ -230,7 +229,7 @@ class SymtabVisitorDefinitionPrinter(DefinitionPrinter):
                     self.writer.write_line("setupSymbol(node, " + property_name + is_prime + ");")
 
                 else:
-                    """ setupBlock has node*, symbol*, symbol_block, program_block, global_block"""
+                    """ setupBlock has node*, properties, global_block"""
                     if node.is_symbol_block_node():
                         fun_call = "setupSymbolTable(node, " + property_name + ", false);"
 

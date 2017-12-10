@@ -37,7 +37,7 @@ void SymtabVisitor::setupSymbolTable(T* node,
 
 template <typename T>
 void SymtabVisitor::setupSymbolTable(T* node, bool global_block) {
-    auto symtab = modsymtab->initialize_scope(node->getName(), node, global_block);
+    auto symtab = modsymtab->enter_scope(node->getName(), node, global_block);
     node->setBlockSymbolTable(symtab);
 
     if (node->isProgram()) {
