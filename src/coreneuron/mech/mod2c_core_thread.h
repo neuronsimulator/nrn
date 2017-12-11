@@ -37,15 +37,25 @@ typedef int (*SPFUN)(struct SparseObj*, double*, _threadargsproto_);
 
 #else
 
+/**
+ * \todo: typedefs like DIFUN can be removed
+ * \todo: macros for difun, newtfun, eulerfun are not necessary
+ *        and need to be refactored.
+ */
+
 typedef int DIFUN;
 typedef int NEWTFUN;
 typedef int SPFUN;
+typedef int EULFUN;
 #pragma acc routine seq
-extern int nrn_derivimplic_steer(int, _threadargsproto_);
-#define difun(arg) nrn_derivimplic_steer(arg, _threadargs_);
+extern int nrn_derivimplicit_steer(int, _threadargsproto_);
+#define difun(arg) nrn_derivimplicit_steer(arg, _threadargs_);
 #pragma acc routine seq
 extern int nrn_newton_steer(int, _threadargsproto_);
 #define newtfun(arg) nrn_newton_steer(arg, _threadargs_);
+#pragma acc routine seq
+extern int nrn_euler_steer(int, _threadargsproto_);
+#define eulerfun(arg) nrn_euler_steer(arg, _threadargs_);
 
 #endif
 
@@ -97,6 +107,8 @@ typedef struct SparseObj {  /* all the state information */
 extern int nrn_kinetic_steer(int, SparseObj*, double*, _threadargsproto_);
 #define spfun(arg1, arg2, arg3) nrn_kinetic_steer(arg1, arg2, arg3, _threadargs_);
 
+#pragma acc routine seq
+extern int euler_thread(int, int*, int*, EULFUN, _threadargsproto_);
 #pragma acc routine seq
 extern int derivimplicit_thread(int, int*, int*, DIFUN, _threadargsproto_);
 #pragma acc routine seq
