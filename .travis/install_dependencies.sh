@@ -7,6 +7,7 @@ MPI_LIB_NAME="$1"
 
 case "$TRAVIS_OS_NAME" in
     osx)
+        brew cask uninstall oclint
         brew update > /dev/null
         brew install flex bison modules
         brew install python3
