@@ -183,15 +183,8 @@ class AstDeclarationPrinter(DeclarationPrinter):
                 if node.is_prime_node() and child.varname == ORDER_VAR_NAME:
                     self.writer.write_line("int getOrder() " + " { return " + ORDER_VAR_NAME + "->eval(); }")
 
-            # TODO: returning typename for name? check the usage of this and fix in better way
+            # add method to return typename
             self.writer.write_line("virtual std::string getTypeName() override { return \"" + node.class_name + "\"; }")
-
-            # TODO : symbol table needs to know the name of every node
-            # For nodes without any children with name, name is typename itself
-            if not get_method_added:
-                self.writer.write_line("virtual std::string getName() override {")
-                self.writer.write_line("    return getTypeName();")
-                self.writer.write_line("}")
 
             # all member functions
             self.writer.write_line(virtual + "void visitChildren (Visitor* v) override;")

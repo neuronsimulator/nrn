@@ -88,21 +88,21 @@ SCENARIO("Symbol operations") {
             symbol.add_property(property1);
             symbol.add_property(property2);
             THEN("symbol has multiple properties") {
-                REQUIRE(symbol.has_common_properties(property1) == true);
+                REQUIRE(symbol.has_properties(property1) == true);
 
                 SymbolInfo property = NmodlInfo::param_assign;
-                REQUIRE(symbol.has_common_properties(property) == false);
+                REQUIRE(symbol.has_properties(property) == false);
 
                 symbol.add_property(NmodlInfo::param_assign);
-                REQUIRE(symbol.has_common_properties(property) == true);
+                REQUIRE(symbol.has_properties(property) == true);
             }
         }
         WHEN("combined properties") {
             SymbolInfo property = NmodlInfo::factor_def | NmodlInfo::global_var;
             THEN("symbol has union of all properties") {
-                REQUIRE(symbol.has_common_properties(property) == false);
+                REQUIRE(symbol.has_properties(property) == false);
                 symbol.combine_properties(property);
-                REQUIRE(symbol.has_common_properties(property) == true);
+                REQUIRE(symbol.has_properties(property) == true);
                 property |= symbol.get_properties();
                 REQUIRE(symbol.get_properties() == property);
             }

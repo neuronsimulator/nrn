@@ -6,10 +6,12 @@
 
 using namespace symtab::details;
 
+/// check if any property is set
 bool has_property(const SymbolInfo& obj, NmodlInfo property) {
     return static_cast<bool>(obj & property);
 }
 
+/// helper function to convert properties to string
 std::vector<std::string> to_string_vector(const SymbolInfo& obj) {
     std::vector<std::string> properties;
 

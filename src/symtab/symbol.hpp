@@ -106,7 +106,7 @@ namespace symtab {
 
         bool is_extern_token_only();
 
-        bool has_common_properties(SymbolInfo& prop);
+        bool has_properties(SymbolInfo& prop);
 
         void combine_properties(SymbolInfo& prop);
 
