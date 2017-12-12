@@ -16,11 +16,11 @@ namespace symtab {
         symbols[name] = symbol;
     }
 
-    std::shared_ptr<Symbol> Table::lookup(std::string sname) {
-        if (symbols.find(sname) == symbols.end()) {
+    std::shared_ptr<Symbol> Table::lookup(std::string name) {
+        if (symbols.find(name) == symbols.end()) {
             return nullptr;
         }
-        return symbols[sname];
+        return symbols[name];
     }
 
     SymbolTable::SymbolTable(const SymbolTable& table) {
@@ -30,6 +30,7 @@ namespace symtab {
         parent = nullptr;
     }
 
+    /// insert new symbol table of one of the children block
     void SymbolTable::insert_table(std::string name, std::shared_ptr<SymbolTable> table) {
         if (childrens.find(name) != childrens.end()) {
             throw std::runtime_error("Trying to re-insert SymbolTable " + name);
@@ -53,7 +54,7 @@ namespace symtab {
             auto symbol = syminfo.second;
             SymbolInfo property = NmodlInfo::range_var;
             property |= NmodlInfo::dependent_def | NmodlInfo::param_assign;
-            if (symbol->has_common_properties(property)) {
+            if (symbol->has_properties(property)) {
                 variables.push_back(symbol);
             }
         }
@@ -95,9 +96,15 @@ namespace symtab {
     }
 
     /// lookup in all parents symbol table
-    /// \todo not sure why we are searching in parent symtab only. Also we could
-    ///       also use lookup_in_scope partly. revisit this usage.
+    /// \todo parent_symtab is somewhat misleading. it's actually
+    ///       current symbol table that is under process. we should
+    ///       rename it. note that we still need parent symbol table
+    ///       filed to traverse the parents. revisit this usage.
     std::shared_ptr<Symbol> ModelSymbolTable::lookup(std::string name) {
+
+        /// parent symbol is not set means symbol table is
+        /// is not used with visitor at all. it would be ok
+        // to just return nullptr?
         if (!parent_symtab) {
             throw std::logic_error("Lookup wit previous symtab = nullptr ");
         }
@@ -107,7 +114,7 @@ namespace symtab {
             return symbol;
         }
 
-        // check into all parents
+        // check into all parent symbol tables
         auto parent = parent_symtab->get_parent_table();
         while (parent) {
             symbol = parent->lookup(name);
@@ -152,8 +159,8 @@ namespace symtab {
          *  \todo Error handling should go to logger instead of exception
          */
         if (parent_symtab->global_scope()) {
-            if (search_symbol->has_common_properties(symbol->get_properties())) {
-                std::string msg = "_NMODL_GLOBAL_ has re-declaration of ";
+            if (search_symbol->has_properties(symbol->get_properties())) {
+                std::string msg = GLOBAL_SYMTAB_BANE + " has re-declaration of ";
                 msg += name + " <" + type + "> " + properties;
                 throw std::runtime_error(msg);
             } else {
@@ -194,7 +201,7 @@ namespace symtab {
         return name;
     }
 
-    /** Callback at the entry of every block in nmodl file
+    /** Function callback at the entry of every block in nmodl file
      *  Every block starts a new scope and hence new symbol table is created.
      *  The same symbol table is returned so that visitor can store pointer to
      *  symbol table within a node.
@@ -214,7 +221,7 @@ namespace symtab {
 
         /// change name for global symbol table
         if (global) {
-            name = global_symtab_name;
+            name = GLOBAL_SYMTAB_BANE;
         }
 
         /// statement block within global scope is part of global block itself
@@ -264,7 +271,8 @@ namespace symtab {
     }
 
     //=============================================================================
-    // Revisit implementation of all below symbol table printing functions
+    // Revisit implementation of symbol table pretty printing functions : should
+    // be refactored into separate table printer function.
     //=============================================================================
 
     enum class alignment { left, right, center };

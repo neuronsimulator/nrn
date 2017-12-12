@@ -158,7 +158,7 @@ class SymtabVisitorDeclarationPrinter(DeclarationPrinter):
         self.writer.write_line(line, newline=2)
 
     def class_comment(self):
-        self.writer.write_line("/* Concrete visitor for printing Symbol table in JSON format */")
+        self.writer.write_line("/* Concrete visitor for constructing symbol table from AST */")
 
     def class_name_declaration(self):
 
@@ -182,17 +182,24 @@ class SymtabVisitorDeclarationPrinter(DeclarationPrinter):
         line = self.classname + "( ModelSymbolTable* symtab, std::string filename) : modsymtab(symtab), printer(new JSONPrinter(filename)) {}"
         self.writer.write_line(line, newline=2)
 
+        # helper function for creating symbol for variables
         self.writer.write_line("template<typename T>")
-        self.writer.write_line("void setupSymbol(T* node, symtab::details::NmodlInfo property, int order = 0);", newline=2)
+        self.writer.write_line("void setupSymbol(T* node, SymbolInfo property, int order = 0);", newline=2)
 
+        # helper function for creating symbol table for blocks
+        # without name (e.g. parameter, unit, breakpoint)
         self.writer.write_line("template<typename T>")
-        line = "void setupSymbolTable(T *node, bool global);"
+        line = "void setupSymbolTable(T *node, std::string name, bool global);"
         self.writer.write_line(line)
 
+        # helper function for creating symbol table for blocks
+        # with name (e.g. procedure, function, derivative)
         self.writer.write_line("template<typename T>")
-        line = "void setupSymbolTable(T *node, symtab::details::NmodlInfo property, bool global);"
+        line = "void setupSymbolTable(T *node, std::string name, SymbolInfo property, bool global);"
         self.writer.write_line(line, newline=2)
 
+        # we have to override visitor methods for the nodes
+        # which goes into symbol table
         for node in self.nodes:
             if node.is_symtab_method_required():
                 line = "void visit" + node.class_name + "(" + node.class_name + "* node) override;"
@@ -201,6 +208,7 @@ class SymtabVisitorDeclarationPrinter(DeclarationPrinter):
         self.writer.decrease_gutter()
 
     def post_declaration(self):
+        # helper function definitions
         self.writer.write_line()
         self.writer.write_line('#include "visitors/symtab_visitor_helper.hpp"')
 
@@ -231,14 +239,14 @@ class SymtabVisitorDefinitionPrinter(DefinitionPrinter):
                 else:
                     """ setupBlock has node*, properties, global_block"""
                     if node.is_symbol_block_node():
-                        fun_call = "setupSymbolTable(node, " + property_name + ", false);"
+                        fun_call = "setupSymbolTable(node, node->getName(), " + property_name + ", false);"
 
                     elif node.is_program_node() or node.is_global_block_node():
-                        fun_call = "setupSymbolTable(node, true);"
+                        fun_call = "setupSymbolTable(node, node->getTypeName(), true);"
 
                     else:
                         """this is for nodes which has parent class as Block node"""
-                        fun_call = "setupSymbolTable(node, false);"
+                        fun_call = "setupSymbolTable(node, node->getTypeName(), false);"
 
                     self.writer.write_line(fun_call)
                 self.writer.write_line("}", pre_gutter=-1, newline=2)

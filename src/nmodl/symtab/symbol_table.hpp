@@ -180,7 +180,7 @@ namespace symtab {
         std::string get_unique_name(std::string name, AST* node);
 
         /// name of top level global symbol table
-        const std::string global_symtab_name = "_NMODL_GLOBAL_";
+        const std::string GLOBAL_SYMTAB_BANE = "NMODL_GLOBAL";
 
       public:
         /// entering into new nmodl block
