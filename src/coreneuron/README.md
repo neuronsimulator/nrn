@@ -211,11 +211,10 @@ Note that celsius and dt, if not specified, will get their values from the model
 
 # Results
 
-Currently CoreNEURON only outputs spike data. When running the simulation, each MPI rank writes spike information
-into a file `out.#mpi_rank`. These files should be combined and sorted to compare with NEURON spike output.
+Currently CoreNEURON only outputs spike data. Spike output file need to be sorted to compare with NEURON:
 
 ```
-cat out[0-9]*.dat | sort -k 1n,1n -k 2n,2n > out.spk
+sort -k 1n,1n -k 2n,2n out.dat > out.spk
 ```
 
 # Running tests

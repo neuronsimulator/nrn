@@ -207,3 +207,11 @@ void nrn_fatal_error(const char* msg) {
     }
     nrn_abort(-1);
 }
+
+int nrnmpi_initialized() {
+    int flag = 0;
+#if NRNMPI
+    MPI_Initialized(&flag);
+#endif
+    return flag;
+}
