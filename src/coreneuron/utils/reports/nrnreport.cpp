@@ -124,9 +124,12 @@ void ReportGenerator::register_report() {
 
         /** avoid empty NrnThread */
         if (nt.ncell) {
-            /** new event for every thread */
+            /** new event for every thread : we start recording
+             * reports at t = 0 (to be consistent with neurodamus).
+             * t could be 0 at the begining or some different value
+             * for checkpoint-restart simulations */
             events.push_back(new ReportEvent(dt));
-            events[ith]->send(dt, net_cvode_instance, &nt);
+            events[ith]->send(t, net_cvode_instance, &nt);
 
             /** @todo: hard coded parameters for ReportingLib from Jim*/
             int sizemapping = 1;
