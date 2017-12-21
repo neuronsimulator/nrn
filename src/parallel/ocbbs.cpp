@@ -1062,7 +1062,7 @@ void ParallelContext_reg() {
 		retobj_members, retstr_members);
 }
 
-char* BBSImpl::execute_helper(size_t* size, int id) {
+char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
 	char* s;
 	int subworld = (nrnmpi_numprocs > 1 && nrnmpi_numprocs_bbs < nrnmpi_numprocs_world);
 	int style = upkint();
@@ -1205,11 +1205,16 @@ hoc_execerror("ParallelContext execution error", 0);
 				pickle_ret_ = 0;
 				pickle_ret_size_ = 0;
 			}
-			rs = (*nrnpy_callpicklef)(s, npickle, narg, size);
+			if (exec) {
+			  rs = (*nrnpy_callpicklef)(s, npickle, narg, size);
+			}
 			hoc_ac_ = 0.;
 		}else{
 //printf("%d exec hoc call %s narg=%d\n", nrnmpi_myid_world, fname->name, narg);
-			hoc_ac_ = hoc_call_objfunc(fname, narg, ob);
+			hoc_ac_ = 0.;
+			if (exec) {
+			  hoc_ac_ = hoc_call_objfunc(fname, narg, ob);
+			}
 //printf("%d exec return from hoc call %s narg=%d\n", nrnmpi_myid_world, fname->name, narg);
 		}
 		delete [] s;
