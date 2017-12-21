@@ -371,7 +371,7 @@ int BBSImpl::submit(int userid) {
 printf("submit n_= %d for working_id=%d userid=%d\n",n_, working_id_, userid);
 	}
 	if (userid < 0) {
-		save_args(-userid);
+		save_args(userid);
 	}else{
 		post_todo(working_id_);
 	}
@@ -441,7 +441,6 @@ printf("working n_=%d: after %d try elapsed %g sec got result for %d id=%d x=%g\
 n_, cnt, time()-t, working_id_, id, x);
 			}
 			if (userid < 0) {
-				userid = -userid;
 				return_args(userid);
 			}
 			return true;
