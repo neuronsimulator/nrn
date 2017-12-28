@@ -79,9 +79,9 @@ SCENARIO("Symbol operations") {
         ModToken token(true);
         Symbol symbol("alpha", token);
         WHEN("added external property") {
-            symbol.add_property(NmodlInfo::extern_token);
+            symbol.add_property(NmodlInfo::extern_neuron_variable);
             THEN("symbol becomes external") {
-                REQUIRE(symbol.is_extern_token_only() == true);
+                REQUIRE(symbol.is_external_symbol_only() == true);
             }
         }
         WHEN("added multiple properties to symbol") {

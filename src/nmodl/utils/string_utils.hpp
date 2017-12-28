@@ -11,6 +11,8 @@
  * stackoverflow.com/questions/216823/whats-the-best-way-to-trim-stdstring
  */
 
+enum class text_alignment { left, right, center };
+
 namespace stringutils {
     /// Trim from start
     static inline std::string& ltrim(std::string& s) {
@@ -32,7 +34,7 @@ namespace stringutils {
         return ltrim(rtrim(s));
     }
 
-    inline void remove_character(std::string& str, const char c) {
+    static inline void remove_character(std::string& str, const char c) {
         str.erase(std::remove(str.begin(), str.end(), c), str.end());
     }
 
@@ -51,7 +53,7 @@ namespace stringutils {
                 case '"':
                 case '\\':
                     after += '\\';
-                /// don't break here as we want to append actual character
+                    /// don't break here as we want to append actual character
 
                 default:
                     after += c;
@@ -62,16 +64,41 @@ namespace stringutils {
     }
 
     /// Spilt string with given delimiter and returns vector
-    inline std::vector<std::string> split_string(const std::string& s, char delim) {
-        std::vector<std::string> elems;
-        std::stringstream ss(s);
+    static inline std::vector<std::string> split_string(const std::string& text, char delimiter) {
+        std::vector<std::string> elements;
+        std::stringstream ss(text);
         std::string item;
 
-        while (std::getline(ss, item, delim)) {
-            elems.push_back(item);
+        while (std::getline(ss, item, delimiter)) {
+            elements.push_back(item);
         }
 
-        return elems;
+        return elements;
+    }
+
+    /// Left/Right/Center-aligns string within a field of width "width"
+    static inline std::string align_text(std::string text, int width, text_alignment type) {
+        /// left and right spacing
+        std::string left, right;
+
+        /// count excess room to pad
+        int padding = width - text.size();
+
+        if (padding > 0) {
+            if (type == text_alignment::left) {
+                right = std::string(padding, ' ');
+            } else if (type == text_alignment::right) {
+                left = std::string(padding, ' ');
+            } else {
+                left = std::string(padding / 2, ' ');
+                right = std::string(padding / 2, ' ');
+                /// if odd #, add one more space
+                if (padding > 0 && padding % 2 != 0) {
+                    right += " ";
+                }
+            }
+        }
+        return left + text + right;
     }
 
 }  // namespace stringutils

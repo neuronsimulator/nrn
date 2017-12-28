@@ -139,6 +139,7 @@ class JSONVisitorDefinitionPrinter(DefinitionPrinter):
                 if node.class_name == "Program":
                     self.writer.write_line("flush();")
             else:
+                self.writer.write_line("(void)node;")
                 self.writer.write_line("printer->addNode(\"" + node.class_name + "\");")
 
             self.writer.write_line("}", pre_gutter=-1, newline=2)
@@ -167,8 +168,8 @@ class SymtabVisitorDeclarationPrinter(DeclarationPrinter):
 
     def private_declaration(self):
         self.writer.write_line("private:", post_gutter=1)
-        self.writer.write_line("std::unique_ptr<JSONPrinter> printer;")
         self.writer.write_line("ModelSymbolTable* modsymtab;", newline=2, post_gutter=-1)
+        self.writer.write_line("std::unique_ptr<JSONPrinter> printer;")
 
     def public_declaration(self):
         self.writer.write_line("public:", post_gutter=1)
@@ -189,13 +190,13 @@ class SymtabVisitorDeclarationPrinter(DeclarationPrinter):
         # helper function for creating symbol table for blocks
         # without name (e.g. parameter, unit, breakpoint)
         self.writer.write_line("template<typename T>")
-        line = "void setupSymbolTable(T *node, std::string name, bool global);"
+        line = "void setupSymbolTable(T *node, std::string name, bool is_global);"
         self.writer.write_line(line)
 
         # helper function for creating symbol table for blocks
         # with name (e.g. procedure, function, derivative)
         self.writer.write_line("template<typename T>")
-        line = "void setupSymbolTable(T *node, std::string name, SymbolInfo property, bool global);"
+        line = "void setupSymbolTable(T *node, std::string name, SymbolInfo property, bool is_global);"
         self.writer.write_line(line, newline=2)
 
         # we have to override visitor methods for the nodes

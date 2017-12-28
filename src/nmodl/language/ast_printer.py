@@ -26,10 +26,6 @@ class AstDeclarationPrinter(DeclarationPrinter):
         self.writer.write_line('#include "lexer/modtoken.hpp"')
         self.writer.write_line('#include "utils/common_utils.hpp"', newline=2)
 
-        self.writer.write_line('namespace symtab {')
-        self.writer.write_line('    class SymbolTable;')
-        self.writer.write_line('}')
-
     def class_comment(self):
         self.writer.write_line("/* all classes representing Abstract Syntax Tree (AST) nodes */")
 
@@ -201,8 +197,8 @@ class AstDeclarationPrinter(DeclarationPrinter):
                 self.writer.write_line("void setToken(ModToken& tok) " + " { token = std::shared_ptr<ModToken>(new ModToken(tok)); }")
 
             if node.is_symtab_needed():
-                self.writer.write_line("void setBlockSymbolTable(std::shared_ptr<symtab::SymbolTable> newsymtab) " + " { symtab = newsymtab; }")
-                self.writer.write_line("std::shared_ptr<symtab::SymbolTable> getBlockSymbolTable() " + " { return symtab; }")
+                self.writer.write_line("void setSymbolTable(std::shared_ptr<symtab::SymbolTable> newsymtab) " + " { symtab = newsymtab; }")
+                self.writer.write_line("std::shared_ptr<symtab::SymbolTable> getSymbolTable() override " + " { return symtab; }")
 
             if node.is_number_node():
                 self.writer.write_line(virtual + "void negate()" + override + " { std::cout << \"ERROR : negate() not implemented! \"; abort(); } ")
@@ -214,7 +210,7 @@ class AstDeclarationPrinter(DeclarationPrinter):
                     self.writer.write_line("void negate() override { value = -value; }")
 
             if node.is_identifier_node():
-                self.writer.write_line(virtual + "void setName(std::string name)" + override + " { std::cout << \"ERROR : setName() not implemented! \"; abort(); }")
+                self.writer.write_line(virtual + "void setName(std::string /*name*/)" + override + " { std::cout << \"ERROR : setName() not implemented! \"; abort(); }")
 
             if node.is_name_node():
                 self.writer.write_line(virtual + "void setName(std::string name)" + override + " { value->set(name); }")
@@ -303,7 +299,7 @@ class AstDefinitionPrinter(DefinitionPrinter):
                 self.writer.flush_buffered_lines()
                 self.writer.write_line("}", pre_gutter=-1, newline=2)
             else:
-                self.writer.write_line("void " + node.class_name + "::visitChildren(Visitor* v) {}")
+                self.writer.write_line("void " + node.class_name + "::visitChildren(Visitor* /*v*/) {}")
 
             if members:
                 # TODO : constructor definition : remove this with C++11 style
@@ -318,7 +314,7 @@ class AstDefinitionPrinter(DefinitionPrinter):
                 self.writer.write_line("{")
 
                 for member in ptr_members:
-                    # bit hack here : remove pointer because we are creating smart pointer
+                    # todo : bit hack here, need to remove pointer because we are creating smart pointer
                     typename = member[0].replace("*", "")
                     self.writer.write_line("    this->" + member[1] + " = std::shared_ptr<" + typename + ">(" + member[1] + ");")
 

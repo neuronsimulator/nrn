@@ -5,6 +5,10 @@
 
 #include "lexer/modtoken.hpp"
 
+namespace symtab {
+    class SymbolTable;
+}
+
 namespace ast {
     /* enumaration of all binary operators in the language */
     typedef enum {
@@ -85,6 +89,10 @@ namespace ast {
         /* @todo: please revisit this. adding quickly for symtab */
         virtual ModToken* getToken() { /*std::cout << "\n ERROR: getToken not implemented!";*/
             return nullptr;
+        }
+
+        virtual std::shared_ptr<symtab::SymbolTable> getSymbolTable() {
+            throw std::runtime_error("getSymbolTable() not implemented");
         }
 
         virtual ~AST() {

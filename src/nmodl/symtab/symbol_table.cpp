@@ -1,5 +1,7 @@
-#include "symtab/symbol_table.hpp"
 #include "lexer/token_mapping.hpp"
+#include "symtab/symbol_table.hpp"
+#include "utils/table_data.hpp"
+#include "utils/string_utils.hpp"
 
 namespace symtab {
 
@@ -32,10 +34,10 @@ namespace symtab {
 
     /// insert new symbol table of one of the children block
     void SymbolTable::insert_table(std::string name, std::shared_ptr<SymbolTable> table) {
-        if (childrens.find(name) != childrens.end()) {
+        if (children.find(name) != children.end()) {
             throw std::runtime_error("Trying to re-insert SymbolTable " + name);
         }
-        childrens[name] = table;
+        children[name] = table;
     }
 
     /** Get all symbols which can be used in global scope. Note that
@@ -101,7 +103,6 @@ namespace symtab {
     ///       rename it. note that we still need parent symbol table
     ///       filed to traverse the parents. revisit this usage.
     std::shared_ptr<Symbol> ModelSymbolTable::lookup(std::string name) {
-
         /// parent symbol is not set means symbol table is
         /// is not used with visitor at all. it would be ok
         // to just return nullptr?
@@ -275,41 +276,22 @@ namespace symtab {
     // be refactored into separate table printer function.
     //=============================================================================
 
-    enum class alignment { left, right, center };
-
-    /// Left/Right/Center-aligns string within a field of width "width"
-    std::string format_text(std::string text, int width, alignment type) {
-        std::string left, right;
-        // count excess room to pad
-        int padding = width - text.size();
-        if (padding > 0) {
-            if (type == alignment::left) {
-                right = std::string(padding, ' ');
-            } else if (type == alignment::right) {
-                left = std::string(padding, ' ');
-            } else {
-                left = std::string(padding / 2, ' ');
-                right = std::string(padding / 2, ' ');
-                // if odd #, add one more space
-                if (padding > 0 && padding % 2 != 0) {
-                    right += " ";
-                }
-            }
-        }
-        return left + text + right;
-    }
-
-    void Table::print(std::stringstream& ss, std::string title, int n) {
+    void Table::print(std::stringstream& stream, std::string title, int indent) {
         if (symbols.size()) {
-            std::vector<int> width{15, 15, 15, 15, 15};
-            std::vector<std::vector<std::string>> rows;
+            TableData table;
+            table.title = title;
+            table.headers = {"NAME", "PROPERTIES", "LOCATION", "# READS", "# WRITES"};
+            table.alignments = {text_alignment::left, text_alignment::left, text_alignment::right,
+                                text_alignment::right, text_alignment::right};
 
             for (const auto& syminfo : symbols) {
                 auto symbol = syminfo.second;
+                auto is_external = symbol->is_external_symbol_only();
+                auto read_count = symbol->get_read_count();
+                auto write_count = symbol->get_write_count();
 
                 // do not print external symbols which are not used in the current model
-                if (symbol->is_extern_token_only() && symbol->get_read_count() == 0 &&
-                    symbol->get_write_count() == 0) {
+                if (is_external && read_count == 0 && write_count == 0) {
                     continue;
                 }
 
@@ -318,55 +300,22 @@ namespace symtab {
                 auto properties = to_string(symbol->get_properties());
                 auto reads = std::to_string(symbol->get_read_count());
                 auto writes = std::to_string(symbol->get_write_count());
-
-                std::vector<std::string> row{name, properties, position, reads, writes};
-                rows.push_back(row);
-
-                for (int i = 0; i < row.size(); i++) {
-                    if (width[i] < (row[i].length() + 3))
-                        width[i] = row[i].length() + 3;
-                }
+                table.rows.push_back({name, properties, position, reads, writes});
             }
-
-            std::stringstream header;
-            header << "| ";
-            header << format_text("NAME", width[0], alignment::center) << " | ";
-            header << format_text("PROPERTIES", width[1], alignment::center) << " | ";
-            header << format_text("LOCATION", width[2], alignment::center) << " | ";
-            header << format_text("# READS", width[3], alignment::center) << " | ";
-            header << format_text("# WRITES", width[4], alignment::center) << "  |";
-
-            auto header_len = header.str().length();
-            auto spaces = std::string(n * 4, ' ');
-            auto separator_line = std::string(header_len, '-');
-
-            ss << "\n" << spaces << separator_line;
-            ss << "\n" << spaces;
-            ss << "|" << format_text(title, header_len - 2, alignment::center) << "|";
-            ss << "\n" << spaces << separator_line;
-            ss << "\n" << spaces << header.str();
-            ss << "\n" << spaces << separator_line;
-
-            for (const auto& row : rows) {
-                ss << "\n" << spaces << "| ";
-                ss << format_text(row[0], width[0], alignment::left) << " | ";
-                ss << format_text(row[1], width[1], alignment::left) << " | ";
-                ss << format_text(row[2], width[2], alignment::right) << " | ";
-                ss << format_text(row[3], width[3], alignment::right) << " | ";
-                ss << format_text(row[4], width[4], alignment::right) << "  |";
-            }
-            ss << "\n" << spaces << separator_line << "\n";
+            table.print(stream, indent);
         }
     }
 
-    void SymbolTable::print(std::stringstream& ss, int level) {
+    std::string SymbolTable::title() {
         /// construct title for symbol table
         auto name = symtab_name + " [" + type() + " IN " + get_parent_table_name() + "] ";
         auto location = "POSITION : " + position();
         auto scope = global ? "GLOBAL" : "LOCAL";
-        auto title = name + location + " SCOPE : " + scope;
+        return name + location + " SCOPE : " + scope;
+    }
 
-        table.print(ss, title, level);
+    void SymbolTable::print(std::stringstream& ss, int level) {
+        table.print(ss, title(), level);
 
         /// when current symbol table is empty, the childrens
         /// can be printed from the same indentation level
@@ -376,8 +325,8 @@ namespace symtab {
             next_level--;
         }
 
-        /// recursively print all childrens
-        for (const auto& item : childrens) {
+        /// recursively print all children tables
+        for (const auto& item : children) {
             if (item.second->symbol_count() >= 0) {
                 (item.second)->print(ss, ++next_level);
                 next_level--;

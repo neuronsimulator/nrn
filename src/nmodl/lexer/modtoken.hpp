@@ -34,11 +34,11 @@ class ModToken {
     /// token value returned by lexer
     int token = -1;
 
-    /// if token is externally defined symbol
-    bool external = false;
-
     /// position of the token in mod file
     nmodl::location pos;
+
+    /// if token is externally defined symbol
+    bool external = false;
 
   public:
     ModToken() : pos(nullptr, 0){};
@@ -72,8 +72,6 @@ class ModToken {
     std::string position() const;
 
     friend std::ostream& operator<<(std::ostream& stream, const ModToken& mt);
-
-    std::string to_string() const;
 };
 
 #endif

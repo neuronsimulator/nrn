@@ -1,0 +1,108 @@
+#include <numeric>
+#include <iostream>
+
+#include "utils/table_data.hpp"
+#include "utils/string_utils.hpp"
+
+/**
+ *   Print table data in below shown format: title as first row (centrally aligned),
+ *   second row is header for individual column (centrally aligned) and then all data
+ *   rows (with associated alignments).
+ *
+ *   ----------------------------------------------------------------------------------------
+ *   |       mBetaf [FunctionBlock IN NMODL_GLOBAL] POSITION : 109.1-8 SCOPE : LOCAL        |
+ *   ----------------------------------------------------------------------------------------
+ *   |    NAME     |    PROPERTIES     |    LOCATION     |    # READS     |    # WRITES     |
+ *   ----------------------------------------------------------------------------------------
+ *   | v           | argument          |          109.17 |              0 |               0 |
+ *   ----------------------------------------------------------------------------------------
+ */
+
+using namespace stringutils;
+
+void TableData::print(std::stringstream& stream, int indent) {
+    const int PADDING = 1;
+
+    /// not necessary to print empty table
+    if (rows.size() == 0 || headers.size() == 0) {
+        return;
+    }
+
+    /// based on indentation level, spaces to prefix
+    auto gutter = std::string(indent * 4, ' ');
+
+    auto ncolumns = headers.size();
+    std::vector<unsigned> col_width(ncolumns);
+
+    /// alignment is optional, so fill remaining withh right alignment
+    for (unsigned i = alignments.size(); i < ncolumns; i++)
+        alignments.push_back(text_alignment::center);
+
+    /// calculate space required for each column
+    unsigned row_width = 0;
+    for (unsigned i = 0; i < headers.size(); i++) {
+        col_width[i] = headers[i].length() + PADDING;
+        row_width += col_width[i];
+    }
+
+    /// if title is larger than headers then every column
+    /// width needs to be scaled
+    if (title.length() > row_width) {
+        int extra_size = title.length() - row_width;
+        int column_pad = extra_size / ncolumns;
+        if (extra_size % ncolumns) {
+            column_pad++;
+        }
+        for (auto& column : col_width) {
+            column += column_pad;
+        }
+    }
+
+    /// check length of columns in each row to find max length required
+    for (const auto& row : rows) {
+        for (unsigned i = 0; i < row.size(); i++) {
+            if (col_width[i] < (row[i].length()) + PADDING) {
+                col_width[i] = row[i].length() + PADDING;
+            }
+        }
+    }
+
+    std::stringstream header;
+    header << "| ";
+    for (size_t i = 0; i < headers.size(); i++) {
+        auto text = align_text(headers[i], col_width[i], text_alignment::center);
+        header << text << " | ";
+    }
+
+    row_width = header.str().length();
+    auto separator_line = std::string(row_width - 1, '-');
+
+    /// title row
+    if (!title.empty()) {
+        title = stringutils::align_text(title, row_width - 3, text_alignment::center);
+        stream << "\n" << gutter << separator_line;
+        stream << "\n" << gutter << "|" << title << "|";
+    }
+
+    /// header row
+    stream << "\n" << gutter << separator_line;
+    stream << "\n" << gutter << header.str();
+    stream << "\n" << gutter << separator_line;
+
+    /// data rows
+    for (const auto& row : rows) {
+        stream << "\n" << gutter << "| ";
+        for (unsigned i = 0; i < row.size(); i++) {
+            stream << stringutils::align_text(row[i], col_width[i], alignments[i]) << " | ";
+        }
+    }
+
+    /// bottom separator line
+    stream << "\n" << gutter << separator_line << "\n";
+}
+
+void TableData::print(int indent) {
+    std::stringstream ss;
+    print(ss, indent);
+    std::cout << ss.str();
+}

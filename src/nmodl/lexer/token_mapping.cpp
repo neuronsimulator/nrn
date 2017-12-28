@@ -285,7 +285,10 @@ namespace nmodl {
             return keywords[name];
         }
 
-        TokenType method_type(std::string name) {
+        /** \todo: revisit implementation, this is no longer
+         *        necessary as token_type is sufficient
+         */
+        TokenType method_type(std::string /*name*/) {
             return Token::METHOD;
         }
 
@@ -323,15 +326,21 @@ namespace nmodl {
         throw std::runtime_error("get_token_type called for non-existent token " + name);
     }
 
-    /// return all external variables (required for symbol table registration)
-    std::vector<std::string> all_external_variables() {
+    /// return all external variables
+    std::vector<std::string> get_external_variables() {
         std::vector<std::string> result;
         result.insert(result.end(), internal::neuron_vars.begin(), internal::neuron_vars.end());
+        return result;
+    }
+
+    /// return all solver methods as well as commonly used math functions
+    std::vector<std::string> get_external_functions() {
+        std::vector<std::string> result;
         for (auto& method : internal::methods) {
             result.push_back(method.first);
         }
-        for (auto& extdef : internal::extern_definitions) {
-            result.push_back(extdef.first);
+        for (auto& definition : internal::extern_definitions) {
+            result.push_back(definition.first);
         }
         return result;
     }

@@ -2,20 +2,24 @@
 
 namespace symtab {
 
-    /// if symbol has only extern_token property : this is true
-    /// for symbols which are external variables from neuron
-    /// like v, t, dt etc.
-    bool Symbol::is_extern_token_only() {
-        return (properties == details::NmodlInfo::extern_token);
+    /** if symbol has only extern_token property : this is true
+     *  for symbols which are external variables from neuron
+     *  like v, t, dt etc.
+     * \todo: check if we should check two properties using has_property
+     *        instead of exact comparisons
+     */
+    bool Symbol::is_external_symbol_only() {
+        return (properties == details::NmodlInfo::extern_neuron_variable ||
+                properties == details::NmodlInfo::extern_method);
     }
 
     /// check if symbol has any of the common properties
-    bool Symbol::has_properties(SymbolInfo& new_properties) {
+    bool Symbol::has_properties(SymbolInfo new_properties) {
         return static_cast<bool>(properties & new_properties);
     }
 
     /// add new properties to symbol with bitwise or
-    void Symbol::combine_properties(SymbolInfo& new_properties) {
+    void Symbol::combine_properties(SymbolInfo new_properties) {
         properties |= new_properties;
     }
 
@@ -23,7 +27,7 @@ namespace symtab {
         properties |= property;
     }
 
-    void Symbol::add_property(SymbolInfo& property) {
+    void Symbol::add_property(SymbolInfo property) {
         properties |= property;
     }
 

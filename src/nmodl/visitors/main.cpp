@@ -5,19 +5,20 @@
 #include "parser/nmodl_driver.hpp"
 #include "visitors/ast_visitor.hpp"
 #include "visitors/json_visitor.hpp"
-#include "visitors/verbatim_visitor.hpp"
+#include "visitors/perf_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
+#include "visitors/verbatim_visitor.hpp"
 
 #include "tclap/CmdLine.h"
 
 using namespace symtab;
 
 /**
- * Standlone visitor program for NMODL. This demonstrate basic
+ * Standalone visitor program for NMODL. This demonstrate basic
  * usage of different visitors classes and driver class.
  **/
 
-int main(int argc, char* argv[]) {
+int main(int argc, const char* argv[]) {
     try {
         TCLAP::CmdLine cmd("NMODL Visitor: Standalone visitor program for NMODL");
         TCLAP::ValueArg<std::string> filearg("", "file", "NMODL input file path", false,
@@ -37,6 +38,8 @@ int main(int argc, char* argv[]) {
         if (!file.good()) {
             throw std::runtime_error("Could not open file " + filename);
         }
+
+        std::string channel_name = remove_extension(base_name(filename));
 
         /// driver object creates lexer and parser, just call parser method
         nmodl::Driver driver;
@@ -80,6 +83,7 @@ int main(int argc, char* argv[]) {
         }
 
         {
+            // todo : we should pass this or use get method to retrieve?
             ModelSymbolTable symtab;
             std::stringstream ss1;
 
@@ -93,6 +97,21 @@ int main(int argc, char* argv[]) {
             std::cout << ss2.str();
 
             std::cout << "----SYMTAB VISITOR FINISHED----" << std::endl;
+        }
+
+        {
+            PerfVisitor v(channel_name + ".perf.json");
+            v.visitProgram(ast.get());
+
+            auto symtab = ast->getSymbolTable();
+            std::stringstream ss;
+            symtab->print(ss, 0);
+            std::cout << ss.str();
+
+            ss.str("");
+            v.print(ss);
+            std::cout << ss.str() << std::endl;
+            std::cout << "----PERF VISITOR FINISHED----" << std::endl;
         }
 
     } catch (TCLAP::ArgException& e) {

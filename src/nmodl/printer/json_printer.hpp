@@ -25,7 +25,7 @@ using json = nlohmann::json;
  * block in popBlock() because block itself will be
  * part of other parent elements. Also we are writing
  * results to file, stringstream and cout. And hence
- * we can't simply reset/cler previously written text.
+ * we can't simply reset/clear previously written text.
  */
 
 class JSONPrinter {
@@ -34,7 +34,7 @@ class JSONPrinter {
     std::streambuf* sbuf = nullptr;
 
     /// common output stream for file, cout or stringstream
-    std::shared_ptr<std::ostream> result_stream;
+    std::shared_ptr<std::ostream> result;
 
     /// single (current) nmodl block / statement
     std::shared_ptr<json> block;
@@ -46,16 +46,22 @@ class JSONPrinter {
     bool compact = false;
 
   public:
-    JSONPrinter();
     JSONPrinter(std::string filename);
-    JSONPrinter(std::stringstream& ss);
+
+    /// By default dump output to std::cout
+    JSONPrinter() : result(new std::ostream(std::cout.rdbuf())) {
+    }
+
+    // Dump output to stringstream
+    JSONPrinter(std::stringstream& ss) : result(new std::ostream(ss.rdbuf())) {
+    }
 
     ~JSONPrinter() {
         flush();
     }
 
-    void pushBlock(std::string);
-    void addNode(std::string);
+    void pushBlock(std::string name);
+    void addNode(std::string value, std::string name="value");
     void popBlock();
     void flush();
 

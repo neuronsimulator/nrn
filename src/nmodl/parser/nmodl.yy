@@ -358,7 +358,8 @@
     #include "parser/verbatim_context.hpp"
 
     /// yylex takes scanner as well as driver reference
-    static nmodl::Parser::symbol_type yylex(nmodl::Lexer &scanner, nmodl::Driver &driver) {
+    /// \todo: check if driver argument is required
+    static nmodl::Parser::symbol_type yylex(nmodl::Lexer &scanner, nmodl::Driver &/*driver*/) {
         return scanner.next_token();
     }
 

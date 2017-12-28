@@ -9,6 +9,8 @@ set(VISITOR_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/symtab_visitor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/symtab_visitor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/symtab_visitor_helper.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/perf_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/perf_visitor.cpp
 )
 
 set_source_files_properties(
@@ -23,10 +25,10 @@ add_library(visitor
             STATIC
             ${VISITOR_SOURCE_FILES})
 
-add_dependencies(visitor lexer)
+add_dependencies(visitor lexer util)
 
 add_executable(nocmodl_visitor main.cpp)
-target_link_libraries(nocmodl_visitor printer visitor symtab lexer)
+target_link_libraries(nocmodl_visitor printer visitor symtab util lexer)
 
 #=============================================================================
 # Files for clang-format
