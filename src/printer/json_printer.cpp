@@ -1,13 +1,5 @@
 #include "printer/json_printer.hpp"
 
-/// By default dump output to std::cout
-JSONPrinter::JSONPrinter() : result_stream(new std::ostream(std::cout.rdbuf())) {
-}
-
-// Dumpt output to stringstream
-JSONPrinter::JSONPrinter(std::stringstream& ss) : result_stream(new std::ostream(ss.rdbuf())) {
-}
-
 /// Dump output to provided file
 JSONPrinter::JSONPrinter(std::string fname) {
     if (fname.empty()) {
@@ -22,18 +14,18 @@ JSONPrinter::JSONPrinter(std::string fname) {
     }
 
     sbuf = ofs.rdbuf();
-    result_stream = std::make_shared<std::ostream>(sbuf);
+    result = std::make_shared<std::ostream>(sbuf);
 }
 
 /// Add node to json (typically basic type)
-void JSONPrinter::addNode(std::string name) {
+void JSONPrinter::addNode(std::string value, std::string name) {
     if (!block) {
         auto text = "Block not initialized (pushBlock missing?)";
         throw std::logic_error(text);
     }
 
     json j;
-    j["value"] = name;
+    j[name] = value;
     block->front().push_back(j);
 }
 
@@ -64,9 +56,9 @@ void JSONPrinter::popBlock() {
 void JSONPrinter::flush() {
     if (block) {
         if (compact) {
-            *result_stream << (*block).dump();
+            *result << block->dump();
         } else {
-            *result_stream << (*block).dump(2);
+            *result << block->dump(2);
         }
         ofs.close();
         block = nullptr;

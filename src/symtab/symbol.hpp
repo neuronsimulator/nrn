@@ -76,7 +76,7 @@ namespace symtab {
             return scope;
         }
 
-        SymbolInfo& get_properties() {
+        SymbolInfo get_properties() {
             return properties;
         }
 
@@ -104,15 +104,15 @@ namespace symtab {
             return write_count;
         }
 
-        bool is_extern_token_only();
+        bool is_external_symbol_only();
 
-        bool has_properties(SymbolInfo& prop);
+        bool has_properties(SymbolInfo prop);
 
-        void combine_properties(SymbolInfo& prop);
+        void combine_properties(SymbolInfo prop);
 
         void add_property(NmodlInfo property);
 
-        void add_property(SymbolInfo& property);
+        void add_property(SymbolInfo property);
 
         void set_order(int order);
     };

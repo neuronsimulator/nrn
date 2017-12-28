@@ -51,7 +51,7 @@ namespace nmodl {
         /** The streams in and out default to cin and cout, but that assignment
          * is only made when initializing in yylex(). */
         explicit Lexer(Driver& drv, std::istream* in = nullptr, std::ostream* out = nullptr)
-            : driver(drv), NmodlFlexLexer(in, out) {}
+            : NmodlFlexLexer(in, out), driver(drv) {}
 
         ~Lexer() override= default;;
 

@@ -32,7 +32,7 @@ namespace symtab {
         std::shared_ptr<Symbol> lookup(std::string name);
 
         /// pretty print
-        void print(std::stringstream& ss, std::string title, int indent);
+        void print(std::stringstream& stream, std::string title, int indent);
     };
 
     /**
@@ -62,15 +62,16 @@ namespace symtab {
         /// name of the block
         std::string symtab_name;
 
-        /// true if current symbol table is global
-        /// (blocks like NEURON, PARAMETER defines global variables)
-        bool global;
-
         /// table holding all symbols in the current block
         Table table;
 
         /// pointer to ast node for which current block symbol created
         AST* node = nullptr;
+
+        /// true if current symbol table is global. blocks like neuron,
+        /// parameter defines global variables and hence they go into
+        /// single global symbol table
+        bool global = false;
 
         /// pointer to the symbol table of parent block in the mod file
         std::shared_ptr<SymbolTable> parent = nullptr;
@@ -79,7 +80,7 @@ namespace symtab {
         /// construct. for example, for every block statement (like if, while,
         /// for) within function we append new symbol table. note that this is
         /// also required for nested blocks like INITIAL in NET_RECEIVE.
-        std::map<std::string, std::shared_ptr<SymbolTable>> childrens;
+        std::map<std::string, std::shared_ptr<SymbolTable>> children;
 
         /// pretty print table
         void print_table(std::stringstream& ss, int indent);
@@ -98,6 +99,8 @@ namespace symtab {
         std::string type() const {
             return node->getTypeName();
         }
+
+        std::string title();
 
         /// todo: set token for every block from parser
         std::string position() const {

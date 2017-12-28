@@ -15,9 +15,9 @@ add_executable (testsymtab symtab/symbol_table.cpp)
 
 target_link_libraries(testmodtoken lexer)
 target_link_libraries(testlexer lexer)
-target_link_libraries(testvisitor lexer printer visitor)
+target_link_libraries(testvisitor printer symtab lexer visitor util)
 target_link_libraries(testprinter printer)
-target_link_libraries(testsymtab symtab lexer)
+target_link_libraries(testsymtab symtab lexer util)
 
 add_test (NAME ModToken COMMAND testmodtoken)
 add_test (NAME Lexer COMMAND testlexer)

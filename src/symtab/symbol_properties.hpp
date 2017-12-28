@@ -165,8 +165,11 @@ namespace symtab {
             /** factor in unit block */
             factor_def = 1 << 25,
 
-            /** extern token */
-            extern_token = 1 << 26
+            /** neuron variable accessible in mod file */
+            extern_neuron_variable = 1 << 26,
+
+            /** neuron solver methods and math functions */
+            extern_method = 1 << 27
         };
 
     }  // namespace details

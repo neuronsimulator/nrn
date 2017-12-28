@@ -53,11 +53,17 @@
 /* no need for includes */
 %option noyywrap
 
-/* need to unput in buffer for custom routines */
-%option unput
+/* need to unput in buffer for custom routines
+ * \todo : due to unused function warning this
+ *         option is disabled
+ */
+%option nounput
 
-/* need to input in buffer for custom routines */
-%option input
+/* need to input in buffer for custom routines
+ * \todo : due to unused function warning this
+ *         option is disabled
+ */
+%option noinput
 
 /* not an interactive lexer, takes a file */
 %option batch

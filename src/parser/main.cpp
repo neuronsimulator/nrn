@@ -12,7 +12,7 @@
  * hook up json/yaml writer in this example to dump ast.
  */
 
-int main(int argc, char* argv[]) {
+int main(int argc, const char* argv[]) {
     try {
         TCLAP::CmdLine cmd("NMODL Parser: Standalone parser program for NMODL");
         TCLAP::ValueArg<std::string> filearg("", "file", "NMODL input file path", false,

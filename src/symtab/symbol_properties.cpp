@@ -119,8 +119,12 @@ std::vector<std::string> to_string_vector(const SymbolInfo& obj) {
         properties.push_back("factor_def");
     }
 
-    if (has_property(obj, NmodlInfo::extern_token)) {
-        properties.push_back("extern_token");
+    if (has_property(obj, NmodlInfo::extern_neuron_variable)) {
+        properties.push_back("extern_neuron_var");
+    }
+
+    if (has_property(obj, NmodlInfo::extern_method)) {
+        properties.push_back("extern_method");
     }
 
     return properties;

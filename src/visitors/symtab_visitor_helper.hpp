@@ -36,32 +36,37 @@ template <typename T>
 void SymtabVisitor::setupSymbolTable(T* node,
                                      std::string name,
                                      SymbolInfo property,
-                                     bool global_block) {
+                                     bool is_global) {
     auto token = node->getToken();
     auto symbol = std::make_shared<Symbol>(name, node, *token);
     symbol->add_property(property);
     modsymtab->insert(symbol);
-    setupSymbolTable(node, name, global_block);
+    setupSymbolTable(node, name, is_global);
 }
 
 template <typename T>
-void SymtabVisitor::setupSymbolTable(T* node, std::string name, bool global_block) {
-
+void SymtabVisitor::setupSymbolTable(T* node, std::string name, bool is_global) {
     /// entering into new nmodl block
-    auto symtab = modsymtab->enter_scope(name, node, global_block);
+    auto symtab = modsymtab->enter_scope(name, node, is_global);
 
     /// not required at the moment but every node
     /// has pointer to associated symbol table
-    node->setBlockSymbolTable(symtab);
+    node->setSymbolTable(symtab);
 
     /// when visiting highest level node i.e. Program, we insert
     /// all global variables to the global symbol table
     if (node->isProgram()) {
-        auto variables = nmodl::all_external_variables();
+        ModToken tok(true);
+        auto variables = nmodl::get_external_variables();
         for (auto variable : variables) {
-            ModToken tok(true);
             auto symbol = std::make_shared<Symbol>(variable, nullptr, tok);
-            symbol->add_property(symtab::details::NmodlInfo::extern_token);
+            symbol->add_property(symtab::details::NmodlInfo::extern_neuron_variable);
+            modsymtab->insert(symbol);
+        }
+        auto methods = nmodl::get_external_functions();
+        for (auto method : methods) {
+            auto symbol = std::make_shared<Symbol>(method, nullptr, tok);
+            symbol->add_property(symtab::details::NmodlInfo::extern_method);
             modsymtab->insert(symbol);
         }
     }
