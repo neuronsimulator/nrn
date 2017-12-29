@@ -16,115 +16,115 @@ std::vector<std::string> to_string_vector(const SymbolInfo& obj) {
     std::vector<std::string> properties;
 
     if (has_property(obj, NmodlInfo::local_var)) {
-        properties.push_back("local");
+        properties.emplace_back("local");
     }
 
     if (has_property(obj, NmodlInfo::global_var)) {
-        properties.push_back("global");
+        properties.emplace_back("global");
     }
 
     if (has_property(obj, NmodlInfo::range_var)) {
-        properties.push_back("range");
+        properties.emplace_back("range");
     }
 
     if (has_property(obj, NmodlInfo::param_assign)) {
-        properties.push_back("parameter");
+        properties.emplace_back("parameter");
     }
 
     if (has_property(obj, NmodlInfo::pointer_var)) {
-        properties.push_back("pointer");
+        properties.emplace_back("pointer");
     }
 
     if (has_property(obj, NmodlInfo::bbcore_pointer_var)) {
-        properties.push_back("bbcore_pointer");
+        properties.emplace_back("bbcore_pointer");
     }
 
     if (has_property(obj, NmodlInfo::extern_var)) {
-        properties.push_back("extern");
+        properties.emplace_back("extern");
     }
 
     if (has_property(obj, NmodlInfo::prime_name)) {
-        properties.push_back("prime_name");
+        properties.emplace_back("prime_name");
     }
 
     if (has_property(obj, NmodlInfo::dependent_def)) {
-        properties.push_back("dependent_def");
+        properties.emplace_back("dependent_def");
     }
 
     if (has_property(obj, NmodlInfo::unit_def)) {
-        properties.push_back("unit_def");
+        properties.emplace_back("unit_def");
     }
 
     if (has_property(obj, NmodlInfo::read_ion_var)) {
-        properties.push_back("read_ion");
+        properties.emplace_back("read_ion");
     }
 
     if (has_property(obj, NmodlInfo::write_ion_var)) {
-        properties.push_back("write_ion");
+        properties.emplace_back("write_ion");
     }
 
     if (has_property(obj, NmodlInfo::nonspe_cur_var)) {
-        properties.push_back("nonspe_cur");
+        properties.emplace_back("nonspe_cur");
     }
 
     if (has_property(obj, NmodlInfo::electrode_cur_var)) {
-        properties.push_back("electrode_cur");
+        properties.emplace_back("electrode_cur");
     }
 
     if (has_property(obj, NmodlInfo::section_var)) {
-        properties.push_back("section");
+        properties.emplace_back("section");
     }
 
     if (has_property(obj, NmodlInfo::argument)) {
-        properties.push_back("argument");
+        properties.emplace_back("argument");
     }
 
     if (has_property(obj, NmodlInfo::function_block)) {
-        properties.push_back("function_block");
+        properties.emplace_back("function_block");
     }
 
     if (has_property(obj, NmodlInfo::procedure_block)) {
-        properties.push_back("procedure_block");
+        properties.emplace_back("procedure_block");
     }
 
     if (has_property(obj, NmodlInfo::derivative_block)) {
-        properties.push_back("derivative_block");
+        properties.emplace_back("derivative_block");
     }
 
     if (has_property(obj, NmodlInfo::linear_block)) {
-        properties.push_back("linear_block");
+        properties.emplace_back("linear_block");
     }
 
     if (has_property(obj, NmodlInfo::non_linear_block)) {
-        properties.push_back("non_linear_block");
+        properties.emplace_back("non_linear_block");
     }
 
     if (has_property(obj, NmodlInfo::discrete_block)) {
-        properties.push_back("discrete_block");
+        properties.emplace_back("discrete_block");
     }
 
     if (has_property(obj, NmodlInfo::partial_block)) {
-        properties.push_back("partial_block");
+        properties.emplace_back("partial_block");
     }
 
     if (has_property(obj, NmodlInfo::kinetic_block)) {
-        properties.push_back("kinetic_block");
+        properties.emplace_back("kinetic_block");
     }
 
     if (has_property(obj, NmodlInfo::function_table_block)) {
-        properties.push_back("function_table_block");
+        properties.emplace_back("function_table_block");
     }
 
     if (has_property(obj, NmodlInfo::factor_def)) {
-        properties.push_back("factor_def");
+        properties.emplace_back("factor_def");
     }
 
     if (has_property(obj, NmodlInfo::extern_neuron_variable)) {
-        properties.push_back("extern_neuron_var");
+        properties.emplace_back("extern_neuron_var");
     }
 
     if (has_property(obj, NmodlInfo::extern_method)) {
-        properties.push_back("extern_method");
+        properties.emplace_back("extern_method");
     }
 
     return properties;

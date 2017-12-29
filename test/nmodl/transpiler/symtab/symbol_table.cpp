@@ -23,7 +23,7 @@ SCENARIO("Symbol properties can be added and converted to string") {
     GIVEN("A empty property") {
         WHEN("converted to string") {
             THEN("returns empty string") {
-                REQUIRE(to_string(prop1) == "");
+                REQUIRE(to_string(prop1).empty());
             }
         }
         WHEN("checked for property") {
@@ -34,7 +34,7 @@ SCENARIO("Symbol properties can be added and converted to string") {
         WHEN("adding another empty property") {
             SymbolInfo result = prop1 | prop1;
             THEN("to_string still returns empty string") {
-                REQUIRE(to_string(result) == "");
+                REQUIRE(to_string(result).empty());
             }
         }
         WHEN("added some other property") {
@@ -156,7 +156,7 @@ SCENARIO("Symbol table operations") {
             table->insert(symbol);
             auto variables = table->get_global_variables();
             THEN("table doesn't have any global variables") {
-                REQUIRE(variables.size() == 0);
+                REQUIRE(variables.empty());
                 WHEN("added global symbol") {
                     auto next_symbol = std::make_shared<Symbol>("gamma", ModToken());
                     next_symbol->add_property(NmodlInfo::dependent_def);

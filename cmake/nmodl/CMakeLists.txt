@@ -29,6 +29,7 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 include(GitRevision)
 include(FlexHelper)
 include(CompilerHelper)
+include(ClangTidyHelper)
 
 include_directories(
     ${PROJECT_SOURCE_DIR}/src

@@ -1,7 +1,8 @@
+#include <utility>
+
 #include "lexer/token_mapping.hpp"
 #include "symtab/symbol_table.hpp"
 #include "utils/table_data.hpp"
-#include "utils/string_utils.hpp"
 
 namespace symtab {
 
@@ -10,7 +11,7 @@ namespace symtab {
      *
      * \todo Revisit the error handling
      */
-    void Table::insert(std::shared_ptr<Symbol> symbol) {
+    void Table::insert(const std::shared_ptr<Symbol>& symbol) {
         std::string name = symbol->get_name();
         if (symbols.find(name) != symbols.end()) {
             throw std::runtime_error("Trying to re-insert symbol " + name);
@@ -18,7 +19,7 @@ namespace symtab {
         symbols[name] = symbol;
     }
 
-    std::shared_ptr<Symbol> Table::lookup(std::string name) {
+    std::shared_ptr<Symbol> Table::lookup(const std::string& name) {
         if (symbols.find(name) == symbols.end()) {
             return nullptr;
         }
@@ -33,11 +34,11 @@ namespace symtab {
     }
 
     /// insert new symbol table of one of the children block
-    void SymbolTable::insert_table(std::string name, std::shared_ptr<SymbolTable> table) {
+    void SymbolTable::insert_table(const std::string& name, std::shared_ptr<SymbolTable> table) {
         if (children.find(name) != children.end()) {
             throw std::runtime_error("Trying to re-insert SymbolTable " + name);
         }
-        children[name] = table;
+        children[name] = std::move(table);
     }
 
     /** Get all symbols which can be used in global scope. Note that
@@ -89,7 +90,7 @@ namespace symtab {
     }
 
     /// lookup for symbol in current scope as well as all parents
-    std::shared_ptr<Symbol> SymbolTable::lookup_in_scope(std::string name) {
+    std::shared_ptr<Symbol> SymbolTable::lookup_in_scope(const std::string& name) {
         auto symbol = table.lookup(name);
         if (!symbol && parent) {
             symbol = parent->lookup_in_scope(name);
@@ -102,7 +103,7 @@ namespace symtab {
     ///       current symbol table that is under process. we should
     ///       rename it. note that we still need parent symbol table
     ///       filed to traverse the parents. revisit this usage.
-    std::shared_ptr<Symbol> ModelSymbolTable::lookup(std::string name) {
+    std::shared_ptr<Symbol> ModelSymbolTable::lookup(const std::string& name) {
         /// parent symbol is not set means symbol table is
         /// is not used with visitor at all. it would be ok
         // to just return nullptr?
@@ -127,7 +128,7 @@ namespace symtab {
         return symbol;
     }
 
-    void ModelSymbolTable::insert(std::shared_ptr<Symbol> symbol) {
+    void ModelSymbolTable::insert(const std::shared_ptr<Symbol>& symbol) {
         if (parent_symtab == nullptr) {
             throw std::logic_error("Can not insert symbol without entering scope");
         }
@@ -146,7 +147,7 @@ namespace symtab {
         auto properties = to_string(search_symbol->get_properties());
         auto node = symbol->get_node();
         std::string type = "UNKNOWN";
-        if (node) {
+        if (node != nullptr) {
             type = node->getTypeName();
         }
 
@@ -277,9 +278,9 @@ namespace symtab {
     //=============================================================================
 
     void Table::print(std::stringstream& stream, std::string title, int indent) {
-        if (symbols.size()) {
+        if (!symbols.empty()) {
             TableData table;
-            table.title = title;
+            table.title = std::move(title);
             table.headers = {"NAME", "PROPERTIES", "LOCATION", "# READS", "# WRITES"};
             table.alignments = {text_alignment::left, text_alignment::left, text_alignment::right,
                                 text_alignment::right, text_alignment::right};
@@ -321,7 +322,7 @@ namespace symtab {
         /// can be printed from the same indentation level
         /// (this is to avoid unnecessary empty indentations)
         auto next_level = level;
-        if (table.symbols.size() == 0) {
+        if (table.symbols.empty()) {
             next_level--;
         }
 

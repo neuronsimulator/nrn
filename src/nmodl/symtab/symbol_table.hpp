@@ -26,10 +26,10 @@ namespace symtab {
         std::map<std::string, std::shared_ptr<Symbol>> symbols;
 
         /// insert new symbol into table
-        void insert(std::shared_ptr<Symbol> sym);
+        void insert(const std::shared_ptr<Symbol>& symbol);
 
         /// check if symbol with given name exist
-        std::shared_ptr<Symbol> lookup(std::string name);
+        std::shared_ptr<Symbol> lookup(const std::string& name);
 
         /// pretty print
         void print(std::stringstream& stream, std::string title, int indent);
@@ -143,15 +143,15 @@ namespace symtab {
             return new SymbolTable(*this);
         }
 
-        std::shared_ptr<Symbol> lookup_in_scope(std::string name);
+        std::shared_ptr<Symbol> lookup_in_scope(const std::string& name);
 
         std::vector<std::shared_ptr<Symbol>> get_global_variables();
 
         bool under_global_scope();
 
-        void insert_table(std::string name, std::shared_ptr<SymbolTable> table);
+        void insert_table(const std::string& name, std::shared_ptr<SymbolTable> table);
 
-        void print(std::stringstream& ss, int indent);
+        void print(std::stringstream& ss, int level);
     };
 
     /**
@@ -192,9 +192,9 @@ namespace symtab {
         /// leaving current nmodl block
         void leave_scope();
 
-        void insert(std::shared_ptr<Symbol> symbol);
+        void insert(const std::shared_ptr<Symbol>& symbol);
 
-        std::shared_ptr<Symbol> lookup(std::string name);
+        std::shared_ptr<Symbol> lookup(const std::string& name);
 
         /// pretty print
         void print(std::stringstream& ss);

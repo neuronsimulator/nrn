@@ -10,7 +10,7 @@
 using Token = nmodl::Parser::token;
 
 /// just retrieve token type from lexer
-nmodl::Parser::token_type token_type(std::string name) {
+nmodl::Parser::token_type token_type(const std::string& name) {
     std::istringstream ss(name);
     std::istream& in = ss;
 

@@ -7,7 +7,7 @@ void VerbatimVisitor::visitVerbatim(Verbatim* node) {
         block = node->statement->eval();
     }
 
-    if (block.size() && verbose) {
+    if (!block.empty() && verbose) {
         std::cout << "BLOCK START";
         std::cout << block;
         std::cout << "\nBLOCK END \n\n";

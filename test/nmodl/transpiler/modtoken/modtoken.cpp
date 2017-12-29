@@ -9,7 +9,7 @@
 
 /// retrieve token from lexer
 template <typename T>
-void symbol_type(std::string name, T& value) {
+void symbol_type(const std::string& name, T& value) {
     std::istringstream ss(name);
     std::istream& in = ss;
 

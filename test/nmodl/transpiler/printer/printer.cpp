@@ -16,7 +16,7 @@ TEST_CASE("JSON Printer Tests", "[JSONPrinter]") {
         p.popBlock();
         p.flush();
 
-        auto result = "{\"A\":[{\"value\":\"B\"}]}";
+        auto result = R"({"A":[{"value":"B"}]})";
         REQUIRE(ss.str() == result);
     }
 
@@ -34,7 +34,7 @@ TEST_CASE("JSON Printer Tests", "[JSONPrinter]") {
         p.popBlock();
         p.flush();
 
-        auto result = "{\"A\":[{\"value\":\"B\"},{\"value\":\"C\"},{\"D\":[{\"value\":\"E\"}]}]}";
+        auto result = R"({"A":[{"value":"B"},{"value":"C"},{"D":[{"value":"E"}]}]})";
         REQUIRE(ss.str() == result);
     }
 }

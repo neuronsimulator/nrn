@@ -1,4 +1,4 @@
-#include <string.h>
+#include <cstring>
 #include <map>
 #include <vector>
 
@@ -115,14 +115,13 @@ namespace nmodl {
         /// numerical methods supported in nmodl
         struct MethodInfo {
             /// method types that will work with this method
-            long subtype = 0;
+            int64_t subtype = 0;
 
             /// if it's a variable timestep method
             int varstep = 0;
 
-            MethodInfo() {
-            }
-            MethodInfo(long s, int v) : subtype(s), varstep(v) {
+            MethodInfo() = default;
+            MethodInfo(int64_t s, int v) : subtype(s), varstep(v) {
             }
         };
 
@@ -281,22 +280,22 @@ namespace nmodl {
 
         static std::vector<std::string> neuron_vars = {"t", "dt", "celsius", "v", "diam", "area"};
 
-        TokenType keyword_type(std::string name) {
+        TokenType keyword_type(const std::string& name) {
             return keywords[name];
         }
 
         /** \todo: revisit implementation, this is no longer
          *        necessary as token_type is sufficient
          */
-        TokenType method_type(std::string /*name*/) {
+        TokenType method_type(const std::string& /*name*/) {
             return Token::METHOD;
         }
 
-        bool is_externdef(std::string name) {
+        bool is_externdef(const std::string& name) {
             return (extern_definitions.find(name) != extern_definitions.end());
         }
 
-        DefinitionType extdef_type(std::string name) {
+        DefinitionType extdef_type(const std::string& name) {
             if (!is_externdef(name)) {
                 throw std::runtime_error("Can't find " + name + " in external definitions!");
             }
@@ -307,16 +306,16 @@ namespace nmodl {
 
     /// methods exposed to lexer, parser and compilers passes
 
-    bool is_keyword(std::string name) {
+    bool is_keyword(const std::string& name) {
         return (internal::keywords.find(name) != internal::keywords.end());
     }
 
-    bool is_method(std::string name) {
+    bool is_method(const std::string& name) {
         return (internal::methods.find(name) != internal::methods.end());
     }
 
     /// return token type for associated name (used by nmodl scanner)
-    TokenType token_type(std::string name) {
+    TokenType token_type(const std::string& name) {
         if (is_keyword(name)) {
             return internal::keyword_type(name);
         }
@@ -336,6 +335,7 @@ namespace nmodl {
     /// return all solver methods as well as commonly used math functions
     std::vector<std::string> get_external_functions() {
         std::vector<std::string> result;
+        result.reserve(internal::methods.size());
         for (auto& method : internal::methods) {
             result.push_back(method.first);
         }
