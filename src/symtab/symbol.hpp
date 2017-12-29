@@ -106,15 +106,15 @@ namespace symtab {
 
         bool is_external_symbol_only();
 
-        bool has_properties(SymbolInfo prop);
+        bool has_properties(SymbolInfo new_properties);
 
-        void combine_properties(SymbolInfo prop);
+        void combine_properties(SymbolInfo new_properties);
 
         void add_property(NmodlInfo property);
 
         void add_property(SymbolInfo property);
 
-        void set_order(int order);
+        void set_order(int new_order);
     };
 
 }  // namespace symtab

@@ -24,7 +24,7 @@ void TableData::print(std::stringstream& stream, int indent) {
     const int PADDING = 1;
 
     /// not necessary to print empty table
-    if (rows.size() == 0 || headers.size() == 0) {
+    if (rows.empty() || headers.empty()) {
         return;
     }
 
@@ -35,8 +35,9 @@ void TableData::print(std::stringstream& stream, int indent) {
     std::vector<unsigned> col_width(ncolumns);
 
     /// alignment is optional, so fill remaining withh right alignment
-    for (unsigned i = alignments.size(); i < ncolumns; i++)
+    for (unsigned i = alignments.size(); i < ncolumns; i++) {
         alignments.push_back(text_alignment::center);
+    }
 
     /// calculate space required for each column
     unsigned row_width = 0;

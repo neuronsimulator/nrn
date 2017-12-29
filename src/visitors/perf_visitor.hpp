@@ -70,11 +70,11 @@ class PerfVisitor : public AstVisitor {
     /// if not json, all goes to string
     std::stringstream stream;
 
-    void update_memory_ops(std::string name);
+    void update_memory_ops(const std::string& name);
 
-    bool symbol_to_skip(std::shared_ptr<symtab::Symbol> symbol);
+    bool symbol_to_skip(const std::shared_ptr<symtab::Symbol>& symbol);
 
-    bool is_local_variable(std::shared_ptr<symtab::Symbol> symbol);
+    bool is_local_variable(const std::shared_ptr<symtab::Symbol>& symbol);
 
     void measure_performance(AST* node);
 
@@ -83,7 +83,7 @@ class PerfVisitor : public AstVisitor {
   public:
     PerfVisitor() = default;
 
-    explicit PerfVisitor(std::string filename);
+    explicit PerfVisitor(const std::string& filename);
 
     void compact_json(bool flag) {
         printer->compact_json(flag);

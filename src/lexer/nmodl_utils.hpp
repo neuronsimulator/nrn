@@ -20,10 +20,14 @@ namespace nmodl {
     using TokenType = nmodl::Parser::token_type;
 
     SymbolType double_symbol(double value, PositionType& pos);
-    SymbolType integer_symbol(int value, PositionType& pos, const char* name = nullptr);
-    SymbolType name_symbol(std::string text, PositionType& pos, TokenType token = Token::NAME);
+    SymbolType integer_symbol(int value, PositionType& pos, const char* text = nullptr);
+    SymbolType name_symbol(const std::string& text,
+                           PositionType& pos,
+                           TokenType type = Token::NAME);
     SymbolType prime_symbol(std::string text, PositionType& pos);
-    SymbolType string_symbol(std::string text, PositionType& pos);
-    SymbolType token_symbol(std::string text, PositionType& pos, TokenType token = Token::UNKNOWN);
+    SymbolType string_symbol(const std::string& text, PositionType& pos);
+    SymbolType token_symbol(const std::string& key,
+                            PositionType& pos,
+                            TokenType type = Token::UNKNOWN);
 
 }  // namespace nmodl

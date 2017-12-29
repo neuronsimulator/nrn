@@ -1,15 +1,15 @@
 #include "printer/json_printer.hpp"
 
 /// Dump output to provided file
-JSONPrinter::JSONPrinter(std::string fname) {
-    if (fname.empty()) {
+JSONPrinter::JSONPrinter(const std::string& filename) {
+    if (filename.empty()) {
         throw std::runtime_error("Empty filename for JSONPrinter");
     }
 
-    ofs.open(fname.c_str());
+    ofs.open(filename.c_str());
 
     if (ofs.fail()) {
-        auto msg = "Error while opening file '" + fname + "' for JSONPrinter";
+        auto msg = "Error while opening file '" + filename + "' for JSONPrinter";
         throw std::runtime_error(msg);
     }
 
@@ -18,7 +18,7 @@ JSONPrinter::JSONPrinter(std::string fname) {
 }
 
 /// Add node to json (typically basic type)
-void JSONPrinter::addNode(std::string value, std::string name) {
+void JSONPrinter::addNode(std::string value, const std::string& name) {
     if (!block) {
         auto text = "Block not initialized (pushBlock missing?)";
         throw std::logic_error(text);
@@ -31,7 +31,7 @@ void JSONPrinter::addNode(std::string value, std::string name) {
 
 /// Add new json object (typically start of new block)
 /// name here is type of new block encountered
-void JSONPrinter::pushBlock(std::string name) {
+void JSONPrinter::pushBlock(const std::string& name) {
     if (block) {
         stack.push(block);
     }

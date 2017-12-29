@@ -15,7 +15,7 @@ using json = nlohmann::json;
 // Verbatim visitor tests
 //=============================================================================
 
-std::vector<std::string> run_verbatim_visitor(std::string text) {
+std::vector<std::string> run_verbatim_visitor(const std::string& text) {
     nmodl::Driver driver;
     driver.parse_string(text);
     auto ast = driver.ast();
@@ -48,7 +48,7 @@ TEST_CASE("Verbatim Visitor") {
 // JSON visitor tests
 //=============================================================================
 
-std::string run_json_visitor(std::string text, bool compact = false) {
+std::string run_json_visitor(const std::string& text, bool compact = false) {
     nmodl::Driver driver;
     driver.parse_string(text);
     auto ast = driver.ast();
@@ -88,7 +88,7 @@ TEST_CASE("JSON Visitor") {
 
     SECTION("JSON text test (compact format)") {
         std::string nmodl_text = "NEURON {}";
-        std::string expected = "{\"Program\":[{\"NeuronBlock\":[{\"StatementBlock\":[]}]}]}";
+        std::string expected = R"({"Program":[{"NeuronBlock":[{"StatementBlock":[]}]}]})";
 
         auto result = run_json_visitor(nmodl_text, true);
         REQUIRE(result == expected);

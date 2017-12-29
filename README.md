@@ -10,11 +10,18 @@ git clone ssh://bbpcode.epfl.ch:22/incubator/nocmodl
 
 #### Dependencies
 
-Make sure to have latest version of flex (>=2.6) and bison (>=3.0). For example, on OS X we do:
+- flex (>=2.6)
+- bison (>=3.0)
+- CMake (>=3.1)
+- C++ compiler (with c++11 support)
+- Python2 (>=2.7)
+
+Make sure to have latest version of flex (>=2.6) and bison (>=3.0). For example, on OS X we typically install packages via brew or macport as:
 
 ```
 brew install flex bison
 ```
+
 This will install flex and bison in:
 
 ```
@@ -22,10 +29,18 @@ This will install flex and bison in:
 /usr/local/opt/bison
 ```
 
-On Ubuntu 16.04 you should already have recent version of flex/bison.
+On Ubuntu (>=16.04) you should already have recent version of flex/bison:
+
+```
+$ flex --version
+flex 2.6.4
+
+$ bison --version
+bison (GNU Bison) 3.0.4
+```
 
 #### Build
-Install NOCMODL as:
+Build/Compile NOCMODL as:
 
 ```
 mkdir build
@@ -38,38 +53,49 @@ If flex / bison is installed in non-standard location then set `PATH` env variab
 
 ```
  cmake .. -DCMAKE_PREFIX_PATH="/usr/local/opt/bison/;/usr/local/opt/flex"
- ```
+```
 
- On Lugano system we have to use newer version using:
+ On Lugano BBP IV system we have to use newer versions installed in below path:
 
  ```
  export PATH=/gpfs/bbp.cscs.ch/project/proj16/software/viz/hpc/bison-3.0.4-/bin:$PATH
  export PATH=/gpfs/bbp.cscs.ch/project/proj16/software/viz/hpc/flex-2.6.4/bin:$PATH
  ```
 
- #### Running NOCMODL
+If you want to enable `clang-tidy` checks with CMake, make sure to have `CMake >= 3.5` and use following cmake option:
 
- You can independently run lexer, parser as:
+```
+cmake .. -DENABLE_CLANG_TIDY=ON
+```
 
- ```
+
+#### Running NOCMODL
+
+You can independently run lexer, parser or visitors as:
+
+```
 ./bin/nocmodl_lexer --file ../test/input/channel.mod
 ./bin/nocmodl_parser --file ../test/input/channel.mod
- ````
+./bin/nocmodl_visitor --file ../test/input/channel.mod
+```
 
 
- #### Running Test
+#### Running Test
 
  You can run unit tests as:
 
- ```
+```
  make test
- ```
+```
 
- Or individual binaries with verbode output:
+ Or individual test binaries with verbode output:
 
  ```
- ./bin/testlexer -s
- ./bin/testmodtoken -s
+ ./bin/test/testlexer -s
+ ./bin/test/testmodtoken -s
+ ./bin/test/testprinter -s
+ ./bin/test/testsymtab -s
+ ./bin/test/testvisitor -s
  ```
 
 

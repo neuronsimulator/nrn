@@ -1,8 +1,10 @@
+#include <utility>
+
 #include "visitors/perf_visitor.hpp"
 
 using namespace symtab;
 
-PerfVisitor::PerfVisitor(std::string filename) : printer(new JSONPrinter(filename)) {
+PerfVisitor::PerfVisitor(const std::string& filename) : printer(new JSONPrinter(filename)) {
 }
 
 /// count math operations from all binary expressions
@@ -257,7 +259,7 @@ void PerfVisitor::visitUnaryExpression(UnaryExpression* node) {
  * count for "exp" symbol. Same for solve statement where name will
  * be neuron solver method.
  */
-bool PerfVisitor::symbol_to_skip(std::shared_ptr<Symbol> symbol) {
+bool PerfVisitor::symbol_to_skip(const std::shared_ptr<Symbol>& symbol) {
     bool skip = false;
 
     auto is_method = symbol->has_properties(NmodlInfo::extern_method);
@@ -272,7 +274,7 @@ bool PerfVisitor::symbol_to_skip(std::shared_ptr<Symbol> symbol) {
     return skip;
 }
 
-bool PerfVisitor::is_local_variable(std::shared_ptr<symtab::Symbol> symbol) {
+bool PerfVisitor::is_local_variable(const std::shared_ptr<symtab::Symbol>& symbol) {
     bool is_local = false;
     auto properties = NmodlInfo::local_var | NmodlInfo::argument | NmodlInfo::function_block;
     if (symbol->has_properties(properties)) {
@@ -284,7 +286,7 @@ bool PerfVisitor::is_local_variable(std::shared_ptr<symtab::Symbol> symbol) {
 /** Find symbol in closest scope (up to parent) and update
  * read/write count. Also update ops count in current block.
  */
-void PerfVisitor::update_memory_ops(std::string name) {
+void PerfVisitor::update_memory_ops(const std::string& name) {
     if (start_measurement) {
         auto symbol = current_symtab->lookup_in_scope(name);
         if (symbol == nullptr || symbol_to_skip(symbol)) {

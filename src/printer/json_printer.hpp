@@ -46,7 +46,7 @@ class JSONPrinter {
     bool compact = false;
 
   public:
-    JSONPrinter(std::string filename);
+    JSONPrinter(const std::string& filename);
 
     /// By default dump output to std::cout
     JSONPrinter() : result(new std::ostream(std::cout.rdbuf())) {
@@ -60,8 +60,8 @@ class JSONPrinter {
         flush();
     }
 
-    void pushBlock(std::string name);
-    void addNode(std::string value, std::string name="value");
+    void pushBlock(const std::string& name);
+    void addNode(std::string value, const std::string& name = "value");
     void popBlock();
     void flush();
 

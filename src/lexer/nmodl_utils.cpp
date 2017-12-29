@@ -1,4 +1,4 @@
-#include <string.h>
+#include <cstring>
 #include <iostream>
 
 #include "ast/ast.hpp"
@@ -37,7 +37,7 @@ namespace nmodl {
      * \todo In addition to keywords and methods, there are also external
      * definitions for math and neuron specific functions/variables. In the
      * token we should mark those as external. */
-    SymbolType name_symbol(std::string text, PositionType& pos, TokenType type) {
+    SymbolType name_symbol(const std::string& text, PositionType& pos, TokenType type) {
         ModToken token(text, type, pos);
         auto value = new ast::Name(new ast::String(text));
         value->setToken(token);
@@ -53,14 +53,14 @@ namespace nmodl {
         stringutils::remove_character(text, '\'');
 
         auto prime_name = new ast::String(text);
-        auto prime_order = new ast::Integer(order, NULL);
+        auto prime_order = new ast::Integer(order, nullptr);
         auto value = new ast::PrimeName(prime_name, prime_order);
         value->setToken(token);
         return Parser::make_PRIME(value, pos);
     }
 
     /// create symbol for string ast class
-    SymbolType string_symbol(std::string text, PositionType& pos) {
+    SymbolType string_symbol(const std::string& text, PositionType& pos) {
         ModToken token(text, Token::STRING, pos);
         auto value = new ast::String(text);
         value->setToken(token);
@@ -74,7 +74,7 @@ namespace nmodl {
      * reaction parsing where we have "lexical context". Hence, if token
      * type is passed then we don't check/search for the token type. */
 
-    SymbolType token_symbol(std::string key, PositionType& pos, TokenType type) {
+    SymbolType token_symbol(const std::string& key, PositionType& pos, TokenType type) {
         /// if token type is not passed, check if it is keyword or method
         if (type == Token::UNKNOWN) {
             if (is_keyword(key) || is_method(key)) {
