@@ -10,9 +10,9 @@ class AstDeclarationPrinter(DeclarationPrinter):
         """ print ast type for every ast node """
         self.writer.write_line("enum class Type {", post_gutter=1)
         for node in self.nodes[:-1]:
-            name = node_ast_type(node.class_name) + ","
+            name = to_snake_case(node.class_name).upper() + ","
             self.writer.write_line(name)
-        name = node_ast_type(self.nodes[-1].class_name)
+        name = to_snake_case(self.nodes[-1].class_name).upper()
         self.writer.write_line(name)
         self.writer.write_line("};", pre_gutter=-1)
 
@@ -77,7 +77,7 @@ class AstDeclarationPrinter(DeclarationPrinter):
 
     def ast_classes_declaration(self):
 
-        # TODO: for demo, removing error messages in getToken method.
+        # TODO: for demo, removing error messages in get_token method.
         # need to look in detail whether we should abort in this case
         # when ModToken in NULL. This was introduced when added SymtabVisitor
         # pass to get Token information.
@@ -163,42 +163,42 @@ class AstDeclarationPrinter(DeclarationPrinter):
                     if child.is_string_node():
                         method = "eval"
                     else:
-                        method = "getName"
+                        method = "get_name"
 
-                    self.writer.write_line("virtual std::string getName() override {")
+                    self.writer.write_line("virtual std::string get_name() override {")
                     self.writer.write_line("    return " + varname + "->" + method + "();")
                     self.writer.write_line("}")
 
                     if not node.has_token:
-                        self.writer.write_line(virtual + "ModToken* getToken() override {")
-                        self.writer.write_line("    return " + varname + "->getToken();")
+                        self.writer.write_line(virtual + "ModToken* get_token() override {")
+                        self.writer.write_line("    return " + varname + "->get_token();")
                         self.writer.write_line("}")
 
                     get_method_added = True
 
                 if node.is_prime_node() and child.varname == ORDER_VAR_NAME:
-                    self.writer.write_line("int getOrder() " + " { return " + ORDER_VAR_NAME + "->eval(); }")
+                    self.writer.write_line("int get_order() " + " { return " + ORDER_VAR_NAME + "->eval(); }")
 
             # add method to return typename
-            self.writer.write_line("virtual std::string getTypeName() override { return \"" + node.class_name + "\"; }")
+            self.writer.write_line("virtual std::string get_type_name() override { return \"" + node.class_name + "\"; }")
 
             # all member functions
-            self.writer.write_line(virtual + "void visitChildren (Visitor* v) override;")
-            self.writer.write_line(virtual + "void accept(Visitor* v) override { v->visit" + node.class_name + "(this); }")
+            self.writer.write_line(virtual + "void visit_children (Visitor* v) override;")
+            self.writer.write_line(virtual + "void accept(Visitor* v) override { v->visit_" + to_snake_case(node.class_name) + "(this); }")
 
             # TODO: type should declared as enum class
-            typename = node_ast_type(node.class_name)
-            self.writer.write_line(virtual + "Type getType() override { return Type::" + typename + "; }")
-            self.writer.write_line("bool is" + node.class_name + " () override { return true; }")
+            typename = to_snake_case(node.class_name).upper()
+            self.writer.write_line(virtual + "Type get_type() override { return Type::" + typename + "; }")
+            self.writer.write_line("bool is_" + to_snake_case(node.class_name) + " () override { return true; }")
             self.writer.write_line(virtual + node.class_name + "* clone() override { return new " + node.class_name + "(*this); }")
 
             if node.has_token:
-                self.writer.write_line(virtual + "ModToken* getToken() " + override + " { return token.get(); }")
-                self.writer.write_line("void setToken(ModToken& tok) " + " { token = std::shared_ptr<ModToken>(new ModToken(tok)); }")
+                self.writer.write_line(virtual + "ModToken* get_token() " + override + " { return token.get(); }")
+                self.writer.write_line("void set_token(ModToken& tok) " + " { token = std::shared_ptr<ModToken>(new ModToken(tok)); }")
 
             if node.is_symtab_needed():
-                self.writer.write_line("void setSymbolTable(std::shared_ptr<symtab::SymbolTable> newsymtab) " + " { symtab = newsymtab; }")
-                self.writer.write_line("std::shared_ptr<symtab::SymbolTable> getSymbolTable() override " + " { return symtab; }")
+                self.writer.write_line("void set_symbol_table(std::shared_ptr<symtab::SymbolTable> newsymtab) " + " { symtab = newsymtab; }")
+                self.writer.write_line("std::shared_ptr<symtab::SymbolTable> get_symbol_table() override " + " { return symtab; }")
 
             if node.is_number_node():
                 self.writer.write_line(virtual + "void negate()" + override + " { std::cout << \"ERROR : negate() not implemented! \"; abort(); } ")
@@ -210,10 +210,10 @@ class AstDeclarationPrinter(DeclarationPrinter):
                     self.writer.write_line("void negate() override { value = -value; }")
 
             if node.is_identifier_node():
-                self.writer.write_line(virtual + "void setName(std::string /*name*/)" + override + " { std::cout << \"ERROR : setName() not implemented! \"; abort(); }")
+                self.writer.write_line(virtual + "void set_name(std::string /*name*/)" + override + " { std::cout << \"ERROR : set_name() not implemented! \"; abort(); }")
 
             if node.is_name_node():
-                self.writer.write_line(virtual + "void setName(std::string name)" + override + " { value->set(name); }")
+                self.writer.write_line(virtual + "void set_name(std::string name)" + override + " { value->set(name); }")
 
             # if node is of enum type then return enum value
             # TODO: hardcoded Names
@@ -280,7 +280,6 @@ class AstDefinitionPrinter(DefinitionPrinter):
                 if child.is_vector:
                     # TODO : remove this with C++11 style
                     self.writer.add_line("for(auto& item : this->" + child.varname + ") {")
-                    #self.writer.add_line("    iter != this->" + child.varname + "->end(); iter++) {")
                     self.writer.add_line("        item->accept(v);")
                     self.writer.add_line("}")
                 elif child.optional or child.is_statement_block_node():
@@ -295,11 +294,11 @@ class AstDefinitionPrinter(DefinitionPrinter):
 
             if self.writer.num_buffered_lines():
                 self.writer.write_line("/* visit method for " + node.class_name + " ast node */")
-                self.writer.write_line("void " + node.class_name + "::visitChildren(Visitor* v) {", post_gutter=1)
+                self.writer.write_line("void " + node.class_name + "::visit_children(Visitor* v) {", post_gutter=1)
                 self.writer.flush_buffered_lines()
                 self.writer.write_line("}", pre_gutter=-1, newline=2)
             else:
-                self.writer.write_line("void " + node.class_name + "::visitChildren(Visitor* /*v*/) {}")
+                self.writer.write_line("void " + node.class_name + "::visit_children(Visitor* /*v*/) {}")
 
             if members:
                 # TODO : constructor definition : remove this with C++11 style

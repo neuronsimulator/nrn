@@ -93,126 +93,126 @@ class PerfVisitor : public AstVisitor {
         return total_perf;
     }
 
-    void visitBinaryExpression(BinaryExpression* node) override;
+    void visit_binary_expression(BinaryExpression* node) override;
 
-    void visitFunctionCall(FunctionCall* node) override;
+    void visit_function_call(FunctionCall* node) override;
 
-    void visitName(Name* node) override;
+    void visit_name(Name* node) override;
 
-    void visitPrimeName(PrimeName* node) override;
+    void visit_prime_name(PrimeName* node) override;
 
-    void visitSolveBlock(SolveBlock* node) override;
+    void visit_solve_block(SolveBlock* node) override;
 
-    void visitStatementBlock(StatementBlock* node) override;
+    void visit_statement_block(StatementBlock* node) override;
 
-    void visitUnaryExpression(UnaryExpression* node) override;
+    void visit_unary_expression(UnaryExpression* node) override;
 
-    void visitIfStatement(IfStatement* node) override;
+    void visit_if_statement(IfStatement* node) override;
 
-    void visitElseIfStatement(ElseIfStatement* node) override;
+    void visit_else_if_statement(ElseIfStatement* node) override;
 
-    void visitProgram(Program* node) override;
+    void visit_program(Program* node) override;
 
-    void visitPlotBlock(PlotBlock* node) override {
+    void visit_plot_block(PlotBlock* node) override {
         measure_performance(node);
     }
 
-    void visitInitialBlock(InitialBlock* node) override {
+    void visit_initial_block(InitialBlock* node) override {
         measure_performance(node);
     }
 
-    void visitConstructorBlock(ConstructorBlock* node) override {
+    void visit_constructor_block(ConstructorBlock* node) override {
         measure_performance(node);
     }
 
-    void visitDestructorBlock(DestructorBlock* node) override {
+    void visit_destructor_block(DestructorBlock* node) override {
         measure_performance(node);
     }
 
-    void visitDerivativeBlock(DerivativeBlock* node) override {
+    void visit_derivative_block(DerivativeBlock* node) override {
         measure_performance(node);
     }
 
-    void visitLinearBlock(LinearBlock* node) override {
+    void visit_linear_block(LinearBlock* node) override {
         measure_performance(node);
     }
 
-    void visitNonLinearBlock(NonLinearBlock* node) override {
+    void visit_non_linear_block(NonLinearBlock* node) override {
         measure_performance(node);
     }
 
-    void visitDiscreteBlock(DiscreteBlock* node) override {
+    void visit_discrete_block(DiscreteBlock* node) override {
         measure_performance(node);
     }
 
-    void visitPartialBlock(PartialBlock* node) override {
+    void visit_partial_block(PartialBlock* node) override {
         measure_performance(node);
     }
 
-    void visitFunctionTableBlock(FunctionTableBlock* node) override {
+    void visit_function_table_block(FunctionTableBlock* node) override {
         measure_performance(node);
     }
 
-    void visitFunctionBlock(FunctionBlock* node) override {
+    void visit_function_block(FunctionBlock* node) override {
         measure_performance(node);
     }
 
-    void visitProcedureBlock(ProcedureBlock* node) override {
+    void visit_procedure_block(ProcedureBlock* node) override {
         measure_performance(node);
     }
 
-    void visitNetReceiveBlock(NetReceiveBlock* node) override {
+    void visit_net_receive_block(NetReceiveBlock* node) override {
         measure_performance(node);
     }
 
-    void visitBreakpointBlock(BreakpointBlock* node) override {
+    void visit_breakpoint_block(BreakpointBlock* node) override {
         measure_performance(node);
     }
 
-    void visitTerminalBlock(TerminalBlock* node) override {
+    void visit_terminal_block(TerminalBlock* node) override {
         measure_performance(node);
     }
 
-    void visitBeforeBlock(BeforeBlock* node) override {
+    void visit_before_block(BeforeBlock* node) override {
         measure_performance(node);
     }
 
-    void visitAfterBlock(AfterBlock* node) override {
+    void visit_after_block(AfterBlock* node) override {
         measure_performance(node);
     }
 
-    void visitBABlock(BABlock* node) override {
+    void visit_ba_block(BABlock* node) override {
         measure_performance(node);
     }
 
-    void visitForNetcon(ForNetcon* node) override {
+    void visit_for_netcon(ForNetcon* node) override {
         measure_performance(node);
     }
 
-    void visitKineticBlock(KineticBlock* node) override {
+    void visit_kinetic_block(KineticBlock* node) override {
         measure_performance(node);
     }
 
-    void visitMatchBlock(MatchBlock* node) override {
+    void visit_match_block(MatchBlock* node) override {
         measure_performance(node);
     }
 
     /// certain constructs needs to be excluded from usage counting
     /// and hence need to provide empty implementations
 
-    void visitConductanceHint(ConductanceHint* /*node*/) override {
+    void visit_conductance_hint(ConductanceHint* /*node*/) override {
     }
 
-    void visitLocalListStatement(LocalListStatement* /*node*/) override {
+    void visit_local_list_statement(LocalListStatement* /*node*/) override {
     }
 
-    void visitSuffix(Suffix* /*node*/) override {
+    void visit_suffix(Suffix* /*node*/) override {
     }
 
-    void visitUseion(Useion* /*node*/) override {
+    void visit_useion(Useion* /*node*/) override {
     }
 
-    void visitValence(Valence* /*node*/) override {
+    void visit_valence(Valence* /*node*/) override {
     }
 
     void print(std::stringstream& ss) {

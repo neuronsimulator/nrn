@@ -11,9 +11,9 @@ TEST_CASE("JSON Printer Tests", "[JSONPrinter]") {
         JSONPrinter p(ss);
         p.compact_json(true);
 
-        p.pushBlock("A");
-        p.addNode("B");
-        p.popBlock();
+        p.push_block("A");
+        p.add_node("B");
+        p.pop_block();
         p.flush();
 
         auto result = R"({"A":[{"value":"B"}]})";
@@ -25,13 +25,13 @@ TEST_CASE("JSON Printer Tests", "[JSONPrinter]") {
         JSONPrinter p(ss);
         p.compact_json(true);
 
-        p.pushBlock("A");
-        p.addNode("B");
-        p.addNode("C");
-        p.pushBlock("D");
-        p.addNode("E");
-        p.popBlock();
-        p.popBlock();
+        p.push_block("A");
+        p.add_node("B");
+        p.add_node("C");
+        p.push_block("D");
+        p.add_node("E");
+        p.pop_block();
+        p.pop_block();
         p.flush();
 
         auto result = R"({"A":[{"value":"B"},{"value":"C"},{"D":[{"value":"E"}]}]})";

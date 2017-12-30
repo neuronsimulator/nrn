@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
                 case Token::DEL:
                 case Token::DEL2: {
                     auto value = sym.value.as<ast::name_ptr>();
-                    std::cout << *(value->getToken()) << std::endl;
+                    std::cout << *(value->get_token()) << std::endl;
                     delete value;
                     break;
                 }
@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
                 /// token with prime ast class
                 case Token::PRIME: {
                     auto value = sym.value.as<ast::primename_ptr>();
-                    std::cout << *(value->getToken()) << std::endl;
+                    std::cout << *(value->get_token()) << std::endl;
                     delete value;
                     break;
                 }
@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
                 /// token with integer ast class
                 case Token::INTEGER: {
                     auto value = sym.value.as<ast::integer_ptr>();
-                    std::cout << *(value->getToken()) << std::endl;
+                    std::cout << *(value->get_token()) << std::endl;
                     delete value;
                     break;
                 }
@@ -89,7 +89,7 @@ int main(int argc, char* argv[]) {
                 /// token with double/float ast class
                 case Token::REAL: {
                     auto value = sym.value.as<ast::double_ptr>();
-                    std::cout << *(value->getToken()) << std::endl;
+                    std::cout << *(value->get_token()) << std::endl;
                     delete value;
                     break;
                 }
@@ -97,7 +97,7 @@ int main(int argc, char* argv[]) {
                 /// token with string ast class
                 case Token::STRING: {
                     auto value = sym.value.as<ast::string_ptr>();
-                    std::cout << *(value->getToken()) << std::endl;
+                    std::cout << *(value->get_token()) << std::endl;
                     delete value;
                     break;
                 }

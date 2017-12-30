@@ -51,7 +51,7 @@ int main(int argc, const char* argv[]) {
         {
             /// run basic AST visitor
             AstVisitor v;
-            v.visitProgram(ast.get());
+            v.visit_program(ast.get());
 
             std::cout << "----AST VISITOR FINISHED----" << std::endl;
         }
@@ -60,7 +60,7 @@ int main(int argc, const char* argv[]) {
             /// run basic Verbatim visitor
             /// constructor takes true/false argument for printing blocks
             VerbatimVisitor v;
-            v.visitProgram(ast.get());
+            v.visit_program(ast.get());
 
             std::cout << "----VERBATIM VISITOR FINISHED----" << std::endl;
         }
@@ -72,7 +72,7 @@ int main(int argc, const char* argv[]) {
             /// to get compact json we can set compact mode
             /// v.compact_json(true);
 
-            v.visitProgram(ast.get());
+            v.visit_program(ast.get());
 
             std::cout << "----JSON VISITOR FINISHED----" << std::endl;
 
@@ -88,7 +88,7 @@ int main(int argc, const char* argv[]) {
             std::stringstream ss1;
 
             SymtabVisitor v(&symtab, ss1);
-            v.visitProgram(ast.get());
+            v.visit_program(ast.get());
 
             // std::cout << ss1.str();
 
@@ -101,9 +101,9 @@ int main(int argc, const char* argv[]) {
 
         {
             PerfVisitor v(channel_name + ".perf.json");
-            v.visitProgram(ast.get());
+            v.visit_program(ast.get());
 
-            auto symtab = ast->getSymbolTable();
+            auto symtab = ast->get_symbol_table();
             std::stringstream ss;
             symtab->print(ss, 0);
             std::cout << ss.str();

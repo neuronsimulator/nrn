@@ -12,7 +12,7 @@ namespace nmodl {
     SymbolType double_symbol(double value, PositionType& pos) {
         ModToken token(std::to_string(value), Token::REAL, pos);
         auto floatvalue = new ast::Double(value);
-        floatvalue->setToken(token);
+        floatvalue->set_token(token);
         return Parser::make_REAL(floatvalue, pos);
     }
 
@@ -24,11 +24,11 @@ namespace nmodl {
 
         if (text != nullptr) {
             macro = new ast::Name(new ast::String(text));
-            macro->setToken(token);
+            macro->set_token(token);
         }
 
         auto intvalue = new ast::Integer(value, macro);
-        intvalue->setToken(token);
+        intvalue->set_token(token);
         return Parser::make_INTEGER(intvalue, pos);
     }
 
@@ -40,7 +40,7 @@ namespace nmodl {
     SymbolType name_symbol(const std::string& text, PositionType& pos, TokenType type) {
         ModToken token(text, type, pos);
         auto value = new ast::Name(new ast::String(text));
-        value->setToken(token);
+        value->set_token(token);
         return Parser::make_NAME(value, pos);
     }
 
@@ -55,7 +55,7 @@ namespace nmodl {
         auto prime_name = new ast::String(text);
         auto prime_order = new ast::Integer(order, nullptr);
         auto value = new ast::PrimeName(prime_name, prime_order);
-        value->setToken(token);
+        value->set_token(token);
         return Parser::make_PRIME(value, pos);
     }
 
@@ -63,7 +63,7 @@ namespace nmodl {
     SymbolType string_symbol(const std::string& text, PositionType& pos) {
         ModToken token(text, Token::STRING, pos);
         auto value = new ast::String(text);
-        value->setToken(token);
+        value->set_token(token);
         return Parser::make_STRING(value, pos);
     }
 

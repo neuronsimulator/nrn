@@ -65,7 +65,7 @@ namespace nmodl {
         /// root of the ast
         std::shared_ptr<ast::Program> astRoot = nullptr;
 
-        Driver(){};
+        Driver() = default;
         Driver(bool strace, bool ptrace);
 
         void error(const std::string& m, const class location& l);

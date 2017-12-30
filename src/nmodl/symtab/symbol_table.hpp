@@ -97,14 +97,14 @@ namespace symtab {
         }
 
         std::string type() const {
-            return node->getTypeName();
+            return node->get_type_name();
         }
 
         std::string title();
 
         /// todo: set token for every block from parser
         std::string position() const {
-            auto token = node->getToken();
+            auto token = node->get_token();
             if (token)
                 return token->position();
             else

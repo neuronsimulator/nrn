@@ -39,7 +39,7 @@ namespace stringutils {
     }
 
     /// Remove leading newline for the string read by grammar
-    static inline std::string& trimnewline(std::string& s) {
+    static inline std::string& trim_newline(std::string& s) {
         remove_character(s, '\n');
         return s;
     }
