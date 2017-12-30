@@ -1,6 +1,6 @@
 #include "visitors/verbatim_visitor.hpp"
 
-void VerbatimVisitor::visitVerbatim(Verbatim* node) {
+void VerbatimVisitor::visit_verbatim(Verbatim* node) {
     std::string block;
 
     if (node->statement) {

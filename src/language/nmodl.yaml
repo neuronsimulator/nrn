@@ -459,7 +459,7 @@
 #
 # Diffusion statement:
 #
-# Statement:LDifuse("LONGITUDINAL_DIFFUSION") => ?Name<name>(":,")
+# Statement:LonDifuse("LONGITUDINAL_DIFFUSION") => ?Name<name>(":,")
 #                                                Expression<expression>
 #                                                *Name<names>("{:}: ")
 # Kinetic block:
@@ -1422,7 +1422,7 @@
               prefix: {value: "{"}
               suffix: {value: "}"}
               separator: " "
-    - LDifuse:
+    - LonDifuse:
         nmodl: LONGITUDINAL_DIFFUSION
         members:
           - name:

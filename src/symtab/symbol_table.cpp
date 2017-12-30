@@ -148,7 +148,7 @@ namespace symtab {
         auto node = symbol->get_node();
         std::string type = "UNKNOWN";
         if (node != nullptr) {
-            type = node->getTypeName();
+            type = node->get_type_name();
         }
 
         /** For global symbol tables, same variable can appear in multiple
@@ -196,8 +196,8 @@ namespace symtab {
      */
     std::string ModelSymbolTable::get_unique_name(std::string name, AST* node) {
         static int block_counter = 0;
-        if (node->isStatementBlock() || node->isSolveBlock() || node->isBeforeBlock() ||
-            node->isAfterBlock()) {
+        if (node->is_statement_block() || node->is_solve_block() || node->is_before_block() ||
+            node->is_after_block()) {
             name += std::to_string(block_counter++);
         }
         return name;
@@ -227,7 +227,7 @@ namespace symtab {
         }
 
         /// statement block within global scope is part of global block itself
-        if (symtab && node->isStatementBlock() && parent_symtab->under_global_scope()) {
+        if (symtab && node->is_statement_block() && parent_symtab->under_global_scope()) {
             parent_symtab = symtab;
             return parent_symtab;
         }

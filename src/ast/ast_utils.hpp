@@ -73,13 +73,13 @@ namespace ast {
          */
 
         /* all AST nodes provide visit children and accept methods */
-        virtual void visitChildren(Visitor* v) = 0;
+        virtual void visit_children(Visitor* v) = 0;
         virtual void accept(Visitor* v) = 0;
-        virtual Type getType() = 0;
-        virtual std::string getTypeName() = 0;
+        virtual Type get_type() = 0;
+        virtual std::string get_type_name() = 0;
 
-        virtual std::string getName() {
-            throw std::logic_error("getName() not implemented");
+        virtual std::string get_name() {
+            throw std::logic_error("get_name() not implemented");
         }
 
         virtual AST* clone() {
@@ -87,530 +87,532 @@ namespace ast {
         }
 
         /* @todo: please revisit this. adding quickly for symtab */
-        virtual ModToken* getToken() { /*std::cout << "\n ERROR: getToken not implemented!";*/
+        virtual ModToken* get_token() { /*std::cout << "\n ERROR: get_token not implemented!";*/
             return nullptr;
         }
 
-        virtual std::shared_ptr<symtab::SymbolTable> getSymbolTable() {
-            throw std::runtime_error("getSymbolTable() not implemented");
+        virtual std::shared_ptr<symtab::SymbolTable> get_symbol_table() {
+            throw std::runtime_error("get_symbol_table() not implemented");
         }
 
         virtual ~AST() {
         }
 
-        virtual bool isAST() {
+        virtual bool is_ast() {
             return true;
         }
 
-        virtual bool isStatement() {
+        virtual bool is_statement() {
             return false;
         }
 
-        virtual bool isExpression() {
+        virtual bool is_expression() {
             return false;
         }
 
-        virtual bool isBlock() {
+        virtual bool is_block() {
             return false;
         }
 
-        virtual bool isIdentifier() {
+        virtual bool is_identifier() {
             return false;
         }
 
-        virtual bool isNumber() {
+        virtual bool is_number() {
             return false;
         }
 
-        virtual bool isString() {
+        virtual bool is_string() {
             return false;
         }
 
-        virtual bool isInteger() {
+        virtual bool is_integer() {
             return false;
         }
 
-        virtual bool isFloat() {
+        virtual bool is_float() {
             return false;
         }
 
-        virtual bool isDouble() {
+        virtual bool is_double() {
             return false;
         }
 
-        virtual bool isBoolean() {
+        virtual bool is_boolean() {
             return false;
         }
 
-        virtual bool isName() {
+        virtual bool is_name() {
             return false;
         }
 
-        virtual bool isPrimeName() {
+        virtual bool is_prime_name() {
             return false;
         }
 
-        virtual bool isVarName() {
+        virtual bool is_var_name() {
             return false;
         }
 
-        virtual bool isIndexedName() {
+        virtual bool is_indexed_name() {
             return false;
         }
 
-        virtual bool isArgument() {
+        virtual bool is_argument() {
             return false;
         }
 
-        virtual bool isReactVarName() {
+        virtual bool is_react_var_name() {
             return false;
         }
 
-        virtual bool isReadIonVar() {
+        virtual bool is_read_ion_var() {
             return false;
         }
 
-        virtual bool isWriteIonVar() {
+        virtual bool is_write_ion_var() {
             return false;
         }
 
-        virtual bool isNonspeCurVar() {
+        virtual bool is_nonspe_cur_var() {
             return false;
         }
 
-        virtual bool isElectrodeCurVar() {
+        virtual bool is_electrode_cur_var() {
             return false;
         }
 
-        virtual bool isSectionVar() {
+        virtual bool is_section_var() {
             return false;
         }
 
-        virtual bool isRangeVar() {
+        virtual bool is_range_var() {
             return false;
         }
 
-        virtual bool isGlobalVar() {
+        virtual bool is_global_var() {
             return false;
         }
 
-        virtual bool isPointerVar() {
+        virtual bool is_pointer_var() {
             return false;
         }
 
-        virtual bool isBbcorePointerVar() {
+        virtual bool is_bbcore_pointer_var() {
             return false;
         }
 
-        virtual bool isExternVar() {
+        virtual bool is_extern_var() {
             return false;
         }
 
-        virtual bool isThreadsafeVar() {
+        virtual bool is_threadsafe_var() {
             return false;
         }
 
-        virtual bool isParamBlock() {
+        virtual bool is_param_block() {
             return false;
         }
 
-        virtual bool isStepBlock() {
+        virtual bool is_step_block() {
             return false;
         }
 
-        virtual bool isIndependentBlock() {
+        virtual bool is_independent_block() {
             return false;
         }
 
-        virtual bool isDependentBlock() {
+        virtual bool is_dependent_block() {
             return false;
         }
 
-        virtual bool isStateBlock() {
+        virtual bool is_state_block() {
             return false;
         }
 
-        virtual bool isPlotBlock() {
+        virtual bool is_plot_block() {
             return false;
         }
 
-        virtual bool isInitialBlock() {
+        virtual bool is_initial_block() {
             return false;
         }
 
-        virtual bool isConstructorBlock() {
+        virtual bool is_constructor_block() {
             return false;
         }
 
-        virtual bool isDestructorBlock() {
+        virtual bool is_destructor_block() {
             return false;
         }
 
-        virtual bool isStatementBlock() {
+        virtual bool is_statement_block() {
             return false;
         }
 
-        virtual bool isDerivativeBlock() {
+        virtual bool is_derivative_block() {
             return false;
         }
 
-        virtual bool isLinearBlock() {
+        virtual bool is_linear_block() {
             return false;
         }
 
-        virtual bool isNonLinearBlock() {
+        virtual bool is_non_linear_block() {
             return false;
         }
 
-        virtual bool isDiscreteBlock() {
+        virtual bool is_discrete_block() {
             return false;
         }
 
-        virtual bool isPartialBlock() {
+        virtual bool is_partial_block() {
             return false;
         }
 
-        virtual bool isFunctionTableBlock() {
+        virtual bool is_function_table_block() {
             return false;
         }
 
-        virtual bool isFunctionBlock() {
+        virtual bool is_function_block() {
             return false;
         }
 
-        virtual bool isProcedureBlock() {
+        virtual bool is_procedure_block() {
             return false;
         }
 
-        virtual bool isNetReceiveBlock() {
+        virtual bool is_net_receive_block() {
             return false;
         }
 
-        virtual bool isSolveBlock() {
+        virtual bool is_solve_block() {
             return false;
         }
 
-        virtual bool isBreakpointBlock() {
+        virtual bool is_breakpoint_block() {
             return false;
         }
 
-        virtual bool isTerminalBlock() {
+        virtual bool is_terminal_block() {
             return false;
         }
 
-        virtual bool isBeforeBlock() {
+        virtual bool is_before_block() {
             return false;
         }
 
-        virtual bool isAfterBlock() {
+        virtual bool is_after_block() {
             return false;
         }
 
-        virtual bool isBABlock() {
+        virtual bool is_ba_block() {
             return false;
         }
 
-        virtual bool isForNetcon() {
+        virtual bool is_for_netcon() {
             return false;
         }
 
-        virtual bool isKineticBlock() {
+        virtual bool is_kinetic_block() {
             return false;
         }
 
-        virtual bool isMatchBlock() {
+        virtual bool is_match_block() {
             return false;
         }
 
-        virtual bool isUnitBlock() {
+        virtual bool is_unit_block() {
             return false;
         }
 
-        virtual bool isConstantBlock() {
+        virtual bool is_constant_block() {
             return false;
         }
 
-        virtual bool isNeuronBlock() {
+        virtual bool is_neuron_block() {
             return false;
         }
 
-        virtual bool isUnit() {
+        virtual bool is_unit() {
             return false;
         }
 
-        virtual bool isDoubleUnit() {
+        virtual bool is_double_unit() {
             return false;
         }
 
-        virtual bool isLocalVar() {
+        virtual bool is_local_var() {
             return false;
         }
 
-        virtual bool isLimits() {
+        virtual bool is_limits() {
             return false;
         }
 
-        virtual bool isNumberRange() {
+        virtual bool is_number_range() {
             return false;
         }
 
-        virtual bool isPlotVar() {
+        virtual bool is_plot_var() {
             return false;
         }
 
-        virtual bool isBinaryOperator() {
+        virtual bool is_binary_operator() {
             return false;
         }
 
-        virtual bool isUnaryOperator() {
+        virtual bool is_unary_operator() {
             return false;
         }
 
-        virtual bool isReactionOperator() {
+        virtual bool is_reaction_operator() {
             return false;
         }
 
-        virtual bool isBinaryExpression() {
+        virtual bool is_binary_expression() {
             return false;
         }
 
-        virtual bool isUnaryExpression() {
+        virtual bool is_unary_expression() {
             return false;
         }
 
-        virtual bool isNonLinEuation() {
+        virtual bool is_non_lin_euation() {
             return false;
         }
 
-        virtual bool isLinEquation() {
+        virtual bool is_lin_equation() {
             return false;
         }
 
-        virtual bool isFunctionCall() {
+        virtual bool is_function_call() {
             return false;
         }
 
-        virtual bool isFirstLastTypeIndex() {
+        virtual bool is_first_last_type_index() {
             return false;
         }
 
-        virtual bool isWatch() {
+        virtual bool is_watch() {
             return false;
         }
 
-        virtual bool isQueueExpressionType() {
+        virtual bool is_queue_expression_type() {
             return false;
         }
 
-        virtual bool isMatch() {
+        virtual bool is_match() {
             return false;
         }
 
-        virtual bool isBABlockType() {
+        virtual bool is_ba_block_type() {
             return false;
         }
 
-        virtual bool isUnitDef() {
+        virtual bool is_unit_def() {
             return false;
         }
 
-        virtual bool isFactorDef() {
+        virtual bool is_factor_def() {
             return false;
         }
 
-        virtual bool isValence() {
+        virtual bool is_valence() {
             return false;
         }
 
-        virtual bool isUnitState() {
+        virtual bool is_unit_state() {
             return false;
         }
 
-        virtual bool isLocalListStatement() {
+        virtual bool is_local_list_statement() {
             return false;
         }
 
-        virtual bool isModel() {
+        virtual bool is_model() {
             return false;
         }
 
-        virtual bool isDefine() {
+        virtual bool is_define() {
             return false;
         }
 
-        virtual bool isInclude() {
+        virtual bool is_include() {
             return false;
         }
 
-        virtual bool isParamAssign() {
+        virtual bool is_param_assign() {
             return false;
         }
 
-        virtual bool isStepped() {
+        virtual bool is_stepped() {
             return false;
         }
 
-        virtual bool isIndependentDef() {
+        virtual bool is_independent_def() {
             return false;
         }
 
-        virtual bool isDependentDef() {
+        virtual bool is_dependent_def() {
             return false;
         }
 
-        virtual bool isPlotDeclaration() {
+        virtual bool is_plot_declaration() {
             return false;
         }
 
-        virtual bool isConductanceHint() {
+        virtual bool is_conductance_hint() {
             return false;
         }
 
-        virtual bool isExpressionStatement() {
+        virtual bool is_expression_statement() {
             return false;
         }
 
-        virtual bool isProtectStatement() {
+        virtual bool is_protect_statement() {
             return false;
         }
 
-        virtual bool isFromStatement() {
+        virtual bool is_from_statement() {
             return false;
         }
 
-        virtual bool isForAllStatement() {
+        virtual bool is_for_all_statement() {
             return false;
         }
 
-        virtual bool isWhileStatement() {
+        virtual bool is_while_statement() {
             return false;
         }
 
-        virtual bool isIfStatement() {
+        virtual bool is_if_statement() {
             return false;
         }
 
-        virtual bool isElseIfStatement() {
+        virtual bool is_else_if_statement() {
             return false;
         }
 
-        virtual bool isElseStatement() {
+        virtual bool is_else_statement() {
             return false;
         }
 
-        virtual bool isPartialEquation() {
+        virtual bool is_partial_equation() {
             return false;
         }
 
-        virtual bool isPartialBoundary() {
+        virtual bool is_partial_boundary() {
             return false;
         }
 
-        virtual bool isWatchStatement() {
+        virtual bool is_watch_statement() {
             return false;
         }
 
-        virtual bool isMutexLock() {
+        virtual bool is_mutex_lock() {
             return false;
         }
 
-        virtual bool isMutexUnlock() {
+        virtual bool is_mutex_unlock() {
             return false;
         }
 
-        virtual bool isReset() {
+        virtual bool is_reset() {
             return false;
         }
 
-        virtual bool isSens() {
+        virtual bool is_sens() {
             return false;
         }
 
-        virtual bool isConserve() {
+        virtual bool is_conserve() {
             return false;
         }
 
-        virtual bool isCompartment() {
+        virtual bool is_compartment() {
             return false;
         }
 
-        virtual bool isLDifuse() {
+        virtual bool is_lon_difuse() {
             return false;
         }
 
-        virtual bool isReactionStatement() {
+        virtual bool is_reaction_statement() {
             return false;
         }
 
-        virtual bool isLagStatement() {
+        virtual bool is_lag_statement() {
             return false;
         }
 
-        virtual bool isQueueStatement() {
+        virtual bool is_queue_statement() {
             return false;
         }
 
-        virtual bool isConstantStatement() {
+        virtual bool is_constant_statement() {
             return false;
         }
 
-        virtual bool isTableStatement() {
+        virtual bool is_table_statement() {
             return false;
         }
 
-        virtual bool isSuffix() {
+        virtual bool is_suffix() {
             return false;
         }
 
-        virtual bool isUseion() {
+        virtual bool is_useion() {
             return false;
         }
 
-        virtual bool isNonspecific() {
+        /// \todo : how is this different from is_nonspe_cur_var ?
+        virtual bool is_nonspecific() {
             return false;
         }
 
-        virtual bool isElctrodeCurrent() {
+        virtual bool is_elctrode_current() {
             return false;
         }
 
-        virtual bool isSection() {
+        virtual bool is_section() {
             return false;
         }
 
-        virtual bool isRange() {
+        virtual bool is_range() {
             return false;
         }
 
-        virtual bool isGlobal() {
+        virtual bool is_global() {
             return false;
         }
 
-        virtual bool isPointer() {
+        /// \todo : how these are different from is_pointer_var ?
+        virtual bool is_pointer() {
             return false;
         }
 
-        virtual bool isBbcorePtr() {
+        virtual bool is_bbcore_ptr() {
             return false;
         }
 
-        virtual bool isExternal() {
+        virtual bool is_external() {
             return false;
         }
 
-        virtual bool isThreadSafe() {
+        virtual bool is_thread_safe() {
             return false;
         }
 
-        virtual bool isVerbatim() {
+        virtual bool is_verbatim() {
             return false;
         }
 
-        virtual bool isComment() {
+        virtual bool is_comment() {
             return false;
         }
 
-        virtual bool isProgram() {
+        virtual bool is_program() {
             return false;
         }
     };

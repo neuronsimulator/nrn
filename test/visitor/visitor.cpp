@@ -21,7 +21,7 @@ std::vector<std::string> run_verbatim_visitor(const std::string& text) {
     auto ast = driver.ast();
 
     VerbatimVisitor v;
-    v.visitProgram(ast.get());
+    v.visit_program(ast.get());
     return v.verbatim_blocks();
 }
 
@@ -59,7 +59,7 @@ std::string run_json_visitor(const std::string& text, bool compact = false) {
     /// if compact is true then we get compact json output
     v.compact_json(compact);
 
-    v.visitProgram(ast.get());
+    v.visit_program(ast.get());
     return ss.str();
 }
 
@@ -142,7 +142,7 @@ SCENARIO("Symbol table generation and Perf stat visitor pass") {
         WHEN("Symbol table generator pass runs") {
             ModelSymbolTable symtab;
             SymtabVisitor v(&symtab);
-            v.visitProgram(ast.get());
+            v.visit_program(ast.get());
 
             using namespace symtab::details;
 
@@ -168,7 +168,7 @@ SCENARIO("Symbol table generation and Perf stat visitor pass") {
 
             WHEN("Perf visitor pass runs after symtab visitor") {
                 PerfVisitor v;
-                v.visitProgram(ast.get());
+                v.visit_program(ast.get());
                 auto result = v.get_total_perfstat();
 
                 THEN("Performance counters are updated") {
@@ -190,7 +190,7 @@ SCENARIO("Symbol table generation and Perf stat visitor pass") {
         WHEN("Perf visitor pass runs before symtab visitor") {
             PerfVisitor v;
             THEN("exception is thrown") {
-                REQUIRE_THROWS_WITH(v.visitProgram(ast.get()), Catch::Contains("table not setup"));
+                REQUIRE_THROWS_WITH(v.visit_program(ast.get()), Catch::Contains("table not setup"));
             }
         }
     }

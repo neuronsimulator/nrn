@@ -60,9 +60,9 @@ class JSONPrinter {
         flush();
     }
 
-    void pushBlock(const std::string& name);
-    void addNode(std::string value, const std::string& name = "value");
-    void popBlock();
+    void push_block(const std::string& name);
+    void add_node(std::string value, const std::string& name = "value");
+    void pop_block();
     void flush();
 
     /// print json in compact mode

@@ -33,7 +33,7 @@ class VerbatimVisitor : public AstVisitor {
         verbose = flag;
     }
 
-    void visitVerbatim(Verbatim* node) override;
+    void visit_verbatim(Verbatim* node) override;
 
     std::vector<std::string> verbatim_blocks() {
         return blocks;

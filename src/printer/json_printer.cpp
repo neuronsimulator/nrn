@@ -18,9 +18,9 @@ JSONPrinter::JSONPrinter(const std::string& filename) {
 }
 
 /// Add node to json (typically basic type)
-void JSONPrinter::addNode(std::string value, const std::string& name) {
+void JSONPrinter::add_node(std::string value, const std::string& name) {
     if (!block) {
-        auto text = "Block not initialized (pushBlock missing?)";
+        auto text = "Block not initialized (push_block missing?)";
         throw std::logic_error(text);
     }
 
@@ -31,7 +31,7 @@ void JSONPrinter::addNode(std::string value, const std::string& name) {
 
 /// Add new json object (typically start of new block)
 /// name here is type of new block encountered
-void JSONPrinter::pushBlock(const std::string& name) {
+void JSONPrinter::push_block(const std::string& name) {
     if (block) {
         stack.push(block);
     }
@@ -42,7 +42,7 @@ void JSONPrinter::pushBlock(const std::string& name) {
 }
 
 /// We finished processing a block, add processed block to it's parent block
-void JSONPrinter::popBlock() {
+void JSONPrinter::pop_block() {
     if (!stack.empty()) {
         auto current = block;
         block = stack.top();

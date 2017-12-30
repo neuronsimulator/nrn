@@ -28,7 +28,7 @@ TEST_CASE("Lexer symbol type tests", "[TokenPrinter]") {
         {
             std::stringstream ss;
             symbol_type("text", value);
-            ss << *(value->getToken());
+            ss << *(value->get_token());
             REQUIRE(ss.str().compare("           text at [1.1-4] type 356") == 0);
             delete value;
         }
@@ -36,7 +36,7 @@ TEST_CASE("Lexer symbol type tests", "[TokenPrinter]") {
         {
             std::stringstream ss;
             symbol_type("  some_text", value);
-            ss << *(value->getToken());
+            ss << *(value->get_token());
             REQUIRE(ss.str().compare("      some_text at [1.3-11] type 356") == 0);
             delete value;
         }
@@ -48,9 +48,9 @@ TEST_CASE("Lexer symbol type tests", "[TokenPrinter]") {
         {
             std::stringstream ss;
             symbol_type("h'' = ", value);
-            ss << *(value->getToken());
+            ss << *(value->get_token());
             REQUIRE(ss.str().compare("            h'' at [1.1-3] type 362") == 0);
-            REQUIRE(value->getOrder() == 2);
+            REQUIRE(value->get_order() == 2);
             delete value;
         }
     }

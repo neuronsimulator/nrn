@@ -288,7 +288,7 @@
 %type   <ast::conserve_ptr>                 conserve
 %type   <ast::expression_ptr>               react
 %type   <ast::compartment_ptr>              compart
-%type   <ast::ldifuse_ptr>                  ldifus
+%type   <ast::londifuse_ptr>                ldifus
 %type   <ast::name_list>                    namelist
 %type   <ast::unitblock_ptr>                unitblk
 %type   <ast::expression_list>              unitbody
@@ -472,7 +472,7 @@ model           :   MODEL LINE_PART
 define1         :   DEFINE1 NAME INTEGER
                     {
                         $$ = new ast::Define($2, $3);
-                        driver.add_defined_var($2->getTypeName(), $3->eval());
+                        driver.add_defined_var($2->get_type_name(), $3->eval());
                     }
                 |   DEFINE1 error
                     {
@@ -816,13 +816,13 @@ destructblk     :   DESTRUCTOR stmtlist "}"
 stmtlist        :   "{" stmtlist1
                     {
                         $$ = new ast::StatementBlock($2);
-                        $$->setToken($1);
+                        $$->set_token($1);
                     }
                 |   "{" locallist stmtlist1
                     {
                         $3.insert($3.begin(), std::shared_ptr<ast::LocalListStatement>($2));
                         $$ = new ast::StatementBlock($3);
-                        $$->setToken($1);
+                        $$->set_token($1);
                     }
                 ;
 
@@ -1261,7 +1261,7 @@ optelse         :   { $$ = nullptr; }
 derivblk        :   DERIVATIVE NAME stmtlist "}"
                     {
                         $$ = new ast::DerivativeBlock($2, $3);
-                        $$->setToken($1);
+                        $$->set_token($1);
                     }
                 ;
 
@@ -1269,7 +1269,7 @@ derivblk        :   DERIVATIVE NAME stmtlist "}"
 linblk          :   LINEAR NAME solvefor stmtlist "}"
                     {
                         $$ = new ast::LinearBlock($2, $3, $4);
-                        $$->setToken($1);
+                        $$->set_token($1);
                     }
                 ;
 
@@ -1277,7 +1277,7 @@ linblk          :   LINEAR NAME solvefor stmtlist "}"
 nonlinblk       :   NONLINEAR NAME solvefor stmtlist "}"
                     {
                         $$ = new ast::NonLinearBlock($2, $3, $4);
-                        $$->setToken($1);
+                        $$->set_token($1);
                     }
                 ;
 
@@ -1285,7 +1285,7 @@ nonlinblk       :   NONLINEAR NAME solvefor stmtlist "}"
 discretblk      :   DISCRETE NAME stmtlist "}"
                     {
                         $$ = new ast::DiscreteBlock($2, $3);
-                        $$->setToken($1);
+                        $$->set_token($1);
                     }
                 ;
 
@@ -1293,7 +1293,7 @@ discretblk      :   DISCRETE NAME stmtlist "}"
 partialblk      :   PARTIAL NAME stmtlist "}"
                     {
                         $$ = new ast::PartialBlock($2, $3);
-                        $$->setToken($1);
+                        $$->set_token($1);
                     }
                 |   PARTIAL error
                     {
@@ -1331,7 +1331,7 @@ firstlast       :   FIRST
 functableblk    :   FUNCTION_TABLE NAME "(" arglist ")" units
                     {
                         $$ = new ast::FunctionTableBlock($2, $4, $6);
-                        $$->setToken($1);
+                        $$->set_token($1);
                     }
                 ;
 
@@ -1339,7 +1339,7 @@ functableblk    :   FUNCTION_TABLE NAME "(" arglist ")" units
 funcblk         :   FUNCTION1 NAME "(" arglist ")" units stmtlist "}"
                     {
                         $$ = new ast::FunctionBlock($2, $4, $6, $7);
-                        $$->setToken($1);
+                        $$->set_token($1);
                     }
                 ;
 
@@ -1366,7 +1366,7 @@ arglist1        :   name units
 
 procedblk       :   PROCEDURE NAME "(" arglist ")" units stmtlist "}"
                     {
-                            $$ = new ast::ProcedureBlock($2, $4, $6, $7); $$->setToken($1);
+                            $$ = new ast::ProcedureBlock($2, $4, $6, $7); $$->set_token($1);
                     }
                 ;
 
@@ -1599,11 +1599,11 @@ compart         :   COMPARTMENT NAME "," expr "{" namelist "}"
 
 ldifus          :   LONGDIFUS NAME "," expr "{" namelist "}"
                     {
-                        $$ = new ast::LDifuse($2, $4, $6);
+                        $$ = new ast::LonDifuse($2, $4, $6);
                     }
                 |   LONGDIFUS expr "{" namelist "}"
                     {
-                        $$ = new ast::LDifuse(NULL, $2, $4);
+                        $$ = new ast::LonDifuse(NULL, $2, $4);
                     }
                 ;
 
@@ -1624,7 +1624,7 @@ namelist        :   NAME
 kineticblk      :   KINETIC NAME solvefor stmtlist "}"
                     {
                         $$ = new ast::KineticBlock($2, $3, $4);
-                        $$->setToken($1);
+                        $$->set_token($1);
                     }
                 ;
 
@@ -1774,17 +1774,17 @@ unitdef         :   unit "=" unit
 factordef       :   NAME "=" real unit
                     {
                         $$ = new ast::FactorDef($1, $3, $4, NULL, NULL);
-                        $$->setToken(*($1->getToken()));
+                        $$->set_token(*($1->get_token()));
                     }
                 |   NAME "=" unit unit
                     {
                         $$ = new ast::FactorDef($1, NULL, $3, NULL, $4);
-                        $$->setToken(*($1->getToken()));
+                        $$->set_token(*($1->get_token()));
                     }
                 |   NAME "=" unit "-" GT unit
                     {
                         $$ = new ast::FactorDef($1, NULL, $3, new ast::Boolean(1), $6);
-                        $$->setToken(*($1->getToken()));
+                        $$->set_token(*($1->get_token()));
                     }
                 |   error
                     {
@@ -1849,7 +1849,7 @@ dependlst       :                       { $$ = ast::NameVector(); }
 neuronblk       :   NEURON OPEN_BRACE nrnstmt CLOSE_BRACE
                     {
                         auto block = new ast::StatementBlock($3);
-                        block->setToken($2);
+                        block->set_token($2);
                         $$ = new ast::NeuronBlock(block);
                     }
                 ;

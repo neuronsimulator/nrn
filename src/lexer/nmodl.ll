@@ -163,7 +163,7 @@ ELSE                    {
                                 auto type = token_type(yytext);
                                 ModToken tok(yytext, type, loc);
                                 auto value = new ast::Name( new ast::String(yytext) );
-                                value->setToken(tok);
+                                value->set_token(tok);
 
                                 switch (static_cast<int>(type)) {
                                     /** Tokens requiring name_ptr as value */
@@ -367,7 +367,7 @@ ELSE                    {
 
                             if (driver.is_verbose()) {
                                 if(str.length()) {
-                                    stringutils::trimnewline(str);
+                                    stringutils::trim_newline(str);
                                     std::cout << "LINE "<< yylineno << ": " << str << std::endl;
                                 } else {
                                     std::cout << "LINE " << yylineno << ": " << std::endl;
@@ -440,7 +440,7 @@ ELSE                    {
                             /** For title return string without new line character */
                             loc.lines(1);
                             std::string str(yytext);
-                            stringutils::trimnewline(str);
+                            stringutils::trim_newline(str);
                             BEGIN(INITIAL);
                             return nmodl::Parser::make_LINE_PART(str, loc);
                         }
@@ -500,7 +500,7 @@ void nmodl::Lexer::scan_unit() {
 
     ModToken tok(str, Token::UNITS, loc);
     last_unit = new ast::String(str);
-    last_unit->setToken(tok);
+    last_unit->set_token(tok);
 }
 
 /** return last scanned unit, it shouln't be null pointer */
