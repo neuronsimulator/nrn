@@ -38,14 +38,14 @@ class Writer(object):
             self.print_gutter()
             self.fh.write(string)
 
-    def write_line(self, string=None, newline=1, pre_gutter=0, post_gutter=0):
+    def write_line(self, string, newline, pre_gutter, post_gutter):
         self.num_tabs += pre_gutter
         self.write(string)
         for i in range(newline):
             self.fh.write("\n")
         self.num_tabs += post_gutter
 
-    def add_line(self, string=None, newline=1, pre_gutter=0, post_gutter=0):
+    def add_line(self, string, newline, pre_gutter, post_gutter):
         self.num_tabs += pre_gutter
         if string:
             for i in range(self.num_tabs):
@@ -77,6 +77,12 @@ class Printer(object):
         self.classname = classname
         self.nodes = nodes
 
+    def write_line(self, string=None, newline=1, pre_gutter=0, post_gutter=0):
+        self.writer.write_line(string, newline, pre_gutter, post_gutter)
+
+    def add_line(self, string=None, newline=1, pre_gutter=0, post_gutter=0):
+        self.writer.add_line(string, newline, pre_gutter, post_gutter)
+
     @abstractmethod
     def write(self):
         pass
@@ -96,7 +102,7 @@ class DeclarationPrinter(Printer):
     """
 
     def guard(self):
-        self.writer.write_line("#pragma once", newline=2)
+        self.write_line("#pragma once", newline=2)
 
     @abstractmethod
     def headers(self):
@@ -106,12 +112,12 @@ class DeclarationPrinter(Printer):
         pass
 
     def class_name_declaration(self):
-        self.writer.write_line("class " + self.classname + " {")
+        self.write_line("class " + self.classname + " {")
 
     def declaration_start(self):
         self.guard()
         self.headers()
-        self.writer.write_line()
+        self.write_line()
         self.class_comment()
         self.class_name_declaration()
 
@@ -123,13 +129,13 @@ class DeclarationPrinter(Printer):
 
     def body(self):
         self.writer.increase_gutter()
-        self.writer.write_line()
+        self.write_line()
         self.private_declaration()
         self.public_declaration()
         self.writer.decrease_gutter()
 
     def declaration_end(self):
-        self.writer.write_line("};", pre_gutter=-1)
+        self.write_line("};", pre_gutter=-1)
 
     def post_declaration(self):
         pass
