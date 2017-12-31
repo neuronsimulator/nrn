@@ -279,7 +279,7 @@ class AstDefinitionPrinter(DefinitionPrinter):
                 self.writer.increase_gutter()
                 if child.is_vector:
                     # TODO : remove this with C++11 style
-                    self.add_line("for(auto& item : this->" + child.varname + ") {")
+                    self.add_line("for (auto& item : this->" + child.varname + ") {")
                     self.add_line("        item->accept(v);")
                     self.add_line("}")
                 elif child.optional or child.is_statement_block_node():
@@ -328,18 +328,18 @@ class AstDefinitionPrinter(DefinitionPrinter):
                 # TODO : more cleanup
                 for child in node.children:
                     if child.is_vector:
-                        self.write_line("for(auto& item : obj." + child.varname + ") {")
+                        self.write_line("for (auto& item : obj." + child.varname + ") {")
                         self.write_line("    this->" + child.varname + ".push_back(std::shared_ptr< " + child.class_name + ">(item->clone()));")
                         self.write_line("}")
                     else:
                         if child.is_pointer_node():
-                            self.write_line("if(obj." + child.varname + ")")
+                            self.write_line("if (obj." + child.varname + ")")
                             self.write_line("    this->" + child.varname + " = std::shared_ptr<" + child.class_name + ">(obj." + child.varname + "->clone());")
                         else:
                             self.write_line("this->" + child.varname + " = obj." + child.varname + ";")
 
                 if node.has_token:
-                    self.write_line("if(obj.token)")
+                    self.write_line("if (obj.token)")
                     self.write_line("    this->token = std::shared_ptr<ModToken>(obj.token->clone());")
 
                 self.write_line("}", pre_gutter=-1, newline=2)
