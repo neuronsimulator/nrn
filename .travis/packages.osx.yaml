@@ -46,10 +46,10 @@ packages:
         version: [5.7.2]
     python:
         paths:
-            python@2.7.12: /System/Library/Frameworks/Python.framework/Versions/2.7
-            python@3.6: /usr/local/opt/python3
+            python@2.7: PYTHON_2_PATH
+            python@3.6: PYTHON_3_PATH
         buildable: False
-        version: [2.7.12, 3.6]
+        version: [2.7, 3.6]
     all:
         compiler: [clang, gcc@4.9]
         providers:

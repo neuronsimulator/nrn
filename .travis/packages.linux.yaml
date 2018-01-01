@@ -47,9 +47,9 @@ packages:
         version: [5.4]
     python:
         paths:
-            python@2.7.13: /opt/python/2.7.13
-            python@3.5.3: /opt/python/3.5.3
-        version: [2.7.13, 3.5.3]
+            python@2.7: PYTHON_2_PATH
+            python@3.5: PYTHON_3_PATH
+        version: [2.7, 3.5]
         buildable: False
     all:
         compiler: [gcc, clang]
