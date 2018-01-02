@@ -142,7 +142,6 @@ ELSE                    {
                         }
 
 <MACRO_NAME_MODE>[a-zA-Z][a-zA-Z0-9_]* {
-
                             /** macro name (typically string) */
                             BEGIN(MACRO_VALUE_MODE);
                             return name_symbol(yytext, loc, Token::INTEGER);
@@ -447,6 +446,14 @@ ELSE                    {
 
 <LINE_MODE>.            {
                             yymore();
+                        }
+
+<MACRO_NAME_MODE>[^a-zA-Z_ \t]+ |
+<MACRO_VALUE_MODE>[^ \t0-9]+ {
+                            /** If macro name doesn't start with character or value
+                             *  is not an integer then it's invalid macro definition
+                             */
+                            return nmodl::Parser::make_INVALID_TOKEN(loc);
                         }
 
 \"[^\"\n]*$             {
