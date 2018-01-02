@@ -128,7 +128,7 @@ class GeneralizedReaction(object):
             active_regions = []
         for sptr in self._involved_species:
             s = sptr()
-            if s:
+            if s and isinstance(s,species.SpeciesOnRegion):
                 for r in self._regions:
                     if r in active_regions and not s.indices(r):
                         del active_regions[active_regions.index(r)]
@@ -150,7 +150,19 @@ class GeneralizedReaction(object):
             areas = _numpy_array(list(_itertools_chain.from_iterable([list(self._regions[0]._geometry.volumes1d(sec)) for sec in self._regions[0].secs])))
             if not self._scale_by_area:
                 areas = numpy.ones(len(areas))
-            self._mult = [-areas / volumes[si] / molecules_per_mM_um3 for si in sources_indices] + [areas / volumes[di] / molecules_per_mM_um3 for di in dests_indices]
+            if len(sources_ecs) == len(dests_ecs) == 0:
+                self._mult = [-areas / volumes[si] / molecules_per_mM_um3 for si in sources_indices] + [areas / volumes[di] / molecules_per_mM_um3 for di in dests_indices]
+            #TODO: check for multicompartment reaction within the ECS
+            elif len(sources_ecs) > 0 and len(dests_ecs) == 0:
+                #TODO: replace dx^3 if/when we allow non-cube grids
+                self._mult = [-areas / s()._extracellular()._dx**3*s()._extracellular().alpha / molecules_per_mM_um3 for s in sources_ecs for di in dest_indices] + [areas / volumes[di] / molecules_per_mM_um3 for di in dests_indices]
+            elif len(sources_ecs) == 0 and len(dests_ecs) > 0:
+                self._mult = [-areas / volumes[si] / molecules_per_mM_um3 for si in sources_indices] + [areas / s()._extracellular()._dx**3*s()._extracellular().alpha / molecules_per_mM_um3 for s in dests_ecs for si in sources_indices]
+            else:
+                #TODO: Is this reasonable? If both the source & destination are in the ECS, they should use a reaction
+                # not a multicompartment reaction
+                RxDException("An extracellular source and destination is not possible with a multi-compartment reaction.")
+
         else:
             self._mult = list(-1 for v in sources_indices) + list(1 for v in dests_indices)
         self._mult = _numpy_array(self._mult)
@@ -181,7 +193,8 @@ class GeneralizedReaction(object):
         num_ind = len(self._indices)
         self._jac_cols = list(_itertools_chain(*[self._indices_dict[s()] for s in self._involved_species])) * num_ind
         if self._trans_membrane:
-            self._mult_extended = [sum([list(mul) * num_involved], []) for mul in self._mult]
+            self._mult_extended = self._mult
+            #self._mult_extended = [sum([list(mul) * num_involved], []) for mul in self._mult]
             #self._mult_extended = [list(_itertools_chain.from_iterable(list(mul) * num_involved)) for mul in self._mult]
         else:
             self._mult_extended = self._mult

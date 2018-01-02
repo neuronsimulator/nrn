@@ -174,34 +174,47 @@ class Extracellular:
         self._nz = int(math.ceil((zhi - zlo) / dx))
         self._xhi, self._yhi, self._zhi = xlo + dx * self._nx, ylo + dx * self._ny, zlo + dx * self._nz
 
-        alpha = volume_fraction
-        if(numpy.isscalar(alpha)):
-            alpha = float(alpha)
+        if(numpy.isscalar(volume_fraction)):
+            alpha = float(volume_fraction)
             self._alpha = alpha
             self.alpha = alpha
+        elif callable(volume_fraction):
+            alpha = numpy.ndarray((self._nx,self._ny,self._nz))
+            for i in xrange(self._nx):
+                for j in xrange(self._ny):
+                    for k in xrange(self._nz):
+                        alpha[i,j,k] = volume_fraction(self._xlo + i*self._dx, self._ylo + j*self._dx, self._zlo + k*self._dx)
+                self.alpha = alpha
+                self._alpha = h.Vector(alpha)
+                         
         else:
-            alpha = numpy.array(alpha)
+            alpha = numpy.array(volume_fraction)
             if(alpha.shape != (self._nx, self._ny, self._nz)):
-                 raise RxDException('volume fraction alpha must be a scalar or an array the same size as the grid: {0}x{1}x{2}'.format(self._nx, self._ny, self._nz ))
+                 raise RxDException('free volume fraction alpha must be a scalar or an array the same size as the grid: {0}x{1}x{2}'.format(self._nx, self._ny, self._nz ))
  
             else:
-                self._alpha = h.Vector(self._nx * self._ny * self._nz);
+                self._alpha = h.Vector(alpha)
                 self.alpha = self._alpha.as_numpy().reshape(self._nx, self._ny, self._nz)
-                self.alpha[:] = alpha
                 
         if(numpy.isscalar(tortuosity)):
             tortuosity = float(tortuosity)
             self._tortuosity = tortuosity
             self.tortuosity = tortuosity
+        elif callable(tortuosity):
+            self.tortuosity = numpy.ndarray((self._nx,self._ny,self._nz))
+            for i in xrange(self._nx):
+                for j in xrange(self._ny):
+                    for k in xrange(self._nz):
+                        self.tortuosity[i,j,k] = tortuosity(self._xlo + i*self._dx, self._ylo + j*self._dx, self._zlo + k*self._dx)
+            self._tortuosity = h.Vector(self.tortuosity)
         else:
             tortuosity = numpy.array(tortuosity)
             if(tortuosity.shape != (self._nx, self._ny, self._nz)):
                  raise RxDException('tortuosity must be a scalar or an array the same size as the grid: {0}x{1}x{2}'.format(self._nx, self._ny, self._nz ))
     
             else:
-                self._tortuosity = h.Vector(self._nx * self._ny * self._nz)
                 self.tortuosity = self._tortuosity.as_numpy().reshape(self._nx, self._ny, self._nz)
-                self.tortuosity[:] = tortuosity
+                self._tortuosity = h.Vector(self.tortuosity)
                 
 class Region(object):
     """Declare a conceptual region of the neuron.

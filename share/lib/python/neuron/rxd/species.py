@@ -177,21 +177,53 @@ class SpeciesOnExtracellular(_SpeciesMathable):
         self._species = weakref.ref(species)
         self._extracellular = weakref.ref(extracellular)
         self._id = _species_count
+    
+
     @property
     def states3d(self):
         return self._extracellular().states
 
-    def extent(self, axes2d):
-        """valid options for axes2d: xy, xz, yz"""
+    def extent(self, axes):
+        """valid options for axes: xyz, xy, xz, yz, x, y, z"""
         e = self._extracellular()
-        if axes2d == 'xy':
+        if axes == 'xyz':
+            return [e._xlo, e._xhi, e._ylo, e._yhi, e._zlo, e._zhi]
+        elif axes == 'xy':
             return [e._xlo, e._xhi, e._ylo, e._yhi]
-        elif axes2d == 'xz':
+        elif axes == 'xz':
             return [e._xlo, e._xhi, e._zlo, e._zhi]
-        elif axes2d == 'yz':
+        elif axes == 'yz':
             return [e._ylo, e._yhi, e._zlo, e._zhi]
+        elif axes == 'x':
+            return [e._xlo, e._xhi]
+        elif axes == 'y':
+            return [e._ylo, e._yhi]
+        elif axes == 'z':
+            return [e._zlo, e._zhi]
         else:
-            raise RxDException('unknown axes2d argument; valid options: xy, xz, and yz')
+            raise RxDException('unknown axes argument; valid options: xyz, xy, xz, yz, x, y and z')
+
+    def node_by_location(self,x,y,z):
+        e = self._extracellular()._region
+        i = int((x - e._xlo) / e._dx)
+        j = int((y - e._ylo) / e._dx)
+        k = int((z - e._zlo) / e._dx)
+        return self.node_by_ijk(i,j,k) 
+    
+    def node_by_ijk(self,i,j,k):
+        index = 0
+        s = self._extracellular()
+        for ecs in self._species()._extracellular_instances:
+            if ecs == s:
+                e = s._region
+                index += (i * e._ny + j) * e._nz + k
+            else:
+                e = ecs._region
+                index += e._nz * e._ny * e._nz
+        return self._species()._extracellular_nodes[index]
+ 
+
+                
     @property
     def _semi_compile(self):
         return 'species_ecs[%d]' % (self._extracellular()._grid_id)
@@ -394,8 +426,9 @@ class _ExtracellularSpecies(_SpeciesMathable):
         warnings.warn('ExtracellularSpecies deleted; if this is happening anytime other than at the end of the program, then something will likely go wrong... since it should be deleted from the list of grids, but this has not been implemented yet.')
 
     def _finitialize(self):
+        # Updated - now it will initialize using NodeExtracellular
         # TODO: support more complicated initializations than just constants
-        self.states[:] = self._initial
+        #self.states[:] = self._initial
         warnings.warn('Extracellular currently not transferring concentrations to legacy grid until after first time step')
 
     def _ion_register(self):
@@ -673,14 +706,14 @@ class Species(_SpeciesMathable):
                     _has_3d = True
 
     def _do_init4(self):
-        self._extracellular_instances = [_ExtracellularSpecies(r, d=self._d, name=self.name, charge=self.charge, initial=self.initial) for r in self._extracellular_regions]
         self._extracellular_nodes = []
+        self._extracellular_instances = [_ExtracellularSpecies(r, d=self._d, name=self.name, charge=self.charge, initial=self.initial) for r in self._extracellular_regions]
         sp_ref = weakref.ref(self)
         for r in self._extracellular_regions:
             for i in xrange(r._nx):
                 for j in xrange(r._ny):
                     for k in xrange(r._nz):
-                        self._extracellular_nodes.append(node.NodeExtracellular((i * r._ny + j) * r._nz + k, i, j, k, r, sp_ref))
+                        self._extracellular_nodes.append(node.NodeExtracellular((i * r._ny + j) * r._nz + k, i, j, k, r, sp_ref, weakref.ref(r)))
            
     
     def _do_init5(self):

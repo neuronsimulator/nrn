@@ -76,8 +76,9 @@ class MultiCompartmentReaction(GeneralizedReaction):
             raise RxDException('membrane_flux must be either True or False')
         if membrane is None:
             raise RxDException('MultiCompartmentReaction requires a membrane parameter')
-        if membrane_flux and region._sim_dimension != 1:
-            raise RxDException('membrane_flux not supported except in 1D')
+        #TODO: check 1D intracellular simulation
+        #if membrane_flux and region._sim_dimension != 1:
+        #    raise RxDException('membrane_flux not supported except in 1D')
         self._membrane_flux = membrane_flux
         if not isinstance(scheme, rxdmath._Reaction):
             raise RxDException('%r not a recognized reaction scheme' % self._scheme)
@@ -134,7 +135,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
             raise RxDException('unrecognized direction; should never happen')
         self._rate, self._involved_species = rxdmath._compile(rate)
         self._changing_species = list(set(self._sources + self._dests))
-        if not all(isinstance(s(), species.SpeciesOnRegion) for s in self._involved_species):
+        if not all(isinstance(s(), species.SpeciesOnRegion) or isinstance(s(), species.SpeciesOnExtracellular) for s in self._involved_species):
             raise RxDException('must specify region for all involved species')
 
 

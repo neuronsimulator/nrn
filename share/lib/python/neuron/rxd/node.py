@@ -571,7 +571,7 @@ class Node3D(Node):
 
 
 class NodeExtracellular(Node):
-    def __init__(self, index, i, j, k, r, speciesref):
+    def __init__(self, index, i, j, k, r, speciesref, regionref):
         """
             Parameters
             ----------
@@ -592,9 +592,21 @@ class NodeExtracellular(Node):
         self._r = r
         # TODO: store region as a weakref! (weakref.proxy?)
         self._speciesref = speciesref
+        self._regionref = regionref
         # TODO: support _molecule_node data type
         self._data_type = _concentration_node
     
+    @property
+    def x3d(self):
+        return self._regionref()._xlo + (self._i+0.5)*self._regionref()._dx
+    @property
+    def y3d(self):
+        return self._regionref()._ylo + (self._j+0.5)*self._regionref()._dx
+    @property
+    def z3d(self):
+        return self._regionref()._zlo + (self._k+0.5)*self._regionref()._dx
+    
+
     @property
     def d(self):
         """Gets the diffusion rate within the compartment."""
@@ -627,7 +639,7 @@ class NodeExtracellular(Node):
     @property
     def _ref_value(self):
         """Returns a HOC reference to the Node's value"""
-        return self._speciesref().extracellular()._states._ref_x[self._index]
+        return self._speciesref().__getitem__(self._regionref())._extracellular()._states._ref_x[self._index]
         
     @value.getter
     def _state_index(self):
