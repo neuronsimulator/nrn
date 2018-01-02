@@ -9,18 +9,21 @@ include_directories(
 #=============================================================================
 add_executable (testmodtoken modtoken/modtoken.cpp)
 add_executable (testlexer lexer/tokens.cpp)
+add_executable (testparser parser/parser.cpp)
 add_executable (testvisitor visitor/visitor.cpp)
 add_executable (testprinter printer/printer.cpp)
 add_executable (testsymtab symtab/symbol_table.cpp)
 
 target_link_libraries(testmodtoken lexer)
 target_link_libraries(testlexer lexer)
+target_link_libraries(testparser lexer)
 target_link_libraries(testvisitor printer symtab lexer visitor util)
 target_link_libraries(testprinter printer)
 target_link_libraries(testsymtab symtab lexer util)
 
 add_test (NAME ModToken COMMAND testmodtoken)
 add_test (NAME Lexer COMMAND testlexer)
+add_test (NAME Parser COMMAND testparser)
 add_test (NAME Visitor COMMAND testvisitor)
 add_test (NAME Printer COMMAND testprinter)
 add_test (NAME Symtab COMMAND testsymtab)
@@ -31,6 +34,7 @@ add_test (NAME Symtab COMMAND testsymtab)
 set(FILES_FOR_CLANG_FORMAT
     ${CMAKE_CURRENT_SOURCE_DIR}/modtoken/modtoken.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/lexer/tokens.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/parser/parser.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/visitor/visitor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/printer/printer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/symtab/symbol_table.cpp

@@ -201,6 +201,7 @@
 %token  <ModToken>              PERIOD              "."
 %token  END                     0                   "End of file"
 %token                          UNKNOWN
+%token                          INVALID_TOKEN
 
 /** Define terminal and nonterminal symbols : Instead of using AST classes
  *  directly, we are using typedefs like program_ptr. This is useful when we
@@ -472,7 +473,7 @@ model           :   MODEL LINE_PART
 define1         :   DEFINE1 NAME INTEGER
                     {
                         $$ = new ast::Define($2, $3);
-                        driver.add_defined_var($2->get_type_name(), $3->eval());
+                        driver.add_defined_var($2->get_name(), $3->eval());
                     }
                 |   DEFINE1 error
                     {
