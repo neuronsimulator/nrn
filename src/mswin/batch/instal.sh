@@ -250,7 +250,7 @@ unzip -d $D -o $Z
 rm $Z
 cd $B/share
 rm -f $Z
-zip -l $Z lib/nrn.defaults
+zip -l $Z lib/nrn.defaults lib/nrnunits.lib
 unzip -d $D -o $Z 
 rm $Z
 fi

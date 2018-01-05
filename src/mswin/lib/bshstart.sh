@@ -5,7 +5,7 @@ if test -f $N/bin/cygpath ; then
   cyg=yes
 else
   if test -d $N/mingw ; then
-    PATH=$N/mingw/bin:$PATH
+    PATH=$N/mingw/usr/bin:$N/mingw/mingw64/bin:$PATH
   fi
   if test -d $N/bin64 ; then
     PATH=$N/bin64:$PATH

@@ -100,10 +100,11 @@ if test "$LTCC" = "" ; then
 fi
 
 # extract enough mingw stuff so mknrndll will work.
-#This adds 13MB to the installer.
-#get rid of this in favor of newer gcc
-unzip -d $D -o $S/../mingw${BIT}_nrndist.zip
-cp $S/../pthreadGC2-w64.dll $DB
+#This adds 22MB to the installer.
+sh $S/mingw_files/nrnmingwenv.sh $D
+#mingw64_nrndist created using nrn/mingw_files/nrnmingwenv.sh
+#unzip -d $D -o $S/../mingw${BIT}_nrndist.zip
+#cp $S/../pthreadGC2-w64.dll $DB
 
 if false ; then
 # copy some useful tools
@@ -188,7 +189,7 @@ unzip -d $D -o $Z
 rm $Z
 cd $B/share
 rm -f $Z
-zip -l $Z lib/nrn.defaults
+zip -l $Z lib/nrn.defaults lib/nrnunits.lib
 unzip -d $D -o $Z 
 rm $Z
 for f in $DB/hocmodule*.dll ; do
