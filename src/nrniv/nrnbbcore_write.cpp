@@ -121,7 +121,7 @@ static void write_memb_mech_types(const char* fname);
 static void write_globals(const char* fname);
 static void write_nrnthread(const char* fname, NrnThread& nt, CellGroup& cg);
 static void write_nrnthread_task(const char*, CellGroup* cgs);
-static int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndices& di, int* ml_data_offset, int* ml_vdata_offset);
+static int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndices& di, int* ml_vdata_offset);
 static void setup_nrn_has_net_event();
 static int chkpnt;
 
@@ -147,7 +147,7 @@ static NrnMappingInfo mapinfo;
 
 // to avoid incompatible dataset between neuron and coreneuron
 // add version string to the dataset files
-const char *bbcore_write_version = "1.0";
+const char *bbcore_write_version = "1.1";
 
 // accessible from ParallelContext.total_bytes()
 size_t nrnbbcore_write() {
@@ -896,7 +896,7 @@ static void write_contiguous_art_data(double** data, int nitem, int szitem, FILE
 // a discon vector or VecPlayStep with a DT or tvec, but are not implemented
 // at present. Assertion errors are generated if not type 0 of if we
 // cannot determine the index into the NrnThread._data .
-static void nrnbbcore_vecplay_write(FILE* f, NrnThread& nt, int* ml_data_offset) {
+static void nrnbbcore_vecplay_write(FILE* f, NrnThread& nt) {
   // count the instances for this thread
   // error if not a VecPlayContinuous with no discon vector
   int n = 0;
@@ -972,16 +972,10 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
 
   fprintf(f, "%s\n", bbcore_write_version);
   NrnThreadMembList* tml;
-  // sizes and data offset
-  int* ml_data_offset = new int[n_memb_func];
+  // sizes and total data count
   int* ml_vdata_offset = new int[n_memb_func];
-  int data_offset = 6*nt.end;
-  if (cg.ndiam) {
-    data_offset += nt.end;
-  }
   int vdata_offset = 0;
   for (int i=0; i < n_memb_func; ++i) {
-    ml_data_offset[i] = -1; // for nt._data
     ml_vdata_offset[i] = -1; // for nt._vdata
   }
   fprintf(f, "%d ngid\n", cg.n_output);
@@ -1009,8 +1003,6 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
   for (tml=tml_with_art[nt.id]; tml; tml = tml->next) {
     fprintf(f, "%d\n", tml->index);
     fprintf(f, "%d\n", tml->ml->nodecount);
-    ml_data_offset[tml->index] = data_offset;
-    data_offset += tml->ml->nodecount*nrn_prop_param_size_[tml->index];
     ml_vdata_offset[tml->index] = vdata_offset;
     int* ds = memb_func[tml->index].dparam_semantics;
     for (int psz=0; psz < bbcore_dparam_size[tml->index]; ++psz) {
@@ -1020,8 +1012,7 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
       }
     }
   }
-  //  printf("ndata=%d  nidata=%d nvdata=%d nnetcon=%d\n", data_offset, 0, vdata_offset, cg.n_netcon);
-  fprintf(f, "%d ndata\n", data_offset);
+  //  printf("nidata=%d nvdata=%d nnetcon=%d\n", 0, vdata_offset, cg.n_netcon);
   fprintf(f, "%d nidata\n", 0);
   fprintf(f, "%d nvdata\n", vdata_offset);
   int nweight = 0;
@@ -1055,7 +1046,7 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     sz = bbcore_dparam_size[tml->index];
 
     if (sz) {
-      int* pdata = datum2int(tml->index, ml, nt, cg, cg.datumindices[id], ml_data_offset, ml_vdata_offset);
+      int* pdata = datum2int(tml->index, ml, nt, cg, cg.datumindices[id], ml_vdata_offset);
       writeint(pdata, n * sz);
       ++id;
       delete [] pdata;
@@ -1143,10 +1134,9 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     }
   }
 
-  nrnbbcore_vecplay_write(f, nt, ml_data_offset);
+  nrnbbcore_vecplay_write(f, nt);
 
   fclose(f);
-  delete [] ml_data_offset;
   delete [] ml_vdata_offset;
 }
 
@@ -1267,13 +1257,10 @@ void write_nrnthread_task(const char* path, CellGroup* cgs)
 }
 
 
-int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndices& di, int* ml_data_offset, int* ml_vdata_offset) {
+int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndices& di, int* ml_vdata_offset) {
   int isart = nrn_is_artificial_[di.type];
   int sz = bbcore_dparam_size[type];
   int* pdata = new int[ml->nodecount * sz];
-  int diam_offset = 6*nt.end;
-  int area_offset = 5*nt.end;
-  int volt_offset = 4*nt.end;
   for (int i=0; i < ml->nodecount; ++i) {
     Datum* d = ml->pdata[i];
     int ioff = i*sz;
@@ -1285,12 +1272,12 @@ int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndic
         if (isart) {
           pdata[jj] = -1; // maybe save this space eventually. but not many of these in bb models
         }else{
-          pdata[jj] = area_offset + eindex;
+          pdata[jj] = eindex;
         }
       }else if (etype == -9) {
-        pdata[jj] = diam_offset + eindex;
+        pdata[jj] = eindex;
       }else if (etype > 0 && etype < 1000){//ion pointer and also POINTER
-        pdata[jj] = ml_data_offset[etype] + eindex;
+        pdata[jj] = eindex;
       }else if (etype > 1000 && etype < 2000) { //ionstyle can be explicit instead of pointer to int*
         pdata[jj] = eindex;
       }else if (etype == -2) { // an ion and this is the iontype
@@ -1305,7 +1292,7 @@ int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndic
         pdata[jj] = ml_vdata_offset[type] + eindex;
         //printf("etype %d jj=%d eindex=%d pdata=%d\n", etype, jj, eindex, pdata[jj]);
       }else if (etype == -5) { // POINTER to voltage
-        pdata[jj] = volt_offset + eindex;
+        pdata[jj] = eindex;
         //printf("etype %d\n", etype);
       }else{ //uninterpreted
         assert(eindex != -3); // avoided if last
