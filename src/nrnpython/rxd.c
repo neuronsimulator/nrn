@@ -17,9 +17,8 @@
 */
 
 int NUM_THREADS = 1;
-
-
 fptr _setup, _initialize, _setup_matrices;
+
 
 /*intracellular diffusion*/
 int _rxd_euler_nrow, _rxd_euler_nnonzero, _rxd_num_zvi;
@@ -271,6 +270,7 @@ int rxd_nonvint_block(int method, int size, double* p1, double* p2, int thread_i
             break;
     }
 	/* printf("method=%d, size=%d, thread_id=%d\n", method, size, thread_id);	 */
+    
     return 0;
 }
 

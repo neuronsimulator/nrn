@@ -93,6 +93,14 @@ Grid_node *make_Grid(PyHocObject* my_states, int my_num_states_x,
 		new_Grid->get_alpha = &get_alpha_array;	
 
 	}
+    if(nrnmpi_use)
+    {
+        new_Grid->proc_offsets = (int*)malloc(nrnmpi_numprocs_world*sizeof(int));
+        new_Grid->proc_num_currents = (int*)malloc(nrnmpi_numprocs_world*sizeof(int));
+        new_Grid->num_all_currents = 0;
+        new_Grid->current_dest = NULL;
+        new_Grid->all_currents = NULL;
+    }
 
     return new_Grid;
 }
@@ -204,6 +212,7 @@ void set_grid_currents(int grid_list_index, int index_in_list, PyObject* grid_in
     Grid_node* g;
     Py_ssize_t i;
     Py_ssize_t n = PyList_Size(grid_indices);
+    long* dests;
 
     /* Find the Grid Object */
     g = Parallel_grids[grid_list_index];
@@ -233,6 +242,36 @@ void set_grid_currents(int grid_list_index, int index_in_list, PyObject* grid_in
         printf("no problems\n");
     }
     PyErr_Clear(); */
+    if(nrnmpi_use)
+    {
+        /*Gather an array of the number of currents for each process*/
+        g->proc_num_currents[nrnmpi_myid_world] = n;
+        MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, g->proc_num_currents, 1, MPI_INT, nrnmpi_world_comm);
+        
+        g->proc_offsets[0] = 0; 
+        for(i = 1; i < nrnmpi_numprocs_world; i++)
+            g->proc_offsets[i] =  g->proc_offsets[i-1] + g->proc_num_currents[i-1];
+         g->num_all_currents = g->proc_offsets[i-1] + g->proc_num_currents[i-1];
+        
+        /*Copy array of current destinations (index to states) across all processes*/
+        free(g->current_dest);
+        free(g->all_currents);
+            
+        /*TODO: Get rid of duplication with current_list*/
+        g->current_dest = malloc(g->num_all_currents*sizeof(long));
+        g->all_currents = malloc(g->num_all_currents*sizeof(double));
+        dests = g->current_dest + g->proc_offsets[nrnmpi_myid_world];
+        for(i = 0; i < n; i++)
+        {
+            dests[i] = g->current_list[i].destination;
+        }
+        MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, g->current_dest, g->proc_num_currents, g->proc_offsets, MPI_LONG, nrnmpi_world_comm);
+        /*for(i = 0; i < g->num_all_currents; i++)
+        {
+            fprintf(stderr,"%i] dest[%i] = %i\n",nrnmpi_myid_world,i,g->current_dest[i]);
+            fprintf(stderr,"\t%i] state[%i] = %g\n",nrnmpi_myid_world,g->current_dest[i],g->states[g->current_dest[i]]);
+        }*/
+    }
 }
 
 // Free a single Grid_node
@@ -244,6 +283,10 @@ void free_Grid(Grid_node *grid) {
     free(grid->current_list);
 	free(grid->alpha);
 	free(grid->lambda);
+    free(grid->current_dest);
+    free(grid->proc_offsets);
+    free(grid->proc_num_currents);
+    free(grid->all_currents);
     free(grid);
 }
 

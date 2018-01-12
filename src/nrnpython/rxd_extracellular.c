@@ -349,29 +349,81 @@ static void run_threaded_reactions(ReactGridData* tasks)
 	free(thread);
 }
 
+/*
+ * do_current - process the current for a given grid
+ * Grid_node* grid - the grid used
+ * double* output - for fixed step this is the states for variable ydot
+ * double dt - for fixed step the step size, for variable step 1
+ */
+void do_currents(Grid_node* grid, double* output, double dt)
+{
+    Py_ssize_t m, n, i;
+    Current_Triple* c;
+
+    /*Currents to broadcast via MPI*/
+    /*TODO: Handle multiple grids with one pass*/
+    /*Maybe TODO: Should check #currents << #voxels and not the other way round*/
+    double* val;
+    double* all_currents;
+    int proc_offset;
+
+    /* currents, via explicit Euler */
+    n = grid->num_all_currents;
+    m = grid->num_currents;
+    c = grid->current_list;
+    if(nrnmpi_use)
+    {
+        proc_offset = grid->proc_offsets[nrnmpi_myid_world];
+        val = (grid->all_currents + proc_offset*sizeof(double*));
+
+        for(i = 0; i < m; i++)
+        {
+            if(grid->VARIABLE_ECS_VOLUME == VOLUME_FRACTION) 
+                val[i] = dt * c[i].scale_factor * (*c[i].source)/grid->alpha[c[i].destination];
+            else
+                val[i] = dt * c[i].scale_factor * (*c[i].source)/grid->alpha[0];
+        }
+
+        MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, grid->all_currents, grid->proc_num_currents, grid->proc_offsets, MPI_DOUBLE,nrnmpi_world_comm);
+        for(i = 0; i < n; i++)
+            output[grid->current_dest[i]] += grid->all_currents[i];
+    }
+    else
+    {
+        /*divided the concentration by the volume fraction of the relevant voxel*/ 
+        if(grid->VARIABLE_ECS_VOLUME == VOLUME_FRACTION)
+        {
+       	    for (i = 0; i < n; i++)
+          	    output[c[i].destination] += dt * c[i].scale_factor * (*c[i].source)/grid->alpha[c[i].destination];
+	    }
+	    else 
+        {
+		    for (i = 0; i < n; i++) 
+        	    output[c[i].destination] += dt * c[i].scale_factor * (*c[i].source)/grid->alpha[0];
+		}
+    }
+}
+
+
 void _fadvance_fixed_step_ecs(void) {
     Grid_node* grid;
-    Py_ssize_t n, i;
+    Py_ssize_t m, n, i;
     double* states;
     Current_Triple* c;
     double dt = (*dt_ptr);
+
+    /*Currents to broadcast via MPI*/
+    /*TODO: Handle multiple grids with one pass*/
+    /*Maybe TODO: Should check #currents << #voxels and not the other way round*/
+    double* val;
+    double* all_currents;
+    int proc_offset;
+
     /* currents, via explicit Euler */
-    for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
-        states = grid->states;
-        n = grid->num_currents;
-        c = grid->current_list;
-		/*divided the concentration by the volume fraction of the relevant voxel*/ 
-		if(grid->VARIABLE_ECS_VOLUME == VOLUME_FRACTION) {
-        	for (i = 0; i < n; i++) {
-            	states[c[i].destination] += dt * c[i].scale_factor * (*c[i].source)/grid->alpha[c[i].destination];
-        	}
-		}
-		else {
-			for (i = 0; i < n; i++) {
-            	states[c[i].destination] += dt * c[i].scale_factor * (*c[i].source)/grid->alpha[0];
-        	}
-		}
-		memcpy(grid->old_states, states, sizeof(double) * grid->size_x * grid->size_y * grid->size_z);
+    for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next)
+    {
+        do_currents(grid, grid->states, dt);
+        memcpy(grid->old_states, grid->states, sizeof(double) * grid->size_x * grid->size_y * grid->size_z);
     }
 
 	if(threaded_reactions_tasks != NULL)
@@ -517,21 +569,12 @@ void _rhs_variable_step_ecs(const double t, const double* states, double* ydot) 
     states = orig_states;
 
     /* process currents */
-    for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
-        grid_states = grid->states;
-        n = grid->num_currents;
-        c = grid->current_list;
-        grid_size = grid->size_x * grid->size_y * grid->size_z;
-
-        for (i = 0; i < n; i++) {
-            ydot[c[i].destination] += c[i].scale_factor * (*c[i].source);
-        }
+    for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next)
+    {
+        do_currents(grid, ydot, 1.0);
         ydot += grid_size;
-        states += grid_size;        
     }
-
 	ydot = orig_ydot;
-    states = orig_states;
 
     /* do the diffusion rates */
     for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {

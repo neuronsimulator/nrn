@@ -6,6 +6,8 @@ and Flux_pair structs and their respective functions
 ******************************************************************/
 #include <stdio.h>
 #include <assert.h>
+#include <nrnmpi.h>
+#include <mpi.h>
 #ifdef __APPLE__
 #include <Python/Python.h>
 #else
@@ -26,6 +28,11 @@ and Flux_pair structs and their respective functions
 #define VOLUME_FRACTION 	3
 
 #define MAX(a,b)	((a)>(b)?(a):(b))
+
+/*Set in src/nrnmpi/nrnmpi_impl.c */
+extern MPI_Comm nrnmpi_world_comm;
+extern MPI_Comm nrnmpi_comm;
+extern MPI_Comm nrn_bbs_comm;
 
 
 typedef struct {
@@ -97,6 +104,13 @@ typedef struct Grid_node {
     Concentration_Pair* concentration_list;
     Current_Triple* current_list;
     Py_ssize_t num_concentrations, num_currents;
+    
+    /*used for MPI implementation*/
+    int num_all_currents;
+    int* proc_offsets;
+    int* proc_num_currents;
+    long* current_dest;
+    double* all_currents;
 
 	/*Extension to handle a variable diffusion characteristics of a grid*/
 	unsigned char	VARIABLE_ECS_VOLUME;	/*FLAG which variable volume fraction
@@ -109,6 +123,7 @@ typedef struct Grid_node {
 	 * the single value or the value at a given index*/ 
 	double (*get_alpha)(double*,int);
 	double (*get_lambda)(double*,int);
+    
 } Grid_node;
 
 static double get_alpha_scalar(double*, int);

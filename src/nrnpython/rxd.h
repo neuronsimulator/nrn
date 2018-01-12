@@ -146,3 +146,4 @@ void _rhs_variable_step_ecs(const double, const double*, double*);
 void clear_rates_ecs();
 void do_ics_reactions(const double, const double*, double*);
 void _ecs_ode_reinit(double*); 
+void do_currents(Grid_node*, double*, double);
