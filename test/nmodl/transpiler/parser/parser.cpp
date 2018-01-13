@@ -4,6 +4,7 @@
 
 #include "catch/catch.hpp"
 #include "parser/nmodl_driver.hpp"
+#include "input/nmodl_constructs.h"
 
 //=============================================================================
 // Parser tests
@@ -84,6 +85,28 @@ SCENARIO("Macros can be used anywhere in NMODL program") {
     WHEN("macro is used in parameter definition") {
         THEN("parser accepts without an error") {
             REQUIRE(is_valid_construct(nmodl_text));
+        }
+    }
+}
+
+SCENARIO("Parser test for valid NMODL grammar constructs") {
+    for (const auto& construct : nmodl_valid_constructs) {
+        auto test_case = construct.second;
+        GIVEN(test_case.name) {
+            THEN("Parser successfully parses : " + test_case.nmodl_text) {
+                REQUIRE(is_valid_construct(test_case.nmodl_text));
+            }
+        }
+    }
+}
+
+SCENARIO("Parser test for invalid NMODL grammar constructs") {
+    for (const auto& construct : nmdol_invalid_constructs) {
+        auto test_case = construct.second;
+        GIVEN(test_case.name) {
+            THEN("Parser throws an exception while parsing : " + test_case.nmodl_text) {
+                REQUIRE_THROWS(is_valid_construct(test_case.nmodl_text));
+            }
         }
     }
 }
