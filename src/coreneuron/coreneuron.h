@@ -30,7 +30,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
  * Includes all headers required to communicate and run all methods
  * described in CoreNeuron, neurox, and mod2c C-generated mechanisms
  * functions.
-**/
+ **/
 
 #ifndef CORENEURON_H
 #define CORENEURON_H

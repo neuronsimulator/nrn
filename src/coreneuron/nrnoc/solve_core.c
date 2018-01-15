@@ -32,7 +32,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 int use_solve_interleave;
 
-static void triang(NrnThread *), bksub(NrnThread *);
+static void triang(NrnThread*), bksub(NrnThread*);
 
 /* solve the matrix equation */
 void nrn_solve_minimal(NrnThread* _nt) {
@@ -63,9 +63,12 @@ static void triang(NrnThread* _nt) {
 #endif
 
 /** @todo: just for benchmarking, otherwise produces wrong results */
-#pragma acc parallel loop seq present(                                                  \
-    vec_a[0 : i3], vec_b[0 : i3], vec_d[0 : i3], vec_rhs[0 : i3], parent_index[0 : i3]) \
-                                                     async(stream_id) if (_nt->compute_gpu)
+// clang-format off
+    #pragma acc parallel loop seq present(      \
+        vec_a[0:i3], vec_b[0:i3], vec_d[0:i3],  \
+        vec_rhs[0:i3], parent_index[0:i3])      \
+        async(stream_id) if (_nt->compute_gpu)
+    // clang-format on
     for (i = i3 - 1; i >= i2; --i) {
         p = vec_a[i] / vec_d[i];
         vec_d[parent_index[i]] -= p * vec_b[i];

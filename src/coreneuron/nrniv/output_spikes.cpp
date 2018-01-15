@@ -29,7 +29,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <sstream>
 #include <string.h>
-#include <stdexcept> // std::lenght_error
+#include <stdexcept>  // std::lenght_error
 #include <vector>
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
@@ -47,10 +47,10 @@ static MUTDEC
     void
     mk_spikevec_buffer(int sz) {
     try {
-      spikevec_time.reserve(sz);
-      spikevec_gid.reserve(sz);
+        spikevec_time.reserve(sz);
+        spikevec_gid.reserve(sz);
     } catch (const std::length_error& le) {
-      std::cerr << "Lenght error" << le.what() << std::endl;
+        std::cerr << "Lenght error" << le.what() << std::endl;
     }
     MUTCONSTRUCT(1);
 }
@@ -74,7 +74,7 @@ void output_spikes_parallel(const char* outpath) {
     std::string fname = ss.str();
 
     // remove if file already exist
-    if(nrnmpi_myid == 0) {
+    if (nrnmpi_myid == 0) {
         remove(fname.c_str());
     }
     nrnmpi_barrier();
@@ -83,9 +83,9 @@ void output_spikes_parallel(const char* outpath) {
     const int SPIKE_RECORD_LEN = 64;
     unsigned num_spikes = spikevec_gid.size();
     unsigned num_bytes = (sizeof(char) * num_spikes * SPIKE_RECORD_LEN);
-    char *spike_data = (char*) malloc(num_bytes);
+    char* spike_data = (char*)malloc(num_bytes);
 
-    if(spike_data == NULL) {
+    if (spike_data == NULL) {
         printf("Error while writing spikes due to memory allocation\n");
         return;
     }
@@ -95,7 +95,7 @@ void output_spikes_parallel(const char* outpath) {
 
     // populate buffer with all spike entries
     char spike_entry[SPIKE_RECORD_LEN];
-    for(unsigned i = 0; i < num_spikes; i++) {
+    for (unsigned i = 0; i < num_spikes; i++) {
         snprintf(spike_entry, 64, "%.8g\t%d\n", spikevec_time[i], spikevec_gid[i]);
         strcat(spike_data, spike_entry);
     }
@@ -113,14 +113,15 @@ void output_spikes_parallel(const char* outpath) {
     MPI_Status status;
 
     // ibm mpi (bg-q) expects char* instead of const char* (even though it's standard)
-    int op_status = MPI_File_open(MPI_COMM_WORLD, (char*) fname.c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
-    if(op_status != MPI_SUCCESS && nrnmpi_myid == 0) {
+    int op_status = MPI_File_open(MPI_COMM_WORLD, (char*)fname.c_str(),
+                                  MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
+    if (op_status != MPI_SUCCESS && nrnmpi_myid == 0) {
         std::cerr << "Error while opening spike output file " << fname << std::endl;
         abort();
     }
 
     op_status = MPI_File_write_at_all(fh, offset, spike_data, num_chars, MPI_BYTE, &status);
-    if(op_status != MPI_SUCCESS && nrnmpi_myid == 0) {
+    if (op_status != MPI_SUCCESS && nrnmpi_myid == 0) {
         std::cerr << "Error while writing spike output " << std::endl;
         abort();
     }
@@ -152,7 +153,7 @@ void output_spikes_serial(const char* outpath) {
 
 void output_spikes(const char* outpath) {
 #if NRNMPI
-    if(nrnmpi_initialized()) {
+    if (nrnmpi_initialized()) {
         output_spikes_parallel(outpath);
     } else {
         output_spikes_serial(outpath);
@@ -161,7 +162,6 @@ void output_spikes(const char* outpath) {
     output_spikes_serial(outpath);
 #endif
 }
-
 
 void validation(std::vector<std::pair<double, int> >& res) {
     for (unsigned i = 0; i < spikevec_gid.size(); ++i)

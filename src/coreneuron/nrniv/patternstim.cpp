@@ -85,7 +85,7 @@ void nrn_mkPatternStim(const char* fname) {
     }
 
     // if there is empty thread then return, don't need patternstim
-    if(nrn_threads == NULL || nrn_threads->ncell == 0) {
+    if (nrn_threads == NULL || nrn_threads->ncell == 0) {
         return;
     }
 
@@ -120,7 +120,7 @@ void nrn_mkPatternStim(const char* fname) {
 // comparator to sort spikes based on time
 typedef std::pair<double, int> spike_type;
 static bool spike_comparator(const spike_type& l, const spike_type& r) {
-        return l.first < r.first;
+    return l.first < r.first;
 }
 
 size_t read_raster_file(const char* fname, double** tvec, int** gidvec) {
@@ -146,15 +146,15 @@ size_t read_raster_file(const char* fname, double** tvec, int** gidvec) {
     // pattern.mod expects sorted spike raster (this is to avoid
     // injecting all events at the begining of the simulation).
     // sort spikes according to time
-    std::sort(spikes.begin(), spikes.end(),  spike_comparator);
+    std::sort(spikes.begin(), spikes.end(), spike_comparator);
 
     // fill gid and time vectors
     *tvec = (double*)emalloc(spikes.size() * sizeof(double));
     *gidvec = (int*)emalloc(spikes.size() * sizeof(int));
 
-    for(size_t i = 0; i < spikes.size(); i++) {
-         (*tvec)[i] = spikes[i].first;
-         (*gidvec)[i] = spikes[i].second;
+    for (size_t i = 0; i < spikes.size(); i++) {
+        (*tvec)[i] = spikes[i].first;
+        (*gidvec)[i] = spikes[i].second;
     }
 
     return spikes.size();
@@ -171,7 +171,7 @@ Point_process* nrn_artcell_instantiate(const char* mechname) {
     int type = nrn_get_mechtype(mechname);
     NrnThread* nt = nrn_threads + 0;
 
-    //printf("nrn_artcell_instantiate %s type=%d\n", mechname, type);
+    // printf("nrn_artcell_instantiate %s type=%d\n", mechname, type);
 
     // see nrn_setup.cpp:read_phase2 for how it creates NrnThreadMembList instances.
     // create and append to nt.tml

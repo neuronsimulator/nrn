@@ -42,7 +42,6 @@ of spikes sent is equal to the number of spikes sent.
 // which has the greatest amount of overlap between computation
 // and communication.
 
-
 int use_multisend_;
 int use_phase2_;
 int n_multisend_interval = 2;
@@ -103,7 +102,6 @@ class Multisend_ReceiveBuffer {
     int phase2_nsend_cell_, phase2_nsend_;
     Phase2Buffer* phase2_buffer_;
 };
-
 
 #define MULTISEND_INTERVAL 2
 static Multisend_ReceiveBuffer* multisend_receive_buffer[MULTISEND_INTERVAL];
@@ -468,4 +466,4 @@ void nrn_multisend_setup() {
 #endif
 }
 
-#endif //NRN_MULTISEND
+#endif  // NRN_MULTISEND

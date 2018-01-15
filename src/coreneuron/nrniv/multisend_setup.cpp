@@ -703,4 +703,4 @@ static int setup_target_lists(int use_phase2, int** r_return) {
     return sz;
 }
 
-#endif //NRN_MULTISEND
+#endif  // NRN_MULTISEND

@@ -10,7 +10,7 @@
  *  time.
  *  \todo: eulerfun/difun are legacy macros and can be replaced with
  *         actual steer function for euler/derivimplicit methods.
-*/
+ */
 
 #include "coreneuron/mech/cfile/scoplib.h"
 #include "coreneuron/mech/mod2c_core_thread.h"
@@ -44,16 +44,15 @@ int nrn_kinetic_steer(int fun, SparseObj* so, double* rhs, _threadargsproto_) {
 // derived from nrn/src/scopmath/euler.c
 // updated for aos/soa layout index
 int euler_thread(int neqn, int* var, int* der, DIFUN fun, _threadargsproto_) {
-
     double dt = _nt->_dt;
     int i;
 
     /* calculate the derivatives */
-     eulerfun(fun);
+    eulerfun(fun);
 
     /* update dependent variables */
     for (i = 0; i < neqn; i++)
-        _p[var[i]*_STRIDE] += dt * (_p[der[i]*_STRIDE]);
+        _p[var[i] * _STRIDE] += dt * (_p[der[i] * _STRIDE]);
 
     return 0;
 }
