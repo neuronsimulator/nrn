@@ -5072,8 +5072,10 @@ void PreSyn::record(double tt) {
 		}
 	}
 	if (stmt_) {
-		nt_t = tt;
+		if (nrn_nthread > 1) { nrn_hoc_lock(); }
+		t = tt;
 		stmt_->execute(false);
+		if (nrn_nthread > 1) { nrn_hoc_unlock(); }
 	}
 }
 
