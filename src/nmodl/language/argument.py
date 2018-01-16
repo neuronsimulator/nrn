@@ -1,9 +1,5 @@
 class Argument:
-    """Utility class for holding all arguments for node classes
-
-    when force_prefix / force_suffix is true then prefix/suffix needs to be
-    printed even if node itself is null
-    """
+    """Utility class for holding all arguments for node classes"""
 
     def __init__(self):
         self.base_class = ""
@@ -11,6 +7,8 @@ class Argument:
         self.nmodl_name = ""
         self.prefix = ""
         self.suffix = ""
+        self.force_prefix = ""
+        self.force_suffix = ""
         self.separator = ""
         self.typename = ""
         self.varname = ""
@@ -19,5 +17,3 @@ class Argument:
         self.add_method = False
         self.getname_method = False
         self.has_token = False
-        self.force_prefix = False
-        self.force_suffix = False

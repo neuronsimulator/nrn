@@ -3,8 +3,8 @@
 #include <string>
 
 #include "catch/catch.hpp"
-#include "parser/nmodl_driver.hpp"
 #include "input/nmodl_constructs.h"
+#include "parser/nmodl_driver.hpp"
 
 //=============================================================================
 // Parser tests
@@ -93,8 +93,8 @@ SCENARIO("Parser test for valid NMODL grammar constructs") {
     for (const auto& construct : nmodl_valid_constructs) {
         auto test_case = construct.second;
         GIVEN(test_case.name) {
-            THEN("Parser successfully parses : " + test_case.nmodl_text) {
-                REQUIRE(is_valid_construct(test_case.nmodl_text));
+            THEN("Parser successfully parses : " + test_case.input) {
+                REQUIRE(is_valid_construct(test_case.input));
             }
         }
     }
@@ -104,8 +104,8 @@ SCENARIO("Parser test for invalid NMODL grammar constructs") {
     for (const auto& construct : nmdol_invalid_constructs) {
         auto test_case = construct.second;
         GIVEN(test_case.name) {
-            THEN("Parser throws an exception while parsing : " + test_case.nmodl_text) {
-                REQUIRE_THROWS(is_valid_construct(test_case.nmodl_text));
+            THEN("Parser throws an exception while parsing : " + test_case.input) {
+                REQUIRE_THROWS(is_valid_construct(test_case.input));
             }
         }
     }

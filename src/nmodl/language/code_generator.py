@@ -1,6 +1,7 @@
 from parser import LanguageParser
 from ast_printer import *
 from visitors_printer import *
+from nmodl_printer import *
 
 
 # parse nmodl definition file and get list of abstract nodes
@@ -51,4 +52,14 @@ SymtabVisitorDeclarationPrinter(
 SymtabVisitorDefinitionPrinter(
     "../visitors/symtab_visitor.cpp",
     "SymtabVisitor",
+    nodes).write()
+
+NmodlVisitorDeclarationPrinter(
+    "../visitors/nmodl_visitor.hpp",
+    "NmodlPrintVisitor",
+    nodes).write()
+
+NmodlVisitorDefinitionPrinter(
+    "../visitors/nmodl_visitor.cpp",
+    "NmodlPrintVisitor",
     nodes).write()

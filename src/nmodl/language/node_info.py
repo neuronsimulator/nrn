@@ -93,7 +93,8 @@ STATEMENT_TYPES=["Statement",
                  "IndependentDef",
                  "DependentDef",
                  "ParamAssign",
-                 "ConstantStatement"]
+                 "ConstantStatement",
+                 "Stepped"]
 
 # data types which have token as an argument to the constructor
 LEXER_DATA_TYPES = ["Name",
@@ -145,8 +146,5 @@ UNIT_BLOCK = "UnitBlock"
 
 # name of variable in prime node which represent order of derivative
 ORDER_VAR_NAME = "order"
-REACT_VAR_NAME = "react"
-REACT2_VAR_NAME = "react2"
-SWEEP_VAR_NAME = "sweep"
-
+BINARY_OPERATOR_NAME = "op"
 # yapf: enable

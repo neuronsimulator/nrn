@@ -594,1025 +594,1053 @@
 # specification
 
 - AST:
-  - Expression:
-    - String:
-        members:
-          - value:
-              type: std::string
-    - Number:
-      - Integer:
+  - Node:
+    - Expression:
+      - String:
           members:
             - value:
-                type: int
-            - macroname:
-                type: Name
+                type: std::string
+      - Number:
+        - Integer:
+            members:
+              - value:
+                  type: int
+              - macroname:
+                  type: Name
+                  optional: true
+        - Float:
+            members:
+              - value:
+                  type: float
+        - Double:
+            members:
+              - value:
+                  type: double
+        - Boolean:
+            members:
+              - value:
+                  type: int
+      - Identifier:
+        - Name:
+            members:
+              - value:
+                  type: String
+                  getname: true
+        - PrimeName:
+            members:
+              - value:
+                  type: String
+                  getname: true
+              - order:
+                  type: Integer
+        - VarName:
+            members:
+              - name:
+                  type: Identifier
+                  getname: true
+              - at_index:
+                  type: Integer
+                  optional: true
+                  prefix: {value: "@"}
+              - index:
+                  type: Expression
+                  optional: true
+                  prefix: {value: "["}
+                  suffix: {value: "]"}
+        - IndexedName:
+            members:
+              - name:
+                  type: Identifier
+                  getname: true
+              - index:
+                  type: Expression
+                  prefix: {value: "["}
+                  suffix: {value: "]"}
+        - Argument:
+            members:
+              - name:
+                  type: Identifier
+                  getname: true
+              - unit:
+                  type: Unit
+                  optional: true
+        - ReactVarName:
+            members:
+              - value:
+                  type: Integer
+                  optional: true
+                  prefix: {value: " "}
+              - name:
+                  type: VarName
+                  getname: true
+        - ReadIonVar:
+            members:
+              - name:
+                  type: Name
+                  getname: true
+        - WriteIonVar:
+            members:
+              - name:
+                  type: Name
+                  getname: true
+        - NonspeCurVar:
+            members:
+              - name:
+                  type: Name
+                  getname: true
+        - ElectrodeCurVar:
+            members:
+              - name:
+                  type: Name
+                  getname: true
+        - SectionVar:
+            members:
+              - name:
+                  type: Name
+                  getname: true
+        - RangeVar:
+            members:
+              - name:
+                  type: Name
+                  getname: true
+        - GlobalVar:
+            members:
+              - name:
+                  type: Name
+                  getname: true
+        - PointerVar:
+            members:
+              - name:
+                  type: Name
+                  getname: true
+        - BbcorePointerVar:
+            members:
+              - name:
+                  type: Name
+                  getname: true
+        - ExternVar:
+            members:
+              - name:
+                  type: Name
+                  getname: true
+        - ThreadsafeVar:
+            members:
+              - name:
+                  type: Name
+                  getname: true
+      - Block:
+        - ParamBlock:
+            nmodl: PARAMETER
+            members:
+              - statements:
+                  type: ParamAssign
+                  vector: true
+        - StepBlock:
+            nmodl: STEPPED
+            members:
+              - statements:
+                  type: Stepped
+                  vector: true
+        - IndependentBlock:
+            nmodl: INDEPENDENT
+            members:
+              - definitions:
+                  type: IndependentDef
+                  vector: true
+        - DependentBlock:
+            nmodl: ASSIGNED
+            members:
+              - definitions:
+                  type: DependentDef
+                  vector: true
+        - StateBlock:
+            nmodl: STATE
+            members:
+              - definitions:
+                  type: DependentDef
+                  vector: true
+        - PlotBlock:
+            members:
+              - plot:
+                  type: PlotDeclaration
+        - InitialBlock:
+            nmodl: INITIAL
+            members:
+              - statementblock:
+                  type: StatementBlock
+        - ConstructorBlock:
+            nmodl: CONSTRUCTOR
+            members:
+              - statementblock:
+                  type: StatementBlock
+        - DestructorBlock:
+            nmodl: DESTRUCTOR
+            members:
+              - statementblock:
+                  type: StatementBlock
+        - StatementBlock:
+            members:
+              - statements:
+                  type: Statement
+                  vector: true
+        - DerivativeBlock:
+            nmodl: "DERIVATIVE "
+            members:
+              - name:
+                  type: Name
+                  getname: true
+              - statementblock:
+                  type: StatementBlock
+        - LinearBlock:
+            nmodl: "LINEAR "
+            members:
+              - name:
+                  type: Name
+                  getname: true
+              - solvefor:
+                  type: Name
+                  vector: true
+                  separator: ","
+                  prefix: {value: " SOLVEFOR "}
+              - statementblock:
+                  type: StatementBlock
+        - NonLinearBlock:
+            nmodl: "NONLINEAR "
+            members:
+              - name:
+                  type: Name
+                  getname: true
+              - solvefor:
+                  type: Name
+                  vector: true
+                  separator: ","
+                  prefix: {value: " SOLVEFOR "}
+              - statementblock:
+                  type: StatementBlock
+        - DiscreteBlock:
+            nmodl: "DISCRETE "
+            members:
+              - name:
+                  type: Name
+                  getname: true
+              - statementblock:
+                  type: StatementBlock
+        - PartialBlock:
+            nmodl: "PARTIAL "
+            members:
+              - name:
+                  type: Name
+                  getname: true
+              - statementblock:
+                  type: StatementBlock
+        - FunctionTableBlock:
+            nmodl: "FUNCTION_TABLE "
+            members:
+              - name:
+                  type: Name
+                  getname: true
+              - arguments:
+                  type: Argument
+                  vector: true
+                  prefix: {value: "(", force: true}
+                  suffix: {value: ")", force: true}
+                  separator: ", "
+              - unit:
+                  type: Unit
+                  optional: true
+                  prefix: {value: " "}
+        - FunctionBlock:
+            nmodl: "FUNCTION "
+            members:
+              - name:
+                  type: Name
+                  getname: true
+              - arguments:
+                  type: Argument
+                  vector: true
+                  prefix: {value: "(", force: true}
+                  suffix: {value: ")", force: true}
+                  separator: ", "
+              - unit:
+                  type: Unit
+                  optional: true
+                  prefix: {value: " "}
+              - statementblock:
+                  type: StatementBlock
+        - ProcedureBlock:
+            nmodl: "PROCEDURE "
+            members:
+              - name:
+                  type: Name
+                  getname: true
+              - arguments:
+                  type: Argument
+                  vector: true
+                  prefix: {value: "(", force: true}
+                  suffix: {value: ")", force: true}
+                  separator: ", "
+              - unit:
+                  type: Unit
+                  optional: true
+              - statementblock:
+                  type: StatementBlock
+        - NetReceiveBlock:
+            nmodl: "NET_RECEIVE "
+            members:
+              - arguments:
+                  type: Argument
+                  vector: true
+                  prefix: {value: "(", force: true}
+                  suffix: {value: ")", force: true}
+                  separator: ", "
+              - statementblock:
+                  type: StatementBlock
+        - SolveBlock:
+            nmodl: SOLVE
+            members:
+              - name:
+                  type: Name
+                  prefix: {value: " "}
+              - method:
+                  type: Name
+                  optional: true
+                  prefix: {value: " METHOD "}
+              - ifsolerr:
+                  type: StatementBlock
+                  prefix: {value: " IFERROR"}
+        - BreakpointBlock:
+            nmodl: BREAKPOINT
+            members:
+              - statementblock:
+                  type: StatementBlock
+        - TerminalBlock:
+            nmodl: TERMINAL
+            members:
+              - statementblock:
+                  type: StatementBlock
+        - BeforeBlock:
+            nmodl: "BEFORE "
+            members:
+              - block:
+                  type: BABlock
+        - AfterBlock:
+            nmodl: "AFTER "
+            members:
+              - block:
+                  type: BABlock
+        - BABlock:
+            members:
+              - type:
+                  type: BABlockType
+              - statementblock:
+                  type: StatementBlock
+        - ForNetcon:
+            nmodl: "FOR_NETCONS "
+            members:
+              - arguments:
+                  type: Argument
+                  vector: true
+                  prefix: {value: "(", force: true}
+                  suffix: {value: ")", force: true}
+                  separator: ", "
+              - statementblock:
+                  type: StatementBlock
+        - KineticBlock:
+            nmodl: "KINETIC "
+            members:
+              - name:
+                  type: Name
+                  getname: true
+              - solvefor:
+                  type: Name
+                  vector: true
+                  separator: ","
+              - statementblock:
+                  type: StatementBlock
+        - MatchBlock:
+            nmodl: MATCH
+            members:
+              - matchs:
+                  type: Match
+                  vector: true
+                  separator: " "
+                  prefix: {value: " { "}
+                  suffix: {value: " }"}
+        - UnitBlock:
+            nmodl: UNITS
+            members:
+              - definitions:
+                  type: Expression
+                  vector: true
+        - ConstantBlock:
+            nmodl: CONSTANT
+            members:
+              - statements:
+                  type: ConstantStatement
+                  vector: true
+        - NeuronBlock:
+            nmodl: NEURON
+            members:
+              - statementblock:
+                  type: StatementBlock
+      - Unit:
+          members:
+            - name:
+                type: String
+                getname: true
+                prefix: {value: "("}
+                suffix: {value: ")"}
+      - DoubleUnit:
+          members:
+            - values:
+                type: Double
+            - unit:
+                type: Unit
                 optional: true
-      - Float:
-          members:
-            - value:
-                type: float
-      - Double:
-          members:
-            - value:
-                type: double
-      - Boolean:
-          members:
-            - value:
-                type: int
-    - Identifier:
-      - Name:
-          members:
-            - value:
-                type: String
-                getname: true
-      - PrimeName:
-          members:
-            - value:
-                type: String
-                getname: true
-            - order:
-                type: Integer
-      - VarName:
+      - LocalVar:
           members:
             - name:
                 type: Identifier
                 getname: true
-            - at_index:
+      - Limits:
+          members:
+            - min:
+                type: Double
+                prefix: {value: "<"}
+                suffix: {value: ","}
+            - max:
+                type: Double
+                suffix: {value: ">"}
+      - NumberRange:
+          members:
+            - min:
+                type: Number
+                prefix: {value: "<"}
+                suffix: {value: ","}
+            - max:
+                type: Number
+                suffix: {value: ">"}
+
+      - PlotVar:
+          members:
+            - name:
+                type: Identifier
+            - index:
                 type: Integer
                 optional: true
-                prefix: {value: "@"}
-      - IndexedName:
+                prefix: {value: "["}
+                suffix: {value: "]"}
+      - BinaryOperator:
+          members:
+            - value:
+                type: BinaryOp
+      - UnaryOperator:
+          members:
+            - value:
+                type: UnaryOp
+      - ReactionOperator:
+          members:
+            - value:
+                type: ReactionOp
+      - ParenExpression:
+          members:
+            - expr:
+                type: Expression
+                prefix: {value: "("}
+                suffix: {value: ")"}
+      - BinaryExpression:
+          members:
+            - lhs:
+                type: Expression
+            - op:
+                type: BinaryOperator
+            - rhs:
+                type: Expression
+      - UnaryExpression:
+          members:
+            - op:
+                type: UnaryOperator
+            - expression:
+                type: Expression
+      - NonLinEuation:
+          nmodl: "~ "
+          members:
+            - lhs:
+                type: Expression
+                suffix: {value: " = "}
+            - rhs:
+                type: Expression
+      - LinEquation:
+          nmodl: "~ "
+          members:
+            - leftlinexpr:
+                type: Expression
+                suffix: {value: " = "}
+            - linexpr:
+                type: Expression
+      - FunctionCall:
+          members:
+            - name:
+                type: Name
+            - arguments:
+                type: Expression
+                vector: true
+                separator: ", "
+                prefix: {value: "(", force: true}
+                suffix: {value: ")", force: true}
+      - FirstLastTypeIndex:
+          members:
+            - value:
+                type: FirstLastType
+      - Watch:
+          members:
+            - expression:
+                type: Expression
+                prefix: {value: "("}
+                suffix: {value: ")"}
+            - value:
+                type: Expression
+                prefix: {value: " "}
+      - QueueExpressionType:
+          members:
+            - value:
+                type: QueueType
+      - Match:
+          members:
+            - name:
+                type: Identifier
+            - expression:
+                type: Expression
+                optional: true
+      - BABlockType:
+          members:
+            - value:
+                type: BAType
+      - UnitDef:
+          members:
+            - unit1:
+                type: Unit
+                getname: true
+            - unit2:
+                type: Unit
+                prefix: {value: " = "}
+      - FactorDef:
+          members:
+            - name:
+                type: Name
+                getname: true
+                suffix: {value: " ="}
+            - value:
+                type: Double
+                optional: true
+                prefix: {value: " "}
+            - unit1:
+                type: Unit
+                prefix: {value: " "}
+            - gt:
+                type: Boolean
+                nmodl: " ->"
+                optional: true
+            - unit2:
+                type: Unit
+                optional: true
+                prefix: {value: " "}
+      - Valence:
+          members:
+            - type:
+                type: Name
+                prefix: {value: " "}
+                suffix: {value: " "}
+            - value:
+                type: Double
+
+    - Statement:
+      - UnitState:
+          members:
+            - value:
+                type: UnitStateType
+      - LocalListStatement:
+          nmodl: "LOCAL "
+          members:
+            - variables:
+                type: LocalVar
+                vector: true
+                separator: ", "
+      - Model:
+          nmodl: TITLE
+          members:
+            - title:
+                type: String
+      - Define:
+          nmodl: "DEFINE "
+          members:
+            - name:
+                type: Name
+            - value:
+                type: Integer
+                prefix: {value: " "}
+      - Include:
+          nmodl: "INCLUDE "
+          members:
+            - filename:
+                type: String
+      - ParamAssign:
+          members:
+            - name:
+                type: Identifier
+                getname: true
+            - value:
+                type: Number
+                optional: true
+                prefix: {value: " = "}
+            - unit:
+                type: Unit
+                optional: true
+                prefix: {value: " "}
+            - limit:
+                type: Limits
+                optional: true
+                prefix: {value: " "}
+      - Stepped:
+          members:
+            - name:
+                type: Name
+            - values:
+                type: Number
+                vector: true
+                prefix: {value: " = "}
+                separator: ", "
+            - unit:
+                type: Unit
+                optional: true
+                prefix: {value: " "}
+      - IndependentDef:
+          members:
+            - sweep:
+                type: Boolean
+                optional: true
+                nmodl: "SWEEP "
+            - name:
+                type: Name
+            - from:
+                type: Number
+                prefix: {value: " FROM "}
+            - to:
+                type: Number
+                prefix: {value: " TO "}
+            - with:
+                type: Integer
+                prefix: {value: " WITH "}
+            - opstart:
+                type: Number
+                prefix: {value: " START "}
+                optional: true
+            - unit:
+                type: Unit
+                optional: true
+                prefix: {value: " "}
+      - DependentDef:
           members:
             - name:
                 type: Identifier
                 getname: true
             - index:
-                type: Expression
+                type: Integer
+                optional: true
                 prefix: {value: "["}
                 suffix: {value: "]"}
-      - Argument:
+            - from:
+                type: Number
+                prefix: {value: " FROM "}
+                optional: true
+            - to:
+                type: Number
+                prefix: {value: " TO "}
+                optional: true
+            - opstart:
+                type: Number
+                prefix: {value: " START "}
+                optional: true
+            - unit:
+                type: Unit
+                optional: true
+                prefix: {value: " "}
+            - abstol:
+                type: Double
+                prefix: {value: " <"}
+                suffix: {value: ">"}
+                optional: true
+      - PlotDeclaration:
+          nmodl: "PLOT "
+          members:
+            - pvlist:
+                type: PlotVar
+                vector: true
+                separator: ", "
+            - name:
+                type: PlotVar
+                prefix: {value: " VS "}
+      - ConductanceHint:
+          nmodl: "CONDUCTANCE "
+          members:
+            - conductance:
+                type: Name
+            - ion:
+                type: Name
+                optional: true
+                prefix: {value: " USEION "}
+      - ExpressionStatement:
+          members:
+            - expression:
+                type: Expression
+      - ProtectStatement:
+          nmodl: "PROTECT "
+          members:
+            - expression:
+                type: Expression
+      - FromStatement:
+          nmodl: "FROM "
+          members:
+            - name:
+                type: Name
+            - from:
+                type: Expression
+                prefix: {value: " = "}
+            - to:
+                type: Expression
+                prefix: {value: " TO "}
+            - opinc:
+                type: Expression
+                prefix: {value: " BY "}
+                optional: true
+            - statementblock:
+                type: StatementBlock
+      - ForAllStatement:
+          nmodl: "FORALL "
+          members:
+            - name:
+                type: Name
+            - statementblock:
+                type: StatementBlock
+      - WhileStatement:
+          nmodl: "WHILE "
+          members:
+            - condition:
+                type: Expression
+                prefix: {value: "("}
+                suffix: {value: ")"}
+            - statementblock:
+                type: StatementBlock
+      - IfStatement:
+          nmodl: "IF "
+          members:
+            - condition:
+                type: Expression
+                prefix: {value: "("}
+                suffix: {value: ")"}
+            - statementblock:
+                type: StatementBlock
+            - elseifs:
+                type: ElseIfStatement
+                vector: true
+            - elses:
+                type: ElseStatement
+                optional: true
+      - ElseIfStatement:
+          nmodl: " ELSE IF "
+          members:
+            - condition:
+                type: Expression
+                prefix: {value: "("}
+                suffix: {value: ")"}
+            - statementblock:
+                type: StatementBlock
+      - ElseStatement:
+          nmodl: " ELSE"
+          members:
+            - statementblock:
+                type: StatementBlock
+      - PartialEquation:
+          members:
+            - prime:
+                type: PrimeName
+            - name1:
+                type: Name
+            - name2:
+                type: Name
+            - name3:
+                type: Name
+      - PartialBoundary:
+          nmodl: "~ "
+          members:
+            - del:
+                type: Name
+                optional: true
+                suffix: {value: " "}
+            - name:
+                type: Identifier
+            - index:
+                type: FirstLastTypeIndex
+                optional: true
+                prefix: {value: "["}
+                suffix: {value: "]"}
+            - expression:
+                type: Expression
+                optional: true
+                prefix: {value: " = "}
+            - name1:
+                type: Name
+                optional: true
+                prefix: {value: " = "}
+                suffix: {value: "*"}
+            - del2:
+                type: Name
+                optional: true
+                suffix: {value: "("}
+            - name2:
+                type: Name
+                optional: true
+                suffix: {value: ")"}
+            - name3:
+                type: Name
+                optional: true
+                prefix: {value: "+"}
+      - WatchStatement:
+          nmodl: "WATCH "
+          members:
+            - statements:
+                type: Watch
+                vector: true
+                separator: ","
+                add: true
+      - MutexLock:
+          nmodl: MUTEXLOCK
+      - MutexUnlock:
+          nmodl: MUTEXUNLOCK
+      - Reset:
+          nmodl: RESET
+      - Sens:
+          nmodl: "SENS "
+          members:
+            - senslist:
+                type: VarName
+                vector: true
+                separator: ", "
+      - Conserve:
+          nmodl: CONSERVE
+          members:
+            - react:
+                type: Expression
+                prefix: {value: " "}
+            - expr:
+                type: Expression
+                prefix: {value: " = "}
+      - Compartment:
+          nmodl: COMPARTMENT
+          members:
+            - name:
+                type: Name
+                optional: true
+                prefix: {value: " "}
+                suffix: {value: ","}
+            - expression:
+                type: Expression
+                prefix: {value: " "}
+            - names:
+                type: Name
+                vector: true
+                prefix: {value: " {"}
+                suffix: {value: "}"}
+                separator: " "
+      - LonDifuse:
+          nmodl: LONGITUDINAL_DIFFUSION
+          members:
+            - name:
+                type: Name
+                optional: true
+                prefix: {value: " "}
+                suffix: {value: ","}
+            - expression:
+                type: Expression
+                prefix: {value: " "}
+            - names:
+                type: Name
+                vector: true
+                prefix: {value: " {"}
+                suffix: {value: "}"}
+                separator: " "
+      - ReactionStatement:
+          nmodl: "~ "
+          members:
+            - react1:
+                type: Expression
+            - op:
+                type: ReactionOperator
+                prefix: {value: " "}
+            - react2:
+                type: Expression
+                prefix: {value: " "}
+                optional: true
+            - expr1:
+                type: Expression
+                prefix: {value: " ("}
+            - expr2:
+                type: Expression
+                prefix: {value: ", "}
+                suffix: {value: ")", force: true}
+                optional: true
+      - LagStatement:
+          nmodl: "LAG "
           members:
             - name:
                 type: Identifier
-                getname: true
+            - byname:
+                type: Name
+                prefix: {value: " BY "}
+      - QueueStatement:
+          members:
+            - qype:
+                type: QueueExpressionType
+            - name:
+                type: Identifier
+                prefix: {value: " "}
+      - ConstantStatement:
+          members:
+            - name:
+                type: Name
+            - value:
+                type: Number
+                prefix: {value: " = "}
             - unit:
                 type: Unit
-                optional: true
-      - ReactVarName:
-          members:
-            - value:
-                type: Integer
                 optional: true
                 prefix: {value: " "}
-            - name:
-                type: VarName
-                getname: true
-      - ReadIonVar:
+      - TableStatement:
+          nmodl: "TABLE "
           members:
-            - name:
-                type: Name
-                getname: true
-      - WriteIonVar:
-          members:
-            - name:
-                type: Name
-                getname: true
-      - NonspeCurVar:
-          members:
-            - name:
-                type: Name
-                getname: true
-      - ElectrodeCurVar:
-          members:
-            - name:
-                type: Name
-                getname: true
-      - SectionVar:
-          members:
-            - name:
-                type: Name
-                getname: true
-      - RangeVar:
-          members:
-            - name:
-                type: Name
-                getname: true
-      - GlobalVar:
-          members:
-            - name:
-                type: Name
-                getname: true
-      - PointerVar:
-          members:
-            - name:
-                type: Name
-                getname: true
-      - BbcorePointerVar:
-          members:
-            - name:
-                type: Name
-                getname: true
-      - ExternVar:
-          members:
-            - name:
-                type: Name
-                getname: true
-      - ThreadsafeVar:
-          members:
-            - name:
-                type: Name
-                getname: true
-    - Block:
-      - ParamBlock:
-          nmodl: PARAMETER
-          members:
-            - statements:
-                type: ParamAssign
-                vector: true
-      - StepBlock:
-          nmodl: STEPPED
-          members:
-            - statements:
-                type: Stepped
-                vector: true
-      - IndependentBlock:
-          nmodl: INDEPENDENT
-          members:
-            - definitions:
-                type: IndependentDef
-                vector: true
-      - DependentBlock:
-          nmodl: ASSIGNED
-          members:
-            - definitions:
-                type: DependentDef
-                vector: true
-      - StateBlock:
-          nmodl: STATE
-          members:
-            - definitions:
-                type: DependentDef
-                vector: true
-      - PlotBlock:
-          members:
-            - plot:
-                type: PlotDeclaration
-      - InitialBlock:
-          nmodl: INITIAL
-          members:
-            - statementblock:
-                type: StatementBlock
-      - ConstructorBlock:
-          nmodl: CONSTRUCTOR
-          members:
-            - statementblock:
-                type: StatementBlock
-      - DestructorBlock:
-          nmodl: DESTRUCTOR
-          members:
-            - statementblock:
-                type: StatementBlock
-      - StatementBlock:
-          members:
-            - statements:
-                type: Statement
-                vector: true
-      - DerivativeBlock:
-          nmodl: DERIVATIVE
-          members:
-            - name:
-                type: Name
-                getname: true
-            - statementblock:
-                type: StatementBlock
-      - LinearBlock:
-          nmodl: LINEAR
-          members:
-            - name:
-                type: Name
-                getname: true
-            - solvefor:
+            - tablst:
                 type: Name
                 vector: true
-                prefix: {value: " SOLVEFOR "}
-            - statementblock:
-                type: StatementBlock
-      - NonLinearBlock:
-          nmodl: NONLINEAR
-          members:
-            - name:
-                type: Name
-                getname: true
-            - solvefor:
-                type: Name
-                vector: true
-                prefix: {value: " SOLVEFOR "}
-            - statementblock:
-                type: StatementBlock
-      - DiscreteBlock:
-          nmodl: DISCRETE
-          members:
-            - name:
-                type: Name
-                getname: true
-            - statementblock:
-                type: StatementBlock
-      - PartialBlock:
-          nmodl: PARTIAL
-          members:
-            - name:
-                type: Name
-                getname: true
-            - statementblock:
-                type: StatementBlock
-      - FunctionTableBlock:
-          nmodl: FUNCTION_TABLE
-          members:
-            - name:
-                type: Name
-                getname: true
-            - arguments:
-                type: Argument
-                vector: true
-                prefix: {value: "(", force: true}
-                suffix: {value: ")", force: true}
                 separator: ","
-            - unit:
-                type: Unit
-                optional: true
-      - FunctionBlock:
-          nmodl: FUNCTION
-          members:
-            - name:
+            - dependlst:
                 type: Name
-                getname: true
-            - arguments:
-                type: Argument
                 vector: true
-                prefix: {value: "(", force: true}
-                suffix: {value: ")", force: true}
+                prefix: {value: " DEPEND "}
                 separator: ","
-            - unit:
-                type: Unit
-                optional: true
-            - statementblock:
-                type: StatementBlock
-      - ProcedureBlock:
-          nmodl: PROCEDURE
-          members:
-            - name:
-                type: Name
-                getname: true
-            - arguments:
-                type: Argument
-                vector: true
-                prefix: {value: "(", force: true}
-                suffix: {value: ")", force: true}
-                separator: ","
-            - unit:
-                type: Unit
-                optional: true
-            - statementblock:
-                type: StatementBlock
-      - NetReceiveBlock:
-          nmodl: NET_RECEIVE
-          members:
-            - arguments:
-                type: Argument
-                vector: true
-                prefix: {value: "(", force: true}
-                suffix: {value: ")", force: true}
-                separator: ","
-            - statementblock:
-                type: StatementBlock
-      - SolveBlock:
-          nmodl: SOLVE
-          members:
-            - name:
-                type: Name
-            - method:
-                type: Name
-                optional: true
-                prefix: {value: " METHOD "}
-            - ifsolerr:
-                type: StatementBlock
-                prefix: {value: IFERROR}
-      - BreakpointBlock:
-          nmodl: BREAKPOINT
-          members:
-            - statementblock:
-                type: StatementBlock
-      - TerminalBlock:
-          nmodl: TERMINAL
-          members:
-            - statementblock:
-                type: StatementBlock
-      - BeforeBlock:
-          nmodl: BEFORE
-          members:
-            - block:
-                type: BABlock
-      - AfterBlock:
-          nmodl: AFTER
-          members:
-            - block:
-                type: BABlock
-      - BABlock:
+            - from:
+                type: Expression
+                prefix: {value: " FROM "}
+            - to:
+                type: Expression
+                prefix: {value: " TO "}
+            - with:
+                type: Integer
+                prefix: {value: " WITH "}
+      - Suffix:
           members:
             - type:
-                type: BABlockType
-            - statementblock:
-                type: StatementBlock
-      - ForNetcon:
-          nmodl: FOR_NETCONS
-          members:
-            - arguments:
-                type: Argument
-                vector: true
-                prefix: {value: "(", force: true}
-                suffix: {value: ")", force: true}
-                separator: ","
-            - statementblock:
-                type: StatementBlock
-      - KineticBlock:
-          nmodl: KINETIC
+                type: Name
+                suffix: {value: " "}
+            - name:
+                type: Name
+      - Useion:
+          nmodl: "USEION "
           members:
             - name:
                 type: Name
-                getname: true
-            - solvefor:
-                type: Name
+            - readlist:
+                type: ReadIonVar
                 vector: true
-            - statementblock:
-                type: StatementBlock
-      - MatchBlock:
-          nmodl: MATCH
-          members:
-            - matchs:
-                type: Match
+                prefix: {value: " READ "}
+                separator: ", "
+            - writelist:
+                type: WriteIonVar
                 vector: true
-      - UnitBlock:
-          nmodl: UNITS
+                prefix: {value: " WRITE "}
+                separator: ", "
+            - valence:
+                type: Valence
+                optional: true
+      - Nonspecific:
+          nmodl: "NONSPECIFIC_CURRENT "
           members:
-            - definitions:
-                type: Expression
+            - currents:
+                type: NonspeCurVar
                 vector: true
-      - ConstantBlock:
-          nmodl: CONSTANT
+                separator: ", "
+      - ElctrodeCurrent:
+          nmodl: "ELECTRODE_CURRENT "
           members:
-            - statements:
-                type: ConstantStatement
+            - ecurrents:
+                type: ElectrodeCurVar
                 vector: true
-      - NeuronBlock:
-          nmodl: NEURON
+                separator: ", "
+      - Section:
+          nmodl: "SECTION "
           members:
-            - statementblock:
-                type: StatementBlock
-    - Unit:
-        members:
-          - name:
-              type: String
-              getname: true
-              prefix: {value: "("}
-              suffix: {value: ")"}
-    - DoubleUnit:
-        members:
-          - values:
-              type: Double
-          - unit:
-              type: Unit
-              optional: true
-    - LocalVar:
-        members:
-          - name:
-              type: Identifier
-              getname: true
-    - Limits:
-        members:
-          - min:
-              type: Double
-              prefix: {value: "<"}
-              suffix: {value: ","}
-          - max:
-              type: Double
-              suffix: {value: ">"}
-    - NumberRange:
-        members:
-          - min:
-              type: Number
-              prefix: {value: "<"}
-              suffix: {value: ","}
-          - max:
-              type: Number
-              suffix: {value: ">"}
-
-    - PlotVar:
-        members:
-          - name:
-              type: Identifier
-              prefix: {value: " "}
-          - index:
-              type: Integer
-              optional: true
-              prefix: {value: "["}
-              suffix: {value: "]"}
-    - BinaryOperator:
-        members:
-          - value:
-              type: BinaryOp
-    - UnaryOperator:
-        members:
-          - value:
-              type: UnaryOp
-    - ReactionOperator:
-        members:
-          - value:
-              type: ReactionOp
-    - BinaryExpression:
-        members:
-          - lhs:
-              type: Expression
-          - op:
-              type: BinaryOperator
-          - rhs:
-              type: Expression
-    - UnaryExpression:
-        members:
-          - op:
-              type: UnaryOperator
-          - expression:
-              type: Expression
-    - NonLinEuation:
-        nmodl: "~"
-        members:
-          - lhs:
-              type: Expression
-              suffix: {value: "="}
-          - rhs:
-              type: Expression
-    - LinEquation:
-        nmodl: "~"
-        members:
-          - leftlinexpr:
-              type: Expression
-              suffix: {value: "="}
-          - linexpr:
-              type: Expression
-    - FunctionCall:
-        members:
-          - name:
-              type: Name
-          - arguments:
-              type: Expression
-              vector: true
-              separator: ","
-              prefix: {value: "(", force: true}
-              suffix: {value: ")", force: true}
-    - FirstLastTypeIndex:
-        members:
-          - value:
-              type: FirstLastType
-    - Watch:
-        members:
-          - expression:
-              type: Expression
-          - value:
-              type: Expression
-              prefix: {value: " "}
-    - QueueExpressionType:
-        members:
-          - value:
-              type: QueueType
-    - Match:
-        members:
-          - name:
-              type: Identifier
-          - expression:
-              type: Expression
-              optional: true
-    - BABlockType:
-        members:
-          - value:
-              type: BAType
-    - UnitDef:
-        members:
-          - unit1:
-              type: Unit
-              getname: true
-          - unit2:
-              type: Unit
-              prefix: {value: "="}
-    - FactorDef:
-        members:
-          - name:
-              type: Name
-              getname: true
-              suffix: {value: "="}
-          - value:
-              type: Double
-              optional: true
-          - unit1:
-              type: Unit
-          - gt:
-              type: Boolean
-              nmodl: "->"
-              optional: true
-          - unit2:
-              type: Unit
-              optional: true
-    - Valence:
-        members:
-          - type:
-              type: Name
-              prefix: {value: " "}
-              suffix: {value: " "}
-          - value:
-              type: Double
-
-  - Statement:
-    - UnitState:
-        members:
-          - value:
-              type: UnitStateType
-    - LocalListStatement:
-        nmodl: LOCAL
-        members:
-          - variables:
-              type: LocalVar
-              vector: true
-              separator: ","
-    - Model:
-        nmodl: TITLE
-        members:
-          - title:
-              type: String
-    - Define:
-        nmodl: DEFINE
-        members:
-          - name:
-              type: Name
-              suffix: {value: " "}
-          - value:
-              type: Integer
-    - Include:
-        nmodl: INCLUDE
-        members:
-          - filename:
-              type: String
-    - ParamAssign:
-        members:
-          - name:
-              type: Identifier
-              getname: true
-          - value:
-              type: Number
-              optional: true
-              prefix: {value: "="}
-          - unit:
-              type: Unit
-              optional: true
-          - limit:
-              type: Limits
-              optional: true
-    - Stepped:
-        members:
-          - name:
-              type: Name
-          - values:
-              type: Number
-              vector: true
-              prefix: {value: "="}
-              separator: ","
-          - unit:
-              type: Unit
-    - IndependentDef:
-        members:
-          - sweep:
-              type: Boolean
-              optional: true
-          - name:
-              type: Name
-          - from:
-              type: Number
-              prefix: {value: " FROM "}
-          - to:
-              type: Number
-              prefix: {value: " TO "}
-          - with:
-              type: Integer
-              prefix: {value: " WITH "}
-          - opstart:
-              type: Number
-              prefix: {value: " START "}
-              optional: true
-          - unit:
-              type: Unit
-    - DependentDef:
-        members:
-          - name:
-              type: Identifier
-              getname: true
-              suffix: {value: " "}
-          - index:
-              type: Integer
-              optional: true
-              prefix: {value: "["}
-              suffix: {value: "]"}
-          - from:
-              type: Number
-              prefix: {value: " FROM "}
-              optional: true
-          - to:
-              type: Number
-              prefix: {value: " TO "}
-              optional: true
-          - opstart:
-              type: Number
-              prefix: {value: " START "}
-              suffix: {value: " "}
-              optional: true
-          - unit:
-              type: Unit
-              optional: true
-          - abstol:
-              type: Double
-              prefix: {value: " <"}
-              suffix: {value: "> "}
-              optional: true
-    - PlotDeclaration:
-        nmodl: "PLOT "
-        members:
-          - pvlist:
-              type: PlotVar
-              vector: true
-              separator: ","
-          - name:
-              type: PlotVar
-              prefix: {value: " VS "}
-    - ConductanceHint:
-        nmodl: "CONDUCTANCE"
-        members:
-          - conductance:
-              type: Name
-          - ion:
-              type: Name
-              optional: true
-              prefix: {value: " USEION "}
-    - ExpressionStatement:
-        members:
-          - expression:
-              type: Expression
-    - ProtectStatement:
-        nmodl: PROTECT
-        members:
-          - expression:
-              type: Expression
-    - FromStatement:
-        nmodl: FROM
-        members:
-          - name:
-              type: Name
-              prefix: {value: " "}
-              suffix: {value: " "}
-          - from:
-              type: Expression
-              prefix: {value: "="}
-          - to:
-              type: Expression
-              prefix: {value: " TO "}
-          - opinc:
-              type: Expression
-              prefix: {value: " BY "}
-              optional: true
-          - statementblock:
-              type: StatementBlock
-    - ForAllStatement:
-        nmodl: FORALL
-        members:
-          - name:
-              type: Name
-              prefix: {value: " "}
-              suffix: {value: " "}
-          - statementblock:
-              type: StatementBlock
-    - WhileStatement:
-        nmodl: WHILE
-        members:
-          - condition:
-              type: Expression
-              prefix: {value: "("}
-              suffix: {value: ")"}
-          - statementblock:
-              type: StatementBlock
-    - IfStatement:
-        nmodl: IF
-        members:
-          - condition:
-              type: Expression
-              prefix: {value: "("}
-              suffix: {value: ")"}
-          - statementblock:
-              type: StatementBlock
-          - elseifs:
-              type: ElseIfStatement
-              vector: true
-          - elses:
-              type: ElseStatement
-              optional: true
-    - ElseIfStatement:
-        nmodl: ELSE IF
-        members:
-          - condition:
-              type: Expression
-              prefix: {value: "("}
-              suffix: {value: ")"}
-          - statementblock:
-              type: StatementBlock
-    - ElseStatement:
-        nmodl: ELSE
-        members:
-          - statementblock:
-              type: StatementBlock
-    - PartialEquation:
-        members:
-          - prime:
-              type: PrimeName
-          - name1:
-              type: Name
-          - name2:
-              type: Name
-          - name3:
-              type: Name
-    - PartialBoundary:
-        nmodl: "~"
-        members:
-          - del:
-              type: Name
-              optional: true
-              suffix: {value: " "}
-          - name:
-              type: Identifier
-          - index:
-              type: FirstLastTypeIndex
-              optional: true
-              prefix: {value: "["}
-              suffix: {value: "]"}
-          - expression:
-              type: Expression
-              optional: true
-              prefix: {value: "="}
-          - name1:
-              type: Name
-              optional: true
-              prefix: {value: "="}
-              suffix: {value: "*"}
-          - del2:
-              type: Name
-              optional: true
-              suffix: {value: "("}
-          - name2:
-              type: Name
-              optional: true
-              suffix: {value: ")"}
-          - name3:
-              type: Name
-              optional: true
-              prefix: {value: "+"}
-    - WatchStatement:
-        nmodl: WATCH
-        members:
-          - statements:
-              type: Watch
-              vector: true
-              separator: ","
-              add: true
-    - MutexLock:
-        nmodl: MUTEXLOCK
-    - MutexUnlock:
-        nmodl: MUTEXUNLOCK
-    - Reset:
-        nmodl: RESET
-    - Sens:
-        nmodl: SENS
-        members:
-          - senslist:
-              type: VarName
-              vector: true
-              separator: ","
-    - Conserve:
-        nmodl: CONSERVE
-        members:
-          - react:
-              type: Expression
-          - expr:
-              type: Expression
-              prefix: {value: "="}
-    - Compartment:
-        nmodl: COMPARTMENT
-        members:
-          - name:
-              type: Name
-              optional: true
-              suffix: {value: ","}
-          - expression:
-              type: Expression
-          - names:
-              type: Name
-              vector: true
-              prefix: {value: "{"}
-              suffix: {value: "}"}
-              separator: " "
-    - LonDifuse:
-        nmodl: LONGITUDINAL_DIFFUSION
-        members:
-          - name:
-              type: Name
-              optional: true
-              suffix: {value: ","}
-          - expression:
-              type: Expression
-          - names:
-              type: Name
-              vector: true
-              prefix: {value: "{"}
-              suffix: {value: "}"}
-              separator: " "
-    - ReactionStatement:
-        nmodl: "~"
-        members:
-          - react1:
-              type: Expression
-              suffix: {value: " "}
-          - op:
-              type: ReactionOperator
-              prefix: {value: " "}
-              suffix: {value: " "}
-          - react2:
-              type: Expression
-              prefix: {value: " "}
-              suffix: {value: " "}
-              optional: true
-          - expr1:
-              type: Expression
-              prefix: {value: "("}
-          - expr2:
-              type: Expression
-              prefix: {value: ","}
-              suffix: {value: ")", force: true}
-              optional: true
-    - LagStatement:
-        nmodl: LAG
-        members:
-          - name:
-              type: Identifier
-          - byname:
-              type: Name
-              prefix: {value: " BY "}
-    - QueueStatement:
-        members:
-          - qype:
-              type: QueueExpressionType
-          - name:
-              type: Identifier
-    - ConstantStatement:
-        members:
-          - name:
-              type: Name
-          - value:
-              type: Number
-              prefix: {value: "="}
-          - unit:
-              type: Unit
-              optional: true
-    - TableStatement:
-        nmodl: TABLE
-        members:
-          - tablst:
-              type: Name
-              vector: true
-              separator: ","
-          - dependlst:
-              type: Name
-              vector: true
-              prefix: {value: " DEPEND "}
-              separator: ","
-          - from:
-              type: Expression
-              prefix: {value: " FROM "}
-          - to:
-              type: Expression
-              prefix: {value: " TO "}
-          - with:
-              type: Integer
-              prefix: {value: " WITH "}
-    - Suffix:
-        members:
-          - type:
-              type: Name
-              suffix: {value: " "}
-          - name:
-              type: Name
-    - Useion:
-        nmodl: USEION
-        members:
-          - name:
-              type: Name
-          - readlist:
-              type: ReadIonVar
-              vector: true
-              prefix: {value: " READ "}
-              separator: ","
-          - writelist:
-              type: WriteIonVar
-              vector: true
-              prefix: {value: " WRITE "}
-              separator: ","
-          - valence:
-              type: Valence
-              optional: true
-    - Nonspecific:
-        nmodl: NONSPECIFIC_CURRENT
-        members:
-          - currents:
-              type: NonspeCurVar
-              vector: true
-              separator: ","
-    - ElctrodeCurrent:
-        nmodl: ELECTRODE_CURRENT
-        members:
-          - ecurrents:
-              type: ElectrodeCurVar
-              vector: true
-              separator: ","
-    - Section:
-        nmodl: SECTION
-        members:
-          - sections:
-              type: SectionVar
-              vector: true
-              separator: ","
-    - Range:
-        nmodl: RANGE
-        members:
-          - range_vars:
-              type: RangeVar
-              vector: true
-              separator: ","
-    - Global:
-        nmodl: GLOBAL
-        members:
-          - global_vars:
-              type: GlobalVar
-              vector: true
-              separator: ","
-    - Pointer:
-        nmodl: POINTER
-        members:
-          - pointers:
-              type: PointerVar
-              vector: true
-              separator: ","
-    - BbcorePtr:
-        nmodl: BBCOREPOINTER
-        members:
-          - bbcore_pointers:
-              type: BbcorePointerVar
-              vector: true
-              separator: ","
-    - External:
-        nmodl: EXTERNAL
-        members:
-          - externals:
-              type: ExternVar
-              vector: true
-              separator: ","
-    - ThreadSafe:
-        nmodl: THREADSAFE
-        members:
-          - threadsafe:
-              type: ThreadsafeVar
-              vector: true
-              separator: ","
-    - Verbatim:
-        nmodl: VERBATIM
-        members:
-          - statement:
-              type: String
-              suffix: {value: "ENDVERBATIM"}
-    - Comment:
-        nmodl: COMMENT
-        members:
-          - comment:
-              type: String
-              suffix: {value: "ENDCOMMENT"}
+            - sections:
+                type: SectionVar
+                vector: true
+                separator: ", "
+      - Range:
+          nmodl: "RANGE "
+          members:
+            - range_vars:
+                type: RangeVar
+                vector: true
+                separator: ", "
+      - Global:
+          nmodl: "GLOBAL "
+          members:
+            - global_vars:
+                type: GlobalVar
+                vector: true
+                separator: ", "
+      - Pointer:
+          nmodl: "POINTER "
+          members:
+            - pointers:
+                type: PointerVar
+                vector: true
+                separator: ", "
+      - BbcorePtr:
+          nmodl: "BBCOREPOINTER "
+          members:
+            - bbcore_pointers:
+                type: BbcorePointerVar
+                vector: true
+                separator: ", "
+      - External:
+          nmodl: "EXTERNAL "
+          members:
+            - externals:
+                type: ExternVar
+                vector: true
+                separator: ", "
+      - ThreadSafe:
+          nmodl: THREADSAFE
+          members:
+            - threadsafe:
+                type: ThreadsafeVar
+                vector: true
+                separator: ", "
+                prefix: {value: " "}
+      - Verbatim:
+          nmodl: VERBATIM
+          members:
+            - statement:
+                type: String
+                suffix: {value: "ENDVERBATIM"}
+      - Comment:
+          nmodl: COMMENT
+          members:
+            - comment:
+                type: String
+                suffix: {value: "ENDCOMMENT"}
 
 - Program:
     members:
-    - statements:
-        type: Statement
-        vector: true
-        add: true
     - blocks:
-        type: Block
+        type: Node
         vector: true
         add: true

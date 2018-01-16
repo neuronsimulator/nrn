@@ -3,8 +3,8 @@
 
 /** Check if the iterator is pointing to last element in the container */
 template <typename Iter, typename Cont>
-bool is_last(Iter iter, const Cont* cont) {
-    return ((iter != cont->end()) && (next(iter) == cont->end()));
+bool is_last(Iter iter, const Cont& cont) {
+    return ((iter != cont.end()) && (next(iter) == cont.end()));
 }
 
 /** Given full file path, returns only name of the file */
