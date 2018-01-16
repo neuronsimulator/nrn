@@ -362,6 +362,10 @@ namespace ast {
             return false;
         }
 
+        virtual bool is_paren_expression() {
+            return false;
+        }
+
         virtual bool is_unary_operator() {
             return false;
         }
@@ -609,6 +613,10 @@ namespace ast {
         }
 
         virtual bool is_comment() {
+            return false;
+        }
+
+        virtual bool is_node() {
             return false;
         }
 

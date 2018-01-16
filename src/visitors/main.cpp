@@ -8,6 +8,7 @@
 #include "visitors/perf_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
 #include "visitors/verbatim_visitor.hpp"
+#include "visitors/nmodl_visitor.hpp"
 
 #include "tclap/CmdLine.h"
 
@@ -112,6 +113,11 @@ int main(int argc, const char* argv[]) {
             v.print(ss);
             std::cout << ss.str() << std::endl;
             std::cout << "----PERF VISITOR FINISHED----" << std::endl;
+        }
+
+        {
+            NmodlPrintVisitor v(channel_name + ".nocmodl.mod");
+            v.visit_program(ast.get());
         }
 
     } catch (TCLAP::ArgException& e) {

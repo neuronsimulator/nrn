@@ -11,6 +11,9 @@ set(VISITOR_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/symtab_visitor_helper.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/perf_visitor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/perf_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/nmodl_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/nmodl_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/nmodl_visitor_helper.hpp
 )
 
 set_source_files_properties(

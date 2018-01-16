@@ -77,21 +77,29 @@ class LanguageParser:
         if 'getname' in properties:
             args.getname_method = properties['getname']
 
+        # if there is nmodl name
+        if 'nmodl' in properties:
+            args.nmodl_name = properties['nmodl']
+
         # prefix while printing back to NMODL
         if 'prefix' in properties:
             args.prefix = properties['prefix']['value']
 
-            # if prefix is compulsory to print in NMODL
+            # if prefix is compulsory to print in NMODL then make suffix empty
             if 'force' in properties['prefix']:
-                args.force_prefix = properties['prefix']['force']
+                if properties['prefix']['force']:
+                    args.force_prefix = args.prefix
+                    args.prefix = ""
 
         # suffix while printing back to NMODL
         if 'suffix' in properties:
             args.suffix = properties['suffix']['value']
 
-            # if suffix is compulsory to print in NMODL
+            # if suffix is compulsory to print in NMODL then make suffix empty
             if 'force' in properties['suffix']:
-                args.force_suffix = properties['suffix']['force']
+                if properties['suffix']['force']:
+                    args.force_suffix = args.suffix
+                    args.suffix = ""
 
         return args
 

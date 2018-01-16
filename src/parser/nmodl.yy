@@ -132,7 +132,8 @@
 %token  <ModToken>              GE
 %token  <ModToken>              PLOT
 %token  <ModToken>              VS
-%token  <ModToken>              LAG RESET
+%token  <ModToken>              LAG
+%token  <ModToken>              RESET
 %token  <ModToken>              MATCH
 %token  <ModToken>              MODEL_LEVEL
 %token  <ModToken>              SWEEP
@@ -406,22 +407,22 @@ all             :   {
                     }
                 |   all model
                     {
-                        $1->addStatement($2);
+                        $1->addNode($2);
                         $$ = $1;
                     }
                 |   all locallist
                     {
-                        $1->addStatement($2);
+                        $1->addNode($2);
                         $$ = $1;
                     }
                 |   all define1
                     {
-                        $1->addStatement($2);
+                        $1->addNode($2);
                         $$ = $1;
                     }
                 |   all declare
                     {
-                        $1->addBlock($2);
+                        $1->addNode($2);
                         $$ = $1;
                     }
                 |   all MODEL_LEVEL INTEGER declare
@@ -433,31 +434,32 @@ all             :   {
                     }
                 |   all proc
                     {
-                        $1->addBlock($2);
+                        $1->addNode($2);
                         $$ = $1;
                     }
                 |   all VERBATIM
                     {
                         auto text = parse_with_verbatim_parser($2);
                         auto statement = new ast::Verbatim(new ast::String(text));
-                        $1->addStatement(statement);
+                        $1->addNode(statement);
                         $$ = $1;
                     }
                 |   all COMMENT
                     {
                         auto text = parse_with_verbatim_parser($2);
                         auto statement = new ast::Comment(new ast::String(text));
-                        $1->addStatement(statement);
+                        $1->addNode(statement);
                         $$ = $1;
                     }
                 |   all uniton
                     {
-                        $1->addStatement($2);
+                        $1->addNode($2);
                         $$ = $1;
                     }
                 |   all INCLUDE1 STRING
                     {
-                        $1->addStatement(new ast::Include($3));
+                        auto statement = new ast::Include($3);
+                        $1->addNode(statement);
                         $$ = $1;
                     }
                 ;
@@ -545,7 +547,12 @@ units           :           {   $$ = nullptr;  }
 
 unit            :   "(" { scanner.scan_unit(); } ")"
                     {
-                        $$ = new ast::Unit(scanner.get_unit());
+                        auto unit = scanner.get_unit();
+                        auto text = unit->eval();
+                        if (text.size() == 0) {
+                            error(scanner.loc, "empty unit");
+                        }
+                        $$ = new ast::Unit(unit);
                     }
                 ;
 
@@ -988,26 +995,26 @@ asgn            :   varname "=" expr
 
 varname         :   name
                     {
-                        $$ = new ast::VarName($1, NULL);
+                        $$ = new ast::VarName($1, nullptr, nullptr);
                     }
                 |   name "[" intexpr "]"
                     {
-                        $$ = new ast::VarName(new ast::IndexedName($1, $3), NULL);
+                        $$ = new ast::VarName(new ast::IndexedName($1, $3), nullptr, nullptr);
                     }
                 |   NAME "@" integer
                     {
-                        $$ = new ast::VarName($1, $3);
+                        $$ = new ast::VarName($1, $3, nullptr);
                     }
                 |   NAME "@" integer "[" intexpr "]"
                     {
-                        $$ = new ast::VarName(new ast::IndexedName($1, $5), $3);
+                        $$ = new ast::VarName($1, $3, $5);
                     }
                 ;
 
 
 intexpr         :   Name                    { $$ = $1; }
                 |   integer                 { $$ = $1; }
-                |   "(" intexpr ")"         { $$ = $2; }
+                |   "(" intexpr ")"         { $$ = new ast::ParenExpression($2); }
                 |   intexpr "+" intexpr
                     {
                         $$ = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_ADDITION), $3);
@@ -1040,7 +1047,7 @@ expr            :   varname             { $$ = $1; }
                             $$ = $1;
                     }
                 |   funccall            { $$ = $1; }
-                |   "(" expr ")"        { $$ = $2; }
+                |   "(" expr ")"        { $$ = new ast::ParenExpression($2); }
                 |   expr "+" expr
                     {
                         $$ = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_ADDITION), $3);
@@ -1157,7 +1164,7 @@ primary         :   term        { $$ = $1; }
 term            :   varname         { $$ = $1; }
                 |   real            { $$ = $1; }
                 |   funccall        { $$ = $1; }
-                |   "(" expr ")"    { $$ = $2; }
+                |   "(" expr ")"    { $$ = new ast::ParenExpression($2); }
                 |   error
                     {
                         error(scanner.loc, "term");
@@ -1520,7 +1527,7 @@ aexpr           :   varname                 { $$ = $1; }
                         $$ = new ast::DoubleUnit($1, $2);
                     }
                 |   funccall                { $$ = $1; }
-                |   "(" aexpr ")"           { $$ = $2; }
+                |   "(" aexpr ")"           { $$ = new ast::ParenExpression($2); }
                 |   aexpr "+" aexpr
                     {
                         $$ = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_ADDITION), $3);
@@ -1720,7 +1727,9 @@ match           :   name
                 |   matchname "(" expr ")" "=" expr
                     {
                         auto op = ast::BinaryOperator(ast::BOP_ASSIGN);
-                        auto expr = new ast::BinaryExpression($3, op, $6);
+                        auto lhs = new ast::ParenExpression($3);
+                        auto rhs = $6;
+                        auto expr = new ast::BinaryExpression(lhs, op, rhs);
                         $$ = new ast::Match($1, expr);
                     }
                 |   error
