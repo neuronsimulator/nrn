@@ -18,12 +18,11 @@ struct NmodlTestCase {
 
     NmodlTestCase() = delete;
 
-    NmodlTestCase(std::string name, std::string input)
-        : name(name), input(input), output(input) {
+    NmodlTestCase(std::string name, std::string input) : name(name), input(input), output(input) {
     }
 
     NmodlTestCase(std::string name, std::string input, std::string output)
-            : name(name), input(input), output(output) {
+        : name(name), input(input), output(output) {
     }
 };
 

@@ -17,7 +17,6 @@ void NmodlPrintVisitor::visit_element(const std::vector<T>& elements,
                                       bool program,
                                       bool statement) {
     for (auto iter = elements.begin(); iter != elements.end(); iter++) {
-
         /// statements need indentation at the start
         if (statement) {
             printer->add_indent();
