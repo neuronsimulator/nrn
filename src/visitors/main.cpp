@@ -5,6 +5,7 @@
 #include "parser/nmodl_driver.hpp"
 #include "visitors/ast_visitor.hpp"
 #include "visitors/json_visitor.hpp"
+#include "visitors/local_var_rename_visitor.hpp"
 #include "visitors/perf_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
 #include "visitors/verbatim_visitor.hpp"
@@ -113,6 +114,11 @@ int main(int argc, const char* argv[]) {
             v.print(ss);
             std::cout << ss.str() << std::endl;
             std::cout << "----PERF VISITOR FINISHED----" << std::endl;
+        }
+
+        {
+            LocalVarRenameVisitor v;
+            v.visit_program(ast.get());
         }
 
         {
