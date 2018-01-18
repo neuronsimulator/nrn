@@ -7,7 +7,7 @@ using namespace symtab;
 /** Return new name variable by appending "_r_COUNT" where COUNT is number
  * of times the given variable is already used.
  */
-std::string LocalVarRenameVisitor::get_new_name(std::string name) {
+std::string LocalVarRenameVisitor::get_new_name(const std::string& name) {
     int suffix = 0;
     if (renamed_variables.find(name) != renamed_variables.end()) {
         suffix = renamed_variables[name];
@@ -33,7 +33,6 @@ LocalVarVector* LocalVarRenameVisitor::get_local_variables(StatementBlock* node)
 
 /// rename name conflicting variables in the statement block and it's all children
 void LocalVarRenameVisitor::visit_statement_block(StatementBlock* node) {
-
     /// nothing to do
     if (node->statements.empty()) {
         return;
@@ -61,8 +60,8 @@ void LocalVarRenameVisitor::visit_statement_block(StatementBlock* node) {
         parent_symtab = symtab->get_parent_table();
     }
 
-    /// global blocks are not changes : if there is no parent symbol
-    /// table or no variables in the block then there is nothing to do
+    /// global blocks do not change (do no have parent symbol table)
+    /// if no variables in the block then there is nothing to do
     if (parent_symtab == nullptr || variables == nullptr) {
         return;
     }
@@ -73,7 +72,7 @@ void LocalVarRenameVisitor::visit_statement_block(StatementBlock* node) {
         std::string name = var->get_name();
         auto s = parent_symtab->lookup_in_scope(name);
 
-        /// if parent has symbol and it's of type variable
+        /// if symbol represents variable (to avoid renaming use of units like mV)
         if (s && s->is_variable()) {
             std::string new_name = get_new_name(name);
             rename_visitor.set(name, new_name);

@@ -54,7 +54,7 @@ class LocalVarRenameVisitor : public AstVisitor {
     ast::LocalVarVector* get_local_variables(ast::StatementBlock* node);
 
     /// based on usage frequency return new name for given variable
-    std::string get_new_name(std::string var_name);
+    std::string get_new_name(const std::string& name);
 
   public:
     LocalVarRenameVisitor() = default;

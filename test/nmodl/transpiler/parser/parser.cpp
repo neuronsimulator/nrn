@@ -3,8 +3,8 @@
 #include <string>
 
 #include "catch/catch.hpp"
-#include "input/nmodl_constructs.h"
 #include "parser/nmodl_driver.hpp"
+#include "test/utils/nmodl_constructs.h"
 
 //=============================================================================
 // Parser tests

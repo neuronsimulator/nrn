@@ -1,4 +1,4 @@
-#include "input/nmodl_constructs.h"
+#include "test/utils/nmodl_constructs.h"
 
 /** Guidelines for adding nmodl text constructs
  *

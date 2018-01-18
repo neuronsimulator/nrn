@@ -8,9 +8,10 @@ include_directories(
 #=============================================================================
 # Common input data library
 #=============================================================================
-add_library(test_input
+add_library(test_util
             STATIC
-            ${CMAKE_CURRENT_SOURCE_DIR}/input/nmodl_constructs.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/utils/nmodl_constructs.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/utils/test_utils.cpp
 )
 
 #=============================================================================
@@ -25,8 +26,8 @@ add_executable (testsymtab symtab/symbol_table.cpp)
 
 target_link_libraries(testmodtoken lexer)
 target_link_libraries(testlexer lexer)
-target_link_libraries(testparser lexer test_input)
-target_link_libraries(testvisitor symtab lexer visitor util test_input printer)
+target_link_libraries(testparser lexer test_util)
+target_link_libraries(testvisitor symtab lexer visitor util test_util printer)
 target_link_libraries(testprinter printer)
 target_link_libraries(testsymtab symtab lexer util)
 
@@ -41,8 +42,9 @@ add_test (NAME Symtab COMMAND testsymtab)
 # Files for clang-format
 #=============================================================================
 set(FILES_FOR_CLANG_FORMAT
-    ${CMAKE_CURRENT_SOURCE_DIR}/input/nmodl_constructs.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/input/nmodl_constructs.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/nmodl_constructs.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/nmodl_constructs.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/test_utils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/modtoken/modtoken.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/lexer/tokens.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/parser/parser.cpp
