@@ -10,6 +10,7 @@
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/perf_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
+#include "visitors/var_rename_visitor.hpp"
 #include "visitors/verbatim_visitor.hpp"
 
 using json = nlohmann::json;
@@ -285,13 +286,121 @@ std::string run_nmodl_visitor(const std::string& text) {
 SCENARIO("Test for AST back to NMODL transformation") {
     for (const auto& construct : nmodl_valid_constructs) {
         auto test_case = construct.second;
-            std::string input_nmodl_text = reindent_text(test_case.input);
-            std::string output_nmodl_text = reindent_text(test_case.output);
-            GIVEN(test_case.name) {
-                THEN("Visitor successfully returns : " + input_nmodl_text) {
-                    auto result = run_nmodl_visitor(input_nmodl_text);
-                    REQUIRE(result == output_nmodl_text);
-                }
+        std::string input_nmodl_text = reindent_text(test_case.input);
+        std::string output_nmodl_text = reindent_text(test_case.output);
+        GIVEN(test_case.name) {
+            THEN("Visitor successfully returns : " + input_nmodl_text) {
+                auto result = run_nmodl_visitor(input_nmodl_text);
+                REQUIRE(result == output_nmodl_text);
             }
+        }
+    }
+}
+
+//=============================================================================
+// Variable rename tests
+//=============================================================================
+std::string run_var_rename_visitor(const std::string& text,
+                                   std::vector<std::pair<std::string, std::string>> variables) {
+    nmodl::Driver driver;
+    driver.parse_string(text);
+    auto ast = driver.ast();
+
+    {
+        for (const auto& variable : variables) {
+            VarRenameVisitor v(variable.first, variable.second);
+            v.visit_program(ast.get());
+        }
+    }
+    std::stringstream stream;
+
+    {
+        NmodlPrintVisitor v(stream);
+        v.visit_program(ast.get());
+    }
+    return stream.str();
+}
+
+SCENARIO("Renaming any variable in mod file with VarRenameVisitor") {
+    GIVEN("A mod file") {
+        // sample nmodl text
+        std::string input_nmodl_text = R"(
+            NEURON {
+                SUFFIX NaTs2_t
+                USEION na READ ena WRITE ina
+                RANGE gNaTs2_tbar
+            }
+
+            PARAMETER {
+                gNaTs2_tbar = 0.1 (S/cm2)
+            }
+
+            STATE {
+                m
+                h
+            }
+
+            COMMENT
+                m and gNaTs2_tbar remain same here
+            ENDCOMMENT
+
+            BREAKPOINT {
+                LOCAL gNaTs2_t
+                gNaTs2_t = gNaTs2_tbar*m*m*m*h
+                ina = gNaTs2_t*(v-ena)
+            }
+
+            FUNCTION mAlpha() {
+            }
+        )";
+
+        /// expected result after renaming m, gNaTs2_tbar and mAlpha
+        std::string output_nmodl_text = R"(
+            NEURON {
+                SUFFIX NaTs2_t
+                USEION na READ ena WRITE ina
+                RANGE new_gNaTs2_tbar
+            }
+
+            PARAMETER {
+                new_gNaTs2_tbar = 0.1 (S/cm2)
+            }
+
+            STATE {
+                mm
+                h
+            }
+
+            COMMENT
+                m and gNaTs2_tbar remain same here
+            ENDCOMMENT
+
+            BREAKPOINT {
+                LOCAL gNaTs2_t
+                gNaTs2_t = new_gNaTs2_tbar*mm*mm*mm*h
+                ina = gNaTs2_t*(v-ena)
+            }
+
+            FUNCTION mBeta() {
+            }
+        )";
+
+        std::string input = reindent_text(input_nmodl_text);
+        std::string expected_output = reindent_text(output_nmodl_text);
+
+        THEN("existing variables could be renamed") {
+            std::vector<std::pair<std::string, std::string>> variables = {
+                {"m", "mm"}, {"gNaTs2_tbar", "new_gNaTs2_tbar"}, {"mAlpha", "mBeta"},
+            };
+            auto result = run_var_rename_visitor(input, variables);
+            REQUIRE(result == expected_output);
+        }
+
+        THEN("non-existing variables will be ignored") {
+            std::vector<std::pair<std::string, std::string>> variables = {
+                {"unknown_variable", "doesnot_matter"}};
+            auto result = run_var_rename_visitor(input, variables);
+            REQUIRE(result == input);
+        }
     }
 }
