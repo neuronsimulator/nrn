@@ -10,7 +10,7 @@
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/perf_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
-#include "visitors/var_rename_visitor.hpp"
+#include "visitors/rename_visitor.hpp"
 #include "visitors/verbatim_visitor.hpp"
 
 using json = nlohmann::json;
@@ -308,7 +308,7 @@ std::string run_var_rename_visitor(const std::string& text,
 
     {
         for (const auto& variable : variables) {
-            VarRenameVisitor v(variable.first, variable.second);
+            RenameVisitor v(variable.first, variable.second);
             v.visit_program(ast.get());
         }
     }
@@ -321,7 +321,7 @@ std::string run_var_rename_visitor(const std::string& text,
     return stream.str();
 }
 
-SCENARIO("Renaming any variable in mod file with VarRenameVisitor") {
+SCENARIO("Renaming any variable in mod file with RenameVisitor") {
     GIVEN("A mod file") {
         // sample nmodl text
         std::string input_nmodl_text = R"(

@@ -115,6 +115,8 @@ namespace symtab {
         void add_property(SymbolInfo property);
 
         void set_order(int new_order);
+
+        bool is_variable();
     };
 
 }  // namespace symtab
