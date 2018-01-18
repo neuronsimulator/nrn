@@ -3,15 +3,16 @@
 #include <string>
 
 #include "catch/catch.hpp"
-#include "input/nmodl_constructs.h"
 #include "parser/nmodl_driver.hpp"
-#include "utils/string_utils.hpp"
 #include "visitors/json_visitor.hpp"
+#include "visitors/local_var_rename_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/perf_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
 #include "visitors/rename_visitor.hpp"
 #include "visitors/verbatim_visitor.hpp"
+#include "test/utils/nmodl_constructs.h"
+#include "test/utils/test_utils.hpp"
 
 using json = nlohmann::json;
 
@@ -204,73 +205,6 @@ SCENARIO("Symbol table generation and Perf stat visitor pass") {
 // AST to NMODL printer tests
 //=============================================================================
 
-int count_leading_spaces(std::string text) {
-    int length = text.size();
-    stringutils::ltrim(text);
-    int num_whitespaces = length - text.size();
-    return num_whitespaces;
-}
-
-/// check if string has only whitespaces
-bool is_empty(std::string text) {
-    stringutils::trim(text);
-    return text.empty();
-}
-
-/** Reindent nmodl text for text-to-text comparison
- *
- * Nmodl constructs defined in test database has extra leading whitespace.
- * This is done for readability reason in nmodl_constructs.cpp. For example,
- * we have following nmodl text with 8 leading whitespaces:
-
-
-        NEURON {
-            RANGE x
-        }
-
- * We convert above paragraph to:
-
-NEURON {
-    RANGE x
-}
-
- * i.e. we get first non-empty line and count number of leading whitespaces (X).
- * Then for every sub-sequent line, we remove first X characters (assuing those
- * all are whitespaces). This is done because when ast is transformed back to
- * nmodl, the nmodl output is without "extra" whitespaces in the provided input.
- */
-
-std::string reindent_text(const std::string& text) {
-    std::string indented_text;
-    int num_whitespaces = 0;
-    bool flag = false;
-    std::string line;
-    std::stringstream stream(text);
-
-    while (std::getline(stream, line)) {
-        if (!line.empty()) {
-            /// count whitespaces for first non-empty line only
-            if (!flag) {
-                flag = true;
-                num_whitespaces = count_leading_spaces(line);
-            }
-
-            /// make sure we don't remove non whitespaces characters
-            if (!is_empty(line.substr(0, num_whitespaces))) {
-                throw std::runtime_error("Test nmodl input not correctly formatted");
-            }
-
-            line.erase(0, num_whitespaces);
-            indented_text += line;
-        }
-        /// discard empty lines at very beginning
-        if (!stream.eof() && flag) {
-            indented_text += "\n";
-        }
-    }
-    return indented_text;
-}
-
 std::string run_nmodl_visitor(const std::string& text) {
     nmodl::Driver driver;
     driver.parse_string(text);
@@ -305,7 +239,6 @@ std::string run_var_rename_visitor(const std::string& text,
     nmodl::Driver driver;
     driver.parse_string(text);
     auto ast = driver.ast();
-
     {
         for (const auto& variable : variables) {
             RenameVisitor v(variable.first, variable.second);
@@ -313,7 +246,6 @@ std::string run_var_rename_visitor(const std::string& text,
         }
     }
     std::stringstream stream;
-
     {
         NmodlPrintVisitor v(stream);
         v.visit_program(ast.get());
@@ -401,6 +333,196 @@ SCENARIO("Renaming any variable in mod file with RenameVisitor") {
                 {"unknown_variable", "doesnot_matter"}};
             auto result = run_var_rename_visitor(input, variables);
             REQUIRE(result == input);
+        }
+    }
+}
+
+//=============================================================================
+// Local variable rename tests
+//=============================================================================
+
+std::string run_local_var_rename_visitor(const std::string& text) {
+    nmodl::Driver driver;
+    driver.parse_string(text);
+    auto ast = driver.ast();
+
+    {
+        ModelSymbolTable symtab;
+        SymtabVisitor v(&symtab);
+        v.visit_program(ast.get());
+    }
+
+    {
+        LocalVarRenameVisitor v;
+        v.visit_program(ast.get());
+    }
+    std::stringstream stream;
+    {
+        NmodlPrintVisitor v(stream);
+        v.visit_program(ast.get());
+    }
+    return stream.str();
+}
+
+SCENARIO("Presence of local and global variables in same block") {
+    GIVEN("A neuron block and procedure with same variable name") {
+        std::string nmodl_text = R"(
+            NEURON {
+                SUFFIX NaTs2_t
+                USEION na READ ena WRITE ina
+                RANGE gNaTs2_tbar
+            }
+
+            PROCEDURE rates() {
+                LOCAL gNaTs2_tbar
+                gNaTs2_tbar = 2.1 + ena
+            }
+        )";
+
+        std::string expected_nmodl_text = R"(
+            NEURON {
+                SUFFIX NaTs2_t
+                USEION na READ ena WRITE ina
+                RANGE gNaTs2_tbar
+            }
+
+            PROCEDURE rates() {
+                LOCAL gNaTs2_tbar_r_0
+                gNaTs2_tbar_r_0 = 2.1+ena
+            }
+        )";
+
+        THEN("var renaming pass changes only local variables in procedure") {
+            std::string input = reindent_text(nmodl_text);
+            auto expected_result = reindent_text(expected_nmodl_text);
+            auto result = run_local_var_rename_visitor(input);
+            REQUIRE(result == expected_result);
+        }
+    }
+}
+
+SCENARIO("Absence of global blocks") {
+    GIVEN("Procedures containing same variables") {
+        std::string nmodl_text = R"(
+            PROCEDURE rates_1() {
+                LOCAL gNaTs2_tbar
+                gNaTs2_tbar = 2.1+ena
+            }
+
+            PROCEDURE rates_2() {
+                LOCAL gNaTs2_tbar
+                gNaTs2_tbar = 2.1+ena
+            }
+        )";
+
+        THEN("nothing gets renamed") {
+            std::string input = reindent_text(nmodl_text);
+            auto result = run_local_var_rename_visitor(input);
+            REQUIRE(result == input);
+        }
+    }
+}
+
+SCENARIO("Variable renaming in nested blocks") {
+    GIVEN("Mod file containing procedures with nested blocks") {
+        std::string input_nmodl_text = R"(
+            NEURON {
+                SUFFIX NaTs2_t
+                USEION na READ ena WRITE ina
+                RANGE gNaTs2_tbar
+            }
+
+            PARAMETER {
+                gNaTs2_tbar = 0.1 (S/cm2)
+                tau = 11.1
+            }
+
+            STATE {
+                m
+                h
+            }
+
+            BREAKPOINT {
+                LOCAL gNaTs2_t
+                gNaTs2_t = gNaTs2_tbar*m*m*m*h
+                ina = gNaTs2_t*(v-ena)
+                {
+                    LOCAL gNaTs2_t, h
+                    gNaTs2_t = m + h
+                    {
+                        LOCAL m
+                        m = gNaTs2_t + h
+                        {
+                            LOCAL m, h
+                        }
+                    }
+                }
+            }
+
+            PROCEDURE rates() {
+                LOCAL x, m
+                m = x + gNaTs2_tbar
+                {
+                    {
+                        LOCAL h, x, gNaTs2_tbar
+                        m = h * x * gNaTs2_tbar + tau
+                    }
+                }
+            }
+        )";
+
+        // \todo : open brace without any keyword starts with an extra empty space
+        std::string expected_nmodl_text = R"(
+            NEURON {
+                SUFFIX NaTs2_t
+                USEION na READ ena WRITE ina
+                RANGE gNaTs2_tbar
+            }
+
+            PARAMETER {
+                gNaTs2_tbar = 0.1 (S/cm2)
+                tau = 11.1
+            }
+
+            STATE {
+                m
+                h
+            }
+
+            BREAKPOINT {
+                LOCAL gNaTs2_t_r_1
+                gNaTs2_t_r_1 = gNaTs2_tbar*m*m*m*h
+                ina = gNaTs2_t_r_1*(v-ena)
+                 {
+                    LOCAL gNaTs2_t_r_0, h_r_1
+                    gNaTs2_t_r_0 = m+h_r_1
+                     {
+                        LOCAL m_r_1
+                        m_r_1 = gNaTs2_t_r_0+h_r_1
+                         {
+                            LOCAL m_r_0, h_r_0
+                        }
+                    }
+                }
+            }
+
+            PROCEDURE rates() {
+                LOCAL x_r_1, m_r_2
+                m_r_2 = x_r_1+gNaTs2_tbar
+                 {
+                     {
+                        LOCAL h_r_2, x_r_0, gNaTs2_tbar_r_0
+                        m_r_2 = h_r_2*x_r_0*gNaTs2_tbar_r_0+tau
+                    }
+                }
+            }
+        )";
+
+        THEN("variables conflicting with global variables get renamed starting from inner block") {
+            std::string input = reindent_text(input_nmodl_text);
+            auto expected_result = reindent_text(expected_nmodl_text);
+            auto result = run_local_var_rename_visitor(input);
+            REQUIRE(result == expected_result);
         }
     }
 }
