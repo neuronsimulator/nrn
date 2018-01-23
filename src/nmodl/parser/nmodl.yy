@@ -250,7 +250,7 @@
 %type   <ast::elseifstatement_list>         optelseif
 %type   <ast::elsestatement_ptr>            optelse
 %type   <ast::solveblock_ptr>               solveblk
-%type   <ast::functioncall_ptr>             funccall
+%type   <ast::wrappedexpression_ptr>        funccall
 %type   <ast::statementblock_ptr>           ifsolerr
 %type   <ast::expression_ptr>               opinc
 %type   <ast::number_ptr>                   opstart
@@ -1174,7 +1174,8 @@ term            :   varname         { $$ = $1; }
 
 funccall        :   NAME "(" exprlist ")"
                     {
-                        $$ = new ast::FunctionCall($1, $3);
+                        auto expression = new ast::FunctionCall($1, $3);
+                        $$ = new ast::WrappedExpression(expression);
                     }
                 ;
 

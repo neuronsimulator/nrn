@@ -4,6 +4,7 @@
 
 #include "catch/catch.hpp"
 #include "parser/nmodl_driver.hpp"
+#include "visitors/inline_visitor.hpp"
 #include "visitors/json_visitor.hpp"
 #include "visitors/local_var_rename_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
@@ -322,7 +323,9 @@ SCENARIO("Renaming any variable in mod file with RenameVisitor") {
 
         THEN("existing variables could be renamed") {
             std::vector<std::pair<std::string, std::string>> variables = {
-                {"m", "mm"}, {"gNaTs2_tbar", "new_gNaTs2_tbar"}, {"mAlpha", "mBeta"},
+                {"m", "mm"},
+                {"gNaTs2_tbar", "new_gNaTs2_tbar"},
+                {"mAlpha", "mBeta"},
             };
             auto result = run_var_rename_visitor(input, variables);
             REQUIRE(result == expected_output);
@@ -522,6 +525,520 @@ SCENARIO("Variable renaming in nested blocks") {
             std::string input = reindent_text(input_nmodl_text);
             auto expected_result = reindent_text(expected_nmodl_text);
             auto result = run_local_var_rename_visitor(input);
+            REQUIRE(result == expected_result);
+        }
+    }
+}
+
+//=============================================================================
+// Procedure/Function inlining tests
+//=============================================================================
+
+std::string run_inline_visitor(const std::string& text) {
+    nmodl::Driver driver;
+    driver.parse_string(text);
+    auto ast = driver.ast();
+
+    {
+        ModelSymbolTable symtab;
+        SymtabVisitor v(&symtab);
+        v.visit_program(ast.get());
+    }
+
+    {
+        InlineVisitor v;
+        v.visit_program(ast.get());
+    }
+    std::stringstream stream;
+    {
+        NmodlPrintVisitor v(stream);
+        v.visit_program(ast.get());
+    }
+    return stream.str();
+}
+
+SCENARIO("External procedure calls") {
+    GIVEN("Procedures with external procedure call") {
+        std::string nmodl_text = R"(
+            PROCEDURE rates_1() {
+                hello()
+            }
+
+            PROCEDURE rates_2() {
+                bye()
+            }
+        )";
+
+        THEN("nothing gets inlinine") {
+            std::string input = reindent_text(nmodl_text);
+            auto result = run_inline_visitor(input);
+            REQUIRE(result == input);
+        }
+    }
+}
+
+SCENARIO("Simple procedure inlining") {
+    GIVEN("A procedure calling another procedure") {
+        std::string input_nmodl = R"(
+            PROCEDURE rates_1() {
+                LOCAL x
+                rates_2(23.1)
+            }
+
+            PROCEDURE rates_2(y) {
+                LOCAL x
+                x = 21.1*v+y
+            }
+        )";
+
+        std::string output_nmodl = R"(
+            PROCEDURE rates_1() {
+                LOCAL x, rates_2_in_0
+                 {
+                    LOCAL x, y_in_0
+                    y_in_0 = 23.1
+                    x = 21.1*v+y_in_0
+                    rates_2_in_0 = 0
+                }
+            }
+
+            PROCEDURE rates_2(y) {
+                LOCAL x
+                x = 21.1*v+y
+            }
+        )";
+        THEN("Procedure body gets inlined") {
+            std::string input = reindent_text(input_nmodl);
+            auto expected_result = reindent_text(output_nmodl);
+            auto result = run_inline_visitor(input);
+            REQUIRE(result == expected_result);
+        }
+    }
+}
+
+SCENARIO("Nested procedure inlining") {
+    GIVEN("A procedure with nested call chain and arguments") {
+        std::string input_nmodl = R"(
+            PROCEDURE rates_1() {
+                LOCAL x, y
+                rates_2()
+                rates_3(x, y)
+            }
+
+            PROCEDURE rates_2() {
+                LOCAL x
+                x = 21.1*v
+                rates_3(x, x+1.1)
+            }
+
+            PROCEDURE rates_3(a, b) {
+                LOCAL c
+                c = 21.1*v+a*b
+            }
+        )";
+
+        std::string output_nmodl = R"(
+            PROCEDURE rates_1() {
+                LOCAL x, y, rates_2_in_0, rates_3_in_1
+                 {
+                    LOCAL x, rates_3_in_0
+                    x = 21.1*v
+                     {
+                        LOCAL c, a_in_0, b_in_0
+                        a_in_0 = x
+                        b_in_0 = x+1.1
+                        c = 21.1*v+a_in_0*b_in_0
+                        rates_3_in_0 = 0
+                    }
+                    rates_2_in_0 = 0
+                }
+                 {
+                    LOCAL c, a_in_1, b_in_1
+                    a_in_1 = x
+                    b_in_1 = y
+                    c = 21.1*v+a_in_1*b_in_1
+                    rates_3_in_1 = 0
+                }
+            }
+
+            PROCEDURE rates_2() {
+                LOCAL x, rates_3_in_0
+                x = 21.1*v
+                 {
+                    LOCAL c, a_in_0, b_in_0
+                    a_in_0 = x
+                    b_in_0 = x+1.1
+                    c = 21.1*v+a_in_0*b_in_0
+                    rates_3_in_0 = 0
+                }
+            }
+
+            PROCEDURE rates_3(a, b) {
+                LOCAL c
+                c = 21.1*v+a*b
+            }
+        )";
+        THEN("Nested procedure gets inlined with variables renaming") {
+            std::string input = reindent_text(input_nmodl);
+            auto expected_result = reindent_text(output_nmodl);
+            auto result = run_inline_visitor(input);
+            REQUIRE(result == expected_result);
+        }
+    }
+}
+
+SCENARIO("Inline function call in procedure") {
+    GIVEN("A procedure with function call") {
+        std::string input_nmodl = R"(
+            PROCEDURE rates_1() {
+                LOCAL x
+                x = 12.1+rates_2()
+            }
+
+            FUNCTION rates_2() {
+                LOCAL x
+                x = 21.1*12.1+11
+                rates_2 = x
+            }
+        )";
+
+        std::string output_nmodl = R"(
+            PROCEDURE rates_1() {
+                LOCAL x, rates_2_in_0
+                 {
+                    LOCAL x
+                    x = 21.1*12.1+11
+                    rates_2_in_0 = x
+                }
+                x = 12.1+rates_2_in_0
+            }
+
+            FUNCTION rates_2() {
+                LOCAL x
+                x = 21.1*12.1+11
+                rates_2 = x
+            }
+        )";
+        THEN("Procedure body gets inlined") {
+            std::string input = reindent_text(input_nmodl);
+            auto expected_result = reindent_text(output_nmodl);
+            auto result = run_inline_visitor(input);
+            REQUIRE(result == expected_result);
+        }
+    }
+}
+
+SCENARIO("Function call within conditional statement") {
+    GIVEN("A procedure with function call in if statement") {
+        std::string input_nmodl = R"(
+            FUNCTION rates_1() {
+                IF (rates_2()) {
+                    rates_1 = 10
+                } ELSE {
+                    rates_1 = 20
+                }
+            }
+
+            FUNCTION rates_2() {
+                rates_2 = 10
+            }
+        )";
+
+        std::string output_nmodl = R"(
+            FUNCTION rates_1() {
+                LOCAL rates_2_in_0
+                 {
+                    rates_2_in_0 = 10
+                }
+                IF (rates_2_in_0) {
+                    rates_1 = 10
+                } ELSE {
+                    rates_1 = 20
+                }
+            }
+
+            FUNCTION rates_2() {
+                rates_2 = 10
+            }
+        )";
+
+        THEN("Procedure body gets inlined and return value is used in if condition") {
+            std::string input = reindent_text(input_nmodl);
+            auto expected_result = reindent_text(output_nmodl);
+            auto result = run_inline_visitor(input);
+            REQUIRE(result == expected_result);
+        }
+    }
+}
+
+SCENARIO("Multiple function calls in same statement") {
+    GIVEN("A procedure with two function calls in binary expression") {
+        std::string input_nmodl = R"(
+            FUNCTION rates_1() {
+                IF (rates_2()-rates_2()) {
+                    rates_1 = 20
+                }
+            }
+
+            FUNCTION rates_2() {
+                rates_2 = 10
+            }
+        )";
+
+        std::string output_nmodl = R"(
+            FUNCTION rates_1() {
+                LOCAL rates_2_in_0, rates_2_in_1
+                 {
+                    rates_2_in_0 = 10
+                }
+                 {
+                    rates_2_in_1 = 10
+                }
+                IF (rates_2_in_0-rates_2_in_1) {
+                    rates_1 = 20
+                }
+            }
+
+            FUNCTION rates_2() {
+                rates_2 = 10
+            }
+        )";
+
+        THEN("Procedure body gets inlined") {
+            std::string input = reindent_text(input_nmodl);
+            auto expected_result = reindent_text(output_nmodl);
+            auto result = run_inline_visitor(input);
+            REQUIRE(result == expected_result);
+        }
+    }
+
+    GIVEN("A procedure with multiple function calls in an expression") {
+        std::string input_nmodl = R"(
+            FUNCTION rates_1() {
+                LOCAL x
+                x = (rates_2()+(rates_2()/rates_2()))
+            }
+
+            FUNCTION rates_2() {
+                rates_2 = 10
+            }
+        )";
+
+        std::string output_nmodl = R"(
+            FUNCTION rates_1() {
+                LOCAL x, rates_2_in_0, rates_2_in_1, rates_2_in_2
+                 {
+                    rates_2_in_0 = 10
+                }
+                 {
+                    rates_2_in_1 = 10
+                }
+                 {
+                    rates_2_in_2 = 10
+                }
+                x = (rates_2_in_0+(rates_2_in_1/rates_2_in_2))
+            }
+
+            FUNCTION rates_2() {
+                rates_2 = 10
+            }
+        )";
+
+        THEN("Procedure body gets inlined and return values are used in an expression") {
+            std::string input = reindent_text(input_nmodl);
+            auto expected_result = reindent_text(output_nmodl);
+            auto result = run_inline_visitor(input);
+            REQUIRE(result == expected_result);
+        }
+    }
+}
+
+SCENARIO("Nested function calls withing arguments") {
+    GIVEN("A procedure with function call") {
+        std::string input_nmodl = R"(
+            FUNCTION rates_2() {
+                IF (rates_3(11,21)) {
+                   rates_2 = 10.1
+                }
+                rates_2 = rates_3(12,22)
+            }
+
+            FUNCTION rates_1() {
+                rates_1 = 12.1+rates_2()+exp(12.1)
+            }
+
+            FUNCTION rates_3(x, y) {
+                rates_3 = x+y
+            }
+        )";
+
+        std::string output_nmodl = R"(
+            FUNCTION rates_2() {
+                LOCAL rates_3_in_0, rates_3_in_1
+                 {
+                    LOCAL x_in_0, y_in_0
+                    x_in_0 = 11
+                    y_in_0 = 21
+                    rates_3_in_0 = x_in_0+y_in_0
+                }
+                IF (rates_3_in_0) {
+                    rates_2 = 10.1
+                }
+                 {
+                    LOCAL x_in_1, y_in_1
+                    x_in_1 = 12
+                    y_in_1 = 22
+                    rates_3_in_1 = x_in_1+y_in_1
+                }
+                rates_2 = rates_3_in_1
+            }
+
+            FUNCTION rates_1() {
+                LOCAL rates_2_in_0
+                 {
+                    LOCAL rates_3_in_0, rates_3_in_1
+                     {
+                        LOCAL x_in_0, y_in_0
+                        x_in_0 = 11
+                        y_in_0 = 21
+                        rates_3_in_0 = x_in_0+y_in_0
+                    }
+                    IF (rates_3_in_0) {
+                        rates_2_in_0 = 10.1
+                    }
+                     {
+                        LOCAL x_in_1, y_in_1
+                        x_in_1 = 12
+                        y_in_1 = 22
+                        rates_3_in_1 = x_in_1+y_in_1
+                    }
+                    rates_2_in_0 = rates_3_in_1
+                }
+                rates_1 = 12.1+rates_2_in_0+exp(12.1)
+            }
+
+            FUNCTION rates_3(x, y) {
+                rates_3 = x+y
+            }
+        )";
+
+        THEN("Procedure body gets inlined") {
+            std::string input = reindent_text(input_nmodl);
+            auto expected_result = reindent_text(output_nmodl);
+            auto result = run_inline_visitor(input);
+            REQUIRE(result == expected_result);
+        }
+    }
+}
+
+SCENARIO("Function call in non-binary expression") {
+    GIVEN("A function call in unary expression") {
+        std::string input_nmodl = R"(
+            PROCEDURE rates_1() {
+                LOCAL x
+                x = (-rates_2(23.1))
+            }
+
+            FUNCTION rates_2(y) {
+                rates_2 = 21.1*v+y
+            }
+        )";
+
+        std::string output_nmodl = R"(
+            PROCEDURE rates_1() {
+                LOCAL x, rates_2_in_0
+                 {
+                    LOCAL y_in_0
+                    y_in_0 = 23.1
+                    rates_2_in_0 = 21.1*v+y_in_0
+                }
+                x = (-rates_2_in_0)
+            }
+
+            FUNCTION rates_2(y) {
+                rates_2 = 21.1*v+y
+            }
+        )";
+        THEN("Function gets inlined in the unary expression") {
+            std::string input = reindent_text(input_nmodl);
+            auto expected_result = reindent_text(output_nmodl);
+            auto result = run_inline_visitor(input);
+            REQUIRE(result == expected_result);
+        }
+    }
+
+    GIVEN("A function call as part of function argument itself") {
+        std::string input_nmodl = R"(
+            FUNCTION rates_1() {
+                rates_1 = 10 + rates_2( rates_2(11) )
+            }
+
+            FUNCTION rates_2(x) {
+                rates_2 = 10+x
+            }
+        )";
+
+        std::string output_nmodl = R"(
+            FUNCTION rates_1() {
+                LOCAL rates_2_in_0, rates_2_in_1
+                 {
+                    LOCAL x_in_0
+                    x_in_0 = 11
+                    rates_2_in_0 = 10+x_in_0
+                }
+                 {
+                    LOCAL x_in_1
+                    x_in_1 = rates_2_in_0
+                    rates_2_in_1 = 10+x_in_1
+                }
+                rates_1 = 10+rates_2_in_1
+            }
+
+            FUNCTION rates_2(x) {
+                rates_2 = 10+x
+            }
+        )";
+        THEN("Function and function arguments gets inlined recursively") {
+            std::string input = reindent_text(input_nmodl);
+            auto expected_result = reindent_text(output_nmodl);
+            auto result = run_inline_visitor(input);
+            REQUIRE(result == expected_result);
+        }
+    }
+}
+
+SCENARIO("Procedure call as standalone statement as well as part of expression") {
+    GIVEN("A procedure call in expression and statement") {
+        std::string input_nmodl = R"(
+            PROCEDURE rates_1() {
+                LOCAL x
+                x = 10 + rates_2()
+                rates_2()
+            }
+
+            PROCEDURE rates_2() {
+            }
+        )";
+
+        std::string output_nmodl = R"(
+            PROCEDURE rates_1() {
+                LOCAL x, rates_2_in_0, rates_2_in_1
+                 {
+                    rates_2_in_0 = 0
+                }
+                x = 10+rates_2_in_0
+                 {
+                    rates_2_in_1 = 0
+                }
+            }
+
+            PROCEDURE rates_2() {
+            }
+        )";
+        THEN("Return statement from procedure (with zero value) is used") {
+            std::string input = reindent_text(input_nmodl);
+            auto expected_result = reindent_text(output_nmodl);
+            auto result = run_inline_visitor(input);
             REQUIRE(result == expected_result);
         }
     }
