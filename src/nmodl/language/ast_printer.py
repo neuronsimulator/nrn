@@ -132,7 +132,7 @@ class AstDeclarationPrinter(DeclarationPrinter):
                 self.write_line("symtab::SymbolTable* symtab = nullptr;")
 
             if node.is_program_node():
-                self.write_line("std::shared_ptr<symtab::ModelSymbolTable> model_symtab;")
+                self.write_line("symtab::ModelSymbolTable model_symtab;")
 
             self.write_line("")
 
@@ -180,6 +180,12 @@ class AstDeclarationPrinter(DeclarationPrinter):
 
                     get_method_added = True
 
+                if child.getter_method:
+                    getter_method = child.getter_method
+                    getter_override = " override" if child.getter_override  else ""
+                    return_type = "std::shared_ptr<" + class_name + "> "
+                    self.write_line(return_type + getter_method + "()" + getter_override + " { return " + varname + "; }")
+
                 if node.is_prime_node() and child.varname == ORDER_VAR_NAME:
                     self.write_line("int get_order() " + " { return " + ORDER_VAR_NAME + "->eval(); }")
 
@@ -205,8 +211,7 @@ class AstDeclarationPrinter(DeclarationPrinter):
                 self.write_line("symtab::SymbolTable* get_symbol_table() override " + " { return symtab; }")
 
             if node.is_program_node():
-                self.write_line("void init_model_symbol_table();")
-                self.write_line("symtab::ModelSymbolTable* get_model_symbol_table() " + " { return model_symtab.get(); }")
+                self.write_line("symtab::ModelSymbolTable* get_model_symbol_table() " + " { return &model_symtab; }")
 
             if node.is_number_node():
                 self.write_line(virtual + "void negate()" + override + " { std::cout << \"ERROR : negate() not implemented! \"; abort(); } ")
@@ -222,6 +227,11 @@ class AstDeclarationPrinter(DeclarationPrinter):
 
             if node.is_name_node():
                 self.write_line(virtual + "void set_name(std::string name)" + override + " { value->set(name); }")
+
+            if node.is_base_block_node():
+                self.write_line("virtual std::shared_ptr<StatementBlock> get_statement_block() {")
+                self.write_line('    throw std::runtime_error("get_statement_node not implemented");')
+                self.write_line("}")
 
             # if node is of enum type then return enum value
             # TODO: hardcoded Names
@@ -308,11 +318,6 @@ class AstDefinitionPrinter(DefinitionPrinter):
                 self.write_line("}", pre_gutter=-1, newline=2)
             else:
                 self.write_line("void " + node.class_name + "::visit_children(Visitor* /*v*/) {}")
-
-            if node.is_program_node():
-                self.write_line("void Program::init_model_symbol_table() " + " {")
-                self.write_line("   model_symtab = std::make_shared<symtab::ModelSymbolTable>();")
-                self.write_line("}")
 
             if members:
                 # TODO : constructor definition : remove this with C++11 style

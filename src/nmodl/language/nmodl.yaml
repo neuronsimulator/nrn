@@ -311,10 +311,10 @@
 # Expression:UnaryExpression => UnaryOperator<op> Expression<expression>
 #
 # After reading all bison productions it is clear that two basic classes derived from Expression
-# are needed : LinEquation and NonLinEuation:
+# are needed : LinEquation and NonLinEquation:
 # Todo : add more NMODL tests for validation
 #
-# Expression:NonLinEuation("~") => Expression<lhs>(":=") Expression<rhs>
+# Expression:NonLinEquation("~") => Expression<lhs>(":=") Expression<rhs>
 # Expression:LinEquation("~") => Expression<leftlinexpr>(":=") Expression<linexpr>
 #
 # Function call (must be expression because it could be called in expression definition):
@@ -768,16 +768,19 @@
             members:
               - statementblock:
                   type: StatementBlock
+                  getter: {name: get_statement_block, override: true}
         - ConstructorBlock:
             nmodl: CONSTRUCTOR
             members:
               - statementblock:
                   type: StatementBlock
+                  getter: {name: get_statement_block, override: true}
         - DestructorBlock:
             nmodl: DESTRUCTOR
             members:
               - statementblock:
                   type: StatementBlock
+                  getter: {name: get_statement_block, override: true}
         - StatementBlock:
             members:
               - statements:
@@ -791,6 +794,7 @@
                   getname: true
               - statementblock:
                   type: StatementBlock
+                  getter: {name: get_statement_block, override: true}
         - LinearBlock:
             nmodl: "LINEAR "
             members:
@@ -804,6 +808,7 @@
                   prefix: {value: " SOLVEFOR "}
               - statementblock:
                   type: StatementBlock
+                  getter: {name: get_statement_block, override: true}
         - NonLinearBlock:
             nmodl: "NONLINEAR "
             members:
@@ -817,6 +822,7 @@
                   prefix: {value: " SOLVEFOR "}
               - statementblock:
                   type: StatementBlock
+                  getter: {name: get_statement_block, override: true}
         - DiscreteBlock:
             nmodl: "DISCRETE "
             members:
@@ -825,6 +831,7 @@
                   getname: true
               - statementblock:
                   type: StatementBlock
+                  getter: {name: get_statement_block, override: true}
         - PartialBlock:
             nmodl: "PARTIAL "
             members:
@@ -833,6 +840,7 @@
                   getname: true
               - statementblock:
                   type: StatementBlock
+                  getter: {name: get_statement_block, override: true}
         - FunctionTableBlock:
             nmodl: "FUNCTION_TABLE "
             members:
@@ -867,6 +875,7 @@
                   prefix: {value: " "}
               - statementblock:
                   type: StatementBlock
+                  getter: {name: get_statement_block, override: true}
         - ProcedureBlock:
             nmodl: "PROCEDURE "
             members:
@@ -884,6 +893,7 @@
                   optional: true
               - statementblock:
                   type: StatementBlock
+                  getter: {name: get_statement_block, override: true}
         - NetReceiveBlock:
             nmodl: "NET_RECEIVE "
             members:
@@ -895,6 +905,7 @@
                   separator: ", "
               - statementblock:
                   type: StatementBlock
+                  getter: {name: get_statement_block, override: true}
         - SolveBlock:
             nmodl: SOLVE
             members:
@@ -913,11 +924,13 @@
             members:
               - statementblock:
                   type: StatementBlock
+                  getter: {name: get_statement_block, override: true}
         - TerminalBlock:
             nmodl: TERMINAL
             members:
               - statementblock:
                   type: StatementBlock
+                  getter: {name: get_statement_block, override: true}
         - BeforeBlock:
             nmodl: "BEFORE "
             members:
@@ -934,6 +947,7 @@
                   type: BABlockType
               - statementblock:
                   type: StatementBlock
+                  getter: {name: get_statement_block, override: true}
         - ForNetcon:
             nmodl: "FOR_NETCONS "
             members:
@@ -945,6 +959,7 @@
                   separator: ", "
               - statementblock:
                   type: StatementBlock
+                  getter: {name: get_statement_block, override: true}
         - KineticBlock:
             nmodl: "KINETIC "
             members:
@@ -957,6 +972,7 @@
                   separator: ","
               - statementblock:
                   type: StatementBlock
+                  getter: {name: get_statement_block, override: true}
         - MatchBlock:
             nmodl: MATCH
             members:
@@ -1066,7 +1082,7 @@
                 type: UnaryOperator
             - expression:
                 type: Expression
-      - NonLinEuation:
+      - NonLinEquation:
           nmodl: "~ "
           members:
             - lhs:

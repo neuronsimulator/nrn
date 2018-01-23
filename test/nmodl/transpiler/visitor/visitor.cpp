@@ -12,6 +12,8 @@
 #include "visitors/symtab_visitor.hpp"
 #include "visitors/rename_visitor.hpp"
 #include "visitors/verbatim_visitor.hpp"
+#include "visitors/defuse_analyze_visitor.hpp"
+#include "visitors/localize_visitor.hpp"
 #include "test/utils/nmodl_constructs.h"
 #include "test/utils/test_utils.hpp"
 
@@ -996,7 +998,7 @@ SCENARIO("Function call in non-binary expression") {
                 rates_2 = 10+x
             }
         )";
-        THEN("Function and function arguments gets inlined recursively") {
+        THEN("Function and it's arguments gets inlined recursively") {
             std::string input = reindent_text(input_nmodl);
             auto expected_result = reindent_text(output_nmodl);
             auto result = run_inline_visitor(input);
@@ -1088,6 +1090,453 @@ SCENARIO("Procedure inlining handles local-global name conflict") {
             std::string input = reindent_text(input_nmodl);
             auto expected_result = reindent_text(output_nmodl);
             auto result = run_inline_visitor(input);
+            REQUIRE(result == expected_result);
+        }
+    }
+}
+
+
+//=============================================================================
+// DefUseAnalyze visitor tests
+//=============================================================================
+
+std::vector<DUChain> run_defuse_visitor(const std::string& text, const std::string variable) {
+    nmodl::Driver driver;
+    driver.parse_string(text);
+    auto ast = driver.ast();
+
+    {
+        SymtabVisitor v;
+        v.visit_program(ast.get());
+    }
+
+    {
+        InlineVisitor v1;
+        v1.visit_program(ast.get());
+    }
+
+    {
+        std::vector<DUChain> chains;
+        DefUseAnalyzeVisitor v(ast->get_symbol_table());
+
+        for (auto& block : ast->blocks) {
+            if (block->get_type() != ast::Type::NEURON_BLOCK) {
+                chains.push_back(v.analyze(block.get(), variable));
+            }
+        }
+        return chains;
+    }
+}
+
+SCENARIO("Running defuse analyzer") {
+    GIVEN("global variable usage in assignment statements") {
+        std::string nmodl_text = R"(
+            NEURON {
+                RANGE tau, beta
+            }
+
+            DERIVATIVE states {
+                tau = 1
+                tau = 1 + tau
+            }
+        )";
+
+        std::string expected_text =
+            R"({"DerivativeBlock":[{"value":"D"},{"value":"U"},{"value":"D"}]})";
+
+        THEN("Def-Use chains for individual usage is printed") {
+            std::string input = reindent_text(nmodl_text);
+            auto chains = run_defuse_visitor(input, "tau");
+            REQUIRE(chains[0].to_string(true) == expected_text);
+            REQUIRE(chains[0].eval() == DUState::D);
+        }
+    }
+
+    GIVEN("block with use of verbatim block") {
+        std::string nmodl_text = R"(
+            NEURON {
+                RANGE tau, beta
+            }
+
+            DERIVATIVE states {
+                VERBATIM ENDVERBATIM
+                tau = 1
+                VERBATIM ENDVERBATIM
+            }
+        )";
+
+        std::string expected_text =
+            R"({"DerivativeBlock":[{"value":"U"},{"value":"D"},{"value":"U"}]})";
+
+        THEN("Verbatim block is considered as use of the variable") {
+            std::string input = reindent_text(nmodl_text);
+            auto chains = run_defuse_visitor(input, "tau");
+            REQUIRE(chains[0].to_string(true) == expected_text);
+            REQUIRE(chains[0].eval() == DUState::U);
+        }
+    }
+
+    GIVEN("global variable definition in else block") {
+        std::string nmodl_text = R"(
+            NEURON {
+                RANGE tau, beta
+            }
+
+            DERIVATIVE states {
+                IF (1) {
+                    LOCAL tau
+                    tau = 1
+                } ELSE {
+                    tau = 1
+                }
+            }
+        )";
+
+        std::string expected_text =
+            R"({"DerivativeBlock":[{"CONDITIONAL_BLOCK":[{"IF":[{"value":"LD"}]},{"ELSE":[{"value":"D"}]}]}]})";
+
+        THEN("Def-Use chains should return NONE") {
+            std::string input = reindent_text(nmodl_text);
+            auto chains = run_defuse_visitor(input, "tau");
+            REQUIRE(chains[0].to_string() == expected_text);
+            REQUIRE(chains[0].eval() == DUState::NONE);
+        }
+    }
+
+    GIVEN("global variable usage in else block") {
+        std::string nmodl_text = R"(
+            NEURON {
+                RANGE tau, beta
+            }
+
+            DERIVATIVE states {
+                IF (1) {
+                } ELSE {
+                    tau = 1 + tau
+                }
+            }
+        )";
+
+        std::string expected_text =
+            R"({"DerivativeBlock":[{"CONDITIONAL_BLOCK":[{"value":"IF"},{"ELSE":[{"value":"U"},{"value":"D"}]}]}]})";
+
+        THEN("Def-Use chains should return USE") {
+            std::string input = reindent_text(nmodl_text);
+            auto chains = run_defuse_visitor(input, "tau");
+            REQUIRE(chains[0].to_string() == expected_text);
+            REQUIRE(chains[0].eval() == DUState::U);
+        }
+    }
+
+    GIVEN("global variable definition in if-else block") {
+        std::string nmodl_text = R"(
+            NEURON {
+                RANGE tau
+            }
+
+            DERIVATIVE states {
+                IF (1) {
+                    tau = 11.1
+                    exp(tau)
+                } ELSE {
+                    tau = 1
+                }
+            }
+        )";
+
+        std::string expected_text =
+            R"({"DerivativeBlock":[{"CONDITIONAL_BLOCK":[{"IF":[{"value":"D"},{"value":"U"}]},{"ELSE":[{"value":"D"}]}]}]})";
+
+        THEN("Def-Use chains should return DEF") {
+            std::string input = reindent_text(nmodl_text);
+            auto chains = run_defuse_visitor(input, "tau");
+            REQUIRE(chains[0].to_string() == expected_text);
+            REQUIRE(chains[0].eval() == DUState::D);
+        }
+    }
+
+
+    GIVEN("global variable usage in if-elseif-else block") {
+        std::string nmodl_text = R"(
+            NEURON {
+                RANGE tau, beta
+            }
+
+            DERIVATIVE states {
+                IF (1) {
+                    tau = 1
+                }
+                tau = 1 + tau
+                IF (0) {
+                    beta = 1
+                } ELSE IF (2) {
+                    tau = 1
+                }
+            }
+
+        )";
+
+        std::string expected_text =
+            R"({"DerivativeBlock":[{"CONDITIONAL_BLOCK":[{"IF":[{"value":"D"}]}]},{"value":"U"},{"value":"D"},{"CONDITIONAL_BLOCK":[{"value":"IF"},{"ELSEIF":[{"value":"D"}]}]}]})";
+
+        THEN("Def-Use chains for individual usage is printed") {
+            std::string input = reindent_text(nmodl_text);
+            auto chains = run_defuse_visitor(input, "tau");
+            REQUIRE(chains[0].to_string() == expected_text);
+            REQUIRE(chains[0].eval() == DUState::U);
+        }
+    }
+
+    GIVEN("global variable used in nested if-elseif-else block") {
+        std::string nmodl_text = R"(
+            NEURON {
+                RANGE tau, beta
+            }
+
+            DERIVATIVE states {
+                IF (1) {
+                    LOCAL tau
+                    tau = 1
+                }
+                IF (0) {
+                    IF (1) {
+                        beta = 1
+                    } ELSE {
+                        tau = 1
+                    }
+                } ELSE IF (2) {
+                    IF (1) {
+                        beta = 1
+                        IF (0) {
+                        } ELSE {
+                            beta = 1 + exp(tau)
+                        }
+                    }
+                    tau = 1
+                }
+            }
+        )";
+
+        std::string expected_text =
+            R"({"DerivativeBlock":[{"CONDITIONAL_BLOCK":[{"IF":[{"value":"LD"}]}]},{"CONDITIONAL_BLOCK":[{"IF":[{"CONDITIONAL_BLOCK":[{"value":"IF"},{"ELSE":[{"value":"D"}]}]}]},{"ELSEIF":[{"CONDITIONAL_BLOCK":[{"IF":[{"CONDITIONAL_BLOCK":[{"value":"IF"},{"ELSE":[{"value":"U"}]}]}]}]},{"value":"D"}]}]}]})";
+
+        THEN("Def-Use chains for nested statements calculated") {
+            std::string input = reindent_text(nmodl_text);
+            auto chains = run_defuse_visitor(input, "tau");
+            REQUIRE(chains[0].to_string() == expected_text);
+            REQUIRE(chains[0].eval() == DUState::U);
+        }
+    }
+}
+
+
+//=============================================================================
+// Localizer visitor tests
+//=============================================================================
+
+std::string run_localize_visitor(const std::string& text) {
+    nmodl::Driver driver;
+    driver.parse_string(text);
+    auto ast = driver.ast();
+
+    {
+        SymtabVisitor v1;
+        v1.visit_program(ast.get());
+        InlineVisitor v2;
+        v2.visit_program(ast.get());
+        LocalizeVisitor v3;
+        v3.visit_program(ast.get());
+    }
+
+    std::stringstream stream;
+    {
+        NmodlPrintVisitor v(stream);
+        v.visit_program(ast.get());
+    }
+    return stream.str();
+}
+
+
+SCENARIO("Localizer test with single global block") {
+    GIVEN("Single derivative block with variable definition") {
+        std::string nmodl_text = R"(
+            NEURON {
+                RANGE tau
+            }
+
+            DERIVATIVE states {
+                tau = 11.1
+                exp(tau)
+            }
+        )";
+
+        std::string output_nmodl = R"(
+            NEURON {
+                RANGE tau
+            }
+
+            DERIVATIVE states {
+                LOCAL tau
+                tau = 11.1
+                exp(tau)
+            }
+        )";
+
+        THEN("tau variable gets localized") {
+            std::string input = reindent_text(nmodl_text);
+            auto expected_result = reindent_text(output_nmodl);
+            auto result = run_localize_visitor(input);
+            REQUIRE(result == expected_result);
+        }
+    }
+}
+
+SCENARIO("Localizer test with use of verbatim block") {
+    GIVEN("Verbatim block usage in one of the global block") {
+        std::string nmodl_text = R"(
+            NEURON {
+                RANGE tau
+            }
+
+            DERIVATIVE states {
+                tau = 11.1
+                exp(tau)
+            }
+
+            BREAKPOINT {
+                VERBATIM ENDVERBATIM
+            }
+        )";
+
+        std::string output_nmodl = R"(
+            NEURON {
+                RANGE tau
+            }
+
+            DERIVATIVE states {
+                tau = 11.1
+                exp(tau)
+            }
+
+            BREAKPOINT {
+                VERBATIM ENDVERBATIM
+            }
+        )";
+
+        THEN("Localization is disabled") {
+            std::string input = reindent_text(nmodl_text);
+            auto expected_result = reindent_text(output_nmodl);
+            auto result = run_localize_visitor(input);
+            REQUIRE(result == expected_result);
+        }
+    }
+}
+
+
+SCENARIO("Localizer test with multiple global blocks") {
+    GIVEN("Multiple global blocks with definition of variable") {
+        std::string nmodl_text = R"(
+            NEURON {
+                RANGE tau, beta
+            }
+
+            INITIAL {
+                LOCAL tau
+                tau = beta
+            }
+
+            DERIVATIVE states {
+                tau = 11.1
+                exp(tau)
+            }
+
+            BREAKPOINT {
+                IF (1) {
+                    tau = beta
+                } ELSE {
+                    tau = 11
+                }
+
+            }
+        )";
+
+        std::string output_nmodl = R"(
+            NEURON {
+                RANGE tau, beta
+            }
+
+            INITIAL {
+                LOCAL tau
+                tau = beta
+            }
+
+            DERIVATIVE states {
+                LOCAL tau
+                tau = 11.1
+                exp(tau)
+            }
+
+            BREAKPOINT {
+                LOCAL tau
+                IF (1) {
+                    tau = beta
+                } ELSE {
+                    tau = 11
+                }
+            }
+        )";
+
+        THEN("Localization across multiple blocks is done") {
+            std::string input = reindent_text(nmodl_text);
+            auto expected_result = reindent_text(output_nmodl);
+            auto result = run_localize_visitor(input);
+            REQUIRE(result == expected_result);
+        }
+    }
+
+
+    GIVEN("Two global blocks with definition and use of the variable") {
+        std::string nmodl_text = R"(
+            NEURON {
+                RANGE tau
+            }
+
+            DERIVATIVE states {
+                tau = 11.1
+            }
+
+            BREAKPOINT {
+                IF (1) {
+                    tau = 22
+                } ELSE {
+                    tau = exp(tau) + 11
+                }
+
+            }
+        )";
+
+        std::string output_nmodl = R"(
+            NEURON {
+                RANGE tau
+            }
+
+            DERIVATIVE states {
+                tau = 11.1
+            }
+
+            BREAKPOINT {
+                IF (1) {
+                    tau = 22
+                } ELSE {
+                    tau = exp(tau)+11
+                }
+            }
+        )";
+
+        THEN("Localization is not done due to use of variable") {
+            std::string input = reindent_text(nmodl_text);
+            auto expected_result = reindent_text(output_nmodl);
+            auto result = run_localize_visitor(input);
             REQUIRE(result == expected_result);
         }
     }

@@ -47,10 +47,6 @@ void SymtabVisitor::setup_symbol_table(T* node,
 template <typename T>
 void SymtabVisitor::setup_program_symbol_table(T* node, std::string name, bool is_global) {
     modsymtab = node->get_model_symbol_table();
-    if (modsymtab == nullptr) {
-        node->init_model_symbol_table();
-        modsymtab = node->get_model_symbol_table();
-    }
     setup_symbol_table(node, name, is_global);
 }
 

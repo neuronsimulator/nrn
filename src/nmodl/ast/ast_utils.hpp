@@ -383,7 +383,7 @@ namespace ast {
             return false;
         }
 
-        virtual bool is_non_lin_euation() {
+        virtual bool is_non_lin_equation() {
             return false;
         }
 

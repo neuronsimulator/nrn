@@ -13,5 +13,8 @@ std::string get_new_name(const std::string& name,
                          const std::string& suffix,
                          std::map<std::string, int>& variables);
 ast::LocalVarVector* get_local_variables(const ast::StatementBlock* node);
+void add_local_statement(ast::StatementBlock* node);
+void add_local_variable(ast::StatementBlock* node, const std::string& varname);
+void add_local_variable(ast::StatementBlock* node, ast::Identifier* varname);
 
 #endif
