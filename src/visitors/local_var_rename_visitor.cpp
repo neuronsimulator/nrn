@@ -1,35 +1,9 @@
 #include "visitors/local_var_rename_visitor.hpp"
 #include "visitors/rename_visitor.hpp"
+#include "visitors/visitor_utils.hpp"
 
 using namespace ast;
 using namespace symtab;
-
-/** Return new name variable by appending "_r_COUNT" where COUNT is number
- * of times the given variable is already used.
- */
-std::string LocalVarRenameVisitor::get_new_name(const std::string& name) {
-    int suffix = 0;
-    if (renamed_variables.find(name) != renamed_variables.end()) {
-        suffix = renamed_variables[name];
-    }
-
-    /// increase counter for next usage
-    renamed_variables[name] = suffix + 1;
-    return (name + "_r_" + std::to_string(suffix));
-}
-
-LocalVarVector* LocalVarRenameVisitor::get_local_variables(StatementBlock* node) {
-    LocalVarVector* variables = nullptr;
-    for (const auto& statement : node->statements) {
-        /// we are only interested in local variable definition statement
-        if (statement->get_type() == Type::LOCAL_LIST_STATEMENT) {
-            auto local_statement = std::static_pointer_cast<LocalListStatement>(statement);
-            variables = &(local_statement->variables);
-            break;
-        }
-    }
-    return variables;
-}
 
 /// rename name conflicting variables in the statement block and it's all children
 void LocalVarRenameVisitor::visit_statement_block(StatementBlock* node) {
@@ -74,7 +48,7 @@ void LocalVarRenameVisitor::visit_statement_block(StatementBlock* node) {
 
         /// if symbol represents variable (to avoid renaming use of units like mV)
         if (s && s->is_variable()) {
-            std::string new_name = get_new_name(name);
+            std::string new_name = get_new_name(name, "r", renamed_variables);
             rename_visitor.set(name, new_name);
             rename_visitor.visit_statement_block(node);
         }

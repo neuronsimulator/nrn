@@ -4,6 +4,7 @@
 
 #include "parser/nmodl_driver.hpp"
 #include "visitors/ast_visitor.hpp"
+#include "visitors/inline_visitor.hpp"
 #include "visitors/json_visitor.hpp"
 #include "visitors/local_var_rename_visitor.hpp"
 #include "visitors/perf_visitor.hpp"
@@ -118,6 +119,11 @@ int main(int argc, const char* argv[]) {
 
         {
             LocalVarRenameVisitor v;
+            v.visit_program(ast.get());
+        }
+
+        {
+            InlineVisitor v;
             v.visit_program(ast.get());
         }
 

@@ -82,9 +82,6 @@ namespace symtab {
         /// also required for nested blocks like INITIAL in NET_RECEIVE.
         std::map<std::string, std::shared_ptr<SymbolTable>> children;
 
-        /// pretty print table
-        void print_table(std::stringstream& ss, int indent);
-
       public:
         SymbolTable(std::string name, AST* node, bool global = false)
             : symtab_name(name), node(node), global(global) {
@@ -139,6 +136,7 @@ namespace symtab {
             return table.symbols.size();
         }
 
+        /// \todo: revisit the usage as tokens will be pointing to old nodes
         SymbolTable* clone() {
             return new SymbolTable(*this);
         }

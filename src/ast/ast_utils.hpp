@@ -362,6 +362,10 @@ namespace ast {
             return false;
         }
 
+        virtual bool is_wrapped_expression() {
+            return true;
+        }
+
         virtual bool is_paren_expression() {
             return false;
         }

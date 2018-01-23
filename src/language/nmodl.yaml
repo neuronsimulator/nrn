@@ -1042,6 +1042,10 @@
           members:
             - value:
                 type: ReactionOp
+      - WrappedExpression:
+          members:
+            - expression:
+                type: Expression
       - ParenExpression:
           members:
             - expr:
