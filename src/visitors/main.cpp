@@ -11,6 +11,7 @@
 #include "visitors/symtab_visitor.hpp"
 #include "visitors/verbatim_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
+#include "visitors/localize_visitor.hpp"
 
 #include "tclap/CmdLine.h"
 
@@ -128,7 +129,27 @@ int main(int argc, const char* argv[]) {
         }
 
         {
-            NmodlPrintVisitor v(channel_name + ".nocmodl.mod");
+            NmodlPrintVisitor v(channel_name + ".nocmodl.in.mod");
+            v.visit_program(ast.get());
+        }
+
+        {
+            LocalizeVisitor v;
+            v.visit_program(ast.get());
+        }
+
+        {
+            NmodlPrintVisitor v(channel_name + ".nocmodl.loc.mod");
+            v.visit_program(ast.get());
+        }
+
+        {
+            LocalVarRenameVisitor v;
+            v.visit_program(ast.get());
+        }
+
+        {
+            NmodlPrintVisitor v(channel_name + ".nocmodl.loc.ren.mod");
             v.visit_program(ast.get());
         }
 

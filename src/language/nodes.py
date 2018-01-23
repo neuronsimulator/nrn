@@ -158,6 +158,8 @@ class ChildNode(BaseNode):
         self.optional = args.is_optional
         self.add_method = args.add_method
         self.getname_method = args.getname_method
+        self.getter_method = args.getter_method
+        self.getter_override = args.getter_override
 
     def get_typename(self):
         """returns type of the node for declaration
@@ -222,6 +224,13 @@ class Node(BaseNode):
         :return: True if parent is BASE_BLOCK otherwise False
         """
         return True if self.base_class == BASE_BLOCK else False
+
+    def is_base_block_node(self):
+        """
+        check if node is Block
+        :return: True if node type/name is BASE_BLOCK
+        """
+        return True if self.class_name == BASE_BLOCK else False
 
     def is_symtab_needed(self):
         """

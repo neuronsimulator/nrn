@@ -77,6 +77,12 @@ class LanguageParser:
         if 'getname' in properties:
             args.getname_method = properties['getname']
 
+        # if getter method required
+        if 'getter' in properties:
+            args.getter_method = properties['getter']['name']
+            if 'override' in properties['getter']:
+                args.getter_override = properties['getter']['override']
+
         # if there is nmodl name
         if 'nmodl' in properties:
             args.nmodl_name = properties['nmodl']

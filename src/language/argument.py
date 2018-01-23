@@ -17,3 +17,5 @@ class Argument:
         self.add_method = False
         self.getname_method = False
         self.has_token = False
+        self.getter_method = False
+        self.getter_override = False

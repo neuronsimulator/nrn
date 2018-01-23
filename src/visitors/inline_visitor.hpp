@@ -158,9 +158,6 @@ class InlineVisitor : public AstVisitor {
     /// in case of procedure blocks)
     void add_return_variable(ast::StatementBlock* block, std::string& varname);
 
-    /// add local statement to the block if doesn't exist already
-    void add_local_statement(ast::StatementBlock* node);
-
   public:
     InlineVisitor() = default;
 

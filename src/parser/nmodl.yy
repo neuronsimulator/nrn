@@ -984,7 +984,7 @@ asgn            :   varname "=" expr
                     }
                 |   nonlineqn expr "=" expr
                     {
-                        $$ = new ast::NonLinEuation($2, $4);
+                        $$ = new ast::NonLinEquation($2, $4);
                     }
                 |   lineqn leftlinexpr "=" linexpr
                     {

@@ -14,14 +14,6 @@ bool InlineVisitor::can_inline_block(StatementBlock* block) {
     return to_inline;
 }
 
-void InlineVisitor::add_local_statement(StatementBlock* node) {
-    auto variables = get_local_variables(node);
-    if (variables == nullptr) {
-        auto statement = std::make_shared<LocalListStatement>(LocalVarVector());
-        node->statements.insert(node->statements.begin(), statement);
-    }
-}
-
 void InlineVisitor::add_return_variable(StatementBlock* block, std::string& varname) {
     auto lhs = new Name(new String(varname));
     auto rhs = new Integer(0, nullptr);
@@ -63,10 +55,6 @@ void InlineVisitor::inline_arguments(StatementBlock* inlined_block,
         return;
     }
 
-    /// add local statement in the block if missing
-    add_local_statement(inlined_block);
-
-    auto local_variables = get_local_variables(inlined_block);
     auto& statements = inlined_block->statements;
 
     size_t counter = 0;
@@ -78,7 +66,7 @@ void InlineVisitor::inline_arguments(StatementBlock* inlined_block,
         name->set_name(new_name);
 
         /// for argument add new variable to local statement
-        local_variables->push_back(std::make_shared<LocalVar>(name));
+        add_local_variable(inlined_block, name);
 
         /// variables in cloned block needs to be renamed
         RenameVisitor visitor(old_name, new_name);
