@@ -8,6 +8,7 @@
 #include "visitors/ast_visitor.hpp"
 #include "visitors/rename_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
+#include "visitors/local_var_rename_visitor.hpp"
 #include "symtab/symbol_table.hpp"
 
 /**
@@ -191,6 +192,12 @@ void InlineVisitor::inline_function_call(T* callee,
         std::cerr << "Can not inline function call to " + function_name;
         return;
     }
+
+    /// make sure to rename conflicting local variable in caller block
+    /// because in case of procedure inlining they can conflict with
+    /// global variables used in procedure being inlined
+    LocalVarRenameVisitor v;
+    v.visit_statement_block(caller);
 
     auto local_variables = get_local_variables(caller);
     auto& caller_arguments = node->arguments;
