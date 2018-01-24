@@ -1043,3 +1043,55 @@ SCENARIO("Procedure call as standalone statement as well as part of expression")
         }
     }
 }
+
+SCENARIO("Procedure inlining handles local-global name conflict") {
+    GIVEN("A procedure with local variable that exist in global scope") {
+
+        /// note that x in rates_2 should still update global x after inlining
+        std::string input_nmodl = R"(
+            NEURON {
+                RANGE x
+            }
+
+            PROCEDURE rates_1() {
+                LOCAL x
+                x = 12
+                rates_2(x)
+                x = 11
+            }
+
+            PROCEDURE rates_2(y) {
+                x = 10+y
+            }
+        )";
+
+        std::string output_nmodl = R"(
+            NEURON {
+                RANGE x
+            }
+
+            PROCEDURE rates_1() {
+                LOCAL x_r_0, rates_2_in_0
+                x_r_0 = 12
+                 {
+                    LOCAL y_in_0
+                    y_in_0 = x_r_0
+                    x = 10+y_in_0
+                    rates_2_in_0 = 0
+                }
+                x_r_0 = 11
+            }
+
+            PROCEDURE rates_2(y) {
+                x = 10+y
+            }
+        )";
+
+        THEN("Caller variables get renamed first and then inlining is done") {
+            std::string input = reindent_text(input_nmodl);
+            auto expected_result = reindent_text(output_nmodl);
+            auto result = run_inline_visitor(input);
+            REQUIRE(result == expected_result);
+        }
+    }
+}
