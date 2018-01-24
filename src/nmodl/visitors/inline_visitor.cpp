@@ -100,7 +100,7 @@ void InlineVisitor::visit_function_call(FunctionCall* node) {
     node->visit_children(this);
 
     std::string function_name = node->name->get_name();
-    auto symbol = caller_symtab->lookup_in_scope(function_name);
+    auto symbol = program_symtab->lookup_in_scope(function_name);
 
     /// nothing to do if called function is not defined or it's external
     if (symbol == nullptr || symbol->is_external_symbol_only()) {
@@ -132,17 +132,6 @@ void InlineVisitor::visit_statement_block(StatementBlock* node) {
      */
     caller_block = node;
     statementblock_stack.push(node);
-
-    /** Some statements like forall, from, while are statements but contain
-     *  statement block. They don't have symbol table. Hence we check if there
-     *  is a symbol table and then only we push it on stack. In case of nullptr,
-     *  we use parent's symbol table.
-     */
-    auto symtab = node->get_symbol_table();
-    if (symtab) {
-        caller_symtab = symtab;
-    }
-    symtab_stack.push(caller_symtab);
 
     /** Add empty local statement at the begining of block if already doesn't exist.
      * Why? When we iterate over statements and inline function call, we have to add
@@ -192,16 +181,12 @@ void InlineVisitor::visit_statement_block(StatementBlock* node) {
      * stack is already empty.
      */
     statementblock_stack.pop();
-    symtab_stack.pop();
 
     if (!statement_stack.empty()) {
         caller_statement = statement_stack.top();
     }
     if (!statementblock_stack.empty()) {
         caller_block = statementblock_stack.top();
-    }
-    if (!symtab_stack.empty()) {
-        caller_symtab = symtab_stack.top();
     }
 }
 
@@ -218,4 +203,12 @@ void InlineVisitor::visit_wrapped_expression(WrappedExpression* node) {
             node->expression = std::make_shared<Name>(new String(var));
         }
     }
+}
+
+void InlineVisitor::visit_program(Program* node) {
+   program_symtab = node->get_symbol_table();
+   if(program_symtab == nullptr) {
+       throw std::runtime_error("Program node doesn't have symbol table");
+   }
+    node->visit_children(this);
 }
