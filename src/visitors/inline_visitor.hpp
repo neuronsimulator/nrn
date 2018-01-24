@@ -115,11 +115,8 @@ class InlineVisitor : public AstVisitor {
     /// statement containing current function call
     std::shared_ptr<ast::Statement> caller_statement;
 
-    /// symbol table for current statement block (or of parent block if doesn't have)
-    std::shared_ptr<symtab::SymbolTable> caller_symtab;
-
-    /// symbol tables in call hierarchy
-    std::stack<std::shared_ptr<symtab::SymbolTable>> symtab_stack;
+    /// symbol table for program node
+    std::shared_ptr<symtab::SymbolTable> program_symtab;
 
     /// statement blocks in call hierarchy
     std::stack<ast::StatementBlock*> statementblock_stack;
@@ -172,6 +169,8 @@ class InlineVisitor : public AstVisitor {
     virtual void visit_statement_block(ast::StatementBlock* node) override;
 
     virtual void visit_wrapped_expression(ast::WrappedExpression* node) override;
+
+    virtual void visit_program(Program* node) override;
 };
 
 /**
