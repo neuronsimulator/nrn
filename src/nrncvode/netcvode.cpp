@@ -465,11 +465,12 @@ static double nc_preloc(void* v) { // user must pop section stack after call
 		// there is no efficient search for the location of
 		// an arbitrary variable. Search only for v at 0 - 1.
 		// Otherwise return .5 .
-		if (v == &NODEV(s->parentnode)) { return 0.; }
-		if (v == &NODEV(s->pnode[s->nnode-1])) { return 1.; }
-		for (int i = s->nnode - 2; i >= 0; --i) {
+		if (v == &NODEV(s->parentnode)) {
+			return nrn_arc_position(s, s->parentnode);
+		}
+		for (int i = 0; i < s->nnode; ++i) {
 			if (v == &NODEV(s->pnode[i])) {
-				return (double(i)+0.5)/double(s->nnode - 1);
+				return nrn_arc_position(s, s->pnode[i]);
 			}
 		}
 		return -2.;	// not voltage
@@ -492,11 +493,12 @@ static Object** nc_preseg(void* v) { // user must pop section stack after call
 		// there is no efficient search for the location of
 		// an arbitrary variable. Search only for v at 0 -  1.
 		// Otherwise return NULL.
-		if (v == &NODEV(s->parentnode)) { x = 0.; }
-		if (v == &NODEV(s->pnode[s->nnode-1])) { x = 1.; }
-		for (int i = s->nnode - 2; i >= 0; --i) {
+		if (v == &NODEV(s->parentnode)) {
+			x =  nrn_arc_position(s, s->parentnode);
+		}
+		for (int i = 0; i < s->nnode; ++i) {
 			if (v == &NODEV(s->pnode[i])) {
-				x = (double(i)+0.5)/double(s->nnode - 1);
+				x = nrn_arc_position(s, s->pnode[i]);
 				continue;
 			}
 		}
