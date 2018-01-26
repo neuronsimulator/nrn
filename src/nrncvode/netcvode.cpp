@@ -463,11 +463,16 @@ static double nc_preloc(void* v) { // user must pop section stack after call
 		double* v = d->src_->thvar_;
 		nrn_parent_info(s); // make sure parentnode exists
 		// there is no efficient search for the location of
-		// an arbitrary variable. Search only for v at 0, 1.
+		// an arbitrary variable. Search only for v at 0 - 1.
 		// Otherwise return .5 .
 		if (v == &NODEV(s->parentnode)) { return 0.; }
 		if (v == &NODEV(s->pnode[s->nnode-1])) { return 1.; }
-		return .5;	// perhaps should search for v
+		for (int i = s->nnode - 2; i >= 0; --i) {
+			if (v == &NODEV(s->pnode[i])) {
+				return (double(i)+0.5)/double(s->nnode - 1);
+			}
+		}
+		return -2.;	// not voltage
 	}else{
 		return -1.;
 	}
@@ -477,7 +482,7 @@ static Object** nc_preseg(void* v) { // user must pop section stack after call
 	NetCon* d = (NetCon*)v;
 	Section* s = NULL;
 	Object* obj = NULL;
-	double x = 0.5;
+	double x = -1.;
 	if (d->src_) {
 		s = d->src_->ssrc_;
 	}
@@ -485,13 +490,21 @@ static Object** nc_preseg(void* v) { // user must pop section stack after call
 		double* v = d->src_->thvar_;
 		nrn_parent_info(s); // make sure parentnode exists
 		// there is no efficient search for the location of
-		// an arbitrary variable. Search only for v at 0, 1.
-		// Otherwise leave x at .5 .
+		// an arbitrary variable. Search only for v at 0 -  1.
+		// Otherwise return NULL.
 		if (v == &NODEV(s->parentnode)) { x = 0.; }
 		if (v == &NODEV(s->pnode[s->nnode-1])) { x = 1.; }
+		for (int i = s->nnode - 2; i >= 0; --i) {
+			if (v == &NODEV(s->pnode[i])) {
+				x = (double(i)+0.5)/double(s->nnode - 1);
+				continue;
+			}
+		}
 		// perhaps should search for v
-		obj = (*nrnpy_seg_from_sec_x)(s, x);
-		--obj->refcount;
+		if (x >= 0) {
+			obj = (*nrnpy_seg_from_sec_x)(s, x);
+			--obj->refcount;
+		}
 	}
 	return hoc_temp_objptr(obj);
 }
