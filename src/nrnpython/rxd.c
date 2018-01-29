@@ -17,6 +17,9 @@
 */
 
 int NUM_THREADS = 1;
+pthread_t* Threads = NULL;
+TaskQueue* AllTasks = NULL;
+
 fptr _setup, _initialize, _setup_matrices;
 
 
@@ -31,7 +34,6 @@ double* _rxd_b;
 double* _rxd_c;
 double* _rxd_d;
 int* _rxd_p;    
-
 static int _cvode_offset;
 
 /*intracellular reactions*/
@@ -132,7 +134,7 @@ void rxd_set_euler_matrix(int nrow, int nnonzero, long* nonzero_i,
 	memcpy(_conc_ptrs, conc_ptrs, sizeof(PyHocObject*)*conc_count);
 }
 
-static void mul(int nrow, int nnonzero, long* nonzero_i, long* nonzero_j, double* nonzero_values, double* v, double* result) {
+static void mul(int nrow, int nnonzero, long* nonzero_i, long* nonzero_j, const double* nonzero_values, const double* v, double* result) {
     long i, j, k;
 	double dt = *dt_ptr;
     bzero(result,sizeof(double)*nrow);
@@ -162,7 +164,7 @@ void set_initialize(const fptr initialize_fn) {
 	_initialize = initialize_fn;
 
 	/*Setup threaded reactions*/
-    ecs_refresh_reactions(NUM_THREADS);
+    set_num_threads_ecs(NUM_THREADS);
 }
 
 void set_setup_matrices(fptr setup_matrices) {
@@ -270,7 +272,6 @@ int rxd_nonvint_block(int method, int size, double* p1, double* p2, int thread_i
             break;
     }
 	/* printf("method=%d, size=%d, thread_id=%d\n", method, size, thread_id);	 */
-    
     return 0;
 }
 
@@ -512,11 +513,157 @@ void clear_rates()
     clear_rates_ecs();
 }
 
-void setup_solver(double* my_states, PyHocObject* my_dt_ptr, int my_num_states) {
+void setup_solver(double* my_states, PyHocObject* my_t_ptr, PyHocObject* my_dt_ptr, int my_num_states) {
     states = my_states;
     num_states = my_num_states;
+    t_ptr = my_t_ptr -> u.px_;
     dt_ptr = my_dt_ptr -> u.px_;
+    start_threads();
 }
+
+void start_threads()
+{
+    int i;
+    if(Threads == NULL)
+    {
+        AllTasks = (TaskQueue*)calloc(1,sizeof(TaskQueue));
+        Threads = (pthread_t*)malloc(sizeof(pthread_t)*(NUM_THREADS-1));
+        AllTasks->task_mutex = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t));
+        AllTasks->waiting_mutex = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t));
+        AllTasks->task_cond = (pthread_cond_t*)malloc(sizeof(pthread_cond_t));
+        AllTasks->waiting_cond = (pthread_cond_t*)malloc(sizeof(pthread_cond_t));
+        pthread_mutex_init(AllTasks->task_mutex, NULL);
+        pthread_cond_init(AllTasks->task_cond, NULL);
+        pthread_mutex_init(AllTasks->waiting_mutex, NULL);
+        pthread_cond_init(AllTasks->waiting_cond, NULL);
+        AllTasks->length = 0;
+        for(i = 0; i < NUM_THREADS-1; i++)
+            pthread_create(&Threads[i], NULL, TaskQueue_exe_tasks, AllTasks);
+    }
+
+}
+
+void TaskQueue_add_task(TaskQueue* q, void* (*task)(void*), void* args, void* result)
+{
+    TaskList *t, *list;
+    t = (TaskList*)malloc(sizeof(TaskList));
+    t->task = task;
+    t->args = args;
+    t->result = result;
+    t->next = NULL;
+    
+    //Add task to the queue
+    pthread_mutex_lock(q->task_mutex);
+    if(q->first == NULL)  //empty queue
+    {
+        q->first=t;
+        q->last=t;
+    }
+    else                    //non-empty
+    {
+        q->last->next = t;
+        q->last = t;
+    }
+    pthread_mutex_unlock(q->task_mutex);
+
+    pthread_mutex_lock(q->waiting_mutex);
+    q->length++;
+    pthread_mutex_unlock(q->waiting_mutex);
+    
+    //signal waiting threads
+    pthread_cond_signal(q->task_cond);
+ 
+}
+
+void* TaskQueue_exe_tasks(void* dat)
+{
+    TaskList* job;
+    TaskQueue* q = (TaskQueue*)dat;
+    /*int id;
+    for(id=0;id<NUM_THREADS;id++)
+    {
+        if (pthread_equal(Threads[id],pthread_self()))
+        {
+            break;
+        }
+    }
+    fprintf(stderr,"%i] ready\n",id);
+    */
+    while(1)    //loop until thread is killed
+    {
+        pthread_mutex_lock(q->task_mutex);
+        while(q->first == NULL) //no tasks
+        {
+            //Wait for new tasks
+            pthread_cond_wait(q->task_cond, q->task_mutex);
+        }
+        //fprintf(stderr,"%i] running\n",id); 
+        job = q->first;
+        q->first = job->next;
+        pthread_mutex_unlock(q->task_mutex); 
+    
+        //execute
+        job->result = job->task(job->args);
+
+        //fprintf(stderr,"%i] updating\n",id); 
+        pthread_mutex_lock(q->waiting_mutex);
+        if(--(q->length) == 0)  //all finished
+        {
+            pthread_mutex_unlock(q->waiting_mutex);
+            pthread_cond_signal(q->waiting_cond);
+        }
+        pthread_mutex_unlock(q->waiting_mutex);
+        //fprintf(stderr,"%i] done\n",id);
+    } 
+    
+    return NULL;
+}
+
+
+void set_num_threads(int n)
+{
+    int k, old_num = NUM_THREADS;
+	set_num_threads_ecs(n);
+    NUM_THREADS = n;
+    if(Threads == NULL)
+    {
+        return start_threads();
+    }
+    if(n == old_num)
+        return;
+    if(n<old_num)
+    {
+        //Kill some threads
+        for(k=old_num-1; k>=n; k--)
+        {
+            TaskQueue_sync(AllTasks);
+            pthread_cancel(&Threads[k]);
+        } 
+        Threads = realloc(Threads,sizeof(pthread_t) * n);
+    }
+    else
+    {
+        //Create some threads
+        Threads = realloc(Threads,sizeof(pthread_t) * n);
+        for (k = old_num+1; k < n-1; k++) 
+        {
+            pthread_create(&Threads[k], NULL, TaskQueue_exe_tasks, AllTasks);
+        }
+    }
+}
+void TaskQueue_sync(TaskQueue *q)
+{
+    //Wait till the queue is empty
+    pthread_mutex_lock(q->waiting_mutex);
+    if(q->length > 0)
+        pthread_cond_wait(q->waiting_cond,q->waiting_mutex);
+    pthread_mutex_unlock(q->waiting_mutex);
+}
+
+int get_num_threads(void) {
+    return NUM_THREADS;
+}
+
 
 
 void set_reaction_indices( int num_locations, int* regions, int* num_species, 
@@ -1012,7 +1159,7 @@ void solve_reaction(ICSReactions* react, double* states, double *ydot)
     }
 }
 
-void do_ics_reactions(const double t, const double* states, double* ydot)
+void do_ics_reactions(const double t, double* states, double* ydot)
 {
     ICSReactions* react;
     for(react = _reactions; react != NULL; react = react->next)

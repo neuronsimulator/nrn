@@ -16,16 +16,19 @@ and Flux_pair structs and their respective functions
 
 #define DIE(msg) exit(fprintf(stderr, "%s\n", msg))
 #define SAFE_FREE(ptr){if((ptr)!=NULL) free(ptr);}
-#define IDX(x,y,z)  ((z) + (y) * g.size_z + (x) * g.size_z * g.size_y)
+#define IDX(x,y,z)  ((z) + (y) * g->size_z + (x) * g->size_z * g->size_y)
 #define INDEX(x,y,z)  ((z) + (y) * grid->size_z + (x) * grid->size_z * grid->size_y)
-#define ALPHA(x,y,z) (g.get_alpha(g.alpha,IDX(x,y,z)))
-#define LAMBDA(x,y,z) (g.get_lambda(g.lambda,IDX(x,y,z)))
+#define ALPHA(x,y,z) (g->get_alpha(g->alpha,IDX(x,y,z)))
+#define LAMBDA(x,y,z) (g->get_lambda(g->lambda,IDX(x,y,z)))
 #define SQ(x)       ((x)*(x))
 #define CU(x)       ((x)*(x)*(x))
 #define TRUE 				1
 #define FALSE				0
 #define TORTUOSITY			2
 #define VOLUME_FRACTION 	3
+
+#define NEUMANN             0
+#define DIRICHLET           1
 
 #define MAX(a,b)	((a)>(b)?(a):(b))
 
@@ -77,7 +80,7 @@ typedef struct {
 } Current_Triple;
 
 typedef void (*ReactionRate)(double**, double**, double*, double**, double**);
-typedef void (*ECSReactionRate)(double*, double*, double*, double*, double*);
+typedef void (*ECSReactionRate)(double*, double*);
 typedef struct Reaction {
 	struct Reaction* next;
 	ECSReactionRate reaction;
@@ -86,6 +89,17 @@ typedef struct Reaction {
 	unsigned char* subregion;
 	unsigned int region_size;
 } Reaction;
+
+typedef struct {
+        double* copyFrom;
+        long copyTo;
+} AdiLineData;
+
+typedef struct {
+    /*TODO: Support for mixed boundaries and by edge (maybe even by voxel)*/
+    unsigned char type;
+    double value;
+} BoundaryConditions; 
 
 typedef struct Grid_node {
     double *states;         // Array of doubles representing Grid space
@@ -99,7 +113,7 @@ typedef struct Grid_node {
     double dx;              // ∆X
     double dy;              // ∆Y
     double dz;              // ∆Z
-    Flux *flux_list;        // List of pointer, index pairs
+    BoundaryConditions* bc;
     struct Grid_node *next;
     Concentration_Pair* concentration_list;
     Current_Triple* current_list;
@@ -123,8 +137,21 @@ typedef struct Grid_node {
 	 * the single value or the value at a given index*/ 
 	double (*get_alpha)(double*,int);
 	double (*get_lambda)(double*,int);
-    
+    struct AdiGridData* tasks;
+    AdiLineData* task_vals;
+    double* task_state;
 } Grid_node;
+
+typedef struct AdiGridData{
+    int start, stop;
+    AdiLineData* vals;
+    double* state;
+    Grid_node* g;
+    int sizej;
+    AdiLineData (*dg_adi_dir)(Grid_node*, double, int, int, double const *, double*);
+    double* scratchpad;
+} AdiGridData;
+
 
 static double get_alpha_scalar(double*, int);
 static double get_alpha_array(double*, int);
@@ -152,7 +179,7 @@ void make_dt_ptr(PyHocObject* my_dt_ptr);
 Grid_node *make_Grid(PyHocObject* my_states, int my_num_states_x, 
     int my_num_states_y, int my_num_states_z, double my_dc_x, double my_dc_y,
     double my_dc_z, double my_dx, double my_dy, double my_dz,
-	PyHocObject* my_alpha, PyHocObject* my_lambda);
+	PyHocObject* my_alpha, PyHocObject* my_lambda, int, double);
 
 
 // Free a single Grid_node "grid"
@@ -162,7 +189,7 @@ void free_Grid(Grid_node *grid);
 int insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x, 
     int my_num_states_y, int my_num_states_z, double my_dc_x, double my_dc_y,
     double my_dc_z, double my_dx, double my_dy, double my_dz, 
-	PyHocObject* my_alpha, PyHocObject* my_lambda);
+	PyHocObject* my_alpha, PyHocObject* my_lambda, int, double);
 
 // Set the diffusion coefficients for a given grid_id 
 int set_diffusion(int grid_list_index, int grid_id, double dc_x, double dc_y, double dc_z);

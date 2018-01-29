@@ -26,15 +26,9 @@ set_initialize.argtypes = [fptr_prototype]
 #setup_solver.argtypes = [ctypes.py_object, ctypes.py_object, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double]
 
 insert = dll.insert
-insert.argtypes = [ctypes.c_int, ctypes.py_object, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.py_object, ctypes.py_object]
+insert.argtypes = [ctypes.c_int, ctypes.py_object, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.py_object, ctypes.py_object, ctypes.c_int, ctypes.c_double]
 
 insert.restype = ctypes.c_int
-
-#states = None
-_set_num_threads = dll.set_num_threads 
-_set_num_threads.argtypes = [ctypes.c_int]
-_get_num_threads = dll.get_num_threads
-_get_num_threads.restype = ctypes.c_int
 
 _set_grid_concentrations = dll.set_grid_concentrations
 _set_grid_concentrations.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.py_object, ctypes.py_object]
@@ -205,9 +199,9 @@ class SpeciesOnExtracellular(_SpeciesMathable):
 
     def node_by_location(self,x,y,z):
         e = self._extracellular()._region
-        i = int((x - e._xlo) / e._dx)
-        j = int((y - e._ylo) / e._dx)
-        k = int((z - e._zlo) / e._dx)
+        i = int((x - e._xlo) / e._dx[0])
+        j = int((y - e._ylo) / e._dx[1])
+        k = int((z - e._zlo) / e._dx[2])
         return self.node_by_ijk(i,j,k) 
     
     def node_by_ijk(self,i,j,k):
@@ -363,17 +357,19 @@ def _xyz(seg):
 
 
 class _ExtracellularSpecies(_SpeciesMathable):
-    def __init__(self, region, d=0, name=None, charge=0, initial=0):
+    def __init__(self, region, d=0, name=None, charge=0, initial=0, boundary_conditions=None):
         """
             region = Extracellular object (TODO? or list of objects)
             name = string of the name of the NEURON species (e.g. ca)
             d = diffusion constant
             charge = charge of the molecule (used for converting currents to concentration changes)
             initial = initial concentration
-            alpha = volume fraction - either a single value for the whole region or a Vector giving a value for each voxel
-            tortuosity = increase in path length due to obstacles, effective diffusion coefficient d/tortuosity^2. - either a single value for the whole region or a Vector giving a value for each voxel.
+            alpha = volume fraction - either a single value for the whole region, a Vector giving a value for each voxel  or a anonymous function with argument of rxd.ExtracellularNode
+            tortuosity = increase in path length due to obstacles, effective diffusion coefficient d/tortuosity^2. - either a single value for the whole region or a Vector giving a value for each voxel, or a anonymous function with argument of rxd.ExtracellularNode
+            boundary_conditions = None by default corresponding to Neumann (zero flux) boundaries or a concentration for Dirichlet boundaries  
             NOTE: For now, only define this AFTER the morphology is instantiated. In the future, this requirement can be relaxed.
             TODO: remove this limitation
+            
 
         """
         warnings.warn('Note that changing the morphology after initialization in models with Extracellular regions is not yet supported (This is printed everytime regardless of whether there is an attempt to change morphology)')
@@ -395,6 +391,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
         self._states = h.Vector(self._nx * self._ny * self._nz)
         self.states = self._states.as_numpy().reshape(self._nx, self._ny, self._nz)
         self._initial = initial
+        self._boundary_conditions = boundary_conditions
 
         if(numpy.isscalar(region.alpha)):
             self.alpha = self._alpha = region.alpha
@@ -408,9 +405,20 @@ class _ExtracellularSpecies(_SpeciesMathable):
             self.tortuosity = region.tortuosity
             self._tortuosity = region._tortuosity._ref_x[0]
 
-
+        if boundary_conditions is None:
+            bc_type = 0
+            bc_value = 0.0
+        else:
+            bc_type = 1
+            bc_value = boundary_conditions
+        
         # TODO: if allowing different diffusion rates in different directions, verify that they go to the right ones
-        self._grid_id = insert(0, self._states._ref_x[0], self._nx, self._ny, self._nz, self._d, self._d, self._d, self._dx, self._dx, self._dx, self._alpha, self._tortuosity)
+        if not hasattr(self._d,'__len__'):
+            self._grid_id = insert(0, self._states._ref_x[0], self._nx, self._ny, self._nz, self._d, self._d, self._d, self._dx[0], self._dx[1], self._dx[2], self._alpha, self._tortuosity, bc_type, bc_value)
+        elif len(self._d) == 3:
+             self._grid_id = insert(0, self._states._ref_x[0], self._nx, self._ny, self._nz, self._d[0], self._d[1], self._d[2], self._dx[0], self._dx[1], self._dx[2], self._alpha, self._tortuosity, bc_type, bc_value)
+        else:
+            raise RxDException("Diffusion coefficient %s for %s is invalid. A single value D or a tuple of 3 values (Dx,Dy,Dz) is required for the diffusion coefficient." % (repr(d), name))  
 
         self._name = name
 
@@ -459,9 +467,9 @@ class _ExtracellularSpecies(_SpeciesMathable):
         if x < self._xlo or x > self._xhi or y < self._ylo or y > self._yhi or z < self._zlo or z > self._zhi:
             return None
         # if we make it here, then we are inside the domain
-        i = int((x - self._xlo) / self._dx)
-        j = int((y - self._ylo) / self._dx)
-        k = int((z - self._zlo) / self._dx)
+        i = int((x - self._xlo) / self._dx[0])
+        j = int((y - self._ylo) / self._dx[1])
+        k = int((z - self._zlo) / self._dx[2])
         return self._nodes_by_location(i, j, k)
 
     def ijk_from_index(self, index):
@@ -476,7 +484,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
 
     def xyz_from_index(self, index):
         i, j, k = ijk_from_index(self, index)
-        return self._xlo + i * self._dx, self._ylo + j * self._dx, self._zlo + k * self._dx
+        return self._xlo + i * self._dx[0], self._ylo + j * self._dx[1], self._zlo + k * self._dx[2]
 
     def _locate_segments(self):
         """Note: there may be Nones in the result if a section extends outside the extracellular domain
@@ -506,7 +514,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
         _set_grid_concentrations(grid_list, self._grid_id, grid_indices, neuron_pointers)
 
         tenthousand_over_charge_faraday = 10000. / (self._charge * h.FARADAY)
-        scale_factor = tenthousand_over_charge_faraday / (self._dx ** 3)
+        scale_factor = tenthousand_over_charge_faraday / (numpy.prod(self._dx))
         ispecies = '_ref_i' + self._species
         neuron_pointers = []
         scale_factors = []
@@ -531,7 +539,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
 #       that two regions (e.g. apical and other_dendrites) are connected?
 
 class Species(_SpeciesMathable):
-    def __init__(self, regions=None, d=0, name=None, charge=0, initial=None, atolscale=1):
+    def __init__(self, regions=None, d=0, name=None, charge=0, initial=None, atolscale=1, ecs_boundary_conditions=None):
         """s = rxd.Species(regions, d = 0, name = None, charge = 0, initial = None, atolscale=1)
     
         Declare a species.
@@ -550,7 +558,7 @@ class Species(_SpeciesMathable):
 
         atolscale -- scale factor for absolute tolerance in variable step integrations
 
-
+        ecs_boundary_conditions  -- if Extracellular rxd is used ecs_boundary_conditions=None for zero flux boundaries or if ecs_boundary_conditions=the concentration at the boundary.
         Note:
 
         charge must match the charges specified in NMODL files for the same ion, if any.
@@ -577,6 +585,7 @@ class Species(_SpeciesMathable):
         self.charge = charge
         self.initial = initial
         self._atolscale = atolscale
+        self._ecs_boundary_conditions = ecs_boundary_conditions
         _all_species.append(weakref.ref(self))
         # declare an update to the structure of the model (the number of differential equations has changed)
         neuron.nrn_dll_sym('structure_change_cnt', ctypes.c_int).value += 1
@@ -707,7 +716,7 @@ class Species(_SpeciesMathable):
 
     def _do_init4(self):
         self._extracellular_nodes = []
-        self._extracellular_instances = [_ExtracellularSpecies(r, d=self._d, name=self.name, charge=self.charge, initial=self.initial) for r in self._extracellular_regions]
+        self._extracellular_instances = [_ExtracellularSpecies(r, d=self._d, name=self.name, charge=self.charge, initial=self.initial, boundary_conditions=self._ecs_boundary_conditions) for r in self._extracellular_regions]
         sp_ref = weakref.ref(self)
         for r in self._extracellular_regions:
             for i in xrange(r._nx):

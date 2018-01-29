@@ -61,7 +61,14 @@ set_initialize = dll.set_initialize
 set_initialize.argtypes = [fptr_prototype]
 
 setup_solver = dll.setup_solver
-setup_solver.argtypes = [ndpointer(ctypes.c_double), ctypes.py_object, ctypes.c_int]
+setup_solver.argtypes = [ndpointer(ctypes.c_double), ctypes.py_object, ctypes.py_object, ctypes.c_int]
+
+#states = None
+_set_num_threads = dll.set_num_threads 
+_set_num_threads.argtypes = [ctypes.c_int]
+_get_num_threads = dll.get_num_threads
+_get_num_threads.restype = ctypes.c_int
+
 
 clear_rates = dll.clear_rates
 register_rate = dll.register_rate
@@ -698,7 +705,7 @@ def _c_compile(formula):
     reaction = dll.reaction
     reaction.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double)] 
     reaction.restype = ctypes.c_double
-    os.remove(filename + '.c')
+    #os.remove(filename + '.c')
     if sys.platform.lower().startswith("win"):
         #cannot remove dll that are in use
         _windows_dll.append(weakref.ref(reaction))
@@ -1128,27 +1135,34 @@ def _compile_reactions():
     c_region_list = []
     for sets in matched_regions:
         c_region_list.append(_c_region(sets))
-
+    
     for rptr in _all_reactions:
         r = rptr()
         if not r:
             continue
+        
+        #Find all the species involved
         if isinstance(r,rate.Rate):
             sptrs = set(r._involved_species + [r._species])
         else:
             sptrs  = set(r._involved_species + r._dests + r._sources)
         
+        #Find all the regions involved
         if isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
             react_regions = [s()._extracellular()._region for s in r._sources + r._dests if isinstance(s(),species.SpeciesOnExtracellular)] + [s()._region() for s in r._sources + r._dests if not isinstance(s(),species.SpeciesOnExtracellular)]
             react_regions +=  [sptr()._region() for sptr in sptrs if isinstance(sptr(),species.SpeciesOnRegion)]
+        #if regions are specified - use those
         elif None not in r._regions:
             react_regions = r._regions
+        #Otherwise use all the regions where the species are
         else:
             react_regions = set()
             for sp in sptrs:
                 s = sp()
                 if isinstance(s,species.SpeciesOnRegion):
                     react_regions.add(s._region())
+                elif isinstance(s,species.SpeciesOnExtracellular):
+                    react_regions.add(s._extracellular()._region)
                 elif None not in s._regions:
                     [react_regions.add(reg) for reg in s._regions + s._extracellular_regions]
         #any intracellular regions
@@ -1172,31 +1186,34 @@ def _compile_reactions():
                     species_by_region[reg] = set(species_involved)
                     for sec in reg._secs:
                         location_count += sec.nseg
-        #any extracellular regions
-        if isinstance(r, multiCompartmentReaction.MultiCompartmentReaction) and any([isinstance(x, region.Extracellular) for x in react_regions]):
-            for sp in sptrs:
-                s = sp()
-                if isinstance(s,species._ExtracellularSpecies):
-                    ecs_mc_species_involved.add(s)
-                elif isinstance(s,species.SpeciesOnExtracellular):
-                    ecs_mc_species_involved.add(s._extracellular())
-            for reg in react_regions:
-                if reg in ecs_species_by_region.keys():
-                    ecs_species_by_region[reg] = ecs_species_by_region[reg].union(ecs_mc_species_involved)
-                else:
-                    ecs_species_by_region[reg] = set(ecs_mc_species_involved)
-
-        elif any([isinstance(x, region.Extracellular) for x in react_regions]):
-            ecs_species_involved = []
-            for sp in sptrs:
-                s = sp()
-                ecs_all_species_involed.add(s)
-                ecs_species_involved.append(s)
+        #Any extracellular regions
+        if any([isinstance(x, region.Extracellular) for x in react_regions]):
+            #MultiCompartment - so can have both extracellular and intracellular regions
+            if isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
+                for sp in sptrs:
+                    s = sp()
+                    if isinstance(s,species._ExtracellularSpecies):
+                        ecs_mc_species_involved.add(s)
+                    elif isinstance(s,species.SpeciesOnExtracellular):
+                        ecs_mc_species_involved.add(s._extracellular())
+                for reg in react_regions:
+                    if reg in ecs_species_by_region.keys():
+                        ecs_species_by_region[reg] = ecs_species_by_region[reg].union(ecs_mc_species_involved)
+                    else:
+                        ecs_species_by_region[reg] = set(ecs_mc_species_involved)
+            #Otherwise - reaction can only have extracellular regions
+            else:
+                ecs_species_involved = []
+                for sp in sptrs:
+                    s = sp()
+                    ecs_all_species_involed.add(s)
+                    ecs_species_involved.append(s)
+                if any([isinstance(x, region.Region) for x in react_regions]):
+                    raise RxDException("Error: an %s cannot have both Extracellular and Intracellular regions. Use a MultiCompartmentReaction or specify the desired region with the 'region=' keyword argument", rptr().__class__)
 
             for reg in react_regions:
                 if not isinstance(reg, region.Extracellular):
                     continue
-
                 if reg in ecs_regions_inv.keys():
                     ecs_regions_inv[reg].append(rptr)
                 else:
@@ -1210,7 +1227,6 @@ def _compile_reactions():
     nseg_by_region = []     # a list of the number of segments for each region
     # a table for location,species -> state index
     location_index = []
-    
     for reg in regions_inv.keys():
         rptr = weakref.ref(reg)
         for c_region in region._c_region_lookup[rptr]:
@@ -1223,121 +1239,157 @@ def _compile_reactions():
     # now setup the reactions
     #if there are no reactions
     if location_count == 0 and len(ecs_regions_inv) == 0:
-        setup_solver(_node_get_states(), h._ref_dt, location_count)
+        setup_solver(_node_get_states(), h._ref_t, h._ref_dt, location_count)
         return None
 
-    from . import rate, multiCompartmentReaction
-    for creg in c_region_list:
-        creg._initalize()
-        mc_mult_count = 0
-        mc_mult_list = []
-        species_ids_used = numpy.zeros((creg.num_species,creg.num_regions),bool)
-        ecs_species_ids_used = numpy.zeros((creg.num_ecs_species,creg.num_regions),bool)
-        fxn_string = '#include <math.h>\n'
-        fxn_string += '#include <rxdmath.h>\n'
-        fxn_string += 'void reaction(double** species, double** rhs, double* mult, double** species_ecs, double** rhs_ecs)\n{'
-        # declare the "rate" variable if any reactions (non-rates)
-        for rprt in creg._react_regions.keys():
-            if not isinstance(rprt(),rate.Rate):
-                fxn_string += '\n\tdouble rate;'
-                break
-        for rptr in  creg._react_regions.keys():
-            r = rptr()
-            if isinstance(r,rate.Rate):
-                s = r._species()
-                species_id = creg._species_ids.get(s._id)
-                if isinstance(s,species.SpeciesOnRegion):
-                    region_ids = [creg._region_ids.get(s._region()._id)]
-                else:
-                    region_ids = creg._react_regions[rptr]
-                for region_id in region_ids:
-                    rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate)
-                    rate_str = re.sub(r'species\[(\d+)\]\[\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), region_id), rate_str)
-                    operator = '+=' if species_ids_used[species_id][region_id] else '='
-                    fxn_string += "\n\trhs[%d][%d] %s %s;" % (species_id, region_id, operator, rate_str)
-                    species_ids_used[species_id][region_id] = True
-            elif isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
-                #Lookup the region_id for the reaction
-                for sptr in r._sources + r._dests:
-                    if isinstance(sptr(),species.SpeciesOnExtracellular):
-                        continue
-                    region_id = creg._region_ids.get(sptr()._region()._id)
-                rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate)
-                rate_str = re.sub(r'species\[(\d+)\]\[\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), region_id), rate_str)
-                rate_str = re.sub(r'species_ecs\[(\d+)\]',lambda m: "species_ecs[%i][%i]" %  (int(m.groups()[0]), region_id), rate_str)
-
-                fxn_string += "\n\trate = %s;" % rate_str
-
-                for sptr in r._sources + r._dests:
-                    s = sptr()
-                    if isinstance(s,species.SpeciesOnExtracellular):
-                        species_id = s._extracellular()._grid_id
-                        operator = '+=' if ecs_species_ids_used[species_id][region_id] else '='
-                        fxn_string += "\n\trhs_ecs[%d][%d] %s mult[%d] * rate;" % (species_id, region_id, operator, mc_mult_count)
-                        ecs_species_ids_used[species_id][region_id] = True
-                    else:
-                        species_id = creg._species_ids.get(s._id)
-                        region_id = creg._region_ids.get(sptr()._region()._id)
-                        operator = '+=' if species_ids_used[species_id][region_id] else '='
-                        fxn_string += "\n\trhs[%d][%d] %s mult[%d] * rate;" % (species_id, region_id, operator, mc_mult_count)
-                        species_ids_used[species_id][region_id] = True
-                    #TODO: Fix problem if the whole region isn't part of the same aggregate c_region
-                    mc_mult_count += 1
-                mc_mult_list.extend(r._mult.flatten())
-            else:
-                for region_id in creg._react_regions[rptr]:
-                    rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate)
-                    rate_str = re.sub(r'species\[(\d+)\]\[\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), region_id), rate_str)
-                    fxn_string += "\n\trate = %s;" % rate_str
-                    summed_mults = collections.defaultdict(lambda: 0)
-                    for (mult, sp) in zip(r._mult, r._sources + r._dests):
-                        summed_mults[creg._species_ids.get(sp()._id)] += mult
-                    for idx in sorted(summed_mults.keys()):
-                        operator = '+=' if species_ids_used[idx][region_id] else '='
-                        species_ids_used[idx][region_id] = True
-                        fxn_string += "\n\trhs[%d][%d] %s (%g) * rate;" % (idx, region_id, operator, summed_mults[idx])
-          
-        fxn_string += "\n}\n"
-        """print "num_species=%i\t num_regions=%i\t num_segments=%i\n" % (creg.num_species, creg.num_regions, creg.num_segments) 
-        print "state_index %s \t num_ecs_species=%i\t ecs_species_ids %s\n" % (creg.get_state_index().shape, creg.num_ecs_species, creg.get_ecs_species_ids().shape)
-        print "ecs_index %s\t mc_mult_count=%i \t mc_mult_list %s\n" % (creg.get_ecs_index().shape, mc_mult_count, numpy.array(mc_mult_list, dtype=ctypes.c_double).shape)
-        print mc_mult_list
-        print fxn_string"""
-        register_rate(creg.num_species, creg.num_regions, creg.num_segments, creg.get_state_index(),
-                      creg.num_ecs_species, creg.get_ecs_species_ids(), creg.get_ecs_index(),
-                      mc_mult_count, numpy.array(mc_mult_list, dtype=ctypes.c_double), 
-                      _c_compile(fxn_string))
-    setup_solver(_node_get_states(), h._ref_dt, location_count)
-    #Setup extracellular reactions
-    """for reg in ecs_regions_inv.keys():
-        grid_ids = []
-        for s in ecs_species_by_region[reg]:
-            if isinstance(s,species.Species): s = s[reg]._extracellular()
-            elif isinstance(s,species.SpeciesOnExtracellular): s = s._extracellular()
-        for s in ecs_species_by_region[reg]:
+    #Setup intracellular and multicompartment reactions
+    if location_count > 0:
+        from . import rate, multiCompartmentReaction
+        for creg in c_region_list:
+            creg._initalize()
+            mc_mult_count = 0
+            mc_mult_list = []
+            species_ids_used = numpy.zeros((creg.num_species,creg.num_regions),bool)
+            ecs_species_ids_used = numpy.zeros((creg.num_ecs_species,creg.num_regions),bool)
             fxn_string = '#include <math.h>\n'
             fxn_string += '#include <rxdmath.h>\n'
-            #TODO: find the nrn include path in python
-            #TODO: install rxdmath.h into the include path
-            #It is necessary for a couple of function in python that are not in math.h
-            fxn_string += 'void reaction(double* species_ecs, double* rhs)\n{'
-            for rptr in ecs_regions_inv[reg]:
+            fxn_string += 'void reaction(double** species, double** rhs, double* mult, double** species_ecs, double** rhs_ecs)\n{'
+            # declare the "rate" variable if any reactions (non-rates)
+            for rprt in creg._react_regions.keys():
+                if not isinstance(rprt(),rate.Rate):
+                    fxn_string += '\n\tdouble rate;'
+                    break
+            for rptr in  creg._react_regions.keys():
                 r = rptr()
                 if isinstance(r,rate.Rate):
                     s = r._species()
-                    if isinstance(s,species.Species): s = s[reg]._extracellular()
-                    fxn_string += "\n\trhs[%d] = %s;" % (s._grid_id, r._ecs_rate)
+                    species_id = creg._species_ids.get(s._id)
+                    if isinstance(s,species.SpeciesOnRegion):
+                        region_ids = [creg._region_ids.get(s._region()._id)]
+                    else:
+                        region_ids = creg._react_regions[rptr]
+                    for region_id in region_ids:
+                        rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate)
+                        rate_str = re.sub(r'species\[(\d+)\]\[\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), region_id), rate_str)
+                        operator = '+=' if species_ids_used[species_id][region_id] else '='
+                        fxn_string += "\n\trhs[%d][%d] %s %s;" % (species_id, region_id, operator, rate_str)
+                        species_ids_used[species_id][region_id] = True
+                elif isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
+                    #Lookup the region_id for the reaction
+                    for sptr in r._sources + r._dests:
+                        if isinstance(sptr(),species.SpeciesOnExtracellular):
+                            continue
+                        region_id = creg._region_ids.get(sptr()._region()._id)
+                    rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate)
+                    rate_str = re.sub(r'species\[(\d+)\]\[\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), region_id), rate_str)
+                    rate_str = re.sub(r'species_ecs\[(\d+)\]',lambda m: "species_ecs[%i][%i]" %  (int(m.groups()[0]), region_id), rate_str)
+    
+                    fxn_string += "\n\trate = %s;" % rate_str
+    
+                    for sptr in r._sources + r._dests:
+                        s = sptr()
+                        if isinstance(s,species.SpeciesOnExtracellular):
+                            species_id = s._extracellular()._grid_id
+                            operator = '+=' if ecs_species_ids_used[species_id][region_id] else '='
+                            fxn_string += "\n\trhs_ecs[%d][%d] %s mult[%d] * rate;" % (species_id, region_id, operator, mc_mult_count)
+                            ecs_species_ids_used[species_id][region_id] = True
+                        else:
+                            species_id = creg._species_ids.get(s._id)
+                            region_id = creg._region_ids.get(sptr()._region()._id)
+                            operator = '+=' if species_ids_used[species_id][region_id] else '='
+                            fxn_string += "\n\trhs[%d][%d] %s mult[%d] * rate;" % (species_id, region_id, operator, mc_mult_count)
+                            species_ids_used[species_id][region_id] = True
+                        #TODO: Fix problem if the whole region isn't part of the same aggregate c_region
+                        mc_mult_count += 1
+                    mc_mult_list.extend(r._mult.flatten())
                 else:
-                    idx = 0
-                   #TODO: Check the order of r._mult is reliable
+                    for region_id in creg._react_regions[rptr]:
+                        rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate)
+                        rate_str = re.sub(r'species\[(\d+)\]\[\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), region_id), rate_str)
+                        fxn_string += "\n\trate = %s;" % rate_str
+                        summed_mults = collections.defaultdict(lambda: 0)
+                        for (mult, sp) in zip(r._mult, r._sources + r._dests):
+                            summed_mults[creg._species_ids.get(sp()._id)] += mult
+                        for idx in sorted(summed_mults.keys()):
+                            operator = '+=' if species_ids_used[idx][region_id] else '='
+                            species_ids_used[idx][region_id] = True
+                            fxn_string += "\n\trhs[%d][%d] %s (%g) * rate;" % (idx, region_id, operator, summed_mults[idx])
+              
+            fxn_string += "\n}\n"
+            """print "num_species=%i\t num_regions=%i\t num_segments=%i\n" % (creg.num_species, creg.num_regions, creg.num_segments) 
+            print "state_index %s \t num_ecs_species=%i\t ecs_species_ids %s\n" % (creg.get_state_index().shape, creg.num_ecs_species, creg.get_ecs_species_ids().shape)
+            print "ecs_index %s\t mc_mult_count=%i \t mc_mult_list %s\n" % (creg.get_ecs_index().shape, mc_mult_count, numpy.array(mc_mult_list, dtype=ctypes.c_double).shape)
+            print mc_mult_list
+            print fxn_string"""
+            register_rate(creg.num_species, creg.num_regions, creg.num_segments, creg.get_state_index(),
+                          creg.num_ecs_species, creg.get_ecs_species_ids(), creg.get_ecs_index(),
+                          mc_mult_count, numpy.array(mc_mult_list, dtype=ctypes.c_double), 
+                          _c_compile(fxn_string))
+        setup_solver(_node_get_states(), h._ref_t, h._ref_dt, location_count)
+
+    
+    #Setup extracellular reactions
+    if len(ecs_regions_inv) > 0:
+        grid_ids = []
+        all_gids = set() 
+        fxn_string = '#include <math.h>\n'
+        fxn_string += '#include <rxdmath.h>\n'
+        #TODO: find the nrn include path in python
+        #TODO: install rxdmath.h into the include path
+        #It is necessary for a couple of function in python that are not in math.h
+        fxn_string += 'void reaction(double* species_ecs, double* rhs)\n{'
+        # declare the "rate" variable if any reactions (non-rates)
+        for rptr in [r for rlist in ecs_regions_inv.values() for r in rlist]:
+            if not isinstance(rptr(),rate.Rate):
+                fxn_string += '\n\tdouble rate;'
+                break
+        #get a list of all grid_ids invovled
+        for rptr in [r for rlist in ecs_regions_inv.values() for r in rlist]:
+            if isinstance(rptr(),rate.Rate):
+                s = rptr()._species()
+                all_gids.add(s[reg]._extracellular()._grid_id if isinstance(s, species.Species) else s._extracellular()._grid_id)
+            else:
+                for sp in rptr()._sources + rptr()._dests:
+                    s = sp()
+                    all_gids.add(s[reg]._extracellular()._grid_id if isinstance(s, species.Species) else s._extracellular()._grid_id)
+        all_gids = list(all_gids)
+        for reg in ecs_regions_inv.keys():
+            for rptr in ecs_regions_inv[reg]:
+                r = rptr()
+                rate_str = re.sub(r'species_ecs\[(\d+)\]',lambda m: "species_ecs[%i]" %  [pid for pid,gid in enumerate(all_gids) if gid == int(m.groups()[0])][0], r._rate)
+                if isinstance(r,rate.Rate):
+                    s = r._species()
+                    #Get underlying rxd._ExtracellularSpecies for the grid_id
+                    if isinstance(s, species.Species):
+                        s = s[reg]._extracellular()
+                    elif isinstance(s, species.SpeciesOnExtracellular):
+                        s = s._extracellular()
+                    if s._grid_id in grid_ids:
+                        operator = '+=' 
+                    else:
+                        operator = '='
+                        grid_ids.append(s._grid_id)
+                    fxn_string += "\n\trhs[%d] %s %s;" % (s._grid_id, operator, rate_str)
+                else:
+                    idx=0
+                    fxn_string += "\n\trate = %s;" %  rate_str
                     for sp in r._sources + r._dests:
                         s = sp()
-                        fxn_string += "\n\trhs[%d] = (%s)*(%s);" % (s._grid_id, r._mult[idx], r._rate)
-                        idx+=1
-                fxn_string += "\n}\n"
-            print fxn_string
-            ecs_register_reaction(0, len(grid_ids), _list_to_cint_array(grid_ids), _c_compile(fxn_string))
-"""
+                        #Get underlying rxd._ExtracellularSpecies for the grid_id
+                        if isinstance(s, species.Species):
+                            s = s[reg]._extracellular()
+                        elif isinstance(s, species.SpeciesOnExtracellular):
+                            s = s._extracellular()
+                        if s._grid_id in grid_ids:
+                            operator = '+=' 
+                        else:
+                            operator = '='
+                            grid_ids.append(s._grid_id)
+                        fxn_string += "\n\trhs[%d] %s (%s)*rate;" % ([pid for pid,gid in enumerate(all_gids) if gid == s._grid_id][0], operator, r._mult[idx])
+                        idx += 1
+        fxn_string += "\n}\n"
+        ecs_register_reaction(0, len(grid_ids), _list_to_cint_array(grid_ids), _c_compile(fxn_string))
+
 def _init():
     if len(species._all_species) == 0:
         return None
@@ -1403,4 +1455,7 @@ def _windows_remove_dlls():
     _windows_dll = []
         
         
-
+def nthread(n=None):
+    if(n):
+        _set_num_threads(n)
+    return _get_num_threads()

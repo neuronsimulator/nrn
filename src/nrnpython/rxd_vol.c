@@ -10,20 +10,21 @@
 #endif
 
 /*Tortuous diffusion coefficients*/
-#define DcX(x,y,z) (g.dc_x/LAMBDA(x,y,z))
-#define DcY(x,y,z) (g.dc_y/LAMBDA(x,y,z))
-#define DcZ(x,y,z) (g.dc_z/LAMBDA(x,y,z))
+#define DcX(x,y,z) (g->dc_x/LAMBDA(x,y,z))
+#define DcY(x,y,z) (g->dc_y/LAMBDA(x,y,z))
+#define DcZ(x,y,z) (g->dc_z/LAMBDA(x,y,z))
 
 /*Flux in the x,y,z directions*/
-#define Fxx(x1,x2) (ALPHA(x1,y,z)*ALPHA(x2,y,z)*g.dc_x*(g.states[IDX(x1,y,z)] - g.states[IDX(x2,y,z)])/((ALPHA(x1,y,z)+ALPHA(x2,y,z))*LAMBDA(x1,y,z)))
-#define Fxy(y1,y1d,y2) (ALPHA(x,y1,z)*ALPHA(x,y2,z)*g.dc_y*(g.states[IDX(x,y1,z)] - g.states[IDX(x,y2,z)])/((ALPHA(x,y1,z)+ALPHA(x,y2,z))*LAMBDA(x,y1d,z)))
-#define Fxz(z1,z1d,z2) (ALPHA(x,y,z1)*ALPHA(x,y,z2)*g.dc_z*(g.states[IDX(x,y,z1)] - g.states[IDX(x,y,z2)])/((ALPHA(x,y,z1)+ALPHA(x,y,z2))*LAMBDA(x,y,z1d)))
-#define Fyy(y1,y2) (ALPHA(x,y1,z)*ALPHA(x,y2,z)*g.dc_y*(g.states[IDX(x,y1,z)] - g.states[IDX(x,y2,z)])/((ALPHA(x,y1,z)+ALPHA(x,y2,z))*LAMBDA(x,y1,z)))
-#define Fzz(z1,z2) (ALPHA(x,y,z1)*ALPHA(x,y,z2)*g.dc_z*(g.states[IDX(x,y,z1)] - g.states[IDX(x,y,z2)])/((ALPHA(x,y,z1)+ALPHA(x,y,z2))*LAMBDA(x,y,z1)))
+#define Fxx(x1,x2) (ALPHA(x1,y,z)*ALPHA(x2,y,z)*g->dc_x*(g->states[IDX(x1,y,z)] - g->states[IDX(x2,y,z)])/((ALPHA(x1,y,z)+ALPHA(x2,y,z))*LAMBDA(x1,y,z)))
+#define Fxy(y1,y1d,y2) (ALPHA(x,y1,z)*ALPHA(x,y2,z)*g->dc_y*(g->states[IDX(x,y1,z)] - g->states[IDX(x,y2,z)])/((ALPHA(x,y1,z)+ALPHA(x,y2,z))*LAMBDA(x,y1d,z)))
+#define Fxz(z1,z1d,z2) (ALPHA(x,y,z1)*ALPHA(x,y,z2)*g->dc_z*(g->states[IDX(x,y,z1)] - g->states[IDX(x,y,z2)])/((ALPHA(x,y,z1)+ALPHA(x,y,z2))*LAMBDA(x,y,z1d)))
+#define Fyy(y1,y2) (ALPHA(x,y1,z)*ALPHA(x,y2,z)*g->dc_y*(g->states[IDX(x,y1,z)] - g->states[IDX(x,y2,z)])/((ALPHA(x,y1,z)+ALPHA(x,y2,z))*LAMBDA(x,y1,z)))
+#define Fzz(z1,z2) (ALPHA(x,y,z1)*ALPHA(x,y,z2)*g->dc_z*(g->states[IDX(x,y,z1)] - g->states[IDX(x,y,z2)])/((ALPHA(x,y,z1)+ALPHA(x,y,z2))*LAMBDA(x,y,z1)))
 
-#define FLUXX(a,b,pa,pb) (ALPHA(a,j,k)*ALPHA(b,j,k)*g.dc_x*(pa - pb)/(0.5*(ALPHA(a,j,k)+ALPHA(b,j,k))))
-#define FLUXY(a,b,pa,pb) (ALPHA(i,a,k)*ALPHA(i,b,k)*g.dc_y*(pa - pb)/(0.5*(ALPHA(i,a,k)+ALPHA(i,b,k))))
-#define FLUXZ(a,b,pa,pb) (ALPHA(i,j,a)*ALPHA(i,j,b)*g.dc_z*(pa - pb)/(0.5*(ALPHA(i,j,a)+ALPHA(i,j,b))))
+#define FLUXX(a,b,pa,pb) (ALPHA(a,j,k)*ALPHA(b,j,k)*g->dc_x*(pa - pb)/(0.5*(ALPHA(a,j,k)+ALPHA(b,j,k))))
+#define FLUXY(a,b,pa,pb) (ALPHA(i,a,k)*ALPHA(i,b,k)*g->dc_y*(pa - pb)/(0.5*(ALPHA(i,a,k)+ALPHA(i,b,k))))
+#define FLUXZ(a,b,pa,pb) (ALPHA(i,j,a)*ALPHA(i,j,b)*g->dc_z*(pa - pb)/(0.5*(ALPHA(i,j,a)+ALPHA(i,j,b))))
+
 
 extern int NUM_THREADS;
 /* solve Ax=b where A is a diagonally dominant tridiagonal matrix
@@ -71,71 +72,71 @@ static int solve_dd_tridiag(int N, const double* l_diag, const double* diag,
  * like dg_adi_x except the grid has a variable volume fraction
  * g.alpha and my have variable tortuosity g.lambda
  */
-static AdiLineData dg_adi_vol_x(Grid_node g, const double dt, const int y, const int z, double const * const state, double* const scratch)
+static AdiLineData dg_adi_vol_x(Grid_node* g, const double dt, const int y, const int z, double const * const state, double* const scratch)
 {
 int yp,ypd,ym,ymd,zp,zpd,zm,zmd,div_y,div_z;
 	int x;
-	double *RHS = malloc(g.size_x*sizeof(double));
-	double *diag = malloc(g.size_x*sizeof(double));
-	double *l_diag = malloc((g.size_x-1)*sizeof(double));
-	double *u_diag = malloc((g.size_x-1)*sizeof(double));
+	double *RHS = malloc(g->size_x*sizeof(double));
+	double *diag = malloc(g->size_x*sizeof(double));
+	double *l_diag = malloc((g->size_x-1)*sizeof(double));
+	double *u_diag = malloc((g->size_x-1)*sizeof(double));
 	double prev, next;
 
 	AdiLineData result;
     result.copyFrom = RHS;
     result.copyTo = IDX(0, y, z);
 
-	for(x=1;x<g.size_x-1;x++)
+	for(x=1;x<g->size_x-1;x++)
 	{
 		prev = ALPHA(x-1,y,z)*DcX(x,y,z)/(ALPHA(x-1,y,z) + ALPHA(x,y,z));
 		next = ALPHA(x+1,y,z)*DcX(x+1,y,z)/(ALPHA(x+1,y,z) + ALPHA(x,y,z));
 
-		l_diag[x-1] = -dt*prev/SQ(g.dx);
-		diag[x] = 1. + dt*(prev + next)/SQ(g.dx);
-		u_diag[x] = -dt*next/SQ(g.dx);
+		l_diag[x-1] = -dt*prev/SQ(g->dx);
+		diag[x] = 1. + dt*(prev + next)/SQ(g->dx);
+		u_diag[x] = -dt*next/SQ(g->dx);
 	}
 
 	/*zero flux boundary condition*/
 	next = ALPHA(1,y,z)*DcX(1,y,z)/(ALPHA(1,y,z) + ALPHA(0,y,z));
-	diag[0] = 1. + dt*next/SQ(g.dx);
-	u_diag[0] = -dt*next/SQ(g.dx);
+	diag[0] = 1. + dt*next/SQ(g->dx);
+	u_diag[0] = -dt*next/SQ(g->dx);
 
-	prev = ALPHA(g.size_x-2,y,z)*DcX(g.size_x-1,y,z)/
-			(ALPHA(g.size_x-1,y,z) + ALPHA(g.size_x-2,y,z));
-	diag[g.size_x-1] = 1. + dt*prev/SQ(g.dx);
-	l_diag[g.size_x-2] = -dt*prev/SQ(g.dx);
+	prev = ALPHA(g->size_x-2,y,z)*DcX(g->size_x-1,y,z)/
+			(ALPHA(g->size_x-1,y,z) + ALPHA(g->size_x-2,y,z));
+	diag[g->size_x-1] = 1. + dt*prev/SQ(g->dx);
+	l_diag[g->size_x-2] = -dt*prev/SQ(g->dx);
 
-	yp = (y==g.size_y-1)?y-1:y+1;
-	ypd = (y==g.size_y-1)?y:y+1;
+	yp = (y==g->size_y-1)?y-1:y+1;
+	ypd = (y==g->size_y-1)?y:y+1;
 	ym = (y==0)?y+1:y-1;
 	ymd = (y==0)?1:y;
-	zp = (z==g.size_z-1)?z-1:z+1;
-	zpd = (z==g.size_z-1)?z:z+1;
+	zp = (z==g->size_z-1)?z-1:z+1;
+	zpd = (z==g->size_z-1)?z:z+1;
 	zm = (z==0)?z+1:z-1;
 	zmd = (z==0)?1:z;
 
-	div_y = 0.5*SQ(g.dy)*((y==0||y==g.size_y-1)?2.:1.);
-	div_z = 0.5*SQ(g.dz)*((z==0||z==g.size_z-1)?2.:1.);
+	div_y = 0.5*SQ(g->dy)*((y==0||y==g->size_y-1)?2.:1.);
+	div_z = 0.5*SQ(g->dz)*((z==0||z==g->size_z-1)?2.:1.);
 
 	x=0;
-	RHS[0] = g.states[IDX(x,y,z)] + (dt/ALPHA(x,y,z))*
-					((Fxx(x+1,x)/SQ(g.dx)) 
+	RHS[0] = g->states[IDX(x,y,z)] + (dt/ALPHA(x,y,z))*
+					((Fxx(x+1,x)/SQ(g->dx)) 
 				+    (Fxy(yp,ypd,y) - Fxy(y,ymd,ym))/div_y 
 				+ 	 (Fxz(zp,zpd,z) - Fxz(z,zmd,zm))/div_z);
 	
-	for(x=1;x<g.size_x-1;x++)
+	for(x=1;x<g->size_x-1;x++)
 	{
-		RHS[x] =  g.states[IDX(x,y,z)] + (dt/ALPHA(x,y,z))*
-				((Fxx(x+1,x) - Fxx(x,x-1))/SQ(g.dx) 
+		RHS[x] =  g->states[IDX(x,y,z)] + (dt/ALPHA(x,y,z))*
+				((Fxx(x+1,x) - Fxx(x,x-1))/SQ(g->dx) 
 			+    (Fxy(yp,ypd,y) - Fxy(y,ymd,ym))/div_y 
 			+ 	 (Fxz(zp,zpd,z) - Fxz(z,zmd,zm))/div_z);
 	}
-	RHS[x]  = g.states[IDX(x,y,z)] + (dt/ALPHA(x,y,z))*
-				((-Fxx(x,x-1))/SQ(g.dx) 
+	RHS[x]  = g->states[IDX(x,y,z)] + (dt/ALPHA(x,y,z))*
+				((-Fxx(x,x-1))/SQ(g->dx) 
 			+    (Fxy(yp,ypd,y) - Fxy(y,ymd,ym))/div_y 
 			+ 	 (Fxz(zp,zpd,z) - Fxz(z,zmd,zm))/div_z);
 	
-	solve_dd_tridiag(g.size_x, l_diag, diag, u_diag, RHS, scratch);
+	solve_dd_tridiag(g->size_x, l_diag, diag, u_diag, RHS, scratch);
 	
 	free(diag);
 	free(l_diag);
@@ -150,54 +151,54 @@ int yp,ypd,ym,ymd,zp,zpd,zm,zmd,div_y,div_z;
  * y    -   the index for the y plane
  * z    -   the index for the z plane
  * state    -   where the output of this step is stored
- * scratch  - scratchpad array of doubles, length g.size_y 
+ * scratch  - scratchpad array of doubles, length g->size_y 
  * like dg_adi_y except the grid has a variable volume fraction
- * g.alpha and my have variable tortuosity g.lambda
+ * g->alpha and my have variable tortuosity g->lambda
  */
-static AdiLineData dg_adi_vol_y(Grid_node g, double const dt, int const x, int const z, double const * const state, double* const scratch)
+static AdiLineData dg_adi_vol_y(Grid_node* g, double const dt, int const x, int const z, double const * const state, double* const scratch)
 {
 	int y;
-	double *RHS = malloc(g.size_y*sizeof(double));
-	double *diag = malloc(g.size_y*sizeof(double));
-	double *l_diag = malloc((g.size_y-1)*sizeof(double));
-	double *u_diag = malloc((g.size_y-1)*sizeof(double));
+	double *RHS = malloc(g->size_y*sizeof(double));
+	double *diag = malloc(g->size_y*sizeof(double));
+	double *l_diag = malloc((g->size_y-1)*sizeof(double));
+	double *u_diag = malloc((g->size_y-1)*sizeof(double));
 	double prev, next;
 
     AdiLineData result;
     result.copyFrom = RHS;
     result.copyTo = IDX(x, 0, z);
 
-	for(y=1;y<g.size_y-1;y++)
+	for(y=1;y<g->size_y-1;y++)
 	{
 		prev = ALPHA(x,y-1,z)*DcY(x,y,z)/(ALPHA(x,y-1,z) + ALPHA(x,y,z));
 		next = ALPHA(x,y+1,z)*DcY(x,y+1,z)/(ALPHA(x,y+1,z) + ALPHA(x,y,z));
 
-		l_diag[y-1] = -dt*prev/SQ(g.dy);
-		diag[y] = 1. + dt*(prev + next)/SQ(g.dy);
-		u_diag[y] = -dt*next/SQ(g.dy);
+		l_diag[y-1] = -dt*prev/SQ(g->dy);
+		diag[y] = 1. + dt*(prev + next)/SQ(g->dy);
+		u_diag[y] = -dt*next/SQ(g->dy);
 	}
 
 
 	/*zero flux boundary condition*/
 	next = ALPHA(x,1,z)*DcY(x,1,z)/(ALPHA(x,1,z) + ALPHA(x,0,z));
-	diag[0] = 1. + dt*next/SQ(g.dy);
-	u_diag[0] = -dt*next/SQ(g.dy);
+	diag[0] = 1. + dt*next/SQ(g->dy);
+	u_diag[0] = -dt*next/SQ(g->dy);
 
-	prev = ALPHA(x,g.size_y-2,z)*DcY(x,g.size_y-1,z)/
-			(ALPHA(x,g.size_y-1,z) + ALPHA(x,g.size_y-2,z));
+	prev = ALPHA(x,g->size_y-2,z)*DcY(x,g->size_y-1,z)/
+			(ALPHA(x,g->size_y-1,z) + ALPHA(x,g->size_y-2,z));
 
-	diag[g.size_y-1] = 1. + dt*prev/SQ(g.dy);
-	l_diag[g.size_y-2] = -dt*prev/SQ(g.dy);
+	diag[g->size_y-1] = 1. + dt*prev/SQ(g->dy);
+	l_diag[g->size_y-2] = -dt*prev/SQ(g->dy);
 
 
-	RHS[0] =  state[IDX(x,0,z)] - dt*Fyy(1,0)/(SQ(g.dy)*ALPHA(x,0,z));
-	for(y=1;y<g.size_y-1;y++)
+	RHS[0] =  state[IDX(x,0,z)] - dt*Fyy(1,0)/(SQ(g->dy)*ALPHA(x,0,z));
+	for(y=1;y<g->size_y-1;y++)
 	{
-		RHS[y] =  state[IDX(x,y,z)] - (dt/ALPHA(x,y,z))*(Fyy(y+1,y) - Fyy(y,y-1))/SQ(g.dy);
+		RHS[y] =  state[IDX(x,y,z)] - (dt/ALPHA(x,y,z))*(Fyy(y+1,y) - Fyy(y,y-1))/SQ(g->dy);
 	}
-	RHS[y] =  state[IDX(x,y,z)] + (dt/ALPHA(x,y,z))*Fyy(y,y-1)/SQ(g.dy);
+	RHS[y] =  state[IDX(x,y,z)] + (dt/ALPHA(x,y,z))*Fyy(y,y-1)/SQ(g->dy);
 
-	solve_dd_tridiag(g.size_y, l_diag, diag, u_diag, RHS, scratch);
+	solve_dd_tridiag(g->size_y, l_diag, diag, u_diag, RHS, scratch);
 
 	free(diag);
 	free(l_diag);
@@ -212,17 +213,17 @@ static AdiLineData dg_adi_vol_y(Grid_node g, double const dt, int const x, int c
  * y    -   the index for the y plane
  * z    -   the index for the z plane
  * state    -   where the output of this step is stored
- * scratch  - scratchpad array of doubles, length g.size_y
+ * scratch  - scratchpad array of doubles, length g->size_y
  * like dg_adi_z except the grid has a variable volume fraction
- * g.alpha and my have variable tortuosity g.lambda
+ * g->alpha and my have variable tortuosity g->lambda
  */
-static AdiLineData dg_adi_vol_z(Grid_node g, double const dt, int const x, int const y, double const * const state, double* const scratch)
+static AdiLineData dg_adi_vol_z(Grid_node* g, double const dt, int const x, int const y, double const * const state, double* const scratch)
 {
 	int z;
-	double *RHS = malloc(g.size_z*sizeof(double));
-	double *diag = malloc(g.size_z*sizeof(double));
-	double *l_diag = malloc((g.size_z-1)*sizeof(double));
-	double *u_diag = malloc((g.size_z-1)*sizeof(double));
+	double *RHS = malloc(g->size_z*sizeof(double));
+	double *diag = malloc(g->size_z*sizeof(double));
+	double *l_diag = malloc((g->size_z-1)*sizeof(double));
+	double *u_diag = malloc((g->size_z-1)*sizeof(double));
 	double prev, next;
 
 	AdiLineData result;
@@ -230,37 +231,37 @@ static AdiLineData dg_adi_vol_z(Grid_node g, double const dt, int const x, int c
     result.copyTo = IDX(x, y, 0);
 
 
-	for(z=1;z<g.size_z-1;z++)
+	for(z=1;z<g->size_z-1;z++)
 	{
 		prev = ALPHA(x,y,z-1)*DcZ(x,y,z)/(ALPHA(x,y,z-1) + ALPHA(x,y,z));
 		next = ALPHA(x,y,z+1)*DcZ(x,y,z+1)/(ALPHA(x,y,z+1) + ALPHA(x,y,z));
 
-		l_diag[z-1] = -dt*prev/SQ(g.dz);
-		diag[z] = 1. + dt*(prev + next)/SQ(g.dz);
-		u_diag[z] = -dt*next/SQ(g.dz);
+		l_diag[z-1] = -dt*prev/SQ(g->dz);
+		diag[z] = 1. + dt*(prev + next)/SQ(g->dz);
+		u_diag[z] = -dt*next/SQ(g->dz);
 	}
 
 	/*zero flux boundary condition*/
 	next = ALPHA(x,y,1)*DcZ(x,y,1)/(ALPHA(x,y,1) + ALPHA(x,y,0));
-	diag[0] = 1. + dt*next/SQ(g.dz);
-	u_diag[0] = -dt*next/SQ(g.dz);
+	diag[0] = 1. + dt*next/SQ(g->dz);
+	u_diag[0] = -dt*next/SQ(g->dz);
 
-	prev = ALPHA(x,y,g.size_z-2)*DcZ(x,y,g.size_z-1)/
-			(ALPHA(x,y,g.size_z-1) + ALPHA(x,y,g.size_z-2));
+	prev = ALPHA(x,y,g->size_z-2)*DcZ(x,y,g->size_z-1)/
+			(ALPHA(x,y,g->size_z-1) + ALPHA(x,y,g->size_z-2));
 
-	diag[g.size_z-1] = 1. + dt*prev/SQ(g.dz);
-	l_diag[g.size_z-2] = -dt*prev/SQ(g.dz);
+	diag[g->size_z-1] = 1. + dt*prev/SQ(g->dz);
+	l_diag[g->size_z-2] = -dt*prev/SQ(g->dz);
 
 
 	
-	RHS[0] = state[IDX(x,y,0)] - dt*Fzz(1,0)/(SQ(g.dz)*ALPHA(x,y,0));
-	for(z=1;z<g.size_z-1;z++)
+	RHS[0] = state[IDX(x,y,0)] - dt*Fzz(1,0)/(SQ(g->dz)*ALPHA(x,y,0));
+	for(z=1;z<g->size_z-1;z++)
 	{
-		RHS[z] =  state[IDX(x,y,z)] - (dt/ALPHA(x,y,z))*(Fzz(z+1,z) - Fzz(z,z-1))/SQ(g.dz);
+		RHS[z] =  state[IDX(x,y,z)] - (dt/ALPHA(x,y,z))*(Fzz(z+1,z) - Fzz(z,z-1))/SQ(g->dz);
 	}
-	RHS[z] =  state[IDX(x,y,z)] + (dt/ALPHA(x,y,z))*Fzz(z,z-1)/SQ(g.dz);
+	RHS[z] =  state[IDX(x,y,z)] + (dt/ALPHA(x,y,z))*Fzz(z,z-1)/SQ(g->dz);
 
-	solve_dd_tridiag(g.size_z, l_diag, diag, u_diag, RHS, scratch);
+	solve_dd_tridiag(g->size_z, l_diag, diag, u_diag, RHS, scratch);
 
 	free(diag);
 	free(l_diag);
@@ -274,46 +275,28 @@ static AdiLineData dg_adi_vol_z(Grid_node g, double const dt, int const x, int c
  * like dg_adi execpt the Grid_node g has variable volume fraction g.alpha and may have
  * variable tortuosity g.lambda
  */
-int dg_adi_vol(Grid_node g)
+int dg_adi_vol(Grid_node* g)
 {
-	double* state = malloc(sizeof(double) * g.size_x * g.size_y * g.size_z);
-    AdiLineData* vals = malloc(sizeof(AdiLineData) * g.size_y * g.size_z);
-    pthread_t* thread = malloc(sizeof(pthread_t) * NUM_THREADS);
-    AdiGridData* tasks = malloc(sizeof(AdiGridData) * NUM_THREADS);
-
-    /* first step: advance the x direction */
-    run_threaded_dg_adi(tasks, thread, g.size_y, g.size_z, g, state, vals, dg_adi_vol_x, g.size_x);
+    run_threaded_dg_adi(g->size_y, g->size_z, g, dg_adi_vol_x, g->size_x);
 
     /* transfer data */
-    dg_transfer_data(vals, state, g.size_x, g.size_y * g.size_z, g.size_y * g.size_z);
-
-    /* Adjust memory */
-    free(vals);
-    vals = malloc(sizeof(AdiLineData) * g.size_x * g.size_z);
+    dg_transfer_data(g->task_vals, g->task_state, g->size_x, g->size_y * g->size_z, g->size_y * g->size_z);
 
     /* second step: advance the y direction */
-    run_threaded_dg_adi(tasks, thread, g.size_x, g.size_z, g, state, vals, dg_adi_vol_y, g.size_y);
+    run_threaded_dg_adi(g->size_x, g->size_z, g, dg_adi_vol_y, g->size_y);
 
     /* transfer data */
-    dg_transfer_data(vals, state, g.size_y, g.size_x * g.size_z, g.size_z);
-
-    /* Adjust memory */
-    free(vals);
-    vals = malloc(sizeof(AdiLineData) * g.size_x * g.size_y);
+    dg_transfer_data(g->task_vals, g->task_state, g->size_y, g->size_x * g->size_z, g->size_z);
 
     /* third step: advance the z direction */
-    run_threaded_dg_adi(tasks, thread, g.size_x, g.size_y, g, state, vals, dg_adi_vol_z, g.size_z);
+    run_threaded_dg_adi(g->size_x, g->size_y, g, dg_adi_vol_z, g->size_z);
 
-    /* transfer data directly into Grid_node values (g.states) */
-    dg_transfer_data(vals, g.states, g.size_z, g.size_x * g.size_y, 1);
-
-    free(state);
-    free(vals);
-    free(thread);
-    free(tasks);
-
+    /* transfer data directly into Grid_node values (g->states) */
+    dg_transfer_data(g->task_vals, g->states, g->size_z, g->size_x * g->size_y, 1);
+    
     return 0;
 }
+
 
 /* dg_adi_tort_x performs the first of 3 steps in DG-ADI
  * g    -   the parameters and state of the grid
@@ -325,65 +308,65 @@ int dg_adi_vol(Grid_node g)
  * like dg_adi_x except the grid has a variable tortuosity
  * g.lambda (but it still has fixed volume fraction)
  */
-static AdiLineData dg_adi_tort_x(Grid_node g, const double dt, const int y, const int z, double const * const state, double* const scratch)
+static AdiLineData dg_adi_tort_x(Grid_node* g, const double dt, const int y, const int z, double const * const state, double* const scratch)
 {
 	int yp,ypd,ym,ymd,zp,zpd,zm,zmd,div_y,div_z;
 	int x;
-	double *RHS = malloc(g.size_x*sizeof(double));
-	double *diag = malloc(g.size_x*sizeof(double));
-	double *l_diag = malloc((g.size_x-1)*sizeof(double));
-	double *u_diag = malloc((g.size_x-1)*sizeof(double));
+	double *RHS = malloc(g->size_x*sizeof(double));
+	double *diag = malloc(g->size_x*sizeof(double));
+	double *l_diag = malloc((g->size_x-1)*sizeof(double));
+	double *u_diag = malloc((g->size_x-1)*sizeof(double));
 
 	AdiLineData result;
     result.copyFrom = RHS;
     result.copyTo = IDX(0, y, z);
 
 
-	for(x=1;x<g.size_x-1;x++)
+	for(x=1;x<g->size_x-1;x++)
 	{
-		l_diag[x-1] = -dt*DcX(x,y,z)/(2.*SQ(g.dx));
-		diag[x] = 1. + dt*(DcX(x,y,z) + DcX(x+1,y,z))/(2.*SQ(g.dx));
-		u_diag[x] = -dt*DcX(x+1,y,z)/(2.*SQ(g.dx));
+		l_diag[x-1] = -dt*DcX(x,y,z)/(2.*SQ(g->dx));
+		diag[x] = 1. + dt*(DcX(x,y,z) + DcX(x+1,y,z))/(2.*SQ(g->dx));
+		u_diag[x] = -dt*DcX(x+1,y,z)/(2.*SQ(g->dx));
 	}
 
 	/*zero flux boundary condition*/
-	yp = (y==g.size_y-1)?y-1:y+1;
-	ypd = (y==g.size_y-1)?y:y+1;
+	yp = (y==g->size_y-1)?y-1:y+1;
+	ypd = (y==g->size_y-1)?y:y+1;
 	ym = (y==0)?y+1:y-1;
 	ymd = (y==0)?1:y;
-	zp = (z==g.size_z-1)?z-1:z+1;
-	zpd = (z==g.size_z-1)?z:z+1;
+	zp = (z==g->size_z-1)?z-1:z+1;
+	zpd = (z==g->size_z-1)?z:z+1;
 	zm = (z==0)?z+1:z-1;
 	zmd = (z==0)?1:z;
 
-	div_y = (y==0||y==g.size_y-1)?2.:1.;
-	div_z = (z==0||z==g.size_z-1)?2.:1.;
+	div_y = (y==0||y==g->size_y-1)?2.:1.;
+	div_z = (z==0||z==g->size_z-1)?2.:1.;
 
-	diag[0] = 1. + 0.5*dt*DcX(1,y,z)/SQ(g.dx);
-	u_diag[0] = -0.5*dt*DcX(1,y,z)/SQ(g.dx);
-	diag[g.size_x-1] = 1. + 0.5*dt*DcX(g.size_x-1,y,z)/SQ(g.dx);
-	l_diag[g.size_x-2] = -0.5*dt*DcX(g.size_x-1,y,z)/SQ(g.dx);
+	diag[0] = 1. + 0.5*dt*DcX(1,y,z)/SQ(g->dx);
+	u_diag[0] = -0.5*dt*DcX(1,y,z)/SQ(g->dx);
+	diag[g->size_x-1] = 1. + 0.5*dt*DcX(g->size_x-1,y,z)/SQ(g->dx);
+	l_diag[g->size_x-2] = -0.5*dt*DcX(g->size_x-1,y,z)/SQ(g->dx);
 
 
 
-	RHS[0] =  g.states[IDX(0,y,z)]
-			+ dt*((DcX(1,y,z)*g.states[IDX(1,y,z)] - DcX(1,y,z)*g.states[IDX(0,y,z)])/(2.*SQ(g.dx))
-			+	  (DcY(0,ypd,z)*g.states[IDX(0,yp,z)] - (DcY(0,ypd,z)+DcY(0,ymd,z))*g.states[IDX(0,y,z)] + DcY(0,ymd,z)*g.states[IDX(0,ym,z)])/(div_y*SQ(g.dy))
-			+	  (DcZ(0,y,zpd)*g.states[IDX(0,y,zp)] - (DcZ(0,y,zpd)+DcZ(0,y,zmd))*g.states[IDX(0,y,z)] + DcZ(0,y,zmd)*g.states[IDX(0,y,zm)])/(div_z*SQ(g.dz)));
+	RHS[0] =  g->states[IDX(0,y,z)]
+			+ dt*((DcX(1,y,z)*g->states[IDX(1,y,z)] - DcX(1,y,z)*g->states[IDX(0,y,z)])/(2.*SQ(g->dx))
+			+	  (DcY(0,ypd,z)*g->states[IDX(0,yp,z)] - (DcY(0,ypd,z)+DcY(0,ymd,z))*g->states[IDX(0,y,z)] + DcY(0,ymd,z)*g->states[IDX(0,ym,z)])/(div_y*SQ(g->dy))
+			+	  (DcZ(0,y,zpd)*g->states[IDX(0,y,zp)] - (DcZ(0,y,zpd)+DcZ(0,y,zmd))*g->states[IDX(0,y,z)] + DcZ(0,y,zmd)*g->states[IDX(0,y,zm)])/(div_z*SQ(g->dz)));
 
-	for(x=1;x<g.size_x-1;x++)
+	for(x=1;x<g->size_x-1;x++)
 	{
-		RHS[x] =  g.states[IDX(x,y,z)]
-			+ dt*((DcX(x+1,y,z)*g.states[IDX(x+1,y,z)] - (DcX(x+1,y,z)+DcX(x,y,z))*g.states[IDX(x,y,z)] + DcX(x,y,z)*g.states[IDX(x-1,y,z)])/(2.*SQ(g.dx))
-			+	  (DcY(x,ypd,z)*g.states[IDX(x,yp,z)] - (DcY(x,ypd,z)+DcY(x,ymd,z))*g.states[IDX(x,y,z)] + DcY(x,ymd,z)*g.states[IDX(x,ym,z)])/(div_y*SQ(g.dy))
-			+	  (DcZ(x,y,zpd)*g.states[IDX(x,y,zp)] - (DcZ(x,y,zpd)+DcZ(x,y,zmd))*g.states[IDX(x,y,z)] + DcZ(x,y,zmd)*g.states[IDX(x,y,zm)])/(div_z*SQ(g.dz)));
+		RHS[x] =  g->states[IDX(x,y,z)]
+			+ dt*((DcX(x+1,y,z)*g->states[IDX(x+1,y,z)] - (DcX(x+1,y,z)+DcX(x,y,z))*g->states[IDX(x,y,z)] + DcX(x,y,z)*g->states[IDX(x-1,y,z)])/(2.*SQ(g->dx))
+			+	  (DcY(x,ypd,z)*g->states[IDX(x,yp,z)] - (DcY(x,ypd,z)+DcY(x,ymd,z))*g->states[IDX(x,y,z)] + DcY(x,ymd,z)*g->states[IDX(x,ym,z)])/(div_y*SQ(g->dy))
+			+	  (DcZ(x,y,zpd)*g->states[IDX(x,y,zp)] - (DcZ(x,y,zpd)+DcZ(x,y,zmd))*g->states[IDX(x,y,z)] + DcZ(x,y,zmd)*g->states[IDX(x,y,zm)])/(div_z*SQ(g->dz)));
 	}
-RHS[x] =  g.states[IDX(x,y,z)]
-				+ dt*((DcX(x,y,z)*g.states[IDX(x-1,y,z)] - DcX(x,y,z)*g.states[IDX(x,y,z)])/(2.*SQ(g.dx))
-				+	  (DcY(x,ypd,z)*g.states[IDX(x,yp,z)] - (DcY(x,ypd,z)+DcY(x,ymd,z))*g.states[IDX(x,y,z)] + DcY(x,ymd,z)*g.states[IDX(x,ym,z)])/(div_y*SQ(g.dy))
-				+	  (DcZ(x,y,zpd)*g.states[IDX(x,y,zp)] - (DcZ(x,y,zpd)+DcZ(x,y,zmd))*g.states[IDX(x,y,z)] + DcZ(x,y,zmd)*g.states[IDX(x,y,zm)])/(div_z*SQ(g.dz)));
+RHS[x] =  g->states[IDX(x,y,z)]
+				+ dt*((DcX(x,y,z)*g->states[IDX(x-1,y,z)] - DcX(x,y,z)*g->states[IDX(x,y,z)])/(2.*SQ(g->dx))
+				+	  (DcY(x,ypd,z)*g->states[IDX(x,yp,z)] - (DcY(x,ypd,z)+DcY(x,ymd,z))*g->states[IDX(x,y,z)] + DcY(x,ymd,z)*g->states[IDX(x,ym,z)])/(div_y*SQ(g->dy))
+				+	  (DcZ(x,y,zpd)*g->states[IDX(x,y,zp)] - (DcZ(x,y,zpd)+DcZ(x,y,zmd))*g->states[IDX(x,y,z)] + DcZ(x,y,zmd)*g->states[IDX(x,y,zm)])/(div_z*SQ(g->dz)));
 	
-	solve_dd_tridiag(g.size_x, l_diag, diag, u_diag, RHS, scratch);
+	solve_dd_tridiag(g->size_x, l_diag, diag, u_diag, RHS, scratch);
 	
 	free(diag);
 	free(l_diag);
@@ -398,50 +381,50 @@ RHS[x] =  g.states[IDX(x,y,z)]
  * y    -   the index for the y plane
  * z    -   the index for the z plane
  * state    -   where the output of this step is stored
- * scratch  - scratchpad array of doubles, length g.size_y - 1
+ * scratch  - scratchpad array of doubles, length g->size_y - 1
  * like dg_adi_y except the grid has a variable tortuosity
- * g.lambda (but it still has fixed volume fraction)
+ * g->lambda (but it still has fixed volume fraction)
  */
-static AdiLineData dg_adi_tort_y(Grid_node g, double const dt, int const x, int const z, double const * const state, double* const scratch)
+static AdiLineData dg_adi_tort_y(Grid_node* g, double const dt, int const x, int const z, double const * const state, double* const scratch)
 {
 	int y;
-	double *RHS = malloc(g.size_y*sizeof(double));
-	double *diag = malloc(g.size_y*sizeof(double));
-	double *l_diag = malloc((g.size_y-1)*sizeof(double));
-	double *u_diag = malloc((g.size_y-1)*sizeof(double));
+	double *RHS = malloc(g->size_y*sizeof(double));
+	double *diag = malloc(g->size_y*sizeof(double));
+	double *l_diag = malloc((g->size_y-1)*sizeof(double));
+	double *u_diag = malloc((g->size_y-1)*sizeof(double));
 
     AdiLineData result;
     result.copyFrom = RHS;
     result.copyTo = IDX(x, 0, z);
 
-	for(y=1;y<g.size_y-1;y++)
+	for(y=1;y<g->size_y-1;y++)
 	{
-		l_diag[y-1] = -dt*DcY(x,y,z)/(2.*SQ(g.dy));
-		diag[y] = 1. + dt*(DcY(x,y,z)+DcY(x,y+1,z))/(2.*SQ(g.dy));
-		u_diag[y] = -dt*DcY(x,y+1,z)/(2.*SQ(g.dy));
+		l_diag[y-1] = -dt*DcY(x,y,z)/(2.*SQ(g->dy));
+		diag[y] = 1. + dt*(DcY(x,y,z)+DcY(x,y+1,z))/(2.*SQ(g->dy));
+		u_diag[y] = -dt*DcY(x,y+1,z)/(2.*SQ(g->dy));
 	}
 
 
 	/*zero flux boundary condition*/
-	diag[0] = 1. + 0.5*dt*DcY(x,1,z)/SQ(g.dy);
-	u_diag[0] = -0.5*dt*DcY(x,1,z)/SQ(g.dy);
-	diag[g.size_y-1] = 1. + 0.5*dt*DcY(x,g.size_y-1,z)/SQ(g.dy);
-	l_diag[g.size_y-2] = -0.5*dt*DcY(x,g.size_y-1,z)/SQ(g.dy);
+	diag[0] = 1. + 0.5*dt*DcY(x,1,z)/SQ(g->dy);
+	u_diag[0] = -0.5*dt*DcY(x,1,z)/SQ(g->dy);
+	diag[g->size_y-1] = 1. + 0.5*dt*DcY(x,g->size_y-1,z)/SQ(g->dy);
+	l_diag[g->size_y-2] = -0.5*dt*DcY(x,g->size_y-1,z)/SQ(g->dy);
 
 
 
-	RHS[0] =  state[IDX(x,0,z)] - dt*((DcY(x,1,z)*g.states[IDX(x,1,z)] - DcY(x,1,z)*g.states[IDX(x,0,z)])/(2.*SQ(g.dy)));
-	for(y=1;y<g.size_y-1;y++)
+	RHS[0] =  state[IDX(x,0,z)] - dt*((DcY(x,1,z)*g->states[IDX(x,1,z)] - DcY(x,1,z)*g->states[IDX(x,0,z)])/(2.*SQ(g->dy)));
+	for(y=1;y<g->size_y-1;y++)
 	{
 		RHS[y] =  state[IDX(x,y,z)]
-			-	  dt*(DcY(x,y+1,z)*g.states[IDX(x,y+1,z)] - (DcY(x,y+1,z)+DcY(x,y,z))*g.states[IDX(x,y,z)] + DcY(x,y,z)*g.states[IDX(x,y-1,z)])/(2.*SQ(g.dy));
+			-	  dt*(DcY(x,y+1,z)*g->states[IDX(x,y+1,z)] - (DcY(x,y+1,z)+DcY(x,y,z))*g->states[IDX(x,y,z)] + DcY(x,y,z)*g->states[IDX(x,y-1,z)])/(2.*SQ(g->dy));
 
 	}
 	RHS[y] =  state[IDX(x,y,z)]
-		-	  dt*(DcY(x,y,z)*g.states[IDX(x,y-1,z)] - DcY(x,y,z)*g.states[IDX(x,y,z)])/(2.*SQ(g.dy));
+		-	  dt*(DcY(x,y,z)*g->states[IDX(x,y-1,z)] - DcY(x,y,z)*g->states[IDX(x,y,z)])/(2.*SQ(g->dy));
 
 	
-	solve_dd_tridiag(g.size_y, l_diag, diag, u_diag, RHS, scratch);
+	solve_dd_tridiag(g->size_y, l_diag, diag, u_diag, RHS, scratch);
 
 	free(diag);
 	free(l_diag);
@@ -456,48 +439,48 @@ static AdiLineData dg_adi_tort_y(Grid_node g, double const dt, int const x, int 
  * y    -   the index for the y plane
  * z    -   the index for the z plane
  * state    -   where the output of this step is stored
- * scratch  - scratchpad array of doubles, length g.size_z - 1
+ * scratch  - scratchpad array of doubles, length g->size_z - 1
  * like dg_adi_z except the grid has a variable tortuosity
- * g.lambda (but it still has fixed volume fraction)
+ * g->lambda (but it still has fixed volume fraction)
  */
-static AdiLineData dg_adi_tort_z(Grid_node g, double const dt, int const x, int const y, double const * const state, double* const scratch)
+static AdiLineData dg_adi_tort_z(Grid_node* g, double const dt, int const x, int const y, double const * const state, double* const scratch)
 {
 	int z;
-	double *RHS = malloc(g.size_z*sizeof(double));
-	double *diag = malloc(g.size_z*sizeof(double));
-	double *l_diag = malloc((g.size_z-1)*sizeof(double));
-	double *u_diag = malloc((g.size_z-1)*sizeof(double));
+	double *RHS = malloc(g->size_z*sizeof(double));
+	double *diag = malloc(g->size_z*sizeof(double));
+	double *l_diag = malloc((g->size_z-1)*sizeof(double));
+	double *u_diag = malloc((g->size_z-1)*sizeof(double));
 
 	AdiLineData result;
     result.copyFrom = RHS;
     result.copyTo = IDX(x, y, 0);
 
 
-	for(z=1;z<g.size_z-1;z++)
+	for(z=1;z<g->size_z-1;z++)
 	{
-		l_diag[z-1] = -dt*DcZ(x,y,z)/(2.*SQ(g.dz));
-		diag[z] = 1. + dt*(DcZ(x,y,z)+DcZ(x,y,z+1))/(2.*SQ(g.dz));
-		u_diag[z] = -dt*DcZ(x,y,z+1)/(2.*SQ(g.dz));
+		l_diag[z-1] = -dt*DcZ(x,y,z)/(2.*SQ(g->dz));
+		diag[z] = 1. + dt*(DcZ(x,y,z)+DcZ(x,y,z+1))/(2.*SQ(g->dz));
+		u_diag[z] = -dt*DcZ(x,y,z+1)/(2.*SQ(g->dz));
 	}
 
 	/*zero flux boundary condition*/
-	diag[0] = 1. + 0.5*dt*DcZ(x,y,1)/SQ(g.dz);
-	u_diag[0] = -0.5*dt*DcZ(x,y,1)/SQ(g.dz);
-	diag[g.size_z-1] = 1. + 0.5*dt*DcZ(x,y,g.size_z-1)/SQ(g.dz);
-	l_diag[g.size_z-2] = -0.5*dt*DcZ(x,y,g.size_z-1)/SQ(g.dz);
+	diag[0] = 1. + 0.5*dt*DcZ(x,y,1)/SQ(g->dz);
+	u_diag[0] = -0.5*dt*DcZ(x,y,1)/SQ(g->dz);
+	diag[g->size_z-1] = 1. + 0.5*dt*DcZ(x,y,g->size_z-1)/SQ(g->dz);
+	l_diag[g->size_z-2] = -0.5*dt*DcZ(x,y,g->size_z-1)/SQ(g->dz);
 
-	RHS[0] =  state[IDX(x,y,0)] - dt*((DcZ(x,y,1)*g.states[IDX(x,y,1)] - DcZ(x,y,1)*g.states[IDX(x,y,0)])/(2.*SQ(g.dz)));
+	RHS[0] =  state[IDX(x,y,0)] - dt*((DcZ(x,y,1)*g->states[IDX(x,y,1)] - DcZ(x,y,1)*g->states[IDX(x,y,0)])/(2.*SQ(g->dz)));
 
-	for(z=1;z<g.size_z-1;z++)
+	for(z=1;z<g->size_z-1;z++)
 	{
 		RHS[z] =  state[IDX(x,y,z)]
-			-	  dt*(DcZ(x,y,z+1)*g.states[IDX(x,y,z+1)] - (DcZ(x,y,z+1)+DcZ(x,y,z))*g.states[IDX(x,y,z)] + DcZ(x,y,z)*g.states[IDX(x,y,z-1)])/(2.*SQ(g.dz));
+			-	  dt*(DcZ(x,y,z+1)*g->states[IDX(x,y,z+1)] - (DcZ(x,y,z+1)+DcZ(x,y,z))*g->states[IDX(x,y,z)] + DcZ(x,y,z)*g->states[IDX(x,y,z-1)])/(2.*SQ(g->dz));
 
 	}
 	RHS[z] =  state[IDX(x,y,z)]
-				-	  dt*(DcZ(x,y,z)*g.states[IDX(x,y,z-1)] - DcZ(x,y,z)*g.states[IDX(x,y,z)])/(2.*SQ(g.dz));
+				-	  dt*(DcZ(x,y,z)*g->states[IDX(x,y,z-1)] - DcZ(x,y,z)*g->states[IDX(x,y,z)])/(2.*SQ(g->dz));
 
-	solve_dd_tridiag(g.size_z, l_diag, diag, u_diag, RHS, scratch);
+	solve_dd_tridiag(g->size_z, l_diag, diag, u_diag, RHS, scratch);
 
 	free(diag);
 	free(l_diag);
@@ -506,52 +489,34 @@ static AdiLineData dg_adi_tort_z(Grid_node g, double const dt, int const x, int 
 	return result;
 }
 
-
 /*DG-ADI implementation the 3 step process to diffusion species in grid g by time step *dt_ptr
  * g    -   the state and parameters
  * like dg_adi except the grid node g has variable tortuosity g.lambda (but fixed volume
  * fraction)
  */
-int dg_adi_tort(Grid_node g)
+ int dg_adi_tort(Grid_node* g)
 {
-	double* state = malloc(sizeof(double) * g.size_x * g.size_y * g.size_z);
-    AdiLineData* vals = malloc(sizeof(AdiLineData) * g.size_y * g.size_z);
-    pthread_t* thread = malloc(sizeof(pthread_t) * NUM_THREADS);
-    AdiGridData* tasks = malloc(sizeof(AdiGridData) * NUM_THREADS);
-
-    /* first step: advance the x direction */
-    run_threaded_dg_adi(tasks, thread, g.size_y, g.size_z, g, state, vals, dg_adi_tort_x, g.size_x);
+    run_threaded_dg_adi(g->size_y, g->size_z, g, dg_adi_tort_x, g->size_x);
 
     /* transfer data */
-    dg_transfer_data(vals, state, g.size_x, g.size_y * g.size_z, g.size_y * g.size_z);
-
-    /* Adjust memory */
-    free(vals);
-    vals = malloc(sizeof(AdiLineData) * g.size_x * g.size_z);
+    dg_transfer_data(g->task_vals, g->task_state, g->size_x, g->size_y * g->size_z, g->size_y * g->size_z);
 
     /* second step: advance the y direction */
-    run_threaded_dg_adi(tasks, thread, g.size_x, g.size_z, g, state, vals, dg_adi_tort_y, g.size_y);
+    run_threaded_dg_adi(g->size_x, g->size_z, g, dg_adi_tort_y, g->size_y);
 
     /* transfer data */
-    dg_transfer_data(vals, state, g.size_y, g.size_x * g.size_z, g.size_z);
-
-    /* Adjust memory */
-    free(vals);
-    vals = malloc(sizeof(AdiLineData) * g.size_x * g.size_y);
+    dg_transfer_data(g->task_vals, g->task_state, g->size_y, g->size_x * g->size_z, g->size_z);
 
     /* third step: advance the z direction */
-    run_threaded_dg_adi(tasks, thread, g.size_x, g.size_y, g, state, vals, dg_adi_tort_z, g.size_z);
+    run_threaded_dg_adi(g->size_x, g->size_y, g, dg_adi_tort_z, g->size_z);
 
-    /* transfer data directly into Grid_node values (g.states) */
-    dg_transfer_data(vals, g.states, g.size_z, g.size_x * g.size_y, 1);
+    /* transfer data directly into Grid_node values (g->states) */
+    dg_transfer_data(g->task_vals, g->states, g->size_z, g->size_x * g->size_y, 1);
 
-    free(state);
-    free(vals);
-    free(thread);
-    free(tasks);
 
-    return 0;
+     return 0;
 }
+
 
 /*****************************************************************************
 *
@@ -559,14 +524,13 @@ int dg_adi_tort(Grid_node g)
 *
 *****************************************************************************/
 
-void _rhs_variable_step_helper_tort(Grid_node* grid, const double const* states, double* ydot) {
-    int num_states_x = grid->size_x, num_states_y = grid->size_y, num_states_z = grid->size_z;
-    double dx = grid->dx, dy = grid->dy, dz = grid->dz;
+void _rhs_variable_step_helper_tort(Grid_node* g, const double const* states, double* ydot) {
+    int num_states_x = g->size_x, num_states_y = g->size_y, num_states_z = g->size_z;
+    double dx = g->dx, dy = g->dy, dz = g->dz;
     int i, j, k, stop_i, stop_j, stop_k;
     double rate_x = 1. / (dx * dx);
     double rate_y = 1. / (dy * dy);
     double rate_z = 1. / (dz * dz);
-	Grid_node g = *grid;	/*Dereference for the LAMBDA, DcX, DcY and DcZ macros used in fixed-step*/
 
 	/*indices*/
 	int index, prev_i, prev_j, prev_k, next_i ,next_j, next_k;
@@ -626,14 +590,13 @@ void _rhs_variable_step_helper_tort(Grid_node* grid, const double const* states,
 }
 
 
-void _rhs_variable_step_helper_vol(Grid_node* grid, const double const* states, double* ydot) {
-    int num_states_x = grid->size_x, num_states_y = grid->size_y, num_states_z = grid->size_z;
-    double dx = grid->dx, dy = grid->dy, dz = grid->dz;
+void _rhs_variable_step_helper_vol(Grid_node* g, const double const* states, double* ydot) {
+    int num_states_x = g->size_x, num_states_y = g->size_y, num_states_z = g->size_z;
+    double dx = g->dx, dy = g->dy, dz = g->dz;
     int i, j, k, stop_i, stop_j, stop_k;
-    double rate_x = grid->dc_x / (dx * dx);
-    double rate_y = grid->dc_y / (dy * dy);
-    double rate_z = grid->dc_z / (dz * dz);
-	Grid_node g = *grid;	/*Dereference for the LAMBDA, DcX, DcY and DcZ macros used in fixed-step*/
+    double rate_x = g->dc_x / (dx * dx);
+    double rate_y = g->dc_y / (dy * dy);
+    double rate_z = g->dc_z / (dz * dz);
 
 
 	/*indices*/

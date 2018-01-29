@@ -598,13 +598,13 @@ class NodeExtracellular(Node):
     
     @property
     def x3d(self):
-        return self._regionref()._xlo + (self._i+0.5)*self._regionref()._dx
+        return self._regionref()._xlo + (self._i+0.5)*self._regionref()._dx[0]
     @property
     def y3d(self):
-        return self._regionref()._ylo + (self._j+0.5)*self._regionref()._dx
+        return self._regionref()._ylo + (self._j+0.5)*self._regionref()._dx[1]
     @property
     def z3d(self):
-        return self._regionref()._zlo + (self._k+0.5)*self._regionref()._dx
+        return self._regionref()._zlo + (self._k+0.5)*self._regionref()._dx[2]
     
 
     @property

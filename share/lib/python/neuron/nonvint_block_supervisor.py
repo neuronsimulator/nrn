@@ -119,6 +119,8 @@ def nonvint_block(method, size, pd1, pd2, tid):
     if method == ode_count_method_index:
         rval = ode_count_all(size) # count of the extra states-equations managed by us
     else:
+        if pc.nhost() > 0:
+            h.t, h.dt = _pc_dt(tid), _pc_t(tid)
         if pd1:
             if size:
                 pd1_array = numpy_from_pointer(pd1, size)

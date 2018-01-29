@@ -106,7 +106,9 @@ class Reaction(GeneralizedReaction):
         rate = rate_f - rate_b
         self._sources = ref_list_with_mult(lhs)
         self._dests = ref_list_with_mult(rhs)
-        self._rate, self._involved_species = rxdmath._compile(rate)
+        ecs_species = any([isinstance(s(), species._ExtracellularSpecies) or isinstance(s(), species.SpeciesOnExtracellular) for s in self._sources and self._dests])
+        self._rate, self._involved_species = rxdmath._compile(rate, extracellular=ecs_species)
+
         
         
         trans_membrane = any(isinstance(s(), species.SpeciesOnRegion) for s in self._involved_species)

@@ -39,20 +39,8 @@ typedef struct {
 	ReactSet* offset;
 } ReactGridData;
 
-typedef struct {
-        double* copyFrom;
-        long copyTo;
-} AdiLineData;
 
-typedef struct {
-    int start, stop;
-    AdiLineData* vals;
-    double* state;
-    Grid_node g;
-    int sizej;
-    AdiLineData (*dg_adi_dir)(Grid_node, double, int, int, double const *, double*);
-    double* scratchpad;
-} AdiGridData;
+
 
 typedef struct ICSReactions{
     ReactionRate reaction;
@@ -91,16 +79,35 @@ typedef struct {
 
 } ReactionVariables;
 
+typedef struct TaskList
+{
+    void *(*task)(void*);
+    void *args;
+    void *result;
+    struct TaskList* next;
+} TaskList;
+
+typedef struct TaskQueue
+{
+    pthread_mutex_t* task_mutex;
+    pthread_cond_t* task_cond;
+    pthread_mutex_t* waiting_mutex;
+    pthread_cond_t* waiting_cond;
+    int length;
+    struct TaskList* first;
+    struct TaskList* last;
+} TaskQueue;
+
 void set_num_threads(int);
 void _fadvance(void);
 void _fadvance_fixed_step_ecs(void);
 
 int get_num_threads(void);
-static int dg_adi(Grid_node);
-int dg_adi_vol(Grid_node);
-int dg_adi_tort(Grid_node);
+static int dg_adi(Grid_node*);
+int dg_adi_vol(Grid_node*);
+int dg_adi_tort(Grid_node*);
 void dg_transfer_data(AdiLineData * const, double* const, int const, int const, int const);
-void run_threaded_dg_adi(AdiGridData*, pthread_t*, const int, const int, Grid_node, double*, AdiLineData*, AdiLineData (*dg_adi_dir)(Grid_node, double, int, int, double const *, double*), const int n);
+void run_threaded_dg_adi(const int, const int, Grid_node*, AdiLineData (*dg_adi_dir)(Grid_node*, double, int, int, double const *, double*), const int n);
 
 ReactGridData* create_threaded_reactions(void);
 void* do_reactions(void*);
@@ -139,11 +146,18 @@ void _rhs_variable_step_helper_tort(Grid_node*, const double const*, double*);
 
 void _rhs_variable_step_helper_vol(Grid_node*, const double const*, double*);
 
-void ecs_refresh_reactions(int);
+static void ecs_refresh_reactions(int);
+void set_num_threads_ecs(int n);
 
 void _rhs_variable_step_ecs(const double, const double*, double*);
 
 void clear_rates_ecs();
-void do_ics_reactions(const double, const double*, double*);
+void do_ics_reactions(const double, double*, double*);
 void _ecs_ode_reinit(double*); 
 void do_currents(Grid_node*, double*, double);
+void TaskQueue_add_task(TaskQueue*, void* (*task)(void* args), void*, void*);
+void *TaskQueue_exe_tasks(void*);
+void start_threads();
+void TaskQueue_sync(TaskQueue*);
+
+

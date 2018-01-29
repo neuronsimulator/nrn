@@ -168,11 +168,17 @@ class Extracellular:
         if not options.enable.extracellular:
             raise RxDException('Extracellular diffusion support is disabled. Override with rxd.options.enable.extracellular = True.')
         self._xlo, self._ylo, self._zlo = xlo, ylo, zlo
-        self._dx = dx
-        self._nx = int(math.ceil((xhi - xlo) / dx))
-        self._ny = int(math.ceil((yhi - ylo) / dx))
-        self._nz = int(math.ceil((zhi - zlo) / dx))
-        self._xhi, self._yhi, self._zhi = xlo + dx * self._nx, ylo + dx * self._ny, zlo + dx * self._nz
+        if not hasattr(dx,'__len__'):
+            self._dx = (dx,dx,dx)
+        elif len(dx) == 3:
+            self._dx = dx
+        else:
+            raise RxDException('Extracellular region dx=%s is invalid, dx should be a number or a tuple (dx,dy,dz) for the length, width and height of the voxels' % repr(dx))
+
+        self._nx = int(math.ceil((xhi - xlo) / self._dx[0]))
+        self._ny = int(math.ceil((yhi - ylo) / self._dx[1]))
+        self._nz = int(math.ceil((zhi - zlo) / self._dx[2]))
+        self._xhi, self._yhi, self._zhi = xlo + self._dx[0] * self._nx, ylo + self._dx[1] * self._ny, zlo + self._dx[2] * self._nz
 
         if(numpy.isscalar(volume_fraction)):
             alpha = float(volume_fraction)
@@ -183,7 +189,7 @@ class Extracellular:
             for i in xrange(self._nx):
                 for j in xrange(self._ny):
                     for k in xrange(self._nz):
-                        alpha[i,j,k] = volume_fraction(self._xlo + i*self._dx, self._ylo + j*self._dx, self._zlo + k*self._dx)
+                        alpha[i,j,k] = volume_fraction(self._xlo + i*self._dx[0], self._ylo + j*self._dx[1], self._zlo + k*self._dx[2])
                 self.alpha = alpha
                 self._alpha = h.Vector(alpha)
                          
@@ -205,7 +211,7 @@ class Extracellular:
             for i in xrange(self._nx):
                 for j in xrange(self._ny):
                     for k in xrange(self._nz):
-                        self.tortuosity[i,j,k] = tortuosity(self._xlo + i*self._dx, self._ylo + j*self._dx, self._zlo + k*self._dx)
+                        self.tortuosity[i,j,k] = tortuosity(self._xlo + i*self._dx[0], self._ylo + j*self._dx[1], self._zlo + k*self._dx[2])
             self._tortuosity = h.Vector(self.tortuosity)
         else:
             tortuosity = numpy.array(tortuosity)

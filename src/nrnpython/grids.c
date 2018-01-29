@@ -13,7 +13,7 @@ a linked list of Grid_nodes
 #include <Python.h>
 #endif
 
-
+extern int NUM_THREADS;
 double *dt_ptr;
 double* t_ptr;
 Grid_node *Parallel_grids[100] = {NULL};
@@ -28,7 +28,8 @@ void make_time_ptr(PyHocObject* my_dt_ptr, PyHocObject* my_t_ptr) {
 Grid_node *make_Grid(PyHocObject* my_states, int my_num_states_x, 
     int my_num_states_y, int my_num_states_z, double my_dc_x, double my_dc_y,
     double my_dc_z, double my_dx, double my_dy, double my_dz, PyHocObject* my_alpha,
-	PyHocObject* my_lambda) {
+	PyHocObject* my_lambda, int bc, double bc_value) {
+    int k;
     Grid_node *new_Grid = malloc(sizeof(Grid_node));
     assert(new_Grid);
 
@@ -38,7 +39,6 @@ Grid_node *make_Grid(PyHocObject* my_states, int my_num_states_x,
     new_Grid->size_y = my_num_states_y;
     new_Grid->size_z = my_num_states_z;
 
-    new_Grid->flux_list = NULL;
 
     new_Grid->dc_x = my_dc_x;
     new_Grid->dc_y = my_dc_y;
@@ -102,6 +102,20 @@ Grid_node *make_Grid(PyHocObject* my_states, int my_num_states_x,
         new_Grid->all_currents = NULL;
     }
 
+    new_Grid->bc = (BoundaryConditions*)malloc(sizeof(BoundaryConditions));
+    new_Grid->bc->type=bc;
+    new_Grid->bc->value=bc_value;
+
+    new_Grid->tasks = NULL;
+    new_Grid->task_vals = (AdiLineData*)malloc(sizeof(AdiLineData) * MAX(my_num_states_x*MAX(my_num_states_y, my_num_states_z),my_num_states_y*my_num_states_z));
+    new_Grid->task_state = malloc(sizeof(double) * my_num_states_x * my_num_states_y * my_num_states_z);
+    new_Grid->tasks = (AdiGridData*)malloc(NUM_THREADS*sizeof(AdiGridData));
+    for(k=0; k<NUM_THREADS; k++)
+    {
+        new_Grid->tasks[k].scratchpad = malloc(sizeof(double) * MAX(my_num_states_x,MAX(my_num_states_y,my_num_states_z)));
+        new_Grid->tasks[k].g = new_Grid;
+    }
+
     return new_Grid;
 }
 
@@ -112,13 +126,13 @@ Grid_node *make_Grid(PyHocObject* my_states, int my_num_states_x,
 int insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x, 
     int my_num_states_y, int my_num_states_z, double my_dc_x, double my_dc_y,
     double my_dc_z, double my_dx, double my_dy, double my_dz, 
-	PyHocObject* my_alpha, PyHocObject* my_lambda) {
+	PyHocObject* my_alpha, PyHocObject* my_lambda, int bc, double bc_value) {
     int i = 0;
 
 
     Grid_node *new_Grid = make_Grid(my_states, my_num_states_x, my_num_states_y, 
             my_num_states_z, my_dc_x, my_dc_y, my_dc_z, my_dx, my_dy, my_dz, 
-			my_alpha, my_lambda);
+			my_alpha, my_lambda, bc, bc_value);
     Grid_node **head = &(Parallel_grids[grid_list_index]);
     Grid_node *save;
 
@@ -256,11 +270,10 @@ void set_grid_currents(int grid_list_index, int index_in_list, PyObject* grid_in
         /*Copy array of current destinations (index to states) across all processes*/
         free(g->current_dest);
         free(g->all_currents);
-            
-        /*TODO: Get rid of duplication with current_list*/
         g->current_dest = malloc(g->num_all_currents*sizeof(long));
         g->all_currents = malloc(g->num_all_currents*sizeof(double));
         dests = g->current_dest + g->proc_offsets[nrnmpi_myid_world];
+        /*TODO: Get rid of duplication with current_list*/
         for(i = 0; i < n; i++)
         {
             dests[i] = g->current_list[i].destination;
@@ -276,17 +289,26 @@ void set_grid_currents(int grid_list_index, int index_in_list, PyObject* grid_in
 
 // Free a single Grid_node
 void free_Grid(Grid_node *grid) {
+    int i;
     free(grid->states);
     free(grid->old_states);
-    free(grid->flux_list);
     free(grid->concentration_list);
     free(grid->current_list);
 	free(grid->alpha);
 	free(grid->lambda);
+    free(grid->bc);
     free(grid->current_dest);
     free(grid->proc_offsets);
     free(grid->proc_num_currents);
     free(grid->all_currents);
+    free(grid->task_vals);
+    free(grid->task_state);
+    if(grid->tasks != NULL)
+    {   
+        for(i=0; i<NUM_THREADS; i++)
+            free(grid->tasks[i].scratchpad);
+    }
+    free(grid->tasks);
     free(grid);
 }
 
