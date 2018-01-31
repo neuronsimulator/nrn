@@ -116,7 +116,7 @@ class InlineVisitor : public AstVisitor {
     std::shared_ptr<ast::Statement> caller_statement;
 
     /// symbol table for program node
-    std::shared_ptr<symtab::SymbolTable> program_symtab;
+    symtab::SymbolTable* program_symtab = nullptr;
 
     /// statement blocks in call hierarchy
     std::stack<ast::StatementBlock*> statementblock_stack;

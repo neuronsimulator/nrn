@@ -146,30 +146,30 @@ SCENARIO("Symbol table generation and Perf stat visitor pass") {
         auto ast = driver.ast();
 
         WHEN("Symbol table generator pass runs") {
-            ModelSymbolTable symtab;
-            SymtabVisitor v(&symtab);
+            SymtabVisitor v;
             v.visit_program(ast.get());
+            auto symtab = ast->get_model_symbol_table();
 
             using namespace symtab::details;
 
             THEN("Can lookup for defined variables") {
-                auto symbol = symtab.lookup("m");
+                auto symbol = symtab->lookup("m");
                 REQUIRE(symbol->has_properties(NmodlInfo::dependent_def));
                 REQUIRE_FALSE(symbol->has_properties(NmodlInfo::local_var));
 
-                symbol = symtab.lookup("gNaTs2_tbar");
+                symbol = symtab->lookup("gNaTs2_tbar");
                 REQUIRE(symbol->has_properties(NmodlInfo::param_assign));
                 REQUIRE(symbol->has_properties(NmodlInfo::range_var));
 
-                symbol = symtab.lookup("ena");
+                symbol = symtab->lookup("ena");
                 REQUIRE(symbol->has_properties(NmodlInfo::read_ion_var));
             }
             THEN("Can lookup for defined functions") {
-                auto symbol = symtab.lookup("hBetaf");
+                auto symbol = symtab->lookup("hBetaf");
                 REQUIRE(symbol->has_properties(NmodlInfo::function_block));
             }
             THEN("Non existent variable lookup returns nullptr") {
-                REQUIRE(symtab.lookup("xyz") == nullptr);
+                REQUIRE(symtab->lookup("xyz") == nullptr);
             }
 
             WHEN("Perf visitor pass runs after symtab visitor") {
@@ -350,8 +350,7 @@ std::string run_local_var_rename_visitor(const std::string& text) {
     auto ast = driver.ast();
 
     {
-        ModelSymbolTable symtab;
-        SymtabVisitor v(&symtab);
+        SymtabVisitor v;
         v.visit_program(ast.get());
     }
 
@@ -540,8 +539,7 @@ std::string run_inline_visitor(const std::string& text) {
     auto ast = driver.ast();
 
     {
-        ModelSymbolTable symtab;
-        SymtabVisitor v(&symtab);
+        SymtabVisitor v;
         v.visit_program(ast.get());
     }
 
@@ -1046,7 +1044,6 @@ SCENARIO("Procedure call as standalone statement as well as part of expression")
 
 SCENARIO("Procedure inlining handles local-global name conflict") {
     GIVEN("A procedure with local variable that exist in global scope") {
-
         /// note that x in rates_2 should still update global x after inlining
         std::string input_nmodl = R"(
             NEURON {

@@ -174,13 +174,13 @@ class SymtabVisitorDeclarationPrinter(DeclarationPrinter):
     def public_declaration(self):
         self.write_line("public:", post_gutter=1)
 
-        line = self.classname + "(ModelSymbolTable* symtab) : modsymtab(symtab), printer(new JSONPrinter()) {} "
+        line = self.classname + "() : printer(new JSONPrinter()) {} "
         self.write_line(line)
 
-        line = self.classname + "( ModelSymbolTable* symtab, std::stringstream &ss) : modsymtab(symtab), printer(new JSONPrinter(ss)) {}"
+        line = self.classname + "(std::stringstream &ss) : printer(new JSONPrinter(ss)) {}"
         self.write_line(line)
 
-        line = self.classname + "( ModelSymbolTable* symtab, std::string filename) : modsymtab(symtab), printer(new JSONPrinter(filename)) {}"
+        line = self.classname + "(std::string filename) : printer(new JSONPrinter(filename)) {}"
         self.write_line(line, newline=2)
 
         # helper function for creating symbol for variables
@@ -191,12 +191,17 @@ class SymtabVisitorDeclarationPrinter(DeclarationPrinter):
         # without name (e.g. parameter, unit, breakpoint)
         self.write_line("template<typename T>")
         line = "void setup_symbol_table(T *node, std::string name, bool is_global);"
-        self.write_line(line)
+        self.write_line(line, newline=2)
 
         # helper function for creating symbol table for blocks
         # with name (e.g. procedure, function, derivative)
         self.write_line("template<typename T>")
         line = "void setup_symbol_table(T *node, std::string name, SymbolInfo property, bool is_global);"
+        self.write_line(line, newline=2)
+
+        # helper function to setup program symbol table
+        self.write_line("template<typename T>")
+        line = "void setup_program_symbol_table(T *node, std::string name, bool is_global);"
         self.write_line(line, newline=2)
 
         # we have to override visitor methods for the nodes
@@ -242,7 +247,10 @@ class SymtabVisitorDefinitionPrinter(DefinitionPrinter):
                     if node.is_symbol_block_node():
                         fun_call = "setup_symbol_table(node, node->get_name(), " + property_name + ", false);"
 
-                    elif node.is_program_node() or node.is_global_block_node():
+                    elif node.is_program_node():
+                        fun_call = "setup_program_symbol_table(node, node->get_type_name(), true);"
+
+                    elif node.is_global_block_node():
                         fun_call = "setup_symbol_table(node, node->get_type_name(), true);"
 
                     else:

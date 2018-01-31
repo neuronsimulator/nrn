@@ -206,9 +206,9 @@ void InlineVisitor::visit_wrapped_expression(WrappedExpression* node) {
 }
 
 void InlineVisitor::visit_program(Program* node) {
-   program_symtab = node->get_symbol_table();
-   if(program_symtab == nullptr) {
-       throw std::runtime_error("Program node doesn't have symbol table");
-   }
+    program_symtab = node->get_symbol_table();
+    if (program_symtab == nullptr) {
+        throw std::runtime_error("Program node doesn't have symbol table");
+    }
     node->visit_children(this);
 }

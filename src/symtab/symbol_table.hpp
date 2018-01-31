@@ -2,6 +2,7 @@
 #define _NMODL_SYMTAB_HPP_
 
 #include <map>
+#include <memory>
 
 #include "symtab/symbol.hpp"
 
@@ -74,7 +75,7 @@ namespace symtab {
         bool global = false;
 
         /// pointer to the symbol table of parent block in the mod file
-        std::shared_ptr<SymbolTable> parent = nullptr;
+        SymbolTable* parent = nullptr;
 
         /// symbol table for each enclosing block in the current nmodl block
         /// construct. for example, for every block statement (like if, while,
@@ -93,26 +94,18 @@ namespace symtab {
             return symtab_name;
         }
 
-        std::string type() const {
-            return node->get_type_name();
-        }
+        std::string type() const;
 
         std::string title();
 
         /// todo: set token for every block from parser
-        std::string position() const {
-            auto token = node->get_token();
-            if (token)
-                return token->position();
-            else
-                return ModToken().position();
-        }
+        std::string position() const;
 
         bool global_scope() const {
             return global;
         }
 
-        std::shared_ptr<SymbolTable> get_parent_table() const {
+        SymbolTable* get_parent_table() const {
             return parent;
         }
 
@@ -128,7 +121,7 @@ namespace symtab {
             table.insert(symbol);
         }
 
-        void set_parent_table(std::shared_ptr<SymbolTable> block) {
+        void set_parent_table(SymbolTable* block) {
             parent = block;
         }
 
@@ -175,7 +168,7 @@ namespace symtab {
         std::shared_ptr<SymbolTable> symtab = nullptr;
 
         /// symbol table for parent block (used during symbol table construction)
-        std::shared_ptr<SymbolTable> parent_symtab = nullptr;
+        SymbolTable* parent_symtab = nullptr;
 
         /// Return unique name by appending some counter value
         std::string get_unique_name(std::string name, AST* node);
@@ -185,7 +178,7 @@ namespace symtab {
 
       public:
         /// entering into new nmodl block
-        std::shared_ptr<SymbolTable> enter_scope(std::string name, AST* node, bool global);
+        SymbolTable* enter_scope(std::string name, AST* node, bool global);
 
         /// leaving current nmodl block
         void leave_scope();

@@ -87,16 +87,16 @@ int main(int argc, const char* argv[]) {
 
         {
             // todo : we should pass this or use get method to retrieve?
-            ModelSymbolTable symtab;
             std::stringstream ss1;
 
-            SymtabVisitor v(&symtab, ss1);
+            SymtabVisitor v(ss1);
             v.visit_program(ast.get());
 
             // std::cout << ss1.str();
 
             std::stringstream ss2;
-            symtab.print(ss2);
+            auto symtab = ast->get_model_symbol_table();
+            symtab->print(ss2);
             std::cout << ss2.str();
 
             std::cout << "----SYMTAB VISITOR FINISHED----" << std::endl;

@@ -36,7 +36,7 @@
 class PerfVisitor : public AstVisitor {
   private:
     /// symbol table of current block being visited
-    std::shared_ptr<symtab::SymbolTable> current_symtab;
+    symtab::SymbolTable* current_symtab = nullptr;
 
     /// performance stats of all blocks being visited
     /// in recursive chain

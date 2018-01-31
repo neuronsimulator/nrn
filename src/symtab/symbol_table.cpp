@@ -1,6 +1,6 @@
 #include <utility>
 
-#include "lexer/token_mapping.hpp"
+#include "ast/ast.hpp"
 #include "symtab/symbol_table.hpp"
 #include "utils/table_data.hpp"
 
@@ -31,6 +31,18 @@ namespace symtab {
         global = table.global_scope();
         node = nullptr;
         parent = nullptr;
+    }
+
+    std::string SymbolTable::type() const {
+        return node->get_type_name();
+    }
+
+    std::string SymbolTable::position() const {
+        auto token = node->get_token();
+        if (token)
+            return token->position();
+        else
+            return ModToken().position();
     }
 
     /// insert new symbol table of one of the children block
@@ -208,16 +220,14 @@ namespace symtab {
      *  The same symbol table is returned so that visitor can store pointer to
      *  symbol table within a node.
      */
-    std::shared_ptr<SymbolTable> ModelSymbolTable::enter_scope(std::string name,
-                                                               AST* node,
-                                                               bool global) {
+    SymbolTable* ModelSymbolTable::enter_scope(std::string name, AST* node, bool global) {
         if (node == nullptr) {
             throw std::runtime_error("Can't enter with empty node");
         }
 
         /// all global blocks in mod file have same symbol table
         if (symtab && global) {
-            parent_symtab = symtab;
+            parent_symtab = symtab.get();
             return parent_symtab;
         }
 
@@ -228,7 +238,7 @@ namespace symtab {
 
         /// statement block within global scope is part of global block itself
         if (symtab && node->is_statement_block() && parent_symtab->under_global_scope()) {
-            parent_symtab = symtab;
+            parent_symtab = symtab.get();
             return parent_symtab;
         }
 
@@ -241,13 +251,13 @@ namespace symtab {
         // table and then new symbol table becomes parent for future blocks
         if (symtab == nullptr) {
             symtab = new_symtab;
-            parent_symtab = new_symtab;
+            parent_symtab = new_symtab.get();
         } else {
             parent_symtab->insert_table(name, new_symtab);
             new_symtab->set_parent_table(parent_symtab);
-            parent_symtab = new_symtab;
+            parent_symtab = new_symtab.get();
         }
-        return new_symtab;
+        return new_symtab.get();
     }
 
     /** Callback at the exit of every block in nmodl file When we reach
@@ -268,7 +278,7 @@ namespace symtab {
         ///         current symbol table. this is happening for global
         ///         scope symbol table
         if (parent_symtab == nullptr) {
-            parent_symtab = symtab;
+            parent_symtab = symtab.get();
         }
     }
 

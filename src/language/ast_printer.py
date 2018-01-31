@@ -128,9 +128,13 @@ class AstDeclarationPrinter(DeclarationPrinter):
             if node.has_token:
                 self.write_line("std::shared_ptr<ModToken> token;")
 
-
             if node.is_symtab_needed():
-                self.write_line("std::shared_ptr<symtab::SymbolTable> symtab;", newline=2)
+                self.write_line("symtab::SymbolTable* symtab = nullptr;")
+
+            if node.is_program_node():
+                self.write_line("std::shared_ptr<symtab::ModelSymbolTable> model_symtab;")
+
+            self.write_line("")
 
             if members:
                 self.write_line("/* constructors */")
@@ -197,8 +201,12 @@ class AstDeclarationPrinter(DeclarationPrinter):
                 self.write_line("void set_token(ModToken& tok) " + " { token = std::shared_ptr<ModToken>(new ModToken(tok)); }")
 
             if node.is_symtab_needed():
-                self.write_line("void set_symbol_table(std::shared_ptr<symtab::SymbolTable> newsymtab) " + " { symtab = newsymtab; }")
-                self.write_line("std::shared_ptr<symtab::SymbolTable> get_symbol_table() override " + " { return symtab; }")
+                self.write_line("void set_symbol_table(symtab::SymbolTable* newsymtab) " + " { symtab = newsymtab; }")
+                self.write_line("symtab::SymbolTable* get_symbol_table() override " + " { return symtab; }")
+
+            if node.is_program_node():
+                self.write_line("void init_model_symbol_table();")
+                self.write_line("symtab::ModelSymbolTable* get_model_symbol_table() " + " { return model_symtab.get(); }")
 
             if node.is_number_node():
                 self.write_line(virtual + "void negate()" + override + " { std::cout << \"ERROR : negate() not implemented! \"; abort(); } ")
@@ -251,7 +259,8 @@ class AstDefinitionPrinter(DefinitionPrinter):
     """Prints AST class definitions"""
 
     def headers(self):
-        self.write_line('#include "ast/ast.hpp"', newline=2)
+        self.write_line('#include "ast/ast.hpp"')
+        self.write_line('#include "symtab/symbol_table.hpp"', newline=2)
 
     def definitions(self):
         self.write_line("namespace ast {", post_gutter=1)
@@ -299,6 +308,11 @@ class AstDefinitionPrinter(DefinitionPrinter):
                 self.write_line("}", pre_gutter=-1, newline=2)
             else:
                 self.write_line("void " + node.class_name + "::visit_children(Visitor* /*v*/) {}")
+
+            if node.is_program_node():
+                self.write_line("void Program::init_model_symbol_table() " + " {")
+                self.write_line("   model_symtab = std::make_shared<symtab::ModelSymbolTable>();")
+                self.write_line("}")
 
             if members:
                 # TODO : constructor definition : remove this with C++11 style
