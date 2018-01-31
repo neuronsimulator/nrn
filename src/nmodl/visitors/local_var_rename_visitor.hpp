@@ -42,10 +42,10 @@
 class LocalVarRenameVisitor : public AstVisitor {
   private:
     /// non-null symbol table in the scope hierarchy
-    std::shared_ptr<symtab::SymbolTable> symtab;
+    symtab::SymbolTable* symtab = nullptr;
 
     /// symbol tables in case of nested blocks
-    std::stack<std::shared_ptr<symtab::SymbolTable>> symtab_stack;
+    std::stack<symtab::SymbolTable*> symtab_stack;
 
     /// variables currently being renamed and their count
     std::map<std::string, int> renamed_variables;

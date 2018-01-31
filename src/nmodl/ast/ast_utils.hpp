@@ -4,10 +4,7 @@
 #include <string>
 
 #include "lexer/modtoken.hpp"
-
-namespace symtab {
-    class SymbolTable;
-}
+#include "symtab/symbol_table.hpp"
 
 namespace ast {
     /* enumaration of all binary operators in the language */
@@ -91,7 +88,7 @@ namespace ast {
             return nullptr;
         }
 
-        virtual std::shared_ptr<symtab::SymbolTable> get_symbol_table() {
+        virtual symtab::SymbolTable* get_symbol_table() {
             throw std::runtime_error("get_symbol_table() not implemented");
         }
 

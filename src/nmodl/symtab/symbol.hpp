@@ -3,8 +3,12 @@
 
 #include <map>
 
-#include "ast/ast.hpp"
+#include "lexer/modtoken.hpp"
 #include "symtab/symbol_properties.hpp"
+
+namespace ast {
+    class AST;
+}
 
 namespace symtab {
 

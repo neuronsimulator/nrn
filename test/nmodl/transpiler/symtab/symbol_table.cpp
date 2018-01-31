@@ -3,6 +3,7 @@
 #include <string>
 
 #include "catch/catch.hpp"
+#include "ast/ast.hpp"
 #include "symtab/symbol.hpp"
 #include "symtab/symbol_table.hpp"
 
@@ -172,7 +173,7 @@ SCENARIO("Symbol table operations") {
             table->insert(symbol);
             auto next_program = std::make_shared<ast::Program>();
             auto next_table = std::make_shared<SymbolTable>("Ca", next_program.get(), true);
-            next_table->set_parent_table(table);
+            next_table->set_parent_table(table.get());
             THEN("children symbol table can lookup into parent table scope") {
                 REQUIRE(next_table->lookup("alpha") == nullptr);
                 REQUIRE(next_table->lookup_in_scope("alpha") != nullptr);

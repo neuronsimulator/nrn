@@ -29,7 +29,7 @@ void LocalVarRenameVisitor::visit_statement_block(StatementBlock* node) {
 
     auto variables = get_local_variables(node);
 
-    std::shared_ptr<SymbolTable> parent_symtab;
+    SymbolTable* parent_symtab = nullptr;
     if (symtab) {
         parent_symtab = symtab->get_parent_table();
     }
