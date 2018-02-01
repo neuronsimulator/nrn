@@ -180,6 +180,7 @@
 %token  <ast::primename_ptr>    PRIME
 %token  <std::string>           VERBATIM
 %token  <std::string>           COMMENT
+%token  <std::string>           INLINE_COMMENT
 %token  <std::string>           LINE_PART
 %token  <ast::string_ptr>       STRING
 %token  <ast::string_ptr>       UNIT_STR
@@ -389,7 +390,12 @@
  *
  *  \todo ModToken is set for the symbols returned by Lexer. But we need to
  *  set accurate location for each production. We need to add method in AST
- *  classes to handle this. */
+ *  classes to handle this.
+ *
+ *  \todo INLINE_COMMENT adds comment as separate statement and hence they
+ *   go into separate line in nmodl printer. Need to update grammar to distinguish
+ *   standalone single line comment vs. inline comment.
+ */
 
 top             :   all
                     {
@@ -447,7 +453,13 @@ all             :   {
                 |   all COMMENT
                     {
                         auto text = parse_with_verbatim_parser($2);
-                        auto statement = new ast::Comment(new ast::String(text));
+                        auto statement = new ast::Comment(new ast::String(text), nullptr);
+                        $1->addNode(statement);
+                        $$ = $1;
+                    }
+                |   all INLINE_COMMENT
+                    {
+                        auto statement = new ast::Comment(nullptr, new ast::String($2));
                         $1->addNode(statement);
                         $$ = $1;
                     }
@@ -900,6 +912,12 @@ stmtlist1       :   {
                         $1.push_back(std::shared_ptr<ast::Statement>($2));
                         $$ = $1;
                     }
+                |   stmtlist1 INLINE_COMMENT
+                    {
+                        auto statement = new ast::Comment(nullptr, new ast::String($2));
+                        $1.push_back(std::shared_ptr<ast::Statement>(statement));
+                        $$ = $1;
+                    }
                 ;
 
 
@@ -922,7 +940,7 @@ ostmt           :   fromstmt        {   $$ = $1;    }
                     }
                 |   COMMENT
                     {   auto text = parse_with_verbatim_parser($1);
-                        $$ = new ast::Comment(new ast::String(text));
+                        $$ = new ast::Comment(new ast::String(text), nullptr);
                     }
                 |   sens            { $$ = $1; }
                 |   compart         { $$ = $1; }

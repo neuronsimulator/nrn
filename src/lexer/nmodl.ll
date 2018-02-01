@@ -382,8 +382,9 @@ ELSE                    {
 
 :.* |
 \?.*                    {
-                            /** Todo : add grammar support for single line comment.
-                              * Here yytext already has entire part of string */
+                            /** Todo : add grammar support for inline vs single-line comments */
+                              auto str = std::string(yytext);
+                              return nmodl::Parser::make_INLINE_COMMENT(str, loc);
                         }
 
 .                       {
