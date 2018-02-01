@@ -730,31 +730,31 @@
                   getname: true
       - Block:
         - ParamBlock:
-            nmodl: PARAMETER
+            nmodl: "PARAMETER "
             members:
               - statements:
                   type: ParamAssign
                   vector: true
         - StepBlock:
-            nmodl: STEPPED
+            nmodl: "STEPPED "
             members:
               - statements:
                   type: Stepped
                   vector: true
         - IndependentBlock:
-            nmodl: INDEPENDENT
+            nmodl: "INDEPENDENT "
             members:
               - definitions:
                   type: IndependentDef
                   vector: true
         - DependentBlock:
-            nmodl: ASSIGNED
+            nmodl: "ASSIGNED "
             members:
               - definitions:
                   type: DependentDef
                   vector: true
         - StateBlock:
-            nmodl: STATE
+            nmodl: "STATE "
             members:
               - definitions:
                   type: DependentDef
@@ -764,19 +764,19 @@
               - plot:
                   type: PlotDeclaration
         - InitialBlock:
-            nmodl: INITIAL
+            nmodl: "INITIAL "
             members:
               - statementblock:
                   type: StatementBlock
                   getter: {name: get_statement_block, override: true}
         - ConstructorBlock:
-            nmodl: CONSTRUCTOR
+            nmodl: "CONSTRUCTOR "
             members:
               - statementblock:
                   type: StatementBlock
                   getter: {name: get_statement_block, override: true}
         - DestructorBlock:
-            nmodl: DESTRUCTOR
+            nmodl: "DESTRUCTOR "
             members:
               - statementblock:
                   type: StatementBlock
@@ -792,6 +792,7 @@
               - name:
                   type: Name
                   getname: true
+                  suffix: {value: " "}
               - statementblock:
                   type: StatementBlock
                   getter: {name: get_statement_block, override: true}
@@ -801,6 +802,7 @@
               - name:
                   type: Name
                   getname: true
+                  suffix: {value: " "}
               - solvefor:
                   type: Name
                   vector: true
@@ -820,6 +822,7 @@
                   vector: true
                   separator: ","
                   prefix: {value: " SOLVEFOR "}
+                  suffix: {value: " ", force: true}
               - statementblock:
                   type: StatementBlock
                   getter: {name: get_statement_block, override: true}
@@ -829,6 +832,7 @@
               - name:
                   type: Name
                   getname: true
+                  suffix: {value: " "}
               - statementblock:
                   type: StatementBlock
                   getter: {name: get_statement_block, override: true}
@@ -838,6 +842,7 @@
               - name:
                   type: Name
                   getname: true
+                  suffix: {value: " "}
               - statementblock:
                   type: StatementBlock
                   getter: {name: get_statement_block, override: true}
@@ -873,6 +878,7 @@
                   type: Unit
                   optional: true
                   prefix: {value: " "}
+                  suffix: {value: " ", force: true}
               - statementblock:
                   type: StatementBlock
                   getter: {name: get_statement_block, override: true}
@@ -886,7 +892,7 @@
                   type: Argument
                   vector: true
                   prefix: {value: "(", force: true}
-                  suffix: {value: ")", force: true}
+                  suffix: {value: ") ", force: true}
                   separator: ", "
               - unit:
                   type: Unit
@@ -901,7 +907,7 @@
                   type: Argument
                   vector: true
                   prefix: {value: "(", force: true}
-                  suffix: {value: ")", force: true}
+                  suffix: {value: ") ", force: true}
                   separator: ", "
               - statementblock:
                   type: StatementBlock
@@ -918,15 +924,15 @@
                   prefix: {value: " METHOD "}
               - ifsolerr:
                   type: StatementBlock
-                  prefix: {value: " IFERROR"}
+                  prefix: {value: " IFERROR "}
         - BreakpointBlock:
-            nmodl: BREAKPOINT
+            nmodl: "BREAKPOINT "
             members:
               - statementblock:
                   type: StatementBlock
                   getter: {name: get_statement_block, override: true}
         - TerminalBlock:
-            nmodl: TERMINAL
+            nmodl: "TERMINAL "
             members:
               - statementblock:
                   type: StatementBlock
@@ -945,6 +951,7 @@
             members:
               - type:
                   type: BABlockType
+                  suffix: {value: " "}
               - statementblock:
                   type: StatementBlock
                   getter: {name: get_statement_block, override: true}
@@ -955,7 +962,7 @@
                   type: Argument
                   vector: true
                   prefix: {value: "(", force: true}
-                  suffix: {value: ")", force: true}
+                  suffix: {value: ") ", force: true}
                   separator: ", "
               - statementblock:
                   type: StatementBlock
@@ -966,6 +973,7 @@
               - name:
                   type: Name
                   getname: true
+                  suffix: {value: " "}
               - solvefor:
                   type: Name
                   vector: true
@@ -983,19 +991,19 @@
                   prefix: {value: " { "}
                   suffix: {value: " }"}
         - UnitBlock:
-            nmodl: UNITS
+            nmodl: "UNITS "
             members:
               - definitions:
                   type: Expression
                   vector: true
         - ConstantBlock:
-            nmodl: CONSTANT
+            nmodl: "CONSTANT "
             members:
               - statements:
                   type: ConstantStatement
                   vector: true
         - NeuronBlock:
-            nmodl: NEURON
+            nmodl: "NEURON "
             members:
               - statementblock:
                   type: StatementBlock
@@ -1332,6 +1340,7 @@
             - opinc:
                 type: Expression
                 prefix: {value: " BY "}
+                suffix: {value: " ", force: true}
                 optional: true
             - statementblock:
                 type: StatementBlock
@@ -1340,6 +1349,7 @@
           members:
             - name:
                 type: Name
+                suffix: {value: " "}
             - statementblock:
                 type: StatementBlock
       - WhileStatement:
@@ -1348,7 +1358,7 @@
             - condition:
                 type: Expression
                 prefix: {value: "("}
-                suffix: {value: ")"}
+                suffix: {value: ") "}
             - statementblock:
                 type: StatementBlock
       - IfStatement:
@@ -1357,7 +1367,7 @@
             - condition:
                 type: Expression
                 prefix: {value: "("}
-                suffix: {value: ")"}
+                suffix: {value: ") "}
             - statementblock:
                 type: StatementBlock
             - elseifs:
@@ -1372,11 +1382,11 @@
             - condition:
                 type: Expression
                 prefix: {value: "("}
-                suffix: {value: ")"}
+                suffix: {value: ") "}
             - statementblock:
                 type: StatementBlock
       - ElseStatement:
-          nmodl: " ELSE"
+          nmodl: " ELSE "
           members:
             - statementblock:
                 type: StatementBlock

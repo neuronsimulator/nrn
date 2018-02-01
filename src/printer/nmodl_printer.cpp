@@ -19,7 +19,7 @@ NMODLPrinter::NMODLPrinter(const std::string& filename) {
 
 void NMODLPrinter::push_level() {
     indent_level++;
-    *result << " {";
+    *result << "{";
     add_newline();
 }
 
