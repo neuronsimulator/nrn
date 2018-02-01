@@ -1662,11 +1662,15 @@
                 type: String
                 suffix: {value: "ENDVERBATIM"}
       - Comment:
-          nmodl: COMMENT
           members:
-            - comment:
+            - block_comment:
                 type: String
+                prefix: {value: "COMMENT"}
                 suffix: {value: "ENDCOMMENT"}
+                optional: true
+            - line_comment:
+                type: String
+                optional: true
 
 - Program:
     members:

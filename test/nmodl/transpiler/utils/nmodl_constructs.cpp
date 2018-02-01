@@ -1251,6 +1251,8 @@ std::map<std::string, NmodlTestCase> nmodl_valid_constructs{
                 }
             )",
             R"(
+                ? comment here
+
                 FUNCTION urand() {
                     VERBATIM
                         printf("Hello World!\n");
@@ -1273,7 +1275,9 @@ std::map<std::string, NmodlTestCase> nmodl_valid_constructs{
             R"(
                 FUNCTION urand() {
                     a = b+c
+                    : some comment here
                     c = d*e
+                    ? another comment here
                 }
             )"
         }
