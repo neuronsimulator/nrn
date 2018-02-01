@@ -195,22 +195,27 @@ void InlineVisitor::inline_function_call(T* callee,
     LocalVarRenameVisitor v;
     v.visit_statement_block(caller);
 
-    auto local_variables = get_local_variables(caller);
     auto& caller_arguments = node->arguments;
-
-    /// each block should already have local statement (added in statement block's visit function)
-    if (local_variables == nullptr) {
-        throw std::logic_error("got local statement as nullptr");
-    }
-
     std::string new_varname = get_new_name(function_name, "in", inlined_variables);
 
-    /// create new variable which will be used for returning value from inlined block
-    auto name = new ast::Name(new ast::String(new_varname));
-    ModToken tok;
-    name->set_token(tok);
+    /// check if caller statement could be replaced
+    bool to_replace = can_replace_statement(caller_statement);
 
-    local_variables->push_back(std::make_shared<ast::LocalVar>(name));
+    /// need to add local variable for function calls or for procedure call if it is part of
+    /// expression (standalone procedure calls don't need return statement)
+    if (callee->is_function_block() || to_replace == false) {
+        /// create new variable which will be used for returning value from inlined block
+        auto name = new ast::Name(new ast::String(new_varname));
+        ModToken tok;
+        name->set_token(tok);
+
+        auto local_variables = get_local_variables(caller);
+        /// each block should already have local statement
+        if (local_variables == nullptr) {
+            throw std::logic_error("got local statement as nullptr");
+        }
+        local_variables->push_back(std::make_shared<ast::LocalVar>(name));
+    }
 
     /// get a copy of function/procedure body
     auto inlined_block = callee->statementblock->clone();
@@ -227,12 +232,10 @@ void InlineVisitor::inline_function_call(T* callee,
     inline_arguments(inlined_block, callee->arguments, caller_arguments);
 
     /// to return value from procedure we have to add new variable
-    if (callee->is_procedure_block()) {
+    if (callee->is_procedure_block() && to_replace == false) {
         add_return_variable(inlined_block, new_varname);
     }
 
-    /// check if caller statement could be replaced and add new statement to appropriate map
-    bool to_replace = can_replace_statement(caller_statement);
     auto statement = new ast::ExpressionStatement(inlined_block);
 
     if (to_replace) {

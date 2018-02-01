@@ -189,8 +189,7 @@ class DefUseAnalyzeVisitor : public AstVisitor {
   public:
     DefUseAnalyzeVisitor() = delete;
 
-    explicit DefUseAnalyzeVisitor(symtab::SymbolTable* symtab)
-        : global_symtab(symtab) {
+    explicit DefUseAnalyzeVisitor(symtab::SymbolTable* symtab) : global_symtab(symtab) {
     }
 
     virtual void visit_binary_expression(BinaryExpression* node) override;
