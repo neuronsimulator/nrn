@@ -43,7 +43,7 @@ a class. This allows multiple independent instances to be created. For example:
             
 .. note::
     
-    Top-level variables can be accessed using the ``__main__`` module.
+    Top-level variables can be accessed through ``this_module`` where that is defined via ``import sys; this_module = sys.modules[__name__]``; see examples below.
 
 ----
 
@@ -187,7 +187,7 @@ a class. This allows multiple independent instances to be created. For example:
             python
 
             from neuron import h, gui
-            import __main__
+            import sys; this_module = sys.modules[__name__]
 
             button_state = 0
 
@@ -195,7 +195,7 @@ a class. This allows multiple independent instances to be created. For example:
                 print 'You pressed the button. The state is now:', button_state
 
             h.xpanel('StateButton demo')
-            h.xstatebutton('Press me', (__main__, 'button_state'), on_press)
+            h.xstatebutton('Press me', (this_module, 'button_state'), on_press)
             h.xpanel()
          
         .. image:: ../../images/xstatebutton.png
@@ -457,7 +457,7 @@ a class. This allows multiple independent instances to be created. For example:
             from neuron import h, gui
 
             mystr = h.ref('')
-            h.xpanel('strref demo')
+            h.xpanel('xvarlabel demo')
             h.xlabel('Dynamic text will appear below:')
             h.xvarlabel(mystr)
             h.xpanel()
@@ -518,12 +518,12 @@ a class. This allows multiple independent instances to be created. For example:
             python
             
             from neuron import h, gui
-            import __main__
+            import sys; this_module = sys.modules[__name__]
 
             val = 42
 
             h.xpanel('demo')
-            h.xvalue('enter value', (__main__, 'val'))
+            h.xvalue('enter value', (this_module, 'val'))
             h.xpanel()
 
             # changing val in the dialog will change val as seen by the program
@@ -639,7 +639,7 @@ a class. This allows multiple independent instances to be created. For example:
             python
             
             from neuron import h, gui
-            import __main__
+            import sys; this_module = sys.modules[__name__]
 
             val = 42
             val_str = h.ref('Slider value:         ')
@@ -649,7 +649,7 @@ a class. This allows multiple independent instances to be created. For example:
 
             h.xpanel('demo')
             h.xvarlabel(val_str)
-            h.xslider((__main__, 'val'), 0, 100, show_val)
+            h.xslider((this_module, 'val'), 0, 100, show_val)
             h.xpanel()
             show_val()
 
