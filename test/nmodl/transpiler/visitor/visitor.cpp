@@ -497,13 +497,13 @@ SCENARIO("Variable renaming in nested blocks") {
                 LOCAL gNaTs2_t_r_1
                 gNaTs2_t_r_1 = gNaTs2_tbar*m*m*m*h
                 ina = gNaTs2_t_r_1*(v-ena)
-                 {
+                {
                     LOCAL gNaTs2_t_r_0, h_r_1
                     gNaTs2_t_r_0 = m+h_r_1
-                     {
+                    {
                         LOCAL m_r_1
                         m_r_1 = gNaTs2_t_r_0+h_r_1
-                         {
+                        {
                             LOCAL m_r_0, h_r_0
                         }
                     }
@@ -513,8 +513,8 @@ SCENARIO("Variable renaming in nested blocks") {
             PROCEDURE rates() {
                 LOCAL x_r_1, m_r_2
                 m_r_2 = x_r_1+gNaTs2_tbar
-                 {
-                     {
+                {
+                    {
                         LOCAL h_r_2, x_r_0, gNaTs2_tbar_r_0
                         m_r_2 = h_r_2*x_r_0*gNaTs2_tbar_r_0+tau
                     }
@@ -594,7 +594,7 @@ SCENARIO("Simple procedure inlining") {
         std::string output_nmodl = R"(
             PROCEDURE rates_1() {
                 LOCAL x
-                 {
+                {
                     LOCAL x, y_in_0
                     y_in_0 = 23.1
                     x = 21.1*v+y_in_0
@@ -638,9 +638,9 @@ SCENARIO("Nested procedure inlining") {
         std::string output_nmodl = R"(
             PROCEDURE rates_1() {
                 LOCAL x, y
-                 {
+                {
                     LOCAL x, rates_3_in_0
-                     {
+                    {
                         LOCAL c, a_in_0, b_in_0
                         a_in_0 = x
                         b_in_0 = x+1.1
@@ -649,7 +649,7 @@ SCENARIO("Nested procedure inlining") {
                     }
                     x = 21.1*v+rates_3_in_0
                 }
-                 {
+                {
                     LOCAL c, a_in_1, b_in_1
                     a_in_1 = x
                     b_in_1 = y
@@ -659,7 +659,7 @@ SCENARIO("Nested procedure inlining") {
 
             PROCEDURE rates_2() {
                 LOCAL x, rates_3_in_0
-                 {
+                {
                     LOCAL c, a_in_0, b_in_0
                     a_in_0 = x
                     b_in_0 = x+1.1
@@ -701,7 +701,7 @@ SCENARIO("Inline function call in procedure") {
         std::string output_nmodl = R"(
             PROCEDURE rates_1() {
                 LOCAL x, rates_2_in_0
-                 {
+                {
                     LOCAL x
                     x = 21.1*12.1+11
                     rates_2_in_0 = x
@@ -743,7 +743,7 @@ SCENARIO("Function call within conditional statement") {
         std::string output_nmodl = R"(
             FUNCTION rates_1() {
                 LOCAL rates_2_in_0
-                 {
+                {
                     rates_2_in_0 = 10
                 }
                 IF (rates_2_in_0) {
@@ -784,10 +784,10 @@ SCENARIO("Multiple function calls in same statement") {
         std::string output_nmodl = R"(
             FUNCTION rates_1() {
                 LOCAL rates_2_in_0, rates_2_in_1
-                 {
+                {
                     rates_2_in_0 = 10
                 }
-                 {
+                {
                     rates_2_in_1 = 10
                 }
                 IF (rates_2_in_0-rates_2_in_1) {
@@ -823,13 +823,13 @@ SCENARIO("Multiple function calls in same statement") {
         std::string output_nmodl = R"(
             FUNCTION rates_1() {
                 LOCAL x, rates_2_in_0, rates_2_in_1, rates_2_in_2
-                 {
+                {
                     rates_2_in_0 = 10
                 }
-                 {
+                {
                     rates_2_in_1 = 10
                 }
-                 {
+                {
                     rates_2_in_2 = 10
                 }
                 x = (rates_2_in_0+(rates_2_in_1/rates_2_in_2))
@@ -871,7 +871,7 @@ SCENARIO("Nested function calls withing arguments") {
         std::string output_nmodl = R"(
             FUNCTION rates_2() {
                 LOCAL rates_3_in_0, rates_3_in_1
-                 {
+                {
                     LOCAL x_in_0, y_in_0
                     x_in_0 = 11
                     y_in_0 = 21
@@ -880,7 +880,7 @@ SCENARIO("Nested function calls withing arguments") {
                 IF (rates_3_in_0) {
                     rates_2 = 10.1
                 }
-                 {
+                {
                     LOCAL x_in_1, y_in_1
                     x_in_1 = 12
                     y_in_1 = 22
@@ -891,9 +891,9 @@ SCENARIO("Nested function calls withing arguments") {
 
             FUNCTION rates_1() {
                 LOCAL rates_2_in_0
-                 {
+                {
                     LOCAL rates_3_in_0, rates_3_in_1
-                     {
+                    {
                         LOCAL x_in_0, y_in_0
                         x_in_0 = 11
                         y_in_0 = 21
@@ -902,7 +902,7 @@ SCENARIO("Nested function calls withing arguments") {
                     IF (rates_3_in_0) {
                         rates_2_in_0 = 10.1
                     }
-                     {
+                    {
                         LOCAL x_in_1, y_in_1
                         x_in_1 = 12
                         y_in_1 = 22
@@ -943,7 +943,7 @@ SCENARIO("Function call in non-binary expression") {
         std::string output_nmodl = R"(
             PROCEDURE rates_1() {
                 LOCAL x, rates_2_in_0
-                 {
+                {
                     LOCAL y_in_0
                     y_in_0 = 23.1
                     rates_2_in_0 = 21.1*v+y_in_0
@@ -977,12 +977,12 @@ SCENARIO("Function call in non-binary expression") {
         std::string output_nmodl = R"(
             FUNCTION rates_1() {
                 LOCAL rates_2_in_0, rates_2_in_1
-                 {
+                {
                     LOCAL x_in_0
                     x_in_0 = 11
                     rates_2_in_0 = 10+x_in_0
                 }
-                 {
+                {
                     LOCAL x_in_1
                     x_in_1 = rates_2_in_0
                     rates_2_in_1 = 10+x_in_1
@@ -1020,7 +1020,7 @@ SCENARIO("Function call as standalone expression") {
         std::string output_nmodl = R"(
             PROCEDURE rates_1() {
                 LOCAL x, rates_2_in_0
-                 {
+                {
                     LOCAL y_in_0
                     y_in_0 = 23.1
                     rates_2_in_0 = 21.1*v+y_in_0
@@ -1056,11 +1056,11 @@ SCENARIO("Procedure call as standalone statement as well as part of expression")
         std::string output_nmodl = R"(
             PROCEDURE rates_1() {
                 LOCAL x, rates_2_in_0
-                 {
+                {
                     rates_2_in_0 = 0
                 }
                 x = 10+rates_2_in_0
-                 {
+                {
                 }
             }
 
@@ -1104,7 +1104,7 @@ SCENARIO("Procedure inlining handles local-global name conflict") {
             PROCEDURE rates_1() {
                 LOCAL x_r_0
                 x_r_0 = 12
-                 {
+                {
                     LOCAL y_in_0
                     y_in_0 = x_r_0
                     x = 10+y_in_0
