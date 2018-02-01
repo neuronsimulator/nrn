@@ -593,12 +593,11 @@ SCENARIO("Simple procedure inlining") {
 
         std::string output_nmodl = R"(
             PROCEDURE rates_1() {
-                LOCAL x, rates_2_in_0
+                LOCAL x
                  {
                     LOCAL x, y_in_0
                     y_in_0 = 23.1
                     x = 21.1*v+y_in_0
-                    rates_2_in_0 = 0
                 }
             }
 
@@ -627,8 +626,7 @@ SCENARIO("Nested procedure inlining") {
 
             PROCEDURE rates_2() {
                 LOCAL x
-                x = 21.1*v
-                rates_3(x, x+1.1)
+                x = 21.1*v + rates_3(x, x+1.1)
             }
 
             PROCEDURE rates_3(a, b) {
@@ -639,10 +637,9 @@ SCENARIO("Nested procedure inlining") {
 
         std::string output_nmodl = R"(
             PROCEDURE rates_1() {
-                LOCAL x, y, rates_2_in_0, rates_3_in_1
+                LOCAL x, y
                  {
                     LOCAL x, rates_3_in_0
-                    x = 21.1*v
                      {
                         LOCAL c, a_in_0, b_in_0
                         a_in_0 = x
@@ -650,20 +647,18 @@ SCENARIO("Nested procedure inlining") {
                         c = 21.1*v+a_in_0*b_in_0
                         rates_3_in_0 = 0
                     }
-                    rates_2_in_0 = 0
+                    x = 21.1*v+rates_3_in_0
                 }
                  {
                     LOCAL c, a_in_1, b_in_1
                     a_in_1 = x
                     b_in_1 = y
                     c = 21.1*v+a_in_1*b_in_1
-                    rates_3_in_1 = 0
                 }
             }
 
             PROCEDURE rates_2() {
                 LOCAL x, rates_3_in_0
-                x = 21.1*v
                  {
                     LOCAL c, a_in_0, b_in_0
                     a_in_0 = x
@@ -671,6 +666,7 @@ SCENARIO("Nested procedure inlining") {
                     c = 21.1*v+a_in_0*b_in_0
                     rates_3_in_0 = 0
                 }
+                x = 21.1*v+rates_3_in_0
             }
 
             PROCEDURE rates_3(a, b) {
@@ -1007,6 +1003,43 @@ SCENARIO("Function call in non-binary expression") {
     }
 }
 
+
+SCENARIO("Function call as standalone expression") {
+    GIVEN("Function call as a statement") {
+        std::string input_nmodl = R"(
+            PROCEDURE rates_1() {
+                LOCAL x
+                rates_2(23.1)
+            }
+
+            FUNCTION rates_2(y) {
+                rates_2 = 21.1*v+y
+            }
+        )";
+
+        std::string output_nmodl = R"(
+            PROCEDURE rates_1() {
+                LOCAL x, rates_2_in_0
+                 {
+                    LOCAL y_in_0
+                    y_in_0 = 23.1
+                    rates_2_in_0 = 21.1*v+y_in_0
+                }
+            }
+
+            FUNCTION rates_2(y) {
+                rates_2 = 21.1*v+y
+            }
+        )";
+        THEN("Function gets inlined but it's value is not used") {
+            std::string input = reindent_text(input_nmodl);
+            auto expected_result = reindent_text(output_nmodl);
+            auto result = run_inline_visitor(input);
+            REQUIRE(result == expected_result);
+        }
+    }
+}
+
 SCENARIO("Procedure call as standalone statement as well as part of expression") {
     GIVEN("A procedure call in expression and statement") {
         std::string input_nmodl = R"(
@@ -1022,13 +1055,12 @@ SCENARIO("Procedure call as standalone statement as well as part of expression")
 
         std::string output_nmodl = R"(
             PROCEDURE rates_1() {
-                LOCAL x, rates_2_in_0, rates_2_in_1
+                LOCAL x, rates_2_in_0
                  {
                     rates_2_in_0 = 0
                 }
                 x = 10+rates_2_in_0
                  {
-                    rates_2_in_1 = 0
                 }
             }
 
@@ -1070,13 +1102,12 @@ SCENARIO("Procedure inlining handles local-global name conflict") {
             }
 
             PROCEDURE rates_1() {
-                LOCAL x_r_0, rates_2_in_0
+                LOCAL x_r_0
                 x_r_0 = 12
                  {
                     LOCAL y_in_0
                     y_in_0 = x_r_0
                     x = 10+y_in_0
-                    rates_2_in_0 = 0
                 }
                 x_r_0 = 11
             }
