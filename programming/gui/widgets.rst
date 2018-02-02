@@ -28,13 +28,13 @@ a class. This allows multiple independent instances to be created. For example:
             h.xvalue('Type a number', (self, 'myval'), 1, self.numberset)
             h.xpanel()
         def clicked(self, choice):
-            print 'you switched the radio button! choice = %g' % choice
+            print('you switched the radio button! choice = %g' % choice)
         def statepressed(self):
-            print 'you pressed the state button. Value = %g' % self.mystate
+            print('you pressed the state button. Value = %g' % self.mystate)
         def checkboxpressed(self):
-            print 'you clicked the checkbox. state = %g' % self.checkbox
+            print('you clicked the checkbox. state = %g' % self.checkbox)
         def numberset(self):
-            print 'you set the number to: %g' % self.myval
+            print('you set the number to: %g' % self.myval)
 
     window = MyWindow()
 
@@ -129,7 +129,7 @@ a class. This allows multiple independent instances to be created. For example:
             from neuron import h, gui
 
             def on_press():
-                print 'You pressed the button.'
+                print('You pressed the button.')
 
             h.xpanel('Button demo')
             h.xbutton('Press me', on_press)
@@ -192,7 +192,7 @@ a class. This allows multiple independent instances to be created. For example:
             button_state = 0
 
             def on_press():
-                print 'You pressed the button. The state is now:', button_state
+                print('You pressed the button. The state is now: %g' % button_state)
 
             h.xpanel('StateButton demo')
             h.xstatebutton('Press me', (this_module, 'button_state'), on_press)
@@ -255,7 +255,7 @@ a class. This allows multiple independent instances to be created. For example:
 
             def a(n):
                 """function to be called when a radio button is toggled"""
-                print n
+                print(n)
 
             h.xpanel('panel')
             h.xmenu('menu')
@@ -307,10 +307,10 @@ a class. This allows multiple independent instances to be created. For example:
                 from neuron import h, gui
 
                 def selected1():
-                    print 'you selected option 1'
+                    print('you selected option 1')
 
                 def selected2():
-                    print 'you selected option 2'
+                    print('you selected option 2')
 
                 h.xpanel('xmenu demo')
                 h.xmenu('one')
@@ -336,7 +336,7 @@ a class. This allows multiple independent instances to be created. For example:
                 import sys
 
                 def item_selected(n):
-                    print 'selected value %g' % n
+                    print('selected value %g' % n)
 
                 h.xpanel("menubar") 
                 h.xmenu("first") 
@@ -564,7 +564,7 @@ a class. This allows multiple independent instances to be created. For example:
             val = h.ref(42)
 
             def show_val():
-                print 'value is:', val[0]
+                print('value is: %g' % val[0])
 
             h.xpanel('demo')
             h.xpvalue('enter value', val, 1)
@@ -716,11 +716,11 @@ a class. This allows multiple independent instances to be created. For example:
         .. code-block::
             python
             
-            print h.units('dt')        # ms
-            print h.units('gna_hh')    # S/cm2
-            print h.units('Ra')        # ohm-cm
-            print h.units('L')         # um
-            print h.units('ExpSyn.g')  # uS
+            print(h.units('dt'))        # ms
+            print(h.units('gna_hh'))    # S/cm2
+            print(h.units('Ra'))        # ohm-cm
+            print(h.units('L'))         # um
+            print(h.units('ExpSyn.g'))  # uS
 
     .. warning::
     
