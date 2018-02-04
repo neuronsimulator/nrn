@@ -35,9 +35,6 @@
 /** enable tracing parser for debugging */
 %define parse.trace
 
-/** enable location tracking */
-%locations
-
 /** add extra arguments to yyparse() and yylexe() methods */
 %parse-param {class Lexer& scanner}
 %parse-param {class Driver& driver}
@@ -55,6 +52,8 @@
 
 /** namespace to enclose parser */
 %name-prefix "nmodl"
+
+%define api.namespace {nmodl}
 
 /** set the parser's class identifier */
 %define parser_class_name {Parser}

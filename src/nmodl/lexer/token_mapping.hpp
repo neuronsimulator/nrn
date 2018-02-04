@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include "parser/nmodl_parser.hpp"
+#include "parser/nmodl/nmodl_parser.hpp"
 
 namespace nmodl {
     bool is_keyword(const std::string& name);

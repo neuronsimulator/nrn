@@ -2,8 +2,10 @@
 #define NMODL_TEST_CONSTRUCTS
 
 #include <string>
+#include <vector>
 #include <map>
 
+/// represent nmodl construct test
 struct NmodlTestCase {
     /// name of the test
     std::string name;
@@ -26,7 +28,23 @@ struct NmodlTestCase {
     }
 };
 
+/// represent differential equation test
+struct DiffEqTestCase {
+    /// name of the mod file
+    std::string name;
+
+    /// differential equation to solve
+    std::string equation;
+
+    /// expected solution
+    std::string solution;
+
+    /// solve method
+    std::string method;
+};
+
 extern std::map<std::string, NmodlTestCase> nmdol_invalid_constructs;
 extern std::map<std::string, NmodlTestCase> nmodl_valid_constructs;
+extern std::vector<DiffEqTestCase> diff_eq_constructs;
 
 #endif

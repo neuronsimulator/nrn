@@ -4,7 +4,7 @@
 
 #include "ast/ast.hpp"
 #include "lexer/modl.h"
-#include "parser/nmodl_parser.hpp"
+#include "parser/nmodl/nmodl_parser.hpp"
 
 namespace nmodl {
     using Token = nmodl::Parser::token;

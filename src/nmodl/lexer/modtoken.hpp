@@ -6,7 +6,7 @@
 #include <sstream>
 #include <string>
 
-#include "parser/location.hh"
+#include "parser/nmodl/location.hh"
 
 /**
  * \class ModToken

@@ -23,7 +23,7 @@ namespace nmodl {
      * class.
      *
      * \todo lexer, parser and ast member variables are used inside lexer/
-     * parser instaces. The local instaces are created inside parse_stream
+     * parser instances. The local instaces are created inside parse_stream
      * and hence the pointers are no longer valid except ast. Need better
      * way to handle this.
      *

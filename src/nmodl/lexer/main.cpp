@@ -13,7 +13,7 @@
  * location.
  */
 
-int main(int argc, char* argv[]) {
+int main(int argc, const char* argv[]) {
     try {
         TCLAP::CmdLine cmd("NMODL Lexer: Standalone lexer program for NMODL");
         TCLAP::ValueArg<std::string> filearg("", "file", "NMODL input file path", false,

@@ -1284,3 +1284,331 @@ std::map<std::string, NmodlTestCase> nmodl_valid_constructs{
     }
     // clang-format on
 };
+
+
+std::vector<DiffEqTestCase> diff_eq_constructs{
+    // clang-format off
+
+        /// differential equations from BlueBrain mod files including latest V6 branch
+
+        {
+            "NaTs2_t.mod",
+            "m' = (mInf-m)/mTau",
+            "m = m+(1.0-exp(dt*((((-1.0)))/mTau)))*(-(((mInf))/mTau)/((((-1.0)))/mTau)-m)",
+            "cnexp"
+        },
+
+        {
+            "tmgExSyn.mod",
+            "A' = -A/tau_r",
+            "A = A+(1.0-exp(dt*((-1.0)/tau_r)))*(-(0.0)/((-1.0)/tau_r)-A)",
+            "cnexp"
+        },
+
+        {
+            "CaDynamics_DC0.mod",
+            "cai' = -(10000)*ica*surftovol*gamma/(2*FARADAY) - (cai - minCai)/decay",
+            "cai = cai+(1.0-exp(dt*((-((1.0))/decay))))*(-(((((-(10000))*(ica))*(surftovol))*(gamma))/(2*FARADAY)-(((-minCai)))/decay)/((-((1.0))/decay))-cai)",
+            "cnexp"
+        },
+
+        {
+            "CaDynamics_DC1.mod",
+            "cai' = -(10000)*ica*surftovol*gamma/(2*FARADAY) - (cai - minCai)/decay * diamref * surftovol",
+            "cai = cai+(1.0-exp(dt*((-((((1.0))/decay)*(diamref))*(surftovol)))))*(-(((((-(10000))*(ica))*(surftovol))*(gamma))/(2*FARADAY)-(((((-minCai)))/decay)*(diamref))*(surftovol))/((-((((1.0))/decay)*(diamref))*(surftovol)))-cai)",
+            "cnexp"
+        },
+
+        {
+            "DetAMPANMDA.mod",
+            "A_AMPA' = -A_AMPA/tau_r_AMPA",
+            "A_AMPA = A_AMPA+(1.0-exp(dt*((-1.0)/tau_r_AMPA)))*(-(0.0)/((-1.0)/tau_r_AMPA)-A_AMPA)",
+            "cnexp"
+        },
+
+        {
+            "StochKv.mod",
+            "n' = a - (a + b)*n",
+            "n = n+(1.0-exp(dt*((-((a+b))*(1.0)))))*(-(a)/((-((a+b))*(1.0)))-n)",
+            "cnexp"
+        },
+
+        {
+            "StochKv2.mod",
+            "l' = al - (al + bl)*l",
+            "l = l+(1.0-exp(dt*((-((al+bl))*(1.0)))))*(-(al)/((-((al+bl))*(1.0)))-l)",
+            "cnexp"
+        },
+
+         {
+            "_calcium.mod",
+            "mcal' = ((inf-mcal)/tau)",
+            "mcal = mcal+(1.0-exp(dt*(((((-1.0)))/tau))))*(-((((inf))/tau))/(((((-1.0)))/tau))-mcal)",
+            "cnexp"
+        },
+
+        {
+            "_calciumc_concentration.mod",
+            "cai' = -(ica*surftovol/FARADAY) - cai/decay",
+            "cai = cai+(1.0-exp(dt*((-(1.0)/decay))))*(-(-(((ica)*(surftovol))/FARADAY))/((-(1.0)/decay))-cai)",
+            "cnexp"
+        },
+
+        {
+            "_outside_calcium_concentration.mod",
+            "cao' = ica*(1e8)/(fhspace*FARADAY) + (cabath-cao)/trans",
+            "cao = cao+(1.0-exp(dt*((((-1.0)))/trans)))*(-(((ica)*((1e8)))/(fhspace*FARADAY)+((cabath))/trans)/((((-1.0)))/trans)-cao)",
+            "cnexp"
+        },
+
+
+        /// glusynapse.mod for plasticity simulations
+
+
+        /// using cnexp method
+
+        {
+            "GluSynapse.mod",
+            "A_AMPA' = -A_AMPA/tau_r_AMPA",
+            "A_AMPA = A_AMPA+(1.0-exp(dt*((-1.0)/tau_r_AMPA)))*(-(0.0)/((-1.0)/tau_r_AMPA)-A_AMPA)",
+            "cnexp"
+        },
+
+        {
+            "GluSynapse.mod",
+            "m_VDCC' = (minf_VDCC-m_VDCC)/mtau_VDCC",
+            "m_VDCC = m_VDCC+(1.0-exp(dt*((((-1.0)))/mtau_VDCC)))*(-(((minf_VDCC))/mtau_VDCC)/((((-1.0)))/mtau_VDCC)-m_VDCC)",
+            "cnexp"
+        },
+
+        {
+            "GluSynapse.mod",
+            "cai_CR' = -(1e-9)*(ica_NMDA + ica_VDCC)*gamma_ca_CR/((1e-15)*volume_CR*2*FARADAY) - (cai_CR - min_ca_CR)/tau_ca_CR",
+            "cai_CR = cai_CR+(1.0-exp(dt*((-((1.0))/tau_ca_CR))))*(-((((-(1e-9))*((ica_NMDA+ica_VDCC)))*(gamma_ca_CR))/((1e-15)*volume_CR*2*FARADAY)-(((-min_ca_CR)))/tau_ca_CR)/((-((1.0))/tau_ca_CR))-cai_CR)",
+            "cnexp"
+        },
+
+        {
+            "GluSynapse.mod",
+            "effcai_GB' = -0.005*effcai_GB + (cai_CR - min_ca_CR)",
+            "effcai_GB = effcai_GB+(1.0-exp(dt*((-0.005)*(1.0))))*(-((cai_CR-min_ca_CR))/((-0.005)*(1.0))-effcai_GB)",
+            "cnexp"
+        },
+
+        {
+            "GluSynapse.mod",
+            "Rho_GB' = ( - Rho_GB*(1-Rho_GB)*(rho_star_GB-Rho_GB) + potentiate_GB*gamma_p_GB*(1-Rho_GB) - depress_GB* gamma_d_GB*Rho_GB ) / ((1e3)*tau_GB)",
+            "Rho_GB = Rho_GB+(1.0-exp(dt*(((((((-1.0)*((1-Rho_GB))+(-Rho_GB)*(((-1.0)))))*((rho_star_GB-Rho_GB))+(-Rho_GB*(1-Rho_GB))*(((-1.0))))+(potentiate_GB*gamma_p_GB)*(((-1.0)))-(depress_GB*gamma_d_GB)*(1.0)))/((1e3)*tau_GB))))*(-Rho_GB)",
+            "cnexp"
+        },
+
+        {
+            "GluSynapse.mod",
+            "Use_GB' = (Use_d_GB + Rho_GB*(Use_p_GB-Use_d_GB) - Use_GB) / ((1e3)*tau_Use_GB)",
+            "Use_GB = Use_GB+(1.0-exp(dt*((((-1.0)))/((1e3)*tau_Use_GB))))*(-(((Use_d_GB+(Rho_GB)*((Use_p_GB-Use_d_GB))))/((1e3)*tau_Use_GB))/((((-1.0)))/((1e3)*tau_Use_GB))-Use_GB)",
+            "cnexp"
+        },
+
+        /// some made-up examples to test cnexp solver implementation
+
+        {
+            "GluSynapse.mod",
+            "A_AMPA' = fun(tau_r_AMPA)",
+            "A_AMPA = A_AMPA-dt*(-(fun(tau_r_AMPA)))",
+            "cnexp"
+        },
+
+        {
+            "GluSynapse.mod",
+            "A_AMPA' = fun(tau_r_AMPA, B_AMPA) + B_AMPA",
+            "A_AMPA = A_AMPA-dt*(-(fun(tau_r_AMPA,B_AMPA)+B_AMPA))",
+            "cnexp"
+        },
+
+        {
+            "GluSynapse.mod",
+            "A_AMPA' = tau_r_AMPA/A_AMPA",
+            "DA_AMPA = DA_AMPA/(1.0-dt*(((tau_r_AMPA/(A_AMPA+0.001))-(tau_r_AMPA/A_AMPA))/0.001))",
+            "cnexp"
+        },
+
+        {
+            "GluSynapse.mod",
+            "A_AMPA' = A_AMPA*A_AMPA",
+            "A_AMPA = A_AMPA+(1.0-exp(dt*(((1.0)*(A_AMPA)+(A_AMPA)*(1.0)))))*(-A_AMPA)",
+            "cnexp"
+        },
+
+        {
+            "GluSynapse.mod",
+            "A_AMPA' = tau_r_AMPA/A_AMPA",
+            "DA_AMPA = DA_AMPA/(1.0-dt*(((tau_r_AMPA/(A_AMPA+0.001))-(tau_r_AMPA/A_AMPA))/0.001))",
+            "derivimplicit"
+        },
+
+        {
+            "GluSynapse.mod",
+            "A_AMPA' = A_AMPA*A_AMPA",
+            "DA_AMPA = DA_AMPA/(1.0-dt*(((1.0)*(A_AMPA)+(A_AMPA)*(1.0))))",
+            "euler"
+        },
+        /// using derivimplicit method
+        /// note that the equation in state block gets changed by replacing state variable with Dstate.
+        /// below expressions are from ode_matsol1 method
+
+        {
+                "GluSynapse.mod",
+                "A_AMPA' = -A_AMPA/tau_r_AMPA",
+                "DA_AMPA = DA_AMPA/(1.0-dt*((-1.0)/tau_r_AMPA))",
+                "derivimplicit"
+        },
+
+        {
+                "GluSynapse.mod",
+                "m_VDCC' = (minf_VDCC-m_VDCC)/mtau_VDCC",
+                "Dm_VDCC = Dm_VDCC/(1.0-dt*((((-1.0)))/mtau_VDCC))",
+                "derivimplicit"
+        },
+
+        {
+                "GluSynapse.mod",
+                "cai_CR' = -(1e-9)*(ica_NMDA + ica_VDCC)*gamma_ca_CR/((1e-15)*volume_CR*2*FARADAY) - (cai_CR - min_ca_CR)/tau_ca_CR",
+                "Dcai_CR = Dcai_CR/(1.0-dt*((-((1.0))/tau_ca_CR)))",
+                "derivimplicit"
+        },
+
+        {
+                "GluSynapse.mod",
+                "effcai_GB' = -0.005*effcai_GB + (cai_CR - min_ca_CR)",
+                "Deffcai_GB = Deffcai_GB/(1.0-dt*((-0.005)*(1.0)))",
+                "derivimplicit"
+        },
+
+        {
+                "GluSynapse.mod",
+                "Rho_GB' = ( - Rho_GB*(1-Rho_GB)*(rho_star_GB-Rho_GB) + potentiate_GB*gamma_p_GB*(1-Rho_GB) - depress_GB*gamma_d_GB*Rho_GB ) / ((1e3)*tau_GB)",
+                "DRho_GB = DRho_GB/(1.0-dt*(((((((-1.0)*((1-Rho_GB))+(-Rho_GB)*(((-1.0)))))*((rho_star_GB-Rho_GB))+(-Rho_GB*(1-Rho_GB))*(((-1.0))))+(potentiate_GB*gamma_p_GB)*(((-1.0)))-(depress_GB*gamma_d_GB)*(1.0)))/((1e3)*tau_GB)))",
+                "derivimplicit"
+        },
+
+        {
+                "GluSynapse.mod",
+                "Use_GB' = (Use_d_GB + Rho_GB*(Use_p_GB-Use_d_GB) - Use_GB) / ((1e3)*tau_Use_GB)",
+                "DUse_GB = DUse_GB/(1.0-dt*((((-1.0)))/((1e3)*tau_Use_GB)))",
+                "derivimplicit"
+        },
+
+
+        /// using euler method : solutions are same as derivimplicit method
+
+        {
+                "GluSynapse.mod",
+                "A_AMPA' = -A_AMPA/tau_r_AMPA",
+                "DA_AMPA = DA_AMPA/(1.0-dt*((-1.0)/tau_r_AMPA))",
+                "euler"
+        },
+
+        {
+                "GluSynapse.mod",
+                "m_VDCC' = (minf_VDCC-m_VDCC)/mtau_VDCC",
+                "Dm_VDCC = Dm_VDCC/(1.0-dt*((((-1.0)))/mtau_VDCC))",
+                "euler"
+        },
+
+        {
+                "GluSynapse.mod",
+                "cai_CR' = -(1e-9)*(ica_NMDA + ica_VDCC)*gamma_ca_CR/((1e-15)*volume_CR*2*FARADAY) - (cai_CR - min_ca_CR)/tau_ca_CR",
+                "Dcai_CR = Dcai_CR/(1.0-dt*((-((1.0))/tau_ca_CR)))",
+                "euler"
+        },
+
+        {
+                "GluSynapse.mod",
+                "effcai_GB' = -0.005*effcai_GB + (cai_CR - min_ca_CR)",
+                "Deffcai_GB = Deffcai_GB/(1.0-dt*((-0.005)*(1.0)))",
+                "euler"
+        },
+
+        {
+                "GluSynapse.mod",
+                "Rho_GB' = ( - Rho_GB*(1-Rho_GB)*(rho_star_GB-Rho_GB) + potentiate_GB*gamma_p_GB*(1-Rho_GB) - depress_GB*gamma_d_GB*Rho_GB ) / ((1e3)*tau_GB)",
+                "DRho_GB = DRho_GB/(1.0-dt*(((((((-1.0)*((1-Rho_GB))+(-Rho_GB)*(((-1.0)))))*((rho_star_GB-Rho_GB))+(-Rho_GB*(1-Rho_GB))*(((-1.0))))+(potentiate_GB*gamma_p_GB)*(((-1.0)))-(depress_GB*gamma_d_GB)*(1.0)))/((1e3)*tau_GB)))",
+                "euler"
+        },
+
+        {
+                "GluSynapse.mod",
+                "Use_GB' = (Use_d_GB + Rho_GB*(Use_p_GB-Use_d_GB) - Use_GB) / ((1e3)*tau_Use_GB)",
+                "DUse_GB = DUse_GB/(1.0-dt*((((-1.0)))/((1e3)*tau_Use_GB)))",
+                "euler"
+        },
+
+
+        /// equations of nonlinear from taken from nocmodlx/test/input/usecases/nonlinear
+        /// using derivimplicit and euler method
+
+        {
+            "wc.mod",
+            "uu' = -uu+f(aee*uu-aie*vv-ze+i_e)",
+            "Duu = Duu/(1.0-dt*(((-(uu+0.001)+f(aee*(uu+0.001)-aie*vv-ze+i_e))-(-uu+f(aee*uu-aie*vv-ze+i_e)))/0.001))",
+            "derivimplicit"
+        },
+
+        {
+            "wc.mod",
+            "vv' = (-vv+f(aei*uu-aii*vv-zi+i_i))/tau",
+            "Dvv = Dvv/(1.0-dt*((((-(vv+0.001)+f(aei*uu-aii*(vv+0.001)-zi+i_i))/tau)-((-vv+f(aei*uu-aii*vv-zi+i_i))/tau))/0.001))",
+            "derivimplicit"
+        },
+
+        {
+            "ER.mod",
+            "caer' = -(0.001)*( Jip3(cali,caer, ip3ip, Vip3, dact, dinh, dip3, ddis)+errel(cali,caer,kerrel,kerm)-erfil(cali,caer,kerfila,kerfilb)+erlek(cali,caer,kerlek))/(rhover/fer)",
+            "Dcaer = Dcaer/(1.0-dt*(((-(0.001)*(Jip3(cali,(caer+0.001),ip3ip,Vip3,dact,dinh,dip3,ddis)+errel(cali,(caer+0.001),kerrel,kerm)-erfil(cali,(caer+0.001),kerfila,kerfilb)+erlek(cali,(caer+0.001),kerlek))/(rhover/fer))-(-(0.001)*(Jip3(cali,caer,ip3ip,Vip3,dact,dinh,dip3,ddis)+errel(cali,caer,kerrel,kerm)-erfil(cali,caer,kerfila,kerfilb)+erlek(cali,caer,kerlek))/(rhover/fer)))/0.001))",
+            "derivimplicit"
+        },
+
+        {
+            "ER.mod",
+            "Jip3h' = (Jip3hinf(ip3ip, cali, dinh, dip3, ddis)-Jip3h)/Jip3th(ip3ip, ainh, cali, dinh, dip3, ddis)",
+            "DJip3h = DJip3h/(1.0-dt*((((-1.0)))/Jip3th(ip3ip,ainh,cali,dinh,dip3,ddis)))",
+            "derivimplicit"
+        },
+
+        {
+            "gr_ltp1.mod",
+            "messenger' = -gamma*picanmda - eta*messenger",
+            "Dmessenger = Dmessenger/(1.0-dt*((-(eta)*(1.0))))",
+            "derivimplicit"
+        },
+
+        {
+            "gr_ltp1.mod",
+            "Np' = nu1*messenger  - (pp - picanmda*gdel1)*Np +(Mp*Np*Np)/(Ap+Np*Np)",
+            "DNp = DNp/(1.0-dt*(((nu1*messenger-(pp-picanmda*gdel1)*(Np+0.001)+(Mp*(Np+0.001)*(Np+0.001))/(Ap+(Np+0.001)*(Np+0.001)))-(nu1*messenger-(pp-picanmda*gdel1)*Np+(Mp*Np*Np)/(Ap+Np*Np)))/0.001))",
+            "derivimplicit"
+        },
+
+        {
+            "cajsracc.mod",
+            "cri' = ((cui - cri)/180 - 0.5*icr)/(1 + Csqn*Kmcsqn/((cri + Kmcsqn)*(cri + Kmcsqn)))",
+            "Dcri = Dcri/(1.0-dt*(((((cui-(cri+0.001))/180-0.5*icr)/(1+Csqn*Kmcsqn/(((cri+0.001)+Kmcsqn)*((cri+0.001)+Kmcsqn))))-(((cui-cri)/180-0.5*icr)/(1+Csqn*Kmcsqn/((cri+Kmcsqn)*(cri+Kmcsqn)))))/0.001))",
+            "derivimplicit"
+        },
+
+        {
+            "syn_bip_gan.mod",
+            "s' = (s_inf-s)/((1-s_inf)*tau*s)",
+            "Ds = Ds/(1.0-dt*((((s_inf-(s+0.001))/((1-s_inf)*tau*(s+0.001)))-((s_inf-s)/((1-s_inf)*tau*s)))/0.001))",
+            "euler"
+        },
+
+        {
+            "syn_rod_bip.mod",
+            "s' = (s_inf-s)/((1-s_inf)*tau*s)",
+            "Ds = Ds/(1.0-dt*((((s_inf-(s+0.001))/((1-s_inf)*tau*(s+0.001)))-((s_inf-s)/((1-s_inf)*tau*s)))/0.001))",
+            "euler"
+        },
+
+    // clang-format on
+};
