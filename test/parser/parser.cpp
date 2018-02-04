@@ -4,6 +4,7 @@
 
 #include "catch/catch.hpp"
 #include "parser/nmodl_driver.hpp"
+#include "parser/diffeq_driver.hpp"
 #include "test/utils/nmodl_constructs.h"
 
 //=============================================================================
@@ -107,6 +108,34 @@ SCENARIO("Parser test for invalid NMODL grammar constructs") {
             THEN("Parser throws an exception while parsing : " + test_case.input) {
                 REQUIRE_THROWS(is_valid_construct(test_case.input));
             }
+        }
+    }
+}
+
+
+//=============================================================================
+// Differential Equation Parser tests
+//=============================================================================
+
+std::string solve_construct(const std::string& equation, std::string method) {
+    diffeq::Driver driver;
+    auto solution = driver.solve(equation, method);
+    return solution;
+}
+
+SCENARIO("Solving differential equations using NEURON's implementation") {
+    GIVEN("A differential equation") {
+        int counter = 0;
+        for (const auto& test_case : diff_eq_constructs) {
+            auto prefix = "." + std::to_string(counter);
+            WHEN(prefix + " EQUATION = " + test_case.equation + " METHOD = " + test_case.method) {
+                THEN(prefix + " SOLUTION = " + test_case.solution) {
+                    auto expected_result = test_case.solution;
+                    auto result = solve_construct(test_case.equation, test_case.method);
+                    REQUIRE(result == expected_result);
+                }
+            }
+            counter++;
         }
     }
 }

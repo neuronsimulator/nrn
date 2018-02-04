@@ -17,7 +17,6 @@ void NmodlPrintVisitor::visit_element(const std::vector<T>& elements,
                                       std::string separator,
                                       bool program,
                                       bool statement) {
-
     for (auto iter = elements.begin(); iter != elements.end(); iter++) {
         /// statements need indentation at the start
         if (statement) {
@@ -39,9 +38,9 @@ void NmodlPrintVisitor::visit_element(const std::vector<T>& elements,
         /// if there are multiple inline comments then we want them to be
         /// contiguous and only last comment should have extra line.
         bool extra_newline = false;
-        if(!is_last(iter, elements)) {
+        if (!is_last(iter, elements)) {
             extra_newline = true;
-            if((*iter)->is_comment() && (*(iter+1))->is_comment()) {
+            if ((*iter)->is_comment() && (*(iter + 1))->is_comment()) {
                 extra_newline = false;
             }
         }

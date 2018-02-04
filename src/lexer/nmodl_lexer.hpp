@@ -2,7 +2,7 @@
 #define NMODL_LEXER_HPP
 
 #include "ast/ast.hpp"
-#include "parser/nmodl_parser.hpp"
+#include "parser/nmodl/nmodl_parser.hpp"
 
 /** Flex expects the declaration of yylex to be defined in the macro YY_DECL
  * and C++ parser class expects it to be declared. */

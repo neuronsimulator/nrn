@@ -1,0 +1,157 @@
+#include <iostream>
+
+#include "lexer/diffeq_lexer.hpp"
+#include "utils/string_utils.hpp"
+
+using namespace diffeq;
+
+
+Term::Term(std::string expr, std::string state) : expr(expr), b(expr) {
+    if (expr == state) {
+        deriv = "1.0";
+        a = "1.0";
+        b = "0.0";
+    }
+}
+
+
+void Term::print() {
+    std::cout << "Term [expr, deriv, a, b] : ";
+    std::cout << expr << ", " << deriv << ", " << a << ", " << b << std::endl;
+}
+
+
+void DiffEqContext::print() {
+    std::cout << "-----------------DiffEq Context----------------" << std::endl;
+    std::cout << "deriv_invalid = " << deriv_invalid << std::endl;
+    std::cout << "eqn_invalid   = " << eqn_invalid << std::endl;
+    std::cout << "expr          = " << solution.expr << std::endl;
+    std::cout << "deriv         = " << solution.deriv << std::endl;
+    std::cout << "a             = " << solution.a << std::endl;
+    std::cout << "b             = " << solution.b << std::endl;
+    std::cout << "-----------------------------------------------" << std::endl;
+}
+
+
+std::string DiffEqContext::cvode_deriv() {
+    std::string result;
+    if (!deriv_invalid) {
+        result = solution.deriv;
+    }
+    return result;
+}
+
+
+std::string DiffEqContext::cvode_eqnrhs() {
+    std::string result;
+    if (!eqn_invalid) {
+        result = solution.b;
+    }
+    return result;
+}
+
+
+/**
+ * When non-cnexp method is used, for solving non-linear equations we need original
+ * expression but with replacing every state variable with (state+0.001). In order
+ * to do this we scan original expression and build nw by replacing only state variable.
+ */
+std::string DiffEqContext::get_expr_for_nonlinear() {
+    std::string expression;
+
+    /// build lexer instance
+    std::istringstream in(rhs);
+    Lexer scanner(&in);
+
+    /// scan entire expression
+    while (true) {
+        auto sym = scanner.next_token();
+        auto token = sym.token();
+        if (token == Parser::token::END) {
+            break;
+        }
+        /// extract value of the token and check if it is a token
+        auto value = sym.value.as<std::string>();
+        if (value == state) {
+            expression += "(" + value + "+0.001)";
+        } else {
+            expression += value;
+        }
+    }
+    return expression;
+}
+
+
+/**
+ * Return solution for non-cnexp method and when equation is linear
+ */
+std::string DiffEqContext::get_cvode_linear_diffeq() {
+    auto result = "D" + state + " = " + "D" + state + "/(1.0-dt*(" + solution.deriv + "))";
+    return result;
+}
+
+
+/**
+ * Return solution for non-cnexp method and when equation is non-linear.
+ */
+std::string DiffEqContext::get_cvode_nonlinear_diffeq() {
+    std::string expr = get_expr_for_nonlinear();
+    std::string sol = "D" + state + " = " + "D" + state + "/(1.0-dt*(";
+    sol += "((" + expr + ")-(" + solution.expr + "))/0.001))";
+    return sol;
+}
+
+
+/**
+ * Return solution for cnexp method
+ */
+std::string DiffEqContext::get_cnexp_solution() {
+    auto a = cvode_deriv();
+    auto b = cvode_eqnrhs();
+    /**
+     * a is zero typically when rhs doesn't have state variable
+     * in this case we have to remove "last" term /(0.0) from b
+     * and then return : state = state - dt*(b)
+     */
+    std::string result;
+    if(a == "0.0") {
+        std::string suffix =  "/(0.0)";
+        b = b.substr(0, b.size()-suffix.size());
+        result = state + " = " + state + "-dt*(" + b + ")";
+    } else {
+        result = state + " = " + state + "+(1.0-exp(dt*(" + a + ")))*(" + b + "-" + state + ")";
+    }
+    return result;
+}
+
+
+/**
+ * Return solution for non-cnexp method
+ */
+std::string DiffEqContext::get_non_cnexp_solution() {
+    std::string result;
+    if (!deriv_invalid) {
+        result = get_cvode_linear_diffeq();
+    } else if (deriv_invalid and eqn_invalid) {
+        result = get_cvode_nonlinear_diffeq();
+    } else {
+        throw std::runtime_error("Error in differential equation solver with non-cnexp");
+    }
+    return result;
+}
+
+
+/**
+ * Return the solution for differential equation based on method used.
+ *
+ * \todo: Currently we have tested cnexp, euler and derivimplicit methods with
+ * all equations from BBP models. Need to test this against various other mod
+ * files, especially kinetic schemes, reaction-diffusion etc.
+ */
+std::string DiffEqContext::get_solution() {
+    if ( method == "cnexp" && !(deriv_invalid && eqn_invalid)) {
+        return get_cnexp_solution();
+    } else {
+        return get_non_cnexp_solution();
+    }
+}

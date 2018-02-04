@@ -1,25 +1,21 @@
-#ifndef _NMODL_VERBATIM_CONTEXT_
-#define _NMODL_VERBATIM_CONTEXT_
+#ifndef NMODL_VERBATIM_CONTEXT
+#define NMODL_VERBATIM_CONTEXT
 
 #include <iostream>
 
 class VerbatimContext {
   public:
-    void* scanner;
-    std::istream* is;
-
-    std::string* result;
+    void* scanner = nullptr;
+    std::istream* is = nullptr;
+    std::string* result = nullptr;
 
     VerbatimContext(std::istream* is = &std::cin) {
-        scanner = NULL;
-        result = NULL;
         init_scanner();
         this->is = is;
     }
 
     virtual ~VerbatimContext() {
         destroy_scanner();
-
         if (result) {
             delete result;
         }
@@ -33,4 +29,4 @@ class VerbatimContext {
 
 int Verbatim_parse(VerbatimContext*);
 
-#endif  // _NMODL_VERBATIM_CONTEXT_
+#endif  // NMODL_VERBATIM_CONTEXT

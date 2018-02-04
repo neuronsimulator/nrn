@@ -325,9 +325,7 @@ SCENARIO("Renaming any variable in mod file with RenameVisitor") {
 
         THEN("existing variables could be renamed") {
             std::vector<std::pair<std::string, std::string>> variables = {
-                {"m", "mm"},
-                {"gNaTs2_tbar", "new_gNaTs2_tbar"},
-                {"mAlpha", "mBeta"},
+                {"m", "mm"}, {"gNaTs2_tbar", "new_gNaTs2_tbar"}, {"mAlpha", "mBeta"},
             };
             auto result = run_var_rename_visitor(input, variables);
             REQUIRE(result == expected_output);

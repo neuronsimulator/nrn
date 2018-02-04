@@ -1,7 +1,7 @@
 #pragma once
 
-#include "parser/location.hh"
-#include "parser/nmodl_parser.hpp"
+#include "parser/nmodl/location.hh"
+#include "parser/nmodl/nmodl_parser.hpp"
 
 /**
  * \brief Utility functions for nmodl lexer
