@@ -185,13 +185,13 @@ class Extracellular:
             self._alpha = alpha
             self.alpha = alpha
         elif callable(volume_fraction):
-            alpha = numpy.ndarray((self._nx,self._ny,self._nz))
+            alpha = numpy.ndarray((self._nx, self._ny, self._nz))
             for i in xrange(self._nx):
                 for j in xrange(self._ny):
                     for k in xrange(self._nz):
                         alpha[i,j,k] = volume_fraction(self._xlo + i*self._dx[0], self._ylo + j*self._dx[1], self._zlo + k*self._dx[2])
                 self.alpha = alpha
-                self._alpha = h.Vector(alpha)
+                self._alpha = h.Vector(alpha.flatten())
                          
         else:
             alpha = numpy.array(volume_fraction)
@@ -212,7 +212,7 @@ class Extracellular:
                 for j in xrange(self._ny):
                     for k in xrange(self._nz):
                         self.tortuosity[i,j,k] = tortuosity(self._xlo + i*self._dx[0], self._ylo + j*self._dx[1], self._zlo + k*self._dx[2])
-            self._tortuosity = h.Vector(self.tortuosity)
+            self._tortuosity = h.Vector(self.tortuosity.flatten())
         else:
             tortuosity = numpy.array(tortuosity)
             if(tortuosity.shape != (self._nx, self._ny, self._nz)):

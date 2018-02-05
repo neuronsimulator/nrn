@@ -97,10 +97,11 @@ Grid_node *make_Grid(PyHocObject* my_states, int my_num_states_x,
     {
         new_Grid->proc_offsets = (int*)malloc(nrnmpi_numprocs_world*sizeof(int));
         new_Grid->proc_num_currents = (int*)malloc(nrnmpi_numprocs_world*sizeof(int));
-        new_Grid->num_all_currents = 0;
-        new_Grid->current_dest = NULL;
-        new_Grid->all_currents = NULL;
     }
+    new_Grid->num_all_currents = 0;
+    new_Grid->current_dest = NULL;
+    new_Grid->all_currents = NULL;
+    
 
     new_Grid->bc = (BoundaryConditions*)malloc(sizeof(BoundaryConditions));
     new_Grid->bc->type=bc;
@@ -256,7 +257,13 @@ void set_grid_currents(int grid_list_index, int index_in_list, PyObject* grid_in
         printf("no problems\n");
     }
     PyErr_Clear(); */
-    if(nrnmpi_use)
+    if(!nrnmpi_use)
+    {
+        free(g->all_currents);
+        g->all_currents = (double*)malloc(sizeof(double) * g->num_currents);
+        g->num_all_currents = g->num_currents;
+    }
+    else
     {
         /*Gather an array of the number of currents for each process*/
         g->proc_num_currents[nrnmpi_myid_world] = n;
@@ -270,8 +277,8 @@ void set_grid_currents(int grid_list_index, int index_in_list, PyObject* grid_in
         /*Copy array of current destinations (index to states) across all processes*/
         free(g->current_dest);
         free(g->all_currents);
-        g->current_dest = malloc(g->num_all_currents*sizeof(long));
-        g->all_currents = malloc(g->num_all_currents*sizeof(double));
+        g->current_dest = (long*)malloc(g->num_all_currents*sizeof(long));
+        g->all_currents = (double*)malloc(g->num_all_currents*sizeof(double));
         dests = g->current_dest + g->proc_offsets[nrnmpi_myid_world];
         /*TODO: Get rid of duplication with current_list*/
         for(i = 0; i < n; i++)

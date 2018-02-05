@@ -705,7 +705,7 @@ def _c_compile(formula):
     reaction = dll.reaction
     reaction.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double)] 
     reaction.restype = ctypes.c_double
-    #os.remove(filename + '.c')
+    os.remove(filename + '.c')
     if sys.platform.lower().startswith("win"):
         #cannot remove dll that are in use
         _windows_dll.append(weakref.ref(reaction))
@@ -1133,6 +1133,7 @@ def _compile_reactions():
             matched_regions.append(set_of_regions)
     region._c_region_lookup = dict()
     c_region_list = []
+    
     for sets in matched_regions:
         c_region_list.append(_c_region(sets))
     
@@ -1156,16 +1157,23 @@ def _compile_reactions():
             react_regions = r._regions
         #Otherwise use all the regions where the species are
         else:
-            react_regions = set()
+            react_regions = list()
+            nsp = 0
             for sp in sptrs:
                 s = sp()
+                nsp += 1
                 if isinstance(s,species.SpeciesOnRegion):
-                    react_regions.add(s._region())
+                    react_regions.append(s._region())
                 elif isinstance(s,species.SpeciesOnExtracellular):
-                    react_regions.add(s._extracellular()._region)
+                    react_regions.append(s._extracellular()._region)
+                elif isinstance(s,species._ExtracellularSpecies):
+                    react_regions.append(s._region)
                 elif None not in s._regions:
-                    [react_regions.add(reg) for reg in s._regions + s._extracellular_regions]
-        #any intracellular regions
+                    [react_regions.append(reg) for reg in s._regions + s._extracellular_regions]
+            #Only regions where ALL the species are present
+            from collections import Counter
+            react_regions = [reg for reg, count in Counter(react_regions).iteritems() if count == nsp]
+        #Any intracellular regions
         if not all([isinstance(x, region.Extracellular) for x in react_regions]):
             species_involved = []
             for sp in sptrs:
@@ -1346,17 +1354,18 @@ def _compile_reactions():
         #get a list of all grid_ids invovled
         for rptr in [r for rlist in ecs_regions_inv.values() for r in rlist]:
             if isinstance(rptr(),rate.Rate):
-                s = rptr()._species()
-                all_gids.add(s[reg]._extracellular()._grid_id if isinstance(s, species.Species) else s._extracellular()._grid_id)
+                for sp in [rptr()._species] + rptr()._involved_species_ecs:
+                    s = sp()[reg]._extracellular() if isinstance(sp(), species.Species) else sp()
+                    all_gids.add(sp()._extracellular()._grid_id if isinstance(s, species.SpeciesOnExtracellular) else s._grid_id)
             else:
-                for sp in rptr()._sources + rptr()._dests:
-                    s = sp()
-                    all_gids.add(s[reg]._extracellular()._grid_id if isinstance(s, species.Species) else s._extracellular()._grid_id)
+                for sp in rptr()._sources + rptr()._dests + rptr()._involved_species_ecs:
+                    s = sp()[reg]._extracellular() if isinstance(sp(), species.Species) else sp()
+                    all_gids.add(sp()._extracellular()._grid_id if isinstance(s, species.SpeciesOnExtracellular) else s._grid_id)
         all_gids = list(all_gids)
         for reg in ecs_regions_inv.keys():
             for rptr in ecs_regions_inv[reg]:
                 r = rptr()
-                rate_str = re.sub(r'species_ecs\[(\d+)\]',lambda m: "species_ecs[%i]" %  [pid for pid,gid in enumerate(all_gids) if gid == int(m.groups()[0])][0], r._rate)
+                rate_str = re.sub(r'species_ecs\[(\d+)\]',lambda m: "species_ecs[%i]" %  [pid for pid,gid in enumerate(all_gids) if gid == int(m.groups()[0])][0], r._rate_ecs)
                 if isinstance(r,rate.Rate):
                     s = r._species()
                     #Get underlying rxd._ExtracellularSpecies for the grid_id
@@ -1369,7 +1378,8 @@ def _compile_reactions():
                     else:
                         operator = '='
                         grid_ids.append(s._grid_id)
-                    fxn_string += "\n\trhs[%d] %s %s;" % (s._grid_id, operator, rate_str)
+                    pid = [pid for pid,gid in enumerate(all_gids) if gid == s._grid_id][0]
+                    fxn_string += "\n\trhs[%d] %s %s;" % (pid, operator, rate_str)
                 else:
                     idx=0
                     fxn_string += "\n\trate = %s;" %  rate_str
@@ -1385,10 +1395,11 @@ def _compile_reactions():
                         else:
                             operator = '='
                             grid_ids.append(s._grid_id)
-                        fxn_string += "\n\trhs[%d] %s (%s)*rate;" % ([pid for pid,gid in enumerate(all_gids) if gid == s._grid_id][0], operator, r._mult[idx])
+                        pid = [pid for pid,gid in enumerate(all_gids) if gid == s._grid_id][0]
+                        fxn_string += "\n\trhs[%d] %s (%s)*rate;" % (pid, operator, r._mult[idx])
                         idx += 1
         fxn_string += "\n}\n"
-        ecs_register_reaction(0, len(grid_ids), _list_to_cint_array(grid_ids), _c_compile(fxn_string))
+        ecs_register_reaction(0, len(all_gids), _list_to_cint_array(all_gids), _c_compile(fxn_string))
 
 def _init():
     if len(species._all_species) == 0:

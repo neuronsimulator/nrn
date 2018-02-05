@@ -31,6 +31,8 @@ and Flux_pair structs and their respective functions
 #define DIRICHLET           1
 
 #define MAX(a,b)	((a)>(b)?(a):(b))
+#define MIN(a,b)	((a)<(b)?(a):(b))
+
 
 /*Set in src/nrnmpi/nrnmpi_impl.c */
 extern MPI_Comm nrnmpi_world_comm;

@@ -40,6 +40,11 @@ typedef struct {
 } ReactGridData;
 
 
+typedef struct {
+    Grid_node* g;
+    int onset, offset;
+    double* val;
+} CurrentData;
 
 
 typedef struct ICSReactions{

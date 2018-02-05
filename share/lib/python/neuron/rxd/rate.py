@@ -54,6 +54,27 @@ class Rate(GeneralizedReaction):
         else:
             self._involved_species = [weakref.ref(species)]
         self._update_indices()
+
+        #Check to if it is an extracellular reaction
+        import region, species
+        #Was an ECS region was passed to to the constructor 
+        ecs_region = [r for r in self._regions if isinstance(r, region.Extracellular)]
+        ecs_region = ecs_region[0] if len(ecs_region) > 0 else None
+        #Is the species passed to the constructor extracellular
+        if not ecs_region:
+            if isinstance(self._species(),species.SpeciesOnExtracellular):
+                ecs_region = self._species()._extracellular()
+            elif isinstance(self._species(),species._ExtracellularSpecies):
+                ecs_region = self._species()._region
+        #Is the species passed to the constructor defined on the ECS
+        if not ecs_region:
+            if self._species()._extracellular_instances:
+                ecs_region = self._species()._extracellular_instances[0]._region
+        
+
+        if ecs_region:
+            self._rate_ecs, self._involved_species_ecs = rxdmath._compile(rate, extracellular=ecs_region)
+
     
     def __repr__(self):
         if len(self._regions) != 1 or self._regions[0] is not None:

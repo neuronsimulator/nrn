@@ -197,7 +197,7 @@ ReactGridData* create_threaded_reactions()
 		return NULL;
 
 	/*Divide the number of reactions between the threads*/
-	tasks_per_thread = react_count / NUM_THREADS;
+	tasks_per_thread = (react_count + NUM_THREADS - 1) / NUM_THREADS;
 	ReactGridData* tasks = (ReactGridData*)calloc(sizeof(ReactGridData), NUM_THREADS);
 	
 	tasks[0].onset = (ReactSet*)malloc(sizeof(ReactSet));
@@ -224,6 +224,12 @@ ReactGridData* create_threaded_reactions()
 					load = 0;
 				}
 			}
+            if(k == NUM_THREADS - 1 && react -> next == NULL)
+            {
+                tasks[k].offset = (ReactSet*)malloc(sizeof(ReactSet));
+				tasks[k].offset->reaction = react;
+				tasks[k].offset->idx = i-1;
+            }
 		}
 	}
 	return tasks;
@@ -252,7 +258,6 @@ void* ecs_do_reactions(void* dataptr)
     VEC *b;
     PERM *pivot;
 
-	int rcalls=0;
 	for(react = ecs_reactions; react != NULL; react = react -> next)
 	{
 		/*find start location for this thread*/
@@ -286,8 +291,8 @@ void* ecs_do_reactions(void* dataptr)
 			pivot = px_get(jacobian->m);
 			states_cache = (double*)malloc(sizeof(double)*react->num_species_involved);
 			states_cache_dx = (double*)malloc(sizeof(double)*react->num_species_involved);
-			results_array = (double*)malloc(sizeof(double)*react->num_species_involved);
-			results_array_dx = (double*)malloc(sizeof(double)*react->num_species_involved);
+			results_array = (double*)calloc(react->num_species_involved,sizeof(double));
+			results_array_dx = (double*)calloc(react->num_species_involved,sizeof(double));
 
 			for(i = start_idx; i <= stop_idx; i++)
 			{
@@ -301,7 +306,6 @@ void* ecs_do_reactions(void* dataptr)
 						states_cache[j] = react->species_states[j][i];
 						states_cache_dx[j] = react->species_states[j][i];
 					}
-
 					react->reaction(states_cache, results_array);
 
 					for(j = 0; j < react->num_species_involved; j++)
@@ -362,6 +366,26 @@ static void run_threaded_reactions(ReactGridData* tasks)
     TaskQueue_sync(AllTasks);
 }
 
+static void* gather_currents(void* dataptr)
+{
+    CurrentData* d =  (CurrentData*)dataptr;
+    Grid_node *grid = d->g;
+    double *val = d->val;
+    int i, start = d->onset, stop = d->offset;
+    Current_Triple* c = grid->current_list;
+    if(grid->VARIABLE_ECS_VOLUME == VOLUME_FRACTION) 
+    {
+        for(i = start; i < stop; i++)
+           val[i] = c[i].scale_factor * (*c[i].source)/grid->alpha[c[i].destination];
+    }
+    else
+    {
+        for(i = start; i < stop; i++)
+            val[i] = c[i].scale_factor * (*c[i].source)/grid->alpha[0];
+    }
+    return NULL;
+}
+
 /*
  * do_current - process the current for a given grid
  * Grid_node* grid - the grid used
@@ -383,36 +407,39 @@ void do_currents(Grid_node* grid, double* output, double dt)
     n = grid->num_all_currents;
     m = grid->num_currents;
     c = grid->current_list;
+    CurrentData* tasks = (CurrentData*)malloc(NUM_THREADS*sizeof(CurrentData));
+    val = grid->all_currents + (nrnmpi_use?grid->proc_offsets[nrnmpi_myid_world]:0);
+    int tasks_per_thread = (m + NUM_THREADS - 1)/NUM_THREADS;
+
+    for(i = 0; i < NUM_THREADS; i++)
+    {
+        tasks[i].g = grid;
+        tasks[i].onset = i * tasks_per_thread;
+        tasks[i].offset = MIN((i+1)*tasks_per_thread,m);
+        tasks[i].val = val;
+    }
+    for (i = 0; i < NUM_THREADS-1; i++) 
+    {
+        TaskQueue_add_task(AllTasks, &gather_currents, &tasks[i], NULL);
+    }
+    /* run one task in the main thread */
+    gather_currents(&tasks[NUM_THREADS - 1]);
+
+    /* wait for them to finish */
+    TaskQueue_sync(AllTasks);
+    free(tasks);
     if(nrnmpi_use)
     {
-        proc_offset = grid->proc_offsets[nrnmpi_myid_world];
-        val = (grid->all_currents + proc_offset);
-
-        for(i = 0; i < m; i++)
-        {
-            if(grid->VARIABLE_ECS_VOLUME == VOLUME_FRACTION) 
-                val[i] = dt * c[i].scale_factor * (*c[i].source)/grid->alpha[c[i].destination];
-            else
-                val[i] = dt * c[i].scale_factor * (*c[i].source)/grid->alpha[0];
-        }
 
         MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, grid->all_currents, grid->proc_num_currents, grid->proc_offsets, MPI_DOUBLE, nrnmpi_world_comm);
         for(i = 0; i < n; i++)
-            output[grid->current_dest[i]] += grid->all_currents[i];
+            output[grid->current_dest[i]] += dt * grid->all_currents[i];
     }
     else
     {
-        /*divided the concentration by the volume fraction of the relevant voxel*/ 
-        if(grid->VARIABLE_ECS_VOLUME == VOLUME_FRACTION)
-        {
-       	    for (i = 0; i < m; i++)
-          	    output[c[i].destination] += dt * c[i].scale_factor * (*c[i].source)/grid->alpha[c[i].destination];
-	    }
-	    else 
-        {
-		    for (i = 0; i < m; i++) 
-        	    output[c[i].destination] += dt * c[i].scale_factor * (*c[i].source)/grid->alpha[0];
-		}
+        for(i = 0; i < n; i++)
+            output[grid->current_list[i].destination] += dt * grid->all_currents[i];
+
     }
 }
 

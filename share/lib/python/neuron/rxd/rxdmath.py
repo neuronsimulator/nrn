@@ -115,6 +115,17 @@ class _Function:
     def _involved_species(self, the_dict):
         self._obj._involved_species(the_dict)
 
+    def _ensure_extracellular(self, extracellular = None):
+        if extracellular:
+            import species
+            item = self._obj 
+            if isinstance(item,species.Species):
+                ecs_species = item[extracellular]._extracellular()
+                items = ecs_species
+            elif hasattr(item,'_ensure_extracellular'):
+                item._ensure_extracellular(extracellular=extracellular)
+
+
 class _Function2:
     def __init__(self, obj1, obj2, f, fname):
         self._obj1 = _ensure_arithmeticed(obj1)
@@ -134,6 +145,17 @@ class _Function2:
     def _involved_species(self, the_dict):
         self._obj1._involved_species(the_dict)
         self._obj2._involved_species(the_dict)
+
+    def _ensure_extracellular(self, extracellular = None):
+        if extracellular:
+            import species 
+            for item in [self._obj1, self._obj2]:
+                if isinstance(item,species.Species):
+                    ecs_species = item[extracellular]._extracellular()
+                    items = ecs_species
+                elif hasattr(item,'_ensure_extracellular'):
+                    item._ensure_extracellular(extracellular=extracellular)
+
 
 
     
