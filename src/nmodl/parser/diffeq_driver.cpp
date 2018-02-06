@@ -1,4 +1,5 @@
 #include <sstream>
+#include <utility>
 
 #include "lexer/diffeq_lexer.hpp"
 #include "parser/diffeq_driver.hpp"
@@ -6,39 +7,58 @@
 
 namespace diffeq {
 
-    std::string Driver::solve(std::string equation, std::string method, bool debug) {
-        /// split equation into lhs and rhs (lhs is a state variable)
+    void Driver::parse_equation(const std::string& equation,
+                                std::string& state,
+                                std::string& rhs,
+                                int& order) {
         auto parts = stringutils::split_string(equation, '=');
-        auto state = stringutils::trim(parts[0]);
-        auto rhs = stringutils::trim(parts[1]);
+        state = stringutils::trim(parts[0]);
+        rhs = stringutils::trim(parts[1]);
 
         /// expect prime on lhs, find order and remove quote
-        int order = std::count(state.begin(), state.end(), '\'');
+        order = std::count(state.begin(), state.end(), '\'');
         stringutils::remove_character(state, '\'');
 
-        /// error if no prime in equation or not a binary expression
-        if (order == 0 || state.size() == 0) {
+        /// error if no prime in equation or not an assignment statement
+        if (order == 0 || state.empty()) {
             throw std::runtime_error("Invalid equation, no prime on rhs? " + equation);
         }
+    }
 
-        return solve_equation(state, order, rhs, method, debug);
+    std::string Driver::solve(std::string equation, std::string method, bool debug) {
+        std::string state, rhs;
+        int order = 0;
+        bool cnexp_possible;
+        parse_equation(equation, state, rhs, order);
+        return solve_equation(state, order, rhs, method, cnexp_possible, debug);
     }
 
     std::string Driver::solve_equation(std::string& state,
                                        int order,
                                        std::string& rhs,
                                        std::string& method,
+                                       bool& cnexp_possible,
                                        bool debug) {
         std::istringstream in(rhs);
         DiffEqContext context(state, order, rhs, method);
         Lexer scanner(&in);
         Parser parser(scanner, context);
         parser.parse();
-
         if (debug) {
             context.print();
         }
-        return context.get_solution();
+        return context.get_solution(cnexp_possible);
+    }
+
+    /// \todo : instead of using neuron like api, we need to refactor
+    bool Driver::cnexp_possible(std::string equation, std::string& solution) {
+        std::string state, rhs;
+        int order = 0;
+        bool cnexp_possible;
+        std::string method = "cnexp";
+        parse_equation(equation, state, rhs, order);
+        solution = solve_equation(state, order, rhs, method, cnexp_possible);
+        return cnexp_possible;
     }
 
 }  // namespace diffeq

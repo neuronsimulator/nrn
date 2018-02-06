@@ -51,7 +51,7 @@ void TableData::print(std::stringstream& stream, int indent) {
     if (title.length() > row_width) {
         int extra_size = title.length() - row_width;
         int column_pad = extra_size / ncolumns;
-        if (extra_size % ncolumns) {
+        if ((extra_size % ncolumns) != 0) {
             column_pad++;
         }
         for (auto& column : col_width) {

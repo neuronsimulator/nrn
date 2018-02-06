@@ -1,7 +1,6 @@
-#ifndef _VERBATIM_VISITOR_HPP_
-#define _VERBATIM_VISITOR_HPP_
+#ifndef VERBATIM_VISITOR_HPP
+#define VERBATIM_VISITOR_HPP
 
-#include <iostream>
 #include <vector>
 
 #include "ast/ast.hpp"

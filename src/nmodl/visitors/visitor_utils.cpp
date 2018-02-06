@@ -1,8 +1,9 @@
 #include <string>
 #include <map>
-#include <utility>
+#include <memory>
 
 #include "ast/ast.hpp"
+#include "parser/nmodl_driver.hpp"
 
 using namespace ast;
 
@@ -44,4 +45,24 @@ void add_local_variable(ast::StatementBlock* node, ast::Identifier* varname) {
 void add_local_variable(ast::StatementBlock* node, const std::string& varname) {
     auto name = new ast::Name(new ast::String(varname));
     add_local_variable(node, name);
+}
+
+/**
+ * Convert given code statement (in string format) to corresponding ast node
+ *
+ * We create dummy nmodl procedure containing given code statement and then
+ * parse it using NMODL parser. As there will be only one block with single
+ * statement, we return first statement.
+ *
+ * \todo : Need to revisit this during code generation passes to make sure
+ *  if all statements can be part of procedure block.
+ */
+std::shared_ptr<ast::Statement> create_statement(const std::string& code_statement) {
+    nmodl::Driver driver;
+    auto nmodl_text = "PROCEDURE dummy() { " + code_statement + " }";
+    driver.parse_string(nmodl_text);
+    auto ast = driver.ast();
+    auto procedure = std::dynamic_pointer_cast<ProcedureBlock>(ast->blocks[0]);
+    auto statement = std::shared_ptr<Statement>(procedure->statementblock->statements[0]->clone());
+    return statement;
 }

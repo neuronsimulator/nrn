@@ -12,9 +12,17 @@
 std::string get_new_name(const std::string& name,
                          const std::string& suffix,
                          std::map<std::string, int>& variables);
+
+/** Return pointer to local statement in the given block, otherwise nullptr */
 ast::LocalVarVector* get_local_variables(const ast::StatementBlock* node);
+
+/** Add empty local statement to given block if already doesn't exist */
 void add_local_statement(ast::StatementBlock* node);
+
+/** Add new local variable to the block */
 void add_local_variable(ast::StatementBlock* node, const std::string& varname);
 void add_local_variable(ast::StatementBlock* node, ast::Identifier* varname);
 
+/** Create ast statement node from given code in string format */
+std::shared_ptr<ast::Statement> create_statement(const std::string& code_statement);
 #endif

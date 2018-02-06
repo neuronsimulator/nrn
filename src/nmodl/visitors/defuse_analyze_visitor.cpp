@@ -181,7 +181,7 @@ void DefUseAnalyzeVisitor::visit_function_call(FunctionCall* node) {
 
 void DefUseAnalyzeVisitor::visit_statement_block(StatementBlock* node) {
     auto symtab = node->get_symbol_table();
-    if (symtab) {
+    if (symtab != nullptr) {
         current_symtab = symtab;
     }
 

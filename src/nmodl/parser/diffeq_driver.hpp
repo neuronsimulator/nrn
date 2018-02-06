@@ -27,11 +27,23 @@ namespace diffeq {
                                    int order,
                                    std::string& rhs,
                                    std::string& method,
-                                   bool debug);
+                                   bool& cnexp_possible,
+                                   bool debug = false);
+
+        /// parse given equation into lhs, rhs and find it's order and state variable
+        void parse_equation(const std::string& equation,
+                            std::string& state,
+                            std::string& rhs,
+                            int& order);
 
       public:
         Driver() = default;
+
+        /// solve equation using provided method
         std::string solve(std::string equation, std::string method, bool debug = false);
+
+        /// check if given equation can be solved using cnexp method
+        bool cnexp_possible(std::string equation, std::string& solution);
     };
 
 }  // namespace diffeq

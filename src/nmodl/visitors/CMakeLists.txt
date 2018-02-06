@@ -24,6 +24,8 @@ set(VISITOR_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/localize_visitor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/defuse_analyze_visitor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/defuse_analyze_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/cnexp_solve_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/cnexp_solve_visitor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/visitor_utils.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/visitor_utils.cpp
 )

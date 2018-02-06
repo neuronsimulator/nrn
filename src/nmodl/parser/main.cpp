@@ -45,4 +45,6 @@ int main(int argc, const char* argv[]) {
         std::cout << "Argument Error: " << e.error() << " for arg " << e.argId() << std::endl;
         return 1;
     }
+
+    return 0;
 }

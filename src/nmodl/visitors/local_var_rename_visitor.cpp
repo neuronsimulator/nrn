@@ -13,7 +13,7 @@ void LocalVarRenameVisitor::visit_statement_block(StatementBlock* node) {
     }
 
     auto current_symtab = node->get_symbol_table();
-    if (current_symtab) {
+    if (current_symtab != nullptr) {
         symtab = current_symtab;
     }
 
@@ -30,7 +30,7 @@ void LocalVarRenameVisitor::visit_statement_block(StatementBlock* node) {
     auto variables = get_local_variables(node);
 
     SymbolTable* parent_symtab = nullptr;
-    if (symtab) {
+    if (symtab != nullptr) {
         parent_symtab = symtab->get_parent_table();
     }
 
