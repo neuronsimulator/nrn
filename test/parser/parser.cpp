@@ -1,6 +1,7 @@
 #define CATCH_CONFIG_MAIN
 
 #include <string>
+#include <utility>
 
 #include "catch/catch.hpp"
 #include "parser/nmodl_driver.hpp"
@@ -15,6 +16,7 @@ bool is_valid_construct(const std::string& construct) {
     nmodl::Driver driver;
     return driver.parse_string(construct);
 }
+
 
 SCENARIO("NMODL can define macros using DEFINE keyword") {
     GIVEN("A valid macro definition") {

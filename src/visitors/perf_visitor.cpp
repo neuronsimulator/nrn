@@ -287,7 +287,7 @@ bool PerfVisitor::is_local_variable(const std::shared_ptr<symtab::Symbol>& symbo
  * read/write count. Also update ops count in current block.
  */
 void PerfVisitor::update_memory_ops(const std::string& name) {
-    if (start_measurement && current_symtab) {
+    if (start_measurement && (current_symtab != nullptr)) {
         auto symbol = current_symtab->lookup_in_scope(name);
         if (symbol == nullptr || symbol_to_skip(symbol)) {
             return;

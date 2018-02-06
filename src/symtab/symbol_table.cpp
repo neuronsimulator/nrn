@@ -37,12 +37,16 @@ namespace symtab {
         return node->get_type_name();
     }
 
+    /// \todo: should return unknown position ?
     std::string SymbolTable::position() const {
         auto token = node->get_token();
-        if (token)
-            return token->position();
-        else
-            return ModToken().position();
+        std::string position;
+        if (token != nullptr) {
+            position = token->position();
+        } else {
+            position = ModToken().position();
+        }
+        return position;
     }
 
     /// insert new symbol table of one of the children block
@@ -92,9 +96,9 @@ namespace symtab {
         auto parent_table = parent;
 
         // traverse all parent blocks to make sure everyone is global
-        while (global_scope && parent_table) {
+        while (global_scope && (parent_table != nullptr)) {
             parent_table = parent_table->parent;
-            if (parent_table) {
+            if (parent_table != nullptr) {
                 global_scope = parent_table->global_scope();
             }
         }
@@ -104,7 +108,7 @@ namespace symtab {
     /// lookup for symbol in current scope as well as all parents
     std::shared_ptr<Symbol> SymbolTable::lookup_in_scope(const std::string& name) {
         auto symbol = table.lookup(name);
-        if (!symbol && parent) {
+        if (!symbol && (parent != nullptr)) {
             symbol = parent->lookup_in_scope(name);
         }
         return symbol;
@@ -119,7 +123,7 @@ namespace symtab {
         /// parent symbol is not set means symbol table is
         /// is not used with visitor at all. it would be ok
         // to just return nullptr?
-        if (!parent_symtab) {
+        if (parent_symtab == nullptr) {
             throw std::logic_error("Lookup wit previous symtab = nullptr ");
         }
 
@@ -130,7 +134,7 @@ namespace symtab {
 
         // check into all parent symbol tables
         auto parent = parent_symtab->get_parent_table();
-        while (parent) {
+        while (parent != nullptr) {
             symbol = parent->lookup(name);
             if (symbol) {
                 break;
@@ -270,7 +274,7 @@ namespace symtab {
         }
 
         /// if has parent scope, setup new parent symbol table
-        if (parent_symtab) {
+        if (parent_symtab != nullptr) {
             parent_symtab = parent_symtab->get_parent_table();
         }
 

@@ -8,7 +8,6 @@
 
     #define yyterminate() return Parser::make_END(loc);
 
-    /// need to store original equation for non-linear solution and hence we add all tokens
     #define YY_USER_ACTION { loc.step(); loc.columns(yyleng); }
 
     #define YY_NO_UNISTD_H
@@ -18,7 +17,7 @@
 D   [0-9]
 E   [Ee][-+]?{D}+
 
-/** we do use yymore feature in copy modes */
+/** if want to use yymore feature in copy modes */
 %option yymore
 
 /** name of the lexer header file */
@@ -42,7 +41,7 @@ E   [Ee][-+]?{D}+
 /** need to put in buffer for custom routines */
 %option input
 
-/* not an interactive lexer, takes a file */
+/* not an interactive lexer, takes a file or stream */
 %option batch
 
 /** enable debug mode (disable for production) */
@@ -75,9 +74,9 @@ E   [Ee][-+]?{D}+
 
 ","                     { return Parser::make_COMMA(yytext, loc); }
 
-:.*                     { /*ignore inline comments */       }
+:.*                     { /* ignore inline comments */ }
 
-[ \t]                   { /* ignore spacing characters */   }
+[ \t]                   { /* ignore spacing characters */ }
 
 {D}+                    |
 {D}+"."{D}*({E})?       |

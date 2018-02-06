@@ -12,6 +12,7 @@
 #include "visitors/verbatim_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/localize_visitor.hpp"
+#include "visitors/cnexp_solve_visitor.hpp"
 
 #include "tclap/CmdLine.h"
 
@@ -104,6 +105,12 @@ int main(int argc, const char* argv[]) {
         }
 
         {
+            CnexpSolveVisitor v;
+            v.visit_program(ast.get());
+            std::cout << "----CNEXP SOLVE VISITOR FINISHED----" << std::endl;
+        }
+
+        {
             PerfVisitor v(channel_name + ".perf.json");
             v.visit_program(ast.get());
 
@@ -116,6 +123,11 @@ int main(int argc, const char* argv[]) {
             v.print(ss);
             std::cout << ss.str() << std::endl;
             std::cout << "----PERF VISITOR FINISHED----" << std::endl;
+        }
+
+        {
+            NmodlPrintVisitor v(channel_name + ".nocmodl.cnexp.mod");
+            v.visit_program(ast.get());
         }
 
         {
@@ -152,7 +164,6 @@ int main(int argc, const char* argv[]) {
             NmodlPrintVisitor v(channel_name + ".nocmodl.loc.ren.mod");
             v.visit_program(ast.get());
         }
-
     } catch (TCLAP::ArgException& e) {
         std::cout << "Argument Error: " << e.error() << " for arg " << e.argId() << std::endl;
         return 1;

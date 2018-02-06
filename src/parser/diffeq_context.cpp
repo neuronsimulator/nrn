@@ -6,7 +6,7 @@
 using namespace diffeq;
 
 
-Term::Term(std::string expr, std::string state) : expr(expr), b(expr) {
+Term::Term(const std::string& expr, const std::string& state) : expr(expr), b(expr) {
     if (expr == state) {
         deriv = "1.0";
         a = "1.0";
@@ -54,7 +54,7 @@ std::string DiffEqContext::cvode_eqnrhs() {
 /**
  * When non-cnexp method is used, for solving non-linear equations we need original
  * expression but with replacing every state variable with (state+0.001). In order
- * to do this we scan original expression and build nw by replacing only state variable.
+ * to do this we scan original expression and build new by replacing only state variable.
  */
 std::string DiffEqContext::get_expr_for_nonlinear() {
     std::string expression;
@@ -110,13 +110,13 @@ std::string DiffEqContext::get_cnexp_solution() {
     auto b = cvode_eqnrhs();
     /**
      * a is zero typically when rhs doesn't have state variable
-     * in this case we have to remove "last" term /(0.0) from b
+     * in this case we have to remove "last" term "/(0.0)" from b
      * and then return : state = state - dt*(b)
      */
     std::string result;
-    if(a == "0.0") {
-        std::string suffix =  "/(0.0)";
-        b = b.substr(0, b.size()-suffix.size());
+    if (a == "0.0") {
+        std::string suffix = "/(0.0)";
+        b = b.substr(0, b.size() - suffix.size());
         result = state + " = " + state + "-dt*(" + b + ")";
     } else {
         result = state + " = " + state + "+(1.0-exp(dt*(" + a + ")))*(" + b + "-" + state + ")";
@@ -148,10 +148,14 @@ std::string DiffEqContext::get_non_cnexp_solution() {
  * all equations from BBP models. Need to test this against various other mod
  * files, especially kinetic schemes, reaction-diffusion etc.
  */
-std::string DiffEqContext::get_solution() {
-    if ( method == "cnexp" && !(deriv_invalid && eqn_invalid)) {
-        return get_cnexp_solution();
+std::string DiffEqContext::get_solution(bool& cnexp_possible) {
+    std::string solution;
+    if (method == "cnexp" && !(deriv_invalid && eqn_invalid)) {
+        cnexp_possible = true;
+        solution = get_cnexp_solution();
     } else {
-        return get_non_cnexp_solution();
+        cnexp_possible = false;
+        solution = get_non_cnexp_solution();
     }
+    return solution;
 }

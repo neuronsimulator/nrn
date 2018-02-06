@@ -1,3 +1,4 @@
+#include <iostream>
 #include "visitors/verbatim_visitor.hpp"
 
 void VerbatimVisitor::visit_verbatim(Verbatim* node) {

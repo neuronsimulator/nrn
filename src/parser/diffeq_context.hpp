@@ -9,9 +9,9 @@ namespace diffeq {
      * \class Term
      * \brief Represent a term in differential equation and it's "current" solution
      *
-     * When differential equation is parser, each variable/term is represented
+     * When differential equation is parsed, each variable/term is represented
      * by this class. As expressions are formed, like a+b, the solution gets
-     * updated.
+     * updated
      */
 
     struct Term {
@@ -27,7 +27,7 @@ namespace diffeq {
 
         Term() = default;
 
-        Term(std::string expr, std::string state);
+        Term(const std::string& expr, const std::string& state);
 
         Term(std::string expr, std::string deriv, std::string a, std::string b)
             : expr(expr), deriv(deriv), a(a), b(b) {
@@ -58,7 +58,7 @@ namespace diffeq {
      */
 
     class DiffEqContext {
-        /// name of the method
+        /// name of the solve method
         std::string method;
 
         /// name of the state variable
@@ -83,7 +83,7 @@ namespace diffeq {
         std::string get_cvode_linear_diffeq();
         std::string get_cvode_nonlinear_diffeq();
 
-        /// methods similar to neuron implementation (not used at the moment)
+        /// \todo: methods inherited neuron implementation
         std::string cvode_deriv();
         std::string cvode_eqnrhs();
 
@@ -109,7 +109,7 @@ namespace diffeq {
         }
 
         /// return solution of the differential equation
-        std::string get_solution();
+        std::string get_solution(bool& cnexp_possible);
 
         /// return expression with Dstate added
         std::string get_expr_for_nonlinear();
