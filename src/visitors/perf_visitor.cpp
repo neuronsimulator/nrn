@@ -121,15 +121,16 @@ void PerfVisitor::measure_performance(AST* node) {
         throw std::runtime_error("Symbol table not setup, Symtab visitor pass did not run?");
     }
 
+    auto name = symtab->name();
+    if (node->is_derivative_block()) {
+        name = node->get_type_name();
+    }
+
     if (printer) {
-        auto name = symtab->name();
-        if(node->is_derivative_block()) {
-            name = node->get_type_name();
-        }
         printer->push_block(name);
     }
 
-    perf.title = "Performance Statistics of " + symtab->name();
+    perf.title = "Performance Statistics of " + name;
     perf.print(stream);
 
     if (printer) {
@@ -212,15 +213,15 @@ void PerfVisitor::count_variables() {
 
 void PerfVisitor::print_memory_usage() {
     stream << std::endl;
-    stream << "#INSTANCE VARIABLES : " <<  num_instance_variables << " ";
-    stream << "#GLOBAL VARIABLES : " <<  num_global_variables << " ";
-    stream << "#STATE VARIABLES : " <<  num_state_variables << std::endl;
+    stream << "#INSTANCE VARIABLES : " << num_instance_variables << " ";
+    stream << "#GLOBAL VARIABLES : " << num_global_variables << " ";
+    stream << "#STATE VARIABLES : " << num_state_variables << std::endl;
 
-    if(printer) {
+    if (printer) {
         printer->push_block("MemroyInfo");
         printer->add_node(std::to_string(num_instance_variables), "InstanceVariables");
-        printer->add_node(std::to_string(num_global_variables), "GlobalVariables") ;
-        printer->add_node(std::to_string(num_state_variables), "StateVariables") ;
+        printer->add_node(std::to_string(num_global_variables), "GlobalVariables");
+        printer->add_node(std::to_string(num_state_variables), "StateVariables");
         printer->pop_block();
     }
 }

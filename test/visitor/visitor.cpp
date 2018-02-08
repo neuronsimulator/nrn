@@ -1738,3 +1738,48 @@ SCENARIO("CnexpSolver visitor solving ODEs") {
         }
     }
 }
+
+
+//=============================================================================
+// Passes can run multiple times
+//=============================================================================
+
+void run_visitor_passes(const std::string& text) {
+    nmodl::Driver driver;
+    driver.parse_string(text);
+    auto ast = driver.ast();
+    {
+        SymtabVisitor v1;
+        InlineVisitor v2;
+        LocalizeVisitor v3;
+        v1.visit_program(ast.get());
+        v2.visit_program(ast.get());
+        v3.visit_program(ast.get());
+        v1.visit_program(ast.get());
+        v1.visit_program(ast.get());
+        v2.visit_program(ast.get());
+        v3.visit_program(ast.get());
+        v2.visit_program(ast.get());
+    }
+}
+
+
+SCENARIO("Running visitor passes multiple time") {
+    GIVEN("A mod file") {
+        std::string nmodl_text = R"(
+            NEURON {
+                RANGE tau
+            }
+
+            DERIVATIVE states {
+                tau = 11.1
+                exp(tau)
+            }
+        )";
+
+        THEN("Passes can run multiple times") {
+            std::string input = reindent_text(nmodl_text);
+            REQUIRE_NOTHROW(run_visitor_passes(input));
+        }
+    }
+}

@@ -189,6 +189,13 @@ namespace symtab {
 
         /// pretty print
         void print(std::stringstream& ss);
+
+        /// re-initialize members to throw away old symbol tables
+        /// this is required as symtab visitor pass runs multiple time
+        void initialize() {
+            symtab = nullptr;
+            parent_symtab = nullptr;
+        }
     };
 
 }  // namespace symtab

@@ -9,7 +9,6 @@
 template <typename T>
 void SymtabVisitor::setup_symbol(T* node, SymbolInfo property, int order) {
     std::shared_ptr<Symbol> symbol;
-    auto token = node->get_token();
 
     /// if prime variable is already exist in symbol table
     /// then just update the order
@@ -22,8 +21,15 @@ void SymtabVisitor::setup_symbol(T* node, SymbolInfo property, int order) {
         }
     }
 
+    ModToken token;
+    auto token_ptr = node->get_token();
+    if (token_ptr != nullptr) {
+        token = *token_ptr;
+    }
+
     /// add new symbol
-    symbol = std::make_shared<Symbol>(node->get_name(), node, *token);
+    symbol = std::make_shared<Symbol>(node->get_name(), node, token);
+
     symbol->add_property(property);
     modsymtab->insert(symbol);
 
@@ -49,9 +55,15 @@ void SymtabVisitor::setup_symbol_table(T* node,
     setup_symbol_table(node, name, is_global);
 }
 
+
+/**
+ *  Symtab visitor could be called multiple times, after optimization passes,
+ *  in which case we have to throw awayold symbol tables and setup new ones.
+ */
 template <typename T>
 void SymtabVisitor::setup_program_symbol_table(T* node, std::string name, bool is_global) {
     modsymtab = node->get_model_symbol_table();
+    modsymtab->initialize();
     setup_symbol_table(node, name, is_global);
 }
 
