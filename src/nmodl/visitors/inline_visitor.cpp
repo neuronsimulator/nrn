@@ -103,12 +103,18 @@ void InlineVisitor::visit_function_call(FunctionCall* node) {
     /// first inline called function
     function_definition->visit_children(this);
 
+    bool inlined = false;
+
     if (function_definition->is_procedure_block()) {
         auto proc = (ProcedureBlock*)function_definition;
-        inline_function_call(proc, node, caller_block);
+        inlined = inline_function_call(proc, node, caller_block);
     } else if (function_definition->is_function_block()) {
         auto func = (FunctionBlock*)function_definition;
-        inline_function_call(func, node, caller_block);
+        inlined = inline_function_call(func, node, caller_block);
+    }
+
+    if (inlined) {
+        symbol->inlined();
     }
 }
 

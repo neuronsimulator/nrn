@@ -189,9 +189,18 @@ void PerfVisitor::count_variables() {
     /// number of instance variables: range or assigned variables
     /// \todo: one caveat is that the global variables appearing in
     /// assigned block variable are not treated as range!
-    SymbolInfo property = NmodlInfo::range_var | NmodlInfo::dependent_def;
+    SymbolInfo property = NmodlInfo::range_var | NmodlInfo::dependent_def | NmodlInfo::state_var;
     auto variables = current_symtab->get_variables_with_properties(property);
     num_instance_variables = variables.size();
+
+    for (auto& variable : variables) {
+        if (variable->has_properties(NmodlInfo::param_assign)) {
+            num_constant_instance_variables++;
+        }
+        if (variable->has_any_status(Status::localized)) {
+            num_localized_instance_variables++;
+        }
+    }
 
     /// state variables
     property = NmodlInfo::state_var;
@@ -207,21 +216,48 @@ void PerfVisitor::count_variables() {
         property = NmodlInfo::range_var | NmodlInfo::dependent_def;
         if (!variable->has_properties(property)) {
             num_global_variables++;
+            if (variable->has_properties(NmodlInfo::param_assign)) {
+                num_constant_global_variables++;
+            }
+            if (variable->has_any_status(Status::localized)) {
+                num_localized_global_variables++;
+            }
         }
     }
 }
 
 void PerfVisitor::print_memory_usage() {
     stream << std::endl;
+
     stream << "#INSTANCE VARIABLES : " << num_instance_variables << " ";
-    stream << "#GLOBAL VARIABLES : " << num_global_variables << " ";
-    stream << "#STATE VARIABLES : " << num_state_variables << std::endl;
+    stream << "[ CONSTANT " << num_constant_instance_variables << ", ";
+    stream << "LOCALIZED " << num_localized_instance_variables << " ]";
+
+    stream << "  #GLOBAL VARIABLES : " << num_global_variables << " ";
+    stream << "[ CONSTANT " << num_constant_global_variables << ", ";
+    stream << "LOCALIZED " << num_localized_global_variables << " ]";
+
+    stream << "  #STATE VARIABLES : " << num_state_variables << std::endl;
 
     if (printer) {
-        printer->push_block("MemroyInfo");
-        printer->add_node(std::to_string(num_instance_variables), "InstanceVariables");
-        printer->add_node(std::to_string(num_global_variables), "GlobalVariables");
-        printer->add_node(std::to_string(num_state_variables), "StateVariables");
+        printer->push_block("MemoryInfo");
+
+        printer->push_block("Instance");
+        printer->add_node(std::to_string(num_instance_variables), "total");
+        printer->add_node(std::to_string(num_constant_instance_variables), "const");
+        printer->add_node(std::to_string(num_localized_instance_variables), "localized");
+        printer->pop_block();
+
+        printer->push_block("Global");
+        printer->add_node(std::to_string(num_global_variables), "total");
+        printer->add_node(std::to_string(num_global_variables), "const");
+        printer->add_node(std::to_string(num_localized_global_variables), "localized");
+        printer->pop_block();
+
+        printer->push_block("State");
+        printer->add_node(std::to_string(num_state_variables), "total");
+        printer->pop_block();
+
         printer->pop_block();
     }
 }
@@ -240,7 +276,6 @@ void PerfVisitor::visit_program(Program* node) {
         printer->push_block("total");
         add_perf_to_printer(total_perf);
         printer->pop_block();
-        /// BlockPerf
         printer->pop_block();
     }
 
@@ -318,6 +353,7 @@ bool PerfVisitor::symbol_to_skip(const std::shared_ptr<Symbol>& symbol) {
         skip = true;
     }
 
+    is_method = symbol->has_properties(NmodlInfo::derivative_block | NmodlInfo::extern_method);
     if (is_method && under_solve_block) {
         skip = true;
     }

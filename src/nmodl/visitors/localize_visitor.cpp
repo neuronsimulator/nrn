@@ -97,6 +97,8 @@ void LocalizeVisitor::visit_program(Program* node) {
                 auto block_ptr = dynamic_cast<Block*>(block.get());
                 auto statement_block = block_ptr->get_statement_block();
                 add_local_variable(statement_block.get(), variable);
+                auto symbol = program_symtab->lookup(variable);
+                symbol->localized();
             }
         }
     }

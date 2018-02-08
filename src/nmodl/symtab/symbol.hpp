@@ -47,6 +47,9 @@ namespace symtab {
         /// properties of symbol from whole mod file
         SymbolInfo properties{flags::empty};
 
+        /// status of symbol during various passes
+        SymbolStatus status{flags::empty};
+
         /// scope of the symbol (block name)
         std::string scope;
 
@@ -84,6 +87,10 @@ namespace symtab {
             return properties;
         }
 
+        SymbolStatus get_status() {
+            return status;
+        }
+
         void read() {
             read_count++;
         }
@@ -112,11 +119,25 @@ namespace symtab {
 
         bool has_properties(SymbolInfo new_properties);
 
+        bool has_any_status(SymbolStatus new_status);
+
         void combine_properties(SymbolInfo new_properties);
 
         void add_property(NmodlInfo property);
 
         void add_property(SymbolInfo property);
+
+        void inlined() {
+            status |= Status::inlined;
+        }
+
+        void renamed() {
+            status |= Status::renamed;
+        }
+
+        void localized() {
+            status |= Status::localized;
+        }
 
         void set_order(int new_order);
 

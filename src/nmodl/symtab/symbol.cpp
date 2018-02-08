@@ -19,6 +19,11 @@ namespace symtab {
         return static_cast<bool>(properties & new_properties);
     }
 
+    /// check if symbol has any of the status
+    bool Symbol::has_any_status(SymbolStatus new_status) {
+        return static_cast<bool>(status & new_status);
+    }
+
     /// add new properties to symbol with bitwise or
     void Symbol::combine_properties(SymbolInfo new_properties) {
         properties |= new_properties;
