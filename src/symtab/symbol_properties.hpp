@@ -1,9 +1,10 @@
-#ifndef _SYMBOL_PROPERTIES_HPP_
-#define _SYMBOL_PROPERTIES_HPP_
+#ifndef SYMBOL_PROPERTIES_HPP
+#define SYMBOL_PROPERTIES_HPP
 
 #include <sstream>
 
 #include "flags/flags.hpp"
+#include "utils/string_utils.hpp"
 
 namespace symtab {
 
@@ -35,20 +36,20 @@ namespace symtab {
 
         /** state during various compiler passes */
         enum class Status {
-            /** unmodified */
-            unmodified,
-
             /** converted to local */
-            to_local,
+            localized = 1 << 0,
 
             /** converted to global */
-            to_global,
+            globalized = 1 << 1,
 
             /** inlined */
-            inlined,
+            inlined = 1 << 2,
 
             /** renamed */
-            renamed
+            renamed = 1 << 3,
+
+            /** created */
+            created = 1 << 4
         };
 
         /** usage of mod file as array or scalar */
@@ -181,11 +182,27 @@ namespace symtab {
 
 ALLOW_FLAGS_FOR_ENUM(symtab::details::NmodlInfo)
 ALLOW_FLAGS_FOR_ENUM(symtab::details::Access)
+ALLOW_FLAGS_FOR_ENUM(symtab::details::Status)
 
 using SymbolInfo = flags::flags<symtab::details::NmodlInfo>;
+using SymbolStatus = flags::flags<symtab::details::Status>;
 
 std::ostream& operator<<(std::ostream& os, const SymbolInfo& obj);
+std::ostream& operator<<(std::ostream& os, const SymbolStatus& obj);
 
-std::string to_string(const SymbolInfo& obj);
+std::vector<std::string> to_string_vector(const SymbolInfo& obj);
+std::vector<std::string> to_string_vector(const SymbolStatus& obj);
+
+template <typename T>
+std::string to_string(const T& obj) {
+    auto elements = to_string_vector(obj);
+    std::string text;
+    for (const auto& element : elements) {
+        text += element + " ";
+    }
+    // remove extra whitespace at the end
+    stringutils::trim(text);
+    return text;
+}
 
 #endif

@@ -285,7 +285,7 @@ namespace symtab {
         if (!symbols.empty()) {
             TableData table;
             table.title = std::move(title);
-            table.headers = {"NAME", "PROPERTIES", "LOCATION", "# READS", "# WRITES"};
+            table.headers = {"NAME", "PROPERTIES", "STATUS", "LOCATION", "# READS", "# WRITES"};
             table.alignments = {text_alignment::left, text_alignment::left, text_alignment::right,
                                 text_alignment::right, text_alignment::right};
 
@@ -303,9 +303,10 @@ namespace symtab {
                 auto name = syminfo.first;
                 auto position = symbol->get_token().position();
                 auto properties = to_string(symbol->get_properties());
+                auto status = to_string(symbol->get_status());
                 auto reads = std::to_string(symbol->get_read_count());
                 auto writes = std::to_string(symbol->get_write_count());
-                table.rows.push_back({name, properties, position, reads, writes});
+                table.rows.push_back({name, properties, status, position, reads, writes});
             }
             table.print(stream, indent);
         }

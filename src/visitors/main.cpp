@@ -157,6 +157,13 @@ int main(int argc, const char* argv[]) {
         }
 
         {
+            std::stringstream stream;
+            auto symtab = ast->get_model_symbol_table();
+            symtab->print(stream);
+            std::cout << stream.str();
+        }
+
+        {
             PerfVisitor v(channel_name + ".perf.json");
             v.visit_program(ast.get());
 

@@ -11,6 +11,10 @@ bool has_property(const SymbolInfo& obj, NmodlInfo property) {
     return static_cast<bool>(obj & property);
 }
 
+bool has_status(const SymbolStatus &obj, Status state) {
+    return static_cast<bool>(obj & state);
+}
+
 /// helper function to convert properties to string
 std::vector<std::string> to_string_vector(const SymbolInfo& obj) {
     std::vector<std::string> properties;
@@ -133,19 +137,38 @@ std::vector<std::string> to_string_vector(const SymbolInfo& obj) {
     return properties;
 }
 
+std::vector<std::string> to_string_vector(const SymbolStatus& obj) {
+    std::vector<std::string> status;
+
+    if (has_status(obj, Status::localized)) {
+        status.emplace_back("localized");
+    }
+
+    if (has_status(obj, Status::globalized)) {
+        status.emplace_back("globalized");
+    }
+
+    if (has_status(obj, Status::inlined)) {
+        status.emplace_back("inlined");
+    }
+
+    if (has_status(obj, Status::renamed)) {
+        status.emplace_back("renamed");
+    }
+
+    if (has_status(obj, Status::created)) {
+        status.emplace_back("created");
+    }
+    return status;
+}
+
 std::ostream& operator<<(std::ostream& os, const SymbolInfo& obj) {
     os << to_string(obj);
     return os;
 }
 
-std::string to_string(const SymbolInfo& obj) {
-    auto properties = to_string_vector(obj);
-    std::string text;
-    for (const auto& property : properties) {
-        text += property + " ";
-    }
 
-    // remove extra whitespace at the end
-    stringutils::trim(text);
-    return text;
+std::ostream& operator<<(std::ostream& os, const SymbolStatus& obj) {
+    os << to_string(obj);
+    return os;
 }

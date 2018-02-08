@@ -73,8 +73,20 @@ class PerfVisitor : public AstVisitor {
     /// count of per channel instance variables
     int num_instance_variables = 0;
 
+    /// subset of instance variables which are constant
+    int num_constant_instance_variables = 0;
+
+    /// subset of instance variables which are localized
+    int num_localized_instance_variables = 0;
+
     /// count of global variables
     int num_global_variables = 0;
+
+    /// subset of global variables which are constant
+    int num_constant_global_variables = 0;
+
+    /// subset of global variables which are localized
+    int num_localized_global_variables = 0;
 
     /// count of state variables
     int num_state_variables = 0;

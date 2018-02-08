@@ -147,7 +147,7 @@ class InlineVisitor : public AstVisitor {
 
     /// inline function/procedure into caller block
     template <typename T>
-    void inline_function_call(T* callee, ast::FunctionCall* node, ast::StatementBlock* caller);
+    bool inline_function_call(T* callee, ast::FunctionCall* node, ast::StatementBlock* caller);
 
     /// add assignement statements into given statement block to inline arguments
     void inline_arguments(ast::StatementBlock* inlined_block,
@@ -178,7 +178,7 @@ class InlineVisitor : public AstVisitor {
  * @param caller : statement block containing function call
  */
 template <typename T>
-void InlineVisitor::inline_function_call(T* callee,
+bool InlineVisitor::inline_function_call(T* callee,
                                          ast::FunctionCall* node,
                                          ast::StatementBlock* caller) {
     std::string function_name = callee->name->get_name();
@@ -186,7 +186,7 @@ void InlineVisitor::inline_function_call(T* callee,
     /// do nothing if we can't inline given procedure/function
     if (!can_inline_block(callee->statementblock.get())) {
         std::cerr << "Can not inline function call to " + function_name;
-        return;
+        return false;
     }
 
     /// make sure to rename conflicting local variable in caller block
@@ -247,6 +247,7 @@ void InlineVisitor::inline_function_call(T* callee,
 
     /// variable name which will replace the function call that we just inlined
     replaced_fun_calls[node] = new_varname;
+    return true;
 }
 
 #endif  //
