@@ -383,9 +383,10 @@ ELSE                    {
 
 :.* |
 \?.*                    {
-                            /** Todo : add grammar support for inline vs single-line comments */
+                            /** Todo : add grammar support for inline vs single-line comments
                               auto str = std::string(yytext);
                               return nmodl::Parser::make_INLINE_COMMENT(str, loc);
+                             */
                         }
 
 .                       {
