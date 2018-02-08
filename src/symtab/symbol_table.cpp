@@ -57,23 +57,13 @@ namespace symtab {
         children[name] = std::move(table);
     }
 
-    /** Get all symbols which can be used in global scope. Note that
-     *  this is different from GLOBAL variable type in the mod file. Here
-     *  global meaning all variables that can be used in entire mod file.
-     *  This is used from optimization passes.
-     *
-     *  \todo Voltage v can be global variable as well as external. In order
-     *        to avoid optimizations, we need to handle this case properly
-     *
-     *  \todo Instead of ast node, use symbol properties to check variable type
-     */
-    std::vector<std::shared_ptr<Symbol>> SymbolTable::get_global_variables() {
+    /// return all symbol having any of the provided properties
+    std::vector<std::shared_ptr<Symbol>> SymbolTable::get_variables_with_properties(
+        SymbolInfo properties) {
         std::vector<std::shared_ptr<Symbol>> variables;
         for (auto& syminfo : table.symbols) {
             auto symbol = syminfo.second;
-            SymbolInfo property = NmodlInfo::range_var;
-            property |= NmodlInfo::dependent_def | NmodlInfo::param_assign;
-            if (symbol->has_properties(property)) {
+            if (symbol->has_properties(properties)) {
                 variables.push_back(symbol);
             }
         }
@@ -124,7 +114,7 @@ namespace symtab {
         /// is not used with visitor at all. it would be ok
         // to just return nullptr?
         if (parent_symtab == nullptr) {
-            throw std::logic_error("Lookup wit previous symtab = nullptr ");
+            throw std::logic_error("Lookup with previous symtab = nullptr ");
         }
 
         auto symbol = parent_symtab->lookup(name);

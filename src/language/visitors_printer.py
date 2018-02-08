@@ -170,6 +170,7 @@ class SymtabVisitorDeclarationPrinter(DeclarationPrinter):
         self.write_line("private:", post_gutter=1)
         self.write_line("ModelSymbolTable* modsymtab;", newline=2, post_gutter=-1)
         self.write_line("std::unique_ptr<JSONPrinter> printer;")
+        self.write_line("bool state_block = false;", newline=2)
 
     def public_declaration(self):
         self.write_line("public:", post_gutter=1)

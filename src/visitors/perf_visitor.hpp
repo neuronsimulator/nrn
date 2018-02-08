@@ -70,13 +70,28 @@ class PerfVisitor : public AstVisitor {
     /// if not json, all goes to string
     std::stringstream stream;
 
+    /// count of per channel instance variables
+    int num_instance_variables = 0;
+
+    /// count of global variables
+    int num_global_variables = 0;
+
+    /// count of state variables
+    int num_state_variables = 0;
+
     void update_memory_ops(const std::string& name);
 
     bool symbol_to_skip(const std::shared_ptr<symtab::Symbol>& symbol);
 
     bool is_local_variable(const std::shared_ptr<symtab::Symbol>& symbol);
 
+    bool is_constant_variable(const std::shared_ptr<symtab::Symbol>& symbol);
+
+    void count_variables();
+
     void measure_performance(AST* node);
+
+    void print_memory_usage();
 
     void add_perf_to_printer(PerfStat& perf);
 
@@ -89,8 +104,20 @@ class PerfVisitor : public AstVisitor {
         printer->compact_json(flag);
     }
 
-    PerfStat& get_total_perfstat() {
+    PerfStat get_total_perfstat() {
         return total_perf;
+    }
+
+    int get_instance_variable_count() {
+        return num_instance_variables;
+    }
+
+    int get_global_variable_count() {
+        return num_global_variables;
+    }
+
+    int get_state_variable_count() {
+        return num_state_variables;
     }
 
     void visit_binary_expression(BinaryExpression* node) override;

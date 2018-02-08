@@ -136,7 +136,7 @@ namespace symtab {
 
         std::shared_ptr<Symbol> lookup_in_scope(const std::string& name);
 
-        std::vector<std::shared_ptr<Symbol>> get_global_variables();
+        std::vector<std::shared_ptr<Symbol>> get_variables_with_properties(SymbolInfo properties);
 
         bool under_global_scope();
 

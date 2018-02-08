@@ -127,6 +127,9 @@ std::vector<std::string> to_string_vector(const SymbolInfo& obj) {
         properties.emplace_back("extern_method");
     }
 
+    if (has_property(obj, NmodlInfo::state_var)) {
+        properties.emplace_back("state_var");
+    }
     return properties;
 }
 

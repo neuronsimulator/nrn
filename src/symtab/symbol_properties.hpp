@@ -169,7 +169,10 @@ namespace symtab {
             extern_neuron_variable = 1 << 26,
 
             /** neuron solver methods and math functions */
-            extern_method = 1 << 27
+            extern_method = 1 << 27,
+
+            /** state variable */
+            state_var = 1 << 28
         };
 
     }  // namespace details

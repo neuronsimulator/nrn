@@ -114,16 +114,22 @@ SCENARIO("Symbol table generation and Perf stat visitor pass") {
             NEURON  {
                 SUFFIX NaTs2_t
                 USEION na READ ena WRITE ina
-                RANGE gNaTs2_tbar
+                RANGE gNaTs2_tbar, A_AMPA_step
+                GLOBAL Rstate
             }
 
             PARAMETER   {
                 gNaTs2_tbar = 0.00001 (S/cm2)
+                tau_r = 0.2 (ms)
+                tau_d_AMPA = 1.0
             }
 
             ASSIGNED    {
                 v   (mV)
                 ena (mV)
+                tau_r
+                tsyn_fac
+                A_AMPA_step
             }
 
             STATE {
@@ -176,9 +182,18 @@ SCENARIO("Symbol table generation and Perf stat visitor pass") {
             }
 
             WHEN("Perf visitor pass runs after symtab visitor") {
-                PerfVisitor v;
+                PerfVisitor v, v2("a.a");
                 v.visit_program(ast.get());
+
                 auto result = v.get_total_perfstat();
+                auto num_instance_var = v.get_instance_variable_count();
+                auto num_global_var = v.get_global_variable_count();
+                auto num_state_var = v.get_state_variable_count();
+
+                v2.visit_program(ast.get());
+                std::stringstream s;
+                result.print(s);
+                std::cout << s.str();
 
                 THEN("Performance counters are updated") {
                     REQUIRE(result.add_count == 0);
@@ -186,12 +201,17 @@ SCENARIO("Symbol table generation and Perf stat visitor pass") {
                     REQUIRE(result.mul_count == 6);
                     REQUIRE(result.div_count == 2);
                     REQUIRE(result.exp_count == 1);
-                    REQUIRE(result.global_read_count == 7);
+                    REQUIRE(result.global_read_count == 6);
                     REQUIRE(result.global_write_count == 1);
+                    REQUIRE(result.constant_read_count == 1);
+                    REQUIRE(result.constant_write_count == 0);
                     REQUIRE(result.local_read_count == 3);
                     REQUIRE(result.local_write_count == 2);
                     REQUIRE(result.func_call_count == 1);
                     REQUIRE(result.neg_count == 3);
+                    REQUIRE(num_instance_var == 8);
+                    REQUIRE(num_global_var == 2);
+                    REQUIRE(num_state_var == 2);
                 }
             }
         }
@@ -1602,7 +1622,6 @@ std::string run_cnexp_solve_visitor(const std::string& text) {
 
 
 SCENARIO("CnexpSolver visitor solving ODEs") {
-
     GIVEN("Derivative block with cnexp method in breakpoint block") {
         std::string nmodl_text = R"(
             BREAKPOINT {

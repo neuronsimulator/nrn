@@ -43,8 +43,20 @@ std::vector<std::string> LocalizeVisitor::variables_to_optimize() {
                                      | NmodlInfo::bbcore_pointer_var
                                      | NmodlInfo::electrode_cur_var
                                      | NmodlInfo::section_var;
+
+    SymbolInfo global_var_properties = NmodlInfo::range_var
+                                       | NmodlInfo::dependent_def
+                                       | NmodlInfo::param_assign;
     // clang-format on
-    auto variables = program_symtab->get_global_variables();
+
+
+    /**
+     *  \todo Voltage v can be global variable as well as external. In order
+     *        to avoid optimizations, we need to handle this case properly
+     *  \todo Instead of ast node, use symbol properties to check variable type
+     */
+    auto variables = program_symtab->get_variables_with_properties(global_var_properties);
+
     std::vector<std::string> result;
     for (auto& variable : variables) {
         if (!variable->has_properties(excluded_var_properties)) {
