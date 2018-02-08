@@ -123,13 +123,12 @@ int main(int argc, const char* argv[]) {
 
         {
             InlineVisitor v;
-            //v.visit_program(ast.get());
+            v.visit_program(ast.get());
         }
 
         {
-            // BUG: WE SHOULD BE ABLE TO RE-RUN SYMTAB AGAIN HERE!!
             SymtabVisitor v;
-            //v.visit_program(ast.get());
+            v.visit_program(ast.get());
         }
 
         {
@@ -158,7 +157,6 @@ int main(int argc, const char* argv[]) {
         }
 
         {
-            /// NEED TO RUN SYMTAB VISITOR AFTER INLINING WHICH IS NOT RUNNING
             PerfVisitor v(channel_name + ".perf.json");
             v.visit_program(ast.get());
 
