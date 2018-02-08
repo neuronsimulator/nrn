@@ -122,7 +122,11 @@ void PerfVisitor::measure_performance(AST* node) {
     }
 
     if (printer) {
-        printer->push_block(symtab->name());
+        auto name = symtab->name();
+        if(node->is_derivative_block()) {
+            name = node->get_type_name();
+        }
+        printer->push_block(name);
     }
 
     perf.title = "Performance Statistics of " + symtab->name();
@@ -180,9 +184,50 @@ void PerfVisitor::visit_else_if_statement(ElseIfStatement* /*node*/) {
     }
 }
 
+void PerfVisitor::count_variables() {
+    /// number of instance variables: range or assigned variables
+    /// \todo: one caveat is that the global variables appearing in
+    /// assigned block variable are not treated as range!
+    SymbolInfo property = NmodlInfo::range_var | NmodlInfo::dependent_def;
+    auto variables = current_symtab->get_variables_with_properties(property);
+    num_instance_variables = variables.size();
+
+    /// state variables
+    property = NmodlInfo::state_var;
+    variables = current_symtab->get_variables_with_properties(property);
+    num_state_variables = variables.size();
+
+    /// number of global variables : parameters could appear also as range
+    /// variables and hence need to filter out
+    property = NmodlInfo::global_var | NmodlInfo::param_assign;
+    variables = current_symtab->get_variables_with_properties(property);
+    num_global_variables = 0;
+    for (auto& variable : variables) {
+        property = NmodlInfo::range_var | NmodlInfo::dependent_def;
+        if (!variable->has_properties(property)) {
+            num_global_variables++;
+        }
+    }
+}
+
+void PerfVisitor::print_memory_usage() {
+    stream << std::endl;
+    stream << "#INSTANCE VARIABLES : " <<  num_instance_variables << " ";
+    stream << "#GLOBAL VARIABLES : " <<  num_global_variables << " ";
+    stream << "#STATE VARIABLES : " <<  num_state_variables << std::endl;
+
+    if(printer) {
+        printer->push_block("MemroyInfo");
+        printer->add_node(std::to_string(num_instance_variables), "InstanceVariables");
+        printer->add_node(std::to_string(num_global_variables), "GlobalVariables") ;
+        printer->add_node(std::to_string(num_state_variables), "StateVariables") ;
+        printer->pop_block();
+    }
+}
+
 void PerfVisitor::visit_program(Program* node) {
     if (printer) {
-        printer->push_block("NMODL");
+        printer->push_block("BlockPerf");
     }
 
     node->visit_children(this);
@@ -194,8 +239,13 @@ void PerfVisitor::visit_program(Program* node) {
         printer->push_block("total");
         add_perf_to_printer(total_perf);
         printer->pop_block();
+        /// BlockPerf
         printer->pop_block();
     }
+
+    current_symtab = node->get_symbol_table();
+    count_variables();
+    print_memory_usage();
 }
 
 /** Blocks like function can have multiple statement blocks and
@@ -262,7 +312,7 @@ void PerfVisitor::visit_unary_expression(UnaryExpression* node) {
 bool PerfVisitor::symbol_to_skip(const std::shared_ptr<Symbol>& symbol) {
     bool skip = false;
 
-    auto is_method = symbol->has_properties(NmodlInfo::extern_method);
+    auto is_method = symbol->has_properties(NmodlInfo::extern_method | NmodlInfo::function_block);
     if (is_method && under_function_call) {
         skip = true;
     }
@@ -276,12 +326,23 @@ bool PerfVisitor::symbol_to_skip(const std::shared_ptr<Symbol>& symbol) {
 
 bool PerfVisitor::is_local_variable(const std::shared_ptr<symtab::Symbol>& symbol) {
     bool is_local = false;
+    /// in the function when we write to function variable then consider it as local variable
     auto properties = NmodlInfo::local_var | NmodlInfo::argument | NmodlInfo::function_block;
     if (symbol->has_properties(properties)) {
         is_local = true;
     }
     return is_local;
 }
+
+bool PerfVisitor::is_constant_variable(const std::shared_ptr<symtab::Symbol>& symbol) {
+    bool is_constant = false;
+    auto properties = NmodlInfo::param_assign;
+    if (symbol->has_properties(properties)) {
+        is_constant = true;
+    }
+    return is_constant;
+}
+
 
 /** Find symbol in closest scope (up to parent) and update
  * read/write count. Also update ops count in current block.
@@ -304,10 +365,18 @@ void PerfVisitor::update_memory_ops(const std::string& name) {
         } else {
             if (visiting_lhs_expression) {
                 symbol->write();
-                current_block_perf.global_write_count++;
+                if (is_constant_variable(symbol)) {
+                    current_block_perf.constant_write_count++;
+                } else {
+                    current_block_perf.global_write_count++;
+                }
             } else {
                 symbol->read();
-                current_block_perf.global_read_count++;
+                if (is_constant_variable(symbol)) {
+                    current_block_perf.constant_read_count++;
+                } else {
+                    current_block_perf.global_read_count++;
+                }
             }
         }
     }

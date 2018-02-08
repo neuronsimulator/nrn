@@ -27,6 +27,11 @@ void SymtabVisitor::setup_symbol(T* node, SymbolInfo property, int order) {
     symbol->add_property(property);
     modsymtab->insert(symbol);
 
+    /// extra property for state variables
+    if (state_block) {
+        symbol->add_property(NmodlInfo::state_var);
+    }
+
     /// visit childrens, most likely variables are already
     /// leaf nodes, not necessary to visit
     node->visit_children(this);
@@ -55,6 +60,10 @@ void SymtabVisitor::setup_symbol_table(T* node, std::string name, bool is_global
     /// entering into new nmodl block
     auto symtab = modsymtab->enter_scope(name, node, is_global);
 
+    if (node->is_state_block()) {
+        state_block = true;
+    }
+
     /// not required at the moment but every node
     /// has pointer to associated symbol table
     node->set_symbol_table(symtab);
@@ -82,6 +91,10 @@ void SymtabVisitor::setup_symbol_table(T* node, std::string name, bool is_global
 
     /// exisiting nmodl block
     modsymtab->leave_scope();
+
+    if (node->is_state_block()) {
+        state_block = false;
+    }
 }
 
 #endif

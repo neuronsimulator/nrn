@@ -110,20 +110,6 @@ int main(int argc, const char* argv[]) {
             std::cout << "----CNEXP SOLVE VISITOR FINISHED----" << std::endl;
         }
 
-        {
-            PerfVisitor v(channel_name + ".perf.json");
-            v.visit_program(ast.get());
-
-            auto symtab = ast->get_symbol_table();
-            std::stringstream ss;
-            symtab->print(ss, 0);
-            std::cout << ss.str();
-
-            ss.str("");
-            v.print(ss);
-            std::cout << ss.str() << std::endl;
-            std::cout << "----PERF VISITOR FINISHED----" << std::endl;
-        }
 
         {
             NmodlPrintVisitor v(channel_name + ".nocmodl.cnexp.mod");
@@ -137,7 +123,13 @@ int main(int argc, const char* argv[]) {
 
         {
             InlineVisitor v;
-            v.visit_program(ast.get());
+            //v.visit_program(ast.get());
+        }
+
+        {
+            // BUG: WE SHOULD BE ABLE TO RE-RUN SYMTAB AGAIN HERE!!
+            SymtabVisitor v;
+            //v.visit_program(ast.get());
         }
 
         {
@@ -164,6 +156,24 @@ int main(int argc, const char* argv[]) {
             NmodlPrintVisitor v(channel_name + ".nocmodl.loc.ren.mod");
             v.visit_program(ast.get());
         }
+
+        {
+            /// NEED TO RUN SYMTAB VISITOR AFTER INLINING WHICH IS NOT RUNNING
+            PerfVisitor v(channel_name + ".perf.json");
+            v.visit_program(ast.get());
+
+            auto symtab = ast->get_symbol_table();
+            std::stringstream ss;
+            symtab->print(ss, 0);
+            std::cout << ss.str();
+
+            ss.str("");
+            v.print(ss);
+            std::cout << ss.str() << std::endl;
+            std::cout << "----PERF VISITOR FINISHED----" << std::endl;
+        }
+
+
     } catch (TCLAP::ArgException& e) {
         std::cout << "Argument Error: " << e.error() << " for arg " << e.argId() << std::endl;
         return 1;

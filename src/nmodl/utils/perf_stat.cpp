@@ -41,6 +41,8 @@ PerfStat operator+(const PerfStat& first, const PerfStat& second) {
     result.local_read_count = first.local_read_count + second.local_read_count;
     result.local_write_count = first.local_write_count + second.local_write_count;
 
+    result.constant_read_count = first.constant_read_count + second.constant_read_count;
+    result.constant_write_count = first.constant_write_count + second.constant_write_count;
     return result;
 }
 
@@ -55,8 +57,8 @@ void PerfStat::print(std::stringstream& stream) {
 }
 
 std::vector<std::string> PerfStat::keys() {
-    return {"+",     "-",     "x",    "/",       "exp",   "GM(R)",      "GM(W)",
-            "LM(R)", "LM(W)", "call", "compare", "unary", "conditional"};
+    return {"+",     "-",     "x",     "/",    "exp",     "GM(R)", "GM(W)",      "CM(R)",
+            "CM(W)", "LM(R)", "LM(W)", "call", "compare", "unary", "conditional"};
 }
 
 std::vector<std::string> PerfStat::values() {
@@ -73,6 +75,8 @@ std::vector<std::string> PerfStat::values() {
 
     row.push_back(std::to_string(global_read_count));
     row.push_back(std::to_string(global_write_count));
+    row.push_back(std::to_string(constant_read_count));
+    row.push_back(std::to_string(constant_write_count));
     row.push_back(std::to_string(local_read_count));
     row.push_back(std::to_string(local_write_count));
     row.push_back(std::to_string(func_call_count));

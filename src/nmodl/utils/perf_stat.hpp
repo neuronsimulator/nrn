@@ -58,15 +58,18 @@ class PerfStat {
     int if_count = 0;
     int elif_count = 0;
 
-    /// expensive : typically access to
-    /// dynamically allocated memory
+    /// expensive : typically access to dynamically allocated memory
     int global_read_count = 0;
     int global_write_count = 0;
 
-    /// cheap : typically local variables
-    //  in mod file means registers
+    /// cheap : typically local variables in mod file means registers
     int local_read_count = 0;
     int local_write_count = 0;
+
+    /// could be optimized : access to variables that could be read-only
+    /// in this case write counts are typically from initialization
+    int constant_read_count = 0;
+    int constant_write_count = 0;
 
     friend PerfStat operator+(const PerfStat& first, const PerfStat& second);
     void print(std::stringstream& stream);

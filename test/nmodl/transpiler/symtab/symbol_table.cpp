@@ -155,14 +155,14 @@ SCENARIO("Symbol table operations") {
         }
         WHEN("checked for global variables") {
             table->insert(symbol);
-            auto variables = table->get_global_variables();
+            auto variables = table->get_variables_with_properties(NmodlInfo::range_var);
             THEN("table doesn't have any global variables") {
                 REQUIRE(variables.empty());
                 WHEN("added global symbol") {
                     auto next_symbol = std::make_shared<Symbol>("gamma", ModToken());
                     next_symbol->add_property(NmodlInfo::dependent_def);
                     table->insert(next_symbol);
-                    auto variables = table->get_global_variables();
+                    auto variables = table->get_variables_with_properties(NmodlInfo::dependent_def);
                     THEN("table has global variable") {
                         REQUIRE(variables.size() == 1);
                     }
