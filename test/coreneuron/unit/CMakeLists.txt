@@ -36,21 +36,21 @@ endif()
 
 
 if(UNIT_TESTS)
-
-add_subdirectory(unit/endian)
-add_subdirectory(unit/sdprintf)
-add_subdirectory(unit/mechbuild)
-add_subdirectory(unit/omp)
-add_subdirectory(unit/cmdline_interface)
-add_subdirectory(unit/interleave_info)
-add_subdirectory(unit/alignment)
-add_subdirectory(unit/queueing)
-
+    add_subdirectory(unit/endian)
+    add_subdirectory(unit/sdprintf)
+    add_subdirectory(unit/mechbuild)
+    add_subdirectory(unit/omp)
+    add_subdirectory(unit/cmdline_interface)
+    add_subdirectory(unit/interleave_info)
+    add_subdirectory(unit/alignment)
+    add_subdirectory(unit/queueing)
+else()
+    message(STATUS "Unit tests disabled")
 endif()
 
 if(FUNCTIONAL_TESTS)
-
-add_subdirectory(integration)
-add_subdirectory(regression)
-
+    add_subdirectory(integration)
+    add_subdirectory(regression)
+else()
+    message(STATUS "Functional tests disabled")
 endif()

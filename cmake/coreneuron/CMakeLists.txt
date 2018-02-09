@@ -164,12 +164,14 @@ add_definitions(-DCORENEURON_BUILD)
 option (ENABLE_SELECTIVE_GPU_PROFILING "Enable GPU profiling only for Solver" ON)
 option (ENABLE_OPENACC "Enable use of OpenACC" OFF)
 
+set(CLANG_FORMAT_MIN_VERSION "4.0")
+set(CLANG_FORMAT_MAX_VERSION "4.9")
 find_package(ClangFormat)
 
 if(CLANG_FORMAT_FOUND)
     message("clang-format : ${CLANG_FORMAT_EXECUTABLE} : ${CLANG_FORMAT_VERSION}")
 else()
-    message("clang-format executable not found")
+  message("clang-format executable with appropriate version (min: ${CLANG_FORMAT_MIN_VERSION}, max: ${CLANG_FORMAT_MAX_VERSION}) not found")
 endif()
 
 if(CLANG_FORMAT_FOUND)
@@ -255,6 +257,8 @@ endif(CORENEURON_MAIN)
 # Tests
 if(Boost_FOUND)
     add_subdirectory(tests)
+else()
+    message(STATUS "Boost not found, disabling tests")
 endif(Boost_FOUND)
 
 
