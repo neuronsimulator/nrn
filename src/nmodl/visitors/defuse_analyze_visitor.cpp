@@ -241,7 +241,9 @@ void DefUseAnalyzeVisitor::visit_if_statement(IfStatement* node) {
  *        of verbatim block to find the variable usage.
  */
 void DefUseAnalyzeVisitor::visit_verbatim(Verbatim* node) {
-    current_chain->push_back(DUInstance(DUState::U));
+    if (!ignore_verbatim) {
+        current_chain->push_back(DUInstance(DUState::U));
+    }
 }
 
 /** Update def-use chain if we encounter a variable that we are looking for.

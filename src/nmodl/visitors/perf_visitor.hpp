@@ -64,6 +64,9 @@ class PerfVisitor : public AstVisitor {
     /// whether solve block is being visited
     bool under_solve_block = false;
 
+    /// whether net receive block is being visited
+    bool under_net_receive_block = false;
+
     /// to print to json file
     std::unique_ptr<JSONPrinter> printer;
 
@@ -90,6 +93,9 @@ class PerfVisitor : public AstVisitor {
 
     /// count of state variables
     int num_state_variables = 0;
+
+    /// count of pointer / bbcorepointer variables
+    int num_pointer_variables = 0;
 
     void update_memory_ops(const std::string& name);
 
@@ -124,6 +130,14 @@ class PerfVisitor : public AstVisitor {
         return num_instance_variables;
     }
 
+    int get_const_instance_variable_count() {
+        return num_constant_instance_variables;
+    }
+
+    int get_const_global_variable_count() {
+        return num_constant_global_variables;
+    }
+
     int get_global_variable_count() {
         return num_global_variables;
     }
@@ -156,8 +170,11 @@ class PerfVisitor : public AstVisitor {
         measure_performance(node);
     }
 
+    /// skip initial block under net_receive block
     void visit_initial_block(InitialBlock* node) override {
-        measure_performance(node);
+        if (!under_net_receive_block) {
+            measure_performance(node);
+        }
     }
 
     void visit_constructor_block(ConstructorBlock* node) override {
@@ -201,7 +218,9 @@ class PerfVisitor : public AstVisitor {
     }
 
     void visit_net_receive_block(NetReceiveBlock* node) override {
+        under_net_receive_block = true;
         measure_performance(node);
+        under_net_receive_block = false;
     }
 
     void visit_breakpoint_block(BreakpointBlock* node) override {

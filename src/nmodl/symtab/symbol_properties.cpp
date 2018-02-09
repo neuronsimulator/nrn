@@ -11,7 +11,7 @@ bool has_property(const SymbolInfo& obj, NmodlInfo property) {
     return static_cast<bool>(obj & property);
 }
 
-bool has_status(const SymbolStatus &obj, Status state) {
+bool has_status(const SymbolStatus& obj, Status state) {
     return static_cast<bool>(obj & state);
 }
 

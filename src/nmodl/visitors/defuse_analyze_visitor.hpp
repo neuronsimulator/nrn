@@ -175,8 +175,8 @@ class DefUseAnalyzeVisitor : public AstVisitor {
     /// indicate that there is unsupported construct encountered
     bool unsupported_node = false;
 
-    /// indicate that there is verbatim block encountered
-    bool verbatim_node = false;
+    /// ignore verbatim blocks
+    bool ignore_verbatim = false;
 
     /// starting visiting lhs of assignment statement
     bool visiting_lhs = false;
@@ -190,6 +190,10 @@ class DefUseAnalyzeVisitor : public AstVisitor {
     DefUseAnalyzeVisitor() = delete;
 
     explicit DefUseAnalyzeVisitor(symtab::SymbolTable* symtab) : global_symtab(symtab) {
+    }
+
+    DefUseAnalyzeVisitor(symtab::SymbolTable* symtab, bool ignore_verbatim)
+        : global_symtab(symtab), ignore_verbatim(ignore_verbatim) {
     }
 
     virtual void visit_binary_expression(BinaryExpression* node) override;

@@ -18,7 +18,11 @@ PerfStat operator+(const PerfStat& first, const PerfStat& second) {
     result.exp_count = first.exp_count + second.exp_count;
     result.log_count = first.log_count + second.log_count;
     result.pow_count = first.pow_count + second.pow_count;
-    result.func_call_count = first.func_call_count + second.func_call_count;
+
+    result.external_func_call_count =
+        first.external_func_call_count + second.external_func_call_count;
+    result.internal_func_call_count =
+        first.internal_func_call_count + second.internal_func_call_count;
 
     result.and_count = first.and_count + second.and_count;
     result.or_count = first.or_count + second.or_count;
@@ -57,8 +61,9 @@ void PerfStat::print(std::stringstream& stream) {
 }
 
 std::vector<std::string> PerfStat::keys() {
-    return {"+",     "-",     "x",     "/",    "exp",     "GM(R)", "GM(W)",      "CM(R)",
-            "CM(W)", "LM(R)", "LM(W)", "call", "compare", "unary", "conditional"};
+    return {"+",          "-",          "x",       "/",     "exp",        "log",
+            "GM(R)",      "GM(W)",      "CM(R)",   "CM(W)", "LM(R)",      "LM(W)",
+            "calls(ext)", "calls(int)", "compare", "unary", "conditional"};
 }
 
 std::vector<std::string> PerfStat::values() {
@@ -72,6 +77,7 @@ std::vector<std::string> PerfStat::values() {
     row.push_back(std::to_string(mul_count));
     row.push_back(std::to_string(div_count));
     row.push_back(std::to_string(exp_count));
+    row.push_back(std::to_string(log_count));
 
     row.push_back(std::to_string(global_read_count));
     row.push_back(std::to_string(global_write_count));
@@ -79,7 +85,9 @@ std::vector<std::string> PerfStat::values() {
     row.push_back(std::to_string(constant_write_count));
     row.push_back(std::to_string(local_read_count));
     row.push_back(std::to_string(local_write_count));
-    row.push_back(std::to_string(func_call_count));
+
+    row.push_back(std::to_string(external_func_call_count));
+    row.push_back(std::to_string(internal_func_call_count));
 
     row.push_back(std::to_string(compares));
     row.push_back(std::to_string(not_count + neg_count));

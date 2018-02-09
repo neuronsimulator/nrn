@@ -118,7 +118,8 @@ void PerfVisitor::measure_performance(AST* node) {
 
     auto symtab = node->get_symbol_table();
     if (symtab == nullptr) {
-        throw std::runtime_error("Symbol table not setup, Symtab visitor pass did not run?");
+        throw std::runtime_error("Perfvisitor : symbol table not setup for " +
+                                 node->get_type_name());
     }
 
     auto name = symtab->name();
@@ -155,7 +156,14 @@ void PerfVisitor::visit_function_call(FunctionCall* node) {
             current_block_perf.pow_count++;
         }
         node->visit_children(this);
-        current_block_perf.func_call_count++;
+
+        auto symbol = current_symtab->lookup_in_scope(name);
+        auto method_property = NmodlInfo::procedure_block | NmodlInfo::function_block;
+        if (symbol != nullptr && symbol->has_properties(method_property)) {
+            current_block_perf.internal_func_call_count++;
+        } else {
+            current_block_perf.external_func_call_count++;
+        }
     }
 
     under_function_call = false;
@@ -173,48 +181,63 @@ void PerfVisitor::visit_prime_name(PrimeName* node) {
     node->visit_children(this);
 }
 
-void PerfVisitor::visit_if_statement(IfStatement* /*node*/) {
+void PerfVisitor::visit_if_statement(IfStatement* node) {
     if (start_measurement) {
         current_block_perf.if_count++;
+        node->visit_children(this);
     }
 }
 
-void PerfVisitor::visit_else_if_statement(ElseIfStatement* /*node*/) {
+void PerfVisitor::visit_else_if_statement(ElseIfStatement* node) {
     if (start_measurement) {
         current_block_perf.elif_count++;
+        node->visit_children(this);
     }
 }
 
 void PerfVisitor::count_variables() {
     /// number of instance variables: range or assigned variables
-    /// \todo: one caveat is that the global variables appearing in
-    /// assigned block variable are not treated as range!
+    /// one caveat is that the global variables appearing in
+    /// assigned block are not treated as range
+    num_instance_variables = 0;
+
     SymbolInfo property = NmodlInfo::range_var | NmodlInfo::dependent_def | NmodlInfo::state_var;
     auto variables = current_symtab->get_variables_with_properties(property);
-    num_instance_variables = variables.size();
 
     for (auto& variable : variables) {
-        if (variable->has_properties(NmodlInfo::param_assign)) {
-            num_constant_instance_variables++;
-        }
-        if (variable->has_any_status(Status::localized)) {
-            num_localized_instance_variables++;
+        if (!variable->has_properties(NmodlInfo::global_var)) {
+            num_instance_variables++;
+            if (variable->has_properties(NmodlInfo::param_assign)) {
+                num_constant_instance_variables++;
+            }
+            if (variable->has_any_status(Status::localized)) {
+                num_localized_instance_variables++;
+            }
         }
     }
 
-    /// state variables
+    /// state variables have state_var property
     property = NmodlInfo::state_var;
     variables = current_symtab->get_variables_with_properties(property);
     num_state_variables = variables.size();
 
-    /// number of global variables : parameters could appear also as range
-    /// variables and hence need to filter out
-    property = NmodlInfo::global_var | NmodlInfo::param_assign;
+    /// pointer variables have pointer/bbcorepointer
+    property = NmodlInfo::pointer_var | NmodlInfo::bbcore_pointer_var;
+    variables = current_symtab->get_variables_with_properties(property);
+    num_pointer_variables = variables.size();
+
+
+    /// number of global variables : parameters and pointers could appear also
+    /// as range variables and hence need to filter out. But if anything declared
+    /// as global is always global.
+    property = NmodlInfo::global_var | NmodlInfo::param_assign | NmodlInfo::bbcore_pointer_var |
+               NmodlInfo::pointer_var;
     variables = current_symtab->get_variables_with_properties(property);
     num_global_variables = 0;
     for (auto& variable : variables) {
+        auto is_global = variable->has_properties(NmodlInfo::global_var);
         property = NmodlInfo::range_var | NmodlInfo::dependent_def;
-        if (!variable->has_properties(property)) {
+        if (!variable->has_properties(property) || is_global) {
             num_global_variables++;
             if (variable->has_properties(NmodlInfo::param_assign)) {
                 num_constant_global_variables++;
@@ -229,15 +252,18 @@ void PerfVisitor::count_variables() {
 void PerfVisitor::print_memory_usage() {
     stream << std::endl;
 
-    stream << "#INSTANCE VARIABLES : " << num_instance_variables << " ";
+
+    stream << "#VARIABLES :: ";
+    stream << "  INSTANCE : " << num_instance_variables << " ";
     stream << "[ CONSTANT " << num_constant_instance_variables << ", ";
     stream << "LOCALIZED " << num_localized_instance_variables << " ]";
 
-    stream << "  #GLOBAL VARIABLES : " << num_global_variables << " ";
+    stream << "  GLOBAL VARIABLES : " << num_global_variables << " ";
     stream << "[ CONSTANT " << num_constant_global_variables << ", ";
     stream << "LOCALIZED " << num_localized_global_variables << " ]";
 
-    stream << "  #STATE VARIABLES : " << num_state_variables << std::endl;
+    stream << "  STATE : " << num_state_variables;
+    stream << "  POINTER : " << num_pointer_variables << std::endl;
 
     if (printer) {
         printer->push_block("MemoryInfo");
@@ -256,6 +282,10 @@ void PerfVisitor::print_memory_usage() {
 
         printer->push_block("State");
         printer->add_node(std::to_string(num_state_variables), "total");
+        printer->pop_block();
+
+        printer->push_block("Pointer");
+        printer->add_node(std::to_string(num_pointer_variables), "total");
         printer->pop_block();
 
         printer->pop_block();
@@ -295,7 +325,8 @@ void PerfVisitor::visit_statement_block(StatementBlock* node) {
     current_symtab = node->get_symbol_table();
 
     if (current_symtab == nullptr) {
-        throw std::runtime_error("Symbol table not setup, Symtab visitor pass did not run?");
+        throw std::runtime_error("Perfvisitor : symbol table not setup for " +
+                                 node->get_type_name());
     }
 
     /// new block perf starts from zero
@@ -315,6 +346,8 @@ void PerfVisitor::visit_statement_block(StatementBlock* node) {
 
 /// solve is not a statement but could have associated block
 /// and hence could/should not be skipped completely
+/// we can't ignore the block because it could have associated
+/// statement block (in theory)
 void PerfVisitor::visit_solve_block(SolveBlock* node) {
     under_solve_block = true;
     node->visit_children(this);
@@ -343,7 +376,7 @@ void PerfVisitor::visit_unary_expression(UnaryExpression* node) {
  * read/write operations. For example, for expression "exp(a+b)",
  * "exp" is an external math function and we should not increment read
  * count for "exp" symbol. Same for solve statement where name will
- * be neuron solver method.
+ * be derivative block name and neuron solver method.
  */
 bool PerfVisitor::symbol_to_skip(const std::shared_ptr<Symbol>& symbol) {
     bool skip = false;
