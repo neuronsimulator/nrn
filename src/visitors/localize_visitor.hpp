@@ -73,6 +73,9 @@
 
 class LocalizeVisitor : public AstVisitor {
   private:
+    /// ignore verbatim blocks while localizing
+    bool ignore_verbatim = false;
+
     symtab::SymbolTable* program_symtab = nullptr;
 
     std::vector<std::string> variables_to_optimize();
@@ -81,6 +84,9 @@ class LocalizeVisitor : public AstVisitor {
 
   public:
     LocalizeVisitor() = default;
+
+    explicit LocalizeVisitor(bool ignore_verbatim) : ignore_verbatim(ignore_verbatim) {
+    }
 
     virtual void visit_program(ast::Program* node) override;
 };

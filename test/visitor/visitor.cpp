@@ -114,27 +114,32 @@ SCENARIO("Symbol table generation and Perf stat visitor pass") {
             NEURON  {
                 SUFFIX NaTs2_t
                 USEION na READ ena WRITE ina
-                RANGE gNaTs2_tbar, A_AMPA_step
-                GLOBAL Rstate
+                RANGE gNaTs2_tbar, A_AMPA_step  : range + anything = range (2)
+                GLOBAL Rstate                   : global + anything = global
+                POINTER rng                     : pointer = global
+                BBCOREPOINTER coreRng           : pointer + assigned = range
             }
 
             PARAMETER   {
-                gNaTs2_tbar = 0.00001 (S/cm2)
-                tau_r = 0.2 (ms)
-                tau_d_AMPA = 1.0
+                gNaTs2_tbar = 0.00001 (S/cm2)   : range + parameter = range already
+                tau_r = 0.2 (ms)                : parameter = global
+                tau_d_AMPA = 1.0                : parameter = global
+                tsyn_fac = 11.1                 : parameter + assigned = range
             }
 
             ASSIGNED    {
-                v   (mV)
-                ena (mV)
-                tau_r
-                tsyn_fac
-                A_AMPA_step
+                v   (mV)        : only assigned = range
+                ena (mV)        : only assigned = range
+                tsyn_fac        : parameter + assigned = range already
+                A_AMPA_step     : range + assigned = range already
+                AmState         : only assigned = range
+                Rstate          : global + assigned == global already
+                coreRng         : pointer + assigned = range already
             }
 
             STATE {
-                m
-                h
+                m               : state = range
+                h               : state = range
             }
 
             BREAKPOINT  {
@@ -143,6 +148,7 @@ SCENARIO("Symbol table generation and Perf stat visitor pass") {
                 SOLVE states METHOD cnexp
                 gNaTs2_t = gNaTs2_tbar*m*m*m*h
                 ina = gNaTs2_t*(v-ena)
+                m = hBetaf(11)
             }
 
             FUNCTION hBetaf(v) {
@@ -189,6 +195,8 @@ SCENARIO("Symbol table generation and Perf stat visitor pass") {
                 auto num_instance_var = v.get_instance_variable_count();
                 auto num_global_var = v.get_global_variable_count();
                 auto num_state_var = v.get_state_variable_count();
+                auto num_const_instance_var = v.get_const_instance_variable_count();
+                auto num_const_global_var = v.get_const_global_variable_count();
 
                 v2.visit_program(ast.get());
                 std::stringstream s;
@@ -202,16 +210,19 @@ SCENARIO("Symbol table generation and Perf stat visitor pass") {
                     REQUIRE(result.div_count == 2);
                     REQUIRE(result.exp_count == 1);
                     REQUIRE(result.global_read_count == 6);
-                    REQUIRE(result.global_write_count == 1);
+                    REQUIRE(result.global_write_count == 2);
                     REQUIRE(result.constant_read_count == 1);
                     REQUIRE(result.constant_write_count == 0);
                     REQUIRE(result.local_read_count == 3);
                     REQUIRE(result.local_write_count == 2);
-                    REQUIRE(result.func_call_count == 1);
+                    REQUIRE(result.external_func_call_count == 1);
+                    REQUIRE(result.internal_func_call_count == 1);
                     REQUIRE(result.neg_count == 3);
-                    REQUIRE(num_instance_var == 8);
-                    REQUIRE(num_global_var == 2);
+                    REQUIRE(num_instance_var == 9);
+                    REQUIRE(num_global_var == 4);
                     REQUIRE(num_state_var == 2);
+                    REQUIRE(num_const_instance_var == 2);
+                    REQUIRE(num_const_global_var == 2);
                 }
             }
         }

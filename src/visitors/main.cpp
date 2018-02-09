@@ -137,7 +137,9 @@ int main(int argc, const char* argv[]) {
         }
 
         {
-            LocalizeVisitor v;
+            /// for benchmarking/plotting purpose we want to enable unsafe mode
+            bool ignore_verbatim = true;
+            LocalizeVisitor v(ignore_verbatim);
             v.visit_program(ast.get());
         }
 

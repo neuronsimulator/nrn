@@ -81,7 +81,7 @@ void LocalizeVisitor::visit_program(Program* node) {
         /// compute def use chains
         for (auto& block : blocks) {
             if (node_to_localize(block.get())) {
-                DefUseAnalyzeVisitor v(program_symtab);
+                DefUseAnalyzeVisitor v(program_symtab, ignore_verbatim);
                 auto usages = v.analyze(block.get(), variable);
                 auto result = usages.eval();
                 block_usage[result].push_back(block);

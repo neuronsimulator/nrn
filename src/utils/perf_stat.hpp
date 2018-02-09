@@ -34,9 +34,12 @@ class PerfStat {
     int exp_count = 0;
     int log_count = 0;
     int pow_count = 0;
+
     /// could be external math funcs
-    /// or mod functions (before inlining)
-    int func_call_count = 0;
+    int external_func_call_count = 0;
+
+    /// mod functions (before/after inlining)
+    int internal_func_call_count = 0;
 
     /// bitwise ops
     int and_count = 0;

@@ -1238,6 +1238,7 @@ std::map<std::string, NmodlTestCase> nmodl_valid_constructs{
         }
     },
 
+    /// \todo : support for comment parsing is not working
     {
         "inline_comment_1",
         {
