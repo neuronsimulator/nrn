@@ -1,6 +1,6 @@
 http://www.symscape.com/configure-msmpi-for-mingw-w64
 
-Installed msmpisdk.msi and MsMpiSetup.exe in c:\ms-mpi  (version 7.1)
+Installed msmpisdk.msi and MsMpiSetup.exe in c:\ms-mpi  (version 9.0)
 Change Bin, Lib, Include to bin, lib, include
 cp c:/Windows/System32/msmpi.dll c:/ms-mpi/lib/x64
 cp c:/Windows/SysWoW64/msmpi.dll c:/ms-mpi/lib/x86 #optional

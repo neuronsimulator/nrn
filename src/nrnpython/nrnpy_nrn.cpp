@@ -46,6 +46,7 @@ typedef struct {
   PyObject_HEAD NPySegObj* pyseg_;
   Symbol* sym_;
   int isptr_;
+  int attr_from_sec_; // so section.xraxial[0] = e assigns to all segments.
 } NPyRangeVar;
 
 static PyTypeObject* psection_type;
@@ -313,6 +314,7 @@ static PyObject* NPyRangeVar_new(PyTypeObject* type, PyObject* args,
     self->pyseg_ = NULL;
     self->sym_ = NULL;
     self->isptr_ = 0;
+    self->attr_from_sec_ = 0;
   }
   return (PyObject*)self;
 }
@@ -998,6 +1000,7 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
       r->pyseg_->x_ = 0.5;
       r->sym_ = sym;
       r->isptr_ = 0;
+      r->attr_from_sec_ = 1;
       result = (PyObject*)r;
     } else {
       int err;
@@ -1225,6 +1228,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
       Py_INCREF(r->pyseg_);
       r->sym_ = sym;
       r->isptr_ = 0;
+      r->attr_from_sec_ = 0;
       result = (PyObject*)r;
     } else {
       int err;
@@ -1251,6 +1255,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
         Py_INCREF(r->pyseg_);
         r->sym_ = sym;
         r->isptr_ = 1;
+        r->attr_from_sec_ = 0;
         result = (PyObject*)r;
       } else {
         int err;
@@ -1378,6 +1383,7 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
       Py_INCREF(r->pyseg_);
       r->sym_ = sym;
       r->isptr_ = isptr;
+      r->attr_from_sec_ = 0;
       result = (PyObject*)r;
     } else {
       double* px = np.prop_pval(sym, 0);
@@ -1508,10 +1514,22 @@ static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
     rv_noexist(r->pyseg_->pysec_->sec_, r->sym_->name, r->pyseg_->x_, err);
     return -1;
   }
-  d += ix;
-  if (!PyArg_Parse(value, "d", d)) {
-    PyErr_SetString(PyExc_ValueError, "bad value");
-    return -1;
+  if (r->attr_from_sec_) {
+    // the range variable array is from a section not a segment and so
+    // assignment is over the entire section.
+    double x;
+    if (!PyArg_Parse(value, "d", &x)) {
+      PyErr_SetString(PyExc_ValueError, "bad value");
+      return -1;
+    }
+    hoc_pushx(double(ix));
+    nrn_rangeconst(r->pyseg_->pysec_->sec_, r->sym_, &x, 0);
+  }else{
+    d += ix;
+    if (!PyArg_Parse(value, "d", d)) {
+      PyErr_SetString(PyExc_ValueError, "bad value");
+      return -1;
+    }
   }
   if (r->sym_->u.rng.type == EXTRACELL && r->sym_->u.rng.index == 0) {
     diam_changed = 1;
@@ -1640,6 +1658,7 @@ static void rangevars_add(Symbol* sym) {
   // printf("%s\n", sym->name);
   r->sym_ = sym;
   r->isptr_ = 0;
+  r->attr_from_sec_ = 0;
   PyDict_SetItemString(rangevars_, sym->name, (PyObject*)r);
 }
 
