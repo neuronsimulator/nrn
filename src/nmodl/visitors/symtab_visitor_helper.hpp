@@ -28,7 +28,8 @@ void SymtabVisitor::setup_symbol(T* node, SymbolInfo property, int order) {
     }
 
     /// add new symbol
-    symbol = std::make_shared<Symbol>(node->get_name(), node, token);
+    auto name = node->get_name();
+    symbol = std::make_shared<Symbol>(name, node, token);
 
     symbol->add_property(property);
     modsymtab->insert(symbol);
@@ -51,6 +52,11 @@ void SymtabVisitor::setup_symbol_table(T* node,
     auto token = node->get_token();
     auto symbol = std::make_shared<Symbol>(name, node, *token);
     symbol->add_property(property);
+
+    if(name == block_to_solve) {
+        symbol->add_property(NmodlInfo::to_solve);
+    }
+
     modsymtab->insert(symbol);
     setup_symbol_table(node, name, is_global);
 }
@@ -74,6 +80,12 @@ void SymtabVisitor::setup_symbol_table(T* node, std::string name, bool is_global
 
     if (node->is_state_block()) {
         state_block = true;
+    }
+
+    /// there is only one solve statement allowed in mod file
+    if (node->is_solve_block()) {
+        auto solve_block = dynamic_cast<SolveBlock*> (node);
+        block_to_solve = solve_block->name->get_name();
     }
 
     /// not required at the moment but every node

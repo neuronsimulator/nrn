@@ -173,7 +173,10 @@ namespace symtab {
             extern_method = 1 << 27,
 
             /** state variable */
-            state_var = 1 << 28
+            state_var = 1 << 28,
+
+            /** need to solve : used in solve statement */
+            to_solve = 1 << 29
         };
 
     }  // namespace details

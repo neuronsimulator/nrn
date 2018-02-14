@@ -134,6 +134,10 @@ std::vector<std::string> to_string_vector(const SymbolInfo& obj) {
     if (has_property(obj, NmodlInfo::state_var)) {
         properties.emplace_back("state_var");
     }
+
+    if (has_property(obj, NmodlInfo::to_solve)) {
+        properties.emplace_back("to_solve");
+    }
     return properties;
 }
 

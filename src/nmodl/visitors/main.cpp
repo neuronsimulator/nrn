@@ -166,6 +166,11 @@ int main(int argc, const char* argv[]) {
         }
 
         {
+            SymtabVisitor v;
+            v.visit_program(ast.get());
+        }
+
+        {
             PerfVisitor v(channel_name + ".perf.json");
             v.visit_program(ast.get());
 

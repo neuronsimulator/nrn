@@ -4,11 +4,19 @@
 #include "visitors/defuse_analyze_visitor.hpp"
 
 using namespace ast;
+using namespace symtab;
 
-bool LocalizeVisitor::node_to_localize(ast::Node* node) {
+bool LocalizeVisitor::node_for_def_use_analysis(ast::Node *node) {
     auto type = node->get_type();
+
+    /**
+     * Blocks where we should compute def-use chains. We are excluding
+     * procedures and functions because we expect those to be "inlined".
+     * If procedure/function is not inlined then DefUse pass returns
+     * result as "Use". So it's safe.
+     */
     // clang-format off
-    const std::vector<ast::Type> blocks_to_localize = {
+    const std::vector<ast::Type> blocks_to_analyze = {
             ast::Type::INITIAL_BLOCK,
             ast::Type::BREAKPOINT_BLOCK,
             ast::Type::CONSTRUCTOR_BLOCK,
@@ -26,8 +34,24 @@ bool LocalizeVisitor::node_to_localize(ast::Node* node) {
             ast::Type::AFTER_BLOCK,
     };
     // clang-format on
-    auto it = std::find(blocks_to_localize.begin(), blocks_to_localize.end(), type);
-    return !(it == blocks_to_localize.end());
+    auto it = std::find(blocks_to_analyze.begin(), blocks_to_analyze.end(), type);
+    auto node_to_analyze = !(it == blocks_to_analyze.end());
+    auto solve_procedure = is_solve_procedure(node);
+    return (node_to_analyze || solve_procedure);
+}
+
+/*
+ * Check if given node is a procedure block and if it is used
+ * in the solve statement.
+ */
+bool LocalizeVisitor::is_solve_procedure(ast::Node* node) {
+    if(node->is_procedure_block()) {
+        auto symbol = program_symtab->lookup(node->get_name());
+        if (symbol && symbol->has_properties(NmodlInfo::to_solve)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 std::vector<std::string> LocalizeVisitor::variables_to_optimize() {
@@ -80,7 +104,7 @@ void LocalizeVisitor::visit_program(Program* node) {
 
         /// compute def use chains
         for (auto& block : blocks) {
-            if (node_to_localize(block.get())) {
+            if (node_for_def_use_analysis(block.get())) {
                 DefUseAnalyzeVisitor v(program_symtab, ignore_verbatim);
                 auto usages = v.analyze(block.get(), variable);
                 auto result = usages.eval();
