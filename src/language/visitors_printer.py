@@ -171,18 +171,19 @@ class SymtabVisitorDeclarationPrinter(DeclarationPrinter):
         self.write_line("ModelSymbolTable* modsymtab;", newline=2, post_gutter=-1)
         self.write_line("std::unique_ptr<JSONPrinter> printer;")
         self.write_line("std::string block_to_solve;")
+        self.write_line("bool update = false;")
         self.write_line("bool state_block = false;", newline=2)
 
     def public_declaration(self):
         self.write_line("public:", post_gutter=1)
 
-        line = self.classname + "() : printer(new JSONPrinter()) {} "
+        line = "explicit " + self.classname + "(bool update = false) : printer(new JSONPrinter()), update(update) {} "
         self.write_line(line)
 
-        line = self.classname + "(std::stringstream &ss) : printer(new JSONPrinter(ss)) {}"
+        line = self.classname + "(std::stringstream &ss, bool update = false) : printer(new JSONPrinter(ss)), update(update) {}"
         self.write_line(line)
 
-        line = self.classname + "(std::string filename) : printer(new JSONPrinter(filename)) {}"
+        line = self.classname + "(std::string filename, bool update = false) : printer(new JSONPrinter(filename)), update(update) {}"
         self.write_line(line, newline=2)
 
         # helper function for creating symbol for variables

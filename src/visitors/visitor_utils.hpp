@@ -20,8 +20,8 @@ ast::LocalVarVector* get_local_variables(const ast::StatementBlock* node);
 void add_local_statement(ast::StatementBlock* node);
 
 /** Add new local variable to the block */
-void add_local_variable(ast::StatementBlock* node, const std::string& varname);
-void add_local_variable(ast::StatementBlock* node, ast::Identifier* varname);
+LocalVar* add_local_variable(ast::StatementBlock* node, const std::string& varname);
+LocalVar* add_local_variable(ast::StatementBlock* node, ast::Identifier* varname);
 
 /** Create ast statement node from given code in string format */
 std::shared_ptr<ast::Statement> create_statement(const std::string& code_statement);

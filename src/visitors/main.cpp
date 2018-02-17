@@ -54,54 +54,44 @@ int main(int argc, const char* argv[]) {
         auto ast = driver.ast();
 
         {
-            /// run basic AST visitor
             AstVisitor v;
             v.visit_program(ast.get());
-
             std::cout << "----AST VISITOR FINISHED----" << std::endl;
         }
 
         {
-            /// run basic Verbatim visitor
             /// constructor takes true/false argument for printing blocks
             VerbatimVisitor v;
             v.visit_program(ast.get());
-
             std::cout << "----VERBATIM VISITOR FINISHED----" << std::endl;
         }
 
         {
             std::stringstream ss;
             JSONVisitor v(ss);
-
-            /// to get compact json we can set compact mode
-            /// v.compact_json(true);
-
             v.visit_program(ast.get());
-
-            std::cout << "----JSON VISITOR FINISHED----" << std::endl;
-
             if (verbose) {
-                std::cout << "RESULT OF JSON VISITOR : " << std::endl;
-                std::cout << ss.str();
+                std::cout << "RESULT OF JSON VISITOR : " << std::endl << ss.str();
             }
+            std::cout << "----JSON VISITOR FINISHED----" << std::endl;
         }
 
         {
-            // todo : we should pass this or use get method to retrieve?
-            std::stringstream ss1;
-
-            SymtabVisitor v(ss1);
+            SymtabVisitor v(false);
             v.visit_program(ast.get());
+        }
 
-            // std::cout << ss1.str();
-
-            std::stringstream ss2;
+        {
+            std::stringstream stream;
             auto symtab = ast->get_model_symbol_table();
-            symtab->print(ss2);
-            std::cout << ss2.str();
-
+            symtab->print(stream);
+            std::cout << stream.str();
             std::cout << "----SYMTAB VISITOR FINISHED----" << std::endl;
+        }
+
+        {
+            NmodlPrintVisitor v(channel_name + ".nocmodl.mod");
+            v.visit_program(ast.get());
         }
 
         {
@@ -110,29 +100,36 @@ int main(int argc, const char* argv[]) {
             std::cout << "----CNEXP SOLVE VISITOR FINISHED----" << std::endl;
         }
 
-
         {
             NmodlPrintVisitor v(channel_name + ".nocmodl.cnexp.mod");
             v.visit_program(ast.get());
         }
 
-        {
-            LocalVarRenameVisitor v;
-            v.visit_program(ast.get());
-        }
 
         {
             InlineVisitor v;
             v.visit_program(ast.get());
         }
 
+
         {
-            SymtabVisitor v;
+            NmodlPrintVisitor v(channel_name + ".nocmodl.cnexp.in.mod");
             v.visit_program(ast.get());
         }
 
         {
-            NmodlPrintVisitor v(channel_name + ".nocmodl.in.mod");
+            LocalVarRenameVisitor v;
+            v.visit_program(ast.get());
+            std::cout << "----LOCAL VAR RENAME VISITOR FINISHED----" << std::endl;
+        }
+
+        {
+            NmodlPrintVisitor v(channel_name + ".nocmodl.cnexp.in.ren.mod");
+            v.visit_program(ast.get());
+        }
+
+        {
+            SymtabVisitor v(true);
             v.visit_program(ast.get());
         }
 
@@ -144,7 +141,7 @@ int main(int argc, const char* argv[]) {
         }
 
         {
-            NmodlPrintVisitor v(channel_name + ".nocmodl.loc.mod");
+            NmodlPrintVisitor v(channel_name + ".nocmodl.cnexp.in.ren.loc.mod");
             v.visit_program(ast.get());
         }
 
@@ -154,19 +151,12 @@ int main(int argc, const char* argv[]) {
         }
 
         {
-            NmodlPrintVisitor v(channel_name + ".nocmodl.loc.ren.mod");
+            SymtabVisitor v(true);
             v.visit_program(ast.get());
         }
 
         {
-            std::stringstream stream;
-            auto symtab = ast->get_model_symbol_table();
-            symtab->print(stream);
-            std::cout << stream.str();
-        }
-
-        {
-            SymtabVisitor v;
+            NmodlPrintVisitor v(channel_name + ".nocmodl.cnexp.in.ren.loc.ren.mod");
             v.visit_program(ast.get());
         }
 
@@ -184,7 +174,6 @@ int main(int argc, const char* argv[]) {
             std::cout << ss.str() << std::endl;
             std::cout << "----PERF VISITOR FINISHED----" << std::endl;
         }
-
 
     } catch (TCLAP::ArgException& e) {
         std::cout << "Argument Error: " << e.error() << " for arg " << e.argId() << std::endl;

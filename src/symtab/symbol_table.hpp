@@ -3,6 +3,7 @@
 
 #include <map>
 #include <memory>
+#include <vector>
 
 #include "symtab/symbol.hpp"
 
@@ -24,7 +25,7 @@ namespace symtab {
     class Table {
       public:
         /// map of symbol name and associated symbol for faster lookup
-        std::map<std::string, std::shared_ptr<Symbol>> symbols;
+        std::vector<std::shared_ptr<Symbol>> symbols;
 
         /// insert new symbol into table
         void insert(const std::shared_ptr<Symbol>& symbol);
@@ -149,7 +150,7 @@ namespace symtab {
      * \class ModelSymbolTable
      * \brief Represent symbol table for nmodl block
      *
-     * SymbolTable is sufficinet to hold information about all symbols in the
+     * SymbolTable is sufficient to hold information about all symbols in the
      * mod file. It might be sufficient to keep track of global symbol tables
      * and local symbol tables. But we construct symbol table using visitor
      * pass. In this case we visit ast and recursively create symbol table for
@@ -167,24 +168,40 @@ namespace symtab {
         /// symbol table for mod file (always top level symbol table)
         std::shared_ptr<SymbolTable> symtab = nullptr;
 
-        /// symbol table for parent block (used during symbol table construction)
-        SymbolTable* parent_symtab = nullptr;
+        /// current symbol table being constructed
+        SymbolTable* current_symtab = nullptr;
 
-        /// Return unique name by appending some counter value
-        std::string get_unique_name(std::string name, AST* node);
+        /// return unique name by appending some counter value
+        std::string get_unique_name(std::string name, AST* node, bool is_global);
 
         /// name of top level global symbol table
-        const std::string GLOBAL_SYMTAB_BANE = "NMODL_GLOBAL";
+        const std::string GLOBAL_SYMTAB_NAME = "NMODL_GLOBAL";
+
+        /// default mode of symbol table: if update is true then we update exisiting
+        /// symbols otherwise we throw away old table and construct new one
+        bool update_table = false;
+
+        /// insert symbol table in update mode
+        void update_mode_insert(const std::shared_ptr<Symbol>& symbol);
+
+        void emit_message(const std::shared_ptr<Symbol>& first,
+                          const std::shared_ptr<Symbol>& second,
+                          bool redefinition);
 
       public:
         /// entering into new nmodl block
-        SymbolTable* enter_scope(std::string name, AST* node, bool global);
+        SymbolTable* enter_scope(std::string name,
+                                 AST* node,
+                                 bool global,
+                                 SymbolTable* node_symtab);
 
         /// leaving current nmodl block
         void leave_scope();
 
+        /// insert new symbol into current table
         void insert(const std::shared_ptr<Symbol>& symbol);
 
+        /// lookup for symbol into current as well as all parent tables
         std::shared_ptr<Symbol> lookup(const std::string& name);
 
         /// pretty print
@@ -192,10 +209,7 @@ namespace symtab {
 
         /// re-initialize members to throw away old symbol tables
         /// this is required as symtab visitor pass runs multiple time
-        void initialize() {
-            symtab = nullptr;
-            parent_symtab = nullptr;
-        }
+        void set_mode(bool mode);
     };
 
 }  // namespace symtab

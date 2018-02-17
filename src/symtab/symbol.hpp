@@ -65,6 +65,9 @@ namespace symtab {
       public:
         Symbol() = delete;
 
+        Symbol(std::string name, AST* node) : name(name), node(node) {
+        }
+
         Symbol(std::string name, ModToken token) : name(name), token(token) {
         }
 
@@ -77,6 +80,10 @@ namespace symtab {
 
         std::string get_name() {
             return name;
+        }
+
+        void set_name(std::string new_name) {
+            name = new_name;
         }
 
         std::string get_scope() {
@@ -129,6 +136,10 @@ namespace symtab {
 
         void inlined() {
             status |= Status::inlined;
+        }
+
+        void created() {
+            status |= Status::created;
         }
 
         void renamed() {

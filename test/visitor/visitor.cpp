@@ -534,9 +534,9 @@ SCENARIO("Variable renaming in nested blocks") {
             }
 
             BREAKPOINT {
-                LOCAL gNaTs2_t_r_1
-                gNaTs2_t_r_1 = gNaTs2_tbar*m*m*m*h
-                ina = gNaTs2_t_r_1*(v-ena)
+                LOCAL gNaTs2_t
+                gNaTs2_t = gNaTs2_tbar*m*m*m*h
+                ina = gNaTs2_t*(v-ena)
                 {
                     LOCAL gNaTs2_t_r_0, h_r_1
                     gNaTs2_t_r_0 = m+h_r_1
@@ -551,8 +551,8 @@ SCENARIO("Variable renaming in nested blocks") {
             }
 
             PROCEDURE rates() {
-                LOCAL x_r_1, m_r_2
-                m_r_2 = x_r_1+gNaTs2_tbar
+                LOCAL x, m_r_2
+                m_r_2 = x+gNaTs2_tbar
                 {
                     {
                         LOCAL h_r_2, x_r_0, gNaTs2_tbar_r_0

@@ -17,7 +17,7 @@ void LocalVarRenameVisitor::visit_statement_block(StatementBlock* node) {
         symtab = current_symtab;
     }
 
-    // Some statetements like forall, from, while are of type expression statement type.
+    // Some statements like forall, from, while are of type expression statement type.
     // These statements contain statement block but do not have symbol table. And hence
     // we push last non-null symbol table on the stack.
     symtab_stack.push(symtab);
@@ -27,12 +27,16 @@ void LocalVarRenameVisitor::visit_statement_block(StatementBlock* node) {
         item->visit_children(this);
     }
 
-    auto variables = get_local_variables(node);
+    /// go back to previous block in hierarchy
+    symtab = symtab_stack.top();
+    symtab_stack.pop();
 
     SymbolTable* parent_symtab = nullptr;
     if (symtab != nullptr) {
         parent_symtab = symtab->get_parent_table();
     }
+
+    auto variables = get_local_variables(node);
 
     /// global blocks do not change (do no have parent symbol table)
     /// if no variables in the block then there is nothing to do
@@ -40,21 +44,20 @@ void LocalVarRenameVisitor::visit_statement_block(StatementBlock* node) {
         return;
     }
 
+
     RenameVisitor rename_visitor;
 
     for (auto& var : *variables) {
         std::string name = var->get_name();
         auto s = parent_symtab->lookup_in_scope(name);
-
-        /// if symbol represents variable (to avoid renaming use of units like mV)
+        /// if symbol is a variable name (avoid renaming use of units like mV)
         if (s && s->is_variable()) {
             std::string new_name = get_new_name(name, "r", renamed_variables);
             rename_visitor.set(name, new_name);
             rename_visitor.visit_statement_block(node);
+            auto symbol = symtab->lookup_in_scope(name);
+            symbol->set_name(new_name);
+            symbol->renamed();
         }
     }
-
-    /// go back to previous block in hierarchy
-    symtab = symtab_stack.top();
-    symtab_stack.pop();
 }

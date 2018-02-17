@@ -189,13 +189,17 @@ SCENARIO("Symbol table operations") {
 SCENARIO("Model symbol table operations") {
     GIVEN("A Model symbolTable") {
         ModelSymbolTable mod_symtab;
+
         auto program = std::make_shared<ast::Program>();
         auto symbol1 = std::make_shared<Symbol>("alpha", ModToken());
         auto symbol2 = std::make_shared<Symbol>("alpha", ModToken());
         auto symbol3 = std::make_shared<Symbol>("alpha", ModToken());
+
         symbol1->add_property(NmodlInfo::param_assign);
         symbol2->add_property(NmodlInfo::range_var);
         symbol3->add_property(NmodlInfo::range_var);
+
+        SymbolTable* old_symtab = nullptr;
 
         WHEN("trying to exit scope without entering") {
             THEN("throws an exception") {
@@ -204,7 +208,7 @@ SCENARIO("Model symbol table operations") {
         }
         WHEN("trying to enter scope without valid node") {
             THEN("throws an exception") {
-                REQUIRE_THROWS_WITH(mod_symtab.enter_scope("scope", nullptr, true),
+                REQUIRE_THROWS_WITH(mod_symtab.enter_scope("scope", nullptr, true, old_symtab),
                                     Catch::Contains("empty node"));
             }
         }
@@ -217,15 +221,15 @@ SCENARIO("Model symbol table operations") {
         WHEN("enter scope multipel times") {
             auto program1 = std::make_shared<ast::Program>();
             auto program2 = std::make_shared<ast::Program>();
-            mod_symtab.enter_scope("scope1", program1.get(), false);
-            mod_symtab.enter_scope("scope2", program2.get(), false);
+            mod_symtab.enter_scope("scope1", program1.get(), false, old_symtab);
+            mod_symtab.enter_scope("scope2", program2.get(), false, old_symtab);
             THEN("can leave scope multiple times") {
                 mod_symtab.leave_scope();
                 mod_symtab.leave_scope();
             }
         }
         WHEN("added same symbol with different properties in global scope") {
-            mod_symtab.enter_scope("scope", program.get(), true);
+            mod_symtab.enter_scope("scope", program.get(), true, old_symtab);
             mod_symtab.insert(symbol1);
             mod_symtab.insert(symbol2);
             THEN("only one symbol gets added with combined properties") {
@@ -235,18 +239,18 @@ SCENARIO("Model symbol table operations") {
             }
         }
         WHEN("added same symbol with exisiting property") {
-            mod_symtab.enter_scope("scope", program.get(), true);
+            mod_symtab.enter_scope("scope", program.get(), true, old_symtab);
             mod_symtab.insert(symbol1);
             mod_symtab.insert(symbol2);
             THEN("throws an exception") {
-                REQUIRE_THROWS_WITH(mod_symtab.insert(symbol3), Catch::Contains("re-declaration"));
+                REQUIRE_THROWS_WITH(mod_symtab.insert(symbol3), Catch::Contains("Re-declaration"));
             }
         }
         WHEN("added same symbol in children scope") {
-            mod_symtab.enter_scope("scope1", program.get(), true);
+            mod_symtab.enter_scope("scope1", program.get(), true, old_symtab);
             mod_symtab.insert(symbol2);
             THEN("it's ok, just get overshadow warning") {
-                mod_symtab.enter_scope("scope2", program.get(), false);
+                mod_symtab.enter_scope("scope2", program.get(), false, old_symtab);
                 mod_symtab.insert(symbol3);
                 ///\todo : not sure how to capture std::cout
             }
