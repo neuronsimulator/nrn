@@ -53,7 +53,7 @@ void SymtabVisitor::setup_symbol_table(T* node,
     auto symbol = std::make_shared<Symbol>(name, node, *token);
     symbol->add_property(property);
 
-    if(name == block_to_solve) {
+    if (name == block_to_solve) {
         symbol->add_property(NmodlInfo::to_solve);
     }
 
@@ -84,7 +84,7 @@ void SymtabVisitor::setup_symbol_table(T* node, std::string name, bool is_global
 
     /// there is only one solve statement allowed in mod file
     if (node->is_solve_block()) {
-        auto solve_block = dynamic_cast<SolveBlock*> (node);
+        auto solve_block = dynamic_cast<SolveBlock*>(node);
         block_to_solve = solve_block->name->get_name();
     }
 

@@ -53,7 +53,7 @@ namespace stringutils {
                 case '"':
                 case '\\':
                     after += '\\';
-                    /// don't break here as we want to append actual character
+                /// don't break here as we want to append actual character
 
                 default:
                     after += c;

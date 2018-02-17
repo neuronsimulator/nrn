@@ -80,7 +80,7 @@ class LocalizeVisitor : public AstVisitor {
 
     std::vector<std::string> variables_to_optimize();
 
-    bool node_for_def_use_analysis(ast::Node *node);
+    bool node_for_def_use_analysis(ast::Node* node);
 
     bool is_solve_procedure(ast::Node* node);
 

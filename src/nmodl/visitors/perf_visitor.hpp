@@ -2,6 +2,7 @@
 #define _NMODL_PERF_VISITOR_HPP_
 
 #include <stack>
+#include <set>
 
 #include "printer/json_printer.hpp"
 #include "symtab/symbol_table.hpp"
@@ -96,6 +97,18 @@ class PerfVisitor : public AstVisitor {
 
     /// count of pointer / bbcorepointer variables
     int num_pointer_variables = 0;
+
+    /// keys used in map to track var usage
+    std::string const_memr_key = "cm_r_u";
+    std::string const_memw_key = "cm_w_u";
+    std::string global_memr_key = "gm_r_u";
+    std::string global_memw_key = "gm_w_u";
+
+    /// map of variables to count unique read-writes
+    std::map<std::string, std::set<std::string>> var_usage = {{const_memr_key, {}},
+                                                              {const_memw_key, {}},
+                                                              {global_memr_key, {}},
+                                                              {global_memw_key, {}}};
 
     void update_memory_ops(const std::string& name);
 

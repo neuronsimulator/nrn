@@ -19,60 +19,64 @@ class PerfStat {
     std::string title;
 
     /// write ops
-    int assign_count = 0;
+    int n_assign = 0;
 
     /// basic ops (<= 1 cycle)
-    int add_count = 0;
-    int sub_count = 0;
-    int mul_count = 0;
+    int n_add = 0;
+    int n_sub = 0;
+    int n_mul = 0;
 
     /// expensive ops
-    int div_count = 0;
+    int n_div = 0;
 
     /// expensive functions : commonly
     /// used functions in mod files
-    int exp_count = 0;
-    int log_count = 0;
-    int pow_count = 0;
+    int n_exp = 0;
+    int n_log = 0;
+    int n_pow = 0;
 
     /// could be external math funcs
-    int external_func_call_count = 0;
+    int n_ext_func_call = 0;
 
     /// mod functions (before/after inlining)
-    int internal_func_call_count = 0;
+    int n_int_func_call = 0;
 
     /// bitwise ops
-    int and_count = 0;
-    int or_count = 0;
+    int n_and = 0;
+    int n_or = 0;
 
     /// comparisons ops
-    int gt_count = 0;
-    int lt_count = 0;
-    int ge_count = 0;
-    int le_count = 0;
-    int ne_count = 0;
-    int ee_count = 0;
+    int n_gt = 0;
+    int n_lt = 0;
+    int n_ge = 0;
+    int n_le = 0;
+    int n_ne = 0;
+    int n_ee = 0;
 
     /// unary ops
-    int not_count = 0;
-    int neg_count = 0;
+    int n_not = 0;
+    int n_neg = 0;
 
     /// conditional ops
-    int if_count = 0;
-    int elif_count = 0;
+    int n_if = 0;
+    int n_elif = 0;
 
     /// expensive : typically access to dynamically allocated memory
-    int global_read_count = 0;
-    int global_write_count = 0;
+    int n_global_read = 0;
+    int n_global_write = 0;
+    int n_unique_global_read = 0;
+    int n_unique_global_write = 0;
 
     /// cheap : typically local variables in mod file means registers
-    int local_read_count = 0;
-    int local_write_count = 0;
+    int n_local_read = 0;
+    int n_local_write = 0;
 
     /// could be optimized : access to variables that could be read-only
     /// in this case write counts are typically from initialization
-    int constant_read_count = 0;
-    int constant_write_count = 0;
+    int n_constant_read = 0;
+    int n_constant_write = 0;
+    int n_unique_constant_read = 0;
+    int n_unique_constant_write = 0;
 
     friend PerfStat operator+(const PerfStat& first, const PerfStat& second);
     void print(std::stringstream& stream);

@@ -3,6 +3,7 @@
 #include "visitors/perf_visitor.hpp"
 
 using namespace symtab;
+using namespace ast;
 
 PerfVisitor::PerfVisitor(const std::string& filename) : printer(new JSONPrinter(filename)) {
 }
@@ -14,60 +15,60 @@ void PerfVisitor::visit_binary_expression(BinaryExpression* node) {
     if (start_measurement) {
         switch (node->op.value) {
             case BOP_ADDITION:
-                current_block_perf.add_count++;
+                current_block_perf.n_add++;
                 break;
 
             case BOP_SUBTRACTION:
-                current_block_perf.sub_count++;
+                current_block_perf.n_sub++;
                 break;
 
             case BOP_MULTIPLICATION:
-                current_block_perf.mul_count++;
+                current_block_perf.n_mul++;
                 break;
 
             case BOP_DIVISION:
-                current_block_perf.div_count++;
+                current_block_perf.n_div++;
                 break;
 
             case BOP_POWER:
-                current_block_perf.pow_count++;
+                current_block_perf.n_pow++;
                 break;
 
             case BOP_AND:
-                current_block_perf.and_count++;
+                current_block_perf.n_and++;
                 break;
 
             case BOP_OR:
-                current_block_perf.or_count++;
+                current_block_perf.n_or++;
                 break;
 
             case BOP_GREATER:
-                current_block_perf.gt_count++;
+                current_block_perf.n_gt++;
                 break;
 
             case BOP_GREATER_EQUAL:
-                current_block_perf.ge_count++;
+                current_block_perf.n_ge++;
                 break;
 
             case BOP_LESS:
-                current_block_perf.lt_count++;
+                current_block_perf.n_lt++;
                 break;
 
             case BOP_LESS_EQUAL:
-                current_block_perf.le_count++;
+                current_block_perf.n_le++;
                 break;
 
             case BOP_ASSIGN:
-                current_block_perf.assign_count++;
+                current_block_perf.n_assign++;
                 assign_op = true;
                 break;
 
             case BOP_NOT_EQUAL:
-                current_block_perf.ne_count++;
+                current_block_perf.n_ne++;
                 break;
 
             case BOP_EXACT_EQUAL:
-                current_block_perf.ee_count++;
+                current_block_perf.n_ee++;
                 break;
 
             default:
@@ -140,6 +141,11 @@ void PerfVisitor::measure_performance(AST* node) {
     }
 
     start_measurement = false;
+
+    /// clear var usage map
+    for (auto& var_set : var_usage) {
+        var_set.second.clear();
+    }
 }
 
 /// count function calls and "most useful" or "commonly used" math functions
@@ -149,20 +155,20 @@ void PerfVisitor::visit_function_call(FunctionCall* node) {
     if (start_measurement) {
         auto name = node->name->get_name();
         if (name.compare("exp") == 0) {
-            current_block_perf.exp_count++;
+            current_block_perf.n_exp++;
         } else if (name.compare("log") == 0) {
-            current_block_perf.log_count++;
+            current_block_perf.n_log++;
         } else if (name.compare("pow") == 0) {
-            current_block_perf.pow_count++;
+            current_block_perf.n_pow++;
         }
         node->visit_children(this);
 
         auto symbol = current_symtab->lookup_in_scope(name);
         auto method_property = NmodlInfo::procedure_block | NmodlInfo::function_block;
         if (symbol != nullptr && symbol->has_properties(method_property)) {
-            current_block_perf.internal_func_call_count++;
+            current_block_perf.n_int_func_call++;
         } else {
-            current_block_perf.external_func_call_count++;
+            current_block_perf.n_ext_func_call++;
         }
     }
 
@@ -183,14 +189,14 @@ void PerfVisitor::visit_prime_name(PrimeName* node) {
 
 void PerfVisitor::visit_if_statement(IfStatement* node) {
     if (start_measurement) {
-        current_block_perf.if_count++;
+        current_block_perf.n_if++;
         node->visit_children(this);
     }
 }
 
 void PerfVisitor::visit_else_if_statement(ElseIfStatement* node) {
     if (start_measurement) {
-        current_block_perf.elif_count++;
+        current_block_perf.n_elif++;
         node->visit_children(this);
     }
 }
@@ -358,11 +364,11 @@ void PerfVisitor::visit_unary_expression(UnaryExpression* node) {
     if (start_measurement) {
         switch (node->op.value) {
             case UOP_NEGATION:
-                current_block_perf.neg_count++;
+                current_block_perf.n_neg++;
                 break;
 
             case UOP_NOT:
-                current_block_perf.not_count++;
+                current_block_perf.n_not++;
                 break;
 
             default:
@@ -418,36 +424,58 @@ bool PerfVisitor::is_constant_variable(const std::shared_ptr<symtab::Symbol>& sy
  * read/write count. Also update ops count in current block.
  */
 void PerfVisitor::update_memory_ops(const std::string& name) {
-    if (start_measurement && (current_symtab != nullptr)) {
-        auto symbol = current_symtab->lookup_in_scope(name);
-        if (symbol == nullptr || symbol_to_skip(symbol)) {
-            return;
-        }
+    if (start_measurement == false || current_symtab == nullptr) {
+        return;
+    }
 
-        if (is_local_variable(symbol)) {
-            if (visiting_lhs_expression) {
-                symbol->write();
-                current_block_perf.local_write_count++;
-            } else {
-                symbol->read();
-                current_block_perf.local_read_count++;
+    auto symbol = current_symtab->lookup_in_scope(name);
+    if (symbol == nullptr || symbol_to_skip(symbol)) {
+        return;
+    }
+
+    if (is_local_variable(symbol)) {
+        if (visiting_lhs_expression) {
+            symbol->write();
+            current_block_perf.n_local_write++;
+        } else {
+            symbol->read();
+            current_block_perf.n_local_read++;
+        }
+        return;
+    }
+
+    /// lhs symbols get written
+    if (visiting_lhs_expression) {
+        symbol->write();
+        if (is_constant_variable(symbol)) {
+            current_block_perf.n_constant_write++;
+            if (var_usage[const_memw_key].find(name) == var_usage[const_memw_key].end()) {
+                current_block_perf.n_unique_constant_write++;
+                var_usage[const_memw_key].insert(name);
             }
         } else {
-            if (visiting_lhs_expression) {
-                symbol->write();
-                if (is_constant_variable(symbol)) {
-                    current_block_perf.constant_write_count++;
-                } else {
-                    current_block_perf.global_write_count++;
-                }
-            } else {
-                symbol->read();
-                if (is_constant_variable(symbol)) {
-                    current_block_perf.constant_read_count++;
-                } else {
-                    current_block_perf.global_read_count++;
-                }
+            current_block_perf.n_global_write++;
+            if (var_usage[global_memw_key].find(name) == var_usage[global_memw_key].end()) {
+                current_block_perf.n_unique_global_write++;
+                var_usage[global_memw_key].insert(name);
             }
+        }
+        return;
+    }
+
+    /// rhs symbols get read
+    symbol->read();
+    if (is_constant_variable(symbol)) {
+        current_block_perf.n_constant_read++;
+        if (var_usage[const_memr_key].find(name) == var_usage[const_memr_key].end()) {
+            current_block_perf.n_unique_constant_read++;
+            var_usage[const_memr_key].insert(name);
+        }
+    } else {
+        current_block_perf.n_global_read++;
+        if (var_usage[global_memr_key].find(name) == var_usage[global_memr_key].end()) {
+            current_block_perf.n_unique_global_read++;
+            var_usage[global_memr_key].insert(name);
         }
     }
 }
