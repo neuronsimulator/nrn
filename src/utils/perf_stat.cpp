@@ -8,45 +8,48 @@
 PerfStat operator+(const PerfStat& first, const PerfStat& second) {
     PerfStat result;
 
-    result.assign_count = first.assign_count + second.assign_count;
+    result.n_assign = first.n_assign + second.n_assign;
 
-    result.add_count = first.add_count + second.add_count;
-    result.sub_count = first.sub_count + second.sub_count;
-    result.mul_count = first.mul_count + second.mul_count;
-    result.div_count = first.div_count + second.div_count;
+    result.n_add = first.n_add + second.n_add;
+    result.n_sub = first.n_sub + second.n_sub;
+    result.n_mul = first.n_mul + second.n_mul;
+    result.n_div = first.n_div + second.n_div;
 
-    result.exp_count = first.exp_count + second.exp_count;
-    result.log_count = first.log_count + second.log_count;
-    result.pow_count = first.pow_count + second.pow_count;
+    result.n_exp = first.n_exp + second.n_exp;
+    result.n_log = first.n_log + second.n_log;
+    result.n_pow = first.n_pow + second.n_pow;
 
-    result.external_func_call_count =
-        first.external_func_call_count + second.external_func_call_count;
-    result.internal_func_call_count =
-        first.internal_func_call_count + second.internal_func_call_count;
+    result.n_ext_func_call = first.n_ext_func_call + second.n_ext_func_call;
+    result.n_int_func_call = first.n_int_func_call + second.n_int_func_call;
 
-    result.and_count = first.and_count + second.and_count;
-    result.or_count = first.or_count + second.or_count;
+    result.n_and = first.n_and + second.n_and;
+    result.n_or = first.n_or + second.n_or;
 
-    result.gt_count = first.gt_count + second.gt_count;
-    result.lt_count = first.lt_count + second.lt_count;
-    result.ge_count = first.ge_count + second.ge_count;
-    result.le_count = first.le_count + second.le_count;
-    result.ne_count = first.ne_count + second.ne_count;
-    result.ee_count = first.ee_count + second.ee_count;
+    result.n_gt = first.n_gt + second.n_gt;
+    result.n_lt = first.n_lt + second.n_lt;
+    result.n_ge = first.n_ge + second.n_ge;
+    result.n_le = first.n_le + second.n_le;
+    result.n_ne = first.n_ne + second.n_ne;
+    result.n_ee = first.n_ee + second.n_ee;
 
-    result.not_count = first.not_count + second.not_count;
-    result.neg_count = first.neg_count + second.neg_count;
+    result.n_not = first.n_not + second.n_not;
+    result.n_neg = first.n_neg + second.n_neg;
 
-    result.if_count = first.if_count + second.if_count;
-    result.elif_count = first.elif_count + second.elif_count;
+    result.n_if = first.n_if + second.n_if;
+    result.n_elif = first.n_elif + second.n_elif;
 
-    result.global_read_count = first.global_read_count + second.global_read_count;
-    result.global_write_count = first.global_write_count + second.global_write_count;
-    result.local_read_count = first.local_read_count + second.local_read_count;
-    result.local_write_count = first.local_write_count + second.local_write_count;
+    result.n_global_read = first.n_global_read + second.n_global_read;
+    result.n_global_write = first.n_global_write + second.n_global_write;
+    result.n_unique_global_read = first.n_unique_global_read + second.n_unique_global_read;
+    result.n_unique_global_write = first.n_unique_global_write + second.n_unique_global_write;
 
-    result.constant_read_count = first.constant_read_count + second.constant_read_count;
-    result.constant_write_count = first.constant_write_count + second.constant_write_count;
+    result.n_local_read = first.n_local_read + second.n_local_read;
+    result.n_local_write = first.n_local_write + second.n_local_write;
+
+    result.n_constant_read = first.n_constant_read + second.n_constant_read;
+    result.n_constant_write = first.n_constant_write + second.n_constant_write;
+    result.n_unique_constant_read = first.n_unique_constant_read + second.n_unique_constant_read;
+    result.n_unique_constant_write = first.n_unique_constant_write + second.n_unique_constant_write;
     return result;
 }
 
@@ -61,36 +64,42 @@ void PerfStat::print(std::stringstream& stream) {
 }
 
 std::vector<std::string> PerfStat::keys() {
-    return {"+",          "-",          "x",       "/",     "exp",        "log",
-            "GM(R)",      "GM(W)",      "CM(R)",   "CM(W)", "LM(R)",      "LM(W)",
-            "calls(ext)", "calls(int)", "compare", "unary", "conditional"};
+    return {"+",       "-",       "x",          "/",          "exp",     "log",     "GM-R(T)",
+            "GM-R(U)", "GM-W(T)", "GM-W(U)",    "CM-R(T)",    "CM-R(U)", "CM-W(T)", "CM-W(U)",
+            "LM-R(T)", "LM-W(T)", "calls(ext)", "calls(int)", "compare", "unary",   "conditional"};
 }
 
 std::vector<std::string> PerfStat::values() {
     std::vector<std::string> row;
 
-    int compares = gt_count + lt_count + ge_count + le_count + ne_count + ee_count;
-    int conditionals = if_count + elif_count;
+    int compares = n_gt + n_lt + n_ge + n_le + n_ne + n_ee;
+    int conditionals = n_if + n_elif;
 
-    row.push_back(std::to_string(add_count));
-    row.push_back(std::to_string(sub_count));
-    row.push_back(std::to_string(mul_count));
-    row.push_back(std::to_string(div_count));
-    row.push_back(std::to_string(exp_count));
-    row.push_back(std::to_string(log_count));
+    row.push_back(std::to_string(n_add));
+    row.push_back(std::to_string(n_sub));
+    row.push_back(std::to_string(n_mul));
+    row.push_back(std::to_string(n_div));
+    row.push_back(std::to_string(n_exp));
+    row.push_back(std::to_string(n_log));
 
-    row.push_back(std::to_string(global_read_count));
-    row.push_back(std::to_string(global_write_count));
-    row.push_back(std::to_string(constant_read_count));
-    row.push_back(std::to_string(constant_write_count));
-    row.push_back(std::to_string(local_read_count));
-    row.push_back(std::to_string(local_write_count));
+    row.push_back(std::to_string(n_global_read));
+    row.push_back(std::to_string(n_unique_global_read));
+    row.push_back(std::to_string(n_global_write));
+    row.push_back(std::to_string(n_unique_global_write));
 
-    row.push_back(std::to_string(external_func_call_count));
-    row.push_back(std::to_string(internal_func_call_count));
+    row.push_back(std::to_string(n_constant_read));
+    row.push_back(std::to_string(n_unique_constant_read));
+    row.push_back(std::to_string(n_constant_write));
+    row.push_back(std::to_string(n_unique_constant_write));
+
+    row.push_back(std::to_string(n_local_read));
+    row.push_back(std::to_string(n_local_write));
+
+    row.push_back(std::to_string(n_ext_func_call));
+    row.push_back(std::to_string(n_int_func_call));
 
     row.push_back(std::to_string(compares));
-    row.push_back(std::to_string(not_count + neg_count));
+    row.push_back(std::to_string(n_not + n_neg));
     row.push_back(std::to_string(conditionals));
 
     return row;

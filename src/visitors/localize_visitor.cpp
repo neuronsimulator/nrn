@@ -6,7 +6,7 @@
 using namespace ast;
 using namespace symtab;
 
-bool LocalizeVisitor::node_for_def_use_analysis(ast::Node *node) {
+bool LocalizeVisitor::node_for_def_use_analysis(ast::Node* node) {
     auto type = node->get_type();
 
     /**
@@ -45,7 +45,7 @@ bool LocalizeVisitor::node_for_def_use_analysis(ast::Node *node) {
  * in the solve statement.
  */
 bool LocalizeVisitor::is_solve_procedure(ast::Node* node) {
-    if(node->is_procedure_block()) {
+    if (node->is_procedure_block()) {
         auto symbol = program_symtab->lookup(node->get_name());
         if (symbol && symbol->has_properties(NmodlInfo::to_solve)) {
             return true;

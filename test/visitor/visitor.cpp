@@ -143,16 +143,27 @@ SCENARIO("Symbol table generation and Perf stat visitor pass") {
             }
 
             BREAKPOINT  {
-                LOCAL gNaTs2_t
                 CONDUCTANCE gNaTs2_t USEION na
                 SOLVE states METHOD cnexp
-                gNaTs2_t = gNaTs2_tbar*m*m*m*h
-                ina = gNaTs2_t*(v-ena)
-                m = hBetaf(11)
+                {
+                    LOCAL gNaTs2_t
+                    {
+                        gNaTs2_t = gNaTs2_tbar*m*m*m*h
+                    }
+                    ina = gNaTs2_t*(v-ena)
+                }
+                {
+                    m = hBetaf(11+v)
+                    m = 12/gNaTs2_tbar
+                }
+                {
+                    gNaTs2_tbar = gNaTs2_tbar*gNaTs2_tbar + 11.0
+                    gNaTs2_tbar = 12.0
+                }
             }
 
             FUNCTION hBetaf(v) {
-                    hBetaf = (-0.015 * (-v -60))/(1-(exp((-v -60)/6)))
+                hBetaf = (-0.015 * (-v -60))/(1-(exp((-v -60)/6)))
             }
         )";
 
@@ -188,7 +199,7 @@ SCENARIO("Symbol table generation and Perf stat visitor pass") {
             }
 
             WHEN("Perf visitor pass runs after symtab visitor") {
-                PerfVisitor v, v2("a.a");
+                PerfVisitor v;
                 v.visit_program(ast.get());
 
                 auto result = v.get_total_perfstat();
@@ -198,26 +209,25 @@ SCENARIO("Symbol table generation and Perf stat visitor pass") {
                 auto num_const_instance_var = v.get_const_instance_variable_count();
                 auto num_const_global_var = v.get_const_global_variable_count();
 
-                v2.visit_program(ast.get());
-                std::stringstream s;
-                result.print(s);
-                std::cout << s.str();
-
                 THEN("Performance counters are updated") {
-                    REQUIRE(result.add_count == 0);
-                    REQUIRE(result.sub_count == 4);
-                    REQUIRE(result.mul_count == 6);
-                    REQUIRE(result.div_count == 2);
-                    REQUIRE(result.exp_count == 1);
-                    REQUIRE(result.global_read_count == 6);
-                    REQUIRE(result.global_write_count == 2);
-                    REQUIRE(result.constant_read_count == 1);
-                    REQUIRE(result.constant_write_count == 0);
-                    REQUIRE(result.local_read_count == 3);
-                    REQUIRE(result.local_write_count == 2);
-                    REQUIRE(result.external_func_call_count == 1);
-                    REQUIRE(result.internal_func_call_count == 1);
-                    REQUIRE(result.neg_count == 3);
+                    REQUIRE(result.n_add == 2);
+                    REQUIRE(result.n_sub == 4);
+                    REQUIRE(result.n_mul == 7);
+                    REQUIRE(result.n_div == 3);
+                    REQUIRE(result.n_exp == 1);
+                    REQUIRE(result.n_global_read == 7);
+                    REQUIRE(result.n_unique_global_read == 4);
+                    REQUIRE(result.n_global_write == 3);
+                    REQUIRE(result.n_unique_global_write == 2);
+                    REQUIRE(result.n_constant_read == 4);
+                    REQUIRE(result.n_unique_constant_read == 1);
+                    REQUIRE(result.n_constant_write == 2);
+                    REQUIRE(result.n_unique_constant_write == 1);
+                    REQUIRE(result.n_local_read == 3);
+                    REQUIRE(result.n_local_write == 2);
+                    REQUIRE(result.n_ext_func_call == 1);
+                    REQUIRE(result.n_int_func_call == 1);
+                    REQUIRE(result.n_neg == 3);
                     REQUIRE(num_instance_var == 9);
                     REQUIRE(num_global_var == 4);
                     REQUIRE(num_state_var == 2);
@@ -357,9 +367,7 @@ SCENARIO("Renaming any variable in mod file with RenameVisitor") {
 
         THEN("existing variables could be renamed") {
             std::vector<std::pair<std::string, std::string>> variables = {
-                {"m", "mm"},
-                {"gNaTs2_tbar", "new_gNaTs2_tbar"},
-                {"mAlpha", "mBeta"},
+                {"m", "mm"}, {"gNaTs2_tbar", "new_gNaTs2_tbar"}, {"mAlpha", "mBeta"},
             };
             auto result = run_var_rename_visitor(input, variables);
             REQUIRE(result == expected_output);
