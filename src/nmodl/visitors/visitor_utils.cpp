@@ -36,15 +36,17 @@ void add_local_statement(StatementBlock* node) {
     }
 }
 
-void add_local_variable(ast::StatementBlock* node, ast::Identifier* varname) {
+LocalVar* add_local_variable(ast::StatementBlock* node, ast::Identifier* varname) {
     add_local_statement(node);
     auto local_variables = get_local_variables(node);
-    local_variables->push_back(std::make_shared<LocalVar>(varname));
+    auto var = std::make_shared<LocalVar>(varname);
+    local_variables->push_back(var);
+    return var.get();
 }
 
-void add_local_variable(ast::StatementBlock* node, const std::string& varname) {
+LocalVar* add_local_variable(ast::StatementBlock* node, const std::string& varname) {
     auto name = new ast::Name(new ast::String(varname));
-    add_local_variable(node, name);
+    return add_local_variable(node, name);
 }
 
 /**

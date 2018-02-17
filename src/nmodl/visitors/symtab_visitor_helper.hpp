@@ -69,14 +69,14 @@ void SymtabVisitor::setup_symbol_table(T* node,
 template <typename T>
 void SymtabVisitor::setup_program_symbol_table(T* node, std::string name, bool is_global) {
     modsymtab = node->get_model_symbol_table();
-    modsymtab->initialize();
+    modsymtab->set_mode(update);
     setup_symbol_table(node, name, is_global);
 }
 
 template <typename T>
 void SymtabVisitor::setup_symbol_table(T* node, std::string name, bool is_global) {
     /// entering into new nmodl block
-    auto symtab = modsymtab->enter_scope(name, node, is_global);
+    auto symtab = modsymtab->enter_scope(name, node, is_global, node->get_symbol_table());
 
     if (node->is_state_block()) {
         state_block = true;

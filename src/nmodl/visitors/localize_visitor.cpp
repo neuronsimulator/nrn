@@ -98,7 +98,7 @@ void LocalizeVisitor::visit_program(Program* node) {
     }
 
     auto variables = variables_to_optimize();
-    for (const auto& variable : variables) {
+    for (const auto& varname : variables) {
         auto blocks = node->blocks;
         std::map<DUState, std::vector<std::shared_ptr<ast::Node>>> block_usage;
 
@@ -106,7 +106,7 @@ void LocalizeVisitor::visit_program(Program* node) {
         for (auto& block : blocks) {
             if (node_for_def_use_analysis(block.get())) {
                 DefUseAnalyzeVisitor v(program_symtab, ignore_verbatim);
-                auto usages = v.analyze(block.get(), variable);
+                auto usages = v.analyze(block.get(), varname);
                 auto result = usages.eval();
                 block_usage[result].push_back(block);
             }
@@ -120,9 +120,18 @@ void LocalizeVisitor::visit_program(Program* node) {
             for (auto& block : block_usage[DUState::D]) {
                 auto block_ptr = dynamic_cast<Block*>(block.get());
                 auto statement_block = block_ptr->get_statement_block();
-                add_local_variable(statement_block.get(), variable);
-                auto symbol = program_symtab->lookup(variable);
+                auto variable = add_local_variable(statement_block.get(), varname);
+
+                /// mark variable as localized in global symbol table
+                auto symbol = program_symtab->lookup(varname);
                 symbol->localized();
+
+                /// insert new symbol into symbol table
+                auto symtab = statement_block->get_symbol_table();
+                auto new_symbol = std::make_shared<Symbol>(varname, variable);
+                new_symbol->add_property(NmodlInfo::local_var);
+                new_symbol->created();
+                symtab->insert(new_symbol);
             }
         }
     }
