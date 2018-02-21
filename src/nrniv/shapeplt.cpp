@@ -258,7 +258,8 @@ static Member_func sh_members[] = {
 
 static Member_ret_obj_func retobj_members[] = {
 	"nearest_seg", nrniv_sh_nearest_seg,
-	"selected_seg", nrniv_sh_selected_seg
+	"selected_seg", nrniv_sh_selected_seg,
+	NULL, NULL
 };
 
 static void* sh_cons(Object* ho) {
