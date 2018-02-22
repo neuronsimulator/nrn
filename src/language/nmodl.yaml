@@ -605,9 +605,11 @@
             members:
               - value:
                   type: int
+                  getter: {name: get_value}
               - macroname:
                   type: Name
                   optional: true
+                  getter: {name: get_macro_name}
         - Float:
             members:
               - value:
@@ -626,6 +628,7 @@
               - value:
                   type: String
                   getname: true
+                  getter: {name: get_value}
         - PrimeName:
             members:
               - value:
@@ -652,10 +655,11 @@
               - name:
                   type: Identifier
                   getname: true
-              - index:
+              - length:
                   type: Expression
                   prefix: {value: "["}
                   suffix: {value: "]"}
+                  getter: {name: get_length}
         - Argument:
             members:
               - name:
@@ -786,6 +790,7 @@
               - statements:
                   type: Statement
                   vector: true
+                  getter: {name: get_statements}
         - DerivativeBlock:
             nmodl: "DERIVATIVE "
             members:
@@ -874,6 +879,7 @@
                   prefix: {value: "(", force: true}
                   suffix: {value: ")", force: true}
                   separator: ", "
+                  getter: {name: get_arguments}
               - unit:
                   type: Unit
                   optional: true
@@ -894,6 +900,7 @@
                   prefix: {value: "(", force: true}
                   suffix: {value: ") ", force: true}
                   separator: ", "
+                  getter: {name: get_arguments}
               - unit:
                   type: Unit
                   optional: true
@@ -909,6 +916,7 @@
                   prefix: {value: "(", force: true}
                   suffix: {value: ") ", force: true}
                   separator: ", "
+                  getter: {name: get_arguments}
               - statementblock:
                   type: StatementBlock
                   getter: {name: get_statement_block, override: true}
@@ -918,10 +926,12 @@
               - name:
                   type: Name
                   prefix: {value: " "}
+                  getter: {name: get_solve_block}
               - method:
                   type: Name
                   optional: true
                   prefix: {value: " METHOD "}
+                  getter: {name: get_method}
               - ifsolerr:
                   type: StatementBlock
                   prefix: {value: " IFERROR "}
@@ -1054,6 +1064,18 @@
                 optional: true
                 prefix: {value: "["}
                 suffix: {value: "]"}
+      - ConstantVar:
+          members:
+            - name:
+                type: Name
+                getname: true
+            - value:
+                type: Number
+                prefix: {value: " = "}
+            - unit:
+                type: Unit
+                optional: true
+                prefix: {value: " "}
       - BinaryOperator:
           members:
             - value:
@@ -1080,10 +1102,13 @@
           members:
             - lhs:
                 type: Expression
+                getter: {name: get_lhs}
             - op:
                 type: BinaryOperator
+                getter: {name: get_op}
             - rhs:
                 type: Expression
+                getter: {name: get_rhs}
       - UnaryExpression:
           members:
             - op:
@@ -1110,12 +1135,14 @@
           members:
             - name:
                 type: Name
+                getter: {name: get_function_name}
             - arguments:
                 type: Expression
                 vector: true
                 separator: ", "
                 prefix: {value: "(", force: true}
                 suffix: {value: ")", force: true}
+                getter: {name: get_arguments}
       - FirstLastTypeIndex:
           members:
             - value:
@@ -1272,11 +1299,12 @@
             - name:
                 type: Identifier
                 getname: true
-            - index:
+            - length:
                 type: Integer
                 optional: true
                 prefix: {value: "["}
                 suffix: {value: "]"}
+                getter: {name: get_length}
             - from:
                 type: Number
                 prefix: {value: " FROM "}
@@ -1313,14 +1341,17 @@
           members:
             - conductance:
                 type: Name
+                getter: {name: get_variable}
             - ion:
                 type: Name
                 optional: true
                 prefix: {value: " USEION "}
+                getter: {name: get_ion}
       - ExpressionStatement:
           members:
             - expression:
                 type: Expression
+                getter: {name: get_expression}
       - ProtectStatement:
           nmodl: "PROTECT "
           members:
@@ -1331,19 +1362,24 @@
           members:
             - name:
                 type: Name
+                getter: {name: get_from_name}
             - from:
                 type: Expression
                 prefix: {value: " = "}
+                getter: {name: get_from_expression}
             - to:
                 type: Expression
                 prefix: {value: " TO "}
+                getter: {name: get_to_expression}
             - opinc:
                 type: Expression
                 prefix: {value: " BY "}
                 suffix: {value: " ", force: true}
                 optional: true
+                getter: {name: get_inc_expression}
             - statementblock:
                 type: StatementBlock
+                getter: {name: get_block}
       - ForAllStatement:
           nmodl: "FORALL "
           members:
@@ -1536,15 +1572,8 @@
                 prefix: {value: " "}
       - ConstantStatement:
           members:
-            - name:
-                type: Name
-            - value:
-                type: Number
-                prefix: {value: " = "}
-            - unit:
-                type: Unit
-                optional: true
-                prefix: {value: " "}
+            - constant:
+                type: ConstantVar
       - TableStatement:
           nmodl: "TABLE "
           members:
@@ -1571,13 +1600,16 @@
             - type:
                 type: Name
                 suffix: {value: " "}
+                getter: {name: get_suffix_type}
             - name:
                 type: Name
+                getter: {name: get_suffix_name}
       - Useion:
           nmodl: "USEION "
           members:
             - name:
                 type: Name
+                getname: true
             - readlist:
                 type: ReadIonVar
                 vector: true
@@ -1658,7 +1690,7 @@
       - Verbatim:
           nmodl: VERBATIM
           members:
-            - statement:
+            - statements:
                 type: String
                 getter: {name: get_statement}
                 suffix: {value: "ENDVERBATIM"}
@@ -1679,3 +1711,4 @@
         type: Node
         vector: true
         add: true
+        getter: {name: get_blocks}

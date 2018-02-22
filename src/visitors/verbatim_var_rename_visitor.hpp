@@ -29,7 +29,6 @@
 
 class VerbatimVarRenameVisitor : public AstVisitor {
   private:
-
     /// non-null symbol table in the scope hierarchy
     symtab::SymbolTable* symtab = nullptr;
 
@@ -37,10 +36,10 @@ class VerbatimVarRenameVisitor : public AstVisitor {
     std::stack<symtab::SymbolTable*> symtab_stack;
 
     /// prefix used for local variable
-    std::string local_prefix = "_l";
+    const std::string local_prefix = "_l";
 
     /// prefix used for range variables
-    std::string range_prefix = "_p_";
+    const std::string range_prefix = "_p_";
 
     std::string rename_variable(std::string);
 

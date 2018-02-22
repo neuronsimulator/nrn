@@ -47,10 +47,9 @@ namespace c11 {
         std::cerr << m << std::endl;
     }
 
-    void Driver::process(std::string text) {
+    void Driver::add_token(std::string text) {
         tokens.push_back(text);
         // here we will query and look into symbol table or register callback
-        // std::cout << text;
     }
 
     void Driver::scan_string(std::string& text) {

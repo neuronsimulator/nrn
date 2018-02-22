@@ -183,7 +183,13 @@ class AstDeclarationPrinter(DeclarationPrinter):
                 if child.getter_method:
                     getter_method = child.getter_method
                     getter_override = " override" if child.getter_override  else ""
-                    return_type = "std::shared_ptr<" + class_name + "> "
+                    if child.is_vector:
+                        return_type = class_name + "Vector& "
+                    else:
+                        if child.is_ptr_excluded_node() or child.is_base_type_node():
+                            return_type =  class_name + " "
+                        else:
+                            return_type = "std::shared_ptr<" + class_name + "> "
                     self.write_line(return_type + getter_method + "()" + getter_override + " { return " + varname + "; }")
 
                 if node.is_prime_node() and child.varname == ORDER_VAR_NAME:
@@ -221,9 +227,14 @@ class AstDeclarationPrinter(DeclarationPrinter):
                     self.write_line("void negate() override { value = !value; }")
                 else:
                     self.write_line("void negate() override { value = -value; }")
+                    self.write_line("double number_value() override { return value; }")
+
 
             if node.is_identifier_node():
                 self.write_line(virtual + "void set_name(std::string /*name*/)" + override + " { std::cout << \"ERROR : set_name() not implemented! \"; abort(); }")
+
+            if node.is_number_node():
+                self.write_line(virtual + "double number_value()" + override + " { std::cout << \"ERROR : number_value() not implemented! \"; abort(); }")
 
             if node.is_name_node():
                 self.write_line(virtual + "void set_name(std::string name)" + override + " { value->set(name); }")

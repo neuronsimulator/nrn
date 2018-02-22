@@ -49,7 +49,10 @@ namespace symtab {
             renamed = 1 << 3,
 
             /** created */
-            created = 1 << 4
+            created = 1 << 4,
+
+            /** derived from state */
+            from_state = 1 << 5
         };
 
         /** usage of mod file as array or scalar */
@@ -86,8 +89,9 @@ namespace symtab {
          * from NMODL (towards C/C++) then other types will be useful.
          *
          * \todo Rename param_assign to parameter_var
+         * \todo Reaching max limit (31), need to refactor all block types
          */
-        enum class NmodlInfo {
+        enum class NmodlInfo : long long {
             /** Local Variable */
             local_var = 1 << 0,
 
@@ -151,8 +155,8 @@ namespace symtab {
             /** NonLinear Block */
             non_linear_block = 1 << 20,
 
-            /** Discrete Block */
-            discrete_block = 1 << 21,
+            /** constant variable */
+            constant_var = 1 << 21,
 
             /** Partial Block */
             partial_block = 1 << 22,
@@ -176,7 +180,13 @@ namespace symtab {
             state_var = 1 << 28,
 
             /** need to solve : used in solve statement */
-            to_solve = 1 << 29
+            to_solve = 1 << 29,
+
+            /** ion type */
+            useion = 1 << 30
+
+            /** Discrete Block */
+            // discrete_block = 1 << 31,
         };
 
     }  // namespace details

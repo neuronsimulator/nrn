@@ -25,8 +25,16 @@ class CnexpSolveVisitor : public AstVisitor {
     /// true while visiting derivative block
     bool derivative_block = false;
 
-    /// name of the cnexp methoda in nmodl
+    /// name of the cnexp method
     const std::string cnexp_method = "cnexp";
+
+    /// name of the derivimplicit method
+    const std::string derivimplicit_method = "derivimplicit";
+
+    /// name of the euler method
+    const std::string euler_method = "euler";
+
+    symtab::SymbolTable* program_symtab = nullptr;
 
   public:
     CnexpSolveVisitor() = default;
@@ -34,6 +42,7 @@ class CnexpSolveVisitor : public AstVisitor {
     void visit_solve_block(SolveBlock* node) override;
     void visit_derivative_block(DerivativeBlock* node) override;
     void visit_binary_expression(BinaryExpression* node) override;
+    void visit_program(Program* node) override;
 };
 
 #endif

@@ -103,8 +103,14 @@ std::vector<std::string> to_string_vector(const SymbolInfo& obj) {
         properties.emplace_back("non_linear_block");
     }
 
+    /** todo: temporarily commented out
     if (has_property(obj, NmodlInfo::discrete_block)) {
         properties.emplace_back("discrete_block");
+    }
+     */
+
+    if (has_property(obj, NmodlInfo::constant_var)) {
+        properties.emplace_back("constant");
     }
 
     if (has_property(obj, NmodlInfo::partial_block)) {
@@ -138,6 +144,10 @@ std::vector<std::string> to_string_vector(const SymbolInfo& obj) {
     if (has_property(obj, NmodlInfo::to_solve)) {
         properties.emplace_back("to_solve");
     }
+
+    if (has_property(obj, NmodlInfo::useion)) {
+        properties.emplace_back("ion");
+    }
     return properties;
 }
 
@@ -162,6 +172,9 @@ std::vector<std::string> to_string_vector(const SymbolStatus& obj) {
 
     if (has_status(obj, Status::created)) {
         status.emplace_back("created");
+    }
+    if (has_status(obj, Status::from_state)) {
+        status.emplace_back("from_state");
     }
     return status;
 }

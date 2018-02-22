@@ -14,14 +14,25 @@ namespace symtab {
     }
 
     /// check if symbol has any of the common properties
-    /// \todo : rename to has_any_property
+
     bool Symbol::has_properties(SymbolInfo new_properties) {
         return static_cast<bool>(properties & new_properties);
     }
 
+    /// check if symbol has all of the given properties
+    bool Symbol::has_all_properties(SymbolInfo new_properties) {
+        return ((properties & new_properties) == new_properties);
+    }
+
+
     /// check if symbol has any of the status
     bool Symbol::has_any_status(SymbolStatus new_status) {
         return static_cast<bool>(status & new_status);
+    }
+
+    /// check if symbol has all of the status
+    bool Symbol::has_all_status(SymbolStatus new_status) {
+        return ((status & new_status) == new_status);
     }
 
     /// add new properties to symbol with bitwise or

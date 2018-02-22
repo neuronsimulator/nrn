@@ -101,4 +101,10 @@ namespace stringutils {
         return left + text + right;
     }
 
+    /// To lower case
+    static inline std::string tolower(std::string text) {
+        std::transform(text.begin(), text.end(), text.begin(), ::tolower);
+        return text;
+    }
+
 }  // namespace stringutils

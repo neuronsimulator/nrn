@@ -55,6 +55,7 @@ SYMBOL_VAR_TYPES = ["LocalVar",
                     "UnitDef",
                     "FactorDef",
                     "RangeVar",
+                    "Useion",
                     "ReadIonVar",
                     "WriteIonVar",
                     "NonspeCurVar",
@@ -64,15 +65,17 @@ SYMBOL_VAR_TYPES = ["LocalVar",
                     "PointerVar",
                     "BbcorePointerVar",
                     "ExternVar",
-                    "PrimeName"]
+                    "PrimeName",
+                    "ConstantVar"]
 
 # block nodes which will go into symbol table
+# todo : skipping discrete block due to limits in
 SYMBOL_BLOCK_TYPES = ["FunctionBlock",
                       "ProcedureBlock",
                       "DerivativeBlock",
                       "LinearBlock",
                       "NonLinearBlock",
-                      "DiscreteBlock",
+                      #"DiscreteBlock",
                       "PartialBlock",
                       "KineticBlock",
                       "FunctionTableBlock"]

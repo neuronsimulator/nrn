@@ -45,7 +45,7 @@ int main(int argc, const char* argv[]) {
             throw std::runtime_error("Could not open file " + filename);
         }
 
-        std::string channel_name = remove_extension(base_name(filename));
+        std::string mod_filename = remove_extension(base_name(filename));
 
         /// driver object creates lexer and parser, just call parser method
         nmodl::Driver driver;
@@ -96,12 +96,12 @@ int main(int argc, const char* argv[]) {
         }
 
         {
-            NmodlPrintVisitor v(channel_name + ".nocmodl.verbrename.mod");
+            NmodlPrintVisitor v(mod_filename + ".nocmodl.verbrename.mod");
             v.visit_program(ast.get());
         }
 
         {
-            NmodlPrintVisitor v(channel_name + ".nocmodl.mod");
+            NmodlPrintVisitor v(mod_filename + ".nocmodl.mod");
             v.visit_program(ast.get());
         }
 
@@ -112,7 +112,7 @@ int main(int argc, const char* argv[]) {
         }
 
         {
-            NmodlPrintVisitor v(channel_name + ".nocmodl.cnexp.mod");
+            NmodlPrintVisitor v(mod_filename + ".nocmodl.cnexp.mod");
             v.visit_program(ast.get());
         }
 
@@ -124,7 +124,7 @@ int main(int argc, const char* argv[]) {
 
 
         {
-            NmodlPrintVisitor v(channel_name + ".nocmodl.cnexp.in.mod");
+            NmodlPrintVisitor v(mod_filename + ".nocmodl.cnexp.in.mod");
             v.visit_program(ast.get());
         }
 
@@ -135,7 +135,7 @@ int main(int argc, const char* argv[]) {
         }
 
         {
-            NmodlPrintVisitor v(channel_name + ".nocmodl.cnexp.in.ren.mod");
+            NmodlPrintVisitor v(mod_filename + ".nocmodl.cnexp.in.ren.mod");
             v.visit_program(ast.get());
         }
 
@@ -152,7 +152,7 @@ int main(int argc, const char* argv[]) {
         }
 
         {
-            NmodlPrintVisitor v(channel_name + ".nocmodl.cnexp.in.ren.loc.mod");
+            NmodlPrintVisitor v(mod_filename + ".nocmodl.cnexp.in.ren.loc.mod");
             v.visit_program(ast.get());
         }
 
@@ -167,12 +167,20 @@ int main(int argc, const char* argv[]) {
         }
 
         {
-            NmodlPrintVisitor v(channel_name + ".nocmodl.cnexp.in.ren.loc.ren.mod");
+            std::stringstream stream;
+            auto symtab = ast->get_model_symbol_table();
+            symtab->print(stream);
+            std::cout << stream.str();
+            std::cout << "----SYMTAB VISITOR FINISHED----" << std::endl;
+        }
+
+        {
+            NmodlPrintVisitor v(mod_filename + ".nocmodl.cnexp.in.ren.loc.ren.mod");
             v.visit_program(ast.get());
         }
 
         {
-            PerfVisitor v(channel_name + ".perf.json");
+            PerfVisitor v(mod_filename + ".perf.json");
             v.visit_program(ast.get());
 
             auto symtab = ast->get_symbol_table();
@@ -185,6 +193,7 @@ int main(int argc, const char* argv[]) {
             std::cout << ss.str() << std::endl;
             std::cout << "----PERF VISITOR FINISHED----" << std::endl;
         }
+
 
     } catch (TCLAP::ArgException& e) {
         std::cout << "Argument Error: " << e.error() << " for arg " << e.argId() << std::endl;

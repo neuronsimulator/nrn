@@ -23,6 +23,8 @@ namespace symtab {
      * \todo Re-implement pretty printing
      */
     class Table {
+        static int counter;
+
       public:
         /// map of symbol name and associated symbol for faster lookup
         std::vector<std::shared_ptr<Symbol>> symbols;
@@ -137,7 +139,13 @@ namespace symtab {
 
         std::shared_ptr<Symbol> lookup_in_scope(const std::string& name);
 
-        std::vector<std::shared_ptr<Symbol>> get_variables_with_properties(SymbolInfo properties);
+        std::vector<std::shared_ptr<Symbol>> get_variables(SymbolInfo with, SymbolInfo without);
+
+        std::vector<std::shared_ptr<Symbol>> get_variables_with_properties(SymbolInfo properties,
+                                                                           bool all = false);
+
+        std::vector<std::shared_ptr<Symbol>> get_variables_with_status(SymbolStatus status,
+                                                                       bool all = false);
 
         bool under_global_scope();
 
@@ -181,12 +189,23 @@ namespace symtab {
         /// symbols otherwise we throw away old table and construct new one
         bool update_table = false;
 
+        /// current order of variable being defined
+        int definition_order = 0;
+
+        /// if breakpoint block exist in the model
+        bool breakpoint_exist = false;
+
+        std::string model_suffix = "";
+
         /// insert symbol table in update mode
-        void update_mode_insert(const std::shared_ptr<Symbol>& symbol);
+        std::shared_ptr<Symbol> update_mode_insert(const std::shared_ptr<Symbol>& symbol);
 
         void emit_message(const std::shared_ptr<Symbol>& first,
                           const std::shared_ptr<Symbol>& second,
                           bool redefinition);
+
+        void update_order(const std::shared_ptr<Symbol>& present_symbol,
+                          const std::shared_ptr<Symbol>& new_symbol);
 
       public:
         /// entering into new nmodl block
@@ -199,7 +218,7 @@ namespace symtab {
         void leave_scope();
 
         /// insert new symbol into current table
-        void insert(const std::shared_ptr<Symbol>& symbol);
+        std::shared_ptr<Symbol> insert(const std::shared_ptr<Symbol>& symbol);
 
         /// lookup for symbol into current as well as all parent tables
         std::shared_ptr<Symbol> lookup(const std::string& name);
@@ -210,6 +229,14 @@ namespace symtab {
         /// re-initialize members to throw away old symbol tables
         /// this is required as symtab visitor pass runs multiple time
         void set_mode(bool mode);
+
+        bool has_breakpoint() const {
+            return breakpoint_exist;
+        }
+
+        std::string model_name() const {
+            return model_suffix;
+        }
     };
 
 }  // namespace symtab

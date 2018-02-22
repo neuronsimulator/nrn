@@ -40,11 +40,11 @@ std::string VerbatimVarRenameVisitor::rename_variable(std::string name) {
     bool rename_plausible = false;
     auto new_name = name;
     if (name.find(local_prefix) == 0) {
-        new_name.erase(0,2);
+        new_name.erase(0, 2);
         rename_plausible = true;
     }
     if (name.find(range_prefix) == 0) {
-        new_name.erase(0,3);
+        new_name.erase(0, 3);
         rename_plausible = true;
     }
     if (rename_plausible) {
@@ -70,7 +70,7 @@ void VerbatimVarRenameVisitor::visit_verbatim(Verbatim* node) {
     auto tokens = driver.all_tokens();
 
     std::string result;
-    for(auto& token: tokens) {
+    for (auto& token : tokens) {
         result += rename_variable(token);
     }
     statement->set(result);

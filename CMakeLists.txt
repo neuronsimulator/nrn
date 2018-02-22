@@ -34,7 +34,7 @@ include(ClangTidyHelper)
 include_directories(
     ${PROJECT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}/src
-    ${PROJECT_SOURCE_DIR}/src/ext/
+    ${PROJECT_SOURCE_DIR}/src/ext
 )
 
 #=============================================================================
@@ -54,6 +54,8 @@ add_subdirectory(src/printer)
 add_subdirectory(src/symtab)
 add_subdirectory(src/utils)
 add_subdirectory(src/visitors)
+add_subdirectory(src/codegen)
+add_subdirectory(src/ext/fmt)
 
 #=============================================================================
 # Memory checker options and add tests
@@ -70,10 +72,9 @@ add_subdirectory(test)
 # Add executables
 #=============================================================================
 add_executable(nocmodl
-               src/main.cpp
-               ${CMAKE_CURRENT_BINARY_DIR}/version.cpp)
+               src/main.cpp)
 
-target_link_libraries(nocmodl lexer visitor)
+target_link_libraries(nocmodl lexer util visitor)
 
 #=============================================================================
 # Clang format target

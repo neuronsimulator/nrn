@@ -61,7 +61,7 @@ namespace c11 {
         bool parse_string(const std::string& input);
         bool parse_file(const std::string& filename);
         void scan_string(std::string& text);
-        void process(std::string);
+        void add_token(std::string);
 
         void set_verbose(bool b) {
             verbose = b;

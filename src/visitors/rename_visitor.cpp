@@ -34,7 +34,7 @@ void RenameVisitor::visit_verbatim(Verbatim* node) {
     auto tokens = driver.all_tokens();
 
     std::string result;
-    for(auto& token: tokens) {
+    for (auto& token : tokens) {
         if (token == var_name) {
             result += new_var_name;
         } else {
