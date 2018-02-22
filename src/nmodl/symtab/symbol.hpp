@@ -36,6 +36,12 @@ namespace symtab {
         /// name of the symbol
         std::string name;
 
+        /// original name in case of renaming
+        std::string renamed_from;
+
+        /// unique id or index position when symbol is inserted into specific table
+        int id = 0;
+
         /// ast node where symbol encountered first time
         /// node is passed from visitor and hence we have
         /// raw pointer instead of shared_ptr
@@ -62,6 +68,18 @@ namespace symtab {
         /// order of derivative (for prime node)
         int order = 0;
 
+        /// order in which symbol arrives
+        int definition_order = -1;
+
+        /// value (for parameters, constant etc)
+        std::shared_ptr<double> value;
+
+        /// true if array variable
+        bool array = false;
+
+        /// number of elements
+        int length = 1;
+
       public:
         Symbol() = delete;
 
@@ -82,7 +100,18 @@ namespace symtab {
             return name;
         }
 
+        int get_id() {
+            return id;
+        }
+
+        void set_id(int i) {
+            id = i;
+        }
+
         void set_name(std::string new_name) {
+            if (renamed_from.empty()) {
+                renamed_from = name;
+            }
             name = new_name;
         }
 
@@ -122,11 +151,20 @@ namespace symtab {
             return write_count;
         }
 
+        int get_definition_order() const {
+            return definition_order;
+        }
+
         bool is_external_symbol_only();
 
+        /// \todo : rename to has_any_property
         bool has_properties(SymbolInfo new_properties);
 
+        bool has_all_properties(SymbolInfo new_properties);
+
         bool has_any_status(SymbolStatus new_status);
+
+        bool has_all_status(SymbolStatus new_status);
 
         void combine_properties(SymbolInfo new_properties);
 
@@ -150,7 +188,49 @@ namespace symtab {
             status |= Status::localized;
         }
 
+        void created_from_state() {
+            created();
+            status |= Status::from_state;
+        }
+
         void set_order(int new_order);
+
+        void set_definition_order(int order) {
+            definition_order = order;
+        }
+
+        void set_value(double val) {
+            value = std::make_shared<double>(val);
+        }
+
+        void set_as_array(int len) {
+            array = true;
+            length = len;
+        }
+
+        bool is_array() {
+            return array;
+        }
+
+        void set_length(int len) {
+            length = len;
+        }
+
+        int get_length() {
+            return length;
+        }
+
+        std::string get_original_name() {
+            return renamed_from;
+        }
+
+        std::shared_ptr<double> get_value() {
+            return value;
+        }
+
+        void set_original_name(std::string new_name) {
+            renamed_from = new_name;
+        }
 
         bool is_variable();
     };

@@ -6,6 +6,7 @@ set(UTIL_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/perf_stat.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/table_data.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/table_data.cpp
+    ${CMAKE_BINARY_DIR}/version.cpp
 )
 
 #=============================================================================

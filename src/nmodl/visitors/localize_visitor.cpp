@@ -120,10 +120,16 @@ void LocalizeVisitor::visit_program(Program* node) {
             for (auto& block : block_usage[DUState::D]) {
                 auto block_ptr = dynamic_cast<Block*>(block.get());
                 auto statement_block = block_ptr->get_statement_block();
-                auto variable = add_local_variable(statement_block.get(), varname);
+                LocalVar* variable;
+                auto symbol = program_symtab->lookup(varname);
+                if (symbol->is_array()) {
+                    variable =
+                        add_local_variable(statement_block.get(), varname, symbol->get_length());
+                } else {
+                    variable = add_local_variable(statement_block.get(), varname);
+                }
 
                 /// mark variable as localized in global symbol table
-                auto symbol = program_symtab->lookup(varname);
                 symbol->localized();
 
                 /// insert new symbol into symbol table

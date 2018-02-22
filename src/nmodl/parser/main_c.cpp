@@ -13,12 +13,18 @@ int main(int argc, const char* argv[]) {
     try {
         TCLAP::CmdLine cmd("C Parser: Standalone parser program for C");
         TCLAP::ValueArg<std::string> filearg("", "file", "C input file path", false,
-                                             "../test/input/channel.c", "string");
+                                             "", "string");
 
         cmd.add(filearg);
         cmd.parse(argc, argv);
 
         std::string filename = filearg.getValue();
+
+        if (filename.empty()) {
+            std::cerr << "Error : Pass input C file, see --help" << std::endl;
+            return 1;
+        }
+
         std::ifstream file(filename);
 
         if (!file) {

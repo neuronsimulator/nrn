@@ -1311,7 +1311,8 @@ nonlinblk       :   NONLINEAR NAME solvefor stmtlist "}"
 discretblk      :   DISCRETE NAME stmtlist "}"
                     {
                         $$ = new ast::DiscreteBlock($2, $3);
-                        $$->set_token($1);
+                        // todo : disabled symbol table, remove this
+                        //$$->set_token($1);
                     }
                 ;
 
@@ -1833,7 +1834,8 @@ conststmt       :   {
                     }
                 |   conststmt NAME "=" number units
                     {
-                        auto statement = new ast::ConstantStatement($2, $4, $5);
+                        auto constant = new ast::ConstantVar($2, $4, $5);
+                        auto statement = new ast::ConstantStatement(constant);
                         $1.push_back(std::shared_ptr<ast::ConstantStatement>(statement));
                         $$ = $1;
                     }

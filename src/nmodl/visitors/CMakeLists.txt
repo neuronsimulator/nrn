@@ -30,6 +30,8 @@ set(VISITOR_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/visitor_utils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/verbatim_var_rename_visitor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/verbatim_var_rename_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/var_usage_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/var_usage_visitor.cpp
 )
 
 set_source_files_properties(
@@ -47,7 +49,7 @@ add_library(visitor
 add_dependencies(visitor lexer util)
 
 add_executable(nocmodl_visitor main.cpp)
-target_link_libraries(nocmodl_visitor printer visitor symtab util lexer)
+target_link_libraries(nocmodl_visitor printer visitor symtab util lexer fmt)
 
 #=============================================================================
 # Files for clang-format

@@ -11,7 +11,7 @@
       * starts at column 1 and increasing by yyleng gives extra position
       * larger than exact columns span of the token. Hence in ModToken
       * class we reduce the length by one column. */
-    #define YY_USER_ACTION { loc.step(); loc.columns(yyleng); driver.process(yytext); }
+    #define YY_USER_ACTION { loc.step(); loc.columns(yyleng); }
 
    /** By default yylex returns int, we use token_type. Unfortunately
      * yyterminate by default returns 0, which is not of token_type. */
@@ -101,450 +101,565 @@ WS  [ \t\v\n\f]
 
 %%
 
+[ \t]*"#define"                         {
+                                            /** macros also need to be processed / re-defined */
+                                            driver.add_token(yytext);
+                                        }
 
-^"#"                                    {
+[ \t]*"#"                               {
                                             BEGIN(P_P_DIRECTIVE);
+                                            yymore();
                                         }
 
 <P_P_DIRECTIVE>.                        {
+                                            yymore();
                                         }
 
 <P_P_DIRECTIVE>\n                       {
+                                            driver.add_token(yytext);
                                             BEGIN(INITIAL);
                                         }
 
 "/*"                                    {
                                             BEGIN(COMMENT);
+                                            yymore();
                                         }
 
 <COMMENT>"*/"                           {
+                                            driver.add_token(yytext);
                                             BEGIN(INITIAL);
-                                        }
-
-<COMMENT>.                              {
                                         }
 
 <COMMENT>\n                             {
                                             loc.lines(1);
+                                            yymore();
+                                        }
+
+<COMMENT>.                              {
+                                            yymore();
                                         }
 
 "//".*                                  {
-                                            /* consume //-comment */
+                                            /* consume single liine comment */
                                         }
 
 "auto"                                  {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_AUTO(yytext, loc);
                                         }
 
 "break"                                 {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_BREAK(yytext, loc);
                                         }
 
 "case"                                  {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_CASE(yytext, loc);
                                         }
 
 "char"                                  {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_CHAR(yytext, loc);
                                         }
 
 "const"                                 {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_CONST(yytext, loc);
                                         }
 
 "continue"                              {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_CONTINUE(yytext, loc);
                                         }
 
 "default"                               {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_DEFAULT(yytext, loc);
                                         }
 
 "do"                                    {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_DO(yytext, loc);
                                         }
 
 "double"                                {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_DOUBLE(yytext, loc);
                                         }
 
 "else"                                  {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_ELSE(yytext, loc);
                                         }
 
 "enum"                                  {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_ENUM(yytext, loc);
                                         }
 
 "extern"                                {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_EXTERN(yytext, loc);
                                         }
 
 "float"                                 {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_FLOAT(yytext, loc);
                                         }
 
 "for"                                   {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_FOR(yytext, loc);
                                         }
 
 "goto"                                  {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_GOTO(yytext, loc);
                                         }
 
 "if"                                    {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_IF(yytext, loc);
                                         }
 
 "inline"                                {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_INLINE(yytext, loc);
                                         }
 
 "int"                                   {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_INT(yytext, loc);
                                         }
 
 "long"                                  {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_LONG(yytext, loc);
                                         }
 
 "register"                              {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_REGISTER(yytext, loc);
                                         }
 
 "restrict"                              {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_RESTRICT(yytext, loc);
                                         }
 
 "return"                                {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_RETURN(yytext, loc);
                                         }
 
 "short"                                 {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_SHORT(yytext, loc);
                                         }
 
 "signed"                                {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_SIGNED(yytext, loc);
                                         }
 
 "sizeof"                                {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_SIZEOF(yytext, loc);
                                         }
 
 "static"                                {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_STATIC(yytext, loc);
                                         }
 
 "struct"                                {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_STRUCT(yytext, loc);
                                         }
 
 "switch"                                {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_SWITCH(yytext, loc);
                                         }
 
 "typedef"                               {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_TYPEDEF(yytext, loc);
                                         }
 
 "union"                                 {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_UNION(yytext, loc);
                                         }
 
 "unsigned"                              {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_UNSIGNED(yytext, loc);
                                         }
 
 "void"                                  {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_VOID(yytext, loc);
                                         }
 
 "volatile"                              {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_VOLATILE(yytext, loc);
                                         }
 
 "while"                                 {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_WHILE(yytext, loc);
                                         }
 
 "_Alignas"                              {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_ALIGNAS(yytext, loc);
                                         }
 
 "_Alignof"                              {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_ALIGNOF(yytext, loc);
                                         }
 
 "_Atomic"                               {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_ATOMIC(yytext, loc);
                                         }
 
 "_Bool"                                 {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_BOOL(yytext, loc);
                                         }
 
 "_Complex"                              {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_COMPLEX(yytext, loc);
                                         }
 
 "_Generic"                              {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_GENERIC(yytext, loc);
                                         }
 
 "_Imaginary"                            {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_IMAGINARY(yytext, loc);
                                         }
 
 "_Noreturn"                             {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_NORETURN(yytext, loc);
                                         }
 
 "_Static_assert"                        {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_STATIC_ASSERT(yytext, loc);
                                         }
 
 "_Thread_local"                         {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_THREAD_LOCAL(yytext, loc);
                                         }
 
 "__func__"                              {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_FUNC_NAME(yytext, loc);
                                         }
 
 {L}{A}*                                 {
+                                            driver.add_token(yytext);
                                             return check_type();
                                         }
 
 {HP}{H}+{IS}?                           {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_I_CONSTANT(yytext, loc);
                                         }
 
 {NZ}{D}*{IS}?                           {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_I_CONSTANT(yytext, loc);
                                         }
 
 "0"{O}*{IS}?                            {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_I_CONSTANT(yytext, loc);
                                         }
 
 {CP}?"'"([^'\\\n]|{ES})+"'"             {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_I_CONSTANT(yytext, loc);
                                         }
 
 {D}+{E}{FS}?                            {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_F_CONSTANT(yytext, loc);
                                         }
 
 {D}*"."{D}+{E}?{FS}?                    {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_F_CONSTANT(yytext, loc);
                                         }
 
 {D}+"."{E}?{FS}?                        {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_F_CONSTANT(yytext, loc);
                                         }
 
 {HP}{H}+{P}{FS}?                        {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_F_CONSTANT(yytext, loc);
                                         }
 
 {HP}{H}*"."{H}+{P}{FS}?                 {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_F_CONSTANT(yytext, loc);
                                         }
 
 {HP}{H}+"."{P}{FS}?                     {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_F_CONSTANT(yytext, loc);
                                         }
 
 ({SP}?\"([^"\\\n]|{ES})*\"{WS}*)+       {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_STRING_LITERAL(yytext, loc);
                                         }
 
 "..."                                   {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_ELLIPSIS(yytext, loc);
                                         }
 
 ">>="                                   {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_RIGHT_ASSIGN(yytext, loc);
                                         }
 
 "<<="                                   {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_LEFT_ASSIGN(yytext, loc);
                                         }
 
 "+="                                    {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_ADD_ASSIGN(yytext, loc);
                                         }
 
 "-="                                    {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_SUB_ASSIGN(yytext, loc);
                                         }
 
 "*="                                    {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_MUL_ASSIGN(yytext, loc);
                                         }
 
 "/="                                    {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_DIV_ASSIGN(yytext, loc);
                                         }
 
 "%="                                    {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_MOD_ASSIGN(yytext, loc);
                                         }
 
 "&="                                    {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_AND_ASSIGN(yytext, loc);
                                         }
 
 "^="                                    {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_XOR_ASSIGN(yytext, loc);
                                         }
 
 "|="                                    {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_OR_ASSIGN(yytext, loc);
                                         }
 
 ">>"                                    {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_RIGHT_OP(yytext, loc);
                                         }
 
 "<<"                                    {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_LEFT_OP(yytext, loc);
                                         }
 
 "++"                                    {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_INC_OP(yytext, loc);
                                         }
 
 "--"                                    {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_DEC_OP(yytext, loc);
                                         }
 
 "->"                                    {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_PTR_OP(yytext, loc);
                                         }
 
 "&&"                                    {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_AND_OP(yytext, loc);
                                         }
 
 "||"                                    {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_OR_OP(yytext, loc);
                                         }
 
 "<="                                    {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_LE_OP(yytext, loc);
                                         }
 
 ">="                                    {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_GE_OP(yytext, loc);
                                         }
 
 "=="                                    {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_EQ_OP(yytext, loc);
                                         }
 
 "!="                                    {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_NE_OP(yytext, loc);
                                         }
 
 ";"                                     {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_SEMICOLON(yytext, loc);
                                         }
 
 ("{"|"<%")                              {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_OPEN_BRACE(yytext, loc);
                                         }
 
 ("}"|"%>")                              {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_CLOSE_BRACE(yytext, loc);
                                         }
 
 ","                                     {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_COMMA(yytext, loc);
                                         }
 
 ":"                                     {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_COLON(yytext, loc);
                                         }
 
 "="                                     {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_ASSIGN(yytext, loc);
                                         }
 
 "("                                     {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_OPEN_PARENTHESIS(yytext, loc);
                                         }
 
 ")"                                     {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_CLOSE_PARENTHESIS(yytext, loc);
                                         }
 
 ("["|"<:")                              {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_OPEN_BRACKET(yytext, loc);
                                         }
 
 ("]"|":>")                              {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_CLOSE_BRACKET(yytext, loc);
                                         }
 
 "."                                     {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_PERIOD(yytext, loc);
                                         }
 
 "&"                                     {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_AMPERSTAND(yytext, loc);
                                         }
 
 "!"                                     {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_NEGATION(yytext, loc);
                                         }
 
 "~"                                     {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_NEGATION(yytext, loc);
                                         }
 
 "-"                                     {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_MINUS(yytext, loc);
                                         }
 
 "+"                                     {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_ADD(yytext, loc);
                                         }
 
 "*"                                     {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_MULTIPLY(yytext, loc);
                                         }
 
 "/"                                     {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_DIVIDE(yytext, loc);
                                         }
 
 "%"                                     {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_PERCENT(yytext, loc);
                                         }
 
 "<"                                     {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_LT(yytext, loc);
                                         }
 
 ">"                                     {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_GT(yytext, loc);
                                         }
 
 "^"                                     {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_CARET(yytext, loc);
                                         }
 
 "|"                                     {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_OR(yytext, loc);
                                         }
 
 "?"                                     {
+                                            driver.add_token(yytext);
                                             return c11::Parser::make_QUESTION(yytext, loc);
                                         }
 
 {WS}+                                   {
+                                            driver.add_token(yytext);
                                             std::string str(yytext);
                                             stringutils::remove_character(str, ' ');
                                             if (str == "\n") {
@@ -555,7 +670,7 @@ WS  [ \t\v\n\f]
                                         }
 
 .                                       {
-                                            /* discard bad characters */
+                                            /* if nothing match, scan more characters ? */
                                             yymore();
                                         }
 

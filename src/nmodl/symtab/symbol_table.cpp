@@ -6,6 +6,8 @@
 
 namespace symtab {
 
+    int Table::counter = 0;
+
     /**
      *  Insert symbol into current symbol table. There are certain
      *  cases where we were getting re-insertion errors.
@@ -15,6 +17,7 @@ namespace symtab {
         if (lookup(name) != nullptr) {
             throw std::runtime_error("Trying to re-insert symbol " + name);
         }
+        symbol->set_id(counter++);
         symbols.push_back(symbol);
     }
 
@@ -65,11 +68,49 @@ namespace symtab {
 
     /// return all symbol having any of the provided properties
     std::vector<std::shared_ptr<Symbol>> SymbolTable::get_variables_with_properties(
-        SymbolInfo properties) {
+        SymbolInfo properties,
+        bool all) {
         std::vector<std::shared_ptr<Symbol>> variables;
         for (auto& symbol : table.symbols) {
-            if (symbol->has_properties(properties)) {
-                variables.push_back(symbol);
+            if (all) {
+                if (symbol->has_all_properties(properties)) {
+                    variables.push_back(symbol);
+                }
+            } else {
+                if (symbol->has_properties(properties)) {
+                    variables.push_back(symbol);
+                }
+            }
+        }
+        return variables;
+    }
+
+    /// return all symbol which has all "with" properties and none of the "without" properties
+    std::vector<std::shared_ptr<Symbol>> SymbolTable::get_variables(SymbolInfo with,
+                                                                    SymbolInfo without) {
+        auto variables = get_variables_with_properties(with, true);
+        decltype(variables) result;
+        for (auto& variable : variables) {
+            if (!variable->has_properties(without)) {
+                result.push_back(variable);
+            }
+        }
+        return result;
+    }
+
+
+    std::vector<std::shared_ptr<Symbol>> SymbolTable::get_variables_with_status(SymbolStatus status,
+                                                                                bool all) {
+        std::vector<std::shared_ptr<Symbol>> variables;
+        for (auto& symbol : table.symbols) {
+            if (all) {
+                if (symbol->has_all_status(status)) {
+                    variables.push_back(symbol);
+                }
+            } else {
+                if (symbol->has_any_status(status)) {
+                    variables.push_back(symbol);
+                }
             }
         }
         return variables;
@@ -183,7 +224,8 @@ namespace symtab {
      *  to other passes like local renamer). In this case we have to do
      *  local lookup in the current symtab and insert if doesn't exist.
      */
-    void ModelSymbolTable::update_mode_insert(const std::shared_ptr<Symbol>& symbol) {
+    std::shared_ptr<Symbol> ModelSymbolTable::update_mode_insert(
+        const std::shared_ptr<Symbol>& symbol) {
         symbol->set_scope(current_symtab->name());
         symbol->created();
 
@@ -193,40 +235,55 @@ namespace symtab {
         /// if no symbol found then safe to insert
         if (search_symbol == nullptr) {
             current_symtab->insert(symbol);
-            return;
+            return symbol;
         }
 
         /// for global scope just combine properties
         if (current_symtab->global_scope()) {
             search_symbol->combine_properties(symbol->get_properties());
-            return;
+            return search_symbol;
         }
 
         /// insert into current block's symbol table
         if (current_symtab->lookup(name) == nullptr) {
             current_symtab->insert(symbol);
         }
+        return symbol;
     }
 
+    void ModelSymbolTable::update_order(const std::shared_ptr<Symbol>& present_symbol,
+                                        const std::shared_ptr<Symbol>& new_symbol) {
+        auto symbol = (present_symbol != nullptr) ? present_symbol : new_symbol;
 
-    void ModelSymbolTable::insert(const std::shared_ptr<Symbol>& symbol) {
+        bool is_parameter = new_symbol->has_properties(NmodlInfo::param_assign);
+        bool is_dependent_def = new_symbol->has_properties(NmodlInfo::dependent_def);
+
+        if (symbol->get_definition_order() == -1) {
+            if (is_parameter || is_dependent_def) {
+                symbol->set_definition_order(definition_order++);
+            }
+        }
+    }
+
+    std::shared_ptr<Symbol> ModelSymbolTable::insert(const std::shared_ptr<Symbol>& symbol) {
         if (current_symtab == nullptr) {
             throw std::logic_error("Can not insert symbol without entering scope");
         }
 
+        auto search_symbol = lookup(symbol->get_name());
+        update_order(search_symbol, symbol);
+
         /// handle update mode insertion
         if (update_table == true) {
-            update_mode_insert(symbol);
-            return;
+            return update_mode_insert(symbol);
         }
 
         symbol->set_scope(current_symtab->name());
-        auto search_symbol = lookup(symbol->get_name());
 
         // if no symbol found then safe to insert
         if (search_symbol == nullptr) {
             current_symtab->insert(symbol);
-            return;
+            return symbol;
         }
 
         /**
@@ -243,7 +300,7 @@ namespace symtab {
             } else {
                 search_symbol->combine_properties(symbol->get_properties());
             }
-            return;
+            return search_symbol;
         }
 
         /**
@@ -259,6 +316,7 @@ namespace symtab {
             emit_message(symbol, search_symbol, false);
             current_symtab->insert(symbol);
         }
+        return symbol;
     }
 
 
@@ -291,6 +349,10 @@ namespace symtab {
                                                SymbolTable* node_symtab) {
         if (node == nullptr) {
             throw std::runtime_error("Can't enter with empty node");
+        }
+
+        if (node->is_breakpoint_block()) {
+            breakpoint_exist = true;
         }
 
         /// all global blocks in mod file have same global symbol table
@@ -351,6 +413,7 @@ namespace symtab {
             symtab = nullptr;
             current_symtab = nullptr;
         }
+        definition_order = 0;
     }
 
 
@@ -363,7 +426,8 @@ namespace symtab {
         if (!symbols.empty()) {
             TableData table;
             table.title = std::move(title);
-            table.headers = {"NAME", "PROPERTIES", "STATUS", "LOCATION", "# READS", "# WRITES"};
+            table.headers = {"NAME",  "PROPERTIES", "STATUS",  "LOCATION",
+                             "VALUE", "# READS",    "# WRITES"};
             table.alignments = {text_alignment::left, text_alignment::left, text_alignment::right,
                                 text_alignment::right, text_alignment::right};
 
@@ -378,12 +442,20 @@ namespace symtab {
                 }
 
                 auto name = symbol->get_name();
+                if (symbol->is_array()) {
+                    name += "[" + std::to_string(symbol->get_length()) + "]";
+                }
                 auto position = symbol->get_token().position();
                 auto properties = to_string(symbol->get_properties());
                 auto status = to_string(symbol->get_status());
                 auto reads = std::to_string(symbol->get_read_count());
+                std::string value = "";
+                auto sym_value = symbol->get_value();
+                if (sym_value) {
+                    value = std::to_string(*sym_value);
+                }
                 auto writes = std::to_string(symbol->get_write_count());
-                table.rows.push_back({name, properties, status, position, reads, writes});
+                table.rows.push_back({name, properties, status, position, value, reads, writes});
             }
             table.print(stream, indent);
         }

@@ -1776,12 +1776,12 @@ SCENARIO("CnexpSolver visitor solving ODEs") {
             }
 
             DERIVATIVE states {
-                m' = (mInf-m)/mTau
-                h' = (hInf-h)/hTau
+                Dm = (mInf-m)/mTau
+                Dh = (hInf-h)/hTau
             }
         )";
 
-        THEN("ODEs don't get solved / replaced ") {
+        THEN("ODEs don't get solved but state variables get replaced with Dstate ") {
             std::string input = reindent_text(nmodl_text);
             auto expected_result = reindent_text(output_nmodl);
             auto result = run_cnexp_solve_visitor(input);

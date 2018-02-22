@@ -36,7 +36,7 @@ void add_local_statement(StatementBlock* node) {
     }
 }
 
-LocalVar* add_local_variable(ast::StatementBlock* node, ast::Identifier* varname) {
+LocalVar* add_local_variable(StatementBlock* node, Identifier* varname) {
     add_local_statement(node);
     auto local_variables = get_local_variables(node);
     auto var = std::make_shared<LocalVar>(varname);
@@ -44,8 +44,13 @@ LocalVar* add_local_variable(ast::StatementBlock* node, ast::Identifier* varname
     return var.get();
 }
 
-LocalVar* add_local_variable(ast::StatementBlock* node, const std::string& varname) {
-    auto name = new ast::Name(new ast::String(varname));
+LocalVar* add_local_variable(StatementBlock* node, const std::string& varname) {
+    auto name = new Name(new String(varname));
+    return add_local_variable(node, name);
+}
+
+LocalVar* add_local_variable(StatementBlock* node, const std::string& varname, int dim) {
+    auto name = new IndexedName(new Name(new String(varname)), new Integer(dim, nullptr));
     return add_local_variable(node, name);
 }
 
@@ -59,7 +64,7 @@ LocalVar* add_local_variable(ast::StatementBlock* node, const std::string& varna
  * \todo : Need to revisit this during code generation passes to make sure
  *  if all statements can be part of procedure block.
  */
-std::shared_ptr<ast::Statement> create_statement(const std::string& code_statement) {
+std::shared_ptr<Statement> create_statement(const std::string& code_statement) {
     nmodl::Driver driver;
     auto nmodl_text = "PROCEDURE dummy() { " + code_statement + " }";
     driver.parse_string(nmodl_text);

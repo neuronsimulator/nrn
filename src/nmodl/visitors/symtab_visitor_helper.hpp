@@ -32,11 +32,66 @@ void SymtabVisitor::setup_symbol(T* node, SymbolInfo property, int order) {
     symbol = std::make_shared<Symbol>(name, node, token);
 
     symbol->add_property(property);
-    modsymtab->insert(symbol);
+
+
+    if (property == NmodlInfo::nonspe_cur_var) {
+        symbol->add_property(NmodlInfo::range_var);
+    }
+
+    /// range and non_spec_cur can appear in any order in neuron block.
+    /// for both properties, we have to check if symbol is already exist.
+    /// if so we have to return to avoid duplicate definition error.
+    if (property == NmodlInfo::range_var || property == NmodlInfo::nonspe_cur_var) {
+        auto s = modsymtab->lookup(name);
+        if (s && s->has_properties(NmodlInfo::nonspe_cur_var | NmodlInfo::range_var)) {
+            s->add_property(property);
+            return;
+        }
+    }
+
+
+    /// insert might return different symbol if already exist in the same scope
+    symbol = modsymtab->insert(symbol);
 
     /// extra property for state variables
     if (state_block) {
         symbol->add_property(NmodlInfo::state_var);
+    }
+
+    if (node->is_param_assign()) {
+        auto parameter = dynamic_cast<ParamAssign*>(node);
+        if (parameter->value) {
+            symbol->set_value(parameter->value->number_value());
+        }
+        if (parameter->name->is_indexed_name()) {
+            auto name = dynamic_cast<IndexedName*>(parameter->name.get());
+            auto length = dynamic_cast<Integer*>(name->get_length().get());
+            symbol->set_as_array(length->eval());
+        }
+    }
+
+    if (node->is_dependent_def()) {
+        auto variable = dynamic_cast<DependentDef*>(node);
+        auto length = variable->get_length();
+        if (length) {
+            symbol->set_as_array(length->eval());
+        }
+    }
+
+    if (node->is_constant_var()) {
+        auto constant = dynamic_cast<ConstantVar*>(node);
+        if (constant->value) {
+            symbol->set_value(constant->value->number_value());
+        }
+    }
+
+    if (node->is_local_var()) {
+        auto local_var = dynamic_cast<LocalVar*>(node);
+        if (local_var->name->is_indexed_name()) {
+            auto name = dynamic_cast<IndexedName*>(local_var->name.get());
+            auto length = dynamic_cast<Integer*>(name->get_length().get());
+            symbol->set_as_array(length->eval());
+        }
     }
 
     /// visit childrens, most likely variables are already

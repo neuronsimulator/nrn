@@ -624,6 +624,10 @@ namespace ast {
         virtual bool is_program() {
             return false;
         }
+
+        virtual bool is_constant_var() {
+            return false;
+        }
     };
 
 }  // namespace ast

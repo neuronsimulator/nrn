@@ -76,6 +76,7 @@ SCENARIO("Symbol properties can be added and converted to string") {
 SCENARIO("Symbol operations") {
     SymbolInfo property1 = NmodlInfo::argument;
     SymbolInfo property2 = NmodlInfo::range_var;
+    SymbolInfo property3 = NmodlInfo::param_assign;
     GIVEN("A symbol") {
         ModToken token(true);
         Symbol symbol("alpha", token);
@@ -91,11 +92,22 @@ SCENARIO("Symbol operations") {
             THEN("symbol has multiple properties") {
                 REQUIRE(symbol.has_properties(property1) == true);
 
-                SymbolInfo property = NmodlInfo::param_assign;
-                REQUIRE(symbol.has_properties(property) == false);
+                REQUIRE(symbol.has_properties(property3) == false);
 
-                symbol.add_property(NmodlInfo::param_assign);
-                REQUIRE(symbol.has_properties(property) == true);
+                symbol.add_property(property3);
+                REQUIRE(symbol.has_properties(property3) == true);
+
+                auto property = property1 | property2;
+                REQUIRE(symbol.has_all_properties(property) == true);
+
+                property |= property3;
+                REQUIRE(symbol.has_all_properties(property) == true);
+
+                property = property2 | property3;
+                REQUIRE(symbol.has_all_properties(property) == true);
+
+                property |= NmodlInfo::to_solve;
+                REQUIRE(symbol.has_all_properties(property) == false);
             }
         }
         WHEN("combined properties") {
@@ -178,6 +190,49 @@ SCENARIO("Symbol table operations") {
                 REQUIRE(next_table->lookup("alpha") == nullptr);
                 REQUIRE(next_table->lookup_in_scope("alpha") != nullptr);
             }
+        }
+        WHEN("query for symbol with and without properties") {
+            auto symbol1 = std::make_shared<Symbol>("alpha", ModToken());
+            auto symbol2 = std::make_shared<Symbol>("beta", ModToken());
+            auto symbol3 = std::make_shared<Symbol>("gamma", ModToken());
+            auto symbol4 = std::make_shared<Symbol>("delta", ModToken());
+
+            symbol1->add_property(NmodlInfo::range_var | NmodlInfo::param_assign);
+            symbol2->add_property(NmodlInfo::range_var | NmodlInfo::param_assign |
+                                  NmodlInfo::state_var);
+            symbol3->add_property(NmodlInfo::range_var | NmodlInfo::dependent_def |
+                                  NmodlInfo::pointer_var);
+            symbol4->add_property(NmodlInfo::range_var);
+
+            table->insert(symbol1);
+            table->insert(symbol2);
+            table->insert(symbol3);
+            table->insert(symbol4);
+
+            auto result = table->get_variables_with_properties(NmodlInfo::range_var);
+            REQUIRE(result.size() == 4);
+
+            result =
+                table->get_variables_with_properties(NmodlInfo::range_var | NmodlInfo::pointer_var);
+            REQUIRE(result.size() == 4);
+
+            auto with = NmodlInfo::range_var | NmodlInfo::param_assign;
+            auto without = NmodlInfo::state_var | NmodlInfo::pointer_var;
+            result = table->get_variables(with, without);
+            REQUIRE(result.size() == 1);
+            REQUIRE(result[0]->get_name() == "alpha");
+
+
+            with = NmodlInfo::range_var;
+            without = NmodlInfo::param_assign | NmodlInfo::dependent_def;
+            result = table->get_variables(with, without);
+            REQUIRE(result.size() == 1);
+            REQUIRE(result[0]->get_name() == "delta");
+
+            with = NmodlInfo::range_var;
+            without = NmodlInfo::range_var;
+            result = table->get_variables(with, without);
+            REQUIRE(result.size() == 0);
         }
     }
 }
