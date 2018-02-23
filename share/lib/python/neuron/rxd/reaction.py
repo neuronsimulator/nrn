@@ -130,9 +130,8 @@ class Reaction(GeneralizedReaction):
         
         self._rate, self._involved_species = rxdmath._compile(rate, extracellular=None)
 
-        
-        
-        trans_membrane = any(isinstance(s(), species.SpeciesOnRegion) for s in self._involved_species)
+        #Species are in at most one region
+        trans_membrane = len({s()._region() for s in self._involved_species if isinstance(s(), species.SpeciesOnRegion)}) + len({s()._extracellular() for s in self._involved_species if isinstance(s(), species.SpeciesOnExtracellular)}) > 1 
         if trans_membrane:
             raise RxDException('Reaction does not support multi-compartment dynamics. Use MultiCompartmentReaction.')
         

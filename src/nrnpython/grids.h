@@ -7,7 +7,11 @@ and Flux_pair structs and their respective functions
 #include <stdio.h>
 #include <assert.h>
 #include <nrnmpi.h>
+
+#if NRNMPI
 #include <mpi.h>
+#endif
+
 #ifdef __APPLE__
 #include <Python/Python.h>
 #else
@@ -35,10 +39,11 @@ and Flux_pair structs and their respective functions
 
 
 /*Set in src/nrnmpi/nrnmpi_impl.c */
+#if NRNMPI
 extern MPI_Comm nrnmpi_world_comm;
 extern MPI_Comm nrnmpi_comm;
 extern MPI_Comm nrn_bbs_comm;
-
+#endif
 
 typedef struct {
     PyObject_HEAD

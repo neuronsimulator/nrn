@@ -266,6 +266,7 @@ void set_grid_currents(int grid_list_index, int index_in_list, PyObject* grid_in
     else
     {
         /*Gather an array of the number of currents for each process*/
+#if NRNMPI
         g->proc_num_currents[nrnmpi_myid_world] = n;
         MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, g->proc_num_currents, 1, MPI_INT, nrnmpi_world_comm);
         
@@ -286,11 +287,7 @@ void set_grid_currents(int grid_list_index, int index_in_list, PyObject* grid_in
             dests[i] = g->current_list[i].destination;
         }
         MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, g->current_dest, g->proc_num_currents, g->proc_offsets, MPI_LONG, nrnmpi_world_comm);
-        /*for(i = 0; i < g->num_all_currents; i++)
-        {
-            fprintf(stderr,"%i] dest[%i] = %i\n",nrnmpi_myid_world,i,g->current_dest[i]);
-            fprintf(stderr,"\t%i] state[%i] = %g\n",nrnmpi_myid_world,g->current_dest[i],g->states[g->current_dest[i]]);
-        }*/
+#endif
     }
 }
 

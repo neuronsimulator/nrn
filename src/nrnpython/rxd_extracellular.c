@@ -430,10 +430,11 @@ void do_currents(Grid_node* grid, double* output, double dt)
     free(tasks);
     if(nrnmpi_use)
     {
-
+#if NRNMPI
         MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, grid->all_currents, grid->proc_num_currents, grid->proc_offsets, MPI_DOUBLE, nrnmpi_world_comm);
         for(i = 0; i < n; i++)
             output[grid->current_dest[i]] += dt * grid->all_currents[i];
+#endif
     }
     else
     {

@@ -351,7 +351,7 @@ def _xyz(seg):
     y3d = [h.y3d(i, sec=sec) for i in xrange(n3d)]
     z3d = [h.z3d(i, sec=sec) for i in xrange(n3d)]
     arc3d = [h.arc3d(i, sec=sec) for i in xrange(n3d)]
-    return numpy.interp([seg.x * sec.L], arc3d, x3d)[0], numpy.interp([seg.x], arc3d, y3d)[0], numpy.interp([seg.x], arc3d, z3d)[0]
+    return numpy.interp([seg.x * sec.L], arc3d, x3d)[0], numpy.interp([seg.x * sec.L], arc3d, y3d)[0], numpy.interp([seg.x * sec.L], arc3d, z3d)[0]
 
 
 

@@ -68,8 +68,12 @@ class Rate(GeneralizedReaction):
                 ecs_region = self._species()._region
         #Is the species passed to the constructor defined on the ECS
         if not ecs_region:
-            if self._species()._extracellular_instances:
-                ecs_region = self._species()._extracellular_instances[0]._region
+            if isinstance(self._species(),species.SpeciesOnRegion):
+                sp = self._species()._species()
+            else:
+                sp = self._species()
+            if sp._extracellular_instances:
+                ecs_region = sp._extracellular_instances[0]._region
         
 
         if ecs_region:
