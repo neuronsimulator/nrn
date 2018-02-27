@@ -323,6 +323,8 @@ void BBSDirect::take(const char* key) { // blocking
 		if (look_take(key)) {
 			wait_time_ += time() - st;
 			return;
+		} else if (!master_works_) {
+			BBSDirectServer::handle_block();
 		} else if ((id = look_take_todo()) != 0) {
 			wait_time_ += time() - st;
 			execute(id);
