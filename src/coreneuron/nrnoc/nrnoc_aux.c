@@ -40,7 +40,7 @@ int v_structure_change;
 int diam_changed;
 #define MAXERRCOUNT 5
 int hoc_errno_count;
-const char* bbcore_write_version = "1.0";
+const char* bbcore_write_version = "1.1";
 
 char* pnt_name(Point_process* pnt) {
     return memb_func[pnt->_type].sym;

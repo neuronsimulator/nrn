@@ -31,19 +31,21 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <string>
 #include "coreneuron/nrnoc/multicore.h"
-#include "coreneuron/nrniv/nrn_datareader.h"
+#include "coreneuron/nrniv/nrn_filehandler.h"
+#include "coreneuron/utils/sdprintf.h"
 
 static int ngroup_w;
 static int* gidgroups_w;
 static int* imult_w;
 static const char* path_w;
-static data_reader* file_reader_w;
+static const char* restore_path_w;
+static FileHandler* file_reader_w;
 static bool byte_swap_w;
 
-static void read_phase1(data_reader& F, int imult, NrnThread& nt);
-static void read_phase2(data_reader& F, int imult, NrnThread& nt);
-static void read_phase3(data_reader& F, int imult, NrnThread& nt);
-static void read_phasegap(data_reader& F, int imult, NrnThread& nt);
+static void read_phase1(FileHandler& F, int imult, NrnThread& nt);
+static void read_phase2(FileHandler& F, int imult, NrnThread& nt);
+static void read_phase3(FileHandler& F, int imult, NrnThread& nt);
+static void read_phasegap(FileHandler& F, int imult, NrnThread& nt);
 static void setup_ThreadData(NrnThread& nt);
 
 // Functions to load and clean data;
@@ -84,25 +86,25 @@ namespace coreneuron {
 
     /// Reading phase selector.
     template <phase P>
-    inline void read_phase_aux(data_reader& F, int imult, NrnThread& nt);
+    inline void read_phase_aux(FileHandler& F, int imult, NrnThread& nt);
 
     template <>
-    inline void read_phase_aux<one>(data_reader& F, int imult, NrnThread& nt) {
+    inline void read_phase_aux<one>(FileHandler& F, int imult, NrnThread& nt) {
         read_phase1(F, imult, nt);
     }
 
     template <>
-    inline void read_phase_aux<two>(data_reader& F, int imult, NrnThread& nt) {
+    inline void read_phase_aux<two>(FileHandler& F, int imult, NrnThread& nt) {
         read_phase2(F, imult, nt);
     }
 
     template <>
-    inline void read_phase_aux<three>(data_reader& F, int imult, NrnThread& nt) {
+    inline void read_phase_aux<three>(FileHandler& F, int imult, NrnThread& nt) {
         read_phase3(F, imult, nt);
     }
 
     template <>
-    inline void read_phase_aux<gap>(data_reader& F, int imult, NrnThread& nt) {
+    inline void read_phase_aux<gap>(FileHandler& F, int imult, NrnThread& nt) {
         read_phasegap(F, imult, nt);
     }
 
@@ -111,11 +113,23 @@ namespace coreneuron {
     inline void* phase_wrapper_w(NrnThread* nt) {
         int i = nt->id;
         char fnamebuf[1000];
+        char check_fnamebuf[1000] = "";
         if (i < ngroup_w) {
+            const char* data_dir = path_w;
+            // directory to read could be different for phase 2 if we are restoring
+            // all other phases still read from dataset directory because the data
+            // is constant
+            if (P == 2) {
+                data_dir = restore_path_w;
+            }
+
             sd_ptr fname = sdprintf(fnamebuf, sizeof(fnamebuf),
                                     std::string("%s/%d_" + getPhaseName<P>() + ".dat").c_str(),
-                                    path_w, gidgroups_w[i]);
+                                    data_dir, gidgroups_w[i]);
+
+            // if no file failed to open or not opened at all
             file_reader_w[i].open(fname, byte_swap_w);
+
             read_phase_aux<P>(file_reader_w[i], imult_w[i], *nt);
             file_reader_w[i].close();
             if (P == 2) {

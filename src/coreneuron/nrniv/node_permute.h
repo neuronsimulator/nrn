@@ -14,4 +14,6 @@ void permute_data(double* vec, int n, int* permute);
 void permute_ml(Memb_list* ml, int type, NrnThread& nt);
 int nrn_index_permute(int, int type, Memb_list* ml);
 
+int* inverse_permute(int* p, int n);
+
 #endif

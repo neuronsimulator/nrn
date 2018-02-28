@@ -35,6 +35,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 class PlayRecord;
 
 #define VecPlayContinuousType 4
+#define PlayRecordEventType 21
 
 // used by PlayRecord subclasses that utilize discrete events
 class PlayRecordEvent : public DiscreteEvent {
@@ -47,6 +48,9 @@ class PlayRecordEvent : public DiscreteEvent {
     PlayRecord* plr_;
     static unsigned long playrecord_send_;
     static unsigned long playrecord_deliver_;
+    virtual int type() {
+        return PlayRecordEventType;
+    }
 };
 
 // common interface for Play and Record for all integration methods.

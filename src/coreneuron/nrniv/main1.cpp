@@ -39,6 +39,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnmpi/nrnmpi.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/nrniv/output_spikes.h"
+#include "coreneuron/nrniv/nrn_checkpoint.h"
 #include "coreneuron/utils/endianness.h"
 #include "coreneuron/utils/memory_utils.h"
 #include "coreneuron/nrniv/nrnoptarg.h"
@@ -49,6 +50,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/profiler_interface.h"
 #include "coreneuron/nrniv/partrans.h"
 #include "coreneuron/nrniv/multisend.h"
+#include "coreneuron/utils/file_utils.h"
 #include <string.h>
 
 #if 0
@@ -60,7 +62,6 @@ int nrn_feenableexcept() {
   return result;
 }
 #endif
-
 int main1(int argc, char* argv[], char** env);
 void call_prcellstate_for_prcellgid(int prcellgid, int compute_gpu, int is_init);
 void nrn_init_and_load_data(int argc,
@@ -95,7 +96,6 @@ void nrn_init_and_load_data(int argc,
     // set global variables
     // precedence is: set by user, globals.dat, 34.0
     celsius = nrnopt_get_dbl("--celsius");
-    t = celsius;  // later will read globals.dat and compare with this.
 
 #if _OPENACC
     if (!nrnopt_get_flag("--gpu") && nrnopt_get_int("--cell-permute") == 2) {
@@ -125,7 +125,8 @@ void nrn_init_and_load_data(int argc,
     report_mem_usage("After mk_mech");
 
     // set global variables for start time, timestep and temperature
-    t = nrnopt_get_dbl("--tstart");
+    std::string restore_path = nrnopt_get_str("--restore");
+    t = restore_time(restore_path.c_str());
 
     if (nrnopt_get_dbl("--dt") != -1000.) {  // command line arg highest precedence
         dt = nrnopt_get_dbl("--dt");
@@ -157,6 +158,11 @@ void nrn_init_and_load_data(int argc,
     use_interleave_permute = nrnopt_get_int("--cell-permute");
     cellorder_nwarp = nrnopt_get_int("--nwarp");
     use_solve_interleave = nrnopt_get_int("--cell-permute");
+#if LAYOUT==1
+    //permuting not allowed for AoS
+    use_interleave_permute = 0;
+    use_solve_interleave = 0;
+#endif
 
     // pass by flag so existing tests do not need a changed nrn_setup prototype.
     nrn_setup_multiple = nrnopt_get_int("--multiple");
@@ -187,6 +193,9 @@ void nrn_init_and_load_data(int argc,
 
     // show all configuration parameters for current run
     nrnopt_show();
+    if (nrnmpi_myid == 0) {
+        std::cout << " Start time (t) = " << t << std::endl << std::endl;
+    }
 
     // allocate buffer for mpi communication
     mk_spikevec_buffer(nrnopt_get_int("--spikebuf"));
@@ -235,15 +244,30 @@ int main1(int argc, char** argv, char** env) {
 
     // initializationa and loading functions moved to separate
     nrn_init_and_load_data(argc, argv);
-    // nrnopt_get... still available until call nrnopt_delete()
+    std::string checkpoint_path = nrnopt_get_str("--checkpoint");
+    if (strlen(checkpoint_path.c_str())) {
+        nrn_checkpoint_arg_exists = true;
+    }
+    std::string output_dir = nrnopt_get_str("--outpath");
 
+    if (nrnmpi_myid == 0) {
+        mkdir_p(output_dir.c_str());
+    }
+#if NRNMPI
+    nrnmpi_barrier();
+#endif
     bool compute_gpu = nrnopt_get_flag("-gpu");
+
 // clang-format off
     #pragma acc data copyin(celsius, secondorder) if (compute_gpu)
     // clang-format on
     {
         double v = nrnopt_get_dbl("--voltage");
-        nrn_finitialize(v != 1000., v);
+
+        // finitialize is not called if running in checkpoint-restore mode
+        if (!checkpoint_initialize()) {
+            nrn_finitialize(v != 1000., v);
+        }
 
         report_mem_usage("After nrn_finitialize");
 
@@ -259,10 +283,9 @@ int main1(int argc, char** argv, char** env) {
                     printf(
                         "\n WARNING! : Can't enable reports with model duplications feature! \n");
             } else {
-                r = new ReportGenerator(nrnopt_get_int("--report"), nrnopt_get_dbl("--tstart"),
-                                        nrnopt_get_dbl("--tstop"), nrnopt_get_dbl("--dt"),
-                                        nrnopt_get_dbl("--mindelay"), nrnopt_get_dbl("--dt_report"),
-                                        nrnopt_get_str("--outpath"));
+                r = new ReportGenerator(nrnopt_get_int("--report"), t, nrnopt_get_dbl("--tstop"),
+                                        nrnopt_get_dbl("--dt"), nrnopt_get_dbl("--mindelay"),
+                                        nrnopt_get_dbl("--dt_report"), nrnopt_get_str("--outpath"));
                 r->register_report();
             }
 #else
@@ -285,7 +308,6 @@ int main1(int argc, char** argv, char** env) {
 
         /// Solver execution
         BBS_netpar_solve(nrnopt_get_dbl("--tstop"));
-
         // Report global cell statistics
         report_cell_stats();
 
@@ -302,8 +324,10 @@ int main1(int argc, char** argv, char** env) {
 #endif
     }
 
+    write_checkpoint(nrn_threads, nrn_nthread, checkpoint_path.c_str(), nrn_need_byteswap);
+
     // write spike information to outpath
-    output_spikes(nrnopt_get_str("--outpath").c_str());
+    output_spikes(output_dir.c_str());
 
     // Cleaning the memory
     nrn_cleanup();

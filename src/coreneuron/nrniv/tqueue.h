@@ -198,7 +198,11 @@ class TQueue {
     }
     void move_least_nolock(double tnew);
     SPTREE* sptree_;
+
+  public:
     BinQ* binq_;
+
+  private:
     TQItem* least_;
     TQPair make_TQPair(TQItem* p) {
         return TQPair(p->t_, p);

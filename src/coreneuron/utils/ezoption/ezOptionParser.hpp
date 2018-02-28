@@ -1788,7 +1788,7 @@ int ezOptionParser::isSet(std::string & name) {
 };
 /* ################################################################### */
 OptionGroup * ezOptionParser::get(const char * name) {
-  if (optionGroupIds.count(name)) {
+  if (optionGroupIds.count(std::string(name))) {
     return groups[optionGroupIds[name]];
   }
   

@@ -27,28 +27,46 @@ THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <iostream>
-#include "coreneuron/nrniv/nrn_datareader.h"
+#include "coreneuron/nrniv/nrn_filehandler.h"
+#include "coreneuron/nrnconf.h"
+extern "C" void check_bbcore_write_version(const char*);
 
-extern "C" int check_bbcore_write_version(const char*);
-
-data_reader::data_reader(const char* filename, bool reorder) {
+FileHandler::FileHandler(const char* filename, bool reorder) {
     this->open(filename, reorder);
     checkpoint(0);
 }
 
-void data_reader::open(const char* filename, bool reorder) {
-    reorder_on_read = reorder;
-
+void FileHandler::open(const char* filename, bool reorder, std::ios::openmode mode) {
+    nrn_assert((mode & (std::ios::in | std::ios::out)));
+    reorder_bytes = reorder;
     close();
-    F.open(filename);
-
+    F.open(filename, mode | std::ios::binary);
+    nrn_assert(F.is_open());
+    current_mode = mode;
     char version[256];
-    F.getline(version, sizeof(version));
-    nrn_assert(!F.fail());
-    check_bbcore_write_version(version);
+    if (current_mode & std::ios::in) {
+        F.getline(version, sizeof(version));
+        nrn_assert(!F.fail());
+        check_bbcore_write_version(version);
+    }
+    if (current_mode & std::ios::out) {
+        F << bbcore_write_version << std::endl;
+    }
 }
 
-int data_reader::read_int() {
+bool FileHandler::eof() {
+    if (F.eof()) {
+        return true;
+    }
+    int a = F.get();
+    if (F.eof()) {
+        return true;
+    }
+    F.putback(a);
+    return false;
+}
+
+int FileHandler::read_int() {
     char line_buf[max_line_length];
 
     F.getline(line_buf, sizeof(line_buf));
@@ -61,7 +79,7 @@ int data_reader::read_int() {
     return i;
 }
 
-void data_reader::read_mapping_count(int* gid, int* nsec, int* nseg, int* nseclist) {
+void FileHandler::read_mapping_count(int* gid, int* nsec, int* nseg, int* nseclist) {
     char line_buf[max_line_length];
 
     F.getline(line_buf, sizeof(line_buf));
@@ -72,11 +90,11 @@ void data_reader::read_mapping_count(int* gid, int* nsec, int* nseg, int* nsecli
     nrn_assert(n_scan == 4);
 }
 
-void data_reader::read_mapping_cell_count(int* count) {
+void FileHandler::read_mapping_cell_count(int* count) {
     *count = read_int();
 }
 
-void data_reader::read_checkpoint_assert() {
+void FileHandler::read_checkpoint_assert() {
     char line_buf[max_line_length];
 
     F.getline(line_buf, sizeof(line_buf));
@@ -95,6 +113,6 @@ void data_reader::read_checkpoint_assert() {
     ++chkpnt;
 }
 
-void data_reader::close() {
+void FileHandler::close() {
     F.close();
 }

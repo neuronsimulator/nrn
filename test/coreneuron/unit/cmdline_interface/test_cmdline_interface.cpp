@@ -47,6 +47,9 @@ BOOST_AUTO_TEST_CASE(cmdline_interface) {
         "--datpath",
         "/this/is/the/data/path",
 
+        "--checkpoint",
+        "/this/is/the/chkp/path",
+
         "--dt",
         "0.02",
 
@@ -83,9 +86,6 @@ BOOST_AUTO_TEST_CASE(cmdline_interface) {
 
         "--cell-permute",
         "2",
-
-        "--tstart",
-        "0.001",
 
         "--voltage",
         "-32",
@@ -133,6 +133,8 @@ BOOST_AUTO_TEST_CASE(cmdline_interface) {
 
     BOOST_CHECK(!strcmp(nrnopt_get_str("--datpath").c_str(), "/this/is/the/data/path"));
 
+    BOOST_CHECK(!strcmp(nrnopt_get_str("--checkpoint").c_str(), "/this/is/the/chkp/path"));
+
     BOOST_CHECK(nrnopt_get_dbl("--dt") == 0.02);
 
     BOOST_CHECK(nrnopt_get_dbl("--tstop") == 0.1);
@@ -158,8 +160,6 @@ BOOST_AUTO_TEST_CASE(cmdline_interface) {
     BOOST_CHECK(nrnopt_get_int("--report") == 2);
 
     BOOST_CHECK(nrnopt_get_int("--cell-permute") == 2);
-
-    BOOST_CHECK(nrnopt_get_dbl("--tstart") == 0.001);
 
     BOOST_CHECK(nrnopt_get_dbl("--voltage") == -32);
 

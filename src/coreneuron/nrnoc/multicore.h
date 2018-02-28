@@ -137,6 +137,8 @@ extern void nrn_thread_table_check(void);
 
 extern void nrn_threads_free(void);
 
+extern int _nrn_skip_initmodel;
+
 #if defined(__cplusplus)
 }
 #endif

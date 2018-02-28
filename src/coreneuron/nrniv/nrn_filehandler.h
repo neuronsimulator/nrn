@@ -26,9 +26,10 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef nrn_datareader_h
-#define nrn_datareader_h
+#ifndef nrn_filehandler_h
+#define nrn_filehandler_h
 
+#include <iostream>
 #include <fstream>
 #include <vector>
 #include "coreneuron/utils/endianness.h"
@@ -52,11 +53,11 @@ THE POSSIBILITY OF SUCH DAMAGE.
 // @todo: remove this static buffer
 const int max_line_length = 1024;
 
-class data_reader {
-    std::ifstream F;       //!< File stream associated with reader.
-    bool reorder_on_read;  //!< True if we need to reorder for native endiannes.
-    int chkpnt;            //!< Current checkpoint number state.
-
+class FileHandler {
+    std::fstream F;                        //!< File stream associated with reader.
+    bool reorder_bytes;                    //!< True if we need to reorder for native endiannes.
+    std::ios_base::openmode current_mode;  //!< File open mode (not stored in fstream)
+    int chkpnt;                            //!< Current checkpoint number state.
     /** Read a checkpoint line, bump our chkpnt counter, and assert equality.
      *
      * Checkpoint information is represented by a sequence "checkpt %d\n"
@@ -65,23 +66,26 @@ class data_reader {
      */
     void read_checkpoint_assert();
 
-    // private copy constructor, assignment: data_reader is not copyable.
-    data_reader(const data_reader&);
-    data_reader& operator=(const data_reader&);
+    // private copy constructor, assignment: FileHandler is not copyable.
+    FileHandler(const FileHandler&);
+    FileHandler& operator=(const FileHandler&);
 
   public:
-    data_reader() : reorder_on_read(false), chkpnt(0) {
+    FileHandler() : reorder_bytes(false), chkpnt(0) {
     }
 
-    explicit data_reader(const char* filename, bool reorder = false);
+    explicit FileHandler(const char* filename, bool reorder = false);
 
     /** Preserving chkpnt state, move to a new file. */
-    void open(const char* filename, bool reorder);
+    void open(const char* filename, bool reorder, std::ios::openmode mode = std::ios::in);
 
     /** Is the file not open */
     bool fail() const {
         return F.fail();
     }
+
+    /** nothing more to read */
+    bool eof();
 
     /** Query chkpnt state. */
     int checkpoint() const {
@@ -174,7 +178,7 @@ class data_reader {
                 break;
             case read:
                 F.read((char*)p, count * sizeof(T));
-                if (reorder_on_read)
+                if (reorder_bytes)
                     endian::swap_endian_range(p, p + count);
                 break;
         }
@@ -199,6 +203,70 @@ class data_reader {
 
     /** Close currently open file. */
     void close();
+
+    /** Write an 1D array **/
+    template <typename T>
+    void write_array(T* p, size_t nb_elements) {
+        nrn_assert(F.is_open());
+        nrn_assert(current_mode & std::ios::out);
+        write_checkpoint();
+        if (reorder_bytes) {
+            endian::swap_endian_range(p, p + nb_elements);
+            F.write((const char*)p, nb_elements * (sizeof(T)));
+            endian::swap_endian_range(p, p + nb_elements);
+        } else {
+            F.write((const char*)p, nb_elements * (sizeof(T)));
+        }
+        nrn_assert(!F.fail());
+    }
+
+    /** Write a padded array. nb_elements is number of elements to write per line,
+     * line_width is full size of a line in nb elements**/
+    template <typename T>
+    void write_array(T* p,
+                     size_t nb_elements,
+                     size_t line_width,
+                     size_t nb_lines,
+                     bool to_transpose = false) {
+        nrn_assert(F.is_open());
+        nrn_assert(current_mode & std::ios::out);
+        write_checkpoint();
+        T* temp_cpy = new T[nb_elements * nb_lines];
+
+        if (to_transpose) {
+            for (size_t i = 0; i < nb_lines; i++) {
+                for (size_t j = 0; j < nb_elements; j++) {
+                    temp_cpy[i + j * nb_lines] = p[i * line_width + j];
+                }
+            }
+        } else {
+            memcpy(temp_cpy, p, nb_elements * sizeof(T) * nb_lines);
+        }
+        if (reorder_bytes) {
+            endian::swap_endian_range(temp_cpy, temp_cpy + nb_elements * nb_lines);
+        }
+        // AoS never use padding, SoA is translated above, so one write
+        // operation is enought in both cases
+        F.write((const char*)temp_cpy, nb_elements * sizeof(T) * nb_lines);
+        nrn_assert(!F.fail());
+        delete[] temp_cpy;
+    }
+
+    template <typename T>
+    FileHandler& operator<<(const T& scalar) {
+        nrn_assert(F.is_open());
+        nrn_assert(current_mode & std::ios::out);
+        F << scalar;
+        nrn_assert(!F.fail());
+        return *this;
+    }
+
+  private:
+    /* write_checkpoint is callable only for our internal uses, making it accesible to user, makes
+     * file format unpredictable */
+    void write_checkpoint() {
+        F << "chkpnt " << chkpnt++ << std::endl;
+    }
 };
 
-#endif  // ifndef nrn_datareader_h
+#endif  // ifndef nrn_filehandler_h
