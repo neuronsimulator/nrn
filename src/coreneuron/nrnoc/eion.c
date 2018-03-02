@@ -325,6 +325,12 @@ void nrn_init_ion(NrnThread* nt, Memb_list* ml, int type) {
     double* pd;
     Datum* ppd;
     (void)nt; /* unused */
+
+    // skip initialization if restoring from checkpoint
+    if (_nrn_skip_initmodel == 1) {
+        return;
+    }
+
 /*printf("ion_init %s\n", memb_func[type].sym->name);*/
 #if LAYOUT == 1 /*AoS*/
     for (_iml = 0; _iml < _cntml_actual; ++_iml) {
