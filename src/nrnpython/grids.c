@@ -93,11 +93,13 @@ Grid_node *make_Grid(PyHocObject* my_states, int my_num_states_x,
 		new_Grid->get_alpha = &get_alpha_array;	
 
 	}
+#if NRNMPI
     if(nrnmpi_use)
     {
         new_Grid->proc_offsets = (int*)malloc(nrnmpi_numprocs_world*sizeof(int));
         new_Grid->proc_num_currents = (int*)malloc(nrnmpi_numprocs_world*sizeof(int));
     }
+#endif
     new_Grid->num_all_currents = 0;
     new_Grid->current_dest = NULL;
     new_Grid->all_currents = NULL;
@@ -257,16 +259,11 @@ void set_grid_currents(int grid_list_index, int index_in_list, PyObject* grid_in
         printf("no problems\n");
     }
     PyErr_Clear(); */
-    if(!nrnmpi_use)
-    {
-        free(g->all_currents);
-        g->all_currents = (double*)malloc(sizeof(double) * g->num_currents);
-        g->num_all_currents = g->num_currents;
-    }
-    else
+
+#if NRNMPI
+    if(nrnmpi_use)
     {
         /*Gather an array of the number of currents for each process*/
-#if NRNMPI
         g->proc_num_currents[nrnmpi_myid_world] = n;
         MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, g->proc_num_currents, 1, MPI_INT, nrnmpi_world_comm);
         
@@ -287,8 +284,18 @@ void set_grid_currents(int grid_list_index, int index_in_list, PyObject* grid_in
             dests[i] = g->current_list[i].destination;
         }
         MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, g->current_dest, g->proc_num_currents, g->proc_offsets, MPI_LONG, nrnmpi_world_comm);
-#endif
     }
+    else
+    {
+        free(g->all_currents);
+        g->all_currents = (double*)malloc(sizeof(double) * g->num_currents);
+        g->num_all_currents = g->num_currents;
+    }
+#else
+    free(g->all_currents);
+    g->all_currents = (double*)malloc(sizeof(double) * g->num_currents);
+    g->num_all_currents = g->num_currents;
+#endif
 }
 
 // Free a single Grid_node

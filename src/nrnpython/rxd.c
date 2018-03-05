@@ -162,9 +162,7 @@ void set_setup(const fptr setup_fn) {
 
 void set_initialize(const fptr initialize_fn) {
 	_initialize = initialize_fn;
-
-	/*Setup threaded reactions*/
-    set_num_threads_ecs(NUM_THREADS);
+    set_num_threads(NUM_THREADS);
 }
 
 void set_setup_matrices(fptr setup_matrices) {
@@ -224,6 +222,7 @@ void nrn_tree_solve(double* a, double* b, double* c, double* dbase, double* rhs,
 
 
 int rxd_nonvint_block(int method, int size, double* p1, double* p2, int thread_id) {
+    //fprintf(stderr,"rxd_nonvint_block method %i size %i p1 %p p2 %p tid %i\n",method,size,p1,p2,thread_id);
     switch (method) {
         case 0:
             _setup();
@@ -518,16 +517,16 @@ void setup_solver(double* my_states, PyHocObject* my_t_ptr, PyHocObject* my_dt_p
     num_states = my_num_states;
     t_ptr = my_t_ptr -> u.px_;
     dt_ptr = my_dt_ptr -> u.px_;
-    start_threads();
+    set_num_threads(NUM_THREADS);
 }
 
-void start_threads()
+void start_threads(const int n)
 {
     int i;
     if(Threads == NULL)
     {
         AllTasks = (TaskQueue*)calloc(1,sizeof(TaskQueue));
-        Threads = (pthread_t*)malloc(sizeof(pthread_t)*(NUM_THREADS-1));
+        Threads = (pthread_t*)malloc(sizeof(pthread_t)*(n-1));
         AllTasks->task_mutex = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t));
         AllTasks->waiting_mutex = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t));
         AllTasks->task_cond = (pthread_cond_t*)malloc(sizeof(pthread_cond_t));
@@ -537,7 +536,7 @@ void start_threads()
         pthread_mutex_init(AllTasks->waiting_mutex, NULL);
         pthread_cond_init(AllTasks->waiting_cond, NULL);
         AllTasks->length = 0;
-        for(i = 0; i < NUM_THREADS-1; i++)
+        for(i = 0; i < n-1; i++)
             pthread_create(&Threads[i], NULL, TaskQueue_exe_tasks, AllTasks);
     }
 
@@ -620,37 +619,44 @@ void* TaskQueue_exe_tasks(void* dat)
 }
 
 
-void set_num_threads(int n)
+void set_num_threads(const int n)
 {
     int k, old_num = NUM_THREADS;
-	set_num_threads_ecs(n);
-    NUM_THREADS = n;
     if(Threads == NULL)
     {
-        return start_threads();
-    }
-    if(n == old_num)
-        return;
-    if(n<old_num)
-    {
-        //Kill some threads
-        for(k=old_num-1; k>=n; k--)
-        {
-            TaskQueue_sync(AllTasks);
-            pthread_cancel(&Threads[k]);
-        } 
-        Threads = realloc(Threads,sizeof(pthread_t) * n);
+        start_threads(n);
     }
     else
     {
-        //Create some threads
-        Threads = realloc(Threads,sizeof(pthread_t) * n);
-        for (k = old_num+1; k < n-1; k++) 
+        if(n<old_num)
         {
-            pthread_create(&Threads[k], NULL, TaskQueue_exe_tasks, AllTasks);
+            //Kill some threads
+            for(k=old_num-1; k>=n; k--)
+            {
+                TaskQueue_sync(AllTasks);
+                pthread_cancel(Threads[k]);
+            } 
+            Threads = realloc(Threads,sizeof(pthread_t) * n);
+            assert(Threads);
+        }
+        else if(n>old_num)
+        {
+            //Create some threads
+            Threads = realloc(Threads,sizeof(pthread_t) * n);
+            assert(Threads);
+            if(Threads == NULL)
+
+            for (k = old_num-1; k < n-1; k++) 
+            {
+                pthread_create(&Threads[k], NULL, TaskQueue_exe_tasks, AllTasks);
+            }
         }
     }
+    set_num_threads_ecs(n);
+    NUM_THREADS = n;
+
 }
+
 void TaskQueue_sync(TaskQueue *q)
 {
     //Wait till the queue is empty
@@ -889,6 +895,7 @@ void _rhs_variable_step(const double t, const double* p1, double* p2)
 	/*reactions*/
     do_ics_reactions(t, states, ydot);
 }
+
 
 
 void solve_reaction(ICSReactions* react, double* states, double *ydot)

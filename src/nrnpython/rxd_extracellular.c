@@ -32,7 +32,7 @@ static int states_cvode_offset;
 /*Update the global array of reaction tasks when the number of reactions 
  *or threads change.
  *n - the old number of threads - use to free the old threaded_reactions_tasks*/
-static void ecs_refresh_reactions(int n)
+static void ecs_refresh_reactions(const int n)
 {
 	int k;
 	if(threaded_reactions_tasks != NULL)
@@ -43,11 +43,11 @@ static void ecs_refresh_reactions(int n)
 			SAFE_FREE(threaded_reactions_tasks[k].offset);
 		}
 	}
-	threaded_reactions_tasks = create_threaded_reactions();
+	threaded_reactions_tasks = create_threaded_reactions(n);
 }
 
 
-void set_num_threads_ecs(int n)
+void set_num_threads_ecs(const int n)
 {
     int i;
     Grid_node *grid;
@@ -184,7 +184,7 @@ void ecs_register_subregion_reaction_ecs(int list_idx, int num_species, int* spe
  * returns ReactGridData* which can be used as the global
  * 	threaded_reactions_tasks 
  */
-ReactGridData* create_threaded_reactions()
+ReactGridData* create_threaded_reactions(const int n)
 {
 	int i,k,load,react_count = 0,tasks_per_thread;
 	Grid_node* grid;
@@ -197,8 +197,8 @@ ReactGridData* create_threaded_reactions()
 		return NULL;
 
 	/*Divide the number of reactions between the threads*/
-	tasks_per_thread = (react_count + NUM_THREADS - 1) / NUM_THREADS;
-	ReactGridData* tasks = (ReactGridData*)calloc(sizeof(ReactGridData), NUM_THREADS);
+	tasks_per_thread = (react_count + NUM_THREADS - 1) / n;
+	ReactGridData* tasks = (ReactGridData*)calloc(sizeof(ReactGridData), n);
 	
 	tasks[0].onset = (ReactSet*)malloc(sizeof(ReactSet));
 	tasks[0].onset->reaction = ecs_reactions;

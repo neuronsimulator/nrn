@@ -103,7 +103,7 @@ typedef struct TaskQueue
     struct TaskList* last;
 } TaskQueue;
 
-void set_num_threads(int);
+void set_num_threads(const int);
 void _fadvance(void);
 void _fadvance_fixed_step_ecs(void);
 
@@ -114,7 +114,7 @@ int dg_adi_tort(Grid_node*);
 void dg_transfer_data(AdiLineData * const, double* const, int const, int const, int const);
 void run_threaded_dg_adi(const int, const int, Grid_node*, AdiLineData (*dg_adi_dir)(Grid_node*, double, int, int, double const *, double*), const int n);
 
-ReactGridData* create_threaded_reactions(void);
+ReactGridData* create_threaded_reactions(const int);
 void* do_reactions(void*);
 
 typedef void (*fptr)(void);
@@ -162,7 +162,7 @@ void _ecs_ode_reinit(double*);
 void do_currents(Grid_node*, double*, double);
 void TaskQueue_add_task(TaskQueue*, void* (*task)(void* args), void*, void*);
 void *TaskQueue_exe_tasks(void*);
-void start_threads();
+void start_threads(const int);
 void TaskQueue_sync(TaskQueue*);
 
 
