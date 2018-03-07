@@ -408,7 +408,11 @@ void do_currents(Grid_node* grid, double* output, double dt)
     m = grid->num_currents;
     c = grid->current_list;
     CurrentData* tasks = (CurrentData*)malloc(NUM_THREADS*sizeof(CurrentData));
+#if NRNMPI    
     val = grid->all_currents + (nrnmpi_use?grid->proc_offsets[nrnmpi_myid_world]:0);
+#else
+    val = grid->all_currents
+#endif
     int tasks_per_thread = (m + NUM_THREADS - 1)/NUM_THREADS;
 
     for(i = 0; i < NUM_THREADS; i++)
@@ -428,13 +432,12 @@ void do_currents(Grid_node* grid, double* output, double dt)
     /* wait for them to finish */
     TaskQueue_sync(AllTasks);
     free(tasks);
+#if NRNMPI
     if(nrnmpi_use)
     {
-#if NRNMPI
         MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, grid->all_currents, grid->proc_num_currents, grid->proc_offsets, MPI_DOUBLE, nrnmpi_world_comm);
         for(i = 0; i < n; i++)
             output[grid->current_dest[i]] += dt * grid->all_currents[i];
-#endif
     }
     else
     {
@@ -442,6 +445,10 @@ void do_currents(Grid_node* grid, double* output, double dt)
             output[grid->current_list[i].destination] += dt * grid->all_currents[i];
 
     }
+#else
+    for(i = 0; i < n; i++)
+        output[grid->current_list[i].destination] += dt * grid->all_currents[i];
+#endif
 }
 
 
