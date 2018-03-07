@@ -644,9 +644,8 @@ void set_num_threads(const int n)
             //Create some threads
             Threads = realloc(Threads,sizeof(pthread_t) * n);
             assert(Threads);
-            if(Threads == NULL)
-
-            for (k = old_num-1; k < n-1; k++) 
+            
+            for (k = old_num-1; k < n; k++) 
             {
                 pthread_create(&Threads[k], NULL, TaskQueue_exe_tasks, AllTasks);
             }
