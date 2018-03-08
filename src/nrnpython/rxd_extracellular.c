@@ -411,7 +411,7 @@ void do_currents(Grid_node* grid, double* output, double dt)
 #if NRNMPI    
     val = grid->all_currents + (nrnmpi_use?grid->proc_offsets[nrnmpi_myid_world]:0);
 #else
-    val = grid->all_currents
+    val = grid->all_currents;
 #endif
     int tasks_per_thread = (m + NUM_THREADS - 1)/NUM_THREADS;
 
