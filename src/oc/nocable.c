@@ -25,6 +25,7 @@ void mech_uninsert(void) {}
 void sec_access_push(void) {}
 void hoc_sec_internal_push(void) {}
 void* hoc_sec_internal_name2ptr(const char* s, int flag) { return NULL; }
+void* hoc_pysec_name2ptr(const char* s, int flag) { return NULL; }
 void sec_access_pop(void) {}
 void sec_access_temp(void) {}
 void rangepoint(void) {}

@@ -771,6 +771,16 @@ void* hoc_sec_internal_name2ptr(const char* s, int eflag) {
 	return vp;
 }
 
+void* hoc_pysec_name2ptr(const char* s, int eflag) {
+	/*
+	  syntax is _pysec.<name>  where <name> is the name of a python
+	  nrn.Section from (*nrnpy_pysec_name_p_)(sec) 
+	  
+	*/
+	Section* sec = nrnpy_pysecname2sec(s);
+	return (void*)sec;
+}
+
 /* in an object syntax a section may either be last or next to last
 in either case it is pushed when it is seen in hoc_object_component
 and section_object_seen is set.
@@ -1785,6 +1795,18 @@ const char* secname(Section* sec) /* name of section (for use in error messages)
 	return name;
 }
 
+const char* nrn_sec2pysecname(Section* sec) {
+  static char buf[256];
+  const char* name = secname(sec);
+  if (sec && sec->prop->dparam[PROP_PY_INDEX]._pvoid
+    && strncmp(name, "__nrnsec_0x", 11) != 0) {
+    sprintf(buf, "__pysec.%s", name);
+  }else{
+    strcpy(buf, name);
+  }
+  return buf;
+}
+
 void section_owner(void) {
 	Section* sec;
 	Object* ob;
@@ -1819,7 +1841,7 @@ char* hoc_section_pathname(Section* sec)
 			Sprintf(name, "%s%s", s->name, hoc_araystr(s, indx, hoc_objectdata));
 		}
 	}else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
-		sprintf(name, "__nrnsec_%p", sec);
+		strcpy(name, nrn_sec2pysecname(sec));
 	}else{
 		name[0] = '\0';
 	}
@@ -2231,8 +2253,13 @@ void sectionname(void) {
 
 void hoc_secname(void) {
 	static char* buf = (char*)0;
+	Section* sec = chk_access();
 	if (!buf) { buf = (char*)emalloc(256*sizeof(char)); }
-	strcpy(buf,secname(chk_access()));
+	if (ifarg(1) && chkarg(1, 0., 1.) == 1.) {
+		strcpy(buf, nrn_sec2pysecname(sec));
+	}else{
+		strcpy(buf, secname(sec));
+	}
 	hoc_ret();
 	hoc_pushstr(&buf);
 }

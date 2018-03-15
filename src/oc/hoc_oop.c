@@ -49,6 +49,13 @@ int hoc_print_first_instance = 1;
 static Symbol* hoc_obj_;
 
 void hoc_install_hoc_obj(void) {
+	/* see void hoc_objvardecl(void) */
+	Object** pobj;
+	Symbol* s = hoc_install("_pysec", OBJECTVAR, 0.0, &hoc_top_level_symlist);
+	hoc_install_object_data_index(s);
+	hoc_objectdata[s->u.oboff].pobj = pobj = (Object**)emalloc(sizeof(Object*));
+	pobj[0] = (Object*)0;
+
 	hoc_oc("objref hoc_obj_[2]\n");
 	hoc_obj_ = hoc_lookup("hoc_obj_");
 }

@@ -102,6 +102,7 @@ static char* pysec_name(Section* sec) {
   if (sec->prop) {
     NPySecObj* ps = (NPySecObj*)sec->prop->dparam[PROP_PY_INDEX]._pvoid;
     buf[0] = '\0';
+#if 0 // full name in ps->name because of nrnpy_pysecname2sec_remove
     if (ps->cell_) {
       PyLockGIL lock;
 
@@ -111,6 +112,7 @@ static char* pysec_name(Section* sec) {
       char* cp = str.c_str();
       sprintf(buf, "%s.", cp);
     }
+#endif
     char* cp = buf + strlen(buf);
     if (ps->name_) {
       sprintf(cp, "%s", ps->name_);
@@ -142,11 +144,12 @@ static int pysec_cell_equals(Section* sec, Object* obj) {
 static void NPySecObj_dealloc(NPySecObj* self) {
   // printf("NPySecObj_dealloc %p %s\n", self, secname(self->sec_));
   if (self->sec_) {
+    if (self->name_) {
+      nrnpy_pysecname2sec_remove(self->sec_);
+      delete[] self->name_;
+    }
     if (self->sec_->prop) {
       self->sec_->prop->dparam[PROP_PY_INDEX]._pvoid = 0;
-    }
-    if (self->name_) {
-      delete[] self->name_;
     }
     if (self->sec_->prop && !self->sec_->prop->dparam[0].sym) {
       sec_free(self->sec_->prop->dparam[8].itm);
@@ -210,10 +213,27 @@ static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
     }
     // note that we are NOT referencing the cell
     if (name) {
-      self->name_ = new char[strlen(name) + 1];
-      strcpy(self->name_, name);
+      size_t n = strlen(name) + 1; // include terminator
+#if 1
+      if (self->cell_) {
+        // include cellname in name so nrnpy_pysecname2sec_remove can determine
+
+        PyObject* cell = PyObject_Str(self->cell_);
+        Py2NRNString str(cell);
+        Py_DECREF(cell);
+        char* cp = str.c_str();
+        n += strlen(cp) + 1; // include dot
+        self->name_ = new char[n];
+        sprintf(self->name_, "%s.%s", cp, name);
+      }else
+#endif
+      {
+        self->name_ = new char[n];
+        strcpy(self->name_, name);
+      }
     }
     self->sec_ = nrnpy_newsection(self);
+    nrnpy_pysecname2sec_add(self->sec_);
   }
   return 0;
 }
@@ -497,6 +517,13 @@ static PyObject* hoc_internal_name(NPySecObj* self) {
   sprintf(buf, "__nrnsec_%p", self->sec_);
   result = PyString_FromString(buf);
   return result;
+}
+
+static PyObject* is_pysec(NPySecObj* self) {
+  if (self->sec_->prop && self->sec_->prop->dparam[PROP_PY_INDEX]._pvoid) {
+      Py_RETURN_TRUE;
+  }
+  Py_RETURN_FALSE;
 }
 
 NPySecObj* newpysechelp(Section* sec) {
@@ -1587,6 +1614,8 @@ static PyMethodDef NPySecObj_methods[] = {
      "Returns the arc position of the ith 3D point."},
     {"diam3d", (PyCFunction)NPySecObj_diam3d, METH_VARARGS,
      "Returns the diam of the ith 3D point."},
+    {"is_pysec", (PyCFunction)is_pysec, METH_NOARGS,
+     "Returns True if Section created from Python, False if created from HOC."},
     {NULL}};
 
 static PyMethodDef NPySegObj_methods[] = {

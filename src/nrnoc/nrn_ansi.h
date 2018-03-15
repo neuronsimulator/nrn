@@ -98,6 +98,7 @@ extern void v_setup_vectors(void);
 extern void section_ref(Section*);
 extern void section_unref(Section*);  
 extern const char* secname(Section*);
+extern const char* nrn_sec2pysecname(Section*);
 extern void nrn_pushsec(Section*);
 extern void nrn_popsec(void); 
 extern Section* chk_access(void);
@@ -127,6 +128,10 @@ extern int nrn_use_fast_imem;
 extern void nrn_fast_imem_alloc();
 extern void nrn_calc_fast_imem(NrnThread*);
 extern void nrn_seg_or_x_arg(int iarg, Section** psec, double* px);
+extern Section* nrnpy_pysecname2sec(const char*);
+extern const char* nrnpy_sec2pysecname(Section* sec);
+extern void nrnpy_pysecname2sec_add(Section* sec);
+extern void nrnpy_pysecname2sec_remove(Section* sec);
 
 extern void nrn_pt3dclear(Section*);
 extern void nrn_length_change(Section*, double);

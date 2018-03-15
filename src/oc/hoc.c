@@ -274,6 +274,27 @@ static int lexstate = 0;
    at eos to see if true.*/
 static int eos;
 
+static char* optarray(char* buf) {
+  int c;
+  if ((c = Getc(fin)) == '[') {
+    char* s = buf + strlen(buf);
+    *s++ = c;
+    while (isdigit(c = Getc(fin)) && (s - buf) < 200) {
+      *s++ = c;
+    }
+    if (c == ']') {
+      *s++ = c;
+      *s = '\0';
+    }else{
+      *s = '\0';
+      acterror(buf, " not literal name[int]");
+    }
+  }else{
+    unGetc(c, fin);
+  }
+  return buf;
+}
+
 int yylex(void)			/* hoc6 */
 {
    restart:	/* when no token in between comments */
@@ -355,6 +376,38 @@ int yylex(void)			/* hoc6 */
 		if (strncmp(sbuf, "__nrnsec_0x", 11) == 0) {
 			yylval.ptr = hoc_sec_internal_name2ptr(sbuf, 1);
 			return INTERNALSECTIONNAME;
+		}
+		/* _pysec.name[int] or _pysec.name[int].name[int] where
+		  [int] is optional must resolve to Section at parse time.
+		  void* nrn_parsing_pysec_ is 1 to signal the beginning
+		  of parsing and as a sub-dictionary pointer in case the
+		  first level __psec.name[int] is the name of a cell.
+		  On error or success in parse.y, nrn_parsing_pysec_ is
+		  set back to NULL.
+		*/
+		if (strcmp(sbuf, "_pysec") == 0) {
+			if (c != '.') {
+hoc_acterror("Must be of form _pysec.secname where secname is the literal result of nrn.Section.name() .", NULL);
+			}
+			yylval.ptr = NULL;
+			nrn_parsing_pysec_ = (void*)1;
+			return PYSEC;
+		}
+		if (nrn_parsing_pysec_) {
+			yylval.ptr = hoc_pysec_name2ptr(optarray(sbuf), 1);
+			if (nrn_parsing_pysec_ > (void*)1) { /* there will be a second part */
+				c = Getc(fin); unGetc(c, fin);
+				if (c != '.') { /* so there must be a . */
+					nrn_parsing_pysec_ = NULL;
+hoc_acterror("Must be of form _pysec.cellname.secname where cellname.secname is the literal result of nrn.Section.name() .", NULL);
+				}
+			}
+			if (yylval.ptr == NULL) {
+				return PYSECOBJ;
+			}else{
+				nrn_parsing_pysec_ = NULL;
+				return PYSECNAME;
+			}
 		}
 		if ((s=lookup(sbuf)) == 0)
 			s = install(sbuf, UNDEF, 0.0, &symlist);

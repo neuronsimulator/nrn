@@ -3,6 +3,10 @@
 
 #include "hoc.h"
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 /* do not know why this is not in parse.h */
 extern int yyparse(void);
 extern int yylex(void);
@@ -39,5 +43,8 @@ extern void hoc_help(void);
 extern char* hoc_strgets(char*, int);
 extern int hoc_strgets_need(void);
 
+#if defined(__cplusplus)
+}
+#endif
 
 #endif

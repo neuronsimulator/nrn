@@ -33,6 +33,7 @@ public:
 		Symbol*, int array_index=0, int node_index=0);
 	SymDirectory(Object*);
 	SymDirectory(int type);
+	SymDirectory();
 	virtual ~SymDirectory();
 
 	virtual const String& path() const;
@@ -49,6 +50,8 @@ public:
 	int array_index(int index) const;
 	Object* object() const; // the parent_object
 	Object* obj(int index); // non-NULL if SymbolItem is an object
+	virtual bool is_pysec(int index) const;
+	SymDirectory* newsymdir(int index);
 private:
 	SymDirectoryImpl* impl_;
 };
