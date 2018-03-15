@@ -32,7 +32,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #if defined(__cplusplus)
 extern "C" {
 #endif
-
 #include "coreneuron/nrnoc/nrnoc_ml.h"
 
 typedef Datum* (*Pfrpdat)(void);
@@ -43,6 +42,9 @@ typedef void (*mod_alloc_t)(double*, Datum*, int);
 typedef void (*mod_f_t)(struct NrnThread*, Memb_list*, int);
 typedef void (*pnt_receive_t)(Point_process*, int, double);
 
+/*
+ * Memb_func structure contains all related informations of a mechanism
+ */
 typedef struct Memb_func {
     mod_alloc_t alloc;
     mod_f_t current;

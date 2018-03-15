@@ -34,6 +34,7 @@ extern "C" void check_bbcore_write_version(const char*);
 FileHandler::FileHandler(const char* filename, bool reorder) {
     this->open(filename, reorder);
     checkpoint(0);
+    stored_chkpnt = 0;
 }
 
 void FileHandler::open(const char* filename, bool reorder, std::ios::openmode mode) {
@@ -50,7 +51,7 @@ void FileHandler::open(const char* filename, bool reorder, std::ios::openmode mo
         check_bbcore_write_version(version);
     }
     if (current_mode & std::ios::out) {
-        F << bbcore_write_version << std::endl;
+        F << bbcore_write_version << "\n";
     }
 }
 

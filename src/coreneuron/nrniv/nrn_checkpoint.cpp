@@ -77,9 +77,9 @@ class FileHandlerWrap {
     template <typename T>
     void write_array(T* p, size_t nb_elements) {
         // G first before chkpnt is incremented
-        G << "chkpnt " << F.checkpoint() << std::endl;
+        G << "chkpnt " << F.checkpoint() << "\n";
         for (size_t i = 0; i < nb_elements; ++i) {
-            G << std::setprecision(8) << p[i] << std::endl;
+            G << std::setprecision(8) << p[i] << "\n";
         }
         F.write_array(p, nb_elements);  // chkpnt incremented
     }
@@ -176,6 +176,9 @@ void write_checkpoint(NrnThread* nt, int nb_threads, const char* dir, bool swap_
     if (nrnmpi_myid == 0) {
         write_time(output_dir);
     }
+#if NRNMPI
+    nrnmpi_barrier();
+#endif
 }
 
 static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
@@ -595,7 +598,7 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
 static void write_time(const char* output_dir) {
     std::ostringstream filename;
     FileHandler f;
-    filename << output_dir << "/" << "time.dat";
+    filename << output_dir << "/time.dat";
     f.open(filename.str().c_str(), swap_bytes, std::ios::out);
     f.write_array(&t, 1);
     f.close();
@@ -607,7 +610,7 @@ double restore_time(const char* restore_dir) {
     if (strlen(restore_dir)) {
         std::ostringstream filename;
         FileHandler f;
-        filename << restore_dir << "/" << "time.dat";
+        filename << restore_dir << "/time.dat";
         f.open(filename.str().c_str(), swap_bytes, std::ios::in);
         f.read_array(&rtime, 1);
         f.close();
@@ -617,8 +620,13 @@ double restore_time(const char* restore_dir) {
 
 static void write_tqueue(TQItem* q, NrnThread& nt, FileHandlerWrap& fh) {
     DiscreteEvent* d = (DiscreteEvent*)q->data_;
+
     // printf("  p %.20g %d\n", q->t_, d->type());
     // d->pr("", q->t_, net_cvode_instance);
+
+    if (!d->require_checkpoint()) {
+        return;
+    }
 
     fh << d->type() << "\n";
     fh.write_array(&q->t_, 1);

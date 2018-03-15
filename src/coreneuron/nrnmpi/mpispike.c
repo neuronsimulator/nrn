@@ -107,8 +107,14 @@ static void make_spikebuf_type() {
 }
 #endif
 
+void wait_before_spike_exchange() {
+    MPI_Barrier(nrnmpi_comm);
+}
+
 int nrnmpi_spike_exchange() {
     int i, n;
+    wait_before_spike_exchange();
+
 #if nrn_spikebuf_size > 0
     int n1, novfl;
 #endif

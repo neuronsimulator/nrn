@@ -81,17 +81,14 @@ BOOST_AUTO_TEST_CASE(cmdline_interface) {
         "--pattern",
         "filespike.dat",
 
-        "--report",
-        "2",
+        "--report-conf",
+        "report.conf",
 
         "--cell-permute",
         "2",
 
         "--voltage",
         "-32",
-
-        "--dt_report",
-        "0.25",
 
         "--nwarp",
         "8",
@@ -157,13 +154,11 @@ BOOST_AUTO_TEST_CASE(cmdline_interface) {
 
     BOOST_CHECK(!strcmp(nrnopt_get_str("--pattern").c_str(), "filespike.dat"));
 
-    BOOST_CHECK(nrnopt_get_int("--report") == 2);
+    BOOST_CHECK(!strcmp(nrnopt_get_str("--report-conf").c_str(), "report.conf"));
 
     BOOST_CHECK(nrnopt_get_int("--cell-permute") == 2);
 
     BOOST_CHECK(nrnopt_get_dbl("--voltage") == -32);
-
-    BOOST_CHECK(nrnopt_get_dbl("--dt_report") == 0.25);
 
     BOOST_CHECK(nrnopt_get_int("--nwarp") == 8);
 

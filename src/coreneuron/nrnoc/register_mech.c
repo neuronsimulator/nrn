@@ -33,6 +33,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnoc/membdef.h"
 #include "coreneuron/nrnoc/nrnoc_decl.h"
 #include "coreneuron/nrnmpi/nrnmpi.h"
+#include "coreneuron/nrnoc/mech_mapping.hpp"
 
 int secondorder = 0;
 double t, dt, celsius;
@@ -223,6 +224,7 @@ int register_mech(const char** m,
     memb_list[type].nodecount = 0;
     memb_list[type]._thread = (ThreadDatum*)0;
 #endif
+    register_all_variables_offsets(type, &m[2]);
     return type;
 }
 

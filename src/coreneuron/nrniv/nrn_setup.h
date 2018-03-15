@@ -51,6 +51,7 @@ static void setup_ThreadData(NrnThread& nt);
 // Functions to load and clean data;
 extern void nrn_init_and_load_data(int argc,
                                    char** argv,
+                                   bool is_mapping_needed = false,
                                    bool nrnmpi_under_nrncontrol = true,
                                    bool run_setup_cleanup = true);
 extern void nrn_setup_cleanup();

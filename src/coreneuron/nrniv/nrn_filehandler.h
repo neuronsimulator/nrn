@@ -58,6 +58,7 @@ class FileHandler {
     bool reorder_bytes;                    //!< True if we need to reorder for native endiannes.
     std::ios_base::openmode current_mode;  //!< File open mode (not stored in fstream)
     int chkpnt;                            //!< Current checkpoint number state.
+    int stored_chkpnt;                     //!< last "remembered" checkpoint number state.
     /** Read a checkpoint line, bump our chkpnt counter, and assert equality.
      *
      * Checkpoint information is represented by a sequence "checkpt %d\n"
@@ -71,7 +72,7 @@ class FileHandler {
     FileHandler& operator=(const FileHandler&);
 
   public:
-    FileHandler() : reorder_bytes(false), chkpnt(0) {
+    FileHandler() : reorder_bytes(false), chkpnt(0), stored_chkpnt(0) {
     }
 
     explicit FileHandler(const char* filename, bool reorder = false);
@@ -95,6 +96,16 @@ class FileHandler {
     /** Explicitly override chkpnt state. */
     void checkpoint(int c) {
         chkpnt = c;
+    }
+
+    /** Record current chkpnt state. */
+    void record_checkpoint() {
+        stored_chkpnt = chkpnt;
+    }
+
+    /** Restored last recorded chkpnt state. */
+    void restore_checkpoint() {
+        chkpnt = stored_chkpnt;
     }
 
     /** Parse a single integer entry.
@@ -265,7 +276,7 @@ class FileHandler {
     /* write_checkpoint is callable only for our internal uses, making it accesible to user, makes
      * file format unpredictable */
     void write_checkpoint() {
-        F << "chkpnt " << chkpnt++ << std::endl;
+        F << "chkpnt " << chkpnt++ << "\n";
     }
 };
 

@@ -8,6 +8,10 @@
 #include <pat_api.h>
 #endif
 
+#ifdef TAU
+#include <TAU.h>
+#endif
+
 #if defined(_OPENACC)
 #include <openacc.h>
 
@@ -19,7 +23,7 @@ extern int nrnmpi_myid;
 
 void start_profile() {
     if (nrnmpi_myid == 0)
-        printf("\n ----- GPU PROFILING STARTED -----\n");
+        printf("\n ----- PROFILING STARTED -----\n");
 
 #ifdef CRAYPAT
     PAT_record(PAT_STATE_ON);
@@ -32,11 +36,15 @@ void start_profile() {
 #ifdef CUDA_PROFILING
     start_cuda_profile();
 #endif
+
+#ifdef TAU
+    TAU_ENABLE_INSTRUMENTATION();
+#endif
 }
 
 void stop_profile() {
     if (nrnmpi_myid == 0)
-        printf("\n ----- GPU PROFILING STOPPED -----\n");
+        printf("\n ----- PROFILING STOPPED -----\n");
 
 #ifdef CRAYPAT
     PAT_record(PAT_STATE_OFF);
@@ -49,5 +57,9 @@ void stop_profile() {
 
 #ifdef CUDA_PROFILING
     stop_cuda_profile();
+#endif
+
+#ifdef TAU
+    TAU_DISABLE_INSTRUMENTATION();
 #endif
 }

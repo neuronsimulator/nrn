@@ -1,6 +1,9 @@
 #ifndef node_permute_h
 #define node_permute_h
 
+struct NrnThread;
+struct Memb_list;
+
 // determine ml->_permute and permute the ml->nodeindices accordingly
 void permute_nodeindices(Memb_list* ml, int* permute);
 
