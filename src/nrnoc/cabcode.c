@@ -1800,7 +1800,7 @@ const char* nrn_sec2pysecname(Section* sec) {
   const char* name = secname(sec);
   if (sec && sec->prop->dparam[PROP_PY_INDEX]._pvoid
     && strncmp(name, "__nrnsec_0x", 11) != 0) {
-    sprintf(buf, "__pysec.%s", name);
+    sprintf(buf, "_pysec.%s", name);
   }else{
     strcpy(buf, name);
   }
@@ -2242,12 +2242,14 @@ const char* secaccessname(void) {
 }
 
 void sectionname(void) {
-	const char *buf;
 	char **cpp;
 	
-	buf = secname(chk_access());
 	cpp = hoc_pgargstr(1);
-	hoc_assign_str(cpp, buf);
+	if (ifarg(2) && chkarg(2, 0., 1.) == 0.) {
+		hoc_assign_str(cpp, secname(chk_access()));
+	}else{
+		hoc_assign_str(cpp, nrn_sec2pysecname(chk_access()));
+	}
 	hoc_retpushx(1.);
 }
 
@@ -2255,10 +2257,10 @@ void hoc_secname(void) {
 	static char* buf = (char*)0;
 	Section* sec = chk_access();
 	if (!buf) { buf = (char*)emalloc(256*sizeof(char)); }
-	if (ifarg(1) && chkarg(1, 0., 1.) == 1.) {
-		strcpy(buf, nrn_sec2pysecname(sec));
-	}else{
+	if (ifarg(1) && chkarg(1, 0., 1.) == 0.) {
 		strcpy(buf, secname(sec));
+	}else{
+		strcpy(buf, nrn_sec2pysecname(sec));
 	}
 	hoc_ret();
 	hoc_pushstr(&buf);
