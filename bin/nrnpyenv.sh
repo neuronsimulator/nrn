@@ -73,7 +73,7 @@ def upath(path):
   #return linux path
   if path == None:
     return ""
-  import posixpath
+  import posixpath, sys
   plist = path.split(os.pathsep)
   for i, p in enumerate(plist):
     p = os.path.splitdrive(p)
@@ -84,6 +84,9 @@ def upath(path):
     p = posixpath.normpath(p)
     plist[i] = p
   p = upathsep.join(plist)
+  # /c/... does not work in our bash shell. Convert to c:...
+  if 'win' in sys.platform and p[0] == '/':
+    p = p[1] + ':' + p[2:]
   return p
 
 #a copy of nrnpylib_linux() but with some os x specific modifications
