@@ -29,7 +29,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include "coreneuron/nrniv/nrn_filehandler.h"
 #include "coreneuron/nrnconf.h"
-extern "C" void check_bbcore_write_version(const char*);
 
 FileHandler::FileHandler(const char* filename, bool reorder) {
     this->open(filename, reorder);

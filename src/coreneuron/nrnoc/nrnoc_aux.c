@@ -30,12 +30,9 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
-
-extern void nrnmpi_finalize(void);
+#include "coreneuron/nrnmpi/nrnmpidec.h"
 
 int stoprun;
-int nrn_nthread;
-NrnThread* nrn_threads;
 int v_structure_change;
 int diam_changed;
 #define MAXERRCOUNT 5
@@ -156,7 +153,6 @@ double hoc_Exp(double x) {
  * abort in case of missmatch
  */
 void check_bbcore_write_version(const char* version) {
-    extern int nrnmpi_myid;
 
     if (strcmp(version, bbcore_write_version) != 0) {
         if (nrnmpi_myid == 0)

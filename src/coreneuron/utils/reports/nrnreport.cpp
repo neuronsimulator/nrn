@@ -26,6 +26,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "coreneuron/nrniv/netcon.h"
 #include "coreneuron/nrniv/nrn_assert.h"
 #include "coreneuron/nrniv/netcvode.h"
 #include "coreneuron/nrnoc/multicore.h"

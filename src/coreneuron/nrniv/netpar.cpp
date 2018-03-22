@@ -34,7 +34,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnmpi/nrnmpi.h"
 #include "coreneuron/nrnoc/nrnoc_decl.h"
-
+#include "coreneuron/nrnmpi/nrnmpidec.h"
 class PreSyn;
 class InputPreSyn;
 
@@ -49,8 +49,6 @@ static double t_exchange_;
 static double dt1_;  // 1/dt
 
 extern "C" {
-extern double t, dt;
-extern void nrn_fake_fire(int gid, double firetime, int fake_out);
 void nrn_spike_exchange_init();
 }
 
@@ -677,7 +675,7 @@ static void mk_localgid_rep() {
 // set the third arg to 1 and set the output cell thresholds very
 // high so that they do not themselves generate spikes.
 // Can only be called by thread 0 because of the ps->send.
-void nrn_fake_fire(int gid, double spiketime, int fake_out) {
+extern "C" void nrn_fake_fire(int gid, double spiketime, int fake_out) {
     std::map<int, InputPreSyn*>::iterator gid2in_it;
     gid2in_it = gid2in.find(gid);
     if (gid2in_it != gid2in.end()) {

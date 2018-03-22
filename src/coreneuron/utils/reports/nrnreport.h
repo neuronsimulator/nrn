@@ -36,13 +36,18 @@
 #ifndef _H_NRN_REPORT_
 #define _H_NRN_REPORT_
 
-#include "coreneuron/nrniv/netcon.h"
-#include "coreneuron/nrniv/nrn_assert.h"
 #include <string>
 #include <vector>
 #include <set>
 #define MAX_REPORT_NAME_LEN 256
 #define MAX_REPORT_PATH_LEN 512
+
+#if defined(__cplusplus)
+#define EXTERN_C extern "C"
+#else
+#define EXTERN_C
+#endif
+
 
 // name of the variable in mod file that is used to indicate which synapse
 // is enabled or disable for reporting
@@ -77,6 +82,6 @@ std::vector<ReportConfiguration> create_report_configurations(const char* filena
                                                               const char* output_dir);
 void setup_report_engine(double dt_report, double mindelay);
 void finalize_report();
-extern "C" void nrn_flush_reports(double t);
+EXTERN_C void nrn_flush_reports(double t);
 
 #endif  //_H_NRN_REPORT_

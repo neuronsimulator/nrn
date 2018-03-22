@@ -31,7 +31,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnoc/nrnpthread.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnmpi/nrnmpi.h"
-
+#include "coreneuron/nrnoc/nrnoc_decl.h"
 /*
 Now that threads have taken over the actual_v, v_node, etc, it might
 be a good time to regularize the method of freeing, allocating, and
@@ -71,13 +71,6 @@ the handling of v_structure_change as long as possible.
 int nrn_nthread = 0;
 NrnThread* nrn_threads = NULL;
 void (*nrn_mk_transfer_thread_data_)();
-
-extern int v_structure_change;
-extern int diam_changed;
-
-extern void nrn_threads_free();
-extern void nrn_old_thread_save();
-extern double nrn_timeus();
 
 static int nrn_thread_parallel_;
 static int table_check_cnt_;

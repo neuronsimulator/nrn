@@ -127,7 +127,6 @@ void add_nrn_fornetcons(int type, int indx) {
 }
 
 /* array is parallel to memb_func. All are 0 except 1 for ARTIFICIAL_CELL */
-short* nrn_is_artificial_;
 short* nrn_artcell_qindex_;
 
 void add_nrn_artcell(int type, int qi) {

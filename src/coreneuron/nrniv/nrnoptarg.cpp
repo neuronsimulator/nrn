@@ -368,26 +368,3 @@ static void graceful_exit(int err) {
 #endif
     exit(nrnmpi_myid == 0 ? err : 0);
 }
-
-#if defined(nrnoptargtest)
-// for testing, compile with: g++ -g -I../.. nrnoptarg.cpp
-
-int nrnmpi_myid;
-
-int main(int argc, const char* argv[]) {
-    nrnopt_parse(argc, argv);
-
-    printf("prcellgid = %d\n", nrnopt_get_int("--prcellgid"));
-    printf("outpath = %s\n", nrnopt_get_str("--outpath").c_str());
-
-    printf("before modify dt = %g\n", nrnopt_get_dbl("--dt"));
-    nrnopt_modify_dbl("--dt", 18.1);
-    printf("after modify to 18.1, dt = %g\n", nrnopt_get_dbl("--dt"));
-
-    nrnopt_show();
-
-    nrnopt_delete();
-    return 0;
-}
-
-#endif  // test

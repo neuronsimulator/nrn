@@ -36,10 +36,12 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/netcvode.h"
 #include "coreneuron/nrniv/ivocvect.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
+#include "coreneuron/nrnoc/nrnoc_decl.h"
 #include "coreneuron/nrniv/output_spikes.h"
 #include "coreneuron/nrniv/nrn_assert.h"
 #include "coreneuron/nrniv/nrn_acc_manager.h"
 #include "coreneuron/nrniv/multisend.h"
+#include "coreneuron/nrnoc/membfunc.h"
 #ifdef _OPENACC
 #include <openacc.h>
 #endif
@@ -63,10 +65,8 @@ void mk_netcvode() {
     }
 }
 
-extern void nrn_outputevent(unsigned char, double);
 extern "C" {
-extern pnt_receive_t* pnt_receive;
-extern pnt_receive_t* pnt_receive_init;
+//TODO following declarations dont appears in any include files
 extern short* nrn_artcell_qindex_;
 extern bool nrn_use_localgid_;
 extern void nrn2ncs_outputevent(int netcon_output_index, double firetime);
@@ -76,8 +76,6 @@ void net_move(void**, Point_process*, double);
 void net_sem_from_gpu(int sendtype, int i_vdata, int, int ith, int ipnt, double, double);
 void artcell_net_send(void**, int, Point_process*, double, double);
 void artcell_net_move(void**, Point_process*, double);
-extern void nrn_fixed_step_minimal();
-extern void nrn_fixed_step_group_minimal(int);
 
 #ifdef DEBUG
 // temporary
