@@ -85,7 +85,7 @@ def upath(path):
     plist[i] = p
   p = upathsep.join(plist)
   # /c/... does not work in our bash shell. Convert to c:...
-  if 'win' in sys.platform and p[0] == '/':
+  if 'win' in sys.platform and 'darwin' not in sys.platform and p[0] == '/':
     p = p[1] + ':' + p[2:]
   return p
 

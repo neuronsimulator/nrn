@@ -33,6 +33,9 @@ fi
 
 cd ~/neuron/nrnwinobj
 
+#comment tout if you do not have vcenv.sh. In that case there may be
+#problems in building the dlls from cython generated cpp files in
+# nrn/share/lib/python/neuron/rxd/geometry3d under python3.5
 . ../vcenv.sh  #visual c environment allows cl for python (rxd for 35)
 
 PYVS="py"

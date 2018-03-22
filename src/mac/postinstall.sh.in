@@ -2,14 +2,30 @@
 
 echo "" > /tmp/temp.tmp
 
+idir=/Applications/NEURON-@PACKAGE_VERSION@/nrn
+
+#for testing on linux
+#idir=$HOME/neuron/nrnmpi
+#function osascript() {
+#  echo "osascript $1 $2 button returned:Yes" >> /tmp/temp.tmp
+#  echo "button returned:Yes"
+#}
+
 #Use .bashrc if it exists, otherwise .bash_profile
+#also add to .cshrc and .tcshrc if they exist
 b=.bashrc
+cshp=''
+tcshp=''
 if test ! -f "$HOME/$b" ; then
   b=.bash_profile
 fi
 bp=$HOME/$b
-
-idir=/Applications/NEURON-@PACKAGE_VERSION@
+if test -f "$HOME/.cshrc" ; then
+  cshp="$HOME/.cshrc"
+fi
+if test -f "$HOME/.tcshrc" ; then
+  tcshp="$HOME/.tcshrc"
+fi
 
 # if cannot find nrniv, then perhaps modify PATH
 echo "PATH=$PATH" >> /tmp/temp.tmp
@@ -17,7 +33,7 @@ echo "PATH=$PATH" >> /tmp/temp.tmp
 if test -f "$bp" ; then
   (source $bp ; echo "srcpath $PATH" >> /tmp/temp.tmp ; echo `which nrniv` >> /tmp/temp.tmp ; which nrniv)
   a=$?
-  echo "a=$a" >> /tmp/temp.tmp
+  echo "1 a=$a" >> /tmp/temp.tmp
   if test "$a" = "0" ; then
     addpath=no
   else
@@ -30,32 +46,41 @@ else
 fi
 echo "PATH=$PATH" >> /tmp/temp.tmp
 
-echo "addpath=$addpath" >> /tmp/temp.tmp
+echo "1 addpath=$addpath" >> /tmp/temp.tmp
 
 if test "$addpath" = "yes" ; then
 a=`osascript -e 'tell app "Installer" to display dialog "
 Modify PATH to allow launching nrniv from Terminal?
   ... will append a line to  $HOME/'$b'
+      and, if they exist, .cshrc and .tcshrc
 " buttons {"No", "Yes"} default button 1'`
-
-  echo "a=$a" >> /tmp/temp.tmp
+  echo "2 a=$a" >> /tmp/temp.tmp
   if test "$a" = "button returned:Yes" ; then
     addpath=yes
   else
     addpath=no
   fi
 fi
-echo "addpath=$addpath" >> /tmp/temp.tmp
+
+echo "2 addpath=$addpath" >> /tmp/temp.tmp
 
 if test "$addpath" = "yes" ; then
   if test  ! -f "$bp" ; then
     echo '#!bin/bash' > "$bp"
   fi
-  echo "export PATH=$idir/nrn/x86_64/bin:\$PATH #added by NEURON installer" >> "$bp"
+  echo "export PATH=\"$idir/x86_64/bin\":\$PATH #added by NEURON installer" >> "$bp"
   chown $USER "$bp"
+  if test "$cshp" != "" ; then
+    echo "set path = (\"$idir/x86_64/bin\" \$path) #added by NEURON installer" >> "$cshp"
+    chown $USER "$cshp"
+  fi
+  if test "$tcshp" != "" ; then
+    echo "set path = (\"$idir/x86_64/bin\" \$path) #added by NEURON installer" >> "$tcshp"
+    chown $USER "$tcshp"
+  fi
 fi
 
-if true && test "$addpath" = "yes" ; then # Python environment
+if true || test "$addpath" = "yes" ; then # Python environment
   addpyenv=no
 
   a=`osascript -e 'tell app "Installer" to display dialog "
@@ -63,7 +88,7 @@ Modify $HOME/'$b' to allow NEURON + Python
   ... will set some Python related environment variables.
 " buttons {"No", "Yes"} default button 1'`
 
-  echo "a=$a" >> /tmp/temp.tmp
+  echo "3 a=$a" >> /tmp/temp.tmp
   if test "$a" = "button returned:Yes" ; then
     addpyenv=yes
   else
@@ -71,10 +96,26 @@ Modify $HOME/'$b' to allow NEURON + Python
   fi
 
   if test "$addpyenv" = "yes" ; then
-    echo "export PYTHONPATH=$idir/nrn/lib/python #added by NEURON installer" >> "$bp"
+    echo "export PYTHONPATH=\"$idir/lib/python\" #added by NEURON installer" >> "$bp"
+    if test "$cshp" != "" ; then
+      echo "setenv PYTHONPATH \"$idir/lib/python\" #added by NEURON installer" >> "$cshp"
+      chown $USER "$cshp"
+    fi
+    if test "$tcshp" != "" ; then
+      echo "setenv PYTHONPATH \"$idir/lib/python\" #added by NEURON installer" >> "$tcshp"
+      chown $USER "$tcshp"
+    fi
     tmpfile=/tmp/$$.tmp
-    (source $bp ; echo "srcpath $PATH" >> /tmp/temp.tmp ; $idir/nrn/x86_64/bin/nrnpyenv.sh |sed -n 's/\(^export.*\)/\1 #added by NEURON installer/p' > $tmpfile)
-    sed '/PYTHONPATH/d' $tmpfile >> "$bp"
+    (source $bp ; echo "srcpath $PATH" >> /tmp/temp.tmp ; $idir/x86_64/bin/nrnpyenv.sh |sed -n 's/\(^export.*\)/\1 #added by NEURON installer/p' | sed '/PYTHONPATH/d' > $tmpfile)
+    cat $tmpfile >> "$bp"
+    if test "$cshp" != "" ; then
+      sed 's/export \(.*\)=\(".*"\)\(.*\)/setenv \1 \2 \3/' < $tmpfile >> "$cshp"
+      chown $USER "$cshp"
+    fi
+    if test "$tcshp" != "" ; then
+      sed 's/export \(.*\)=\(".*"\)\(.*\)/setenv \1 \2 \3/' < $tmpfile >> "$tcshp"
+      chown $USER "$tcshp"
+    fi
     rm -f $tmpfile
   fi
   chown $USER "$bp"
