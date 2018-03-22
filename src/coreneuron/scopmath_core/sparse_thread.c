@@ -97,7 +97,7 @@ static void bksub(SparseObj* so, int _iml);
 static void prmat(SparseObj* so);
 static void initeqn(SparseObj* so, unsigned maxeqn);
 static void free_elm(SparseObj* so);
-static Elm* getelm(SparseObj* so, unsigned row, unsigned col, Elm* new);
+static Elm* getelm(SparseObj* so, unsigned row, unsigned col, Elm* new_elem);
 #pragma acc routine seq
 double* _nrn_thread_getelm(SparseObj* so, int row, int col, int _iml);
 void* nrn_cons_sparseobj(SPFUN, int, Memb_list*, _threadargsproto_);
@@ -113,10 +113,10 @@ static List* newlist();
 static void freelist(List* list);
 static void linkitem(Item* item, Item* i);
 static void insert(SparseObj* so, Item* item);
-static void delete (Item* item);
+static void delete_item (Item* item);
 static void* myemalloc(unsigned n);
 static void myfree(void*);
-static void check_assert();
+static void check_assert(SparseObj* so);
 static void re_link(SparseObj* so, unsigned i);
 static SparseObj* create_sparseobj();
 void _nrn_destroy_sparseobj_thread(SparseObj* so);
@@ -129,7 +129,7 @@ void _nrn_destroy_sparseobj_thread(SparseObj* so);
 #endif
 
 static Elm* nrn_pool_alloc(void* arg) {
-    return emalloc(sizeof(Elm));
+    return (Elm*) emalloc(sizeof(Elm));
 }
 
 /* sparse matrix dynamic allocation:
@@ -362,7 +362,7 @@ The biggest difference is that elements are no longer removed and this
 saves much time allocating and freeing during the solve phase
 */
 
-static Elm* getelm(SparseObj* so, unsigned row, unsigned col, Elm* new)
+static Elm* getelm(SparseObj* so, unsigned row, unsigned col, Elm* new_elem)
 /* return pointer to row col element maintaining order in rows */
 {
     register Elm *el, *elnext;
@@ -387,16 +387,16 @@ static Elm* getelm(SparseObj* so, unsigned row, unsigned col, Elm* new)
             }
         }
         /* insert below el */
-        if (!new) {
-            new = (Elm*)nrn_pool_alloc(so->elmpool);
-            new->value = (double*)ecalloc(so->_cntml_padded, sizeof(double));
+        if (!new_elem) {
+            new_elem = (Elm*)nrn_pool_alloc(so->elmpool);
+            new_elem->value = (double*)ecalloc(so->_cntml_padded, sizeof(double));
             increase_order(so, row);
         }
-        new->r_down = el->r_down;
-        el->r_down = new;
-        new->r_up = el;
-        if (new->r_down) {
-            new->r_down->r_up = new;
+        new_elem->r_down = el->r_down;
+        el->r_down = new_elem;
+        new_elem->r_up = el;
+        if (new_elem->r_down) {
+            new_elem->r_down->r_up = new_elem;
         }
         /* search leftward from diag[vrow] */
         for (el = so->diag[vrow];; el = elnext) {
@@ -408,13 +408,13 @@ static Elm* getelm(SparseObj* so, unsigned row, unsigned col, Elm* new)
             }
         }
         /* insert to left of el */
-        new->c_left = el->c_left;
-        el->c_left = new;
-        new->c_right = el;
-        if (new->c_left) {
-            new->c_left->c_right = new;
+        new_elem->c_left = el->c_left;
+        el->c_left = new_elem;
+        new_elem->c_right = el;
+        if (new_elem->c_left) {
+            new_elem->c_left->c_right = new_elem;
         } else {
-            so->rowst[vrow] = new;
+            so->rowst[vrow] = new_elem;
         }
     } else { /* in the upper triangle */
         /* search upward from diag[vcol] */
@@ -429,16 +429,16 @@ static Elm* getelm(SparseObj* so, unsigned row, unsigned col, Elm* new)
             }
         }
         /* insert above el */
-        if (!new) {
-            new = (Elm*)nrn_pool_alloc(so->elmpool);
-            new->value = (double*)ecalloc(so->_cntml_padded, sizeof(double));
+        if (!new_elem) {
+            new_elem = (Elm*)nrn_pool_alloc(so->elmpool);
+            new_elem->value = (double*)ecalloc(so->_cntml_padded, sizeof(double));
             increase_order(so, row);
         }
-        new->r_up = el->r_up;
-        el->r_up = new;
-        new->r_down = el;
-        if (new->r_up) {
-            new->r_up->r_down = new;
+        new_elem->r_up = el->r_up;
+        el->r_up = new_elem;
+        new_elem->r_down = el;
+        if (new_elem->r_up) {
+            new_elem->r_up->r_down = new_elem;
         }
         /* search right from diag[vrow] */
         for (el = so->diag[vrow];; el = elnext) {
@@ -450,16 +450,16 @@ static Elm* getelm(SparseObj* so, unsigned row, unsigned col, Elm* new)
             }
         }
         /* insert to right of el */
-        new->c_right = el->c_right;
-        el->c_right = new;
-        new->c_left = el;
-        if (new->c_right) {
-            new->c_right->c_left = new;
+        new_elem->c_right = el->c_right;
+        el->c_right = new_elem;
+        new_elem->c_left = el;
+        if (new_elem->c_right) {
+            new_elem->c_right->c_left = new_elem;
         }
     }
-    new->row = row;
-    new->col = col;
-    return new;
+    new_elem->row = row;
+    new_elem->col = col;
+    return new_elem;
 }
 
 double* _nrn_thread_getelm(SparseObj* so, int row, int col, int _iml) {
@@ -544,7 +544,7 @@ static void increase_order(SparseObj* so, unsigned row) {
     if (!so->do_flag)
         return;
     order = so->roworder[row];
-    delete (order);
+    delete_item (order);
     order->norder++;
     insert(so, order);
 }
@@ -556,7 +556,7 @@ static void reduce_order(SparseObj* so, unsigned row) {
     if (!so->do_flag)
         return;
     order = so->roworder[row];
-    delete (order);
+    delete_item (order);
     order->norder--;
     insert(so, order);
 }
@@ -620,7 +620,7 @@ static void get_next_pivot(SparseObj* so, unsigned i) {
 	printf("\n");
 }
 #endif
-    delete (order);
+    delete_item (order);
 }
 
 /* The following routines support the concept of a list.
@@ -686,7 +686,7 @@ static void insert(SparseObj* so, Item* item) {
     linkitem(i, item);
 }
 
-static void delete (Item* item) {
+static void delete_item (Item* item) {
     item->next->prev = item->prev;
     item->prev->next = item->next;
     item->prev = ITEM0;
@@ -805,7 +805,7 @@ static void re_link(SparseObj* so, unsigned i) {
 static SparseObj* create_sparseobj() {
     SparseObj* so;
 
-    so = myemalloc(sizeof(SparseObj));
+    so = (SparseObj*) myemalloc(sizeof(SparseObj));
     nrn_malloc_lock();
     nrn_malloc_unlock();
     so->rowst = 0;
