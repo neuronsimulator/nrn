@@ -104,6 +104,13 @@ typedef struct SparseObj {  /* all the state information */
 } SparseObj;
 
 #pragma acc routine seq
+extern double* _nrn_thread_getelm(SparseObj* so, int row, int col, int _iml);
+
+extern void* nrn_cons_sparseobj(SPFUN, int, Memb_list*, _threadargsproto_);
+
+extern void _nrn_destroy_sparseobj_thread(SparseObj* so);
+
+#pragma acc routine seq
 extern int nrn_kinetic_steer(int, SparseObj*, double*, _threadargsproto_);
 #define spfun(arg1, arg2, arg3) nrn_kinetic_steer(arg1, arg2, arg3, _threadargs_);
 

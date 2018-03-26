@@ -35,6 +35,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/utils/endianness.h"
 #include "coreneuron/nrniv/nrnoptarg.h"
 
+extern int cvode_active_;
 /// Vector of maps for negative presyns
 extern std::vector<std::map<int, PreSyn*> > neg_gid2out;
 /// Maps for ouput and input presyns
