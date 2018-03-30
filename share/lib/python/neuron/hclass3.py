@@ -8,6 +8,8 @@
 from neuron import h, hoc
 import nrn
 
+#avoid syntax error if compiled by python 2
+exec('''
 class MetaHocObject(type):
   """Provides Exception for Inheritance of multiple HocObject"""
   def __new__(cls, name, bases, attrs):
@@ -36,3 +38,4 @@ def hclass(c):
             return hoc.HocObject.__new__(cls, *args, **kwds2)
     setattr(hc, 'htype', c)
     return hc
+''')
