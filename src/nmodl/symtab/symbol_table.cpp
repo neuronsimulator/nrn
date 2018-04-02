@@ -289,7 +289,6 @@ namespace symtab {
                                                AST* node,
                                                bool global,
                                                SymbolTable* node_symtab) {
-
         if (node == nullptr) {
             throw std::runtime_error("Can't enter with empty node");
         }

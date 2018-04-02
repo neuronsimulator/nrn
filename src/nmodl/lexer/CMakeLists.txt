@@ -5,6 +5,7 @@ set (BISON_GENERATED_SOURCE_FILES
     ${PROJECT_SOURCE_DIR}/src/parser/nmodl/nmodl_parser.cpp
     ${PROJECT_SOURCE_DIR}/src/parser/verbatim_parser.cpp
     ${PROJECT_SOURCE_DIR}/src/parser/diffeq/diffeq_parser.cpp
+    ${PROJECT_SOURCE_DIR}/src/parser/c/c11_parser.cpp
 )
 
 set(AST_SOURCE_FILES
@@ -25,6 +26,11 @@ set(DIFFEQ_DRIVER_FILES
     ${PROJECT_SOURCE_DIR}/src/parser/diffeq_helper.hpp
 )
 
+set(C_DRIVER_FILES
+    ${PROJECT_SOURCE_DIR}/src/parser/c11_driver.hpp
+    ${PROJECT_SOURCE_DIR}/src/parser/c11_driver.cpp
+)
+
 set_source_files_properties(
     ${AST_SOURCE_FILES}
     PROPERTIES GENERATED TRUE
@@ -41,8 +47,10 @@ set(LEXER_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/nmodl_base_lexer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/verbatim_lexer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/diffeq_base_lexer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/c11_base_lexer.cpp
     ${NMODL_DRIVER_FILES}
     ${DIFFEQ_DRIVER_FILES}
+    ${C_DRIVER_FILES}
 )
 
 #=============================================================================
@@ -50,6 +58,7 @@ set(LEXER_SOURCE_FILES
 #=============================================================================
 file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/src/parser/nmodl)
 file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/src/parser/diffeq)
+file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/src/parser/c)
 
 #=============================================================================
 # Lexer & Parser commands
@@ -97,6 +106,17 @@ add_custom_command (
     COMMENT "-- NOCMODL : GENERATING DIFFERENTIAL EQUATION PARSER WITH BISON! --"
 )
 
+# command to generate C (11) parser
+add_custom_command (
+    COMMAND ${BISON_EXECUTABLE}
+    ARGS -d -o ${PROJECT_SOURCE_DIR}/src/parser/c/c11_parser.cpp
+    ${PROJECT_SOURCE_DIR}/src/parser/c11.yy
+    OUTPUT ${PROJECT_SOURCE_DIR}/src/parser/c/c11_parser.cpp
+    OUTPUT ${PROJECT_SOURCE_DIR}/src/parser/c/c11_parser.hpp
+    DEPENDS ${PROJECT_SOURCE_DIR}/src/parser/c11.yy
+    COMMENT "-- NOCMODL : GENERATING C (11) PARSER WITH BISON! --"
+)
+
 # command to generate nmodl lexer
 add_custom_command(
     COMMAND ${FLEX_EXECUTABLE}
@@ -131,6 +151,17 @@ add_custom_command(
     COMMENT "-- NOCMODL : GENERATING DIFFERENTIAL EQUATION LEXER WITH FLEX! --"
 )
 
+# command to generate C (11) lexer
+add_custom_command(
+    COMMAND ${FLEX_EXECUTABLE}
+    ARGS ${CMAKE_CURRENT_SOURCE_DIR}/c11.ll
+    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/c11_base_lexer.cpp
+    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/c11_base_lexer.hpp
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/c11.ll
+    COMMENT "-- NOCMODL : GENERATING C(11) LEXER WITH FLEX! --"
+)
+
 #=============================================================================
 # Libraries & executables
 #=============================================================================
@@ -140,16 +171,21 @@ add_library(lexer
             ${BISON_GENERATED_SOURCE_FILES}
             ${AST_SOURCE_FILES})
 
-add_executable(nocmodl_lexer main.cpp)
+add_executable(nocmodl_lexer main_nmodl.cpp)
+add_executable(c_lexer main_c.cpp)
+
 target_link_libraries(nocmodl_lexer lexer)
+target_link_libraries(c_lexer lexer)
 
 #=============================================================================
 # Files for clang-format
 #=============================================================================
 set(FILES_FOR_CLANG_FORMAT
     ${LEXER_SOURCE_FILES}
-    ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/main_nmodl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/main_c.cpp
     ${DIFFEQ_DRIVER_FILES}
+    ${C_DRIVER_FILES}
     ${FILES_FOR_CLANG_FORMAT}
     PARENT_SCOPE
 )
