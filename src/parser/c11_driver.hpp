@@ -29,6 +29,9 @@ namespace c11 {
         /// constants defined in enum
         std::vector<std::string> enum_constants;
 
+        /// all tokens encountered
+        std::vector<std::string> tokens;
+
         /// enable debug output in the flex scanner
         bool trace_scanner = false;
 
@@ -57,6 +60,7 @@ namespace c11 {
         bool parse_stream(std::istream& in);
         bool parse_string(const std::string& input);
         bool parse_file(const std::string& filename);
+        void scan_string(std::string& text);
         void process(std::string);
 
         void set_verbose(bool b) {
@@ -74,6 +78,10 @@ namespace c11 {
         bool is_enum_constant(std::string constant) const {
             return std::find(enum_constants.begin(), enum_constants.end(), constant) !=
                    enum_constants.end();
+        }
+
+        std::vector<std::string> all_tokens() const {
+            return tokens;
         }
     };
 
