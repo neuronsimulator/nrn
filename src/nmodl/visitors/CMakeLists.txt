@@ -28,6 +28,8 @@ set(VISITOR_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/cnexp_solve_visitor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/visitor_utils.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/visitor_utils.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/verbatim_var_rename_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/verbatim_var_rename_visitor.cpp
 )
 
 set_source_files_properties(

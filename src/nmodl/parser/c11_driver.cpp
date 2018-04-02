@@ -48,8 +48,24 @@ namespace c11 {
     }
 
     void Driver::process(std::string text) {
+        tokens.push_back(text);
         // here we will query and look into symbol table or register callback
         // std::cout << text;
+    }
+
+    void Driver::scan_string(std::string& text) {
+        std::istringstream in(text);
+        Lexer scanner(*this, &in);
+        Parser parser(scanner, *this);
+        this->lexer = &scanner;
+        this->parser = &parser;
+        while (true) {
+            auto sym = lexer->next_token();
+            auto token = sym.token();
+            if (token == Parser::token::END) {
+                break;
+            }
+        }
     }
 
 }  // namespace c11

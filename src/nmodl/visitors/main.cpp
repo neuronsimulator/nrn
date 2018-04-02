@@ -13,6 +13,7 @@
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/localize_visitor.hpp"
 #include "visitors/cnexp_solve_visitor.hpp"
+#include "visitors/verbatim_var_rename_visitor.hpp"
 
 #include "tclap/CmdLine.h"
 
@@ -87,6 +88,16 @@ int main(int argc, const char* argv[]) {
             symtab->print(stream);
             std::cout << stream.str();
             std::cout << "----SYMTAB VISITOR FINISHED----" << std::endl;
+        }
+
+        {
+            VerbatimVarRenameVisitor v;
+            v.visit_program(ast.get());
+        }
+
+        {
+            NmodlPrintVisitor v(channel_name + ".nocmodl.verbrename.mod");
+            v.visit_program(ast.get());
         }
 
         {

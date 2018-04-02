@@ -1660,6 +1660,7 @@
           members:
             - statement:
                 type: String
+                getter: {name: get_statement}
                 suffix: {value: "ENDVERBATIM"}
       - Comment:
           members:
