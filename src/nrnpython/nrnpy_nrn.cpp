@@ -996,7 +996,7 @@ static void rv_noexist(Section* sec, const char* n, double x, int err) {
   } else {
     sprintf(buf, "%s does not exist at %s(%g)", n, secname(sec), x);
   }
-  PyErr_SetString(PyExc_NameError, buf);
+  PyErr_SetString(PyExc_AttributeError, buf);
 }
 
 static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
