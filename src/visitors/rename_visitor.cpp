@@ -1,4 +1,5 @@
 #include "visitors/rename_visitor.hpp"
+#include "parser/c11_driver.hpp"
 
 /// rename matching variable
 void RenameVisitor::visit_name(ast::Name* node) {
@@ -15,4 +16,30 @@ void RenameVisitor::visit_name(ast::Name* node) {
  */
 void RenameVisitor::visit_prime_name(ast::PrimeName* node) {
     node->visit_children(this);
+}
+
+/**
+ * Parse verbatim blocks and rename variable if it is used.
+ */
+void RenameVisitor::visit_verbatim(Verbatim* node) {
+    if (!rename_verbatim) {
+        return;
+    }
+
+    auto statement = node->get_statement();
+    auto text = statement->eval();
+    c11::Driver driver;
+
+    driver.scan_string(text);
+    auto tokens = driver.all_tokens();
+
+    std::string result;
+    for(auto& token: tokens) {
+        if (token == var_name) {
+            result += new_var_name;
+        } else {
+            result += token;
+        }
+    }
+    statement->set(result);
 }

@@ -44,7 +44,6 @@ void LocalVarRenameVisitor::visit_statement_block(StatementBlock* node) {
         return;
     }
 
-
     RenameVisitor rename_visitor;
 
     for (auto& var : *variables) {

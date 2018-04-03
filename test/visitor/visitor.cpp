@@ -14,6 +14,7 @@
 #include "visitors/verbatim_visitor.hpp"
 #include "visitors/defuse_analyze_visitor.hpp"
 #include "visitors/localize_visitor.hpp"
+#include "visitors/verbatim_var_rename_visitor.hpp"
 #include "visitors/cnexp_solve_visitor.hpp"
 #include "test/utils/nmodl_constructs.h"
 #include "test/utils/test_utils.hpp"
@@ -397,6 +398,11 @@ std::string run_local_var_rename_visitor(const std::string& text) {
     }
 
     {
+        VerbatimVarRenameVisitor v;
+        v.visit_program(ast.get());
+    }
+
+    {
         LocalVarRenameVisitor v;
         v.visit_program(ast.get());
     }
@@ -498,6 +504,9 @@ SCENARIO("Variable renaming in nested blocks") {
                         m = gNaTs2_t + h
                         {
                             LOCAL m, h
+                            VERBATIM
+                            _lm = 12
+                            ENDVERBATIM
                         }
                     }
                 }
@@ -515,7 +524,6 @@ SCENARIO("Variable renaming in nested blocks") {
             }
         )";
 
-        // \todo : open brace without any keyword starts with an extra empty space
         std::string expected_nmodl_text = R"(
             NEURON {
                 SUFFIX NaTs2_t
@@ -545,6 +553,9 @@ SCENARIO("Variable renaming in nested blocks") {
                         m_r_1 = gNaTs2_t_r_0+h_r_1
                         {
                             LOCAL m_r_0, h_r_0
+                            VERBATIM
+                            m_r_0 = 12
+                            ENDVERBATIM
                         }
                     }
                 }
@@ -564,6 +575,56 @@ SCENARIO("Variable renaming in nested blocks") {
 
         THEN("variables conflicting with global variables get renamed starting from inner block") {
             std::string input = reindent_text(input_nmodl_text);
+            auto expected_result = reindent_text(expected_nmodl_text);
+            auto result = run_local_var_rename_visitor(input);
+            REQUIRE(result == expected_result);
+        }
+    }
+}
+
+
+SCENARIO("Presence of local variable in verbatim block") {
+    GIVEN("A neuron block and procedure with same variable name") {
+        std::string nmodl_text = R"(
+            NEURON {
+                RANGE gNaTs2_tbar
+            }
+
+            PROCEDURE rates() {
+                LOCAL gNaTs2_tbar, x
+                VERBATIM
+                _lx = _lgNaTs2_tbar
+                ENDVERBATIM
+            }
+
+            PROCEDURE alpha() {
+                VERBATIM
+                _p_gNaTs2_tbar = 12
+                ENDVERBATIM
+            }
+        )";
+
+        std::string expected_nmodl_text = R"(
+            NEURON {
+                RANGE gNaTs2_tbar
+            }
+
+            PROCEDURE rates() {
+                LOCAL gNaTs2_tbar_r_0, x
+                VERBATIM
+                x = gNaTs2_tbar_r_0
+                ENDVERBATIM
+            }
+
+            PROCEDURE alpha() {
+                VERBATIM
+                gNaTs2_tbar = 12
+                ENDVERBATIM
+            }
+        )";
+
+        THEN("var renaming pass changes local & global variable in verbatim block") {
+            std::string input = reindent_text(nmodl_text);
             auto expected_result = reindent_text(expected_nmodl_text);
             auto result = run_local_var_rename_visitor(input);
             REQUIRE(result == expected_result);
