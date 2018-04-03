@@ -29,6 +29,9 @@ class RenameVisitor : public AstVisitor {
     /// new name
     std::string new_var_name;
 
+    // rename verbatim blocks as well
+    bool rename_verbatim = true;
+
   public:
     RenameVisitor() = default;
 
@@ -41,8 +44,13 @@ class RenameVisitor : public AstVisitor {
         new_var_name = new_name;
     }
 
+    void enable_verbatim(bool state) {
+        rename_verbatim = state;
+    }
+
     virtual void visit_name(ast::Name* node) override;
     virtual void visit_prime_name(ast::PrimeName* node) override;
+    virtual void visit_verbatim(ast::Verbatim* node) override;
 };
 
 #endif
