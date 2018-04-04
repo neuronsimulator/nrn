@@ -1385,6 +1385,23 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname,
   return err;
 }
 
+static bool striptrail(char* buf, const char* n, const char* m) {
+    int nlen = strlen(n);
+    int mlen = strlen(m);
+    int u = nlen - mlen - 1; // should be location of _
+    if (u > 0 && n[u] == '_') { // likely n is name_m
+      for (int i = 1; i <= mlen; ++i) {
+        if (n[u + i] != m[i - 1]) {
+          return false;
+        }
+      }
+      strncpy(buf, n, u);
+      buf[u] = '\0';
+      return true;
+    }
+    return false;
+}
+
 static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
   Py_INCREF(pyname);
   Py2NRNString name(pyname);
@@ -1424,8 +1441,13 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
     }
   } else if (strcmp(n, "__dict__") == 0) {
     result = PyDict_New();
+    char* mname = memb_func[self->prop_->type].sym->name;
+    int mnamelen = strlen(mname);
     for (Symbol* s = np.first_var(); np.more_var(); s = np.next_var()) {
-      int err = PyDict_SetItemString(result, s->name, Py_None);
+      if (!striptrail(buf, s->name, mname)) {
+        strcpy(buf, s->name);
+      }
+      int err = PyDict_SetItemString(result, buf, Py_None);
       assert(err == 0);
     }
   } else {
