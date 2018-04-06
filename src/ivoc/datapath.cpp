@@ -5,6 +5,7 @@
 #include <OS/table.h>
 #include <OS/list.h>
 #include "hoclist.h"
+#include <nrnpython_config.h>
 #if HAVE_IV
 #include "graph.h"
 #endif
@@ -444,6 +445,7 @@ void HocDataPathImpl::search_vectors() {
 #if CABLE
 
 void HocDataPathImpl::search_pysec() {
+#if USE_PYTHON
   CopyString cs("");
   hoc_Item* qsec;
   ForAllSections(sec)
@@ -454,6 +456,7 @@ void HocDataPathImpl::search_pysec() {
       strlist_.remove(strlist_.count()-1);
     }
   }
+#endif
 }
 
 void HocDataPathImpl::search(Section* sec) {

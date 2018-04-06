@@ -1796,6 +1796,7 @@ const char* secname(Section* sec) /* name of section (for use in error messages)
 }
 
 const char* nrn_sec2pysecname(Section* sec) {
+#if USE_PYTHON
   static char buf[256];
   const char* name = secname(sec);
   if (sec && sec->prop->dparam[PROP_PY_INDEX]._pvoid
@@ -1805,6 +1806,9 @@ const char* nrn_sec2pysecname(Section* sec) {
     strcpy(buf, name);
   }
   return buf;
+#else
+  return secname(sec);
+#endif
 }
 
 void section_owner(void) {
@@ -1840,8 +1844,10 @@ char* hoc_section_pathname(Section* sec)
 		}else{
 			Sprintf(name, "%s%s", s->name, hoc_araystr(s, indx, hoc_objectdata));
 		}
+#if USE_PYTHON
 	}else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
 		strcpy(name, nrn_sec2pysecname(sec));
+#endif
 	}else{
 		name[0] = '\0';
 	}
