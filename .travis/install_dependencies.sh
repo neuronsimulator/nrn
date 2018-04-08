@@ -10,7 +10,7 @@ case "$TRAVIS_OS_NAME" in
         brew cask uninstall oclint
         brew update > /dev/null
         brew install flex bison modules
-        brew install python3
+        brew upgrade python3
 
         # NOTE: brew installed python3 on OSX has known issue
         # See https://stackoverflow.com/questions/24257803/
