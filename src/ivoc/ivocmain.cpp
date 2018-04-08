@@ -600,16 +600,21 @@ ENDGUI
 	}
 
 #if defined(USE_PYTHON)
-#if HAVE_IV
 	nrn_nopython = 0;
-	if (!nrn_is_python_extension && session && session->style()->value_is_on("nopython")) {
-		nrn_nopython = 1;
-	}
+	if (!nrn_is_python_extension) {
+#if HAVE_IV
+		if (session) {
+			if (session->style()->value_is_on("nopython")) {
+				nrn_nopython = 1;
+			}
+		}else
 #endif
-//	if (nrn_optarg_on("-nopython", &our_argc, our_argv)) {
-//		nrn_nopython = 1;
-//	}
-
+		{
+			if (nrn_optarg_on("-nopython", &our_argc, our_argv)) {
+				nrn_nopython = 1;
+			}
+		}
+	}
 #endif //USE_PYTHON
 
 #if defined(WIN32) && HAVE_IV
