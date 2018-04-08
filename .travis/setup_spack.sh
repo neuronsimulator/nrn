@@ -30,11 +30,16 @@ cp .travis/modules.yaml $HOME/.spack/
 # external packages are already installed on system, this install step just register them to spack
 spack install flex bison automake autoconf libtool pkg-config ncurses mpich openmpi python@3 python@2.7
 
-
+set -x
 # find python2/3 to avoid hardcoded paths in packages.yaml
-PYTHON_2_PATH=`python -c "from distutils.sysconfig import get_config_var; print(get_config_var('prefix'))"`
-PYTHON_3_PATH=`python3 -c "from distutils.sysconfig import get_config_var; print(get_config_var('prefix'))"`
-
+if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+    PYTHON_2_PATH=`python -c "from distutils.sysconfig import get_config_var; print(get_config_var('prefix'))"`
+    PYTHON_3_PATH=`python3 -c "from distutils.sysconfig import get_config_var; print(get_config_var('prefix'))"`
+else
+    PYTHON_2_PATH=`python2.7 -c "from distutils.sysconfig import get_config_var; print(get_config_var('prefix'))"`
+    PYTHON_3_PATH=`/usr/local/opt/python3/bin/python3 -c "from distutils.sysconfig import get_config_var; print(get_config_var('prefix'))"`
+fi
+set +x
 
 # setup python path (gnu vs osx sed)
 if [ "$TRAVIS_OS_NAME" == "linux" ]; then
