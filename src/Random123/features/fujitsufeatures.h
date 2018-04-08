@@ -56,7 +56,11 @@ with cray compiler.
 #endif
 
 #ifndef R123_USE_MULHILO64_MULHI_INTRIN
-#define R123_USE_MULHILO64_MULHI_INTRIN (defined(__powerpc64__))
+#if (defined(__powerpc64__))
+#define R123_USE_MULHILO64_MULHI_INTRIN 1
+#else
+#define R123_USE_MULHILO64_MULHI_INTRIN 0
+#endif
 #endif
 
 #ifndef R123_MULHILO64_MULHI_INTRIN

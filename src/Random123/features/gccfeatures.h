@@ -80,7 +80,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    earlier versions, the only way  to detect whether --std=c++0x was requested
    on the command line is to look at the __GCC_EXPERIMENTAL_CXX0X__ pp-symbol.
 */
-#define GNU_CXX11 (__cplusplus>=201103L || (R123_GNUC_VERSION<40700 && defined(__GCC_EXPERIMENTAL_CXX0X__) ))
+#if (__cplusplus>=201103L || (R123_GNUC_VERSION<40700 && defined(__GCC_EXPERIMENTAL_CXX0X__) ))
+#define GNU_CXX11 1
+#else
+#define GNU_CXX11 0
+#endif
 
 #ifndef R123_USE_CXX11_UNRESTRICTED_UNIONS
 #define R123_USE_CXX11_UNRESTRICTED_UNIONS ((R123_GNUC_VERSION >= 40600) && GNU_CXX11)
@@ -158,7 +162,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #ifndef R123_USE_ASM_GNU
-#define R123_USE_ASM_GNU (defined(__x86_64__)||defined(__i386__))
+/* avoid "macro expansion producing 'defined' has undefined behavior */
+#if (defined(__x86_64__)||defined(__i386__))
+#define R123_USE_ASM_GNU 1
+#else
+#define R123_USE_ASM_GNU 0
+#endif
 #endif
 
 #ifndef R123_USE_CPUID_MSVC
@@ -166,7 +175,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #ifndef R123_USE_X86INTRIN_H
-#define R123_USE_X86INTRIN_H ((defined(__x86_64__)||defined(__i386__)) && R123_GNUC_VERSION >= 40402)
+/* avoid "macro expansion producing 'defined' has undefined behavior */
+#if ((defined(__x86_64__)||defined(__i386__)) && R123_GNUC_VERSION >= 40402)
+#define R123_USE_X86INTRIN_H 1
+#else
+#define R123_USE_X86INTRIN_H 0
+#endif
 #endif
 
 #ifndef R123_USE_IA32INTRIN_H
@@ -219,7 +233,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #ifndef R123_USE_MULHILO64_MULHI_INTRIN
-#define R123_USE_MULHILO64_MULHI_INTRIN (defined(__powerpc64__))
+#if (defined(__powerpc64__))
+#define R123_USE_MULHILO64_MULHI_INTRIN 1
+#else
+#define R123_USE_MULHILO64_MULHI_INTRIN 0
+#endif
 #endif
 
 #ifndef R123_MULHILO64_MULHI_INTRIN

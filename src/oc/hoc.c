@@ -41,7 +41,11 @@ int (*p_nrnpy_pyrun)(const char* fname);
 #endif
 
 #if HAVE_FENV_H
-#define NRN_FLOAT_EXCEPTION (defined(linux))
+#if defined(linux)
+#define NRN_FLOAT_EXCEPTION 1
+#else
+#define NRN_FLOAT_EXCEPTION 0
+#endif
 #endif
 
 #if NRN_FLOAT_EXCEPTION

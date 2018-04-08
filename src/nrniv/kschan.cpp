@@ -1931,7 +1931,7 @@ for (i=0; i < vec->capacity(); ++i) {
 		}
 	}
 	// assert that order is all vtrans and then all lig trans
-	int pdoff = ppoff_ + ion_sym_ ? 5 : 0;
+	int pdoff = ppoff_ + (ion_sym_ ? 5 : 0);
 	for (i=0; i < ntrans_; ++i) {
 		trans_[i].index_ = i;
 		trans_[i].ks_ = this;

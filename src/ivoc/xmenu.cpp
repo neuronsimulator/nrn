@@ -797,7 +797,7 @@ void hoc_ivvaluerun_ex(CChar* name,
 		}
 	}
 	HocSymExtension* xtra = extra;
-	if (!xtra) { s ? s->extra : NULL; }
+	if (!xtra) { xtra = s ? s->extra : NULL; }
 	curHocPanel->valueEd(name, variable, action, canrun,
 		pvar, deflt, false, xtra, pyvar, pyact);
 }
