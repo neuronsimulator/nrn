@@ -15,7 +15,11 @@ pacman -S --needed base-devel mingw-w64-x86_64-toolchain
 
 for complete mpi see mingw_notes
 for more or less complete python
-pacman -S mingw64/mingw-w64-x86_64-cython
+pacman -S mingw-w64-x86_64-cython
+#note above failed at end. Succeeded with
+#pacman -R mingw-w64-x86_64-cython
+#pacman -S mingw-w64-x86_64-cython2
+#and add to configure, CYTHON=cython2
 
 #pacman -S mingw64/mingw-w64-x86_64-python3-scipy  #python 3.6.4
 Note: the pacman installed version of python has a library naming

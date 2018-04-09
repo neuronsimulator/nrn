@@ -2,6 +2,7 @@
 # install from the build directories to the mswin destination
 # uses the classical positions of files
 # must be launched from a mingw terminal
+set -ex
 
 if false ; then
 echo "top_srcdir $top_srcdir"
@@ -196,7 +197,9 @@ for f in $DB/hocmodule*.dll ; do
   x=`echo $f | sed "s/.*hocmodule\([0-9]*\)\.dll/\1/"`
   mv $f $D/lib/python/neuron/hoc${x}.pyd
 done
+set +e
 cp $B/share/lib/python/neuron/rxd/geometry3d/*.pyd $D/lib/python/neuron/rxd/geometry3d
+set -e
 fi
 
 if true ; then
@@ -283,7 +286,9 @@ if test -d "$hparent/html" ; then
 	unzip -d $marshal_dir html.zip
 	rm html.zip
 fi
-
+else #nsis requires something
+mkdir $marshal_dir/html
+touch $marshal_dir/html/empty
 fi # end of html marshaling
 
 set +v

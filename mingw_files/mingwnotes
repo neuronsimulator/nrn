@@ -11,6 +11,12 @@ add #include <stdint.h> in /c/ms-mpi/include/mpi.h
 gendef msmpi.dll
 x86_64-w64-mingw32-dlltool -d msmpi.def -l libmsmpi.a -D msmpi.dll
 
+#gendef can be built from mingw source via
+#git clone https;//github.com/msys2-contrib/mingw-w64
+#cd mingw-64/mingw-w64-tools/gendef
+#./configure --prefix=`pwd`
+#make # may have to get rid of the -Werror
+#cp gendef.exe /mingw64/bin
 
 in cygwin terminal
  cp /usr/include/w32api/sal.h c:/ms-mpi/include

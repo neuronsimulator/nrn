@@ -49,10 +49,11 @@ done
 
 M=$N/mingw64
 X=x86_64-w64-mingw32
+gccver=`gcc --version | sed -n '1s/.* //p'`
 
 # all the folders involved that have files
 mkdir -p $M/bin
-mkdir -p $M/lib/gcc/$X/6.3.0
+mkdir -p $M/lib/gcc/$X/$gccver
 mkdir -p $M/$X/lib
 mkdir -p $M/$X/include/sdks
 mkdir -p $M/$X/include/sec_api/sys
@@ -72,7 +73,7 @@ x86_64-w64-mingw32-gcc.exe
 zlib1.dll
 '
 
-copy mingw64/lib/gcc/x86_64-w64-mingw32/6.3.0 '
+copy mingw64/lib/gcc/x86_64-w64-mingw32/$gccver '
 cc1.exe
 libgcc.a
 libgcc_s.a

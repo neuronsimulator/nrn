@@ -119,8 +119,8 @@ proc exec() {localobj s1, s2
 	s1 = new String()
 	s2 = new String()
 	sscanf(neuronhome(), "%[^:]:%s", s1.s, s2.s)
-	sprint(s1.s, "/%s%s", s1.s, s2.s)
-	sprint(tstr, "%s/mingw/bin/sh %s/lib/modlunit.sh %s %s", neuronhome(), neuronhome(), s1.s, $s1)
+	sprint(s1.s, "/cygdrive/%s%s", s1.s, s2.s)
+	sprint(tstr, "%s/mingw/usr/bin/sh %s/lib/modlunit.sh %s %s", neuronhome(), neuronhome(), s1.s, $s1)
 //	print tstr
 	system(tstr)
     }else{
