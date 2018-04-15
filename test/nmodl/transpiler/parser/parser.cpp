@@ -121,7 +121,7 @@ SCENARIO("Parser test for invalid NMODL grammar constructs") {
 
 std::string solve_construct(const std::string& equation, std::string method) {
     diffeq::Driver driver;
-    auto solution = driver.solve(equation, method);
+    auto solution = driver.solve(equation, std::move(method));
     return solution;
 }
 

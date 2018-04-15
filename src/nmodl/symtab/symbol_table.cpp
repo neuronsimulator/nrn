@@ -195,12 +195,11 @@ namespace symtab {
             msg += "<" + properties + "> in " + current_symtab->name();
             msg += " with one in " + second->get_scope();
             throw std::runtime_error(msg);
-        } else {
-            std::string msg = "SYMTAB WARNING: " + name + " [" + type + "] in ";
-            msg += current_symtab->name() + " shadows <" + properties;
-            msg += "> definition in " + second->get_scope();
-            std::cout << msg << std::endl;
         }
+        std::string msg = "SYMTAB WARNING: " + name + " [" + type + "] in ";
+        msg += current_symtab->name() + " shadows <" + properties;
+        msg += "> definition in " + second->get_scope();
+        std::cout << msg << std::endl;
     }
 
 
@@ -274,7 +273,7 @@ namespace symtab {
         update_order(search_symbol, symbol);
 
         /// handle update mode insertion
-        if (update_table == true) {
+        if (update_table) {
             return update_mode_insert(symbol);
         }
 
@@ -365,14 +364,14 @@ namespace symtab {
             return symtab.get();
         }
 
-        if (node_symtab == nullptr || update_table == false) {
+        if (node_symtab == nullptr || !update_table) {
             name = get_unique_name(name, node, global);
             auto new_symtab = std::make_shared<SymbolTable>(name, node, global);
             new_symtab->set_parent_table(current_symtab);
             if (symtab == nullptr) {
                 symtab = new_symtab;
             }
-            if (current_symtab) {
+            if (current_symtab != nullptr) {
                 current_symtab->insert_table(name, new_symtab);
             }
             node_symtab = new_symtab.get();
@@ -405,11 +404,11 @@ namespace symtab {
      * If there is no symbol table constructed then we toggle mode.
      */
     void ModelSymbolTable::set_mode(bool update_mode) {
-        if (update_mode == true && symtab == nullptr) {
+        if (update_mode && symtab == nullptr) {
             update_mode = false;
         }
         update_table = update_mode;
-        if (update_table == false) {
+        if (!update_table) {
             symtab = nullptr;
             current_symtab = nullptr;
         }
@@ -449,7 +448,7 @@ namespace symtab {
                 auto properties = to_string(symbol->get_properties());
                 auto status = to_string(symbol->get_status());
                 auto reads = std::to_string(symbol->get_read_count());
-                std::string value = "";
+                std::string value;
                 auto sym_value = symbol->get_value();
                 if (sym_value) {
                     value = std::to_string(*sym_value);

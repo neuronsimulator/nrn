@@ -91,8 +91,5 @@ bool CodegenCOmpVisitor::channel_task_dependency_enabled() {
 
 
 bool CodegenCOmpVisitor::block_require_shadow_update(BlockType type) {
-    if (!channel_task_dependency_enabled() || type == BlockType::Initial) {
-        return false;
-    }
-    return true;
+    return !(!channel_task_dependency_enabled() || type == BlockType::Initial);
 }

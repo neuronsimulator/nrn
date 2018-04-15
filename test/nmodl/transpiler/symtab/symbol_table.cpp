@@ -232,7 +232,7 @@ SCENARIO("Symbol table operations") {
             with = NmodlInfo::range_var;
             without = NmodlInfo::range_var;
             result = table->get_variables(with, without);
-            REQUIRE(result.size() == 0);
+            REQUIRE(result.empty());
         }
     }
 }

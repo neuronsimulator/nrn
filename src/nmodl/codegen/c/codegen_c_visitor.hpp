@@ -104,7 +104,7 @@ class CodegenCVisitor : public CodegenBaseVisitor {
 
 
     /// process token in verbatim block for possible variable renaming
-    std::string process_verbatim_token(std::string token);
+    std::string process_verbatim_token(const std::string& token);
 
 
     /// rename function/procedure arguments that conflict with default arguments
@@ -132,7 +132,7 @@ class CodegenCVisitor : public CodegenBaseVisitor {
 
 
     /// function call / statement for nrn_wrote_conc
-    std::string conc_write_statement(std::string ion_name, std::string concentration, int index);
+    std::string conc_write_statement(std::string ion_name, const std::string& concentration, int index);
 
 
     /// arguments for internally defined functions
@@ -163,6 +163,10 @@ class CodegenCVisitor : public CodegenBaseVisitor {
     std::vector<ShadowUseStatement> shadow_statements;
 
 
+    /// return name of main compute kernels
+    virtual std::string compute_method_name(BlockType type);
+
+
     /// start of coreneuron namespace
     void print_namespace_start();
 
@@ -172,11 +176,11 @@ class CodegenCVisitor : public CodegenBaseVisitor {
 
 
     /// start of backend namespace
-    void print_backend_namespace_start();
+    virtual void print_backend_namespace_start();
 
 
     /// end of backend namespace
-    void print_backend_namespace_end();
+    virtual void print_backend_namespace_end();
 
 
     /// top header printed in generated code
@@ -274,11 +278,11 @@ class CodegenCVisitor : public CodegenBaseVisitor {
 
 
     /// backend specific device method annotation
-    void print_device_method_annotation();
+    virtual void print_device_method_annotation();
 
 
     /// backend specific global method annotation
-    void print_global_method_annotation();
+    virtual void print_global_method_annotation();
 
 
     /// call to internal or external function
@@ -479,13 +483,14 @@ class CodegenCVisitor : public CodegenBaseVisitor {
     void codegen_data_structures();
 
     /// all compute functions for every backend
-    void codegen_compute_functions();
+    virtual void codegen_compute_functions();
 
     /// entry point to code generation
-    void codegen_all();
+    virtual void codegen_all();
 
   public:
-    CodegenCVisitor(std::string mod_file, bool aos) : CodegenBaseVisitor(mod_file, aos) {
+    CodegenCVisitor(std::string mod_file, bool aos, std::string extension = ".cpp")
+        : CodegenBaseVisitor(mod_file, aos, extension) {
         init(aos, mod_file);
     }
 

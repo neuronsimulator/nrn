@@ -1,6 +1,7 @@
 #include <algorithm>
-#include <math.h>
-#include <time.h>
+#include <utility>
+#include <cmath>
+#include <ctime>
 
 #include "visitors/rename_visitor.hpp"
 #include "codegen/base/codegen_helper_visitor.hpp"
@@ -68,7 +69,7 @@ void CodegenBaseVisitor::visit_boolean(Boolean* node) {
     if (!codegen) {
         return;
     }
-    printer->add_text(std::to_string(node->eval()));
+    printer->add_text(std::to_string(static_cast<int>(node->eval())));
 }
 
 
@@ -313,10 +314,7 @@ bool CodegenBaseVisitor::net_send_buffer_required() {
 
 
 bool CodegenBaseVisitor::net_receive_buffering_required() {
-    if (info.point_process && !info.artificial_cell && info.net_receive_node != nullptr) {
-        return true;
-    }
-    return false;
+    return info.point_process && !info.artificial_cell && info.net_receive_node != nullptr;
 }
 
 
@@ -324,34 +322,22 @@ bool CodegenBaseVisitor::nrn_state_required() {
     if (info.artificial_cell) {
         return false;
     }
-    if (info.solve_node != nullptr || info.currents.empty()) {
-        return true;
-    }
-    return false;
+    return info.solve_node != nullptr || info.currents.empty();
 }
 
 
 bool CodegenBaseVisitor::nrn_cur_required() {
-    if (info.breakpoint_node != nullptr && !info.currents.empty()) {
-        return true;
-    }
-    return false;
+    return info.breakpoint_node != nullptr && !info.currents.empty();
 }
 
 
 bool CodegenBaseVisitor::net_receive_exist() {
-    if (info.net_receive_node != nullptr) {
-        return true;
-    }
-    return false;
+    return info.net_receive_node != nullptr;
 }
 
 
 bool CodegenBaseVisitor::breakpoint_exist() {
-    if (info.breakpoint_node != nullptr) {
-        return true;
-    }
-    return false;
+    return info.breakpoint_node != nullptr;
 }
 
 
@@ -373,7 +359,7 @@ bool CodegenBaseVisitor::state_variable(std::string name) {
 }
 
 
-int CodegenBaseVisitor::position_of_float_var(std::string name) {
+int CodegenBaseVisitor::position_of_float_var(const std::string& name) {
     int index = 0;
     for (auto& var : float_variables) {
         if (var->get_name() == name) {
@@ -385,7 +371,7 @@ int CodegenBaseVisitor::position_of_float_var(std::string name) {
 }
 
 
-int CodegenBaseVisitor::position_of_int_var(std::string name) {
+int CodegenBaseVisitor::position_of_int_var(const std::string& name) {
     int index = 0;
     for (auto& var : int_variables) {
         if (var.symbol->get_name() == name) {
@@ -409,9 +395,8 @@ int CodegenBaseVisitor::position_of_int_var(std::string name) {
 std::string CodegenBaseVisitor::double_to_string(double value) {
     if (ceilf(value) == value) {
         return "{:.1f}"_format(value);
-    } else {
-        return "{:.16g}"_format(value);
     }
+    return "{:.16g}"_format(value);
 }
 
 
@@ -449,12 +434,9 @@ bool CodegenBaseVisitor::need_semicolon(Statement* node) {
 
 // check if there is a function or procedure defined with given name
 bool CodegenBaseVisitor::defined_method(std::string name) {
-    auto function = program_symtab->lookup(name);
+    auto function = program_symtab->lookup(std::move(name));
     auto properties = NmodlInfo::function_block | NmodlInfo::procedure_block;
-    if (function && function->has_properties(properties)) {
-        return true;
-    }
-    return false;
+    return function && function->has_properties(properties);
 }
 
 
@@ -572,21 +554,21 @@ void CodegenBaseVisitor::update_index_semantics() {
     int index = 0;
     info.semantics.clear();
     if (info.point_process) {
-        info.semantics.push_back({index++, "area", 1});
-        info.semantics.push_back({index++, "pntproc", 1});
+        info.semantics.emplace_back(index++, "area", 1);
+        info.semantics.emplace_back(index++, "pntproc", 1);
     }
     for (const auto& ion : info.ions) {
         for (auto& var : ion.reads) {
-            info.semantics.push_back({index++, ion.name + "_ion", 1});
+            info.semantics.emplace_back(index++, ion.name + "_ion", 1);
         }
         for (auto& var : ion.writes) {
-            info.semantics.push_back({index++, ion.name + "_ion", 1});
+            info.semantics.emplace_back(index++, ion.name + "_ion", 1);
             if (ion.is_ionic_current(var)) {
-                info.semantics.push_back({index++, ion.name + "_ion", 1});
+                info.semantics.emplace_back(index++, ion.name + "_ion", 1);
             }
         }
         if (ion.need_style) {
-            info.semantics.push_back({index++, "#{}_ion"_format(ion.name), 1});
+            info.semantics.emplace_back(index++, "#{}_ion"_format(ion.name), 1);
         }
     }
     for (auto& var : info.pointer_variables) {
@@ -595,14 +577,14 @@ void CodegenBaseVisitor::update_index_semantics() {
         }
         int size = var->get_length();
         if (var->has_properties(NmodlInfo::pointer_var)) {
-            info.semantics.push_back({index, "pointer", size});
+            info.semantics.emplace_back(index, "pointer", size);
         } else {
-            info.semantics.push_back({index, "bbcorepointer", size});
+            info.semantics.emplace_back(index, "bbcorepointer", size);
         }
         index += size;
     }
     if (info.net_send_used) {
-        info.semantics.push_back({index++, "netsend", 1});
+        info.semantics.emplace_back(index++, "netsend", 1);
     }
 }
 
@@ -661,39 +643,39 @@ std::vector<SymbolType> CodegenBaseVisitor::get_float_variables() {
 std::vector<IndexVariableInfo> CodegenBaseVisitor::get_int_variables() {
     std::vector<IndexVariableInfo> variables;
     if (info.point_process) {
-        variables.push_back({make_symbol(node_area)});
+        variables.emplace_back(make_symbol(node_area));
         if (info.artificial_cell) {
-            variables.push_back({make_symbol("point_process"), true});
+            variables.emplace_back(make_symbol("point_process"), true);
         } else {
-            variables.push_back({make_symbol("point_process"), false, false, true});
+            variables.emplace_back(make_symbol("point_process"), false, false, true);
         }
     }
 
     for (auto& ion : info.ions) {
         bool need_style = false;
         for (auto& var : ion.reads) {
-            variables.push_back({make_symbol("ion_" + var)});
+            variables.emplace_back(make_symbol("ion_" + var));
         }
         for (auto& var : ion.writes) {
-            variables.push_back({make_symbol("ion_" + var)});
+            variables.emplace_back(make_symbol("ion_" + var));
             if (ion.is_ionic_current(var)) {
-                variables.push_back({make_symbol("ion_di" + ion.name + "dv")});
+                variables.emplace_back(make_symbol("ion_di" + ion.name + "dv"));
             }
             if (ion.is_intra_cell_conc(var) || ion.is_extra_cell_conc(var)) {
                 need_style = true;
             }
         }
         if (need_style) {
-            variables.push_back({make_symbol("style_" + ion.name), false, true});
+            variables.emplace_back(make_symbol("style_" + ion.name), false, true);
         }
     }
 
     for (auto& var : info.pointer_variables) {
         auto name = var->get_name();
         if (var->has_properties(NmodlInfo::pointer_var)) {
-            variables.push_back({make_symbol(name)});
+            variables.emplace_back(make_symbol(name));
         } else {
-            variables.push_back({make_symbol(name), true});
+            variables.emplace_back(make_symbol(name), true);
         }
     }
 
@@ -701,9 +683,9 @@ std::vector<IndexVariableInfo> CodegenBaseVisitor::get_int_variables() {
     // then tqitem is an offset
     if (info.net_send_used) {
         if (info.artificial_cell) {
-            variables.push_back({make_symbol("tqitem"), true});
+            variables.emplace_back(make_symbol("tqitem"), true);
         } else {
-            variables.push_back({make_symbol("tqitem"), false, false, true});
+            variables.emplace_back(make_symbol("tqitem"), false, false, true);
         }
         info.tqitem_index = variables.size() - 1;
     }

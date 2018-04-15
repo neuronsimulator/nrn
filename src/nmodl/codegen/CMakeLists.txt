@@ -14,6 +14,8 @@ set(CODEGEN_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/c-openmp/codegen_c_omp_visitor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/c-openacc/codegen_c_acc_visitor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/c-openacc/codegen_c_acc_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/c-cuda/codegen_c_cuda_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/c-cuda/codegen_c_cuda_visitor.cpp
 )
 
 #=============================================================================

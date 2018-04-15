@@ -40,10 +40,10 @@ namespace diffeq {
         Driver() = default;
 
         /// solve equation using provided method
-        std::string solve(std::string equation, std::string method, bool debug = false);
+        std::string solve(const std::string& equation, std::string method, bool debug = false);
 
         /// check if given equation can be solved using cnexp method
-        bool cnexp_possible(std::string equation, std::string& solution);
+        bool cnexp_possible(const std::string& equation, std::string& solution);
     };
 
 }  // namespace diffeq

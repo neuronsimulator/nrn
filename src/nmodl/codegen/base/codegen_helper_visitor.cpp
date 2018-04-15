@@ -1,5 +1,5 @@
 #include <algorithm>
-#include <math.h>
+#include <cmath>
 
 #include "visitors/rename_visitor.hpp"
 #include "codegen/base/codegen_helper_visitor.hpp"
