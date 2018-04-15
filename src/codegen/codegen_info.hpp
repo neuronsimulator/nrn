@@ -318,16 +318,16 @@ namespace codegen {
         bool ion_has_write_variable();
 
         /// if given variable is ion write variable
-        bool is_ion_write_variable(std::string name);
+        bool is_ion_write_variable(const std::string& name);
 
         /// if given variable is ion read variable
-        bool is_ion_read_variable(std::string name);
+        bool is_ion_read_variable(const std::string& name);
 
         /// if either read or write variable
-        bool is_ion_variable(std::string name);
+        bool is_ion_variable(const std::string& name);
 
         /// if a current
-        bool is_current(std::string name);
+        bool is_current(const std::string& name);
     };
 };  // namespace codegen
 

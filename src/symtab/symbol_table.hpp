@@ -228,7 +228,7 @@ namespace symtab {
 
         /// re-initialize members to throw away old symbol tables
         /// this is required as symtab visitor pass runs multiple time
-        void set_mode(bool mode);
+        void set_mode(bool update_mode);
 
         bool has_breakpoint() const {
             return breakpoint_exist;

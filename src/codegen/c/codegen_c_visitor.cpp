@@ -1,6 +1,6 @@
 #include <algorithm>
-#include <math.h>
-#include <time.h>
+#include <cmath>
+#include <ctime>
 
 #include "visitors/rename_visitor.hpp"
 #include "codegen/base/codegen_helper_visitor.hpp"
@@ -203,7 +203,7 @@ std::vector<ShadowUseStatement> CodegenCVisitor::ion_write_statements(BlockType 
  * Often top level verbatim blocks use variables with old names.
  * Here we process if we are processing verbatim block at global scope.
  */
-std::string CodegenCVisitor::process_verbatim_token(std::string token) {
+std::string CodegenCVisitor::process_verbatim_token(const std::string& token) {
     if (printing_top_verbatim_blocks) {
         std::string name = token;
         if (verbatim_variables_mapping.find(token) != verbatim_variables_mapping.end()) {
@@ -216,10 +216,7 @@ std::string CodegenCVisitor::process_verbatim_token(std::string token) {
 
 
 bool CodegenCVisitor::ion_variable_struct_required() {
-    if (optimize_ion_variable_copies() && info.ion_has_write_variable()) {
-        return true;
-    }
-    return false;
+    return optimize_ion_variable_copies() && info.ion_has_write_variable();
 }
 
 
@@ -242,7 +239,9 @@ void CodegenCVisitor::print_channel_iteration_task_end() {
  * Depending on the backend, print loop for tiling channel iterations
  */
 void CodegenCVisitor::print_channel_iteration_tiling_block_begin(BlockType type) {
-    // backend specific, do nothing
+    // no tiling for cpu backend, just get loop bounds
+    printer->add_line("int start = 0;");
+    printer->add_line("int end = nodecount;");
 }
 
 
@@ -298,10 +297,7 @@ void CodegenCVisitor::print_channel_iteration_block_parallel_hint() {
 
 /// if reduction block in nrn_cur required
 bool CodegenCVisitor::nrn_cur_reduction_loop_required() {
-    if (channel_task_dependency_enabled() || info.point_process) {
-        return true;
-    }
-    return false;
+    return channel_task_dependency_enabled() || info.point_process;
 }
 
 
@@ -464,6 +460,20 @@ void CodegenCVisitor::print_memory_allocation_routine() {
     printer->add_line("static inline void mem_free(void* ptr) {");
     printer->add_line("    free(ptr);");
     printer->add_line("}");
+}
+
+
+std::string CodegenCVisitor::compute_method_name(BlockType type) {
+    if (type == BlockType::Initial) {
+        return method_name("nrn_init");
+    }
+    if (type == BlockType::State) {
+        return method_name("nrn_state");
+    }
+    if (type == BlockType::Equation) {
+        return method_name("nrn_cur");
+    }
+    throw std::logic_error("compute_method_name not implemented");
 }
 
 
@@ -667,9 +677,8 @@ std::string CodegenCVisitor::process_verbatim_text(std::string text) {
 std::string CodegenCVisitor::internal_method_arguments() {
     if (ion_variable_struct_required()) {
         return "id, pnodecount, inst, ionvar, data, indexes, thread, nt, v";
-    } else {
-        return "id, pnodecount, inst, data, indexes, thread, nt, v";
     }
+    return "id, pnodecount, inst, data, indexes, thread, nt, v";
 }
 
 
@@ -721,7 +730,7 @@ std::pair<std::string, std::string> CodegenCVisitor::write_ion_variable_name(std
 
 
 std::string CodegenCVisitor::conc_write_statement(std::string ion_name,
-                                                  std::string concentration,
+                                                  const std::string& concentration,
                                                   int index) {
     auto conc_var_name = get_variable_name("ion_" + concentration);
     auto style_var_name = get_variable_name("style_" + ion_name);
@@ -934,18 +943,16 @@ std::string CodegenCVisitor::float_variable_name(SymbolType& symbol, bool use_in
         if (use_instance) {
             auto stride = (layout == LayoutType::soa) ? dimension : num_float;
             return "(inst->{}+id*{})"_format(name, stride);
-        } else {
-            auto stride = (layout == LayoutType::soa) ? "{}*pnodecount+id*{}"_format(position, dimension) : "{}"_format(position);
-            return "(data+{})"_format(stride);
         }
+        auto stride = (layout == LayoutType::soa) ? "{}*pnodecount+id*{}"_format(position, dimension) : "{}"_format(position);
+        return "(data+{})"_format(stride);
     } else {
         if (use_instance) {
             auto stride = (layout == LayoutType::soa) ? "id" : "id*{}"_format(num_float);
             return "inst->{}[{}]"_format(name, stride);
-        } else {
-            auto stride = (layout == LayoutType::soa) ? "{}*pnodecount+id"_format(position) : "{}"_format(position);
-            return "data[{}]"_format(stride);
         }
+        auto stride = (layout == LayoutType::soa) ? "{}*pnodecount+id"_format(position) : "{}"_format(position);
+        return "data[{}]"_format(stride);
     }
     // clang-format on
 }
@@ -962,25 +969,22 @@ std::string CodegenCVisitor::int_variable_name(IndexVariableInfo& symbol,
         offset = std::to_string(position);
         if (use_instance) {
             return "inst->{}[{}]"_format(name, offset);
-        } else {
-            return "indexes[{}]"_format(offset);
         }
+        return "indexes[{}]"_format(offset);
     } else if (symbol.is_integer) {
         if (use_instance) {
             offset = (layout == LayoutType::soa) ? "{}*pnodecount+id"_format(position) : "id*{}+{}"_format(num_int, position);
             return "inst->{}[{}]"_format(name, offset);
-        } else {
-            offset = (layout == LayoutType::soa) ? "{}*pnodecount+id"_format(position) : "id";
-            return "indexes[{}]"_format(offset);
         }
+        offset = (layout == LayoutType::soa) ? "{}*pnodecount+id"_format(position) : "id";
+        return "indexes[{}]"_format(offset);
     } else {
         offset = (layout == LayoutType::soa) ? "{}*pnodecount+id"_format(position) : "{}"_format(position);
         if (use_instance) {
             return "inst->{}[indexes[{}]]"_format(name, offset);
-        } else {
-            auto data = symbol.is_vdata ? "_vdata" : "_data";
-            return "nt->{}[indexes[{}]]"_format(data, offset);
         }
+        auto data = symbol.is_vdata ? "_vdata" : "_data";
+        return "nt->{}[indexes[{}]]"_format(data, offset);
     }
     // clang-format on
 }
@@ -1213,7 +1217,7 @@ void CodegenCVisitor::print_mechanism_global_structure() {
         }
     }
 
-    if (info.primes_size) {
+    if (info.primes_size != 0) {
         printer->add_line("int* slist1;");
         printer->add_line("int* dlist1;");
         global_variables.push_back(make_symbol("slist1"));
@@ -1379,7 +1383,7 @@ void CodegenCVisitor::print_mechanism_register() {
      *  Register callbacks for thread allocation and cleanup. Note that thread_data_index
      *  represent total number of thread used minus 1 (i.e. index of last thread).
      */
-    if (info.vectorize && info.thread_data_index) {
+    if (info.vectorize && (info.thread_data_index != 0)) {
         auto name = get_variable_name("ext_call_thread");
         printer->add_line("thread_mem_init({});"_format(name));
         printer->add_line("{} = 0;"_format(get_variable_name("thread_data_in_use")));
@@ -1423,7 +1427,7 @@ void CodegenCVisitor::print_mechanism_register() {
     if (net_receive_buffering_required()) {
         printer->add_line("hoc_register_net_receive_buffering(net_buf_receive, mech_type);");
     }
-    if (info.num_net_receive_arguments) {
+    if (info.num_net_receive_arguments != 0) {
         printer->add_line("pnt_receive[mech_type] = {};"_format(method_name("net_receive")));
         printer->add_line("pnt_receive_size[mech_type] = num_net_receive_args();");
         if (info.net_receive_initial_node != nullptr) {
@@ -1454,13 +1458,13 @@ void CodegenCVisitor::print_thread_memory_callbacks() {
     if (info.vectorize && info.derivimplicit_used) {
         printer->add_line("thread[dith{}()].pval = NULL;"_format(info.derivimplicit_list_num));
     }
-    if (info.vectorize && info.top_local_thread_size) {
+    if (info.vectorize && (info.top_local_thread_size != 0)) {
         auto length = info.top_local_thread_size;
         auto allocation = "(double*)mem_alloc({}, sizeof(double))"_format(length);
         auto line = "thread[top_local_var_tid()].pval = {};"_format(allocation);
         printer->add_line(line);
     }
-    if (info.thread_var_data_size) {
+    if (info.thread_var_data_size != 0) {
         auto length = info.thread_var_data_size;
         auto thread_data = get_variable_name("thread_data");
         auto thread_data_in_use = get_variable_name("thread_data_in_use");
@@ -1486,11 +1490,11 @@ void CodegenCVisitor::print_thread_memory_callbacks() {
         printer->add_line("free(thread[dith{}()].pval);"_format(n));
         printer->add_line("nrn_destroy_newtonspace(*newtonspace{}(thread));"_format(n));
     }
-    if (info.top_local_thread_size) {
+    if (info.top_local_thread_size != 0) {
         auto line = "free(thread[top_local_var_tid()].pval);";
         printer->add_line(line);
     }
-    if (info.thread_var_data_size) {
+    if (info.thread_var_data_size != 0) {
         auto thread_data = get_variable_name("thread_data");
         auto thread_data_in_use = get_variable_name("thread_data_in_use");
         printer->add_line("if (thread[thread_var_tid()].pval == {}) {}"_format(thread_data, "{"));
@@ -1516,7 +1520,7 @@ void CodegenCVisitor::print_mechanism_var_structure() {
     }
     for (auto& var : int_variables) {
         auto name = var.symbol->get_name();
-        if (var.is_index | var.is_integer) {
+        if (var.is_index || var.is_integer) {
             printer->add_line("{}* {};"_format(int_type, name));
         } else {
             auto type = var.is_vdata ? "void*" : float_data_type();
@@ -1576,7 +1580,7 @@ void CodegenCVisitor::print_global_variable_setup() {
     printer->add_line("{0}_global = {1};"_format(info.mod_suffix, allocation));
 
     /// offsets for state variables
-    if (info.primes_size) {
+    if (info.primes_size != 0) {
         auto slist1 = get_variable_name("slist1");
         auto dlist1 = get_variable_name("dlist1");
         auto n = info.primes_size;
@@ -1610,7 +1614,7 @@ void CodegenCVisitor::print_global_variable_setup() {
     }
 
     /// memory for thread member
-    if (info.vectorize && info.thread_data_index) {
+    if (info.vectorize && (info.thread_data_index != 0)) {
         auto n = info.thread_data_index;
         auto alloc = "(ThreadDatum*) mem_alloc({}, sizeof(ThreadDatum))"_format(n);
         auto name = get_variable_name("ext_call_thread");
@@ -1737,7 +1741,7 @@ void CodegenCVisitor::print_instance_variable_setup() {
 
     for (auto& var : int_variables) {
         auto name = var.symbol->get_name();
-        if (var.is_index | var.is_integer) {
+        if (var.is_index || var.is_integer) {
             printer->add_line("inst->{} = ml->pdata;"_format(name));
         } else {
             auto data = var.is_vdata ? "_vdata" : "_data";
@@ -1778,7 +1782,7 @@ void CodegenCVisitor::print_initial_block(InitialBlock* node) {
     }
 
     /// initial block
-    if (node) {
+    if (node != nullptr) {
         auto block = node->get_statement_block();
         print_statement_block(block.get(), false, false);
     }
@@ -1793,14 +1797,7 @@ void CodegenCVisitor::print_initial_block(InitialBlock* node) {
 
 
 void CodegenCVisitor::print_global_function_common_code(BlockType type) {
-    std::string method;
-    if (type == BlockType::Initial) {
-        method = method_name("nrn_init");
-    } else if (type == BlockType::State) {
-        method = method_name("nrn_state");
-    } else if (type == BlockType::Equation) {
-        method = method_name("nrn_cur");
-    }
+    std::string method = compute_method_name(type);
     auto args = "NrnThread* nt, Memb_list* ml, int type";
 
     print_global_method_annotation();
@@ -2541,12 +2538,12 @@ void CodegenCVisitor::codegen_all() {
     print_mechanism_info_array();
     print_global_variables_for_hoc();
 
+    codegen_data_structures();
+
     codegen_common_getters();
 
     print_thread_memory_callbacks();
     print_memory_allocation_routine();
-
-    codegen_data_structures();
 
     print_global_variable_setup();
     print_instance_variable_setup();

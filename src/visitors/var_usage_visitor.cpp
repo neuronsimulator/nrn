@@ -1,5 +1,7 @@
 #include "visitors/var_usage_visitor.hpp"
 
+#include <utility>
+
 /// rename matching variable
 void VarUsageVisitor::visit_name(ast::Name* node) {
     std::string name = node->get_name();
@@ -10,7 +12,7 @@ void VarUsageVisitor::visit_name(ast::Name* node) {
 
 bool VarUsageVisitor::variable_used(ast::Node* node, std::string name) {
     used = false;
-    var_name = name;
+    var_name = std::move(name);
     node->visit_children(this);
     return used;
 }

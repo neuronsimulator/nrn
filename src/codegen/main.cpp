@@ -18,6 +18,7 @@
 #include "codegen/c/codegen_c_visitor.hpp"
 #include "codegen/c-openmp/codegen_c_omp_visitor.hpp"
 #include "codegen/c-openacc/codegen_c_acc_visitor.hpp"
+#include "codegen/c-cuda/codegen_c_cuda_visitor.hpp"
 
 using namespace symtab;
 
@@ -47,7 +48,7 @@ int main(int argc, const char* argv[]) {
                                                     "accelerator",
                                                     "Accelerator backend [cuda]",
                                                     false,
-                                                    "cuda",
+                                                    "",
                                                     "string");
         TCLAP::SwitchArg verbose_arg(               "",
                                                     "verbose",
@@ -73,6 +74,7 @@ int main(int argc, const char* argv[]) {
 
         std::string filename = modfile_arg.getValue();
         std::string host_backend = host_arg.getValue();
+        std::string accel_backend = accel_arg.getValue();
         bool verbose = verbose_arg.getValue();
         bool aos_code = aos_layout_arg.getValue();
         bool mod_inline = inline_arg.getValue();
@@ -214,6 +216,17 @@ int main(int argc, const char* argv[]) {
             } else {
                 std::cerr << "Argument Error: Unknown host backend " << host_backend << std::endl;
                 return 1;
+            }
+
+            if (!accel_backend.empty()) {
+                if (accel_backend == "cuda") {
+                    CodegenCCudaVisitor visitor(mod_filename, aos_code);
+                    visitor.visit_program(ast.get());
+                } else {
+                    std::cerr << "Argument Error: Unknown accelerator backend " << accel_backend
+                              << std::endl;
+                    return 1;
+                }
             }
         }
 

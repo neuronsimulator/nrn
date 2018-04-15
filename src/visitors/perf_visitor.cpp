@@ -424,7 +424,7 @@ bool PerfVisitor::is_constant_variable(const std::shared_ptr<symtab::Symbol>& sy
  * read/write count. Also update ops count in current block.
  */
 void PerfVisitor::update_memory_ops(const std::string& name) {
-    if (start_measurement == false || current_symtab == nullptr) {
+    if (!start_measurement || current_symtab == nullptr) {
         return;
     }
 

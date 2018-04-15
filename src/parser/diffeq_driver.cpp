@@ -25,7 +25,7 @@ namespace diffeq {
         }
     }
 
-    std::string Driver::solve(std::string equation, std::string method, bool debug) {
+    std::string Driver::solve(const std::string& equation, std::string method, bool debug) {
         std::string state, rhs;
         int order = 0;
         bool cnexp_possible;
@@ -51,7 +51,7 @@ namespace diffeq {
     }
 
     /// \todo : instead of using neuron like api, we need to refactor
-    bool Driver::cnexp_possible(std::string equation, std::string& solution) {
+    bool Driver::cnexp_possible(const std::string& equation, std::string& solution) {
         std::string state, rhs;
         int order = 0;
         bool cnexp_possible;

@@ -310,11 +310,11 @@ class CodegenBaseVisitor : public AstVisitor {
 
 
     /// for given float variable name, index position in the data array
-    int position_of_float_var(std::string name);
+    int position_of_float_var(const std::string& name);
 
 
     /// for given int variable name, index position in the data array
-    int position_of_int_var(std::string name);
+    int position_of_int_var(const std::string& name);
 
 
     /// when ion variable copies optimized then change name (e.g. ena to ion_ena)
@@ -390,8 +390,8 @@ class CodegenBaseVisitor : public AstVisitor {
     }
 
   public:
-    CodegenBaseVisitor(std::string mod_file, bool aos)
-        : printer(new CodePrinter(mod_file + ".cpp")) {
+    CodegenBaseVisitor(std::string mod_file, bool aos, std::string extension = ".cpp")
+        : printer(new CodePrinter(mod_file + extension)) {
         init(aos, mod_file);
     }
 
