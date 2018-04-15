@@ -132,7 +132,9 @@ class CodegenCVisitor : public CodegenBaseVisitor {
 
 
     /// function call / statement for nrn_wrote_conc
-    std::string conc_write_statement(std::string ion_name, const std::string& concentration, int index);
+    std::string conc_write_statement(std::string ion_name,
+                                     const std::string& concentration,
+                                     int index);
 
 
     /// arguments for internally defined functions
@@ -165,6 +167,13 @@ class CodegenCVisitor : public CodegenBaseVisitor {
 
     /// return name of main compute kernels
     virtual std::string compute_method_name(BlockType type);
+
+
+    /// retstrict keyword
+    virtual std::string k_restrict();
+
+    /// const keyword
+    virtual std::string k_const();
 
 
     /// start of coreneuron namespace
@@ -211,6 +220,10 @@ class CodegenCVisitor : public CodegenBaseVisitor {
 
     /// if reduction block in nrn_cur required
     virtual bool nrn_cur_reduction_loop_required();
+
+
+    /// if variable is qualified as constant
+    virtual bool is_constant_variable(std::string name);
 
 
     /// char array that has mechanism information (to be registered with coreneuron)

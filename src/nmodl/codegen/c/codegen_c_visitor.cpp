@@ -220,6 +220,23 @@ bool CodegenCVisitor::ion_variable_struct_required() {
 }
 
 
+/// if variable is qualified as constant
+bool CodegenCVisitor::is_constant_variable(std::string name) {
+    auto symbol = program_symtab->lookup_in_scope(name);
+    bool is_constant = false;
+    if (symbol != nullptr) {
+        if (symbol->has_properties(NmodlInfo::read_ion_var)) {
+            is_constant = true;
+        }
+        if (symbol->has_properties(NmodlInfo::param_assign) && symbol->get_write_count() == 0) {
+            is_constant = true;
+        }
+    }
+    return is_constant;
+}
+
+
+
 /****************************************************************************************/
 /*                      Routines must be overloaded in backend                          */
 /****************************************************************************************/
@@ -477,6 +494,17 @@ std::string CodegenCVisitor::compute_method_name(BlockType type) {
 }
 
 
+// note extra empty space for pretty-printing if we skip the symbol
+std::string CodegenCVisitor::k_restrict() {
+    return "__restrict__ ";
+}
+
+
+std::string CodegenCVisitor::k_const() {
+    return "const ";
+}
+
+
 /****************************************************************************************/
 /*               Non-code-specific printing routines for code generation                */
 /****************************************************************************************/
@@ -688,8 +716,8 @@ std::string CodegenCVisitor::internal_method_parameters() {
         ion_var_arg = " IonCurVar& ionvar,";
     }
     return "int id, int pnodecount, {}* inst,{} double* data, "
-           "Datum* indexes, ThreadDatum* thread, "
-           "NrnThread* nt, double v"_format(instance_struct(), ion_var_arg);
+           "{}Datum* indexes, ThreadDatum* thread, "
+           "NrnThread* nt, double v"_format(instance_struct(), ion_var_arg, k_const());
 }
 
 
@@ -799,6 +827,7 @@ void CodegenCVisitor::print_memory_layout_getter() {
 
 void CodegenCVisitor::print_first_pointer_var_index_getter() {
     printer->add_newline(2);
+    print_device_method_annotation();
     printer->add_line("static inline int first_pointer_var_index() {");
     printer->add_line("    return {};"_format(info.first_pointer_var_index));
     printer->add_line("}");
@@ -807,11 +836,13 @@ void CodegenCVisitor::print_first_pointer_var_index_getter() {
 
 void CodegenCVisitor::print_num_variable_getter() {
     printer->add_newline(2);
+    print_device_method_annotation();
     printer->add_line("static inline int num_float_variable() {");
     printer->add_line("    return {};"_format(num_float_variable()));
     printer->add_line("}");
 
     printer->add_newline(2);
+    print_device_method_annotation();
     printer->add_line("static inline int num_int_variable() {");
     printer->add_line("    return {};"_format(num_int_variable()));
     printer->add_line("}");
@@ -823,6 +854,7 @@ void CodegenCVisitor::print_net_receive_arg_size_getter() {
         return;
     }
     printer->add_newline(2);
+    print_device_method_annotation();
     printer->add_line("static inline int num_net_receive_args() {");
     printer->add_line("    return {};"_format(info.num_net_receive_arguments));
     printer->add_line("}");
@@ -831,6 +863,7 @@ void CodegenCVisitor::print_net_receive_arg_size_getter() {
 
 void CodegenCVisitor::print_mech_type_getter() {
     printer->add_newline(2);
+    print_device_method_annotation();
     printer->add_line("static inline int get_mech_type() {");
     printer->add_line("    return {};"_format(get_variable_name("mech_type")));
     printer->add_line("}");
@@ -839,6 +872,7 @@ void CodegenCVisitor::print_mech_type_getter() {
 
 void CodegenCVisitor::print_memb_list_getter() {
     printer->add_newline(2);
+    print_device_method_annotation();
     printer->add_line("static inline Memb_list* get_memb_list(NrnThread* nt) {");
     printer->add_line("    if (nt->_ml_list == NULL) {");
     printer->add_line("        return NULL;");
@@ -926,11 +960,9 @@ void CodegenCVisitor::print_thread_getters() {
 }
 
 
-
 /****************************************************************************************/
 /*                         Routines for returning variable name                         */
 /****************************************************************************************/
-
 
 
 std::string CodegenCVisitor::float_variable_name(SymbolType& symbol, bool use_instance) {
@@ -1184,13 +1216,11 @@ void CodegenCVisitor::print_mechanism_global_structure() {
         global_variables.push_back(symbol);
     }
 
-    if (info.vectorize) {
-        printer->add_line("ThreadDatum* ext_call_thread;");
-        global_variables.push_back(make_symbol("ext_call_thread"));
-    }
-
     printer->add_line("int reset;");
     global_variables.push_back(make_symbol("reset"));
+
+    printer->add_line("int mech_type;");
+    global_variables.push_back(make_symbol("mech_type"));
 
     auto& globals = info.global_variables;
     auto& constants = info.constant_variables;
@@ -1228,14 +1258,17 @@ void CodegenCVisitor::print_mechanism_global_structure() {
         }
     }
 
-    printer->add_line("int mech_type;");
-    global_variables.push_back(make_symbol("mech_type"));
+    if (info.vectorize) {
+        printer->add_line("ThreadDatum* {}ext_call_thread;"_format(k_restrict()));
+        global_variables.push_back(make_symbol("ext_call_thread"));
+    }
+
     printer->decrease_indent();
     printer->add_line("};");
 
     printer->add_newline(1);
     printer->add_line("/** holds object of global variable */");
-    printer->add_line("{}* {}_global;"_format(global_struct(), info.mod_suffix));
+    printer->add_line("{}* {}{}_global;"_format(global_struct(), k_restrict(), info.mod_suffix));
 }
 
 
@@ -1516,21 +1549,23 @@ void CodegenCVisitor::print_mechanism_var_structure() {
     printer->start_block("struct {} "_format(instance_struct()));
     for (auto& var : float_variables) {
         auto name = var->get_name();
-        printer->add_line("{}* {};"_format(float_type, name));
+        auto qualifier = is_constant_variable(name) ? k_const() : "";
+        printer->add_line("{}{}* {}{};"_format(qualifier, float_type, k_restrict(), name));
     }
     for (auto& var : int_variables) {
         auto name = var.symbol->get_name();
         if (var.is_index || var.is_integer) {
-            printer->add_line("{}* {};"_format(int_type, name));
+            printer->add_line("{}{}* {}{};"_format(k_const(), int_type, k_restrict(), name));
         } else {
+            auto qualifier = var.is_constant ? k_const() : "";
             auto type = var.is_vdata ? "void*" : float_data_type();
-            printer->add_line("{}* {};"_format(type, name));
+            printer->add_line("{}{}* {}{};"_format(qualifier, type, k_restrict(), name));
         }
     }
     if (channel_task_dependency_enabled()) {
         for (auto& var : shadow_variables) {
             auto name = var->get_name();
-            printer->add_line("{}* {};"_format(float_type, name));
+            printer->add_line("{}* {}{};"_format(float_type, k_restrict(), name));
         }
     }
     printer->end_block();
@@ -1682,6 +1717,7 @@ void CodegenCVisitor::print_global_variable_setup() {
     printer->add_newline();
 }
 
+
 void CodegenCVisitor::print_shadow_vector_setup() {
     printer->add_newline(2);
     printer->add_line("/** allocate and initialize shadow vector */");
@@ -1805,23 +1841,25 @@ void CodegenCVisitor::print_global_function_common_code(BlockType type) {
     print_kernel_data_present_annotation_block_begin();
     printer->add_line("int nodecount = ml->nodecount;");
     printer->add_line("int pnodecount = ml->_nodecount_padded;");
-    printer->add_line("int* node_index = ml->nodeindices;");
-    printer->add_line("double* data = ml->data;");
-    printer->add_line("double* voltage = nt->_actual_v;");
+    printer->add_line("{}int* {}node_index = ml->nodeindices;"_format(k_const(), k_restrict()));
+    printer->add_line("double* {}data = ml->data;"_format(k_restrict()));
+    printer->add_line("{}double* {}voltage = nt->_actual_v;"_format(k_const(), k_restrict()));
 
     if (type == BlockType::Equation) {
-        printer->add_line("double* vec_rhs = nt->_actual_rhs;");
-        printer->add_line("double* vec_d = nt->_actual_d;");
+        printer->add_line("double* {} vec_rhs = nt->_actual_rhs;"_format(k_restrict()));
+        printer->add_line("double* {} vec_d = nt->_actual_d;"_format(k_restrict()));
         print_rhs_d_shadow_variables();
     }
-    printer->add_line("Datum* indexes = ml->pdata;");
-    printer->add_line("ThreadDatum* thread = ml->_thread;");
+    printer->add_line("{}Datum* {}indexes = ml->pdata;"_format(k_const(), k_restrict()));
+    printer->add_line("ThreadDatum* {}thread = ml->_thread;"_format(k_restrict()));
 
     if (type == BlockType::Initial) {
         printer->add_newline();
         printer->add_line("setup_instance(nt, ml);");
     }
-    printer->add_line("{0}* inst = ({0}*) ml->instance;"_format(instance_struct()));
+    // clang-format off
+    printer->add_line("{0}* {1}inst = ({0}*) ml->instance;"_format(instance_struct(), k_restrict()));
+    // clang-format on
     printer->add_newline(1);
 }
 
@@ -2220,7 +2258,6 @@ void CodegenCVisitor::print_derivative_kernel_for_derivimplicit() {
 }
 
 
-
 /****************************************************************************************/
 /*                                Print nrn_state routine                                */
 /****************************************************************************************/
@@ -2319,6 +2356,7 @@ void CodegenCVisitor::print_nrn_current(BreakpointBlock* node) {
     auto args = internal_method_parameters();
     auto block = node->get_statement_block().get();
     printer->add_newline(2);
+    print_device_method_annotation();
     printer->start_block("static inline double nrn_current({})"_format(args));
     printer->add_line("double current = 0.0;");
     print_statement_block(block, false, false);

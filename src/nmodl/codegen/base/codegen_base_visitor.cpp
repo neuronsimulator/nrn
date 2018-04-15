@@ -639,11 +639,19 @@ std::vector<SymbolType> CodegenBaseVisitor::get_float_variables() {
  *      - is_vdata   (false)
  *      - is_index   (false
  *      - is_integer (false)
+ *
+ * Which variables are constant qualified?
+ *
+ *  - node area is read only
+ *  - read ion variables are read only
+ *  - style_ionname is index / offset
  */
 std::vector<IndexVariableInfo> CodegenBaseVisitor::get_int_variables() {
     std::vector<IndexVariableInfo> variables;
     if (info.point_process) {
         variables.emplace_back(make_symbol(node_area));
+        variables.back().is_constant = true;
+        /// note that this variable is not printed in neuron implementation
         if (info.artificial_cell) {
             variables.emplace_back(make_symbol("point_process"), true);
         } else {
@@ -655,6 +663,7 @@ std::vector<IndexVariableInfo> CodegenBaseVisitor::get_int_variables() {
         bool need_style = false;
         for (auto& var : ion.reads) {
             variables.emplace_back(make_symbol("ion_" + var));
+            variables.back().is_constant = true;
         }
         for (auto& var : ion.writes) {
             variables.emplace_back(make_symbol("ion_" + var));
@@ -667,6 +676,7 @@ std::vector<IndexVariableInfo> CodegenBaseVisitor::get_int_variables() {
         }
         if (need_style) {
             variables.emplace_back(make_symbol("style_" + ion.name), false, true);
+            variables.back().is_constant = true;
         }
     }
 

@@ -76,6 +76,9 @@ struct IndexVariableInfo {
     /// is printed as array accesses
     bool is_integer = false;
 
+    /// if the variable is qualified as constant (this is propery of IndexVariable)
+    bool is_constant = false;
+
     IndexVariableInfo(std::shared_ptr<symtab::Symbol> symbol,
                       bool is_vdata = false,
                       bool is_index = false,

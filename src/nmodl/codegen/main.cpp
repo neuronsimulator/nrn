@@ -191,6 +191,11 @@ int main(int argc, const char* argv[]) {
         }
 
         {
+            PerfVisitor v(mod_filename + ".perf.json");
+            v.visit_program(ast.get());
+        }
+
+        {
             std::stringstream stream;
             auto symtab = ast->get_model_symbol_table();
             symtab->print(stream);
