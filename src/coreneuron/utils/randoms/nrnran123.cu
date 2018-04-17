@@ -43,7 +43,7 @@ __device__ size_t nrnran123_state_size() {
     return sizeof(nrnran123_State);
 }
 
-__device__ void nrnran123_set_globalindex(uint32_t gix) {
+__global__ void nrnran123_set_globalindex(uint32_t gix) {
     k.v[0] = gix;
 }
 
@@ -163,4 +163,10 @@ void nrnran123_deletestream(nrnran123_State* s) {
     cudaDeviceSynchronize();
 
     cudaFree(s);
+}
+
+/* set global index for random123 stream on gpu */
+void nrnran123_set_gpu_globalindex(uint32_t gix) {
+    nrnran123_set_globalindex<<<1,1>>>(gix);
+    cudaDeviceSynchronize();
 }

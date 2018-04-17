@@ -42,21 +42,15 @@ size_t nrnran123_instance_count() {
     return instance_count_;
 }
 
-/* now this is declated in nrnran123.h so that its available for prototype declaration
-
-struct nrnran123_State {
-        philox4x32_ctr_t c;
-        philox4x32_ctr_t r;
-        unsigned char which_;
-};
-*/
-
 size_t nrnran123_state_size() {
     return sizeof(nrnran123_State);
 }
 
 void nrnran123_set_globalindex(uint32_t gix) {
     k.v[0] = gix;
+    #if (defined(__CUDACC__) || defined(_OPENACC))
+    nrnran123_set_gpu_globalindex(gix);
+    #endif
 }
 
 /* if one sets the global, one should reset all the stream sequences. */

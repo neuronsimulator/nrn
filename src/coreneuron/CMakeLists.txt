@@ -235,7 +235,13 @@ endif()
 set(GENERATED_MECH_C_FILES ${MOD_FUNC_C} ${MOD_FUNC_PTRS_C} ${MOD2C_STDMECH_OUTPUTS} ${MOD2C_OPTMECH_OUTPUTS})
 
 # artificial cells must be on cpu, defaul nrnran123.c is for cpu, nrn_setup.cpp uses nrnran123 for only memory calculation purpose which should use cpu version of nrnran123
-set(NOACC_MECH_C_FILES ${CMAKE_CURRENT_BINARY_DIR}/netstim.c ${CMAKE_CURRENT_BINARY_DIR}/netstim_inhpoisson.c ${CMAKE_CURRENT_BINARY_DIR}/pattern.c ${CMAKE_CURRENT_SOURCE_DIR}/utils/randoms/nrnran123.c ${CMAKE_CURRENT_SOURCE_DIR}/nrniv/nrn_setup.cpp)
+set(NOACC_MECH_C_FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/netstim.c
+    ${CMAKE_CURRENT_BINARY_DIR}/netstim_inhpoisson.c
+    ${CMAKE_CURRENT_BINARY_DIR}/pattern.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/randoms/nrnran123.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/nrniv/nrn_setup.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/nrniv/global_vars.cpp)
 
 if(ENABLE_OPENACC)
     set_source_files_properties(${GENERATED_MECH_C_FILES} PROPERTIES COMPILE_FLAGS "")

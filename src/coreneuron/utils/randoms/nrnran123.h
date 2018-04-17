@@ -98,7 +98,7 @@ extern DEVICE void nrnran123_mutconstruct(void);
 
 /* global index. eg. run number */
 /* all generator instances share this global index */
-extern DEVICE void nrnran123_set_globalindex(uint32_t gix);
+extern GLOBAL void nrnran123_set_globalindex(uint32_t gix);
 extern DEVICE uint32_t nrnran123_get_globalindex();
 
 extern DEVICE size_t nrnran123_instance_count(void);
@@ -155,7 +155,7 @@ extern DEVICE double nrnran123_gauss(nrnran123_State*); /* mean 0.0, std 1.0 */
 /* more fundamental (stateless) (though the global index is still used) */
 extern DEVICE nrnran123_array4x32 nrnran123_iran(uint32_t seq, uint32_t id1, uint32_t id2);
 extern DEVICE double nrnran123_uint2dbl(uint32_t);
-
+extern void nrnran123_set_gpu_globalindex(uint32_t gix);
 #if defined(__cplusplus)
 }
 #endif
