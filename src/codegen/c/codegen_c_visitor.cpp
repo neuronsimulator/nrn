@@ -220,7 +220,13 @@ bool CodegenCVisitor::ion_variable_struct_required() {
 }
 
 
-/// if variable is qualified as constant
+/**
+ * Check if variable is qualified as constant
+ *
+ * This can be override in the backend. For example, parameters can be constant
+ * except in INITIAL block where they are set to 0. As initial block is/can be
+ * executed on c/cpu backend, gpu/cuda backend can mark the parameter as constnat.
+ */
 bool CodegenCVisitor::is_constant_variable(std::string name) {
     auto symbol = program_symtab->lookup_in_scope(name);
     bool is_constant = false;

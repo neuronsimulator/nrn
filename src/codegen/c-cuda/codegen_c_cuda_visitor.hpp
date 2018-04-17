@@ -19,6 +19,8 @@ class CodegenCCudaVisitor : public CodegenCVisitor {
     /// name of the code generation backend
     std::string backend_name() override;
 
+    /// if variable is qualified as constant
+    bool is_constant_variable(std::string name) override;
 
     /// return name of main compute kernels
     std::string compute_method_name(BlockType type) override;
