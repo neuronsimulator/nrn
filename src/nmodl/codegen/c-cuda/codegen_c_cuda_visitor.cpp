@@ -1,14 +1,36 @@
 #include <fmt/format.h>
 
+#include "symtab/symbol_table.hpp"
 #include "codegen/c-cuda/codegen_c_cuda_visitor.hpp"
 #include "utils/string_utils.hpp"
 
 using namespace fmt::literals;
+using namespace symtab;
 
 
 /****************************************************************************************/
 /*                      Routines must be overloaded in backend                          */
 /****************************************************************************************/
+
+
+/**
+ * As initial block is/can be executed on c/cpu backend, gpu/cuda
+ * backend can mark the parameter as constant even if they have
+ * write count > 0 (typically due to initial block).
+ */
+bool CodegenCCudaVisitor::is_constant_variable(std::string name) {
+    auto symbol = program_symtab->lookup_in_scope(name);
+    bool is_constant = false;
+    if (symbol != nullptr) {
+        if (symbol->has_properties(NmodlInfo::read_ion_var)) {
+            is_constant = true;
+        }
+        if (symbol->has_properties(NmodlInfo::param_assign)) {
+            is_constant = true;
+        }
+    }
+    return is_constant;
+}
 
 
 std::string CodegenCCudaVisitor::compute_method_name(BlockType type) {
