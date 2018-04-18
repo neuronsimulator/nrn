@@ -202,14 +202,20 @@ class CodegenBaseVisitor : public AstVisitor {
     }
 
 
-    /// data type for floating point elements
+    /// default data type for floating point elements
+    std::string default_float_data_type() {
+        return "double";
+    }
+
+
+    /// data type for floating point elements specified on command line
     std::string float_data_type() {
         return float_type;
     }
 
 
-    /// data type for ineteger (offset) elemenets
-    std::string int_data_type() {
+    /// default data type for integer (offset) elements
+    std::string default_int_data_type() {
         return "int";
     }
 
@@ -279,6 +285,10 @@ class CodegenBaseVisitor : public AstVisitor {
 
     /// check if net_send_buffer is required
     bool net_send_buffer_required();
+
+
+    /// check if setup_range_variable function is required
+    bool range_variable_setup_required();
 
 
     /// check if net_receive node exist

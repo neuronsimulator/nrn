@@ -323,6 +323,10 @@ bool CodegenCVisitor::nrn_cur_reduction_loop_required() {
     return channel_task_dependency_enabled() || info.point_process;
 }
 
+/// if shadow vectors required
+bool CodegenCVisitor::shadow_vector_setup_required() {
+    return (channel_task_dependency_enabled() && !shadow_variables.empty());
+}
 
 
 /*
@@ -666,7 +670,7 @@ void CodegenCVisitor::print_function(ast::FunctionBlock* node) {
     codegen = true;
     auto name = node->get_name();
     auto return_var = "ret_" + name;
-    auto type = float_data_type() + " ";
+    auto type = default_float_data_type() + " ";
 
     /// first rename return variable name
     auto block = node->get_statement_block().get();
@@ -988,14 +992,13 @@ std::string CodegenCVisitor::float_variable_name(SymbolType& symbol, bool use_in
         }
         auto stride = (layout == LayoutType::soa) ? "{}*pnodecount+id*{}"_format(position, dimension) : "{}"_format(position);
         return "(data+{})"_format(stride);
-    } else {
-        if (use_instance) {
-            auto stride = (layout == LayoutType::soa) ? "id" : "id*{}"_format(num_float);
-            return "inst->{}[{}]"_format(name, stride);
-        }
-        auto stride = (layout == LayoutType::soa) ? "{}*pnodecount+id"_format(position) : "{}"_format(position);
-        return "data[{}]"_format(stride);
     }
+    if (use_instance) {
+        auto stride = (layout == LayoutType::soa) ? "id" : "id*{}"_format(num_float);
+        return "inst->{}[{}]"_format(name, stride);
+    }
+    auto stride = (layout == LayoutType::soa) ? "{}*pnodecount+id"_format(position) : "{}"_format(position);
+    return "data[{}]"_format(stride);
     // clang-format on
 }
 
@@ -1013,7 +1016,8 @@ std::string CodegenCVisitor::int_variable_name(IndexVariableInfo& symbol,
             return "inst->{}[{}]"_format(name, offset);
         }
         return "indexes[{}]"_format(offset);
-    } else if (symbol.is_integer) {
+    }
+    if (symbol.is_integer) {
         if (use_instance) {
             offset = (layout == LayoutType::soa) ? "{}*pnodecount+id"_format(position) : "id*{}+{}"_format(num_int, position);
             return "inst->{}[{}]"_format(name, offset);
@@ -1169,7 +1173,7 @@ void CodegenCVisitor::print_coreneuron_includes() {
  * same for some variables to keep same code as neuron.
  */
 void CodegenCVisitor::print_mechanism_global_structure() {
-    auto float_type = float_data_type();
+    auto float_type = default_float_data_type();
     printer->add_newline(2);
     printer->add_line("/** all global variables */");
     printer->add_line("struct {} {}"_format(global_struct(), "{"));
@@ -1553,15 +1557,16 @@ void CodegenCVisitor::print_thread_memory_callbacks() {
 
 
 void CodegenCVisitor::print_mechanism_var_structure() {
-    auto float_type = float_data_type();
-    auto int_type = int_data_type();
+    auto float_type = default_float_data_type();
+    auto int_type = default_int_data_type();
     printer->add_newline(2);
     printer->add_line("/** all mechanism instance variables */");
     printer->start_block("struct {} "_format(instance_struct()));
     for (auto& var : float_variables) {
         auto name = var->get_name();
+        auto type = get_range_var_float_type(var);
         auto qualifier = is_constant_variable(name) ? k_const() : "";
-        printer->add_line("{}{}* {}{};"_format(qualifier, float_type, k_restrict(), name));
+        printer->add_line("{}{}* {}{};"_format(qualifier, type, k_restrict(), name));
     }
     for (auto& var : int_variables) {
         auto name = var.symbol->get_name();
@@ -1569,7 +1574,7 @@ void CodegenCVisitor::print_mechanism_var_structure() {
             printer->add_line("{}{}* {}{};"_format(k_const(), int_type, k_restrict(), name));
         } else {
             auto qualifier = var.is_constant ? k_const() : "";
-            auto type = var.is_vdata ? "void*" : float_data_type();
+            auto type = var.is_vdata ? "void*" : default_float_data_type();
             printer->add_line("{}{}* {}{};"_format(qualifier, type, k_restrict(), name));
         }
     }
@@ -1594,12 +1599,12 @@ void CodegenCVisitor::print_ion_variables_structure() {
     printer->start_block("struct IonCurVar");
     for (auto& ion : info.ions) {
         for (auto& var : ion.writes) {
-            printer->add_line("{} {};"_format(float_data_type(), var));
+            printer->add_line("{} {};"_format(default_float_data_type(), var));
         }
     }
     for (auto& var : info.currents) {
         if (!info.is_ion_variable(var)) {
-            printer->add_line("{} {};"_format(float_data_type(), var));
+            printer->add_line("{} {};"_format(default_float_data_type(), var));
         }
     }
     printer->end_block();
@@ -1738,7 +1743,7 @@ void CodegenCVisitor::print_shadow_vector_setup() {
         printer->add_line("int nodecount = ml->nodecount;");
         for (auto& var : shadow_variables) {
             auto name = var->get_name();
-            auto type = float_data_type();
+            auto type = default_float_data_type();
             auto allocation = "({0}*) mem_alloc(nodecount, sizeof({0}))"_format(type);
             printer->add_line("inst->{0} = {1};"_format(name, allocation));
         }
@@ -1761,8 +1766,54 @@ void CodegenCVisitor::print_shadow_vector_setup() {
 }
 
 
+void CodegenCVisitor::print_setup_range_variable() {
+    auto type = float_data_type();
+    printer->add_newline(2);
+    printer->add_line("/** allocate and setup array for range variable */");
+    printer->start_block("static inline {}* setup_range_variable(double* variable, int n) "_format(type));
+    printer->add_line("{0}* data = ({0}*) mem_alloc(n, sizeof({0}));"_format(type));
+    printer->add_line("for(size_t i = 0; i < n; i++) {");
+    printer->add_line("    data[i] = variable[i];");
+    printer->add_line("}");
+    printer->add_line("return data;");
+    printer->end_block();
+    printer->add_newline();
+}
+
+
+/**
+ * Floating point type for the given range variable (symbol)
+ *
+ * If floating point type like "float" is specified on command line then
+ * we can't turn all variables to new type. This is because certain variables
+ * are pointers to internal variables (e.g. ions). Hence, we check if given
+ * variable can be safely converted to new type. If so, return new type.
+ *
+ * @param symbol Symbol for the range variable
+ * @return Floating point type (float/double)
+ */
+std::string CodegenCVisitor::get_range_var_float_type(const SymbolType& symbol) {
+    /// clang-format off
+    auto with   =   NmodlInfo::read_ion_var
+                    | NmodlInfo::write_ion_var
+                    | NmodlInfo::pointer_var
+                    | NmodlInfo::bbcore_pointer_var
+                    | NmodlInfo::extern_neuron_variable;
+    /// clang-format on
+    bool need_default_type = symbol->has_properties(with);
+    if (need_default_type) {
+        return default_float_data_type();
+    }
+    return float_data_type();
+}
+
+
 void CodegenCVisitor::print_instance_variable_setup() {
-    if (channel_task_dependency_enabled() && !shadow_variables.empty()) {
+    if (range_variable_setup_required()) {
+        print_setup_range_variable();
+    }
+
+    if (shadow_vector_setup_required()) {
         print_shadow_vector_setup();
     }
     printer->add_newline(2);
@@ -1781,8 +1832,17 @@ void CodegenCVisitor::print_instance_variable_setup() {
 
     printer->add_line("Datum* indexes = ml->pdata;");
     int id = 0;
+    std::vector<std::string> variables_to_free;
     for (auto& var : float_variables) {
-        printer->add_line("inst->{} = ml->data + {}{};"_format(var->get_name(), id, stride));
+        auto name = var->get_name();
+        auto default_type = default_float_data_type();
+        auto range_var_type = get_range_var_float_type(var);
+        if (default_type == range_var_type) {
+            printer->add_line("inst->{} = ml->data+{}{};"_format(name, id, stride));
+        } else {
+            printer->add_line("inst->{} = setup_range_variable(ml->data+{}{}, pnodecount);"_format(name, id, stride));
+            variables_to_free.push_back(name);
+        }
         id += var->get_length();
     }
 
@@ -1799,6 +1859,22 @@ void CodegenCVisitor::print_instance_variable_setup() {
     printer->add_line("ml->instance = (void*) inst;");
     printer->end_block();
     printer->add_newline();
+
+    if (range_variable_setup_required()) {
+        printer->add_newline(2);
+        printer->add_line("/** cleanup mechanism instance variables */");
+        printer->start_block("static inline void cleanup_instance(Memb_list* ml) ");
+        if (variables_to_free.empty()) {
+            printer->add_line("// do nothing");
+        } else {
+            printer->add_line("{0}* inst = ({0}*) ml->instance;"_format(instance_struct()));
+            for (auto &var : variables_to_free) {
+                printer->add_line("mem_free((void*)inst->{});"_format(var));
+            }
+        }
+        printer->end_block();
+        printer->add_newline();
+    }
 }
 
 
