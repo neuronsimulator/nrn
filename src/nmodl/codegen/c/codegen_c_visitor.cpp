@@ -2382,7 +2382,8 @@ void CodegenCVisitor::print_nrn_cur_conductance_kernel(BreakpointBlock* node) {
     if (!info.currents.empty()) {
         std::string sum;
         for (const auto& current : info.currents) {
-            sum += breakpoint_current(current);
+            auto var = breakpoint_current(current);
+            sum += get_variable_name(var);
             if (&current != &info.currents.back()) {
                 sum += "+";
             }
@@ -2392,7 +2393,8 @@ void CodegenCVisitor::print_nrn_cur_conductance_kernel(BreakpointBlock* node) {
     if (!info.conductances.empty()) {
         std::string sum;
         for (const auto& conductance : info.conductances) {
-            sum += breakpoint_current(conductance.variable);
+            auto var = breakpoint_current(conductance.variable);
+            sum += get_variable_name(var);
             if (&conductance != &info.conductances.back()) {
                 sum += "+";
             }
