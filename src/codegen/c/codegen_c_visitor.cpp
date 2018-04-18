@@ -613,10 +613,14 @@ void CodegenCVisitor::rename_function_arguments() {
         stringutils::trim(arg);
         RenameVisitor v(arg, "arg_" + arg);
         for (const auto& function : info.functions) {
-            function->accept(&v);
+            if (has_argument_of_name(function, arg)) {
+                function->accept(&v);
+            }
         }
         for (const auto& function : info.procedures) {
-            function->accept(&v);
+            if (has_argument_of_name(function, arg)) {
+                function->accept(&v);
+            }
         }
     }
 }
@@ -1128,9 +1132,10 @@ void CodegenCVisitor::print_backend_info() {
 
 void CodegenCVisitor::print_standard_includes() {
     printer->add_newline();
+    printer->add_line("#include <math.h>");
     printer->add_line("#include <stdio.h>");
     printer->add_line("#include <stdlib.h>");
-    printer->add_line("#include <math.h>");
+    printer->add_line("#include <string.h>");
 }
 
 

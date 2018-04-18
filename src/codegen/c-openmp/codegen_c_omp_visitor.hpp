@@ -55,13 +55,15 @@ class CodegenCOmpVisitor : public CodegenCVisitor {
 
 
   public:
-    CodegenCOmpVisitor(std::string mod_file, bool aos) : CodegenCVisitor(mod_file, aos) {
-        init(aos, mod_file);
+    CodegenCOmpVisitor(std::string mod_file, bool aos, std::string float_type)
+        : CodegenCVisitor(mod_file, aos, float_type) {
     }
 
-    CodegenCOmpVisitor(std::string mod_file, std::stringstream& stream, bool aos)
-        : CodegenCVisitor(mod_file, stream, aos) {
-        init(aos, mod_file);
+    CodegenCOmpVisitor(std::string mod_file,
+                       std::stringstream& stream,
+                       bool aos,
+                       std::string float_type)
+        : CodegenCVisitor(mod_file, stream, aos, float_type) {
     }
 };
 

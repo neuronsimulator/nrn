@@ -50,6 +50,12 @@ int main(int argc, const char* argv[]) {
                                                     false,
                                                     "",
                                                     "string");
+        TCLAP::ValueArg<std::string> dtype_arg(     "",
+                                                    "datatype",
+                                                    "Data type [float, double]",
+                                                    false,
+                                                    "double",
+                                                    "string");
         TCLAP::SwitchArg verbose_arg(               "",
                                                     "verbose",
                                                     "Enable verbose output",
@@ -70,11 +76,13 @@ int main(int argc, const char* argv[]) {
         cmd.add(inline_arg);
         cmd.add(host_arg);
         cmd.add(accel_arg);
+        cmd.add(dtype_arg);
         cmd.parse(argc, argv);
 
         std::string filename = modfile_arg.getValue();
         std::string host_backend = host_arg.getValue();
         std::string accel_backend = accel_arg.getValue();
+        std::string data_type = dtype_arg.getValue();
         bool verbose = verbose_arg.getValue();
         bool aos_code = aos_layout_arg.getValue();
         bool mod_inline = inline_arg.getValue();
@@ -209,14 +217,19 @@ int main(int argc, const char* argv[]) {
         }
 
         {
+            if (data_type != "double" && data_type != "float") {
+                std::cerr << "Argument Error: Unknown data type " << data_type << std::endl;
+                return 1;
+            }
+
             if (host_backend == "c") {
-                CodegenCVisitor visitor(mod_filename, aos_code);
+                CodegenCVisitor visitor(mod_filename, aos_code, data_type);
                 visitor.visit_program(ast.get());
             } else if (host_backend == "c-openmp") {
-                CodegenCOmpVisitor visitor(mod_filename, aos_code);
+                CodegenCOmpVisitor visitor(mod_filename, aos_code, data_type);
                 visitor.visit_program(ast.get());
             } else if (host_backend == "c-openacc") {
-                CodegenCAccVisitor visitor(mod_filename, aos_code);
+                CodegenCAccVisitor visitor(mod_filename, aos_code, data_type);
                 visitor.visit_program(ast.get());
             } else {
                 std::cerr << "Argument Error: Unknown host backend " << host_backend << std::endl;
@@ -225,7 +238,7 @@ int main(int argc, const char* argv[]) {
 
             if (!accel_backend.empty()) {
                 if (accel_backend == "cuda") {
-                    CodegenCCudaVisitor visitor(mod_filename, aos_code);
+                    CodegenCCudaVisitor visitor(mod_filename, aos_code, data_type);
                     visitor.visit_program(ast.get());
                 } else {
                     std::cerr << "Argument Error: Unknown accelerator backend " << accel_backend

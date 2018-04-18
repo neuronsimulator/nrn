@@ -130,6 +130,9 @@ class CodegenBaseVisitor : public AstVisitor {
   protected:
     using SymbolType = std::shared_ptr<symtab::Symbol>;
 
+    /// data type of floating point variables
+    std::string float_type = "double";
+
     /// memory layout for code generation
     LayoutType layout;
 
@@ -201,7 +204,7 @@ class CodegenBaseVisitor : public AstVisitor {
 
     /// data type for floating point elements
     std::string float_data_type() {
-        return "double";
+        return float_type;
     }
 
 
@@ -373,12 +376,16 @@ class CodegenBaseVisitor : public AstVisitor {
     std::vector<SymbolType> get_shadow_variables();
 
 
-    /// vector elements from all types
+    /// print vector elements (all types)
     template <typename T>
     void print_vector_elements(const std::vector<T>& elements,
                                std::string separator,
                                std::string prefix = "");
 
+
+    /// check if function or procedure has argument with same name
+    template <typename T>
+    bool has_argument_with_name(const T& node, std::string name);
 
     /// any statement block in nmodl with option to (not) print braces
     void print_statement_block(ast::StatementBlock* node,
@@ -387,20 +394,27 @@ class CodegenBaseVisitor : public AstVisitor {
 
 
     /// common init for constructors
-    void init(bool aos, std::string filename) {
-        layout = aos ? LayoutType::aos : LayoutType::soa;
+    void init(std::string filename, bool aos, std::string type) {
         mod_file_suffix = filename;
+        layout = aos ? LayoutType::aos : LayoutType::soa;
+        float_type = type;
     }
 
   public:
-    CodegenBaseVisitor(std::string mod_file, bool aos, std::string extension = ".cpp")
+    CodegenBaseVisitor(std::string mod_file,
+                       bool aos,
+                       std::string float_type,
+                       std::string extension = ".cpp")
         : printer(new CodePrinter(mod_file + extension)) {
-        init(aos, mod_file);
+        init(mod_file, aos, float_type);
     }
 
-    CodegenBaseVisitor(std::string mod_file, std::stringstream& stream, bool aos)
+    CodegenBaseVisitor(std::string mod_file,
+                       std::stringstream& stream,
+                       bool aos,
+                       std::string float_type)
         : printer(new CodePrinter(stream)) {
-        init(aos, mod_file);
+        init(mod_file, aos, float_type);
     }
 
     virtual void visit_unit(ast::Unit* node) override;
@@ -443,5 +457,24 @@ void CodegenBaseVisitor::print_vector_elements(const std::vector<T>& elements,
     }
 }
 
+
+/**
+ * Check if function or procedure node has argument with given name
+ *
+ * @tparam T Node type (either procedure or function)
+ * @param node AST node (either procedure or function)
+ * @param name Name of argument
+ * @return True if argument with name exist
+ */
+template <typename T>
+bool has_argument_of_name(const T& node, std::string name) {
+    auto arguments = node->get_arguments();
+    for (const auto& argument : arguments) {
+        if (argument->get_name() == name) {
+            return true;
+        }
+    }
+    return false;
+}
 
 #endif
