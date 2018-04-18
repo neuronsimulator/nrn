@@ -346,6 +346,15 @@ bool CodegenBaseVisitor::net_receive_required() {
 }
 
 
+/**
+ * When floating point data type is not default (i.e. double) then we
+ * have to copy old array to new type (for range variables).
+ */
+bool CodegenBaseVisitor::range_variable_setup_required() {
+    return default_float_data_type() != float_data_type();
+}
+
+
 bool CodegenBaseVisitor::state_variable(std::string name) {
     // clang-format off
     auto result = std::find_if(info.state_vars.begin(),

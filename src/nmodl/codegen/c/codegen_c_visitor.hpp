@@ -169,7 +169,7 @@ class CodegenCVisitor : public CodegenBaseVisitor {
     virtual std::string compute_method_name(BlockType type);
 
 
-    /// retstrict keyword
+    /// restrict keyword
     virtual std::string k_restrict();
 
     /// const keyword
@@ -214,6 +214,10 @@ class CodegenCVisitor : public CodegenBaseVisitor {
     virtual bool channel_task_dependency_enabled();
 
 
+    /// check if shadow_vector_setup function is required
+    bool shadow_vector_setup_required();
+
+
     /// ion variable copies are avoided
     bool optimize_ion_variable_copies();
 
@@ -242,7 +246,15 @@ class CodegenCVisitor : public CodegenBaseVisitor {
     void print_ion_variables_structure();
 
 
-    /// function that initialized instance structure
+    /// return floating point type for given range variable symbol
+    std::string get_range_var_float_type(const SymbolType& symbol);
+
+
+    /// function that initialize range variable with different data type
+    void print_setup_range_variable();
+
+
+    /// function that initialize instance structure
     void print_instance_variable_setup();
 
 
@@ -542,7 +554,7 @@ void CodegenCVisitor::print_function_declaration(T& node) {
     /// procedures have "int" return type by default
     std::string return_type = "int";
     if (node->is_function_block()) {
-        return_type = float_data_type();
+        return_type = default_float_data_type();
     }
 
     print_device_method_annotation();
@@ -553,7 +565,7 @@ void CodegenCVisitor::print_function_declaration(T& node) {
     if (!params.empty() && !internal_params.empty()) {
         printer->add_text(", ");
     }
-    auto type = float_data_type() + " ";
+    auto type = default_float_data_type() + " ";
     print_vector_elements(params, ", ", type);
     printer->add_text(")");
 
