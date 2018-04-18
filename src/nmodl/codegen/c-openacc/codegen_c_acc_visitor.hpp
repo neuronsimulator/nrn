@@ -58,13 +58,15 @@ class CodegenCAccVisitor : public CodegenCVisitor {
 
 
   public:
-    CodegenCAccVisitor(std::string mod_file, bool aos) : CodegenCVisitor(mod_file, aos) {
-        init(aos, mod_file);
+    CodegenCAccVisitor(std::string mod_file, bool aos, std::string float_type)
+        : CodegenCVisitor(mod_file, aos, float_type) {
     }
 
-    CodegenCAccVisitor(std::string mod_file, std::stringstream& stream, bool aos)
-        : CodegenCVisitor(mod_file, stream, aos) {
-        init(aos, mod_file);
+    CodegenCAccVisitor(std::string mod_file,
+                       std::stringstream& stream,
+                       bool aos,
+                       std::string float_type)
+        : CodegenCVisitor(mod_file, stream, aos, float_type) {
     }
 };
 

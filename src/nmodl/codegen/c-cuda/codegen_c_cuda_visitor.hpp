@@ -85,13 +85,15 @@ class CodegenCCudaVisitor : public CodegenCVisitor {
     void codegen_all() override;
 
   public:
-    CodegenCCudaVisitor(std::string mod_file, bool aos) : CodegenCVisitor(mod_file, aos, ".cu") {
-        init(aos, mod_file);
+    CodegenCCudaVisitor(std::string mod_file, bool aos, std::string float_type)
+        : CodegenCVisitor(mod_file, aos, float_type, ".cu") {
     }
 
-    CodegenCCudaVisitor(std::string mod_file, std::stringstream& stream, bool aos)
-        : CodegenCVisitor(mod_file, stream, aos) {
-        init(aos, mod_file);
+    CodegenCCudaVisitor(std::string mod_file,
+                        std::stringstream& stream,
+                        bool aos,
+                        std::string float_type)
+        : CodegenCVisitor(mod_file, stream, aos, float_type) {
     }
 };
 

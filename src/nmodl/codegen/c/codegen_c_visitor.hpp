@@ -502,14 +502,18 @@ class CodegenCVisitor : public CodegenBaseVisitor {
     virtual void codegen_all();
 
   public:
-    CodegenCVisitor(std::string mod_file, bool aos, std::string extension = ".cpp")
-        : CodegenBaseVisitor(mod_file, aos, extension) {
-        init(aos, mod_file);
+    CodegenCVisitor(std::string mod_file,
+                    bool aos,
+                    std::string float_type,
+                    std::string extension = ".cpp")
+        : CodegenBaseVisitor(mod_file, aos, float_type, extension) {
     }
 
-    CodegenCVisitor(std::string mod_file, std::stringstream& stream, bool aos)
-        : CodegenBaseVisitor(mod_file, stream, aos) {
-        init(aos, mod_file);
+    CodegenCVisitor(std::string mod_file,
+                    std::stringstream& stream,
+                    bool aos,
+                    std::string float_type)
+        : CodegenBaseVisitor(mod_file, stream, aos, float_type) {
     }
 
     virtual void visit_function_call(ast::FunctionCall* node) override;
