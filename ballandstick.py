@@ -10,6 +10,8 @@ AUTHORS:
         Journal of Neuroscience Methods 169 (2008) 425-455).
 
 modified to use h instead of nrn -- 2015-04-21
+
+modified to use sec= instead of pushing and popping sections by Robert A McDougal 2018-04-20
 """
 from cell import *
 from neuron import h
@@ -48,8 +50,8 @@ class BallAndStick(Cell):  #### Inherits from Cell
     def define_biophysics(self):
         """Assign the membrane properties across the cell."""
         for sec in self.all: # 'all' exists in parent object.
-            sec.Ra = 100    # Axial resistance in Ohm * cm
-            sec.cm = 1      # Membrane capacitance in micro Farads / cm^2
+            sec.Ra = 100     # Axial resistance in Ohm * cm
+            sec.cm = 1       # Membrane capacitance in micro Farads / cm^2
         
         # Insert active Hodgkin-Huxley current in the soma
         self.soma.insert('hh')
@@ -70,18 +72,14 @@ class BallAndStick(Cell):  #### Inherits from Cell
         the X-axis.
         """
         len1 = self.soma.L
-        self.soma.push()
-        h.pt3dclear()
-        h.pt3dadd(0, 0, 0, self.soma.diam)
-        h.pt3dadd(len1, 0, 0, self.soma.diam)
-        h.pop_section()
+        h.pt3dclear(sec=self.soma)
+        h.pt3dadd(0, 0, 0, self.soma.diam, sec=self.soma)
+        h.pt3dadd(len1, 0, 0, self.soma.diam, sec=self.soma)
         
         len2 = self.dend.L
-        self.dend.push()
-        h.pt3dclear()
-        h.pt3dadd(len1, 0, 0, self.dend.diam)
-        h.pt3dadd(len1 + len2, 0, 0, self.dend.diam)
-        h.pop_section()
+        h.pt3dclear(sec=self.dend)
+        h.pt3dadd(len1, 0, 0, self.dend.diam, sec=self.dend)
+        h.pt3dadd(len1 + len2, 0, 0, self.dend.diam, sec=self.dend)
         
     #### build_subsets, rotateZ, and set_location are now in cell object. ####
     
