@@ -33,9 +33,9 @@ The results of evaluating this code should look something like the following out
 .. code-block::
     none
 
-    NEURON -- Release 7.3 (1314:6accae5c3677) 2015-01-30
-    Duke, Yale, and the BlueBrain Project -- Copyright 1984-2014
-    See http://www.neuron.yale.edu/neuron/credits
+    NEURON -- VERSION 7.5 master (6b4c19f) 2017-09-25
+    Duke, Yale, and the BlueBrain Project -- Copyright 1984-2016
+    See http://neuron.yale.edu/neuron/credits
 
 Step 2: Create a cell
 ---------------------
@@ -134,8 +134,8 @@ Using the Python :func:`type` function can tell us what a variable is:
 .. code-block::
     python
     
-    print "type(soma) =", type(soma)
-    print "type(soma(0.5)) =", type(soma(0.5)) 
+    print("type(soma) = {}".format(type(soma)))
+    print("type(soma(0.5)) ={}".format(type(soma(0.5))))
 
 
 Aside 5: Accessing segment variables.
@@ -157,13 +157,13 @@ or
     python
 
     mech = soma(0.5).pas
-    print dir(mech) 
+    print(dir(mech))
 
 .. code-block::
     python
             	
-    print mech.g
-    print soma(0.5).g_pas 
+    print(mech.g)
+    print(soma(0.5).g_pas)
 
 Step 4: Insert an alpha synapse.
 --------------------------------
@@ -188,10 +188,10 @@ Again, with :func:`dir` function, we can validate that asyn is an object and con
 .. code-block::
     python
        	
-    print "asyn.e", asyn.e
-    print "asyn.gmax", asyn.gmax
-    print "asyn.onset", asyn.onset
-    print "asyn.tau", asyn.tau 
+    print("asyn.e = {}".format(asyn.e))
+    print("asyn.gmax = {}".format(asyn.gmax))
+    print("asyn.onset = {}".format(asyn.onset))
+    print("asyn.tau = {}".format(asyn.tau))
         	
 
 Let's assign the onset of this synapse to occur at 20 ms and the maximal conductance to 1.
@@ -209,7 +209,6 @@ Let's look at the state of our cell using neuron's :func:`psection`.
     python
     
     h.psection() 
-
 
 
 Step 5: Set up recording variables.
@@ -272,7 +271,7 @@ The last line displays the graph and allows you to interact with it (zoom, pan, 
 Step 8: Saving and restoring results.
 -------------------------------------
 
-Many NEURON objects cannot be pickled, including :class:`Vector`. However, data values can often be pickled and restored. For example, using NEURON's :meth:`Vector.to_python` method we can write a file and restore values as illustrated below.
+NEURON ``Vector`` objects can be pickled. This allows them to be stored to disk and restored later:
 
 Saving:
 
@@ -281,10 +280,10 @@ Saving:
     
     # Pickle
     import pickle
-    with open('t_vec.p', 'w') as t_vec_file:
-        pickle.dump(t_vec.to_python(), t_vec_file)
-    with open('v_vec.p', 'w') as v_vec_file:
-        pickle.dump(v_vec.to_python(), v_vec_file)
+    with open('t_vec.p', 'wb') as t_vec_file:
+        pickle.dump(t_vec, t_vec_file)
+    with open('v_vec.p', 'wb') as v_vec_file:
+        pickle.dump(v_vec, v_vec_file)
 
 Loading:
 
@@ -296,16 +295,14 @@ Loading:
     import pickle
     
     # Unpickle
-    with open('t_vec.p') as t_vec_file:
-        py_t_vec = pickle.load(t_vec_file)
-    t_vec_restore = h.Vector(py_t_vec)
-    with open('v_vec.p') as vec_file:
-        py_v_vec = pickle.load(vec_file)
-    v_vec_restore = h.Vector(py_v_vec)
+    with open('t_vec.p', 'rb') as t_vec_file:
+        t_vec = pickle.load(t_vec_file)
+    with open('v_vec.p', 'rb') as vec_file:
+        v_vec = pickle.load(vec_file)
 
     # Confirm
     pyplot.figure(figsize=(8,4)) # Default figsize is (8,6)
-    pyplot.plot(t_vec_restore, v_vec_restore)
+    pyplot.plot(t_vec, v_vec)
     pyplot.xlabel('time (ms)')
     pyplot.ylabel('mV')
     pyplot.show()

@@ -14,11 +14,11 @@ This page provides a brief introduction to:
 * Importing modules
 * Writing and reading files with Pickling.
 
-If you are running Linux or OSX, you probably already have Python installed. To run it, simply open a terminal and type ``python``. (Many users prefer to use `IPython <http://ipython.org/>`_ instead. That should work with all of our examples without requiring any modifications.) On Windows, you will probably have to install Python yourself. You could get it directly from `python.org <http://python.org>`_ or install versions -- e.g. `Anaconda <https://store.continuum.io/cshop/anaconda/>`_, `Enthought Canopy <https://www.enthought.com/products/canopy/>`_, `Python(x,y) <https://code.google.com/p/pythonxy/>`_, etc --  that package Python with many additional libraries.
+If you are running Linux or OSX, you probably already have Python installed. To run it, simply open a terminal and type ``python``. (Many users prefer to use `Jupyter <http://jupyter.org/>`_ instead. That should work with all of our examples without requiring any modifications.) On Windows, you will probably have to install Python yourself. You could get it directly from `python.org <http://python.org>`_ or install versions -- e.g. `Anaconda <https://store.continuum.io/cshop/anaconda/>`_, `Enthought Canopy <https://www.enthought.com/products/canopy/>`_, `Python(x,y) <https://code.google.com/p/pythonxy/>`_, etc --  that package Python with many additional libraries.
 
 .. note::
 
-    If you are not using a distribution that packages Python with many additional modules, you will need to install at least numpy and matplotlib to run some of the examples in this tutorial series.
+    If you are not using a distribution (e.g. `Anaconda <https://www.anaconda.com/download/>`, `Enthought <https://www.enthought.com/product/canopy/>`, etc) that packages Python with many additional modules, you will need to install at least numpy and matplotlib to run some of the examples in this tutorial series.
     
     On Ubuntu and Debian, you can get these modules via:
     
@@ -31,14 +31,14 @@ If you are running Linux or OSX, you probably already have Python installed. To 
         
     .. seealso::
     
-        `Installing Python Modules <https://docs.python.org/2.7/installing/>`_
+        `Installing Python Modules <https://docs.python.org/3/installing/>`_
 
 The following command simply prints "Hello". Run it, and then re-evaluate with a different string.
 
 .. code-block::
     python
     
-    print "Hello"
+    print("Hello")
 
 Variables: Strings, numbers, and dynamic type casting
 -----------------------------------------------------
@@ -56,8 +56,8 @@ Let's work with these variables.
 .. code-block::
     python
     
-    print my_name
-    print my_age 
+    print(my_name)
+    print(my_age)
        	
 
 Strings can be combined with the + operator.
@@ -66,21 +66,21 @@ Strings can be combined with the + operator.
     python
     
     greeting = "Hello, " + my_name
-    print greeting 
+    print(greeting)
        	
 Let's move on to numbers.
 
 .. code-block::
     python
     
-    print my_age 
+    print(my_age)
 
 If you try using the + operator on my_name and my_age:
 
 .. code-block::
     python
        	
-    print my_name + my_age 
+    print(my_name + my_age)
 
 You will get a :class:`TypeError`. What is wrong?
 
@@ -91,14 +91,15 @@ We can determine an object's type with the :func:`type` function.
 .. code-block::
     python
 
-    print type(my_name), type(my_age) 
+    print(type(my_name))
+    print(type(my_age))
        	
 The function :func:`isinstance` is also useful.
 
 .. code-block::
     python
     
-    print isinstance(my_name, str)
+    print(isinstance(my_name, str))
 
 Python also has a special object called *None*. This is one way you can specify whether or not an object is valid. After evaluating the following script block, set my_valid_var to a value and rerun the four lines beginning with the if statement. The first time, it will complain that the variable is None; the second time it will print its value.
 
@@ -107,21 +108,15 @@ Python also has a special object called *None*. This is one way you can specify 
     
     my_valid_var = None
     if my_valid_var is not None:
-        print my_valid_var
+        print(my_valid_var)
     else:
-        print "The variable is None!" 
+        print("The variable is None!")
        	
-Note the differences in the following lines.
 
-.. code-block::
-    python
-    
-    my_int = my_age/2
-    my_float = my_age/2.0
-    print my_int
-    print my_float 
-       	
-In this case, on the top line, my_age is an int and 2 is an int, so the variable that gets assigned is also an int. In the second line, 2.0 is a float, so the result of the calculation remains a float. If you are following our example and used an odd value for my_age, you will notice that the two numbers are not equal in Python 2.7 as the division of two integers is assumed to be an integer (the fractional part is discarded). In Python 3.0+ by contrast, the division of two integers will produce a float if they do not divide evenly.
+.. warning::
+
+    In older versions of Python (prior to 3.0), the ``/`` operator when used on integers performed integer division; i.e. ``3/2`` returned ``1``, but ``3/2.0`` returned ``1.5``. Beginning with Python 3.0, the ``/`` operator returns a float if integers do not divide evenly; i.e. ``3/2`` returns ``1.5``. Integer division is still available using the ``//`` operator, i.e. ``3 // 2`` evaluates to 1.
+
 
 Lists
 -----
@@ -132,40 +127,40 @@ Lists are comma-separated values surrounded by square brackets:
     python
     
     my_list = [1, 3, 5, 8, 13]
-    print my_list 
+    print(my_list)
        	
 Lists are zero-indexed. That is, the first element is 0.
 
 .. code-block::
     python
     
-    print my_list[0] 
+    print(my_list[0])
        	
 You may often find yourself wanting to know how many items are in a list.
 
 .. code-block::
     python
     
-    print len(my_list) 
+    print(len(my_list))
        	
 Python interprets negative indices as counting backwards from the end of the list. That is, the -1 index refers to the last item, the -2 index refers to the second-to-last item, etc.
 
 .. code-block::
     python
     
-    print my_list
-    print my_list[-1] 
+    print(my_list)
+    print(my_list[-1])
        	
 "Slicing" is extracting particular sub-elements from the list in a particular range. However, notice that the right-side is excluded, and the left is included.
 
 .. code-block::
     python
     
-    print my_list
-    print my_list[2:4] # Includes the range from index 2 to 3
-    print my_list[2:-1] # Includes the range from index 2 to the element before -1
-    print my_list[:2] # Includes everything before index 2
-    print my_list[2:] # Includes everything from index 2 
+    print(my_list)
+    print(my_list[2:4])  # Includes the range from index 2 to 3
+    print(my_list[2:-1]) # Includes the range from index 2 to the element before -1
+    print(my_list[:2])   # Includes everything before index 2
+    print(my_list[2:])   # Includes everything from index 2 
 
 To make a variable equal to a copy of a list, set it equal to ``list(the_old_list)``. For example:
 
@@ -175,8 +170,8 @@ To make a variable equal to a copy of a list, set it equal to ``list(the_old_lis
     list_a = [1, 3, 5, 8, 13]
     list_b = list(list_a)
     list_b.reverse()
-    print "list_a =", list_a
-    print "list_b =", list_b 
+    print("list_a =" + str(list_a))
+    print("list_b =" + str(list_b))
 
 Now replace the second line with ``list_b = list_a`` and rerun that code. In that case, ``list_b`` is the *same* list as ``list_a`` (as opposed to a copy), so when ``list_b`` was reversed so is ``list_a`` (since ``list_b`` *is* ``list_a``).
 
@@ -186,27 +181,31 @@ Lists can contain arbitrary data types, but if you find yourself doing this, you
     python
     
     confusing_list = ['abc', 1.0, 2, "another string"]
-    print confusing_list
-    print confusing_list[3] 
+    print(confusing_list)
+    print(confusing_list[3])
        	
 range()
 -------
 
-:func:`range` is a function in Python that automatically generates a list of sequential integers. Note that the ending value is not included.
+:func:`range` is a function in Python that automatically generates evenly-spaced integers. Note that the ending value is not included.
 
 .. code-block::
     python
     
-    print range(10)         # [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    print range(0, 10)      # [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    print range(3, 10)      # [3, 4, 5, 6, 7, 8, 9]
-    print range(0, 10, 2)   # [0, 2, 4, 6, 8]
-    print range(0, -10)     # []
-    print range(0, -10, -1) # [0, -1, -2, -3, -4, -5, -6, -7, -8, -9]
-    print range(0, -10, -2) # [0, -2, -4, -6, -8]
+    print(list(range(10)))         # [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    print(list(range(0, 10)))      # [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    print(list(range(3, 10)))      # [3, 4, 5, 6, 7, 8, 9]
+    print(list(range(0, 10, 2)))   # [0, 2, 4, 6, 8]
+    print(list(range(0, -10)))     # []
+    print(list(range(0, -10, -1))) # [0, -1, -2, -3, -4, -5, -6, -7, -8, -9]
+    print(list(range(0, -10, -2))) # [0, -2, -4, -6, -8]
     
 For non-integer ranges, use ``numpy.arange`` from the ``numpy`` module.
-       	
+
+.. note::
+
+    Prior to Python 3.0, ``range`` returned a list of integers. Beginning in 3.0 it returns an object that in many ways behaves like a list but with minimal memory overhead. In Python 3.0 and higher, ``print(range(3, 7))`` displays ``range(3, 7)``.
+
 For loops and iterators
 -----------------------
 
@@ -217,26 +216,22 @@ We can iterate over elements in a list by following the format: "for element in 
     
     some_range = range(10)
     for elem in some_range:
-        print "The value is", elem 
+        print("The value is" + str(elem))
        	
 Try substituting some of the previous lists that have been created instead of using some_range and re-evaluate the script block.
 
-The `while loop <https://wiki.python.org/moin/WhileLoop>`_ is another type of loop that repeats until a condition is satisfied.
+The `while loop <https://wiki.python.org/moin/WhileLoop>`_ is another type of loop that repeats as long as a condition is True.
 
 If you are ever stuck in a long loop (or any other Python code), try pressing :kbd:`Control-c` to break the loop by raising a :class:`KeyboardInterrupt` exception. Run the following code and stop it by pressing :kdb:`Control-c`:
 
 .. code-block::
     python
     
-    for i in xrange(100000000):
+    while True:
         pass
 
 
-Here, ``pass`` means do nothing, and :func:`xrange` acts like :func:`range` in this example. The difference is that ``range`` constructs the list first (which requires memory and time) while ``xrange`` does not.
-
-.. note::
-
-    For Python 3+, replace :func:`xrange` with :func:`range`. (This is because ``range`` in Python 3 acts like ``xrange`` in Python 2).
+Here, ``pass`` means do nothing.
 
 
 Here we use
@@ -249,18 +244,26 @@ Simulations across time mean that we deal with a lot of time-series data -- time
     python
     
     y = ['a', 'b', 'c', 'd', 'e']
-    x = range(len(y))
-    print "x =", x
-    print "y =", y
-    print zip(x, y) 
-       	
+    x = list(range(len(y)))
+    print("x = {}".format(x))
+    print("y = {}".format(y))
+    print(zip(x, y))
+
+
+.. note::
+
+    Here we have introduced ``.format`` . Many usages are possible
+    (see `examples <https://docs.python.org/3/library/string.html#format-examples>`_ on the Python website),
+    but as used here it puts the value of its argument(s) in order into the locations of the string marked by ``{}``.
+
+
 This is a list of tuples. Given a list of tuples, then we iterate with each tuple.
 
 .. code-block::
     python
     
     for x_val, y_val in zip(x, y):
-        print "idx", x_val, "=", y_val 
+        print("index {}: {}".format(x_val, y_val))
        	
 Tuples are similar to lists, except they are immutable (cannot be changed). You can retrieve individual elements of a tuple, but once they are set upon creation, you cannot change them. Also, you cannot add or remove elements of a tuple.
 
@@ -268,8 +271,8 @@ Tuples are similar to lists, except they are immutable (cannot be changed). You 
     python
     
     my_tuple = (1, 'two', 3)
-    print my_tuple
-    print my_tuple[1] 
+    print(my_tuple)
+    print(my_tuple[1])
 
 Attempting to modify a tuple, e.g.
 
@@ -292,15 +295,15 @@ A dictionary (also called a dict or hash table) is a set of (key, value) pairs, 
 .. code-block::
     python
     
-    about_me = {'name' : my_name, 'age' : my_age, 'height' : "5'8"}
-    print about_me 
+    about_me = {'name': my_name, 'age': my_age, 'height': "5'8"}
+    print(about_me)
        	
 You can obtain values by referencing the key:
 
 .. code-block::
     python
     
-    print about_me['height'] 
+    print(about_me['height'])
        	
 Similarly, we can modify existing values by referencing the key.
 
@@ -308,7 +311,7 @@ Similarly, we can modify existing values by referencing the key.
     python
     
     about_me['name'] = "Thomas"
-    print about_me 
+    print(about_me)
        	
 We can even add new values.
 
@@ -316,15 +319,15 @@ We can even add new values.
     python
     
     about_me['eye_color'] = "brown"
-    print about_me 
+    print(about_me)
        	
 We can iterate keys, values or key-value value pairs in the dict. Here is an example of key-value pairs.
 
 .. code-block::
     python
     
-    for k, v in about_me.iteritems():
-        print "key =", k, "  val =", v 
+    for k, v in about_me.items():
+        print('key = {}    val = {}'.format(k, v))
        	
 To test for the presence of a key in a dict, we just ask:
 
@@ -332,9 +335,9 @@ To test for the presence of a key in a dict, we just ask:
     python
     
     if 'hair_color' in about_me:
-        print "Yes. 'hair_color' is a key in the dict"
+        print("Yes. 'hair_color' is a key in the dict")
     else:
-        print "No. 'hair_color' is NOT a key in the dict" 
+        print("No. 'hair_color' is NOT a key in the dict")
        	
 Functions
 ---------
@@ -345,7 +348,7 @@ Functions are defined with a "def" keyword in front of them, end with a colon, a
     python
     
     def print_hello():
-        print "Hello" 
+        print("Hello")
        	
 Now let's call our function.
 
@@ -360,7 +363,7 @@ We can also pass in an argument.
     python
     
     def my_print(the_arg):
-        print the_arg 
+        print(the_arg)
        	
 Now try passing various things to the my_print() function.
 
@@ -375,10 +378,10 @@ We can even make default arguments.
     python
     
     def my_print(the_arg="Hello"):
-        print the_arg 
+        print(the_arg)
            	
     my_print()
-    my_print(range(4)) 
+    my_print(list(range(4)))
        	
 And we can also return values.
 
@@ -394,7 +397,7 @@ And we can also return values.
             series.append(a)
         return series 
        	
-    print fib() 
+    print(fib())
 
 Note the assignment line for a and b inside the while loop. That line says that a becomes the old value of b and that b becomes the old value of a plus the old value of b. The ability to calculate multiple values before assigning them allows Python to do things like swapping the values of two variables in one line while many other programming languages would require the introduction of a temporary variable.
    	
@@ -407,7 +410,7 @@ You may have noticed the triple-quoted strings. This enables a string to span mu
     This is the second,
     and a third."""
 
-    print multi_line_str 
+    print(multi_line_str)
        	
 The importance of docstrings.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -449,7 +452,7 @@ Objects are instances of a "class". They are useful for encapsulating ideas, and
                 my_str += " " + self.email
             if self.phone:
                 my_str += " " + self.phone     
-            print my_str 
+            print(my_str)
        	
 By convention, the first letter of a class name is capitalized.
 Notice in the class definition above that the object can contain fields, which are used within the class as "self.field". This field can be another method in the class, or another object of another class.
@@ -477,7 +480,7 @@ Similarly, we can retrieve fields from the object.
     python
     
     the_name = joe.first_name
-    print the_name 
+    print(the_name)
        	
 And we call methods of the object using the format instance.method().
 
@@ -498,29 +501,18 @@ Importing modules
 
 Extensions to core Python are made by importing modules, which may contain more variables, objects, methods, and functions. Many modules come with Python, but are not part of its core. Other packages and modules have to be installed.
 
-We previously used :func:`zip` to simultaneously iterate over two lists of the same length. Merging the values into a list of tuples, however, is computational overhead. More streamlined iterators are available in the :mod:`itertools` module. In particular, a faster way of simultaneously iterating two lists is to use :func:`izip` from the :mod:`itertools` module.
-
-.. code-block::
-    python
-    
-    from itertools import izip
-    y = ['a', 'b', 'c', 'd', 'e']
-    x = range(len(y))
-    for (x_val, y_val) in izip(x, y):
-        print "idx", x_val, "=", y_val 
-       	
-As another example, the numpy package contains a function called arange() that is similar to Python's range() function, but permits non-integer steps.
+The ``numpy`` module contains a function called ``arange()`` that is similar to Python's ``range()`` function, but permits non-integer steps.
 
 .. code-block::
     python
     
     import numpy
     my_vec = numpy.arange(0, 1, 0.1)
-    print my_vec 
+    print(my_vec)
        	
 .. note::
 
-    The itertools module is a standard part of Python but numpy is a separate module. If the ``import numpy`` line gave an error message, you either do not have numpy installed or Python cannot find it for some reason. You should resolve this issue before proceeding because we will use numpy in some of the examples in other parts of the tutorial. The standard tool for installing Python modules is called ``pip``; other options may be available depending on your platform.
+    Numpy is available in many distributions of Python, but it is not part of Python itself. If the ``import numpy`` line gave an error message, you either do not have numpy installed or Python cannot find it for some reason. You should resolve this issue before proceeding because we will use numpy in some of the examples in other parts of the tutorial. The standard tool for installing Python modules is called ``pip``; other options may be available depending on your platform.
 
 Pickling objects
 ----------------
@@ -533,10 +525,10 @@ There are various file io operations in Python, but one of the easiest is ":mod:
     import pickle
     contacts = [joe, bob] # Make a list of contacts
 
-    with open('contacts.p', 'w') as pickle_file: # Make a new file
+    with open('contacts.p', 'wb') as pickle_file: # Make a new file
         pickle.dump(contacts, pickle_file)       # Write contact list
 
-    with open('contacts.p', 'r') as pickle_file: # Open the file for reading
+    with open('contacts.p', 'rb') as pickle_file: # Open the file for reading
         contacts2 = pickle.load(pickle_file)     # Load the pickled contents
         
     for elem in contacts2:
