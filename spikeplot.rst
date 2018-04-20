@@ -240,7 +240,7 @@ The following example creates a figure and axes, then sets an axes title, a x-ax
 .. image:: images/spikeplot9.png
     :align: center
 
-The title is slightly clipped (note how thin the tops of the two letter ``f``s are) and the xlabel is not even visible. Adjust the axes size.
+The title is slightly clipped (note how thin the tops of the two letter fs are) and the xlabel is not even visible. Adjust the axes size.
 
 .. code-block:: python
 

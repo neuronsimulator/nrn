@@ -295,17 +295,22 @@ Running in parallel requires the following format.
         h.dt = 0.025 # Fixed dt
         pc.psolve(100)
        	
-Let's call :func:`prun` and plot the output spikes.
+Let's call :func:`prun`, output the spikes to a file, load all the spikes back in to process number 0, and plot the output spikes. The file IO is unnecessary for a serial program, but it is one way of transferring data that has to be saved to disk anyway in a parallel program.
 
 .. code-block:: python
 
     prun()
-
-    from neuronpy.graphics import spikeplot
-
-    spikes = my_ring.spike_times
-    sp = spikeplot.SpikePlot()
-    sp.plot_spikes(spikes) 
+    myring.write_spikes('out.spk')
+    if not pc.id():
+        spike_times = [[] for i in range(myring._N)]
+        with open('out.spk') as f:
+            for line in f:
+                vals = line.split()
+                spike_times[int(vals[1])].append(float(vals[0]))
+        for i, spikes in enumerate(spike_times):
+            pyplot.vlines(spikes, i + 0.5, i + 1.5, color='black')
+        pyplot.show()
+    pc.barrier()
 
 .. image:: images/ballstick18.png
     :align: center
@@ -319,13 +324,11 @@ The previous run demonstrates a serial run using a ParallelContext object. Let's
     
     mpiexec -n 1 python parrun.py
        	
-You will notice that it made two output files. :file:`out.spk` is a tab-delimited list of spike times and gids. :file:`sorted_out.spk` is equivalent. Now let's try with 3 processors.
+You will notice that it made an output files: :file:`out.spk` is a tab-delimited list of unsorted spike times and gids. Now let's try with 3 processors.
 
 .. code-block:: none
     
     mpiexec -n 3 python parrun.py
-
-In this case, we have 3 processors. It is likely that each process writes to :file:`out.spk` out of order. In this case, :file:`out.spk` is sorted by spike times and then gid and the result is placed in :file:`sorted_out.spk`.
 
 This concludes this series on ball-and-stick models.
 

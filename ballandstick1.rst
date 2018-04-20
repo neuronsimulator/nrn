@@ -153,8 +153,9 @@ Our cell needs biophysical mechanisms in the membrane.
 
     # Insert passive current in the dendrite
     dend.insert('pas')
-    dend.g_pas = 0.001  # Passive conductance in S/cm2
-    dend.e_pas = -65    # Leak reversal potential mV 
+    for seg in dend:
+        seg.pas.g = 0.001  # Passive conductance in S/cm2
+        seg.pas.e = -65    # Leak reversal potential mV 
         	
 
 If you want to know the units for a given mechanism's parameter, use :func:`units`. Pass in a string with the paramater name, an underscore, and then the mechanism name.
@@ -281,7 +282,6 @@ Let's also visualize what is going on in the dendrite. Notice that we do not hav
         stim.amp = i
         h.tstop = simdur
         h.run()
-        # yes, you need the commas on the left-hand side of the next two lines
         soma_plot = pyplot.plot(t_vec, v_vec, color='black')
         dend_plot = pyplot.plot(t_vec, dend_v_vec, color='red')
 

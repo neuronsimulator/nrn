@@ -14,18 +14,18 @@ This page provides a brief introduction to:
 * Importing modules
 * Writing and reading files with Pickling.
 
-If you are running Linux or OSX, you probably already have Python installed. To run it, simply open a terminal and type ``python``. (Many users prefer to use `Jupyter <http://jupyter.org/>`_ instead. That should work with all of our examples without requiring any modifications.) On Windows, you will probably have to install Python yourself. You could get it directly from `python.org <http://python.org>`_ or install versions -- e.g. `Anaconda <https://store.continuum.io/cshop/anaconda/>`_, `Enthought Canopy <https://www.enthought.com/products/canopy/>`_, `Python(x,y) <https://code.google.com/p/pythonxy/>`_, etc --  that package Python with many additional libraries.
+If you are running Linux or OSX, you probably already have Python installed. To run it, simply open a terminal and type ``python``. (Many users prefer to use `Jupyter <http://jupyter.org/>`_ instead. That should work with all of our examples without requiring any modifications.) On Windows, you will probably have to install Python yourself. You could get it directly from `python.org <http://python.org>`_ or install versions -- e.g. `Anaconda <https://www.anaconda.com/download/>`_ , `Enthought Canopy <https://www.enthought.com/product/canopy/>`_ , `Python(x,y) <http://python-xy.github.io>`_ , etc --  that package Python with many additional libraries.
 
 .. note::
 
-    If you are not using a distribution (e.g. `Anaconda <https://www.anaconda.com/download/>`, `Enthought <https://www.enthought.com/product/canopy/>`, etc) that packages Python with many additional modules, you will need to install at least numpy and matplotlib to run some of the examples in this tutorial series.
+    If you are not using a distribution (e.g. `Anaconda <https://www.anaconda.com/download/>`_ , `Enthought <https://www.enthought.com/product/canopy/>`_ , etc) that packages Python with many additional modules, you will need to install at least numpy and matplotlib to run some of the examples in this tutorial series.
     
     On Ubuntu and Debian, you can get these modules via:
     
     .. code-block::
         none
         
-        sudo apt-get install python-numpy python-matplotlib
+        sudo apt install python-numpy python-matplotlib
 
     On all platforms, you can use the ``pip`` tool to automatically download and install new modules.
         
@@ -285,7 +285,6 @@ will cause a :class:`TypeError`.
        	
 Because you cannot modify an element in a tuple, or add or remove individual elements of it, it can operate in python more efficiently than a list. A tuple can even serve as a key to a dictionary.
 
-.. _dictionaries:
 
 Dictionaries
 ------------
@@ -422,7 +421,6 @@ Docstrings are strings just under a function definition, and usually triple-quot
     
     help(fib) 
 
-.. _classes
 
 Classes
 -------
@@ -533,10 +531,6 @@ There are various file io operations in Python, but one of the easiest is ":mod:
         
     for elem in contacts2:
         elem.print_info() 
-
-.. note::
-
-    Many NEURON objects *cannot* be pickled. However, the data *values* can often be pickled and restored.
 
 The next part of this tutorial introduces basic NEURON commands.
 

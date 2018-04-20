@@ -21,8 +21,7 @@ Let's begin by creating a file :file:`simrun.py` to contain the simulation contr
             t_vec = h.Vector()        # Time stamp vector
             soma_v_vec.record(cell.soma(0.5)._ref_v)
             dend_v_vec.record(cell.dend(0.5)._ref_v)
-            t_vec.record(h._ref_t)
-            
+            t_vec.record(h._ref_t)            
             return soma_v_vec, dend_v_vec, t_vec
             
         def simulate(tstop=25):

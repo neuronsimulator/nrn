@@ -153,6 +153,8 @@ or
 
     ``section(loc).var_mech``
 
+The first form is preferred.
+
 .. code-block::
     python
 
@@ -163,7 +165,7 @@ or
     python
             	
     print(mech.g)
-    print(soma(0.5).g_pas)
+    print(soma(0.5).pas.g)
 
 Step 4: Insert an alpha synapse.
 --------------------------------
