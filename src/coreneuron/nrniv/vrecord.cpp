@@ -116,6 +116,7 @@ void VecPlayContinuous::deliver(double tt, NetCvode* ns) {
     NrnThread* nt = nrn_threads + ith_;
     // printf("deliver %g\n", tt);
     last_index_ = ubound_index_;
+    #pragma acc update device(last_index_) if (nt->compute_gpu)
     if (discon_indices_) {
         if (discon_index_ < discon_indices_->size()) {
             ubound_index_ = (int)(*discon_indices_)[discon_index_++];
@@ -130,11 +131,16 @@ void VecPlayContinuous::deliver(double tt, NetCvode* ns) {
             e_->send((*t_)[ubound_index_], ns, nt);
         }
     }
+    #pragma acc update device(ubound_index_) if (nt->compute_gpu)
     continuous(tt);
 }
 
 void VecPlayContinuous::continuous(double tt) {
-    *pd_ = interpolate(tt);
+    NrnThread* nt = nrn_threads + ith_;
+    #pragma acc kernels present(this) if(nt->compute_gpu)
+    {
+        *pd_ = interpolate(tt);
+    }
 }
 
 double VecPlayContinuous::interpolate(double tt) {
@@ -176,5 +182,5 @@ void VecPlayContinuous::search(double tt) {
 
 void VecPlayContinuous::pr() {
     printf("VecPlayContinuous ");
-    //	printf("%s.x[%d]\n", hoc_object_name(y_->obj_), last_index_);
+    // printf("%s.x[%d]\n", hoc_object_name(y_->obj_), last_index_);
 }
