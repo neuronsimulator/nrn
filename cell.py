@@ -77,12 +77,12 @@ class Cell:
         parts of the cell relative to that location.
         """
         for sec in self.all:
-            for i in range(int(h.n3d())):
+            for i in range(sec.n3d()):
                 h.pt3dchange(i, 
-                        x-self.x+h.x3d(i), 
-                        y-self.y+h.y3d(i), 
-                        z-self.z+h.z3d(i), 
-                        h.diam3d(i))
+                        x-self.x+sec.x3d(i), 
+                        y-self.y+sec.y3d(i), 
+                        z-self.z+sec.z3d(i), 
+                        sec.diam3d(i), sec=sec)
         self.x = x; self.y = y; self.z = z
 
     def rotateZ(self, theta):
@@ -90,7 +90,7 @@ class Cell:
         rot_m = numpy.array([[numpy.sin(theta), numpy.cos(theta)], 
                 [numpy.cos(theta), -numpy.sin(theta)]])
         for sec in self.all:
-            for i in range(int(h.n3d())):
-                xy = numpy.dot([h.x3d(i), h.y3d(i)], rot_m)
-                h.pt3dchange(i, float(xy[0]), float(xy[1]), h.z3d(i), 
-                        h.diam3d(i))
+            for i in range(sec.n3d()):
+                xy = numpy.dot([sec.x3d(i), sec.y3d(i)], rot_m)
+                h.pt3dchange(i, float(xy[0]), float(xy[1]), sec.z3d(i), 
+                        sec.diam3d(i))
