@@ -49,15 +49,18 @@ With this in mind, let's encapsulate these concepts in the class's methods. Let'
 
         # Insert active Hodgkin-Huxley current in the soma
         soma.insert('hh')
-        soma.gnabar_hh = 0.12  # Sodium conductance in S/cm2
-        soma.gkbar_hh = 0.036  # Potassium conductance in S/cm2
-        soma.gl_hh = 0.0003    # Leak conductance in S/cm2
-        soma.el_hh = -54.3     # Reversal potential in mV
+        for seg in soma:
+            seg.hh.gnabar = 0.12  # Sodium conductance in S/cm2
+            seg.hh.gkbar = 0.036  # Potassium conductance in S/cm2
+            seg.hh.gl = 0.0003    # Leak conductance in S/cm2
+            seg.hh.el = -54.3     # Reversal potential in mV
 
         # Insert passive current in the dendrite
         dend.insert('pas')
-        dend.g_pas = 0.001  # Passive conductance in S/cm2
-        dend.e_pas = -65    # Leak reversal potential mV
+        for seg in dend:
+            seg.pas.g = 0.001  # Passive conductance in S/cm2
+            seg.pas.e = -65    # Leak reversal potential mV 
+
 
 We can make arbitrarily many copies of the cell by building it inside of a class.
 (In particular, the rest of this page assumes that the code in the recall block
@@ -105,15 +108,17 @@ methods to clarify the purpose of each code block.
                 sec.Ra = 100    # Axial resistance in Ohm * cm
                 sec.cm = 1      # Membrane capacitance in micro Farads / cm^2
             # Insert active Hodgkin-Huxley current in the soma
-            self.soma.insert('hh')
-            self.soma.gnabar_hh = 0.12  # Sodium conductance in S/cm2
-            self.soma.gkbar_hh = 0.036  # Potassium conductance in S/cm2
-            self.soma.gl_hh = 0.0003    # Leak conductance in S/cm2
-            self.soma.el_hh = -54.3     # Reversal potential in mV
+            soma.insert('hh')
+            for seg in soma:
+                seg.hh.gnabar = 0.12  # Sodium conductance in S/cm2
+                seg.hh.gkbar = 0.036  # Potassium conductance in S/cm2
+                seg.hh.gl = 0.0003    # Leak conductance in S/cm2
+                seg.hh.el = -54.3     # Reversal potential in mV
             # Insert passive current in the dendrite
-            self.dend.insert('pas')
-            self.dend.g_pas = 0.001  # Passive conductance in S/cm2
-            self.dend.e_pas = -65    # Leak reversal potential mV
+            dend.insert('pas')
+            for seg in dend:
+                seg.pas.g = 0.001  # Passive conductance in S/cm2
+                seg.pas.e = -65    # Leak reversal potential mV 
         #            
         def build_subsets(self):
             """Build subset lists. For now we define 'all'."""

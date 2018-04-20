@@ -89,7 +89,7 @@ Let's set the spatial properties of the cell using a "stylized" geometry. Later 
     soma.L = soma.diam = 12.6157 # Makes a soma of 500 microns squared.
     dend.L = 200 # microns
     dend.diam = 1 # microns
-    print "Surface area of soma =", h.area(0.5, sec=soma) 
+    print("Surface area of soma = {}".format(soma(0.5).area()))
 
 Now we can see what our cell looks like. From the GUI, we can select
 :menuselection:`Graph --> Shape plot` or we can run the following command:
@@ -145,10 +145,11 @@ Our cell needs biophysical mechanisms in the membrane.
 
     # Insert active Hodgkin-Huxley current in the soma
     soma.insert('hh')
-    soma.gnabar_hh = 0.12  # Sodium conductance in S/cm2
-    soma.gkbar_hh = 0.036  # Potassium conductance in S/cm2
-    soma.gl_hh = 0.0003    # Leak conductance in S/cm2
-    soma.el_hh = -54.3     # Reversal potential in mV
+    for seg in soma:
+        seg.hh.gnabar = 0.12  # Sodium conductance in S/cm2
+        seg.hh.gkbar = 0.036  # Potassium conductance in S/cm2
+        seg.hh.gl = 0.0003    # Leak conductance in S/cm2
+        seg.hh.el = -54.3     # Reversal potential in mV
 
     # Insert passive current in the dendrite
     dend.insert('pas')
@@ -156,12 +157,12 @@ Our cell needs biophysical mechanisms in the membrane.
     dend.e_pas = -65    # Leak reversal potential mV 
         	
 
-If you want to know the units for a given mechanism's parameter, use :func:`units`.
+If you want to know the units for a given mechanism's parameter, use :func:`units`. Pass in a string with the paramater name, an underscore, and then the mechanism name.
 
 .. code-block::
     python
     
-    print h.units('gnabar_hh') 
+    print(h.units('gnabar_hh'))
         	
 
 Confirm with :func:`psection`.
@@ -174,7 +175,7 @@ Confirm with :func:`psection`.
 
 .. note::
     
-    We do not need to specify the section with a ``sec=`` keyword argument to :func:`psection` here because when iterating over ``h.allsec()`` the current section becomes NEURON's default section.
+    Technically, we do not need to specify the section with a ``sec=`` keyword argument to :func:`psection` here because when iterating over ``h.allsec()`` the current section becomes NEURON's default section, but it's best practice to never depend on the default section.
 
 Instrumentation
 ---------------
@@ -205,9 +206,8 @@ So let's verify the location.
 .. code-block::
     python
     
-    seg = stim.get_segment()
-    print "segment =", seg.sec.name(), " seg loc =", seg.x, " stim loc =", stim.get_loc() 
-        	
+    print("segment = {}".format(stim.get_segment()))
+
 
 Let's set our fields.
 
@@ -383,7 +383,7 @@ Let's modify :data:`nseg` to other values. What values overlay the blue and gree
     err /= idx
     err /= 2 # Since we have a soma and dend vec
 
-    print "Average error =", err
+    print("Average error = {}".format(err))
 
     pyplot.legend(soma_lowres + dend_lowres + soma_hires + dend_hires,
             ['soma low-res', 'dend low-res', 'soma hi-res', 'dend hi-res'])

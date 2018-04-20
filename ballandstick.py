@@ -53,17 +53,19 @@ class BallAndStick(Cell):  #### Inherits from Cell
             sec.Ra = 100     # Axial resistance in Ohm * cm
             sec.cm = 1       # Membrane capacitance in micro Farads / cm^2
         
-        # Insert active Hodgkin-Huxley current in the soma
-        self.soma.insert('hh')
-        self.soma.gnabar_hh = 0.12  # Sodium conductance in S/cm2
-        self.soma.gkbar_hh = 0.036  # Potassium conductance in S/cm2
-        self.soma.gl_hh = 0.0003    # Leak conductance in S/cm2
-        self.soma.el_hh = -54.3     # Reversal potential in mV
-        
-        # Insert passive current in the dendrite
-        self.dend.insert('pas')
-        self.dend.g_pas = 0.001  # Passive conductance in S/cm2
-        self.dend.e_pas = -65    # Leak reversal potential mV
+            # Insert active Hodgkin-Huxley current in the soma
+            soma.insert('hh')
+            for seg in soma:
+                seg.hh.gnabar = 0.12  # Sodium conductance in S/cm2
+                seg.hh.gkbar = 0.036  # Potassium conductance in S/cm2
+                seg.hh.gl = 0.0003    # Leak conductance in S/cm2
+                seg.hh.el = -54.3     # Reversal potential in mV
+                
+            # Insert passive current in the dendrite
+            dend.insert('pas')
+            for seg in dend:
+                seg.pas.g = 0.001  # Passive conductance in S/cm2
+                seg.pas.e = -65    # Leak reversal potential mV 
     
     def shape_3D(self):
         """

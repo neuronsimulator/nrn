@@ -5,12 +5,12 @@ This is the final part of the series where we build a multicompartment cell and 
 
 .. note::
 
-    For this part of the tutorial, you will need an MPI installation, such as `Open MPI <http://www.open-mpi.org>`_ or `MPICH <http://www.mpich.org>`_. The code presented here was tested using MPICH. (On Ubuntu, install MPICH via: ``sudo apt-get install mpich``). Furthermore, your copy of NEURON will need to have been compiled with support for parallel simulations; that is, the ``--with-paranrn`` flagged needed to be passed to the compiler.
+    For this part of the tutorial, you will need an MPI installation, such as `Open MPI <http://www.open-mpi.org>`_ or `MPICH <http://www.mpich.org>`_ or `Microsoft MPI <https://msdn.microsoft.com/en-us/library/bb524831.aspx>`_. The code presented here was tested using MPICH. (On Ubuntu, install MPICH via: ``sudo apt install mpich``). Furthermore, your copy of NEURON will need to have been compiled with support for parallel simulations; that is, the ``--with-paranrn`` flagged needed to be passed to the compiler. If you installed NEURON by downloading an installer from the website, it already has this support.
 
 Parallel communication in NEURON
 --------------------------------
 
-Parallel communication takes place via logical events in network connection objects known as :class:`NetCons <NetCon>`. NetCon sources are threshold detectors. They monitor some variable, say the membrane potential of a cell, and when the variable reaches some threshold, it triggers an event sent to the targets. Targets are frequently synapses on other cells. When they receive the event, they activate.
+Parallel communication takes place via logical events in network connection objects known as :class:`NetCon <NetCon>`. NetCon sources are threshold detectors. They monitor some variable, say the membrane potential of a cell, and when the variable reaches some threshold, it triggers an event sent to the targets. Targets are frequently synapses on other cells. When they receive the event, they activate.
 
 In a parallel context across several machines, communication between hosts can be computationally inefficient when the frequency of events is high and when the message being sent is large. NEURON uses an efficient priority queueing mechanism to deliver events to targets after the delay specified by the NetCon. The message passed is succinct. It is an integer, the unique global identifier (gid) of the source. The following two figures illustrate these ideas and come from  `Hines M.L. and Carnevale N.T, Translating network models to parallel hardware in NEURON, Journal of Neuroscience Methods 169 (2008) 425–455 <http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2430920/>`_.  Users should also consult the :class:`ParallelContext` reference.
 
@@ -25,7 +25,7 @@ The main step involved in making a parallel implementation is to assign the glob
 Test MPI and Parallel NEURON
 ----------------------------
 
-Parallel NEURON operates through MPI. Ensure that you have MPI and a Python interface to MPI, such as `mpi4py <http://mpi4py.scipy.org/>`_. (In Ubuntu, you can setup this module via: ``sudo apt-get install python-mpi4py``)
+Parallel NEURON operates through MPI. Ensure that you have MPI and a Python interface to MPI, such as `mpi4py <http://mpi4py.scipy.org/>`_. (In Ubuntu, you can setup this module via: ``sudo apt install python-mpi4py``. On other platforms use ``pip install mpi4py``, possibly with a sudo.)
 
 Create a file called :file:`testmpi.py`:
 
@@ -36,16 +36,9 @@ Create a file called :file:`testmpi.py`:
     pc = h.ParallelContext()
     id = int(pc.id())
     nhost = int(pc.nhost())
-    print "I am", id, "of", nhost
+    print("I am {} of {}".format(id, nhost))
 
-Launch Python, and then you can run the script in parallel using :func:`os.system`.
-
-.. code-block:: python
-    
-    import os
-    os.system('mpiexec -n 4 python testmpi.py')
-
-You should see output resembling:
+Run the script in parallel via e.g. ``mpiexec -n 4 python testmpi.py`` from the command line. You should see output resembling:
 
 .. code-block:: none
 
@@ -62,6 +55,7 @@ You should see output resembling:
     I am 2 of 4
 
 If instead, you see four processes claiming to be 0 of 1, then your copy of NEURON was not compiled with support for parallel simulation. Reconfigure with the ``--with-paranrn`` flag and recompile.
+
 
 Import our modules
 ------------------
@@ -94,8 +88,6 @@ The following code demarcates new functionality with '####'. Most parallel funct
     from neuron import h
     import ballandstick
     import numpy
-    from itertools import izip
-    from neuronpy.util import spiketrain
 
     class Ring:
         """A network of *N* ball-and-stick cells where cell n makes an 
@@ -159,8 +151,8 @@ The following code demarcates new functionality with '####'. Most parallel funct
                 cell.rotateZ(i*2*numpy.pi/N)
                 
                 # Then reposition
-                x_loc = float(numpy.cos(i*2*numpy.pi/N))*r
-                y_loc = float(numpy.sin(i*2*numpy.pi/N))*r
+                x_loc = numpy.cos(i*2*numpy.pi/N) * r
+                y_loc = numpy.sin(i*2*numpy.pi/N) * r
                 cell.set_position(x_loc, y_loc, 0)
                 
                 self.cells.append(cell)
@@ -177,19 +169,6 @@ The following code demarcates new functionality with '####'. Most parallel funct
                 
                 #### Record spikes of this cell
                 self.pc.spike_record(i, self.t_vec, self.id_vec)
-
-    # OLD WAY            
-    #    def connect_cells(self):
-    #        self.nclist = []
-    #        N = self._N
-    #        for i in range(N):
-    #            src = self.cells[i]
-    #            tgt_syn = self.cells[(i+1)%N].synlist[0]
-    #            nc = src.connect2target(tgt_syn)
-    #            nc.weight[0] = self.syn_w
-    #            nc.delay = self.syn_delay
-    #            nc.record(self.t_vec, self.id_vec, i)
-    #            self.nclist.append(nc)
 
         def connect_cells(self):
             """Connect cell n to cell n + 1."""
@@ -217,10 +196,6 @@ The following code demarcates new functionality with '####'. Most parallel funct
             self.ncstim = h.NetCon(self.stim, self.cells[0].synlist[0])
             self.ncstim.delay = 1
             self.ncstim.weight[0] = self.stim_w # NetCon weight is a vector.
-            
-        def get_spikes(self):
-            """Get the spikes as a list of lists."""
-            return spiketrain.netconvecs_to_listoflists(self.t_vec, self.id_vec)
             
         def write_spikes(self, file_name='out.spk'):
             """Append the spike output file with spikes on this host. The output
@@ -250,7 +225,7 @@ The following code demarcates new functionality with '####'. Most parallel funct
                     else:
                         mode = 'a' # append
                     with open(file_name, mode) as spk_file: # Append
-                        for (t, id) in izip(self.t_vec, self.id_vec):
+                        for (t, id) in zip(self.t_vec, self.id_vec):
                             spk_file.write('%.3f\t%d\n' %(t, id)) # timestamp, id
             self.pc.barrier() 
 
@@ -319,8 +294,6 @@ Running in parallel requires the following format.
         h.stdinit()
         h.dt = 0.025 # Fixed dt
         pc.psolve(100)
-        pc.runworker()
-        pc.done() 
        	
 Let's call :func:`prun` and plot the output spikes.
 
@@ -330,7 +303,7 @@ Let's call :func:`prun` and plot the output spikes.
 
     from neuronpy.graphics import spikeplot
 
-    spikes = my_ring.get_spikes()
+    spikes = my_ring.spike_times
     sp = spikeplot.SpikePlot()
     sp.plot_spikes(spikes) 
 

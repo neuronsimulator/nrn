@@ -69,7 +69,7 @@ class Cell:
     
     def is_art(self):
         """Flag to check if we are an integrate-and-fire artificial cell."""
-        return 0
+        return False
         
     def set_position(self, x, y, z):
         """

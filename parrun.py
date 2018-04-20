@@ -18,15 +18,16 @@ AUTHORS:
 - THOMAS MCTAVISH (2010-11-04): initial version
 
 Robert A McDougal (2015-04-21): added missing sys import
+Robert A McDougal (2018-04-20): Python 3 compatibility fixes, removed "nrn"
 """
 import os
 import numpy
 from mpi4py import MPI # Must come before importing NEURON
-from neuron import h as nrn
+from neuron import h
 from ring import *
 import sys
 
-nrn.load_file("stdrun.hoc") # For when we run simulations
+h.load_file("stdrun.hoc") # For when we run simulations
 
 def process_args(in_argv):
     """Process additional arguments on command line. Any Python statement can
@@ -47,9 +48,7 @@ def process_args(in_argv):
             try:
                 exec(arg, global_dict, local_dict)
             except:
-                print "WARNING: Do not know how to process statement \
-                        \'{0}\'".format(item)
-                pass
+                print("WARNING: Do not know how to process statement \n'{0}'".format(item))
         if 'sim_var' in local_dict:
             # Replace default values with those in the local_dict
             sim_var.update(local_dict['sim_var'])
@@ -62,23 +61,21 @@ def run(argv = None):
     ``"sim_var['<var>']=x"`` will run the simulation with a modification of 
     those parameters."""
     sim_var = process_args(argv)
-    pc = nrn.ParallelContext()
-    ring = Ring(sim_var['N'], \
-            sim_var['stim_w'], \
-            sim_var['stim_spike_num'], \
-            sim_var['syn_w'], \
+    pc = h.ParallelContext()
+    ring = Ring(sim_var['N'], 
+            sim_var['stim_w'], 
+            sim_var['stim_spike_num'], 
+            sim_var['syn_w'], 
             sim_var['syn_delay'])
     pc.set_maxstep(10)
-    nrn.stdinit()
-    nrn.dt = 0.025 # Fixed dt
+    h.stdinit()
+    h.dt = 0.025 # Fixed dt
     pc.psolve(100)
     ring.write_spikes(sim_var['spike_out_file'])
-    pc.runworker()    
-    pc.done()
     
     # After we are done, re-sort the file by spike times.
-    exec_cmd = 'sort -k 1n,1n -k 2n,2n ' + sim_var['spike_out_file'] + \
-            ' > ' + 'sorted_' + sim_var['spike_out_file']
+    exec_cmd = ('sort -k 1n,1n -k 2n,2n ' + sim_var['spike_out_file'] +
+            ' > ' + 'sorted_' + sim_var['spike_out_file'])
     os.system(exec_cmd)
         
 if __name__ == '__main__':

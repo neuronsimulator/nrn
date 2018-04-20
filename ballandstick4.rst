@@ -10,7 +10,6 @@ The first thing we will do is pull in our necessary imports. ``simrun.py`` was d
     import numpy
     import simrun
     from neuron import h, gui
-    from neuronpy.util import spiketrain
     from math import sin, cos, pi
     from matplotlib import pyplot
 
@@ -21,86 +20,88 @@ We have evolved our BallAndStick class into a fairly nice class, but it can stil
 
 .. code-block:: python
 
-    class Cell(object):
-        """Generic cell template."""    
-        def __init__(self):
-            self.x, self.y, self.z = 0, 0, 0
-            self.synlist = [] #### NEW CONSTRUCT IN THIS WORKSHEET
-            self.create_sections()
-            self.build_topology()
-            self.build_subsets()
-            self.define_geometry()
-            self.define_biophysics()
-            self.create_synapses()
-        #        
-        def create_sections(self):
-            """Create the sections of the cell. Remember to do this
-            in the form::            
-                h.Section(name='soma', cell=self)            
-            """
-            raise NotImplementedError("create_sections() is not implemented.")
-        #
-        def build_topology(self):
-            """Connect the sections of the cell to build a tree."""
-            raise NotImplementedError("build_topology() is not implemented.")
-        #    
-        def define_geometry(self):
-            """Set the 3D geometry of the cell."""
-            raise NotImplementedError("define_geometry() is not implemented.")
-        #
-        def define_biophysics(self):
-            """Assign the membrane properties across the cell."""
-            raise NotImplementedError("define_biophysics() is not implemented.")
-        #        
-        def create_synapses(self):
-            """Subclasses should create synapses (such as ExpSyn) at various
-            segments and add them to self.synlist."""
-            pass # Ignore if child does not implement.
-        #        
-        def build_subsets(self):
-            """Build subset lists. This defines 'all', but subclasses may
-            want to define others. If overridden, call super() to include 'all'."""
-            self.all = h.SectionList()
-            self.all.wholetree(sec=self.soma)
-        #        
-        def connect2target(self, target, thresh=10):
-            """Make a new NetCon with this cell's membrane
-            potential at the soma as the source (i.e. the spike detector)
-            onto the target passed in (i.e. a synapse on a cell).
-            Subclasses may override with other spike detectors."""
-            nc = h.NetCon(self.soma(1)._ref_v, target, sec = self.soma)
-            nc.threshold = thresh
-            return nc
-        #    
-        def is_art(self):
-            """Flag to check if we are an integrate-and-fire artificial cell."""
-            return 0
-        #        
-        def set_position(self, x, y, z):
-            """
-            Set the base location in 3D and move all other
-            parts of the cell relative to that location.
-            """
-            for sec in self.all:
-                for i in range(int(h.n3d())):
-                    h.pt3dchange(i, 
-                            x - self.x + h.x3d(i), 
-                            y - self.y + h.y3d(i), 
-                            z - self.z + h.z3d(i), 
-                            h.diam3d(i))
-            self.x, self.y, self.z = x, y, z
-        #
-        def rotateZ(self, theta):
-            """Rotate the cell about the Z axis."""   
-            for sec in self.all:
-                for i in range(int(h.n3d(sec=sec))):
-                    x = h.x3d(i, sec=sec)
-                    y = h.y3d(i, sec=sec)
-                    c = cos(theta)
-                    s = sin(theta)
-                    xprime = x * c - y * s
-                    yprime = x * s + y * c
-                    h.pt3dchange(i, xprime, yprime, h.z3d(i, sec=sec), h.diam3d(i, sec=sec), sec=sec)
+class Cell:
+    """Generic cell template."""
+    #
+    def __init__(self):
+        self.x = 0; self.y = 0; self.z = 0
+        self.soma = None
+        self.synlist = [] #### NEW CONSTRUCT IN THIS WORKSHEET
+        self.create_sections()
+        self.build_topology()
+        self.build_subsets()
+        self.define_geometry()
+        self.define_biophysics()
+        self.create_synapses()
+    #    
+    def create_sections(self):
+        """Create the sections of the cell. Remember to do this
+        in the form::
+            
+            h.Section(name='soma', cell=self)
+            
+        """
+        raise NotImplementedError("create_sections() is not implemented.")
+    #    
+    def build_topology(self):
+        """Connect the sections of the cell to build a tree."""
+        raise NotImplementedError("build_topology() is not implemented.")
+    #    
+    def define_geometry(self):
+        """Set the 3D geometry of the cell."""
+        raise NotImplementedError("define_geometry() is not implemented.")
+    #
+    def define_biophysics(self):
+        """Assign the membrane properties across the cell."""
+        raise NotImplementedError("define_biophysics() is not implemented.")
+    #   
+    def create_synapses(self):
+        """Subclasses should create synapses (such as ExpSyn) at various
+        segments and add them to self.synlist."""
+        pass # Ignore if child does not implement.
+    #   
+    def build_subsets(self):
+        """Build subset lists. This defines 'all', but subclasses may
+        want to define others. If overriden, call super() to include 'all'."""
+        self.all = h.SectionList()
+        self.all.wholetree(sec=self.soma)
+    #   
+    def connect2target(self, target, thresh=10):
+        """Make a new NetCon with this cell's membrane
+        potential at the soma as the source (i.e. the spike detector)
+        onto the target passed in (i.e. a synapse on a cell).
+        Subclasses may override with other spike detectors."""
+        nc = h.NetCon(self.soma(1)._ref_v, target, sec = self.soma)
+        nc.threshold = thresh
+        return nc
+    #
+    def is_art(self):
+        """Flag to check if we are an integrate-and-fire artificial cell."""
+        return False
+    #    
+    def set_position(self, x, y, z):
+        """
+        Set the base location in 3D and move all other
+        parts of the cell relative to that location.
+        """
+        for sec in self.all:
+            for i in range(sec.n3d()):
+                h.pt3dchange(i, 
+                        x-self.x+sec.x3d(i), 
+                        y-self.y+sec.y3d(i), 
+                        z-self.z+sec.z3d(i), 
+                        sec.diam3d(i), sec=sec)
+        self.x = x; self.y = y; self.z = z
+    #
+    def rotateZ(self, theta):
+        """Rotate the cell about the Z axis."""
+        rot_m = numpy.array([[numpy.sin(theta), numpy.cos(theta)], 
+                [numpy.cos(theta), -numpy.sin(theta)]])
+        for sec in self.all:
+            for i in range(sec.n3d()):
+                xy = numpy.dot([sec.x3d(i), sec.y3d(i)], rot_m)
+                h.pt3dchange(i, float(xy[0]), float(xy[1]), sec.z3d(i), 
+                        sec.diam3d(i))
 
 Test this:
 
@@ -135,65 +136,72 @@ This Cell object serves as a template and reduces the coding in inherited object
         ####     super(Cell, self).__init__()
         ####     # Do some more stuff                 
         #
-        def create_sections(self):
-            """Create the sections of the cell."""
-            self.soma = h.Section(name='soma', cell=self)
-            self.dend = h.Section(name='dend', cell=self)
-        #    
-        def build_topology(self):
-            """Connect the sections of the cell to build a tree."""
-            self.dend.connect(self.soma(1))
-        #    
-        def define_geometry(self):
-            """Set the 3D geometry of the cell."""
-            self.soma.L = self.soma.diam = 12.6157 # microns
-            self.dend.L = 200                      # microns
-            self.dend.diam = 1                     # microns
-            self.dend.nseg = 5
-            self.shape_3D()
-        #
-        def define_biophysics(self):
-            """Assign the membrane properties across the cell."""
-            for sec in self.all: # 'all' exists in parent object.
-                sec.Ra = 100    # Axial resistance in Ohm * cm
-                sec.cm = 1      # Membrane capacitance in micro Farads / cm^2            
+    def create_sections(self):
+        """Create the sections of the cell."""
+        self.soma = h.Section(name='soma', cell=self)
+        self.dend = h.Section(name='dend', cell=self)
+    #    
+    def build_topology(self):
+        """Connect the sections of the cell to build a tree."""
+        self.dend.connect(self.soma(1))
+    #    
+    def define_geometry(self):
+        """Set the 3D geometry of the cell."""
+        self.soma.L = self.soma.diam = 12.6157 # microns
+        self.dend.L = 200                      # microns
+        self.dend.diam = 1                     # microns
+        self.dend.nseg = 5
+        self.shape_3D()
+    #
+    def define_biophysics(self):
+        """Assign the membrane properties across the cell."""
+        for sec in self.all: # 'all' exists in parent object.
+            sec.Ra = 100     # Axial resistance in Ohm * cm
+            sec.cm = 1       # Membrane capacitance in micro Farads / cm^2
+            #
             # Insert active Hodgkin-Huxley current in the soma
-            self.soma.insert('hh')
-            self.soma.gnabar_hh = 0.12  # Sodium conductance in S/cm2
-            self.soma.gkbar_hh = 0.036  # Potassium conductance in S/cm2
-            self.soma.gl_hh = 0.0003    # Leak conductance in S/cm2
-            self.soma.el_hh = -54.3     # Reversal potential in mV            
+            soma.insert('hh')
+            for seg in soma:
+                seg.hh.gnabar = 0.12  # Sodium conductance in S/cm2
+                seg.hh.gkbar = 0.036  # Potassium conductance in S/cm2
+                seg.hh.gl = 0.0003    # Leak conductance in S/cm2
+                seg.hh.el = -54.3     # Reversal potential in mV
+            #    
             # Insert passive current in the dendrite
-            self.dend.insert('pas')
-            self.dend.g_pas = 0.001  # Passive conductance in S/cm2
-            self.dend.e_pas = -65    # Leak reversal potential mV
-        #        
-        def shape_3D(self):
-            """
-            Set the default shape of the cell in 3D coordinates.
-            Set soma(0) to the origin (0,0,0) and dend extending along 
-            the X-axis.
-            """
-            len1 = self.soma.L
-            h.pt3dclear(sec=self.soma)
-            h.pt3dadd(0, 0, 0, self.soma.diam, sec=self.soma)
-            h.pt3dadd(len1, 0, 0, self.soma.diam, sec=self.soma)
-            len2 = self.dend.L
-            h.pt3dclear(sec=self.dend)
-            h.pt3dadd(len1, 0, 0, self.dend.diam, sec=self.dend)
-            h.pt3dadd(len1 + len2, 0, 0, self.dend.diam, sec=self.dend)
-        #            
-        #### build_subsets, rotateZ, and set_location are gone. ####
+            dend.insert('pas')
+            for seg in dend:
+                seg.pas.g = 0.001  # Passive conductance in S/cm2
+                seg.pas.e = -65    # Leak reversal potential mV 
+    #
+    def shape_3D(self):
+        """
+        Set the default shape of the cell in 3D coordinates.
+        Set soma(0) to the origin (0,0,0) and dend extending along
+        the X-axis.
+        """
+        len1 = self.soma.L
+        h.pt3dclear(sec=self.soma)
+        h.pt3dadd(0, 0, 0, self.soma.diam, sec=self.soma)
+        h.pt3dadd(len1, 0, 0, self.soma.diam, sec=self.soma)
         #
-        #### NEW STUFF ####
-        #
-        def create_synapses(self):
-            """Add an exponentially decaying synapse in the middle
-            of the dendrite. Set its tau to 2ms, and append this
-            synapse to the synlist of the cell."""
-            syn = h.ExpSyn(self.dend(0.5))
-            syn.tau = 2
-            self.synlist.append(syn) # synlist is defined in Cell 
+        len2 = self.dend.L
+        h.pt3dclear(sec=self.dend)
+        h.pt3dadd(len1, 0, 0, self.dend.diam, sec=self.dend)
+        h.pt3dadd(len1 + len2, 0, 0, self.dend.diam, sec=self.dend)
+    #    
+    #### build_subsets, rotateZ, and set_location are now in cell object. ####
+    #
+    #### NEW STUFF ####
+    #
+    def create_synapses(self):
+        """Add an exponentially decaying synapse in the middle
+        of the dendrite. Set its tau to 2ms, and append this
+        synapse to the synlist of the cell."""
+        syn = h.ExpSyn(self.dend(0.5))
+        syn.tau = 2
+        self.synlist.append(syn) # synlist is defined in Cell
+
+
 
 Make a Ring class
 -----------------
@@ -255,6 +263,7 @@ Encapsulating code into discrete objects is not only conceptually useful for cod
         def connect_cells(self):
             """Connect cell n to cell n + 1."""
             self.nclist = []
+            self.spike_times = []
             N = self._N
             for i in range(N):
                 src = self.cells[i]
@@ -262,8 +271,10 @@ Encapsulating code into discrete objects is not only conceptually useful for cod
                 nc = src.connect2target(tgt_syn)
                 nc.weight[0] = self.syn_w
                 nc.delay = self.syn_delay
-                nc.record(self.t_vec, self.id_vec, i)
+                spike_times = h.Vector()
+                nc.record(spike_times)
                 self.nclist.append(nc)
+                self.spike_times.append(spike_times)
         #       
         def connect_stim(self):
             """Connect a spiking generator to the first cell to get
@@ -274,10 +285,6 @@ Encapsulating code into discrete objects is not only conceptually useful for cod
             self.ncstim = h.NetCon(self.stim, self.cells[0].synlist[0])
             self.ncstim.delay = 1
             self.ncstim.weight[0] = self.stim_w # NetCon weight is a vector.
-        #
-        def get_spikes(self):
-            """Get the spikes as a list of lists."""
-            return spiketrain.netconvecs_to_listoflists(self.t_vec, self.id_vec) 
 
 Test the network
 ----------------
@@ -310,11 +317,11 @@ Let's see a spike plot.
 
 .. code-block:: python
 
-    from neuronpy.graphics import spikeplot
-
-    spikes = ring.get_spikes()
-    sp = spikeplot.SpikePlot(savefig=True)
-    sp.plot_spikes(spikes) 
+    pyplot.figure()
+    spikes = ring.spike_times
+    for i, spike_times in enumerate(spikes):
+        pyplot.vlines(spike_times, i + 0.5, i + 1.5)
+    pyplot.show()
 
 .. image:: images/ballstick15.png
     :align: center
@@ -328,11 +335,13 @@ Let's run other instances of the net. The code below keeps the variable spikes f
 
     ring = Ring(syn_w=.005) # Try different weights, for example.
     simrun.simulate(tstop=100)
-    spikes2 = ring.get_spikes()
-    sp = spikeplot.SpikePlot()
-    sp.plot_spikes(spikes, draw=False, label='spikes')
-    sp.set_markercolor('red')
-    sp.plot_spikes(spikes2, label='spikes2') 
+    spikes2 = ring.spike_times
+    pyplot.figure()
+    for i, spike_times in enumerate(spikes):
+        pyplot.vlines(spike_times, i + 0.5, i + 1.5, color='black')
+    for i, spike_times in enumerate(spikes2):
+        pyplot.vlines(spike_times, i + 0.5, i + 1.5, color='red')
+    pyplot.show()
 
 .. image:: images/ballstick16.png
     :align: center
@@ -341,5 +350,5 @@ In both simulations, the first spike occurs at 12.625 ms. After that, the red sp
 
 This concludes this part of the tutorial. The next part translates this serial implementation into a parallel model.
 
-Here we use ``draw=False`` on the first call to ``plot_spikes`` to prevent it from only plotting the first set of spikes and then blocking. We specify different labels for the two sets of spikes because if a label was reused (or both were omitted), then the first raster would be replaced with the second.
+Here we specify different labels for the two sets of spikes because if a label was reused (or both were omitted), then the first raster would be replaced with the second.
 

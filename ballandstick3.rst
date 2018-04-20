@@ -1,12 +1,6 @@
 Ball-and-stick: 3 - Basic cell
 ==============================
 
-.. topic:: Before we begin
-
-    The examples on this page use Thomas McTavish's ``neuronpy`` module, available
-    from `<https://pypi.python.org/pypi/neuronpy>`_. On Linux or Mac, this may be
-    installed by typing: ``sudo pip install neuronpy``
-
 This page is the third in a series here we build a multicompartment cell and evolve it into a network of cells running on a parallel machine. In this page, we build a ring network of ball-and-stick cells created in the previous page. In this case, we make *N* cells where cell *n* makes an excitatory synapse onto cell *n* + 1 and the last, *N*\ th cell in the network projects to the first cell. We will drive the first cell and visualize the spikes of the network.
 
 Let's begin by creating a file :file:`simrun.py` to contain the simulation control methods from the previous tutorial page. In this file, place the following code:
@@ -110,15 +104,17 @@ We want to make a ring network, so let's layout our cells on the XY plane arrang
                 sec.Ra = 100    # Axial resistance in Ohm * cm
                 sec.cm = 1      # Membrane capacitance in micro Farads / cm^2
             # Insert active Hodgkin-Huxley current in the soma
-            self.soma.insert('hh')
-            self.soma.gnabar_hh = 0.12  # Sodium conductance in S/cm2
-            self.soma.gkbar_hh = 0.036  # Potassium conductance in S/cm2
-            self.soma.gl_hh = 0.0003    # Leak conductance in S/cm2
-            self.soma.el_hh = -54.3     # Reversal potential in mV            
+            soma.insert('hh')
+            for seg in soma:
+                seg.hh.gnabar = 0.12  # Sodium conductance in S/cm2
+                seg.hh.gkbar = 0.036  # Potassium conductance in S/cm2
+                seg.hh.gl = 0.0003    # Leak conductance in S/cm2
+                seg.hh.el = -54.3     # Reversal potential in mV
             # Insert passive current in the dendrite
-            self.dend.insert('pas')
-            self.dend.g_pas = 0.001  # Passive conductance in S/cm2
-            self.dend.e_pas = -65    # Leak reversal potential mV
+            dend.insert('pas')
+            for seg in dend:
+                seg.pas.g = 0.001  # Passive conductance in S/cm2
+                seg.pas.e = -65    # Leak reversal potential mV 
         #
         def build_subsets(self):
             """Build subset lists. For now we define 'all'."""
@@ -150,25 +146,25 @@ We want to make a ring network, so let's layout our cells on the XY plane arrang
             for sec in self.all:
                 # note: iterating like this changes the context for all NEURON
                 # functions that depend on a section, so no need to specify sec=
-                for i in range(int(h.n3d())):
+                for i in range(sec.n3d()):
                     h.pt3dchange(i, 
-                            x - self.x + h.x3d(i),
-                            y - self.y + h.y3d(i),
-                            z - self.z + h.z3d(i), 
-                            h.diam3d(i))
+                            x - self.x + sec.x3d(i),
+                            y - self.y + sec.y3d(i),
+                            z - self.z + sec.z3d(i), 
+                            sec.diam3d(i), sec=sec)
             self.x, self.y, self.z = x, y, z
         #
         def rotateZ(self, theta):
             """Rotate the cell about the Z axis."""   
             for sec in self.all:
-                for i in range(int(h.n3d(sec=sec))):
-                    x = h.x3d(i, sec=sec)
-                    y = h.y3d(i, sec=sec)
+                for i in range(sec.n3d()):
+                    x = sec.x3d(i)
+                    y = sec.y3d(i)
                     c = cos(theta)
                     s = sin(theta)
                     xprime = x * c - y * s
                     yprime = x * s + y * c
-                    h.pt3dchange(i, xprime, yprime, h.z3d(i, sec=sec), h.diam3d(i, sec=sec), sec=sec)
+                    h.pt3dchange(i, xprime, yprime, sec.z3d(i), sec.diam3d(i), sec=sec)
         
 
 Construct and layout our cells
@@ -221,7 +217,7 @@ The code below makes a stimulator and attaches it to a synapse object (:class:`E
     # Attach it to a synapse in the middle of the dendrite
     # of the first cell in the network. (Named 'syn_' to avoid
     # being overwritten with the 'syn' var assigned later.)
-    syn_ = h.ExpSyn(cells[0].dend(0.5), name='syn_')
+    syn_ = h.ExpSyn(cells[0].dend(0.5))
 
     stim.number = 1
     stim.start = 9
@@ -241,9 +237,9 @@ We can see syn\_'s properties.
 
 .. code-block:: python
 
-    print dir(syn_)
-    print 'tau =', syn_.tau
-    print 'reversal =', syn_.e 
+    print(dir(syn_))
+    print('tau = {}'.format(syn_.tau))
+    print('reversal = {}'.format(syn_.e))
         	
 
 Let's visualize the results of a simulation.
@@ -307,7 +303,7 @@ Okay. We have our ball-and-stick cells arranged in a ring, and we've attached a 
         syn = h.ExpSyn(tgt.dend(0.5))
         syns.append(syn)
         nc = h.NetCon(src.soma(0.5)._ref_v, syn, sec=src.soma)
-        nc.weight[0] = .05
+        nc.weight[0] = 0.05
         nc.delay = 5
         nclist.append(nc) 
         	
@@ -330,10 +326,9 @@ We can see that the network is now active -- an initial trigger generates a spik
 
 .. code-block:: python
 
-    t_vec = h.Vector()
-    id_vec = h.Vector()
-    for i in range(len(nclist)):
-        nclist[i].record(t_vec, id_vec, i)
+    spike_times = [h.Vector() for nc in nclist]
+    for nc, spike_times_vec in zip(nclist, spike_times):
+        nc.record(spike_times_vec)
         
     simrun.simulate(tstop=100)
 
@@ -342,30 +337,24 @@ Print out the results.
 
 .. code-block:: python
 
-    from itertools import izip
-    for t, id in izip(t_vec, id_vec):
-        print "cell =", id, t 
+    for i, spike_times_vec in enumerate(spike_times):
+        print('cell {}: {}'.format(i, list(spike_times_vec)))
 
-Each line represents one spike: cell 0 fires first, then 1, 2, 3, 4, back to 0, etc.
-
+Each line represents one cell and lists all the times it fires: cell 0 fires first, then 1, 2, 3, 4, back to 0, etc.
 
 
-We can also visualize raster plots using the Neuronpy library.
+
+We can also visualize raster plots:
 
 .. code-block:: python
-
-    from neuronpy.graphics import spikeplot
-    from neuronpy.util import spiketrain
-
-    spikes = spiketrain.netconvecs_to_listoflists(t_vec, id_vec)
-    sp = spikeplot.SpikePlot(savefig=True)
-    sp.plot_spikes(spikes) 
+    
+    pyplot.figure()
+    for i, spike_times_vec in enumerate(spike_times):
+        pyplot.vlines(spike_times_vec, i + 0.5, i + 1.5)
+    pyplot.show()
 
 .. image:: images/ballstick13.png
     :align: center
-
-(If you got an :class:`ImportError` on the first line of this code block, then you do not have the ``neuronpy``
-module installed. See the "before we begin" note at the top of this page).
 
 This page has demonstrated various functionality to arrange, connect, and visualize a network and its output. As nice as it may seem, it needs some design work to make it flexible. The next part of the tutorial further organizes the functionality into more classes to make it more easily extended.
 
