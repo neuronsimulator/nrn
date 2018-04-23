@@ -282,7 +282,8 @@ size_t nrnbbcore_write() {
 
 int nrncore_art2index(double* d) {
   int i;
-  assert(artdata2index_->find(d, i));
+  int result = artdata2index_->find(d, i);
+  assert(result);
   return i;
 }
 
