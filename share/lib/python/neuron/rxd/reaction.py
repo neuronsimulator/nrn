@@ -139,11 +139,14 @@ class Reaction(GeneralizedReaction):
     
     
     def __repr__(self):
+        short_f = self._original_rate_f._short_repr() if hasattr(self._original_rate_f,'_short_repr') else self._original_rate_f
+        short_b = self._original_rate_b._short_repr() if hasattr(self._original_rate_b,'_short_repr') else self._original_rate_b
+
         if len(self._regions) != 1 or self._regions[0] is not None:
             regions_short = '[' + ', '.join(r._short_repr() for r in self._regions) + ']'
-            return 'Reaction(%s, %s, rate_b=%s, regions=%s, custom_dynamics=%r)' % (self._scheme._short_repr(), self._original_rate_f._short_repr(), self._original_rate_b._short_repr(), regions_short, self._custom_dynamics)
+            return 'Reaction(%s, %s, rate_b=%s, regions=%s, custom_dynamics=%r)' % (self._scheme, short_f, short_b, regions_short, self._custom_dynamics)
         else:
-            return 'Reaction(%s, %s, rate_b=%s, custom_dynamics=%r)' % (self._scheme._short_repr(), self._original_rate_f._short_repr(), self._original_rate_b._short_repr(), self._custom_dynamics)
+            return 'Reaction(%s, %s, rate_b=%s, custom_dynamics=%r)' % (self._scheme, short_f, short_b, self._custom_dynamics)
     
     
     def _do_memb_scales(self):
