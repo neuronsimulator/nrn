@@ -6,6 +6,8 @@
 #include <math.h>
 #include <assert.h>
 
+extern "C" int hoc_return_type_code;
+
 #if HAVE_IV
 #include <InterViews/glyph.h>
 #include <InterViews/hit.h>
@@ -990,6 +992,7 @@ ENDGUI
 }
 
 static double gr_view_count(void* v) {
+	hoc_return_type_code = 1; // integer
 #if HAVE_IV
 	int n = 0;
 IFGUI

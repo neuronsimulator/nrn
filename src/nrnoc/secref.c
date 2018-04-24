@@ -20,6 +20,8 @@ access s1.sec	// soma becomes the default section
 #include "parse.h"
 #include "hoc_membf.h"
 
+extern int hoc_return_type_code; 
+
 Symbol* nrn_sec_sym, *nrn_parent_sym, *nrn_root_sym, *nrn_child_sym;
 Symbol* nrn_trueparent_sym;
 
@@ -218,12 +220,14 @@ int nrn_secref_nchild(Section* sec) {
 
 static double s_nchild(void* v) {
 	int n;
+	hoc_return_type_code = 1; /* integer */
 	return (double)nrn_secref_nchild((Section*)v);
 }
 
 static double s_has_parent(void* v) {
 	int n;
 	Section* sec = (Section*)v;
+	hoc_return_type_code = 2; /* boolean */
 	if (!sec->prop) {
 		hoc_execerror("Section was deleted", (char*)0);
 	}
@@ -233,6 +237,7 @@ static double s_has_parent(void* v) {
 static double s_has_trueparent(void* v) {
 	int n;
 	Section* sec = (Section*)v;
+	hoc_return_type_code = 2; /* boolean */
 	if (!sec->prop) {
 		hoc_execerror("Section was deleted", (char*)0);
 	}
@@ -241,6 +246,7 @@ static double s_has_trueparent(void* v) {
 
 static double s_exists(void* v) {
 	int n;
+	hoc_return_type_code = 2; /* boolean */
 	Section* sec = (Section*)v;
 	return (double)(sec->prop != (Prop*)0);
 }
@@ -248,6 +254,7 @@ static double s_exists(void* v) {
 static double s_cas(void* v) { /* return 1 if currently accessed section */
 	Section* sec = (Section*)v;
 	Section* cas = chk_access();
+	hoc_return_type_code = 2; /* boolean */
 	if (!sec->prop) {
 		hoc_execerror("Section was deleted", (char*)0);
 	}

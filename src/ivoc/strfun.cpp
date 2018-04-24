@@ -21,6 +21,8 @@ extern Symlist* hoc_built_in_symlist;
 extern int nrn_is_artificial(int);
 }
 
+extern "C" int hoc_return_type_code;
+
 inline unsigned long key_to_hash(String& s) {return s.hash();}
 implementTable(SymbolTable, String, Symbol*)
 
@@ -36,6 +38,7 @@ static double l_substr(void*) {
 }
 
 static double l_len(void*) {
+	hoc_return_type_code = 1; // integer
 	return double(strlen(gargstr(1)));
 }
 
@@ -87,6 +90,7 @@ static double l_right(void*) {
 }
 
 static double l_is_name(void*) {
+	hoc_return_type_code = 2; // boolean
 	return hoc_lookup(gargstr(1)) ? 1. : 0.;
 }
 
@@ -285,12 +289,14 @@ static double l_ref(void*) {
 
 static double l_is_point(void*) {
 	Object* ob = *hoc_objgetarg(1);
+	hoc_return_type_code = 1; // integer
 	return double(ob ? ob->ctemplate->is_point_ : 0);
 }
 
 static double l_is_artificial(void*) {
 	Object* ob = *hoc_objgetarg(1);
 	int type = ob ? ob->ctemplate->is_point_ : 0;
+	hoc_return_type_code = 1; // integer
 	if (type == 0) { return 0.; }
 	return nrn_is_artificial(type) ? type : 0;
 }

@@ -15,6 +15,7 @@
 #include "objcmd.h"
 #include "ivocvect.h"
 
+extern "C" int hoc_return_type_code;
 static double dummy;
 
 OcPtrVector::OcPtrVector(int sz) {
@@ -87,11 +88,13 @@ double OcPtrVector::getval(int i) {
 }
 
 static double resize(void* v) {
+	hoc_return_type_code = 1; // integer
 	((OcPtrVector*)v)->resize((int(chkarg(1, 1., 2e9))));
 	return double(((OcPtrVector*)v)->size());
 }
 
 static double get_size(void* v){
+	hoc_return_type_code = 1; // integer
 	return ((OcPtrVector*)v)->size();
 }
 
