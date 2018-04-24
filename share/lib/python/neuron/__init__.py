@@ -576,3 +576,9 @@ if not embedded:
     print("Failed to setup nrnpy_pr")
     pass
 
+try:
+  from neuron.psection import psection
+  nrn.set_psection(psection)
+except:
+  print("Failed to setup nrn.Section.psection")
+pass

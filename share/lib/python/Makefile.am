@@ -11,6 +11,7 @@ neuron/gui.py \
 neuron/hclass2.py \
 neuron/hclass3.py \
 neuron/__init__.py \
+neuron/psection.py \
 neuron/sections.py \
 \
 neuron/nonvint_block_supervisor.py \

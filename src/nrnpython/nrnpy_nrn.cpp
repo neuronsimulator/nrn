@@ -519,6 +519,36 @@ static PyObject* hoc_internal_name(NPySecObj* self) {
   return result;
 }
 
+static PyObject* nrnpy_psection;
+static PyObject* nrnpy_set_psection(PyObject* self, PyObject* args) {
+  PyObject* po;
+  if (!PyArg_ParseTuple(args, "O", &po)) {
+    return NULL;
+  }
+  if (PyCallable_Check(po) == 0) {
+    PyErr_SetString(PyExc_TypeError, "argument must be a callable");
+    return NULL;
+  }
+  if (nrnpy_psection) {
+    Py_DECREF(nrnpy_psection);
+    nrnpy_psection = NULL;
+  }
+  nrnpy_psection = po;
+  Py_INCREF(po);
+  return po;
+}
+
+static PyObject* NPySecObj_psection(NPySecObj* self) {
+  if (nrnpy_psection) {
+    PyObject* arglist = Py_BuildValue("(O)", self);
+    PyObject* result = PyEval_CallObject(nrnpy_psection, arglist);
+    Py_DECREF(arglist);
+    return result;
+  }
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
 static PyObject* is_pysec(NPySecObj* self) {
   if (self->sec_->prop && self->sec_->prop->dparam[PROP_PY_INDEX]._pvoid) {
       Py_RETURN_TRUE;
@@ -1638,6 +1668,8 @@ static PyMethodDef NPySecObj_methods[] = {
      "Returns the diam of the ith 3D point."},
     {"is_pysec", (PyCFunction)is_pysec, METH_NOARGS,
      "Returns True if Section created from Python, False if created from HOC."},
+    {"psection", (PyCFunction)NPySecObj_psection, METH_NOARGS,
+     "Returns dict of info about Section contents."},
     {NULL}};
 
 static PyMethodDef NPySegObj_methods[] = {
@@ -1693,6 +1725,8 @@ static PyMethodDef nrnpy_methods[] = {
     {"cas", nrnpy_cas, METH_VARARGS, "Return the currently accessed section."},
     {"allsec", nrnpy_forall, METH_VARARGS,
      "Return iterator over all sections."},
+    {"set_psection", nrnpy_set_psection, METH_VARARGS,
+     "Specify the nrn.Section.psection callback."},
     {NULL}};
 
 #if PY_MAJOR_VERSION >= 3
