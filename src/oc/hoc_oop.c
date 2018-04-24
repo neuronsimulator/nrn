@@ -46,6 +46,8 @@ static void free_objectdata(Objectdata*, Template*);
 
 int hoc_print_first_instance = 1;
 
+int hoc_max_builtin_class_id = -1;
+
 static Symbol* hoc_obj_;
 
 void hoc_install_hoc_obj(void) {
@@ -1512,6 +1514,9 @@ void class2oc(
 	tsym->subtype = CPLUSOBJECT;
 	hoc_begintemplate(tsym);
 	t = tsym->u.template;
+	if (t->id > hoc_max_builtin_class_id) {
+		hoc_max_builtin_class_id = t->id;
+	}
 	t->constructor = cons;
 	t->destructor = destruct;
 	t->steer = 0;

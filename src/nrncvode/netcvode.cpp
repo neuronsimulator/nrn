@@ -114,6 +114,8 @@ Object* (*nrnpy_seg_from_sec_x)(Section*, double);
 extern void nrnmusic_injectlist(void*, double);
 #endif
 
+extern "C" int hoc_return_type_code;
+
 extern int nrn_fornetcon_cnt_;
 extern int* nrn_fornetcon_index_;
 extern int* nrn_fornetcon_type_;
@@ -699,6 +701,7 @@ static double nc_setpost(void* v) {
 
 static double nc_valid(void* v) {
 	NetCon* d = (NetCon*)v;
+	hoc_return_type_code = 2;
 	if (d->src_ && d->target_) {
 		return 1.;
 	}
@@ -711,6 +714,7 @@ static double nc_active(void* v) {
 	if (d->target_ && ifarg(1)) {
 		d->active_ = bool(chkarg(1, 0, 1));
 	}
+	hoc_return_type_code = 2;
 	return double(a);
 }
 
@@ -766,6 +770,7 @@ static double nc_record(void* v) {
 
 static double nc_srcgid(void* v) {
 	NetCon* d = (NetCon*)v;
+	hoc_return_type_code = 1;
 	if (d->src_) {
 		return (double)d->src_->gid_;
 	}

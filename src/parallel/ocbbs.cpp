@@ -17,6 +17,8 @@
 #undef MD
 #define MD 2147483647.
 
+extern "C" int hoc_return_type_code;
+
 extern "C" {
 	extern int vector_arg_px(int, double**);
 	Symbol* hoc_which_template(Symbol*);
@@ -204,6 +206,7 @@ static double working(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
 	int id;
 	bool b = bbs->working(id, bbs->retval_, bbs->userid_);
+	hoc_return_type_code = 1; // integer
 	if (b) {
 		return double(id);
 	}else{
@@ -222,26 +225,32 @@ static double userid(void* v) {
 }
 
 static double nhost(void* v) {
+	hoc_return_type_code = 1;
 	return nrnmpi_numprocs;
 }
 
 static double nrn_rank(void* v) {
+	hoc_return_type_code = 1;
 	return nrnmpi_myid;
 }
 
 static double nhost_world(void* v) {
+	hoc_return_type_code = 1; // integer
 	return nrnmpi_numprocs_world;
 }
 
 static double rank_world(void* v) {
+	hoc_return_type_code = 1;
 	return nrnmpi_myid_world;
 }
 
 static double nhost_bbs(void* v) {
+	hoc_return_type_code = 1;
 	return nrnmpi_numprocs_bbs;
 }
 
 static double rank_bbs(void* v) {
+	hoc_return_type_code = 1;
 	return nrnmpi_myid_bbs;
 }
 
@@ -426,6 +435,7 @@ static double take(void* v) {
 
 static double look(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
+	hoc_return_type_code = 2; // boolean
 	if (bbs->look(key_help())) {
 		unpack_help(2, bbs);
 		return 1.;
@@ -435,6 +445,7 @@ static double look(void* v) {
 
 static double look_take(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
+	hoc_return_type_code = 2; // boolean
 	if (bbs->look_take(key_help())) {
 		unpack_help(2, bbs);
 		return 1.;
@@ -533,6 +544,7 @@ static double set_gid2node(void* v) {
 
 static double gid_exists(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
+	hoc_return_type_code = 1; // NOTE: possible returns are integers 0 - 3
 	return int(bbs->gid_exists(int(chkarg(1, 0, MD))));
 }
 
@@ -636,6 +648,7 @@ static double set_maxstep(void* v) {
 static double spike_stat(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
 	int nsend, nsendmax, nrecv, nrecv_useful;
+	hoc_return_type_code = 1; // integer
 	nsend = nsendmax = nrecv = nrecv_useful = 0;
 	bbs->netpar_spanning_statistics(&nsend, &nsendmax, &nrecv, &nrecv_useful);
 	if (ifarg(1)) { *hoc_pgetarg(1) = nsend; }
@@ -850,6 +863,7 @@ static double checkpoint(void*) {
 
 static double nthrd(void*) {
 	int ip = 1;
+	hoc_return_type_code = 1; // integer
 	if (ifarg(1)) {
 		if (ifarg(2)) { ip = int(chkarg(2, 0, 1)); }
 		nrn_threads_create(int(chkarg(1, 1, 1e5)), ip);
@@ -888,11 +902,13 @@ static double thread_busywait(void*) {
 }
 
 static double thread_how_many_proc(void*) {
+	hoc_return_type_code = 1; // integer
 	int i = nrn_how_many_processors();
 	return double(i);
 }
 
 static double sec_in_thread(void*) {
+	hoc_return_type_code = 2; // boolean
 	Section* sec = chk_access();
 	return double(sec->pnode[0]->_nt->id);
 }
