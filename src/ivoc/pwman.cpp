@@ -1892,9 +1892,9 @@ float yoff = pageheight*72/2/sfac - (e.top() + e.bottom() + 23.)/2.;
 	pr->epilog();
 	obuf.close();
 #if !MAC || DARWIN
-	char buf[200];
 	String filt("cat");
 	s->find_attribute("pwm_postscript_filter", filt);
+	char* buf = new char[200 + strlen(name) + strlen(filt.string()) + 2*strlen(tmpfile)];
 		
 	if (use_printer) {
 #ifdef WIN32
@@ -1915,6 +1915,7 @@ float yoff = pageheight*72/2/sfac - (e.top() + e.bottom() + 23.)/2.;
 	}
 //printf("%s\n", buf);
 	nrnignore = system(buf);
+	delete [] buf;
 #ifdef WIN32
 	unlink(tmpfile);
 #endif
