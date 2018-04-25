@@ -1,4 +1,7 @@
 #include <../../nrnconf.h>
+
+extern "C" int hoc_return_type_code;
+
 #if HAVE_IV // to end of file
 
 #include <stdio.h>
@@ -46,6 +49,7 @@ static double map(void* v) {
 
 static double readonly(void* v) {
 	OcMLineEditor* e = (OcMLineEditor*)v;
+	hoc_return_type_code = 2; // boolean
 	if (ifarg(1)) {
 		e->txt_->readOnly(int(chkarg(1, 0, 1)));
 	}

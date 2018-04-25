@@ -70,6 +70,9 @@ extern int nrn_matrix_dim(void*, int);
 extern PyObject* pmech_types;  // Python map for name to Mechanism
 extern PyObject* rangevars_;   // Python map for name to Symbol
 
+extern "C" int hoc_max_builtin_class_id;
+extern "C" int hoc_return_type_code;
+
 static cTemplate* hoc_vec_template_;
 static cTemplate* hoc_list_template_;
 static cTemplate* hoc_sectionlist_template_;
@@ -398,8 +401,11 @@ static Symbol* getsym(char* name, Object* ho, int fail) {
 
 // on entry the stack order is indices, args, object
 // on exit all that is popped and the result is on the stack
-static void component(PyHocObject* po) {
+// returns hoc_return_is_int if called on a builtin (i.e. 2 if bool, 1 if int, 0 otherwise)
+static int component(PyHocObject* po) {
   Inst fc[6];
+  int var_type = 0;
+  hoc_return_type_code = 0;
   fc[0].sym = po->sym_;
   fc[1].i = 0;
   fc[2].i = 0;
@@ -418,6 +424,12 @@ static void component(PyHocObject* po) {
   Inst* pcsav = save_pc(fc);
   hoc_object_component();
   hoc_pc = pcsav;
+  // only return a type if we're calling a built-in (these are all registered first)
+  if (po->ho_->ctemplate->id <= hoc_max_builtin_class_id) {
+    var_type = hoc_return_type_code;
+  }
+  hoc_return_type_code = 0;
+  return(var_type);
 }
 
 int nrnpy_numbercheck(PyObject* po) {
@@ -565,6 +577,15 @@ static int set_final_from_stk(PyObject* po) {
   return err;
 }
 
+
+static void* nrnpy_hoc_int_pop() {
+  return (void*) Py_BuildValue("i", (long) hoc_xpop());
+}
+
+static void* nrnpy_hoc_bool_pop() {
+  return (void*) PyBool_FromLong((long) hoc_xpop());
+}
+
 static void* fcall(void* vself, void* vargs) {
   PyHocObject* self = (PyHocObject*)vself;
   if (self->ho_) {
@@ -572,11 +593,19 @@ static void* fcall(void* vself, void* vargs) {
   }
   std::vector<char*> strings_to_free;
   int narg = hocobj_pushargs((PyObject*)vargs, strings_to_free);
+  int var_type;
   if (self->ho_) {
     self->nindex_ = narg;
-    component(self);
+    var_type = component(self);
     hocobj_pushargs_free_strings(strings_to_free);
-    return (void*)nrnpy_hoc_pop();
+    switch(var_type) {
+      case 2:
+        return nrnpy_hoc_bool_pop();
+      case 1:
+        return nrnpy_hoc_int_pop();
+      default:
+        return(void*) nrnpy_hoc_pop();
+    }
   }
   if (self->sym_->type == BLTIN) {
     if (narg != 1) {
@@ -604,6 +633,7 @@ static void* fcall(void* vself, void* vargs) {
     HocContextRestore
   }
   hocobj_pushargs_free_strings(strings_to_free);
+
   return (void*)nrnpy_hoc_pop();
 }
 

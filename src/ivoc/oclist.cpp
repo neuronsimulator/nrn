@@ -31,6 +31,7 @@ int ivoc_list_count(Object*);
 Object* ivoc_list_item(Object*, int);
 }
 
+extern "C" int hoc_return_type_code;
 void handle_old_focus();
 
 #if HAVE_IV
@@ -177,6 +178,7 @@ void OcList::insert(long i, Object* ob) {
 
 static double l_count(void* v) {
 	OcList* o = (OcList*)v;
+	hoc_return_type_code = 1;
 	return o->count();
 }
 long OcList::count() { return oli_->count();}
@@ -204,6 +206,7 @@ void OcList::remove(long i) {
 static double l_index(void* v) {
 	OcList* o = (OcList*)v;
 	Object* ob = *hoc_objgetarg(1);
+	hoc_return_type_code = 1; // integer
 	return o->index(ob);
 }
 long OcList::index(Object* ob) {
@@ -306,6 +309,7 @@ ENDGUI
 	return 1.;
 }
 static double l_selected(void* v) {
+	hoc_return_type_code = 1; // integer
 #if HAVE_IV
 	long i = -1;
 IFGUI

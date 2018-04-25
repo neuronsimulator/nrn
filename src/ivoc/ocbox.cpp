@@ -22,6 +22,8 @@
 #include "oc2iv.h"
 #include "classreg.h"
 
+extern "C" int hoc_return_type_code;
+
 #if HAVE_IV
 
 class NrnFixedLayout : public Layout {
@@ -250,6 +252,7 @@ ENDGUI
 }
 
 static double ismapped(void* v) {
+	hoc_return_type_code = 2;
 #if HAVE_IV
 	bool b = false;
 IFGUI
