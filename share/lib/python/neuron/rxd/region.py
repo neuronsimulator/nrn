@@ -41,7 +41,7 @@ class Region(object):
 
     def _short_repr(self):
         if self._name is not None:
-            return 'Region(<%r>)' % self._name
+            return str(self._name)
         else:
             return self.__repr__()
 

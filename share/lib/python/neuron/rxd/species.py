@@ -127,7 +127,9 @@ class SpeciesOnRegion(_SpeciesMathable):
         return '%r[%r]' % (self._species(), self._region())
         
     def _short_repr(self):
-        return '%r[%r]' % (self._species()._short_repr(), self._region()._short_repr())
+        return '%s[%s]' % (self._species()._short_repr(), self._region()._short_repr())
+    def __str__(self):
+        return '%s[%s]' % (self._species()._short_repr(), self._region()._short_repr())
 
     def indices(self, r=None):
         """If no Region is specified or if r is the Region specified in the constructor,
@@ -736,7 +738,7 @@ class Species(_SpeciesMathable):
     
     def _short_repr(self):
         if self._name is not None:
-            return 'Species(<%s>)' % self._name
+            return str(self._name)
         else:
             return self.__repr__()
     
