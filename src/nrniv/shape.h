@@ -39,6 +39,7 @@ public:
 	static ShapeScene* current_draw_scene();
 	void color(Section* sec1, Section* sec2, const Color*);
 	void color(Section* sec, const Color*);
+	void colorseg(Section*, double, const Color*);
 	void color(const Color*);
 	void color(SectionList*, const Color*);
 	ColorValue* color_value();
@@ -98,6 +99,7 @@ public:
 	virtual void fast_draw(Canvas*, Coord x, Coord y, bool) const;
 	virtual void pick(Canvas*, const Allocation&, int depth, Hit&);
 	virtual void setColor(const Color*, ShapeScene*);
+	virtual void setColorseg(const Color*, double, ShapeScene*);
 	const Color* color(){return color_;}
 	virtual void set_range_variable(Symbol*);
 	virtual void clear_variable();
@@ -132,6 +134,8 @@ private:
 	Coord len_scale_;
 	const Color* color_;
 	const Color** old_;
+	const Color** colorseg_;
+	int colorseg_size_; // so know when to unref colorseg_ items.
 	Coord xmin_, xmax_, ymin_, ymax_;
 	Coord *x_, *y_;
 	int n_;

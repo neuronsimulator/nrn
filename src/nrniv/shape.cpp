@@ -352,7 +352,14 @@ IFGUI
 	ShapeScene* s = (ShapeScene*)v;
 	const Color* c = NULL;
 	c = colors->color(int(*getarg(1)));
-	s->color(chk_access(), c);
+	if (ifarg(2)) {
+		Section* sec;
+		double x;
+		nrn_seg_or_x_arg(2, &sec, &x);
+		s->colorseg(sec, x, c);
+	}else{
+		s->color(chk_access(), c);
+	}
 ENDGUI
 #endif
 	return 0.;
@@ -1158,6 +1165,13 @@ void ShapeScene::color(Section* sec1, Section* sec2, const Color* c) {
 	}
 }
 
+void ShapeScene::colorseg(Section* sec, double x, const Color* c) {
+	ShapeSection* ss = shape_section(sec);
+	if (ss && ss->color() != c) {
+		ss->setColorseg(c, x, this);
+	}
+}
+
 void ShapeScene::color(Section* sec, const Color* c) {
 	ShapeSection* ss = shape_section(sec);
 	if (ss && ss->color() != c) {
@@ -1228,6 +1242,8 @@ ShapeSection::ShapeSection(Section* sec) {
 	color_->ref();
 	old_ = NULL;
 	pvar_ = NULL;
+	colorseg_ = NULL;
+	colorseg_size_ = 0;
 	scale(1.);
 
 	if (sec_->npt3d == 0) {
@@ -1490,6 +1506,14 @@ void ShapeSection::clear_variable() {
 		delete [] old_;
 		old_ = NULL;
 	}
+	if (colorseg_) {
+		for (int i=0; i < colorseg_size_; ++i) {
+			colorseg_[i]->unref();
+		}
+		delete [] colorseg_;
+		colorseg_ = NULL;
+		colorseg_size_ = 0;
+	}
 }
 void ShapeSection::draw(Canvas* c, const Allocation& a) const {
 	if (!good()) {
@@ -1516,18 +1540,28 @@ xmin_, a.left(),ymin_,a.bottom(),xmax_,a.right());
 void ShapeSection::fast_draw(Canvas* c, Coord x, Coord y, bool b) const {
 	Section* sec = section();
 	IfIdraw(pict());
-	if (pvar_) {
+	if (pvar_ || (colorseg_ && colorseg_size_ == sec_->nnode-1)) {
 		const Color* color;
-		ColorValue* cv = ShapeScene::current_draw_scene()->color_value();
+		ColorValue* cv;
+		if (pvar_) {
+			cv = ShapeScene::current_draw_scene()->color_value();
+		}
 		if (sec->nnode == 2) {
-			if (pvar_[0]) {
-				color = cv->get_color(*pvar_[0]);
+			if (colorseg_) {
+				color = colorseg_[0];
 			}else{
-				color = cv->no_value();
+				if (pvar_[0]) {
+					color = cv->get_color(*pvar_[0]);
+				}else{
+					color = cv->no_value();
+				}
+				if (color != old_[0] || b) {
+					b = true;
+					((ShapeSection*)this)->old_[0] = color;
+				}
 			}
-			if (color != old_[0] || b) {
+			if (b) {
 				draw_points(c, color, 0, sec_->npt3d);
-				((ShapeSection*)this)->old_[0] = color;
 			}
 ///////////////////////////////////////
 #if FASTIDIOUS
@@ -1558,15 +1592,18 @@ void ShapeSection::fast_draw(Canvas* c, Coord x, Coord y, bool b) const {
 	a3dold = 0.;
 	i3d = 1;
 	for (iseg = 0; iseg < sec->nnode - 1; ++iseg) {
-		if (pvar_[iseg]) {
-			color = cv->get_color(*pvar_[iseg]);
+		if (colorseg_) {
+			color = colorseg_[iseg];
 		}else{
-			color = cv->no_value();
-		}
-		if (color != old_[iseg] || b) {
-			((ShapeSection*)this)->old_[iseg] = color;
-		}else{
-			color = NULL;
+			if (pvar_[iseg]) {
+				color = cv->get_color(*pvar_[iseg]);
+			}else{
+				color = cv->no_value();
+			}
+			if (color != old_[iseg] || b) {
+				((ShapeSection*)this)->old_[iseg] = color;
+				b = true;
+			}
 		}
 		xend = double(iseg+1)*dseg;
 		for ( ; i3d < sec->npt3d; ++i3d) {
@@ -1599,14 +1636,21 @@ void ShapeSection::fast_draw(Canvas* c, Coord x, Coord y, bool b) const {
 ///////////////////////////////////////
 		}else{
 			for (int iseg = 0; iseg < sec->nnode - 1; ++iseg) {
-				if (pvar_[iseg]) {
-					color = cv->get_color(*pvar_[iseg]);
+				if (colorseg_) {
+					color = colorseg_[iseg];
 				}else{
-					color = cv->no_value();
+					if (pvar_[iseg]) {
+						color = cv->get_color(*pvar_[iseg]);
+					}else{
+						color = cv->no_value();
+					}
+					if (color != old_[iseg] || b) {
+						((ShapeSection*)this)->old_[iseg] = color;
+						b = true;
+					}
 				}
-				if (color != old_[iseg] || b) {
+				if (b) {
 					draw_seg(c, color, iseg);
-					((ShapeSection*)this)->old_[iseg] = color;
 				}
 			}
 		}
@@ -1814,7 +1858,28 @@ void ShapeSection::trapezoid(Canvas* c, const Color* color,
 	}
 }
 
+void ShapeSection::setColorseg(const Color* color, double x, ShapeScene* s) {
+	if (x <= 0.0 || x >= 1.0) { return; }
+	if (colorseg_size_ != sec_->nnode - 1) {
+		clear_variable();
+	}
+	if (!colorseg_) {
+		colorseg_size_ = sec_->nnode - 1;
+		colorseg_ = new const Color*[colorseg_size_];
+		for (int i=0; i < colorseg_size_; ++i) {
+			colorseg_[i] = color_;
+			color_->ref();
+		}
+	}
+	int i = int(x * colorseg_size_);
+	color->ref();
+	colorseg_[i]->unref();
+	colorseg_[i] = color;
+	damage(s);
+}
+
 void ShapeSection::setColor(const Color* color, ShapeScene* s) {
+	clear_variable();
 	color->ref();
 	color_->unref();
 	color_ = color;
