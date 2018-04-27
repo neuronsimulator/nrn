@@ -1,7 +1,12 @@
 def psection(sec):
-    from neuron import h, rxd
-    from neuron.rxd import region, species
-    from neuron.rxd import rxd as rxd_module
+    from neuron import h
+    try:
+        from neuron import rxd
+        from neuron.rxd import region, species
+        from neuron.rxd import rxd as rxd_module
+        have_rxd = True
+    except:
+      have_rxd = False
 
     results = {}
 
@@ -76,24 +81,25 @@ def psection(sec):
     results['Ra'] = sec.Ra
     results['cm'] = [seg.cm for seg in sec]
 
-    regions = {r() for r in region._all_regions if r() is not None and sec in r().secs}
-    results['regions'] = regions
+    if have_rxd:
+        regions = {r() for r in region._all_regions if r() is not None and sec in r().secs}
+        results['regions'] = regions
 
-    my_species = []
-    for sp in species._all_species:
-        sp = sp()
-        if sp is not None:
-            sp_regions = sp._regions
-            if not hasattr(sp_regions, '__len__'):
-                sp_regions = [sp_regions]
-            if any(r in sp_regions for r in regions):
-                my_species.append(sp)
-    results['species'] = set(my_species)
-    results['name'] = sec.name()
-    results['hoc_internal_name'] = sec.hoc_internal_name()
-    results['cell'] = sec.cell()
+        my_species = []
+        for sp in species._all_species:
+            sp = sp()
+            if sp is not None:
+                sp_regions = sp._regions
+                if not hasattr(sp_regions, '__len__'):
+                    sp_regions = [sp_regions]
+                if any(r in sp_regions for r in regions):
+                    my_species.append(sp)
+        results['species'] = set(my_species)
+        results['name'] = sec.name()
+        results['hoc_internal_name'] = sec.hoc_internal_name()
+        results['cell'] = sec.cell()
 
-    #all_active_reactions = [r() for r in rxd_module._all_reactions if r() is not None]
+        #all_active_reactions = [r() for r in rxd_module._all_reactions if r() is not None]
 
     return results
 
