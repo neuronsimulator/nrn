@@ -32,7 +32,9 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnoc/nrnoc_decl.h"
 #include "coreneuron/nrniv/nrn_acc_manager.h"
 #include "coreneuron/coreneuron.h"
-extern nrn_flush_reports(double t); // TODO remove when this file goes as cpp 
+#include "coreneuron/utils/progressbar/progressbar.h"
+
+extern void nrn_flush_reports(double t);
 static void* nrn_fixed_step_thread(NrnThread*);
 static void* nrn_fixed_step_group_thread(NrnThread*);
 
@@ -58,7 +60,6 @@ void nrn_fixed_step_minimal() { /* not so minimal anymore with gap junctions */
     } else {
         dt2thread(dt);
     }
-    /*printf("nrn_fixed_step_minimal t=%g\n", t);*/
     nrn_thread_table_check();
     nrn_multithread_job(nrn_fixed_step_thread);
     if (nrn_have_gaps) {
@@ -79,6 +80,26 @@ integration interval before joining
 static int step_group_n;
 static int step_group_begin;
 static int step_group_end;
+static progressbar *progress;
+
+void initialize_progress_bar(int nstep) {
+    if (nrnmpi_myid == 0) {
+        printf("\n");
+        progress = progressbar_new(" psolve", nstep);
+    }
+}
+
+void update_progress_bar(int step, double time) {
+    if (nrnmpi_myid == 0) {
+        progressbar_update(progress, step, time);
+    }
+}
+
+void finalize_progress_bar() {
+    if (nrnmpi_myid == 0) {
+        progressbar_finish(progress);
+    }
+}
 
 void nrn_fixed_step_group_minimal(int n) {
     static int step = 0;
@@ -87,6 +108,8 @@ void nrn_fixed_step_group_minimal(int n) {
     step_group_n = n;
     step_group_begin = 0;
     step_group_end = 0;
+    initialize_progress_bar(step_group_n);
+
     while (step_group_end < step_group_n) {
         nrn_multithread_job(nrn_fixed_step_group_thread);
 #if NRNMPI
@@ -99,17 +122,12 @@ void nrn_fixed_step_group_minimal(int n) {
         if (stoprun) {
             break;
         }
-        step_group_begin = step_group_end;
         step++;
-
-        //@TODO: flush/optimize/better way
-        if (nrnmpi_myid == 0) {
-            float completed = (((float)step_group_end / step_group_n) * 100.0);
-            printf(" Completed %.2f, t = %lf\r", completed, nrn_threads[0]._t);
-            fflush(stdout);
-        }
+        step_group_begin = step_group_end;
+        update_progress_bar(step_group_end, nrn_threads[0]._t);
     }
     t = nrn_threads[0]._t;
+    finalize_progress_bar();
 }
 
 static void* nrn_fixed_step_group_thread(NrnThread* nth) {
