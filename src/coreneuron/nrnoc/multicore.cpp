@@ -65,6 +65,7 @@ model structure. We want to use Node* as much as possible and defer
 the handling of v_structure_change as long as possible.
 */
 
+namespace coreneuron {
 #define CACHELINE_ALLOC(name, type, size) \
     name = (type*)nrn_cacheline_alloc((void**)&name, size * sizeof(type))
 
@@ -481,3 +482,4 @@ void nrn_multithread_job(void* (*job)(NrnThread*)) {
     }
 #endif
 }
+} // namespace coreneuron

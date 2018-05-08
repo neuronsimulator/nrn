@@ -55,6 +55,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <utility>
 #include "coreneuron/nrniv/nrnmutdec.h"
 
+namespace coreneuron {
 #define COLLECT_TQueue_STATISTICS 0
 #define STRCMP(a, b) (a - b)
 
@@ -66,13 +67,13 @@ class TQItem;
 #define cnt cnt_
 #define key t_
 
-typedef struct SPTREE {
+struct SPTREE {
     SPBLK* root; /* root node */
 
     /* Statistics, not strictly necessary, but handy for tuning  */
     int enqcmps; /* compares in spenq */
 
-} SPTREE;
+};
 
 #define spinit sptq_spinit
 #define spenq sptq_spenq
@@ -213,6 +214,6 @@ class TQueue {
     unsigned long ncompare, nleastsrch, nfind, nfindsrch, nmove, nfastmove;
 #endif
 };
-
+} //namespace coreneuron
 #include "coreneuron/nrniv/tqueue.ipp"
 #endif

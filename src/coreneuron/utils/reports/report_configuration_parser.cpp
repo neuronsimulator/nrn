@@ -38,6 +38,8 @@
 
 #define MAX_LINE_LENGTH 4096
 
+namespace coreneuron {
+
 /*
  * Split filter string ("mech.var_name") into mech_id and var_name
  */
@@ -115,3 +117,4 @@ std::vector<ReportConfiguration> create_report_configurations(const char* conf_f
     fclose(fp);
     return reports;
 }
+} //namespace coreneuron

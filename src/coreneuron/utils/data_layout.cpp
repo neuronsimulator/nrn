@@ -4,6 +4,7 @@
 #include "coreneuron/nrnoc/nrnoc_decl.h"
 #include "coreneuron/nrnoc/membfunc.h"
 
+namespace coreneuron {
 /*
  * Return the index to mechanism variable based Original input files are organized in AoS
  */
@@ -15,3 +16,4 @@ int get_data_index(int node_index, int variable_index, int mtype, Memb_list* ml)
     assert(layout == SOA_LAYOUT);
     return variable_index * ml->_nodecount_padded + node_index;
 }
+} //namespace coreneuron

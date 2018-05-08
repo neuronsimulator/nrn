@@ -34,6 +34,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <vector>
 #include <string.h>
+#include "coreneuron/engine.h"
 #include "coreneuron/utils/randoms/nrnran123.h"
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
@@ -56,6 +57,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <climits>
 
+
 #if 0
 #include <fenv.h>
 #define NRN_FEEXCEPT (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)
@@ -65,7 +67,7 @@ int nrn_feenableexcept() {
   return result;
 }
 #endif
-int main1(int argc, char* argv[], char** env);
+namespace coreneuron {
 void call_prcellstate_for_prcellgid(int prcellgid, int compute_gpu, int is_init);
 void nrn_init_and_load_data(int argc,
                             char* argv[],
@@ -240,8 +242,35 @@ void call_prcellstate_for_prcellgid(int prcellgid, int compute_gpu, int is_init)
     }
 }
 
-int main1(int argc, char** argv, char** env) {
-    (void)env; /* unused */
+
+/* perform forwardskip and call prcellstate for prcellgid */
+void handle_forward_skip(double forwardskip, int prcellgid) {
+    double savedt = dt;
+    double savet = t;
+
+    dt = forwardskip * 0.1;
+    t = -1e9;
+
+    for (int step = 0; step < 10; ++step) {
+        nrn_fixed_step_minimal();
+    }
+
+    if (prcellgid >= 0) {
+        prcellstate(prcellgid, "fs");
+    }
+
+    dt = savedt;
+    t = savet;
+    dt2thread(-1.);
+}
+
+const char* nrn_version(int) {
+    return "version id unimplemented";
+}
+} //namespace coreneuron
+
+using namespace coreneuron;
+extern "C" int solve_core(int argc, char** argv) {
 
 #if NRNMPI
     nrnmpi_init(1, &argc, &argv);
@@ -278,6 +307,7 @@ int main1(int argc, char** argv, char** env) {
     nrnmpi_barrier();
 #endif
     bool compute_gpu = nrnopt_get_flag("-gpu");
+    bool skip_mpi_finalize = nrnopt_get_flag("--skip-mpi-finalize");
 
 // clang-format off
     #pragma acc data copyin(celsius, secondorder) if (compute_gpu)
@@ -354,7 +384,9 @@ int main1(int argc, char** argv, char** env) {
 
 // mpi finalize
 #if NRNMPI
-    nrnmpi_finalize();
+    if (!skip_mpi_finalize) {
+        nrnmpi_finalize();
+    }
 #endif
 
     finalize_data_on_device();
@@ -362,27 +394,3 @@ int main1(int argc, char** argv, char** env) {
     return 0;
 }
 
-/* perform forwardskip and call prcellstate for prcellgid */
-void handle_forward_skip(double forwardskip, int prcellgid) {
-    double savedt = dt;
-    double savet = t;
-
-    dt = forwardskip * 0.1;
-    t = -1e9;
-
-    for (int step = 0; step < 10; ++step) {
-        nrn_fixed_step_minimal();
-    }
-
-    if (prcellgid >= 0) {
-        prcellstate(prcellgid, "fs");
-    }
-
-    dt = savedt;
-    t = savet;
-    dt2thread(-1.);
-}
-
-const char* nrn_version(int) {
-    return "version id unimplemented";
-}

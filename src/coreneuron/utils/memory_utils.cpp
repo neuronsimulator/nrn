@@ -55,6 +55,8 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <malloc.h>
 #endif
 
+namespace coreneuron {
+
 double nrn_mallinfo(void) {
     // -ve mem usage for non-supported platforms
     double mbs = -1.0;
@@ -118,3 +120,4 @@ void report_mem_usage(const char* message, bool all_ranks) {
     }
     fflush(stdout);
 }
+} //namespace coreneuron

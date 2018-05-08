@@ -4,7 +4,7 @@
 #include <vector>
 
 // experiment with ordering strategies for Tree Nodes
-
+namespace coreneuron {
 class TNode;
 
 typedef std::vector<TNode*> VecTNode;
@@ -36,5 +36,5 @@ size_t dist2child(TNode* nd);
 size_t warp_balance(size_t ncell, VecTNode& nodevec);
 
 #define warpsize 32
-
+}
 #endif

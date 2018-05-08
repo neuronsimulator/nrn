@@ -38,7 +38,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/nrn_assert.h"
 
 #define precision 15
-
+namespace coreneuron {
 static std::map<Point_process*, int> pnt2index;  // for deciding if NetCon is to be printed
 static int pntindex;                             // running count of printed point processes.
 static std::map<NetCon*, DiscreteEvent*> map_nc2src;
@@ -295,3 +295,4 @@ int prcellstate(int gid, const char* suffix) {
     }
     return 0;
 }
+} //namespace coreneuron

@@ -12,7 +12,7 @@
 #include <string.h>
 
 using namespace std;
-
+namespace coreneuron {
 static size_t groupsize = 32;
 
 static bool tnode_earlier(TNode* a, TNode* b) {
@@ -669,3 +669,4 @@ for (int i = 0; i <= nwarp; ++i){
 }
 #endif
 }
+} //namespace coreneuron

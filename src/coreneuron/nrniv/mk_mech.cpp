@@ -40,6 +40,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 static char banner[] = "Duke, Yale, and the BlueBrain Project -- Copyright 1984-2015";
 
+namespace coreneuron {
 int nrn_nobanner_;
 
 int nrn_need_byteswap;
@@ -171,3 +172,4 @@ const char* nrn_get_mechname(int type) {
     }
     return NULL;
 }
+} //namespace coreneuron

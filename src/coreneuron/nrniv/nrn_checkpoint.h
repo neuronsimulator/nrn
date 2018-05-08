@@ -28,7 +28,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifndef _H_NRNCHECKPOINT_
 #define _H_NRNCHECKPOINT_
-
+namespace coreneuron {
 class NrnThread;
 class FileHandler;
 
@@ -110,5 +110,5 @@ typedef struct NrnThreadChkpnt {
 } NrnThreadChkpnt;
 
 extern NrnThreadChkpnt* nrnthread_chkpnt;
-
+} //namespace coreneuron
 #endif

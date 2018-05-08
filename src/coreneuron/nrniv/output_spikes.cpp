@@ -39,6 +39,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnmpi/nrnmpi_impl.h"
 #include "coreneuron/nrnmpi/nrnmpidec.h"
 
+namespace coreneuron {
 std::vector<double> spikevec_time;
 std::vector<int> spikevec_gid;
 
@@ -168,3 +169,4 @@ void validation(std::vector<std::pair<double, int> >& res) {
         if (spikevec_gid[i] > -1)
             res.push_back(std::make_pair(spikevec_time[i], spikevec_gid[i]));
 }
+} //namespace coreneuron

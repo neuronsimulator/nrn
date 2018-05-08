@@ -33,7 +33,7 @@ static char RCSid[] = "abort.c,v 1.2 1997/08/30 14:32:00 hines Exp";
 #include <setjmp.h>
 #include <stdio.h>
 #include "errcodes.h"
-
+namespace coreneuron {
 int abort_run(int code) {
     switch ((code >= 0) ? code : -code) {
         case EXCEED_ITERS:
@@ -92,3 +92,4 @@ int abort_run(int code) {
     hoc_execerror("scopmath library error", (char*)0);
     return 0;
 }
+} //namespace coreneuron

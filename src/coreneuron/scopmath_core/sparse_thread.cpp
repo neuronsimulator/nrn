@@ -90,7 +90,7 @@ extern void nrn_malloc_unlock();
         varord[el->row] < varord[el->c_right->row]
         varord[el->col] < varord[el->r_down->col]
 */
-
+namespace coreneuron {
 static int matsol(SparseObj* so, int _iml);
 static void subrow(SparseObj* so, Elm* pivot, Elm* rowsub, int _iml);
 static void bksub(SparseObj* so, int _iml);
@@ -847,3 +847,4 @@ void _nrn_destroy_sparseobj_thread(SparseObj* so) {
         freelist(so->orderlist);
     Free(so);
 }
+} //namespace coreneuron

@@ -41,7 +41,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #else
 #define STAT(arg) /**/
 #endif
-
+namespace coreneuron {
 // splay tree + bin queue limited to fixed step method
 // for event-sets or priority queues
 // this starts from the sptqueue.cpp file and adds a bin queue
@@ -358,5 +358,5 @@ inline TQItem* TQueue<pq_que>::atomic_dq(double tt) {
     MUTUNLOCK
     return q;
 }
-
+} //namespace coreneuron
 #endif

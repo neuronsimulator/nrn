@@ -51,7 +51,7 @@ static char RCSid[] = "crout.c,v 1.2 1999/01/04 12:46:43 hines Exp";
 
 #include <math.h>
 #include "coreneuron/scopmath_core/errcodes.h"
-
+namespace coreneuron {
 #define ix(arg) ((arg)*_STRIDE)
 
 /* having a differnt permutation per instance may not be a good idea */
@@ -233,3 +233,4 @@ void nrn_scopmath_solve_thread(int n,
         }
     }
 }
+} //namespace coreneuron

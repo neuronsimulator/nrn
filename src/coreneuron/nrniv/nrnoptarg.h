@@ -40,7 +40,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #define nrnoptarg_h
 
 #include <string>
-
+namespace coreneuron {
 // before nrnopt_parse()
 void nrnopt_add_flag(const char* names, const char* usage);
 void nrnopt_add_int(const char* names, const char* usage, int dflt, int low, int high);
@@ -57,5 +57,5 @@ int nrnopt_get_int(const char* name);
 double nrnopt_get_dbl(const char* name);
 std::string nrnopt_get_str(const char* name);
 void nrnopt_modify_dbl(const char* name, double value);
-
+} //namespace coreneuron
 #endif

@@ -29,7 +29,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnoc/nrnoc_decl.h"
-
+namespace coreneuron {
 void nrn_finitialize(int setv, double v) {
     int i;
     NrnThread* _nt;
@@ -106,3 +106,4 @@ void nrn_finitialize(int setv, double v) {
     nrn_spike_exchange(nrn_threads);
 #endif
 }
+} //namespace coreneuron

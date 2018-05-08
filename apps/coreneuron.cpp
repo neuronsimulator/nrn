@@ -26,12 +26,11 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
-extern int main1(int argc, char** argv, char** env);
+#include <coreneuron/engine.h>
 extern "C" {extern void modl_reg(void);}
 
-int main(int argc, char** argv, char** env) {
-  return main1(argc, argv, env);
+int main(int argc, char** argv) {
+  return solve_core(argc, argv);
 }
 
 /// Declare an empty function if Neurodamus mechanisms are not used, otherwise register them in mechs/cfile/mod_func.c

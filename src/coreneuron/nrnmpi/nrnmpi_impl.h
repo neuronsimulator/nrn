@@ -32,10 +32,10 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #if NRNMPI
 
 #include <mpi.h>
-
+namespace coreneuron {
 extern MPI_Comm nrnmpi_world_comm;
 extern MPI_Comm nrnmpi_comm;
-
+} //namespace coreneuron
 #endif  // NRNMPI
 
 #endif

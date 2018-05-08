@@ -28,11 +28,11 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <stdlib.h>
 #include <math.h>
-#include "coreneuron/nrnconf.h"
 #include "coreneuron/utils/randoms/nrnran123.h"
+#include "coreneuron/nrnconf.h"
 #include "coreneuron/utils/randoms/Random123/philox.h"
 #include "coreneuron/nrniv/nrnmutdec.h"
-
+namespace coreneuron {
 static const double SHIFT32 = 1.0 / 4294967297.0; /* 1/(2^32 + 1) */
 
 static philox4x32_key_t k = {{0}};
@@ -158,3 +158,4 @@ double nrnran123_uint2dbl(uint32_t u) {
     /* min 2.3283064e-10 to max (1 - 2.3283064e-10) */
     return ((double)u + 1.0) * SHIFT32;
 }
+} //namespace coreneuron

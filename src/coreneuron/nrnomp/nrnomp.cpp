@@ -25,9 +25,19 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 */
+#include <string.h>
+#include "coreneuron/nrnconf.h"
+#include "coreneuron/nrnomp/nrnomp.h"
 
-extern int main1(int argc, char** argv, char** env);
-
-int main(int argc, char** argv, char** env) {
-    return main1(argc, argv, env);
+#if defined(_OPENMP)
+#include <omp.h>
+#endif  // _OPENMP
+namespace coreneuron {
+int nrnomp_get_numthreads() {
+#if defined(_OPENMP)
+    return (omp_get_max_threads());
+#else
+    return 1;
+#endif
 }
+} //namespace coreneuron

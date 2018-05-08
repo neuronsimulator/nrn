@@ -32,6 +32,8 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnmpi/nrnmpidec.h"
 
+
+namespace coreneuron {
 int stoprun;
 int v_structure_change;
 int diam_changed;
@@ -162,3 +164,4 @@ void check_bbcore_write_version(const char* version) {
         abort();
     }
 }
+} // namespace coreneuron

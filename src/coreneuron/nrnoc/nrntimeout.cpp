@@ -39,7 +39,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 setitimer will conflict with profiler. In that case,
 user can disable setitimer which is just safety for
 deadlock situations */
-
+namespace coreneuron {
 #ifdef DISABLE_TIMEOUT
 
 void nrn_timeout(int seconds) {
@@ -96,5 +96,6 @@ printf("nrn_timeout %d\n", seconds);
 }
 
 #endif /* DISABLE_TIMEOUT */
+} // namespace coreneuron
 
 #endif /*NRNMPI*/

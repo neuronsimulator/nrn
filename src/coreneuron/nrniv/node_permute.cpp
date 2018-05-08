@@ -72,7 +72,7 @@ so pdata_m(k, isz) = inew + data_t
 #include <vector>
 #include <utility>
 #include <algorithm>
-
+namespace coreneuron {
 template <typename T>
 void permute(T* data, int cnt, int sz, int layout, int* p) {
     // data(p[icnt], isz) <- data(icnt, isz)
@@ -329,3 +329,4 @@ void permute_nodeindices(Memb_list* ml, int* p) {
     invert_permute(ml->_permute, ml->nodecount);
     permute_ptr(ml->nodeindices, ml->nodecount, ml->_permute);
 }
+} //namespace coreneuron

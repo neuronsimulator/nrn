@@ -26,6 +26,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+namespace coreneuron {
 int nrnmpi_use;
 int nrnmpi_numprocs = 1; /* size */
 int nrnmpi_myid = 0;     /* rank */
@@ -51,3 +52,4 @@ int nrnmpi_ovfl_;
 unsigned char* nrnmpi_spikeout_fixed_;
 unsigned char* nrnmpi_spikein_fixed_;
 unsigned char* nrnmpi_spikein_fixed_ovfl_;
+} //namespace coreneuron

@@ -31,7 +31,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <boost/test/unit_test.hpp>
 #include "nrniv/cellorder.h"
-
+using namespace coreneuron;
 BOOST_AUTO_TEST_CASE(interleave_info_test) {
     size_t nwarp = 4;
     size_t nstride = 6;

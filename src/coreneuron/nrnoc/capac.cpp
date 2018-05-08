@@ -53,6 +53,8 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #define _STRIDE _cntml_padded + _iml
 #endif
 
+namespace coreneuron {
+
 static const char* mechanism[] = {"0", "capacitance", "cm", 0, "i_cap", 0, 0};
 void nrn_alloc_capacitance(double*, Datum*, int);
 void nrn_init_capacitance(NrnThread*, Memb_list*, int);
@@ -177,3 +179,4 @@ void nrn_alloc_capacitance(double* data, Datum* pdata, int type) {
     (void)type;       /* unused */
     data[0] = DEF_cm; /*default capacitance/cm^2*/
 }
+} //namespace coreneuron

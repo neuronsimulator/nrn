@@ -8,9 +8,9 @@
  * errcodes.h,v 1.1.1.1 1994/10/12 17:22:18 hines Exp
  *
  ******************************************************************************/
-
-extern int abort_run(int);
-
+namespace coreneuron {
+    extern int abort_run(int);
+}
 #define ROUNDOFF 1.e-20
 #define ZERO 1.e-8
 #define STEP 1.e-6

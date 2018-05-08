@@ -14,7 +14,7 @@ using namespace std;
 // experiment starting with identical cell ordering
 // groupindex aleady defined that keeps identical cells together
 // begin with leaf to root ordering
-
+namespace coreneuron {
 typedef VecTNode VTN;        // level of nodes
 typedef vector<VTN> VVTN;    // group of levels
 typedef vector<VVTN> VVVTN;  // groups
@@ -530,3 +530,4 @@ void group_order2(VecTNode& nodevec, size_t groupsize, size_t ncell) {
     std::sort(nodevec.begin() + ncell, nodevec.end(), final_nodevec_cmp);
     set_nodeindex(nodevec);
 }
+} //namespace coreneuron

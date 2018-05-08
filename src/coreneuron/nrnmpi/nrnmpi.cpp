@@ -38,12 +38,10 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 #if NRNMPI
 #include <mpi.h>
-
-#define USE_HPM 0
-#if USE_HPM
-#include <libhpm.h>
 #endif
+namespace coreneuron {
 
+#if NRNMPI
 int nrnmusic;
 
 MPI_Comm nrnmpi_world_comm;
@@ -215,3 +213,5 @@ int nrnmpi_initialized() {
 #endif
     return flag;
 }
+
+} //namespace coreneuron

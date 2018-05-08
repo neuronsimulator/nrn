@@ -35,7 +35,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "coreneuron/nrniv/nrn_acc_manager.h"
 
-extern "C" {
+namespace coreneuron{
 
 // for fixed step thread
 // check thresholds and deliver all (including binqueue) events
@@ -112,4 +112,4 @@ int at_time(NrnThread* nt, double te) {
     }
     return 0;
 }
-}
+} //namespace coreneuron

@@ -35,12 +35,16 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <stdint.h>
 
+
+namespace coreneuron {
+
 #define NRNBBCORE 1
 
 #define nil NULL
 #define Sprintf sprintf
 
 typedef int Datum;
+//#define Datum int
 typedef int (*Pfri)();
 typedef char Symbol;
 
@@ -53,11 +57,9 @@ typedef char Symbol;
 #define VEC_AREA(i) (_nt->_actual_area[(i)])
 #define VECTORIZE 1
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
 
 extern double celsius;
+
 extern double t, dt;
 extern int rev_dt;
 extern int secondorder;
@@ -91,8 +93,6 @@ typedef struct Point_process {
 
 extern char* pnt_name(Point_process* pnt);
 
-#if defined(__cplusplus)
-}
-#endif
+} //namespace coreneuron
 
 #endif

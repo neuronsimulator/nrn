@@ -42,13 +42,7 @@
 #define MAX_REPORT_NAME_LEN 256
 #define MAX_REPORT_PATH_LEN 512
 
-#if defined(__cplusplus)
-#define EXTERN_C extern "C"
-#else
-#define EXTERN_C
-#endif
-
-
+namespace coreneuron {
 // name of the variable in mod file that is used to indicate which synapse
 // is enabled or disable for reporting
 #define SELECTED_VAR_MOD_NAME "selected_for_report"
@@ -58,7 +52,7 @@
 
 enum ReportType { SomaReport, CompartmentReport, SynapseReport };
 
-typedef struct {
+struct ReportConfiguration{
     char name[MAX_REPORT_NAME_LEN];         // name of the report
     char output_path[MAX_REPORT_PATH_LEN];  // full path of the report
     char target_name[MAX_REPORT_NAME_LEN];  // target of the report
@@ -74,7 +68,7 @@ typedef struct {
     double stop;                            // stop time of report
     int num_gids;                           // total number of gids
     std::set<int> target;                   // list of gids for this report
-} ReportConfiguration;
+};
 
 void setup_report_engine(double dt_report, double mindelay);
 void register_report(double dt, double tstop, double delay, ReportConfiguration& config);
@@ -82,6 +76,6 @@ std::vector<ReportConfiguration> create_report_configurations(const char* filena
                                                               const char* output_dir);
 void setup_report_engine(double dt_report, double mindelay);
 void finalize_report();
-EXTERN_C void nrn_flush_reports(double t);
-
+void nrn_flush_reports(double t);
+} //namespace coreneuron
 #endif  //_H_NRN_REPORT_

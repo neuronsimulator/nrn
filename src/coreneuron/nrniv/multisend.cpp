@@ -41,7 +41,7 @@ of spikes sent is equal to the number of spikes sent.
 // We expect that phase2 will work best in combination with ENQUEUE=2
 // which has the greatest amount of overlap between computation
 // and communication.
-
+namespace coreneuron {
 int use_multisend_;
 int use_phase2_;
 int n_multisend_interval = 2;
@@ -465,5 +465,5 @@ void nrn_multisend_setup() {
     }
 #endif
 }
-
 #endif  // NRN_MULTISEND
+} // namespace coreneuron

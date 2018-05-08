@@ -44,7 +44,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/output_spikes.h"
 #include "coreneuron/nrniv/nrn_assert.h"
 
-extern "C" {
+namespace coreneuron {
 void _pattern_reg(void);
 extern void pattern_stim_setup_helper(int size,
                                       double* tvec,
@@ -56,7 +56,6 @@ extern void pattern_stim_setup_helper(int size,
                                       ThreadDatum* _thread,
                                       NrnThread* _nt,
                                       double v);
-}
 
 static size_t read_raster_file(const char* fname, double** tvec, int** gidvec);
 
@@ -250,4 +249,5 @@ Point_process* nrn_artcell_instantiate(const char* mechname) {
     nt->_vdata[nt->_nvdata + 1] = (void*)pnt;
 
     return pnt;
+}
 }

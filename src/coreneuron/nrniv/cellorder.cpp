@@ -12,7 +12,7 @@
 #ifdef _OPENACC
 #include <openacc.h>
 #endif
-
+namespace coreneuron {
 int use_interleave_permute;
 InterleaveInfo* interleave_info;  // nrn_nthread array
 
@@ -683,5 +683,5 @@ void solve_interleaved(int ith) {
         solve_interleaved1(ith);
     }
 }
-
+} //namespace coreneuron 
 #endif

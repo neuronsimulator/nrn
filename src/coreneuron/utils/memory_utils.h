@@ -37,6 +37,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef NRN_MEMORY_UTILS
 #define NRN_MEMORY_UTILS
 
+namespace coreneuron {
 /** @brief Reports current memory usage of the simulator to stdout
  *
  *  Current implementation is based on mallinfo. This routine prints
@@ -52,5 +53,5 @@ void report_mem_usage(const char* message, bool all_ranks = false);
  *  @return memory usage in KBs
  */
 double nrn_mallinfo(void);
-
+}
 #endif /* ifndef NRN_MEMORY_UTILS */

@@ -1,6 +1,6 @@
 #ifndef partrans_h
 #define partrans_h
-
+namespace coreneuron {
 struct Memb_list;
 
 namespace nrn_partrans {
@@ -57,5 +57,5 @@ namespace nrn_partrans {
     extern double* outsrc_buf_;  // Send buffer for gap voltages
     extern int *insrccnt_, *insrcdspl_, *outsrccnt_, *outsrcdspl_;
 }
-
+} //namespace coreneuron
 #endif /*partrans_h*/

@@ -33,6 +33,7 @@ print <<"__eof";
 #include <string.h>
 #include <stdlib.h>
 #include "coreneuron/coreneuron.h"
+namespace coreneuron {
 __eof
 
 #Get the correct SUFFIX from each mod file for each mechanism
@@ -121,5 +122,6 @@ mod_f_t get_BA_function(const char * sym, int BA_func_id)
 {
   return NULL;
 }
+} //namespace coreneuron
 __eof
 

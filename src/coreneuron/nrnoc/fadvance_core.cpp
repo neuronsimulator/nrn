@@ -26,15 +26,16 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "coreneuron/coreneuron.h"
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnmpi/nrnmpi.h"
 #include "coreneuron/nrnoc/nrnoc_decl.h"
 #include "coreneuron/nrniv/nrn_acc_manager.h"
-#include "coreneuron/coreneuron.h"
+#include "coreneuron/utils/reports/nrnreport.h"
 #include "coreneuron/utils/progressbar/progressbar.h"
+namespace coreneuron {
 
-extern void nrn_flush_reports(double t);
 static void* nrn_fixed_step_thread(NrnThread*);
 static void* nrn_fixed_step_group_thread(NrnThread*);
 
@@ -267,3 +268,4 @@ void* nrn_fixed_step_lastpart(NrnThread* nth) {
     nrn_deliver_events(nth); /* up to but not past texit */
     return (void*)0;
 }
+} //namespace coreneuron

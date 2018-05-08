@@ -31,7 +31,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "coreneuron/nrniv/netcon.h"
 #include "coreneuron/nrniv/ivocvect.h"
-
+namespace coreneuron {
 class PlayRecord;
 
 #define VecPlayContinuousType 4
@@ -108,5 +108,5 @@ class VecPlayContinuous : public PlayRecord {
 
     PlayRecordEvent* e_;
 };
-
+} //namespace coreneuron
 #endif

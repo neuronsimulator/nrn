@@ -13,7 +13,7 @@
 #include "coreneuron/nrniv/tnode.h"
 #include "coreneuron/nrniv/lpt.h"
 #include <algorithm>
-
+namespace coreneuron {
 int cellorder_nwarp = 0;  // 0 means do not balance
 
 // ordering by warp, then old order
@@ -103,3 +103,4 @@ size_t warp_balance(size_t ncell, VecTNode& nodevec) {
 
     return nwarp;
 }
+} //namespace coreneuron

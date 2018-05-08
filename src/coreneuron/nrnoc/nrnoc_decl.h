@@ -29,9 +29,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef nrnoc_decl_h
 #define nrnoc_decl_h
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
+namespace coreneuron {
 
 extern int v_structure_change;
 extern int diam_changed;
@@ -77,7 +75,5 @@ extern void nrn_fatal_error(const char* msg);
 extern void nrn_abort(int errcode);
 extern double nrn_wtime(void);
 
-#if defined(__cplusplus)
 }
-#endif
 #endif

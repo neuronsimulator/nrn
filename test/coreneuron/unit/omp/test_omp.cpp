@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE(omp_standardusecase)
 {
 #if defined(_OPENMP)
     omp_set_num_threads(NUMTHREAD);
-    BOOST_CHECK(nrnomp_get_numthreads()==NUMTHREAD);
+    BOOST_CHECK(coreneuron::nrnomp_get_numthreads()==NUMTHREAD);
 #endif
 }
 

@@ -26,6 +26,7 @@ s/\.mod$// foreach @mods;
 
 print << "__eof";
 #include <stdio.h>
+namespace coreneuron {
 extern int nrnmpi_myid;
 extern int nrn_nobanner_;
 extern int @{[join ",\n  ", map{"_${_}_reg(void)"} @mods]};
@@ -41,4 +42,5 @@ void modl_reg() {
 
     @{[join "\n", map{" _${_}_reg();"} @mods] }
 }
+} //namespace coreneuron
 __eof

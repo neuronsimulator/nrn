@@ -35,7 +35,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifndef _H_NRN_STATS_
 #define _H_NRN_STATS_
-
+namespace coreneuron {
 /** @brief Reports global cell statistics of the simulation
  *
  *  This routine prints the global number of cells, synapses of the simulation
@@ -44,4 +44,5 @@ THE POSSIBILITY OF SUCH DAMAGE.
  */
 void report_cell_stats(void);
 
+} //namespace coreneuron
 #endif /* ifndef _H_NRN_STATS_ */

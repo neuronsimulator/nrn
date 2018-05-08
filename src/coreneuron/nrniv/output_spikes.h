@@ -31,7 +31,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <vector>
 #include <utility>
-
+namespace coreneuron {
 void output_spikes(const char* outpath);
 void mk_spikevec_buffer(int);
 
@@ -42,5 +42,5 @@ void validation(std::vector<std::pair<double, int> >& res);
 
 void spikevec_lock();
 void spikevec_unlock();
-
+} //namespace coreneuron
 #endif

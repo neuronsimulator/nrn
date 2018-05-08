@@ -38,10 +38,7 @@ the prototypes be of the form "type foo(type arg, ...)"
 
 #if NRNMPI
 #include <stdlib.h>
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
+namespace coreneuron {
 /* from bbsmpipack.c */
 typedef struct bbsmpibuf {
     char* buf;
@@ -133,8 +130,6 @@ extern int nrnmpi_multisend_single_advance(NRNMPI_Spike* spk);
 extern int nrnmpi_multisend_conserve(int nsend, int nrecv);
 #endif
 
-#if defined(__cplusplus)
-}
-#endif
+} //namespace coreneuron
 #endif
 #endif

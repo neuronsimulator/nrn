@@ -32,14 +32,9 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/membfunc.h"
 
-#if defined(__cplusplus)
+namespace coreneuron {
 class NetCon;
 class PreSyn;
-extern "C" {
-#else
-typedef void NetCon;
-typedef void PreSyn;
-#endif
 
 /*
    Point_process._presyn, used only if its NET_RECEIVE sends a net_event, is
@@ -50,26 +45,26 @@ extern int nrn_has_net_event_cnt_; /* how many net_event sender types are there?
 extern int* nrn_has_net_event_;    /* the types that send a net_event */
 extern int* pnttype2presyn; /* from the type, which array of pnt2presyn_ix are we talking about. */
 
-typedef struct NrnThreadMembList { /* patterned after CvMembList in cvodeobj.h */
-    struct NrnThreadMembList* next;
-    struct Memb_list* ml;
+struct NrnThreadMembList { /* patterned after CvMembList in cvodeobj.h */
+    NrnThreadMembList* next;
+    Memb_list* ml;
     int index;
     int* dependencies; /* list of mechanism types that this mechanism depends on*/
     int ndependencies; /* for scheduling we need to know the dependency count */
-} NrnThreadMembList;
+};
 
-typedef struct NrnThreadBAList {
-    struct Memb_list* ml; /* an item in the NrnThreadMembList */
-    struct BAMech* bam;
-    struct NrnThreadBAList* next;
-} NrnThreadBAList;
+struct NrnThreadBAList {
+    Memb_list* ml; /* an item in the NrnThreadMembList */
+    BAMech* bam;
+    NrnThreadBAList* next;
+};
 
 /* for OpenACC, in order to avoid an error while update PreSyn, with virtual base
  * class, we are adding helper with flag variable which could be updated on GPU
  */
-typedef struct PreSynHelper { int flag_; } PreSynHelper;
+struct PreSynHelper { int flag_; };
 
-typedef struct NrnThread {
+struct NrnThread {
     double _t;
     double _dt;
     double cj;
@@ -111,7 +106,7 @@ typedef struct NrnThread {
     int* _v_parent_index;
     int* _permute;
     char* _sp13mat;                     /* handle to general sparse matrix */
-    struct Memb_list* _ecell_memb_list; /* normally nil */
+    Memb_list* _ecell_memb_list;        /* normally nil */
 
     double _ctime; /* computation time in seconds (using nrnmpi_wtime) */
 
@@ -127,7 +122,8 @@ typedef struct NrnThread {
     int* _watch_types; /* NULL or 0 terminated array of integers */
     void* mapping;     /* section to segment mapping information */
 
-} NrnThread;
+};
+
 
 extern void nrn_threads_create(int n, int parallel);
 extern int nrn_nthread;
@@ -139,8 +135,6 @@ extern void nrn_threads_free(void);
 
 extern int _nrn_skip_initmodel;
 
-#if defined(__cplusplus)
-}
-#endif
+} //namespace coreneuron
 
 #endif

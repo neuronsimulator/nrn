@@ -41,16 +41,16 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <sstream>
 #include <cassert>
 #include <stdio.h>
-
+namespace coreneuron {
 bool nrn_checkpoint_arg_exists;
 int _nrn_skip_initmodel;
-
+}
 #define UseFileHandlerWrap 0
 
 #if UseFileHandlerWrap
 
 #include <iomanip>
-
+namespace coreneuron {
 /// wrapper class for FileHandler used for debugging checkpointing
 class FileHandlerWrap {
   public:
@@ -91,13 +91,14 @@ class FileHandlerWrap {
         return *this;
     }
 };
-
+} //namespace coreneuron
 #else
 
 #define FileHandlerWrap FileHandler
 
 #endif  // UseFileHandlerWrap
 
+namespace coreneuron {
 template <typename T>
 T* chkpnt_soa2aos(T* data, int cnt, int sz, int layout, int* permute) {
     // inverse of F -> data. Just a copy if layout=1. If SoA,
@@ -759,10 +760,8 @@ static void checkpoint_restore_tqitem(int type, NrnThread& nt, FileHandler& fh) 
     }
 }
 
-extern "C" {
 extern int checkpoint_save_patternstim(_threadargsproto_);
 extern void checkpoint_restore_patternstim(int, double, _threadargsproto_);
-}
 
 static void write_tqueue(NrnThread& nt, FileHandlerWrap& fh) {
     // VecPlayContinuous
@@ -889,3 +888,4 @@ bool checkpoint_initialize() {
 
     return checkpoint_restored_;
 }
+} //namespace coreneuron

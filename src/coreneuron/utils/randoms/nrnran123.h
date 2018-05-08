@@ -81,9 +81,7 @@ http://www.deshawresearch.com/resources_random123.html
 #define nrnran123_getids3 cu_nrnran123_getids3
 #endif
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
+namespace coreneuron {
 
 typedef struct nrnran123_State {
     philox4x32_ctr_t c;
@@ -156,8 +154,7 @@ extern DEVICE double nrnran123_gauss(nrnran123_State*); /* mean 0.0, std 1.0 */
 extern DEVICE nrnran123_array4x32 nrnran123_iran(uint32_t seq, uint32_t id1, uint32_t id2);
 extern DEVICE double nrnran123_uint2dbl(uint32_t);
 extern void nrnran123_set_gpu_globalindex(uint32_t gix);
-#if defined(__cplusplus)
-}
-#endif
+
+} //namespace coreneuron
 
 #endif

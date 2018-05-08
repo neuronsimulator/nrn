@@ -33,7 +33,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrniv/nrn_filehandler.h"
 #include "coreneuron/utils/sdprintf.h"
-
+namespace coreneuron {
 static int ngroup_w;
 static int* gidgroups_w;
 static int* imult_w;
@@ -146,5 +146,5 @@ namespace coreneuron {
         nrn_multithread_job(phase_wrapper_w<P>);
     }
 }  // namespace coreneuron
-
+} //namespace coreneuron
 #endif

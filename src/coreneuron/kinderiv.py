@@ -14,7 +14,7 @@ kf = '_kinderiv.h'
 
 import os
 
-fnames = [f.replace('.mod', '.c') for f in os.listdir('.') if f.endswith('.mod')]
+fnames = [f.replace('.mod', '.cpp') for f in os.listdir('.') if f.endswith('.mod')]
 euler = []
 deriv = []
 kin = []
@@ -47,6 +47,7 @@ for l in [deriv, kin,  euler]:
     fout.write(' */\n')
 
 fout.write("\n/* declarations */\n")
+fout.write("\nnamespace coreneuron {\n")
 for item in deriv:
   fout.write('#pragma acc routine seq\n')
   fout.write('extern int %s%s(_threadargsproto_);\n' % (item[0], item[1]))
@@ -94,6 +95,8 @@ for item in euler:
 fout.write("\n")
 
 fout.write('\n#endif\n')
+
+fout.write("\n} //namespace coreneuron\n")
 fout.close()
 
 # if kf exists and is same as kftmp, just remove kftmp. Otherwise

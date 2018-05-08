@@ -1,6 +1,7 @@
 #include "coreneuron/mech/cfile/scoplib.h"
 #include "coreneuron/mech/mod2c_core_thread.h"
 #include "coreneuron/scopmath_core/errcodes.h"
+namespace coreneuron {
 #define s_(arg) _p[s[arg] * _STRIDE]
 
 #pragma acc routine seq
@@ -77,3 +78,4 @@ void _modl_set_dt_thread(double dt, NrnThread* nt) {
 double _modl_get_dt_thread(NrnThread* nt) {
     return nt->_dt;
 }
+} //namespace coreneuron

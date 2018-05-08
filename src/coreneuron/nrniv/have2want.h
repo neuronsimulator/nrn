@@ -38,7 +38,7 @@ and minimize memory usage so that no single rank ever needs to know all keys.
 #ifndef HAVEWANT_t
 #define HAVEWANT_t int
 #endif
-
+namespace coreneuron {
 // round robin default rendezvous rank function
 static int default_rendezvous(HAVEWANT_t key) {
     return key % nrnmpi_numprocs;
@@ -260,3 +260,4 @@ static void have_to_want(HAVEWANT_t* have,
     recv_from_have_cnt = want_s_cnt;
     recv_from_have_displ = want_s_displ;
 }
+} //namespace coreneuron

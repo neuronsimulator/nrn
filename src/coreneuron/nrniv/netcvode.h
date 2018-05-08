@@ -43,7 +43,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #else
 #define QTYPE pq_que
 #endif
-
+namespace coreneuron {
 class DiscreteEvent;
 class NetCvode;
 
@@ -92,5 +92,5 @@ class NetCvode {
     void init_events();
     void point_receive(int, Point_process*, double*, double);
 };
-
+} //namespace coreneuron
 #endif

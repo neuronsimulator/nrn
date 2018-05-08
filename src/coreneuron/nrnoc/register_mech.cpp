@@ -34,7 +34,9 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnoc/nrnoc_decl.h"
 #include "coreneuron/nrnmpi/nrnmpi.h"
 #include "coreneuron/nrnoc/mech_mapping.hpp"
+#include "coreneuron/nrnoc/membfunc.h"
 
+namespace coreneuron {
 int secondorder = 0;
 double t, dt, celsius;
 #if defined(PG_ACC_BUGS)
@@ -498,7 +500,7 @@ void _nrn_thread_reg1(int i, void (*f)(ThreadDatum*)) {
     memb_func[i].thread_mem_init_ = f;
 }
 
-void _nrn_thread_table_reg(int i, void (*f)(int, int, double*, Datum*, ThreadDatum*, void*, int)) {
+void _nrn_thread_table_reg(int i, void (*f)(int, int, double*, Datum*, ThreadDatum*, NrnThread*, int)) {
     if (i == -1)
         return;
 
@@ -511,3 +513,4 @@ void _nrn_setdata_reg(int i, void (*call)(double*, Datum*)) {
 
     memb_func[i].setdata_ = call;
 }
+} // namespace coreneuron

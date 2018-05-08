@@ -33,7 +33,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/ivocvect.h"
 #include "coreneuron/nrniv/netcvode.h"
 #include "coreneuron/nrniv/vrecitem.h"
-
+namespace coreneuron {
 extern NetCvode* net_cvode_instance;
 
 PlayRecordEvent::PlayRecordEvent() {
@@ -184,3 +184,4 @@ void VecPlayContinuous::pr() {
     printf("VecPlayContinuous ");
     // printf("%s.x[%d]\n", hoc_object_name(y_->obj_), last_index_);
 }
+} //namespace coreneuron

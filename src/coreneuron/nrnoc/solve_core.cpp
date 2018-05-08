@@ -29,7 +29,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnoc/nrnoc_decl.h"
-
+namespace coreneuron {
 int use_solve_interleave;
 
 static void triang(NrnThread*), bksub(NrnThread*);
@@ -115,3 +115,4 @@ static void bksub(NrnThread* _nt) {
     #pragma acc wait(stream_id)
     // clang-format on
 }
+} //namespace coreneuron

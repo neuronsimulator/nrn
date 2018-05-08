@@ -117,7 +117,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 // For this reason cellgroup data are divided into two separate
 // files with the first containing output_gids and netcon_srcgid which are
 // stored in the nt.presyns array and nt.netcons array respectively
-
+namespace coreneuron {
 int nrn_setup_multiple = 1; /* default */
 int nrn_setup_extracon = 0; /* default */
 static int maxgid;
@@ -738,7 +738,7 @@ void read_phasegap(FileHandler& F, int imult, NrnThread& nt) {
 }
 
 int nrn_soa_padded_size(int cnt, int layout) {
-    return coreneuron::soa_padded_size<NRN_SOA_PAD>(cnt, layout);
+    return soa_padded_size<NRN_SOA_PAD>(cnt, layout);
 }
 
 static size_t nrn_soa_byte_align(size_t i) {
@@ -1069,9 +1069,9 @@ void read_phase2(FileHandler& F, int imult, NrnThread& nt) {
     }
 
     if (shadow_rhs_cnt) {
-        nt._shadow_rhs = (double*)coreneuron::ecalloc_align(nrn_soa_padded_size(shadow_rhs_cnt, 0),
+        nt._shadow_rhs = (double*)ecalloc_align(nrn_soa_padded_size(shadow_rhs_cnt, 0),
                                                             NRN_SOA_BYTE_ALIGN, sizeof(double));
-        nt._shadow_d = (double*)coreneuron::ecalloc_align(nrn_soa_padded_size(shadow_rhs_cnt, 0),
+        nt._shadow_d = (double*)ecalloc_align(nrn_soa_padded_size(shadow_rhs_cnt, 0),
                                                           NRN_SOA_BYTE_ALIGN, sizeof(double));
         nt.shadow_rhs_cnt = shadow_rhs_cnt;
     }
@@ -1130,7 +1130,7 @@ void read_phase2(FileHandler& F, int imult, NrnThread& nt) {
 
     // now that we know the effect of padding, we can allocate data space,
     // fill matrix, and adjust Memb_list data pointers
-    nt._data = (double*)coreneuron::ecalloc_align(nt._ndata, NRN_SOA_BYTE_ALIGN, sizeof(double));
+    nt._data = (double*)ecalloc_align(nt._ndata, NRN_SOA_BYTE_ALIGN, sizeof(double));
     nt._actual_rhs = nt._data + 0 * ne;
     nt._actual_d = nt._data + 1 * ne;
     nt._actual_a = nt._data + 2 * ne;
@@ -1144,7 +1144,7 @@ void read_phase2(FileHandler& F, int imult, NrnThread& nt) {
     }
 
     // matrix info
-    nt._v_parent_index = (int*)coreneuron::ecalloc_align(nt.end, NRN_SOA_BYTE_ALIGN, sizeof(int));
+    nt._v_parent_index = (int*)ecalloc_align(nt.end, NRN_SOA_BYTE_ALIGN, sizeof(int));
     F.read_array<int>(nt._v_parent_index, nt.end);
 #if CHKPNTDEBUG
     ntc.parent = new int[nt.end];
@@ -1178,7 +1178,7 @@ void read_phase2(FileHandler& F, int imult, NrnThread& nt) {
 
         if (!is_art) {
             ml->nodeindices =
-                (int*)coreneuron::ecalloc_align(ml->nodecount, NRN_SOA_BYTE_ALIGN, sizeof(int));
+                (int*)ecalloc_align(ml->nodecount, NRN_SOA_BYTE_ALIGN, sizeof(int));
             F.read_array<int>(ml->nodeindices, ml->nodecount);
         } else {
             ml->nodeindices = NULL;
@@ -1188,7 +1188,7 @@ void read_phase2(FileHandler& F, int imult, NrnThread& nt) {
         mech_layout<double>(F, ml->data, n, szp, layout);
 
         if (szdp) {
-            ml->pdata = (int*)coreneuron::ecalloc_align(nrn_soa_padded_size(n, layout) * szdp,
+            ml->pdata = (int*)ecalloc_align(nrn_soa_padded_size(n, layout) * szdp,
                                                         NRN_SOA_BYTE_ALIGN, sizeof(int));
             mech_layout<int>(F, ml->pdata, n, szdp, layout);
 #if CHKPNTDEBUG  // Not substantive. Only for debugging.
@@ -1751,9 +1751,9 @@ for (int i=0; i < nt.end; ++i) {
 #if CHKPNTDEBUG
         ntc.vecplay_ix[i] = ix;
 #endif
-        IvocVect* yvec = vector_new1(sz);
+        IvocVect* yvec = vector_new(sz);
         F.read_array<double>(vector_vec(yvec), sz);
-        IvocVect* tvec = vector_new1(sz);
+        IvocVect* tvec = vector_new(sz);
         F.read_array<double>(vector_vec(tvec), sz);
         ix = nrn_param_layout(ix, mtype, ml);
         if (ml->_permute) {
@@ -1983,3 +1983,4 @@ size_t model_size(void) {
 
     return nbyte;
 }
+} //namespace coreneuron

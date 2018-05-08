@@ -5,8 +5,8 @@
 #include "coreneuron/nrniv/partrans.h"
 #include <map>
 #include <vector>
-
-using namespace ::nrn_partrans;
+namespace coreneuron {
+using namespace coreneuron::nrn_partrans;
 
 nrn_partrans::SetupInfo* nrn_partrans::setup_info_;
 
@@ -16,6 +16,7 @@ class SidData {
     std::vector<int> indices_;
 };
 
+} //namespace coreneuron
 #if NRNLOGSGID
 #define sgid_alltoallv nrnmpi_long_alltoallv
 #else
@@ -27,6 +28,8 @@ class SidData {
 #define HAVEWANT2Int std::map<sgid_t, int>
 #include "coreneuron/nrniv/have2want.h"
 
+namespace coreneuron {
+using namespace coreneuron::nrn_partrans;
 nrn_partrans::TransferThreadData::TransferThreadData() {
     halfgap_ml = NULL;
     nsrc = 0;
@@ -287,3 +290,4 @@ void nrn_partrans::gap_indices_permute(NrnThread& nt) {
         delete[] oldisi;
     }
 }
+} //namespace coreneuron

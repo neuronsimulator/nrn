@@ -15,7 +15,7 @@
 #include "coreneuron/mech/cfile/scoplib.h"
 #include "coreneuron/mech/mod2c_core_thread.h"
 #include "_kinderiv.h"
-
+namespace coreneuron {
 int derivimplicit_thread(int n, int* slist, int* dlist, DIFUN fun, _threadargsproto_) {
     difun(fun);
     return 0;
@@ -56,3 +56,5 @@ int euler_thread(int neqn, int* var, int* der, DIFUN fun, _threadargsproto_) {
 
     return 0;
 }
+
+} //namespace coreneuron

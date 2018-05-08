@@ -35,7 +35,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #if MAC
 #define NetCon nrniv_Dinfo
 #endif
-
+namespace coreneuron {
 class PreSyn;
 class InputPreSyn;
 class TQItem;
@@ -183,5 +183,5 @@ class NetParEvent : public DiscreteEvent {
 
     virtual void pr(const char*, double t, NetCvode*);
 };
-
+} //namespace coreneuron
 #endif

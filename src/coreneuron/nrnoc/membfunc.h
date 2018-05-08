@@ -29,23 +29,21 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef nrn_memb_func_h
 #define nrn_memb_func_h
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
 #include "coreneuron/nrnoc/nrnoc_ml.h"
+namespace coreneuron {
 
 typedef Datum* (*Pfrpdat)(void);
 
 struct NrnThread;
 
 typedef void (*mod_alloc_t)(double*, Datum*, int);
-typedef void (*mod_f_t)(struct NrnThread*, Memb_list*, int);
+typedef void (*mod_f_t)(NrnThread*, Memb_list*, int);
 typedef void (*pnt_receive_t)(Point_process*, int, double);
 
 /*
  * Memb_func structure contains all related informations of a mechanism
  */
-typedef struct Memb_func {
+struct Memb_func {
     mod_alloc_t alloc;
     mod_f_t current;
     mod_f_t jacob;
@@ -57,11 +55,11 @@ typedef struct Memb_func {
     int thread_size_;                       /* how many Datum needed in Memb_list if vectorized */
     void (*thread_mem_init_)(ThreadDatum*); /* after Memb_list._thread is allocated */
     void (*thread_cleanup_)(ThreadDatum*);  /* before Memb_list._thread is freed */
-    void (*thread_table_check_)(int, int, double*, Datum*, ThreadDatum*, void*, int);
+    void (*thread_table_check_)(int, int, double*, Datum*, ThreadDatum*, NrnThread*, int);
     int is_point;
     void (*setdata_)(double*, Datum*);
     int* dparam_semantics; /* for nrncore writing. */
-} Memb_func;
+};
 
 #define VINDEX -1
 #define CABLESECTION 1
@@ -79,11 +77,11 @@ typedef struct Memb_func {
 #define AFTER_SOLVE 3
 #define BEFORE_STEP 4
 #define BEFORE_AFTER_SIZE 5 /* 1 more than the previous */
-typedef struct BAMech {
+struct BAMech {
     mod_f_t f;
     int type;
     struct BAMech* next;
-} BAMech;
+};
 extern BAMech** bamech_;
 
 extern int nrn_ion_global_map_size;
@@ -126,7 +124,7 @@ extern int point_register_mech(const char**,
                                void* (*constructor)(),
                                void (*destructor)(),
                                int vectorized);
-typedef void (*NetBufReceive_t)(struct NrnThread*);
+typedef void (*NetBufReceive_t)(NrnThread*);
 extern void hoc_register_net_receive_buffering(NetBufReceive_t, int);
 extern int net_buf_receive_cnt_;
 extern int* net_buf_receive_type_;
@@ -136,32 +134,32 @@ extern void hoc_register_net_send_buffering(int);
 extern int net_buf_send_cnt_;
 extern int* net_buf_send_type_;
 
-typedef void (*nrn_watch_check_t)(struct NrnThread*, Memb_list*);
+typedef void (*nrn_watch_check_t)(NrnThread*, Memb_list*);
 extern void hoc_register_watch_check(nrn_watch_check_t, int);
 extern nrn_watch_check_t* nrn_watch_check;
 
-extern void nrn_jacob_capacitance(struct NrnThread*, Memb_list*, int);
+extern void nrn_jacob_capacitance(NrnThread*, Memb_list*, int);
 extern void nrn_writes_conc(int, int);
-#if defined(_OPENACC)
 #pragma acc routine seq
-#endif
 extern void nrn_wrote_conc(int, double*, int, int, double**, double, int);
+#pragma acc routine seq
+double nrn_nernst(double ci, double co, double z, double celsius);
 extern void hoc_register_prop_size(int, int, int);
 extern void hoc_register_dparam_semantics(int type, int, const char* name);
 
-typedef struct {
+struct DoubScal{
     const char* name;
     double* pdoub;
-} DoubScal;
-typedef struct {
+};
+struct DoubVec{
     const char* name;
     double* pdoub;
     int index1;
-} DoubVec;
-typedef struct {
+};
+struct VoidFunc{
     const char* name;
     void (*func)(void);
-} VoidFunc;
+};
 extern void hoc_register_var(DoubScal*, DoubVec*, VoidFunc*);
 
 extern void _nrn_layout_reg(int, int);
@@ -178,7 +176,7 @@ typedef void (*bbcore_read_t)(double*,
                               double*,
                               Datum*,
                               ThreadDatum*,
-                              struct NrnThread*,
+                              NrnThread*,
                               double);
 extern bbcore_read_t* nrn_bbcore_read_;
 
@@ -191,7 +189,7 @@ typedef void (*bbcore_write_t)(double*,
                                double*,
                                Datum*,
                                ThreadDatum*,
-                               struct NrnThread*,
+                               NrnThread*,
                                double);
 extern bbcore_write_t* nrn_bbcore_write_;
 
@@ -206,14 +204,18 @@ extern void net_event(Point_process*, double);
 extern void net_send(void**, int, Point_process*, double, double);
 extern void net_move(void**, Point_process*, double);
 extern void artcell_net_send(void**, int, Point_process*, double, double);
+extern void artcell_net_move(void**, Point_process*, double);
+extern void nrn2ncs_outputevent(int netcon_output_index, double firetime);
+extern short* nrn_artcell_qindex_;
+extern bool nrn_use_localgid_;
+extern void net_sem_from_gpu(int sendtype, int i_vdata, int, int ith, int ipnt, double, double);
+
 // _OPENACC and/or NET_RECEIVE_BUFFERING
 extern void net_sem_from_gpu(int, int, int, int, int, double, double);
 
 extern void hoc_malchk(void); /* just a stub */
 extern void* hoc_Emalloc(size_t);
 
-#if defined(__cplusplus)
-}
-#endif
+} // namespace coreneuron
 
 #endif /* nrn_memb_func_h */

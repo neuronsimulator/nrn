@@ -29,7 +29,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include "coreneuron/nrniv/nrn_filehandler.h"
 #include "coreneuron/nrnconf.h"
-
+namespace coreneuron {
 FileHandler::FileHandler(const char* filename, bool reorder) {
     this->open(filename, reorder);
     checkpoint(0);
@@ -116,3 +116,4 @@ void FileHandler::read_checkpoint_assert() {
 void FileHandler::close() {
     F.close();
 }
+} //namespace coreneuron

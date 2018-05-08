@@ -29,11 +29,10 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef ivoc_vector_h
 #define ivoc_vector_h
 
-#if defined(__cplusplus)
 
 #include <stdio.h>
 #include "coreneuron/nrniv/nrnmutdec.h"
-
+namespace coreneuron {
 template <typename T>
 class fixed_vector {
     size_t n_;
@@ -85,20 +84,15 @@ class fixed_vector {
 
 typedef fixed_vector<double> IvocVect;
 
-extern "C" {
-
-#else
-
-typedef void IvocVect;
-
-#endif /* !defined(__cplusplus) */
-
-extern IvocVect* vector_new1(int n);
+extern IvocVect* vector_new(int n);
 extern int vector_capacity(IvocVect* v);
 extern double* vector_vec(IvocVect* v);
 
-#if defined(__cplusplus)
-}
-#endif
+// retro-compatibility API
+extern void* vector_new1(int n);
+extern int vector_capacity(void* v);
+extern double* vector_vec(void* v);
+
+} //namespace coreneuron
 
 #endif

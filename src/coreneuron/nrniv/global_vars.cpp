@@ -11,7 +11,7 @@
 #include "coreneuron/nrniv/nrn_assert.h"
 
 using namespace std;
-
+namespace coreneuron {
 typedef pair<size_t, double*> PSD;
 typedef map<string, PSD> N2V;
 
@@ -106,3 +106,4 @@ void set_globals(const char* path) {
     delete n2v;
     n2v = NULL;
 }
+} //namespace coreneuron

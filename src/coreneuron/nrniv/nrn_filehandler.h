@@ -35,7 +35,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/utils/endianness.h"
 #include "coreneuron/utils/swap_endian.h"
 #include "coreneuron/nrniv/nrn_assert.h"
-
+namespace coreneuron {
 /** Encapsulate low-level reading of coreneuron input data files.
  *
  * Error handling is simple: abort()!
@@ -279,5 +279,5 @@ class FileHandler {
         F << "chkpnt " << chkpnt++ << "\n";
     }
 };
-
+} //namespace coreneuron
 #endif  // ifndef nrn_filehandler_h

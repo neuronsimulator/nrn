@@ -9,7 +9,7 @@
 // assert that all HalfGaps are of the same type
 // assert that every HalfGap instance in the thread have been a
 // ParallelContext.target(&HalfGap.vpre, sid)
-
+namespace coreneuron {
 int nrn_have_gaps;
 
 using namespace nrn_partrans;
@@ -178,3 +178,4 @@ void nrn_partrans::gap_update_indices() {
         }
     }
 }
+} //namespace coreneuron

@@ -31,6 +31,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnoc/nrnoc_decl.h"
 #include "coreneuron/nrniv/nrn_acc_manager.h"
 
+namespace coreneuron {
 /*
 Fixed step method with threads and cache efficiency. No extracellular,
 sparse matrix, multisplit, or legacy features.
@@ -165,3 +166,4 @@ void* setup_tree_matrix_minimal(NrnThread* _nt) {
 
     return (void*)0;
 }
+} //namespace coreneuron

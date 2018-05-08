@@ -66,7 +66,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/tqueue.h"
 
 namespace bfs = ::boost::filesystem;
-
+using namespace coreneuron;
 //UNIT TESTS
 BOOST_AUTO_TEST_CASE(priority_queue_nq_dq){
 	TQueue<pq_que> tq = TQueue<pq_que>();

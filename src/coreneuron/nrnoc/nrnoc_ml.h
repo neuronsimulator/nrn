@@ -30,23 +30,23 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #define nrnoc_ml_h
 
 #include "coreneuron/nrnconf.h"
-
+namespace coreneuron {
 #if PG_ACC_BUGS
-typedef struct ThreadDatum {
+struct ThreadDatum {
     int i;
     double* pval;
     void* _pvoid;
-} ThreadDatum;
+};
 #else
-typedef union ThreadDatum {
+union ThreadDatum {
     double val;
     int i;
     double* pval;
     void* _pvoid;
-} ThreadDatum;
+};
 #endif
 
-typedef struct NetReceiveBuffer_t {
+struct NetReceiveBuffer_t {
     int* _displ;     /* _displ_cnt + 1 of these */
     int* _nrb_index; /* _cnt of these (order of increasing _pnt_index) */
 
@@ -58,9 +58,9 @@ typedef struct NetReceiveBuffer_t {
     int _displ_cnt; /* number of unique _pnt_index */
     int _size;      /* capacity */
     int _pnt_offset;
-} NetReceiveBuffer_t;
+};
 
-typedef struct NetSendBuffer_t {
+struct NetSendBuffer_t {
     int* _sendtype;  // net_send, net_event, net_move
     int* _vdata_index;
     int* _pnt_index;
@@ -70,9 +70,9 @@ typedef struct NetSendBuffer_t {
     int _cnt;
     int _size;       /* capacity */
     int reallocated; /* if buffer resized/reallocated, needs to be copy to cpu */
-} NetSendBuffer_t;
+};
 
-typedef struct Memb_list {
+struct Memb_list {
 #if CACHEVEC != 0
     /* nodeindices contains all nodes this extension is responsible for,
      * ordered according to the matrix. This allows to access the matrix
@@ -89,6 +89,6 @@ typedef struct Memb_list {
     NetSendBuffer_t* _net_send_buffer;
     int nodecount; /* actual node count */
     int _nodecount_padded;
-} Memb_list;
-
+};
+} //namespace coreneuron
 #endif

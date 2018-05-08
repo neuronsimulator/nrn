@@ -6,6 +6,7 @@
 #include <map>
 #include <stdlib.h>
 
+namespace coreneuron {
 typedef size_t Offset;
 typedef int MechId;
 typedef const char* VariableName;
@@ -61,3 +62,5 @@ void register_all_variables_offsets(int mech_id, SerializedNames variable_names)
     }
     idx++;
 }
+
+}//namespace coreneuron

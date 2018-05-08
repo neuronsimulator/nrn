@@ -30,6 +30,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #define nrnmpi_h
 #include "coreneuron/nrnmpi/nrnmpiuse.h"
 
+namespace coreneuron {
 /* by default nrnmpi_numprocs_world = nrnmpi_numprocs = nrnmpi_numsubworlds and
    nrnmpi_myid_world = nrnmpi_myid and the bulletin board and network communication do
    not easily coexist. ParallelContext.subworlds(nsmall) divides the world into
@@ -42,35 +43,23 @@ extern int nrnmpi_myid;           /* rank in subworld */
 extern int nrnmpi_numprocs_bbs;   /* number of subworlds */
 extern int nrnmpi_myid_bbs;       /* rank in nrn_bbs_comm of rank 0 of a subworld */
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 void nrn_abort(int errcode);
 void nrn_fatal_error(const char* msg);
 double nrn_wtime();
+} //namespace coreneuron
 
-#if defined(__cplusplus)
-}
-#endif /*c++*/
 
 #if NRNMPI
 
+namespace coreneuron {
 typedef struct {
     int gid;
     double spiketime;
 } NRNMPI_Spike;
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 extern int nrnmpi_use; /* NEURON does MPI init and terminate?*/
 
-#if defined(__cplusplus)
-}
-#endif /*c++*/
-
+} //namespace coreneuron
 #include "coreneuron/nrnmpi/nrnmpidec.h"
 
 #endif /*NRNMPI*/

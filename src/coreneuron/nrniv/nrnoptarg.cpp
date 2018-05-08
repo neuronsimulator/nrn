@@ -32,7 +32,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnmpi/nrnmpi.h"
 #include "coreneuron/nrniv/nrnoptarg.h"
 #include "coreneuron/utils/ezoption/ezOptionParser.hpp"
-
+namespace coreneuron {
 struct param_int {
     const char* names; /* space separated (includes - or --) */
     int dflt, low, high;
@@ -95,6 +95,7 @@ static param_flag param_flag_args[] = {
     {"--show", "Print args."},
     {"--multisend", "Use Multisend spike exchange instead of Allgather."},
     {"--binqueue", "Use bin queue."},
+    {"--skip-mpi-finalize", "Do not call mpi finalize."},
     {NULL, NULL}};
 
 static param_str param_str_args[] = {
@@ -368,3 +369,4 @@ static void graceful_exit(int err) {
 #endif
     exit(nrnmpi_myid == 0 ? err : 0);
 }
+} //namespace coreneuron

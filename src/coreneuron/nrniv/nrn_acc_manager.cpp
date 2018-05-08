@@ -18,7 +18,7 @@
 #ifdef CRAYPAT
 #include <pat_api.h>
 #endif
-
+namespace coreneuron {
 extern InterleaveInfo* interleave_info;
 void copy_ivoc_vect_to_device(IvocVect*& iv, IvocVect*& div);
 
@@ -797,10 +797,6 @@ void update_nrnthreads_on_device(NrnThread* threads, int nthreads) {
 #endif
 }
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void update_matrix_from_gpu(NrnThread* _nt) {
 #ifdef _OPENACC
     if (_nt->compute_gpu && (_nt->end > 0)) {
@@ -852,10 +848,6 @@ void update_matrix_to_gpu(NrnThread* _nt) {
     (void)_nt;
 #endif
 }
-
-#ifdef __cplusplus
-}
-#endif
 
 void finalize_data_on_device() {
     /*@todo: when we have used random123 on gpu and we do this finalize,
@@ -999,3 +991,5 @@ void nrn_sparseobj_copyto_device(SparseObj* so) {
     }
 #endif
 }
+} //namespace coreneuron
+

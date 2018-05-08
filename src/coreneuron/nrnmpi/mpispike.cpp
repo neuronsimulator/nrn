@@ -37,6 +37,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #if NRNMPI
 #include <mpi.h>
 
+namespace coreneuron {
 static int np;
 static int* displs;
 static int* byteovfl; /* for the compressed transfer method */
@@ -564,5 +565,5 @@ int nrnmpi_multisend_conserve(int nsend, int nrecv) {
 }
 
 #endif /*NRN_MULTISEND*/
-
+} //namespace coreneuron
 #endif /*NRNMPI*/

@@ -43,6 +43,8 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <map>
 #include <set>
 
+namespace coreneuron {
+
 #ifdef ENABLE_REPORTING
 
 class ReportEvent;
@@ -354,7 +356,7 @@ static int num_min_delay_to_buffer = 500;
 /// number of min-delays completed since last flush
 static int num_min_delays_completed = 0;
 
-extern "C" void nrn_flush_reports(double t) {
+void nrn_flush_reports(double t) {
 #ifdef ENABLE_REPORTING
     // flush before buffer is full
     if (num_min_delays_completed >= (num_min_delay_to_buffer - 2)) {
@@ -439,4 +441,5 @@ void finalize_report() {
     }
     reports.clear();
 #endif
+}
 }

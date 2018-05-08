@@ -38,7 +38,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #else
 #define STAT(arg) /**/
 #endif
-
+namespace coreneuron {
 // splay tree + bin queue limited to fixed step method
 // for event-sets or priority queues
 // this starts from the sptqueue.cpp file and adds a bin queue
@@ -598,3 +598,4 @@ void spdelete(SPBLK* n, SPTREE* q) {
     }
 
 } /* spdelete */
+}//namespace coreneuron

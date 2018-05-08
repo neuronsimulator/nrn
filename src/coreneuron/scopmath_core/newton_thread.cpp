@@ -58,10 +58,10 @@ static char RCSid[] = "newton.c,v 1.3 1999/01/04 12:46:48 hines Exp";
 #include "coreneuron/mech/mod2c_core_thread.h"
 #include "coreneuron/scopmath_core/errcodes.h"
 
+namespace coreneuron {
 #define ix(arg) ((arg)*_STRIDE)
 #define s_(arg) _p[s[arg] * _STRIDE]
 
-#pragma acc routine seq
 int nrn_newton_thread(NewtonSpace* ns,
                       int n,
                       int* s,
@@ -244,3 +244,4 @@ void nrn_destroy_newtonspace(NewtonSpace* ns) {
     freevector(ns->rowmax);
     free((char*)ns);
 }
+} //namespace coreneuron

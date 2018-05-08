@@ -2,7 +2,7 @@
 #define cellorder_h
 
 #include <algorithm>
-
+namespace coreneuron {
 int* interleave_order(int ith, int ncell, int nnode, int* parent);
 
 void create_interleave_info();
@@ -57,5 +57,5 @@ void copy_array(T*& dest, T* src, size_t n) {
 #if INTERLEAVE_DEBUG
 void mk_cell_indices();
 #endif
-
+} //namespace coreneuron
 #endif

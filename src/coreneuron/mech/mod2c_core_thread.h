@@ -4,9 +4,7 @@
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnoc/nrnoc_ml.h"
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
+namespace coreneuron {
 
 #if !defined(LAYOUT)
 /* 1 means AoS, >1 means AoSoA, <= 0 means SOA */
@@ -141,8 +139,6 @@ extern void _modl_set_dt_thread(double, NrnThread*);
 
 void nrn_sparseobj_copyto_device(SparseObj* so);
 
-#if defined(__cplusplus)
-}
-#endif
+} // namespace coreneuron
 
 #endif
