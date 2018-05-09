@@ -133,7 +133,7 @@ extern const char* nrnpy_sec2pysecname(Section* sec);
 extern void nrnpy_pysecname2sec_add(Section* sec);
 extern void nrnpy_pysecname2sec_remove(Section* sec);
 
-extern void nrn_pt3dclear(Section*);
+extern void nrn_pt3dclear(Section*, int);
 extern void nrn_length_change(Section*, double);
 extern void stor_pt3d(Section*, double x, double y, double z, double d);
 extern int nrn_netrec_state_adjust;

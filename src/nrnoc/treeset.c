@@ -966,6 +966,27 @@ void pt3dconst(void) {
 	hoc_retpushx((double)i);
 }
 
+void nrn_pt3dstyle0(Section* sec) {
+	if (sec->logical_connection) {
+		free((char*)sec->logical_connection);
+		sec->logical_connection = (Pt3d*)0;
+		++nrn_shape_changed_;
+		diam_changed = 1;
+	}
+}
+
+void nrn_pt3dstyle1(Section* sec, double x, double y, double z) {
+	Pt3d* p = sec->logical_connection;
+	if (!p) {
+		p = sec->logical_connection = (Pt3d*)ecalloc(1, sizeof(Pt3d));
+	}
+	p->x = x;
+	p->y = y;
+	p->z = z;
+	++nrn_shape_changed_;
+	diam_changed = 1;
+}
+
 void pt3dstyle(void) {
 	Section* sec = chk_access();
 	if (ifarg(1)) {
@@ -984,8 +1005,8 @@ void pt3dstyle(void) {
 		instead of snapping to a specific absolute x,y,z position.
 		*/
 		if ((int)chkarg(1, 0., 1.) == 1) {
-			Pt3d* p = sec->logical_connection;
 			if (hoc_is_pdouble_arg(2)) {
+				Pt3d* p = sec->logical_connection;
 				if (p) {
 					double* px, *hoc_pgetarg();
 					px = hoc_pgetarg(2); *px = p->x;
@@ -993,22 +1014,10 @@ void pt3dstyle(void) {
 					px = hoc_pgetarg(4); *px = p->z;
 				}
 			}else{
-				if (!p) {
-					p = sec->logical_connection = (Pt3d*)ecalloc(1, sizeof(Pt3d));
-				}
-				p->x = *getarg(2);
-				p->y = *getarg(3);
-				p->z = *getarg(4);
-				++nrn_shape_changed_;
-				diam_changed = 1;
+				nrn_pt3dstyle1(sec, *getarg(2), *getarg(3), *getarg(4));
 			}
 		}else{
-			if (sec->logical_connection) {
-				free((char*)sec->logical_connection);
-				sec->logical_connection = (Pt3d*)0;
-				++nrn_shape_changed_;
-				diam_changed = 1;
-			}
+			nrn_pt3dstyle0(sec);
 		}
 	}
 	hoc_retpushx((double)(sec->logical_connection ? 1 : 0));
@@ -1016,7 +1025,13 @@ void pt3dstyle(void) {
 
 void pt3dclear(void) { /*destroys space in current section for 3d points.*/
 	Section* sec = chk_access();
-	nrn_pt3dclear(sec);
+	int req;
+	if (ifarg(1)) {
+		req = chkarg(1, 0., 30000.);
+	} else {
+		req = 0;
+	}
+	nrn_pt3dclear(sec, req);
 	hoc_retpushx((double)sec->pt3d_bsize);
 }
 
@@ -1061,14 +1076,7 @@ static void nrn_pt3dmodified(Section* sec, int i0) {
 	sec->prop->dparam[2].val = sec->pt3d[n-1].arc;
 }
 
-void nrn_pt3dclear(Section* sec)
-{
-	int req;
-	if (ifarg(1)) {
-		req = chkarg(1, 0., 30000.);
-	}else{
-		req = 0;
-	}
+void nrn_pt3dclear(Section* sec, int req) {
 	++nrn_shape_changed_;
 	if (req != sec->pt3d_bsize) {
 		if (sec->pt3d) {
@@ -1085,13 +1093,10 @@ void nrn_pt3dclear(Section* sec)
 }
 
 
-void pt3dinsert(void) {
-	Section* sec;
-	int i, n, i0;
-	sec = chk_access();
+void nrn_pt3dinsert(Section* sec, int i0, double x, double y, double z, double d) {
+	int i, n;
 	n = sec->npt3d;
 	nrn_pt3dbufchk(sec, n+1);
-	i0 = (int)chkarg(1, 0., (double)(n));
 	++sec->npt3d;
 	for (i = n-1; i >= i0; --i) {
 		Pt3d* p = sec->pt3d + i + 1;
@@ -1100,37 +1105,54 @@ void pt3dinsert(void) {
 		p->z = sec->pt3d[i].z;
 		p->d = sec->pt3d[i].d;
 	}
-	sec->pt3d[i0].x = *getarg(2);
-	sec->pt3d[i0].y = *getarg(3);
-	sec->pt3d[i0].z = *getarg(4);
-	sec->pt3d[i0].d = *getarg(5);
+	sec->pt3d[i0].x = x;
+	sec->pt3d[i0].y = y;
+	sec->pt3d[i0].z = z;
+	sec->pt3d[i0].d = d;
 	nrn_pt3dmodified(sec,i0);
+}
+
+void pt3dinsert(void) {
+	Section* sec;
+	int i, n, i0;
+	sec = chk_access();
+	n = sec->npt3d;
+	i0 = (int)chkarg(1, 0., (double)(n));
+	nrn_pt3dinsert(sec, i0, *getarg(2), *getarg(3), *getarg(4), *getarg(5));
 	hoc_retpushx(0.);
 }
+
+void nrn_pt3dchange1(Section* sec, int i, double d) {
+		sec->pt3d[i].d = d;
+		++nrn_shape_changed_;
+		diam_changed = 1;
+		sec->recalc_area_ = 1;
+}
+
+void nrn_pt3dchange2(Section* sec, int i, double x, double y, double z, double diam) {
+	sec->pt3d[i].x = x;
+	sec->pt3d[i].y = y;
+	sec->pt3d[i].z = z;
+	sec->pt3d[i].d = diam;
+	nrn_pt3dmodified(sec, i);
+}
+
 void pt3dchange(void) {
 	int i, n;
 	Section* sec = chk_access();
 	n = sec->npt3d;
 	i = (int)chkarg(1, 0., (double)(n-1));
 	if (ifarg(5)) {
-		sec->pt3d[i].x = *getarg(2);
-		sec->pt3d[i].y = *getarg(3);
-		sec->pt3d[i].z = *getarg(4);
-		sec->pt3d[i].d = *getarg(5);
-		nrn_pt3dmodified(sec, i);
+		nrn_pt3dchange2(sec, i, *getarg(2), *getarg(3), *getarg(4), *getarg(5));
 	}else{
-		sec->pt3d[i].d = *getarg(2);
-		++nrn_shape_changed_;
-		diam_changed = 1;
-		sec->recalc_area_ = 1;
+		nrn_pt3dchange1(sec, i, *getarg(2));
 	}
 	hoc_retpushx(0.);
 }
-void pt3dremove(void) {
-	int i, i0, n;
-	Section* sec = chk_access();
+
+void nrn_pt3dremove(Section* sec, int i0) {
+	int i, n;
 	n = sec->npt3d;
-	i0 = (int)chkarg(1, 0., (double)(n-1));
 	for (i=i0+1; i < n; ++i) {
 		Pt3d* p = sec->pt3d + i - 1;
 		p->x = sec->pt3d[i].x;
@@ -1140,6 +1162,15 @@ void pt3dremove(void) {
 	}
 	--sec->npt3d;
 	nrn_pt3dmodified(sec, i0);
+}
+
+void pt3dremove(void) {
+	int i, i0, n;
+	Section* sec = chk_access();
+	n = sec->npt3d;
+	i0 = (int)chkarg(1, 0., (double)(n-1));
+	nrn_pt3dremove(sec, i0);
+	
 	hoc_retpushx(0.);
 }
 
