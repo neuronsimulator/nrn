@@ -96,13 +96,13 @@ Modify $HOME/'$b' to allow NEURON + Python
   fi
 
   if test "$addpyenv" = "yes" ; then
-    echo "export PYTHONPATH=\"$idir/lib/python\" #added by NEURON installer" >> "$bp"
+    echo "export PYTHONPATH=\"$idir/lib/python\":\$PYTHONPATH #added by NEURON installer" >> "$bp"
     if test "$cshp" != "" ; then
-      echo "setenv PYTHONPATH \"$idir/lib/python\" #added by NEURON installer" >> "$cshp"
+      echo "setenv PYTHONPATH \"$idir/lib/python\":\$PYTHONPATH #added by NEURON installer" >> "$cshp"
       chown $USER "$cshp"
     fi
     if test "$tcshp" != "" ; then
-      echo "setenv PYTHONPATH \"$idir/lib/python\" #added by NEURON installer" >> "$tcshp"
+      echo "setenv PYTHONPATH \"$idir/lib/python\":\$PYTHONPATH #added by NEURON installer" >> "$tcshp"
       chown $USER "$tcshp"
     fi
     tmpfile=/tmp/$$.tmp

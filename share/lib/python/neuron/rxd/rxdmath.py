@@ -240,7 +240,7 @@ class _Reaction:
         self._rhs = rhs
         self._dir = direction
     def __repr__(self):
-        return '%s%s%s' % (self._lhs._short_repr(), self._dir, self._rhs._short_repr())
+        return '%s%s%s' % (str(self._lhs), self._dir, str(self._rhs))
     def __bool__(self):
         return False
 
@@ -275,18 +275,14 @@ class _Arithmeticed:
         counts = []
         for item, count in zip(list(self._items.keys()), list(self._items.values())):
             if count:
-                if isinstance(item, species._SpeciesMathable):
-                    items.append(str(item))
-                    counts.append(count)
-                else:
-                    items.append(repr(item))
-                    counts.append(count)
+                items.append(item)
+                counts.append(count)
         result = ''
         for i, c in zip(items, counts):
             try:
                 short_i = '%s' % i._short_repr()
             except:
-                short_i = '%s' % i
+                short_i = '%r' % i
             if result and c > 0:
                 result += '+'
             if c == -1:
@@ -294,7 +290,7 @@ class _Arithmeticed:
             elif c != 1:
                 result += '%d*(%s)' % (c, short_i)
             elif c == 1:
-                result += i
+                result += short_i
         if not result:
             result = '0'
         return result
