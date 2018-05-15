@@ -5,7 +5,7 @@ define([AC_CACHE_LOAD], )dnl
 define([AC_CACHE_SAVE], )dnl
 
 dnl PACKAGE_VERSION makes its way into hg2nrnversion_h.sh, etc.
-AC_INIT([nrn],[7.5])
+AC_INIT([nrn],[7.6])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR(src/memacs/main.c)
 AM_INIT_AUTOMAKE([foreign])

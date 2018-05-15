@@ -4,7 +4,7 @@ set -e
 # sh bldnrnmacpkg.sh python3 /Volumes/HinesWD/mac/anaconda3/bin/python python
 #sh bldnrnmac.sh python3 /Volumes/HinesWD/mac/anaconda3/bin/python /Volumes/HinesWD/mac/anaconda2/bin/python
 
-INST=/Applications/NEURON-7.5/nrn
+INST=/Applications/NEURON-7.6/nrn
 cd $HOME/neuron/nrnobj
 
 export MACOSX_DEPLOYMENT_TARGET=10.7
