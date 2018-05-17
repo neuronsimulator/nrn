@@ -154,11 +154,11 @@ void PerfVisitor::visit_function_call(FunctionCall* node) {
 
     if (start_measurement) {
         auto name = node->name->get_name();
-        if (name.compare("exp") == 0) {
+        if (name == "exp") {
             current_block_perf.n_exp++;
-        } else if (name.compare("log") == 0) {
+        } else if (name == "log") {
             current_block_perf.n_log++;
-        } else if (name.compare("pow") == 0) {
+        } else if (name == "pow") {
             current_block_perf.n_pow++;
         }
         node->visit_children(this);
