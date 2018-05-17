@@ -1024,14 +1024,13 @@ std::string CodegenCVisitor::int_variable_name(IndexVariableInfo& symbol,
         }
         offset = (layout == LayoutType::soa) ? "{}*pnodecount+id"_format(position) : "id";
         return "indexes[{}]"_format(offset);
-    } else {
-        offset = (layout == LayoutType::soa) ? "{}*pnodecount+id"_format(position) : "{}"_format(position);
-        if (use_instance) {
-            return "inst->{}[indexes[{}]]"_format(name, offset);
-        }
-        auto data = symbol.is_vdata ? "_vdata" : "_data";
-        return "nt->{}[indexes[{}]]"_format(data, offset);
     }
+    offset = (layout == LayoutType::soa) ? "{}*pnodecount+id"_format(position) : "{}"_format(position);
+    if (use_instance) {
+        return "inst->{}[indexes[{}]]"_format(name, offset);
+    }
+    auto data = symbol.is_vdata ? "_vdata" : "_data";
+    return "nt->{}[indexes[{}]]"_format(data, offset);
     // clang-format on
 }
 

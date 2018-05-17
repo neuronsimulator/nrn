@@ -2,6 +2,7 @@
 #define _NMODL_SYMBOL_HPP_
 
 #include <map>
+#include <memory>
 
 #include "lexer/modtoken.hpp"
 #include "symtab/symbol_properties.hpp"
