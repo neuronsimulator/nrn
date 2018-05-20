@@ -65,7 +65,7 @@ static void nrnpython_finalize() {
     Py_Finalize();
   }
 #if linux
-  system("stty sane");
+  if (system("stty sane")){} // 'if' to avoid ignoring return value warning
 #endif
 }
 
@@ -154,7 +154,7 @@ void inithoc() {
   } else {
     mpi_mes = 3;
   }
-  assert(mpi_mes != -1);  // avoid unused variable warning
+  if (pmes && mpi_mes == 2){exit(1);}  // avoid unused variable warning
 
 #endif //NRNMPI
 
