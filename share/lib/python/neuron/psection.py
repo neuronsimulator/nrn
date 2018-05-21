@@ -95,7 +95,7 @@ def psection(sec):
                 if any(r in sp_regions for r in regions):
                     my_species.append(sp)
         results['species'] = set(my_species)
-        results['name'] = sec.name()
+        results['name'] = sec.hname()
         results['hoc_internal_name'] = sec.hoc_internal_name()
         results['cell'] = sec.cell()
 

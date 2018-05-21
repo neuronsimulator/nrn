@@ -50,13 +50,23 @@ if type -P uname > /dev/null ; then
   z=`uname`
 fi
 if test "$z" = "Darwin" ; then
-  DYLD_PRINT_LIBRARIES=1
-  export DYLD_PRINT_LIBRARIES
-  z=`$PYTHON -c 'quit()' 2>&1 | sed -n 's/^dyld: loaded: //p' | sed -n /libpython/p`
-  if test "$z" = "" ; then
-    z=`$PYTHON -c 'quit()' 2>&1 | sed -n 's/^dyld: loaded: //p' | sed -n 2p`
+  p=`which $PYTHON`
+  d=`dirname $p`
+  l=`ls $d/../lib/libpython*.dylib`
+  if test -f "$l" ; then
+    z="$l"
+    unset p
+    unset d
+    unset l
+  else
+    DYLD_PRINT_LIBRARIES=1
+    export DYLD_PRINT_LIBRARIES
+    z=`$PYTHON -c 'quit()' 2>&1 | sed -n 's/^dyld: loaded: //p' | sed -n /libpython/p`
+    if test "$z" = "" ; then
+      z=`$PYTHON -c 'quit()' 2>&1 | sed -n 's/^dyld: loaded: //p' | sed -n 2p`
+    fi
+    unset DYLD_PRINT_LIBRARIES  
   fi
-  unset DYLD_PRINT_LIBRARIES  
   PYLIB_DARWIN=$z
   export PYLIB_DARWIN
 fi

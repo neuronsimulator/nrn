@@ -35,7 +35,7 @@ if test -f "$bp" ; then
   a=$?
   echo "1 a=$a" >> /tmp/temp.tmp
   if test "$a" = "0" ; then
-    addpath=no
+    addpath=yes
   else
     addpath=yes
   fi
