@@ -248,8 +248,11 @@ dnl of extra dist files.
 dnl Also needed for neuron.rxd.geometry3d module
 if test "x$have_cython" != "xno" ; then
   AC_CHECK_PROG(have_cython, cython, yes, no)
+  if test "x$have_cython" = "xno" ; then
+    AC_CHECK_PROG(have_cython, cython3, yes, no)
+  fi
 fi
-AC_CHECK_PROG(CYTHON, cython, cython, cython)
+AC_CHECK_PROG(CYTHON, cython, cython, cython3)
 AM_CONDITIONAL(HAVE_CYTHON, test x$have_cython = xyes)
 
 BUILD_RX3D=0
