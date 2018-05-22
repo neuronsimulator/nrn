@@ -233,13 +233,13 @@ dnl Checks for libraries
 AC_CHECK_LIBM
 LIBS="$LIBS $LIBM"
 
+dnl Python that runs on the build machine needed to create hocusr.h
+AC_CHECK_PROG(PYTHON_BLD, python, python, python3)
+
 dnl Python for cygwin and mingw has to be done early because later tests may
 dnl have to be done with a CFLAGS="-mno-cygwin" (obsolete after gcc2.3)
 dnl What to do about Python
 AC_NRN_PYTHON
-
-dnl Python that runs on the build machine needed to create hocusr.h
-AC_CHECK_PROG(PYTHON_BLD, python, python)
 
 dnl Only needed if making a distribution. In that case cython must work.
 dnl Otherwise, to make a distribution, need to modify
