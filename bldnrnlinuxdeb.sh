@@ -22,6 +22,8 @@ bld python "--with-nrnpython-only"
 
 cd $INST/lib/python/neuron
 sudo cp hoc.cpython-35m-x86_64-linux-gnu.so hoc.cpython-36m-x86_64-linux-gnu.so
+cd rxd/geometry3d
+sudo cp surfaces.cpython-35m-x86_64-linux-gnu.so surfaces.cpython-36m-x86_64-linux-gnu.so
 cd $objdir
 
 sudo make rpm
