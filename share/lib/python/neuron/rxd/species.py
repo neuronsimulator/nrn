@@ -389,6 +389,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
         self._nz = region._nz
         self._xhi, self._yhi, self._zhi = region._xhi, region._yhi, region._zhi
         self._states = h.Vector(self._nx * self._ny * self._nz)
+
         self.states = self._states.as_numpy().reshape(self._nx, self._ny, self._nz)
         self._initial = initial
         self._boundary_conditions = boundary_conditions

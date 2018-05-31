@@ -83,9 +83,9 @@ class Rate(GeneralizedReaction):
     def __repr__(self):
         if len(self._regions) != 1 or self._regions[0] is not None:
             regions_short = '[' + ', '.join(r._short_repr() for r in self._regions) + ']'
-            return 'Rate(%s, %s, regions=%s, membrane_flux=%r)' % (self._species()._short_repr(), self._original_rate._short_repr(), regions_short, self._membrane_flux)
+            return 'Rate(%s, %s, regions=%s, membrane_flux=%r)' % (self._species()._short_repr(), self._original_rate._short_rep() if hasattr(self._original_rate,'_short_repr') else self._original_rate, regions_short, self._membrane_flux)
         else:
-            return 'Rate(%s, %s, membrane_flux=%r)' % (self._species()._short_repr(), self._original_rate, self._membrane_flux)
+            return 'Rate(%s, %s, membrane_flux=%r)' % (self._species()._short_repr(), self._original_rate._short_rep() if hasattr(self._original_rate,'_short_repr') else self._original_rate, self._membrane_flux)
     
     def _rate_from_rangevar(self, *args):
         return self._original_rate._rangevar_vec()

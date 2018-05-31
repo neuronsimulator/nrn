@@ -83,7 +83,6 @@ def ode_count_all(offset):
   for c in call:
     if c[ode_count_method_index]:
       cnt += c[ode_count_method_index](nonvint_block_offset + cnt)
-  #print("ode_count_all %d, offset=%d\n"%(cnt, nonvint_block_offset))
   return cnt
 
 pc = h.ParallelContext()
@@ -112,15 +111,15 @@ def numpy_from_pointer(cpointer, size):
 
 
 def nonvint_block(method, size, pd1, pd2, tid):
-  # print('nonvint_block called with method = %d l=%d' % (method,size))
+  #print('nonvint_block called with method = %d l=%d t=%g dt=%g' % (method,size,_pc_t(tid),_pc_dt(tid)))
   assert(tid == 0)
+  #ensure dt_ptr in rxd.c is updated from CVode
+  h.dt, h.t = _pc_dt(tid), _pc_t(tid)
   rval = 0
   try:
     if method == ode_count_method_index:
         rval = ode_count_all(size) # count of the extra states-equations managed by us
     else:
-        if pc.nhost() > 1:
-            h.dt, h.t = _pc_dt(tid), _pc_t(tid)
         if pd1:
             if size:
                 pd1_array = numpy_from_pointer(pd1, size)
@@ -149,6 +148,9 @@ def nonvint_block(method, size, pd1, pd2, tid):
         for c in call:
             if c[method] is not None:
                 c[method](*args)
+        #for i in range(size):
+        #    print("%g]\t%i\t%1.20e\t%1.20e" %(_pc_t(tid), i, (pd1_array[i] if pd1_array is not None else 0), (pd2_array[i] if pd2_array is not None else 0)))
+
   except:
     traceback.print_exc()
     rval = -1

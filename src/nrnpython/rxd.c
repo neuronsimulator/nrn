@@ -5,6 +5,9 @@
 #include "rxd.h"
 #include <matrix2.h>
 #include <pthread.h>
+#include <../nrnoc/section.h>
+#include <../nrnoc/nrn_ansi.h>
+#include <../nrnoc/multicore.h>
 #ifdef __APPLE__
 #include <Python/Python.h>
 #else
@@ -21,10 +24,10 @@ pthread_t* Threads = NULL;
 TaskQueue* AllTasks = NULL;
 
 fptr _setup, _initialize, _setup_matrices;
-
+extern NrnThread* nrn_threads;
 
 /*intracellular diffusion*/
-int _rxd_euler_nrow, _rxd_euler_nnonzero, _rxd_num_zvi;
+int _rxd_euler_nrow=0, _rxd_euler_nnonzero=0, _rxd_num_zvi=0;
 long* _rxd_euler_nonzero_i;
 long* _rxd_euler_nonzero_j;
 double* _rxd_euler_nonzero_values;
@@ -33,7 +36,9 @@ double* _rxd_a;
 double* _rxd_b;
 double* _rxd_c;
 double* _rxd_d;
-int* _rxd_p;    
+int* _rxd_p; 
+long*  _rxd_zvi_child_count = NULL;
+long** _rxd_zvi_child = NULL;
 static int _cvode_offset;
 
 /*intracellular reactions*/
@@ -41,7 +46,7 @@ ICSReactions* _reactions = NULL;
 
 /*intracellular reactions*/
 double* states;
-int num_states;
+int num_states=0;
 int _num_reactions = 0;
 int* _num_species = NULL;
 int _max_species_per_location = 0;
@@ -64,7 +69,7 @@ int* _ecs_species_count = NULL;
 int _num_ecs_species = 0;
 Grid_node*** _mc_ecs_grids;
 
-static void tranfer_to_legacy()
+static void transfer_to_legacy()
 {
 	/*TODO: support 3D*/
 	int i;
@@ -76,6 +81,7 @@ static void tranfer_to_legacy()
 
 /* TODO: remove MAX_REACTIONS; use dynamic storage instead */
 #define MAX_REACTIONS 100
+#define CHILD_BLOCK 10
 
 void rxd_set_euler_matrix(int nrow, int nnonzero, long* nonzero_i,
                           long* nonzero_j, double* nonzero_values,
@@ -87,12 +93,24 @@ void rxd_set_euler_matrix(int nrow, int nnonzero, long* nonzero_i,
 						  PyHocObject** curr_ptrs, int conc_count, 
 						  int* conc_index, PyHocObject** conc_ptrs) {
 
+    long i, j;
     /* TODO: is it better to use a pointer or do a copy */
 	_rxd_euler_nrow = nrow;
     _rxd_euler_nnonzero = nnonzero;
     _rxd_euler_nonzero_i = nonzero_i;
     _rxd_euler_nonzero_j = nonzero_j;
     _rxd_euler_nonzero_values = nonzero_values;
+
+    /*Clear previous _rxd_zvi_child*/
+    if(_rxd_zvi_child != NULL && _rxd_zvi_child_count != NULL)
+    {
+        for(i = 0; i < _rxd_num_zvi; i++)
+            if(_rxd_zvi_child_count[i]>0) free(_rxd_zvi_child[i]);
+        free(_rxd_zvi_child);
+        free(_rxd_zvi_child_count);
+        _rxd_zvi_child_count = NULL;
+        _rxd_zvi_child = NULL;
+    }
     
     _rxd_num_zvi = num_zero_volume_indices;
     _rxd_zero_volume_indices = zero_volume_indices; 
@@ -102,8 +120,34 @@ void rxd_set_euler_matrix(int nrow, int nnonzero, long* nonzero_i,
     _rxd_d = diffusion_d_base;
     _rxd_p = diffusion_p;
     _rxd_c = c_diagonal;
+
+    
+    if(_rxd_num_zvi > 0)
+    {
+        _rxd_zvi_child_count = (long*)calloc(_rxd_num_zvi,sizeof(long));
+        _rxd_zvi_child = (long**)malloc(_rxd_num_zvi*sizeof(long*));
+
+        /* find children of zero-volume-indices */
+        for(i = 0; i < _rxd_num_zvi; i++)
+        {
+            _rxd_zvi_child_count[i] = 0;
+            _rxd_zvi_child[i] = (long*)malloc(sizeof(long)*CHILD_BLOCK);
+            assert(_rxd_zvi_child[i]);
+            for(j = 0; j < _rxd_euler_nrow; j++)
+            {
+                if(_rxd_zero_volume_indices[i] == _rxd_p[j])
+                {
+                    _rxd_zvi_child[i][_rxd_zvi_child_count[i]] = j;
+                    _rxd_zvi_child_count[i]++;
+                    if(_rxd_zvi_child_count[i]%CHILD_BLOCK == 0)
+                      _rxd_zvi_child[i] = (long*)realloc(_rxd_zvi_child[i], sizeof(long)*(_rxd_zvi_child_count[i]+CHILD_BLOCK));
+                }
+            }
+            _rxd_zvi_child[i] = (long*)realloc(_rxd_zvi_child[i], sizeof(long)*_rxd_zvi_child_count[i]);
+        }
+    }
 	
-	/*Info for NEURON currents - to update states*/
+	/* info for NEURON currents - to update states */
 	_curr_count = num_currents;
 	if(_curr_indices != NULL)
 		free(_curr_indices);
@@ -120,7 +164,7 @@ void rxd_set_euler_matrix(int nrow, int nnonzero, long* nonzero_i,
 	_curr_ptrs = malloc(sizeof(PyHocObject)*num_currents);
 	memcpy(_curr_ptrs, curr_ptrs, sizeof(PyHocObject*)*num_currents);
 
-	/*Info for NEURON concentration - to transfer to legacy*/
+	/* info for NEURON concentration - to transfer to legacy */
 	_conc_count = conc_count;
 
 	if(_conc_indices != NULL)
@@ -221,8 +265,109 @@ void nrn_tree_solve(double* a, double* b, double* c, double* dbase, double* rhs,
 }
 
 
+static void ode_solve(double dt, double t, double* p1, double* p2)
+{
+    unsigned long i, j;
+    double* b = p1 + _cvode_offset;
+    double* full_b;
+	long* zvi = _rxd_zero_volume_indices;
+   
+    if(_rxd_num_zvi > 0)
+    {
+        full_b = (double*)calloc(sizeof(double),num_states);
+        for(i = 0, j = 0; i < num_states; i++)
+        {
+            if(i == zvi[j])
+                j++;
+            else
+                full_b[i] = b[i-j];
+        }
+    }
+    else
+    {
+        full_b = b;
+    }
+    //for(i=0;i<_rxd_euler_nrow;i++)
+    //    fprintf(stderr,"%i] a %1.5e b %1.5e c %1.5e d %1.5e p %i state %1.5e\n", i, _rxd_a[i], _rxd_b[i], _rxd_c[i], _rxd_d[i], _rxd_p[i], full_b[i]);  
+	nrn_tree_solve(_rxd_a, _rxd_b, _rxd_c, _rxd_d, full_b, _rxd_p, _rxd_euler_nrow, dt);
+   
+
+    //do_ics_reactions(t, full_b, NULL);
+    
+    if(_rxd_num_zvi>0)
+    {
+        for(i = 0, j = 0; i < num_states; i++)
+        {
+            if(i == zvi[j])
+                j++;
+            else
+                b[i-j] = full_b[i];
+        }
+        free(full_b);
+    }
+    
+}
+
+static void ode_jacobian(double dt, const double* p1, double* p2)
+{
+    return;
+    unsigned long i, j;
+    const double* my_states = p1 + _cvode_offset;
+    double* ydot = p2 + _cvode_offset;
+	double *rhs;
+	long* zvi = _rxd_zero_volume_indices;
+
+    bzero(ydot, num_states*sizeof(double));
+    
+    /*diffusion*/
+    rhs = (double*)malloc(sizeof(double*) * _rxd_euler_nrow);
+	mul(_rxd_euler_nrow, _rxd_euler_nnonzero, _rxd_euler_nonzero_i, _rxd_euler_nonzero_j, _rxd_euler_nonzero_values, my_states, rhs);
+	
+    /* increment states by rhs which is now really deltas */
+    for (i = 0; i < _rxd_euler_nrow; i++) {
+        ydot[i] = rhs[i];
+    }
+
+    /* clear zero volume indices (conservation nodes) */
+    for (i = 0; i < _rxd_num_zvi; i++) {
+        ydot[zvi[i]] = 0;
+    }
+    free(rhs);
+
+	/*reactions*/
+    do_ics_reactions(*t_ptr, my_states, ydot);
+}
+
+/*
+int ode_abs_tol(double* y)
+{
+    long i, j;
+    double* my_states = y + _cvode_offset;
+    if(_rxd_num_zvi > 0)
+    {
+        for(i=0, j=0; i < num_states; i++)
+        {
+            if(zvi[j] == i)
+                j++;
+            else
+                y[i-j] *= atol_scale;
+        }
+    }
+    else
+    {
+        for(i=0; i < num_states; i++)
+            y[i] *= atol_scale;
+    }
+}
+*/
+
 int rxd_nonvint_block(int method, int size, double* p1, double* p2, int thread_id) {
-    //fprintf(stderr,"rxd_nonvint_block method %i size %i p1 %p p2 %p tid %i\n",method,size,p1,p2,thread_id);
+    //fprintf(stderr,"rxd_nonvint_block method %i size %i p1 %p p2 %p tid %i\tdt %g\n",method,size,p1,p2,thread_id,*dt_ptr);
+    int i;
+    //for(i = 0; i < size; i++)
+    //{
+    //    fprintf(stderr,"%g]\t%i\t%1.20e\t%1.20e\n",*t_ptr,i,(p1==NULL?0:p1[i]), (p2==NULL?0:p2[i]));
+    //}   
     switch (method) {
         case 0:
             _setup();
@@ -242,9 +387,9 @@ int rxd_nonvint_block(int method, int size, double* p1, double* p2, int thread_i
 			_fadvance();
             break;
         case 5:
-            /* ode_count */
-            _cvode_offset = size + ode_count(size);
-            return num_states + _cvode_offset - size;
+            /* ode_count */ 
+            _cvode_offset = size + ode_count(size) + num_states - _rxd_num_zvi;
+            return _cvode_offset - size;
             break;
         case 6:
             /* ode_reinit(y) */
@@ -257,19 +402,24 @@ int rxd_nonvint_block(int method, int size, double* p1, double* p2, int thread_i
             _rhs_variable_step_ecs(*t_ptr, p1, p2);
             break;
         case 8:
-            /* ode_solve(dt, t, b, y); solve mx=b replace b with x */
+            ode_solve(*dt_ptr, *t_ptr, p1, p2); /*solve mx=b replace b with x */
             /* TODO: we can probably reuse the dgadi code here... for now, we do nothing, which implicitly approximates the Jacobian as the identity matrix */
             break;
         case 9:
-            /* ode_jacobian(dt, t, ypred, fpred); optionally prepare jacobian for fast ode_solve */
+            ode_jacobian(*dt_ptr, p1, p2); /* optionally prepare jacobian for fast ode_solve */
             break;
         case 10:
+            //ode_abs_tol(p1);
             /* ode_abs_tol(y_abs_tolerance); fill with cvode.atol() * scalefactor */
             break;
         default:
             printf("Unknown rxd_nonvint_block call: %d\n", method);
             break;
     }
+    //for(i = 0; i < size; i++)
+    //{
+    //    fprintf(stderr,"out\t%g]\t%i\t%1.20e\t%1.20e\n",*t_ptr,i,(p1==NULL?0:p1[i]), (p2==NULL?0:p2[i]));
+    //}  
 	/* printf("method=%d, size=%d, thread_id=%d\n", method, size, thread_id);	 */
     return 0;
 }
@@ -512,11 +662,11 @@ void clear_rates()
     clear_rates_ecs();
 }
 
-void setup_solver(double* my_states, PyHocObject* my_t_ptr, PyHocObject* my_dt_ptr, int my_num_states) {
+void setup_solver(double* my_states, int my_num_states) {
     states = my_states;
     num_states = my_num_states;
-    t_ptr = my_t_ptr -> u.px_;
-    dt_ptr = my_dt_ptr -> u.px_;
+    dt_ptr = &nrn_threads->_dt;
+    t_ptr = &nrn_threads->_t;
     set_num_threads(NUM_THREADS);
 }
 
@@ -563,11 +713,11 @@ void TaskQueue_add_task(TaskQueue* q, void* (*task)(void*), void* args, void* re
         q->last->next = t;
         q->last = t;
     }
-    pthread_mutex_unlock(q->task_mutex);
 
     pthread_mutex_lock(q->waiting_mutex);
     q->length++;
     pthread_mutex_unlock(q->waiting_mutex);
+    pthread_mutex_unlock(q->task_mutex);
     
     //signal waiting threads
     pthread_cond_signal(q->task_cond);
@@ -608,8 +758,7 @@ void* TaskQueue_exe_tasks(void* dat)
         pthread_mutex_lock(q->waiting_mutex);
         if(--(q->length) == 0)  //all finished
         {
-            pthread_mutex_unlock(q->waiting_mutex);
-            pthread_cond_signal(q->waiting_cond);
+            pthread_cond_broadcast(q->waiting_cond);
         }
         pthread_mutex_unlock(q->waiting_mutex);
         //fprintf(stderr,"%i] done\n",id);
@@ -660,7 +809,7 @@ void TaskQueue_sync(TaskQueue *q)
 {
     //Wait till the queue is empty
     pthread_mutex_lock(q->waiting_mutex);
-    if(q->length > 0)
+    while(q->length > 0)
         pthread_cond_wait(q->waiting_cond,q->waiting_mutex);
     pthread_mutex_unlock(q->waiting_mutex);
 }
@@ -816,20 +965,20 @@ void _fadvance(void) {
 	int i, j, k;
 
 	/*variables for diffusion*/
-	double *rhs = malloc(sizeof(double*) * _rxd_euler_nrow);
+	double *rhs = malloc(sizeof(double*) * num_states);
 	long* zvi = _rxd_zero_volume_indices;
 
     /*diffusion*/
 	mul(_rxd_euler_nrow, _rxd_euler_nnonzero, _rxd_euler_nonzero_i, _rxd_euler_nonzero_j, _rxd_euler_nonzero_values, states, rhs);
 	
 	/* multiply rhs vector by dt */
-    for (i = 0; i < _rxd_euler_nrow; i++) {
+    for (i = 0; i < num_states; i++) {
         rhs[i] *= dt;
     }
 	nrn_tree_solve(_rxd_a, _rxd_b, _rxd_c, _rxd_d, rhs, _rxd_p, _rxd_euler_nrow, dt);
    
     /* increment states by rhs which is now really deltas */
-    for (i = 0; i < _rxd_euler_nrow; i++) {
+    for (i = 0; i < num_states; i++) {
         states[i] += rhs[i];
     }
 
@@ -842,57 +991,110 @@ void _fadvance(void) {
     /*reactions*/
     do_ics_reactions(t, states, NULL);	
 	
-	tranfer_to_legacy();
+	transfer_to_legacy();
 }
 
-void _ode_reinit(double* y) {
+
+void _ode_reinit(double* y)
+{
+    long i, j;
+    long* zvi = _rxd_zero_volume_indices;
     y += _cvode_offset;
-    memcpy(y,states,num_states*sizeof(double));
+    //fprintf(stderr,"_cvode_offset=%i, num_states=%i, _rxd_num_zvi= %i",_cvode_offset,num_states,_rxd_num_zvi);
+    /*Copy states to CVode*/ 
+    if(_rxd_num_zvi > 0)
+    {
+        for(i=0, j=0; i < num_states; i++)
+        {
+            if(zvi[j] == i)
+                j++;
+            else
+                y[i-j] = states[i];
+        }
+    }
+    else
+    {
+        memcpy(y,states,sizeof(double)*num_states);
+    }
 }
 
 
 void _rhs_variable_step(const double t, const double* p1, double* p2) 
 {
-	int i, j, k;
+	long i, j, k, p, c;
     double dt = *dt_ptr;
     const unsigned char calculate_rhs = p2 == NULL ? 0 : 1;
     const double* my_states = p1 + _cvode_offset;
     double* ydot = p2 + _cvode_offset;
+    double st;
 	/*variables for diffusion*/
 	double *rhs;
 	long* zvi = _rxd_zero_volume_indices;
-
-    memcpy(states,my_states,num_states*sizeof(double));
-
-    if(!calculate_rhs)
-        return;
-
-    bzero(ydot,num_states*sizeof(double));
-    
-    /*diffusion*/
-    rhs = (double*)malloc(sizeof(double*) * _rxd_euler_nrow);
-	mul(_rxd_euler_nrow, _rxd_euler_nnonzero, _rxd_euler_nonzero_i, _rxd_euler_nonzero_j, _rxd_euler_nonzero_values, my_states, rhs);
-	
-	/* multiply rhs vector by dt */
-    for (i = 0; i < _rxd_euler_nrow; i++) {
-        rhs[i] *= dt;
-    }
-	nrn_tree_solve(_rxd_a, _rxd_b, _rxd_c, _rxd_d, rhs, _rxd_p, _rxd_euler_nrow, dt);
    
-    /* increment states by rhs which is now really deltas */
-    for (i = 0; i < _rxd_euler_nrow; i++) {
-        ydot[i] = rhs[i]/dt;
-        states[i] += rhs[i];
+    /*Copy states from CVode*/ 
+    if(_rxd_num_zvi > 0)
+    {
+        for(i=0, j=0; i < num_states; i++)
+        {
+            if(zvi[j] == i)
+                j++;
+            else
+                states[i] = my_states[i-j];
+        }
+    }
+    else
+    {
+        memcpy(states,my_states,sizeof(double)*num_states);
     }
 
-    /* clear zero volume indices (conservation nodes) */
-    for (i = 0; i < _rxd_num_zvi; i++) {
-        ydot[zvi[i]] = 0;
+    for(i = 0; i < _rxd_num_zvi; i++)
+    {
+        j = zvi[i];
+        p = _rxd_p[j];
+        states[j] = (p>0?-(_rxd_b[j]/_rxd_d[j])*states[p]:0);
+        for(k = 0; k < _rxd_zvi_child_count[i]; k++)
+        {
+            c = _rxd_zvi_child[i][k];
+            states[j] -= (_rxd_a[c]/_rxd_d[j])*states[c];
+        }
+    }
+    if(!calculate_rhs)
+    {
+        for(i = 0; i < _rxd_num_zvi; i++)
+            states[zvi[i]] = 0;
+        return;
+    }
+    /*diffusion*/
+    rhs = (double*)malloc(sizeof(double*) * num_states);
+	mul(_rxd_euler_nrow, _rxd_euler_nnonzero, _rxd_euler_nonzero_i, _rxd_euler_nonzero_j, _rxd_euler_nonzero_values, states, rhs);
+	
+   
+    /*reactions*/
+    do_ics_reactions(t, states, rhs);
+
+    /* increment states by rhs which is now really deltas */
+    if(_rxd_num_zvi > 0)
+    {
+        for (i = 0, j = 0; i < num_states; i++)
+        {
+            if(zvi[j] == i)
+            {
+                states[i] = 0;
+                j++;
+            }
+            else
+            {
+                ydot[i-j] = rhs[i];
+            }
+        }
+    }
+    else
+    {
+        memcpy(ydot,rhs,sizeof(double)*num_states);
     }
     free(rhs);
 
-	/*reactions*/
-    do_ics_reactions(t, states, ydot);
+	
 }
 
 
@@ -1086,8 +1288,9 @@ void solve_reaction(ICSReactions* react, double* states, double *ydot)
 	        }
 	    }
 	    // solve for x, destructively
-	    LUfactor(jacobian, pivot);
-	    LUsolve(jacobian, pivot, b, x);
+        tracecatch(LUfactor(jacobian, pivot);
+	        LUsolve(jacobian, pivot, b, x);,
+            "solve_reaction");
 
 	    if(ydot == NULL)    //fixed-step
 	    {
@@ -1114,6 +1317,7 @@ void solve_reaction(ICSReactions* react, double* states, double *ydot)
 	                if(idx != SPECIES_ABSENT)
 	                {
 	                        ydot[idx] += v_get_val(x,jac_idx++)/dt;
+
 	                }
 	
 	            }

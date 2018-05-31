@@ -34,12 +34,17 @@ Grid_node *make_Grid(PyHocObject* my_states, int my_num_states_x,
     assert(new_Grid);
 
     new_Grid->states = my_states->u.px_;
+    
+    /*TODO: When there are multiple grids share the largest intermediate arrays to save memory*/
+    /*intermediate states for DG-ADI*/
+    new_Grid->states_x = (double*)malloc(sizeof(double)*my_num_states_x*my_num_states_y*my_num_states_z);
+    new_Grid->states_y = (double*)malloc(sizeof(double)*my_num_states_x*my_num_states_y*my_num_states_z);
+    new_Grid->states_cur = (double*)malloc(sizeof(double)*my_num_states_x*my_num_states_y*my_num_states_z);
 
     new_Grid->size_x = my_num_states_x;
     new_Grid->size_y = my_num_states_y;
     new_Grid->size_z = my_num_states_z;
-
-
+    
     new_Grid->dc_x = my_dc_x;
     new_Grid->dc_y = my_dc_y;
     new_Grid->dc_z = my_dc_z;
@@ -47,10 +52,6 @@ Grid_node *make_Grid(PyHocObject* my_states, int my_num_states_x,
     new_Grid->dx = my_dx;
     new_Grid->dy = my_dy;
     new_Grid->dz = my_dz;
-    new_Grid->old_states = (double *) malloc(sizeof(double) * new_Grid->size_x * 
-    new_Grid->size_y * new_Grid->size_z);
-
-    assert(new_Grid->old_states);
 
     new_Grid->concentration_list = NULL;
     new_Grid->num_concentrations = 0;
@@ -110,14 +111,32 @@ Grid_node *make_Grid(PyHocObject* my_states, int my_num_states_x,
     new_Grid->bc->value=bc_value;
 
     new_Grid->tasks = NULL;
-    new_Grid->task_vals = (AdiLineData*)malloc(sizeof(AdiLineData) * MAX(my_num_states_x*MAX(my_num_states_y, my_num_states_z),my_num_states_y*my_num_states_z));
-    new_Grid->task_state = malloc(sizeof(double) * my_num_states_x * my_num_states_y * my_num_states_z);
     new_Grid->tasks = (AdiGridData*)malloc(NUM_THREADS*sizeof(AdiGridData));
     for(k=0; k<NUM_THREADS; k++)
     {
-        new_Grid->tasks[k].scratchpad = malloc(sizeof(double) * MAX(my_num_states_x,MAX(my_num_states_y,my_num_states_z)));
+        new_Grid->tasks[k].scratchpad = (double*)malloc(sizeof(double) * MAX(my_num_states_x,MAX(my_num_states_y,my_num_states_z)));
         new_Grid->tasks[k].g = new_Grid;
     }
+
+
+    new_Grid->adi_dir_x = (AdiDirection*)malloc(sizeof(AdiDirection));
+    new_Grid->adi_dir_x->states_in = new_Grid->states;
+    new_Grid->adi_dir_x->states_out = new_Grid->states_x;
+    new_Grid->adi_dir_x->line_size = my_num_states_x;
+
+
+    new_Grid->adi_dir_y = (AdiDirection*)malloc(sizeof(AdiDirection));
+    new_Grid->adi_dir_y->states_in = new_Grid->states_x;
+    new_Grid->adi_dir_y->states_out = new_Grid->states_y;
+    new_Grid->adi_dir_y->line_size = my_num_states_y;
+
+
+
+    new_Grid->adi_dir_z = (AdiDirection*)malloc(sizeof(AdiDirection));
+    new_Grid->adi_dir_z->states_in = new_Grid->states_y;
+    new_Grid->adi_dir_z->states_out = new_Grid->states_x;
+    new_Grid->adi_dir_z->line_size = my_num_states_z;
+
 
     return new_Grid;
 }
@@ -302,7 +321,9 @@ void set_grid_currents(int grid_list_index, int index_in_list, PyObject* grid_in
 void free_Grid(Grid_node *grid) {
     int i;
     free(grid->states);
-    free(grid->old_states);
+    free(grid->states_x);
+    free(grid->states_y);
+    free(grid->states_cur);
     free(grid->concentration_list);
     free(grid->current_list);
 	free(grid->alpha);
@@ -312,12 +333,17 @@ void free_Grid(Grid_node *grid) {
     free(grid->proc_offsets);
     free(grid->proc_num_currents);
     free(grid->all_currents);
-    free(grid->task_vals);
-    free(grid->task_state);
+    free(grid->adi_dir_x);
+    free(grid->adi_dir_y);
+    free(grid->adi_dir_z);
+
+
     if(grid->tasks != NULL)
     {   
         for(i=0; i<NUM_THREADS; i++)
+        {
             free(grid->tasks[i].scratchpad);
+        }
     }
     free(grid->tasks);
     free(grid);

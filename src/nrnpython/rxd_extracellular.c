@@ -58,13 +58,15 @@ void set_num_threads_ecs(const int n)
             if(grid->tasks != NULL)
             {
                 for(i = 0; i<NUM_THREADS; i++)
+                {
                     free(grid->tasks[i].scratchpad);
+                }
             }
             free(grid->tasks);
             grid->tasks = (AdiGridData*)malloc(NUM_THREADS*sizeof(AdiGridData));
             for(i=0; i<n; i++)
             {
-                grid->tasks[i].scratchpad = malloc(sizeof(double) * MAX(grid->size_x,MAX(grid->size_y,grid->size_z)));
+                grid->tasks[i].scratchpad = (double*)malloc(sizeof(double) * MAX(grid->size_x,MAX(grid->size_y,grid->size_z)));
                 grid->tasks[i].g = grid;
 
             }
@@ -110,7 +112,6 @@ Reaction* ecs_create_reaction(int list_idx, int num_species, int* species_ids, E
 	r = (Reaction*)malloc(sizeof(Reaction));
 	assert(r);
 	r->reaction = f;
-		
 	/*place reaction on the top of the stack of reactions*/
 	r->next = ecs_reactions;
 	ecs_reactions = r;
@@ -402,7 +403,7 @@ void do_currents(Grid_node* grid, double* output, double dt)
     double* val;
     double* all_currents;
     int proc_offset;
-
+    bzero(output,sizeof(double)*grid->size_x*grid->size_y*grid->size_z);
     /* currents, via explicit Euler */
     n = grid->num_all_currents;
     m = grid->num_currents;
@@ -437,24 +438,22 @@ void do_currents(Grid_node* grid, double* output, double dt)
     {
         MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, grid->all_currents, grid->proc_num_currents, grid->proc_offsets, MPI_DOUBLE, nrnmpi_world_comm);
         for(i = 0; i < n; i++)
-            output[grid->current_dest[i]] += dt * grid->all_currents[i];
+            output[grid->current_dest[i]] += grid->all_currents[i];
     }
     else
     {
         for(i = 0; i < n; i++)
-            output[grid->current_list[i].destination] += dt * grid->all_currents[i];
-
+            output[grid->current_list[i].destination] += grid->all_currents[i];
     }
 #else
     for(i = 0; i < n; i++)
-        output[grid->current_list[i].destination] += dt * grid->all_currents[i];
+        output[grid->current_list[i].destination] +=  grid->all_currents[i];
 #endif
 }
 
 
 void _fadvance_fixed_step_ecs(void) {
     Grid_node* grid;
-    Py_ssize_t m, n, i;
     double* states;
     Current_Triple* c;
     double dt = (*dt_ptr);
@@ -466,28 +465,24 @@ void _fadvance_fixed_step_ecs(void) {
     double* all_currents;
     int proc_offset;
 
-    /* currents, via explicit Euler */
-    for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next)
-    {
-        do_currents(grid, grid->states, dt);
-        memcpy(grid->old_states, grid->states, sizeof(double) * grid->size_x * grid->size_y * grid->size_z);
-    }
-
 	if(threaded_reactions_tasks != NULL)
 	    run_threaded_reactions(threaded_reactions_tasks);
 
     for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
+        do_currents(grid, grid->states_cur, dt);
 		switch(grid->VARIABLE_ECS_VOLUME)
 		{
 			case VOLUME_FRACTION:
-				dg_adi_vol(grid);
+				set_adi_vol(grid);
 				break;
 			case TORTUOSITY:
-				dg_adi_tort(grid);
+                set_adi_tort(grid);
 				break;
 			default:
-        		dg_adi(grid);
+                set_adi_homogeneous(grid);
 		}
+        dg_adi(grid);
+        
     }
     /* transfer concentrations */
     scatter_concentrations();
@@ -737,6 +732,7 @@ static void _rhs_variable_step_helper(Grid_node* grid, const double const* state
             prev_j = find(stop_i, j-1, k, num_states_y, num_states_z);
             prev_k = find(stop_i, j, k-1, num_states_y, num_states_z);
             next_j = find(stop_i, j+1, k, num_states_y, num_states_z);
+
             next_k = find(stop_i, j, k+1, num_states_y, num_states_z);
             next_i = find(stop_i-1, j, k, num_states_y, num_states_z);
 
@@ -886,15 +882,11 @@ static void update_boundaries_z(int i, int j, int k, int di, int dj, double rate
 
 
 
-
 /*****************************************************************************
 *
 * End variable step code
 *
 *****************************************************************************/
-
-
-
 
 
 
@@ -926,7 +918,6 @@ static int solve_dd_clhs_tridiag(const int N, const double l_diag, const double 
     const double u_diag, const double lbc_diag, const double lbc_u_diag,
     const double ubc_l_diag, const double ubc_diag, double* const b, double* const c) 
 {
-    /*could solve the difference equation rather than allocate memory*/ 
     int i;
     
     
@@ -948,6 +939,51 @@ static int solve_dd_clhs_tridiag(const int N, const double l_diag, const double 
     return 0;
 }
 
+/*
+static int solve_dd_clhs_tridiag_rev(const int N, const double l_diag, const double diag, 
+    const double u_diag, const double lbc_diag, const double lbc_u_diag,
+    const double ubc_l_diag, const double ubc_diag, double* const d, double* const a) 
+{
+    int i;
+    
+    
+    a[N-2] = ubc_l_diag/ubc_diag;
+    d[N-1] = d[N-1]/ubc_diag;
+
+    for(i=N-2; i>0; i--)
+    {
+        a[i-1] = l_diag/(diag - u_diag*a[i]);
+        d[i] = (d[i] - u_diag*d[i+1])/(diag - u_diag*a[i]);
+    }
+    d[0] = (d[0] - lbc_u_diag*d[1])/(lbc_diag - lbc_u_diag*a[0]);
+
+    for(i=1; i<N; i++)
+    {
+        d[i] = d[i] - a[i-1]*d[i-1];
+
+    }
+    return 0;
+}
+unsigned char callcount = TRUE;
+static int solve_dd_clhs_tridiag(const int N, const double l_diag, const double diag, 
+    const double u_diag, const double lbc_diag, const double lbc_u_diag,
+    const double ubc_l_diag, const double ubc_diag, double* const b, double* const c)
+{
+    if(callcount)
+    {
+        callcount = FALSE;
+        return solve_dd_clhs_tridiag_for(N, l_diag, diag, u_diag, lbc_diag, lbc_u_diag, ubc_l_diag, ubc_diag, b, c);
+    }
+    else
+    {
+        callcount = TRUE;
+        return solve_dd_clhs_tridiag_rev(N, l_diag, diag, u_diag, lbc_diag, lbc_u_diag, ubc_l_diag, ubc_diag, b, c);       
+    }
+}
+*/
+
+
+
 /* dg_adi_x performs the first of 3 steps in DG-ADI
  * g    -   the parameters and state of the grid
  * dt   -   the time step
@@ -956,24 +992,19 @@ static int solve_dd_clhs_tridiag(const int N, const double l_diag, const double 
  * state    -   where the output of this step is stored
  * scratch  - scratchpad array of doubles, length g->size_x - 1
  */
-static AdiLineData dg_adi_x(Grid_node* g, const double dt, const int y, const int z, double const * const state, double* const scratch)
+static void dg_adi_x(Grid_node* g, const double dt, const int y, const int z, double const * const state, double* const RHS, double* const scratch)
 {
     int yp,ym,zp,zm;
     int x;
-    double *RHS = malloc(sizeof(double)*g->size_x);
 	double r = g->dc_x*dt/SQ(g->dx);
 	double div_y, div_z;
-	AdiLineData result;
-    result.copyFrom = RHS;
-    result.copyTo = IDX(0, y, z);
-
     /*TODO: Get rid of this by not calling dg_adi when on the boundary for DIRICHLET conditions*/
     if(g->bc->type == DIRICHLET && (y == 0 || z == 0 || y == g->size_y-1 || z == g->size_z-1))
     {
         for(x=0; x<g->size_x; x++)
             RHS[x] = g->bc->value;
-        return result;
-    }
+        return;
+    }    
     yp = (y==g->size_y-1)?y-1:y+1;
     ym = (y==0)?y+1:y-1;
     zp = (z==g->size_z-1)?z-1:z+1;
@@ -985,14 +1016,14 @@ static AdiLineData dg_adi_x(Grid_node* g, const double dt, const int y, const in
     {
         /*zero flux boundary condition*/
         RHS[0] =  g->states[IDX(0,y,z)] 
-           + dt*((g->dc_x/SQ(g->dx))*(g->states[IDX(1,y,z)] - 2.*g->states[IDX(0,y,z)] + g->states[IDX(1,y,z)])/4.
+           + dt*((g->dc_x/SQ(g->dx))*(g->states[IDX(1,y,z)] - 2.*g->states[IDX(0,y,z)] + g->states[IDX(1,y,z)])/4.0
            + (g->dc_y/SQ(g->dy))*(g->states[IDX(0,yp,z)] - 2.*g->states[IDX(0,y,z)] + g->states[IDX(0,ym,z)])/div_y
-           + (g->dc_z/SQ(g->dz))*(g->states[IDX(0,y,zp)] - 2.*g->states[IDX(0,y,z)] + g->states[IDX(0,y,zm)])/div_z);
+           + (g->dc_z/SQ(g->dz))*(g->states[IDX(0,y,zp)] - 2.*g->states[IDX(0,y,z)] + g->states[IDX(0,y,zm)])/div_z + g->states_cur[IDX(0,y,z)]);
         x = g->size_x-1;
         RHS[x] = g->states[IDX(x,y,z)] 
-           + dt*((g->dc_x/SQ(g->dx))*(g->states[IDX(x-1,y,z)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x-1,y,z)])/4.
+           + dt*((g->dc_x/SQ(g->dx))*(g->states[IDX(x-1,y,z)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x-1,y,z)])/4.0
            + (g->dc_y/SQ(g->dy))*(g->states[IDX(x,yp,z)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x,ym,z)])/div_y
-           + (g->dc_z/SQ(g->dz))*(g->states[IDX(x,y,zp)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x,y,zm)])/div_z);
+           + (g->dc_z/SQ(g->dz))*(g->states[IDX(x,y,zp)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x,y,zm)])/div_z + g->states_cur[IDX(x,y,z)]);
     }
     else
     {
@@ -1000,23 +1031,21 @@ static AdiLineData dg_adi_x(Grid_node* g, const double dt, const int y, const in
         RHS[g->size_x-1] = g->bc->value;
     }
 
-    
     for(x=1; x<g->size_x-1; x++)
     {
+        __builtin_prefetch(&(g->states[IDX(x+PREFETCH,y,z)]), 0, 1);
+        __builtin_prefetch(&(g->states[IDX(x+PREFETCH,yp,z)]), 0, 0);
+        __builtin_prefetch(&(g->states[IDX(x+PREFETCH,ym,z)]), 0, 0);
         RHS[x] =  g->states[IDX(x,y,z)] 
                + dt*((g->dc_x/SQ(g->dx))*(g->states[IDX(x+1,y,z)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x-1,y,z)])/2.
                    + (g->dc_y/SQ(g->dy))*(g->states[IDX(x,yp,z)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x,ym,z)])/div_y
-                   + (g->dc_z/SQ(g->dz))*(g->states[IDX(x,y,zp)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x,y,zm)])/div_z);
+                   + (g->dc_z/SQ(g->dz))*(g->states[IDX(x,y,zp)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x,y,zm)])/div_z + g->states_cur[IDX(x,y,z)]);
 
     }
-    solve_dd_clhs_tridiag(g->size_x, -r/2., 1.+r, -r/2., 1.+r/2., -r/2., -r/2., 1.+r/2., RHS, scratch);
-
-    if(g->bc->type == DIRICHLET)
-    {
-        RHS[0] = g->bc->value;
-        RHS[g->size_x-1] = g->bc->value;
-    }
-    return result;
+    if(g->bc->type == NEUMANN)
+        solve_dd_clhs_tridiag(g->size_x, -r/2.0, 1.0+r, -r/2.0, 1.0+r/2.0, -r/2.0, -r/2.0, 1.0+r/2.0, RHS, scratch);
+    else
+        solve_dd_clhs_tridiag(g->size_x, -r/2.0, 1.0+r, -r/2.0, 1.0, 0, 0, 1.0, RHS, scratch);
 }
 
 
@@ -1029,52 +1058,43 @@ static AdiLineData dg_adi_x(Grid_node* g, const double dt, const int y, const in
  *              overwritten by the output of this step
  * scratch  -   scratchpad array of doubles, length g->size_y - 1
  */
-static AdiLineData dg_adi_y(Grid_node* g, double const dt, int const x, int const z, double const * const state, double* const scratch)
+static void dg_adi_y(Grid_node* g, double const dt, int const x, int const z, double const * const state, double* const RHS, double* const scratch)
 {
     int y;
 	double r = (g->dc_y*dt/SQ(g->dy)); 
-    double *RHS = malloc(sizeof(double)*g->size_y);
-    AdiLineData result;
-    result.copyFrom = RHS;
-    result.copyTo = IDX(x, 0, z);
-
     /*TODO: Get rid of this by not calling dg_adi when on the boundary for DIRICHLET conditions*/
-    if(g->bc->type == DIRICHLET && (x == 0 || z == 0 || x == g->size_x-1 || z == g->size_y-1))
+    if(g->bc->type == DIRICHLET && (x == 0 || z == 0 || x == g->size_x-1 || z == g->size_z-1))
     {
         for(y=0; y<g->size_y; y++)
             RHS[y] = g->bc->value;
-        return result;
+        return;
     }
-
 
     if(g->bc->type == NEUMANN)
     {
         /*zero flux boundary condition*/
-        RHS[0] =  state[IDX(x,0,z)]
-            - (g->dc_y*dt/SQ(g->dy))*(g->states[IDX(x,1,z)] - 2.*g->states[IDX(x,0,z)] + g->states[IDX(x,1,z)])/4.;
+        RHS[0] =  state[x + z*g->size_x]
+            - (g->dc_y*dt/SQ(g->dy))*(g->states[IDX(x,1,z)] - 2.0*g->states[IDX(x,0,z)] + g->states[IDX(x,1,z)])/4.0;
         y = g->size_y-1;
-        RHS[y] =  state[IDX(x,y,z)]
-            - (g->dc_y*dt/SQ(g->dy))*(g->states[IDX(x,y-1,z)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x,y-1,z)])/4.;
+        RHS[y] = state[x + (z + y*g->size_z)*g->size_x]
+            - (g->dc_y*dt/SQ(g->dy))*(g->states[IDX(x,y-1,z)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x,y-1,z)])/4.0;
     }
     else
     {
         RHS[0] = g->bc->value;
         RHS[g->size_y-1] = g->bc->value;
     }
-
     for(y=1; y<g->size_y-1; y++)
     {
-        RHS[y] =  state[IDX(x,y,z)]
-            - (g->dc_y*dt/SQ(g->dy))*(g->states[IDX(x,y+1,z)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x,y-1,z)])/2.;
+        __builtin_prefetch(&state[x + (z + (y+PREFETCH)*g->size_z)*g->size_x], 0, 0);
+        __builtin_prefetch(&(g->states[IDX(x,y+PREFETCH,z)]), 0, 1);
+        RHS[y] =  state[x + (z + y*g->size_z)*g->size_x]
+            - (g->dc_y*dt/SQ(g->dy))*(g->states[IDX(x,y+1,z)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x,y-1,z)])/2.0;
     }
-
-    solve_dd_clhs_tridiag(g->size_y, -r/2., 1.+r, -r/2., 1.+r/2., -r/2., -r/2., 1.+r/2., RHS, scratch);
-    if(g->bc->type == DIRICHLET)
-    {
-        RHS[0] = g->bc->value;
-        RHS[g->size_y-1] = g->bc->value;
-    }
-    return result;
+    if(g->bc->type == NEUMANN)
+        solve_dd_clhs_tridiag(g->size_y, -r/2.0, 1.0+r, -r/2.0, 1.0+r/2.0, -r/2.0, -r/2.0, 1.0+r/2.0, RHS, scratch);
+    else
+        solve_dd_clhs_tridiag(g->size_y, -r/2., 1.+r, -r/2., 1.0, 0, 0, 1.0, RHS, scratch);
 }
 
 
@@ -1087,30 +1107,26 @@ static AdiLineData dg_adi_y(Grid_node* g, double const dt, int const x, int cons
  *              overwritten by the output of this step
  * scratch  -   scratchpad array of doubles, length g->size_z - 1
  */
-static AdiLineData dg_adi_z(Grid_node* g, double const dt, int const x, int const y, double const * const state, double* const scratch)
+static void dg_adi_z(Grid_node* g, double const dt, int const x, int const y, double const * const state, double* const RHS, double* const scratch)
 {
     int z;
-    double *RHS = malloc(sizeof(double)*g->size_z);
 	double r = g->dc_z*dt/SQ(g->dz);
-    AdiLineData result;
-    result.copyFrom = RHS;
-    result.copyTo = IDX(x, y, 0);
     /*TODO: Get rid of this by not calling dg_adi when on the boundary for DIRICHLET conditions*/
     if(g->bc->type == DIRICHLET && (x == 0 || y == 0 || x == g->size_x-1 || y == g->size_y-1))
     {
         for(z=0; z<g->size_z; z++)
             RHS[z] = g->bc->value;
-        return result;
+        return;
     }
 
     if(g->bc->type == NEUMANN)
     { 
         /*zero flux boundary condition*/
-        RHS[0] =  state[IDX(x,y,0)]
-            - (g->dc_z*dt/SQ(g->dz))*(g->states[IDX(x,y,1)] - 2.*g->states[IDX(x,y,0)] + g->states[IDX(x,y,1)])/4.;
+        RHS[0] = state[y + g->size_y*(x*g->size_z)]
+            - (g->dc_z*dt/SQ(g->dz))*(g->states[IDX(x,y,1)] - 2.0*g->states[IDX(x,y,0)] + g->states[IDX(x,y,1)])/4.0;
         z = g->size_z-1;
-        RHS[z] =  state[IDX(x,y,z)]
-                - (g->dc_z*dt/SQ(g->dz))*(g->states[IDX(x,y,z-1)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x,y,z-1)])/4.;
+        RHS[z] =  state[y + g->size_y*(x*g->size_z + z)]
+                - (g->dc_z*dt/SQ(g->dz))*(g->states[IDX(x,y,z-1)] - 2.0*g->states[IDX(x,y,z)] + g->states[IDX(x,y,z-1)])/4.0;
 
     }
     else
@@ -1118,34 +1134,16 @@ static AdiLineData dg_adi_z(Grid_node* g, double const dt, int const x, int cons
         RHS[0] = g->bc->value;
         RHS[g->size_z-1] = g->bc->value;
     }
-
     for(z=1; z<g->size_z-1; z++)
     {
-        RHS[z] =  state[IDX(x,y,z)]
+        RHS[z] =  state[y + g->size_y*(x*g->size_z + z)]
                 - (g->dc_z*dt/SQ(g->dz))*(g->states[IDX(x,y,z+1)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x,y,z-1)])/2.;
     }
 
-    solve_dd_clhs_tridiag(g->size_z, -r/2., 1.+r, -r/2., 1.+r/2., -r/2., -r/2., 1.+r/2., RHS, scratch);
-    
-    if(g->bc->type == DIRICHLET)
-    {
-        RHS[0] = g->bc->value;
-        RHS[g->size_z-1] = g->bc->value;
-    }
-    return result;
-}
-
-void dg_transfer_data(AdiLineData * const vals, double* const state, int const num_each_line, int const num_lines, int const offset) {
-    AdiLineData* myVal;
-    int i, j, k;
-
-    for(i = 0; i < num_lines; i++) {
-        myVal = vals + i;
-        for(j = myVal -> copyTo, k = 0; k < num_each_line; k++, j += offset) {
-            state[j] = (myVal -> copyFrom)[k];
-        }
-        free(myVal -> copyFrom);
-    }
+    if(g->bc->type == NEUMANN)
+        solve_dd_clhs_tridiag(g->size_z, -r/2.0, 1.0+r, -r/2.0, 1.0+r/2.0, -r/2.0, -r/2.0, 1.0+r/2.0, RHS, scratch);
+    else
+        solve_dd_clhs_tridiag(g->size_z, -r/2., 1.+r, -r/2., 1.0, 0, 0, 1.0, RHS, scratch);
 }
 
 static void* do_dg_adi(void* dataptr) {
@@ -1153,33 +1151,41 @@ static void* do_dg_adi(void* dataptr) {
     int start = data -> start;
     int stop = data -> stop;
     int i, j, k;
+    AdiDirection* adi_dir = data -> adi_dir;
     double dt = *dt_ptr;
     int sizej = data -> sizej;
     Grid_node* g = data -> g;
-    double* state = g->task_state;
-    AdiLineData* vals = g->task_vals; 
+    double* state_in = adi_dir-> states_in;
+    double* state_out = adi_dir-> states_out;
+    int offset = adi_dir -> line_size;
     double* scratchpad = data -> scratchpad;
-    AdiLineData (*dg_adi_dir)(Grid_node*, double, int, int, double const *, double*) = data -> dg_adi_dir;
-
-    for (k = start; k < stop; k++) {
+    void (*dg_adi_dir)(Grid_node*, double, int, int, double const * const, double* const, double* const) = adi_dir -> dg_adi_dir;
+    for (k = start; k < stop; k++)
+    {
         i = k / sizej;
         j = k % sizej;
-        vals[k] = dg_adi_dir(g, dt, i, j, state, scratchpad);
+        dg_adi_dir(g, dt, i, j, state_in, &state_out[k*offset], scratchpad);
     }
+
     return NULL;
 }
 
-void run_threaded_dg_adi(const int i, const int j, Grid_node* g, AdiLineData (*dg_adi_dir)(Grid_node*, double, int, int, double const *, double*), const int n) {
+void run_threaded_dg_adi(const int i, const int j, Grid_node* g, AdiDirection* adi_dir, const int n) {
     int k;  
     /* when doing any given direction, the number of tasks is the product of the other two, so multiply everything then divide out the current direction */
-    const int tasks_per_thread = (g->size_x * g->size_y * g->size_z / n + NUM_THREADS - 1) / NUM_THREADS;
-    /*only setup tasks once*/
-    for (k = 0; k < NUM_THREADS; k++)
+    const int tasks_per_thread = (g->size_x * g->size_y * g->size_z / n) / NUM_THREADS;
+    const int extra = (g->size_x * g->size_y * g->size_z / n) % NUM_THREADS;
+    
+    g->tasks[0].start = 0; 
+    g->tasks[0].stop = tasks_per_thread + (extra>0);
+    g->tasks[0].sizej = j;
+    g->tasks[0].adi_dir = adi_dir;
+    for (k = 1; k < NUM_THREADS; k++)
     {
-        g->tasks[k].start = k * tasks_per_thread; 
-        g->tasks[k].stop = (k + 1) * tasks_per_thread;
+        g->tasks[k].start = g->tasks[k-1].stop;
+        g->tasks[k].stop = g->tasks[k].start + tasks_per_thread + (extra>k);
         g->tasks[k].sizej = j;
-        g->tasks[k].dg_adi_dir = dg_adi_dir;
+        g->tasks[k].adi_dir = adi_dir;
     }
     g->tasks[NUM_THREADS - 1].stop = i * j;
      /* launch threads */
@@ -1189,9 +1195,15 @@ void run_threaded_dg_adi(const int i, const int j, Grid_node* g, AdiLineData (*d
     }
     /* run one task in the main thread */
     do_dg_adi(&(g->tasks[NUM_THREADS - 1]));
-
     /* wait for them to finish */
     TaskQueue_sync(AllTasks);
+}
+
+void set_adi_homogeneous(Grid_node *g)
+{
+    g->adi_dir_x->dg_adi_dir = dg_adi_x;
+    g->adi_dir_y->dg_adi_dir = dg_adi_y;
+    g->adi_dir_z->dg_adi_dir = dg_adi_z;
 }
 
 /*DG-ADI implementation the 3 step process to diffusion species in grid g by time step *dt_ptr
@@ -1199,24 +1211,23 @@ void run_threaded_dg_adi(const int i, const int j, Grid_node* g, AdiLineData (*d
  */
 static int dg_adi(Grid_node *g)
 {
+    //double* tmp;
     /* first step: advance the x direction */
-    run_threaded_dg_adi(g->size_y, g->size_z, g, dg_adi_x, g->size_x);
-
-    /* transfer data */
-    dg_transfer_data(g->task_vals, g->task_state, g->size_x, g->size_y * g->size_z, g->size_y * g->size_z);
+    run_threaded_dg_adi(g->size_y, g->size_z, g, g->adi_dir_x, g->size_x);
 
     /* second step: advance the y direction */
-    run_threaded_dg_adi(g->size_x, g->size_z, g, dg_adi_y, g->size_y);
-
-    /* transfer data */
-    dg_transfer_data(g->task_vals, g->task_state, g->size_y, g->size_x * g->size_z, g->size_z);
+    run_threaded_dg_adi(g->size_x, g->size_z, g, g->adi_dir_y, g->size_y);
 
     /* third step: advance the z direction */
-    run_threaded_dg_adi(g->size_x, g->size_y, g, dg_adi_z, g->size_z);
+    run_threaded_dg_adi(g->size_x, g->size_y, g, g->adi_dir_z, g->size_z);
 
-    /*transfer data directly into Grid_node values (g->states)*/
-    dg_transfer_data(g->task_vals, g->states, g->size_z, g->size_x * g->size_y, 1);
-    
+    /* transfer data */
+    /*TODO: Avoid copy by switching pointers and updating Python copy
+    tmp = g->states;
+    g->states = g->adi_dir_z->states_out;
+    g->adi_dir_z->states_out = tmp;
+    */
+    memcpy(g->states, g->adi_dir_z->states_out, sizeof(double)*g->size_x*g->size_y*g->size_z);
     return 0;
 }
 

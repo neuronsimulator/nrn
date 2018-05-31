@@ -161,7 +161,10 @@ class MultiCompartmentReaction(GeneralizedReaction):
         
     
     def __repr__(self):
-        return 'MultiCompartmentReaction(%r, %r, rate_b=%r, membrane=%r, custom_dynamics=%r, membrane_flux=%r, scale_by_area=%r)' % (self._scheme, self._original_rate_f, self._original_rate_b, self._regions[0], self._custom_dynamics, self._membrane_flux, self._scale_by_area)
+        short_f = self._original_rate_f._short_repr() if hasattr(self._original_rate_f,'_short_repr') else self._original_rate_f
+        short_b = self._original_rate_b._short_repr() if hasattr(self._original_rate_b,'_short_repr') else self._original_rate_b
+        short_scheme =  self._scheme._short_repr() if hasattr(self._scheme,'_short_repr') else self._scheme
+        return 'MultiCompartmentReaction(%r, %r, rate_b=%r, membrane=%r, custom_dynamics=%r, membrane_flux=%r, scale_by_area=%r)' % (short_scheme, short_f, short_b, self._regions[0], self._custom_dynamics, self._membrane_flux, self._scale_by_area)
     
     
     def _do_memb_scales(self, cur_map):                    

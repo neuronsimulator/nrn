@@ -4,6 +4,7 @@
 #define	v_get_val(x,i)		((x)->ve[(i)])
 #define	m_get_val(A,i,j)	((A)->me[(i)][(j)])
 #define SPECIES_ABSENT      -1
+#define PREFETCH 4
 
 typedef void (*fptr)(void);
 
@@ -109,11 +110,12 @@ void _fadvance_fixed_step_ecs(void);
 
 int get_num_threads(void);
 static int dg_adi(Grid_node*);
-int dg_adi_vol(Grid_node*);
-int dg_adi_tort(Grid_node*);
-void dg_transfer_data(AdiLineData * const, double* const, int const, int const, int const);
-void run_threaded_dg_adi(const int, const int, Grid_node*, AdiLineData (*dg_adi_dir)(Grid_node*, double, int, int, double const *, double*), const int n);
+void set_adi_tort(Grid_node*);
+void set_adi_vol(Grid_node*);
+void set_adi_homogeneous(Grid_node *);
 
+void dg_transfer_data(AdiLineData * const, double* const, int const, int const, int const);
+void run_threaded_dg_adi(const int, const int, Grid_node*, AdiDirection*, const int);
 ReactGridData* create_threaded_reactions(const int);
 void* do_reactions(void*);
 
@@ -164,5 +166,6 @@ void TaskQueue_add_task(TaskQueue*, void* (*task)(void* args), void*, void*);
 void *TaskQueue_exe_tasks(void*);
 void start_threads(const int);
 void TaskQueue_sync(TaskQueue*);
-
+static void ode_solve(double, double, double*, double*);
+static void ode_jacobian(double, const double*, double*);
 

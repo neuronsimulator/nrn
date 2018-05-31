@@ -380,6 +380,7 @@ class _Arithmeticed:
         import species
         items = []
         counts = []
+        result = ""
         for item, count in zip(self._items.keys(), self._items.values()):
             if count:
                 if isinstance(item, species._SpeciesMathable):

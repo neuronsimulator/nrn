@@ -110,7 +110,9 @@ typedef struct {
 
 typedef struct Grid_node {
     double *states;         // Array of doubles representing Grid space
-    double *old_states;     // Copy of states to hold old values
+    double *states_x;
+    double *states_y;
+    double *states_cur;
     int size_x;          // Size of X dimension
     int size_y;          // Size of Y dimension
     int size_z;          // Size of Z dimension
@@ -145,19 +147,27 @@ typedef struct Grid_node {
 	double (*get_alpha)(double*,int);
 	double (*get_lambda)(double*,int);
     struct AdiGridData* tasks;
-    AdiLineData* task_vals;
-    double* task_state;
+    struct AdiDirection* adi_dir_x;
+    struct AdiDirection* adi_dir_y;
+    struct AdiDirection* adi_dir_z;
 } Grid_node;
+
+typedef struct AdiDirection{
+    void (*dg_adi_dir)(Grid_node*, const double, const int, const int, double const * const, double* const, double* const);
+    double* states_in;
+    double* states_out;
+    int line_size;
+} AdiDirection;
 
 typedef struct AdiGridData{
     int start, stop;
-    AdiLineData* vals;
     double* state;
     Grid_node* g;
     int sizej;
-    AdiLineData (*dg_adi_dir)(Grid_node*, double, int, int, double const *, double*);
+    AdiDirection* adi_dir;
     double* scratchpad;
 } AdiGridData;
+
 
 
 static double get_alpha_scalar(double*, int);

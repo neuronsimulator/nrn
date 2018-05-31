@@ -61,7 +61,7 @@ set_initialize = dll.set_initialize
 set_initialize.argtypes = [fptr_prototype]
 
 setup_solver = dll.setup_solver
-setup_solver.argtypes = [ndpointer(ctypes.c_double), ctypes.py_object, ctypes.py_object, ctypes.c_int]
+setup_solver.argtypes = [ndpointer(ctypes.c_double), ctypes.c_int]
 
 #states = None
 _set_num_threads = dll.set_num_threads 
@@ -268,6 +268,8 @@ _rxd_offset = None
 
 def _atolscale(y):
     real_index_lookup = {item: index for index, item in enumerate(_nonzero_volume_indices)}
+    print real_index_lookup
+    print "_rxd_offset",_rxd_offset
     for sr in _species_get_all_species().values():
         s = sr()
         if s is not None:
@@ -277,7 +279,7 @@ def _atolscale(y):
 def _ode_count(offset):
     global _rxd_offset, last_structure_change_cnt, _structure_change_count
     initializer._do_init()
-    _rxd_offset = offset
+    _rxd_offset = offset - len(_nonzero_volume_indices)
     if _diffusion_matrix is None or last_structure_change_cnt != _structure_change_count.value: _setup_matrices()
     last_structure_change_cnt = _structure_change_count.value
     return len(_nonzero_volume_indices)
@@ -290,7 +292,7 @@ def _ode_fun(t, y, ydot):
     lo = _rxd_offset
     hi = lo + len(_nonzero_volume_indices)
     if lo == hi: return
-    states = _node_get_states()
+    states = _node_get_states().copy()
     states[_nonzero_volume_indices] = y[lo : hi]
 
     # need to fill in the zero volume states with the correct concentration
@@ -318,9 +320,9 @@ def _ode_fun(t, y, ydot):
     """
     # TODO: make this so that the section1d parts use cptrs (can't do this directly for 3D because sum, but could maybe move that into the C)
     # the old way: _section1d_transfer_to_legacy()
-    for sr in _species_get_all_species().values():
-        s = sr()
-        if s is not None: s._transfer_to_legacy()
+#    for sr in _species_get_all_species().values():
+#        s = sr()
+#        if s is not None: s._transfer_to_legacy()
 
     
     if ydot is not None:
@@ -734,15 +736,15 @@ _orig_fixed_step_solve = _fixed_step_solve
 _orig_ode_jacobian = _ode_jacobian
 
 # wrapper functions allow swapping in experimental alternatives
-def _w_ode_jacobian(dt, t, ypred, fpred): return _ode_jacobian(dt, t, ypred, fpred)
+def _w_ode_jacobian(dt, t, ypred, fpred): return None #_ode_jacobian(dt, t, ypred, fpred)
 #def _w_conductance(d): return _conductance(d)
 _w_conductance = None
 def _w_setup(): return _setup()
-def _w_currents(rhs): return _currents(rhs)
+def _w_currents(rhs): return None 
 def _w_ode_count(offset): return _ode_count(offset)
-def _w_ode_reinit(y): return _ode_reinit(y)
-def _w_ode_fun(t, y, ydot): return None #_ode_fun(t, y, ydot)
-def _w_ode_solve(dt, t, b, y): return None #_ode_solve(dt, t, b, y)
+def _w_ode_reinit(y): return None 
+def _w_ode_fun(t, y, ydot): return None
+def _w_ode_solve(dt, t, b, y): return None # _ode_solve(dt, t, b, y)
 def _w_fixed_step_solve(raw_dt): return None # _section1d_transfer_to_legacy # _fixed_step_solve(raw_dt)
 def _w_atolscale(y): return _atolscale(y)
 _callbacks = [_w_setup, None, _w_currents, _w_conductance, _w_fixed_step_solve,
@@ -802,7 +804,7 @@ def _update_node_data(force=False):
         _curr_scales = _numpy_array(_curr_scales)        
 
 def _send_euler_matrix_to_c(nrow, nnonzero, nonzero_i, nonzero_j, nonzero_values, zero_volume_indices):
-    section1d._transfer_to_legacy() 
+    section1d._transfer_to_legacy()
     set_euler_matrix(nrow, nnonzero, nonzero_i, nonzero_j, nonzero_values,
                      zero_volume_indices, len(zero_volume_indices),
                      _diffusion_a_base, _diffusion_b_base, _diffusion_d_base,
@@ -811,16 +813,10 @@ def _send_euler_matrix_to_c(nrow, nnonzero, nonzero_i, nonzero_j, nonzero_values
                      _list_to_pyobject_array(_curr_ptrs), 
                      len(section1d._all_cindices), 
                      _list_to_cint_array(section1d._all_cindices), 
-                     _list_to_pyobject_array(section1d._all_cptrs)
-)
-
-
-
-
+                     _list_to_pyobject_array(section1d._all_cptrs))
 
 def _matrix_to_rxd_sparse(m):
     """precondition: assumes m a numpy array"""
-
     nonzero_i, nonzero_j = zip(*m.keys())
     nonzero_values = numpy.ascontiguousarray(m.values(), dtype=numpy.float64)
 
@@ -913,9 +909,10 @@ def _setup_matrices():
             for sr in list(_species_get_all_species().values()):
                 s = sr()
                 if s is not None:
-                    #print '_diffusion_matrix.shape = %r, n = %r, species._has_3d = %r' % (_diffusion_matrix.shape, n, species._has_3d)
                     s._setup_diffusion_matrix(_diffusion_matrix)
                     s._setup_c_matrix(_linmodadd_c)
+                    #print '_diffusion_matrix.shape = %r, n = %r, species._has_3d = %r' % (_diffusion_matrix.shape, n, species._has_3d)
+
             
             # modify C for cases where no diffusive coupling of 0, 1 ends
             # TODO: is there a better way to handle no diffusion?
@@ -1018,9 +1015,8 @@ def _setup_matrices():
         _calculate_diffusion_bases()
         _update_node_data()
         _send_euler_matrix_to_c(_euler_matrix_nrow, _euler_matrix_nnonzero, _euler_matrix_i, _euler_matrix_j, _euler_matrix_nonzero, _zero_volume_indices)
-
-
-
+    else:
+        setup_solver(_node_get_states(), len(_node_get_states()))
 
     # we do this last because of performance issues with changing sparsity of csr matrices
     if _diffusion_matrix is not None:
@@ -1247,7 +1243,7 @@ def _compile_reactions():
     # now setup the reactions
     #if there are no reactions
     if location_count == 0 and len(ecs_regions_inv) == 0:
-        setup_solver(_node_get_states(), h._ref_t, h._ref_dt, location_count)
+        setup_solver(_node_get_states(), len(_node_get_states()))
         return None
 
     #Setup intracellular and multicompartment reactions
@@ -1324,16 +1320,17 @@ def _compile_reactions():
                             fxn_string += "\n\trhs[%d][%d] %s (%g) * rate;" % (idx, region_id, operator, summed_mults[idx])
               
             fxn_string += "\n}\n"
-            """print "num_species=%i\t num_regions=%i\t num_segments=%i\n" % (creg.num_species, creg.num_regions, creg.num_segments) 
+            print "num_species=%i\t num_regions=%i\t num_segments=%i\n" % (creg.num_species, creg.num_regions, creg.num_segments)
+            print creg.get_state_index()
             print "state_index %s \t num_ecs_species=%i\t ecs_species_ids %s\n" % (creg.get_state_index().shape, creg.num_ecs_species, creg.get_ecs_species_ids().shape)
             print "ecs_index %s\t mc_mult_count=%i \t mc_mult_list %s\n" % (creg.get_ecs_index().shape, mc_mult_count, numpy.array(mc_mult_list, dtype=ctypes.c_double).shape)
             print mc_mult_list
-            print fxn_string"""
+            print fxn_string
             register_rate(creg.num_species, creg.num_regions, creg.num_segments, creg.get_state_index(),
                           creg.num_ecs_species, creg.get_ecs_species_ids(), creg.get_ecs_index(),
                           mc_mult_count, numpy.array(mc_mult_list, dtype=ctypes.c_double), 
                           _c_compile(fxn_string))
-        setup_solver(_node_get_states(), h._ref_t, h._ref_dt, location_count)
+        setup_solver(_node_get_states(), len(_node_get_states()))
 
     
     #Setup extracellular reactions
