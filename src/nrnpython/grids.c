@@ -6,12 +6,8 @@ a linked list of Grid_nodes
 ******************************************************************/
 #include <stdio.h>
 #include <assert.h>
+#include "nrnpython.h"
 #include "grids.h"
-#ifdef __APPLE__
-#include <Python/Python.h>
-#else
-#include <Python.h>
-#endif
 
 extern int NUM_THREADS;
 double *dt_ptr;
