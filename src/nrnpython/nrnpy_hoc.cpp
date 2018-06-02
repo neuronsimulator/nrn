@@ -1851,7 +1851,7 @@ static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
           if (op != Py_EQ && op != Py_NE) {
             return NULL;
           }
-          if (self->nindex_ != (((PyHocObject*)other)->nindex_)) {
+          if (self->nindex_ != (((PyHocObject*)other)->nindex_) || self->sym_ != (((PyHocObject*)other)->sym_)) {
             if (op == Py_NE) {
               Py_RETURN_TRUE;
             }
