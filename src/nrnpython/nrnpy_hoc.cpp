@@ -1838,7 +1838,7 @@ static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
             } else if (op == Py_EQ) {
               Py_RETURN_FALSE;
             }
-            return NULL;
+            Py_RETURN_NOTIMPLEMENTED;
           }
           self_ptr = (void*) self->sym_;
           other_ptr = (void*) (((PyHocObject*)other)->sym_);
@@ -1849,7 +1849,7 @@ static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
           break;
         case PyHoc::HocArray:
           if (op != Py_EQ && op != Py_NE) {
-            return NULL;
+            Py_RETURN_NOTIMPLEMENTED;
           }
           if (self->nindex_ != (((PyHocObject*)other)->nindex_) || self->sym_ != (((PyHocObject*)other)->sym_)) {
             if (op == Py_NE) {
