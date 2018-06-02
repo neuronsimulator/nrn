@@ -138,7 +138,7 @@ def voxelize2(source, dx=0.25, xlo=None, xhi=None, ylo=None, yhi=None, zlo=None,
     
     # for each triangle, compute the area. Add it to the appropriate spots in sa_grid
     # TODO: move this to C? or at least cythonize it?
-    for tdata in triangles.reshape(len(triangles) / 9, 9):
+    for tdata in triangles.reshape(len(triangles) // 9, 9):
         v0, v1, v2 = tdata[0 : 3], tdata[3 : 6], tdata[6 : 9]
         centerx, centery, centerz = (v0 + v1 + v2) / 3
         i, j, k = (centerx - xlo) / dx, (centery - ylo) / dx, (centerz - zlo) / dx
@@ -162,7 +162,7 @@ def voxelize2(source, dx=0.25, xlo=None, xhi=None, ylo=None, yhi=None, zlo=None,
     #for i, j, k in zip(*surface_nodes):
     #    volume_values[i, j, k] = surfaces.volume_inside_cell(i, j, k, chunk_objs[i // chunk_size][j // chunk_size][k // chunk_size], xs, ys, zs)
     
-    return mesh, surface_areas, volumes, triangles.reshape(len(triangles) / 9, 9)
+    return mesh, surface_areas, volumes, triangles.reshape(len(triangles) // 9, 9)
 
             
             
