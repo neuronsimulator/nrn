@@ -1821,8 +1821,74 @@ PyObject* nrn_ptr_richcmp(void* self_ptr, void* other_ptr, int op) {
 static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
   void* self_ptr = (void*)(self->ho_);
   void* other_ptr = (void*)other;
+  bool are_equal = true;
   if (PyObject_TypeCheck(other, hocobject_type)) {
-    other_ptr = (void*)(((PyHocObject*)other)->ho_);
+    if (((PyHocObject*)other)->type_ == self->type_) {
+      switch(self->type_) {
+        case PyHoc::HocRefNum:
+        case PyHoc::HocRefStr:
+        case PyHoc::HocRefObj:
+          /* only same objects can point to same h.ref */
+          self_ptr = (void*) self;
+          break;
+        case PyHoc::HocFunction:
+          if (self->ho_ != (void*)(((PyHocObject*)other)->ho_)) {
+            if (op == Py_NE) {
+              Py_RETURN_TRUE;
+            } else if (op == Py_EQ) {
+              Py_RETURN_FALSE;
+            }
+            /* different classes, comparing < or > doesn't make sense */
+            PyErr_SetString(PyExc_TypeError, "this comparison is undefined");
+            return NULL;
+          }
+          self_ptr = (void*) self->sym_;
+          other_ptr = (void*) (((PyHocObject*)other)->sym_);
+          break;
+        case PyHoc::HocScalarPtr:
+          self_ptr = self->u.px_;
+          other_ptr = (void*)(((PyHocObject*)other)->u.px_);
+          break;
+        case PyHoc::HocArrayIncomplete:
+        case PyHoc::HocArray:
+          if (op != Py_EQ && op != Py_NE) {
+            /* comparing partial arrays doesn't make sense */
+            PyErr_SetString(PyExc_TypeError, "this comparison is undefined");
+            return NULL;
+          }
+          if (self->ho_ != (void*)(((PyHocObject*)other)->ho_)) {
+            /* different objects */
+            other_ptr = (void*)(((PyHocObject*)other)->ho_);
+            break;
+          }
+          if (self->nindex_ != (((PyHocObject*)other)->nindex_) || self->sym_ != (((PyHocObject*)other)->sym_)) {
+            if (op == Py_NE) {
+              Py_RETURN_TRUE;
+            }
+            Py_RETURN_FALSE;
+          }
+          for (int i = 0; i < self->nindex_; i++) {
+            if (self->indices_[i] != ((PyHocObject*)other)->indices_[i]) {
+              are_equal = false;
+            }
+          }
+          if (are_equal == (op == Py_EQ)) {
+            Py_RETURN_TRUE;
+          }
+          Py_RETURN_FALSE;
+        default:
+          other_ptr = (void*)(((PyHocObject*)other)->ho_);
+      }
+    } else {
+      if (op == Py_EQ) {
+        Py_RETURN_FALSE;
+      } else if (op == Py_NE) {
+        Py_RETURN_TRUE;
+      } 
+      /* different NEURON object types are incomperable besides for (in)equality */
+      PyErr_SetString(PyExc_TypeError, "this comparison is undefined");
+      return NULL;
+    }
   }
   return nrn_ptr_richcmp(self_ptr, other_ptr, op);
 }
