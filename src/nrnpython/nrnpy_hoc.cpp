@@ -1838,7 +1838,9 @@ static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
             } else if (op == Py_EQ) {
               Py_RETURN_FALSE;
             }
-            Py_RETURN_NOTIMPLEMENTED;
+            /* different classes, comparing < or > doesn't make sense */
+            PyErr_SetString(PyExc_TypeError, "this comparison is undefined");
+            return NULL;
           }
           self_ptr = (void*) self->sym_;
           other_ptr = (void*) (((PyHocObject*)other)->sym_);
@@ -1849,7 +1851,9 @@ static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
           break;
         case PyHoc::HocArray:
           if (op != Py_EQ && op != Py_NE) {
-            Py_RETURN_NOTIMPLEMENTED;
+            /* comparing partial arrays doesn't make sense */
+            PyErr_SetString(PyExc_TypeError, "this comparison is undefined");
+            return NULL;
           }
           if (self->nindex_ != (((PyHocObject*)other)->nindex_) || self->sym_ != (((PyHocObject*)other)->sym_)) {
             if (op == Py_NE) {
