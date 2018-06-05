@@ -168,7 +168,7 @@ SectionEnd
 ; optional section
 ;Section /o "" nrnenvvar
 ;Section /o "!For all users, Set NEURONHOME and append to PYTHONPATH. This is needed if you wish to launch Python from a terminal other than the bash icon." nrnenvvar
-Section /o "!Set DOS environment. (Useful if you wish to launch Python from a terminal not started by the bash icon.)" nrnenvvar
+Section "!Set DOS environment. (Useful if you wish to launch Python from a terminal not started by the bash icon.)" nrnenvvar
   ${EnvVarUpdate} $0 "NEURONHOME" "A" "HKCU" "$INSTDIR"
   ${EnvVarUpdate} $0 "PYTHONPATH" "A" "HKCU" "$INSTDIR\lib\python"
   Push "$INSTDIR\bin"
