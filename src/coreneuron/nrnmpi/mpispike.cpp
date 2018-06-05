@@ -248,15 +248,6 @@ int nrnmpi_spike_exchange_compressed() {
     return ntot;
 }
 
-double nrnmpi_mindelay(double m) {
-    double result;
-    if (!nrnmpi_use) {
-        return m;
-    }
-    MPI_Allreduce(&m, &result, 1, MPI_DOUBLE, MPI_MIN, nrnmpi_comm);
-    return result;
-}
-
 int nrnmpi_int_allmax(int x) {
     int result;
     if (nrnmpi_numprocs < 2) {

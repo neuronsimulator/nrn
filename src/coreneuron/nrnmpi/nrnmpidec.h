@@ -89,7 +89,6 @@ extern void nrnmpi_check_threading_support();
 extern void nrnmpi_spike_initialize(void);
 extern int nrnmpi_spike_exchange(void);
 extern int nrnmpi_spike_exchange_compressed(void);
-extern double nrnmpi_mindelay(double maxdel);
 extern int nrnmpi_int_allmax(int i);
 extern void nrnmpi_int_gather(int* s, int* r, int cnt, int root);
 extern void nrnmpi_int_gatherv(int* s, int scnt, int* r, int* rcnt, int* rdispl, int root);

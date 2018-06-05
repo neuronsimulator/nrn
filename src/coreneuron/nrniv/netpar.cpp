@@ -801,15 +801,14 @@ double set_mindelay(double maxdelay) {
 
     // printf("%d netpar_mindelay local %g now calling nrnmpi_mindelay\n", nrnmpi_myid, mindelay);
     //	double st = time();
-    mindelay_ = nrnmpi_mindelay(mindelay);
+    mindelay_ = nrnmpi_dbl_allmin(mindelay);
     //	add_wait_time(st);
     // printf("%d local min=%g  global min=%g\n", nrnmpi_myid, mindelay, mindelay_);
     errno = 0;
-    return mindelay;
 #else
     mindelay_ = mindelay;
-    return mindelay;
 #endif  // NRNMPI
+    return mindelay_;
 }
 
 void BBS_netpar_spanning_statistics(int* nsend, int* nsendmax, int* nrecv, int* nrecv_useful) {
