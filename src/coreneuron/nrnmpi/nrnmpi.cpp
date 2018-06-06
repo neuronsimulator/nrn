@@ -214,4 +214,4 @@ int nrnmpi_initialized() {
     return flag;
 }
 
-} //namespace coreneuron
+}  // namespace coreneuron

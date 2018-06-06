@@ -106,4 +106,4 @@ void set_globals(const char* path) {
     delete n2v;
     n2v = NULL;
 }
-} //namespace coreneuron
+}  // namespace coreneuron

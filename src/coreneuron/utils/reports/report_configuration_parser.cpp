@@ -117,4 +117,4 @@ std::vector<ReportConfiguration> create_report_configurations(const char* conf_f
     fclose(fp);
     return reports;
 }
-} //namespace coreneuron
+}  // namespace coreneuron

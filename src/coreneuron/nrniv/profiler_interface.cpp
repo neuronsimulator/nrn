@@ -18,10 +18,9 @@ namespace coreneuron {
 
 static int cray_acc_debug_orig = 0;
 static int cray_acc_debug_zero = 0;
-} //namespace coreneuron
+}  // namespace coreneuron
 #endif
 namespace coreneuron {
-
 
 void start_profile() {
     if (nrnmpi_myid == 0)
@@ -65,4 +64,4 @@ void stop_profile() {
     TAU_DISABLE_INSTRUMENTATION();
 #endif
 }
-}//namespace coreneuron
+}  // namespace coreneuron

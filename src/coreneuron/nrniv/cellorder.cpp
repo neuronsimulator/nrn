@@ -683,5 +683,5 @@ void solve_interleaved(int ith) {
         solve_interleaved1(ith);
     }
 }
-} //namespace coreneuron 
+}  // namespace coreneuron
 #endif

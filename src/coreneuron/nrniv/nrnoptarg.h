@@ -57,5 +57,5 @@ int nrnopt_get_int(const char* name);
 double nrnopt_get_dbl(const char* name);
 std::string nrnopt_get_str(const char* name);
 void nrnopt_modify_dbl(const char* name, double value);
-} //namespace coreneuron
+}  // namespace coreneuron
 #endif

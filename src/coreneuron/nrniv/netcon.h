@@ -183,5 +183,5 @@ class NetParEvent : public DiscreteEvent {
 
     virtual void pr(const char*, double t, NetCvode*);
 };
-} //namespace coreneuron
+}  // namespace coreneuron
 #endif

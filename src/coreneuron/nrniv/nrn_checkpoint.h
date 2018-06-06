@@ -110,5 +110,5 @@ typedef struct NrnThreadChkpnt {
 } NrnThreadChkpnt;
 
 extern NrnThreadChkpnt* nrnthread_chkpnt;
-} //namespace coreneuron
+}  // namespace coreneuron
 #endif

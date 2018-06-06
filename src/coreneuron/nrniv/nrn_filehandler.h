@@ -279,5 +279,5 @@ class FileHandler {
         F << "chkpnt " << chkpnt++ << "\n";
     }
 };
-} //namespace coreneuron
+}  // namespace coreneuron
 #endif  // ifndef nrn_filehandler_h

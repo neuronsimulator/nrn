@@ -72,7 +72,6 @@ struct SPTREE {
 
     /* Statistics, not strictly necessary, but handy for tuning  */
     int enqcmps; /* compares in spenq */
-
 };
 
 #define spinit sptq_spinit
@@ -214,6 +213,6 @@ class TQueue {
     unsigned long ncompare, nleastsrch, nfind, nfindsrch, nmove, nfastmove;
 #endif
 };
-} //namespace coreneuron
+}  // namespace coreneuron
 #include "coreneuron/nrniv/tqueue.ipp"
 #endif

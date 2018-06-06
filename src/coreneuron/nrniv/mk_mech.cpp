@@ -172,4 +172,4 @@ const char* nrn_get_mechname(int type) {
     }
     return NULL;
 }
-} //namespace coreneuron
+}  // namespace coreneuron

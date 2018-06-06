@@ -62,7 +62,9 @@ struct NrnThreadBAList {
 /* for OpenACC, in order to avoid an error while update PreSyn, with virtual base
  * class, we are adding helper with flag variable which could be updated on GPU
  */
-struct PreSynHelper { int flag_; };
+struct PreSynHelper {
+    int flag_;
+};
 
 struct NrnThread {
     double _t;
@@ -105,8 +107,8 @@ struct NrnThread {
                              compartment */
     int* _v_parent_index;
     int* _permute;
-    char* _sp13mat;                     /* handle to general sparse matrix */
-    Memb_list* _ecell_memb_list;        /* normally nil */
+    char* _sp13mat;              /* handle to general sparse matrix */
+    Memb_list* _ecell_memb_list; /* normally nil */
 
     double _ctime; /* computation time in seconds (using nrnmpi_wtime) */
 
@@ -121,9 +123,7 @@ struct NrnThread {
 
     int* _watch_types; /* NULL or 0 terminated array of integers */
     void* mapping;     /* section to segment mapping information */
-
 };
-
 
 extern void nrn_threads_create(int n, int parallel);
 extern int nrn_nthread;
@@ -135,6 +135,6 @@ extern void nrn_threads_free(void);
 
 extern int _nrn_skip_initmodel;
 
-} //namespace coreneuron
+}  // namespace coreneuron
 
 #endif

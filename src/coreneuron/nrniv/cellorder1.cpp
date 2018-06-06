@@ -669,4 +669,4 @@ for (int i = 0; i <= nwarp; ++i){
 }
 #endif
 }
-} //namespace coreneuron
+}  // namespace coreneuron

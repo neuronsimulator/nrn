@@ -810,4 +810,4 @@ tryagain:
         (*net_buf_receive_[i])(nt);
     }
 }
-} //namespace coreneuron
+}  // namespace coreneuron

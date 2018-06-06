@@ -250,4 +250,4 @@ Point_process* nrn_artcell_instantiate(const char* mechname) {
 
     return pnt;
 }
-}
+}  // namespace coreneuron

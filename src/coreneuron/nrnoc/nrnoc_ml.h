@@ -90,5 +90,5 @@ struct Memb_list {
     int nodecount; /* actual node count */
     int _nodecount_padded;
 };
-} //namespace coreneuron
+}  // namespace coreneuron
 #endif

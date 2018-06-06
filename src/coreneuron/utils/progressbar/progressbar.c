@@ -1,14 +1,14 @@
 /**
-* \file
-* \author Trevor Fountain
-* \author Johannes Buchner
-* \author Erik Garrison
-* \date 2010-2014
-* \copyright BSD 3-Clause
-*
-* progressbar -- a C class (by convention) for displaying progress
-* on the command line (to stdout).
-*/
+ * \file
+ * \author Trevor Fountain
+ * \author Johannes Buchner
+ * \author Erik Garrison
+ * \date 2010-2014
+ * \copyright BSD 3-Clause
+ *
+ * progressbar -- a C class (by convention) for displaying progress
+ * on the command line (to stdout).
+ */
 
 #include <assert.h>
 #include <limits.h>
@@ -45,10 +45,10 @@ typedef struct {
 static void progressbar_draw(const progressbar* bar);
 
 /**
-* Create a new progress bar with the specified label, max number of steps, and format string.
-* Note that `format` must be exactly three characters long, e.g. "<->" to render a progress
-* bar like "<---------->". Returns NULL if there isn't enough memory to allocate a progressbar
-*/
+ * Create a new progress bar with the specified label, max number of steps, and format string.
+ * Note that `format` must be exactly three characters long, e.g. "<->" to render a progress
+ * bar like "<---------->". Returns NULL if there isn't enough memory to allocate a progressbar
+ */
 progressbar* progressbar_new_with_format(const char* label, unsigned long max, const char* format) {
     progressbar* new = malloc(sizeof(progressbar));
     if (new == NULL) {
@@ -71,8 +71,8 @@ progressbar* progressbar_new_with_format(const char* label, unsigned long max, c
 }
 
 /**
-* Create a new progress bar with the specified label and max number of steps.
-*/
+ * Create a new progress bar with the specified label and max number of steps.
+ */
 progressbar* progressbar_new(const char* label, unsigned long max) {
     return progressbar_new_with_format(label, max, "|=|");
 }
@@ -82,15 +82,15 @@ void progressbar_update_label(progressbar* bar, const char* label) {
 }
 
 /**
-* Delete an existing progress bar.
-*/
+ * Delete an existing progress bar.
+ */
 void progressbar_free(progressbar* bar) {
     free(bar);
 }
 
 /**
-* Increment an existing progressbar by `value` steps.
-*/
+ * Increment an existing progressbar by `value` steps.
+ */
 void progressbar_update(progressbar* bar, unsigned long value, double t) {
     bar->value = value;
     bar->t = t;
@@ -98,8 +98,8 @@ void progressbar_update(progressbar* bar, unsigned long value, double t) {
 }
 
 /**
-* Increment an existing progressbar by a single step.
-*/
+ * Increment an existing progressbar by a single step.
+ */
 void progressbar_inc(progressbar* bar, double t) {
     progressbar_update(bar, bar->value + 1, t);
 }
@@ -194,8 +194,8 @@ static void progressbar_draw(const progressbar* bar) {
 }
 
 /**
-* Finish a progressbar, indicating 100% completion, and free it.
-*/
+ * Finish a progressbar, indicating 100% completion, and free it.
+ */
 void progressbar_finish(progressbar* bar) {
     // Make sure we fill the progressbar so things look complete.
     progressbar_draw(bar);

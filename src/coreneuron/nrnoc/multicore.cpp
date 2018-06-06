@@ -482,4 +482,4 @@ void nrn_multithread_job(void* (*job)(NrnThread*)) {
     }
 #endif
 }
-} // namespace coreneuron
+}  // namespace coreneuron

@@ -147,16 +147,16 @@ double nrn_nernst(double ci, double co, double z, double celsius);
 extern void hoc_register_prop_size(int, int, int);
 extern void hoc_register_dparam_semantics(int type, int, const char* name);
 
-struct DoubScal{
+struct DoubScal {
     const char* name;
     double* pdoub;
 };
-struct DoubVec{
+struct DoubVec {
     const char* name;
     double* pdoub;
     int index1;
 };
-struct VoidFunc{
+struct VoidFunc {
     const char* name;
     void (*func)(void);
 };
@@ -216,6 +216,6 @@ extern void net_sem_from_gpu(int, int, int, int, int, double, double);
 extern void hoc_malchk(void); /* just a stub */
 extern void* hoc_Emalloc(size_t);
 
-} // namespace coreneuron
+}  // namespace coreneuron
 
 #endif /* nrn_memb_func_h */

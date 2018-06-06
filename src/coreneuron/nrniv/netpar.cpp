@@ -914,4 +914,4 @@ int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth) {
     return 0;
 #endif
 }
-} //namespace coreneuron
+}  // namespace coreneuron

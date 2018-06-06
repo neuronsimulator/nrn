@@ -178,4 +178,4 @@ void nrn_partrans::gap_update_indices() {
         }
     }
 }
-} //namespace coreneuron
+}  // namespace coreneuron

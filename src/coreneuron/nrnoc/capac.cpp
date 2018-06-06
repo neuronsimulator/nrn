@@ -179,4 +179,4 @@ void nrn_alloc_capacitance(double* data, Datum* pdata, int type) {
     (void)type;       /* unused */
     data[0] = DEF_cm; /*default capacitance/cm^2*/
 }
-} //namespace coreneuron
+}  // namespace coreneuron

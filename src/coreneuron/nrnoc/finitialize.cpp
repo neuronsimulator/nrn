@@ -106,4 +106,4 @@ void nrn_finitialize(int setv, double v) {
     nrn_spike_exchange(nrn_threads);
 #endif
 }
-} //namespace coreneuron
+}  // namespace coreneuron

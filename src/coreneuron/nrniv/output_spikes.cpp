@@ -169,4 +169,4 @@ void validation(std::vector<std::pair<double, int> >& res) {
         if (spikevec_gid[i] > -1)
             res.push_back(std::make_pair(spikevec_time[i], spikevec_gid[i]));
 }
-} //namespace coreneuron
+}  // namespace coreneuron

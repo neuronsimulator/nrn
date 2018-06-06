@@ -598,4 +598,4 @@ void spdelete(SPBLK* n, SPTREE* q) {
     }
 
 } /* spdelete */
-}//namespace coreneuron
+}  // namespace coreneuron

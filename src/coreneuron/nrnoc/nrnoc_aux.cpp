@@ -32,7 +32,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnmpi/nrnmpidec.h"
 
-
 namespace coreneuron {
 int stoprun;
 int v_structure_change;
@@ -155,7 +154,6 @@ double hoc_Exp(double x) {
  * abort in case of missmatch
  */
 void check_bbcore_write_version(const char* version) {
-
     if (strcmp(version, bbcore_write_version) != 0) {
         if (nrnmpi_myid == 0)
             fprintf(stderr,
@@ -164,4 +162,4 @@ void check_bbcore_write_version(const char* version) {
         abort();
     }
 }
-} // namespace coreneuron
+}  // namespace coreneuron

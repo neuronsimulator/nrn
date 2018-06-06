@@ -92,5 +92,5 @@ class NetCvode {
     void init_events();
     void point_receive(int, Point_process*, double*, double);
 };
-} //namespace coreneuron
+}  // namespace coreneuron
 #endif

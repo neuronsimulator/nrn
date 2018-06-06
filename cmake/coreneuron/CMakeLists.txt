@@ -185,7 +185,17 @@ if(CLANG_FORMAT_FOUND)
 
     # exclude ezoption header file
     list(REMOVE_ITEM SRC_FILES_FOR_CLANG_FORMAT
-        "${PROJECT_SOURCE_DIR}/coreneuron/utils/ezoption/ezOptionParser.hpp")
+        ${PROJECT_SOURCE_DIR}/coreneuron/utils/ezoption/ezOptionParser.hpp
+        ${PROJECT_SOURCE_DIR}/coreneuron/utils/endianness.h
+        ${PROJECT_SOURCE_DIR}/coreneuron/utils/swap_endian.h)
+
+    # exclude random123 files
+    file (GLOB_RECURSE RANDOM123_FILES
+        ${PROJECT_SOURCE_DIR}/coreneuron/utils/randoms/Random123/*.cpp
+        ${PROJECT_SOURCE_DIR}/coreneuron/utils/randoms/Random123/*.h)
+    foreach (R123_PATH ${RANDOM123_FILES})
+        list (REMOVE_ITEM SRC_FILES_FOR_CLANG_FORMAT ${R123_PATH})
+    endforeach(R123_PATH)
 
     add_custom_target(formatsource COMMAND ${CMAKE_COMMAND}
         -DSOURCE_FILES:STRING="${SRC_FILES_FOR_CLANG_FORMAT}"

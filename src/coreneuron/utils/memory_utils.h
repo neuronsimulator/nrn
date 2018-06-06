@@ -53,5 +53,5 @@ void report_mem_usage(const char* message, bool all_ranks = false);
  *  @return memory usage in KBs
  */
 double nrn_mallinfo(void);
-}
+}  // namespace coreneuron
 #endif /* ifndef NRN_MEMORY_UTILS */

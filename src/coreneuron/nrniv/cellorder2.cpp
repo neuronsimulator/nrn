@@ -530,4 +530,4 @@ void group_order2(VecTNode& nodevec, size_t groupsize, size_t ncell) {
     std::sort(nodevec.begin() + ncell, nodevec.end(), final_nodevec_cmp);
     set_nodeindex(nodevec);
 }
-} //namespace coreneuron
+}  // namespace coreneuron

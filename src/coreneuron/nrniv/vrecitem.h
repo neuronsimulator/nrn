@@ -108,5 +108,5 @@ class VecPlayContinuous : public PlayRecord {
 
     PlayRecordEvent* e_;
 };
-} //namespace coreneuron
+}  // namespace coreneuron
 #endif

@@ -57,5 +57,5 @@ void copy_array(T*& dest, T* src, size_t n) {
 #if INTERLEAVE_DEBUG
 void mk_cell_indices();
 #endif
-} //namespace coreneuron
+}  // namespace coreneuron
 #endif

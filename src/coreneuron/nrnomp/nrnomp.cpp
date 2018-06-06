@@ -40,4 +40,4 @@ int nrnomp_get_numthreads() {
     return 1;
 #endif
 }
-} //namespace coreneuron
+}  // namespace coreneuron

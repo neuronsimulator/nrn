@@ -26,7 +26,6 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
 namespace coreneuron {
 
 extern void capacitance_reg(void), _passive_reg(void),
@@ -43,4 +42,4 @@ static void (*mechanism[])(void) = {/* type will start at 3 */
 #endif
                                     _stim_reg, _hh_reg, _expsyn_reg, _netstim_reg, _exp2syn_reg, 0};
 
-} //namespace coreneuron
+}  // namespace coreneuron

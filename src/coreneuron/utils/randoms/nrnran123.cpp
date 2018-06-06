@@ -48,9 +48,9 @@ size_t nrnran123_state_size() {
 
 void nrnran123_set_globalindex(uint32_t gix) {
     k.v[0] = gix;
-    #if (defined(__CUDACC__) || defined(_OPENACC))
+#if (defined(__CUDACC__) || defined(_OPENACC))
     nrnran123_set_gpu_globalindex(gix);
-    #endif
+#endif
 }
 
 /* if one sets the global, one should reset all the stream sequences. */
@@ -158,4 +158,4 @@ double nrnran123_uint2dbl(uint32_t u) {
     /* min 2.3283064e-10 to max (1 - 2.3283064e-10) */
     return ((double)u + 1.0) * SHIFT32;
 }
-} //namespace coreneuron
+}  // namespace coreneuron

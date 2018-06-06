@@ -78,4 +78,4 @@ void _modl_set_dt_thread(double dt, NrnThread* nt) {
 double _modl_get_dt_thread(NrnThread* nt) {
     return nt->_dt;
 }
-} //namespace coreneuron
+}  // namespace coreneuron

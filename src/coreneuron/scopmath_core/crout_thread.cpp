@@ -233,4 +233,4 @@ void nrn_scopmath_solve_thread(int n,
         }
     }
 }
-} //namespace coreneuron
+}  // namespace coreneuron

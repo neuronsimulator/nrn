@@ -16,4 +16,4 @@ int get_data_index(int node_index, int variable_index, int mtype, Memb_list* ml)
     assert(layout == SOA_LAYOUT);
     return variable_index * ml->_nodecount_padded + node_index;
 }
-} //namespace coreneuron
+}  // namespace coreneuron

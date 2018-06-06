@@ -110,7 +110,7 @@ static List* newlist();
 static void freelist(List* list);
 static void linkitem(Item* item, Item* i);
 static void insert(SparseObj* so, Item* item);
-static void delete_item (Item* item);
+static void delete_item(Item* item);
 static void* myemalloc(unsigned n);
 static void myfree(void*);
 static void check_assert(SparseObj* so);
@@ -125,7 +125,7 @@ static SparseObj* create_sparseobj();
 #endif
 
 static Elm* nrn_pool_alloc(void* arg) {
-    return (Elm*) emalloc(sizeof(Elm));
+    return (Elm*)emalloc(sizeof(Elm));
 }
 
 /* sparse matrix dynamic allocation:
@@ -540,7 +540,7 @@ static void increase_order(SparseObj* so, unsigned row) {
     if (!so->do_flag)
         return;
     order = so->roworder[row];
-    delete_item (order);
+    delete_item(order);
     order->norder++;
     insert(so, order);
 }
@@ -552,7 +552,7 @@ static void reduce_order(SparseObj* so, unsigned row) {
     if (!so->do_flag)
         return;
     order = so->roworder[row];
-    delete_item (order);
+    delete_item(order);
     order->norder--;
     insert(so, order);
 }
@@ -616,7 +616,7 @@ static void get_next_pivot(SparseObj* so, unsigned i) {
 	printf("\n");
 }
 #endif
-    delete_item (order);
+    delete_item(order);
 }
 
 /* The following routines support the concept of a list.
@@ -682,7 +682,7 @@ static void insert(SparseObj* so, Item* item) {
     linkitem(i, item);
 }
 
-static void delete_item (Item* item) {
+static void delete_item(Item* item) {
     item->next->prev = item->prev;
     item->prev->next = item->next;
     item->prev = ITEM0;
@@ -801,7 +801,7 @@ static void re_link(SparseObj* so, unsigned i) {
 static SparseObj* create_sparseobj() {
     SparseObj* so;
 
-    so = (SparseObj*) myemalloc(sizeof(SparseObj));
+    so = (SparseObj*)myemalloc(sizeof(SparseObj));
     nrn_malloc_lock();
     nrn_malloc_unlock();
     so->rowst = 0;
@@ -847,4 +847,4 @@ void _nrn_destroy_sparseobj_thread(SparseObj* so) {
         freelist(so->orderlist);
     Free(so);
 }
-} //namespace coreneuron
+}  // namespace coreneuron

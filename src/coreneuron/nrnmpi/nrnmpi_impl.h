@@ -35,7 +35,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 namespace coreneuron {
 extern MPI_Comm nrnmpi_world_comm;
 extern MPI_Comm nrnmpi_comm;
-} //namespace coreneuron
+}  // namespace coreneuron
 #endif  // NRNMPI
 
 #endif

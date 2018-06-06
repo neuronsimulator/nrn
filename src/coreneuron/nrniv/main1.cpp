@@ -57,7 +57,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <climits>
 
-
 #if 0
 #include <fenv.h>
 #define NRN_FEEXCEPT (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)
@@ -242,7 +241,6 @@ void call_prcellstate_for_prcellgid(int prcellgid, int compute_gpu, int is_init)
     }
 }
 
-
 /* perform forwardskip and call prcellstate for prcellgid */
 void handle_forward_skip(double forwardskip, int prcellgid) {
     double savedt = dt;
@@ -267,11 +265,10 @@ void handle_forward_skip(double forwardskip, int prcellgid) {
 const char* nrn_version(int) {
     return "version id unimplemented";
 }
-} //namespace coreneuron
+}  // namespace coreneuron
 
 using namespace coreneuron;
 extern "C" int solve_core(int argc, char** argv) {
-
 #if NRNMPI
     nrnmpi_init(1, &argc, &argv);
 #endif
@@ -393,4 +390,3 @@ extern "C" int solve_core(int argc, char** argv) {
 
     return 0;
 }
-

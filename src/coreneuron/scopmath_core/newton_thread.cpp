@@ -244,4 +244,4 @@ void nrn_destroy_newtonspace(NewtonSpace* ns) {
     freevector(ns->rowmax);
     free((char*)ns);
 }
-} //namespace coreneuron
+}  // namespace coreneuron

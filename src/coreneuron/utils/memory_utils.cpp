@@ -120,4 +120,4 @@ void report_mem_usage(const char* message, bool all_ranks) {
     }
     fflush(stdout);
 }
-} //namespace coreneuron
+}  // namespace coreneuron

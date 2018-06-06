@@ -329,4 +329,4 @@ void permute_nodeindices(Memb_list* ml, int* p) {
     invert_permute(ml->_permute, ml->nodecount);
     permute_ptr(ml->nodeindices, ml->nodecount, ml->_permute);
 }
-} //namespace coreneuron
+}  // namespace coreneuron

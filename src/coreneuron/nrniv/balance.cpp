@@ -103,4 +103,4 @@ size_t warp_balance(size_t ncell, VecTNode& nodevec) {
 
     return nwarp;
 }
-} //namespace coreneuron
+}  // namespace coreneuron

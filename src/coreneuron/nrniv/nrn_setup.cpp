@@ -1070,9 +1070,9 @@ void read_phase2(FileHandler& F, int imult, NrnThread& nt) {
 
     if (shadow_rhs_cnt) {
         nt._shadow_rhs = (double*)ecalloc_align(nrn_soa_padded_size(shadow_rhs_cnt, 0),
-                                                            NRN_SOA_BYTE_ALIGN, sizeof(double));
+                                                NRN_SOA_BYTE_ALIGN, sizeof(double));
         nt._shadow_d = (double*)ecalloc_align(nrn_soa_padded_size(shadow_rhs_cnt, 0),
-                                                          NRN_SOA_BYTE_ALIGN, sizeof(double));
+                                              NRN_SOA_BYTE_ALIGN, sizeof(double));
         nt.shadow_rhs_cnt = shadow_rhs_cnt;
     }
 
@@ -1177,8 +1177,7 @@ void read_phase2(FileHandler& F, int imult, NrnThread& nt) {
         int szdp = nrn_prop_dparam_size_[type];
 
         if (!is_art) {
-            ml->nodeindices =
-                (int*)ecalloc_align(ml->nodecount, NRN_SOA_BYTE_ALIGN, sizeof(int));
+            ml->nodeindices = (int*)ecalloc_align(ml->nodecount, NRN_SOA_BYTE_ALIGN, sizeof(int));
             F.read_array<int>(ml->nodeindices, ml->nodecount);
         } else {
             ml->nodeindices = NULL;
@@ -1189,7 +1188,7 @@ void read_phase2(FileHandler& F, int imult, NrnThread& nt) {
 
         if (szdp) {
             ml->pdata = (int*)ecalloc_align(nrn_soa_padded_size(n, layout) * szdp,
-                                                        NRN_SOA_BYTE_ALIGN, sizeof(int));
+                                            NRN_SOA_BYTE_ALIGN, sizeof(int));
             mech_layout<int>(F, ml->pdata, n, szdp, layout);
 #if CHKPNTDEBUG  // Not substantive. Only for debugging.
             Memb_list_ckpnt* mlc = ntc.mlmap[type];
@@ -1983,4 +1982,4 @@ size_t model_size(void) {
 
     return nbyte;
 }
-} //namespace coreneuron
+}  // namespace coreneuron

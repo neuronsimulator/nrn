@@ -129,6 +129,6 @@ extern int nrnmpi_multisend_single_advance(NRNMPI_Spike* spk);
 extern int nrnmpi_multisend_conserve(int nsend, int nrecv);
 #endif
 
-} //namespace coreneuron
+}  // namespace coreneuron
 #endif
 #endif

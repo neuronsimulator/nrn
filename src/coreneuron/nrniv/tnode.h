@@ -36,5 +36,5 @@ size_t dist2child(TNode* nd);
 size_t warp_balance(size_t ncell, VecTNode& nodevec);
 
 #define warpsize 32
-}
+}  // namespace coreneuron
 #endif

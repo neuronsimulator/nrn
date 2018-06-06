@@ -29,7 +29,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef ivoc_vector_h
 #define ivoc_vector_h
 
-
 #include <stdio.h>
 #include "coreneuron/nrniv/nrnmutdec.h"
 namespace coreneuron {
@@ -93,6 +92,6 @@ extern void* vector_new1(int n);
 extern int vector_capacity(void* v);
 extern double* vector_vec(void* v);
 
-} //namespace coreneuron
+}  // namespace coreneuron
 
 #endif

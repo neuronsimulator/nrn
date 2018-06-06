@@ -19,5 +19,5 @@ void nrn_multisend_cleanup();
 void nrn_multisend_setup();
 
 void nrn_multisend_setup_targets(int use_phase2, int*& targets_phase1, int*& targets_phase2);
-} //namespace coreneuron
+}  // namespace coreneuron
 #endif  // nrnmultisend_h

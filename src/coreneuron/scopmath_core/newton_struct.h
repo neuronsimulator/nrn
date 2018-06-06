@@ -51,6 +51,6 @@ extern void nrn_destroy_newtonspace(NewtonSpace* ns);
 
 void nrn_newtonspace_copyto_device(NewtonSpace* ns);
 
-} //namespace coreneuron
+}  // namespace coreneuron
 
 #endif

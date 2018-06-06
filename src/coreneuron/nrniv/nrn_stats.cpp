@@ -212,4 +212,4 @@ void report_cell_stats(void) {
     if (nrnmpi_myid == 0)
         printf("\n\n");
 }
-} //namespace
+}  // namespace coreneuron

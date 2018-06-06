@@ -358,5 +358,5 @@ inline TQItem* TQueue<pq_que>::atomic_dq(double tt) {
     MUTUNLOCK
     return q;
 }
-} //namespace coreneuron
+}  // namespace coreneuron
 #endif

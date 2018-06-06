@@ -92,4 +92,4 @@ int abort_run(int code) {
     hoc_execerror("scopmath library error", (char*)0);
     return 0;
 }
-} //namespace coreneuron
+}  // namespace coreneuron

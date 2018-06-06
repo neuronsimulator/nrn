@@ -57,4 +57,4 @@ int euler_thread(int neqn, int* var, int* der, DIFUN fun, _threadargsproto_) {
     return 0;
 }
 
-} //namespace coreneuron
+}  // namespace coreneuron

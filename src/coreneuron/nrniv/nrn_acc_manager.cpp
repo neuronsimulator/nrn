@@ -991,5 +991,4 @@ void nrn_sparseobj_copyto_device(SparseObj* so) {
     }
 #endif
 }
-} //namespace coreneuron
-
+}  // namespace coreneuron

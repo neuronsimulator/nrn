@@ -466,4 +466,4 @@ void nrn_multisend_setup() {
 #endif
 }
 #endif  // NRN_MULTISEND
-} // namespace coreneuron
+}  // namespace coreneuron

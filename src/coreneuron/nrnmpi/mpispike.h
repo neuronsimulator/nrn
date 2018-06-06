@@ -38,13 +38,12 @@ THE POSSIBILITY OF SUCH DAMAGE.
 namespace coreneuron {
 
 #if nrn_spikebuf_size > 0
-struct NRNMPI_Spikebuf{
+struct NRNMPI_Spikebuf {
     int nspike;
     int gid[nrn_spikebuf_size];
     double spiketime[nrn_spikebuf_size];
 };
 #endif
-
 
 #define icapacity_ nrnmpi_i_capacity_
 #define spikeout_ nrnmpi_spikeout_
@@ -81,7 +80,7 @@ extern NRNMPI_Spikebuf* spbufout_;
 extern NRNMPI_Spikebuf* spbufin_;
 #endif
 
-} //namespace coreneuron
+}  // namespace coreneuron
 
 #endif  // NRNMPI
 #endif

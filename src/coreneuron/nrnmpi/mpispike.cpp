@@ -556,5 +556,5 @@ int nrnmpi_multisend_conserve(int nsend, int nrecv) {
 }
 
 #endif /*NRN_MULTISEND*/
-} //namespace coreneuron
+}  // namespace coreneuron
 #endif /*NRNMPI*/

@@ -46,8 +46,7 @@ extern int nrnmpi_myid_bbs;       /* rank in nrn_bbs_comm of rank 0 of a subworl
 void nrn_abort(int errcode);
 void nrn_fatal_error(const char* msg);
 double nrn_wtime();
-} //namespace coreneuron
-
+}  // namespace coreneuron
 
 #if NRNMPI
 
@@ -59,7 +58,7 @@ typedef struct {
 
 extern int nrnmpi_use; /* NEURON does MPI init and terminate?*/
 
-} //namespace coreneuron
+}  // namespace coreneuron
 #include "coreneuron/nrnmpi/nrnmpidec.h"
 
 #endif /*NRNMPI*/

@@ -295,4 +295,4 @@ int prcellstate(int gid, const char* suffix) {
     }
     return 0;
 }
-} //namespace coreneuron
+}  // namespace coreneuron

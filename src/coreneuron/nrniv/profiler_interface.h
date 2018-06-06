@@ -3,6 +3,6 @@
 namespace coreneuron {
 void start_profile();
 void stop_profile();
-}
+}  // namespace coreneuron
 
 #endif

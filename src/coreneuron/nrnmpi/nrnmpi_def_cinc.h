@@ -52,4 +52,4 @@ int nrnmpi_ovfl_;
 unsigned char* nrnmpi_spikeout_fixed_;
 unsigned char* nrnmpi_spikein_fixed_;
 unsigned char* nrnmpi_spikein_fixed_ovfl_;
-} //namespace coreneuron
+}  // namespace coreneuron

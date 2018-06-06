@@ -44,5 +44,5 @@ namespace coreneuron {
  */
 void report_cell_stats(void);
 
-} //namespace coreneuron
+}  // namespace coreneuron
 #endif /* ifndef _H_NRN_STATS_ */

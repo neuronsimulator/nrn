@@ -35,7 +35,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <stdint.h>
 
-
 namespace coreneuron {
 
 #define NRNBBCORE 1
@@ -56,7 +55,6 @@ typedef char Symbol;
 #define VEC_V(i) (_nt->_actual_v[(i)])
 #define VEC_AREA(i) (_nt->_actual_area[(i)])
 #define VECTORIZE 1
-
 
 extern double celsius;
 
@@ -93,6 +91,6 @@ typedef struct Point_process {
 
 extern char* pnt_name(Point_process* pnt);
 
-} //namespace coreneuron
+}  // namespace coreneuron
 
 #endif

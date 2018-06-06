@@ -52,7 +52,7 @@ namespace coreneuron {
 
 enum ReportType { SomaReport, CompartmentReport, SynapseReport };
 
-struct ReportConfiguration{
+struct ReportConfiguration {
     char name[MAX_REPORT_NAME_LEN];         // name of the report
     char output_path[MAX_REPORT_PATH_LEN];  // full path of the report
     char target_name[MAX_REPORT_NAME_LEN];  // target of the report
@@ -77,5 +77,5 @@ std::vector<ReportConfiguration> create_report_configurations(const char* filena
 void setup_report_engine(double dt_report, double mindelay);
 void finalize_report();
 void nrn_flush_reports(double t);
-} //namespace coreneuron
+}  // namespace coreneuron
 #endif  //_H_NRN_REPORT_

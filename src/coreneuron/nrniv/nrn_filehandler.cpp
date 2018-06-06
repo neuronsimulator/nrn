@@ -116,4 +116,4 @@ void FileHandler::read_checkpoint_assert() {
 void FileHandler::close() {
     F.close();
 }
-} //namespace coreneuron
+}  // namespace coreneuron

@@ -260,4 +260,4 @@ static void have_to_want(HAVEWANT_t* have,
     recv_from_have_cnt = want_s_cnt;
     recv_from_have_displ = want_s_displ;
 }
-} //namespace coreneuron
+}  // namespace coreneuron

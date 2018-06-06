@@ -115,4 +115,4 @@ static void bksub(NrnThread* _nt) {
     #pragma acc wait(stream_id)
     // clang-format on
 }
-} //namespace coreneuron
+}  // namespace coreneuron

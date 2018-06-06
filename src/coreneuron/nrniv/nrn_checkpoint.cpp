@@ -44,7 +44,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 namespace coreneuron {
 bool nrn_checkpoint_arg_exists;
 int _nrn_skip_initmodel;
-}
+}  // namespace coreneuron
 #define UseFileHandlerWrap 0
 
 #if UseFileHandlerWrap
@@ -91,7 +91,7 @@ class FileHandlerWrap {
         return *this;
     }
 };
-} //namespace coreneuron
+}  // namespace coreneuron
 #else
 
 #define FileHandlerWrap FileHandler
@@ -888,4 +888,4 @@ bool checkpoint_initialize() {
 
     return checkpoint_restored_;
 }
-} //namespace coreneuron
+}  // namespace coreneuron

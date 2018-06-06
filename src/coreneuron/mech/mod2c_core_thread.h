@@ -139,6 +139,6 @@ extern void _modl_set_dt_thread(double, NrnThread*);
 
 void nrn_sparseobj_copyto_device(SparseObj* so);
 
-} // namespace coreneuron
+}  // namespace coreneuron
 
 #endif

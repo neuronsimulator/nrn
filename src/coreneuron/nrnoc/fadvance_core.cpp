@@ -81,7 +81,7 @@ integration interval before joining
 static int step_group_n;
 static int step_group_begin;
 static int step_group_end;
-static progressbar *progress;
+static progressbar* progress;
 
 void initialize_progress_bar(int nstep) {
     if (nrnmpi_myid == 0) {
@@ -268,4 +268,4 @@ void* nrn_fixed_step_lastpart(NrnThread* nth) {
     nrn_deliver_events(nth); /* up to but not past texit */
     return (void*)0;
 }
-} //namespace coreneuron
+}  // namespace coreneuron

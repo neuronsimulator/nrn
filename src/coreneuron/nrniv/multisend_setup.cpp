@@ -702,5 +702,5 @@ static int setup_target_lists(int use_phase2, int** r_return) {
     *r_return = r;
     return sz;
 }
-} //namespace coreneuron
+}  // namespace coreneuron
 #endif  // NRN_MULTISEND

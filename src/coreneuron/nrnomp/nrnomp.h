@@ -34,7 +34,7 @@ namespace coreneuron {
 /// Get maximum number of OMP threads as defined by the OMP_NUM_THREAS environment variable
 int nrnomp_get_numthreads();
 
-} // namespace coreneuron
+}  // namespace coreneuron
 
 #include "coreneuron/nrnmpi/nrnmpidec.h"
 

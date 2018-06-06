@@ -155,6 +155,6 @@ extern DEVICE nrnran123_array4x32 nrnran123_iran(uint32_t seq, uint32_t id1, uin
 extern DEVICE double nrnran123_uint2dbl(uint32_t);
 extern void nrnran123_set_gpu_globalindex(uint32_t gix);
 
-} //namespace coreneuron
+}  // namespace coreneuron
 
 #endif

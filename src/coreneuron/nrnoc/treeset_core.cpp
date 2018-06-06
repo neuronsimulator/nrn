@@ -166,4 +166,4 @@ void* setup_tree_matrix_minimal(NrnThread* _nt) {
 
     return (void*)0;
 }
-} //namespace coreneuron
+}  // namespace coreneuron

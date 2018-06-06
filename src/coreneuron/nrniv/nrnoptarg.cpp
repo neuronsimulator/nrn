@@ -369,4 +369,4 @@ static void graceful_exit(int err) {
 #endif
     exit(nrnmpi_myid == 0 ? err : 0);
 }
-} //namespace coreneuron
+}  // namespace coreneuron

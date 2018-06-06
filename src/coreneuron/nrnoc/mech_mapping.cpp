@@ -63,4 +63,4 @@ void register_all_variables_offsets(int mech_id, SerializedNames variable_names)
     idx++;
 }
 
-}//namespace coreneuron
+}  // namespace coreneuron

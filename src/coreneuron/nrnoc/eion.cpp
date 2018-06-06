@@ -394,5 +394,5 @@ void second_order_cur(NrnThread* _nt, int secondorder) {
             }
     }
 }
-} //namespace coreneuron
+}  // namespace coreneuron
 #endif

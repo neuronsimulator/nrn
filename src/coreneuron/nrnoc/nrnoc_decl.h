@@ -75,5 +75,5 @@ extern void nrn_fatal_error(const char* msg);
 extern void nrn_abort(int errcode);
 extern double nrn_wtime(void);
 
-}
+}  // namespace coreneuron
 #endif

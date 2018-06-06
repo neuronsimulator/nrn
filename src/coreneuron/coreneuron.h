@@ -67,6 +67,6 @@ extern void nrn_cur_ion(NrnThread* _nt, Memb_list* ml, int type);
 extern void nrn_alloc_ion(double* data, Datum* pdata, int type);
 extern void second_order_cur(NrnThread* _nt, int secondorder);
 
-} //namespace coreneuron
+}  // namespace coreneuron
 
 #endif

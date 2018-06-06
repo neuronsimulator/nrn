@@ -96,6 +96,6 @@ printf("nrn_timeout %d\n", seconds);
 }
 
 #endif /* DISABLE_TIMEOUT */
-} // namespace coreneuron
+}  // namespace coreneuron
 
 #endif /*NRNMPI*/

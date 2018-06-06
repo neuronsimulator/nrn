@@ -16,7 +16,7 @@ class SidData {
     std::vector<int> indices_;
 };
 
-} //namespace coreneuron
+}  // namespace coreneuron
 #if NRNLOGSGID
 #define sgid_alltoallv nrnmpi_long_alltoallv
 #else
@@ -290,4 +290,4 @@ void nrn_partrans::gap_indices_permute(NrnThread& nt) {
         delete[] oldisi;
     }
 }
-} //namespace coreneuron
+}  // namespace coreneuron

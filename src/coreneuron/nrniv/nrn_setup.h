@@ -58,93 +58,93 @@ extern void nrn_setup_cleanup();
 
 namespace coreneuron {
 
-    /// Reading phase number.
-    enum phase { one = 1, two, three, gap };
+/// Reading phase number.
+enum phase { one = 1, two, three, gap };
 
-    /// Get the phase number in form of the string.
-    template <phase P>
-    inline std::string getPhaseName();
+/// Get the phase number in form of the string.
+template <phase P>
+inline std::string getPhaseName();
 
-    template <>
-    inline std::string getPhaseName<one>() {
-        return "1";
-    }
+template <>
+inline std::string getPhaseName<one>() {
+    return "1";
+}
 
-    template <>
-    inline std::string getPhaseName<two>() {
-        return "2";
-    }
+template <>
+inline std::string getPhaseName<two>() {
+    return "2";
+}
 
-    template <>
-    inline std::string getPhaseName<three>() {
-        return "3";
-    }
+template <>
+inline std::string getPhaseName<three>() {
+    return "3";
+}
 
-    template <>
-    inline std::string getPhaseName<gap>() {
-        return "gap";
-    }
+template <>
+inline std::string getPhaseName<gap>() {
+    return "gap";
+}
 
-    /// Reading phase selector.
-    template <phase P>
-    inline void read_phase_aux(FileHandler& F, int imult, NrnThread& nt);
+/// Reading phase selector.
+template <phase P>
+inline void read_phase_aux(FileHandler& F, int imult, NrnThread& nt);
 
-    template <>
-    inline void read_phase_aux<one>(FileHandler& F, int imult, NrnThread& nt) {
-        read_phase1(F, imult, nt);
-    }
+template <>
+inline void read_phase_aux<one>(FileHandler& F, int imult, NrnThread& nt) {
+    read_phase1(F, imult, nt);
+}
 
-    template <>
-    inline void read_phase_aux<two>(FileHandler& F, int imult, NrnThread& nt) {
-        read_phase2(F, imult, nt);
-    }
+template <>
+inline void read_phase_aux<two>(FileHandler& F, int imult, NrnThread& nt) {
+    read_phase2(F, imult, nt);
+}
 
-    template <>
-    inline void read_phase_aux<three>(FileHandler& F, int imult, NrnThread& nt) {
-        read_phase3(F, imult, nt);
-    }
+template <>
+inline void read_phase_aux<three>(FileHandler& F, int imult, NrnThread& nt) {
+    read_phase3(F, imult, nt);
+}
 
-    template <>
-    inline void read_phase_aux<gap>(FileHandler& F, int imult, NrnThread& nt) {
-        read_phasegap(F, imult, nt);
-    }
+template <>
+inline void read_phase_aux<gap>(FileHandler& F, int imult, NrnThread& nt) {
+    read_phasegap(F, imult, nt);
+}
 
-    /// Reading phase wrapper for each neuron group.
-    template <phase P>
-    inline void* phase_wrapper_w(NrnThread* nt) {
-        int i = nt->id;
-        char fnamebuf[1000];
-        char check_fnamebuf[1000] = "";
-        if (i < ngroup_w) {
-            const char* data_dir = path_w;
-            // directory to read could be different for phase 2 if we are restoring
-            // all other phases still read from dataset directory because the data
-            // is constant
-            if (P == 2) {
-                data_dir = restore_path_w;
-            }
-
-            sd_ptr fname = sdprintf(fnamebuf, sizeof(fnamebuf),
-                                    std::string("%s/%d_" + getPhaseName<P>() + ".dat").c_str(),
-                                    data_dir, gidgroups_w[i]);
-
-            // if no file failed to open or not opened at all
-            file_reader_w[i].open(fname, byte_swap_w);
-
-            read_phase_aux<P>(file_reader_w[i], imult_w[i], *nt);
-            file_reader_w[i].close();
-            if (P == 2) {
-                setup_ThreadData(*nt);
-            }
+/// Reading phase wrapper for each neuron group.
+template <phase P>
+inline void* phase_wrapper_w(NrnThread* nt) {
+    int i = nt->id;
+    char fnamebuf[1000];
+    char check_fnamebuf[1000] = "";
+    if (i < ngroup_w) {
+        const char* data_dir = path_w;
+        // directory to read could be different for phase 2 if we are restoring
+        // all other phases still read from dataset directory because the data
+        // is constant
+        if (P == 2) {
+            data_dir = restore_path_w;
         }
-        return NULL;
-    }
 
-    /// Specific phase reading executed by threads.
-    template <phase P>
-    inline static void phase_wrapper() {
-        nrn_multithread_job(phase_wrapper_w<P>);
+        sd_ptr fname = sdprintf(fnamebuf, sizeof(fnamebuf),
+                                std::string("%s/%d_" + getPhaseName<P>() + ".dat").c_str(),
+                                data_dir, gidgroups_w[i]);
+
+        // if no file failed to open or not opened at all
+        file_reader_w[i].open(fname, byte_swap_w);
+
+        read_phase_aux<P>(file_reader_w[i], imult_w[i], *nt);
+        file_reader_w[i].close();
+        if (P == 2) {
+            setup_ThreadData(*nt);
+        }
     }
+    return NULL;
+}
+
+/// Specific phase reading executed by threads.
+template <phase P>
+inline static void phase_wrapper() {
+    nrn_multithread_job(phase_wrapper_w<P>);
+}
 }  // namespace coreneuron
-} //namespace coreneuron
+}  // namespace coreneuron
 #endif
