@@ -132,13 +132,15 @@ static void dg_adi_vol_x(Grid_node* g, const double dt, const int y, const int z
 	    RHS[x] = g->states[IDX(x,y,z)] + (dt/ALPHA(x,y,z))*
 					((Fxx(x+1,x)/SQ(g->dx)) 
 				+    (Fxy(yp,ypd,y) - Fxy(y,ymd,ym))/div_y 
-				+ 	 (Fxz(zp,zpd,z) - Fxz(z,zmd,zm))/div_z);
+				+ 	 (Fxz(zp,zpd,z) - Fxz(z,zmd,zm))/div_z)
+                + dt*g->states_cur[IDX(x,y,z)];;
 
         x = g->size_x-1;
         RHS[x]  = g->states[IDX(x,y,z)] + (dt/ALPHA(x,y,z))*
 				((Fxx(x-1,x))/SQ(g->dx) 
 			+    (Fxy(yp,ypd,y) - Fxy(y,ymd,ym))/div_y 
-			+ 	 (Fxz(zp,zpd,z) - Fxz(z,zmd,zm))/div_z);
+			+ 	 (Fxz(zp,zpd,z) - Fxz(z,zmd,zm))/div_z)
+            + dt*g->states_cur[IDX(x,y,z)];
     }
     else
     {
@@ -163,7 +165,8 @@ static void dg_adi_vol_x(Grid_node* g, const double dt, const int y, const int z
 		RHS[x] =  g->states[IDX(x,y,z)] + (dt/ALPHA(x,y,z))*
 				((Fxx(x+1,x) - Fxx(x,x-1))/SQ(g->dx) 
 			+    (Fxy(yp,ypd,y) - Fxy(y,ymd,ym))/div_y 
-			+ 	 (Fxz(zp,zpd,z) - Fxz(z,zmd,zm))/div_z);
+			+ 	 (Fxz(zp,zpd,z) - Fxz(z,zmd,zm))/div_z)
+            + dt*g->states_cur[IDX(x,y,z)];
         //fprintf(stderr,"%1.20e %1.20e %1.20e == %1.20e\n", l_diag[x-1], diag[x], u_diag[x], RHS[x]);
 	}
     //fprintf(stderr,"%1.20e %1.20e\t\t == %1.20e\n", l_diag[x-1], diag[x], RHS[x]);
@@ -415,12 +418,14 @@ static void dg_adi_tort_x(Grid_node* g, const double dt, const int y, const int 
 	    RHS[0] =  g->states[IDX(0,y,z)]
 			    + dt*((DcX(1,y,z)*g->states[IDX(1,y,z)] - DcX(1,y,z)*g->states[IDX(0,y,z)])/(2.*SQ(g->dx))
 			    +	  (DcY(0,ypd,z)*g->states[IDX(0,yp,z)] - (DcY(0,ypd,z)+DcY(0,ymd,z))*g->states[IDX(0,y,z)] + DcY(0,ymd,z)*g->states[IDX(0,ym,z)])/(div_y*SQ(g->dy))
-			    +	  (DcZ(0,y,zpd)*g->states[IDX(0,y,zp)] - (DcZ(0,y,zpd)+DcZ(0,y,zmd))*g->states[IDX(0,y,z)] + DcZ(0,y,zmd)*g->states[IDX(0,y,zm)])/(div_z*SQ(g->dz)));
+			    +	  (DcZ(0,y,zpd)*g->states[IDX(0,y,zp)] - (DcZ(0,y,zpd)+DcZ(0,y,zmd))*g->states[IDX(0,y,z)] + DcZ(0,y,zmd)*g->states[IDX(0,y,zm)])/(div_z*SQ(g->dz)))
+                + dt*g->states_cur[IDX(0,y,z)];
         x = g->size_x-1;
         RHS[x] =  g->states[IDX(x,y,z)]
 				+ dt*((DcX(x,y,z)*g->states[IDX(x-1,y,z)] - DcX(x,y,z)*g->states[IDX(x,y,z)])/(2.*SQ(g->dx))
 				+	  (DcY(x,ypd,z)*g->states[IDX(x,yp,z)] - (DcY(x,ypd,z)+DcY(x,ymd,z))*g->states[IDX(x,y,z)] + DcY(x,ymd,z)*g->states[IDX(x,ym,z)])/(div_y*SQ(g->dy))
-				+	  (DcZ(x,y,zpd)*g->states[IDX(x,y,zp)] - (DcZ(x,y,zpd)+DcZ(x,y,zmd))*g->states[IDX(x,y,z)] + DcZ(x,y,zmd)*g->states[IDX(x,y,zm)])/(div_z*SQ(g->dz)));
+				+	  (DcZ(x,y,zpd)*g->states[IDX(x,y,zp)] - (DcZ(x,y,zpd)+DcZ(x,y,zmd))*g->states[IDX(x,y,z)] + DcZ(x,y,zmd)*g->states[IDX(x,y,zm)])/(div_z*SQ(g->dz)))
+                + dt*g->states_cur[IDX(x,y,z)];
 
     }
     else
@@ -441,7 +446,8 @@ static void dg_adi_tort_x(Grid_node* g, const double dt, const int y, const int 
 		RHS[x] =  g->states[IDX(x,y,z)]
 			+ dt*((DcX(x+1,y,z)*g->states[IDX(x+1,y,z)] - (DcX(x+1,y,z)+DcX(x,y,z))*g->states[IDX(x,y,z)] + DcX(x,y,z)*g->states[IDX(x-1,y,z)])/(2.*SQ(g->dx))
 			+	  (DcY(x,ypd,z)*g->states[IDX(x,yp,z)] - (DcY(x,ypd,z)+DcY(x,ymd,z))*g->states[IDX(x,y,z)] + DcY(x,ymd,z)*g->states[IDX(x,ym,z)])/(div_y*SQ(g->dy))
-			+	  (DcZ(x,y,zpd)*g->states[IDX(x,y,zp)] - (DcZ(x,y,zpd)+DcZ(x,y,zmd))*g->states[IDX(x,y,z)] + DcZ(x,y,zmd)*g->states[IDX(x,y,zm)])/(div_z*SQ(g->dz)));
+			+	  (DcZ(x,y,zpd)*g->states[IDX(x,y,zp)] - (DcZ(x,y,zpd)+DcZ(x,y,zmd))*g->states[IDX(x,y,z)] + DcZ(x,y,zmd)*g->states[IDX(x,y,zm)])/(div_z*SQ(g->dz)))
+            + dt*g->states_cur[IDX(x,y,z)];
 	}
 	
 	solve_dd_tridiag(g->size_x, l_diag, diag, u_diag, RHS, scratch);
