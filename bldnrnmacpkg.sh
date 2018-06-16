@@ -40,6 +40,10 @@ chk () {
     eval "`nrnpyenv.sh $1`"
     nrniv -python -c "from neuron import test; test() ; quit()"
   )
+  # Launching nrniv no longer needs NRN_PYLIB and PYTHONHOME
+  (
+    $INST/nrn/x86_64/bin/nrniv -python -pyexe $1 -c "import neuron ; neuron.test() ; quit()"
+  )
 }
 
 # no args, use standard python

@@ -84,7 +84,7 @@ rpm: @RPM_TARGET@
 
 .PHONY: rpm
 
-$(RPM_TARGET): $(DISTFILES)
+$(RPM_TARGET): $(DISTFILES) nrnrpm.spec
 	(cd $(libdir) ; strip -d *.so*)
 	(cd @IV_LIBDIR@ ; strip -d *.so*)
 	-rm $(pkgdatadir)/demo/neuron

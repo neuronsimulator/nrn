@@ -173,6 +173,8 @@ Section "!Set DOS environment. (Useful if you wish to launch Python from a termi
   ${EnvVarUpdate} $0 "PYTHONPATH" "A" "HKCU" "$INSTDIR\lib\python"
   Push "$INSTDIR\bin"
   Call AddToPath
+  Push "$INSTDIR\mingw\usr\bin"
+  Call AddToPath
   FileOpen $r1 "$INSTDIR\lib\nrnenvinst.dat" "w"
   FileWrite $r1 "If $INSTDIR\lib\nrnenvinst.dat exists then, on uninstall, the NEURONHOME and PYTHONPATH environment variables will be removed."
   FileClose $r1
@@ -212,6 +214,8 @@ Section "Uninstall"
   IfFileExists "$INSTDIR\lib\nrnenvinst.dat" +1 env
     ${un.EnvVarUpdate} $0 "NEURONHOME" "R" "HKCU" "$INSTDIR"
     ${un.EnvVarUpdate} $0 "PYTHONPATH" "R" "HKCU" "$INSTDIR\lib\python"
+    Push "$INSTDIR\mingw\usr\bin"
+    Call un.RemoveFromPath
     Push "$INSTDIR\bin"
     Call un.RemoveFromPath
 env:
