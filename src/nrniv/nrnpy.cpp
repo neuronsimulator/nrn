@@ -83,6 +83,8 @@ extern void nrnpython_real();
 }
 #endif //defined(NRNPYTHON_DYNAMICLOAD)
 
+char* nrnpy_pyhome;
+
 void nrnpython() {
 #if USE_PYTHON
 	if (p_nrnpython_real) {
@@ -102,7 +104,6 @@ static void p_destruct(void* v) {
 static Member_func p_members[] = {0,0};
 
 #if NRNPYTHON_DYNAMICLOAD
-char* nrnpy_pyhome;
 static char* nrnpy_pylib;
 
 static void siteprob(void) {
