@@ -621,7 +621,8 @@ ENDGUI
 			if (nrn_optarg_on("-nopython", &our_argc, our_argv)) {
 				nrn_nopython = 1;
 			}
-			nrnpy_pyexe = strdup(nrn_optarg("-pyexe", &our_argc, our_argv));
+			const char* buf = nrn_optarg("-pyexe", &our_argc, our_argv);
+			if (buf) {nrnpy_pyexe = strdup(buf);}
 		}
 	}
 #endif //USE_PYTHON
