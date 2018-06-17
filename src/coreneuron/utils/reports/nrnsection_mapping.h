@@ -5,6 +5,9 @@
 #include <vector>
 #include <map>
 #include <iostream>
+
+namespace coreneuron {
+
 /** type to store every section and associated segments */
 typedef std::vector<int> segvec_type;
 typedef std::map<int, segvec_type> secseg_map_type;
@@ -169,5 +172,7 @@ struct NrnThreadMappingInfo {
         mappingvec.push_back(c);
     }
 };
+
+}
 
 #endif  // NRN_SECTION_MAPPING
