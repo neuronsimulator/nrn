@@ -10,38 +10,43 @@ if test -f $NSRC/src/nrnoc/nrnversion.h ; then
 	VERHFILE=`cat $NSRC/src/nrnoc/nrnversion.h`
 elif test -d $NSRC/.git ; then
 	VERHFILE=`sh $NSRC/git2nrnversion_h.sh`
-elif test -d $NSRC/.hg ; then
-	VERHFILE=`sh $NSRC/hg2nrnversion_h.sh`
 fi
 
+GIT=GIT
 ver=`sed -n '/^AC_INIT/s/^.*nrn\],\[\(.*\)\].*/\1/p' < $NSRC/configure.ac`
 
-HG=HG
-global=`echo "$VERHFILE" | sed -n '/HG_CHANGESET/s/.*"\(.*\)".*/\1/p'`
-if test "$global" = "" ; then
-  global=`echo "$VERHFILE" | sed -n '/GIT_CHANGESET/s/.*"\(.*\)".*/\1/p'`
-  HG=GIT
-fi
+global=`echo "$VERHFILE" | sed -n '/GIT_CHANGESET/s/.*"\(.*\)".*/\1/p'`
 
-type=`echo "$VERHFILE" | sed -n /${HG}'_BRANCH/s/.*\(".*"\).*/\1/p' | sed '
-s/"trunk"/alpha/
+type=`echo "$VERHFILE" | sed -n /${GIT}'_BRANCH/s/.*\(".*"\).*/\1/p' | sed '
 s/"Release.*"/rel/
 s/"\(.*\)"/\1/
 '`
-local=`echo "$VERHFILE" | sed -n /${HG}'_LOCAL/s/.*"\(.*\)".*/\1/p'`
+describe=`echo "$VERHFILE" | sed -n /${GIT}'_DESCRIBE/s/.*"\(.*\)".*/\1/p'`
 base=`echo $global | sed 's/\+//'`
-commit=`echo "$VERHFILE" | sed -n /${HG}'_LOCAL/s/.*"\(.*\)".*/\1/p'`
-date=`echo "$VERHFILE" | sed -n /${HG}'_DATE/s/.*"\(.*\)".*/\1/p'`
+commit=$global
+date=`echo "$VERHFILE" | sed -n /${GIT}'_DATE/s/.*"\(.*\)".*/\1/p'`
+micro=`echo $describe | sed -n 's/[0-9]*\.[0-9]*\.\([0-9]*\).*/\1/p'`
+nano=''
+if echo $describe | grep -q '\-' ; then
+  nano=`echo $describe | sed -n 's/[^-]*\-\([0-9]*\).*/\1/p'`
+fi 
+microdotnano=$micro
+if test "$nano" != "" ; then
+  microdotnano=$micro.$nano
+fi
 
 case $1 in
 	2) echo $ver.$type-$commit ;;
 	3) echo ${ver} ;;
 	"type") echo $type ;;
-	"commit") echo ${type}${commit} ;;
-	"local") echo $local ;;
+	"commit") echo ${type}-${commit} ;;
+	"describe") echo $describe ;;
 	"base") echo $base ;;
 	"global") echo $global ;;
 	"date") echo $date ;;
+	"micro") echo $micro ;;
+	"nano") echo $nano ;;
+	"microdotnano") echo $microdotnano ;;
 	*) echo $ver ;;
 esac
 

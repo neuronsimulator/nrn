@@ -40,10 +40,10 @@ chk () {
 }
 
 bld python3 ""
-sudo $INST/x86_64/bin/neurondemo -c 'quit()'
 chk python3
 bld python "--with-nrnpython-only"
 chk python
+sudo $INST/x86_64/bin/neurondemo -c 'quit()'
 
 cd $INST/lib/python/neuron
 sudo cp hoc.cpython-35m-x86_64-linux-gnu.so hoc.cpython-36m-x86_64-linux-gnu.so

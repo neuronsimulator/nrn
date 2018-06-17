@@ -5,6 +5,11 @@ define([AC_CACHE_LOAD], )dnl
 define([AC_CACHE_SAVE], )dnl
 
 dnl PACKAGE_VERSION makes its way into hg2nrnversion_h.sh, etc.
+dnl However 'git describe --tags' is used for the version string for
+dnl distribution file names, banner, nrniv --version, and
+dnl nrnversion(5). If the PACKAGE_VERSION changes then also do a
+dnl git tag -a major.minor.micro consistent with that.
+
 AC_INIT([nrn],[7.6])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR(src/memacs/main.c)
@@ -182,7 +187,10 @@ AM_CONDITIONAL(BUILD_CARBON, test x$enable_carbon = xyes)
 NRN_SRCDIR=$srcdir
 AC_SUBST(NRN_SRCDIR)
 dnl use the --enable-rpm-rules=yes
-RPM_RELEASE="`export NSRC=$srcdir ; sh $srcdir/nrnversion.sh commit`"
+dnl Following is not very good with respect to identification
+dnl as it is just the package version major.minor
+dnl but distribution file names will get the latest name.
+RPM_RELEASE="`export NSRC=$srcdir ; sh $srcdir/nrnversion.sh microdotnano`"
 AC_SUBST(RPM_RELEASE)
 if test "$rpm_extra_args" = "" ; then
 	rpm_extra_args="-ba nrnrpm.spec"

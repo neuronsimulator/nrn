@@ -67,7 +67,7 @@ done
 
 ver="`sh ../nrn/nrnversion.sh 3`"
 n1=nrn"${ver}"setup-x86_64.exe
-n2=nrn-"`sh ../nrn/nrnversion.sh 2`".w64-mingw-${PYVS}-setup.exe
+n2=nrn-"`sh ../nrn/nrnversion.sh describe`".w64-mingw-${PYVS}-setup.exe
 rm -f src/mswin/$n1
 make mswin
 
