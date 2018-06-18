@@ -76,7 +76,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
             raise RxDException('membrane_flux must be either True or False')
         if membrane is None:
             raise RxDException('MultiCompartmentReaction requires a membrane parameter')
-        if membrane_flux and region._sim_dimension != 1:
+        if membrane_flux and species._has_3d:
             raise RxDException('membrane_flux not supported except in 1D')
         self._membrane_flux = membrane_flux
         if not isinstance(scheme, rxdmath._Reaction):
@@ -171,13 +171,14 @@ class MultiCompartmentReaction(GeneralizedReaction):
             areas = numpy.ones(len(areas))
         else:
             # TODO: simplify this expression
-            areas = numpy.array(itertools.chain.from_iterable([list(self._regions[0]._geometry.volumes1d(sec) for sec in self._regions[0].secs)]))
+            areas = numpy.fromiter(itertools.chain.from_iterable(list(self._regions[0]._geometry.volumes1d(sec) for sec in self._regions[0].secs)),dtype=float)
         neuron_areas = []
         for sec in self._regions[0].secs:
             neuron_areas += [h.area((i + 0.5) / sec.nseg, sec=sec) for i in range(sec.nseg)]
         neuron_areas = numpy.array(neuron_areas)
         # area_ratios is usually a vector of 1s
         area_ratios = areas / neuron_areas
+        
         # still needs to be multiplied by the valence of each molecule
         self._memb_scales = -area_ratios * FARADAY / (10000 * molecules_per_mM_um3)
         #print area_ratios
@@ -196,7 +197,6 @@ class MultiCompartmentReaction(GeneralizedReaction):
             #       to membrane flux
             source_regions = [s()._region()._nrn_region for s in self._sources]
             dest_regions = [d()._region()._nrn_region for d in self._dests]
-            
             if 'i' in source_regions and 'o' not in source_regions and 'i' not in dest_regions:
                 inside = -1 #'source'
             elif 'o' in source_regions and 'i' not in source_regions and 'o' not in dest_regions:
@@ -220,7 +220,6 @@ class MultiCompartmentReaction(GeneralizedReaction):
         # TODO: this needs changed when I switch to allowing multiple sides on the left/right (e.g. simplified Na/K exchanger)
         self._cur_charges = tuple([-inside * s.charge for s in sources if s.name is not None] + [inside * s.charge for s in dests if s.name is not None])
         self._net_charges = sum(self._cur_charges)
-        
         self._cur_ptrs = []
         self._cur_mapped = []
         
