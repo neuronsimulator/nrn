@@ -14,18 +14,13 @@
 
 #if defined(_OPENACC)
 #include <openacc.h>
-namespace coreneuron {
+#endif
 
+namespace coreneuron {
 static int cray_acc_debug_orig = 0;
 static int cray_acc_debug_zero = 0;
-}  // namespace coreneuron
-#endif
-namespace coreneuron {
 
 void start_profile() {
-    if (nrnmpi_myid == 0)
-        printf("\n ----- PROFILING STARTED -----\n");
-
 #ifdef CRAYPAT
     PAT_record(PAT_STATE_ON);
 #endif
@@ -44,9 +39,6 @@ void start_profile() {
 }
 
 void stop_profile() {
-    if (nrnmpi_myid == 0)
-        printf("\n ----- PROFILING STOPPED -----\n");
-
 #ifdef CRAYPAT
     PAT_record(PAT_STATE_OFF);
 #endif
@@ -64,4 +56,5 @@ void stop_profile() {
     TAU_DISABLE_INSTRUMENTATION();
 #endif
 }
+
 }  // namespace coreneuron

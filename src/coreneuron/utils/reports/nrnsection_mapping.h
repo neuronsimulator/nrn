@@ -172,7 +172,6 @@ struct NrnThreadMappingInfo {
         mappingvec.push_back(c);
     }
 };
-
 }
 
 #endif  // NRN_SECTION_MAPPING

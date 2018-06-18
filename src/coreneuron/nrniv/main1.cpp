@@ -77,9 +77,7 @@ void nrn_init_and_load_data(int argc,
     nrn_feenableexcept();
 #endif
 
-#ifdef ENABLE_SELECTIVE_PROFILING
     stop_profile();
-#endif
 
 // mpi initialisation
 #if NRNMPI
@@ -349,9 +347,7 @@ extern "C" int solve_core(int argc, char** argv) {
             handle_forward_skip(nrnopt_get_dbl("--forwardskip"), nrnopt_get_int("--prcellgid"));
         }
 
-#ifdef ENABLE_SELECTIVE_PROFILING
         start_profile();
-#endif
 
         /// Solver execution
         BBS_netpar_solve(nrnopt_get_dbl("--tstop"));
@@ -367,9 +363,7 @@ extern "C" int solve_core(int argc, char** argv) {
 
     write_checkpoint(nrn_threads, nrn_nthread, checkpoint_path.c_str(), nrn_need_byteswap);
 
-#ifdef ENABLE_SELECTIVE_PROFILING
     stop_profile();
-#endif
 
     // must be done after checkpoint (to avoid deleting events)
     if (reports_needs_finalize) {
@@ -378,6 +372,9 @@ extern "C" int solve_core(int argc, char** argv) {
 
     // Cleaning the memory
     nrn_cleanup();
+
+    // tau needs to resume profile
+    start_profile();
 
 // mpi finalize
 #if NRNMPI
