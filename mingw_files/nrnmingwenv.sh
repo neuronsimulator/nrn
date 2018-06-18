@@ -23,7 +23,7 @@ cp $HOME/.inputrc $N/etc/inputrc
 #cp /msys2_shell.cmd $N
 
 binprog="basename bash cat cp dirname echo find grep ls make mintty
-  mkdir mv rebase rm sed sh sort unzip"
+  mkdir mv rebase rm sed sh sort unzip which"
 for i in $binprog ; do
   echo $i
   cp /usr/bin/$i.exe $N/usr/bin/$i.exe
@@ -88,6 +88,7 @@ _mingw_print_pop.h
 _mingw_print_push.h
 _mingw_secapi.h
 assert.h
+corecrt_startup.h
 crtdefs.h
 errno.h
 limits.h

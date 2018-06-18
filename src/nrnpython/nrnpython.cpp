@@ -16,6 +16,7 @@ void nrnpython_start(int);
 extern int hoc_get_line();
 extern HocStr* hoc_cbufstr;
 extern int nrnpy_nositeflag;
+extern char* nrnpy_pyhome;
 extern char* hoc_ctp;
 extern FILE* hoc_fin;
 extern const char* hoc_promptstr;
@@ -125,18 +126,32 @@ static wchar_t** copy_argv_wcargv(int argc, char** argv) {
   }
   return argv_copy;
 }
+
+static wchar_t* mywstrdup(char* s) {
+  size_t sz = strlen(s);
+  wchar_t* ws = new wchar_t[sz];
+  int count = mbstowcs(ws, s, sz + 1);
+  return ws;
+}
 #endif
 
 void nrnpython_start(int b) {
 #if USE_PYTHON
   static int started = 0;
-  //	printf("nrnpython_start %d started=%d\n", b, started);
+  //printf("nrnpython_start %d started=%d\n", b, started);
   if (b == 1 && !started) {
     p_nrnpy_pyrun = nrnpy_pyrun;
     if (nrnpy_nositeflag) {
       Py_NoSiteFlag = 1;
     }
     // printf("Py_NoSiteFlag = %d\n", Py_NoSiteFlag);
+    if (nrnpy_pyhome) {
+#if PY_MAJOR_VERSION >= 3
+        Py_SetPythonHome(mywstrdup(nrnpy_pyhome));
+#else
+        Py_SetPythonHome(nrnpy_pyhome);
+#endif
+    }
     Py_Initialize();
 #if NRNPYTHON_DYNAMICLOAD
     // return from Py_Initialize means there was no site problem

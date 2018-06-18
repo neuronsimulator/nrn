@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
 
 extern char* ivoc_get_temp_file();
+extern "C" int hoc_return_type_code;
 
 #if HAVE_IV
 #if (MAC && !defined(carbon)) || defined(WIN32)
@@ -472,6 +473,7 @@ static void pwman_destruct(void* v) {
 
 static double pwman_count(void* v) {
 	int cnt = 0;
+	hoc_return_type_code = 1; // integer
 #if HAVE_IV
 IFGUI
 	PWMImpl* p = PrintableWindowManager::current()->pwmi_;
@@ -481,6 +483,7 @@ ENDGUI
 	return double(cnt);
 }
 static double pwman_is_mapped(void* v) {
+	hoc_return_type_code = 2; // boolean
 #if HAVE_IV
 IFGUI
 	PWMImpl* p = PrintableWindowManager::current()->pwmi_;
@@ -587,6 +590,7 @@ ENDGUI
 	return 0.;
 }
 static double pwman_leader(void* v) {
+	hoc_return_type_code = 1; // integer
 #if HAVE_IV
 IFGUI
 	PWMImpl* p = PrintableWindowManager::current()->pwmi_;
@@ -603,6 +607,7 @@ ENDGUI
 	return -1.;
 }
 static double pwman_manager(void* v) {
+	hoc_return_type_code = 1; // integer
 #if HAVE_IV
 IFGUI
 	PWMImpl* p = PrintableWindowManager::current()->pwmi_;
@@ -676,6 +681,7 @@ ENDGUI
 
 // position size and show/hide a java window on session retrieve
 static double pwman_jwindow(void* v) {
+	hoc_return_type_code = 1; // integer
 #if HAVE_IV
 IFGUI
 	PWMImpl* p = PrintableWindowManager::current()->pwmi_;
@@ -1886,9 +1892,9 @@ float yoff = pageheight*72/2/sfac - (e.top() + e.bottom() + 23.)/2.;
 	pr->epilog();
 	obuf.close();
 #if !MAC || DARWIN
-	char buf[200];
 	String filt("cat");
 	s->find_attribute("pwm_postscript_filter", filt);
+	char* buf = new char[200 + strlen(name) + strlen(filt.string()) + 2*strlen(tmpfile)];
 		
 	if (use_printer) {
 #ifdef WIN32
@@ -1909,6 +1915,7 @@ float yoff = pageheight*72/2/sfac - (e.top() + e.bottom() + 23.)/2.;
 	}
 //printf("%s\n", buf);
 	nrnignore = system(buf);
+	delete [] buf;
 #ifdef WIN32
 	unlink(tmpfile);
 #endif

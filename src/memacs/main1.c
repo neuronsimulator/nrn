@@ -668,7 +668,7 @@ int quickexit(f, n)
 	}
         IGNORE(quit(f, n));                     /* conditionally quit   */
 #else
-	char mes[128];
+	char mes[NFILEN + NBUFN + 50];
 	BUFFER *bp;
 	BUFFER *btemp;
 

@@ -6,6 +6,8 @@
 ########################################
 # the following commands must be executed in this directory
 
+sh git2nrnversion_h.sh > src/nrnoc/nrnversion.h
+
 aclocal -I m4
 
 ltarg="-i"

@@ -16,6 +16,7 @@
 extern "C" {
 extern int nrn_nopython;
 extern int nrnpy_nositeflag;
+extern char* nrnpy_pyexe;
 extern int nrn_is_python_extension;
 int* nrnpy_site_problem_p;
 extern void (*p_nrnpython_start)(int);
@@ -82,6 +83,8 @@ extern void nrnpython_real();
 }
 #endif //defined(NRNPYTHON_DYNAMICLOAD)
 
+char* nrnpy_pyhome;
+
 void nrnpython() {
 #if USE_PYTHON
 	if (p_nrnpython_real) {
@@ -101,12 +104,13 @@ static void p_destruct(void* v) {
 static Member_func p_members[] = {0,0};
 
 #if NRNPYTHON_DYNAMICLOAD
-static char* pyhome;
+static char* nrnpy_pylib;
+
 static void siteprob(void) {
 	if (nrnpy_site_problem_p && (*nrnpy_site_problem_p)) {
 printf("Py_Initialize exited. PYTHONHOME probably needs to be set correctly.\n");
-		if(pyhome) {
-printf("Our automatic guess based on the Python shared library location:\n    export PYTHONHOME=%s\ndid not work.\n", pyhome);
+		if(nrnpy_pyhome) {
+printf("The value of PYTHONHOME or our automatic guess based on the output of nrnpyenv.sh:\n    export PYTHONHOME=%s\ndid not work.\n", nrnpy_pyhome);
 		}
 printf("It will help to examine the output of:\nnrnpyenv.sh\n\
 and set the indicated environment variables, or avoid python by adding\n\
@@ -116,19 +120,68 @@ neuron_home);
 	}
 }
 
+static void set_nrnpylib() {
+  nrnpy_pylib = getenv("NRN_PYLIB");
+  nrnpy_pyhome = getenv("PYTHONHOME");
+  if (nrnpy_pylib && nrnpy_pyhome) { return; }
+  // copy allows free of the copy if needed
+  if (nrnpy_pylib) { nrnpy_pylib = strdup(nrnpy_pylib); }
+  if (nrnpy_pyhome) { nrnpy_pyhome = strdup(nrnpy_pyhome); }
+
+  if (nrnmpi_myid_world == 0) {
+    char line[1024];
+    snprintf(line, 1024, "bash nrnpyenv.sh %s",
+      (nrnpy_pyexe && strlen(nrnpy_pyexe) > 0) ? nrnpy_pyexe : "");
+    FILE* p = popen(line, "r");
+    if (!p) {
+      printf("could not popen '%s'\n", line);
+    }else{
+      while(fgets(line, 1024, p)) {
+        char* cp;
+        // must get rid of beginning '"' and trailing '"\n'
+        if (!nrnpy_pyhome && (cp = strstr(line, "export PYTHONHOME="))) {
+          cp += 19;
+          cp[strlen(cp) - 2] = '\0';
+          if (nrnpy_pyhome) { free(nrnpy_pyhome); }
+          nrnpy_pyhome = strdup(cp);
+        }else if (!nrnpy_pylib && (cp = strstr(line, "export NRN_PYLIB="))) {
+          cp += 18;
+          cp[strlen(cp) - 2] = '\0';
+          if (nrnpy_pylib) { free(nrnpy_pylib); }
+          nrnpy_pylib = strdup(cp);
+        }
+      }
+      pclose(p);
+    }
+  }
+#if NRNMPI
+  if (nrnmpi_numprocs_world > 1) { // 0 broadcasts to everyone else.
+    nrnmpi_char_broadcast_world(&nrnpy_pylib, 0);
+    nrnmpi_char_broadcast_world(&nrnpy_pyhome, 0);
+  }
+#endif
+}
+
+#if 0
 static void set_pythonhome(void* handle){
 	if (nrnmpi_myid == 0) {atexit(siteprob);}
 #ifdef MINGW
 #else
 	if (getenv("PYTHONHOME") || nrnpy_nositeflag) { return; }
+	if (nrnpy_pyhome) {
+		int res = setenv("PYTHONHOME", nrnpy_pyhome, 1);
+		assert(res == 0);
+		return;
+	}
+
 	Dl_info dl_info;
 	void* s = dlsym(handle, "Py_Initialize");
         assert(s != NULL);
 	int success = dladdr(s, &dl_info);
 	if (success) {
 		//printf("%s\n", dl_info.dli_fname);
-		pyhome = strdup(dl_info.dli_fname);
-		char* p = pyhome;
+		nrnpy_pyhome = strdup(dl_info.dli_fname);
+		char* p = nrnpy_pyhome;
 		int n = strlen(p);
 		int seen = 0;
 		for (int i = n-1; i > 0; --i) {
@@ -144,6 +197,7 @@ static void set_pythonhome(void* handle){
 	}
 #endif
 }
+#endif // if 0
 #endif
 
 void nrnpython_reg() {
@@ -156,15 +210,16 @@ void nrnpython_reg() {
     }else{
 #if NRNPYTHON_DYNAMICLOAD
 	void* handle = NULL;
-	char* nrn_pylib = NULL;
 
       if (!nrn_is_python_extension) {
 	// As last resort (or for python3) load $NRN_PYLIB
-	nrn_pylib = getenv("NRN_PYLIB");
-	if (nrn_pylib) {
-		handle = dlopen(nrn_pylib, RTLD_NOW|RTLD_GLOBAL);
+	set_nrnpylib();
+	//printf("nrnpy_pylib %s\n", nrnpy_pylib);
+	//printf("nrnpy_pyhome %s\n", nrnpy_pyhome);
+	if (nrnpy_pylib) {
+		handle = dlopen(nrnpy_pylib, RTLD_NOW|RTLD_GLOBAL);
 		if (!handle) {
-			fprintf(stderr, "Could not dlopen NRN_PYLIB: %s\n", nrn_pylib);
+			fprintf(stderr, "Could not dlopen NRN_PYLIB: %s\n", nrnpy_pylib);
 			exit(1);
 		}
 	}
@@ -172,12 +227,15 @@ void nrnpython_reg() {
 	if (!handle) { // embed python
 		handle = load_python();
 	}
+#if 0
+	// No longer do this as Py_SetPythonHome is used
 	if (handle) {
 		// need to worry about the site.py problem
 		// can fix with a proper PYTHONHOME but need to know
 		// what path was used to load the python library.
 		set_pythonhome(handle);
 	}
+#endif
       }else{
         //printf("nrn_is_python_extension = %d\n", nrn_is_python_extension);
       }
@@ -188,7 +246,7 @@ void nrnpython_reg() {
 	// in these circumstances, it is sufficient to go ahead and dlopen
 	// the nrnpython interface library
 	if (handle || nrn_is_python_extension) {
-		load_nrnpython(nrn_is_python_extension, nrn_pylib);
+		load_nrnpython(nrn_is_python_extension, nrnpy_pylib);
 	}
 #else
 	p_nrnpython_start = nrnpython_start;

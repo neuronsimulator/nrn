@@ -151,7 +151,7 @@ int hoc_sred(const char* prompt, char* defalt, char* charlist) {
             istr[strlen(istr)-1]='\0';        /* if real input, strip return */
          }
          if ( sscanf(istr,"%s%s",instring,c) == 1 ) {   /* only single input */
-            if ( charlist=='\0' ) {       /* if charlist is null: */
+            if ( charlist==NULL ) {       /* if charlist is null: */
                strcpy(defalt,instring);   /* accept any input, so */
                return(0);                 /* update default and return 0 */
             }

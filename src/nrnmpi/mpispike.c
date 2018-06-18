@@ -306,6 +306,21 @@ void nrnmpi_char_broadcast(char* buf, int cnt, int root) {
 	MPI_Bcast(buf, cnt,  MPI_CHAR, root, nrnmpi_comm);
 }
 
+void nrnmpi_char_broadcast_world(char** pstr, int root) {
+	int sz;
+	sz = *pstr ? (strlen(*pstr) + 1) : 0;
+	MPI_Bcast(&sz, 1, MPI_INT, root, nrnmpi_world_comm);
+	if (nrnmpi_myid_world != root) {
+		if (*pstr) { free(*pstr); *pstr = NULL; }
+		if (sz) {
+			*pstr = (char*)hoc_Emalloc(sz*sizeof(char)); hoc_malchk();
+		}
+	}
+	if (sz) {
+		MPI_Bcast(*pstr, sz, MPI_CHAR, root, nrnmpi_world_comm);
+	}
+}
+
 int nrnmpi_int_sum_reduce(int in) {
 	int result;
 	MPI_Allreduce(&in, &result, 1, MPI_INT, MPI_SUM, nrnmpi_comm);

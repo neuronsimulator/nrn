@@ -280,11 +280,11 @@ unzip ../nrnhelp.zip
 fi
 if test -d "$hparent/html" ; then
 	cd $hparent
-	rm html.zip
+	rm -f html.zip
 	zip -r html.zip html -x \*.svn\*
 	rm -r -f $marshal_dir/html
 	unzip -d $marshal_dir html.zip
-	rm html.zip
+	rm -f html.zip
 fi
 else #nsis requires something
 mkdir $marshal_dir/html

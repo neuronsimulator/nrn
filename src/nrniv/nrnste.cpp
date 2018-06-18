@@ -9,6 +9,8 @@
 #include <nrnste.h>
 #include <netcon.h>
 
+extern "C" int hoc_return_type_code;
+
 static double ste_transition(void* v) {
 	StateTransitionEvent* ste = (StateTransitionEvent*)v;
 	int src = (int)chkarg(1, 0, ste->nstate()-1);
@@ -36,6 +38,7 @@ static double ste_transition(void* v) {
 
 static double ste_state(void* v) {
 	StateTransitionEvent* ste = (StateTransitionEvent*)v;
+	hoc_return_type_code = 1; // integer
 	int state = ste->state();
 	if (ifarg(1)) {
 		ste->state((int)chkarg(1, 0, ste->nstate()-1));

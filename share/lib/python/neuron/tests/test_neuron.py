@@ -84,7 +84,25 @@ class NeuronTestCase(unittest.TestCase):
             except:
                 print("'from neuron import rxd' failed")
                 a = 0
+            else:
+               try:
+                   a = basicRxD3D()
+                   print("    basicRxD3D() ran with no exception")
+               except:
+                   print("'basicRxD3D()' failed")
+                   a = 0
         assert a == 1
+
+def basicRxD3D():
+    from neuron import h, rxd
+    s = h.Section(name='s')
+    s.L = s.diam = 1
+    cyt = rxd.Region([s])
+    ca = rxd.Species(cyt)
+    rxd.set_solve_type([s], dimension=3)
+    h.finitialize(-65)
+    h.fadvance()
+    return 1
 
 def suite():
 

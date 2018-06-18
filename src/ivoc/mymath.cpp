@@ -6,6 +6,8 @@
 #include <math.h>
 #include <stdio.h>
 
+extern "C" int hoc_return_type_code;
+
 static double distance_to_line(void*) {
 	return MyMath::distance_to_line(*getarg(1), *getarg(2),
 		*getarg(3), *getarg(4),	*getarg(5), *getarg(6));
@@ -17,6 +19,7 @@ static double distance_to_line_segment(void*) {
 }
 
 static double inside(void*) {
+	hoc_return_type_code = 2; // boolean
 	return MyMath::inside(*getarg(1), *getarg(2), *getarg(3), *getarg(4),
 		*getarg(5), *getarg(6));
 }
@@ -54,6 +57,7 @@ int nrn_feround(int mode) {
 
 static double feround(void*) {
 	int arg = 0;
+	hoc_return_type_code = 1; // integer
 	if (ifarg(1)) {
 		arg = (int)chkarg(1, 0, 4);
 	}

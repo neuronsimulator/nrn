@@ -109,7 +109,7 @@ and PYINCDIR to find Python.h
 
 	AC_ARG_WITH([pyexe],
 		AC_HELP_STRING([--with-pyexe=[desired python binary (when --with-nrnpython=dynamic]]),
-		[ac_nrn_pyexe="$withval"], [ac_nrn_pyexe="python"]
+		[ac_nrn_pyexe="$withval"], [ac_nrn_pyexe="$PYTHON_BLD"]
 	)
 
 	if test "$ac_nrn_python" = "yes" ; then

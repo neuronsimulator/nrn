@@ -9,6 +9,8 @@
 #include <unistd.h>
 #endif
 
+extern "C" int hoc_return_type_code;
+
 #ifdef WIN32
 #include <errno.h>
 #include <io.h>
@@ -257,6 +259,7 @@ static double f_seek(void* v){
 
 static double f_tell(void* v){
 	OcFile* f = (OcFile*)v;
+	hoc_return_type_code = 1;
 	BinaryMode(f)
 	return (double)ftell(f->file());
 }

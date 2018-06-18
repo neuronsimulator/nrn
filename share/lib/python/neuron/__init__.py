@@ -558,21 +558,36 @@ def _pkl(arg):
   #print 'neuron._pkl arg is ', arg
   return h.Vector(0)
 
+def nrnpy_pass():
+  return 1
+
 def nrnpy_pr(s):
   sys.stdout.write(s.decode())
   return 0
 
 if not embedded:
   try:
-    # callback in place of hoc printf
+    # nrnpy_pr callback in place of hoc printf
     # ensures consistent with python stdout even with jupyter notebook.
+    # nrnpy_pass callback used by h.doNotify() in MINGW when not called from
+    # gui thread in order to allow the gui thread to run.
+
+    nrnpy_set_pr_etal = nrn_dll_sym('nrnpy_set_pr_etal')
+
     nrnpy_pr_proto = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_char_p)
-    nrnpy_set_pr = nrn_dll_sym('nrnpy_set_pr')
-    nrnpy_set_pr.argtypes = [nrnpy_pr_proto]
+    nrnpy_pass_proto = ctypes.CFUNCTYPE(ctypes.c_int)
+    nrnpy_set_pr_etal.argtypes = [nrnpy_pr_proto, nrnpy_pass_proto]
 
     nrnpy_pr_callback = nrnpy_pr_proto(nrnpy_pr)
-    nrnpy_set_pr(nrnpy_pr_callback)
+    nrnpy_pass_callback = nrnpy_pass_proto(nrnpy_pass)
+    nrnpy_set_pr_etal(nrnpy_pr_callback, nrnpy_pass_callback)
   except:
     print("Failed to setup nrnpy_pr")
     pass
 
+try:
+  from neuron.psection import psection
+  nrn.set_psection(psection)
+except:
+  print("Failed to setup nrn.Section.psection")
+pass

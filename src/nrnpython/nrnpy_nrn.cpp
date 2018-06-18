@@ -7,6 +7,14 @@
 extern "C" {
 #include <membfunc.h>
 #include <parse.h>
+extern void nrn_pt3dremove(Section* sec, int i0);
+extern void nrn_pt3dinsert(Section* sec, int i0, double x, double y, double z, double d);
+extern void nrn_pt3dclear(Section* sec, int req);
+extern void nrn_pt3dchange1(Section* sec, int i, double d);
+extern void nrn_pt3dchange2(Section* sec, int i, double x, double y, double z, double diam);
+extern void stor_pt3d(Section* sec, double x, double y, double z, double d);
+extern void nrn_pt3dstyle1(Section* sec, double x, double y, double z);
+extern void nrn_pt3dstyle0(Section* sec);
 extern void nrn_area_ri(Section* sec);
 extern void sec_free(hoc_Item*);
 extern Symlist* hoc_built_in_symlist;
@@ -413,6 +421,132 @@ static PyObject* NPySecObj_n3d(NPySecObj* self) {
   return PyInt_FromLong(self->sec_->npt3d);
 }
 
+static PyObject* NPySecObj_pt3dremove(NPySecObj* self, PyObject* args) {
+  Section* sec = self->sec_;
+  int i0, n;
+  if (!PyArg_ParseTuple(args, "i", &i0)) {
+    return NULL;
+  }
+  if (i0 < 0 || i0 >= sec->npt3d) {
+    PyErr_SetString(PyExc_Exception, "Arg out of range\n");
+    return NULL;
+  }
+  
+  nrn_pt3dremove(sec, i0);
+  Py_RETURN_NONE;
+}
+
+static PyObject* NPySecObj_pt3dclear(NPySecObj* self, PyObject* args) {
+  Section* sec = self->sec_;
+  int req = 0;
+  Py_ssize_t narg = PyTuple_GET_SIZE(args);
+  if (narg) {
+    if (!PyArg_ParseTuple(args, "i", &req)) {
+      return NULL;
+    }
+  }
+  if (req < 0) {
+    PyErr_SetString(PyExc_Exception, "Arg out of range\n");
+    return NULL;
+  }
+  nrn_pt3dclear(sec, req);
+  return PyInt_FromLong(sec->pt3d_bsize);
+}
+
+static PyObject* NPySecObj_pt3dchange(NPySecObj* self, PyObject* args) {
+  Section* sec = self->sec_;
+  int i;
+  double x, y, z, diam;
+  Py_ssize_t narg = PyTuple_GET_SIZE(args);
+  if (narg == 2) {
+    if (!PyArg_ParseTuple(args, "id", &i, &diam)) {
+      return NULL;
+    }
+    if (i < 0 || i >= sec->npt3d) {
+      PyErr_SetString(PyExc_Exception, "Arg out of range\n");
+      return NULL;
+    }
+    nrn_pt3dchange1(sec, i, diam);
+  }
+  else if (narg == 5) {
+    if (!PyArg_ParseTuple(args, "idddd", &i, &x, &y, &z, &diam)) {
+      return NULL;
+    }
+    if (i < 0 || i >= sec->npt3d) {
+      PyErr_SetString(PyExc_Exception, "Arg out of range\n");
+      return NULL;
+    }
+    nrn_pt3dchange2(sec, i, x, y, z, diam);
+  } else {
+    PyErr_SetString(PyExc_Exception, "Wrong number of arguments\n");
+    return NULL;
+  }
+  Py_RETURN_NONE;
+}
+
+static PyObject* NPySecObj_pt3dinsert(NPySecObj* self, PyObject* args) {
+  Section* sec = self->sec_;
+  int i;
+  double x, y, z, d;
+  if (!PyArg_ParseTuple(args, "idddd", &i, &x, &y, &z, &d)) {
+    return NULL;
+  }
+  if (i < 0 || i > sec->npt3d) {
+    PyErr_SetString(PyExc_Exception, "Arg out of range\n");
+    return NULL;
+  }
+  nrn_pt3dinsert(sec, i, x, y, z, d);
+  Py_RETURN_NONE;
+}
+
+
+static PyObject* NPySecObj_pt3dadd(NPySecObj* self, PyObject* args) {
+  Section* sec = self->sec_;
+  double x, y, z, d;
+  // TODO: add support for iterables
+  if (!PyArg_ParseTuple(args, "dddd", &x, &y, &z, &d)) {
+    return NULL;
+  }
+  stor_pt3d(sec, x, y, z, d);
+  Py_RETURN_NONE;
+}
+
+static PyObject* NPySecObj_pt3dstyle(NPySecObj* self, PyObject* args) {
+  Section* sec = self->sec_;
+  int style;
+  double x, y, z;
+  Py_ssize_t narg = PyTuple_GET_SIZE(args);
+
+  if (narg) {
+    if (narg == 1) {
+      if (!PyArg_ParseTuple(args, "i", &style)) {
+        return NULL;
+      }
+      if (style) {
+        PyErr_SetString(PyExc_AttributeError, "If exactly one argument, it must be 0.");
+        return NULL;
+      }
+      nrn_pt3dstyle0(sec);
+    } else if (narg == 4) {
+      // TODO: figure out some way of reading the logical connection point
+      // don't use hoc refs
+      if (!PyArg_ParseTuple(args, "iddd", &style, &x, &y, &z)) {
+        return NULL;
+      }
+      nrn_pt3dstyle1(sec, x, y, z);
+
+    } else {
+      PyErr_SetString(PyExc_Exception, "Wrong number of arguments.");
+      return NULL;
+    }
+  }
+
+  if (sec->logical_connection) {
+    Py_RETURN_TRUE;
+  }
+  Py_RETURN_FALSE;
+}
+
 static PyObject* NPySecObj_x3d(
     NPySecObj* self, PyObject* args) {  // returns x value at index of 3d list
   Section* sec = self->sec_;
@@ -517,6 +651,36 @@ static PyObject* hoc_internal_name(NPySecObj* self) {
   sprintf(buf, "__nrnsec_%p", self->sec_);
   result = PyString_FromString(buf);
   return result;
+}
+
+static PyObject* nrnpy_psection;
+static PyObject* nrnpy_set_psection(PyObject* self, PyObject* args) {
+  PyObject* po;
+  if (!PyArg_ParseTuple(args, "O", &po)) {
+    return NULL;
+  }
+  if (PyCallable_Check(po) == 0) {
+    PyErr_SetString(PyExc_TypeError, "argument must be a callable");
+    return NULL;
+  }
+  if (nrnpy_psection) {
+    Py_DECREF(nrnpy_psection);
+    nrnpy_psection = NULL;
+  }
+  nrnpy_psection = po;
+  Py_INCREF(po);
+  return po;
+}
+
+static PyObject* NPySecObj_psection(NPySecObj* self) {
+  if (nrnpy_psection) {
+    PyObject* arglist = Py_BuildValue("(O)", self);
+    PyObject* result = PyEval_CallObject(nrnpy_psection, arglist);
+    Py_DECREF(arglist);
+    return result;
+  }
+  Py_INCREF(Py_None);
+  return Py_None;
 }
 
 static PyObject* is_pysec(NPySecObj* self) {
@@ -1636,8 +1800,22 @@ static PyMethodDef NPySecObj_methods[] = {
      "Returns the arc position of the ith 3D point."},
     {"diam3d", (PyCFunction)NPySecObj_diam3d, METH_VARARGS,
      "Returns the diam of the ith 3D point."},
+    {"pt3dremove", (PyCFunction) NPySecObj_pt3dremove, METH_VARARGS,
+     "Removes the ith 3D point."},
+    {"pt3dclear", (PyCFunction) NPySecObj_pt3dclear, METH_VARARGS,
+     "Clears all 3D points. Optionally takes a buffer size."},
+    {"pt3dinsert", (PyCFunction) NPySecObj_pt3dinsert, METH_VARARGS,
+     "Insert the point (so it becomes the i'th point) to section. If i is equal to sec.n3d(), the point is appended (equivalent to sec.pt3dadd())"},
+    {"pt3dchange", (PyCFunction) NPySecObj_pt3dchange, METH_VARARGS,
+     "Change the i'th 3-d point info. If only two args then the second arg is the diameter and the location is unchanged."},
+    {"pt3dadd", (PyCFunction) NPySecObj_pt3dadd, METH_VARARGS,
+     "Add the 3d location and diameter point (or points in the second form) at the end of the current pt3d list. Assume that successive additions increase the arc length monotonically."},
+    {"pt3dstyle", (PyCFunction) NPySecObj_pt3dstyle, METH_VARARGS,
+     "Returns True if using a logical connection point, else False. With first arg 0 sets to no logical connection point. With first arg 1 and x, y, z arguments, sets the logical connection point. Return value includes the result of any setting."},  
     {"is_pysec", (PyCFunction)is_pysec, METH_NOARGS,
      "Returns True if Section created from Python, False if created from HOC."},
+    {"psection", (PyCFunction)NPySecObj_psection, METH_NOARGS,
+     "Returns dict of info about Section contents."},
     {NULL}};
 
 static PyMethodDef NPySegObj_methods[] = {
@@ -1693,6 +1871,8 @@ static PyMethodDef nrnpy_methods[] = {
     {"cas", nrnpy_cas, METH_VARARGS, "Return the currently accessed section."},
     {"allsec", nrnpy_forall, METH_VARARGS,
      "Return iterator over all sections."},
+    {"set_psection", nrnpy_set_psection, METH_VARARGS,
+     "Specify the nrn.Section.psection callback."},
     {NULL}};
 
 #if PY_MAJOR_VERSION >= 3

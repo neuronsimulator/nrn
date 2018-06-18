@@ -1,9 +1,11 @@
 #!/bin/bash
 
 # eval "`sh nrnpyenv.sh`"
-# if PYTHONHOME does not exist,
 # will set bash environment variables so that nrniv -python has same
 # environment as python
+
+# May specify the python executable with explicit first argument.
+# Without arg use python and if that does not exist then python3
 
 # Overcome environment issues when --with-nrnpython=dynamic .
 
@@ -35,14 +37,23 @@ export originalPYTHONHOME="$PYTHONHOME"
 export originalLDLIBRARYPATH="$LD_LIBRARY_PATH"
 
 if test "$PYTHONHOME" != "" ; then
-  echo '# PYTHONHOME exists. Do nothing' 1>&2
-  exit 0
+  echo "# Ignoring existing PYTHONHOME=$PYTHONHOME."
+  unset PYTHONHOME
 fi
 
-PYTHON=python
+WHICH=which
+
 if test "$1" != "" ; then
   PYTHON="$1"
+elif $WHICH python >& /dev/null ; then
+  PYTHON=`$WHICH python`
+elif $WHICH python3 >& /dev/null ; then
+  PYTHON=`$WHICH python3`
+else
+  echo "Cannot find executable python or python3" 1>2
+  exit 1;
 fi
+echo "# PYTHON=$PYTHON"
 
 # what is the python library for Darwin
 z=''
@@ -50,13 +61,23 @@ if type -P uname > /dev/null ; then
   z=`uname`
 fi
 if test "$z" = "Darwin" ; then
-  DYLD_PRINT_LIBRARIES=1
-  export DYLD_PRINT_LIBRARIES
-  z=`$PYTHON -c 'quit()' 2>&1 | sed -n 's/^dyld: loaded: //p' | sed -n /libpython/p`
-  if test "$z" = "" ; then
-    z=`$PYTHON -c 'quit()' 2>&1 | sed -n 's/^dyld: loaded: //p' | sed -n 2p`
+  p=`$WHICH $PYTHON`
+  d=`dirname $p`
+  l=`ls $d/../lib/libpython*.dylib`
+  if test -f "$l" ; then
+    z="$l"
+    unset p
+    unset d
+    unset l
+  else
+    DYLD_PRINT_LIBRARIES=1
+    export DYLD_PRINT_LIBRARIES
+    z=`$PYTHON -c 'quit()' 2>&1 | sed -n 's/^dyld: loaded: //p' | sed -n /libpython/p`
+    if test "$z" = "" ; then
+      z=`$PYTHON -c 'quit()' 2>&1 | sed -n 's/^dyld: loaded: //p' | sed -n 2p`
+    fi
+    unset DYLD_PRINT_LIBRARIES  
   fi
-  unset DYLD_PRINT_LIBRARIES  
   PYLIB_DARWIN=$z
   export PYLIB_DARWIN
 fi

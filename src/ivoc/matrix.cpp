@@ -11,6 +11,8 @@
 #define EPS hoc_epsilon
 static Symbol* smat_;
 
+extern "C" int hoc_return_type_code;
+
 extern "C" {
 	extern double hoc_scan(FILE*);
 	extern FILE* hoc_obj_file_arg(int i);
@@ -63,11 +65,13 @@ Object** Matrix::temp_objvar() {
 }
 
 static double m_nrow(void* v) {
+	hoc_return_type_code = 1; // integer
 	Matrix* m = (Matrix*)v;
 	return (double)m->nrow();
 }
 
 static double m_ncol(void* v) {
+	hoc_return_type_code = 1; // integer
 	Matrix* m = (Matrix*)v;
 	return (double)m->ncol();
 }
@@ -95,6 +99,7 @@ static double m_getval(void* v) {
 static double m_sprowlen(void* v) {
 	Matrix* m = (Matrix*)v;
 	int i;
+	hoc_return_type_code = 1; // integer
 	i = (int)chkarg(1, 0, m->nrow()-1);
 	return double(m->sprowlen(i));
 }
