@@ -870,10 +870,18 @@ void hoc_Chdir(void) {
 
 int nrn_is_python_extension;
 int (*nrnpy_pr_callback)(char*);
+int (*nrnpy_pass_callback)();
 
-void nrnpy_set_pr(int (*cb)(char*)) {
+void nrnpy_set_pr_etal(int (*cbpr)(char*), int (*cbpass)()) {
     if (nrn_is_python_extension) {
-        nrnpy_pr_callback = cb;
+        nrnpy_pr_callback = cbpr;
+        nrnpy_pass_callback = cbpass;
+    }
+}
+
+void nrnpy_pass() {
+    if (nrnpy_pass_callback) {
+    	if((*nrnpy_pass_callback)() != 1) {hoc_execerror("nrnpy_pass", 0);}
     }
 }
 
