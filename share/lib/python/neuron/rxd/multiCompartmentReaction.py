@@ -212,10 +212,10 @@ class MultiCompartmentReaction(GeneralizedReaction):
         # dereference the species to get the true species if it's actually a SpeciesOnRegion
         sources = [s()._species() for s in self._sources]
         dests = [d()._species() for d in self._dests]
-        if self._membrane_flux:
-            if any(s in dests for s in sources) or any(d in sources for d in dests):
-                # TODO: remove this limitation
-                raise RxDException('current fluxes do not yet support same species on both sides of reaction')
+        #if self._membrane_flux:
+        #    if any(s in dests for s in sources) or any(d in sources for d in dests):
+        #        # TODO: remove this limitation
+        #        raise RxDException('current fluxes do not yet support same species on both sides of reaction')
         
         # TODO: make so don't need multiplicity (just do in one pass)
         # TODO: this needs changed when I switch to allowing multiple sides on the left/right (e.g. simplified Na/K exchanger)
