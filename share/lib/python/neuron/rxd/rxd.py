@@ -302,7 +302,6 @@ def _currents(rhs):
         assert(len(rxd_memb_flux) == len(memb_net_charges))
         for flux, cur_ptrs, cur_charges, net_charge, i, cur_maps in zip(rxd_memb_flux, memb_cur_ptrs, memb_cur_charges, memb_net_charges, _cur_node_indices, memb_cur_mapped):
             rhs[i] -= net_charge * flux
-            #print net_charge * flux
             #import sys
             #sys.exit()
             # TODO: remove this assert when more thoroughly tested
@@ -312,9 +311,11 @@ def _currents(rhs):
                 # currents lower the membrane potential
                 cur = charge * flux
                 ptr[0] += cur
-                for sign, c in zip([-1, 1], cur_maps):
-                    if c is not None:
-                        _rxd_induced_currents[c] += sign * cur
+                for c in cur_map_i:
+                    _rxd_induced_currents[c] += cur
+                #for sign, c in zip([-1, 1], cur_maps):
+                #    if c is not None:
+                #        _rxd_induced_currents[c] += sign * cur
 
 _last_m = None
 _last_preconditioner = None
@@ -403,9 +404,10 @@ def _rxd_reaction(states):
 
     b = _numpy_zeros(len(states))
     
+    
     if _curr_ptr_vector is not None:
         _curr_ptr_vector.gather(_curr_ptr_storage_nrn)
-        b[_curr_indices] = _curr_scales * (_curr_ptr_storage + _rxd_induced_currents)
+        b[_curr_indices] = _curr_scales * (_curr_ptr_storage - _rxd_induced_currents)   
     
     #b[_curr_indices] = _curr_scales * [ptr[0] for ptr in _curr_ptrs]
 

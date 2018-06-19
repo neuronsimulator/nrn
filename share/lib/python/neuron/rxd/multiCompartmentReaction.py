@@ -168,7 +168,8 @@ class MultiCompartmentReaction(GeneralizedReaction):
     
     def _do_memb_scales(self, cur_map):                    
         if not self._scale_by_area:
-            areas = numpy.ones(len(areas))
+            narea = sum([sec.nseg for sec in self._regions[0].secs])
+            areas = numpy.ones(narea)
         else:
             # TODO: simplify this expression
             areas = numpy.fromiter(itertools.chain.from_iterable(list(self._regions[0]._geometry.volumes1d(sec) for sec in self._regions[0].secs)),dtype=float)
@@ -218,7 +219,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
         
         # TODO: make so don't need multiplicity (just do in one pass)
         # TODO: this needs changed when I switch to allowing multiple sides on the left/right (e.g. simplified Na/K exchanger)
-        self._cur_charges = tuple([-inside * s.charge for s in sources if s.name is not None] + [inside * s.charge for s in dests if s.name is not None])
+        self._cur_charges = tuple([inside * s.charge for s in sources if s.name is not None] + [inside * s.charge for s in dests if s.name is not None])
         self._net_charges = sum(self._cur_charges)
         self._cur_ptrs = []
         self._cur_mapped = []
