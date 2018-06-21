@@ -29,7 +29,7 @@ void hoc_register_var(DoubScal* ds, DoubVec* dv, VoidFunc*) {
     }
 }
 
-void set_globals(const char* path) {
+void set_globals(const char* path, int cli_global_seed) {
     if (!n2v) {
         n2v = new N2V();
     }
@@ -89,14 +89,17 @@ void set_globals(const char* path) {
         if (sscanf(line, "%s %d", name, &n) == 2) {
             if (strcmp(name, "secondorder") == 0) {
                 secondorder = n;
-            } else if (strcmp(name, "Random123_globalindex") == 0) {
+            } else if ( strcmp(name, "Random123_globalindex") == 0) {
                 nrnran123_set_globalindex((uint32_t)n);
             }
         }
     }
 
     fclose(f);
-
+    // overwrite global.dat config if seed is specified on Command line
+    if (cli_global_seed != -1) {
+      nrnran123_set_globalindex((uint32_t)cli_global_seed);
+    }
 #if 0
   for (N2V::iterator i = n2v->begin(); i != n2v->end(); ++i) {
     printf("%s %ld %p\n", i->first.c_str(), i->second.first, i->second.second);

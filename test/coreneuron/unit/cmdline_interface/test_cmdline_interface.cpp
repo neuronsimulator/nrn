@@ -123,7 +123,9 @@ BOOST_AUTO_TEST_CASE(cmdline_interface) {
     argc++;
 
     nrnopt_parse(argc, argv);
-
+    
+    BOOST_CHECK(nrnopt_get_int("--seed") == -1);            // testing default value 
+    
     BOOST_CHECK(nrnopt_get_int("--spikebuf") == 100);
 
     BOOST_CHECK(nrnopt_get_flag("--threading") == true);

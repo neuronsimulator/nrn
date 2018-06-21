@@ -120,7 +120,7 @@ void nrn_init_and_load_data(int argc,
     mk_mech(nrnopt_get_str("--datpath").c_str());
 
     // read the global variable names and set their values from globals.dat
-    set_globals(nrnopt_get_str("--datpath").c_str());
+    set_globals(nrnopt_get_str("--datpath").c_str(), nrnopt_get_int("--seed"));
 
     report_mem_usage("After mk_mech");
 
@@ -167,7 +167,6 @@ void nrn_init_and_load_data(int argc,
     // pass by flag so existing tests do not need a changed nrn_setup prototype.
     nrn_setup_multiple = nrnopt_get_int("--multiple");
     nrn_setup_extracon = nrnopt_get_int("--extracon");
-
     // multisend options
     use_multisend_ = nrnopt_get_flag("--multisend") ? 1 : 0;
     n_multisend_interval = nrnopt_get_int("--ms-subintervals");
