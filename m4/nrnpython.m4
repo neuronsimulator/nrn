@@ -73,10 +73,10 @@ AC_DEFUN([AC_NRN_PYTHON],[
 
 	AC_ARG_ENABLE([pysetup],
 		AC_HELP_STRING([--enable-pysetup=[installoption]],
- [Execute 'python setup.py install installoption' as the last
+ [Execute '$(PYTHON) setup.py install installoption' as the last
 installation step.
 --disable-pysetup or an installoption of 'no' means do NOT execute
-'python setup.py...'
+'$(PYTHON) setup.py...'
 The default installoption is '--home=<prefix>']
 ),
 		[ac_pysetup="$enableval"], [ac_pysetup='--home=$(prefix)']
@@ -108,7 +108,7 @@ and PYINCDIR to find Python.h
 	)
 
 	AC_ARG_WITH([pyexe],
-		AC_HELP_STRING([--with-pyexe=[desired python binary (when --with-nrnpython=dynamic]]),
+		AC_HELP_STRING([--with-pyexe=[desired python binary (when --with-nrnpython=dynamic)]]),
 		[ac_nrn_pyexe="$withval"], [ac_nrn_pyexe="$PYTHON_BLD"]
 	)
 

@@ -45,12 +45,12 @@ WHICH=which
 
 if test "$1" != "" ; then
   PYTHON="$1"
-elif $WHICH python >& /dev/null ; then
-  PYTHON=`$WHICH python`
 elif $WHICH python3 >& /dev/null ; then
   PYTHON=`$WHICH python3`
+elif $WHICH python >& /dev/null ; then
+  PYTHON=`$WHICH python`
 else
-  echo "Cannot find executable python or python3" 1>2
+  echo "Cannot find executable python3 or python" 1>2
   exit 1;
 fi
 echo "# PYTHON=$PYTHON"
