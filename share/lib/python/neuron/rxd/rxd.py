@@ -686,20 +686,24 @@ def _c_compile(formula):
     filename = 'rxddll' + str(uuid.uuid1())
     with open(filename + '.c', 'w') as f:
         f.write(formula)
+    math_library = '-lm'
+    fpic = '-fPIC'
     try:
         gcc = os.environ["CC"]
     except:
         #when running on windows try and used the gcc included with NEURON
         if sys.platform.lower().startswith("win"):
+            math_library = ''
+            fpic = ''
             gcc = os.path.join(h.neuronhome(),"mingw","bin","x86_64-w64-mingw32-gcc.exe")
-            if not gcc.isfile():
+            if not os.path.isfile(gcc):
                 raise RxDException("unable to locate a C compiler. Please `set CC=<path to C compiler>`")
         else:
             gcc = "gcc"
     #TODO: Check this works on non-Linux machines
     gcc_cmd =  "%s -I%s -I%s " % (gcc, sysconfig.get_python_inc(), os.path.join(h.neuronhome(), "..", "..", "include", "nrn"))
-    gcc_cmd += "-shared -fPIC  %s.c %s " % (filename, _find_librxdmath())
-    gcc_cmd += "-o %s.so -lpython%i.%i -lm" % (filename, sys.version_info.major, sys.version_info.minor)
+    gcc_cmd += "-shared %s  %s.c %s " % (fpic, filename, _find_librxdmath())
+    gcc_cmd += "-o %s.so %s" % (filename, math_library)
     os.system(gcc_cmd)
     #TODO: Find a better way of letting the system locate librxdmath.so.0
     rxdmath_dll = ctypes.cdll[_find_librxdmath()]
@@ -711,7 +715,7 @@ def _c_compile(formula):
     if sys.platform.lower().startswith("win"):
         #cannot remove dll that are in use
         _windows_dll.append(weakref.ref(reaction))
-        _windows_dll_files.append(filesname + ".so")
+        _windows_dll_files.append(filename + ".so")
     else:
         os.remove(filename + '.so')
     return reaction
