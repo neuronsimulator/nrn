@@ -1459,10 +1459,10 @@ set_initialize(do_initialize_fptr)
 def _windows_remove_dlls():
     global _windows_dll_files, _windows_dll
     for (dll_ptr,filepath) in zip(_windows_dll,_windows_dll_files):
-        dll = dll_prt()
+        dll = dll_ptr()
         if dll:
             del dll
-        sys.remove(filepath)
+        os.remove(filepath)
     _windows_dll_files = []
     _windows_dll = []
         
