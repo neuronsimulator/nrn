@@ -120,7 +120,7 @@ void nrn_init_and_load_data(int argc,
     mk_mech(nrnopt_get_str("--datpath").c_str());
 
     // read the global variable names and set their values from globals.dat
-    set_globals(nrnopt_get_str("--datpath").c_str(), nrnopt_get_int("--seed"));
+    set_globals(nrnopt_get_str("--datpath").c_str(), nrnopt_get_flag("--seed"), nrnopt_get_int("--seed"));
 
     report_mem_usage("After mk_mech");
 
