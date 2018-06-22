@@ -714,7 +714,7 @@ def _c_compile(formula):
     os.remove(filename + '.c')
     if sys.platform.lower().startswith("win"):
         #cannot remove dll that are in use
-        _windows_dll.append(weakref.ref(reaction))
+        _windows_dll.append(weakref.ref(dll))
         _windows_dll_files.append(filename + ".so")
     else:
         os.remove(filename + '.so')
