@@ -48,7 +48,7 @@ extern std::vector<NetCon*> netcon_in_presyn_order_;
 extern std::vector<int*> netcon_srcgid;
 
 extern void mk_mech(const char* path);
-extern void set_globals(const char* path);
+extern void set_globals(const char* path, bool cli_global_seed, int cli_global_seed_value);
 extern void mk_netcvode(void);
 extern void nrn_p_construct(void);
 extern void nrn_setup(const char* filesdat,
