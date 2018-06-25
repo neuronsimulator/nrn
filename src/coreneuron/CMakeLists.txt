@@ -279,7 +279,7 @@ endif()
 if(ENABLE_REPORTINGLIB)
   set(link_reportinglib ${REPORTINGLIB_LIBRARIES})
 endif()
-target_link_libraries(coreneuron ${MPI_C_LIBRARIES}
+target_link_libraries(coreneuron ${MPI_CXX_LIBRARIES}
     ${link_reportinglib} ${link_cudacoreneuron} ${CUDA_LIBRARIES} )
 
 
