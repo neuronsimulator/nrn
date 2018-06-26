@@ -60,8 +60,10 @@ set_setup.argtypes = [fptr_prototype]
 set_initialize = dll.set_initialize
 set_initialize.argtypes = [fptr_prototype]
 
+rxd_set_no_diffusion = dll.rxd_set_no_diffusion
+
 setup_solver = dll.setup_solver
-setup_solver.argtypes = [ndpointer(ctypes.c_double), ctypes.c_int]
+setup_solver.argtypes = [ndpointer(ctypes.c_double), ctypes.c_int,  ctypes.POINTER(ctypes.c_long), ctypes.c_int]
 
 #states = None
 _set_num_threads = dll.set_num_threads 
@@ -82,6 +84,22 @@ register_rate.argtypes = [
         ctypes.c_int,                                                               #num multicompartment reactions
         numpy.ctypeslib.ndpointer(ctypes.c_double, flags='contiguous'),             #multicompartment multipliers
         ]                                                                           #Reaction rate function
+
+setup_currents = dll.setup_currents
+setup_currents.argtypes = [
+    ctypes.c_int,   #number of membrane currents
+    ctypes.c_int,   #number of nodes with membrane currents
+    _int_ptr,       #number of species involved in each membrane current
+    _int_ptr,       #charges of the species involved in each membrane current
+    _int_ptr,       #node indices
+    _int_ptr,       #node indices
+    _double_ptr,    #scaling (areas) of the fluxes
+    _int_ptr,       #charges for each species in each reation
+    ctypes.POINTER(ctypes.py_object),    #hoc pointers
+    _int_ptr,       #maps for membrane fluxes
+    _int_ptr        #maps for ecs fluxes
+]
+    
 
 set_reaction_indices = dll.set_reaction_indices
 set_reaction_indices.argtypes = [ctypes.c_int, _int_ptr, _int_ptr, _int_ptr, 
@@ -105,22 +123,44 @@ set_euler_matrix.argtypes = [
     numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
     numpy.ctypeslib.ndpointer(numpy.int32, flags='contiguous'),
     numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
+]
+rxd_setup_curr_ptrs = dll.rxd_setup_curr_ptrs
+rxd_setup_curr_ptrs.argtypes = [
     ctypes.c_int,
     _int_ptr,
     numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
     ctypes.POINTER(ctypes.py_object),
+]
+
+rxd_setup_conc_ptrs = dll.rxd_setup_conc_ptrs
+rxd_setup_conc_ptrs.argtypes = [
     ctypes.c_int,
     _int_ptr,
     ctypes.POINTER(ctypes.py_object)
 ]
 def _list_to_cint_array(data):
-    if len(data) == 0:
+    if data is None or len(data) == 0:
         return None
     else:
         return (ctypes.c_int * len(data))(*tuple(data))
 
+def _list_to_cdouble_array(data):
+    if data is None or len(data) == 0:
+        return None
+    else:
+        return (ctypes.c_double * len(data))(*tuple(data))
+
+def _list_to_clong_array(data):
+    if data is None or len(data) == 0:
+        return None
+    else:
+        return (ctypes.c_long * len(data))(*tuple(data))
+
 def _list_to_pyobject_array(data):
-    return (ctypes.py_object * len(data))(*tuple(data))
+    if data is None or len(data) == 0:
+        return None
+    else:
+        return (ctypes.py_object * len(data))(*tuple(data))
 
 def byeworld():
     # needed to prevent a seg-fault error at shutdown in at least some
@@ -130,7 +170,7 @@ def byeworld():
     try:
         del _react_matrix_solver
     except NameError:
-        # if it already didn't exist, that's fine
+    #    # if it already didn't exist, that's fine
         pass
     _windows_remove_dlls()
     
@@ -268,8 +308,6 @@ _rxd_offset = None
 
 def _atolscale(y):
     real_index_lookup = {item: index for index, item in enumerate(_nonzero_volume_indices)}
-    print real_index_lookup
-    print "_rxd_offset",_rxd_offset
     for sr in _species_get_all_species().values():
         s = sr()
         if s is not None:
@@ -363,36 +401,47 @@ def _ode_solve(dt, t, b, y):
 
 _rxd_induced_currents = None
 
-def _currents(rhs):
+def _setup_memb_currents():
     initializer._do_init()
     # setup membrane fluxes from our stuff
     # TODO: cache the memb_cur_ptrs, memb_cur_charges, memb_net_charges, memb_cur_mapped
     #       because won't change very often
-    global _rxd_induced_currents
-
     # need this; think it's because of initialization of mod files
     if _curr_indices is None: return
-
+    SPECIES_ABSENT = -1
     # TODO: change so that this is only called when there are in fact currents
-    _rxd_induced_currents = _numpy_zeros(len(_curr_indices))
-    rxd_memb_flux = []
+    rxd_memb_scales = []
     memb_cur_ptrs = []
     memb_cur_charges = []
     memb_net_charges = []
     memb_cur_mapped = []
+    memb_cur_mapped_ecs = []
     for rptr in _all_reactions:
         r = rptr()
         if r and r._membrane_flux:
-            # NOTE: memb_flux contains any scaling we need
-            new_fluxes = r._get_memb_flux(_node_get_states())
-            rxd_memb_flux += list(new_fluxes)
+            scales = r._memb_scales
+            rxd_memb_scales.extend(scales)
             memb_cur_ptrs += r._cur_ptrs
             memb_cur_mapped += r._cur_mapped
-            memb_cur_charges += [r._cur_charges] * len(new_fluxes)
-            memb_net_charges += [r._net_charges] * len(new_fluxes)
-
-    # TODO: is this in any way dimension dependent?
-
+            memb_cur_mapped_ecs += r._cur_mapped_ecs
+            memb_cur_charges += [r._cur_charges] * len(scales)
+            memb_net_charges += [r._net_charges] * len(scales)
+    ecs_map = [SPECIES_ABSENT if i is None else i for i in list(itertools.chain.from_iterable(itertools.chain.from_iterable(memb_cur_mapped_ecs)))]
+    ics_map = [SPECIES_ABSENT if i is None else i for i in list(itertools.chain.from_iterable(itertools.chain.from_iterable(memb_cur_mapped)))]
+    setup_currents(len(memb_cur_ptrs),
+        len(_curr_indices),
+        _list_to_cint_array([len(x) for x in memb_cur_mapped]),
+        _list_to_cint_array(memb_net_charges),
+        _list_to_cint_array(_curr_indices),
+        _list_to_cint_array(_cur_node_indices),
+        _list_to_cdouble_array(rxd_memb_scales),
+        _list_to_cint_array(list(itertools.chain.from_iterable(memb_cur_charges))),
+        _list_to_pyobject_array(list(itertools.chain.from_iterable(memb_cur_ptrs))),
+        _list_to_cint_array(ics_map),
+        _list_to_cint_array(ecs_map))
+        
+def _currents(rhs):
+    return
     if rxd_memb_flux:
         # TODO: remove the asserts when this is verified to work
         assert(len(rxd_memb_flux) == len(_cur_node_indices))
@@ -699,10 +748,10 @@ def _c_compile(formula):
     #TODO: Check this works on non-Linux machines
     gcc_cmd =  "%s -I%s -I%s " % (gcc, sysconfig.get_python_inc(), os.path.join(h.neuronhome(), "..", "..", "include", "nrn"))
     gcc_cmd += "-shared -fPIC  %s.c %s " % (filename, _find_librxdmath())
-    gcc_cmd += "-o %s.so -lpython%i.%i -lm" % (filename, sys.version_info.major, sys.version_info.minor)
+    gcc_cmd += "-o %s.so -lm" % (filename )
     os.system(gcc_cmd)
     #TODO: Find a better way of letting the system locate librxdmath.so.0
-    rxdmath_dll = ctypes.cdll[_find_librxdmath()]
+    #rxdmath_dll = ctypes.cdll[_find_librxdmath()]
     dll = ctypes.cdll['./%s.so' % filename]
     reaction = dll.reaction
     reaction.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double)] 
@@ -741,12 +790,12 @@ def _w_ode_jacobian(dt, t, ypred, fpred): return None #_ode_jacobian(dt, t, ypre
 _w_conductance = None
 def _w_setup(): return _setup()
 def _w_currents(rhs): return None 
-def _w_ode_count(offset): return _ode_count(offset)
+def _w_ode_count(offset): return None #_ode_count(offset)
 def _w_ode_reinit(y): return None 
 def _w_ode_fun(t, y, ydot): return None
 def _w_ode_solve(dt, t, b, y): return None # _ode_solve(dt, t, b, y)
 def _w_fixed_step_solve(raw_dt): return None # _section1d_transfer_to_legacy # _fixed_step_solve(raw_dt)
-def _w_atolscale(y): return _atolscale(y)
+def _w_atolscale(y): return None #_atolscale(y)
 _callbacks = [_w_setup, None, _w_currents, _w_conductance, _w_fixed_step_solve,
               _w_ode_count, _w_ode_reinit, _w_ode_fun, _w_ode_solve, _w_ode_jacobian, _w_atolscale]
 
@@ -808,12 +857,8 @@ def _send_euler_matrix_to_c(nrow, nnonzero, nonzero_i, nonzero_j, nonzero_values
     set_euler_matrix(nrow, nnonzero, nonzero_i, nonzero_j, nonzero_values,
                      zero_volume_indices, len(zero_volume_indices),
                      _diffusion_a_base, _diffusion_b_base, _diffusion_d_base,
-                     _diffusion_p, _c_diagonal, len(_curr_indices), 
-                     _list_to_cint_array(_curr_indices), _curr_scales, 
-                     _list_to_pyobject_array(_curr_ptrs), 
-                     len(section1d._all_cindices), 
-                     _list_to_cint_array(section1d._all_cindices), 
-                     _list_to_pyobject_array(section1d._all_cptrs))
+                     _diffusion_p, _c_diagonal) 
+
 
 def _matrix_to_rxd_sparse(m):
     """precondition: assumes m a numpy array"""
@@ -1016,7 +1061,17 @@ def _setup_matrices():
         _update_node_data()
         _send_euler_matrix_to_c(_euler_matrix_nrow, _euler_matrix_nnonzero, _euler_matrix_i, _euler_matrix_j, _euler_matrix_nonzero, _zero_volume_indices)
     else:
-        setup_solver(_node_get_states(), len(_node_get_states()))
+        rxd_set_no_diffusion()
+        setup_solver(_node_get_states(), len(_node_get_states()), _list_to_clong_array(_zero_volume_indices), len(_zero_volume_indices))
+    
+    if _curr_indices is not None and len(_curr_indices) > 0:
+        rxd_setup_curr_ptrs(len(_curr_indices), _list_to_cint_array(_curr_indices),
+            _curr_scales, _list_to_pyobject_array(_curr_ptrs))
+
+    if section1d._all_cindices is not None and len(section1d._all_cindices) > 0:
+        rxd_setup_conc_ptrs(len(section1d._all_cindices), 
+             _list_to_cint_array(section1d._all_cindices), 
+             _list_to_pyobject_array(section1d._all_cptrs))
 
     # we do this last because of performance issues with changing sparsity of csr matrices
     if _diffusion_matrix is not None:
@@ -1119,6 +1174,7 @@ def _compile_reactions():
     ecs_mc_species_involved = set()   
     from . import rate, multiCompartmentReaction
 
+    #Find sets of sections that contain the same regions
     from region import _c_region
     matched_regions = [] # the different combinations of regions that arise in different sections
     for nrnsec in section1d._rxd_sec_lookup.keys():
@@ -1128,16 +1184,18 @@ def _compile_reactions():
         if set_of_regions not in matched_regions:
             matched_regions.append(set_of_regions)
     region._c_region_lookup = dict()
-    c_region_list = []
     
+    #create a c_region instance for each of the unique sets of regions
+    c_region_list = []
     for sets in matched_regions:
         c_region_list.append(_c_region(sets))
     
+
     for rptr in _all_reactions:
         r = rptr()
         if not r:
             continue
-        
+
         #Find all the species involved
         if isinstance(r,rate.Rate):
             sptrs = set(r._involved_species + [r._species])
@@ -1166,9 +1224,10 @@ def _compile_reactions():
                     react_regions.append(s._region)
                 elif None not in s._regions:
                     [react_regions.append(reg) for reg in s._regions + s._extracellular_regions]
-            #Only regions where ALL the species are present
-            from collections import Counter
-            react_regions = [reg for reg, count in Counter(react_regions).iteritems() if count == nsp]
+            #Only regions where ALL the species are present -- unless it is a membrane
+            #from collections import Counter
+            #from . import geometry as geo
+            #react_regions = [reg for reg, count in Counter(react_regions).iteritems() if count == nsp or isinstance(reg.geometry,geo.ScalableBorder)]
         #Any intracellular regions
         if not all([isinstance(x, region.Extracellular) for x in react_regions]):
             species_involved = []
@@ -1214,18 +1273,18 @@ def _compile_reactions():
                     ecs_species_involved.append(s)
                 if any([isinstance(x, region.Region) for x in react_regions]):
                     raise RxDException("Error: an %s cannot have both Extracellular and Intracellular regions. Use a MultiCompartmentReaction or specify the desired region with the 'region=' keyword argument", rptr().__class__)
+                for reg in react_regions:
+                    if not isinstance(reg, region.Extracellular):
+                        continue
 
-            for reg in react_regions:
-                if not isinstance(reg, region.Extracellular):
-                    continue
-                if reg in ecs_regions_inv.keys():
-                    ecs_regions_inv[reg].append(rptr)
-                else:
-                    ecs_regions_inv[reg] = [rptr]
-                if reg in species_by_region.keys():
-                    ecs_species_by_region[reg] = ecs_species_by_region[reg].union(ecs_species_involved)
-                else:
-                    ecs_species_by_region[reg] = set(ecs_species_involved)
+                    if reg in ecs_regions_inv.keys():
+                        ecs_regions_inv[reg].append(rptr)
+                    else:
+                        ecs_regions_inv[reg] = [rptr]
+                    if reg in ecs_species_by_region.keys():
+                        ecs_species_by_region[reg] = ecs_species_by_region[reg].union(ecs_species_involved)
+                    else:
+                        ecs_species_by_region[reg] = set(ecs_species_involved)
 
     #Create lists of indexes for intracellular reactions and rates
     nseg_by_region = []     # a list of the number of segments for each region
@@ -1243,7 +1302,7 @@ def _compile_reactions():
     # now setup the reactions
     #if there are no reactions
     if location_count == 0 and len(ecs_regions_inv) == 0:
-        setup_solver(_node_get_states(), len(_node_get_states()))
+        setup_solver(_node_get_states(), len(_node_get_states()), _list_to_clong_array(_zero_volume_indices), len(_zero_volume_indices))
         return None
 
     #Setup intracellular and multicompartment reactions
@@ -1320,17 +1379,17 @@ def _compile_reactions():
                             fxn_string += "\n\trhs[%d][%d] %s (%g) * rate;" % (idx, region_id, operator, summed_mults[idx])
               
             fxn_string += "\n}\n"
-            print "num_species=%i\t num_regions=%i\t num_segments=%i\n" % (creg.num_species, creg.num_regions, creg.num_segments)
-            print creg.get_state_index()
-            print "state_index %s \t num_ecs_species=%i\t ecs_species_ids %s\n" % (creg.get_state_index().shape, creg.num_ecs_species, creg.get_ecs_species_ids().shape)
-            print "ecs_index %s\t mc_mult_count=%i \t mc_mult_list %s\n" % (creg.get_ecs_index().shape, mc_mult_count, numpy.array(mc_mult_list, dtype=ctypes.c_double).shape)
-            print mc_mult_list
-            print fxn_string
+            #print "num_species=%i\t num_regions=%i\t num_segments=%i\n" % (creg.num_species, creg.num_regions, creg.num_segments)
+            #print creg.get_state_index()
+            #print "state_index %s \t num_ecs_species=%i\t ecs_species_ids %s\n" % (creg.get_state_index().shape, creg.num_ecs_species, creg.get_ecs_species_ids().shape)
+            #print "ecs_index %s\t mc_mult_count=%i \t mc_mult_list %s\n" % (creg.get_ecs_index().shape, mc_mult_count, numpy.array(mc_mult_list, dtype=ctypes.c_double).shape)
+            #print mc_mult_list
+            #print fxn_string
             register_rate(creg.num_species, creg.num_regions, creg.num_segments, creg.get_state_index(),
                           creg.num_ecs_species, creg.get_ecs_species_ids(), creg.get_ecs_index(),
                           mc_mult_count, numpy.array(mc_mult_list, dtype=ctypes.c_double), 
                           _c_compile(fxn_string))
-        setup_solver(_node_get_states(), len(_node_get_states()))
+        setup_solver(_node_get_states(), len(_node_get_states()), _list_to_clong_array(_zero_volume_indices), len(_zero_volume_indices))
 
     
     #Setup extracellular reactions
@@ -1416,6 +1475,7 @@ def _init():
             s._finitialize()
     _setup_matrices()
     _compile_reactions()
+    _setup_memb_currents()
 
  
 
@@ -1433,7 +1493,7 @@ def _do_nbs_register():
         #
         # register the initialization handler and the ion register handler
         #
-        _fih = h.FInitializeHandler(_init)
+        _fih = h.FInitializeHandler(3, _init)
         set_setup_matrices = dll.set_setup_matrices
         set_setup_matrices.argtypes = [fptr_prototype]
         do_setup_matrices_fptr = fptr_prototype(_setup_matrices)

@@ -27,6 +27,14 @@ extern double* states;
 
 Reaction* ecs_reactions = NULL;
 
+/*Current from multicompartment reations*/
+extern unsigned char _membrane_flux;
+extern int _memb_curr_total;
+extern int* _rxd_induced_currents_grid;
+extern int* _rxd_induced_currents_ecs_idx;
+extern double* _rxd_induced_currents_ecs;
+
+
 static int states_cvode_offset;
 
 /*Update the global array of reaction tasks when the number of reactions 
@@ -393,7 +401,7 @@ static void* gather_currents(void* dataptr)
  * double* output - for fixed step this is the states for variable ydot
  * double dt - for fixed step the step size, for variable step 1
  */
-void do_currents(Grid_node* grid, double* output, double dt)
+void do_currents(Grid_node* grid, double* output, double dt, int grid_id)
 {
     Py_ssize_t m, n, i;
     Current_Triple* c;
@@ -443,14 +451,25 @@ void do_currents(Grid_node* grid, double* output, double dt)
     else
     {
         for(i = 0; i < n; i++)
+        {
             output[grid->current_list[i].destination] += grid->all_currents[i];
+        }
     }
 #else
     for(i = 0; i < n; i++)
         output[grid->current_list[i].destination] +=  grid->all_currents[i];
 #endif
+    if(_membrane_flux)
+    {
+        for(i = 0; i < _memb_curr_total; i++)
+        {
+            if(_rxd_induced_currents_grid[i] == grid_id)
+            {
+                output[_rxd_induced_currents_ecs_idx[i]] += _rxd_induced_currents_ecs[i];
+            }
+        }
+    }
 }
-
 
 void _fadvance_fixed_step_ecs(void) {
     Grid_node* grid;
@@ -463,13 +482,13 @@ void _fadvance_fixed_step_ecs(void) {
     /*Maybe TODO: Should check #currents << #voxels and not the other way round*/
     double* val;
     double* all_currents;
-    int proc_offset;
+    int proc_offset, id;
 
 	if(threaded_reactions_tasks != NULL)
 	    run_threaded_reactions(threaded_reactions_tasks);
 
-    for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
-        do_currents(grid, grid->states_cur, dt);
+    for (id = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, id++) {
+        do_currents(grid, grid->states_cur, dt, id);
 		switch(grid->VARIABLE_ECS_VOLUME)
 		{
 			case VOLUME_FRACTION:
@@ -510,7 +529,6 @@ void scatter_concentrations(void) {
 * Begin variable step code
 *
 *****************************************************************************/
-
 
 /* count the total number of state variables AND store their offset (passed in) in the cvode vector */
 int ode_count(const int offset) {
@@ -609,9 +627,9 @@ void _rhs_variable_step_ecs(const double t, const double* states, double* ydot) 
     ydot = orig_ydot;
     states = orig_states;
     /* process currents */
-    for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next)
+    for (i=0,grid = Parallel_grids[0]; grid != NULL; grid = grid -> next,i++)
     {
-        do_currents(grid, ydot, 1.0);
+        do_currents(grid, ydot, 1.0, i);
         ydot += grid_size;
     }
 	ydot = orig_ydot;

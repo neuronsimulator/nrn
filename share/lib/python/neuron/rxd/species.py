@@ -30,6 +30,9 @@ insert.argtypes = [ctypes.c_int, ctypes.py_object, ctypes.c_int, ctypes.c_int, c
 
 insert.restype = ctypes.c_int
 
+species_atolscale = dll.species_atolscale
+species_atolscale.argtypes = [ctypes.c_int, ctypes.c_double, ctypes.c_int, ctypes.POINTER(ctypes.c_int)]
+
 _set_grid_concentrations = dll.set_grid_concentrations
 _set_grid_concentrations.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.py_object, ctypes.py_object]
 
@@ -835,6 +838,8 @@ class Species(_SpeciesMathable):
         # 1D stuff
         for sec in self._secs:
             sec._register_cptrs()
+        idx = self._indices1d()
+        species_atolscale(self._id, self._atolscale, len(idx), (ctypes.c_int * len(idx))(*idx))
         # 3D stuff
         self._concentration_ptrs = []
         self._seg_order = []

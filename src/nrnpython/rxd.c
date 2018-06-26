@@ -18,7 +18,7 @@
 /*
     Globals
 */
-
+extern NrnThread* nrn_threads;
 int NUM_THREADS = 1;
 pthread_t* Threads = NULL;
 TaskQueue* AllTasks = NULL;
@@ -27,6 +27,7 @@ fptr _setup, _initialize, _setup_matrices;
 extern NrnThread* nrn_threads;
 
 /*intracellular diffusion*/
+unsigned char diffusion = FALSE;
 int _rxd_euler_nrow=0, _rxd_euler_nnonzero=0, _rxd_num_zvi=0;
 long* _rxd_euler_nonzero_i;
 long* _rxd_euler_nonzero_j;
@@ -43,6 +44,9 @@ static int _cvode_offset;
 
 /*intracellular reactions*/
 ICSReactions* _reactions = NULL;
+
+/*Indices used to set atol scale*/
+SpeciesIndexList* species_indices = NULL;
 
 /*intracellular reactions*/
 double* states;
@@ -69,6 +73,39 @@ int* _ecs_species_count = NULL;
 int _num_ecs_species = 0;
 Grid_node*** _mc_ecs_grids;
 
+/*membrane fluxes*/
+int _memb_curr_total = 0;   /*number of membrane currents (sum of 
+                              _memb_species_count)*/
+
+int _memb_count = 0;        /*number of membrane currents*/
+double* _rxd_flux_scale;    /*array length _memb_count to scale fluxes*/
+
+int* _memb_net_charges;     /*array length _memb_count of charges*/
+int* _cur_node_indices;      /*array length _memb_count into nodes index*/
+
+int* _cur_indices;          /*array length _memb_curr_total into _rxd_induced_currents index*/
+
+int* _memb_species_count;   /*array of length _memb_count
+                             number of species involved in each membrane
+                             current*/
+
+/*arrays of size _memb_count by _memb_species_count*/
+PyHocObject*** _memb_cur_ptrs; /*hoc pointers TODO: replace with index for _curr_ptrs*/
+int** _memb_cur_charges;    
+int*** _memb_cur_mapped;      /*array of pairs of indices*/
+int*** _memb_cur_mapped_ecs;  /*array of pointer into ECS grids*/
+
+double* _rxd_induced_flux = NULL;       /*set when calculating reactions*/
+double* _rxd_induced_currents = NULL;
+double* _rxd_induced_currents_ecs = NULL;
+int* _rxd_induced_currents_grid = NULL;
+int* _rxd_induced_currents_ecs_idx = NULL;
+
+unsigned char _membrane_flux = FALSE;   /*TRUE if any membrane fluxes are in the model*/
+int* _membrane_flux_lookup; /*states index -> position in _rxd_induced_flux*/
+int* _membrane_scale_lookup; /*sates index -> poisition in _rxd_flux_scale*/
+
+
 static void transfer_to_legacy()
 {
 	/*TODO: support 3D*/
@@ -83,17 +120,82 @@ static void transfer_to_legacy()
 #define MAX_REACTIONS 100
 #define CHILD_BLOCK 10
 
+void rxd_set_no_diffusion()
+{
+    int i;
+    diffusion = FALSE;
+    /*Clear previous _rxd_zvi_child*/
+    if(_rxd_zvi_child != NULL && _rxd_zvi_child_count != NULL)
+    {
+        for(i = 0; i < _rxd_num_zvi; i++)
+            if(_rxd_zvi_child_count[i]>0) free(_rxd_zvi_child[i]);
+        free(_rxd_zvi_child);
+        free(_rxd_zvi_child_count);
+        _rxd_zvi_child = NULL;
+        _rxd_zvi_child_count = NULL;
+        
+    }
+    if(_rxd_zvi_child_count != NULL)
+    {
+        free(_rxd_zvi_child_count);
+        _rxd_zvi_child_count = NULL;
+    }
+    if(_rxd_zvi_child != NULL)
+    {
+        free(_rxd_zvi_child_count);
+        _rxd_zvi_child_count=NULL;
+    }
+}
+
+void rxd_setup_curr_ptrs(int num_currents, int* curr_index, double* curr_scale,
+						  PyHocObject** curr_ptrs, int conc_count, 
+						  int* conc_index, PyHocObject** conc_ptrs)
+{
+	/* info for NEURON currents - to update states */
+	_curr_count = num_currents;
+	if(_curr_indices != NULL)
+		free(_curr_indices);
+	_curr_indices = malloc(sizeof(int)*num_currents);
+	memcpy(_curr_indices,curr_index, sizeof(int)*num_currents); 
+	
+	if(_curr_scales != NULL)
+		free(_curr_scales);
+	_curr_scales = malloc(sizeof(double)*num_currents);
+	memcpy(_curr_scales, curr_scale, sizeof(double)*num_currents); 
+
+	if(_curr_ptrs != NULL)
+		free(_curr_ptrs);
+	_curr_ptrs = malloc(sizeof(PyHocObject)*num_currents);
+	memcpy(_curr_ptrs, curr_ptrs, sizeof(PyHocObject*)*num_currents);
+}
+
+void rxd_setup_conc_ptrs(int conc_count, int* conc_index, 
+                         PyHocObject** conc_ptrs)
+{
+	/* info for NEURON concentration - to transfer to legacy */
+	_conc_count = conc_count;
+
+	if(_conc_indices != NULL)
+		free(_conc_indices);
+	_conc_indices = malloc(sizeof(int)*conc_count);
+	memcpy(_conc_indices, conc_index, sizeof(int)*conc_count); 
+	
+	if(_conc_ptrs != NULL)
+		free(_conc_ptrs);
+	_conc_ptrs = malloc(sizeof(PyHocObject)*conc_count);
+	memcpy(_conc_ptrs, conc_ptrs, sizeof(PyHocObject*)*conc_count);
+    
+}
+
 void rxd_set_euler_matrix(int nrow, int nnonzero, long* nonzero_i,
                           long* nonzero_j, double* nonzero_values,
                           long* zero_volume_indices, int num_zero_volume_indices,
                           double* diffusion_a_base, double* diffusion_b_base,
                           double* diffusion_d_base, int* diffusion_p, 
-                          double* c_diagonal,
-						  int num_currents, int* curr_index, double* curr_scale,
-						  PyHocObject** curr_ptrs, int conc_count, 
-						  int* conc_index, PyHocObject** conc_ptrs) {
-
+                          double* c_diagonal)
+{
     long i, j;
+    diffusion = TRUE;  
     /* TODO: is it better to use a pointer or do a copy */
 	_rxd_euler_nrow = nrow;
     _rxd_euler_nnonzero = nnonzero;
@@ -113,17 +215,20 @@ void rxd_set_euler_matrix(int nrow, int nnonzero, long* nonzero_i,
     }
     
     _rxd_num_zvi = num_zero_volume_indices;
-    _rxd_zero_volume_indices = zero_volume_indices; 
+    if(_rxd_zero_volume_indices != NULL) free(_rxd_zero_volume_indices);
+    _rxd_zero_volume_indices = malloc(sizeof(long)*num_zero_volume_indices);
+    memcpy(_rxd_zero_volume_indices,zero_volume_indices,sizeof(long)*num_zero_volume_indices);
 
     _rxd_a = diffusion_a_base;
     _rxd_b = diffusion_b_base;
     _rxd_d = diffusion_d_base;
     _rxd_p = diffusion_p;
     _rxd_c = c_diagonal;
-
     
     if(_rxd_num_zvi > 0)
     {
+        if(_rxd_zvi_child_count != NULL) free(_rxd_zvi_child_count);
+        if(_rxd_zvi_child != NULL) free(_rxd_zvi_child_count);
         _rxd_zvi_child_count = (long*)calloc(_rxd_num_zvi,sizeof(long));
         _rxd_zvi_child = (long**)malloc(_rxd_num_zvi*sizeof(long*));
 
@@ -146,36 +251,6 @@ void rxd_set_euler_matrix(int nrow, int nnonzero, long* nonzero_i,
             _rxd_zvi_child[i] = (long*)realloc(_rxd_zvi_child[i], sizeof(long)*_rxd_zvi_child_count[i]);
         }
     }
-	
-	/* info for NEURON currents - to update states */
-	_curr_count = num_currents;
-	if(_curr_indices != NULL)
-		free(_curr_indices);
-	_curr_indices = malloc(sizeof(int)*num_currents);
-	memcpy(_curr_indices,curr_index, sizeof(int)*num_currents); 
-	
-	if(_curr_scales != NULL)
-		free(_curr_scales);
-	_curr_scales = malloc(sizeof(double)*num_currents);
-	memcpy(_curr_scales, curr_scale, sizeof(double)*num_currents); 
-
-	if(_curr_ptrs != NULL)
-		free(_curr_ptrs);
-	_curr_ptrs = malloc(sizeof(PyHocObject)*num_currents);
-	memcpy(_curr_ptrs, curr_ptrs, sizeof(PyHocObject*)*num_currents);
-
-	/* info for NEURON concentration - to transfer to legacy */
-	_conc_count = conc_count;
-
-	if(_conc_indices != NULL)
-		free(_conc_indices);
-	_conc_indices = malloc(sizeof(int)*conc_count);
-	memcpy(_conc_indices, conc_index, sizeof(int)*conc_count); 
-	
-	if(_conc_ptrs != NULL)
-		free(_conc_ptrs);
-	_conc_ptrs = malloc(sizeof(PyHocObject)*conc_count);
-	memcpy(_conc_ptrs, conc_ptrs, sizeof(PyHocObject*)*conc_count);
 }
 
 static void mul(int nrow, int nnonzero, long* nonzero_i, long* nonzero_j, const double* nonzero_values, const double* v, double* result) {
@@ -194,9 +269,16 @@ static void mul(int nrow, int nnonzero, long* nonzero_i, long* nonzero_j, const 
 	/*Add currents to the result
 	 * TODO: RxD induced currents
 	 */
-	for (k = 0; k < _curr_count; k++)
-	{
-		result[_curr_indices[k]] += _curr_scales[k] * (*_curr_ptrs[k]->u.px_);
+    if(_membrane_flux)
+    {
+	    for (k = 0; k < _curr_count; k++)
+    	    result[_curr_indices[k]] += _curr_scales[k] * (*_curr_ptrs[k]->u.px_ - _rxd_induced_currents[k]);
+    }
+    else
+    {
+        for (k =0; k < _curr_count; k++)
+            result[_curr_indices[k]] += _curr_scales[k] * (*_curr_ptrs[k]->u.px_);
+
 	}
 }
 
@@ -274,7 +356,7 @@ static void ode_solve(double dt, double t, double* p1, double* p2)
    
     if(_rxd_num_zvi > 0)
     {
-        full_b = (double*)calloc(sizeof(double),num_states);
+        full_b = (double*)calloc(sizeof(double), num_states);
         for(i = 0, j = 0; i < num_states; i++)
         {
             if(i == zvi[j])
@@ -287,14 +369,12 @@ static void ode_solve(double dt, double t, double* p1, double* p2)
     {
         full_b = b;
     }
-    //for(i=0;i<_rxd_euler_nrow;i++)
-    //    fprintf(stderr,"%i] a %1.5e b %1.5e c %1.5e d %1.5e p %i state %1.5e\n", i, _rxd_a[i], _rxd_b[i], _rxd_c[i], _rxd_d[i], _rxd_p[i], full_b[i]);  
-	nrn_tree_solve(_rxd_a, _rxd_b, _rxd_c, _rxd_d, full_b, _rxd_p, _rxd_euler_nrow, dt);
-   
+    do_ics_reactions(t, full_b, NULL);
 
-    //do_ics_reactions(t, full_b, NULL);
-    
-    if(_rxd_num_zvi>0)
+	nrn_tree_solve(_rxd_a, _rxd_b, _rxd_c, _rxd_d, full_b, _rxd_p, _rxd_euler_nrow, dt);
+
+   
+    if(_rxd_num_zvi > 0)
     {
         for(i = 0, j = 0; i < num_states; i++)
         {
@@ -308,66 +388,177 @@ static void ode_solve(double dt, double t, double* p1, double* p2)
     
 }
 
-static void ode_jacobian(double dt, const double* p1, double* p2)
+static int ode_abs_tol(double* p1)
 {
-    return;
-    unsigned long i, j;
-    const double* my_states = p1 + _cvode_offset;
-    double* ydot = p2 + _cvode_offset;
-	double *rhs;
-	long* zvi = _rxd_zero_volume_indices;
-
-    bzero(ydot, num_states*sizeof(double));
-    
-    /*diffusion*/
-    rhs = (double*)malloc(sizeof(double*) * _rxd_euler_nrow);
-	mul(_rxd_euler_nrow, _rxd_euler_nnonzero, _rxd_euler_nonzero_i, _rxd_euler_nonzero_j, _rxd_euler_nonzero_values, my_states, rhs);
-	
-    /* increment states by rhs which is now really deltas */
-    for (i = 0; i < _rxd_euler_nrow; i++) {
-        ydot[i] = rhs[i];
-    }
-
-    /* clear zero volume indices (conservation nodes) */
-    for (i = 0; i < _rxd_num_zvi; i++) {
-        ydot[zvi[i]] = 0;
-    }
-    free(rhs);
-
-	/*reactions*/
-    do_ics_reactions(*t_ptr, my_states, ydot);
-}
-
-/*
-int ode_abs_tol(double* y)
-{
-    long i, j;
-    double* my_states = y + _cvode_offset;
-    if(_rxd_num_zvi > 0)
+    int i;
+    double* y = p1 + _cvode_offset;
+    if(species_indices != NULL)
     {
-        for(i=0, j=0; i < num_states; i++)
+        SpeciesIndexList* list;
+        for(list = species_indices; list->next != NULL; list = list->next)
         {
-            if(zvi[j] == i)
-                j++;
-            else
-                y[i-j] *= atol_scale;
+            for(i=0; i<list->length; i++)
+                y[list->indices[i]] *= list->atolscale;
         }
     }
-    else
+}
+
+static void free_currents()
+{
+    int i, j;
+    for(i = 0; i < _memb_count; i++)
     {
-        for(i=0; i < num_states; i++)
-            y[i] *= atol_scale;
+        for(j = 0; j < _memb_species_count[i]; j++)
+        {
+            free(_memb_cur_mapped[i][j]);
+        }
+        free(_memb_cur_mapped[i]);
+        free(_memb_cur_charges[i]);
+        free(_memb_cur_ptrs[i]);
+    }
+    free(_memb_cur_charges);
+    free(_memb_cur_ptrs);
+    free(_memb_cur_mapped);
+    free(_memb_species_count);
+    free(_cur_indices);
+    free(_cur_node_indices);
+    free(_rxd_induced_flux);
+    free(_rxd_induced_currents);
+    free(_rxd_flux_scale);
+    free(_membrane_flux_lookup);
+    free(_membrane_scale_lookup);
+    free(_memb_cur_mapped_ecs);
+    free(_rxd_induced_currents_grid);
+    free(_rxd_induced_currents_ecs);
+    free(_rxd_induced_currents_ecs_idx);
+    _membrane_flux = FALSE; 
+}
+
+void setup_currents(int num_currents, int num_nodes, int* num_species, int* net_charges, int* cur_idxs, int* node_idxs, double* scales,  int* charges, PyHocObject** ptrs, int* mapped, int* mapped_ecs)
+{
+    int i, j, k;
+    if(_membrane_flux)
+        free_currents();
+    _memb_count = num_currents;
+    _memb_curr_total = num_nodes;
+    _memb_species_count = (int*)malloc(sizeof(int)*num_currents);
+    memcpy(_memb_species_count,num_species,sizeof(int)*num_currents);
+
+    _memb_net_charges = (int*)malloc(sizeof(int)*num_currents);
+    memcpy(_memb_net_charges,net_charges,sizeof(int)*num_currents);
+
+    _rxd_flux_scale = (double*)malloc(sizeof(double)*num_currents);
+    memcpy(_rxd_flux_scale,scales,sizeof(double)*num_currents);
+
+    /*TODO: if memory is an issue - replace with sorted list of cur_idxs*/
+    _membrane_flux_lookup = (int*)malloc(sizeof(int)*num_states);
+    memset(_membrane_flux_lookup, SPECIES_ABSENT, sizeof(int)*num_states);
+    for(i = 0; i < _memb_curr_total; i++)
+    {
+        _membrane_flux_lookup[cur_idxs[i]] = i;
+    }
+
+    _membrane_scale_lookup = (int*)malloc(sizeof(int)*num_states);
+     memset(_membrane_scale_lookup, SPECIES_ABSENT, sizeof(int)*num_states);
+    _memb_cur_charges = (int**)malloc(sizeof(int*)*num_currents);
+    _memb_cur_ptrs = (PyHocObject***)malloc(sizeof(PyHocObject**)*num_currents);     
+    _memb_cur_charges = (int**)malloc(sizeof(int*)*num_currents);
+    _memb_cur_mapped_ecs = (int***)malloc(sizeof(int*)*num_currents);        
+    _memb_cur_mapped = (int***)malloc(sizeof(int**)*num_currents);
+    _rxd_induced_currents_grid = (int*)malloc(sizeof(int)*_memb_curr_total);
+    _rxd_induced_currents_ecs_idx = (int*)malloc(sizeof(int)*_memb_curr_total);
+
+    for(i = 0, k = 0; i < num_currents; i++)
+    {
+        _memb_cur_charges[i] = (int*)malloc(sizeof(int)*num_species[i]);
+        memcpy(_memb_cur_charges[i], &charges[k], sizeof(int)*num_species[i]);
+
+        _memb_cur_ptrs[i] = (PyHocObject**)malloc(sizeof(PyHocObject*)*num_species[i]);
+        memcpy(_memb_cur_ptrs[i], &ptrs[k], sizeof(PyHocObject*)*num_species[i]);
+        _memb_cur_mapped_ecs[i] = (int**)malloc(sizeof(int*)*num_species[i]);
+        _memb_cur_mapped[i] =  (int**)malloc(sizeof(int*)*num_species[i]);
+
+
+        for(j = 0; j < num_species[i]; j++, k++)
+        {
+            _memb_cur_mapped[i][j] = (int*)malloc(2*sizeof(int));
+            memcpy(_memb_cur_mapped[i][j],&mapped[2*k],2*sizeof(int));
+            _memb_cur_mapped_ecs[i][j] = (int*)malloc(2*sizeof(int));
+            memcpy(_memb_cur_mapped_ecs[i][j],&mapped_ecs[2*k],2*sizeof(int));
+            _membrane_scale_lookup[cur_idxs[_memb_cur_mapped[i][j][0]]] = i;
+            _membrane_scale_lookup[cur_idxs[_memb_cur_mapped[i][j][1]]] = i;
+            if( cur_idxs[_memb_cur_mapped[i][j][0]] != SPECIES_ABSENT)
+            {
+                _rxd_induced_currents_grid[_memb_cur_mapped[i][j][0]] = _memb_cur_mapped_ecs[i][j][0];
+                _rxd_induced_currents_ecs_idx[_memb_cur_mapped[i][j][0]] = _memb_cur_mapped_ecs[i][j][1];
+
+            }
+            else if(cur_idxs[_memb_cur_mapped[i][j][1]] != SPECIES_ABSENT)
+
+            {
+                _rxd_induced_currents_grid[_memb_cur_mapped[i][j][1]] = _memb_cur_mapped_ecs[i][j][0];
+                _rxd_induced_currents_ecs_idx[_memb_cur_mapped[i][j][1]] = _memb_cur_mapped_ecs[i][j][1];
+
+            }
+        }   
+    }
+
+    _cur_indices = (int*)malloc(sizeof(int)*_memb_curr_total);
+    memcpy(_cur_indices, cur_idxs, sizeof(int)*_memb_curr_total);
+
+    _cur_node_indices = (int*)malloc(sizeof(int)*num_currents);
+    memcpy(_cur_node_indices, node_idxs, sizeof(int)*num_currents);
+
+    _membrane_flux = TRUE;
+    _rxd_induced_currents = (double*)malloc(sizeof(double)*_memb_curr_total);
+    _rxd_induced_flux = (double*)malloc(sizeof(double)*_memb_curr_total);
+    _rxd_induced_currents_ecs = (double*)malloc(sizeof(double)*_memb_curr_total);
+}
+
+static void _currents(double* rhs)
+{
+    int i, j, k, idx;
+    double current;
+    
+    if(!_membrane_flux)
+        return;
+
+    get_all_reaction_rates(*t_ptr,states,NULL);
+    
+    bzero(_rxd_induced_currents, _memb_curr_total*sizeof(double));
+    bzero(_rxd_induced_currents_ecs, _memb_curr_total*sizeof(double));
+
+    for(i=0, k = 0; i < _memb_count; i++)
+    {
+        idx = _cur_node_indices[i];
+        rhs[idx] -= _memb_net_charges[i] * _rxd_induced_flux[i];
+        for(j=0; j < _memb_species_count[i]; j++, k++)
+        {
+           current = (double)_memb_cur_charges[i][j] * _rxd_induced_flux[i];
+
+           *(_memb_cur_ptrs[i][j]->u.px_) += current;
+            _rxd_induced_currents[_memb_cur_mapped[i][j][0]] += current;
+   
+            if(_memb_cur_mapped[i][j][0] == SPECIES_ABSENT)
+            {
+                if(_memb_cur_mapped_ecs[i][j][1] != SPECIES_ABSENT)
+                {
+                    /*Extracellular region is within the ECS grid*/ 
+                    _rxd_induced_currents_ecs[k] += current;
+                    
+                }
+            }
+            else
+            {
+                /*Original rxd nrn_region='o'*/
+                _rxd_induced_currents[_memb_cur_mapped[i][j][1]] += current;
+            }
+        }
     }
 }
-*/
 
 int rxd_nonvint_block(int method, int size, double* p1, double* p2, int thread_id) {
-    //fprintf(stderr,"rxd_nonvint_block method %i size %i p1 %p p2 %p tid %i\tdt %g\n",method,size,p1,p2,thread_id,*dt_ptr);
-    int i;
-    //for(i = 0; i < size; i++)
-    //{
-    //    fprintf(stderr,"%g]\t%i\t%1.20e\t%1.20e\n",*t_ptr,i,(p1==NULL?0:p1[i]), (p2==NULL?0:p2[i]));
-    //}   
+    //fprintf(stderr,"nonvint_block  method = %d l=%d t=%g dt=%g p1=%p p2=%p offset=%i num_states=%i\n",method,size, *t_ptr, *dt_ptr, p1, p2, _cvode_offset, num_states);
     switch (method) {
         case 0:
             _setup();
@@ -377,6 +568,7 @@ int rxd_nonvint_block(int method, int size, double* p1, double* p2, int thread_i
             break;
         case 2:
             /* compute outward current to be subtracted from rhs */
+            _currents(p1);
             break;
         case 3:
             /* conductance to be added to d */
@@ -387,13 +579,12 @@ int rxd_nonvint_block(int method, int size, double* p1, double* p2, int thread_i
 			_fadvance();
             break;
         case 5:
-            /* ode_count */ 
-            _cvode_offset = size + ode_count(size) + num_states - _rxd_num_zvi;
-            return _cvode_offset - size;
-            break;
+            /* ode_count */
+            _cvode_offset = size;
+            return ode_count(size) + num_states - _rxd_num_zvi;
         case 6:
             /* ode_reinit(y) */
-            _ode_reinit(p1);
+            _ode_reinit(p1); //Invalid read of size 8 
             _ecs_ode_reinit(p1);
             break;
         case 7:
@@ -406,21 +597,22 @@ int rxd_nonvint_block(int method, int size, double* p1, double* p2, int thread_i
             /* TODO: we can probably reuse the dgadi code here... for now, we do nothing, which implicitly approximates the Jacobian as the identity matrix */
             break;
         case 9:
-            ode_jacobian(*dt_ptr, p1, p2); /* optionally prepare jacobian for fast ode_solve */
+            //ode_jacobian(*dt_ptr, p1, p2); /* optionally prepare jacobian for fast ode_solve */
             break;
         case 10:
-            //ode_abs_tol(p1);
+            ode_abs_tol(p1);
             /* ode_abs_tol(y_abs_tolerance); fill with cvode.atol() * scalefactor */
             break;
         default:
             printf("Unknown rxd_nonvint_block call: %d\n", method);
             break;
     }
-    //for(i = 0; i < size; i++)
-    //{
-    //    fprintf(stderr,"out\t%g]\t%i\t%1.20e\t%1.20e\n",*t_ptr,i,(p1==NULL?0:p1[i]), (p2==NULL?0:p2[i]));
-    //}  
-	/* printf("method=%d, size=%d, thread_id=%d\n", method, size, thread_id);	 */
+    /*
+    int i;
+    for(i=0; i<size; i++)
+    {
+        fprintf(stderr,"%i] \t %1.12e \t %1.12e \n", i, (p1==NULL?-1e9:p1[i]), (p2==NULL?-1e9:p2[i]));
+    }*/
     return 0;
 }
 
@@ -566,7 +758,6 @@ void register_rate(int nspecies, int nregions, int nseg, int* sidx, int necs, in
             react->mc_multiplier[i] = (double*)malloc(nseg*sizeof(double));
             memcpy(react->mc_multiplier[i], (mult+i*nseg), nseg*sizeof(double));
         }
-
     }
 
     if(react->num_ecs_species > 0)
@@ -662,9 +853,56 @@ void clear_rates()
     clear_rates_ecs();
 }
 
-void setup_solver(double* my_states, int my_num_states) {
+
+void species_atolscale(int id, double scale, int len, int* idx)
+{
+    SpeciesIndexList* list;
+    if(species_indices != NULL)
+    {
+        for(list = species_indices; list->next != NULL; list = list->next)
+        {
+            if(list->id == id)
+            {
+                list->atolscale = scale;
+                return;
+            }
+        }
+        list->next = (SpeciesIndexList*)malloc(sizeof(SpeciesIndexList));
+        list = list->next;
+    }
+    else
+    {
+        species_indices = (SpeciesIndexList*)malloc(sizeof(SpeciesIndexList));
+        list = species_indices;
+    }
+    list->id = id;
+    list->indices = (int*)malloc(sizeof(int)*len);
+    memcpy(list->indices,idx,sizeof(int)*len);
+    list->length = len;
+    list->atolscale = scale;
+    list->next = NULL;
+}
+
+static void free_SpeciesIndexList()
+{
+    SpeciesIndexList* list;
+    while(species_indices != NULL)
+    {
+        list = species_indices;
+        free(list->indices);
+        species_indices = list->next;
+        free(list);
+    }
+}
+
+void setup_solver(double* my_states, int my_num_states, long* zvi, int num_zvi) {
+    int i;
     states = my_states;
     num_states = my_num_states;
+    _rxd_num_zvi = num_zvi;
+    if(_rxd_zero_volume_indices != NULL) free(_rxd_zero_volume_indices);
+    _rxd_zero_volume_indices = malloc(sizeof(long)*num_zvi);
+    memcpy(_rxd_zero_volume_indices,zvi,sizeof(long)*num_zvi);
     dt_ptr = &nrn_threads->_dt;
     t_ptr = &nrn_threads->_t;
     set_num_threads(NUM_THREADS);
@@ -1000,7 +1238,6 @@ void _ode_reinit(double* y)
     long i, j;
     long* zvi = _rxd_zero_volume_indices;
     y += _cvode_offset;
-    //fprintf(stderr,"_cvode_offset=%i, num_states=%i, _rxd_num_zvi= %i",_cvode_offset,num_states,_rxd_num_zvi);
     /*Copy states to CVode*/ 
     if(_rxd_num_zvi > 0)
     {
@@ -1044,18 +1281,21 @@ void _rhs_variable_step(const double t, const double* p1, double* p2)
     }
     else
     {
-        memcpy(states,my_states,sizeof(double)*num_states);
+        memcpy(states,my_states,sizeof(double)*num_states); //Invalid read & write of size 8
     }
 
-    for(i = 0; i < _rxd_num_zvi; i++)
+    if(diffusion)
     {
-        j = zvi[i];
-        p = _rxd_p[j];
-        states[j] = (p>0?-(_rxd_b[j]/_rxd_d[j])*states[p]:0);
-        for(k = 0; k < _rxd_zvi_child_count[i]; k++)
+        for(i = 0; i < _rxd_num_zvi; i++)
         {
-            c = _rxd_zvi_child[i][k];
-            states[j] -= (_rxd_a[c]/_rxd_d[j])*states[c];
+            j = zvi[i];
+            p = _rxd_p[j];
+            states[j] = (p>0?-(_rxd_b[j]/_rxd_d[j])*states[p]:0);
+            for(k = 0; k < _rxd_zvi_child_count[i]; k++)
+            {
+                c = _rxd_zvi_child[i][k];
+                states[j] -= (_rxd_a[c]/_rxd_d[j])*states[c];
+            }
         }
     }
     if(!calculate_rhs)
@@ -1064,11 +1304,15 @@ void _rhs_variable_step(const double t, const double* p1, double* p2)
             states[zvi[i]] = 0;
         return;
     }
+
     /*diffusion*/
-    rhs = (double*)malloc(sizeof(double*) * num_states);
-	mul(_rxd_euler_nrow, _rxd_euler_nnonzero, _rxd_euler_nonzero_i, _rxd_euler_nonzero_j, _rxd_euler_nonzero_values, states, rhs);
+    rhs = (double*)malloc(sizeof(double) * num_states);
 	
-   
+    if(diffusion)
+        mul(_rxd_euler_nrow, _rxd_euler_nnonzero, _rxd_euler_nonzero_i, _rxd_euler_nonzero_j, _rxd_euler_nonzero_values, states, rhs);
+    else
+        bzero(rhs,sizeof(double) * num_states);
+
     /*reactions*/
     do_ics_reactions(t, states, rhs);
 
@@ -1090,11 +1334,100 @@ void _rhs_variable_step(const double t, const double* p1, double* p2)
     }
     else
     {
-        memcpy(ydot,rhs,sizeof(double)*num_states);
+        memcpy(ydot,rhs,sizeof(double)*num_states); //Invalid write of size 8
     }
     free(rhs);
+}
 
-	
+void get_reaction_rates(ICSReactions* react, double* states, double* rates)
+{
+    int segment;
+    int i, j, idx, jac_i, jac_j, jac_idx;
+    int N = react->icsN + react->ecsN;  /*size of Jacobian (number species*regions for a segments)*/
+    double pd;
+    double dt = *dt_ptr;
+    
+    double** states_for_reaction = (double**)malloc(react->num_species*sizeof(double*));
+    double** result_array = (double**)malloc(react->num_species*sizeof(double*));
+    double* mc_mult;
+    if(react->num_mult > 0)
+        mc_mult = (double*)malloc(react->num_mult*sizeof(double));
+
+    double** ecs_states_for_reaction;
+    double** ecs_result;
+    if(react->num_ecs_species>0)
+    {
+        ecs_states_for_reaction = (double**)malloc(react->num_ecs_species*sizeof(double*));
+        ecs_result = (double**)malloc(react->num_ecs_species*sizeof(double*));
+        for(i = 0; i < react->num_ecs_species; i++)
+	    {
+	        ecs_states_for_reaction[i] = (double*)malloc(react->num_regions*sizeof(double));
+	        ecs_result[i] = (double*)malloc(react->num_regions*sizeof(double));
+        }
+
+    }
+
+    if(_membrane_flux)
+        bzero(_rxd_induced_flux,sizeof(double)*_memb_curr_total);
+    
+    for(i = 0; i < react->num_species; i++)
+    {
+        states_for_reaction[i] = (double*)malloc(react->num_regions*sizeof(double));
+        result_array[i] = (double*)malloc(react->num_regions*sizeof(double));
+        
+    }
+    for(segment = 0; segment < react->num_segments; segment++)
+    {
+        for(i = 0; i < react->num_species; i++)
+        {
+
+            for(j = 0; j < react->num_regions; j++)
+	        {
+                if(react->state_idx[segment][i][j] != SPECIES_ABSENT)
+                {
+            	    states_for_reaction[i][j] = states[react->state_idx[segment][i][j]];
+        	    }
+                else
+                {
+                    states_for_reaction[i][j] = -1.0;
+                }
+	        }
+	    }
+
+	    for(i = 0; i < react->num_ecs_species; i++)
+	    {
+	        for(j = 0; j < react->num_regions; j++)
+	        {
+	            if(react->ecs_state[segment][i][j] != NULL)
+	            {
+	            	ecs_states_for_reaction[i][j] = *(react->ecs_state[segment][i][j]);
+	        	}
+	        }
+	    }
+        for(i = 0; i < react->num_mult; i++)
+        {
+            mc_mult[i] = react->mc_multiplier[i][segment];
+        }
+
+	    react->reaction(states_for_reaction, result_array, mc_mult, ecs_states_for_reaction, ecs_result);
+
+        for(i = 0; i < react->num_species; i++)
+        {
+            for(j = 0; j < react->num_regions; j++)
+            {
+                idx = react->state_idx[segment][i][j];
+                if(idx != SPECIES_ABSENT)
+                {
+                    if(_membrane_flux && _membrane_flux_lookup[idx] != SPECIES_ABSENT)
+                    {
+                        _rxd_induced_flux[_membrane_flux_lookup[idx]] -= _rxd_flux_scale[_membrane_scale_lookup[idx]] * result_array[i][j]/react->mc_multiplier[i][segment];
+                    }
+                    if(rates != NULL)
+                        rates[idx] += result_array[i][j];
+	            }
+	        }
+	    }
+    }
 }
 
 
@@ -1140,6 +1473,9 @@ void solve_reaction(ICSReactions* react, double* states, double *ydot)
 
     }
 
+    if(_membrane_flux)
+        bzero(_rxd_induced_flux,sizeof(double)*_memb_curr_total);
+    
     for(i = 0; i < react->num_species; i++)
     {
         states_for_reaction[i] = (double*)malloc(react->num_regions*sizeof(double));
@@ -1165,7 +1501,6 @@ void solve_reaction(ICSReactions* react, double* states, double *ydot)
                     states_for_reaction[i][j] = -1.0;
                     states_for_reaction_dx[i][j] = states_for_reaction[i][j];
                 }
-
 	        }
 	    }
 
@@ -1186,6 +1521,7 @@ void solve_reaction(ICSReactions* react, double* states, double *ydot)
         }
 
 	    react->reaction(states_for_reaction, result_array, mc_mult, ecs_states_for_reaction, ecs_result);
+
 
 	    /*Calculate I - Jacobian for ICS reactions*/
 	    for(i = 0, idx = 0; i < react->num_species; i++)
@@ -1294,7 +1630,6 @@ void solve_reaction(ICSReactions* react, double* states, double *ydot)
 
 	    if(ydot == NULL)    //fixed-step
 	    {
-	    
 		    for(i = 0, jac_idx=0; i < react->num_species; i++)
 	        {
 	            for(j = 0; j < react->num_regions; j++)
@@ -1302,12 +1637,17 @@ void solve_reaction(ICSReactions* react, double* states, double *ydot)
 	                idx = react->state_idx[segment][i][j];
 	                if(idx != SPECIES_ABSENT)
 	                {
+                        if(_membrane_flux && _membrane_flux_lookup[idx] != SPECIES_ABSENT)
+                        {
+                            _rxd_induced_flux[_membrane_flux_lookup[idx]] -= _rxd_flux_scale[_membrane_scale_lookup[idx]] * result_array[i][j]/react->mc_multiplier[i][segment];
+                        }
+
                         states[idx] += v_get_val(x,jac_idx++);
 	                }
 	            }
 	        }
 	    }
-	    else    //variable-step
+	    else   //variable-step
 	    {
 	    	for(i = 0, jac_idx=0; i < react->num_species; i++)
 	        {
@@ -1316,8 +1656,7 @@ void solve_reaction(ICSReactions* react, double* states, double *ydot)
 	                idx = react->state_idx[segment][i][j];
 	                if(idx != SPECIES_ABSENT)
 	                {
-	                        ydot[idx] += v_get_val(x,jac_idx++)/dt;
-
+	                    ydot[idx] += v_get_val(x,jac_idx++)/dt;
 	                }
 	
 	            }
@@ -1326,7 +1665,7 @@ void solve_reaction(ICSReactions* react, double* states, double *ydot)
 	    }
 	    //TODO: Variable step ICS<->ECS reactions
         //TODO: Currents
-	    for(i = 0, jac_idx=0; i < react->num_ecs_species; i++)
+	    for(i = 0, jac_idx=0;i < react->num_ecs_species; i++)
 	    {
 	        for(j = 0; j < react->num_regions; j++)
 	        {
@@ -1334,6 +1673,9 @@ void solve_reaction(ICSReactions* react, double* states, double *ydot)
 	                *(react->ecs_state[segment][i][j]) -= v_get_val(x,jac_idx++);
 	        }
 	    }
+        
+        /*store fluxes needed for membrane currents*/
+        
     }
 
     m_free(jacobian);
@@ -1375,6 +1717,15 @@ void do_ics_reactions(const double t, double* states, double* ydot)
     for(react = _reactions; react != NULL; react = react->next)
     {
         solve_reaction(react, states, ydot);
+    }
+}
+
+void get_all_reaction_rates(const double t, double* states, double* rates)
+{
+    ICSReactions* react;
+    for(react = _reactions; react != NULL; react = react->next)
+    {
+        get_reaction_rates(react, states, rates);
     }
 }
 

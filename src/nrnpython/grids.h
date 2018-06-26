@@ -179,6 +179,9 @@ static double get_lambda_array(double*, int);
 /***** GLOBALS *******************************************************************/
 extern double *dt_ptr;              // Universal ∆t
 extern double *t_ptr;               // Universal t
+extern double *h_dt_ptr;              // Universal ∆t
+extern double *h_t_ptr;               // Universal t
+
 // static int N = 100;                 // Number of grid_lists (size of Parallel_grids)
 extern Grid_node *Parallel_grids[100];// Array of Grid_node * lists
 /*********************************************************************************/

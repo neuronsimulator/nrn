@@ -48,7 +48,15 @@ typedef struct {
 } CurrentData;
 
 
-typedef struct ICSReactions{
+typedef struct SpeciesIndexList {
+    int id;
+    double atolscale;
+    int* indices;
+    int length;
+    struct SpeciesIndexList* next;
+} SpeciesIndexList;
+
+typedef struct ICSReactions {
     ReactionRate reaction;
     int num_species;
     int num_regions;
@@ -160,12 +168,13 @@ void _rhs_variable_step_ecs(const double, const double*, double*);
 
 void clear_rates_ecs();
 void do_ics_reactions(const double, double*, double*);
+void get_all_reaction_rates(const double, double*, double*);
 void _ecs_ode_reinit(double*); 
-void do_currents(Grid_node*, double*, double);
+void do_currents(Grid_node*, double*, double, int);
 void TaskQueue_add_task(TaskQueue*, void* (*task)(void* args), void*, void*);
 void *TaskQueue_exe_tasks(void*);
 void start_threads(const int);
 void TaskQueue_sync(TaskQueue*);
 static void ode_solve(double, double, double*, double*);
-static void ode_jacobian(double, const double*, double*);
+static void ode_jacobian(double, double*, double*);
 

@@ -17,7 +17,7 @@ import species
 
 _all_regions = []
 _region_count = 0
-_c_region_lookup = None 
+_c_region_lookup = None  #a global dictionary linking a region to a list of _c_regions it is a part of
 
 def _sort_secs(secs):
     # sort the sections
@@ -31,7 +31,14 @@ def _sort_secs(secs):
         if h.section_orientation(sec=sec):
             raise RxDException('still need to deal with backwards sections')
     return [secs_names[sec.hoc_internal_name()] for sec in all_sorted if sec.hoc_internal_name() in secs_names]
+
+
 class _c_region:
+    """
+    The overlapping regions that are used to parse the relevant indices for JIT C reactions. 
+    regions - a set of regions that occur in the same sections
+    """
+
     def __init__(self,regions):
         global _c_region_lookup
         self._regions = list(regions)

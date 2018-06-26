@@ -85,10 +85,16 @@ class GeneralizedReaction(object):
     def _setup_membrane_fluxes(self, node_indices, cur_map):
         # TODO: make sure this is redone whenever nseg changes
         if not self._membrane_flux: return
-
+        
+        from . import species
+        sources = [r for r in self._sources if not isinstance(r(),species.SpeciesOnExtracellular)]
+        dests = [r for r in self._dests if not isinstance(r(),species.SpeciesOnExtracellular)]
+        
+        sources_ecs = [r for r in self._sources if isinstance(r(),species.SpeciesOnExtracellular)]
+        dests_ecs = [r for r in self._dests if isinstance(r(),species.SpeciesOnExtracellular)]
         # locate the regions containing all species (including the one that changes)
-        if all(sptr() for sptr in self._sources) and all(dptr() for dptr in self._dests):
-            active_regions = [r for r in self._regions if all(sptr().indices(r) for sptr in self._sources + self._dests)]
+        if all(sptr() for sptr in sources) and all(dptr() for dptr in dests):
+            active_regions = [r for r in self._regions if all(sptr().indices(r) for sptr in sources + dests)]
         else:
             active_regions = []
         node_indices_append = node_indices.append
@@ -120,7 +126,6 @@ class GeneralizedReaction(object):
         
         sources_ecs = [r for r in self._sources if isinstance(r(),species.SpeciesOnExtracellular)]
         dests_ecs = [r for r in self._dests if isinstance(r(),species.SpeciesOnExtracellular)]
-        
         # locate the regions containing all species (including the one that changes)
         if all(sptr() for sptr in sources) and all(dptr() for dptr in dests):
             active_regions = [r for r in self._regions if all(sptr().indices(r) for sptr in sources + dests)]
@@ -132,13 +137,17 @@ class GeneralizedReaction(object):
                 for r in self._regions:
                     if r in active_regions and not s.indices(r):
                         del active_regions[active_regions.index(r)]
+            elif s and isinstance(s,species.SpeciesOnExtracellular):
+                r = s._extracellular()
+                if r in active_regions:
+                    del active_regions[active_regions.index(r)] 
             else:
                 active_regions = []
-        
         # store the indices
         for sptr in self._involved_species:
             s = sptr()
-            self._indices_dict[s] = list(_itertools_chain.from_iterable(s.indices(r) for r in active_regions))
+            if not isinstance(s,species.SpeciesOnExtracellular):
+                self._indices_dict[s] = list(_itertools_chain.from_iterable(s.indices(r) for r in active_regions))
         sources_indices = [list(_itertools_chain.from_iterable(sptr().indices(r) for r in active_regions)) for sptr in sources]
         dests_indices = [list(_itertools_chain.from_iterable(dptr().indices(r) for r in active_regions)) for dptr in dests]
         self._indices = sources_indices + dests_indices
@@ -156,9 +165,9 @@ class GeneralizedReaction(object):
             elif len(sources_ecs) > 0 and len(dests_ecs) == 0:
                 self._mult = [-areas / numpy.prod(s()._extracellular()._dx)*s()._extracellular().alpha / molecules_per_mM_um3 for s in sources_ecs for di in dest_indices] + [areas / volumes[di] / molecules_per_mM_um3 for di in dests_indices]
             elif len(sources_ecs) == 0 and len(dests_ecs) > 0:
-                self._mult = [-areas / volumes[si] / molecules_per_mM_um3 for si in sources_indices] + [areas / numpy.prod(s()._extracellular()._dx)*s()._extracellular().alpha / molecules_per_mM_um3 for s in dests_ecs for si in sources_indices]
+                self._mult = [-areas / volumes[si] / molecules_per_mM_um3 for si in sources_indices] + [areas / numpy.prod(s()._extracellular()._dx)*s()._extracellular().alpha / molecules_per_mM_um3 for si in sources_indices for s in dests_ecs]
             else:
-                #TODO: Is this reasonable? If both the source & destination are in the ECS, they should use a reaction
+                # If both the source & destination are in the ECS, they should use a reaction
                 # not a multicompartment reaction
                 RxDException("An extracellular source and destination is not possible with a multi-compartment reaction.")
         else:
@@ -189,10 +198,11 @@ class GeneralizedReaction(object):
 
 
     def _update_jac_cache(self):
+        from . import species
         num_involved = len(self._involved_species)
         self._jac_rows = list(_itertools_chain(*[ind * num_involved for ind in self._indices]))
         num_ind = len(self._indices)
-        self._jac_cols = list(_itertools_chain(*[self._indices_dict[s()] for s in self._involved_species])) * num_ind
+        self._jac_cols = list(_itertools_chain(*[self._indices_dict[s()] for s in self._involved_species if not isinstance(s(),species.SpeciesOnExtracellular)])) * num_ind
         if self._trans_membrane:
             self._mult_extended = self._mult
             #self._mult_extended = [sum([list(mul) * num_involved], []) for mul in self._mult]

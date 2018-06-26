@@ -11,7 +11,9 @@ a linked list of Grid_nodes
 
 extern int NUM_THREADS;
 double *dt_ptr;
-double* t_ptr;
+double *t_ptr;
+double *h_dt_ptr;
+double *h_t_ptr;
 Grid_node *Parallel_grids[100] = {NULL};
 
 // Set dt, t pointers
