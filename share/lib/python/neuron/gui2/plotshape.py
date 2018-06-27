@@ -4,13 +4,8 @@ import ctypes
 import json
 import weakref
 import time
-import ipywidgets as widgets
-from IPython.display import display, HTML, Javascript
 import neuron
 from neuron import h
-from .setup_threejs import setup_threejs, javascript_embedder
-from .utilities import _segment_3d_pts
-from .rangevar import rangevars_present, _get_ptrs
 
 _update_thread = None
 _gui_widgets = []
@@ -21,11 +16,13 @@ _diam_change_count = neuron.nrn_dll_sym('diam_change_cnt', ctypes.c_int)
 _last_diam_change_count = _diam_change_count.value
 _last_structure_change_count = _structure_change_count.value
 update_interval = 0.1  # seconds
+_has_setup = False
 
 def _ensure_update_thread():
     global _update_thread
     if _update_thread is None:
-        _update_thread = threading.Thread(target=_do_updates, daemon=True)
+        _update_thread = threading.Thread(target=_do_updates)
+        _update_thread.daemon = True
         _update_thread.start()
 
 def _do_updates():
@@ -59,8 +56,23 @@ def _do_reset_geometry():
             sp._force_redraw = True
     del secs
         
-        
-setup_threejs(after="""
+def _ensure_setup():
+    """deferred import (and webgl) loader"""
+    global _has_setup, widgets
+    global display, HTML, Javascript
+    global setup_threejs, javascript_embedder
+    global _segment_3d_pts
+    global rangevars_present, _get_ptrs
+
+    if not _has_setup:
+        _has_setup = True
+        import ipywidgets as widgets
+        from IPython.display import display, HTML, Javascript
+        from .setup_threejs import setup_threejs, javascript_embedder
+        from .utilities import _segment_3d_pts
+        from .rangevar import rangevars_present, _get_ptrs
+
+        setup_threejs(after="""
 <script>
 var neuron_section_data = undefined;
 
@@ -171,6 +183,7 @@ ShapePlot.prototype.update_colors = function(data) {
 
 class GUIWidget:
     def __init__(self, parent=None):
+        _ensure_setup()
         self._ready = False
         self._index = None
         if parent is None:
@@ -182,7 +195,6 @@ class GUIWidget:
         self._parent = parent
         _ensure_update_thread()
         _gui_widgets.append(weakref.ref(self))
-
 
 class PlotShape(GUIWidget):
     def __init__(self):
