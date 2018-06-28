@@ -145,7 +145,7 @@ class SpeciesOnRegion(_SpeciesMathable):
         if self._species() is None or self._region() is None:
             return []
         else:
-            return self._species().indices(self._region(),secs)
+            return self._species().indices(self._region(), secs)
 
     
 
@@ -566,14 +566,25 @@ class Species(_SpeciesMathable):
         If secs is a set return all indices on the regions for those sections. """
         # TODO: beware, may really want self._indices3d or self._indices1d
         initializer._do_init()
-        if secs:
+        if secs is not None:
+            if type(secs) != set:
+                secs={secs}
             if r is None:
-                return [ind for reg in self._regions for sec, ind in zip(reg.secs, self.indices(reg)) if sec in secs and ind != []]
+                regions = self._regions
             elif not hasattr(r,'__len__'):
-                return [ind for sec, ind in zip(r.secs, self.indices(r)) if sec in secs and ind != []]
+                regions = [r]
             else:
-                return [ind for reg in r for sec, ind in zip(reg.secs, self.indices(reg)) if sec in secs and ind != []]
-
+                regions = r
+            return list(itertools.chain.from_iterable([s.indices for s in self._secs if s._sec in secs and s.region in regions]))
+                
+            """for reg in regions:
+                ind = self.indices(reg)
+                offset = 0
+                for sec in r.secs:
+                    if sec not in secs:
+                        del ind[offset:(offset+sec.nseg)]
+                    offset += sec.nseg
+                return ind"""
         else:
             if not hasattr(r,'__len__'):
                 return self._indices1d(r) + self._indices3d(r)
@@ -581,8 +592,7 @@ class Species(_SpeciesMathable):
                 return self._indices1d(r[0]) + self._indices3d(r[0])
             else:   #Find the intersection
                 interseg = set.intersection(*[set(reg.secs) for reg in r if reg is not None])
-                return list({ind for reg in r for sec, ind in zip(reg.secs, self.indices(reg)) if sec in interseg and ind != []})
-
+                return self.indices(r,interseg)
     
     def _setup_diffusion_matrix(self, g):
         for s in self._secs:

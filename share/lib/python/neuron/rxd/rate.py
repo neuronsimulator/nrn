@@ -100,33 +100,39 @@ class Rate(GeneralizedReaction):
             else:
                 warnings.warn("Error in rate %r\nThe regions specified %s are not appropriate regions %s will be used instead." % (self, [r._name for r in self._regions], [r._name for r in self._species()._regions]))
         
-        #Note: This finds the sections where the all involved species exsit
+        #Note: This finds the sections where the all involved species exists
         #e.g. for Rate(A, B+C) if A sections [1,2,3] and B is on sections [1,2] and C is on sections [2,3]
         #The Rate will only effect A on section 2 (rather than have 3 different rates)
         if not active_regions:  #They do not share a common region
+            if any(isinstance(sptr(),species.Species) for sptr in self._involved_species + [self._species]):
+                for sptr in self._involved_species:
+                    self._indices_dict[sptr()] = []
+                return
             active_secs = list(set.union(*[set(reg.secs) for reg in actr]))
             #if there are multiple regions on a segment for an involved species the rate is ambiguous
             for sptr in self._involved_species:
                 s = sptr()
                 indices = [list(s.indices(secs={sec})) for sec in active_secs]
-                if not all(rcount <= 1 for rcount in [len(ind) for ind in indices]):
+                if not all(rcount == sec.nseg or rcount == 0 for rcount, sec in zip([len(ind) for ind in indices],active_secs)):
                     #If the modeller has specified regions -- do they fix the ambiguity
-                    model_reg = list(set.intersection(set(s._regions),set(self._regions)))
+                    model_reg = list(set.intersection(set(s._regions) if isinstance(s,species.Species) else {s._region()}, 
+                                     set(self._regions)))
                     indices = [list(s.indices(secs={sec})) for sec in active_secs]
-                    if not all(rcount <= 1 for rcount in [len(ind) for ind in indices]):
+                    if not all(rcount == sec.nseg or rcount == 0 for rcount, sec in zip([len(ind) for ind in indices],active_secs)):
                         raise RxDException("Error in rate %r, the species do not share a common region" % self)
                 #remove sections where species is absent 
-                active_secs = [sec for sec, ind in zip(active_secs,indices) if len(ind) == 1]
+                active_secs = {sec for sec, ind in zip(active_secs,indices) if len(ind) == sec.nseg}
             #Repeated with the trimmed active_secs and store the indices
             if active_secs:
                 for sptr in self._involved_species:
                     s = sptr()
                     indices = [list(s.indices(secs={sec})) for sec in active_secs]
-                    if not all(rcount <= 1 for rcount in [len(ind) for ind in indices]):
+                    if not all(rcount == sec.nseg or rcount == 0 for rcount, sec in zip([len(ind) for ind in indices],active_secs)):
                         #If the modeller has specified regions -- do they fix the ambiguity
-                        model_reg = list(set.intersection(set(s._regions),set(self._regions)))
+                        model_reg = list(set.intersection(set(s._regions) if isinstance(s,species.Species) else {s._region()}, 
+                                        set(self._regions)))
                         indices = [list(s.indices(secs={sec})) for sec in active_secs]
-
+                    
                     self._indices_dict[s] = list(_itertools_chain.from_iterable(indices))
                     self._indices = [self._species().indices(actr, active_secs)]
             else:
