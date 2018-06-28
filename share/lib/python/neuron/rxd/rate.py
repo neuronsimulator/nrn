@@ -114,12 +114,7 @@ class Rate(GeneralizedReaction):
                 s = sptr()
                 indices = [list(s.indices(secs={sec})) for sec in active_secs]
                 if not all(rcount == sec.nseg or rcount == 0 for rcount, sec in zip([len(ind) for ind in indices],active_secs)):
-                    #If the modeller has specified regions -- do they fix the ambiguity
-                    model_reg = list(set.intersection(set(s._regions) if isinstance(s,species.Species) else {s._region()}, 
-                                     set(self._regions)))
-                    indices = [list(s.indices(secs={sec})) for sec in active_secs]
-                    if not all(rcount == sec.nseg or rcount == 0 for rcount, sec in zip([len(ind) for ind in indices],active_secs)):
-                        raise RxDException("Error in rate %r, the species do not share a common region" % self)
+                    raise RxDException("Error in rate %r, the species do not share a common region" % self)
                 #remove sections where species is absent 
                 active_secs = {sec for sec, ind in zip(active_secs,indices) if len(ind) == sec.nseg}
             #Repeated with the trimmed active_secs and store the indices
@@ -127,12 +122,6 @@ class Rate(GeneralizedReaction):
                 for sptr in self._involved_species:
                     s = sptr()
                     indices = [list(s.indices(secs={sec})) for sec in active_secs]
-                    if not all(rcount == sec.nseg or rcount == 0 for rcount, sec in zip([len(ind) for ind in indices],active_secs)):
-                        #If the modeller has specified regions -- do they fix the ambiguity
-                        model_reg = list(set.intersection(set(s._regions) if isinstance(s,species.Species) else {s._region()}, 
-                                        set(self._regions)))
-                        indices = [list(s.indices(secs={sec})) for sec in active_secs]
-                    
                     self._indices_dict[s] = list(_itertools_chain.from_iterable(indices))
                     self._indices = [self._species().indices(actr, active_secs)]
             else:
