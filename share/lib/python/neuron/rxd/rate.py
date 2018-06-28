@@ -74,11 +74,17 @@ class Rate(GeneralizedReaction):
         # this is called anytime the geometry changes as well as at init
         # TODO: is the above statement true?
        
-         
+        #Default values 
         self._indices_dict = {}
         self._indices = []
+        self._jac_rows = []
+        self._jac_cols = []
+        self._mult = [1]
+        self._mult_extended = self._mult
 
         if not self._species():
+            for sptr in self._involved_species:
+                self._indices_dict[sptr()] = []
             return
 
         active_secs = None 
@@ -144,16 +150,10 @@ class Rate(GeneralizedReaction):
                     else:
                         nodes += s[r].nodes
             self._original_rate._init_ptr_vectors(nodes)
-            self._mult = [1]
-            self._mult_extended = self._mult
             self._indices = [self._original_rate._locs]
             self._rate = self._rate_from_rangevar
             self._get_args = lambda ignore: []
-            # this indicates no contribution to the jacobian
-            self._jac_rows = []
-            self._jac_cols = []
         else:
-            self._mult = [1]
             self._update_jac_cache()
 
     def _do_memb_scales(self):
