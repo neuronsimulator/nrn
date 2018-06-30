@@ -11,12 +11,6 @@ extern const char* neuron_home;
 #if MAC
 char hoc_console_buffer[256];
 #endif
-#if LINT
-int ilint;
-#define Fprintf		ilint = fprintf
-#else
-#define Fprintf		fprintf
-#endif
 
 #if defined(WIN32)
 void* cvode_pmem;

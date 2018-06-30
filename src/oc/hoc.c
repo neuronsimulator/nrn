@@ -1482,11 +1482,7 @@ void warning(const char* s, const char* t)	/* print warning message */
 	Fprintf(stderr, "%s %s",id, cbuf);
     if (nrnmpi_numprocs_world > 0) {
 	for (cp = cbuf; cp != ctp; cp++) {
-#if defined(WIN32) && !defined(CYGWIN)
-		fputchar(' ');
-#else
-		IGNORE(putc(' ', stderr));
-#endif
+		Fprintf(stderr, " ");
 	}
 	Fprintf(stderr,"^\n");
     }

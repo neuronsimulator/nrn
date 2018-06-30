@@ -1202,7 +1202,7 @@ void frame_debug(void)	/* print the call sequence on an execerror */
 	}
 	for (i=5, f=fp; f != frame && --i; f=f-1) { /* print only to depth of 5 */
 		for (j=i; j; j--) {
-			IGNORE(fputs("  ",stderr));
+			Fprintf(stderr, "  ");
 		}
 		if (f->ob) {
 			Fprintf(stderr, "%s%s.%s(", id, hoc_object_name(f->ob), f->sp->name);
@@ -1232,10 +1232,10 @@ Fprintf(stderr, "%s", hoc_object_name(*f->argn[(j - f->nargs)*2].pobj));
 		   	break;
 		   }
 			if (++j <= f->nargs) {
-				fprintf(stderr, ", ");
+				Fprintf(stderr, ", ");
 			}
 		}
-		IGNORE(fputs(")\n", stderr));
+		Fprintf(stderr, ")\n");
 	}
 	if (i <= 0) {
 		Fprintf(stderr, "and others\n");

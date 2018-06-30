@@ -308,7 +308,6 @@ int	ilint;
 #define Strncpy         cplint = strncpy
 #define Sprintf         cplint = sprintf
 #define Printf		ilint = printf
-#define Fprintf		ilint = fprintf
 #else
 #if defined(__TURBOC__)
 #undef IGNORE
@@ -324,7 +323,6 @@ int	ilint;
 #define Strncpy         strncpy
 #define Sprintf         sprintf
 #define Printf		nrnpy_pr
-#define Fprintf		fprintf
 #endif
 
 /* EINTR handling for LINDA */
