@@ -69,6 +69,7 @@ typedef struct ICSReactions {
     /*ECS for MultiCompartment reactions*/
     int num_ecs_species;
     double**** ecs_state;    /*[segment][ecs_species][region]*/
+    int*** ecs_index;
     int ecsN;    /*total number of ecs species*regions per segment*/
     
     int num_mult;
@@ -167,8 +168,8 @@ void set_num_threads_ecs(int n);
 void _rhs_variable_step_ecs(const double, const double*, double*);
 
 void clear_rates_ecs();
-void do_ics_reactions(const double, double*, double*);
-void get_all_reaction_rates(const double, double*, double*);
+void do_ics_reactions(double*, double*, double*);
+void get_all_reaction_rates(double*, double*);
 void _ecs_ode_reinit(double*); 
 void do_currents(Grid_node*, double*, double, int);
 void TaskQueue_add_task(TaskQueue*, void* (*task)(void* args), void*, void*);

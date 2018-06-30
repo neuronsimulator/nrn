@@ -63,7 +63,7 @@ set_initialize.argtypes = [fptr_prototype]
 rxd_set_no_diffusion = dll.rxd_set_no_diffusion
 
 setup_solver = dll.setup_solver
-setup_solver.argtypes = [ndpointer(ctypes.c_double), ctypes.c_int,  ctypes.POINTER(ctypes.c_long), ctypes.c_int]
+setup_solver.argtypes = [ndpointer(ctypes.c_double), ctypes.c_int,  ctypes.POINTER(ctypes.c_long), ctypes.c_int, ctypes.py_object, ctypes.py_object]
 
 #states = None
 _set_num_threads = dll.set_num_threads 
@@ -88,6 +88,7 @@ register_rate.argtypes = [
 setup_currents = dll.setup_currents
 setup_currents.argtypes = [
     ctypes.c_int,   #number of membrane currents
+    ctypes.c_int,   #number induced currents
     ctypes.c_int,   #number of nodes with membrane currents
     _int_ptr,       #number of species involved in each membrane current
     _int_ptr,       #charges of the species involved in each membrane current
@@ -428,17 +429,21 @@ def _setup_memb_currents():
             memb_net_charges += [r._net_charges] * len(scales)
     ecs_map = [SPECIES_ABSENT if i is None else i for i in list(itertools.chain.from_iterable(itertools.chain.from_iterable(memb_cur_mapped_ecs)))]
     ics_map = [SPECIES_ABSENT if i is None else i for i in list(itertools.chain.from_iterable(itertools.chain.from_iterable(memb_cur_mapped)))]
-    setup_currents(len(memb_cur_ptrs),
-        len(_curr_indices),
-        _list_to_cint_array([len(x) for x in memb_cur_mapped]),
-        _list_to_cint_array(memb_net_charges),
-        _list_to_cint_array(_curr_indices),
-        _list_to_cint_array(_cur_node_indices),
-        _list_to_cdouble_array(rxd_memb_scales),
-        _list_to_cint_array(list(itertools.chain.from_iterable(memb_cur_charges))),
-        _list_to_pyobject_array(list(itertools.chain.from_iterable(memb_cur_ptrs))),
-        _list_to_cint_array(ics_map),
-        _list_to_cint_array(ecs_map))
+    if memb_cur_ptrs:
+        cur_counts = [len(x) for x in memb_cur_mapped]
+        num_currents = numpy.array(cur_counts).sum()
+        setup_currents(len(memb_cur_ptrs),
+            num_currents,
+            len(_curr_indices), # num_currents == len(_curr_indices) if no Extracellular
+            _list_to_cint_array(cur_counts),
+            _list_to_cint_array(memb_net_charges),
+            _list_to_cint_array(_curr_indices),
+            _list_to_cint_array(_cur_node_indices),
+            _list_to_cdouble_array(rxd_memb_scales),
+            _list_to_cint_array(list(itertools.chain.from_iterable(memb_cur_charges))),
+            _list_to_pyobject_array(list(itertools.chain.from_iterable(memb_cur_ptrs))),
+            _list_to_cint_array(ics_map),
+            _list_to_cint_array(ecs_map))
         
 def _currents(rhs):
     return
@@ -1066,7 +1071,7 @@ def _setup_matrices():
         _send_euler_matrix_to_c(_euler_matrix_nrow, _euler_matrix_nnonzero, _euler_matrix_i, _euler_matrix_j, _euler_matrix_nonzero, _zero_volume_indices)
     else:
         rxd_set_no_diffusion()
-        setup_solver(_node_get_states(), len(_node_get_states()), _list_to_clong_array(_zero_volume_indices), len(_zero_volume_indices))
+        setup_solver(_node_get_states(), len(_node_get_states()), _list_to_clong_array(_zero_volume_indices), len(_zero_volume_indices), h._ref_t, h._ref_dt)
     
     if _curr_indices is not None and len(_curr_indices) > 0:
         rxd_setup_curr_ptrs(len(_curr_indices), _list_to_cint_array(_curr_indices),
@@ -1202,6 +1207,8 @@ def _compile_reactions():
 
         #Find all the species involved
         if isinstance(r,rate.Rate):
+            if not r._species():
+                continue
             sptrs = set(r._involved_species + [r._species])
         else:
             sptrs  = set(r._involved_species + r._dests + r._sources)
@@ -1306,7 +1313,7 @@ def _compile_reactions():
     # now setup the reactions
     #if there are no reactions
     if location_count == 0 and len(ecs_regions_inv) == 0:
-        setup_solver(_node_get_states(), len(_node_get_states()), _list_to_clong_array(_zero_volume_indices), len(_zero_volume_indices))
+        setup_solver(_node_get_states(), len(_node_get_states()), _list_to_clong_array(_zero_volume_indices), len(_zero_volume_indices), h._ref_t, h._ref_dt)
         return None
 
     #Setup intracellular and multicompartment reactions
@@ -1393,7 +1400,7 @@ def _compile_reactions():
                           creg.num_ecs_species, creg.get_ecs_species_ids(), creg.get_ecs_index(),
                           mc_mult_count, numpy.array(mc_mult_list, dtype=ctypes.c_double), 
                           _c_compile(fxn_string))
-        setup_solver(_node_get_states(), len(_node_get_states()), _list_to_clong_array(_zero_volume_indices), len(_zero_volume_indices))
+        setup_solver(_node_get_states(), len(_node_get_states()), _list_to_clong_array(_zero_volume_indices), len(_zero_volume_indices), h._ref_t, h._ref_dt)
 
     
     #Setup extracellular reactions

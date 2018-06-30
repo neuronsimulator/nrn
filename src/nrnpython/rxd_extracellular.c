@@ -33,6 +33,7 @@ extern int _memb_curr_total;
 extern int* _rxd_induced_currents_grid;
 extern int* _rxd_induced_currents_ecs_idx;
 extern double* _rxd_induced_currents_ecs;
+extern double* _rxd_induced_currents_scale;
 
 
 static int states_cvode_offset;
@@ -459,13 +460,15 @@ void do_currents(Grid_node* grid, double* output, double dt, int grid_id)
     for(i = 0; i < n; i++)
         output[grid->current_list[i].destination] +=  grid->all_currents[i];
 #endif
+    /*Remove the contribution from membrane currents*/
     if(_membrane_flux)
     {
         for(i = 0; i < _memb_curr_total; i++)
         {
             if(_rxd_induced_currents_grid[i] == grid_id)
             {
-                output[_rxd_induced_currents_ecs_idx[i]] += _rxd_induced_currents_ecs[i];
+                /*Added twice because we only record half the current (the intracellular half)*/
+                output[_rxd_induced_currents_ecs_idx[i]] += 2.0*_rxd_induced_currents_ecs[i]*_rxd_induced_currents_scale[i];
             }
         }
     }

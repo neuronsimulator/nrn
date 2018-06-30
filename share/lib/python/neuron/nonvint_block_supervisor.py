@@ -114,11 +114,12 @@ def nonvint_block(method, size, pd1, pd2, tid):
   #print('nonvint_block called with method = %d l=%d t=%g dt=%g' % (method,size,_pc_t(tid),_pc_dt(tid)))
   assert(tid == 0)
   #ensure dt_ptr in rxd.c is updated from CVode
-  h.dt, h.t = _pc_dt(tid), _pc_t(tid)
+  #print("h.dt %1.4e\t h.t %1.4e\t\t _pc_dt %1.4e\t _pc_t %1.4e\n" % (h.dt, h.t, _pc_dt(tid), _pc_t(tid)))
+  #h.dt, h.t = _pc_dt(tid), _pc_t(tid)
   rval = 0
   try:
     if method == ode_count_method_index:
-        rval = ode_count_all(size) # count of the extra states-equations managed by us
+        rval = 0 #ode_count_all(size) # count of the extra states-equations managed by us
     else:
         if pd1:
             if size:

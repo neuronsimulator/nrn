@@ -72,7 +72,7 @@ class Rate(GeneralizedReaction):
                 sp = self._species()._species()
             else:
                 sp = self._species()
-            if sp._extracellular_instances:
+            if sp and sp._extracellular_instances:
                 ecs_region = sp._extracellular_instances[0]._region
         
 
