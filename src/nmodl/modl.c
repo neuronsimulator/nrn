@@ -142,6 +142,7 @@ int main(argc, argv)
 	 * code 
 	 */
 	solvhandler();
+	netrec_discon();
 	/* 
 	 * NAME's can be used in many cases before they were declared and
 	 * no checking up to this point has been done to make sure that

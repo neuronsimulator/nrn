@@ -187,7 +187,7 @@ struct passwd *getpwuid (), *getpwent ();
 /* Some standard library routines. */
 #include "readline.h"
 #include "history.h"
-extern rl_prep_terminal (), rl_deprep_terminal ();
+extern void rl_prep_terminal (), rl_deprep_terminal ();
 
 #ifndef digit
 #define digit(c)  ((c) >= '0' && (c) <= '9')
@@ -214,9 +214,9 @@ char *index ();
 #define exchange(x, y) {int temp = x; x = y; y = temp;}
 #endif
 
-static update_line ();
+static void update_line (char *old, char *new, int current_line);
 static void output_character_function ();
-static delete_chars ();
+static void delete_chars ();
 static insert_some_chars ();
 
 #ifdef VOID_SIGHANDLER
@@ -395,6 +395,11 @@ readline (prompt)
 
   return (value);
 }
+
+void rl_dispatch (int key, Keymap map);
+void rl_digit_loop ();
+void move_vert (int to);
+void init_terminal_io (char *terminal_name);
 
 /* Read a line of input from the global rl_instream, doing output on
    the global rl_outstream.
@@ -751,7 +756,7 @@ rl_unget_char (key)
 
 /* If a character is available to be read, then read it
    and stuff it into IBUFFER.  Otherwise, just return. */
-rl_gather_tyi ()
+void rl_gather_tyi ()
 {
   int tty = fileno (in_stream);
   register int tem, result = -1;
@@ -879,7 +884,7 @@ static void add_macro_char ();
 /* Do the command associated with KEY in MAP.
    If the associated command is really a keymap, then read
    another key, and dispatch into that map. */
-rl_dispatch (key, map)
+void rl_dispatch (key, map)
      register int key;
      Keymap map;
 {
@@ -1324,7 +1329,7 @@ rl_universal_argument ()
   rl_digit_loop ();
 }
 
-rl_digit_loop ()
+void rl_digit_loop ()
 {
   int key, c;
   while (1)
@@ -1454,7 +1459,7 @@ static void output_character_function ();
 static int compare_strings ();
 
 /* Basic redisplay algorithm. */
-rl_redisplay ()
+void rl_redisplay ()
 {
   register int in, out, c, linenum;
   register char *line = invisible_line;
@@ -1676,7 +1681,7 @@ new:	eddie> Oh, my little buggy says to me, as lurgid as
    no differences, as well as for end of line additions must be handeled.
 
    Could be made even smarter, but this works well enough */
-static
+static void
 update_line (old, new, current_line)
      register char *old, *new;
      int current_line;
@@ -1871,7 +1876,7 @@ move_cursor_relative (new, data)
 }
 
 /* PWP: move the cursor up or down. */
-move_vert (to)
+void move_vert (to)
      int to;
 {
   void output_character_function ();
@@ -2011,7 +2016,7 @@ rl_reset_terminal (terminal_name)
   init_terminal_io (terminal_name);
 }
 
-init_terminal_io (terminal_name)
+void init_terminal_io (terminal_name)
      char *terminal_name;
 {
   char* getenv();
@@ -2134,7 +2139,7 @@ output_some_chars (string, count)
 }
 
 /* Delete COUNT characters from the display line. */
-static
+static void
 delete_chars (count)
      int count;
 {
@@ -2267,7 +2272,7 @@ static struct ltchars original_ltchars;
 static struct sgttyb the_ttybuff;
 
 /* Put the terminal in CBREAK mode so that we can detect key presses. */
-rl_prep_terminal ()
+void rl_prep_terminal ()
 {
   int tty = fileno (rl_instream);
   int oldmask = sigblock (sigmask (SIGINT));
@@ -2406,7 +2411,7 @@ static struct termios otio;
 static struct termio otio;
 #endif
 
-rl_prep_terminal ()
+void rl_prep_terminal ()
 {
   int tty = fileno (rl_instream);
 #if defined (_POSIX_VERSION)
@@ -2496,7 +2501,7 @@ rl_prep_terminal ()
       terminal_prepped = 1;
 }
 
-rl_deprep_terminal ()
+void rl_deprep_terminal ()
 {
   int tty;
 
@@ -2738,7 +2743,7 @@ rl_delete_text (from, to)
    might as well let rl_redisplay do that job. */
 
 /* Move forward COUNT characters. */
-rl_forward (count)
+void rl_forward (count)
      int count;
 {
   if (count < 0)
@@ -2762,7 +2767,7 @@ rl_forward (count)
 }
 
 /* Move backward COUNT characters. */
-rl_backward (count)
+void rl_backward (count)
      int count;
 {
   if (count < 0)
@@ -2794,7 +2799,7 @@ rl_end_of_line ()
 }
 
 /* Move forward a word.  We do what Emacs does. */
-rl_forward_word (count)
+void rl_forward_word (count)
      int count;
 {
   int c;
@@ -2832,7 +2837,7 @@ rl_forward_word (count)
 }
 
 /* Move backward a word.  We do what Emacs does. */
-rl_backward_word (count)
+void rl_backward_word (count)
      int count;
 {
   int c;
@@ -2873,7 +2878,7 @@ rl_backward_word (count)
 }
 
 /* Clear the current line.  Numeric argument to C-l does this. */
-rl_refresh_line ()
+void rl_refresh_line ()
 {
   int curr_line = last_c_pos / screenwidth;
   extern char *term_clreol;
@@ -2891,7 +2896,7 @@ rl_refresh_line ()
 /* C-l typed to a line without quoting clears the screen, and then reprints
    the prompt and the current input line.  Given a numeric arg, redraw only
    the current line. */
-rl_clear_screen ()
+void rl_clear_screen ()
 {
   extern char *term_clrpag;
 
@@ -2910,7 +2915,7 @@ rl_clear_screen ()
   rl_display_fixed = 1;
 }
 
-rl_arrow_keys(count,c)
+void rl_arrow_keys(count,c)
      int count,c;
 {
   int ch = rl_read_key();
@@ -2946,7 +2951,7 @@ rl_arrow_keys(count,c)
 /* **************************************************************** */
 
 /* Insert the character C at the current location, moving point forward. */
-rl_insert (count, c)
+void rl_insert (count, c)
      int count, c;
 {
   register int i;
@@ -3095,7 +3100,7 @@ rl_do_lowercase_version (ignore1, ignore2)
 }
 
 /* Rubout the character behind point. */
-rl_rubout (count)
+void rl_rubout (count)
      int count;
 {
   if (count < 0)
@@ -3135,7 +3140,7 @@ rl_rubout (count)
 
 /* Delete the character under the cursor.  Given a numeric argument,
    kill that many characters instead. */
-rl_delete (count, invoking_key)
+void rl_delete (count, invoking_key)
      int count, invoking_key;
 {
   if (count < 0)
@@ -3308,7 +3313,7 @@ rl_change_case (count, op)
 /* **************************************************************** */
 
 /* Transpose the words at point. */
-rl_transpose_words (count)
+void rl_transpose_words (count)
      int count;
 {
   char *word1, *word2;
@@ -3364,7 +3369,7 @@ rl_transpose_words (count)
 
 /* Transpose the characters at point.  If point is at the end of the line,
    then transpose the characters before point. */
-rl_transpose_chars (count)
+void rl_transpose_chars (count)
      int count;
 {
   if (!count)
@@ -4178,7 +4183,7 @@ rl_revert_line ()
 }
 
 /* Do some undoing of things that were done. */
-rl_undo_command (count)
+void rl_undo_command (count)
 {
   if (count < 0) return;	/* Nothing to do. */
 
@@ -4221,7 +4226,7 @@ start_using_history ()
 }
 
 /* Free the contents (and containing structure) of a HIST_ENTRY. */
-free_history_entry (entry)
+void free_history_entry (entry)
      HIST_ENTRY *entry;
 {
   if (!entry) return;
@@ -4289,7 +4294,7 @@ rl_end_of_history ()
 }
 
 /* Move down to the next history line. */
-rl_get_next_history (count)
+void rl_get_next_history (count)
      int count;
 {
   HIST_ENTRY *temp = (HIST_ENTRY *)NULL;
@@ -4325,7 +4330,7 @@ rl_get_next_history (count)
 
 /* Get the previous item out of our interactive history, making it the current
    line.  If there is no previous history, just ding. */
-rl_get_previous_history (count)
+void rl_get_previous_history (count)
      int count;
 {
   HIST_ENTRY *old_temp = (HIST_ENTRY *)NULL;
@@ -4450,7 +4455,7 @@ rl_display_search (search_string, reverse_p, where)
    This is analogous to i-search.  We start the search in the current line.
    DIRECTION is which direction to search; > 0 means forward, < 0 means
    backwards. */
-rl_search_history (direction, invoking_key)
+void rl_search_history (direction, invoking_key)
      int direction;
      int invoking_key;
 {
@@ -4746,7 +4751,7 @@ rl_set_retained_kills (num)
    than TO, then the text is appended, otherwise prepended.  If the
    last command was not a kill command, then a new slot is made for
    this kill. */
-rl_kill_text (from, to)
+void rl_kill_text (from, to)
      int from, to;
 {
   int slot;
@@ -4954,7 +4959,7 @@ rl_yank_pop ()
 }
 
 /* Yank the COUNTth argument from the previous history line. */
-rl_yank_nth_arg (count, ignore)
+void rl_yank_nth_arg (count, ignore)
      int count;
 {
   register HIST_ENTRY *entry = previous_history ();
@@ -5333,7 +5338,7 @@ rl_set_key (keyseq, function, map)
 /* Bind the key sequence represented by the string KEYSEQ to
    the string of characters MACRO.  This makes new keymaps as
    necessary.  The initial place to do bindings is in MAP. */
-rl_macro_bind (keyseq, macro, map)
+void rl_macro_bind (keyseq, macro, map)
      char *keyseq, *macro;
      Keymap map;
 {
@@ -5353,7 +5358,7 @@ rl_macro_bind (keyseq, macro, map)
    pointed to by DATA, right now this can be a function (ISFUNC),
    a macro (ISMACR), or a keymap (ISKMAP).  This makes new keymaps
    as necessary.  The initial place to do bindings is in MAP. */
-rl_generic_bind (type, keyseq, data, map)
+void rl_generic_bind (type, keyseq, data, map)
      int type;
      char *keyseq, *data;
      Keymap map;
@@ -5703,7 +5708,7 @@ handle_parser_directive (statement)
    A key binding command looks like: Keyname: function-name\0,
    a variable binding command looks like: set variable value.
    A new-style keybinding looks like "\C-x\C-x": exchange-point-and-mark. */
-rl_parse_and_bind (string)
+void rl_parse_and_bind (string)
      char *string;
 {
   extern char *possible_control_prefixes[], *possible_meta_prefixes[];

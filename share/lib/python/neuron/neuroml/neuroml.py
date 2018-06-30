@@ -1,4 +1,4 @@
-from xml2nrn import *
+from .xml2nrn import *
 
 def biophysics(self, node):
     # following is worthless. need units for Ra, cm, gmax, e
@@ -14,24 +14,24 @@ def cell(self, node):
     if val:
         self.cellname = str(val)
     if debug:
-        print "cell"
+        print("cell")
         self.prattrs(node)
 
 def cell_end(self, node):
     if debug:
-        print 'endcell'
+        print('endcell')
         for i in range(len(self.cables_)):
             c = self.cables_[i]
-            print "Cable ",i,": ", c.id_, c.parent_cable_id_, c.name_, c.px_, c.pcnt_
+            print("Cable ",i,": ", c.id_, c.parent_cable_id_, c.name_, c.px_, c.pcnt_)
     
         for bm in self.biomechs_:
-            print bm  
+            print(bm)  
     
         for cg in self.cablegroups_:
-            print cg
+            print(cg)
 
         for g2i in self.groupname2index_:
-            print "groupname2index: ", g2i, " - ", str(self.groupname2index_[g2i])
+            print("groupname2index: ", g2i, " - ", str(self.groupname2index_[g2i]))
 
 def cells(self, node):
   pass

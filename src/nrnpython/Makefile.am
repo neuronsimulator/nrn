@@ -2,7 +2,6 @@ npylib = libnrnpython@npy_apiver@
 lib_LTLIBRARIES = libnrnpython@npy_apiver@.la librxdmath@npy_apiver@.la
 
 
-
 nsrc=$(top_srcdir)/src
 DEFS = @DEFS@ @NRNPYTHON_DEFINES@
 NRNPYTHON_INCLUDES = @npy_NRNPYTHON_INCLUDES@

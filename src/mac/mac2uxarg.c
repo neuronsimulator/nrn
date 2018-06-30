@@ -8,7 +8,7 @@ then the string begins with a space.
 #include <string.h>
 #include <stdlib.h>
 #include <Carbon/Carbon.h>
-
+extern void InitCursor();
 extern char* mac_args();
 
 /* test program */

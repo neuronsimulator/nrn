@@ -99,11 +99,17 @@ $Id: __init__.py,v 1.1 2008/05/26 11:39:44 hines Exp hines $
 #except:
 #  pass
 
+import sys
+embedded = True if 'hoc' in sys.modules else False
+
 try:
     import hoc
 except:
-  #Python3.1 extending needs to look into the module explicitly
-  import neuron.hoc
+  try:
+    #Python3.1 extending needs to look into the module explicitly
+    import neuron.hoc
+  except: # mingw name strategy
+    exec("import neuron.hoc%d%d as hoc" % (sys.version_info[0], sys.version_info[1]))
 
 import nrn
 import _neuron_section
@@ -117,7 +123,6 @@ h  = hoc.HocObject()
 # (thus replacing the dummy)
 def help(request=None):
     global help
-    print "Enabling NEURON+Python help system."
     from neuron import doc
     doc.help(request)
     help = doc.help
@@ -145,34 +150,10 @@ def test():
 # using the idiom self.basemethod = self.baseattr('methodname')
 # ------------------------------------------------------------------------------
 
-class MetaHocObject(type):
-  """Provides Exception for Inheritance of multiple HocObject"""
-  def __new__(cls, name, bases, attrs):
-    #print cls, name, bases
-    m = []
-    for b in bases:
-      if issubclass(b, hoc.HocObject):
-        m.append(b.__name__)
-    if (len(m) > 1):
-      raise TypeError('Multiple Inheritance of HocObject in %s' % name
-        + ' through %s not allowed' % ','.join(m))
-      #note that join(b.__name__ for b in m) is not valid for Python 2.3
-    return type.__new__(cls, name, bases, attrs)
-
-def hclass(c):
-    """Class factory for subclassing h.anyclass. E.g. class MyList(hclass(h.List)):..."""
-    if c == h.Section :
-        return nrn.Section
-    class hc(hoc.HocObject):
-        __metaclass__ = MetaHocObject
-        def __new__(cls, *args, **kwds):
-            kwds2 = {'hocbase': cls.htype}
-            if 'sec' in kwds:
-                kwds2['sec'] = kwds['sec']
-            return hoc.HocObject.__new__(cls, *args, **kwds2)
-    setattr(hc, 'htype', c)
-    return hc
-
+if sys.version_info[0] == 2:
+  from neuron.hclass2 import hclass
+else:
+  from neuron.hclass3 import hclass
 
 # global list of paths already loaded by load_mechanisms
 nrn_dll_loaded = []
@@ -185,7 +166,7 @@ def load_mechanisms(path):
 
     This function will not load a mechanism path twice.
 
-    The path should specify the directory in which nrnmodliv was run,
+    The path should specify the directory in which nrnivmodl or mknrndll was run,
     and in which the directory 'i686' (or 'x86_64' or 'powerpc' depending on your platform)
     was created"""
 
@@ -193,33 +174,41 @@ def load_mechanisms(path):
     
     global nrn_dll_loaded
     if path in nrn_dll_loaded:
-        print "Mechanisms already loaded from path: %s.  Aborting." % path
-        return
+        print("Mechanisms already loaded from path: %s.  Aborting." % path)
+        return True
     
     # in case NEURON is assuming a different architecture to Python,
     # we try multiple possibilities
 
+    libname = 'libnrnmech.so'
+    libsubdir = '.libs'
     arch_list = [platform.machine(), 'i686', 'x86_64', 'powerpc', 'umac']
 
+    # windows loads nrnmech.dll
+    if h.unix_mac_pc() == 3:
+        libname = 'nrnmech.dll'
+        libsubdir = ''
+        arch_list = ['']
+
     for arch in arch_list:
-        lib_path = os.path.join(path, arch, '.libs', 'libnrnmech.so')
+        lib_path = os.path.join(path, arch, libsubdir, libname)
         if os.path.exists(lib_path):
             h.nrn_load_dll(lib_path)
             nrn_dll_loaded.append(path)
-            return
-    print "NEURON mechanisms not found in %s." % path
-
+            return True
+    print("NEURON mechanisms not found in %s." % path)
+    return False
 
 import os,sys
 if 'NRN_NMODL_PATH' in os.environ:
     nrn_nmodl_path = os.environ['NRN_NMODL_PATH'].split(':')
-    print 'Auto-loading mechanisms:'
-    print 'NRN_NMODL_PATH=%s' % os.environ['NRN_NMODL_PATH']
+    print('Auto-loading mechanisms:')
+    print('NRN_NMODL_PATH=%s' % os.environ['NRN_NMODL_PATH'])
     for x in nrn_nmodl_path:
         #print "from path %s:" % x
         load_mechanisms(x)
         #print "\n"
-    print "Done.\n"
+    print("Done.\n")
     
 
 
@@ -277,7 +266,7 @@ def new_hoc_class(name,doc=None):
         __doc__ = doc
         def __init__(self, **kwargs):
             self.__dict__['hoc_obj'] = getattr(h, 'new_%s' % name)()
-            for k,v in kwargs.items():
+            for k,v in list(kwargs.items()):
                 setattr(self.hoc_obj, k, v)
     someclass.__name__ = name
     return someclass
@@ -411,7 +400,8 @@ def nrn_dll_sym_nt(name, type):
       if h.nrnversion(8).find('i686') is 0:
         b = 'bin'
       path = os.path.join(h.neuronhome().replace('/','\\'), b)
-      for dllname in ['nrniv.dll', 'libnrnpython1013.dll']:
+      p = sys.version_info[0]*10 + sys.version_info[1]
+      for dllname in ['nrniv.dll', 'libnrnpython%d.dll'%p]:
         p = os.path.join(path, dllname)
         nt_dlls.append(ctypes.cdll[p])
     for dll in nt_dlls:
@@ -439,18 +429,32 @@ def nrn_dll(printpath=False):
     import platform
     import glob
 
+    try:
+        #extended? if there is a __file__, then use that
+        if printpath: print ("hoc.__file__ %s" % hoc.__file__)
+        the_dll = ctypes.cdll[hoc.__file__]
+        return the_dll        
+    except:
+      pass
+
     neuron_home = os.path.split(os.path.split(h.neuronhome())[0])[0]
 
     success = False
-    base_path = os.path.join(neuron_home, 'lib' , 'python', 'neuron', 'hoc')
+    if sys.platform == 'msys' or sys.platform == 'win32':
+      p = 'hoc%d%d' % (sys.version_info[0], sys.version_info[1])
+    else:
+      p = 'hoc'
+    base_path = os.path.join(neuron_home, 'lib' , 'python', 'neuron', p)
     for extension in ['', '.dll', '.so', '.dylib']:
         dlls = glob.glob(base_path + '*' + extension)
-        try:
-            the_dll = ctypes.cdll[dlls[0]]
-            if printpath : print dlls[0]
-            success = True
-        except:
-            pass
+        for dll in dlls:
+            try:
+                the_dll = ctypes.cdll[dll]
+                if printpath : print(dll)
+                success = True
+            except:
+                pass
+            if success: break
         if success: break
     else:
         raise Exception('unable to connect to the NEURON library')
@@ -462,7 +466,7 @@ _sec_db = {}
 def _declare_contour(secobj, secname):
     j = secobj.first
     center_vec = secobj.contourcenter(secobj.raw.getrow(0), secobj.raw.getrow(1), secobj.raw.getrow(2))
-    x0, y0, z0 = [center_vec.x[i] for i in xrange(3)]    
+    x0, y0, z0 = [center_vec.x[i] for i in range(3)]    
     # (is_stack, x, y, z, xcenter, ycenter, zcenter)
     _sec_db[secname] = (True if secobj.contour_list else False, secobj.raw.getrow(0).c(j), secobj.raw.getrow(1).c(j), secobj.raw.getrow(2).c(j), x0, y0, z0)
 
@@ -472,7 +476,7 @@ def _create_all_list(obj):
 
 def _create_sections_in_obj(obj, name, numsecs):
     # used by import3d to instantiate inside of a Python object
-    setattr(obj, name, [h.Section(name="%s[%d]" % (name, i), cell=obj) for i in xrange(int(numsecs))])
+    setattr(obj, name, [h.Section(name="%s[%d]" % (name, i), cell=obj) for i in range(int(numsecs))])
 
 def _connect_sections_in_obj(obj, childsecname, childx, parentsecname, parentx):
     # used by import3d
@@ -553,3 +557,37 @@ def _has_scipy():
 def _pkl(arg):
   #print 'neuron._pkl arg is ', arg
   return h.Vector(0)
+
+def nrnpy_pass():
+  return 1
+
+def nrnpy_pr(s):
+  sys.stdout.write(s.decode())
+  return 0
+
+if not embedded:
+  try:
+    # nrnpy_pr callback in place of hoc printf
+    # ensures consistent with python stdout even with jupyter notebook.
+    # nrnpy_pass callback used by h.doNotify() in MINGW when not called from
+    # gui thread in order to allow the gui thread to run.
+
+    nrnpy_set_pr_etal = nrn_dll_sym('nrnpy_set_pr_etal')
+
+    nrnpy_pr_proto = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_char_p)
+    nrnpy_pass_proto = ctypes.CFUNCTYPE(ctypes.c_int)
+    nrnpy_set_pr_etal.argtypes = [nrnpy_pr_proto, nrnpy_pass_proto]
+
+    nrnpy_pr_callback = nrnpy_pr_proto(nrnpy_pr)
+    nrnpy_pass_callback = nrnpy_pass_proto(nrnpy_pass)
+    nrnpy_set_pr_etal(nrnpy_pr_callback, nrnpy_pass_callback)
+  except:
+    print("Failed to setup nrnpy_pr")
+    pass
+
+try:
+  from neuron.psection import psection
+  nrn.set_psection(psection)
+except:
+  print("Failed to setup nrn.Section.psection")
+pass

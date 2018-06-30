@@ -205,6 +205,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
 
             source_regions = [s()._region()._nrn_region for s in sources] + ['o' for s in sources_ecs]
             dest_regions = [d()._region()._nrn_region for d in dests] + ['o' for d in dests_ecs]
+
             if 'i' in source_regions and 'o' not in source_regions and 'i' not in dest_regions:
                 inside = -1 #'source'
             elif 'o' in source_regions and 'i' not in source_regions and 'o' not in dest_regions:

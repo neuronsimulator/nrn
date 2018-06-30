@@ -5,21 +5,21 @@ try:
 except:
     raise RxDException('NEURON RxD module requires SciPy')
 
-import rxd
-from species import Species
-from region import Region, Extracellular
-from rate import Rate
-from reaction import Reaction
-import geometry
-from multiCompartmentReaction import MultiCompartmentReaction
-from rxd import re_init, set_solve_type, nthread
+from . import rxd
+from .species import Species
+from .region import Region, Extracellular
+from .rate import Rate
+from .reaction import Reaction
+from . import geometry
+from .multiCompartmentReaction import MultiCompartmentReaction
+from .rxd import re_init, set_solve_type, nthread
 try:
-  import dimension3
+  from . import dimension3
 except:
   pass
-from rangevar import RangeVar
-from geometry import membrane, inside, Shell, FractionalVolume, FixedCrossSection, FixedPerimeter, ScalableBorder, DistributedBoundary
-from plugins import set_solver
+from .rangevar import RangeVar
+from .geometry import membrane, inside, Shell, FractionalVolume, FixedCrossSection, FixedPerimeter, ScalableBorder, DistributedBoundary
+from .plugins import set_solver
 # deprecated:
 # from geometry import ConstantArea, ConstantVolume
 # TODO: if we ever separate Parameter and State from species, then we need to
@@ -28,7 +28,7 @@ Parameter = Species
 State = Species
 
 def _model_view(tree):
-    import species
+    from . import species
     from neuron import h
     species_dict = species._get_all_species()
     if 'TreeViewItem' not in dir(h): return

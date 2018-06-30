@@ -85,10 +85,14 @@ endif
 if NMODL_ONLY
 SUBDIRS = $(nmodlbuild)
 else
+if NRNPYTHON_ONLY
+SUBDIRS = $(nrnpythonbuild) mswin
+else
 SUBDIRS = $(readlinebuild) $(memacsbuild) $(nmodlbuild) $(NRNOC_SUBDIRS) \
 	$(nrnjavabuild) $(ivosbuild) $(nrnpythonbuild) \
 	$(build_6229) $(nrnivbuild) $(mos2nrnbuild) $(neuronmusicbuild) \
 	mac mswin
+endif
 endif
 
 DIST_SUBDIRS = $(MEMACS_SUBDIRS) $(READLINE_SUBDIRS) $(NMODL_SUBDIRS) $(NRNOC_SUBDIRS) \
@@ -102,6 +106,8 @@ dist-hook: $(npydir)
 		|| exit 1; \
 	done
 
+if NRNPYTHON_ONLY
+else
 install-exec-hook:
 	echo "enter install-exec-hook in nrn/src/Makefile.am"
 if BUILD_NRNMPI_DYNAMIC
@@ -112,4 +118,4 @@ if BUILD_NRNMPI_DYNAMIC
 	$(MAKE) -e install
 endif
 	echo "leave install-exec-hook in nrn/src/Makefile.am"
-
+endif

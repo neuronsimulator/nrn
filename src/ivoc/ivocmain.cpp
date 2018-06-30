@@ -122,6 +122,7 @@ static PropertyData properties[] = {
 {"*nopython", "off"},
 {"*err_dialog", "off"},
 {"*banner", "on"},
+{"*pyexe", ""},
 	 { NULL }
 };
 
@@ -140,6 +141,7 @@ static OptionDesc options[] = {
 {"--version", "*print_nrn_version", OptionValueImplicit, "on"},
 {"-python", "*python", OptionValueImplicit, "on"},
 {"-nopython", "*nopython", OptionValueImplicit, "on"},
+{"-pyexe", "*pyexe", OptionValueNext},
 {"-Py_NoSiteFlag", "*Py_NoSiteFlag", OptionValueImplicit, "1"},
 {"-nobanner", "*banner", OptionValueImplicit, "off"},
 #if defined(WIN32)
@@ -163,6 +165,7 @@ extern "C" {
 	int nrn_nopython;
 	extern int use_python_interpreter;
 	extern void (*p_nrnpython_start)(int);
+	char* nrnpy_pyexe;
 #endif
 }
 
@@ -250,7 +253,7 @@ extern "C" {
 	extern int nrn_global_argc;
 	extern const char** nrn_global_argv;
 	int always_false;
-	int nrn_is_python_extension;
+	extern int nrn_is_python_extension;
 }
 
 // some things are defined in libraries earlier than they are used so...
@@ -372,6 +375,7 @@ int ivocmain (int argc, const char** argv, const char** env) {
     -nogui           do not send any gui info to screen\n\
     -notatty         buffered stdout and no prompt\n\
     -python          Python is the interpreter\n\
+    -pyexe path      Python to use if python (or python3 fallback) not right.\n\
     -nopython        Do not initialize Python\n\
     -Py_NoSiteFlag   Set Py_NoSiteFlag=1 before initializing Python\n\
     -realtime        For hard real-time simulation for dynamic clamp\n\
@@ -600,16 +604,27 @@ ENDGUI
 	}
 
 #if defined(USE_PYTHON)
-#if HAVE_IV
 	nrn_nopython = 0;
-	if (session && session->style()->value_is_on("nopython")) {
-		nrn_nopython = 1;
-	}
+	if (!nrn_is_python_extension) {
+#if HAVE_IV
+		if (session) {
+			if (session->style()->value_is_on("nopython")) {
+				nrn_nopython = 1;
+			}
+			String str;
+			if (session->style()->find_attribute("pyexe", str)) {
+				nrnpy_pyexe = strdup(str.string());
+			}
+		}else
 #endif
-//	if (nrn_optarg_on("-nopython", &our_argc, our_argv)) {
-//		nrn_nopython = 1;
-//	}
-
+		{
+			if (nrn_optarg_on("-nopython", &our_argc, our_argv)) {
+				nrn_nopython = 1;
+			}
+			const char* buf = nrn_optarg("-pyexe", &our_argc, our_argv);
+			if (buf) {nrnpy_pyexe = strdup(buf);}
+		}
+	}
 #endif //USE_PYTHON
 
 #if defined(WIN32) && HAVE_IV

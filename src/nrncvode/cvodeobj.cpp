@@ -10,6 +10,8 @@ void cvode_finitialize();
 extern void (*nrn_multisplit_setup_)();
 }
 
+extern "C" int hoc_return_type_code;
+
 #include <math.h>
 #include <stdlib.h>
 #include "classreg.h"
@@ -303,6 +305,7 @@ static double statename(void* v) {
 
 static double use_local_dt(void* v) {
 	NetCvode* d = (NetCvode*)v;
+	hoc_return_type_code = 2; // boolean
 	if (ifarg(1)) {
 		int i = (int)chkarg(1, 0, 1);
 		d->localstep(i);
@@ -312,6 +315,7 @@ static double use_local_dt(void* v) {
 
 static double use_daspk(void* v) {
 	NetCvode* d = (NetCvode*)v;
+	hoc_return_type_code = 2; // boolean
 	if (ifarg(1)) {
 		int i = (int)chkarg(1, 0, 1);
 		if ((i != 0) != d->use_daspk()) {
@@ -333,6 +337,7 @@ static double dae_init_dteps(void* v) {
 
 static double use_mxb(void* v) {
 	NetCvode* d = (NetCvode*)v;
+	hoc_return_type_code = 2; // boolean
 	if (ifarg(1)) {
 		int i = (int)chkarg(1,0,1);
 		if (use_sparse13 != i) {
@@ -354,6 +359,7 @@ static double cache_efficient(void* v) {
 
 static double use_long_double(void* v) {
 	NetCvode* d = (NetCvode*)v;
+	hoc_return_type_code = 2; // boolean
 	if (ifarg(1)) {
 		int i = (int)chkarg(1,0,1);
 		d->use_long_double_ = i;
@@ -560,6 +566,7 @@ static double extra_scatter_gather_remove(void* v) {
 
 static double use_fast_imem(void* v) {
 	int i = nrn_use_fast_imem;
+	hoc_return_type_code = 2; // boolean
 	if (ifarg(1)) {
 		nrn_use_fast_imem = int(chkarg(1, 0., 1.));
 		nrn_fast_imem_alloc();

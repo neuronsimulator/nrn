@@ -184,7 +184,7 @@ proc sectionify() {local i, si  localobj tobj
 	// create point2sec map and sections list
 	// point2sec gives immediate knowledge of the section a point is in
 	// sections list is for display purposes
-	if (id.size < 2) { return }
+	if (id.size < 1) { return }
 
 	// tobj stores the number of child nodes with pid equal to i
 	// actually every non-contiguous child adds 1.01 and a contiguous
@@ -225,14 +225,13 @@ proc mark_branch() { local i, p
 
 	// however warn if the first two points do not have the same type
 	// if single point soma set the spherical_soma flag
-	if ( type.x[0] != type.x[1]) {
+	if ( type.size() > 1) if (type.x[0] != type.x[1]) {
 		err = 1
 		if (0 && !quiet) {
 printf("\nNotice: %s:\nThe first two points have different types (%d and %d) but\n    a single point NEURON section is not allowed.\n    Interpreting the point as the center of a sphere of\n    radius %g at location (%g, %g, %g)\n    Will represent as 3-point cylinder with L=diam and with all\n    children kept at their 1st point positions and connected\n    with wire to middle point.\n    If this is an incorrect guess, then change the file.\n"\
 , file.getname, type.x[0], type.x[1], d.x[0]/2, x.x[0], y.x[0], z.x[0])
 		}
 	}
-
 	// another wrinkle is that when a dendrite connects to the soma
 	// by a wire,
 	// another branch may connect to the first point of that dendrite

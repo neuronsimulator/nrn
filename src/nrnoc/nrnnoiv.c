@@ -16,6 +16,9 @@ void nrnpointmenu(){hoc_retpushx(0);}
 void make_mechanism(){hoc_retpushx(0);}
 void make_pointprocess(){hoc_retpushx(0);}
 void nrnpython() {hoc_retpushx(0);}
+Section* nrnpy_pysecname2sec(const char* name) { return NULL; }
+void nrnpy_pysecname2sec_add(Section* sec) {}
+void nrnpy_pysecname2sec_remove(Section* sec) {}
 void nrn_prcellstate(int gid, const char* suffix){}
 /*ARGSUSED*/
 void hoc_construct_point(Object* ob, int i){}

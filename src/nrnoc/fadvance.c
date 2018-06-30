@@ -656,11 +656,15 @@ printf("%d %d %g %g %g %g\n", isec, inode, ClassicalNODEB(nd), ClassicalNODEA(nd
 
 void fmatrix(void) {
 	if (ifarg(1)) {
-		extern Node* node_exact(Section*, double);
-		double x = chkarg(1, 0., 1.);
-		int id = (int)chkarg(2, 1., 4.);
-		Node* nd = node_exact(chk_access(), x);
-		NrnThread* _nt = nd->_nt;
+		double x;
+		Section* sec;
+		int id;
+		Node* nd;
+		NrnThread* _nt;
+		nrn_seg_or_x_arg(1, &sec, &x);
+		id = (int)chkarg(2, 1., 4.);
+		nd = node_exact(sec, x);
+		_nt = nd->_nt;
 		switch (id) {
 		case 1: hoc_retpushx(NODEA(nd)); break;
 		case 2: hoc_retpushx(NODED(nd)); break;
@@ -1073,3 +1077,33 @@ int nrn_nonvint_block_helper(int method, int size, double* pd1, double* pd2, int
 	}
 	return rval;
 }
+
+/*
+   Derived from scopmath/euler.c. Here because scopmath does not know
+   about NrnThread
+*/
+#include "nrniv_mf.h"
+#undef SUCCESS
+#define SUCCESS 0
+#define der_(arg)  p[der[arg]]
+#define var_(arg)  p[var[arg]]
+/* ARGSUSED */
+int euler_thread(int neqn, int* var, int* der, double* p,
+  int (*func)(double*, Datum*, Datum*, NrnThread*),
+  Datum* ppvar, Datum* thread, NrnThread* nt)
+{
+    int i;
+    double dt = nt->_dt;
+
+    /* Calculate the derivatives */
+
+    (*func) (p, ppvar, thread, nt);
+    
+    /* Update dependent variables --- note defines in euler above*/
+
+    for (i = 0; i < neqn; i++)
+        var_(i) += dt * (der_(i));
+    
+    return (SUCCESS);
+}
+

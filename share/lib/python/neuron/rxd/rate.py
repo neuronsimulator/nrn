@@ -4,7 +4,11 @@ from . import species, rxdmath, rxd, initializer
 import numpy
 from .rangevar import RangeVar
 import itertools
+import warnings
 from .generalizedReaction import GeneralizedReaction
+
+# aliases to avoid repeatedly doing multiple hash-table lookups
+_itertools_chain = itertools.chain
 
 class Rate(GeneralizedReaction):
     """Declare a contribution to the rate of change of a species or other state variable.
@@ -81,11 +85,12 @@ class Rate(GeneralizedReaction):
 
     
     def __repr__(self):
+        short_rate = self._original_rate._short_repr() if hasattr(self._original_rate,'_short_repr') else self._original_rate
         if len(self._regions) != 1 or self._regions[0] is not None:
             regions_short = '[' + ', '.join(r._short_repr() for r in self._regions) + ']'
-            return 'Rate(%s, %s, regions=%s, membrane_flux=%r)' % (self._species()._short_repr(), self._original_rate._short_rep() if hasattr(self._original_rate,'_short_repr') else self._original_rate, regions_short, self._membrane_flux)
+            return 'Rate(%s, %s, regions=%s, membrane_flux=%r)' % (self._species()._short_repr(), short_rate, regions_short, self._membrane_flux)
         else:
-            return 'Rate(%s, %s, membrane_flux=%r)' % (self._species()._short_repr(), self._original_rate._short_rep() if hasattr(self._original_rate,'_short_repr') else self._original_rate, self._membrane_flux)
+            return 'Rate(%s, %s, membrane_flux=%r)' % (self._species()._short_repr(), short_rate, self._membrane_flux)
     
     def _rate_from_rangevar(self, *args):
         return self._original_rate._rangevar_vec()
@@ -93,22 +98,68 @@ class Rate(GeneralizedReaction):
     def _update_indices(self):
         # this is called anytime the geometry changes as well as at init
         # TODO: is the above statement true?
-        
+       
+        #Default values 
         self._indices_dict = {}
-        
+        self._indices = []
+        self._jac_rows = []
+        self._jac_cols = []
+        self._mult = [1]
+        self._mult_extended = self._mult
+
+        if not self._species():
+            for sptr in self._involved_species:
+                self._indices_dict[sptr()] = []
+            return
+
+        active_secs = None 
         # locate the regions containing all species (including the one that changes)
-        if self._species():
-            active_regions = [r for r in self._regions if self._species().indices(r)]
-        else:
-            active_regions = []
+        active_regions = list(set.intersection(*[set(sptr()._regions if isinstance(sptr(),species.Species) else [sptr()._region()]) for sptr in self._involved_species + [self._species]]))
+        sp_regions = self._species()._regions if isinstance(self._species(),species.Species) else [self._species()._region()]
+        actr = sp_regions
+        if self._regions != [None]:
+            specified_regions = list(set.intersection(set(self._regions), set(sp_regions)))
+            if specified_regions:
+                active_regions = list(set.intersection(set(active_regions), set(actr)))
+                actr = specified_regions
+            else:
+                warnings.warn("Error in rate %r\nThe regions specified %s are not appropriate regions %s will be used instead." % (self, [r._name for r in self._regions], [r._name for r in self._species()._regions]))
+        
+        #Note: This finds the sections where the all involved species exists
+        #e.g. for Rate(A, B+C) if A sections [1,2,3] and B is on sections [1,2] and C is on sections [2,3]
+        #The Rate will only effect A on section 2 (rather than have 3 different rates)
+        if not active_regions:  #They do not share a common region
+            if any(isinstance(sptr(),species.Species) for sptr in self._involved_species + [self._species]):
+                for sptr in self._involved_species:
+                    self._indices_dict[sptr()] = []
+                return
+            active_secs = list(set.union(*[set(reg.secs) for reg in actr]))
+            #if there are multiple regions on a segment for an involved species the rate is ambiguous
             for sptr in self._involved_species:
                 s = sptr()
-                if s:
-                    for r in self._regions:
-                        if r in active_regions and not s.indices(r):
-                            del active_regions[active_regions.index(r)]
-                else:
-                    active_regions = []
+                indices = [list(s.indices(secs={sec})) for sec in active_secs]
+                if not all(rcount == sec.nseg or rcount == 0 for rcount, sec in zip([len(ind) for ind in indices],active_secs)):
+                    raise RxDException("Error in rate %r, the species do not share a common region" % self)
+                #remove sections where species is absent 
+                active_secs = {sec for sec, ind in zip(active_secs,indices) if len(ind) == sec.nseg}
+            #Repeated with the trimmed active_secs and store the indices
+            if active_secs:
+                for sptr in self._involved_species:
+                    s = sptr()
+                    indices = [list(s.indices(secs={sec})) for sec in active_secs]
+                    self._indices_dict[s] = list(_itertools_chain.from_iterable(indices))
+                    self._indices = [self._species().indices(actr, active_secs)]
+            else:
+                raise RxDException("Error in rate %r, the species do not share a common section" % self)
+        else:
+            active_secs = set.union(*[set(reg.secs) for reg in active_regions if reg is not None])
+            # store the indices
+            for sptr in self._involved_species:
+                s = sptr()
+                self._indices_dict[s] = s.indices(active_regions, active_secs)
+            
+            self._indices = [self._species().indices(active_regions, active_secs)] 
+        
         if isinstance(self._original_rate, RangeVar):
             nodes = []
             for sptr in self._involved_species:
@@ -119,41 +170,10 @@ class Rate(GeneralizedReaction):
                     else:
                         nodes += s[r].nodes
             self._original_rate._init_ptr_vectors(nodes)
-            self._mult = [1]
-            self._mult_extended = self._mult
             self._indices = [self._original_rate._locs]
             self._rate = self._rate_from_rangevar
             self._get_args = lambda ignore: []
-            # this indicates no contribution to the jacobian
-            self._jac_rows = []
-            self._jac_cols = []
         else:
-            # this is called anytime the geometry changes as well as at init
-            # TODO: is the above statement true?
-            
-            self._indices_dict = {}
-            
-            # locate the regions containing all species (including the one that changes)
-            if self._species():
-                active_regions = [r for r in self._regions if self._species().indices(r)]
-            else:
-                active_regions = []
-            for sptr in self._involved_species:
-                s = sptr()
-                if s:
-                    for r in self._regions:
-                        if r in active_regions and not s.indices(r):
-                            del active_regions[active_regions.index(r)]
-                else:
-                    active_regions = []
-            
-            # store the indices
-            for sptr in self._involved_species:
-                s = sptr()
-                self._indices_dict[s] = list(itertools.chain.from_iterable([s.indices(r) for r in active_regions]))
-            
-            self._indices = [list(itertools.chain.from_iterable([self._species().indices(r) for r in active_regions]))]
-            self._mult = [1]
             self._update_jac_cache()
 
     def _do_memb_scales(self):
@@ -165,7 +185,7 @@ class Rate(GeneralizedReaction):
     
     def _get_memb_flux(self, states):
         if self._membrane_flux:
-            raise RxDException('membrane flux due to rxd.Rate objects not yet supported')
+            #raise RxDException('membrane flux due to rxd.Rate objects not yet supported')
             # TODO: refactor the inside of _evaluate so can construct args in a separate function and just get self._rate() result
             rates = self._evaluate(states)[2]
             return self._memb_scales * rates

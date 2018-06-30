@@ -13,8 +13,10 @@ static char Derivimplicit[] = "derivimplicit";
 extern Symbol *indepsym;
 extern List *indeplist;
 extern int sens_parm, numlist;
+int dtsav_for_nrn_state;
 static void copylist();
 List* massage_list_;
+List* netrec_cnexp;
 
 #if VECTORIZE
 extern int vectorize;
@@ -38,8 +40,8 @@ void solv_diffeq(qsol, fun, method, numeqn, listnum, steadystate, btype)
 	int numeqn, listnum, steadystate;
 	int btype;
 {
-	char *maxerr_str, dindepname[50];
-	char deriv1_advance[30], deriv2_advance[30];
+	char *maxerr_str, dindepname[256];
+	char deriv1_advance[256], deriv2_advance[256];
 	char ssprefix[8];
 	
 	if (method && strcmp(method->name, "cnexp") == 0) {
@@ -136,6 +138,13 @@ dindepname, fun->name, listnum);
    }
 #endif
 	}
+	dtsav_for_nrn_state = 1;
+	sprintf(buf,"   if (secondorder) {\n"
+	  "    int _i;\n"
+	  "    for (_i = 0; _i < %d; ++_i) {\n"
+	  "      _p[_slist%d[_i]] += dt*_p[_dlist%d[_i]];\n"
+	  "    }}\n", numeqn, listnum, listnum);
+	insertstr(qsol->next, buf);
 }
 
 /* addition of higher order derivatives
@@ -224,13 +233,13 @@ Implementation :
 base state first. Will install PRIME if necessary.
 */
 static Symbol	*forderiv;	/* base state */
-static char	base_units[50];	/*base state units */
+static char	base_units[256];	/*base state units */
 static int	indx, maxindx;	/* current indx, and indx of dstate */
 
 static Symbol * init_forderiv(prime)
 	Symbol *prime;
 {
-	char name[100];
+	char name[256];
 	double d1, d2;
 
 	assert(prime->type == PRIME);
@@ -260,7 +269,7 @@ static Symbol * init_forderiv(prime)
 static char *name_forderiv(i)
 	int i;
 {
-	static char name[100];
+	static char name[256];
 	
 	assert(i > 0  && forderiv);
 	if (i > 1) {
@@ -277,7 +286,7 @@ We make use of the tools here to reconstruct the original prime name.
 char *reprime(sym)
 	Symbol *sym;
 {
-	static char name[100];
+	static char name[256];
 	int i;
 	char *cp;
 	
@@ -301,7 +310,7 @@ static Symbol *next_forderiv()
 {
 	char *name;
 	Symbol *s;
-	char units[50];
+	char units[256];
 	
 	if (++indx >= maxindx) {
 		return SYM0;
@@ -416,7 +425,7 @@ void massagederiv(q1, q2, q3, q4, sensused)
 	Item *q1, *q2, *q3, *q4; int sensused;
 {
 	int count = 0, deriv_implicit, solve_seen;
-	char units[50];
+	char units[256];
 	Item *qs, *q, *mixed_eqns();
 	Symbol *s, *derfun, *state;
 
@@ -1034,11 +1043,19 @@ int cvode_cnexp_success(q1, q2) Item* q1, *q2; {
 			s = SYM(qeq); qeq = qeq->next; a = STR(qeq);
 			qeq = qeq->next; b = STR(qeq); qeq = qeq->next;
 			q = q->next; q1=ITM(q); q = q->next; q2 = ITM(q);
+			if (!netrec_cnexp) { netrec_cnexp = newlist(); }
+			lappendsym(netrec_cnexp, s);
 			if (strcmp(a, "0.0") == 0) {
 				assert(b[strlen(b) - 9] == '/');
 				b[strlen(b) - 9] = '\0';
+sprintf(buf," __primary -= 0.5*dt*( %s )", b);
+				lappendstr(netrec_cnexp, buf);
 sprintf(buf," %s = %s - dt*(%s)", s->name, s->name, b);
 			}else{
+sprintf(buf," __primary += ( 1. - exp( 0.5*dt*( %s ) ) )*( %s - __primary )",
+					a, b
+			);
+				lappendstr(netrec_cnexp, buf);
 sprintf(buf," %s = %s + (1. - exp(dt*(%s)))*(%s - %s)",
 					s->name, s->name,
 					a, b,

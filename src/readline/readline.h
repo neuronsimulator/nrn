@@ -11,21 +11,43 @@ typedef int Function ();
 #endif
 typedef void* PFunction ();
 
+extern void rl_forward (int count);
+extern void rl_backward (int count);
+extern void rl_forward_word ();
+extern void rl_backward_word ();
+
+extern void rl_clear_screen ();
+extern void rl_insert (int count, int c);
+extern void rl_redisplay ();
+extern void rl_rubout ();
+extern void rl_delete ();
+extern void rl_transpose_words();
+extern void rl_transpose_chars();
+extern void rl_undo_command ();
+extern void free_history_entry ();
+extern void rl_get_next_history ();
+extern void rl_get_previous_history ();
+extern void rl_search_history (int direction, int invoking_key);
+extern void rl_kill_text (int from, int to);
+extern void rl_yank_nth_arg (int count, int ignore);
+extern void rl_parse_and_bind (char *string);
+extern void rl_generic_bind (int type, char *keyseq, char *data, Keymap map);
+
+
 /* The functions for manipulating the text of the line within readline.
 Most of these functions are bound to keys by default. */
 extern int
-rl_beg_of_line (), rl_backward (), rl_delete (), rl_end_of_line (),
-rl_forward (), ding (), rl_backward (), rl_newline (), rl_kill_line (),
-rl_clear_screen (), rl_get_next_history (), rl_get_previous_history (),
-rl_quoted_insert (), rl_reverse_search_history (), rl_transpose_chars
-(), rl_unix_line_discard (), rl_quoted_insert (), rl_unix_word_rubout
-(), rl_yank (), rl_rubout (), rl_backward_word (), rl_kill_word (),
-rl_forward_word (), rl_tab_insert (), rl_yank_pop (), rl_yank_nth_arg (),
-rl_backward_kill_word (), rl_backward_kill_line (), rl_transpose_words
-(), rl_complete (), rl_possible_completions (), rl_do_lowercase_version
+rl_beg_of_line (), rl_end_of_line (),
+ding (), rl_newline (), rl_kill_line (),
+rl_quoted_insert (), rl_reverse_search_history (),
+rl_unix_line_discard (), rl_quoted_insert (), rl_unix_word_rubout
+(), rl_yank (), rl_kill_word (),
+ rl_tab_insert (), rl_yank_pop (),
+rl_backward_kill_word (), rl_backward_kill_line (),
+rl_complete (), rl_possible_completions (), rl_do_lowercase_version
 (), rl_digit_argument (), rl_universal_argument (), rl_abort (),
-rl_undo_command (), rl_revert_line (), rl_beginning_of_history (),
-rl_end_of_history (), rl_forward_search_history (), rl_insert (),
+rl_revert_line (), rl_beginning_of_history (),
+rl_end_of_history (), rl_forward_search_history (),
 rl_upcase_word (), rl_downcase_word (), rl_capitalize_word (),
 rl_restart_output (), rl_re_read_init_file ();
 
@@ -51,7 +73,7 @@ rl_vi_delete_to (), rl_vi_change_to (), rl_vi_yank_to (), rl_vi_complete ();
 extern int
 rl_start_kbd_macro (), rl_end_kbd_macro (), rl_call_last_kbd_macro ();
 
-extern int rl_arrow_keys(), rl_refresh_line ();
+extern void rl_arrow_keys(), rl_refresh_line ();
 
 /* Maintaining the state of undo.  We remember individual deletes and inserts
    on a chain of things to do. */

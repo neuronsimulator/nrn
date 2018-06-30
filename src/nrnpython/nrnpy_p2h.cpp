@@ -23,6 +23,10 @@ extern int hoc_ipop();
 PyObject* nrnpy_hoc2pyobject(Object*);
 Object* nrnpy_pyobject_in_obj(PyObject*);
 int nrnpy_ho_eq_po(Object*, PyObject*);
+extern void* (*nrnpy_save_thread)();
+extern void (*nrnpy_restore_thread)(void*);
+static void* save_thread() { return PyEval_SaveThread(); }
+static void restore_thread(void* g) {PyEval_RestoreThread((PyThreadState*)g); }
 extern Symbol* nrnpy_pyobj_sym_;
 extern void (*nrnpy_py2n_component)(Object*, Symbol*, int, int);
 extern void (*nrnpy_hpoasgn)(Object*, int);
@@ -30,6 +34,8 @@ extern double (*nrnpy_praxis_efun)(Object*, Object*);
 extern int (*nrnpy_hoccommand_exec)(Object*);
 extern int (*nrnpy_hoccommand_exec_strret)(Object*, char*, int);
 extern void (*nrnpy_cmdtool)(Object*, int, double, double, int);
+extern double (*nrnpy_func_call)(Object*, int, int*);
+extern Object* (*nrnpy_callable_with_args)(Object*, int);
 extern double (*nrnpy_guigetval)(Object*);
 extern void (*nrnpy_guisetval)(Object*, double);
 extern int (*nrnpy_guigetstr)(Object*, char**);
@@ -58,6 +64,8 @@ static double praxis_efun(Object*, Object*);
 static int hoccommand_exec(Object*);
 static int hoccommand_exec_strret(Object*, char*, int);
 static void grphcmdtool(Object*, int, double, double, int);
+static double func_call(Object*, int, int*);
+static Object* callable_with_args(Object*, int);
 static double guigetval(Object*);
 static void guisetval(Object*, double);
 static int guigetstr(Object*, char**);
@@ -95,12 +103,12 @@ Member_func p_members[] = {0,0};
 static void call_python_with_section(Object* pyact, Section* sec) {
   PyObject* po = ((Py2Nrn*)pyact->u.this_pointer)->po_;
   PyObject* r;
-  PyGILState_STATE s = PyGILState_Ensure();
+  PyLockGIL lock;
+
   PyObject* args = PyTuple_Pack(1, (PyObject*) newpysechelp(sec));
   r = nrnpy_pyCallObject(po, args);
   Py_XDECREF(args);
   Py_XDECREF(r);
-  PyGILState_Release(s);
 }
 
 
@@ -117,6 +125,8 @@ void nrnpython_reg_real() {
   nrnpy_hoccommand_exec = hoccommand_exec;
   nrnpy_hoccommand_exec_strret = hoccommand_exec_strret;
   nrnpy_cmdtool = grphcmdtool;
+  nrnpy_func_call = func_call;
+  nrnpy_callable_with_args = callable_with_args;
   nrnpy_guigetval = guigetval;
   nrnpy_guisetval = guisetval;
   nrnpy_guigetstr = guigetstr;
@@ -125,6 +135,8 @@ void nrnpython_reg_real() {
   nrnpy_callpicklef = call_picklef;
   nrnpympi_alltoall = py_alltoall;
   nrnpy_pysame = pysame;
+  nrnpy_save_thread = save_thread;
+  nrnpy_restore_thread = restore_thread;
   dlist = hoc_l_newlist();
 #if NRNPYTHON_DYNAMICLOAD
   nrnpy_site_problem_p = &nrnpy_site_problem;
@@ -138,9 +150,8 @@ Py2Nrn::Py2Nrn() {
   //	printf("Py2Nrn() %p\n", this);
 }
 Py2Nrn::~Py2Nrn() {
-  PyGILState_STATE gilsav = PyGILState_Ensure();
+  PyLockGIL lock;
   Py_XDECREF(po_);
-  PyGILState_Release(gilsav);
   //	printf("~Py2Nrn() %p\n", this);
 }
 
@@ -210,7 +221,7 @@ void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
   Py2Nrn* pn = (Py2Nrn*)ob->u.this_pointer;
   PyObject* head = pn->po_;
   PyObject* tail;
-  PyGILState_STATE gilsav = PyGILState_Ensure();
+  PyLockGIL lock;
   if (pn->type_ == 0) {  // top level
     if (!main_module) {
       main_module = PyImport_AddModule("__main__");
@@ -231,7 +242,7 @@ void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
   }
   if (!tail) {
     PyErr_Print();
-    PyGILState_Release(gilsav);
+    lock.release();
     hoc_execerror("No attribute:", sym->name);
   }
   PyObject* args = 0;
@@ -254,7 +265,7 @@ void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
     // printf("  result of call\n");
     if (!result) {
       PyErr_Print();
-      PyGILState_Release(gilsav);
+      lock.release();
       hoc_execerror("PyObject method call failed:", sym->name);
     }
   } else if (nindex) {
@@ -267,7 +278,7 @@ void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
     result = PyObject_GetItem(tail, arg);
     if (!result) {
       PyErr_Print();
-      PyGILState_Release(gilsav);
+      lock.release();
       hoc_execerror("Python get item failed:", hoc_object_name(ob));
     }
   } else {
@@ -303,7 +314,6 @@ void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
   }
   Py_XDECREF(head);
   Py_DECREF(tail);
-  PyGILState_Release(gilsav);
 }
 
 static void hpoasgn(Object* o, int type) {
@@ -413,7 +423,8 @@ static PyObject* hoccommand_exec_help(Object* ho) {
 }
 
 static double praxis_efun(Object* ho, Object* v) {
-  PyGILState_STATE s = PyGILState_Ensure();
+  PyLockGIL lock;
+
   PyObject* pc = nrnpy_ho2po(ho);
   PyObject* pv = nrnpy_ho2po(v);
   PyObject* po = Py_BuildValue("(OO)", pc, pv);
@@ -425,24 +436,24 @@ static double praxis_efun(Object* ho, Object* v) {
   Py_XDECREF(pn);
   Py_XDECREF(r);
   Py_XDECREF(po);
-  PyGILState_Release(s);
   return x;
 }
 
 static int hoccommand_exec(Object* ho) {
-  PyGILState_STATE s = PyGILState_Ensure();
+  PyLockGIL lock;
+
   PyObject* r = hoccommand_exec_help(ho);
   if (r == NULL) {
-    PyGILState_Release(s);
+    lock.release();
     hoc_execerror("Python Callback failed", 0);
   }
   Py_XDECREF(r);
-  PyGILState_Release(s);
   return (r != NULL);
 }
 
 static int hoccommand_exec_strret(Object* ho, char* buf, int size) {
-  PyGILState_STATE s = PyGILState_Ensure();
+  PyLockGIL lock;
+
   PyObject* r = hoccommand_exec_help(ho);
   if (r) {
     PyObject* pn = PyObject_Str(r);
@@ -451,9 +462,8 @@ static int hoccommand_exec_strret(Object* ho, char* buf, int size) {
     strncpy(buf, str.c_str(), size);
     buf[size - 1] = '\0';
     Py_XDECREF(r);
-    PyGILState_Release(s);
   } else {
-    PyGILState_Release(s);
+    lock.release();
     hoc_execerror("Python Callback failed", 0);
   }
   return (r != NULL);
@@ -462,49 +472,139 @@ static int hoccommand_exec_strret(Object* ho, char* buf, int size) {
 static void grphcmdtool(Object* ho, int type, double x, double y, int key) {
   PyObject* po = ((Py2Nrn*)ho->u.this_pointer)->po_;
   PyObject* r;
-  PyGILState_STATE s = PyGILState_Ensure();
+  PyLockGIL lock;
+
   PyObject* args = PyTuple_Pack(4, PyInt_FromLong(type), PyFloat_FromDouble(x),
                                 PyFloat_FromDouble(y), PyInt_FromLong(key));
   r = nrnpy_pyCallObject(po, args);
   Py_XDECREF(args);
   Py_XDECREF(r);
-  PyGILState_Release(s);
+}
+
+static Object* callable_with_args(Object* ho, int narg) {
+  PyObject* po = ((Py2Nrn*)ho->u.this_pointer)->po_;
+  PyLockGIL lock;
+
+  PyObject* args = PyTuple_New((Py_ssize_t)narg);
+  if (args == NULL) {
+    lock.release();
+    hoc_execerror("PyTuple_New failed", 0);
+  }
+  for (int i = 0; i < narg; ++i) {
+    PyObject* item = nrnpy_hoc_pop();
+    if (item == NULL) {
+      Py_XDECREF(args);
+      lock.release();
+      hoc_execerror("nrnpy_hoc_pop failed", 0);
+    }
+    if (PyTuple_SetItem(args, (Py_ssize_t)(narg - i - 1), item) != 0) {
+      Py_XDECREF(args);
+      lock.release();
+      hoc_execerror("PyTuple_SetItem failed", 0);
+    }
+  }
+
+  PyObject* r = PyTuple_New(2);
+  PyTuple_SetItem(r, 1, args);
+  Py_INCREF(po); // when r is destroyed, do not want po refcnt to go to 0
+  PyTuple_SetItem(r, 0, po);
+
+  Object* hr = nrnpy_po2ho(r);
+  Py_XDECREF(r);
+
+  return hr;
+}
+
+static double func_call(Object* ho, int narg, int* err) {
+  PyObject* po = ((Py2Nrn*)ho->u.this_pointer)->po_;
+  PyObject* r;
+  PyLockGIL lock;
+
+  PyObject* args = PyTuple_New((Py_ssize_t)narg);
+  if (args == NULL) {
+    lock.release();
+    hoc_execerror("PyTuple_New failed", 0);
+  }
+  for (int i = 0; i < narg; ++i) {
+    PyObject* item = nrnpy_hoc_pop();
+    if (item == NULL) {
+      Py_XDECREF(args);
+      lock.release();
+      hoc_execerror("nrnpy_hoc_pop failed", 0);
+    }
+    if (PyTuple_SetItem(args, (Py_ssize_t)(narg - i - 1), item) != 0) {
+      Py_XDECREF(args);
+      lock.release();
+      hoc_execerror("PyTuple_SetItem failed", 0);
+    }
+  }
+
+  r = nrnpy_pyCallObject(po, args);
+  Py_XDECREF(args);
+  double rval = 0.0;
+  if (r == NULL) {
+    if (!err || *err) {
+      PyErr_Print();
+    }else{
+      PyErr_Clear();
+    }
+    if (!err || *err) {
+      lock.release();
+      hoc_execerror("func_call failed", 0);
+    }
+    if (err) { *err = 1; }
+  }else{
+    if (nrnpy_numbercheck(r)) {
+      PyObject* pn = PyNumber_Float(r);
+      rval = PyFloat_AsDouble(pn);
+      Py_XDECREF(pn);
+    }
+    Py_XDECREF(r);
+    if (err) { *err = 0; } // success
+  }
+  return rval;
 }
 
 static double guigetval(Object* ho) {
   PyObject* po = ((Py2Nrn*)ho->u.this_pointer)->po_;
-  PyGILState_STATE s = PyGILState_Ensure();
-  PyObject* r =
-      PyObject_GetAttr(PyTuple_GetItem(po, 0), PyTuple_GetItem(po, 1));
+  PyLockGIL lock;
+  PyObject* r = NULL;
+  PyObject* p = PyTuple_GetItem(po, 0);
+  if (PySequence_Check(p) || PyMapping_Check(p)) {
+    r = PyObject_GetItem(p, PyTuple_GetItem(po, 1));
+  }else{
+    r = PyObject_GetAttr(p, PyTuple_GetItem(po, 1));
+  }
   PyObject* pn = PyNumber_Float(r);
   double x = PyFloat_AsDouble(pn);
   Py_XDECREF(pn);
-  PyGILState_Release(s);
   return x;
 }
 
 static void guisetval(Object* ho, double x) {
   PyObject* po = ((Py2Nrn*)ho->u.this_pointer)->po_;
-  PyGILState_STATE s = PyGILState_Ensure();
+  PyLockGIL lock;
   PyObject* pn = PyFloat_FromDouble(x);
-  if (PyObject_SetAttr(PyTuple_GetItem(po, 0), PyTuple_GetItem(po, 1), pn)) {
-    ;
+  PyObject* p = PyTuple_GetItem(po, 0);
+  if (PySequence_Check(p) || PyMapping_Check(p)) {
+    PyObject_SetItem(p, PyTuple_GetItem(po, 1), pn);
+  }else{
+    PyObject_SetAttr(p, PyTuple_GetItem(po, 1), pn);
   }
   Py_XDECREF(pn);
-  PyGILState_Release(s);
 }
 
 static int guigetstr(Object* ho, char** cpp) {
   PyObject* po = ((Py2Nrn*)ho->u.this_pointer)->po_;
-  PyGILState_STATE s = PyGILState_Ensure();
-  PyObject* r =
-      PyObject_GetAttr(PyTuple_GetItem(po, 0), PyTuple_GetItem(po, 1));
+  PyLockGIL lock;
+
+  PyObject* r = PyObject_GetAttr(PyTuple_GetItem(po, 0),
+                                 PyTuple_GetItem(po, 1));
   PyObject* pn = PyObject_Str(r);
   Py2NRNString name(pn);
   Py_DECREF(pn);
   char* cp = name.c_str();
   if (*cpp && strcmp(*cpp, cp) == 0) {
-    PyGILState_Release(s);
     return 0;
   }
   if (*cpp) {
@@ -512,7 +612,6 @@ static int guigetstr(Object* ho, char** cpp) {
   }
   *cpp = new char[strlen(cp) + 1];
   strcpy(*cpp, cp);
-  PyGILState_Release(s);
   return 1;
 }
 

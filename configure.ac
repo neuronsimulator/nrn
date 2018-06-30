@@ -5,7 +5,12 @@ define([AC_CACHE_LOAD], )dnl
 define([AC_CACHE_SAVE], )dnl
 
 dnl PACKAGE_VERSION makes its way into hg2nrnversion_h.sh, etc.
-AC_INIT([nrn],[7.5])
+dnl However 'git describe --tags' is used for the version string for
+dnl distribution file names, banner, nrniv --version, and
+dnl nrnversion(5). If the PACKAGE_VERSION changes then also do a
+dnl git tag -a major.minor.micro consistent with that.
+
+AC_INIT([nrn],[7.6])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR(src/memacs/main.c)
 AM_INIT_AUTOMAKE([foreign])
@@ -130,6 +135,13 @@ fi
 AM_CONDITIONAL(NMODL_ONLY, test x$with_nmodl_only = xyes)
 AM_CONDITIONAL(NMODL_BUILD, test x$nmodl_build = xyes)
 
+AC_ARG_WITH([nrnpython-only],
+	AC_HELP_STRING([--with-nrnpython-only],[configure and make only the nrnpython folder]), [
+],[
+	with_nrnpython_only=no
+])
+AM_CONDITIONAL(NRNPYTHON_ONLY, test x$with_nrnpython_only = xyes)
+
 if test "$always_call_mpi_init" = "yes" ; then
 	NRN_DEFINE(ALWAYS_CALL_MPI_INIT,1,[define if needed])
 fi
@@ -175,7 +187,10 @@ AM_CONDITIONAL(BUILD_CARBON, test x$enable_carbon = xyes)
 NRN_SRCDIR=$srcdir
 AC_SUBST(NRN_SRCDIR)
 dnl use the --enable-rpm-rules=yes
-RPM_RELEASE="`export NSRC=$srcdir ; sh $srcdir/nrnversion.sh commit`"
+dnl Following is not very good with respect to identification
+dnl as it is just the package version major.minor
+dnl but distribution file names will get the latest name.
+RPM_RELEASE="`export NSRC=$srcdir ; sh $srcdir/nrnversion.sh microdotnano`"
 AC_SUBST(RPM_RELEASE)
 if test "$rpm_extra_args" = "" ; then
 	rpm_extra_args="-ba nrnrpm.spec"
@@ -226,13 +241,13 @@ dnl Checks for libraries
 AC_CHECK_LIBM
 LIBS="$LIBS $LIBM"
 
+dnl Python that runs on the build machine needed to create hocusr.h
+AC_CHECK_PROG(PYTHON_BLD, python, python, python3)
+
 dnl Python for cygwin and mingw has to be done early because later tests may
 dnl have to be done with a CFLAGS="-mno-cygwin" (obsolete after gcc2.3)
 dnl What to do about Python
 AC_NRN_PYTHON
-
-dnl Python that runs on the build machine needed to create hocusr.h
-AC_CHECK_PROG(PYTHON_BLD, python, python)
 
 dnl Only needed if making a distribution. In that case cython must work.
 dnl Otherwise, to make a distribution, need to modify
@@ -241,8 +256,11 @@ dnl of extra dist files.
 dnl Also needed for neuron.rxd.geometry3d module
 if test "x$have_cython" != "xno" ; then
   AC_CHECK_PROG(have_cython, cython, yes, no)
+  if test "x$have_cython" = "xno" ; then
+    AC_CHECK_PROG(have_cython, cython3, yes, no)
+  fi
 fi
-AC_CHECK_PROG(CYTHON, cython, cython, cython)
+AC_CHECK_PROG(CYTHON, cython, cython, cython3)
 AM_CONDITIONAL(HAVE_CYTHON, test x$have_cython = xyes)
 
 BUILD_RX3D=0
@@ -565,6 +583,27 @@ fi
 echo "NRNOC_X11 = $NRNOC_X11"
 AC_DEFINE_UNQUOTED(NRNOC_X11,$NRNOC_X11, if nrnoc can use X11)
 
+dnl Use legacy values for FARADAY and R, or 2017 NIST values?
+AC_ARG_ENABLE([LegacyFR],
+	AC_HELP_STRING([--enable-LegacyFR], [Use legacy instead of NIST (as of 2017) values for FARADAY and gas constant R. (default is legacy enabled)]),[
+	if test "$enable_LegacyFR" != "yes" ; then
+		enable_LegacyFR="no"
+	fi
+],[
+	enable_LegacyFR="yes"
+])
+if test "$enable_LegacyFR" = "yes" ; then
+	LegacyY=""
+	LegacyN="/"
+	LegacyFR=1
+	AC_DEFINE_UNQUOTED(LegacyFR,1,[1 for legacy, undef for NIST (as of 2017), for FARADAY and R])
+else
+	LegacyY="/"
+	LegacyN=""
+fi
+AC_SUBST(LegacyY)
+AC_SUBST(LegacyN)
+
 dnl This list specifies what files configure actually makes.
 AC_CONFIG_FILES([
 	Makefile src/Makefile
@@ -573,9 +612,25 @@ if test "$nmodl_build" = "yes" ; then
 AC_CONFIG_HEADERS([nmodlconf.h])
 AC_CONFIG_FILES([
 	src/modlunit/Makefile src/nmodl/Makefile
+	share/lib/nrnunits.lib
 ])
 fi	
-if test "$with_nmodl_only" != "yes" ; then
+
+if test "$with_nmodl_only" != "yes"; then
+AC_CONFIG_HEADERS([
+	src/nrnpython/nrnpython_config.h
+])
+AC_CONFIG_FILES([
+	src/nrnpython/Makefile
+	src/mswin/nrncygso.sh
+	src/nrnpython/setup.py
+	share/lib/python/neuron/rxd/geometry3d/Makefile
+        share/lib/python/neuron/rxd/geometry3d/setup.py
+])
+fi	
+
+
+if test "$with_nmodl_only" != "yes" -a "$with_nrnpython_only" != "yes" ; then
 AC_CONFIG_HEADERS([nrnconf.h])
 AC_CONFIG_HEADERS([src/nrnoc/nrnconfigargs.h])
 AC_CONFIG_HEADERS([src/oc/nrnmpiuse.h])
@@ -586,7 +641,6 @@ AC_CONFIG_HEADERS([src/nrnjava/njconf.h])
 AC_CONFIG_HEADERS([src/nrncvode/nrnneosm.h])
 AC_CONFIG_HEADERS([src/ivos/ivstream.h])
 AC_CONFIG_HEADERS([src/sundials/sundials_config.h])
-AC_CONFIG_HEADERS([src/nrnpython/nrnpython_config.h])
 
 AC_CONFIG_FILES([
 	nrnrpm.spec
@@ -601,10 +655,10 @@ AC_CONFIG_FILES([
 	src/ivos/Makefile src/ivos/InterViews/Makefile src/ivos/OS/Makefile
 	src/nrnjava/Makefile src/nrnjava/nrnccmb/Makefile
 	src/nrnjava/neuron/Makefile
-	src/nrnpython/Makefile src/ni_pci_6229/Makefile
+	src/ni_pci_6229/Makefile
 	src/mac/Makefile src/mswin/Makefile src/mswin/batch/Makefile
 	src/mac/macdist.pkgproj src/mac/postinstall.sh
-	src/mswin/nrnsetup.nsi src/mswin/nrncygso.sh src/mswin/lib/mknrndll.mak
+	src/mswin/nrnsetup.nsi src/mswin/lib/mknrndll.mak
 	src/mswin/nrnsetupmingw.nsi
 	src/mswin/EnvVarUpdate.nsh src/mswin/AddToPath.nsh
 	src/mswin/extra/Makefile src/mswin/rdln/Makefile
@@ -631,14 +685,9 @@ AC_CONFIG_FILES([
 	share/examples/nrniv/xmech/Makefile
 	share/demo/Makefile share/demo/release/Makefile share/demo/dend3/Makefile
 	share/demo/sync/Makefile
-	share/lib/python/neuron/rxd/geometry3d/Makefile
 	share/lib/python/neuron/Makefile
 	share/lib/python/neuron/rxd/Makefile
 	])
-AC_CONFIG_FILES([src/nrnpython/setup.py share/lib/python/neuron/rxd/geometry3d/setup.py],
-  [if test $NRNPYTHON_PYMAJOR -gt 2 ; then $PY2TO3 -w src/nrnpython/setup.py ; $PY2TO3 share/lib/python/neuron/rxd/geometry3d/setup.py ; fi],
-  [NRNPYTHON_PYMAJOR=$NRNPYTHON_PYMAJOR PY2TO3=$PY2TO3]
-)
 fi
 
 AC_OUTPUT

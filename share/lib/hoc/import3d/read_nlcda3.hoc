@@ -4,7 +4,7 @@
 // The format is given by a context free grammar that would be easy
 // to handle with lex/yacc but we can do reasonably well using  recursive descent
 // that more or less matches each production rules for the grammar.
-// Presently we only handle contours and trees but with spines ignored.
+// Presently we handle contours and trees and record spine information.
 
 begintemplate Branch2SomaInfo
 // info to carry out decision about which to connect to for
@@ -41,11 +41,64 @@ obfunc clone() { localobj r
 }
 endtemplate Import3d_LexToken
 
+begintemplate Import3d_Spine
+public append_point
+public class_label, class_type, color, generated, baseindex, x, y, z, d
+public iline, fline
+objref x, y, z, d, fline
+strdef class_label, color
+
+proc init() {
+  class_type = 0
+  class_label = ""
+  color = ""
+  generated = 0
+  iline = 0
+  baseindex = 0
+  x = new Vector(0)
+  y = new Vector(0)
+  z = new Vector(0)
+  d = new Vector(0)
+}
+
+proc append_point() {
+  x.append($1)
+  y.append($2)
+  z.append($3)
+  d.append($4)
+}
+
+endtemplate Import3d_Spine
+
+begintemplate Import3d_Property
+public items, add_token, pr
+objref items
+proc init() {
+  items = new List()
+  items.append($o1.clone())
+}
+proc add_token() {
+  items.append($o1.clone())
+}
+proc pr() {local i localobj item
+  for i=0, items.count - 1 {
+    item = items.o(i)
+    if (item.token == 1) { // number
+      printf(" %g", item.x)
+    }else{
+      printf(" %s", item.s)
+    }
+  }
+  printf("\n")
+}
+endtemplate Import3d_Property
+
 begintemplate Import3d_Neurolucida3
 public type
 public filetype, input, file, sections
 public label, id2pt, id2line, pt2id, pt2sec, sec2pt, helptxt, mark, err, b2spanel
 public x, y, z, d, iline, lines, quiet
+public spines
 external hoc_sf_
 objref type, firstpoints, gm, plist
 objref current, look_ahead, look_ahead2
@@ -53,6 +106,7 @@ objref file, tokens, sections, cursec, parentsec, nil
 objref x, y, z, d, iline, lines
 objref somas, centers, b2serr, b2sinfo
 strdef line, tstr, tstr2, filetype, fline
+objref spines
 
 proc init() {
 	quiet = 0
@@ -71,6 +125,7 @@ proc init() {
 	tokensappend("set", "rgb", "string", "label", "err")
 	tokensappend("leftsp", "rightsp")
 	plist = new List()
+	spines = new List()
 }
 proc tokensappend() {local i
 	for i=1, numarg() {
@@ -93,6 +148,7 @@ proc input() {
 	firstpoints = new Vector(sections.count)
 	set_firstpoints()
 	connect2soma()
+	if (nspine > 0 && !quiet) { printf("%d spines\n", nspine) }
 	if (err) { errout() }
 }
 
@@ -660,7 +716,7 @@ proc newsec() {local i, n, first, n1 localobj m
 proc set_sectype() {localobj tobj
 	sectype = 0
 	if (plist.count) {
-		tobj = plist.object(plist.count-1)
+		tobj = plist.object(plist.count-1).items.o(0)
 		if (strcmp(tobj.s, "Axon") == 0) {
 			sectype = 2
 		}else if (strcmp(tobj.s, "Dendrite") == 0) {
@@ -718,8 +774,8 @@ proc helptxt() {
 	xpanel("Neurolucida V3 file filter characteristics")
 xlabel("The elaborate file format is handled by a reasonably complete")
 xlabel("recursive descent parser that more or less matches the production")
-xlabel("rules for the grammar. However, at present, only contours and trees")
-xlabel("are given any semantic actions (in particular, spines are ignored).")
+xlabel("rules for the grammar. However, at present, only contours, trees")
+xlabel("and spines are given any semantic actions.")
 	xpanel(1)
 }
 
@@ -853,13 +909,14 @@ proc property_or_set() {
 		p_set()
 	}
 }
-proc property() {
+proc property() {localobj prop
 	enter("property")
 	chk(leftpar)
 	demand(label_)
-	plist.append(new String(current.s))
+	prop = new Import3d_Property(current)
+	plist.append(prop)
 	read_next_token()
-	optionalvalues()
+	optionalvalues(prop)
 	chk(rightpar)
 	read_next_token()
 	leave("property")
@@ -868,19 +925,19 @@ proc optionalvalues() {local c
 	enter("optionalvalues")
 	c = current.token
 	if (c == number || c == string || c == label_ || c == rgb) {
-		values()
+		values($o1)
 	}
 	leave("optionalvalues")
 }
 proc values() {local c
 	enter("values")
-	value()
+	value($o1)
 	while (1) {
 		c = current.token
 		if (c != number && c != string && c != label_ && c != rgb) {
 			break
 		}
-		value()
+		value($o1)
 	}
 	leave("values")
 }
@@ -888,8 +945,11 @@ proc value() {local c
 	enter("value")
 	c = current.token
 	if (c == number) {
+		$o1.add_token(current)
 	}else if (c == string) {
+		$o1.add_token(current)
 	}else if (c == label_) {
+		$o1.add_token(current)
 	}else if (c == rgb) {
 		demand(leftpar)
 		demand(number)
@@ -1025,29 +1085,41 @@ proc treepoint() {
     } else {
         point()
         if (current.token == leftsp) {
-            spines()
+            spines_proc()
         }
     }
 	leave("treepoint")
 }
-proc spines() {
-	enter("spines")
-	spine()
+proc spines_proc() {
+	enter("spines_proc")
+	spine_proc()
 	while(current.token == leftsp) {
-		spine()
+		spine_proc()
 	}
-	leave("spines")
+	leave("spines_proc")
 }
-proc spine() {
-	enter("spine")
+proc spine_proc() {local i, ix  localobj spine, p
+	enter("spine_proc")
 	chk(leftsp) read_next_token()
-	nspine += 1  err = 1
-//	properties() points()
-	while (current.token != rightsp) {
-		read_next_token()
+	nspine += 1
+	spine = new Import3d_Spine()
+	spine.baseindex = x.size()-1
+	ix = spine.baseindex
+	spine.append_point(x.x[ix], y.x[ix], z.x[ix], d.x[ix]) // base
+	properties()
+	if (plist.count > 0) {
+		p = plist.o(0)
+		if (strcmp(p.items.o(0).s, "Class") == 0) {
+			spine.class_type = p.items.o(1).x
+		}
 	}
+	spine_point(spine)
+	spines.append(spine)
+//	while (current.token != rightsp) {
+//		read_next_token()
+//	}
 	chk(rightsp) read_next_token()
-	leave("spine")
+	leave("spine_proc")
 }
 proc branchend() {
 	enter("branchend")
@@ -1142,6 +1214,23 @@ proc point() {
 //printf("%g %g %g %g\n", xval, yval, zval, dval)
 	leave("point")
 }
+proc spine_point() {
+	enter("spine_point")
+	chk(leftpar)
+	demand(number)
+	xval = current.x
+	// only the last point
+	$o1.iline = iline_   $o1.fline = new String(fline)
+	read_next_token() optionalcomma()
+	chk(number)
+	yval = current.x
+	zval = dval = 0
+	read_next_token() optz()
+	chk(rightpar) read_next_token()
+	$o1.append_point(xval, yval, zval, dval)
+//printf("%g %g %g %g\n", xval, yval, zval, dval)
+	leave("spine_point")
+}
 proc optz() {
 	enter("optz")
 	optionalcomma()
@@ -1195,9 +1284,6 @@ proc p_err() {
 proc errout() {local i
 	if (quiet) { return }
 	printf("\n%s problems\n\n", file.getname)
-	if (nspine) {
-		printf("Ignored %d spines\n", nspine)
-	}
 	for i=0, b2serr.count-1 {
 		printf("%s\n", b2serr.object(i).s)
 	}

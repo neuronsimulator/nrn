@@ -138,6 +138,8 @@ extern "C" {
         extern int nrn_mlh_gsort (double* vec, int *base_ptr, int total_elems, doubleComparator cmp);
 };
 
+extern "C" int hoc_return_type_code;
+
 IvocVect::IvocVect(Object* o) : ParentVect(){obj_ = o; label_ = NULL; MUTCONSTRUCT(0)}
 IvocVect::IvocVect(int l, Object* o) : ParentVect(l){obj_ = o; label_ = NULL; MUTCONSTRUCT(0)}
 IvocVect::IvocVect(int l, double fill_value, Object* o) : ParentVect(l, fill_value){obj_ = o; label_ = NULL; MUTCONSTRUCT(0)}
@@ -394,6 +396,7 @@ static double v_fwrite(void* v) {
 	int x_max = vp->capacity()-1;
 	int start = 0;
 	int end = x_max;
+	hoc_return_type_code = 1; // integer
 	if (ifarg(2)) {
 	  start = int(chkarg(2,0,x_max));
 	  end = int(chkarg(3,0,x_max));
@@ -418,6 +421,7 @@ static double v_fread(void* v) {
 	void* s = (void*)(vp->vec());
 
         Object* ob = *hoc_objgetarg(1);
+
 	check_obj_type(ob, "File");
 	OcFile* f = (OcFile*)(ob->u.this_pointer);
 
@@ -761,6 +765,7 @@ static double v_printf(void *v) {
 	   }
            if(extra_newline) {printf("\n");}
 	 }
+	hoc_return_type_code = 1; // integer
 	return double(end-start+1);
 }
 
@@ -774,6 +779,8 @@ static double v_scanf(void *v) {
         Object* ob = *hoc_objgetarg(1);
     	check_obj_type(ob, "File");
         OcFile* f = (OcFile*)(ob->u.this_pointer);
+
+    hoc_return_type_code = 1; // integer
 
 	if (ifarg(4)) {
 	  n = int(*getarg(2));
@@ -831,6 +838,7 @@ static double v_scantil(void *v) {
     	check_obj_type(ob, "File");
         OcFile* f = (OcFile*)(ob->u.this_pointer);
 
+    hoc_return_type_code = 1; // integer
 	til = *getarg(2);
 	if (ifarg(4)) {
 	  c = int(*getarg(3));
@@ -1252,6 +1260,7 @@ static Object** v_ind(void* v) {
 
 static double v_size(void* v) {
 	Vect* x = (Vect*)v;
+	hoc_return_type_code = 1;
 	return double(x->capacity());
 }
 
@@ -1261,6 +1270,7 @@ static double v_buffer_size(void* v) {
 		int n = (int)chkarg(1, (double)x->capacity(), dmaxint_);
 		x->buffer_size(n);
 	}
+	hoc_return_type_code = 1;
 	return x->buffer_size();
 }
 
@@ -1386,6 +1396,7 @@ static Object** v_remove(void* v) {
 static double v_contains(void* v) {
         Vect* x = (Vect*)v;
         double g = *getarg(1);
+        hoc_return_type_code = 2;
         for (int i=0;i<x->capacity();i++) {
            if (Math::equal(x->elem(i), g, hoc_epsilon)) return 1.;
         }
@@ -1728,7 +1739,7 @@ static double v_indwhere(void* v) {
   int i, iarg, m=0;
   char* op;
   double value,value2;
-
+  hoc_return_type_code = 1;
     op = gargstr(1);
     value = *getarg(2);
     iarg = 3;
@@ -2065,6 +2076,7 @@ static double v_min_ind(void* v)
 {
   Vect* x = (Vect*)v;
   int x_max = x->capacity()-1;
+  hoc_return_type_code = 1; // integer
   if (ifarg(1)) {
     int start = int(chkarg(1,0,x_max));
     int end = int(chkarg(2,0,x_max));
@@ -2091,6 +2103,7 @@ static double v_max_ind(void* v)
 {
   Vect* x = (Vect*)v;
   int x_max = x->capacity()-1;
+  hoc_return_type_code = 1; // integer
   if (ifarg(1)) {
     int start = int(chkarg(1,0,x_max));
     int end = int(chkarg(2,0,x_max));

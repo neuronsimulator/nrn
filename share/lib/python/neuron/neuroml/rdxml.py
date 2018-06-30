@@ -3,13 +3,13 @@ try:
 except ImportError:
   from xml.etree import ElementTree as etree
 
-import xml2nrn
+from . import xml2nrn
 
 # module names derived from the namespace. Add new tags in proper namespace
-import neuroml
-import metadata
-import morphml
-import biophysics
+from . import neuroml
+from . import metadata
+from . import morphml
+from . import biophysics
 
 class FileWrapper:
      def __init__(self, source):
@@ -39,9 +39,9 @@ def handle(x2n, fw, event, node):
     try:
       f(x2n, node) # handle the element when it opens
     except:
-      print tag,' failed at ', x2n.locator.getLineNumber()
+      print(tag,' failed at ', x2n.locator.getLineNumber())
   elif event == 'start':
-    print 'ignore', node.tag # no function to handle the element
+    print('ignore', node.tag) # no function to handle the element
     return 0
   return 1
 

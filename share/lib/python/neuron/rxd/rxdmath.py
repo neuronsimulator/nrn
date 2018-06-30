@@ -44,12 +44,12 @@ def _neg(objs):
 
 def analyze_reaction(r):
     if not isinstance(r, _Reaction):
-        print '%r is not a reaction' % r
+        print('%r is not a reaction' % r)
     else:
-        print '%r is a reaction:' % r
-        print '   lhs: ', ', '.join('%s[%d]' % (sp, c) for sp, c in zip(r._lhs._items.keys(), r._lhs._items.values()))
-        print '   rhs: ', ', '.join('%s[%d]' % (sp, c) for sp, c in zip(r._rhs._items.keys(), r._rhs._items.values()))
-        print '   dir: ', r._dir
+        print('%r is a reaction:' % r)
+        print('   lhs: ', ', '.join('%s[%d]' % (sp, c) for sp, c in zip(list(r._lhs._items.keys()), list(r._lhs._items.values()))))
+        print('   rhs: ', ', '.join('%s[%d]' % (sp, c) for sp, c in zip(list(r._rhs._items.keys()), list(r._rhs._items.values()))))
+        print('   dir: ', r._dir)
         
 # TODO: change this so that inputs are all automatically converted to numpy.array(s)
 #_compile is called by the reaction (Reaction._update_rates)
@@ -76,10 +76,9 @@ def _compile(arith, extracellular=None):
     #(functools.partial(eval(command), numpy, sys.modules[__name__]), species_dict.values())
 
 
-    
 
 def _ensure_arithmeticed(other):
-    import species
+    from . import species
     if isinstance(other, species._SpeciesMathable):
         other = _Arithmeticed(other)
     elif isinstance(other, _Reaction):
@@ -300,8 +299,8 @@ class _Reaction:
         self._rhs = rhs
         self._dir = direction
     def __repr__(self):
-        return '%s%s%s' % (self._lhs._short_repr(), self._dir, self._rhs._short_repr())
-    def __nonzero__(self):
+        return '%s%s%s' % (str(self._lhs), self._dir, str(self._rhs))
+    def __bool__(self):
         return False
 
 
@@ -347,23 +346,19 @@ class _Arithmeticed:
 
     
     def _short_repr(self):
-        import species
+        from . import species
         items = []
         counts = []
-        for item, count in zip(self._items.keys(), self._items.values()):
+        for item, count in zip(list(self._items.keys()), list(self._items.values())):
             if count:
-                if isinstance(item, species._SpeciesMathable):
-                    items.append(str(item))
-                    counts.append(count)
-                else:
-                    items.append(repr(item))
-                    counts.append(count)
+                items.append(item)
+                counts.append(count)
         result = ''
         for i, c in zip(items, counts):
             try:
                 short_i = '%s' % i._short_repr()
             except:
-                short_i = '%s' % i
+                short_i = '%r' % i
             if result and c > 0:
                 result += '+'
             if c == -1:
@@ -371,17 +366,17 @@ class _Arithmeticed:
             elif c != 1:
                 result += '%d*(%s)' % (c, short_i)
             elif c == 1:
-                result += i
+                result += short_i
         if not result:
             result = '0'
         return result
                     
     def __repr__(self):
-        import species
+        from . import species
         items = []
         counts = []
         result = ""
-        for item, count in zip(self._items.keys(), self._items.values()):
+        for item, count in zip(list(self._items.keys()), list(self._items.values())):
             if count:
                 if isinstance(item, species._SpeciesMathable):
                     items.append(str(item))
@@ -407,7 +402,7 @@ class _Arithmeticed:
         counts = []
         items_append = items.append
         counts_append = counts.append
-        for item, count in zip(self._items.keys(), self._items.values()):
+        for item, count in zip(list(self._items.keys()), list(self._items.values())):
             if count:
                 try:
                     items_append(item._semi_compile)
@@ -429,7 +424,7 @@ class _Arithmeticed:
         return result
 
     def _involved_species(self, the_dict):        
-        for item, count in zip(self._items.keys(), self._items.values()):
+        for item, count in zip(list(self._items.keys()), list(self._items.values())):
             if count:
                 try:
                     item._involved_species(the_dict)

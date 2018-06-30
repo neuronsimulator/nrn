@@ -65,6 +65,23 @@ void BBSDirect::context() {
 	BBSDirectServer::handle();
 	nrnmpi_enddata(sendbuf_);
 	BBSDirectServer::server_->context(sendbuf_);
+
+	// if nhost > 1 of the id_bbs==0 subworld,
+	// then id > 0 need to execute the context statement
+	// but id == 0 does not.
+	if (nrnmpi_numprocs > 1 && nrnmpi_numprocs_bbs < nrnmpi_numprocs_world) {
+		size_t n;
+		bbsmpibuf* rsav = recvbuf_; // May naturally be NULL anyway
+		recvbuf_ = nrnmpi_newbuf(sendbuf_->size);
+		nrnmpi_ref(recvbuf_);
+		nrnmpi_copy(recvbuf_, sendbuf_);
+		nrnmpi_upkbegin(recvbuf_);
+		nrnmpi_upkint(recvbuf_);
+		execute_helper(&n, -1, false);
+		nrnmpi_unref(recvbuf_);
+		recvbuf_ = rsav;
+	}
+
 	nrnmpi_unref(sendbuf_);
 	sendbuf_ = nil;
 }
@@ -306,6 +323,8 @@ void BBSDirect::take(const char* key) { // blocking
 		if (look_take(key)) {
 			wait_time_ += time() - st;
 			return;
+		} else if (!master_works_) {
+			BBSDirectServer::handle_block();
 		} else if ((id = look_take_todo()) != 0) {
 			wait_time_ += time() - st;
 			execute(id);

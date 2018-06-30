@@ -12,7 +12,7 @@ public:
 	virtual ~MechanismStandard();
 
 	void panel(const char* label = NULL);
-	void action(const char*);
+	void action(const char*, Object* pyact);
 
    int count();
    const char* name();
@@ -32,12 +32,14 @@ public:
 
 	void save(const char*, ostream*); // for session files
 	NrnProperty* np() { return np_; }
+	Object* msobj_; // wraps 'this' and used as first arg for pyact_
 private:
 	NrnProperty* np_;
 	int name_cnt_;
 	int offset_;
 	int vartype_;
 	CopyString action_;
+	Object* pyact_;
 	Symbol** glosym_;
 	void mschk(const char*);
 };
@@ -55,7 +57,7 @@ public:
 	void insert(Section*);
 	void remove(Section*);
 	void point_process(Object**);
-	void action(const char*);
+	void action(const char*, Object* pyact);
 	void menu();
 
 	int count();
@@ -65,6 +67,8 @@ public:
 
 	Point_process* pp_begin();
 	Point_process* pp_next();
+	
+	Object* mtobj_; // wraps 'this' and used as first arg for pyact_
 private:
 	MechTypeImpl* mti_;
 };

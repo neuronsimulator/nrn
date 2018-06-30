@@ -45,6 +45,11 @@ static PyNumberMethods hocobj_as_number = {
 #endif
 };
 
+static PySequenceMethods hocobj_seqmeth = {
+    hocobj_len,     NULL, NULL, hocobj_getitem, NULL,
+    hocobj_setitem, NULL, NULL, NULL,           NULL
+};
+
 #undef ccast
 #if PYTHON_API_VERSION < 1013
 #define ccast (char*)

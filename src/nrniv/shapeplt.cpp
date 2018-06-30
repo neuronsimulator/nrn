@@ -217,6 +217,8 @@ extern double nrniv_sh_color(void*);
 extern double nrniv_sh_color_all(void*);
 extern double nrniv_sh_color_list(void*);
 extern double nrniv_len_scale(void*);
+extern Object** nrniv_sh_nearest_seg(void*);
+extern Object** nrniv_sh_selected_seg(void*);
 
 static Member_func sh_members[] = {
 	"hinton", sh_hinton,
@@ -253,6 +255,13 @@ static Member_func sh_members[] = {
 	"gif", ivoc_gr_gif,
 	0,0
 };
+
+static Member_ret_obj_func retobj_members[] = {
+	"nearest_seg", nrniv_sh_nearest_seg,
+	"selected_seg", nrniv_sh_selected_seg,
+	NULL, NULL
+};
+
 static void* sh_cons(Object* ho) {
 #if HAVE_IV
 	ShapePlot* sh = NULL;
@@ -295,7 +304,7 @@ ENDGUI
 }
 void PlotShape_reg() {
 //	printf("PlotShape_reg\n");
-	class2oc("PlotShape", sh_cons, sh_destruct, sh_members, NULL, NULL, NULL);
+	class2oc("PlotShape", sh_cons, sh_destruct, sh_members, NULL, retobj_members, NULL);
 }
 
 #if HAVE_IV

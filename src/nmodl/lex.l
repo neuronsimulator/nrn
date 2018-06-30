@@ -32,7 +32,7 @@ D	[0-9]
 E	[Ee][-+]?{D}+
 %%
 [a-zA-Z][a-zA-Z0-9_]*'+ { /*PRIME possibly high order*/
-	char *cp, buf[100];
+	char *cp, buf[256];
 	int i;
 	Symbol *base;
 

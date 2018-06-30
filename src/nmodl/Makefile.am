@@ -7,6 +7,7 @@ bin_PROGRAMS = nocmodl
 
 nocmodl_SOURCES = parse1.y diffeq.y lex.l consist.c deriv.c discrete.c \
 	init.c io.c kinetic.c list.c modl.c nocpout.c noccout.c parsact.c \
+	netrec_discon.c \
 	partial.c sens.c simultan.c solve.c symbol.c units.c version.c
 
 nsrc=$(top_srcdir)/src
@@ -27,4 +28,4 @@ noinst_HEADERS = extdef.h extdef2.h extdef5.h modl.h symbol.h parse1.h \
 ## do not exist and dependencies have not yet been determined
 consist.o cout.o deriv.o discrete.o init.o io.o kinetic.o lex.o \
 list.o noccout.o nocpout.o parsact.o partial.o sens.o simultan.o \
-solve.o symbol.o: parse1.h
+solve.o symbol.o netrec_discon.o: parse1.h

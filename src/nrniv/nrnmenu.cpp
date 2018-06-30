@@ -15,7 +15,7 @@
 #include "classreg.h"
 
 typedef void (*ReceiveFunc)(Point_process*, double*, double);
-
+extern "C" int hoc_return_type_code;
 extern "C" {
 // from nrnoc
 #include "membfunc.h"
@@ -39,6 +39,10 @@ void nrnsecmenu();
 void nrnglobalmechmenu();
 void nrnmechmenu();
 void nrnpointmenu();
+
+Object* (*nrnpy_callable_with_args)(Object*, int narg);
+int (*nrnpy_ob_is_seg)(Object*);
+
 }
 
 #if HAVE_IV
@@ -60,7 +64,16 @@ ENDGUI
 void nrnsecmenu() {
 #if HAVE_IV
 IFGUI
-	section_menu(chkarg(1,-1.,1.), (int)chkarg(2,1.,3.));
+	double x;
+	Section* sec = NULL;
+	if (hoc_is_object_arg(1)) { // x = -1 not allowed
+		nrn_seg_or_x_arg(1, &sec, &x);
+		nrn_pushsec(sec);
+	}else{
+		x = chkarg(1,-1.,1.);
+	}
+	section_menu(x, (int)chkarg(2,1.,3.));
+	if (sec) { nrn_popsec(); }
 ENDGUI
 #endif
 	hoc_retpushx(1.);
@@ -496,10 +509,15 @@ ENDGUI
 }
 static double ms_action(void* v) {
 	char* a = 0;
+	Object* pyact = NULL;
 	if(ifarg(1)) {
-		a = gargstr(1);
+		if (hoc_is_str_arg(1)) {
+			a = gargstr(1);
+		}else{
+			pyact = *hoc_objgetarg(1);
+		}
 	}
-	((MechanismStandard*)v)->action(a);
+	((MechanismStandard*)v)->action(a, pyact);
 	return 0.;
 }
 
@@ -515,6 +533,11 @@ static double ms_out(void* v) {
 			m->out((MechanismStandard*)o->u.this_pointer);
 		}else if (is_point_process(o)) {
 			m->out(ob2pntproc(o));
+		}else if (nrnpy_ob_is_seg && (*nrnpy_ob_is_seg)(o)) {
+			double x;
+			Section* sec;
+			nrn_seg_or_x_arg(1, &sec, &x);
+			m->out(sec, x);
 		}else{
 hoc_execerror("Object arg must be MechanismStandard or a Point Process, not",
 			hoc_object_name(o));
@@ -538,8 +561,13 @@ static double ms_in(void* v) {
 			m->in((MechanismStandard*)o->u.this_pointer);
 		}else if (is_point_process(o)) {
 			m->in(ob2pntproc(o));
+		}else if (nrnpy_ob_is_seg && (*nrnpy_ob_is_seg)(o)) {
+			double x;
+			Section* sec;
+			nrn_seg_or_x_arg(1, &sec, &x);
+			m->in(sec, x);
 		}else{
-hoc_execerror("Object arg must be MechanismStandard or a Point Process, not",
+hoc_execerror("Object arg must be MechanismStandard or a Point Process or a nrn.Segment, not",
 			hoc_object_name(o));
 		}
 	    }
@@ -565,6 +593,7 @@ static double ms_get(void* v) {
 	return ((MechanismStandard*)v)->get(gargstr(1), i);
 }
 static double ms_count(void* v) {
+	hoc_return_type_code = 1;
 	return ((MechanismStandard*)v)->count();
 }
 static double ms_name(void* v) {
@@ -577,6 +606,7 @@ static double ms_name(void* v) {
    	n = ms->name();
    }
    hoc_assign_str(hoc_pgargstr(1), n);
+   hoc_return_type_code = 1;
    return double(rval);
 }
 
@@ -590,7 +620,7 @@ static double ms_save(void* v) {
 	return 0.;
 }
 
-static void* ms_cons(Object*) {
+static void* ms_cons(Object* ob) {
 	int vartype = nrnocCONST;
 	if (ifarg(2)) {
 		// 0 means all
@@ -598,6 +628,7 @@ static void* ms_cons(Object*) {
 	}
 	MechanismStandard* m = new MechanismStandard(gargstr(1), vartype);
 	m->ref();
+	m->msobj_ = ob;
 	return (void*)m;
 }
 
@@ -609,6 +640,7 @@ static Member_func ms_members[] = {
 	"panel", ms_panel,
 	"action", ms_action,
 	"in", ms_in,
+	"_in", ms_in,
 	"out", ms_out,
 	"set", ms_set,
 	"get", ms_get,
@@ -623,6 +655,7 @@ void MechanismStandard_reg() {
 }
 
 MechanismStandard::MechanismStandard(const char* name, int vartype) {
+	msobj_ = NULL;
 	glosym_ = NULL;
 	np_ = new NrnProperty(name);
 	name_cnt_ = 0;
@@ -661,8 +694,12 @@ MechanismStandard::MechanismStandard(const char* name, int vartype) {
 	}
     }
 	action_ = "";
+	pyact_ = NULL;
 }
 MechanismStandard::~MechanismStandard() {
+	if (pyact_) {
+		hoc_obj_unref(pyact_);
+	}
 	if (glosym_) {
 		delete [] glosym_;
 	}
@@ -699,27 +736,56 @@ void MechanismStandard::panel(const char* label) {
 	}
 	for (sym = np_->first_var(), i=0; np_->more_var(); sym = np_->next_var(), ++i) {
 		if (vartype_ == 0 || np_->var_type(sym) == vartype_) {
+			Object* pyactval = NULL;
 			int size = hoc_total_array_data(sym, 0);
-			sprintf(buf, "hoc_ac_ = %d  %s", i, action_.string());
-			hoc_ivpvaluerun(sym->name, np_->prop_pval(sym),
-				buf, true, false, sym->extra);
+			if (pyact_) {
+				assert(nrnpy_callable_with_args);
+				hoc_push_object(msobj_);
+				hoc_pushx(double(i));
+				hoc_pushx(0.0);
+				pyactval = (*nrnpy_callable_with_args)(pyact_, 3);
+			}else{
+				sprintf(buf, "hoc_ac_ = %d  %s", i, action_.string());
+			}
+			hoc_ivvaluerun_ex(sym->name,
+				NULL, np_->prop_pval(sym), NULL,
+				pyact_ ? NULL : buf, pyactval,
+				true, false, true, sym->extra);
+			if (pyactval) {
+				hoc_obj_unref(pyactval);
+			}
 			int j;
 			for (j=1; j < size; ++j) {
 				++i;
-				sprintf(buf, "hoc_ac_ = %d %s", i, action_.string());
+				if (pyact_) {
+					assert(nrnpy_callable_with_args);
+					hoc_push_object(msobj_);
+					hoc_pushx(double(i));
+					hoc_pushx(double(j));
+					pyactval = (*nrnpy_callable_with_args)(pyact_, 3);
+				}else{
+					sprintf(buf, "hoc_ac_ = %d %s", i, action_.string());
+				}
 				char buf2[200];
 				sprintf(buf2, "%s[%d]", sym->name, j);
-				hoc_ivpvaluerun(buf2, np_->prop_pval(sym, j),
-					buf, true, false, sym->extra);
+				hoc_ivvaluerun_ex(buf2,
+					NULL, np_->prop_pval(sym, j), NULL,
+					pyact_ ? NULL : buf, pyact_,
+					true, false, true, sym->extra);
+				if (pyactval) { hoc_obj_unref(pyactval); }
 			}
 		}
 	}
 	hoc_ivpanelmap();
 #endif
 }
-void MechanismStandard::action(const char* action){
+void MechanismStandard::action(const char* action, Object* pyact){
 	mschk("action");
-	action_ = action;
+	action_ = action ? action : "";
+	if (pyact) {
+		pyact_ = pyact;
+		hoc_obj_ref(pyact);
+	}
 }
 void MechanismStandard::set(const char* name, double val, int index){
 	mschk("set");
@@ -890,6 +956,7 @@ static double mt_selected(void* v) {
 	if (ifarg(1)) {
 		hoc_assign_str(hoc_pgargstr(1), mt->selected());
 	}
+	hoc_return_type_code = 1;
 	return double(i);
 }
 static double mt_internal_type(void* v) {
@@ -912,6 +979,7 @@ static double mt_remove(void* v) {
 }
 static double mt_count(void* v) {
 	MechanismType* mt = (MechanismType*)v;
+	hoc_return_type_code = 1;
 	return double(mt->count());
 }
 static double mt_menu(void* v) {
@@ -925,19 +993,26 @@ ENDGUI
 }
 static double mt_action(void* v) {
 	MechanismType* mt = (MechanismType*)v;
-	mt->action(gargstr(1));
+	if (hoc_is_str_arg(1)) {
+		mt->action(gargstr(1), NULL);
+	}else{
+		mt->action(NULL, *hoc_objgetarg(1));
+	}
 	return 0.;
 }
 static double mt_is_target(void* v) {
 	MechanismType* mt = (MechanismType*)v;
+	hoc_return_type_code = 2;
 	return double(mt->is_netcon_target(int(chkarg(1, 0, mt->count()))));
 }
 static double mt_has_net_event(void* v) {
 	MechanismType* mt = (MechanismType*)v;
+	hoc_return_type_code = 2;
 	return double(mt->has_net_event(int(chkarg(1, 0, mt->count()))));
 }
 static double mt_is_artificial(void* v) {
 	MechanismType* mt = (MechanismType*)v;
+	hoc_return_type_code = 2;
 	return double(mt->is_artificial(int(chkarg(1, 0, mt->count()))));
 }
 static Object** mt_pp_begin(void* v) {
@@ -960,9 +1035,10 @@ static Object** mt_pp_next(void* v) {
 	return hoc_temp_objptr(obj);
 }
 
-static void* mt_cons(Object*) {
+static void* mt_cons(Object* obj) {
 	MechanismType* mt = new MechanismType(int(chkarg(1, 0, 1)));
 	mt->ref();
+	mt->mtobj_ = obj;
 	return (void*)mt;
 }
 static void mt_destruct(void* v) {
@@ -1001,6 +1077,7 @@ private:
 	int count_;
 	int select_;
 	CopyString action_;
+	Object* pyact_;
 	Section* sec_iter_;
 	int inode_iter_;
 	Prop* p_iter_;
@@ -1026,10 +1103,14 @@ MechanismType::MechanismType(bool point_process){
 			++j;
 		}
 	}
-	action("");
+	mti_->pyact_ = NULL;
+	action("", NULL);
 	select(0);
 }
 MechanismType::~MechanismType(){
+	if (mti_->pyact_) {
+		hoc_obj_unref(mti_->pyact_);
+	}
 	delete [] mti_->type_;
 	delete mti_;
 }
@@ -1143,24 +1224,41 @@ void MechanismType::point_process(Object** o){
 	(*o)->refcount = 1;
 }
 
-void MechanismType::action(const char* action){
-	mti_->action_ = action;
+void MechanismType::action(const char* action, Object* pyact){
+	mti_->action_ = action ? action : "";
+	if (pyact) {
+		hoc_obj_ref(pyact);
+	}
+	if (mti_->pyact_) {
+		hoc_obj_unref(mti_->pyact_);
+		mti_->pyact_ = NULL;
+	}
+	mti_->pyact_ = pyact;
 }
 void MechanismType::menu(){
 #if HAVE_IV
 	char buf[200];
 	Oc oc;
-	oc.run("xmenu(\"MechType\")\n");
+	oc.run("{xmenu(\"MechType\")}\n");
 	for (int i=0; i < mti_->count_; ++i) {
 	    Symbol* s = memb_func[mti_->type_[i]].sym;
 	    if (s->subtype != MORPHOLOGY) {
-		sprintf(buf, "xbutton(\"%s\", \"hoc_ac_=%d %s\")\n",
-			s->name, i, mti_->action_.string()
-		);
-		oc.run(buf);
+		if (mti_->pyact_) {
+			assert(nrnpy_callable_with_args);
+			hoc_push_object(mtobj_);
+			hoc_pushx(double(i));
+			Object* pyactval = (*nrnpy_callable_with_args)(mti_->pyact_, 2);
+			hoc_ivbutton(s->name, NULL, pyactval);
+			hoc_obj_unref(pyactval);
+		}else {
+			sprintf(buf, "xbutton(\"%s\", \"hoc_ac_=%d %s\")\n",
+				s->name, i, mti_->action_.string()
+			);
+			oc.run(buf);
+		}
 	    }
 	}
-	oc.run("xmenu()\n");
+	oc.run("{xmenu()}\n");
 #endif
 }
 

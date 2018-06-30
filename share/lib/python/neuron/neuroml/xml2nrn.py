@@ -31,7 +31,7 @@ class Cable:
     self.px_ = -1.
     self.parent_cable_id_ = -1
     self.name_ = ""
-    if debug: print " New ", self.__str__()
+    if debug: print(" New ", self.__str__())
 
   def __str__(self):
     return "Cable: id="+str(self.id_)+" name="+self.name_+" pid="+str(self.parent_cable_id_)+ " first="+str(self.first_)
@@ -78,11 +78,11 @@ class LineNo:
 class XML2Nrn():
 
   def __init__(self):
-    if debug: print "Starting parsing of NeuroML file... "
+    if debug: print("Starting parsing of NeuroML file... ")
     self.in_biogroup_ = False
     self.in_paramgroup_ = False
     self.locator = LineNo()
 
   def prattrs(self, node):
-    for i in node.keys():
-      print "  ", i, " ", node.get(i)
+    for i in list(node.keys()):
+      print("  ", i, " ", node.get(i))

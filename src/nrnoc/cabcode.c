@@ -771,6 +771,16 @@ void* hoc_sec_internal_name2ptr(const char* s, int eflag) {
 	return vp;
 }
 
+void* hoc_pysec_name2ptr(const char* s, int eflag) {
+	/*
+	  syntax is _pysec.<name>  where <name> is the name of a python
+	  nrn.Section from (*nrnpy_pysec_name_p_)(sec) 
+	  
+	*/
+	Section* sec = nrnpy_pysecname2sec(s);
+	return (void*)sec;
+}
+
 /* in an object syntax a section may either be last or next to last
 in either case it is pushed when it is seen in hoc_object_component
 and section_object_seen is set.
@@ -1073,9 +1083,10 @@ Prop* hoc_getdata_range(int type)
 {
 	int inode;
 	Section *sec;
+	double x;
 	
-	sec = chk_access();
-	inode = node_index(sec, *getarg(1));
+	nrn_seg_or_x_arg(1, &sec, &x);
+	inode = node_index(sec, x);
 	return nrn_mechanism_check(type, sec, inode);
 }
 
@@ -1784,6 +1795,22 @@ const char* secname(Section* sec) /* name of section (for use in error messages)
 	return name;
 }
 
+const char* nrn_sec2pysecname(Section* sec) {
+#if USE_PYTHON
+  static char buf[256];
+  const char* name = secname(sec);
+  if (sec && sec->prop->dparam[PROP_PY_INDEX]._pvoid
+    && strncmp(name, "__nrnsec_0x", 11) != 0) {
+    sprintf(buf, "_pysec.%s", name);
+  }else{
+    strcpy(buf, name);
+  }
+  return buf;
+#else
+  return secname(sec);
+#endif
+}
+
 void section_owner(void) {
 	Section* sec;
 	Object* ob;
@@ -1817,8 +1844,10 @@ char* hoc_section_pathname(Section* sec)
 		}else{
 			Sprintf(name, "%s%s", s->name, hoc_araystr(s, indx, hoc_objectdata));
 		}
+#if USE_PYTHON
 	}else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
-		sprintf(name, "__nrnsec_%p", sec);
+		strcpy(name, nrn_sec2pysecname(sec));
+#endif
 	}else{
 		name[0] = '\0';
 	}
@@ -2219,19 +2248,26 @@ const char* secaccessname(void) {
 }
 
 void sectionname(void) {
-	const char *buf;
 	char **cpp;
 	
-	buf = secname(chk_access());
 	cpp = hoc_pgargstr(1);
-	hoc_assign_str(cpp, buf);
+	if (ifarg(2) && chkarg(2, 0., 1.) == 0.) {
+		hoc_assign_str(cpp, secname(chk_access()));
+	}else{
+		hoc_assign_str(cpp, nrn_sec2pysecname(chk_access()));
+	}
 	hoc_retpushx(1.);
 }
 
 void hoc_secname(void) {
 	static char* buf = (char*)0;
+	Section* sec = chk_access();
 	if (!buf) { buf = (char*)emalloc(256*sizeof(char)); }
-	strcpy(buf,secname(chk_access()));
+	if (ifarg(1) && chkarg(1, 0., 1.) == 0.) {
+		strcpy(buf, secname(sec));
+	}else{
+		strcpy(buf, nrn_sec2pysecname(sec));
+	}
 	hoc_ret();
 	hoc_pushstr(&buf);
 }

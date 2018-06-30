@@ -96,6 +96,7 @@ private:
     void show_objid();
     void show_objref();
     void show_sec();
+    void show_pysec();
     double* selected_var();
     int selected_vector_count();
     FieldEditor* add_filter(
@@ -470,6 +471,11 @@ Menu* SymChooserImpl::makeshowmenu() {
 #if SHOW_SECTION
 	mi->state()->set(TelltaleState::is_chosen, true);
 #endif
+	mi = K::radio_menu_item(ttg, "Python Sections");
+	mi->action(new ActionCallback(SymChooserImpl)(
+		this, &SymChooserImpl::show_pysec
+	));
+	mp->append_item(mi);
 
 	return mb;
 }
@@ -495,6 +501,9 @@ void SymChooserImpl::show_objid() {
 }
 void SymChooserImpl::show_sec() {
 	show(SECTION);
+}
+void SymChooserImpl::show_pysec() {
+	show(PYSEC);
 }
 
 void SymChooserImpl::clear(int bindex) {
@@ -711,18 +720,21 @@ bool SymChooserImpl::chdir(int bindex, int index) {
 if (dir_[bindex]->obj(index)) {
 		d = new SymDirectory(dir_[bindex]->obj(index));
 		bi = bindex;
+}else if (dir_[bindex]->is_pysec(index)) {
+		d = dir_[bindex]->newsymdir(index);
+		bi = bindex + 1;
 }else{
 		d = new SymDirectory(
 			dir_[bindex]->path(),
 			dir_[bindex]->object(),
 			dir_[bindex]->symbol(index),
 			dir_[bindex]->array_index(index));
-			bi = bindex + 1;
-			if (bi > nbrowser_-1) {
-				bi = nbrowser_-1;
-				// rotate
-			}
+		bi = bindex + 1;
 }
+		if (bi > nbrowser_-1) {
+			bi = nbrowser_-1;
+			// rotate
+		}
 		Resource::ref(d);
 		browser_index_ = bi;
 		Resource::unref(dir_[bi]);

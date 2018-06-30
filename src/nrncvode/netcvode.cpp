@@ -94,6 +94,7 @@ void _nrn_free_watch(Datum*, int, int);
 extern int hoc_araypt(Symbol*, int);
 extern int hoc_stacktype();
 extern Point_process* ob2pntproc(Object*);
+extern Point_process* ob2pntproc_0(Object*);
 void nrn_use_daspk(int);
 extern int nrn_use_daspk_;
 int linmod_extra_eqn_count();
@@ -108,9 +109,12 @@ extern void nrn_use_busywait(int);
 extern double* nrn_recalc_ptr(double*);
 void* nrn_interthread_enqueue(NrnThread*);
 extern void (*nrnthread_v_transfer_)(NrnThread*);
+Object* (*nrnpy_seg_from_sec_x)(Section*, double);
 #if NRN_MUSIC
 extern void nrnmusic_injectlist(void*, double);
 #endif
+
+extern "C" int hoc_return_type_code;
 
 extern int nrn_fornetcon_cnt_;
 extern int* nrn_fornetcon_index_;
@@ -461,14 +465,52 @@ static double nc_preloc(void* v) { // user must pop section stack after call
 		double* v = d->src_->thvar_;
 		nrn_parent_info(s); // make sure parentnode exists
 		// there is no efficient search for the location of
-		// an arbitrary variable. Search only for v at 0, 1.
+		// an arbitrary variable. Search only for v at 0 - 1.
 		// Otherwise return .5 .
-		if (v == &NODEV(s->parentnode)) { return 0.; }
-		if (v == &NODEV(s->pnode[s->nnode-1])) { return 1.; }
-		return .5;	// perhaps should search for v
+		if (v == &NODEV(s->parentnode)) {
+			return nrn_arc_position(s, s->parentnode);
+		}
+		for (int i = 0; i < s->nnode; ++i) {
+			if (v == &NODEV(s->pnode[i])) {
+				return nrn_arc_position(s, s->pnode[i]);
+			}
+		}
+		return -2.;	// not voltage
 	}else{
 		return -1.;
 	}
+}
+
+static Object** nc_preseg(void* v) { // user must pop section stack after call
+	NetCon* d = (NetCon*)v;
+	Section* s = NULL;
+	Object* obj = NULL;
+	double x = -1.;
+	if (d->src_) {
+		s = d->src_->ssrc_;
+	}
+	if (s && nrnpy_seg_from_sec_x) {
+		double* v = d->src_->thvar_;
+		nrn_parent_info(s); // make sure parentnode exists
+		// there is no efficient search for the location of
+		// an arbitrary variable. Search only for v at 0 -  1.
+		// Otherwise return NULL.
+		if (v == &NODEV(s->parentnode)) {
+			x =  nrn_arc_position(s, s->parentnode);
+		}
+		for (int i = 0; i < s->nnode; ++i) {
+			if (v == &NODEV(s->pnode[i])) {
+				x = nrn_arc_position(s, s->pnode[i]);
+				continue;
+			}
+		}
+		// perhaps should search for v
+		if (x >= 0) {
+			obj = (*nrnpy_seg_from_sec_x)(s, x);
+			--obj->refcount;
+		}
+	}
+	return hoc_temp_objptr(obj);
 }
 
 static double nc_postloc(void* v) { // user must pop section stack after call
@@ -479,6 +521,17 @@ static double nc_postloc(void* v) { // user must pop section stack after call
 	}else{
 		return -1.;
 	}
+}
+
+static Object** nc_postseg(void* v) { // user must pop section stack after call
+	NetCon* d = (NetCon*)v;
+	Object* obj = NULL;
+	if (d->target_ && d->target_->sec && nrnpy_seg_from_sec_x) {
+		double x =  nrn_arc_position(d->target_->sec, d->target_->node);
+		obj = (*nrnpy_seg_from_sec_x)(d->target_->sec, x);
+		--obj->refcount;
+	}
+	return hoc_temp_objptr(obj);
 }
 
 static Object** nc_syn(void* v) {
@@ -648,6 +701,7 @@ static double nc_setpost(void* v) {
 
 static double nc_valid(void* v) {
 	NetCon* d = (NetCon*)v;
+	hoc_return_type_code = 2;
 	if (d->src_ && d->target_) {
 		return 1.;
 	}
@@ -660,6 +714,7 @@ static double nc_active(void* v) {
 	if (d->target_ && ifarg(1)) {
 		d->active_ = bool(chkarg(1, 0, 1));
 	}
+	hoc_return_type_code = 2;
 	return double(a);
 }
 
@@ -715,6 +770,7 @@ static double nc_record(void* v) {
 
 static double nc_srcgid(void* v) {
 	NetCon* d = (NetCon*)v;
+	hoc_return_type_code = 1;
 	if (d->src_) {
 		return (double)d->src_->gid_;
 	}
@@ -757,6 +813,8 @@ static Member_ret_obj_func omembers[] = {
 	"pre", nc_pre,
 	"precell", nc_precell,
 	"postcell", nc_postcell,
+	"preseg", nc_preseg,
+	"postseg", nc_postseg,
 	"prelist", nc_prelist,
 	"synlist", nc_synlist,
 	"precelllist", nc_precelllist,
@@ -4881,7 +4939,8 @@ PreSyn::~PreSyn() {
 		nrn_notify_pointer_disconnect(this);
 #endif
 		if (!thvar_) {
-			Point_process* pnt = ob2pntproc(osrc_);
+			// even if the point process section was deleted earlier
+			Point_process* pnt = ob2pntproc_0(osrc_);
 			if (pnt) {
 				pnt->presyn_ = nil;
 			}
@@ -5033,8 +5092,10 @@ void PreSyn::record(double tt) {
 		}
 	}
 	if (stmt_) {
-		nt_t = tt;
+		if (nrn_nthread > 1) { nrn_hoc_lock(); }
+		t = tt;
 		stmt_->execute(false);
+		if (nrn_nthread > 1) { nrn_hoc_unlock(); }
 	}
 }
 
@@ -5837,7 +5898,11 @@ void VecRecordDt::frecord_init(TQItem* q) {
 void VecRecordDt::deliver(double tt, NetCvode* nc) {
 	int j = y_->capacity();
 	y_->resize_chunk(j + 1);
-	y_->elem(j) = *pd_;
+	if (pd_ == &t) {
+		y_->elem(j) = tt;
+	}else{
+		y_->elem(j) = *pd_;
+	}
 	e_->send(tt + dt_, nc, nrn_threads);
 }
 

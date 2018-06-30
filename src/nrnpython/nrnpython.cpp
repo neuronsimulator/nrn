@@ -1,4 +1,5 @@
 #include <nrnpython.h>
+#include <nrnpy_utils.h>
 #include <stdio.h>
 #include <InterViews/resource.h>
 #if HAVE_IV
@@ -15,6 +16,7 @@ void nrnpython_start(int);
 extern int hoc_get_line();
 extern HocStr* hoc_cbufstr;
 extern int nrnpy_nositeflag;
+extern char* nrnpy_pyhome;
 extern char* hoc_ctp;
 extern FILE* hoc_fin;
 extern const char* hoc_promptstr;
@@ -60,6 +62,19 @@ void nrnpy_augment_path() {
 
 int nrnpy_pyrun(const char* fname) {
 #ifdef MINGW
+#if PY_MAJOR_VERSION >= 3
+  // perhaps this should be the generic implementation
+  char* cmd = new char[strlen(fname) + 40];
+  sprintf(cmd, "exec(open(\"%s\").read(), globals())", fname);
+  int err = PyRun_SimpleString(cmd);
+  delete [] cmd;
+  if (err != 0) {
+    PyErr_Print();
+    PyErr_Clear();
+    return 0;
+  }
+  return 1;
+#else // PY_MAJOR_VERSION < 3
   /*
   http://www.megasolutions.net/python/How-to-receive-a-FILE--from-Python-under-MinGW_-38375.aspx
   Because microsoft C runtimes are not binary compatible, we can't just
@@ -74,15 +89,20 @@ int nrnpy_pyrun(const char* fname) {
     PyErr_Clear();
     return 0;
   } else {
+    char* cmd = NULL;
     if (PyRun_AnyFile(PyFile_AsFile(pfo), fname) == -1) {
       PyErr_Print();
       PyErr_Clear();
+      Py_DECREF(pfo);
+      if (cmd) { delete [] cmd; }
       return 0;
     }
     Py_DECREF(pfo);
+    if (cmd) { delete [] cmd; }
     return 1;
   }
-#else
+#endif // PY_MAJOR_VERSION < 3
+#else // MINGW not defined
   FILE* fp = fopen(fname, "r");
   if (fp) {
     PyRun_AnyFile(fp, fname);
@@ -92,7 +112,7 @@ int nrnpy_pyrun(const char* fname) {
     fprintf(stderr, "Could not open %s\n", fname);
     return 0;
   }
-#endif
+#endif // MINGW not defined
 }
 
 #if PY_MAJOR_VERSION >= 3
@@ -106,18 +126,32 @@ static wchar_t** copy_argv_wcargv(int argc, char** argv) {
   }
   return argv_copy;
 }
+
+static wchar_t* mywstrdup(char* s) {
+  size_t sz = strlen(s);
+  wchar_t* ws = new wchar_t[sz];
+  int count = mbstowcs(ws, s, sz + 1);
+  return ws;
+}
 #endif
 
 void nrnpython_start(int b) {
 #if USE_PYTHON
   static int started = 0;
-  //	printf("nrnpython_start %d started=%d\n", b, started);
+  //printf("nrnpython_start %d started=%d\n", b, started);
   if (b == 1 && !started) {
     p_nrnpy_pyrun = nrnpy_pyrun;
     if (nrnpy_nositeflag) {
       Py_NoSiteFlag = 1;
     }
     // printf("Py_NoSiteFlag = %d\n", Py_NoSiteFlag);
+    if (nrnpy_pyhome) {
+#if PY_MAJOR_VERSION >= 3
+        Py_SetPythonHome(mywstrdup(nrnpy_pyhome));
+#else
+        Py_SetPythonHome(nrnpy_pyhome);
+#endif
+    }
     Py_Initialize();
 #if NRNPYTHON_DYNAMICLOAD
     // return from Py_Initialize means there was no site problem
@@ -212,9 +246,11 @@ void nrnpython_start(int b) {
 void nrnpython_real() {
   int retval = 0;
 #if USE_PYTHON
-  HocTopContextSet PyGILState_STATE gilsav = PyGILState_Ensure();
-  retval = PyRun_SimpleString(gargstr(1)) == 0;
-  PyGILState_Release(gilsav);
+  HocTopContextSet
+  {
+    PyLockGIL lock;
+    retval = PyRun_SimpleString(gargstr(1)) == 0;
+  }
   HocContextRestore
 #endif
   hoc_retpushx(double(retval));
@@ -235,14 +271,22 @@ static char* nrnpython_getline(char* prompt) {
   if (r == 1) {
     size_t n = strlen(hoc_cbufstr->buf) + 1;
     hoc_ctp = hoc_cbufstr->buf + n - 1;
+#if (PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 4)
+    char* p = (char*)PyMem_RawMalloc(n);
+#else
     char* p = (char*)PyMem_MALLOC(n);
+#endif
     if (p == 0) {
       return 0;
     }
     strcpy(p, hoc_cbufstr->buf);
     return p;
   } else if (r == EOF) {
+#if (PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 4)
+    char* p = (char*)PyMem_RawMalloc(2);
+#else
     char* p = (char*)PyMem_MALLOC(2);
+#endif
     if (p == 0) {
       return 0;
     }

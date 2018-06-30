@@ -46,9 +46,18 @@ static void free_objectdata(Objectdata*, Template*);
 
 int hoc_print_first_instance = 1;
 
+int hoc_max_builtin_class_id = -1;
+
 static Symbol* hoc_obj_;
 
 void hoc_install_hoc_obj(void) {
+	/* see void hoc_objvardecl(void) */
+	Object** pobj;
+	Symbol* s = hoc_install("_pysec", OBJECTVAR, 0.0, &hoc_top_level_symlist);
+	hoc_install_object_data_index(s);
+	hoc_objectdata[s->u.oboff].pobj = pobj = (Object**)emalloc(sizeof(Object*));
+	pobj[0] = (Object*)0;
+
 	hoc_oc("objref hoc_obj_[2]\n");
 	hoc_obj_ = hoc_lookup("hoc_obj_");
 }
@@ -159,7 +168,7 @@ assert(sym->public != 2);
 #else
 	    b = (hoc_fin == stdin);
 #endif	    
-	    if (nrnmpi_myid_world == 0 &&(hoc_print_first_instance || b)) {
+	    if (nrnmpi_myid_world == 0 &&(hoc_print_first_instance && b)) {
 	        NOT_PARALLEL_SUB(printf("first instance of %s\n", sym->name);)
 	    }
 		sym->defined_on_the_fly = 1;
@@ -1505,6 +1514,9 @@ void class2oc(
 	tsym->subtype = CPLUSOBJECT;
 	hoc_begintemplate(tsym);
 	t = tsym->u.template;
+	if (t->id > hoc_max_builtin_class_id) {
+		hoc_max_builtin_class_id = t->id;
+	}
 	t->constructor = cons;
 	t->destructor = destruct;
 	t->steer = 0;

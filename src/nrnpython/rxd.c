@@ -8,7 +8,7 @@
 #include <../nrnoc/section.h>
 #include <../nrnoc/nrn_ansi.h>
 #include <../nrnoc/multicore.h>
-#ifdef __APPLE__
+#if 0 && defined(__APPLE__)
 #include <Python/Python.h>
 #else
 #include <Python.h>

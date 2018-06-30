@@ -111,7 +111,6 @@ inline bool NrnHashIterator(NrnHash)::more() { return entry_ <= last_; }
 // google integer hash function
 // http://www.concentric.net/~Ttwang/tech/inthash.htm
 static uint32_t nrn_uint32hash( uint32_t a) {
-    return a;
     a = (a ^ 61) ^ (a >> 16);
     a = a + (a << 3);  
     a = a ^ (a >> 4);  

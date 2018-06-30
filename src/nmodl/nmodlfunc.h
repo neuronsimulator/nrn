@@ -138,3 +138,7 @@ void poplocal();
 void conductance_hint(int blocktype, Item* q1, Item* q2);
 void possible_local_current(int blocktype, List* symlist);
 Symbol* breakpoint_current(Symbol* s);
+void netrec_asgn(Item* varname, Item* equal, Item* expr, Item* lastok);
+void netrec_discon();
+char* items_as_string(Item* begin, Item* last); /* does not include last */
+int slist_search(int listnum, Symbol* s);

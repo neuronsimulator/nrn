@@ -5,7 +5,7 @@
 #include <hoc_membf.h>
 
 struct NrnThread;
-	
+union Datum;	
 
 #if defined(__cplusplus)
 extern "C" {
@@ -73,10 +73,14 @@ extern int _cvode_sparse(void**, int, int*, double*,
 extern int _cvode_sparse_thread(void**, int, int*, double*,
   int(*)(void*, double*, double*, Datum*, Datum*, NrnThread*), void*, void*, void*);
 extern int _nrn_destroy_sparseobj_thread(void*);
+extern int derivimplicit(int, int, int*, int*, double*, double*, double, int(*)(), double**);
+extern int derivimplicit_thread(int, int*, int*, double*, int(*)(double*, union Datum*, union Datum*, struct NrnThread*), void*, void*, void*);
 extern int _ss_derivimplicit(int, int, int*, int*, double*, double*, double,
   int(*)(), double**);
 extern int _ss_derivimplicit_thread(int, int*, int*, double*,
-   int(*)(double*, void*, void*, void*), void*, void*, void*);
+   int(*)(double*, union Datum*, union Datum*, struct NrnThread*), void*, void*, void*);
+extern int euler_thread(int, int*, int*, double*,
+   int(*)(double*, union Datum*, union Datum*, struct NrnThread*), union Datum*, union Datum*, struct NrnThread*);
 
 #if defined(__cplusplus)
 }

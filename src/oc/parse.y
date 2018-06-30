@@ -16,6 +16,8 @@
 #include "equation.h"
 #include "nrnfilewrap.h"
 
+void* nrn_parsing_pysec_;
+
 #if LINT
 Inst *inlint;
 #define code	inlint = Code
@@ -94,7 +96,7 @@ static void hoc_opasgn_invalid(int op);
 %token	<sym>	ITERATOR ITERKEYWORD ITERSTMT STRINGFUNC OBJECTFUNC
 %token	<sym>	LOCALOBJ AUTOOBJ
 %token	<narg>	ARG NUMZERO ARGREF
-%token	<ptr>	INTERNALSECTIONNAME
+%token	<ptr>	INTERNALSECTIONNAME PYSEC PYSECNAME PYSECOBJ
 %type	<inst>	expr stmt asgn prlist delsym stmtlist strnasgn
 %type	<inst>	cond while if begin end for_init for_st for_cond for_inc
 %type	<inst>	eqn_list dep_list varname wholearray array pointer
@@ -104,6 +106,7 @@ static void hoc_opasgn_invalid(int op);
 %type	<sym>	anyname
 %type	<narg>	arglist arglist1 local local1 newarray numdimen procstmt
 %type	<narg>	localobj local2
+%type	<ptr>	pysec pysec1
 
 /* NEWCABLE */
 %token	<sym>	SECTIONKEYWORD SECTION CONNECTKEYWORD ACCESSKEYWORD
@@ -525,7 +528,22 @@ section: SECTION {pushs($1); pushi(CHECK);} wholearray
 		  $$ = code(hoc_sec_internal_push);
 		  hoc_codeptr($1);
 		}
+	| pysec
+		{
+		  nrn_parsing_pysec_ = NULL;
+		  $$ = code(hoc_sec_internal_push);
+		  hoc_codeptr($1);
+		}
 	;
+
+pysec: PYSEC '.' pysec1
+		{ $$ = $3; }
+	;
+
+pysec1: PYSECNAME
+	| PYSECOBJ '.' PYSECNAME
+		{ $$ = $3; }
+;
 
 section_or_ob: section '(' expr ')' {TPD;}
 	| {$<inst>$ = progp; code(connect_obsec_syntax);} ob
@@ -612,7 +630,7 @@ stmtlist: /* nothing */
 		{
 			prog_parse_recover = progp;
 			prog_error = $$;
-			if (nrn_fw_eq(fin, stdin) && !pipeflag)
+			if (fin && nrn_fw_eq(fin, stdin) && !pipeflag)
 			{	int i;
 				Printf(">");
 				for (i = 0; i < ntab; i++)

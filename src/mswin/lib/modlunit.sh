@@ -1,3 +1,5 @@
+#!sh
+
 if test -f $1/bin/cygpath ; then
   N="`$1/bin/cygpath -u $1`"
   PATH=$N/bin
@@ -5,8 +7,11 @@ if test -f $1/bin/cygpath ; then
   cyg=yes
 else
   N=$1
+  if test -d $N/mingw/mingw64 ; then
+    PATH=$N/mingw/mingw64/bin:$PATH
+  fi
   if test -d $N/mingw ; then
-    PATH=$N/mingw/bin:$PATH
+    PATH=$N/mingw/usr/bin:$PATH
   fi
   if test -d $N/bin64 ; then
     PATH=$N/bin64:$PATH

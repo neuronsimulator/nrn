@@ -17,6 +17,8 @@ extern List *nrnstate;
 #if VECTORIZE
 extern int vectorize;
 extern char* cray_pragma();
+extern int netrec_state_count;
+extern int netrec_need_thread;
 #endif
 #endif
 #if CVODE
@@ -176,6 +178,10 @@ void solvhandler()
 		fun = SYM(qsol);
 		numeqn = fun->used;
 		listnum =fun->u.i;
+		if (btype == BREAKPOINT && (fun->subtype == DERF || fun->subtype == KINF)) {
+			netrec_state_count = numeqn*10 + listnum;
+			netrec_need_thread = 1;
+		}
 		follow = qsol->next; /* where p[0] gets updated */
 		/* Check consistency of method and block type */
 		if (method && !(method->subtype & fun->subtype)) {
@@ -192,7 +198,7 @@ void solvhandler()
 			}
 			if (btype == BREAKPOINT && !steadystate) {
 				/* derivatives recalculated after while loop */
-if (strcmp(method->name, "cnexp") != 0 && strcmp(method->name, "derivimplicit") != 0) {
+if (strcmp(method->name, "cnexp") != 0 && strcmp(method->name, "derivimplicit") != 0 && strcmp(method->name, "euler") != 0) {
 fprintf(stderr, "Notice: %s is not thread safe. Complain to Hines\n", method->name);
 				vectorize = 0;
 				Sprintf(buf, " %s();\n", fun->name);
@@ -213,7 +219,7 @@ fprintf(stderr, "Notice: %s is not thread safe. Complain to Hines\n", method->na
 			}
 			if (btype == BREAKPOINT && (method->subtype & DERF)) {
 #if VECTORIZE
-fprintf(stderr, "Notice: KINETIC with is thread safe only with METHOD sparse. Complain to Hines\n");
+fprintf(stderr, "Notice: KINETIC is thread safe only with METHOD sparse. Complain to Hines\n");
 				vectorize = 0;
 #endif
 				/* derivatives recalculated after while loop */
@@ -396,7 +402,7 @@ which is trapped in scop */
 #endif
 			int i;
 			Item *q;
-			char sval[30];
+			char sval[256];
 			Sprintf(buf, "delta_%s", indepsym->name);
 			for (i=0, q=indeplist->next; i<3; i++, q=q->next) {
 				d[i] = atof(STR(q));

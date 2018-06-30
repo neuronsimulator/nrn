@@ -2,6 +2,7 @@
 # install from the build directories to the mswin destination
 # uses the classical positions of files
 # must be launched from a mingw terminal
+set -ex
 
 if false ; then
 echo "top_srcdir $top_srcdir"
@@ -68,63 +69,24 @@ rm -r -f $D
 mkdir $D
 mkdir $DB
 mkdir $D/lib
+mkdir $D/tmp
 
-# copy and strip the various executables we built
+# copy the various executables we built
 cp $B/src/nrniv/mos2nrn.exe $DB/mos2nrn.exe
-strip $DB/mos2nrn.exe
 cp $B/src/nrniv/neuron.exe $DB/neuron.exe
-strip $DB/neuron.exe
 cp $B/src/mswin/nrniv.exe $DB/nrniv.exe
-strip $DB/nrniv.exe
-if test -f $B/src/mswin/nrniv_enthought.exe ; then
-  cp $B/src/mswin/nrniv_enthought.exe $DB/nrniv_enthought.exe
-  strip $DB/nrniv_enthought.exe
-  cp /c/Python27/Microsoft.VC90.CRT.manifest $DB
-  cp /c/Python27/msvcr90.dll $DB
+if test -f $B/src/mswin/nrniv_crt90.exe ; then
+  # overwrite (avoids R6034 error from python2.7 on certain imports)
+  cp $B/src/mswin/nrniv_crt90.exe $DB/nrniv.exe
+  cp /e/Python27/Microsoft.VC90.CRT.manifest $DB
+  cp /e/Python27/msvcr90.dll $DB
 fi
 cp $B/src/mswin/nrniv.dll $DB/nrniv.dll
-strip $DB/nrniv.dll
 cp $B/src/mswin/libnrnmpi.dll $DB/libnrnmpi.dll
-strip $DB/libnrnmpi.dll
 #will move hocmodule to lib/python/neuron/hoc.pyd after lib/python is created
-cp $B/src/mswin/hocmodule.dll $DB/hocmodule.dll
-strip $DB/hocmodule.dll
-cp $B/src/mswin/libnrnpython1013.dll $DB
-strip $DB/libnrnpython1013.dll
+cp $B/src/mswin/hocmodule*.dll $DB
+cp $B/src/mswin/libnrnpython*.dll $DB
 cp $ivbindir/libIVhines-3.dll $DB/libIVhines-3.dll
-strip $DB/libIVhines-3.dll
-
-cp $H/neuron/termcap-1.3.1/libtermcap.dll $DB
-strip $DB/libtermcap.dll
-cp $H/neuron/readline-6.2/shlib/libhistory6.dll $DB
-strip $DB/libhistory6.dll
-cp $H/neuron/readline-6.2/shlib/libreadline6.dll $DB
-strip $DB/libreadline6.dll
-cp $H/neuron/regex-0.12/libregex.dll $DB
-strip $DB/libregex.dll
-
-if test "$host_cpu" = x86_64 ; then
-cp $H/pthreads-20100604/mingw64/bin/pthreadGC2-w64.dll $DB
-strip $DB/pthreadGC2-w64.dll
-mkdir $D/gccinc
-cp $H/pthreads-20100604/mingw64/x86_64-w64-mingw32/lib/*.a $DB
-cp $H/pthreads-20100604/mingw64/x86_64-w64-mingw32/include/*.h $D/gccinc
-else
-cp $SYS/bin/pthreadGC2.dll $DB
-strip $DB/pthreadGC2.dll
-fi
-
-if test "$host_cpu" = x86_64 ; then
-cp $SYS/lib/libgcc_s_sjlj-1.dll $DB
-strip $DB/libgcc_s_sjlj-1.dll
-cp $SYS/lib/libstdc++-6.dll $DB
-strip $DB/libstdc++-6.dll
-else
-cp $SYS/bin/libgcc_s_dw2-1.dll $DB
-strip $DB/libgcc_s_dw2-1.dll
-cp $SYS/bin/libstdc++-6.dll $DB
-strip $DB/libstdc++-6.dll
-fi
 
 if test -f $B/src/nmodl/.libs/nocmodl.exe ; then
 	cp $B/src/nmodl/.libs/nocmodl.exe $DB
@@ -133,16 +95,50 @@ else
 	cp $B/src/nmodl/nocmodl.exe $DB
 	cp $B/src/modlunit/modlunit.exe $DB
 fi
-strip $DB/nocmodl.exe
-strip $DB/modlunit.exe
 
 if test "$LTCC" = "" ; then
 	LTCC=$CC
 fi
 
 # extract enough mingw stuff so mknrndll will work.
-#This adds 13MB to the installer.
-unzip -d $D -o $S/../mingw${BIT}_nrndist.zip
+#This adds 22MB to the installer.
+sh $S/mingw_files/nrnmingwenv.sh $D
+#mingw64_nrndist created using nrn/mingw_files/nrnmingwenv.sh
+#unzip -d $D -o $S/../mingw${BIT}_nrndist.zip
+#cp $S/../pthreadGC2-w64.dll $DB
+
+if false ; then
+# copy some useful tools
+for i in \
+  basename, bash cat cp dirname echo find grep ls make mintty mkdir mv \
+  rebase rm sed sh sort unzip zip \
+  cygcheck
+do
+  cp /usr/bin/$i.exe $D/bin
+done    
+fi
+cp /usr/bin/cygcheck.exe $D/bin
+
+# Determine what msys64 dlls are needed by the bin programs and copy them
+(cd $DB
+  rm -f temp.tmp
+
+  for i in *.exe ; do
+    cygcheck ./$i | sed 's/^ *//' >> temp.tmp
+  done
+)
+  
+sort $DB/temp.tmp | uniq | grep 'msys64' | sed 's,\\,/,g' > $DB/temp2.tmp
+for i in `cat $DB/temp2.tmp` ; do
+ echo $i
+ cp $i $DB
+done
+     
+rm $DB/temp.tmp
+rm $DB/temp2.tmp
+    
+# reduce size of bin folder
+(cd $DB ; strip *.exe *.dll)
 
 # in case this is an mpi version distribute the appropriate administrative tools.
 if test "$PARANEURON"="yes" ; then
@@ -153,7 +149,14 @@ if test "$PARANEURON"="yes" ; then
 	#cp /c/Windows/System32/mpich2mpi.dll $DB
 	#cp $S/../mpich2mpi.dll $DB
 	if test $host_cpu = x86_64 ; then
-		cp $mpiinstalled/lib/x64/msmpi.dll $DB
+		if test -f $mpiinstalled/lib/x64/msmpi.dll ; then
+			cp $mpiinstalled/lib/x64/msmpi.dll $DB
+		else
+			zz=`cygcheck $DB/libnrnmpi.dll | grep msmpi.dll`
+			if test "$zz" != "" ; then
+				cp $zz $DB
+			fi
+		fi
 	else
 		cp $mpiinstalled/lib/x86/msmpi.dll $DB
 	fi
@@ -187,10 +190,16 @@ unzip -d $D -o $Z
 rm $Z
 cd $B/share
 rm -f $Z
-zip -l $Z lib/nrn.defaults
+zip -l $Z lib/nrn.defaults lib/nrnunits.lib
 unzip -d $D -o $Z 
 rm $Z
-mv $DB/hocmodule.dll $D/lib/python/neuron/hoc.pyd
+for f in $DB/hocmodule*.dll ; do
+  x=`echo $f | sed "s/.*hocmodule\([0-9]*\)\.dll/\1/"`
+  mv $f $D/lib/python/neuron/hoc${x}.pyd
+done
+set +e
+cp $B/share/lib/python/neuron/rxd/geometry3d/*.pyd $D/lib/python/neuron/rxd/geometry3d
+set -e
 fi
 
 if true ; then
@@ -271,13 +280,15 @@ unzip ../nrnhelp.zip
 fi
 if test -d "$hparent/html" ; then
 	cd $hparent
-	rm html.zip
+	rm -f html.zip
 	zip -r html.zip html -x \*.svn\*
 	rm -r -f $marshal_dir/html
 	unzip -d $marshal_dir html.zip
-	rm html.zip
+	rm -f html.zip
 fi
-
+else #nsis requires something
+mkdir $marshal_dir/html
+touch $marshal_dir/html/empty
 fi # end of html marshaling
 
 set +v

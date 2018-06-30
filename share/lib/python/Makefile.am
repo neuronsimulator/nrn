@@ -8,7 +8,10 @@ nobase_neuronhomepython_DATA = \
 \
 neuron/doc.py \
 neuron/gui.py \
+neuron/hclass2.py \
+neuron/hclass3.py \
 neuron/__init__.py \
+neuron/psection.py \
 neuron/sections.py \
 \
 neuron/nonvint_block_supervisor.py \
@@ -24,6 +27,8 @@ neuron/neuroml/biophysics.py \
 neuron/tests/__init__.py \
 neuron/tests/test_all.py \
 neuron/tests/test_vector.py \
+neuron/tests/test_neuron.py \
+neuron/tests/_subclass.py \
 neuron/rxd/region.py \
 neuron/rxd/species.py \
 neuron/rxd/rxd.py \
@@ -54,8 +59,8 @@ SUBDIRS = neuron
 
 EXTRA_DIST = $(nobase_neuronhomepython_DATA)
 
-install-data-hook:
-	if test $(NRNPYTHON_PYMAJOR) -gt 2 ; then \
-		$(PY2TO3) -w $(DESTDIR)$(neuronhomepythondir) ; \
-	fi
+#install-data-hook:
+#	if test $(NRNPYTHON_PYMAJOR) -gt 2 ; then \
+#		$(PY2TO3) -w $(DESTDIR)$(neuronhomepythondir) ; \
+#	fi
 

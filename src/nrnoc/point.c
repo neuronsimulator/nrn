@@ -180,6 +180,22 @@ secname(sec), nrn_arc_position(sec, node)
 	}
 }
 
+void nrn_seg_or_x_arg(int iarg, Section** psec, double* px) {
+	if (hoc_is_double_arg(iarg)) {
+		*px = chkarg(iarg, 0., 1.);
+		*psec = chk_access();
+	}else{
+		Object* o = *hoc_objgetarg(iarg);
+		*psec = (Section*)0;
+		if (nrnpy_o2loc_p_) {
+			(*nrnpy_o2loc_p_)(o, psec, px);
+		}
+		if (!(*psec)) {
+			assert(0);
+		}
+	}
+}
+
 double loc_point_process(int pointtype, void* v)
 {
 	extern int hoc_is_double_arg();
@@ -193,19 +209,7 @@ double loc_point_process(int pointtype, void* v)
 	if (nrn_is_artificial_[pointsym[pointtype]->subtype]) {
 		hoc_execerror("ARTIFICIAL_CELLs are not located in a section", (char*)0);
 	}
-	if (hoc_is_double_arg(1)) {
-		x = chkarg(1, 0., 1.);
-		sec = chk_access();
-	}else{
-		Object* o = *hoc_objgetarg(1);			
-		sec = (Section*)0;
-		if (nrnpy_o2loc_p_) {
-			(*nrnpy_o2loc_p_)(o, &sec, &x);
-		}
-		if (!sec) {
-			assert(0);
-		}
-	}
+	nrn_seg_or_x_arg(1, &sec, &x);
 	node = node_exact(sec, x);
 	nrn_loc_point_process(pointtype, pnt, sec, node);
 	return x;

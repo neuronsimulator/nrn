@@ -18,6 +18,7 @@ extern Object* hoc_thisobject;
 int (*nrnpy_hoccommand_exec)(Object*);
 int (*nrnpy_hoccommand_exec_strret)(Object*, char*, int);
 void (*nrnpy_cmdtool)(Object*, int type, double x, double y, int kd);
+double (*nrnpy_func_call)(Object*, int, int*);
 }
 
 HocCommand::HocCommand(const char* cmd) {
@@ -149,8 +150,14 @@ int HocCommand::execute(const char* s, bool notify) {
 	return err;
 }
 
-double HocCommand::func_call(int narg) {
-	assert(po_ == NULL);
+double HocCommand::func_call(int narg, int* perr) {
+	if (po_) {
+		if (nrnpy_func_call) {
+			return (*nrnpy_func_call)(po_, narg, perr);
+	  	}
+		*perr = 1;
+        	return 0.0;
+	}
 	Symbol* s = NULL;
 	if (obj_ && obj_->ctemplate) {
 		s = hoc_table_lookup(name(), obj_->ctemplate->symtable);

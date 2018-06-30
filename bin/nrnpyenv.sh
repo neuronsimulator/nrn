@@ -1,9 +1,11 @@
 #!/bin/bash
 
 # eval "`sh nrnpyenv.sh`"
-# if PYTHONHOME does not exist,
 # will set bash environment variables so that nrniv -python has same
 # environment as python
+
+# May specify the python executable with explicit first argument.
+# Without arg use python and if that does not exist then python3
 
 # Overcome environment issues when --with-nrnpython=dynamic .
 
@@ -16,7 +18,10 @@
 #export PYTHONPATH=...
 #export LD_LIBRARY_PATH=...
 #export PATH=...
+#export NRN_PYLIB=...
 
+#with NRN_PYLIB as a full path to the Python library,
+#it may not be necessary to change LD_LIBRARY_PATH
 
 #Some python installations, such as enthought canopy, do not have site
 #in a subfolder of prefix. In that case, the site folder defines home and
@@ -32,12 +37,52 @@ export originalPYTHONHOME="$PYTHONHOME"
 export originalLDLIBRARYPATH="$LD_LIBRARY_PATH"
 
 if test "$PYTHONHOME" != "" ; then
-  echo '# PYTHONHOME exists. Do nothing' 1>&2
-  exit 0
+  echo "# Ignoring existing PYTHONHOME=$PYTHONHOME."
+  unset PYTHONHOME
 fi
 
-PYTHON=python
-$PYTHON -c '
+WHICH=which
+
+if test "$1" != "" ; then
+  PYTHON="$1"
+elif $WHICH python >& /dev/null ; then
+  PYTHON=`$WHICH python`
+elif $WHICH python3 >& /dev/null ; then
+  PYTHON=`$WHICH python3`
+else
+  echo "Cannot find executable python or python3" 1>2
+  exit 1;
+fi
+echo "# PYTHON=$PYTHON"
+
+# what is the python library for Darwin
+z=''
+if type -P uname > /dev/null ; then
+  z=`uname`
+fi
+if test "$z" = "Darwin" ; then
+  p=`$WHICH $PYTHON`
+  d=`dirname $p`
+  l=`ls $d/../lib/libpython*.dylib`
+  if test -f "$l" ; then
+    z="$l"
+    unset p
+    unset d
+    unset l
+  else
+    DYLD_PRINT_LIBRARIES=1
+    export DYLD_PRINT_LIBRARIES
+    z=`$PYTHON -c 'quit()' 2>&1 | sed -n 's/^dyld: loaded: //p' | sed -n /libpython/p`
+    if test "$z" = "" ; then
+      z=`$PYTHON -c 'quit()' 2>&1 | sed -n 's/^dyld: loaded: //p' | sed -n 2p`
+    fi
+    unset DYLD_PRINT_LIBRARIES  
+  fi
+  PYLIB_DARWIN=$z
+  export PYLIB_DARWIN
+fi
+
+$PYTHON << 'here'
 ###########################################
 
 import sys, os, site
@@ -49,7 +94,7 @@ def upath(path):
   #return linux path
   if path == None:
     return ""
-  import posixpath
+  import posixpath, sys
   plist = path.split(os.pathsep)
   for i, p in enumerate(plist):
     p = os.path.splitdrive(p)
@@ -60,7 +105,169 @@ def upath(path):
     p = posixpath.normpath(p)
     plist[i] = p
   p = upathsep.join(plist)
+  # /c/... does not work in our bash shell. Convert to c:...
+  if 'win' in sys.platform and 'darwin' not in sys.platform and p[0] == '/':
+    p = p[1] + ':' + p[2:]
   return p
+
+#a copy of nrnpylib_linux() but with some os x specific modifications
+def nrnpylib_darwin_helper():
+  import os, sys, re, subprocess
+  #in case it was dynamically loaded by python
+  pid = os.getpid()
+  cmd = "lsof -p %d"%pid
+  f = []
+  try: # in case lsof does not exist
+    f = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout
+  except:
+    pass
+  nrn_pylib = None
+  cnt = 0
+  for bline in f:
+    fields = bline.decode().split()
+    if len(fields) > 8:
+      line = fields[8]
+      if re.search(r'libpython.*\.[ds]', line):
+        print ("# nrn_pylib from lsof: %s" % line)
+        nrn_pylib = line.strip()
+        return nrn_pylib
+      if re.search(r'[Ll][Ii][Bb].*[Pp]ython', line):
+        cnt += 1  
+        if cnt == 1: # skip 1st since it is the python executable
+          continue
+        if re.search(r'[Pp]ython', line.split('/')[-1]):
+          print ("# nrn_pylib from lsof: %s" % line)
+          nrn_pylib = line.strip()
+          return nrn_pylib
+  else: # figure it out from the os path
+    p = os.path.sep.join(os.__file__.split(os.path.sep)[:-1])
+    name = "libpython%d.%d" % (sys.version_info[0], sys.version_info[1])
+    cmd = r'find %s -name %s\*.dylib' % (p, name)
+    print ('# %s'%cmd)
+    f = os.popen(cmd)
+    libs = []
+    for line in f:
+      libs.append(line.strip())
+    if len(libs) == 0: # try again searching the parent folder
+      p = os.path.sep.join(os.__file__.split(os.path.sep)[:-2])
+      cmd = r'find %s -name %s\*.dylib' % (p, name)
+      print ('# %s'%cmd)
+      f = os.popen(cmd)
+      for line in f:
+        libs.append(line.strip())
+    print ('# %s'%str(libs))
+    if len(libs) == 1:
+      print ("# nrn_pylib from os.path %s"%str(libs[0]))
+      return libs[0]
+    if len(libs) > 1:
+      # which one do we want? Check the name of an imported shared object
+      try:
+        import _ctypes
+      except:
+        import ctypes
+      for i in sys.modules.values():
+        try:
+          s = i.__file__
+          if s.endswith('.dylib'):
+            match = re.search(r'-%d%d([^-]*)-' % (sys.version_info[0], sys.version_info[1]), s)
+            if match:
+              name = name + match.group(1) + '.dylib'
+            break
+          elif s.endswith('.so'):
+            match = re.search(r'-%d%d([^-]*)-' % (sys.version_info[0], sys.version_info[1]), s)
+            if match:
+              name = name + match.group(1) + '.so'
+            break
+        except:
+          pass
+      for i in libs:
+        if name in i:
+          print ("# nrn_pylib from os.path %s" % i)
+          return i
+      print ("# nrn_pylib from os.path %s" % str(nrn_pylib))
+  return nrn_pylib
+
+def nrnpylib_darwin():
+  import os
+  nrn_pylib = os.getenv("PYLIB_DARWIN")
+  if nrn_pylib is not "":
+    print ("# nrn_pylib from PYLIB_DARWIN %s"%nrn_pylib)
+    return nrn_pylib
+  return nrnpylib_darwin_helper()
+          
+def nrnpylib_mswin():
+  import os, sys, re
+  e = '/'.join(sys.executable.split(os.path.sep))
+  cmd = 'cygcheck "%s"' % e
+  f = os.popen(cmd)
+  nrn_pylib = None
+  for line in f:
+    if re.search('ython..\.dll', line):
+      nrn_pylib = '/'.join(line.split(os.path.sep)).strip()
+  return nrn_pylib
+
+def nrnpylib_linux():
+  import os, sys, re, subprocess
+  #in case it was dynamically loaded by python
+  pid = os.getpid()
+  cmd = "lsof -p %d"%pid
+  f = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout
+  nrn_pylib = None
+  for bline in f:
+    fields = bline.decode().split()
+    if len(fields) > 8:
+      line = fields[8]
+      if re.search(r'libpython.*\.so', line):
+        print ("from lsof: %s" % line)
+        nrn_pylib = line.strip()
+        return nrn_pylib
+  else: # figure it out from the os path
+    p = os.path.sep.join(os.__file__.split(os.path.sep)[:-1])
+    name = "libpython%d.%d" % (sys.version_info[0], sys.version_info[1])
+    cmd = r'find %s -name %s\*.so' % (p, name)
+    print ('# %s'%cmd)
+    f = os.popen(cmd)
+    libs = []
+    for line in f:
+      libs.append(line.strip())
+    if len(libs) == 0: # try again searching the parent folder
+      p = os.path.sep.join(os.__file__.split(os.path.sep)[:-2])
+      cmd = r'find %s -name %s\*.so' % (p, name)
+      print ('# %s'%cmd)
+      f = os.popen(cmd)
+      for line in f:
+        libs.append(line.strip())
+    print ('# %s'%str(libs))
+    if len(libs) == 1:
+      return libs[0]
+    if len(libs) > 1:
+      # which one do we want? Check the name of an imported shared object
+      try:
+        import _ctypes
+      except:
+        import ctypes
+      for i in sys.modules.values():
+        try:
+          s = i.__file__
+          if s.endswith('.so'):
+            match = re.search(r'-%d%d([^-]*)-' % (sys.version_info[0], sys.version_info[1]), s)
+            if match:
+              name = name + match.group(1) + '.so'
+            break
+        except:
+          pass
+      for i in libs:
+        if name in i:
+          return i
+  return nrn_pylib
+
+nrn_pylib = None
+if 'darwin' in sys.platform:
+  nrn_pylib = nrnpylib_darwin()
+elif 'win' in sys.platform:
+  nrn_pylib = nrnpylib_mswin()
+elif 'linux' in sys.platform:
+  nrn_pylib = nrnpylib_linux()
 
 #there is a question about whether to use sys.prefix for PYTHONHOME
 #or whether to derive from site.__file__.
@@ -122,16 +329,20 @@ if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
     pass
 
   dq = "\""
+  if pythonpath:
+    print ("\n# if launch python, then need:")
+    print ("export PYTHONPATH=" + dq + pythonpath + dq)
+  print ("\n# if launch nrniv, then likely need:")
   if pythonhome:
     print ("export PYTHONHOME=" + dq + pythonhome + dq)
-  if pythonpath:
-    print ("export PYTHONPATH=" + dq + pythonpath + dq)
-  if ldpath:
+  if ldpath and nrn_pylib == None:
     print ("export LD_LIBRARY_PATH=" + dq + ldpath + upathsep + "$LD_LIBRARY_PATH" + dq)
   if path:
     print ("export PATH=" + dq + path + "$PATH" + dq)
+  if nrn_pylib != None:
+    print ('export NRN_PYLIB="%s"' % nrn_pylib)
 
 quit()
 
 ###################################
-'
+here

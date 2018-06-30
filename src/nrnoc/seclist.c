@@ -7,6 +7,8 @@
 #include "code.h"
 #include "hoc_membf.h"
 
+extern int hoc_return_type_code;
+
 /*ARGSUSED*/
 static void* constructor(Object* ho)
 {
@@ -168,6 +170,7 @@ static double unique(void* v)
 	Section* s;
 	Item* q, *q1;
 	List* sl = (List*)v;
+	hoc_return_type_code = 1; /* integer */
 	ITERATE(q, sl) {
 		s = hocSEC(q);
 		s->volatile_mark = 0;
@@ -190,6 +193,7 @@ static double contains(void* v)
 	Section* s;
 	Item* q;
 	List* sl = (List*)v;
+	hoc_return_type_code = 2; /* boolean */
 	s = chk_access();
 	ITERATE(q, sl) {
 		if (hocSEC(q) == s) {

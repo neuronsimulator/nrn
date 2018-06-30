@@ -17,6 +17,8 @@
 #undef MD
 #define MD 2147483647.
 
+extern "C" int hoc_return_type_code;
+
 extern "C" {
 	extern int vector_arg_px(int, double**);
 	Symbol* hoc_which_template(Symbol*);
@@ -28,7 +30,7 @@ extern "C" {
 	extern void nrnmpi_source_var(), nrnmpi_target_var(), nrnmpi_setup_transfer();
 	extern int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth);
 	extern int nrnmpi_splitcell_connect(int that_host);
-	extern int nrnmpi_multisplit(double x, int sid, int backbonestyle);
+	extern int nrnmpi_multisplit(Section*, double x, int sid, int backbonestyle);
 	extern int nrn_set_timeout(int timeout);
 	extern void nrnmpi_gid_clear(int);
 	double nrnmpi_rtcomp_time_;
@@ -204,6 +206,7 @@ static double working(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
 	int id;
 	bool b = bbs->working(id, bbs->retval_, bbs->userid_);
+	hoc_return_type_code = 1; // integer
 	if (b) {
 		return double(id);
 	}else{
@@ -222,26 +225,32 @@ static double userid(void* v) {
 }
 
 static double nhost(void* v) {
+	hoc_return_type_code = 1;
 	return nrnmpi_numprocs;
 }
 
 static double nrn_rank(void* v) {
+	hoc_return_type_code = 1;
 	return nrnmpi_myid;
 }
 
 static double nhost_world(void* v) {
+	hoc_return_type_code = 1; // integer
 	return nrnmpi_numprocs_world;
 }
 
 static double rank_world(void* v) {
+	hoc_return_type_code = 1;
 	return nrnmpi_myid_world;
 }
 
 static double nhost_bbs(void* v) {
+	hoc_return_type_code = 1;
 	return nrnmpi_numprocs_bbs;
 }
 
 static double rank_bbs(void* v) {
+	hoc_return_type_code = 1;
 	return nrnmpi_myid_bbs;
 }
 
@@ -426,6 +435,7 @@ static double take(void* v) {
 
 static double look(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
+	hoc_return_type_code = 2; // boolean
 	if (bbs->look(key_help())) {
 		unpack_help(2, bbs);
 		return 1.;
@@ -435,6 +445,7 @@ static double look(void* v) {
 
 static double look_take(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
+	hoc_return_type_code = 2; // boolean
 	if (bbs->look_take(key_help())) {
 		unpack_help(2, bbs);
 		return 1.;
@@ -533,6 +544,7 @@ static double set_gid2node(void* v) {
 
 static double gid_exists(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
+	hoc_return_type_code = 1; // NOTE: possible returns are integers 0 - 3
 	return int(bbs->gid_exists(int(chkarg(1, 0, MD))));
 }
 
@@ -572,18 +584,19 @@ static double splitcell_connect(void* v) {
 
 static double multisplit(void* v) {
 	double x = -1.;
+	Section* sec = NULL;
 	int sid = -1;
 	int backbone_style = 2;
 	int reducedtree_host = 0;
 	if (ifarg(1)) {
-		x = chkarg(1, 0, 1);
+		nrn_seg_or_x_arg(1, &sec, &x);
 		sid = (int)chkarg(2, 0, (double)(0x7fffffff));
 	}
 	if (ifarg(3)) {
 		backbone_style = (int)chkarg(3, 0, 2);
 	}
 	// also needs a currently accessed section
-	nrnmpi_multisplit(x, sid, backbone_style);
+	nrnmpi_multisplit(sec, x, sid, backbone_style);
 	return 0.;
 }
 
@@ -635,6 +648,7 @@ static double set_maxstep(void* v) {
 static double spike_stat(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
 	int nsend, nsendmax, nrecv, nrecv_useful;
+	hoc_return_type_code = 1; // integer
 	nsend = nsendmax = nrecv = nrecv_useful = 0;
 	bbs->netpar_spanning_statistics(&nsend, &nsendmax, &nrecv, &nrecv_useful);
 	if (ifarg(1)) { *hoc_pgetarg(1) = nsend; }
@@ -849,6 +863,7 @@ static double checkpoint(void*) {
 
 static double nthrd(void*) {
 	int ip = 1;
+	hoc_return_type_code = 1; // integer
 	if (ifarg(1)) {
 		if (ifarg(2)) { ip = int(chkarg(2, 0, 1)); }
 		nrn_threads_create(int(chkarg(1, 1, 1e5)), ip);
@@ -887,11 +902,13 @@ static double thread_busywait(void*) {
 }
 
 static double thread_how_many_proc(void*) {
+	hoc_return_type_code = 1; // integer
 	int i = nrn_how_many_processors();
 	return double(i);
 }
 
 static double sec_in_thread(void*) {
+	hoc_return_type_code = 2; // boolean
 	Section* sec = chk_access();
 	return double(sec->pnode[0]->_nt->id);
 }
@@ -1061,7 +1078,7 @@ void ParallelContext_reg() {
 		retobj_members, retstr_members);
 }
 
-char* BBSImpl::execute_helper(size_t* size, int id) {
+char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
 	char* s;
 	int subworld = (nrnmpi_numprocs > 1 && nrnmpi_numprocs_bbs < nrnmpi_numprocs_world);
 	int style = upkint();
@@ -1204,11 +1221,16 @@ hoc_execerror("ParallelContext execution error", 0);
 				pickle_ret_ = 0;
 				pickle_ret_size_ = 0;
 			}
-			rs = (*nrnpy_callpicklef)(s, npickle, narg, size);
+			if (exec) {
+			  rs = (*nrnpy_callpicklef)(s, npickle, narg, size);
+			}
 			hoc_ac_ = 0.;
 		}else{
 //printf("%d exec hoc call %s narg=%d\n", nrnmpi_myid_world, fname->name, narg);
-			hoc_ac_ = hoc_call_objfunc(fname, narg, ob);
+			hoc_ac_ = 0.;
+			if (exec) {
+			  hoc_ac_ = hoc_call_objfunc(fname, narg, ob);
+			}
 //printf("%d exec return from hoc call %s narg=%d\n", nrnmpi_myid_world, fname->name, narg);
 		}
 		delete [] s;

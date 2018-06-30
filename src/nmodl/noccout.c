@@ -32,6 +32,7 @@ extern int	artificial_cell;
 extern int	net_receive_;
 extern int	debugging_;
 extern int	point_process;
+extern int dtsav_for_nrn_state;
 
 #if CVODE
 extern Symbol* cvode_nrn_cur_solve_;
@@ -119,7 +120,7 @@ void c_out(const char* prefix)
 	}
 #endif
 #if VECTORIZE
-	P("/* NOT VECTORIZED */\n");
+	P("/* NOT VECTORIZED */\n#define NRN_VECTORIZED 0\n");
 #endif
 	Fflush(fcout);
 	/* things which must go first and most declarations */
@@ -385,6 +386,10 @@ P("#include \"md2redef.h\"\n");
 	if (nrnstate || currents->next == currents) {
 #if VECTORIZE
 	  P("Node *_nd; double _v = 0.0; int* _ni; int _iml, _cntml;\n");
+	  if (dtsav_for_nrn_state && nrnstate) {
+	    P("double _dtsav = dt;\n"
+	      "if (secondorder) { dt *= 0.5; }\n");
+	  }
 	  P("#if CACHEVEC\n");
 	  P("    _ni = _ml->_nodeindices;\n");
 	  P("#endif\n");
@@ -410,6 +415,9 @@ P("#include \"md2redef.h\"\n");
 #else
 	P("}\n");
 #endif
+	  if (dtsav_for_nrn_state && nrnstate) {
+	    P(" dt = _dtsav;");
+	  }
 	}
 	P("\n}\n");
 #else
@@ -546,6 +554,25 @@ void debugprintitem(q) Item* q; {
 		}
 }
 
+/* does not include q2 */
+char* items_as_string(Item* q1, Item* q2) {
+  Item* q;
+  buf[0] = '\0';
+  for (q = q1; q != q2; q = q->next) {
+    if (buf[0] != '\0') {
+      strcat(buf, " ");
+    }
+    if (q->itemtype == SYMBOL) {
+      strcat(buf, SYM(q)->name);
+    }else if (q->itemtype == STRING) {
+      strcat(buf, STR(q));
+    }else{
+      assert(0);
+    }
+  }
+  return strdup(buf);
+}
+
 void printlist(s)
 	List           *s;
 {
@@ -619,7 +646,7 @@ void c_out_vectorize(const char* prefix)
 	Item *q;
 	
 	/* things which must go first and most declarations */
-	P("/* VECTORIZED */\n");
+	P("/* VECTORIZED */\n#define NRN_VECTORIZED 1\n");
 	P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"scoplib_ansi.h\"\n");
 	P("#undef PI\n");
 	P("#define nil 0\n");
@@ -852,6 +879,10 @@ diag("current can only be LOCAL in a BREAKPOINT if CONDUCTANCE statements are us
 	if (nrnstate || currents->next == currents) {
 	  P("double* _p; Datum* _ppvar; Datum* _thread;\n");
 	  P("Node *_nd; double _v = 0.0; int* _ni; int _iml, _cntml;\n");
+	  if (dtsav_for_nrn_state && nrnstate) {
+	    P("double _dtsav = dt;\n"
+	      "if (secondorder) { dt *= 0.5; }\n");
+	  }
 	  P("#if CACHEVEC\n");
 	  P("    _ni = _ml->_nodeindices;\n");
 	  P("#endif\n");
@@ -871,6 +902,9 @@ diag("current can only be LOCAL in a BREAKPOINT if CONDUCTANCE statements are us
 	  }
 	  printlist(set_ion_variables(1));
 	P("}}\n");
+	  if (dtsav_for_nrn_state && nrnstate) {
+	    P(" dt = _dtsav;");
+	  }
 	}
 	P("\n}\n");
 

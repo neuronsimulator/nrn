@@ -26,15 +26,15 @@ def centroids_by_segment(sec):
     n3d = int(h.n3d(sec=sec))
     length = sec.L
     
-    arc3d = [h.arc3d(i, sec=sec) for i in xrange(n3d)]
-    x3d = numpy.array([h.x3d(i, sec=sec) for i in xrange(n3d)])
-    y3d = numpy.array([h.y3d(i, sec=sec) for i in xrange(n3d)])
-    z3d = numpy.array([h.z3d(i, sec=sec) for i in xrange(n3d)])
-    diam3d = numpy.array([h.diam3d(i, sec=sec) for i in xrange(n3d)])
+    arc3d = [h.arc3d(i, sec=sec) for i in range(n3d)]
+    x3d = numpy.array([h.x3d(i, sec=sec) for i in range(n3d)])
+    y3d = numpy.array([h.y3d(i, sec=sec) for i in range(n3d)])
+    z3d = numpy.array([h.z3d(i, sec=sec) for i in range(n3d)])
+    diam3d = numpy.array([h.diam3d(i, sec=sec) for i in range(n3d)])
     
     dx = length / sec.nseg
     objs = {}
-    for i in xrange(sec.nseg):
+    for i in range(sec.nseg):
         x_lo = i * dx
         x_hi = (i + 1) * dx
         pts = [x_lo] + _values_strictly_between(x_lo, x_hi, arc3d) + [x_hi]
@@ -43,7 +43,7 @@ def centroids_by_segment(sec):
         local_z3d = numpy.interp(pts, arc3d, z3d)
         local_diam3d = numpy.interp(pts, arc3d, diam3d)
         local_objs = []
-        for j in xrange(len(pts) - 1):
+        for j in range(len(pts) - 1):
             x0, y0, z0, r0 = local_x3d[j], local_y3d[j], local_z3d[j], local_diam3d[j] / 2.
             x1, y1, z1, r1 = local_x3d[j + 1], local_y3d[j + 1], local_z3d[j + 1], local_diam3d[j + 1] / 2.
             if x0 != x1 or y0 != y1 or z0 != z1:
@@ -75,15 +75,15 @@ def objects_by_segment(sec):
     n3d = int(h.n3d(sec=sec))
     length = sec.L
     
-    arc3d = [h.arc3d(i, sec=sec) for i in xrange(n3d)]
-    x3d = numpy.array([h.x3d(i, sec=sec) for i in xrange(n3d)])
-    y3d = numpy.array([h.y3d(i, sec=sec) for i in xrange(n3d)])
-    z3d = numpy.array([h.z3d(i, sec=sec) for i in xrange(n3d)])
-    diam3d = numpy.array([h.diam3d(i, sec=sec) for i in xrange(n3d)])
+    arc3d = [h.arc3d(i, sec=sec) for i in range(n3d)]
+    x3d = numpy.array([h.x3d(i, sec=sec) for i in range(n3d)])
+    y3d = numpy.array([h.y3d(i, sec=sec) for i in range(n3d)])
+    z3d = numpy.array([h.z3d(i, sec=sec) for i in range(n3d)])
+    diam3d = numpy.array([h.diam3d(i, sec=sec) for i in range(n3d)])
     
     dx = length / sec.nseg
     objs = {}
-    for i in xrange(sec.nseg):
+    for i in range(sec.nseg):
         x_lo = i * dx
         x_hi = (i + 1) * dx
         pts = [x_lo] + _values_strictly_between(x_lo, x_hi, arc3d) + [x_hi]
@@ -92,7 +92,7 @@ def objects_by_segment(sec):
         local_z3d = numpy.interp(pts, arc3d, z3d)
         local_diam3d = numpy.interp(pts, arc3d, diam3d)
         local_objs = []
-        for j in xrange(len(pts) - 1):
+        for j in range(len(pts) - 1):
             x0, y0, z0, r0 = local_x3d[j], local_y3d[j], local_z3d[j], local_diam3d[j] / 2.
             x1, y1, z1, r1 = local_x3d[j + 1], local_y3d[j + 1], local_z3d[j + 1], local_diam3d[j + 1] / 2.
             if r0 == r1:

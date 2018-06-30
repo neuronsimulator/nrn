@@ -1,17 +1,17 @@
-from xml2nrn import *
+from .xml2nrn import *
 
 def group(self, node):
     groupName = str(node.text.strip())
     self.biomechs_[-1].parms_[-1].group_index_ = self.groupname2index_[groupName]
     if debug:
-      print "Content: ", groupName, " relevant to biogroup: ", self.biomechs_[-1]
+      print("Content: ", groupName, " relevant to biogroup: ", self.biomechs_[-1])
 
 def mechanism(self, node):
     name = str(node.get("name"))
     pc = node.get('passiveConductance')
     if pc != None:
       if pc == 'true' or pc == '1':
-        print "Substituting passive conductance", name , " in file for inbuilt mechanism pas as attribute passiveConductance = true "
+        print("Substituting passive conductance", name , " in file for inbuilt mechanism pas as attribute passiveConductance = true ")
         name = 'pas'
     self.biomechs_.append(BioMech(name))
 

@@ -8,9 +8,9 @@ import scipy.sparse
 import scipy.sparse.linalg
 import ctypes
 import atexit
-import options
+from . import options
 from .rxdException import RxDException
-import initializer 
+from . import initializer 
 import collections
 import os
 from distutils import sysconfig
@@ -283,14 +283,14 @@ def re_init():
     
         # update current pointers
         section1d._purge_cptrs()
-        for sr in _species_get_all_species().values():
+        for sr in list(_species_get_all_species().values()):
             s = sr()
             if s is not None:
                 s._register_cptrs()
         
         # update matrix equations
         _setup_matrices()
-    for sr in _species_get_all_species().values():
+    for sr in list(_species_get_all_species().values()):
         s = sr()
         if s is not None: s.re_init()
     # TODO: is this safe?        
@@ -309,7 +309,7 @@ _rxd_offset = None
 
 def _atolscale(y):
     real_index_lookup = {item: index for index, item in enumerate(_nonzero_volume_indices)}
-    for sr in _species_get_all_species().values():
+    for sr in list(_species_get_all_species().values()):
         s = sr()
         if s is not None:
             shifted_i = [real_index_lookup[i] + _rxd_offset for i in s.indices() if i in real_index_lookup]
@@ -455,7 +455,6 @@ def _currents(rhs):
         assert(len(rxd_memb_flux) == len(memb_net_charges))
         for flux, cur_ptrs, cur_charges, net_charge, i, cur_maps in zip(rxd_memb_flux, memb_cur_ptrs, memb_cur_charges, memb_net_charges, _cur_node_indices, memb_cur_mapped):
             rhs[i] -= net_charge * flux
-            #print net_charge * flux
             #import sys
             #sys.exit()
             # TODO: remove this assert when more thoroughly tested
@@ -465,9 +464,11 @@ def _currents(rhs):
                 # currents lower the membrane potential
                 cur = charge * flux
                 ptr[0] += cur
-                for sign, c in zip([-1, 1], cur_maps):
-                    if c is not None:
-                        _rxd_induced_currents[c] += sign * cur
+                for c in cur_map_i:
+                    _rxd_induced_currents[c] += cur
+                #for sign, c in zip([-1, 1], cur_maps):
+                #    if c is not None:
+                #        _rxd_induced_currents[c] += sign * cur
 
 _last_m = None
 _last_preconditioner = None
@@ -546,7 +547,7 @@ def _fixed_step_solve(raw_dt):
         # clear the zero-volume "nodes"
         states[_zero_volume_indices] = 0
 
-        for sr in _species_get_all_species().values():
+        for sr in list(_species_get_all_species().values()):
             s = sr()
             if s is not None: s._transfer_to_legacy()
 
@@ -558,9 +559,10 @@ def _rxd_reaction(states):
 
     b = _numpy_zeros(len(states))
     
+    
     if _curr_ptr_vector is not None:
         _curr_ptr_vector.gather(_curr_ptr_storage_nrn)
-        b[_curr_indices] = _curr_scales * (_curr_ptr_storage + _rxd_induced_currents)
+        b[_curr_indices] = _curr_scales * (_curr_ptr_storage - _rxd_induced_currents)   
     
     b[_curr_indices] = _curr_scales * [ptr[0] for ptr in _curr_ptrs]
 
@@ -609,7 +611,7 @@ def _diffusion_matrix_solve(dt, rhs):
             _diffusion_b_base = _numpy_zeros(n)
             # TODO: the int32 bit may be machine specific
             _diffusion_p = _numpy_array([-1] * n, dtype=numpy.int32)
-            for j in xrange(n):
+            for j in range(n):
                 col = _diffusion_matrix[:, j]
                 col_nonzero = col.nonzero()
                 for i in col_nonzero[0]:
@@ -642,8 +644,8 @@ def _get_jac(dt, states):
     # this works as long as (I - dt(Jdiff + Jreact)) \approx (I - dtJreact)(I - dtJdiff)
     count = 0
     n = len(states)
-    rows = range(n)
-    cols = range(n)
+    rows = list(range(n))
+    cols = list(range(n))
     data = [1] * n
     for rptr in _all_reactions:
         r = rptr()
@@ -830,10 +832,10 @@ def _update_node_data(force=False):
         last_structure_change_cnt = _structure_change_count.value
         #if not species._has_3d:
         # TODO: merge this with the 3d/hybrid case?
-        for sr in _species_get_all_species().values():
+        for sr in list(_species_get_all_species().values()):
             s = sr()
             if s is not None: s._update_node_data()
-        for sr in _species_get_all_species().values():
+        for sr in list(_species_get_all_species().values()):
             s = sr()
             if s is not None: s._update_region_indices()
         #end#if
@@ -843,7 +845,7 @@ def _update_node_data(force=False):
         _curr_indices = []
         _curr_scales = []
         _curr_ptrs = []
-        for sr in _species_get_all_species().values():
+        for sr in list(_species_get_all_species().values()):
             s = sr()
             if s is not None: s._setup_currents(_curr_indices, _curr_scales, _curr_ptrs, _cur_map)
         
@@ -1004,7 +1006,7 @@ def _setup_matrices():
         hybrid_neighbors = collections.defaultdict(lambda: [])
         hybrid_diams = {}
         dxs = set()
-        for sr in _species_get_all_species().values():
+        for sr in list(_species_get_all_species().values()):
             s = sr()
             if s is not None:
                 if s._nodes and s._secs:
@@ -1041,7 +1043,7 @@ def _setup_matrices():
         diffs = node._diffs
         n = len(_node_get_states())
         # TODO: validate that we're doing the right thing at boundaries
-        for index1d in hybrid_neighbors.keys():
+        for index1d in list(hybrid_neighbors.keys()):
             neighbors3d = set(hybrid_neighbors[index1d])
             # NOTE: splitting the connection area equally across all the connecting nodes
             area = (numpy.pi * 0.25 * hybrid_diams[index1d] ** 2) / len(neighbors3d)
@@ -1150,7 +1152,7 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
         # TODO: make this whole thing more efficient
         # the parent node is the nonzero index on the first row before the diagonal
         first_row = min([node._index for node in species.nodes(region)(sec1d)])
-        for j in xrange(first_row):
+        for j in range(first_row):
             if _euler_matrix[first_row, j] != 0:
                 index_1d = j
                 break
@@ -1478,7 +1480,7 @@ def _init():
     if species._has_1d:
         section1d._purge_cptrs()
     
-    for sr in _species_get_all_species().values():
+    for sr in list(_species_get_all_species().values()):
         s = sr()
         if s is not None:
             # TODO: are there issues with hybrid or 3D here? (I don't think so, but here's a bookmark just in case)

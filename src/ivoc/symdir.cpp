@@ -27,6 +27,9 @@ extern int hoc_array_index(Symbol*, Objectdata*);
 #include "string.h"
 #include "symdir.h"
 
+#include "nrnsymdiritem.h"
+implementPtrList(SymbolList, SymbolItem);
+
 const char* concat(const char* s1, const char* s2) {
 	static char* tmp = 0;
 	int l1 = strlen(s1);
@@ -38,30 +41,6 @@ const char* concat(const char* s1, const char* s2) {
 	sprintf(tmp, "%s%s", s1, s2);
 	return (const char*)tmp;
 }
-
-class SymbolItem {
-public:
-	SymbolItem(const char*, int whole_array = 0);
-	SymbolItem(Symbol*, Objectdata*, int index = 0, int whole_array=0);
-	SymbolItem(Object*);
-	~SymbolItem();
-	Symbol* symbol() const {return symbol_;}
-	Object* object() const {return ob_;}
-	void no_object();
-	const String& name() const { return name_;}
-	bool is_directory() const;
-	int array_index() const { return index_;}
-	int whole_vector();
-private:
-	CopyString name_;
-	Symbol* symbol_;
-	int index_;
-	Object* ob_;
-	int whole_array_;
-};
-
-declarePtrList(SymbolList, SymbolItem);
-implementPtrList(SymbolList, SymbolItem);
 
 class SymDirectoryImpl : public Observer {
 public:
@@ -195,6 +174,41 @@ SymDirectory::SymDirectory(Object* ob) {
 	ObjObservable::Attach(impl_->obj_, impl_);
 	impl_->load_object();
 	impl_->sort();
+}
+
+bool SymDirectory::is_pysec(int index) const {
+	SymbolItem* si = impl_->symbol_list_.item(index);
+#if CABLE
+	return si->pysec_ ? true : false;
+#else
+	return false;
+#endif
+}
+SymDirectory* SymDirectory::newsymdir(int index) {
+	SymbolItem* si = impl_->symbol_list_.item(index);
+	SymDirectory* d = new SymDirectory();
+#if CABLE
+	if (si->pysec_type_ == PYSECOBJ) {
+		nrn_symdir_load_pysec(d->impl_->symbol_list_, si->pysec_);
+	}else{
+		d->impl_->sec_ = (Section*)si->pysec_;
+		section_ref(d->impl_->sec_);
+		d->impl_->load_section();
+	}
+	d->impl_->path_ = concat(path().string(), si->name().string());
+	d->impl_->path_ = concat(d->impl_->path_.string(), ".");
+	d->impl_->sort();
+#endif
+	return d;
+}
+
+SymDirectory::SymDirectory() {
+	impl_ = new SymDirectoryImpl();
+#if CABLE
+	impl_->sec_ = NULL;
+#endif
+	impl_->obj_ = NULL;
+	impl_->t_ = NULL;
 }
 
 SymDirectory::SymDirectory(int type) {
@@ -363,7 +377,10 @@ SymbolItem::SymbolItem(const char* n, int whole_array) {
 	ob_ = NULL;
 	name_ = n;
 	whole_array_ = whole_array;
-		
+#if CABLE
+	pysec_type_ = 0;
+	pysec_ = NULL;
+#endif
 }
 SymbolItem::SymbolItem(Symbol* sym, Objectdata* od, int index, int whole_array) {
 	symbol_ = sym;
@@ -385,6 +402,10 @@ SymbolItem::SymbolItem(Symbol* sym, Objectdata* od, int index, int whole_array) 
 		name_ = sym->name;
 	}
 	index_ = index;
+#if CABLE
+	pysec_type_ = 0;
+	pysec_ = NULL;
+#endif
 }
 
 int SymbolItem::whole_vector() {
@@ -398,6 +419,10 @@ SymbolItem::SymbolItem(Object* ob) {
 	char buf[10];
 	sprintf(buf, "%d", ob->index);
 	name_ = buf;
+#if CABLE
+	pysec_type_ = 0;
+	pysec_ = NULL;
+#endif
 }
 
 void SymbolItem::no_object() {
@@ -420,6 +445,11 @@ bool SymbolItem::is_directory() const {
 	if (ob_) {
 		return true;
 	}
+#if CABLE
+	if (pysec_) {
+		return true;
+	}
+#endif
 	return false;
 }
 
@@ -440,6 +470,10 @@ void SymDirectoryImpl::load(int type) {
 #if CABLE
 	case RANGEVAR:
 		load(type, hoc_built_in_symlist);
+		break;
+	case PYSEC:
+		path_ = "_pysec.";
+		nrn_symdir_load_pysec(symbol_list_, NULL);
 		break;
 #endif
 	default:

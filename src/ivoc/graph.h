@@ -88,7 +88,7 @@ public:
 	void brush(int);
 	const Color* color() const {return color_;}
 	const Brush* brush() const {return brush_;}
-	void set_cross_action(const char*, bool vectorcopy=false);
+	void set_cross_action(const char*, Object*, bool vectorcopy=false);
 	void cross_action(char, GPolyLine*, int);
 	void cross_action(char, Coord, Coord);
 	void simgraph();// faintly analogous to Vector.record for localstep plotting

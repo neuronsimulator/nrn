@@ -84,7 +84,7 @@ rpm: @RPM_TARGET@
 
 .PHONY: rpm
 
-$(RPM_TARGET): $(DISTFILES)
+$(RPM_TARGET): $(DISTFILES) nrnrpm.spec
 	(cd $(libdir) ; strip -d *.so*)
 	(cd @IV_LIBDIR@ ; strip -d *.so*)
 	-rm $(pkgdatadir)/demo/neuron
@@ -97,8 +97,8 @@ $(RPM_TARGET): $(DISTFILES)
 	(cd `dirname $(RPM_TARGET)` &&  alien --to-deb $(RPM_TARGET))
 
 rpmdist:
-	scp $(RPM_TARGET) $(ALPHADIR)/nrn-"`(export NSRC='$(srcdir)' ; sh $(srcdir)/nrnversion.sh 2)`".$(host_cpu).rpm
-	scp `dirname $(RPM_TARGET)`/nrn*.deb $(ALPHADIR)/nrn-"`(export NSRC='$(srcdir)' ; sh $(srcdir)/nrnversion.sh 2)`".$(host_cpu).deb
+	scp $(RPM_TARGET) $(ALPHADIR)/nrn-"`(export NSRC='$(srcdir)' ; sh $(srcdir)/nrnversion.sh describe)`".$(host_cpu).rpm
+	scp `dirname $(RPM_TARGET)`/nrn*.deb $(ALPHADIR)/nrn-"`(export NSRC='$(srcdir)' ; sh $(srcdir)/nrnversion.sh describe)`".$(host_cpu).deb
 
 else
 endif
@@ -118,11 +118,11 @@ pkg:
 
 alphadist:
 if UniversalMacBinary
-	a=$(ALPHADIR)/nrn-"``(export NSRC='$(srcdir)' ; sh $(srcdir)/nrnversion.sh 2)`"-MacOSX"`sw_vers -productVersion`".dmg && \
+	a=$(ALPHADIR)/nrn-"``(export NSRC='$(srcdir)' ; sh $(srcdir)/nrnversion.sh describe)`"-MacOSX"`sw_vers -productVersion`".dmg && \
 	echo $$a && \
 	scp $(HOME)/NEURON-"`(export NSRC='$(srcdir)' ; sh $(srcdir)/nrnversion.sh)`".dmg "$$a"
 else
-	a=$(ALPHADIR)/nrn-"`(export NSRC='$(srcdir)' ; sh $(srcdir)/nrnversion.sh 2)`".$(host_cpu)-osx.pkg &&\
+	a=$(ALPHADIR)/nrn-"`(export NSRC='$(srcdir)' ; sh $(srcdir)/nrnversion.sh describe)`".$(host_cpu)-osx.pkg &&\
 	b=$(top_builddir)/src/mac/build/NEURON-$(NVER).pkg &&\
 	echo "scp $$b $$a" && \
 	scp $$b $$a
@@ -131,18 +131,18 @@ endif
 else
 if BUILD_CYGWIN
 alphadist:
-	a=$(ALPHADIR)/nrn-"`(export NSRC='$(srcdir)' ; sh $(srcdir)/nrnversion.sh 2)`".$(host)-setup.exe &&\
+	a=$(ALPHADIR)/nrn-"`(export NSRC='$(srcdir)' ; sh $(srcdir)/nrnversion.sh describe)`".$(host)-setup.exe &&\
 	echo $$a && \
 	scp src/mswin/nrn"`(export NSRC='$(srcdir)' ; sh $(srcdir)/nrnversion.sh 3)`"setup.exe $$a
 else
 if BUILD_MINGW
 alphadist:
-	a=$(ALPHADIR)/nrn-"`(export NSRC='$(srcdir)' ; sh $(srcdir)/nrnversion.sh 2)`".$(host)-setup.exe && \
+	a=$(ALPHADIR)/nrn-"`(export NSRC='$(srcdir)' ; sh $(srcdir)/nrnversion.sh describe)`".$(host)-setup.exe && \
 	echo $$a && \
 	scp src/mswin/nrn"`(export NSRC='$(srcdir)' ; sh $(srcdir)/nrnversion.sh 3)`"setup-$(host_cpu).exe $$a
 else
 alphadist:
-	a=$(ALPHADIR)/nrn-"`(export NSRC='$(srcdir)' ; sh $(srcdir)/nrnversion.sh 2)`".tar.gz && \
+	a=$(ALPHADIR)/nrn-"`(export NSRC='$(srcdir)' ; sh $(srcdir)/nrnversion.sh describe)`".tar.gz && \
 	echo $$a && \
 	scp nrn-"`(export NSRC='$(srcdir)' ; sh $(srcdir)/nrnversion.sh)`".tar.gz $$a
 endif

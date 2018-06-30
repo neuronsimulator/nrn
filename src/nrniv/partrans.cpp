@@ -46,6 +46,7 @@ extern double t;
 extern int v_structure_change;
 extern int structure_change_cnt;
 extern double* nrn_recalc_ptr(double*);
+extern const char *bbcore_write_version;
 // see lengthy comment in ../nrnoc/fadvance.c
 // nrnmpi_v_transfer requires existence of nrnthread_v_transfer even if there
 // is only one thread.
@@ -466,7 +467,7 @@ static MapNode2PDbl* mk_svibuf() {
 		int isrc = poutsrc_indices_[i];
 		Node* nd = visources_->item(isrc);
 		double* pd = NULL;
-		it = non_vsrc_update_info_.find(sgids_->item(i));
+		it = non_vsrc_update_info_.find(sgids_->item(isrc));
 		if (nd->extnode	&& it == non_vsrc_update_info_.end()) {
 			assert(ndvi2pd->find(nd, pd));
 			poutsrc_[i] = pd;
@@ -1119,6 +1120,7 @@ size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
     sprintf(fname, "%s/%d_gap.dat", path, group_ids[tid]);
     FILE* f = fopen(fname, "wb");
     assert(f);
+    fprintf(f, "%s\n", bbcore_write_version);
     fprintf(f, "%d ntar\n", g.ntar);
     fprintf(f, "%d nsrc\n", g.nsrc);
     fprintf(f, "%d %s\n", type, memb_func[type].sym->name);

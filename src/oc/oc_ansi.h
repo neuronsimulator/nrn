@@ -115,6 +115,8 @@ extern int ivoc_list_count(Object*);
 extern double hoc_func_table(void* functable, int n, double* args);
 extern void hoc_spec_table(void** pfunctable, int n);
 extern void* hoc_sec_internal_name2ptr(const char* s, int eflag);
+extern void* hoc_pysec_name2ptr(const char* s, int eflag);
+extern void* nrn_parsing_pysec_;
 
 #if defined(__cplusplus)
 class IvocVect;
@@ -211,6 +213,8 @@ extern int hoc_pid(void);
 extern int hoc_ired(const char*, int, int, int);
 extern double hoc_xred(const char*, double, double, double);
 extern int hoc_sred(const char*, char*, char*);
+extern int nrnpy_pr(const char* fmt, ...);
+extern void nrnpy_pass();
 
 #if defined (__cplusplus)
 extern void hoc_free_allobjects(cTemplate*, Symlist*, Objectdata*);

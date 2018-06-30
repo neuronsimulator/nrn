@@ -24,10 +24,10 @@ if nrn_srcdir[0] != '/' :
     nrn_srcdir = '../../' + nrn_srcdir
 
 if nrnpython_pyver!=get_python_version():
-    print "Error:"
-    print "NEURON configure time python: "+nrnpython_exec+"  "+ nrnpython_pyver
-    print "Python presently executing setup.py: "+sys.executable+"   "+ get_python_version()
-    print "These do not match, and they should!"
+    print ("Error:")
+    print ("NEURON configure time python: "+nrnpython_exec+"  "+ nrnpython_pyver)
+    print ("Python presently executing setup.py: "+sys.executable+"   "+ get_python_version())
+    print ("These do not match, and they should!")
     sys.exit(1)
 
 
@@ -69,6 +69,8 @@ libdirs = [destdir + "@NRN_LIBDIR@",
 ]
 epre='-Wl,-R'
 
+@MAC_DARWIN_FALSE@readline="readline"
+@MAC_DARWIN_TRUE@readline="edit"
 
 
 hoc_module = Extension(
@@ -78,13 +80,13 @@ hoc_module = Extension(
       @setup_extra_link_args@ = [ epre+libdirs[0],epre+libdirs[1] ],
       #extra_objects = [],
       libraries = [
-	"nrnpython@npy_apiver@",
+	"nrnpython@npy_pyver10@",
         "nrnoc", "oc", "nrniv", "ivoc",
         @BUILD_MEMACS_TRUE@"memacs",
 	"meschach", "neuron_gnu",
 	@BUILD_NRNMPI_DYNAMIC_FALSE@"nrnmpi",
         "scopmath", "sparse13", "sundials",
-	"readline",
+	readline,
 	"@IVHINES@",
       ],
       include_dirs = include_dirs,
@@ -94,7 +96,7 @@ hoc_module = Extension(
 # specify that the data_files paths are relative to same place as python files
 # from http://stackoverflow.com/questions/1612733/including-non-python-files-with-setup-py
 from distutils.command.install import INSTALL_SCHEMES
-for scheme in INSTALL_SCHEMES.values():
+for scheme in list(INSTALL_SCHEMES.values()):
     scheme['data'] = scheme['purelib']
 
 ext_modules = [hoc_module]

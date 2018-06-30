@@ -88,7 +88,7 @@ Section "${NEURON} (required)"
   Push $INSTDIR
   Call d2u
   Pop $uINSTDIR
-  StrCpy $launch1 "$INSTDIR\mingw\bin\bash.exe"
+  StrCpy $launch1 "$INSTDIR\mingw\usr\bin\bash.exe"
   StrCpy $launch2 "--rcfile $uINSTDIR/lib/bshstart.sh -i"
   StrCpy $launch3 "$launch2 $uINSTDIR/lib/neuron2.sh"
   ; Set output path to the installation directory.
@@ -136,7 +136,7 @@ Section "Start Menu Shortcuts"
   WriteINIStr "$SMPROGRAMS\${NEURON}\NEURON Home Page.url" "InternetShortcut" "URL" "http://neuron.yale.edu/"
   SetOutPath "$INSTDIR\demo"
   SetOutPath "$INSTDIR"
-  CreateShortCut "$SMPROGRAMS\${NEURON}\bash.lnk" "$launch1" "$launch2" "$INSTDIR\mingw\bin\bash.exe" 0
+  CreateShortCut "$SMPROGRAMS\${NEURON}\bash.lnk" "$launch1" "$launch2" "$INSTDIR\mingw\usr\bin\bash.exe" 0
   CreateShortCut "$SMPROGRAMS\${NEURON}\nrngui.lnk" "$launch1" "$launch3 nrngui" "$INSTDIR\bin${binsuffix}\nrniv10.ico" 0
   CreateShortCut "$SMPROGRAMS\${NEURON}\NEURON Demo.lnk" "$launch1" "$launch3 neurondemo" "$INSTDIR\bin${binsuffix}\nrniv10.ico" 0
   CreateShortCut "$SMPROGRAMS\${NEURON}\nrniv_python.lnk" "$launch1" "$launch3 nrniv -python" "$INSTDIR\bin${binsuffix}\nrniv10.ico" 0
@@ -156,7 +156,7 @@ Section "Desktop ${NEURON} folder with Shortcuts"
   WriteINIStr "$DESKTOP\${NEURON}\NEURON Home Page.url" "InternetShortcut" "URL" "http://neuron.yale.edu/"
   SetOutPath "$INSTDIR\demo"
   SetOutPath "$INSTDIR"
-  CreateShortCut "$DESKTOP\${NEURON}\bash.lnk" "$launch1" "$launch2" "$INSTDIR\mingw\bin\bash.exe" 0
+  CreateShortCut "$DESKTOP\${NEURON}\bash.lnk" "$launch1" "$launch2" "$INSTDIR\mingw\usr\bin\bash.exe" 0
   CreateShortCut "$DESKTOP\${NEURON}\nrngui.lnk" "$launch1" "$launch3 nrngui" "$INSTDIR\bin${binsuffix}\nrniv10.ico" 0
   CreateShortCut "$DESKTOP\${NEURON}\NEURON Demo.lnk" "$launch1" "$launch3 neurondemo" "$INSTDIR\bin${binsuffix}\nrniv10.ico" 0
   CreateShortCut "$DESKTOP\${NEURON}\nrniv_python.lnk" "$launch1" "$launch3 nrniv -python" "$INSTDIR\bin${binsuffix}\nrniv10.ico" 0
@@ -168,10 +168,12 @@ SectionEnd
 ; optional section
 ;Section /o "" nrnenvvar
 ;Section /o "!For all users, Set NEURONHOME and append to PYTHONPATH. This is needed if you wish to launch Python from a terminal other than the bash icon." nrnenvvar
-Section /o "!Set DOS environment. (Useful if you wish to launch Python from a terminal not started by the bash icon.)" nrnenvvar
+Section "!Set DOS environment. (Useful if you wish to launch Python from a terminal not started by the bash icon.)" nrnenvvar
   ${EnvVarUpdate} $0 "NEURONHOME" "A" "HKCU" "$INSTDIR"
   ${EnvVarUpdate} $0 "PYTHONPATH" "A" "HKCU" "$INSTDIR\lib\python"
   Push "$INSTDIR\bin"
+  Call AddToPath
+  Push "$INSTDIR\mingw\usr\bin"
   Call AddToPath
   FileOpen $r1 "$INSTDIR\lib\nrnenvinst.dat" "w"
   FileWrite $r1 "If $INSTDIR\lib\nrnenvinst.dat exists then, on uninstall, the NEURONHOME and PYTHONPATH environment variables will be removed."
@@ -212,6 +214,8 @@ Section "Uninstall"
   IfFileExists "$INSTDIR\lib\nrnenvinst.dat" +1 env
     ${un.EnvVarUpdate} $0 "NEURONHOME" "R" "HKCU" "$INSTDIR"
     ${un.EnvVarUpdate} $0 "PYTHONPATH" "R" "HKCU" "$INSTDIR\lib\python"
+    Push "$INSTDIR\mingw\usr\bin"
+    Call un.RemoveFromPath
     Push "$INSTDIR\bin"
     Call un.RemoveFromPath
 env:

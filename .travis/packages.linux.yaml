@@ -1,0 +1,57 @@
+packages:
+
+    mpich:
+        paths:
+            mpich@3.0.4: /usr
+        version: [3.0.4]
+        buildable: False
+    openmpi:
+        paths:
+            openmpi@2.1.1: /usr
+        buildable: False
+        version: [2.1.1]
+    autoconf:
+        paths:
+            autoconf@2.69: /usr
+        buildable: False
+        version: [2.69]
+    automake:
+        paths:
+            automake@1.15.1: /usr
+        buildable: False
+        version: [1.15.1]
+    pkg-config:
+        paths:
+            pkg-config@0.29.1: /usr
+        buildable: False
+        version: [0.29.1]
+    libtool:
+        paths:
+            libtool@2.4.2: /usr
+        buildable: False
+        version: [2.4.2]
+    flex:
+        paths:
+            flex@2.5.35: /usr
+        buildable: False
+        version: [2.5.35]
+    bison:
+        paths:
+            bison@2.3: /usr
+        buildable: False
+        version: [2.3]
+    ncurses:
+        paths:
+            ncurses@5.4: /usr
+        buildable: False
+        version: [5.4]
+    python:
+        paths:
+            python@2.7: PYTHON_2_PATH
+            python@3.5: PYTHON_3_PATH
+        version: [2.7, 3.5]
+        buildable: False
+    all:
+        compiler: [gcc, clang]
+        providers:
+            mpi: [mpich]

@@ -209,7 +209,7 @@ def _invalidate_plugin():
     rxd._external_solver_initialized = False
 
 def _initialize(solver):
-    all_species = [s() for s in species._defined_species.values() if s() is not None]
+    all_species = [s() for s in list(species._defined_species.values()) if s() is not None]
     all_reactions = [r() for r in rxd._all_reactions if r() is not None]
     
     solver.init(all_species, all_reactions)

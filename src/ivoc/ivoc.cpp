@@ -37,6 +37,10 @@ static nrn::tool::bimap<double*,Observer*>* pdob;
 int nrn_err_dialog_active_;
 
 extern "C" {
+
+void* (*nrnpy_save_thread)();
+void (*nrnpy_restore_thread)(void*);
+
 void nrn_notify_freed(PF pf) {
 	if (!f_list) {
 		f_list = new FList;
@@ -447,13 +451,16 @@ void single_event_run() {
 #ifdef MINGW
 extern "C" {
 extern void nrniv_bind_call(void);
-extern int nrn_is_gui_thread(void);
 }
 #endif
 
 void hoc_notify_iv() { IFGUI
 #ifdef MINGW
-	if (!nrn_is_gui_thread()) { hoc_pushx(0.); hoc_ret(); return; }
+	if (!nrn_is_gui_thread()) {
+		// allow gui thread to run
+		nrnpy_pass();
+		hoc_pushx(0.); hoc_ret(); return;
+	}
 	nrniv_bind_call();
 #endif
 	Resource::flush();

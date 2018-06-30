@@ -90,7 +90,8 @@ rl_copy_keymap (map)
 Keymap
 rl_make_keymap ()
 {
-  extern rl_insert (), rl_rubout (), rl_do_lowercase_version ();
+  extern void rl_insert (), rl_rubout ();
+  extern rl_do_lowercase_version ();
   extern rl_digit_argument ();
   register int i;
   Keymap newmap;
@@ -109,7 +110,7 @@ rl_make_keymap ()
 }
 
 /* Free the storage associated with MAP. */
-rl_discard_keymap (map)
+void rl_discard_keymap (map)
      Keymap (map);
 {
   int i;

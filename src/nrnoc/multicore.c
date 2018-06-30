@@ -517,6 +517,7 @@ void nrn_threads_create(int n, int parallel) {
 				nt->id = i;
 				nt->_stop_stepping = 0;
 				nt->tml = (NrnThreadMembList*)0;
+				nt->_ml_list = NULL;
 				nt->roots = (hoc_List*)0;
 				nt->userpart = 0;
 				nt->ncell = 0;
@@ -534,6 +535,8 @@ void nrn_threads_create(int n, int parallel) {
 				nt->_v_node = 0;
 				nt->_v_parent = 0;
 				nt->_ecell_memb_list = 0;
+				nt->_ecell_child_cnt = 0;
+				nt->_ecell_children = NULL;
 				nt->_sp13mat = 0;
 				nt->_ctime = 0.0;
 				nt->_vcv = 0;
@@ -643,6 +646,7 @@ void nrn_threads_free() {
 			free((char*)ml);
 			free((char*)tml);
 		}
+		if (nt->_ml_list) { free((char*)nt->_ml_list); nt->_ml_list = NULL; }
 		for (i=0; i < BEFORE_AFTER_SIZE; ++i) {
 			NrnThreadBAList* tbl, *tbl2;
 			for (tbl = nt->tbl[i]; tbl; tbl = tbl2) {
@@ -664,6 +668,11 @@ void nrn_threads_free() {
 		if (nt->_v_node) {free((char*)nt->_v_node); nt->_v_node = 0;}
 		if (nt->_v_parent) {free((char*)nt->_v_parent); nt->_v_parent = 0;}
 		nt->_ecell_memb_list = 0;
+		if (nt->_ecell_children) {
+			nt->_ecell_child_cnt = 0;
+			free(nt->_ecell_children);
+			nt->_ecell_children = NULL;
+		}
 		if (nt->_sp13mat) {
 			spDestroy(nt->_sp13mat);
 			nt->_sp13mat = 0;
@@ -744,6 +753,10 @@ hoc_execerror(memb_func[i].sym->name, "is not thread safe");
 			tml->ml->nodecount = 0; /* counted again below */
 		}
 	}
+	CACHELINE_CALLOC(_nt->_ml_list, Memb_list*, n_memb_func);
+	for (tml = _nt->tml; tml; tml = tml->next) {
+		_nt->_ml_list[tml->index] = tml->ml;
+	}
 
 	/* fill */
 	for (i = 0; i < _nt->end; ++i) {
@@ -763,6 +776,34 @@ hoc_execerror(memb_func[i].sym->name, "is not thread safe");
 					ml->pdata[ml->nodecount] = p->dparam;
 				}
 				++ml->nodecount;
+			}
+		}
+	}
+	/* count and store any Node* with the property
+	   nd->extnode == NULL && nd->pnd != NULL && nd->pnd->extcell != NULL
+	*/
+	if (_nt->_ecell_memb_list) {
+		Node* pnd;
+		int cnt=0;
+		for (i = 0; i < _nt->end; ++i) {
+			nd = _nt->_v_node[i];
+			pnd = _nt->_v_parent[i];
+			if (nd->extnode == NULL && pnd && pnd->extnode) {
+				++cnt;
+			}
+		}
+		if (cnt) {
+			Node** p;
+			CACHELINE_ALLOC(_nt->_ecell_children, Node*, cnt);
+			_nt->_ecell_child_cnt = cnt;
+			p = _nt->_ecell_children;
+			cnt = 0;
+			for (i = 0; i < _nt->end; ++i) {
+				nd = _nt->_v_node[i];
+				pnd = _nt->_v_parent[i];
+				if (nd->extnode == NULL && pnd && pnd->extnode) {
+					p[cnt++] = nd;
+				}
 			}
 		}
 	}

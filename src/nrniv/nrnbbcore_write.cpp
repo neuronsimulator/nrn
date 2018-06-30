@@ -80,6 +80,7 @@ nt->tml->pdata is not cache_efficient
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <nrnran123.h> // globalindex written to globals.dat
 #include <section.h>
 #include <parse.h>
 #include <nrnmpi.h>
@@ -120,7 +121,7 @@ static void write_memb_mech_types(const char* fname);
 static void write_globals(const char* fname);
 static void write_nrnthread(const char* fname, NrnThread& nt, CellGroup& cg);
 static void write_nrnthread_task(const char*, CellGroup* cgs);
-static int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndices& di, int* ml_data_offset, int* ml_vdata_offset);
+static int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndices& di, int* ml_vdata_offset);
 static void setup_nrn_has_net_event();
 static int chkpnt;
 
@@ -143,6 +144,10 @@ PVoid2Int* artdata2index_;
 
 /** mapping information */
 static NrnMappingInfo mapinfo;
+
+// to avoid incompatible dataset between neuron and coreneuron
+// add version string to the dataset files
+const char *bbcore_write_version = "1.1";
 
 // accessible from ParallelContext.total_bytes()
 size_t nrnbbcore_write() {
@@ -277,7 +282,8 @@ size_t nrnbbcore_write() {
 
 int nrncore_art2index(double* d) {
   int i;
-  assert(artdata2index_->find(d, i));
+  int result = artdata2index_->find(d, i);
+  assert(result);
   return i;
 }
 
@@ -797,6 +803,7 @@ static void write_memb_mech_types(const char* fname) {
   if (!f) {
     hoc_execerror("nrnbbcore_write write_mem_mech_types could not open for writing: %s\n", fname);
   }
+  fprintf(f, "%s\n", bbcore_write_version);
   fprintf(f, "%d\n", n_memb_func);
   for (int type=2; type < n_memb_func; ++type) {
     Memb_func& mf = memb_func[type];
@@ -831,6 +838,7 @@ static void write_globals(const char* fname) {
     hoc_execerror("nrnbbcore_write write_globals could not open for writing: %s\n", fname);
   }
 
+  fprintf(f, "%s\n", bbcore_write_version);
   for (Symbol* sp = hoc_built_in_symlist->first; sp; sp = sp->next) {
     if (sp->type == VAR && sp->subtype == USERDOUBLE) {
       if (ISARRAY(sp)) {
@@ -850,6 +858,7 @@ static void write_globals(const char* fname) {
   }
   fprintf(f, "0 0\n"); 
   fprintf(f, "secondorder %d\n", secondorder);
+  fprintf(f, "Random123_globalindex %d\n", nrnran123_get_globalindex());
 
   fclose(f);
 }
@@ -888,7 +897,7 @@ static void write_contiguous_art_data(double** data, int nitem, int szitem, FILE
 // a discon vector or VecPlayStep with a DT or tvec, but are not implemented
 // at present. Assertion errors are generated if not type 0 of if we
 // cannot determine the index into the NrnThread._data .
-static void nrnbbcore_vecplay_write(FILE* f, NrnThread& nt, int* ml_data_offset) {
+static void nrnbbcore_vecplay_write(FILE* f, NrnThread& nt) {
   // count the instances for this thread
   // error if not a VecPlayContinuous with no discon vector
   int n = 0;
@@ -949,6 +958,7 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
   if (!f) {
     hoc_execerror("nrnbbcore_write write_nrnthread could not open for writing:", fname);
   }
+  fprintf(f, "%s\n", bbcore_write_version);
   fprintf(f, "%d npresyn\n", cg.n_presyn);
   fprintf(f, "%d nnetcon\n", cg.n_netcon);
   writeint(cg.output_gid, cg.n_presyn);
@@ -961,17 +971,12 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     hoc_execerror("nrnbbcore_write write_nrnthread could not open for writing:", fname);
   }
 
+  fprintf(f, "%s\n", bbcore_write_version);
   NrnThreadMembList* tml;
-  // sizes and data offset
-  int* ml_data_offset = new int[n_memb_func];
+  // sizes and total data count
   int* ml_vdata_offset = new int[n_memb_func];
-  int data_offset = 6*nt.end;
-  if (cg.ndiam) {
-    data_offset += nt.end;
-  }
   int vdata_offset = 0;
   for (int i=0; i < n_memb_func; ++i) {
-    ml_data_offset[i] = -1; // for nt._data
     ml_vdata_offset[i] = -1; // for nt._vdata
   }
   fprintf(f, "%d ngid\n", cg.n_output);
@@ -999,8 +1004,6 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
   for (tml=tml_with_art[nt.id]; tml; tml = tml->next) {
     fprintf(f, "%d\n", tml->index);
     fprintf(f, "%d\n", tml->ml->nodecount);
-    ml_data_offset[tml->index] = data_offset;
-    data_offset += tml->ml->nodecount*nrn_prop_param_size_[tml->index];
     ml_vdata_offset[tml->index] = vdata_offset;
     int* ds = memb_func[tml->index].dparam_semantics;
     for (int psz=0; psz < bbcore_dparam_size[tml->index]; ++psz) {
@@ -1010,8 +1013,7 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
       }
     }
   }
-  //  printf("ndata=%d  nidata=%d nvdata=%d nnetcon=%d\n", data_offset, 0, vdata_offset, cg.n_netcon);
-  fprintf(f, "%d ndata\n", data_offset);
+  //  printf("nidata=%d nvdata=%d nnetcon=%d\n", 0, vdata_offset, cg.n_netcon);
   fprintf(f, "%d nidata\n", 0);
   fprintf(f, "%d nvdata\n", vdata_offset);
   int nweight = 0;
@@ -1045,7 +1047,7 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     sz = bbcore_dparam_size[tml->index];
 
     if (sz) {
-      int* pdata = datum2int(tml->index, ml, nt, cg, cg.datumindices[id], ml_data_offset, ml_vdata_offset);
+      int* pdata = datum2int(tml->index, ml, nt, cg, cg.datumindices[id], ml_vdata_offset);
       writeint(pdata, n * sz);
       ++id;
       delete [] pdata;
@@ -1133,37 +1135,65 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     }
   }
 
-  nrnbbcore_vecplay_write(f, nt, ml_data_offset);
+  nrnbbcore_vecplay_write(f, nt);
 
   fclose(f);
-  delete [] ml_data_offset;
   delete [] ml_vdata_offset;
 }
 
 
-/// Writing the number of threads per MPI task
+/** Write all dataset ids to files.dat.
+ *
+ * Format of the files.dat file is:
+ *
+ *     version string
+ *     -1 (if model uses gap junction)
+ *     n (number of datasets)
+ *     id1
+ *     id2
+ *     ...
+ *     idN
+ */
 void write_nrnthread_task(const char* path, CellGroup* cgs)
 {
-  int *iRecv, *iRecvVec, *iDispl;
+  // ids of datasets that will be created
+  std::vector<int> iSend;
+
+  // ignore empty nrnthread (has -1 id)
+  for (int iInt = 0; iInt < nrn_nthread; ++iInt)
+  {
+    if ( cgs[iInt].group_id >= 0) {
+        iSend.push_back(cgs[iInt].group_id);
+    }
+  }
+
+  // receive and displacement buffers for mpi
+  std::vector<int> iRecv, iDispl;
+
   if (nrnmpi_myid == 0)
   {
-    iRecv = new int[nrnmpi_numprocs];
-    iDispl = new int[nrnmpi_numprocs];
+    iRecv.resize(nrnmpi_numprocs);
+    iDispl.resize(nrnmpi_numprocs);
   }
 
-  int iSumThread = 0;
-  int *iSend = new int[nrn_nthread];
+  // number of datasets on the current rank
+  int num_datasets = iSend.size();
+
 #ifdef NRNMPI
-  /// Getting the number of threads for each task
+  // gather number of datasets from each task
   if (nrnmpi_numprocs > 1) {
-    nrnmpi_int_gather(&nrn_nthread, iRecv, 1, 0);
+    nrnmpi_int_gather(&num_datasets, begin_ptr(iRecv), 1, 0);
   }else{
-    iRecv[0] = nrn_nthread;
+    iRecv[0] = num_datasets;
   }
 #else
-  iRecv[0] = nrn_nthread;
+  iRecv[0] = num_datasets;
 #endif
 
+  // total number of datasets across all ranks
+  int iSumThread = 0;
+
+  // calculate mpi displacements
   if (nrnmpi_myid == 0)
   {
     for (int iInt = 0; iInt < nrnmpi_numprocs; ++iInt)
@@ -1171,26 +1201,23 @@ void write_nrnthread_task(const char* path, CellGroup* cgs)
       iDispl[iInt] = iSumThread;
       iSumThread += iRecv[iInt];
     }
-    iRecvVec = new int[iSumThread];
   }
 
-  for (int iInt = 0; iInt < nrn_nthread; ++iInt) 
-  {  
-    iSend[iInt] = cgs[iInt].group_id;
-  }
+  // buffer for receiving all dataset ids
+  std::vector<int> iRecvVec(iSumThread);
 
 #ifdef NRNMPI
-  /// Getting all the first gids (per thread) into the array with correspondent offsets
+  // gather ids into the array with correspondent offsets
   if (nrnmpi_numprocs > 1) {
-    nrnmpi_int_gatherv(iSend, nrn_nthread, iRecvVec, iRecv, iDispl, 0);
+    nrnmpi_int_gatherv(begin_ptr(iSend), num_datasets, begin_ptr(iRecvVec), begin_ptr(iRecv), begin_ptr(iDispl), 0);
   }else{
-    for (int iInt = 0; iInt < nrn_nthread; ++iInt)
+    for (int iInt = 0; iInt < num_datasets; ++iInt)
     {
       iRecvVec[iInt] = iSend[iInt];
     }
   }
 #else
-  for (int iInt = 0; iInt < nrn_nthread; ++iInt)
+  for (int iInt = 0; iInt < num_datasets; ++iInt)
   {
     iRecvVec[iInt] = iSend[iInt];
   }
@@ -1199,46 +1226,42 @@ void write_nrnthread_task(const char* path, CellGroup* cgs)
   /// Writing the file with task, correspondent number of threads and list of correspondent first gids
   if (nrnmpi_myid == 0)
   {
-    char fname[1000];
-    sprintf(fname, "%s/%s", path, "files.dat");
-    FILE *fp = fopen(fname, "w");
+    std::stringstream ss;
+    ss << path << "/files.dat";
+
+    std::string filename = ss.str();
+
+    FILE *fp = fopen(filename.c_str(), "w");
     if (!fp) {
-      hoc_execerror("nrnbbcore_write write_nrnthread_task could not open for writing:", fname);
+      hoc_execerror("nrnbbcore_write write_nrnthread_task could not open for writing:", filename.c_str());
     }
-    // temporary? expedient to notify coreneuron that this model involves
-    // gap junctions
+
+    fprintf(fp, "%s\n", bbcore_write_version);
+
+    // notify coreneuron that this model involves gap junctions
     if (nrnthread_v_transfer_) {
       fprintf(fp, "-1\n");
     }
+
+    // total number of datasets
     fprintf(fp, "%d\n", iSumThread);
-    for (int iInt = 0; iInt < nrnmpi_numprocs; ++iInt)
+
+    // write all dataset ids
+    for (int i = 0; i < iRecvVec.size(); ++i)
     {
-      //fprintf(fp, "%d\t%d\n", iInt, iRecv[iInt]);
-      for (int jInt = 0; jInt < iRecv[iInt]; ++jInt)
-      {
-        fprintf(fp, "%d\n", iRecvVec[jInt+iDispl[iInt]]);
-      }
+        fprintf(fp, "%d\n", iRecvVec[i]);
     }
+
     fclose(fp);
   }
 
-  delete [] iSend;
-  if (nrnmpi_myid == 0)
-  {
-    delete [] iRecv;
-    delete [] iDispl;
-    delete [] iRecvVec;
-  }
 }
 
 
-int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndices& di, int* ml_data_offset, int* ml_vdata_offset) {
+int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndices& di, int* ml_vdata_offset) {
   int isart = nrn_is_artificial_[di.type];
   int sz = bbcore_dparam_size[type];
   int* pdata = new int[ml->nodecount * sz];
-  int diam_offset = 6*nt.end;
-  int area_offset = 5*nt.end;
-  int volt_offset = 4*nt.end;
   for (int i=0; i < ml->nodecount; ++i) {
     Datum* d = ml->pdata[i];
     int ioff = i*sz;
@@ -1250,12 +1273,12 @@ int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndic
         if (isart) {
           pdata[jj] = -1; // maybe save this space eventually. but not many of these in bb models
         }else{
-          pdata[jj] = area_offset + eindex;
+          pdata[jj] = eindex;
         }
       }else if (etype == -9) {
-        pdata[jj] = diam_offset + eindex;
+        pdata[jj] = eindex;
       }else if (etype > 0 && etype < 1000){//ion pointer and also POINTER
-        pdata[jj] = ml_data_offset[etype] + eindex;
+        pdata[jj] = eindex;
       }else if (etype > 1000 && etype < 2000) { //ionstyle can be explicit instead of pointer to int*
         pdata[jj] = eindex;
       }else if (etype == -2) { // an ion and this is the iontype
@@ -1270,7 +1293,7 @@ int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndic
         pdata[jj] = ml_vdata_offset[type] + eindex;
         //printf("etype %d jj=%d eindex=%d pdata=%d\n", etype, jj, eindex, pdata[jj]);
       }else if (etype == -5) { // POINTER to voltage
-        pdata[jj] = volt_offset + eindex;
+        pdata[jj] = eindex;
         //printf("etype %d\n", etype);
       }else{ //uninterpreted
         assert(eindex != -3); // avoided if last
@@ -1352,6 +1375,8 @@ void nrn_write_mapping_info(const char *path, int gid, NrnMappingInfo &minfo) {
     if (!f) {
         hoc_execerror("nrnbbcore_write could not open for writing:", fname.c_str());
     }
+
+    fprintf(f, "%s\n", bbcore_write_version);
 
     /** number of gids in NrnThread */
     fprintf(f, "%zd\n", minfo.size());

@@ -1,0 +1,81 @@
+msys2.org
+download x86_64 installer and follow instructions. i.e.
+  run the installer
+    tick the "run MSYS now" at end
+  in the terminal ---
+  pacman -Syu
+  close msysw terminal and open any msys2 terminal again from start menu.
+  pacman -Su #until no further installations
+  pacman -S git
+  pacman -S zip unzip
+
+after installing from above
+pacman -S --needed base-devel mingw-w64-x86_64-toolchain
+(I chose default=all for the first group and '3' for the toolchain)
+
+for complete mpi see mingw_notes
+for more or less complete python
+pacman -S mingw-w64-x86_64-cython
+#note above failed at end. Succeeded with
+#pacman -R mingw-w64-x86_64-cython
+#pacman -S mingw-w64-x86_64-cython2
+#and add to configure, CYTHON=cython2
+
+#pacman -S mingw64/mingw-w64-x86_64-python3-scipy  #python 3.6.4
+Note: the pacman installed version of python has a library naming
+convention that is similar to linux versions and so is not compatible
+with windows versions. i.e. python3.6m.dll instead of python36.dll .
+For this reason it is best to download and install windows versions of
+python from python.org. In my case I installed (into drive E:)
+python27, python35, and python36 respectively from
+python-2.7.14.amd64.msi
+python-3.5.4-amd64.exe
+python-3.6.4-amd64.exe
+and the "howto" file assumes this. These do not have scipy, so for
+testing rxd, I also have a version of anaconda installed.
+
+If you wish to eventually build a setup.exe, then search for nsis installer
+and install the nullsoft nsis installer. I am using
+nsis-3.01-setup.exe
+
+Another subtle issue is that under python 3.5, the dlls built from
+cython generated cpp files, did not dyamically load corectly unless
+compiled by the cl visual c compiler command line tools. To enable this
+I installed either
+visualcppbuildtools_full.exe
+vs_BuildTools.exe
+and the howto script source a shell script called vcenv.sh .
+If you don't have these, comment out the line in howto.
+
+
+In $HOME/neuron
+
+git clone http://nrnhines@github.com/nrnhines/iv
+git clone http://nrnhines@github.com/nrnhines/nrn
+
+cd $HOME/neuron/iv
+sh build.sh
+./configure --prefix=`pwd`
+make
+make install
+
+cd $HOME/neuron/nrn
+sh build.sh
+
+mkdir $HOME/neuron/nrnwinobj
+cd $HOME/neuron/nrnwinobj
+../nrn/configure --prefix=`pwd` -with-nrnpython=dynamic \
+ --with-pyexe=python3 --with-paranrn=dynamic \
+ MPICC=x86_64-w64-mingw32-gcc  MPICXX=x86_64-w64-mingw32-g++ \
+ CFLAGS='-DMSMPI_NO_SAL -I/c/ms-mpi/include' \
+ LIBS='-L/c/ms-mpi/lib/x64 -lmsmpi' \
+ --host=x86_64-w64-mingw32
+
+make # may do configure over again
+#probably should edit nrn/src/mswin/batch/instalmingw.sh and change
+#'if true ; then # false means skip marshaling of html'
+#to 'if false ;'
+make mswin
+
+c:/nrn/tmp needed by bash.exe
+export PATH=/mingw/bin:$PATH

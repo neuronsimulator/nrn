@@ -32,6 +32,8 @@ int nrn_isecstack();
 #define BBSPOLL /**/
 #endif
 
+int hoc_return_type_code = 0; /* flag for allowing integers (1) and booleans (2) to be recognized as such */
+
 # define	STACKCHK	if (stackp >= stacklast) \
 					execerror("Stack too deep.", "Increase with -NSTACK stacksize option");
 
@@ -2359,9 +2361,9 @@ void print(void) /* pop top value from stack, print it */
 	}else
 #endif
 	{
-	NOT_PARALLEL_SUB(Fprintf(stdout, "\t");)
+	nrnpy_pr("\t");
 	prexpr();
-	NOT_PARALLEL_SUB(Fprintf(stdout, "\n");)
+	nrnpy_pr("\n");
 	}
 }
 

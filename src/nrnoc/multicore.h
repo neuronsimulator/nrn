@@ -55,10 +55,12 @@ typedef struct NrnThread {
 	double _dt;
 	double cj;
 	NrnThreadMembList* tml;
+	Memb_list** _ml_list;
         int ncell; /* analogous to old rootnodecount */
 	int end;    /* 1 + position of last in v_node array. Now v_node_count. */
 	int id; /* this is nrn_threads[id] */
 	int _stop_stepping; /* delivered an all thread HocEvent */
+	int _ecell_child_cnt; /* see _ecell_children below */
 
 	double* _actual_rhs;
 	double* _actual_d;
@@ -71,6 +73,7 @@ typedef struct NrnThread {
 	Node** _v_parent;
 	char* _sp13mat; /* handle to general sparse matrix */
 	Memb_list* _ecell_memb_list; /* normally nil */
+	Node** _ecell_children; /* nodes with no extcell but parent has it */
 	_nrn_Fast_Imem* _nrn_fast_imem;
 	void* _vcv; /* replaces old cvode_instance and nrn_cvode_ */
 

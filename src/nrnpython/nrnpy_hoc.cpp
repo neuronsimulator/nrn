@@ -7,6 +7,16 @@
 #include "oclist.h"
 #include "nrniv_mf.h"
 #include "nrnpy_utils.h"
+#include <vector>
+
+#if defined(__MINGW32__) && NRNPYTHON_DYNAMICLOAD > 0
+// want to end up with a string like "hoc36"
+#define HOCMOD_1(s) HOCMOD_2(s)
+#define HOCMOD_2(s) #s
+#define HOCMOD "hoc" HOCMOD_1(NRNPYTHON_DYNAMICLOAD)
+#else
+#define HOCMOD hoc
+#endif
 
 extern "C" {
 
@@ -14,6 +24,8 @@ extern "C" {
 extern Section* nrn_noerr_access();
 extern void hoc_pushs(Symbol*);
 extern double* hoc_evalpointer();
+extern double cable_prop_eval(Symbol* sym);
+extern void nrn_change_nseg(Section*, int);
 extern Symlist* hoc_top_level_symlist;
 extern Symlist* hoc_built_in_symlist;
 extern Inst* hoc_pc;
@@ -53,9 +65,13 @@ int nrnpy_set_vec_as_numpy(PyObject* (*p)(int, double*));  // called by ctypes.
 extern double** nrnpy_setpointer_helper(PyObject*, PyObject*);
 extern Symbol* ivoc_alias_lookup(const char* name, Object* ob);
 extern int nrn_netcon_weight(void*, double**);
+extern int nrn_matrix_dim(void*, int);
 
 extern PyObject* pmech_types;  // Python map for name to Mechanism
 extern PyObject* rangevars_;   // Python map for name to Symbol
+
+extern "C" int hoc_max_builtin_class_id;
+extern "C" int hoc_return_type_code;
 
 static cTemplate* hoc_vec_template_;
 static cTemplate* hoc_list_template_;
@@ -302,7 +318,7 @@ static Inst* save_pc(Inst* newpc) {
   return savpc;
 }
 
-static int hocobj_pushargs(PyObject* args) {
+static int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
   int i, narg = PyTuple_Size(args);
   for (i = 0; i < narg; ++i) {
     PyObject* po = PyTuple_GetItem(args, i);
@@ -316,6 +332,7 @@ static int hocobj_pushargs(PyObject* args) {
       char** ts = hoc_temp_charptr();
       Py2NRNString str(po, /* disable_release */ true);
       *ts = str.c_str();
+      s2free.push_back(*ts);
       hoc_pushstr(ts);
     } else if (PyObject_IsInstance(po, (PyObject*)hocobject_type)) {
       PyHocObject* pho = (PyHocObject*)po;
@@ -349,6 +366,13 @@ static int hocobj_pushargs(PyObject* args) {
   return narg;
 }
 
+static void hocobj_pushargs_free_strings(std::vector<char*>& s2free) {
+  std::vector<char*>::iterator it = s2free.begin();
+  for (; it != s2free.end(); ++it) {
+    delete *it;
+  }
+}
+
 static Symbol* getsym(char* name, Object* ho, int fail) {
   Symbol* sym = 0;
   if (ho) {
@@ -377,8 +401,11 @@ static Symbol* getsym(char* name, Object* ho, int fail) {
 
 // on entry the stack order is indices, args, object
 // on exit all that is popped and the result is on the stack
-static void component(PyHocObject* po) {
+// returns hoc_return_is_int if called on a builtin (i.e. 2 if bool, 1 if int, 0 otherwise)
+static int component(PyHocObject* po) {
   Inst fc[6];
+  int var_type = 0;
+  hoc_return_type_code = 0;
   fc[0].sym = po->sym_;
   fc[1].i = 0;
   fc[2].i = 0;
@@ -397,6 +424,12 @@ static void component(PyHocObject* po) {
   Inst* pcsav = save_pc(fc);
   hoc_object_component();
   hoc_pc = pcsav;
+  // only return a type if we're calling a built-in (these are all registered first)
+  if (po->ho_->ctemplate->id <= hoc_max_builtin_class_id) {
+    var_type = hoc_return_type_code;
+  }
+  hoc_return_type_code = 0;
+  return(var_type);
 }
 
 int nrnpy_numbercheck(PyObject* po) {
@@ -544,16 +577,35 @@ static int set_final_from_stk(PyObject* po) {
   return err;
 }
 
+
+static void* nrnpy_hoc_int_pop() {
+  return (void*) Py_BuildValue("i", (long) hoc_xpop());
+}
+
+static void* nrnpy_hoc_bool_pop() {
+  return (void*) PyBool_FromLong((long) hoc_xpop());
+}
+
 static void* fcall(void* vself, void* vargs) {
   PyHocObject* self = (PyHocObject*)vself;
   if (self->ho_) {
     hoc_push_object(self->ho_);
   }
-  int narg = hocobj_pushargs((PyObject*)vargs);
+  std::vector<char*> strings_to_free;
+  int narg = hocobj_pushargs((PyObject*)vargs, strings_to_free);
+  int var_type;
   if (self->ho_) {
     self->nindex_ = narg;
-    component(self);
-    return (void*)nrnpy_hoc_pop();
+    var_type = component(self);
+    hocobj_pushargs_free_strings(strings_to_free);
+    switch(var_type) {
+      case 2:
+        return nrnpy_hoc_bool_pop();
+      case 1:
+        return nrnpy_hoc_int_pop();
+      default:
+        return(void*) nrnpy_hoc_pop();
+    }
   }
   if (self->sym_->type == BLTIN) {
     if (narg != 1) {
@@ -566,6 +618,7 @@ static void* fcall(void* vself, void* vargs) {
     PyHocObject* result = (PyHocObject*)hocobj_new(hocobject_type, 0, 0);
     result->ho_ = ho;
     result->type_ = PyHoc::HocObject;
+    hocobj_pushargs_free_strings(strings_to_free);
     return result;
   } else {
     HocTopContextSet Inst fc[4];
@@ -579,6 +632,8 @@ static void* fcall(void* vself, void* vargs) {
     hoc_pc = pcsav;
     HocContextRestore
   }
+  hocobj_pushargs_free_strings(strings_to_free);
+
   return (void*)nrnpy_hoc_pop();
 }
 
@@ -743,6 +798,7 @@ PyObject* nrn_hocobj_ptr(double* pd) {
 static void symlist2dict(Symlist* sl, PyObject* dict) {
   PyObject* nn = Py_BuildValue("");
   for (Symbol* s = sl->first; s; s = s->next) {
+    if (s->type == UNDEF) { continue; }
     if (s->cpublic == 1 || sl == hoc_built_in_symlist ||
         sl == hoc_top_level_symlist) {
       if (strcmp(s->name, "del") == 0) {
@@ -789,6 +845,10 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
   int isptr = 0;
   Py2NRNString name(pyname);
   char* n = name.c_str();
+  if (!n) {
+    PyErr_SetString(PyExc_TypeError, "attribute name must be a string");
+    return NULL;
+  }
   // printf("hocobj_getattr %s\n", n);
 
   Symbol* sym = getsym(n, self->ho_, 0);
@@ -886,6 +946,20 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         nrn_popsec();
       }
       return result;
+    } else if (self->type_ == PyHoc::HocTopLevelInterpreter &&
+               strncmp(n, "__pysec_", 8) == 0) {
+      Section* sec = (Section*)hoc_pysec_name2ptr(n, 0);
+      if (sec == NULL) {
+        PyErr_SetString(PyExc_NameError, n);
+      } else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
+        result = (PyObject*)sec->prop->dparam[PROP_PY_INDEX]._pvoid;
+        Py_INCREF(result);
+      } else {
+        nrn_pushsec(sec);
+        result = nrnpy_cas(NULL, NULL);
+        nrn_popsec();
+      }
+      return result;
     } else {
       // ipython wants to know if there is a __getitem__
       // even though it does not use it.
@@ -964,6 +1038,17 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         if (sym->subtype == USERPROPERTY) {
           if (!nrn_noerr_access()) {
             PyErr_SetString(PyExc_TypeError, "Section access unspecified");
+            break;
+          }
+          if (!isptr) {
+            if (sym->u.rng.type == CABLESECTION) {
+              result = Py_BuildValue("d", cable_prop_eval(sym));
+            }else{
+              result = Py_BuildValue("i", int(cable_prop_eval(sym)));
+            }
+            break;
+          }else if (sym->u.rng.type != CABLESECTION) {
+            PyErr_SetString(PyExc_TypeError, "Cannot be a reference");
             break;
           }
         }
@@ -1101,6 +1186,10 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname,
   }
   Py2NRNString name(pyname);
   char* n = name.c_str();
+  if (!n) {
+    PyErr_SetString(PyExc_TypeError, "attribute name must be a string");
+    return -1;
+  }
   // printf("hocobj_setattro %s\n", n);
   Symbol* sym = getsym(n, self->ho_, 0);
   if (!sym) {
@@ -1156,12 +1245,33 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname,
         PyErr_SetString(PyExc_TypeError, "wrong number of subscripts");
         err = -1;
       } else {
-        hoc_pushs(sym);
         if (sym->subtype == USERINT) {
-          err = PyArg_Parse(value, "i", sym->u.pvalint) != 1;
+          err = PyArg_Parse(value, "i", sym->u.pvalint) == 0;
+        } else if (sym->subtype == USERPROPERTY) {
+          if (!nrn_noerr_access()) {
+            PyErr_SetString(PyExc_TypeError, "Section access unspecified");
+            err = -1;
+            break;
+          }
+          double x;
+          if (sym->u.rng.type != CABLESECTION) {
+            int i;
+            if (PyArg_Parse(value, "i", &i) != 0 && i > 0 && i <= 32767) {
+              x = double(i);
+            }else{
+              PyErr_SetString(PyExc_ValueError, "nseg must be an integer in range 1 to 32767");
+              err = -1;
+            }
+          } else {
+            err = PyArg_Parse(value, "d", &x) == 0;
+          }
+          if (!err) {
+            cable_prop_assign(sym, &x, 0);
+          }
         } else {
+          hoc_pushs(sym);
           hoc_evalpointer();
-          err = PyArg_Parse(value, "d", hoc_pxpop()) != 1;
+          err = PyArg_Parse(value, "d", hoc_pxpop()) == 0;
         }
       }
       break;
@@ -1233,7 +1343,7 @@ static int araylen(Arrayinfo* a, PyHocObject* po) {
   } else if (po->sym_ == nrn_child_sym) {
     n = nrn_secref_nchild((Section*)po->ho_->u.this_pointer);
   } else if (po->sym_ == sym_mat_x) {
-    return 0;
+    n = nrn_matrix_dim(po->ho_->u.this_pointer, po->nindex_);
   } else {
     n = a->sub[po->nindex_];
   }
@@ -1543,11 +1653,10 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
     }
     return 0;
   }
-  if (!po->sym_) {
+  if (!po->sym_ || po->type_ != PyHoc::HocArray) {
     PyErr_SetString(PyExc_TypeError, "unsubscriptable object");
     return -1;
   }
-  assert(po->type_ == PyHoc::HocArray);
   Arrayinfo* a = hocobj_aray(po->sym_, po->ho_);
   if (a->nsub - 1 != po->nindex_) {
     PyErr_SetString(PyExc_TypeError, "wrong number of subscripts");
@@ -1639,6 +1748,9 @@ static PyObject* setpointer(PyObject* self, PyObject* args) {
       }
       Py2NRNString str(name);
       char* n = str.c_str();
+      if (!n) {
+        goto done;
+      }
       Symbol* sym = getsym(n, hpp->ho_, 0);
       if (!sym || sym->type != RANGEVAR || sym->subtype != NRNPOINTER) {
         goto done;
@@ -1709,8 +1821,74 @@ PyObject* nrn_ptr_richcmp(void* self_ptr, void* other_ptr, int op) {
 static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
   void* self_ptr = (void*)(self->ho_);
   void* other_ptr = (void*)other;
+  bool are_equal = true;
   if (PyObject_TypeCheck(other, hocobject_type)) {
-    other_ptr = (void*)(((PyHocObject*)other)->ho_);
+    if (((PyHocObject*)other)->type_ == self->type_) {
+      switch(self->type_) {
+        case PyHoc::HocRefNum:
+        case PyHoc::HocRefStr:
+        case PyHoc::HocRefObj:
+          /* only same objects can point to same h.ref */
+          self_ptr = (void*) self;
+          break;
+        case PyHoc::HocFunction:
+          if (self->ho_ != (void*)(((PyHocObject*)other)->ho_)) {
+            if (op == Py_NE) {
+              Py_RETURN_TRUE;
+            } else if (op == Py_EQ) {
+              Py_RETURN_FALSE;
+            }
+            /* different classes, comparing < or > doesn't make sense */
+            PyErr_SetString(PyExc_TypeError, "this comparison is undefined");
+            return NULL;
+          }
+          self_ptr = (void*) self->sym_;
+          other_ptr = (void*) (((PyHocObject*)other)->sym_);
+          break;
+        case PyHoc::HocScalarPtr:
+          self_ptr = self->u.px_;
+          other_ptr = (void*)(((PyHocObject*)other)->u.px_);
+          break;
+        case PyHoc::HocArrayIncomplete:
+        case PyHoc::HocArray:
+          if (op != Py_EQ && op != Py_NE) {
+            /* comparing partial arrays doesn't make sense */
+            PyErr_SetString(PyExc_TypeError, "this comparison is undefined");
+            return NULL;
+          }
+          if (self->ho_ != (void*)(((PyHocObject*)other)->ho_)) {
+            /* different objects */
+            other_ptr = (void*)(((PyHocObject*)other)->ho_);
+            break;
+          }
+          if (self->nindex_ != (((PyHocObject*)other)->nindex_) || self->sym_ != (((PyHocObject*)other)->sym_)) {
+            if (op == Py_NE) {
+              Py_RETURN_TRUE;
+            }
+            Py_RETURN_FALSE;
+          }
+          for (int i = 0; i < self->nindex_; i++) {
+            if (self->indices_[i] != ((PyHocObject*)other)->indices_[i]) {
+              are_equal = false;
+            }
+          }
+          if (are_equal == (op == Py_EQ)) {
+            Py_RETURN_TRUE;
+          }
+          Py_RETURN_FALSE;
+        default:
+          other_ptr = (void*)(((PyHocObject*)other)->ho_);
+      }
+    } else {
+      if (op == Py_EQ) {
+        Py_RETURN_FALSE;
+      } else if (op == Py_NE) {
+        Py_RETURN_TRUE;
+      } 
+      /* different NEURON object types are incomperable besides for (in)equality */
+      PyErr_SetString(PyExc_TypeError, "this comparison is undefined");
+      return NULL;
+    }
   }
   return nrn_ptr_richcmp(self_ptr, other_ptr, op);
 }
@@ -1727,10 +1905,6 @@ static PyObject* hocobj_same(PyHocObject* pself, PyObject* args) {
   }
   return NULL;
 }
-
-static PySequenceMethods hocobj_seqmeth = {
-    hocobj_len,     NULL, NULL, hocobj_getitem, NULL,
-    hocobj_setitem, NULL, NULL, NULL,           NULL};
 
 static char* double_array_interface(PyObject* po, long& stride) {
   void* data = 0;
@@ -2130,21 +2304,35 @@ myPyMODINIT_FUNC nrnpy_hoc() {
   nrnpy_vec_from_python_p_ = nrnpy_vec_from_python;
   nrnpy_vec_to_python_p_ = nrnpy_vec_to_python;
   nrnpy_vec_as_numpy_helper_ = vec_as_numpy_helper;
-  PyGILState_STATE pgs = PyGILState_Ensure();
+  PyLockGIL lock;
+
   char endian_character = 0;
+
 #if PY_MAJOR_VERSION >= 3
   int err = 0;
   PyObject* modules = PyImport_GetModuleDict();
+#if defined(__MINGW32__)
+  if ((m = PyDict_GetItemString(modules, HOCMOD)) != NULL && PyModule_Check(m)) {
+#else
   if ((m = PyDict_GetItemString(modules, "hoc")) != NULL && PyModule_Check(m)) {
+#endif // __MINGW32__
     return m;
   }
   m = PyModule_Create(&hocmodule);
+#else // PY_MAJOR_VERSION
+#if defined(__MINGW32__)
+  m = Py_InitModule3(HOCMOD, HocMethods, "HOC interaction with Python");
 #else
   m = Py_InitModule3("hoc", HocMethods, "HOC interaction with Python");
-#endif
+#endif // __MINGW32__
+#endif // PY_MAJOR_VERSION
   assert(m);
   Symbol* s = NULL;
+#if PY_MAJOR_VERSION >= 3
+  hocobject_type = (PyTypeObject*)PyType_FromSpec(&nrnpy_HocObjectType_spec);
+#else
   hocobject_type = &nrnpy_HocObjectType;
+#endif
   if (PyType_Ready(hocobject_type) < 0) goto fail;
   Py_INCREF(hocobject_type);
   // printf("AddObject HocObject\n");
@@ -2181,14 +2369,11 @@ myPyMODINIT_FUNC nrnpy_hoc() {
   err = PyDict_SetItemString(modules, "hoc", m);
   assert(err == 0);
   Py_DECREF(m);
-  PyGILState_Release(pgs);
   return m;
 fail:
-  PyGILState_Release(pgs);
   return NULL;
 #else
 fail:
-  PyGILState_Release(pgs);
   return;
 #endif
 }

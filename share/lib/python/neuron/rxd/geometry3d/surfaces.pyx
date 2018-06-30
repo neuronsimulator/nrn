@@ -455,7 +455,7 @@ cpdef _triangulate_surface_given_chunks(list objects, xs, ys, zs, internal_membr
                                     process2[cell_id] = 0
                 break
     
-    still_to_process = process2.keys()
+    still_to_process = list(process2.keys())
     #print 'len(still_to_process) = %d' % len(still_to_process)
     # flood on those still_to_process
     while still_to_process:

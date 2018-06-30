@@ -26,10 +26,9 @@ char* nrn_version(int i)
   {
     sprintf(head, "%s (%s)", GIT_BRANCH, GIT_CHANGESET);
   }else{
-    sprintf(head, "VERSION %s %s%s(%s)",
-    PACKAGE_VERSION,
-    strcmp("trunk", GIT_BRANCH) ? GIT_BRANCH : "",
-    strcmp("trunk", GIT_BRANCH) ? " " : "",
+    sprintf(head, "VERSION %s %s (%s)",
+    GIT_DESCRIBE,
+    GIT_BRANCH,
     GIT_CHANGESET);
   }
   if (i == 0) 
@@ -42,7 +41,7 @@ char* nrn_version(int i)
   }else if (i == 4) {
     sprintf(buf, "%s", GIT_DATE);
   }else if (i == 5) {
-    sprintf(buf, "%s", GIT_LOCAL);
+    sprintf(buf, "%s", GIT_DESCRIBE);
   }else if (i == 6) {
     return configargs;
   }else if (i == 7) {

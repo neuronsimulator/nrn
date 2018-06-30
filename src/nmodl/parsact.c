@@ -355,7 +355,7 @@ void statdefault(n, index, units, qs, makeconst)
 	char           *units;
 	Item           *qs;
 {
-	char            nam[30], *un;
+	char            nam[256], *un;
 	Symbol         *s;
 
 	if (n->type != NAME && n->type != PRIME) {
@@ -1045,18 +1045,34 @@ void vectorize_use_func(qname, qpar1, qexpr, qpar2, blocktype)
 			Insertstr(qpar1->next, "&");
 		}else if (strcmp(SYM(qname)->name, "state_discontinuity") == 0) {
 #if CVODE
-fprintf(stderr, "Notice: Use of state_discontinuity is not thread safe");
-			vectorize = 0;
-			if (blocktype == NETRECEIVE) {
-Fprintf(stderr, "Notice: Use of state_discontinuity in a NET_RECEIVE block is unnecessary and prevents use of this mechanism in a multithreaded simulation.\n");
+		    if (blocktype == NETRECEIVE) {
+			Item* qeq = NULL;
+			/* convert to state = expr form and process with netrec_discon(...) */
+			replacstr(qname, "");
+			replacstr(qpar1, "");
+			replacstr(qpar2, "");
+			/* qexpr begins state, expr */
+			/* find the first , and replace by = */
+			for (q = qexpr; q != qpar2; q = q->next) {
+			  if (q->itemtype == SYMBOL && strcmp(SYM(q)->name, ",") == 0) {
+			    qeq = q;
+			    replacstr(qeq, "=");
+			    break;
+			  }
 			}
+			assert(qeq);
+			netrec_asgn(qexpr, qeq,  qeq->next, qpar2);
+		    }else{
+fprintf(stderr, "Notice: Use of state_discontinuity is not thread safe except in a NET_RECEIVE block");
+			vectorize = 0;
 			if (!state_discon_list_) {
 				state_discon_list_ = newlist();
 				Linsertstr(procfunc, "extern int state_discon_flag_;\n");
 			}
 			lappenditem(state_discon_list_, qpar1->next);
-#endif
 			Insertstr(qpar1->next, "-1, &");
+		    }
+#endif
 		}else if (strcmp(SYM(qname)->name, "net_send") == 0) {
 			net_send_seen_ = 1;
 			if (artificial_cell) {
