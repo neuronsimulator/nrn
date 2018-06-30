@@ -124,7 +124,7 @@ class GeneralizedReaction(object):
         if self._trans_membrane:   #assume sources share common regions and destinations share common regions
             sp_regions = list({sptr()._region for sptr in self._sources}.union({sptr()._region for sptr in self._dests}))
         else:
-            sp_regions = list(set.intersection(*[set(sptr()._regions) for sptr in self._sources + self._dests]))
+            sp_regions = list(set.intersection(*[set(sptr()._regions) if isinstance(sptr(),species.Species) else {sptr()._region}  for sptr in self._sources + self._dests]))
 
         #The reactants do not share a common region 
         if not sp_regions:
@@ -160,7 +160,7 @@ class GeneralizedReaction(object):
                 active_regions = src_regions + dest_regions
                 active_secs = set.union(src_sections,dest_sections)
             else:
-                active_regions = list(set.intersection(*[set(sptr()._regions) for sptr in self._sources + self._dests]))
+                active_regions = list(set.intersection(*[set(sptr()._regions) if isinstance(sptr(),species.Species) else {sptr()._region()} for sptr in self._sources + self._dests]))
                 if not active_regions:
                     raise RxDException("Error in %r. The species do not share a common region" % self)
                 active_secs = set.intersection(*[set(reg.secs) for reg in active_regions if reg is not None])
