@@ -6,7 +6,6 @@ and Flux_pair structs and their respective functions
 ******************************************************************/
 #include <stdio.h>
 #include <assert.h>
-<<<<<<< HEAD
 #include <nrnmpi.h>
 
 #if NRNMPI

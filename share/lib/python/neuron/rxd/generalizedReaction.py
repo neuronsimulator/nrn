@@ -127,10 +127,17 @@ class GeneralizedReaction(object):
         self._mult = [1]
         self._mult_extended = self._mult
         active_secs = None
+
+        sources = [r for r in self._sources if not isinstance(r(),species.SpeciesOnExtracellular)]
+        dests = [r for r in self._dests if not isinstance(r(),species.SpeciesOnExtracellular)]
+        
+        sources_ecs = [r for r in self._sources if isinstance(r(),species.SpeciesOnExtracellular)]
+        dests_ecs = [r for r in self._dests if isinstance(r(),species.SpeciesOnExtracellular)]
+
         if self._trans_membrane:   #assume sources share common regions and destinations share common regions
-            sp_regions = list({sptr()._region for sptr in self._sources}.union({sptr()._region for sptr in self._dests}))
+            sp_regions = list({sptr()._region for sptr in sources}.union({sptr()._region for sptr in dests}))
         else:
-            sp_regions = list(set.intersection(*[set(sptr()._regions) for sptr in self._sources + self._dests]))
+            sp_regions = list(set.intersection(*[set(sptr()._regions) if isinstance(sptr(),species.Species) else {sptr()._region} for sptr in sources + dests]))
 
         #The reactants do not share a common region 
         if not sp_regions:
@@ -145,7 +152,7 @@ class GeneralizedReaction(object):
             active_regions = []
         for sptr in self._involved_species:
             s = sptr()
-            if s and isinstance(s,species.SpeciesOnRegion):
+            if s and not isinstance(s,species.SpeciesOnExtracellular):
                 for r in self._regions:
                     if r in active_regions and not s.indices(r):
                         del active_regions[active_regions.index(r)]
@@ -159,32 +166,33 @@ class GeneralizedReaction(object):
         #If we haven't identified active_regions -- use the regions where all species are defined
         if len(active_regions) == 0 or active_regions == [None]:
             if self._trans_membrane:
-                src_regions =  list(set.intersection(*[set(sptr()._regions) for sptr in self._sources]))
+                src_regions =  list(set.intersection(*[set(sptr()._regions) for sptr in sources]))
                 if not src_regions:
                     raise RxDException("Error in %r. The source species do not share a common region" % self)
                 src_sections = set.intersection(*[set(reg.secs) for reg in src_regions if reg is not None])
-                dest_regions = list(set.intersection(*[set(sptr()._regions) for sptr in self._dests]))
+                dest_regions = list(set.intersection(*[set(sptr()._regions) for sptr in dests]))
                 if not dest_regions:
                     raise RxDException("Error in %r. The destination species do not share a common region" % self)
                 dest_sections = set.intersection(*[set(reg.secs) for reg in dest_regions if reg is not None])
                 active_regions = src_regions + dest_regions
                 active_secs = set.union(src_sections,dest_sections)
             else:
-                active_regions = list(set.intersection(*[set(sptr()._regions) for sptr in self._sources + self._dests]))
+                active_regions = list(set.intersection(*[set(sptr()._regions) if isinstance(sptr(),species.Species) else {sptr()._region()} for sptr in sources + dests]))
                 if not active_regions:
                     raise RxDException("Error in %r. The species do not share a common region" % self)
-                active_secs = set.intersection(*[set(reg.secs) for reg in active_regions if reg is not None])
+                active_secs = set.intersection(*[set(reg.secs) for reg in active_regions if reg])
         else:
-            active_secs = set.intersection(*[set(reg.secs) for reg in active_regions if reg is not None])
+            active_secs = set.intersection(*[set(reg.secs) for reg in active_regions if reg])
                 
             
         # store the indices
         for sptr in self._involved_species:
             s = sptr()
-            self._indices_dict[s] = s.indices(active_regions,active_secs)
+            if not isinstance(s,species.SpeciesOnExtracellular):
+                self._indices_dict[s] = s.indices(active_regions,active_secs)
 
-        sources_indices = [sptr().indices(active_regions,active_secs) for sptr in self._sources if not isinstance(sptr(),species.SpeciesOnExtracellular)]
-        dests_indices = [dptr().indices(active_regions,active_secs) for dptr in self._dests if not isinstance(sptr(),species.SpeciesOnExtracellular)]
+        sources_indices = [sptr().indices(active_regions,active_secs) for sptr in sources]
+        dests_indices = [dptr().indices(active_regions,active_secs) for dptr in dests]
 
         self._indices = sources_indices + dests_indices
         volumes, surface_area, diffs = node._get_data()

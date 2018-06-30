@@ -10,6 +10,7 @@ import itertools
 from .rxdException import RxDException
 from . import initializer
 import collections
+import ctypes
 
 dll = neuron.nrn_dll()
 #Now set in rxd.py
