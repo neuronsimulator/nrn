@@ -112,16 +112,17 @@ if __name__ == '__main__':
     os.chdir(dname)
     
     files = [f for f in os.listdir('tests') if f[-3:].lower() == '.py']
-    dirs = [name for name in os.listdir('tests') if os.path.isdir(os.path.join('tests', name))]
+    #dirs = [name for name in os.listdir('tests') if os.path.isdir(os.path.join('tests', name))]
+    dirs = [os.path.join(*d.split(os.path.sep)[1:]) for d in [wlk[0] for wlk in os.walk('tests')][1:]]
+    os.chdir(dname)
+
     for dr in dirs:
         fname = os.path.join('tests', dr, 'torun.txt')
         if os.path.isfile(fname):
             # compile any mod files
             os.chdir(os.path.join('tests', dr))
             os.system('nrnivmodl')
-            os.chdir(os.path.join('..', '..'))
+            os.chdir(dname)
             with open(fname) as f:
                 files += [os.path.join(dr, s) for s in f.read().splitlines()]
-    
     sys.exit(test(files))
-

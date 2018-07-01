@@ -1,0 +1,3 @@
+class RxDException(Exception):
+    pass
+    

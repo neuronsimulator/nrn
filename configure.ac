@@ -626,6 +626,8 @@ AC_CONFIG_FILES([
 	src/nrnpython/setup.py
 	share/lib/python/neuron/rxd/geometry3d/Makefile
         share/lib/python/neuron/rxd/geometry3d/setup.py
+    share/lib/python/neuron/crxd/geometry3d/Makefile
+        share/lib/python/neuron/crxd/geometry3d/setup.py
 ])
 fi	
 
@@ -687,6 +689,7 @@ AC_CONFIG_FILES([
 	share/demo/sync/Makefile
 	share/lib/python/neuron/Makefile
 	share/lib/python/neuron/rxd/Makefile
+    share/lib/python/neuron/crxd/Makefile
 	])
 fi
 

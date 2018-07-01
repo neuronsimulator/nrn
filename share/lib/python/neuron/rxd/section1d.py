@@ -11,7 +11,6 @@ _c_ptr_vector = None
 _c_ptr_vector_storage_nrn = None
 _c_ptr_vector_storage = None
 _last_c_ptr_length = None
-_rxd_sec_lookup = dict()
 
 def _donothing(): pass
 
@@ -56,12 +55,7 @@ class Section1D(rxdsection.RxDSection):
         self._nseg = sec.nseg
         self._region = r
         # NOTE: you must do _init_diffusion_rates after assigning parents
-        global _rxd_sec_lookup
-        if sec in _rxd_sec_lookup.keys():
-            _rxd_sec_lookup[sec].append(weakref.ref(self))
-        else:
-            _rxd_sec_lookup[sec] = [weakref.ref(self)]
-
+    
     def _init_diffusion_rates(self):
         # call only after roots are set
         node._diffs[self._offset : self._offset + self.nseg] = self._diff

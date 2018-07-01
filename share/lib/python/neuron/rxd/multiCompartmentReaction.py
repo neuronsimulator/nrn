@@ -134,7 +134,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
             raise RxDException('unrecognized direction; should never happen')
         self._rate, self._involved_species = rxdmath._compile(rate)
         self._changing_species = list(set(self._sources + self._dests))
-        if any(isinstance(s(), species.Species) for s in self._involved_species):
+        if not all(isinstance(s(), species.SpeciesOnRegion) for s in self._involved_species):
             raise RxDException('must specify region for all involved species')
 
 
@@ -196,16 +196,8 @@ class MultiCompartmentReaction(GeneralizedReaction):
             # TODO: don't assume/require always inside/outside on one side...
             #       if no nrn_region specified, then (make so that) no contribution
             #       to membrane flux
-            from . import species
-            sources = [r for r in self._sources if not isinstance(r(),species.SpeciesOnExtracellular)]
-            dests = [r for r in self._dests if not isinstance(r(),species.SpeciesOnExtracellular)]
-        
-            sources_ecs = [r for r in self._sources if isinstance(r(),species.SpeciesOnExtracellular)]
-            dests_ecs = [r for r in self._dests if isinstance(r(),species.SpeciesOnExtracellular)]
-
-            source_regions = [s()._region()._nrn_region for s in sources] + ['o' for s in sources_ecs]
-            dest_regions = [d()._region()._nrn_region for d in dests] + ['o' for d in dests_ecs]
-
+            source_regions = [s()._region()._nrn_region for s in self._sources]
+            dest_regions = [d()._region()._nrn_region for d in self._dests]
             if 'i' in source_regions and 'o' not in source_regions and 'i' not in dest_regions:
                 inside = -1 #'source'
             elif 'o' in source_regions and 'i' not in source_regions and 'o' not in dest_regions:
@@ -231,44 +223,24 @@ class MultiCompartmentReaction(GeneralizedReaction):
         self._net_charges = sum(self._cur_charges)
         self._cur_ptrs = []
         self._cur_mapped = []
-        self._cur_mapped_ecs = []
-        ecs_indices = dict()
-        ecs_grids = dict()
-        for sp in itertools.chain(self._sources, self._dests):
-            s = sp()._species()
-            if s.name is not None:
-                for r in s.regions:
-                    if isinstance(s[r],species.SpeciesOnExtracellular):
-                        ecs_indices[s.name] = s[r]._extracellular()._locate_segments()
-                        ecs_grids[s.name] = s[r]._extracellular()._grid_id
+        
         for sec in self._regions[0].secs:
             for i in range(sec.nseg):
                 local_ptrs = []
                 local_mapped = []
-                local_mapped_ecs = []
                 for sp in itertools.chain(self._sources, self._dests):
-                    s = sp()._species()
-                    spname = s.name
-                    #Check for extracellular regions
+                    spname = sp()._species().name
                     if spname is not None:
                         name = '_ref_i%s' % (spname)
                         seg = sec((i + 0.5) / sec.nseg)
                         local_ptrs.append(seg.__getattribute__(name))
                         uberlocal_map = [None, None]
-                        uberlocal_map_ecs = [None, None]
                         if spname + 'i' in cur_map:
                             uberlocal_map[0] = cur_map[spname + 'i'][seg]
                         if spname + 'o' in cur_map:
-                                    #Original rxd extracellular region
-                            if cur_map[spname + 'o'].has_key(seg):
-                                uberlocal_map[1] = cur_map[spname + 'o'][seg]
-                            else:   #Extracellular space
-                                uberlocal_map_ecs[0] = ecs_grids[spname]      #TODO: Just pass the grid_id once per species
-                                uberlocal_map_ecs[1] = ecs_indices[s.name][seg.sec][seg.node_index()-1]
+                            uberlocal_map[1] = cur_map[spname + 'o'][seg]
                         local_mapped.append(uberlocal_map)
-                        local_mapped_ecs.append(uberlocal_map_ecs)
                 self._cur_ptrs.append(tuple(local_ptrs))
                 self._cur_mapped.append(tuple(local_mapped))
-                self._cur_mapped_ecs.append(local_mapped_ecs)
 
         

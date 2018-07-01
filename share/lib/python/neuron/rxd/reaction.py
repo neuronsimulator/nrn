@@ -106,38 +106,11 @@ class Reaction(GeneralizedReaction):
         rate = rate_f - rate_b
         self._sources = ref_list_with_mult(lhs)
         self._dests = ref_list_with_mult(rhs)
+        self._rate, self._involved_species = rxdmath._compile(rate)
         
-        #Check to if it is an extracellular reaction
-        import region, species
-        #Was an ECS region was passed to to the constructor 
-        ecs_region = [r for r in self._regions if isinstance(r, region.Extracellular)]
-        ecs_region = ecs_region[0] if len(ecs_region) > 0 else None
-        #Are any of of the sources or destinations passed to the constructor extracellular
-        if not ecs_region:
-            ecs_species = [s() for s in self._sources + self._dests if isinstance(s(),species.SpeciesOnExtracellular) or isinstance(s(),species._ExtracellularSpecies)]
-            if ecs_species:
-                ecs_region = ecs_species[0]._region if isinstance(ecs_species[0],species._ExtracellularSpecies) else ecs_species[0]._extracellular()
-
-        #Are any of of the sources or destinations passed to the constructor defined on the ECS
-        if not ecs_region:
-            sps = [s() for s in self._sources + self._dests if isinstance(s(),species.Species)]
-            for s in sps:
-                if s._extracellular_instances:
-                    ecs_region = s._extracellular_instances[0]._region
-        
-        if ecs_region:
-            self._rate_ecs, self._involved_species_ecs = rxdmath._compile(rate, extracellular=ecs_region)
-        
-        self._rate, self._involved_species = rxdmath._compile(rate, extracellular=None)
-
-        #Species are in at most one region
-        trans_membrane = len({s()._region() for s in self._involved_species if isinstance(s(), species.SpeciesOnRegion)}) + len({s()._extracellular() for s in self._involved_species if isinstance(s(), species.SpeciesOnExtracellular)}) > 1 
+        trans_membrane = any(isinstance(s(), species.SpeciesOnRegion) for s in self._involved_species)
         if trans_membrane:
             raise RxDException('Reaction does not support multi-compartment dynamics. Use MultiCompartmentReaction.')
-        
-        #Recompile all the reactions in C
-        if hasattr(self, '_mult'):
-            rxd._compile_reactions()
 
     
     @property

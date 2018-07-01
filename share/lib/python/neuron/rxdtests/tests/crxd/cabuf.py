@@ -1,4 +1,4 @@
-from neuron import h, rxd, gui
+from neuron import h, crxd as rxd, gui
 from matplotlib import pyplot
 
 # reaction rates
@@ -30,7 +30,7 @@ Ca = rxd.Species(r, name='Ca', d=Dca)
 Buf = rxd.Species(r, name='Buf', d=Db)
 CaBuf = rxd.Species(r, name='CaBuf', d=Dcab)
 
-buffering = rxd.Reaction(Ca[r] + Buf[r], CaBuf[r], kf, kb)
+buffering = rxd.Reaction(Ca + Buf, CaBuf, kf, kb)
 
 
 #
@@ -58,6 +58,9 @@ times.record(h._ref_t)
 #
 # simulate 1 sec
 #
+h.CVode().active(1)
+h.CVode().re_init()
+h.CVode().atol(1e-12)
 h.tstop = 1000
 h.run()
 

@@ -304,7 +304,7 @@ void set_setup_matrices(fptr setup_matrices) {
 }
 
 /* nrn_tree_solve modified from nrnoc/ldifus.c */
-void nrn_tree_solve(double* a, double* b, double* c, double* dbase, double* rhs, int* pindex, int n, double dt) {
+static void nrn_tree_solve(double* a, double* b, double* c, double* dbase, double* rhs, int* pindex, int n, double dt) {
     /*
         treesolver
         
@@ -353,6 +353,7 @@ void nrn_tree_solve(double* a, double* b, double* c, double* dbase, double* rhs,
 	
 	free(d);
 }
+
 
 
 static void ode_solve(double t, double dt, double* p1, double* p2)

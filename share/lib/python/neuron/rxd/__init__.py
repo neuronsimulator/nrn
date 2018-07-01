@@ -1,5 +1,4 @@
 from .rxdException import RxDException
-
 try:
     import scipy
 except:
@@ -7,12 +6,12 @@ except:
 
 from . import rxd
 from .species import Species
-from .region import Region, Extracellular
+from .region import Region
 from .rate import Rate
 from .reaction import Reaction
 from . import geometry
 from .multiCompartmentReaction import MultiCompartmentReaction
-from .rxd import re_init, set_solve_type, nthread
+from .rxd import re_init, set_solve_type, _curr_ptr_vector, _curr_ptr_storage_nrn
 try:
   from . import dimension3
 except:
