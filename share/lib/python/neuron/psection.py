@@ -1,8 +1,7 @@
 def psection(sec):
-    from neuron import h
-    import sys
+    from neuron import h, _has_rxd
     try:
-        if 'neuron.crxd' in sys.modules:
+        if _has_rxd['crxd']:
             from neuron import crxd as rxd
             from neuron.crxd import region, species
             from neuron.crxd import rxd as rxd_module

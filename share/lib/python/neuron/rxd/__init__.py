@@ -1,4 +1,10 @@
 from .rxdException import RxDException
+from .. import _has_rxd 
+if _has_rxd['crxd']:
+    raise RxDException('NEURON RxD module should not be used with CRxD.')
+else:
+   _has_rxd['rxd'] = True
+
 try:
     import scipy
 except:

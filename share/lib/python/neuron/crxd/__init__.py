@@ -1,4 +1,10 @@
 from .rxdException import RxDException
+from .. import _has_rxd 
+if _has_rxd['rxd']:
+    raise RxDException('NEURON CRxD module should not be used with RxD.')
+else:
+   _has_rxd['crxd']  = True
+
 #import sys
 #if 'neuron.rxd' in sys.modules:
 #    raise RxDException('NEURON CRxD module cannot be used with NEURON RxD module.')

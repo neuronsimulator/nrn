@@ -565,6 +565,9 @@ def nrnpy_pr(s):
   sys.stdout.write(s.decode())
   return 0
 
+#flag to prevent both rxd and crxd being used
+_has_rxd = {'rxd':False,'crxd':False}
+
 if not embedded:
   try:
     # nrnpy_pr callback in place of hoc printf
