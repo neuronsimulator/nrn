@@ -307,10 +307,8 @@ def _currents(rhs):
         assert(len(rxd_memb_flux) == len(memb_cur_ptrs))
         assert(len(rxd_memb_flux) == len(memb_cur_charges))
         assert(len(rxd_memb_flux) == len(memb_net_charges))
-        print "_cur_node_indices", _cur_node_indices
         for flux, cur_ptrs, cur_charges, net_charge, i, cur_maps in zip(rxd_memb_flux, memb_cur_ptrs, memb_cur_charges, memb_net_charges, _cur_node_indices, memb_cur_mapped):
             rhs[i] -= net_charge * flux
-            print "%i] %1.4e net_charge %1.4e flux %1.8e" % (i, net_charge, flux, net_charge*flux)
             #import sys
             #sys.exit()
             # TODO: remove this assert when more thoroughly tested
