@@ -874,7 +874,7 @@ def _send_euler_matrix_to_c(nrow, nnonzero, nonzero_i, nonzero_j, nonzero_values
 def _matrix_to_rxd_sparse(m):
     """precondition: assumes m a numpy array"""
     nonzero_i, nonzero_j = zip(*m.keys())
-    nonzero_values = numpy.ascontiguousarray(m.values(), dtype=numpy.float64)
+    nonzero_values = numpy.ascontiguousarray(list(m.values()), dtype=numpy.float64)
 
     # number of rows
     n = m.shape[1]
@@ -890,7 +890,7 @@ def _calculate_diffusion_bases():
     _diffusion_b_base = _numpy_zeros(n, dtype=numpy.double)
     # TODO: the int32 bit may be machine specific
     _diffusion_p = _numpy_array([-1] * n, dtype=numpy.int32)
-    for j in xrange(n):
+    for j in range(n):
         col = _diffusion_matrix[:, j]
         col_nonzero = col.nonzero()
         for i in col_nonzero[0]:
@@ -1186,7 +1186,7 @@ def _compile_reactions():
     from . import rate, multiCompartmentReaction
 
     #Find sets of sections that contain the same regions
-    from region import _c_region
+    from .region import _c_region
     matched_regions = [] # the different combinations of regions that arise in different sections
     for nrnsec in section1d._rxd_sec_lookup.keys():
         set_of_regions = set() # a set of the regions that occur in a given section
