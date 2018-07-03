@@ -41,20 +41,5 @@ int nrn_kinetic_steer(int fun, SparseObj* so, double* rhs, _threadargsproto_) {
     return 0;
 }
 
-// derived from nrn/src/scopmath/euler.c
-// updated for aos/soa layout index
-int euler_thread(int neqn, int* var, int* der, DIFUN fun, _threadargsproto_) {
-    double dt = _nt->_dt;
-    int i;
-
-    /* calculate the derivatives */
-    eulerfun(fun);
-
-    /* update dependent variables */
-    for (i = 0; i < neqn; i++)
-        _p[var[i] * _STRIDE] += dt * (_p[der[i] * _STRIDE]);
-
-    return 0;
-}
 
 }  // namespace coreneuron

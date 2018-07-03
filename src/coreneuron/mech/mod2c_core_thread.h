@@ -112,8 +112,23 @@ extern void _nrn_destroy_sparseobj_thread(SparseObj* so);
 extern int nrn_kinetic_steer(int, SparseObj*, double*, _threadargsproto_);
 #define spfun(arg1, arg2, arg3) nrn_kinetic_steer(arg1, arg2, arg3, _threadargs_);
 
+// derived from nrn/src/scopmath/euler.c
+// updated for aos/soa layout index
 #pragma acc routine seq
-extern int euler_thread(int, int*, int*, EULFUN, _threadargsproto_);
+static inline int euler_thread(int neqn, int* var, int* der, DIFUN fun, _threadargsproto_) {
+    double dt = _nt->_dt;
+    int i;
+
+    /* calculate the derivatives */
+    eulerfun(fun);
+
+    /* update dependent variables */
+    for (i = 0; i < neqn; i++)
+        _p[var[i] * _STRIDE] += dt * (_p[der[i] * _STRIDE]);
+
+    return 0;
+}
+
 #pragma acc routine seq
 extern int derivimplicit_thread(int, int*, int*, DIFUN, _threadargsproto_);
 #pragma acc routine seq
