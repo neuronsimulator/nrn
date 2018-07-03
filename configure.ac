@@ -615,6 +615,7 @@ AC_CONFIG_HEADERS([
 	src/nrnpython/nrnpython_config.h
 ])
 AC_CONFIG_FILES([
+	bin/nrndiagnose.sh
 	src/nrnpython/Makefile
 	src/mswin/nrncygso.sh
 	src/nrnpython/setup.py

@@ -74,6 +74,9 @@ install-exec-hook:
 		cd src/nrnpython ; \
 		$(PYTHON) setup.py install @ac_pysetup@ ;\
 	fi
+	if test "@ac_diagnose@" != "no" ; then \
+		sh bin/nrndiagnose.sh ; \
+	fi
 	echo "leave install-exec-hook in nrn/Makefile.am"
 endif
 

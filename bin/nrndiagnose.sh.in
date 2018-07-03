@@ -1,0 +1,256 @@
+#!/bin/sh
+set -e
+
+# sh nrndiagnose.sh [python]
+
+# Diagnostic tests to verify launch functionality of a NEURON
+# installation. Problems that occur are generally traceable to
+# environment issues that can be fixed with proper
+# PATH, PYTHONPATH, PYTHONHOME, and/or NRN_PYLIB
+
+# filled in by configure
+prefix="@prefix@"
+pysetup='@ac_pysetup@'
+
+# What python are we supposed to use that allows the possibility
+# of import neuron. Need a Python that is consistent with our build.
+# If not dynamic then just use PYTHONCFG. If dynamic there may be
+# multiple acceptable python versions, e.g 2.7, 3.5, 3.6 so look in
+# $prefix/$host_cpu/lib for libnrnpython* and see if there are
+# any consistent versions on this machine
+
+PYTHONBLD="@PYTHON_BLD@" # The python used for 
+PYTHONCFG="@PYTHON@" # The Python from --with_nrnpython or --pyexe
+host_cpu="@host_cpu@"
+host_os="@host_os@"
+NRNPYTHON_DYNAMIC=no
+nrnPYTHONPATH="$prefix/lib/python"
+
+diagnose() {
+  echo "nrnsetpypath failed with the message:"
+  echo "$1"
+  echo "If the information below is not sufficient to help you fix the problem, please send the entire output of this script, 'sh nrndiagnose.sh', to michael.hines@yale.edu."
+
+  echo "prefix=$prefix"
+  echo "nrnversion=$nrnversion"
+  echo "pysetup=$pysetup"
+  echo "setpypath=$setpypath"
+  echo "PYTHONBLD=$PYTHONBLD"
+  echo "PYTHONCFG=$PYTHONCFG"
+  echo "PYTHON=$PYTHON"
+  echo "host_cpu=$host_cpu"
+  echo "host_os=$host_os"
+  echo "NRNPYTHON_DYNAMIC=$NRNPYTHON_DYNAMIC"
+  echo "origPYTHONPATH=$origPYTHONPATH"
+  echo "origPYTHONHOME=$origPYTHONHOME"
+  echo "origNRN_PYLIB=$origNRN_PYLIB"
+  echo "pythonpath_needed=$pythonpath_needed"
+  echo "nrnPYTHONPATH=$nrnPYTHONPATH"
+  echo "neuron.__file__ with no PYTHONPATH: $xxx"
+  echo "neuron.__file__ with nrnPYTHONPATH: $yyy"
+  echo "SHELL=$SHELL"
+  echo "exportstyle1=$exportstyle1"
+  echo "exportstyle2=$exportstyle2"
+  echo "rc=$rc"
+  exit 1
+}
+
+# What is nrniv for this installation and does it run
+NRNIV="$prefix/$host_cpu/bin/nrniv"
+
+if ! $NRNIV -nogui -nopython -c 'quit()' > /dev/null 2>& 1 || false ; then
+  $NRNIV -nogui -nopython -c 'quit()'
+  diagnose "$NRNIV did not run successfully"
+fi
+
+nrnversion=`$NRNIV -nogui -nopython -nobanner -c '{print nrnversion(5) quit()}'`
+
+# Is nrniv in the PATH and is it the same version as $NRNIV
+if which nrniv > /dev/null 2>& 1 && true ; then
+  xxx=`nrniv -nogui -nopython -nobanner -c '{print nrnversion(5) quit()}'`
+  if test "$xxx" != "$nrnversion" || false ; then
+    echo "The version of nrniv in your PATH, `which nrniv` is $xxx but the installed version, $NRNIV, is $nrnversion"
+    echo "You should update your PATH accordingly."
+    exit 1
+  fi
+else
+  echo 'nrniv is not in the PATH. You may wish to add a line like the following to .bashrc (or whatever your shell startup file is called).'
+  echo "export PATH=$prefix/$host_cpu/bin:\$PATH"
+fi
+
+#should python functionality be checked?
+chkpython=yes
+if test "$BUILD_NRNPYTHON_TURE" = "#" ; then
+  chkpython=no
+fi
+
+if test "$chkpython" = "yes" ; then
+
+origPYTHONPATH="$PYTHONPATH"
+origPYTHONHOME="$PYTHONHOME"
+origNRN_PYLIB="$NRN_PYLIB"
+unset PYTHONPATH # pristine, just going to check for runability
+
+# what python is to be used for testing...
+
+PYTHON=""
+if test "@BUILD_NRNPYTHON_DYNAMIC_FALSE@" = "#" ; then
+  NRNPYTHON_DYNAMIC=yes
+  if $PYTHONCFG -c 'quit()' > /dev/null 2>& 1 ; then
+    PYTHON="$PYTHONCFG" #last one built
+  else # python for last one built is not on this machine
+    # try python3 and python
+    if python3 -c 'quit()' > /dev/null 2>& 1 ; then
+      ( export PYTHONPATH=$nrnPYTHONPATH
+        if python3 -c 'import neuron ; quit()' > /dev/nul 2>& 1 ; then
+          PYTHON=python3
+        fi
+      )
+    elif python -c 'quit()' > /dev/null/ 2>& 1 ; then
+      ( export PYTHONPATH=$nrnPYTHONPATH
+        if python -c 'import neuron ; quit()' > /dev/null 2>& 1 ; then
+          PYTHON=python
+        fi
+      )
+    fi
+  fi
+else # not a distribution so built on this machine. Use the configured.
+  if $PYTHONCFG -c 'quit()' > /dev/null 2>& 1 ; then
+    PYTHON="$PYTHONCFG"
+  fi
+fi
+
+if test "$PYTHON" = "" || false ; then
+  diagnose "Cannot find a python on this machine that is consistent with the NEURON build."
+fi
+
+# can $PYTHON import the neuron module of this build?
+unset PYTHONPATH
+# does it work without a PYTHONPATH
+pythonpath_needed='yes'
+if $PYTHON -c 'import neuron ; quit()' > /dev/null 2>& 1 || false ; then
+  xxx=`$PYTHON -c 'import neuron ; print (neuron.h.nrnversion(5)); quit()' 2> /dev/null`
+  if test "$xxx" != "$nrnversion" ; then
+    yyy=`$PYTHON -c 'import neuron ; print (neuron.__file__) ; quit()' 2> /dev/null | sed -n '$s/\/__init__.py//p'`
+    echo "$PYTHON with no PYTHONPATH is importing the wrong neuron module."
+    echo "The wrong module version is $xxx but should be $nrnversion ."
+    echo "The wrong module location is $yyy"
+  else
+    pythonpath_needed='no'
+  fi
+fi
+
+# If origPYTHONPATH, does it work with that?
+if test "$origPYTHONPATH" != "" ; then
+  PYTHONPATH="$origPYTHONPATH"
+  export PYTHONPATH
+  if $PYTHON -c 'import neuron ; quit()' > /dev/null 2>& 1 ; then
+    xxx=`$PYTHON -c 'import neuron ; print (neuron.h.nrnversion(5)); quit()' 2> /dev/null`
+    if test "$xxx" != "$nrnversion" ; then
+      yyy=`$PYTHON -c 'import neuron ; print (neuron.__file__) ; quit()' 2> /dev/null | sed -n '$s/\/__init__.py//p'`
+      echo "$PYTHON with the existing PYTHONPATH is importing the wrong neuron module."
+      echo "The wrong module version is $xxx but should be $nrnversion ."
+      echo "The wrong module location is $yyy"
+    else
+      pythonpath_needed='no'
+    fi
+  fi
+fi
+
+if test "$pythonpath_needed" = 'yes' ; then
+  if test "$pysetup" = '--home=$(prefix)' && true ; then
+    unset PYTHONPATH
+    PYTHONPATH="$nrnPYTHONPATH"
+    export PYTHONPATH
+    if $PYTHON -c 'import neuron ; quit()' > /dev/null 2>& 1 && true; then
+      xxx=`$PYTHON -c 'import neuron ; print (neuron.h.nrnversion(5)); quit()' 2> /dev/null`
+      if test "$xxx" != "$nrnversion" || false ; then
+        echo "$PYTHON with PYTHONPATH=$PYTHONPATH derived from"
+        echo "--enable-pysetup=\'$pysetup\'"
+        echo "is importing version $xxx instead of $nrnversion"
+        diagnose ""
+      else
+        true 
+      fi
+    else
+      echo "$PYTHON with PYTHONPATH=$PYTHONPATH derived from default"
+      echo "--enable-pysetup option '--home=\$(prefix)' does not succeed with"
+      echo "import neuron"
+      diagnose ""
+    fi
+  else
+    echo "This script does not know how to derive a PYTHONPATH for the"
+    echo "non default --enable-pysetup='$pysetup'"
+    diagnose ""
+  fi
+fi
+
+#how about launching nrniv -python
+unset PYTHONPATH
+unset PYTHONHOME
+unset NRN_PYLIB
+
+nrnivlaunch() {
+  if $NRNIV -python -pyexe=$PYTHON -c 'quit()' > /dev/null 2>&1 && true ; then
+    if $NRNIV -python -pyexe=$PYTHON -c 'import neuron ; quit()' > /dev/null 2>&1 && true ; then
+      xxx=`$NRNIV -python -pyexe=$PYTHON -c 'import neuron ; print (neuron.h.nrnversion(5)); quit()' 2> /dev/null`
+      if test "$xxx" != "$nrnversion" || false ; then
+        echo "$1"
+        echo "$NRNIV -python -pyexe=$PYTHON -c 'import neuron'"
+        echo "is importing version $xxx instead of $nrnversion"
+        diagnose ""
+      fi
+    else
+      echo "$1"
+      echo "$NRNIV -python -pyexe=$PYTHON -c 'import neuron' gives"
+      $NRNIV -python -pyexe=$PYTHON -c 'import neuron ; quit()' || true
+      diagnose "could not successfully import neuron"
+    fi
+  else
+    echo "$1"
+    echo "$NRNIV -python -pyexe=$PYTHON gives"
+    $NRNIV -python -pyexe=$PYTHON -c 'quit()' || true
+    diagnose ""
+  fi
+}
+nrnivlaunch "With no PYTHONHOME or NRN_PYLIB"
+if test "$origPYTHONHOME" != "" -o "$origNRN_PYLIB" != "" ; then
+  PYTHONHOME=$origPYTHONHOME
+  NRNPY_LIB=$origNRN_PYLIB
+  export PYTHONHOME
+  export NRN_PYLIB
+  nrnivlaunch "With original PYTHONHOME=$PYTHONHOME and NRN_PYLIB=$NRN_PYLIB"
+fi
+
+PYTHONPATH="$nrnPYTHONPATH"
+export PYTHONPATH
+if ! $PYTHON -c 'import neuron ; quit()' > /dev/null 2>&1 || false ; then
+  diagnose "$PYTHON with \$PYTHONPATH=${PYTHONPATH} cannot import neuron"
+fi
+
+#which login shell
+case "$SHELL" in
+  */bash )
+    exportstyle1="export"
+    exportstyle2="="
+    if test -f "$HOME/.bashrc" ; then
+      rc="$HOME/.bashrc"
+    elif test -f "$HOME/.bash_profile" ; then
+      rc="$HOME/.bash_profile"
+    fi
+    ;;
+esac
+if test "$rc" = "" || false ; then
+    diagnose "Do not know where or how to set environment for SHELL=$SHELL"
+fi
+
+if test "$pythonpath_needed" = "yes" ; then
+  echo "For successful \"$PYTHON -c 'import neuron ; quit()\" you need"
+  orig=""
+  if test "$origPYTHONPATH" != "" ; then
+    orig=':$PYTHONPATH'
+  fi
+  echo "$exportstyle1 PYTHONPATH${exportstyle2}${nrnPYTHONPATH}${orig}"
+fi
+
+fi # chkpython

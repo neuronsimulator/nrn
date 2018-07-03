@@ -1,7 +1,7 @@
 #!/bin/bash
 set -ex
 # distribution built with
-#sh bldnrnmach.sh python3.6 python
+#sh bldnrnmacpkg.sh python3.6 python
 
 #10.7 possible if one builds with pythons that are consisent with that.
 export MACOSX_DEPLOYMENT_TARGET=10.9

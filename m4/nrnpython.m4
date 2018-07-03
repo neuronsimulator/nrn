@@ -71,6 +71,15 @@ AC_DEFUN([AC_NRN_PYTHON],[
 	npy_apiver=""
 	npy_pyver10=""
 
+	AC_ARG_WITH([nrnpython],
+		AC_HELP_STRING([--with-nrnpython=[desired python binary or 'dynamic']],
+			[Python interpreter can be used (default is NO)
+Probably need to set PYLIBDIR to find libpython...
+and PYINCDIR to find Python.h
+]),
+		[ac_nrn_python="$withval"], [ac_nrn_python=no]
+	)
+
 	AC_ARG_ENABLE([pysetup],
 		AC_HELP_STRING([--enable-pysetup=[installoption]],
  [Execute '$(PYTHON) setup.py install installoption' as the last
@@ -84,15 +93,13 @@ The default installoption is '--home=<prefix>']
 	if test "$ac_pysetup" = "yes" ; then
 		ac_pysetup='--home=$(prefix)'
 	fi
-
-	AC_ARG_WITH([nrnpython],
-		AC_HELP_STRING([--with-nrnpython=[desired python binary or 'dynamic']],
-			[Python interpreter can be used (default is NO)
-Probably need to set PYLIBDIR to find libpython...
-and PYINCDIR to find Python.h
+	AC_ARG_ENABLE([diagnose],
+		AC_HELP_STRING([--enable-diagnose],
+[At end of installation, run nrndiagnose.sh to verify basic launch
+functionality.
 ]),
-		[ac_nrn_python="$withval"], [ac_nrn_python=no]
-	)
+		[ac_diagnose=$enableval], [ac_diagnose="no"])
+
 	AM_CONDITIONAL(NRN_PYTHON_ON, test x$ac_nrn_python != xno)
 	nrn_temp_cflags="$CFLAGS"
 	AC_ARG_ENABLE([cygwin],
@@ -115,7 +122,6 @@ and PYINCDIR to find Python.h
 	if test "$ac_nrn_python" = "yes" ; then
 		ac_nrn_python="$ac_nrn_pyexe"
 	fi
-
 
 	if test "$ac_nrn_python" = "dynamic" ; then
 		ac_nrn_python="$ac_nrn_pyexe"
@@ -288,6 +294,7 @@ PYLIB="${PYLIBLINK} ${PYLINKFORSHARED} -R${PYLIBDIR}"
 	fi
 
 	AC_SUBST(ac_pysetup)
+	AC_SUBST(ac_diagnose)
 	AC_SUBST(NRNPYTHON_LIBLA)
 	AC_SUBST(NRNPYTHON_LIBS)
 	AC_SUBST(NRNPYTHON_DEP)
