@@ -216,7 +216,8 @@ class MultiCompartmentReaction(GeneralizedReaction):
                 inside = -1 # 'source'
             else:
                 raise RxDException('unable to identify which side of reaction is inside (hope to remove the need for this')
-        
+        if sources_ecs or dests_ecs:
+            inside *= -1
         # dereference the species to get the true species if it's actually a SpeciesOnRegion
         sources = [s()._species() for s in self._sources]
         dests = [d()._species() for d in self._dests]

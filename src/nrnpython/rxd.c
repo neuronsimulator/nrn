@@ -286,7 +286,6 @@ static void mul(int nrow, int nnonzero, long* nonzero_i, long* nonzero_j, const 
     {
         for (k =0; k < _curr_count; k++)
             result[_curr_indices[k]] += _curr_scales[k] * (*_curr_ptrs[k]->u.px_);
-
 	}
 }
 
@@ -578,11 +577,12 @@ static void _currents(double* rhs)
     for(i=0, k = 0; i < _memb_count; i++)
     {
         idx = _cur_node_indices[i];
+        
         rhs[idx] -= _memb_net_charges[i] * _rxd_induced_flux[i];
         for(j=0; j < _memb_species_count[i]; j++, k++)
         {
-           
             current = (double)_memb_cur_charges[i][j] * _rxd_induced_flux[i];
+            
             *(_memb_cur_ptrs[i][j]->u.px_) += current;  
 
             for(side = 0; side < 2; side++)
@@ -590,13 +590,11 @@ static void _currents(double* rhs)
                 if(_memb_cur_mapped[i][j][side] == SPECIES_ABSENT)
                 {
                         /*Extracellular region is within the ECS grid*/ 
-                        _rxd_induced_currents_ecs[k] = current;
-                        *(_memb_cur_ptrs[i][j]->u.px_) -= 2.0*current;  
+                        _rxd_induced_currents_ecs[k] -= current;
                 }
                 else
                 {
                         _rxd_induced_currents[_memb_cur_mapped[i][j][side]] += current;
- 
                 }
             }
         }
