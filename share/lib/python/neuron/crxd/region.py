@@ -13,7 +13,6 @@ from . import initializer
 import warnings
 import math
 import ctypes
-from . import species
 
 _all_regions = []
 _region_count = 0
