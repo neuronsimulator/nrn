@@ -44,12 +44,12 @@ def _neg(objs):
 
 def analyze_reaction(r):
     if not isinstance(r, _Reaction):
-        print('%r is not a reaction' % r)
+        print(('%r is not a reaction' % r))
     else:
-        print('%r is a reaction:' % r)
-        print('   lhs: ', ', '.join('%s[%d]' % (sp, c) for sp, c in zip(list(r._lhs._items.keys()), list(r._lhs._items.values()))))
-        print('   rhs: ', ', '.join('%s[%d]' % (sp, c) for sp, c in zip(list(r._rhs._items.keys()), list(r._rhs._items.values()))))
-        print('   dir: ', r._dir)
+        print(('%r is a reaction:' % r))
+        print(('   lhs: ', ', '.join('%s[%d]' % (sp, c) for sp, c in zip(list(r._lhs._items.keys()), list(r._lhs._items.values())))))
+        print(('   rhs: ', ', '.join('%s[%d]' % (sp, c) for sp, c in zip(list(r._rhs._items.keys()), list(r._rhs._items.values())))))
+        print(('   dir: ', r._dir))
         
 # TODO: change this so that inputs are all automatically converted to numpy.array(s)
 #_compile is called by the reaction (Reaction._update_rates)
@@ -67,12 +67,12 @@ def _compile(arith, extracellular=None):
         species_dict = {}
         s = str(arith)
 
-    all_names = ['numpy', 'rxdmath'] + species_dict.keys()
+    all_names = ['numpy', 'rxdmath'] + list(species_dict.keys())
     command = 'lambda %s: %s ' % (', '.join(all_names), s)
-    species_index = [int(''.join(x for x in r if x.isdigit())) for r in species_dict.keys()]
+    species_index = [int(''.join(x for x in r if x.isdigit())) for r in list(species_dict.keys())]
     #C-version
     #Get the index rather than the key
-    return (s, species_dict.values())
+    return (s, list(species_dict.values()))
     #(functools.partial(eval(command), numpy, sys.modules[__name__]), species_dict.values())
 
 
@@ -116,7 +116,7 @@ class _Function:
 
     def _ensure_extracellular(self, extracellular = None):
         if extracellular:
-            import species
+            from . import species
             item = self._obj 
             if isinstance(item,species.Species):
                 ecs_species = item[extracellular]._extracellular()
@@ -147,7 +147,7 @@ class _Function2:
 
     def _ensure_extracellular(self, extracellular = None):
         if extracellular:
-            import species 
+            from . import species 
             for item in [self._obj1, self._obj2]:
                 if isinstance(item,species.Species):
                     ecs_species = item[extracellular]._extracellular()
@@ -251,7 +251,7 @@ class _Product:
     #_grid_id and not the species _id
     def _ensure_extracellular(self, extracellular = None):
         if extracellular:
-            import species 
+            from . import species 
             for item in [self._a, self._b]:
                 if isinstance(item,species.Species):
                     ecs_species = item[extracellular]._extracellular()
@@ -277,7 +277,7 @@ class _Quotient:
     #_grid_id and not the species _id
     def _ensure_extracellular(self, extracellular = None):
         if extracellular:
-            import species 
+            from . import species 
             for item in [self._a, self._b]:
                 if isinstance(item,species.Species):
                     ecs_species = item[extracellular]._extracellular()
@@ -332,8 +332,8 @@ class _Arithmeticed:
     #_grid_id and not the species _id
     def _ensure_extracellular(self, extracellular = None):
         if extracellular and hasattr(self,'_items'):
-            import species 
-            for item, count in zip(self._items.keys(), self._items.values()):
+            from . import species 
+            for item, count in zip(list(self._items.keys()), list(self._items.values())):
                 if count:
                     if isinstance(item,species.Species):
                         ecs_species = item[extracellular]._extracellular()

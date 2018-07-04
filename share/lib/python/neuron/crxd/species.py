@@ -355,10 +355,10 @@ def _xyz(seg):
     # TODO: this is very inefficient, especially since we're calling this for each segment not for each section; fix
     sec = seg.sec
     n3d = int(h.n3d(sec=sec))
-    x3d = [h.x3d(i, sec=sec) for i in xrange(n3d)]
-    y3d = [h.y3d(i, sec=sec) for i in xrange(n3d)]
-    z3d = [h.z3d(i, sec=sec) for i in xrange(n3d)]
-    arc3d = [h.arc3d(i, sec=sec) for i in xrange(n3d)]
+    x3d = [h.x3d(i, sec=sec) for i in range(n3d)]
+    y3d = [h.y3d(i, sec=sec) for i in range(n3d)]
+    z3d = [h.z3d(i, sec=sec) for i in range(n3d)]
+    arc3d = [h.arc3d(i, sec=sec) for i in range(n3d)]
     return numpy.interp([seg.x * sec.L], arc3d, x3d)[0], numpy.interp([seg.x * sec.L], arc3d, y3d)[0], numpy.interp([seg.x * sec.L], arc3d, z3d)[0]
 
 
@@ -515,7 +515,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
         grid_indices = []
         neuron_pointers = []
         stateo = '_ref_' + self._species + 'o'
-        for sec, indices in self._seg_indices.iteritems():
+        for sec, indices in self._seg_indices.items():
             for seg, i in zip(sec, indices):
                 if i is not None:
                     grid_indices.append(i)
@@ -527,7 +527,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
         ispecies = '_ref_i' + self._species
         neuron_pointers = []
         scale_factors = []
-        for sec, indices in self._seg_indices.iteritems():
+        for sec, indices in self._seg_indices.items():
             for seg, surface_area, i in zip(sec, _surface_areas1d(sec), indices):
                 if i is not None:
                     neuron_pointers.append(seg.__getattribute__(ispecies))
@@ -713,7 +713,7 @@ class Species(_SpeciesMathable):
                         _3doffset = node._allocate(len(xs))
                     self._3doffset_by_region[r] = _3doffset
                     
-                    for i, x, y, z, seg in zip(range(len(xs)), xs, ys, zs, segs):
+                    for i, x, y, z, seg in zip(list(range(len(xs))), xs, ys, zs, segs):
                         self._nodes.append(node.Node3D(i + _3doffset, x, y, z, r, seg, selfref))
                     # the region is now responsible for computing the correct volumes and surface areas
                         # this is done so that multiple species can use the same region without recomputing it
@@ -728,9 +728,9 @@ class Species(_SpeciesMathable):
         self._extracellular_instances = [_ExtracellularSpecies(r, d=self._d, name=self.name, charge=self.charge, initial=self.initial, boundary_conditions=self._ecs_boundary_conditions) for r in self._extracellular_regions]
         sp_ref = weakref.ref(self)
         for r in self._extracellular_regions:
-            for i in xrange(r._nx):
-                for j in xrange(r._ny):
-                    for k in xrange(r._nz):
+            for i in range(r._nx):
+                for j in range(r._ny):
+                    for k in range(r._nz):
                         self._extracellular_nodes.append(node.NodeExtracellular((i * r._ny + j) * r._nz + k, i, j, k, r, sp_ref, weakref.ref(r)))
            
     
@@ -1001,7 +1001,7 @@ class Species(_SpeciesMathable):
                             continue
                         indices.append(local_indices[i])
                         if volumes[i + offset] == 0:
-                            print('0 volume at position %d; surface area there: %g' % (i + offset, surface_area[i + offset]))
+                            print(('0 volume at position %d; surface area there: %g' % (i + offset, surface_area[i + offset])))
                         scales.append(sign * tenthousand_over_charge_faraday * surface_area[i + offset] / volumes[i + offset])
                         ptrs.append(seg.__getattribute__(ion_curr))
 

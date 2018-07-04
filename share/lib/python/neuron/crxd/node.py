@@ -615,7 +615,7 @@ class NodeExtracellular(Node):
     @d.setter
     def d(self, value):
         """Sets the diffusion rate within the compartment."""
-        import rxd
+        from . import rxd
         # TODO: Replace zero with Parallel_grids id (here an in insert call)
         if hasattr(value,'__len__'):
             set_diffusion(0,self._speciesref()._grid_id, value[0], value[1], value[2])

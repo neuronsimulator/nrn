@@ -873,7 +873,7 @@ def _send_euler_matrix_to_c(nrow, nnonzero, nonzero_i, nonzero_j, nonzero_values
 
 def _matrix_to_rxd_sparse(m):
     """precondition: assumes m a numpy array"""
-    nonzero_i, nonzero_j = zip(*m.keys())
+    nonzero_i, nonzero_j = list(zip(*list(m.keys())))
     nonzero_values = numpy.ascontiguousarray(list(m.values()), dtype=numpy.float64)
 
     # number of rows
@@ -1188,7 +1188,7 @@ def _compile_reactions():
     #Find sets of sections that contain the same regions
     from .region import _c_region
     matched_regions = [] # the different combinations of regions that arise in different sections
-    for nrnsec in section1d._rxd_sec_lookup.keys():
+    for nrnsec in list(section1d._rxd_sec_lookup.keys()):
         set_of_regions = set() # a set of the regions that occur in a given section
         for sec in section1d._rxd_sec_lookup[nrnsec]:
             if sec(): set_of_regions.add(sec()._region)
@@ -1211,9 +1211,9 @@ def _compile_reactions():
         if isinstance(r,rate.Rate):
             if not r._species():
                 continue
-            sptrs = set(r._involved_species + [r._species])
+            sptrs = set(list(r._involved_species) + [r._species])
         else:
-            sptrs  = set(r._involved_species + r._dests + r._sources)
+            sptrs  = set(list(r._involved_species) + r._dests + r._sources)
         
         #Find all the regions involved
         if isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
@@ -1252,11 +1252,11 @@ def _compile_reactions():
             for reg in react_regions:
                 if isinstance(reg, region.Extracellular):
                     continue
-                if reg in regions_inv.keys():
+                if reg in regions_inv:
                     regions_inv[reg].append(rptr)
                 else:
                     regions_inv[reg] = [rptr]
-                if reg in species_by_region.keys():
+                if reg in species_by_region:
                     species_by_region[reg] = species_by_region[reg].union(species_involved)
                 else:
                     species_by_region[reg] = set(species_involved)
@@ -1273,7 +1273,7 @@ def _compile_reactions():
                     elif isinstance(s,species.SpeciesOnExtracellular):
                         ecs_mc_species_involved.add(s._extracellular())
                 for reg in react_regions:
-                    if reg in ecs_species_by_region.keys():
+                    if reg in list(ecs_species_by_region.keys()):
                         ecs_species_by_region[reg] = ecs_species_by_region[reg].union(ecs_mc_species_involved)
                     else:
                         ecs_species_by_region[reg] = set(ecs_mc_species_involved)
@@ -1290,11 +1290,11 @@ def _compile_reactions():
                     if not isinstance(reg, region.Extracellular):
                         continue
 
-                    if reg in ecs_regions_inv.keys():
+                    if reg in ecs_regions_inv:
                         ecs_regions_inv[reg].append(rptr)
                     else:
                         ecs_regions_inv[reg] = [rptr]
-                    if reg in ecs_species_by_region.keys():
+                    if reg in ecs_species_by_region:
                         ecs_species_by_region[reg] = ecs_species_by_region[reg].union(ecs_species_involved)
                     else:
                         ecs_species_by_region[reg] = set(ecs_species_involved)
@@ -1303,13 +1303,13 @@ def _compile_reactions():
     nseg_by_region = []     # a list of the number of segments for each region
     # a table for location,species -> state index
     location_index = []
-    for reg in regions_inv.keys():
+    for reg in regions_inv:
         rptr = weakref.ref(reg)
         for c_region in region._c_region_lookup[rptr]:
             for react in regions_inv[reg]:
                 c_region.add_reaction(react,regions_inv[reg])
                 c_region.add_species(species_by_region[reg])
-                if ecs_species_by_region.has_key(reg):
+                if reg in ecs_species_by_region:
                     c_region.add_ecs_species(ecs_species_by_region[reg])
 
     # now setup the reactions
@@ -1331,11 +1331,11 @@ def _compile_reactions():
             fxn_string += '#include <rxdmath.h>\n'
             fxn_string += 'void reaction(double** species, double** rhs, double* mult, double** species_ecs, double** rhs_ecs)\n{'
             # declare the "rate" variable if any reactions (non-rates)
-            for rprt in creg._react_regions.keys():
+            for rprt in list(creg._react_regions.keys()):
                 if not isinstance(rprt(),rate.Rate):
                     fxn_string += '\n\tdouble rate;'
                     break
-            for rptr in  creg._react_regions.keys():
+            for rptr in  list(creg._react_regions.keys()):
                 r = rptr()
                 if isinstance(r,rate.Rate):
                     s = r._species()
@@ -1416,12 +1416,12 @@ def _compile_reactions():
         #It is necessary for a couple of function in python that are not in math.h
         fxn_string += 'void reaction(double* species_ecs, double* rhs)\n{'
         # declare the "rate" variable if any reactions (non-rates)
-        for rptr in [r for rlist in ecs_regions_inv.values() for r in rlist]:
+        for rptr in [r for rlist in list(ecs_regions_inv.values()) for r in rlist]:
             if not isinstance(rptr(),rate.Rate):
                 fxn_string += '\n\tdouble rate;'
                 break
         #get a list of all grid_ids invovled
-        for rptr in [r for rlist in ecs_regions_inv.values() for r in rlist]:
+        for rptr in [r for rlist in list(ecs_regions_inv.values()) for r in rlist]:
             if isinstance(rptr(),rate.Rate):
                 for sp in [rptr()._species] + rptr()._involved_species_ecs:
                     s = sp()[reg]._extracellular() if isinstance(sp(), species.Species) else sp()
@@ -1431,7 +1431,7 @@ def _compile_reactions():
                     s = sp()[reg]._extracellular() if isinstance(sp(), species.Species) else sp()
                     all_gids.add(sp()._extracellular()._grid_id if isinstance(s, species.SpeciesOnExtracellular) else s._grid_id)
         all_gids = list(all_gids)
-        for reg in ecs_regions_inv.keys():
+        for reg in ecs_regions_inv:
             for rptr in ecs_regions_inv[reg]:
                 r = rptr()
                 rate_str = re.sub(r'species_ecs\[(\d+)\]',lambda m: "species_ecs[%i]" %  [pid for pid,gid in enumerate(all_gids) if gid == int(m.groups()[0])][0], r._rate_ecs)

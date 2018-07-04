@@ -261,7 +261,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
                             uberlocal_map[0] = cur_map[spname + 'i'][seg]
                         if spname + 'o' in cur_map:
                                     #Original rxd extracellular region
-                            if cur_map[spname + 'o'].has_key(seg):
+                            if seg in cur_map[spname + 'o']:
                                 uberlocal_map[1] = cur_map[spname + 'o'][seg]
                             else:   #Extracellular space
                                 uberlocal_map_ecs[0] = ecs_grids[spname]      #TODO: Just pass the grid_id once per species

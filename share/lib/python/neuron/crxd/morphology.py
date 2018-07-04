@@ -118,17 +118,17 @@ def main():
     # now try it our way
     morph = MorphologyDB()
     for sec in s:
-        print(sec.name() + ':')
-        print('  children:', ', '.join(child.name() for child in morph.children(sec)))
-        print('  parent:', morph.parent(sec).name() if morph.parent(sec) is not None else 'None')
+        print((sec.name() + ':'))
+        print(('  children:', ', '.join(child.name() for child in morph.children(sec))))
+        print(('  parent:', morph.parent(sec).name() if morph.parent(sec) is not None else 'None'))
     
     conns = morph.connections([s[i] for i in [2, 3, 4, 5, 6, 7, 9, 10, 11, 12]])
     for p1, p2 in conns:
-        print('%s(%g)    %s(%g)' % (p1[0].name(), p1[1], p2[0].name(), p2[1]))
+        print(('%s(%g)    %s(%g)' % (p1[0].name(), p1[1], p2[0].name(), p2[1])))
     
     print()
     print()
-    print('roots:', morph.roots)
+    print(('roots:', morph.roots))
     return 0
     
 if __name__ == '__main__':

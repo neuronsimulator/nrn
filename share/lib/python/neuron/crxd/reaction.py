@@ -108,7 +108,7 @@ class Reaction(GeneralizedReaction):
         self._dests = ref_list_with_mult(rhs)
         
         #Check to if it is an extracellular reaction
-        import region, species
+        from . import region, species
         #Was an ECS region was passed to to the constructor 
         ecs_region = [r for r in self._regions if isinstance(r, region.Extracellular)]
         ecs_region = ecs_region[0] if len(ecs_region) > 0 else None

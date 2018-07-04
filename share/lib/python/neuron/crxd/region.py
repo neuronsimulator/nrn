@@ -56,7 +56,7 @@ class _c_region:
         for r in self._regions:
             self._overlap.intersection(r._secs)
             rptr = weakref.ref(r)
-            if rptr in _c_region_lookup.keys():
+            if rptr in list(_c_region_lookup.keys()):
                 _c_region_lookup[rptr].append(self)
             else:
                 _c_region_lookup[rptr] = [self]
@@ -66,7 +66,7 @@ class _c_region:
         self._initialized = False
 
     def add_species(self,species_set):
-        from . species import SpeciesOnRegion
+        from .species import SpeciesOnRegion
         for s in species_set:
             if isinstance(s,SpeciesOnRegion):
                 self._react_species.add(s._species())
@@ -97,7 +97,7 @@ class _c_region:
     def get_ecs_species_ids(self):
         ret = numpy.ndarray(self.num_ecs_species,ctypes.c_int)
         if self.num_ecs_species > 0:
-            for i in self._ecs_species_ids.keys():
+            for i in list(self._ecs_species_ids.keys()):
                 ret[self._ecs_species_ids[i]] = i
         return ret
     def _ecs_initalize(self):
@@ -105,12 +105,12 @@ class _c_region:
 
         #Set the local ids of the regions and species involved in the reactions
         self._ecs_species_ids = dict()
-        for sid, s in zip(xrange(self.num_ecs_species), self._ecs_react_species):   
+        for sid, s in zip(list(range(self.num_ecs_species)), self._ecs_react_species):   
             self._ecs_species_ids[sid]= s._grid_id
 
         #Setup the matrix to the ECS grid points
-        for rid,r in zip(xrange(self.num_regions), self._regions):
-            for sid, s in zip(xrange(self.num_ecs_species), self._ecs_react_species):
+        for rid,r in zip(list(range(self.num_regions)), self._regions):
+            for sid, s in zip(list(range(self.num_ecs_species)), self._ecs_react_species):
                 seg_idx = 0
                 for sec in self._overlap:
                        for seg in sec:
@@ -120,23 +120,23 @@ class _c_region:
         self.ecs_location_index = self.ecs_location_index.transpose()
 
     def _initalize(self):
-        from . species import Species
+        from .species import Species
         self.location_index = -numpy.ones((self.num_regions,self.num_species,self.num_segments),ctypes.c_int)
-        from . species import SpeciesOnExtracellular, SpeciesOnRegion
+        from .species import SpeciesOnExtracellular, SpeciesOnRegion
         
         #Set the local ids of the regions and species involved in the reactions
         self._species_ids = dict()
         self._region_ids = dict()
         
-        for rid,r in zip(xrange(len(self._regions)), self._regions):  
+        for rid,r in zip(list(range(len(self._regions))), self._regions):  
             self._region_ids[r._id] = rid
-        for sid, s in zip(xrange(self.num_species), self._react_species):
+        for sid, s in zip(list(range(self.num_species)), self._react_species):
             self._species_ids[s._id] = sid
             
         
         #Setup the array to the state index 
-        for rid,r in zip(xrange(self.num_regions), self._regions):
-            for sid, s in zip(xrange(self.num_species), self._react_species):
+        for rid,r in zip(list(range(self.num_regions)), self._regions):
+            for sid, s in zip(list(range(self.num_species)), self._react_species):
                 indices = s.indices(r)
                 try:
                     if indices == []:
@@ -195,9 +195,9 @@ class Extracellular:
             self.alpha = alpha
         elif callable(volume_fraction):
             alpha = numpy.ndarray((self._nx, self._ny, self._nz))
-            for i in xrange(self._nx):
-                for j in xrange(self._ny):
-                    for k in xrange(self._nz):
+            for i in range(self._nx):
+                for j in range(self._ny):
+                    for k in range(self._nz):
                         alpha[i,j,k] = volume_fraction(self._xlo + i*self._dx[0], self._ylo + j*self._dx[1], self._zlo + k*self._dx[2])
                 self.alpha = alpha
                 self._alpha = h.Vector(alpha.flatten())
@@ -217,9 +217,9 @@ class Extracellular:
             self.tortuosity = tortuosity
         elif callable(tortuosity):
             self.tortuosity = numpy.ndarray((self._nx,self._ny,self._nz))
-            for i in xrange(self._nx):
-                for j in xrange(self._ny):
-                    for k in xrange(self._nz):
+            for i in range(self._nx):
+                for j in range(self._ny):
+                    for k in range(self._nz):
                         self.tortuosity[i,j,k] = tortuosity(self._xlo + i*self._dx[0], self._ylo + j*self._dx[1], self._zlo + k*self._dx[2])
             self._tortuosity = h.Vector(self.tortuosity.flatten())
         else:

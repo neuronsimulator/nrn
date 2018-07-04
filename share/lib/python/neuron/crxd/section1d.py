@@ -57,7 +57,7 @@ class Section1D(rxdsection.RxDSection):
         self._region = r
         # NOTE: you must do _init_diffusion_rates after assigning parents
         global _rxd_sec_lookup
-        if sec in _rxd_sec_lookup.keys():
+        if sec in list(_rxd_sec_lookup.keys()):
             _rxd_sec_lookup[sec].append(weakref.ref(self))
         else:
             _rxd_sec_lookup[sec] = [weakref.ref(self)]
@@ -106,7 +106,7 @@ class Section1D(rxdsection.RxDSection):
     def _transfer_to_legacy(self):
         states = node._get_states()
         if self._concentration_ptrs is not None:
-            for i, ptr in zip(range(self._offset, self._offset + self.nseg), self._concentration_ptrs):
+            for i, ptr in zip(list(range(self._offset, self._offset + self.nseg)), self._concentration_ptrs):
                 ptr[0] = states[i]
         
     def _register_cptrs(self):
@@ -162,7 +162,7 @@ class Section1D(rxdsection.RxDSection):
                 g[io, io + 1] -= rate_r
                 g[io, il] -= rate_l
             except IndexError:
-                print('indexerror: g.shape = %r, io = %r, il = %r, len(node._states) = %r' % (g.shape, io, il, len(node._states)))
+                print(('indexerror: g.shape = %r, io = %r, il = %r, len(node._states) = %r' % (g.shape, io, il, len(node._states))))
                 raise
             # TODO: verify that these are correct
             if i == 0:
@@ -184,7 +184,7 @@ class Section1D(rxdsection.RxDSection):
         """imports concentration from NEURON; else 0s it if not in NEURON"""
         states = node._get_states()
         if self.nrn_region is not None and self.species.name is not None:
-            for i, ptr in zip(range(self._offset, self._offset + self.nseg), self._concentration_ptrs):
+            for i, ptr in zip(list(range(self._offset, self._offset + self.nseg)), self._concentration_ptrs):
                 states[i] = ptr[0]
 
         elif init:

@@ -60,7 +60,7 @@ class Rate(GeneralizedReaction):
         self._update_indices()
 
         #Check to if it is an extracellular reaction
-        import region, species
+        from . import  region, species
         #Was an ECS region was passed to to the constructor 
         ecs_region = [r for r in self._regions if isinstance(r, region.Extracellular)]
         ecs_region = ecs_region[0] if len(ecs_region) > 0 else None
@@ -114,7 +114,7 @@ class Rate(GeneralizedReaction):
 
         active_secs = None 
         # locate the regions containing all species (including the one that changes)
-        active_regions = list(set.intersection(*[set(sptr()._regions if isinstance(sptr(),species.Species) else [sptr()._region()]) for sptr in self._involved_species + [self._species]]))
+        active_regions = list(set.intersection(*[set(sptr()._regions if isinstance(sptr(),species.Species) else [sptr()._region()]) for sptr in list(self._involved_species) + [self._species]]))
         sp_regions = self._species()._regions if isinstance(self._species(),species.Species) else [self._species()._region()]
         actr = sp_regions
         if self._regions != [None]:
@@ -129,7 +129,7 @@ class Rate(GeneralizedReaction):
         #e.g. for Rate(A, B+C) if A sections [1,2,3] and B is on sections [1,2] and C is on sections [2,3]
         #The Rate will only effect A on section 2 (rather than have 3 different rates)
         if not active_regions:  #They do not share a common region
-            if any(isinstance(sptr(),species.Species) for sptr in self._involved_species + [self._species]):
+            if any(isinstance(sptr(),species.Species) for sptr in list(self._involved_species) + [self._species]):
                 for sptr in self._involved_species:
                     self._indices_dict[sptr()] = []
                 return
