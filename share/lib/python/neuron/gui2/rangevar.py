@@ -1,5 +1,12 @@
-from neuron import h
-from neuron.rxd import species
+from neuron import h, _has_rxd
+try:
+    if _has_rxd['crxd']:
+        from neuron.crxd import species
+    else:
+        from neuron.rxd import species
+    have_rxd = True
+except:
+  have_rxd = False
 
 
 def get_mech_names():
@@ -64,7 +71,6 @@ def _get_ptrs(plot_what):
         # TODO: this probably won't work well with 3D nodes
         sp = plot_what['species']
         region = plot_what['region']
-        from neuron.rxd import species
         for s in species._all_species:
             s = s()
             if s is None: continue
@@ -120,19 +126,20 @@ def _section_var(name):
 def get_rxd_vars(secs):
     # TODO: filter by sections present
     result = []
-    for sp in species._all_species:
-        sp = sp()
-        if sp is not None and sp.name is not None:
-            regions = sp._regions
-            if hasattr(regions, '__len__'):
-                regions = list(regions)
-            else:
-                regions = list([regions])
-            result += [{'type': 'NEURONRXD',
-                        'name': '%s[%s]' % (sp.name, r._name),
-                        'species': sp.name,
-                        'region': r._name}
-                         for r in regions if r._name is not None]
+    if have_rxd:
+        for sp in species._all_species:
+            sp = sp()
+            if sp is not None and sp.name is not None:
+                regions = sp._regions
+                if hasattr(regions, '__len__'):
+                    regions = list(regions)
+                else:
+                    regions = list([regions])
+                result += [{'type': 'NEURONRXD',
+                            'name': '%s[%s]' % (sp.name, r._name),
+                            'species': sp.name,
+                            'region': r._name}
+                             for r in regions if r._name is not None]
     return result
 
 
