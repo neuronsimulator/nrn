@@ -66,7 +66,7 @@ class _c_region:
         self._initialized = False
 
     def add_species(self,species_set):
-        from species import SpeciesOnRegion
+        from . species import SpeciesOnRegion
         for s in species_set:
             if isinstance(s,SpeciesOnRegion):
                 self._react_species.add(s._species())
@@ -120,9 +120,9 @@ class _c_region:
         self.ecs_location_index = self.ecs_location_index.transpose()
 
     def _initalize(self):
-        from species import Species
+        from . species import Species
         self.location_index = -numpy.ones((self.num_regions,self.num_species,self.num_segments),ctypes.c_int)
-        from species import SpeciesOnExtracellular, SpeciesOnRegion
+        from . species import SpeciesOnExtracellular, SpeciesOnRegion
         
         #Set the local ids of the regions and species involved in the reactions
         self._species_ids = dict()
