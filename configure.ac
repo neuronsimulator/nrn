@@ -242,7 +242,7 @@ AC_CHECK_LIBM
 LIBS="$LIBS $LIBM"
 
 dnl Python that runs on the build machine needed to create hocusr.h
-AC_CHECK_PROG(PYTHON_BLD, python, python, python3)
+AC_CHECK_PROGS(PYTHON_BLD, python3 python, python3)
 
 dnl Python for cygwin and mingw has to be done early because later tests may
 dnl have to be done with a CFLAGS="-mno-cygwin" (obsolete after gcc2.3)
@@ -254,14 +254,8 @@ dnl Otherwise, to make a distribution, need to modify
 dnl src/neuronmusic/Makefile.am and remove neuronmusic.cpp from the list
 dnl of extra dist files.
 dnl Also needed for neuron.rxd.geometry3d module
-if test "x$have_cython" != "xno" ; then
-  AC_CHECK_PROG(have_cython, cython, yes, no)
-  if test "x$have_cython" = "xno" ; then
-    AC_CHECK_PROG(have_cython, cython3, yes, no)
-  fi
-fi
-AC_CHECK_PROG(CYTHON, cython, cython, cython3)
-AM_CONDITIONAL(HAVE_CYTHON, test x$have_cython = xyes)
+AC_CHECK_PROGS(CYTHON, cython3 cython, "no")
+AM_CONDITIONAL(HAVE_CYTHON, test x$CYTHON != xno)
 
 BUILD_RX3D=0
 if test "$ac_nrn_rx3d" = "yes" ; then
@@ -621,6 +615,7 @@ AC_CONFIG_HEADERS([
 	src/nrnpython/nrnpython_config.h
 ])
 AC_CONFIG_FILES([
+	bin/nrndiagnose.sh
 	src/nrnpython/Makefile
 	src/mswin/nrncygso.sh
 	src/nrnpython/setup.py

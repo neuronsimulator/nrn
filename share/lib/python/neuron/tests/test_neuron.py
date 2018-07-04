@@ -99,7 +99,7 @@ def basicRxD3D():
     s.L = s.diam = 1
     cyt = rxd.Region([s])
     ca = rxd.Species(cyt)
-    rxd.set_solve_type([s], dimension=3)
+    rxd.set_solve_type(dimension=3)
     h.finitialize(-65)
     h.fadvance()
     return 1

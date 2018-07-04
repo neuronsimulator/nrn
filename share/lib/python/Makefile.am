@@ -14,6 +14,13 @@ neuron/__init__.py \
 neuron/psection.py \
 neuron/sections.py \
 \
+neuron/gui2/__init__.py \
+neuron/gui2/plotshape.py \
+neuron/gui2/setup_threejs.py \
+neuron/gui2/config.py \
+neuron/gui2/rangevar.py \
+neuron/gui2/utilities.py \
+\
 neuron/nonvint_block_supervisor.py \
 \
 neuron/neuroml/__init__.py \

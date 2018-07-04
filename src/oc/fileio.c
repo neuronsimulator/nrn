@@ -869,12 +869,12 @@ void hoc_Chdir(void) {
 }
 
 int nrn_is_python_extension;
-int (*nrnpy_pr_callback)(char*);
-int (*nrnpy_pass_callback)();
+static int (*nrnpy_pr_stdoe_callback)(int, char*);
+static int (*nrnpy_pass_callback)();
 
-void nrnpy_set_pr_etal(int (*cbpr)(char*), int (*cbpass)()) {
+void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)()) {
     if (nrn_is_python_extension) {
-        nrnpy_pr_callback = cbpr;
+        nrnpy_pr_stdoe_callback = cbpr_stdoe;
         nrnpy_pass_callback = cbpass;
     }
 }
@@ -885,22 +885,18 @@ void nrnpy_pass() {
     }
 }
 
-int nrnpy_pr(const char *fmt, ...) {
+static int vnrnpy_pr_stdoe(FILE* stream, const char *fmt, va_list ap) {
     int size = 0;
     char *p = NULL;
-    va_list ap;
 
-    if (!nrnpy_pr_callback) {
-        va_start(ap, fmt);
-        size = vprintf(fmt, ap);
+    if (!nrnpy_pr_stdoe_callback || (stream != stderr && stream != stdout)) {
+        size = vfprintf(stream, fmt, ap);
         return size;
     }
 
     /* Determine required size */
 
-    va_start(ap, fmt);
     size = vsnprintf(p, size, fmt, ap);
-    va_end(ap);
 
     if (size < 0)
         return 0;
@@ -910,17 +906,34 @@ int nrnpy_pr(const char *fmt, ...) {
     if (p == NULL)
         return 0;
 
-    va_start(ap, fmt);
     size = vsnprintf(p, size, fmt, ap);
     if (size < 0) {
         free(p);
         return 0;
     }
-    va_end(ap);
 
-    (*nrnpy_pr_callback)(p);
+    (*nrnpy_pr_stdoe_callback)((stream == stderr) ? 2 : 1, p);
 
     free(p);
     return size;
 }
+
+int nrnpy_pr(const char *fmt, ...) {
+  int n;
+  va_list ap;
+  va_start(ap, fmt);
+  n = vnrnpy_pr_stdoe(stdout, fmt, ap);
+  va_end(ap);
+  return n;
+}
+
+int Fprintf(FILE* stream, const char *fmt, ...) {
+  int n;
+  va_list ap;
+  va_start(ap, fmt);
+  n = vnrnpy_pr_stdoe(stream, fmt, ap);
+  va_end(ap);
+  return n;
+}
+
 

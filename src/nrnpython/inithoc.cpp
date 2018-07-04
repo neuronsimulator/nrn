@@ -37,6 +37,7 @@ extern int nrnpy_site_problem;
 #endif
 
 extern int nrn_is_python_extension;
+extern int nrn_nobanner_;
 extern int ivocmain(int, char**, char**);
 extern int nrn_main_launch;
 
@@ -170,6 +171,7 @@ void inithoc() {
   }
 #endif // !defined(__CYGWIN__)
   nrn_is_python_extension = 1;
+  nrn_nobanner_ = 1;
   const char* pyver = Py_GetVersion();
   nrn_is_python_extension = (pyver[0]-'0')*10 + (pyver[2] - '0');
   p_nrnpython_finalize = nrnpython_finalize;

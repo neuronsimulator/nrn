@@ -114,6 +114,7 @@ except:
 import nrn
 import _neuron_section
 h  = hoc.HocObject()
+version = h.nrnversion(5)
 
 
 # As a workaround to importing doc at neuron import time
@@ -561,8 +562,11 @@ def _pkl(arg):
 def nrnpy_pass():
   return 1
 
-def nrnpy_pr(s):
-  sys.stdout.write(s.decode())
+def nrnpy_pr(stdoe, s):
+  if stdoe == 1:
+    sys.stdout.write(s.decode())
+  else:
+    sys.stderr.write(s.decode())
   return 0
 
 #flag to prevent both rxd and crxd being used
@@ -577,7 +581,7 @@ if not embedded:
 
     nrnpy_set_pr_etal = nrn_dll_sym('nrnpy_set_pr_etal')
 
-    nrnpy_pr_proto = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_char_p)
+    nrnpy_pr_proto = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_char_p)
     nrnpy_pass_proto = ctypes.CFUNCTYPE(ctypes.c_int)
     nrnpy_set_pr_etal.argtypes = [nrnpy_pr_proto, nrnpy_pass_proto]
 
