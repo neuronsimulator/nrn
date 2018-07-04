@@ -41,6 +41,7 @@ void FileHandler::open(const char* filename, bool reorder, std::ios::openmode mo
     reorder_bytes = reorder;
     close();
     F.open(filename, mode | std::ios::binary);
+    if (! F.is_open()) fprintf (stderr, "cannot open file %s\n", filename);
     nrn_assert(F.is_open());
     current_mode = mode;
     char version[256];
