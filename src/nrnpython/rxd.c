@@ -1656,10 +1656,10 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double *y
 	        {
 	            if(react->ecs_state[segment][i][j] != NULL)
 	            {
-                    //if(bval == NULL)
+                    if(bval == NULL)
     	                v_set_val(b, idx, dt*ecs_result[i][j]);
-                    //else
-                    //    v_set_val(b, idx, bval[react->ecs_index[segment][i][j]]);
+                    else
+                        v_set_val(b, idx, bval[react->ecs_index[segment][i][j]]);
 
 	                
 	                // set up the changed states array
@@ -1707,7 +1707,7 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double *y
 	        LUsolve(jacobian, pivot, b, x);,
             "solve_reaction");
 
-        /*if(bval != NULL)
+        if(bval != NULL)
         {
 		    for(i = 0, jac_idx=0; i < react->num_species; i++)
 	        {
@@ -1722,7 +1722,7 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double *y
 	        }
     
         }
-	    else*/ if(ydot == NULL)    //fixed-step
+	    else if(ydot == NULL)    //fixed-step
 	    {
 		    for(i = 0, jac_idx=0; i < react->num_species; i++)
 	        {
