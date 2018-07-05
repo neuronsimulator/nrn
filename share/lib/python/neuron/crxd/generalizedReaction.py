@@ -183,24 +183,24 @@ class GeneralizedReaction(object):
                 active_secs = set.intersection(*[set(reg.secs) for reg in active_regions if reg])
         else:
             active_secs = set.intersection(*[set(reg.secs) for reg in active_regions if reg])
-                
-            
+        
+        active_secs_list = [sec for reg in active_regions if reg  for sec in reg.secs if sec in active_secs]
         # store the indices
         for sptr in self._involved_species:
             s = sptr()
             if not isinstance(s,species.SpeciesOnExtracellular):
                 self._indices_dict[s] = s.indices(active_regions,active_secs)
-
         sources_indices = [sptr().indices(active_regions,active_secs) for sptr in sources]
         dests_indices = [dptr().indices(active_regions,active_secs) for dptr in dests]
-
+        
         self._indices = sources_indices + dests_indices
         volumes, surface_area, diffs = node._get_data()
         #self._mult = [list(-1. / volumes[sources_indices]) + list(1. / volumes[dests_indices])]
         if self._trans_membrane and active_regions:
             # note that this assumes (as is currently enforced) that if trans-membrane then only one region
+            
             # TODO: verify the areas and volumes are in the same order!
-            areas = _numpy_array(list(_itertools_chain.from_iterable([list(self._regions[0]._geometry.volumes1d(sec)) for sec in active_secs])))
+            areas = _numpy_array(list(_itertools_chain.from_iterable([list(self._regions[0]._geometry.volumes1d(sec)) for sec in active_secs_list])))
             if not self._scale_by_area:
                 areas = numpy.ones(len(areas))
             if len(sources_ecs) == len(dests_ecs) == 0:

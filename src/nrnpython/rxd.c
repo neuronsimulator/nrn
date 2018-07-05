@@ -1255,34 +1255,37 @@ void _fadvance(void) {
 	double dt = *dt_ptr;
     double t = *t_ptr;
 	int i, j, k;
-
 	/*variables for diffusion*/
-	double *rhs = malloc(sizeof(double*) * num_states);
+	double *rhs; 
 	long* zvi = _rxd_zero_volume_indices;
 
     /*diffusion*/
-	mul(_rxd_euler_nrow, _rxd_euler_nnonzero, _rxd_euler_nonzero_i, _rxd_euler_nonzero_j, _rxd_euler_nonzero_values, states, rhs);
+    if(diffusion)
+    {
+        rhs = malloc(sizeof(double*) * num_states);
+	    mul(_rxd_euler_nrow, _rxd_euler_nnonzero, _rxd_euler_nonzero_i, _rxd_euler_nonzero_j, _rxd_euler_nonzero_values, states, rhs);
 	
-	/* multiply rhs vector by dt */
-    for (i = 0; i < num_states; i++) {
-        rhs[i] *= dt;
-    }
-	nrn_tree_solve(_rxd_a, _rxd_b, _rxd_c, _rxd_d, rhs, _rxd_p, _rxd_euler_nrow, dt);
+	    /* multiply rhs vector by dt */
+        for (i = 0; i < num_states; i++) {
+            rhs[i] *= dt;
+        }
+	    nrn_tree_solve(_rxd_a, _rxd_b, _rxd_c, _rxd_d, rhs, _rxd_p, _rxd_euler_nrow, dt);
    
-    /* increment states by rhs which is now really deltas */
-    for (i = 0; i < num_states; i++) {
-        states[i] += rhs[i];
-    }
+        /* increment states by rhs which is now really deltas */
+        for (i = 0; i < num_states; i++) {
+            states[i] += rhs[i];
+        }
 
-    /* clear zero volume indices (conservation nodes) */
-    for (i = 0; i < _rxd_num_zvi; i++) {
-        states[zvi[i]] = 0;
+        /* clear zero volume indices (conservation nodes) */
+        for (i = 0; i < _rxd_num_zvi; i++) {
+            states[zvi[i]] = 0;
+        }
+        free(rhs);
     }
-    free(rhs);
 
     /*reactions*/
     do_ics_reactions(states, NULL, NULL);	
-	
+
 	transfer_to_legacy();
 }
 
@@ -1546,13 +1549,11 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double *y
         states_for_reaction_dx[i] = (double*)malloc(react->num_regions*sizeof(double));
         result_array[i] = (double*)malloc(react->num_regions*sizeof(double));
         result_array_dx[i] = (double*)malloc(react->num_regions*sizeof(double));
-        
     }
     for(segment = 0; segment < react->num_segments; segment++)
     {
         for(i = 0; i < react->num_species; i++)
         {
-
             for(j = 0; j < react->num_regions; j++)
 	        {
                 if(react->state_idx[segment][i][j] != SPECIES_ABSENT)
@@ -1565,7 +1566,10 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double *y
                     states_for_reaction[i][j] = -1.0;
                     states_for_reaction_dx[i][j] = states_for_reaction[i][j];
                 }
+
 	        }
+            bzero(result_array[i],react->num_regions*sizeof(double));
+            bzero(result_array_dx[i],react->num_regions*sizeof(double));
 	    }
 
 	    for(i = 0; i < react->num_ecs_species; i++)
@@ -1582,6 +1586,7 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double *y
         for(i = 0; i < react->num_mult; i++)
         {
             mc_mult[i] = react->mc_multiplier[i][segment];
+            
         }
 
 	    react->reaction(states_for_reaction, result_array, mc_mult, ecs_states_for_reaction, ecs_result);
@@ -1619,6 +1624,7 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double *y
 						        m_set_val(jacobian, jac_idx, idx, (idx==jac_idx) - dt*pd);
 	                            jac_idx += 1;
 	       	                }
+                            result_array_dx[jac_i][jac_j] = 0;
 	                    }
 	                }
 					for (jac_i = 0; jac_i < react->num_ecs_species; jac_i++)
@@ -1630,9 +1636,10 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double *y
 	                        {
 	       	                    pd = (ecs_result_dx[jac_i][jac_j] - ecs_result[jac_i][jac_j])/dx;
 						        m_set_val(jacobian, jac_idx, idx, -dt*pd);
-
 	                            jac_idx += 1;
 	       	                }
+                            ecs_result_dx[jac_i][jac_j] = 0;
+
 	                    }
 					}
                     // reset dx array
@@ -1649,13 +1656,12 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double *y
 	        {
 	            if(react->ecs_state[segment][i][j] != NULL)
 	            {
-                    if(bval == NULL)
-    	                v_set_val(b, idx, dt*result_array[i][j]);
-                    else
-                        v_set_val(b, idx, bval[react->ecs_index[segment][i][j]]);
+                    //if(bval == NULL)
+    	                v_set_val(b, idx, dt*ecs_result[i][j]);
+                    //else
+                    //    v_set_val(b, idx, bval[react->ecs_index[segment][i][j]]);
 
-	                v_set_val(b, idx, dt*ecs_result[i][j]);
-	
+	                
 	                // set up the changed states array
 				    ecs_states_for_reaction_dx[i][j] += dx;
 	
@@ -1701,7 +1707,7 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double *y
 	        LUsolve(jacobian, pivot, b, x);,
             "solve_reaction");
 
-        if(bval != NULL)
+        /*if(bval != NULL)
         {
 		    for(i = 0, jac_idx=0; i < react->num_species; i++)
 	        {
@@ -1716,7 +1722,7 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double *y
 	        }
     
         }
-	    else if(ydot == NULL)    //fixed-step
+	    else*/ if(ydot == NULL)    //fixed-step
 	    {
 		    for(i = 0, jac_idx=0; i < react->num_species; i++)
 	        {
