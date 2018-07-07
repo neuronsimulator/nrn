@@ -54,16 +54,16 @@ class BallAndStick(Cell):  #### Inherits from Cell
             sec.cm = 1       # Membrane capacitance in micro Farads / cm^2
         
             # Insert active Hodgkin-Huxley current in the soma
-            soma.insert('hh')
-            for seg in soma:
+            self.soma.insert('hh')
+            for seg in self.soma:
                 seg.hh.gnabar = 0.12  # Sodium conductance in S/cm2
                 seg.hh.gkbar = 0.036  # Potassium conductance in S/cm2
                 seg.hh.gl = 0.0003    # Leak conductance in S/cm2
                 seg.hh.el = -54.3     # Reversal potential in mV
                 
             # Insert passive current in the dendrite
-            dend.insert('pas')
-            for seg in dend:
+            self.dend.insert('pas')
+            for seg in self.dend:
                 seg.pas.g = 0.001  # Passive conductance in S/cm2
                 seg.pas.e = -65    # Leak reversal potential mV 
     
