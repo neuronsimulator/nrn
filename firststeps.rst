@@ -21,21 +21,22 @@ Any code that is not part of Python's :py:ref:`built-in-funcs` must be imported.
 .. image:: images/python_hoc_neuron.png
     :align: center
 
-We begin by loading NEURON's h module and its graphical user interface:
+We begin by loading NEURON's h module:
 
 .. code-block::
     python
     
-    from neuron import h, gui
+    from neuron import h
 
-The results of evaluating this code should look something like the following output.
+Prior to NEURON 7.6, this would display a banner message with version number and copyright information.
+
+NEURON additionally has a graphical interface that could be loaded as below, but we will not use it in this tutorial:
 
 .. code-block::
-    none
+    python
+    
+    from neuron import gui
 
-    NEURON -- VERSION 7.5 master (6b4c19f) 2017-09-25
-    Duke, Yale, and the BlueBrain Project -- Copyright 1984-2016
-    See http://neuron.yale.edu/neuron/credits
 
 Step 2: Create a cell
 ---------------------
@@ -57,7 +58,9 @@ NEURON's :func:`psection` (short for "print section") function can provide a lot
 .. code-block::
     python
     
-    h.psection()
+    h.psection(sec=soma)
+    
+Beginning with NEURON 7.6, you can also invoke ``soma.psection()`` which returns a dictionary with section information.
 
 The results tell us the soma is a cylinder with length 100 microns, diameter 500 microns, axial resistivity 35.4 ohm*cm, and specific membrance capacitance 1 :math:`\mu F/cm^2`
 
@@ -210,7 +213,7 @@ Let's look at the state of our cell using neuron's :func:`psection`.
 .. code-block::
     python
     
-    h.psection() 
+    h.psection(sec=soma) 
 
 
 Step 5: Set up recording variables.
