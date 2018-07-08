@@ -21,21 +21,14 @@ Any code that is not part of Python's :py:ref:`built-in-funcs` must be imported.
 .. image:: images/python_hoc_neuron.png
     :align: center
 
-We begin by loading NEURON's h module:
+We begin by loading NEURON's h module and its default graphical interface (gui):
 
 .. code-block::
     python
     
-    from neuron import h
+    from neuron import h, gui
 
 Prior to NEURON 7.6, this would display a banner message with version number and copyright information.
-
-NEURON additionally has a graphical interface that could be loaded as below, but we will not use it in this tutorial:
-
-.. code-block::
-    python
-    
-    from neuron import gui
 
 
 Step 2: Create a cell
