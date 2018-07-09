@@ -95,8 +95,8 @@ Grid_node *make_Grid(PyHocObject* my_states, int my_num_states_x,
 #if NRNMPI
     if(nrnmpi_use)
     {
-        new_Grid->proc_offsets = (int*)malloc(nrnmpi_numprocs_world*sizeof(int));
-        new_Grid->proc_num_currents = (int*)malloc(nrnmpi_numprocs_world*sizeof(int));
+        new_Grid->proc_offsets = (int*)malloc(nrnmpi_numprocs*sizeof(int));
+        new_Grid->proc_num_currents = (int*)malloc(nrnmpi_numprocs*sizeof(int));
     }
 #endif
     new_Grid->num_all_currents = 0;
@@ -281,11 +281,11 @@ void set_grid_currents(int grid_list_index, int index_in_list, PyObject* grid_in
     if(nrnmpi_use)
     {
         /*Gather an array of the number of currents for each process*/
-        g->proc_num_currents[nrnmpi_myid_world] = n;
-        MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, g->proc_num_currents, 1, MPI_INT, nrnmpi_world_comm);
+        g->proc_num_currents[nrnmpi_myid] = n;
+        nrnmpi_int_allgather_inplace(g->proc_num_currents, 1);
         
         g->proc_offsets[0] = 0; 
-        for(i = 1; i < nrnmpi_numprocs_world; i++)
+        for(i = 1; i < nrnmpi_numprocs; i++)
             g->proc_offsets[i] =  g->proc_offsets[i-1] + g->proc_num_currents[i-1];
          g->num_all_currents = g->proc_offsets[i-1] + g->proc_num_currents[i-1];
         
@@ -294,13 +294,13 @@ void set_grid_currents(int grid_list_index, int index_in_list, PyObject* grid_in
         free(g->all_currents);
         g->current_dest = (long*)malloc(g->num_all_currents*sizeof(long));
         g->all_currents = (double*)malloc(g->num_all_currents*sizeof(double));
-        dests = g->current_dest + g->proc_offsets[nrnmpi_myid_world];
+        dests = g->current_dest + g->proc_offsets[nrnmpi_myid];
         /*TODO: Get rid of duplication with current_list*/
         for(i = 0; i < n; i++)
         {
             dests[i] = g->current_list[i].destination;
         }
-        MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, g->current_dest, g->proc_num_currents, g->proc_offsets, MPI_LONG, nrnmpi_world_comm);
+        nrnmpi_long_allgatherv_inplace(g->current_dest, g->proc_num_currents, g->proc_offsets);
     }
     else
     {

@@ -8,10 +8,6 @@ and Flux_pair structs and their respective functions
 #include <assert.h>
 #include <nrnmpi.h>
 
-#if NRNMPI
-#include <mpi.h>
-#endif
-
 #if 0 && defined(__APPLE__)
 #include <Python/Python.h>
 #else
@@ -36,14 +32,6 @@ and Flux_pair structs and their respective functions
 
 #define MAX(a,b)	((a)>(b)?(a):(b))
 #define MIN(a,b)	((a)<(b)?(a):(b))
-
-
-/*Set in src/nrnmpi/nrnmpi_impl.c */
-#if NRNMPI
-extern MPI_Comm nrnmpi_world_comm;
-extern MPI_Comm nrnmpi_comm;
-extern MPI_Comm nrn_bbs_comm;
-#endif
 
 typedef struct {
     PyObject_HEAD

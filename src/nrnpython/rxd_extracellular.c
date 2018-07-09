@@ -419,7 +419,7 @@ void do_currents(Grid_node* grid, double* output, double dt, int grid_id)
     c = grid->current_list;
     CurrentData* tasks = (CurrentData*)malloc(NUM_THREADS*sizeof(CurrentData));
 #if NRNMPI    
-    val = grid->all_currents + (nrnmpi_use?grid->proc_offsets[nrnmpi_myid_world]:0);
+    val = grid->all_currents + (nrnmpi_use?grid->proc_offsets[nrnmpi_myid]:0);
 #else
     val = grid->all_currents;
 #endif
@@ -445,7 +445,7 @@ void do_currents(Grid_node* grid, double* output, double dt, int grid_id)
 #if NRNMPI
     if(nrnmpi_use)
     {
-        MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, grid->all_currents, grid->proc_num_currents, grid->proc_offsets, MPI_DOUBLE, nrnmpi_world_comm);
+        nrnmpi_dbl_allgatherv_inplace(grid->all_currents, grid->proc_num_currents, grid->proc_offsets);
         for(i = 0; i < n; i++)
             output[grid->current_dest[i]] += grid->all_currents[i];
     }
