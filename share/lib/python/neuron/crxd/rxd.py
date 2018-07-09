@@ -1224,19 +1224,20 @@ def _compile_reactions():
             react_regions = r._active_regions
         #Otherwise use all the regions where the species are
         else:
-            react_regions = list()
+            react_regions = set()
             nsp = 0
             for sp in sptrs:
                 s = sp()
                 nsp += 1
                 if isinstance(s,species.SpeciesOnRegion):
-                    react_regions.append(s._region())
+                    react_regions.add(s._region())
                 elif isinstance(s,species.SpeciesOnExtracellular):
-                    react_regions.append(s._extracellular()._region)
+                    react_regions.add(s._extracellular()._region)
                 elif isinstance(s,species._ExtracellularSpecies):
-                    react_regions.append(s._region)
+                    react_regions.add(s._region)
                 elif None not in s._regions:
-                    [react_regions.append(reg) for reg in s._regions + s._extracellular_regions]
+                    [react_regions.add(reg) for reg in s._regions + s._extracellular_regions]
+            react_regions = list(react_regions)
             #Only regions where ALL the species are present -- unless it is a membrane
             #from collections import Counter
             #from . import geometry as geo
@@ -1298,7 +1299,6 @@ def _compile_reactions():
                         ecs_species_by_region[reg] = ecs_species_by_region[reg].union(ecs_species_involved)
                     else:
                         ecs_species_by_region[reg] = set(ecs_species_involved)
-
     #Create lists of indexes for intracellular reactions and rates
     nseg_by_region = []     # a list of the number of segments for each region
     # a table for location,species -> state index

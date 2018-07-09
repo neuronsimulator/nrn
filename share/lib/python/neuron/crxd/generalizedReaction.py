@@ -130,7 +130,6 @@ class GeneralizedReaction(object):
 
         sources = [r for r in self._sources if not isinstance(r(),species.SpeciesOnExtracellular)]
         dests = [r for r in self._dests if not isinstance(r(),species.SpeciesOnExtracellular)]
-        
         sources_ecs = [r for r in self._sources if isinstance(r(),species.SpeciesOnExtracellular)]
         dests_ecs = [r for r in self._dests if isinstance(r(),species.SpeciesOnExtracellular)]
 
@@ -143,7 +142,11 @@ class GeneralizedReaction(object):
         if not sp_regions:
             for sptr in self._involved_species:
                 self._indices_dict[sptr()] = []
+                #Setup for extracellular
+                self._mult = list(-1 for v in self._sources) + list(1 for v in self._dests)
+                self._mult = _numpy_array(self._mult)
             return
+
 
         # locate the regions containing all species (including the one that changes)
         if all(sptr() for sptr in sources) and all(dptr() for dptr in dests):
@@ -210,15 +213,13 @@ class GeneralizedReaction(object):
                 self._mult = [-areas / numpy.prod(s()._extracellular()._dx)*s()._extracellular().alpha / molecules_per_mM_um3 for s in sources_ecs for di in dest_indices] + [areas / volumes[di] / molecules_per_mM_um3 for di in dests_indices]
             elif len(sources_ecs) == 0 and len(dests_ecs) > 0:
                 self._mult = [-areas / volumes[si] / molecules_per_mM_um3 for si in sources_indices] + [areas / numpy.prod(s()._extracellular()._dx)*s()._extracellular().alpha / molecules_per_mM_um3 for si in sources_indices for s in dests_ecs]
+            
             else:
                 # If both the source & destination are in the ECS, they should use a reaction
                 # not a multicompartment reaction
                 RxDException("An extracellular source and destination is not possible with a multi-compartment reaction.")
         else:
-            if len(sources_indices) == len(dests_indices) == 0:
-                self._mult = list(-1 for v in sources_ecs) + list(1 for v in dests_ecs)
-            else:
-                self._mult = list(-1 for v in sources_indices) + list(1 for v in dests_indices)
+            self._mult = list(-1 for v in sources_indices) + list(1 for v in dests_indices)
         self._mult = _numpy_array(self._mult)
         self._update_jac_cache()
         
