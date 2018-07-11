@@ -203,9 +203,6 @@ dnl however we would need to deal with libnrnmech.so and dlopen
 if test x$make_rpms = xtrue ; then
 dnl	AM_ENABLE_SHARED(no)
 	AM_ENABLE_SHARED(yes)
-	if test "$with_readline" = "" ; then
-		with_readline="no"
-	fi
 elif test x$CYGWIN = xyes ; then
 dnl shared libraries cannot have undefined names. src/mswin/nrncygso.sh
 dnl will combine .o files into a single nrniv.dll (-fPIC is not needed)
@@ -259,7 +256,7 @@ AM_CONDITIONAL(HAVE_CYTHON, test x$CYTHON != xno)
 
 BUILD_RX3D=0
 if test "$ac_nrn_rx3d" = "yes" ; then
-	if test x$have_cython = xyes -o -f share/lib/python/neuron/rxd/geometry3d/ctng.cpp ; then
+	if test x$CYTHON != xno -o -f share/lib/python/neuron/rxd/geometry3d/ctng.cpp ; then
 		BUILD_RX3D=1
 	else
 		BUILD_RX3D=0
