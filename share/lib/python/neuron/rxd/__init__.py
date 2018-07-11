@@ -1,4 +1,9 @@
 from .rxdException import RxDException
+from .. import _has_rxd 
+if _has_rxd['crxd']:
+    raise RxDException('NEURON RxD module should not be used with CRxD.')
+else:
+   _has_rxd['rxd'] = True
 
 try:
     import scipy
@@ -12,7 +17,7 @@ from .rate import Rate
 from .reaction import Reaction
 from . import geometry
 from .multiCompartmentReaction import MultiCompartmentReaction
-from .rxd import re_init, set_solve_type
+from .rxd import re_init, set_solve_type, _curr_ptr_vector, _curr_ptr_storage_nrn
 try:
   from . import dimension3
 except:

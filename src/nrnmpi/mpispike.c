@@ -279,6 +279,10 @@ void nrnmpi_int_allgather(int* s, int* r, int n) {
 	MPI_Allgather(s, n,  MPI_INT, r, n, MPI_INT, nrnmpi_comm);
 }
 
+void nrnmpi_int_allgather_inplace(int* srcdest, int n) {
+	MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, srcdest, n,  MPI_INT, nrnmpi_comm);
+}
+
 void nrnmpi_int_allgatherv(int* s, int* r, int* n, int* dspl) {
 	MPI_Allgatherv(s, n[nrnmpi_myid],  MPI_INT,
 		r, n, dspl, MPI_INT, nrnmpi_comm);
@@ -289,9 +293,19 @@ void nrnmpi_long_allgatherv(int64_t* s, int64_t* r, int* n, int* dspl) {
 		r, n, dspl, MPI_LONG, nrnmpi_comm);
 }
 
+void nrnmpi_long_allgatherv_inplace(int64_t* srcdest, int* n, int* dspl) {
+	MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, srcdest,
+		n, dspl, MPI_LONG, nrnmpi_comm);
+}
+
 void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl) {
 	MPI_Allgatherv(s, n[nrnmpi_myid],  MPI_DOUBLE,
 		r, n, dspl, MPI_DOUBLE, nrnmpi_comm);
+}
+
+void nrnmpi_dbl_allgatherv_inplace(double* srcdest, int* n, int* dspl) {
+	MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, srcdest,
+		n, dspl, MPI_DOUBLE, nrnmpi_comm);
 }
 
 void nrnmpi_dbl_broadcast(double* buf, int cnt, int root) {

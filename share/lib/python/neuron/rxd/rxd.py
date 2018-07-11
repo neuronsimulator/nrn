@@ -233,6 +233,7 @@ def _ode_fun(t, y, ydot):
     states[_zero_volume_indices] = 0
 
 def _ode_solve(dt, t, b, y):
+    #print "%1.10e] ode_solve %1.10e\t%1.10e  %1.10e" %(t,dt,h.ParallelContext().t(0),h.ParallelContext().dt(0))
     initializer.assert_initialized()
     if _diffusion_matrix is None: _setup_matrices()
     lo = _rxd_offset
@@ -254,7 +255,10 @@ def _ode_solve(dt, t, b, y):
         # 1D only; use Hines solver
         full_b = numpy.zeros(n)
         full_b[_nonzero_volume_indices] = b[lo : hi]
-        b[lo : hi] = _react_matrix_solver(_diffusion_matrix_solve(dt, full_b))[_nonzero_volume_indices]
+        full_b =  _react_matrix_solver(_diffusion_matrix_solve(dt, full_b))
+        b[lo : hi] = full_b[_nonzero_volume_indices]
+        #for i,x in zip(range(len(full_b)),full_b):
+        #    print "full_b[%i] = %1.20e" %(i,x)
         # the following version computes the reaction matrix each time
         #full_y = numpy.zeros(n)
         #full_y[_nonzero_volume_indices] = y[lo : hi]
@@ -281,16 +285,19 @@ def _currents(rhs):
     memb_cur_charges = []
     memb_net_charges = []
     memb_cur_mapped = []
+    rxd_memb_scales = []
     for rptr in _all_reactions:
         r = rptr()
         if r and r._membrane_flux:
             # NOTE: memb_flux contains any scaling we need
             new_fluxes = r._get_memb_flux(_node_get_states())
+            rxd_memb_scales.extend(r._memb_scales)
             rxd_memb_flux += list(new_fluxes)
             memb_cur_ptrs += r._cur_ptrs
             memb_cur_mapped += r._cur_mapped
             memb_cur_charges += [r._cur_charges] * len(new_fluxes)
             memb_net_charges += [r._net_charges] * len(new_fluxes)
+    
 
     # TODO: is this in any way dimension dependent?
 
@@ -302,7 +309,6 @@ def _currents(rhs):
         assert(len(rxd_memb_flux) == len(memb_net_charges))
         for flux, cur_ptrs, cur_charges, net_charge, i, cur_maps in zip(rxd_memb_flux, memb_cur_ptrs, memb_cur_charges, memb_net_charges, _cur_node_indices, memb_cur_mapped):
             rhs[i] -= net_charge * flux
-            #print net_charge * flux
             #import sys
             #sys.exit()
             # TODO: remove this assert when more thoroughly tested
@@ -312,9 +318,11 @@ def _currents(rhs):
                 # currents lower the membrane potential
                 cur = charge * flux
                 ptr[0] += cur
-                for sign, c in zip([-1, 1], cur_maps):
-                    if c is not None:
-                        _rxd_induced_currents[c] += sign * cur
+                for c in cur_map_i:
+                    _rxd_induced_currents[c] += cur
+                #for sign, c in zip([-1, 1], cur_maps):
+                #    if c is not None:
+                #        _rxd_induced_currents[c] += sign * cur
 
 _last_m = None
 _last_preconditioner = None
@@ -403,9 +411,10 @@ def _rxd_reaction(states):
 
     b = _numpy_zeros(len(states))
     
+    
     if _curr_ptr_vector is not None:
         _curr_ptr_vector.gather(_curr_ptr_storage_nrn)
-        b[_curr_indices] = _curr_scales * (_curr_ptr_storage + _rxd_induced_currents)
+        b[_curr_indices] = _curr_scales * (_curr_ptr_storage - _rxd_induced_currents)
     
     #b[_curr_indices] = _curr_scales * [ptr[0] for ptr in _curr_ptrs]
 

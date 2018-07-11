@@ -1,71 +1,39 @@
-#=============================================================================
-# Travis NEURON settings
-#=============================================================================
-
-#=============================================================================
-# Environment
-#=============================================================================
-env:
-  global:
-    - SPACK_ROOT=$TRAVIS_BUILD_DIR/spack
-    - PATH=$SPACK_ROOT/bin:$PATH
-    - ARCHFLAGS="-arch x86_64"
-
-#=============================================================================
-# Build matrix
-#   - Do not use osx_image otherwise brew fails
-#     (mpich depends on gcc and brew link fails)
-#=============================================================================
-matrix:
-  fast_finish: true
-  include:
-    - language: cpp
-      os: linux
-      dist: trusty
-      sudo: true
-      env: [ MPI=mpich]
-    - language: cpp
-      os: osx
-      sudo: false
-      env: [ MPI=openmpi]
-
-#=============================================================================
-# Common Packages
-#=============================================================================
+language: cpp
+sudo: false
+dist: trusty
 addons:
-  apt:
-    packages:
-      - libncurses-dev
-      - environment-modules
+    apt:
+        packages:
+        - python3-pip
+        - python-pip
+        - python3-scipy
+        - python-scipy
+        - python-tk
+virtualenv:
+    system_site_packages: true 
 
-#=============================================================================
-# Install dependencies / setup Spack
-#=============================================================================
+compiler:
+  - clang
+  - gcc
+env:
+  - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2)"
+    PYTHON="$(which python2)"
+    PIP="$(which pip)"
+  - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python3)"
+    PYTHON="$(which python3)"
+    PIP="$(which pip3)"
+os:
+  - linux
+before_install:
+  - echo $LANG
+  - echo $LC_ALL
+  - $CXX -v
+  - export PYTHONPATH=$PYTHONPATH:$(pwd)/install/lib/python/
 install:
-  - .travis/install_dependencies.sh $MPI
-  - .travis/setup_spack.sh
-
-#=============================================================================
-# Build NEURON
-#=============================================================================
+  - $PIP install --user numpy 
+  - $PIP install --user matplotlib
+  - export PYTHONPATH=$PYTHONPATH:$HOME/.local/lib/python*/
 script:
-  - echo "------- SHOW SPACK CONFIGURATIONS -------"
-  - spack compilers
-  - spack config get packages
-
-  - echo "------- INSTALL ALL NEURON VERSIONS -------"
-  - .travis/install_neuron.sh
-
-  - echo "------- INSTALLED VERSIONS (WITH DEPENDENCY DAG) -------"
-  - spack find -d -v neuron
-
-  - echo "------- INSTALLED VERSIONS LIST  -------"
-  - spack find -v neuron
-#=============================================================================
-# Notifications
-#=============================================================================
-notifications:
-  email:
-    recipients: pramod.s.kumbhar@gmail.com
-    on_success: change
-    on_failure: always
+  - ./travis_build.sh build_out_of_tree
+  - ./travis_build.sh .
+  - $PYTHON share/lib/python/neuron/rxdtests/run_all.py

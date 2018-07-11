@@ -131,19 +131,22 @@ class SpeciesOnRegion(_SpeciesMathable):
     def __str__(self):
         return '%s[%s]' % (self._species()._short_repr(), self._region()._short_repr())
 
-    def indices(self, r=None):
+    def indices(self, r=None, secs=None):
         """If no Region is specified or if r is the Region specified in the constructor,
         returns a list of the indices of state variables corresponding
         to the Species when restricted to the Region defined in the constructor.
 
         If r is a different Region, then returns the empty list.
+        If secs is a set return all indices on the regions for those sections.
         """    
         #if r is not None and r != self._region():
         #    raise RxDException('attempt to access indices on the wrong region')
         # TODO: add a mechanism to catch if not right region (but beware of reactions crossing regions)
         if self._species() is None or self._region() is None:
             return []
-        return self._species().indices(self._region())
+        else:
+            return self._species().indices(self._region(), secs)
+
     
 
     def __getitem__(self, r):
@@ -555,14 +558,41 @@ class Species(_SpeciesMathable):
         """return the indices of just the 1D nodes corresponding to this species in the given region"""
         return self._region_indices.get(r, [])
     
-    def indices(self, r=None):
+    def indices(self, r=None, secs=None):
         """return the indices corresponding to this species in the given region
         
-        if r is None, then returns all species indices"""
+        if r is None, then returns all species indices
+        If r is a list of regions return indices for only those sections that are on all the regions.
+        If secs is a set return all indices on the regions for those sections. """
         # TODO: beware, may really want self._indices3d or self._indices1d
         initializer._do_init()
-        return self._indices1d(r) + self._indices3d(r)
-        
+        if secs is not None:
+            if type(secs) != set:
+                secs={secs}
+            if r is None:
+                regions = self._regions
+            elif not hasattr(r,'__len__'):
+                regions = [r]
+            else:
+                regions = r
+            return list(itertools.chain.from_iterable([s.indices for s in self._secs if s._sec in secs and s.region in regions]))
+                
+            """for reg in regions:
+                ind = self.indices(reg)
+                offset = 0
+                for sec in r.secs:
+                    if sec not in secs:
+                        del ind[offset:(offset+sec.nseg)]
+                    offset += sec.nseg
+                return ind"""
+        else:
+            if not hasattr(r,'__len__'):
+                return self._indices1d(r) + self._indices3d(r)
+            elif len(r) == 1:
+                return self._indices1d(r[0]) + self._indices3d(r[0])
+            else:   #Find the intersection
+                interseg = set.intersection(*[set(reg.secs) for reg in r if reg is not None])
+                return self.indices(r,interseg)
     
     def _setup_diffusion_matrix(self, g):
         for s in self._secs:
