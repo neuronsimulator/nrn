@@ -7,7 +7,7 @@
 
 double factorial(const double x)
 {
-	return gamma(x+1.);
+	return tgamma(x+1.);
 }
 
 
