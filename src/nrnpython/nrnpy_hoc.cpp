@@ -369,7 +369,7 @@ static int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
 static void hocobj_pushargs_free_strings(std::vector<char*>& s2free) {
   std::vector<char*>::iterator it = s2free.begin();
   for (; it != s2free.end(); ++it) {
-    delete *it;
+    free(*it);
   }
 }
 

@@ -2,6 +2,7 @@
 
 #include <nrnmpi.h>
 #include <nrnrt.h>
+#include <stdlib.h>
 #include <errno.h>
 #include "neuron.h"
 #include "section.h"
