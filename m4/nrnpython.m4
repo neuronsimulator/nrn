@@ -283,8 +283,7 @@ PYLIB="${PYLIBLINK} ${PYLINKFORSHARED} -R${PYLIBDIR}"
 		fi
 	fi
 
-
-	rxd_mingw_args='-c mingw32'
+	rxd_mingw_args='-c mingw32 -D MS_WIN64'
 	if test $NRNPYTHON_PYMAJOR -gt 2 ; then
 		rxd_mingw_args=''
 		pypath=`dirname $NRNPYTHON_EXEC`
