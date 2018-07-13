@@ -1,5 +1,5 @@
 npylib = libnrnpython@npy_pyver10@
-lib_LTLIBRARIES = libnrnpython@npy_pyver10@.la librxdmath@npy_pyver10@.la
+lib_LTLIBRARIES = libnrnpython@npy_pyver10@.la librxdmath.la
 
 
 nsrc=$(top_srcdir)/src
@@ -25,7 +25,7 @@ endif
 libnrnpython@npy_pyver10@_la_SOURCES = nrnpython.cpp nrnpy_hoc.cpp nrnpy_nrn.cpp \
 	nrnpy_p2h.cpp grids.c rxd.c rxd_extracellular.c rxd_vol.c $(EXTEND)
 
-librxdmath@npy_pyver10@_la_SOURCES = rxdmath.c $(EXTEND)
+librxdmath_la_SOURCES = rxdmath.c $(EXTEND)
 
 pkginclude_HEADERS = rxdmath.h
 
