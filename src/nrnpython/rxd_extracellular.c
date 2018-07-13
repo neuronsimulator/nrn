@@ -576,7 +576,7 @@ void _rhs_variable_step_ecs(const double t, const double* states, double* ydot) 
 	double dt = *dt_ptr;
     Current_Triple* c;
     double* grid_states;
-    const double const* orig_states = states + states_cvode_offset;
+    double const * const orig_states = states + states_cvode_offset;
     const unsigned char calculate_rhs = ydot == NULL ? 0 : 1;
     double* const orig_ydot = ydot + states_cvode_offset;
     states = orig_states;
@@ -661,7 +661,7 @@ void _rhs_variable_step_ecs(const double t, const double* states, double* ydot) 
 
 
 
-static void _rhs_variable_step_helper(Grid_node* grid, const double const* states, double* ydot) {
+static void _rhs_variable_step_helper(Grid_node* grid, double const * const states, double* ydot) {
     int num_states_x = grid->size_x, num_states_y = grid->size_y, num_states_z = grid->size_z;
     double dc_x = grid->dc_x, dc_y = grid->dc_y, dc_z = grid->dc_z;
     double dx = grid->dx, dy = grid->dy, dz = grid->dz;
@@ -849,7 +849,7 @@ static void _rhs_variable_step_helper(Grid_node* grid, const double const* state
 1 or -1 for dj and dk to indicate which adjacent location is still in bounds */
 static void update_boundaries_x(int i, int j, int k, int dj, int dk, double rate_x,
  double rate_y, double rate_z, int num_states_x, int num_states_y, int num_states_z,
- const double const* states, double* ydot) {
+ double const * const states, double* ydot) {
 
     int edge = find(i, j, k, num_states_y, num_states_z);
     int prev_i = find(i-1, j, k, num_states_y, num_states_z);
@@ -866,7 +866,7 @@ static void update_boundaries_x(int i, int j, int k, int dj, int dk, double rate
 /* update y-dimension edge points */
 static void update_boundaries_y(int i, int j, int k, int di, int dk, double rate_x,
  double rate_y, double rate_z, int num_states_x, int num_states_y, int num_states_z,
- const double const* states, double* ydot) {
+ double const * const states, double* ydot) {
 
     int edge = find(i, j, k, num_states_y, num_states_z);
     int prev_j = find(i, j-1, k, num_states_y, num_states_z);
@@ -883,7 +883,7 @@ static void update_boundaries_y(int i, int j, int k, int di, int dk, double rate
 /* update z-dimension edge points */
 static void update_boundaries_z(int i, int j, int k, int di, int dj, double rate_x,
  double rate_y, double rate_z, int num_states_x, int num_states_y, int num_states_z,
- const double const* states, double* ydot) {
+ double const * const states, double* ydot) {
 
     int edge = find(i, j, k, num_states_y, num_states_z);
     int prev_k = find(i, j, k-1, num_states_y, num_states_z);

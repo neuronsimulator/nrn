@@ -406,7 +406,7 @@ static void ode_solve(double t, double dt, double* p1, double* p2)
     
 }
 
-static int ode_abs_tol(double* p1)
+static void ode_abs_tol(double* p1)
 {
     int i;
     double* y = p1 + _cvode_offset;

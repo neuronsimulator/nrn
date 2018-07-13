@@ -143,24 +143,24 @@ void scatter_concentrations(void);
 
 static void update_boundaries_x(int i, int j, int k, int dj, int dk, double rate_x,
  double rate_y, double rate_z, int num_states_x, int num_states_y, int num_states_z,
- const double const* states, double* ydot);
+ double const* const states, double* ydot);
 
 
 static void update_boundaries_y(int i, int j, int k, int di, int dk, double rate_x,
  double rate_y, double rate_z, int num_states_x, int num_states_y, int num_states_z,
- const double const* states, double* ydot);
+ double const * const states, double* ydot);
 
 static void update_boundaries_z(int i, int j, int k, int di, int dj, double rate_x,
  double rate_y, double rate_z, int num_states_x, int num_states_y, int num_states_z,
- const double const* states, double* ydot);
+ double const * const states, double* ydot);
 
-static void _rhs_variable_step_helper(Grid_node* grid, const double const* states, double* ydot);
+static void _rhs_variable_step_helper(Grid_node* grid, double const * const states, double* ydot);
 
 int find(const int, const int, const int, const int, const int);
 
-void _rhs_variable_step_helper_tort(Grid_node*, const double const*, double*);
+void _rhs_variable_step_helper_tort(Grid_node*, double const * const, double*);
 
-void _rhs_variable_step_helper_vol(Grid_node*, const double const*, double*);
+void _rhs_variable_step_helper_vol(Grid_node*, double const * const, double*);
 
 static void ecs_refresh_reactions(int);
 void set_num_threads_ecs(int n);

@@ -257,8 +257,8 @@ extern void nrnmpi_int_alltoallv(int* s, int* scnt, int* sdispl,
 
 extern void nrnmpi_long_alltoallv(int64_t* s, int* scnt, int* sdispl,
     int64_t* r, int* rcnt, int* rdispl) {
-	MPI_Alltoallv(s, scnt, sdispl, MPI_LONG,
-		r, rcnt, rdispl, MPI_LONG, nrnmpi_comm);
+	MPI_Alltoallv(s, scnt, sdispl, MPI_INT64_T,
+		r, rcnt, rdispl, MPI_INT64_T, nrnmpi_comm);
 }
 
 extern void nrnmpi_dbl_alltoallv(double* s, int* scnt, int* sdispl,
@@ -289,11 +289,11 @@ void nrnmpi_int_allgatherv(int* s, int* r, int* n, int* dspl) {
 }
 
 void nrnmpi_long_allgatherv(int64_t* s, int64_t* r, int* n, int* dspl) {
-	MPI_Allgatherv(s, n[nrnmpi_myid],  MPI_LONG,
-		r, n, dspl, MPI_LONG, nrnmpi_comm);
+	MPI_Allgatherv(s, n[nrnmpi_myid],  MPI_INT64_T,
+		r, n, dspl, MPI_INT64_T, nrnmpi_comm);
 }
 
-void nrnmpi_long_allgatherv_inplace(int64_t* srcdest, int* n, int* dspl) {
+void nrnmpi_long_allgatherv_inplace(long* srcdest, int* n, int* dspl) {
 	MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, srcdest,
 		n, dspl, MPI_LONG, nrnmpi_comm);
 }

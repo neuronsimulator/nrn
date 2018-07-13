@@ -631,7 +631,7 @@ void set_adi_tort(Grid_node *g)
 *
 *****************************************************************************/
 
-void _rhs_variable_step_helper_tort(Grid_node* g, const double const* states, double* ydot) {
+void _rhs_variable_step_helper_tort(Grid_node* g, double const * const states, double* ydot) {
     int num_states_x = g->size_x, num_states_y = g->size_y, num_states_z = g->size_z;
     double dx = g->dx, dy = g->dy, dz = g->dz;
     int i, j, k, stop_i, stop_j, stop_k;
@@ -697,7 +697,7 @@ void _rhs_variable_step_helper_tort(Grid_node* g, const double const* states, do
 }
 
 
-void _rhs_variable_step_helper_vol(Grid_node* g, const double const* states, double* ydot) {
+void _rhs_variable_step_helper_vol(Grid_node* g, double const * const states, double* ydot) {
     int num_states_x = g->size_x, num_states_y = g->size_y, num_states_z = g->size_z;
     double dx = g->dx, dy = g->dy, dz = g->dz;
     int i, j, k, stop_i, stop_j, stop_k;
