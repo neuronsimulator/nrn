@@ -128,7 +128,6 @@ void run_threaded_dg_adi(const int, const int, Grid_node*, AdiDirection*, const 
 ReactGridData* create_threaded_reactions(const int);
 void* do_reactions(void*);
 
-typedef void (*fptr)(void);
 void current_reaction(double *states);
 
 
