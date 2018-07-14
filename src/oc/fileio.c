@@ -895,8 +895,10 @@ static int vnrnpy_pr_stdoe(FILE* stream, const char *fmt, va_list ap) {
     }
 
     /* Determine required size */
-
-    size = vsnprintf(p, size, fmt, ap);
+    va_list apc;
+    va_copy(apc, ap);
+    size = vsnprintf(p, size, fmt, apc);
+    va_end(apc);
 
     if (size < 0)
         return 0;
