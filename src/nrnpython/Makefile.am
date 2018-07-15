@@ -29,7 +29,7 @@ librxdmath_la_SOURCES = rxdmath.c $(EXTEND)
 
 pkginclude_HEADERS = rxdmath.h
 
-noinst_HEADERS = nrnpython.h nrnwrap_python.h nrnpy_reg.h \
+noinst_HEADERS = nrnpython.h nrnwrap_Python.h nrnpy_reg.h \
 	nrnpy_hoc_2.h nrnpy_hoc_3.h \
 	nrnpy_nrn_2.h nrnpy_nrn_3.h hoccontext.h \
 	nrnpy_utils.h rxd.h grids.h
