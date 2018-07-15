@@ -4,11 +4,7 @@
 #include "grids.h"
 #include "rxd.h"
 #include <pthread.h>
-#if 0 && defined(__APPLE__)
-#include <Python/Python.h>
-#else
-#include <Python.h>
-#endif
+#include <nrnwrap_Python.h>
 
 /*Tortuous diffusion coefficients*/
 #define DcX(x,y,z) (g->dc_x/LAMBDA(x,y,z))

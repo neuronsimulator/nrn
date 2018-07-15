@@ -21,7 +21,7 @@
 //at least a problem with g++6.3.0
 #define _hypot hypot
 #endif
-#include <Python.h>
+#include <nrnwrap_Python.h>
 
 #if (PY_MAJOR_VERSION >= 3)
 #define myPyMODINIT_FUNC PyObject *

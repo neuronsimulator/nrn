@@ -205,8 +205,8 @@ void hoc_neuronhome(void) {
 #if defined(WIN32)||defined(CYGWIN)
 	if (ifarg(1) && (int)chkarg(1, 0., 1.) == 1) {
 		if (!neuron_home_dos) {
-			extern void setneuronhome(char*);
-			setneuronhome((char*)0);
+			extern void setneuronhome(const char*);
+			setneuronhome(NULL);
 		}
 		hoc_ret();
 		hoc_pushstr(&neuron_home_dos);

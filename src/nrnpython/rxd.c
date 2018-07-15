@@ -9,11 +9,7 @@
 #include <../nrnoc/section.h>
 #include <../nrnoc/nrn_ansi.h>
 #include <../nrnoc/multicore.h>
-#if 0 && defined(__APPLE__)
-#include <Python/Python.h>
-#else
-#include <Python.h>
-#endif
+#include <nrnwrap_Python.h>
 
 
 /*
@@ -265,7 +261,7 @@ void rxd_set_euler_matrix(int nrow, int nnonzero, long* nonzero_i,
 static void mul(int nrow, int nnonzero, long* nonzero_i, long* nonzero_j, const double* nonzero_values, const double* v, double* result) {
     long i, j, k;
 	double dt = *dt_ptr;
-    bzero(result,sizeof(double)*nrow);
+    MEM_ZERO(result,sizeof(double)*nrow);
 
     /* now loop through all the nonzero locations */
     /* NOTE: this would be more efficient if not repeatedly doing the result[i] lookup */
@@ -572,8 +568,8 @@ static void _currents(double* rhs)
 
     get_all_reaction_rates(states,NULL);
     
-    bzero(_rxd_induced_currents, _memb_curr_total*sizeof(double));
-    bzero(_rxd_induced_currents_ecs, _memb_curr_total*sizeof(double));
+    MEM_ZERO(_rxd_induced_currents, _memb_curr_total*sizeof(double));
+    MEM_ZERO(_rxd_induced_currents_ecs, _memb_curr_total*sizeof(double));
 
     for(i=0, k = 0; i < _memb_count; i++)
     {
@@ -1369,7 +1365,7 @@ void _rhs_variable_step(const double t, const double* p1, double* p2)
     if(diffusion)
         mul(_rxd_euler_nrow, _rxd_euler_nnonzero, _rxd_euler_nonzero_i, _rxd_euler_nonzero_j, _rxd_euler_nonzero_values, states, rhs);
     else
-        bzero(rhs,sizeof(double) * num_states);
+        MEM_ZERO(rhs,sizeof(double) * num_states);
 
     /*reactions*/
     get_all_reaction_rates(states, rhs);
@@ -1426,7 +1422,7 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates)
     }
     //TODO: Pass in a flag to switch between variable step solver and currents
     if(_membrane_flux)
-        bzero(_rxd_induced_flux,sizeof(double)*_memb_curr_total);
+        MEM_ZERO(_rxd_induced_flux,sizeof(double)*_memb_curr_total);
     
     for(i = 0; i < react->num_species; i++)
     {
@@ -1542,7 +1538,7 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double *y
     }
 
     if(_membrane_flux)
-        bzero(_rxd_induced_flux,sizeof(double)*_memb_curr_total);
+        MEM_ZERO(_rxd_induced_flux,sizeof(double)*_memb_curr_total);
     
     for(i = 0; i < react->num_species; i++)
     {
@@ -1569,8 +1565,8 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double *y
                 }
 
 	        }
-            bzero(result_array[i],react->num_regions*sizeof(double));
-            bzero(result_array_dx[i],react->num_regions*sizeof(double));
+            MEM_ZERO(result_array[i],react->num_regions*sizeof(double));
+            MEM_ZERO(result_array_dx[i],react->num_regions*sizeof(double));
 	    }
 
 	    for(i = 0; i < react->num_ecs_species; i++)

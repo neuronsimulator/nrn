@@ -105,7 +105,7 @@ Symbol* ivoc_alias_lookup(const char* name, Object* ob) {return (Symbol*)0;}
 void ivoc_free_alias(Object* ob){}
 
 #if carbon || defined(MINGW)
-void stdin_event_ready(void) {}
+int stdin_event_ready(void) {}
 #endif
 
 void nrnbbs_context_wait(void) {}

@@ -8,11 +8,7 @@ and Flux_pair structs and their respective functions
 #include <assert.h>
 #include <nrnmpi.h>
 
-#if 0 && defined(__APPLE__)
-#include <Python/Python.h>
-#else
-#include <Python.h>
-#endif
+#include <nrnwrap_Python.h>
 
 #define DIE(msg) exit(fprintf(stderr, "%s\n", msg))
 #define SAFE_FREE(ptr){if((ptr)!=NULL) free(ptr);}

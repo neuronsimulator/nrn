@@ -6,11 +6,7 @@
 #include "rxd.h"
 #include <matrix2.h>
 #include <pthread.h>
-#if 0 && defined(__APPLE__)
-#include <Python/Python.h>
-#else
-#include <Python.h>
-#endif
+#include <nrnwrap_Python.h>
 
 
 /*
@@ -413,7 +409,7 @@ void do_currents(Grid_node* grid, double* output, double dt, int grid_id)
     double* val;
     double* all_currents;
     int proc_offset;
-    bzero(output,sizeof(double)*grid->size_x*grid->size_y*grid->size_z);
+    MEM_ZERO(output,sizeof(double)*grid->size_x*grid->size_y*grid->size_z);
     /* currents, via explicit Euler */
     n = grid->num_all_currents;
     m = grid->num_currents;

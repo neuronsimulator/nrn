@@ -42,6 +42,7 @@ typedef uint32_t u_int;
 /* #undef MALLOCDECL */
 #define NOT_SEGMENTED 1
 #define CHAR0ISDBL0 1
+#undef HAVE_PROTOTYPES
 #define HAVE_PROTOTYPES 1
 /* #undef HAVE_PROTOTYPES_IN_STRUCT */
 

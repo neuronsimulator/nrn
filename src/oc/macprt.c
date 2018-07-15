@@ -78,6 +78,7 @@ int hoc_copyfile(const char* src, const char* dest) {
 
 void hoc_check_intupt(int intupt) {
 #if 1
+	extern void set_intset();
 	EventRecord e;
 	if (EventAvail(keyDownMask, &e)) {
 		//debugfile("%d\n", e.what);

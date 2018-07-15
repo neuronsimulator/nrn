@@ -17,6 +17,7 @@
 
 extern char* neuron_home;
 extern char* neuron_home_dos;
+extern void hoc_quit();
 
 #if !defined(CYGWIN)
 extern HWND hCurrWnd;
@@ -29,7 +30,7 @@ extern int bad_install_ok;
 int bad_install_ok;
 #endif // HAVE_IV
 extern FILE* hoc_redir_stdout;
-setneuronhome(p) char* p; {
+void setneuronhome(p) char* p; {
 	// if the program lives in .../bin/neuron.exe
 	// and .../lib exists then use ... as the
 	// NEURONHOME
@@ -105,7 +106,7 @@ void HandleOutput(char* s) {
 static long exception_filter(p) LPEXCEPTION_POINTERS p; {
 //	hoc_execerror("unhandled exception", "");
 //	return EXCEPTION_CONTINUE_EXECUTION;
-	static n = 0;
+	static int n = 0;
 	++n;
 	if (n == 1) {
 		hoc_execerror("\nUnhandled Exception. This usually means a bad memory \n\
@@ -121,7 +122,7 @@ any unsaved em buffers before exiting.", "NEURON Internal ERROR", MB_OK);
 	return EXCEPTION_EXECUTE_HANDLER;
 }
 
-hoc_set_unhandled_exception_filter() {
+void hoc_set_unhandled_exception_filter() {
 	SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)exception_filter);
 }
 BOOL hoc_copyfile(const char* src, const char* dest) {
@@ -360,10 +361,10 @@ int getpid() {
 //hoc_regraph(){ret();pushx(0.);}
 //hoc_plotx(){ret();pushx(0.);}
 //hoc_ploty(){ret();pushx(0.);}
-hoc_Plt() {ret(); pushx(0.);}
-hoc_Setcolor(){ret(); pushx(0.);}
-hoc_Lw(){ret(); pushx(0.);}
-hoc_settext(){ret(); pushx(0.);}
+void hoc_Plt() {ret(); pushx(0.);}
+void hoc_Setcolor(){ret(); pushx(0.);}
+void hoc_Lw(){ret(); pushx(0.);}
+void hoc_settext(){ret(); pushx(0.);}
 //Plot(){ret();pushx(0.);}
 //axis(){ret();pushx(0.);}
 //hoc_fmenu() {ret();pushx(0.);}

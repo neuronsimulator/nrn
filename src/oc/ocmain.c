@@ -14,6 +14,7 @@ char hoc_console_buffer[256];
 
 #if defined(WIN32)
 void* cvode_pmem;
+extern void setneuronhome(const char*);
 #endif
 
 static void setnrnhome(const char* arg) {

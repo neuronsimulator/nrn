@@ -4,7 +4,7 @@
 int newstyle;
 unsigned int text_style=0, text_size=1, text_orient=0;
 
-int hoc_settext(void)
+void hoc_settext(void)
 {
 	if (!ifarg(1)) {
 		text_style	= 0;
@@ -25,5 +25,4 @@ int hoc_settext(void)
 	if (text_orient > 1) text_orient = 0;
 	newstyle = 1;
 	Ret(1.);
-	return 0;
 }

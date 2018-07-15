@@ -39,7 +39,12 @@ extern void hoc_Setcolor(void);
 extern void hoc_init_space(void);
 extern void hoc_install_hoc_obj(void);
 extern void nrn_feenableexcept(void);
-
+#if DOS
+extern void hoc_settext(void);
+#endif
+#if defined(WIN32)
+extern void hoc_win_exec();
+#endif
 #if defined(__cplusplus)
 }
 #endif
