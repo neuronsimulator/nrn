@@ -53,7 +53,7 @@ a=`osascript -e 'tell app "Installer" to display dialog "
 Modify PATH to allow launching nrniv from Terminal?
   ... will append a line to  $HOME/'$b'
       and, if they exist, .cshrc and .tcshrc
-" buttons {"No", "Yes"} default button 1'`
+" buttons {"No", "Yes"} default button 2'`
   echo "2 a=$a" >> /tmp/temp.tmp
   if test "$a" = "button returned:Yes" ; then
     addpath=yes
@@ -84,9 +84,8 @@ if true || test "$addpath" = "yes" ; then # Python environment
   addpyenv=no
 
   a=`osascript -e 'tell app "Installer" to display dialog "
-Modify $HOME/'$b' to allow NEURON + Python
-  ... will set some Python related environment variables.
-" buttons {"No", "Yes"} default button 1'`
+Modify PYTHONPATH in $HOME/'$b' to allow a launch of Python to import neuron.
+" buttons {"No", "Yes"} default button 2'`
 
   echo "3 a=$a" >> /tmp/temp.tmp
   if test "$a" = "button returned:Yes" ; then
@@ -105,6 +104,7 @@ Modify $HOME/'$b' to allow NEURON + Python
       echo "setenv PYTHONPATH \"$idir/lib/python\":\$PYTHONPATH #added by NEURON installer" >> "$tcshp"
       chown $USER "$tcshp"
     fi
+   if false ; then # no longer add NRN_PYLIB and PYTHONHOME
     tmpfile=/tmp/$$.tmp
     (source $bp ; echo "srcpath $PATH" >> /tmp/temp.tmp ; $idir/x86_64/bin/nrnpyenv.sh |sed -n 's/\(^export.*\)/\1 #added by NEURON installer/p' | sed '/PYTHONPATH/d' > $tmpfile)
     cat $tmpfile >> "$bp"
@@ -117,6 +117,7 @@ Modify $HOME/'$b' to allow NEURON + Python
       chown $USER "$tcshp"
     fi
     rm -f $tmpfile
+   fi
   fi
   chown $USER "$bp"
 fi
