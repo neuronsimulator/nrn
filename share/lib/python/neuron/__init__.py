@@ -115,7 +115,7 @@ import nrn
 import _neuron_section
 h  = hoc.HocObject()
 version = h.nrnversion(5)
-
+__version__ = version
 
 # As a workaround to importing doc at neuron import time
 # (which leads to chicken and egg issues on some platforms)
