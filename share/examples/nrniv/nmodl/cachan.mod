@@ -40,12 +40,15 @@ ASSIGNED { ica		(mA/cm2)}
 STATE {	oca }		: fraction of open channels
 
 BREAKPOINT {
-	SOLVE castate METHOD euler
+	SOLVE castate METHOD cnexp
 	ica = pcabar*oca*oca*ghk(v, cai, cao)
 }
 
 DERIVATIVE castate {
-	oca' = (oca_ss(v) - oca)/oca_tau(v)
+	LOCAL inf, tau
+	inf = oca_ss(v)
+	tau = oca_tau(v)
+	oca' = (inf - oca)/tau
 }
 
 INITIAL {
