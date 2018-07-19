@@ -436,15 +436,30 @@ def nrn_dll(printpath=False):
         the_dll = ctypes.cdll[hoc.__file__]
         return the_dll        
     except:
-      pass
+        pass
 
-    neuron_home = os.path.split(os.path.split(h.neuronhome())[0])[0]
 
     success = False
     if sys.platform == 'msys' or sys.platform == 'win32':
       p = 'hoc%d%d' % (sys.version_info[0], sys.version_info[1])
     else:
       p = 'hoc'
+
+    try:
+        # maybe hoc.so in this neuron module
+        base_path = os.path.join(os.path.split(__file__)[0], p)
+        dlls = glob.glob(base_path + '*.*')
+        for dll in dlls:
+            try:
+                the_dll = ctypes.cdll[dll]
+                if printpath : print(dll)
+                return the_dll
+            except:
+                pass
+    except:
+        pass
+    # maybe old default module location
+    neuron_home = os.path.split(os.path.split(h.neuronhome())[0])[0]
     base_path = os.path.join(neuron_home, 'lib' , 'python', 'neuron', p)
     for extension in ['', '.dll', '.so', '.dylib']:
         dlls = glob.glob(base_path + '*' + extension)
