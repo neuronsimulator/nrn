@@ -321,7 +321,7 @@ static void* load_nrnpython_helper(const char* npylib) {
 #if DARWIN
 	sprintf(name, "%s/../../%s/lib/%s.dylib", neuron_home, NRNHOSTCPU, npylib);
 #else
-	sprintf(name, "%s.so", npylib);
+	sprintf(name, "%s/../../%s/lib/%s.so", neuron_home, NRNHOSTCPU, npylib);
 #endif
 #endif
 	void* handle = dlopen(name, RTLD_NOW);
