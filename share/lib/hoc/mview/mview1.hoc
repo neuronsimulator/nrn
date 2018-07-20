@@ -132,10 +132,10 @@ proc init() {local i, n, icdis, ntop, has_rxd
         has_rxd = pyobj.neuron._has_scipy()
     }
     if (has_rxd) {
-        if (nrnpython("neuron._has_rxd['crxd']")) {
+        if (pyobj.neuron._has_rxd.__getitem__("crxd")) {
             pyobj.neuron.crxd._model_view(display.top)
 
-        } else {
+        } else if (pyobj.neuron._has_rxd.__getitem__("rxd")){
             nrnpython("import neuron.rxd")
             pyobj.neuron.rxd._model_view(display.top)
         }
