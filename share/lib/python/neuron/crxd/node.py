@@ -10,8 +10,7 @@ import ctypes
 import collections
 
 #function to change extracellular diffusion
-dll = neuron.nrn_dll()
-set_diffusion = dll.set_diffusion
+set_diffusion = nrn_dll_sym('set_diffusion')
 set_diffusion.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_double, ctypes.c_double, ctypes.c_double]
 set_diffusion.restype = ctypes.c_int
 
