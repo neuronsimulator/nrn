@@ -749,7 +749,7 @@ def _c_compile(formula):
         if sys.platform.lower().startswith("win"):
             math_library = ''
             fpic = ''
-            gcc = os.path.join(h.neuronhome(),"mingw","bin","x86_64-w64-mingw32-gcc.exe")
+            gcc = os.path.join(h.neuronhome(),"mingw","mingw64","bin","x86_64-w64-mingw32-gcc.exe")
             if not os.path.isfile(gcc):
                 raise RxDException("unable to locate a C compiler. Please `set CC=<path to C compiler>`")
         else:
