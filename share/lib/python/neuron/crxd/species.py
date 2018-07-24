@@ -1,8 +1,7 @@
 from .rxdmath import _Arithmeticed
 import weakref
 from .section1d import Section1D
-from neuron import h, nrn
-import neuron
+from neuron import h, nrn, nrn_dll_sym
 from . import node, nodelist, rxdmath, region
 import numpy
 import warnings
@@ -12,32 +11,31 @@ from . import initializer
 import collections
 import ctypes
 
-dll = neuron.nrn_dll()
 #Now set in rxd.py
 #set_nonvint_block = neuron.nrn_dll_sym('set_nonvint_block')
 
 fptr_prototype = ctypes.CFUNCTYPE(None)
 
-set_setup = dll.set_setup
+set_setup = nrn_dll_sym('set_setup')
 set_setup.argtypes = [fptr_prototype]
-set_initialize = dll.set_initialize
+set_initialize = nrn_dll_sym('set_initialize')
 set_initialize.argtypes = [fptr_prototype]
 
 #setup_solver = nrn.setup_solver
 #setup_solver.argtypes = [ctypes.py_object, ctypes.py_object, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double]
 
-insert = dll.insert
+insert = nrn_dll_sym('insert')
 insert.argtypes = [ctypes.c_int, ctypes.py_object, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.py_object, ctypes.py_object, ctypes.c_int, ctypes.c_double]
 
 insert.restype = ctypes.c_int
 
-species_atolscale = dll.species_atolscale
+species_atolscale = nrn_dll_sym('species_atolscale')
 species_atolscale.argtypes = [ctypes.c_int, ctypes.c_double, ctypes.c_int, ctypes.POINTER(ctypes.c_int)]
 
-_set_grid_concentrations = dll.set_grid_concentrations
+_set_grid_concentrations = nrn_dll_sym('set_grid_concentrations')
 _set_grid_concentrations.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.py_object, ctypes.py_object]
 
-_set_grid_currents = dll.set_grid_currents
+_set_grid_currents = nrn_dll_sym('set_grid_currents')
 _set_grid_currents.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.py_object, ctypes.py_object, ctypes.py_object]
 
 
@@ -80,16 +78,14 @@ def _extracellular_do_initialize():
         # TODO: allow
 
 
-_extracellular_set_setup = dll.set_setup
+_extracellular_set_setup = nrn_dll_sym('set_setup')
 _extracellular_set_setup.argtypes = [fptr_prototype]
-_extracellular_set_initialize = dll.set_initialize
+_extracellular_set_initialize = nrn_dll_sym('set_initialize')
 _extracellular_set_initialize.argtypes = [fptr_prototype]
 
 def _ensure_extracellular():
     global _extracellular_exists, do_setup_fptr, do_initialize_fptr
     if not _extracellular_exists:
-        from neuron import nrn_dll
-        #set_nonvint_block(nrn_dll().rxd_nonvint_block)
         do_setup_fptr = fptr_prototype(_extracellular_do_setup)
         do_initialize_fptr = fptr_prototype(_extracellular_do_initialize)
         _extracellular_set_setup(do_setup_fptr)
@@ -597,7 +593,7 @@ class Species(_SpeciesMathable):
         self._ecs_boundary_conditions = ecs_boundary_conditions
         _all_species.append(weakref.ref(self))
         # declare an update to the structure of the model (the number of differential equations has changed)
-        neuron.nrn_dll_sym('structure_change_cnt', ctypes.c_int).value += 1
+        nrn_dll_sym('structure_change_cnt', ctypes.c_int).value += 1
 
         # initialize self if the rest of rxd is already initialized
         if initializer.is_initialized():

@@ -1,5 +1,4 @@
-import neuron
-from neuron import h, nrn, nrn_dll_sym, nrn_dll
+from neuron import h, nrn, nrn_dll_sym 
 from . import species, node, section1d, region, morphology
 from .nodelist import NodeList
 import weakref
@@ -41,9 +40,8 @@ _windows_dll_files = []
 _windows_dll = []
 
 
-dll = neuron.nrn_dll()
 
-make_time_ptr = dll.make_time_ptr
+make_time_ptr = nrn_dll_sym('make_time_ptr')
 make_time_ptr.argtypes = [ctypes.py_object, ctypes.py_object]
 make_time_ptr(h._ref_dt, h._ref_t)
 
@@ -53,27 +51,27 @@ _int_ptr = ctypes.POINTER(_ctypes_c_int)
 
 fptr_prototype = ctypes.CFUNCTYPE(None)
 set_nonvint_block = nrn_dll_sym('set_nonvint_block')
-set_nonvint_block(dll.rxd_nonvint_block)
+set_nonvint_block(nrn_dll_sym('rxd_nonvint_block'))
 
-set_setup = dll.set_setup
+set_setup = nrn_dll_sym('set_setup')
 set_setup.argtypes = [fptr_prototype]
-set_initialize = dll.set_initialize
+set_initialize = nrn_dll_sym('set_initialize')
 set_initialize.argtypes = [fptr_prototype]
 
-rxd_set_no_diffusion = dll.rxd_set_no_diffusion
+rxd_set_no_diffusion = nrn_dll_sym('rxd_set_no_diffusion')
 
-setup_solver = dll.setup_solver
+setup_solver = nrn_dll_sym('setup_solver')
 setup_solver.argtypes = [ndpointer(ctypes.c_double), ctypes.c_int,  ctypes.POINTER(ctypes.c_long), ctypes.c_int, ctypes.py_object, ctypes.py_object]
 
 #states = None
-_set_num_threads = dll.set_num_threads 
+_set_num_threads = nrn_dll_sym('set_num_threads')
 _set_num_threads.argtypes = [ctypes.c_int]
-_get_num_threads = dll.get_num_threads
+_get_num_threads = nrn_dll_sym('get_num_threads')
 _get_num_threads.restype = ctypes.c_int
 
 
-clear_rates = dll.clear_rates
-register_rate = dll.register_rate
+clear_rates = nrn_dll_sym('clear_rates')
+register_rate = nrn_dll_sym('register_rate')
 register_rate.argtypes = [ 
         ctypes.c_int,                                                              #num species
         ctypes.c_int,                                                               #num regions
@@ -85,7 +83,7 @@ register_rate.argtypes = [
         numpy.ctypeslib.ndpointer(ctypes.c_double, flags='contiguous'),             #multicompartment multipliers
         ]                                                                           #Reaction rate function
 
-setup_currents = dll.setup_currents
+setup_currents = nrn_dll_sym('setup_currents')
 setup_currents.argtypes = [
     ctypes.c_int,   #number of membrane currents
     ctypes.c_int,   #number induced currents
@@ -102,22 +100,22 @@ setup_currents.argtypes = [
 ]
     
 
-set_reaction_indices = dll.set_reaction_indices
+set_reaction_indices = nrn_dll_sym('set_reaction_indices')
 set_reaction_indices.argtypes = [ctypes.c_int, _int_ptr, _int_ptr, _int_ptr, 
     _int_ptr,_int_ptr,_double_ptr, ctypes.c_int, _int_ptr, _int_ptr, _int_ptr,
     _int_ptr]
 
-ecs_register_reaction = dll.ecs_register_reaction
+ecs_register_reaction = nrn_dll_sym('ecs_register_reaction')
 ecs_register_reaction.argtype = [ctypes.c_int, ctypes.c_int, _int_ptr, fptr_prototype]
 
-set_euler_matrix = dll.rxd_set_euler_matrix
+set_euler_matrix = nrn_dll_sym('rxd_set_euler_matrix')
 set_euler_matrix.argtypes = [
     ctypes.c_int,
     ctypes.c_int,
-    numpy.ctypeslib.ndpointer(int, flags='contiguous'),
-    numpy.ctypeslib.ndpointer(int, flags='contiguous'),
+    numpy.ctypeslib.ndpointer(numpy.int64, flags='contiguous'),
+    numpy.ctypeslib.ndpointer(numpy.int64, flags='contiguous'),
     numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
-    numpy.ctypeslib.ndpointer(int, flags='contiguous'),
+    numpy.ctypeslib.ndpointer(numpy.int64, flags='contiguous'),
     ctypes.c_int,
     numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
     numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
@@ -125,7 +123,7 @@ set_euler_matrix.argtypes = [
     numpy.ctypeslib.ndpointer(numpy.int32, flags='contiguous'),
     numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
 ]
-rxd_setup_curr_ptrs = dll.rxd_setup_curr_ptrs
+rxd_setup_curr_ptrs = nrn_dll_sym('rxd_setup_curr_ptrs')
 rxd_setup_curr_ptrs.argtypes = [
     ctypes.c_int,
     _int_ptr,
@@ -133,7 +131,7 @@ rxd_setup_curr_ptrs.argtypes = [
     ctypes.POINTER(ctypes.py_object),
 ]
 
-rxd_setup_conc_ptrs = dll.rxd_setup_conc_ptrs
+rxd_setup_conc_ptrs = nrn_dll_sym('rxd_setup_conc_ptrs')
 rxd_setup_conc_ptrs.argtypes = [
     ctypes.c_int,
     _int_ptr,
@@ -206,7 +204,7 @@ _zero_volume_indices = []
 _nonzero_volume_indices = []
 
 
-nrn_tree_solve = neuron.nrn_dll_sym('nrn_tree_solve')
+nrn_tree_solve = nrn_dll_sym('nrn_tree_solve')
 nrn_tree_solve.restype = None
 
 _dptr = _double_ptr
@@ -751,7 +749,7 @@ def _c_compile(formula):
         if sys.platform.lower().startswith("win"):
             math_library = ''
             fpic = ''
-            gcc = os.path.join(h.neuronhome(),"mingw","bin","x86_64-w64-mingw32-gcc.exe")
+            gcc = os.path.join(h.neuronhome(),"mingw","mingw64","bin","x86_64-w64-mingw32-gcc.exe")
             if not os.path.isfile(gcc):
                 raise RxDException("unable to locate a C compiler. Please `set CC=<path to C compiler>`")
         else:
@@ -818,8 +816,8 @@ _cur_map = None
 _h_ptrvector = h.PtrVector
 _h_vector = h.Vector
 
-_structure_change_count = neuron.nrn_dll_sym('structure_change_cnt', _ctypes_c_int)
-_diam_change_count = neuron.nrn_dll_sym('diam_change_cnt', _ctypes_c_int)
+_structure_change_count = nrn_dll_sym('structure_change_cnt', _ctypes_c_int)
+_diam_change_count = nrn_dll_sym('diam_change_cnt', _ctypes_c_int)
 
 def _donothing(): pass
 
@@ -1507,7 +1505,7 @@ def _do_nbs_register():
         # register the initialization handler and the ion register handler
         #
         _fih = h.FInitializeHandler(3, _init)
-        set_setup_matrices = dll.set_setup_matrices
+        set_setup_matrices = nrn_dll_sym('set_setup_matrices')
         set_setup_matrices.argtypes = [fptr_prototype]
         do_setup_matrices_fptr = fptr_prototype(_setup_matrices)
 
