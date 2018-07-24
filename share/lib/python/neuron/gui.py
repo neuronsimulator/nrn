@@ -49,7 +49,7 @@ class Timer:
             self.start()
 
     def start(self):
-        self._thread = theading.Timer(self._interval, self._do_callback)
+        self._thread = threading.Timer(self._interval, self._do_callback)
         self._thread.start()
 
     def end(self):
