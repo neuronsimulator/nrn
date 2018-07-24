@@ -112,10 +112,10 @@ set_euler_matrix = nrn_dll_sym('rxd_set_euler_matrix')
 set_euler_matrix.argtypes = [
     ctypes.c_int,
     ctypes.c_int,
-    numpy.ctypeslib.ndpointer(int, flags='contiguous'),
-    numpy.ctypeslib.ndpointer(int, flags='contiguous'),
+    numpy.ctypeslib.ndpointer(numpy.int64, flags='contiguous'),
+    numpy.ctypeslib.ndpointer(numpy.int64, flags='contiguous'),
     numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
-    numpy.ctypeslib.ndpointer(int, flags='contiguous'),
+    numpy.ctypeslib.ndpointer(numpy.int64, flags='contiguous'),
     ctypes.c_int,
     numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
     numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
