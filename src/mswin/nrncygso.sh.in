@@ -189,13 +189,21 @@ fi # NPYONLY no
     if test $nrnpy = 'yes' ; then
 
       echo 'make libnrnpython${NPYVER}.dll'
-      $CXX -shared ../nrnpython/${ltlibs}/*.o -L. -lnrniv -o libnrnpython${NPYVER}.dll \
+      z=../nrnpython
+      lnpyfiles="$z/grids.o $z/nrnpy_hoc.o $z/nrnpy_nrn.o $z/nrnpy_p2h.o $z/nrnpython.o $z/rxd.o $z/rxd_vol.o $z/rxd_extracellular.o"
+      $CXX -shared $lnpyfiles -L. -lnrniv -o libnrnpython${NPYVER}.dll \
         @NRNPYTHON_PYLIBLINK@ \
         -L${IVLIBDIR} -lIVhines \
         -lreadline -lpthread \
         -Wl,--enable-auto-image-base \
         ${LDFLAGS} \
         -Xlinker --out-implib -Xlinker libnrnpython${NPYVER}.dll.a
+
+      echo 'make librxdmath.dll'
+      $CXX -shared ../nrnpython/${ltlibs}/rxdmath.o -o librxdmath.dll \
+        -Wl,--enable-auto-image-base \
+        ${LDFLAGS} \
+        -Xlinker --out-implib -Xlinker librxdmath.dll.a
 
       echo "make hocmodule${NPYVER}.dll"
       $CXX -shared \
