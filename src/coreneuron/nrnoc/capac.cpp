@@ -59,6 +59,8 @@ static const char* mechanism[] = {"0", "capacitance", "cm", 0, "i_cap", 0, 0};
 void nrn_alloc_capacitance(double*, Datum*, int);
 void nrn_init_capacitance(NrnThread*, Memb_list*, int);
 void nrn_jacob_capacitance(NrnThread*, Memb_list*, int);
+void nrn_div_capacity(NrnThread*, Memb_list*, int);
+void nrn_mul_capacity(NrnThread*, Memb_list*, int);
 
 #define nparm 2
 
@@ -178,5 +180,57 @@ void nrn_alloc_capacitance(double* data, Datum* pdata, int type) {
     (void)pdata;
     (void)type;       /* unused */
     data[0] = DEF_cm; /*default capacitance/cm^2*/
+}
+
+void nrn_div_capacity(NrnThread* _nt, Memb_list* ml, int type) {
+    (void)type;
+    int _cntml_actual = ml->nodecount;
+    int _cntml_padded = ml->_nodecount_padded;
+    int _iml;
+    double* vdata;
+    (void)_nt;
+    (void)type;
+    (void)_cntml_padded; /* unused */
+
+    int* ni = ml->nodeindices;
+
+#if LAYOUT == 1 /*AoS*/
+    for (_iml = 0; _iml < _cntml_actual; _iml++) {
+        vdata = ml->data + _iml * nparm;
+#else
+    vdata = ml->data;
+    _PRAGMA_FOR_INIT_ACC_LOOP_
+    for (_iml = 0; _iml < _cntml_actual; _iml++) {
+#endif
+        i_cap = VEC_RHS(ni[_iml]);
+        VEC_RHS(ni[_iml]) /= 1.e-3 * cm;
+        // fprintf(stderr, "== nrn_div_cap: RHS[%d]=%.12f\n", ni[_iml], VEC_RHS(ni[_iml])) ;
+    }
+}
+
+void nrn_mul_capacity(NrnThread* _nt, Memb_list* ml, int type) {
+    (void)type;
+    int _cntml_actual = ml->nodecount;
+    int _cntml_padded = ml->_nodecount_padded;
+    int _iml;
+    double* vdata;
+    (void)_nt;
+    (void)type;
+    (void)_cntml_padded; /* unused */
+
+    int* ni = ml->nodeindices;
+
+    const double cfac = .001 * _nt->cj;
+
+#if LAYOUT == 1 /*AoS*/
+    for (_iml = 0; _iml < _cntml_actual; _iml++) {
+        vdata = ml->data + _iml * nparm;
+#else
+    vdata = ml->data;
+    _PRAGMA_FOR_INIT_ACC_LOOP_
+    for (_iml = 0; _iml < _cntml_actual; _iml++) {
+#endif
+        VEC_RHS(ni[_iml]) *= cfac * cm;
+    }
 }
 }  // namespace coreneuron
