@@ -107,12 +107,14 @@ class Rate(GeneralizedReaction):
         self._mult = [1]
         self._mult_extended = self._mult
 
-        if not self._species():
+        if not self._species() or isinstance(self._species(),species.SpeciesOnExtracellular):
             for sptr in self._involved_species:
                 self._indices_dict[sptr()] = []
             return
+        
 
-        active_secs = None 
+        active_secs = None
+        
         # locate the regions containing all species (including the one that changes)
         active_regions = list(set.intersection(*[set(sptr()._regions if isinstance(sptr(),species.Species) else [sptr()._region()]) for sptr in list(self._involved_species) + [self._species]]))
         sp_regions = self._species()._regions if isinstance(self._species(),species.Species) else [self._species()._region()]

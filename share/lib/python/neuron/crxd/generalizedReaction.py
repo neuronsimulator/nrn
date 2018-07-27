@@ -133,9 +133,10 @@ class GeneralizedReaction(object):
         sources_ecs = [r for r in self._sources if isinstance(r(),species.SpeciesOnExtracellular)]
         dests_ecs = [r for r in self._dests if isinstance(r(),species.SpeciesOnExtracellular)]
 
-        if self._trans_membrane:   #assume sources share common regions and destinations share common regions
+        sp_regions = None
+        if self._trans_membrane and (sources or dests):   #assume sources share common regions and destinations share common regions
             sp_regions = list({sptr()._region for sptr in sources}.union({sptr()._region for sptr in dests}))
-        else:
+        elif sources and dests:
             sp_regions = list(set.intersection(*[set(sptr()._regions) if isinstance(sptr(),species.Species) else {sptr()._region} for sptr in sources + dests]))
 
         #The reactants do not share a common region 
