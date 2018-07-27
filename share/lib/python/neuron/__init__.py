@@ -306,15 +306,16 @@ def psection(section):
 
     Print info about section in a hoc format which is executable.
     (length, parent, diameter, membrane information)
+    
+    Use section.psection() instead to get a data structure that
+    contains the same information and more.
 
     See:
 
-    http://neuron.yale.edu/neuron/docs/help/neuron/neuron/nrnoc.html#psection
+    https://www.neuron.yale.edu/neuron/static/py_doc/modelspec/programmatic/topology.html?#psection
 
     """
-    section.push()
-    h.psection()
-    h.pop_section()
+    h.psection(sec=section)
 
 def init():
     """
@@ -322,9 +323,10 @@ def init():
 
     Initialize the simulation kernel.  This should be called before a run(tstop) call.
 
-    Equivalent to hoc finitialize():
+    Use h.finitialize() instead, which allows you to specify the membrane potential
+    to initialize to; via e.g. h.finitialize(-65)
 
-    http://neuron.yale.edu/neuron/docs/help/neuron/neuron/nrnoc.html#finitialize
+    https://www.neuron.yale.edu/neuron/static/py_doc/simctrl/programmatic.html?#finitialize
     
     """
     h.finitialize()

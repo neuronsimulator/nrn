@@ -1,11 +1,12 @@
 movie_frame_dur_ = .01
 {variable_domain(&movie_frame_dur_, .001, 1e9) units(&movie_frame_dur_, "s")}
 objref movie_timer, movierunbox
+movie_timer = new Timer("moviestep()")
 proc moviestep() {
 	steprun()
 	realtime = startsw() - rtstart
 	if (t >= tstop || stoprun) {
-		movie_timer.end
+		movie_timer.end()
 		running_ = 0
 	}
 }
@@ -16,11 +17,10 @@ proc movierun() {
 	stoprun = 0
 	stdinit()
 	movie_timer.seconds(movie_frame_dur_)
-	movie_timer.start
+	movie_timer.start()
 }
 
 proc movierunpanel() {localobj b
-	movie_timer = new Timer("moviestep()")
 	b = new VBox(3)
 	movierunbox = b
 	b.save("movierunsave()")

@@ -86,6 +86,7 @@ cp $B/src/mswin/libnrnmpi.dll $DB/libnrnmpi.dll
 #will move hocmodule to lib/python/neuron/hoc.pyd after lib/python is created
 cp $B/src/mswin/hocmodule*.dll $DB
 cp $B/src/mswin/libnrnpython*.dll $DB
+cp $B/src/mswin/librxdmath.dll $DB
 cp $ivbindir/libIVhines-3.dll $DB/libIVhines-3.dll
 
 if test -f $B/src/nmodl/.libs/nocmodl.exe ; then
@@ -199,6 +200,7 @@ for f in $DB/hocmodule*.dll ; do
 done
 set +e
 cp $B/share/lib/python/neuron/rxd/geometry3d/*.pyd $D/lib/python/neuron/rxd/geometry3d
+cp $B/share/lib/python/neuron/crxd/geometry3d/*.pyd $D/lib/python/neuron/crxd/geometry3d
 set -e
 fi
 
@@ -214,6 +216,7 @@ fi
 if true ; then
 cd $S/src/mswin
 cp bin/mknrndll bin/neurondemo bin/nrngui $DB
+cp bin/mknrndll $DB/nrnivmodl
 rm -f $Z
 zip -l $Z notes.txt
 #do the lib shell scripts in unix format

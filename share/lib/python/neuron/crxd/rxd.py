@@ -112,15 +112,15 @@ set_euler_matrix = nrn_dll_sym('rxd_set_euler_matrix')
 set_euler_matrix.argtypes = [
     ctypes.c_int,
     ctypes.c_int,
-    numpy.ctypeslib.ndpointer(numpy.int64, flags='contiguous'),
-    numpy.ctypeslib.ndpointer(numpy.int64, flags='contiguous'),
+    numpy.ctypeslib.ndpointer(numpy.int_, flags='contiguous'),
+    numpy.ctypeslib.ndpointer(numpy.int_, flags='contiguous'),
     numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
-    numpy.ctypeslib.ndpointer(numpy.int64, flags='contiguous'),
+    numpy.ctypeslib.ndpointer(numpy.int_, flags='contiguous'),
     ctypes.c_int,
     numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
     numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
     numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
-    numpy.ctypeslib.ndpointer(numpy.int32, flags='contiguous'),
+    numpy.ctypeslib.ndpointer(numpy.intc, flags='contiguous'),
     numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
 ]
 rxd_setup_curr_ptrs = nrn_dll_sym('rxd_setup_curr_ptrs')
@@ -608,7 +608,7 @@ def _diffusion_matrix_solve(dt, rhs):
             _diffusion_a_base = _numpy_zeros(n)
             _diffusion_b_base = _numpy_zeros(n)
             # TODO: the int32 bit may be machine specific
-            _diffusion_p = _numpy_array([-1] * n, dtype=numpy.int32)
+            _diffusion_p = _numpy_array([-1] * n, dtype=numpy.intc)
             for j in range(n):
                 col = _diffusion_matrix[:, j]
                 col_nonzero = col.nonzero()
@@ -733,7 +733,11 @@ def _find_librxdmath():
             pass
         if success: break
     if not success:
-        raise RxDException('unable to connect to the librxdmath library')
+        if sys.platform.lower().startswith("win"):
+            dll = os.path.join(h.neuronhome(), 'bin', 'librxdmath.dll')
+            success = os.path.exists(dll)
+        if not success:
+            raise RxDException('unable to connect to the librxdmath library')
     return dll
     
 def _c_compile(formula):
@@ -758,7 +762,13 @@ def _c_compile(formula):
     gcc_cmd =  "%s -I%s -I%s " % (gcc, sysconfig.get_python_inc(), os.path.join(h.neuronhome(), "..", "..", "include", "nrn"))
     gcc_cmd += "-shared %s  %s.c %s " % (fpic, filename, _find_librxdmath())
     gcc_cmd += "-o %s.so %s" % (filename, math_library)
-    os.system(gcc_cmd)
+    if sys.platform.lower().startswith("win"):
+        my_path = os.getenv('PATH')
+        os.putenv('PATH', my_path + ';' + os.path.join(h.neuronhome(),"mingw","mingw64","bin"))
+        os.system(gcc_cmd)
+        os.putenv('PATH', my_path)
+    else:
+        os.system(gcc_cmd)
     #TODO: Find a better way of letting the system locate librxdmath.so.0
     rxdmath_dll = ctypes.cdll[_find_librxdmath()]
     dll = ctypes.cdll['./%s.so' % filename]
@@ -877,7 +887,7 @@ def _matrix_to_rxd_sparse(m):
     # number of rows
     n = m.shape[1]
 
-    return n, len(nonzero_i), numpy.ascontiguousarray(nonzero_i, dtype=numpy.int64), numpy.ascontiguousarray(nonzero_j, dtype=numpy.int64), nonzero_values
+    return n, len(nonzero_i), numpy.ascontiguousarray(nonzero_i, dtype=numpy.int_), numpy.ascontiguousarray(nonzero_j, dtype=numpy.int_), nonzero_values
 
 def _calculate_diffusion_bases():
     global _diffusion_a_base, _diffusion_b_base, _diffusion_d_base, _diffusion_p
@@ -887,7 +897,7 @@ def _calculate_diffusion_bases():
     _diffusion_a_base = _numpy_zeros(n, dtype=numpy.double)
     _diffusion_b_base = _numpy_zeros(n, dtype=numpy.double)
     # TODO: the int32 bit may be machine specific
-    _diffusion_p = _numpy_array([-1] * n, dtype=numpy.int32)
+    _diffusion_p = _numpy_array([-1] * n, dtype=numpy.intc)
     for j in range(n):
         col = _diffusion_matrix[:, j]
         col_nonzero = col.nonzero()
@@ -995,7 +1005,7 @@ def _setup_matrices():
                 _euler_matrix = -_diffusion_matrix
 
     volumes = node._get_data()[0]
-    _zero_volume_indices = numpy.where(volumes == 0)[0]
+    _zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
     _nonzero_volume_indices = volumes.nonzero()[0]
 
 
@@ -1169,7 +1179,7 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
 def _compile_reactions():
     #clear all previous reactions (intracellular & extracellular) and the
     #supporting indexes
-    _windows_remove_dlls()
+    #_windows_remove_dlls()
     clear_rates()
     
     regions_inv = dict() #regions -> reactions that occur there
@@ -1326,7 +1336,15 @@ def _compile_reactions():
             species_ids_used = numpy.zeros((creg.num_species,creg.num_regions),bool)
             ecs_species_ids_used = numpy.zeros((creg.num_ecs_species,creg.num_regions),bool)
             fxn_string = '#include <math.h>\n'
-            fxn_string += '#include <rxdmath.h>\n'
+            fxn_string += """/*Some functions supported by numpy that aren't included in math.h
+ * names and arguments match the wrappers used in rxdmath.py
+ */
+
+double factorial(const double);
+double degrees(const double);
+void radians(const double, double*);
+double log1p(const double);
+"""
             fxn_string += 'void reaction(double** species, double** rhs, double* mult, double** species_ecs, double** rhs_ecs)\n{'
             # declare the "rate" variable if any reactions (non-rates)
             for rprt in list(creg._react_regions.keys()):
@@ -1528,7 +1546,9 @@ def _windows_remove_dlls():
     for (dll_ptr,filepath) in zip(_windows_dll,_windows_dll_files):
         dll = dll_ptr()
         if dll:
+            handle = dll._handle
             del dll
+            ctypes.windll.kernel32.FreeLibrary(handle)
         os.remove(filepath)
     _windows_dll_files = []
     _windows_dll = []
