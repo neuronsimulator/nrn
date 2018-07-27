@@ -26,7 +26,7 @@ void make_time_ptr(PyHocObject* my_dt_ptr, PyHocObject* my_t_ptr) {
 Grid_node *make_Grid(PyHocObject* my_states, int my_num_states_x, 
     int my_num_states_y, int my_num_states_z, double my_dc_x, double my_dc_y,
     double my_dc_z, double my_dx, double my_dy, double my_dz, PyHocObject* my_alpha,
-	PyHocObject* my_lambda, int bc, double bc_value) {
+	PyHocObject* my_lambda, int bc, double bc_value, double atolscale) {
     int k;
     Grid_node *new_Grid = malloc(sizeof(Grid_node));
     assert(new_Grid);
@@ -135,6 +135,8 @@ Grid_node *make_Grid(PyHocObject* my_states, int my_num_states_x,
     new_Grid->adi_dir_z->states_out = new_Grid->states_x;
     new_Grid->adi_dir_z->line_size = my_num_states_z;
 
+    new_Grid->atolscale = atolscale;
+
 
     return new_Grid;
 }
@@ -146,13 +148,14 @@ Grid_node *make_Grid(PyHocObject* my_states, int my_num_states_x,
 int insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x, 
     int my_num_states_y, int my_num_states_z, double my_dc_x, double my_dc_y,
     double my_dc_z, double my_dx, double my_dy, double my_dz, 
-	PyHocObject* my_alpha, PyHocObject* my_lambda, int bc, double bc_value) {
+	PyHocObject* my_alpha, PyHocObject* my_lambda, int bc, double bc_value,
+    double atolscale) {
     int i = 0;
 
 
     Grid_node *new_Grid = make_Grid(my_states, my_num_states_x, my_num_states_y, 
             my_num_states_z, my_dc_x, my_dc_y, my_dc_z, my_dx, my_dy, my_dz, 
-			my_alpha, my_lambda, bc, bc_value);
+			my_alpha, my_lambda, bc, bc_value, atolscale);
     Grid_node **head = &(Parallel_grids[grid_list_index]);
     Grid_node *save;
 

@@ -177,4 +177,6 @@ void start_threads(const int);
 void TaskQueue_sync(TaskQueue*);
 static void ode_solve(double, double, double*, double*);
 static void ode_jacobian(double, double*, double*);
+void ecs_atolscale(double*);
+
 

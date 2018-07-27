@@ -15,6 +15,8 @@ and Flux_pair structs and their respective functions
 #define IDX(x,y,z)  ((z) + (y) * g->size_z + (x) * g->size_z * g->size_y)
 #define INDEX(x,y,z)  ((z) + (y) * grid->size_z + (x) * grid->size_z * grid->size_y)
 #define ALPHA(x,y,z) (g->get_alpha(g->alpha,IDX(x,y,z)))
+#define VOLFRAC(idx) (g->get_alpha(g->alpha,idx))
+#define TORT(idx) (g->get_lambda(g->lambda,idx))
 #define LAMBDA(x,y,z) (g->get_lambda(g->lambda,IDX(x,y,z)))
 #define SQ(x)       ((x)*(x))
 #define CU(x)       ((x)*(x)*(x))
@@ -134,6 +136,7 @@ typedef struct Grid_node {
     struct AdiDirection* adi_dir_x;
     struct AdiDirection* adi_dir_y;
     struct AdiDirection* adi_dir_z;
+    double atolscale;
 } Grid_node;
 
 typedef struct AdiDirection{
@@ -183,7 +186,7 @@ void make_dt_ptr(PyHocObject* my_dt_ptr);
 Grid_node *make_Grid(PyHocObject* my_states, int my_num_states_x, 
     int my_num_states_y, int my_num_states_z, double my_dc_x, double my_dc_y,
     double my_dc_z, double my_dx, double my_dy, double my_dz,
-	PyHocObject* my_alpha, PyHocObject* my_lambda, int, double);
+	PyHocObject* my_alpha, PyHocObject* my_lambda, int, double, double);
 
 
 // Free a single Grid_node "grid"
@@ -193,7 +196,7 @@ void free_Grid(Grid_node *grid);
 int insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x, 
     int my_num_states_y, int my_num_states_z, double my_dc_x, double my_dc_y,
     double my_dc_z, double my_dx, double my_dy, double my_dz, 
-	PyHocObject* my_alpha, PyHocObject* my_lambda, int, double);
+	PyHocObject* my_alpha, PyHocObject* my_lambda, int, double, double);
 
 // Set the diffusion coefficients for a given grid_id 
 int set_diffusion(int grid_list_index, int grid_id, double dc_x, double dc_y, double dc_z);

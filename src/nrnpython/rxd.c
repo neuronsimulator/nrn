@@ -643,6 +643,7 @@ int rxd_nonvint_block(int method, int size, double* p1, double* p2, int thread_i
             break;
         case 10:
             ode_abs_tol(p1);
+            ecs_atolscale(p1);
             /* ode_abs_tol(y_abs_tolerance); fill with cvode.atol() * scalefactor */
             break;
         default:
@@ -1764,9 +1765,6 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double *y
 	        }
 
 	    }
-
-        
-        
     }
 
     m_free(jacobian);
