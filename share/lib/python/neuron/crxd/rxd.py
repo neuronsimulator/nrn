@@ -1540,10 +1540,13 @@ def _windows_remove_dlls():
     for (dll_ptr,filepath) in zip(_windows_dll,_windows_dll_files):
         dll = dll_ptr()
         if dll:
+            handle = dll._handle
             del dll
+            ctypes.windll.kernel32.FreeLibrary(handle)
         os.remove(filepath)
     _windows_dll_files = []
     _windows_dll = []
+        
         
         
 def nthread(n=None):
