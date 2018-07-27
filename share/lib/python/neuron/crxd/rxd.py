@@ -112,15 +112,15 @@ set_euler_matrix = nrn_dll_sym('rxd_set_euler_matrix')
 set_euler_matrix.argtypes = [
     ctypes.c_int,
     ctypes.c_int,
-    numpy.ctypeslib.ndpointer(numpy.int64, flags='contiguous'),
-    numpy.ctypeslib.ndpointer(numpy.int64, flags='contiguous'),
+    numpy.ctypeslib.ndpointer(numpy.int_, flags='contiguous'),
+    numpy.ctypeslib.ndpointer(numpy.int_, flags='contiguous'),
     numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
-    numpy.ctypeslib.ndpointer(numpy.int64, flags='contiguous'),
+    numpy.ctypeslib.ndpointer(numpy.int_, flags='contiguous'),
     ctypes.c_int,
     numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
     numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
     numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
-    numpy.ctypeslib.ndpointer(numpy.int32, flags='contiguous'),
+    numpy.ctypeslib.ndpointer(numpy.intc, flags='contiguous'),
     numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
 ]
 rxd_setup_curr_ptrs = nrn_dll_sym('rxd_setup_curr_ptrs')
@@ -608,7 +608,7 @@ def _diffusion_matrix_solve(dt, rhs):
             _diffusion_a_base = _numpy_zeros(n)
             _diffusion_b_base = _numpy_zeros(n)
             # TODO: the int32 bit may be machine specific
-            _diffusion_p = _numpy_array([-1] * n, dtype=numpy.int32)
+            _diffusion_p = _numpy_array([-1] * n, dtype=numpy.intc)
             for j in range(n):
                 col = _diffusion_matrix[:, j]
                 col_nonzero = col.nonzero()
@@ -887,7 +887,7 @@ def _matrix_to_rxd_sparse(m):
     # number of rows
     n = m.shape[1]
 
-    return n, len(nonzero_i), numpy.ascontiguousarray(nonzero_i, dtype=numpy.int64), numpy.ascontiguousarray(nonzero_j, dtype=numpy.int64), nonzero_values
+    return n, len(nonzero_i), numpy.ascontiguousarray(nonzero_i, dtype=numpy.int_), numpy.ascontiguousarray(nonzero_j, dtype=numpy.int_), nonzero_values
 
 def _calculate_diffusion_bases():
     global _diffusion_a_base, _diffusion_b_base, _diffusion_d_base, _diffusion_p
@@ -897,7 +897,7 @@ def _calculate_diffusion_bases():
     _diffusion_a_base = _numpy_zeros(n, dtype=numpy.double)
     _diffusion_b_base = _numpy_zeros(n, dtype=numpy.double)
     # TODO: the int32 bit may be machine specific
-    _diffusion_p = _numpy_array([-1] * n, dtype=numpy.int32)
+    _diffusion_p = _numpy_array([-1] * n, dtype=numpy.intc)
     for j in range(n):
         col = _diffusion_matrix[:, j]
         col_nonzero = col.nonzero()
@@ -1005,7 +1005,7 @@ def _setup_matrices():
                 _euler_matrix = -_diffusion_matrix
 
     volumes = node._get_data()[0]
-    _zero_volume_indices = numpy.where(volumes == 0)[0]
+    _zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
     _nonzero_volume_indices = volumes.nonzero()[0]
 
 
