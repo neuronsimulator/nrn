@@ -762,7 +762,13 @@ def _c_compile(formula):
     gcc_cmd =  "%s -I%s -I%s " % (gcc, sysconfig.get_python_inc(), os.path.join(h.neuronhome(), "..", "..", "include", "nrn"))
     gcc_cmd += "-shared %s  %s.c %s " % (fpic, filename, _find_librxdmath())
     gcc_cmd += "-o %s.so %s" % (filename, math_library)
-    os.system(gcc_cmd)
+    if sys.platform.lower().startswith("win"):
+        my_path = os.getenv('PATH')
+        os.putenv('PATH', my_path + ';' + os.path.join(h.neuronhome(),"mingw","mingw64","bin"))
+        os.system(gcc_cmd)
+        os.putenv('PATH', my_path)
+    else:
+        os.system(gcc_cmd)
     #TODO: Find a better way of letting the system locate librxdmath.so.0
     rxdmath_dll = ctypes.cdll[_find_librxdmath()]
     dll = ctypes.cdll['./%s.so' % filename]
@@ -1546,7 +1552,6 @@ def _windows_remove_dlls():
         os.remove(filepath)
     _windows_dll_files = []
     _windows_dll = []
-        
         
         
 def nthread(n=None):
