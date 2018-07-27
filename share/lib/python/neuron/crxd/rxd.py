@@ -112,10 +112,10 @@ set_euler_matrix = nrn_dll_sym('rxd_set_euler_matrix')
 set_euler_matrix.argtypes = [
     ctypes.c_int,
     ctypes.c_int,
-    numpy.ctypeslib.ndpointer(int, flags='contiguous'),
-    numpy.ctypeslib.ndpointer(int, flags='contiguous'),
+    numpy.ctypeslib.ndpointer(numpy.int64, flags='contiguous'),
+    numpy.ctypeslib.ndpointer(numpy.int64, flags='contiguous'),
     numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
-    numpy.ctypeslib.ndpointer(int, flags='contiguous'),
+    numpy.ctypeslib.ndpointer(numpy.int64, flags='contiguous'),
     ctypes.c_int,
     numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
     numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
@@ -749,7 +749,7 @@ def _c_compile(formula):
         if sys.platform.lower().startswith("win"):
             math_library = ''
             fpic = ''
-            gcc = os.path.join(h.neuronhome(),"mingw","bin","x86_64-w64-mingw32-gcc.exe")
+            gcc = os.path.join(h.neuronhome(),"mingw","mingw64","bin","x86_64-w64-mingw32-gcc.exe")
             if not os.path.isfile(gcc):
                 raise RxDException("unable to locate a C compiler. Please `set CC=<path to C compiler>`")
         else:
