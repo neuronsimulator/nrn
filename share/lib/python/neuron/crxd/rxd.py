@@ -137,6 +137,17 @@ rxd_setup_conc_ptrs.argtypes = [
     _int_ptr,
     ctypes.POINTER(ctypes.py_object)
 ]
+
+_c_headers = """#include <math.h>
+/*Some functions supported by numpy that aren't included in math.h
+ * names and arguments match the wrappers used in rxdmath.py
+ */
+double factorial(const double);
+double degrees(const double);
+void radians(const double, double*);
+double log1p(const double);
+"""
+
 def _list_to_cint_array(data):
     if data is None or len(data) == 0:
         return None
@@ -1335,16 +1346,7 @@ def _compile_reactions():
             mc_mult_list = []
             species_ids_used = numpy.zeros((creg.num_species,creg.num_regions),bool)
             ecs_species_ids_used = numpy.zeros((creg.num_ecs_species,creg.num_regions),bool)
-            fxn_string = '#include <math.h>\n'
-            fxn_string += """/*Some functions supported by numpy that aren't included in math.h
- * names and arguments match the wrappers used in rxdmath.py
- */
-
-double factorial(const double);
-double degrees(const double);
-void radians(const double, double*);
-double log1p(const double);
-"""
+            fxn_string = _c_headers 
             fxn_string += 'void reaction(double** species, double** rhs, double* mult, double** species_ecs, double** rhs_ecs)\n{'
             # declare the "rate" variable if any reactions (non-rates)
             for rprt in list(creg._react_regions.keys()):
@@ -1425,10 +1427,8 @@ double log1p(const double);
     if len(ecs_regions_inv) > 0:
         grid_ids = []
         all_gids = set() 
-        fxn_string = '#include <math.h>\n'
-        fxn_string += '#include <rxdmath.h>\n'
+        fxn_string = _c_headers 
         #TODO: find the nrn include path in python
-        #TODO: install rxdmath.h into the include path
         #It is necessary for a couple of function in python that are not in math.h
         fxn_string += 'void reaction(double* species_ecs, double* rhs)\n{'
         # declare the "rate" variable if any reactions (non-rates)
