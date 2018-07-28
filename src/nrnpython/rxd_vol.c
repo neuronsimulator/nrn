@@ -12,16 +12,15 @@
 #define DcZ(x,y,z) (g->dc_z/LAMBDA(x,y,z))
 
 /*Flux in the x,y,z directions*/
+//TODO: Refactor to avoid calculating indices
 #define Fxx(x1,x2) (ALPHA(x1,y,z)*ALPHA(x2,y,z)*g->dc_x*(g->states[IDX(x1,y,z)] - g->states[IDX(x2,y,z)])/((ALPHA(x1,y,z)+ALPHA(x2,y,z))*LAMBDA(x1,y,z)))
 #define Fxy(y1,y1d,y2) (ALPHA(x,y1,z)*ALPHA(x,y2,z)*g->dc_y*(g->states[IDX(x,y1,z)] - g->states[IDX(x,y2,z)])/((ALPHA(x,y1,z)+ALPHA(x,y2,z))*LAMBDA(x,y1d,z)))
 #define Fxz(z1,z1d,z2) (ALPHA(x,y,z1)*ALPHA(x,y,z2)*g->dc_z*(g->states[IDX(x,y,z1)] - g->states[IDX(x,y,z2)])/((ALPHA(x,y,z1)+ALPHA(x,y,z2))*LAMBDA(x,y,z1d)))
 #define Fyy(y1,y2) (ALPHA(x,y1,z)*ALPHA(x,y2,z)*g->dc_y*(g->states[IDX(x,y1,z)] - g->states[IDX(x,y2,z)])/((ALPHA(x,y1,z)+ALPHA(x,y2,z))*LAMBDA(x,y1,z)))
 #define Fzz(z1,z2) (ALPHA(x,y,z1)*ALPHA(x,y,z2)*g->dc_z*(g->states[IDX(x,y,z1)] - g->states[IDX(x,y,z2)])/((ALPHA(x,y,z1)+ALPHA(x,y,z2))*LAMBDA(x,y,z1)))
 
-#define FLUXX(a,b,pa,pb) (ALPHA(a,j,k)*ALPHA(b,j,k)*g->dc_x*(pa - pb)/(0.5*(ALPHA(a,j,k)+ALPHA(b,j,k))))
-#define FLUXY(a,b,pa,pb) (ALPHA(i,a,k)*ALPHA(i,b,k)*g->dc_y*(pa - pb)/(0.5*(ALPHA(i,a,k)+ALPHA(i,b,k))))
-#define FLUXZ(a,b,pa,pb) (ALPHA(i,j,a)*ALPHA(i,j,b)*g->dc_z*(pa - pb)/(0.5*(ALPHA(i,j,a)+ALPHA(i,j,b))))
-
+/*Flux for used by variable step inhomogeneous volume fraction*/
+#define FLUX(pidx,idx) (VOLFRAC(pidx)*VOLFRAC(idx)*(states[pidx] - states[idx]))/(0.5*(VOLFRAC(pidx)+VOLFRAC(idx)))
 
 extern int NUM_THREADS;
 /* solve Ax=b where A is a diagonally dominant tridiagonal matrix
@@ -637,7 +636,7 @@ void _rhs_variable_step_helper_tort(Grid_node* g, double const * const states, d
 
 	/*indices*/
 	int index, prev_i, prev_j, prev_k, next_i ,next_j, next_k;
-	int xp, xpd, xm, xmd, yp, ypd, ym, ymd, zp, zpd, zm, zmd;
+	int xpd, xmd, ypd, ymd, zpd, zmd;
 	double div_x, div_y, div_z;
 
 	/* Euler advance x, y, z (all points) */
@@ -645,37 +644,25 @@ void _rhs_variable_step_helper_tort(Grid_node* g, double const * const states, d
     stop_j = num_states_y - 1;
     stop_k = num_states_z - 1;
 
-    for (i = 0; i <= stop_i; i++) {
-			/*Zero flux boundary conditions*/
-			xp = (i==stop_i)?i-1:i+1;
-			xpd = (i==stop_i)?i:i+1;
-			xm = (i==0)?i+1:i-1;
-			xmd = (i==0)?1:i;
-			div_x = (i==0||i==stop_i)?2.:1.;
+    for (i = 0, index = 0, prev_i = num_states_y*num_states_z, next_i = num_states_y*num_states_z; 
+         i < num_states_x; i++) {
+	    /*Zero flux boundary conditions*/
+		div_x = (i==0||i==stop_i)?2.:1.;
+		xpd = (i==stop_i)?i:i+1;
+		xmd = (i==0)?1:i;
 
-        for(j = 0; j <= stop_j; j++) {
-			yp = (j==stop_j)?j-1:j+1;
-			ypd = (j==stop_j)?j:j+1;
-			ym = (j==0)?j+1:j-1;
-			ymd = (j==0)?1:j;
+        for(j = 0, prev_j = index + num_states_z, next_j = index + num_states_z; j < num_states_y; j++) {
 			div_y = (j==0||j==stop_j)?2.:1.;
-            
-			for(k = 0; k <= stop_k; k++) {
-				zp = (k==stop_k)?k-1:k+1;
-				zpd = (k==stop_k)?k:k+1;
-				zm = (k==0)?k+1:k-1;
-				zmd = (k==0)?1:k;
-				div_z = (k==0||k==stop_k)?2.:1.;
+            ypd = (j==stop_j)?j:j+1;
+			ymd = (j==0)?1:j;
 
-                index = find(i, j, k, num_states_y, num_states_z);
-                prev_i = find(xm, j, k, num_states_y, num_states_z);
-                prev_j = find(i, ym, k, num_states_y, num_states_z);
-                prev_k = find(i, j, zm, num_states_y, num_states_z);
-                next_i = find(xp, j, k, num_states_y, num_states_z);
-                next_j = find(i, yp, k, num_states_y, num_states_z);
-                next_k = find(i, j, zp, num_states_y, num_states_z);
-			
-                ydot[index] += rate_x * (DcX(xmd,j,k)*states[prev_i] -  
+			for(k = 0, prev_k = index + 1, next_k = index + 1; k < num_states_z;
+                k++, index++, prev_i++, next_i++, prev_j++, next_j++) {
+				div_z = (k==0||k==stop_k)?2.:1.;
+				zpd = (k==stop_k)?k:k+1;
+				zmd = (k==0)?1:k;
+
+                ydot[index] = rate_x * (DcX(xmd,j,k)*states[prev_i] -  
                     (DcX(xmd,j,k)+DcX(xpd,j,k)) * states[index] + 
 					DcX(xpd,j,k)*states[next_i])/div_x;
 
@@ -687,10 +674,19 @@ void _rhs_variable_step_helper_tort(Grid_node* g, double const * const states, d
                     (DcZ(i,j,zmd)+DcZ(i,j,zpd)) * states[index] + 
 					DcZ(i,j,zpd)*states[next_k])/div_z;
 
-            }   
+                next_k = (k==stop_k-1)?index:index+2;
+                prev_k = index;
+
+            }
+            prev_j = index - num_states_z;
+            next_j = (j==stop_j-1)?prev_j:index + num_states_z;
         }
+        prev_i = index - num_states_y*num_states_z;
+        next_i = (i==stop_i-1)?prev_i:index+num_states_y*num_states_z;
     }
 }
+
+
 
 
 void _rhs_variable_step_helper_vol(Grid_node* g, double const * const states, double* ydot) {
@@ -706,57 +702,53 @@ void _rhs_variable_step_helper_vol(Grid_node* g, double const * const states, do
 	int index, prev_i, prev_j, prev_k, next_i ,next_j, next_k;
 
 	/*zero flux boundary conditions*/
-	int xp, xpd, xm, xmd, yp, ypd, ym, ymd, zp, zpd, zm, zmd;
+	int xpd, xmd, ypd, ymd, zpd, zmd;
 	double div_x, div_y, div_z;
 	
 	/* Euler advance x, y, z (all points) */
     stop_i = num_states_x - 1;
     stop_j = num_states_y - 1;
     stop_k = num_states_z - 1;
-    for (i = 0; i <= stop_i; i++) {
-			/*Zero flux boundary conditions*/
-			xp = (i==stop_i)?stop_i-1:i+1;
-			xpd = (i==stop_i)?i:i+1;
-			xm = (i==0)?i+1:i-1;
-			xmd = (i==0)?1:i;
-			div_x = (i==0||i==stop_i)?2.:1.;
 
-        for(j = 0; j <= stop_j; j++) {
-			yp = (j==stop_j)?j-1:j+1;
-			ypd = (j==stop_j)?j:j+1;
-			ym = (j==0)?j+1:j-1;
-			ymd = (j==0)?1:j;
+    for (i = 0, index = 0, prev_i = num_states_y*num_states_z, next_i = num_states_y*num_states_z; 
+         i < num_states_x; i++) {
+	    /*Zero flux boundary conditions*/
+		div_x = (i==0||i==stop_i)?2.:1.;
+		xpd = (i==stop_i)?i:i+1;
+		xmd = (i==0)?1:i;
+
+        for(j = 0, prev_j = index + num_states_z, next_j = index + num_states_z; j < num_states_y; j++) {
 			div_y = (j==0||j==stop_j)?2.:1.;
-            
-			for(k = 0; k <= stop_k; k++) {
-				zp = (k==stop_k)?k-1:k+1;
-				zpd = (k==stop_k)?k:k+1;
-				zm = (k==0)?k+1:k-1;
-				zmd = (k==0)?1:k;
+            ypd = (j==stop_j)?j:j+1;
+			ymd = (j==0)?1:j;
+
+			for(k = 0, prev_k = index + 1, next_k = index + 1; k < num_states_z;
+                k++, index++, prev_i++, next_i++, prev_j++, next_j++) {
 				div_z = (k==0||k==stop_k)?2.:1.;
-				
-                index = find(i, j, k, num_states_y, num_states_z);
-                prev_i = find(xm, j, k, num_states_y, num_states_z);
-                prev_j = find(i, ym, k, num_states_y, num_states_z);
-                prev_k = find(i, j, zm, num_states_y, num_states_z);
-                next_i = find(xp, j, k, num_states_y, num_states_z);
-                next_j = find(i, yp, k, num_states_y, num_states_z);
-                next_k = find(i, j, zp, num_states_y, num_states_z);
+				zpd = (k==stop_k)?k:k+1;
+				zmd = (k==0)?1:k;
 				
 				/*x-direction*/
-				ydot[index] += rate_x * (FLUXX(xp,i,states[next_i],states[index])/LAMBDA(xpd,j,k) - 
-					FLUXX(xm,i,states[index],states[prev_i])/LAMBDA(xmd,j,k))/(ALPHA(i,j,k)*div_x);
+                ydot[index] = rate_x * (FLUX(next_i,index)/LAMBDA(xpd,j,k) + 
+					FLUX(prev_i,index)/LAMBDA(xmd,j,k))/(VOLFRAC(index)*div_x);
 
 				/*y-direction*/
-				ydot[index] += rate_y * (FLUXY(yp,j,states[next_j],states[index])/LAMBDA(i,ypd,k) - 
-					FLUXY(ym,j,states[index],states[prev_j])/LAMBDA(i,ymd,k))/(ALPHA(i,j,k)*div_y);
+				ydot[index] += rate_y * (FLUX(next_j,index)/LAMBDA(i,ypd,k) +
+                FLUX(prev_j,index)/LAMBDA(i,ymd,k))/(VOLFRAC(index)*div_y);
 
 				/*z-direction*/
-				ydot[index] += rate_z * (FLUXZ(zp,k,states[next_k],states[index])/LAMBDA(i,j,zpd) - 
-					FLUXZ(zm,k,states[index],states[prev_k])/LAMBDA(i,j,zmd))/(ALPHA(i,j,k)*div_z);
-				
-            }   
+				ydot[index] += rate_z * (FLUX(next_k,index)/LAMBDA(i,j,zpd) + 
+					FLUX(prev_k,index)/LAMBDA(i,j,zmd))/(VOLFRAC(index)*div_z);
+
+                next_k = (k==stop_k-1)?index:index+2;
+                prev_k = index;
+
+            }
+            prev_j = index - num_states_z;
+            next_j = (j==stop_j-1)?prev_j:index + num_states_z;
         }
+        prev_i = index - num_states_y*num_states_z;
+        next_i = (i==stop_i-1)?prev_i:index+num_states_y*num_states_z;
     }
 }
 

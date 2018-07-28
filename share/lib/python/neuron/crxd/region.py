@@ -220,7 +220,7 @@ class Extracellular:
             for i in range(self._nx):
                 for j in range(self._ny):
                     for k in range(self._nz):
-                        self.tortuosity[i,j,k] = tortuosity(self._xlo + i*self._dx[0], self._ylo + j*self._dx[1], self._zlo + k*self._dx[2])
+                        self.tortuosity[i,j,k] = tortuosity(self._xlo + i*self._dx[0], self._ylo + j*self._dx[1], self._zlo + k*self._dx[2])**2
             self._tortuosity = h.Vector(self.tortuosity.flatten())
         else:
             tortuosity = numpy.array(tortuosity)

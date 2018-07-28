@@ -144,6 +144,14 @@ def test():
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(neuron.tests.suite())
 
+def test_rxd():
+    """ Runs a tests on the rxd and crxd modules."""
+    import neuron.tests
+    import unittest
+
+    runner = unittest.TextTestRunner(verbosity=2)
+    runner.run(neuron.tests.test_rxd.suite())
+
 
 # ------------------------------------------------------------------------------
 # class factory for subclassing h.anyclass

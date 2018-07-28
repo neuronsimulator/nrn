@@ -35,6 +35,7 @@ neuron/tests/__init__.py \
 neuron/tests/test_all.py \
 neuron/tests/test_vector.py \
 neuron/tests/test_neuron.py \
+neuron/tests/test_rxd.py \
 neuron/tests/_subclass.py \
 \
 neuron/crxd/region.py \

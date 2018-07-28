@@ -8,6 +8,7 @@
 #include <pthread.h>
 #include <nrnwrap_Python.h>
 
+#define loc(x,y,z)((z) + (y) *  grid->size_z + (x) *  grid->size_z *  grid->size_y)
 
 /*
     Globals
@@ -541,10 +542,22 @@ int ode_count(const int offset) {
     return count;
 }
 
-int find(const int x, const int y, const int z, const int size_y, const int size_z) {
-    int index = z + y * size_z + x * size_z * size_y;
-    return index;
 
+void ecs_atolscale(double* y)
+{
+    Grid_node* grid;
+    Py_ssize_t i;
+    int grid_size;
+    double* grid_states;
+    y += states_cvode_offset;
+    for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
+        grid_size = grid->size_x * grid->size_y * grid->size_z;
+
+        for (i = 0; i < grid_size; i++) {
+            y[i] *= grid->atolscale;
+        }
+        y += grid_size;
+    }
 }
 
 void _ecs_ode_reinit(double* y) {
@@ -568,7 +581,7 @@ void _ecs_ode_reinit(double* y) {
 void _rhs_variable_step_ecs(const double t, const double* states, double* ydot) {
 	Grid_node *grid;
     Py_ssize_t n, i;
-    int grid_size;
+    int grid_size, j, k;
 	double dt = *dt_ptr;
     Current_Triple* c;
     double* grid_states;
@@ -636,6 +649,7 @@ void _rhs_variable_step_ecs(const double t, const double* states, double* ydot) 
 
     /* do the diffusion rates */
     for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
+        grid_size = grid->size_x * grid->size_y * grid->size_z;
 		switch(grid->VARIABLE_ECS_VOLUME)
 		{
 			case VOLUME_FRACTION:
@@ -655,249 +669,56 @@ void _rhs_variable_step_ecs(const double t, const double* states, double* ydot) 
 }
 
 
-
-
-static void _rhs_variable_step_helper(Grid_node* grid, double const * const states, double* ydot) {
-    int num_states_x = grid->size_x, num_states_y = grid->size_y, num_states_z = grid->size_z;
-    double dc_x = grid->dc_x, dc_y = grid->dc_y, dc_z = grid->dc_z;
-    double dx = grid->dx, dy = grid->dy, dz = grid->dz;
+static void _rhs_variable_step_helper(Grid_node* g, double const * const states, double* ydot) {
+    int num_states_x = g->size_x, num_states_y = g->size_y, num_states_z = g->size_z;
+    double dx = g->dx, dy = g->dy, dz = g->dz;
     int i, j, k, stop_i, stop_j, stop_k;
+    double dc_x = g->dc_x, dc_y = g->dc_y, dc_z = g->dc_z;
+
     double rate_x = dc_x / (dx * dx);
     double rate_y = dc_y / (dy * dy);
     double rate_z = dc_z / (dz * dz);
 
-    /* Euler advance x, y, z (all internal points) */
+	/*indices*/
+	int index, prev_i, prev_j, prev_k, next_i ,next_j, next_k;
+	int xp, xm, yp, ym, zp, zm;
+	double div_x, div_y, div_z;
+
+	/* Euler advance x, y, z (all points) */
     stop_i = num_states_x - 1;
     stop_j = num_states_y - 1;
     stop_k = num_states_z - 1;
-    for (i = 1; i < stop_i; i++) {
-        for(j = 1; j < stop_j; j++) {
-            for(k = 1; k < stop_k; k++) {
-                int index = find(i, j, k, num_states_y, num_states_z);
-                int prev_i = find(i-1, j, k, num_states_y, num_states_z);
-                int prev_j = find(i, j-1, k, num_states_y, num_states_z);
-                int prev_k = find(i, j, k-1, num_states_y, num_states_z);
-                int next_i = find(i+1, j, k, num_states_y, num_states_z);
-                int next_j = find(i, j+1, k, num_states_y, num_states_z);
-                int next_k = find(i, j, k+1, num_states_y, num_states_z);
+    for (i = 0, index = 0, prev_i = num_states_y*num_states_z, next_i = num_states_y*num_states_z; 
+         i < num_states_x; i++) {
+	    /*Zero flux boundary conditions*/
+		div_x = (i==0||i==stop_i)?2.:1.;
 
-                ydot[index] += rate_x * (states[prev_i] - 2 * 
-                    states[index] + states[next_i]);
+        for(j = 0, prev_j = index + num_states_z, next_j = index + num_states_z; j < num_states_y; j++) {
+			div_y = (j==0||j==stop_j)?2.:1.;
+            
+			for(k = 0, prev_k = index + 1, next_k = index + 1; k < num_states_z;
+                k++, index++, prev_i++, next_i++, prev_j++, next_j++) {
+				div_z = (k==0||k==stop_k)?2.:1.;
 
-                ydot[index] += rate_y * (states[prev_j] - 2 * 
-                    states[index] + states[next_j]);
+                ydot[index] = rate_x * (states[prev_i] -  
+                    2.0 * states[index] + states[next_i])/div_x;
 
-                ydot[index] += rate_z * (states[prev_k] - 2 * 
-                    states[index] + states[next_k]);
-            }   
-        }
-    }
+                ydot[index] += rate_y * (states[prev_j] - 
+                    2.0 * states[index] + states[next_j])/div_y;
 
-    /* boundary conditions for Z faces */
-    for(i = 1; i < stop_i; i++) {
-        for(j = 1; j < stop_j; j++) {
-            int index = find(i, j, 0, num_states_y, num_states_z);
-            int prev_i = find(i-1, j, 0, num_states_y, num_states_z);
-            int prev_j = find(i, j-1, 0, num_states_y, num_states_z);
-            int next_i = find(i+1, j, 0, num_states_y, num_states_z);
-            int next_j = find(i, j+1, 0, num_states_y, num_states_z);
-            int next_k = find(i, j, 1, num_states_y, num_states_z);
+                ydot[index] += rate_z * (states[prev_k] - 
+                    2.0 * states[index] + states[next_k])/div_z;
+                next_k = (k==stop_k-1)?index:index+2;
+                prev_k = index;
 
-            ydot[index] += rate_x * (states[prev_i] - 2 * 
-                states[index] + states[next_i]);
-
-            ydot[index] += rate_y * (states[prev_j] - 2 * 
-                states[index] + states[next_j]);
-
-            ydot[index] += rate_z * (states[next_k] - states[index]);
-
-            index = find(i, j, stop_k, num_states_y, num_states_z);
-            prev_i = find(i-1, j, stop_k, num_states_y, num_states_z);
-            prev_j = find(i, j-1, stop_k, num_states_y, num_states_z);
-            next_i = find(i+1, j, stop_k, num_states_y, num_states_z);
-            next_j = find(i, j+1, stop_k, num_states_y, num_states_z);
-            next_k = find(i, j, stop_k-1, num_states_y, num_states_z);
-
-            ydot[index] += rate_x * (states[prev_i] - 2 * 
-                states[index] + states[next_i]);
-
-            ydot[index] += rate_y * (states[prev_j] - 2 * 
-                states[index] + states[next_j]);
-
-            ydot[index] += rate_z * (states[next_k] - states[index]);
-        }   
-    }   
-
-    /* boundary conditions for X faces */
-    for(j = 1; j < stop_j; j++) {
-        for(k = 1; k < stop_k; k++) {
-            int index = find(0, j, k, num_states_y, num_states_z);
-            int prev_j = find(0, j-1, k, num_states_y, num_states_z);
-            int prev_k = find(0, j, k-1, num_states_y, num_states_z);
-            int next_j = find(0, j+1, k, num_states_y, num_states_z);
-            int next_k = find(0, j, k+1, num_states_y, num_states_z);
-            int next_i = find(1, j, k, num_states_y, num_states_z);
-
-            ydot[index] += rate_x * (states[next_i] - states[index]);
-
-            ydot[index] += rate_y * (states[prev_j] - 2 * 
-                states[index] + states[next_j]);
-
-            ydot[index] += rate_z * (states[prev_k] - 2 * 
-                states[index] + states[next_k]);
-
-            index = find(stop_i, j, k, num_states_y, num_states_z);
-            prev_j = find(stop_i, j-1, k, num_states_y, num_states_z);
-            prev_k = find(stop_i, j, k-1, num_states_y, num_states_z);
-            next_j = find(stop_i, j+1, k, num_states_y, num_states_z);
-
-            next_k = find(stop_i, j, k+1, num_states_y, num_states_z);
-            next_i = find(stop_i-1, j, k, num_states_y, num_states_z);
-
-            ydot[index] += rate_x * (states[next_i] - states[index]);
-
-            ydot[index] += rate_y * (states[prev_j] - 2 * 
-                states[index] + states[next_j]);
-
-            ydot[index] += rate_z * (states[prev_k] - 2 * 
-                states[index] + states[next_k]);
-        }   
-    }   
-
-    /* boundary conditions for Y faces */
-    for(i = 1; i < stop_i; i++) {
-        for(k = 1; k < stop_k; k++) {
-            int index = find(i, 0, k, num_states_y, num_states_z);
-            int prev_i = find(i-1, 0, k, num_states_y, num_states_z);
-            int prev_k = find(i, 0, k-1, num_states_y, num_states_z);
-            int next_i = find(i+1, 0, k, num_states_y, num_states_z);
-            int next_k = find(i, 0, k+1, num_states_y, num_states_z);
-            int next_j = find(i, 1, k, num_states_y, num_states_z);
-
-            ydot[index] += rate_x * (states[prev_i] - 2 * 
-                states[index] + states[next_i]);
-
-            ydot[index] += rate_y * (states[next_j] - states[index]);
-
-            ydot[index] += rate_z * (states[prev_k] - 2 * 
-                states[index] + states[next_k]);
-
-            index = find(i, stop_j, k, num_states_y, num_states_z);
-            prev_i = find(i-1, stop_j, k, num_states_y, num_states_z);
-            prev_k = find(i, stop_j, k-1, num_states_y, num_states_z);
-            next_i = find(i+1, stop_j, k, num_states_y, num_states_z);
-            next_k = find(i, stop_j, k+1, num_states_y, num_states_z);
-            next_j = find(i, stop_j-1, k, num_states_y, num_states_z);
-
-            ydot[index] += rate_x * (states[prev_i] - 2 * 
-                states[index] + states[next_i]);
-
-            ydot[index] += rate_y * (states[next_j] - states[index]);
-
-            ydot[index] += rate_z * (states[prev_k] - 2 * 
-                states[index] + states[prev_k]);
-        }   
-    }
-
-    /* boundary conditions for edges */
-    for(i = 1; i < stop_i; i++) {
-        update_boundaries_x(i, 0, 0, 1, 1, rate_x, rate_y, rate_z, num_states_x, num_states_y, num_states_z, states, ydot);
-        update_boundaries_x(i, stop_j, 0, -1, 1, rate_x, rate_y, rate_z, num_states_x, num_states_y, num_states_z, states, ydot);
-        update_boundaries_x(i, 0, stop_k, 1, -1, rate_x, rate_y, rate_z, num_states_x, num_states_y, num_states_z, states, ydot);
-        update_boundaries_x(i, stop_j, stop_k, -1, -1, rate_x, rate_y, rate_z, num_states_x, num_states_y, num_states_z, states, ydot);
-    }
-    for(j = 1; j < stop_j; j++) {
-        update_boundaries_y(0, j, 0, 1, 1, rate_x, rate_y, rate_z, num_states_x, num_states_y, num_states_z, states, ydot);
-        update_boundaries_y(stop_i, j, 0, -1, 1, rate_x, rate_y, rate_z, num_states_x, num_states_y, num_states_z, states, ydot);
-        update_boundaries_y(0, j, stop_k, 1, -1, rate_x, rate_y, rate_z, num_states_x, num_states_y, num_states_z, states, ydot);
-        update_boundaries_y(stop_i, j, stop_k, -1, -1, rate_x, rate_y, rate_z, num_states_x, num_states_y, num_states_z, states, ydot);
-    }
-    for(k = 1; k < stop_k; k++) {
-        update_boundaries_z(0, 0, k, 1, 1, rate_x, rate_y, rate_z, num_states_x, num_states_y, num_states_z, states, ydot);
-        update_boundaries_z(stop_i, 0, k, -1, 1, rate_x, rate_y, rate_z, num_states_x, num_states_y, num_states_z, states, ydot);
-        update_boundaries_z(0, stop_j, k, 1, -1, rate_x, rate_y, rate_z, num_states_x, num_states_y, num_states_z, states, ydot);
-        update_boundaries_z(stop_i, stop_j, k, -1, -1, rate_x, rate_y, rate_z, num_states_x, num_states_y, num_states_z, states, ydot);
-    }
-
-    /* boundary conditions for corners */
-    int next_i, next_j, next_k;
-    for(i = 0; i <= stop_i; i += stop_i) {
-        for(j = 0; j <= stop_j; j += stop_j) {
-            for(k = 0; k <= stop_k; k += stop_k) {
-                int corner = find(i, j, k, num_states_y, num_states_z);
-                if(!i) next_i = find(i+1, j, k, num_states_y, num_states_z);
-                else next_i = find(i-1, j, k, num_states_y, num_states_z);
-                if(!j) next_j = find(i, j+1, k, num_states_y, num_states_z);
-                else next_j = find(i, j-1, k, num_states_y, num_states_z);
-                if(!k) next_k = find(i, j, k+1, num_states_y, num_states_z);
-                else next_k = find(i, j, k-1, num_states_y, num_states_z);
-                ydot[corner] += rate_x * (states[next_i] - states[corner]);
-                ydot[corner] += rate_y * (states[next_j] - states[corner]);
-                ydot[corner] += rate_z * (states[next_k] - states[corner]);
             }
+            prev_j = index - num_states_z;
+            next_j = (j==stop_j-1)?prev_j:index + num_states_z;
         }
+        prev_i = index - num_states_y*num_states_z;
+        next_i = (i==stop_i-1)?prev_i:index+num_states_y*num_states_z;
     }
-
 }
-
-/* update x-dimension edge points */
-/* function takes in combinations of j and k to represent the edges as well as
-1 or -1 for dj and dk to indicate which adjacent location is still in bounds */
-static void update_boundaries_x(int i, int j, int k, int dj, int dk, double rate_x,
- double rate_y, double rate_z, int num_states_x, int num_states_y, int num_states_z,
- double const * const states, double* ydot) {
-
-    int edge = find(i, j, k, num_states_y, num_states_z);
-    int prev_i = find(i-1, j, k, num_states_y, num_states_z);
-    int next_i = find(i+1, j, k, num_states_y, num_states_z);
-    int next_j = find(i, j + dj, k, num_states_y, num_states_z);
-    int next_k = find(i, j, k + dk, num_states_y, num_states_z);
-
-    ydot[edge] += rate_x * (states[prev_i] - 2 * states[edge]
-     + states[next_i]);
-    ydot[edge] += rate_y * (states[next_j] - states[edge]);
-    ydot[edge] += rate_z * (states[next_k] - states[edge]);
-}
-
-/* update y-dimension edge points */
-static void update_boundaries_y(int i, int j, int k, int di, int dk, double rate_x,
- double rate_y, double rate_z, int num_states_x, int num_states_y, int num_states_z,
- double const * const states, double* ydot) {
-
-    int edge = find(i, j, k, num_states_y, num_states_z);
-    int prev_j = find(i, j-1, k, num_states_y, num_states_z);
-    int next_j = find(i, j+1, k, num_states_y, num_states_z);
-    int next_i = find(i + di, j, k, num_states_y, num_states_z);
-    int next_k = find(i, j, k + dk, num_states_y, num_states_z);
-
-    ydot[edge] += rate_x * (states[next_i] - states[edge]);
-    ydot[edge] += rate_y * (states[prev_j] - 2 * states[edge]
-     + states[next_j]);
-    ydot[edge] += rate_z * (states[next_k] - states[edge]);
-}
-
-/* update z-dimension edge points */
-static void update_boundaries_z(int i, int j, int k, int di, int dj, double rate_x,
- double rate_y, double rate_z, int num_states_x, int num_states_y, int num_states_z,
- double const * const states, double* ydot) {
-
-    int edge = find(i, j, k, num_states_y, num_states_z);
-    int prev_k = find(i, j, k-1, num_states_y, num_states_z);
-    int next_k = find(i, j, k+1, num_states_y, num_states_z);
-    int next_i = find(i + di, j, k, num_states_y, num_states_z);
-    int next_j = find(i, j + dj, k, num_states_y, num_states_z);
-
-    ydot[edge] += rate_x * (states[next_i] - states[edge]);
-    ydot[edge] += rate_y * (states[next_j] - states[edge]);
-    ydot[edge] += rate_z * (states[prev_k] - 2 * states[edge] + 
-        states[next_k]);
-}
-
-
-
-
-
-
 
 
 /*****************************************************************************
