@@ -57,8 +57,10 @@ def suite():
     suite = unittest.makeSuite(RxDTestCase,'test')
     return suite
     
-if __name__ == "__main__":
-
-    # unittest.main()
+def test():
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(suite())
+
+if __name__ == "__main__":
+    # unittest.main()
+    test()
