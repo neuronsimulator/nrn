@@ -624,6 +624,25 @@ static PyObject* NPySecObj_diam3d(
   return PyFloat_FromDouble((double)fabs(sec->pt3d[i].d));
 }
 
+static PyObject* NPySecObj_spine3d(
+    NPySecObj* self,
+    PyObject* args) {  // returns True/False depending on if spine present
+  Section* sec = self->sec_;
+  int n, i;
+  if (!PyArg_ParseTuple(args, "i", &i)) {
+    return NULL;
+  }
+  n = sec->npt3d - 1;
+  if (i < 0 || i > n) {
+    PyErr_SetString(PyExc_Exception, "Arg out of range\n");
+    return NULL;
+  }
+  if (sec->pt3d[i].d < 0) {
+    Py_RETURN_TRUE;
+  }
+  Py_RETURN_FALSE;
+}
+
 static PyObject* pysec_repr(PyObject* p) {
   NPySecObj* psec = (NPySecObj*)p;
   if (psec->sec_ && psec->sec_->prop) {
@@ -1800,6 +1819,8 @@ static PyMethodDef NPySecObj_methods[] = {
      "Returns the arc position of the ith 3D point."},
     {"diam3d", (PyCFunction)NPySecObj_diam3d, METH_VARARGS,
      "Returns the diam of the ith 3D point."},
+    {"spine3d", (PyCFunction)NPySecObj_spine3d, METH_VARARGS,
+     "Returns True or False depending on whether a spine exists at the ith 3D point."},
     {"pt3dremove", (PyCFunction) NPySecObj_pt3dremove, METH_VARARGS,
      "Removes the ith 3D point."},
     {"pt3dclear", (PyCFunction) NPySecObj_pt3dclear, METH_VARARGS,
