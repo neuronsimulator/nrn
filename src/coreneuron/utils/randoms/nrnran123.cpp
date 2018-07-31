@@ -48,7 +48,7 @@ size_t nrnran123_state_size() {
 
 void nrnran123_set_globalindex(uint32_t gix) {
     k.v[0] = gix;
-#if (defined(__CUDACC__) || defined(_OPENACC))
+#if (defined(__CUDACC__) || defined(_OPENACC)) && !defined(CUDA_MODULES_DISABLED)
     nrnran123_set_gpu_globalindex(gix);
 #endif
 }

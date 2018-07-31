@@ -236,6 +236,7 @@ if(ENABLE_OPENACC)
         endif(CUDA_FOUND)
     else(ENABLE_CUDA_MODULES)
         message(INFO "Support for CUDA modules (e.g. Random123) is disabled!")
+        add_definitions(-DCUDA_MODULES_DISABLED)
     endif(ENABLE_CUDA_MODULES)
 
 ELSE(ENABLE_OPENACC)

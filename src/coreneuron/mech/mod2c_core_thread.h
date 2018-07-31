@@ -114,7 +114,6 @@ extern int nrn_kinetic_steer(int, SparseObj*, double*, _threadargsproto_);
 
 // derived from nrn/src/scopmath/euler.c
 // updated for aos/soa layout index
-#pragma acc routine seq
 static inline int euler_thread(int neqn, int* var, int* der, DIFUN fun, _threadargsproto_) {
     double dt = _nt->_dt;
     int i;
