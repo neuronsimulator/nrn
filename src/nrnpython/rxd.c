@@ -1447,6 +1447,7 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates)
                     states_for_reaction[i][j] = -1.0;
                 }
 	        }
+            MEM_ZERO(result_array[i],react->num_regions*sizeof(double));
 	    }
 
 	    for(i = 0; i < react->num_ecs_species; i++)
