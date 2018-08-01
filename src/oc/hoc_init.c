@@ -15,9 +15,10 @@ extern int      numprocs(), myproc(), psync();
 extern int	hoc_co();
 #endif
 #if	DOS || defined(WIN32) /*|| defined(MAC)*/
-extern int	hoc_settext();
-extern void hoc_win_exec(void);
 extern double	erf(), erfc();	/* supplied by unix */
+#endif
+#if defined(WIN32)
+extern void hoc_winio_show(int b);
 #endif
 
 #if MAC

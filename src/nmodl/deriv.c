@@ -549,7 +549,21 @@ Sprintf(buf, "static int _slist%d[%d], _dlist%d[%d];\n",
 		cvode_diffeq(s, q1, q2);
 		qextra = q2->next;
 	}
-	Lappendstr(procfunc, ";\n return 0;\n}\n");
+#if 1
+	/* if we are not at the end, there is more extra */
+	while (qextra != q4) {
+		switch (qextra->itemtype) {
+		case STRING:
+			Lappendstr(procfunc, STR(qextra));
+			break;
+		case SYMBOL:
+			Lappendsym(procfunc, SYM(qextra));
+			break;
+		}
+		qextra = qextra->next;
+	}
+#endif
+	Lappendstr(procfunc, " return 0;\n}\n");
 	vectorize_scan_for_func(qq, procfunc);
   }
 

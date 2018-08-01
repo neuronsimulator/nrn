@@ -41,7 +41,7 @@ So macos now handled by the HAVE_SSTREAM case.
 #include <stream.h>
 #else
 #define _STREAM_COMPAT
-#include <iostream.h>
+#include <iostream>
 #endif
 
 // for some compilers stream.h is insufficient

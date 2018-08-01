@@ -28,6 +28,35 @@ def process_events() :
     print ("Exception in gui thread")
   _lock.release()
 
+class Timer:
+    """Python version of the NEURON Timer class"""
+    def __init__(self, callback):
+        self._callable = callback
+        self._interval = 1
+        self._thread = None
+
+    def seconds(self, interval):
+        last_interval = interval
+        self._interval = interval
+        return last_interval
+
+    def _do_callback(self):
+        if callable(self._callable):
+            self._callable()
+        else:
+            h(self._callable)
+        if self._thread is not None:
+            self.start()
+
+    def start(self):
+        self._thread = threading.Timer(self._interval, self._do_callback)
+        self._thread.start()
+
+    def end(self):
+        if self._thread is not None:
+            self._thread.cancel()
+            self._thread = None
+
 class LoopTimer(threading.Thread) :
   """
   a Timer that calls f every interval
@@ -58,3 +87,4 @@ if h.nrnversion(9) == '2' or h.nrnversion(8).find('mingw') > 0:
 
 h.load_file("nrngui.hoc")
 
+h.movie_timer = Timer("moviestep()")

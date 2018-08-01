@@ -203,9 +203,6 @@ dnl however we would need to deal with libnrnmech.so and dlopen
 if test x$make_rpms = xtrue ; then
 dnl	AM_ENABLE_SHARED(no)
 	AM_ENABLE_SHARED(yes)
-	if test "$with_readline" = "" ; then
-		with_readline="no"
-	fi
 elif test x$CYGWIN = xyes ; then
 dnl shared libraries cannot have undefined names. src/mswin/nrncygso.sh
 dnl will combine .o files into a single nrniv.dll (-fPIC is not needed)
@@ -242,7 +239,7 @@ AC_CHECK_LIBM
 LIBS="$LIBS $LIBM"
 
 dnl Python that runs on the build machine needed to create hocusr.h
-AC_CHECK_PROG(PYTHON_BLD, python, python, python3)
+AC_CHECK_PROGS(PYTHON_BLD, python3 python, python3)
 
 dnl Python for cygwin and mingw has to be done early because later tests may
 dnl have to be done with a CFLAGS="-mno-cygwin" (obsolete after gcc2.3)
@@ -254,18 +251,12 @@ dnl Otherwise, to make a distribution, need to modify
 dnl src/neuronmusic/Makefile.am and remove neuronmusic.cpp from the list
 dnl of extra dist files.
 dnl Also needed for neuron.rxd.geometry3d module
-if test "x$have_cython" != "xno" ; then
-  AC_CHECK_PROG(have_cython, cython, yes, no)
-  if test "x$have_cython" = "xno" ; then
-    AC_CHECK_PROG(have_cython, cython3, yes, no)
-  fi
-fi
-AC_CHECK_PROG(CYTHON, cython, cython, cython3)
-AM_CONDITIONAL(HAVE_CYTHON, test x$have_cython = xyes)
+AC_CHECK_PROGS(CYTHON, cython3 cython, "no")
+AM_CONDITIONAL(HAVE_CYTHON, test x$CYTHON != xno)
 
 BUILD_RX3D=0
 if test "$ac_nrn_rx3d" = "yes" ; then
-	if test x$have_cython = xyes -o -f share/lib/python/neuron/rxd/geometry3d/ctng.cpp ; then
+	if test x$CYTHON != xno -o -f share/lib/python/neuron/rxd/geometry3d/ctng.cpp ; then
 		BUILD_RX3D=1
 	else
 		BUILD_RX3D=0
@@ -621,11 +612,14 @@ AC_CONFIG_HEADERS([
 	src/nrnpython/nrnpython_config.h
 ])
 AC_CONFIG_FILES([
+	bin/nrndiagnose.sh
 	src/nrnpython/Makefile
 	src/mswin/nrncygso.sh
 	src/nrnpython/setup.py
 	share/lib/python/neuron/rxd/geometry3d/Makefile
         share/lib/python/neuron/rxd/geometry3d/setup.py
+    share/lib/python/neuron/crxd/geometry3d/Makefile
+        share/lib/python/neuron/crxd/geometry3d/setup.py
 ])
 fi	
 
@@ -687,6 +681,7 @@ AC_CONFIG_FILES([
 	share/demo/sync/Makefile
 	share/lib/python/neuron/Makefile
 	share/lib/python/neuron/rxd/Makefile
+    share/lib/python/neuron/crxd/Makefile
 	])
 fi
 

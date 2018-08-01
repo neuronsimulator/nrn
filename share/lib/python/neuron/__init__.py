@@ -114,7 +114,8 @@ except:
 import nrn
 import _neuron_section
 h  = hoc.HocObject()
-
+version = h.nrnversion(5)
+__version__ = version
 
 # As a workaround to importing doc at neuron import time
 # (which leads to chicken and egg issues on some platforms)
@@ -142,6 +143,14 @@ def test():
 
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(neuron.tests.suite())
+
+def test_rxd():
+    """ Runs a tests on the rxd and crxd modules."""
+    import neuron.tests
+    import unittest
+
+    runner = unittest.TextTestRunner(verbosity=2)
+    runner.run(neuron.tests.test_rxd.suite())
 
 
 # ------------------------------------------------------------------------------
@@ -297,15 +306,16 @@ def psection(section):
 
     Print info about section in a hoc format which is executable.
     (length, parent, diameter, membrane information)
+    
+    Use section.psection() instead to get a data structure that
+    contains the same information and more.
 
     See:
 
-    http://neuron.yale.edu/neuron/docs/help/neuron/neuron/nrnoc.html#psection
+    https://www.neuron.yale.edu/neuron/static/py_doc/modelspec/programmatic/topology.html?#psection
 
     """
-    section.push()
-    h.psection()
-    h.pop_section()
+    h.psection(sec=section)
 
 def init():
     """
@@ -313,9 +323,10 @@ def init():
 
     Initialize the simulation kernel.  This should be called before a run(tstop) call.
 
-    Equivalent to hoc finitialize():
+    Use h.finitialize() instead, which allows you to specify the membrane potential
+    to initialize to; via e.g. h.finitialize(-65)
 
-    http://neuron.yale.edu/neuron/docs/help/neuron/neuron/nrnoc.html#finitialize
+    https://www.neuron.yale.edu/neuron/static/py_doc/simctrl/programmatic.html?#finitialize
     
     """
     h.finitialize()
@@ -435,15 +446,30 @@ def nrn_dll(printpath=False):
         the_dll = ctypes.cdll[hoc.__file__]
         return the_dll        
     except:
-      pass
+        pass
 
-    neuron_home = os.path.split(os.path.split(h.neuronhome())[0])[0]
 
     success = False
     if sys.platform == 'msys' or sys.platform == 'win32':
       p = 'hoc%d%d' % (sys.version_info[0], sys.version_info[1])
     else:
       p = 'hoc'
+
+    try:
+        # maybe hoc.so in this neuron module
+        base_path = os.path.join(os.path.split(__file__)[0], p)
+        dlls = glob.glob(base_path + '*.*')
+        for dll in dlls:
+            try:
+                the_dll = ctypes.cdll[dll]
+                if printpath : print(dll)
+                return the_dll
+            except:
+                pass
+    except:
+        pass
+    # maybe old default module location
+    neuron_home = os.path.split(os.path.split(h.neuronhome())[0])[0]
     base_path = os.path.join(neuron_home, 'lib' , 'python', 'neuron', p)
     for extension in ['', '.dll', '.so', '.dylib']:
         dlls = glob.glob(base_path + '*' + extension)
@@ -561,9 +587,15 @@ def _pkl(arg):
 def nrnpy_pass():
   return 1
 
-def nrnpy_pr(s):
-  sys.stdout.write(s.decode())
+def nrnpy_pr(stdoe, s):
+  if stdoe == 1:
+    sys.stdout.write(s.decode())
+  else:
+    sys.stderr.write(s.decode())
   return 0
+
+#flag to prevent both rxd and crxd being used
+_has_rxd = {'rxd':False,'crxd':False}
 
 if not embedded:
   try:
@@ -574,7 +606,7 @@ if not embedded:
 
     nrnpy_set_pr_etal = nrn_dll_sym('nrnpy_set_pr_etal')
 
-    nrnpy_pr_proto = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_char_p)
+    nrnpy_pr_proto = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_char_p)
     nrnpy_pass_proto = ctypes.CFUNCTYPE(ctypes.c_int)
     nrnpy_set_pr_etal.argtypes = [nrnpy_pr_proto, nrnpy_pass_proto]
 

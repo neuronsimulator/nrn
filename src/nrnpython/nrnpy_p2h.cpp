@@ -861,5 +861,7 @@ Object* py_alltoall(Object* o, int size) {
   Object* ho = nrnpy_po2ho(pdest);
   --ho->refcount;
   return ho;
+#else
+  return o;
 #endif
 }

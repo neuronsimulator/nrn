@@ -132,6 +132,7 @@ extern Section* nrnpy_pysecname2sec(const char*);
 extern const char* nrnpy_sec2pysecname(Section* sec);
 extern void nrnpy_pysecname2sec_add(Section* sec);
 extern void nrnpy_pysecname2sec_remove(Section* sec);
+extern void nrn_verify_ion_charge_defined();
 
 extern void nrn_pt3dclear(Section*, int);
 extern void nrn_length_change(Section*, double);

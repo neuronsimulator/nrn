@@ -1,11 +1,12 @@
 npylib = libnrnpython@npy_pyver10@
-lib_LTLIBRARIES = libnrnpython@npy_pyver10@.la
+lib_LTLIBRARIES = libnrnpython@npy_pyver10@.la librxdmath.la
+
 
 nsrc=$(top_srcdir)/src
 DEFS = @DEFS@ @NRNPYTHON_DEFINES@
 NRNPYTHON_INCLUDES = @npy_NRNPYTHON_INCLUDES@
 IV_INCLUDES = @IV_INCLUDE@ $(X_CFLAGS)
-includes =  -I. -I$(nsrc)/nrniv -I$(nsrc)/ivoc -I$(nsrc)/nrnoc -I$(nsrc)/oc -I$(nsrc)/nrnmpi -I$(nsrc)/gnu $(NRNPYTHON_INCLUDES) $(IV_INCLUDES)
+includes =  -I. -I$(nsrc)/nrniv -I$(nsrc)/ivoc -I$(nsrc)/nrnoc -I$(nsrc)/oc -I$(nsrc)/nrnmpi -I$(nsrc)/gnu -I$(nsrc)/mesch $(NRNPYTHON_INCLUDES) $(IV_INCLUDES)
 AM_CPPFLAGS = -DOOP=1 -DCABLE=1 -DUSECVODE=1 -DUSEMATRIX=1 -DUSEBBS=1 $(includes)
 AM_CXXFLAGS = @MINGW_CFLAG@
 
@@ -22,9 +23,13 @@ endif
 endif
 
 libnrnpython@npy_pyver10@_la_SOURCES = nrnpython.cpp nrnpy_hoc.cpp nrnpy_nrn.cpp \
-	nrnpy_p2h.cpp grids.c rxd.c rxd_vol.c $(EXTEND)
+	nrnpy_p2h.cpp grids.c rxd.c rxd_extracellular.c rxd_vol.c $(EXTEND)
 
-noinst_HEADERS = nrnpython.h nrnpy_reg.h \
+librxdmath_la_SOURCES = rxdmath.c $(EXTEND)
+
+pkginclude_HEADERS = rxdmath.h
+
+noinst_HEADERS = nrnpython.h nrnwrap_Python.h nrnpy_reg.h \
 	nrnpy_hoc_2.h nrnpy_hoc_3.h \
 	nrnpy_nrn_2.h nrnpy_nrn_3.h hoccontext.h \
 	nrnpy_utils.h rxd.h grids.h

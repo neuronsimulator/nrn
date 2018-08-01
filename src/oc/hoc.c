@@ -38,6 +38,7 @@ int (*p_nrnpy_pyrun)(const char* fname);
 
 #if carbon || defined(MINGW)
 #include <pthread.h>
+extern int stdin_event_ready();
 #endif
 
 #if HAVE_FENV_H
@@ -193,9 +194,12 @@ int	gargc;
 static int c = '\n';	/* global for use by warning() */
 
 #if defined(WIN32) || MAC
-set_intset() {
+void set_intset() {
 	intset++;
 }
+#endif
+#ifdef WIN32
+extern void hoc_win32_cleanup();
 #endif
 
 static int follow(int expect, int ifyes, int ifno);/* look ahead for >=, etc. */
@@ -880,6 +884,7 @@ static void hoc_run1(void);
 int hoc_main1(int argc, const char** argv, const char** envp)	/* hoc6 */
 {
 #ifdef WIN32
+	extern void hoc_set_unhandled_exception_filter();
 	hoc_set_unhandled_exception_filter();
 #endif
 #if 0
@@ -973,11 +978,9 @@ static pthread_mutex_t inputMutex_;
 static pthread_cond_t inputCond_;
 static int inputReadyFlag_;
 
-void* inputReadyThread(void*  input);
 void* inputReadyThread(void* input) {
 	fd_set readfds;
 	int i, j;
-	extern int stdin_event_ready();
 	char c;
 //	printf("inputReadyThread started\n");
 //	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &j);
@@ -1008,11 +1011,10 @@ static pthread_mutex_t inputMutex_;
 static pthread_cond_t inputCond_;
 static int inputReadyFlag_;
 static int inputReadyVal_;
+extern int getch();
 
-void* inputReadyThread(void*  input);
 void* inputReadyThread(void* input) {
 	int i, j;
-	extern int stdin_event_ready();
 	char c;
 //	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &j);
 	for (;;) {
@@ -1482,11 +1484,7 @@ void warning(const char* s, const char* t)	/* print warning message */
 	Fprintf(stderr, "%s %s",id, cbuf);
     if (nrnmpi_numprocs_world > 0) {
 	for (cp = cbuf; cp != ctp; cp++) {
-#if defined(WIN32) && !defined(CYGWIN)
-		fputchar(' ');
-#else
-		IGNORE(putc(' ', stderr));
-#endif
+		Fprintf(stderr, " ");
 	}
 	Fprintf(stderr,"^\n");
     }

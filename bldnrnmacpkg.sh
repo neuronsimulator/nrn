@@ -1,14 +1,14 @@
 #!/bin/bash
 set -ex
 # distribution built with
-#sh bldnrnmach.sh python3.6 python
+#sh bldnrnmacpkg.sh python3.7 python3.6 python2.7
 
 #10.7 possible if one builds with pythons that are consisent with that.
 export MACOSX_DEPLOYMENT_TARGET=10.9
 
 INST=/Applications/NEURON-7.6
 
-if true ; then
+if false ; then
   cd $HOME/neuron/iv
   make clean
   rm -r -f $INST
@@ -19,7 +19,11 @@ fi
 
 cd $HOME/neuron/nrnobj
 
+PYVS="py"
+
 bld () {
+PYVER=`$1 -c 'from sys import version_info as v ; print (str(v.major) + str(v.minor)); quit()'`
+PYVS=${PYVS}-${PYVER}
 rm -r -f src/nrnpython/build
 ../nrn/configure --prefix=$INST/nrn --with-paranrn=dynamic \
   --with-nrnpython=dynamic --with-pyexe=$1 $2
@@ -32,6 +36,7 @@ chk () {
   (
     export PYTHONPATH=$INST/nrn/lib/python
     $1 -c 'from neuron import test; test()'
+    $1 -c 'from neuron.tests import test_rxd; test_rxd.test(); quit()'
   )
   # Can launch nrniv -python and import neuron
   # needs NRN_PYLIB and perhaps PYTHONHOME
@@ -43,6 +48,7 @@ chk () {
   # Launching nrniv no longer needs NRN_PYLIB and PYTHONHOME
   (
     $INST/nrn/x86_64/bin/nrniv -python -pyexe $1 -c "import neuron ; neuron.test() ; quit()"
+    $INST/nrn/x86_64/bin/nrniv -python -pyexe python2.7 -c 'from neuron.tests import test_rxd; test_rxd.test(); quit()'
   )
 }
 
@@ -61,8 +67,8 @@ for i in $* ; do
   chk $i
 done
 
-chk $HOME/anaconda3/bin/python3.6
-chk $HOME/anaconda2/bin/python2.7
+#chk $HOME/anaconda3/bin/python3.6
+#chk $HOME/anaconda2/bin/python2.7
 
 
 make after_install
@@ -72,4 +78,15 @@ make after_install
 # and Neurondev.p12 file. To add to the keychain, double click each
 # of those files. By default, I added my cerificate to the login keychain.
 make pkg
-make alphadist
+
+#make alphadist
+#following requires cwd to be the build directory because of NSRC
+ALPHADIR='hines@neuron.yale.edu:/home/htdocs/ftp/neuron/versions/alpha'
+export NSRC=../nrn
+describe="`sh $NSRC/nrnversion.sh describe`"
+NVER="`sh $NSRC/nrnversion.sh 3`"
+a=${ALPHADIR}/nrn-${describe}.x86_64-osx-${PYVER}.pkg
+b=./src/mac/build/NEURON-${NVER}.pkg
+echo "scp $b $a"
+scp $b $a
+

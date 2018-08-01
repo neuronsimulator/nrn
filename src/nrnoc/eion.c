@@ -177,12 +177,29 @@ two USEION statements (%g and %g)\n",
 			s->name, valence, global_charge(s->subtype));
 		nrn_exit(1);
 	}else if (valence == VAL_SENTINAL && val == VAL_SENTINAL) {
-		fprintf(stderr, "%s ion valence must be defined in\n\
-the USEION statement of any model using this ion\n", s->name);
-		nrn_exit(1);
+		/* Not defined now but could be defined by
+		   a subsequent ion_reg from another model.
+                   The list of ion mechanisms will be checked
+                   after all mod files have been dealt with to verify
+                   that they all have a defined valence.
+		*/
+#if 0
+#endif
 	}else if (valence != VAL_SENTINAL) {
 		global_charge(s->subtype) = valence;
 	}
+}
+
+void nrn_verify_ion_charge_defined() {
+  int i;
+  for (i = 3; i < n_memb_func; ++i ) if (nrn_is_ion(i)) {
+    if (global_charge(i) == VAL_SENTINAL) {
+      Symbol* s = memb_func[i].sym;
+      Fprintf(stderr, "%s USEION CHARGE (or VALENCE) must be defined in\n\
+at least one model using this ion\n", s->name);
+      nrn_exit(1);
+    }
+  }
 }
 
 #if defined(LegacyFR) && LegacyFR == 1

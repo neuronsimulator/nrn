@@ -374,6 +374,9 @@ if (strcmp(nrn_mech_dll, "nrnmech.dll") == 0) {
 #endif /* WIN32 || NRNMECH_DLL_STYLE */
 	s = hoc_lookup("section_owner");
 	s->type = OBJECTFUNC;
+
+	/* verify that all ions have a defined CHARGE */
+	nrn_verify_ion_charge_defined();
 }
 
 void initnrn(void) {

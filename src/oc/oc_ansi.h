@@ -214,6 +214,7 @@ extern int hoc_ired(const char*, int, int, int);
 extern double hoc_xred(const char*, double, double, double);
 extern int hoc_sred(const char*, char*, char*);
 extern int nrnpy_pr(const char* fmt, ...);
+extern int Fprintf(FILE*, const char* fmt, ...);
 extern void nrnpy_pass();
 
 #if defined (__cplusplus)

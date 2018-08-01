@@ -36,6 +36,7 @@ INITIAL {
 }
 
 BREAKPOINT {
+	: slow enough to be numerically stable with euler for fixed step method
 	SOLVE state METHOD euler
 }
 
