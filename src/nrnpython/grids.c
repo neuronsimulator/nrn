@@ -27,6 +27,7 @@ Grid_node *make_Grid(PyHocObject* my_states, int my_num_states_x,
     int my_num_states_y, int my_num_states_z, double my_dc_x, double my_dc_y,
     double my_dc_z, double my_dx, double my_dy, double my_dz, PyHocObject* my_alpha,
 	PyHocObject* my_lambda, int bc, double bc_value, double atolscale) {
+    unsigned long i;
     int k;
     Grid_node *new_Grid = malloc(sizeof(Grid_node));
     assert(new_Grid);
@@ -74,6 +75,8 @@ Grid_node *make_Grid(PyHocObject* my_states, int my_num_states_x,
 	else
 	{
 		new_Grid->lambda = my_lambda->u.px_;
+        for(i = 0; i < my_num_states_x * my_num_states_y * my_num_states_z; i++)
+            new_Grid->lambda[i] *= new_Grid->lambda[i];
 		new_Grid->VARIABLE_ECS_VOLUME = TORTUOSITY;
 		new_Grid->get_lambda = &get_lambda_array;
 	}

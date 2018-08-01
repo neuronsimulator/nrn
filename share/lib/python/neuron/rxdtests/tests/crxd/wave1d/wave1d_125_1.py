@@ -2,6 +2,7 @@ from neuron import h, crxd as rxd, gui
 import numpy
 import sys
 import time
+import itertools
 
 npar = len(sys.argv)
 #if(npar<2):
@@ -63,7 +64,7 @@ def set_plotshape_colormap(plotshape, cmap='jet'):
     s = matplotlib.cm.ScalarMappable(cmap=cmap)
     cmap = s.get_cmap()
     s.set_clim(0, cmap.N)
-    rs, gs, bs = zip(*s.to_rgba(list(range(cmap.N))))[0 : 3]
+    rs, gs, bs = itertools.islice(zip(*s.to_rgba(list(range(cmap.N)))),0,3)
     plotshape.colormap(cmap.N)
     for i, r, g, b in zip(range(cmap.N), rs, gs, bs):
         plotshape.colormap(i, r * 255, g * 255, b * 255)
