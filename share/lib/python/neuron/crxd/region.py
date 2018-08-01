@@ -101,6 +101,7 @@ class _c_region:
                 ret[self._ecs_species_ids[i]] = i
         return ret
     def _ecs_initalize(self):
+        from . import species
         self.ecs_location_index = -numpy.ones((self.num_regions,self.num_ecs_species,self.num_segments),ctypes.c_int)
 
         #Set the local ids of the regions and species involved in the reactions
