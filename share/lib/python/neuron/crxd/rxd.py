@@ -58,6 +58,12 @@ set_setup.argtypes = [fptr_prototype]
 set_initialize = nrn_dll_sym('set_initialize')
 set_initialize.argtypes = [fptr_prototype]
 
+scatter_concentrations = nrn_dll_sym('scatter_concentrations')
+
+# Transfer extracellular concentrations to NEURON
+_fih_transfer_ecs = h.FInitializeHandler(1, scatter_concentrations)
+
+
 rxd_set_no_diffusion = nrn_dll_sym('rxd_set_no_diffusion')
 
 setup_solver = nrn_dll_sym('setup_solver')
@@ -1528,6 +1534,7 @@ def _do_nbs_register():
         do_setup_matrices_fptr = fptr_prototype(_setup_matrices)
 
         _fih2 = h.FInitializeHandler(3, initializer._do_ion_register)
+
 
         #
         # register scatter/gather mechanisms
