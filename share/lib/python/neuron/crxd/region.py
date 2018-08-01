@@ -221,7 +221,7 @@ class Extracellular:
             for i in range(self._nx):
                 for j in range(self._ny):
                     for k in range(self._nz):
-                        self.tortuosity[i,j,k] = tortuosity(self._xlo + i*self._dx[0], self._ylo + j*self._dx[1], self._zlo + k*self._dx[2])**2
+                        self.tortuosity[i,j,k] = tortuosity(self._xlo + i*self._dx[0], self._ylo + j*self._dx[1], self._zlo + k*self._dx[2])
             self._tortuosity = h.Vector(self.tortuosity.flatten())
         else:
             tortuosity = numpy.array(tortuosity)
@@ -229,8 +229,8 @@ class Extracellular:
                  raise RxDException('tortuosity must be a scalar or an array the same size as the grid: {0}x{1}x{2}'.format(self._nx, self._ny, self._nz ))
     
             else:
-                self.tortuosity = self._tortuosity.as_numpy().reshape(self._nx, self._ny, self._nz)
-                self._tortuosity = h.Vector(self.tortuosity)
+                self.tortuosity = tortuosity
+                self._tortuosity = h.Vector(self.tortuosity.flatten())
                 
 class Region(object):
     """Declare a conceptual region of the neuron.
