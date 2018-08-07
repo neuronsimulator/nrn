@@ -76,11 +76,13 @@ int main(int argc, char** argv) {
 	buf = new char[strlen(args) + 6*strlen(nh) + 200];
 #if defined(MINGW)
 	//sprintf(buf, "%s\\mingw\\bin\\bash.exe -rcfile %s/lib/nrnstart.bsh -i %s/lib/neuron2.sh nrngui %s", nrnhome, nh, nh, args);
+#if 0
 	if (nh[1] == ':') {
 		nh[1] = nh[0];
 		nh[0] = '/';
 	}
-	sprintf(buf, "%s\\mingw\\bin\\bash.exe -i %s/lib/neuron3.sh %s nrngui %s", nrnhome, nh, nh, args);
+#endif
+	sprintf(buf, "%s\\mingw\\usr\\bin\\bash.exe -i %s/lib/neuron3.sh %s nrngui %s", nrnhome, nh, nh, args);
 //MessageBox(0, buf, "NEURON", MB_OK);
 #else
 	sprintf(buf, "%s\\bin\\mintty -c %s/lib/minttyrc %s/bin/bash --rcfile %s/lib/nrnstart.bsh %s/lib/neuron.sh %s %s", nrnhome, nh, nh, nh, nh, nh, args);
