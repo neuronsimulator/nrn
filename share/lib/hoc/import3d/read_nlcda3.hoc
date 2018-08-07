@@ -1111,6 +1111,7 @@ proc spine_proc() {local i, ix  localobj spine, p
 		p = plist.o(0)
 		if (strcmp(p.items.o(0).s, "Class") == 0) {
 			spine.class_type = p.items.o(1).x
+			spine.class_label = p.items.o(2).s
 		}
 	}
 	spine_point(spine)
