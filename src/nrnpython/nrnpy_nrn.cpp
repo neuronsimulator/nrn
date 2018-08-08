@@ -227,6 +227,9 @@ static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
         // include cellname in name so nrnpy_pysecname2sec_remove can determine
 
         PyObject* cell = PyObject_Str(self->cell_);
+        if (cell == NULL) {
+          return -1;
+        }
         Py2NRNString str(cell);
         Py_DECREF(cell);
         char* cp = str.c_str();
