@@ -12,19 +12,25 @@ idir=/Applications/NEURON-@PACKAGE_VERSION@/nrn
 #}
 
 #Use .bashrc if it exists, otherwise .bash_profile
-#also add to .cshrc and .tcshrc if they exist
+#also add to .cshrc, .tcshrc, .kshrc, and  .zshrc if they exist
 b=.bashrc
-cshp=''
-tcshp=''
 if test ! -f "$HOME/$b" ; then
   b=.bash_profile
 fi
 bp=$HOME/$b
+blike="$bp"
+clike=''
 if test -f "$HOME/.cshrc" ; then
-  cshp="$HOME/.cshrc"
+  clike="$HOME/.cshrc"
 fi
 if test -f "$HOME/.tcshrc" ; then
-  tcshp="$HOME/.tcshrc"
+  clike="$clike $HOME/.tcshrc"
+fi
+if test -f "$HOME/.zshrc" ; then
+  blike="$blike $HOME/.zshrc"
+fi
+if test -f "$HOME/.kshrc" ; then
+  blike="$blike $HOME/.kshrc"
 fi
 
 # if cannot find nrniv, then perhaps modify PATH
@@ -52,7 +58,7 @@ if test "$addpath" = "yes" ; then
 a=`osascript -e 'tell app "Installer" to display dialog "
 Modify PATH to allow launching nrniv from Terminal?
   ... will append a line to  $HOME/'$b'
-      and, if they exist, .cshrc and .tcshrc
+      and, if they exist, .cshrc .tcshrc .kshrc .zshrc
 " buttons {"No", "Yes"} default button 2'`
   echo "2 a=$a" >> /tmp/temp.tmp
   if test "$a" = "button returned:Yes" ; then
@@ -68,16 +74,14 @@ if test "$addpath" = "yes" ; then
   if test  ! -f "$bp" ; then
     echo '#!bin/bash' > "$bp"
   fi
-  echo "export PATH=\"$idir/x86_64/bin\":\$PATH #added by NEURON installer" >> "$bp"
-  chown $USER "$bp"
-  if test "$cshp" != "" ; then
-    echo "set path = (\"$idir/x86_64/bin\" \$path) #added by NEURON installer" >> "$cshp"
-    chown $USER "$cshp"
-  fi
-  if test "$tcshp" != "" ; then
-    echo "set path = (\"$idir/x86_64/bin\" \$path) #added by NEURON installer" >> "$tcshp"
-    chown $USER "$tcshp"
-  fi
+  for i in $blike ; do
+    echo "export PATH=\"$idir/x86_64/bin\":\$PATH #added by NEURON installer" >> "$i"
+    chown $USER "$i"
+  done
+  for i in $clike != "" ; do
+    echo "set path = (\"$idir/x86_64/bin\" \$path) #added by NEURON installer" >> "$i"
+    chown $USER "$i"
+  done
 fi
 
 if true || test "$addpath" = "yes" ; then # Python environment
@@ -95,31 +99,28 @@ Modify PYTHONPATH in $HOME/'$b' to allow a launch of Python to import neuron.
   fi
 
   if test "$addpyenv" = "yes" ; then
-    echo "export PYTHONPATH=\"$idir/lib/python\":\$PYTHONPATH #added by NEURON installer" >> "$bp"
-    if test "$cshp" != "" ; then
-      echo "setenv PYTHONPATH \"$idir/lib/python\":\$PYTHONPATH #added by NEURON installer" >> "$cshp"
-      chown $USER "$cshp"
-    fi
-    if test "$tcshp" != "" ; then
-      echo "setenv PYTHONPATH \"$idir/lib/python\":\$PYTHONPATH #added by NEURON installer" >> "$tcshp"
-      chown $USER "$tcshp"
-    fi
+    for i in $blike ; do
+      echo "export PYTHONPATH=\"$idir/lib/python\":\$PYTHONPATH #added by NEURON installer" >> "$i"
+      chown $USER "$i"
+    done
+    for i in $clike ; do
+      echo "setenv PYTHONPATH \"$idir/lib/python\":\$PYTHONPATH #added by NEURON installer" >> "$i"
+      chown $USER "$i"
+    done
    if false ; then # no longer add NRN_PYLIB and PYTHONHOME
     tmpfile=/tmp/$$.tmp
     (source $bp ; echo "srcpath $PATH" >> /tmp/temp.tmp ; $idir/x86_64/bin/nrnpyenv.sh |sed -n 's/\(^export.*\)/\1 #added by NEURON installer/p' | sed '/PYTHONPATH/d' > $tmpfile)
-    cat $tmpfile >> "$bp"
-    if test "$cshp" != "" ; then
-      sed 's/export \(.*\)=\(".*"\)\(.*\)/setenv \1 \2 \3/' < $tmpfile >> "$cshp"
-      chown $USER "$cshp"
-    fi
-    if test "$tcshp" != "" ; then
-      sed 's/export \(.*\)=\(".*"\)\(.*\)/setenv \1 \2 \3/' < $tmpfile >> "$tcshp"
-      chown $USER "$tcshp"
-    fi
+    for i in $blike ; do
+      cat $tmpfile >> "$i"
+      chown $USER "$i"
+    done
+    for i in $clike ; do
+      sed 's/export \(.*\)=\(".*"\)\(.*\)/setenv \1 \2 \3/' < $tmpfile >> "$i"
+      chown $USER "$i"
+    done
     rm -f $tmpfile
    fi
   fi
-  chown $USER "$bp"
 fi
 
 if true ; then # notice that Command Line Tools and XQuartz also need to be installed.
