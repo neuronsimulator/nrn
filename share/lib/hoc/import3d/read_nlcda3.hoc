@@ -577,6 +577,9 @@ func lex() {local n
 			line = ""
 			$o1.token = err_
 		}
+	}else if ((n = sscanf(line, " \"\"%[^@]", line)) > 0) {
+		// empty strings do not get consumed by previous
+		$o1.token = string
 	}else if (sscanf(line, " %[A-Za-z0-9_]%[^@]", $o1.s, line) == 2) {
 		$o1.token = label_
 	}else{
