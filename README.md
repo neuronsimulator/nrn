@@ -8,7 +8,7 @@ and a discusson forum.
 Basic installation on Linux from the nrn...tar.gz file is:
 
   Build InterViews first from the git repository at
-  http://github.org/nrnhines/iv or the iv...tar.gz file at
+  http://github.org/neuronsimulator/iv or the iv...tar.gz file at
   http://neuron.yale.edu/ftp/neuron/versions/alpha/
 
 ```
@@ -18,7 +18,7 @@ Basic installation on Linux from the nrn...tar.gz file is:
 ```
 
 If sources are obtained from the git repository,
-http://github.org/nrnhines/nrn ,
+http://github.org/neuronsimulator/nrn ,
 create the automake, autoconf, libtool generated files by:
   sh build.sh
 
