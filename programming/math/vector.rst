@@ -555,6 +555,39 @@ Vector
 
     .. seealso::
         :meth:`Vector.record`, :meth:`Vector.play_remove`
+	
+    Example of playing into a segment's ina:
+
+        .. code-block::
+            python
+	    
+            from neuron import h, gui
+            import numpy
+
+            # create a geometry
+            soma = h.Section(name='soma')
+
+            # insert variables for sodium ions
+            soma.insert('na_ion')
+
+            # driving stimulus
+            t = h.Vector(numpy.linspace(0, 2 * numpy.pi, 50))
+            y = h.Vector(numpy.sin(t))
+
+            # play the stimulus into soma(0.5)'s ina
+            # the last True means to interpolate; it's not the default, but unless
+            # you know what you're doing, you probably want to pass True there
+            y.play(soma(0.5)._ref_ina, t, True)
+
+            # setup a graph
+            g = h.Graph()
+            g.addvar("ina", soma(0.5)._ref_ina)
+            g.size(0, 6.28, -1, 1)
+            h.graphList[0].append(g)
+
+            # run the simulation
+            h.finitialize(-65)
+            h.continuerun(6.28)
 
 ----
 
