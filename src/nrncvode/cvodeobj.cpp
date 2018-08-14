@@ -121,6 +121,7 @@ static double spikestat(void* v) {
 	return 0;
 }
 static double queue_mode(void* v) {
+	hoc_return_type_code = 1; // integer
 #if BBTQ == 3 || BBTQ == 4
 	if (ifarg(1)) {
 		nrn_use_fifo_queue_ = chkarg(1, 0, 1) ? true : false;
@@ -213,6 +214,7 @@ static double active(void* v) {
 			d->re_init(nt_t);
 		}
 	}
+	hoc_return_type_code = 2; // boolean
 	return cvode_active_;
 }
 static double stiff(void* v) {
@@ -220,6 +222,7 @@ static double stiff(void* v) {
 	if (ifarg(1)) {
 		d->stiff((int)chkarg(1, 0, 2));
 	}
+	hoc_return_type_code = 1; // integer
 	return double(d->stiff());
 }
 static double maxorder(void* v) {
@@ -227,11 +230,13 @@ static double maxorder(void* v) {
 	if (ifarg(1)) {
 		d->maxorder((int)chkarg(1, 0, 5));
 	}
+	hoc_return_type_code = 1; // integer
 	return d->maxorder();
 }
 static double order(void* v) {
 	NetCvode* d = (NetCvode*)v;
 	int i = 0;
+	hoc_return_type_code = 1; // integer
 	if (ifarg(1)) {
 		// only thread 0
 		i = int(chkarg(1, 0, d->p->nlcv_ - 1));
@@ -446,6 +451,7 @@ static double tstop_event(void* v) {
 
 static double current_method(void* v) {
 	NetCvode* d = (NetCvode*)v;
+	hoc_return_type_code = 1; // integer
 	int modeltype = nrn_modeltype();
 	int methodtype = secondorder; // 0, 1, or 2
 	int localtype = 0;
