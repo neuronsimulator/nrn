@@ -27,14 +27,10 @@ class HTMLTranslator(sphinx.writers.html.HTMLTranslator):
         functions = []
         for i, tag in enumerate(self.body):
             if tag.strip() == '<dl class="function">':
-                j = i + 2
-                success = False
-                while False:
-                    try:
-                        functions.append(self.body[j].split('"descname">')[1].split('</tt>')[0])
-                        break
-                    except:
-                        j += 1
+                try:
+                    functions.append(self.body[i + 1].split('"')[1])
+                except:
+                    functions.append(self.body[i + 3])
         for i, tag in enumerate(self.body):
             if tag.strip() == '<dl class="data">':
                 data_id = self.body[i + 1].split('"')[1].split('.')
@@ -69,11 +65,3 @@ class HTMLTranslator(sphinx.writers.html.HTMLTranslator):
             
         self.body = jump_table + self.body
         sphinx.writers.html.HTMLTranslator.depart_document(self, node)
-
-
-
-class SmartyPantsHTMLTranslator(HTMLTranslator, sphinx.writers.html.SmartyPantsHTMLTranslator):
-    """
-    Smart quotes from Sphinx combined with our regular HTML translation extension.
-    """
-    pass
