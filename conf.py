@@ -164,7 +164,7 @@ html_last_updated_fmt = '%b %d, %Y'
 #html_use_smartypants = True
 
 # Custom sidebar templates, maps document names to template names.
-html_sidebars = {'*': 'questions.html', '*/*': 'questions.html', '*/*/*': 'questions.html', '*/*/*/*': 'questions.html', '*/*/*/*/*': 'questions.html'}
+html_sidebars = {'*': 'sidebar-links.html', '*/*': 'sidebar-links.html', '*/*/*': 'sidebar-links.html', '*/*/*/*': 'sidebar-links.html', '*/*/*/*/*': 'sidebar-links.html'}
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
