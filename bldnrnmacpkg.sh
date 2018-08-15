@@ -26,7 +26,7 @@ PYVER=`$1 -c 'from sys import version_info as v ; print (str(v.major) + str(v.mi
 PYVS=${PYVS}-${PYVER}
 rm -r -f src/nrnpython/build
 ../nrn/configure --prefix=$INST/nrn --with-paranrn=dynamic \
-  --with-nrnpython=dynamic --with-pyexe=$1 $2
+  --with-nrnpython=dynamic --with-pyexe=$1 #$2
 make -j 2 install
 }
 
@@ -48,7 +48,7 @@ chk () {
   # Launching nrniv no longer needs NRN_PYLIB and PYTHONHOME
   (
     $INST/nrn/x86_64/bin/nrniv -python -pyexe $1 -c "import neuron ; neuron.test() ; quit()"
-    $INST/nrn/x86_64/bin/nrniv -python -pyexe python2.7 -c 'from neuron.tests import test_rxd; test_rxd.test(); quit()'
+    $INST/nrn/x86_64/bin/nrniv -python -pyexe $1 -c 'from neuron.tests import test_rxd; test_rxd.test(); quit()'
   )
 }
 
@@ -85,7 +85,7 @@ ALPHADIR='hines@neuron.yale.edu:/home/htdocs/ftp/neuron/versions/alpha'
 export NSRC=../nrn
 describe="`sh $NSRC/nrnversion.sh describe`"
 NVER="`sh $NSRC/nrnversion.sh 3`"
-a=${ALPHADIR}/nrn-${describe}.x86_64-osx-${PYVER}.pkg
+a=${ALPHADIR}/nrn-${describe}.x86_64-osx-${PYVS}.pkg
 b=./src/mac/build/NEURON-${NVER}.pkg
 echo "scp $b $a"
 scp $b $a

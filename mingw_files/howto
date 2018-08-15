@@ -1,6 +1,6 @@
 #!/bin/bash
 # howto 36   # builds for 3.6
-# howto 36 27 # builds for 3.6 and 2.7
+# howto 37 36 27 # builds for 3.7 3.6 and 2.7
 #see nrn/howtomingw
 
 set -e
@@ -9,7 +9,7 @@ set -x
 #this part is not necessary with the MSYS2 installation
 if test "x$OSTYPE" = "xcygwin" ; then
 
-cd /cygdrive/e/msys64/home/hines/neuron/nrn
+cd /cygdrive/f/msys64/home/hines/neuron/nrn
 sh git2nrnversion_h.sh > src/nrnoc/nrnversion.h
 
 cat src/nrnoc/neuron.h > tmp.c
@@ -40,17 +40,19 @@ cd ~/neuron/nrnwinobj
 
 PYVS="py"
 
+export CYTHON=cython2
+
 bld () {
 PYVER=$1
 PYVS=${PYVS}-${PYVER}
-PYDIR=/e/python${PYVER}
+PYDIR=/f/python${PYVER}
 ../nrn/configure --prefix=`pwd` -with-nrnpython=dynamic \
- --with-pyexe=$PYDIR/python $2 \
+ --with-pyexe=$PYDIR/python \
  --host=x86_64-w64-mingw32 PYINCDIR="$PYDIR/include" \
  --with-paranrn=dynamic MPICC=x86_64-w64-mingw32-gcc \
  MPICXX=x86_64-w64-mingw32-g++ \
  CFLAGS='-DMSMPI_NO_SAL -I/c/ms-mpi/include -O2' \
- CXXFLAGS='-DmSMPI_NO_SAL -I/c/ms-mpi/include -O2' \
+ CXXFLAGS='-DMSMPI_NO_SAL -I/c/ms-mpi/include -O2' \
  LIBS='-L/c/ms-mpi/lib/x64 -lmsmpi' \
   PYINCDIR=$PYDIR/include \
   PYLIBDIR=$PYDIR/libs \
@@ -79,7 +81,7 @@ fi
 
 echo "scp src/mswin/$n1  hines@neuron.yale.edu:/home/htdocs/ftp/neuron/versions/alpha/$n2"
 
-h=hines@10.10.0.2
+h=michaelhines@192.168.2.7
 scp src/mswin/$n1 $h:vmshared/$n2
 if true ; then
 ssh $h scp vmshared/$n2 hines@neuron.yale.edu:/home/htdocs/ftp/neuron/versions/alpha/$n2
