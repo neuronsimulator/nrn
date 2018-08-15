@@ -43,17 +43,55 @@ fi
 
 WHICH=which
 
+function trypy {
+  a=`ls "$1" |grep "$2"`
+  if test "$a" != "" ; then
+    b=`cygpath -U "$1/$a/Anaconda Prompt.lnk"`
+    c=`nrnbinstr "activate.bat" "$b"`
+    if test "$c" != "" ; then
+      c=`cygpath -U "$c"`
+      c=`dirname "$c"`
+      c=`dirname "$c"`
+      c="$c/python"
+      if $WHICH "$c" >& /dev/null ; then
+        PYTHON=`$WHICH "$c"`
+        # if python.exe not in PATH then cygcheck may not find the library
+        PYTHON=`cygpath -U "$PYTHON"`
+        export PATH=`dirname "$PYTHON"`:"$PATH"
+        PYTHON=`basename "$PYTHON"`
+      fi
+    fi
+  fi
+}
+
+PYTHON=""
 if test "$1" != "" ; then
-  PYTHON="$1"
+  if $WHICH "$1" >& /dev/null ; then
+    PYTHON="$1"
+  fi
 elif $WHICH python3 >& /dev/null ; then
-  PYTHON=`$WHICH python3`
+  PYTHON=python3
 elif $WHICH python >& /dev/null ; then
-  PYTHON=`$WHICH python`
+  PYTHON=python
 else
-  echo "Cannot find executable python3 or python" 1>&2
-  exit 1;
+  # Often people install Anaconda on Windows without adding it to PATH
+  if test "$OS" = "Windows_NT" -a "$APPDATA" != "" ; then
+    smenu="$APPDATA/Microsoft/Windows/Start Menu/Programs"
+    trypy "$smenu" Anaconda3
+    if test "$PYTHON" = "" ; then
+      trypy "$smenu" Anaconda2
+    fi
+    if test "$PYTHON" = "" ; then
+      trypy "$smenu" Anaconda
+    fi
+  fi
+  if test "$PYTHON" = "" ; then
+    echo "Cannot find executable python3 or python" 1>&2
+    exit 1;
+  fi
 fi
-echo "# PYTHON=$PYTHON"
+
+echo "# PYTHON=`$WHICH $PYTHON`"
 
 # what is the python library for Darwin
 z=''
@@ -99,15 +137,21 @@ def upath(path):
   for i, p in enumerate(plist):
     p = os.path.splitdrive(p)
     if p[0]:
-      p = usep + p[0][:p[0].rfind(":")] + usep + p[1].replace(os.sep, usep)
+      p = "/cygdrive/" + p[0][:p[0].rfind(":")] + usep + p[1].replace(os.sep, usep)
     else:
       p = p[1].replace(os.sep, usep)
     p = posixpath.normpath(p)
     plist[i] = p
   p = upathsep.join(plist)
-  # /c/... does not work in our bash shell. Convert to c:...
-  if 'win' in sys.platform and 'darwin' not in sys.platform and p[0] == '/':
-    p = p[1] + ':' + p[2:]
+  return p
+
+def u2d(p):
+  if "darwin" not in sys.platform and "win" in sys.platform:
+    p = p.split(usep)
+    if "cygdrive" == p[1]:
+      p = p[2] + ':/' + usep.join(p[3:])
+    else:
+      p = usep.join(p)
   return p
 
 #a copy of nrnpylib_linux() but with some os x specific modifications
@@ -202,7 +246,7 @@ def nrnpylib_mswin():
   f = os.popen(cmd)
   nrn_pylib = None
   for line in f:
-    if re.search('ython..\.dll', line):
+    if re.search('ython[a-zA-Z0-9_.]*\.dll', line):
       nrn_pylib = '/'.join(line.split(os.path.sep)).strip()
   return nrn_pylib
 
@@ -334,6 +378,7 @@ if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
     print ("export PYTHONPATH=" + dq + pythonpath + dq)
   print ("\n# if launch nrniv, then likely need:")
   if pythonhome:
+    pythonhome=u2d(pythonhome)
     print ("export PYTHONHOME=" + dq + pythonhome + dq)
   if ldpath and nrn_pylib == None:
     print ("export LD_LIBRARY_PATH=" + dq + ldpath + upathsep + "$LD_LIBRARY_PATH" + dq)

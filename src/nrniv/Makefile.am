@@ -50,7 +50,10 @@ else
 if BUILD_MINGW
 nrniv_LDFLAGS =
 windll = -I$(nsrc)/mswin/windll
-cygexe = mos2nrn.exe neuron.exe
+cygexe = mos2nrn.exe neuron.exe nrnbinstr.exe
+
+nrnbinstr.exe: $(nsrc)/mswin/extra/nrnbinstr.cpp
+	$(CXX) -g -O2 -DMINGW -o nrnbinstr.exe $(nsrc)/mswin/extra/nrnbinstr.cpp
 
 mos2nrn.exe: $(nsrc)/mswin/extra/mos2nrn.cpp
 	$(CXX) -g -O2 -DMINGW -o mos2nrn.exe $(nsrc)/mswin/extra/mos2nrn.cpp

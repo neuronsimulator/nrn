@@ -72,6 +72,7 @@ mkdir $D/lib
 mkdir $D/tmp
 
 # copy the various executables we built
+cp $B/src/nrniv/nrnbinstr.exe $DB/nrnbinstr.exe
 cp $B/src/nrniv/mos2nrn.exe $DB/mos2nrn.exe
 cp $B/src/nrniv/neuron.exe $DB/neuron.exe
 cp $B/src/mswin/nrniv.exe $DB/nrniv.exe
@@ -109,7 +110,7 @@ sh $S/mingw_files/nrnmingwenv.sh $D
 #cp $S/../pthreadGC2-w64.dll $DB
 
 if false ; then
-# copy some useful tools
+# copy some useful tools (now done my mingw_files/nrnmingwenv.sh)
 for i in \
   basename, bash cat cp dirname echo find grep ls make mintty mkdir mv \
   rebase rm sed sh sort unzip zip \
@@ -118,7 +119,6 @@ do
   cp /usr/bin/$i.exe $D/bin
 done    
 fi
-cp /usr/bin/cygcheck.exe $D/bin
 
 # Determine what msys64 dlls are needed by the bin programs and copy them
 (cd $DB

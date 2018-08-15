@@ -23,7 +23,7 @@ cp $HOME/.inputrc $N/etc/inputrc
 #cp /msys2_shell.cmd $N
 
 binprog="basename bash cat cp dirname echo find grep ls make mintty
-  mkdir mv rebase rm sed sh sort unzip which"
+  mkdir mv rebase rm sed sh sort unzip which cygpath cygcheck"
 for i in $binprog ; do
   echo $i
   cp /usr/bin/$i.exe $N/usr/bin/$i.exe
