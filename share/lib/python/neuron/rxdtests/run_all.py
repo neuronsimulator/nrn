@@ -10,7 +10,7 @@ def test(files):
     dt_eps = 1e-20
     
     try:
-        os.makedirs('test_data')
+        os.makedirs(os.path.join('test_data', 'crxd', 'wave1d'))
     except OSError:
         pass
 
