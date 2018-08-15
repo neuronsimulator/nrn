@@ -1402,7 +1402,7 @@ static int hocobj_nonzero(PyObject* self) {
     Arrayinfo* a = hocobj_aray(po->sym_, po->ho_);
     b = araylen(a, po) > 0;
   } else if (po->sym_ && po->sym_->type == TEMPLATE) {
-    b = po->sym_->u.ctemplate->count > 0;
+    b = 1; // prior behavior: po->sym_->u.ctemplate->count > 0;
   }
   return b;
 }

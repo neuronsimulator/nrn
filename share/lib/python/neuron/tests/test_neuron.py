@@ -47,7 +47,8 @@ class NeuronTestCase(unittest.TestCase):
 
         # Py_nb_bool
         assert True if h else False
-        assert False if h.List else True
+        assert True if h.List else False
+        # ensure creating a List doesn't change the truth value
         l = h.List()
         assert True if h.List else False
         assert False if l else True
