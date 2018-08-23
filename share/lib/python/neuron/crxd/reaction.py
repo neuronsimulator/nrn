@@ -75,11 +75,11 @@ class Reaction(GeneralizedReaction):
         # initialize self if the rest of rxd is already initialized
         if initializer.is_initialized():
             self._do_init()
-            self._update_indices()
 
 
     def _do_init(self):
         self._update_rates()
+        self._update_indices()
 
     def _update_rates(self):
         lhs = self._scheme._lhs._items

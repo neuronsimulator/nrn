@@ -443,7 +443,8 @@ class _ExtracellularSpecies(_SpeciesMathable):
     def _finitialize(self):
         # Updated - now it will initialize using NodeExtracellular
         # TODO: support more complicated initializations than just constants
-        #self.states[:] = self._initial
+        if self._initial is None:
+            self.states[:] = 0
         warnings.warn('Extracellular currently not transferring concentrations to legacy grid until after first time step')
 
     def _ion_register(self):
