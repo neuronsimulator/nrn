@@ -222,7 +222,7 @@ class Extracellular:
                 for j in range(self._ny):
                     for k in range(self._nz):
                         self.tortuosity[i,j,k] = tortuosity(self._xlo + i*self._dx[0], self._ylo + j*self._dx[1], self._zlo + k*self._dx[2])
-            self._tortuosity = h.Vector(self.tortuosity.flatten())
+            self._tortuosity = h.Vector(self.tortuosity.flatten()).pow(2)
         else:
             tortuosity = numpy.array(tortuosity)
             if(tortuosity.shape != (self._nx, self._ny, self._nz)):
@@ -230,7 +230,7 @@ class Extracellular:
     
             else:
                 self.tortuosity = tortuosity
-                self._tortuosity = h.Vector(self.tortuosity.flatten())
+                self._tortuosity = h.Vector(self.tortuosity.flatten()).pow(2)
                 
 class Region(object):
     """Declare a conceptual region of the neuron.

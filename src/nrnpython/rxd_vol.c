@@ -70,12 +70,12 @@ static int solve_dd_tridiag(int N, const double* l_diag, const double* diag,
  */
 static void dg_adi_vol_x(Grid_node* g, const double dt, const int y, const int z, double const * const state, double* const RHS, double* const scratch)
 {
-    int yp,ypd,ym,ymd,zp,zpd,zm,zmd,div_y,div_z;
+    int yp,ypd,ym,ymd,zp,zpd,zm,zmd;
 	int x;
 	double *diag;
 	double *l_diag;
 	double *u_diag;
-	double prev, next;
+	double prev, next, div_y, div_z;
 
     /*TODO: Get rid of this by not calling dg_adi when on the boundary for DIRICHLET conditions*/
     if(g->bc->type == DIRICHLET && (y == 0 || z == 0 || y == g->size_y-1 || z == g->size_z-1))
@@ -109,8 +109,8 @@ static void dg_adi_vol_x(Grid_node* g, const double dt, const int y, const int z
 	zm = (z==0)?z+1:z-1;
 	zmd = (z==0)?1:z;
 
-	div_y = SQ(g->dy)*((y==0||y==g->size_y-1)?1.0:0.5);
-	div_z = SQ(g->dz)*((z==0||z==g->size_z-1)?1.0:0.5);
+	div_y = ((y==0||y==g->size_y-1)?1.0:0.5)*SQ(g->dy);
+	div_z = ((z==0||z==g->size_z-1)?1.0:0.5)*SQ(g->dz);
 
     if(g->bc->type == NEUMANN)
     {
@@ -129,7 +129,7 @@ static void dg_adi_vol_x(Grid_node* g, const double dt, const int y, const int z
 					((Fxx(x+1,x)/SQ(g->dx)) 
 				+    (Fxy(yp,ypd,y) - Fxy(y,ymd,ym))/div_y 
 				+ 	 (Fxz(zp,zpd,z) - Fxz(z,zmd,zm))/div_z)
-                + dt*g->states_cur[IDX(x,y,z)];;
+                + dt*g->states_cur[IDX(x,y,z)];
 
         x = g->size_x-1;
         RHS[x]  = g->states[IDX(x,y,z)] + (dt/ALPHA(x,y,z))*
@@ -147,10 +147,7 @@ static void dg_adi_vol_x(Grid_node* g, const double dt, const int y, const int z
         RHS[0] = g->bc->value;
         RHS[g->size_x-1] = g->bc->value;
     }
-
 	
-    
-    //fprintf(stderr,"\t\t %1.20e %1.20e == %1.20e\n", diag[0], u_diag[0], RHS[0]);
 	for(x=1;x<g->size_x-1;x++)
 	{
         __builtin_prefetch(&(g->states[IDX(x+PREFETCH,y,z)]), 0, 1);
@@ -163,10 +160,7 @@ static void dg_adi_vol_x(Grid_node* g, const double dt, const int y, const int z
 			+    (Fxy(yp,ypd,y) - Fxy(y,ymd,ym))/div_y 
 			+ 	 (Fxz(zp,zpd,z) - Fxz(z,zmd,zm))/div_z)
             + dt*g->states_cur[IDX(x,y,z)];
-        //fprintf(stderr,"%1.20e %1.20e %1.20e == %1.20e\n", l_diag[x-1], diag[x], u_diag[x], RHS[x]);
 	}
-    //fprintf(stderr,"%1.20e %1.20e\t\t == %1.20e\n", l_diag[x-1], diag[x], RHS[x]);
-
 	
 	solve_dd_tridiag(g->size_x, l_diag, diag, u_diag, RHS, scratch);
 	
@@ -399,8 +393,8 @@ static void dg_adi_tort_x(Grid_node* g, const double dt, const int y, const int 
 	zm = (z==0)?z+1:z-1;
 	zmd = (z==0)?1:z;
 
-	div_y = (y==0||y==g->size_y-1)?2.:1.;
-	div_z = (z==0||z==g->size_z-1)?2.:1.;
+	div_y = (y==0||y==g->size_y-1)?2:1;
+	div_z = (z==0||z==g->size_z-1)?2:1;
 
 
     if(g->bc->type == NEUMANN)
