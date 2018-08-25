@@ -587,6 +587,87 @@ General
 
 ----
 
+.. class:: PatternStim
+
+  Syntax:
+    ``s = h.PatternStim()``
+    
+    ``s.play(tvec, gidvec)``
+    
+    ``s.fake_output --- 0 or 1``
+  
+  Description:
+    The spikeout pairs (t, gid) resulting from a parallel network simulation
+    can become the stimulus for any single cpu subnet.
+    Only spikes with gid's that are not owned by this process and are associated
+    with NetCon instances created by pc.gid_connect(gid, target) are delivered
+    when s.fake_output == 0. If s.fake_output == 1, all spikes associated with gid's
+    specified by pc.gid_connect(gid, target) including those gid's owned by this process
+    are delivered.
+    
+  .. Note::
+      Must retain references to the tvec and gidvec vectors to avoid use of freed memory
+      since PatternStim does not increment the reference count for those vectors.
+      Calling s.play() with no arguments turns off the PatternStim.
+  
+  Example:
+    .. code-block::
+      python
+      
+      from neuron import h
+      pc = h.ParallelContext()
+      
+      #Model
+      cell = h.IntFire1()
+      cell.refrac = 0 # no limit on spike rate
+      pc.set_gid2node(0, pc.id())
+      pc.cell(0, h.NetCon(cell, None)) # generates a spike with gid=0
+      nclist = [pc.gid_connect(i, cell) for i in range(4)] #note gid=0 recursive connection
+      for i, nc in enumerate(nclist):
+        nc.weight[0] = 2 # anything above 1 causes immediate firing for IntFire1
+        nc.delay = 1 + 0.1*i # incoming (t, gid) generates output (t + 1 + 0.1*gid, 0)
+      
+      # Record all spikes (cell is the only one generating output spikes)
+      out = [h.Vector() for _ in range(2)]
+      pc.spike_record(-1, out[0], out[1])
+      
+      #PatternStim
+      tvec =   h.Vector(range(10))
+      gidvec = h.Vector(range(10)) # only 0,1,2 go to cell
+      ps = h.PatternStim()
+      ps.play(tvec, gidvec)
+
+      #Run
+      pc.set_maxstep(10.)
+      h.finitialize()
+      pc.psolve(7)
+      
+      for i, tsp in enumerate(out[0]):
+        print ("%g %d" %(tsp, int(out[1].x[i])))
+
+  Output:
+    Notice that 2.1 is the first output because (0, 0) is discarded by PatternStim
+    because fake_fire=0 and gid=0 is owned by this process.
+    (1, 1) is the first spike that gets passed into a NetCon (with delay 1.1) so the
+    first output spike is generated at 2.2 and that spike gets recursively regenerated every
+    1.0 ms. PatternStim spikes with gid > 3 are discarded.
+    .. code-block::
+
+        2.1 0
+        3.1 0
+        3.2 0
+        4.1 0
+        4.2 0
+        4.3 0
+        5.1 0
+        5.2 0
+        5.3 0
+        6.1 0
+        6.2 0
+        6.3 0
+
+----
+
 
 
 .. class:: IntFire1
