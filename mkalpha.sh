@@ -17,7 +17,7 @@ if test $? != 0 ; then
 	exit 1
 fi
 srcdir=$NSRC/src/nrnoc
-sh $NSRC/hg2nrnversion_h.sh > $srcdir/nrnversion.h.tmp
+sh $NSRC/git2nrnversion_h.sh > $srcdir/nrnversion.h.tmp
 cmp $srcdir/nrnversion.h $srcdir/nrnversion.h.tmp || cp $srcdir/nrnversion.h.tmp $srcdir/nrnversion.h
 rm $srcdir/nrnversion.h.tmp
 

@@ -4,7 +4,7 @@ dnl disable caching. When configure fails, it is best to start from scratch.
 define([AC_CACHE_LOAD], )dnl
 define([AC_CACHE_SAVE], )dnl
 
-dnl PACKAGE_VERSION makes its way into hg2nrnversion_h.sh, etc.
+dnl PACKAGE_VERSION makes its way into git2nrnversion_h.sh, etc.
 dnl However 'git describe --tags' is used for the version string for
 dnl distribution file names, banner, nrniv --version, and
 dnl nrnversion(5). If the PACKAGE_VERSION changes then also do a

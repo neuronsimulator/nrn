@@ -31,7 +31,7 @@ CONFIGURE_DEPENDENCIES = m4/acx_mpi.m4 m4/ivcheck.m4 m4/java_support.m4 \
 	m4/withmpi.m4 m4/nrnbg.m4
 
 EXTRA_DIST = $(CONFIGURE_DEPENDENCIES) installunix.html build.sh \
-	nrnversion.sh git2nrnversion_h.sh hg2nrnversion_h.sh \
+	nrnversion.sh git2nrnversion_h.sh \
 	extend_depcomp.sh Copyright
 
 if BUILD_PARANEURON
