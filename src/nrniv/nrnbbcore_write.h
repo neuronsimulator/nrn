@@ -23,6 +23,11 @@ public:
   int* ion_index; // or index into _actual_area
 };
 
+//vector version of former NrnThreadMembList copy of NrnThread list of
+// tml + artificial for easy access to ith type and Memb_list*
+typedef std::pair < int, Memb_list* > MlWithArtItem;
+typedef std::vector < MlWithArtItem > MlWithArt;
+
 class CellGroup {
 public:
   CellGroup();
@@ -35,6 +40,7 @@ public:
   int n_real_output;
   int ndiam; // > 0 only if diam semantics in use.
   int n_mech;
+  int* ml_vdata_offset;
   // following three are parallel arrays
   PreSyn** output_ps; //n_presyn of these, real are first, tml order for acell.
   int* output_gid; // n_presyn of these, -(type + 1000*index) if no gid
@@ -48,6 +54,7 @@ public:
   // Datum.pval info
   int ntype;
   DatumIndices* datumindices;
+  MlWithArt mlwithart;
 };
 
 // returns start pointer of the container's data

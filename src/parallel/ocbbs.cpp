@@ -71,6 +71,7 @@ extern "C" {
 	extern int nrn_how_many_processors();
 	extern size_t nrnbbcore_write();
 	extern size_t nrnbbcore_register_mapping();
+	extern int nrncore_run();
 
 }
 
@@ -944,6 +945,10 @@ static double nrnbbcorewrite(void*) {
 	return double(nrnbbcore_write());
 }
 
+static double nrncorerun(void*) {
+	return double(nrncore_run());
+}
+
 static double nrnbbcore_register_mapping(void*) {
 	return double(nrnbbcore_register_mapping());
 }
@@ -1037,6 +1042,7 @@ static Member_func members[] = {
 
     "nrnbbcore_write", nrnbbcorewrite,
     "nrnbbcore_register_mapping", nrnbbcore_register_mapping,
+    "nrncore_run", nrncorerun,
 
 	0,0
 };

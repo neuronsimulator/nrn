@@ -1019,24 +1019,122 @@ extern size_t nrnbbcore_gap_write(const char* path, int* group_ids);
   Assert no extracellular.
 */
 
+/*
+  The original file creation for each thread was accomplished by
+  a serial function that:
+  Verified the assertion constraints.
+  Created an nthread array of BBCoreGapInfo.
+  Wrote the <gid>_gap.dat files forall the threads.
+  Cleaned up the BBCoreGapInfo (and gap_ml).
+
+  So a simple factoring of the verify and create portions suffices
+  for both files and direct. Note that direct calls back for each thread
+  in index order. So for, tid 0, verify and create will be accomplished,
+  and for tid nthread-1, cleanup of BBCoreGapInfo will take place (the
+  contents of each thread are passed back and cleaned up in coreneuron
+  after use there.
+*/
+
 struct BBCoreGapInfo {
   int nsrc, ntar;
   int* sid_src;
   int* v_index;
   int* sid_target;
   int* vpre_index;
+
+  Memb_list* gap_ml;
+
+  // until CoreNEURON gap up to date with respect to NEURON
+  int type; // only one type allowed for half gap.
+  int ix_vpre; // data offset within instance of a half gap.
 };
 
+static BBCoreGapInfo* gi; // array of size nthread
+
+static void nrnbbcore_gap_info();
 static void sidsort(int* sids, int cnt, int* indices);
 
+extern "C" {
+void get_partrans_setup_info(int tid, int& ntar, int& nsrc,
+  int& type, int& ix_vpre, int*& sid_target, int*& sid_src, int*& v_indices);
+}
+
+void get_partrans_setup_info(int tid, int& ntar, int& nsrc,
+  int& type, int& ix_vpre, int*& sid_target, int*& sid_src, int*& v_indices) {
+
+  if (tid == 0) { // first call
+    nrnbbcore_gap_info();
+  }
+  assert(gi);
+
+  BBCoreGapInfo& g = gi[tid];
+  ntar = g.ntar;
+  nsrc = g.nsrc;
+  type = gi[0].type;
+  ix_vpre = gi[0].ix_vpre;
+  sid_target = g.sid_target;
+  sid_src = g.vpre_index;
+  v_indices = g.v_index;
+
+  if (tid == nrn_nthread-1) {
+    delete [] gi;
+    gi = NULL;
+  }
+}
+
 size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
+  nrnbbcore_gap_info();
+  if (gi == NULL) { return 0; }
+
+  // print the files
+  for (int tid = 0; tid < nrn_nthread; ++tid) {
+    BBCoreGapInfo& g = gi[tid];
+    if (g.ntar == 0) { continue; }
+
+    assert(g.nsrc > 0);
+    int type = g.type;
+    int ix_vpre = g.ix_vpre;
+
+    char fname[1000];
+    sprintf(fname, "%s/%d_gap.dat", path, group_ids[tid]);
+    FILE* f = fopen(fname, "wb");
+    assert(f);
+    fprintf(f, "%s\n", bbcore_write_version);
+    fprintf(f, "%d ntar\n", g.ntar);
+    fprintf(f, "%d nsrc\n", g.nsrc);
+    fprintf(f, "%d %s\n", type, memb_func[type].sym->name);
+    fprintf(f, "%d ix_vpre\n", ix_vpre); // range variable offset from instance
+
+    int chkpnt = 0;
+#define CHKPNT fprintf(f, "chkpnt %d\n", chkpnt++);
+    CHKPNT fwrite(g.sid_target, g.ntar, sizeof(int), f);
+    CHKPNT fwrite(g.sid_src, g.nsrc, sizeof(int), f);
+    CHKPNT fwrite(g.v_index, g.nsrc, sizeof(int), f);
+
+    fclose(f);
+  }
+
+  // cleanup
+  for (int tid=0; tid < nrn_nthread; ++tid) {
+    BBCoreGapInfo& g = gi[tid];
+    delete [] g.sid_src;
+    delete [] g.sid_target;
+    delete [] g.v_index;
+    delete [] g.vpre_index;
+  }
+  delete [] gi;
+  gi = NULL;
+  return 0;
+}
+
+static void nrnbbcore_gap_info() {
   if (non_vsrc_update_info_.size() > 0) {
     hoc_execerror("Non Voltage transfer sources not supported in CoreNEURON", NULL);
   }
   // if there are no targets, then there are no sources
   if (!targets_ || !targets_->count()) {
     assert(sgids_->count() == 0);
-    return 0;
+    return;
   }
 
   // type
@@ -1049,19 +1147,8 @@ size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
 
   int ix_vpre = target_parray_index_->item(0);
 
-  // memb_lists of the threads.
-  Memb_list** gap_ml = new Memb_list*[nrn_nthread];
-  for (int tid=0; tid < nrn_nthread; ++tid) {
-    NrnThread& nt = nrn_threads[tid];
-    for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
-      if (tml->index == type) {
-        gap_ml[tid] = tml->ml;
-      }
-    }
-  }
-
   // space for the info
-  BBCoreGapInfo* gi = new BBCoreGapInfo[nrn_nthread];
+  gi = new BBCoreGapInfo[nrn_nthread];
   for (int tid = 0; tid < nrn_nthread; ++tid) {
     BBCoreGapInfo& g = gi[tid];
     int n = transfer_thread_data_[tid].cnt;
@@ -1071,6 +1158,19 @@ size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
     g.vpre_index = new int[n];
     g.ntar = 0; // will end up as gap_ml[tid].nodecount
     g.nsrc = 0; // will end up as number of distinct gap_ml[tid].nodeindices
+
+    g.type = type;
+    g.ix_vpre = ix_vpre;
+  }
+
+  // memb_lists of the threads.
+  for (int tid=0; tid < nrn_nthread; ++tid) {
+    NrnThread& nt = nrn_threads[tid];
+    for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
+      if (tml->index == type) {
+        gi[tid].gap_ml = tml->ml;
+      }
+    }
   }
 
   // gap info for targets, segregate into threads
@@ -1078,7 +1178,7 @@ size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
     int sid = sgid2targets_->item(i);
     NrnThread* nt = (NrnThread*)target_pntlist_->item(i)->_vnt;
     int tid = nt ? nt->id : 0;
-    Memb_list* ml = gap_ml[tid];
+    Memb_list* ml = gi[tid].gap_ml;
     int ix = targets_->item(i) - ml->data[0];
 
     BBCoreGapInfo& g = gi[tid];
@@ -1109,43 +1209,6 @@ size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
     sidsort(g.sid_src, g.nsrc, g.v_index);
     sidsort(g.sid_target, g.ntar, g.vpre_index);
   }
-
-  // print the files
-  for (int tid = 0; tid < nrn_nthread; ++tid) {
-    BBCoreGapInfo& g = gi[tid];
-    if (g.ntar == 0) { continue; }
-
-    assert(g.nsrc > 0);
-    char fname[1000];
-    sprintf(fname, "%s/%d_gap.dat", path, group_ids[tid]);
-    FILE* f = fopen(fname, "wb");
-    assert(f);
-    fprintf(f, "%s\n", bbcore_write_version);
-    fprintf(f, "%d ntar\n", g.ntar);
-    fprintf(f, "%d nsrc\n", g.nsrc);
-    fprintf(f, "%d %s\n", type, memb_func[type].sym->name);
-    fprintf(f, "%d ix_vpre\n", ix_vpre); // range variable offset from instance
-
-    int chkpnt = 0;
-#define CHKPNT fprintf(f, "chkpnt %d\n", chkpnt++);
-    CHKPNT fwrite(g.sid_target, g.ntar, sizeof(int), f);
-    CHKPNT fwrite(g.sid_src, g.nsrc, sizeof(int), f);
-    CHKPNT fwrite(g.v_index, g.nsrc, sizeof(int), f);
-
-    fclose(f);
-  }
-
-  // cleanup
-  for (int tid=0; tid < nrn_nthread; ++tid) {
-    BBCoreGapInfo& g = gi[tid];
-    delete [] g.sid_src;
-    delete [] g.sid_target;
-    delete [] g.v_index;
-    delete [] g.vpre_index;
-  }
-  delete [] gi;
-  delete [] gap_ml;
-  return 0;
 }
 
 static bool mycompar(const std::pair<int, int>& a, const std::pair<int, int>& b) {
