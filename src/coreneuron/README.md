@@ -261,4 +261,4 @@ Contributors will however be gratefully acknowledged in the corresponding CREDIT
 
 ## Funding
 
-This work has been partially funded by the European Union Seventh Framework Program (FP7/2007­2013) under grant agreement no. 604102 (HBP).
+CoreNEURON is developed in a joint collaboration between the Blue Brain Project and Yale University. Financial support was provided by the ETH Board funding to the Blue Brain Project and by the following grants: European Union Seventh Framework Program (FP7/2007-2013) under grant agreement no. 604102 (HBP), European Union’s Horizon 2020 research and innovation programme under grant agreements no. 720270, 785907 (HBP SGA1, HBP SGA2) and NIH grant number R01NS11613.
