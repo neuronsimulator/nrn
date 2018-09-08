@@ -138,6 +138,7 @@ static int get_global_int_item(const char* name);
 static void* get_global_dbl_item(void* p, const char* & name, int& size, double*& val);
 static void write_nrnthread(const char* fname, NrnThread& nt, CellGroup& cg);
 
+static void nrnthread_group_ids(int* groupids);
 static int nrnthread_dat1(int tid, int& n_presyn, int& n_netcon,
   int*& output_gid, int*& netcon_srcgid);
 static int nrnthread_dat2_1(int tid, int& ngid, int& n_real_gid, int& nnode, int& ndiam,
@@ -1341,6 +1342,12 @@ static int nrnthread_dat2_corepointer_mech(int tid, int type,
   return 1;
 }
 
+void nrnthread_group_ids(int* grp) {
+  for (int i = 0; i < nrn_nthread; ++i) {
+    grp[i] = cellgroups_[i].group_id;
+  }
+}
+
 void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
   char fname[1000];
   if (cg.n_output <= 0) { return; }
@@ -1750,6 +1757,7 @@ extern CNB get_partrans_setup_info; // from partrans.cpp
 
 
 static core2nrn_callback_t cnbs[]  = {
+  {"nrn2core_group_ids_", (CNB)nrnthread_group_ids},
   {"nrn2core_mkmech_info_", (CNB)write_memb_mech_types_direct},
   {"nrn2core_get_global_dbl_item_", (CNB)get_global_dbl_item},
   {"nrn2core_get_global_int_item_", (CNB)get_global_int_item},
@@ -1774,6 +1782,8 @@ int nrncore_run() {
   }
   void* handle = dlopen(corenrn_lib, RTLD_NOW|RTLD_GLOBAL);
   if (!handle) {   
+    fputs(dlerror(), stderr);
+    fputs("\n", stderr);
     hoc_execerror("Could not dlopen $CORENEURONLIB: ", corenrn_lib);
   }
   for (int i=0; cnbs[i].name; ++i) {
@@ -1791,8 +1801,9 @@ int nrncore_run() {
     hoc_execerror("Could not get symbol corenrn_embedded_run from", corenrn_lib);
   }
   part1();
-  int (*r)() = (int (*)())sym;
-  return r();
+  int (*r)(int, int, int) = (int (*)(int, int, int))sym;
+  int have_gap = nrnthread_v_transfer_ ? 1 : 0;
+  return r(nrn_nthread, have_gap, nrnmpi_use);
 }
 
 } // end of extern "C"
