@@ -1073,7 +1073,7 @@ void get_partrans_setup_info(int tid, int& ntar, int& nsrc,
   type = gi[0].type;
   ix_vpre = gi[0].ix_vpre;
   sid_target = g.sid_target;
-  sid_src = g.vpre_index;
+  sid_src = g.sid_src;
   v_indices = g.v_index;
 
   if (tid == nrn_nthread-1) {

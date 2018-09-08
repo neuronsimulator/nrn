@@ -1753,15 +1753,17 @@ typedef struct core2nrn_callback_t {
   CNB f;
 } core2nrn_callback_t;
 
-extern CNB get_partrans_setup_info; // from partrans.cpp
-
+// from partrans.cpp
+extern "C" {
+extern void get_partrans_setup_info(int, int&, int&, int&, int&, int*&, int*&, int*&);
+}
 
 static core2nrn_callback_t cnbs[]  = {
   {"nrn2core_group_ids_", (CNB)nrnthread_group_ids},
   {"nrn2core_mkmech_info_", (CNB)write_memb_mech_types_direct},
   {"nrn2core_get_global_dbl_item_", (CNB)get_global_dbl_item},
   {"nrn2core_get_global_int_item_", (CNB)get_global_int_item},
-  {"nrn2core_get_partrans_setup_info_", get_partrans_setup_info},
+  {"nrn2core_get_partrans_setup_info_", (CNB)get_partrans_setup_info},
   {"nrn2core_get_dat1_", (CNB)nrnthread_dat1},
   {"nrn2core_get_dat2_1_", (CNB)nrnthread_dat2_1},
   {"nrn2core_get_dat2_2_", (CNB)nrnthread_dat2_2},
