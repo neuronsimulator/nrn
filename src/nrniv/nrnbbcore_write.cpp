@@ -1776,7 +1776,7 @@ static core2nrn_callback_t cnbs[]  = {
   {NULL, NULL}
 };
 
-int nrncore_run() {
+int nrncore_run(const char* arg) {
   printf("nrncore_run\n");
   char* corenrn_lib = getenv("CORENEURONLIB");
   if (!corenrn_lib) {
@@ -1803,9 +1803,9 @@ int nrncore_run() {
     hoc_execerror("Could not get symbol corenrn_embedded_run from", corenrn_lib);
   }
   part1();
-  int (*r)(int, int, int) = (int (*)(int, int, int))sym;
+  int (*r)(int, int, int, const char*) = (int (*)(int, int, int, const char*))sym;
   int have_gap = nrnthread_v_transfer_ ? 1 : 0;
-  return r(nrn_nthread, have_gap, nrnmpi_use);
+  return r(nrn_nthread, have_gap, nrnmpi_use, arg);
 }
 
 } // end of extern "C"

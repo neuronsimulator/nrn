@@ -71,7 +71,7 @@ extern "C" {
 	extern int nrn_how_many_processors();
 	extern size_t nrnbbcore_write();
 	extern size_t nrnbbcore_register_mapping();
-	extern int nrncore_run();
+	extern int nrncore_run(const char*);
 
 }
 
@@ -946,7 +946,7 @@ static double nrnbbcorewrite(void*) {
 }
 
 static double nrncorerun(void*) {
-	return double(nrncore_run());
+	return double(nrncore_run(gargstr(1)));
 }
 
 static double nrnbbcore_register_mapping(void*) {
