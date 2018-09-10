@@ -95,7 +95,7 @@ hocusr.h: $(nsrc)/nrnoc/neuron.h $(nsrc)/oc/mk_hocusr_h.py $(nsrc)/nrnoc/options
 	cat $(nsrc)/nrnoc/neuron.h > tmp.c
 	@CPP@ -E -I$(nsrc)/nrnoc -I$(nsrc)/oc tmp.c | sed '/^#/d' > neuron.tmp
 	$(PYTHON_BLD) $(nsrc)/oc/mk_hocusr_h.py < neuron.tmp > temp2hoc
-	cat neuron.tmp temp2hoc |sed 's/"nrnhoc_topology"/"topology"/' > hocusr.h
+	cat temp2hoc |sed 's/"nrnhoc_topology"/"topology"/' > hocusr.h
 	rm -f temp1hoc temp2hoc neuron.tmp tmp.c
 
 ## Header files that need to be installed:
