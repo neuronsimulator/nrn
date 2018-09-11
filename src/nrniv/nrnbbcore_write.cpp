@@ -1815,6 +1815,9 @@ int nrncore_run(const char* arg) {
   part1();
   int (*r)(int, int, int, const char*) = (int (*)(int, int, int, const char*))sym;
   int have_gap = nrnthread_v_transfer_ ? 1 : 0;
+#if !NRNMPI
+#define nrnmpi_use 0
+#endif
   return r(nrn_nthread, have_gap, nrnmpi_use, arg);
 }
 
