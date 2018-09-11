@@ -1777,7 +1777,6 @@ static core2nrn_callback_t cnbs[]  = {
 };
 
 int nrncore_run(const char* arg) {
-  printf("nrncore_run\n");
   char* corenrn_lib = getenv("CORENEURONLIB");
   if (!corenrn_lib) {
     hoc_execerror("nrncore_run needs a CORENEURONLIB environment variable", NULL);
@@ -1787,7 +1786,18 @@ int nrncore_run(const char* arg) {
     fputs(dlerror(), stderr);
     fputs("\n", stderr);
     hoc_execerror("Could not dlopen $CORENEURONLIB: ", corenrn_lib);
-  }
+  }else{
+    void* sym = dlsym(handle, "corenrn_version");
+    if (!sym) {
+      hoc_execerror("Could not get symbol corenrn_version from", corenrn_lib);
+    }
+    const char* cnver = (*(const char*(*)())sym)();
+    if (strcmp(bbcore_write_version, cnver) != 0) {
+      char buf[200];
+      sprintf(buf, "%s and %s", bbcore_write_version, cnver);
+      hoc_execerror("Incompatible NEURON and CoreNEURON data versions:", buf);
+    }
+  }      
   for (int i=0; cnbs[i].name; ++i) {
     void* sym = dlsym(handle, cnbs[i].name);
     if (!sym) {
