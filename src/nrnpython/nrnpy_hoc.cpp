@@ -89,6 +89,12 @@ static char array_interface_typestr[5] = "|f8";
 // time
 static PyObject* pfunc_get_docstring = NULL;
 
+// Methods unique to the HocTopLevelInterpreter type of HocObject
+// follow the add_methods implementation of python3.6.2 in typeobject.c
+// and the GenericGetAttr implementation in object.c
+static PyObject* topmethdict = NULL;
+static void add2topdict(PyObject*);
+
 static const char* hocobj_docstring =
     "class neuron.hoc.HocObject - Hoc Object wrapper";
 
@@ -833,6 +839,22 @@ static int setup_doc_system() {
   return 1;
 }
 
+PyObject* toplevel_get(PyObject* subself, const char* n) {
+  PyHocObject* self = (PyHocObject*)subself;
+  PyObject* result = NULL;
+  if (self->type_ == PyHoc::HocTopLevelInterpreter) {
+    PyObject* descr = PyDict_GetItemString(topmethdict, n);
+    if (descr) {
+      Py_INCREF(descr);
+      descrgetfunc f = descr->ob_type->tp_descr_get;
+      assert(f);
+      result = f(descr, subself, (PyObject*)Py_TYPE(subself));
+      Py_DECREF(descr);
+    }
+  }
+  return result;
+}
+
 // TODO: This function needs refactoring; there are too many exit points
 static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
   PyHocObject* self = (PyHocObject*)subself;
@@ -858,6 +880,12 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
       PyObject* p = nrnpy_hoc2pyobject(self->ho_);
       return PyObject_GenericGetAttr(p, pyname);
     }
+    if (self->type_ == PyHoc::HocTopLevelInterpreter) {
+      result = toplevel_get(subself, n);
+      if (result) {
+        return result;
+      }
+    }
     if (strcmp(n, "__dict__") == 0) {
       // all the public names
       Symlist* sl = 0;
@@ -872,6 +900,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
       } else {
         symlist2dict(hoc_built_in_symlist, dict);
         symlist2dict(hoc_top_level_symlist, dict);
+        add2topdict(dict);
       }
 
       // Is the self->ho_ a Vector?  If so, add the __array_interface__ symbol
@@ -1116,7 +1145,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
       break;
     }
     case SETPOINTERKEYWORD:
-      result = PyObject_GenericGetAttr((PyObject*)subself, pyname);
+      result = toplevel_get(subself, n);
       break;
     default:  // otherwise
     {
@@ -2235,18 +2264,10 @@ static PyObject* hocpickle_setstate(PyObject* self, PyObject* args) {
   return Py_None;
 }
 
+// available for every HocObject
 static PyMethodDef hocobj_methods[] = {
-    {"ref", mkref, METH_VARARGS,
-     "Wrap to allow call by reference in a hoc function"},
     {"baseattr", hocobj_baseattr, METH_VARARGS,
      "To allow use of an overrided base method"},
-    {"cas", nrnpy_cas, METH_VARARGS, "Return the currently accessed section."},
-    {"allsec", nrnpy_forall, METH_VARARGS,
-     "Return iterator over all sections."},
-    {"Section", (PyCFunction)nrnpy_newsecobj, METH_VARARGS | METH_KEYWORDS,
-     "Return a new Section"},
-    {"setpointer", setpointer, METH_VARARGS,
-     "Assign hoc variable address to NMODL POINTER"},
     {"hocobjptr", hocobj_vptr, METH_NOARGS, "Hoc Object pointer as a long int"},
     {"same", (PyCFunction)hocobj_same, METH_VARARGS,
      "o1.same(o2) return True if o1 and o2 wrap the same internal HOC Object"},
@@ -2255,6 +2276,34 @@ static PyMethodDef hocobj_methods[] = {
     {"__reduce__", hocpickle_reduce, METH_VARARGS, "pickle interface"},
     {"__setstate__", hocpickle_setstate, METH_VARARGS, "pickle interface"},
     {NULL, NULL, 0, NULL}};
+
+// only for a HocTopLevelInterpreter type HocObject
+static PyMethodDef toplevel_methods[] = {
+    {"ref", mkref, METH_VARARGS,
+     "Wrap to allow call by reference in a hoc function"},
+    {"cas", nrnpy_cas, METH_VARARGS, "Return the currently accessed section."},
+    {"allsec", nrnpy_forall, METH_VARARGS,
+     "Return iterator over all sections."},
+    {"Section", (PyCFunction)nrnpy_newsecobj, METH_VARARGS | METH_KEYWORDS,
+     "Return a new Section"},
+    {"setpointer", setpointer, METH_VARARGS,
+     "Assign hoc variable address to NMODL POINTER"},
+    {NULL, NULL, 0, NULL}};
+
+static void add2topdict(PyObject* dict) {
+  for (PyMethodDef* meth = toplevel_methods; meth->ml_name != NULL; meth++) {
+    int err;
+    PyObject* nn = Py_BuildValue("s", meth->ml_doc);
+    if (!nn) {
+      return;
+    }
+    err = PyDict_SetItemString(dict, meth->ml_name, nn);
+    Py_DECREF(nn);
+    if (err) {
+      return;
+    }
+  }
+}
 
 static PyMemberDef hocobj_members[] = {{NULL, 0, 0, 0, NULL}};
 
@@ -2337,6 +2386,19 @@ myPyMODINIT_FUNC nrnpy_hoc() {
   Py_INCREF(hocobject_type);
   // printf("AddObject HocObject\n");
   PyModule_AddObject(m, "HocObject", (PyObject*)hocobject_type);
+
+  topmethdict = PyDict_New();
+  for (PyMethodDef* meth = toplevel_methods; meth->ml_name != NULL; meth++) {
+    PyObject* descr;
+    int err;
+    descr = PyDescr_NewMethod(hocobject_type, meth);
+    assert(descr);
+    err = PyDict_SetItemString(topmethdict, meth->ml_name, descr);
+    Py_DECREF(descr);
+    if (err < 0) {
+      goto fail;
+    }      
+  }
 
   s = hoc_lookup("Vector");
   assert(s);
