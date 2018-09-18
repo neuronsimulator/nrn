@@ -14,7 +14,6 @@ int main(int argc, const char** argv) {
     return 1;
   }
   const char* pat = argv[1];
-  pat = "activate.bat";
   const char* fname = argv[2];
 
   FILE* f = fopen(fname, "rb");

@@ -102,7 +102,9 @@ functions here as well.
 #include <fstream>
 #include <sstream>
 
+#if defined(HAVE_DLFCN_H)
 #include <dlfcn.h>
+#endif
 
 extern NetCvode* net_cvode_instance;
 
@@ -1776,6 +1778,7 @@ static core2nrn_callback_t cnbs[]  = {
   {NULL, NULL}
 };
 
+#if defined(HAVE_DLFCN_H)
 int nrncore_run(const char* arg) {
   char* corenrn_lib = getenv("CORENEURONLIB");
   if (!corenrn_lib) {
@@ -1820,5 +1823,10 @@ int nrncore_run(const char* arg) {
 #endif
   return r(nrn_nthread, have_gap, nrnmpi_use, arg);
 }
+#else
+int nrncore_run(const char*) {
+  return 0;
+}
+#endif //HAVE_DLFCN_H
 
 } // end of extern "C"

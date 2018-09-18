@@ -46,8 +46,8 @@ WHICH=which
 function trypy {
   a=`ls "$1" |grep "$2"`
   if test "$a" != "" ; then
-    b=`cygpath -U "$1/$a/Anaconda Prompt.lnk"`
-    c=`nrnbinstr "activate.bat" "$b"`
+    b=`cygpath -U "$1/$a/$3"`
+    c=`nrnbinstr "$4" "$b"`
     if test "$c" != "" ; then
       c=`cygpath -U "$c"`
       c=`dirname "$c"`
@@ -77,12 +77,19 @@ else
   # Often people install Anaconda on Windows without adding it to PATH
   if test "$OS" = "Windows_NT" -a "$APPDATA" != "" ; then
     smenu="$APPDATA/Microsoft/Windows/Start Menu/Programs"
-    trypy "$smenu" Anaconda3
+    trypy "$smenu" Anaconda3 "Anaconda Prompt.lnk" activate.bat
     if test "$PYTHON" = "" ; then
-      trypy "$smenu" Anaconda2
+      trypy "$smenu" Anaconda2 "Anaconda Prompt.lnk" activate.bat
     fi
     if test "$PYTHON" = "" ; then
-      trypy "$smenu" Anaconda
+      trypy "$smenu" Anaconda "Anaconda Prompt.lnk" activate.bat
+    fi
+    if test "$PYTHON" = "" ; then #brittle but try Enthought
+      a=`cygpath -U "$APPDATA/../local/enthought/canopy/edm/envs/user"`
+      if test -d "$a" ; then
+        export PATH="$a":"$PATH"
+        PYTHON=python
+      fi
     fi
   fi
   if test "$PYTHON" = "" ; then
