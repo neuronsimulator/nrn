@@ -131,11 +131,60 @@ Impedance
          
         Note that the extended impedance calculation may involve a singular matrix 
         because of the negative resistance contributions of excitable channels. 
-         
+
+        If the extended impedance calculation has been chosen (second arg = 1)
+        then parallel gap junction effects will be taken into account.
+        But for parallel gap junctions, there are several qualifications:
+
+        One and only one rank can have a stimulus location. :meth:`Impedance.loc`
+        can be used with an arg of -1 to remove the stimulus location on
+        a rank.
+
+        Every rank must participate in the call to compute (because of the use of
+	MPI collective calls to carry out the impedance calculation). Note that only the
+        freq arg value on the rank that has a location matters. If not all ranks have the
+        second arg value of 1, the machine will hang in an MPI collective call.
+
+        Not more than 5 types of gap junction POINT_PROCESS mechanisms can be instantiated.
+        If any POINT_PROCESS instance participates in a gap junction
+        (via :meth:`ParallelContext.target_var`) then all instances of that type
+        must participate in gap junctions.
+
+        Only :meth:`Impedance.transfer` and :meth:`Impedance.transfer_phase` can be used
+        to access the impedance values.
+        Ranks do not have to participate in the calls to the those two
+        methods since no MPI collective calls are involved. After
+        :meth:`Impedance.compute` is called, the transfer impedance is available at any
+        cell location and multiple calls from a rank are allowed. Note that if the stimulus
+        location is at location x and the transfer impedance is obtained at location x and
+        y, the input impedance is known only at location x (equal to the transfer impedance)
+        and the voltage ratio is known only at x and y. Note that the voltage ratio at
+        x is trivially 1.0, and the voltage at y, given that x is voltage clamped to a 1mV
+        sine wave with freq, is transfer(y)/transfer(x) . Unfortunately this is the opposite
+        of the definition given for :meth:`Impedance.ratio` which voltage clamped y
+        and recorded at x. I regret
+        the original convention which was an artifact of
+        :meth:`Impedance.compute` with args (freq, 0) calculating at one time, not only all the transfer
+        impedances, but also all the input impedances at every location.  The problem with
+        the original convention for :meth:`Impedance.ratio`, and also with
+        :meth:`Impedance.input`, when the second :meth:`Impedance.compute` arg is 1,
+        is that their use necessitates a solve with a moved input stimulus location
+        specified by their argument. This is very inconvenient in a parallel context, as
+        that solve would require the participation of all the ranks where all the args except
+        one would have to be -1.  An error message will be generated if one attempts to use the
+        ratio or input methods in the context of parallel gap junctions when nhost > 1.
+
+        Impedance calculations with parallel gap junctions use the
+        Jacobi iterative method to solve the linear matrix equation.
+        This method converges linearly and the number of iterations
+        required is proportional to the gap junction strength. Up to 500 iterations
+        are allowed before an error message is generated. Iteration stops when no state
+        changes more than 1e-9 after an iteration. It is expected that the number of
+        iterations will be quite modest with realistic gap junction conductances (a dozen
+        or so).
+
 
     .. warning::
-        The calculation is incomplete in the presence of nonlocal mechanisms 
-        such as gap junctions. 
          
         There are many limitations to the extended linearization of the 
         complete system. It basically handles only voltage sensitive 
@@ -147,8 +196,8 @@ Impedance
         LinearMechanism not allowed. 
          
         Because we are not doing the complete full df/dy calculation, there 
-        may be interactions between states that are not computed. Gap junctions 
-        mentioned above are a case in point. Others are where ion concentration 
+        may be interactions between states that are not computed.
+        An example is  where ion concentration 
         equations are voltage sensitive in one mechanism and then the ionic 
         current is concentration sensitive in another mechanism. ie. the 
         typical way NEURON deals with ionic concentration coupling to current 
