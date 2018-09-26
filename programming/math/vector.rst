@@ -514,11 +514,12 @@ Vector
         ``dv = new Vector()`` 
 
         Any of the following makes NEURON load its standard run library:
-        starting NEURON by executing nrngui
-        executing any of the following statements:
-            load_file("nrngui.hoc") // also brings up the NEURON Main Menu
-            load_file("noload.hoc") // does not bring up the NEURON Main Menu
-            load_file("stdrun.hoc") // does not bring up the NEURON Main Menu
+        
+	- starting NEURON by executing nrngui
+        - executing any of the following statements:
+          - load_file("nrngui.hoc") // also brings up the NEURON Main Menu
+          - load_file("noload.hoc") // does not bring up the NEURON Main Menu
+          - load_file("stdrun.hoc") // does not bring up the NEURON Main Menu
 
 
     .. seealso::
