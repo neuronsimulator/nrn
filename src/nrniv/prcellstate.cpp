@@ -154,7 +154,7 @@ printf("%s\n", ps.ssrc_?secname(ps.ssrc_):"unknown");
   for (int i=0; i < nt.end; ++i) if (cellnodes[i] >= 0) {
     Node* nd = nt._v_node[i]; //if not cach_efficient then _actual_area=NULL
     fprintf(f, "%d %d %.*g %.*g %.*g\n",
-      cellnodes[i], cellnodes[nt._v_parent_index[i]],
+      cellnodes[i], i < nt.ncell ? -1 : cellnodes[nt._v_parent_index[i]],
       precision, NODEAREA(nd), precision, nt._actual_a[i], precision, nt._actual_b[i]);
   }
   fprintf(f, "inode v\n");
