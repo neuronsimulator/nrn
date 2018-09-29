@@ -1,5 +1,4 @@
 #include <math.h>
-#include "rxdmath.h"
 
 /*Some functions supported by numpy that aren't included in math.h
  * names and arguments match the wrappers used in rxdmath.py
