@@ -51,6 +51,11 @@ of the full distribution available from
 http://www.deshawresearch.com/resources_random123.html
 */
 
+#ifdef __bgclang__
+#define R123_USE_MULHILO64_MULHI_INTRIN 0
+#define R123_USE_GNU_UINT128 1
+#endif
+
 #include "Random123/philox.h"
 #include <inttypes.h>
 
