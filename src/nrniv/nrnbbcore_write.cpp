@@ -1248,6 +1248,7 @@ static int nrnthread_dat2_mech(int tid, size_t i, int dsz_inst, int*& nodeindice
         for (int i=0; i < nn; ++i) {
           pdata[i] = pdata1[i];
         }
+        delete [] pdata1;
       }else{
         pdata = pdata1;
       }
