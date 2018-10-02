@@ -1,0 +1,50 @@
+
+my mylaunch("")
+
+
+on open names
+	
+	tell application "Finder"
+		set farg to ""
+		repeat with i in names
+			set farg to farg & " \"" & (the POSIX path of (i as string)) & "\""
+		end repeat
+	end tell
+	my mylaunch(farg)
+end open
+
+on mylaunch(farg)
+	tell application "Finder"
+		set myname to name of (path to me)
+		set cutpos to (offset of ".app" in myname) - 1
+		set basename to text 1 thru cutpos of myname
+		set appdir to (container of (path to me) as string)
+		set neuronhome to the POSIX path of appdir
+		
+		set myhome to path to current user folder
+		set fname to (the POSIX path of (myhome as string)) & ".nrn_as2sh"
+		set nl to ASCII character 10
+		--display dialog fname
+		set mycmd to "./" & basename & ".sh " & farg
+		
+		set thefile to open for access (fname as POSIX file) with write permission
+		set eof of thefile to 0
+		write "#!/bin/sh" & nl to thefile
+		write "NRNHOME=\"" & neuronhome & "nrn\"" & nl to thefile
+		write "NEURONHOME=\"${NRNHOME}/share/nrn\"" & nl to thefile
+		write "PATH=\"${NRNHOME}/x86_64/bin:${PATH}\"" & nl to thefile
+		write "export NRNHOME" & nl to thefile
+		write "export NEURONHOME" & nl to thefile
+		write "export PATH" & nl to thefile
+		write "cd \"${NRNHOME}/x86_64/bin\"" & nl to thefile
+		write (mycmd as string) & nl to thefile
+		close access thefile
+		
+		set termfile to appdir & "nrn:x86_64:bin:" & "macnrn.term"
+		open file termfile
+		
+	end tell
+	
+end mylaunch
+
+

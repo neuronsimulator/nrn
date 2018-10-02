@@ -22,33 +22,23 @@ bindir="$2/${cpu}/bin"
 # /Developer/Applications/Utilities/"Icon Composer" and save here. 
 
 # the following creates an app bundle.
+# based on the applescript method of nrn5.4 cvs version 1.3 of 2003-11-25
+# returned to this because carbon and i386 finally deprecated out of
+# existence as of Mojave 10.14
 
 mkapp() {
 	name=$1
-	contents=${IDIR}/${name}.app/Contents
-	rm -f -r ${IDIR}/${name}.app
-	mkdir ${IDIR}/${name}.app
-	mkdir ${contents}
-	mkdir ${contents}/Resources
-	mkdir ${contents}/MacOS
-
-	cp ${name}.icns ${contents}/Resources
-	cp ${name}.info ${contents}/Info.plist
-	cp ${objdir}/a.out ${contents}/MacOS
+	app_path=${IDIR}/${name}.app
+	rm -f -r ${app_path}
+	osacompile -o ${app_path} prototype_applescript.txt
+	cp ${name}.icns ${app_path}/Contents/Resources/droplet.icns
 }
 
 cd ${srcdir}
-if test "$carbon" = "yes" ; then
-	rm -r -f $bindir/nrniv.app
-	mkapp nrniv
-	mv ${IDIR}/nrniv.app $bindir
-	rm $bindir/nrniv.app/Contents/MacOS/a.out
-	cp $bindir/nrniv $bindir/nrniv.app/Contents/MacOS
-else
-	mkapp idraw
-fi
 mkapp nrngui
 mkapp mknrndll
 mkapp modlunit
 mkapp neurondemo
 mkapp mos2nrn
+mkapp idraw
+
