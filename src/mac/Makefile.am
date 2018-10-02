@@ -5,8 +5,7 @@ S =  modlunit.sh mknrndll.sh nrngui.sh neurondemo.sh idraw.sh mos2nrn.sh
 
 launch_scripts = macnrn.term $(S)
 
-EXTRA_DIST = maccmd.c njconf.h nrnneosm.h bbsconf.h macnrn.h nrnconf.h \
-	njvmstub.c nrncarbon.h \
+EXTRA_DIST = \
 	$(launch_scripts) launch_inst.sh \
 	modlunit.icns mknrndll.icns nrngui.icns neurondemo.icns idraw.icns mos2nrn.icns \
 	mkdmg.sh after-install.sh prototype_applescript.txt
