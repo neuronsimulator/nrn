@@ -70,7 +70,7 @@ libdirs = [destdir + "@NRN_LIBDIR@",
 epre='-Wl,-R'
 
 @MAC_DARWIN_FALSE@readline="readline"
-@MAC_DARWIN_TRUE@readline="edit"
+@MAC_DARWIN_TRUE@readline="readline"
 
 
 hoc_module = Extension(

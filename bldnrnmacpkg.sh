@@ -26,7 +26,7 @@ PYVER=`$1 -c 'from sys import version_info as v ; print (str(v.major) + str(v.mi
 PYVS=${PYVS}-${PYVER}
 rm -r -f src/nrnpython/build
 ../nrn/configure --prefix=$INST/nrn --with-paranrn=dynamic \
-  --with-nrnpython=dynamic --with-pyexe=$1 #$2
+  --with-nrnpython=dynamic --with-pyexe=$1 --with-readline=no #$2
 make -j 2 install
 }
 
