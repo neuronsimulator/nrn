@@ -1,6 +1,6 @@
 import weakref
 from neuron import h
-from . import node, rxdsection, nodelist, morphology
+from . import node, rxdsection, nodelist
 import numpy
 from .rxdException import RxDException
 
@@ -194,7 +194,8 @@ class Section1D(rxdsection.RxDSection):
 
     def _assign_parents(self, root_id, missing, root_children):
         # assign parents and root nodes
-        parent_sec = morphology.parent(self._sec)
+        parent_seg = self._sec.trueparentseg()
+        parent_sec = None if not parent_seg else parent_seg.sec
         if parent_sec is None or not self._species()._has_region_section(self._region, parent_sec):
             if parent_sec is None:
                 pt = (self._region, None)
@@ -213,7 +214,7 @@ class Section1D(rxdsection.RxDSection):
             # TODO: this is inefficient since checking the list twice for _region, parent_sec combo
             #       but doesn't matter much since only done at setup
             parent_section = self.species._region_section(self._region, parent_sec)
-            self._parent = (parent_section, int(parent_sec.nseg * morphology.parent_loc(self._sec, parent_sec)))
+            self._parent = (parent_section, int(parent_sec.nseg * parent_seg.x))
         #print 'parent:', self._parent
         return root_id
 
