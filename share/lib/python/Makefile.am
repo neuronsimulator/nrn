@@ -53,7 +53,6 @@ neuron/crxd/__init__.py \
 neuron/crxd/multiCompartmentReaction.py \
 neuron/crxd/nodelist.py \
 neuron/crxd/generalizedReaction.py \
-neuron/crxd/morphology.py \
 neuron/crxd/options.py \
 neuron/crxd/gui.py \
 neuron/crxd/plugins.py \
