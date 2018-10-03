@@ -29,6 +29,9 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <map>
 #include <string>
+#include <iostream>
+#include <fstream>
+#include <sstream>
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnoc/membdef.h"
@@ -37,6 +40,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/nrn_assert.h"
 #include "coreneuron/utils/sdprintf.h"
 #include "coreneuron/mech/cfile/cabvars.h"
+#include "coreneuron/nrniv/nrn2core_direct.h"
 
 static char banner[] = "Duke, Yale, and the BlueBrain Project -- Copyright 1984-2015";
 
@@ -62,30 +66,73 @@ int nrn_need_byteswap;
 
 std::map<std::string, int> mech2type;
 
+extern "C" {
+void (*nrn2core_mkmech_info_)(std::ostream&);
+}
+static void mk_mech();
+static void mk_mech(std::istream&);
+
 /// Read meta data about the mechanisms and allocate corresponding mechanism management data
 /// structures
 void mk_mech(const char* datpath) {
+    if (corenrn_embedded) {
+        // we are embedded in NEURON
+        mk_mech();
+        return;
+    }
     char fnamebuf[1024];
     sd_ptr fname = sdprintf(fnamebuf, sizeof(fnamebuf), "%s/%s", datpath, "bbcore_mech.dat");
-    FILE* f;
-    f = fopen(fname, "r");
+    std::ifstream fs(fname);
 
-    if (f == NULL) {
+    if (!fs.good()) {
         fprintf(stderr, "Error: couldn't find bbcore_mech.dat file in the dataset directory \n");
         fprintf(
             stderr,
             "       Make sure to pass full directory path of dataset using -d DIR or --datpath=DIR \n");
     }
 
-    nrn_assert(f);
+    nrn_assert(fs.good());
+    mk_mech(fs);
+    fs.close();
 
+    fname = sdprintf(fnamebuf, sizeof(fnamebuf), "%s/%s", datpath, "byteswap1.dat");
+    FILE* f;
+    f = fopen(fname, "r");
+    if (!f) {
+        fprintf(stderr, "Error: couldn't find byteswap1.dat file in the dataset directory \n");
+    }
+    nrn_assert(f);
+    // file consists of int32_t binary 1 . After reading can decide if
+    // binary info in files needs to be byteswapped.
+    int32_t x;
+    nrn_assert(fread(&x, sizeof(int32_t), 1, f) == 1);
+    nrn_need_byteswap = 0;
+    if (x != 1) {
+        BYTEHEADER;
+        nrn_need_byteswap = 1;
+        BYTESWAP(x, int32_t);
+        nrn_assert(x == 1);
+    }
+    fclose(f);
+}
+
+// we are embedded in NEURON, get info as stringstream from nrnbbcore_write.cpp
+static void mk_mech() {
+    nrn_need_byteswap = 0;
+    std::stringstream ss;
+    nrn_assert(nrn2core_mkmech_info_);
+    (*nrn2core_mkmech_info_)(ss);
+    mk_mech(ss);
+}
+
+static void mk_mech(std::istream& s) {
     char version[256];
-    fscanf(f, "%s\n", version);
+    s >> version;
     check_bbcore_write_version(version);
 
     //  printf("reading %s\n", fname);
     int n = 0;
-    nrn_assert(fscanf(f, "%d\n", &n) == 1);
+    nrn_assert(s >> n);
 
     /// Allocate space for mechanism related data structures
     alloc_mech(n);
@@ -94,8 +141,7 @@ void mk_mech(const char* datpath) {
     for (int i = 2; i < n; ++i) {
         char mname[100];
         int type = 0, pnttype = 0, is_art = 0, is_ion = 0, dsize = 0, pdsize = 0;
-        nrn_assert(fscanf(f, "%s %d %d %d %d %d %d\n", mname, &type, &pnttype, &is_art, &is_ion,
-                          &dsize, &pdsize) == 7);
+        nrn_assert(s >> mname >> type >> pnttype >> is_art >> is_ion >> dsize >> pdsize);
         nrn_assert(i == type);
 #ifdef DEBUG
         printf("%s %d %d %d %d %d %d\n", mname, type, pnttype, is_art, is_ion, dsize, pdsize);
@@ -109,7 +155,7 @@ void mk_mech(const char* datpath) {
         nrn_is_artificial_[type] = is_art;
         if (is_ion) {
             double charge = 0.;
-            nrn_assert(fscanf(f, "%lf\n", &charge) == 1);
+            nrn_assert(s >> charge);
             // strip the _ion
             char iname[100];
             strcpy(iname, mname);
@@ -119,20 +165,6 @@ void mk_mech(const char* datpath) {
         }
         // printf("%s %d %d\n", mname, nrn_get_mechtype(mname), type);
     }
-
-    // an int32_t binary 1 is at this position. After reading can decide if
-    // binary info in files needs to be byteswapped.
-    int32_t x;
-    nrn_assert(fread(&x, sizeof(int32_t), 1, f) == 1);
-    nrn_need_byteswap = 0;
-    if (x != 1) {
-        BYTEHEADER;
-        nrn_need_byteswap = 1;
-        BYTESWAP(x, int32_t);
-        nrn_assert(x == 1);
-    }
-
-    fclose(f);
 
     if (nrnmpi_myid < 1 && nrn_nobanner_ == 0) {
         fprintf(stderr, " \n");

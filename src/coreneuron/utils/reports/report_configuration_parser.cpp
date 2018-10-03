@@ -69,7 +69,8 @@ std::vector<ReportConfiguration> create_report_configurations(const char* conf_f
 
     FILE* fp = fopen(conf_file, "r");
     if (!fp) {
-        std::cerr << "Cannot open configuration file: " << conf_file << ", aborting execution" << std::endl;
+        std::cerr << "Cannot open configuration file: " << conf_file << ", aborting execution"
+                  << std::endl;
         abort();
     }
 

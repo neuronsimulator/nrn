@@ -41,6 +41,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnoc/nrnoc_decl.h"
 #include "coreneuron/nrnmpi/nrnmpi.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
+#include "coreneuron/nrniv/nrnmutdec.h"
 #include "coreneuron/nrniv/output_spikes.h"
 #include "coreneuron/nrniv/nrn_checkpoint.h"
 #include "coreneuron/utils/endianness.h"
@@ -54,8 +55,85 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/partrans.h"
 #include "coreneuron/nrniv/multisend.h"
 #include "coreneuron/utils/file_utils.h"
+#include "coreneuron/nrniv/nrn2core_direct.h"
 #include <string.h>
 #include <climits>
+
+extern "C" {
+const char* corenrn_version() {
+    return coreneuron::bbcore_write_version;
+}
+
+/**
+ * If "export OMP_NUM_THREADS=n" is not set then omp by default sets
+ * the number of threads equal to the number of cores on this node.
+ * If there are a number of mpi processes on this node as well, things
+ * can go very slowly as there are so many more threads than cores.
+ * Assume the NEURON users pc.nthread() is well chosen if
+ * OMP_NUM_THREADS is not set.
+ */
+void set_openmp_threads(int nthread) {
+#if defined(_OPENMP)
+    if (!getenv("OMP_NUM_THREADS")) {
+        omp_set_num_threads(nthread);
+    }
+#endif
+}
+
+/**
+ * Convert char* containing arguments from neuron to char* argv[] for
+ * coreneuron command line argument parser.
+ */
+char* prepare_args(int& argc, char**& argv, int use_mpi, const char* arg) {
+    // first construct all arguments as string
+    std::string args(arg);
+    args.insert(0, " coreneuron ");
+    if (use_mpi) {
+        args.append(" -mpi ");
+    }
+
+    // we can't modify string with strtok, make copy
+    char* first = strdup(args.c_str());
+    const char* sep = " ";
+
+    // first count the no of argument
+    char* token = strtok(first, sep);
+    argc = 0;
+    while (token) {
+        token = strtok(NULL, sep);
+        argc++;
+    }
+    free(first);
+
+    // now build char*argv
+    argv = new char*[argc];
+    first = strdup(args.c_str());
+    token = strtok(first, sep);
+    for (int i = 0; token; i++) {
+        argv[i] = token;
+        token = strtok(NULL, sep);
+    }
+
+    // return actual data to be freed
+    return first;
+}
+
+int corenrn_embedded_run(int nthread, int have_gaps, int use_mpi, const char* arg) {
+    corenrn_embedded = 1;
+    corenrn_embedded_nthread = nthread;
+    coreneuron::nrn_have_gaps = have_gaps;
+
+    set_openmp_threads(nthread);
+    int argc = 0;
+    char** argv;
+    char* new_arg = prepare_args(argc, argv, use_mpi, arg);
+    solve_core(argc, argv);
+    free(new_arg);
+    delete[] argv;
+
+    return corenrn_embedded;
+}
+}
 
 #if 0
 #include <fenv.h>
@@ -120,7 +198,8 @@ void nrn_init_and_load_data(int argc,
     mk_mech(nrnopt_get_str("--datpath").c_str());
 
     // read the global variable names and set their values from globals.dat
-    set_globals(nrnopt_get_str("--datpath").c_str(), nrnopt_get_flag("--seed"), nrnopt_get_int("--seed"));
+    set_globals(nrnopt_get_str("--datpath").c_str(), nrnopt_get_flag("--seed"),
+                nrnopt_get_int("--seed"));
 
     report_mem_usage("After mk_mech");
 
@@ -285,7 +364,6 @@ extern "C" int solve_core(int argc, char** argv) {
             reports_needs_finalize = configs.size();
         }
     }
-
     // initializationa and loading functions moved to separate
     nrn_init_and_load_data(argc, argv, configs.size() > 0);
     std::string checkpoint_path = nrnopt_get_str("--checkpoint");
@@ -329,7 +407,7 @@ extern "C" int solve_core(int argc, char** argv) {
 
         // register all reports into reportinglib
         double min_report_dt = INT_MAX;
-        for (int i = 0; i < configs.size(); i++) {
+        for (size_t i = 0; i < configs.size(); i++) {
             register_report(dt, tstop, delay, configs[i]);
             if (configs[i].report_dt < min_report_dt) {
                 min_report_dt = configs[i].report_dt;

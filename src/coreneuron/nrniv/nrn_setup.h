@@ -34,6 +34,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/nrn_filehandler.h"
 #include "coreneuron/utils/sdprintf.h"
 namespace coreneuron {
+static bool do_not_open;
 static int ngroup_w;
 static int* gidgroups_w;
 static int* imult_w;
@@ -112,27 +113,31 @@ inline void read_phase_aux<gap>(FileHandler& F, int imult, NrnThread& nt) {
 /// Reading phase wrapper for each neuron group.
 template <phase P>
 inline void* phase_wrapper_w(NrnThread* nt) {
+    bool no_open = do_not_open;
     int i = nt->id;
     char fnamebuf[1000];
     char check_fnamebuf[1000] = "";
     if (i < ngroup_w) {
-        const char* data_dir = path_w;
-        // directory to read could be different for phase 2 if we are restoring
-        // all other phases still read from dataset directory because the data
-        // is constant
-        if (P == 2) {
-            data_dir = restore_path_w;
+        if (!no_open) {
+            const char* data_dir = path_w;
+            // directory to read could be different for phase 2 if we are restoring
+            // all other phases still read from dataset directory because the data
+            // is constant
+            if (P == 2) {
+                data_dir = restore_path_w;
+            }
+
+            sd_ptr fname = sdprintf(fnamebuf, sizeof(fnamebuf),
+                                    std::string("%s/%d_" + getPhaseName<P>() + ".dat").c_str(),
+                                    data_dir, gidgroups_w[i]);
+
+            // if no file failed to open or not opened at all
+            file_reader_w[i].open(fname, byte_swap_w);
         }
-
-        sd_ptr fname = sdprintf(fnamebuf, sizeof(fnamebuf),
-                                std::string("%s/%d_" + getPhaseName<P>() + ".dat").c_str(),
-                                data_dir, gidgroups_w[i]);
-
-        // if no file failed to open or not opened at all
-        file_reader_w[i].open(fname, byte_swap_w);
-
         read_phase_aux<P>(file_reader_w[i], imult_w[i], *nt);
-        file_reader_w[i].close();
+        if (!no_open) {
+            file_reader_w[i].close();
+        }
         if (P == 2) {
             setup_ThreadData(*nt);
         }
@@ -142,8 +147,14 @@ inline void* phase_wrapper_w(NrnThread* nt) {
 
 /// Specific phase reading executed by threads.
 template <phase P>
-inline static void phase_wrapper() {
+inline static void phase_wrapper(int direct = 0) {
+    if (direct) {
+        do_not_open = true;
+    }
     nrn_multithread_job(phase_wrapper_w<P>);
+    if (direct) {
+        do_not_open = false;
+    }
 }
 }  // namespace coreneuron
 }  // namespace coreneuron

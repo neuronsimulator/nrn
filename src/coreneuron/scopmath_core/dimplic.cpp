@@ -41,5 +41,4 @@ int nrn_kinetic_steer(int fun, SparseObj* so, double* rhs, _threadargsproto_) {
     return 0;
 }
 
-
 }  // namespace coreneuron

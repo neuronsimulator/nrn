@@ -150,7 +150,6 @@ void nrnthread_v_transfer(NrnThread* _nt) {
 }
 
 void nrn_partrans::gap_update_indices() {
-    printf("gap_update_indices\n");
     if (insrcdspl_) {
 // clang-format off
         #pragma acc enter data create(                  \
