@@ -11,6 +11,7 @@ def test(files):
     
     try:
         os.makedirs(os.path.join('test_data', 'crxd', 'wave1d'))
+        os.makedirs(os.path.join('test_data', 'wave1d'))
     except OSError:
         pass
 
