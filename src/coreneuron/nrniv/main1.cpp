@@ -88,6 +88,7 @@ char* prepare_args(int& argc, char**& argv, int use_mpi, const char* arg) {
     // first construct all arguments as string
     std::string args(arg);
     args.insert(0, " coreneuron ");
+    args.append(" --skip-mpi-finalize ");
     if (use_mpi) {
         args.append(" -mpi ");
     }
