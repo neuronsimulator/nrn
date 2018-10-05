@@ -224,7 +224,7 @@ int _cvode_sparse_thread(void** v, int n, int* x, SPFUN fun, _threadargsproto_)
 }
 
 static int matsol(SparseObj* so, int _iml) {
-    register Elm *pivot, *el;
+    Elm *pivot, *el;
     unsigned i;
 
     /* Upper triangularization */
@@ -244,7 +244,7 @@ static int matsol(SparseObj* so, int _iml) {
 
 static void subrow(SparseObj* so, Elm* pivot, Elm* rowsub, int _iml) {
     double r;
-    register Elm* el;
+    Elm* el;
 
     int _cntml_padded = so->_cntml_padded;
     r = rowsub->value[_iml] / pivot->value[_iml];
@@ -300,7 +300,7 @@ static void prmat(SparseObj* so) {
 
 static void initeqn(SparseObj* so, unsigned maxeqn) /* reallocate space for matrix */
 {
-    register unsigned i, nn;
+    unsigned i, nn;
 
     if (maxeqn == so->neqn)
         return;
@@ -361,7 +361,7 @@ saves much time allocating and freeing during the solve phase
 static Elm* getelm(SparseObj* so, unsigned row, unsigned col, Elm* new_elem)
 /* return pointer to row col element maintaining order in rows */
 {
-    register Elm *el, *elnext;
+    Elm *el, *elnext;
     unsigned vrow, vcol;
 
     vrow = so->varord[row];

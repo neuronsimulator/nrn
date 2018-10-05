@@ -110,21 +110,17 @@ template <typename V> V sample_check_value(unsigned i=0);
 
 template <> double sample_fill_value<double>(unsigned i)  {
     double table[]={
-        -0x1.dab89674523c1p+45,
-        0x1.2312f1e0dfcebp+309,
-        -0x1.cd13e90023347p-169,
-        0x1.6e72aa9c692b5p+92,
-        0x1.5634ec623974fp-331
+        1.1,
+        12.345e36,
+        -0.987e-39
     };
     return table[i%NELEM(table)];
 }
 template <> double sample_check_value<double>(unsigned i) {
     double table[]={
-        -0x1.3456789abcdc2p+19,
-        -0x1.c0d1e2f314253p+704,
-        0x1.302903ed16cb5p+116,
-        -0x1.2c6a92ae7b645p-166,
-        0x1.723c64e63452bp+250
+        -1.5423487136706484e-180,
+        130023111.64417373,
+        2.703780148780151e-145
     };
     return table[i%NELEM(table)];
 }
@@ -170,21 +166,20 @@ template <> uint32_t sample_check_value<uint32_t>(unsigned i) {
     return table[i%NELEM(table)];
 }
 
-
 template <> float sample_fill_value<float>(unsigned i)  {
     float table[]={
-        (float)0x1.8a4782p+79,
-        (float)0x1.68acfp-91,
-        (float)-0x1.06e8d8p-90
+        (float)1.1,
+        (float)12.345e12,
+        (float)-0.987e-13
     };
     return table[i%NELEM(table)];
 }
 
 template <> float sample_check_value<float>(unsigned i) {
     float table[]={
-        (float)-0x1.468acep+3,
-        (float)0x1.ac6824p+113,
-        (float)0x1.e90724p+89
+        (float)-428967904.0,
+        (float)-1.2233891766300076e-06,
+        (float)-1.0963376907702216e-11
     };
     return table[i%NELEM(table)];
 }

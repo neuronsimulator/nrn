@@ -341,10 +341,19 @@ void nrnmpi_assert_opstep(int opstep, double tt) {
 
 double nrnmpi_dbl_allmin(double x) {
     double result;
-    if (nrnmpi_numprocs < 2) {
+    if (!nrnmpi_use || (nrnmpi_numprocs < 2)) {
         return x;
     }
     MPI_Allreduce(&x, &result, 1, MPI_DOUBLE, MPI_MIN, nrnmpi_comm);
+    return result;
+}
+
+double nrnmpi_dbl_allmax(double x) {
+    double result;
+    if (!nrnmpi_use || (nrnmpi_numprocs < 2)) {
+        return x;
+    }
+    MPI_Allreduce(&x, &result, 1, MPI_DOUBLE, MPI_MAX, nrnmpi_comm);
     return result;
 }
 

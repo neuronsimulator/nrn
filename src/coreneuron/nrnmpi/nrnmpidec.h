@@ -110,6 +110,7 @@ extern void nrnmpi_char_broadcast(char* buf, int cnt, int root);
 extern int nrnmpi_int_sum_reduce(int in);
 extern void nrnmpi_assert_opstep(int opstep, double t);
 extern double nrnmpi_dbl_allmin(double x);
+extern double nrnmpi_dbl_allmax(double x);
 extern int nrnmpi_pgvts_least(double* t, int* op, int* init);
 extern void nrnmpi_send_doubles(double* pd, int cnt, int dest, int tag);
 extern void nrnmpi_recv_doubles(double* pd, int cnt, int src, int tag);

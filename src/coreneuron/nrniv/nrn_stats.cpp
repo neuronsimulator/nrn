@@ -69,9 +69,11 @@ void report_cell_stats(void) {
     stat_array[5] = (long)spikevec_gid.size();  // number of spikes
 
     int spikevec_positive_gid_size = 0;
-    for (int i = 0; i < spikevec_gid.size(); ++i)
-        if (spikevec_gid[i] > -1)
+    for (std::size_t i = 0; i < spikevec_gid.size(); ++i) {
+        if (spikevec_gid[i] > -1) {
             spikevec_positive_gid_size++;
+        }
+    }
 
     stat_array[6] = (long)spikevec_positive_gid_size;  // number of non-negative gid spikes
 
