@@ -283,7 +283,7 @@ if(ENABLE_OPENACC AND ENABLE_CUDA_MODULES)
 endif()
 
 if(ENABLE_REPORTINGLIB)
-  set(link_reportinglib ${REPORTINGLIB_LIBRARIES})
+    set(link_reportinglib ${reportinglib_LIBRARY})
 endif()
 target_link_libraries(coreneuron ${MPI_CXX_LIBRARIES}
     ${link_reportinglib} ${link_cudacoreneuron} ${CUDA_LIBRARIES} )
