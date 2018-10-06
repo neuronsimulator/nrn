@@ -66,8 +66,6 @@ void spikevec_unlock() {
     MUTUNLOCK
 }
 
-#if NRNMPI
-
 void local_spikevec_sort(std::vector<double>& isvect,
                          std::vector<int>& isvecg,
                          std::vector<double>& osvect,
@@ -89,6 +87,8 @@ void local_spikevec_sort(std::vector<double>& isvect,
     std::transform(perm.begin(), perm.end(), osvecg.begin(),
                    [&](std::size_t i) { return isvecg[i]; });
 }
+
+#if NRNMPI
 
 void sort_spikes(std::vector<double>& spikevec_time, std::vector<int>& spikevec_gid) {
     double lmin_time = *(std::min_element(spikevec_time.begin(), spikevec_time.end()));
