@@ -103,6 +103,7 @@ void sort_spikes(std::vector<double>& spikevec_time, std::vector<int>& spikevec_
     std::vector<int> rcv_dsps(nrnmpi_numprocs);
 
     double bin_t = (max_time - min_time) / nrnmpi_numprocs;
+    bin_t = bin_t ? bin_t : 1;
     // first find number of spikes in each time window
     for (const auto& st : spikevec_time) {
         int idx = (int)(st - min_time) / bin_t;
@@ -199,6 +200,7 @@ void output_spikes_parallel(const char* outpath) {
     }
 
     MPI_File_close(&fh);
+    free(spike_data);
 }
 #endif
 

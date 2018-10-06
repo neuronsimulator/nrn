@@ -805,8 +805,9 @@ void setup_ThreadData(NrnThread& nt) {
                 MUTLOCK (*mf.thread_mem_init_)(ml->_thread);
                 MUTUNLOCK
             }
-        } else
+        } else {
             ml->_thread = NULL;
+        }
     }
 }
 
@@ -970,6 +971,11 @@ void nrn_cleanup(bool clean_ion_global_map) {
             if (ml->_permute) {
                 delete[] ml->_permute;
                 ml->_permute = NULL;
+            }
+
+            if (ml->_thread) {
+                free (ml->_thread);
+                ml->_thread = NULL;
             }
 
             NetReceiveBuffer_t* nrb = ml->_net_receive_buffer;

@@ -131,6 +131,9 @@ void nrnmpi_finalize(void) {
         int flag = 0;
         MPI_Initialized(&flag);
         if (flag) {
+            MPI_Comm_free(&nrnmpi_world_comm);
+            MPI_Comm_free(&nrnmpi_comm);
+            MPI_Comm_free(&nrn_bbs_comm);
             MPI_Finalize();
         }
     }
