@@ -3,6 +3,10 @@
 #include <InterViews/resource.h>
 #include <nrnoc2iv.h>
 #include "nrnpy_utils.h"
+#include <cmath>
+#ifndef M_PI
+#define M_PI (3.14159265358979323846)
+#endif
 
 extern "C" {
 #include <membfunc.h>
@@ -1096,6 +1100,91 @@ static PyObject* seg_area(NPySegObj* self) {
   return result;
 }
 
+static inline double scaled_frustum_volume(double length, double d0, double d1) {
+  // this is proportional to the volume of a frustum... need to multiply by pi/12
+  return length * (d0 * d0 + d0 * d1 + d1 * d1);
+}
+
+static inline double interpolate(double x0, double x1, double y0, double y1, double xnew) {
+  // computes ynew on the line between (x0, y0) and (x1, y1)
+  // recall: y - y0 = m (x - x0)
+  if (x1 == x0) {
+    // avoid dividing by 0 if no length... 
+    return y0;
+  } else {
+    return y0 + (y1 - y0) * (xnew - x0) / (x1 - x0);
+  }
+}
+
+static int arg_bisect_arc3d(Section* sec, int npt3d, double x) {
+  // returns the index in sec where the arc is no more than x, but where the next points arc is more
+  // right endpoint is never included
+  int left = 0;
+  int right = npt3d;
+  while (right - left > 1) {
+    int mid = (left + right) / 2;
+    if (sec->pt3d[mid].arc < x) {
+      left = mid;
+    } else {
+      right = mid;
+    }
+  }
+  return left;
+}
+
+static PyObject* seg_volume(NPySegObj* self) {
+  Section* sec = self->pysec_->sec_;
+  int i;
+  if (sec->recalc_area_) {
+    nrn_area_ri(sec);
+  }
+  double x = self->x_;
+  double a = 0.0;
+  // volume only exists on the interior
+  if (x > 0. && x < 1.) {
+    // every section owns one extra node (the conservation node)
+    int nseg = sec->nnode - 1;
+    double length = section_length(sec) / nseg;
+    int iseg = x * nseg;
+    double seg_left_arc = iseg * length;
+    double seg_right_arc = (iseg + 1) * length;
+    if (sec->npt3d > 1) {
+      int i_left = arg_bisect_arc3d(sec, sec->npt3d, seg_left_arc);
+      double left_diam = fabs(sec->pt3d[i_left].d);
+      double right_diam = fabs(sec->pt3d[i_left + 1].d);
+      double left_arc = seg_left_arc;
+      left_diam = interpolate(sec->pt3d[i_left].arc, sec->pt3d[i_left + 1].arc, left_diam, right_diam, left_arc);
+
+      for (i = i_left + 1; i < sec->npt3d && sec->pt3d[i].arc < seg_right_arc; i++) {
+        right_diam = fabs(sec->pt3d[i].d);
+        a += scaled_frustum_volume(sec->pt3d[i].arc - left_arc, left_diam, right_diam);
+        left_arc = sec->pt3d[i].arc;
+        left_diam = right_diam;
+      }
+      if (i < sec->npt3d) {
+        right_diam = interpolate(left_arc, sec->pt3d[i].arc, left_diam, fabs(sec->pt3d[i].d), seg_right_arc);
+        a += scaled_frustum_volume(seg_right_arc - left_arc, left_diam, right_diam);
+      }
+
+      // the scaled_frustum_volume formula factored out a pi/12
+      a *= M_PI / 12;
+    } else {
+      // 0 or 1 3D points... so give cylinder volume
+      Node* nd = node_exact(sec, x);
+      for (Prop* p = nd->prop; p; p = p->next) {
+        if (p->type == MORPHOLOGY) {
+          double diam = p->param[0];
+          a = M_PI * diam * diam / 4 * length;
+          break;
+        }
+      }
+    }
+  }
+  PyObject* result = Py_BuildValue("d", a);
+  return result;
+}
+
+
 static PyObject* seg_ri(NPySegObj* self) {
   Section* sec = self->pysec_->sec_;
   if (sec->recalc_area_) {
@@ -1854,6 +1943,8 @@ static PyMethodDef NPySegObj_methods[] = {
     {"ri", (PyCFunction)seg_ri, METH_NOARGS,
      "Segment resistance to parent segment (Megohms) (same as h.ri(sec(x), "
      "sec=sec))"},
+    {"volume", (PyCFunction)seg_volume, METH_NOARGS,
+     "Segment volume (um3)"},
     {NULL}};
 
 // I'm guessing Python should change their typedef to get rid of the
