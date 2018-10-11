@@ -1,5 +1,5 @@
 from neuron import h, nrn, nrn_dll_sym 
-from . import species, node, section1d, region, morphology
+from . import species, node, section1d, region
 from .nodelist import NodeList
 import weakref
 import numpy
@@ -1040,27 +1040,29 @@ def _setup_matrices():
                     for r in s._regions:
                         dxs.add(r._dx)
                         for sec in r._secs3d:
-                            parent_sec = morphology.parent(sec)
+                            parent_seg = sec.trueparentseg()
+                            parent_sec = None if not parent_seg else parent_seg.sec
                             # are any of these a match with a 1d section?
                             if s._has_region_section(r, parent_sec):
                                 # this section has a 1d section that is a parent
                                 index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), parent_sec, h.parent_connection(sec=sec))
                                 hybrid_neighbors[index1d] += indices3d
-                                hybrid_diams[index1d] = parent_sec(h.parent_connection(sec=sec)).diam
+                                hybrid_diams[index1d] = parent_seg.diam
                             else:
                                 for sec1d in r._secs1d:
-                                    parent_1d = morphology.parent(sec1d)
+                                    parent_1d_seg = sec1d.trueparentseg()
+                                    parent_1d = None if not parent_seg else parent_seg.sec
                                     if parent_1d == sec:
                                         # it is the parent of a 1d section
                                         index1d, indices3d = _get_node_indices(s, r, sec, h.parent_connection(sec=sec1d), sec1d, h.section_orientation(sec=sec1d))
                                         hybrid_neighbors[index1d] += indices3d
-                                        hybrid_diams[index1d] = sec1d(h.section_orientation(sec=sec1d)).diam
+                                        hybrid_diams[index1d] = parent_1d_seg.diam
                                         break
                                     elif parent_1d == parent_sec:
                                         # it connects to the parent of a 1d section
                                         index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), sec1d, h.section_orientation(sec=sec1d))
                                         hybrid_neighbors[index1d] += indices3d
-                                        hybrid_diams[index1d] = sec1d(h.section_orientation(sec=sec1d)).diam
+                                        hybrid_diams[index1d] = parent_1d_seg.diam
                                         break
         if len(dxs) > 1:
             raise RxDException('currently require a unique value for dx')
