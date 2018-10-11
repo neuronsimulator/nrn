@@ -2,7 +2,8 @@
 set -e
 # rpm and deb distribution built with
 #sh bldnrnlinuxdeb.sh
-# works for user installation of python2.7, python3.5, and python3.6
+# works for user installation of python2.7, python3.5, python3.6
+# and python3.7
 
 INST=/usr/local/nrn
 objdir=$HOME/neuron/nrnrpm
@@ -41,8 +42,10 @@ chk () {
   )
 }
 
-PYVS=py-36-35-27
+PYVS=py-37-36-35-27
 
+bld python3.7 ""
+chk python3.7
 bld python3.6 ""
 chk python3.6
 bld python3.5 "--with-nrnpython-only"

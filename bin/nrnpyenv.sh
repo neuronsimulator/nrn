@@ -269,7 +269,7 @@ def nrnpylib_linux():
     if len(fields) > 8:
       line = fields[8]
       if re.search(r'libpython.*\.so', line):
-        print ("from lsof: %s" % line)
+        print ("# from lsof: %s" % line)
         nrn_pylib = line.strip()
         return nrn_pylib
   else: # figure it out from the os path
