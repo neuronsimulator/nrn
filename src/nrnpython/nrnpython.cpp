@@ -128,8 +128,8 @@ static wchar_t** copy_argv_wcargv(int argc, char** argv) {
 }
 
 static wchar_t* mywstrdup(char* s) {
-  size_t sz = strlen(s);
-  wchar_t* ws = new wchar_t[sz];
+  size_t sz = mbstowcs(NULL, s, 0);
+  wchar_t* ws = new wchar_t[sz + 1];
   int count = mbstowcs(ws, s, sz + 1);
   return ws;
 }
