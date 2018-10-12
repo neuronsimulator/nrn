@@ -117,6 +117,17 @@ h  = hoc.HocObject()
 version = h.nrnversion(5)
 __version__ = version
 
+if not hasattr(hoc, "__file__"):
+  import platform
+  p = h.nrnversion(6)
+  if "--prefix=" in p:
+    p = p[p.find('--prefix=') + 9:]
+    p = p[:p.find("'")]
+  else:
+    p = "/usr/local/nrn"
+  p = p + "/%s/lib/libnrnpython.so"%platform.machine()
+  setattr(hoc, "__file__", p)
+
 # As a workaround to importing doc at neuron import time
 # (which leads to chicken and egg issues on some platforms)
 # define a dummy help function which imports doc,
