@@ -20,7 +20,7 @@ class Writer(object):
         try:
             self.fh = open(self.filepath, "w+")
         except IOError as e:
-            print "Error :: I/O error while writing {0} : {1}".format(self.filepath, e.strerror)
+            print("Error :: I/O error while writing {0} : {1}".format(self.filepath, e.strerror))
             sys.exit(1)
 
     def print_gutter(self):

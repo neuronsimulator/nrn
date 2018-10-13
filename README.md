@@ -14,8 +14,8 @@ git clone ssh://bbpcode.epfl.ch:22/incubator/nocmodl
 - bison (>=3.0)
 - CMake (>=3.1)
 - C++ compiler (with c++11 support)
-- Python2 (>=2.7)
-- Python yaml
+- Python2/3 (>=2.7)
+- Python yaml (pyyaml)
 
 Make sure to have latest version of flex (>=2.6) and bison (>=3.0). For example, on OS X we typically install packages via brew or macport as:
 
@@ -41,9 +41,19 @@ bison (GNU Bison) 3.0.4
 ```
 
 Python yaml can be installed on Ubuntu using:
+
 ```
 sudo apt-get install python-yaml
 ```
+
+On OS X:
+
+```
+pip install pyyaml
+pip3 install pyyaml
+
+```
+
 
 #### Build
 Build/Compile NMODL as:

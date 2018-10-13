@@ -15,9 +15,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 #=============================================================================
 # Find required packages
 #=============================================================================
-message(STATUS "CHECKING FOR FLEX/BISON/PYTHON")
-
-find_package(PythonInterp REQUIRED)
+message(STATUS "CHECKING FOR FLEX/BISON")
 find_package(FLEX 2.6 REQUIRED)
 find_package(BISON 3.0 REQUIRED)
 
@@ -25,11 +23,18 @@ find_package(BISON 3.0 REQUIRED)
 # Include cmake modules
 #=============================================================================
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-
 include(GitRevision)
 include(FlexHelper)
 include(CompilerHelper)
 include(ClangTidyHelper)
+include(FindPythonModule)
+
+#=============================================================================
+# Find required python packages
+#=============================================================================
+message(STATUS "CHECKING FOR PYTHON")
+find_package(PythonInterp REQUIRED)
+find_python_module(yaml REQUIRED)
 
 include_directories(
     ${PROJECT_SOURCE_DIR}
