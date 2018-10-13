@@ -1,4 +1,4 @@
-## NOCMODL
+## NMODL
 
 This is prototype implementation of code generation framework for NMODL.
 
@@ -46,7 +46,7 @@ sudo apt-get install python-yaml
 ```
 
 #### Build
-Build/Compile NOCMODL as:
+Build/Compile NMODL as:
 
 ```
 mkdir build
@@ -75,14 +75,14 @@ cmake .. -DENABLE_CLANG_TIDY=ON
 ```
 
 
-#### Running NOCMODL
+#### Running NMODL
 
 You can independently run lexer, parser or visitors as:
 
 ```
-./bin/nocmodl_lexer --file ../test/input/channel.mod
-./bin/nocmodl_parser --file ../test/input/channel.mod
-./bin/nocmodl_visitor --file ../test/input/channel.mod
+./bin/nmodl_lexer --file ../test/input/channel.mod
+./bin/nmodl_parser --file ../test/input/channel.mod
+./bin/nmodl_visitor --file ../test/input/channel.mod
 ```
 
 
@@ -110,7 +110,7 @@ You can independently run lexer, parser or visitors as:
 Test memory leaks using :
 
 ```
-valgrind --leak-check=full --track-origins=yes  ./bin/nocmodl_lexer
+valgrind --leak-check=full --track-origins=yes  ./bin/nmodl_lexer
 ```
 
 Or using CTest as:

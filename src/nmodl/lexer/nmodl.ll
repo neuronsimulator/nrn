@@ -467,7 +467,7 @@ ELSE                    {
 
 
 /** Some of the utility functions can't be defined outside due to macros.
-  * These are utility functions ported from original nocmodl implementation. */
+  * These are utility functions ported from original nmodl implementation. */
 
 
 /** This implementation of NmodlFlexLexer::yylex() is required to fill the

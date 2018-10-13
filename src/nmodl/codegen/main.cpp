@@ -126,12 +126,12 @@ int main(int argc, const char* argv[]) {
         }
 
         {
-            NmodlPrintVisitor v(mod_filename + ".nocmodl.verbrename.mod");
+            NmodlPrintVisitor v(mod_filename + ".nmodl.verbrename.mod");
             v.visit_program(ast.get());
         }
 
         {
-            NmodlPrintVisitor v(mod_filename + ".nocmodl.mod");
+            NmodlPrintVisitor v(mod_filename + ".nmodl.mod");
             v.visit_program(ast.get());
         }
 
@@ -142,7 +142,7 @@ int main(int argc, const char* argv[]) {
         }
 
         {
-            NmodlPrintVisitor v(mod_filename + ".nocmodl.cnexp.mod");
+            NmodlPrintVisitor v(mod_filename + ".nmodl.cnexp.mod");
             v.visit_program(ast.get());
         }
 
@@ -156,7 +156,7 @@ int main(int argc, const char* argv[]) {
 
 
         {
-            NmodlPrintVisitor v(mod_filename + ".nocmodl.cnexp.in.mod");
+            NmodlPrintVisitor v(mod_filename + ".nmodl.cnexp.in.mod");
             v.visit_program(ast.get());
         }
 
@@ -167,7 +167,7 @@ int main(int argc, const char* argv[]) {
         }
 
         {
-            NmodlPrintVisitor v(mod_filename + ".nocmodl.cnexp.in.ren.mod");
+            NmodlPrintVisitor v(mod_filename + ".nmodl.cnexp.in.ren.mod");
             v.visit_program(ast.get());
         }
 
@@ -184,7 +184,7 @@ int main(int argc, const char* argv[]) {
         }
 
         {
-            NmodlPrintVisitor v(mod_filename + ".nocmodl.cnexp.in.ren.loc.mod");
+            NmodlPrintVisitor v(mod_filename + ".nmodl.cnexp.in.ren.loc.mod");
             v.visit_program(ast.get());
         }
 
@@ -212,7 +212,7 @@ int main(int argc, const char* argv[]) {
         }
 
         {
-            NmodlPrintVisitor v(mod_filename + ".nocmodl.cnexp.in.ren.loc.ren.mod");
+            NmodlPrintVisitor v(mod_filename + ".nmodl.cnexp.in.ren.loc.ren.mod");
             v.visit_program(ast.get());
         }
 

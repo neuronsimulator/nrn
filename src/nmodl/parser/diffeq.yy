@@ -3,7 +3,7 @@
  * @brief Bison grammar and parser implementation for ODEs
  *
  * ODEs specified in DERIVATIVE block needs to be solved during code generation.
- * This parser implementation is based on original NEURON's nocmodl implementation
+ * This parser implementation is based on original NEURON's nmodl implementation
  * and solves ODEs using helper routines provided.
  *****************************************************************************/
 
