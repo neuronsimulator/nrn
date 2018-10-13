@@ -27,8 +27,8 @@ add_library(codegen
 
 add_dependencies(codegen lexer util)
 
-add_executable(nocmodl_codegen main.cpp)
-target_link_libraries(nocmodl_codegen printer codegen visitor symtab util lexer fmt)
+add_executable(nmodl_codegen main.cpp)
+target_link_libraries(nmodl_codegen printer codegen visitor symtab util lexer fmt)
 
 #=============================================================================
 # Files for clang-format

@@ -1,4 +1,4 @@
 #include "version/version.h"
 
-const std::string nocmodl::version::GIT_REVISION = "@GIT_REVISION@";
-const std::string nocmodl::version::NOCMODL_VERSION = "@PROJECT_VERSION@";
+const std::string nmodl::version::GIT_REVISION = "@GIT_REVISION@";
+const std::string nmodl::version::NMODL_VERSION = "@PROJECT_VERSION@";

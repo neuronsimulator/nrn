@@ -1118,7 +1118,7 @@ void CodegenCVisitor::print_backend_info() {
     time_t tr;
     time(&tr);
     auto date = std::string(asctime(localtime(&tr)));
-    auto version = nocmodl::version::NOCMODL_VERSION + " [" + nocmodl::version::GIT_REVISION + "]";
+    auto version = nmodl::version::NMODL_VERSION + " [" + nmodl::version::GIT_REVISION + "]";
 
     printer->add_line("/*********************************************************");
     printer->add_line("Model Name      : {}"_format(info.mod_suffix));

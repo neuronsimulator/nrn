@@ -75,7 +75,7 @@ add_custom_command (
     OUTPUT ${PROJECT_SOURCE_DIR}/src/parser/nmodl/stack.hh
     DEPENDS ${PROJECT_SOURCE_DIR}/src/parser/nmodl.yy
     DEPENDS pyastgen
-    COMMENT "-- NOCMODL : GENERATING NMODL_CORE PARSER WITH BISON! --"
+    COMMENT "-- NMODL : GENERATING NMODL_CORE PARSER WITH BISON! --"
 )
 
 # command to generate verbatim parser
@@ -86,7 +86,7 @@ add_custom_command (
     OUTPUT ${PROJECT_SOURCE_DIR}/src/parser/verbatim_parser.cpp
     OUTPUT ${PROJECT_SOURCE_DIR}/src/parser/verbatim_parser.hpp
     DEPENDS ${PROJECT_SOURCE_DIR}/src/parser/verbatim.y
-    COMMENT "-- NOCMODL : GENERATING VERBATIM PARSER WITH BISON! --"
+    COMMENT "-- NMODL : GENERATING VERBATIM PARSER WITH BISON! --"
 )
 
 # command to generate differential equation parser
@@ -103,7 +103,7 @@ add_custom_command (
     DEPENDS ${PROJECT_SOURCE_DIR}/src/parser/diffeq_context.hpp
     DEPENDS ${PROJECT_SOURCE_DIR}/src/parser/diffeq_context.cpp
     DEPENDS ${PROJECT_SOURCE_DIR}/src/parser/diffeq_helper.hpp
-    COMMENT "-- NOCMODL : GENERATING DIFFERENTIAL EQUATION PARSER WITH BISON! --"
+    COMMENT "-- NMODL : GENERATING DIFFERENTIAL EQUATION PARSER WITH BISON! --"
 )
 
 # command to generate C (11) parser
@@ -113,8 +113,11 @@ add_custom_command (
     ${PROJECT_SOURCE_DIR}/src/parser/c11.yy
     OUTPUT ${PROJECT_SOURCE_DIR}/src/parser/c/c11_parser.cpp
     OUTPUT ${PROJECT_SOURCE_DIR}/src/parser/c/c11_parser.hpp
+    OUTPUT ${PROJECT_SOURCE_DIR}/src/parser/c/location.hh
+    OUTPUT ${PROJECT_SOURCE_DIR}/src/parser/c/position.hh
+    OUTPUT ${PROJECT_SOURCE_DIR}/src/parser/c/stack.hh
     DEPENDS ${PROJECT_SOURCE_DIR}/src/parser/c11.yy
-    COMMENT "-- NOCMODL : GENERATING C (11) PARSER WITH BISON! --"
+    COMMENT "-- NMODL : GENERATING C (11) PARSER WITH BISON! --"
 )
 
 # command to generate nmodl lexer
@@ -126,7 +129,7 @@ add_custom_command(
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/nmodl.ll
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/nmodl_utils.hpp
-    COMMENT "-- NOCMODL : GENERATING NMODL LEXER WITH FLEX! --"
+    COMMENT "-- NMODL : GENERATING NMODL LEXER WITH FLEX! --"
 )
 
 # command to generate verbatim lexer
@@ -137,7 +140,7 @@ add_custom_command(
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/verbatim_lexer.hpp
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/verbatim.l
-    COMMENT "-- NOCMODL : GENERATING VERBATIM LEXER WITH FLEX! --"
+    COMMENT "-- NMODL : GENERATING VERBATIM LEXER WITH FLEX! --"
 )
 
 # command to generate differential equation lexer
@@ -148,7 +151,7 @@ add_custom_command(
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/diffeq_base_lexer.hpp
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/diffeq.ll
-    COMMENT "-- NOCMODL : GENERATING DIFFERENTIAL EQUATION LEXER WITH FLEX! --"
+    COMMENT "-- NMODL : GENERATING DIFFERENTIAL EQUATION LEXER WITH FLEX! --"
 )
 
 # command to generate C (11) lexer
@@ -159,7 +162,7 @@ add_custom_command(
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/c11_base_lexer.hpp
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/c11.ll
-    COMMENT "-- NOCMODL : GENERATING C(11) LEXER WITH FLEX! --"
+    COMMENT "-- NMODL : GENERATING C(11) LEXER WITH FLEX! --"
 )
 
 #=============================================================================
@@ -171,10 +174,10 @@ add_library(lexer
             ${BISON_GENERATED_SOURCE_FILES}
             ${AST_SOURCE_FILES})
 
-add_executable(nocmodl_lexer main_nmodl.cpp)
+add_executable(nmodl_lexer main_nmodl.cpp)
 add_executable(c_lexer main_c.cpp)
 
-target_link_libraries(nocmodl_lexer lexer)
+target_link_libraries(nmodl_lexer lexer)
 target_link_libraries(c_lexer lexer)
 
 #=============================================================================

@@ -2,7 +2,7 @@
  *
  * @brief Bison grammar and parser implementation for NMODL
  *
- * This implementation is based NEURON's nocmodl program. The grammar rules,
+ * This implementation is based NEURON's nmodl program. The grammar rules,
  * symbols, terminals and non-terminals closely resember to NEURON
  * implementation. This is to support entire NMODL language for NEURON as well
  * as CoreNEURON. As opposed to non-reentrant C parser, this implementation

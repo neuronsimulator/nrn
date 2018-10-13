@@ -1,11 +1,11 @@
 #pragma once
 
 /**
- * Original implementation of nocmodl use various flags to help
+ * Original implementation of nmodl use various flags to help
  * code generation. These flags are implemented as bit masks in
  * the token whic are later checked during code printing. We are
  * using ast and hence don't need all bit masks. These are defined
- * in modl.h file of original nocmodl implementation.
+ * in modl.h file of original nmodl implementation.
  *
  * \todo Remove these bit masks as we incorporate type information
  * into corresponding ast types. */

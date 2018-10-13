@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1.0 FATAL_ERROR)
-project(nocmodl CXX)
+project(nmodl CXX)
 
 #=============================================================================
 # CMake common project settings
@@ -71,10 +71,10 @@ add_subdirectory(test)
 #=============================================================================
 # Add executables
 #=============================================================================
-add_executable(nocmodl
+add_executable(nmodl
                src/main.cpp)
 
-target_link_libraries(nocmodl lexer util visitor)
+target_link_libraries(nmodl lexer util visitor)
 
 #=============================================================================
 # Clang format target
