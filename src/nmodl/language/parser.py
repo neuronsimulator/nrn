@@ -40,8 +40,8 @@ class LanguageParser:
         """
 
         # there is only one key and it has one value
-        varname = child.iterkeys().next()
-        properties = child.itervalues().next()
+        varname = next(iter(list(child.keys())))
+        properties = next(iter(list(child.values())))
 
         # arguments holder for creating tree node
         args = Argument()
@@ -54,7 +54,7 @@ class LanguageParser:
 
 
         if self.debug:
-            print 'Child {}, {}'.format(args.varname, args.class_name)
+            print(('Child {}, {}'.format(args.varname, args.class_name)))
 
         # if there is add method for member in the class
         if 'add' in properties:
@@ -116,8 +116,8 @@ class LanguageParser:
 
         for node in nodelist:
             # name of the ast class and it's properties as dictionary
-            class_name = node.iterkeys().next()
-            properties = node.itervalues().next()
+            class_name = next(iter(list(node.keys())))
+            properties = next(iter(list(node.values())))
 
             # yaml file has abstract classes and their subclasses (i.e. children) as a list
             if isinstance(properties, list):
@@ -138,7 +138,7 @@ class LanguageParser:
                     abstract_nodes.append(node)
                     nodes.insert(0, node)
                     if self.debug:
-                        print 'Abstract {}, {}'.format(base_class, class_name)
+                        print(('Abstract {}, {}'.format(base_class, class_name)))
             else:
                 # name of the node while printing back to NMODL
                 nmodl_name = properties['nmodl'] if 'nmodl' in properties else None
@@ -158,7 +158,7 @@ class LanguageParser:
                 nodes.append(node)
 
                 if self.debug:
-                    print 'Class {}, {}, {}'.format(base_class, class_name, nmodl_name)
+                    print(('Class {}, {}, {}'.format(base_class, class_name, nmodl_name)))
 
                 # now process all children specification
                 childs = properties['members'] if 'members' in properties else []
@@ -184,7 +184,7 @@ class LanguageParser:
                 # abstract nodes are not used though
                 abstract_nodes, nodes = self.parse_yaml_rules(rules)
             except yaml.YAMLError as e:
-                print "Error while parsing YAML definition file {0} : {1}".format(self.filename, e.strerror)
+                print(("Error while parsing YAML definition file {0} : {1}".format(self.filename, e.strerror)))
                 sys.exit(1)
 
         return nodes
