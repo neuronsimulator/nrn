@@ -37,10 +37,16 @@ file(GLOB_RECURSE coreneuron_cuda_files "*.cu")
 # Compile and include MOD files
 
 # set mod2c binary and files from built in
-set (MOD2C ${PROJECT_BINARY_DIR}/external/mod2c/bin/mod2c_core)
+if(NOT EXISTS ${MOD2C})
+    set (MOD2C ${PROJECT_BINARY_DIR}/external/mod2c/bin/mod2c_core)
+endif()
+
 get_filename_component(mod2c_install_prefix ${MOD2C} DIRECTORY)
 set (MOD2C_UNITS "${PROJECT_BINARY_DIR}/external/mod2c/share/nrnunits.lib")
 set(MOD2C env "MODLUNIT=${MOD2C_UNITS}" ${MOD2C})
+
+message(STATUS "USING MOD2C ${MOD2C}")
+
 # Macro sets up build rule for .c files from .mod files.
 # Parameters:
 #    name     An arbitrary name to keep track of output .c files
