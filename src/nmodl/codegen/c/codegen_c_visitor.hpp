@@ -515,10 +515,11 @@ class CodegenCVisitor : public CodegenBaseVisitor {
 
   public:
     CodegenCVisitor(std::string mod_file,
+                    std::string output_dir,
                     bool aos,
                     std::string float_type,
                     std::string extension = ".cpp")
-        : CodegenBaseVisitor(mod_file, aos, float_type, extension) {
+        : CodegenBaseVisitor(mod_file, output_dir, aos, float_type, extension) {
     }
 
     CodegenCVisitor(std::string mod_file,

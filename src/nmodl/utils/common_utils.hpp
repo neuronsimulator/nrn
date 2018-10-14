@@ -20,4 +20,7 @@ T remove_extension(T const& filename) {
     return p > 0 && p != T::npos ? filename.substr(0, p) : filename;
 }
 
+/** Given directory path, create sub-directories */
+bool make_path(const std::string& path);
+
 #endif

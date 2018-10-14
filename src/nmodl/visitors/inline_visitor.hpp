@@ -185,7 +185,7 @@ bool InlineVisitor::inline_function_call(T* callee,
 
     /// do nothing if we can't inline given procedure/function
     if (!can_inline_block(callee->statementblock.get())) {
-        std::cerr << "Can not inline function call to " + function_name;
+        std::cerr << "Can not inline function call to " + function_name << std::endl;
         return false;
     }
 

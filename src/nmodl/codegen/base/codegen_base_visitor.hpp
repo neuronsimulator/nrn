@@ -412,10 +412,11 @@ class CodegenBaseVisitor : public AstVisitor {
 
   public:
     CodegenBaseVisitor(std::string mod_file,
+                       std::string output_dir,
                        bool aos,
                        std::string float_type,
                        std::string extension = ".cpp")
-        : printer(new CodePrinter(mod_file + extension)) {
+        : printer(new CodePrinter(output_dir + "/" + mod_file + extension)) {
         init(mod_file, aos, float_type);
     }
 
