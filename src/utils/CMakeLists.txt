@@ -2,6 +2,7 @@
 # Utility sources
 #=============================================================================
 set(UTIL_SOURCE_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/common_utils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/perf_stat.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/perf_stat.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/table_data.hpp

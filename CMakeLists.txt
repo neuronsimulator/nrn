@@ -78,8 +78,7 @@ add_subdirectory(test)
 #=============================================================================
 add_executable(nmodl
                src/main.cpp)
-
-target_link_libraries(nmodl lexer util visitor)
+target_link_libraries(nmodl printer codegen visitor symtab util lexer fmt)
 
 #=============================================================================
 # Clang format target

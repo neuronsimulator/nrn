@@ -1867,7 +1867,7 @@ void CodegenCVisitor::print_instance_variable_setup() {
             printer->add_line("// do nothing");
         } else {
             printer->add_line("{0}* inst = ({0}*) ml->instance;"_format(instance_struct()));
-            for (auto &var : variables_to_free) {
+            for (auto& var : variables_to_free) {
                 printer->add_line("mem_free((void*)inst->{});"_format(var));
             }
         }

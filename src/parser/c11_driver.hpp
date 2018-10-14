@@ -83,6 +83,13 @@ namespace c11 {
         std::vector<std::string> all_tokens() const {
             return tokens;
         }
+
+        bool has_token(std::string token) {
+            if(std::find(tokens.begin(), tokens.end(), token) != tokens.end()) {
+                return true;
+            }
+            return false;
+        }
     };
 
 }  // namespace c11
