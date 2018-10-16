@@ -185,7 +185,9 @@ download() {
 instprogress() {
   CURL="$idir/x86_64/bin/curlprogress.app"
   osascript -e "tell app \"$CURL\" to launch"
-  osascript -e "tell app \"$CURL\" to instprogress(\"$1\", \"$2\", \"$3\", \"$4\")" &
+  osascript -e "with timeout of 600 seconds" \
+    -e "tell app \"$CURL\" to instprogress(\"$1\", \"$2\", \"$3\", \"$4\")" \
+    -e "end timeout" &
   return $!
 }
   
