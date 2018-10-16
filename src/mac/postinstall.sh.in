@@ -1,4 +1,14 @@
 #!/bin/bash
+nrnlog=/tmp/nrnlog$$
+exec > $nrnlog
+exec 2>&1
+set -x
+
+# for debugging
+dialog() {
+  osascript -e "tell app \"Installer\" to display dialog \"$1\""
+  return 0
+}
 
 echo "" > /tmp/temp.tmp
 
@@ -78,10 +88,12 @@ if test "$addpath" = "yes" ; then
     echo "export PATH=\"$idir/x86_64/bin\":\$PATH #added by NEURON installer" >> "$i"
     chown $USER "$i"
   done
-  for i in $clike != "" ; do
-    echo "set path = (\"$idir/x86_64/bin\" \$path) #added by NEURON installer" >> "$i"
-    chown $USER "$i"
-  done
+  if "$clike" != "" ; then
+    for i in $clike ; do
+      echo "set path = (\"$idir/x86_64/bin\" \$path) #added by NEURON installer" >> "$i"
+      chown $USER "$i"
+    done
+  fi
 fi
 
 if true || test "$addpath" = "yes" ; then # Python environment
@@ -123,22 +135,129 @@ Modify PYTHONPATH in $HOME/'$b' to allow a launch of Python to import neuron.
   fi
 fi
 
-if true ; then # notice that Command Line Tools and XQuartz also need to be installed.
-osascript -e 'tell app "Installer" to display dialog "NEURON @PACKAGE_VERSION@ was successfully installed, but ...
+# install command line tools?
+if xcode-select -p 2>&1 | grep 'error: unable to get' ; then
+  a=`osascript -e 'tell app "Installer" to display dialog "
 Mod files cannot be linked into NEURON unless
-Command Line Tools is installed,
-and NEURON cannot launch unless XQuartz is installed.
-If either or both are not installed, you will be asked
-if you wish to install them. You may wish to install
-XQuartz last as it requires logging out at the end.
-(After closing this dialog, you can close the NEURON installer).
-
-" buttons {"Continue"}'
+Command Line Tools is installed.
+Note: selecting \"Yes\" will also set the system date to the current
+date via \"sntp -sS pool.ntp.org\" as \"xcode-select --install\" sometimes
+fails if the date is not accurate.
+Install now?
+" buttons {"No", "Yes"} default button 2'`
+  if test "$a" = "button returned:Yes" ; then
+    b=`sntp -sS pool.ntp.org`
+    xcode-select --install
+    sleep 1
+if false ; then
+    osascript << EOD
+      tell application "System Events"
+        tell process "Install Command Line Developer Tools"
+          keystroke return
+          #click button "Agree" of window "License Agreement"
+        end tell
+      end tell
+EOD
+fi
+    # wait for the "Install Command Line" process to quit or
+    # kill it when "xcode-select -p" returns a good value since
+    # sometimes it hangs at end with window still up
+    pid=`ps ax | grep -v 'sed' | sed -n '/Install Command Line/s/^ *\([0-9]*\).*/\1/p'`
+    set +x
+    while kill -0 $pid > /dev/null ; do
+      if xcode-select -p > /dev/null ; then
+        kill -1 $pid
+      fi
+      sleep 5
+    done
+    set -x
+  fi  
 fi
 
-# install command line tools?
-if gcc -v ; then 
-  true
+download() {
+  return 0
+  CURL="$idir/x86_64/bin/curlprogress.app"
+  osascript -e "tell app \"$CURL\" to launch"
+  a=`osascript -e "tell app \"$CURL\" to download(\"$1\", \"$2\")"`
+  return $a
+}
+  
+instprogress() {
+  CURL="$idir/x86_64/bin/curlprogress.app"
+  osascript -e "tell app \"$CURL\" to launch"
+  osascript -e "tell app \"$CURL\" to instprogress(\"$1\", \"$2\", \"$3\", \"$4\")" &
+  return $!
+}
+  
+xquartz_install() {
+  stage=$HOME/Downloads
+  xquartzdmg=https://dl.bintray.com/xquartz/downloads/XQuartz-2.7.11.dmg
+  xquartzdmg=`curl -L -k http://xquartz.org 2> /dev/null| sed -n 's/.*href="\(.*XQuartz[0-9.-]*\.dmg\)">.*/\1/p'`
+  xquartz=`echo $xquartzdmg | sed -n 's/.*\(XQuartz[0-9.-]*\)\.dmg/\1/p'`
+  xquartzpkg=/Volumes/$xquartz/XQuartz.pkg
+
+  a=`download "$xquartzdmg" "$stage/xquartz.dmg"`
+
+  LOG1=/tmp/temp1_$$
+  hdiutil attach -verbose $stage/xquartz.dmg -mountroot /Volumes > "$LOG1" 2>&1 &
+  pid=$!
+  ps $pid
+  instprogress "Opening xquartz.dmg", "$pid" 6000 "$LOG1"
+  pidprog=`ps ax | grep -v 'sed' | grep -v 'osascript' | sed -n '/curlprogress/s/^ *\([0-9]*\).*/\1/'`
+  ps $pidprog
+
+  set +x
+  while ps $pid > /dev/null 2>&1 ; do
+    if grep 'The install was successful' "$LOG1" > /dev/null 2>&1 ; then
+      kill -1 $pid
+    fi
+    sleep 5
+  done
+  set -x
+  if kill -1 $pidprog ; then true ; fi #is there a better way to not quit on error?
+
+  LOG2=/tmp/temp2_$$
+  installer -dumplog -pkg $xquartzpkg -target / -lang en > "$LOG2" 2>&1 &
+  pid=$!
+  ps $pid
+  instprogress "Installing XQuartz" "$pid" 7000 "$LOG2"
+  pidprog=`ps ax | grep -v 'sed' | grep -v 'osascript' | sed -n '/curlprogress/s/^ *\([0-9]*\).*/\1/'`
+  ps $pidprog
+
+  # wait for the "installer" process to quit or
+  # kill it when the LOG file has a "install was successful" line
+  # sometimes the progress dialog  hangs at end with window still up
+  # so kill that as well.
+  set +x
+  while ps $pid > /dev/null 2>&1 ; do
+    if grep 'The install was successful' "$LOG2" > /dev/null 2>&1 ; then
+      kill -1 $pid
+    fi
+    sleep 5
+  done
+  set -x
+  if kill -1 $pidprog ; then true ; fi #is there a better way to not quit on error?
+
+  ls -lH "$LOG"
+  hdiutil detach /Volumes/$xquartz
+  rm -r -f $stage/xquartz.dmg
+  return 0
+}
+
+# install XQuartz?
+if test ! -d /Applications/Utilities/XQuartz.app ; then
+  a=`osascript -e 'tell app "Installer" to display dialog "
+XQuartz is required to launch NEURON.
+Install now?
+" buttons {"No", "Yes"} default button 2'`
+  if test "$a" = "button returned:Yes" ; then
+    xquartz_install
+    a=`osascript -e 'tell app "Installer" to display dialog "
+XQuartz has been installed. Before launching NEURON, you need
+to logout and login in order to activate XQuartz" buttons {"Ok"} default button 1'`
+  else
+    true
+  fi
 else
   true
 fi
@@ -147,11 +266,4 @@ fi
 #focus follows mouse
 sudo -u $USER defaults write org.macosforge.xquartz.X11 wm_ffm -bool true
 echo "defaults write" >> /tmp/temp.tmp
-
-# install XQuartz?
-if /usr/X11/bin/xauth version ; then
-  true
-else
-  true
-fi
 

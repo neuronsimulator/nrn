@@ -1,0 +1,103 @@
+on run
+  activate me
+  display dialog "usage:
+  tell app \"curlprogress\" to launch
+  tell app \"curlprogress\" to download(remoteURL, localpath)
+  "
+end run
+
+on pidexist(pid)
+  do shell script "ps -e " & pid & " >/dev/null 2>&1 ; echo $?"
+  return the result as integer
+end pidexist
+
+on download(remoteURL, localpath)
+  activate me
+  #Is the remote url downloadable
+  try
+    do shell script "curl -I -L -k " & remoteURL & " 2>&1 | grep 'Not Found'"
+    set res to the result as text
+    if (length of res) > 8 then
+      display dialog ("error: " & res & "\nfor " & remoteURL)
+      return 1
+    end if
+  on error
+    #grep did not see a Not Found
+  end try
+
+  #start out as 0 length file so ls will not fail
+  do shell script "rm -f " & localpath
+  do shell script "touch " & localpath
+
+  #size of the download
+  do shell script "curl -I -L -k " & remoteURL & " 2>&1 | sed -n 's/Content-Length: //p'"
+  set res to the result as text
+  set filesize to res as number
+
+  #start download in background
+  do shell script "curl -L -k " & remoteURL & " -o " & localpath & " >dev/null 2>&1 & echo $!"
+  set pid to the result
+
+  set cnt to 100
+  set progress total steps to cnt
+  set progress completed steps to 0
+  set progress description to ("Downloading... " & return & remoteURL & return & "to" & return & localpath)
+  set progress additional description to "Preparing to download."
+
+  set a to 0
+  repeat until a is equal to cnt
+    #tell application "Finder"
+      do shell script "ls -laH " & localpath
+      set is_result to the result
+      set AppleScript's text item delimiters to space
+      set thearray to is_result's text items
+      set thecount to count (thearray)
+      set downloadedsize to item (thecount - 4) of thearray
+      set a to (downloadedsize / filesize * 100) as integer
+    #end tell
+    set progress additional description to downloadedsize & " bytes of " & filesize & "   " & a & "%"
+    set progress completed steps to a
+    delay 0.5
+  end repeat
+  set progress total steps to 0
+  set progress completed steps to 0
+  set progress description to ""
+  set progress additional description to ""
+
+  return 0
+end download
+
+on instprogress(descript, pid, filesize, filepath)
+  activate me
+  set fsize to (filesize as integer)
+
+  set cnt to 100
+  set progress total steps to cnt
+  set progress completed steps to 0
+  set progress description to descript
+  set progress additional description to "0%"
+
+  set a to 0
+  repeat until pidexist(pid) is not equal to 0
+    #tell application "Finder"
+      do shell script "ls -laH " & filepath
+      set is_result to the result
+      set AppleScript's text item delimiters to space
+      set thearray to is_result's text items
+      set thecount to count (thearray)
+      set cursize to item (thecount - 5) of thearray
+      set a to (cursize / fsize * 100) as integer
+    #end tell
+    set progress additional description to (a & "%")
+    set progress completed steps to a
+    delay 0.5
+  end repeat
+
+  set progress total steps to 0
+  set progress completed steps to 0
+  set progress description to ""
+  set progress additional description to ""
+
+  return 0
+end instprogress
+

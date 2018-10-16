@@ -8,7 +8,7 @@ launch_scripts = macnrn.term $(S)
 EXTRA_DIST = \
 	$(launch_scripts) launch_inst.sh \
 	modlunit.icns mknrndll.icns nrngui.icns neurondemo.icns idraw.icns mos2nrn.icns \
-	mkdmg.sh after-install.sh prototype_applescript.txt
+	mkdmg.sh after-install.sh prototype_applescript.txt curlprogress.txt
 
 host_cpu = @host_cpu@
 

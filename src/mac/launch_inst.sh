@@ -42,3 +42,9 @@ mkapp neurondemo
 mkapp mos2nrn
 mkapp idraw
 
+#following is a helper for the postinstall script to allow visualization
+#of progress if the installer downloads files for installation.
+# e.g xquartz
+
+osacompile -o ${bindir}/curlprogress.app curlprogress.txt
+
