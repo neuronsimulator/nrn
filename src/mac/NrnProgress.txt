@@ -52,7 +52,7 @@ on download(remoteURL, localpath)
       set AppleScript's text item delimiters to space
       set thearray to is_result's text items
       set thecount to count (thearray)
-      set downloadedsize to item (thecount - 4) of thearray
+      set downloadedsize to item (thecount - 5) of thearray
       set a to (downloadedsize / filesize * 100) as integer
     #end tell
     set progress additional description to downloadedsize & " bytes of " & filesize & "   " & a & "%"

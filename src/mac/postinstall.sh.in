@@ -143,6 +143,7 @@ Command Line Tools is installed.
 Note: selecting \"Yes\" will also set the system date to the current
 date via \"sntp -sS pool.ntp.org\" as \"xcode-select --install\" sometimes
 fails if the date is not accurate.
+This part of the installation sometimes takes 20 minutes.
 Install now?
 " buttons {"No", "Yes"} default button 2'`
   if test "$a" = "button returned:Yes" ; then
@@ -165,7 +166,7 @@ fi
     pid=`ps ax | grep -v 'sed' | sed -n '/Install Command Line/s/^ *\([0-9]*\).*/\1/p'`
     set +x
     while kill -0 $pid > /dev/null ; do
-      if xcode-select -p > /dev/null ; then
+      if xcode-select -p > /dev/null 2>&1 ; then
         kill -1 $pid
       fi
       sleep 5
@@ -175,15 +176,14 @@ fi
 fi
 
 download() {
-  return 0
-  CURL="$idir/x86_64/bin/curlprogress.app"
+  CURL="$idir/x86_64/bin/NrnProgress.app"
   osascript -e "tell app \"$CURL\" to launch"
   a=`osascript -e "tell app \"$CURL\" to download(\"$1\", \"$2\")"`
   return $a
 }
   
 instprogress() {
-  CURL="$idir/x86_64/bin/curlprogress.app"
+  CURL="$idir/x86_64/bin/NrnProgress.app"
   osascript -e "tell app \"$CURL\" to launch"
   osascript -e "with timeout of 600 seconds" \
     -e "tell app \"$CURL\" to instprogress(\"$1\", \"$2\", \"$3\", \"$4\")" \
@@ -205,7 +205,7 @@ xquartz_install() {
   pid=$!
   ps $pid
   instprogress "Opening xquartz.dmg", "$pid" 6000 "$LOG1"
-  pidprog=`ps ax | grep -v 'sed' | grep -v 'osascript' | sed -n '/curlprogress/s/^ *\([0-9]*\).*/\1/'`
+  pidprog=`ps ax | grep -v 'sed' | grep -v 'osascript' | sed -n '/NrnProgress/s/^ *\([0-9]*\).*/\1/'`
   ps $pidprog
 
   set +x
@@ -223,7 +223,7 @@ xquartz_install() {
   pid=$!
   ps $pid
   instprogress "Installing XQuartz" "$pid" 7000 "$LOG2"
-  pidprog=`ps ax | grep -v 'sed' | grep -v 'osascript' | sed -n '/curlprogress/s/^ *\([0-9]*\).*/\1/'`
+  pidprog=`ps ax | grep -v 'sed' | grep -v 'osascript' | sed -n '/NrnProgress/s/^ *\([0-9]*\).*/\1/'`
   ps $pidprog
 
   # wait for the "installer" process to quit or

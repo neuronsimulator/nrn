@@ -46,5 +46,5 @@ mkapp idraw
 #of progress if the installer downloads files for installation.
 # e.g xquartz
 
-osacompile -o ${bindir}/curlprogress.app curlprogress.txt
+osacompile -o ${bindir}/NrnProgress.app NrnProgress.txt
 
