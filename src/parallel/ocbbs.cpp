@@ -628,10 +628,15 @@ static double outputcell(void* v) {
 
 static double spike_record(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
-	int gid = int(chkarg(1, -1., MD));
 	IvocVect* spikevec = vector_arg(2);
 	IvocVect* gidvec = vector_arg(3);	
-	bbs->spike_record(gid, spikevec, gidvec);
+	if (hoc_is_object_arg(1) && is_vector_arg(1)) {
+		IvocVect* gids = vector_arg(1);
+		bbs->spike_record(gids, spikevec, gidvec);
+	}else{
+		int gid = int(chkarg(1, -1., MD));
+		bbs->spike_record(gid, spikevec, gidvec);
+	}
 	return 0.;
 }
 

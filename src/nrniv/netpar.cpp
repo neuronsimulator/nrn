@@ -1107,6 +1107,18 @@ void BBS::spike_record(int gid, IvocVect* spikevec, IvocVect* gidvec) {
     }
 }
 
+void BBS::spike_record(IvocVect* gids, IvocVect* spikevec, IvocVect* gidvec) {
+	int sz = vector_capacity(gids);
+	double* pd = vector_vec(gids);
+	for (int i = 0; i < sz; ++i) {
+		PreSyn* ps;
+		int gid = int(pd[i]);
+		assert(gid2out_->find(gid, ps));
+		assert(ps);
+		ps->record(spikevec, gidvec, gid);
+	}
+}
+
 static Object* gid2obj_(int gid) {
 	Object* cell = 0;
 //printf("%d gid2obj gid=%d\n", nrnmpi_myid, gid);
