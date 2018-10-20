@@ -51,12 +51,12 @@ set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/version/version.cpp.in
                ${CMAKE_CURRENT_BINARY_DIR}/version.cpp @ONLY)
 
-add_subdirectory(src)
 add_subdirectory(src/ast)
 add_subdirectory(src/codegen)
 add_subdirectory(src/ext/fmt)
 add_subdirectory(src/language)
 add_subdirectory(src/lexer)
+add_subdirectory(src/nmodl)
 add_subdirectory(src/parser)
 add_subdirectory(src/printer)
 add_subdirectory(src/symtab)
@@ -73,13 +73,6 @@ set(MEMORYCHECK_COMMAND_OPTIONS "--trace-children=yes \
                                  --show-possibly-lost=no")
 include (CTest)
 add_subdirectory(test)
-
-#=============================================================================
-# Add executables
-#=============================================================================
-add_executable(nmodl
-               src/main.cpp)
-target_link_libraries(nmodl printer codegen visitor symtab util lexer fmt)
 
 #=============================================================================
 # Clang format target
