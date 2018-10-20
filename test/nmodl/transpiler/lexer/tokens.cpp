@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "catch.hpp"
+#include "catch/catch.hpp"
 #include "lexer/modtoken.hpp"
 #include "lexer/nmodl_lexer.hpp"
 #include "parser/nmodl_driver.hpp"
