@@ -21,4 +21,4 @@ set(FILES_FOR_CLANG_FORMAT
 #=============================================================================
 add_executable(nmodl
                ${NMODL_SOURCE_FILES})
-target_link_libraries(nmodl printer codegen visitor symtab util lexer fmt)
+target_link_libraries(nmodl printer codegen visitor symtab util lexer)
