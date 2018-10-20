@@ -53,7 +53,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/version/version.cpp.in
 
 add_subdirectory(src/ast)
 add_subdirectory(src/codegen)
-add_subdirectory(src/ext/fmt)
 add_subdirectory(src/language)
 add_subdirectory(src/lexer)
 add_subdirectory(src/nmodl)

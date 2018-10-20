@@ -49,7 +49,7 @@ add_library(visitor
 add_dependencies(visitor lexer util)
 
 add_executable(nmodl_visitor main.cpp)
-target_link_libraries(nmodl_visitor printer visitor symtab util lexer fmt)
+target_link_libraries(nmodl_visitor printer visitor symtab util lexer)
 
 #=============================================================================
 # Files for clang-format

@@ -4,7 +4,6 @@
 
 #include "arg_handler.hpp"
 #include "parser/nmodl_driver.hpp"
-#include "version/version.h"
 #include "visitors/ast_visitor.hpp"
 #include "visitors/inline_visitor.hpp"
 #include "visitors/json_visitor.hpp"
@@ -21,27 +20,33 @@
 #include "codegen/c-openacc/codegen_c_acc_visitor.hpp"
 #include "codegen/c-cuda/codegen_c_cuda_visitor.hpp"
 #include "utils/common_utils.hpp"
+#include "utils/logger.hpp"
 
 void ast_to_nmodl(ast::Program* ast, std::string filename) {
     NmodlPrintVisitor v(filename);
     v.visit_program(ast);
+    logger->info("AST to NMODL transformation written to {}", filename);
 }
 
 int main(int argc, const char* argv[]) {
-    // version string
-    auto version = nmodl::version::NMODL_VERSION + " [" + nmodl::version::GIT_REVISION + "]";
 
     ArgumentHandler arg(argc, argv);
 
     make_path(arg.output_dir);
     make_path(arg.scratch_dir);
 
+    int error_count = 0;
+
     for (auto& nmodl_file : arg.nmodl_files) {
         std::ifstream file(nmodl_file);
 
         if (!file.good()) {
-            throw std::runtime_error("Could not open file " + nmodl_file);
+            logger->warn("Could not open file : {}", nmodl_file);
+            error_count++;
+            continue;
         }
+
+        logger->info("Processing {}", nmodl_file);
 
         std::string mod_file = remove_extension(base_name(nmodl_file));
 
@@ -127,12 +132,11 @@ int main(int argc, const char* argv[]) {
         }
 
         if (arg.show_symtab) {
-            std::cout << "----SYMBOL TABLE ----" << std::endl;
+            logger->info("Printing symbol table");
             std::stringstream stream;
             auto symtab = ast->get_model_symbol_table();
             symtab->print(stream);
             std::cout << stream.str();
-            std::cout << "---------------------" << std::endl;
         }
 
         {
@@ -142,6 +146,8 @@ int main(int argc, const char* argv[]) {
             v.visit_program(ast.get());
 
             bool aos_layout = arg.aos_memory_layout();
+
+            logger->info("Generating host code with {} backend", arg.host_backend);
 
             if (arg.host_c_backend()) {
                 CodegenCVisitor visitor(mod_file, arg.output_dir, aos_layout, arg.dtype);
@@ -155,11 +161,17 @@ int main(int argc, const char* argv[]) {
             }
 
             if (arg.device_cuda_backend()) {
+                logger->info("Generating device code with {} backend", arg.accel_backend);
                 CodegenCCudaVisitor visitor(mod_file, arg.output_dir, aos_layout, arg.dtype);
                 visitor.visit_program(ast.get());
             }
         }
     }
 
-    return 0;
+    if (error_count) {
+        logger->error("Code generation encountered {} errors", error_count);
+    } else {
+        logger->info("Code generation finished successfully");
+    }
+    return error_count;
 }

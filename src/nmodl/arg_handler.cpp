@@ -7,7 +7,7 @@
 
 ArgumentHandler::ArgumentHandler(const int& argc, const char** argv) {
     // version string
-    auto version = nmodl::version::NMODL_VERSION + " [" + nmodl::version::GIT_REVISION + "]";
+    auto version = nmodl::version().to_string();
 
     try {
         using string_vector_type = std::vector<std::string>;
