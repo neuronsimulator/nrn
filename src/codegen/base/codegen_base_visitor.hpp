@@ -172,6 +172,11 @@ class CodegenBaseVisitor : public AstVisitor {
     /// node area variable
     const std::string node_area = "node_area";
 
+    /// node diameter variable
+    const std::string diam_variable = "diam";
+
+    /// similar to node area but user can explicitly declare it
+    const std::string area_variable = "area";
 
     /// nmodl language version
     std::string nmodl_version() {
@@ -449,6 +454,7 @@ class CodegenBaseVisitor : public AstVisitor {
     virtual void visit_unary_operator(ast::UnaryOperator* node) override;
     virtual void visit_statement_block(ast::StatementBlock* node) override;
     virtual void visit_program(ast::Program* node) override;
+    virtual void visit_while_statement(ast::WhileStatement* node) override;
 };
 
 

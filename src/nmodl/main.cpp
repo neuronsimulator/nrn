@@ -29,7 +29,6 @@ void ast_to_nmodl(ast::Program* ast, std::string filename) {
 }
 
 int main(int argc, const char* argv[]) {
-
     ArgumentHandler arg(argc, argv);
 
     make_path(arg.output_dir);

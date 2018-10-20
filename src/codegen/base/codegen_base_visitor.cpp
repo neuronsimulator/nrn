@@ -164,6 +164,12 @@ void CodegenBaseVisitor::visit_else_statement(ElseStatement* node) {
     node->visit_children(this);
 }
 
+void CodegenBaseVisitor::visit_while_statement(WhileStatement* node) {
+    printer->add_text("while (");
+    node->condition->accept(this);
+    printer->add_text(") ");
+    node->statementblock->accept(this);
+}
 
 void CodegenBaseVisitor::visit_from_statement(ast::FromStatement* node) {
     if (!codegen) {
@@ -562,6 +568,7 @@ void CodegenBaseVisitor::print_statement_block(ast::StatementBlock* node,
 void CodegenBaseVisitor::update_index_semantics() {
     int index = 0;
     info.semantics.clear();
+
     if (info.point_process) {
         info.semantics.emplace_back(index++, "area", 1);
         info.semantics.emplace_back(index++, "pntproc", 1);
@@ -592,6 +599,15 @@ void CodegenBaseVisitor::update_index_semantics() {
         }
         index += size;
     }
+
+    if (info.diam_used) {
+        info.semantics.emplace_back(index++, diam_variable, 1);
+    }
+
+    if(info.area_used) {
+        info.semantics.emplace_back(index++, area_variable, 1);
+    }
+
     if (info.net_send_used) {
         info.semantics.emplace_back(index++, "netsend", 1);
     }
@@ -696,6 +712,14 @@ std::vector<IndexVariableInfo> CodegenBaseVisitor::get_int_variables() {
         } else {
             variables.emplace_back(make_symbol(name), true);
         }
+    }
+
+    if (info.diam_used) {
+        variables.emplace_back(make_symbol("diam"));
+    }
+
+    if (info.area_used) {
+        variables.emplace_back(make_symbol("area"));
     }
 
     // for non-artificial cell, when net_receive buffering is enabled

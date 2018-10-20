@@ -61,6 +61,8 @@ class CodegenHelperVisitor : public AstVisitor {
     const std::string net_event_method = "net_event";
     const std::string artificial_cell = "ARTIFICIAL_CELL";
     const std::string point_process = "POINT_PROCESS";
+    const std::string diam_variable = "diam";
+    const std::string area_variable = "area";
 
     void find_solve_node();
     void find_ion_variables();

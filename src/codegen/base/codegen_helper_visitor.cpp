@@ -219,6 +219,21 @@ void CodegenHelperVisitor::find_non_range_variables() {
                       | NmodlInfo::bbcore_pointer_var;
     // clang-format on
     info.pointer_variables = psymtab->get_variables_with_properties(properties);
+
+    // find special variables like diam, area
+    // clang-format off
+    properties = NmodlInfo::dependent_def
+            | NmodlInfo::param_assign;
+    vars = psymtab->get_variables_with_properties(properties);
+    for (auto& var : vars) {
+        if (var->get_name() == area_variable) {
+            info.area_used = true;
+        }
+        if (var->get_name() == diam_variable) {
+            info.diam_used = true;
+        }
+    }
+    // clang-format on
 }
 
 /**

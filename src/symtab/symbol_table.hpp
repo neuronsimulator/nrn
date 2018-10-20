@@ -33,7 +33,7 @@ namespace symtab {
         void insert(const std::shared_ptr<Symbol>& symbol);
 
         /// check if symbol with given name exist
-        std::shared_ptr<Symbol> lookup(const std::string& name);
+        std::shared_ptr<Symbol> lookup(const std::string& name) const;
 
         /// pretty print
         void print(std::stringstream& stream, std::string title, int indent);
@@ -101,6 +101,8 @@ namespace symtab {
 
         std::string title();
 
+        bool is_method_defined(const std::string& name) const;
+
         /// todo: set token for every block from parser
         std::string position() const;
 
@@ -137,7 +139,7 @@ namespace symtab {
             return new SymbolTable(*this);
         }
 
-        std::shared_ptr<Symbol> lookup_in_scope(const std::string& name);
+        std::shared_ptr<Symbol> lookup_in_scope(const std::string& name) const;
 
         std::vector<std::shared_ptr<Symbol>> get_variables(SymbolInfo with, SymbolInfo without);
 

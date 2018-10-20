@@ -22,7 +22,7 @@ namespace symtab {
     }
 
 
-    std::shared_ptr<Symbol> Table::lookup(const std::string& name) {
+    std::shared_ptr<Symbol> Table::lookup(const std::string& name) const {
         for (const auto& symbol : symbols) {
             if (symbol->get_name() == name) {
                 return symbol;
@@ -44,6 +44,18 @@ namespace symtab {
         return node->get_type_name();
     }
 
+    bool SymbolTable::is_method_defined(const std::string& name) const {
+        auto symbol = lookup_in_scope(name);
+        if (symbol != nullptr) {
+            auto node = symbol->get_node();
+            if (node) {
+                if (node->is_procedure_block() || node->is_function_block()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
     std::string SymbolTable::position() const {
         auto token = node->get_token();
@@ -143,7 +155,7 @@ namespace symtab {
 
 
     /// lookup for symbol in current scope as well as all parents
-    std::shared_ptr<Symbol> SymbolTable::lookup_in_scope(const std::string& name) {
+    std::shared_ptr<Symbol> SymbolTable::lookup_in_scope(const std::string& name) const {
         auto symbol = table.lookup(name);
         if (!symbol && (parent != nullptr)) {
             symbol = parent->lookup_in_scope(name);

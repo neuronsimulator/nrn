@@ -33,22 +33,8 @@ class CodegenCVisitor : public CodegenBaseVisitor {
     /// currently printing verbatim blocks in top level block
     bool printing_top_verbatim_blocks = false;
 
-    /**
-     * Commonly used variables in the verbatim blocks and their corresponding
-     * variable name in the new code generation backend.
-     */
-    std::map<std::string, std::string> verbatim_variables_mapping{
-        {"_nt", "nt"},
-        {"_p", "data"},
-        {"_ppvar", "indexes"},
-        {"_thread", "thread"},
-        {"_iml", "id"},
-        {"_cntml_padded", "pnodecount"},
-        {"_cntml", "nodecount"},
-        {"_tqitem", "tqitem"},
-        {"_threadargs_", nrn_thread_arguments()},
-        {"_threadargsproto_", external_method_parameters()}};
-
+    /// internal method call was encountered while processing vebatim block
+    bool internal_method_call_encountered = false;
 
     /// number of threads to allocate
     int num_thread_objects() {
@@ -160,9 +146,15 @@ class CodegenCVisitor : public CodegenBaseVisitor {
     /// arguments for "_threadargs_" macro in neuron implementation
     std::string nrn_thread_arguments();
 
+    /// arguments for "_threadargs_" macro in neuron implementation
+    std::string nrn_thread_internal_arguments();
 
     /// list of shadow statements in the current block
     std::vector<ShadowUseStatement> shadow_statements;
+
+
+    /// replace commonly used verbatim variables
+    std::string replace_if_verbatim_variable(std::string name);
 
 
     /// return name of main compute kernels

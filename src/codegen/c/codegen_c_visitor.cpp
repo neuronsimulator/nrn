@@ -204,14 +204,33 @@ std::vector<ShadowUseStatement> CodegenCVisitor::ion_write_statements(BlockType 
  * Here we process if we are processing verbatim block at global scope.
  */
 std::string CodegenCVisitor::process_verbatim_token(const std::string& token) {
-    if (printing_top_verbatim_blocks) {
-        std::string name = token;
-        if (verbatim_variables_mapping.find(token) != verbatim_variables_mapping.end()) {
-            name = verbatim_variables_mapping[token];
-        }
-        return get_variable_name(name, false);
+    std::string name = token;
+
+    /**
+     * If given token is procedure name and if it's defined
+     * in the current mod file then it must be replaced
+     */
+    if (program_symtab->is_method_defined(token)) {
+        return method_name(token);
     }
-    return get_variable_name(token);
+
+    /**
+     * Check if token is commongly used variable name in
+     * verbatim block like nt, _threadargs etc. If so, replace
+     * it and return.
+     */
+    auto new_name = replace_if_verbatim_variable(name);
+    if (new_name != name) {
+        return get_variable_name(new_name, false);
+    }
+
+    /**
+     * For top level verbatim blocks we shouldn't replace variable
+     * names with Instance because arguments are provided from coreneuron
+     * and they are missing inst.
+     */
+    auto use_instance = printing_top_verbatim_blocks ? false : true;
+    return get_variable_name(token, use_instance);
 }
 
 
@@ -696,26 +715,6 @@ void CodegenCVisitor::print_function(ast::FunctionBlock* node) {
 /****************************************************************************************/
 
 
-
-std::string CodegenCVisitor::process_verbatim_text(std::string text) {
-    c11::Driver driver;
-    driver.scan_string(text);
-    auto tokens = driver.all_tokens();
-    std::string result;
-    for (auto& token : tokens) {
-        auto name = process_verbatim_token(token);
-        if (token == "_tqitem") {
-            name = "&" + name;
-        }
-        if (token == "_STRIDE") {
-            name = (layout == LayoutType::soa) ? "pnodecount+id" : "1";
-        }
-        result += name;
-    }
-    return result;
-}
-
-
 std::string CodegenCVisitor::internal_method_arguments() {
     if (ion_variable_struct_required()) {
         return "id, pnodecount, inst, ionvar, data, indexes, thread, nt, v";
@@ -746,8 +745,95 @@ std::string CodegenCVisitor::external_method_parameters() {
 }
 
 
+/**
+ * Function call arguments when function or procedure is external (i.e.
+ * not visible at nmodl level)
+ */
 std::string CodegenCVisitor::nrn_thread_arguments() {
+    if (ion_variable_struct_required()) {
+        return "id, pnodecount, ionvar, data, indexes, thread, nt, v";
+    }
     return "id, pnodecount, data, indexes, thread, nt, v";
+}
+
+/**
+ * Function call arguments when function or procedure is defined in the
+ * same mod file itself
+ */
+std::string CodegenCVisitor::nrn_thread_internal_arguments() {
+    if (ion_variable_struct_required()) {
+        return "id, pnodecount, inst, ionvar, data, indexes, thread, nt, v";
+    }
+    return "id, pnodecount, inst, data, indexes, thread, nt, v";
+}
+
+
+/**
+ * Commonly used variables in the verbatim blocks and their corresponding
+ * variable name in the new code generation backend.
+ */
+std::string CodegenCVisitor::replace_if_verbatim_variable(std::string name) {
+    // clang-format off
+    std::map<std::string, std::string> verbatim_variables_map{
+            {"_nt", "nt"},
+            {"_p", "data"},
+            {"_ppvar", "indexes"},
+            {"_thread", "thread"},
+            {"_iml", "id"},
+            {"_cntml_padded", "pnodecount"},
+            {"_cntml", "nodecount"},
+            {"_tqitem", "tqitem"}};
+    // clang-format on
+
+    if (verbatim_variables_map.find(name) != verbatim_variables_map.end()) {
+        name = verbatim_variables_map[name];
+    }
+
+    /// if function is defined the same mod file then the arguments must
+    /// contain mechanism instance as well.
+    if (name == "_threadargs_") {
+        if (internal_method_call_encountered) {
+            name = nrn_thread_internal_arguments();
+            internal_method_call_encountered = false;
+        } else {
+            name = nrn_thread_arguments();
+        }
+    }
+    if (name == "_threadargsproto_") {
+        name = external_method_parameters();
+    }
+    return name;
+}
+
+/**
+ * Processing commonly used constructs in the verbatim blocks.
+ * @todo : this is still ad-hoc and requires re-implementation to
+ * handle it more elegantly.
+ */
+std::string CodegenCVisitor::process_verbatim_text(std::string text) {
+    c11::Driver driver;
+    driver.scan_string(text);
+    auto tokens = driver.all_tokens();
+    std::string result;
+    for (size_t i = 0; i < tokens.size(); i++) {
+        auto token = tokens[i];
+
+        /// check if we have function call in the verbatim block where
+        /// function is defined in the same mod file
+        if (program_symtab->is_method_defined(token) && tokens[i + 1] == "(") {
+            internal_method_call_encountered = true;
+        }
+        auto name = process_verbatim_token(token);
+
+        if (token == "_tqitem") {
+            name = "&" + name;
+        }
+        if (token == "_STRIDE") {
+            name = (layout == LayoutType::soa) ? "pnodecount+id" : "1";
+        }
+        result += name;
+    }
+    return result;
 }
 
 
@@ -1151,6 +1237,7 @@ void CodegenCVisitor::print_coreneuron_includes() {
     printer->add_line("#include <coreneuron/nrniv/nrn_acc_manager.h>");
     printer->add_line("#include <coreneuron/utils/randoms/nrnran123.h>");
     printer->add_line("#include <coreneuron/nrniv/nrniv_decl.h>");
+    printer->add_line("#include <coreneuron/nrniv/ivocvect.h>");
 }
 
 
@@ -2664,9 +2751,11 @@ void CodegenCVisitor::codegen_all() {
     codegen_namespace_begin();
 
     print_mechanism_info_array();
-    print_global_variables_for_hoc();
 
     codegen_data_structures();
+
+    // must be after codegen_data_structures
+    print_global_variables_for_hoc();
 
     codegen_common_getters();
 
