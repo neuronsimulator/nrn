@@ -51,7 +51,10 @@ set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/version/version.cpp.in
                ${CMAKE_CURRENT_BINARY_DIR}/version.cpp @ONLY)
 
+add_subdirectory(src)
 add_subdirectory(src/ast)
+add_subdirectory(src/codegen)
+add_subdirectory(src/ext/fmt)
 add_subdirectory(src/language)
 add_subdirectory(src/lexer)
 add_subdirectory(src/parser)
@@ -59,8 +62,6 @@ add_subdirectory(src/printer)
 add_subdirectory(src/symtab)
 add_subdirectory(src/utils)
 add_subdirectory(src/visitors)
-add_subdirectory(src/codegen)
-add_subdirectory(src/ext/fmt)
 
 #=============================================================================
 # Memory checker options and add tests

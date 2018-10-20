@@ -1769,7 +1769,8 @@ void CodegenCVisitor::print_setup_range_variable() {
     auto type = float_data_type();
     printer->add_newline(2);
     printer->add_line("/** allocate and setup array for range variable */");
-    printer->start_block("static inline {}* setup_range_variable(double* variable, int n) "_format(type));
+    printer->start_block(
+        "static inline {}* setup_range_variable(double* variable, int n) "_format(type));
     printer->add_line("{0}* data = ({0}*) mem_alloc(n, sizeof({0}));"_format(type));
     printer->add_line("for(size_t i = 0; i < n; i++) {");
     printer->add_line("    data[i] = variable[i];");
@@ -1792,13 +1793,13 @@ void CodegenCVisitor::print_setup_range_variable() {
  * @return Floating point type (float/double)
  */
 std::string CodegenCVisitor::get_range_var_float_type(const SymbolType& symbol) {
-    /// clang-format off
+    // clang-format off
     auto with   =   NmodlInfo::read_ion_var
                     | NmodlInfo::write_ion_var
                     | NmodlInfo::pointer_var
                     | NmodlInfo::bbcore_pointer_var
                     | NmodlInfo::extern_neuron_variable;
-    /// clang-format on
+    // clang-format on
     bool need_default_type = symbol->has_properties(with);
     if (need_default_type) {
         return default_float_data_type();
@@ -1839,7 +1840,8 @@ void CodegenCVisitor::print_instance_variable_setup() {
         if (default_type == range_var_type) {
             printer->add_line("inst->{} = ml->data+{}{};"_format(name, id, stride));
         } else {
-            printer->add_line("inst->{} = setup_range_variable(ml->data+{}{}, pnodecount);"_format(name, id, stride));
+            printer->add_line("inst->{} = setup_range_variable(ml->data+{}{}, pnodecount);"_format(
+                name, id, stride));
             variables_to_free.push_back(name);
         }
         id += var->get_length();

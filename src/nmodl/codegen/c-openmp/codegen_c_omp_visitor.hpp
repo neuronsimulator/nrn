@@ -55,7 +55,10 @@ class CodegenCOmpVisitor : public CodegenCVisitor {
 
 
   public:
-    CodegenCOmpVisitor(std::string mod_file, std::string output_dir, bool aos, std::string float_type)
+    CodegenCOmpVisitor(std::string mod_file,
+                       std::string output_dir,
+                       bool aos,
+                       std::string float_type)
         : CodegenCVisitor(mod_file, output_dir, aos, float_type) {
     }
 

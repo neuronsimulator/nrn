@@ -85,7 +85,7 @@ namespace c11 {
         }
 
         bool has_token(std::string token) {
-            if(std::find(tokens.begin(), tokens.end(), token) != tokens.end()) {
+            if (std::find(tokens.begin(), tokens.end(), token) != tokens.end()) {
                 return true;
             }
             return false;

@@ -31,7 +31,6 @@ add_dependencies(codegen lexer util)
 # Files for clang-format
 #=============================================================================
 set(FILES_FOR_CLANG_FORMAT
-    ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
     ${CODEGEN_SOURCE_FILES}
     ${FILES_FOR_CLANG_FORMAT}
     PARENT_SCOPE
