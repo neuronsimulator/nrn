@@ -4,7 +4,7 @@
 #include <cerrno>
 
 bool is_dir_exist(const std::string& path) {
-    struct stat info{};
+    struct stat info {};
     if (stat(path.c_str(), &info) != 0) {
         return false;
     }

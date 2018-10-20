@@ -159,6 +159,12 @@ namespace codegen {
         /// if net_even function is used
         bool net_event_used = false;
 
+        /// if diam is used
+        bool diam_used = false;
+
+        /// if area is used
+        bool area_used = false;
+
         /**
          * thread_data_index indicates number of threads being allocated.
          * For example, if there is derivimplicit method used, then two thread
