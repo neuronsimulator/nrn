@@ -11,6 +11,11 @@ on pidexist(pid)
   return the result as integer
 end pidexist
 
+on size_of_file(filename)
+  do shell script "ls -Lon '" & filename & "' | awk '{print $4}'"
+  return the result as integer
+end size_of_file
+
 on download(remoteURL, localpath)
   activate me
   #Is the remote url downloadable
@@ -47,12 +52,7 @@ on download(remoteURL, localpath)
   set a to 0
   repeat until a is equal to cnt
     #tell application "Finder"
-      do shell script "ls -laH " & localpath
-      set is_result to the result
-      set AppleScript's text item delimiters to space
-      set thearray to is_result's text items
-      set thecount to count (thearray)
-      set downloadedsize to item (thecount - 5) of thearray
+      set downloadedsize to size_of_file(localpath)
       set a to (downloadedsize / filesize * 100) as integer
     #end tell
     set progress additional description to downloadedsize & " bytes of " & filesize & "   " & a & "%"
@@ -80,12 +80,7 @@ on instprogress(descript, pid, filesize, filepath)
   set a to 0
   repeat until pidexist(pid) is not equal to 0
     #tell application "Finder"
-      do shell script "ls -laH " & filepath
-      set is_result to the result
-      set AppleScript's text item delimiters to space
-      set thearray to is_result's text items
-      set thecount to count (thearray)
-      set cursize to item (thecount - 5) of thearray
+      set cursize to size_of_file(filepath)
       set a to (cursize / fsize * 100) as integer
     #end tell
     set progress additional description to (a & "%")

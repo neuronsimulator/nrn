@@ -10,14 +10,15 @@ dialog() {
   return 0
 }
 
-echo "" > /tmp/temp.tmp
+LOG0=/tmp/temp0_$$
+echo "" > $LOG0
 
 idir=/Applications/NEURON-@PACKAGE_VERSION@/nrn
 
 #for testing on linux
 #idir=$HOME/neuron/nrnmpi
 #function osascript() {
-#  echo "osascript $1 $2 button returned:Yes" >> /tmp/temp.tmp
+#  echo "osascript $1 $2 button returned:Yes" >> "$LOG0"
 #  echo "button returned:Yes"
 #}
 
@@ -44,25 +45,25 @@ if test -f "$HOME/.kshrc" ; then
 fi
 
 # if cannot find nrniv, then perhaps modify PATH
-echo "PATH=$PATH" >> /tmp/temp.tmp
+echo "PATH=$PATH" >> "$LOG0"
 # can nrniv be found in the users path?
 if test -f "$bp" ; then
-  (source $bp ; echo "srcpath $PATH" >> /tmp/temp.tmp ; echo `which nrniv` >> /tmp/temp.tmp ; which nrniv)
+  (source $bp ; echo "srcpath $PATH" >> "$LOG0" ; echo `which nrniv` >> "$LOG0" ; which nrniv)
   a=$?
-  echo "1 a=$a" >> /tmp/temp.tmp
+  echo "1 a=$a" >> "$LOG0"
   if test "$a" = "0" ; then
     addpath=yes
   else
     addpath=yes
   fi
-  echo "PATH=$PATH" >> /tmp/temp.tmp
-  echo "in source addpath=$addpath" >> /tmp/temp.tmp
+  echo "PATH=$PATH" >> "$LOG0"
+  echo "in source addpath=$addpath" >> "$LOG0"
 else
   addpath=yes
 fi
-echo "PATH=$PATH" >> /tmp/temp.tmp
+echo "PATH=$PATH" >> "$LOG0"
 
-echo "1 addpath=$addpath" >> /tmp/temp.tmp
+echo "1 addpath=$addpath" >> "$LOG0"
 
 if test "$addpath" = "yes" ; then
 a=`osascript -e 'tell app "Installer" to display dialog "
@@ -70,7 +71,7 @@ Modify PATH to allow launching nrniv from Terminal?
   ... will append a line to  $HOME/'$b'
       and, if they exist, .cshrc .tcshrc .kshrc .zshrc
 " buttons {"No", "Yes"} default button 2'`
-  echo "2 a=$a" >> /tmp/temp.tmp
+  echo "2 a=$a" >> "$LOG0"
   if test "$a" = "button returned:Yes" ; then
     addpath=yes
   else
@@ -78,7 +79,7 @@ Modify PATH to allow launching nrniv from Terminal?
   fi
 fi
 
-echo "2 addpath=$addpath" >> /tmp/temp.tmp
+echo "2 addpath=$addpath" >> "$LOG0"
 
 if test "$addpath" = "yes" ; then
   if test  ! -f "$bp" ; then
@@ -103,7 +104,7 @@ if true || test "$addpath" = "yes" ; then # Python environment
 Modify PYTHONPATH in $HOME/'$b' to allow a launch of Python to import neuron.
 " buttons {"No", "Yes"} default button 2'`
 
-  echo "3 a=$a" >> /tmp/temp.tmp
+  echo "3 a=$a" >> "$LOG0"
   if test "$a" = "button returned:Yes" ; then
     addpyenv=yes
   else
@@ -121,7 +122,7 @@ Modify PYTHONPATH in $HOME/'$b' to allow a launch of Python to import neuron.
     done
    if false ; then # no longer add NRN_PYLIB and PYTHONHOME
     tmpfile=/tmp/$$.tmp
-    (source $bp ; echo "srcpath $PATH" >> /tmp/temp.tmp ; $idir/x86_64/bin/nrnpyenv.sh |sed -n 's/\(^export.*\)/\1 #added by NEURON installer/p' | sed '/PYTHONPATH/d' > $tmpfile)
+    (source $bp ; echo "srcpath $PATH" >> "$LOG0" ; $idir/x86_64/bin/nrnpyenv.sh |sed -n 's/\(^export.*\)/\1 #added by NEURON installer/p' | sed '/PYTHONPATH/d' > $tmpfile)
     for i in $blike ; do
       cat $tmpfile >> "$i"
       chown $USER "$i"
@@ -136,6 +137,9 @@ Modify PYTHONPATH in $HOME/'$b' to allow a launch of Python to import neuron.
 fi
 
 # install command line tools?
+# see end of this file. If command line tools are installed while this
+# installer is running, one of them will hang.
+if false ; then
 if xcode-select -p 2>&1 | grep 'error: unable to get' ; then
   a=`osascript -e 'tell app "Installer" to display dialog "
 Mod files cannot be linked into NEURON unless
@@ -165,7 +169,7 @@ fi
     # sometimes it hangs at end with window still up
     pid=`ps ax | grep -v 'sed' | sed -n '/Install Command Line/s/^ *\([0-9]*\).*/\1/p'`
     set +x
-    while kill -0 $pid > /dev/null ; do
+    while ps $pid > /dev/null 2>&1 ; do
       if xcode-select -p > /dev/null 2>&1 ; then
         kill -1 $pid
       fi
@@ -173,6 +177,7 @@ fi
     done
     set -x
   fi  
+fi
 fi
 
 download() {
@@ -204,7 +209,7 @@ xquartz_install() {
   hdiutil attach -verbose $stage/xquartz.dmg -mountroot /Volumes > "$LOG1" 2>&1 &
   pid=$!
   ps $pid
-  instprogress "Opening xquartz.dmg", "$pid" 6000 "$LOG1"
+  instprogress "Opening xquartz.dmg (may take a minute)", "$pid" 6000 "$LOG1"
   pidprog=`ps ax | grep -v 'sed' | grep -v 'osascript' | sed -n '/NrnProgress/s/^ *\([0-9]*\).*/\1/'`
   ps $pidprog
 
@@ -222,7 +227,7 @@ xquartz_install() {
   installer -dumplog -pkg $xquartzpkg -target / -lang en > "$LOG2" 2>&1 &
   pid=$!
   ps $pid
-  instprogress "Installing XQuartz" "$pid" 7000 "$LOG2"
+  instprogress "Installing XQuartz (may take 5 minutes)" "$pid" 7000 "$LOG2"
   pidprog=`ps ax | grep -v 'sed' | grep -v 'osascript' | sed -n '/NrnProgress/s/^ *\([0-9]*\).*/\1/'`
   ps $pidprog
 
@@ -240,7 +245,7 @@ xquartz_install() {
   set -x
   if kill -1 $pidprog ; then true ; fi #is there a better way to not quit on error?
 
-  ls -lH "$LOG"
+  ls -lH "$LOG2"
   hdiutil detach /Volumes/$xquartz
   rm -r -f $stage/xquartz.dmg
   return 0
@@ -249,7 +254,7 @@ xquartz_install() {
 # install XQuartz?
 if test ! -d /Applications/Utilities/XQuartz.app ; then
   a=`osascript -e 'tell app "Installer" to display dialog "
-XQuartz is required to launch NEURON.
+XQuartz is required to launch NEURON. (installation may take 15 minutes)
 Install now?
 " buttons {"No", "Yes"} default button 2'`
   if test "$a" = "button returned:Yes" ; then
@@ -267,5 +272,36 @@ fi
 #single click button action for x11 when entering a window
 #focus follows mouse
 sudo -u $USER defaults write org.macosforge.xquartz.X11 wm_ffm -bool true
-echo "defaults write" >> /tmp/temp.tmp
+echo "defaults write" >> "$LOG0"
 
+# Can only install command line tools when this installer is done.
+# Otherwise one of them will hang.
+# So start a no hangup background process that waits til there is
+# no Installer running and then do xcode-select --install
+if xcode-select -p 2>&1 | grep 'error: unable to get' ; then
+  a=`osascript -e 'tell app "Installer" to display dialog "
+Mod files cannot be linked into NEURON unless
+Command Line Tools is installed.
+Note: selecting \"Yes\" will also set the system date to the current
+date via \"sntp -sS pool.ntp.org\" as \"xcode-select --install\" sometimes
+fails if the date is not accurate.
+This part of the installation sometimes takes 20 minutes.
+It will begin after the NEURON install successfully completes and
+no other Install process is running.
+Install?
+" buttons {"No", "Yes"} default button 2'`
+  if test "$a" = "button returned:Yes" ; then
+    pidinst=`ps ax | grep -v 'sed' | sed -n '/Installer/s/^ *\([0-9]*\).*/\1/p'`
+    echo $pidinst
+    if test "$pidinst" != "" ; then
+      b=`sntp -sS pool.ntp.org` # if time is not reasonably accurate, xcode-select will fail
+      ps $pidinst
+      nohup bash -c "
+        while ps $pidinst > /dev/null 2>&1 ; do
+          sleep 1 
+        done 
+        xcode-select --install
+      " > /dev/null &
+    fi
+  fi
+fi
