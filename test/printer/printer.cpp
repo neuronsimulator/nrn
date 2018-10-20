@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "catch.hpp"
+#include "catch/catch.hpp"
 #include "printer/json_printer.hpp"
 
 TEST_CASE("JSON Printer Tests", "[JSONPrinter]") {

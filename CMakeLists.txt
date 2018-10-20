@@ -39,7 +39,7 @@ find_python_module(yaml REQUIRED)
 include_directories(
     ${PROJECT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}/src
-    ${PROJECT_SOURCE_DIR}/src/ext
+    ${PROJECT_SOURCE_DIR}/ext
 )
 
 #=============================================================================
