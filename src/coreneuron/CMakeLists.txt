@@ -113,6 +113,7 @@ macro(mod2c_from_file name modlist searchpath)
     string(REGEX REPLACE "[ \t\n]+" ";" mods_ "${mods_}")
     list(REMOVE_ITEM mods_ "")
     list(APPEND added_mod_files "")
+    list(APPEND mod_filenames "")
 
     foreach(mod_ ${mods_})
         unset(modpath_)
@@ -137,6 +138,7 @@ macro(mod2c_from_file name modlist searchpath)
                 message(FATAL_ERROR "Multiple ${filename} exist in the search path, list of mod files found : ${modpath_} ${added_mod_files}")
             else()
                 list(APPEND added_mod_files "${modpath_}")
+                list(APPEND mod_filenames "${filename}")
                 mod2c_target(${name} "${modpath_}")
                 list(APPEND MOD_PATHS ${modpath_})
             endif()
@@ -160,6 +162,7 @@ macro(mod2c_from_file name modlist searchpath)
         message(STATUS "Adding halfgap.mod mod file for tests!")
     endif()
 
+    message(STATUS "MOD files used : ${mod_filenames}")
 endmacro()
 
 # Standard MOD files are always built
