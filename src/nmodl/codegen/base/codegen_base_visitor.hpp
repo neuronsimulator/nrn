@@ -230,6 +230,10 @@ class CodegenBaseVisitor : public AstVisitor {
         return name == "net_send";
     }
 
+    /// function name for net move
+    bool is_net_move(const std::string& name) {
+        return name == "net_move";
+    }
 
     /// function name for net event
     bool is_net_event(const std::string& name) {

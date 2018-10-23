@@ -580,18 +580,27 @@ void CodegenCVisitor::print_function_call(FunctionCall* node) {
         print_net_send_call(node);
         return;
     }
+
+    if (is_net_move(name)) {
+        print_net_move_call(node);
+        return;
+    }
+
     if (is_net_event(name)) {
         print_net_event_call(node);
         return;
     }
+
     auto arguments = node->get_arguments();
     printer->add_text("{}("_format(function_name));
+
     if (defined_method(name)) {
         printer->add_text(internal_method_arguments());
         if (!arguments.empty()) {
             printer->add_text(", ");
         }
     }
+
     print_vector_elements(arguments, ", ");
     printer->add_text(")");
 }
@@ -2149,6 +2158,33 @@ void CodegenCVisitor::print_net_send_call(FunctionCall* node) {
     }
     // clang-format off
     print_vector_elements(arguments, ", ");
+    printer->add_text(")");
+}
+
+
+void CodegenCVisitor::print_net_move_call(FunctionCall* node) {
+    if (!printing_net_receive) {
+        std::cout << "Error : net_move only allowed in NET_RECEIVE block" << std::endl;
+        abort();
+    }
+
+    auto arguments = node->get_arguments();
+    auto tqitem = get_variable_name("tqitem");
+    std::string weight_index = "-1";
+    std::string pnt = "pnt";
+
+    /// artificial cells don't use spike buffering
+    // clang-format off
+    if (info.artificial_cell) {
+        printer->add_text("artcell_net_move(&{}, {}, {}, t+"_format(tqitem, weight_index, pnt));
+    } else {
+        auto point_process = get_variable_name("point_process");
+        printer->add_text("net_send_buffering(");
+        printer->add_text("ml->_net_send_buffer, 2, {}, {}, {}, t+"_format(tqitem, weight_index, point_process));
+    }
+    // clang-format off
+    print_vector_elements(arguments, ", ");
+    printer->add_text(", 0.0");
     printer->add_text(")");
 }
 

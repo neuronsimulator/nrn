@@ -150,7 +150,9 @@ void CodegenHelperVisitor::find_non_range_variables() {
                    | NmodlInfo::dependent_def
                    | NmodlInfo::global_var
                    | NmodlInfo::pointer_var
-                   | NmodlInfo::bbcore_pointer_var;
+                   | NmodlInfo::bbcore_pointer_var
+                   | NmodlInfo::read_ion_var
+                   | NmodlInfo::write_ion_var;
     // clang-format on
     vars = psymtab->get_variables(with, without);
     for (auto& var : vars) {

@@ -310,6 +310,10 @@ class CodegenCVisitor : public CodegenBaseVisitor {
     void print_net_send_call(ast::FunctionCall* node);
 
 
+    /// net_move call
+    void print_net_move_call(ast::FunctionCall* node);
+
+
     /// net_event call
     void print_net_event_call(ast::FunctionCall* node);
 
