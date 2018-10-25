@@ -91,6 +91,7 @@ assert.h
 corecrt_startup.h
 crtdefs.h
 errno.h
+inttypes.h
 limits.h
 malloc.h
 math.h
@@ -102,6 +103,7 @@ pthread_unistd.h
 signal.h
 stdio.h
 stddef.h
+stdint.h
 stdlib.h
 string.h
 swprintf.inl
