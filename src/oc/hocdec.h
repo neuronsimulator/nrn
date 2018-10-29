@@ -8,6 +8,7 @@
 extern "C" {
 #endif
 
+#include    <stdio.h>
 #include	"nrnapi.h"
 #include	"hocassrt.h"
 #include	<string.h>
