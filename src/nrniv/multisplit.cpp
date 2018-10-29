@@ -14,7 +14,9 @@ extern "C" {
 void nrnmpi_multisplit(Section*, double x, int sid, int backbone_style);
 int nrn_multisplit_active_;
 
+extern int tree_changed;
 extern int diam_changed;
+extern void setup_topology();
 extern void nrn_cachevec(int);
 extern void nrn_matrix_node_free();
 extern void (*nrn_multisplit_setup_)();
@@ -384,6 +386,7 @@ void MultiSplitControl::multisplit(Section* sec, double x, int sid, int backbone
 		multisplit_list_ = new MultiSplitList();
 	}
 	Node* nd = node_exact(sec, x);
+	if (tree_changed) { setup_topology(); }
 //	printf("root of %s(%g) ", secname(sec), x);
 	Node* root;
 	for (sec = nd->sec; sec; sec = sec->parentsec) {
