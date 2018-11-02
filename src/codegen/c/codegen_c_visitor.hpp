@@ -36,6 +36,9 @@ class CodegenCVisitor : public CodegenBaseVisitor {
     /// internal method call was encountered while processing vebatim block
     bool internal_method_call_encountered = false;
 
+    /// index of watch statement being printed
+    int current_watch_statement = 0;
+
     /// number of threads to allocate
     int num_thread_objects() {
         return info.vectorize ? (info.thread_data_index + 1) : 0;
@@ -405,6 +408,10 @@ class CodegenCVisitor : public CodegenBaseVisitor {
     void print_net_send_buffer_kernel();
 
 
+    /// send event move block used in net receive as well as watch
+    void print_send_event_move();
+
+
     /// kernel for buffering net_receive events
     void print_net_receive_buffer_kernel();
 
@@ -488,23 +495,38 @@ class CodegenCVisitor : public CodegenBaseVisitor {
     /// mechanism registration function
     void print_mechanism_register();
 
+
+    /// print watch activate function
+    void print_watch_activate();
+
+
+    /// print watch activate function
+    void print_watch_check();
+
+
     /// all includes
     void codegen_includes();
+
 
     /// start of namespaces
     void codegen_namespace_begin();
 
+
     /// end of namespaces
     void codegen_namespace_end();
+
 
     /// common getter
     void codegen_common_getters();
 
+
     /// all classes
     void codegen_data_structures();
 
+
     /// all compute functions for every backend
     virtual void codegen_compute_functions();
+
 
     /// entry point to code generation
     virtual void codegen_all();
@@ -525,6 +547,7 @@ class CodegenCVisitor : public CodegenBaseVisitor {
         : CodegenBaseVisitor(mod_file, stream, aos, float_type) {
     }
 
+    virtual void visit_watch_statement(ast::WatchStatement* node) override;
     virtual void visit_function_call(ast::FunctionCall* node) override;
     virtual void visit_verbatim(ast::Verbatim* node) override;
     virtual void visit_program(ast::Program* node) override;

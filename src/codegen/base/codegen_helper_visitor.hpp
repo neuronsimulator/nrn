@@ -88,6 +88,9 @@ class CodegenHelperVisitor : public AstVisitor {
     virtual void visit_derivative_block(ast::DerivativeBlock* node) override;
     virtual void visit_net_receive_block(ast::NetReceiveBlock* node) override;
     virtual void visit_bbcore_ptr(ast::BbcorePtr* node) override;
+    virtual void visit_watch(ast::Watch* node) override;
+    virtual void visit_watch_statement(ast::WatchStatement* node) override;
+    virtual void visit_for_netcon(ast::ForNetcon* node) override;
     virtual void visit_program(ast::Program* node) override;
 };
 

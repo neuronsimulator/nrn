@@ -31,7 +31,10 @@ enum class BlockType {
     Ode,
 
     /// derivative block
-    State
+    State,
+
+    /// watch block
+    Watch
 };
 
 
@@ -76,7 +79,7 @@ struct IndexVariableInfo {
     /// is printed as array accesses
     bool is_integer = false;
 
-    /// if the variable is qualified as constant (this is propery of IndexVariable)
+    /// if the variable is qualified as constant (this is property of IndexVariable)
     bool is_constant = false;
 
     IndexVariableInfo(std::shared_ptr<symtab::Symbol> symbol,
