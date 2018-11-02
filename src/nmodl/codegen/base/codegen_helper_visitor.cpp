@@ -525,6 +525,22 @@ void CodegenHelperVisitor::visit_bbcore_ptr(BbcorePtr* node) {
 }
 
 
+void CodegenHelperVisitor::visit_watch(ast::Watch* node) {
+    info.watch_count++;
+}
+
+
+void CodegenHelperVisitor::visit_watch_statement(ast::WatchStatement* node) {
+    info.watch_statements.push_back(node);
+    node->visit_children(this);
+}
+
+
+void CodegenHelperVisitor::visit_for_netcon(ast::ForNetcon* node) {
+    info.for_netcon_used = true;
+}
+
+
 void CodegenHelperVisitor::find_solve_node() {
     if (info.solve_node != nullptr) {
         return;

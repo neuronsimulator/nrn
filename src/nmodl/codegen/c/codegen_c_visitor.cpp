@@ -519,6 +519,9 @@ std::string CodegenCVisitor::compute_method_name(BlockType type) {
     if (type == BlockType::Equation) {
         return method_name("nrn_cur");
     }
+    if (type == BlockType::Watch) {
+        return method_name("nrn_watch_check");
+    }
     throw std::logic_error("compute_method_name not implemented");
 }
 
@@ -566,6 +569,12 @@ void CodegenCVisitor::print_statement_block(ast::StatementBlock* node,
     if (close_brace) {
         printer->end_block();
     }
+}
+
+
+void CodegenCVisitor::visit_watch_statement(ast::WatchStatement* node) {
+    printer->add_text(
+        "nrn_watch_activate(inst, id, pnodecount, {})"_format(current_watch_statement++));
 }
 
 
@@ -1247,6 +1256,8 @@ void CodegenCVisitor::print_coreneuron_includes() {
     printer->add_line("#include <coreneuron/utils/randoms/nrnran123.h>");
     printer->add_line("#include <coreneuron/nrniv/nrniv_decl.h>");
     printer->add_line("#include <coreneuron/nrniv/ivocvect.h>");
+    printer->add_line("#include <coreneuron/mech/mod2c_core_thread.h>");
+    printer->add_line("#include <_kinderiv.h>");
 }
 
 
@@ -1666,7 +1677,8 @@ void CodegenCVisitor::print_mechanism_var_structure() {
     for (auto& var : int_variables) {
         auto name = var.symbol->get_name();
         if (var.is_index || var.is_integer) {
-            printer->add_line("{}{}* {}{};"_format(k_const(), int_type, k_restrict(), name));
+            auto qualifier = var.is_constant ? k_const() : "";
+            printer->add_line("{}{}* {}{};"_format(qualifier, int_type, k_restrict(), name));
         } else {
             auto qualifier = var.is_constant ? k_const() : "";
             auto type = var.is_vdata ? "void*" : default_float_data_type();
@@ -2034,7 +2046,7 @@ void CodegenCVisitor::print_global_function_common_code(BlockType type) {
         printer->add_line("double* {} vec_d = nt->_actual_d;"_format(k_restrict()));
         print_rhs_d_shadow_variables();
     }
-    printer->add_line("{}Datum* {}indexes = ml->pdata;"_format(k_const(), k_restrict()));
+    printer->add_line("Datum* {}indexes = ml->pdata;"_format(k_restrict()));
     printer->add_line("ThreadDatum* {}thread = ml->_thread;"_format(k_restrict()));
 
     if (type == BlockType::Initial) {
@@ -2094,6 +2106,126 @@ void CodegenCVisitor::print_nrn_alloc() {
     printer->add_line("// do nothing");
     printer->end_block();
     printer->add_newline();
+}
+
+/**
+ * Print nrn_watch_activate function used as a callback for every
+ * WATCH statement in the mod file.
+ * Todo : number of watch could be more than number of statements
+ * according to grammar. Check if this is correctly handled in neuron
+ * and coreneuron.
+ */
+void CodegenCVisitor::print_watch_activate() {
+    if (info.watch_statements.empty()) {
+        return;
+    }
+    codegen = true;
+    printer->add_newline(2);
+    auto inst = "{}* inst"_format(instance_struct());
+
+    printer->start_block(
+        "static void nrn_watch_activate({}, int id, int pnodecount, int watch_id) "_format(inst));
+
+    /// initialize all variables only during first watch statement
+    printer->add_line("if (watch_id == 0) {");
+    for (int i = 0; i < info.watch_count; i++) {
+        auto name = get_variable_name("watch{}"_format(i + 1));
+        printer->add_line("    {} = 0;"_format(name));
+    }
+    printer->add_line("}");
+
+    // todo : similar to neuron/coreneuron we are using
+    // first watch and ignoring rest.
+    for (int i = 0; i < info.watch_statements.size(); i++) {
+        auto& statement = info.watch_statements[i];
+        printer->start_block("if (watch_id == {})"_format(i));
+
+        auto varname = get_variable_name("watch{}"_format(i + 1));
+        printer->add_indent();
+        printer->add_text("{} = 2 + "_format(varname));
+        auto& watch = statement->statements.front();
+        watch->expression->visit_children(this);
+        printer->add_text(";");
+        printer->add_newline();
+
+        printer->end_block();
+        printer->add_newline();
+    }
+    printer->end_block();
+    printer->add_newline();
+    codegen = false;
+}
+
+/**
+ * Print kernel for watch activation
+ * todo : similar to print_watch_activate, we are using only
+ * first watch. need to verify with neuron/coreneuron about rest.
+ */
+
+void CodegenCVisitor::print_watch_check() {
+    codegen = true;
+    printer->add_newline(2);
+    printer->add_line("/** routine to check watch activation */");
+    print_global_function_common_code(BlockType::Watch);
+    print_channel_iteration_tiling_block_begin(BlockType::Watch);
+    print_channel_iteration_block_begin();
+    print_post_channel_iteration_common_code();
+
+    for (int i = 0; i < info.watch_statements.size(); i++) {
+        auto& statement = info.watch_statements[i];
+        auto& watch = statement->statements.front();
+        auto varname = get_variable_name("watch{}"_format(i + 1));
+
+        // start block 1
+        printer->start_block("if ({}&2)"_format(varname));
+
+        // start block 2
+        printer->add_indent();
+        printer->add_text("if (");
+        watch->expression->accept(this);
+        printer->add_text(") {");
+        printer->add_newline();
+        printer->increase_indent();
+
+        // start block 3
+        printer->start_block("if (({}&1) == 0)"_format(varname));
+
+        auto tqitem = get_variable_name("tqitem");
+        auto point_process = get_variable_name("point_process");
+        printer->add_indent();
+        printer->add_text("net_send_buffering(");
+        printer->add_text(
+            "ml->_net_send_buffer, 0, {}, 0, {}, t+0.0, "_format(tqitem, point_process));
+        watch->value->accept(this);
+        printer->add_text(");");
+        printer->add_newline();
+
+        printer->add_line("{} = 3;"_format(varname));
+        printer->end_block();
+        printer->add_newline();
+        // end block 3
+
+        // start block 3
+        printer->start_block("else"_format());
+        printer->add_line("{} = 2;"_format(varname));
+        printer->end_block();
+        printer->add_newline();
+        // end block 3
+
+        printer->decrease_indent();
+        printer->add_line("}");
+        // end block 2
+
+        printer->end_block();
+        printer->add_newline();
+        // end block 1
+    }
+
+    print_channel_iteration_block_end();
+    print_send_event_move();
+    printer->end_block();
+    printer->add_newline();
+    codegen = false;
 }
 
 
@@ -2227,6 +2359,25 @@ void CodegenCVisitor::print_net_init_kernel() {
     codegen = false;
 }
 
+void CodegenCVisitor::print_send_event_move() {
+    printer->add_newline();
+    printer->add_line("NetSendBuffer_t* nsb = ml->_net_send_buffer;");
+    // todo : update net send buffer on host
+    printer->add_line("for (int i=0; i < nsb->_cnt; i++) {");
+    printer->add_line("    int type = nsb->_sendtype[i];");
+    printer->add_line("    int tid = nt->id;");
+    printer->add_line("    double t = nsb->_nsb_t[i];");
+    printer->add_line("    double flag = nsb->_nsb_flag[i];");
+    printer->add_line("    int vdata_index = nsb->_vdata_index[i];");
+    printer->add_line("    int weight_index = nsb->_weight_index[i];");
+    printer->add_line("    int point_index = nsb->_pnt_index[i];");
+    // clang-format off
+    printer->add_line("    net_sem_from_gpu(type, vdata_index, weight_index, tid, point_index, t, flag);");
+    // clang-format on
+    printer->add_line("}");
+    printer->add_line("nsb->_cnt = 0;");
+    // todo : update net send buffer count on device
+}
 
 void CodegenCVisitor::print_net_receive_buffer_kernel() {
     if (!net_receive_required() || info.artificial_cell) {
@@ -2258,26 +2409,10 @@ void CodegenCVisitor::print_net_receive_buffer_kernel() {
     printer->add_line("}");
 
     if (info.net_send_used || info.net_event_used) {
-        printer->add_newline();
-        printer->add_line("NetSendBuffer_t* nsb = ml->_net_send_buffer;");
-        printer->add_line("for (int i=0; i < nsb->_cnt; i++) {");
-        printer->add_line("    int type = nsb->_sendtype[i];");
-        printer->add_line("    int tid = nt->id;");
-        printer->add_line("    double t = nsb->_nsb_t[i];");
-        printer->add_line("    double flag = nsb->_nsb_flag[i];");
-        printer->add_line("    int vdata_index = nsb->_vdata_index[i];");
-        printer->add_line("    int weight_index = nsb->_weight_index[i];");
-        printer->add_line("    int point_index = nsb->_pnt_index[i];");
-        // clang-format off
-        printer->add_line("    net_sem_from_gpu(type, vdata_index, weight_index, tid, point_index, t, flag);");
-        // clang-format on
-        printer->add_line("}");
+        print_send_event_move();
     }
 
     printer->add_newline();
-    if (info.net_send_used || info.net_event_used) {
-        printer->add_line("nsb->_cnt = 0;");
-    }
     printer->add_line("nrb->_displ_cnt = 0;");
     printer->add_line("nrb->_cnt = 0;");
 
@@ -2390,7 +2525,8 @@ void CodegenCVisitor::print_derivative_kernel_for_euler() {
     auto arguments = external_method_parameters();
 
     printer->add_newline(2);
-    printer->start_block("int {}({})"_format(node->get_name(), arguments));
+    printer->add_line("/* _euler_ state _{} */"_format(info.mod_suffix));
+    printer->start_block("int {}_{}({})"_format(node->get_name(), info.mod_suffix, arguments));
     printer->add_line(instance);
     print_statement_block(node->get_statement_block().get(), false, false);
     printer->add_line("return 0;");
@@ -2522,7 +2658,7 @@ void CodegenCVisitor::print_nrn_state() {
         printer->add_line(statement);
     } else if (info.euler_used) {
         auto args =
-            "{}, {}, {}, euler_{}_{}, {}"
+            "{}, {}, {}, _euler_{}_{}, {}"
             ""_format(num_primes, slist, dlist, block_name, suffix, thread_args);
         auto statement = "euler_thread({});"_format(args);
         printer->add_line(statement);
@@ -2772,6 +2908,8 @@ void CodegenCVisitor::codegen_compute_functions() {
 
     print_net_init_kernel();
     print_net_send_buffer_kernel();
+    print_watch_activate();
+    print_watch_check();
     print_net_receive();
     print_net_receive_buffer_kernel();
     print_nrn_init();

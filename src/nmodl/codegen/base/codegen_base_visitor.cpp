@@ -311,7 +311,7 @@ bool CodegenBaseVisitor::skip_statement(Statement* node) {
 
 bool CodegenBaseVisitor::net_send_buffer_required() {
     if (net_receive_required() && !info.artificial_cell) {
-        if (info.net_event_used || info.net_send_used) {
+        if (info.net_event_used || info.net_send_used || info.is_watch_used()) {
             return true;
         }
     }
@@ -604,12 +604,26 @@ void CodegenBaseVisitor::update_index_semantics() {
         info.semantics.emplace_back(index++, diam_variable, 1);
     }
 
-    if(info.area_used) {
+    if (info.area_used) {
         info.semantics.emplace_back(index++, area_variable, 1);
     }
 
     if (info.net_send_used) {
         info.semantics.emplace_back(index++, "netsend", 1);
+    }
+
+    /**
+     * Number of semantics for watch is one greater than number of
+     * actual watch statements in the mod file
+     */
+    if (info.watch_statements.size() > 0) {
+        for (int i = 0; i < info.watch_statements.size() + 1; i++) {
+            info.semantics.emplace_back(index++, "watch", 1);
+        }
+    }
+
+    if (info.for_netcon_used) {
+        info.semantics.emplace_back(index++, "fornetcon", 1);
     }
 }
 
@@ -681,6 +695,7 @@ std::vector<IndexVariableInfo> CodegenBaseVisitor::get_int_variables() {
             variables.emplace_back(make_symbol("point_process"), true);
         } else {
             variables.emplace_back(make_symbol("point_process"), false, false, true);
+            variables.back().is_constant = true;
         }
     }
 
@@ -729,8 +744,20 @@ std::vector<IndexVariableInfo> CodegenBaseVisitor::get_int_variables() {
             variables.emplace_back(make_symbol("tqitem"), true);
         } else {
             variables.emplace_back(make_symbol("tqitem"), false, false, true);
+            variables.back().is_constant = true;
         }
         info.tqitem_index = variables.size() - 1;
+    }
+
+    /**
+     * Variables for watch statements : note that there is one extra variable
+     * used in coreneuron compared to actual watch statements for compatibility
+     * with neuron (which uses one extra Datum variable)
+     */
+    if (info.watch_statements.size() > 0) {
+        for (int i = 0; i < info.watch_statements.size() + 1; i++) {
+            variables.emplace_back(make_symbol("watch{}"_format(i)), false, false, true);
+        }
     }
     return variables;
 }

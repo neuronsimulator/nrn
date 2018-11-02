@@ -165,6 +165,12 @@ namespace codegen {
         /// if area is used
         bool area_used = false;
 
+        /// if for_netcon is used
+        bool for_netcon_used = false;
+
+        /// number of watch expressions
+        int watch_count = 0;
+
         /**
          * thread_data_index indicates number of threads being allocated.
          * For example, if there is derivimplicit method used, then two thread
@@ -316,6 +322,9 @@ namespace codegen {
         /// all top level verbatim blocks
         std::vector<ast::Node*> top_verbatim_blocks;
 
+        /// all watch statements
+        std::vector<ast::WatchStatement*> watch_statements;
+
         /// tqitem index in int variables
         /// note that if tqitem doesn't exist then default value should be 0
         int tqitem_index = 0;
@@ -334,6 +343,11 @@ namespace codegen {
 
         /// if a current
         bool is_current(const std::string& name);
+
+        /// if watch statements are used
+        bool is_watch_used() const {
+            return watch_count > 0;
+        }
     };
 };  // namespace codegen
 
