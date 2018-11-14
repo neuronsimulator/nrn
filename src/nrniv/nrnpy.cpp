@@ -23,6 +23,7 @@ extern void (*p_nrnpython_start)(int);
 void nrnpython();
 static void (*p_nrnpython_real)();
 static void (*p_nrnpython_reg_real)();
+char* hoc_back2forward(char* s);
 }
 
 // following is undefined or else has the value of sys.api_version
@@ -130,8 +131,16 @@ static void set_nrnpylib() {
 
   if (nrnmpi_myid_world == 0) {
     char line[1024];
+	#ifdef MINGW
+    snprintf(line, 1024, "%s\\mingw\\usr\\bin\\bash %s/bin/nrnpyenv.sh %s --NEURON_HOME=%s",
+      neuron_home, 
+	  hoc_back2forward(neuron_home),
+	  (nrnpy_pyexe && strlen(nrnpy_pyexe) > 0) ? nrnpy_pyexe : "",
+	  hoc_back2forward(neuron_home));
+	#else
     snprintf(line, 1024, "bash nrnpyenv.sh %s",
       (nrnpy_pyexe && strlen(nrnpy_pyexe) > 0) ? nrnpy_pyexe : "");
+	#endif
     FILE* p = popen(line, "r");
     if (!p) {
       printf("could not popen '%s'\n", line);

@@ -23,7 +23,7 @@ cp $HOME/.inputrc $N/etc/inputrc
 #cp /msys2_shell.cmd $N
 
 binprog="basename bash cat cp dirname echo find grep ls make mintty
-  mkdir mv rebase rm sed sh sort unzip which cygpath cygcheck"
+  mkdir mv rebase rm sed sh sort unzip which cygpath cygcheck uname"
 for i in $binprog ; do
   echo $i
   cp /usr/bin/$i.exe $N/usr/bin/$i.exe
@@ -84,8 +84,6 @@ copy mingw64/x86_64-w64-mingw32/include '
 _mingw.h
 _mingw_mac.h
 _mingw_off_t.h
-_mingw_print_pop.h
-_mingw_print_push.h
 _mingw_secapi.h
 assert.h
 corecrt_startup.h
