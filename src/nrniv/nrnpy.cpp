@@ -130,26 +130,28 @@ static void set_nrnpylib() {
   if (nrnpy_pyhome) { nrnpy_pyhome = strdup(nrnpy_pyhome); }
 
   if (nrnmpi_myid_world == 0) {
+    int linesz = 1024 + (nrnpy_pyexe ? strlen(nrnpy_pyexe) : 0);
     #ifdef MINGW
-    char* line = new char[1024 + 3*strlen(neuron_home)];
+    linesz += 3*strlen(neuron_home);
+    char* line = new char[linesz+1];
     char* bfnrnhome = strdup(neuron_home);
-    hoc_back2forward(neuron_home);
-    snprintf(line, 1024, "%s\\mingw\\usr\\bin\\bash %s/bin/nrnpyenv.sh %s --NEURON_HOME=%s",
+    hoc_back2forward(bfnrnhome);
+    sprintf(line, "%s\\mingw\\usr\\bin\\bash %s/bin/nrnpyenv.sh %s --NEURON_HOME=%s",
       neuron_home, 
       bfnrnhome,
       (nrnpy_pyexe && strlen(nrnpy_pyexe) > 0) ? nrnpy_pyexe : "",
       bfnrnhome);
-    delete [] bfnrnhome;
+    free(bfnrnhome);
     #else
-    char* line = new char[1024 + 3*strlen(neuron_home)];
-    snprintf(line, 1024, "bash nrnpyenv.sh %s",
+    char* line = new char[linesz+1];
+    sprintf(line, "bash nrnpyenv.sh %s",
       (nrnpy_pyexe && strlen(nrnpy_pyexe) > 0) ? nrnpy_pyexe : "");
    #endif
     FILE* p = popen(line, "r");
     if (!p) {
       printf("could not popen '%s'\n", line);
     }else{
-      while(fgets(line, 1024, p)) {
+      while(fgets(line, linesz, p)) {
         char* cp;
         // must get rid of beginning '"' and trailing '"\n'
         if (!nrnpy_pyhome && (cp = strstr(line, "export PYTHONHOME="))) {
