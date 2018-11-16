@@ -5,9 +5,8 @@ import bisect
 cimport numpy
 from numpy import linalg
 cimport cython
-from neuron.rxd.rxdException import RxDException
+from neuron.crxd.rxdException import RxDException
 import neuron
-import neuron.rxd.morphology
 
 cdef extern from "math.h":
     double sqrt(double)
@@ -338,7 +337,10 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx):
                     parent_sec_name.append(None)
             else:
                 branches.append(sec)
-                parent_sec_name.append(neuron.rxd.morphology.parent(sec))
+                if sec.trueparentseg():
+                    parent_sec_name.append(sec.trueparentseg().sec)
+                else:
+                    parent_sec_name.append(None)
 
 
 

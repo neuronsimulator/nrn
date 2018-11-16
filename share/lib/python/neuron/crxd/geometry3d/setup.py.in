@@ -45,11 +45,11 @@ else:
     if mingw and sys.version_info[0] == 2:
         define_macros=[('MS_WIN64', None)]
 
-    include_dirs = [nrn_srcdir + '/share/lib/python/neuron/rxd/geometry3d', '.', numpy.get_include()]
+    include_dirs = [nrn_srcdir + '/share/lib/python/neuron/crxd/geometry3d', '.', numpy.get_include()]
 
-    srcdir = nrn_srcdir + '/share/lib/python/neuron/rxd/geometry3d/'
+    srcdir = nrn_srcdir + '/share/lib/python/neuron/crxd/geometry3d/'
 
-    #    name='neuron/rxd/geometry3d',
+    #    name='neuron/crxd/geometry3d',
     setup(
         ext_modules = [
                        Extension("graphicsPrimitives",
@@ -65,5 +65,5 @@ else:
                                  define_macros=define_macros,
                                  include_dirs=include_dirs)],
     )
-    #    package_dir = {'': instdir + '/share/lib/python/neuron/rxd/geometry3d'}
+    #    package_dir = {'': instdir + '/share/lib/python/neuron/crxd/geometry3d'}
 

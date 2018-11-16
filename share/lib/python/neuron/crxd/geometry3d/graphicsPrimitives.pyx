@@ -6,7 +6,7 @@
 
 import bisect
 cimport cython
-from neuron.rxd.rxdException import RxDException
+from neuron.crxd.rxdException import RxDException
 
 cdef extern from "math.h":
     double sqrt(double)
