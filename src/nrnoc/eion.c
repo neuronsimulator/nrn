@@ -56,7 +56,7 @@ void ion_register(void) {
 	in use and not an ion;	and the mechanism subtype otherwise.
 	*/
 	char* name;
-	char buf[100];
+	char* buf;
 	Symbol *s;
 	Symlist* sav;
 	int fail;
@@ -64,10 +64,12 @@ void ion_register(void) {
 	sav = hoc_symlist;
 	hoc_symlist = hoc_top_level_symlist;
 	name = gargstr(1);
+	buf = emalloc(strlen(name) + 10);
 	sprintf(buf, "%s_ion", name);
 	s = hoc_lookup(buf);
 	if (s && s->type == MECHANISM && memb_func[s->subtype].alloc == ion_alloc) {
 		hoc_symlist = sav;
+		free(buf);
 		hoc_retpushx((double)s->subtype); return;
 	}
 	if (s) { fail = 1; }
@@ -78,6 +80,7 @@ void ion_register(void) {
 	sprintf(buf, "di%s_dv_", name); if (hoc_lookup(buf))  { fail = 1; }
 	if (fail) {
 		hoc_symlist = sav;
+		free(buf);
 		hoc_retpushx(-1.); return;
 	}
 	hoc_symlist = hoc_built_in_symlist;
@@ -86,6 +89,7 @@ void ion_register(void) {
 	sprintf(buf, "%s_ion", name);
 	s = hoc_lookup(buf);
 	hoc_retpushx((double)s->subtype);
+	free(buf);
 }
 
 void ion_charge(void) {
@@ -101,10 +105,15 @@ void ion_reg(const char* name, double valence)
 {
 	int i, mechtype;
 	Symbol *s;
-	char buf[7][50];
+	char* buf[7];
 	double val;
 #define VAL_SENTINAL -10000.
 
+	{int n = strlen(name) + 10;
+	  for (i=0; i < 7; ++i) {
+		buf[i] = emalloc(n);
+	  }
+	}
 	Sprintf(buf[0], "%s_ion", name);
 	Sprintf(buf[1], "e%s", name);
 	Sprintf(buf[2], "%si", name);
@@ -187,6 +196,9 @@ two USEION statements (%g and %g)\n",
 #endif
 	}else if (valence != VAL_SENTINAL) {
 		global_charge(s->subtype) = valence;
+	}
+	for (i=0; i < 7; ++i) {
+		free(buf[i]);
 	}
 }
 

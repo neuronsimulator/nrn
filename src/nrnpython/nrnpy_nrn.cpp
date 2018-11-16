@@ -1660,17 +1660,15 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname,
   return err;
 }
 
-static bool striptrail(char* buf, const char* n, const char* m) {
+static bool striptrail(char* buf, int sz, const char* n, const char* m) {
     int nlen = strlen(n);
     int mlen = strlen(m);
     int u = nlen - mlen - 1; // should be location of _
     if (u > 0 && n[u] == '_') { // likely n is name_m
-      for (int i = 1; i <= mlen; ++i) {
-        if (n[u + i] != m[i - 1]) {
+      if (strcmp(n+(u+1), m) != 0) {
           return false;
-        }
       }
-      strncpy(buf, n, u);
+      strncpy(buf, n, sz);
       buf[u] = '\0';
       return true;
     }
@@ -1689,8 +1687,9 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
   // printf("mech_getattro %s\n", n);
   PyObject* result = NULL;
   NrnProperty np(self->prop_);
-  char buf[200];
   int isptr = (strncmp(n, "_ref_", 5) == 0);
+  int bufsz = strlen(n) + 6;
+  char *buf = new char[bufsz];
   sprintf(buf, "%s_%s", isptr ? n + 5 : n,
           memb_func[self->prop_->type].sym->name);
   Symbol* sym = np.find(buf);
@@ -1719,7 +1718,7 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
     char* mname = memb_func[self->prop_->type].sym->name;
     int mnamelen = strlen(mname);
     for (Symbol* s = np.first_var(); np.more_var(); s = np.next_var()) {
-      if (!striptrail(buf, s->name, mname)) {
+      if (!striptrail(buf, bufsz, s->name, mname)) {
         strcpy(buf, s->name);
       }
       int err = PyDict_SetItemString(result, buf, Py_None);
@@ -1729,6 +1728,7 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
     result = PyObject_GenericGetAttr((PyObject*)self, pyname);
   }
   Py_DECREF(pyname);
+  delete [] buf;
   return result;
 }
 

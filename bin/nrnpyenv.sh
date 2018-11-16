@@ -36,6 +36,17 @@ export originalPYTHONPATH="$PYTHONPATH"
 export originalPYTHONHOME="$PYTHONHOME"
 export originalLDLIBRARYPATH="$LD_LIBRARY_PATH"
 
+# get the last argument
+for last; do true; done
+
+# if the last argument begins with --NEURON_HOME=
+if [[ $last == "--NEURON_HOME="* ]] ; then
+last=${last#"--NEURON_HOME="}
+export PATH=/cygdrive/${last//:/}/mingw/usr/bin:/cygdrive/${last//:/}/mingw/mingw64/bin:$PATH
+# remove the last argument
+set -- "${@:1:$(($#-1))}"
+fi
+
 if test "$PYTHONHOME" != "" ; then
   echo "# Ignoring existing PYTHONHOME=$PYTHONHOME."
   unset PYTHONHOME

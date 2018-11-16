@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
 	nh = hoc_dos2unixpath(nrnhome);
 	args = argstr(argc, argv);
 	temp = getenv("TEMP");
-	if (!temp) { temp = "c:/tmp"; }
+	if (!temp) {temp = strdup("c:/tmp"); }
 	temp = hoc_dos2unixpath(temp);
 	buf = new char[strlen(args) + 3*strlen(nh) + 200 + strlen(temp)];
 	

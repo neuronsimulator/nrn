@@ -35,7 +35,7 @@ do
 done
 
 echo '
-modl_reg(){
+void modl_reg(){
 	//nrn_mswindll_stdio(stdin, stdout, stderr);
     if (!nrn_nobanner_) if (nrnmpi_myid < 1) {
 	fprintf(stderr, "Additional mechanisms from files'$newline'");

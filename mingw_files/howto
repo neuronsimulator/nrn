@@ -1,6 +1,6 @@
 #!/bin/bash
 # howto 36   # builds for 3.6
-# howto 37 36 27 # builds for 37 3.6 and 2.7
+# howto 37 36 27 # builds for 3.7 3.6 and 2.7
 #see nrn/howtomingw
 
 set -e
@@ -33,7 +33,7 @@ fi
 
 cd ~/neuron/nrnwinobj
 
-#comment tout if you do not have vcenv.sh. In that case there may be
+#comment out if you do not have vcenv.sh. In that case there may be
 #problems in building the dlls from cython generated cpp files in
 # nrn/share/lib/python/neuron/rxd/geometry3d under python3.5
 . ../vcenv.sh  #visual c environment allows cl for python (rxd for 35)
@@ -51,7 +51,9 @@ PYDIR=/f/python${PYVER}
  --host=x86_64-w64-mingw32 PYINCDIR="$PYDIR/include" \
  --with-paranrn=dynamic MPICC=x86_64-w64-mingw32-gcc \
  MPICXX=x86_64-w64-mingw32-g++ \
- CFLAGS='-DMSMPI_NO_SAL -I/c/ms-mpi/include' LIBS='-L/c/ms-mpi/lib/x64 -lmsmpi' \
+ CFLAGS='-DMSMPI_NO_SAL -I/c/ms-mpi/include -O2' \
+ CXXFLAGS='-DMSMPI_NO_SAL -I/c/ms-mpi/include -O2' \
+ LIBS='-L/c/ms-mpi/lib/x64 -lmsmpi' \
   PYINCDIR=$PYDIR/include \
   PYLIBDIR=$PYDIR/libs \
   PYLIB="-L$PYDIR/libs -lpython${PYVER}" \

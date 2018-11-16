@@ -57,6 +57,7 @@ public:
 	void cell();
 	void outputcell(int);
 	void spike_record(int, IvocVect*, IvocVect*);
+	void spike_record(IvocVect*, IvocVect*, IvocVect*);
 	void netpar_solve(double);
 	Object** gid2obj(int);
 	Object** gid2cell(int);
