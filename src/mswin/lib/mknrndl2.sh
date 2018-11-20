@@ -1,3 +1,5 @@
+#!sh
+set -e
 
 NEURONHOME=$N
 M=$N/lib
