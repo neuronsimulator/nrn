@@ -627,7 +627,7 @@ fi
 if test "$with_nmodl_only" != "yes" -a "$with_nrnpython_only" != "yes" ; then
 
 #Run CMake for CVODE
-CVODE_CMAKE_CMD="cmake .."
+CVODE_CMAKE_CMD="cmake .. -DCMAKE_INSTALL_PREFIX=${prefix} -DEXAMPLES_INSTALL=OFF"
 CVODE_BUILD_PATH=src/cvode-3.2.1/build-autoconf
 AC_MSG_RESULT([Running CMake command for CVODE: $CVODE_CMAKE_CMD])
 
