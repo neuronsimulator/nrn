@@ -625,6 +625,24 @@ fi
 
 
 if test "$with_nmodl_only" != "yes" -a "$with_nrnpython_only" != "yes" ; then
+
+#Run CMake for CVODE
+CVODE_CMAKE_CMD="cmake .."
+CVODE_BUILD_PATH=src/cvode-3.2.1/build-autoconf
+AC_MSG_RESULT([Running CMake command for CVODE: $CVODE_CMAKE_CMD])
+
+if test ${CC}; then
+  CVODE_CMAKE_CMD="${CVODE_CMAKE_CMD} -DCMAKE_C_COMPILER=${CC}"
+fi
+
+if test ${CFLAGS}; then
+  CVODE_CMAKE_CMD="${CVODE_CMAKE_CMD} -DCMAKE_C_FLAGS=\"${CFLAGS}\""
+fi
+
+cd $CVODE_BUILD_PATH
+$CVODE_CMAKE_CMD
+cd ../../../
+
 AC_CONFIG_HEADERS([nrnconf.h])
 AC_CONFIG_HEADERS([src/nrnoc/nrnconfigargs.h])
 AC_CONFIG_HEADERS([src/oc/nrnmpiuse.h])
