@@ -21,6 +21,12 @@
 
 #include <map> // Introduced for NonVSrcUpdateInfo
 
+#ifndef USE_ALLTOALL_TRANSFER
+// define to 1 if want to use nrnmpi_dbl_alltoall
+// instead of nrnmpi_dbl_alltoallv for mpi_transfer
+#define USE_ALLTOALL_TRANSFER 0
+#endif
+
 #ifndef NRNLONGSGID
 #define NRNLONGSGID 0
 #endif
@@ -133,6 +139,9 @@ extern int nrnmpi_int_allmax(int);
 extern void sgid_alltoallv(sgid_t*, int*, int*, sgid_t*, int*, int*);
 extern void nrnmpi_int_alltoallv(int*, int*, int*,  int*, int*, int*);
 extern void nrnmpi_dbl_alltoallv(double*, int*, int*,  double*, int*, int*);
+#if USE_ALLTOALL_TRANSFER
+extern void nrnmpi_dbl_alltoall(double*, double*, int);
+#endif
 #endif
 }
 
@@ -176,6 +185,9 @@ static double** poutsrc_; // prior to mpi copy src value to proper place in outs
 static int* poutsrc_indices_; // for recalc pointers
 static int insrc_buf_size_, *insrccnt_, *insrcdspl_;
 static int outsrc_buf_size_, *outsrccnt_, *outsrcdspl_;
+#if USE_ALLTOALL_TRANSFER
+static int alltoall_cnt_;
+#endif
 static MapSgid2Int* sid2insrc_; // received interprocessor sid data is
 // associated with which insrc_buf index. Created by nrnmpi_setup_transfer
 // and used by mk_ttd
@@ -582,14 +594,32 @@ void thread_vi_compute(NrnThread* _nt) {
 
 void mpi_transfer() {
 	int i, n = outsrc_buf_size_;
+#if USE_ALLTOALL_TRANSFER
+	// Each rank portion of the outsrc_buf_ is the same size (alltoall_cnt_).
+	// Only copy outsrccnt_[rank] items beginning at alltoall_cnt_*rank.
+	i = 0;
+	for (int rank = 0; rank < nrnmpi_numprocs; ++rank) {
+		int m = outsrccnt_[rank];
+		int displ = alltoall_cnt_*rank;
+		for (int j = 0; j < m; ++j) {
+			outsrc_buf_[displ + j] = *poutsrc_[i++];
+		}
+	}
+	assert(i == n);
+#else
 	for (i=0; i < n; ++i) {
 		outsrc_buf_[i] = *poutsrc_[i];
 	}
+#endif
 #if PARANEURON
 	if (nrnmpi_numprocs > 1) {
 		double wt = nrnmpi_wtime();
+#if USE_ALLTOALL_TRANSFER
+		nrnmpi_dbl_alltoall(outsrc_buf_, insrc_buf_, alltoall_cnt_);
+#else
 		nrnmpi_dbl_alltoallv(outsrc_buf_, outsrccnt_, outsrcdspl_,
 			insrc_buf_, insrccnt_, insrcdspl_);
+#endif
 		nrnmpi_transfer_wait_ += nrnmpi_wtime() - wt;
 		errno = 0;
 	}
@@ -626,6 +656,10 @@ void thread_transfer(NrnThread* _nt) {
 	if (target_ptr_need_update_cnt_ > target_ptr_update_cnt_) {
 		target_ptr_update();
 	}
+#if USE_ALLTOALL_TRANSFER
+	// Each rank portion of the insrc_buf_ is the same size (alltoall_cnt_).
+	// ttd.sv has been modified to point to the proper elements of insrc_buf.
+#endif
 	TransferThreadData& ttd = transfer_thread_data_[_nt->id];
 	for (int i = 0; i < ttd.cnt; ++i) {
 		*(ttd.tv[i]) = *(ttd.sv[i]);
@@ -794,10 +828,23 @@ void nrnmpi_setup_transfer() {
 	// construct outsrc_buf, outsrc_buf_size, outsrccnt_, outsrcdspl_
 	// and poutsrc_;
 	outsrccnt_ = send_to_want_cnt;
+#if USE_ALLTOALL_TRANSFER
+	// Need the global max of all outsrccnt (alltoall_cnt_) as that
+	// is the number of doubles each rank sends to all ranks with alltoall.
+	alltoall_cnt_ = 0;
+	for (int i=0; i < nrnmpi_numprocs; ++i) {
+	  if (outsrccnt_[i] > alltoall_cnt_) {
+	    alltoall_cnt_ = outsrccnt_[i];
+	  }
+	}
+	alltoall_cnt_ = nrnmpi_int_sum_reduce(alltoall_cnt_);
+	outsrc_buf_ = new double[nrnmpi_numprocs*alltoall_cnt_];
+#else
+	outsrc_buf_ = new double[szalloc];
+#endif
 	outsrcdspl_ = send_to_want_displ;
 	outsrc_buf_size_ = outsrcdspl_[nrnmpi_numprocs];
 	szalloc = outsrc_buf_size_ ? outsrc_buf_size_ : 1;
-	outsrc_buf_ = new double[szalloc];
 	poutsrc_ = new double*[szalloc];
 	poutsrc_indices_ = new int[szalloc];
 	for (int i=0; i < outsrc_buf_size_; ++i) {
@@ -815,7 +862,6 @@ void nrnmpi_setup_transfer() {
 			// the v+vext case can only be done after mk_svib()
 		}
 		poutsrc_indices_[i] = srcindex;
-		outsrc_buf_[i] = double(sid); // see step 5
 	}
 	delete [] send_to_want;
 
@@ -825,12 +871,31 @@ void nrnmpi_setup_transfer() {
 	insrcdspl_ = recv_from_have_displ;
 	insrc_buf_size_ = insrcdspl_[nrnmpi_numprocs];
 	szalloc = insrc_buf_size_ ? insrc_buf_size_ : 1;
+#if USE_ALLTOALL_TRANSFER
+	insrc_buf_ = new double[nrnmpi_numprocs*alltoall_cnt_];
+#else
 	insrc_buf_ = new double[szalloc];
+#endif
 
 	// map sid to insrc_buf_ indices.
 	// mk_ttd can then construct the right pointer to the source.
 	sid2insrc_ = seen; // since seen was constructed and then modified
 		// way above this. Might be better to reconstruct here.
+#if USE_ALLTOALL_TRANSFER
+	// Recalculate the indices for sid2insrc to reflect alltoall
+	// constant alltoall_cnt_ size transfer to each rank.
+	int i = 0;
+	for (int rank = 0; rank < nrnmpi_numprocs; ++rank) {
+		int m = insrccnt_[rank];
+		int displ = alltoall_cnt_*rank;
+		for (int j = 0; j < m; ++j) {
+			sgid_t sgid = recv_from_have[i++];
+			int x;
+			assert(sid2insrc_->find(sgid, x));
+			(*sid2insrc_)[sgid] = displ + j;
+		}
+	}
+#endif
 
 	nrnmpi_v_transfer_ = mpi_transfer;
     }	

@@ -249,6 +249,10 @@ extern void nrnmpi_int_alltoall(int* s, int* r, int n) {
 	MPI_Alltoall(s, n, MPI_INT, r, n, MPI_INT, nrnmpi_comm);
 }
 
+extern void nrnmpi_dbl_alltoall(double* s, double* r, int n) {
+	MPI_Alltoall(s, n, MPI_DOUBLE, r, n, MPI_DOUBLE, nrnmpi_comm);
+}
+
 extern void nrnmpi_int_alltoallv(int* s, int* scnt, int* sdispl,
     int* r, int* rcnt, int* rdispl) {
 	MPI_Alltoallv(s, scnt, sdispl, MPI_INT,

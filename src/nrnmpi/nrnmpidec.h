@@ -80,6 +80,7 @@ extern void nrnmpi_long_allgatherv_inplace(long* srcdest, int* n, int* dspl);
 extern void nrnmpi_long_alltoallv(int64_t* s, int* scnt, int* sdispl, int64_t* r, int* rcnt, int* rdispl);
 extern void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl);
 extern void nrnmpi_dbl_allgatherv_inplace(double* srcdest, int* n, int* dspl);
+extern void nrnmpi_dbl_alltoall(double* s, double* r, int n);
 extern void nrnmpi_dbl_alltoallv(double* s, int* scnt, int* sdispl, double* r, int* rcnt, int* rdispl);
 extern void nrnmpi_char_alltoallv(char* s, int* scnt, int* sdispl, char* r, int* rcnt, int* rdispl);
 extern void nrnmpi_dbl_broadcast(double* buf, int cnt, int root);
