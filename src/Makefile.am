@@ -14,14 +14,10 @@ else
 NMODL_SUBDIRS = modlunit nmodl
 endif
 NRNOC_SUBDIRS = sparse sparse13 scopmath Random123 nrnmpi oc nrnoc
-NRNIV_SUBDIRS = sundials mesch gnu ivoc nrncvode parallel nrniv
+NRNIV_SUBDIRS = mesch gnu ivoc nrncvode parallel nrniv
 IVOS_SUBDIRS = ivos
 NRNJAVA_SUBDIRS = nrnjava
 NRNPYTHON_SUBDIRS = nrnpython
-
-# CVODE does not allow build to be performed in the source folder
-cvodebuild = cvode-3.2.1/build-autoconf
-CVODE_SUBDIRS = cvode-3.2.1
 
 if NMODL_BUILD
 nmodlbuild = $(NMODL_SUBDIRS)
@@ -93,14 +89,14 @@ if NRNPYTHON_ONLY
 SUBDIRS = $(nrnpythonbuild) mswin
 else
 SUBDIRS = $(readlinebuild) $(memacsbuild) $(nmodlbuild) $(NRNOC_SUBDIRS) \
-	$(nrnjavabuild) $(ivosbuild) $(nrnpythonbuild) $(cvodebuild) \
+	$(nrnjavabuild) $(ivosbuild) $(nrnpythonbuild) \
 	$(build_6229) $(nrnivbuild) $(mos2nrnbuild) $(neuronmusicbuild) \
 	mac mswin
 endif
 endif
 
 DIST_SUBDIRS = $(MEMACS_SUBDIRS) $(READLINE_SUBDIRS) $(NMODL_SUBDIRS) $(NRNOC_SUBDIRS) \
-	$(NRNJAVA_SUBDIRS) $(NRNIV_SUBDIRS) $(IVOS_SUBDIRS) $(CVODE_SUBDIRS) \
+	$(NRNJAVA_SUBDIRS) $(NRNIV_SUBDIRS) $(IVOS_SUBDIRS) \
 	$(NRNPYTHON_SUBDIRS) mswin uxnrnbbs mac ni_pci_6229 neuronmusic
 
 dist-hook: $(npydir)

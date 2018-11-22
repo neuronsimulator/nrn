@@ -39,14 +39,25 @@ static MUTDEC
 #if MAC
 #include "d_avec.h"
 #endif
-//#include "shared/sundialstypes.h"
-//#include "shared/nvector_serial.h"
-#include "cvodes/cvodes.h"
-#include "cvodes/cvodes_impl.h"
-#include "cvodes/cvdense.h"
-#include "cvodes/cvdiag.h"
-#include "shared/dense.h"
-#include "ida/ida.h"
+
+#include <cvode/cvode.h>           /* prototypes for CVODE fcts, consts*/
+#include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts, macros*/
+#include <sundials/sundials_types.h> /* definition of type realtype*/
+#include "cvode/cvode_impl.h"      /* definition of CVodeMem*/
+
+// For Sparse Matrix resolutions
+//#include <cvodes/cvodes_superlumt.h>  /* prototype for CVSUPERLUMT */
+#include <sundials/sundials_sparse.h> /* definitions SlsMat */
+
+// For Dense Matrix resolutions
+#include <cvode/cvode_direct.h>    /* access to CVDls interface            */
+#include <sundials/sundials_types.h> /* defs. of realtype, sunindextype */
+#include <sunlinsol/sunlinsol_dense.h> /* access to dense SUNLinearSolver */
+#include <sunmatrix/sunmatrix_dense.h> /* access to dense SUNMatrix */
+
+// For Pre-conditioned matrix solvers
+#include <cvode/cvode_diag.h> /*For Approx Diagonal matrix*/
+
 #include "nonvintblock.h"
 
 extern "C" {

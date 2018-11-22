@@ -3,9 +3,8 @@
 
 #include "nrnmpi.h"
 #include "nrnneosm.h"
-//#include "shared/nvector_serial.h"
-#include "shared/nvector.h"
 #include "membfunc.h"
+#include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts, macros*/
 
 class NetCvode;
 class Daspk;
