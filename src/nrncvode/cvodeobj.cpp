@@ -15,7 +15,10 @@ extern "C" int hoc_return_type_code;
 #include <math.h>
 #include <stdlib.h>
 #include "classreg.h"
-#include "nrnoc2iv.h"
+/*TODO Michael, if I configure with --without-iv this folder is not part
+ * or the include flags (-I) and files cant be found unless prefixed
+ * with ../nrniv/ */
+#include "../nrniv/nrnoc2iv.h"
 #include "datapath.h"
 #include "cvodeobj.h"
 #include "netcvode.h"
@@ -43,11 +46,11 @@ static MUTDEC
 #include <cvode/cvode.h>           /* prototypes for CVODE fcts, consts*/
 #include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts, macros*/
 #include <sundials/sundials_types.h> /* definition of type realtype*/
-#include "cvode/cvode_impl.h"      /* definition of CVodeMem*/
+#include <cvode/cvode_impl.h>      /* definition of CVodeMem*/
 
 // For Sparse Matrix resolutions
 //#include <cvodes/cvodes_superlumt.h>  /* prototype for CVSUPERLUMT */
-#include <sundials/sundials_sparse.h> /* definitions SlsMat */
+//#include <sundials/sundials_sparse.h> /* definitions SlsMat */
 
 // For Dense Matrix resolutions
 #include <cvode/cvode_direct.h>    /* access to CVDls interface            */

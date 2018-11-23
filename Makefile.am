@@ -8,9 +8,9 @@ host_cpu = @host_cpu@
 NVER = $(PACKAGE_VERSION)
 
 if NMODL_ONLY
-SUBDIRS = src contrib
+SUBDIRS = contrib/sundials/build src
 else
-SUBDIRS = src contrib bin share
+SUBDIRS = contrib/sundials/build src bin share
 endif
 #
 # Install libtool; it's needed to compile the "special" program.
