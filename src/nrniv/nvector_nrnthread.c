@@ -723,6 +723,15 @@ mydebug2("vl1norm %.20g\n", retval);
   return(retval);
 }
 
+void N_VOneMask_Serial(N_Vector x)
+{
+  long int N  = NV_LENGTH_S(x);
+  realtype *xd = NV_DATA_S(x);
+  for (long int i=0; i<N; i++,xd++) {
+    if (*xd != ZERO) *xd = ONE;
+  }
+}
+
 static void* v1mask(NrnThread* nt) {
   int i = nt->id;
   N_VOneMask_Serial(xarg(i));
