@@ -612,8 +612,8 @@ realtype N_VWrmsNorm_NrnThreadLD(N_Vector x, N_Vector w)
 #if USELONGDOUBLE
   retval = longdretval;
 #endif
-mydebug2("vwrmsnorm %.20g\n", RSqrt(retval / N));
-  return(RSqrt(retval / N));
+mydebug2("vwrmsnorm %.20g\n", SUNRsqrt(retval / N));
+  return(SUNRsqrt(retval / N));
 }
 
 static realtype vwrmsnormmask_help(N_Vector x, N_Vector w, N_Vector id)
@@ -649,8 +649,8 @@ realtype N_VWrmsNormMask_NrnThreadLD(N_Vector x, N_Vector w, N_Vector id)
   retval = ZERO;
   xpass wpass idpass
   nrn_multithread_job(vwrmsnormmask);
-mydebug2("vwrmsnormmask %.20g\n", RSqrt(retval / N));
-  return(RSqrt(retval / N));
+mydebug2("vwrmsnormmask %.20g\n", SUNRsqrt(retval / N));
+  return(SUNRsqrt(retval / N));
 }
 
 static void* vmin(NrnThread* nt) {
@@ -701,8 +701,8 @@ realtype N_VWL2Norm_NrnThreadLD(N_Vector x, N_Vector w)
   xpass wpass
   nrn_multithread_job(vwl2norm);
   N  = NV_LENGTH_NT_LD(x);
-mydebug2("vwl2norm %.20g\n", RSqrt(retval));
-  return(RSqrt(retval));
+mydebug2("vwl2norm %.20g\n", SUNRsqrt(retval));
+  return(SUNRsqrt(retval));
 }
 
 static void* vl1norm(NrnThread* nt) {

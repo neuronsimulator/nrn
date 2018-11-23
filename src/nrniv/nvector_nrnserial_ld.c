@@ -32,6 +32,7 @@
 
 #include "nvector_nrnserial_ld.h"
 #include <sundials/sundials_types.h> /* defs. of realtype, sunindextype */
+#include <sundials/sundials_math.h> /* defs. of realtype, sunindextype */
 
 #define ZERO   RCONST(0.0)
 #define HALF   RCONST(0.5)
@@ -551,7 +552,7 @@ void N_VAbs_NrnSerialLD(N_Vector x, N_Vector z)
   zd = NV_DATA_S_LD(z);
 
   for (i=0; i < N; i++, xd++, zd++)
-    *zd = ABS(*xd);
+    *zd = SUNRabs(*xd);
 }
 
 void N_VInv_NrnSerialLD(N_Vector x, N_Vector z)
@@ -604,7 +605,7 @@ realtype N_VMaxNorm_NrnSerialLD(N_Vector x)
   xd = NV_DATA_S_LD(x);
 
   for (i=0; i < N; i++, xd++) {
-    if (ABS(*xd) > max) max = ABS(*xd);
+    if (SUNRabs(*xd) > max) max = SUNRabs(*xd);
   }
    
   return(max);
@@ -625,7 +626,7 @@ realtype N_VWrmsNorm_NrnSerialLD(N_Vector x, N_Vector w)
     sum += prodi * prodi;
   }
 
-  return(RSqrt((realtype)sum / N));
+  return(SUNRsqrt((realtype)sum / N));
 }
 
 realtype N_VWrmsNormMask_NrnSerialLD(N_Vector x, N_Vector w, N_Vector id)
@@ -646,7 +647,7 @@ realtype N_VWrmsNormMask_NrnSerialLD(N_Vector x, N_Vector w, N_Vector id)
     }
   }
 
-  return(RSqrt((realtype)sum / N));
+  return(SUNRsqrt((realtype)sum / N));
 }
 
 realtype N_VMin_NrnSerialLD(N_Vector x)
@@ -682,7 +683,7 @@ realtype N_VWL2Norm_NrnSerialLD(N_Vector x, N_Vector w)
     sum += prodi * prodi;
   }
 
-  return(RSqrt((realtype)sum));
+  return(SUNRsqrt((realtype)sum));
 }
 
 realtype N_VL1Norm_NrnSerialLD(N_Vector x)
@@ -695,7 +696,7 @@ realtype N_VL1Norm_NrnSerialLD(N_Vector x)
   xd = NV_DATA_S_LD(x);
   
   for (i=0; i<N; i++)  
-    sum += ABS(xd[i]);
+    sum += SUNRabs(xd[i]);
 
   return((realtype)sum);
 }
@@ -723,7 +724,7 @@ void N_VCompare_NrnSerialLD(realtype c, N_Vector x, N_Vector z)
   zd = NV_DATA_S_LD(z);
 
   for (i=0; i < N; i++, xd++, zd++) {
-    *zd = (ABS(*xd) >= c) ? ONE : ZERO;
+    *zd = (SUNRabs(*xd) >= c) ? ONE : ZERO;
   }
 }
 
@@ -790,7 +791,7 @@ realtype N_VMinQuotient_NrnSerialLD(N_Vector num, N_Vector denom)
         min = *nd / *dd ;
         notEvenOnce = SUNFALSE;
       }
-      else min = MIN(min, (*nd) / (*dd));
+      else min = SUNMIN(min, (*nd) / (*dd));
     }
   }
 
