@@ -678,10 +678,26 @@ if test x"$SUNDIALS_SYSTEM_INSTALL" != "yes"; then
   ROOT_SOURCE_FOLDER="../.." #Its a hack, the full path var $abs_top_builddir is empty
   AC_SUBST(CFLAGS, "$CFLAGS -I${ROOT_SOURCE_FOLDER}/${SUNDIALS_SRC_PATH}/include/ -I${ROOT_SOURCE_FOLDER}/${SUNDIALS_BUILD_PATH}/include/ -I${ROOT_SOURCE_FOLDER}/${SUNDIALS_SRC_PATH}/src/")
   AC_SUBST(CPPFLAGS, "$CPPFLAGS -I${ROOT_SOURCE_FOLDER}/${SUNDIALS_SRC_PATH}/include/ -I${ROOT_SOURCE_FOLDER}/${SUNDIALS_BUILD_PATH}/include/ -I${ROOT_SOURCE_FOLDER}/${SUNDIALS_SRC_PATH}/src/")
+
+  #AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_sunmatrixsparse")
+  #AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_sunlinsolband")
+  #AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_sunlinsoldense")
+  #AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_sunlinsolspgmr")
+  #AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_sunlinsolspfgmr")
+  #AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_sunlinsolspbcgs")
+  #AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_sunlinsolsptfqmr")
+  #AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_sunlinsolpcg")
+  AC_SUBST(LDFLAGS, "$LDFLAGS -L${ROOT_SOURCE_FOLDER}/${SUNDIALS_BUILD_PATH}/src/ida")
+  AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_ida")
+  AC_SUBST(LDFLAGS, "$LDFLAGS -L${ROOT_SOURCE_FOLDER}/${SUNDIALS_BUILD_PATH}/src/cvode")
+  AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_cvode")
+  AC_SUBST(LDFLAGS, "$LDFLAGS -L${ROOT_SOURCE_FOLDER}/${SUNDIALS_BUILD_PATH}/src/nvec_ser")
+  AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_nvecserial")
 else
   # installation from system folders
   AC_SUBST(CFLAGS, "$CFLAGS -I${prefix}/include")
   AC_SUBST(CPPFLAGS, "$CPPFLAGS -I${prefix}/include")
+  AC_SUBST(LDFLAGS, "$LDFLAGS -L${prefix}/lib -lsundials_ida -lsundials_cvode -lsundials_nvecserial")
 fi
 
 AC_CONFIG_HEADERS([nrnconf.h])
