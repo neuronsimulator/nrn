@@ -19,6 +19,11 @@ extern "C" int hoc_return_type_code;
  * or the include flags (-I) and files cant be found unless prefixed
  * with ../nrniv/ */
 #include "../nrniv/nrnoc2iv.h"
+#include "../nrniv/nvector_nrnserial_ld.h"
+#include "../nrniv/nvector_nrnthread_ld.h"
+#include "../nrniv/nvector_nrnthread.h"
+#include "ida/ida.h"
+
 #include "datapath.h"
 #include "cvodeobj.h"
 #include "netcvode.h"
@@ -681,7 +686,6 @@ void Cvode_reg() {
 
 /* Functions Called by the CVODE Solver */
 
-static int minit(CVodeMem cv_mem);
 static int msetup(CVodeMem cv_mem, int convfail, N_Vector ypred,
                   N_Vector fpred, booleantype *jcurPtr, N_Vector vtemp,
                   N_Vector vtemp2, N_Vector vtemp3);
@@ -689,9 +693,8 @@ static int msolve(CVodeMem cv_mem, N_Vector b, N_Vector weight, N_Vector ycur,
                  N_Vector fcur);
 static int msolve_lvardt(CVodeMem cv_mem, N_Vector b, N_Vector weight, N_Vector ycur,
                  N_Vector fcur);
-static void mfree(CVodeMem cv_mem);
-static void f_gvardt(realtype t, N_Vector y, N_Vector ydot, void *f_data);
-static void f_lvardt(realtype t, N_Vector y, N_Vector ydot, void *f_data);
+static int f_gvardt(realtype t, N_Vector y, N_Vector ydot, void *user_data);
+static int f_lvardt(realtype t, N_Vector y, N_Vector ydot, void *user_data);
 static CVRhsFn pf_;
 
 static void* msetup_thread(NrnThread*);
@@ -864,8 +867,8 @@ Cvode::~Cvode() {
 		N_VDestroy(atolnvec_);
 	}
 	if (mem_) {
-		CVodeFree(mem_);
-	}
+        CVodeFree((void **)(&mem_));
+    }
 	if (maxstate_) {
 		N_VDestroy(maxstate_);
 		N_VDestroy(maxacor_);
@@ -891,11 +894,11 @@ void Cvode::init_prepare() {
 			y_ = nil;
 		}
 		if (mem_) {
-			CVodeFree(mem_);
-			mem_ = nil;
+            CVodeFree((void **)(&mem_));
+            mem_ = nil;
 		}
 		if (atolnvec_) {
-			N_VDestroy(atolnvec_);
+            N_VDestroy_Serial(atolnvec_);
 			atolnvec_ = nil;
 		}
 		if (daspk_) {
@@ -1044,8 +1047,8 @@ void Cvode::maxstep(double x) {
 
 void Cvode::free_cvodemem() {
 	if (mem_) {
-		CVodeFree(mem_);
-		mem_ = nil;
+        CVodeFree((void **)(&mem_));
+        mem_ = nil;
 	}
 }
 
@@ -1067,21 +1070,22 @@ int Cvode::cvode_init(double) {
 	// TODO: this needs changed if want to support more than one thread or local variable timestep
 	nrn_nonvint_block_ode_reinit(neq_, N_VGetArrayPointer(y_), 0);
 	if (mem_) {
-		err = CVodeReInit(mem_, pf_, t0_, y_, CV_SV, &ncv_->rtol_, atolnvec_);
-		CVodeSetFdata(mem_, (void*)this);
-		//printf("CVodeReInit\n");
-		if (err != SUCCESS){
+        err = CVodeReInit(mem_, t0_, y_);
+        err = CVodeSetUserData(mem_, (void*)this);
+        if (err != SUCCESS){
 			printf("Cvode %p %s CVReInit error %d\n", this, secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec), err);
 			return err;
 		}
 	}else{
-		mem_ = CVodeCreate(CV_BDF, ncv_->stiff() ? CV_NEWTON : CV_FUNCTIONAL);
+        mem_ = (CVodeMem)CVodeCreate(CV_BDF, ncv_->stiff() ? CV_NEWTON : CV_FUNCTIONAL);
 		if (!mem_){
 			hoc_execerror ("CVodeCreate error", 0);
 		}
-		CVodeMalloc(mem_, pf_, t0_, y_, CV_SV, &ncv_->rtol_, atolnvec_);
-		CVodeSetFdata(mem_, (void*)this);
-		if (err != SUCCESS){
+        //CVodeMalloc was replaced by CVodeCreate/CVodeInit
+        // CVodeInit allocates and initializes memory for a problem
+        err = CVodeInit(mem_, pf_, t0_, y_);
+        err = CVodeSetUserData(mem_, (void*)this);
+        if (err != SUCCESS){
 			printf("Cvode %p %s CVodeMalloc error %d\n", this, secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec), err);
 			return err;
 		}
@@ -1285,8 +1289,12 @@ this, nth_?nth_->id:0, initialize_, tstop_, t_);
 }
 #endif
 	CVodeSetStopTime(mem_, tstop_);
+    /* Note: CV_ONE_STEP_TSTOP is removed, now CV_ONE_STEP does the
+     * same. From documentation: If tstop is enabled (through a call
+     * to CVodeSetStopTime), then CVode returns the solution at tstop.
+    */
 //printf("cvode_advance_tn begin t0_=%g t_=%g tn_=%g tstop=%g\n", t0_, t_, tn_, tstop_);
-	int err = CVode(mem_, tstop_, y_, &t_, CV_ONE_STEP_TSTOP);
+    int err = CVode(mem_, tstop_, y_, &t_, CV_ONE_STEP);
 #if PRINT_EVENT
 if (net_cvode_instance->print_event_ > 1) {
 printf("t_=%.20g\n", t_);
@@ -1391,29 +1399,50 @@ void Cvode::statistics() {
 
 void Cvode::matmeth() {
 	switch ( ncv_->jacobian() ) {
-	case 1:
-		CVDense(mem_, neq_);
-		break;
+    case 1:
+    {
+        /* Create dense SUNMatrix for use in linear solver */
+        SUNMatrix A = SUNDenseMatrix(neq_, neq_);
+        assert(A);
+
+        /* Create dense SUNLinearSolver object for use by CVode */
+        SUNLinearSolver LS = SUNDenseLinearSolver(y_, A);
+        assert(LS);
+
+        /* attach the matrix and linear solver to CVode */
+        int flag = CVDlsSetLinearSolver(mem_, LS, A);
+        assert(flag);
+
+        /* Set jacobian and allocate memory */
+        /* (TODO Michael Hines: is there a jacobian for dense matrix
+         * in neuron? If yes, add it here instead of NULL */
+        flag = CVDlsSetJacFn(mem_, NULL);
+        if (flag == CVDLS_MEM_FAIL)
+          throw std::runtime_error(
+              "ERROR: can't allocate memory for dense jacobian");
+        break;
+    }
 	case 2:
 		CVDiag(mem_);
 		break;
 	default:
-		((CVodeMem)mem_)->cv_linit = minit;
+    {
+        /* CVODES guide chapter 8: Providing Alternate Linear
+         * Solver Modules: only lsolve function is mandatory
+         * (non-used functions need to be set to null) */
+        ((CVodeMem)mem_)->cv_linit = nullptr;
+        //TODO can the set-up be set to nullptr?
 		((CVodeMem)mem_)->cv_lsetup = msetup;
-		((CVodeMem)mem_)->cv_setupNonNull = TRUE; // but since our's does not do anything...
+        //((CVodeMem)mem_)->cv_setupNonNull = TRUE; // but since our's does not do anything...
 	    if (nth_) { // lvardt
 		((CVodeMem)mem_)->cv_lsolve = msolve_lvardt;
 	    }else{
 		((CVodeMem)mem_)->cv_lsolve = msolve;
 	    }
-		((CVodeMem)mem_)->cv_lfree = mfree;
+        ((CVodeMem)mem_)->cv_lfree = nullptr;
 		break;
 	}
-}
-
-static int minit(CVodeMem) {
-//	printf("minit\n");
-	return CV_NO_FAILURES;
+    }
 }
 
 static int msetup(CVodeMem m, int convfail,
@@ -1422,7 +1451,7 @@ static int msetup(CVodeMem m, int convfail,
 {
 //	printf("msetup\n");
 	*jcurPtr = true;
-	Cvode* cv = (Cvode*)m->cv_f_data;
+    Cvode* cv = (Cvode*)m->cv_user_data;
 	return cv->setup(yp, fp);
 }
 
@@ -1434,7 +1463,7 @@ static int msolve(CVodeMem m, N_Vector b, N_Vector weight, N_Vector ycur, N_Vect
 //	N_VIth(b, 0) /= (1. + m->cv_gamma);
 //	N_VIth(b, 0) /= (1. + m->cv_gammap);
 //	N_VIth(b,0) *= 2./(1. + m->cv_gamrat);
-	msolve_cv_ = (Cvode*)m->cv_f_data;
+    msolve_cv_ = (Cvode*)m->cv_user_data;
 	Cvode& cv = *msolve_cv_;
 	++cv.mxb_calls_;
 	if (cv.ncv_->stiff() == 0) { return 0; }
@@ -1451,7 +1480,7 @@ static int msolve(CVodeMem m, N_Vector b, N_Vector weight, N_Vector ycur, N_Vect
 	return 0;
 }
 static int msolve_lvardt(CVodeMem m, N_Vector b, N_Vector weight, N_Vector ycur, N_Vector fcur) {
-	Cvode* cv = (Cvode*)m->cv_f_data;
+    Cvode* cv = (Cvode*)m->cv_user_data;
 	++cv->mxb_calls_;
 	if (cv->ncv_->stiff() == 0) { return 0; }
 	if (cv->gam() == 0.) { return 0; }
@@ -1491,15 +1520,11 @@ static void* msolve_thread_part3(NrnThread* nt) {
 	return 0;
 }
 
-static void mfree(CVodeMem) {
-//	printf("mfree\n");
-}
-
 static realtype f_t_;
 static N_Vector f_y_;
 static N_Vector f_ydot_;
 static Cvode* f_cv_;
-static void f_gvardt(realtype t, N_Vector y, N_Vector ydot, void *f_data) {
+static int f_gvardt(realtype t, N_Vector y, N_Vector ydot, void *f_data) {
 	//ydot[0] = -y[0];
 //	N_VIth(ydot, 0) = -N_VIth(y, 0);
 //printf("f(%g, %p, %p)\n", t, y, ydot);
@@ -1533,14 +1558,16 @@ static void f_gvardt(realtype t, N_Vector y, N_Vector ydot, void *f_data) {
 	}else{
 		nrn_multithread_job(f_thread);
 	}
+    return CV_SUCCESS;
 }
-static void f_lvardt(realtype t, N_Vector y, N_Vector ydot, void *f_data) {
-	Cvode* cv = (Cvode*)f_data;
+static int f_lvardt(realtype t, N_Vector y, N_Vector ydot, void *user_data) {
+    Cvode* cv = (Cvode*)user_data;
 	++cv->f_calls_;
 	cv->nth_->_vcv = cv;
 	cv->fun_thread(t, cv->n_vector_data(y, 0),
 		cv->n_vector_data(ydot, 0), cv->nth_);
-	cv->nth_->_vcv = 0;
+    cv->nth_->_vcv = 0;
+    return CV_SUCCESS;
 }
 
 static void* f_thread(NrnThread* nt) {
