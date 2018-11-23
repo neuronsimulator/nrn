@@ -10,13 +10,17 @@
 extern "C" {
 #include "spmatrix.h"
 }
-#include "nrnoc2iv.h"
+/*TODO Michael, if I configure with --without-iv this folder is not part
+ * or the include flags (-I) and files cant be found unless prefixed
+ * with ../nrniv/ */
+#include "../nrniv/nrnoc2iv.h"
 #include "cvodeobj.h"
 #include "nrndaspk.h"
 #include "netcvode.h"
-#include "ida/ida.h"
-#include "ida/ida_impl.h"
 #include "mymath.h"
+
+#include <ida/ida.h> /* IDASetUserData */
+#include <ida/ida_impl.h>
 
 // the state of the g - d2/dx2 matrix for voltages
 #define INVALID 0
@@ -37,10 +41,6 @@ extern void nrn_rhs(NrnThread*);
 extern void nrn_lhs(NrnThread*);
 extern void nrn_solve(NrnThread*);
 void nrn_daspk_init_step(double, double, int);
-// this is private in ida.c but we want to check if our initialization
-// is good. Unfortunately ewt is set on the first call to solve which
-// is too late for us.
-extern booleantype IDAEwtSet(IDAMem IDA_mem, N_Vector ycur);
 
 //extern double t, dt;
 #define nt_dt nrn_threads->_dt
@@ -105,17 +105,12 @@ static int res_gvardt(
 	return thread_ier;
 }
 
-// linear solver specific allocation and initialization
-static int minit(IDAMem) {
-	return IDA_SUCCESS;
-}
-
 // linear solver preparation for subsequent calls to msolve
 // approximation to jacobian. Everything necessary for solving P*x = b
 static int msetup(IDAMem mem, N_Vector y, N_Vector yp, N_Vector,
 	N_Vector, N_Vector, N_Vector
 ){
-	Cvode* cv = (Cvode*)mem->ida_rdata;
+    Cvode* cv = (Cvode*)mem->ida_user_data;
 	++cv->jac_calls_;
 	return 0;
 }
@@ -132,7 +127,7 @@ static void* msolve_thread(NrnThread* nt) {
 	return 0;
 }
 static int msolve(IDAMem mem, N_Vector b, N_Vector w, N_Vector ycur, N_Vector, N_Vector){
-	thread_cv = (Cvode*)mem->ida_rdata;
+    thread_cv = (Cvode*)mem->ida_user_data;
 	thread_t = mem->ida_tn;
 	nvec_y = ycur;
 	nvec_yp = b;
@@ -140,8 +135,6 @@ static int msolve(IDAMem mem, N_Vector b, N_Vector w, N_Vector ycur, N_Vector, N
 	nrn_multithread_job(msolve_thread);
 	return thread_ier;
 }
-
-static int mfree(IDAMem) {return IDA_SUCCESS;}
 
 Daspk::Daspk(Cvode* cv, int neq) {
 //	printf("Daspk::Daspk\n");
@@ -159,40 +152,52 @@ Daspk::~Daspk() {
 	N_VDestroy(delta_);
 	N_VDestroy(yp_);
 	if (mem_) {
-		IDAFree((IDAMem)mem_);
+        IDAFree((void**)&mem_);
 	}
 }
 
 void Daspk::ida_init() {
 	int ier;
 	if (mem_) {
-		ier = IDAReInit(mem_, res_gvardt, cv_->t_, cv_->y_, yp_,
-			IDA_SV, &cv_->ncv_->rtol_, cv_->atolnvec_
-		);
+        ier = IDAReInit(mem_, cv_->t_, cv_->y_, yp_);
 		if (ier < 0) {
 			hoc_execerror("IDAReInit error", 0);
 		}
 	}else{
-		IDAMem mem = (IDAMem) IDACreate();
+        IDAMem mem = (IDAMem) IDACreate();
 		if (!mem) {
 			hoc_execerror("IDAMalloc error", 0);
 		}
-		IDASetRdata(mem, cv_);
-		ier = IDAMalloc(mem, res_gvardt, cv_->t_, cv_->y_, yp_,
-			IDA_SV, &cv_->ncv_->rtol_, cv_->atolnvec_
-		);
-		mem->ida_linit = minit;
+        IDASetUserData(mem, cv_);
+
+        /* Set which components are algebraic or differential */
+        /* 'id' states a given element to be either algebraic or
+         * differential. A value of 1.0 indicates a differential
+         * variable while a 0.0 indicates an  algebraic variable.
+         */
+        // TODO M Hines:
+        //ier = IDASetId(mem, id);
+        //assert(ier);
+
+        /* TODO M Hines: do we need constraints?
+        ier = IDASetConstraints(mem, constraints);
+        assert(ier);
+        N_VDestroy(constraints);
+        */
+
+        ier = IDAInit(mem,  res_gvardt,  cv_->t_, cv_->y_, yp_);
+        assert(ier);
+
+        ier = IDASVtolerances(mem, cv_->ncv_->rtol_, cv_->atolnvec_);
+        assert(ier);
+
+        mem->ida_linit = nullptr;
 		mem->ida_lsetup = msetup;
 		mem->ida_lsolve = msolve;
-		mem->ida_lfree = mfree;
-		mem->ida_setupNonNull = false;
+        mem->ida_lfree = nullptr;
 		mem_ = mem;
 	}
 }
-
-void Daspk::info() {
-}
-
 
 // last two bits, 0 error, 1 warning, 2 apply parasitic
 // if init_failure_style & 010, then use the original method
@@ -285,7 +290,7 @@ cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_);
 #if 1
 	// test
 //printf("test\n");
-	if (!IDAEwtSet((IDAMem)mem_, cv_->y_)) {
+    if (!IDAEwtSet(cv_->y_, ((IDAMem)mem_)->ida_ewt, mem_)) {
 		hoc_execerror("Bad Ida error weight vector", 0);
 	}
 	use_parasite_ = false;
@@ -332,7 +337,7 @@ int Daspk::advance_tn(double tstop) {
 	//printf("Daspk::advance_tn(%g)\n", tstop);
 	double tn = cv_->tn_;
 	IDASetStopTime(mem_, tstop);
-	int ier = IDASolve(mem_, tstop, &cv_->t_, cv_->y_, yp_, IDA_ONE_STEP_TSTOP);
+    int ier = IDASolve(mem_, tstop, &cv_->t_, cv_->y_, yp_, IDA_ONE_STEP);
 	if (ier < 0) {
 		//printf("DASPK advance_tn error\n");
 		return ier;
