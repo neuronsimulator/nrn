@@ -721,6 +721,9 @@ mydebug2("vl1norm %.20g\n", retval);
   return(retval);
 }
 
+// This function was removed from Sundials3
+// I copied it from Sundials2
+// TODO replace by proper call
 void N_VOneMask_SerialLD(N_Vector x)
 {
   long int N  = NV_LENGTH_S(x);
