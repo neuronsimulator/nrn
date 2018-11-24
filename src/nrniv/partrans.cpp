@@ -821,7 +821,9 @@ void nrnmpi_setup_transfer() {
 	// clean up a little
 	delete [] ownsrc;
 	delete [] needsrc;
+#if USE_ALLTOALL_TRANSFER == 0
 	delete [] recv_from_have;
+#endif
 
 	// 3) First return triple creates the proper outsrc_buf_.
 	// Now that we know what machines are interested in our sids...
@@ -895,6 +897,7 @@ void nrnmpi_setup_transfer() {
 			(*sid2insrc_)[sgid] = displ + j;
 		}
 	}
+	delete [] recv_from_have;
 #endif
 
 	nrnmpi_v_transfer_ = mpi_transfer;
