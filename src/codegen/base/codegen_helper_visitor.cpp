@@ -130,6 +130,7 @@ void CodegenHelperVisitor::find_non_range_variables() {
     auto vars = psymtab->get_variables_with_properties(NmodlInfo::global_var);
     for (auto& var : vars) {
         if (info.thread_safe && var->get_write_count() > 0) {
+            var->add_property(NmodlInfo::thread_safe);
             info.thread_variables.push_back(var);
             info.thread_var_data_size += var->get_length();
         } else {
@@ -156,7 +157,18 @@ void CodegenHelperVisitor::find_non_range_variables() {
     // clang-format on
     vars = psymtab->get_variables(with, without);
     for (auto& var : vars) {
+        // some variables like area and diam are declared in parameter
+        // block but they are not global
+        if (var->get_name() == diam_variable
+            || var->get_name() == area_variable
+            || var->has_properties(NmodlInfo::extern_neuron_variable)) {
+            continue;
+        }
+
+        // if model is thread safe and if parameter is being written then
+        // those variables should be promoted to thread safe variable
         if (info.thread_safe && var->get_write_count() > 0) {
+            var->add_property(NmodlInfo::thread_safe);
             info.thread_variables.push_back(var);
             info.thread_var_data_size += var->get_length();
         } else {
