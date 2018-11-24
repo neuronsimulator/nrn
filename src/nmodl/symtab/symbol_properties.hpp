@@ -90,6 +90,7 @@ namespace symtab {
          *
          * \todo Rename param_assign to parameter_var
          * \todo Reaching max limit (31), need to refactor all block types
+         *       into separate type
          */
         enum class NmodlInfo : long long {
             /** Local Variable */
@@ -183,7 +184,10 @@ namespace symtab {
             to_solve = 1 << 29,
 
             /** ion type */
-            useion = 1 << 30
+            useion = 1 << 30,
+
+            /** variable is converted to thread safe */
+            thread_safe = 1 << 31
 
             /** Discrete Block */
             // discrete_block = 1 << 31,

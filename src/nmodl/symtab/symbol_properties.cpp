@@ -148,6 +148,11 @@ std::vector<std::string> to_string_vector(const SymbolInfo& obj) {
     if (has_property(obj, NmodlInfo::useion)) {
         properties.emplace_back("ion");
     }
+
+    if (has_property(obj, NmodlInfo::thread_safe)) {
+        properties.emplace_back("thread_safe");
+    }
+
     return properties;
 }
 
