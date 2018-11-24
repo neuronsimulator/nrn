@@ -66,9 +66,8 @@ mv temp nvector_nrnthread_ld.h
 extern "C" {
 #endif
 
-#include "nvector.h"
-#include "sundialstypes.h"
-extern void N_VOneMask_Serial(N_Vector x);
+#include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts, macros*/
+#include <sundials/sundials_types.h> /* definition of type realtype*/
 
 /*
  * -----------------------------------------------------------------

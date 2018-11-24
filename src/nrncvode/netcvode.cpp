@@ -24,7 +24,7 @@
 #include "nrnneosm.h"
 #include "datapath.h"
 #include "objcmd.h"
-#include "shared/sundialsmath.h"
+#include "sundials/sundials_math.h"
 #include "kssingle.h"
 #include "ocnotify.h"
 #if HAVE_IV

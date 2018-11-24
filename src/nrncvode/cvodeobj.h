@@ -3,9 +3,9 @@
 
 #include "nrnmpi.h"
 #include "nrnneosm.h"
-//#include "shared/nvector_serial.h"
-#include "shared/nvector.h"
 #include "membfunc.h"
+#include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts, macros*/
+#include <cvode/cvode_impl.h> /*CVodeMem*/
 
 class NetCvode;
 class Daspk;
@@ -189,7 +189,7 @@ public:
 	void maxstate(bool, NrnThread* nt = 0);
 	void maxacor(double*);
 public:
-	void* mem_;
+    CVodeMem mem_;
 	N_Vector y_;
 	N_Vector atolnvec_;
 	N_Vector maxstate_;

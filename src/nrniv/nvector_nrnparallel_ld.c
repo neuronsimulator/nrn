@@ -38,8 +38,8 @@ extern int nrnmpi_numprocs;
 #else
 extern MPI_Comm nrnmpi_comm;
 #endif
-#include "sundialsmath.h"
-#include "sundialstypes.h"
+#include <sundials/sundials_types.h> /* definition of type realtype*/
+#include <sundials/sundials_math.h> /* definition of type realtype*/
 
 #define ZERO   RCONST(0.0)
 #define HALF   RCONST(0.5)
@@ -610,7 +610,7 @@ void N_VAbs_NrnParallelLD(N_Vector x, N_Vector z)
   zd = NV_DATA_P_LD(z);
 
   for (i=0; i < N; i++, xd++, zd++)
-    *zd = ABS(*xd);
+    *zd = SUNRabs(*xd);
 }
 
 void N_VInv_NrnParallelLD(N_Vector x, N_Vector z)
@@ -668,7 +668,7 @@ realtype N_VMaxNorm_NrnParallelLD(N_Vector x)
   max = ZERO;
 
   for (i=0; i < N; i++, xd++) {
-    if (ABS(*xd) > max) max = ABS(*xd);
+    if (SUNRabs(*xd) > max) max = SUNRabs(*xd);
   }
    
   gmax = VAllReduce_NrnParallelLD(max, 2, comm);
@@ -694,7 +694,7 @@ realtype N_VWrmsNorm_NrnParallelLD(N_Vector x, N_Vector w)
   }
 
   gsum = VAllReduce_long_NrnParallelLD(sum, 1, comm);
-  return(RSqrt((realtype)gsum / N_global));
+  return(SUNRsqrt((realtype)gsum / N_global));
 }
 
 realtype N_VWrmsNormMask_NrnParallelLD(N_Vector x, N_Vector w, N_Vector id)
@@ -719,7 +719,7 @@ realtype N_VWrmsNormMask_NrnParallelLD(N_Vector x, N_Vector w, N_Vector id)
   }
 
   gsum = VAllReduce_long_NrnParallelLD(sum, 1, comm);
-  return(RSqrt((realtype)gsum / N_global));
+  return(SUNRsqrt((realtype)gsum / N_global));
 }
 
 realtype N_VMin_NrnParallelLD(N_Vector x)
@@ -768,7 +768,7 @@ realtype N_VWL2Norm_NrnParallelLD(N_Vector x, N_Vector w)
   }
 
   gsum = VAllReduce_long_NrnParallelLD(sum, 1, comm);
-  return(RSqrt((realtype)gsum));
+  return(SUNRsqrt((realtype)gsum));
 }
 
 realtype N_VL1Norm_NrnParallelLD(N_Vector x)
@@ -783,7 +783,7 @@ realtype N_VL1Norm_NrnParallelLD(N_Vector x)
   comm = NV_COMM_P_LD(x);
 
   for (i=0; i<N; i++,xd++) 
-    sum += ABS(*xd);
+    sum += SUNRabs(*xd);
 
   gsum = VAllReduce_long_NrnParallelLD((realtype)sum, 1, comm);
   return(gsum);
@@ -799,7 +799,7 @@ void N_VCompare_NrnParallelLD(realtype c, N_Vector x, N_Vector z)
   zd = NV_DATA_P_LD(z);
 
   for (i=0; i < N; i++, xd++, zd++) {
-    *zd = (ABS(*xd) >= c) ? ONE : ZERO;
+    *zd = (SUNRabs(*xd) >= c) ? ONE : ZERO;
   }
 }
 
@@ -880,7 +880,7 @@ realtype N_VMinQuotient_NrnParallelLD(N_Vector num, N_Vector denom)
         min = *nd / *dd ;
         notEvenOnce = FALSE;
       }
-      else min = MIN(min, (*nd) / (*dd));
+      else min = SUNMIN(min, (*nd) / (*dd));
     }
   }
 

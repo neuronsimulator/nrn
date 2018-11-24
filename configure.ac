@@ -625,6 +625,81 @@ fi
 
 
 if test "$with_nmodl_only" != "yes" -a "$with_nrnpython_only" != "yes" ; then
+
+if test x"$SUNDIALS_SYSTEM_INSTALL" != "yes"; then
+  #installation from contrib
+  #download and unpack sundials if not already in contrib/sundials-*
+  SUNDIALS_SRC_PATH="${NRN_SRCDIR}/contrib/sundials"
+  AC_CHECK_FILE($SUNDIALS_SRC_PATH,SUNDIALS_CHECK=yes,SUNDIALS_CHECK=no)
+  if test x"$SUNDIALS_CHECK" != x"yes" ; then
+
+    AC_MSG_RESULT([Downloading and extracting Sundials at contrib/sundials])
+
+    AC_CHECK_PROG(WGET_CHECK,wget,yes)
+    if test x"$WGET_CHECK" != x"yes" ; then
+      AC_MSG_ERROR([Please install wget before proceesing.])
+    fi
+
+    AC_CHECK_PROG(TAR_CHECK,tar,yes)
+    if test x"$TAR_CHECK" != x"yes" ; then
+      AC_MSG_ERROR([Please install tar before proceeding.])
+    fi
+
+    mkdir -p contrib
+    cd contrib
+    SUNDIALS_FILE_NAME=sundials-3.2.1
+    wget https://computation.llnl.gov/projects/sundials/download/${SUNDIALS_FILE_NAME}.tar.gz
+    tar -xvf ./${SUNDIALS_FILE_NAME}.tar.gz 
+    rm ./${SUNDIALS_FILE_NAME}.tar.gz
+    mv ${SUNDIALS_FILE_NAME} sundials
+    cd ..
+  else
+    AC_MSG_RESULT([Sundials found at contrib folder])
+  fi
+
+  #Run CMake for SUNDIALS (CVODE and IDA only)
+  SUNDIALS_BUILD_PATH="${SUNDIALS_SRC_PATH}/build"
+  SUNDIALS_CMAKE_CMD="cmake .. -DCMAKE_INSTALL_PREFIX=${prefix} -DEXAMPLES_INSTALL=OFF -DBUILD_ARKODE=OFF -DBUILD_CVODES=OFF -DBUILD_IDAS=OFF -DBUILD_KINSOL=OFF -DEXAMPLES_ENABLE_C=OFF"
+
+  if test ${CC}; then
+    SUNDIALS_CMAKE_CMD="${SUNDIALS_CMAKE_CMD} -DCMAKE_C_COMPILER=${CC}"
+  fi
+
+  #TODO the CLAGS append is broken (instead always compile with Release)
+  #if test ${CFLAGS}; then
+  #  SUNDIALS_CMAKE_CMD="${SUNDIALS_CMAKE_CMD} -DCMAKE_C_FLAGS='${CFLAGS}'"
+  #fi
+  SUNDIALS_CMAKE_CMD="${SUNDIALS_CMAKE_CMD} -DCMAKE_BUILD_TYPE=Release"
+
+  AC_MSG_RESULT([Running CMake command for SUNDIALS: $SUNDIALS_CMAKE_CMD])
+  mkdir -p $SUNDIALS_BUILD_PATH; cd $SUNDIALS_BUILD_PATH; $SUNDIALS_CMAKE_CMD; cd ../../../
+
+  #Include paths for contrib libraries (relative to src/nrncvode)
+  ROOT_SOURCE_FOLDER="../.." #Its a hack, the full path var $abs_top_builddir is empty
+  AC_SUBST(CFLAGS, "$CFLAGS -I${ROOT_SOURCE_FOLDER}/${SUNDIALS_SRC_PATH}/include/ -I${ROOT_SOURCE_FOLDER}/${SUNDIALS_BUILD_PATH}/include/ -I${ROOT_SOURCE_FOLDER}/${SUNDIALS_SRC_PATH}/src/")
+  AC_SUBST(CPPFLAGS, "$CPPFLAGS -I${ROOT_SOURCE_FOLDER}/${SUNDIALS_SRC_PATH}/include/ -I${ROOT_SOURCE_FOLDER}/${SUNDIALS_BUILD_PATH}/include/ -I${ROOT_SOURCE_FOLDER}/${SUNDIALS_SRC_PATH}/src/")
+
+  #AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_sunmatrixsparse")
+  #AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_sunlinsolband")
+  #AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_sunlinsoldense")
+  #AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_sunlinsolspgmr")
+  #AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_sunlinsolspfgmr")
+  #AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_sunlinsolspbcgs")
+  #AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_sunlinsolsptfqmr")
+  #AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_sunlinsolpcg")
+  AC_SUBST(LDFLAGS, "$LDFLAGS -L${ROOT_SOURCE_FOLDER}/${SUNDIALS_BUILD_PATH}/src/ida")
+  AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_ida")
+  AC_SUBST(LDFLAGS, "$LDFLAGS -L${ROOT_SOURCE_FOLDER}/${SUNDIALS_BUILD_PATH}/src/cvode")
+  AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_cvode")
+  AC_SUBST(LDFLAGS, "$LDFLAGS -L${ROOT_SOURCE_FOLDER}/${SUNDIALS_BUILD_PATH}/src/nvec_ser")
+  AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_nvecserial")
+else
+  # installation from system folders
+  AC_SUBST(CFLAGS, "$CFLAGS -I${prefix}/include")
+  AC_SUBST(CPPFLAGS, "$CPPFLAGS -I${prefix}/include")
+  AC_SUBST(LDFLAGS, "$LDFLAGS -L${prefix}/lib -lsundials_ida -lsundials_cvode -lsundials_nvecserial")
+fi
+
 AC_CONFIG_HEADERS([nrnconf.h])
 AC_CONFIG_HEADERS([src/nrnoc/nrnconfigargs.h])
 AC_CONFIG_HEADERS([src/oc/nrnmpiuse.h])
@@ -634,12 +709,9 @@ AC_CONFIG_HEADERS([src/parallel/bbsconf.h])
 AC_CONFIG_HEADERS([src/nrnjava/njconf.h])
 AC_CONFIG_HEADERS([src/nrncvode/nrnneosm.h])
 AC_CONFIG_HEADERS([src/ivos/ivstream.h])
-AC_CONFIG_HEADERS([src/sundials/sundials_config.h])
 
 AC_CONFIG_FILES([
 	nrnrpm.spec
-	src/sundials/Makefile src/sundials/shared/Makefile
-	src/sundials/cvodes/Makefile src/sundials/ida/Makefile
 	src/sparse/Makefile src/memacs/Makefile
 	src/readline/Makefile src/sparse13/Makefile src/Random123/Makefile
 	src/oc/Makefile	src/scopmath/Makefile src/nrnoc/Makefile

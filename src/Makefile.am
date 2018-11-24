@@ -14,7 +14,7 @@ else
 NMODL_SUBDIRS = modlunit nmodl
 endif
 NRNOC_SUBDIRS = sparse sparse13 scopmath Random123 nrnmpi oc nrnoc
-NRNIV_SUBDIRS = sundials mesch gnu ivoc nrncvode parallel nrniv
+NRNIV_SUBDIRS = mesch gnu ivoc nrncvode parallel nrniv
 IVOS_SUBDIRS = ivos
 NRNJAVA_SUBDIRS = nrnjava
 NRNPYTHON_SUBDIRS = nrnpython

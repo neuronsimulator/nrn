@@ -1,10 +1,8 @@
 #ifndef daspk_h
 #define daspk_h
 
-#include "shared/nvector_serial.h"
-#include "nvector_nrnthread.h"
-#include "nvector_nrnthread_ld.h"
-#include "nvector_nrnserial_ld.h"
+#include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts, macros*/
+#include <ida/ida_impl.h>
 
 class Cvode;
 
@@ -20,9 +18,8 @@ public:
 	N_Vector acorvec();
 private:
 	void ida_init();
-	void info();
 public:
-	void* mem_;
+    IDAMem mem_;
 	Cvode* cv_;
 	N_Vector yp_;
 	N_Vector delta_; // use for calling res explicitly

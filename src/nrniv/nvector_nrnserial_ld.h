@@ -67,8 +67,8 @@ mv temp nvector_nrnserial_ld.c
 extern "C" {
 #endif
 
-#include "nvector.h"
-#include "sundialstypes.h"
+#include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts, macros*/
+#include <sundials/sundials_types.h> /* definition of type realtype*/
 
 /*
  * -----------------------------------------------------------------

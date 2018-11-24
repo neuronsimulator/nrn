@@ -21,10 +21,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "shared/nvector_serial.h"
+#include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts, macros*/
 #include "nvector_nrnthread.h"
-#include "shared/sundialsmath.h"
-#include "shared/sundialstypes.h"
+//#include "shared/sundialsmath.h"
+#include <sundials/sundials_types.h> /* defs. of realtype, sunindextype */
 #include "section.h"
 #include "nrnmutdec.h"
 
@@ -90,7 +90,7 @@ static booleantype bretval;
 #endif
 #define lockmax(arg) lock; if (retval < arg) { retval = arg; }; unlock;
 #define lockmin(arg) lock; if (retval > arg) { retval = arg; }; unlock;
-#define lockfalse lock; bretval = FALSE; unlock;
+#define lockfalse lock; bretval = SUNFALSE; unlock;
 
 /*
  * -----------------------------------------------------------------
@@ -150,7 +150,7 @@ N_Vector N_VNewEmpty_NrnThread(long int length, int nthread, long int* sizes)
 
   content->length = length;
   content->nt = nthread;
-  content->own_data = FALSE;
+  content->own_data = SUNFALSE;
   content->data = (N_Vector*) malloc(sizeof(N_Vector)*nthread);
   if (content->data == NULL) { free(ops); free(v); free(content); return(NULL);}
   for (i=0; i < nthread; ++i) {
@@ -181,7 +181,7 @@ N_Vector N_VNew_NrnThread(long int length, int nthread, long int* sizes)
   if (length > 0) {
 
     /* Allocate memory */
-    NV_OWN_DATA_NT(v) = TRUE;
+    NV_OWN_DATA_NT(v) = SUNTRUE;
     for (i=0; i < nthread; ++i) {
     	data = N_VNew_Serial(sizes[i]);
         if(data == NULL) {N_VDestroy_NrnThread(v);return(NULL);}
@@ -245,7 +245,7 @@ N_Vector N_VCloneEmpty_NrnThread(N_Vector w)
 
   wcontent = NV_CONTENT_NT(w);
   content->length = NV_LENGTH_NT(w);
-  content->own_data = FALSE;
+  content->own_data = SUNFALSE;
   content->nt = wcontent->nt;
   content->data = (N_Vector*) malloc(sizeof(N_Vector) * content->nt);
   if (content->data == NULL) { free(ops); free(v); free(content); return(NULL);}
@@ -386,7 +386,7 @@ N_Vector N_VClone_NrnThread(N_Vector w)
 
   /* Create data */
   if (length > 0) {
-    NV_OWN_DATA_NT(v) = TRUE;
+    NV_OWN_DATA_NT(v) = SUNTRUE;
     for (i=0; i < nt; ++i) {
       wdata = NV_SUBVEC_NT(w, i);
       data = N_VClone(wdata);
@@ -405,7 +405,7 @@ void N_VDestroy_NrnThread(N_Vector v)
   int i, nt;
   N_Vector data;
   nt = NV_NT_NT(v);
-  if (NV_OWN_DATA_NT(v) == TRUE) {
+  if (NV_OWN_DATA_NT(v) == SUNTRUE) {
     if (NV_CONTENT_NT(v)->data) {
       for (i = 0; i < nt; ++i) {
         data = NV_SUBVEC_NT(v, i);
@@ -614,8 +614,8 @@ realtype N_VWrmsNorm_NrnThread(N_Vector x, N_Vector w)
 #if USELONGDOUBLE
   retval = longdretval;
 #endif
-mydebug2("vwrmsnorm %.20g\n", RSqrt(retval / N));
-  return(RSqrt(retval / N));
+mydebug2("vwrmsnorm %.20g\n", SUNRsqrt(retval / N));
+  return(SUNRsqrt(retval / N));
 }
 
 static realtype vwrmsnormmask_help(N_Vector x, N_Vector w, N_Vector id)
@@ -651,8 +651,8 @@ realtype N_VWrmsNormMask_NrnThread(N_Vector x, N_Vector w, N_Vector id)
   retval = ZERO;
   xpass wpass idpass
   nrn_multithread_job(vwrmsnormmask);
-mydebug2("vwrmsnormmask %.20g\n", RSqrt(retval / N));
-  return(RSqrt(retval / N));
+mydebug2("vwrmsnormmask %.20g\n", SUNRsqrt(retval / N));
+  return(SUNRsqrt(retval / N));
 }
 
 static void* vmin(NrnThread* nt) {
@@ -703,8 +703,8 @@ realtype N_VWL2Norm_NrnThread(N_Vector x, N_Vector w)
   xpass wpass
   nrn_multithread_job(vwl2norm);
   N  = NV_LENGTH_NT(x);
-mydebug2("vwl2norm %.20g\n", RSqrt(retval));
-  return(RSqrt(retval));
+mydebug2("vwl2norm %.20g\n", SUNRsqrt(retval));
+  return(SUNRsqrt(retval));
 }
 
 static void* vl1norm(NrnThread* nt) {
@@ -721,6 +721,18 @@ realtype N_VL1Norm_NrnThread(N_Vector x)
   nrn_multithread_job(vl1norm);
 mydebug2("vl1norm %.20g\n", retval);
   return(retval);
+}
+
+// This function was removed from Sundials3
+// I copied it from Sundials2
+// TODO replace by proper call
+void N_VOneMask_Serial(N_Vector x)
+{
+  long int N  = NV_LENGTH_S(x);
+  realtype *xd = NV_DATA_S(x);
+  for (long int i=0; i<N; i++,xd++) {
+    if (*xd != ZERO) *xd = ONE;
+  }
 }
 
 static void* v1mask(NrnThread* nt) {
@@ -755,7 +767,7 @@ static void* vinvtest(NrnThread* nt) {
 }
 booleantype N_VInvTest_NrnThread(N_Vector x, N_Vector z)
 {
-  bretval = TRUE;
+  bretval = SUNTRUE;
   xpass zpass
   nrn_multithread_job(vinvtest);
 mydebug2("vinvtest %d\n", bretval);
@@ -771,7 +783,7 @@ static void* vconstrmask(NrnThread* nt) {
 }
 booleantype N_VConstrMask_NrnThread(N_Vector y, N_Vector x, N_Vector z)
 {
-  bretval = TRUE;
+  bretval = SUNTRUE;
   ypass xpass zpass
   nrn_multithread_job(vconstrmask);
 mydebug2("vconstrmask %d\n", bretval);
