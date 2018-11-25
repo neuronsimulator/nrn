@@ -73,6 +73,7 @@ namespace symtab {
             write = 1 << 1
         };
 
+
         /** @brief nmodl variable properties
          *
          * Certain variables/symbols specified in various places in the

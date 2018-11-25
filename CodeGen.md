@@ -1,4 +1,4 @@
-#### Nodes for Code Generation
+#### Notes for Code Generation
 
 ###### when vectorize is true and what is relation with threadsafe?
 

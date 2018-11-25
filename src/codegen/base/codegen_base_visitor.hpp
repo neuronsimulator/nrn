@@ -158,6 +158,7 @@ class CodegenBaseVisitor : public AstVisitor {
     std::vector<IndexVariableInfo> int_variables;
 
     /// all global variables for the model
+    /// todo : this has become different than CodegenInfo
     std::vector<SymbolType> global_variables;
 
     /// all ion variables that could be possibly written

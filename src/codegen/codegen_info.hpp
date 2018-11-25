@@ -144,9 +144,6 @@ namespace codegen {
         /// if thread thread call back routines need to register
         bool thread_callback_register = false;
 
-        /// \todo : if table routines need to be printed
-        bool emit_table_thread = false;
-
         /// if bbcore pointer is used
         bool bbcore_pointer_used = false;
 
@@ -170,6 +167,9 @@ namespace codegen {
 
         /// number of watch expressions
         int watch_count = 0;
+
+        // number of table statements
+        int table_count = 0;
 
         /**
          * thread_data_index indicates number of threads being allocated.
@@ -347,6 +347,10 @@ namespace codegen {
         /// if watch statements are used
         bool is_watch_used() const {
             return watch_count > 0;
+        }
+
+        bool emit_table_thread() const {
+            return (table_count > 0 && vectorize == true);
         }
     };
 };  // namespace codegen
