@@ -447,6 +447,7 @@ void CodegenHelperVisitor::visit_breakpoint_block(BreakpointBlock* node) {
 
 void CodegenHelperVisitor::visit_procedure_block(ast::ProcedureBlock* node) {
     info.procedures.push_back(node);
+    node->visit_children(this);
 }
 
 
@@ -562,6 +563,11 @@ void CodegenHelperVisitor::visit_watch_statement(ast::WatchStatement* node) {
 
 void CodegenHelperVisitor::visit_for_netcon(ast::ForNetcon* node) {
     info.for_netcon_used = true;
+}
+
+
+void CodegenHelperVisitor::visit_table_statement(ast::TableStatement* node) {
+    info.table_count++;
 }
 
 

@@ -91,6 +91,7 @@ class CodegenHelperVisitor : public AstVisitor {
     virtual void visit_watch(ast::Watch* node) override;
     virtual void visit_watch_statement(ast::WatchStatement* node) override;
     virtual void visit_for_netcon(ast::ForNetcon* node) override;
+    virtual void visit_table_statement(ast::TableStatement* node) override;
     virtual void visit_program(ast::Program* node) override;
 };
 

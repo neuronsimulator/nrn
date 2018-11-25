@@ -103,7 +103,7 @@ std::vector<std::string> to_string_vector(const SymbolInfo& obj) {
         properties.emplace_back("non_linear_block");
     }
 
-    /** todo: temporarily commented out
+    /** todo: temporarily disabled due to property limit in enum
     if (has_property(obj, NmodlInfo::discrete_block)) {
         properties.emplace_back("discrete_block");
     }

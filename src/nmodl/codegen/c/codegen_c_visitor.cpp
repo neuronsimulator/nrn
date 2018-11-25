@@ -1379,6 +1379,11 @@ void CodegenCVisitor::print_mechanism_global_structure() {
         }
     }
 
+    if (info.table_count > 0) {
+        printer->add_line("double usetable;");
+        global_variables.push_back(make_symbol("usetable"));
+    }
+
     if (info.vectorize) {
         printer->add_line("ThreadDatum* {}ext_call_thread;"_format(k_restrict()));
         global_variables.push_back(make_symbol("ext_call_thread"));
@@ -1436,7 +1441,7 @@ void CodegenCVisitor::print_global_variables_for_hoc() {
         for (auto& variable : variables) {
             if (variable->is_array() == if_array) {
                 auto name = get_variable_name(variable->get_name());
-                auto ename = add_escape_quote(variable->get_name());
+                auto ename = add_escape_quote(variable->get_name() + "_" + info.mod_suffix);
                 auto length = variable->get_length();
                 if (if_vector) {
                     printer->add_line("{}, {}, {},"_format(ename, name, length));
@@ -1449,6 +1454,10 @@ void CodegenCVisitor::print_global_variables_for_hoc() {
 
     auto globals = info.global_variables;
     auto thread_vars = info.thread_variables;
+
+    if (info.table_count > 0) {
+        globals.push_back(make_symbol("usetable"));
+    }
 
     printer->add_newline(2);
     printer->add_line("/** connect global (scalar) variables to hoc -- */");
@@ -1542,12 +1551,14 @@ void CodegenCVisitor::print_mechanism_register() {
         printer->add_line("thread_mem_init({});"_format(name));
         printer->add_line("{} = 0;"_format(get_variable_name("thread_data_in_use")));
     }
+
     if (info.thread_callback_register) {
         printer->add_line("_nrn_thread_reg0(mech_type, thread_mem_cleanup);");
         printer->add_line("_nrn_thread_reg1(mech_type, thread_mem_init);");
     }
-    if (info.emit_table_thread) {
-        printer->add_line("nrn_thread_table_reg(mech_type, check_table_thread);");
+
+    if (info.emit_table_thread()) {
+        printer->add_line("_nrn_thread_table_reg(mech_type, check_table_thread);");
     }
 
     /// register read/write callbacks for pointers
@@ -1816,6 +1827,11 @@ void CodegenCVisitor::print_global_variable_setup() {
         }
         /// use %g to be same as nocmodl in neuron
         printer->add_line("{} = {};"_format(name, "{:g}"_format(value)));
+    }
+
+    if (info.table_count > 0) {
+        auto name = get_variable_name("usetable");
+        printer->add_line("{} = 1;"_format(name));
     }
 
     printer->add_newline();
