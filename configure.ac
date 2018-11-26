@@ -625,7 +625,6 @@ fi
 if test "$with_nmodl_only" != "yes" -a "$with_nrnpython_only" != "yes" ; then
 
 if test x"$SUNDIALS_SYSTEM_INSTALL" != "yes"; then
-  #installation from contrib
   #download and unpack sundials if not already in contrib/sundials-*
   SUNDIALS_SRC_PATH="${NRN_SRCDIR}/contrib/sundials"
   AC_CHECK_FILE($SUNDIALS_SRC_PATH,SUNDIALS_CHECK=yes,SUNDIALS_CHECK=no)
@@ -653,6 +652,11 @@ if test x"$SUNDIALS_SYSTEM_INSTALL" != "yes"; then
     cd ..
   else
     AC_MSG_RESULT([Sundials found at contrib folder])
+  fi
+
+  AC_CHECK_PROG(CMAKE_CHECK,cmake,yes)
+  if test x"$CMAKE_CHECK" != x"yes" ; then
+    AC_MSG_ERROR([Please install cmake before proceesing.])
   fi
 
   #Run CMake for SUNDIALS (CVODE and IDA only)
@@ -687,6 +691,7 @@ if test x"$SUNDIALS_SYSTEM_INSTALL" != "yes"; then
   AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_cvode")
   AC_SUBST(LDFLAGS, "$LDFLAGS -L${ROOT_SOURCE_FOLDER}/${SUNDIALS_BUILD_PATH}/src/nvec_ser")
   AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_nvecserial")
+
 else
   # installation from system folders
   AC_SUBST(CFLAGS, "$CFLAGS -I${prefix}/include")
