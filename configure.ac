@@ -624,6 +624,11 @@ fi
 
 if test "$with_nmodl_only" != "yes" -a "$with_nrnpython_only" != "yes" ; then
 
+AC_CHECK_PROG(FLEX_CHECK,flex,yes)
+if test x"$FLEX_CHECK" != x"yes" ; then
+  AC_MSG_ERROR([flex not found. Please install bison (yacc) and flex before proceesing.])
+fi
+
 if test x"$SUNDIALS_SYSTEM_INSTALL" != "yes"; then
   #download and unpack sundials if not already in contrib/sundials-*
   SUNDIALS_SRC_PATH="${NRN_SRCDIR}/contrib/sundials"
