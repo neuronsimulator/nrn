@@ -1430,16 +1430,16 @@ void Cvode::matmeth() {
         /* CVODES guide chapter 8: Providing Alternate Linear
          * Solver Modules: only lsolve function is mandatory
          * (non-used functions need to be set to null) */
-        ((CVodeMem)mem_)->cv_linit = nullptr;
-        //TODO can the set-up be set to nullptr?
-		((CVodeMem)mem_)->cv_lsetup = msetup;
+        ((CVodeMem)mem_)->cv_linit = NULL;
+        //TODO can the set-up be set to NULL? Comment says it does not do anything!
+		((CVodeMem)mem_)->cv_lsetup = NULL;
         //((CVodeMem)mem_)->cv_setupNonNull = TRUE; // but since our's does not do anything...
 	    if (nth_) { // lvardt
 		((CVodeMem)mem_)->cv_lsolve = msolve_lvardt;
 	    }else{
 		((CVodeMem)mem_)->cv_lsolve = msolve;
 	    }
-        ((CVodeMem)mem_)->cv_lfree = nullptr;
+        ((CVodeMem)mem_)->cv_lfree = NULL;
 		break;
 	}
     }

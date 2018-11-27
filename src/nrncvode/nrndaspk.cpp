@@ -191,10 +191,10 @@ void Daspk::ida_init() {
         ier = IDASVtolerances(mem, cv_->ncv_->rtol_, cv_->atolnvec_);
         assert(ier);
 
-        mem->ida_linit = nullptr;
+        mem->ida_linit = NULL;
 		mem->ida_lsetup = msetup;
 		mem->ida_lsolve = msolve;
-        mem->ida_lfree = nullptr;
+        mem->ida_lfree = NULL;
 		mem_ = mem;
 	}
 }
