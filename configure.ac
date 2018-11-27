@@ -184,7 +184,10 @@ AC_LANG_RESTORE
 
 AM_CONDITIONAL(BUILD_CARBON, test x$enable_carbon = xyes)
 
-NRN_SRCDIR=$srcdir
+#We used $PWD instead of $srcdir as the latter is a relative path (typically '.') and does not work with -rpath
+#also the autoconf variable $abs_top_builddir only works after AC_OUTPUT
+NRN_SRCDIR=$PWD
+
 AC_SUBST(NRN_SRCDIR)
 dnl use the --enable-rpm-rules=yes
 dnl Following is not very good with respect to identification
@@ -632,6 +635,8 @@ fi
 if test x"$SUNDIALS_SYSTEM_INSTALL" != x"yes"; then
   #download and unpack sundials if not already in contrib/sundials-*
   SUNDIALS_SRC_PATH="${NRN_SRCDIR}/contrib/sundials"
+  SUNDIALS_BUILD_PATH="${SUNDIALS_SRC_PATH}/build"
+
   AC_CHECK_FILE($SUNDIALS_SRC_PATH,SUNDIALS_CHECK=yes,SUNDIALS_CHECK=no)
   if test x"$SUNDIALS_CHECK" != x"yes" ; then
 
@@ -665,13 +670,13 @@ if test x"$SUNDIALS_SYSTEM_INSTALL" != x"yes"; then
   fi
 
   #Run CMake for SUNDIALS (CVODE and IDA only)
-  SUNDIALS_BUILD_PATH="${SUNDIALS_SRC_PATH}/build"
   SUNDIALS_CMAKE_CMD="cmake .. -DCMAKE_INSTALL_PREFIX=${prefix} -DEXAMPLES_INSTALL=OFF -DBUILD_ARKODE=OFF -DBUILD_CVODES=OFF -DBUILD_IDAS=OFF -DBUILD_KINSOL=OFF -DEXAMPLES_ENABLE_C=OFF"
 
   #Previous settings set by M Hines
   SUNDIALS_CMAKE_CMD="${SUNDIALS_CMAKE_CMD} -DSUNDIALS_PRECISION=double"
   SUNDIALS_CMAKE_CMD="${SUNDIALS_CMAKE_CMD} -DUSE_GENERIC_MATH=ON"
 
+  #set user-specified compiler, if any
   if test ${CC}; then
     SUNDIALS_CMAKE_CMD="${SUNDIALS_CMAKE_CMD} -DCMAKE_C_COMPILER=${CC}"
   fi
@@ -682,20 +687,17 @@ if test x"$SUNDIALS_SYSTEM_INSTALL" != x"yes"; then
   #fi
   SUNDIALS_CMAKE_CMD="${SUNDIALS_CMAKE_CMD} -DCMAKE_BUILD_TYPE=Release"
 
+  #Append Makefile folder to CONTRIB_SUBDIRS that will be used by Makefile.am and entry for SUBDIRS
+  AC_SUBST(CONTRIB_SUBDIRS, "$CONTRIB_SUBDIRS $SUNDIALS_BUILD_PATH")
+
   AC_MSG_RESULT([Running CMake command for SUNDIALS: $SUNDIALS_CMAKE_CMD])
-  mkdir -p $SUNDIALS_BUILD_PATH; cd $SUNDIALS_BUILD_PATH; $SUNDIALS_CMAKE_CMD; cd ../../../
+  mkdir -p $SUNDIALS_BUILD_PATH; cd $SUNDIALS_BUILD_PATH; $SUNDIALS_CMAKE_CMD; cd $NRN_SRCDIR
 
-  #Include paths for contrib libraries (relative to src/nrncvode)
-  ROOT_SOURCE_FOLDER="../.." #Its a hack, the full path var $abs_top_builddir is empty
-
-  #Append new folder to CONTRIB_SUBDIRS that will be used by Makefile.am and entry for SUBDIRS
-  AC_SUBST(CONTRIB_SUBDIRS, "$CONTRIB_SUBDIRS contrib/sundials/build")
-
-  AC_SUBST(SUNDIALS_INCLUDES, "-I${ROOT_SOURCE_FOLDER}/${SUNDIALS_SRC_PATH}/include/ -I${ROOT_SOURCE_FOLDER}/${SUNDIALS_BUILD_PATH}/include/ -I${ROOT_SOURCE_FOLDER}/${SUNDIALS_SRC_PATH}/src/")
-  SUNDIALS_LIBPATH="${ROOT_SOURCE_FOLDER}/${SUNDIALS_BUILD_PATH}/src"
-  xdirlist="ida cvode nvec_ser nvec_par"
-  for i in xdirlist ; do
-    SUNDIALS_LIBDIRNAMES="${SUNDIALS_LIBDIRS} ${SUNDIALS_LIBPATH}/${i}"
+  AC_SUBST(SUNDIALS_INCLUDES, "-I${SUNDIALS_SRC_PATH}/include/ -I${SUNDIALS_BUILD_PATH}/include/ -I${SUNDIALS_SRC_PATH}/src/")
+  SUNDIALS_LIBPATH="${SUNDIALS_BUILD_PATH}/src"
+  xdirlist="ida cvode nvec_ser" #nvec_par"
+  for i in $xdirlist ; do
+    SUNDIALS_LIBDIRNAMES="${SUNDIALS_LIBDIRNAMES} ${SUNDIALS_LIBPATH}/${i}"
   done
 else
   # installation from system folders
@@ -703,12 +705,13 @@ else
   SUNDIALS_LIBDIRNAMES="${prefix}/lib"
 fi
 
-SUNDIALS_LIBNAMES="sundials_ida sundials_cvode sundials_nvecserial sundials_nvecparallel"
+SUNDIALS_LIBNAMES="sundials_ida sundials_cvode sundials_nvecserial" # sundials_nvecparallel"
 
 for i in $SUNDIALS_LIBDIRNAMES ; do
   SUNDIALS_LIBDIRS="$SUNDIALS_LIBDIRS -L${i}"
   SUNDIALS_LIBDIR_RPATH="${SUNDIALS_LIBDIR_RPATH} -rpath ${i}"
 done
+
 for i in $SUNDIALS_LIBNAMES ; do
   SUNDIALS_LIBS="$SUNDIALS_LIBS -l${i}"
 done
