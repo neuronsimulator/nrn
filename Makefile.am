@@ -8,9 +8,9 @@ host_cpu = @host_cpu@
 NVER = $(PACKAGE_VERSION)
 
 if NMODL_ONLY
-SUBDIRS = src
+SUBDIRS = ${CONTRIB_SUBDIRS} src
 else
-SUBDIRS = src bin share
+SUBDIRS = ${CONTRIB_SUBDIRS} src bin share
 endif
 
 #

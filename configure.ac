@@ -651,7 +651,7 @@ if test x"$SUNDIALS_SYSTEM_INSTALL" != "yes"; then
     cd contrib
     SUNDIALS_FILE_NAME=sundials-3.2.1
     wget https://computation.llnl.gov/projects/sundials/download/${SUNDIALS_FILE_NAME}.tar.gz
-    tar -xvf ./${SUNDIALS_FILE_NAME}.tar.gz 
+    tar -xf ./${SUNDIALS_FILE_NAME}.tar.gz 
     rm ./${SUNDIALS_FILE_NAME}.tar.gz
     mv ${SUNDIALS_FILE_NAME} sundials
     cd ..
@@ -696,6 +696,9 @@ if test x"$SUNDIALS_SYSTEM_INSTALL" != "yes"; then
   AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_cvode")
   AC_SUBST(LDFLAGS, "$LDFLAGS -L${ROOT_SOURCE_FOLDER}/${SUNDIALS_BUILD_PATH}/src/nvec_ser")
   AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_nvecserial")
+
+  #Append new folder to CONTRIB_SUBDIRS that will be used by Makefile.am and entry for SUBDIRS
+  AC_SUBST(CONTRIB_SUBDIRS, "$CONTRIB_SUBDIRS contrib/sundials/build")
 
 else
   # installation from system folders
