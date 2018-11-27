@@ -59,7 +59,6 @@ if BUILD_NRNPYTHON
 nrnpythonbuild = $(NRNPYTHON_SUBDIRS)
 endif
 
-
 if BUILD_NEURONMUSIC
 neuronmusicbuild = neuronmusic
 else
