@@ -62,7 +62,7 @@ LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS)
 
 NRNLIBS = -L$(libdir) -lnrnoc -loc \
 	-lnrniv -livoc -loc \
-	-lneuron_gnu -lscopmath -lsparse13 -lsundials $(lnrnmpi) \
+	-lneuron_gnu -lscopmath -lsparse13 $(lnrnmpi) \
 	@MEMACSLIB@ -lmeschach \
 	$(IVOS_LIB) $(IV_LIBS) \
 	@READLINE_LIBS@ \

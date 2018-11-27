@@ -23,8 +23,8 @@
 
 #include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts, macros*/
 #include "nvector_nrnthread.h"
-//#include "shared/sundialsmath.h"
 #include <sundials/sundials_types.h> /* defs. of realtype, sunindextype */
+#include <sundials/sundials_math.h>
 #include "section.h"
 #include "nrnmutdec.h"
 
@@ -275,7 +275,7 @@ N_Vector N_VMake_NrnThread(long int length, realtype *v_data)
 
   if (length > 0) {
     /* Attach data */
-    NV_OWN_DATA_NT(v) = FALSE;
+    NV_OWN_DATA_NT(v) = SUNFALSE;
     NV_DATA_NT(v) = v_data;
   }
 

@@ -47,7 +47,7 @@ LINK = $(LIBTOOL) --mode=link $(CCLD) -module $(AM_CFLAGS) $(CFLAGS) \
 NRNOCLIBS = -L"$(libdir)" -lnrnoc -loc @MEMACSLIB@ \
 	$(lnrnmpi) -lscopmath -lsparse13 @READLINE_LIBS@
 NRNIVLIBS = -L"$(libdir)" -lnrniv -livoc \
-	-lneuron_gnu -lmeschach -lsundials \
+	-lneuron_gnu -lmeschach \
 	$(IVOS_LIB) $(IV_LIBS) $(NJ_LIBS) $(PY_LIBS) $(NRNNI_LIBS) $(PVM_LIBS)
 
 NRNOCOBJS = "$(libobjdir)/ocmain.o" "$(libobjdir)/nrnnoiv.o" "$(libobjdir)/ocnoiv.o"

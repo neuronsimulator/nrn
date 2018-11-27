@@ -19,6 +19,8 @@
 #define USELONGDOUBLE 1
 
 #include <../../nrnconf.h>
+/* gets from sundials_config.h */
+#undef SUNDIALS_USE_GENERIC_MATH
 #include <hocassrt.h>
 
 #include <stdio.h>
@@ -163,7 +165,7 @@ N_Vector N_VNewEmpty_NrnParallelLD(MPI_Comm comm,
   content->local_length = local_length;
   content->global_length = global_length;
   content->comm = comm;
-  content->own_data = FALSE;
+  content->own_data = SUNFALSE;
   content->data = NULL;
 
   /* Attach content and ops */
@@ -195,7 +197,7 @@ N_Vector N_VNew_NrnParallelLD(MPI_Comm comm,
     if(data == NULL) {N_VDestroy_NrnParallelLD(v);return(NULL);}
 
     /* Attach data */
-    NV_OWN_DATA_P_LD(v) = TRUE;
+    NV_OWN_DATA_P_LD(v) = SUNTRUE;
     NV_DATA_P_LD(v) = data; 
 
   }
@@ -256,7 +258,7 @@ N_Vector N_VCloneEmpty_NrnParallelLD(N_Vector w)
   content->local_length  = NV_LOCLENGTH_P_LD(w);
   content->global_length = NV_GLOBLENGTH_P_LD(w);
   content->comm = NV_COMM_P_LD(w);
-  content->own_data = FALSE;
+  content->own_data = SUNFALSE;
   content->data = NULL;
 
   /* Attach content and ops */
@@ -282,7 +284,7 @@ N_Vector N_VMake_NrnParallelLD(MPI_Comm comm,
 
   if (local_length > 0) {
     /* Attach data */
-    NV_OWN_DATA_P_LD(v) = FALSE;
+    NV_OWN_DATA_P_LD(v) = SUNFALSE;
     NV_DATA_P_LD(v) = v_data;
   }
 
@@ -408,7 +410,7 @@ N_Vector N_VClone_NrnParallelLD(N_Vector w)
     if(data == NULL) {N_VDestroy_NrnParallelLD(v);return(NULL);}
 
     /* Attach data */
-    NV_OWN_DATA_P_LD(v) = TRUE;
+    NV_OWN_DATA_P_LD(v) = SUNTRUE;
     NV_DATA_P_LD(v) = data;
   }
 
@@ -417,7 +419,7 @@ N_Vector N_VClone_NrnParallelLD(N_Vector w)
 
 void N_VDestroy_NrnParallelLD(N_Vector v)
 {
-  if ( (NV_OWN_DATA_P_LD(v) == TRUE) && (NV_DATA_P_LD(v) != NULL) ) 
+  if ( (NV_OWN_DATA_P_LD(v) == SUNTRUE) && (NV_DATA_P_LD(v) != NULL) ) 
     free(NV_DATA_P_LD(v));
   free(v->content);
   free(v->ops);
@@ -824,9 +826,9 @@ booleantype N_VInvTest_NrnParallelLD(N_Vector x, N_Vector z)
 
   gval = VAllReduce_NrnParallelLD(val, 3, comm);
   if (gval == ZERO)
-    return(FALSE);
+    return(SUNFALSE);
   else
-    return(TRUE);
+    return(SUNTRUE);
 }
 
 booleantype N_VConstrMask_NrnParallelLD(N_Vector c, N_Vector x, N_Vector m)
@@ -842,17 +844,17 @@ booleantype N_VConstrMask_NrnParallelLD(N_Vector c, N_Vector x, N_Vector m)
   md = NV_DATA_P_LD(m);
   comm = NV_COMM_P_LD(x);
 
-  test = TRUE;
+  test = SUNTRUE;
 
   for (i=0; i<N; i++, cd++, xd++, md++) {
     *md = ZERO;
     if (*cd == ZERO) continue;
     if (*cd > ONEPT5 || (*cd) < -ONEPT5) {
-      if ( (*xd)*(*cd) <= ZERO) {test = FALSE; *md = ONE; }
+      if ( (*xd)*(*cd) <= ZERO) {test = SUNFALSE; *md = ONE; }
       continue;
     }
     if ( (*cd) > HALF || (*cd) < -HALF) {
-      if ( (*xd)*(*cd) < ZERO ) {test = FALSE; *md = ONE; }
+      if ( (*xd)*(*cd) < ZERO ) {test = SUNFALSE; *md = ONE; }
     }
   }
 
@@ -871,14 +873,14 @@ realtype N_VMinQuotient_NrnParallelLD(N_Vector num, N_Vector denom)
   dd = NV_DATA_P_LD(denom);
   comm = NV_COMM_P_LD(num);
 
-  notEvenOnce = TRUE;
+  notEvenOnce = SUNTRUE;
 
   for (i = 0; i < N; i++, nd++, dd++) {
     if (*dd == ZERO) continue;
     else {
       if (notEvenOnce) {
         min = *nd / *dd ;
-        notEvenOnce = FALSE;
+        notEvenOnce = SUNFALSE;
       }
       else min = SUNMIN(min, (*nd) / (*dd));
     }

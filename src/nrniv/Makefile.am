@@ -107,7 +107,8 @@ PTHREAD_CC=@PTHREAD_CC@
 PTHREAD_CFLAGS=@PTHREAD_CFLAGS@
 PTHREAD_LIBS=@PTHREAD_LIBS@
 
-includes = $(windll) -I$(nsrc)/nrncvode -I$(nsrc)/sparse13 -I$(nsrc)/gnu -I. -I$(nsrc)/ivoc -I$(nsrc)/nrnoc -I$(top_builddir)/src/oc -I$(nsrc)/oc $(IV_INCLUDES) $(BBS_INCLUDES)
+SUNDIALS_INCLUDES = @SUNDIALS_INCLUDES@
+includes = $(windll) -I$(nsrc)/nrncvode -I$(nsrc)/sparse13 -I$(nsrc)/gnu -I. -I$(nsrc)/ivoc -I$(nsrc)/nrnoc -I$(top_builddir)/src/oc -I$(nsrc)/oc $(SUNDIALS_INCLUDES) $(IV_INCLUDES) $(BBS_INCLUDES)
 AM_CPPFLAGS = -DOOP=1 -DCABLE=1 -DUSECVODE=1 -DUSEMATRIX=1 -DUSEBBS=1 $(includes)
 AM_CFLAGS = @MINGW_CFLAG@ $(PTHREAD_CFLAGS)
 AM_CXXFLAGS = @MINGW_CFLAG@ $(PTHREAD_CFLAGS)
@@ -133,6 +134,7 @@ nrniv_LDADD = ../ivoc/nrnmain.o ../ivoc/ivocmain.o ../oc/modlreg.o \
 	@MEMACSLIBLA@ ../mesch/libmeschach.la $(IVOS_DIR) \
 	$(IV_LIBS) @NRNJAVA_LIBLA@ \
 	$(BBS_LIBS) @NRNPYTHON_LIBLA@ @MUSIC_LIBLA@ @NRNNI_LIBLA@ \
+	@SUNDIALS_LIBDIRS@ @SUNDIALS_LIBS@ @SUNDIALS_LIBDIR_RPATH@ \
 	@NRN_READLINE_LIBS@ @PTHREAD_LIBS@
 
 nrniv_DEPENDENCIES = \
@@ -147,7 +149,6 @@ nrniv_DEPENDENCIES = \
 	@MEMACSLIBLA@ ../mesch/libmeschach.la \
 	@NRN_READLINE_DEP@ @NRNJAVA_DEP@ @NRNPYTHON_DEP@ @NRNNI_DEP@ \
 	$(cygexe)
-
 
 ## Header files that must be included in the distribution:
 noinst_HEADERS = ndatclas.h nrnclass.h nrnmenu.h nrnoc2iv.h ppshape.h \

@@ -64,9 +64,12 @@ os.environ["CXX"]=mpicxx_bin
 include_dirs = [nrn_srcdir+'/src/oc', '../oc', nrn_srcdir+'/src/nrnmpi']
 defines = []
 
+sundials_dirs="@SUNDIALS_LIBDIRNAMES@".split()
+sundials_libs="@SUNDIALS_LIBNAMES@".split()
+
 libdirs = [destdir + "@NRN_LIBDIR@",
   ivlibdir
-]
+] + sundials_dirs
 epre='-Wl,-R'
 
 @MAC_DARWIN_FALSE@readline="readline"
@@ -77,7 +80,7 @@ hoc_module = Extension(
       "neuron.hoc",
       ["inithoc.cpp"],
       library_dirs=libdirs,
-      @setup_extra_link_args@ = [ epre+libdirs[0],epre+libdirs[1] ],
+      @setup_extra_link_args@ = [ epre + i for i in libdirs ],
       #extra_objects = [],
       libraries = [
 	"nrnpython@npy_pyver10@",
@@ -85,10 +88,10 @@ hoc_module = Extension(
         @BUILD_MEMACS_TRUE@"memacs",
 	"meschach", "neuron_gnu",
 	@BUILD_NRNMPI_DYNAMIC_FALSE@"nrnmpi",
-        "scopmath", "sparse13", "sundials",
+        "scopmath", "sparse13",
 	readline,
 	"@IVHINES@",
-      ],
+      ] + sundials_libs,
       include_dirs = include_dirs,
       define_macros=defines
     )

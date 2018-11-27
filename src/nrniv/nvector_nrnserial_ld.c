@@ -19,6 +19,8 @@
 #define USELONGDOUBLE 1
 
 #include <../../nrnconf.h>
+/* gets from sundials_config.h */
+#undef SUNDIALS_USE_GENERIC_MATH
 #include <hocassrt.h>
 #if HAVE_POSIX_MEMALIGN
 #define HAVE_MEMALIGN 1

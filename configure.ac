@@ -629,7 +629,7 @@ if test x"$FLEX_CHECK" != x"yes" ; then
   AC_MSG_ERROR([flex not found. Please install bison (yacc) and flex before proceesing.])
 fi
 
-if test x"$SUNDIALS_SYSTEM_INSTALL" != "yes"; then
+if test x"$SUNDIALS_SYSTEM_INSTALL" != x"yes"; then
   #download and unpack sundials if not already in contrib/sundials-*
   SUNDIALS_SRC_PATH="${NRN_SRCDIR}/contrib/sundials"
   AC_CHECK_FILE($SUNDIALS_SRC_PATH,SUNDIALS_CHECK=yes,SUNDIALS_CHECK=no)
@@ -687,25 +687,37 @@ if test x"$SUNDIALS_SYSTEM_INSTALL" != "yes"; then
 
   #Include paths for contrib libraries (relative to src/nrncvode)
   ROOT_SOURCE_FOLDER="../.." #Its a hack, the full path var $abs_top_builddir is empty
-  AC_SUBST(CFLAGS, "$CFLAGS -I${ROOT_SOURCE_FOLDER}/${SUNDIALS_SRC_PATH}/include/ -I${ROOT_SOURCE_FOLDER}/${SUNDIALS_BUILD_PATH}/include/ -I${ROOT_SOURCE_FOLDER}/${SUNDIALS_SRC_PATH}/src/")
-  AC_SUBST(CPPFLAGS, "$CPPFLAGS -I${ROOT_SOURCE_FOLDER}/${SUNDIALS_SRC_PATH}/include/ -I${ROOT_SOURCE_FOLDER}/${SUNDIALS_BUILD_PATH}/include/ -I${ROOT_SOURCE_FOLDER}/${SUNDIALS_SRC_PATH}/src/")
-
-  AC_SUBST(LDFLAGS, "$LDFLAGS -L${ROOT_SOURCE_FOLDER}/${SUNDIALS_BUILD_PATH}/src/ida")
-  AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_ida")
-  AC_SUBST(LDFLAGS, "$LDFLAGS -L${ROOT_SOURCE_FOLDER}/${SUNDIALS_BUILD_PATH}/src/cvode")
-  AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_cvode")
-  AC_SUBST(LDFLAGS, "$LDFLAGS -L${ROOT_SOURCE_FOLDER}/${SUNDIALS_BUILD_PATH}/src/nvec_ser")
-  AC_SUBST(LDFLAGS, "$LDFLAGS -lsundials_nvecserial")
 
   #Append new folder to CONTRIB_SUBDIRS that will be used by Makefile.am and entry for SUBDIRS
   AC_SUBST(CONTRIB_SUBDIRS, "$CONTRIB_SUBDIRS contrib/sundials/build")
 
+  AC_SUBST(SUNDIALS_INCLUDES, "-I${ROOT_SOURCE_FOLDER}/${SUNDIALS_SRC_PATH}/include/ -I${ROOT_SOURCE_FOLDER}/${SUNDIALS_BUILD_PATH}/include/ -I${ROOT_SOURCE_FOLDER}/${SUNDIALS_SRC_PATH}/src/")
+  SUNDIALS_LIBPATH="${ROOT_SOURCE_FOLDER}/${SUNDIALS_BUILD_PATH}/src"
+  xdirlist="ida cvode nvec_ser nvec_par"
+  for i in xdirlist ; do
+    SUNDIALS_LIBDIRNAMES="${SUNDIALS_LIBDIRS} ${SUNDIALS_LIBPATH}/${i}"
+  done
 else
   # installation from system folders
-  AC_SUBST(CFLAGS, "$CFLAGS -I${prefix}/include")
-  AC_SUBST(CPPFLAGS, "$CPPFLAGS -I${prefix}/include")
-  AC_SUBST(LDFLAGS, "$LDFLAGS -L${prefix}/lib -lsundials_ida -lsundials_cvode -lsundials_nvecserial")
+  AC_SUBST(SUNDIALS_INCLUDES, "-I${prefix}/include")
+  SUNDIALS_LIBDIRNAMES="${prefix}/lib"
 fi
+
+SUNDIALS_LIBNAMES="sundials_ida sundials_cvode sundials_nvecserial sundials_nvecparallel"
+
+for i in $SUNDIALS_LIBDIRNAMES ; do
+  SUNDIALS_LIBDIRS="$SUNDIALS_LIBDIRS -L${i}"
+  SUNDIALS_LIBDIR_RPATH="${SUNDIALS_LIBDIR_RPATH} -rpath ${i}"
+done
+for i in $SUNDIALS_LIBNAMES ; do
+  SUNDIALS_LIBS="$SUNDIALS_LIBS -l${i}"
+done
+
+AC_SUBST(SUNDIALS_LIBDIRNAMES, "$SUNDIALS_LIBDIRNAMES")
+AC_SUBST(SUNDIALS_LIBDIR_RPATH, "$SUNDIALS_LIBDIR_RPATH")
+AC_SUBST(SUNDIALS_LIBDIRS, "$SUNDIALS_LIBDIRS")
+AC_SUBST(SUNDIALS_LIBNAMES, "$SUNDIALS_LIBNAMES")
+AC_SUBST(SUNDIALS_LIBS, "$SUNDIALS_LIBS")
 
 AC_CONFIG_HEADERS([nrnconf.h])
 AC_CONFIG_HEADERS([src/nrnoc/nrnconfigargs.h])

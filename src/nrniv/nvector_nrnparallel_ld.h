@@ -245,7 +245,7 @@ N_Vector N_VNewEmpty_NrnParallelLD(MPI_Comm comm,
  * -----------------------------------------------------------------
  * This function creates a new parallel N_Vector with an empty (NULL)
  * data array using the vector w as a template
- * (sets own_data = FALSE).
+ * (sets own_data = SUNFALSE).
  * -----------------------------------------------------------------
  */
 
