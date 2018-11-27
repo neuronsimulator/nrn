@@ -693,9 +693,9 @@ if test x"$SUNDIALS_SYSTEM_INSTALL" != x"yes"; then
 
   AC_SUBST(SUNDIALS_INCLUDES, "-I${ROOT_SOURCE_FOLDER}/${SUNDIALS_SRC_PATH}/include/ -I${ROOT_SOURCE_FOLDER}/${SUNDIALS_BUILD_PATH}/include/ -I${ROOT_SOURCE_FOLDER}/${SUNDIALS_SRC_PATH}/src/")
   SUNDIALS_LIBPATH="${ROOT_SOURCE_FOLDER}/${SUNDIALS_BUILD_PATH}/src"
-  xdirlist="ida cvode nvec_ser nvec_par"
-  for i in xdirlist ; do
-    SUNDIALS_LIBDIRNAMES="${SUNDIALS_LIBDIRS} ${SUNDIALS_LIBPATH}/${i}"
+  xdirlist="ida cvode nvec_ser" #nvec_par"
+  for i in $xdirlist ; do
+    SUNDIALS_LIBDIRNAMES="${SUNDIALS_LIBDIRNAMES} ${SUNDIALS_LIBPATH}/${i}"
   done
 else
   # installation from system folders
@@ -703,12 +703,13 @@ else
   SUNDIALS_LIBDIRNAMES="${prefix}/lib"
 fi
 
-SUNDIALS_LIBNAMES="sundials_ida sundials_cvode sundials_nvecserial sundials_nvecparallel"
+SUNDIALS_LIBNAMES="sundials_ida sundials_cvode sundials_nvecserial" # sundials_nvecparallel"
 
 for i in $SUNDIALS_LIBDIRNAMES ; do
   SUNDIALS_LIBDIRS="$SUNDIALS_LIBDIRS -L${i}"
   SUNDIALS_LIBDIR_RPATH="${SUNDIALS_LIBDIR_RPATH} -rpath ${i}"
 done
+
 for i in $SUNDIALS_LIBNAMES ; do
   SUNDIALS_LIBS="$SUNDIALS_LIBS -l${i}"
 done
