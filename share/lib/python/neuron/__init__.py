@@ -104,6 +104,7 @@ embedded = True if 'hoc' in sys.modules else False
 
 try:
     import hoc
+    hoc.__file__
 except:
   try:
     #Python3.1 extending needs to look into the module explicitly
