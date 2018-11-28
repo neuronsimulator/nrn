@@ -1456,7 +1456,6 @@ static PyObject* hocobj_iter(PyObject* self) {
       // need a clone of self so nested loops do not share iteritem_
       PyObject* po2 = nrnpy_ho2po(po->ho_);
       ((PyHocObject*)po2)->iteritem_ = ((hoc_Item*)po->ho_->u.this_pointer)->next;
-      Py_INCREF(po2);
       return po2;
     }
   } else if (po->type_ == PyHoc::HocForallSectionIterator) {
