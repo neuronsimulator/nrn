@@ -973,9 +973,10 @@ void Cvode::dstates(double* pd) {
 	int i, id;
     for (id=0; id < nctd_; ++id) {
 	CvodeThreadData& z = ctd_[id];
-	for (i=0; i < z.nvsize_; ++i) {
+	for (i=0; i < z.nonvint_extra_offset_; ++i) {
 		pd[i + z.nvoffset_] = *z.pvdot_[i];
-	}	
+	}
+	nrn_nonvint_block_ode_fun(z.nvsize_, n_vector_data(y_, id), pd, id);
     }
 }
 

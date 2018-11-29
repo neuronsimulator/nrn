@@ -4312,9 +4312,10 @@ const char* NetCvode::statename(int is, int style) {
 		hdp_ = new HocDataPaths(2*n, style);
 		if (gcv_) {
 			for (it=0; it < nrn_nthread; ++it){
-				neq = gcv_->ctd_[it].nvsize_;
-				pv = gcv_->ctd_[it].pv_;
-				for (j=0; j < neq; ++j) {
+				CvodeThreadData& z = gcv_->ctd_[it];
+				neq = z.nvsize_;
+				pv = z.pv_;
+				for (j=0; j < z.nonvint_extra_offset_; ++j) {
 					hdp_->append(pv[j]);
 				}
 			}
