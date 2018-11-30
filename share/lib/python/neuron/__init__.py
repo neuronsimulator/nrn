@@ -119,6 +119,7 @@ __version__ = version
 
 if not hasattr(hoc, "__file__"):
   import platform
+  import os
   p = h.nrnversion(6)
   if "--prefix=" in p:
     p = p[p.find('--prefix=') + 9:]
@@ -127,10 +128,14 @@ if not hasattr(hoc, "__file__"):
     p = "/usr/local/nrn"
   if sys.version_info >= (3, 0):
     import sysconfig
-    p = p + "/lib/python/neuron/hoc%s" % sysconfig.get_config_var('SO')
+    phoc = p + "/lib/python/neuron/hoc%s" % sysconfig.get_config_var('SO')
   else:
-    p = p + "/lib/python/neuron/hoc.so"
-  setattr(hoc, "__file__", p)
+    phoc = p + "/lib/python/neuron/hoc.so"
+  if not os.path.isfile(phoc):
+    phoc = p + "/%s/lib/libnrnpython%d.so" % (platform.machine(), sys.version_info[0])
+  if not os.path.isfile(phoc):
+    phoc = p + "/%s/lib/libnrnpython.so" % platform.machine()
+  setattr(hoc, "__file__", phoc)
 
 # As a workaround to importing doc at neuron import time
 # (which leads to chicken and egg issues on some platforms)
