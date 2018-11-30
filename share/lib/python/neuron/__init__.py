@@ -125,7 +125,11 @@ if not hasattr(hoc, "__file__"):
     p = p[:p.find("'")]
   else:
     p = "/usr/local/nrn"
-  p = p + "/%s/lib/libnrnpython.so"%platform.machine()
+  if sys.version_info >= (3, 0):
+    import sysconfig
+    p = p + "/lib/python/neuron/hoc%s" % sysconfig.get_config_var('SO')
+  else:
+    p = p + "/lib/python/neuron/hoc.so"
   setattr(hoc, "__file__", p)
 
 # As a workaround to importing doc at neuron import time
