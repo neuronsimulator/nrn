@@ -1023,6 +1023,8 @@ void nrn_ba(NrnThread* nt, int bat){
 typedef struct List_nonvint_block
 {
 	int (*func)(int method, int size, double* pd1, double* pd2, int tid);
+	void*(*cpfunc)(int index, int tid);
+	int lastindex;
 	struct List_nonvint_block *next;
 } List_nonvint_block;
 
@@ -1040,30 +1042,60 @@ int nrn_nonvint_block_exe(int method, int size, double* pd1, double* pd2, int ti
 		rval = (*(node->func))(method, size, pd1, pd2, tid);
 		if(rval == -1) {
 			hoc_execerror("nrn_nonvint_block error", 0);
-		}
-		else {
+		} else {
 			sum += rval;
 		}
 		if (method == NONVINT_ODE_COUNT) {
 			size += rval;
+			node->lastindex = size;
 		}
 	}
 	
 	return sum;
 }
 
-int set_nonvint_block(int (*new_nrn_nonvint_block)(int method, int size, double* pd1, double* pd2, int tid)) {
+char* (*nrn_nonvint_block_statename_)(void*(*f)(int, int), int, int);
+
+char* nrn_nonvint_block_statename(int index, int tid) {
+	/* execute all functions in nonvint_block_list and return the
+	 * name appropriate to the index
+	 */
+	List_nonvint_block* node;
+
+    if (nrn_nonvint_block_statename_) {
+	for(node = nonvint_block_list; node != NULL; node = node->next) {
+	    if (node->cpfunc && index < node->lastindex) {
+		char* cp = (*nrn_nonvint_block_statename_)(node->cpfunc, index, tid);
+		/* if not NULL then was strdup of a PyObject* string. */
+		/* which was then unreffed. cp will be freed by caller */
+		if (cp) {
+			return cp;
+		}
+	    }
+	}
+    }
+	
+	return NULL;
+}
+
+int set_nonvint_block(int (*new_nrn_nonvint_block)(int method, int size, double* pd1, double* pd2, int tid),
+  char*(*new_nrn_nonvint_statename)(int index, int tid)) {
 
 	/* store new_nrn_nonvint_block functions in a list */
 	List_nonvint_block* node = (List_nonvint_block*)malloc(sizeof(List_nonvint_block));
 	node->func = new_nrn_nonvint_block;
+	node->cpfunc = (void*)new_nrn_nonvint_statename;
+	node->lastindex = 0;
 	node->next = NULL;
 
 	if(nonvint_block_list == NULL) {
 		nonvint_block_list = node;
-	}
-	else {
-		nonvint_block_list->next = node;
+	} else {
+		List_nonvint_block* last;
+		for (last = nonvint_block_list; last->next; last = last->next) {
+			;
+		}
+		last->next = node;
 	}
 	/* could this be set directly in nrn_nonvint_block_helper? */
 	nrn_nonvint_block = &nrn_nonvint_block_exe;

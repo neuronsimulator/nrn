@@ -31,6 +31,7 @@ The other uses can merely return 0.
 extern int nrn_nonvint_block_helper(int method, int length, double* pd1, double* pd2, int tid);
 
 nonvintblock_extern int (*nrn_nonvint_block)(int method, int length, double* pd1, double* pd2, int tid);
+extern char* nrn_nonvint_block_statename(int index, int tid);
 
 #define nonvint_block(method, size, pd1, pd2, tid) \
   nrn_nonvint_block ? nrn_nonvint_block_helper(method, size, pd1, pd2, tid) : 0

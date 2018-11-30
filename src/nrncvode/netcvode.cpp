@@ -27,6 +27,7 @@
 #include "shared/sundialsmath.h"
 #include "kssingle.h"
 #include "ocnotify.h"
+#include "nonvintblock.h"
 #if HAVE_IV
 #include "ivoc.h"
 #endif
@@ -4288,7 +4289,9 @@ void NetCvode::acor() {
 	}
 }
 
-const char* NetCvode::statename(int is, int style) {
+char* NetCvode::statename(int is, int style) {
+	const char* rval = NULL;
+	char* dofree = NULL;
 	int i, it, j, n, neq;
 	if (!cvode_active_){
 		hoc_execerror("Cvode is not active", 0);
@@ -4321,9 +4324,10 @@ const char* NetCvode::statename(int is, int style) {
 			}
 		}else{
 			lvardtloop(it, i) {
-			neq = p[it].lcv_[i].ctd_[0].nvsize_;
-			pv = p[it].lcv_[i].ctd_[0].pv_;
-			for (j=0; j < neq; ++j) {
+			CvodeThreadData& z = p[it].lcv_[i].ctd_[0];
+			neq = z.nvsize_;
+			pv = z.pv_;
+			for (j=0; j < z.nonvint_extra_offset_; ++j) {
 				hdp_->append(pv[j]);
 			}
 		}
@@ -4335,18 +4339,23 @@ const char* NetCvode::statename(int is, int style) {
 		for (it=0; it < nrn_nthread; ++it){
 			CvodeThreadData& z = gcv_->ctd_[it];
 			if (j + z.nvoffset_ + z.nvsize_ > is) {
+			    if (is < j + z.nvoffset_ + z.nonvint_extra_offset_) {
 				if (style == 2) {
-				    Symbol* sym = hdp_->retrieve_sym(z.pv_[is - j]);
+					Symbol* sym = hdp_->retrieve_sym(z.pv_[is - j]);
 					assert(sym);
-					return sym2name(sym);
+					rval = sym2name(sym);
 				}else{
 					String* s = hdp_->retrieve(z.pv_[is - j]);
 					if (s) {
-						return s->string();
-					}else{
-						return "unknown";
+						rval = s->string();
 					}
 				}
+			    }else{
+				if (nrn_nonvint_block_statename) {
+				    rval = dofree = nrn_nonvint_block_statename(is, it);
+				}
+			    }
+			    break;
 			}
 			j += z.nvsize_;
 		 }
@@ -4357,20 +4366,22 @@ const char* NetCvode::statename(int is, int style) {
 			    if (style == 2) {
 				Symbol* sym = hdp_->retrieve_sym(z.pv_[is - j]);
 				assert(sym);
-				return sym2name(sym);
+				rval = sym2name(sym);
 			    }else{
 				String* s = hdp_->retrieve(z.pv_[is - j]);
 				if (s) {
-					return s->string();
-				}else{
-					return "unknown";
+					rval = s->string();
 				}
 			    }
+			    break;
 			}
 			j += p[it].lcv_[i].neq_;
 		}
 	}
-	return "unknown";
+	if (!rval) { rval = "unknown"; }
+	char* rval1 = strdup(rval);
+	if (dofree) { free(dofree); }
+	return rval1;
 }
 
 const char* NetCvode::sym2name(Symbol* sym) {

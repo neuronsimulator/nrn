@@ -68,7 +68,7 @@ public:
 	int fun(double t, double* y, double* ydot);
 	void error_weights();
 	void acor();
-	const char* statename(int, int style=1);
+	char* statename(int, int style=1);
 	void localstep(bool); bool localstep();
 	bool is_local();
 	void use_daspk(bool); bool use_daspk();

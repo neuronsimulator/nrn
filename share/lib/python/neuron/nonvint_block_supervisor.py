@@ -18,18 +18,21 @@ nrn_dll_sym = neuron.nrn_dll_sym
 
 # declare prototype
 nonvint_block_prototype = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double), ctypes.c_int)
+nonvint_statename_prototype = ctypes.CFUNCTYPE(ctypes.py_object, ctypes.c_int, ctypes.c_int)
 
 set_nonvint_block = nrn_dll_sym('set_nonvint_block')
-set_nonvint_block.argtypes = [nonvint_block_prototype]
+set_nonvint_block.argtypes = [nonvint_block_prototype, nonvint_statename_prototype]
 
 # Some info not available from the HocObject
 v_structure_change = nrn_dll_sym('v_structure_change', ctypes.c_int)
 
-# items in call are each a list of 10 callables
+# items in call are each a list of 12 callables
 #    [setup, initialize, # method 0, 1
 #    current, conductance, fixed_step_solve, # method 2, 4
-#    ode_count, ode_reinit, ode_fun, ode_solve, ode_jacobian, ode_abs_tolerance ] # method 5-10
+#    ode_count, ode_reinit, ode_fun, ode_solve, ode_jacobian, ode_abs_tolerance, # method 5-10
+#    statename] # method 11
 call = []
+cnt_last = []
 
 # e.g.
 test = '''
@@ -55,16 +58,19 @@ def ode_jacobian(dt, t, ypred, fpred): #9 optionally prepare jacobaian for fast 
   print("ode_jacobian %g %g" % (t, dt))
 def ode_abs_tolerance(y_abs_tolerance): #10 fill with cvode.atol()*scalefactor
   print("ode_abs_tolerance") # on entry, y_abs_tolerance filled with cvode.atol()
+def statename(i, tid):
+  return "statename for index %d" % i
 
 call.append([
     setup, initialize, # method 0, 1
     current, conductance, fixed_step_solve, # method 2, 3, 4
     ode_count, ode_reinit, ode_fun, ode_solve, ode_jacobian, # method 5-9
-    ode_abs_tolerance
+    ode_abs_tolerance, statename
   ])
 '''
 
 ode_count_method_index = 5
+statename_method_index = 11
 
 def register(c):
   unregister(c)
@@ -76,12 +82,14 @@ def unregister(c):
     call.remove(c)
 
 def ode_count_all(offset):
-  global nonvint_block_offset
+  global nonvint_block_offset, cnt_last
   nonvint_block_offset = offset
   cnt = 0
+  cnt_last = []
   for c in call:
     if c[ode_count_method_index]:
       cnt += c[ode_count_method_index](nonvint_block_offset + cnt)
+    cnt_last.append(cnt + offset)
   #print("ode_count_all %d, offset=%d\n"%(cnt, nonvint_block_offset))
   return cnt
 
@@ -151,8 +159,17 @@ def nonvint_block(method, size, pd1, pd2, tid):
     rval = -1
   return rval
 
+def _statename(index, tid):
+  for i, c in enumerate(call):
+    if index < cnt_last[i]:
+      if c[statename_method_index]:
+        return c[statename_method_index](index)
+      break
+  return "_statename(%d)" % index
+
 _callback = nonvint_block_prototype(nonvint_block)
-set_nonvint_block(_callback)
+_callback2 = nonvint_statename_prototype(_statename)
+set_nonvint_block(_callback, _callback2)
 
 if __name__ == '__main__':
   exec(test) # see above string

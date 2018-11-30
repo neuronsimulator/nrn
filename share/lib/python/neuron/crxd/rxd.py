@@ -51,7 +51,7 @@ _int_ptr = ctypes.POINTER(_ctypes_c_int)
 
 fptr_prototype = ctypes.CFUNCTYPE(None)
 set_nonvint_block = nrn_dll_sym('set_nonvint_block')
-set_nonvint_block(nrn_dll_sym('rxd_nonvint_block'))
+set_nonvint_block(nrn_dll_sym('rxd_nonvint_block'), None)
 
 set_setup = nrn_dll_sym('set_setup')
 set_setup.argtypes = [fptr_prototype]

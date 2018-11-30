@@ -45,6 +45,9 @@ extern char* (*nrnpy_callpicklef)(char*, size_t size, int narg,
                                   size_t* retsize);
 extern int (*nrnpy_pysame)(Object*, Object*);  // contain same Python object
 extern Object* (*nrnpympi_alltoall)(Object*, int);
+extern char* (*nrn_nonvint_block_statename_)(void*(*f)(int, int), int, int);
+
+
 typedef struct {
   PyObject_HEAD Section* sec_;
   char* name_;
@@ -73,6 +76,7 @@ static char* po2pickle(Object*, size_t* size);
 static Object* pickle2po(char*, size_t size);
 static char* call_picklef(char*, size_t size, int narg, size_t* retsize);
 static Object* py_alltoall(Object*, int);
+static char* nonvint_block_statename(void*(*f)(int, int), int, int);
 static int pysame(Object*, Object*);
 static PyObject* main_module;
 static PyObject* main_namespace;
@@ -134,6 +138,7 @@ void nrnpython_reg_real() {
   nrnpy_pickle2po = pickle2po;
   nrnpy_callpicklef = call_picklef;
   nrnpympi_alltoall = py_alltoall;
+  nrn_nonvint_block_statename_ = nonvint_block_statename;
   nrnpy_pysame = pysame;
   nrnpy_save_thread = save_thread;
   nrnpy_restore_thread = restore_thread;
@@ -865,3 +870,16 @@ Object* py_alltoall(Object* o, int size) {
   return o;
 #endif
 }
+
+
+char* nonvint_block_statename(void*(*f)(int, int), int index, int tid){
+    PyObject* p = (PyObject*)((*f)(index, tid));
+    char* rval = NULL;
+    Py2NRNString str(p);
+    Py_XDECREF(p);
+    if (str.c_str()) {
+      rval = strdup(str.c_str());
+    }
+    return rval;
+}
+
