@@ -672,6 +672,10 @@ if test x"$SUNDIALS_SYSTEM_INSTALL" != x"yes"; then
   #Run CMake for SUNDIALS (CVODE and IDA only)
   SUNDIALS_CMAKE_CMD="cmake .. -DCMAKE_INSTALL_PREFIX=${prefix} -DEXAMPLES_INSTALL=OFF -DBUILD_ARKODE=OFF -DBUILD_CVODES=OFF -DBUILD_IDAS=OFF -DBUILD_KINSOL=OFF -DEXAMPLES_ENABLE_C=OFF"
 
+  #Add MPI and pthread parallelism
+  SUNDIALS_CMAKE_CMD="${SUNDIALS_CMAKE_CMD} -DMPI_ENABLE=ON"
+  SUNDIALS_CMAKE_CMD="${SUNDIALS_CMAKE_CMD} -DPTHREAD_ENABLE=ON"
+
   #Previous settings set by M Hines
   SUNDIALS_CMAKE_CMD="${SUNDIALS_CMAKE_CMD} -DSUNDIALS_PRECISION=double"
   SUNDIALS_CMAKE_CMD="${SUNDIALS_CMAKE_CMD} -DUSE_GENERIC_MATH=ON"
@@ -695,7 +699,7 @@ if test x"$SUNDIALS_SYSTEM_INSTALL" != x"yes"; then
 
   AC_SUBST(SUNDIALS_INCLUDES, "-I${SUNDIALS_SRC_PATH}/include/ -I${SUNDIALS_BUILD_PATH}/include/ -I${SUNDIALS_SRC_PATH}/src/")
   SUNDIALS_LIBPATH="${SUNDIALS_BUILD_PATH}/src"
-  xdirlist="ida cvode nvec_ser" #nvec_par"
+  xdirlist="ida cvode nvec_ser nvec_par nvec_pthreads"
   for i in $xdirlist ; do
     SUNDIALS_LIBDIRNAMES="${SUNDIALS_LIBDIRNAMES} ${SUNDIALS_LIBPATH}/${i}"
   done
@@ -705,7 +709,9 @@ else
   SUNDIALS_LIBDIRNAMES="${prefix}/lib"
 fi
 
-SUNDIALS_LIBNAMES="sundials_ida sundials_cvode sundials_nvecserial" # sundials_nvecparallel"
+#TODO Test: if compiled without MPI, does it work in the Sundials compiled with 
+#-lsundials_nvecparallel, or needs to link to a whole new Sundials?
+SUNDIALS_LIBNAMES="sundials_ida sundials_cvode sundials_nvecserial sundials_nvecparallel sundials_nvecpthreads"
 
 for i in $SUNDIALS_LIBDIRNAMES ; do
   SUNDIALS_LIBDIRS="$SUNDIALS_LIBDIRS -L${i}"
