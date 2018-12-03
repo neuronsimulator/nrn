@@ -1084,6 +1084,9 @@ int Cvode::cvode_init(double) {
         //CVodeMalloc was replaced by CVodeCreate/CVodeInit
         // CVodeInit allocates and initializes memory for a problem
         err = CVodeInit(mem_, pf_, t0_, y_);
+        //atolnvec_ set by Cvode::init_eqn
+        err = CVodeSVtolerances(mem_, rtol(ncv_), atolnvec_);
+
         err = CVodeSetUserData(mem_, (void*)this);
         if (err != SUCCESS){
 			printf("Cvode %p %s CVodeMalloc error %d\n", this, secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec), err);
