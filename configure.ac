@@ -699,7 +699,11 @@ if test x"$SUNDIALS_SYSTEM_INSTALL" != x"yes"; then
 
   AC_SUBST(SUNDIALS_INCLUDES, "-I${SUNDIALS_SRC_PATH}/include/ -I${SUNDIALS_BUILD_PATH}/include/ -I${SUNDIALS_SRC_PATH}/src/")
   SUNDIALS_LIBPATH="${SUNDIALS_BUILD_PATH}/src"
-  xdirlist="ida cvode nvec_ser nvec_par nvec_pthreads"
+  xdirlist="ida cvode nvec_ser nvec_pthreads"
+  xdirlist="ida cvode nvec_ser"
+  if test x"$with_mpi" = xyes ; then
+    xdirlist="${xdirlist} nvec_par"
+  fi
   for i in $xdirlist ; do
     SUNDIALS_LIBDIRNAMES="${SUNDIALS_LIBDIRNAMES} ${SUNDIALS_LIBPATH}/${i}"
   done
@@ -711,7 +715,10 @@ fi
 
 #TODO Test: if compiled without MPI, does it work in the Sundials compiled with 
 #-lsundials_nvecparallel, or needs to link to a whole new Sundials?
-SUNDIALS_LIBNAMES="sundials_ida sundials_cvode sundials_nvecserial sundials_nvecparallel sundials_nvecpthreads"
+SUNDIALS_LIBNAMES="sundials_ida sundials_cvode sundials_nvecserial sundials_nvecpthreads"
+if test x"$with_mpi" = xyes ; then
+  SUNDIALS_LIBNAMES="${SUNDIALS_LIBNAMES} sundials_nvecparallel"
+fi
 
 for i in $SUNDIALS_LIBDIRNAMES ; do
   SUNDIALS_LIBDIRS="$SUNDIALS_LIBDIRS -L${i}"

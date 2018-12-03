@@ -1085,7 +1085,7 @@ int Cvode::cvode_init(double) {
         // CVodeInit allocates and initializes memory for a problem
         err = CVodeInit(mem_, pf_, t0_, y_);
         //atolnvec_ set by Cvode::init_eqn
-        err = CVodeSVtolerances(mem_, rtol(ncv_), atolnvec_);
+        err = CVodeSVtolerances(mem_, ncv_->rtol_, atolnvec_);
 
         err = CVodeSetUserData(mem_, (void*)this);
         if (err != SUCCESS){
