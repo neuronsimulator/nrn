@@ -791,8 +791,10 @@ void hoc_main1_init(const char* pname, const char** envp)
 	extern FILE	*fout;
 	static int inited = 0;
 
-	hoc_xopen_file_size_ = 200;
-	hoc_xopen_file_ = emalloc(hoc_xopen_file_size_);
+	if (!hoc_xopen_file_) {
+		hoc_xopen_file_size_ = 200;
+		hoc_xopen_file_ = emalloc(hoc_xopen_file_size_);
+	}
 	hoc_xopen_file_[0] = '\0';
 
 	hoc_promptstr = "oc>";

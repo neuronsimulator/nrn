@@ -305,6 +305,7 @@ int hoc_xopen1(const char* name, const char* rcs) /* read and execute a hoc prog
 	hoc_xopen_file_[0] = '\0';
 	hoc_lineno = save_lineno;
 	strcpy(hoc_xopen_file_, savname);
+	free(savname);
 	return 0;
 }
 

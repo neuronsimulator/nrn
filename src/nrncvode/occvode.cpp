@@ -765,15 +765,8 @@ void Cvode::before_after(BAMechList* baml, NrnThread* nt) {
 	for (ba = baml; ba; ba = ba->next) {
 		Pfridot f = (Pfridot)ba->bam->f;
 		Memb_list* ml = ba->ml;
-		if (ba->indices) {
-			for (j=0; j < ba->cnt; ++j) {
-				i = ba->indices[j];
+		for (i=0; i < ml->nodecount; ++i) {
 	(*f)(ml->nodelist[i], ml->data[i], ml->pdata[i], ml->_thread, nt);
-			}
-		}else{
-			for (i=0; i < ml->nodecount; ++i) {
-	(*f)(ml->nodelist[i], ml->data[i], ml->pdata[i], ml->_thread, nt);
-			}
 		}
 	}
 }
