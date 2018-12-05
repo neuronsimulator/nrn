@@ -170,7 +170,7 @@ void rxd_setup_curr_ptrs(int num_currents, int* curr_index, double* curr_scale,
 
 	if(_curr_ptrs != NULL)
 		free(_curr_ptrs);
-	_curr_ptrs = malloc(sizeof(PyHocObject)*num_currents);
+	_curr_ptrs = malloc(sizeof(PyHocObject*)*num_currents);
 	memcpy(_curr_ptrs, curr_ptrs, sizeof(PyHocObject*)*num_currents);
 }
 
@@ -187,7 +187,7 @@ void rxd_setup_conc_ptrs(int conc_count, int* conc_index,
 	
 	if(_conc_ptrs != NULL)
 		free(_conc_ptrs);
-	_conc_ptrs = malloc(sizeof(PyHocObject)*conc_count);
+	_conc_ptrs = malloc(sizeof(PyHocObject*)*conc_count);
 	memcpy(_conc_ptrs, conc_ptrs, sizeof(PyHocObject*)*conc_count);
     
 }
@@ -1260,7 +1260,7 @@ void _fadvance(void) {
     /*diffusion*/
     if(diffusion)
     {
-        rhs = malloc(sizeof(double*) * num_states);
+        rhs = malloc(sizeof(double) * num_states);
 	    mul(_rxd_euler_nrow, _rxd_euler_nnonzero, _rxd_euler_nonzero_i, _rxd_euler_nonzero_j, _rxd_euler_nonzero_values, states, rhs);
 	
 	    /* multiply rhs vector by dt */
