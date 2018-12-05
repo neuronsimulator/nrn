@@ -700,7 +700,6 @@ if test x"$SUNDIALS_SYSTEM_INSTALL" != x"yes"; then
   AC_SUBST(SUNDIALS_INCLUDES, "-I${SUNDIALS_SRC_PATH}/include/ -I${SUNDIALS_BUILD_PATH}/include/ -I${SUNDIALS_SRC_PATH}/src/")
   SUNDIALS_LIBPATH="${SUNDIALS_BUILD_PATH}/src"
   xdirlist="ida cvode nvec_ser nvec_pthreads"
-  xdirlist="ida cvode nvec_ser"
   if test x"$with_mpi" = xyes ; then
     xdirlist="${xdirlist} nvec_par"
   fi

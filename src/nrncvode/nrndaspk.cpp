@@ -160,7 +160,7 @@ void Daspk::ida_init() {
 	int ier;
 	if (mem_) {
         ier = IDAReInit(mem_, cv_->t_, cv_->y_, yp_);
-		if (ier < 0) {
+		if (ier != IDA_SUCCESS) {
 			hoc_execerror("IDAReInit error", 0);
 		}
 	}else{
@@ -177,19 +177,19 @@ void Daspk::ida_init() {
          */
         // TODO M Hines:
         //ier = IDASetId(mem, id);
-        //assert(ier);
+        //assert(ier == IDA_SUCCESS);
 
         /* TODO M Hines: do we need constraints?
         ier = IDASetConstraints(mem, constraints);
-        assert(ier);
+        assert(ier == IDA_SUCCESS);
         N_VDestroy(constraints);
         */
 
         ier = IDAInit(mem,  res_gvardt,  cv_->t_, cv_->y_, yp_);
-        assert(ier);
+        assert(ier == IDA_SUCCESS);
 
         ier = IDASVtolerances(mem, cv_->ncv_->rtol_, cv_->atolnvec_);
-        assert(ier);
+        assert(ier == IDA_SUCCESS);
 
         mem->ida_linit = NULL;
 		mem->ida_lsetup = msetup;
@@ -290,7 +290,7 @@ cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_);
 #if 1
 	// test
 //printf("test\n");
-    if (!IDAEwtSet(cv_->y_, ((IDAMem)mem_)->ida_ewt, mem_)) {
+    if (IDAEwtSet(cv_->y_, ((IDAMem)mem_)->ida_ewt, mem_) != IDA_SUCCESS) {
 		hoc_execerror("Bad Ida error weight vector", 0);
 	}
 	use_parasite_ = false;
@@ -338,7 +338,7 @@ int Daspk::advance_tn(double tstop) {
 	double tn = cv_->tn_;
 	IDASetStopTime(mem_, tstop);
     int ier = IDASolve(mem_, tstop, &cv_->t_, cv_->y_, yp_, IDA_ONE_STEP);
-	if (ier < 0) {
+	if (ier != IDA_SUCCESS) {
 		//printf("DASPK advance_tn error\n");
 		return ier;
 	}
@@ -362,9 +362,10 @@ int Daspk::advance_tn(double tstop) {
 int Daspk::interpolate(double tt) {
 //printf("Daspk::interpolate %.15g\n", tt);
 	assert (tt >= cv_->t0_ && tt <= cv_->tn_);
-	IDASetStopTime(mem_, tt);
+	// Generates [IDA ERROR]  IDASetStopTime since tstop is behind current t
+	//IDASetStopTime(mem_, tt);
 	int ier = IDASolve(mem_, tt, &cv_->t_, cv_->y_, yp_, IDA_NORMAL);
-	if (ier < 0) {
+	if (ier != IDA_SUCCESS) {
 		printf("DASPK interpolate error\n");
 		return ier;
 	}
