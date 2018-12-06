@@ -1688,10 +1688,11 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
   PyObject* result = NULL;
   NrnProperty np(self->prop_);
   int isptr = (strncmp(n, "_ref_", 5) == 0);
-  int bufsz = strlen(n) + 6;
+  char* mname = memb_func[self->prop_->type].sym->name;
+  int mnamelen = strlen(mname);
+  int bufsz = strlen(n) + mnamelen + 2;
   char *buf = new char[bufsz];
-  sprintf(buf, "%s_%s", isptr ? n + 5 : n,
-          memb_func[self->prop_->type].sym->name);
+  sprintf(buf, "%s_%s", isptr ? n + 5 : n, mname);
   Symbol* sym = np.find(buf);
   if (sym) {
     // printf("mech_getattro sym %s\n", sym->name);
@@ -1715,8 +1716,6 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
     }
   } else if (strcmp(n, "__dict__") == 0) {
     result = PyDict_New();
-    char* mname = memb_func[self->prop_->type].sym->name;
-    int mnamelen = strlen(mname);
     for (Symbol* s = np.first_var(); np.more_var(); s = np.next_var()) {
       if (!striptrail(buf, bufsz, s->name, mname)) {
         strcpy(buf, s->name);
