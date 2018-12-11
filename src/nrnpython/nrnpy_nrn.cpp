@@ -871,6 +871,13 @@ static PyObject* NPyMechObj_name(NPyMechObj* self) {
   return result;
 }
 
+static PyObject* NPyMechObj_is_ion(NPyMechObj* self) {
+  if (self->prop_ && nrn_is_ion(self->prop_->type)) {
+      Py_RETURN_TRUE;
+  }
+  Py_RETURN_FALSE;
+}
+
 static PyObject* pymech_repr(PyObject* p) {
   NPyMechObj* pymech = (NPyMechObj*)p;
   Section* sec = pymech->pyseg_->pysec_->sec_;
@@ -1970,6 +1977,8 @@ static PyMemberDef NPySegObj_members[] = {
 static PyMethodDef NPyMechObj_methods[] = {
     {"name", (PyCFunction)NPyMechObj_name, METH_NOARGS,
      "Mechanism name (same as hoc suffix for density mechanism)"},
+    {"is_ion", (PyCFunction)NPyMechObj_is_ion, METH_NOARGS,
+     "Returns True if an ion mechanism"},
     {NULL}};
 
 static PyMethodDef NPyRangeVar_methods[] = {
