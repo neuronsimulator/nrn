@@ -1503,6 +1503,7 @@ void class2oc(
 	Member_ret_obj_func* mobjret,
 	Member_ret_str_func* strret
 ){
+	extern int hoc_main1_inited_;
 	Symbol* tsym, *s;
 	Template* t;
 	int i;
@@ -1514,7 +1515,7 @@ void class2oc(
 	tsym->subtype = CPLUSOBJECT;
 	hoc_begintemplate(tsym);
 	t = tsym->u.template;
-	if (t->id > hoc_max_builtin_class_id) {
+	if (!hoc_main1_inited_ && t->id > hoc_max_builtin_class_id) {
 		hoc_max_builtin_class_id = t->id;
 	}
 	t->constructor = cons;
