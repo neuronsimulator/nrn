@@ -173,6 +173,7 @@ public:
 	Daspk* daspk_;
 	int res(double, double*, double*, double*, NrnThread*);
 	int psol(double, double*, double*, double, NrnThread*);
+	int setid(double*, NrnThread*);
 	void daspk_scatter_y(N_Vector); // daspk solves vi,vx instead of vm,vx
 	void daspk_gather_y(N_Vector);
 	void daspk_scatter_y(double*, int);

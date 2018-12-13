@@ -11,6 +11,7 @@ extern "C" {
 	extern void nrndae_lhs();
 	extern void nrndae_dkmap(double**, double**);
 	extern void nrndae_dkres(double*, double*, double*);
+	extern void nrndae_setid(double*);
 	extern void nrndae_dkpsol(double);
 	extern void nrndae_update();
 	extern void nrn_matrix_node_free();
@@ -96,6 +97,13 @@ void nrndae_dkres(double* y, double* yprime, double* delta) {
 	// delta = c*y' - f(y)
 	for (NrnDAEPtrListIterator m = nrndae_list.begin(); m != nrndae_list.end(); m++) {
 		(*m) -> dkres(y, yprime, delta);
+	}
+}
+
+void nrndae_setid(double* id) {
+	// set id[i] = 1.0 if y'[i] is used in any equation.
+	for (NrnDAEPtrListIterator m = nrndae_list.begin(); m != nrndae_list.end(); m++) {
+		(*m) -> setid(id);
 	}
 }
 
@@ -285,6 +293,19 @@ void NrnDAE::dkres(double* y, double* yprime, double* delta) {
 	}
 }
 
+void NrnDAE::setid(double* id) {
+  // iterate over all elements of c_ and for any non-zero, 
+  // set id[mapped column index] = 1.0
+  for (int irow = c_->nrow() - 1; irow >= 0; --irow) {
+    for (int j = c_->sprowlen(irow) - 1; j >= 0; --j) {
+      int jcol;
+      double x = c_->spgetrowval(irow, j, &jcol);
+      if (x) {
+        id[bmap_[jcol] - 1] = 1.0;
+      }
+    }
+  }
+}
 
 void NrnDAE::rhs() {
 	NrnThread* _nt = nrn_threads;

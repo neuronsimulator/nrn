@@ -26,6 +26,8 @@ extern "C" int hoc_return_type_code;
 
 #include "datapath.h"
 #include "cvodeobj.h"
+#undef MSG_TIME
+#undef MSG_TIME_H
 #include "netcvode.h"
 #include "membfunc.h"
 #include "nrndaspk.h"

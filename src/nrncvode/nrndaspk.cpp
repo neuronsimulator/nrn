@@ -15,6 +15,8 @@ extern "C" {
  * with ../nrniv/ */
 #include "../nrniv/nrnoc2iv.h"
 #include "cvodeobj.h"
+#undef MSG_TIME
+#undef MSG_TIME_H
 #include "nrndaspk.h"
 #include "netcvode.h"
 #include "mymath.h"
@@ -36,6 +38,7 @@ double Daspk::dteps_;
 extern "C" {
 	
 extern void nrndae_dkres(double*, double*, double*);
+extern void nrndae_setid(double*);
 extern void nrndae_dkpsol(double);
 extern void nrn_rhs(NrnThread*);
 extern void nrn_lhs(NrnThread*);
@@ -73,10 +76,11 @@ static int mfree(IDAMem);
 // at least in DARWIN the following is already declared so avoid conflict
 #define thread_t nrn_thread_t
 
-// residual
+// residual (and id)
 static N_Vector nvec_y;
 static N_Vector nvec_yp;
 static N_Vector nvec_delta;
+static N_Vector nvec_id;
 static double thread_t;
 static double thread_cj;
 static int thread_ier;
@@ -102,6 +106,32 @@ static int res_gvardt(
 	thread_t = t;
 	thread_ier = 0;
 	nrn_multithread_job(res_thread);
+	return thread_ier;
+}
+
+static void* setid_thread(NrnThread* nt) {
+	int i = nt->id;
+	Cvode* cv = thread_cv;
+	int ier = cv->setid(cv->n_vector_data(nvec_id, i), nt);
+	if (ier != 0) {
+		thread_ier = ier;
+	}
+#if 0
+	printf("\nsetid_thread %d\n", i);
+	double* x = cv->n_vector_data(nvec_id, i);
+
+	for (int i=0; i < cv->neq_; ++i) {
+		printf(" %3d %g\n", i, x[i]);
+	}
+#endif
+	return 0;
+}
+static int setid(N_Vector id, void* rdata
+){
+	thread_cv = (Cvode*)rdata;
+	thread_ier = 0;
+	nvec_id = id;
+	nrn_multithread_job(setid_thread);
 	return thread_ier;
 }
 
@@ -141,19 +171,25 @@ Daspk::Daspk(Cvode* cv, int neq) {
 	cv_ = cv;
 	yp_ = cv->nvnew(neq);
 	delta_ = cv->nvnew(neq);
-	parasite_ = cv->nvnew(neq);
-	use_parasite_ = false;
+	id_ = cv->nvnew(neq);
 	spmat_ = nil;
 	mem_ = nil;
+
+	parasite_ = cv->nvnew(neq);
+	use_parasite_ = false;
 }
 
 Daspk::~Daspk() {
 //	printf("Daspk::~Daspk\n");
 	N_VDestroy(delta_);
 	N_VDestroy(yp_);
+	N_VDestroy(id_);
+
 	if (mem_) {
         IDAFree((void**)&mem_);
 	}
+
+	N_VDestroy(parasite_);
 }
 
 void Daspk::ida_init() {
@@ -169,21 +205,6 @@ void Daspk::ida_init() {
 			hoc_execerror("IDAMalloc error", 0);
 		}
         IDASetUserData(mem, cv_);
-
-        /* Set which components are algebraic or differential */
-        /* 'id' states a given element to be either algebraic or
-         * differential. A value of 1.0 indicates a differential
-         * variable while a 0.0 indicates an  algebraic variable.
-         */
-        // TODO M Hines:
-        //ier = IDASetId(mem, id);
-        //assert(ier == IDA_SUCCESS);
-
-        /* TODO M Hines: do we need constraints?
-        ier = IDASetConstraints(mem, constraints);
-        assert(ier == IDA_SUCCESS);
-        N_VDestroy(constraints);
-        */
 
         ier = IDAInit(mem,  res_gvardt,  cv_->t_, cv_->y_, yp_);
         assert(ier == IDA_SUCCESS);
@@ -232,6 +253,43 @@ N_VGetArrayPointer(ida->delta_)[i]);
 #endif
 	return norm;
 }
+
+#if 1 // initialization using IDACalcIC
+int Daspk::init() {
+    int ier;
+    extern double t;
+
+    /* TODO M Hines: do we need constraints?
+    ier = IDASetConstraints(mem, constraints);
+    assert(ier == IDA_SUCCESS);
+    N_VDestroy(constraints);
+    */
+
+    double tt = cv_->t_;
+    cv_->play_continuous(tt);
+    ida_init();
+    t = cv_->t_;
+
+    /* Set which components are algebraic or differential */
+    /* 'id' states a given element to be either algebraic or
+     * differential. A value of 1.0 indicates a differential
+     * variable while a 0.0 indicates an  algebraic variable.
+     */
+    /* I would expect id to change extremely rarely during a sim */
+    /* unless a c becomes 0 or nonzero it is safe to do this just once */
+    N_VConst(0.0, id_);
+    if (setid(id_, cv_) != 0) {
+      hoc_execerror("setid failed\n", 0);
+    }
+    ier = IDASetId(mem_, id_);
+    assert(ier == IDA_SUCCESS);
+
+    if (IDACalcIC(mem_, IDA_YA_YDP_INIT, t+1.0) != IDA_SUCCESS) {
+        hoc_execerror("IDACalcIC failed", 0);
+    }
+}
+
+#else // old private initialization
 
 int Daspk::init() {
 	extern double t;
@@ -332,6 +390,8 @@ return 0;
 
 	return 0;
 }
+
+#endif // old private initialization
 
 int Daspk::advance_tn(double tstop) {
 	//printf("Daspk::advance_tn(%g)\n", tstop);
@@ -611,6 +671,85 @@ for (i=0; i < z.nvsize_; ++i) {
 }
 printf("Cvode::res %d e=%g t=%.15g\n", res_, e, tt);
 #endif
+	return 0;
+}
+
+// copied and modified from res
+int Cvode::setid(double* id, NrnThread* nt) {
+	CvodeThreadData& z = ctd_[nt->id];
+
+	nt->_vcv = this; // some models may need to know this
+
+	// the cap nodes : see nrnoc/capac.c for location of cm, etc.
+	// these are not in same order as for cvode but are in
+	// spmatrix order mixed with nocap nodes and extracellular
+	// therefore we use the Node.eqn_index to calculate the delta index.
+	assert(use_sparse13 == true);
+	if (z.cmlcap_) {
+		Memb_list* ml = z.cmlcap_->ml;
+		int n = ml->nodecount;
+		for (int i=0; i < n; ++i) {
+			double* cd = ml->data[i];
+			Node* nd = ml->nodelist[i];
+			int j = nd->eqn_index_ - 1;
+			Extnode* nde = nd->extnode;
+			if (nde) {
+				if (cd[0]) {
+					id[j] = 1.0;
+					id[j+1] = 1.0;
+				}
+			}else{
+				if (cd[0]) {
+					id[j] = 1.0;
+				}
+			}
+		}
+	}
+	// See nrnoc/excelln.c for location of cx.
+	if (z.cmlext_) {
+		Memb_list* ml = z.cmlext_->ml;
+		int n = ml->nodecount;
+		for (int i=0; i < n; ++i) {
+			double* cd = ml->data[i];
+			Node* nd = ml->nodelist[i];
+			int j = nd->eqn_index_;
+#if EXTRACELLULAR == 1
+			// only works for one layer
+			// otherwise loop over layer,
+			// xc is (pd + 2*(nlayer))[layer]
+			// and deal with yprime[i+layer]-yprime[i+layer+1]
+			if (cd[2]) {
+				id[j] = 1.0;
+			}
+#else
+			int k, jj;
+			double x;
+			k = nlayer-1;
+			jj = j+k;
+			if (cd[2*nlayer + k]) {
+				id[jj] = 1.0;
+			}
+			for (k=nlayer-2; k >= 0; --k) {
+				// k=0 refers to stuff between layer 0 and 1
+				// j is for vext[0]				
+				jj = j+k;
+				if (cd[2*nlayer+k]) {
+					id[jj] = 1.0;
+					id[jj + 1] = 1.0;
+				}
+			}
+#endif
+		}
+	}
+
+	nrndae_setid(id);
+
+	// the ode's
+	for (int i=z.neq_v_; i < z.nvsize_; ++i) {
+		id[i] = 1.0;
+	}
+
+	nt->_vcv = 0;
 	return 0;
 }
 

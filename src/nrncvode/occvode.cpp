@@ -5,6 +5,8 @@
 #include <OS/string.h>
 #include "nrnoc2iv.h"
 #include "nrndaspk.h"
+#undef MSG_TIME
+#undef MSG_TIME_H
 #include "cvodeobj.h"
 #include "netcvode.h"
 #include "ivocvect.h"

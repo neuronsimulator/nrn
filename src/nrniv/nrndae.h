@@ -60,6 +60,13 @@ public:
 	void dkres(double* y, double* yprime, double* delta);
 	
 	/**
+	 * set id[i] = 1.0 if yprime[i] appears in any equation
+	 *
+	 * @param id            array of 0.0 and 1.0
+	 */
+	void setid(double* id);
+	
+	/**
 	 * Initialize the dynamics.
 	 *
 	 * @remark Does this by calling f_init_. If f_init_ is NULL, initializes to
