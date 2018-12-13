@@ -418,15 +418,17 @@ proc setalias() {
 endtemplate Wire
 
 begintemplate Capacitor
+// IDACalcIC does not work for i = C*(v1' - v2') so
+// try i = C*vm' with vm = v1 - v2
 public nodes, g, len, val, default, extra_eqn, setup_matrix, name
 public setup_matrix_sym
-public setalias
+public setalias, ename
 objref nodes, g
 strdef name
 
 proc init() {
 	name = "C"
-	extra_eqn = 0
+	extra_eqn = 1
 	if (numarg() == 2) {
 		$o2.append(1) // nanofarad
 	}
@@ -448,20 +450,24 @@ proc setup_matrix() {local c, i, j // cmat, rmat, bvec, val, indices
 	c = $o4.x[0]
 	i = $o5.x[0]
 	j = $o5.x[1]
-	$o1.x[i][i] -= c
-	$o1.x[i][j] += c
-	$o1.x[j][j] -= c
-	$o1.x[j][i] += c
+	k = $o5.x[2]
+	$o1.x[i][k] -= c
+	$o1.x[j][k] += c
+	$o2.x[k][i] = 1
+	$o2.x[k][j] = -1
+	$o2.x[k][k] = -1
 }
 proc setup_matrix_sym() {local i, j localobj c// cmat, rmat, bvec, val, indices
 	c = new String()
 	sprint(c.s, "%s", $o4.s)
 	i = $o5.x[0]
 	j = $o5.x[1]
-	$o1.sub(i,i,c.s)
-	$o1.add(i,j,c.s)
-	$o1.sub(j,j,c.s)
-	$o1.add(j,i,c.s)
+	k = $o5.x[2]
+	$o1.sub(i,k,c.s)
+	$o1.add(j,k,c.s)
+	$o1.add(k,i,"1.0")
+	$o1.sub(k,j,"1.0")
+	$o1.sub(k,k,"1.0")
 }
 proc default() {
 	$o1.append(1) // nanofarad
@@ -472,6 +478,9 @@ proc val() {
 }
 proc setalias() {
 	$s1 = ""
+}
+proc ename() {
+	sprint($s1, "V (mV)")
 }
 endtemplate Capacitor
 

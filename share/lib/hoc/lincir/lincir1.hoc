@@ -40,6 +40,7 @@ proc init() {local i
 	WIRE = parts.count
 	parts.append(new Wire(1, con))
 	parts.append(new Resistor(1, con))
+	CAPAC = parts.count
 	parts.append(new Capacitor(1, con))
 	INDUCT = parts.count
 	parts.append(new Inductor(1, con))
@@ -1546,7 +1547,7 @@ proc map() {
 }
 
 proc mkelm() {local i
-	if ($1 >= INDUCT) { $1 += part_offset }
+	if ($1 >= CAPAC) { $1 += part_offset }
 	sel = new ElementBase(parts.object($1), $1)
 	elements.append(sel)
 	sel.x = $2  sel.y = $3  sel.scale = $4  sel.angle = $5
