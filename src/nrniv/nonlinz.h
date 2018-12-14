@@ -8,8 +8,8 @@ public:
 	NonLinImp();
 	virtual ~NonLinImp();
 	void compute(double omega, double deltafac, int maxiter);
-	double transfer_amp(int vloc); // v_node[arg] is the node
-	double transfer_phase(int vloc);
+	double transfer_amp(int curloc, int vloc); // v_node[arg] is the node
+	double transfer_phase(int curloc, int vloc);
 	double input_amp(int curloc);
 	double input_phase(int curloc);
 	double ratio_amp(int clmploc, int vloc);
