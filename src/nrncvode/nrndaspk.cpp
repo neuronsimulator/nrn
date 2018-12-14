@@ -135,6 +135,18 @@ static int setid(N_Vector id, void* rdata
 	return thread_ier;
 }
 
+static void pstate(const char* mesg, double t, N_Vector y, N_Vector yp) {
+  assert(nrn_nthread == 1);
+  int n = N_VGetLength_Serial(y);
+  printf("\n%s %d t=%g\n", mesg, n, t);
+  double* yd = N_VGetArrayPointer(y);
+  double* ypd = N_VGetArrayPointer(yp);
+  for (int i=0; i < n; ++i) {
+    printf("  %d  %g  %g\n", i, yd[i], ypd[i]);
+  }
+  printf("\n");
+}
+
 // linear solver preparation for subsequent calls to msolve
 // approximation to jacobian. Everything necessary for solving P*x = b
 static int msetup(IDAMem mem, N_Vector y, N_Vector yp, N_Vector,
@@ -195,10 +207,7 @@ Daspk::~Daspk() {
 void Daspk::ida_init() {
 	int ier;
 	if (mem_) {
-        ier = IDAReInit(mem_, cv_->t_, cv_->y_, yp_);
-		if (ier != IDA_SUCCESS) {
-			hoc_execerror("IDAReInit error", 0);
-		}
+		return;
 	}else{
         IDAMem mem = (IDAMem) IDACreate();
 		if (!mem) {
@@ -284,9 +293,18 @@ int Daspk::init() {
     ier = IDASetId(mem_, id_);
     assert(ier == IDA_SUCCESS);
 
+    cv_->daspk_gather_y(cv_->y_);
+    ier = IDAReInit(mem_, cv_->t_, cv_->y_, yp_);
+    if (ier != IDA_SUCCESS) {
+        hoc_execerror("IDAReInit error", 0);
+    }
+
+    //pstate("before IDACalcIC", t, cv_->y_, yp_);
     if (IDACalcIC(mem_, IDA_YA_YDP_INIT, t+1.0) != IDA_SUCCESS) {
         hoc_execerror("IDACalcIC failed", 0);
     }
+    //pstate("after IDACalcIC", t, cv_->y_, yp_);
+    return ier;
 }
 
 #else // old private initialization
