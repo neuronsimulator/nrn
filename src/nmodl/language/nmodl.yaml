@@ -1577,11 +1577,11 @@
       - TableStatement:
           nmodl: "TABLE "
           members:
-            - tablst:
+            - table_vars:
                 type: Name
                 vector: true
                 separator: ","
-            - dependlst:
+            - depend_vars:
                 type: Name
                 vector: true
                 prefix: {value: " DEPEND "}

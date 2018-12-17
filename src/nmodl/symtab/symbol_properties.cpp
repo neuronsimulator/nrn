@@ -103,11 +103,9 @@ std::vector<std::string> to_string_vector(const SymbolInfo& obj) {
         properties.emplace_back("non_linear_block");
     }
 
-    /** todo: temporarily disabled due to property limit in enum
-    if (has_property(obj, NmodlInfo::discrete_block)) {
-        properties.emplace_back("discrete_block");
+    if (has_property(obj, NmodlInfo::table_dependent)) {
+        properties.emplace_back("table_dependent");
     }
-     */
 
     if (has_property(obj, NmodlInfo::constant_var)) {
         properties.emplace_back("constant");
@@ -149,8 +147,8 @@ std::vector<std::string> to_string_vector(const SymbolInfo& obj) {
         properties.emplace_back("ion");
     }
 
-    if (has_property(obj, NmodlInfo::thread_safe)) {
-        properties.emplace_back("thread_safe");
+    if (has_property(obj, NmodlInfo::discrete_block)) {
+        properties.emplace_back("discrete_block");
     }
 
     return properties;
@@ -178,9 +176,15 @@ std::vector<std::string> to_string_vector(const SymbolStatus& obj) {
     if (has_status(obj, Status::created)) {
         status.emplace_back("created");
     }
+
     if (has_status(obj, Status::from_state)) {
         status.emplace_back("from_state");
     }
+
+    if (has_status(obj, Status::thread_safe)) {
+        status.emplace_back("thread_safe");
+    }
+
     return status;
 }
 

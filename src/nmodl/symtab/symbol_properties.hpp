@@ -11,7 +11,7 @@ namespace symtab {
     namespace details {
 
         /** kind of symbol */
-        enum class DeclarationType {
+        enum class DeclarationType : long long {
             /** variable */
             variable,
 
@@ -20,7 +20,7 @@ namespace symtab {
         };
 
         /** scope within a mod file */
-        enum class Scope {
+        enum class Scope : long long {
             /** local variable */
             local,
 
@@ -35,28 +35,31 @@ namespace symtab {
         };
 
         /** state during various compiler passes */
-        enum class Status {
+        enum class Status : long long {
             /** converted to local */
-            localized = 1 << 0,
+            localized = 1L << 0,
 
             /** converted to global */
-            globalized = 1 << 1,
+            globalized = 1L << 1,
 
             /** inlined */
-            inlined = 1 << 2,
+            inlined = 1L << 2,
 
             /** renamed */
-            renamed = 1 << 3,
+            renamed = 1L << 3,
 
             /** created */
-            created = 1 << 4,
+            created = 1L << 4,
 
             /** derived from state */
-            from_state = 1 << 5
+            from_state = 1L << 5,
+
+            /** variable marked as thread safe */
+            thread_safe = 1L << 6
         };
 
         /** usage of mod file as array or scalar */
-        enum class VariableType {
+        enum class VariableType : long long {
             /** scalar / single value */
             scalar,
 
@@ -65,12 +68,12 @@ namespace symtab {
         };
 
         /** variable usage within a mod file */
-        enum class Access {
+        enum class Access : long long {
             /** variable is ready only */
-            read = 1 << 0,
+            read = 1L << 0,
 
             /** variable is written only */
-            write = 1 << 1
+            write = 1L << 1
         };
 
 
@@ -95,103 +98,103 @@ namespace symtab {
          */
         enum class NmodlInfo : long long {
             /** Local Variable */
-            local_var = 1 << 0,
+            local_var = 1L << 0,
 
             /** Global Variable */
-            global_var = 1 << 1,
+            global_var = 1L << 1,
 
             /** Range Variable */
-            range_var = 1 << 2,
+            range_var = 1L << 2,
 
             /** Parameter Variable */
-            param_assign = 1 << 3,
+            param_assign = 1L << 3,
 
             /** Pointer Type */
-            pointer_var = 1 << 4,
+            pointer_var = 1L << 4,
 
             /** Bbcorepointer Type */
-            bbcore_pointer_var = 1 << 5,
+            bbcore_pointer_var = 1L << 5,
 
             /** Extern Type */
-            extern_var = 1 << 6,
+            extern_var = 1L << 6,
 
             /** Prime Type */
-            prime_name = 1 << 7,
+            prime_name = 1L << 7,
 
             /** Dependent Def */
-            dependent_def = 1 << 8,
+            dependent_def = 1L << 8,
 
             /** Unit Def */
-            unit_def = 1 << 9,
+            unit_def = 1L << 9,
 
             /** Read Ion */
-            read_ion_var = 1 << 10,
+            read_ion_var = 1L << 10,
 
             /** Write Ion */
-            write_ion_var = 1 << 11,
+            write_ion_var = 1L << 11,
 
             /** Non Specific Current */
-            nonspe_cur_var = 1 << 12,
+            nonspe_cur_var = 1L << 12,
 
             /** Electrode Current */
-            electrode_cur_var = 1 << 13,
+            electrode_cur_var = 1L << 13,
 
             /** Section Type */
-            section_var = 1 << 14,
+            section_var = 1L << 14,
 
             /** Argument Type */
-            argument = 1 << 15,
+            argument = 1L << 15,
 
             /** Function Type */
-            function_block = 1 << 16,
+            function_block = 1L << 16,
 
             /** Procedure Type */
-            procedure_block = 1 << 17,
+            procedure_block = 1L << 17,
 
             /** Derivative Block */
-            derivative_block = 1 << 18,
+            derivative_block = 1L << 18,
 
             /** Linear Block */
-            linear_block = 1 << 19,
+            linear_block = 1L << 19,
 
             /** NonLinear Block */
-            non_linear_block = 1 << 20,
+            non_linear_block = 1L << 20,
 
             /** constant variable */
-            constant_var = 1 << 21,
+            constant_var = 1L << 21,
 
             /** Partial Block */
-            partial_block = 1 << 22,
+            partial_block = 1L << 22,
 
             /** Kinetic Block */
-            kinetic_block = 1 << 23,
+            kinetic_block = 1L << 23,
 
             /** FunctionTable Block */
-            function_table_block = 1 << 24,
+            function_table_block = 1L << 24,
 
             /** factor in unit block */
-            factor_def = 1 << 25,
+            factor_def = 1L << 25,
 
             /** neuron variable accessible in mod file */
-            extern_neuron_variable = 1 << 26,
+            extern_neuron_variable = 1L << 26,
 
             /** neuron solver methods and math functions */
-            extern_method = 1 << 27,
+            extern_method = 1L << 27,
 
             /** state variable */
-            state_var = 1 << 28,
+            state_var = 1L << 28,
 
             /** need to solve : used in solve statement */
-            to_solve = 1 << 29,
+            to_solve = 1L << 29,
 
             /** ion type */
-            useion = 1 << 30,
+            useion = 1L << 30,
 
-            /** variable is converted to thread safe */
-            thread_safe = 1 << 31
+            /** variable is used in table as dependent */
+            table_dependent = 1L << 31,
 
             /** Discrete Block */
-            // discrete_block = 1 << 31,
+            discrete_block = 1L << 32
         };
 
     }  // namespace details

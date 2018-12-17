@@ -133,7 +133,7 @@ void CodegenHelperVisitor::find_non_range_variables() {
     auto vars = psymtab->get_variables_with_properties(NmodlInfo::global_var);
     for (auto& var : vars) {
         if (info.thread_safe && var->get_write_count() > 0) {
-            var->add_property(NmodlInfo::thread_safe);
+            var->mark_thread_safe();
             info.thread_variables.push_back(var);
             info.thread_var_data_size += var->get_length();
             variables += " " + var->get_name();
@@ -180,7 +180,7 @@ void CodegenHelperVisitor::find_non_range_variables() {
         // if model is thread safe and if parameter is being written then
         // those variables should be promoted to thread safe variable
         if (info.thread_safe && var->get_write_count() > 0) {
-            var->add_property(NmodlInfo::thread_safe);
+            var->mark_thread_safe();
             info.thread_variables.push_back(var);
             info.thread_var_data_size += var->get_length();
         } else {

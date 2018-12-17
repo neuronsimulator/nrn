@@ -76,7 +76,7 @@ SCENARIO("Symbol properties can be added and converted to string") {
 SCENARIO("Symbol operations") {
     SymbolInfo property1 = NmodlInfo::argument;
     SymbolInfo property2 = NmodlInfo::range_var;
-    SymbolInfo property3 = NmodlInfo::param_assign;
+    SymbolInfo property3 = NmodlInfo::discrete_block;
     GIVEN("A symbol") {
         ModToken token(true);
         Symbol symbol("alpha", token);

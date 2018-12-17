@@ -189,6 +189,10 @@ namespace symtab {
             status |= Status::localized;
         }
 
+        void mark_thread_safe() {
+            status |= Status::thread_safe;
+        }
+
         void created_from_state() {
             created();
             status |= Status::from_state;
