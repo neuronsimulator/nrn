@@ -116,7 +116,7 @@ import _neuron_section
 h  = hoc.HocObject()
 version = h.nrnversion(5)
 __version__ = version
-
+_original_hoc_file = None
 if not hasattr(hoc, "__file__"):
   import platform
   import os
@@ -136,7 +136,8 @@ if not hasattr(hoc, "__file__"):
   if not os.path.isfile(phoc):
     phoc = p + "/%s/lib/libnrnpython.so" % platform.machine()
   setattr(hoc, "__file__", phoc)
-
+else:
+  _original_hoc_file = hoc.__file__
 # As a workaround to importing doc at neuron import time
 # (which leads to chicken and egg issues on some platforms)
 # define a dummy help function which imports doc,
@@ -462,8 +463,8 @@ def nrn_dll(printpath=False):
 
     try:
         #extended? if there is a __file__, then use that
-        if printpath: print ("hoc.__file__ %s" % hoc.__file__)
-        the_dll = ctypes.cdll[hoc.__file__]
+        if printpath: print ("hoc.__file__ %s" % _original_hoc_file)
+        the_dll = ctypes.cdll[_original_hoc_file]
         return the_dll        
     except:
         pass
