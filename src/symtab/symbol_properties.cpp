@@ -103,8 +103,12 @@ std::vector<std::string> to_string_vector(const SymbolInfo& obj) {
         properties.emplace_back("non_linear_block");
     }
 
-    if (has_property(obj, NmodlInfo::table_dependent)) {
-        properties.emplace_back("table_dependent");
+    if (has_property(obj, NmodlInfo::table_statement_var)) {
+        properties.emplace_back("table_statement_var");
+    }
+
+    if (has_property(obj, NmodlInfo::table_dependent_var)) {
+        properties.emplace_back("table_dependent_var");
     }
 
     if (has_property(obj, NmodlInfo::constant_var)) {

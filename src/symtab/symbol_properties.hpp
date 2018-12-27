@@ -190,11 +190,14 @@ namespace symtab {
             /** ion type */
             useion = 1L << 30,
 
+            /** variable is used in table statement */
+            table_statement_var = 1L << 31,
+
             /** variable is used in table as dependent */
-            table_dependent = 1L << 31,
+            table_dependent_var = 1L << 32,
 
             /** Discrete Block */
-            discrete_block = 1L << 32
+            discrete_block = 1L << 33
         };
 
     }  // namespace details
