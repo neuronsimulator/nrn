@@ -189,3 +189,23 @@ void SymtabVisitor::setup_symbol_table_for_global_block(Node* node) {
 void SymtabVisitor::setup_symbol_table_for_scoped_block(Node* node, std::string name) {
     setup_symbol_table(node, name, false);
 }
+
+
+/**
+ * Visit table statement and update symbol in symbol table
+ *
+ * @todo : we assume table statement follows variable declaration
+ */
+void SymtabVisitor::visit_table_statement(ast::TableStatement* node) {
+    auto update_symbol = [this](NameVector& variables, NmodlInfo property) {
+        for(auto &var : variables) {
+            auto name = var->get_name();
+            auto symbol = modsymtab->lookup(name);
+            if (symbol) {
+                symbol->add_property(property);
+            }
+        }
+    };
+    update_symbol(node->table_vars, NmodlInfo::table_statement_var);
+    update_symbol(node->depend_vars, NmodlInfo::table_dependent_var);
+}

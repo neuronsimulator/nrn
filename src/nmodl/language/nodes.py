@@ -106,6 +106,9 @@ class BaseNode:
     def is_symbol_var_node(self):
         return True if self.class_name in SYMBOL_VAR_TYPES else False
 
+    def is_symbol_helper_node(self):
+        return True if self.class_name in SYMBOL_TABLE_HELPER_NODES else False
+
     def is_symbol_block_node(self):
         return True if self.class_name in SYMBOL_BLOCK_TYPES else False
 
@@ -263,6 +266,9 @@ class Node(BaseNode):
                 method_required = True
 
             if self.is_program_node() or self.has_parent_block_node():
+                method_required = True
+
+            if self.class_name in SYMBOL_TABLE_HELPER_NODES:
                 method_required = True
 
         return method_required

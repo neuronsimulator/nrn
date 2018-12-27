@@ -230,6 +230,11 @@ class SymtabVisitorDefinitionPrinter(DefinitionPrinter):
 
     def definitions(self):
         for node in self.nodes:
+
+            # for helper nodes definition needs to be diectly implemented in symtab_visitor_helper.cpp
+            if node.is_symbol_helper_node():
+                continue
+
             if node.is_symtab_method_required():
 
                 line = "void " + self.classname + "::visit_" + to_snake_case(node.class_name) + "(" + node.class_name + "* node) {"
@@ -242,7 +247,7 @@ class SymtabVisitorDefinitionPrinter(DefinitionPrinter):
                     self.write_line("setup_symbol(node, " + property_name + ");")
 
                 else:
-                    """ setupBlock has node*, properties, global_block"""
+
                     if node.is_program_node():
                         self.write_line("setup_symbol_table_for_program_block(node);")
 
