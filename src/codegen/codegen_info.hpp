@@ -298,6 +298,13 @@ namespace codegen {
         /// this is required while printing them in initlist function
         std::vector<SymbolType> prime_variables_by_order;
 
+        /// table variables
+        std::vector<SymbolType> table_statement_variables;
+        std::vector<SymbolType> table_dependent_variables;
+
+        /// function or procedures with table statement
+        std::vector<ast::Block*> functions_with_table;
+
         /// represent conductance statements used in mod file
         std::vector<Conductance> conductances;
 

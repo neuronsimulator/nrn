@@ -197,15 +197,17 @@ void SymtabVisitor::setup_symbol_table_for_scoped_block(Node* node, std::string 
  * @todo : we assume table statement follows variable declaration
  */
 void SymtabVisitor::visit_table_statement(ast::TableStatement* node) {
-    auto update_symbol = [this](NameVector& variables, NmodlInfo property) {
+    auto update_symbol = [this](NameVector& variables, NmodlInfo property, int num_values) {
         for(auto &var : variables) {
             auto name = var->get_name();
             auto symbol = modsymtab->lookup(name);
             if (symbol) {
                 symbol->add_property(property);
+                symbol->set_num_values(num_values);
             }
         }
     };
-    update_symbol(node->table_vars, NmodlInfo::table_statement_var);
-    update_symbol(node->depend_vars, NmodlInfo::table_dependent_var);
+    int num_values = node->with->eval() + 1;
+    update_symbol(node->table_vars, NmodlInfo::table_statement_var, num_values);
+    update_symbol(node->depend_vars, NmodlInfo::table_dependent_var, num_values);
 }

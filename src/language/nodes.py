@@ -273,5 +273,8 @@ class Node(BaseNode):
 
         return method_required
 
+    def can_use_table(self):
+        return True if self.class_name in NODE_WITH_TABLE else False
+
     def is_base_class_number_node(self):
         return True if self.base_class == NUMBER_NODE else False

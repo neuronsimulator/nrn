@@ -39,6 +39,9 @@ class CodegenHelperVisitor : public AstVisitor {
     /// if visiting breakpoint block
     bool under_breakpoint_block = false;
 
+    /// table statement found
+    bool table_statement_used = false;
+
     /// symbol table for the program
     symtab::SymbolTable* psymtab = nullptr;
 
@@ -66,6 +69,7 @@ class CodegenHelperVisitor : public AstVisitor {
 
     void find_solve_node();
     void find_ion_variables();
+    void find_table_variables();
     void find_range_variables();
     void find_non_range_variables();
     void sort_with_mod2c_symbol_order(std::vector<SymbolType>& symbols);

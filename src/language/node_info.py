@@ -84,6 +84,10 @@ SYMBOL_BLOCK_TYPES = ["FunctionBlock",
 # nodes which need extra handling to augument symbol table
 SYMBOL_TABLE_HELPER_NODES = ["TableStatement"]
 
+# nodes where table can be used
+NODE_WITH_TABLE = ["FunctionBlock",
+                   "ProcedureBlock"]
+
 # blocks defining global variables
 GLOBAL_BLOCKS = ["NeuronBlock",
                  "ParamBlock",

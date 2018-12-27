@@ -292,7 +292,8 @@ bool CodegenBaseVisitor::skip_statement(Statement* node) {
     if (node->is_unit_state()
         || node->is_comment()
         || node->is_solve_block()
-        || node->is_conductance_hint()) {
+        || node->is_conductance_hint()
+        || node->is_table_statement()) {
         return true;
     }
     // clang-format on

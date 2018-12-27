@@ -879,7 +879,7 @@
                   prefix: {value: "(", force: true}
                   suffix: {value: ")", force: true}
                   separator: ", "
-                  getter: {name: get_arguments}
+                  getter: {name: get_arguments, override: true}
               - unit:
                   type: Unit
                   optional: true
@@ -900,7 +900,7 @@
                   prefix: {value: "(", force: true}
                   suffix: {value: ") ", force: true}
                   separator: ", "
-                  getter: {name: get_arguments}
+                  getter: {name: get_arguments, override: true}
               - unit:
                   type: Unit
                   optional: true
@@ -916,7 +916,7 @@
                   prefix: {value: "(", force: true}
                   suffix: {value: ") ", force: true}
                   separator: ", "
-                  getter: {name: get_arguments}
+                  getter: {name: get_arguments, override: true}
               - statementblock:
                   type: StatementBlock
                   getter: {name: get_statement_block, override: true}
