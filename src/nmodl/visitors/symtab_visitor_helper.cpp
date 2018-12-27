@@ -1,26 +1,9 @@
-#ifndef _SYMTAB_VISITOR_HELPER_HPP_
-#define _SYMTAB_VISITOR_HELPER_HPP_
-
 #include "lexer/token_mapping.hpp"
-#include "symtab/symbol_table.hpp"
+#include "visitors/symtab_visitor.hpp"
 
-/// helper function to setup/insert symbol into symbol table
-/// for the ast nodes which are of variable types
-template <typename T>
-void SymtabVisitor::setup_symbol(T* node, SymbolInfo property, int order) {
-    std::shared_ptr<Symbol> symbol;
 
-    /// if prime variable is already exist in symbol table
-    /// then just update the order
-    if (order) {
-        symbol = modsymtab->lookup(node->get_name());
-        if (symbol) {
-            symbol->set_order(order);
-            symbol->add_property(property);
-            return;
-        }
-    }
-
+// create symbol for given node
+static std::shared_ptr<Symbol> create_symbol_for_node(Node* node, SymbolInfo property, bool under_state_block) {
     ModToken token;
     auto token_ptr = node->get_token();
     if (token_ptr != nullptr) {
@@ -28,14 +11,38 @@ void SymtabVisitor::setup_symbol(T* node, SymbolInfo property, int order) {
     }
 
     /// add new symbol
-    auto name = node->get_name();
-    symbol = std::make_shared<Symbol>(name, node, token);
-
+    auto symbol = std::make_shared<Symbol>(node->get_name(), node, token);
     symbol->add_property(property);
 
-
+    // non specific variable is range
     if (property == NmodlInfo::nonspe_cur_var) {
         symbol->add_property(NmodlInfo::range_var);
+    }
+
+    /// extra property for state variables
+    if (under_state_block) {
+        symbol->add_property(NmodlInfo::state_var);
+    }
+    return symbol;
+}
+
+
+/// helper function to setup/insert symbol into symbol table
+/// for the ast nodes which are of variable types
+void SymtabVisitor::setup_symbol(Node* node, SymbolInfo property) {
+    std::shared_ptr<Symbol> symbol;
+    auto name = node->get_name();
+
+    /// if prime variable is already exist in symbol table
+    /// then just update the order
+    if (node->is_prime_name()) {
+        auto prime = dynamic_cast<PrimeName*>(node);
+        symbol = modsymtab->lookup(name);
+        if (symbol) {
+            symbol->set_order(prime->get_order());
+            symbol->add_property(property);
+            return;
+        }
     }
 
     /// range and non_spec_cur can appear in any order in neuron block.
@@ -49,14 +56,10 @@ void SymtabVisitor::setup_symbol(T* node, SymbolInfo property, int order) {
         }
     }
 
+    symbol = create_symbol_for_node(node, property, under_state_block);
 
     /// insert might return different symbol if already exist in the same scope
     symbol = modsymtab->insert(symbol);
-
-    /// extra property for state variables
-    if (state_block) {
-        symbol->add_property(NmodlInfo::state_var);
-    }
 
     if (node->is_param_assign()) {
         auto parameter = dynamic_cast<ParamAssign*>(node);
@@ -94,17 +97,15 @@ void SymtabVisitor::setup_symbol(T* node, SymbolInfo property, int order) {
         }
     }
 
-    /// visit childrens, most likely variables are already
+    /// visit children, most likely variables are already
     /// leaf nodes, not necessary to visit
     node->visit_children(this);
 }
 
-template <typename T>
-void SymtabVisitor::setup_symbol_table(T* node,
-                                       std::string name,
-                                       SymbolInfo property,
-                                       bool is_global) {
+
+void SymtabVisitor::add_model_symbol_with_property(Node* node, SymbolInfo property) {
     auto token = node->get_token();
+    auto name = node->get_name();
     auto symbol = std::make_shared<Symbol>(name, node, *token);
     symbol->add_property(property);
 
@@ -113,28 +114,32 @@ void SymtabVisitor::setup_symbol_table(T* node,
     }
 
     modsymtab->insert(symbol);
-    setup_symbol_table(node, name, is_global);
 }
 
 
-/**
- *  Symtab visitor could be called multiple times, after optimization passes,
- *  in which case we have to throw awayold symbol tables and setup new ones.
- */
-template <typename T>
-void SymtabVisitor::setup_program_symbol_table(T* node, std::string name, bool is_global) {
-    modsymtab = node->get_model_symbol_table();
-    modsymtab->set_mode(update);
-    setup_symbol_table(node, name, is_global);
+static void add_external_symbols(symtab::ModelSymbolTable* symtab) {
+    ModToken tok(true);
+    auto variables = nmodl::get_external_variables();
+    for (auto variable : variables) {
+        auto symbol = std::make_shared<Symbol>(variable, nullptr, tok);
+        symbol->add_property(NmodlInfo::extern_neuron_variable);
+        symtab->insert(symbol);
+    }
+    auto methods = nmodl::get_external_functions();
+    for (auto method : methods) {
+        auto symbol = std::make_shared<Symbol>(method, nullptr, tok);
+        symbol->add_property(NmodlInfo::extern_method);
+        symtab->insert(symbol);
+    }
 }
 
-template <typename T>
-void SymtabVisitor::setup_symbol_table(T* node, std::string name, bool is_global) {
+
+void SymtabVisitor::setup_symbol_table(AST* node, std::string name, bool is_global) {
     /// entering into new nmodl block
     auto symtab = modsymtab->enter_scope(name, node, is_global, node->get_symbol_table());
 
     if (node->is_state_block()) {
-        state_block = true;
+        under_state_block = true;
     }
 
     /// there is only one solve statement allowed in mod file
@@ -150,30 +155,37 @@ void SymtabVisitor::setup_symbol_table(T* node, std::string name, bool is_global
     /// when visiting highest level node i.e. Program, we insert
     /// all global variables to the global symbol table
     if (node->is_program()) {
-        ModToken tok(true);
-        auto variables = nmodl::get_external_variables();
-        for (auto variable : variables) {
-            auto symbol = std::make_shared<Symbol>(variable, nullptr, tok);
-            symbol->add_property(symtab::details::NmodlInfo::extern_neuron_variable);
-            modsymtab->insert(symbol);
-        }
-        auto methods = nmodl::get_external_functions();
-        for (auto method : methods) {
-            auto symbol = std::make_shared<Symbol>(method, nullptr, tok);
-            symbol->add_property(symtab::details::NmodlInfo::extern_method);
-            modsymtab->insert(symbol);
-        }
+        add_external_symbols(modsymtab);
     }
 
     /// look for all children blocks recursively
     node->visit_children(this);
 
-    /// exisiting nmodl block
+    /// existing nmodl block
     modsymtab->leave_scope();
 
     if (node->is_state_block()) {
-        state_block = false;
+        under_state_block = false;
     }
 }
 
-#endif
+
+/**
+ *  Symtab visitor could be called multiple times, after optimization passes,
+ *  in which case we have to throw awayold symbol tables and setup new ones.
+ */
+void SymtabVisitor::setup_symbol_table_for_program_block(Program* node) {
+    modsymtab = node->get_model_symbol_table();
+    modsymtab->set_mode(update);
+    setup_symbol_table(node, node->get_type_name(), true);
+}
+
+
+void SymtabVisitor::setup_symbol_table_for_global_block(Node* node) {
+    setup_symbol_table(node, node->get_type_name(), true);
+}
+
+
+void SymtabVisitor::setup_symbol_table_for_scoped_block(Node* node, std::string name) {
+    setup_symbol_table(node, name, false);
+}

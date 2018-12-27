@@ -8,7 +8,7 @@ set(VISITOR_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/verbatim_visitor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/symtab_visitor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/symtab_visitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/symtab_visitor_helper.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/symtab_visitor_helper.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/perf_visitor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/perf_visitor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/inline_visitor.hpp

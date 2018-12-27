@@ -349,7 +349,8 @@ namespace symtab {
     }
 
 
-    /** Function callback at the entry of every block in nmodl file
+    /**
+     *  Function callback at the entry of every block in nmodl file
      *  Every block starts a new scope and hence new symbol table is created.
      *  The same symbol table is returned so that visitor can store pointer to
      *  symbol table within a node.
@@ -366,7 +367,10 @@ namespace symtab {
             breakpoint_exist = true;
         }
 
-        /// all global blocks in mod file have same global symbol table
+        /**
+         *  All global blocks in mod file have same global symbol table. If there
+         *  is already symbol table setup in global scope, return the same.
+         */
         if (symtab && global) {
             return symtab.get();
         }

@@ -172,7 +172,7 @@ class SymtabVisitorDeclarationPrinter(DeclarationPrinter):
         self.write_line("std::unique_ptr<JSONPrinter> printer;")
         self.write_line("std::string block_to_solve;")
         self.write_line("bool update = false;")
-        self.write_line("bool state_block = false;", newline=2)
+        self.write_line("bool under_state_block = false;", newline=2)
 
     def public_declaration(self):
         self.write_line("public:", post_gutter=1)
@@ -186,25 +186,27 @@ class SymtabVisitorDeclarationPrinter(DeclarationPrinter):
         line = self.classname + "(std::string filename, bool update = false) : printer(new JSONPrinter(filename)), update(update) {}"
         self.write_line(line, newline=2)
 
-        # helper function for creating symbol for variables
-        self.write_line("template<typename T>")
-        self.write_line("void setup_symbol(T* node, SymbolInfo property, int order = 0);", newline=2)
+        # helper function for setting up symbol for variable
+        self.write_line("void setup_symbol(ast::Node* node, SymbolInfo property);", newline=2)
 
-        # helper function for creating symbol table for blocks
-        # without name (e.g. parameter, unit, breakpoint)
-        self.write_line("template<typename T>")
-        line = "void setup_symbol_table(T *node, std::string name, bool is_global);"
+        # add symbol with given property to model symbol table
+        line = "void add_model_symbol_with_property(ast::Node* node, SymbolInfo property);"
         self.write_line(line, newline=2)
 
         # helper function for creating symbol table for blocks
-        # with name (e.g. procedure, function, derivative)
-        self.write_line("template<typename T>")
-        line = "void setup_symbol_table(T *node, std::string name, SymbolInfo property, bool is_global);"
+        line = "void setup_symbol_table(ast::AST *node, std::string name, bool is_global);"
+        self.write_line(line, newline=2)
+
+        # helper function for creating symbol table for global blocks of mod file
+        line = "void setup_symbol_table_for_global_block(ast::Node *node);"
+        self.write_line(line, newline=2)
+
+        # helper function for creating symbol table for non-global blocks (e.g. function, procedures)
+        line = "void setup_symbol_table_for_scoped_block(ast::Node *node, std::string name);"
         self.write_line(line, newline=2)
 
         # helper function to setup program symbol table
-        self.write_line("template<typename T>")
-        line = "void setup_program_symbol_table(T *node, std::string name, bool is_global);"
+        line = "void setup_symbol_table_for_program_block(ast::Program *node);"
         self.write_line(line, newline=2)
 
         # we have to override visitor methods for the nodes
@@ -215,11 +217,6 @@ class SymtabVisitorDeclarationPrinter(DeclarationPrinter):
                 self.write_line(line)
 
         self.writer.decrease_gutter()
-
-    def post_declaration(self):
-        # helper function definitions
-        self.write_line()
-        self.write_line('#include "visitors/symtab_visitor_helper.hpp"')
 
 
 class SymtabVisitorDefinitionPrinter(DefinitionPrinter):
@@ -239,26 +236,25 @@ class SymtabVisitorDefinitionPrinter(DefinitionPrinter):
                 self.write_line(line, post_gutter=1)
 
                 type_name = to_snake_case(node.class_name)
-                property_name = "symtab::details::NmodlInfo::" + type_name
+                property_name = "NmodlInfo::" + type_name
 
-                if node.is_symbol_var_node() or node.is_prime_node():
-                    is_prime = ", node->get_order()" if node.is_prime_node() else "";
-                    self.write_line("setup_symbol(node, " + property_name + is_prime + ");")
+                if node.is_symbol_var_node():
+                    self.write_line("setup_symbol(node, " + property_name + ");")
 
                 else:
                     """ setupBlock has node*, properties, global_block"""
-                    if node.is_symbol_block_node():
-                        fun_call = "setup_symbol_table(node, node->get_name(), " + property_name + ", false);"
-
-                    elif node.is_program_node():
-                        fun_call = "setup_program_symbol_table(node, node->get_type_name(), true);"
+                    if node.is_program_node():
+                        self.write_line("setup_symbol_table_for_program_block(node);")
 
                     elif node.is_global_block_node():
-                        fun_call = "setup_symbol_table(node, node->get_type_name(), true);"
+                        self.write_line("setup_symbol_table_for_global_block(node);")
 
                     else:
                         """this is for nodes which has parent class as Block node"""
-                        fun_call = "setup_symbol_table(node, node->get_type_name(), false);"
+                        if node.is_symbol_block_node():
+                            self.write_line("add_model_symbol_with_property(node, %s);" % property_name)
+                            self.write_line("setup_symbol_table_for_scoped_block(node, node->get_name());")
+                        else:
+                            self.write_line("setup_symbol_table_for_scoped_block(node, node->get_type_name());")
 
-                    self.write_line(fun_call)
                 self.write_line("}", pre_gutter=-1, newline=2)

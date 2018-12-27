@@ -69,13 +69,14 @@ SYMBOL_VAR_TYPES = ["LocalVar",
                     "ConstantVar"]
 
 # block nodes which will go into symbol table
-# todo : skipping discrete block due to limits in
+# these blocks doesn't define global variables but they
+# use variables from other global variables
 SYMBOL_BLOCK_TYPES = ["FunctionBlock",
                       "ProcedureBlock",
                       "DerivativeBlock",
                       "LinearBlock",
                       "NonLinearBlock",
-                      #"DiscreteBlock",
+                      "DiscreteBlock",
                       "PartialBlock",
                       "KineticBlock",
                       "FunctionTableBlock"]
