@@ -81,6 +81,9 @@ namespace symtab {
         /// number of elements
         int length = 1;
 
+        // number of values in case of table variable
+        int num_values = 0;
+
       public:
         Symbol() = delete;
 
@@ -223,6 +226,14 @@ namespace symtab {
 
         int get_length() {
             return length;
+        }
+
+        int get_num_values() {
+            return num_values;
+        }
+
+        void set_num_values(int n) {
+            num_values = n;
         }
 
         std::string get_original_name() {

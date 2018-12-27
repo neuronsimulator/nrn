@@ -16,6 +16,29 @@ using namespace fmt::literals;
 
 
 /**
+ * \class TableStatementVisitor
+ * \brief Helper visitor to return table statement in given node
+ */
+class TableStatementVisitor : public AstVisitor {
+private:
+
+    /// vector containing all table statements
+    std::vector<TableStatement*> statements;
+
+public:
+    TableStatementVisitor() = default;
+
+    void visit_table_statement(TableStatement* node) override {
+        statements.push_back(node);
+    }
+
+    std::vector<TableStatement*> get_statements() {
+        return statements;
+    }
+};
+
+
+/**
  * \class CodegenCVisitor
  * \brief Visitor for printing c code compatible with legacy api
  *
@@ -139,7 +162,7 @@ class CodegenCVisitor : public CodegenBaseVisitor {
 
 
     /// parameters for external functions
-    std::string external_method_parameters();
+    std::string external_method_parameters(bool table = false);
 
 
     /// arguments for register_mech or point_register_mech function
@@ -369,12 +392,28 @@ class CodegenCVisitor : public CodegenBaseVisitor {
     void print_function_prototypes();
 
 
+    /// print check_function() for function/procedure using table
+    void print_table_check_function(ast::Block* node);
+
+
+    /// print replacement function for function/procedure using table
+    void print_table_replacement_function(ast::Block* node);
+
+
+    /// print check_table functions
+    void print_check_table_thread_function();
+
+
     /// nmodl function definition
     void print_function(ast::FunctionBlock* node);
 
 
     /// nmodl procedure definition
     void print_procedure(ast::ProcedureBlock* node);
+
+
+    /// print nmodl function or procedure (common code)
+    void print_function_or_procedure(ast::Block* node, std::string& name);
 
 
     /// thread related memory allocation and deallocation callbacks
@@ -393,7 +432,7 @@ class CodegenCVisitor : public CodegenBaseVisitor {
 
     /// prototype declarations of functions and procedures
     template <typename T>
-    void print_function_declaration(T& node);
+    void print_function_declaration(T& node, std::string name);
 
 
     /// initial block
@@ -484,6 +523,7 @@ class CodegenCVisitor : public CodegenBaseVisitor {
     /// common code for global functions like nrn_init, nrn_cur and nrn_state
     void print_global_function_common_code(BlockType type);
 
+
     /// nrn_init function definition
     void print_nrn_init();
 
@@ -564,14 +604,14 @@ class CodegenCVisitor : public CodegenBaseVisitor {
  *
  * If there is an argument with name (say alpha) same as range variable (say alpha),
  * we want avoid it being printed as instance->alpha. And hence we disable variable
- * name lookup during prototype declaration.
+ * name lookup during prototype declaration. Note that the name of procedure can be
+ * different in case of table statement.
  */
 template <typename T>
-void CodegenCVisitor::print_function_declaration(T& node) {
+void CodegenCVisitor::print_function_declaration(T& node, std::string name) {
     enable_variable_name_lookup = false;
 
-    /// name, internal and user provided arguments
-    auto name = node->get_name();
+    /// internal and user provided arguments
     auto internal_params = internal_method_parameters();
     auto params = node->get_arguments();
 

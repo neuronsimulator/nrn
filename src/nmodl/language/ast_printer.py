@@ -134,6 +134,12 @@ class AstDeclarationPrinter(DeclarationPrinter):
             if node.is_program_node():
                 self.write_line("symtab::ModelSymbolTable model_symtab;")
 
+            if node.can_use_table():
+                self.write_line("")
+                self.write_line("bool has_table = false;")
+                self.write_line("bool use_table() { return has_table; }")
+                self.write_line("void use_table(bool use) { has_table = use; }")
+
             self.write_line("")
 
             if members:
@@ -242,7 +248,11 @@ class AstDeclarationPrinter(DeclarationPrinter):
             if node.is_base_block_node():
                 self.write_line("virtual std::shared_ptr<StatementBlock> get_statement_block() {")
                 self.write_line('    throw std::runtime_error("get_statement_node not implemented");')
-                self.write_line("}")
+                self.write_line("}", newline=2)
+
+                self.write_line("virtual ArgumentVector& get_arguments() {")
+                self.write_line('    throw std::runtime_error("get_arguments not implemented");')
+                self.write_line("}", newline=2)
 
             # if node is of enum type then return enum value
             # TODO: hardcoded Names

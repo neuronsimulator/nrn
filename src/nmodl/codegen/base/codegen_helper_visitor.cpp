@@ -392,6 +392,14 @@ void CodegenHelperVisitor::find_range_variables() {
 }
 
 
+void CodegenHelperVisitor::find_table_variables() {
+    auto property = NmodlInfo::table_statement_var;
+    info.table_statement_variables = psymtab->get_variables_with_properties(property);
+    property = NmodlInfo::table_dependent_var;
+    info.table_dependent_variables = psymtab->get_variables_with_properties(property);
+}
+
+
 void CodegenHelperVisitor::visit_suffix(Suffix* node) {
     auto type = node->get_suffix_type()->get_name();
     if (type == point_process) {
@@ -448,11 +456,22 @@ void CodegenHelperVisitor::visit_breakpoint_block(BreakpointBlock* node) {
 void CodegenHelperVisitor::visit_procedure_block(ast::ProcedureBlock* node) {
     info.procedures.push_back(node);
     node->visit_children(this);
+    if(table_statement_used) {
+        table_statement_used = false;
+        node->use_table(true);
+        info.functions_with_table.push_back(node);
+    }
 }
 
 
 void CodegenHelperVisitor::visit_function_block(ast::FunctionBlock* node) {
     info.functions.push_back(node);
+    node->visit_children(this);
+    if(table_statement_used) {
+        table_statement_used = false;
+        node->use_table(true);
+        info.functions_with_table.push_back(node);
+    }
 }
 
 
@@ -568,6 +587,7 @@ void CodegenHelperVisitor::visit_for_netcon(ast::ForNetcon* node) {
 
 void CodegenHelperVisitor::visit_table_statement(ast::TableStatement* node) {
     info.table_count++;
+    table_statement_used = true;
 }
 
 
@@ -599,6 +619,7 @@ void CodegenHelperVisitor::visit_program(Program* node) {
     find_non_range_variables();
     find_ion_variables();
     find_solve_node();
+    find_table_variables();
 }
 
 

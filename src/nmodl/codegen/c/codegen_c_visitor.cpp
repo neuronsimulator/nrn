@@ -686,13 +686,13 @@ void CodegenCVisitor::print_function_prototypes() {
     }
     codegen = true;
     printer->add_newline(2);
-    for (const auto& function : info.functions) {
-        print_function_declaration(function);
+    for (const auto& node : info.functions) {
+        print_function_declaration(node, node->get_name());
         printer->add_text(";");
         printer->add_newline();
     }
-    for (const auto& function : info.procedures) {
-        print_function_declaration(function);
+    for (const auto& node : info.procedures) {
+        print_function_declaration(node, node->get_name());
         printer->add_text(";");
         printer->add_newline();
     }
@@ -700,18 +700,227 @@ void CodegenCVisitor::print_function_prototypes() {
 }
 
 
-void CodegenCVisitor::print_procedure(ast::ProcedureBlock* node) {
-    codegen = true;
-    auto parameters = node->get_arguments();
+static TableStatement* get_table_statement(ast::Block* node) {
+    TableStatementVisitor v;
+    node->accept(&v);
+    auto table_statements = v.get_statements();
+    if (table_statements.empty()) {
+        throw std::runtime_error("Could not find table statement in " + node->get_name());
+    } else if (table_statements.size() > 1) {
+        throw std::runtime_error("More than one table statement found in " + node->get_name());
+    }
+    return table_statements.front();
+}
 
+
+void CodegenCVisitor::print_table_check_function(ast::Block* node) {
     printer->add_newline(2);
-    print_function_declaration(node);
+    auto name = node->get_name();
+    auto internal_params = internal_method_parameters();
+
+    print_device_method_annotation();
+    printer->add_indent();
+    printer->add_text("void check_{}({})"_format(method_name(name), internal_params));
+    printer->start_block();
+
+    auto statement = get_table_statement(node);
+    auto table_variables = statement->table_vars;
+    auto depend_variables = statement->depend_vars;
+    auto from = statement->from;
+    auto to = statement->to;
+
+    auto with = statement->with->eval();
+    auto use_table_var = get_variable_name("usetable");
+    auto float_type = default_float_data_type();
+    auto tmin_name = get_variable_name("tmin_"+name);
+    auto mfac_name = get_variable_name("mfac_"+name);
+
+    printer->add_line("if ( {} == 0) {}"_format(use_table_var, "{"));
+    printer->add_line("    return;");
+    printer->add_line("}");
+
+    printer->add_line("static bool make_table = true;");
+    for(auto& variable : depend_variables) {
+        printer->add_line("static {} save_{};"_format(float_type, variable->get_name()));
+    }
+
+    for(auto& variable : depend_variables) {
+        auto name = variable->get_name();
+        auto instance_name = get_variable_name(name);
+        printer->add_line("if (save_{} != {}) {}"_format(name, instance_name, "{"));
+        printer->add_line("    make_table = true;");
+        printer->add_line("}");
+    }
+
+    printer->add_line("if (make_table) {}"_format("{"));
+    printer->increase_indent();
+
+    printer->add_line("make_table = false;");
+
+    printer->add_indent();
+    printer->add_text("{} = "_format(tmin_name));
+    from->accept(this);
+    printer->add_text(";");
+    printer->add_newline();
+
+    printer->add_indent();
+    printer->add_text("double tmax = ");
+    to->accept(this);
+    printer->add_text(";");
+    printer->add_newline();
+
+
+    printer->add_line("double dx = (tmax-{})/{}.0;"_format(tmin_name, with));
+    printer->add_line("{} = 1.0/dx;"_format(mfac_name));
+
+    printer->add_line("int i = 0;");
+    printer->add_line("double x = 0;");
+    printer->add_line("for(i = 0, x = {}; i < {}; x += dx, i++) {}"_format(tmin_name, with+1, "{"));
+    auto function_name = method_name("f_"+name);
+    printer->add_line("    {}({}, x);"_format(function_name, internal_method_arguments()));
+    for(auto& variable : table_variables) {
+        auto name = variable->get_name();
+        auto instance_name = get_variable_name(name);
+        auto table_name = get_variable_name("t_"+name);
+        printer->add_line("    {}[i] = {};"_format(table_name, instance_name));
+    }
+    printer->add_line("}");
+
+    for(auto& variable : depend_variables) {
+        auto name = variable->get_name();
+        auto instance_name = get_variable_name(name);
+        printer->add_line("save_{} = {};"_format(name, instance_name));
+    }
+
+    printer->decrease_indent();
+    printer->add_line("}");
+
+    printer->end_block();
+    printer->add_newline();
+}
+
+void CodegenCVisitor::print_table_replacement_function(ast::Block* node) {
+    printer->add_newline(2);
+    auto name = node->get_name();
+    print_function_declaration(node, name);
     printer->add_text(" ");
     printer->start_block();
-    print_statement_block(node->get_statement_block().get(), false, false);
+
+    auto statement = get_table_statement(node);
+    auto table_variables = statement->table_vars;
+    auto with = statement->with->eval();
+    auto use_table_var = get_variable_name("usetable");
+    auto float_type = default_float_data_type();
+    auto tmin_name = get_variable_name("tmin_"+name);
+    auto mfac_name = get_variable_name("mfac_"+name);
+    auto function_name = method_name("f_"+name);
+
+    printer->add_line("if ( {} == 0) {}"_format(use_table_var, "{"));
+    printer->add_line("    {}({}, arg_v);"_format(function_name, internal_method_arguments()));
+    printer->add_line("     return 0;");
+    printer->add_line("}");
+
+    printer->add_line("double xi = {} * (arg_v - {});"_format(mfac_name, tmin_name));
+    printer->add_line("if (isnan(xi)) {");
+    for(auto& variable : table_variables) {
+        auto name = variable->get_name();
+        auto instance_name = get_variable_name(name);
+        printer->add_line("    {} = xi;"_format(instance_name));
+    }
+    printer->add_line("    return 0;");
+    printer->add_line("}");
+
+    printer->add_line("if (xi <= 0.0 || xi >= {}) {}"_format(with, "{"));
+    printer->add_line("    int index = (xi <= 0.0) ? 0 : {};"_format(with));
+    for(auto& variable : table_variables) {
+        auto name = variable->get_name();
+        auto instance_name = get_variable_name(name);
+        auto table_name = get_variable_name("t_"+name);
+        printer->add_line("    {} = {}[index];"_format(instance_name, table_name));
+    }
+    printer->add_line("    return 0;");
+    printer->add_line("}");
+    printer->add_newline();
+
+    printer->add_line("int i = int(xi);");
+    printer->add_line("double theta = xi - double(i);");
+    for(auto& variable : table_variables) {
+        auto name = variable->get_name();
+        auto instance_name = get_variable_name(name);
+        auto table_name = get_variable_name("t_"+name);
+        printer->add_line("{0} = {1}[i] + theta*({1}[i+1]-{1}[i]);"_format(instance_name, table_name));
+    }
+
     printer->add_line("return 0;");
     printer->end_block();
     printer->add_newline();
+}
+
+
+void CodegenCVisitor::print_check_table_thread_function() {
+
+    if (info.table_count == 0) {
+        return;
+    }
+
+    printer->add_newline(2);
+    auto name = method_name("check_table_thread");
+    auto parameters = external_method_parameters(true);
+
+    printer->add_line("static void {} ({}) {}"_format(name, parameters, "{"));
+    printer->add_line("    Memb_list* ml = nt->_ml_list[tml_id];");
+    printer->add_line("    setup_instance(nt, ml);");
+    printer->add_line("    {0}* inst = ({0}*) ml->instance;"_format(instance_struct()));
+    printer->add_line("    double v = 0;");
+    printer->add_line("    IonCurVar ionvar = {0};");
+
+    for(auto& function: info.functions_with_table) {
+        auto name = method_name("check_" + function->get_name());
+        auto arguments = internal_method_arguments();
+        printer->add_line("    {}({});"_format(name, arguments));
+    }
+
+    /// todo : check_table_thread is called multiple times from coreneuron including
+    /// after finitialize. If we cleaup the instance then it will result in segfault
+    /// but if we don't then there is memory leak
+    printer->add_line("    // cleanup_instance(ml);");
+    printer->add_line("}");
+}
+
+void CodegenCVisitor::print_function_or_procedure(ast::Block* node, std::string& name) {
+    auto block = node->get_statement_block().get();
+    printer->add_newline(2);
+    print_function_declaration(node, name);
+    printer->add_text(" ");
+    printer->start_block();
+
+    // function requires return variable declaration
+    if (node->is_function_block()) {
+        auto type = default_float_data_type();
+        printer->add_line("{} ret_{} = 0.0;"_format(type, name));
+    } else {
+        printer->add_line("int ret_{} = 0;"_format(name));
+    }
+
+    print_statement_block(block, false, false);
+    printer->add_line("return ret_{};"_format(name));
+    printer->end_block();
+    printer->add_newline();
+}
+
+void CodegenCVisitor::print_procedure(ast::ProcedureBlock* node) {
+    codegen = true;
+    auto name = node->get_name();
+
+    if (node->use_table()) {
+        auto new_name = "f_" + name;
+        print_function_or_procedure(node, new_name);
+        print_table_check_function(node);
+        print_table_replacement_function(node);
+    } else {
+        print_function_or_procedure(node, name);
+    }
+
     codegen = false;
 }
 
@@ -720,22 +929,13 @@ void CodegenCVisitor::print_function(ast::FunctionBlock* node) {
     codegen = true;
     auto name = node->get_name();
     auto return_var = "ret_" + name;
-    auto type = default_float_data_type() + " ";
 
     /// first rename return variable name
     auto block = node->get_statement_block().get();
     RenameVisitor v(name, return_var);
     block->accept(&v);
 
-    printer->add_newline(2);
-    print_function_declaration(node);
-    printer->add_text(" ");
-    printer->start_block();
-    printer->add_line("{}{} = 0.0;"_format(type, return_var));
-    print_statement_block(block, false, false);
-    printer->add_line("return {};"_format(return_var));
-    printer->end_block();
-    printer->add_newline();
+    print_function_or_procedure(node, name);
     codegen = false;
 }
 
@@ -770,9 +970,14 @@ std::string CodegenCVisitor::external_method_arguments() {
 }
 
 
-std::string CodegenCVisitor::external_method_parameters() {
-    return "int id, int pnodecount, double* data, Datum* indexes, "
-           "ThreadDatum* thread, NrnThread* nt, double v";
+std::string CodegenCVisitor::external_method_parameters(bool table) {
+    if (table) {
+        return "int id, int pnodecount, double* data, Datum* indexes, "
+                "ThreadDatum* thread, NrnThread* nt, int tml_id";
+    } else {
+        return "int id, int pnodecount, double* data, Datum* indexes, "
+                "ThreadDatum* thread, NrnThread* nt, double v";
+    }
 }
 
 
@@ -1395,6 +1600,20 @@ void CodegenCVisitor::print_mechanism_global_structure() {
     if (info.table_count > 0) {
         printer->add_line("double usetable;");
         global_variables.push_back(make_symbol("usetable"));
+
+        for(auto& block: info.functions_with_table) {
+            auto name = block->get_name();
+            printer->add_line("{} tmin_{};"_format(float_type, name));
+            printer->add_line("{} mfac_{};"_format(float_type, name));
+            global_variables.push_back(make_symbol("tmin_"+name));
+            global_variables.push_back(make_symbol("mfac_"+name));
+        }
+
+        for(auto &variable : info.table_statement_variables) {
+            auto name = "t_" + variable->get_name();
+            printer->add_line("{}* {};"_format(float_type, name));
+            global_variables.push_back(make_symbol(name));
+        }
     }
 
     if (info.vectorize) {
@@ -1571,7 +1790,8 @@ void CodegenCVisitor::print_mechanism_register() {
     }
 
     if (info.emit_table_thread()) {
-        printer->add_line("_nrn_thread_table_reg(mech_type, check_table_thread);");
+        auto name = method_name("check_table_thread");
+        printer->add_line("_nrn_thread_table_reg(mech_type, {});"_format(name));
     }
 
     /// register read/write callbacks for pointers
@@ -1845,6 +2065,12 @@ void CodegenCVisitor::print_global_variable_setup() {
     if (info.table_count > 0) {
         auto name = get_variable_name("usetable");
         printer->add_line("{} = 1;"_format(name));
+
+        for(auto &variable : info.table_statement_variables) {
+            auto name = get_variable_name("t_" + variable->get_name());
+            int num_values = variable->get_num_values();
+            printer->add_line("{} = (double*) mem_alloc({}, sizeof(double));"_format(name, num_values));
+        }
     }
 
     printer->add_newline();
@@ -1994,23 +2220,19 @@ void CodegenCVisitor::print_instance_variable_setup() {
 
     printer->add_line("ml->instance = (void*) inst;");
     printer->end_block();
-    printer->add_newline();
 
+    printer->add_newline(2);
+    printer->add_line("/** cleanup mechanism instance variables */");
+    printer->start_block("static inline void cleanup_instance(Memb_list* ml) ");
+    printer->add_line("{0}* inst = ({0}*) ml->instance;"_format(instance_struct()));
     if (range_variable_setup_required()) {
-        printer->add_newline(2);
-        printer->add_line("/** cleanup mechanism instance variables */");
-        printer->start_block("static inline void cleanup_instance(Memb_list* ml) ");
-        if (variables_to_free.empty()) {
-            printer->add_line("// do nothing");
-        } else {
-            printer->add_line("{0}* inst = ({0}*) ml->instance;"_format(instance_struct()));
-            for (auto& var : variables_to_free) {
-                printer->add_line("mem_free((void*)inst->{});"_format(var));
-            }
+        for (auto &var : variables_to_free) {
+            printer->add_line("mem_free((void*)inst->{});"_format(var));
         }
-        printer->end_block();
-        printer->add_newline();
     }
+    printer->add_line("mem_free((void*)inst);");
+    printer->end_block();
+    printer->add_newline();
 }
 
 
@@ -2970,6 +3192,7 @@ void CodegenCVisitor::codegen_all() {
     print_nrn_alloc();
 
     codegen_compute_functions();
+    print_check_table_thread_function();
     print_mechanism_register();
 
     codegen_namespace_end();
