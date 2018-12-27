@@ -213,7 +213,7 @@ class AstDeclarationPrinter(DeclarationPrinter):
                 self.write_line("void set_token(ModToken& tok) " + " { token = std::shared_ptr<ModToken>(new ModToken(tok)); }")
 
             if node.is_symtab_needed():
-                self.write_line("void set_symbol_table(symtab::SymbolTable* newsymtab) " + " { symtab = newsymtab; }")
+                self.write_line("void set_symbol_table(symtab::SymbolTable* newsymtab) override " + " { symtab = newsymtab; }")
                 self.write_line("symtab::SymbolTable* get_symbol_table() override " + " { return symtab; }")
 
             if node.is_program_node():

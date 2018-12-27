@@ -88,6 +88,10 @@ namespace ast {
             return nullptr;
         }
 
+        virtual void set_symbol_table(symtab::SymbolTable* newsymtab) {
+            throw std::runtime_error("set_symbol_table() not implemented");
+        }
+
         virtual symtab::SymbolTable* get_symbol_table() {
             throw std::runtime_error("get_symbol_table() not implemented");
         }
