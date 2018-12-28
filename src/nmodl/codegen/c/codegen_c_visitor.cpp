@@ -1426,6 +1426,16 @@ std::string CodegenCVisitor::get_variable_name(std::string name, bool use_instan
         return ion_shadow_variable_name(*s);
     }
 
+    if (name == "dt") {
+        return  "nt->_dt";
+    }
+
+    /// t in net_receive method is an argument to function and hence it should
+    /// ne used instead of nt->_t which is current time of thread
+    if (name == "t" && !printing_net_receive) {
+        return "nt->_t";
+    }
+
     /// otherwise return original name
     return name;
 }
@@ -2313,6 +2323,7 @@ void CodegenCVisitor::print_nrn_init() {
     codegen = true;
     printer->add_newline(2);
     printer->add_line("/** initialize channel */");
+
     print_global_function_common_code(BlockType::Initial);
     if (info.derivimplicit_used) {
         printer->add_newline();
@@ -2327,16 +2338,24 @@ void CodegenCVisitor::print_nrn_init() {
         // clang-format on
     }
 
+    printer->start_block("if (_nrn_skip_initmodel == 0)");
+
     print_channel_iteration_tiling_block_begin(BlockType::Initial);
     print_channel_iteration_block_begin();
+
     print_post_channel_iteration_common_code();
+
     if (info.net_receive_node != nullptr) {
         printer->add_line("{} = -1e20;"_format(get_variable_name("tsave")));
     }
+
     print_initial_block(info.initial_node);
     print_channel_iteration_block_end();
+
     print_shadow_reduction_statements();
     print_channel_iteration_tiling_block_end();
+    printer->end_block();
+    printer->add_newline();
 
     if (info.derivimplicit_used) {
         printer->add_line("*deriv{}_advance(thread) = 1;"_format(info.derivimplicit_list_num));
@@ -2412,6 +2431,9 @@ void CodegenCVisitor::print_watch_activate() {
  */
 
 void CodegenCVisitor::print_watch_check() {
+    if (info.watch_statements.empty()) {
+        return;
+    }
     codegen = true;
     printer->add_newline(2);
     printer->add_line("/** routine to check watch activation */");
@@ -2443,8 +2465,9 @@ void CodegenCVisitor::print_watch_check() {
         auto point_process = get_variable_name("point_process");
         printer->add_indent();
         printer->add_text("net_send_buffering(");
+        auto t = get_variable_name("t");
         printer->add_text(
-            "ml->_net_send_buffer, 0, {}, 0, {}, t+0.0, "_format(tqitem, point_process));
+            "ml->_net_send_buffer, 0, {}, 0, {}, {}+0.0, "_format(tqitem, point_process, t));
         watch->value->accept(this);
         printer->add_text(");");
         printer->add_newline();
@@ -2531,11 +2554,12 @@ void CodegenCVisitor::print_net_send_call(FunctionCall* node) {
     /// artificial cells don't use spike buffering
     // clang-format off
     if (info.artificial_cell) {
-        printer->add_text("artcell_net_send(&{}, {}, {}, t+"_format(tqitem, weight_index, pnt));
+        printer->add_text("artcell_net_send(&{}, {}, {}, nt->_t+"_format(tqitem, weight_index, pnt));
     } else {
         auto point_process = get_variable_name("point_process");
+        std::string t = get_variable_name("t");
         printer->add_text("net_send_buffering(");
-        printer->add_text("ml->_net_send_buffer, 0, {}, {}, {}, t+"_format(tqitem, weight_index, point_process));
+        printer->add_text("ml->_net_send_buffer, 0, {}, {}, {}, {}+"_format(tqitem, weight_index, point_process, t));
     }
     // clang-format off
     print_vector_elements(arguments, ", ");
@@ -2557,11 +2581,12 @@ void CodegenCVisitor::print_net_move_call(FunctionCall* node) {
     /// artificial cells don't use spike buffering
     // clang-format off
     if (info.artificial_cell) {
-        printer->add_text("artcell_net_move(&{}, {}, {}, t+"_format(tqitem, weight_index, pnt));
+        printer->add_text("artcell_net_move(&{}, {}, {}, nt->_t+"_format(tqitem, weight_index, pnt));
     } else {
         auto point_process = get_variable_name("point_process");
+        std::string t = get_variable_name("t");
         printer->add_text("net_send_buffering(");
-        printer->add_text("ml->_net_send_buffer, 2, {}, {}, {}, t+"_format(tqitem, weight_index, point_process));
+        printer->add_text("ml->_net_send_buffer, 2, {}, {}, {}, {}+"_format(tqitem, weight_index, point_process, t));
     }
     // clang-format off
     print_vector_elements(arguments, ", ");
@@ -2649,9 +2674,9 @@ void CodegenCVisitor::print_net_receive_buffer_kernel() {
     printer->add_line("    for (int j = start; j < end; j++) {");
     printer->add_line("        int index = nrb->_nrb_index[j];");
     printer->add_line("        int offset = nrb->_pnt_index[index];");
-    printer->add_line("        double t = nrb->_nrb_t[i];");
-    printer->add_line("        int weight_index = nrb->_weight_index[i];");
-    printer->add_line("        double flag = nrb->_nrb_flag[i];");
+    printer->add_line("        double t = nrb->_nrb_t[index];");
+    printer->add_line("        int weight_index = nrb->_weight_index[index];");
+    printer->add_line("        double flag = nrb->_nrb_flag[index];");
     printer->add_line("        Point_process* point_process = nt->pntprocs + offset;");
     printer->add_line("        {}(t, point_process, weight_index, flag);"_format(net_receive));
     printer->add_line("    }");
@@ -2720,6 +2745,7 @@ void CodegenCVisitor::print_net_receive() {
     printing_net_receive = true;
     std::string function_name = method_name("net_receive_kernel");
     std::string function_arguments = "double t, Point_process* pnt, int weight_index, double flag";
+
     if (info.artificial_cell) {
         function_name = method_name("net_receive");
         function_arguments = "Point_process* pnt, int weight_index, double flag";
@@ -2729,6 +2755,13 @@ void CodegenCVisitor::print_net_receive() {
     printer->add_newline(2);
     printer->start_block("static void {}({}) "_format(function_name, function_arguments));
     print_net_receive_common_code(node);
+
+    if (info.artificial_cell) {
+        printer->add_line("double t = nt->_t;");
+    }
+
+    printer->add_line("{} = t;"_format(get_variable_name("tsave")));
+
     printer->add_indent();
     node->get_statement_block()->accept(this);
     printer->add_newline();
