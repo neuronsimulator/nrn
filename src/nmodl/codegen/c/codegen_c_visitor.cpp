@@ -260,6 +260,19 @@ bool CodegenCVisitor::is_constant_variable(std::string name) {
     return is_constant;
 }
 
+/**
+ * NMODL constants from unit database
+ *
+ * todo : this should be replaced with constant handling from unit database
+ */
+
+void CodegenCVisitor::print_nmodl_constant() {
+    printer->add_newline(2);
+    printer->add_line("/** constants used in nmodl */");
+    printer->add_line("static double FARADAY = 96485.3;");
+    printer->add_line("static double PI = 3.14159;");
+    printer->add_line("static double R = 8.3145;");
+}
 
 
 /****************************************************************************************/
@@ -2937,6 +2950,8 @@ void CodegenCVisitor::codegen_all() {
     print_backend_info();
     codegen_includes();
     codegen_namespace_begin();
+
+    print_nmodl_constant();
 
     print_mechanism_info_array();
 

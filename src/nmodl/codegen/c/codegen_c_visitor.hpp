@@ -187,6 +187,10 @@ class CodegenCVisitor : public CodegenBaseVisitor {
     virtual void print_backend_namespace_end();
 
 
+    /// nmodl constants
+    void print_nmodl_constant();
+
+
     /// top header printed in generated code
     void print_backend_info();
 
