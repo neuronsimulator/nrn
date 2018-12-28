@@ -1140,7 +1140,7 @@ std::string CodegenCVisitor::int_variable_name(IndexVariableInfo& symbol,
 
 
 std::string CodegenCVisitor::global_variable_name(SymbolType& symbol) {
-    return "{}_global->{}"_format(info.mod_suffix, symbol->get_name());
+    return "{}_global.{}"_format(info.mod_suffix, symbol->get_name());
 }
 
 
@@ -1389,7 +1389,7 @@ void CodegenCVisitor::print_mechanism_global_structure() {
 
     printer->add_newline(1);
     printer->add_line("/** holds object of global variable */");
-    printer->add_line("{}* {}{}_global;"_format(global_struct(), k_restrict(), info.mod_suffix));
+    printer->add_line("{} {}_global;"_format(global_struct(), info.mod_suffix));
 }
 
 
@@ -1732,10 +1732,6 @@ void CodegenCVisitor::print_global_variable_setup() {
     printer->add_line("if (setup_done) {");
     printer->add_line("    return;");
     printer->add_line("}");
-
-    printer->add_newline(1);
-    auto allocation = "({0}*) mem_alloc(1, sizeof({0}))"_format(global_struct());
-    printer->add_line("{0}_global = {1};"_format(info.mod_suffix, allocation));
 
     /// offsets for state variables
     if (info.primes_size != 0) {
