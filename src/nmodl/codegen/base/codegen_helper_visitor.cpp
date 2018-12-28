@@ -127,15 +127,27 @@ void CodegenHelperVisitor::find_non_range_variables() {
      * All global variables remain global if mod file is not marked thread safe.
      * Otherwise, global variables written at least once gets promoted to thread variables.
      */
+
+    std::string variables;
+
     auto vars = psymtab->get_variables_with_properties(NmodlInfo::global_var);
     for (auto& var : vars) {
         if (info.thread_safe && var->get_write_count() > 0) {
             var->add_property(NmodlInfo::thread_safe);
             info.thread_variables.push_back(var);
             info.thread_var_data_size += var->get_length();
+            variables += " " + var->get_name();
         } else {
             info.global_variables.push_back(var);
         }
+    }
+
+    /**
+     * todo : move this to separate pass
+     */
+    if (!variables.empty()) {
+        std::string message = "Global variables are updated in compute blocks, convert them to range? : ";
+        throw std::runtime_error(message + variables);
     }
 
     /**
