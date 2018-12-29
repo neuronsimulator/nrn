@@ -146,7 +146,8 @@ void CodegenHelperVisitor::find_non_range_variables() {
      * todo : move this to separate pass
      */
     if (!variables.empty()) {
-        std::string message = "Global variables are updated in compute blocks, convert them to range? : ";
+        std::string message =
+            "Global variables are updated in compute blocks, convert them to range? : ";
         throw std::runtime_error(message + variables);
     }
 
@@ -171,9 +172,8 @@ void CodegenHelperVisitor::find_non_range_variables() {
     for (auto& var : vars) {
         // some variables like area and diam are declared in parameter
         // block but they are not global
-        if (var->get_name() == diam_variable
-            || var->get_name() == area_variable
-            || var->has_properties(NmodlInfo::extern_neuron_variable)) {
+        if (var->get_name() == diam_variable || var->get_name() == area_variable ||
+            var->has_properties(NmodlInfo::extern_neuron_variable)) {
             continue;
         }
 
@@ -456,7 +456,7 @@ void CodegenHelperVisitor::visit_breakpoint_block(BreakpointBlock* node) {
 void CodegenHelperVisitor::visit_procedure_block(ast::ProcedureBlock* node) {
     info.procedures.push_back(node);
     node->visit_children(this);
-    if(table_statement_used) {
+    if (table_statement_used) {
         table_statement_used = false;
         info.functions_with_table.push_back(node);
     }
@@ -466,7 +466,7 @@ void CodegenHelperVisitor::visit_procedure_block(ast::ProcedureBlock* node) {
 void CodegenHelperVisitor::visit_function_block(ast::FunctionBlock* node) {
     info.functions.push_back(node);
     node->visit_children(this);
-    if(table_statement_used) {
+    if (table_statement_used) {
         table_statement_used = false;
         info.functions_with_table.push_back(node);
     }

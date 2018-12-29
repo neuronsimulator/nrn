@@ -20,12 +20,11 @@ using namespace fmt::literals;
  * \brief Helper visitor to return table statement in given node
  */
 class TableStatementVisitor : public AstVisitor {
-private:
-
+  private:
     /// vector containing all table statements
     std::vector<TableStatement*> statements;
 
-public:
+  public:
     TableStatementVisitor() = default;
 
     void visit_table_statement(TableStatement* node) override {
@@ -91,7 +90,9 @@ class CodegenCVisitor : public CodegenBaseVisitor {
 
 
     /// get variable name for int variable
-    std::string int_variable_name(IndexVariableInfo& symbol, std::string name, bool use_instance);
+    std::string int_variable_name(IndexVariableInfo& symbol,
+                                  const std::string& name,
+                                  bool use_instance);
 
 
     /// get variable name for global variable
@@ -144,7 +145,7 @@ class CodegenCVisitor : public CodegenBaseVisitor {
 
 
     /// function call / statement for nrn_wrote_conc
-    std::string conc_write_statement(std::string ion_name,
+    std::string conc_write_statement(const std::string& ion_name,
                                      const std::string& concentration,
                                      int index);
 

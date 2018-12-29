@@ -22,7 +22,7 @@
 #include "utils/common_utils.hpp"
 #include "utils/logger.hpp"
 
-void ast_to_nmodl(ast::Program* ast, std::string filename) {
+void ast_to_nmodl(ast::Program* ast, const std::string& filename) {
     NmodlPrintVisitor v(filename);
     v.visit_program(ast);
     logger->info("AST to NMODL transformation written to {}", filename);
@@ -167,7 +167,7 @@ int main(int argc, const char* argv[]) {
         }
     }
 
-    if (error_count) {
+    if (error_count != 0) {
         logger->error("Code generation encountered {} errors", error_count);
     } else {
         logger->info("Code generation finished successfully");

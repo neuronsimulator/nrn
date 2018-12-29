@@ -47,7 +47,9 @@ std::string CodegenCCudaVisitor::compute_method_name(BlockType type) {
 }
 
 
-void CodegenCCudaVisitor::print_atomic_op(std::string lhs, std::string op, std::string rhs) {
+void CodegenCCudaVisitor::print_atomic_op(const std::string& lhs,
+                                          const std::string& op,
+                                          const std::string& rhs) {
     std::string function;
     if (op == "+") {
         function = "atomicAdd";

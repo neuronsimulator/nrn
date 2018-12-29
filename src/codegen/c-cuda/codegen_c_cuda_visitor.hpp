@@ -13,7 +13,7 @@
  *      - return statement in the verbatim block of inline function not handled (e.g. netstim.mod)
  */
 class CodegenCCudaVisitor : public CodegenCVisitor {
-    void print_atomic_op(std::string lhs, std::string op, std::string rhs);
+    void print_atomic_op(const std::string& lhs, const std::string& op, const std::string& rhs);
 
   protected:
     /// name of the code generation backend

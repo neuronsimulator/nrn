@@ -1,9 +1,13 @@
+#include <utility>
+
 #include "lexer/token_mapping.hpp"
 #include "visitors/symtab_visitor.hpp"
 
 
 // create symbol for given node
-static std::shared_ptr<Symbol> create_symbol_for_node(Node* node, SymbolInfo property, bool under_state_block) {
+static std::shared_ptr<Symbol> create_symbol_for_node(Node* node,
+                                                      SymbolInfo property,
+                                                      bool under_state_block) {
     ModToken token;
     auto token_ptr = node->get_token();
     if (token_ptr != nullptr) {
@@ -134,7 +138,7 @@ static void add_external_symbols(symtab::ModelSymbolTable* symtab) {
 }
 
 
-void SymtabVisitor::setup_symbol_table(AST* node, std::string name, bool is_global) {
+void SymtabVisitor::setup_symbol_table(AST* node, const std::string& name, bool is_global) {
     /// entering into new nmodl block
     auto symtab = modsymtab->enter_scope(name, node, is_global, node->get_symbol_table());
 
@@ -186,7 +190,7 @@ void SymtabVisitor::setup_symbol_table_for_global_block(Node* node) {
 }
 
 
-void SymtabVisitor::setup_symbol_table_for_scoped_block(Node* node, std::string name) {
+void SymtabVisitor::setup_symbol_table_for_scoped_block(Node* node, const std::string& name) {
     setup_symbol_table(node, name, false);
 }
 
@@ -198,7 +202,7 @@ void SymtabVisitor::setup_symbol_table_for_scoped_block(Node* node, std::string 
  */
 void SymtabVisitor::visit_table_statement(ast::TableStatement* node) {
     auto update_symbol = [this](NameVector& variables, NmodlInfo property, int num_values) {
-        for(auto &var : variables) {
+        for (auto& var : variables) {
             auto name = var->get_name();
             auto symbol = modsymtab->lookup(name);
             if (symbol) {

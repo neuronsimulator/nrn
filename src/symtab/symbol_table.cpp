@@ -48,7 +48,7 @@ namespace symtab {
         auto symbol = lookup_in_scope(name);
         if (symbol != nullptr) {
             auto node = symbol->get_node();
-            if (node) {
+            if (node != nullptr) {
                 if (node->is_procedure_block() || node->is_function_block()) {
                     return true;
                 }
@@ -336,16 +336,18 @@ namespace symtab {
      *  them we simply append counter.
      *  \todo We should add position information to make name unique
      */
-    std::string ModelSymbolTable::get_unique_name(std::string name, AST* node, bool is_global) {
+    std::string ModelSymbolTable::get_unique_name(const std::string& name,
+                                                  AST* node,
+                                                  bool is_global) {
         static int block_counter = 0;
-
+        std::string new_name(name);
         if (is_global) {
-            name = GLOBAL_SYMTAB_NAME;
+            new_name = GLOBAL_SYMTAB_NAME;
         } else if (node->is_statement_block() || node->is_solve_block() ||
                    node->is_before_block() || node->is_after_block()) {
-            name += std::to_string(block_counter++);
+            new_name += std::to_string(block_counter++);
         }
-        return name;
+        return new_name;
     }
 
 
@@ -355,7 +357,7 @@ namespace symtab {
      *  The same symbol table is returned so that visitor can store pointer to
      *  symbol table within a node.
      */
-    SymbolTable* ModelSymbolTable::enter_scope(std::string name,
+    SymbolTable* ModelSymbolTable::enter_scope(const std::string& name,
                                                AST* node,
                                                bool global,
                                                SymbolTable* node_symtab) {
@@ -381,14 +383,14 @@ namespace symtab {
         }
 
         if (node_symtab == nullptr || !update_table) {
-            name = get_unique_name(name, node, global);
-            auto new_symtab = std::make_shared<SymbolTable>(name, node, global);
+            auto new_name = get_unique_name(name, node, global);
+            auto new_symtab = std::make_shared<SymbolTable>(new_name, node, global);
             new_symtab->set_parent_table(current_symtab);
             if (symtab == nullptr) {
                 symtab = new_symtab;
             }
             if (current_symtab != nullptr) {
-                current_symtab->insert_table(name, new_symtab);
+                current_symtab->insert_table(new_name, new_symtab);
             }
             node_symtab = new_symtab.get();
         }
