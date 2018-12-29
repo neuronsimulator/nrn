@@ -1,6 +1,8 @@
 #include <iostream>
 #include "visitors/verbatim_visitor.hpp"
 
+using namespace ast;
+
 void VerbatimVisitor::visit_verbatim(Verbatim* node) {
     std::string block;
     auto statement = node->get_statement();

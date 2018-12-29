@@ -177,23 +177,23 @@ SCENARIO("Symbol table generation and Perf stat visitor pass") {
             v.visit_program(ast.get());
             auto symtab = ast->get_model_symbol_table();
 
-            using namespace symtab::details;
+            using namespace syminfo;
 
             THEN("Can lookup for defined variables") {
                 auto symbol = symtab->lookup("m");
-                REQUIRE(symbol->has_properties(NmodlInfo::dependent_def));
-                REQUIRE_FALSE(symbol->has_properties(NmodlInfo::local_var));
+                REQUIRE(symbol->has_properties(NmodlType::dependent_def));
+                REQUIRE_FALSE(symbol->has_properties(NmodlType::local_var));
 
                 symbol = symtab->lookup("gNaTs2_tbar");
-                REQUIRE(symbol->has_properties(NmodlInfo::param_assign));
-                REQUIRE(symbol->has_properties(NmodlInfo::range_var));
+                REQUIRE(symbol->has_properties(NmodlType::param_assign));
+                REQUIRE(symbol->has_properties(NmodlType::range_var));
 
                 symbol = symtab->lookup("ena");
-                REQUIRE(symbol->has_properties(NmodlInfo::read_ion_var));
+                REQUIRE(symbol->has_properties(NmodlType::read_ion_var));
             }
             THEN("Can lookup for defined functions") {
                 auto symbol = symtab->lookup("hBetaf");
-                REQUIRE(symbol->has_properties(NmodlInfo::function_block));
+                REQUIRE(symbol->has_properties(NmodlType::function_block));
             }
             THEN("Non existent variable lookup returns nullptr") {
                 REQUIRE(symtab->lookup("xyz") == nullptr);
@@ -1255,7 +1255,7 @@ std::vector<DUChain> run_defuse_visitor(const std::string& text, const std::stri
         DefUseAnalyzeVisitor v(ast->get_symbol_table());
 
         for (auto& block : ast->blocks) {
-            if (block->get_type() != ast::Type::NEURON_BLOCK) {
+            if (block->get_type() != ast::AstNodeType::NEURON_BLOCK) {
                 chains.push_back(v.analyze(block.get(), variable));
             }
         }

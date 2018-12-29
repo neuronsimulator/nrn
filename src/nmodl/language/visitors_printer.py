@@ -6,7 +6,8 @@ class AbstractVisitorPrinter(DeclarationPrinter):
     """Prints abstract base class for all visitor implementations"""
 
     def headers(self):
-        pass
+        line = '#include "ast/ast_decl.hpp"'
+        self.write_line(line)
 
     def class_comment(self):
         self.write_line("/* Abstract base class for all visitor implementations */")
@@ -15,7 +16,7 @@ class AbstractVisitorPrinter(DeclarationPrinter):
         self.write_line("public:", post_gutter=1)
 
         for node in self.nodes:
-            line = "virtual void visit_" + to_snake_case(node.class_name) + "(" + node.class_name + "* node) = 0;"
+            line = "virtual void visit_" + to_snake_case(node.class_name) + "(ast::" + node.class_name + "* node) = 0;"
             self.write_line(line)
 
         self.writer.decrease_gutter()
@@ -28,8 +29,6 @@ class AstVisitorDeclarationPrinter(DeclarationPrinter):
         line = '#include "ast/ast.hpp"'
         self.write_line(line)
         line = '#include "visitors/visitor.hpp"'
-        self.write_line(line)
-        line = "using namespace ast;"
         self.write_line(line, newline=2)
 
     def class_comment(self):
@@ -42,7 +41,7 @@ class AstVisitorDeclarationPrinter(DeclarationPrinter):
         self.write_line("public:", post_gutter=1)
 
         for node in self.nodes:
-            line = "virtual void visit_" + to_snake_case(node.class_name) + "(" + node.class_name + "* node) override;"
+            line = "virtual void visit_" + to_snake_case(node.class_name) + "(ast::" + node.class_name + "* node) override;"
             self.write_line(line)
 
         self.writer.decrease_gutter()
@@ -52,7 +51,8 @@ class AstVisitorDefinitionPrinter(DefinitionPrinter):
     """Prints base visitor class method definitions"""
 
     def headers(self):
-        self.write_line('#include "visitors/ast_visitor.hpp"', newline=2)
+        self.write_line('#include "visitors/ast_visitor.hpp"')
+        self.write_line("using namespace ast;", newline=2)
 
     def definitions(self):
         for node in self.nodes:
@@ -100,7 +100,7 @@ class JSONVisitorDeclarationPrinter(DeclarationPrinter):
         self.write_line(line, newline=2)
 
         for node in self.nodes:
-            line = "void visit_" + to_snake_case(node.class_name) + "(" + node.class_name + "* node) override;"
+            line = "void visit_" + to_snake_case(node.class_name) + "(ast::" + node.class_name + "* node) override;"
             self.write_line(line)
 
         self.writer.decrease_gutter()
@@ -110,8 +110,8 @@ class JSONVisitorDefinitionPrinter(DefinitionPrinter):
     """Prints visitor class definition for printing AST in JSON format"""
 
     def headers(self):
-        line = '#include "visitors/json_visitor.hpp"'
-        self.write_line(line, newline=2)
+        self.write_line('#include "visitors/json_visitor.hpp"')
+        self.write_line('using namespace ast;', newline=2)
 
     def definitions(self):
         for node in self.nodes:
@@ -162,13 +162,11 @@ class SymtabVisitorDeclarationPrinter(DeclarationPrinter):
         self.write_line("/* Concrete visitor for constructing symbol table from AST */")
 
     def class_name_declaration(self):
-
-        self.write_line("using namespace symtab;")
         self.write_line("class " + self.classname + " : public AstVisitor {")
 
     def private_declaration(self):
         self.write_line("private:", post_gutter=1)
-        self.write_line("ModelSymbolTable* modsymtab;", newline=2, post_gutter=-1)
+        self.write_line("symtab::ModelSymbolTable* modsymtab;", newline=2, post_gutter=-1)
         self.write_line("std::unique_ptr<JSONPrinter> printer;")
         self.write_line("std::string block_to_solve;")
         self.write_line("bool update = false;")
@@ -187,10 +185,10 @@ class SymtabVisitorDeclarationPrinter(DeclarationPrinter):
         self.write_line(line, newline=2)
 
         # helper function for setting up symbol for variable
-        self.write_line("void setup_symbol(ast::Node* node, SymbolInfo property);", newline=2)
+        self.write_line("void setup_symbol(ast::Node* node, NmodlTypeFlag property);", newline=2)
 
         # add symbol with given property to model symbol table
-        line = "void add_model_symbol_with_property(ast::Node* node, SymbolInfo property);"
+        line = "void add_model_symbol_with_property(ast::Node* node, NmodlTypeFlag property);"
         self.write_line(line, newline=2)
 
         # helper function for creating symbol table for blocks
@@ -213,7 +211,7 @@ class SymtabVisitorDeclarationPrinter(DeclarationPrinter):
         # which goes into symbol table
         for node in self.nodes:
             if node.is_symtab_method_required():
-                line = "void visit_" + to_snake_case(node.class_name) + "(" + node.class_name + "* node) override;"
+                line = "void visit_" + to_snake_case(node.class_name) + "(ast::" + node.class_name + "* node) override;"
                 self.write_line(line)
 
         self.writer.decrease_gutter()
@@ -223,10 +221,12 @@ class SymtabVisitorDefinitionPrinter(DefinitionPrinter):
     """Prints visitor class definition for printing Symbol table in JSON format"""
 
     def headers(self):
-        line = '#include "symtab/symbol_table.hpp"'
-        self.write_line(line)
-        line = '#include "visitors/symtab_visitor.hpp"'
-        self.write_line(line, newline=2)
+        self.write_line('#include "symtab/symbol_table.hpp"')
+        self.write_line('#include "visitors/symtab_visitor.hpp"', newline=2)
+
+        self.write_line('using namespace symtab;')
+        self.write_line('using namespace syminfo;')
+        self.write_line('using namespace ast;', newline=2)
 
     def definitions(self):
         for node in self.nodes:
@@ -241,7 +241,7 @@ class SymtabVisitorDefinitionPrinter(DefinitionPrinter):
                 self.write_line(line, post_gutter=1)
 
                 type_name = to_snake_case(node.class_name)
-                property_name = "NmodlInfo::" + type_name
+                property_name = "syminfo::NmodlType::" + type_name
 
                 if node.is_symbol_var_node():
                     self.write_line("setup_symbol(node, " + property_name + ");")

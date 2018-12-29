@@ -4,6 +4,7 @@
 #include "visitors/defuse_analyze_visitor.hpp"
 
 using namespace ast;
+using namespace syminfo;
 
 /// DUState to string conversion for pretty-printing
 std::string to_string(DUState state) {
@@ -257,7 +258,7 @@ void DefUseAnalyzeVisitor::update_defuse_chain(const std::string& name) {
     if (name == variable_name) {
         auto symbol = current_symtab->lookup_in_scope(name);
         // variable properties that make it local
-        auto properties = symtab::NmodlInfo::local_var | symtab::NmodlInfo::argument;
+        auto properties = NmodlType::local_var | NmodlType::argument;
         auto is_local = symbol->has_properties(properties);
 
         if (unsupported_node) {

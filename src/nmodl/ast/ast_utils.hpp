@@ -3,6 +3,9 @@
 
 #include <string>
 
+#include "ast/ast_decl.hpp"
+#include "visitors/visitor.hpp"
+
 #include "lexer/modtoken.hpp"
 #include "symtab/symbol_table.hpp"
 
@@ -52,17 +55,13 @@ namespace ast {
     typedef enum { LTMINUSGT, LTLT, MINUSGT } ReactionOp;
     static const std::string ReactionOpNames[] = {"<->", "<<", "->"};
 
-    /* base class for all visitors implementation */
-    class Visitor;
-
     /* enum class for ast types */
     enum class Type;
 
     /* define abstract base class for all AST nodes
      * this also serves to define the visitable objects.
      */
-    class AST {
-      public:
+    struct AST {
         /* all AST nodes have a member which stores their
          * basetype (int, bool, none, object). Further type
          * information will come from the symbol table.
@@ -72,7 +71,7 @@ namespace ast {
         /* all AST nodes provide visit children and accept methods */
         virtual void visit_children(Visitor* v) = 0;
         virtual void accept(Visitor* v) = 0;
-        virtual Type get_type() = 0;
+        virtual AstNodeType get_type() = 0;
         virtual std::string get_type_name() = 0;
 
         virtual std::string get_name() {

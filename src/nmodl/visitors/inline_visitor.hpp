@@ -167,7 +167,7 @@ class InlineVisitor : public AstVisitor {
 
     virtual void visit_wrapped_expression(ast::WrappedExpression* node) override;
 
-    virtual void visit_program(Program* node) override;
+    virtual void visit_program(ast::Program* node) override;
 };
 
 /**

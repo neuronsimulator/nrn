@@ -22,16 +22,16 @@ using namespace fmt::literals;
 class TableStatementVisitor : public AstVisitor {
   private:
     /// vector containing all table statements
-    std::vector<TableStatement*> statements;
+    std::vector<ast::TableStatement*> statements;
 
   public:
     TableStatementVisitor() = default;
 
-    void visit_table_statement(TableStatement* node) override {
+    void visit_table_statement(ast::TableStatement* node) override {
         statements.push_back(node);
     }
 
-    std::vector<TableStatement*> get_statements() {
+    std::vector<ast::TableStatement*> get_statements() {
         return statements;
     }
 };

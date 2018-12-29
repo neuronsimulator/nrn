@@ -8,18 +8,18 @@
 #include "symtab/symbol_table.hpp"
 
 using namespace symtab;
-using namespace symtab::details;
+using namespace syminfo;
 
-extern bool has_property(const SymbolInfo& obj, NmodlInfo property);
+extern bool has_property(const NmodlTypeFlag& obj, NmodlType property);
 
 //=============================================================================
 // Symbol properties test
 //=============================================================================
 
 SCENARIO("Symbol properties can be added and converted to string") {
-    SymbolInfo prop1{flags::empty};
-    SymbolInfo prop2 = NmodlInfo::local_var;
-    SymbolInfo prop3 = NmodlInfo::global_var;
+    NmodlTypeFlag prop1{flags::empty};
+    NmodlTypeFlag prop2 = NmodlType::local_var;
+    NmodlTypeFlag prop3 = NmodlType::global_var;
 
     GIVEN("A empty property") {
         WHEN("converted to string") {
@@ -29,29 +29,29 @@ SCENARIO("Symbol properties can be added and converted to string") {
         }
         WHEN("checked for property") {
             THEN("doesn't have any property") {
-                REQUIRE_FALSE(has_property(prop1, NmodlInfo::local_var));
+                REQUIRE_FALSE(has_property(prop1, NmodlType::local_var));
             }
         }
         WHEN("adding another empty property") {
-            SymbolInfo result = prop1 | prop1;
+            NmodlTypeFlag result = prop1 | prop1;
             THEN("to_string still returns empty string") {
                 REQUIRE(to_string(result).empty());
             }
         }
         WHEN("added some other property") {
-            SymbolInfo result = prop1 | prop2;
+            NmodlTypeFlag result = prop1 | prop2;
             THEN("to_string returns added property") {
                 REQUIRE(to_string(result) == "local");
             }
             WHEN("checked for property") {
                 THEN("has required property") {
-                    REQUIRE(has_property(result, NmodlInfo::local_var) == true);
+                    REQUIRE(has_property(result, NmodlType::local_var) == true);
                 }
             }
         }
         WHEN("added multiple properties") {
-            SymbolInfo result = prop1 | prop2 | prop3;
-            result |= NmodlInfo::write_ion_var;
+            NmodlTypeFlag result = prop1 | prop2 | prop3;
+            result |= NmodlType::write_ion_var;
             THEN("to_string returns all added properties") {
                 REQUIRE_THAT(to_string(result), Catch::Contains("local"));
                 REQUIRE_THAT(to_string(result), Catch::Contains("global"));
@@ -59,10 +59,10 @@ SCENARIO("Symbol properties can be added and converted to string") {
             }
             WHEN("checked for property") {
                 THEN("has all added properties") {
-                    REQUIRE(has_property(result, NmodlInfo::local_var) == true);
-                    REQUIRE(has_property(result, NmodlInfo::global_var) == true);
-                    REQUIRE(has_property(result, NmodlInfo::write_ion_var) == true);
-                    REQUIRE_FALSE(has_property(result, NmodlInfo::read_ion_var));
+                    REQUIRE(has_property(result, NmodlType::local_var) == true);
+                    REQUIRE(has_property(result, NmodlType::global_var) == true);
+                    REQUIRE(has_property(result, NmodlType::write_ion_var) == true);
+                    REQUIRE_FALSE(has_property(result, NmodlType::read_ion_var));
                 }
             }
         }
@@ -74,14 +74,14 @@ SCENARIO("Symbol properties can be added and converted to string") {
 //=============================================================================
 
 SCENARIO("Symbol operations") {
-    SymbolInfo property1 = NmodlInfo::argument;
-    SymbolInfo property2 = NmodlInfo::range_var;
-    SymbolInfo property3 = NmodlInfo::discrete_block;
+    NmodlTypeFlag property1 = NmodlType::argument;
+    NmodlTypeFlag property2 = NmodlType::range_var;
+    NmodlTypeFlag property3 = NmodlType::discrete_block;
     GIVEN("A symbol") {
         ModToken token(true);
         Symbol symbol("alpha", token);
         WHEN("added external property") {
-            symbol.add_property(NmodlInfo::extern_neuron_variable);
+            symbol.add_property(NmodlType::extern_neuron_variable);
             THEN("symbol becomes external") {
                 REQUIRE(symbol.is_external_symbol_only() == true);
             }
@@ -106,12 +106,12 @@ SCENARIO("Symbol operations") {
                 property = property2 | property3;
                 REQUIRE(symbol.has_all_properties(property) == true);
 
-                property |= NmodlInfo::to_solve;
+                property |= NmodlType::to_solve;
                 REQUIRE(symbol.has_all_properties(property) == false);
             }
         }
         WHEN("combined properties") {
-            SymbolInfo property = NmodlInfo::factor_def | NmodlInfo::global_var;
+            NmodlTypeFlag property = NmodlType::factor_def | NmodlType::global_var;
             THEN("symbol has union of all properties") {
                 REQUIRE(symbol.has_properties(property) == false);
                 symbol.combine_properties(property);
@@ -167,14 +167,14 @@ SCENARIO("Symbol table operations") {
         }
         WHEN("checked for global variables") {
             table->insert(symbol);
-            auto variables = table->get_variables_with_properties(NmodlInfo::range_var);
+            auto variables = table->get_variables_with_properties(NmodlType::range_var);
             THEN("table doesn't have any global variables") {
                 REQUIRE(variables.empty());
                 WHEN("added global symbol") {
                     auto next_symbol = std::make_shared<Symbol>("gamma", ModToken());
-                    next_symbol->add_property(NmodlInfo::dependent_def);
+                    next_symbol->add_property(NmodlType::dependent_def);
                     table->insert(next_symbol);
-                    auto variables = table->get_variables_with_properties(NmodlInfo::dependent_def);
+                    auto variables = table->get_variables_with_properties(NmodlType::dependent_def);
                     THEN("table has global variable") {
                         REQUIRE(variables.size() == 1);
                     }
@@ -197,40 +197,40 @@ SCENARIO("Symbol table operations") {
             auto symbol3 = std::make_shared<Symbol>("gamma", ModToken());
             auto symbol4 = std::make_shared<Symbol>("delta", ModToken());
 
-            symbol1->add_property(NmodlInfo::range_var | NmodlInfo::param_assign);
-            symbol2->add_property(NmodlInfo::range_var | NmodlInfo::param_assign |
-                                  NmodlInfo::state_var);
-            symbol3->add_property(NmodlInfo::range_var | NmodlInfo::dependent_def |
-                                  NmodlInfo::pointer_var);
-            symbol4->add_property(NmodlInfo::range_var);
+            symbol1->add_property(NmodlType::range_var | NmodlType::param_assign);
+            symbol2->add_property(NmodlType::range_var | NmodlType::param_assign |
+                                  NmodlType::state_var);
+            symbol3->add_property(NmodlType::range_var | NmodlType::dependent_def |
+                                  NmodlType::pointer_var);
+            symbol4->add_property(NmodlType::range_var);
 
             table->insert(symbol1);
             table->insert(symbol2);
             table->insert(symbol3);
             table->insert(symbol4);
 
-            auto result = table->get_variables_with_properties(NmodlInfo::range_var);
+            auto result = table->get_variables_with_properties(NmodlType::range_var);
             REQUIRE(result.size() == 4);
 
             result =
-                table->get_variables_with_properties(NmodlInfo::range_var | NmodlInfo::pointer_var);
+                table->get_variables_with_properties(NmodlType::range_var | NmodlType::pointer_var);
             REQUIRE(result.size() == 4);
 
-            auto with = NmodlInfo::range_var | NmodlInfo::param_assign;
-            auto without = NmodlInfo::state_var | NmodlInfo::pointer_var;
+            auto with = NmodlType::range_var | NmodlType::param_assign;
+            auto without = NmodlType::state_var | NmodlType::pointer_var;
             result = table->get_variables(with, without);
             REQUIRE(result.size() == 1);
             REQUIRE(result[0]->get_name() == "alpha");
 
 
-            with = NmodlInfo::range_var;
-            without = NmodlInfo::param_assign | NmodlInfo::dependent_def;
+            with = NmodlType::range_var;
+            without = NmodlType::param_assign | NmodlType::dependent_def;
             result = table->get_variables(with, without);
             REQUIRE(result.size() == 1);
             REQUIRE(result[0]->get_name() == "delta");
 
-            with = NmodlInfo::range_var;
-            without = NmodlInfo::range_var;
+            with = NmodlType::range_var;
+            without = NmodlType::range_var;
             result = table->get_variables(with, without);
             REQUIRE(result.empty());
         }
@@ -250,9 +250,9 @@ SCENARIO("Model symbol table operations") {
         auto symbol2 = std::make_shared<Symbol>("alpha", ModToken());
         auto symbol3 = std::make_shared<Symbol>("alpha", ModToken());
 
-        symbol1->add_property(NmodlInfo::param_assign);
-        symbol2->add_property(NmodlInfo::range_var);
-        symbol3->add_property(NmodlInfo::range_var);
+        symbol1->add_property(NmodlType::param_assign);
+        symbol2->add_property(NmodlType::range_var);
+        symbol3->add_property(NmodlType::range_var);
 
         SymbolTable* old_symtab = nullptr;
 
@@ -289,7 +289,7 @@ SCENARIO("Model symbol table operations") {
             mod_symtab.insert(symbol2);
             THEN("only one symbol gets added with combined properties") {
                 auto symbol = mod_symtab.lookup("alpha");
-                auto properties = NmodlInfo::param_assign | NmodlInfo::range_var;
+                auto properties = NmodlType::param_assign | NmodlType::range_var;
                 REQUIRE(symbol->get_properties() == properties);
             }
         }

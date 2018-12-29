@@ -1,4 +1,5 @@
 %{
+
     #include <iostream>
 
     #include "ast/ast.hpp"
@@ -514,7 +515,7 @@ void nmodl::Lexer::scan_unit() {
 }
 
 /** return last scanned unit, it shouln't be null pointer */
-ast::string_ptr nmodl::Lexer::get_unit() {
+ast::String* nmodl::Lexer::get_unit() {
     if (last_unit == nullptr) {
         throw std::runtime_error("Trying to get unscanned empty unit");
     }

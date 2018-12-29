@@ -23,7 +23,7 @@ void symbol_type(const std::string& name, T& value) {
 /// test symbol type returned by lexer
 TEST_CASE("Lexer symbol type tests", "[TokenPrinter]") {
     SECTION("Symbol type : name ast class test") {
-        ast::name_ptr value = nullptr;
+        ast::Name* value = nullptr;
 
         {
             std::stringstream ss;
@@ -43,7 +43,7 @@ TEST_CASE("Lexer symbol type tests", "[TokenPrinter]") {
     }
 
     SECTION("Symbol type : prime ast class test") {
-        ast::primename_ptr value = nullptr;
+        ast::PrimeName* value = nullptr;
 
         {
             std::stringstream ss;
