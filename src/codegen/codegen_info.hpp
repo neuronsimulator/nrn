@@ -359,6 +359,8 @@ namespace codegen {
         bool emit_table_thread() const {
             return (table_count > 0 && vectorize == true);
         }
+
+        bool function_uses_table(std::string& name) const;
     };
 };  // namespace codegen
 
