@@ -134,12 +134,6 @@ class AstDeclarationPrinter(DeclarationPrinter):
             if node.is_program_node():
                 self.write_line("symtab::ModelSymbolTable model_symtab;")
 
-            if node.can_use_table():
-                self.write_line("")
-                self.write_line("bool has_table = false;")
-                self.write_line("bool use_table() { return has_table; }")
-                self.write_line("void use_table(bool use) { has_table = use; }")
-
             self.write_line("")
 
             if members:

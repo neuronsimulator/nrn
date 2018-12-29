@@ -912,7 +912,7 @@ void CodegenCVisitor::print_procedure(ast::ProcedureBlock* node) {
     codegen = true;
     auto name = node->get_name();
 
-    if (node->use_table()) {
+    if (info.function_uses_table(name)) {
         auto new_name = "f_" + name;
         print_function_or_procedure(node, new_name);
         print_table_check_function(node);

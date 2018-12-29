@@ -458,7 +458,6 @@ void CodegenHelperVisitor::visit_procedure_block(ast::ProcedureBlock* node) {
     node->visit_children(this);
     if(table_statement_used) {
         table_statement_used = false;
-        node->use_table(true);
         info.functions_with_table.push_back(node);
     }
 }
@@ -469,7 +468,6 @@ void CodegenHelperVisitor::visit_function_block(ast::FunctionBlock* node) {
     node->visit_children(this);
     if(table_statement_used) {
         table_statement_used = false;
-        node->use_table(true);
         info.functions_with_table.push_back(node);
     }
 }
