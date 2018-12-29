@@ -41,6 +41,7 @@ if(NOT EXISTS ${MOD2C})
     set (MOD2C ${PROJECT_BINARY_DIR}/external/mod2c/bin/mod2c_core)
 endif()
 
+set (MOD2C_BINARY ${MOD2C})
 get_filename_component(mod2c_install_prefix ${MOD2C} DIRECTORY)
 set (MOD2C_UNITS "${PROJECT_BINARY_DIR}/external/mod2c/share/nrnunits.lib")
 set(MOD2C env "MODLUNIT=${MOD2C_UNITS}" ${MOD2C})
@@ -68,7 +69,7 @@ macro(mod2c_target name input)
     list(APPEND MOD2C_${name}_MODS "${mod2c_modname_}")
 
     add_custom_command(OUTPUT "${mod2c_output_}"
-      DEPENDS ${input} mod2c
+      DEPENDS ${input} mod2c ${MOD2C_BINARY}
       COMMAND ${CMAKE_COMMAND} -E copy "${mod2c_source_}" "${CMAKE_CURRENT_BINARY_DIR}"
       COMMAND ${MOD2C} "${mod2c_modname_}"
       WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")

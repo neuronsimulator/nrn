@@ -42,6 +42,7 @@ set(ExternalProjectCMakeArgs
 )
 
 ExternalProject_Add(mod2c
+  BUILD_ALWAYS 1
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/mod2c
   GIT_SUBMODULES
   CMAKE_ARGS ${ExternalProjectCMakeArgs}
