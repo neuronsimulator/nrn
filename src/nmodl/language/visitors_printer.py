@@ -194,7 +194,7 @@ class SymtabVisitorDeclarationPrinter(DeclarationPrinter):
         self.write_line(line, newline=2)
 
         # helper function for creating symbol table for blocks
-        line = "void setup_symbol_table(ast::AST *node, std::string name, bool is_global);"
+        line = "void setup_symbol_table(ast::AST *node, const std::string& name, bool is_global);"
         self.write_line(line, newline=2)
 
         # helper function for creating symbol table for global blocks of mod file
@@ -202,7 +202,7 @@ class SymtabVisitorDeclarationPrinter(DeclarationPrinter):
         self.write_line(line, newline=2)
 
         # helper function for creating symbol table for non-global blocks (e.g. function, procedures)
-        line = "void setup_symbol_table_for_scoped_block(ast::Node *node, std::string name);"
+        line = "void setup_symbol_table_for_scoped_block(ast::Node *node, const std::string& name);"
         self.write_line(line, newline=2)
 
         # helper function to setup program symbol table

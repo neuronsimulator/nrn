@@ -182,7 +182,7 @@ namespace symtab {
         SymbolTable* current_symtab = nullptr;
 
         /// return unique name by appending some counter value
-        std::string get_unique_name(std::string name, AST* node, bool is_global);
+        std::string get_unique_name(const std::string& name, AST* node, bool is_global);
 
         /// name of top level global symbol table
         const std::string GLOBAL_SYMTAB_NAME = "NMODL_GLOBAL";
@@ -211,7 +211,7 @@ namespace symtab {
 
       public:
         /// entering into new nmodl block
-        SymbolTable* enter_scope(std::string name,
+        SymbolTable* enter_scope(const std::string& name,
                                  AST* node,
                                  bool global,
                                  SymbolTable* node_symtab);

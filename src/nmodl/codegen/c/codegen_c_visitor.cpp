@@ -204,7 +204,7 @@ std::vector<ShadowUseStatement> CodegenCVisitor::ion_write_statements(BlockType 
  * Here we process if we are processing verbatim block at global scope.
  */
 std::string CodegenCVisitor::process_verbatim_token(const std::string& token) {
-    std::string name = token;
+    const std::string& name = token;
 
     /**
      * If given token is procedure name and if it's defined
@@ -229,7 +229,7 @@ std::string CodegenCVisitor::process_verbatim_token(const std::string& token) {
      * names with Instance because arguments are provided from coreneuron
      * and they are missing inst.
      */
-    auto use_instance = printing_top_verbatim_blocks ? false : true;
+    auto use_instance = !printing_top_verbatim_blocks;
     return get_variable_name(token, use_instance);
 }
 
@@ -704,161 +704,154 @@ static TableStatement* get_table_statement(ast::Block* node) {
     TableStatementVisitor v;
     node->accept(&v);
     auto table_statements = v.get_statements();
-    if (table_statements.empty()) {
-        throw std::runtime_error("Could not find table statement in " + node->get_name());
-    } else if (table_statements.size() > 1) {
-        throw std::runtime_error("More than one table statement found in " + node->get_name());
+    auto nstatements = table_statements.size();
+    if (nstatements != 1) {
+        auto message =
+            "One table statement expected in {} found {}"_format(node->get_name(), nstatements);
+        throw std::runtime_error(message);
     }
     return table_statements.front();
 }
 
 
 void CodegenCVisitor::print_table_check_function(ast::Block* node) {
-    printer->add_newline(2);
     auto name = node->get_name();
     auto internal_params = internal_method_parameters();
-
-    print_device_method_annotation();
-    printer->add_indent();
-    printer->add_text("void check_{}({})"_format(method_name(name), internal_params));
-    printer->start_block();
-
     auto statement = get_table_statement(node);
     auto table_variables = statement->table_vars;
     auto depend_variables = statement->depend_vars;
     auto from = statement->from;
     auto to = statement->to;
-
     auto with = statement->with->eval();
     auto use_table_var = get_variable_name("usetable");
     auto float_type = default_float_data_type();
-    auto tmin_name = get_variable_name("tmin_"+name);
-    auto mfac_name = get_variable_name("mfac_"+name);
+    auto tmin_name = get_variable_name("tmin_" + name);
+    auto mfac_name = get_variable_name("mfac_" + name);
 
-    printer->add_line("if ( {} == 0) {}"_format(use_table_var, "{"));
-    printer->add_line("    return;");
-    printer->add_line("}");
-
-    printer->add_line("static bool make_table = true;");
-    for(auto& variable : depend_variables) {
-        printer->add_line("static {} save_{};"_format(float_type, variable->get_name()));
-    }
-
-    for(auto& variable : depend_variables) {
-        auto name = variable->get_name();
-        auto instance_name = get_variable_name(name);
-        printer->add_line("if (save_{} != {}) {}"_format(name, instance_name, "{"));
-        printer->add_line("    make_table = true;");
+    printer->add_newline(2);
+    print_device_method_annotation();
+    printer->start_block("void check_{}({})"_format(method_name(name), internal_params));
+    {
+        printer->add_line("if ( {} == 0) {}"_format(use_table_var, "{"));
+        printer->add_line("    return;");
         printer->add_line("}");
+
+        printer->add_line("static bool make_table = true;");
+        for (auto& variable : depend_variables) {
+            printer->add_line("static {} save_{};"_format(float_type, variable->get_name()));
+        }
+
+        for (auto& variable : depend_variables) {
+            auto name = variable->get_name();
+            auto instance_name = get_variable_name(name);
+            printer->add_line("if (save_{} != {}) {}"_format(name, instance_name, "{"));
+            printer->add_line("    make_table = true;");
+            printer->add_line("}");
+        }
+
+        printer->start_block("if (make_table)");
+        {
+            printer->add_line("make_table = false;");
+
+            printer->add_indent();
+            printer->add_text("{} = "_format(tmin_name));
+            from->accept(this);
+            printer->add_text(";");
+            printer->add_newline();
+
+            printer->add_indent();
+            printer->add_text("double tmax = ");
+            to->accept(this);
+            printer->add_text(";");
+            printer->add_newline();
+
+
+            printer->add_line("double dx = (tmax-{})/{}.0;"_format(tmin_name, with));
+            printer->add_line("{} = 1.0/dx;"_format(mfac_name));
+
+            printer->add_line("int i = 0;");
+            printer->add_line("double x = 0;");
+            printer->add_line(
+                "for(i = 0, x = {}; i < {}; x += dx, i++) {}"_format(tmin_name, with + 1, "{"));
+            auto function = method_name("f_" + name);
+            printer->add_line("    {}({}, x);"_format(function, internal_method_arguments()));
+            for (auto& variable : table_variables) {
+                auto name = variable->get_name();
+                auto instance_name = get_variable_name(name);
+                auto table_name = get_variable_name("t_" + name);
+                printer->add_line("    {}[i] = {};"_format(table_name, instance_name));
+            }
+            printer->add_line("}");
+
+            for (auto& variable : depend_variables) {
+                auto name = variable->get_name();
+                auto instance_name = get_variable_name(name);
+                printer->add_line("save_{} = {};"_format(name, instance_name));
+            }
+        }
+        printer->end_block();
     }
-
-    printer->add_line("if (make_table) {}"_format("{"));
-    printer->increase_indent();
-
-    printer->add_line("make_table = false;");
-
-    printer->add_indent();
-    printer->add_text("{} = "_format(tmin_name));
-    from->accept(this);
-    printer->add_text(";");
-    printer->add_newline();
-
-    printer->add_indent();
-    printer->add_text("double tmax = ");
-    to->accept(this);
-    printer->add_text(";");
-    printer->add_newline();
-
-
-    printer->add_line("double dx = (tmax-{})/{}.0;"_format(tmin_name, with));
-    printer->add_line("{} = 1.0/dx;"_format(mfac_name));
-
-    printer->add_line("int i = 0;");
-    printer->add_line("double x = 0;");
-    printer->add_line("for(i = 0, x = {}; i < {}; x += dx, i++) {}"_format(tmin_name, with+1, "{"));
-    auto function_name = method_name("f_"+name);
-    printer->add_line("    {}({}, x);"_format(function_name, internal_method_arguments()));
-    for(auto& variable : table_variables) {
-        auto name = variable->get_name();
-        auto instance_name = get_variable_name(name);
-        auto table_name = get_variable_name("t_"+name);
-        printer->add_line("    {}[i] = {};"_format(table_name, instance_name));
-    }
-    printer->add_line("}");
-
-    for(auto& variable : depend_variables) {
-        auto name = variable->get_name();
-        auto instance_name = get_variable_name(name);
-        printer->add_line("save_{} = {};"_format(name, instance_name));
-    }
-
-    printer->decrease_indent();
-    printer->add_line("}");
-
     printer->end_block();
     printer->add_newline();
 }
 
 void CodegenCVisitor::print_table_replacement_function(ast::Block* node) {
-    printer->add_newline(2);
     auto name = node->get_name();
-    print_function_declaration(node, name);
-    printer->add_text(" ");
-    printer->start_block();
-
     auto statement = get_table_statement(node);
     auto table_variables = statement->table_vars;
     auto with = statement->with->eval();
     auto use_table_var = get_variable_name("usetable");
     auto float_type = default_float_data_type();
-    auto tmin_name = get_variable_name("tmin_"+name);
-    auto mfac_name = get_variable_name("mfac_"+name);
-    auto function_name = method_name("f_"+name);
+    auto tmin_name = get_variable_name("tmin_" + name);
+    auto mfac_name = get_variable_name("mfac_" + name);
+    auto function_name = method_name("f_" + name);
 
-    printer->add_line("if ( {} == 0) {}"_format(use_table_var, "{"));
-    printer->add_line("    {}({}, arg_v);"_format(function_name, internal_method_arguments()));
-    printer->add_line("     return 0;");
-    printer->add_line("}");
+    printer->add_newline(2);
+    print_function_declaration(node, name);
+    printer->start_block();
+    {
+        printer->add_line("if ( {} == 0) {}"_format(use_table_var, "{"));
+        printer->add_line("    {}({}, arg_v);"_format(function_name, internal_method_arguments()));
+        printer->add_line("     return 0;");
+        printer->add_line("}");
 
-    printer->add_line("double xi = {} * (arg_v - {});"_format(mfac_name, tmin_name));
-    printer->add_line("if (isnan(xi)) {");
-    for(auto& variable : table_variables) {
-        auto name = variable->get_name();
-        auto instance_name = get_variable_name(name);
-        printer->add_line("    {} = xi;"_format(instance_name));
+        printer->add_line("double xi = {} * (arg_v - {});"_format(mfac_name, tmin_name));
+        printer->add_line("if (isnan(xi)) {");
+        for (auto& var : table_variables) {
+            auto name = get_variable_name(var->get_name());
+            printer->add_line("    {} = xi;"_format(name));
+        }
+        printer->add_line("    return 0;");
+        printer->add_line("}");
+
+        printer->add_line("if (xi <= 0.0 || xi >= {}) {}"_format(with, "{"));
+        printer->add_line("    int index = (xi <= 0.0) ? 0 : {};"_format(with));
+        for (auto& variable : table_variables) {
+            auto name = variable->get_name();
+            auto instance_name = get_variable_name(name);
+            auto table_name = get_variable_name("t_" + name);
+            printer->add_line("    {} = {}[index];"_format(instance_name, table_name));
+        }
+        printer->add_line("    return 0;");
+        printer->add_line("}");
+
+        printer->add_line("int i = int(xi);");
+        printer->add_line("double theta = xi - double(i);");
+        for (auto& var : table_variables) {
+            auto instance_name = get_variable_name(var->get_name());
+            auto table_name = get_variable_name("t_" + var->get_name());
+            printer->add_line(
+                "{0} = {1}[i] + theta*({1}[i+1]-{1}[i]);"_format(instance_name, table_name));
+        }
+
+        printer->add_line("return 0;");
     }
-    printer->add_line("    return 0;");
-    printer->add_line("}");
-
-    printer->add_line("if (xi <= 0.0 || xi >= {}) {}"_format(with, "{"));
-    printer->add_line("    int index = (xi <= 0.0) ? 0 : {};"_format(with));
-    for(auto& variable : table_variables) {
-        auto name = variable->get_name();
-        auto instance_name = get_variable_name(name);
-        auto table_name = get_variable_name("t_"+name);
-        printer->add_line("    {} = {}[index];"_format(instance_name, table_name));
-    }
-    printer->add_line("    return 0;");
-    printer->add_line("}");
-    printer->add_newline();
-
-    printer->add_line("int i = int(xi);");
-    printer->add_line("double theta = xi - double(i);");
-    for(auto& variable : table_variables) {
-        auto name = variable->get_name();
-        auto instance_name = get_variable_name(name);
-        auto table_name = get_variable_name("t_"+name);
-        printer->add_line("{0} = {1}[i] + theta*({1}[i+1]-{1}[i]);"_format(instance_name, table_name));
-    }
-
-    printer->add_line("return 0;");
     printer->end_block();
     printer->add_newline();
 }
 
 
 void CodegenCVisitor::print_check_table_thread_function() {
-
     if (info.table_count == 0) {
         return;
     }
@@ -874,7 +867,7 @@ void CodegenCVisitor::print_check_table_thread_function() {
     printer->add_line("    double v = 0;");
     printer->add_line("    IonCurVar ionvar = {0};");
 
-    for(auto& function: info.functions_with_table) {
+    for (auto& function : info.functions_with_table) {
         auto name = method_name("check_" + function->get_name());
         auto arguments = internal_method_arguments();
         printer->add_line("    {}({});"_format(name, arguments));
@@ -973,11 +966,10 @@ std::string CodegenCVisitor::external_method_arguments() {
 std::string CodegenCVisitor::external_method_parameters(bool table) {
     if (table) {
         return "int id, int pnodecount, double* data, Datum* indexes, "
-                "ThreadDatum* thread, NrnThread* nt, int tml_id";
-    } else {
-        return "int id, int pnodecount, double* data, Datum* indexes, "
-                "ThreadDatum* thread, NrnThread* nt, double v";
+               "ThreadDatum* thread, NrnThread* nt, int tml_id";
     }
+    return "int id, int pnodecount, double* data, Datum* indexes, "
+           "ThreadDatum* thread, NrnThread* nt, double v";
 }
 
 
@@ -1093,7 +1085,7 @@ std::pair<std::string, std::string> CodegenCVisitor::write_ion_variable_name(std
 }
 
 
-std::string CodegenCVisitor::conc_write_statement(std::string ion_name,
+std::string CodegenCVisitor::conc_write_statement(const std::string& ion_name,
                                                   const std::string& concentration,
                                                   int index) {
     auto conc_var_name = get_variable_name("ion_" + concentration);
@@ -1326,7 +1318,7 @@ std::string CodegenCVisitor::float_variable_name(SymbolType& symbol, bool use_in
 
 
 std::string CodegenCVisitor::int_variable_name(IndexVariableInfo& symbol,
-                                               std::string name,
+                                               const std::string& name,
                                                bool use_instance) {
     auto position = position_of_int_var(name);
     auto num_int = num_int_variable();
@@ -1427,7 +1419,7 @@ std::string CodegenCVisitor::get_variable_name(std::string name, bool use_instan
     }
 
     if (name == "dt") {
-        return  "nt->_dt";
+        return "nt->_dt";
     }
 
     /// t in net_receive method is an argument to function and hence it should
@@ -1611,15 +1603,15 @@ void CodegenCVisitor::print_mechanism_global_structure() {
         printer->add_line("double usetable;");
         global_variables.push_back(make_symbol("usetable"));
 
-        for(auto& block: info.functions_with_table) {
+        for (auto& block : info.functions_with_table) {
             auto name = block->get_name();
             printer->add_line("{} tmin_{};"_format(float_type, name));
             printer->add_line("{} mfac_{};"_format(float_type, name));
-            global_variables.push_back(make_symbol("tmin_"+name));
-            global_variables.push_back(make_symbol("mfac_"+name));
+            global_variables.push_back(make_symbol("tmin_" + name));
+            global_variables.push_back(make_symbol("mfac_" + name));
         }
 
-        for(auto &variable : info.table_statement_variables) {
+        for (auto& variable : info.table_statement_variables) {
             auto name = "t_" + variable->get_name();
             printer->add_line("{}* {};"_format(float_type, name));
             global_variables.push_back(make_symbol(name));
@@ -2076,10 +2068,11 @@ void CodegenCVisitor::print_global_variable_setup() {
         auto name = get_variable_name("usetable");
         printer->add_line("{} = 1;"_format(name));
 
-        for(auto &variable : info.table_statement_variables) {
+        for (auto& variable : info.table_statement_variables) {
             auto name = get_variable_name("t_" + variable->get_name());
             int num_values = variable->get_num_values();
-            printer->add_line("{} = (double*) mem_alloc({}, sizeof(double));"_format(name, num_values));
+            printer->add_line(
+                "{} = (double*) mem_alloc({}, sizeof(double));"_format(name, num_values));
         }
     }
 
@@ -2236,7 +2229,7 @@ void CodegenCVisitor::print_instance_variable_setup() {
     printer->start_block("static inline void cleanup_instance(Memb_list* ml) ");
     printer->add_line("{0}* inst = ({0}*) ml->instance;"_format(instance_struct()));
     if (range_variable_setup_required()) {
-        for (auto &var : variables_to_free) {
+        for (auto& var : variables_to_free) {
             printer->add_line("mem_free((void*)inst->{});"_format(var));
         }
     }

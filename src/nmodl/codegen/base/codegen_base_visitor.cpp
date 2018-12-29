@@ -617,7 +617,7 @@ void CodegenBaseVisitor::update_index_semantics() {
      * Number of semantics for watch is one greater than number of
      * actual watch statements in the mod file
      */
-    if (info.watch_statements.size() > 0) {
+    if (!info.watch_statements.empty()) {
         for (int i = 0; i < info.watch_statements.size() + 1; i++) {
             info.semantics.emplace_back(index++, "watch", 1);
         }
@@ -755,7 +755,7 @@ std::vector<IndexVariableInfo> CodegenBaseVisitor::get_int_variables() {
      * used in coreneuron compared to actual watch statements for compatibility
      * with neuron (which uses one extra Datum variable)
      */
-    if (info.watch_statements.size() > 0) {
+    if (!info.watch_statements.empty()) {
         for (int i = 0; i < info.watch_statements.size() + 1; i++) {
             variables.emplace_back(make_symbol("watch{}"_format(i)), false, false, true);
         }

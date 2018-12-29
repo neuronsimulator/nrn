@@ -41,7 +41,7 @@ TEST_CASE("Verbatim Visitor") {
         auto blocks = run_verbatim_visitor(text);
 
         REQUIRE(blocks.size() == 1);
-        REQUIRE(blocks.front().compare(" int a; ") == 0);
+        REQUIRE(blocks.front() == " int a; ");
     }
 
     SECTION("Multiple Blocks") {
@@ -49,8 +49,8 @@ TEST_CASE("Verbatim Visitor") {
         auto blocks = run_verbatim_visitor(text);
 
         REQUIRE(blocks.size() == 2);
-        REQUIRE(blocks[0].compare(" int a; ") == 0);
-        REQUIRE(blocks[1].compare(" float b; ") == 0);
+        REQUIRE(blocks[0] == " int a; ");
+        REQUIRE(blocks[1] == " float b; ");
     }
 }
 
