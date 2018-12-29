@@ -6,6 +6,8 @@
 #include "visitors/visitor_utils.hpp"
 #include "symtab/symbol.hpp"
 
+using namespace ast;
+
 void CnexpSolveVisitor::visit_solve_block(SolveBlock* node) {
     if (node->method) {
         solve_method = node->method->value->eval();

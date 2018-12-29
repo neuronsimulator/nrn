@@ -13,7 +13,7 @@ class NmodlVisitorDeclarationPrinter(DeclarationPrinter):
         self.write_line("/* Visitor for printing AST back to NMODL */")
 
     def class_name_declaration(self):
-        self.write_line("class " + self.classname + " : public ast::Visitor {")
+        self.write_line("class " + self.classname + " : public Visitor {")
 
     def private_declaration(self):
         self.write_line("private:")

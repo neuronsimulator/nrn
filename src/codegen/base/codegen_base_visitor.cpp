@@ -12,7 +12,9 @@
 #include "parser/c11_driver.hpp"
 
 
+using namespace ast;
 using namespace symtab;
+using namespace syminfo;
 using namespace fmt::literals;
 using SymbolType = std::shared_ptr<symtab::Symbol>;
 
@@ -451,7 +453,7 @@ bool CodegenBaseVisitor::need_semicolon(Statement* node) {
 // check if there is a function or procedure defined with given name
 bool CodegenBaseVisitor::defined_method(std::string name) {
     auto function = program_symtab->lookup(std::move(name));
-    auto properties = NmodlInfo::function_block | NmodlInfo::procedure_block;
+    auto properties = NmodlType::function_block | NmodlType::procedure_block;
     return function && function->has_properties(properties);
 }
 
@@ -472,7 +474,7 @@ std::string CodegenBaseVisitor::breakpoint_current(std::string current) {
         return current;
     }
     auto symtab = breakpoint->get_statement_block()->get_symbol_table();
-    auto variables = symtab->get_variables_with_properties(NmodlInfo::local_var);
+    auto variables = symtab->get_variables_with_properties(NmodlType::local_var);
     for (auto& var : variables) {
         auto renamed_name = var->get_name();
         auto original_name = var->get_original_name();
@@ -593,7 +595,7 @@ void CodegenBaseVisitor::update_index_semantics() {
             info.first_pointer_var_index = index;
         }
         int size = var->get_length();
-        if (var->has_properties(NmodlInfo::pointer_var)) {
+        if (var->has_properties(NmodlType::pointer_var)) {
             info.semantics.emplace_back(index, "pointer", size);
         } else {
             info.semantics.emplace_back(index, "bbcorepointer", size);
@@ -723,7 +725,7 @@ std::vector<IndexVariableInfo> CodegenBaseVisitor::get_int_variables() {
 
     for (auto& var : info.pointer_variables) {
         auto name = var->get_name();
-        if (var->has_properties(NmodlInfo::pointer_var)) {
+        if (var->has_properties(NmodlType::pointer_var)) {
             variables.emplace_back(make_symbol(name));
         } else {
             variables.emplace_back(make_symbol(name), true);

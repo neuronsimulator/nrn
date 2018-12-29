@@ -1,8 +1,10 @@
 #include "visitors/rename_visitor.hpp"
 #include "parser/c11_driver.hpp"
 
+using namespace ast;
+
 /// rename matching variable
-void RenameVisitor::visit_name(ast::Name* node) {
+void RenameVisitor::visit_name(Name* node) {
     std::string name = node->get_name();
     if (name == var_name) {
         node->value->set(new_var_name);

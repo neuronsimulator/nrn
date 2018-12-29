@@ -6,8 +6,10 @@
 
 #include <fmt/format.h>
 
+using namespace ast;
 using namespace codegen;
 using namespace symtab;
+using namespace syminfo;
 using namespace fmt::literals;
 
 /**
@@ -50,11 +52,11 @@ void CodegenHelperVisitor::sort_with_mod2c_symbol_order(std::vector<SymbolType>&
  */
 void CodegenHelperVisitor::find_ion_variables() {
     /// name of the ions used
-    auto ion_vars = psymtab->get_variables_with_properties(NmodlInfo::useion);
+    auto ion_vars = psymtab->get_variables_with_properties(NmodlType::useion);
     /// read variables from all ions
-    auto read_ion_vars = psymtab->get_variables_with_properties(NmodlInfo::read_ion_var);
+    auto read_ion_vars = psymtab->get_variables_with_properties(NmodlType::read_ion_var);
     /// write variables from all ions
-    auto write_ion_vars = psymtab->get_variables_with_properties(NmodlInfo::write_ion_var);
+    auto write_ion_vars = psymtab->get_variables_with_properties(NmodlType::write_ion_var);
 
     /**
      * Check if given variable belongs to given ion.
@@ -90,11 +92,11 @@ void CodegenHelperVisitor::find_ion_variables() {
     }
 
     /// once ions are populated, we can find all currents
-    auto vars = psymtab->get_variables_with_properties(NmodlInfo::nonspe_cur_var);
+    auto vars = psymtab->get_variables_with_properties(NmodlType::nonspe_cur_var);
     for (auto& var : vars) {
         info.currents.push_back(var->get_name());
     }
-    vars = psymtab->get_variables_with_properties(NmodlInfo::electrode_cur_var);
+    vars = psymtab->get_variables_with_properties(NmodlType::electrode_cur_var);
     for (auto& var : vars) {
         info.currents.push_back(var->get_name());
     }
@@ -120,8 +122,8 @@ void CodegenHelperVisitor::find_non_range_variables() {
      * Top local variables are local variables appear in global scope. All local
      * variables in program symbol table are in global scope.
      */
-    info.constant_variables = psymtab->get_variables_with_properties(NmodlInfo::constant_var);
-    info.top_local_variables = psymtab->get_variables_with_properties(NmodlInfo::local_var);
+    info.constant_variables = psymtab->get_variables_with_properties(NmodlType::constant_var);
+    info.top_local_variables = psymtab->get_variables_with_properties(NmodlType::local_var);
 
     /**
      * All global variables remain global if mod file is not marked thread safe.
@@ -130,7 +132,7 @@ void CodegenHelperVisitor::find_non_range_variables() {
 
     std::string variables;
 
-    auto vars = psymtab->get_variables_with_properties(NmodlInfo::global_var);
+    auto vars = psymtab->get_variables_with_properties(NmodlType::global_var);
     for (auto& var : vars) {
         if (info.thread_safe && var->get_write_count() > 0) {
             var->mark_thread_safe();
@@ -159,21 +161,21 @@ void CodegenHelperVisitor::find_non_range_variables() {
      * and then sort them with neuron/mod2c order.
      */
     // clang-format off
-    auto with = NmodlInfo::param_assign;
-    auto without = NmodlInfo::range_var
-                   | NmodlInfo::dependent_def
-                   | NmodlInfo::global_var
-                   | NmodlInfo::pointer_var
-                   | NmodlInfo::bbcore_pointer_var
-                   | NmodlInfo::read_ion_var
-                   | NmodlInfo::write_ion_var;
+    auto with = NmodlType::param_assign;
+    auto without = NmodlType::range_var
+                   | NmodlType::dependent_def
+                   | NmodlType::global_var
+                   | NmodlType::pointer_var
+                   | NmodlType::bbcore_pointer_var
+                   | NmodlType::read_ion_var
+                   | NmodlType::write_ion_var;
     // clang-format on
     vars = psymtab->get_variables(with, without);
     for (auto& var : vars) {
         // some variables like area and diam are declared in parameter
         // block but they are not global
         if (var->get_name() == diam_variable || var->get_name() == area_variable ||
-            var->has_properties(NmodlInfo::extern_neuron_variable)) {
+            var->has_properties(NmodlType::extern_neuron_variable)) {
             continue;
         }
 
@@ -233,7 +235,7 @@ void CodegenHelperVisitor::find_non_range_variables() {
     }
 
     /// find number of prime variables and total size
-    auto primes = psymtab->get_variables_with_properties(NmodlInfo::prime_name);
+    auto primes = psymtab->get_variables_with_properties(NmodlType::prime_name);
     info.num_primes = primes.size();
     for (auto& variable : primes) {
         info.primes_size += variable->get_length();
@@ -241,15 +243,15 @@ void CodegenHelperVisitor::find_non_range_variables() {
 
     /// find pointer or bbcore pointer variables
     // clang-format off
-    auto properties = NmodlInfo::pointer_var
-                      | NmodlInfo::bbcore_pointer_var;
+    auto properties = NmodlType::pointer_var
+                      | NmodlType::bbcore_pointer_var;
     // clang-format on
     info.pointer_variables = psymtab->get_variables_with_properties(properties);
 
     // find special variables like diam, area
     // clang-format off
-    properties = NmodlInfo::dependent_def
-            | NmodlInfo::param_assign;
+    properties = NmodlType::dependent_def
+            | NmodlType::param_assign;
     vars = psymtab->get_variables_with_properties(properties);
     for (auto& var : vars) {
         if (var->get_name() == area_variable) {
@@ -282,12 +284,12 @@ void CodegenHelperVisitor::find_range_variables() {
      * First come parameters which are range variables.
      */
     // clang-format off
-    auto with = NmodlInfo::range_var
-                | NmodlInfo::param_assign;
-    auto without = NmodlInfo::global_var
-                   | NmodlInfo::pointer_var
-                   | NmodlInfo::bbcore_pointer_var
-                   | NmodlInfo::state_var;
+    auto with = NmodlType::range_var
+                | NmodlType::param_assign;
+    auto without = NmodlType::global_var
+                   | NmodlType::pointer_var
+                   | NmodlType::bbcore_pointer_var
+                   | NmodlType::state_var;
     // clang-format on
     info.range_parameter_vars = psymtab->get_variables(with, without);
     std::sort(info.range_parameter_vars.begin(), info.range_parameter_vars.end(), comparator);
@@ -296,13 +298,13 @@ void CodegenHelperVisitor::find_range_variables() {
      * Second come dependent variables which are range variables.
      */
     // clang-format off
-    with = NmodlInfo::range_var
-           | NmodlInfo::dependent_def;
-    without = NmodlInfo::global_var
-              | NmodlInfo::pointer_var
-              | NmodlInfo::bbcore_pointer_var
-              | NmodlInfo::state_var
-              | NmodlInfo::param_assign;
+    with = NmodlType::range_var
+           | NmodlType::dependent_def;
+    without = NmodlType::global_var
+              | NmodlType::pointer_var
+              | NmodlType::bbcore_pointer_var
+              | NmodlType::state_var
+              | NmodlType::param_assign;
     // clang-format on
     info.range_dependent_vars = psymtab->get_variables(with, without);
     std::sort(info.range_dependent_vars.begin(), info.range_dependent_vars.end(), comparator);
@@ -316,12 +318,12 @@ void CodegenHelperVisitor::find_range_variables() {
      * \todo: need to validate with more models and mod2c details.
      */
     // clang-format off
-    with = NmodlInfo::state_var;
-    without = NmodlInfo::global_var
-              | NmodlInfo::pointer_var
-              | NmodlInfo::bbcore_pointer_var
-              | NmodlInfo::read_ion_var
-              | NmodlInfo::write_ion_var;
+    with = NmodlType::state_var;
+    without = NmodlType::global_var
+              | NmodlType::pointer_var
+              | NmodlType::bbcore_pointer_var
+              | NmodlType::read_ion_var
+              | NmodlType::write_ion_var;
     // clang-format on
     info.state_vars = psymtab->get_variables(with, without);
     std::sort(info.state_vars.begin(), info.state_vars.end(), comparator);
@@ -337,14 +339,14 @@ void CodegenHelperVisitor::find_range_variables() {
      * first get dependent definition without read ion variables
      */
     // clang-format off
-    with = NmodlInfo::dependent_def;
-    without = NmodlInfo::global_var
-              | NmodlInfo::pointer_var
-              | NmodlInfo::bbcore_pointer_var
-              | NmodlInfo::state_var
-              | NmodlInfo::range_var
-              | NmodlInfo::extern_neuron_variable
-              | NmodlInfo::read_ion_var;
+    with = NmodlType::dependent_def;
+    without = NmodlType::global_var
+              | NmodlType::pointer_var
+              | NmodlType::bbcore_pointer_var
+              | NmodlType::state_var
+              | NmodlType::range_var
+              | NmodlType::extern_neuron_variable
+              | NmodlType::read_ion_var;
     // clang-format on
     info.dependent_vars = psymtab->get_variables(with, without);
 
@@ -354,13 +356,13 @@ void CodegenHelperVisitor::find_range_variables() {
      * compiled anyway.
      */
     // clang-format off
-    with = NmodlInfo::read_ion_var;
-    without = NmodlInfo::global_var
-              | NmodlInfo::pointer_var
-              | NmodlInfo::bbcore_pointer_var
-              | NmodlInfo::state_var
-              | NmodlInfo::range_var
-              | NmodlInfo::extern_neuron_variable;
+    with = NmodlType::read_ion_var;
+    without = NmodlType::global_var
+              | NmodlType::pointer_var
+              | NmodlType::bbcore_pointer_var
+              | NmodlType::state_var
+              | NmodlType::range_var
+              | NmodlType::extern_neuron_variable;
     // clang-format on
     auto variables = psymtab->get_variables(with, without);
     info.dependent_vars.insert(info.dependent_vars.end(), variables.begin(), variables.end());
@@ -371,18 +373,18 @@ void CodegenHelperVisitor::find_range_variables() {
      * treat them separately for ordering.
      */
     // clang-format off
-    with = NmodlInfo::state_var;
-    without = NmodlInfo::global_var
-              | NmodlInfo::pointer_var
-              | NmodlInfo::bbcore_pointer_var
-              | NmodlInfo::range_var
-              | NmodlInfo::extern_neuron_variable;
+    with = NmodlType::state_var;
+    without = NmodlType::global_var
+              | NmodlType::pointer_var
+              | NmodlType::bbcore_pointer_var
+              | NmodlType::range_var
+              | NmodlType::extern_neuron_variable;
     // clang-format on
     variables = psymtab->get_variables(with, without);
     for (auto& variable : variables) {
         // clang-format off
-        auto properties = NmodlInfo::read_ion_var
-                          | NmodlInfo::write_ion_var;
+        auto properties = NmodlType::read_ion_var
+                          | NmodlType::write_ion_var;
         // clang-format on
         if (variable->has_properties(properties)) {
             info.ion_state_vars.push_back(variable);
@@ -393,9 +395,9 @@ void CodegenHelperVisitor::find_range_variables() {
 
 
 void CodegenHelperVisitor::find_table_variables() {
-    auto property = NmodlInfo::table_statement_var;
+    auto property = NmodlType::table_statement_var;
     info.table_statement_variables = psymtab->get_variables_with_properties(property);
-    property = NmodlInfo::table_dependent_var;
+    property = NmodlType::table_dependent_var;
     info.table_dependent_variables = psymtab->get_variables_with_properties(property);
 }
 
@@ -537,8 +539,8 @@ void CodegenHelperVisitor::visit_statement_block(ast::StatementBlock* node) {
             auto name = assign_lhs->get_name();
             auto symbol = psymtab->lookup(name);
             if (symbol != nullptr) {
-                auto is_prime = symbol->has_properties(NmodlInfo::prime_name);
-                auto from_state = symbol->has_any_status(Status::from_state);
+                auto is_prime = symbol->has_properties(NmodlType::prime_name);
+                auto from_state = symbol->has_any_status(syminfo::Status::from_state);
                 if (is_prime || from_state) {
                     if (from_state) {
                         symbol = psymtab->lookup(name.substr(1, name.size()));
@@ -593,7 +595,7 @@ void CodegenHelperVisitor::find_solve_node() {
     if (info.solve_node != nullptr) {
         return;
     }
-    auto symbols = psymtab->get_variables_with_properties(NmodlInfo::to_solve);
+    auto symbols = psymtab->get_variables_with_properties(NmodlType::to_solve);
     if (!symbols.empty()) {
         assert(symbols.size() == 1);
         info.solve_node = dynamic_cast<Block*>(symbols.at(0)->get_node());

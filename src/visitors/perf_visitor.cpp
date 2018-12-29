@@ -2,8 +2,9 @@
 
 #include "visitors/perf_visitor.hpp"
 
-using namespace symtab;
 using namespace ast;
+using namespace syminfo;
+using namespace symtab;
 
 PerfVisitor::PerfVisitor(const std::string& filename) : printer(new JSONPrinter(filename)) {
 }
@@ -164,7 +165,7 @@ void PerfVisitor::visit_function_call(FunctionCall* node) {
         node->visit_children(this);
 
         auto symbol = current_symtab->lookup_in_scope(name);
-        auto method_property = NmodlInfo::procedure_block | NmodlInfo::function_block;
+        auto method_property = NmodlType::procedure_block | NmodlType::function_block;
         if (symbol != nullptr && symbol->has_properties(method_property)) {
             current_block_perf.n_int_func_call++;
         } else {
@@ -207,28 +208,28 @@ void PerfVisitor::count_variables() {
     /// assigned block are not treated as range
     num_instance_variables = 0;
 
-    SymbolInfo property = NmodlInfo::range_var | NmodlInfo::dependent_def | NmodlInfo::state_var;
+    NmodlTypeFlag property = NmodlType::range_var | NmodlType::dependent_def | NmodlType::state_var;
     auto variables = current_symtab->get_variables_with_properties(property);
 
     for (auto& variable : variables) {
-        if (!variable->has_properties(NmodlInfo::global_var)) {
+        if (!variable->has_properties(NmodlType::global_var)) {
             num_instance_variables++;
-            if (variable->has_properties(NmodlInfo::param_assign)) {
+            if (variable->has_properties(NmodlType::param_assign)) {
                 num_constant_instance_variables++;
             }
-            if (variable->has_any_status(Status::localized)) {
+            if (variable->has_any_status(syminfo::Status::localized)) {
                 num_localized_instance_variables++;
             }
         }
     }
 
     /// state variables have state_var property
-    property = NmodlInfo::state_var;
+    property = NmodlType::state_var;
     variables = current_symtab->get_variables_with_properties(property);
     num_state_variables = variables.size();
 
     /// pointer variables have pointer/bbcorepointer
-    property = NmodlInfo::pointer_var | NmodlInfo::bbcore_pointer_var;
+    property = NmodlType::pointer_var | NmodlType::bbcore_pointer_var;
     variables = current_symtab->get_variables_with_properties(property);
     num_pointer_variables = variables.size();
 
@@ -236,19 +237,19 @@ void PerfVisitor::count_variables() {
     /// number of global variables : parameters and pointers could appear also
     /// as range variables and hence need to filter out. But if anything declared
     /// as global is always global.
-    property = NmodlInfo::global_var | NmodlInfo::param_assign | NmodlInfo::bbcore_pointer_var |
-               NmodlInfo::pointer_var;
+    property = NmodlType::global_var | NmodlType::param_assign | NmodlType::bbcore_pointer_var |
+               NmodlType::pointer_var;
     variables = current_symtab->get_variables_with_properties(property);
     num_global_variables = 0;
     for (auto& variable : variables) {
-        auto is_global = variable->has_properties(NmodlInfo::global_var);
-        property = NmodlInfo::range_var | NmodlInfo::dependent_def;
+        auto is_global = variable->has_properties(NmodlType::global_var);
+        property = NmodlType::range_var | NmodlType::dependent_def;
         if (!variable->has_properties(property) || is_global) {
             num_global_variables++;
-            if (variable->has_properties(NmodlInfo::param_assign)) {
+            if (variable->has_properties(NmodlType::param_assign)) {
                 num_constant_global_variables++;
             }
-            if (variable->has_any_status(Status::localized)) {
+            if (variable->has_any_status(syminfo::Status::localized)) {
                 num_localized_global_variables++;
             }
         }
@@ -387,12 +388,12 @@ void PerfVisitor::visit_unary_expression(UnaryExpression* node) {
 bool PerfVisitor::symbol_to_skip(const std::shared_ptr<Symbol>& symbol) {
     bool skip = false;
 
-    auto is_method = symbol->has_properties(NmodlInfo::extern_method | NmodlInfo::function_block);
+    auto is_method = symbol->has_properties(NmodlType::extern_method | NmodlType::function_block);
     if (is_method && under_function_call) {
         skip = true;
     }
 
-    is_method = symbol->has_properties(NmodlInfo::derivative_block | NmodlInfo::extern_method);
+    is_method = symbol->has_properties(NmodlType::derivative_block | NmodlType::extern_method);
     if (is_method && under_solve_block) {
         skip = true;
     }
@@ -403,7 +404,7 @@ bool PerfVisitor::symbol_to_skip(const std::shared_ptr<Symbol>& symbol) {
 bool PerfVisitor::is_local_variable(const std::shared_ptr<symtab::Symbol>& symbol) {
     bool is_local = false;
     /// in the function when we write to function variable then consider it as local variable
-    auto properties = NmodlInfo::local_var | NmodlInfo::argument | NmodlInfo::function_block;
+    auto properties = NmodlType::local_var | NmodlType::argument | NmodlType::function_block;
     if (symbol->has_properties(properties)) {
         is_local = true;
     }
@@ -412,7 +413,7 @@ bool PerfVisitor::is_local_variable(const std::shared_ptr<symtab::Symbol>& symbo
 
 bool PerfVisitor::is_constant_variable(const std::shared_ptr<symtab::Symbol>& symbol) {
     bool is_constant = false;
-    auto properties = NmodlInfo::param_assign;
+    auto properties = NmodlType::param_assign;
     if (symbol->has_properties(properties)) {
         is_constant = true;
     }

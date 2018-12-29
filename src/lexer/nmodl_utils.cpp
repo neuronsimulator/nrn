@@ -19,7 +19,7 @@ namespace nmodl {
     /** Create symbol for integer ast class. Integer class also represent
      * macro definition and hence could have associated text. */
     SymbolType integer_symbol(int value, PositionType& pos, const char* text) {
-        ast::name_ptr macro = nullptr;
+        ast::Name* macro = nullptr;
         ModToken token(std::to_string(value), Token::INTEGER, pos);
 
         if (text != nullptr) {

@@ -182,8 +182,8 @@ class DefUseAnalyzeVisitor : public AstVisitor {
     bool visiting_lhs = false;
 
     void update_defuse_chain(const std::string& name);
-    void visit_unsupported_node(Node* node);
-    void visit_with_new_chain(Node* node, DUState state);
+    void visit_unsupported_node(ast::Node* node);
+    void visit_with_new_chain(ast::Node* node, DUState state);
     void start_new_chain(DUState state);
 
   public:
@@ -196,8 +196,8 @@ class DefUseAnalyzeVisitor : public AstVisitor {
         : global_symtab(symtab), ignore_verbatim(ignore_verbatim) {
     }
 
-    virtual void visit_binary_expression(BinaryExpression* node) override;
-    virtual void visit_if_statement(IfStatement* node) override;
+    virtual void visit_binary_expression(ast::BinaryExpression* node) override;
+    virtual void visit_if_statement(ast::IfStatement* node) override;
     virtual void visit_function_call(ast::FunctionCall* node) override;
     virtual void visit_statement_block(ast::StatementBlock* node) override;
     virtual void visit_verbatim(ast::Verbatim* node) override;
@@ -205,27 +205,27 @@ class DefUseAnalyzeVisitor : public AstVisitor {
     /// unsupported statements : we aren't sure how to handle this "yet" and
     /// hence variables used in any of the below statements are handled separately
 
-    virtual void visit_reaction_statement(ReactionStatement* node) override {
+    virtual void visit_reaction_statement(ast::ReactionStatement* node) override {
         visit_unsupported_node(node);
     }
 
-    virtual void visit_non_lin_equation(NonLinEquation* node) override {
+    virtual void visit_non_lin_equation(ast::NonLinEquation* node) override {
         visit_unsupported_node(node);
     }
 
-    virtual void visit_lin_equation(LinEquation* node) override {
+    virtual void visit_lin_equation(ast::LinEquation* node) override {
         visit_unsupported_node(node);
     }
 
-    virtual void visit_partial_boundary(PartialBoundary* node) override {
+    virtual void visit_partial_boundary(ast::PartialBoundary* node) override {
         visit_unsupported_node(node);
     }
 
-    virtual void visit_from_statement(FromStatement* node) override {
+    virtual void visit_from_statement(ast::FromStatement* node) override {
         visit_unsupported_node(node);
     }
 
-    virtual void visit_conserve(Conserve* node) override {
+    virtual void visit_conserve(ast::Conserve* node) override {
         visit_unsupported_node(node);
     }
 
@@ -240,10 +240,10 @@ class DefUseAnalyzeVisitor : public AstVisitor {
 
     /// statements / nodes that should not be used for def-use chain analysis
 
-    virtual void visit_conductance_hint(ConductanceHint* /*node*/) override {
+    virtual void visit_conductance_hint(ast::ConductanceHint* /*node*/) override {
     }
 
-    virtual void visit_local_list_statement(LocalListStatement* /*node*/) override {
+    virtual void visit_local_list_statement(ast::LocalListStatement* /*node*/) override {
     }
 
     virtual void visit_argument(ast::Argument* /*node*/) override {

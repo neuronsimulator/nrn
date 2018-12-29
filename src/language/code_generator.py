@@ -9,6 +9,11 @@ nodes = LanguageParser("nmodl.yaml").parse_file()
 
 # print various header and code files
 
+AstForwardDeclarationPrinter(
+    "../ast/ast_decl.hpp",
+    "",
+    nodes).write()
+
 AstDeclarationPrinter(
     "../ast/ast.hpp",
     "",

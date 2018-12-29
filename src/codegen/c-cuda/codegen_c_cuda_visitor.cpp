@@ -6,6 +6,7 @@
 
 using namespace fmt::literals;
 using namespace symtab;
+using namespace syminfo;
 
 
 /****************************************************************************************/
@@ -22,10 +23,10 @@ bool CodegenCCudaVisitor::is_constant_variable(std::string name) {
     auto symbol = program_symtab->lookup_in_scope(name);
     bool is_constant = false;
     if (symbol != nullptr) {
-        if (symbol->has_properties(NmodlInfo::read_ion_var)) {
+        if (symbol->has_properties(NmodlType::read_ion_var)) {
             is_constant = true;
         }
-        if (symbol->has_properties(NmodlInfo::param_assign)) {
+        if (symbol->has_properties(NmodlType::param_assign)) {
             is_constant = true;
         }
     }

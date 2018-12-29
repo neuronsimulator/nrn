@@ -33,31 +33,31 @@ nmodl::Parser::token_type token_type(const std::string& name) {
         case Token::VALENCE:
         case Token::DEL:
         case Token::DEL2: {
-            auto value = sym.value.as<ast::name_ptr>();
+            auto value = sym.value.as<ast::Name*>();
             delete value;
             break;
         }
 
         case Token::PRIME: {
-            auto value = sym.value.as<ast::primename_ptr>();
+            auto value = sym.value.as<ast::PrimeName*>();
             delete value;
             break;
         }
 
         case Token::INTEGER: {
-            auto value = sym.value.as<ast::integer_ptr>();
+            auto value = sym.value.as<ast::Integer*>();
             delete value;
             break;
         }
 
         case Token::REAL: {
-            auto value = sym.value.as<ast::double_ptr>();
+            auto value = sym.value.as<ast::Double*>();
             delete value;
             break;
         }
 
         case Token::STRING: {
-            auto value = sym.value.as<ast::string_ptr>();
+            auto value = sym.value.as<ast::String*>();
             delete value;
             break;
         }

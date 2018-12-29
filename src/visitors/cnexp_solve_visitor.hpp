@@ -39,10 +39,10 @@ class CnexpSolveVisitor : public AstVisitor {
   public:
     CnexpSolveVisitor() = default;
 
-    void visit_solve_block(SolveBlock* node) override;
-    void visit_derivative_block(DerivativeBlock* node) override;
-    void visit_binary_expression(BinaryExpression* node) override;
-    void visit_program(Program* node) override;
+    void visit_solve_block(ast::SolveBlock* node) override;
+    void visit_derivative_block(ast::DerivativeBlock* node) override;
+    void visit_binary_expression(ast::BinaryExpression* node) override;
+    void visit_program(ast::Program* node) override;
 };
 
 #endif

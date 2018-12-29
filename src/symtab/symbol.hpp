@@ -13,16 +13,13 @@ namespace ast {
 
 namespace symtab {
 
-    using namespace ast;
-    using namespace details;
-
     /**
      * \class Symbol
      * \brief Represent symbol in symbol table
      *
      * Symbol table generator pass visit the AST and insert symbol for
      * each node into symbol table. Symbol could appear multiple times
-     * in a block or different global blocks. SymbolInfo object has all
+     * in a block or different global blocks. NmodlTypeFlag object has all
      * nmodl properties information.
      *
      * \todo Multiple tokens (i.e. location information) for symbol should
@@ -46,16 +43,16 @@ namespace symtab {
         /// ast node where symbol encountered first time
         /// node is passed from visitor and hence we have
         /// raw pointer instead of shared_ptr
-        AST* node = nullptr;
+        ast::AST* node = nullptr;
 
         /// token for position information
         ModToken token;
 
         /// properties of symbol from whole mod file
-        SymbolInfo properties{flags::empty};
+        NmodlTypeFlag properties{flags::empty};
 
         /// status of symbol during various passes
-        SymbolStatus status{flags::empty};
+        StatusFlag status{flags::empty};
 
         /// scope of the symbol (block name)
         std::string scope;
@@ -87,13 +84,14 @@ namespace symtab {
       public:
         Symbol() = delete;
 
-        Symbol(std::string name, AST* node) : name(name), node(node) {
+        Symbol(std::string name, ast::AST* node) : name(name), node(node) {
         }
 
         Symbol(std::string name, ModToken token) : name(name), token(token) {
         }
 
-        Symbol(std::string name, AST* node, ModToken token) : name(name), node(node), token(token) {
+        Symbol(std::string name, ast::AST* node, ModToken token)
+            : name(name), node(node), token(token) {
         }
 
         void set_scope(std::string s) {
@@ -123,11 +121,11 @@ namespace symtab {
             return scope;
         }
 
-        SymbolInfo get_properties() {
+        NmodlTypeFlag get_properties() {
             return properties;
         }
 
-        SymbolStatus get_status() {
+        StatusFlag get_status() {
             return status;
         }
 
@@ -139,7 +137,7 @@ namespace symtab {
             write_count++;
         }
 
-        AST* get_node() {
+        ast::AST* get_node() {
             return node;
         }
 
@@ -162,43 +160,43 @@ namespace symtab {
         bool is_external_symbol_only();
 
         /// \todo : rename to has_any_property
-        bool has_properties(SymbolInfo new_properties);
+        bool has_properties(NmodlTypeFlag new_properties);
 
-        bool has_all_properties(SymbolInfo new_properties);
+        bool has_all_properties(NmodlTypeFlag new_properties);
 
-        bool has_any_status(SymbolStatus new_status);
+        bool has_any_status(StatusFlag new_status);
 
-        bool has_all_status(SymbolStatus new_status);
+        bool has_all_status(StatusFlag new_status);
 
-        void combine_properties(SymbolInfo new_properties);
+        void combine_properties(NmodlTypeFlag new_properties);
 
-        void add_property(NmodlInfo property);
+        void add_property(syminfo::NmodlType property);
 
-        void add_property(SymbolInfo property);
+        void add_property(NmodlTypeFlag property);
 
         void inlined() {
-            status |= Status::inlined;
+            status |= syminfo::Status::inlined;
         }
 
         void created() {
-            status |= Status::created;
+            status |= syminfo::Status::created;
         }
 
         void renamed() {
-            status |= Status::renamed;
+            status |= syminfo::Status::renamed;
         }
 
         void localized() {
-            status |= Status::localized;
+            status |= syminfo::Status::localized;
         }
 
         void mark_thread_safe() {
-            status |= Status::thread_safe;
+            status |= syminfo::Status::thread_safe;
         }
 
         void created_from_state() {
             created();
-            status |= Status::from_state;
+            status |= syminfo::Status::from_state;
         }
 
         void set_order(int new_order);

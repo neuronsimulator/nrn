@@ -3,10 +3,13 @@
 #include "lexer/token_mapping.hpp"
 #include "visitors/symtab_visitor.hpp"
 
+using namespace ast;
+using namespace symtab;
+using namespace syminfo;
 
 // create symbol for given node
 static std::shared_ptr<Symbol> create_symbol_for_node(Node* node,
-                                                      SymbolInfo property,
+                                                      NmodlTypeFlag property,
                                                       bool under_state_block) {
     ModToken token;
     auto token_ptr = node->get_token();
@@ -19,13 +22,13 @@ static std::shared_ptr<Symbol> create_symbol_for_node(Node* node,
     symbol->add_property(property);
 
     // non specific variable is range
-    if (property == NmodlInfo::nonspe_cur_var) {
-        symbol->add_property(NmodlInfo::range_var);
+    if (property == NmodlType::nonspe_cur_var) {
+        symbol->add_property(NmodlType::range_var);
     }
 
     /// extra property for state variables
     if (under_state_block) {
-        symbol->add_property(NmodlInfo::state_var);
+        symbol->add_property(NmodlType::state_var);
     }
     return symbol;
 }
@@ -33,7 +36,7 @@ static std::shared_ptr<Symbol> create_symbol_for_node(Node* node,
 
 /// helper function to setup/insert symbol into symbol table
 /// for the ast nodes which are of variable types
-void SymtabVisitor::setup_symbol(Node* node, SymbolInfo property) {
+void SymtabVisitor::setup_symbol(Node* node, NmodlTypeFlag property) {
     std::shared_ptr<Symbol> symbol;
     auto name = node->get_name();
 
@@ -52,9 +55,9 @@ void SymtabVisitor::setup_symbol(Node* node, SymbolInfo property) {
     /// range and non_spec_cur can appear in any order in neuron block.
     /// for both properties, we have to check if symbol is already exist.
     /// if so we have to return to avoid duplicate definition error.
-    if (property == NmodlInfo::range_var || property == NmodlInfo::nonspe_cur_var) {
+    if (property == NmodlType::range_var || property == NmodlType::nonspe_cur_var) {
         auto s = modsymtab->lookup(name);
-        if (s && s->has_properties(NmodlInfo::nonspe_cur_var | NmodlInfo::range_var)) {
+        if (s && s->has_properties(NmodlType::nonspe_cur_var | NmodlType::range_var)) {
             s->add_property(property);
             return;
         }
@@ -107,14 +110,14 @@ void SymtabVisitor::setup_symbol(Node* node, SymbolInfo property) {
 }
 
 
-void SymtabVisitor::add_model_symbol_with_property(Node* node, SymbolInfo property) {
+void SymtabVisitor::add_model_symbol_with_property(Node* node, NmodlTypeFlag property) {
     auto token = node->get_token();
     auto name = node->get_name();
     auto symbol = std::make_shared<Symbol>(name, node, *token);
     symbol->add_property(property);
 
     if (name == block_to_solve) {
-        symbol->add_property(NmodlInfo::to_solve);
+        symbol->add_property(NmodlType::to_solve);
     }
 
     modsymtab->insert(symbol);
@@ -126,13 +129,13 @@ static void add_external_symbols(symtab::ModelSymbolTable* symtab) {
     auto variables = nmodl::get_external_variables();
     for (auto variable : variables) {
         auto symbol = std::make_shared<Symbol>(variable, nullptr, tok);
-        symbol->add_property(NmodlInfo::extern_neuron_variable);
+        symbol->add_property(NmodlType::extern_neuron_variable);
         symtab->insert(symbol);
     }
     auto methods = nmodl::get_external_functions();
     for (auto method : methods) {
         auto symbol = std::make_shared<Symbol>(method, nullptr, tok);
-        symbol->add_property(NmodlInfo::extern_method);
+        symbol->add_property(NmodlType::extern_method);
         symtab->insert(symbol);
     }
 }
@@ -201,7 +204,7 @@ void SymtabVisitor::setup_symbol_table_for_scoped_block(Node* node, const std::s
  * @todo : we assume table statement follows variable declaration
  */
 void SymtabVisitor::visit_table_statement(ast::TableStatement* node) {
-    auto update_symbol = [this](NameVector& variables, NmodlInfo property, int num_values) {
+    auto update_symbol = [this](NameVector& variables, NmodlType property, int num_values) {
         for (auto& var : variables) {
             auto name = var->get_name();
             auto symbol = modsymtab->lookup(name);
@@ -212,6 +215,6 @@ void SymtabVisitor::visit_table_statement(ast::TableStatement* node) {
         }
     };
     int num_values = node->with->eval() + 1;
-    update_symbol(node->table_vars, NmodlInfo::table_statement_var, num_values);
-    update_symbol(node->depend_vars, NmodlInfo::table_dependent_var, num_values);
+    update_symbol(node->table_vars, NmodlType::table_statement_var, num_values);
+    update_symbol(node->depend_vars, NmodlType::table_dependent_var, num_values);
 }

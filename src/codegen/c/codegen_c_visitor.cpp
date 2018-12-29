@@ -11,7 +11,9 @@
 #include "parser/c11_driver.hpp"
 
 
+using namespace ast;
 using namespace symtab;
+using namespace syminfo;
 using namespace fmt::literals;
 using SymbolType = std::shared_ptr<symtab::Symbol>;
 
@@ -70,7 +72,7 @@ std::string CodegenCVisitor::breakpoint_current(std::string current) {
         return current;
     }
     auto symtab = breakpoint->get_statement_block()->get_symbol_table();
-    auto variables = symtab->get_variables_with_properties(NmodlInfo::local_var);
+    auto variables = symtab->get_variables_with_properties(NmodlType::local_var);
     for (auto& var : variables) {
         auto renamed_name = var->get_name();
         auto original_name = var->get_original_name();
@@ -250,10 +252,10 @@ bool CodegenCVisitor::is_constant_variable(std::string name) {
     auto symbol = program_symtab->lookup_in_scope(name);
     bool is_constant = false;
     if (symbol != nullptr) {
-        if (symbol->has_properties(NmodlInfo::read_ion_var)) {
+        if (symbol->has_properties(NmodlType::read_ion_var)) {
             is_constant = true;
         }
-        if (symbol->has_properties(NmodlInfo::param_assign) && symbol->get_write_count() == 0) {
+        if (symbol->has_properties(NmodlType::param_assign) && symbol->get_write_count() == 0) {
             is_constant = true;
         }
     }
@@ -2000,7 +2002,7 @@ void CodegenCVisitor::print_global_variable_setup() {
 
     /// additional list for derivimplicit method
     if (info.derivimplicit_used) {
-        auto primes = program_symtab->get_variables_with_properties(NmodlInfo::prime_name);
+        auto primes = program_symtab->get_variables_with_properties(NmodlType::prime_name);
         auto slist2 = get_variable_name("slist2");
         auto nprimes = info.primes_size;
         printer->add_line("{} = (int*) mem_alloc({}, sizeof(int));"_format(slist2, nprimes));
@@ -2158,11 +2160,11 @@ void CodegenCVisitor::print_setup_range_variable() {
  */
 std::string CodegenCVisitor::get_range_var_float_type(const SymbolType& symbol) {
     // clang-format off
-    auto with   =   NmodlInfo::read_ion_var
-                    | NmodlInfo::write_ion_var
-                    | NmodlInfo::pointer_var
-                    | NmodlInfo::bbcore_pointer_var
-                    | NmodlInfo::extern_neuron_variable;
+    auto with   =   NmodlType::read_ion_var
+                    | NmodlType::write_ion_var
+                    | NmodlType::pointer_var
+                    | NmodlType::bbcore_pointer_var
+                    | NmodlType::extern_neuron_variable;
     // clang-format on
     bool need_default_type = symbol->has_properties(with);
     if (need_default_type) {

@@ -4,6 +4,9 @@
 #include "symtab/symbol_table.hpp"
 #include "utils/table_data.hpp"
 
+using namespace ast;
+using namespace syminfo;
+
 namespace symtab {
 
     int Table::counter = 0;
@@ -80,7 +83,7 @@ namespace symtab {
 
     /// return all symbol having any of the provided properties
     std::vector<std::shared_ptr<Symbol>> SymbolTable::get_variables_with_properties(
-        SymbolInfo properties,
+        NmodlTypeFlag properties,
         bool all) {
         std::vector<std::shared_ptr<Symbol>> variables;
         for (auto& symbol : table.symbols) {
@@ -98,8 +101,8 @@ namespace symtab {
     }
 
     /// return all symbol which has all "with" properties and none of the "without" properties
-    std::vector<std::shared_ptr<Symbol>> SymbolTable::get_variables(SymbolInfo with,
-                                                                    SymbolInfo without) {
+    std::vector<std::shared_ptr<Symbol>> SymbolTable::get_variables(NmodlTypeFlag with,
+                                                                    NmodlTypeFlag without) {
         auto variables = get_variables_with_properties(with, true);
         decltype(variables) result;
         for (auto& variable : variables) {
@@ -111,7 +114,7 @@ namespace symtab {
     }
 
 
-    std::vector<std::shared_ptr<Symbol>> SymbolTable::get_variables_with_status(SymbolStatus status,
+    std::vector<std::shared_ptr<Symbol>> SymbolTable::get_variables_with_status(StatusFlag status,
                                                                                 bool all) {
         std::vector<std::shared_ptr<Symbol>> variables;
         for (auto& symbol : table.symbols) {
@@ -266,8 +269,8 @@ namespace symtab {
                                         const std::shared_ptr<Symbol>& new_symbol) {
         auto symbol = (present_symbol != nullptr) ? present_symbol : new_symbol;
 
-        bool is_parameter = new_symbol->has_properties(NmodlInfo::param_assign);
-        bool is_dependent_def = new_symbol->has_properties(NmodlInfo::dependent_def);
+        bool is_parameter = new_symbol->has_properties(NmodlType::param_assign);
+        bool is_dependent_def = new_symbol->has_properties(NmodlType::dependent_def);
 
         if (symbol->get_definition_order() == -1) {
             if (is_parameter || is_dependent_def) {

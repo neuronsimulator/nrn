@@ -5,6 +5,7 @@
 
 using namespace ast;
 using namespace symtab;
+using namespace syminfo;
 
 bool LocalizeVisitor::node_for_def_use_analysis(ast::Node* node) {
     auto type = node->get_type();
@@ -16,22 +17,22 @@ bool LocalizeVisitor::node_for_def_use_analysis(ast::Node* node) {
      * result as "Use". So it's safe.
      */
     // clang-format off
-    const std::vector<ast::Type> blocks_to_analyze = {
-            ast::Type::INITIAL_BLOCK,
-            ast::Type::BREAKPOINT_BLOCK,
-            ast::Type::CONSTRUCTOR_BLOCK,
-            ast::Type::DESTRUCTOR_BLOCK,
-            ast::Type::DERIVATIVE_BLOCK,
-            ast::Type::LINEAR_BLOCK,
-            ast::Type::NON_LINEAR_BLOCK,
-            ast::Type::DISCRETE_BLOCK,
-            ast::Type::PARTIAL_BLOCK,
-            ast::Type::NET_RECEIVE_BLOCK,
-            ast::Type::TERMINAL_BLOCK,
-            ast::Type::BA_BLOCK,
-            ast::Type::FOR_NETCON,
-            ast::Type::BEFORE_BLOCK,
-            ast::Type::AFTER_BLOCK,
+    const std::vector<ast::AstNodeType> blocks_to_analyze = {
+            ast::AstNodeType::INITIAL_BLOCK,
+            ast::AstNodeType::BREAKPOINT_BLOCK,
+            ast::AstNodeType::CONSTRUCTOR_BLOCK,
+            ast::AstNodeType::DESTRUCTOR_BLOCK,
+            ast::AstNodeType::DERIVATIVE_BLOCK,
+            ast::AstNodeType::LINEAR_BLOCK,
+            ast::AstNodeType::NON_LINEAR_BLOCK,
+            ast::AstNodeType::DISCRETE_BLOCK,
+            ast::AstNodeType::PARTIAL_BLOCK,
+            ast::AstNodeType::NET_RECEIVE_BLOCK,
+            ast::AstNodeType::TERMINAL_BLOCK,
+            ast::AstNodeType::BA_BLOCK,
+            ast::AstNodeType::FOR_NETCON,
+            ast::AstNodeType::BEFORE_BLOCK,
+            ast::AstNodeType::AFTER_BLOCK,
     };
     // clang-format on
     auto it = std::find(blocks_to_analyze.begin(), blocks_to_analyze.end(), type);
@@ -47,7 +48,7 @@ bool LocalizeVisitor::node_for_def_use_analysis(ast::Node* node) {
 bool LocalizeVisitor::is_solve_procedure(ast::Node* node) {
     if (node->is_procedure_block()) {
         auto symbol = program_symtab->lookup(node->get_name());
-        if (symbol && symbol->has_properties(NmodlInfo::to_solve)) {
+        if (symbol && symbol->has_properties(NmodlType::to_solve)) {
             return true;
         }
     }
@@ -56,21 +57,21 @@ bool LocalizeVisitor::is_solve_procedure(ast::Node* node) {
 
 std::vector<std::string> LocalizeVisitor::variables_to_optimize() {
     // clang-format off
-    using NmodlInfo = symtab::details::NmodlInfo;
-    const SymbolInfo excluded_var_properties = NmodlInfo::extern_var
-                                     | NmodlInfo::extern_neuron_variable
-                                     | NmodlInfo::read_ion_var
-                                     | NmodlInfo::write_ion_var
-                                     | NmodlInfo::prime_name
-                                     | NmodlInfo::nonspe_cur_var
-                                     | NmodlInfo::pointer_var
-                                     | NmodlInfo::bbcore_pointer_var
-                                     | NmodlInfo::electrode_cur_var
-                                     | NmodlInfo::section_var;
+    using NmodlType = NmodlType;
+    const NmodlTypeFlag excluded_var_properties = NmodlType::extern_var
+                                     | NmodlType::extern_neuron_variable
+                                     | NmodlType::read_ion_var
+                                     | NmodlType::write_ion_var
+                                     | NmodlType::prime_name
+                                     | NmodlType::nonspe_cur_var
+                                     | NmodlType::pointer_var
+                                     | NmodlType::bbcore_pointer_var
+                                     | NmodlType::electrode_cur_var
+                                     | NmodlType::section_var;
 
-    SymbolInfo global_var_properties = NmodlInfo::range_var
-                                       | NmodlInfo::dependent_def
-                                       | NmodlInfo::param_assign;
+    NmodlTypeFlag global_var_properties = NmodlType::range_var
+                                       | NmodlType::dependent_def
+                                       | NmodlType::param_assign;
     // clang-format on
 
 
@@ -135,7 +136,7 @@ void LocalizeVisitor::visit_program(Program* node) {
                 /// insert new symbol into symbol table
                 auto symtab = statement_block->get_symbol_table();
                 auto new_symbol = std::make_shared<Symbol>(varname, variable);
-                new_symbol->add_property(NmodlInfo::local_var);
+                new_symbol->add_property(NmodlType::local_var);
                 new_symbol->created();
                 symtab->insert(new_symbol);
             }

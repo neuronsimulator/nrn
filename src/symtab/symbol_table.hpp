@@ -9,9 +9,6 @@
 
 namespace symtab {
 
-    using namespace details;
-    using namespace ast;
-
     /**
      * \class Table
      * \brief Helper class for implementing symbol table
@@ -70,7 +67,7 @@ namespace symtab {
         Table table;
 
         /// pointer to ast node for which current block symbol created
-        AST* node = nullptr;
+        ast::AST* node = nullptr;
 
         /// true if current symbol table is global. blocks like neuron,
         /// parameter defines global variables and hence they go into
@@ -87,7 +84,7 @@ namespace symtab {
         std::map<std::string, std::shared_ptr<SymbolTable>> children;
 
       public:
-        SymbolTable(std::string name, AST* node, bool global = false)
+        SymbolTable(std::string name, ast::AST* node, bool global = false)
             : symtab_name(name), node(node), global(global) {
         }
 
@@ -141,12 +138,12 @@ namespace symtab {
 
         std::shared_ptr<Symbol> lookup_in_scope(const std::string& name) const;
 
-        std::vector<std::shared_ptr<Symbol>> get_variables(SymbolInfo with, SymbolInfo without);
+        std::vector<std::shared_ptr<Symbol>> get_variables(NmodlTypeFlag with, NmodlTypeFlag without);
 
-        std::vector<std::shared_ptr<Symbol>> get_variables_with_properties(SymbolInfo properties,
+        std::vector<std::shared_ptr<Symbol>> get_variables_with_properties(NmodlTypeFlag properties,
                                                                            bool all = false);
 
-        std::vector<std::shared_ptr<Symbol>> get_variables_with_status(SymbolStatus status,
+        std::vector<std::shared_ptr<Symbol>> get_variables_with_status(StatusFlag status,
                                                                        bool all = false);
 
         bool under_global_scope();
@@ -182,7 +179,7 @@ namespace symtab {
         SymbolTable* current_symtab = nullptr;
 
         /// return unique name by appending some counter value
-        std::string get_unique_name(const std::string& name, AST* node, bool is_global);
+        std::string get_unique_name(const std::string& name, ast::AST* node, bool is_global);
 
         /// name of top level global symbol table
         const std::string GLOBAL_SYMTAB_NAME = "NMODL_GLOBAL";
@@ -212,7 +209,7 @@ namespace symtab {
       public:
         /// entering into new nmodl block
         SymbolTable* enter_scope(const std::string& name,
-                                 AST* node,
+                                 ast::AST* node,
                                  bool global,
                                  SymbolTable* node_symtab);
 

@@ -55,7 +55,7 @@ int main(int argc, const char* argv[]) {
 
             /** Lexer returns different ast types base on token type. We
              * retrieve token object from each instance and print it.
-             * Note that value is of ast type i.e. ast::name_ptr etc. */
+             * Note that value is of ast type i.e. ast::Name* etc. */
             switch (token) {
                 /// token with name ast class
                 case Token::NAME:
@@ -64,7 +64,7 @@ int main(int argc, const char* argv[]) {
                 case Token::VALENCE:
                 case Token::DEL:
                 case Token::DEL2: {
-                    auto value = sym.value.as<ast::name_ptr>();
+                    auto value = sym.value.as<ast::Name*>();
                     std::cout << *(value->get_token()) << std::endl;
                     delete value;
                     break;
@@ -72,7 +72,7 @@ int main(int argc, const char* argv[]) {
 
                 /// token with prime ast class
                 case Token::PRIME: {
-                    auto value = sym.value.as<ast::primename_ptr>();
+                    auto value = sym.value.as<ast::PrimeName*>();
                     std::cout << *(value->get_token()) << std::endl;
                     delete value;
                     break;
@@ -80,7 +80,7 @@ int main(int argc, const char* argv[]) {
 
                 /// token with integer ast class
                 case Token::INTEGER: {
-                    auto value = sym.value.as<ast::integer_ptr>();
+                    auto value = sym.value.as<ast::Integer*>();
                     std::cout << *(value->get_token()) << std::endl;
                     delete value;
                     break;
@@ -88,7 +88,7 @@ int main(int argc, const char* argv[]) {
 
                 /// token with double/float ast class
                 case Token::REAL: {
-                    auto value = sym.value.as<ast::double_ptr>();
+                    auto value = sym.value.as<ast::Double*>();
                     std::cout << *(value->get_token()) << std::endl;
                     delete value;
                     break;
@@ -96,7 +96,7 @@ int main(int argc, const char* argv[]) {
 
                 /// token with string ast class
                 case Token::STRING: {
-                    auto value = sym.value.as<ast::string_ptr>();
+                    auto value = sym.value.as<ast::String*>();
                     std::cout << *(value->get_token()) << std::endl;
                     delete value;
                     break;

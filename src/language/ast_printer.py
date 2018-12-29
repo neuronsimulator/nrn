@@ -2,19 +2,49 @@ from printer import *
 from utils import *
 from node_info import ORDER_VAR_NAME
 
+class AstForwardDeclarationPrinter(DeclarationPrinter):
+    """Prints all AST nodes forward declarations"""
+
+    def headers(self):
+        self.write_line("#include <memory>")
+        self.write_line("#include <string>")
+        self.write_line("#include <vector>", newline=2)
+
+    def class_name_declaration(self):
+        self.write_line("namespace ast {", newline=2, post_gutter=1)
+        self.write_line("/* forward declarations of AST classes */")
+        for node in self.nodes:
+            self.write_line("class " + node.class_name + ";")
+
+        self.write_line()
+        self.write_line("/* Type for every ast node */")
+        self.write_line("enum class AstNodeType {", post_gutter=1)
+        for node in self.nodes:
+            self.write_line(to_snake_case(node.class_name).upper() + ",")
+        self.write_line("};", pre_gutter=-1)
+
+        self.write_line()
+        self.write_line("/* std::vector for convenience */")
+        for node in self.nodes:
+            typename = "std::vector<std::shared_ptr<" + node.class_name + ">>"
+            self.write_line("using " + node.class_name + "Vector = " + typename + ";")
+
+    def declaration_end(self):
+        self.write_line(pre_gutter=-1)
+
+    def private_declaration(self):
+        pass
+
+    def public_declaration(self):
+        pass
+
+    def post_declaration(self):
+        self.write_line("} // namespace ast", pre_gutter=-1)
+
 
 class AstDeclarationPrinter(DeclarationPrinter):
     """Prints all AST nodes class declarations"""
 
-    def ast_types(self):
-        """ print ast type for every ast node """
-        self.write_line("enum class Type {", post_gutter=1)
-        for node in self.nodes[:-1]:
-            name = to_snake_case(node.class_name).upper() + ","
-            self.write_line(name)
-        name = to_snake_case(self.nodes[-1].class_name).upper()
-        self.write_line(name)
-        self.write_line("};", pre_gutter=-1)
 
     def headers(self):
         self.write_line("#include <iostream>")
@@ -22,58 +52,11 @@ class AstDeclarationPrinter(DeclarationPrinter):
         self.write_line("#include <string>")
         self.write_line("#include <vector>", newline=2)
 
+        self.write_line('#include "ast/ast_decl.hpp"')
         self.write_line('#include "ast/ast_utils.hpp"')
         self.write_line('#include "lexer/modtoken.hpp"')
-        self.write_line('#include "utils/common_utils.hpp"', newline=2)
-
-    def class_comment(self):
-        self.write_line("/* all classes representing Abstract Syntax Tree (AST) nodes */")
-
-    def forward_declarations(self):
-        self.write_line("/* forward declarations of AST classes */")
-        for node in self.nodes:
-            self.write_line("class " + node.class_name + ";")
-
-        self.write_line()
-        self.write_line("/* Type for every ast node */")
-        self.ast_types()
-
-        self.write_line()
-        self.write_line("/* std::vector for convenience */")
-
-        for node in self.nodes:
-            typename = "std::vector<std::shared_ptr<" + node.class_name + ">>"
-            self.write_line("using " + node.class_name + "Vector = " + typename + ";")
-
-        created_types = []
-
-        # iterate over all node types
-        for node in self.nodes:
-            type = (node.get_typename(), node.class_name.lower() + "_ptr")
-            if type not in created_types:
-                created_types.append(type)
-
-            for child in node.children:
-                ctype = child.get_typename()
-                cname = child.class_name.lower()
-
-                # base types like int, string are not defined in YYSTYPE
-                if child.is_base_type_node():
-                    continue
-
-                if child.is_vector:
-                    cname = cname + "_list"
-                else:
-                    cname += "_ptr";
-
-                type = (ctype, cname)
-
-                if type not in created_types:
-                    created_types.append(type)
-
-        for tuple in created_types:
-            self.write_line("using " + tuple[1] + " = " + tuple[0] + ";")
-
+        self.write_line('#include "utils/common_utils.hpp"')
+        self.write_line('#include "visitors/visitor.hpp"', newline=2)
 
     def ast_classes_declaration(self):
 
@@ -81,11 +64,6 @@ class AstDeclarationPrinter(DeclarationPrinter):
         # need to look in detail whether we should abort in this case
         # when ModToken in NULL. This was introduced when added SymtabVisitor
         # pass to get Token information.
-
-        # TODO: remove visitor related method definition from declaration
-        # to avoid this include
-        self.write_line()
-        self.write_line("#include <visitors/visitor.hpp>", newline=2)
 
         self.write_line("/* Define all AST nodes */", newline=2)
 
@@ -204,7 +182,7 @@ class AstDeclarationPrinter(DeclarationPrinter):
 
             # TODO: type should declared as enum class
             typename = to_snake_case(node.class_name).upper()
-            self.write_line(virtual + "Type get_type() override { return Type::" + typename + "; }")
+            self.write_line(virtual + "AstNodeType get_type() override { return AstNodeType::" + typename + "; }")
             self.write_line("bool is_" + to_snake_case(node.class_name) + " () override { return true; }")
             self.write_line(virtual + node.class_name + "* clone() override { return new " + node.class_name + "(*this); }")
 
@@ -264,7 +242,6 @@ class AstDeclarationPrinter(DeclarationPrinter):
 
     def class_name_declaration(self):
         self.write_line("namespace ast {", newline=2, post_gutter=1)
-        self.forward_declarations()
         self.ast_classes_declaration()
 
     def declaration_end(self):
