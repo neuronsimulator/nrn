@@ -1801,7 +1801,8 @@ void CodegenCVisitor::print_global_variable_setup() {
             if (value_ptr != nullptr) {
                 value = *value_ptr;
             }
-            printer->add_line("{} = {};"_format(name, double_to_string(value)));
+            /// use %g to be same as nocmodl in neuron
+            printer->add_line("{} = {};"_format(name, "{:g}"_format(value)));
         }
     }
 
@@ -1813,7 +1814,8 @@ void CodegenCVisitor::print_global_variable_setup() {
         if (value_ptr != nullptr) {
             value = *value_ptr;
         }
-        printer->add_line("{} = {};"_format(name, double_to_string(value)));
+        /// use %g to be same as nocmodl in neuron
+        printer->add_line("{} = {};"_format(name, "{:g}"_format(value)));
     }
 
     printer->add_newline();
