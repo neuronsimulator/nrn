@@ -95,6 +95,25 @@ namespace ast {
             throw std::runtime_error("get_symbol_table() not implemented");
         }
 
+        virtual std::shared_ptr<StatementBlock> get_statement_block() {
+            throw std::runtime_error("get_statement_node not implemented");
+        }
+
+        // implemented in Number sub classes
+        virtual void negate() {
+            throw  std::runtime_error("negate() not implemented");
+        }
+
+        // implemented in Number sub classes
+        virtual double number_value() {
+            throw std::runtime_error("number_value() not implemented");
+        }
+
+        // implemented in Identifier sub classes
+        virtual void set_name(std::string /*name*/) {
+            throw std::runtime_error("set_name() not implemented");
+        }
+
         virtual ~AST() {
         }
 

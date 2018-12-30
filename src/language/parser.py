@@ -148,7 +148,7 @@ class LanguageParser:
                 has_token = LanguageParser.is_token(class_name)
 
                 args = Argument()
-                args.base_class = base_class
+                args.base_class = base_class if base_class else 'AST'
                 args.class_name = class_name
                 args.nmodl_name = nmodl_name
                 args.has_token = has_token

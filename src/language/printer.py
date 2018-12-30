@@ -45,24 +45,6 @@ class Writer(object):
             self.fh.write("\n")
         self.num_tabs += post_gutter
 
-    def add_line(self, string, newline, pre_gutter, post_gutter):
-        self.num_tabs += pre_gutter
-        if string:
-            for i in range(self.num_tabs):
-                string = self.TAB + string
-            for i in range(newline):
-                string = string + "\n"
-            self.lines.append(string)
-        self.num_tabs += post_gutter
-
-    def num_buffered_lines(self):
-        return len(self.lines)
-
-    def flush_buffered_lines(self):
-        for line in self.lines:
-            self.fh.write(line)
-        self.lines = []
-
     def __del__(self):
         if not self.fh.closed:
             self.fh.close()
@@ -79,9 +61,6 @@ class Printer(object):
 
     def write_line(self, string=None, newline=1, pre_gutter=0, post_gutter=0):
         self.writer.write_line(string, newline, pre_gutter, post_gutter)
-
-    def add_line(self, string=None, newline=1, pre_gutter=0, post_gutter=0):
-        self.writer.add_line(string, newline, pre_gutter, post_gutter)
 
     @abstractmethod
     def write(self):

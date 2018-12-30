@@ -934,6 +934,7 @@
                   getter: {name: get_method}
               - ifsolerr:
                   type: StatementBlock
+                  optional: true
                   prefix: {value: " IFERROR "}
         - BreakpointBlock:
             nmodl: "BREAKPOINT "
