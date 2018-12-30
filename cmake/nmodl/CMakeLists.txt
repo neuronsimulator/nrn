@@ -33,7 +33,7 @@ include(FindPythonModule)
 # Find required python packages
 #=============================================================================
 message(STATUS "CHECKING FOR PYTHON")
-find_package(PythonInterp REQUIRED)
+find_package(PythonInterp 2.7 REQUIRED)
 find_python_module(yaml REQUIRED)
 
 include_directories(

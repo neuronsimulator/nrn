@@ -13,21 +13,20 @@ class AstForwardDeclarationPrinter(DeclarationPrinter):
     def class_name_declaration(self):
         self.write_line("namespace ast {", newline=2, post_gutter=1)
         self.write_line("/* forward declarations of AST classes */")
-        for node in self.nodes:
-            self.write_line("class " + node.class_name + ";")
+        for node in sorted(self.nodes):
+            self.write_line("class {};".format(node.class_name))
 
         self.write_line()
         self.write_line("/* Type for every ast node */")
         self.write_line("enum class AstNodeType {", post_gutter=1)
-        for node in self.nodes:
-            self.write_line(to_snake_case(node.class_name).upper() + ",")
-        self.write_line("};", pre_gutter=-1)
+        for node in sorted(self.nodes):
+            self.write_line("{},".format(to_snake_case(node.class_name).upper()))
+        self.write_line("};", pre_gutter=-1, newline=2)
 
-        self.write_line()
         self.write_line("/* std::vector for convenience */")
-        for node in self.nodes:
-            typename = "std::vector<std::shared_ptr<" + node.class_name + ">>"
-            self.write_line("using " + node.class_name + "Vector = " + typename + ";")
+        for node in sorted(self.nodes):
+            typename = "std::vector<std::shared_ptr<{}>>".format(node.class_name)
+            self.write_line("using {}Vector = {};".format(node.class_name, typename))
 
     def declaration_end(self):
         self.write_line(pre_gutter=-1)
@@ -45,7 +44,6 @@ class AstForwardDeclarationPrinter(DeclarationPrinter):
 class AstDeclarationPrinter(DeclarationPrinter):
     """Prints all AST nodes class declarations"""
 
-
     def headers(self):
         self.write_line("#include <iostream>")
         self.write_line("#include <memory>")
@@ -53,7 +51,7 @@ class AstDeclarationPrinter(DeclarationPrinter):
         self.write_line("#include <vector>", newline=2)
 
         self.write_line('#include "ast/ast_decl.hpp"')
-        self.write_line('#include "ast/ast_utils.hpp"')
+        self.write_line('#include "ast/ast_common.hpp"')
         self.write_line('#include "lexer/modtoken.hpp"')
         self.write_line('#include "utils/common_utils.hpp"')
         self.write_line('#include "visitors/visitor.hpp"', newline=2)
@@ -62,46 +60,21 @@ class AstDeclarationPrinter(DeclarationPrinter):
 
         # TODO: for demo, removing error messages in get_token method.
         # need to look in detail whether we should abort in this case
-        # when ModToken in NULL. This was introduced when added SymtabVisitor
+        # when ModToken is NULL. This was introduced when added SymtabVisitor
         # pass to get Token information.
+
+        # todo : need a way to setup location
+        # self.write_line("void setLocation(nmodl::location loc) {}")
 
         self.write_line("/* Define all AST nodes */", newline=2)
 
         for node in self.nodes:
-            class_decl = "class " + node.class_name + " : public "
 
-            if node.base_class:
-                class_decl += node.base_class
-            else:
-                class_decl += " AST"
-
-            # depending on if node is abstract or not, we have to
-            # add virtual or override keyword to methods
-            if node.is_abstract:
-                virtual = "virtual "
-                override = ""
-            else:
-                virtual = ""
-                override = " override"
-
-            self.write_line(class_decl + " {", post_gutter=1)
-            self.write_line("public:", post_gutter=1)
-
-            members = []
-            members_with_types = []
+            self.write_line("class {} : public {} {{".format(node.class_name, node.base_class), post_gutter=1)
+            self.write_line("public:", post_gutter=1, newline=1)
 
             for child in node.children:
-                members.append(child.get_typename() + " " + child.varname)
-                members_with_types.append(child.get_typename_as_member() + " " + child.varname)
-
-            if members:
-                self.write_line("/* member variables */")
-
-            # todo : need a way to setup location
-            # self.write_line("void setLocation(nmodl::location loc) {}")
-
-            for member in members_with_types:
-                self.write_line(member + ";")
+                self.write_line("{} {};".format(child.member_typename, child.varname))
 
             if node.has_token:
                 self.write_line("std::shared_ptr<ModToken> token;")
@@ -112,93 +85,77 @@ class AstDeclarationPrinter(DeclarationPrinter):
             if node.is_program_node():
                 self.write_line("symtab::ModelSymbolTable model_symtab;")
 
-            self.write_line("")
-
-            if members:
+            if node.children:
+                members = [ child.get_typename() + " " + child.varname for child in node.children]
+                self.write_line("")
                 self.write_line("/* constructors */")
-                self.write_line(node.class_name + "(" + (", ".join(members)) + ");")
-                self.write_line(node.class_name + "(const " + node.class_name + "& obj);")
+                self.write_line("{}({});".format(node.class_name, (", ".join(members))))
+                self.write_line("{0}(const {0}& obj);".format(node.class_name))
+
+            self.write_line("")
 
             # program node holds statements and blocks and we instantiate it in driver
             # also other nodes which we use as value type, parsor needs to return them
             # as a value. And instantiation of those causes error if default constructor not there.
             if node.is_program_node() or node.is_ptr_excluded_node():
-                self.write_line( node.class_name + "() {}", newline=2)
+                self.write_line( node.class_name + "() = default;", newline=2)
+
+            # depending on if node is abstract or not, we have to
+            # add virtual or override keyword to methods
+            virtual, override = ("virtual ", "") if node.is_abstract else ("", " override")
 
             # Todo : We need virtual destructor otherwise there will be memory leaks.
             #        But we need define which are virtual base classes that needs virtual function.
-            self.write_line("virtual ~" + node.class_name + "() {}")
-            self.write_line()
-
-            get_method_added = False
+            self.write_line("virtual ~{}() {{}}".format(node.class_name), newline=2)
 
             for child in node.children:
                 class_name = child.class_name
                 varname = child.varname
                 if child.add_method:
-                    self.write_line("void add" + class_name + "(" + class_name + " *s) {")
-                    self.write_line("    " + varname + ".push_back(std::shared_ptr<" + class_name + ">(s));")
+                    self.write_line("void add{0}({0} *s) {{".format(class_name))
+                    self.write_line("    {}.emplace_back(s);".format(varname))
                     self.write_line("}")
 
                 if child.getname_method:
                     # string node should be evaluated and hence eval() method
-                    if child.is_string_node():
-                        method = "eval"
-                    else:
-                        method = "get_name"
-
+                    method = "eval" if child.is_string_node() else "get_name"
                     self.write_line("virtual std::string get_name() override {")
-                    self.write_line("    return " + varname + "->" + method + "();")
+                    self.write_line("    return {}->{}();".format(varname, method))
                     self.write_line("}")
 
-                    if not node.has_token:
-                        self.write_line(virtual + "ModToken* get_token() override {")
-                        self.write_line("    return " + varname + "->get_token();")
-                        self.write_line("}")
-
-                    get_method_added = True
-
+                # todo : return type should go into node : refactor when changing return types for all ast nodes
                 if child.getter_method:
                     getter_method = child.getter_method
-                    getter_override = " override" if child.getter_override  else ""
-                    if child.is_vector:
-                        return_type = class_name + "Vector& "
-                    else:
-                        if child.is_ptr_excluded_node() or child.is_base_type_node():
-                            return_type =  class_name + " "
-                        else:
-                            return_type = "std::shared_ptr<" + class_name + "> "
-                    self.write_line(return_type + getter_method + "()" + getter_override + " { return " + varname + "; }")
+                    getter_override = "override" if child.getter_override else ""
+                    return_type = child.return_typename
+                    self.write_line("{} {}() {}{{ return {}; }}".format(return_type, getter_method, getter_override, varname))
 
-                if node.is_prime_node() and child.varname == ORDER_VAR_NAME:
-                    self.write_line("int get_order() " + " { return " + ORDER_VAR_NAME + "->eval(); }")
+            if node.is_prime_node():
+                self.write_line("int get_order() {{ return {}->eval(); }}".format(ORDER_VAR_NAME))
 
             # add method to return typename
-            self.write_line("virtual std::string get_type_name() override { return \"" + node.class_name + "\"; }")
+            self.write_line('virtual std::string get_type_name() override {{ return "{}"; }}'.format(node.class_name))
 
             # all member functions
-            self.write_line(virtual + "void visit_children (Visitor* v) override;")
-            self.write_line(virtual + "void accept(Visitor* v) override { v->visit_" + to_snake_case(node.class_name) + "(this); }")
+            self.write_line("{}void visit_children (Visitor* v) override;".format(virtual))
+            self.write_line("{}void accept(Visitor* v) override {{ v->visit_{}(this); }}".format(virtual, to_snake_case(node.class_name)))
 
             # TODO: type should declared as enum class
             typename = to_snake_case(node.class_name).upper()
-            self.write_line(virtual + "AstNodeType get_type() override { return AstNodeType::" + typename + "; }")
-            self.write_line("bool is_" + to_snake_case(node.class_name) + " () override { return true; }")
-            self.write_line(virtual + node.class_name + "* clone() override { return new " + node.class_name + "(*this); }")
+            self.write_line("{}AstNodeType get_type() override {{ return AstNodeType::{}; }}".format(virtual, typename))
+            self.write_line("bool is_{} () override {{ return true; }}".format(to_snake_case(node.class_name)))
+            self.write_line("{0}{1}* clone() override {{ return new {1}(*this); }}".format(virtual, node.class_name))
 
             if node.has_token:
-                self.write_line(virtual + "ModToken* get_token() " + override + " { return token.get(); }")
-                self.write_line("void set_token(ModToken& tok) " + " { token = std::shared_ptr<ModToken>(new ModToken(tok)); }")
+                self.write_line("{}ModToken* get_token(){} {{ return token.get(); }}".format(virtual, override))
+                self.write_line("void set_token(ModToken& tok) { token = std::shared_ptr<ModToken>(new ModToken(tok)); }")
 
             if node.is_symtab_needed():
-                self.write_line("void set_symbol_table(symtab::SymbolTable* newsymtab) override " + " { symtab = newsymtab; }")
-                self.write_line("symtab::SymbolTable* get_symbol_table() override " + " { return symtab; }")
+                self.write_line("void set_symbol_table(symtab::SymbolTable* newsymtab) override { symtab = newsymtab; }")
+                self.write_line("symtab::SymbolTable* get_symbol_table() override { return symtab; }")
 
             if node.is_program_node():
-                self.write_line("symtab::ModelSymbolTable* get_model_symbol_table() " + " { return &model_symtab; }")
-
-            if node.is_number_node():
-                self.write_line(virtual + "void negate()" + override + " { std::cout << \"ERROR : negate() not implemented! \"; abort(); } ")
+                self.write_line("symtab::ModelSymbolTable* get_model_symbol_table() { return &model_symtab; }")
 
             if node.is_base_class_number_node():
                 if node.is_boolean_node():
@@ -207,36 +164,23 @@ class AstDeclarationPrinter(DeclarationPrinter):
                     self.write_line("void negate() override { value = -value; }")
                     self.write_line("double number_value() override { return value; }")
 
-
-            if node.is_identifier_node():
-                self.write_line(virtual + "void set_name(std::string /*name*/)" + override + " { std::cout << \"ERROR : set_name() not implemented! \"; abort(); }")
-
-            if node.is_number_node():
-                self.write_line(virtual + "double number_value()" + override + " { std::cout << \"ERROR : number_value() not implemented! \"; abort(); }")
-
             if node.is_name_node():
-                self.write_line(virtual + "void set_name(std::string name)" + override + " { value->set(name); }")
+                self.write_line("{}void set_name(std::string name){} {{ value->set(name); }}".format(virtual, override))
 
             if node.is_base_block_node():
-                self.write_line("virtual std::shared_ptr<StatementBlock> get_statement_block() {")
-                self.write_line('    throw std::runtime_error("get_statement_node not implemented");')
-                self.write_line("}", newline=2)
-
                 self.write_line("virtual ArgumentVector& get_arguments() {")
                 self.write_line('    throw std::runtime_error("get_arguments not implemented");')
                 self.write_line("}", newline=2)
 
             # if node is of enum type then return enum value
-            # TODO: hardcoded Names
             if node.is_data_type_node():
                 data_type = node.get_data_type_name()
                 if node.is_enum_node():
-                    self.write_line("std::string " + " eval() { return " + data_type + "Names[value]; }")
+                    self.write_line("std::string eval() {{ return {}Names[value]; }}".format(data_type))
                 # But if basic data type then eval return their value
-                # TODO: value member is hardcoded
                 else:
-                    self.write_line(data_type + " eval() { return value; }")
-                    self.write_line("void set(" + data_type + " _value) " + " { value = _value; }")
+                    self.write_line("{} eval() {{ return value; }}".format(data_type))
+                    self.write_line("void set({} _value) {{ value = _value; }}".format(data_type))
 
             self.write_line("};", pre_gutter=-2, newline=2)
 
@@ -269,89 +213,59 @@ class AstDefinitionPrinter(DefinitionPrinter):
 
         for node in self.nodes:
             # first get types of all childrens into members vector
-            members = []
+            members = [(child.get_typename(), child.varname) for child in node.children]
+            non_base_members = [child for child in node.children if not child.is_base_type_node()]
 
-            # in order to print initializer list, we need to know which
-            # members are no pointer types
-            ptr_members = []
-            non_ptr_members = []
+            self.write_line("/* visit method for {} ast node */".format(node.class_name))
+            self.write_line("void {}::visit_children(Visitor* v) {{".format(node.class_name), post_gutter=1)
 
-            for child in node.children:
-                members.append((child.get_typename(), child.varname))
-
-                if child.is_pointer_node() and not child.is_vector:
-                    ptr_members.append((child.get_typename(), child.varname))
-                else:
-                    non_ptr_members.append((child.get_typename(), child.varname))
-
-                if child.is_base_type_node():
-                    continue
-
-                self.writer.increase_gutter()
+            for child in non_base_members:
                 if child.is_vector:
-                    # TODO : remove this with C++11 style
-                    self.add_line("for (auto& item : this->" + child.varname + ") {")
-                    self.add_line("        item->accept(v);")
-                    self.add_line("}")
-                elif child.optional or child.is_statement_block_node():
-                    self.add_line("if (this->" + child.varname + ") {")
-                    self.add_line("    this->" + child.varname + "->accept(v);")
-                    self.add_line("}")
-                elif not child.is_pointer_node():
-                    self.add_line(child.varname + ".accept(v);")
+                    self.write_line("for (auto& item : this->{}) {{".format(child.varname))
+                    self.write_line("        item->accept(v);")
+                    self.write_line("}")
+                elif child.optional:
+                    self.write_line("if (this->{}) {{".format(child.varname))
+                    self.write_line("    this->{}->accept(v);".format(child.varname))
+                    self.write_line("}")
+                elif child.is_pointer_node():
+                    self.write_line("{}->accept(v);".format(child.varname))
                 else:
-                    self.add_line(child.varname + "->accept(v);")
-                self.writer.decrease_gutter()
+                    self.write_line("{}.accept(v);".format(child.varname))
 
-            if self.writer.num_buffered_lines():
-                self.write_line("/* visit method for " + node.class_name + " ast node */")
-                self.write_line("void " + node.class_name + "::visit_children(Visitor* v) {", post_gutter=1)
-                self.writer.flush_buffered_lines()
-                self.write_line("}", pre_gutter=-1, newline=2)
-            else:
-                self.write_line("void " + node.class_name + "::visit_children(Visitor* /*v*/) {}")
+            if not non_base_members:
+                self.write_line("(void)v;")
+
+            self.write_line("}", pre_gutter=-1, newline=2)
 
             if members:
-                # TODO : constructor definition : remove this with C++11 style
-                self.write_line("/* constructor for " + node.class_name + " ast node */")
                 arguments = (", ".join(map(lambda x: x[0] + " " + x[1], members)))
-                self.write_line(node.class_name + "::" + node.class_name + "(" + arguments + ")")
+                initializer = ", ".join(map(lambda x: x[1] + "(" + x[1] + ")", members))
 
-                if non_ptr_members:
-                    self.write_line(":", newline=0)
-                    self.write_line(",\n".join(map(lambda x: x[1] + "(" + x[1] + ")", non_ptr_members)))
+                self.write_line("/* constructor for {} ast node */".format(node.class_name))
+                self.write_line("{0}::{0}({1})".format(node.class_name, arguments))
+                self.write_line("    :  {}".format(initializer))
+                self.write_line("{}", newline=2)
 
-                self.write_line("{")
+                self.write_line("/* copy constructor for {} ast node */".format(node.class_name))
+                self.write_line("{0}::{0}(const {0}& obj) {{".format(node.class_name), post_gutter=1)
 
-                for member in ptr_members:
-                    # todo : bit hack here, need to remove pointer because we are creating smart pointer
-                    typename = member[0].replace("*", "")
-                    self.write_line("    this->" + member[1] + " = std::shared_ptr<" + typename + ">(" + member[1] + ");")
-
-                self.write_line("}", newline=2)
-
-                # copy construcotr definition : remove this with C++11 style
-                self.write_line("/* copy constructor for " + node.class_name + " ast node */")
-                self.write_line(node.class_name + "::" + node.class_name + "(const " + node.class_name + "& obj) ")
-
-                self.write_line("{", post_gutter=1)
-
-                # TODO : more cleanup
                 for child in node.children:
                     if child.is_vector:
-                        self.write_line("for (auto& item : obj." + child.varname + ") {")
-                        self.write_line("    this->" + child.varname + ".push_back(std::shared_ptr< " + child.class_name + ">(item->clone()));")
+                        self.write_line("for (auto& item : obj.{}) {{".format(child.varname))
+                        self.write_line("    this->{}.emplace_back(item->clone());".format(child.varname))
+                        self.write_line("}")
+                    elif child.is_pointer_node() or child.optional:
+                        self.write_line("if (obj.{}) {{".format(child.varname))
+                        self.write_line("    this->{0}.reset(obj.{0}->clone());".format(child.varname))
                         self.write_line("}")
                     else:
-                        if child.is_pointer_node():
-                            self.write_line("if (obj." + child.varname + ")")
-                            self.write_line("    this->" + child.varname + " = std::shared_ptr<" + child.class_name + ">(obj." + child.varname + "->clone());")
-                        else:
-                            self.write_line("this->" + child.varname + " = obj." + child.varname + ";")
+                        self.write_line("this->{0} = obj.{0};".format(child.varname))
 
                 if node.has_token:
-                    self.write_line("if (obj.token)")
+                    self.write_line("if (obj.token) {")
                     self.write_line("    this->token = std::shared_ptr<ModToken>(obj.token->clone());")
+                    self.write_line("}")
 
                 self.write_line("}", pre_gutter=-1, newline=2)
 

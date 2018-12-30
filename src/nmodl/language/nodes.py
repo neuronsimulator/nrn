@@ -22,6 +22,9 @@ class BaseNode:
         self.force_suffix = args.force_suffix
         self.is_abstract = False
 
+    def __cmp__(self, other):
+        return cmp(self.class_name, other.class_name)
+
     def get_data_type_name(self):
         """ return type name for the node """
         return DATA_TYPES[self.class_name]
@@ -181,10 +184,11 @@ class ChildNode(BaseNode):
 
         return type_name
 
-    def get_typename_as_member(self):
-        """returns type of the node to be a member of the class
+    @property
+    def member_typename(self):
+        """returns type when used as a member of the class
 
-        Check how to refactor this
+        todo: Check how to refactor this
         """
 
         type_name = self.class_name
@@ -193,6 +197,20 @@ class ChildNode(BaseNode):
             type_name += "Vector"
         elif self.class_name not in BASE_TYPES and self.class_name not in PTR_EXCLUDE_TYPES:
             type_name = "std::shared_ptr<" + type_name + ">"
+
+        return type_name
+
+    @property
+    def return_typename(self):
+        """returns type when returned from getter method
+
+        todo: Check how to refactor this
+        """
+        type_name = "std::shared_ptr<" + self.class_name + ">"
+        if self.is_vector:
+            type_name = self.class_name + "Vector&"
+        elif self.is_ptr_excluded_node() or self.is_base_type_node():
+            type_name =  self.class_name
 
         return type_name
 
