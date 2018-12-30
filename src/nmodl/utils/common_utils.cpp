@@ -1,7 +1,8 @@
+#include <cerrno>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <sys/stat.h>
-#include <cerrno>
 
 bool is_dir_exist(const std::string& path) {
     struct stat info {};
