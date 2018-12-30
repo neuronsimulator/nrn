@@ -537,7 +537,7 @@ parmbody        :   {
                     }
                 |   parmbody parmasgn
                     {
-                        $1.push_back(std::shared_ptr<ast::ParamAssign>($2));
+                        $1.emplace_back($2);
                         $$ = $1;
                     }
                 ;
@@ -608,7 +608,7 @@ stepblk         :   STEPPED "{" stepbdy "}"
 stepbdy         :   {   $$ = ast::SteppedVector();    }
                 |   stepbdy stepped
                     {
-                            $1.push_back(std::shared_ptr<ast::Stepped>($2));
+                            $1.emplace_back($2);
                             $$ = $1;
                     }
                 ;
@@ -624,12 +624,12 @@ stepped         :   NAME "=" numlist units
 numlist         :   number "," number
                     {
                         $$ = ast::NumberVector();
-                        $$.push_back(std::shared_ptr<ast::Number>($1));
-                        $$.push_back(std::shared_ptr<ast::Number>($3));
+                        $$.emplace_back($1);
+                        $$.emplace_back($3);
                     }
                 |   numlist "," number
                     {
-                        $1.push_back(std::shared_ptr<ast::Number>($3));
+                        $1.emplace_back($3);
                         $$ = $1;
                     }
                 ;
@@ -680,12 +680,12 @@ indepbody       :   {
                     }
                 |   indepbody indepdef
                     {
-                        $1.push_back(std::shared_ptr<ast::IndependentDef>($2));
+                        $1.emplace_back($2);
                         $$ = $1;
                     }
                 |   indepbody SWEEP indepdef
                     {
-                        $1.push_back(std::shared_ptr<ast::IndependentDef>($3));
+                        $1.emplace_back($3);
                         $3->sweep = std::shared_ptr<ast::Boolean>(new ast::Boolean(1));
                         $$ = $1;
                     }
@@ -719,7 +719,7 @@ depbody         :   {
                     }
                 |   depbody depdef
                     {
-                        $1.push_back(std::shared_ptr<ast::DependentDef>($2));
+                        $1.emplace_back($2);
                         $$ = $1;
                     }
                 ;
@@ -780,13 +780,13 @@ pvlist          :   name optindex
                     {
                         $$ = ast::PlotVarVector();
                         auto variable = new ast::PlotVar($1, $2);
-                        $$.push_back(std::shared_ptr<ast::PlotVar>(variable));
+                        $$.emplace_back(variable);
                     }
                 |   pvlist "," name optindex
                     {
                         $$ = $1;
                         auto variable = new ast::PlotVar($3, $4);
-                        $$.push_back(std::shared_ptr<ast::PlotVar>(variable));
+                        $$.emplace_back(variable);
                     }
                 ;
 
@@ -884,20 +884,20 @@ locallist1      :   NAME locoptarray
                         $$ = ast::LocalVarVector();
                         if($2) {
                             auto variable = new ast::LocalVar(new ast::IndexedName($1, $2));
-                            $$.push_back(std::shared_ptr<ast::LocalVar>(variable));
+                            $$.emplace_back(variable);
                         } else {
                             auto variable = new ast::LocalVar($1);
-                            $$.push_back(std::shared_ptr<ast::LocalVar>(variable));
+                            $$.emplace_back(variable);
                         }
                     }
                 |   locallist1 "," NAME locoptarray
                     {
                         if($4) {
                             auto variable = new ast::LocalVar(new ast::IndexedName($3, $4));
-                            $1.push_back(std::shared_ptr<ast::LocalVar>(variable));
+                            $1.emplace_back(variable);
                         } else {
                             auto variable = new ast::LocalVar($3);
-                            $1.push_back(std::shared_ptr<ast::LocalVar>(variable));
+                            $1.emplace_back(variable);
                         }
                         $$ = $1;
                     }
@@ -914,18 +914,18 @@ stmtlist1       :   {
                     }
                 |   stmtlist1 ostmt
                     {
-                        $1.push_back(std::shared_ptr<ast::Statement>($2));
+                        $1.emplace_back($2);
                         $$ = $1;
                     }
                 |   stmtlist1 astmt
                     {
-                        $1.push_back(std::shared_ptr<ast::Statement>($2));
+                        $1.emplace_back($2);
                         $$ = $1;
                     }
                 |   stmtlist1 INLINE_COMMENT
                     {
                         auto statement = new ast::Comment(nullptr, new ast::String($2));
-                        $1.push_back(std::shared_ptr<ast::Statement>(statement));
+                        $1.emplace_back(statement);
                         $$ = $1;
                     }
                 ;
@@ -1214,21 +1214,21 @@ exprlist        :   {
                 |   expr
                     {
                         $$ = ast::ExpressionVector();
-                        $$.push_back(std::shared_ptr<ast::Expression>($1));
+                        $$.emplace_back($1);
                     }
                 |   STRING
                     {
                         $$ = ast::ExpressionVector();
-                        $$.push_back(std::shared_ptr<ast::Expression>($1));
+                        $$.emplace_back($1);
                     }
                 |   exprlist "," expr
                     {
-                        $1.push_back(std::shared_ptr<ast::Expression>($3));
+                        $1.emplace_back($3);
                         $$ = $1;
                     }
                 |   exprlist "," STRING
                     {
-                        $1.push_back(std::shared_ptr<ast::Expression>($3));
+                        $1.emplace_back($3);
                         $$ = $1;
                     }
                 ;
@@ -1280,8 +1280,7 @@ optelseif       :   {
                     }
                 |   optelseif ELSE IF "(" expr ")" stmtlist "}"
                     {
-                        auto statement = new ast::ElseIfStatement($5, $7);
-                        $1.push_back(std::shared_ptr<ast::ElseIfStatement>(statement));
+                        $1.emplace_back(new ast::ElseIfStatement($5, $7));
                         $$ = $1;
                     }
                 ;
@@ -1392,11 +1391,11 @@ arglist         :   {
 arglist1        :   name units
                     {
                         $$ = ast::ArgumentVector();
-                        $$.push_back(std::shared_ptr<ast::Argument>(new ast::Argument($1, $2)));
+                        $$.emplace_back(new ast::Argument($1, $2));
                     }
                 |   arglist1 "," name units
                     {
-                        $1.push_back(std::shared_ptr<ast::Argument>(new ast::Argument($3, $4)));
+                        $1.emplace_back(new ast::Argument($3, $4));
                         $$ = $1;
                     }
                 ;
@@ -1455,11 +1454,11 @@ solvefor        :                           { $$ = ast::NameVector(); }
 solvefor1       :   SOLVEFOR NAME
                     {
                         $$ = ast::NameVector();
-                        $$.push_back(std::shared_ptr<ast::Name>($2));
+                        $$.emplace_back($2);
                     }
                 |   solvefor1 "," NAME
                     {
-                        $1.push_back(std::shared_ptr<ast::Name>($3));
+                        $1.emplace_back($3);
                         $$ = $1;
                     }
                 |   SOLVEFOR error
@@ -1603,11 +1602,11 @@ sens            :   SENS senslist
 senslist        :   varname
                     {
                         $$ = ast::VarNameVector();
-                        $$.push_back(std::shared_ptr<ast::VarName>($1));
+                        $$.emplace_back($1);
                     }
                 |   senslist "," varname
                     {
-                        $1.push_back(std::shared_ptr<ast::VarName>($3));
+                        $1.emplace_back($3);
                         $$ = $1;
                     }
                 ;
@@ -1649,11 +1648,11 @@ ldifus          :   LONGDIFUS NAME "," expr "{" namelist "}"
 namelist        :   NAME
                     {
                         $$ = ast::NameVector();
-                        $$.push_back(std::shared_ptr<ast::Name>($1));
+                        $$.emplace_back($1);
                     }
                 |   namelist NAME
                     {
-                        $1.push_back(std::shared_ptr<ast::Name>($2));
+                        $1.emplace_back($2);
                         $$ = $1;
                     }
                 ;
@@ -1740,11 +1739,11 @@ matchblk        :   MATCH "{" matchlist "}"
 matchlist       :   match
                     {
                         $$ = ast::MatchVector();
-                        $$.push_back(std::shared_ptr<ast::Match>($1));
+                        $$.emplace_back($1);
                     }
                 |   matchlist match
                     {
-                        $1.push_back(std::shared_ptr<ast::Match>($2));
+                        $1.emplace_back($2);
                         $$ = $1;
                     }
                 ;
@@ -1789,12 +1788,12 @@ unitbody        :   {
                     }
                 |   unitbody unitdef
                     {
-                        $1.push_back(std::shared_ptr<ast::Expression>($2));
+                        $1.emplace_back($2);
                         $$ = $1;
                     }
                 |   unitbody factordef
                     {
-                        $1.push_back(std::shared_ptr<ast::Expression>($2));
+                        $1.emplace_back($2);
                         $$ = $1;
                     }
                 ;
@@ -1846,8 +1845,7 @@ conststmt       :   {
                 |   conststmt NAME "=" number units
                     {
                         auto constant = new ast::ConstantVar($2, $4, $5);
-                        auto statement = new ast::ConstantStatement(constant);
-                        $1.push_back(std::shared_ptr<ast::ConstantStatement>(statement));
+                        $1.emplace_back(new ast::ConstantStatement(constant));
                         $$ = $1;
                     }
                 ;
@@ -1872,11 +1870,11 @@ tablst          :               {   $$ = ast::NameVector(); }
 tablst1         :   Name
                     {
                         $$ = ast::NameVector();
-                        $$.push_back(std::shared_ptr<ast::Name>($1));
+                        $$.emplace_back($1);
                     }
                 |   tablst1 "," Name
                     {
-                        $1.push_back(std::shared_ptr<ast::Name>($3));
+                        $1.emplace_back($3);
                         $$ = $1;
                     }
                 ;
@@ -1899,67 +1897,57 @@ neuronblk       :   NEURON OPEN_BRACE nrnstmt CLOSE_BRACE
 nrnstmt         :   { $$ = ast::StatementVector(); }
                 |   nrnstmt SUFFIX NAME
                     {
-                        auto statement = new ast::Suffix($2, $3);
-                        $1.push_back(std::shared_ptr<ast::Statement>(statement));
+                        $1.emplace_back(new ast::Suffix($2, $3));
                         $$ = $1;
                     }
                 |   nrnstmt nrnuse
                     {
-                        $1.push_back(std::shared_ptr<ast::Statement>($2));
+                        $1.emplace_back($2);
                         $$ = $1;
                     }
                 |   nrnstmt NONSPECIFIC nrnonspeclist
                     {
-                        auto statement = new ast::Nonspecific($3);
-                        $1.push_back(std::shared_ptr<ast::Statement>(statement));
+                        $1.emplace_back(new ast::Nonspecific($3));
                         $$ = $1;
                     }
                 |   nrnstmt ELECTRODE_CURRENT nrneclist
                     {
-                        auto statement = new ast::ElctrodeCurrent($3);
-                        $1.push_back(std::shared_ptr<ast::Statement>(statement));
+                        $1.emplace_back(new ast::ElctrodeCurrent($3));
                         $$ = $1;
                     }
                 |   nrnstmt SECTION nrnseclist
                     {
-                        auto statement = new ast::Section($3);
-                        $1.push_back(std::shared_ptr<ast::Statement>(statement));
+                        $1.emplace_back(new ast::Section($3));
                         $$ = $1;
                     }
                 |   nrnstmt RANGE nrnrangelist
                     {
-                        auto statement = new ast::Range($3);
-                        $1.push_back(std::shared_ptr<ast::Statement>(statement));
+                        $1.emplace_back(new ast::Range($3));
                         $$ = $1;
                     }
                 |   nrnstmt GLOBAL nrnglobalist
                     {
-                        auto statement = new ast::Global($3);
-                        $1.push_back(std::shared_ptr<ast::Statement>(statement));
+                        $1.emplace_back(new ast::Global($3));
                         $$ = $1;
                     }
                 |   nrnstmt POINTER nrnptrlist
                     {
-                        auto statement = new ast::Pointer($3);
-                        $1.push_back(std::shared_ptr<ast::Statement>(statement));
+                        $1.emplace_back(new ast::Pointer($3));
                         $$ = $1;
                     }
                 |   nrnstmt BBCOREPOINTER nrnbbptrlist
                     {
-                        auto statement = new ast::BbcorePtr($3);
-                        $1.push_back(std::shared_ptr<ast::Statement>(statement));
+                        $1.emplace_back(new ast::BbcorePtr($3));
                         $$ = $1;
                     }
                 |   nrnstmt EXTERNAL nrnextlist
                     {
-                        auto statement = new ast::External($3);
-                        $1.push_back(std::shared_ptr<ast::Statement>(statement));
+                        $1.emplace_back(new ast::External($3));
                         $$ = $1;
                     }
                 |   nrnstmt THREADSAFE opthsafelist
                     {
-                        auto statement = new ast::ThreadSafe($3);
-                        $1.push_back(std::shared_ptr<ast::Statement>(statement));
+                        $1.emplace_back(new ast::ThreadSafe($3));
                         $$ = $1;
                     }
                 ;
@@ -1987,11 +1975,11 @@ nrnuse          :   USEION NAME READ nrnionrlist valence
 nrnionrlist     :   NAME
                     {
                         $$ = ast::ReadIonVarVector();
-                        $$.push_back(std::shared_ptr<ast::ReadIonVar>(new ast::ReadIonVar($1)));
+                        $$.emplace_back(new ast::ReadIonVar($1));
                     }
                 |   nrnionrlist "," NAME
                     {
-                        $1.push_back(std::shared_ptr<ast::ReadIonVar>(new ast::ReadIonVar($3)));
+                        $1.emplace_back(new ast::ReadIonVar($3));
                         $$ = $1;
                     }
                 |   error
@@ -2004,11 +1992,11 @@ nrnionrlist     :   NAME
 nrnionwlist     :   NAME
                     {
                         $$ = ast::WriteIonVarVector();
-                        $$.push_back(std::shared_ptr<ast::WriteIonVar>(new ast::WriteIonVar($1)));
+                        $$.emplace_back(new ast::WriteIonVar($1));
                     }
                 |   nrnionwlist "," NAME
                     {
-                        $1.push_back(std::shared_ptr<ast::WriteIonVar>(new ast::WriteIonVar($3)));
+                        $1.emplace_back(new ast::WriteIonVar($3));
                         $$ = $1;
                     }
                 |   error
@@ -2021,13 +2009,11 @@ nrnionwlist     :   NAME
 nrnonspeclist   :   NAME
                     {
                         $$ = ast::NonspeCurVarVector();
-                        auto var = new ast::NonspeCurVar($1);
-                        $$.push_back(std::shared_ptr<ast::NonspeCurVar>(var));
+                        $$.emplace_back(new ast::NonspeCurVar($1));
                     }
                 |   nrnonspeclist "," NAME
                     {
-                        auto var = new ast::NonspeCurVar($3);
-                        $1.push_back(std::shared_ptr<ast::NonspeCurVar>(var));
+                        $1.emplace_back(new ast::NonspeCurVar($3));
                         $$ = $1;
                     }
                 |   error
@@ -2040,13 +2026,11 @@ nrnonspeclist   :   NAME
 nrneclist       :   NAME
                     {
                         $$ = ast::ElectrodeCurVarVector();
-                        auto var = new ast::ElectrodeCurVar($1);
-                        $$.push_back(std::shared_ptr<ast::ElectrodeCurVar>(var));
+                        $$.emplace_back(new ast::ElectrodeCurVar($1));
                     }
                 |   nrneclist "," NAME
                     {
-                        auto var = new ast::ElectrodeCurVar($3);
-                        $1.push_back(std::shared_ptr<ast::ElectrodeCurVar>(var));
+                        $1.emplace_back(new ast::ElectrodeCurVar($3));
                         $$ = $1;
                     }
                 |   error
@@ -2059,13 +2043,11 @@ nrneclist       :   NAME
 nrnseclist      :   NAME
                     {
                         $$ = ast::SectionVarVector();
-                        auto var = new ast::SectionVar($1);
-                        $$.push_back(std::shared_ptr<ast::SectionVar>(var));
+                        $$.emplace_back(new ast::SectionVar($1));
                     }
                 |   nrnseclist "," NAME
                     {
-                        auto var = new ast::SectionVar($3);
-                        $1.push_back(std::shared_ptr<ast::SectionVar>(var));
+                        $1.emplace_back(new ast::SectionVar($3));
                         $$ = $1;
                     }
                 |   error
@@ -2078,11 +2060,11 @@ nrnseclist      :   NAME
 nrnrangelist    :   NAME
                     {
                         $$ = ast::RangeVarVector();
-                        $$.push_back(std::shared_ptr<ast::RangeVar>(new ast::RangeVar($1)));
+                        $$.emplace_back(new ast::RangeVar($1));
                     }
                 |   nrnrangelist "," NAME
                     {
-                        $1.push_back(std::shared_ptr<ast::RangeVar>(new ast::RangeVar($3)));
+                        $1.emplace_back(new ast::RangeVar($3));
                         $$ = $1;
                     }
                 |   error
@@ -2095,11 +2077,11 @@ nrnrangelist    :   NAME
 nrnglobalist    :   NAME
                     {
                         $$ = ast::GlobalVarVector();
-                        $$.push_back(std::shared_ptr<ast::GlobalVar>(new ast::GlobalVar($1)));
+                        $$.emplace_back(new ast::GlobalVar($1));
                     }
                 |   nrnglobalist "," NAME
                     {
-                        $1.push_back(std::shared_ptr<ast::GlobalVar>(new ast::GlobalVar($3)));
+                        $1.emplace_back(new ast::GlobalVar($3));
                         $$ = $1;
                     }
                 |   error
@@ -2112,13 +2094,11 @@ nrnglobalist    :   NAME
 nrnptrlist      :   NAME
                     {
                         $$ = ast::PointerVarVector();
-                        auto var = new ast::PointerVar($1);
-                        $$.push_back(std::shared_ptr<ast::PointerVar>(var));
+                        $$.emplace_back(new ast::PointerVar($1));
                     }
                 |   nrnptrlist "," NAME
                     {
-                        auto var = new ast::PointerVar($3);
-                        $1.push_back(std::shared_ptr<ast::PointerVar>(var));
+                        $1.emplace_back(new ast::PointerVar($3));
                         $$ = $1;
                     }
                 |   error
@@ -2131,13 +2111,11 @@ nrnptrlist      :   NAME
 nrnbbptrlist    :   NAME
                     {
                         $$ = ast::BbcorePointerVarVector();
-                        auto var = new ast::BbcorePointerVar($1);
-                        $$.push_back(std::shared_ptr<ast::BbcorePointerVar>(var));
+                        $$.emplace_back(new ast::BbcorePointerVar($1));
                     }
                 |   nrnbbptrlist "," NAME
                     {
-                        auto var = new ast::BbcorePointerVar($3);
-                        $1.push_back(std::shared_ptr<ast::BbcorePointerVar>(var));
+                        $1.emplace_back(new ast::BbcorePointerVar($3));
                         $$ = $1;
                     }
                 |   error
@@ -2150,13 +2128,11 @@ nrnbbptrlist    :   NAME
 nrnextlist      :   NAME
                     {
                         $$ = ast::ExternVarVector();
-                        auto var = new ast::ExternVar($1);
-                        $$.push_back(std::shared_ptr<ast::ExternVar>(var));
+                        $$.emplace_back(new ast::ExternVar($1));
                     }
                 |   nrnextlist "," NAME
                     {
-                        auto var = new ast::ExternVar($3);
-                        $1.push_back(std::shared_ptr<ast::ExternVar>(var));
+                        $1.emplace_back(new ast::ExternVar($3));
                         $$ = $1;
                     }
                 |   error
@@ -2174,13 +2150,11 @@ opthsafelist    :                       { $$ = ast::ThreadsafeVarVector(); }
 threadsafelist  :   NAME
                     {
                         $$ = ast::ThreadsafeVarVector();
-                        auto var = new ast::ThreadsafeVar($1);
-                        $$.push_back(std::shared_ptr<ast::ThreadsafeVar>(var));
+                        $$.emplace_back(new ast::ThreadsafeVar($1));
                     }
                 |   threadsafelist "," NAME
                     {
-                        auto var = new ast::ThreadsafeVar($3);
-                        $1.push_back(std::shared_ptr<ast::ThreadsafeVar>(var));
+                        $1.emplace_back(new ast::ThreadsafeVar($3));
                         $$ = $1;
                     }
                 ;
