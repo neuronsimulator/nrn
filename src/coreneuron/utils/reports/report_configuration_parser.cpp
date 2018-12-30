@@ -36,8 +36,6 @@
 #include <vector>
 #include <string.h>
 
-#define MAX_LINE_LENGTH 4096
-
 namespace coreneuron {
 
 /*
@@ -63,7 +61,7 @@ std::vector<ReportConfiguration> create_report_configurations(const char* conf_f
     std::vector<ReportConfiguration> reports;
     int num_reports = 0;
     char report_on[MAX_REPORT_NAME_LEN] = "";
-    char raw_line[MAX_LINE_LENGTH] = "";
+    char raw_line[MAX_FILEPATH_LEN] = "";
     int is_soma;
     int* gids;
 
@@ -74,14 +72,14 @@ std::vector<ReportConfiguration> create_report_configurations(const char* conf_f
         abort();
     }
 
-    fgets(raw_line, MAX_LINE_LENGTH, fp);
+    fgets(raw_line, MAX_FILEPATH_LEN, fp);
     sscanf(raw_line, "%d\n", &num_reports);
     for (int i = 0; i < num_reports; i++) {
         reports.push_back(ReportConfiguration());
         ReportConfiguration& report = reports[reports.size() - 1];
         // mechansim id registered in coreneuron
         report.mech_id = -1;
-        fgets(raw_line, MAX_LINE_LENGTH, fp);
+        fgets(raw_line, MAX_FILEPATH_LEN, fp);
         sscanf(raw_line, "\n%s %s %s %s %s %s %d %lf %lf %lf %d\n", report.name, report.target_name,
                report.type_str, report_on, report.unit, report.format, &is_soma, &report.report_dt,
                &report.start, &report.stop, &report.num_gids);
@@ -108,7 +106,7 @@ std::vector<ReportConfiguration> create_report_configurations(const char* conf_f
             gids = (int*)calloc(report.num_gids, sizeof(int));
             fread(gids, sizeof(int), report.num_gids, fp);
             // extra new line
-            fgets(raw_line, MAX_LINE_LENGTH, fp);
+            fgets(raw_line, MAX_FILEPATH_LEN, fp);
             for (int i = 0; i < report.num_gids; i++) {
                 report.target.insert(gids[i]);
             }

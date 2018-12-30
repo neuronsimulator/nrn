@@ -64,14 +64,14 @@ class ReportEvent : public DiscreteEvent {
   private:
     double dt;
     double step;
-    char report_name[MAX_REPORT_NAME_LEN];
+    char report_path[MAX_FILEPATH_LEN];
     std::vector<int> gids_to_report;
     double tstart;
 
   public:
     ReportEvent(double dt, double tstart, VarsToReport& filtered_gids, const char* name)
         : dt(dt), tstart(tstart) {
-        strcpy(report_name, name);
+        strcpy(report_path, name);
         VarsToReport::iterator it;
         nrn_assert(filtered_gids.size());
         step = tstart / dt;
@@ -88,7 +88,7 @@ class ReportEvent : public DiscreteEvent {
 #pragma omp critical
         {
             // each thread needs to know its own step
-            records_nrec(step, gids_to_report.size(), &gids_to_report[0], report_name);
+            records_nrec(step, gids_to_report.size(), &gids_to_report[0], report_path);
             send(t + dt, nc, nt);
             step++;
         }
