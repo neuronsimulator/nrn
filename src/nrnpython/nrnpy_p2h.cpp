@@ -860,6 +860,7 @@ Object* py_alltoall(Object* o, int size) {
   }
   Object* ho = nrnpy_po2ho(pdest);
   --ho->refcount;
+  Py_XDECREF(pdest);
   return ho;
 #else
   return o;
