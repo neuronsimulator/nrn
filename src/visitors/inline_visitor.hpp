@@ -146,8 +146,7 @@ class InlineVisitor : public AstVisitor {
     bool can_replace_statement(const std::shared_ptr<ast::Statement>& statement);
 
     /// inline function/procedure into caller block
-    template <typename T>
-    bool inline_function_call(T* callee, ast::FunctionCall* node, ast::StatementBlock* caller);
+    bool inline_function_call(ast::Block* callee, ast::FunctionCall* node, ast::StatementBlock* caller);
 
     /// add assignement statements into given statement block to inline arguments
     void inline_arguments(ast::StatementBlock* inlined_block,
@@ -169,85 +168,5 @@ class InlineVisitor : public AstVisitor {
 
     virtual void visit_program(ast::Program* node) override;
 };
-
-/**
- * Inline function/procedure call
- * @tparam T
- * @param callee : ast node representing definition of function/procedure being called
- * @param node : function/procedure call node
- * @param caller : statement block containing function call
- */
-template <typename T>
-bool InlineVisitor::inline_function_call(T* callee,
-                                         ast::FunctionCall* node,
-                                         ast::StatementBlock* caller) {
-    std::string function_name = callee->name->get_name();
-
-    /// do nothing if we can't inline given procedure/function
-    if (!can_inline_block(callee->statementblock.get())) {
-        std::cerr << "Can not inline function call to " + function_name << std::endl;
-        return false;
-    }
-
-    /// make sure to rename conflicting local variable in caller block
-    /// because in case of procedure inlining they can conflict with
-    /// global variables used in procedure being inlined
-    LocalVarRenameVisitor v;
-    v.visit_statement_block(caller);
-
-    auto caller_arguments = node->get_arguments();
-    std::string new_varname = get_new_name(function_name, "in", inlined_variables);
-
-    /// check if caller statement could be replaced
-    bool to_replace = can_replace_statement(caller_statement);
-
-    /// need to add local variable for function calls or for procedure call if it is part of
-    /// expression (standalone procedure calls don't need return statement)
-    if (callee->is_function_block() || to_replace == false) {
-        /// create new variable which will be used for returning value from inlined block
-        auto name = new ast::Name(new ast::String(new_varname));
-        ModToken tok;
-        name->set_token(tok);
-
-        auto local_variables = get_local_variables(caller);
-        /// each block should already have local statement
-        if (local_variables == nullptr) {
-            throw std::logic_error("got local statement as nullptr");
-        }
-        local_variables->push_back(std::make_shared<ast::LocalVar>(name));
-    }
-
-    /// get a copy of function/procedure body
-    auto inlined_block = callee->statementblock->clone();
-
-    /// function definition has function name as return value. we have to rename
-    /// it with new variable name
-    RenameVisitor visitor(function_name, new_varname);
-    inlined_block->visit_children(&visitor);
-
-    /// \todo: have to re-run symtab visitor pass to update symbol table
-    inlined_block->set_symbol_table(nullptr);
-
-    /// each argument is added as new assignment statement
-    inline_arguments(inlined_block, callee->get_parameters(), caller_arguments);
-
-    /// to return value from procedure we have to add new variable
-    if (callee->is_procedure_block() && to_replace == false) {
-        add_return_variable(inlined_block, new_varname);
-    }
-
-    auto statement = new ast::ExpressionStatement(inlined_block);
-
-    if (to_replace) {
-        replaced_statements[caller_statement] = statement;
-    } else {
-        inlined_statements[caller_statement].push_back(
-            std::shared_ptr<ast::ExpressionStatement>(statement));
-    }
-
-    /// variable name which will replace the function call that we just inlined
-    replaced_fun_calls[node] = new_varname;
-    return true;
-}
 
 #endif  //

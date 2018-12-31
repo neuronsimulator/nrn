@@ -79,7 +79,8 @@ class LanguageParser:
 
         # if getter method required
         if 'getter' in properties:
-            args.getter_method = properties['getter']['name']
+            if 'name' in properties['getter']:
+                args.getter_method = properties['getter']['name']
             if 'override' in properties['getter']:
                 args.getter_override = properties['getter']['override']
 

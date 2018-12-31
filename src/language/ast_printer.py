@@ -1,6 +1,5 @@
 from printer import *
 from utils import *
-from node_info import ORDER_VAR_NAME
 
 class AstForwardDeclarationPrinter(DeclarationPrinter):
     """Prints all AST nodes forward declarations"""
@@ -121,16 +120,16 @@ class AstDeclarationPrinter(DeclarationPrinter):
                     self.write_line("virtual std::string get_name() override {")
                     self.write_line("    return {}->{}();".format(varname, method))
                     self.write_line("}")
-
-                # todo : return type should go into node : refactor when changing return types for all ast nodes
-                if child.getter_method:
-                    getter_method = child.getter_method
-                    getter_override = "override" if child.getter_override else ""
+                else:
+                    getter_method = child.getter_method if child.getter_method else "get_" + to_snake_case(varname)
+                    getter_override = " override" if child.getter_override else ""
                     return_type = child.return_typename
-                    self.write_line("{} {}() {}{{ return {}; }}".format(return_type, getter_method, getter_override, varname))
+                    if getter_method == "get_name":
+                        print "WARNING : skipping get_name method for node {} and member name of type {}".format(node.class_name, return_type)
+                    else :
+                        self.write_line("{} {}(){}{{ return {}; }}".format(return_type, getter_method, getter_override, varname))
 
-            if node.is_prime_node():
-                self.write_line("int get_order() {{ return {}->eval(); }}".format(ORDER_VAR_NAME))
+            self.write_line()
 
             # all member functions
             self.write_line("{}void visit_children (Visitor* v) override;".format(virtual))
@@ -161,10 +160,16 @@ class AstDeclarationPrinter(DeclarationPrinter):
                     self.write_line("void negate() override { value = !value; }")
                 else:
                     self.write_line("void negate() override { value = -value; }")
-                    self.write_line("double number_value() override { return value; }")
+                self.write_line("double to_double() override { return value; }")
 
             if node.is_name_node():
                 self.write_line("{}void set_name(std::string name){} {{ value->set(name); }}".format(virtual, override))
+
+            if node.is_number_node():
+                self.write_line('{}double to_double() {{ throw std::runtime_error("to_double not implemented"); }}'.format(virtual))
+
+            if node.is_base_block_node():
+                self.write_line('virtual ArgumentVector get_parameters() { throw std::runtime_error("get_parameters not implemented"); }')
 
             # if node is of enum type then return enum value
             if node.is_data_type_node():

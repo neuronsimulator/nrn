@@ -403,7 +403,7 @@ void CodegenHelperVisitor::find_table_variables() {
 
 
 void CodegenHelperVisitor::visit_suffix(Suffix* node) {
-    auto type = node->get_suffix_type()->get_name();
+    auto type = node->get_type()->get_name();
     if (type == point_process) {
         info.point_process = true;
     }
@@ -411,7 +411,7 @@ void CodegenHelperVisitor::visit_suffix(Suffix* node) {
         info.artificial_cell = true;
         info.point_process = true;
     }
-    info.mod_suffix = node->get_suffix_name()->get_name();
+    info.mod_suffix = node->get_name();
 }
 
 
@@ -476,7 +476,7 @@ void CodegenHelperVisitor::visit_function_block(ast::FunctionBlock* node) {
 
 
 void CodegenHelperVisitor::visit_function_call(FunctionCall* node) {
-    auto name = node->get_function_name()->get_name();
+    auto name = node->get_name();
     if (name == net_send_method) {
         info.net_send_used = true;
     }
@@ -488,7 +488,7 @@ void CodegenHelperVisitor::visit_function_call(FunctionCall* node) {
 
 void CodegenHelperVisitor::visit_conductance_hint(ConductanceHint* node) {
     auto ion = node->get_ion();
-    auto variable = node->get_variable();
+    auto variable = node->get_conductance();
     std::string ion_name;
     if (ion) {
         ion_name = ion->get_name();
@@ -500,7 +500,7 @@ void CodegenHelperVisitor::visit_conductance_hint(ConductanceHint* node) {
 void CodegenHelperVisitor::visit_solve_block(SolveBlock* node) {
     info.num_solve_blocks++;
     if (under_breakpoint_block) {
-        info.solve_block_name = node->get_solve_block()->get_name();
+        info.solve_block_name = node->get_block_name()->get_name();
         if (node->get_method()) {
             info.solve_method = node->get_method()->get_name();
             if (info.solve_method == derivimplicit_method) {

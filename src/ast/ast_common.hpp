@@ -82,7 +82,7 @@ namespace ast {
             throw std::logic_error("clone() not implemented");
         }
 
-        /* @todo: please revisit this. adding quickly for symtab */
+        /* @todo: revisit, adding quickly for symtab */
         virtual ModToken* get_token() { /*std::cout << "\n ERROR: get_token not implemented!";*/
             return nullptr;
         }
@@ -96,21 +96,12 @@ namespace ast {
         }
 
         virtual std::shared_ptr<StatementBlock> get_statement_block() {
-            throw std::runtime_error("get_statement_node not implemented");
-        }
-
-        virtual ArgumentVector get_parameters() {
-            throw std::runtime_error("get_parameters not implemented");
+            throw std::runtime_error("get_statement_block not implemented");
         }
 
         // implemented in Number sub classes
         virtual void negate() {
             throw  std::runtime_error("negate() not implemented");
-        }
-
-        // implemented in Number sub classes
-        virtual double number_value() {
-            throw std::runtime_error("number_value() not implemented");
         }
 
         // implemented in Identifier sub classes
