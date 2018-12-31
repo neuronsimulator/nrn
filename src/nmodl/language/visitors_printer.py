@@ -119,15 +119,15 @@ class JSONVisitorDefinitionPrinter(DefinitionPrinter):
             self.write_line(line, post_gutter=1)
 
             if node.has_children():
-                self.write_line("printer->push_block(node->get_type_name());")
+                self.write_line("printer->push_block(node->get_node_type_name());")
                 self.write_line("node->visit_children(this);")
 
                 if node.is_data_type_node():
                     if node.class_name == "Integer":
-                        self.write_line("if(!node->macroname) {", post_gutter=1)
-                        self.write_line("std::stringstream ss;")
-                        self.write_line("ss << node->eval();")
-                        self.write_line("printer->add_node(ss.str());", post_gutter=-1)
+                        self.write_line("if(!node->macroname) {")
+                        self.write_line("    std::stringstream ss;")
+                        self.write_line("    ss << node->eval();")
+                        self.write_line("    printer->add_node(ss.str());")
                         self.write_line("}")
                     else:
                         self.write_line("std::stringstream ss;")
@@ -260,6 +260,6 @@ class SymtabVisitorDefinitionPrinter(DefinitionPrinter):
                             self.write_line("add_model_symbol_with_property(node, %s);" % property_name)
                             self.write_line("setup_symbol_table_for_scoped_block(node, node->get_name());")
                         else:
-                            self.write_line("setup_symbol_table_for_scoped_block(node, node->get_type_name());")
+                            self.write_line("setup_symbol_table_for_scoped_block(node, node->get_node_type_name());")
 
                 self.write_line("}", pre_gutter=-1, newline=2)

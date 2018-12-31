@@ -433,7 +433,7 @@ void CodegenHelperVisitor::visit_initial_block(InitialBlock* node) {
 void CodegenHelperVisitor::visit_net_receive_block(NetReceiveBlock* node) {
     under_net_receive_block = true;
     info.net_receive_node = node;
-    info.num_net_receive_arguments = node->get_arguments().size();
+    info.num_net_receive_parameters = node->get_parameters().size();
     node->visit_children(this);
     under_net_receive_block = false;
 }

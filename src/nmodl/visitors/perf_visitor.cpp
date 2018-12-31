@@ -121,12 +121,12 @@ void PerfVisitor::measure_performance(AST* node) {
     auto symtab = node->get_symbol_table();
     if (symtab == nullptr) {
         throw std::runtime_error("Perfvisitor : symbol table not setup for " +
-                                 node->get_type_name());
+                                 node->get_node_type_name());
     }
 
     auto name = symtab->name();
     if (node->is_derivative_block()) {
-        name = node->get_type_name();
+        name = node->get_node_type_name();
     }
 
     if (printer) {
@@ -333,7 +333,7 @@ void PerfVisitor::visit_statement_block(StatementBlock* node) {
 
     if (current_symtab == nullptr) {
         throw std::runtime_error("Perfvisitor : symbol table not setup for " +
-                                 node->get_type_name());
+                                 node->get_node_type_name());
     }
 
     /// new block perf starts from zero

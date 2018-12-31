@@ -857,7 +857,7 @@
               - name:
                   type: Name
                   getname: true
-              - arguments:
+              - parameters:
                   type: Argument
                   vector: true
                   prefix: {value: "(", force: true}
@@ -873,13 +873,13 @@
               - name:
                   type: Name
                   getname: true
-              - arguments:
+              - parameters:
                   type: Argument
                   vector: true
                   prefix: {value: "(", force: true}
                   suffix: {value: ")", force: true}
                   separator: ", "
-                  getter: {name: get_arguments, override: true}
+                  getter: {name: get_parameters, override: true}
               - unit:
                   type: Unit
                   optional: true
@@ -894,13 +894,13 @@
               - name:
                   type: Name
                   getname: true
-              - arguments:
+              - parameters:
                   type: Argument
                   vector: true
                   prefix: {value: "(", force: true}
                   suffix: {value: ") ", force: true}
                   separator: ", "
-                  getter: {name: get_arguments, override: true}
+                  getter: {name: get_parameters, override: true}
               - unit:
                   type: Unit
                   optional: true
@@ -910,13 +910,13 @@
         - NetReceiveBlock:
             nmodl: "NET_RECEIVE "
             members:
-              - arguments:
+              - parameters:
                   type: Argument
                   vector: true
                   prefix: {value: "(", force: true}
                   suffix: {value: ") ", force: true}
                   separator: ", "
-                  getter: {name: get_arguments, override: true}
+                  getter: {name: get_parameters, override: true}
               - statementblock:
                   type: StatementBlock
                   getter: {name: get_statement_block, override: true}
@@ -969,7 +969,7 @@
         - ForNetcon:
             nmodl: "FOR_NETCONS "
             members:
-              - arguments:
+              - parameters:
                   type: Argument
                   vector: true
                   prefix: {value: "(", force: true}

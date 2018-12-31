@@ -71,8 +71,8 @@ namespace ast {
         /* all AST nodes provide visit children and accept methods */
         virtual void visit_children(Visitor* v) = 0;
         virtual void accept(Visitor* v) = 0;
-        virtual AstNodeType get_type() = 0;
-        virtual std::string get_type_name() = 0;
+        virtual AstNodeType get_node_type() = 0;
+        virtual std::string get_node_type_name() = 0;
 
         virtual std::string get_name() {
             throw std::logic_error("get_name() not implemented");
@@ -97,6 +97,10 @@ namespace ast {
 
         virtual std::shared_ptr<StatementBlock> get_statement_block() {
             throw std::runtime_error("get_statement_node not implemented");
+        }
+
+        virtual ArgumentVector get_parameters() {
+            throw std::runtime_error("get_parameters not implemented");
         }
 
         // implemented in Number sub classes

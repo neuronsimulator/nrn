@@ -615,17 +615,17 @@ void CodegenCVisitor::print_function_call(FunctionCall* node) {
         return;
     }
 
-    auto arguments = node->get_arguments();
+    auto parameters = node->get_parameters();
     printer->add_text("{}("_format(function_name));
 
     if (defined_method(name)) {
         printer->add_text(internal_method_arguments());
-        if (!arguments.empty()) {
+        if (!parameters.empty()) {
             printer->add_text(", ");
         }
     }
 
-    print_vector_elements(arguments, ", ");
+    print_vector_elements(parameters, ", ");
     printer->add_text(")");
 }
 
@@ -669,12 +669,12 @@ void CodegenCVisitor::rename_function_arguments() {
         stringutils::trim(arg);
         RenameVisitor v(arg, "arg_" + arg);
         for (const auto& function : info.functions) {
-            if (has_argument_of_name(function, arg)) {
+            if (has_parameter_of_name(function, arg)) {
                 function->accept(&v);
             }
         }
         for (const auto& function : info.procedures) {
-            if (has_argument_of_name(function, arg)) {
+            if (has_parameter_of_name(function, arg)) {
                 function->accept(&v);
             }
         }
@@ -1186,7 +1186,7 @@ void CodegenCVisitor::print_net_receive_arg_size_getter() {
     printer->add_newline(2);
     print_device_method_annotation();
     printer->add_line("static inline int num_net_receive_args() {");
-    printer->add_line("    return {};"_format(info.num_net_receive_arguments));
+    printer->add_line("    return {};"_format(info.num_net_receive_parameters));
     printer->add_line("}");
 }
 
@@ -1829,7 +1829,7 @@ void CodegenCVisitor::print_mechanism_register() {
     if (net_receive_buffering_required()) {
         printer->add_line("hoc_register_net_receive_buffering(net_buf_receive, mech_type);");
     }
-    if (info.num_net_receive_arguments != 0) {
+    if (info.num_net_receive_parameters != 0) {
         printer->add_line("pnt_receive[mech_type] = {};"_format(method_name("net_receive")));
         printer->add_line("pnt_receive_size[mech_type] = num_net_receive_args();");
         if (info.net_receive_initial_node != nullptr) {
@@ -2511,7 +2511,7 @@ void CodegenCVisitor::print_net_receive_common_code(Block* node) {
     printer->add_line("{0}* inst = ({0}*) ml->instance;"_format(instance_struct()));
 
     /// rename variables but need to see if they are actually used
-    auto arguments = info.net_receive_node->get_arguments();
+    auto arguments = info.net_receive_node->get_parameters();
     if (!arguments.empty()) {
         int i = 0;
         printer->add_newline();
@@ -2531,7 +2531,7 @@ void CodegenCVisitor::print_net_receive_common_code(Block* node) {
 
 
 void CodegenCVisitor::print_net_send_call(FunctionCall* node) {
-    auto arguments = node->get_arguments();
+    auto arguments = node->get_parameters();
     auto tqitem = get_variable_name("tqitem");
     std::string weight_index = "weight_index";
     std::string pnt = "pnt";
@@ -2568,7 +2568,7 @@ void CodegenCVisitor::print_net_move_call(FunctionCall* node) {
         abort();
     }
 
-    auto arguments = node->get_arguments();
+    auto arguments = node->get_parameters();
     auto tqitem = get_variable_name("tqitem");
     std::string weight_index = "-1";
     std::string pnt = "pnt";
@@ -2591,7 +2591,7 @@ void CodegenCVisitor::print_net_move_call(FunctionCall* node) {
 
 
 void CodegenCVisitor::print_net_event_call(FunctionCall* node) {
-    auto arguments = node->get_arguments();
+    auto arguments = node->get_parameters();
     if (info.artificial_cell) {
         printer->add_text("net_event(pnt, ");
         print_vector_elements(arguments, ", ");
@@ -2726,7 +2726,7 @@ void CodegenCVisitor::print_net_receive() {
     auto node = info.net_receive_node;
 
     /// rename arguments but need to see if they are actually used
-    auto arguments = node->get_arguments();
+    auto arguments = node->get_parameters();
     for (auto& argument : arguments) {
         auto name = argument->get_name();
         auto var_used = VarUsageVisitor().variable_used(node, name);

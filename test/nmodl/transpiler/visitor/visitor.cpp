@@ -1255,7 +1255,7 @@ std::vector<DUChain> run_defuse_visitor(const std::string& text, const std::stri
         DefUseAnalyzeVisitor v(ast->get_symbol_table());
 
         for (auto& block : ast->blocks) {
-            if (block->get_type() != ast::AstNodeType::NEURON_BLOCK) {
+            if (block->get_node_type() != ast::AstNodeType::NEURON_BLOCK) {
                 chains.push_back(v.analyze(block.get(), variable));
             }
         }

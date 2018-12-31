@@ -484,18 +484,18 @@ void CodegenBaseVisitor::print_vector_elements(const std::vector<T>& elements,
 
 
 /**
- * Check if function or procedure node has argument with given name
+ * Check if function or procedure node has parameter with given name
  *
  * @tparam T Node type (either procedure or function)
  * @param node AST node (either procedure or function)
- * @param name Name of argument
+ * @param name Name of parameter
  * @return True if argument with name exist
  */
 template <typename T>
-bool has_argument_of_name(const T& node, std::string name) {
-    auto arguments = node->get_arguments();
-    for (const auto& argument : arguments) {
-        if (argument->get_name() == name) {
+bool has_parameter_of_name(const T &node, std::string name) {
+    auto parameters = node->get_parameters();
+    for (const auto& parameter : parameters) {
+        if (parameter->get_name() == name) {
             return true;
         }
     }

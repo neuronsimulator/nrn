@@ -88,11 +88,8 @@ class AstDeclarationPrinter(DeclarationPrinter):
             if node.children:
                 members = [ child.get_typename() + " " + child.varname for child in node.children]
                 self.write_line("")
-                self.write_line("/* constructors */")
                 self.write_line("{}({});".format(node.class_name, (", ".join(members))))
                 self.write_line("{0}(const {0}& obj);".format(node.class_name))
-
-            self.write_line("")
 
             # program node holds statements and blocks and we instantiate it in driver
             # also other nodes which we use as value type, parsor needs to return them
@@ -106,7 +103,9 @@ class AstDeclarationPrinter(DeclarationPrinter):
 
             # Todo : We need virtual destructor otherwise there will be memory leaks.
             #        But we need define which are virtual base classes that needs virtual function.
-            self.write_line("virtual ~{}() {{}}".format(node.class_name), newline=2)
+            self.write_line("virtual ~{}() {{}}".format(node.class_name))
+
+            self.write_line("")
 
             for child in node.children:
                 class_name = child.class_name
@@ -133,18 +132,18 @@ class AstDeclarationPrinter(DeclarationPrinter):
             if node.is_prime_node():
                 self.write_line("int get_order() {{ return {}->eval(); }}".format(ORDER_VAR_NAME))
 
-            # add method to return typename
-            self.write_line('virtual std::string get_type_name() override {{ return "{}"; }}'.format(node.class_name))
-
             # all member functions
             self.write_line("{}void visit_children (Visitor* v) override;".format(virtual))
             self.write_line("{}void accept(Visitor* v) override {{ v->visit_{}(this); }}".format(virtual, to_snake_case(node.class_name)))
+            self.write_line("{0}{1}* clone() override {{ return new {1}(*this); }}".format(virtual, node.class_name))
+
+            self.write_line()
 
             # TODO: type should declared as enum class
             typename = to_snake_case(node.class_name).upper()
-            self.write_line("{}AstNodeType get_type() override {{ return AstNodeType::{}; }}".format(virtual, typename))
+            self.write_line("{}AstNodeType get_node_type() override {{ return AstNodeType::{}; }}".format(virtual, typename))
+            self.write_line('{}std::string get_node_type_name() override {{ return "{}"; }}'.format(virtual, node.class_name))
             self.write_line("bool is_{} () override {{ return true; }}".format(to_snake_case(node.class_name)))
-            self.write_line("{0}{1}* clone() override {{ return new {1}(*this); }}".format(virtual, node.class_name))
 
             if node.has_token:
                 self.write_line("{}ModToken* get_token(){} {{ return token.get(); }}".format(virtual, override))
@@ -166,11 +165,6 @@ class AstDeclarationPrinter(DeclarationPrinter):
 
             if node.is_name_node():
                 self.write_line("{}void set_name(std::string name){} {{ value->set(name); }}".format(virtual, override))
-
-            if node.is_base_block_node():
-                self.write_line("virtual ArgumentVector& get_arguments() {")
-                self.write_line('    throw std::runtime_error("get_arguments not implemented");')
-                self.write_line("}", newline=2)
 
             # if node is of enum type then return enum value
             if node.is_data_type_node():

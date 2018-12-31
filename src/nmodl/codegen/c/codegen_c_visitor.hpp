@@ -614,7 +614,7 @@ void CodegenCVisitor::print_function_declaration(T& node, std::string name) {
 
     /// internal and user provided arguments
     auto internal_params = internal_method_parameters();
-    auto params = node->get_arguments();
+    auto params = node->get_parameters();
 
     /// procedures have "int" return type by default
     std::string return_type = "int";

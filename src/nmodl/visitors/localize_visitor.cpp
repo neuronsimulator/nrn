@@ -8,7 +8,7 @@ using namespace symtab;
 using namespace syminfo;
 
 bool LocalizeVisitor::node_for_def_use_analysis(ast::Node* node) {
-    auto type = node->get_type();
+    auto type = node->get_node_type();
 
     /**
      * Blocks where we should compute def-use chains. We are excluding

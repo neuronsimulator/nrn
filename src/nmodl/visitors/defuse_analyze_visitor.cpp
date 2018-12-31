@@ -299,7 +299,7 @@ DUChain DefUseAnalyzeVisitor::analyze(ast::Node* node, const std::string& name) 
     unsupported_node = false;
 
     /// new chain
-    DUChain usage(node->get_type_name());
+    DUChain usage(node->get_node_type_name());
     current_chain = &usage.chain;
 
     /// analyze given node

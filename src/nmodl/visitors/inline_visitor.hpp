@@ -151,7 +151,7 @@ class InlineVisitor : public AstVisitor {
 
     /// add assignement statements into given statement block to inline arguments
     void inline_arguments(ast::StatementBlock* inlined_block,
-                          const ast::ArgumentVector& callee_arguments,
+                          const ast::ArgumentVector& callee_parameters,
                           const ast::ExpressionVector& caller_expressions);
 
     /// add assignment statement at end of block (to use as a return statement
@@ -195,7 +195,7 @@ bool InlineVisitor::inline_function_call(T* callee,
     LocalVarRenameVisitor v;
     v.visit_statement_block(caller);
 
-    auto& caller_arguments = node->arguments;
+    auto caller_arguments = node->get_arguments();
     std::string new_varname = get_new_name(function_name, "in", inlined_variables);
 
     /// check if caller statement could be replaced
@@ -229,7 +229,7 @@ bool InlineVisitor::inline_function_call(T* callee,
     inlined_block->set_symbol_table(nullptr);
 
     /// each argument is added as new assignment statement
-    inline_arguments(inlined_block, callee->arguments, caller_arguments);
+    inline_arguments(inlined_block, callee->get_parameters(), caller_arguments);
 
     /// to return value from procedure we have to add new variable
     if (callee->is_procedure_block() && to_replace == false) {
