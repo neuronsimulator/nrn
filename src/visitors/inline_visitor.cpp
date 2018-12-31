@@ -61,7 +61,7 @@ bool InlineVisitor::can_replace_statement(const std::shared_ptr<Statement>& stat
 }
 
 void InlineVisitor::inline_arguments(StatementBlock* inlined_block,
-                                     const ArgumentVector& callee_arguments,
+                                     const ArgumentVector& callee_parameters,
                                      const ExpressionVector& caller_expressions) {
     /// nothing to inline if no arguments for function call
     if (caller_expressions.empty()) {
@@ -72,7 +72,7 @@ void InlineVisitor::inline_arguments(StatementBlock* inlined_block,
 
     size_t counter = 0;
 
-    for (const auto& argument : callee_arguments) {
+    for (const auto& argument : callee_parameters) {
         auto name = argument->name->clone();
         auto old_name = name->get_name();
         auto new_name = get_new_name(old_name, "in", inlined_variables);

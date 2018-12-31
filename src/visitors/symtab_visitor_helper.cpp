@@ -184,12 +184,12 @@ void SymtabVisitor::setup_symbol_table(AST* node, const std::string& name, bool 
 void SymtabVisitor::setup_symbol_table_for_program_block(Program* node) {
     modsymtab = node->get_model_symbol_table();
     modsymtab->set_mode(update);
-    setup_symbol_table(node, node->get_type_name(), true);
+    setup_symbol_table(node, node->get_node_type_name(), true);
 }
 
 
 void SymtabVisitor::setup_symbol_table_for_global_block(Node* node) {
-    setup_symbol_table(node, node->get_type_name(), true);
+    setup_symbol_table(node, node->get_node_type_name(), true);
 }
 
 

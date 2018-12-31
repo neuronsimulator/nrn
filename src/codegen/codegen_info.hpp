@@ -239,7 +239,7 @@ namespace codegen {
         ast::NetReceiveBlock* net_receive_node = nullptr;
 
         /// number of arguments to net_receive block
-        int num_net_receive_arguments = 0;
+        int num_net_receive_parameters = 0;
 
         /// initial block within net receive block
         ast::InitialBlock* net_receive_initial_node = nullptr;

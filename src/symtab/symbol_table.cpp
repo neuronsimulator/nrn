@@ -44,7 +44,7 @@ namespace symtab {
 
 
     std::string SymbolTable::type() const {
-        return node->get_type_name();
+        return node->get_node_type_name();
     }
 
     bool SymbolTable::is_method_defined(const std::string& name) const {
@@ -202,7 +202,7 @@ namespace symtab {
         auto properties = to_string(second->get_properties());
         std::string type = "UNKNOWN";
         if (node != nullptr) {
-            type = node->get_type_name();
+            type = node->get_node_type_name();
         }
 
         if (redefinition) {

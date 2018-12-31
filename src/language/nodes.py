@@ -179,7 +179,7 @@ class ChildNode(BaseNode):
 
         if self.is_vector:
             type_name += "Vector"
-        elif self.class_name not in BASE_TYPES and self.class_name not in PTR_EXCLUDE_TYPES:
+        elif not self.is_base_type_node() and not self.is_ptr_excluded_node():
             type_name += "*"
 
         return type_name
@@ -195,7 +195,7 @@ class ChildNode(BaseNode):
 
         if self.is_vector:
             type_name += "Vector"
-        elif self.class_name not in BASE_TYPES and self.class_name not in PTR_EXCLUDE_TYPES:
+        elif not self.is_base_type_node() and not self.is_ptr_excluded_node():
             type_name = "std::shared_ptr<" + type_name + ">"
 
         return type_name
@@ -207,8 +207,9 @@ class ChildNode(BaseNode):
         todo: Check how to refactor this
         """
         type_name = "std::shared_ptr<" + self.class_name + ">"
+
         if self.is_vector:
-            type_name = self.class_name + "Vector&"
+            type_name = self.class_name + "Vector"
         elif self.is_ptr_excluded_node() or self.is_base_type_node():
             type_name =  self.class_name
 

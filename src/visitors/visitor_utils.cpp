@@ -20,7 +20,7 @@ std::string get_new_name(const std::string& name,
 
 LocalVarVector* get_local_variables(const StatementBlock* node) {
     for (const auto& statement : node->statements) {
-        if (statement->get_type() == AstNodeType::LOCAL_LIST_STATEMENT) {
+        if (statement->is_local_list_statement()) {
             auto local_statement = std::static_pointer_cast<LocalListStatement>(statement);
             return &(local_statement->variables);
         }
