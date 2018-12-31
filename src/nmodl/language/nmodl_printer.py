@@ -72,7 +72,7 @@ class NmodlVisitorDefinitionPrinter(DefinitionPrinter):
             # but for integer node we have to check if it is represented as macro
             if node.is_data_type_node():
                 if node.is_integer_node():
-                    self.write_line("if(node->macroname == nullptr) {")
+                    self.write_line("if(node->get_macro_name() == nullptr) {")
                     self.write_line("    printer->add_element(std::to_string(node->eval()));")
                     self.write_line("}")
                 else:

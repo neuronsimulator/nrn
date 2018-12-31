@@ -594,7 +594,7 @@ void CodegenCVisitor::visit_watch_statement(ast::WatchStatement* node) {
 
 
 void CodegenCVisitor::print_function_call(FunctionCall* node) {
-    auto name = node->get_function_name()->get_name();
+    auto name = node->get_name();
     auto function_name = name;
     if (defined_method(name)) {
         function_name = method_name(name);
@@ -615,17 +615,17 @@ void CodegenCVisitor::print_function_call(FunctionCall* node) {
         return;
     }
 
-    auto parameters = node->get_parameters();
+    auto arguments = node->get_arguments();
     printer->add_text("{}("_format(function_name));
 
     if (defined_method(name)) {
         printer->add_text(internal_method_arguments());
-        if (!parameters.empty()) {
+        if (!arguments.empty()) {
             printer->add_text(", ");
         }
     }
 
-    print_vector_elements(parameters, ", ");
+    print_vector_elements(arguments, ", ");
     printer->add_text(")");
 }
 
@@ -2511,12 +2511,12 @@ void CodegenCVisitor::print_net_receive_common_code(Block* node) {
     printer->add_line("{0}* inst = ({0}*) ml->instance;"_format(instance_struct()));
 
     /// rename variables but need to see if they are actually used
-    auto arguments = info.net_receive_node->get_parameters();
-    if (!arguments.empty()) {
+    auto parameters = info.net_receive_node->get_parameters();
+    if (!parameters.empty()) {
         int i = 0;
         printer->add_newline();
-        for (auto& argument : arguments) {
-            auto name = argument->get_name();
+        for (auto& parameter : parameters) {
+            auto name = parameter->get_name();
             VarUsageVisitor vu;
             auto var_used = vu.variable_used(node, "(*" + name + ")");
             if (var_used) {
@@ -2531,7 +2531,7 @@ void CodegenCVisitor::print_net_receive_common_code(Block* node) {
 
 
 void CodegenCVisitor::print_net_send_call(FunctionCall* node) {
-    auto arguments = node->get_parameters();
+    auto arguments = node->get_arguments();
     auto tqitem = get_variable_name("tqitem");
     std::string weight_index = "weight_index";
     std::string pnt = "pnt";
@@ -2568,7 +2568,7 @@ void CodegenCVisitor::print_net_move_call(FunctionCall* node) {
         abort();
     }
 
-    auto arguments = node->get_parameters();
+    auto arguments = node->get_arguments();
     auto tqitem = get_variable_name("tqitem");
     std::string weight_index = "-1";
     std::string pnt = "pnt";
@@ -2591,7 +2591,7 @@ void CodegenCVisitor::print_net_move_call(FunctionCall* node) {
 
 
 void CodegenCVisitor::print_net_event_call(FunctionCall* node) {
-    auto arguments = node->get_parameters();
+    auto arguments = node->get_arguments();
     if (info.artificial_cell) {
         printer->add_text("net_event(pnt, ");
         print_vector_elements(arguments, ", ");
@@ -2726,9 +2726,9 @@ void CodegenCVisitor::print_net_receive() {
     auto node = info.net_receive_node;
 
     /// rename arguments but need to see if they are actually used
-    auto arguments = node->get_parameters();
-    for (auto& argument : arguments) {
-        auto name = argument->get_name();
+    auto parameters = node->get_parameters();
+    for (auto& parameter : parameters) {
+        auto name = parameter->get_name();
         auto var_used = VarUsageVisitor().variable_used(node, name);
         if (var_used) {
             RenameVisitor vr(name, "(*" + name + ")");

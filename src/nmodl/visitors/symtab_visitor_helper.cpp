@@ -46,7 +46,7 @@ void SymtabVisitor::setup_symbol(Node* node, NmodlTypeFlag property) {
         auto prime = dynamic_cast<PrimeName*>(node);
         symbol = modsymtab->lookup(name);
         if (symbol) {
-            symbol->set_order(prime->get_order());
+            symbol->set_order(prime->get_order()->eval());
             symbol->add_property(property);
             return;
         }
@@ -71,7 +71,7 @@ void SymtabVisitor::setup_symbol(Node* node, NmodlTypeFlag property) {
     if (node->is_param_assign()) {
         auto parameter = dynamic_cast<ParamAssign*>(node);
         if (parameter->value) {
-            symbol->set_value(parameter->value->number_value());
+            symbol->set_value(parameter->get_value()->to_double());
         }
         if (parameter->name->is_indexed_name()) {
             auto name = dynamic_cast<IndexedName*>(parameter->name.get());
@@ -91,7 +91,7 @@ void SymtabVisitor::setup_symbol(Node* node, NmodlTypeFlag property) {
     if (node->is_constant_var()) {
         auto constant = dynamic_cast<ConstantVar*>(node);
         if (constant->value) {
-            symbol->set_value(constant->value->number_value());
+            symbol->set_value(constant->get_value()->to_double());
         }
     }
 
@@ -152,7 +152,7 @@ void SymtabVisitor::setup_symbol_table(AST* node, const std::string& name, bool 
     /// there is only one solve statement allowed in mod file
     if (node->is_solve_block()) {
         auto solve_block = dynamic_cast<SolveBlock*>(node);
-        block_to_solve = solve_block->name->get_name();
+        block_to_solve = solve_block->get_block_name()->get_name();
     }
 
     /// not required at the moment but every node

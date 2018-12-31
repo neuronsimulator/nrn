@@ -139,7 +139,7 @@ void CodegenBaseVisitor::visit_if_statement(IfStatement* node) {
     printer->add_text("if (");
     node->condition->accept(this);
     printer->add_text(") ");
-    node->statementblock->accept(this);
+    node->get_statement_block()->accept(this);
     print_vector_elements(node->elseifs, "");
     if (node->elses) {
         node->elses->accept(this);
@@ -154,7 +154,7 @@ void CodegenBaseVisitor::visit_else_if_statement(ElseIfStatement* node) {
     printer->add_text(" else if (");
     node->condition->accept(this);
     printer->add_text(") ");
-    node->statementblock->accept(this);
+    node->get_statement_block()->accept(this);
 }
 
 
@@ -170,18 +170,18 @@ void CodegenBaseVisitor::visit_while_statement(WhileStatement* node) {
     printer->add_text("while (");
     node->condition->accept(this);
     printer->add_text(") ");
-    node->statementblock->accept(this);
+    node->get_statement_block()->accept(this);
 }
 
 void CodegenBaseVisitor::visit_from_statement(ast::FromStatement* node) {
     if (!codegen) {
         return;
     }
-    auto name = node->get_from_name()->get_name();
-    auto from = node->get_from_expression();
-    auto to = node->get_to_expression();
-    auto inc = node->get_inc_expression();
-    auto block = node->get_block();
+    auto name = node->get_name();
+    auto from = node->get_from();
+    auto to = node->get_to();
+    auto inc = node->get_opinc();
+    auto block = node->get_statement_block();
     printer->add_text("for(int {}="_format(name));
     from->accept(this);
     printer->add_text("; {}<="_format(name));

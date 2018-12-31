@@ -50,7 +50,7 @@ TEST_CASE("Lexer symbol type tests", "[TokenPrinter]") {
             symbol_type("h'' = ", value);
             ss << *(value->get_token());
             REQUIRE(ss.str() == "            h'' at [1.1-3] type 362");
-            REQUIRE(value->get_order() == 2);
+            REQUIRE(value->get_order()->eval() == 2);
             delete value;
         }
     }

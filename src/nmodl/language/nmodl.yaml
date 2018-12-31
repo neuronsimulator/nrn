@@ -605,11 +605,9 @@
             members:
               - value:
                   type: int
-                  getter: {name: get_value}
-              - macroname:
+              - macro_name:
                   type: Name
                   optional: true
-                  getter: {name: get_macro_name}
         - Float:
             members:
               - value:
@@ -628,7 +626,6 @@
               - value:
                   type: String
                   getname: true
-                  getter: {name: get_value}
         - PrimeName:
             members:
               - value:
@@ -659,7 +656,6 @@
                   type: Expression
                   prefix: {value: "["}
                   suffix: {value: "]"}
-                  getter: {name: get_length}
         - Argument:
             members:
               - name:
@@ -770,27 +766,26 @@
         - InitialBlock:
             nmodl: "INITIAL "
             members:
-              - statementblock:
+              - statement_block:
                   type: StatementBlock
-                  getter: {name: get_statement_block, override: true}
+                  getter: {override: true}
         - ConstructorBlock:
             nmodl: "CONSTRUCTOR "
             members:
-              - statementblock:
+              - statement_block:
                   type: StatementBlock
-                  getter: {name: get_statement_block, override: true}
+                  getter: {override: true}
         - DestructorBlock:
             nmodl: "DESTRUCTOR "
             members:
-              - statementblock:
+              - statement_block:
                   type: StatementBlock
-                  getter: {name: get_statement_block, override: true}
+                  getter: {override: true}
         - StatementBlock:
             members:
               - statements:
                   type: Statement
                   vector: true
-                  getter: {name: get_statements}
         - DerivativeBlock:
             nmodl: "DERIVATIVE "
             members:
@@ -798,9 +793,9 @@
                   type: Name
                   getname: true
                   suffix: {value: " "}
-              - statementblock:
+              - statement_block:
                   type: StatementBlock
-                  getter: {name: get_statement_block, override: true}
+                  getter: {override: true}
         - LinearBlock:
             nmodl: "LINEAR "
             members:
@@ -813,9 +808,9 @@
                   vector: true
                   separator: ","
                   prefix: {value: " SOLVEFOR "}
-              - statementblock:
+              - statement_block:
                   type: StatementBlock
-                  getter: {name: get_statement_block, override: true}
+                  getter: {override: true}
         - NonLinearBlock:
             nmodl: "NONLINEAR "
             members:
@@ -828,9 +823,9 @@
                   separator: ","
                   prefix: {value: " SOLVEFOR "}
                   suffix: {value: " ", force: true}
-              - statementblock:
+              - statement_block:
                   type: StatementBlock
-                  getter: {name: get_statement_block, override: true}
+                  getter: {override: true}
         - DiscreteBlock:
             nmodl: "DISCRETE "
             members:
@@ -838,9 +833,9 @@
                   type: Name
                   getname: true
                   suffix: {value: " "}
-              - statementblock:
+              - statement_block:
                   type: StatementBlock
-                  getter: {name: get_statement_block, override: true}
+                  getter: {override: true}
         - PartialBlock:
             nmodl: "PARTIAL "
             members:
@@ -848,9 +843,9 @@
                   type: Name
                   getname: true
                   suffix: {value: " "}
-              - statementblock:
+              - statement_block:
                   type: StatementBlock
-                  getter: {name: get_statement_block, override: true}
+                  getter: {override: true}
         - FunctionTableBlock:
             nmodl: "FUNCTION_TABLE "
             members:
@@ -863,6 +858,7 @@
                   prefix: {value: "(", force: true}
                   suffix: {value: ")", force: true}
                   separator: ", "
+                  getter: {override: true}
               - unit:
                   type: Unit
                   optional: true
@@ -879,15 +875,15 @@
                   prefix: {value: "(", force: true}
                   suffix: {value: ")", force: true}
                   separator: ", "
-                  getter: {name: get_parameters, override: true}
+                  getter: {override: true}
               - unit:
                   type: Unit
                   optional: true
                   prefix: {value: " "}
                   suffix: {value: " ", force: true}
-              - statementblock:
+              - statement_block:
                   type: StatementBlock
-                  getter: {name: get_statement_block, override: true}
+                  getter: {override: true}
         - ProcedureBlock:
             nmodl: "PROCEDURE "
             members:
@@ -900,13 +896,13 @@
                   prefix: {value: "(", force: true}
                   suffix: {value: ") ", force: true}
                   separator: ", "
-                  getter: {name: get_parameters, override: true}
+                  getter: {override: true}
               - unit:
                   type: Unit
                   optional: true
-              - statementblock:
+              - statement_block:
                   type: StatementBlock
-                  getter: {name: get_statement_block, override: true}
+                  getter: {override: true}
         - NetReceiveBlock:
             nmodl: "NET_RECEIVE "
             members:
@@ -916,22 +912,20 @@
                   prefix: {value: "(", force: true}
                   suffix: {value: ") ", force: true}
                   separator: ", "
-                  getter: {name: get_parameters, override: true}
-              - statementblock:
+                  getter: {override: true}
+              - statement_block:
                   type: StatementBlock
-                  getter: {name: get_statement_block, override: true}
+                  getter: {override: true}
         - SolveBlock:
             nmodl: SOLVE
             members:
-              - name:
+              - block_name:
                   type: Name
                   prefix: {value: " "}
-                  getter: {name: get_solve_block}
               - method:
                   type: Name
                   optional: true
                   prefix: {value: " METHOD "}
-                  getter: {name: get_method}
               - ifsolerr:
                   type: StatementBlock
                   optional: true
@@ -939,15 +933,15 @@
         - BreakpointBlock:
             nmodl: "BREAKPOINT "
             members:
-              - statementblock:
+              - statement_block:
                   type: StatementBlock
-                  getter: {name: get_statement_block, override: true}
+                  getter: {override: true}
         - TerminalBlock:
             nmodl: "TERMINAL "
             members:
-              - statementblock:
+              - statement_block:
                   type: StatementBlock
-                  getter: {name: get_statement_block, override: true}
+                  getter: {override: true}
         - BeforeBlock:
             nmodl: "BEFORE "
             members:
@@ -963,9 +957,9 @@
               - type:
                   type: BABlockType
                   suffix: {value: " "}
-              - statementblock:
+              - statement_block:
                   type: StatementBlock
-                  getter: {name: get_statement_block, override: true}
+                  getter: {override: true}
         - ForNetcon:
             nmodl: "FOR_NETCONS "
             members:
@@ -975,9 +969,10 @@
                   prefix: {value: "(", force: true}
                   suffix: {value: ") ", force: true}
                   separator: ", "
-              - statementblock:
+                  getter: {override: true}
+              - statement_block:
                   type: StatementBlock
-                  getter: {name: get_statement_block, override: true}
+                  getter: {override: true}
         - KineticBlock:
             nmodl: "KINETIC "
             members:
@@ -989,9 +984,9 @@
                   type: Name
                   vector: true
                   separator: ","
-              - statementblock:
+              - statement_block:
                   type: StatementBlock
-                  getter: {name: get_statement_block, override: true}
+                  getter: {override: true}
         - MatchBlock:
             nmodl: MATCH
             members:
@@ -1016,8 +1011,9 @@
         - NeuronBlock:
             nmodl: "NEURON "
             members:
-              - statementblock:
+              - statement_block:
                   type: StatementBlock
+                  getter: {override: true}
       - Unit:
           members:
             - name:
@@ -1103,13 +1099,10 @@
           members:
             - lhs:
                 type: Expression
-                getter: {name: get_lhs}
             - op:
                 type: BinaryOperator
-                getter: {name: get_op}
             - rhs:
                 type: Expression
-                getter: {name: get_rhs}
       - UnaryExpression:
           members:
             - op:
@@ -1136,14 +1129,13 @@
           members:
             - name:
                 type: Name
-                getter: {name: get_function_name}
+                getname: true
             - arguments:
                 type: Expression
                 vector: true
                 separator: ", "
                 prefix: {value: "(", force: true}
                 suffix: {value: ")", force: true}
-                getter: {name: get_arguments}
       - FirstLastTypeIndex:
           members:
             - value:
@@ -1305,7 +1297,6 @@
                 optional: true
                 prefix: {value: "["}
                 suffix: {value: "]"}
-                getter: {name: get_length}
             - from:
                 type: Number
                 prefix: {value: " FROM "}
@@ -1342,17 +1333,14 @@
           members:
             - conductance:
                 type: Name
-                getter: {name: get_variable}
             - ion:
                 type: Name
                 optional: true
                 prefix: {value: " USEION "}
-                getter: {name: get_ion}
       - ExpressionStatement:
           members:
             - expression:
                 type: Expression
-                getter: {name: get_expression}
       - ProtectStatement:
           nmodl: "PROTECT "
           members:
@@ -1363,32 +1351,30 @@
           members:
             - name:
                 type: Name
-                getter: {name: get_from_name}
+                getname: True
             - from:
                 type: Expression
                 prefix: {value: " = "}
-                getter: {name: get_from_expression}
             - to:
                 type: Expression
                 prefix: {value: " TO "}
-                getter: {name: get_to_expression}
             - opinc:
                 type: Expression
                 prefix: {value: " BY "}
                 suffix: {value: " ", force: true}
                 optional: true
-                getter: {name: get_inc_expression}
-            - statementblock:
+            - statement_block:
                 type: StatementBlock
-                getter: {name: get_block}
+                getter: {override: true}
       - ForAllStatement:
           nmodl: "FORALL "
           members:
             - name:
                 type: Name
                 suffix: {value: " "}
-            - statementblock:
+            - statement_block:
                 type: StatementBlock
+                getter: {override: true}
       - WhileStatement:
           nmodl: "WHILE "
           members:
@@ -1396,8 +1382,9 @@
                 type: Expression
                 prefix: {value: "("}
                 suffix: {value: ") "}
-            - statementblock:
+            - statement_block:
                 type: StatementBlock
+                getter: {override: true}
       - IfStatement:
           nmodl: "IF "
           members:
@@ -1405,8 +1392,9 @@
                 type: Expression
                 prefix: {value: "("}
                 suffix: {value: ") "}
-            - statementblock:
+            - statement_block:
                 type: StatementBlock
+                getter: {override: true}
             - elseifs:
                 type: ElseIfStatement
                 vector: true
@@ -1420,13 +1408,15 @@
                 type: Expression
                 prefix: {value: "("}
                 suffix: {value: ") "}
-            - statementblock:
+            - statement_block:
                 type: StatementBlock
+                getter: {override: true}
       - ElseStatement:
           nmodl: " ELSE "
           members:
-            - statementblock:
+            - statement_block:
                 type: StatementBlock
+                getter: {override: true}
       - PartialEquation:
           members:
             - prime:
@@ -1601,10 +1591,9 @@
             - type:
                 type: Name
                 suffix: {value: " "}
-                getter: {name: get_suffix_type}
             - name:
                 type: Name
-                getter: {name: get_suffix_name}
+                getname: True
       - Useion:
           nmodl: "USEION "
           members:
@@ -1691,9 +1680,8 @@
       - Verbatim:
           nmodl: VERBATIM
           members:
-            - statements:
+            - statement:
                 type: String
-                getter: {name: get_statement}
                 suffix: {value: "ENDVERBATIM"}
       - Comment:
           members:
@@ -1712,4 +1700,3 @@
         type: Node
         vector: true
         add: true
-        getter: {name: get_blocks}

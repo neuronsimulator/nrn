@@ -124,7 +124,7 @@ class JSONVisitorDefinitionPrinter(DefinitionPrinter):
 
                 if node.is_data_type_node():
                     if node.class_name == "Integer":
-                        self.write_line("if(!node->macroname) {")
+                        self.write_line("if(!node->get_macro_name()) {")
                         self.write_line("    std::stringstream ss;")
                         self.write_line("    ss << node->eval();")
                         self.write_line("    printer->add_node(ss.str());")
