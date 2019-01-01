@@ -74,7 +74,7 @@ void InlineVisitor::inline_arguments(StatementBlock* inlined_block,
 
     for (const auto& argument : callee_parameters) {
         auto name = argument->name->clone();
-        auto old_name = name->get_name();
+        auto old_name = name->get_node_name();
         auto new_name = get_new_name(old_name, "in", inlined_variables);
         name->set_name(new_name);
 
@@ -106,7 +106,7 @@ void InlineVisitor::inline_arguments(StatementBlock* inlined_block,
 bool InlineVisitor::inline_function_call(ast::Block* callee,
                                          ast::FunctionCall* node,
                                          ast::StatementBlock* caller) {
-    std::string function_name = callee->get_name();
+    std::string function_name = callee->get_node_name();
 
     /// do nothing if we can't inline given procedure/function
     if (!can_inline_block(callee->get_statement_block().get())) {
@@ -180,7 +180,7 @@ void InlineVisitor::visit_function_call(FunctionCall* node) {
     /// argument can be function call itself
     node->visit_children(this);
 
-    std::string function_name = node->name->get_name();
+    std::string function_name = node->name->get_node_name();
     auto symbol = program_symtab->lookup_in_scope(function_name);
 
     /// nothing to do if called function is not defined or it's external

@@ -62,7 +62,7 @@
 #         value  : indicates the value (i.e. string here) of prefix/suffix itself
 #         force  : print value always even if member if null pointer itself (e.g. arguments)
 # 8.  separator : for the vector data type, the separator for prinitng elements
-# 9.  getname : add getName() method to class and return corresponding value as name
+# 9.  node_name : add get_node_name() method to class and return corresponding value as name
 # 10. add : need to have addMemberType method for corresponding variable (todo : remove this)
 # 11. order of the members is important and determines how constructors/nmodl visitor get
 #     defined from python code generators.
@@ -102,19 +102,19 @@
             members:
               - value:
                   type: String
-                  getname: true
+                  node_name: true
         - PrimeName:
             members:
               - value:
                   type: String
-                  getname: true
+                  node_name: true
               - order:
                   type: Integer
         - VarName:
             members:
               - name:
                   type: Identifier
-                  getname: true
+                  node_name: true
               - at_index:
                   type: Integer
                   optional: true
@@ -128,7 +128,7 @@
             members:
               - name:
                   type: Identifier
-                  getname: true
+                  node_name: true
               - length:
                   type: Expression
                   prefix: {value: "["}
@@ -137,7 +137,7 @@
             members:
               - name:
                   type: Identifier
-                  getname: true
+                  node_name: true
               - unit:
                   type: Unit
                   optional: true
@@ -149,62 +149,62 @@
                   prefix: {value: " "}
               - name:
                   type: VarName
-                  getname: true
+                  node_name: true
         - ReadIonVar:
             members:
               - name:
                   type: Name
-                  getname: true
+                  node_name: true
         - WriteIonVar:
             members:
               - name:
                   type: Name
-                  getname: true
+                  node_name: true
         - NonspeCurVar:
             members:
               - name:
                   type: Name
-                  getname: true
+                  node_name: true
         - ElectrodeCurVar:
             members:
               - name:
                   type: Name
-                  getname: true
+                  node_name: true
         - SectionVar:
             members:
               - name:
                   type: Name
-                  getname: true
+                  node_name: true
         - RangeVar:
             members:
               - name:
                   type: Name
-                  getname: true
+                  node_name: true
         - GlobalVar:
             members:
               - name:
                   type: Name
-                  getname: true
+                  node_name: true
         - PointerVar:
             members:
               - name:
                   type: Name
-                  getname: true
+                  node_name: true
         - BbcorePointerVar:
             members:
               - name:
                   type: Name
-                  getname: true
+                  node_name: true
         - ExternVar:
             members:
               - name:
                   type: Name
-                  getname: true
+                  node_name: true
         - ThreadsafeVar:
             members:
               - name:
                   type: Name
-                  getname: true
+                  node_name: true
       - Block:
         - ParamBlock:
             nmodl: "PARAMETER "
@@ -268,7 +268,7 @@
             members:
               - name:
                   type: Name
-                  getname: true
+                  node_name: true
                   suffix: {value: " "}
               - statement_block:
                   type: StatementBlock
@@ -278,7 +278,7 @@
             members:
               - name:
                   type: Name
-                  getname: true
+                  node_name: true
                   suffix: {value: " "}
               - solvefor:
                   type: Name
@@ -293,7 +293,7 @@
             members:
               - name:
                   type: Name
-                  getname: true
+                  node_name: true
               - solvefor:
                   type: Name
                   vector: true
@@ -308,7 +308,7 @@
             members:
               - name:
                   type: Name
-                  getname: true
+                  node_name: true
                   suffix: {value: " "}
               - statement_block:
                   type: StatementBlock
@@ -318,7 +318,7 @@
             members:
               - name:
                   type: Name
-                  getname: true
+                  node_name: true
                   suffix: {value: " "}
               - statement_block:
                   type: StatementBlock
@@ -328,7 +328,7 @@
             members:
               - name:
                   type: Name
-                  getname: true
+                  node_name: true
               - parameters:
                   type: Argument
                   vector: true
@@ -345,7 +345,7 @@
             members:
               - name:
                   type: Name
-                  getname: true
+                  node_name: true
               - parameters:
                   type: Argument
                   vector: true
@@ -366,7 +366,7 @@
             members:
               - name:
                   type: Name
-                  getname: true
+                  node_name: true
               - parameters:
                   type: Argument
                   vector: true
@@ -455,7 +455,7 @@
             members:
               - name:
                   type: Name
-                  getname: true
+                  node_name: true
                   suffix: {value: " "}
               - solvefor:
                   type: Name
@@ -495,7 +495,7 @@
           members:
             - name:
                 type: String
-                getname: true
+                node_name: true
                 prefix: {value: "("}
                 suffix: {value: ")"}
       - DoubleUnit:
@@ -509,7 +509,7 @@
           members:
             - name:
                 type: Identifier
-                getname: true
+                node_name: true
       - Limits:
           members:
             - min:
@@ -542,7 +542,7 @@
           members:
             - name:
                 type: Name
-                getname: true
+                node_name: true
             - value:
                 type: Number
                 prefix: {value: " = "}
@@ -606,7 +606,7 @@
           members:
             - name:
                 type: Name
-                getname: true
+                node_name: true
             - arguments:
                 type: Expression
                 vector: true
@@ -645,7 +645,7 @@
           members:
             - unit1:
                 type: Unit
-                getname: true
+                node_name: true
             - unit2:
                 type: Unit
                 prefix: {value: " = "}
@@ -653,7 +653,7 @@
           members:
             - name:
                 type: Name
-                getname: true
+                node_name: true
                 suffix: {value: " ="}
             - value:
                 type: Double
@@ -713,7 +713,7 @@
           members:
             - name:
                 type: Identifier
-                getname: true
+                node_name: true
             - value:
                 type: Number
                 optional: true
@@ -768,7 +768,7 @@
           members:
             - name:
                 type: Identifier
-                getname: true
+                node_name: true
             - length:
                 type: Integer
                 optional: true
@@ -828,7 +828,7 @@
           members:
             - name:
                 type: Name
-                getname: True
+                node_name: true
             - from:
                 type: Expression
                 prefix: {value: " = "}
@@ -1070,13 +1070,13 @@
                 suffix: {value: " "}
             - name:
                 type: Name
-                getname: True
+                node_name: true
       - Useion:
           nmodl: "USEION "
           members:
             - name:
                 type: Name
-                getname: true
+                node_name: true
             - readlist:
                 type: ReadIonVar
                 vector: true

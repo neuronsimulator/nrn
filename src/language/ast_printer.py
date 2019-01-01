@@ -18,8 +18,10 @@ class AstForwardDeclarationPrinter(DeclarationPrinter):
         self.write_line()
         self.write_line("/* Type for every ast node */")
         self.write_line("enum class AstNodeType {", post_gutter=1)
+
         for node in sorted(self.nodes):
             self.write_line("{},".format(to_snake_case(node.class_name).upper()))
+
         self.write_line("};", pre_gutter=-1, newline=2)
 
         self.write_line("/* std::vector for convenience */")
@@ -70,7 +72,8 @@ class AstDeclarationPrinter(DeclarationPrinter):
         for node in self.nodes:
 
             self.write_line("class {} : public {} {{".format(node.class_name, node.base_class), post_gutter=1)
-            self.write_line("public:", post_gutter=1, newline=1)
+
+            self.write_line("public:", post_gutter=1)
 
             for child in node.children:
                 self.write_line("{} {};".format(child.member_typename, child.varname))
@@ -114,20 +117,22 @@ class AstDeclarationPrinter(DeclarationPrinter):
                     self.write_line("    {}.emplace_back(s);".format(varname))
                     self.write_line("}")
 
-                if child.getname_method:
+                if child.get_node_name:
                     # string node should be evaluated and hence eval() method
-                    method = "eval" if child.is_string_node() else "get_name"
-                    self.write_line("virtual std::string get_name() override {")
+                    method = "eval" if child.is_string_node() else "get_node_name"
+                    self.write_line("virtual std::string get_node_name() override {")
                     self.write_line("    return {}->{}();".format(varname, method))
                     self.write_line("}")
-                else:
-                    getter_method = child.getter_method if child.getter_method else "get_" + to_snake_case(varname)
-                    getter_override = " override" if child.getter_override else ""
-                    return_type = child.return_typename
-                    if getter_method == "get_name":
-                        print "WARNING : skipping get_name method for node {} and member name of type {}".format(node.class_name, return_type)
-                    else :
-                        self.write_line("{} {}(){}{{ return {}; }}".format(return_type, getter_method, getter_override, varname))
+
+                getter_method = child.getter_method if child.getter_method else "get_" + to_snake_case(varname)
+                getter_override = " override" if child.getter_override else ""
+                return_type = child.return_typename
+                self.write_line("{} {}(){}{{ return {}; }}".format(return_type, getter_method, getter_override, varname))
+
+                setter_method = "set_" + to_snake_case(varname)
+                setter_type = child.member_typename
+                reference = "" if child.is_base_type_node() else "&&"
+                self.write_line("void {0}({1}{2} {3}) {{ this->{3} = {3}; }}".format(setter_method, setter_type, reference, varname))
 
             self.write_line()
 

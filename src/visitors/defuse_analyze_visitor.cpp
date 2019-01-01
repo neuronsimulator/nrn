@@ -171,7 +171,7 @@ void DefUseAnalyzeVisitor::visit_unsupported_node(Node* node) {
  *  unsupported.
  */
 void DefUseAnalyzeVisitor::visit_function_call(FunctionCall* node) {
-    std::string function_name = node->name->get_name();
+    std::string function_name = node->name->get_node_name();
     auto symbol = global_symtab->lookup_in_scope(function_name);
     if (symbol == nullptr || symbol->is_external_symbol_only()) {
         node->visit_children(this);

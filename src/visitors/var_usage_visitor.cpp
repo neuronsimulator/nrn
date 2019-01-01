@@ -4,7 +4,7 @@
 
 /// rename matching variable
 void VarUsageVisitor::visit_name(ast::Name* node) {
-    std::string name = node->get_name();
+    std::string name = node->get_node_name();
     if (name == var_name) {
         used = true;
     }

@@ -409,7 +409,7 @@
 
 top             :   all
                     {
-                        driver.astRoot = std::shared_ptr<ast::Program>($1);
+                        driver.astRoot.reset($1);
                     }
                 |   error
                     {
@@ -497,7 +497,7 @@ model           :   MODEL LINE_PART
 define1         :   DEFINE1 NAME INTEGER
                     {
                         $$ = new ast::Define($2, $3);
-                        driver.add_defined_var($2->get_name(), $3->eval());
+                        driver.add_defined_var($2->get_node_name(), $3->eval());
                     }
                 |   DEFINE1 error
                     {
@@ -686,7 +686,7 @@ indepbody       :   {
                 |   indepbody SWEEP indepdef
                     {
                         $1.emplace_back($3);
-                        $3->sweep = std::shared_ptr<ast::Boolean>(new ast::Boolean(1));
+                        $3->set_sweep(std::make_shared<ast::Boolean>(1));
                         $$ = $1;
                     }
                 ;

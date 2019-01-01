@@ -15,7 +15,7 @@ class Argument:
         self.is_vector = False
         self.is_optional = False
         self.add_method = False
-        self.getname_method = False
+        self.get_node_name = False
         self.has_token = False
         self.getter_method = False
         self.getter_override = False

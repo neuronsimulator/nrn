@@ -74,8 +74,8 @@ namespace ast {
         virtual AstNodeType get_node_type() = 0;
         virtual std::string get_node_type_name() = 0;
 
-        virtual std::string get_name() {
-            throw std::logic_error("get_name() not implemented");
+        virtual std::string get_node_name() {
+            throw std::logic_error("get_node_name() not implemented");
         }
 
         virtual AST* clone() {

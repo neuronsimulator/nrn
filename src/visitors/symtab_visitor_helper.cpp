@@ -18,7 +18,7 @@ static std::shared_ptr<Symbol> create_symbol_for_node(Node* node,
     }
 
     /// add new symbol
-    auto symbol = std::make_shared<Symbol>(node->get_name(), node, token);
+    auto symbol = std::make_shared<Symbol>(node->get_node_name(), node, token);
     symbol->add_property(property);
 
     // non specific variable is range
@@ -38,7 +38,7 @@ static std::shared_ptr<Symbol> create_symbol_for_node(Node* node,
 /// for the ast nodes which are of variable types
 void SymtabVisitor::setup_symbol(Node* node, NmodlTypeFlag property) {
     std::shared_ptr<Symbol> symbol;
-    auto name = node->get_name();
+    auto name = node->get_node_name();
 
     /// if prime variable is already exist in symbol table
     /// then just update the order
@@ -112,7 +112,7 @@ void SymtabVisitor::setup_symbol(Node* node, NmodlTypeFlag property) {
 
 void SymtabVisitor::add_model_symbol_with_property(Node* node, NmodlTypeFlag property) {
     auto token = node->get_token();
-    auto name = node->get_name();
+    auto name = node->get_node_name();
     auto symbol = std::make_shared<Symbol>(name, node, *token);
     symbol->add_property(property);
 
@@ -152,7 +152,7 @@ void SymtabVisitor::setup_symbol_table(AST* node, const std::string& name, bool 
     /// there is only one solve statement allowed in mod file
     if (node->is_solve_block()) {
         auto solve_block = dynamic_cast<SolveBlock*>(node);
-        block_to_solve = solve_block->get_block_name()->get_name();
+        block_to_solve = solve_block->get_block_name()->get_node_name();
     }
 
     /// not required at the moment but every node
@@ -206,7 +206,7 @@ void SymtabVisitor::setup_symbol_table_for_scoped_block(Node* node, const std::s
 void SymtabVisitor::visit_table_statement(ast::TableStatement* node) {
     auto update_symbol = [this](NameVector& variables, NmodlType property, int num_values) {
         for (auto& var : variables) {
-            auto name = var->get_name();
+            auto name = var->get_node_name();
             auto symbol = modsymtab->lookup(name);
             if (symbol) {
                 symbol->add_property(property);

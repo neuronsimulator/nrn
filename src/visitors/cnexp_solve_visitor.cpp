@@ -58,11 +58,11 @@ void CnexpSolveVisitor::visit_binary_expression(BinaryExpression* node) {
                 std::cerr << "cnexp solver not possible";
             }
         } else if (solve_method == derivimplicit_method || solve_method == euler_method) {
-            auto varname = "D" + name->get_name();
+            auto varname = "D" + name->get_node_name();
             auto variable = new ast::Name(new ast::String(varname));
             lhs.reset(variable);
             auto symbol = std::make_shared<symtab::Symbol>(varname, ModToken());
-            symbol->set_original_name(name->get_name());
+            symbol->set_original_name(name->get_node_name());
             symbol->created_from_state();
             program_symtab->insert(symbol);
         } else {
