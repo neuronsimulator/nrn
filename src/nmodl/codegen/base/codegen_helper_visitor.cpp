@@ -403,7 +403,7 @@ void CodegenHelperVisitor::find_table_variables() {
 
 
 void CodegenHelperVisitor::visit_suffix(Suffix* node) {
-    auto type = node->get_type()->get_name();
+    auto type = node->get_type()->get_node_name();
     if (type == point_process) {
         info.point_process = true;
     }
@@ -411,7 +411,7 @@ void CodegenHelperVisitor::visit_suffix(Suffix* node) {
         info.artificial_cell = true;
         info.point_process = true;
     }
-    info.mod_suffix = node->get_name();
+    info.mod_suffix = node->get_node_name();
 }
 
 
@@ -476,7 +476,7 @@ void CodegenHelperVisitor::visit_function_block(ast::FunctionBlock* node) {
 
 
 void CodegenHelperVisitor::visit_function_call(FunctionCall* node) {
-    auto name = node->get_name();
+    auto name = node->get_node_name();
     if (name == net_send_method) {
         info.net_send_used = true;
     }
@@ -491,18 +491,18 @@ void CodegenHelperVisitor::visit_conductance_hint(ConductanceHint* node) {
     auto variable = node->get_conductance();
     std::string ion_name;
     if (ion) {
-        ion_name = ion->get_name();
+        ion_name = ion->get_node_name();
     }
-    info.conductances.push_back({ion_name, variable->get_name()});
+    info.conductances.push_back({ion_name, variable->get_node_name()});
 }
 
 
 void CodegenHelperVisitor::visit_solve_block(SolveBlock* node) {
     info.num_solve_blocks++;
     if (under_breakpoint_block) {
-        info.solve_block_name = node->get_block_name()->get_name();
+        info.solve_block_name = node->get_block_name()->get_node_name();
         if (node->get_method()) {
-            info.solve_method = node->get_method()->get_name();
+            info.solve_method = node->get_method()->get_node_name();
             if (info.solve_method == derivimplicit_method) {
                 info.derivimplicit_used = true;
             } else if (info.solve_method == euler_method) {
@@ -536,7 +536,7 @@ void CodegenHelperVisitor::visit_statement_block(ast::StatementBlock* node) {
         statement->accept(this);
         if (under_derivative_block && assign_lhs &&
             (assign_lhs->is_name() || assign_lhs->is_var_name())) {
-            auto name = assign_lhs->get_name();
+            auto name = assign_lhs->get_node_name();
             auto symbol = psymtab->lookup(name);
             if (symbol != nullptr) {
                 auto is_prime = symbol->has_properties(NmodlType::prime_name);

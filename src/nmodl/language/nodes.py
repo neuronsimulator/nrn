@@ -121,7 +121,7 @@ class ChildNode(BaseNode):
         self.is_vector = args.is_vector
         self.optional = args.is_optional
         self.add_method = args.add_method
-        self.getname_method = args.getname_method
+        self.get_node_name = args.get_node_name
         self.getter_method = args.getter_method
         self.getter_override = args.getter_override
 

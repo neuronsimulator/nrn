@@ -258,7 +258,7 @@ class SymtabVisitorDefinitionPrinter(DefinitionPrinter):
                         """this is for nodes which has parent class as Block node"""
                         if node.is_symbol_block_node():
                             self.write_line("add_model_symbol_with_property(node, %s);" % property_name)
-                            self.write_line("setup_symbol_table_for_scoped_block(node, node->get_name());")
+                            self.write_line("setup_symbol_table_for_scoped_block(node, node->get_node_name());")
                         else:
                             self.write_line("setup_symbol_table_for_scoped_block(node, node->get_node_type_name());")
 

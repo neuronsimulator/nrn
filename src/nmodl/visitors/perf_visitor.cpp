@@ -154,7 +154,7 @@ void PerfVisitor::visit_function_call(FunctionCall* node) {
     under_function_call = true;
 
     if (start_measurement) {
-        auto name = node->name->get_name();
+        auto name = node->name->get_node_name();
         if (name == "exp") {
             current_block_perf.n_exp++;
         } else if (name == "log") {
@@ -178,13 +178,13 @@ void PerfVisitor::visit_function_call(FunctionCall* node) {
 
 /// every variable used is of type name, update counters
 void PerfVisitor::visit_name(Name* node) {
-    update_memory_ops(node->get_name());
+    update_memory_ops(node->get_node_name());
     node->visit_children(this);
 }
 
 /// prime name derived from identifier and hence need to be handled here
 void PerfVisitor::visit_prime_name(PrimeName* node) {
-    update_memory_ops(node->get_name());
+    update_memory_ops(node->get_node_name());
     node->visit_children(this);
 }
 

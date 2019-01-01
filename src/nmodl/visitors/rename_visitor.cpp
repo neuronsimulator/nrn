@@ -5,7 +5,7 @@ using namespace ast;
 
 /// rename matching variable
 void RenameVisitor::visit_name(Name* node) {
-    std::string name = node->get_name();
+    std::string name = node->get_node_name();
     if (name == var_name) {
         node->value->set(new_var_name);
     }

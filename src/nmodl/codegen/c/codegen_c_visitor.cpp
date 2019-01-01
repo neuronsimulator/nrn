@@ -594,7 +594,7 @@ void CodegenCVisitor::visit_watch_statement(ast::WatchStatement* node) {
 
 
 void CodegenCVisitor::print_function_call(FunctionCall* node) {
-    auto name = node->get_name();
+    auto name = node->get_node_name();
     auto function_name = name;
     if (defined_method(name)) {
         function_name = method_name(name);
@@ -689,12 +689,12 @@ void CodegenCVisitor::print_function_prototypes() {
     codegen = true;
     printer->add_newline(2);
     for (const auto& node : info.functions) {
-        print_function_declaration(node, node->get_name());
+        print_function_declaration(node, node->get_node_name());
         printer->add_text(";");
         printer->add_newline();
     }
     for (const auto& node : info.procedures) {
-        print_function_declaration(node, node->get_name());
+        print_function_declaration(node, node->get_node_name());
         printer->add_text(";");
         printer->add_newline();
     }
@@ -709,7 +709,7 @@ static TableStatement* get_table_statement(ast::Block* node) {
     auto nstatements = table_statements.size();
     if (nstatements != 1) {
         auto message =
-            "One table statement expected in {} found {}"_format(node->get_name(), nstatements);
+            "One table statement expected in {} found {}"_format(node->get_node_name(), nstatements);
         throw std::runtime_error(message);
     }
     return table_statements.front();
@@ -717,7 +717,7 @@ static TableStatement* get_table_statement(ast::Block* node) {
 
 
 void CodegenCVisitor::print_table_check_function(ast::Block* node) {
-    auto name = node->get_name();
+    auto name = node->get_node_name();
     auto internal_params = internal_method_parameters();
     auto statement = get_table_statement(node);
     auto table_variables = statement->table_vars;
@@ -740,11 +740,11 @@ void CodegenCVisitor::print_table_check_function(ast::Block* node) {
 
         printer->add_line("static bool make_table = true;");
         for (auto& variable : depend_variables) {
-            printer->add_line("static {} save_{};"_format(float_type, variable->get_name()));
+            printer->add_line("static {} save_{};"_format(float_type, variable->get_node_name()));
         }
 
         for (auto& variable : depend_variables) {
-            auto name = variable->get_name();
+            auto name = variable->get_node_name();
             auto instance_name = get_variable_name(name);
             printer->add_line("if (save_{} != {}) {}"_format(name, instance_name, "{"));
             printer->add_line("    make_table = true;");
@@ -778,7 +778,7 @@ void CodegenCVisitor::print_table_check_function(ast::Block* node) {
             auto function = method_name("f_" + name);
             printer->add_line("    {}({}, x);"_format(function, internal_method_arguments()));
             for (auto& variable : table_variables) {
-                auto name = variable->get_name();
+                auto name = variable->get_node_name();
                 auto instance_name = get_variable_name(name);
                 auto table_name = get_variable_name("t_" + name);
                 printer->add_line("    {}[i] = {};"_format(table_name, instance_name));
@@ -786,7 +786,7 @@ void CodegenCVisitor::print_table_check_function(ast::Block* node) {
             printer->add_line("}");
 
             for (auto& variable : depend_variables) {
-                auto name = variable->get_name();
+                auto name = variable->get_node_name();
                 auto instance_name = get_variable_name(name);
                 printer->add_line("save_{} = {};"_format(name, instance_name));
             }
@@ -798,7 +798,7 @@ void CodegenCVisitor::print_table_check_function(ast::Block* node) {
 }
 
 void CodegenCVisitor::print_table_replacement_function(ast::Block* node) {
-    auto name = node->get_name();
+    auto name = node->get_node_name();
     auto statement = get_table_statement(node);
     auto table_variables = statement->table_vars;
     auto with = statement->with->eval();
@@ -820,7 +820,7 @@ void CodegenCVisitor::print_table_replacement_function(ast::Block* node) {
         printer->add_line("double xi = {} * (arg_v - {});"_format(mfac_name, tmin_name));
         printer->add_line("if (isnan(xi)) {");
         for (auto& var : table_variables) {
-            auto name = get_variable_name(var->get_name());
+            auto name = get_variable_name(var->get_node_name());
             printer->add_line("    {} = xi;"_format(name));
         }
         printer->add_line("    return 0;");
@@ -829,7 +829,7 @@ void CodegenCVisitor::print_table_replacement_function(ast::Block* node) {
         printer->add_line("if (xi <= 0.0 || xi >= {}) {}"_format(with, "{"));
         printer->add_line("    int index = (xi <= 0.0) ? 0 : {};"_format(with));
         for (auto& variable : table_variables) {
-            auto name = variable->get_name();
+            auto name = variable->get_node_name();
             auto instance_name = get_variable_name(name);
             auto table_name = get_variable_name("t_" + name);
             printer->add_line("    {} = {}[index];"_format(instance_name, table_name));
@@ -840,8 +840,8 @@ void CodegenCVisitor::print_table_replacement_function(ast::Block* node) {
         printer->add_line("int i = int(xi);");
         printer->add_line("double theta = xi - double(i);");
         for (auto& var : table_variables) {
-            auto instance_name = get_variable_name(var->get_name());
-            auto table_name = get_variable_name("t_" + var->get_name());
+            auto instance_name = get_variable_name(var->get_node_name());
+            auto table_name = get_variable_name("t_" + var->get_node_name());
             printer->add_line(
                 "{0} = {1}[i] + theta*({1}[i+1]-{1}[i]);"_format(instance_name, table_name));
         }
@@ -870,7 +870,7 @@ void CodegenCVisitor::print_check_table_thread_function() {
     printer->add_line("    IonCurVar ionvar = {0};");
 
     for (auto& function : info.functions_with_table) {
-        auto name = method_name("check_" + function->get_name());
+        auto name = method_name("check_" + function->get_node_name());
         auto arguments = internal_method_arguments();
         printer->add_line("    {}({});"_format(name, arguments));
     }
@@ -905,7 +905,7 @@ void CodegenCVisitor::print_function_or_procedure(ast::Block* node, std::string&
 
 void CodegenCVisitor::print_procedure(ast::ProcedureBlock* node) {
     codegen = true;
-    auto name = node->get_name();
+    auto name = node->get_node_name();
 
     if (info.function_uses_table(name)) {
         auto new_name = "f_" + name;
@@ -922,7 +922,7 @@ void CodegenCVisitor::print_procedure(ast::ProcedureBlock* node) {
 
 void CodegenCVisitor::print_function(ast::FunctionBlock* node) {
     codegen = true;
-    auto name = node->get_name();
+    auto name = node->get_node_name();
     auto return_var = "ret_" + name;
 
     /// first rename return variable name
@@ -1606,7 +1606,7 @@ void CodegenCVisitor::print_mechanism_global_structure() {
         global_variables.push_back(make_symbol("usetable"));
 
         for (auto& block : info.functions_with_table) {
-            auto name = block->get_name();
+            auto name = block->get_node_name();
             printer->add_line("{} tmin_{};"_format(float_type, name));
             printer->add_line("{} mfac_{};"_format(float_type, name));
             global_variables.push_back(make_symbol("tmin_" + name));
@@ -2516,7 +2516,7 @@ void CodegenCVisitor::print_net_receive_common_code(Block* node) {
         int i = 0;
         printer->add_newline();
         for (auto& parameter : parameters) {
-            auto name = parameter->get_name();
+            auto name = parameter->get_node_name();
             VarUsageVisitor vu;
             auto var_used = vu.variable_used(node, "(*" + name + ")");
             if (var_used) {
@@ -2728,7 +2728,7 @@ void CodegenCVisitor::print_net_receive() {
     /// rename arguments but need to see if they are actually used
     auto parameters = node->get_parameters();
     for (auto& parameter : parameters) {
-        auto name = parameter->get_name();
+        auto name = parameter->get_node_name();
         auto var_used = VarUsageVisitor().variable_used(node, name);
         if (var_used) {
             RenameVisitor vr(name, "(*" + name + ")");
@@ -2803,7 +2803,7 @@ void CodegenCVisitor::print_derivative_kernel_for_euler() {
 
     printer->add_newline(2);
     printer->add_line("/* _euler_ state _{} */"_format(info.mod_suffix));
-    printer->start_block("int {}_{}({})"_format(node->get_name(), info.mod_suffix, arguments));
+    printer->start_block("int {}_{}({})"_format(node->get_node_name(), info.mod_suffix, arguments));
     printer->add_line(instance);
     print_statement_block(node->get_statement_block().get(), false, false);
     printer->add_line("return 0;");
@@ -2836,7 +2836,7 @@ void CodegenCVisitor::print_derivative_kernel_for_derivimplicit() {
 
     printer->add_newline(2);
     // clang-format off
-    printer->start_block("int {}_{}({})"_format(node->get_name(), suffix, ext_params));
+    printer->start_block("int {}_{}({})"_format(node->get_node_name(), suffix, ext_params));
     auto instance = "{0}* inst = ({0}*)get_memb_list(nt)->instance;"_format(instance_struct());
     auto slist1 = "int* slist{} = {};"_format(list_num, get_variable_name("slist{}"_format(list_num)));
     auto slist2 = "int* slist{} = {};"_format(list_num+1, get_variable_name("slist{}"_format(list_num+1)));
@@ -2859,7 +2859,7 @@ void CodegenCVisitor::print_derivative_kernel_for_derivimplicit() {
     printer->add_newline();
 
     printer->add_newline(2);
-    printer->start_block("int newton_{}_{}({}) "_format(node->get_name(), info.mod_suffix, external_method_parameters()));
+    printer->start_block("int newton_{}_{}({}) "_format(node->get_node_name(), info.mod_suffix, external_method_parameters()));
     printer->add_line(instance);
     printer->add_line("double* savstate{} = (double*) thread[dith{}()].pval;"_format(list_num, list_num));
     printer->add_line(slist1);

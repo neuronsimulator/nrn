@@ -73,9 +73,9 @@ class LanguageParser:
         if 'vector' in properties:
             args.is_vector = properties['vector']
 
-        # if getNmae method required
-        if 'getname' in properties:
-            args.getname_method = properties['getname']
+        # if get_node_name method required
+        if 'node_name' in properties:
+            args.get_node_name = properties['node_name']
 
         # if getter method required
         if 'getter' in properties:

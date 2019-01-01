@@ -47,7 +47,7 @@ bool LocalizeVisitor::node_for_def_use_analysis(ast::Node* node) {
  */
 bool LocalizeVisitor::is_solve_procedure(ast::Node* node) {
     if (node->is_procedure_block()) {
-        auto symbol = program_symtab->lookup(node->get_name());
+        auto symbol = program_symtab->lookup(node->get_node_name());
         if (symbol && symbol->has_properties(NmodlType::to_solve)) {
             return true;
         }

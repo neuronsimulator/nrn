@@ -177,7 +177,7 @@ void CodegenBaseVisitor::visit_from_statement(ast::FromStatement* node) {
     if (!codegen) {
         return;
     }
-    auto name = node->get_name();
+    auto name = node->get_node_name();
     auto from = node->get_from();
     auto to = node->get_to();
     auto inc = node->get_opinc();

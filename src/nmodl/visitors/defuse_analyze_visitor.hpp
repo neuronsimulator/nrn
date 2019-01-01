@@ -230,11 +230,11 @@ class DefUseAnalyzeVisitor : public AstVisitor {
     }
 
     virtual void visit_var_name(ast::VarName* node) override {
-        update_defuse_chain(node->get_name());
+        update_defuse_chain(node->get_node_name());
     };
 
     virtual void visit_name(ast::Name* node) override {
-        update_defuse_chain(node->get_name());
+        update_defuse_chain(node->get_node_name());
     };
 
 

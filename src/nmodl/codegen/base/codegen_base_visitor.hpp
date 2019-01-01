@@ -495,7 +495,7 @@ template <typename T>
 bool has_parameter_of_name(const T &node, std::string name) {
     auto parameters = node->get_parameters();
     for (const auto& parameter : parameters) {
-        if (parameter->get_name() == name) {
+        if (parameter->get_node_name() == name) {
             return true;
         }
     }

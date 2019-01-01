@@ -59,7 +59,7 @@ bool CodegenInfo::is_current(const std::string& name) {
 
 bool CodegenInfo::function_uses_table(std::string& name) const {
     for (auto& function : functions_with_table) {
-        if (name == function->get_name()) {
+        if (name == function->get_node_name()) {
             return true;
         }
     }
