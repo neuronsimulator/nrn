@@ -29,27 +29,6 @@ class BaseNode:
         """ return type name for the node """
         return DATA_TYPES[self.class_name]
 
-    def get_typename(self):
-        """returns type of the node for declaration
-
-        When node is of base type then it is returned as it is. Depending
-        on pointer or list, appropriate suffix is added. Some of the examples
-        of typename are Expression, ExpressionList, Expression* etc.
-
-        This is different than child node because childs are typically
-        class members and need to be
-        """
-
-        type_name = self.class_name
-
-        if self.class_name not in BASE_TYPES and self.class_name not in PTR_EXCLUDE_TYPES:
-            type_name += "*"
-
-        return type_name
-
-    def is_expression_node(self):
-        return True if self.class_name == EXPRESSION_NODE else False
-
     def is_statement_block_node(self):
         return True if self.class_name == STATEMENT_BLOCK_NODE else False
 
@@ -78,27 +57,6 @@ class BaseNode:
         :return: True or False
         """
         return True if self.class_name in BLOCK_TYPES else False
-
-    def is_reaction_statement_node(self):
-        return True if self.class_name == REACTION_STATEMENT_NODE else False
-
-    def is_conserve_node(self):
-        return True if self.class_name == CONSERVE_NODE else False
-
-    def is_binary_expression_node(self):
-        return True if self.class_name == BINARY_EXPRESSION_NODE else False
-
-    def is_unary_expression_node(self):
-        return True if self.class_name == UNARY_EXPRESSION_NODE else False
-
-    def is_verbatim_node(self):
-        return True if self.class_name == VERBATIM_NODE else False
-
-    def is_comment_node(self):
-        return True if self.class_name == COMMENT_NODE else False
-
-    def is_independentdef_node(self):
-        return True if self.class_name == INDEPENDENTDEF_NODE else False
 
     def is_unit_block(self):
         return True if self.class_name == UNIT_BLOCK else False
