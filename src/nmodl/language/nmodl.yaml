@@ -263,6 +263,7 @@
               - statements:
                   type: Statement
                   vector: true
+                  public: true
         - DerivativeBlock:
             nmodl: "DERIVATIVE "
             members:
@@ -576,10 +577,13 @@
           members:
             - lhs:
                 type: Expression
+                public: true
             - op:
                 type: BinaryOperator
+                public: true
             - rhs:
                 type: Expression
+                public: true
       - UnaryExpression:
           members:
             - op:
@@ -691,6 +695,7 @@
                 type: LocalVar
                 vector: true
                 separator: ", "
+                public: true
       - Model:
           nmodl: TITLE
           members:
@@ -1177,3 +1182,4 @@
         type: Node
         vector: true
         add: true
+        public: true

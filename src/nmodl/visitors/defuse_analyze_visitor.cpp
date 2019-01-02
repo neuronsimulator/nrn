@@ -171,7 +171,7 @@ void DefUseAnalyzeVisitor::visit_unsupported_node(Node* node) {
  *  unsupported.
  */
 void DefUseAnalyzeVisitor::visit_function_call(FunctionCall* node) {
-    std::string function_name = node->name->get_node_name();
+    std::string function_name = node->get_node_name();
     auto symbol = global_symtab->lookup_in_scope(function_name);
     if (symbol == nullptr || symbol->is_external_symbol_only()) {
         node->visit_children(this);
@@ -196,11 +196,11 @@ void DefUseAnalyzeVisitor::visit_statement_block(StatementBlock* node) {
  *  and hence not necessary to keep track of assignment operator using stack.
  */
 void DefUseAnalyzeVisitor::visit_binary_expression(BinaryExpression* node) {
-    node->rhs->visit_children(this);
-    if (node->op.value == BOP_ASSIGN) {
+    node->get_rhs()->visit_children(this);
+    if (node->get_op().get_value() == BOP_ASSIGN) {
         visiting_lhs = true;
     }
-    node->lhs->visit_children(this);
+    node->get_lhs()->visit_children(this);
     visiting_lhs = false;
 }
 
@@ -210,12 +210,12 @@ void DefUseAnalyzeVisitor::visit_if_statement(IfStatement* node) {
 
     /// starting new if block
     previous_chain->push_back(DUInstance(DUState::CONDITIONAL_BLOCK));
-    current_chain = &previous_chain->back().children;
+    current_chain = &(previous_chain->back().children);
 
     /// visiting if sub-block
     auto last_chain = current_chain;
     start_new_chain(DUState::IF);
-    node->condition->accept(this);
+    node->get_condition()->accept(this);
     auto block = node->get_statement_block();
     if (block) {
         block->accept(this);
@@ -223,13 +223,13 @@ void DefUseAnalyzeVisitor::visit_if_statement(IfStatement* node) {
     current_chain = last_chain;
 
     /// visiting else if sub-blocks
-    for (auto& item : node->elseifs) {
+    for (const auto& item : node->get_elseifs()) {
         visit_with_new_chain(item.get(), DUState::ELSEIF);
     }
 
     /// visiting else sub-block
-    if (node->elses) {
-        visit_with_new_chain(node->elses.get(), DUState::ELSE);
+    if (node->get_elses()) {
+        visit_with_new_chain(node->get_elses().get(), DUState::ELSE);
     }
 
     /// restore to previous chain

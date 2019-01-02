@@ -5,7 +5,8 @@ using namespace ast;
 
 bool InlineVisitor::can_inline_block(StatementBlock* block) {
     bool to_inline = true;
-    for (const auto& statement : block->statements) {
+    const auto& statements = block->get_statements();
+    for (auto statement : statements) {
         /// inlining is disabled if function/procedure contains table or lag statement
         if (statement->is_table_statement() || statement->is_lag_statement()) {
             to_inline = false;
@@ -50,10 +51,10 @@ bool InlineVisitor::can_replace_statement(const std::shared_ptr<Statement>& stat
 
     bool to_replace = false;
     auto es = static_cast<ExpressionStatement*>(statement.get());
-    auto e = es->expression;
+    auto e = es->get_expression();
     if (e->is_wrapped_expression()) {
         auto wrapped_expression = static_cast<WrappedExpression*>(e.get());
-        if (wrapped_expression->expression->is_function_call()) {
+        if (wrapped_expression->get_expression()->is_function_call()) {
             to_replace = true;
         }
     }
@@ -68,12 +69,11 @@ void InlineVisitor::inline_arguments(StatementBlock* inlined_block,
         return;
     }
 
+    size_t counter = 0;
     auto& statements = inlined_block->statements;
 
-    size_t counter = 0;
-
     for (const auto& argument : callee_parameters) {
-        auto name = argument->name->clone();
+        auto name = argument->get_name()->clone();
         auto old_name = name->get_node_name();
         auto new_name = get_new_name(old_name, "in", inlined_variables);
         name->set_name(new_name);
@@ -167,7 +167,7 @@ bool InlineVisitor::inline_function_call(ast::Block* callee,
         replaced_statements[caller_statement] = statement;
     } else {
         inlined_statements[caller_statement].push_back(
-                std::shared_ptr<ast::ExpressionStatement>(statement));
+            std::shared_ptr<ast::ExpressionStatement>(statement));
     }
 
     /// variable name which will replace the function call that we just inlined
@@ -180,7 +180,7 @@ void InlineVisitor::visit_function_call(FunctionCall* node) {
     /// argument can be function call itself
     node->visit_children(this);
 
-    std::string function_name = node->name->get_node_name();
+    std::string function_name = node->get_name()->get_node_name();
     auto symbol = program_symtab->lookup_in_scope(function_name);
 
     /// nothing to do if called function is not defined or it's external
@@ -283,11 +283,12 @@ void InlineVisitor::visit_statement_block(StatementBlock* node) {
  */
 void InlineVisitor::visit_wrapped_expression(WrappedExpression* node) {
     node->visit_children(this);
-    if (node->expression->is_function_call()) {
-        auto expression = static_cast<FunctionCall*>(node->expression.get());
+    auto e = node->get_expression();
+    if (e->is_function_call()) {
+        auto expression = static_cast<FunctionCall*>(e.get());
         if (replaced_fun_calls.find(expression) != replaced_fun_calls.end()) {
             auto var = replaced_fun_calls[expression];
-            node->expression = std::make_shared<Name>(new String(var));
+            node->set_expression(std::make_shared<Name>(new String(var)));
         }
     }
 }

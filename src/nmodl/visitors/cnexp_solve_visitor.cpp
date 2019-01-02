@@ -9,8 +9,9 @@
 using namespace ast;
 
 void CnexpSolveVisitor::visit_solve_block(SolveBlock* node) {
-    if (node->method) {
-        solve_method = node->method->value->eval();
+    auto method = node->get_method();
+    if (method) {
+        solve_method = method->get_value()->eval();
     }
 }
 
@@ -23,9 +24,10 @@ void CnexpSolveVisitor::visit_derivative_block(DerivativeBlock* node) {
 void CnexpSolveVisitor::visit_binary_expression(BinaryExpression* node) {
     auto& lhs = node->lhs;
     auto& rhs = node->rhs;
+    auto& op = node->op;
 
     /// we have to only solve binary expressions in derivative block
-    if (!derivative_block || (node->op.value != BOP_ASSIGN)) {
+    if (!derivative_block || (op.get_value() != BOP_ASSIGN)) {
         return;
     }
 
@@ -34,7 +36,7 @@ void CnexpSolveVisitor::visit_binary_expression(BinaryExpression* node) {
         return;
     }
 
-    auto name = std::dynamic_pointer_cast<VarName>(lhs)->name;
+    auto name = std::dynamic_pointer_cast<VarName>(lhs)->get_name();
 
     if (name->is_prime_name()) {
         /// convert ode into string format
@@ -51,7 +53,7 @@ void CnexpSolveVisitor::visit_binary_expression(BinaryExpression* node) {
                 auto statement = create_statement(solution);
                 auto expr_statement = std::dynamic_pointer_cast<ExpressionStatement>(statement);
                 auto bin_expr =
-                    std::dynamic_pointer_cast<BinaryExpression>(expr_statement->expression);
+                    std::dynamic_pointer_cast<BinaryExpression>(expr_statement->get_expression());
                 lhs.reset(bin_expr->lhs->clone());
                 rhs.reset(bin_expr->rhs->clone());
             } else {

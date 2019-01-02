@@ -100,11 +100,11 @@ void LocalizeVisitor::visit_program(Program* node) {
 
     auto variables = variables_to_optimize();
     for (const auto& varname : variables) {
-        auto blocks = node->blocks;
+        const auto& blocks = node->get_blocks();
         std::map<DUState, std::vector<std::shared_ptr<ast::Node>>> block_usage;
 
         /// compute def use chains
-        for (auto& block : blocks) {
+        for (auto block : blocks) {
             if (node_for_def_use_analysis(block.get())) {
                 DefUseAnalyzeVisitor v(program_symtab, ignore_verbatim);
                 auto usages = v.analyze(block.get(), varname);

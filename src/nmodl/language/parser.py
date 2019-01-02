@@ -69,6 +69,10 @@ class LanguageParser:
         if 'separator' in properties:
             args.separator = properties['separator']
 
+        # if variable is public member
+        if 'public' in properties:
+            args.is_public = properties['public']
+
         # if variable if of vector type
         if 'vector' in properties:
             args.is_vector = properties['vector']

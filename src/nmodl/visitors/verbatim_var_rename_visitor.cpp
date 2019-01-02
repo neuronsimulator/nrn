@@ -5,7 +5,7 @@ using namespace ast;
 using namespace symtab;
 
 void VerbatimVarRenameVisitor::visit_statement_block(StatementBlock* node) {
-    if (node->statements.empty()) {
+    if (node->get_statements().empty()) {
         return;
     }
 
@@ -20,7 +20,7 @@ void VerbatimVarRenameVisitor::visit_statement_block(StatementBlock* node) {
     symtab_stack.push(symtab);
 
     // first need to process all children : perform recursively from innermost block
-    for (auto& item : node->statements) {
+    for (const auto& item : node->get_statements()) {
         item->accept(this);
     }
 
@@ -70,7 +70,7 @@ void VerbatimVarRenameVisitor::visit_verbatim(Verbatim* node) {
     auto tokens = driver.all_tokens();
 
     std::string result;
-    for (auto& token : tokens) {
+    for (const auto& token : tokens) {
         result += rename_variable(token);
     }
     statement->set(result);

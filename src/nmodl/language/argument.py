@@ -12,6 +12,7 @@ class Argument:
         self.separator = ""
         self.typename = ""
         self.varname = ""
+        self.is_public = False
         self.is_vector = False
         self.is_optional = False
         self.add_method = False

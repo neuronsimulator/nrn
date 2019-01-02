@@ -596,7 +596,9 @@ SCENARIO("Presence of local variable in verbatim block") {
                 LOCAL gNaTs2_tbar, x
                 VERBATIM
                 _lx = _lgNaTs2_tbar
+                #define my_macro_var _lgNaTs2_tbar*2
                 ENDVERBATIM
+                gNaTs2_tbar = my_macro_var + 1
             }
 
             PROCEDURE alpha() {
@@ -615,7 +617,9 @@ SCENARIO("Presence of local variable in verbatim block") {
                 LOCAL gNaTs2_tbar_r_0, x
                 VERBATIM
                 x = gNaTs2_tbar_r_0
+                #define my_macro_var gNaTs2_tbar_r_0*2
                 ENDVERBATIM
+                gNaTs2_tbar_r_0 = my_macro_var+1
             }
 
             PROCEDURE alpha() {
@@ -1254,7 +1258,7 @@ std::vector<DUChain> run_defuse_visitor(const std::string& text, const std::stri
         std::vector<DUChain> chains;
         DefUseAnalyzeVisitor v(ast->get_symbol_table());
 
-        for (auto& block : ast->blocks) {
+        for (const auto& block : ast->get_blocks()) {
             if (block->get_node_type() != ast::AstNodeType::NEURON_BLOCK) {
                 chains.push_back(v.analyze(block.get(), variable));
             }
