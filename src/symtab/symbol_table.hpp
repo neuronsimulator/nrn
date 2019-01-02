@@ -138,7 +138,8 @@ namespace symtab {
 
         std::shared_ptr<Symbol> lookup_in_scope(const std::string& name) const;
 
-        std::vector<std::shared_ptr<Symbol>> get_variables(NmodlTypeFlag with, NmodlTypeFlag without);
+        std::vector<std::shared_ptr<Symbol>> get_variables(NmodlTypeFlag with,
+                                                           NmodlTypeFlag without);
 
         std::vector<std::shared_ptr<Symbol>> get_variables_with_properties(NmodlTypeFlag properties,
                                                                            bool all = false);

@@ -101,7 +101,7 @@ namespace ast {
 
         // implemented in Number sub classes
         virtual void negate() {
-            throw  std::runtime_error("negate() not implemented");
+            throw std::runtime_error("negate() not implemented");
         }
 
         // implemented in Identifier sub classes

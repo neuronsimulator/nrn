@@ -14,7 +14,8 @@ void PerfVisitor::visit_binary_expression(BinaryExpression* node) {
     bool assign_op = false;
 
     if (start_measurement) {
-        switch (node->op.value) {
+        auto value = node->get_op().get_value();
+        switch (value) {
             case BOP_ADDITION:
                 current_block_perf.n_add++;
                 break;
@@ -83,12 +84,12 @@ void PerfVisitor::visit_binary_expression(BinaryExpression* node) {
         visiting_lhs_expression = true;
     }
 
-    node->lhs->accept(this);
+    node->get_lhs()->accept(this);
 
     /// lhs is done (rhs is read only)
     visiting_lhs_expression = false;
 
-    node->rhs->accept(this);
+    node->get_rhs()->accept(this);
 }
 
 /// add performance stats to json printer
@@ -154,7 +155,7 @@ void PerfVisitor::visit_function_call(FunctionCall* node) {
     under_function_call = true;
 
     if (start_measurement) {
-        auto name = node->name->get_node_name();
+        auto name = node->get_node_name();
         if (name == "exp") {
             current_block_perf.n_exp++;
         } else if (name == "log") {
@@ -363,7 +364,8 @@ void PerfVisitor::visit_solve_block(SolveBlock* node) {
 
 void PerfVisitor::visit_unary_expression(UnaryExpression* node) {
     if (start_measurement) {
-        switch (node->op.value) {
+        auto value = node->get_op().get_value();
+        switch (value) {
             case UOP_NEGATION:
                 current_block_perf.n_neg++;
                 break;

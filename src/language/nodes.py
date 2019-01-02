@@ -118,6 +118,7 @@ class ChildNode(BaseNode):
         BaseNode.__init__(self, args)
         self.typename = args.typename
         self.varname = args.varname
+        self.is_public = args.is_public
         self.is_vector = args.is_vector
         self.optional = args.is_optional
         self.add_method = args.add_method
@@ -144,32 +145,14 @@ class ChildNode(BaseNode):
 
     @property
     def member_typename(self):
-        """returns type when used as a member of the class
-
-        todo: Check how to refactor this
-        """
-
-        type_name = self.class_name
-
-        if self.is_vector:
-            type_name += "Vector"
-        elif not self.is_base_type_node() and not self.is_ptr_excluded_node():
-            type_name = "std::shared_ptr<" + type_name + ">"
-
-        return type_name
-
-    @property
-    def return_typename(self):
-        """returns type when returned from getter method
-
-        todo: Check how to refactor this
-        """
-        type_name = "std::shared_ptr<" + self.class_name + ">"
+        """returns type when used as a member of the class"""
 
         if self.is_vector:
             type_name = self.class_name + "Vector"
-        elif self.is_ptr_excluded_node() or self.is_base_type_node():
-            type_name =  self.class_name
+        elif self.is_base_type_node() or self.is_ptr_excluded_node():
+            type_name = self.class_name
+        else:
+            type_name = "std::shared_ptr<" + self.class_name + ">"
 
         return type_name
 
@@ -251,4 +234,40 @@ class Node(BaseNode):
         return method_required
 
     def is_base_class_number_node(self):
+        """
+        Check if node is of type Number
+        """
         return True if self.base_class == NUMBER_NODE else False
+
+    def public_members(self):
+        """
+        Return public members of the node
+        """
+        members = []
+
+        for child in self.children:
+            if child.is_public:
+                members.append([child.member_typename, child.varname])
+
+        return members
+
+    def private_members(self):
+        """
+        Return private members of the node
+        """
+        members = []
+
+        for child in self.children:
+            if not child.is_public:
+                members.append([child.member_typename, child.varname])
+
+        if self.has_token:
+            members.append(["std::shared_ptr<ModToken>", "token"])
+
+        if self.is_symtab_needed():
+            members.append(["symtab::SymbolTable*", "symtab = nullptr"])
+
+        if self.is_program_node():
+            members.append(["symtab::ModelSymbolTable", "model_symtab;"])
+
+        return members

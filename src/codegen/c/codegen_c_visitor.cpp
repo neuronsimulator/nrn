@@ -708,8 +708,8 @@ static TableStatement* get_table_statement(ast::Block* node) {
     auto table_statements = v.get_statements();
     auto nstatements = table_statements.size();
     if (nstatements != 1) {
-        auto message =
-            "One table statement expected in {} found {}"_format(node->get_node_name(), nstatements);
+        auto message = "One table statement expected in {} found {}"_format(node->get_node_name(),
+                                                                            nstatements);
         throw std::runtime_error(message);
     }
     return table_statements.front();
@@ -717,18 +717,18 @@ static TableStatement* get_table_statement(ast::Block* node) {
 
 
 void CodegenCVisitor::print_table_check_function(ast::Block* node) {
+    auto statement = get_table_statement(node);
+    auto table_variables = statement->get_table_vars();
+    auto depend_variables = statement->get_depend_vars();
+    auto from = statement->get_from();
+    auto to = statement->get_to();
     auto name = node->get_node_name();
     auto internal_params = internal_method_parameters();
-    auto statement = get_table_statement(node);
-    auto table_variables = statement->table_vars;
-    auto depend_variables = statement->depend_vars;
-    auto from = statement->from;
-    auto to = statement->to;
-    auto with = statement->with->eval();
+    auto with = statement->get_with()->eval();
     auto use_table_var = get_variable_name("usetable");
-    auto float_type = default_float_data_type();
     auto tmin_name = get_variable_name("tmin_" + name);
     auto mfac_name = get_variable_name("mfac_" + name);
+    auto float_type = default_float_data_type();
 
     printer->add_newline(2);
     print_device_method_annotation();
@@ -800,8 +800,8 @@ void CodegenCVisitor::print_table_check_function(ast::Block* node) {
 void CodegenCVisitor::print_table_replacement_function(ast::Block* node) {
     auto name = node->get_node_name();
     auto statement = get_table_statement(node);
-    auto table_variables = statement->table_vars;
-    auto with = statement->with->eval();
+    auto table_variables = statement->get_table_vars();
+    auto with = statement->get_with()->eval();
     auto use_table_var = get_variable_name("usetable");
     auto float_type = default_float_data_type();
     auto tmin_name = get_variable_name("tmin_" + name);
@@ -2400,14 +2400,14 @@ void CodegenCVisitor::print_watch_activate() {
     // todo : similar to neuron/coreneuron we are using
     // first watch and ignoring rest.
     for (int i = 0; i < info.watch_statements.size(); i++) {
-        auto& statement = info.watch_statements[i];
+        auto statement = info.watch_statements[i];
         printer->start_block("if (watch_id == {})"_format(i));
 
         auto varname = get_variable_name("watch{}"_format(i + 1));
         printer->add_indent();
         printer->add_text("{} = 2 + "_format(varname));
-        auto& watch = statement->statements.front();
-        watch->expression->visit_children(this);
+        auto watch = statement->get_statements().front();
+        watch->get_expression()->visit_children(this);
         printer->add_text(";");
         printer->add_newline();
 
@@ -2438,8 +2438,8 @@ void CodegenCVisitor::print_watch_check() {
     print_post_channel_iteration_common_code();
 
     for (int i = 0; i < info.watch_statements.size(); i++) {
-        auto& statement = info.watch_statements[i];
-        auto& watch = statement->statements.front();
+        auto statement = info.watch_statements[i];
+        auto watch = statement->get_statements().front();
         auto varname = get_variable_name("watch{}"_format(i + 1));
 
         // start block 1
@@ -2448,7 +2448,7 @@ void CodegenCVisitor::print_watch_check() {
         // start block 2
         printer->add_indent();
         printer->add_text("if (");
-        watch->expression->accept(this);
+        watch->get_expression()->accept(this);
         printer->add_text(") {");
         printer->add_newline();
         printer->increase_indent();
@@ -2463,7 +2463,7 @@ void CodegenCVisitor::print_watch_check() {
         auto t = get_variable_name("t");
         printer->add_text(
             "ml->_net_send_buffer, 0, {}, 0, {}, {}+0.0, "_format(tqitem, point_process, t));
-        watch->value->accept(this);
+        watch->get_value()->accept(this);
         printer->add_text(");");
         printer->add_newline();
 

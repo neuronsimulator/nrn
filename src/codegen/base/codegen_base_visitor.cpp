@@ -98,14 +98,17 @@ void CodegenBaseVisitor::visit_var_name(VarName* node) {
     if (!codegen) {
         return;
     }
-    node->name->accept(this);
-    if (node->at_index) {
+    auto name = node->get_name();
+    auto at_index = node->get_at_index();
+    auto index = node->get_index();
+    name->accept(this);
+    if (at_index) {
         printer->add_text("@");
-        node->at_index->accept(this);
+        at_index->accept(this);
     }
-    if (node->index) {
+    if (index) {
         printer->add_text("[");
-        node->index->accept(this);
+        index->accept(this);
         printer->add_text("]");
     }
 }
@@ -115,9 +118,9 @@ void CodegenBaseVisitor::visit_indexed_name(IndexedName* node) {
     if (!codegen) {
         return;
     }
-    node->name->accept(this);
+    node->get_name()->accept(this);
     printer->add_text("[");
-    node->length->accept(this);
+    node->get_length()->accept(this);
     printer->add_text("]");
 }
 
@@ -128,7 +131,7 @@ void CodegenBaseVisitor::visit_local_list_statement(LocalListStatement* node) {
     }
     auto type = local_var_type() + " ";
     printer->add_text(type);
-    print_vector_elements(node->variables, ", ");
+    print_vector_elements(node->get_variables(), ", ");
 }
 
 
@@ -137,12 +140,13 @@ void CodegenBaseVisitor::visit_if_statement(IfStatement* node) {
         return;
     }
     printer->add_text("if (");
-    node->condition->accept(this);
+    node->get_condition()->accept(this);
     printer->add_text(") ");
     node->get_statement_block()->accept(this);
-    print_vector_elements(node->elseifs, "");
-    if (node->elses) {
-        node->elses->accept(this);
+    print_vector_elements(node->get_elseifs(), "");
+    auto elses = node->get_elses();
+    if (elses) {
+        elses->accept(this);
     }
 }
 
@@ -152,7 +156,7 @@ void CodegenBaseVisitor::visit_else_if_statement(ElseIfStatement* node) {
         return;
     }
     printer->add_text(" else if (");
-    node->condition->accept(this);
+    node->get_condition()->accept(this);
     printer->add_text(") ");
     node->get_statement_block()->accept(this);
 }
@@ -168,7 +172,7 @@ void CodegenBaseVisitor::visit_else_statement(ElseStatement* node) {
 
 void CodegenBaseVisitor::visit_while_statement(WhileStatement* node) {
     printer->add_text("while (");
-    node->condition->accept(this);
+    node->get_condition()->accept(this);
     printer->add_text(") ");
     node->get_statement_block()->accept(this);
 }
@@ -202,7 +206,7 @@ void CodegenBaseVisitor::visit_paren_expression(ParenExpression* node) {
         return;
     }
     printer->add_text("(");
-    node->expr->accept(this);
+    node->get_expr()->accept(this);
     printer->add_text(")");
 }
 
@@ -211,7 +215,7 @@ void CodegenBaseVisitor::visit_binary_expression(BinaryExpression* node) {
     if (!codegen) {
         return;
     }
-    auto op = node->op.eval();
+    auto op = node->get_op().eval();
     auto lhs = node->get_lhs();
     auto rhs = node->get_rhs();
     if (op == "^") {
@@ -695,9 +699,9 @@ std::vector<IndexVariableInfo> CodegenBaseVisitor::get_int_variables() {
         variables.back().is_constant = true;
         /// note that this variable is not printed in neuron implementation
         if (info.artificial_cell) {
-            variables.emplace_back(make_symbol("point_process"), true);
+            variables.emplace_back(make_symbol(point_process), true);
         } else {
-            variables.emplace_back(make_symbol("point_process"), false, false, true);
+            variables.emplace_back(make_symbol(point_process), false, false, true);
             variables.back().is_constant = true;
         }
     }
@@ -733,11 +737,11 @@ std::vector<IndexVariableInfo> CodegenBaseVisitor::get_int_variables() {
     }
 
     if (info.diam_used) {
-        variables.emplace_back(make_symbol("diam"));
+        variables.emplace_back(make_symbol(diam_variable));
     }
 
     if (info.area_used) {
-        variables.emplace_back(make_symbol("area"));
+        variables.emplace_back(make_symbol(area_variable));
     }
 
     // for non-artificial cell, when net_receive buffering is enabled

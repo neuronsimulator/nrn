@@ -8,7 +8,7 @@ using namespace symtab;
 /// rename name conflicting variables in the statement block and it's all children
 void LocalVarRenameVisitor::visit_statement_block(StatementBlock* node) {
     /// nothing to do
-    if (node->statements.empty()) {
+    if (node->get_statements().empty()) {
         return;
     }
 
@@ -23,7 +23,7 @@ void LocalVarRenameVisitor::visit_statement_block(StatementBlock* node) {
     symtab_stack.push(symtab);
 
     // first need to process all children : perform recursively from innermost block
-    for (auto& item : node->statements) {
+    for (const auto& item : node->get_statements()) {
         item->visit_children(this);
     }
 
@@ -46,7 +46,7 @@ void LocalVarRenameVisitor::visit_statement_block(StatementBlock* node) {
 
     RenameVisitor rename_visitor;
 
-    for (auto& var : *variables) {
+    for (const auto& var : *variables) {
         std::string name = var->get_node_name();
         auto s = parent_symtab->lookup_in_scope(name);
         /// if symbol is a variable name (avoid renaming use of units like mV)

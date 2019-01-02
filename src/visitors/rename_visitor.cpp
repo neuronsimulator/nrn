@@ -7,7 +7,8 @@ using namespace ast;
 void RenameVisitor::visit_name(Name* node) {
     std::string name = node->get_node_name();
     if (name == var_name) {
-        node->value->set(new_var_name);
+        auto value = node->get_value();
+        value->set(new_var_name);
     }
 }
 

@@ -182,6 +182,9 @@ class CodegenBaseVisitor : public AstVisitor {
     /// similar to node area but user can explicitly declare it
     const std::string area_variable = "area";
 
+    /// point process variable
+    const std::string point_process = "point_process";
+
     /// nmodl language version
     std::string nmodl_version() {
         return "6.2.0";
@@ -492,7 +495,7 @@ void CodegenBaseVisitor::print_vector_elements(const std::vector<T>& elements,
  * @return True if argument with name exist
  */
 template <typename T>
-bool has_parameter_of_name(const T &node, std::string name) {
+bool has_parameter_of_name(const T& node, std::string name) {
     auto parameters = node->get_parameters();
     for (const auto& parameter : parameters) {
         if (parameter->get_node_name() == name) {

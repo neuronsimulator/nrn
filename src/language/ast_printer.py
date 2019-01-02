@@ -73,23 +73,22 @@ class AstDeclarationPrinter(DeclarationPrinter):
 
             self.write_line("class {} : public {} {{".format(node.class_name, node.base_class), post_gutter=1)
 
+            private_members = node.private_members()
+            public_members = node.public_members()
+
+            if private_members:
+                self.write_line("private:", post_gutter=1)
+                for member in private_members:
+                    self.write_line("{} {};".format(member[0], member[1]))
+                self.write_line(post_gutter=-1)
+
             self.write_line("public:", post_gutter=1)
-
-            for child in node.children:
-                self.write_line("{} {};".format(child.member_typename, child.varname))
-
-            if node.has_token:
-                self.write_line("std::shared_ptr<ModToken> token;")
-
-            if node.is_symtab_needed():
-                self.write_line("symtab::SymbolTable* symtab = nullptr;")
-
-            if node.is_program_node():
-                self.write_line("symtab::ModelSymbolTable model_symtab;")
+            for member in public_members:
+                self.write_line("{} {};".format(member[0], member[1]))
 
             if node.children:
                 members = [ child.get_typename() + " " + child.varname for child in node.children]
-                self.write_line("")
+                self.write_line()
                 self.write_line("{}({});".format(node.class_name, (", ".join(members))))
                 self.write_line("{0}(const {0}& obj);".format(node.class_name))
 
@@ -106,8 +105,7 @@ class AstDeclarationPrinter(DeclarationPrinter):
             # Todo : We need virtual destructor otherwise there will be memory leaks.
             #        But we need define which are virtual base classes that needs virtual function.
             self.write_line("virtual ~{}() {{}}".format(node.class_name))
-
-            self.write_line("")
+            self.write_line()
 
             for child in node.children:
                 class_name = child.class_name
@@ -126,7 +124,7 @@ class AstDeclarationPrinter(DeclarationPrinter):
 
                 getter_method = child.getter_method if child.getter_method else "get_" + to_snake_case(varname)
                 getter_override = " override" if child.getter_override else ""
-                return_type = child.return_typename
+                return_type = child.member_typename
                 self.write_line("{} {}(){}{{ return {}; }}".format(return_type, getter_method, getter_override, varname))
 
                 setter_method = "set_" + to_snake_case(varname)
@@ -161,10 +159,8 @@ class AstDeclarationPrinter(DeclarationPrinter):
                 self.write_line("symtab::ModelSymbolTable* get_model_symbol_table() { return &model_symtab; }")
 
             if node.is_base_class_number_node():
-                if node.is_boolean_node():
-                    self.write_line("void negate() override { value = !value; }")
-                else:
-                    self.write_line("void negate() override { value = -value; }")
+                negation = "!" if node.is_boolean_node() else "-";
+                self.write_line("void negate() override {{ value = {}value; }}".format(negation))
                 self.write_line("double to_double() override { return value; }")
 
             if node.is_name_node():
