@@ -837,7 +837,7 @@ Object* py_alltoall(Object* o, int size) {
     delete[] rcnt;
     delete[] rdispl;
   } else {
-    r = new char[rdispl[np]];
+    r = new char[rdispl[np] + 1]; //force > 0 for all None case
     nrnmpi_char_alltoallv(s, scnt, sdispl, r, rcnt, rdispl);
     delete[] s;
     delete[] scnt;
@@ -847,6 +847,7 @@ Object* py_alltoall(Object* o, int size) {
     assert(pdest != NULL);
     for (int i = 0; i < np; ++i) {
       if (rcnt[i] == 0) {
+	Py_INCREF(Py_None); // 'Fatal Python error: deallocating None' eventually
         PyList_SetItem(pdest, i, Py_None);
       } else {
         PyObject* p = unpickle(r + rdispl[i], rcnt[i]);
