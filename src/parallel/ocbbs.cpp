@@ -38,7 +38,7 @@ extern "C" {
 	char* (*nrnpy_po2pickle)(Object*, size_t*);
 	Object* (*nrnpy_pickle2po)(char*, size_t);
 	char* (*nrnpy_callpicklef)(char*, size_t, int, size_t*);
-	Object* (*nrnpympi_alltoall)(Object*, int);
+	Object* (*nrnpympi_alltoall_type)(int, int);
 	extern void nrn_prcellstate(int gid, const char* suffix);
 	double nrnmpi_step_wait_;
 #if PARANEURON
@@ -407,14 +407,36 @@ Object** BBS::pyret() {
 	return hoc_temp_objptr(po);
 }
 
-static Object** py_alltoall(void*) {
-	assert(nrnpympi_alltoall);
+static Object** py_alltoall_type(int type) {
+	assert(nrnpympi_alltoall_type);
+	// for py_gather, py_broadcast, and py_scatter,
+	// the second arg refers to the root rank of the operation (default 0)
 	int size = 0;
 	if (ifarg(2)) {
 		size = int(chkarg(2, -1, 2.14748e9));
 	}
-	Object* po = (*nrnpympi_alltoall)(*hoc_objgetarg(1), size);
+	Object* po = (*nrnpympi_alltoall_type)(size, type);
 	return hoc_temp_objptr(po);
+}
+
+static Object** py_alltoall(void*) {
+	return py_alltoall_type(1);
+}
+
+static Object** py_allgather(void*) {
+	return py_alltoall_type(2);
+}
+
+static Object** py_gather(void*) {
+	return py_alltoall_type(3);
+}
+
+static Object** py_broadcast(void*) {
+	return py_alltoall_type(4);
+}
+
+static Object** py_scatter(void*) {
+	return py_alltoall_type(5);
 }
 
 static char* key_help() {
@@ -1065,6 +1087,10 @@ static Member_ret_obj_func retobj_members[] = {
 	"upkpyobj", upkpyobj,
 	"pyret", pyret,
 	"py_alltoall", py_alltoall,
+	"py_allgather", py_allgather,
+	"py_gather", py_gather,
+	"py_broadcast", py_broadcast,
+	"py_scatter", py_scatter,
 	0,0
 };
 

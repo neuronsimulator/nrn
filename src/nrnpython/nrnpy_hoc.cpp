@@ -643,8 +643,21 @@ static void* fcall(void* vself, void* vargs) {
   return (void*)nrnpy_hoc_pop();
 }
 
+static PyObject* curargs_;
+
+PyObject* hocobj_call_arg(int i) {
+  return PyTuple_GetItem(curargs_, i);
+}
+
 static PyObject* hocobj_call(PyHocObject* self, PyObject* args,
                              PyObject* kwrds) {
+
+  // Hack to allow some python only methods to get the python args.
+  // without losing info about type bool, int, etc.
+  // eg pc.py_broadcast, pc.py_gather, pc.py_allgather
+  PyObject* prevargs_ = curargs_;
+  curargs_ = args;
+
   PyObject* section = 0;
   PyObject* result;
   if (kwrds && PyDict_Check(kwrds)) {
@@ -662,17 +675,20 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args,
     int num_kwargs = PyDict_Size(kwrds);
     if (num_kwargs > 1) {
       PyErr_SetString(PyExc_RuntimeError, "invalid keyword argument");
+      curargs_ = prevargs_;
       return NULL;
     }
     if (section) {
       section = nrnpy_pushsec(section);
       if (!section) {
         PyErr_SetString(PyExc_TypeError, "sec is not a Section");
+        curargs_ = prevargs_;
         return NULL;
       }
     } else {
       if (num_kwargs) {
         PyErr_SetString(PyExc_RuntimeError, "invalid keyword argument");
+        curargs_ = prevargs_;
         return NULL;
       }
     }
@@ -693,11 +709,13 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args,
     }
   } else {
     PyErr_SetString(PyExc_TypeError, "object is not callable");
+    curargs_ = prevargs_;
     return NULL;
   }
   if (section) {
     nrn_popsec();
   }
+  curargs_ = prevargs_;
   return result;
 }
 
