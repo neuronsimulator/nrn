@@ -1514,10 +1514,337 @@ Description:
           3 [(0, 3), (1, 3), (2, 3), (3, 3)]
 
 
+----
+
+
+
+.. method:: ParallelContext.py_allgather
+
+
+    Syntax:
+        ``destlist = pc.py_allgather(srcitem)``
+
+    Description:
+        Each rank sends its srcitem to all other ranks. All ranks assemble the
+        arriving objects into an nhost size list such that the i'th element
+        came from the i'th rank.
+        The destlist is the same on every rank.
+        The srcitem may be any pickleable Python object including None, Bool, int, h.Vector,
+        etc. and will appear in the destination list as that type. This method can
+        only be called from the python interpreter and cannot be called from HOC.
+        All ranks (or all ranks in a subworld) must participate in this MPI collective.
+        
+        pc.py_allgather uses less memory and is faster than the equivalent
+        ``destlist = pc.py_alltoall([srcitem]*nhost)``
+        
+ 
+    Example:
+
+        .. code-block::
+          python
+          
+          from neuron import h
+          pc = h.ParallelContext()
+          nhost = int(pc.nhost())
+          rank = int(pc.id())
+          
+          src = rank
+          dest = pc.py_allgather(src) 
+
+          def pr(label, val):
+            from time import sleep
+            sleep(.1) # try to avoid mixing different pr output
+            print("%d: %s: %s" % (rank, label, val))
+
+          pr("allgather src", src)  
+          pr("allgather dest", dest)
+
+          src = [src]*nhost
+          dest = pc.py_alltoall(src)        
+          pr("alltoall src", src)   
+          pr("alltoall dest", dest) 
+
+          pc.barrier()
+          h.quit()
+
+       .. code-block::
+          none
+
+          $ mpiexec -n 4 nrniv -python -mpi test.py
+          numprocs=4
+          NEURON -- VERSION 7.6.4-4-gcd480afb master (cd480afb) 2019-01-04
+          Duke, Yale, and the BlueBrain Project -- Copyright 1984-2018
+          See http://neuron.yale.edu/neuron/credits
+
+          0: allgather src: 0
+          1: allgather src: 1
+          2: allgather src: 2
+          3: allgather src: 3
+          0: allgather dest: [0, 1, 2, 3]
+          1: allgather dest: [0, 1, 2, 3]
+          2: allgather dest: [0, 1, 2, 3]
+          3: allgather dest: [0, 1, 2, 3]
+          2: alltoall src: [2, 2, 2, 2]
+          0: alltoall src: [0, 0, 0, 0]
+          1: alltoall src: [1, 1, 1, 1]
+          3: alltoall src: [3, 3, 3, 3]
+          1: alltoall dest: [0, 1, 2, 3]
+          2: alltoall dest: [0, 1, 2, 3]
+          0: alltoall dest: [0, 1, 2, 3]
+          3: alltoall dest: [0, 1, 2, 3]
 
 ----
 
 
+
+
+.. method:: ParallelContext.py_gather
+
+
+    Syntax:
+        ``destlist_on_root = pc.py_gather(srcitem, root)``
+
+    Description:
+        Each rank sends its srcitem to the root rank. The root rank assembles the
+        arriving objects into an nhost size list such that the i'th element came from
+        the i'th rank.
+        The destlist_on_root return value for non-root ranks is None.
+        The srcitem may be any pickleable Python object including None, Bool, int, h.Vector,
+        etc. and will appear in the destination list as that type. This method can
+        only be called from the python interpreter and cannot be called from HOC.
+        All ranks (or all ranks in a subworld) must participate in this MPI collective.
+        
+        pc.py_gather uses less memory and is faster than the almost equivalent
+        ``destlist = pc.py_alltoall([srcitem if i == root else None for i in range(nhost)])``
+        "Almost" because the return value on non-root ranks is None for pc.py_allgather but
+        a list of nhost None for pc.py_alltoall
+ 
+    Example:
+
+        .. code-block::
+          python
+          
+          from neuron import h
+          pc = h.ParallelContext()
+          nhost = int(pc.nhost())
+          rank = int(pc.id())
+
+          root = 0 # any specific rank
+          src = rank
+          dest = pc.py_gather(src, root)
+
+          def pr(label, val):
+            from time import sleep
+            sleep(.1) # try to avoid mixing different pr output
+            print("%d: %s: %s" % (rank, label, val))
+
+          pr("gather src", src)     
+          pr("gather dest", dest)
+
+          src = [src if i == root else None for i in range(nhost)]
+          dest = pc.py_alltoall(src)
+          pr("alltoall src", src)  
+          pr("alltoall dest", dest)
+
+          pc.barrier()
+          h.quit()
+        
+                    
+        .. code-block::
+          none
+          
+          $ mpiexec -n 4 nrniv -python -mpi test.py
+          numprocs=4
+          NEURON -- VERSION 7.6.4-4-gcd480afb master (cd480afb) 2019-01-04
+          Duke, Yale, and the BlueBrain Project -- Copyright 1984-2018
+          See http://neuron.yale.edu/neuron/credits
+        
+          3: gather src: 3
+          1: gather src: 1
+          2: gather src: 2
+          0: gather src: 0
+          3: gather dest: None
+          1: gather dest: None
+          2: gather dest: None
+          0: gather dest: [0, 1, 2, 3]
+          1: alltoall src: [1, None, None, None]
+          2: alltoall src: [2, None, None, None]
+          3: alltoall src: [3, None, None, None]
+          0: alltoall src: [0, None, None, None]
+          3: alltoall dest: [None, None, None, None]
+          1: alltoall dest: [None, None, None, None]
+          2: alltoall dest: [None, None, None, None]
+          0: alltoall dest: [0, 1, 2, 3]
+
+ 
+----
+
+
+
+
+.. method:: ParallelContext.py_scatter
+
+
+    Syntax:
+        ``destitem_from_root = pc.py_scatter(srclist, root)``
+
+    Description:
+        The root rank sends the i'th element in its nhost size list to the i'th rank.
+        The srclist must contain nhost pickleable Python objects including None, Bool,
+        int, h.Vector,
+        etc. and will appear in the destination list as that type. This method can
+        only be called from the python interpreter and cannot be called from HOC.
+        All ranks (or all ranks in a subworld) must participate in this MPI collective.
+        
+        pc.py_scatter uses less memory and is faster than the almost equivalent
+        ``destitem = pc.pyalltoall(srclist if rank == root else [None]*nhost)``
+        "Almost" because the return value on rank i for py.pyalltoall is a list
+        filled with None
+        except for the root'th item which is the i'th element of srclist of the root rank.
+
+    Example:
+
+        .. code-block::
+          python
+          
+          from neuron import h
+          pc = h.ParallelContext()
+          nhost = int(pc.nhost())
+          rank = int(pc.id())
+
+          root = 0 # any specific rank
+          src = [i for i in range(nhost)] if rank == root else None
+          dest = pc.py_scatter(src, root)
+
+          def pr(label, val):
+            from time import sleep
+            sleep(.1) # try to avoid mixing different pr output
+            print("%d: %s: %s" % (rank, label, val))
+
+          pr("scatter src", src)     
+          pr("scatter dest", dest)
+
+          src = src if rank == root else [None]*nhost
+          dest = pc.py_alltoall(src)
+          pr("alltoall src", src)  
+          pr("alltoall dest", dest)
+
+          pc.barrier()
+          h.quit()
+         
+         
+                    
+        .. code-block::
+          none
+          
+          $ mpiexec -n 4 nrniv -python -mpi test.py
+          numprocs=4
+          NEURON -- VERSION 7.6.4-4-gcd480afb master (cd480afb) 2019-01-04
+          Duke, Yale, and the BlueBrain Project -- Copyright 1984-2018
+          See http://neuron.yale.edu/neuron/credits
+
+          0: scatter src: [0, 1, 2, 3]
+          2: scatter src: None
+          1: scatter src: None
+          3: scatter src: None
+          2: scatter dest: 2
+          0: scatter dest: 0
+          1: scatter dest: 1
+          3: scatter dest: 3
+          1: alltoall src: [None, None, None, None]
+          2: alltoall src: [None, None, None, None]
+          0: alltoall src: [0, 1, 2, 3]
+          3: alltoall src: [None, None, None, None]
+          0: alltoall dest: [0, None, None, None]
+          1: alltoall dest: [1, None, None, None]
+          2: alltoall dest: [2, None, None, None]
+          3: alltoall dest: [3, None, None, None]
+         
+
+----
+
+
+
+
+.. method:: ParallelContext.py_broadcast
+
+
+    Syntax:
+        ``destitem_from_root = pc.py_broadcast(srcitem, root)``
+
+    Description:
+        The root rank sends the srcitem to every rank.
+        The srcitem can be any pickleable Python object including None, Bool,
+        int, h.Vector,
+        etc. and will be returned as that type. This method can
+        only be called from the python interpreter and cannot be called from HOC.
+        All ranks (or all ranks in a subworld) must participate in this MPI collective.
+        
+        pc.py_broadcast uses less memory and is faster than the almost equivalent
+        ``destitem = pc.pyalltoall([srcitem]*nhost if rank == root else [None]*nhost)``
+        "Almost" because the return value on rank i for py.pyalltoall is a list
+        filled with None
+        except for the root'th item which is a copy of srcitem from the root rank.
+        
+    Example:
+
+        .. code-block::
+          python
+          
+          from neuron import h
+          pc = h.ParallelContext()
+          nhost = int(pc.nhost())
+          rank = int(pc.id())
+
+          root = 0 # any specific rank
+          src = rank if rank == root else None
+          dest = pc.py_broadcast(src, root)
+
+          def pr(label, val):
+            from time import sleep
+            sleep(.1) # try to avoid mixing different pr output
+            print("%d: %s: %s" % (rank, label, val))
+
+          pr("broadcast src", src)
+          pr("broadcast dest", dest)
+
+          src = [src]*nhost if rank == root else [None]*nhost
+          dest = pc.py_alltoall(src)
+          pr("alltoall src", src)
+          pr("alltoall dest", dest)
+
+          pc.barrier()
+          h.quit()
+       
+                    
+        .. code-block::
+          none
+          
+          $ mpiexec -n 4 nrniv -python -mpi test.py
+          numprocs=4
+          NEURON -- VERSION 7.6.4-4-gcd480afb master (cd480afb) 2019-01-04
+          Duke, Yale, and the BlueBrain Project -- Copyright 1984-2018
+          See http://neuron.yale.edu/neuron/credits
+
+          0: broadcast src: 0
+          1: broadcast src: None
+          2: broadcast src: None
+          3: broadcast src: None
+          0: broadcast dest: 0
+          1: broadcast dest: 0
+          2: broadcast dest: 0
+          3: broadcast dest: 0
+          2: alltoall src: [None, None, None, None]
+          0: alltoall src: [0, 0, 0, 0]
+          1: alltoall src: [None, None, None, None]
+          3: alltoall src: [None, None, None, None]
+          1: alltoall dest: [0, None, None, None]
+          2: alltoall dest: [0, None, None, None]
+          0: alltoall dest: [0, None, None, None]
+          3: alltoall dest: [0, None, None, None]
+          
+ 
+----
 
 .. method:: ParallelContext.broadcast
 
