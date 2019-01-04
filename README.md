@@ -17,7 +17,10 @@ git clone ssh://bbpcode.epfl.ch:22/incubator/nocmodl
 - Python2/3 (>=2.7)
 - Python yaml (pyyaml)
 
-Make sure to have latest version of flex (>=2.6) and bison (>=3.0). For example, on OS X we typically install packages via brew or macport as:
+Make sure to have latest version of flex (>=2.6) and bison (>=3.0).
+
+
+On OS X we typically install packages via brew or macport as:
 
 ```
 brew install flex bison
@@ -71,12 +74,16 @@ If flex / bison is installed in non-standard location then set `PATH` env variab
  cmake .. -DCMAKE_PREFIX_PATH="/usr/local/opt/bison/;/usr/local/opt/flex"
 ```
 
- On Lugano BBP IV system we have to use newer versions installed in below path:
+On BB5, you can do:
 
- ```
- export PATH=/gpfs/bbp.cscs.ch/project/proj16/software/viz/hpc/bison-3.0.4-/bin:$PATH
- export PATH=/gpfs/bbp.cscs.ch/project/proj16/software/viz/hpc/flex-2.6.4/bin:$PATH
- ```
+```
+module load cmake/3.12.0 bison/3.0.5 flex/2.6.3 gcc/6.4.0
+
+mkdir build && cd build
+cmake ..
+make VERBOSE=1 -j
+make test
+```
 
 If you want to enable `clang-tidy` checks with CMake, make sure to have `CMake >= 3.5` and use following cmake option:
 
@@ -93,6 +100,12 @@ You can independently run lexer, parser or visitors as:
 ./bin/nmodl_lexer --file ../test/input/channel.mod
 ./bin/nmodl_parser --file ../test/input/channel.mod
 ./bin/nmodl_visitor --file ../test/input/channel.mod
+```
+
+To run code generator, you can do:
+
+```
+./bin/nmodl ../test/input/channel.mod
 ```
 
 
