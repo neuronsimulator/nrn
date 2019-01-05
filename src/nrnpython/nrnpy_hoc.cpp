@@ -519,8 +519,16 @@ PyObject* nrnpy_hoc_pop() {
     case STRING:
       result = Py_BuildValue("s", *hoc_strpop());
       break;
-    case VAR:
-      result = Py_BuildValue("d", *hoc_pxpop());
+    case VAR: {
+      double* px = hoc_pxpop();
+      if (px) {
+        // unfortunately, this is nonsense if NMODL POINTER is pointing
+        // to something other than a double.
+        result = Py_BuildValue("d", *px);
+      }else{
+        PyErr_SetString(PyExc_AttributeError, "POINTER is NULL");
+      }
+    }
       break;
     case NUMBER:
       result = Py_BuildValue("d", hoc_xpop());
@@ -550,13 +558,23 @@ static int set_final_from_stk(PyObject* po) {
         err = 1;
       }
       break;
-    case VAR:
+    case VAR: {
       double x;
+      double* px;
       if (PyArg_Parse(po, "d", &x) == 1) {
-        *(hoc_pxpop()) = x;
+        px = hoc_pxpop();
+        if (px) {
+          // This is a future crash if NMODL POINTER is pointing
+          // to something other than a double.
+          *px = x;
+        }else{
+          PyErr_SetString(PyExc_AttributeError, "POINTER is NULL");
+          return -1;
+        }
       } else {
         err = 1;
       }
+    }
       break;
     case OBJECTVAR:
       PyHocObject* pho;
