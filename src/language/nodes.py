@@ -22,8 +22,8 @@ class BaseNode:
         self.force_suffix = args.force_suffix
         self.is_abstract = False
 
-    def __cmp__(self, other):
-        return cmp(self.class_name, other.class_name)
+    def __lt__(self, other):
+        return (self.class_name < other.class_name)
 
     def get_data_type_name(self):
         """ return type name for the node """
