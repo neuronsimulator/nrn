@@ -106,8 +106,8 @@ class Rate(GeneralizedReaction):
         self._jac_cols = []
         self._mult = [1]
         self._mult_extended = self._mult
-
-        if not self._species() or isinstance(self._species(),species.SpeciesOnExtracellular):
+        from . import  region
+        if not self._species() or isinstance(self._species(),species.SpeciesOnExtracellular) or all([isinstance(r,region.Extracellular) for r in self._regions]):
             for sptr in self._involved_species:
                 self._indices_dict[sptr()] = []
             return
@@ -126,7 +126,7 @@ class Rate(GeneralizedReaction):
                 actr = specified_regions
             else:
                 warnings.warn("Error in rate %r\nThe regions specified %s are not appropriate regions %s will be used instead." % (self, [r._name for r in self._regions], [r._name for r in self._species()._regions]))
-        
+
         #Note: This finds the sections where the all involved species exists
         #e.g. for Rate(A, B+C) if A sections [1,2,3] and B is on sections [1,2] and C is on sections [2,3]
         #The Rate will only effect A on section 2 (rather than have 3 different rates)
@@ -136,6 +136,7 @@ class Rate(GeneralizedReaction):
                     self._indices_dict[sptr()] = []
                 return
             active_secs = list(set.union(*[set(reg.secs) for reg in actr]))
+            active_regions = actr
             #if there are multiple regions on a segment for an involved species the rate is ambiguous
             for sptr in self._involved_species:
                 s = sptr()

@@ -2,7 +2,6 @@ from . import rxd, node, rxdmath
 import numpy
 import weakref
 import itertools
-import scipy.sparse
 import itertools
 from .rxdException import RxDException
 import warnings
@@ -11,7 +10,6 @@ _weakref_ref = weakref.ref
 # aliases to avoid repeatedly doing multiple hash-table lookups
 _itertools_chain = itertools.chain
 _numpy_array = numpy.array
-_scipy_sparse_coo_matrix = scipy.sparse.coo_matrix
 
 # converting from mM um^3 to molecules
 # = 6.02214129e23 * 1000. / 1.e18 / 1000
@@ -122,8 +120,8 @@ class GeneralizedReaction(object):
         #Default values 
         self._indices_dict = {}
         self._indices = []
-        self._jac_rows = []
-        self._jac_cols = []
+        #self._jac_rows = []
+        #self._jac_cols = []
         self._mult = [1]
         self._mult_extended = self._mult
         active_secs = None
@@ -135,10 +133,9 @@ class GeneralizedReaction(object):
 
         sp_regions = None
         if self._trans_membrane and (sources or dests):   #assume sources share common regions and destinations share common regions
-            sp_regions = list({sptr()._region for sptr in sources}.union({sptr()._region for sptr in dests}))
+            sp_regions = list({sptr()._region for sptr in sources}.union({sptr()._region() for sptr in dests}))
         elif sources and dests:
-            sp_regions = list(set.intersection(*[set(sptr()._regions) if isinstance(sptr(),species.Species) else {sptr()._region} for sptr in sources + dests]))
-
+            sp_regions = list(set.intersection(*[set(sptr()._regions) if isinstance(sptr(),species.Species) else {sptr()._region()} for sptr in sources + dests]))
         #The reactants do not share a common region 
         if not sp_regions:
             for sptr in self._involved_species:
@@ -166,6 +163,7 @@ class GeneralizedReaction(object):
                     del active_regions[active_regions.index(r)] 
             else:
                 active_regions = []
+
     
         #If we haven't identified active_regions -- use the regions where all species are defined
         if len(active_regions) == 0 or active_regions == [None]:
@@ -187,8 +185,9 @@ class GeneralizedReaction(object):
                 active_secs = set.intersection(*[set(reg.secs) for reg in active_regions if reg])
         else:
             active_secs = set.intersection(*[set(reg.secs) for reg in active_regions if reg])
-        
-        active_secs_list = [sec for reg in active_regions if reg  for sec in reg.secs if sec in active_secs]
+
+        self._active_regions = active_regions
+        active_secs_list = [sec for reg in active_regions if reg for sec in reg.secs if sec in active_secs]
         # store the indices
         for sptr in self._involved_species:
             s = sptr()
@@ -242,13 +241,12 @@ class GeneralizedReaction(object):
         else:
             return []
 
-
     def _update_jac_cache(self):
         from . import species
         num_involved = len(self._involved_species)
-        self._jac_rows = list(_itertools_chain(*[ind * num_involved for ind in self._indices]))
+        #self._jac_rows = list(_itertools_chain(*[ind * num_involved for ind in self._indices]))
         num_ind = len(self._indices)
-        self._jac_cols = list(_itertools_chain(*[self._indices_dict[s()] for s in self._involved_species if not isinstance(s(),species.SpeciesOnExtracellular)])) * num_ind
+        #self._jac_cols = list(_itertools_chain(*[self._indices_dict[s()] for s in self._involved_species if not isinstance(s(),species.SpeciesOnExtracellular)])) * num_ind
         if self._trans_membrane:
             self._mult_extended = self._mult
             #self._mult_extended = [sum([list(mul) * num_involved], []) for mul in self._mult]
@@ -257,7 +255,7 @@ class GeneralizedReaction(object):
             self._mult_extended = self._mult
         
 
-
+"""
     def _jacobian_entries(self, states, multiply=1, dx=1.e-10):
         args = self._get_args(states)
         indices, mult, base_value = self._evaluate_args(args)
@@ -276,9 +274,4 @@ class GeneralizedReaction(object):
         else:
             data = list(_itertools_chain(*[derivs * mul * multiply for mul in mult]))
         return self._jac_rows, self._jac_cols, data
-    
-    def _jacobian(self, states, multiply=1, dx=1.e-10):
-        rows, cols, data = self._jacobian_entries(states, multiply=multiply, dx=dx)
-        n = len(states)
-        jac = _scipy_sparse_coo_matrix((data, (rows, cols)), shape=(n, n))
-        return jac
+"""

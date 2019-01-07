@@ -121,9 +121,10 @@ class Reaction(GeneralizedReaction):
         #Are any of of the sources or destinations passed to the constructor defined on the ECS
         if not ecs_region:
             sps = [s() for s in self._sources + self._dests if isinstance(s(),species.Species)]
-            for s in sps:
-                if s._extracellular_instances:
-                    ecs_region = s._extracellular_instances[0]._region
+            # only have an ecs reaction if all the species are defined on the ecs
+            if sps and all(s._extracellular_instances for s in sps):
+                # assume all the ecs regions are the same
+                ecs_region = sps[0]._extracellular_instances[0]._region
         
         if ecs_region:
             self._rate_ecs, self._involved_species_ecs = rxdmath._compile(rate, extracellular=ecs_region)

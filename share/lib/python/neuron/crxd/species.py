@@ -377,7 +377,6 @@ class _ExtracellularSpecies(_SpeciesMathable):
             
 
         """
-        warnings.warn('Note that changing the morphology after initialization in models with Extracellular regions is not yet supported (This is printed everytime regardless of whether there is an attempt to change morphology)')
         _extracellular_diffusion_objects[self] = None
 
         # ensure 3D points exist
@@ -960,8 +959,7 @@ class Species(_SpeciesMathable):
     def _setup_c_matrix(self, c):
         # TODO: this will need to be changed for three dimensions, or stochastic
         for s in self._secs:
-            for i in range(s._offset, s._offset + s.nseg):
-                c[i, i] = 1.
+            c[s._offset:s._offset + s.nseg] = 1.0
     
     def _setup_currents(self, indices, scales, ptrs, cur_map):
         from . import rxd

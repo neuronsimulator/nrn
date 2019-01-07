@@ -47,7 +47,7 @@ class _c_region:
         self.num_ecs_species = 0
         self.num_segments = numpy.sum([x.nseg for x in self._overlap])
         self._ecs_react_species = set()
-        self._react_species = set()
+        self._react_species = list()
         self._react_regions = dict()
         self._initialized = False
         self.location_index = None
@@ -61,17 +61,21 @@ class _c_region:
             else:
                 _c_region_lookup[rptr] = [self]
    
-    def add_reaction(self,rptr,regions):
-        self._react_regions[rptr] = regions
+    def add_reaction(self,rptr,region):
+        if rptr in self._react_regions:
+           self._react_regions[rptr].add(region)
+        else:
+            self._react_regions[rptr] = {region}
         self._initialized = False
 
     def add_species(self,species_set):
         from .species import SpeciesOnRegion
         for s in species_set:
             if isinstance(s,SpeciesOnRegion):
-                self._react_species.add(s._species())
-            else:
-                self._react_species.add(s)
+                if s._species() not in self._react_species: 
+                    self._react_species.append(s._species())
+            elif s not in self._react_species: 
+                self._react_species.append(s)
         self.num_species = len(self._react_species)
         self._initilized = False
 
@@ -153,10 +157,9 @@ class _c_region:
             self._ecs_initalize()
                                   
         for rptr in self._react_regions:
-            reagions = self._react_regions[rptr]
             rids = []
-            for r in self._regions:
-                rids.append(self._region_ids[r._id])
+            for r in self._react_regions[rptr]:
+                rids.append(self._region_ids[r()._id])
             self._react_regions[rptr] = rids
         self._initialized = True
 

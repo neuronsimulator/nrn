@@ -10,7 +10,7 @@ sec.diam=1
 sec.nseg=100
 
 h.CVode().active(1)
-
+h.CVode().atol(1e-4)
 
 
 caDiff =  0.016
@@ -38,7 +38,7 @@ er= rxd.Region(h.allsec(), name='er', geometry=rxd.FractionalVolume(fe/2.))
 
 cyt_er_membrane = rxd.Region(h.allsec(), name='mem', geometry = rxd.ScalableBorder(1, on_cell_surface=False))
 
-ca  = rxd.Species({cyt, er}, d=caDiff, name="ca", charge=2, initial=caCYT_init)
+ca  = rxd.Species([cyt, er], d=caDiff, name="ca", charge=2, initial=caCYT_init)
 
 
 ip3 = rxd.Species(cyt, d=ip3Diff, name="ip3", initial=ip3_init)

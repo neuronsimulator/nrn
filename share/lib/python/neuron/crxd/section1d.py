@@ -3,6 +3,7 @@ from neuron import h
 from . import node, rxdsection, nodelist
 import numpy
 from .rxdException import RxDException
+import warnings
 
 # all concentration ptrs and indices
 _all_cptrs = []
@@ -14,6 +15,18 @@ _last_c_ptr_length = None
 _rxd_sec_lookup = dict()
 
 def _donothing(): pass
+
+
+def add_values(mat, i, js, vals):
+    mat_i = mat[i]
+    for (j,val) in zip(js,vals):
+        if val == 0: continue
+        if j in mat_i:
+            mat_i[j] += val
+            #if mat_i[j] == 0:
+            #    del mat_i[j]
+        else:
+            mat_i[j] = val
 
 def _purge_cptrs():
     """purges all cptr information"""
@@ -46,6 +59,18 @@ def _transfer_to_legacy():
         _c_ptr_vector_storage[:] = node._get_states()[_all_cindices]
         _c_ptr_vector.scatter(_c_ptr_vector_storage_nrn)
 
+def replace(rmsec, offset, nseg):
+    """ Replace the section (rmsec) in node data lists and update the offsets"""
+    start = rmsec._offset
+    dur = rmsec._nseg
+    node._replace(start, rmsec._nseg, offset, nseg)
+    rmsec._offset = offset
+    rmsec._nseg = nseg
+    for secs in _rxd_sec_lookup.values():
+        for sec in secs:
+            if sec and sec()._offset > start:
+                sec()._offset -= dur
+
 class Section1D(rxdsection.RxDSection):
     def __init__(self, species, sec, diff, r):
         self._species = weakref.ref(species)
@@ -67,12 +92,14 @@ class Section1D(rxdsection.RxDSection):
         node._diffs[self._offset : self._offset + self.nseg] = self._diff
     
     def _update_node_data(self):
+        if self._nseg != self._sec.nseg:
+            offset = node._allocate(self._sec.nseg + 1)
+            replace(self, offset, self._sec.nseg)
         volumes, surface_area, diffs = node._get_data()
         geo = self._region._geometry
-        volumes[self._offset : self._offset + self.nseg] = geo.volumes1d(self)
-        surface_area[self._offset : self._offset + self.nseg] = geo.surface_areas1d(self)
+        volumes[self._offset : self._offset + self._nseg] = geo.volumes1d(self)
+        surface_area[self._offset : self._offset + self._nseg] = geo.surface_areas1d(self)
         self._neighbor_areas = geo.neighbor_areas1d(self)
-        
 
     @property
     def indices(self):
@@ -93,7 +120,7 @@ class Section1D(rxdsection.RxDSection):
                 sign = 1
             else:
                 raise RxDException('bad nrn_region for setting up currents (should never get here)')
-            scales.extend(sign * surface_area[self.indices] * 10000. / (self.species.charge * rxd.FARADAY * volumes[self.indices]))
+            scales.append(sign * surface_area[self.indices] * 10000. / (self.species.charge * rxd.FARADAY * volumes[self.indices]))
             for i in range(self.nseg):
                 cur_map[self.species.name + self.nrn_region][self._sec((i + 0.5) / self.nseg)] = len(ptrs) + i
             ptrs.extend([self._sec((i + 0.5) / self.nseg).__getattribute__(ion_curr) for i in range(self.nseg)])
@@ -122,7 +149,7 @@ class Section1D(rxdsection.RxDSection):
         else:
             self._concentration_ptrs = []
 
-    def _setup_diffusion_matrix(self, g):
+    def _setup_diffusion_matrix(self, mat):
         _volumes, _surface_area, _diffs = node._get_data()
         offset = self._offset
         dx = self.L / self.nseg
@@ -157,28 +184,27 @@ class Section1D(rxdsection.RxDSection):
                 # TODO: verify this is the right thing to do
                 rate_r *= 2
             # TODO: does this try/except add overhead? remove
-            try:
-                g[io, io] += rate_r + rate_l
-                g[io, io + 1] -= rate_r
-                g[io, il] -= rate_l
-            except IndexError:
-                print(('indexerror: g.shape = %r, io = %r, il = %r, len(node._states) = %r' % (g.shape, io, il, len(node._states))))
-                raise
+            #try:
+            #    g[io, io] += rate_r + rate_l
+            #    g[io, io + 1] -= rate_r
+            #    g[io, il] -= rate_l
+            #except IndexError:
+            #    print(('indexerror: g.shape = %r, io = %r, il = %r, len(node._states) = %r' % (g.shape, io, il, len(node._states))))
+            #    raise
+            add_values(mat, io, [il, io, io+1], [-rate_l, rate_r + rate_l, -rate_r])
+
             # TODO: verify that these are correct
             if i == 0:
                 # for 0 volume nodes, must conserve MASS not concentration
                 scale = _volumes[io] / _volumes[il] if _volumes[il] else _volumes[io]
-                g[il, il] += rate_l * scale
-                g[il, io] -= rate_l * scale
+                add_values(mat, il, [il, io], [rate_l * scale, -rate_l * scale])
             if i == self.nseg - 1:
                 ir = io + 1
                 # for 0 volume nodes, must conserve MASS not concentration
                 # I suspect ir always points to a 0 volume node, but
                 # good to be safe
                 scale = _volumes[io] / _volumes[ir] if _volumes[ir] else _volumes[io]
-                g[ir, ir] += rate_r * scale
-                g[ir, io] -= rate_r * scale
-            
+                add_values(mat, ir, [ir, io], [rate_r * scale, -rate_r * scale])
 
     def _import_concentration(self, init):
         """imports concentration from NEURON; else 0s it if not in NEURON"""
