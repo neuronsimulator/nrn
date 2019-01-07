@@ -768,6 +768,7 @@ static PyObject* char2pylist(char* buf, int np, int* cnt, int* displ) {
   return plist;
 }
 
+#if NRNMPI
 static PyObject* py_allgather(PyObject* psrc){
   int np = nrnmpi_numprocs;
   size_t sz;
@@ -846,6 +847,7 @@ static PyObject* py_broadcast(PyObject* psrc, int root){
   delete [] buf;
   return pdest;
 }
+#endif
 
 //type 1-alltoall, 2-allgather, 3-gather, 4-broadcast, 5-scatter
 // size for 3, 4, 5 refer to rootrank.
