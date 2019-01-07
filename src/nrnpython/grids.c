@@ -331,8 +331,13 @@ void free_Grid(Grid_node *grid) {
 	free(grid->lambda);
     free(grid->bc);
     free(grid->current_dest);
-    free(grid->proc_offsets);
-    free(grid->proc_num_currents);
+#if NRNMPI
+    if(nrnmpi_use)
+    {
+        free(grid->proc_offsets);
+        free(grid->proc_num_currents);
+    }
+#endif
     free(grid->all_currents);
     free(grid->adi_dir_x);
     free(grid->adi_dir_y);

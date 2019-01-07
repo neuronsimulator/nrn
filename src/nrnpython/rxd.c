@@ -11,6 +11,9 @@
 #include <../nrnoc/multicore.h>
 #include <nrnwrap_Python.h>
 
+extern int structure_change_cnt;
+int prev_structure_change_cnt = 0;
+unsigned char initialized = 0;
 
 /*
     Globals
@@ -33,16 +36,16 @@ extern NrnThread* nrn_threads;
 /*intracellular diffusion*/
 unsigned char diffusion = FALSE;
 int _rxd_euler_nrow=0, _rxd_euler_nnonzero=0, _rxd_num_zvi=0;
-long* _rxd_euler_nonzero_i;
-long* _rxd_euler_nonzero_j;
-double* _rxd_euler_nonzero_values;
-long* _rxd_zero_volume_indices;
-double* _rxd_a;
-double* _rxd_b;
-double* _rxd_c;
-double* _rxd_d;
-int* _rxd_p; 
-long*  _rxd_zvi_child_count = NULL;
+long* _rxd_euler_nonzero_i = NULL;
+long* _rxd_euler_nonzero_j = NULL;
+double* _rxd_euler_nonzero_values = NULL;
+long* _rxd_zero_volume_indices = NULL;
+double* _rxd_a = NULL;
+double* _rxd_b = NULL;
+double* _rxd_c = NULL;
+double* _rxd_d = NULL;
+long* _rxd_p = NULL; 
+unsigned int*  _rxd_zvi_child_count = NULL;
 long** _rxd_zvi_child = NULL;
 static int _cvode_offset;
 
@@ -121,14 +124,31 @@ static void transfer_to_legacy()
 	}
 }
 
-/* TODO: remove MAX_REACTIONS; use dynamic storage instead */
-#define MAX_REACTIONS 100
-#define CHILD_BLOCK 10
+static inline void* allocopy(void* src, size_t size)
+{
+    void* dst = malloc(size);
+    memcpy(dst, src, size);
+    return dst;
+}
 
 void rxd_set_no_diffusion()
 {
     int i;
+    prev_structure_change_cnt = structure_change_cnt;
+    initialized = 1;
     diffusion = FALSE;
+    if(_rxd_a != NULL)
+    {
+        free(_rxd_a);
+        free(_rxd_b);
+        free(_rxd_c);
+        free(_rxd_d);
+        free(_rxd_p);
+        free(_rxd_euler_nonzero_i);
+        free(_rxd_euler_nonzero_j);
+        free(_rxd_euler_nonzero_values);
+        _rxd_a = NULL;
+    }
     /*Clear previous _rxd_zvi_child*/
     if(_rxd_zvi_child != NULL && _rxd_zvi_child_count != NULL)
     {
@@ -194,19 +214,33 @@ void rxd_setup_conc_ptrs(int conc_count, int* conc_index,
 
 void rxd_set_euler_matrix(int nrow, int nnonzero, long* nonzero_i,
                           long* nonzero_j, double* nonzero_values,
-                          long* zero_volume_indices, int num_zero_volume_indices,
-                          double* diffusion_a_base, double* diffusion_b_base,
-                          double* diffusion_d_base, int* diffusion_p, 
-                          double* c_diagonal)
+                          long* zero_volume_indices,
+                          int num_zero_volume_indices, double* c_diagonal)
 {
-    long i, j;
-    diffusion = TRUE;  
-    /* TODO: is it better to use a pointer or do a copy */
+    long i, j, idx;
+    double val;
+    unsigned int k, ps;
+    unsigned int* parent_count;
+    /*free old data*/
+    if(_rxd_a != NULL)
+    {
+        free(_rxd_a);
+        free(_rxd_b);
+        free(_rxd_c);
+        free(_rxd_d);
+        free(_rxd_p);
+        free(_rxd_euler_nonzero_i);
+        free(_rxd_euler_nonzero_j);
+        free(_rxd_euler_nonzero_values);
+    }
+    prev_structure_change_cnt = structure_change_cnt;
+    initialized = 1;
+    diffusion = TRUE;
 	_rxd_euler_nrow = nrow;
     _rxd_euler_nnonzero = nnonzero;
-    _rxd_euler_nonzero_i = nonzero_i;
-    _rxd_euler_nonzero_j = nonzero_j;
-    _rxd_euler_nonzero_values = nonzero_values;
+    _rxd_euler_nonzero_i = (long*)allocopy(nonzero_i, sizeof(long) * nnonzero);
+    _rxd_euler_nonzero_j = (long*)allocopy(nonzero_j, sizeof(long) * nnonzero);
+    _rxd_euler_nonzero_values = (double*)allocopy(nonzero_values, sizeof(double) * nnonzero);
 
     /*Clear previous _rxd_zvi_child*/
     if(_rxd_zvi_child != NULL && _rxd_zvi_child_count != NULL)
@@ -218,46 +252,76 @@ void rxd_set_euler_matrix(int nrow, int nnonzero, long* nonzero_i,
         _rxd_zvi_child_count = NULL;
         _rxd_zvi_child = NULL;
     }
+    _rxd_num_zvi = num_zero_volume_indices; 
+    _rxd_zero_volume_indices = zero_volume_indices;
     
-    _rxd_num_zvi = num_zero_volume_indices;
-    if(_rxd_zero_volume_indices != NULL) free(_rxd_zero_volume_indices);
-    _rxd_zero_volume_indices = malloc(sizeof(long)*num_zero_volume_indices);
-    memcpy(_rxd_zero_volume_indices,zero_volume_indices,sizeof(long)*num_zero_volume_indices);
+    _rxd_a = (double*)calloc(nrow,sizeof(double));
+    _rxd_b = (double*)calloc(nrow,sizeof(double));
+    _rxd_c = (double*)calloc(nrow,sizeof(double));
+    _rxd_d = (double*)calloc(nrow,sizeof(double));
+    _rxd_p = (long*)malloc(nrow*sizeof(long));
+    parent_count = (unsigned int*)calloc(nrow,sizeof(unsigned int));    
 
-    _rxd_a = diffusion_a_base;
-    _rxd_b = diffusion_b_base;
-    _rxd_d = diffusion_d_base;
-    _rxd_p = diffusion_p;
-    _rxd_c = c_diagonal;
+    for(idx = 0; idx < nrow; idx++)
+        _rxd_p[idx] = -1;
+
+    for(idx = 0; idx < nnonzero; idx++)
+    {
+        i = nonzero_i[idx];
+        j = nonzero_j[idx];
+        val = nonzero_values[idx];
+        if(i < j)
+        {
+            _rxd_p[j] = i;
+            parent_count[i]++;
+            _rxd_a[j] = val;
+        }
+        else if(i == j)
+        {
+            _rxd_d[i] = val;
+        }
+        else
+        {
+            _rxd_b[i] = val;
+        }
+        
+    }
+
+    for(idx = 0; idx < nrow; idx++)
+    {
+        _rxd_c[idx] =  _rxd_d[idx] > 0 ? c_diagonal[idx] : 1.0;
+    }
     
     if(_rxd_num_zvi > 0)
     {
-        if(_rxd_zvi_child_count != NULL) free(_rxd_zvi_child_count);
-        if(_rxd_zvi_child != NULL) free(_rxd_zvi_child_count);
-        _rxd_zvi_child_count = (long*)calloc(_rxd_num_zvi,sizeof(long));
+        _rxd_zvi_child_count = (unsigned int*)malloc(_rxd_num_zvi*sizeof(unsigned int));
         _rxd_zvi_child = (long**)malloc(_rxd_num_zvi*sizeof(long*));
 
         /* find children of zero-volume-indices */
         for(i = 0; i < _rxd_num_zvi; i++)
         {
-            _rxd_zvi_child_count[i] = 0;
-            _rxd_zvi_child[i] = (long*)malloc(sizeof(long)*CHILD_BLOCK);
-            assert(_rxd_zvi_child[i]);
-            for(j = 0; j < _rxd_euler_nrow; j++)
+            ps = parent_count[_rxd_zero_volume_indices[i]];
+            if(ps == 0) 
+            {
+                _rxd_zvi_child_count[i] = 0;
+                _rxd_zvi_child[i] = NULL;
+
+                continue;
+            }
+            _rxd_zvi_child[i] = (long*)malloc(ps*sizeof(long));
+            _rxd_zvi_child_count[i] = ps;
+            for(j = 0, k = 0; k < ps; j++)
             {
                 if(_rxd_zero_volume_indices[i] == _rxd_p[j])
                 {
-                    _rxd_zvi_child[i][_rxd_zvi_child_count[i]] = j;
-                    _rxd_zvi_child_count[i]++;
-                    if(_rxd_zvi_child_count[i]%CHILD_BLOCK == 0)
-                      _rxd_zvi_child[i] = (long*)realloc(_rxd_zvi_child[i], sizeof(long)*(_rxd_zvi_child_count[i]+CHILD_BLOCK));
+                    _rxd_zvi_child[i][k] = j;
+                    k++;
                 }
             }
-            _rxd_zvi_child[i] = (long*)realloc(_rxd_zvi_child[i], sizeof(long)*_rxd_zvi_child_count[i]);
         }
     }
+    free(parent_count);
 }
-
 static void mul(int nrow, int nnonzero, long* nonzero_i, long* nonzero_j, const double* nonzero_values, const double* v, double* result) {
     long i, j, k;
 	double dt = *dt_ptr;
@@ -268,8 +332,9 @@ static void mul(int nrow, int nnonzero, long* nonzero_i, long* nonzero_j, const 
     for (k = 0; k < nnonzero; k++) {
         i = *nonzero_i++;
         j = *nonzero_j++;
-        result[i] += (*nonzero_values++) * v[j];
+        result[i] -= (*nonzero_values++) * v[j];
     }
+
 
 	/*Add currents to the result
 	 * TODO: RxD induced currents
@@ -300,7 +365,7 @@ void set_setup_matrices(fptr setup_matrices) {
 }
 
 /* nrn_tree_solve modified from nrnoc/ldifus.c */
-static void nrn_tree_solve(double* a, double* b, double* c, double* dbase, double* rhs, int* pindex, int n, double dt) {
+static void nrn_tree_solve(double* a, double* b, double* c, double* dbase, double* rhs, long* pindex, long n, double dt) {
     /*
         treesolver
         
@@ -312,7 +377,7 @@ static void nrn_tree_solve(double* a, double* b, double* c, double* dbase, doubl
         pindex - parent indices
         n      - number of states
     */
-    int i;
+    long i, pin;
     double* d = malloc(sizeof(double) * n);
     double* myd;
     double* myc;
@@ -330,7 +395,7 @@ static void nrn_tree_solve(double* a, double* b, double* c, double* dbase, doubl
 
 	/* triang */
 	for (i = n - 1; i > 0; --i) {
-		int pin = pindex[i];
+		pin = pindex[i];
 		if (pin > -1) {
 			double p;
 			p = dt * a[i] / d[i];
@@ -340,7 +405,7 @@ static void nrn_tree_solve(double* a, double* b, double* c, double* dbase, doubl
 	}
 	/* bksub */
 	for (i = 0; i < n; ++i) {
-		int pin = pindex[i];
+		pin = pindex[i];
 		if (pin > -1) {
 			rhs[i] -= dt * b[i] * rhs[pin];
 		}
@@ -600,8 +665,12 @@ static void _currents(double* rhs)
 }
 
 int rxd_nonvint_block(int method, int size, double* p1, double* p2, int thread_id) {
-    //fprintf(stderr,"nonvint_block  method = %d l=%d t=%g dt=%g p1=%p p2=%p offset=%i num_states=%i\n",method,size, *t_ptr, *dt_ptr, p1, p2, _cvode_offset, num_states);
-    switch (method) {
+        if(initialized && structure_change_cnt != prev_structure_change_cnt)
+        {
+            /*TODO: Exclude irrelevant (non-rxd) structural changes*/
+            _setup_matrices(); 
+        }
+        switch (method) {
         case 0:
             _setup();
             break;
@@ -623,7 +692,7 @@ int rxd_nonvint_block(int method, int size, double* p1, double* p2, int thread_i
         case 5:
             /* ode_count */
             _cvode_offset = size;
-            return ode_count(size) + num_states - _rxd_num_zvi;
+            return ode_count(size + num_states - _rxd_num_zvi) + num_states - _rxd_num_zvi;
         case 6:
             /* ode_reinit(y) */
             _ode_reinit(p1); //Invalid read of size 8 
@@ -635,7 +704,7 @@ int rxd_nonvint_block(int method, int size, double* p1, double* p2, int thread_i
             _rhs_variable_step(*t_ptr, p1, p2);
             break;
         case 8:
-            //ode_solve(*t_ptr, *dt_ptr, p1, p2); /*solve mx=b replace b with x */
+            ode_solve(*t_ptr, *dt_ptr, p1, p2); /*solve mx=b replace b with x */
             /* TODO: we can probably reuse the dgadi code here... for now, we do nothing, which implicitly approximates the Jacobian as the identity matrix */
             break;
         case 9:
@@ -950,9 +1019,7 @@ void setup_solver(double* my_states, int my_num_states, long* zvi, int num_zvi, 
     states = my_states;
     num_states = my_num_states;
     _rxd_num_zvi = num_zvi;
-    if(_rxd_zero_volume_indices != NULL) free(_rxd_zero_volume_indices);
-    _rxd_zero_volume_indices = malloc(sizeof(long)*num_zvi);
-    memcpy(_rxd_zero_volume_indices,zvi,sizeof(long)*num_zvi);
+    _rxd_zero_volume_indices = zvi;
     dt_ptr = &nrn_threads->_dt;
     t_ptr = &nrn_threads->_t;
     h_t_ptr = h_t_ref->u.px_;
@@ -1043,6 +1110,7 @@ void* TaskQueue_exe_tasks(void* dat)
     
         //execute
         job->result = job->task(job->args);
+        free(job);
 
         //fprintf(stderr,"%i] updating\n",id); 
         pthread_mutex_lock(q->waiting_mutex);
@@ -1313,7 +1381,8 @@ void _ode_reinit(double* y)
 
 void _rhs_variable_step(const double t, const double* p1, double* p2) 
 {
-	long i, j, k, p, c;
+	long i, j, p, c;
+    unsigned int k;
     double dt = *dt_ptr;
     const unsigned char calculate_rhs = p2 == NULL ? 0 : 1;
     const double* my_states = p1 + _cvode_offset;
@@ -1322,7 +1391,7 @@ void _rhs_variable_step(const double t, const double* p1, double* p2)
 	/*variables for diffusion*/
 	double *rhs;
 	long* zvi = _rxd_zero_volume_indices;
-   
+
     /*Copy states from CVode*/ 
     if(_rxd_num_zvi > 0)
     {
@@ -1349,10 +1418,13 @@ void _rhs_variable_step(const double t, const double* p1, double* p2)
             for(k = 0; k < _rxd_zvi_child_count[i]; k++)
             {
                 c = _rxd_zvi_child[i][k];
-                states[j] -= (_rxd_a[c]/_rxd_d[j])*states[c];
+                states[j] -= (_rxd_a[c]/_rxd_d[j])*states[c]; 
             }
         }
     }
+
+    transfer_to_legacy();
+
     if(!calculate_rhs)
     {
         for(i = 0; i < _rxd_num_zvi; i++)
@@ -1416,18 +1488,19 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates)
         ecs_result = (double**)malloc(react->num_ecs_species*sizeof(double*));
         for(i = 0; i < react->num_ecs_species; i++)
 	    {
-	        ecs_states_for_reaction[i] = (double*)malloc(react->num_regions*sizeof(double));
+	        ecs_states_for_reaction[i] = (double*)calloc(react->num_regions,sizeof(double));
 	        ecs_result[i] = (double*)malloc(react->num_regions*sizeof(double));
         }
 
     }
+    
     //TODO: Pass in a flag to switch between variable step solver and currents
     if(_membrane_flux)
         MEM_ZERO(_rxd_induced_flux,sizeof(double)*_memb_curr_total);
     
     for(i = 0; i < react->num_species; i++)
     {
-        states_for_reaction[i] = (double*)malloc(react->num_regions*sizeof(double));
+        states_for_reaction[i] = (double*)calloc(react->num_regions,sizeof(double));
         result_array[i] = (double*)malloc(react->num_regions*sizeof(double));
         
     }
@@ -1459,13 +1532,14 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates)
 	            	ecs_states_for_reaction[i][j] = *(react->ecs_state[segment][i][j]);
 	        	}
 	        }
+            MEM_ZERO(ecs_result[i],react->num_regions*sizeof(double));
 	    }
         for(i = 0; i < react->num_mult; i++)
         {
             mc_mult[i] = react->mc_multiplier[i][segment];
         }
 
-	    react->reaction(states_for_reaction, result_array, mc_mult, ecs_states_for_reaction, ecs_result);
+	    react->reaction(states_for_reaction, result_array, mc_mult, ecs_states_for_reaction, ecs_result); // Conditional jump or move depends on uninitialised value(s)
 
         for(i = 0; i < react->num_species; i++)
         {
@@ -1494,9 +1568,28 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates)
 	        }
 	    }
     }
+    /* free allocated memory */
+    if(react->num_mult > 0)
+        free(mc_mult);
+    if(react->num_ecs_species>0)
+    {
+        for(i = 0; i < react->num_ecs_species; i++)
+        {
+            free(ecs_states_for_reaction[i]); 
+            free(ecs_result[i]);
+        }
+        free(ecs_states_for_reaction);
+        free(ecs_result);
+    }
+    for(i = 0; i < react->num_species; i++)
+    {
+        free(states_for_reaction[i]);
+        free(result_array[i]);
+    }
+    free(states_for_reaction);
+    free(result_array);
+
 }
-
-
 
 void solve_reaction(ICSReactions* react, double* states, double *bval, double *ydot)
 {
@@ -1581,6 +1674,9 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double *y
 	            	ecs_states_for_reaction_dx[i][j] = ecs_states_for_reaction[i][j];
 	        	}
 	        }
+            MEM_ZERO(ecs_result[i],react->num_regions*sizeof(double));
+            MEM_ZERO(ecs_result_dx[i],react->num_regions*sizeof(double));
+
 	    }
         for(i = 0; i < react->num_mult; i++)
         {
@@ -1590,9 +1686,8 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double *y
 
 	    react->reaction(states_for_reaction, result_array, mc_mult, ecs_states_for_reaction, ecs_result);
 
-
 	    /*Calculate I - Jacobian for ICS reactions*/
-	    for(i = 0, idx = 0; i < react->num_species; i++)
+        for(i = 0, idx = 0; i < react->num_species; i++)
 		{
 	        for(j = 0; j < react->num_regions; j++)
 	        {
@@ -1701,10 +1796,10 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double *y
 	        	}
 	        }
 	    }
-	    // solve for x, destructively
+        // solve for x, destructively
         tracecatch(LUfactor(jacobian, pivot);
 	        LUsolve(jacobian, pivot, b, x);,
-            "solve_reaction");
+            "solve_reaction");  //Conditional jump or move depends on uninitialised value(s)
 
         if(bval != NULL)
         {
@@ -1807,7 +1902,8 @@ void do_ics_reactions(double* states, double* b, double* ydot)
     ICSReactions* react;
     for(react = _reactions; react != NULL; react = react->next)
     {
-        solve_reaction(react, states, b, ydot);
+        if(react->icsN + react->ecsN > 0)
+            solve_reaction(react, states, b, ydot);
     }
 }
 
@@ -1816,7 +1912,8 @@ void get_all_reaction_rates(double* states, double* rates)
     ICSReactions* react;
     for(react = _reactions; react != NULL; react = react->next)
     {
-        get_reaction_rates(react, states, rates);
+        if(react->icsN + react->ecsN > 0)
+            get_reaction_rates(react, states, rates);
     }
 }
 

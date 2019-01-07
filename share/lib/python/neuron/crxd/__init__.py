@@ -9,11 +9,6 @@ else:
 #if 'neuron.rxd' in sys.modules:
 #    raise RxDException('NEURON CRxD module cannot be used with NEURON RxD module.')
 
-try:
-    import scipy
-except:
-    raise RxDException('NEURON RxD module requires SciPy')
-
 from . import rxd
 from .species import Species
 from .region import Region, Extracellular

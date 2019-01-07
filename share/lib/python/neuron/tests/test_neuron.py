@@ -36,11 +36,17 @@ class NeuronTestCase(unittest.TestCase):
         b = 1
         assert h.List('A').count() == 0
 
-    def testpsection(self):
+    def psection(self):
         """Test neuron.psection(Section)"""
 
         s = h.Section(name='soma')
         neuron.psection(s)
+
+    def testpsection(self):
+        from multiprocessing import Process
+        p = Process(target=self.psection)
+        p.start()
+        p.join()
 
     def testABI(self):
         """Test use of some  Py_LIMITED_API for python3."""
@@ -64,13 +70,20 @@ class NeuronTestCase(unittest.TestCase):
         v.x[0] = 5
         assert v.x[0] == 5
 
-    def testExtendedSection(self):
+    def ExtendedSection(self):
         """test prsection (modified print statement)"""
         from neuron.sections import ExtendedSection
         s = ExtendedSection(name="test")
         s.psection()
 
-    def testRxDexistence(self):
+    def testExtendedSection(self):
+        from multiprocessing import Process
+        p = Process(target=self.ExtendedSection)
+        p.start()
+        p.join()
+
+    
+    def RxDexistence(self):
         """test import rxd and geometry3d if scipy"""
         a = 1
         try:
@@ -87,12 +100,22 @@ class NeuronTestCase(unittest.TestCase):
                 a = 0
             else:
                try:
-                   a = basicRxD3D()
+                   a = basicRxD3D(h, rxd)
                    print("    basicRxD3D() ran with no exception")
                except:
                    print("'basicRxD3D()' failed")
                    a = 0
-        assert a == 1
+        return a
+        
+
+    def testRxDexistence(self):
+        from multiprocessing import Process
+        p = Process(target=self.RxDexistence)
+        p.start()
+        p.join()
+        assert(p.exitcode == 0)
+        return 0
+
 
 def basicRxD3D():
     from neuron import h, rxd

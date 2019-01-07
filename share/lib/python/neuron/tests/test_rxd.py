@@ -59,6 +59,8 @@ class RxDTestCase(unittest.TestCase):
     def trivial_ecs(self, scale):
         from neuron import h, crxd as rxd
         import numpy
+        import warnings
+        warnings.simplefilter("ignore", UserWarning)
         h.load_file('stdrun.hoc')
         tstop = 10
         if scale:   #variable step case

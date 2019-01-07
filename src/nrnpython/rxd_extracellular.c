@@ -49,6 +49,8 @@ static void ecs_refresh_reactions(const int n)
 			SAFE_FREE(threaded_reactions_tasks[k].onset);
 			SAFE_FREE(threaded_reactions_tasks[k].offset);
 		}
+        SAFE_FREE(threaded_reactions_tasks);
+
 	}
 	threaded_reactions_tasks = create_threaded_reactions(n);
 }
@@ -291,22 +293,22 @@ void* ecs_do_reactions(void* dataptr)
 				stop_idx = react->region_size-1;
 				stop = FALSE;
 			}
-
-			/*allocate data structures*/
+			if(react->num_species_involved == 0)
+                return NULL;
+            /*allocate data structures*/
 			jacobian = m_get(react->num_species_involved,react->num_species_involved);
         	b = v_get(react->num_species_involved);
         	x = v_get(react->num_species_involved);
 			pivot = px_get(jacobian->m);
 			states_cache = (double*)malloc(sizeof(double)*react->num_species_involved);
 			states_cache_dx = (double*)malloc(sizeof(double)*react->num_species_involved);
-			results_array = (double*)calloc(react->num_species_involved,sizeof(double));
-			results_array_dx = (double*)calloc(react->num_species_involved,sizeof(double));
+			results_array = (double*)malloc(react->num_species_involved*sizeof(double));
+			results_array_dx = (double*)malloc(react->num_species_involved*sizeof(double));
 
 			for(i = start_idx; i <= stop_idx; i++)
 			{
 				if(!react->subregion || react->subregion[i])
 				{
-					
 					//TODO: this assumes grids are the same size/shape 
 	 				//      add interpolation in case they aren't      
 					for(j = 0; j < react->num_species_involved; j++)
@@ -314,11 +316,13 @@ void* ecs_do_reactions(void* dataptr)
 						states_cache[j] = react->species_states[j][i];
 						states_cache_dx[j] = react->species_states[j][i];
 					}
+                    MEM_ZERO(results_array,react->num_species_involved*sizeof(double));
 					react->reaction(states_cache, results_array);
 
 					for(j = 0; j < react->num_species_involved; j++)
 					{
 						states_cache_dx[j] += dx;
+                        MEM_ZERO(results_array_dx,react->num_species_involved*sizeof(double));
 						react->reaction(states_cache_dx, results_array_dx);
 						v_set_val(b, j, dt*results_array[j]);
 
@@ -330,7 +334,7 @@ void* ecs_do_reactions(void* dataptr)
 						states_cache_dx[j] -= dx;
 					}
 					// solve for x, destructively
-        			LUfactor(jacobian, pivot);
+        			LUfactor(jacobian, pivot); //Conditional jump or move depends on uninitialised value(s)
         			LUsolve(jacobian, pivot, b, x);
 					for(j = 0; j < react->num_species_involved; j++)
 					{
@@ -640,7 +644,7 @@ void _rhs_variable_step_ecs(const double t, const double* states, double* ydot) 
     ydot = orig_ydot;
     states = orig_states;
     /* process currents */
-    for (i=0,grid = Parallel_grids[0]; grid != NULL; grid = grid -> next,i++)
+    for (i = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, i++)
     {
         do_currents(grid, ydot, 1.0, i);
         ydot += grid_size;
@@ -700,7 +704,7 @@ static void _rhs_variable_step_helper(Grid_node* g, double const * const states,
                 k++, index++, prev_i++, next_i++, prev_j++, next_j++) {
 				div_z = (k==0||k==stop_k)?2.:1.;
 
-                ydot[index] = rate_x * (states[prev_i] -  
+                ydot[index] += rate_x * (states[prev_i] -  
                     2.0 * states[index] + states[next_i])/div_x;
 
                 ydot[index] += rate_y * (states[prev_j] - 

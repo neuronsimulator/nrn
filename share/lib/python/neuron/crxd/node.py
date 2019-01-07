@@ -61,6 +61,24 @@ def _allocate(num):
     _states.resize(total, refcheck=False)
     return start_index
 
+def _replace(start, nseg, new_start, new_nseg):
+    """ delete old volumes, surface areas and diff values in from global arrays
+        move states so that the new segment value is equal to the old segment
+        value that contains its centre """
+    global _volumes, _surface_area, _diffs, _states
+    #Remove entries that have to be recalculated
+    stop = start + nseg
+    _volumes = numpy.delete(_volumes,list(range(start,stop)))
+    _surface_area = numpy.delete(_surface_area,list(range(start,stop)))
+    _diffs = numpy.delete(_diffs,list(range(start,stop)))
+    #Replace states -- the new segment has the state from the old
+    # segment which contains it's centre
+    for j in range(new_nseg):
+        i = int(((j + 0.5) / new_nseg) * nseg)
+        _states[new_start + j] = _states[start + i]
+    _states = numpy.delete(_states,list(range(start,stop)))
+
+
 _numpy_element_ref = neuron.numpy_element_ref
 
 class Node(object):
