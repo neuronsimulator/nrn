@@ -109,6 +109,8 @@ Impedance
         ``.compute(freq)``
 
         ``.compute(freq, 1)``
+        
+        ``.compute(freg, 1, maxiter=500)``
 
 
     Description:
@@ -181,7 +183,8 @@ Impedance
         are allowed before an error message is generated. Iteration stops when no state
         changes more than 1e-9 after an iteration. It is expected that the number of
         iterations will be quite modest with realistic gap junction conductances (a dozen
-        or so).
+        or so). A third argument to .compute specifies the maximum number of iterations
+        (default 500).
 
 
     .. warning::
