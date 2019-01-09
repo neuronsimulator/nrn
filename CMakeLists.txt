@@ -33,8 +33,9 @@ include(FindPythonModule)
 # Find required python packages
 #=============================================================================
 message(STATUS "CHECKING FOR PYTHON")
-find_package(PythonInterp 2.7 REQUIRED)
+find_package(PythonInterp 3.6 REQUIRED)
 find_python_module(yaml REQUIRED)
+find_python_module(jinja2 REQUIRED)
 
 include_directories(
     ${PROJECT_SOURCE_DIR}

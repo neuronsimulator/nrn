@@ -1,7 +1,6 @@
 #include <utility>
 
 #include "lexer/token_mapping.hpp"
-#include "visitors/symtab_visitor.hpp"
 
 using namespace ast;
 using namespace symtab;
