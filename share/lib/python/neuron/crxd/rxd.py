@@ -1225,13 +1225,22 @@ def _init():
     _compile_reactions()
     _setup_memb_currents()
 
- 
+def _init_concentration():
+    if len(species._all_species) == 0:
+        return None
+    for sr in list(_species_get_all_species().values()):
+        s = sr()
+        if s is not None:
+            # TODO: are there issues with hybrid or 3D here? (I don't think so, but here's a bookmark just in case)
+            s._finitialize()
+
+
 
 _has_nbs_registered = False
 _nbs = None
 do_setup_matrices_fptr = None
 def _do_nbs_register():
-    global _has_nbs_registered, _nbs, _fih, _fih2, do_setup_matrices_fptr
+    global _has_nbs_registered, _nbs, _fih, _fih2, _fih3, do_setup_matrices_fptr
     
     if not _has_nbs_registered:
         #from neuron import nonvint_block_supervisor as _nbs
@@ -1242,7 +1251,9 @@ def _do_nbs_register():
         #
         # register the initialization handler and the ion register handler
         #
-        _fih = h.FInitializeHandler(3, _init)
+        _fih = h.FInitializeHandler(_init_concentration)
+        _fih3 = h.FInitializeHandler(3, _init)
+
         set_setup_matrices = nrn_dll_sym('set_setup_matrices')
         set_setup_matrices.argtypes = [fptr_prototype]
         do_setup_matrices_fptr = fptr_prototype(_setup_matrices)
