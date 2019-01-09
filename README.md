@@ -15,15 +15,16 @@ git clone ssh://bbpcode.epfl.ch:22/incubator/nocmodl
 - bison (>=3.0)
 - CMake (>=3.1)
 - C++ compiler (with c++11 support)
-- Python2/3 (>=2.7)
+- Python3 (>=3.6)
 - Python yaml (pyyaml)
+- Jinja2 (>=2.10)
 
 #### Getting Dependencies
 
 Many systems have older version of Flex and Bison. Make sure to have latest version of Flex (>=2.6) and Bison (>=3.0).
 
 
-On OS X we typically install packages via brew/macport and pip :
+On macos X we typically install packages via brew/macport and pip :
 
 ```
 brew install flex bison
@@ -48,6 +49,14 @@ flex 2.6.4
 
 $ bison --version
 bison (GNU Bison) 3.0.4
+```
+
+NMODL depends on Python 3, so make sure you have an up-to-date Python installation. On macos X Python 3 can be installed 
+through e.g. homebrew. On Ubuntu, depending on your version, Python 3 is either already available by default or can be easily
+obtained through
+
+```
+$ apt-get install python3
 ```
 
 Python yaml can be installed as :
