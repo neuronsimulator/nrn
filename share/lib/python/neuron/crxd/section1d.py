@@ -28,6 +28,24 @@ def add_values(mat, i, js, vals):
         else:
             mat_i[j] = val
 
+def _parent(sec):
+    """Return the parent of seg or None if sec is a root"""
+    seg = sec.trueparentseg()
+    if seg:
+        return seg
+    else:
+        seg = sec.parentseg()
+    if seg:
+        par = seg.sec
+        parseg = par.parentseg()
+        if parseg and seg.x == par.orientation:
+            # connection point belongs to temp's ancestor
+            return _parent(seg.sec)
+        else:
+            return seg
+    else:
+        return None
+
 def _purge_cptrs():
     """purges all cptr information"""
     global _all_cptrs, _all_cindices, _c_ptr_vector, _last_c_ptr_length
@@ -90,7 +108,7 @@ class Section1D(rxdsection.RxDSection):
     def _init_diffusion_rates(self):
         # call only after roots are set
         node._diffs[self._offset : self._offset + self.nseg] = self._diff
-    
+
     def _update_node_data(self):
         if self._nseg != self._sec.nseg:
             offset = node._allocate(self._sec.nseg + 1)
@@ -220,8 +238,8 @@ class Section1D(rxdsection.RxDSection):
 
     def _assign_parents(self, root_id, missing, root_children):
         # assign parents and root nodes
-        parent_seg = self._sec.trueparentseg()
-        parent_sec = None if not parent_seg else parent_seg.sec
+        parent_seg = _parent(self._sec)
+        parent_sec = parent_seg.sec if parent_seg else None
         if parent_sec is None or not self._species()._has_region_section(self._region, parent_sec):
             if parent_sec is None:
                 pt = (self._region, None)
