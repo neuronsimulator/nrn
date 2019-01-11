@@ -57,6 +57,12 @@ void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
 #if NRNMPI
 	int i, b, flag;
 	static int called = 0;
+	if (nrnmpi_under_nrncontrol == 2) {
+		int flag;
+		MPI_Initialized(&flag);
+		if (flag) { return; }
+		called = 0;
+	}
 	if (called) { return; }
 	called = 1;
 	nrnmpi_use = 1;
@@ -93,6 +99,10 @@ for (i=0; i < *pargc; ++i) {
 				b = 1;
 				break;
 			}
+		}
+		if (nrnmpi_under_nrncontrol_ == 2) {
+			b = 1;
+			nrnmpi_under_nrncontrol_ = 1;
 		}
 		if (nrnmusic) { b = 1; }
 		if (!b) {

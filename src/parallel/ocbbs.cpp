@@ -33,6 +33,7 @@ extern "C" {
 	extern int nrnmpi_multisplit(Section*, double x, int sid, int backbonestyle);
 	extern int nrn_set_timeout(int timeout);
 	extern void nrnmpi_gid_clear(int);
+	extern int nrnmpi_init_pc();
 	double nrnmpi_rtcomp_time_;
 	extern double nrn_bgp_receive_time(int);
 	char* (*nrnpy_po2pickle)(Object*, size_t*);
@@ -968,6 +969,11 @@ static double thread_dt(void*) {
 	return nrn_threads[i]._dt;
 }
 
+static double mpi_init(void*) {
+	int i;
+	return double(nrnmpi_init_pc());
+}
+
 static double nrnbbcorewrite(void*) {
 	return double(nrnbbcore_write());
 }
@@ -1066,6 +1072,7 @@ static Member_func members[] = {
 	"thread_ctime", thread_ctime,
 	"dt", thread_dt,
 	"t", nrn_thread_t,
+	"mpi_init", mpi_init,
 
     "nrnbbcore_write", nrnbbcorewrite,
     "nrnbbcore_register_mapping", nrnbbcore_register_mapping,

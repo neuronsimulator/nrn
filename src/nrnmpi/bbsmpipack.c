@@ -140,11 +140,23 @@ void nrnmpi_upkvec(int n, double* x, bbsmpibuf* r) {
 	unpack(x, n, my_MPI_DOUBLE, r, "upkvec");
 }
 
+#if NRNMPI_DYNAMICLOAD
+/* for some unknown reason mpiexec -n 2 python3 test0.py gives
+load_nrnmpi: /home/hines/neuron/nrndynam/x86_64/lib/libnrnmpi.so: undefined symbol: cxx_char_alloc
+So fill this in explicitly in nrnmpi_dynam.c
+*/
+char* (*p_cxx_char_alloc)(int len);
+#endif
+
 char* nrnmpi_upkstr(bbsmpibuf* r) {
 	int len;
 	char* s;
 	unpack(&len, 1, my_MPI_INT, r, "upkstr length");
+#if NRNMPI_DYNAMICLOAD
+	s = (*p_cxx_char_alloc)(len+1); /* will be delete not free */
+#else
 	s = cxx_char_alloc(len+1); /* will be delete not free */
+#endif
 	unpack(s, len, my_MPI_CHAR, r, "upkstr string");
 	s[len] = '\0';
 	return s;
@@ -155,7 +167,11 @@ char* nrnmpi_upkpickle(size_t* size, bbsmpibuf* r) {
 	char* s;
 	unpack(&len, 1, my_MPI_INT, r, "upkpickle length");
 	*size = len;
+#if NRNMPI_DYNAMICLOAD
+	s = (*p_cxx_char_alloc)(len+1); /* will be delete not free */
+#else
 	s = cxx_char_alloc(len + 1); /* will be delete, not free */
+#endif
 	unpack(s, len, my_MPI_PICKLE, r, "upkpickle data");
 	return s;
 }

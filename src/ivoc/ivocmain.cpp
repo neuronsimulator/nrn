@@ -254,6 +254,11 @@ extern "C" {
 	extern const char** nrn_global_argv;
 	int always_false;
 	extern int nrn_is_python_extension;
+	extern int nrnmpi_init_pc();
+#if NRNMPI_DYNAMICLOAD
+        extern void nrnmpi_stubs();
+        extern char* nrnmpi_load(int is_python);
+#endif
 }
 
 // some things are defined in libraries earlier than they are used so...
@@ -342,6 +347,25 @@ void prargs(const char* s, int argc, const char** argv) {
 	}
 }
 #endif
+
+int nrnmpi_init_pc() {
+#if NRNMPI
+  if (!nrnmpi_use) {
+#if NRNMPI_DYNAMICLOAD
+    nrnmpi_stubs();
+    const char* pmes = nrnmpi_load(1);
+    if (pmes) {
+      printf("%s\n", pmes);
+    }
+#endif
+    
+    char** foo = (char**)nrn_global_argv;
+    nrnmpi_init(2, &nrn_global_argc, &foo);
+    //if (nrnmpi_myid == 0) {printf("nrnmpi_init_pc called nrnmpi_init\n");}
+  }
+#endif
+  return 0;
+}
 
 // see nrnmain.cpp for the real main()
 
