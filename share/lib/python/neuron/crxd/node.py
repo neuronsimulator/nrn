@@ -61,22 +61,35 @@ def _allocate(num):
     _states.resize(total, refcheck=False)
     return start_index
 
-def _replace(start, nseg, new_start, new_nseg):
+def _remove(start, stop):
+    """ delete old volumes, surface areas and diff values in from global arrays
+    """
+    global _volumes, _surface_area, _diffs, _states
+    #Remove entries that have to be recalculated
+    _volumes = numpy.delete(_volumes,list(range(start,stop)))
+    _surface_area = numpy.delete(_surface_area,list(range(start,stop)))
+    _diffs = numpy.delete(_diffs,list(range(start,stop)))
+    _states = numpy.delete(_states,list(range(start,stop)))
+
+def _replace(old_offset, old_nseg, new_offset, new_nseg):
     """ delete old volumes, surface areas and diff values in from global arrays
         move states so that the new segment value is equal to the old segment
         value that contains its centre """
     global _volumes, _surface_area, _diffs, _states
-    #Remove entries that have to be recalculated
-    stop = start + nseg
-    _volumes = numpy.delete(_volumes,list(range(start,stop)))
-    _surface_area = numpy.delete(_surface_area,list(range(start,stop)))
-    _diffs = numpy.delete(_diffs,list(range(start,stop)))
-    #Replace states -- the new segment has the state from the old
+    # remove entries that have to be recalculated
+    start = old_offset
+    stop = start + old_nseg + 1
+    
+    _volumes = numpy.delete(_volumes,list(range(start, stop)))
+    _surface_area = numpy.delete(_surface_area,list(range(start, stop)))
+    _diffs = numpy.delete(_diffs,list(range(start, stop)))
+    # replace states -- the new segment has the state from the old
     # segment which contains it's centre
+
     for j in range(new_nseg):
-        i = int(((j + 0.5) / new_nseg) * nseg)
-        _states[new_start + j] = _states[start + i]
-    _states = numpy.delete(_states,list(range(start,stop)))
+        i = int(((j + 0.5) / new_nseg) * old_nseg)
+        _states[new_offset + j ] = _states[old_offset + i]
+    _states = numpy.delete(_states,list(range(start, stop)))
 
 
 _numpy_element_ref = neuron.numpy_element_ref

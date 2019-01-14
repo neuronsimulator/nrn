@@ -3,4 +3,5 @@ pure_diffusion_cvode.py
 cabuf.py
 pure_diffusion.py
 multicompartment_reactions.py
+multicompartment_reactions_del.py
 verify_no_initialization_order_issue.py
