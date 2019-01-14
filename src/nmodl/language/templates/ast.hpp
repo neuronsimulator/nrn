@@ -11,11 +11,7 @@
 #include "utils/common_utils.hpp"
 #include "visitors/visitor.hpp"
 
-{% macro ctor_arglist(members) -%}
-    {%- for type, var in members %} {{ type }} {{ var }} {%- if not loop.last %}, {% endif %} {% endfor -%}
-{%- endmacro %}
-
-{% macro virtual(node) %}
+{% macro virtual(node) -%}
     {% if node.is_abstract %} virtual {% endif %}
 {% endmacro %}
 
@@ -40,11 +36,14 @@ namespace ast {
         {% endfor %}
 
         {% if node.children %}
-        {{ node.class_name }}({{ ctor_arglist(node.members) }});
+        {{ node.ctor_declaration() }}
+        {% if node.has_ptr_children() %}
+            {{ node.ctor_shrptr_declaration() }}
+        {% endif %}
         {{ node.class_name }}(const {{ node.class_name }}& obj);
         {% endif %}
 
-        {% if node.is_program_node() or node.is_ptr_excluded_node() %}
+        {% if node.is_program_node or node.is_ptr_excluded_node %}
         {{ node.class_name}}() = default;
         {% endif %}
 
@@ -79,37 +78,37 @@ namespace ast {
         void set_token(ModToken& tok) { token = std::shared_ptr<ModToken>(new ModToken(tok)); }
         {% endif %}
 
-        {% if node.is_symtab_needed() %}
+        {% if node.is_symtab_needed %}
         void set_symbol_table(symtab::SymbolTable* newsymtab) override { symtab = newsymtab; }
 
         symtab::SymbolTable* get_symbol_table() override { return symtab; }
         {% endif %}
 
-        {% if node.is_program_node() %}
+        {% if node.is_program_node %}
         symtab::ModelSymbolTable* get_model_symbol_table() { return &model_symtab; }
         {% endif %}
 
-        {% if node.is_base_class_number_node() %}
+        {% if node.is_base_class_number_node %}
         void negate() override { value = {{ node.negation }}value; }
 
         double to_double() override { return value; }
         {% endif %}
 
-        {% if node.is_name_node() %}
+        {% if node.is_name_node %}
         {{ virtual(node) }}void set_name(std::string name){{ override(node) }} { value->set(name); }
         {% endif %}
 
-        {% if node.is_number_node() %}
+        {% if node.is_number_node %}
         {{ virtual(node) }}double to_double() { throw std::runtime_error("to_double not implemented"); }
         {% endif %}
 
-        {% if node.is_base_block_node() %}
+        {% if node.is_base_block_node %}
         virtual ArgumentVector get_parameters() { throw std::runtime_error("get_parameters not implemented"); }
         {% endif %}
 
-        {% if node.is_data_type_node() %}
+        {% if node.is_data_type_node %}
             {# if node is of enum type then return enum value #}
-            {% if node.is_enum_node() %}
+            {% if node.is_enum_node %}
                 std::string eval() { return {{ node.get_data_type_name() }}Names[value]; }
             {# But if basic data type then eval return their value #}
             {% else %}

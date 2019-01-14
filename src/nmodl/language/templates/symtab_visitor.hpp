@@ -38,7 +38,7 @@ public:
     void setup_symbol_table_for_scoped_block(Node* node, const std::string& name);
 
     {% for node in nodes %}
-        {% if node.is_symtab_method_required() %}
+        {% if node.is_symtab_method_required %}
     void visit_{{ node.class_name|snake_case }}({{ node.class_name }}* node) override;
         {% endif %}
     {% endfor %}

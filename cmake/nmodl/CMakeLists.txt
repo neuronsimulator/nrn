@@ -52,6 +52,13 @@ include_directories(
 )
 
 #=============================================================================
+# Include pybind11
+#=============================================================================
+message(STATUS "INCLUDING PYBIND11")
+add_subdirectory(ext/pybind11)
+
+
+#=============================================================================
 # Project version from git and project directories
 #=============================================================================
 set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})

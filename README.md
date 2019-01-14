@@ -18,6 +18,8 @@ git clone ssh://bbpcode.epfl.ch:22/incubator/nocmodl
 - Python3 (>=3.6)
 - Python yaml (pyyaml)
 - Jinja2 (>=2.10)
+- Python textwrap
+- pybind11 (which should be fetched in its submodule in ext/pybind11)
 
 #### Getting Dependencies
 

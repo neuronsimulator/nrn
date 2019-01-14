@@ -18,12 +18,12 @@ using namespace ast;
 
 
 {%- macro is_program(n) -%}
-{{ "true" if n.is_program_node() else "false" }}
+{{ "true" if n.is_program_node else "false" }}
 {%- endmacro %}
 
 
 {%- macro is_statement(n, c) -%}
-{{ "true" if c.is_statement_node() or n.is_unit_block() else "false" }}
+{{ "true" if c.is_statement_node or n.is_unit_block else "false" }}
 {%- endmacro -%}
 
 
@@ -47,7 +47,7 @@ using namespace ast;
         {%- else %}
             {{- add_vector_child(node, child) }}
         {%- endif %}
-    {% elif node.is_prime_node() and child.varname == node_info.ORDER_VAR_NAME %}
+    {% elif node.is_prime_node and child.varname == node_info.ORDER_VAR_NAME %}
         auto order = node->get_{{ child.varname }}()->eval();
         auto symbol = std::string(order, '\'');
         printer->add_element(symbol);
@@ -58,7 +58,7 @@ using namespace ast;
         printer->add_element(op);
     {% else %}
         {% call guard(child.prefix, child.suffix) %}
-        node->get_{{ child.varname }}(){{ "->" if child.is_pointer_node() else "." }}accept(this);
+        node->get_{{ child.varname }}(){{ "->" if child.is_pointer_node else "." }}accept(this);
         {% endcall %}
     {%- endif %}
 {%- endmacro -%}
@@ -68,11 +68,11 @@ using namespace ast;
 void NmodlPrintVisitor::visit_{{ node.class_name|snake_case}}({{ node.class_name }}* node) {
     {{ add_element(node.nmodl_name) -}}
     {% call guard(node.prefix, node.suffix) -%}
-    {% if node.is_block_node() %}
+    {% if node.is_block_node %}
         printer->push_level();
     {% endif %}
-    {% if node.is_data_type_node() %}
-        {% if node.is_integer_node() %}
+    {% if node.is_data_type_node %}
+        {% if node.is_integer_node %}
             if(node->get_macro_name() == nullptr) {
                 printer->add_element(std::to_string(node->eval()));
             }
@@ -84,9 +84,9 @@ void NmodlPrintVisitor::visit_{{ node.class_name|snake_case}}({{ node.class_name
     {% endif %}
     {% for child in node.children %}
         {% call guard(child.force_prefix, child.force_suffix) -%}
-        {% if child.is_base_type_node() %}
+        {% if child.is_base_type_node %}
         {% else %}
-            {% if child.optional or child.is_statement_block_node() %}
+            {% if child.optional or child.is_statement_block_node %}
                 if(node->get_{{ child.varname }}()) {
                     {{ add_child(node, child)|trim }}
                 }
@@ -97,7 +97,7 @@ void NmodlPrintVisitor::visit_{{ node.class_name|snake_case}}({{ node.class_name
         {% endcall -%}
     {% endfor %}
     {% endcall -%}
-    {% if node.is_block_node() -%}
+    {% if node.is_block_node -%}
         printer->pop_level();
     {% endif -%}
 }
