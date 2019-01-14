@@ -590,9 +590,24 @@ def _update_node_data(force=False):
         last_structure_change_cnt = _structure_change_count.value
         #if not species._has_3d:
         # TODO: merge this with the 3d/hybrid case?
+        nsegs_changed = 0
         for sr in list(_species_get_all_species().values()):
             s = sr()
-            if s is not None: s._update_node_data()
+            if s is not None: nsegs_changed += s._update_node_data()
+        if nsegs_changed:
+            section1d._purge_cptrs()
+            for sr in list(_species_get_all_species().values()):
+                s = sr()
+                if s is not None:
+                    s._update_region_indices(True)
+                    s._register_cptrs()
+            if species._has_1d and species._1d_submatrix_n():
+                volumes = node._get_data()[0]
+                _zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
+            setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
+            # TODO: separate compiling reactions -- so the indices can be updated without recompiling
+            _compile_reactions()
+
         #end#if
         for rptr in _all_reactions:
             r = rptr()

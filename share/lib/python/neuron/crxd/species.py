@@ -38,6 +38,9 @@ _set_grid_concentrations.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.py_objec
 _set_grid_currents = nrn_dll_sym('set_grid_currents')
 _set_grid_currents.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.py_object, ctypes.py_object, ctypes.py_object]
 
+_delete_by_id = nrn_dll_sym('delete_by_id')
+_delete_by_id.argtypes = [ctypes.c_int]
+
 
 # The difference here is that defined species only exists after rxd initialization
 _all_species = []
@@ -437,8 +440,16 @@ class _ExtracellularSpecies(_SpeciesMathable):
     def __del__(self):
         # TODO: remove this object from the list of grids, possibly by reinserting all the others
         # NOTE: be careful about doing the right thing at program's end; some globals may no longer exist
-        warnings.warn('ExtracellularSpecies deleted; if this is happening anytime other than at the end of the program, then something will likely go wrong... since it should be deleted from the list of grids, but this has not been implemented yet.')
-
+        if self in _extracellular_diffusion_objects: del _extracellular_diffusion_objects[self]
+        # remove the grid id
+        if _extracellular_diffusion_objects:
+            for sp in _extracellular_diffusion_objects:
+                if hasattr(sp,'_grid_id') and sp._grid_id > self._grid_id:
+                    sp._grid_id -= 1
+        if hasattr(self,'_grid_id'): _delete_by_id(self._grid_id)
+        
+        nrn_dll_sym('structure_change_cnt', ctypes.c_int).value += 1
+        
     def _finitialize(self):
         # Updated - now it will initialize using NodeExtracellular
         # TODO: support more complicated initializations than just constants
@@ -741,12 +752,49 @@ class Species(_SpeciesMathable):
             # NOTE: can only init_diffusion_rates after the roots (parents)
             #       have been assigned
             sec._init_diffusion_rates()
+        self._update_node_data()    # is this really nessesary
         self._update_region_indices()
 
     def _do_init6(self):
         self._register_cptrs()
 
-
+    def __del__(self):
+        if not weakref or not weakref.ref:
+            # probably at exit -- not worth tidying up
+            return
+        
+        global _all_species, _defined_species
+        try:
+            from . import section1d, node
+        except TypeError:
+            # may not be able to import on exit
+            return 
+        
+        if self.name in _defined_species: del _defined_species[self.name]
+        _all_species = list(filter(lambda x: x() is not None or x() == self, _all_species))
+        # delete the secs
+        if hasattr(self,'_secs') and self._secs:
+            # remove the species root
+            # TODO: will this work with post initialization morphology changes
+            if self._has_adjusted_offsets:
+                self._secs[0]._nseg += self._num_roots
+                self._secs[0]._offset -= self._num_roots
+            self._secs.sort(key=lambda s: s._offset, reverse=True)
+            for sec in self._secs:
+                # node data is removed here in case references to sec remains
+                node._remove(sec._offset, sec._offset + sec._nseg + 1)
+                # shift offset to account for deleted sec
+                for secs in section1d._rxd_sec_lookup.values():
+                    for s in secs:
+                        if s() and s()._offset > sec._offset:
+                            s()._offset -= sec._nseg + 1
+                del sec
+        # set the remaining species offsets
+        for sr in _all_species:
+            s = sr()
+            if s is not None:
+                s._update_region_indices(True)
+        
     def _ion_register(self):
         charge = self._charge
         if self._name is not None:
@@ -823,9 +871,11 @@ class Species(_SpeciesMathable):
         raise RxDException('no such region')
 
     def _update_node_data(self):
+        nsegs_changed = 0
         for sec in self._secs:
-            sec._update_node_data()
-            
+            nsegs_changed += sec._update_node_data()
+        return nsegs_changed
+
     def concentrations(self):
         if self._secs:
             raise RxDException('concentrations only supports 3d and that is deprecated')
@@ -897,8 +947,11 @@ class Species(_SpeciesMathable):
             raise RxDException('Cannot set regions now; model already instantiated')
 
         
-    def _update_region_indices(self):
+    def _update_region_indices(self, update_offsets=False):
         # TODO: should this include 3D nodes? currently 1D only. (What faces the user?)
+        # update offset in case nseg has changed
+        if hasattr(self,'_secs') and self._secs and update_offsets:
+            self._offset = self._secs[0]._offset - self._num_roots
         self._region_indices = {}
         for s in self._secs:
             if s._region not in self._region_indices:

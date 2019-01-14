@@ -72,16 +72,16 @@ class _c_region:
         from .species import SpeciesOnRegion
         for s in species_set:
             if isinstance(s,SpeciesOnRegion):
-                if s._species() not in self._react_species: 
-                    self._react_species.append(s._species())
-            elif s not in self._react_species: 
-                self._react_species.append(s)
+                if s._species() and s._species not in self._react_species: 
+                    self._react_species.append(s._species)
+            elif weakref.ref(s) not in self._react_species: 
+                self._react_species.append(weakref.ref(s))
         self.num_species = len(self._react_species)
         self._initilized = False
 
     def add_ecs_species(self,species_set):
         for s in species_set:
-            self._ecs_react_species.add(s)
+            self._ecs_react_species.add(weakref.ref(s))
         self.num_ecs_species = len(self._ecs_react_species)
         self._initialized = False
 
@@ -111,7 +111,7 @@ class _c_region:
         #Set the local ids of the regions and species involved in the reactions
         self._ecs_species_ids = dict()
         for sid, s in zip(list(range(self.num_ecs_species)), self._ecs_react_species):   
-            self._ecs_species_ids[sid]= s._grid_id
+            self._ecs_species_ids[sid]= s()._grid_id
 
         #Setup the matrix to the ECS grid points
         for rid,r in zip(list(range(self.num_regions)), self._regions):
@@ -136,13 +136,13 @@ class _c_region:
         for rid,r in zip(list(range(len(self._regions))), self._regions):  
             self._region_ids[r._id] = rid
         for sid, s in zip(list(range(self.num_species)), self._react_species):
-            self._species_ids[s._id] = sid
+            self._species_ids[s()._id] = sid
             
         
         #Setup the array to the state index 
         for rid,r in zip(list(range(self.num_regions)), self._regions):
             for sid, s in zip(list(range(self.num_species)), self._react_species):
-                indices = s.indices(r)
+                indices = s().indices(r)
                 try:
                     if indices == []:
                         self.location_index[rid][sid][:] = -1

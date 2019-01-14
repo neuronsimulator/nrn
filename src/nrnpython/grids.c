@@ -321,7 +321,6 @@ void set_grid_currents(int grid_list_index, int index_in_list, PyObject* grid_in
 // Free a single Grid_node
 void free_Grid(Grid_node *grid) {
     int i;
-    free(grid->states);
     free(grid->states_x);
     free(grid->states_y);
     free(grid->states_cur);
@@ -386,6 +385,19 @@ int delete(Grid_node **head, Grid_node *find) {
     temp->next = delete_me->next;
     free_Grid(delete_me);
     return 1;
+}
+
+void delete_by_id(int id) {
+    Grid_node *grid;
+    int k;
+    for(k = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, k++)
+    {
+        if(k == id)
+        {
+            delete(Parallel_grids, grid);
+            break;
+        }
+    }
 }
 
 
