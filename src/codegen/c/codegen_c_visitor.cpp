@@ -18,11 +18,9 @@ using namespace fmt::literals;
 using SymbolType = std::shared_ptr<symtab::Symbol>;
 
 
-
 /****************************************************************************************/
 /*                            Overloaded visitor routines                               */
 /****************************************************************************************/
-
 
 
 void CodegenCVisitor::visit_function_call(FunctionCall* node) {
@@ -53,7 +51,6 @@ void CodegenCVisitor::visit_verbatim(Verbatim* node) {
 /****************************************************************************************/
 /*                               Common helper routines                                 */
 /****************************************************************************************/
-
 
 
 /**
@@ -351,7 +348,6 @@ void CodegenCVisitor::print_channel_iteration_block_parallel_hint() {
 }
 
 
-
 /// if reduction block in nrn_cur required
 bool CodegenCVisitor::nrn_cur_reduction_loop_required() {
     return channel_task_dependency_enabled() || info.point_process;
@@ -555,7 +551,6 @@ std::string CodegenCVisitor::k_const() {
 /****************************************************************************************/
 /*               Non-code-specific printing routines for code generation                */
 /****************************************************************************************/
-
 
 
 void CodegenCVisitor::print_statement_block(ast::StatementBlock* node,
@@ -935,7 +930,6 @@ void CodegenCVisitor::print_function(ast::FunctionBlock* node) {
 }
 
 
-
 /****************************************************************************************/
 /*                           Code-specific helper routines                              */
 /****************************************************************************************/
@@ -1101,7 +1095,6 @@ std::string CodegenCVisitor::conc_write_statement(const std::string& ion_name,
            " nt->_ml_list[{}_type]->_nodecount_padded)"
            ""_format(ion_name, conc_var_name, index, style_var_name, ion_name);
 }
-
 
 
 /**
@@ -1968,7 +1961,6 @@ void CodegenCVisitor::print_ion_variables_structure() {
 }
 
 
-
 void CodegenCVisitor::print_global_variable_setup() {
     std::vector<std::string> allocated_variables;
 
@@ -2811,7 +2803,6 @@ void CodegenCVisitor::print_derivative_kernel_for_euler() {
     printer->add_newline();
     codegen = false;
 }
-
 
 
 /**

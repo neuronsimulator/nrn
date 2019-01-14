@@ -599,7 +599,6 @@ class CodegenCVisitor : public CodegenBaseVisitor {
 };
 
 
-
 /**
  * Print prototype declaration for function and procedures
  *

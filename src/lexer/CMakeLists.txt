@@ -82,10 +82,10 @@ add_custom_command (
 add_custom_command (
     COMMAND ${BISON_EXECUTABLE}
     ARGS -d -o ${PROJECT_SOURCE_DIR}/src/parser/verbatim_parser.cpp
-    ${PROJECT_SOURCE_DIR}/src/parser/verbatim.y
+    ${PROJECT_SOURCE_DIR}/src/parser/verbatim.yy
     OUTPUT ${PROJECT_SOURCE_DIR}/src/parser/verbatim_parser.cpp
     OUTPUT ${PROJECT_SOURCE_DIR}/src/parser/verbatim_parser.hpp
-    DEPENDS ${PROJECT_SOURCE_DIR}/src/parser/verbatim.y
+    DEPENDS ${PROJECT_SOURCE_DIR}/src/parser/verbatim.yy
     COMMENT "-- NMODL : GENERATING VERBATIM PARSER WITH BISON! --"
 )
 

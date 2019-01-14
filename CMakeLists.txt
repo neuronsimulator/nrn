@@ -27,15 +27,23 @@ include(GitRevision)
 include(FlexHelper)
 include(CompilerHelper)
 include(ClangTidyHelper)
+include(FindClangFormat)
 include(FindPythonModule)
+
+#=============================================================================
+# Find clang-format
+#=============================================================================
+
+find_package(ClangFormat)
 
 #=============================================================================
 # Find required python packages
 #=============================================================================
 message(STATUS "CHECKING FOR PYTHON")
 find_package(PythonInterp 3.6 REQUIRED)
-find_python_module(yaml REQUIRED)
 find_python_module(jinja2 REQUIRED)
+find_python_module(yaml REQUIRED)
+find_python_module(textwrap REQUIRED)
 
 include_directories(
     ${PROJECT_SOURCE_DIR}
@@ -77,7 +85,9 @@ add_subdirectory(test)
 #=============================================================================
 # Clang format target
 #=============================================================================
-add_custom_target(clang-format
-                  COMMAND
-                  clang-format -i
-                  --style=file ${FILES_FOR_CLANG_FORMAT})
+if(CLANG_FORMAT_FOUND)
+    add_custom_target(clang-format
+                      COMMAND
+                      ${CLANG_FORMAT_EXECUTABLE} -i
+                      --style=file ${FILES_FOR_CLANG_FORMAT})
+endif()
