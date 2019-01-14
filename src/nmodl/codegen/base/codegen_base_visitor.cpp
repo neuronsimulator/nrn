@@ -568,7 +568,6 @@ void CodegenBaseVisitor::print_statement_block(ast::StatementBlock* node,
 }
 
 
-
 /**
  * Once variables are populated, update index semantics to register with coreneuron
  */
@@ -768,7 +767,6 @@ std::vector<IndexVariableInfo> CodegenBaseVisitor::get_int_variables() {
     }
     return variables;
 }
-
 
 
 /**

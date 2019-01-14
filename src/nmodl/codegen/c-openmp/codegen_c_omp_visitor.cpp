@@ -11,7 +11,6 @@ using SymbolType = std::shared_ptr<symtab::Symbol>;
 /****************************************************************************************/
 
 
-
 void CodegenCOmpVisitor::print_channel_iteration_task_begin(BlockType type) {
     std::string vars;
     if (type == BlockType::Equation) {

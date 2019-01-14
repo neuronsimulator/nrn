@@ -111,7 +111,6 @@ void CodegenCCudaVisitor::print_channel_iteration_block_end() {
 }
 
 
-
 void CodegenCCudaVisitor::print_nrn_cur_matrix_shadow_reduction() {
     // do nothing
 }

@@ -5,9 +5,9 @@ in language definition file. Each member variable of Node
 is represented by ChildNode.
 """
 
-from argument import Argument
 from node_info import *
-
+import textwrap
+from utils import *
 
 class BaseNode:
     """base class for all node types (parent + child) """
@@ -152,10 +152,41 @@ class ChildNode(BaseNode):
         elif self.is_base_type_node() or self.is_ptr_excluded_node():
             type_name = self.class_name
         else:
-            type_name = "std::shared_ptr<" + self.class_name + ">"
+            type_name = f"std::shared_ptr<{self.class_name}>"
 
         return type_name
 
+    def get_add_method(self):
+        s = ''
+        if self.add_method:
+            method = f"""void add{self.class_name}({self.class_name} *s) {{
+                        {self.varname}.emplace_back(s);
+                    }}"""
+            s = textwrap.dedent(method)
+        return s
+
+    def get_node_name_method(self):
+        s = ''
+        if self.get_node_name:
+            # string node should be evaluated and hence eval() method
+            method_name = "eval" if self.is_string_node() else "get_node_name"
+            method = f"""virtual std::string get_node_name() override {{
+                             return {self.varname}->{method_name}();
+                         }}"""
+            s = textwrap.dedent(method)
+        return s
+
+    def get_getter_method(self):
+        getter_method = self.getter_method if self.getter_method else "get_" + to_snake_case(self.varname)
+        getter_override = " override" if self.getter_override else ""
+        return_type = self.member_typename
+        return f"{return_type} {getter_method}(){getter_override}{{ return {self.varname}; }}"
+
+    def get_setter_method(self):
+        setter_method = "set_" + to_snake_case(self.varname)
+        setter_type = self.member_typename
+        reference = "" if self.is_base_type_node() else "&&"
+        return f"void {setter_method}({setter_type}{reference} {self.varname}) {{ this->{self.varname} = {self.varname}; }}"
 
 class Node(BaseNode):
     """represent a class for every rule in language specification"""
@@ -165,6 +196,14 @@ class Node(BaseNode):
         self.base_class = args.base_class
         self.has_token = args.has_token
         self.children = []
+
+    @property
+    def ast_enum_name(self):
+        return to_snake_case(self.class_name).upper()
+
+    @property
+    def negation(self):
+        return "!" if self.is_boolean_node() else "-"
 
     def add_child(self, args):
         """add new child i.e. member to the class"""
@@ -271,3 +310,11 @@ class Node(BaseNode):
             members.append(["symtab::ModelSymbolTable", "model_symtab;"])
 
         return members
+
+    @property
+    def members(self):
+        return [(child.get_typename(), child.varname) for child in self.children]
+
+    @property
+    def non_base_members(self):
+        return [child for child in self.children if not child.is_base_type_node()]
