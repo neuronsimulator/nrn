@@ -29,18 +29,23 @@ class BaseNode:
         """ return type name for the node """
         return DATA_TYPES[self.class_name]
 
+    @property
     def is_statement_block_node(self):
         return True if self.class_name == STATEMENT_BLOCK_NODE else False
 
+    @property
     def is_statement_node(self):
         return True if self.class_name in STATEMENT_TYPES else False
 
+    @property
     def is_global_block_node(self):
         return True if self.class_name in GLOBAL_BLOCKS else False
 
+    @property
     def is_prime_node(self):
         return True if self.class_name == PRIME_NAME_NODE else False
 
+    @property
     def is_program_node(self):
         """
         check if current node is main program container node
@@ -48,6 +53,7 @@ class BaseNode:
         """
         return True if self.class_name == PROGRAM_BLOCK else False
 
+    @property
     def is_block_node(self):
         """
         Check if current node is of type Block
@@ -58,53 +64,68 @@ class BaseNode:
         """
         return True if self.class_name in BLOCK_TYPES else False
 
+    @property
     def is_unit_block(self):
         return True if self.class_name == UNIT_BLOCK else False
 
+    @property
     def is_data_type_node(self):
         return True if self.class_name in DATA_TYPES.keys() else False
 
+    @property
     def is_symbol_var_node(self):
         return True if self.class_name in SYMBOL_VAR_TYPES else False
 
+    @property
     def is_symbol_helper_node(self):
         return True if self.class_name in SYMBOL_TABLE_HELPER_NODES else False
 
+    @property
     def is_symbol_block_node(self):
         return True if self.class_name in SYMBOL_BLOCK_TYPES else False
 
+    @property
     def is_base_type_node(self):
         return True if self.class_name in BASE_TYPES else False
 
+    @property
     def is_string_node(self):
         return True if self.class_name == STRING_NODE else False
 
+    @property
     def is_integer_node(self):
         return True if self.class_name == INTEGER_NODE else False
 
+    @property
     def is_number_node(self):
         return True if self.class_name == NUMBER_NODE else False
 
+    @property
     def is_boolean_node(self):
         return True if self.class_name == BOOLEAN_NODE else False
 
+    @property
     def is_identifier_node(self):
         return True if self.class_name == IDENTIFIER_NODE else False
 
+    @property
     def is_name_node(self):
         return True if self.class_name == NAME_NODE else False
 
+    @property
     def is_enum_node(self):
         data_type = DATA_TYPES[self.class_name]
         return True if data_type in ENUM_BASE_TYPES else False
 
+    @property
     def is_pointer_node(self):
         if self.class_name in PTR_EXCLUDE_TYPES:
             return False
-        if self.is_base_type_node():
+        if self.is_base_type_node:
             return False
         return True
 
+    @property
     def is_ptr_excluded_node(self):
         if self.class_name in PTR_EXCLUDE_TYPES:
             return True
@@ -138,7 +159,7 @@ class ChildNode(BaseNode):
 
         if self.is_vector:
             type_name += "Vector"
-        elif not self.is_base_type_node() and not self.is_ptr_excluded_node():
+        elif not self.is_base_type_node and not self.is_ptr_excluded_node:
             type_name += "*"
 
         return type_name
@@ -149,7 +170,7 @@ class ChildNode(BaseNode):
 
         if self.is_vector:
             type_name = self.class_name + "Vector"
-        elif self.is_base_type_node() or self.is_ptr_excluded_node():
+        elif self.is_base_type_node or self.is_ptr_excluded_node:
             type_name = self.class_name
         else:
             type_name = f"std::shared_ptr<{self.class_name}>"
@@ -169,7 +190,7 @@ class ChildNode(BaseNode):
         s = ''
         if self.get_node_name:
             # string node should be evaluated and hence eval() method
-            method_name = "eval" if self.is_string_node() else "get_node_name"
+            method_name = "eval" if self.is_string_node else "get_node_name"
             method = f"""virtual std::string get_node_name() override {{
                              return {self.varname}->{method_name}();
                          }}"""
@@ -185,7 +206,7 @@ class ChildNode(BaseNode):
     def get_setter_method(self):
         setter_method = "set_" + to_snake_case(self.varname)
         setter_type = self.member_typename
-        reference = "" if self.is_base_type_node() else "&&"
+        reference = "" if self.is_base_type_node else "&&"
         return f"void {setter_method}({setter_type}{reference} {self.varname}) {{ this->{self.varname} = {self.varname}; }}"
 
 class Node(BaseNode):
@@ -203,7 +224,7 @@ class Node(BaseNode):
 
     @property
     def negation(self):
-        return "!" if self.is_boolean_node() else "-"
+        return "!" if self.is_boolean_node else "-"
 
     def add_child(self, args):
         """add new child i.e. member to the class"""
@@ -213,6 +234,7 @@ class Node(BaseNode):
     def has_children(self):
         return True if self.children else False
 
+    @property
     def is_block_scoped_node(self):
         """
         Check if node is derived from BASE_BLOCK
@@ -227,6 +249,7 @@ class Node(BaseNode):
         """
         return True if self.base_class == BASE_BLOCK else False
 
+    @property
     def is_base_block_node(self):
         """
         check if node is Block
@@ -234,6 +257,7 @@ class Node(BaseNode):
         """
         return True if self.class_name == BASE_BLOCK else False
 
+    @property
     def is_symtab_needed(self):
         """
         Check if symbol tabel needed for current node
@@ -242,10 +266,11 @@ class Node(BaseNode):
         :return: True or False
         """
         # block scope nodes have symtab pointer
-        if self.is_program_node() or self.is_block_scoped_node():
+        if self.is_program_node or self.is_block_scoped_node:
             return True
         return False
 
+    @property
     def is_symtab_method_required(self):
         """
         Symbols are not present in all block nodes e.g. Integer node
@@ -264,7 +289,7 @@ class Node(BaseNode):
             if self.class_name in SYMBOL_VAR_TYPES or self.class_name in SYMBOL_BLOCK_TYPES:
                 method_required = True
 
-            if self.is_program_node() or self.has_parent_block_node():
+            if self.is_program_node or self.has_parent_block_node():
                 method_required = True
 
             if self.class_name in SYMBOL_TABLE_HELPER_NODES:
@@ -272,11 +297,55 @@ class Node(BaseNode):
 
         return method_required
 
+    @property
     def is_base_class_number_node(self):
         """
         Check if node is of type Number
         """
         return True if self.base_class == NUMBER_NODE else False
+
+    def ctor_declaration(self):
+        args = []
+        for c in self.children:
+            args.append(f'{c.get_typename()} {c.varname}')
+        return f"{self.class_name}({', '.join(args)});"
+
+    def ctor_definition(self):
+        args = []
+        for c in self.children:
+            args.append(f'{c.get_typename()} {c.varname}')
+        initlist = []
+        for c in self.children:
+            initlist.append(f'{c.varname}({c.varname})')
+        s = f"""{self.class_name}::{self.class_name}({', '.join(args)})
+                : {', '.join(initlist)} {{}}
+        """
+        return textwrap.dedent(s)
+
+    def ctor_shrptr_declaration(self):
+        args = []
+        for c in self.children:
+            args.append(f'{c.member_typename} {c.varname}')
+        return f"{self.class_name}({', '.join(args)});"
+
+    def ctor_shrptr_definition(self):
+        args = []
+        for c in self.children:
+            args.append(f'{c.member_typename} {c.varname}')
+        initlist = []
+        for c in self.children:
+            initlist.append(f'{c.varname}({c.varname})')
+        s = f"""{self.class_name}::{self.class_name}({', '.join(args)})
+                : {', '.join(initlist)} {{}}
+        """
+        return textwrap.dedent(s)
+
+    def has_ptr_children(self):
+        for c in self.children:
+            if not (c.is_vector or c.is_base_type_node or c.is_ptr_excluded_node):
+                return True
+        return False
+
 
     def public_members(self):
         """
@@ -303,18 +372,15 @@ class Node(BaseNode):
         if self.has_token:
             members.append(["std::shared_ptr<ModToken>", "token"])
 
-        if self.is_symtab_needed():
+        if self.is_symtab_needed:
             members.append(["symtab::SymbolTable*", "symtab = nullptr"])
 
-        if self.is_program_node():
+        if self.is_program_node:
             members.append(["symtab::ModelSymbolTable", "model_symtab;"])
 
         return members
 
-    @property
-    def members(self):
-        return [(child.get_typename(), child.varname) for child in self.children]
 
     @property
     def non_base_members(self):
-        return [child for child in self.children if not child.is_base_type_node()]
+        return [child for child in self.children if not child.is_base_type_node]

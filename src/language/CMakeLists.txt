@@ -33,17 +33,17 @@ if(CLANG_FORMAT_FOUND)
             DEPENDS ${PYCODE}
             DEPENDS ${TEMPLATE_FILES}
             COMMENT "-- NMODLX : GENERATING AST CLASSES WITH PYTHON GENERATOR! --"
-            )
+    )
 else()
-        add_custom_command (
-                OUTPUT ${AUTOGEN_FILES}
-                COMMAND ${PYTHON_EXECUTABLE} ARGS ${PROJECT_SOURCE_DIR}/src/language/code_generator.py
-                WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/language
-                DEPENDS ${PROJECT_SOURCE_DIR}/src/language/nmodl.yaml
-                DEPENDS ${PYCODE}
-                DEPENDS ${TEMPLATE_FILES}
-                COMMENT "-- NMODLX : GENERATING AST CLASSES WITH PYTHON GENERATOR! --"
-        )
+    add_custom_command (
+            OUTPUT ${AUTOGEN_FILES}
+            COMMAND ${PYTHON_EXECUTABLE} ARGS ${PROJECT_SOURCE_DIR}/src/language/code_generator.py
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/language
+            DEPENDS ${PROJECT_SOURCE_DIR}/src/language/nmodl.yaml
+            DEPENDS ${PYCODE}
+            DEPENDS ${TEMPLATE_FILES}
+            COMMENT "-- NMODLX : GENERATING AST CLASSES WITH PYTHON GENERATOR! --"
+    )
 endif()
 #=============================================================================
 # Target to propogate dependencies properly to lexer

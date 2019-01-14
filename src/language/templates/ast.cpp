@@ -1,13 +1,6 @@
 #include "ast/ast.hpp"
 #include "symtab/symbol_table.hpp"
 
-{% macro arglist(members) -%}
-    {%- for type, var in members %} {{ type }} {{ var }} {%- if not loop.last %}, {% endif %} {% endfor -%}
-{%- endmacro %}
-
-{% macro initlist(members) -%}
-{%- for type, var in members %} {{ var }}({{ var }}) {%- if not loop.last %}, {% endif %} {% endfor -%}
-{%- endmacro %}
 
 namespace ast {
 
@@ -24,7 +17,7 @@ namespace ast {
         if (this->{{ child.varname }}) {
             this->{{ child.varname }}->accept(v);
         }
-        {% elif child.is_pointer_node() %}
+        {% elif child.is_pointer_node %}
         {{ child.varname }}->accept(v);
         {% else %}
         {{ child.varname }}.accept(v);
@@ -33,10 +26,13 @@ namespace ast {
     {% endfor %}
     }
 
-    {% if node.members %}
+    {% if node.children %}
     /* constructor for {{ node.class_name }} ast node */
-    {{ node.class_name }}::{{ node.class_name }}({{ arglist(node.members) }})
-    :  {{ initlist(node.members) }} {}
+    {{ node.ctor_definition() }}
+
+    {% if node.has_ptr_children() %}
+        {{ node.ctor_shrptr_definition() }}
+    {% endif %}
 
     /* copy constructor for {{ node.class_name }} ast node */
     {{ node.class_name }}::{{ node.class_name }}(const {{ node.class_name }}& obj) {
@@ -46,7 +42,7 @@ namespace ast {
             for (auto& item : obj.{{ child.varname }}) {
                 this->{{ child.varname }}.emplace_back(item->clone());
             }
-            {% elif child.is_pointer_node() or child.optional %}
+            {% elif child.is_pointer_node or child.optional %}
             if (obj.{{ child.varname }}) {
                 this->{{ child.varname }}.reset(obj.{{ child.varname }}->clone());
             }
