@@ -375,13 +375,13 @@ Vector
 .. method:: Vector.record
 
     Syntax:
-        ``vdest.record(var_reference)``
+        ``vdest = vdest.record(var_reference)``
 
-        ``vdest.record(var_reference, Dt)``
+        ``vdest = vdest.record(var_reference, Dt)``
 
-        ``vdest.record(var_reference, tvec)``
+        ``vdest = vdest.record(var_reference, tvec)``
 
-        ``vdest.record(point_process_object, var_reference, ...)``
+        ``vdest = vdest.record(point_process_object, var_reference, ...)``
 
 
     Description:
@@ -426,6 +426,8 @@ Vector
         local step method but will use it for multiple threads. It is therefore 
         a good idea to supply it if possible. 
 
+        Prior to version 7.7, the record methode returned 1.0 .
+
     .. warning::
         record/play behavior is reasonable but surprising if :data:`dt` is greater than 
         ``Dt``. Things work best if ``Dt`` happens to be a multiple of :data:`dt`. All combinations 
@@ -440,8 +442,7 @@ Vector
         .. code-block::
             python
 
-            dv = h.Vector() 
-            dv.record(terminal(0.5)._ref_v) 
+            dv = h.Vector().record(terminal(0.5)._ref_v) 
             h.run() 
 
         Note that the next "run" will overwrite the previous time course stored 
@@ -471,17 +472,17 @@ Vector
 .. method:: Vector.play
 
     Syntax:
-        ``vsrc.play(var_reference, Dt)``
+        ``vdest = vsrc.play(var_reference, Dt)``
 
-        ``vsrc.play(var_reference, tvec)``
+        ``vdest = vsrc.play(var_reference, tvec)``
 
-        ``vsrc.play(index)``
+        ``vdest = vsrc.play(index)``
 
-        ``vsrc.play(var_reference or stmt, tvec, continuous)``
+        ``vdest = vsrc.play(var_reference or stmt, tvec, continuous)``
 
-        ``vsrc.play(var_reference or stmt, tvec, indices_of_discontinuities_vector)``
+        ``vdest = vsrc.play(var_reference or stmt, tvec, indices_of_discontinuities_vector)``
 
-        ``vsrc.play(point_process_object, var_reference, ...)``
+        ``vdest = vsrc.play(point_process_object, var_reference, ...)``
 
 
     Description:
@@ -560,6 +561,8 @@ Vector
         variable time step method do not need or use this information for the 
         local step method but will use it for multiple threads. It is therefore 
         a good idea to supply it if possible. 
+
+        Prior to version 7.7, the play method returned 1.0 .
 
     .. seealso::
         :meth:`Vector.record`, :meth:`Vector.play_remove`

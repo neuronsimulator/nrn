@@ -71,6 +71,11 @@ ParallelContext
                 return x * x
 
             pc = h.ParallelContext()
+
+            # if you launched python and  mpi4py is not available
+            # and NEURON_INIT_MPI is not an environment variable
+            #pc.mpi_init()
+
             pc.runworker() # master returns immediately, workers in an
                            # infinite loop running jobs from bulletin board
 
@@ -205,7 +210,9 @@ ParallelContext
         To run under MPI, be sure to include the ``from mpi4py import MPI`` and then
         launch your script via, e.g. ``mpiexec -n 4 python myscript.py``. NEURON
         also supports running via the PVM (parallel virtual machine), but the launch
-        setup is different.
+        setup is different. If you do not have mpi4py and you have not exported
+        the NEURON_INIT_MPI=1 environment variable then you can use the
+        pc.mpi_init() method.
 
         The exact same Python files should exist in the same relative locations 
         on all host machines. 
@@ -1326,6 +1333,27 @@ Description:
 
 
 
+.. method:: ParallelContext.mpi_init
+
+
+    Syntax:
+        ``pc.mpi_init()``
+
+
+    Description:
+        Initializes MPI if it has not already been initialized.
+        Only required if:
+
+        launched python and mpi4py does not exist and NEURON_INIT_MPI=1
+        environement varialble has not been exported.
+
+        launched nrniv without -mpi argument.
+
+         
+----
+
+
+
 .. method:: ParallelContext.barrier
 
 
@@ -1992,11 +2020,15 @@ Description:
         .. code-block::
             python
  
-            from mpi4py import MPI
+            try:
+                from mpi4py import MPI
+            except:
+                pass
             from neuron import h
             import time
 
             pc = h.ParallelContext() 
+            pc.mpi_init() #does nothing if mpi4py succeeded
             pc.subworlds(3)
 
             def f(arg):
