@@ -217,6 +217,7 @@ if true ; then
 cd $S/src/mswin
 cp bin/mknrndll bin/neurondemo bin/nrngui $DB
 cp bin/mknrndll $DB/nrnivmodl
+cp bin/nrnivmodl.bat $DB/nrnivmodl.bat
 rm -f $Z
 zip -l $Z notes.txt
 #do the lib shell scripts in unix format
