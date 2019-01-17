@@ -4,6 +4,18 @@ set -e
 NEURONHOME=$N
 M=$N/lib
 
+# get the last argument
+for last; do true; done
+
+OUTPUTDIR=.
+# if the last argument begins with --NEURON_HOME=
+if [[ $last == "--OUTPUTDIR="* ]] ; then
+OUTPUTDIR=${last#"--OUTPUTDIR="}
+# remove the last argument
+set -- "${@:1:$(($#-1))}"
+fi
+
+
 if test $# -gt 0
 then
 	files=$*
@@ -60,6 +72,7 @@ echo "}" >> mod_func.c
 
 #echo ' "' >> $$.tmp
 # cat $$.tmp
-$N/bin/make -f $M/mknrndll.mak "`cat $$.tmp`" nrnmech.dll
+make -f $M/mknrndll.mak "`cat $$.tmp`" nrnmech.dll TARGET="$$.nrnmech.dll"
+mv $$.nrnmech.dll "$OUTPUTDIR/nrnmech.dll"
 rm $$.tmp
 
