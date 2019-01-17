@@ -5,7 +5,7 @@ export N="$1"
 shift
 
 export NEURONHOME="$N"
-export PATH="$N/bin:$N/mingw/bin:$PATH"
+export PATH="$N/bin:$N/mingw/usr/bin:$N/mingw/mingw64/bin:$PATH"
 echo $N
 echo $PATH
 source set_nrnpyenv.sh
