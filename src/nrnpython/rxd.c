@@ -322,23 +322,11 @@ void rxd_set_euler_matrix(int nrow, int nnonzero, long* nonzero_i,
     }
     free(parent_count);
 }
-static void mul(int nrow, int nnonzero, long* nonzero_i, long* nonzero_j, const double* nonzero_values, const double* v, double* result) {
-    long i, j, k;
-	double dt = *dt_ptr;
-    MEM_ZERO(result,sizeof(double)*nrow);
 
-    /* now loop through all the nonzero locations */
-    /* NOTE: this would be more efficient if not repeatedly doing the result[i] lookup */
-    for (k = 0; k < nnonzero; k++) {
-        i = *nonzero_i++;
-        j = *nonzero_j++;
-        result[i] -= (*nonzero_values++) * v[j];
-    }
-
-
-	/*Add currents to the result
-	 * TODO: RxD induced currents
-	 */
+static void add_currents(double * result)
+{
+    long k;
+	/*Add currents to the result*/
     if(_membrane_flux)
     {
 	    for (k = 0; k < _curr_count; k++)
@@ -349,6 +337,16 @@ static void mul(int nrow, int nnonzero, long* nonzero_i, long* nonzero_j, const 
         for (k =0; k < _curr_count; k++)
             result[_curr_indices[k]] += _curr_scales[k] * (*_curr_ptrs[k]->u.px_);
 	}
+}
+static void mul(int nrow, int nnonzero, long* nonzero_i, long* nonzero_j, const double* nonzero_values, const double* v, double* result) {
+    long i, j, k;
+    /* now loop through all the nonzero locations */
+    /* NOTE: this would be more efficient if not repeatedly doing the result[i] lookup */
+    for (k = 0; k < nnonzero; k++) {
+        i = *nonzero_i++;
+        j = *nonzero_j++;
+        result[i] -= (*nonzero_values++) * v[j];
+    }
 }
 
 void set_setup(const fptr setup_fn) {
@@ -1324,30 +1322,33 @@ void _fadvance(void) {
 	/*variables for diffusion*/
 	double *rhs; 
 	long* zvi = _rxd_zero_volume_indices;
-
+    
+    rhs = calloc(num_states,sizeof(double));
     /*diffusion*/
     if(diffusion)
-    {
-        rhs = malloc(sizeof(double) * num_states);
 	    mul(_rxd_euler_nrow, _rxd_euler_nnonzero, _rxd_euler_nonzero_i, _rxd_euler_nonzero_j, _rxd_euler_nonzero_values, states, rhs);
-	
-	    /* multiply rhs vector by dt */
-        for (i = 0; i < num_states; i++) {
-            rhs[i] *= dt;
-        }
+
+    add_currents(rhs);
+
+    /* multiply rhs vector by dt */
+    for (i = 0; i < num_states; i++) {
+        rhs[i] *= dt;
+    }
+
+    if(diffusion)
 	    nrn_tree_solve(_rxd_a, _rxd_b, _rxd_c, _rxd_d, rhs, _rxd_p, _rxd_euler_nrow, dt);
    
-        /* increment states by rhs which is now really deltas */
-        for (i = 0; i < num_states; i++) {
-            states[i] += rhs[i];
-        }
-
-        /* clear zero volume indices (conservation nodes) */
-        for (i = 0; i < _rxd_num_zvi; i++) {
-            states[zvi[i]] = 0;
-        }
-        free(rhs);
+    /* increment states by rhs which is now really deltas */
+    for (i = 0; i < num_states; i++) {
+        states[i] += rhs[i];
     }
+
+    /* clear zero volume indices (conservation nodes) */
+    for (i = 0; i < _rxd_num_zvi; i++) {
+    states[zvi[i]] = 0;
+    }
+    
+    free(rhs);
 
     /*reactions*/
     do_ics_reactions(states, NULL, NULL);	
@@ -1433,12 +1434,13 @@ void _rhs_variable_step(const double t, const double* p1, double* p2)
     }
 
     /*diffusion*/
-    rhs = (double*)malloc(sizeof(double) * num_states);
+    rhs = (double*)calloc(num_states,sizeof(double));
 	
     if(diffusion)
         mul(_rxd_euler_nrow, _rxd_euler_nnonzero, _rxd_euler_nonzero_i, _rxd_euler_nonzero_j, _rxd_euler_nonzero_values, states, rhs);
-    else
-        MEM_ZERO(rhs,sizeof(double) * num_states);
+
+    /*Add currents to the result*/
+    add_currents(rhs);
 
     /*reactions*/
     get_all_reaction_rates(states, rhs);
