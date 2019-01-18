@@ -276,7 +276,7 @@ static void dashes(Section* sec, int offset, int first)
 {
 	int i, scnt;
 	Section* ch;
-	char direc[10];
+	char direc[30];
 	extern double nrn_section_orientation();
 	
 	i = (int)nrn_section_orientation(sec);

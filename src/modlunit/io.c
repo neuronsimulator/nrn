@@ -236,7 +236,7 @@ typedef struct FileStackItem {
 	char* ctp;
 	int linenum;
 	FILE* fp;
-	char finname[200];
+	char finname[NRN_BUFSIZE];
 } FileStackItem;
 
 static List* filestack;

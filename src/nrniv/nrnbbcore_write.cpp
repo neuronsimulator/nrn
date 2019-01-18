@@ -204,13 +204,13 @@ size_t nrnbbcore_write() {
 
   size_t rankbytes = part1(); // can arrange to be just before part2
 
-  sprintf(fname, "%s/%s", path, "byteswap1.dat");
+  assert(snprintf(fname, 1024, "%s/%s", path, "byteswap1.dat") < 1024);
   write_byteswap1(fname);
 
-  sprintf(fname, "%s/%s", path, "bbcore_mech.dat");
+  assert(snprintf(fname, 1024, "%s/%s", path, "bbcore_mech.dat") < 1024);
   write_memb_mech_types(fname);
 
-  sprintf(fname, "%s/%s", path, "globals.dat");
+  assert(snprintf(fname, 1024, "%s/%s", path, "globals.dat") < 1024);
   write_globals(fname);
 
   part2(path);
@@ -1355,7 +1355,7 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
   char fname[1000];
   if (cg.n_output <= 0) { return; }
   assert(cg.group_id >= 0);
-  sprintf(fname, "%s/%d_1.dat", path, cg.group_id);
+  assert(snprintf(fname, 1000, "%s/%d_1.dat", path, cg.group_id) < 1000);
   FILE* f = fopen(fname, "wb");
   if (!f) {
     hoc_execerror("nrnbbcore_write write_nrnthread could not open for writing:", fname);
@@ -1372,7 +1372,7 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
   if (cg.netcon_srcgid) {delete [] cg.netcon_srcgid; cg.netcon_srcgid = NULL; }
   fclose(f);
 
-  sprintf(fname, "%s/%d_2.dat", path, cg.group_id);
+  assert(snprintf(fname, 1000, "%s/%d_2.dat", path, cg.group_id) < 1000);
   f = fopen(fname, "w");
   if (!f) {
     hoc_execerror("nrnbbcore_write write_nrnthread could not open for writing:", fname);
