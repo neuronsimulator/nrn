@@ -11,7 +11,7 @@ extern char** nrn_global_argv;
 
 extern int nrn_main_launch; /* 1 if nrniv, 2 if python, 0 if unknownn */
 
-static char buf[256];
+static char buf[1024];
 static char* sarg = 0;
 static char configargs[] = NRN_CONFIG_ARGS;
 
@@ -73,7 +73,7 @@ char* nrn_version(int i) {
     }else if (i == 9) {
       sprintf(buf, "%d", nrn_main_launch);
     }else{
-      sprintf(buf, "NEURON -- %s %s", head, GIT_DATE);
+      assert(snprintf(buf, 1024, "NEURON -- %s %s", head, GIT_DATE) < 1024);
     }
 
   return buf;

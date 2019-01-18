@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 #include <stdio.h>
+#include <assert.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include "mos2nrn.h"
@@ -27,8 +28,8 @@ int main(int argc, char** argv) {
 	fclose(f);
 	if (strncmp(buf, "PK", 2) == 0) { // its a nrnzip file
 		getdname(dname);
-sprintf(buf, "xterm -sb -e %s/mos2nrn2.sh %s %s %d", NEURON_BIN_DIR,
-			argv[1], dname, 0);
+assert(snprintf(buf, 256, "xterm -sb -e %s/mos2nrn2.sh %s %s %d", NEURON_BIN_DIR,
+			argv[1], dname, 0) < 256);
 		int i = system(buf);
 		if (i) { return i; }
 	}else{ // its a hoc file
