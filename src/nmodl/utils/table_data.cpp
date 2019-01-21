@@ -1,8 +1,8 @@
-#include <numeric>
 #include <iostream>
+#include <numeric>
 
-#include "utils/table_data.hpp"
 #include "utils/string_utils.hpp"
+#include "utils/table_data.hpp"
 
 /**
  *   Print table data in below shown format: title as first row (centrally aligned),

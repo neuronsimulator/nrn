@@ -1,15 +1,15 @@
 #include <algorithm>
-#include <utility>
 #include <cmath>
 #include <ctime>
+#include <utility>
 
-#include "visitors/rename_visitor.hpp"
 #include "codegen/base/codegen_helper_visitor.hpp"
 #include "codegen/c/codegen_c_visitor.hpp"
-#include "visitors/var_usage_visitor.hpp"
+#include "parser/c11_driver.hpp"
 #include "utils/string_utils.hpp"
 #include "version/version.h"
-#include "parser/c11_driver.hpp"
+#include "visitors/rename_visitor.hpp"
+#include "visitors/var_usage_visitor.hpp"
 
 
 using namespace ast;
@@ -142,7 +142,7 @@ void CodegenBaseVisitor::visit_if_statement(IfStatement* node) {
     printer->add_text("if (");
     node->get_condition()->accept(this);
     printer->add_text(") ");
-    node->get_block()->accept(this);
+    node->get_statement_block()->accept(this);
     print_vector_elements(node->get_elseifs(), "");
     auto elses = node->get_elses();
     if (elses) {
@@ -158,7 +158,7 @@ void CodegenBaseVisitor::visit_else_if_statement(ElseIfStatement* node) {
     printer->add_text(" else if (");
     node->get_condition()->accept(this);
     printer->add_text(") ");
-    node->get_block()->accept(this);
+    node->get_statement_block()->accept(this);
 }
 
 
@@ -174,7 +174,7 @@ void CodegenBaseVisitor::visit_while_statement(WhileStatement* node) {
     printer->add_text("while (");
     node->get_condition()->accept(this);
     printer->add_text(") ");
-    node->get_block()->accept(this);
+    node->get_statement_block()->accept(this);
 }
 
 void CodegenBaseVisitor::visit_from_statement(ast::FromStatement* node) {
@@ -185,7 +185,7 @@ void CodegenBaseVisitor::visit_from_statement(ast::FromStatement* node) {
     auto from = node->get_from();
     auto to = node->get_to();
     auto inc = node->get_increment();
-    auto block = node->get_block();
+    auto block = node->get_statement_block();
     printer->add_text("for(int {}="_format(name));
     from->accept(this);
     printer->add_text("; {}<="_format(name));
@@ -478,7 +478,7 @@ std::string CodegenBaseVisitor::breakpoint_current(std::string current) {
     if (breakpoint == nullptr) {
         return current;
     }
-    auto symtab = breakpoint->get_block()->get_symbol_table();
+    auto symtab = breakpoint->get_statement_block()->get_symbol_table();
     auto variables = symtab->get_variables_with_properties(NmodlType::local_var);
     for (auto& var : variables) {
         auto renamed_name = var->get_name();

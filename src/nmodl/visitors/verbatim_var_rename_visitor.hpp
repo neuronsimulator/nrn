@@ -1,11 +1,11 @@
 #ifndef VERBATIM_VAR_RENAME_VISITOR_HPP
 #define VERBATIM_VAR_RENAME_VISITOR_HPP
 
-#include <string>
 #include <stack>
+#include <string>
 
-#include "visitors/ast_visitor.hpp"
 #include "symtab/symbol_table.hpp"
+#include "visitors/ast_visitor.hpp"
 
 /**
  * \class VerbatimVarRenameVisitor

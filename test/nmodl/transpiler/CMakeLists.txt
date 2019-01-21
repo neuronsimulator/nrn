@@ -39,6 +39,15 @@ add_test (NAME Printer COMMAND testprinter)
 add_test (NAME Symtab COMMAND testsymtab)
 
 #=============================================================================
+# pybind11 tests
+#=============================================================================
+
+add_test (NAME Pybind COMMAND python3 -m pytest
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+set_tests_properties(Pybind PROPERTIES
+        ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/src/pybind:$ENV{PYTHONPATH})
+
+#=============================================================================
 # Files for clang-format
 #=============================================================================
 set(FILES_FOR_CLANG_FORMAT

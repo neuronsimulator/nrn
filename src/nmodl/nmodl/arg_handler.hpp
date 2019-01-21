@@ -1,8 +1,8 @@
 #ifndef NMODL_ARG_HANDLER_HPP
 #define NMODL_ARG_HANDLER_HPP
 
-#include <vector>
 #include <string>
+#include <vector>
 
 /**
  * \class ArgumentHandler

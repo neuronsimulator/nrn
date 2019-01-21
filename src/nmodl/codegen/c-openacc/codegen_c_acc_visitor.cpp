@@ -1,5 +1,5 @@
-#include <fmt/format.h>
 #include "codegen/c-openacc/codegen_c_acc_visitor.hpp"
+#include <fmt/format.h>
 
 
 using namespace fmt::literals;

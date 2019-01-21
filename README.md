@@ -6,8 +6,11 @@ This is a source-to-source code generation framework for NMODL.
 #### Cloning Source
 
 ```
-git clone ssh://bbpcode.epfl.ch:22/incubator/nocmodl
+git clone --recurse-submodules ssh://bbpcode.epfl.ch:22/incubator/nocmodl
 ```
+
+Note: This project uses git submodules which must be cloned along with the repository
+itself.
 
 #### Dependencies
 
@@ -20,6 +23,7 @@ git clone ssh://bbpcode.epfl.ch:22/incubator/nocmodl
 - Jinja2 (>=2.10)
 - Python textwrap
 - pybind11 (which should be fetched in its submodule in ext/pybind11)
+- pytest (>=4.0.0) (only for tests)
 
 #### Getting Dependencies
 

@@ -12,7 +12,7 @@ class NmodlPrintVisitor : public Visitor {
     public:
         NmodlPrintVisitor() : printer(new NMODLPrinter()) {}
         NmodlPrintVisitor(std::string filename) : printer(new NMODLPrinter(filename)) {}
-        NmodlPrintVisitor(std::stringstream& stream) : printer(new NMODLPrinter(stream)) {}
+        NmodlPrintVisitor(std::ostream& stream) : printer(new NMODLPrinter(stream)) {}
 
         {% for node in nodes %}
         virtual void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}* node) override;

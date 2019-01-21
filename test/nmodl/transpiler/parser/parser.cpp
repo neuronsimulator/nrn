@@ -4,8 +4,8 @@
 #include <utility>
 
 #include "catch/catch.hpp"
-#include "parser/nmodl_driver.hpp"
 #include "parser/diffeq_driver.hpp"
+#include "parser/nmodl_driver.hpp"
 #include "test/utils/nmodl_constructs.h"
 
 //=============================================================================

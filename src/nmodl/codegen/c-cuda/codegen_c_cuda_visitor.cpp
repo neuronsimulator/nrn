@@ -1,7 +1,7 @@
 #include <fmt/format.h>
 
-#include "symtab/symbol_table.hpp"
 #include "codegen/c-cuda/codegen_c_cuda_visitor.hpp"
+#include "symtab/symbol_table.hpp"
 #include "utils/string_utils.hpp"
 
 using namespace fmt::literals;

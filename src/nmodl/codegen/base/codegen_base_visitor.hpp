@@ -2,11 +2,11 @@
 #define NMODL_CODEGEN_BASE_VISITOR_HPP
 
 
-#include <string>
 #include <algorithm>
+#include <string>
 
-#include "fmt/format.h"
 #include "codegen/codegen_info.hpp"
+#include "fmt/format.h"
 #include "printer/code_printer.hpp"
 #include "symtab/symbol_table.hpp"
 #include "visitors/ast_visitor.hpp"

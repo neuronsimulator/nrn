@@ -173,6 +173,7 @@ add_library(lexer
             ${LEXER_SOURCE_FILES}
             ${BISON_GENERATED_SOURCE_FILES}
             ${AST_SOURCE_FILES})
+set_property(TARGET lexer PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 add_executable(nmodl_lexer main_nmodl.cpp)
 add_executable(c_lexer main_c.cpp)

@@ -1,9 +1,9 @@
 #ifndef _JSON_PRINTER_HPP_
 #define _JSON_PRINTER_HPP_
 
-#include <stack>
 #include <fstream>
 #include <iostream>
+#include <stack>
 
 #include "json/json.hpp"
 

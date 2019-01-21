@@ -52,7 +52,7 @@ namespace ast {
         virtual ~{{ node.class_name }}() {}
 
         {% for child in node.children %}
-        {{ child.get_add_method() }}
+        {{ child.get_add_methods() }}
 
         {{ child.get_node_name_method() }}
 

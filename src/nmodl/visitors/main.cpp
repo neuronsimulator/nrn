@@ -4,16 +4,16 @@
 
 #include "parser/nmodl_driver.hpp"
 #include "visitors/ast_visitor.hpp"
+#include "visitors/cnexp_solve_visitor.hpp"
 #include "visitors/inline_visitor.hpp"
 #include "visitors/json_visitor.hpp"
 #include "visitors/local_var_rename_visitor.hpp"
+#include "visitors/localize_visitor.hpp"
+#include "visitors/nmodl_visitor.hpp"
 #include "visitors/perf_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
-#include "visitors/verbatim_visitor.hpp"
-#include "visitors/nmodl_visitor.hpp"
-#include "visitors/localize_visitor.hpp"
-#include "visitors/cnexp_solve_visitor.hpp"
 #include "visitors/verbatim_var_rename_visitor.hpp"
+#include "visitors/verbatim_visitor.hpp"
 
 #include "tclap/CmdLine.h"
 
