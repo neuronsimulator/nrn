@@ -1,12 +1,12 @@
 #ifndef LOCAL_VAR_RENAME_VISITOR_HPP
 #define LOCAL_VAR_RENAME_VISITOR_HPP
 
-#include <stack>
 #include <map>
+#include <stack>
 
 #include "ast/ast.hpp"
-#include "visitors/ast_visitor.hpp"
 #include "symtab/symbol_table.hpp"
+#include "visitors/ast_visitor.hpp"
 
 /**
  * \class LocalVarRenameVisitor

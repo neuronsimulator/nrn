@@ -2,8 +2,8 @@
 
 #include <string>
 
-#include "catch/catch.hpp"
 #include "ast/ast.hpp"
+#include "catch/catch.hpp"
 #include "symtab/symbol.hpp"
 #include "symtab/symbol_table.hpp"
 

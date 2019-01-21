@@ -3,8 +3,8 @@
 
 #include <fstream>
 #include <iostream>
-#include <sstream>
 #include <memory>
+#include <sstream>
 
 /**
  * \class CodePrinter

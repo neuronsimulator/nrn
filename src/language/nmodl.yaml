@@ -319,7 +319,7 @@
                             description: ".."
                             nmodl: "INITIAL "
                             members:
-                              - block:
+                              - statement_block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -327,7 +327,7 @@
                             description: ".."
                             nmodl: "CONSTRUCTOR "
                             members:
-                              - block:
+                              - statement_block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -335,7 +335,7 @@
                             description: ".."
                             nmodl: "DESTRUCTOR "
                             members:
-                              - block:
+                              - statement_block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -356,7 +356,7 @@
                                   type: Name
                                   node_name: true
                                   suffix: {value: " "}
-                              - block:
+                              - statement_block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -375,7 +375,7 @@
                                   vector: true
                                   separator: ","
                                   prefix: {value: " SOLVEFOR "}
-                              - block:
+                              - statement_block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -394,7 +394,7 @@
                                   separator: ","
                                   prefix: {value: " SOLVEFOR "}
                                   suffix: {value: " ", force: true}
-                              - block:
+                              - statement_block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -407,7 +407,7 @@
                                   type: Name
                                   node_name: true
                                   suffix: {value: " "}
-                              - block:
+                              - statement_block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -420,7 +420,7 @@
                                   type: Name
                                   node_name: true
                                   suffix: {value: " "}
-                              - block:
+                              - statement_block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -467,7 +467,7 @@
                                   optional: true
                                   prefix: {value: " "}
                                   suffix: {value: " ", force: true}
-                              - block:
+                              - statement_block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -491,7 +491,7 @@
                                   description: "..."
                                   type: Unit
                                   optional: true
-                              - block:
+                              - statement_block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -507,7 +507,7 @@
                                   suffix: {value: ") ", force: true}
                                   separator: ", "
                                   getter: {override: true}
-                              - block:
+                              - statement_block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -533,7 +533,7 @@
                             description: ".."
                             nmodl: "BREAKPOINT "
                             members:
-                              - block:
+                              - statement_block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -541,7 +541,7 @@
                             description: ".."
                             nmodl: "TERMINAL "
                             members:
-                              - block:
+                              - statement_block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -566,7 +566,7 @@
                                   description: "..."
                                   type: BABlockType
                                   suffix: {value: " "}
-                              - block:
+                              - statement_block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -582,7 +582,7 @@
                                   suffix: {value: ") ", force: true}
                                   separator: ", "
                                   getter: {override: true}
-                              - block:
+                              - statement_block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -600,7 +600,7 @@
                                   type: Name
                                   vector: true
                                   separator: ","
-                              - block:
+                              - statement_block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -636,7 +636,7 @@
                             url: "https://www.neuron.yale.edu/neuron/static/py_doc/modelspec/programmatic/mechanisms/nmodl2.html#neuron"
                             nmodl: "NEURON "
                             members:
-                              - block:
+                              - statement_block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -1115,7 +1115,7 @@
                             prefix: {value: " BY "}
                             suffix: {value: " ", force: true}
                             optional: true
-                        - block:
+                        - statement_block:
                             description: "..."
                             type: StatementBlock
                             getter: {override: true}
@@ -1127,7 +1127,7 @@
                             description: "..."
                             type: Name
                             suffix: {value: " "}
-                        - block:
+                        - statement_block:
                             description: "..."
                             type: StatementBlock
                             getter: {override: true}
@@ -1140,7 +1140,7 @@
                             type: Expression
                             prefix: {value: "("}
                             suffix: {value: ") "}
-                        - block:
+                        - statement_block:
                             description: "..."
                             type: StatementBlock
                             getter: {override: true}
@@ -1153,7 +1153,7 @@
                             type: Expression
                             prefix: {value: "("}
                             suffix: {value: ") "}
-                        - block:
+                        - statement_block:
                             description: "..."
                             type: StatementBlock
                             getter: {override: true}
@@ -1174,7 +1174,7 @@
                             type: Expression
                             prefix: {value: "("}
                             suffix: {value: ") "}
-                        - block:
+                        - statement_block:
                             description: "..."
                             type: StatementBlock
                             getter: {override: true}
@@ -1182,7 +1182,7 @@
                       description: ".."
                       nmodl: " ELSE "
                       members:
-                        - block:
+                        - statement_block:
                             description: "..."
                             type: StatementBlock
                             getter: {override: true}

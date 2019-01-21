@@ -47,6 +47,7 @@ set_source_files_properties(
 add_library(visitor
             STATIC
             ${VISITOR_SOURCE_FILES})
+set_property(TARGET visitor PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 add_dependencies(visitor lexer util)
 

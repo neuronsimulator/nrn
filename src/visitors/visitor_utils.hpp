@@ -1,8 +1,8 @@
 #ifndef NMODL_VISITOR_UTILS
 #define NMODL_VISITOR_UTILS
 
-#include <string>
 #include <map>
+#include <string>
 
 #include "ast/ast.hpp"
 

@@ -3,8 +3,8 @@
 
 #include <fstream>
 #include <iostream>
-#include <sstream>
 #include <memory>
+#include <sstream>
 
 /**
  * \class NMODLPrinter
@@ -27,7 +27,7 @@ class NMODLPrinter {
   public:
     NMODLPrinter() : result(new std::ostream(std::cout.rdbuf())) {
     }
-    NMODLPrinter(std::stringstream& stream) : result(new std::ostream(stream.rdbuf())) {
+    NMODLPrinter(std::ostream& stream) : result(new std::ostream(stream.rdbuf())) {
     }
     NMODLPrinter(const std::string& filename);
 

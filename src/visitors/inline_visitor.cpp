@@ -109,7 +109,7 @@ bool InlineVisitor::inline_function_call(ast::Block* callee,
     std::string function_name = callee->get_node_name();
 
     /// do nothing if we can't inline given procedure/function
-    if (!can_inline_block(callee->get_block().get())) {
+    if (!can_inline_block(callee->get_statement_block().get())) {
         std::cerr << "Can not inline function call to " + function_name << std::endl;
         return false;
     }
@@ -143,7 +143,7 @@ bool InlineVisitor::inline_function_call(ast::Block* callee,
     }
 
     /// get a copy of function/procedure body
-    auto inlined_block = callee->get_block()->clone();
+    auto inlined_block = callee->get_statement_block()->clone();
 
     /// function definition has function name as return value. we have to rename
     /// it with new variable name

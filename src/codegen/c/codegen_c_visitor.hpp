@@ -1,15 +1,15 @@
 #ifndef NMODL_CODEGEN_C_VISITOR_HPP
 #define NMODL_CODEGEN_C_VISITOR_HPP
 
-#include <string>
 #include <algorithm>
+#include <string>
 
-#include "fmt/format.h"
+#include "codegen/base/codegen_base_visitor.hpp"
 #include "codegen/codegen_info.hpp"
+#include "fmt/format.h"
 #include "printer/code_printer.hpp"
 #include "symtab/symbol_table.hpp"
 #include "visitors/ast_visitor.hpp"
-#include "codegen/base/codegen_base_visitor.hpp"
 
 
 using namespace fmt::literals;

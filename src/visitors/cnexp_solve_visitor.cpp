@@ -1,10 +1,10 @@
 #include <sstream>
 
+#include "parser/diffeq_driver.hpp"
+#include "symtab/symbol.hpp"
 #include "visitors/cnexp_solve_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
-#include "parser/diffeq_driver.hpp"
 #include "visitors/visitor_utils.hpp"
-#include "symtab/symbol.hpp"
 
 using namespace ast;
 

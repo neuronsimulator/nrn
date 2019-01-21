@@ -184,12 +184,17 @@ class ChildNode(BaseNode):
 
         return type_name
 
-    def get_add_method(self):
+    def get_add_methods(self):
         s = ''
         if self.add_method:
-            method = f"""void add{self.class_name}({self.class_name} *s) {{
-                        {self.varname}.emplace_back(s);
-                    }}"""
+            method = f"""void add{self.class_name}({self.class_name} *n) {{
+                             {self.varname}.emplace_back(n);
+                         }}
+
+                         void add{self.class_name}(std::shared_ptr<{self.class_name}> n) {{
+                             {self.varname}.push_back(n);
+                         }}
+                    """
             s = textwrap.dedent(method)
         return s
 

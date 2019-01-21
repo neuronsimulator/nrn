@@ -6,11 +6,11 @@
 
 #include "ast/ast.hpp"
 #include "printer/json_printer.hpp"
+#include "symtab/symbol_table.hpp"
 #include "visitors/ast_visitor.hpp"
+#include "visitors/local_var_rename_visitor.hpp"
 #include "visitors/rename_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
-#include "visitors/local_var_rename_visitor.hpp"
-#include "symtab/symbol_table.hpp"
 
 /**
  * \class LocalizeVisitor

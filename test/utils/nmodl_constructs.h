@@ -1,9 +1,9 @@
 #ifndef NMODL_TEST_CONSTRUCTS
 #define NMODL_TEST_CONSTRUCTS
 
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
 
 /// represent nmodl construct test
 struct NmodlTestCase {

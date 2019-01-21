@@ -95,8 +95,8 @@ namespace ast {
             throw std::runtime_error("get_symbol_table() not implemented");
         }
 
-        virtual std::shared_ptr<StatementBlock> get_block() {
-            throw std::runtime_error("get_block not implemented");
+        virtual std::shared_ptr<StatementBlock> get_statement_block() {
+            throw std::runtime_error("get_statement_block not implemented");
         }
 
         // implemented in Number sub classes

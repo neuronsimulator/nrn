@@ -1,5 +1,5 @@
-#include <iostream>
 #include "visitors/verbatim_visitor.hpp"
+#include <iostream>
 
 using namespace ast;
 

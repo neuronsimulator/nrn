@@ -16,6 +16,7 @@ set(PRINTER_SOURCE_FILES
 add_library(printer
             STATIC
             ${PRINTER_SOURCE_FILES})
+set_property(TARGET printer PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 #=============================================================================
 # Files for clang-format

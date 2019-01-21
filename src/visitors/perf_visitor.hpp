@@ -1,8 +1,8 @@
 #ifndef _NMODL_PERF_VISITOR_HPP_
 #define _NMODL_PERF_VISITOR_HPP_
 
-#include <stack>
 #include <set>
+#include <stack>
 
 #include "printer/json_printer.hpp"
 #include "symtab/symbol_table.hpp"

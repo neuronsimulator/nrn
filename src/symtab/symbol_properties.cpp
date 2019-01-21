@@ -1,8 +1,8 @@
-#include <vector>
 #include <string>
+#include <vector>
 
-#include "utils/string_utils.hpp"
 #include "symtab/symbol_properties.hpp"
+#include "utils/string_utils.hpp"
 
 using namespace syminfo;
 

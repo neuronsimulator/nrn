@@ -4,8 +4,8 @@
 #include <string>
 
 #include "ast/ast.hpp"
-#include "visitors/ast_visitor.hpp"
 #include "symtab/symbol_table.hpp"
+#include "visitors/ast_visitor.hpp"
 
 /**
  * \class VarRenameVisitor

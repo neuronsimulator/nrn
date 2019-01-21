@@ -1,7 +1,7 @@
 
 #include "arg_handler.hpp"
-#include "utils/string_utils.hpp"
 #include "tclap/CmdLine.h"
+#include "utils/string_utils.hpp"
 #include "version/version.h"
 
 
