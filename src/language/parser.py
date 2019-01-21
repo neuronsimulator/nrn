@@ -81,6 +81,10 @@ class LanguageParser:
         if 'node_name' in properties:
             args.get_node_name = properties['node_name']
 
+        # description of member variable
+        if 'description' in properties:
+            args.description = properties['description']
+
         # if getter method required
         if 'getter' in properties:
             if 'name' in properties['getter']:
@@ -123,11 +127,12 @@ class LanguageParser:
             # name of the ast class and it's properties as dictionary
             class_name = next(iter(list(node.keys())))
             properties = next(iter(list(node.values())))
+            url = properties['url'] if 'url' in properties else None
 
-            # yaml file has abstract classes and their subclasses (i.e. children) as a list
-            if isinstance(properties, list):
+            # yaml file has abstract classes and their subclasses with children as a property
+            if 'children' in properties:
                 # recursively parse all sub-classes of current abstract class
-                child_abstract_nodes, child_nodes = self.parse_yaml_rules(properties, class_name)
+                child_abstract_nodes, child_nodes = self.parse_yaml_rules(properties['children'], class_name)
 
                 # append all parsed subclasses
                 abstract_nodes.extend(child_abstract_nodes)
@@ -136,9 +141,12 @@ class LanguageParser:
                 # classes like AST which don't have base class
                 # are not added (we print AST class separately)
                 if base_class:
+
                     args = Argument()
                     args.base_class = base_class
                     args.class_name = class_name
+                    args.description = properties['description']
+                    args.url = url
                     node = Node(args)
                     abstract_nodes.append(node)
                     nodes.insert(0, node)
@@ -155,8 +163,10 @@ class LanguageParser:
                 args = Argument()
                 args.base_class = base_class if base_class else 'AST'
                 args.class_name = class_name
+                args.description = properties['description']
                 args.nmodl_name = nmodl_name
                 args.has_token = has_token
+                args.url = url
 
                 # create tree node and add to the list
                 node = Node(args)

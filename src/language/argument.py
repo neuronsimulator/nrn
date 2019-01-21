@@ -4,6 +4,7 @@ class Argument:
     def __init__(self):
         self.base_class = ""
         self.class_name = ""
+        self.description = ""
         self.nmodl_name = ""
         self.prefix = ""
         self.suffix = ""
@@ -20,3 +21,4 @@ class Argument:
         self.has_token = False
         self.getter_method = False
         self.getter_override = False
+        self.url = None

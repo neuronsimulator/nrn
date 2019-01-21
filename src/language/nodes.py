@@ -20,6 +20,7 @@ class BaseNode:
         self.separator = args.separator
         self.force_prefix = args.force_prefix
         self.force_suffix = args.force_suffix
+        self.description = args.description
         self.is_abstract = False
 
     def __lt__(self, other):
@@ -216,6 +217,7 @@ class Node(BaseNode):
         BaseNode.__init__(self, args)
         self.base_class = args.base_class
         self.has_token = args.has_token
+        self.url = args.url
         self.children = []
 
     @property
@@ -355,7 +357,7 @@ class Node(BaseNode):
 
         for child in self.children:
             if child.is_public:
-                members.append([child.member_typename, child.varname])
+                members.append([child.member_typename, child.varname, child.description])
 
         return members
 
@@ -367,16 +369,16 @@ class Node(BaseNode):
 
         for child in self.children:
             if not child.is_public:
-                members.append([child.member_typename, child.varname])
+                members.append([child.member_typename, child.varname, child.description])
 
         if self.has_token:
-            members.append(["std::shared_ptr<ModToken>", "token"])
+            members.append(["std::shared_ptr<ModToken>", "token", "token with location information"])
 
         if self.is_symtab_needed:
-            members.append(["symtab::SymbolTable*", "symtab = nullptr"])
+            members.append(["symtab::SymbolTable*", "symtab = nullptr", "symbol table for a block"])
 
         if self.is_program_node:
-            members.append(["symtab::ModelSymbolTable", "model_symtab;"])
+            members.append(["symtab::ModelSymbolTable", "model_symtab", "global symbol table for model"])
 
         return members
 
