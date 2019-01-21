@@ -71,1115 +71,1487 @@
 # specification
 
 - AST:
-  - Node:
-    - Expression:
-      - String:
-          members:
-            - value:
-                type: std::string
-      - Number:
-        - Integer:
-            members:
-              - value:
-                  type: int
-              - macro_name:
-                  type: Name
-                  optional: true
-        - Float:
-            members:
-              - value:
-                  type: float
-        - Double:
-            members:
-              - value:
-                  type: double
-        - Boolean:
-            members:
-              - value:
-                  type: int
-      - Identifier:
-        - Name:
-            members:
-              - value:
-                  type: String
-                  node_name: true
-        - PrimeName:
-            members:
-              - value:
-                  type: String
-                  node_name: true
-              - order:
-                  type: Integer
-        - VarName:
-            members:
-              - name:
-                  type: Identifier
-                  node_name: true
-              - at_index:
-                  type: Integer
-                  optional: true
-                  prefix: {value: "@"}
-              - index:
-                  type: Expression
-                  optional: true
-                  prefix: {value: "["}
-                  suffix: {value: "]"}
-        - IndexedName:
-            members:
-              - name:
-                  type: Identifier
-                  node_name: true
-              - length:
-                  type: Expression
-                  prefix: {value: "["}
-                  suffix: {value: "]"}
-        - Argument:
-            members:
-              - name:
-                  type: Identifier
-                  node_name: true
-              - unit:
-                  type: Unit
-                  optional: true
-        - ReactVarName:
-            members:
-              - value:
-                  type: Integer
-                  optional: true
-                  prefix: {value: " "}
-              - name:
-                  type: VarName
-                  node_name: true
-        - ReadIonVar:
-            members:
-              - name:
-                  type: Name
-                  node_name: true
-        - WriteIonVar:
-            members:
-              - name:
-                  type: Name
-                  node_name: true
-        - NonspeCurVar:
-            members:
-              - name:
-                  type: Name
-                  node_name: true
-        - ElectrodeCurVar:
-            members:
-              - name:
-                  type: Name
-                  node_name: true
-        - SectionVar:
-            members:
-              - name:
-                  type: Name
-                  node_name: true
-        - RangeVar:
-            members:
-              - name:
-                  type: Name
-                  node_name: true
-        - GlobalVar:
-            members:
-              - name:
-                  type: Name
-                  node_name: true
-        - PointerVar:
-            members:
-              - name:
-                  type: Name
-                  node_name: true
-        - BbcorePointerVar:
-            members:
-              - name:
-                  type: Name
-                  node_name: true
-        - ExternVar:
-            members:
-              - name:
-                  type: Name
-                  node_name: true
-        - ThreadsafeVar:
-            members:
-              - name:
-                  type: Name
-                  node_name: true
-      - Block:
-        - ParamBlock:
-            nmodl: "PARAMETER "
-            members:
-              - statements:
-                  type: ParamAssign
-                  vector: true
-        - StepBlock:
-            nmodl: "STEPPED "
-            members:
-              - statements:
-                  type: Stepped
-                  vector: true
-        - IndependentBlock:
-            nmodl: "INDEPENDENT "
-            members:
-              - definitions:
-                  type: IndependentDef
-                  vector: true
-        - DependentBlock:
-            nmodl: "ASSIGNED "
-            members:
-              - definitions:
-                  type: DependentDef
-                  vector: true
-        - StateBlock:
-            nmodl: "STATE "
-            members:
-              - definitions:
-                  type: DependentDef
-                  vector: true
-        - PlotBlock:
-            members:
-              - plot:
-                  type: PlotDeclaration
-        - InitialBlock:
-            nmodl: "INITIAL "
-            members:
-              - statement_block:
-                  type: StatementBlock
-                  getter: {override: true}
-        - ConstructorBlock:
-            nmodl: "CONSTRUCTOR "
-            members:
-              - statement_block:
-                  type: StatementBlock
-                  getter: {override: true}
-        - DestructorBlock:
-            nmodl: "DESTRUCTOR "
-            members:
-              - statement_block:
-                  type: StatementBlock
-                  getter: {override: true}
-        - StatementBlock:
-            members:
-              - statements:
-                  type: Statement
-                  vector: true
-                  public: true
-        - DerivativeBlock:
-            nmodl: "DERIVATIVE "
-            members:
-              - name:
-                  type: Name
-                  node_name: true
-                  suffix: {value: " "}
-              - statement_block:
-                  type: StatementBlock
-                  getter: {override: true}
-        - LinearBlock:
-            nmodl: "LINEAR "
-            members:
-              - name:
-                  type: Name
-                  node_name: true
-                  suffix: {value: " "}
-              - solvefor:
-                  type: Name
-                  vector: true
-                  separator: ","
-                  prefix: {value: " SOLVEFOR "}
-              - statement_block:
-                  type: StatementBlock
-                  getter: {override: true}
-        - NonLinearBlock:
-            nmodl: "NONLINEAR "
-            members:
-              - name:
-                  type: Name
-                  node_name: true
-              - solvefor:
-                  type: Name
-                  vector: true
-                  separator: ","
-                  prefix: {value: " SOLVEFOR "}
-                  suffix: {value: " ", force: true}
-              - statement_block:
-                  type: StatementBlock
-                  getter: {override: true}
-        - DiscreteBlock:
-            nmodl: "DISCRETE "
-            members:
-              - name:
-                  type: Name
-                  node_name: true
-                  suffix: {value: " "}
-              - statement_block:
-                  type: StatementBlock
-                  getter: {override: true}
-        - PartialBlock:
-            nmodl: "PARTIAL "
-            members:
-              - name:
-                  type: Name
-                  node_name: true
-                  suffix: {value: " "}
-              - statement_block:
-                  type: StatementBlock
-                  getter: {override: true}
-        - FunctionTableBlock:
-            nmodl: "FUNCTION_TABLE "
-            members:
-              - name:
-                  type: Name
-                  node_name: true
-              - parameters:
-                  type: Argument
-                  vector: true
-                  prefix: {value: "(", force: true}
-                  suffix: {value: ")", force: true}
-                  separator: ", "
-                  getter: {override: true}
-              - unit:
-                  type: Unit
-                  optional: true
-                  prefix: {value: " "}
-        - FunctionBlock:
-            nmodl: "FUNCTION "
-            members:
-              - name:
-                  type: Name
-                  node_name: true
-              - parameters:
-                  type: Argument
-                  vector: true
-                  prefix: {value: "(", force: true}
-                  suffix: {value: ")", force: true}
-                  separator: ", "
-                  getter: {override: true}
-              - unit:
-                  type: Unit
-                  optional: true
-                  prefix: {value: " "}
-                  suffix: {value: " ", force: true}
-              - statement_block:
-                  type: StatementBlock
-                  getter: {override: true}
-        - ProcedureBlock:
-            nmodl: "PROCEDURE "
-            members:
-              - name:
-                  type: Name
-                  node_name: true
-              - parameters:
-                  type: Argument
-                  vector: true
-                  prefix: {value: "(", force: true}
-                  suffix: {value: ") ", force: true}
-                  separator: ", "
-                  getter: {override: true}
-              - unit:
-                  type: Unit
-                  optional: true
-              - statement_block:
-                  type: StatementBlock
-                  getter: {override: true}
-        - NetReceiveBlock:
-            nmodl: "NET_RECEIVE "
-            members:
-              - parameters:
-                  type: Argument
-                  vector: true
-                  prefix: {value: "(", force: true}
-                  suffix: {value: ") ", force: true}
-                  separator: ", "
-                  getter: {override: true}
-              - statement_block:
-                  type: StatementBlock
-                  getter: {override: true}
-        - SolveBlock:
-            nmodl: SOLVE
-            members:
-              - block_name:
-                  type: Name
-                  prefix: {value: " "}
-              - method:
-                  type: Name
-                  optional: true
-                  prefix: {value: " METHOD "}
-              - ifsolerr:
-                  type: StatementBlock
-                  optional: true
-                  prefix: {value: " IFERROR "}
-        - BreakpointBlock:
-            nmodl: "BREAKPOINT "
-            members:
-              - statement_block:
-                  type: StatementBlock
-                  getter: {override: true}
-        - TerminalBlock:
-            nmodl: "TERMINAL "
-            members:
-              - statement_block:
-                  type: StatementBlock
-                  getter: {override: true}
-        - BeforeBlock:
-            nmodl: "BEFORE "
-            members:
-              - block:
-                  type: BABlock
-        - AfterBlock:
-            nmodl: "AFTER "
-            members:
-              - block:
-                  type: BABlock
-        - BABlock:
-            members:
-              - type:
-                  type: BABlockType
-                  suffix: {value: " "}
-              - statement_block:
-                  type: StatementBlock
-                  getter: {override: true}
-        - ForNetcon:
-            nmodl: "FOR_NETCONS "
-            members:
-              - parameters:
-                  type: Argument
-                  vector: true
-                  prefix: {value: "(", force: true}
-                  suffix: {value: ") ", force: true}
-                  separator: ", "
-                  getter: {override: true}
-              - statement_block:
-                  type: StatementBlock
-                  getter: {override: true}
-        - KineticBlock:
-            nmodl: "KINETIC "
-            members:
-              - name:
-                  type: Name
-                  node_name: true
-                  suffix: {value: " "}
-              - solvefor:
-                  type: Name
-                  vector: true
-                  separator: ","
-              - statement_block:
-                  type: StatementBlock
-                  getter: {override: true}
-        - MatchBlock:
-            nmodl: MATCH
-            members:
-              - matchs:
-                  type: Match
-                  vector: true
-                  separator: " "
-                  prefix: {value: " { "}
-                  suffix: {value: " }"}
-        - UnitBlock:
-            nmodl: "UNITS "
-            members:
-              - definitions:
-                  type: Expression
-                  vector: true
-        - ConstantBlock:
-            nmodl: "CONSTANT "
-            members:
-              - statements:
-                  type: ConstantStatement
-                  vector: true
-        - NeuronBlock:
-            nmodl: "NEURON "
-            members:
-              - statement_block:
-                  type: StatementBlock
-                  getter: {override: true}
-      - Unit:
-          members:
-            - name:
-                type: String
-                node_name: true
-                prefix: {value: "("}
-                suffix: {value: ")"}
-      - DoubleUnit:
-          members:
-            - values:
-                type: Double
-            - unit:
-                type: Unit
-                optional: true
-      - LocalVar:
-          members:
-            - name:
-                type: Identifier
-                node_name: true
-      - Limits:
-          members:
-            - min:
-                type: Double
-                prefix: {value: "<"}
-                suffix: {value: ","}
-            - max:
-                type: Double
-                suffix: {value: ">"}
-      - NumberRange:
-          members:
-            - min:
-                type: Number
-                prefix: {value: "<"}
-                suffix: {value: ","}
-            - max:
-                type: Number
-                suffix: {value: ">"}
+    description: "Base class for AST"
+    children:
+      - Node:
+          description: "Base class for node in the AST"
+          children:
+            - Expression:
+                description: "Represents a(n) expression"
+                children:
+                  - String:
+                      description: "Represents a(n) double quoted string"
+                      members:
+                        - value:
+                            description: "string value"
+                            type: std::string
+                  - Number:
+                      description: "Represents a(n) number"
+                      children:
+                        - Integer:
+                            description: "Represents a(n) integer number"
+                            members:
+                              - value:
+                                  description: "integer value"
+                                  type: int
+                              - macro_name:
+                                  description: "macro name for integer"
+                                  type: Name
+                                  optional: true
+                        - Float:
+                            description: "Represents a(n) float number"
+                            members:
+                              - value:
+                                  description: "float value"
+                                  type: float
+                        - Double:
+                            description: "Represents a(n) double number"
+                            members:
+                              - value:
+                                  description: "double value"
+                                  type: double
+                        - Boolean:
+                            description: "Represents a(n) boolean variable"
+                            members:
+                              - value:
+                                  description: "bool value"
+                                  type: int
+                  - Identifier:
+                      description: "Represents a(n) identifier"
+                      children:
+                        - Name:
+                            description: "Represents a(n) name"
+                            members:
+                              - value:
+                                  description: "string value"
+                                  type: String
+                                  node_name: true
+                        - PrimeName:
+                            description: "Represents a(n) prime variable"
+                            members:
+                              - value:
+                                  description: "variable name"
+                                  type: String
+                                  node_name: true
+                              - order:
+                                  description: "order of prime"
+                                  type: Integer
+                        - VarName:
+                            description: "Represents a(n) NMODL variable"
+                            members:
+                              - name:
+                                  description: "variable name"
+                                  type: Identifier
+                                  node_name: true
+                              - at_index:
+                                  description: "todo"
+                                  type: Integer
+                                  optional: true
+                                  prefix: {value: "@"}
+                              - index:
+                                  description: "index value in case of array"
+                                  type: Expression
+                                  optional: true
+                                  prefix: {value: "["}
+                                  suffix: {value: "]"}
+                        - IndexedName:
+                            description: ".."
+                            members:
+                              - name:
+                                  description: "..."
+                                  type: Identifier
+                                  node_name: true
+                              - length:
+                                  description: "..."
+                                  type: Expression
+                                  prefix: {value: "["}
+                                  suffix: {value: "]"}
+                        - Argument:
+                            description: ".."
+                            members:
+                              - name:
+                                  description: "..."
+                                  type: Identifier
+                                  node_name: true
+                              - unit:
+                                  description: "..."
+                                  type: Unit
+                                  optional: true
+                        - ReactVarName:
+                            description: ".."
+                            members:
+                              - value:
+                                  description: "..."
+                                  type: Integer
+                                  optional: true
+                                  prefix: {value: " "}
+                              - name:
+                                  description: "..."
+                                  type: VarName
+                                  node_name: true
+                        - ReadIonVar:
+                            description: ".."
+                            members:
+                              - name:
+                                  description: "..."
+                                  type: Name
+                                  node_name: true
+                        - WriteIonVar:
+                            description: ".."
+                            members:
+                              - name:
+                                  description: "..."
+                                  type: Name
+                                  node_name: true
+                        - NonspeCurVar:
+                            description: ".."
+                            members:
+                              - name:
+                                  description: "..."
+                                  type: Name
+                                  node_name: true
+                        - ElectrodeCurVar:
+                            description: ".."
+                            members:
+                              - name:
+                                  description: "..."
+                                  type: Name
+                                  node_name: true
+                        - SectionVar:
+                            description: ".."
+                            members:
+                              - name:
+                                  description: "..."
+                                  type: Name
+                                  node_name: true
+                        - RangeVar:
+                            description: ".."
+                            members:
+                              - name:
+                                  description: "..."
+                                  type: Name
+                                  node_name: true
+                        - GlobalVar:
+                            description: ".."
+                            members:
+                              - name:
+                                  description: "..."
+                                  type: Name
+                                  node_name: true
+                        - PointerVar:
+                            description: ".."
+                            members:
+                              - name:
+                                  description: "..."
+                                  type: Name
+                                  node_name: true
+                        - BbcorePointerVar:
+                            description: ".."
+                            members:
+                              - name:
+                                  description: "..."
+                                  type: Name
+                                  node_name: true
+                        - ExternVar:
+                            description: ".."
+                            members:
+                              - name:
+                                  description: "..."
+                                  type: Name
+                                  node_name: true
+                        - ThreadsafeVar:
+                            description: ".."
+                            members:
+                              - name:
+                                  description: "..."
+                                  type: Name
+                                  node_name: true
+                  - Block:
+                      description: ".."
+                      children:
+                        - ParamBlock:
+                            description: ".."
+                            nmodl: "PARAMETER "
+                            members:
+                              - statements:
+                                  description: "..."
+                                  type: ParamAssign
+                                  vector: true
+                        - StepBlock:
+                            description: ".."
+                            nmodl: "STEPPED "
+                            members:
+                              - statements:
+                                  description: "..."
+                                  type: Stepped
+                                  vector: true
+                        - IndependentBlock:
+                            description: ".."
+                            nmodl: "INDEPENDENT "
+                            members:
+                              - definitions:
+                                  description: "..."
+                                  type: IndependentDef
+                                  vector: true
+                        - DependentBlock:
+                            description: ".."
+                            nmodl: "ASSIGNED "
+                            members:
+                              - definitions:
+                                  description: "..."
+                                  type: DependentDef
+                                  vector: true
+                        - StateBlock:
+                            description: ".."
+                            nmodl: "STATE "
+                            members:
+                              - definitions:
+                                  description: "..."
+                                  type: DependentDef
+                                  vector: true
+                        - PlotBlock:
+                            description: ".."
+                            members:
+                              - plot:
+                                  description: "..."
+                                  type: PlotDeclaration
+                        - InitialBlock:
+                            description: ".."
+                            nmodl: "INITIAL "
+                            members:
+                              - statement_block:
+                                  description: "..."
+                                  type: StatementBlock
+                                  getter: {override: true}
+                        - ConstructorBlock:
+                            description: ".."
+                            nmodl: "CONSTRUCTOR "
+                            members:
+                              - statement_block:
+                                  description: "..."
+                                  type: StatementBlock
+                                  getter: {override: true}
+                        - DestructorBlock:
+                            description: ".."
+                            nmodl: "DESTRUCTOR "
+                            members:
+                              - statement_block:
+                                  description: "..."
+                                  type: StatementBlock
+                                  getter: {override: true}
+                        - StatementBlock:
+                            description: ".."
+                            members:
+                              - statements:
+                                  description: "..."
+                                  type: Statement
+                                  vector: true
+                                  public: true
+                        - DerivativeBlock:
+                            description: ".."
+                            nmodl: "DERIVATIVE "
+                            members:
+                              - name:
+                                  description: "..."
+                                  type: Name
+                                  node_name: true
+                                  suffix: {value: " "}
+                              - statement_block:
+                                  description: "..."
+                                  type: StatementBlock
+                                  getter: {override: true}
+                        - LinearBlock:
+                            description: ".."
+                            nmodl: "LINEAR "
+                            members:
+                              - name:
+                                  description: "..."
+                                  type: Name
+                                  node_name: true
+                                  suffix: {value: " "}
+                              - solvefor:
+                                  description: "..."
+                                  type: Name
+                                  vector: true
+                                  separator: ","
+                                  prefix: {value: " SOLVEFOR "}
+                              - statement_block:
+                                  description: "..."
+                                  type: StatementBlock
+                                  getter: {override: true}
+                        - NonLinearBlock:
+                            description: ".."
+                            nmodl: "NONLINEAR "
+                            members:
+                              - name:
+                                  description: "..."
+                                  type: Name
+                                  node_name: true
+                              - solvefor:
+                                  description: "..."
+                                  type: Name
+                                  vector: true
+                                  separator: ","
+                                  prefix: {value: " SOLVEFOR "}
+                                  suffix: {value: " ", force: true}
+                              - statement_block:
+                                  description: "..."
+                                  type: StatementBlock
+                                  getter: {override: true}
+                        - DiscreteBlock:
+                            description: ".."
+                            nmodl: "DISCRETE "
+                            members:
+                              - name:
+                                  description: "..."
+                                  type: Name
+                                  node_name: true
+                                  suffix: {value: " "}
+                              - statement_block:
+                                  description: "..."
+                                  type: StatementBlock
+                                  getter: {override: true}
+                        - PartialBlock:
+                            description: ".."
+                            nmodl: "PARTIAL "
+                            members:
+                              - name:
+                                  description: "..."
+                                  type: Name
+                                  node_name: true
+                                  suffix: {value: " "}
+                              - statement_block:
+                                  description: "..."
+                                  type: StatementBlock
+                                  getter: {override: true}
+                        - FunctionTableBlock:
+                            description: ".."
+                            nmodl: "FUNCTION_TABLE "
+                            members:
+                              - name:
+                                  description: "..."
+                                  type: Name
+                                  node_name: true
+                              - parameters:
+                                  description: "..."
+                                  type: Argument
+                                  vector: true
+                                  prefix: {value: "(", force: true}
+                                  suffix: {value: ")", force: true}
+                                  separator: ", "
+                                  getter: {override: true}
+                              - unit:
+                                  description: "..."
+                                  type: Unit
+                                  optional: true
+                                  prefix: {value: " "}
+                        - FunctionBlock:
+                            description: ".."
+                            nmodl: "FUNCTION "
+                            members:
+                              - name:
+                                  description: "..."
+                                  type: Name
+                                  node_name: true
+                              - parameters:
+                                  description: "..."
+                                  type: Argument
+                                  vector: true
+                                  prefix: {value: "(", force: true}
+                                  suffix: {value: ")", force: true}
+                                  separator: ", "
+                                  getter: {override: true}
+                              - unit:
+                                  description: "..."
+                                  type: Unit
+                                  optional: true
+                                  prefix: {value: " "}
+                                  suffix: {value: " ", force: true}
+                              - statement_block:
+                                  description: "..."
+                                  type: StatementBlock
+                                  getter: {override: true}
+                        - ProcedureBlock:
+                            description: ".."
+                            nmodl: "PROCEDURE "
+                            members:
+                              - name:
+                                  description: "..."
+                                  type: Name
+                                  node_name: true
+                              - parameters:
+                                  description: "..."
+                                  type: Argument
+                                  vector: true
+                                  prefix: {value: "(", force: true}
+                                  suffix: {value: ") ", force: true}
+                                  separator: ", "
+                                  getter: {override: true}
+                              - unit:
+                                  description: "..."
+                                  type: Unit
+                                  optional: true
+                              - statement_block:
+                                  description: "..."
+                                  type: StatementBlock
+                                  getter: {override: true}
+                        - NetReceiveBlock:
+                            description: ".."
+                            nmodl: "NET_RECEIVE "
+                            members:
+                              - parameters:
+                                  description: "..."
+                                  type: Argument
+                                  vector: true
+                                  prefix: {value: "(", force: true}
+                                  suffix: {value: ") ", force: true}
+                                  separator: ", "
+                                  getter: {override: true}
+                              - statement_block:
+                                  description: "..."
+                                  type: StatementBlock
+                                  getter: {override: true}
+                        - SolveBlock:
+                            description: ".."
+                            nmodl: SOLVE
+                            members:
+                              - block_name:
+                                  description: "..."
+                                  type: Name
+                                  prefix: {value: " "}
+                              - method:
+                                  description: "..."
+                                  type: Name
+                                  optional: true
+                                  prefix: {value: " METHOD "}
+                              - ifsolerr:
+                                  description: "..."
+                                  type: StatementBlock
+                                  optional: true
+                                  prefix: {value: " IFERROR "}
+                        - BreakpointBlock:
+                            description: ".."
+                            nmodl: "BREAKPOINT "
+                            members:
+                              - statement_block:
+                                  description: "..."
+                                  type: StatementBlock
+                                  getter: {override: true}
+                        - TerminalBlock:
+                            description: ".."
+                            nmodl: "TERMINAL "
+                            members:
+                              - statement_block:
+                                  description: "..."
+                                  type: StatementBlock
+                                  getter: {override: true}
+                        - BeforeBlock:
+                            description: ".."
+                            nmodl: "BEFORE "
+                            members:
+                              - block:
+                                  description: "..."
+                                  type: BABlock
+                        - AfterBlock:
+                            description: ".."
+                            nmodl: "AFTER "
+                            members:
+                              - block:
+                                  description: "..."
+                                  type: BABlock
+                        - BABlock:
+                            description: ".."
+                            members:
+                              - type:
+                                  description: "..."
+                                  type: BABlockType
+                                  suffix: {value: " "}
+                              - statement_block:
+                                  description: "..."
+                                  type: StatementBlock
+                                  getter: {override: true}
+                        - ForNetcon:
+                            description: ".."
+                            nmodl: "FOR_NETCONS "
+                            members:
+                              - parameters:
+                                  description: "..."
+                                  type: Argument
+                                  vector: true
+                                  prefix: {value: "(", force: true}
+                                  suffix: {value: ") ", force: true}
+                                  separator: ", "
+                                  getter: {override: true}
+                              - statement_block:
+                                  description: "..."
+                                  type: StatementBlock
+                                  getter: {override: true}
+                        - KineticBlock:
+                            description: ".."
+                            nmodl: "KINETIC "
+                            members:
+                              - name:
+                                  description: "..."
+                                  type: Name
+                                  node_name: true
+                                  suffix: {value: " "}
+                              - solvefor:
+                                  description: "..."
+                                  type: Name
+                                  vector: true
+                                  separator: ","
+                              - statement_block:
+                                  description: "..."
+                                  type: StatementBlock
+                                  getter: {override: true}
+                        - MatchBlock:
+                            description: ".."
+                            nmodl: MATCH
+                            members:
+                              - matchs:
+                                  description: "..."
+                                  type: Match
+                                  vector: true
+                                  separator: " "
+                                  prefix: {value: " { "}
+                                  suffix: {value: " }"}
+                        - UnitBlock:
+                            description: ".."
+                            nmodl: "UNITS "
+                            members:
+                              - definitions:
+                                  description: "..."
+                                  type: Expression
+                                  vector: true
+                        - ConstantBlock:
+                            description: ".."
+                            nmodl: "CONSTANT "
+                            members:
+                              - statements:
+                                  description: "..."
+                                  type: ConstantStatement
+                                  vector: true
+                        - NeuronBlock:
+                            description: ".."
+                            url: "https://www.neuron.yale.edu/neuron/static/py_doc/modelspec/programmatic/mechanisms/nmodl2.html#neuron"
+                            nmodl: "NEURON "
+                            members:
+                              - statement_block:
+                                  description: "..."
+                                  type: StatementBlock
+                                  getter: {override: true}
+                  - Unit:
+                      description: ".."
+                      members:
+                        - name:
+                            description: "..."
+                            type: String
+                            node_name: true
+                            prefix: {value: "("}
+                            suffix: {value: ")"}
+                  - DoubleUnit:
+                      description: ".."
+                      members:
+                        - values:
+                            description: "..."
+                            type: Double
+                        - unit:
+                            description: "..."
+                            type: Unit
+                            optional: true
+                  - LocalVar:
+                      description: ".."
+                      members:
+                        - name:
+                            description: "..."
+                            type: Identifier
+                            node_name: true
+                  - Limits:
+                      description: ".."
+                      members:
+                        - min:
+                            description: "..."
+                            type: Double
+                            prefix: {value: "<"}
+                            suffix: {value: ","}
+                        - max:
+                            description: "..."
+                            type: Double
+                            suffix: {value: ">"}
+                  - NumberRange:
+                      description: ".."
+                      members:
+                        - min:
+                            description: "..."
+                            type: Number
+                            prefix: {value: "<"}
+                            suffix: {value: ","}
+                        - max:
+                            description: "..."
+                            type: Number
+                            suffix: {value: ">"}
+                  - PlotVar:
+                      description: ".."
+                      members:
+                        - name:
+                            description: "..."
+                            type: Identifier
+                        - index:
+                            description: "..."
+                            type: Integer
+                            optional: true
+                            prefix: {value: "["}
+                            suffix: {value: "]"}
+                  - ConstantVar:
+                      description: ".."
+                      members:
+                        - name:
+                            description: "..."
+                            type: Name
+                            node_name: true
+                        - value:
+                            description: "..."
+                            type: Number
+                            prefix: {value: " = "}
+                        - unit:
+                            description: "..."
+                            type: Unit
+                            optional: true
+                            prefix: {value: " "}
+                  - BinaryOperator:
+                      description: ".."
+                      members:
+                        - value:
+                            description: "..."
+                            type: BinaryOp
+                  - UnaryOperator:
+                      description: ".."
+                      members:
+                        - value:
+                            description: "..."
+                            type: UnaryOp
+                  - ReactionOperator:
+                      description: ".."
+                      members:
+                        - value:
+                            description: "..."
+                            type: ReactionOp
+                  - WrappedExpression:
+                      description: ".."
+                      members:
+                        - expression:
+                            description: "..."
+                            type: Expression
+                  - ParenExpression:
+                      description: ".."
+                      members:
+                        - expr:
+                            description: "..."
+                            type: Expression
+                            prefix: {value: "("}
+                            suffix: {value: ")"}
+                  - BinaryExpression:
+                      description: ".."
+                      members:
+                        - lhs:
+                            description: "..."
+                            type: Expression
+                            public: true
+                        - op:
+                            description: "..."
+                            type: BinaryOperator
+                            public: true
+                        - rhs:
+                            description: "..."
+                            type: Expression
+                            public: true
+                  - UnaryExpression:
+                      description: ".."
+                      members:
+                        - op:
+                            description: "..."
+                            type: UnaryOperator
+                        - expression:
+                            description: "..."
+                            type: Expression
+                  - NonLinEquation:
+                      description: ".."
+                      nmodl: "~ "
+                      members:
+                        - lhs:
+                            description: "..."
+                            type: Expression
+                            suffix: {value: " = "}
+                        - rhs:
+                            description: "..."
+                            type: Expression
+                  - LinEquation:
+                      description: ".."
+                      nmodl: "~ "
+                      members:
+                        - leftlinexpr:
+                            description: "..."
+                            type: Expression
+                            suffix: {value: " = "}
+                        - linexpr:
+                            description: "..."
+                            type: Expression
+                  - FunctionCall:
+                      description: ".."
+                      members:
+                        - name:
+                            description: "..."
+                            type: Name
+                            node_name: true
+                        - arguments:
+                            description: "..."
+                            type: Expression
+                            vector: true
+                            separator: ", "
+                            prefix: {value: "(", force: true}
+                            suffix: {value: ")", force: true}
+                  - FirstLastTypeIndex:
+                      description: ".."
+                      members:
+                        - value:
+                            description: "..."
+                            type: FirstLastType
+                  - Watch:
+                      description: ".."
+                      members:
+                        - expression:
+                            description: "..."
+                            type: Expression
+                            prefix: {value: "("}
+                            suffix: {value: ")"}
+                        - value:
+                            description: "..."
+                            type: Expression
+                            prefix: {value: " "}
+                  - QueueExpressionType:
+                      description: ".."
+                      members:
+                        - value:
+                            description: "..."
+                            type: QueueType
+                  - Match:
+                      description: ".."
+                      members:
+                        - name:
+                            description: "..."
+                            type: Identifier
+                        - expression:
+                            description: "..."
+                            type: Expression
+                            optional: true
+                  - BABlockType:
+                      description: ".."
+                      members:
+                        - value:
+                            description: "..."
+                            type: BAType
+                  - UnitDef:
+                      description: ".."
+                      members:
+                        - unit1:
+                            description: "..."
+                            type: Unit
+                            node_name: true
+                        - unit2:
+                            description: "..."
+                            type: Unit
+                            prefix: {value: " = "}
+                  - FactorDef:
+                      description: ".."
+                      members:
+                        - name:
+                            description: "..."
+                            type: Name
+                            node_name: true
+                            suffix: {value: " ="}
+                        - value:
+                            description: "..."
+                            type: Double
+                            optional: true
+                            prefix: {value: " "}
+                        - unit1:
+                            description: "..."
+                            type: Unit
+                            prefix: {value: " "}
+                        - gt:
+                            description: "..."
+                            type: Boolean
+                            nmodl: " ->"
+                            optional: true
+                        - unit2:
+                            description: "..."
+                            type: Unit
+                            optional: true
+                            prefix: {value: " "}
+                  - Valence:
+                      description: ".."
+                      members:
+                        - type:
+                            type: Name
+                            description: "..."
+                            prefix: {value: " "}
+                            suffix: {value: " "}
+                        - value:
+                            description: "..."
+                            type: Double
 
-      - PlotVar:
-          members:
-            - name:
-                type: Identifier
-            - index:
-                type: Integer
-                optional: true
-                prefix: {value: "["}
-                suffix: {value: "]"}
-      - ConstantVar:
-          members:
-            - name:
-                type: Name
-                node_name: true
-            - value:
-                type: Number
-                prefix: {value: " = "}
-            - unit:
-                type: Unit
-                optional: true
-                prefix: {value: " "}
-      - BinaryOperator:
-          members:
-            - value:
-                type: BinaryOp
-      - UnaryOperator:
-          members:
-            - value:
-                type: UnaryOp
-      - ReactionOperator:
-          members:
-            - value:
-                type: ReactionOp
-      - WrappedExpression:
-          members:
-            - expression:
-                type: Expression
-      - ParenExpression:
-          members:
-            - expr:
-                type: Expression
-                prefix: {value: "("}
-                suffix: {value: ")"}
-      - BinaryExpression:
-          members:
-            - lhs:
-                type: Expression
-                public: true
-            - op:
-                type: BinaryOperator
-                public: true
-            - rhs:
-                type: Expression
-                public: true
-      - UnaryExpression:
-          members:
-            - op:
-                type: UnaryOperator
-            - expression:
-                type: Expression
-      - NonLinEquation:
-          nmodl: "~ "
-          members:
-            - lhs:
-                type: Expression
-                suffix: {value: " = "}
-            - rhs:
-                type: Expression
-      - LinEquation:
-          nmodl: "~ "
-          members:
-            - leftlinexpr:
-                type: Expression
-                suffix: {value: " = "}
-            - linexpr:
-                type: Expression
-      - FunctionCall:
-          members:
-            - name:
-                type: Name
-                node_name: true
-            - arguments:
-                type: Expression
-                vector: true
-                separator: ", "
-                prefix: {value: "(", force: true}
-                suffix: {value: ")", force: true}
-      - FirstLastTypeIndex:
-          members:
-            - value:
-                type: FirstLastType
-      - Watch:
-          members:
-            - expression:
-                type: Expression
-                prefix: {value: "("}
-                suffix: {value: ")"}
-            - value:
-                type: Expression
-                prefix: {value: " "}
-      - QueueExpressionType:
-          members:
-            - value:
-                type: QueueType
-      - Match:
-          members:
-            - name:
-                type: Identifier
-            - expression:
-                type: Expression
-                optional: true
-      - BABlockType:
-          members:
-            - value:
-                type: BAType
-      - UnitDef:
-          members:
-            - unit1:
-                type: Unit
-                node_name: true
-            - unit2:
-                type: Unit
-                prefix: {value: " = "}
-      - FactorDef:
-          members:
-            - name:
-                type: Name
-                node_name: true
-                suffix: {value: " ="}
-            - value:
-                type: Double
-                optional: true
-                prefix: {value: " "}
-            - unit1:
-                type: Unit
-                prefix: {value: " "}
-            - gt:
-                type: Boolean
-                nmodl: " ->"
-                optional: true
-            - unit2:
-                type: Unit
-                optional: true
-                prefix: {value: " "}
-      - Valence:
-          members:
-            - type:
-                type: Name
-                prefix: {value: " "}
-                suffix: {value: " "}
-            - value:
-                type: Double
-
-    - Statement:
-      - UnitState:
-          members:
-            - value:
-                type: UnitStateType
-      - LocalListStatement:
-          nmodl: "LOCAL "
-          members:
-            - variables:
-                type: LocalVar
-                vector: true
-                separator: ", "
-                public: true
-      - Model:
-          nmodl: TITLE
-          members:
-            - title:
-                type: String
-      - Define:
-          nmodl: "DEFINE "
-          members:
-            - name:
-                type: Name
-            - value:
-                type: Integer
-                prefix: {value: " "}
-      - Include:
-          nmodl: "INCLUDE "
-          members:
-            - filename:
-                type: String
-      - ParamAssign:
-          members:
-            - name:
-                type: Identifier
-                node_name: true
-            - value:
-                type: Number
-                optional: true
-                prefix: {value: " = "}
-            - unit:
-                type: Unit
-                optional: true
-                prefix: {value: " "}
-            - limit:
-                type: Limits
-                optional: true
-                prefix: {value: " "}
-      - Stepped:
-          members:
-            - name:
-                type: Name
-            - values:
-                type: Number
-                vector: true
-                prefix: {value: " = "}
-                separator: ", "
-            - unit:
-                type: Unit
-                optional: true
-                prefix: {value: " "}
-      - IndependentDef:
-          members:
-            - sweep:
-                type: Boolean
-                optional: true
-                nmodl: "SWEEP "
-            - name:
-                type: Name
-            - from:
-                type: Number
-                prefix: {value: " FROM "}
-            - to:
-                type: Number
-                prefix: {value: " TO "}
-            - with:
-                type: Integer
-                prefix: {value: " WITH "}
-            - opstart:
-                type: Number
-                prefix: {value: " START "}
-                optional: true
-            - unit:
-                type: Unit
-                optional: true
-                prefix: {value: " "}
-      - DependentDef:
-          members:
-            - name:
-                type: Identifier
-                node_name: true
-            - length:
-                type: Integer
-                optional: true
-                prefix: {value: "["}
-                suffix: {value: "]"}
-            - from:
-                type: Number
-                prefix: {value: " FROM "}
-                optional: true
-            - to:
-                type: Number
-                prefix: {value: " TO "}
-                optional: true
-            - opstart:
-                type: Number
-                prefix: {value: " START "}
-                optional: true
-            - unit:
-                type: Unit
-                optional: true
-                prefix: {value: " "}
-            - abstol:
-                type: Double
-                prefix: {value: " <"}
-                suffix: {value: ">"}
-                optional: true
-      - PlotDeclaration:
-          nmodl: "PLOT "
-          members:
-            - pvlist:
-                type: PlotVar
-                vector: true
-                separator: ", "
-            - name:
-                type: PlotVar
-                prefix: {value: " VS "}
-      - ConductanceHint:
-          nmodl: "CONDUCTANCE "
-          members:
-            - conductance:
-                type: Name
-            - ion:
-                type: Name
-                optional: true
-                prefix: {value: " USEION "}
-      - ExpressionStatement:
-          members:
-            - expression:
-                type: Expression
-      - ProtectStatement:
-          nmodl: "PROTECT "
-          members:
-            - expression:
-                type: Expression
-      - FromStatement:
-          nmodl: "FROM "
-          members:
-            - name:
-                type: Name
-                node_name: true
-            - from:
-                type: Expression
-                prefix: {value: " = "}
-            - to:
-                type: Expression
-                prefix: {value: " TO "}
-            - opinc:
-                type: Expression
-                prefix: {value: " BY "}
-                suffix: {value: " ", force: true}
-                optional: true
-            - statement_block:
-                type: StatementBlock
-                getter: {override: true}
-      - ForAllStatement:
-          nmodl: "FORALL "
-          members:
-            - name:
-                type: Name
-                suffix: {value: " "}
-            - statement_block:
-                type: StatementBlock
-                getter: {override: true}
-      - WhileStatement:
-          nmodl: "WHILE "
-          members:
-            - condition:
-                type: Expression
-                prefix: {value: "("}
-                suffix: {value: ") "}
-            - statement_block:
-                type: StatementBlock
-                getter: {override: true}
-      - IfStatement:
-          nmodl: "IF "
-          members:
-            - condition:
-                type: Expression
-                prefix: {value: "("}
-                suffix: {value: ") "}
-            - statement_block:
-                type: StatementBlock
-                getter: {override: true}
-            - elseifs:
-                type: ElseIfStatement
-                vector: true
-            - elses:
-                type: ElseStatement
-                optional: true
-      - ElseIfStatement:
-          nmodl: " ELSE IF "
-          members:
-            - condition:
-                type: Expression
-                prefix: {value: "("}
-                suffix: {value: ") "}
-            - statement_block:
-                type: StatementBlock
-                getter: {override: true}
-      - ElseStatement:
-          nmodl: " ELSE "
-          members:
-            - statement_block:
-                type: StatementBlock
-                getter: {override: true}
-      - PartialEquation:
-          members:
-            - prime:
-                type: PrimeName
-            - name1:
-                type: Name
-            - name2:
-                type: Name
-            - name3:
-                type: Name
-      - PartialBoundary:
-          nmodl: "~ "
-          members:
-            - del:
-                type: Name
-                optional: true
-                suffix: {value: " "}
-            - name:
-                type: Identifier
-            - index:
-                type: FirstLastTypeIndex
-                optional: true
-                prefix: {value: "["}
-                suffix: {value: "]"}
-            - expression:
-                type: Expression
-                optional: true
-                prefix: {value: " = "}
-            - name1:
-                type: Name
-                optional: true
-                prefix: {value: " = "}
-                suffix: {value: "*"}
-            - del2:
-                type: Name
-                optional: true
-                suffix: {value: "("}
-            - name2:
-                type: Name
-                optional: true
-                suffix: {value: ")"}
-            - name3:
-                type: Name
-                optional: true
-                prefix: {value: "+"}
-      - WatchStatement:
-          nmodl: "WATCH "
-          members:
-            - statements:
-                type: Watch
-                vector: true
-                separator: ","
-                add: true
-      - MutexLock:
-          nmodl: MUTEXLOCK
-      - MutexUnlock:
-          nmodl: MUTEXUNLOCK
-      - Reset:
-          nmodl: RESET
-      - Sens:
-          nmodl: "SENS "
-          members:
-            - senslist:
-                type: VarName
-                vector: true
-                separator: ", "
-      - Conserve:
-          nmodl: CONSERVE
-          members:
-            - react:
-                type: Expression
-                prefix: {value: " "}
-            - expr:
-                type: Expression
-                prefix: {value: " = "}
-      - Compartment:
-          nmodl: COMPARTMENT
-          members:
-            - name:
-                type: Name
-                optional: true
-                prefix: {value: " "}
-                suffix: {value: ","}
-            - expression:
-                type: Expression
-                prefix: {value: " "}
-            - names:
-                type: Name
-                vector: true
-                prefix: {value: " {"}
-                suffix: {value: "}"}
-                separator: " "
-      - LonDifuse:
-          nmodl: LONGITUDINAL_DIFFUSION
-          members:
-            - name:
-                type: Name
-                optional: true
-                prefix: {value: " "}
-                suffix: {value: ","}
-            - expression:
-                type: Expression
-                prefix: {value: " "}
-            - names:
-                type: Name
-                vector: true
-                prefix: {value: " {"}
-                suffix: {value: "}"}
-                separator: " "
-      - ReactionStatement:
-          nmodl: "~ "
-          members:
-            - react1:
-                type: Expression
-            - op:
-                type: ReactionOperator
-                prefix: {value: " "}
-            - react2:
-                type: Expression
-                prefix: {value: " "}
-                optional: true
-            - expr1:
-                type: Expression
-                prefix: {value: " ("}
-            - expr2:
-                type: Expression
-                prefix: {value: ", "}
-                suffix: {value: ")", force: true}
-                optional: true
-      - LagStatement:
-          nmodl: "LAG "
-          members:
-            - name:
-                type: Identifier
-            - byname:
-                type: Name
-                prefix: {value: " BY "}
-      - QueueStatement:
-          members:
-            - qype:
-                type: QueueExpressionType
-            - name:
-                type: Identifier
-                prefix: {value: " "}
-      - ConstantStatement:
-          members:
-            - constant:
-                type: ConstantVar
-      - TableStatement:
-          nmodl: "TABLE "
-          members:
-            - table_vars:
-                type: Name
-                vector: true
-                separator: ","
-            - depend_vars:
-                type: Name
-                vector: true
-                prefix: {value: " DEPEND "}
-                separator: ","
-            - from:
-                type: Expression
-                prefix: {value: " FROM "}
-            - to:
-                type: Expression
-                prefix: {value: " TO "}
-            - with:
-                type: Integer
-                prefix: {value: " WITH "}
-      - Suffix:
-          members:
-            - type:
-                type: Name
-                suffix: {value: " "}
-            - name:
-                type: Name
-                node_name: true
-      - Useion:
-          nmodl: "USEION "
-          members:
-            - name:
-                type: Name
-                node_name: true
-            - readlist:
-                type: ReadIonVar
-                vector: true
-                prefix: {value: " READ "}
-                separator: ", "
-            - writelist:
-                type: WriteIonVar
-                vector: true
-                prefix: {value: " WRITE "}
-                separator: ", "
-            - valence:
-                type: Valence
-                optional: true
-      - Nonspecific:
-          nmodl: "NONSPECIFIC_CURRENT "
-          members:
-            - currents:
-                type: NonspeCurVar
-                vector: true
-                separator: ", "
-      - ElctrodeCurrent:
-          nmodl: "ELECTRODE_CURRENT "
-          members:
-            - ecurrents:
-                type: ElectrodeCurVar
-                vector: true
-                separator: ", "
-      - Section:
-          nmodl: "SECTION "
-          members:
-            - sections:
-                type: SectionVar
-                vector: true
-                separator: ", "
-      - Range:
-          nmodl: "RANGE "
-          members:
-            - range_vars:
-                type: RangeVar
-                vector: true
-                separator: ", "
-      - Global:
-          nmodl: "GLOBAL "
-          members:
-            - global_vars:
-                type: GlobalVar
-                vector: true
-                separator: ", "
-      - Pointer:
-          nmodl: "POINTER "
-          members:
-            - pointers:
-                type: PointerVar
-                vector: true
-                separator: ", "
-      - BbcorePtr:
-          nmodl: "BBCOREPOINTER "
-          members:
-            - bbcore_pointers:
-                type: BbcorePointerVar
-                vector: true
-                separator: ", "
-      - External:
-          nmodl: "EXTERNAL "
-          members:
-            - externals:
-                type: ExternVar
-                vector: true
-                separator: ", "
-      - ThreadSafe:
-          nmodl: THREADSAFE
-          members:
-            - threadsafe:
-                type: ThreadsafeVar
-                vector: true
-                separator: ", "
-                prefix: {value: " "}
-      - Verbatim:
-          nmodl: VERBATIM
-          members:
-            - statement:
-                type: String
-                suffix: {value: "ENDVERBATIM"}
-      - Comment:
-          members:
-            - block_comment:
-                type: String
-                prefix: {value: "COMMENT"}
-                suffix: {value: "ENDCOMMENT"}
-                optional: true
-            - line_comment:
-                type: String
-                optional: true
+            - Statement:
+                description: ".."
+                children:
+                  - UnitState:
+                      description: ".."
+                      members:
+                        - value:
+                            description: "..."
+                            type: UnitStateType
+                  - LocalListStatement:
+                      description: ".."
+                      nmodl: "LOCAL "
+                      members:
+                        - variables:
+                            description: "..."
+                            type: LocalVar
+                            vector: true
+                            separator: ", "
+                            public: true
+                  - Model:
+                      description: ".."
+                      nmodl: TITLE
+                      members:
+                        - title:
+                            description: "..."
+                            type: String
+                  - Define:
+                      description: ".."
+                      nmodl: "DEFINE "
+                      members:
+                        - name:
+                            description: "..."
+                            type: Name
+                        - value:
+                            description: "..."
+                            type: Integer
+                            prefix: {value: " "}
+                  - Include:
+                      description: ".."
+                      nmodl: "INCLUDE "
+                      members:
+                        - filename:
+                            description: "..."
+                            type: String
+                  - ParamAssign:
+                      description: ".."
+                      members:
+                        - name:
+                            description: "..."
+                            type: Identifier
+                            node_name: true
+                        - value:
+                            description: "..."
+                            type: Number
+                            optional: true
+                            prefix: {value: " = "}
+                        - unit:
+                            description: "..."
+                            type: Unit
+                            optional: true
+                            prefix: {value: " "}
+                        - limit:
+                            description: "..."
+                            type: Limits
+                            optional: true
+                            prefix: {value: " "}
+                  - Stepped:
+                      description: ".."
+                      members:
+                        - name:
+                            description: "..."
+                            type: Name
+                        - values:
+                            description: "..."
+                            type: Number
+                            vector: true
+                            prefix: {value: " = "}
+                            separator: ", "
+                        - unit:
+                            description: "..."
+                            type: Unit
+                            optional: true
+                            prefix: {value: " "}
+                  - IndependentDef:
+                      description: ".."
+                      members:
+                        - sweep:
+                            description: "..."
+                            type: Boolean
+                            optional: true
+                            nmodl: "SWEEP "
+                        - name:
+                            description: "..."
+                            type: Name
+                        - from:
+                            description: "..."
+                            type: Number
+                            prefix: {value: " FROM "}
+                        - to:
+                            description: "..."
+                            type: Number
+                            prefix: {value: " TO "}
+                        - with:
+                            description: "..."
+                            type: Integer
+                            prefix: {value: " WITH "}
+                        - opstart:
+                            description: "..."
+                            type: Number
+                            prefix: {value: " START "}
+                            optional: true
+                        - unit:
+                            description: "..."
+                            type: Unit
+                            optional: true
+                            prefix: {value: " "}
+                  - DependentDef:
+                      description: ".."
+                      members:
+                        - name:
+                            description: "..."
+                            type: Identifier
+                            node_name: true
+                        - length:
+                            description: "..."
+                            type: Integer
+                            optional: true
+                            prefix: {value: "["}
+                            suffix: {value: "]"}
+                        - from:
+                            description: "..."
+                            type: Number
+                            prefix: {value: " FROM "}
+                            optional: true
+                        - to:
+                            description: "..."
+                            type: Number
+                            prefix: {value: " TO "}
+                            optional: true
+                        - opstart:
+                            description: "..."
+                            type: Number
+                            prefix: {value: " START "}
+                            optional: true
+                        - unit:
+                            description: "..."
+                            type: Unit
+                            optional: true
+                            prefix: {value: " "}
+                        - abstol:
+                            description: "..."
+                            type: Double
+                            prefix: {value: " <"}
+                            suffix: {value: ">"}
+                            optional: true
+                  - PlotDeclaration:
+                      description: ".."
+                      nmodl: "PLOT "
+                      members:
+                        - pvlist:
+                            description: "..."
+                            type: PlotVar
+                            vector: true
+                            separator: ", "
+                        - name:
+                            description: "..."
+                            type: PlotVar
+                            prefix: {value: " VS "}
+                  - ConductanceHint:
+                      description: ".."
+                      nmodl: "CONDUCTANCE "
+                      members:
+                        - conductance:
+                            description: "..."
+                            type: Name
+                        - ion:
+                            description: "..."
+                            type: Name
+                            optional: true
+                            prefix: {value: " USEION "}
+                  - ExpressionStatement:
+                      description: ".."
+                      members:
+                        - expression:
+                            description: "..."
+                            type: Expression
+                  - ProtectStatement:
+                      description: ".."
+                      nmodl: "PROTECT "
+                      members:
+                        - expression:
+                            description: "..."
+                            type: Expression
+                  - FromStatement:
+                      description: ".."
+                      nmodl: "FROM "
+                      members:
+                        - name:
+                            description: "..."
+                            type: Name
+                            node_name: true
+                        - from:
+                            description: "..."
+                            type: Expression
+                            prefix: {value: " = "}
+                        - to:
+                            description: "..."
+                            type: Expression
+                            prefix: {value: " TO "}
+                        - opinc:
+                            description: "..."
+                            type: Expression
+                            prefix: {value: " BY "}
+                            suffix: {value: " ", force: true}
+                            optional: true
+                        - statement_block:
+                            description: "..."
+                            type: StatementBlock
+                            getter: {override: true}
+                  - ForAllStatement:
+                      description: ".."
+                      nmodl: "FORALL "
+                      members:
+                        - name:
+                            description: "..."
+                            type: Name
+                            suffix: {value: " "}
+                        - statement_block:
+                            description: "..."
+                            type: StatementBlock
+                            getter: {override: true}
+                  - WhileStatement:
+                      description: ".."
+                      nmodl: "WHILE "
+                      members:
+                        - condition:
+                            description: "..."
+                            type: Expression
+                            prefix: {value: "("}
+                            suffix: {value: ") "}
+                        - statement_block:
+                            description: "..."
+                            type: StatementBlock
+                            getter: {override: true}
+                  - IfStatement:
+                      description: ".."
+                      nmodl: "IF "
+                      members:
+                        - condition:
+                            description: "..."
+                            type: Expression
+                            prefix: {value: "("}
+                            suffix: {value: ") "}
+                        - statement_block:
+                            description: "..."
+                            type: StatementBlock
+                            getter: {override: true}
+                        - elseifs:
+                            description: "..."
+                            type: ElseIfStatement
+                            vector: true
+                        - elses:
+                            description: "..."
+                            type: ElseStatement
+                            optional: true
+                  - ElseIfStatement:
+                      description: ".."
+                      nmodl: " ELSE IF "
+                      members:
+                        - condition:
+                            description: "..."
+                            type: Expression
+                            prefix: {value: "("}
+                            suffix: {value: ") "}
+                        - statement_block:
+                            description: "..."
+                            type: StatementBlock
+                            getter: {override: true}
+                  - ElseStatement:
+                      description: ".."
+                      nmodl: " ELSE "
+                      members:
+                        - statement_block:
+                            description: "..."
+                            type: StatementBlock
+                            getter: {override: true}
+                  - PartialEquation:
+                      description: ".."
+                      members:
+                        - prime:
+                            description: "..."
+                            type: PrimeName
+                        - name1:
+                            description: "..."
+                            type: Name
+                        - name2:
+                            description: "..."
+                            type: Name
+                        - name3:
+                            description: "..."
+                            type: Name
+                  - PartialBoundary:
+                      description: ".."
+                      nmodl: "~ "
+                      members:
+                        - del:
+                            description: "..."
+                            type: Name
+                            optional: true
+                            suffix: {value: " "}
+                        - name:
+                            description: "..."
+                            type: Identifier
+                        - index:
+                            description: "..."
+                            type: FirstLastTypeIndex
+                            optional: true
+                            prefix: {value: "["}
+                            suffix: {value: "]"}
+                        - expression:
+                            description: "..."
+                            type: Expression
+                            optional: true
+                            prefix: {value: " = "}
+                        - name1:
+                            description: "..."
+                            type: Name
+                            optional: true
+                            prefix: {value: " = "}
+                            suffix: {value: "*"}
+                        - del2:
+                            description: "..."
+                            type: Name
+                            optional: true
+                            suffix: {value: "("}
+                        - name2:
+                            description: "..."
+                            type: Name
+                            optional: true
+                            suffix: {value: ")"}
+                        - name3:
+                            description: "..."
+                            type: Name
+                            optional: true
+                            prefix: {value: "+"}
+                  - WatchStatement:
+                      description: ".."
+                      nmodl: "WATCH "
+                      members:
+                        - statements:
+                            description: "..."
+                            type: Watch
+                            vector: true
+                            separator: ","
+                            add: true
+                  - MutexLock:
+                      description: ".."
+                      nmodl: MUTEXLOCK
+                  - MutexUnlock:
+                      description: ".."
+                      nmodl: MUTEXUNLOCK
+                  - Reset:
+                      description: ".."
+                      nmodl: RESET
+                  - Sens:
+                      description: ".."
+                      nmodl: "SENS "
+                      members:
+                        - senslist:
+                            description: "..."
+                            type: VarName
+                            vector: true
+                            separator: ", "
+                  - Conserve:
+                      description: ".."
+                      nmodl: CONSERVE
+                      members:
+                        - react:
+                            description: "..."
+                            type: Expression
+                            prefix: {value: " "}
+                        - expr:
+                            description: "..."
+                            type: Expression
+                            prefix: {value: " = "}
+                  - Compartment:
+                      description: ".."
+                      nmodl: COMPARTMENT
+                      members:
+                        - name:
+                            description: "..."
+                            type: Name
+                            optional: true
+                            prefix: {value: " "}
+                            suffix: {value: ","}
+                        - expression:
+                            description: "..."
+                            type: Expression
+                            prefix: {value: " "}
+                        - names:
+                            description: "..."
+                            type: Name
+                            vector: true
+                            prefix: {value: " {"}
+                            suffix: {value: "}"}
+                            separator: " "
+                  - LonDifuse:
+                      description: ".."
+                      nmodl: LONGITUDINAL_DIFFUSION
+                      members:
+                        - name:
+                            description: "..."
+                            type: Name
+                            optional: true
+                            prefix: {value: " "}
+                            suffix: {value: ","}
+                        - expression:
+                            description: "..."
+                            type: Expression
+                            prefix: {value: " "}
+                        - names:
+                            description: "..."
+                            type: Name
+                            vector: true
+                            prefix: {value: " {"}
+                            suffix: {value: "}"}
+                            separator: " "
+                  - ReactionStatement:
+                      description: ".."
+                      nmodl: "~ "
+                      members:
+                        - react1:
+                            description: "..."
+                            type: Expression
+                        - op:
+                            description: "..."
+                            type: ReactionOperator
+                            prefix: {value: " "}
+                        - react2:
+                            description: "..."
+                            type: Expression
+                            prefix: {value: " "}
+                            optional: true
+                        - expr1:
+                            description: "..."
+                            type: Expression
+                            prefix: {value: " ("}
+                        - expr2:
+                            description: "..."
+                            type: Expression
+                            prefix: {value: ", "}
+                            suffix: {value: ")", force: true}
+                            optional: true
+                  - LagStatement:
+                      description: ".."
+                      nmodl: "LAG "
+                      members:
+                        - name:
+                            description: "..."
+                            type: Identifier
+                        - byname:
+                            description: "..."
+                            type: Name
+                            prefix: {value: " BY "}
+                  - QueueStatement:
+                      description: ".."
+                      members:
+                        - qype:
+                            description: "..."
+                            type: QueueExpressionType
+                        - name:
+                            description: "..."
+                            type: Identifier
+                            prefix: {value: " "}
+                  - ConstantStatement:
+                      description: ".."
+                      members:
+                        - constant:
+                            description: "..."
+                            type: ConstantVar
+                  - TableStatement:
+                      description: ".."
+                      nmodl: "TABLE "
+                      members:
+                        - table_vars:
+                            description: "..."
+                            type: Name
+                            vector: true
+                            separator: ","
+                        - depend_vars:
+                            description: "..."
+                            type: Name
+                            vector: true
+                            prefix: {value: " DEPEND "}
+                            separator: ","
+                        - from:
+                            description: "..."
+                            type: Expression
+                            prefix: {value: " FROM "}
+                        - to:
+                            description: "..."
+                            type: Expression
+                            prefix: {value: " TO "}
+                        - with:
+                            description: "..."
+                            type: Integer
+                            prefix: {value: " WITH "}
+                  - Suffix:
+                      description: ".."
+                      members:
+                        - type:
+                            description: "..."
+                            type: Name
+                            suffix: {value: " "}
+                        - name:
+                            description: "..."
+                            type: Name
+                            node_name: true
+                  - Useion:
+                      description: ".."
+                      nmodl: "USEION "
+                      members:
+                        - name:
+                            description: "..."
+                            type: Name
+                            node_name: true
+                        - readlist:
+                            description: "..."
+                            type: ReadIonVar
+                            vector: true
+                            prefix: {value: " READ "}
+                            separator: ", "
+                        - writelist:
+                            description: "..."
+                            type: WriteIonVar
+                            vector: true
+                            prefix: {value: " WRITE "}
+                            separator: ", "
+                        - valence:
+                            description: "..."
+                            type: Valence
+                            optional: true
+                  - Nonspecific:
+                      description: ".."
+                      nmodl: "NONSPECIFIC_CURRENT "
+                      members:
+                        - currents:
+                            description: "..."
+                            type: NonspeCurVar
+                            vector: true
+                            separator: ", "
+                  - ElctrodeCurrent:
+                      description: ".."
+                      nmodl: "ELECTRODE_CURRENT "
+                      members:
+                        - ecurrents:
+                            description: "..."
+                            type: ElectrodeCurVar
+                            vector: true
+                            separator: ", "
+                  - Section:
+                      description: ".."
+                      nmodl: "SECTION "
+                      members:
+                        - sections:
+                            description: "..."
+                            type: SectionVar
+                            vector: true
+                            separator: ", "
+                  - Range:
+                      description: ".."
+                      nmodl: "RANGE "
+                      members:
+                        - range_vars:
+                            description: "..."
+                            type: RangeVar
+                            vector: true
+                            separator: ", "
+                  - Global:
+                      description: ".."
+                      nmodl: "GLOBAL "
+                      members:
+                        - global_vars:
+                            description: "..."
+                            type: GlobalVar
+                            vector: true
+                            separator: ", "
+                  - Pointer:
+                      description: ".."
+                      nmodl: "POINTER "
+                      members:
+                        - pointers:
+                            description: "..."
+                            type: PointerVar
+                            vector: true
+                            separator: ", "
+                  - BbcorePtr:
+                      description: ".."
+                      nmodl: "BBCOREPOINTER "
+                      members:
+                        - bbcore_pointers:
+                            description: "..."
+                            type: BbcorePointerVar
+                            vector: true
+                            separator: ", "
+                  - External:
+                      description: ".."
+                      nmodl: "EXTERNAL "
+                      members:
+                        - externals:
+                            description: "..."
+                            type: ExternVar
+                            vector: true
+                            separator: ", "
+                  - ThreadSafe:
+                      description: ".."
+                      nmodl: THREADSAFE
+                      members:
+                        - threadsafe:
+                            description: "..."
+                            type: ThreadsafeVar
+                            vector: true
+                            separator: ", "
+                            prefix: {value: " "}
+                  - Verbatim:
+                      description: "Represents a(n) C code block"
+                      nmodl: VERBATIM
+                      members:
+                        - statement:
+                            description: "C code as a string"
+                            type: String
+                            suffix: {value: "ENDVERBATIM"}
+                  - Comment:
+                      description: "Represents a(n) comment in the NMODL"
+                      members:
+                        - block_comment:
+                            description: "Multi-line block comment"
+                            type: String
+                            prefix: {value: "COMMENT"}
+                            suffix: {value: "ENDCOMMENT"}
+                            optional: true
+                        - line_comment:
+                            description: "Single line comment"
+                            type: String
+                            optional: true
 
 - Program:
+    description: "Represents a(n) whole AST node for input NMODL file"
     members:
-    - blocks:
-        type: Node
-        vector: true
-        add: true
-        public: true
+      - blocks:
+          description: "..."
+          type: Node
+          vector: true
+          add: true
+          public: true
