@@ -23,35 +23,32 @@ void symbol_type(const std::string& name, T& value) {
 /// test symbol type returned by lexer
 TEST_CASE("Lexer symbol type tests", "[TokenPrinter]") {
     SECTION("Symbol type : name ast class test") {
-        ast::Name* value = nullptr;
+        ast::Name value;
 
         {
             std::stringstream ss;
             symbol_type("text", value);
-            ss << *(value->get_token());
+            ss << *(value.get_token());
             REQUIRE(ss.str() == "           text at [1.1-4] type 356");
-            delete value;
         }
 
         {
             std::stringstream ss;
             symbol_type("  some_text", value);
-            ss << *(value->get_token());
+            ss << *(value.get_token());
             REQUIRE(ss.str() == "      some_text at [1.3-11] type 356");
-            delete value;
         }
     }
 
     SECTION("Symbol type : prime ast class test") {
-        ast::PrimeName* value = nullptr;
+        ast::PrimeName value;
 
         {
             std::stringstream ss;
             symbol_type("h'' = ", value);
-            ss << *(value->get_token());
+            ss << *(value.get_token());
             REQUIRE(ss.str() == "            h'' at [1.1-3] type 362");
-            REQUIRE(value->get_order()->eval() == 2);
-            delete value;
+            REQUIRE(value.get_order()->eval() == 2);
         }
     }
 }

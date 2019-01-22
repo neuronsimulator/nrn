@@ -43,7 +43,7 @@ namespace ast {
         {{ node.class_name }}(const {{ node.class_name }}& obj);
         {% endif %}
 
-        {% if node.is_program_node or node.is_ptr_excluded_node %}
+        {% if node.requires_default_constructor %}
         {{ node.class_name}}() = default;
         {% endif %}
 
