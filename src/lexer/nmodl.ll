@@ -163,8 +163,8 @@ ELSE                    {
                                 /** Token for certain keywords need name_ptr value. */
                                 auto type = token_type(yytext);
                                 ModToken tok(yytext, type, loc);
-                                auto value = new ast::Name( new ast::String(yytext) );
-                                value->set_token(tok);
+                                ast::Name value( new ast::String(yytext) );
+                                value.set_token(tok);
 
                                 switch (static_cast<int>(type)) {
                                     /** Tokens requiring name_ptr as value */
@@ -189,7 +189,6 @@ ELSE                    {
                                 }
 
                                 /** value is not used */
-                                delete value;
                                 return token_symbol(yytext, loc, type);
                             } else {
 
