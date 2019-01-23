@@ -11,8 +11,8 @@ namespace nmodl {
     /// create symbol for double/real ast class
     SymbolType double_symbol(double value, PositionType& pos) {
         ModToken token(std::to_string(value), Token::REAL, pos);
-        auto floatvalue = new ast::Double(value);
-        floatvalue->set_token(token);
+        ast::Double floatvalue(value);
+        floatvalue.set_token(token);
         return Parser::make_REAL(floatvalue, pos);
     }
 
@@ -27,8 +27,8 @@ namespace nmodl {
             macro->set_token(token);
         }
 
-        auto intvalue = new ast::Integer(value, macro);
-        intvalue->set_token(token);
+        ast::Integer intvalue(value, macro);
+        intvalue.set_token(token);
         return Parser::make_INTEGER(intvalue, pos);
     }
 
@@ -39,8 +39,8 @@ namespace nmodl {
      * token we should mark those as external. */
     SymbolType name_symbol(const std::string& text, PositionType& pos, TokenType type) {
         ModToken token(text, type, pos);
-        auto value = new ast::Name(new ast::String(text));
-        value->set_token(token);
+        ast::Name value(new ast::String(text));
+        value.set_token(token);
         return Parser::make_NAME(value, pos);
     }
 
@@ -54,16 +54,16 @@ namespace nmodl {
 
         auto prime_name = new ast::String(text);
         auto prime_order = new ast::Integer(order, nullptr);
-        auto value = new ast::PrimeName(prime_name, prime_order);
-        value->set_token(token);
+        ast::PrimeName value(prime_name, prime_order);
+        value.set_token(token);
         return Parser::make_PRIME(value, pos);
     }
 
     /// create symbol for string ast class
     SymbolType string_symbol(const std::string& text, PositionType& pos) {
         ModToken token(text, Token::STRING, pos);
-        auto value = new ast::String(text);
-        value->set_token(token);
+        ast::String value(text);
+        value.set_token(token);
         return Parser::make_STRING(value, pos);
     }
 

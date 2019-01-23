@@ -132,6 +132,12 @@ class BaseNode:
             return True
         return False
 
+    @property
+    def requires_default_constructor(self):
+        if self.class_name in LEXER_DATA_TYPES or self.is_program_node or self.is_ptr_excluded_node:
+            return True
+        else:
+            return False
 
 class ChildNode(BaseNode):
     """represent member variable for a Node"""
