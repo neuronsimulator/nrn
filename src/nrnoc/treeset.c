@@ -37,6 +37,8 @@ extern int* nrn_dparam_ptr_start_;
 extern int* nrn_dparam_ptr_end_;
 extern void nrn_define_shape();
 
+hoc_List* nrn_do_not_simulate_;
+
 #if 1 || PARANEURON
 void (*nrn_multisplit_setup_)();
 #endif
@@ -885,6 +887,57 @@ void connection_coef(void)	/* setup a and b */
 #if EXTRACELLULAR
 	ext_con_coef();
 #endif
+}
+
+static void do_not_sim(Section* s, int b, hoc_List* sl) {
+  int i;
+  hoc_Item* itm = s->prop->dparam[8].itm;
+  s->do_not_simulate = b;
+  hoc_l_movelist(itm, itm, sl);
+  if (s->child) {
+    do_not_sim(s->child, b, sl);
+  }
+  if (s->sibling) {
+    do_not_sim(s->sibling, b, sl);
+  }
+}
+
+void nrn_do_not_simulate(Section* s, int b) {
+  Section* child;
+  hoc_List* sl = section_list;
+  if (s->do_not_simulate == b || !s->prop) {
+    /* not changeing so nothing to do */
+    return;
+  }
+  if (b == -1 && !nrn_do_not_simulate) {
+    /* everything is already being simulated so nothing to do */
+    return;
+  }
+  use_cachevec = 0;
+  tree_changed = 1;
+  if (b > 0) {
+    if (!nrn_do_not_simulate_) {
+      nrn_do_not_simulate_ = hoc_l_newlist();
+    }
+    sl = nrn_do_not_simulate_;
+  }
+  if (b >= 0) {
+    /* whole tree. Start from root */
+    while (s->parentsec) {
+      s = s->parentsec;
+    }
+    do_not_sim(s, b, sl);
+  }else{ /* simulate everything */
+    hoc_Item* q;
+    ITERATE(q, nrn_do_not_simulate_) {
+      Section* sec = hocSEC(q);
+      sec->do_not_simulate = 0;
+    }
+    hoc_l_movelist(nrn_do_not_simulate_->next, nrn_do_not_simulate_->prev, sl);
+  }
+  if (nrn_do_not_simulate_->next == nrn_do_not_simulate_) {
+    hoc_l_freelist(&nrn_do_not_simulate_);
+  }
 }
 
 void nrn_shape_update(void) {
@@ -2083,7 +2136,7 @@ printf("nrn_matrix_node_alloc use_sparse13=%d cvode_active_=%d nrn_use_daspk_=%d
 }
 
 void nrn_cachevec(int b) {
-	if (use_sparse13) {
+	if (use_sparse13 || nrn_do_not_simulate_) {
 		use_cachevec = 0;
 	}else{
 		if (b && use_cachevec == 0) {

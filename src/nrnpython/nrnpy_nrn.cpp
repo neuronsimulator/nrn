@@ -1003,6 +1003,28 @@ static PyObject* NPySecObj_has_membrane(NPySecObj* self, PyObject* args) {
   return result;
 }
 
+static PyObject* NPySecObj_simulate(NPySecObj* self, PyObject* args) {
+  Section* sec = self->sec_;
+  PyObject* result;
+  int b = -2;
+  if (!PyArg_ParseTuple(args, "|i", &b)) {
+    return NULL;
+  }
+  if (b != -2) {
+    if (b > 0) {
+      b = 0;
+    }else if (b == 0) {
+      b = 1;
+    }else{
+      b = -1;
+    }
+    nrn_do_not_simulate(sec, b);
+  }
+  result = sec->do_not_simulate ? Py_False : Py_True;
+  Py_XINCREF(result);
+  return result;
+}
+
 PyObject* nrnpy_pushsec(PyObject* sec) {
   if (PyObject_TypeCheck(sec, psection_type)) {
     nrn_pushsec(((NPySecObj*)sec)->sec_);
@@ -1939,6 +1961,8 @@ static PyMethodDef NPySecObj_methods[] = {
      "Returns True if Section created from Python, False if created from HOC."},
     {"psection", (PyCFunction)NPySecObj_psection, METH_NOARGS,
      "Returns dict of info about Section contents."},
+    {"simulate", (PyCFunction)NPySecObj_simulate, METH_VARARGS,
+     "Returns True if section is simulated. Optional arg of True or False marks entire tree of which Section is a part to be simulated or not"},
     {NULL}};
 
 static PyMethodDef NPySegObj_methods[] = {

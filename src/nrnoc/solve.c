@@ -455,6 +455,7 @@ Section* sec_alloc(void)
 	sec->parentsec = sec->sibling = sec->child = (Section*)0;
 	sec->parentnode = (Node*)0;
 	sec->pnode = (Node **)0;
+	sec->do_not_simulate = 0;
 #if DIAMLIST
 	sec->npt3d = 0;
 	sec->pt3d_bsize = 0;

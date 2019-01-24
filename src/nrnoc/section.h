@@ -55,6 +55,7 @@ typedef struct Section {
 	int order;		/* index of this in secorder vector */
 	short recalc_area_;	/* NODEAREA, NODERINV, diam, L need recalculation */
 	short volatile_mark;	/* for searching */
+	short do_not_simulate;  /* in the do_not_simulate hoc_List */
 	void* volatile_ptr;	/* e.g. ShapeSection* */
 #if DIAMLIST
 	short  npt3d;	/* number of 3-d points */
@@ -298,6 +299,8 @@ typedef struct Eqnblock {
 
 extern int nrn_global_ncell; /* note that for multiple threads all the rootnodes are no longer contiguous */
 extern hoc_List* section_list;	/* Where the Sections live */
+extern hoc_List* nrn_do_not_simulate_; /* not in the section_list */
+extern void nrn_do_not_simulate(Section*, int);
 
 extern Section* chk_access();
 extern Section	*sec_alloc();		/* Allocates a single section */
