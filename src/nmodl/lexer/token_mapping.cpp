@@ -20,7 +20,7 @@ namespace nmodl {
          * Once we finish code generation part then we change this. */
         static std::map<std::string, TokenType> keywords = {
             {"VERBATIM", Token::VERBATIM},
-            {"COMMENT", Token::COMMENT},
+            {"COMMENT", Token::BLOCK_COMMENT},
             {"TITLE", Token::MODEL},
             {"CONSTANT", Token::CONSTANT},
             {"PARAMETER", Token::PARAMETER},

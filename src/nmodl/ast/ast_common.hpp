@@ -95,8 +95,8 @@ namespace ast {
             throw std::runtime_error("get_symbol_table() not implemented");
         }
 
-        virtual std::shared_ptr<StatementBlock> get_statement_block() {
-            throw std::runtime_error("get_statement_block not implemented");
+        virtual std::shared_ptr<StatementBlock> get_block() {
+            throw std::runtime_error("get_block not implemented");
         }
 
         // implemented in Number sub classes
@@ -188,7 +188,7 @@ namespace ast {
             return false;
         }
 
-        virtual bool is_nonspe_cur_var() {
+        virtual bool is_nonspecific_cur_var() {
             return false;
         }
 
@@ -588,7 +588,7 @@ namespace ast {
             return false;
         }
 
-        /// \todo : how is this different from is_nonspe_cur_var ?
+        /// \todo : how is this different from is_nonspecific_cur_var ?
         virtual bool is_nonspecific() {
             return false;
         }
@@ -609,7 +609,7 @@ namespace ast {
             return false;
         }
 
-        /// \todo : how these are different from is_pointer_var ?
+        /// \todo : how is this different from is_pointer_var ?
         virtual bool is_pointer() {
             return false;
         }
@@ -630,7 +630,11 @@ namespace ast {
             return false;
         }
 
-        virtual bool is_comment() {
+        virtual bool is_line_comment() {
+            return false;
+        }
+
+        virtual bool is_block_comment() {
             return false;
         }
 

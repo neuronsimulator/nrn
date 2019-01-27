@@ -94,7 +94,7 @@
                               - value:
                                   description: "integer value"
                                   type: int
-                              - macro_name:
+                              - macro:
                                   description: "macro name for integer"
                                   type: Name
                                   optional: true
@@ -143,8 +143,8 @@
                                   description: "variable name"
                                   type: Identifier
                                   node_name: true
-                              - at_index:
-                                  description: "todo"
+                              - at:
+                                  description: "todo : Michael to define the semantics of this"
                                   type: Integer
                                   optional: true
                                   prefix: {value: "@"}
@@ -203,7 +203,7 @@
                                   description: "..."
                                   type: Name
                                   node_name: true
-                        - NonspeCurVar:
+                        - NonspecificCurVar:
                             description: ".."
                             members:
                               - name:
@@ -319,7 +319,7 @@
                             description: ".."
                             nmodl: "INITIAL "
                             members:
-                              - statement_block:
+                              - block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -327,7 +327,7 @@
                             description: ".."
                             nmodl: "CONSTRUCTOR "
                             members:
-                              - statement_block:
+                              - block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -335,7 +335,7 @@
                             description: ".."
                             nmodl: "DESTRUCTOR "
                             members:
-                              - statement_block:
+                              - block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -356,7 +356,7 @@
                                   type: Name
                                   node_name: true
                                   suffix: {value: " "}
-                              - statement_block:
+                              - block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -375,7 +375,7 @@
                                   vector: true
                                   separator: ","
                                   prefix: {value: " SOLVEFOR "}
-                              - statement_block:
+                              - block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -394,7 +394,7 @@
                                   separator: ","
                                   prefix: {value: " SOLVEFOR "}
                                   suffix: {value: " ", force: true}
-                              - statement_block:
+                              - block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -407,7 +407,7 @@
                                   type: Name
                                   node_name: true
                                   suffix: {value: " "}
-                              - statement_block:
+                              - block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -420,7 +420,7 @@
                                   type: Name
                                   node_name: true
                                   suffix: {value: " "}
-                              - statement_block:
+                              - block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -467,7 +467,7 @@
                                   optional: true
                                   prefix: {value: " "}
                                   suffix: {value: " ", force: true}
-                              - statement_block:
+                              - block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -491,7 +491,7 @@
                                   description: "..."
                                   type: Unit
                                   optional: true
-                              - statement_block:
+                              - block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -507,7 +507,7 @@
                                   suffix: {value: ") ", force: true}
                                   separator: ", "
                                   getter: {override: true}
-                              - statement_block:
+                              - block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -533,7 +533,7 @@
                             description: ".."
                             nmodl: "BREAKPOINT "
                             members:
-                              - statement_block:
+                              - block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -541,7 +541,7 @@
                             description: ".."
                             nmodl: "TERMINAL "
                             members:
-                              - statement_block:
+                              - block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -549,14 +549,14 @@
                             description: ".."
                             nmodl: "BEFORE "
                             members:
-                              - block:
+                              - bablock:
                                   description: "..."
                                   type: BABlock
                         - AfterBlock:
                             description: ".."
                             nmodl: "AFTER "
                             members:
-                              - block:
+                              - bablock:
                                   description: "..."
                                   type: BABlock
                         - BABlock:
@@ -566,7 +566,7 @@
                                   description: "..."
                                   type: BABlockType
                                   suffix: {value: " "}
-                              - statement_block:
+                              - block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -582,7 +582,7 @@
                                   suffix: {value: ") ", force: true}
                                   separator: ", "
                                   getter: {override: true}
-                              - statement_block:
+                              - block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -600,7 +600,7 @@
                                   type: Name
                                   vector: true
                                   separator: ","
-                              - statement_block:
+                              - block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -636,7 +636,7 @@
                             url: "https://www.neuron.yale.edu/neuron/static/py_doc/modelspec/programmatic/mechanisms/nmodl2.html#neuron"
                             nmodl: "NEURON "
                             members:
-                              - statement_block:
+                              - block:
                                   description: "..."
                                   type: StatementBlock
                                   getter: {override: true}
@@ -652,7 +652,7 @@
                   - DoubleUnit:
                       description: ".."
                       members:
-                        - values:
+                        - value:
                             description: "..."
                             type: Double
                         - unit:
@@ -745,7 +745,7 @@
                   - ParenExpression:
                       description: ".."
                       members:
-                        - expr:
+                        - expression:
                             description: "..."
                             type: Expression
                             prefix: {value: "("}
@@ -789,11 +789,11 @@
                       description: ".."
                       nmodl: "~ "
                       members:
-                        - leftlinexpr:
+                        - left_linxpression:
                             description: "..."
                             type: Expression
                             suffix: {value: " = "}
-                        - linexpr:
+                        - linxpression:
                             description: "..."
                             type: Expression
                   - FunctionCall:
@@ -879,7 +879,7 @@
                             type: Unit
                             prefix: {value: " "}
                         - gt:
-                            description: "..."
+                            description: "Todo: @Michael : rename variable gt as well"
                             type: Boolean
                             nmodl: " ->"
                             optional: true
@@ -1006,7 +1006,7 @@
                             description: "..."
                             type: Integer
                             prefix: {value: " WITH "}
-                        - opstart:
+                        - start:
                             description: "..."
                             type: Number
                             prefix: {value: " START "}
@@ -1039,7 +1039,7 @@
                             type: Number
                             prefix: {value: " TO "}
                             optional: true
-                        - opstart:
+                        - start:
                             description: "..."
                             type: Number
                             prefix: {value: " START "}
@@ -1059,7 +1059,7 @@
                       description: ".."
                       nmodl: "PLOT "
                       members:
-                        - pvlist:
+                        - variables:
                             description: "..."
                             type: PlotVar
                             vector: true
@@ -1109,13 +1109,13 @@
                             description: "..."
                             type: Expression
                             prefix: {value: " TO "}
-                        - opinc:
+                        - increment:
                             description: "..."
                             type: Expression
                             prefix: {value: " BY "}
                             suffix: {value: " ", force: true}
                             optional: true
-                        - statement_block:
+                        - block:
                             description: "..."
                             type: StatementBlock
                             getter: {override: true}
@@ -1127,7 +1127,7 @@
                             description: "..."
                             type: Name
                             suffix: {value: " "}
-                        - statement_block:
+                        - block:
                             description: "..."
                             type: StatementBlock
                             getter: {override: true}
@@ -1140,7 +1140,7 @@
                             type: Expression
                             prefix: {value: "("}
                             suffix: {value: ") "}
-                        - statement_block:
+                        - block:
                             description: "..."
                             type: StatementBlock
                             getter: {override: true}
@@ -1153,7 +1153,7 @@
                             type: Expression
                             prefix: {value: "("}
                             suffix: {value: ") "}
-                        - statement_block:
+                        - block:
                             description: "..."
                             type: StatementBlock
                             getter: {override: true}
@@ -1174,7 +1174,7 @@
                             type: Expression
                             prefix: {value: "("}
                             suffix: {value: ") "}
-                        - statement_block:
+                        - block:
                             description: "..."
                             type: StatementBlock
                             getter: {override: true}
@@ -1182,7 +1182,7 @@
                       description: ".."
                       nmodl: " ELSE "
                       members:
-                        - statement_block:
+                        - block:
                             description: "..."
                             type: StatementBlock
                             getter: {override: true}
@@ -1268,7 +1268,7 @@
                       description: ".."
                       nmodl: "SENS "
                       members:
-                        - senslist:
+                        - variables:
                             description: "..."
                             type: VarName
                             vector: true
@@ -1331,23 +1331,23 @@
                       description: ".."
                       nmodl: "~ "
                       members:
-                        - react1:
+                        - reaction1:
                             description: "..."
                             type: Expression
                         - op:
                             description: "..."
                             type: ReactionOperator
                             prefix: {value: " "}
-                        - react2:
+                        - reaction2:
                             description: "..."
                             type: Expression
                             prefix: {value: " "}
                             optional: true
-                        - expr1:
+                        - expression1:
                             description: "..."
                             type: Expression
                             prefix: {value: " ("}
-                        - expr2:
+                        - expression2:
                             description: "..."
                             type: Expression
                             prefix: {value: ", "}
@@ -1367,7 +1367,7 @@
                   - QueueStatement:
                       description: ".."
                       members:
-                        - qype:
+                        - qtype:
                             description: "..."
                             type: QueueExpressionType
                         - name:
@@ -1448,14 +1448,14 @@
                       members:
                         - currents:
                             description: "..."
-                            type: NonspeCurVar
+                            type: NonspecificCurVar
                             vector: true
                             separator: ", "
                   - ElctrodeCurrent:
                       description: ".."
                       nmodl: "ELECTRODE_CURRENT "
                       members:
-                        - ecurrents:
+                        - currents:
                             description: "..."
                             type: ElectrodeCurVar
                             vector: true
@@ -1473,7 +1473,7 @@
                       description: ".."
                       nmodl: "RANGE "
                       members:
-                        - range_vars:
+                        - variables:
                             description: "..."
                             type: RangeVar
                             vector: true
@@ -1482,7 +1482,7 @@
                       description: ".."
                       nmodl: "GLOBAL "
                       members:
-                        - global_vars:
+                        - variables:
                             description: "..."
                             type: GlobalVar
                             vector: true
@@ -1491,7 +1491,7 @@
                       description: ".."
                       nmodl: "POINTER "
                       members:
-                        - pointers:
+                        - variables:
                             description: "..."
                             type: PointerVar
                             vector: true
@@ -1500,7 +1500,7 @@
                       description: ".."
                       nmodl: "BBCOREPOINTER "
                       members:
-                        - bbcore_pointers:
+                        - variables:
                             description: "..."
                             type: BbcorePointerVar
                             vector: true
@@ -1509,7 +1509,7 @@
                       description: ".."
                       nmodl: "EXTERNAL "
                       members:
-                        - externals:
+                        - variables:
                             description: "..."
                             type: ExternVar
                             vector: true
@@ -1518,36 +1518,37 @@
                       description: ".."
                       nmodl: THREADSAFE
                       members:
-                        - threadsafe:
+                        - variables:
                             description: "..."
                             type: ThreadsafeVar
                             vector: true
                             separator: ", "
                             prefix: {value: " "}
                   - Verbatim:
-                      description: "Represents a(n) C code block"
+                      description: "Represents a C code block"
                       nmodl: VERBATIM
                       members:
                         - statement:
                             description: "C code as a string"
                             type: String
                             suffix: {value: "ENDVERBATIM"}
-                  - Comment:
-                      description: "Represents a(n) comment in the NMODL"
+                  - LineComment:
+                      description: "Represents a one line comment in NMODL"
                       members:
-                        - block_comment:
-                            description: "Multi-line block comment"
+                        - statement:
+                            description: "comment text"
                             type: String
-                            prefix: {value: "COMMENT"}
+                  - BlockComment:
+                      description: "Represents a multi-line comment in NMODL"
+                      nmodl: COMMENT
+                      members:
+                        - statement:
+                            description: "comment text"
+                            type: String
                             suffix: {value: "ENDCOMMENT"}
-                            optional: true
-                        - line_comment:
-                            description: "Single line comment"
-                            type: String
-                            optional: true
 
 - Program:
-    description: "Represents a(n) whole AST node for input NMODL file"
+    description: "Represents top level AST node for whole NMODL input"
     members:
       - blocks:
           description: "..."

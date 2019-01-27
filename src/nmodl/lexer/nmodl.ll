@@ -110,8 +110,8 @@ E   [Ee][-+]?{D}+
                             }
                         }
 
-WHILE   |
-IF      |
+WHILE                   |
+IF                      |
 ELSE                    {
                             /** Lower or upper case if,else,while keywords are allowded.
                               * To avoid extra keywords, make token lower case */
@@ -385,7 +385,7 @@ ELSE                    {
 \?.*                    {
                             /** Todo : add grammar support for inline vs single-line comments
                               auto str = std::string(yytext);
-                              return nmodl::Parser::make_INLINE_COMMENT(str, loc);
+                              return nmodl::Parser::make_LINE_COMMENT(str, loc);
                              */
                         }
 
@@ -422,10 +422,10 @@ ELSE                    {
                          }
 
 <COPY_MODE>"ENDCOMMENT" {
-                            auto str = "COMMENT" + std::string(yytext);
+                            auto str = "BLOCK_COMMENT" + std::string(yytext);
                             BEGIN(INITIAL);
                             reset_end_position();
-                            return nmodl::Parser::make_COMMENT(str, loc);
+                            return nmodl::Parser::make_BLOCK_COMMENT(str, loc);
                         }
 
 <COPY_MODE><<EOF>>      {

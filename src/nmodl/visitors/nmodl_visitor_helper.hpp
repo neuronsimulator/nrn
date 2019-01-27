@@ -40,7 +40,7 @@ void NmodlPrintVisitor::visit_element(const std::vector<T>& elements,
         bool extra_newline = false;
         if (!is_last(iter, elements)) {
             extra_newline = true;
-            if ((*iter)->is_comment() && (*(iter + 1))->is_comment()) {
+            if ((*iter)->is_line_comment() && (*(iter + 1))->is_line_comment()) {
                 extra_newline = false;
             }
         }

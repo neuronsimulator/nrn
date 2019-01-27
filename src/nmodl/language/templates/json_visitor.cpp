@@ -7,7 +7,7 @@ void JSONVisitor::visit_{{ node.class_name|snake_case }}({{ node.class_name }}* 
     node->visit_children(this);
     {% if node.is_data_type_node %}
             {% if node.is_integer_node %}
-    if(!node->get_macro_name()) {
+    if(!node->get_macro()) {
         std::stringstream ss;
         ss << node->eval();
         printer->add_node(ss.str());

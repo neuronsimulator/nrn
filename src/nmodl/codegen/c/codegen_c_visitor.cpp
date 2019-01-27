@@ -68,7 +68,7 @@ std::string CodegenCVisitor::breakpoint_current(std::string current) {
     if (breakpoint == nullptr) {
         return current;
     }
-    auto symtab = breakpoint->get_statement_block()->get_symbol_table();
+    auto symtab = breakpoint->get_block()->get_symbol_table();
     auto variables = symtab->get_variables_with_properties(NmodlType::local_var);
     for (auto& var : variables) {
         auto renamed_name = var->get_name();
@@ -878,7 +878,7 @@ void CodegenCVisitor::print_check_table_thread_function() {
 }
 
 void CodegenCVisitor::print_function_or_procedure(ast::Block* node, std::string& name) {
-    auto block = node->get_statement_block().get();
+    auto block = node->get_block().get();
     printer->add_newline(2);
     print_function_declaration(node, name);
     printer->add_text(" ");
@@ -921,7 +921,7 @@ void CodegenCVisitor::print_function(ast::FunctionBlock* node) {
     auto return_var = "ret_" + name;
 
     /// first rename return variable name
-    auto block = node->get_statement_block().get();
+    auto block = node->get_block().get();
     RenameVisitor v(name, return_var);
     block->accept(&v);
 
@@ -2261,7 +2261,7 @@ void CodegenCVisitor::print_initial_block(InitialBlock* node) {
 
     /// initial block
     if (node != nullptr) {
-        auto block = node->get_statement_block();
+        auto block = node->get_block();
         print_statement_block(block.get(), false, false);
     }
 
@@ -2608,7 +2608,7 @@ void CodegenCVisitor::print_net_init_kernel() {
     printer->add_newline(2);
     printer->add_line("/** initialize block for net receive */");
     printer->start_block("static void net_init({}) "_format(args));
-    auto block = node->get_statement_block().get();
+    auto block = node->get_block().get();
     if (block->get_statements().empty()) {
         printer->add_line("// do nothing");
     } else {
@@ -2724,7 +2724,7 @@ void CodegenCVisitor::print_net_receive() {
         auto var_used = VarUsageVisitor().variable_used(node, name);
         if (var_used) {
             RenameVisitor vr(name, "(*" + name + ")");
-            node->get_statement_block()->visit_children(&vr);
+            node->get_block()->visit_children(&vr);
         }
     }
 
@@ -2750,7 +2750,7 @@ void CodegenCVisitor::print_net_receive() {
     printer->add_line("{} = t;"_format(get_variable_name("tsave")));
 
     printer->add_indent();
-    node->get_statement_block()->accept(this);
+    node->get_block()->accept(this);
     printer->add_newline();
     printer->end_block();
     printer->add_newline();
@@ -2797,7 +2797,7 @@ void CodegenCVisitor::print_derivative_kernel_for_euler() {
     printer->add_line("/* _euler_ state _{} */"_format(info.mod_suffix));
     printer->start_block("int {}_{}({})"_format(node->get_node_name(), info.mod_suffix, arguments));
     printer->add_line(instance);
-    print_statement_block(node->get_statement_block().get(), false, false);
+    print_statement_block(node->get_block().get(), false, false);
     printer->add_line("return 0;");
     printer->end_block();
     printer->add_newline();
@@ -2856,7 +2856,7 @@ void CodegenCVisitor::print_derivative_kernel_for_derivimplicit() {
     printer->add_line(slist1);
     printer->add_line(dlist1);
     printer->add_line(dlist2);
-    print_statement_block(node->get_statement_block().get(), false, false);
+    print_statement_block(node->get_block().get(), false, false);
     printer->add_line("int counter = -1;");
     printer->add_line("for (int i=0; i<{}; i++) {}"_format(info.num_primes, "{"));
     printer->add_line("    if (*deriv{}_advance(thread)) {}"_format(list_num, "{"));
@@ -2932,13 +2932,13 @@ void CodegenCVisitor::print_nrn_state() {
         printer->add_line(statement);
     } else {
         if (info.solve_node != nullptr) {
-            auto block = info.solve_node->get_statement_block();
+            auto block = info.solve_node->get_block();
             print_statement_block(block.get(), false, false);
         }
     }
 
     if (info.currents.empty() && info.breakpoint_node != nullptr) {
-        auto block = info.breakpoint_node->get_statement_block();
+        auto block = info.breakpoint_node->get_block();
         print_statement_block(block.get(), false, false);
     }
 
@@ -2969,7 +2969,7 @@ void CodegenCVisitor::print_nrn_state() {
 
 void CodegenCVisitor::print_nrn_current(BreakpointBlock* node) {
     auto args = internal_method_parameters();
-    auto block = node->get_statement_block().get();
+    auto block = node->get_block().get();
     printer->add_newline(2);
     print_device_method_annotation();
     printer->start_block("static inline double nrn_current({})"_format(args));
@@ -2986,7 +2986,7 @@ void CodegenCVisitor::print_nrn_current(BreakpointBlock* node) {
 
 
 void CodegenCVisitor::print_nrn_cur_conductance_kernel(BreakpointBlock* node) {
-    auto block = node->get_statement_block();
+    auto block = node->get_block();
     print_statement_block(block.get(), false, false);
     if (!info.currents.empty()) {
         std::string sum;
