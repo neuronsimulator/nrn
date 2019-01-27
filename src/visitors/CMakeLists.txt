@@ -32,6 +32,8 @@ set(VISITOR_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/verbatim_var_rename_visitor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/var_usage_visitor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/var_usage_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/lookup_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/lookup_visitor.cpp
 )
 
 set_source_files_properties(

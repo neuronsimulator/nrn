@@ -3,6 +3,7 @@
 #include <string>
 
 #include "catch/catch.hpp"
+
 #include "parser/nmodl_driver.hpp"
 #include "visitors/inline_visitor.hpp"
 #include "visitors/json_visitor.hpp"
@@ -16,10 +17,12 @@
 #include "visitors/localize_visitor.hpp"
 #include "visitors/verbatim_var_rename_visitor.hpp"
 #include "visitors/cnexp_solve_visitor.hpp"
+#include "visitors/lookup_visitor.hpp"
 #include "test/utils/nmodl_constructs.h"
 #include "test/utils/test_utils.hpp"
 
 using json = nlohmann::json;
+using namespace ast;
 
 //=============================================================================
 // Verbatim visitor tests
@@ -1259,7 +1262,7 @@ std::vector<DUChain> run_defuse_visitor(const std::string& text, const std::stri
         DefUseAnalyzeVisitor v(ast->get_symbol_table());
 
         for (const auto& block : ast->get_blocks()) {
-            if (block->get_node_type() != ast::AstNodeType::NEURON_BLOCK) {
+            if (block->get_node_type() != AstNodeType::NEURON_BLOCK) {
                 chains.push_back(v.analyze(block.get(), variable));
             }
         }
@@ -1866,6 +1869,88 @@ SCENARIO("Running visitor passes multiple time") {
         THEN("Passes can run multiple times") {
             std::string input = reindent_text(nmodl_text);
             REQUIRE_NOTHROW(run_visitor_passes(input));
+        }
+    }
+}
+
+
+//=============================================================================
+// Ast lookup visitor tests
+//=============================================================================
+
+std::vector<AST*> run_lookup_visitor(Program* node, std::vector<AstNodeType>& types) {
+    AstLookupVisitor v;
+    return v.lookup(node, types);
+}
+
+SCENARIO("Searching for ast nodes using AstLookupVisitor") {
+    auto to_ast = [](const std::string& text) {
+        nmodl::Driver driver;
+        driver.parse_string(text);
+        return driver.ast();
+    };
+
+    auto to_nmodl = [](AST* node) {
+        std::stringstream stream;
+        NmodlPrintVisitor v(stream);
+        node->accept(&v);
+        return stream.str();
+    };
+
+    GIVEN("A mod file with nodes of type NEURON, RANGE, BinaryExpression") {
+        std::string nmodl_text = R"(
+            NEURON {
+                RANGE tau, h
+            }
+
+            DERIVATIVE states {
+                tau = 11.1
+                exp(tau)
+                h' = h + 2
+            }
+
+            : My comment here
+        )";
+
+        auto ast = to_ast(nmodl_text);
+
+        WHEN("Looking for existing nodes") {
+            THEN("Can find RANGE variables") {
+                std::vector<AstNodeType> types{AstNodeType::RANGE_VAR};
+                auto result = run_lookup_visitor(ast.get(), types);
+                REQUIRE(result.size() == 2);
+                REQUIRE(to_nmodl(result[0]) == "tau");
+                REQUIRE(to_nmodl(result[1]) == "h");
+            }
+
+            THEN("Can find NEURON block") {
+                std::vector<AstNodeType> types{AstNodeType::NEURON_BLOCK};
+                auto nodes = run_lookup_visitor(ast.get(), types);
+                REQUIRE(nodes.size() == 1);
+
+                std::string neuron_block = R"(
+                    NEURON {
+                        RANGE tau, h
+                    })";
+                auto result = reindent_text(to_nmodl(nodes[0]));
+                auto expected = reindent_text(neuron_block);
+                REQUIRE(result == expected);
+            }
+
+            THEN("Can find Binary Expressions and function call") {
+                std::vector<AstNodeType> types{AstNodeType::BINARY_EXPRESSION,
+                                               AstNodeType::FUNCTION_CALL};
+                auto result = run_lookup_visitor(ast.get(), types);
+                REQUIRE(result.size() == 4);
+            }
+        }
+
+        WHEN("Looking for missing nodes") {
+            THEN("Can not find BREAKPOINT block") {
+                std::vector<AstNodeType> types{AstNodeType::BREAKPOINT_BLOCK};
+                auto result = run_lookup_visitor(ast.get(), types);
+                REQUIRE(result.size() == 0);
+            }
         }
     }
 }

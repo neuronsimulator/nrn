@@ -2,6 +2,8 @@
 #include "visitors/symtab_visitor.hpp"
 #include "visitors/symtab_visitor_helper.hpp"
 
+using namespace ast;
+
 {% for node in nodes %}
 {% if node.is_symtab_method_required and not node.is_symbol_helper_node %}
 {% set typename = node.class_name|snake_case %}
