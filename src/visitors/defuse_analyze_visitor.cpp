@@ -216,7 +216,7 @@ void DefUseAnalyzeVisitor::visit_if_statement(IfStatement* node) {
     auto last_chain = current_chain;
     start_new_chain(DUState::IF);
     node->get_condition()->accept(this);
-    auto block = node->get_statement_block();
+    auto block = node->get_block();
     if (block) {
         block->accept(this);
     }

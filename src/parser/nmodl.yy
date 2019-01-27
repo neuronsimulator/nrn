@@ -184,8 +184,8 @@
 %token  <ast::Name>             DEL2
 %token  <ast::PrimeName>        PRIME
 %token  <std::string>           VERBATIM
-%token  <std::string>           COMMENT
-%token  <std::string>           INLINE_COMMENT
+%token  <std::string>           BLOCK_COMMENT
+%token  <std::string>           LINE_COMMENT
 %token  <std::string>           LINE_PART
 %token  <ast::String>           STRING
 %token  <ModToken>              OPEN_BRACE          "{"
@@ -316,7 +316,7 @@
 %type   <ast::StatementVector>           nrnstmt
 %type   <ast::ReadIonVarVector>          nrnionrlist
 %type   <ast::WriteIonVarVector>         nrnionwlist
-%type   <ast::NonspeCurVarVector>        nrnonspeclist
+%type   <ast::NonspecificCurVarVector>   nrnonspeclist
 %type   <ast::ElectrodeCurVarVector>     nrneclist
 %type   <ast::SectionVarVector>          nrnseclist
 %type   <ast::RangeVarVector>            nrnrangelist
@@ -399,7 +399,7 @@
  *  set accurate location for each production. We need to add method in AST
  *  classes to handle this.
  *
- *  \todo INLINE_COMMENT adds comment as separate statement and hence they
+ *  \todo LINE_COMMENT adds comment as separate statement and hence they
  *   go into separate line in nmodl printer. Need to update grammar to distinguish
  *   standalone single line comment vs. inline comment.
  */
@@ -457,16 +457,16 @@ all             :   {
                         $1->addNode(statement);
                         $$ = $1;
                     }
-                |   all COMMENT
+                |   all BLOCK_COMMENT
                     {
                         auto text = parse_with_verbatim_parser($2);
-                        auto statement = new ast::Comment(new ast::String(text), nullptr);
+                        auto statement = new ast::BlockComment(new ast::String(text));
                         $1->addNode(statement);
                         $$ = $1;
                     }
-                |   all INLINE_COMMENT
+                |   all LINE_COMMENT
                     {
-                        auto statement = new ast::Comment(nullptr, new ast::String($2));
+                        auto statement = new ast::LineComment(new ast::String($2));
                         $1->addNode(statement);
                         $$ = $1;
                     }
@@ -919,9 +919,9 @@ stmtlist1       :   {
                         $1.emplace_back($2);
                         $$ = $1;
                     }
-                |   stmtlist1 INLINE_COMMENT
+                |   stmtlist1 LINE_COMMENT
                     {
-                        auto statement = new ast::Comment(nullptr, new ast::String($2));
+                        auto statement = new ast::LineComment(new ast::String($2));
                         $1.emplace_back(statement);
                         $$ = $1;
                     }
@@ -945,9 +945,9 @@ ostmt           :   fromstmt        {   $$ = $1;    }
                     {   auto text = parse_with_verbatim_parser($1);
                         $$ = new ast::Verbatim(new ast::String(text));
                     }
-                |   COMMENT
+                |   BLOCK_COMMENT
                     {   auto text = parse_with_verbatim_parser($1);
-                        $$ = new ast::Comment(new ast::String(text), nullptr);
+                        $$ = new ast::BlockComment(new ast::String(text));
                     }
                 |   sens            { $$ = $1; }
                 |   compart         { $$ = $1; }
@@ -2005,12 +2005,12 @@ nrnionwlist     :   NAME_PTR
 
 nrnonspeclist   :   NAME_PTR
                     {
-                        $$ = ast::NonspeCurVarVector();
-                        $$.emplace_back(new ast::NonspeCurVar($1));
+                        $$ = ast::NonspecificCurVarVector();
+                        $$.emplace_back(new ast::NonspecificCurVar($1));
                     }
                 |   nrnonspeclist "," NAME_PTR
                     {
-                        $1.emplace_back(new ast::NonspeCurVar($3));
+                        $1.emplace_back(new ast::NonspecificCurVar($3));
                         $$ = $1;
                     }
                 |   error

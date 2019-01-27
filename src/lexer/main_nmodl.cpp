@@ -104,7 +104,7 @@ int main(int argc, const char* argv[]) {
 
                 /// token with string data type
                 case Token::VERBATIM:
-                case Token::COMMENT:
+                case Token::BLOCK_COMMENT:
                 case Token::LINE_PART: {
                     auto str = sym.value.as<std::string>();
                     std::cout << str << std::endl;

@@ -71,6 +71,6 @@ std::shared_ptr<Statement> create_statement(const std::string& code_statement) {
     auto ast = driver.ast();
     auto procedure = std::dynamic_pointer_cast<ProcedureBlock>(ast->blocks[0]);
     auto statement =
-        std::shared_ptr<Statement>(procedure->get_statement_block()->get_statements()[0]->clone());
+        std::shared_ptr<Statement>(procedure->get_block()->get_statements()[0]->clone());
     return statement;
 }

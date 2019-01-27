@@ -40,7 +40,7 @@ void CodegenBaseVisitor::visit_integer(Integer* node) {
     if (!codegen) {
         return;
     }
-    auto macro = node->get_macro_name();
+    auto macro = node->get_macro();
     auto value = node->get_value();
     if (macro) {
         macro->accept(this);
@@ -99,7 +99,7 @@ void CodegenBaseVisitor::visit_var_name(VarName* node) {
         return;
     }
     auto name = node->get_name();
-    auto at_index = node->get_at_index();
+    auto at_index = node->get_at();
     auto index = node->get_index();
     name->accept(this);
     if (at_index) {
@@ -142,7 +142,7 @@ void CodegenBaseVisitor::visit_if_statement(IfStatement* node) {
     printer->add_text("if (");
     node->get_condition()->accept(this);
     printer->add_text(") ");
-    node->get_statement_block()->accept(this);
+    node->get_block()->accept(this);
     print_vector_elements(node->get_elseifs(), "");
     auto elses = node->get_elses();
     if (elses) {
@@ -158,7 +158,7 @@ void CodegenBaseVisitor::visit_else_if_statement(ElseIfStatement* node) {
     printer->add_text(" else if (");
     node->get_condition()->accept(this);
     printer->add_text(") ");
-    node->get_statement_block()->accept(this);
+    node->get_block()->accept(this);
 }
 
 
@@ -174,7 +174,7 @@ void CodegenBaseVisitor::visit_while_statement(WhileStatement* node) {
     printer->add_text("while (");
     node->get_condition()->accept(this);
     printer->add_text(") ");
-    node->get_statement_block()->accept(this);
+    node->get_block()->accept(this);
 }
 
 void CodegenBaseVisitor::visit_from_statement(ast::FromStatement* node) {
@@ -184,8 +184,8 @@ void CodegenBaseVisitor::visit_from_statement(ast::FromStatement* node) {
     auto name = node->get_node_name();
     auto from = node->get_from();
     auto to = node->get_to();
-    auto inc = node->get_opinc();
-    auto block = node->get_statement_block();
+    auto inc = node->get_increment();
+    auto block = node->get_block();
     printer->add_text("for(int {}="_format(name));
     from->accept(this);
     printer->add_text("; {}<="_format(name));
@@ -206,7 +206,7 @@ void CodegenBaseVisitor::visit_paren_expression(ParenExpression* node) {
         return;
     }
     printer->add_text("(");
-    node->get_expr()->accept(this);
+    node->get_expression()->accept(this);
     printer->add_text(")");
 }
 
@@ -296,7 +296,8 @@ void CodegenBaseVisitor::visit_program(Program* node) {
 bool CodegenBaseVisitor::skip_statement(Statement* node) {
     // clang-format off
     if (node->is_unit_state()
-        || node->is_comment()
+        || node->is_line_comment()
+        || node->is_block_comment()
         || node->is_solve_block()
         || node->is_conductance_hint()
         || node->is_table_statement()) {
@@ -477,7 +478,7 @@ std::string CodegenBaseVisitor::breakpoint_current(std::string current) {
     if (breakpoint == nullptr) {
         return current;
     }
-    auto symtab = breakpoint->get_statement_block()->get_symbol_table();
+    auto symtab = breakpoint->get_block()->get_symbol_table();
     auto variables = symtab->get_variables_with_properties(NmodlType::local_var);
     for (auto& var : variables) {
         auto renamed_name = var->get_name();

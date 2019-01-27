@@ -58,7 +58,7 @@ nmodl::Parser::token_type token_type(const std::string& name) {
         }
 
         case Token::VERBATIM:
-        case Token::COMMENT:
+        case Token::BLOCK_COMMENT:
         case Token::LINE_PART: {
             auto value = sym.value.as<std::string>();
             break;
