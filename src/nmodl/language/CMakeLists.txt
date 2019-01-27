@@ -9,6 +9,8 @@ set ( AUTOGEN_FILES ${PROJECT_SOURCE_DIR}/src/ast/ast.hpp
         ${PROJECT_SOURCE_DIR}/src/visitors/ast_visitor.cpp
         ${PROJECT_SOURCE_DIR}/src/visitors/json_visitor.hpp
         ${PROJECT_SOURCE_DIR}/src/visitors/json_visitor.cpp
+        ${PROJECT_SOURCE_DIR}/src/visitors/lookup_visitor.hpp
+        ${PROJECT_SOURCE_DIR}/src/visitors/lookup_visitor.cpp
         ${PROJECT_SOURCE_DIR}/src/visitors/symtab_visitor.hpp
         ${PROJECT_SOURCE_DIR}/src/visitors/symtab_visitor.cpp
         ${PROJECT_SOURCE_DIR}/src/visitors/nmodl_visitor.hpp

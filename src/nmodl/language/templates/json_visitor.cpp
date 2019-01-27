@@ -1,5 +1,7 @@
 #include "visitors/json_visitor.hpp"
 
+using namespace ast;
+
 {% for node in nodes %}
 void JSONVisitor::visit_{{ node.class_name|snake_case }}({{ node.class_name }}* node) {
     {% if node.has_children() %}

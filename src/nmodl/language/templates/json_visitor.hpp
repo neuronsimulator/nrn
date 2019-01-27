@@ -19,6 +19,6 @@ class JSONVisitor : public AstVisitor {
         void compact_json(bool flag) { printer->compact_json(flag); }
 
         {% for node in nodes %}
-        void visit_{{ node.class_name|snake_case }}({{ node.class_name }}* node) override;
+        void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}* node) override;
         {% endfor %}
 };

@@ -260,7 +260,6 @@ void PerfVisitor::count_variables() {
 void PerfVisitor::print_memory_usage() {
     stream << std::endl;
 
-
     stream << "#VARIABLES :: ";
     stream << "  INSTANCE : " << num_instance_variables << " ";
     stream << "[ CONSTANT " << num_constant_instance_variables << ", ";
