@@ -260,7 +260,7 @@ void nrnhoc_topology(void) /* print the topology of the branched cable */
 	hoc_Item* q;
 
 	v_setup_vectors();
-	printf("\n");
+	Printf("\n");
 	ITERATE(q, section_list) {
 		Section* sec = (Section*)VOIDITM(q);
 		if (sec->parentsec == (Section*)0) {

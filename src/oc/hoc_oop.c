@@ -2055,9 +2055,9 @@ void hoc_allobjects1(Symlist* sl, int nspace) {
 			ITERATE(q, t->olist) {
 				o = OBJ(q);
 				for (i=0; i < nspace; ++i) {
-					printf("   ");
+					Printf("   ");
 				}
-printf("%s with %d refs\n", hoc_object_name(o), o->refcount);
+Printf("%s with %d refs\n", hoc_object_name(o), o->refcount);
 			}
 			hoc_allobjects1(t->symtable, nspace+1);
 		}
@@ -2076,7 +2076,7 @@ void hoc_allobjects2(Symbol* s, int nspace) {
 			for (i=0; i < nspace; ++i) {
 				printf("   ");
 			}
-printf("%s with %d refs\n", hoc_object_name(o), o->refcount);
+Printf("%s with %d refs\n", hoc_object_name(o), o->refcount);
 		}
 	}
 }
