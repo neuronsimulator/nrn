@@ -1,5 +1,38 @@
 :  Vector stream of events
 
+COMMENT
+A VecStim is an artificial spiking cell that generates
+events at times that are specified in a Vector.
+
+HOC Example:
+
+// assumes spt is a Vector whose elements are all > 0
+// and are sorted in monotonically increasing order
+objref vs
+vs = new VecStim()
+vs.play(spt)
+// now launch a simulation, and vs will produce spike events
+// at the times contained in spt
+
+Python Example:
+
+from neuron import h
+spt = h.Vector(10).indgen(1, 0.2)
+vs = h.VecStim()
+vs.play(spt)
+
+def pr():
+  print (h.t)
+
+nc = h.NetCon(vs, None)
+nc.record(pr)
+
+cvode = h.CVode()
+h.finitialize()
+cvode.solve(20)
+
+ENDCOMMENT
+
 NEURON {
 	THREADSAFE
 	ARTIFICIAL_CELL VecStim
