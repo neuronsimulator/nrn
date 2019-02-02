@@ -1,5 +1,4 @@
 #include <memory>
-#include <utility>
 
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
@@ -13,6 +12,7 @@ struct Logger {
         logger->set_pattern(std::move(pattern));
     }
 };
+
 
 Logger nmodl_logger("NMODL", "[%n] [%^%l%$] :: %v");
 logger_type logger = nmodl_logger.logger;

@@ -1,4 +1,4 @@
-#include "codegen/c-openmp/codegen_c_omp_visitor.hpp"
+#include "codegen/codegen_omp_visitor.hpp"
 
 
 using namespace symtab;
@@ -11,7 +11,7 @@ using SymbolType = std::shared_ptr<symtab::Symbol>;
 /****************************************************************************************/
 
 
-void CodegenCOmpVisitor::print_channel_iteration_task_begin(BlockType type) {
+void CodegenOmpVisitor::print_channel_iteration_task_begin(BlockType type) {
     std::string vars;
     if (type == BlockType::Equation) {
         vars = "start, end, node_index, indexes, voltage, vec_rhs, vec_d, inst, thread, nt";
@@ -24,7 +24,7 @@ void CodegenCOmpVisitor::print_channel_iteration_task_begin(BlockType type) {
 }
 
 
-void CodegenCOmpVisitor::print_channel_iteration_task_end() {
+void CodegenOmpVisitor::print_channel_iteration_task_end() {
     printer->decrease_indent();
     printer->add_line("}");
 }
@@ -33,7 +33,7 @@ void CodegenCOmpVisitor::print_channel_iteration_task_end() {
 /*
  * Depending on the backend, print loop for tiling channel iterations
  */
-void CodegenCOmpVisitor::print_channel_iteration_tiling_block_begin(BlockType type) {
+void CodegenOmpVisitor::print_channel_iteration_tiling_block_begin(BlockType type) {
     printer->add_line("const int TILE = 3;");
     printer->start_block("for (int block = 0; block < nodecount;) ");
     printer->add_line("int start = block;");
@@ -46,7 +46,7 @@ void CodegenCOmpVisitor::print_channel_iteration_tiling_block_begin(BlockType ty
 /**
  * End of tiled channel iteration block
  */
-void CodegenCOmpVisitor::print_channel_iteration_tiling_block_end() {
+void CodegenOmpVisitor::print_channel_iteration_tiling_block_end() {
     print_channel_iteration_task_end();
     printer->end_block();
     printer->add_newline();
@@ -64,31 +64,31 @@ void CodegenCOmpVisitor::print_channel_iteration_tiling_block_end() {
  *      for(int id=0; id<nodecount; id++) {
  *
  */
-void CodegenCOmpVisitor::print_channel_iteration_block_parallel_hint() {
+void CodegenOmpVisitor::print_channel_iteration_block_parallel_hint() {
     printer->add_line("#pragma omp simd");
 }
 
 
-void CodegenCOmpVisitor::print_atomic_reduction_pragma() {
+void CodegenOmpVisitor::print_atomic_reduction_pragma() {
     printer->add_line("#pragma omp atomic update");
 }
 
 
-void CodegenCOmpVisitor::print_backend_includes() {
+void CodegenOmpVisitor::print_backend_includes() {
     printer->add_line("#include <omp.h>");
 }
 
 
-std::string CodegenCOmpVisitor::backend_name() {
+std::string CodegenOmpVisitor::backend_name() {
     return "C-OpenMP (api-compatibility)";
 }
 
 
-bool CodegenCOmpVisitor::channel_task_dependency_enabled() {
+bool CodegenOmpVisitor::channel_task_dependency_enabled() {
     return true;
 }
 
 
-bool CodegenCOmpVisitor::block_require_shadow_update(BlockType type) {
+bool CodegenOmpVisitor::block_require_shadow_update(BlockType type) {
     return !(!channel_task_dependency_enabled() || type == BlockType::Initial);
 }
