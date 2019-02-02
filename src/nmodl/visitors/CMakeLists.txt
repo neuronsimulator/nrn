@@ -3,37 +3,37 @@
 #=============================================================================
 set(VISITOR_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/ast_visitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/json_visitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/verbatim_visitor.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/verbatim_visitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/symtab_visitor.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/symtab_visitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/symtab_visitor_helper.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/perf_visitor.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/perf_visitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/inline_visitor.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/inline_visitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/nmodl_visitor.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/nmodl_visitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/nmodl_visitor_helper.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/rename_visitor.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/rename_visitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/local_var_rename_visitor.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/local_var_rename_visitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/localize_visitor.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/localize_visitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/defuse_analyze_visitor.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/defuse_analyze_visitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/cnexp_solve_visitor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/cnexp_solve_visitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/visitor_utils.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/visitor_utils.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/verbatim_var_rename_visitor.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/verbatim_var_rename_visitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/var_usage_visitor.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/var_usage_visitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/lookup_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/cnexp_solve_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/defuse_analyze_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/defuse_analyze_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/inline_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/inline_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/json_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/local_var_rename_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/local_var_rename_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/localize_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/localize_visitor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/lookup_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/lookup_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/nmodl_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/nmodl_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/nmodl_visitor_helper.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/perf_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/perf_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/rename_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/rename_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/symtab_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/symtab_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/symtab_visitor_helper.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/var_usage_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/var_usage_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/verbatim_var_rename_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/verbatim_var_rename_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/verbatim_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/verbatim_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/visitor_utils.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/visitor_utils.hpp
 )
 
 set_source_files_properties(

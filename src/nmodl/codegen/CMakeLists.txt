@@ -2,20 +2,19 @@
 # Codegen sources
 #=============================================================================
 set(CODEGEN_SOURCE_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_info.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_acc_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_acc_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_cuda_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_cuda_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_omp_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_omp_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_c_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_c_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_helper_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_helper_visitor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen_info.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/base/codegen_base_visitor.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/base/codegen_base_visitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/base/codegen_helper_visitor.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/base/codegen_helper_visitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/c/codegen_c_visitor.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/c/codegen_c_visitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/c-openmp/codegen_c_omp_visitor.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/c-openmp/codegen_c_omp_visitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/c-openacc/codegen_c_acc_visitor.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/c-openacc/codegen_c_acc_visitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/c-cuda/codegen_c_cuda_visitor.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/c-cuda/codegen_c_cuda_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_info.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_naming.hpp
 )
 
 #=============================================================================

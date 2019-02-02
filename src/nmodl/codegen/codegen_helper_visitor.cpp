@@ -1,7 +1,8 @@
 #include <algorithm>
 #include <cmath>
 
-#include "codegen/base/codegen_helper_visitor.hpp"
+#include "codegen/codegen_helper_visitor.hpp"
+#include "codegen/codegen_naming.hpp"
 #include "visitors/rename_visitor.hpp"
 
 #include <fmt/format.h>
@@ -174,7 +175,7 @@ void CodegenHelperVisitor::find_non_range_variables() {
     for (auto& var : vars) {
         // some variables like area and diam are declared in parameter
         // block but they are not global
-        if (var->get_name() == diam_variable || var->get_name() == area_variable ||
+        if (var->get_name() == naming::DIAM_VARIABLE || var->get_name() == naming::AREA_VARIABLE ||
             var->has_properties(NmodlType::extern_neuron_variable)) {
             continue;
         }
@@ -254,10 +255,10 @@ void CodegenHelperVisitor::find_non_range_variables() {
             | NmodlType::param_assign;
     vars = psymtab->get_variables_with_properties(properties);
     for (auto& var : vars) {
-        if (var->get_name() == area_variable) {
+        if (var->get_name() == naming::AREA_VARIABLE) {
             info.area_used = true;
         }
-        if (var->get_name() == diam_variable) {
+        if (var->get_name() == naming::DIAM_VARIABLE) {
             info.diam_used = true;
         }
     }
@@ -404,10 +405,10 @@ void CodegenHelperVisitor::find_table_variables() {
 
 void CodegenHelperVisitor::visit_suffix(Suffix* node) {
     auto type = node->get_type()->get_node_name();
-    if (type == point_process) {
+    if (type == naming::POINT_PROCESS) {
         info.point_process = true;
     }
-    if (type == artificial_cell) {
+    if (type == naming::ARTIFICIAL_CELL) {
         info.artificial_cell = true;
         info.point_process = true;
     }
@@ -477,10 +478,10 @@ void CodegenHelperVisitor::visit_function_block(ast::FunctionBlock* node) {
 
 void CodegenHelperVisitor::visit_function_call(FunctionCall* node) {
     auto name = node->get_node_name();
-    if (name == net_send_method) {
+    if (name == naming::NET_SEND_METHOD) {
         info.net_send_used = true;
     }
-    if (name == net_event_method) {
+    if (name == naming::NET_EVENT_METHOD) {
         info.net_event_used = true;
     }
 }
@@ -503,11 +504,11 @@ void CodegenHelperVisitor::visit_solve_block(SolveBlock* node) {
         info.solve_block_name = node->get_block_name()->get_node_name();
         if (node->get_method()) {
             info.solve_method = node->get_method()->get_node_name();
-            if (info.solve_method == derivimplicit_method) {
+            if (info.solve_method == naming::DERIVIMPLICIT_METHOD) {
                 info.derivimplicit_used = true;
-            } else if (info.solve_method == euler_method) {
+            } else if (info.solve_method == naming::EULER_METHOD) {
                 info.euler_used = true;
-            } else if (info.solve_method == cnexp_method) {
+            } else if (info.solve_method == naming::CNEXP_METHOD) {
                 info.cnexp_used = true;
             }
         }
@@ -606,7 +607,6 @@ void CodegenHelperVisitor::find_solve_node() {
 
 void CodegenHelperVisitor::visit_program(Program* node) {
     psymtab = node->get_symbol_table();
-    model_symtab = node->get_model_symbol_table();
     auto blocks = node->get_blocks();
     for (auto& block : blocks) {
         info.top_blocks.push_back(block.get());
@@ -623,7 +623,7 @@ void CodegenHelperVisitor::visit_program(Program* node) {
 }
 
 
-codegen::CodegenInfo CodegenHelperVisitor::get_code_info(ast::Program* node) {
+codegen::CodegenInfo CodegenHelperVisitor::analyze(ast::Program* node) {
     node->accept(this);
     return info;
 }

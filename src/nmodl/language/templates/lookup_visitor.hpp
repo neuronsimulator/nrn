@@ -18,11 +18,27 @@ class AstLookupVisitor : public Visitor {
         std::vector<ast::AST*> nodes;
 
     public:
+
+        AstLookupVisitor() = default;
+
+        AstLookupVisitor(ast::AstNodeType type) {
+            types.push_back(type);
+        }
+
         std::vector<ast::AST*> lookup(ast::Program* node, ast::AstNodeType type);
 
         std::vector<ast::AST*> lookup(ast::Program* node, std::vector<ast::AstNodeType>& types);
 
-        {% for node in nodes %}
+        std::vector<ast::AST*> get_nodes() {
+            return nodes;
+        }
+
+        void clear() {
+            types.clear();
+            nodes.clear();
+        }
+
+    {% for node in nodes %}
         virtual void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}* node) override;
         {% endfor %}
 };

@@ -19,6 +19,7 @@ add_library(util
             STATIC
             ${UTIL_SOURCE_FILES}
 )
+set_property(TARGET util PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 #=============================================================================
 # Files for clang-format

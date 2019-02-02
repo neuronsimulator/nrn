@@ -1,18 +1,14 @@
 #ifndef NMODL_CODEGEN_C_CUDA_VISITOR_HPP
 #define NMODL_CODEGEN_C_CUDA_VISITOR_HPP
 
-#include "codegen/c/codegen_c_visitor.hpp"
+#include "codegen/codegen_c_visitor.hpp"
 
 
 /**
- * \class CodegenCCudaVisitor
+ * \class CodegenCudaVisitor
  * \brief Visitor for printing CUDA backend
- *
- * \todo :
- *      - handle define i.e. macro statement printing
- *      - return statement in the verbatim block of inline function not handled (e.g. netstim.mod)
  */
-class CodegenCCudaVisitor : public CodegenCVisitor {
+class CodegenCudaVisitor : public CodegenCVisitor {
     void print_atomic_op(const std::string& lhs, const std::string& op, const std::string& rhs);
 
   protected:
@@ -58,7 +54,7 @@ class CodegenCCudaVisitor : public CodegenCVisitor {
 
 
     /// end of backend namespace
-    void print_backend_namespace_end() override;
+    void print_backend_namespace_stop() override;
 
 
     /// backend specific global method annotation
@@ -70,7 +66,7 @@ class CodegenCCudaVisitor : public CodegenCVisitor {
 
 
     /// all compute functions for every backend
-    void codegen_compute_functions() override;
+    void print_compute_functions() override;
 
 
     /// print wrapper function that calls cuda kernel
@@ -82,21 +78,21 @@ class CodegenCCudaVisitor : public CodegenCVisitor {
 
 
     /// entry point to code generation
-    void codegen_all() override;
+    void print_codegen_routines() override;
 
   public:
-    CodegenCCudaVisitor(std::string mod_file,
-                        std::string output_dir,
-                        bool aos,
-                        std::string float_type)
-        : CodegenCVisitor(mod_file, output_dir, aos, float_type, ".cu") {
+    CodegenCudaVisitor(std::string mod_file,
+                       std::string output_dir,
+                       LayoutType layout,
+                       std::string float_type)
+        : CodegenCVisitor(mod_file, output_dir, layout, float_type, ".cu") {
     }
 
-    CodegenCCudaVisitor(std::string mod_file,
-                        std::stringstream& stream,
-                        bool aos,
-                        std::string float_type)
-        : CodegenCVisitor(mod_file, stream, aos, float_type) {
+    CodegenCudaVisitor(std::string mod_file,
+                       std::stringstream& stream,
+                       LayoutType layout,
+                       std::string float_type)
+        : CodegenCVisitor(mod_file, stream, layout, float_type) {
     }
 };
 

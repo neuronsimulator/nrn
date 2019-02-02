@@ -27,6 +27,8 @@
  *    Need to check what is correct value.
  */
 class CodegenHelperVisitor : public AstVisitor {
+    using SymbolType = std::shared_ptr<symtab::Symbol>;
+
     /// holds all codegen related information
     codegen::CodegenInfo info;
 
@@ -45,27 +47,8 @@ class CodegenHelperVisitor : public AstVisitor {
     /// symbol table for the program
     symtab::SymbolTable* psymtab = nullptr;
 
-    /// symbol table for the entire model
-    symtab::ModelSymbolTable* model_symtab = nullptr;
-
-    /// if we are visiting lhs of assignment statement
-    bool visiting_lhs_assignment = false;
-
-    using SymbolType = std::shared_ptr<symtab::Symbol>;
-
     /// lhs of assignment in derivative block
-    std::shared_ptr<ast::Expression> assign_lhs = nullptr;
-
-    /// name of the derivimplicit, euler and cnexp methods
-    const std::string derivimplicit_method = "derivimplicit";
-    const std::string euler_method = "euler";
-    const std::string cnexp_method = "cnexp";
-    const std::string net_send_method = "net_send";
-    const std::string net_event_method = "net_event";
-    const std::string artificial_cell = "ARTIFICIAL_CELL";
-    const std::string point_process = "POINT_PROCESS";
-    const std::string diam_variable = "diam";
-    const std::string area_variable = "area";
+    std::shared_ptr<ast::Expression> assign_lhs;
 
     void find_solve_node();
     void find_ion_variables();
@@ -76,7 +59,9 @@ class CodegenHelperVisitor : public AstVisitor {
 
   public:
     CodegenHelperVisitor() = default;
-    codegen::CodegenInfo get_code_info(ast::Program* node);
+
+    /// run visitor and return information for code generation
+    codegen::CodegenInfo analyze(ast::Program* node);
 
     virtual void visit_elctrode_current(ast::ElctrodeCurrent* node) override;
     virtual void visit_suffix(ast::Suffix* node) override;
