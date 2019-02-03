@@ -92,7 +92,7 @@ void CodegenHelperVisitor::find_ion_variables() {
     }
 
     /// once ions are populated, we can find all currents
-    auto vars = psymtab->get_variables_with_properties(NmodlType::nonspe_cur_var);
+    auto vars = psymtab->get_variables_with_properties(NmodlType::nonspecific_cur_var);
     for (auto& var : vars) {
         info.currents.push_back(var->get_name());
     }

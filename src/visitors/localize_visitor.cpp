@@ -63,7 +63,7 @@ std::vector<std::string> LocalizeVisitor::variables_to_optimize() {
                                      | NmodlType::read_ion_var
                                      | NmodlType::write_ion_var
                                      | NmodlType::prime_name
-                                     | NmodlType::nonspe_cur_var
+                                     | NmodlType::nonspecific_cur_var
                                      | NmodlType::pointer_var
                                      | NmodlType::bbcore_pointer_var
                                      | NmodlType::electrode_cur_var

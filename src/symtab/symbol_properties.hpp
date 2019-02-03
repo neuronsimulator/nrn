@@ -132,7 +132,7 @@ namespace syminfo {
         write_ion_var = 1L << 11,
 
         /** Non Specific Current */
-        nonspe_cur_var = 1L << 12,
+        nonspecific_cur_var = 1L << 12,
 
         /** Electrode Current */
         electrode_cur_var = 1L << 13,
