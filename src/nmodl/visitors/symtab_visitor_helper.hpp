@@ -21,7 +21,7 @@ static std::shared_ptr<Symbol> create_symbol_for_node(Node* node,
     symbol->add_property(property);
 
     // non specific variable is range
-    if (property == NmodlType::nonspe_cur_var) {
+    if (property == NmodlType::nonspecific_cur_var) {
         symbol->add_property(NmodlType::range_var);
     }
 
@@ -54,9 +54,9 @@ void SymtabVisitor::setup_symbol(Node* node, NmodlTypeFlag property) {
     /// range and non_spec_cur can appear in any order in neuron block.
     /// for both properties, we have to check if symbol is already exist.
     /// if so we have to return to avoid duplicate definition error.
-    if (property == NmodlType::range_var || property == NmodlType::nonspe_cur_var) {
+    if (property == NmodlType::range_var || property == NmodlType::nonspecific_cur_var) {
         auto s = modsymtab->lookup(name);
-        if (s && s->has_properties(NmodlType::nonspe_cur_var | NmodlType::range_var)) {
+        if (s && s->has_properties(NmodlType::nonspecific_cur_var | NmodlType::range_var)) {
             s->add_property(property);
             return;
         }

@@ -74,7 +74,7 @@ namespace symtab {
                                     | NmodlType::dependent_def
                                     | NmodlType::read_ion_var
                                     | NmodlType::write_ion_var
-                                    | NmodlType::nonspe_cur_var
+                                    | NmodlType::nonspecific_cur_var
                                     | NmodlType::electrode_cur_var
                                     | NmodlType::section_var
                                     | NmodlType::argument

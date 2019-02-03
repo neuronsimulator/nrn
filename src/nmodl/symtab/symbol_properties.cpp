@@ -67,7 +67,7 @@ std::vector<std::string> to_string_vector(const NmodlTypeFlag& obj) {
         properties.emplace_back("write_ion");
     }
 
-    if (has_property(obj, NmodlType::nonspe_cur_var)) {
+    if (has_property(obj, NmodlType::nonspecific_cur_var)) {
         properties.emplace_back("nonspe_cur");
     }
 
