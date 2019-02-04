@@ -29,7 +29,7 @@ namespace nmodl {
             {"INITIAL", Token::INITIAL1},
             {"TERMINAL", Token::TERMINAL},
             {"DERIVATIVE", Token::DERIVATIVE},
-            {"EQUATION", Token::EQUATION},
+            {"EQUATION", Token::BREAKPOINT},
             {"BREAKPOINT", Token::BREAKPOINT},
             {"CONDUCTANCE", Token::CONDUCTANCE},
             {"SOLVE", Token::SOLVE},
