@@ -752,27 +752,27 @@ std::map<std::string, NmodlTestCase> nmodl_valid_constructs{
     },
 
     {
-            "solve_block_equation_1",
+        "solve_block_equation_1",
         {
-                "Solve statement without method using EQUATION, generating BREAKPOINT",
-             R"(
-                EQUATION {
-                    SOLVE states
-                }
+            "Solve statement without method using EQUATION, generating BREAKPOINT",
+            R"(
+               EQUATION {
+                   SOLVE states
+               }
             )",
 
-             R"(
-                BREAKPOINT {
-                    SOLVE states
-                }
+            R"(
+               BREAKPOINT {
+                   SOLVE states
+               }
             )"
         }
     },
 
     {
-            "solve_block_equation_2",
-            {
-                    "Solve statement with method using EQUATION, generating BREAKPOINT",
+        "solve_block_equation_2",
+        {
+            "Solve statement with method using EQUATION, generating BREAKPOINT",
             R"(
                 EQUATION {
                     SOLVE states METHOD cnexp
@@ -784,13 +784,13 @@ std::map<std::string, NmodlTestCase> nmodl_valid_constructs{
                 }
             )"
 
-            }
+        }
     },
 
     {
-            "solve_block_equation_3",
-            {
-                    "Solve statement with iferror block using EQUATION, generating BREAKPOINT",
+        "solve_block_equation_3",
+        {
+            "Solve statement with iferror block using EQUATION, generating BREAKPOINT",
             R"(
                 EQUATION {
                     SOLVE states METHOD cnexp IFERROR {
@@ -805,7 +805,7 @@ std::map<std::string, NmodlTestCase> nmodl_valid_constructs{
                     }
                 }
             )"
-            }
+        }
     },
 
     {
