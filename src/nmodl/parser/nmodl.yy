@@ -77,7 +77,7 @@
  *  we want to access original string and location. With C++ interface and other
  *  location related information, this is now less useful in parser. But when we
  *  lexer executable or tests, it's useful to return ModToken. Note that UNKNOWN
- *  token is added for convenience (with default argumebts). */
+ *  token is added for convenience (with default arguments). */
 
 %token  <ModToken>              MODEL
 %token  <ModToken>              CONSTANT

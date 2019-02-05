@@ -630,7 +630,7 @@ std::map<std::string, NmodlTestCase> nmodl_valid_constructs{
     {
         "while_statement_2",
         {
-            "While statement with expression as condition",
+            "While statement with AND expression as condition",
             R"(
                 CONSTRUCTOR {
                     WHILE ((a+1)<2 && b>100) {
@@ -642,6 +642,35 @@ std::map<std::string, NmodlTestCase> nmodl_valid_constructs{
         }
     },
 
+    {
+        "while_statement_3",
+        {
+            "While statement with OR expression as condition",
+            R"(
+                CONSTRUCTOR {
+                    WHILE ((a+1)<=2 || b>=100) {
+                        x = 10
+                        y = 20
+                    }
+                }
+            )"
+        }
+    },
+
+    {
+        "while_statement_4",
+        {
+            "While statement with NE and NOT condition",
+            R"(
+                CONSTRUCTOR {
+                    WHILE (a!=2 && !b) {
+                        x = 10
+                        y = 20
+                    }
+                }
+            )"
+        }
+    },
 
     {
         "if_statement_1",
@@ -994,6 +1023,29 @@ std::map<std::string, NmodlTestCase> nmodl_valid_constructs{
         }
     },
 
+    /// \todo : NONLIN1 (i.e. ~+) gets replaced with ~. This is not
+    ///         a problem as ~ in NONLINEAR block gets replaced with
+    ///         ~ anyway. But it would be good to keep same variable
+    ///         for nmodl-format utility
+    {
+        "nonlinear_block_2",
+        {
+            "NONLINEAR block using symbol",
+            R"(
+                NONLINEAR some_name SOLVEFOR a,b {
+                    ~+ I1*bi1+C2*b01-C1*(fi1+f01) = 0
+                    ~+ C1+C2+C3+C4+C5+O+I1+I2+I3+I4+I5+I6 = 1
+                }
+            )",
+            R"(
+                NONLINEAR some_name SOLVEFOR a,b {
+                    ~ I1*bi1+C2*b01-C1*(fi1+f01) = 0
+                    ~ C1+C2+C3+C4+C5+O+I1+I2+I3+I4+I5+I6 = 1
+                }
+            )"
+        }
+    },
+
     {
         "table_statement_1",
         {
@@ -1332,6 +1384,17 @@ std::map<std::string, NmodlTestCase> nmodl_valid_constructs{
                 FUNCTION urand() {
                     a = b+c
                     c = d*e
+                }
+            )"
+        }
+    },
+    {
+        "section_test",
+        {
+            "Section token test",
+            R"(
+                NEURON {
+                    SECTION a, b
                 }
             )"
         }
