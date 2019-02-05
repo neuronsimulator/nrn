@@ -29,10 +29,11 @@ std::shared_ptr<ast::Statement> create_statement(const std::string& code_stateme
 
 namespace nmodl {
     /** Given AST node, return the NMODL string representation */
-    std::string to_nmodl(ast::AST *node);
+    std::string to_nmodl(ast::AST* node);
 
     /** Given AST node, return the JSON string representation */
-    std::string to_json(ast::AST *node, bool compact = false);
-}
+    std::string to_json(ast::AST* node, bool compact = false);
+
+}  // namespace nmodl
 
 #endif

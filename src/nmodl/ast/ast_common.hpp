@@ -658,7 +658,6 @@ namespace ast {
         virtual bool is_diff_eq_expression() {
             return false;
         }
-
     };
 
 }  // namespace ast

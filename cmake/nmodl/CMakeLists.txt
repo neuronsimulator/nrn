@@ -41,7 +41,7 @@ find_package(ClangFormat)
 message(STATUS "CHECKING FOR PYTHON")
 find_package(PythonInterp 3.6 REQUIRED)
 find_python_module(jinja2 REQUIRED)
-find_python_module(test REQUIRED)
+find_python_module(pytest REQUIRED)
 find_python_module(textwrap REQUIRED)
 find_python_module(yaml REQUIRED)
 
@@ -76,6 +76,7 @@ set ( AUTO_GENERATED_FILES
         ${PROJECT_SOURCE_DIR}/src/ast/ast.cpp
         ${PROJECT_SOURCE_DIR}/src/pybind/pyast.hpp
         ${PROJECT_SOURCE_DIR}/src/pybind/pyast.cpp
+        ${PROJECT_SOURCE_DIR}/src/pybind/pysymtab.cpp
         ${PROJECT_SOURCE_DIR}/src/pybind/pyvisitor.hpp
         ${PROJECT_SOURCE_DIR}/src/pybind/pyvisitor.cpp
         ${PROJECT_SOURCE_DIR}/src/visitors/visitor.hpp
@@ -83,6 +84,8 @@ set ( AUTO_GENERATED_FILES
         ${PROJECT_SOURCE_DIR}/src/visitors/ast_visitor.cpp
         ${PROJECT_SOURCE_DIR}/src/visitors/json_visitor.hpp
         ${PROJECT_SOURCE_DIR}/src/visitors/json_visitor.cpp
+        ${PROJECT_SOURCE_DIR}/src/visitors/lookup_visitor.hpp
+        ${PROJECT_SOURCE_DIR}/src/visitors/lookup_visitor.cpp
         ${PROJECT_SOURCE_DIR}/src/visitors/symtab_visitor.hpp
         ${PROJECT_SOURCE_DIR}/src/visitors/symtab_visitor.cpp
         ${PROJECT_SOURCE_DIR}/src/visitors/nmodl_visitor.hpp

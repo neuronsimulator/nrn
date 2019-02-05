@@ -9,32 +9,6 @@
 
 namespace symtab {
 
-    /**
-     * \class Table
-     * \brief Helper class for implementing symbol table
-     *
-     * Table is used to store information about every block construct
-     * encountered in the nmodl file. Each symbol has name but for fast lookup,
-     * we create map with the associated name.
-     *
-     * \todo Re-implement pretty printing
-     */
-    class Table {
-        static int counter;
-
-      public:
-        /// map of symbol name and associated symbol for faster lookup
-        std::vector<std::shared_ptr<Symbol>> symbols;
-
-        /// insert new symbol into table
-        void insert(const std::shared_ptr<Symbol>& symbol);
-
-        /// check if symbol with given name exist
-        std::shared_ptr<Symbol> lookup(const std::string& name) const;
-
-        /// pretty print
-        void print(std::stringstream& stream, std::string title, int indent);
-    };
 
     /**
      * \class SymbolTable
@@ -60,6 +34,32 @@ namespace symtab {
      */
     class SymbolTable {
       private:
+        /**
+         * \class Table
+         * \brief Helper class for implementing symbol table
+         *
+         * Table is used to store information about every block construct
+         * encountered in the nmodl file. Each symbol has name but for fast lookup,
+         * we create map with the associated name.
+         *
+         * \todo Re-implement pretty printing
+         */
+        class Table {
+            static int counter;
+
+          public:
+            /// map of symbol name and associated symbol for faster lookup
+            std::vector<std::shared_ptr<Symbol>> symbols;
+
+            /// insert new symbol into table
+            void insert(const std::shared_ptr<Symbol>& symbol);
+
+            /// check if symbol with given name exist
+            std::shared_ptr<Symbol> lookup(const std::string& name) const;
+
+            /// pretty print
+            void print(std::stringstream& stream, std::string title, int indent);
+        };
         /// name of the block
         std::string symtab_name;
 
@@ -138,13 +138,14 @@ namespace symtab {
 
         std::shared_ptr<Symbol> lookup_in_scope(const std::string& name) const;
 
-        std::vector<std::shared_ptr<Symbol>> get_variables(NmodlTypeFlag with,
-                                                           NmodlTypeFlag without);
+        std::vector<std::shared_ptr<Symbol>> get_variables(syminfo::NmodlType with,
+                                                           syminfo::NmodlType without);
 
-        std::vector<std::shared_ptr<Symbol>> get_variables_with_properties(NmodlTypeFlag properties,
-                                                                           bool all = false);
+        std::vector<std::shared_ptr<Symbol>> get_variables_with_properties(
+            syminfo::NmodlType properties,
+            bool all = false);
 
-        std::vector<std::shared_ptr<Symbol>> get_variables_with_status(StatusFlag status,
+        std::vector<std::shared_ptr<Symbol>> get_variables_with_status(syminfo::Status status,
                                                                        bool all = false);
 
         bool under_global_scope();
@@ -152,6 +153,12 @@ namespace symtab {
         void insert_table(const std::string& name, std::shared_ptr<SymbolTable> table);
 
         void print(std::stringstream& ss, int level);
+
+        std::string to_string() {
+            std::stringstream s;
+            print(s, 0);
+            return s.str();
+        }
     };
 
     /**

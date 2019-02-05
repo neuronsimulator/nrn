@@ -9,6 +9,6 @@ class AstVisitor : public Visitor {
 
     public:
         {% for node in nodes %}
-        virtual void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}* node) override;
+        void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}* node) override;
         {% endfor %}
 };

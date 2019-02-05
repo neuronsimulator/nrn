@@ -18,18 +18,14 @@ private:
 
 public:
     explicit SymtabVisitor(bool update = false) : printer(new JSONPrinter()), update(update) {}
-    SymtabVisitor(std::stringstream &ss, bool update = false) : printer(new JSONPrinter(ss)), update(update) {}
+    SymtabVisitor(std::ostream &os, bool update = false) : printer(new JSONPrinter(os)), update(update) {}
     SymtabVisitor(std::string filename, bool update = false) : printer(new JSONPrinter(filename)), update(update) {}
 
-    void add_model_symbol_with_property(ast::Node* node, NmodlTypeFlag property);
+    void add_model_symbol_with_property(ast::Node* node, syminfo::NmodlType property);
 
-    void setup_symbol(ast::Node* node, NmodlTypeFlag property);
+    void setup_symbol(ast::Node* node, syminfo::NmodlType property);
 
     void setup_symbol_table(ast::AST* node, const std::string& name, bool is_global);
-
-    void setup_symbol_table(ast::Node* node, const std::string& name, NmodlTypeFlag property, bool is_global);
-
-    void setup_program_symbol_table(ast::Node* node, const std::string& name, bool is_global);
 
     void setup_symbol_table_for_program_block(ast::Program* node);
 

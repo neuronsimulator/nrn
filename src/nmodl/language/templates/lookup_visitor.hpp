@@ -38,7 +38,7 @@ class AstLookupVisitor : public Visitor {
             nodes.clear();
         }
 
-    {% for node in nodes %}
-        virtual void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}* node) override;
+        {% for node in nodes %}
+            void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}* node) override;
         {% endfor %}
 };

@@ -77,9 +77,9 @@ std::shared_ptr<Statement> create_statement(const std::string& code_statement) {
     return statement;
 }
 
-namespace  nmodl {
+namespace nmodl {
 
-    std::string to_nmodl(ast::AST *node) {
+    std::string to_nmodl(ast::AST* node) {
         std::stringstream stream;
         NmodlPrintVisitor v(stream);
         node->accept(&v);
@@ -87,12 +87,13 @@ namespace  nmodl {
     }
 
 
-    std::string to_json(ast::AST *node, bool compact) {
+    std::string to_json(ast::AST* node, bool compact) {
         std::stringstream stream;
         JSONVisitor v(stream);
         v.compact_json(compact);
         node->accept(&v);
+        v.flush();
         return stream.str();
     }
 
-}
+}  // namespace nmodl

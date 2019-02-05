@@ -209,7 +209,7 @@ void PerfVisitor::count_variables() {
     /// assigned block are not treated as range
     num_instance_variables = 0;
 
-    NmodlTypeFlag property = NmodlType::range_var | NmodlType::dependent_def | NmodlType::state_var;
+    NmodlType property = NmodlType::range_var | NmodlType::dependent_def | NmodlType::state_var;
     auto variables = current_symtab->get_variables_with_properties(property);
 
     for (auto& variable : variables) {

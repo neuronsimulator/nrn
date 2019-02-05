@@ -1,6 +1,7 @@
 #include <utility>
 
 #include "lexer/token_mapping.hpp"
+#include "visitors/symtab_visitor.hpp"
 
 using namespace ast;
 using namespace symtab;
@@ -8,7 +9,7 @@ using namespace syminfo;
 
 // create symbol for given node
 static std::shared_ptr<Symbol> create_symbol_for_node(Node* node,
-                                                      NmodlTypeFlag property,
+                                                      NmodlType property,
                                                       bool under_state_block) {
     ModToken token;
     auto token_ptr = node->get_token();
@@ -35,7 +36,7 @@ static std::shared_ptr<Symbol> create_symbol_for_node(Node* node,
 
 /// helper function to setup/insert symbol into symbol table
 /// for the ast nodes which are of variable types
-void SymtabVisitor::setup_symbol(Node* node, NmodlTypeFlag property) {
+void SymtabVisitor::setup_symbol(Node* node, NmodlType property) {
     std::shared_ptr<Symbol> symbol;
     auto name = node->get_node_name();
 
@@ -113,7 +114,7 @@ void SymtabVisitor::setup_symbol(Node* node, NmodlTypeFlag property) {
 }
 
 
-void SymtabVisitor::add_model_symbol_with_property(Node* node, NmodlTypeFlag property) {
+void SymtabVisitor::add_model_symbol_with_property(Node* node, NmodlType property) {
     auto token = node->get_token();
     auto name = node->get_node_name();
     auto symbol = std::make_shared<Symbol>(name, node, *token);

@@ -13,10 +13,15 @@ set(PRINTER_SOURCE_FILES
 #=============================================================================
 # Printer library
 #=============================================================================
+
+add_library(printer_obj
+        OBJECT
+        ${PRINTER_SOURCE_FILES})
+set_property(TARGET printer_obj PROPERTY POSITION_INDEPENDENT_CODE ON)
+
 add_library(printer
-            STATIC
-            ${PRINTER_SOURCE_FILES})
-set_property(TARGET printer PROPERTY POSITION_INDEPENDENT_CODE ON)
+        STATIC
+        $<TARGET_OBJECTS:printer_obj>)
 
 #=============================================================================
 # Files for clang-format

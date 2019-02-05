@@ -19,7 +19,7 @@ namespace symtab {
      *
      * Symbol table generator pass visit the AST and insert symbol for
      * each node into symbol table. Symbol could appear multiple times
-     * in a block or different global blocks. NmodlTypeFlag object has all
+     * in a block or different global blocks. NmodlType object has all
      * nmodl properties information.
      *
      * \todo Multiple tokens (i.e. location information) for symbol should
@@ -49,10 +49,10 @@ namespace symtab {
         ModToken token;
 
         /// properties of symbol from whole mod file
-        NmodlTypeFlag properties{flags::empty};
+        syminfo::NmodlType properties{syminfo::NmodlType::empty};
 
         /// status of symbol during various passes
-        StatusFlag status{flags::empty};
+        syminfo::Status status{syminfo::Status::empty};
 
         /// scope of the symbol (block name)
         std::string scope;
@@ -121,11 +121,11 @@ namespace symtab {
             return scope;
         }
 
-        NmodlTypeFlag get_properties() {
+        syminfo::NmodlType get_properties() {
             return properties;
         }
 
-        StatusFlag get_status() {
+        syminfo::Status get_status() {
             return status;
         }
 
@@ -160,33 +160,31 @@ namespace symtab {
         bool is_external_symbol_only();
 
         /// \todo : rename to has_any_property
-        bool has_properties(NmodlTypeFlag new_properties);
+        bool has_properties(syminfo::NmodlType new_properties);
 
-        bool has_all_properties(NmodlTypeFlag new_properties);
+        bool has_all_properties(syminfo::NmodlType new_properties);
 
-        bool has_any_status(StatusFlag new_status);
+        bool has_any_status(syminfo::Status new_status);
 
-        bool has_all_status(StatusFlag new_status);
+        bool has_all_status(syminfo::Status new_status);
 
-        void combine_properties(NmodlTypeFlag new_properties);
+        void add_properties(syminfo::NmodlType new_properties);
 
         void add_property(syminfo::NmodlType property);
-
-        void add_property(NmodlTypeFlag property);
 
         void inlined() {
             status |= syminfo::Status::inlined;
         }
 
-        void created() {
+        void mark_created() {
             status |= syminfo::Status::created;
         }
 
-        void renamed() {
+        void mark_renamed() {
             status |= syminfo::Status::renamed;
         }
 
-        void localized() {
+        void mark_localized() {
             status |= syminfo::Status::localized;
         }
 
@@ -195,7 +193,7 @@ namespace symtab {
         }
 
         void created_from_state() {
-            created();
+            mark_created();
             status |= syminfo::Status::from_state;
         }
 
@@ -245,6 +243,8 @@ namespace symtab {
         void set_original_name(std::string new_name) {
             renamed_from = new_name;
         }
+
+        std::string to_string();
 
         bool is_variable();
     };

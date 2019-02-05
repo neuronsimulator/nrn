@@ -57,8 +57,7 @@ bool LocalizeVisitor::is_solve_procedure(ast::Node* node) {
 
 std::vector<std::string> LocalizeVisitor::variables_to_optimize() {
     // clang-format off
-    using NmodlType = NmodlType;
-    const NmodlTypeFlag excluded_var_properties = NmodlType::extern_var
+    const NmodlType excluded_var_properties = NmodlType::extern_var
                                      | NmodlType::extern_neuron_variable
                                      | NmodlType::read_ion_var
                                      | NmodlType::write_ion_var
@@ -69,7 +68,7 @@ std::vector<std::string> LocalizeVisitor::variables_to_optimize() {
                                      | NmodlType::electrode_cur_var
                                      | NmodlType::section_var;
 
-    NmodlTypeFlag global_var_properties = NmodlType::range_var
+    NmodlType global_var_properties = NmodlType::range_var
                                        | NmodlType::dependent_def
                                        | NmodlType::param_assign;
     // clang-format on
@@ -131,13 +130,13 @@ void LocalizeVisitor::visit_program(Program* node) {
                 }
 
                 /// mark variable as localized in global symbol table
-                symbol->localized();
+                symbol->mark_localized();
 
                 /// insert new symbol into symbol table
                 auto symtab = statement_block->get_symbol_table();
                 auto new_symbol = std::make_shared<Symbol>(varname, variable);
                 new_symbol->add_property(NmodlType::local_var);
-                new_symbol->created();
+                new_symbol->mark_created();
                 symtab->insert(new_symbol);
             }
         }

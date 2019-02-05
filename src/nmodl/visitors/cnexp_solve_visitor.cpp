@@ -41,7 +41,6 @@ void CnexpSolveVisitor::visit_binary_expression(BinaryExpression* node) {
     auto name = std::dynamic_pointer_cast<VarName>(lhs)->get_name();
 
     if (name->is_prime_name()) {
-
         auto equation = nmodl::to_nmodl(node);
         diffeq::Driver diffeq_driver;
 
