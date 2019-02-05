@@ -1,4 +1,4 @@
-#include "codegen/c-openacc/codegen_c_acc_visitor.hpp"
+#include "codegen/codegen_acc_visitor.hpp"
 #include <fmt/format.h>
 
 
@@ -21,28 +21,28 @@ using namespace fmt::literals;
  *      for(int id=0; id<nodecount; id++) {
  *
  */
-void CodegenCAccVisitor::print_channel_iteration_block_parallel_hint() {
+void CodegenAccVisitor::print_channel_iteration_block_parallel_hint() {
     printer->add_line("#pragma acc parallel loop");
 }
 
 
-void CodegenCAccVisitor::print_atomic_reduction_pragma() {
+void CodegenAccVisitor::print_atomic_reduction_pragma() {
     printer->add_line("#pragma acc atomic update");
 }
 
 
-void CodegenCAccVisitor::print_backend_includes() {
+void CodegenAccVisitor::print_backend_includes() {
     printer->add_line("#include <cuda.h>");
     printer->add_line("#include <openacc.h>");
 }
 
 
-std::string CodegenCAccVisitor::backend_name() {
+std::string CodegenAccVisitor::backend_name() {
     return "C-OpenAcc (api-compatibility)";
 }
 
 
-void CodegenCAccVisitor::print_memory_allocation_routine() {
+void CodegenAccVisitor::print_memory_allocation_routine() {
     printer->add_newline(2);
     auto args = "size_t num, size_t size, size_t alignment = 16";
     printer->add_line("static inline void* mem_alloc({}) {}"_format(args, "{"));
@@ -71,7 +71,7 @@ void CodegenCAccVisitor::print_memory_allocation_routine() {
  *      }
  *  }
  */
-void CodegenCAccVisitor::print_kernel_data_present_annotation_block_begin() {
+void CodegenAccVisitor::print_kernel_data_present_annotation_block_begin() {
     auto global_variable = "{}_global"_format(info.mod_suffix);
     printer->add_line("#pragma acc data present(nt, ml, {})"_format(global_variable));
     printer->add_line("{");
@@ -79,7 +79,7 @@ void CodegenCAccVisitor::print_kernel_data_present_annotation_block_begin() {
 }
 
 
-void CodegenCAccVisitor::print_nrn_cur_matrix_shadow_update() {
+void CodegenAccVisitor::print_nrn_cur_matrix_shadow_update() {
     auto rhs_op = operator_for_rhs();
     auto d_op = operator_for_d();
     print_atomic_reduction_pragma();
@@ -89,7 +89,7 @@ void CodegenCAccVisitor::print_nrn_cur_matrix_shadow_update() {
 }
 
 
-void CodegenCAccVisitor::print_nrn_cur_matrix_shadow_reduction() {
+void CodegenAccVisitor::print_nrn_cur_matrix_shadow_reduction() {
     // do nothing
 }
 
@@ -97,17 +97,17 @@ void CodegenCAccVisitor::print_nrn_cur_matrix_shadow_reduction() {
 /**
  * End of print_kernel_enter_data_begin
  */
-void CodegenCAccVisitor::print_kernel_data_present_annotation_block_end() {
+void CodegenAccVisitor::print_kernel_data_present_annotation_block_end() {
     printer->decrease_indent();
     printer->add_line("}");
 }
 
 
-void CodegenCAccVisitor::print_rhs_d_shadow_variables() {
+void CodegenAccVisitor::print_rhs_d_shadow_variables() {
     // do nothing
 }
 
 
-bool CodegenCAccVisitor::nrn_cur_reduction_loop_required() {
+bool CodegenAccVisitor::nrn_cur_reduction_loop_required() {
     return false;
 }

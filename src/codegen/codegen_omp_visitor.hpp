@@ -1,18 +1,14 @@
 #ifndef NMODL_CODEGEN_C_OMP_VISITOR_HPP
 #define NMODL_CODEGEN_C_OMP_VISITOR_HPP
 
-#include "codegen/c/codegen_c_visitor.hpp"
+#include "codegen/codegen_c_visitor.hpp"
 
 
 /**
- * \class CodegenCOmpVisitor
+ * \class CodegenOmpVisitor
  * \brief Visitor for printing c code with OpenMP backend
- *
- * \todo :
- *      - handle define i.e. macro statement printing
- *      - return statement in the verbatim block of inline function not handled (e.g. netstim.mod)
  */
-class CodegenCOmpVisitor : public CodegenCVisitor {
+class CodegenOmpVisitor : public CodegenCVisitor {
   protected:
     /// name of the code generation backend
     std::string backend_name() override;
@@ -55,18 +51,18 @@ class CodegenCOmpVisitor : public CodegenCVisitor {
 
 
   public:
-    CodegenCOmpVisitor(std::string mod_file,
-                       std::string output_dir,
-                       bool aos,
-                       std::string float_type)
-        : CodegenCVisitor(mod_file, output_dir, aos, float_type) {
+    CodegenOmpVisitor(std::string mod_file,
+                      std::string output_dir,
+                      LayoutType layout,
+                      std::string float_type)
+        : CodegenCVisitor(mod_file, output_dir, layout, float_type) {
     }
 
-    CodegenCOmpVisitor(std::string mod_file,
-                       std::stringstream& stream,
-                       bool aos,
-                       std::string float_type)
-        : CodegenCVisitor(mod_file, stream, aos, float_type) {
+    CodegenOmpVisitor(std::string mod_file,
+                      std::stringstream& stream,
+                      LayoutType layout,
+                      std::string float_type)
+        : CodegenCVisitor(mod_file, stream, layout, float_type) {
     }
 };
 

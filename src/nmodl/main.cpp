@@ -3,10 +3,10 @@
 #include <sstream>
 
 #include "arg_handler.hpp"
-#include "codegen/c-cuda/codegen_c_cuda_visitor.hpp"
-#include "codegen/c-openacc/codegen_c_acc_visitor.hpp"
-#include "codegen/c-openmp/codegen_c_omp_visitor.hpp"
-#include "codegen/c/codegen_c_visitor.hpp"
+#include "codegen/codegen_cuda_visitor.hpp"
+#include "codegen/codegen_acc_visitor.hpp"
+#include "codegen/codegen_omp_visitor.hpp"
+#include "codegen/codegen_c_visitor.hpp"
 #include "parser/nmodl_driver.hpp"
 #include "utils/common_utils.hpp"
 #include "utils/logger.hpp"
@@ -144,24 +144,24 @@ int main(int argc, const char* argv[]) {
             PerfVisitor v;
             v.visit_program(ast.get());
 
-            bool aos_layout = arg.aos_memory_layout();
+            auto layout = arg.aos_memory_layout() ? LayoutType::aos : LayoutType::soa;
 
             logger->info("Generating host code with {} backend", arg.host_backend);
 
             if (arg.host_c_backend()) {
-                CodegenCVisitor visitor(mod_file, arg.output_dir, aos_layout, arg.dtype);
+                CodegenCVisitor visitor(mod_file, arg.output_dir, layout, arg.dtype);
                 visitor.visit_program(ast.get());
             } else if (arg.host_omp_backend()) {
-                CodegenCOmpVisitor visitor(mod_file, arg.output_dir, aos_layout, arg.dtype);
+                CodegenOmpVisitor visitor(mod_file, arg.output_dir, layout, arg.dtype);
                 visitor.visit_program(ast.get());
             } else if (arg.host_acc_backend()) {
-                CodegenCAccVisitor visitor(mod_file, arg.output_dir, aos_layout, arg.dtype);
+                CodegenAccVisitor visitor(mod_file, arg.output_dir, layout, arg.dtype);
                 visitor.visit_program(ast.get());
             }
 
             if (arg.device_cuda_backend()) {
                 logger->info("Generating device code with {} backend", arg.accel_backend);
-                CodegenCCudaVisitor visitor(mod_file, arg.output_dir, aos_layout, arg.dtype);
+                CodegenCudaVisitor visitor(mod_file, arg.output_dir, layout, arg.dtype);
                 visitor.visit_program(ast.get());
             }
         }

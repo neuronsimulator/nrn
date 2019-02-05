@@ -422,7 +422,7 @@ ELSE                    {
                          }
 
 <COPY_MODE>"ENDCOMMENT" {
-                            auto str = "BLOCK_COMMENT" + std::string(yytext);
+                            auto str = "COMMENT" + std::string(yytext);
                             BEGIN(INITIAL);
                             reset_end_position();
                             return nmodl::Parser::make_BLOCK_COMMENT(str, loc);

@@ -44,14 +44,22 @@ void CodePrinter::add_line(const std::string& text) {
     add_newline();
 }
 
+void CodePrinter::add_multi_line(const std::string& text) {
+    auto lines = stringutils::split_string(text, '\n');
+    for (const auto& line : lines) {
+        add_line(line);
+    }
+}
+
 void CodePrinter::add_newline(int n) {
     for (int i = 0; i < n; i++) {
         *result << std::endl;
     }
 }
 
-void CodePrinter::end_block() {
+void CodePrinter::end_block(int num_newlines) {
     indent_level--;
     add_indent();
     *result << "}";
+    add_newline(num_newlines);
 }

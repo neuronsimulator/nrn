@@ -30,10 +30,10 @@ namespace codegen {
         /// name of the ion
         std::string name;
 
-        /// variables that are being read
+        /// ion variables that are being read
         std::vector<std::string> reads;
 
-        /// variables that are being written
+        /// ion variables that are being written
         std::vector<std::string> writes;
 
         /// if style semantic needed
@@ -282,6 +282,10 @@ namespace codegen {
         /// index/offset for first pointer variable if exist
         int first_pointer_var_index = -1;
 
+        /// tqitem index in integer variables
+        /// note that if tqitem doesn't exist then the default value should be 0
+        int tqitem_index = 0;
+
         /// global variables
         std::vector<SymbolType> global_variables;
 
@@ -331,10 +335,6 @@ namespace codegen {
 
         /// all watch statements
         std::vector<ast::WatchStatement*> watch_statements;
-
-        /// tqitem index in int variables
-        /// note that if tqitem doesn't exist then default value should be 0
-        int tqitem_index = 0;
 
         /// if any ion has write variable
         bool ion_has_write_variable();

@@ -46,6 +46,8 @@ class CodePrinter {
 
     void add_line(const std::string&);
 
+    void add_multi_line(const std::string&);
+
     void add_newline(int n = 1);
 
     void increase_indent() {
@@ -58,7 +60,7 @@ class CodePrinter {
 
     /// end of current block scope (i.e. end with "}")
     /// and decreases indentation level
-    void end_block();
+    void end_block(int num_newlines = 0);
 
     int indent_spaces() {
         return NUM_SPACES * indent_level;
