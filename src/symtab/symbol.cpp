@@ -1,6 +1,9 @@
+#include "fmt/format.h"
+
 #include "symtab/symbol.hpp"
 
 using namespace syminfo;
+using namespace fmt::literals;
 
 namespace symtab {
 
@@ -17,36 +20,32 @@ namespace symtab {
 
     /// check if symbol has any of the common properties
 
-    bool Symbol::has_properties(NmodlTypeFlag new_properties) {
+    bool Symbol::has_properties(NmodlType new_properties) {
         return static_cast<bool>(properties & new_properties);
     }
 
     /// check if symbol has all of the given properties
-    bool Symbol::has_all_properties(NmodlTypeFlag new_properties) {
+    bool Symbol::has_all_properties(NmodlType new_properties) {
         return ((properties & new_properties) == new_properties);
     }
 
 
     /// check if symbol has any of the status
-    bool Symbol::has_any_status(StatusFlag new_status) {
+    bool Symbol::has_any_status(Status new_status) {
         return static_cast<bool>(status & new_status);
     }
 
     /// check if symbol has all of the status
-    bool Symbol::has_all_status(StatusFlag new_status) {
+    bool Symbol::has_all_status(Status new_status) {
         return ((status & new_status) == new_status);
     }
 
     /// add new properties to symbol with bitwise or
-    void Symbol::combine_properties(NmodlTypeFlag new_properties) {
+    void Symbol::add_properties(NmodlType new_properties) {
         properties |= new_properties;
     }
 
     void Symbol::add_property(NmodlType property) {
-        properties |= property;
-    }
-
-    void Symbol::add_property(NmodlTypeFlag property) {
         properties |= property;
     }
 
@@ -64,7 +63,7 @@ namespace symtab {
     /// check if symbol is of variable type in nmodl
     bool Symbol::is_variable() {
         // clang-format off
-        NmodlTypeFlag var_properties = NmodlType::local_var
+        NmodlType var_properties = NmodlType::local_var
                                     | NmodlType::global_var
                                     | NmodlType::range_var
                                     | NmodlType::param_assign
@@ -81,6 +80,17 @@ namespace symtab {
                                     | NmodlType::extern_neuron_variable;
         // clang-format on
         return has_properties(var_properties);
+    }
+
+    std::string Symbol::to_string() {
+        std::string s(name);
+        if (properties != NmodlType::empty) {
+            s += " [Properties : {}]"_format(::to_string(properties));
+        }
+        if (status != Status::empty) {
+            s += " [Status : {}]"_format(::to_string(status));
+        }
+        return s;
     }
 
 }  // namespace symtab

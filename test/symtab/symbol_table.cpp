@@ -10,16 +10,16 @@
 using namespace symtab;
 using namespace syminfo;
 
-extern bool has_property(const NmodlTypeFlag& obj, NmodlType property);
+extern bool has_property(const NmodlType& obj, NmodlType property);
 
 //=============================================================================
 // Symbol properties test
 //=============================================================================
 
 SCENARIO("Symbol properties can be added and converted to string") {
-    NmodlTypeFlag prop1{flags::empty};
-    NmodlTypeFlag prop2 = NmodlType::local_var;
-    NmodlTypeFlag prop3 = NmodlType::global_var;
+    NmodlType prop1{NmodlType::empty};
+    NmodlType prop2 = NmodlType::local_var;
+    NmodlType prop3 = NmodlType::global_var;
 
     GIVEN("A empty property") {
         WHEN("converted to string") {
@@ -33,13 +33,13 @@ SCENARIO("Symbol properties can be added and converted to string") {
             }
         }
         WHEN("adding another empty property") {
-            NmodlTypeFlag result = prop1 | prop1;
+            NmodlType result = prop1 | prop1;
             THEN("to_string still returns empty string") {
                 REQUIRE(to_string(result).empty());
             }
         }
         WHEN("added some other property") {
-            NmodlTypeFlag result = prop1 | prop2;
+            NmodlType result = prop1 | prop2;
             THEN("to_string returns added property") {
                 REQUIRE(to_string(result) == "local");
             }
@@ -50,7 +50,7 @@ SCENARIO("Symbol properties can be added and converted to string") {
             }
         }
         WHEN("added multiple properties") {
-            NmodlTypeFlag result = prop1 | prop2 | prop3;
+            NmodlType result = prop1 | prop2 | prop3;
             result |= NmodlType::write_ion_var;
             THEN("to_string returns all added properties") {
                 REQUIRE_THAT(to_string(result), Catch::Contains("local"));
@@ -66,6 +66,17 @@ SCENARIO("Symbol properties can be added and converted to string") {
                 }
             }
         }
+        WHEN("properties manipulated with bitwise operators") {
+            THEN("& applied correctly") {
+                NmodlType result1 = prop2 & prop2;
+                NmodlType result2 = prop1 & prop2;
+                NmodlType result3 = prop1 & prop2 & prop3;
+                REQUIRE(to_string(result1) == "local");
+                REQUIRE(to_string_vector(result2).empty());
+                REQUIRE(result2 == NmodlType::empty);
+                REQUIRE(result3 == NmodlType::empty);
+            }
+        }
     }
 }
 
@@ -74,9 +85,9 @@ SCENARIO("Symbol properties can be added and converted to string") {
 //=============================================================================
 
 SCENARIO("Symbol operations") {
-    NmodlTypeFlag property1 = NmodlType::argument;
-    NmodlTypeFlag property2 = NmodlType::range_var;
-    NmodlTypeFlag property3 = NmodlType::discrete_block;
+    NmodlType property1 = NmodlType::argument;
+    NmodlType property2 = NmodlType::range_var;
+    NmodlType property3 = NmodlType::discrete_block;
     GIVEN("A symbol") {
         ModToken token(true);
         Symbol symbol("alpha", token);
@@ -111,10 +122,10 @@ SCENARIO("Symbol operations") {
             }
         }
         WHEN("combined properties") {
-            NmodlTypeFlag property = NmodlType::factor_def | NmodlType::global_var;
+            NmodlType property = NmodlType::factor_def | NmodlType::global_var;
             THEN("symbol has union of all properties") {
                 REQUIRE(symbol.has_properties(property) == false);
-                symbol.combine_properties(property);
+                symbol.add_properties(property);
                 REQUIRE(symbol.has_properties(property) == true);
                 property |= symbol.get_properties();
                 REQUIRE(symbol.get_properties() == property);

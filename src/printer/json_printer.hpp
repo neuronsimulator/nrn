@@ -53,7 +53,7 @@ class JSONPrinter {
     }
 
     // Dump output to stringstream
-    JSONPrinter(std::stringstream& ss) : result(new std::ostream(ss.rdbuf())) {
+    JSONPrinter(std::ostream& os) : result(new std::ostream(os.rdbuf())) {
     }
 
     ~JSONPrinter() {

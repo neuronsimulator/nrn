@@ -3,13 +3,15 @@
 
 #include <sstream>
 
-#include "flags/flags.hpp"
 #include "utils/string_utils.hpp"
+
+//@todo : error from pybind if std::underlying_typ is used
+using enum_type = long long;
 
 namespace syminfo {
 
     /** kind of symbol */
-    enum class DeclarationType : long long {
+    enum class DeclarationType : enum_type {
         /** variable */
         variable,
 
@@ -18,7 +20,7 @@ namespace syminfo {
     };
 
     /** scope within a mod file */
-    enum class Scope : long long {
+    enum class Scope : enum_type {
         /** local variable */
         local,
 
@@ -33,7 +35,10 @@ namespace syminfo {
     };
 
     /** state during various compiler passes */
-    enum class Status : long long {
+    enum class Status : enum_type {
+
+        empty = 0,
+
         /** converted to local */
         localized = 1L << 0,
 
@@ -57,7 +62,7 @@ namespace syminfo {
     };
 
     /** usage of mod file as array or scalar */
-    enum class VariableType : long long {
+    enum class VariableType : enum_type {
         /** scalar / single value */
         scalar,
 
@@ -66,7 +71,7 @@ namespace syminfo {
     };
 
     /** variable usage within a mod file */
-    enum class Access : long long {
+    enum class Access : enum_type {
         /** variable is ready only */
         read = 1L << 0,
 
@@ -94,7 +99,10 @@ namespace syminfo {
      * \todo Reaching max limit (31), need to refactor all block types
      *       into separate type
      */
-    enum class NmodlType : long long {
+    enum class NmodlType : enum_type {
+
+        empty = 0,
+
         /** Local Variable */
         local_var = 1L << 0,
 
@@ -200,18 +208,31 @@ namespace syminfo {
 
 }  // namespace syminfo
 
-ALLOW_FLAGS_FOR_ENUM(syminfo::NmodlType)
-ALLOW_FLAGS_FOR_ENUM(syminfo::Access)
-ALLOW_FLAGS_FOR_ENUM(syminfo::Status)
 
-using NmodlTypeFlag = flags::flags<syminfo::NmodlType>;
-using StatusFlag = flags::flags<syminfo::Status>;
+template <typename T>
+inline T operator|(T lhs, T rhs) {
+    using utype = enum_type;
+    return static_cast<T>(static_cast<utype>(lhs) | static_cast<utype>(rhs));
+}
 
-std::ostream& operator<<(std::ostream& os, const NmodlTypeFlag& obj);
-std::ostream& operator<<(std::ostream& os, const StatusFlag& obj);
+template <typename T>
+inline T operator&(T lhs, T rhs) {
+    using utype = enum_type;
+    return static_cast<T>(static_cast<utype>(lhs) & static_cast<utype>(rhs));
+}
 
-std::vector<std::string> to_string_vector(const NmodlTypeFlag& obj);
-std::vector<std::string> to_string_vector(const StatusFlag& obj);
+template <typename T>
+inline T& operator|=(T& lhs, T rhs) {
+    lhs = lhs | rhs;
+    return lhs;
+}
+
+
+std::ostream& operator<<(std::ostream& os, const syminfo::NmodlType& obj);
+std::ostream& operator<<(std::ostream& os, const syminfo::Status& obj);
+
+std::vector<std::string> to_string_vector(const syminfo::NmodlType& obj);
+std::vector<std::string> to_string_vector(const syminfo::Status& obj);
 
 template <typename T>
 std::string to_string(const T& obj) {

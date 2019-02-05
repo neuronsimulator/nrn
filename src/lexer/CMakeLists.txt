@@ -168,12 +168,19 @@ add_custom_command(
 #=============================================================================
 # Libraries & executables
 #=============================================================================
+
+add_library(lexer_obj
+        OBJECT
+        ${LEXER_SOURCE_FILES}
+        ${BISON_GENERATED_SOURCE_FILES}
+        ${AST_SOURCE_FILES})
+set_property(TARGET lexer_obj PROPERTY POSITION_INDEPENDENT_CODE ON)
+
 add_library(lexer
-            STATIC
-            ${LEXER_SOURCE_FILES}
-            ${BISON_GENERATED_SOURCE_FILES}
-            ${AST_SOURCE_FILES})
-set_property(TARGET lexer PROPERTY POSITION_INDEPENDENT_CODE ON)
+        STATIC
+        $<TARGET_OBJECTS:lexer_obj>)
+
+
 
 add_executable(nmodl_lexer main_nmodl.cpp)
 add_executable(c_lexer main_c.cpp)

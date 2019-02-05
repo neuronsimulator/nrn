@@ -25,6 +25,7 @@
 using json = nlohmann::json;
 using namespace ast;
 using namespace nmodl;
+using namespace syminfo;
 
 //=============================================================================
 // Verbatim visitor tests
@@ -173,8 +174,6 @@ SCENARIO("Symbol table generation and Perf stat visitor pass") {
             SymtabVisitor v;
             v.visit_program(ast.get());
             auto symtab = ast->get_model_symbol_table();
-
-            using namespace syminfo;
 
             THEN("Can lookup for defined variables") {
                 auto symbol = symtab->lookup("m");
@@ -1872,7 +1871,8 @@ SCENARIO("Running visitor passes multiple time") {
 // Ast lookup visitor tests
 //=============================================================================
 
-std::vector<std::shared_ptr<AST>> run_lookup_visitor(Program* node, std::vector<AstNodeType>& types) {
+std::vector<std::shared_ptr<AST>> run_lookup_visitor(Program* node,
+                                                     std::vector<AstNodeType>& types) {
     AstLookupVisitor v;
     return v.lookup(node, types);
 }
@@ -1958,7 +1958,7 @@ std::vector<std::string> run_differential_equation_visitor(const std::string& te
     auto equations = v.get_equations();
 
     std::vector<std::string> result;
-    for(const auto& equation : equations) {
+    for (const auto& equation : equations) {
         result.push_back(to_nmodl(equation));
     }
     return result;

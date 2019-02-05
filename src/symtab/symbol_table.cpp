@@ -10,13 +10,13 @@ using namespace syminfo;
 
 namespace symtab {
 
-    int Table::counter = 0;
+    int SymbolTable::Table::counter = 0;
 
     /**
      *  Insert symbol into current symbol table. There are certain
      *  cases where we were getting re-insertion errors.
      */
-    void Table::insert(const std::shared_ptr<Symbol>& symbol) {
+    void SymbolTable::Table::insert(const std::shared_ptr<Symbol>& symbol) {
         std::string name = symbol->get_name();
         if (lookup(name) != nullptr) {
             throw std::runtime_error("Trying to re-insert symbol " + name);
@@ -26,7 +26,7 @@ namespace symtab {
     }
 
 
-    std::shared_ptr<Symbol> Table::lookup(const std::string& name) const {
+    std::shared_ptr<Symbol> SymbolTable::Table::lookup(const std::string& name) const {
         for (const auto& symbol : symbols) {
             if (symbol->get_name() == name) {
                 return symbol;
@@ -84,7 +84,7 @@ namespace symtab {
 
     /// return all symbol having any of the provided properties
     std::vector<std::shared_ptr<Symbol>> SymbolTable::get_variables_with_properties(
-        NmodlTypeFlag properties,
+        NmodlType properties,
         bool all) {
         std::vector<std::shared_ptr<Symbol>> variables;
         for (auto& symbol : table.symbols) {
@@ -102,8 +102,8 @@ namespace symtab {
     }
 
     /// return all symbol which has all "with" properties and none of the "without" properties
-    std::vector<std::shared_ptr<Symbol>> SymbolTable::get_variables(NmodlTypeFlag with,
-                                                                    NmodlTypeFlag without) {
+    std::vector<std::shared_ptr<Symbol>> SymbolTable::get_variables(NmodlType with,
+                                                                    NmodlType without) {
         auto variables = get_variables_with_properties(with, true);
         decltype(variables) result;
         for (auto& variable : variables) {
@@ -115,7 +115,7 @@ namespace symtab {
     }
 
 
-    std::vector<std::shared_ptr<Symbol>> SymbolTable::get_variables_with_status(StatusFlag status,
+    std::vector<std::shared_ptr<Symbol>> SymbolTable::get_variables_with_status(Status status,
                                                                                 bool all) {
         std::vector<std::shared_ptr<Symbol>> variables;
         for (auto& symbol : table.symbols) {
@@ -242,7 +242,7 @@ namespace symtab {
     std::shared_ptr<Symbol> ModelSymbolTable::update_mode_insert(
         const std::shared_ptr<Symbol>& symbol) {
         symbol->set_scope(current_symtab->name());
-        symbol->created();
+        symbol->mark_created();
 
         std::string name = symbol->get_name();
         auto search_symbol = lookup(name);
@@ -255,7 +255,7 @@ namespace symtab {
 
         /// for global scope just combine properties
         if (current_symtab->global_scope()) {
-            search_symbol->combine_properties(symbol->get_properties());
+            search_symbol->add_properties(symbol->get_properties());
             return search_symbol;
         }
 
@@ -313,7 +313,7 @@ namespace symtab {
             if (search_symbol->has_properties(symbol->get_properties())) {
                 emit_message(symbol, search_symbol, true);
             } else {
-                search_symbol->combine_properties(symbol->get_properties());
+                search_symbol->add_properties(symbol->get_properties());
             }
             return search_symbol;
         }
@@ -443,7 +443,7 @@ namespace symtab {
     //=============================================================================
 
 
-    void Table::print(std::stringstream& stream, std::string title, int indent) {
+    void SymbolTable::Table::print(std::stringstream& stream, std::string title, int indent) {
         if (!symbols.empty()) {
             TableData table;
             table.title = std::move(title);
@@ -467,8 +467,8 @@ namespace symtab {
                     name += "[" + std::to_string(symbol->get_length()) + "]";
                 }
                 auto position = symbol->get_token().position();
-                auto properties = to_string(symbol->get_properties());
-                auto status = to_string(symbol->get_status());
+                auto properties = ::to_string(symbol->get_properties());
+                auto status = ::to_string(symbol->get_status());
                 auto reads = std::to_string(symbol->get_read_count());
                 std::string value;
                 auto sym_value = symbol->get_value();

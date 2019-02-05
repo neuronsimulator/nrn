@@ -15,11 +15,15 @@ set(UTIL_SOURCE_FILES
 #=============================================================================
 # Symbol table library
 #=============================================================================
+
+add_library(util_obj
+        OBJECT
+        ${UTIL_SOURCE_FILES})
+set_property(TARGET util_obj PROPERTY POSITION_INDEPENDENT_CODE ON)
+
 add_library(util
-            STATIC
-            ${UTIL_SOURCE_FILES}
-)
-set_property(TARGET util PROPERTY POSITION_INDEPENDENT_CODE ON)
+        STATIC
+        $<TARGET_OBJECTS:util_obj>)
 
 #=============================================================================
 # Files for clang-format

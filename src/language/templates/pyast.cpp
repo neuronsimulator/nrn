@@ -55,8 +55,7 @@ void init_ast_module(py::module& m) {
             .def("get_node_name", &AST::get_node_name)
             .def("clone", &AST::clone)
             .def("get_token", &AST::get_token)
-            .def("set_symbol_table", &AST::set_symbol_table)
-            .def("get_symbol_table", &AST::get_symbol_table)
+            .def("get_symbol_table", &AST::get_symbol_table, py::return_value_policy::reference)
             .def("get_statement_block", &AST::get_statement_block)
             .def("negate", &AST::negate)
             .def("set_name", &AST::set_name)
@@ -94,6 +93,9 @@ void init_ast_module(py::module& m) {
     .def("get_shared_ptr", &{{ node.class_name }}::get_shared_ptr)
     .def("get_node_type", &{{ node.class_name }}::get_node_type)
     .def("get_node_type_name", &{{ node.class_name }}::get_node_type_name)
+    {% if node.is_data_type_node %}
+    .def("eval", &{{ node.class_name }}::eval)
+    {% endif %}
     .def("is_{{ node.class_name | snake_case }}", &{{ node.class_name }}::is_{{ node.class_name | snake_case }});
 
     {% endfor %}

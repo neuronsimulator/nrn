@@ -56,7 +56,7 @@ void LocalVarRenameVisitor::visit_statement_block(StatementBlock* node) {
             rename_visitor.visit_statement_block(node);
             auto symbol = symtab->lookup_in_scope(name);
             symbol->set_name(new_name);
-            symbol->renamed();
+            symbol->mark_renamed();
         }
     }
 }

@@ -16,7 +16,6 @@
 
 class DifferentialEquationVisitor : public AstVisitor {
   private:
-
     std::vector<ast::DiffEqExpression*> equations;
 
   public:

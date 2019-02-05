@@ -2,8 +2,12 @@
 #include <pybind11/iostream.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+
+#include "pybind/pybind_utils.hpp"
 #include "pybind/pyvisitor.hpp"
+#include "visitors/lookup_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
+#include "visitors/symtab_visitor.hpp"
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCDFAInspection"
@@ -30,24 +34,13 @@ void PyAstVisitor::visit_{{ node.class_name|snake_case }}(ast::{{ node.class_nam
 {% endfor %}
 
 
-class PyNModlResources {
-protected:
-    std::unique_ptr<py::detail::pythonbuf> buf;
-    std::unique_ptr<std::ostream> ostream;
-public:
-    PyNModlResources() = default;
-    PyNModlResources(py::object object) : buf(new py::detail::pythonbuf(object)),
-                                          ostream(new std::ostream(buf.get())) {}
-};
-
-
-class PyNmodlPrintVisitor : private PyNModlResources, public NmodlPrintVisitor {
+class PyNmodlPrintVisitor : private VisitorOStreamResources, public NmodlPrintVisitor {
 public:
     using NmodlPrintVisitor::NmodlPrintVisitor;
 
     PyNmodlPrintVisitor() = default;
     PyNmodlPrintVisitor(std::string filename) : NmodlPrintVisitor(filename) {};
-    PyNmodlPrintVisitor(py::object object) : PyNModlResources(object),
+    PyNmodlPrintVisitor(py::object object) : VisitorOStreamResources(object),
                                              NmodlPrintVisitor(*ostream) { };
 };
 
@@ -62,14 +55,14 @@ void init_visitor_module(py::module& m) {
         {% if loop.last -%};{% endif %}
     {% endfor %}
 
-    py::class_<AstVisitor, PyAstVisitor> ast_visitor(m_visitor, "AstVisitor");
+    py::class_<AstVisitor, Visitor, PyAstVisitor> ast_visitor(m_visitor, "AstVisitor");
     ast_visitor.def(py::init<>())
     {% for node in nodes %}
         .def("visit_{{ node.class_name | snake_case }}", &AstVisitor::visit_{{ node.class_name | snake_case }})
         {% if loop.last -%};{% endif %}
     {% endfor %}
 
-    py::class_<PyNmodlPrintVisitor> nmodl_visitor(m_visitor, "NmodlPrintVisitor");
+    py::class_<NmodlPrintVisitor, Visitor, PyNmodlPrintVisitor> nmodl_visitor(m_visitor, "NmodlPrintVisitor");
     nmodl_visitor.def(py::init<std::string>());
     nmodl_visitor.def(py::init<py::object>());
     nmodl_visitor.def(py::init<>())
@@ -78,6 +71,16 @@ void init_visitor_module(py::module& m) {
         {% if loop.last -%};{% endif %}
     {% endfor %}
 
-
+    py::class_<AstLookupVisitor, Visitor> lookup_visitor(m_visitor, "AstLookupVisitor");
+    lookup_visitor.def(py::init<>())
+        .def(py::init<ast::AstNodeType>())
+        .def("get_nodes", &AstLookupVisitor::get_nodes)
+        .def("clear", &AstLookupVisitor::clear)
+        .def("lookup", (std::vector<std::shared_ptr<ast::AST>> (AstLookupVisitor::*)(ast::Program*, ast::AstNodeType)) &AstLookupVisitor::lookup)
+        .def("lookup", (std::vector<std::shared_ptr<ast::AST>> (AstLookupVisitor::*)(ast::Program*, std::vector<ast::AstNodeType>&)) &AstLookupVisitor::lookup)
+    {% for node in nodes %}
+        .def("visit_{{ node.class_name | snake_case }}", &AstLookupVisitor::visit_{{ node.class_name | snake_case }})
+        {% if loop.last -%};{% endif %}
+    {% endfor %}
 }
 #pragma clang diagnostic pop

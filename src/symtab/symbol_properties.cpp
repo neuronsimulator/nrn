@@ -7,17 +7,19 @@
 using namespace syminfo;
 
 /// check if any property is set
-bool has_property(const NmodlTypeFlag& obj, NmodlType property) {
+bool has_property(const NmodlType& obj, NmodlType property) {
     return static_cast<bool>(obj & property);
 }
 
-bool has_status(const StatusFlag& obj, Status state) {
+bool has_status(const Status& obj, Status state) {
     return static_cast<bool>(obj & state);
 }
 
 /// helper function to convert properties to string
-std::vector<std::string> to_string_vector(const NmodlTypeFlag& obj) {
+std::vector<std::string> to_string_vector(const NmodlType& obj) {
     std::vector<std::string> properties;
+
+    // do nothing for NmodlType::empty
 
     if (has_property(obj, NmodlType::local_var)) {
         properties.emplace_back("local");
@@ -68,7 +70,7 @@ std::vector<std::string> to_string_vector(const NmodlTypeFlag& obj) {
     }
 
     if (has_property(obj, NmodlType::nonspecific_cur_var)) {
-        properties.emplace_back("nonspe_cur");
+        properties.emplace_back("nonspecific_cur_var");
     }
 
     if (has_property(obj, NmodlType::electrode_cur_var)) {
@@ -158,8 +160,10 @@ std::vector<std::string> to_string_vector(const NmodlTypeFlag& obj) {
     return properties;
 }
 
-std::vector<std::string> to_string_vector(const StatusFlag& obj) {
+std::vector<std::string> to_string_vector(const Status& obj) {
     std::vector<std::string> status;
+
+    // do nothing for Status::empty
 
     if (has_status(obj, Status::localized)) {
         status.emplace_back("localized");
@@ -192,13 +196,13 @@ std::vector<std::string> to_string_vector(const StatusFlag& obj) {
     return status;
 }
 
-std::ostream& operator<<(std::ostream& os, const NmodlTypeFlag& obj) {
+std::ostream& operator<<(std::ostream& os, const NmodlType& obj) {
     os << to_string(obj);
     return os;
 }
 
 
-std::ostream& operator<<(std::ostream& os, const StatusFlag& obj) {
+std::ostream& operator<<(std::ostream& os, const Status& obj) {
     os << to_string(obj);
     return os;
 }
