@@ -3,6 +3,7 @@
 #include "ast/ast.hpp"
 #include "symtab/symbol_table.hpp"
 #include "utils/table_data.hpp"
+#include "utils/logger.hpp"
 
 using namespace ast;
 using namespace syminfo;
@@ -211,10 +212,10 @@ namespace symtab {
             msg += " with one in " + second->get_scope();
             throw std::runtime_error(msg);
         }
-        std::string msg = "SYMTAB WARNING: " + name + " [" + type + "] in ";
+        std::string msg = "SYMTAB :: " + name + " [" + type + "] in ";
         msg += current_symtab->name() + " shadows <" + properties;
         msg += "> definition in " + second->get_scope();
-        std::cout << msg << std::endl;
+        logger->warn(msg);
     }
 
 

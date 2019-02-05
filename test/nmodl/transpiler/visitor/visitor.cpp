@@ -1924,8 +1924,9 @@ SCENARIO("Searching for ast nodes using AstLookupVisitor") {
             }
 
             THEN("Can find NEURON block") {
-                std::vector<AstNodeType> types{AstNodeType::NEURON_BLOCK};
-                auto nodes = run_lookup_visitor(ast.get(), types);
+                AstLookupVisitor v(AstNodeType::NEURON_BLOCK);
+                ast->accept(&v);
+                auto nodes = v.get_nodes();
                 REQUIRE(nodes.size() == 1);
 
                 std::string neuron_block = R"(

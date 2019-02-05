@@ -37,7 +37,8 @@ set(PYNMODL_HEADERS
 pybind11_add_module(_nmodl ${PYNMODL_HEADERS} ${PYNMODL_SOURCES})
 target_link_libraries(_nmodl PRIVATE lexer
                              PRIVATE visitor
-                             PRIVATE printer)
+                             PRIVATE printer
+                             PRIVATE util)
 
 add_dependencies(_nmodl pyastgen)
 add_dependencies(_nmodl nmodl_parser)

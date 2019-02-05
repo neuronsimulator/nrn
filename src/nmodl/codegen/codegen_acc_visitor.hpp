@@ -1,18 +1,14 @@
 #ifndef NMODL_CODEGEN_C_ACC_VISITOR_HPP
 #define NMODL_CODEGEN_C_ACC_VISITOR_HPP
 
-#include "codegen/c/codegen_c_visitor.hpp"
+#include "codegen/codegen_c_visitor.hpp"
 
 
 /**
- * \class CodegenCAccVisitor
+ * \class CodegenAccVisitor
  * \brief Visitor for printing c code with OpenMP backend
- *
- * \todo :
- *      - handle define i.e. macro statement printing
- *      - return statement in the verbatim block of inline function not handled (e.g. netstim.mod)
  */
-class CodegenCAccVisitor : public CodegenCVisitor {
+class CodegenAccVisitor : public CodegenCVisitor {
   protected:
     /// name of the code generation backend
     std::string backend_name() override;
@@ -53,23 +49,24 @@ class CodegenCAccVisitor : public CodegenCVisitor {
     /// setup method for setting matrix shadow vectors
     void print_rhs_d_shadow_variables() override;
 
+
     /// if reduction block in nrn_cur required
     bool nrn_cur_reduction_loop_required() override;
 
 
   public:
-    CodegenCAccVisitor(std::string mod_file,
-                       std::string output_dir,
-                       bool aos,
-                       std::string float_type)
-        : CodegenCVisitor(mod_file, output_dir, aos, float_type) {
+    CodegenAccVisitor(std::string mod_file,
+                      std::string output_dir,
+                      LayoutType layout,
+                      std::string float_type)
+        : CodegenCVisitor(mod_file, output_dir, layout, float_type) {
     }
 
-    CodegenCAccVisitor(std::string mod_file,
-                       std::stringstream& stream,
-                       bool aos,
-                       std::string float_type)
-        : CodegenCVisitor(mod_file, stream, aos, float_type) {
+    CodegenAccVisitor(std::string mod_file,
+                      std::stringstream& stream,
+                      LayoutType layout,
+                      std::string float_type)
+        : CodegenCVisitor(mod_file, stream, layout, float_type) {
     }
 };
 

@@ -115,7 +115,7 @@ namespace symtab {
             return parent ? parent->name() : "None";
         }
 
-        std::shared_ptr<Symbol> lookup(std::string name) {
+        std::shared_ptr<Symbol> lookup(const std::string& name) {
             return table.lookup(name);
         }
 
