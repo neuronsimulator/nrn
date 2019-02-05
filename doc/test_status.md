@@ -1,0 +1,143 @@
+# Test Suite
+
+This page describe the status of NMODL test suite. The goal of test suite is to cover all NMODL language constructs and test implementation of lexer, parser, ast and visitors.
+
+## Legend
+
+The following symbols are used in the document to descrive the status :
+
+* ✅ = Test implemented
+* ❌ = Test doesn't exist
+* ❓ = Unclear
+
+## Status
+
+| Token | Lexer |
+| ----- | -------------- |
+|TITLE | ✅ |
+|CONSTANT | ✅  |
+|INDEPENDENT | ✅ |
+|ASSIGNED | ✅ |
+|STATE | ✅ |
+|INITIAL | ✅ |
+|DERIVATIVE | ✅ |
+|SOLVE | ✅ |
+|USING | ✅ |
+|WITH | ✅ |
+|STEPPED | ✅ |
+|DISCRETE | ✅ |
+|FROM | ✅ |
+|FORALL | ✅ |
+|TO | ✅ |
+|BY | ✅ |
+|WHILE | ✅ |
+|IF | ✅ |
+|ELSE | ✅ |
+|START | ✅ |
+|STEP | ✅ |
+|SENS | ✅ |
+|SOLVEFOR | ✅ |
+|PROCEDURE | ✅ |
+|PARTIAL | ✅ |
+|DEFINE | ✅ |
+|IFERROR | ✅ |
+|PARAMETER | ✅ |
+|EQUATION | ✅ |
+|TERMINAL | ✅ |
+|LINEAR | ✅ |
+|NONLINEAR | ✅ |
+|FUNCTION | ✅ |
+|LOCAL | ✅ |
+| ~ | ✅ |
+|~+ | ❓ |
+|PUTQ | ✅ |
+|GETQ | ✅ |
+|TABLE | ✅ |
+|DEPEND | ✅ |
+|BREAKPOINT | ✅ |
+|INCLUDE | ✅ |
+|FUNCTION_TABLE | ✅ |
+|PROTECT | ✅ |
+|MUTEXLOCK | ✅ |
+|MUTEXUNLOCK | ✅ |
+| \|\| | ✅ |
+| && | ✅ |
+| \> | ✅ |
+| \< | ✅ |
+| \<= | ✅ |
+| == | ✅ |
+| != | ✅ |
+| ! | ✅ |
+| \>= | ✅ |
+|PLOT | ✅ |
+|VS | ✅ |
+|LAG | ✅ |
+|RESET | ✅ |
+|MATCH | ✅ |
+|MODEL_LEVEL | ✅ |
+|SWEEP | ✅ |
+|FIRST | ✅ |
+|LAST | ✅ |
+|KINETIC | ✅ |
+|CONSERVE | ✅ |
+|REACTION | ✅ |
+|<-> | ✅ |
+|COMPARTMENT | ✅ |
+|UNITS | ✅ |
+|UNITSON | ✅ |
+|UNITSOFF | ✅ |
+|LONGDIFUS | ✅ |
+|NEURON | ✅ |
+|NONSPECIFIC | ✅ |
+|READ | ✅ |
+|WRITE | ✅ |
+|USEION | ✅ |
+|THREADSAFE | ✅ |
+|GLOBAL | ✅ |
+|SECTION | ✅ |
+|RANGE | ✅ |
+|POINTER | ✅ |
+|BBCOREPOINTER | ✅ |
+|EXTERNAL | ✅ |
+|BEFORE | ✅ |
+|AFTER | ✅ |
+|WATCH | ✅ |
+|ELECTRODE_CURRENT | ✅ |
+|CONSTRUCTOR | ✅ |
+|DESTRUCTOR | ✅ |
+|NETRECEIVE | ✅ |
+|FOR_NETCONS | ✅ |
+|CONDUCTANCE | ✅ |
+|REAL | ✅ |
+|INTEGER | ✅ |
+|DEFINEDVAR | ✅ |
+|NAME | ✅ |
+|METHOD | ✅ |
+|SUFFIX | ✅ |
+|VALENCE | ✅ |
+|DEL | ✅ |
+|DEL2 | ✅ |
+|PRIME | ✅ |
+|VERBATIM | ✅ |
+|COMMENT ENDCOMMENT | ✅ |
+|: | ✅ |
+|? | ✅ |
+|STRING | ✅ |
+|{ | ✅ |
+|} | ✅ |
+|( | ✅ |
+|) | ✅ |
+|[ | ✅ |
+|] | ✅ |
+|@ | ✅ |
+|+ | ✅ |
+|x | ✅ |
+|- | ✅ |
+|/ | ✅ |
+|= | ✅ |
+|^ | ✅ |
+|: | ✅ |
+|, | ✅ |
+|~ | ✅ |
+|. | ✅ |
+|- | ✅ |
