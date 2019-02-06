@@ -23,7 +23,7 @@ endif
 endif
 
 libnrnpython@npy_pyver10@_la_SOURCES = nrnpython.cpp nrnpy_hoc.cpp nrnpy_nrn.cpp \
-	nrnpy_p2h.cpp grids.c rxd.c rxd_extracellular.c rxd_vol.c $(EXTEND)
+	nrnpy_p2h.cpp grids.cpp rxd.cpp rxd_extracellular.cpp rxd_vol.cpp $(EXTEND)
 
 librxdmath_la_SOURCES = rxdmath.c $(EXTEND)
 

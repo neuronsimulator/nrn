@@ -85,9 +85,9 @@ static void dg_adi_vol_x(Grid_node* g, const double dt, const int y, const int z
         return;
     }
     /*TODO: move allocation out of loop*/
-	diag = malloc(g->size_x*sizeof(double));
-	l_diag = malloc((g->size_x-1)*sizeof(double));
-	u_diag = malloc((g->size_x-1)*sizeof(double));
+	diag = (double*)malloc(g->size_x*sizeof(double));
+	l_diag = (double*)malloc((g->size_x-1)*sizeof(double));
+	u_diag = (double*)malloc((g->size_x-1)*sizeof(double));
 
 	for(x=1;x<g->size_x-1;x++)
 	{
@@ -195,9 +195,9 @@ static void dg_adi_vol_y(Grid_node* g, double const dt, int const x, int const z
         return;
     }
 
-	diag = malloc(g->size_y*sizeof(double));
-	l_diag = malloc((g->size_y-1)*sizeof(double));
-	u_diag = malloc((g->size_y-1)*sizeof(double));
+	diag = (double*)malloc(g->size_y*sizeof(double));
+	l_diag = (double*)malloc((g->size_y-1)*sizeof(double));
+	u_diag = (double*)malloc((g->size_y-1)*sizeof(double));
 
 	for(y=1;y<g->size_y-1;y++)
 	{
@@ -279,9 +279,9 @@ static void dg_adi_vol_z(Grid_node* g, double const dt, int const x, int const y
         return;
     }
 
-	diag = malloc(g->size_z*sizeof(double));
-	l_diag = malloc((g->size_z-1)*sizeof(double));
-	u_diag = malloc((g->size_z-1)*sizeof(double));
+	diag = (double*)malloc(g->size_z*sizeof(double));
+	l_diag = (double*)malloc((g->size_z-1)*sizeof(double));
+	u_diag = (double*)malloc((g->size_z-1)*sizeof(double));
 
 	for(z=1;z<g->size_z-1;z++)
 	{
@@ -372,9 +372,9 @@ static void dg_adi_tort_x(Grid_node* g, const double dt, const int y, const int 
         return;
     }
 
-	diag = malloc(g->size_x*sizeof(double));
-	l_diag = malloc((g->size_x-1)*sizeof(double));
-	u_diag = malloc((g->size_x-1)*sizeof(double));
+	diag = (double*)malloc(g->size_x*sizeof(double));
+	l_diag = (double*)malloc((g->size_x-1)*sizeof(double));
+	u_diag = (double*)malloc((g->size_x-1)*sizeof(double));
 
 	for(x=1;x<g->size_x-1;x++)
 	{
@@ -472,9 +472,9 @@ static void dg_adi_tort_y(Grid_node* g, double const dt, int const x, int const 
         return;
     }
 
-	diag = malloc(g->size_y*sizeof(double));
-	l_diag = malloc((g->size_y-1)*sizeof(double));
-	u_diag = malloc((g->size_y-1)*sizeof(double));
+	diag = (double*)malloc(g->size_y*sizeof(double));
+	l_diag = (double*)malloc((g->size_y-1)*sizeof(double));
+	u_diag = (double*)malloc((g->size_y-1)*sizeof(double));
 
 	for(y=1;y<g->size_y-1;y++)
 	{
@@ -550,9 +550,9 @@ static void dg_adi_tort_z(Grid_node* g, double const dt, int const x, int const 
         return;
     }
 
-	diag = malloc(g->size_z*sizeof(double));
-	l_diag = malloc((g->size_z-1)*sizeof(double));
-	u_diag = malloc((g->size_z-1)*sizeof(double));
+	diag = (double*)malloc(g->size_z*sizeof(double));
+	l_diag = (double*)malloc((g->size_z-1)*sizeof(double));
+	u_diag = (double*)malloc((g->size_z-1)*sizeof(double));
 
 
 	for(z=1;z<g->size_z-1;z++)

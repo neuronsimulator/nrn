@@ -94,50 +94,51 @@ typedef struct {
     double value;
 } BoundaryConditions; 
 
-typedef struct Grid_node {
-    double *states;         // Array of doubles representing Grid space
-    double *states_x;
-    double *states_y;
-    double *states_cur;
-    int size_x;          // Size of X dimension
-    int size_y;          // Size of Y dimension
-    int size_z;          // Size of Z dimension
-    double dc_x;            // X diffusion constant
-    double dc_y;            // Y diffusion constant
-    double dc_z;            // Z diffusion constant
-    double dx;              // ∆X
-    double dy;              // ∆Y
-    double dz;              // ∆Z
-    BoundaryConditions* bc;
-    struct Grid_node *next;
-    Concentration_Pair* concentration_list;
-    Current_Triple* current_list;
-    Py_ssize_t num_concentrations, num_currents;
-    
-    /*used for MPI implementation*/
-    int num_all_currents;
-    int* proc_offsets;
-    int* proc_num_currents;
-    long* current_dest;
-    double* all_currents;
+class Grid_node {
+    public:
+        double *states;         // Array of doubles representing Grid space
+        double *states_x;
+        double *states_y;
+        double *states_cur;
+        int size_x;          // Size of X dimension
+        int size_y;          // Size of Y dimension
+        int size_z;          // Size of Z dimension
+        double dc_x;            // X diffusion constant
+        double dc_y;            // Y diffusion constant
+        double dc_z;            // Z diffusion constant
+        double dx;              // ∆X
+        double dy;              // ∆Y
+        double dz;              // ∆Z
+        BoundaryConditions* bc;
+        struct Grid_node *next;
+        Concentration_Pair* concentration_list;
+        Current_Triple* current_list;
+        Py_ssize_t num_concentrations, num_currents;
+        
+        /*used for MPI implementation*/
+        int num_all_currents;
+        int* proc_offsets;
+        int* proc_num_currents;
+        long* current_dest;
+        double* all_currents;
 
-	/*Extension to handle a variable diffusion characteristics of a grid*/
-	unsigned char	VARIABLE_ECS_VOLUME;	/*FLAG which variable volume fraction
-											  methods should be used*/
-	/*diffusion characteristics are arrays of a single value or
-	 * the number of voxels (size_x*size_y*size_z)*/
-	double *lambda;		/* tortuosities squared D_eff=D_free/lambda */
-	double *alpha;		/* volume fractions */
-	/*Function that will be assigned when the grid is created to either return
-	 * the single value or the value at a given index*/ 
-	double (*get_alpha)(double*,int);
-	double (*get_lambda)(double*,int);
-    struct AdiGridData* tasks;
-    struct AdiDirection* adi_dir_x;
-    struct AdiDirection* adi_dir_y;
-    struct AdiDirection* adi_dir_z;
-    double atolscale;
-} Grid_node;
+        /*Extension to handle a variable diffusion characteristics of a grid*/
+        unsigned char	VARIABLE_ECS_VOLUME;	/*FLAG which variable volume fraction
+                                                methods should be used*/
+        /*diffusion characteristics are arrays of a single value or
+        * the number of voxels (size_x*size_y*size_z)*/
+        double *lambda;		/* tortuosities squared D_eff=D_free/lambda */
+        double *alpha;		/* volume fractions */
+        /*Function that will be assigned when the grid is created to either return
+        * the single value or the value at a given index*/ 
+        double (*get_alpha)(double*,int);
+        double (*get_lambda)(double*,int);
+        struct AdiGridData* tasks;
+        struct AdiDirection* adi_dir_x;
+        struct AdiDirection* adi_dir_y;
+        struct AdiDirection* adi_dir_z;
+        double atolscale;
+};
 
 typedef struct AdiDirection{
     void (*dg_adi_dir)(Grid_node*, const double, const int, const int, double const * const, double* const, double* const);
@@ -193,16 +194,16 @@ Grid_node *make_Grid(PyHocObject* my_states, int my_num_states_x,
 void free_Grid(Grid_node *grid);
 
 // Insert a Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
-int insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x, 
+extern "C" int insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x, 
     int my_num_states_y, int my_num_states_z, double my_dc_x, double my_dc_y,
     double my_dc_z, double my_dx, double my_dy, double my_dz, 
 	PyHocObject* my_alpha, PyHocObject* my_lambda, int, double, double);
 
 // Set the diffusion coefficients for a given grid_id 
-int set_diffusion(int grid_list_index, int grid_id, double dc_x, double dc_y, double dc_z);
+extern "C" int set_diffusion(int grid_list_index, int grid_id, double dc_x, double dc_y, double dc_z);
 
 // Delete a specific Grid_node "find" from the list "head"
-int delete(Grid_node **head, Grid_node *find);
+int remove(Grid_node **head, Grid_node *find);
 
 // Destroy the list located at list_index and free all memory
 void empty_list(int list_index);

@@ -168,7 +168,7 @@ Reaction* ecs_create_reaction(int list_idx, int num_species, int* species_ids, E
  * grid_id - the grid id within the linked list - this corresponds to species
  * ECSReactionRate - the reaction function
  */
-void ecs_register_reaction(int list_idx, int num_species, int* species_id, ECSReactionRate f)
+extern "C" void ecs_register_reaction(int list_idx, int num_species, int* species_id, ECSReactionRate f)
 {
 	ecs_create_reaction(list_idx, num_species, species_id, f, NULL);
 	ecs_refresh_reactions(NUM_THREADS);

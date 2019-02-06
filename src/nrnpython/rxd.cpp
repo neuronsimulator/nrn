@@ -4,7 +4,9 @@
 #include <string.h>
 #include "grids.h"
 #include "rxd.h"
-#include <matrix2.h>
+extern "C" {
+    #include <matrix2.h>
+}
 #include <pthread.h>
 #include <../nrnoc/section.h>
 #include <../nrnoc/nrn_ansi.h>
@@ -131,7 +133,7 @@ static inline void* allocopy(void* src, size_t size)
     return dst;
 }
 
-void rxd_set_no_diffusion()
+extern "C" void rxd_set_no_diffusion()
 {
     int i;
     prev_structure_change_cnt = structure_change_cnt;
@@ -172,7 +174,7 @@ void rxd_set_no_diffusion()
     }
 }
 
-void rxd_setup_curr_ptrs(int num_currents, int* curr_index, double* curr_scale,
+extern "C" void rxd_setup_curr_ptrs(int num_currents, int* curr_index, double* curr_scale,
 						  PyHocObject** curr_ptrs, int conc_count, 
 						  int* conc_index, PyHocObject** conc_ptrs)
 {
@@ -180,21 +182,21 @@ void rxd_setup_curr_ptrs(int num_currents, int* curr_index, double* curr_scale,
 	_curr_count = num_currents;
 	if(_curr_indices != NULL)
 		free(_curr_indices);
-	_curr_indices = malloc(sizeof(int)*num_currents);
+	_curr_indices = (int*)malloc(sizeof(int)*num_currents);
 	memcpy(_curr_indices,curr_index, sizeof(int)*num_currents); 
 	
 	if(_curr_scales != NULL)
 		free(_curr_scales);
-	_curr_scales = malloc(sizeof(double)*num_currents);
+	_curr_scales = (double*)malloc(sizeof(double)*num_currents);
 	memcpy(_curr_scales, curr_scale, sizeof(double)*num_currents); 
 
 	if(_curr_ptrs != NULL)
 		free(_curr_ptrs);
-	_curr_ptrs = malloc(sizeof(PyHocObject*)*num_currents);
+	_curr_ptrs = (PyHocObject**)malloc(sizeof(PyHocObject*)*num_currents);
 	memcpy(_curr_ptrs, curr_ptrs, sizeof(PyHocObject*)*num_currents);
 }
 
-void rxd_setup_conc_ptrs(int conc_count, int* conc_index, 
+extern "C" void rxd_setup_conc_ptrs(int conc_count, int* conc_index, 
                          PyHocObject** conc_ptrs)
 {
 	/* info for NEURON concentration - to transfer to legacy */
@@ -202,17 +204,17 @@ void rxd_setup_conc_ptrs(int conc_count, int* conc_index,
 
 	if(_conc_indices != NULL)
 		free(_conc_indices);
-	_conc_indices = malloc(sizeof(int)*conc_count);
+	_conc_indices = (int*)malloc(sizeof(int)*conc_count);
 	memcpy(_conc_indices, conc_index, sizeof(int)*conc_count); 
 	
 	if(_conc_ptrs != NULL)
 		free(_conc_ptrs);
-	_conc_ptrs = malloc(sizeof(PyHocObject*)*conc_count);
+	_conc_ptrs = (PyHocObject**)malloc(sizeof(PyHocObject*)*conc_count);
 	memcpy(_conc_ptrs, conc_ptrs, sizeof(PyHocObject*)*conc_count);
     
 }
 
-void rxd_set_euler_matrix(int nrow, int nnonzero, long* nonzero_i,
+extern "C" void rxd_set_euler_matrix(int nrow, int nnonzero, long* nonzero_i,
                           long* nonzero_j, double* nonzero_values,
                           long* zero_volume_indices,
                           int num_zero_volume_indices, double* c_diagonal)
@@ -351,16 +353,16 @@ static void mul(int nrow, int nnonzero, long* nonzero_i, long* nonzero_j, const 
 	}
 }
 
-void set_setup(const fptr setup_fn) {
+extern "C" void set_setup(const fptr setup_fn) {
 	_setup = setup_fn;
 }
 
-void set_initialize(const fptr initialize_fn) {
+extern "C" void set_initialize(const fptr initialize_fn) {
 	_initialize = initialize_fn;
     set_num_threads(NUM_THREADS);
 }
 
-void set_setup_matrices(fptr setup_matrices) {
+extern "C" void set_setup_matrices(fptr setup_matrices) {
     _setup_matrices = setup_matrices;
 }
 
@@ -378,7 +380,7 @@ static void nrn_tree_solve(double* a, double* b, double* c, double* dbase, doubl
         n      - number of states
     */
     long i, pin;
-    double* d = malloc(sizeof(double) * n);
+    double* d = (double*)malloc(sizeof(double) * n);
     double* myd;
     double* myc;
     double* mydbase;
@@ -516,7 +518,7 @@ static void free_currents()
     _membrane_flux = FALSE; 
 }
 
-void setup_currents(int num_currents, int num_fluxes, int num_nodes, int* num_species, int* net_charges, int* cur_idxs, int* node_idxs, double* scales,  int* charges, PyHocObject** ptrs, int* mapped, int* mapped_ecs)
+extern "C" void setup_currents(int num_currents, int num_fluxes, int num_nodes, int* num_species, int* net_charges, int* cur_idxs, int* node_idxs, double* scales,  int* charges, PyHocObject** ptrs, int* mapped, int* mapped_ecs)
 {
     int i, j, k, id;
     Current_Triple* c;
@@ -664,7 +666,7 @@ static void _currents(double* rhs)
              
 }
 
-int rxd_nonvint_block(int method, int size, double* p1, double* p2, int thread_id) {
+extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, int thread_id) {
         if(initialized && structure_change_cnt != prev_structure_change_cnt)
         {
             /*TODO: Exclude irrelevant (non-rxd) structural changes*/
@@ -828,7 +830,7 @@ static void unset_reaction_indices()
 }
 
 
-void register_rate(int nspecies, int nregions, int nseg, int* sidx, int necs, int* ecs_ids, int* ecsidx, int nmult, double* mult, ReactionRate f)
+extern "C" void register_rate(int nspecies, int nregions, int nseg, int* sidx, int necs, int* ecs_ids, int* ecsidx, int nmult, double* mult, ReactionRate f)
 {
     int i,j,k,idx, ecs_id, ecs_index, ecs_offset;
     Grid_node* grid;
@@ -931,7 +933,7 @@ void register_rate(int nspecies, int nregions, int nseg, int* sidx, int necs, in
     }
 }
 
-void clear_rates()
+extern "C" void clear_rates()
 {
     ICSReactions *react, *prev;
     int i, j, k;
@@ -973,7 +975,7 @@ void clear_rates()
 }
 
 
-void species_atolscale(int id, double scale, int len, int* idx)
+extern "C" void species_atolscale(int id, double scale, int len, int* idx)
 {
     SpeciesIndexList* list;
     if(species_indices != NULL)
@@ -1014,7 +1016,7 @@ static void free_SpeciesIndexList()
     }
 }
 
-void setup_solver(double* my_states, int my_num_states, long* zvi, int num_zvi, PyHocObject* h_t_ref, PyHocObject* h_dt_ref) {
+extern "C" void setup_solver(double* my_states, int my_num_states, long* zvi, int num_zvi, PyHocObject* h_t_ref, PyHocObject* h_dt_ref) {
     int i;
     states = my_states;
     num_states = my_num_states;
@@ -1143,13 +1145,13 @@ void set_num_threads(const int n)
                 TaskQueue_sync(AllTasks);
                 pthread_cancel(Threads[k]);
             } 
-            Threads = realloc(Threads,sizeof(pthread_t) * n);
+            Threads = (pthread_t*)realloc(Threads,sizeof(pthread_t) * n);
             assert(Threads);
         }
         else if(n>old_num)
         {
             //Create some threads
-            Threads = realloc(Threads,sizeof(pthread_t) * n);
+            Threads = (pthread_t*)realloc(Threads,sizeof(pthread_t) * n);
             assert(Threads);
             
             for (k = old_num-1; k < n; k++) 
@@ -1178,7 +1180,7 @@ int get_num_threads(void) {
 
 
 
-void set_reaction_indices( int num_locations, int* regions, int* num_species, 
+extern "C" void set_reaction_indices( int num_locations, int* regions, int* num_species, 
 	int* species_index,  int* indices, int* mc_mult_count, double* mc_mult,
 	int num_ecs_species, int* ecs_grid_ids, int* ecs_species_counts, 
 	int* ecs_species_grid_ids, int* ecs_indices)
@@ -1199,7 +1201,7 @@ void set_reaction_indices( int num_locations, int* regions, int* num_species,
 	_species_idx = (int**)malloc(sizeof(int)*_num_reactions);
 	for(idx=0, i=0; i < _num_reactions; i++)
 	{
-		_species_idx[i] = malloc(sizeof(int)*_num_species[i]);
+		_species_idx[i] = (int*)malloc(sizeof(int)*_num_species[i]);
 		_max_species_per_location = MAX(_max_species_per_location,_num_species[i]);
 		for(j=0; j<_num_species[i]; j++)
 			_species_idx[i][j] = species_index[idx++];
@@ -1210,7 +1212,7 @@ void set_reaction_indices( int num_locations, int* regions, int* num_species,
 	{
 		for(i = 0; i < regions[r]; i++, k++)
 		{
-			_indices[k] = malloc(sizeof(int)*_num_species[r]);
+			_indices[k] = (int*)malloc(sizeof(int)*_num_species[r]);
 			for(j=0; j < _num_species[r]; j++)
 			{
 				_indices[k][j] = indices[idx++];
@@ -1328,7 +1330,7 @@ void _fadvance(void) {
     /*diffusion*/
     if(diffusion)
     {
-        rhs = malloc(sizeof(double) * num_states);
+        rhs = (double*)malloc(sizeof(double) * num_states);
 	    mul(_rxd_euler_nrow, _rxd_euler_nnonzero, _rxd_euler_nonzero_i, _rxd_euler_nonzero_j, _rxd_euler_nonzero_values, states, rhs);
 	
 	    /* multiply rhs vector by dt */

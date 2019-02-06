@@ -17,7 +17,7 @@ double *h_t_ptr;
 Grid_node *Parallel_grids[100] = {NULL};
 
 // Set dt, t pointers
-void make_time_ptr(PyHocObject* my_dt_ptr, PyHocObject* my_t_ptr) {
+extern "C" void make_time_ptr(PyHocObject* my_dt_ptr, PyHocObject* my_t_ptr) {
     dt_ptr = my_dt_ptr -> u.px_;
     t_ptr = my_t_ptr -> u.px_;
 }
@@ -28,7 +28,7 @@ Grid_node *make_Grid(PyHocObject* my_states, int my_num_states_x,
     double my_dc_z, double my_dx, double my_dy, double my_dz, PyHocObject* my_alpha,
 	PyHocObject* my_lambda, int bc, double bc_value, double atolscale) {
     int k;
-    Grid_node *new_Grid = malloc(sizeof(Grid_node));
+    Grid_node *new_Grid = new Grid_node();
     assert(new_Grid);
 
     new_Grid->states = my_states->u.px_;
@@ -203,7 +203,7 @@ int set_diffusion(int grid_list_index, int grid_id, double dc_x, double dc_y, do
 }
 
 /* TODO: make this work with Grid_node ptrs instead of pairs of list indices */
-void set_grid_concentrations(int grid_list_index, int index_in_list, PyObject* grid_indices, PyObject* neuron_pointers) {
+extern "C" void set_grid_concentrations(int grid_list_index, int index_in_list, PyObject* grid_indices, PyObject* neuron_pointers) {
     /*
     Preconditions:
 
@@ -225,7 +225,7 @@ void set_grid_concentrations(int grid_list_index, int index_in_list, PyObject* g
     free(g->concentration_list);
 
     /* allocate space for the new list */
-    g->concentration_list = malloc(sizeof(Concentration_Pair) * n);
+    g->concentration_list = (Concentration_Pair*)malloc(sizeof(Concentration_Pair) * n);
     g->num_concentrations = n;
 
     /* populate the list */
@@ -238,7 +238,7 @@ void set_grid_concentrations(int grid_list_index, int index_in_list, PyObject* g
 }
 
 /* TODO: make this work with Grid_node ptrs instead of pairs of list indices */
-void set_grid_currents(int grid_list_index, int index_in_list, PyObject* grid_indices, PyObject* neuron_pointers, PyObject* scale_factors) {
+extern "C" void set_grid_currents(int grid_list_index, int index_in_list, PyObject* grid_indices, PyObject* neuron_pointers, PyObject* scale_factors) {
     /*
     Preconditions:
 
@@ -261,7 +261,7 @@ void set_grid_currents(int grid_list_index, int index_in_list, PyObject* grid_in
     free(g->current_list);
 
     /* allocate space for the new list */
-    g->current_list = malloc(sizeof(Current_Triple) * n);
+    g->current_list = (Current_Triple*)malloc(sizeof(Current_Triple) * n);
     g->num_currents = n;
 
     /* populate the list */
@@ -369,7 +369,7 @@ void free_Grid(Grid_node *grid) {
 }*/
 
 // Delete a specific Grid_node from the list
-int delete(Grid_node **head, Grid_node *find) {
+int remove(Grid_node **head, Grid_node *find) {
     if(*head == find) {
         Grid_node *temp = *head;
         *head = (*head)->next;
@@ -387,14 +387,14 @@ int delete(Grid_node **head, Grid_node *find) {
     return 1;
 }
 
-void delete_by_id(int id) {
+extern "C" void delete_by_id(int id) {
     Grid_node *grid;
     int k;
     for(k = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, k++)
     {
         if(k == id)
         {
-            delete(Parallel_grids, grid);
+            remove(Parallel_grids, grid);
             break;
         }
     }

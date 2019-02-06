@@ -1,5 +1,7 @@
-#include <pthread.h>
-#include <matrix.h>
+extern "C"{
+    #include <pthread.h>
+    #include <matrix2.h>
+}
 /*borrowed from Meschach Version 1.2b*/
 #define	v_get_val(x,i)		((x)->ve[(i)])
 #define	m_get_val(A,i,j)	((A)->me[(i)][(j)])
@@ -8,9 +10,9 @@
 
 typedef void (*fptr)(void);
 
-typedef struct {
+typedef struct OcPtrVector_{
     PyObject_HEAD
-	struct OcPtrVector (*newOcPtrVector)();
+	struct OcPtrVector_ (*newOcPtrVector)();
 	void (*deleteOcPtrVector)();
 	int (*size)(int);
 	void (*resize)();
@@ -113,11 +115,11 @@ typedef struct TaskQueue
     struct TaskList* last;
 } TaskQueue;
 
-void set_num_threads(const int);
+extern "C" void set_num_threads(const int);
 void _fadvance(void);
 void _fadvance_fixed_step_ecs(void);
 
-int get_num_threads(void);
+extern "C" int get_num_threads(void);
 static int dg_adi(Grid_node*);
 void set_adi_tort(Grid_node*);
 void set_adi_vol(Grid_node*);
@@ -138,7 +140,7 @@ void _ode_reinit(double*);
 
 int ode_count(const int);
 
-void scatter_concentrations(void);
+extern "C" void scatter_concentrations(void);
 
 static void update_boundaries_x(int i, int j, int k, int dj, int dk, double rate_x,
  double rate_y, double rate_z, int num_states_x, int num_states_y, int num_states_z,
