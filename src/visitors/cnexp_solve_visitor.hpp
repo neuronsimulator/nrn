@@ -22,8 +22,8 @@ class CnexpSolveVisitor : public AstVisitor {
     /// method specified in solve block
     std::string solve_method;
 
-    /// true while visiting derivative block
-    bool derivative_block = false;
+    /// true while visiting differential equation
+    bool differential_equation = false;
 
     /// name of the cnexp method
     const std::string cnexp_method = "cnexp";
@@ -40,7 +40,7 @@ class CnexpSolveVisitor : public AstVisitor {
     CnexpSolveVisitor() = default;
 
     void visit_solve_block(ast::SolveBlock* node) override;
-    void visit_derivative_block(ast::DerivativeBlock* node) override;
+    void visit_diff_eq_expression(ast::DiffEqExpression* node) override;
     void visit_binary_expression(ast::BinaryExpression* node) override;
     void visit_program(ast::Program* node) override;
 };

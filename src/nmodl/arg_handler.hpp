@@ -46,6 +46,9 @@ struct ArgumentHandler {
     /// generate nmodl from ast
     bool ast_to_nmodl;
 
+    /// generate json from ast
+    bool ast_to_json;
+
     /// enable verbose (todo: replace by log)
     bool verbose;
 

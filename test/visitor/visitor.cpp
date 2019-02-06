@@ -9,6 +9,7 @@
 #include "test/utils/test_utils.hpp"
 #include "visitors/cnexp_solve_visitor.hpp"
 #include "visitors/defuse_analyze_visitor.hpp"
+#include "visitors/differential_equation_visitor.hpp"
 #include "visitors/inline_visitor.hpp"
 #include "visitors/json_visitor.hpp"
 #include "visitors/local_var_rename_visitor.hpp"
@@ -1952,6 +1953,62 @@ SCENARIO("Searching for ast nodes using AstLookupVisitor") {
                 auto result = run_lookup_visitor(ast.get(), types);
                 REQUIRE(result.size() == 0);
             }
+        }
+    }
+}
+
+
+//=============================================================================
+// DifferentialEquation visitor tests
+//=============================================================================
+
+std::vector<std::string> run_differential_equation_visitor(const std::string& text) {
+    nmodl::Driver driver;
+    driver.parse_string(text);
+    auto ast = driver.ast();
+
+    DifferentialEquationVisitor v;
+    v.visit_program(ast.get());
+    auto equations = v.get_equations();
+
+    std::vector<std::string> result;
+    for(const auto& equation : equations) {
+        std::stringstream stream;
+        NmodlPrintVisitor v(stream);
+        equation->accept(&v);
+        result.push_back(stream.str());
+    }
+    return result;
+}
+
+
+SCENARIO("DifferentialEquation visitor finding ODEs") {
+    GIVEN("Derivative block with multiple differential equations") {
+        std::string nmodl_text = R"(
+            DERIVATIVE states {
+                m' = (mInf-m)/mTau
+                h' = (hInf-h)/hTau
+                m = m + h
+            }
+        )";
+
+        THEN("ODEs can be searched in AST") {
+            auto result = run_differential_equation_visitor(nmodl_text);
+            REQUIRE(result.size() == 2);
+            REQUIRE(result[0] == "m' = (mInf-m)/mTau");
+            REQUIRE(result[1] == "h' = (hInf-h)/hTau");
+        }
+    }
+    GIVEN("Derivative mod files without ODE") {
+        std::string nmodl_text = R"(
+            DERIVATIVE states {
+                m = m + h
+            }
+        )";
+
+        THEN("No ODEs are found") {
+            auto result = run_differential_equation_visitor(nmodl_text);
+            REQUIRE(result.size() == 0);
         }
     }
 }

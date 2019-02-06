@@ -1005,7 +1005,13 @@ astmt           :   asgn
 
 asgn            :   varname "=" expr
                     {
-                        $$ = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_ASSIGN), $3);
+                        auto expression = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_ASSIGN), $3);
+                        auto name = $1->get_name();
+                        if (name->is_prime_name()) {
+                            $$ = new ast::DiffEqExpression(expression);
+                        } else {
+                            $$ = expression;
+                        }
                     }
                 |   nonlineqn expr "=" expr
                     {

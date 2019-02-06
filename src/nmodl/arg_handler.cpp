@@ -130,6 +130,13 @@ ArgumentHandler::ArgumentHandler(const int& argc, const char** argv) {
                 cmd,
                 false);
 
+        switch_arg_type ast_to_json_arg(
+                "",
+                "dump-ast-as-json",
+                "Dump intermediate AST states into JSON state",
+                cmd,
+                false);
+
         switch_arg_type no_verbatim_rename_arg(
                 "",
                 "no-verbatim-rename",
@@ -170,6 +177,7 @@ ArgumentHandler::ArgumentHandler(const int& argc, const char** argv) {
         output_dir = output_dir_arg.getValue();
         scratch_dir = scratch_dir_arg.getValue();
         ast_to_nmodl = nmodl_state_arg.getValue();
+        ast_to_json = ast_to_json_arg.getValue();
     } catch (TCLAP::ArgException& e) {
         std::cout << "Argument Error: " << e.error() << " for arg " << e.argId() << std::endl;
     }
