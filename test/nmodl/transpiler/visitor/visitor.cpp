@@ -1879,7 +1879,7 @@ SCENARIO("Running visitor passes multiple time") {
 // Ast lookup visitor tests
 //=============================================================================
 
-std::vector<AST*> run_lookup_visitor(Program* node, std::vector<AstNodeType>& types) {
+std::vector<std::shared_ptr<AST>> run_lookup_visitor(Program* node, std::vector<AstNodeType>& types) {
     AstLookupVisitor v;
     return v.lookup(node, types);
 }
@@ -1891,7 +1891,7 @@ SCENARIO("Searching for ast nodes using AstLookupVisitor") {
         return driver.ast();
     };
 
-    auto to_nmodl = [](AST* node) {
+    auto to_nmodl = [](std::shared_ptr<AST> node) {
         std::stringstream stream;
         NmodlPrintVisitor v(stream);
         node->accept(&v);

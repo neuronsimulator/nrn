@@ -68,6 +68,10 @@ namespace ast {
 
         {{ virtual(node) }} {{ node.class_name }}* clone() override { return new {{ node.class_name }}(*this); }
 
+        {{ virtual(node) }} std::shared_ptr<AST> get_shared_ptr() override {
+            return std::static_pointer_cast<{{ node.class_name }}>(shared_from_this());
+        }
+
         {{ virtual(node) }} AstNodeType get_node_type() override { return AstNodeType::{{ node.ast_enum_name }}; }
 
         {{ virtual(node) }} std::string get_node_type_name() override { return "{{ node.class_name }}"; }

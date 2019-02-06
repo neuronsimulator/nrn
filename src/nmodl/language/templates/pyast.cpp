@@ -45,10 +45,11 @@ void init_ast_module(py::module& m) {
 
 
 
-    py::class_<AST, PyAST> ast_(m_ast, "AST");
+    py::class_<AST, PyAST, std::shared_ptr<AST>> ast_(m_ast, "AST");
     ast_.def(py::init<>())
             .def("visit_children", &AST::visit_children)
             .def("accept", &AST::accept)
+            .def("get_shared_ptr", &AST::get_shared_ptr)
             .def("get_node_type", &AST::get_node_type)
             .def("get_node_type_name", &AST::get_node_type_name)
             .def("get_node_name", &AST::get_node_name)
@@ -90,6 +91,7 @@ void init_ast_module(py::module& m) {
     {{ var(node) }}.def("visit_children", &{{ node.class_name }}::visit_children)
     .def("accept", &{{ node.class_name }}::accept)
     .def("clone", &{{ node.class_name }}::clone)
+    .def("get_shared_ptr", &{{ node.class_name }}::get_shared_ptr)
     .def("get_node_type", &{{ node.class_name }}::get_node_type)
     .def("get_node_type_name", &{{ node.class_name }}::get_node_type_name)
     .def("is_{{ node.class_name | snake_case }}", &{{ node.class_name }}::is_{{ node.class_name | snake_case }});

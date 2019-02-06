@@ -40,6 +40,8 @@ struct PyAST: public AST {
 
     AST* clone() override { PYBIND11_OVERLOAD(AST*, AST, clone, ); }
 
+    std::shared_ptr<AST> get_shared_ptr() override { PYBIND11_OVERLOAD(std::shared_ptr<AST>, AST, get_shared_ptr, ); }
+
     ModToken* get_token() override { PYBIND11_OVERLOAD(ModToken*, AST, get_token, ); }
 
     void set_symbol_table(symtab::SymbolTable* newsymtab) override {

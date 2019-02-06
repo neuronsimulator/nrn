@@ -1388,7 +1388,7 @@ static TableStatement* get_table_statement(ast::Block* node) {
             node->get_node_name(), table_statements.size());
         throw std::runtime_error(message);
     }
-    return dynamic_cast<TableStatement*>(table_statements.front());
+    return dynamic_cast<TableStatement*>(table_statements.front().get());
 }
 
 

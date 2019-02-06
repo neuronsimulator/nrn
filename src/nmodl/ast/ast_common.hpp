@@ -1,6 +1,7 @@
 #ifndef ASTUTILS_HPP
 #define ASTUTILS_HPP
 
+#include <memory>
 #include <string>
 
 #include "ast/ast_decl.hpp"
@@ -61,7 +62,7 @@ namespace ast {
     /* define abstract base class for all AST nodes
      * this also serves to define the visitable objects.
      */
-    struct AST {
+    struct AST : public std::enable_shared_from_this<AST> {
         /* all AST nodes have a member which stores their
          * basetype (int, bool, none, object). Further type
          * information will come from the symbol table.
@@ -110,6 +111,10 @@ namespace ast {
         }
 
         virtual ~AST() {
+        }
+
+        virtual std::shared_ptr<AST> get_shared_ptr() {
+            return std::static_pointer_cast<AST>(shared_from_this());
         }
 
         virtual bool is_ast() {
@@ -653,6 +658,7 @@ namespace ast {
         virtual bool is_diff_eq_expression() {
             return false;
         }
+
     };
 
 }  // namespace ast
