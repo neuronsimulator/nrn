@@ -127,6 +127,13 @@ int main(int argc, const char* argv[]) {
 
         if (arg.perf_stats) {
             PerfVisitor v(arg.scratch_dir + "/" + mod_file + ".perf.json");
+            logger->info("Dumping performance statistics into JSON format");
+            v.visit_program(ast.get());
+        }
+
+        if (arg.ast_to_json) {
+            JSONVisitor v(arg.scratch_dir + "/" + mod_file + ".ast.json");
+            logger->info("Dumping AST state into JSON format");
             v.visit_program(ast.get());
         }
 

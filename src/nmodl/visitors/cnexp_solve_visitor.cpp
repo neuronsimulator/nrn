@@ -2,6 +2,7 @@
 
 #include "parser/diffeq_driver.hpp"
 #include "symtab/symbol.hpp"
+#include "utils/logger.hpp"
 #include "visitors/cnexp_solve_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
@@ -15,10 +16,10 @@ void CnexpSolveVisitor::visit_solve_block(SolveBlock* node) {
     }
 }
 
-void CnexpSolveVisitor::visit_derivative_block(DerivativeBlock* node) {
-    derivative_block = true;
+void CnexpSolveVisitor::visit_diff_eq_expression(DiffEqExpression* node) {
+    differential_equation = true;
     node->visit_children(this);
-    derivative_block = false;
+    differential_equation = false;
 }
 
 void CnexpSolveVisitor::visit_binary_expression(BinaryExpression* node) {
@@ -27,12 +28,13 @@ void CnexpSolveVisitor::visit_binary_expression(BinaryExpression* node) {
     auto& op = node->op;
 
     /// we have to only solve binary expressions in derivative block
-    if (!derivative_block || (op.get_value() != BOP_ASSIGN)) {
+    if (!differential_equation) {
         return;
     }
 
     /// lhs of the expression should be variable
     if (!lhs->is_var_name()) {
+        logger->warn("LHS of differential equation is not a VariableName");
         return;
     }
 

@@ -765,6 +765,13 @@
                             description: "..."
                             type: Expression
                             public: true
+                  - DiffEqExpression:
+                      description: "Represents differential equation in DERIVATIVE block"
+                      members:
+                        - expression:
+                            description: "Differential Expression"
+                            type: BinaryExpression
+                            public: true
                   - UnaryExpression:
                       description: ".."
                       members:

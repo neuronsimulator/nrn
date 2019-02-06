@@ -649,6 +649,10 @@ namespace ast {
         virtual bool is_constant_var() {
             return false;
         }
+
+        virtual bool is_diff_eq_expression() {
+            return false;
+        }
     };
 
 }  // namespace ast
