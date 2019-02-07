@@ -341,9 +341,9 @@ static void ecs_dg_adi_vol_z(ECS_Grid_node* g, double const dt, int const x, int
  */
 void ecs_set_adi_vol(ECS_Grid_node *g)
 {
-    g->adi_dir_x->ecs_dg_adi_dir = ecs_dg_adi_vol_x;
-    g->adi_dir_y->ecs_dg_adi_dir = ecs_dg_adi_vol_y;
-    g->adi_dir_z->ecs_dg_adi_dir = ecs_dg_adi_vol_z;    
+    g->ecs_adi_dir_x->ecs_dg_adi_dir = ecs_dg_adi_vol_x;
+    g->ecs_adi_dir_y->ecs_dg_adi_dir = ecs_dg_adi_vol_y;
+    g->ecs_adi_dir_z->ecs_dg_adi_dir = ecs_dg_adi_vol_z;    
 }
 
 
@@ -608,9 +608,9 @@ static void ecs_dg_adi_tort_z(ECS_Grid_node* g, double const dt, int const x, in
  */
 void ecs_set_adi_tort(ECS_Grid_node *g)
 {
-    g->adi_dir_x->ecs_dg_adi_dir = ecs_dg_adi_tort_x;
-    g->adi_dir_y->ecs_dg_adi_dir = ecs_dg_adi_tort_y;
-    g->adi_dir_z->ecs_dg_adi_dir = ecs_dg_adi_tort_z;    
+    g->ecs_adi_dir_x->ecs_dg_adi_dir = ecs_dg_adi_tort_x;
+    g->ecs_adi_dir_y->ecs_dg_adi_dir = ecs_dg_adi_tort_y;
+    g->ecs_adi_dir_z->ecs_dg_adi_dir = ecs_dg_adi_tort_z;    
 }
 
 

@@ -125,7 +125,7 @@ void ecs_set_adi_vol(ECS_Grid_node*);
 void ecs_set_adi_homogeneous(ECS_Grid_node *);
 
 void dg_transfer_data(AdiLineData * const, double* const, int const, int const, int const);
-void ecs_run_threaded_dg_adi(const int, const int, ECS_Grid_node*, AdiDirection*, const int);
+void ecs_run_threaded_dg_adi(const int, const int, ECS_Grid_node*, ECSAdiDirection*, const int);
 ReactGridData* create_threaded_reactions(const int);
 void* do_reactions(void*);
 

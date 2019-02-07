@@ -133,10 +133,10 @@ class Grid_node {
     * the single value or the value at a given index*/ 
     double (*get_alpha)(double*,int);
     double (*get_lambda)(double*,int);
-    struct AdiGridData* tasks;
-    struct AdiDirection* adi_dir_x;
-    struct AdiDirection* adi_dir_y;
-    struct AdiDirection* adi_dir_z;
+    struct ECSAdiGridData* ecs_tasks;
+    struct ECSAdiDirection* ecs_adi_dir_x;
+    struct ECSAdiDirection* ecs_adi_dir_y;
+    struct ECSAdiDirection* ecs_adi_dir_z;
     double atolscale;
 
     virtual void set_num_threads(const int n) = 0;
@@ -159,21 +159,21 @@ class ICS_Grid_node : public Grid_node{
 
 };
 
-typedef struct AdiDirection{
+typedef struct ECSAdiDirection{
     void (*ecs_dg_adi_dir)(ECS_Grid_node*, const double, const int, const int, double const * const, double* const, double* const);
     double* states_in;
     double* states_out;
     int line_size;
-} AdiDirection;
+} ECSAdiDirection;
 
-typedef struct AdiGridData{
+typedef struct ECSAdiGridData{
     int start, stop;
     double* state;
     ECS_Grid_node* g;
     int sizej;
-    AdiDirection* adi_dir;
+    ECSAdiDirection* ecs_adi_dir;
     double* scratchpad;
-} AdiGridData;
+} ECSAdiGridData;
 
 
 

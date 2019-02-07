@@ -58,19 +58,19 @@ static void ecs_refresh_reactions(const int n)
 void ECS_Grid_node::set_num_threads(const int n)
 {
     int i;
-    if(tasks != NULL)
+    if(ecs_tasks != NULL)
     {
         for(i = 0; i<NUM_THREADS; i++)
         {
-            free(tasks[i].scratchpad);
+            free(ecs_tasks[i].scratchpad);
         }
     }
-    free(tasks);
-    tasks = (AdiGridData*)malloc(NUM_THREADS*sizeof(AdiGridData));
+    free(ecs_tasks);
+    ecs_tasks = (ECSAdiGridData*)malloc(NUM_THREADS*sizeof(ECSAdiGridData));
     for(i=0; i<n; i++)
     {
-        tasks[i].scratchpad = (double*)malloc(sizeof(double) * MAX(size_x,MAX(size_y, size_z)));
-        tasks[i].g = this;
+        ecs_tasks[i].scratchpad = (double*)malloc(sizeof(double) * MAX(size_x,MAX(size_y, size_z)));
+        ecs_tasks[i].g = this;
 
     }
 }
@@ -990,19 +990,19 @@ static void ecs_dg_adi_z(ECS_Grid_node* g, double const dt, int const x, int con
 }
 
 static void* ecs_do_dg_adi(void* dataptr) {
-    AdiGridData* data = (AdiGridData*) dataptr;
+    ECSAdiGridData* data = (ECSAdiGridData*) dataptr;
     int start = data -> start;
     int stop = data -> stop;
     int i, j, k;
-    AdiDirection* adi_dir = data -> adi_dir;
+    ECSAdiDirection* ecs_adi_dir = data -> ecs_adi_dir;
     double dt = *dt_ptr;
     int sizej = data -> sizej;
     ECS_Grid_node* g = data -> g;
-    double* state_in = adi_dir-> states_in;
-    double* state_out = adi_dir-> states_out;
-    int offset = adi_dir -> line_size;
+    double* state_in = ecs_adi_dir-> states_in;
+    double* state_out = ecs_adi_dir-> states_out;
+    int offset = ecs_adi_dir -> line_size;
     double* scratchpad = data -> scratchpad;
-    void (*ecs_dg_adi_dir)(ECS_Grid_node*, double, int, int, double const * const, double* const, double* const) = adi_dir -> ecs_dg_adi_dir;
+    void (*ecs_dg_adi_dir)(ECS_Grid_node*, double, int, int, double const * const, double* const, double* const) = ecs_adi_dir -> ecs_dg_adi_dir;
     for (k = start; k < stop; k++)
     {
         i = k / sizej;
@@ -1013,38 +1013,38 @@ static void* ecs_do_dg_adi(void* dataptr) {
     return NULL;
 }
 
-void ecs_run_threaded_dg_adi(const int i, const int j, ECS_Grid_node* g, AdiDirection* adi_dir, const int n) {
+void ecs_run_threaded_dg_adi(const int i, const int j, ECS_Grid_node* g, ECSAdiDirection* ecs_adi_dir, const int n) {
     int k;  
     /* when doing any given direction, the number of tasks is the product of the other two, so multiply everything then divide out the current direction */
     const int tasks_per_thread = (g->size_x * g->size_y * g->size_z / n) / NUM_THREADS;
     const int extra = (g->size_x * g->size_y * g->size_z / n) % NUM_THREADS;
     
-    g->tasks[0].start = 0; 
-    g->tasks[0].stop = tasks_per_thread + (extra>0);
-    g->tasks[0].sizej = j;
-    g->tasks[0].adi_dir = adi_dir;
+    g->ecs_tasks[0].start = 0; 
+    g->ecs_tasks[0].stop = tasks_per_thread + (extra>0);
+    g->ecs_tasks[0].sizej = j;
+    g->ecs_tasks[0].ecs_adi_dir = ecs_adi_dir;
     for (k = 1; k < NUM_THREADS; k++)
     {
-        g->tasks[k].start = g->tasks[k-1].stop;
-        g->tasks[k].stop = g->tasks[k].start + tasks_per_thread + (extra>k);
-        g->tasks[k].sizej = j;
-        g->tasks[k].adi_dir = adi_dir;
+        g->ecs_tasks[k].start = g->ecs_tasks[k-1].stop;
+        g->ecs_tasks[k].stop = g->ecs_tasks[k].start + tasks_per_thread + (extra>k);
+        g->ecs_tasks[k].sizej = j;
+        g->ecs_tasks[k].ecs_adi_dir = ecs_adi_dir;
     }
-    g->tasks[NUM_THREADS - 1].stop = i * j;
+    g->ecs_tasks[NUM_THREADS - 1].stop = i * j;
      /* launch threads */
     for (k = 0; k < NUM_THREADS-1; k++) 
     {
-       TaskQueue_add_task(AllTasks, &ecs_do_dg_adi, &(g->tasks[k]), NULL);
+       TaskQueue_add_task(AllTasks, &ecs_do_dg_adi, &(g->ecs_tasks[k]), NULL);
     }
     /* run one task in the main thread */
-    ecs_do_dg_adi(&(g->tasks[NUM_THREADS - 1]));
+    ecs_do_dg_adi(&(g->ecs_tasks[NUM_THREADS - 1]));
     /* wait for them to finish */
     TaskQueue_sync(AllTasks);
 }
 
 void ecs_set_adi_homogeneous(ECS_Grid_node *g)
 {
-    g->adi_dir_x->ecs_dg_adi_dir = ecs_dg_adi_x;
-    g->adi_dir_y->ecs_dg_adi_dir = ecs_dg_adi_y;
-    g->adi_dir_z->ecs_dg_adi_dir = ecs_dg_adi_z;
+    g->ecs_adi_dir_x->ecs_dg_adi_dir = ecs_dg_adi_x;
+    g->ecs_adi_dir_y->ecs_dg_adi_dir = ecs_dg_adi_y;
+    g->ecs_adi_dir_z->ecs_dg_adi_dir = ecs_dg_adi_z;
 }

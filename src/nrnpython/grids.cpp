@@ -109,32 +109,32 @@ ECS_Grid_node *ECS_make_Grid(PyHocObject* my_states, int my_num_states_x,
     new_Grid->bc->type=bc;
     new_Grid->bc->value=bc_value;
 
-    new_Grid->tasks = NULL;
-    new_Grid->tasks = (AdiGridData*)malloc(NUM_THREADS*sizeof(AdiGridData));
+    new_Grid->ecs_tasks = NULL;
+    new_Grid->ecs_tasks = (ECSAdiGridData*)malloc(NUM_THREADS*sizeof(ECSAdiGridData));
     for(k=0; k<NUM_THREADS; k++)
     {
-        new_Grid->tasks[k].scratchpad = (double*)malloc(sizeof(double) * MAX(my_num_states_x,MAX(my_num_states_y,my_num_states_z)));
-        new_Grid->tasks[k].g = new_Grid;
+        new_Grid->ecs_tasks[k].scratchpad = (double*)malloc(sizeof(double) * MAX(my_num_states_x,MAX(my_num_states_y,my_num_states_z)));
+        new_Grid->ecs_tasks[k].g = new_Grid;
     }
 
 
-    new_Grid->adi_dir_x = (AdiDirection*)malloc(sizeof(AdiDirection));
-    new_Grid->adi_dir_x->states_in = new_Grid->states;
-    new_Grid->adi_dir_x->states_out = new_Grid->states_x;
-    new_Grid->adi_dir_x->line_size = my_num_states_x;
+    new_Grid->ecs_adi_dir_x = (ECSAdiDirection*)malloc(sizeof(ECSAdiDirection));
+    new_Grid->ecs_adi_dir_x->states_in = new_Grid->states;
+    new_Grid->ecs_adi_dir_x->states_out = new_Grid->states_x;
+    new_Grid->ecs_adi_dir_x->line_size = my_num_states_x;
 
 
-    new_Grid->adi_dir_y = (AdiDirection*)malloc(sizeof(AdiDirection));
-    new_Grid->adi_dir_y->states_in = new_Grid->states_x;
-    new_Grid->adi_dir_y->states_out = new_Grid->states_y;
-    new_Grid->adi_dir_y->line_size = my_num_states_y;
+    new_Grid->ecs_adi_dir_y = (ECSAdiDirection*)malloc(sizeof(ECSAdiDirection));
+    new_Grid->ecs_adi_dir_y->states_in = new_Grid->states_x;
+    new_Grid->ecs_adi_dir_y->states_out = new_Grid->states_y;
+    new_Grid->ecs_adi_dir_y->line_size = my_num_states_y;
 
 
 
-    new_Grid->adi_dir_z = (AdiDirection*)malloc(sizeof(AdiDirection));
-    new_Grid->adi_dir_z->states_in = new_Grid->states_y;
-    new_Grid->adi_dir_z->states_out = new_Grid->states_x;
-    new_Grid->adi_dir_z->line_size = my_num_states_z;
+    new_Grid->ecs_adi_dir_z = (ECSAdiDirection*)malloc(sizeof(ECSAdiDirection));
+    new_Grid->ecs_adi_dir_z->states_in = new_Grid->states_y;
+    new_Grid->ecs_adi_dir_z->states_out = new_Grid->states_x;
+    new_Grid->ecs_adi_dir_z->line_size = my_num_states_z;
 
     new_Grid->atolscale = atolscale;
 
@@ -339,19 +339,19 @@ void free_Grid(Grid_node *grid) {
     }
 #endif
     free(grid->all_currents);
-    free(grid->adi_dir_x);
-    free(grid->adi_dir_y);
-    free(grid->adi_dir_z);
+    free(grid->ecs_adi_dir_x);
+    free(grid->ecs_adi_dir_y);
+    free(grid->ecs_adi_dir_z);
 
 
-    if(grid->tasks != NULL)
+    if(grid->ecs_tasks != NULL)
     {   
         for(i=0; i<NUM_THREADS; i++)
         {
-            free(grid->tasks[i].scratchpad);
+            free(grid->ecs_tasks[i].scratchpad);
         }
     }
-    free(grid->tasks);
+    free(grid->ecs_tasks);
     free(grid);
 }
 
@@ -456,13 +456,13 @@ int ECS_Grid_node::dg_adi()
 {
     //double* tmp;
     /* first step: advance the x direction */
-    ecs_run_threaded_dg_adi(size_y, size_z, this, adi_dir_x, size_x);
+    ecs_run_threaded_dg_adi(size_y, size_z, this, ecs_adi_dir_x, size_x);
 
     /* second step: advance the y direction */
-    ecs_run_threaded_dg_adi(size_x, size_z, this, adi_dir_y, size_y);
+    ecs_run_threaded_dg_adi(size_x, size_z, this, ecs_adi_dir_y, size_y);
 
     /* third step: advance the z direction */
-    ecs_run_threaded_dg_adi(size_x, size_y, this, adi_dir_z, size_z);
+    ecs_run_threaded_dg_adi(size_x, size_y, this, ecs_adi_dir_z, size_z);
 
     /* transfer data */
     /*TODO: Avoid copy by switching pointers and updating Python copy
@@ -470,6 +470,6 @@ int ECS_Grid_node::dg_adi()
     g->states = g->adi_dir_z->states_out;
     g->adi_dir_z->states_out = tmp;
     */
-    memcpy(states, adi_dir_z->states_out, sizeof(double)*size_x*size_y*size_z);
+    memcpy(states, ecs_adi_dir_z->states_out, sizeof(double)*size_x*size_y*size_z);
     return 0;
 }
