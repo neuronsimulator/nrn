@@ -4,6 +4,8 @@
 
 #include "ast/ast.hpp"
 #include "parser/nmodl_driver.hpp"
+#include "visitors/json_visitor.hpp"
+#include "visitors/nmodl_visitor.hpp"
 
 using namespace ast;
 
@@ -73,4 +75,24 @@ std::shared_ptr<Statement> create_statement(const std::string& code_statement) {
     auto statement =
         std::shared_ptr<Statement>(procedure->get_statement_block()->get_statements()[0]->clone());
     return statement;
+}
+
+namespace  nmodl {
+
+    std::string to_nmodl(ast::AST *node) {
+        std::stringstream stream;
+        NmodlPrintVisitor v(stream);
+        node->accept(&v);
+        return stream.str();
+    }
+
+
+    std::string to_json(ast::AST *node, bool compact) {
+        std::stringstream stream;
+        JSONVisitor v(stream);
+        v.compact_json(compact);
+        node->accept(&v);
+        return stream.str();
+    }
+
 }

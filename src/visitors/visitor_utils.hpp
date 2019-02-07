@@ -26,4 +26,13 @@ ast::LocalVar* add_local_variable(ast::StatementBlock* node, const std::string& 
 
 /** Create ast statement node from given code in string format */
 std::shared_ptr<ast::Statement> create_statement(const std::string& code_statement);
+
+namespace nmodl {
+    /** Given AST node, return the NMODL string representation */
+    std::string to_nmodl(ast::AST *node);
+
+    /** Given AST node, return the JSON string representation */
+    std::string to_json(ast::AST *node, bool compact = false);
+}
+
 #endif
