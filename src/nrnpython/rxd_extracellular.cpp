@@ -480,7 +480,7 @@ void do_currents(Grid_node* grid, double* output, double dt, int grid_id)
     }
 }
 
-void _fadvance_fixed_step_ecs(void) {
+void _fadvance_fixed_step_3D(void) {
     Grid_node* grid;
     double* states;
     Current_Triple* c;
@@ -497,19 +497,9 @@ void _fadvance_fixed_step_ecs(void) {
 	    run_threaded_reactions(threaded_reactions_tasks);
 
     for (id = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, id++) {
-        do_currents(grid, grid->states_cur, dt, id);
-		switch(grid->VARIABLE_ECS_VOLUME)
-		{
-			case VOLUME_FRACTION:
-				set_adi_vol(grid);
-				break;
-			case TORTUOSITY:
-                set_adi_tort(grid);
-				break;
-			default:
-                set_adi_homogeneous(grid);
-		}
-        dg_adi(grid);
+        grid->do_grid_currents(dt, id);
+        grid->volume_setup();
+        grid->dg_adi();
         
     }
     /* transfer concentrations */
@@ -1052,30 +1042,3 @@ void set_adi_homogeneous(Grid_node *g)
     g->adi_dir_y->dg_adi_dir = dg_adi_y;
     g->adi_dir_z->dg_adi_dir = dg_adi_z;
 }
-
-/*DG-ADI implementation the 3 step process to diffusion species in grid g by time step *dt_ptr
- * g    -   the state and parameters
- */
-static int dg_adi(Grid_node *g)
-{
-    //double* tmp;
-    /* first step: advance the x direction */
-    run_threaded_dg_adi(g->size_y, g->size_z, g, g->adi_dir_x, g->size_x);
-
-    /* second step: advance the y direction */
-    run_threaded_dg_adi(g->size_x, g->size_z, g, g->adi_dir_y, g->size_y);
-
-    /* third step: advance the z direction */
-    run_threaded_dg_adi(g->size_x, g->size_y, g, g->adi_dir_z, g->size_z);
-
-    /* transfer data */
-    /*TODO: Avoid copy by switching pointers and updating Python copy
-    tmp = g->states;
-    g->states = g->adi_dir_z->states_out;
-    g->adi_dir_z->states_out = tmp;
-    */
-    memcpy(g->states, g->adi_dir_z->states_out, sizeof(double)*g->size_x*g->size_y*g->size_z);
-    return 0;
-}
-
-

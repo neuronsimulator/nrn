@@ -98,7 +98,6 @@ class Grid_node {
     public:
     struct Grid_node *next;
 
-
     double *states;         // Array of doubles representing Grid space
     double *states_x;
     double *states_y;
@@ -123,7 +122,6 @@ class Grid_node {
     int* proc_num_currents;
     long* current_dest;
     double* all_currents;
-
     /*Extension to handle a variable diffusion characteristics of a grid*/
     unsigned char	VARIABLE_ECS_VOLUME;	/*FLAG which variable volume fraction
                                             methods should be used*/
@@ -140,12 +138,19 @@ class Grid_node {
     struct AdiDirection* adi_dir_y;
     struct AdiDirection* adi_dir_z;
     double atolscale;
+
     virtual void set_num_threads(const int n) = 0;
+    virtual void do_grid_currents(double dt, int id) = 0;
+    virtual void volume_setup() = 0;
+    virtual int dg_adi() = 0;
 };
 
-class ECS_Grid_node: public Grid_node{
+class ECS_Grid_node : public Grid_node{
     public:
-        void set_num_threads(const int n);  
+        void set_num_threads(const int n);
+        void do_grid_currents(double dt, int id);  
+        void volume_setup();
+        int dg_adi();
 };
 
 typedef struct AdiDirection{

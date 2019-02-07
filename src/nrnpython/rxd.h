@@ -117,7 +117,7 @@ typedef struct TaskQueue
 
 extern "C" void set_num_threads(const int);
 void _fadvance(void);
-void _fadvance_fixed_step_ecs(void);
+void _fadvance_fixed_step_3D(void);
 
 extern "C" int get_num_threads(void);
 static int dg_adi(Grid_node*);
