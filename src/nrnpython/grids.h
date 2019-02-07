@@ -143,6 +143,7 @@ class Grid_node {
     virtual void do_grid_currents(double dt, int id) = 0;
     virtual void volume_setup() = 0;
     virtual int dg_adi() = 0;
+    virtual void scatter_grid_concentrations() = 0;
 };
 
 class ECS_Grid_node : public Grid_node{
@@ -151,6 +152,11 @@ class ECS_Grid_node : public Grid_node{
         void do_grid_currents(double dt, int id);  
         void volume_setup();
         int dg_adi();
+        void scatter_grid_concentrations();
+};
+
+class ICS_Grid_node : public Grid_node{
+
 };
 
 typedef struct AdiDirection{
@@ -197,7 +203,7 @@ void make_dt_ptr(PyHocObject* my_dt_ptr);
                 size of x, y, and z dimensions
                 x, y, and z diffusion constants
                 delta x, delta y, and delta z*/
-Grid_node *make_Grid(PyHocObject* my_states, int my_num_states_x, 
+ECS_Grid_node *ECS_make_Grid(PyHocObject* my_states, int my_num_states_x, 
     int my_num_states_y, int my_num_states_z, double my_dc_x, double my_dc_y,
     double my_dc_z, double my_dx, double my_dy, double my_dz,
 	PyHocObject* my_alpha, PyHocObject* my_lambda, int, double, double);

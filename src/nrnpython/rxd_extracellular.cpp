@@ -506,20 +506,26 @@ void _fadvance_fixed_step_3D(void) {
     scatter_concentrations();
 }
 
+void ECS_Grid_node::scatter_grid_concentrations()
+{
+    Py_ssize_t i, n;
+    Concentration_Pair* cp;
+    double* my_states;  
+
+    my_states = states;
+    n = num_concentrations;
+    cp = concentration_list;
+    for (i = 0; i < n; i++) {
+        (*cp[i].destination) = states[cp[i].source];
+    }  
+}
+
 void scatter_concentrations(void) {
     /* transfer concentrations to classic NEURON */
     Grid_node* grid;
-    Py_ssize_t i, n;
-    Concentration_Pair* cp;
-    double* states;
 
     for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
-        states = grid->states;
-        n = grid->num_concentrations;
-        cp = grid->concentration_list;
-        for (i = 0; i < n; i++) {
-            (*cp[i].destination) = states[cp[i].source];
-        }
+        grid->scatter_grid_concentrations();
     }
 }
 
