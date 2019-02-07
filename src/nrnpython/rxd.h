@@ -164,7 +164,7 @@ void _rhs_variable_step_helper_tort(Grid_node*, double const * const, double*);
 void _rhs_variable_step_helper_vol(Grid_node*, double const * const, double*);
 
 static void ecs_refresh_reactions(int);
-void set_num_threads_ecs(int n);
+void set_num_threads_3D(int n);
 
 void _rhs_variable_step_ecs(const double, const double*, double*);
 

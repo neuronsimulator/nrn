@@ -1160,7 +1160,7 @@ void set_num_threads(const int n)
             }
         }
     }
-    set_num_threads_ecs(n);
+    set_num_threads_3D(n);
     NUM_THREADS = n;
 
 }

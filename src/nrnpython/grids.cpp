@@ -23,12 +23,12 @@ extern "C" void make_time_ptr(PyHocObject* my_dt_ptr, PyHocObject* my_t_ptr) {
 }
 
 // Make a new Grid_node given required Grid_node parameters
-Grid_node *make_Grid(PyHocObject* my_states, int my_num_states_x, 
+ECS_Grid_node *ECS_make_Grid(PyHocObject* my_states, int my_num_states_x, 
     int my_num_states_y, int my_num_states_z, double my_dc_x, double my_dc_y,
     double my_dc_z, double my_dx, double my_dy, double my_dz, PyHocObject* my_alpha,
 	PyHocObject* my_lambda, int bc, double bc_value, double atolscale) {
     int k;
-    Grid_node *new_Grid = new Grid_node();
+    ECS_Grid_node *new_Grid = new ECS_Grid_node();
     assert(new_Grid);
 
     new_Grid->states = my_states->u.px_;
@@ -153,7 +153,7 @@ int insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x,
     int i = 0;
 
 
-    Grid_node *new_Grid = make_Grid(my_states, my_num_states_x, my_num_states_y, 
+    Grid_node *new_Grid = ECS_make_Grid(my_states, my_num_states_x, my_num_states_y, 
             my_num_states_z, my_dc_x, my_dc_y, my_dc_z, my_dx, my_dy, my_dz, 
 			my_alpha, my_lambda, bc, bc_value, atolscale);
     Grid_node **head = &(Parallel_grids[grid_list_index]);

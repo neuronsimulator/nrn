@@ -55,30 +55,34 @@ static void ecs_refresh_reactions(const int n)
 	threaded_reactions_tasks = create_threaded_reactions(n);
 }
 
-
-void set_num_threads_ecs(const int n)
+void ECS_Grid_node::set_num_threads(const int n)
 {
     int i;
+    if(tasks != NULL)
+    {
+        for(i = 0; i<NUM_THREADS; i++)
+        {
+            free(tasks[i].scratchpad);
+        }
+    }
+    free(tasks);
+    tasks = (AdiGridData*)malloc(NUM_THREADS*sizeof(AdiGridData));
+    for(i=0; i<n; i++)
+    {
+        tasks[i].scratchpad = (double*)malloc(sizeof(double) * MAX(size_x,MAX(size_y, size_z)));
+        tasks[i].g = this;
+
+    }
+}
+
+void set_num_threads_3D(const int n)
+{
     Grid_node *grid;
     if(n != NUM_THREADS)
     {
         for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next)
         {
-            if(grid->tasks != NULL)
-            {
-                for(i = 0; i<NUM_THREADS; i++)
-                {
-                    free(grid->tasks[i].scratchpad);
-                }
-            }
-            free(grid->tasks);
-            grid->tasks = (AdiGridData*)malloc(NUM_THREADS*sizeof(AdiGridData));
-            for(i=0; i<n; i++)
-            {
-                grid->tasks[i].scratchpad = (double*)malloc(sizeof(double) * MAX(grid->size_x,MAX(grid->size_y,grid->size_z)));
-                grid->tasks[i].g = grid;
-
-            }
+            grid->set_num_threads(n);
         }
     }
     ecs_refresh_reactions(n);

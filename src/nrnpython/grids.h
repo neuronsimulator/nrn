@@ -96,48 +96,56 @@ typedef struct {
 
 class Grid_node {
     public:
-        double *states;         // Array of doubles representing Grid space
-        double *states_x;
-        double *states_y;
-        double *states_cur;
-        int size_x;          // Size of X dimension
-        int size_y;          // Size of Y dimension
-        int size_z;          // Size of Z dimension
-        double dc_x;            // X diffusion constant
-        double dc_y;            // Y diffusion constant
-        double dc_z;            // Z diffusion constant
-        double dx;              // ∆X
-        double dy;              // ∆Y
-        double dz;              // ∆Z
-        BoundaryConditions* bc;
-        struct Grid_node *next;
-        Concentration_Pair* concentration_list;
-        Current_Triple* current_list;
-        Py_ssize_t num_concentrations, num_currents;
-        
-        /*used for MPI implementation*/
-        int num_all_currents;
-        int* proc_offsets;
-        int* proc_num_currents;
-        long* current_dest;
-        double* all_currents;
+    struct Grid_node *next;
 
-        /*Extension to handle a variable diffusion characteristics of a grid*/
-        unsigned char	VARIABLE_ECS_VOLUME;	/*FLAG which variable volume fraction
-                                                methods should be used*/
-        /*diffusion characteristics are arrays of a single value or
-        * the number of voxels (size_x*size_y*size_z)*/
-        double *lambda;		/* tortuosities squared D_eff=D_free/lambda */
-        double *alpha;		/* volume fractions */
-        /*Function that will be assigned when the grid is created to either return
-        * the single value or the value at a given index*/ 
-        double (*get_alpha)(double*,int);
-        double (*get_lambda)(double*,int);
-        struct AdiGridData* tasks;
-        struct AdiDirection* adi_dir_x;
-        struct AdiDirection* adi_dir_y;
-        struct AdiDirection* adi_dir_z;
-        double atolscale;
+
+    double *states;         // Array of doubles representing Grid space
+    double *states_x;
+    double *states_y;
+    double *states_cur;
+    int size_x;          // Size of X dimension
+    int size_y;          // Size of Y dimension
+    int size_z;          // Size of Z dimension
+    double dc_x;            // X diffusion constant
+    double dc_y;            // Y diffusion constant
+    double dc_z;            // Z diffusion constant
+    double dx;              // ∆X
+    double dy;              // ∆Y
+    double dz;              // ∆Z
+    BoundaryConditions* bc;
+    Concentration_Pair* concentration_list;
+    Current_Triple* current_list;
+    Py_ssize_t num_concentrations, num_currents;
+    
+    /*used for MPI implementation*/
+    int num_all_currents;
+    int* proc_offsets;
+    int* proc_num_currents;
+    long* current_dest;
+    double* all_currents;
+
+    /*Extension to handle a variable diffusion characteristics of a grid*/
+    unsigned char	VARIABLE_ECS_VOLUME;	/*FLAG which variable volume fraction
+                                            methods should be used*/
+    /*diffusion characteristics are arrays of a single value or
+    * the number of voxels (size_x*size_y*size_z)*/
+    double *lambda;		/* tortuosities squared D_eff=D_free/lambda */
+    double *alpha;		/* volume fractions */
+    /*Function that will be assigned when the grid is created to either return
+    * the single value or the value at a given index*/ 
+    double (*get_alpha)(double*,int);
+    double (*get_lambda)(double*,int);
+    struct AdiGridData* tasks;
+    struct AdiDirection* adi_dir_x;
+    struct AdiDirection* adi_dir_y;
+    struct AdiDirection* adi_dir_z;
+    double atolscale;
+    virtual void set_num_threads(const int n) = 0;
+};
+
+class ECS_Grid_node: public Grid_node{
+    public:
+        void set_num_threads(const int n);  
 };
 
 typedef struct AdiDirection{
