@@ -78,9 +78,8 @@ set(MOD2C "" CACHE FILEPATH "Path of MOD2C binary")
 option(UNIT_TESTS "Enable unit tests compilation and execution" ON)
 option(FUNCTIONAL_TESTS "Enable functional tests compilation and execution" ON)
 
-# For external development, allow one to install all headers and mod files
-# todo: need to refactor to install specific set of headers only
-option(ENABLE_DEV_FILES_INSTALLATION "Allow to install hedaers/mod files for development" OFF)
+# todo: need to refactor to install only necessary header files
+option(ENABLE_HEADER_INSTALL "Install hedaers files for standalone compilation" ON)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake
       ${PROJECT_SOURCE_DIR}/CMake/portability
@@ -277,6 +276,8 @@ else()
     message(STATUS "Boost not found, disabling tests")
 endif(Boost_FOUND)
 
+
+add_subdirectory(extra)
 
 # Documentation
 #include(DoxygenRule)

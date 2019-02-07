@@ -295,26 +295,50 @@ endif()
 if(ENABLE_REPORTINGLIB)
     set(link_reportinglib ${reportinglib_LIBRARY})
 endif()
-target_link_libraries(coreneuron ${MPI_CXX_LIBRARIES}
-    ${link_reportinglib} ${link_cudacoreneuron} ${CUDA_LIBRARIES} )
 
+
+target_link_libraries(coreneuron ${MPI_CXX_LIBRARIES}
+                      ${link_reportinglib} ${link_cudacoreneuron} ${CUDA_LIBRARIES} )
 
 set_target_properties(coreneuron PROPERTIES
-                            VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}
-                            SOVERSION ${VERSION_MAJOR}
-                            CLEAN_DIRECT_OUTPUT 1)
+                      VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}
+                      SOVERSION ${VERSION_MAJOR}
+                      CLEAN_DIRECT_OUTPUT 1)
+
+
+# Extract link defs to the whole project
+get_target_property(CORENRN_LINK_LIBS coreneuron LINK_LIBRARIES)
+set(CORENRN_LINK_LIBS ${CORENRN_LINK_LIBS} PARENT_SCOPE)
+
+# Share built-in OPTIONAL MODS also with rest of project
+set(CORENRN_OPTMECH_MODS "${MOD2C_OPTMECH_MODS}" PARENT_SCOPE)
+
 
 install(TARGETS coreneuron
-             LIBRARY DESTINATION ${LIB_INSTALL_DIR}
-             ARCHIVE DESTINATION ${LIB_INSTALL_DIR} )
-         install(FILES "engine.h" DESTINATION include/coreneuron)
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
-if(ENABLE_DEV_FILES_INSTALLATION)
+install(FILES "engine.h"
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/coreneuron)
+
+if(ENABLE_HEADER_INSTALL)
     install(DIRECTORY .
-                DESTINATION include/coreneuron
-                FILES_MATCHING PATTERN "*.h*" PATTERN "*.ipp")
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/coreneuron
+            FILES_MATCHING PATTERN "*.h*" PATTERN "*.ipp")
 
-    install(DIRECTORY ./mech/modfile/.
-                DESTINATION share/mod
-                FILES_MATCHING PATTERN "*.mod")
+    install(FILES ${KINDERIV_PY}
+            DESTINATION ${CMAKE_INSTALL_DATADIR}/coreneuron)
+
+    install(FILES ${MOD_FUNC_C_PL}
+            DESTINATION ${CMAKE_INSTALL_DATADIR}/coreneuron)
+
+    install(DIRECTORY "scopmath_core"
+            DESTINATION ${CMAKE_INSTALL_DATADIR}/coreneuron
+            FILES_MATCHING PATTERN "dimplic.cpp")
 endif()
+
+install(PROGRAMS ${MOD2C_BINARY}
+        DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+install(FILES ${MOD2C_UNITS}
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/mod2c)
