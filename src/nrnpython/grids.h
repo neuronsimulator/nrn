@@ -133,10 +133,6 @@ class Grid_node {
     * the single value or the value at a given index*/ 
     double (*get_alpha)(double*,int);
     double (*get_lambda)(double*,int);
-    struct ECSAdiGridData* ecs_tasks;
-    struct ECSAdiDirection* ecs_adi_dir_x;
-    struct ECSAdiDirection* ecs_adi_dir_y;
-    struct ECSAdiDirection* ecs_adi_dir_z;
     double atolscale;
 
     virtual void set_num_threads(const int n) = 0;
@@ -144,15 +140,22 @@ class Grid_node {
     virtual void volume_setup() = 0;
     virtual int dg_adi() = 0;
     virtual void scatter_grid_concentrations() = 0;
+    virtual void free_Grid() = 0;
 };
 
 class ECS_Grid_node : public Grid_node{
     public:
+        struct ECSAdiGridData* ecs_tasks;
+        struct ECSAdiDirection* ecs_adi_dir_x;
+        struct ECSAdiDirection* ecs_adi_dir_y;
+        struct ECSAdiDirection* ecs_adi_dir_z;
+
         void set_num_threads(const int n);
         void do_grid_currents(double dt, int id);  
         void volume_setup();
         int dg_adi();
         void scatter_grid_concentrations();
+        void free_Grid();
 };
 
 class ICS_Grid_node : public Grid_node{
@@ -210,7 +213,7 @@ ECS_Grid_node *ECS_make_Grid(PyHocObject* my_states, int my_num_states_x,
 
 
 // Free a single Grid_node "grid"
-void free_Grid(Grid_node *grid);
+//void free_Grid(Grid_node *grid);
 
 // Insert a Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
 extern "C" int insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x, 

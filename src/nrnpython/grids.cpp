@@ -318,9 +318,45 @@ extern "C" void set_grid_currents(int grid_list_index, int index_in_list, PyObje
     g->num_all_currents = g->num_currents;
 #endif
 }
+// Free a single Grid_node
+void ECS_Grid_node::free_Grid(){
+    int i;
+    free(states_x);
+    free(states_y);
+    free(states_cur);
+    free(concentration_list);
+    free(current_list);
+	free(alpha);
+	free(lambda);
+    free(bc);
+    free(current_dest);
+#if NRNMPI
+    if(nrnmpi_use)
+    {
+        free(proc_offsets);
+        free(proc_num_currents);
+    }
+#endif
+    free(all_currents);
+    free(ecs_adi_dir_x);
+    free(ecs_adi_dir_y);
+    free(ecs_adi_dir_z);
+
+
+    if(ecs_tasks != NULL)
+    {   
+        for(i=0; i<NUM_THREADS; i++)
+        {
+            free(ecs_tasks[i].scratchpad);
+        }
+    }
+    free(ecs_tasks);
+    free(this);
+}
 
 // Free a single Grid_node
-void free_Grid(Grid_node *grid) {
+
+/*void free_Grid(Grid_node *grid) {
     int i;
     free(grid->states_x);
     free(grid->states_y);
@@ -353,7 +389,7 @@ void free_Grid(Grid_node *grid) {
     }
     free(grid->ecs_tasks);
     free(grid);
-}
+}*/
 
 // Insert a Grid_node into the linked list
 /*void insert(Grid_node **head, Grid_node *new_Grid) {
@@ -374,7 +410,7 @@ int remove(Grid_node **head, Grid_node *find) {
     if(*head == find) {
         Grid_node *temp = *head;
         *head = (*head)->next;
-        free_Grid(temp);
+        temp->free_Grid();
         return 1;
     }
     Grid_node *temp = *head;
@@ -384,7 +420,7 @@ int remove(Grid_node **head, Grid_node *find) {
     if(!temp) return 0;
     Grid_node *delete_me = temp->next;
     temp->next = delete_me->next;
-    free_Grid(delete_me);
+    delete_me->free_Grid();
     return 1;
 }
 
@@ -408,7 +444,7 @@ void empty_list(int list_index) {
     while(*head != NULL) {
         Grid_node *old_head = *head;
         *head = (*head)->next;
-        free_Grid(old_head);
+        old_head->free_Grid();
     }
 }
 
