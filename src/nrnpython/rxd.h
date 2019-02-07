@@ -120,13 +120,12 @@ void _fadvance(void);
 void _fadvance_fixed_step_3D(void);
 
 extern "C" int get_num_threads(void);
-static int dg_adi(Grid_node*);
-void set_adi_tort(Grid_node*);
-void set_adi_vol(Grid_node*);
-void set_adi_homogeneous(Grid_node *);
+void ecs_set_adi_tort(ECS_Grid_node*);
+void ecs_set_adi_vol(ECS_Grid_node*);
+void ecs_set_adi_homogeneous(ECS_Grid_node *);
 
 void dg_transfer_data(AdiLineData * const, double* const, int const, int const, int const);
-void run_threaded_dg_adi(const int, const int, Grid_node*, AdiDirection*, const int);
+void ecs_run_threaded_dg_adi(const int, const int, ECS_Grid_node*, AdiDirection*, const int);
 ReactGridData* create_threaded_reactions(const int);
 void* do_reactions(void*);
 

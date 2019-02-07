@@ -68,7 +68,7 @@ static int solve_dd_tridiag(int N, const double* l_diag, const double* diag,
  * like dg_adi_x except the grid has a variable volume fraction
  * g.alpha and my have variable tortuosity g.lambda
  */
-static void dg_adi_vol_x(Grid_node* g, const double dt, const int y, const int z, double const * const state, double* const RHS, double* const scratch)
+static void ecs_dg_adi_vol_x(ECS_Grid_node* g, const double dt, const int y, const int z, double const * const state, double* const RHS, double* const scratch)
 {
     int yp,ypd,ym,ymd,zp,zpd,zm,zmd;
 	int x;
@@ -179,7 +179,7 @@ static void dg_adi_vol_x(Grid_node* g, const double dt, const int y, const int z
  * like dg_adi_y except the grid has a variable volume fraction
  * g->alpha and my have variable tortuosity g->lambda
  */
-static void dg_adi_vol_y(Grid_node* g, double const dt, int const x, int const z, double const * const state, double* const RHS, double* const scratch)
+static void ecs_dg_adi_vol_y(ECS_Grid_node* g, double const dt, int const x, int const z, double const * const state, double* const RHS, double* const scratch)
 {
 	int y;
 	double *diag;
@@ -263,7 +263,7 @@ static void dg_adi_vol_y(Grid_node* g, double const dt, int const x, int const z
  * like dg_adi_z except the grid has a variable volume fraction
  * g->alpha and my have variable tortuosity g->lambda
  */
-static void dg_adi_vol_z(Grid_node* g, double const dt, int const x, int const y, double const * const state, double* const RHS, double* const scratch)
+static void ecs_dg_adi_vol_z(ECS_Grid_node* g, double const dt, int const x, int const y, double const * const state, double* const RHS, double* const scratch)
 {
 	int z;
 	double *diag;
@@ -339,11 +339,11 @@ static void dg_adi_vol_z(Grid_node* g, double const dt, int const x, int const y
  * like dg_adi execpt the Grid_node g has variable volume fraction g.alpha and may have
  * variable tortuosity g.lambda
  */
-void set_adi_vol(Grid_node *g)
+void ecs_set_adi_vol(ECS_Grid_node *g)
 {
-    g->adi_dir_x->dg_adi_dir = dg_adi_vol_x;
-    g->adi_dir_y->dg_adi_dir = dg_adi_vol_y;
-    g->adi_dir_z->dg_adi_dir = dg_adi_vol_z;    
+    g->adi_dir_x->ecs_dg_adi_dir = ecs_dg_adi_vol_x;
+    g->adi_dir_y->ecs_dg_adi_dir = ecs_dg_adi_vol_y;
+    g->adi_dir_z->ecs_dg_adi_dir = ecs_dg_adi_vol_z;    
 }
 
 
@@ -357,7 +357,7 @@ void set_adi_vol(Grid_node *g)
  * like dg_adi_x except the grid has a variable tortuosity
  * g.lambda (but it still has fixed volume fraction)
  */
-static void dg_adi_tort_x(Grid_node* g, const double dt, const int y, const int z, double const * const state, double* const RHS, double* const scratch)
+static void ecs_dg_adi_tort_x(ECS_Grid_node* g, const double dt, const int y, const int z, double const * const state, double* const RHS, double* const scratch)
 {
 	int yp,ypd,ym,ymd,zp,zpd,zm,zmd,div_y,div_z;
 	int x;
@@ -457,7 +457,7 @@ static void dg_adi_tort_x(Grid_node* g, const double dt, const int y, const int 
  * like dg_adi_y except the grid has a variable tortuosity
  * g->lambda (but it still has fixed volume fraction)
  */
-static void dg_adi_tort_y(Grid_node* g, double const dt, int const x, int const z, double const * const state, double* const RHS, double* const scratch)
+static void ecs_dg_adi_tort_y(ECS_Grid_node* g, double const dt, int const x, int const z, double const * const state, double* const RHS, double* const scratch)
 {
 	int y;
 	double *diag;
@@ -535,7 +535,7 @@ static void dg_adi_tort_y(Grid_node* g, double const dt, int const x, int const 
  * like dg_adi_z except the grid has a variable tortuosity
  * g->lambda (but it still has fixed volume fraction)
  */
-static void dg_adi_tort_z(Grid_node* g, double const dt, int const x, int const y, double const * const state, double* const RHS, double* const scratch)
+static void ecs_dg_adi_tort_z(ECS_Grid_node* g, double const dt, int const x, int const y, double const * const state, double* const RHS, double* const scratch)
 {
 	int z;
 	double *diag;
@@ -606,11 +606,11 @@ static void dg_adi_tort_z(Grid_node* g, double const dt, int const x, int const 
  * like dg_adi except the grid node g has variable tortuosity g.lambda (but fixed volume
  * fraction)
  */
-void set_adi_tort(Grid_node *g)
+void ecs_set_adi_tort(ECS_Grid_node *g)
 {
-    g->adi_dir_x->dg_adi_dir = dg_adi_tort_x;
-    g->adi_dir_y->dg_adi_dir = dg_adi_tort_y;
-    g->adi_dir_z->dg_adi_dir = dg_adi_tort_z;    
+    g->adi_dir_x->ecs_dg_adi_dir = ecs_dg_adi_tort_x;
+    g->adi_dir_y->ecs_dg_adi_dir = ecs_dg_adi_tort_y;
+    g->adi_dir_z->ecs_dg_adi_dir = ecs_dg_adi_tort_z;    
 }
 
 

@@ -442,13 +442,13 @@ void ECS_Grid_node::volume_setup()
     switch(VARIABLE_ECS_VOLUME)
     {
         case VOLUME_FRACTION:
-            set_adi_vol(this);
+            ecs_set_adi_vol(this);
             break;
         case TORTUOSITY:
-            set_adi_tort(this);
+            ecs_set_adi_tort(this);
             break;
         default:
-            set_adi_homogeneous(this);
+            ecs_set_adi_homogeneous(this);
     }    
 }
 
@@ -456,13 +456,13 @@ int ECS_Grid_node::dg_adi()
 {
     //double* tmp;
     /* first step: advance the x direction */
-    run_threaded_dg_adi(size_y, size_z, this, adi_dir_x, size_x);
+    ecs_run_threaded_dg_adi(size_y, size_z, this, adi_dir_x, size_x);
 
     /* second step: advance the y direction */
-    run_threaded_dg_adi(size_x, size_z, this, adi_dir_y, size_y);
+    ecs_run_threaded_dg_adi(size_x, size_z, this, adi_dir_y, size_y);
 
     /* third step: advance the z direction */
-    run_threaded_dg_adi(size_x, size_y, this, adi_dir_z, size_z);
+    ecs_run_threaded_dg_adi(size_x, size_y, this, adi_dir_z, size_z);
 
     /* transfer data */
     /*TODO: Avoid copy by switching pointers and updating Python copy

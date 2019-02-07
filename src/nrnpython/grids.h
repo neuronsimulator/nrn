@@ -154,7 +154,7 @@ class ECS_Grid_node : public Grid_node{
 };
 
 typedef struct AdiDirection{
-    void (*dg_adi_dir)(Grid_node*, const double, const int, const int, double const * const, double* const, double* const);
+    void (*ecs_dg_adi_dir)(ECS_Grid_node*, const double, const int, const int, double const * const, double* const, double* const);
     double* states_in;
     double* states_out;
     int line_size;
@@ -163,7 +163,7 @@ typedef struct AdiDirection{
 typedef struct AdiGridData{
     int start, stop;
     double* state;
-    Grid_node* g;
+    ECS_Grid_node* g;
     int sizej;
     AdiDirection* adi_dir;
     double* scratchpad;

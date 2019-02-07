@@ -829,7 +829,7 @@ static int solve_dd_clhs_tridiag(const int N, const double l_diag, const double 
  * state    -   where the output of this step is stored
  * scratch  - scratchpad array of doubles, length g->size_x - 1
  */
-static void dg_adi_x(Grid_node* g, const double dt, const int y, const int z, double const * const state, double* const RHS, double* const scratch)
+static void ecs_dg_adi_x(ECS_Grid_node* g, const double dt, const int y, const int z, double const * const state, double* const RHS, double* const scratch)
 {
     int yp,ym,zp,zm;
     int x;
@@ -895,7 +895,7 @@ static void dg_adi_x(Grid_node* g, const double dt, const int y, const int z, do
  *              overwritten by the output of this step
  * scratch  -   scratchpad array of doubles, length g->size_y - 1
  */
-static void dg_adi_y(Grid_node* g, double const dt, int const x, int const z, double const * const state, double* const RHS, double* const scratch)
+static void ecs_dg_adi_y(ECS_Grid_node* g, double const dt, int const x, int const z, double const * const state, double* const RHS, double* const scratch)
 {
     int y;
 	double r = (g->dc_y*dt/SQ(g->dy)); 
@@ -944,7 +944,7 @@ static void dg_adi_y(Grid_node* g, double const dt, int const x, int const z, do
  *              overwritten by the output of this step
  * scratch  -   scratchpad array of doubles, length g->size_z - 1
  */
-static void dg_adi_z(Grid_node* g, double const dt, int const x, int const y, double const * const state, double* const RHS, double* const scratch)
+static void ecs_dg_adi_z(ECS_Grid_node* g, double const dt, int const x, int const y, double const * const state, double* const RHS, double* const scratch)
 {
     int z;
 	double r = g->dc_z*dt/SQ(g->dz);
@@ -983,7 +983,7 @@ static void dg_adi_z(Grid_node* g, double const dt, int const x, int const y, do
         solve_dd_clhs_tridiag(g->size_z, -r/2., 1.+r, -r/2., 1.0, 0, 0, 1.0, RHS, scratch);
 }
 
-static void* do_dg_adi(void* dataptr) {
+static void* ecs_do_dg_adi(void* dataptr) {
     AdiGridData* data = (AdiGridData*) dataptr;
     int start = data -> start;
     int stop = data -> stop;
@@ -991,23 +991,23 @@ static void* do_dg_adi(void* dataptr) {
     AdiDirection* adi_dir = data -> adi_dir;
     double dt = *dt_ptr;
     int sizej = data -> sizej;
-    Grid_node* g = data -> g;
+    ECS_Grid_node* g = data -> g;
     double* state_in = adi_dir-> states_in;
     double* state_out = adi_dir-> states_out;
     int offset = adi_dir -> line_size;
     double* scratchpad = data -> scratchpad;
-    void (*dg_adi_dir)(Grid_node*, double, int, int, double const * const, double* const, double* const) = adi_dir -> dg_adi_dir;
+    void (*ecs_dg_adi_dir)(ECS_Grid_node*, double, int, int, double const * const, double* const, double* const) = adi_dir -> ecs_dg_adi_dir;
     for (k = start; k < stop; k++)
     {
         i = k / sizej;
         j = k % sizej;
-        dg_adi_dir(g, dt, i, j, state_in, &state_out[k*offset], scratchpad);
+        ecs_dg_adi_dir(g, dt, i, j, state_in, &state_out[k*offset], scratchpad);
     }
 
     return NULL;
 }
 
-void run_threaded_dg_adi(const int i, const int j, Grid_node* g, AdiDirection* adi_dir, const int n) {
+void ecs_run_threaded_dg_adi(const int i, const int j, ECS_Grid_node* g, AdiDirection* adi_dir, const int n) {
     int k;  
     /* when doing any given direction, the number of tasks is the product of the other two, so multiply everything then divide out the current direction */
     const int tasks_per_thread = (g->size_x * g->size_y * g->size_z / n) / NUM_THREADS;
@@ -1028,17 +1028,17 @@ void run_threaded_dg_adi(const int i, const int j, Grid_node* g, AdiDirection* a
      /* launch threads */
     for (k = 0; k < NUM_THREADS-1; k++) 
     {
-       TaskQueue_add_task(AllTasks, &do_dg_adi, &(g->tasks[k]), NULL);
+       TaskQueue_add_task(AllTasks, &ecs_do_dg_adi, &(g->tasks[k]), NULL);
     }
     /* run one task in the main thread */
-    do_dg_adi(&(g->tasks[NUM_THREADS - 1]));
+    ecs_do_dg_adi(&(g->tasks[NUM_THREADS - 1]));
     /* wait for them to finish */
     TaskQueue_sync(AllTasks);
 }
 
-void set_adi_homogeneous(Grid_node *g)
+void ecs_set_adi_homogeneous(ECS_Grid_node *g)
 {
-    g->adi_dir_x->dg_adi_dir = dg_adi_x;
-    g->adi_dir_y->dg_adi_dir = dg_adi_y;
-    g->adi_dir_z->dg_adi_dir = dg_adi_z;
+    g->adi_dir_x->ecs_dg_adi_dir = ecs_dg_adi_x;
+    g->adi_dir_y->ecs_dg_adi_dir = ecs_dg_adi_y;
+    g->adi_dir_z->ecs_dg_adi_dir = ecs_dg_adi_z;
 }
