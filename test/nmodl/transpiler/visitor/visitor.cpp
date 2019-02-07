@@ -24,6 +24,7 @@
 
 using json = nlohmann::json;
 using namespace ast;
+using namespace nmodl;
 
 //=============================================================================
 // Verbatim visitor tests
@@ -66,15 +67,7 @@ std::string run_json_visitor(const std::string& text, bool compact = false) {
     nmodl::Driver driver;
     driver.parse_string(text);
     auto ast = driver.ast();
-
-    std::stringstream ss;
-    JSONVisitor v(ss);
-
-    /// if compact is true then we get compact json output
-    v.compact_json(compact);
-
-    v.visit_program(ast.get());
-    return ss.str();
+    return to_json(ast.get(), compact);
 }
 
 TEST_CASE("JSON Visitor") {
@@ -1891,13 +1884,6 @@ SCENARIO("Searching for ast nodes using AstLookupVisitor") {
         return driver.ast();
     };
 
-    auto to_nmodl = [](std::shared_ptr<AST> node) {
-        std::stringstream stream;
-        NmodlPrintVisitor v(stream);
-        node->accept(&v);
-        return stream.str();
-    };
-
     GIVEN("A mod file with nodes of type NEURON, RANGE, BinaryExpression") {
         std::string nmodl_text = R"(
             NEURON {
@@ -1920,8 +1906,8 @@ SCENARIO("Searching for ast nodes using AstLookupVisitor") {
                 std::vector<AstNodeType> types{AstNodeType::RANGE_VAR};
                 auto result = run_lookup_visitor(ast.get(), types);
                 REQUIRE(result.size() == 2);
-                REQUIRE(to_nmodl(result[0]) == "tau");
-                REQUIRE(to_nmodl(result[1]) == "h");
+                REQUIRE(to_nmodl(result[0].get()) == "tau");
+                REQUIRE(to_nmodl(result[1].get()) == "h");
             }
 
             THEN("Can find NEURON block") {
@@ -1934,7 +1920,7 @@ SCENARIO("Searching for ast nodes using AstLookupVisitor") {
                     NEURON {
                         RANGE tau, h
                     })";
-                auto result = reindent_text(to_nmodl(nodes[0]));
+                auto result = reindent_text(to_nmodl(nodes[0].get()));
                 auto expected = reindent_text(neuron_block);
                 REQUIRE(result == expected);
             }
@@ -1973,10 +1959,7 @@ std::vector<std::string> run_differential_equation_visitor(const std::string& te
 
     std::vector<std::string> result;
     for(const auto& equation : equations) {
-        std::stringstream stream;
-        NmodlPrintVisitor v(stream);
-        equation->accept(&v);
-        result.push_back(stream.str());
+        result.push_back(to_nmodl(equation));
     }
     return result;
 }
