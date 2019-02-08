@@ -96,7 +96,7 @@ typedef struct {
 
 class Grid_node {
     public:
-    struct Grid_node *next;
+    Grid_node *next;
 
     double *states;         // Array of doubles representing Grid space
     double *states_x;
@@ -145,6 +145,7 @@ class Grid_node {
 
 class ECS_Grid_node : public Grid_node{
     public:
+        //Data for DG-ADI
         struct ECSAdiGridData* ecs_tasks;
         struct ECSAdiDirection* ecs_adi_dir_x;
         struct ECSAdiDirection* ecs_adi_dir_y;
@@ -156,10 +157,6 @@ class ECS_Grid_node : public Grid_node{
         int dg_adi();
         void scatter_grid_concentrations();
         void free_Grid();
-};
-
-class ICS_Grid_node : public Grid_node{
-
 };
 
 typedef struct ECSAdiDirection{
@@ -178,6 +175,73 @@ typedef struct ECSAdiGridData{
     double* scratchpad;
 } ECSAdiGridData;
 
+class ICS_Grid_node : public Grid_node{
+    public:
+        //stores the positive x,y, and z neighbors for each node. [node0_x, node0_y, node0_z, node1_x ...]
+        long* _neighbors;
+
+        /*Line definitions from Python. In pattern of [line_start_node, line_length, ...]
+        Array is sorted from longest to shortest line */
+        long* _sorted_x_lines;
+        long* _sorted_y_lines;
+        long* _sorted_z_lines;
+
+        //Lengths of _sorted_lines arrays. Used to find thread start and stop indices
+        long _x_lines_length;
+        long _y_lines_length;
+        long _z_lines_length;
+
+        //maximum line length for scratchpad memory allocation
+        long _line_length_max;
+
+        //total number of nodes for this grid
+        long _num_nodes;
+
+        //indices for thread start and stop positions 
+        long* _nodes_per_thread;
+        
+        //Data for DG-ADI
+        struct ICSAdiGridData* ics_tasks;
+        struct ICSAdiDirection* ics_adi_dir_x;
+        struct ICSAdiDirection* ics_adi_dir_y;
+        struct ICSAdiDirection* ics_adi_dir_z;
+        
+        void divide_x_work();
+        void divide_y_work();
+        void divide_z_work();
+        void set_num_threads(const int n);
+        void do_grid_currents(double dt, int id);  
+        void volume_setup();
+        int dg_adi();
+        void scatter_grid_concentrations();
+        void free_Grid();
+};
+
+typedef struct ICSAdiDirection{
+    void (*ics_dg_adi_dir)(ICS_Grid_node* g, int, int, int, double, double*, double*, double*);
+    double* states_in;
+    double* states_out;
+    double* deltas;
+    long* ordered_line_defs;
+    long* ordered_nodes;
+    long* ordered_start_stop_indices; 
+    long* line_start_stop_indices;
+    double dc;
+    double d;
+}ICSAdiDirection;
+
+typedef struct ICSAdiGridData{
+    //Start and stop node indices for lines
+    int line_start, line_stop;
+    //Where to start in the ordered_nodes array
+    int ordered_start;
+    double* state;
+    ICS_Grid_node* g;
+    ICSAdiDirection* ics_adi_dir;
+    double* scratchpad;
+    double* RHS;
+    //double* deltas;
+}ICSAdiGridData;
 
 
 static double get_alpha_scalar(double*, int);

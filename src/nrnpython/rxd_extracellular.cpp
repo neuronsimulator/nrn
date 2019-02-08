@@ -55,26 +55,6 @@ static void ecs_refresh_reactions(const int n)
 	threaded_reactions_tasks = create_threaded_reactions(n);
 }
 
-void ECS_Grid_node::set_num_threads(const int n)
-{
-    int i;
-    if(ecs_tasks != NULL)
-    {
-        for(i = 0; i<NUM_THREADS; i++)
-        {
-            free(ecs_tasks[i].scratchpad);
-        }
-    }
-    free(ecs_tasks);
-    ecs_tasks = (ECSAdiGridData*)malloc(NUM_THREADS*sizeof(ECSAdiGridData));
-    for(i=0; i<n; i++)
-    {
-        ecs_tasks[i].scratchpad = (double*)malloc(sizeof(double) * MAX(size_x,MAX(size_y, size_z)));
-        ecs_tasks[i].g = this;
-
-    }
-}
-
 void set_num_threads_3D(const int n)
 {
     Grid_node *grid;
@@ -504,20 +484,6 @@ void _fadvance_fixed_step_3D(void) {
     }
     /* transfer concentrations */
     scatter_concentrations();
-}
-
-void ECS_Grid_node::scatter_grid_concentrations()
-{
-    Py_ssize_t i, n;
-    Concentration_Pair* cp;
-    double* my_states;  
-
-    my_states = states;
-    n = num_concentrations;
-    cp = concentration_list;
-    for (i = 0; i < n; i++) {
-        (*cp[i].destination) = states[cp[i].source];
-    }  
 }
 
 void scatter_concentrations(void) {

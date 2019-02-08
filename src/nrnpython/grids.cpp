@@ -318,92 +318,6 @@ extern "C" void set_grid_currents(int grid_list_index, int index_in_list, PyObje
     g->num_all_currents = g->num_currents;
 #endif
 }
-// Free a single Grid_node
-void ECS_Grid_node::free_Grid(){
-    int i;
-    free(states_x);
-    free(states_y);
-    free(states_cur);
-    free(concentration_list);
-    free(current_list);
-	free(alpha);
-	free(lambda);
-    free(bc);
-    free(current_dest);
-#if NRNMPI
-    if(nrnmpi_use)
-    {
-        free(proc_offsets);
-        free(proc_num_currents);
-    }
-#endif
-    free(all_currents);
-    free(ecs_adi_dir_x);
-    free(ecs_adi_dir_y);
-    free(ecs_adi_dir_z);
-
-
-    if(ecs_tasks != NULL)
-    {   
-        for(i=0; i<NUM_THREADS; i++)
-        {
-            free(ecs_tasks[i].scratchpad);
-        }
-    }
-    free(ecs_tasks);
-    free(this);
-}
-
-// Free a single Grid_node
-
-/*void free_Grid(Grid_node *grid) {
-    int i;
-    free(grid->states_x);
-    free(grid->states_y);
-    free(grid->states_cur);
-    free(grid->concentration_list);
-    free(grid->current_list);
-	free(grid->alpha);
-	free(grid->lambda);
-    free(grid->bc);
-    free(grid->current_dest);
-#if NRNMPI
-    if(nrnmpi_use)
-    {
-        free(grid->proc_offsets);
-        free(grid->proc_num_currents);
-    }
-#endif
-    free(grid->all_currents);
-    free(grid->ecs_adi_dir_x);
-    free(grid->ecs_adi_dir_y);
-    free(grid->ecs_adi_dir_z);
-
-
-    if(grid->ecs_tasks != NULL)
-    {   
-        for(i=0; i<NUM_THREADS; i++)
-        {
-            free(grid->ecs_tasks[i].scratchpad);
-        }
-    }
-    free(grid->ecs_tasks);
-    free(grid);
-}*/
-
-// Insert a Grid_node into the linked list
-/*void insert(Grid_node **head, Grid_node *new_Grid) {
-    if(!(*head)) {
-        *head = new_Grid;
-        return;
-    }
-
-    Grid_node *end = *head;
-    while(end->next != NULL) {
-        end = end->next;
-    }
-    end->next = new_Grid;
-}*/
 
 // Delete a specific Grid_node from the list
 int remove(Grid_node **head, Grid_node *find) {
@@ -467,6 +381,31 @@ static double get_lambda_array(double* lambda, int idx)
 	return lambda[idx];
 }
 
+/*****************************************************************************
+*
+* Begin ECS_Grid_node Functions
+*
+*****************************************************************************/
+
+void ECS_Grid_node::set_num_threads(const int n)
+{
+    int i;
+    if(ecs_tasks != NULL)
+    {
+        for(i = 0; i<NUM_THREADS; i++)
+        {
+            free(ecs_tasks[i].scratchpad);
+        }
+    }
+    free(ecs_tasks);
+    ecs_tasks = (ECSAdiGridData*)malloc(NUM_THREADS*sizeof(ECSAdiGridData));
+    for(i=0; i<n; i++)
+    {
+        ecs_tasks[i].scratchpad = (double*)malloc(sizeof(double) * MAX(size_x,MAX(size_y, size_z)));
+        ecs_tasks[i].g = this;
+    }
+}
+
 void ECS_Grid_node::do_grid_currents(double dt, int grid_id)
 {
     //TODO: Avoid this call and put the code from do_currents in this method
@@ -508,4 +447,137 @@ int ECS_Grid_node::dg_adi()
     */
     memcpy(states, ecs_adi_dir_z->states_out, sizeof(double)*size_x*size_y*size_z);
     return 0;
+}
+
+void ECS_Grid_node::scatter_grid_concentrations()
+{
+    Py_ssize_t i, n;
+    Concentration_Pair* cp;
+    double* my_states;  
+
+    my_states = states;
+    n = num_concentrations;
+    cp = concentration_list;
+    for (i = 0; i < n; i++) {
+        (*cp[i].destination) = states[cp[i].source];
+    }  
+}
+
+// Free a single Grid_node
+void ECS_Grid_node::free_Grid(){
+    int i;
+    free(states_x);
+    free(states_y);
+    free(states_cur);
+    free(concentration_list);
+    free(current_list);
+	free(alpha);
+	free(lambda);
+    free(bc);
+    free(current_dest);
+#if NRNMPI
+    if(nrnmpi_use)
+    {
+        free(proc_offsets);
+        free(proc_num_currents);
+    }
+#endif
+    free(all_currents);
+    free(ecs_adi_dir_x);
+    free(ecs_adi_dir_y);
+    free(ecs_adi_dir_z);
+
+
+    if(ecs_tasks != NULL)
+    {   
+        for(i=0; i<NUM_THREADS; i++)
+        {
+            free(ecs_tasks[i].scratchpad);
+        }
+    }
+    free(ecs_tasks);
+    free(this);
+}
+
+/*****************************************************************************
+*
+* Begin ICS_Grid_node Functions
+*
+*****************************************************************************/
+
+void ICS_Grid_node::set_num_threads(const int n)
+{
+    int i;
+    if(ics_tasks != NULL)
+    {
+        for(i = 0; i<NUM_THREADS; i++)
+        {
+            free(ics_tasks[i].scratchpad);
+        }
+    }
+    free(ics_tasks);
+    ics_tasks = (ICSAdiGridData*)malloc(NUM_THREADS*sizeof(ICSAdiGridData));
+    for(i=0; i<n; i++)
+    {
+        ics_tasks[i].scratchpad = (double*)malloc(sizeof(double) * _line_length_max);
+        ics_tasks[i].g = this;
+    }
+}
+
+void ICS_Grid_node::do_grid_currents(double dt, int grid_id)
+{
+    //TODO: Avoid this call and put the code from do_currents in this method
+    printf("doing ics currents\n");
+}
+
+void ICS_Grid_node::volume_setup()
+{
+    printf("doing ics volume setup\n");
+}
+
+int ICS_Grid_node::dg_adi()
+{
+    printf("doing ics dg_adi\n");
+    return 0;
+}
+
+void ICS_Grid_node::scatter_grid_concentrations()
+{
+    printf("Scattering ics concentrations\n");
+}
+
+// Free a single Grid_node
+void ICS_Grid_node::free_Grid(){
+    int i;
+    free(states_x);
+    free(states_y);
+    free(states_cur);
+    free(concentration_list);
+    free(current_list);
+	free(alpha);
+	free(lambda);
+    free(bc);
+    free(current_dest);
+#if NRNMPI
+    if(nrnmpi_use)
+    {
+        free(proc_offsets);
+        free(proc_num_currents);
+    }
+#endif
+    free(all_currents);
+    free(ics_adi_dir_x);
+    free(ics_adi_dir_y);
+    free(ics_adi_dir_z);
+
+
+    if(ics_tasks != NULL)
+    {   
+        for(i=0; i<NUM_THREADS; i++)
+        {
+            free(ics_tasks[i].scratchpad);
+        }
+    }
+    free(ics_tasks);
+    free(this);
 }
