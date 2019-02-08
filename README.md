@@ -22,7 +22,7 @@ itself.
 - Python yaml (pyyaml)
 - Jinja2 (>=2.10)
 - Python textwrap
-- pybind11 (which should be fetched in its submodule in ext/pybind11)
+- pybind11 (which should be fetched as submodule in ext/pybind11)
 - pytest (>=4.0.0) (only for tests)
 
 #### Getting Dependencies
