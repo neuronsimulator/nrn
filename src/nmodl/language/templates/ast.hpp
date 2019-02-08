@@ -126,4 +126,4 @@ namespace ast {
     };
 
     {% endfor %}
-}
+}  // namespace ast
