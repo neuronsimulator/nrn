@@ -408,6 +408,10 @@ extern "C" int solve_core(int argc, char** argv) {
 
         // register all reports into reportinglib
         double min_report_dt = INT_MAX;
+        int num_report_mindelay = nrnopt_get_int("--num-report-mindelay");
+
+        set_num_mindelay_to_buffer(num_report_mindelay);
+
         for (size_t i = 0; i < configs.size(); i++) {
             register_report(dt, tstop, delay, configs[i]);
             if (configs[i].report_dt < min_report_dt) {

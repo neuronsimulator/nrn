@@ -71,6 +71,7 @@ static param_int param_int_args[] = {
     {"--extracon -x", 0, 0, 10000000,
      "Number of extra random connections in each thread to other duplicate models (int)."},
     {"--seed -s", -1, 0, 100000000, "Initialization seed for random number generator (int)."},
+    {"--num-report-mindelay", 100, 1, 10000, "Number of min delay intervals to be buffered during reporting (int)."},
     {NULL, 0, 0, 0, NULL}};
 
 static param_dbl param_dbl_args[] = {
