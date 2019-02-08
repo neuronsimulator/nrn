@@ -41,8 +41,9 @@ find_package(ClangFormat)
 message(STATUS "CHECKING FOR PYTHON")
 find_package(PythonInterp 3.6 REQUIRED)
 find_python_module(jinja2 REQUIRED)
-find_python_module(yaml REQUIRED)
+find_python_module(test REQUIRED)
 find_python_module(textwrap REQUIRED)
+find_python_module(yaml REQUIRED)
 
 include_directories(
     ${PROJECT_SOURCE_DIR}
