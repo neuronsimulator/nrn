@@ -233,14 +233,12 @@ class MultiCompartmentReaction(GeneralizedReaction):
         self._cur_ptrs = []
         self._cur_mapped = []
         self._cur_mapped_ecs = []
-        ecs_indices = dict()
         ecs_grids = dict()
         for sp in itertools.chain(self._sources, self._dests):
             s = sp()._species()
             if s.name is not None:
                 for r in s.regions:
                     if isinstance(s[r],species.SpeciesOnExtracellular):
-                        ecs_indices[s.name] = s[r]._extracellular()._locate_segments()
                         ecs_grids[s.name] = s[r]._extracellular()._grid_id
         for sec in self._regions[0].secs:
             for i in range(sec.nseg):
@@ -265,7 +263,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
                                 uberlocal_map[1] = cur_map[spname + 'o'][seg]
                             else:   #Extracellular space
                                 uberlocal_map_ecs[0] = ecs_grids[spname]      #TODO: Just pass the grid_id once per species
-                                uberlocal_map_ecs[1] = ecs_indices[s.name][seg.sec][seg.node_index()-1]
+                                uberlocal_map_ecs[1] = s[r]._extracellular().index_from_xyz(*species._xyz(seg))
                         local_mapped.append(uberlocal_map)
                         local_mapped_ecs.append(uberlocal_map_ecs)
                 self._cur_ptrs.append(tuple(local_ptrs))
