@@ -5,7 +5,6 @@ set(VISITOR_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/ast_visitor.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/cnexp_solve_visitor.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/defuse_analyze_visitor.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/differential_equation_visitor.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/inline_visitor.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/json_visitor.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/local_var_rename_visitor.cpp
@@ -15,6 +14,7 @@ set(VISITOR_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/perf_visitor.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/rename_visitor.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/symtab_visitor.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/sympy_solver_visitor.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/var_usage_visitor.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/verbatim_var_rename_visitor.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/verbatim_visitor.cpp
@@ -24,7 +24,6 @@ set(VISITOR_SOURCES
 set(VISITOR_HEADERS
         ${CMAKE_CURRENT_SOURCE_DIR}/cnexp_solve_visitor.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/defuse_analyze_visitor.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/differential_equation_visitor.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/inline_visitor.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/local_var_rename_visitor.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/localize_visitor.hpp
@@ -35,6 +34,7 @@ set(VISITOR_HEADERS
         ${CMAKE_CURRENT_SOURCE_DIR}/rename_visitor.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/symtab_visitor.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/symtab_visitor_helper.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/sympy_solver_visitor.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/var_usage_visitor.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/verbatim_var_rename_visitor.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/verbatim_visitor.hpp
@@ -49,6 +49,7 @@ set_source_files_properties(
 #=============================================================================
 # Visitor library and executable
 #=============================================================================
+include_directories(${PYBIND11_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS})
 add_library(visitor_obj
         OBJECT
         ${VISITOR_SOURCES} ${VISITOR_HEADERS})
@@ -59,6 +60,7 @@ add_dependencies(visitor_obj lexer_obj)
 add_library(visitor
             STATIC
             $<TARGET_OBJECTS:visitor_obj>)
+target_link_libraries(visitor PRIVATE pybind11::embed)
 
 add_dependencies(visitor lexer util)
 

@@ -74,6 +74,7 @@ setup(
     zip_safe=False,
     setup_requires=['jinja2>=2.10',
                     'PyYAML>=3.13',
+                    'sympy>=1.2'
                     ],
     tests_require=['pytest>=4.0.0']
 )

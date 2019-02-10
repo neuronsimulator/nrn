@@ -25,6 +25,9 @@ struct ArgumentHandler {
     /// memory layout to use
     std::string mlayout;
 
+    /// enable SymPy analytic integration
+    bool sympy;
+
     /// enable nmodl level inlining
     bool inlining;
 

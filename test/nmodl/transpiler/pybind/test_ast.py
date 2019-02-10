@@ -1,6 +1,6 @@
 import nmodl
+from nmodl.dsl import ast, visitor
 import pytest
-from nmodl import ast, visitor
 
 class TestAST(object):
     def test_empty_program(self):
@@ -11,7 +11,7 @@ class TestAST(object):
 def test_lookup_visitor(ch_ast):
     lookup_visitor = visitor.AstLookupVisitor()
     eqs = lookup_visitor.lookup(ch_ast, ast.AstNodeType.DIFF_EQ_EXPRESSION)
-    eq_str = nmodl.to_nmodl(eqs[0])
+    eq_str = nmodl.dsl.to_nmodl(eqs[0])
     assert eq_str == "m' = mInf-m"
 
 
@@ -19,8 +19,8 @@ def test_lookup_visitor_constructor(ch_ast):
     lookup_visitor = visitor.AstLookupVisitor(ast.AstNodeType.DIFF_EQ_EXPRESSION)
     ch_ast.accept(lookup_visitor)
     eqs = lookup_visitor.get_nodes()
-    eq_str = nmodl.to_nmodl(eqs[0])
-    eq_json = nmodl.to_json(eqs[0], True)
+    eq_str = nmodl.dsl.to_nmodl(eqs[0])
+    eq_json = nmodl.dsl.to_json(eqs[0], True)
     assert eq_str == "m' = mInf-m"
     assert '"DiffEqExpression":[{"BinaryExpression"' in eq_json
 
@@ -40,7 +40,7 @@ def test_custom_visitor(ch_ast):
 
         def visit_name(self, node):
             if self.in_state:
-                self.states.append(nmodl.to_nmodl(node))
+                self.states.append(nmodl.dsl.to_nmodl(node))
 
     myvisitor = StateVisitor()
     ch_ast.accept(myvisitor)

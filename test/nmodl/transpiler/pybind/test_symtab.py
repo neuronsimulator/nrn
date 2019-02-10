@@ -1,7 +1,6 @@
 import io
-
-from nmodl import ast, visitor, symtab
-
+import nmodl
+from nmodl.dsl import ast, visitor, symtab
 
 def test_symtab(ch_ast):
     v = symtab.SymtabVisitor()

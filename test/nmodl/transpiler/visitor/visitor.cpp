@@ -1,15 +1,15 @@
-#define CATCH_CONFIG_MAIN
+#define CATCH_CONFIG_RUNNER
 
 #include <string>
 
 #include "catch/catch.hpp"
+#include <pybind11/embed.h>
 
 #include "parser/nmodl_driver.hpp"
 #include "test/utils/nmodl_constructs.h"
 #include "test/utils/test_utils.hpp"
 #include "visitors/cnexp_solve_visitor.hpp"
 #include "visitors/defuse_analyze_visitor.hpp"
-#include "visitors/differential_equation_visitor.hpp"
 #include "visitors/inline_visitor.hpp"
 #include "visitors/json_visitor.hpp"
 #include "visitors/local_var_rename_visitor.hpp"
@@ -19,6 +19,7 @@
 #include "visitors/perf_visitor.hpp"
 #include "visitors/rename_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
+#include "visitors/sympy_solver_visitor.hpp"
 #include "visitors/verbatim_var_rename_visitor.hpp"
 #include "visitors/verbatim_visitor.hpp"
 
@@ -26,6 +27,15 @@ using json = nlohmann::json;
 using namespace ast;
 using namespace nmodl;
 using namespace syminfo;
+namespace py = pybind11;
+
+int main(int argc, char* argv[]) {
+    // initialize python interpreter once for
+    // entire catch executable
+    pybind11::scoped_interpreter guard{};
+    int result = Catch::Session().run(argc, argv);
+    return result;
+}
 
 //=============================================================================
 // Verbatim visitor tests
@@ -1945,53 +1955,182 @@ SCENARIO("Searching for ast nodes using AstLookupVisitor") {
 
 
 //=============================================================================
-// DifferentialEquation visitor tests
+// SympySolver visitor tests
 //=============================================================================
 
-std::vector<std::string> run_differential_equation_visitor(const std::string& text) {
+std::vector<std::string> run_sympy_solver_visitor(const std::string& text) {
+    std::vector<std::string> results;
+
+    // construct AST from text
     nmodl::Driver driver;
     driver.parse_string(text);
     auto ast = driver.ast();
 
-    DifferentialEquationVisitor v;
-    v.visit_program(ast.get());
-    auto equations = v.get_equations();
+    // construct symbol table from AST
+    SymtabVisitor v_symtab;
+    v_symtab.visit_program(ast.get());
 
-    std::vector<std::string> result;
-    for (const auto& equation : equations) {
-        result.push_back(to_nmodl(equation));
+    // run SympySolver on AST
+    SympySolverVisitor v_sympy;
+    v_sympy.visit_program(ast.get());
+
+    // run lookup visitor to extract results from AST
+    AstLookupVisitor v_lookup;
+    auto res = v_lookup.lookup(ast.get(), AstNodeType::DIFF_EQ_EXPRESSION);
+    for (auto r : res) {
+        results.push_back(to_nmodl(r.get()));
     }
-    return result;
+
+    return results;
 }
 
+void run_sympy_visitor_passes(Program* node) {
+    // construct symbol table from AST
+    SymtabVisitor v_symtab;
+    v_symtab.visit_program(node);
 
-SCENARIO("DifferentialEquation visitor finding ODEs") {
-    GIVEN("Derivative block with multiple differential equations") {
+    // run SympySolver on AST several times
+    SympySolverVisitor v_sympy1;
+    v_sympy1.visit_program(node);
+    v_sympy1.visit_program(node);
+
+    // also use a second instance of SympySolver
+    SympySolverVisitor v_sympy2;
+    v_sympy2.visit_program(node);
+    v_sympy1.visit_program(node);
+    v_sympy2.visit_program(node);
+}
+
+std::string ast_to_string(Program* node) {
+    std::stringstream stream;
+    {
+        NmodlPrintVisitor v(stream);
+        v.visit_program(node);
+    }
+    return stream.str();
+}
+
+SCENARIO("SympySolver visitor", "[sympy]") {
+    GIVEN("Derivative block without ODE, solver method cnexp") {
         std::string nmodl_text = R"(
+            BREAKPOINT  {
+                SOLVE states METHOD cnexp
+            }
             DERIVATIVE states {
-                m' = (mInf-m)/mTau
-                h' = (hInf-h)/hTau
                 m = m + h
             }
         )";
 
-        THEN("ODEs can be searched in AST") {
-            auto result = run_differential_equation_visitor(nmodl_text);
+        THEN("No ODEs found - do nothing") {
+            auto result = run_sympy_solver_visitor(nmodl_text);
+            REQUIRE(result.size() == 0);
+        }
+    }
+    GIVEN("Derivative block with ODES, solver method is not cnexp") {
+        std::string nmodl_text = R"(
+            BREAKPOINT  {
+                SOLVE states METHOD derivimplicit
+            }
+            DERIVATIVE states {
+                m' = (mInf-m)/mTau
+                h' = (hInf-h)/hTau
+                z = a*b + c
+            }
+        )";
+
+        THEN("Solver method is not cnexp - do nothing") {
+            auto result = run_sympy_solver_visitor(nmodl_text);
             REQUIRE(result.size() == 2);
             REQUIRE(result[0] == "m' = (mInf-m)/mTau");
             REQUIRE(result[1] == "h' = (hInf-h)/hTau");
         }
     }
-    GIVEN("Derivative mod files without ODE") {
+    GIVEN("Derivative block with linear ODES, solver method cnexp") {
         std::string nmodl_text = R"(
+            BREAKPOINT  {
+                SOLVE states METHOD cnexp
+            }
             DERIVATIVE states {
-                m = m + h
+                m' = (mInf-m)/mTau
+                z = a*b + c
+                h' = hInf/hTau - h/hTau
             }
         )";
 
-        THEN("No ODEs are found") {
-            auto result = run_differential_equation_visitor(nmodl_text);
-            REQUIRE(result.size() == 0);
+        THEN("Integrate equations analytically") {
+            auto result = run_sympy_solver_visitor(nmodl_text);
+            REQUIRE(result.size() == 2);
+            REQUIRE(result[0] == "m = mInf+(m-mInf)*exp(-dt/mTau)");
+            REQUIRE(result[1] == "h = hInf+(h-hInf)*exp(-dt/hTau)");
+        }
+    }
+    GIVEN("Derivative block including non-linear but solvable ODES, solver method cnexp") {
+        std::string nmodl_text = R"(
+            BREAKPOINT  {
+                SOLVE states METHOD cnexp
+            }
+            DERIVATIVE states {
+                m' = (mInf-m)/mTau
+                h' = c2 * h*h
+            }
+        )";
+
+        THEN("Integrate equations analytically") {
+            auto result = run_sympy_solver_visitor(nmodl_text);
+            REQUIRE(result.size() == 2);
+            REQUIRE(result[0] == "m = mInf+(m-mInf)*exp(-dt/mTau)");
+            REQUIRE(result[1] == "h = -1/(c2*dt-1/h)");
+        }
+    }
+    GIVEN("Derivative block including ODES that can't currently be solved, solver method cnexp") {
+        std::string nmodl_text = R"(
+            BREAKPOINT  {
+                SOLVE states METHOD cnexp
+            }
+            DERIVATIVE states {
+                z' = a/z +  b/z/z
+                h' = c2 * h*h
+                x' = a
+                y' = c3 * y*y*y
+            }
+        )";
+
+        THEN("Integrate equations analytically where possible, otherwise leave untouched") {
+            auto result = run_sympy_solver_visitor(nmodl_text);
+            REQUIRE(result.size() == 4);
+            REQUIRE(result[0] == "z' = a/z+b/z/z");
+            REQUIRE(result[1] == "h = -1/(c2*dt-1/h)");
+            REQUIRE(result[2] == "x = a*dt+x");
+            REQUIRE(result[3] == "y' = c3*y*y*y");
+        }
+    }
+    GIVEN("Derivative block with cnexp solver method, AST after SympySolver pass") {
+        std::string nmodl_text = R"(
+            BREAKPOINT  {
+                SOLVE states METHOD cnexp
+            }
+            DERIVATIVE states {
+                m' = (mInf-m)/mTau
+            }
+        )";
+        // construct AST from text
+        nmodl::Driver driver;
+        driver.parse_string(nmodl_text);
+        auto ast = driver.ast();
+
+        // construct symbol table from AST
+        SymtabVisitor v_symtab;
+        v_symtab.visit_program(ast.get());
+
+        // run SympySolver on AST
+        SympySolverVisitor v_sympy;
+        v_sympy.visit_program(ast.get());
+
+        std::string AST_string = ast_to_string(ast.get());
+
+        THEN("More SympySolver passes do nothing to the AST and don't throw") {
+            REQUIRE_NOTHROW(run_sympy_visitor_passes(ast.get()));
+            REQUIRE(AST_string == ast_to_string(ast.get()));
         }
     }
 }

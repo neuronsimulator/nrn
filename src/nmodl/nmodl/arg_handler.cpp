@@ -81,10 +81,17 @@ ArgumentHandler::ArgumentHandler(const int& argc, const char** argv) {
                 "string",
                 cmd);
 
-        switch_arg_type  verbose_arg(
+        switch_arg_type verbose_arg(
                 "",
                 "verbose",
                 "Enable verbose output",
+                cmd,
+                false);
+
+        switch_arg_type sympy_arg(
+                "",
+                "enable-sympy",
+                "Enable SymPy analytic integration",
                 cmd,
                 false);
 
@@ -167,6 +174,7 @@ ArgumentHandler::ArgumentHandler(const int& argc, const char** argv) {
         dtype = stringutils::tolower(dtype_arg.getValue());
         mlayout = layout_arg.getValue();
         verbose = verbose_arg.getValue();
+        sympy = sympy_arg.getValue();
         inlining = inline_arg.getValue();
         localize_with_verbatim = localize_verbatim_arg.getValue();
         local_rename = local_rename_arg.getValue();
