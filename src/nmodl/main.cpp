@@ -1,6 +1,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <pybind11/embed.h>
 
 #include "arg_handler.hpp"
 #include "codegen/codegen_cuda_visitor.hpp"
@@ -19,6 +20,7 @@
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/perf_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
+#include "visitors/sympy_solver_visitor.hpp"
 #include "visitors/verbatim_var_rename_visitor.hpp"
 #include "visitors/verbatim_visitor.hpp"
 
@@ -35,6 +37,10 @@ int main(int argc, const char* argv[]) {
     make_path(arg.scratch_dir);
 
     int error_count = 0;
+
+    if (arg.sympy) {
+        pybind11::initialize_interpreter();
+    }
 
     for (auto& nmodl_file : arg.nmodl_files) {
         std::ifstream file(nmodl_file);
@@ -76,6 +82,11 @@ int main(int argc, const char* argv[]) {
             if (arg.ast_to_nmodl) {
                 ast_to_nmodl(ast.get(), arg.scratch_dir + "/" + mod_file + ".nmodl.verbrename.mod");
             }
+        }
+
+        if (arg.sympy) {
+            SympySolverVisitor v;
+            v.visit_program(ast.get());
         }
 
         {
@@ -172,6 +183,10 @@ int main(int argc, const char* argv[]) {
                 visitor.visit_program(ast.get());
             }
         }
+    }
+
+    if (arg.sympy) {
+        pybind11::finalize_interpreter();
     }
 
     if (error_count != 0) {

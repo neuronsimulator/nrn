@@ -42,6 +42,7 @@ message(STATUS "CHECKING FOR PYTHON")
 find_package(PythonInterp 3.6 REQUIRED)
 find_python_module(jinja2 REQUIRED)
 find_python_module(pytest REQUIRED)
+find_python_module(sympy REQUIRED)
 find_python_module(textwrap REQUIRED)
 find_python_module(yaml REQUIRED)
 
