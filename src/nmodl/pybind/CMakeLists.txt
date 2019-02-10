@@ -30,3 +30,9 @@ pybind11_add_module(_nmodl ${PYNMODL_HEADERS} ${PYNMODL_SOURCES}
 add_dependencies(_nmodl pyastgen)
 add_dependencies(_nmodl lexer_obj)
 add_dependencies(_nmodl util_obj)
+
+#=============================================================================
+# Install python binding components
+#=============================================================================
+install(TARGETS _nmodl DESTINATION lib/python/nmodl)
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/nmodl DESTINATION lib/python/)

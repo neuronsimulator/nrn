@@ -16,5 +16,3 @@ if(NOT FLEX_BIN_DIR MATCHES "/usr/bin")
         include_directories(${FLEX_INCLUDE_PATH})
     endif()
 endif()
-
-include_directories(${FLEX_INCLUDE_DIRS})

@@ -1,2 +1,2 @@
 
-from _nmodl import *
+from ._nmodl import *
