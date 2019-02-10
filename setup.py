@@ -1,18 +1,22 @@
 import os
+import os.path as osp
 import re
+import shutil
+
 import sys
 import platform
 import subprocess
 
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
+from setuptools.command.install_lib import install_lib
 from distutils.version import LooseVersion
 
 
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=''):
         Extension.__init__(self, name, sources=[])
-        self.sourcedir = os.path.abspath(sourcedir)
+        self.sourcedir = osp.abspath(sourcedir)
 
 
 class CMakeBuild(build_ext):
@@ -31,7 +35,7 @@ class CMakeBuild(build_ext):
             self.build_extension(ext)
 
     def build_extension(self, ext):
-        extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
+        extdir = osp.abspath(osp.join(osp.dirname(self.get_ext_fullpath(ext.name)), 'nmodl'))
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
                       '-DPYTHON_EXECUTABLE=' + sys.executable]
 
@@ -50,17 +54,18 @@ class CMakeBuild(build_ext):
         env = os.environ.copy()
         env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),
                                                               self.distribution.get_version())
-        if not os.path.exists(self.build_temp):
+        if not osp.exists(self.build_temp):
             os.makedirs(self.build_temp)
         subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
-        subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
+        subprocess.check_call(['cmake', '--build', '.', '--target', '_nmodl'] + build_args, cwd=self.build_temp)
+
 
 setup(
     name='NMODL',
-    version='0.0.1',
-    author='The Blue Brain Project',
-    author_email='omar.awile@epfl.ch',
-    description='A NEURON modelling language source-to-source compiler framework',
+    version='0.1',
+    author='Blue Brain Project',
+    author_email='bbp-ou-hpc@groupes.epfl.ch',
+    description='NEURON Modelling Language Source-to-Source Compiler Framework',
     long_description='',
     packages=['nmodl'],
     ext_modules=[CMakeExtension('nmodl')],

@@ -21,3 +21,9 @@ set(FILES_FOR_CLANG_FORMAT
     ${FILES_FOR_CLANG_FORMAT}
     PARENT_SCOPE
 )
+
+#=============================================================================
+# Install executable
+#=============================================================================
+install(TARGETS nmodl_parser DESTINATION bin/parser)
+install(TARGETS c_parser DESTINATION bin/parser)
