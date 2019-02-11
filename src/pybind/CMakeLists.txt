@@ -31,6 +31,15 @@ add_dependencies(_nmodl pyastgen)
 add_dependencies(_nmodl lexer_obj)
 add_dependencies(_nmodl util_obj)
 
+add_custom_command(TARGET _nmodl POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_directory
+                    ${PROJECT_SOURCE_DIR}/nmodl
+                    ${CMAKE_BINARY_DIR}/nmodl
+                    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    $<TARGET_FILE:_nmodl>
+                    ${CMAKE_BINARY_DIR}/nmodl
+                   )
+
 #=============================================================================
 # Install python binding components
 #=============================================================================
