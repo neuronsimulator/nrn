@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 #define HOC_L_LIST 1
+#include <nrnpython_config.h>
 #include "section.h"
 #include "neuron.h"
 #include "parse.h"
@@ -136,7 +137,9 @@ static double allroots(void* v)
 
 static double seclist_remove(void* v)
 {
+#if USE_PYTHON
 	extern Symbol* nrnpy_pyobj_sym_;
+#endif
 	Section* sec, *s;
 	Item* q, *q1;
 	List* sl;
@@ -144,7 +147,11 @@ static double seclist_remove(void* v)
 
 	sl = (List*)v;
 	i = 0;
+#if USE_PYTHON
     if (!ifarg(1) || (*hoc_objgetarg(1))->template->sym == nrnpy_pyobj_sym_) {
+#else
+    if (!ifarg(1)) {
+#endif
 	sec = arg1();
 	ITERATE_REMOVE(q, q1, sl) /*{*/
 		if (sec == q->element.sec) {
