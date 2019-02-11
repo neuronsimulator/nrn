@@ -210,7 +210,7 @@ class GeneralizedReaction(object):
                 self._mult = [-areas / volumes[si] / molecules_per_mM_um3 for si in sources_indices] + [areas / volumes[di] / molecules_per_mM_um3 for di in dests_indices]
             #TODO: check for multicompartment reaction within the ECS
             elif len(sources_ecs) > 0 and len(dests_ecs) == 0:
-                self._mult = [-areas / numpy.prod(s()._extracellular()._dx)*s()._extracellular().alpha / molecules_per_mM_um3 for s in sources_ecs for di in dest_indices] + [areas / volumes[di] / molecules_per_mM_um3 for di in dests_indices]
+                self._mult = [-areas / numpy.prod(s()._extracellular()._dx)*s()._extracellular().alpha / molecules_per_mM_um3 for s in sources_ecs for di in dests_indices] + [areas / volumes[di] / molecules_per_mM_um3 for di in dests_indices]
             elif len(sources_ecs) == 0 and len(dests_ecs) > 0:
                 self._mult = [-areas / volumes[si] / molecules_per_mM_um3 for si in sources_indices] + [areas / numpy.prod(s()._extracellular()._dx)*s()._extracellular().alpha / molecules_per_mM_um3 for si in sources_indices for s in dests_ecs]
             

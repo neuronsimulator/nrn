@@ -372,8 +372,9 @@ def _ode_fun(t, y, ydot):
     states[_zero_volume_indices] = 0
 
 _rxd_induced_currents = None
-
+_memb_cur_ptrs= []
 def _setup_memb_currents():
+    global _memb_cur_ptrs
     initializer._do_init()
     # setup membrane fluxes from our stuff
     # TODO: cache the memb_cur_ptrs, memb_cur_charges, memb_net_charges, memb_cur_mapped
@@ -383,7 +384,7 @@ def _setup_memb_currents():
     SPECIES_ABSENT = -1
     # TODO: change so that this is only called when there are in fact currents
     rxd_memb_scales = []
-    memb_cur_ptrs = []
+    _memb_cur_ptrs = []
     memb_cur_charges = []
     memb_net_charges = []
     memb_cur_mapped = []
@@ -393,17 +394,17 @@ def _setup_memb_currents():
         if r and r._membrane_flux:
             scales = r._memb_scales
             rxd_memb_scales.extend(scales)
-            memb_cur_ptrs += r._cur_ptrs
+            _memb_cur_ptrs += r._cur_ptrs
             memb_cur_mapped += r._cur_mapped
             memb_cur_mapped_ecs += r._cur_mapped_ecs
             memb_cur_charges += [r._cur_charges] * len(scales)
             memb_net_charges += [r._net_charges] * len(scales)
     ecs_map = [SPECIES_ABSENT if i is None else i for i in list(itertools.chain.from_iterable(itertools.chain.from_iterable(memb_cur_mapped_ecs)))]
     ics_map = [SPECIES_ABSENT if i is None else i for i in list(itertools.chain.from_iterable(itertools.chain.from_iterable(memb_cur_mapped)))]
-    if memb_cur_ptrs:
+    if _memb_cur_ptrs:
         cur_counts = [len(x) for x in memb_cur_mapped]
         num_currents = numpy.array(cur_counts).sum()
-        setup_currents(len(memb_cur_ptrs),
+        setup_currents(len(_memb_cur_ptrs),
             num_currents,
             len(_curr_indices), # num_currents == len(_curr_indices) if no Extracellular
             _list_to_cint_array(cur_counts),
@@ -412,7 +413,7 @@ def _setup_memb_currents():
             _list_to_cint_array(_cur_node_indices),
             _list_to_cdouble_array(rxd_memb_scales),
             _list_to_cint_array(list(itertools.chain.from_iterable(memb_cur_charges))),
-            _list_to_pyobject_array(list(itertools.chain.from_iterable(memb_cur_ptrs))),
+            _list_to_pyobject_array(list(itertools.chain.from_iterable(_memb_cur_ptrs))),
             _list_to_cint_array(ics_map),
             _list_to_cint_array(ecs_map))
         
