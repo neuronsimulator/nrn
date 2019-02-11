@@ -42,10 +42,9 @@ add_test (NAME Symtab COMMAND testsymtab)
 # pybind11 tests
 #=============================================================================
 
-add_test (NAME Pybind COMMAND python3 -m pytest
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+add_test (NAME Pybind COMMAND python3 -m pytest ${PROJECT_SOURCE_DIR}/test/pybind)
 set_tests_properties(Pybind PROPERTIES
-        ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/src/pybind:$ENV{PYTHONPATH})
+        ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}:$ENV{PYTHONPATH})
 
 #=============================================================================
 # Files for clang-format

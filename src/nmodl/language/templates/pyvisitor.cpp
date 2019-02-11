@@ -37,11 +37,19 @@ void PyAstVisitor::visit_{{ node.class_name|snake_case }}(ast::{{ node.class_nam
 class PyNmodlPrintVisitor : private VisitorOStreamResources, public NmodlPrintVisitor {
 public:
     using NmodlPrintVisitor::NmodlPrintVisitor;
+    using VisitorOStreamResources::flush;
 
     PyNmodlPrintVisitor() = default;
     PyNmodlPrintVisitor(std::string filename) : NmodlPrintVisitor(filename) {};
     PyNmodlPrintVisitor(py::object object) : VisitorOStreamResources(object),
                                              NmodlPrintVisitor(*ostream) { };
+
+    {% for node in nodes %}
+    void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}* node) override {
+        NmodlPrintVisitor::visit_{{ node.class_name|snake_case }}(node);
+        flush();
+    }
+    {% endfor %}
 };
 
 
@@ -62,7 +70,7 @@ void init_visitor_module(py::module& m) {
         {% if loop.last -%};{% endif %}
     {% endfor %}
 
-    py::class_<NmodlPrintVisitor, Visitor, PyNmodlPrintVisitor> nmodl_visitor(m_visitor, "NmodlPrintVisitor");
+    py::class_<PyNmodlPrintVisitor, Visitor> nmodl_visitor(m_visitor, "NmodlPrintVisitor");
     nmodl_visitor.def(py::init<std::string>());
     nmodl_visitor.def(py::init<py::object>());
     nmodl_visitor.def(py::init<>())

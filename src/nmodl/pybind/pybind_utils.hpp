@@ -91,4 +91,7 @@ public:
     VisitorOStreamResources() = default;
     VisitorOStreamResources(pybind11::object object) : buf(new pybind11::detail::pythonbuf(object)),
                                           ostream(new std::ostream(buf.get())) {}
+    void flush() {
+        ostream->flush();
+    }
 };

@@ -1,6 +1,7 @@
+import io
+
 from nmodl import ast, visitor, symtab
-import nmodl
-import pytest
+
 
 def test_symtab(ch_ast):
     v = symtab.SymtabVisitor()
@@ -20,3 +21,13 @@ def test_symtab(ch_ast):
     variables = s.get_variables_with_properties(symtab.NmodlType.range_var, True)
     assert len(variables) == 2
     assert str(variables[0]) == "mInf [Properties : range dependent_def]"
+
+
+def test_visitor_python_io(ch_ast):
+    lookup_visitor = visitor.AstLookupVisitor()
+    eqs = lookup_visitor.lookup(ch_ast, ast.AstNodeType.DIFF_EQ_EXPRESSION)
+    stream = io.StringIO()
+    pv = visitor.NmodlPrintVisitor(stream)
+    eqs[0].accept(pv)
+    #  `del pv` is not required to have the ostream flushed
+    assert stream.getvalue() == "m' = mInf-m"

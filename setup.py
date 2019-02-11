@@ -35,7 +35,8 @@ class CMakeBuild(build_ext):
             self.build_extension(ext)
 
     def build_extension(self, ext):
-        extdir = osp.abspath(osp.join(osp.dirname(self.get_ext_fullpath(ext.name)), 'nmodl'))
+        extdir = osp.abspath(osp.dirname(self.get_ext_fullpath(ext.name)))
+        extdir = osp.join(extdir, ext.name)
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
                       '-DPYTHON_EXECUTABLE=' + sys.executable]
 
