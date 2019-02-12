@@ -62,19 +62,24 @@ ParallelContext
         .. code-block::
             python
 
-            from mpi4py import MPI
-            # importing MPI must come before loading NEURON
+            try:
+                from mpi4py import MPI
+            except:
+                # if you launched python and mpi4py is not available
+                # and NEURON_INIT_MPI is not an environment variable
+                from neuron import h
+                h.nrnmpi_init()
+                # actually, it can't hurt to execute h.nrnmpi_init even if
+                # from mpi4py import MPI succeeds as it is a noop if MPI has
+                # already been initialized.
+
+            # importing MPI or h.nrnmpi_init() must come before the first instantiation of ParallelContext()
             from neuron import h
+            pc = h.ParallelContext()
 
             def f(x):
                 """a function with no context that changes except its argument"""
                 return x * x
-
-            pc = h.ParallelContext()
-
-            # if you launched python and  mpi4py is not available
-            # and NEURON_INIT_MPI is not an environment variable
-            #pc.mpi_init()
 
             pc.runworker() # master returns immediately, workers in an
                            # infinite loop running jobs from bulletin board
@@ -212,7 +217,8 @@ ParallelContext
         also supports running via the PVM (parallel virtual machine), but the launch
         setup is different. If you do not have mpi4py and you have not exported
         the NEURON_INIT_MPI=1 environment variable then you can use the
-        pc.mpi_init() method.
+        h.nrnmpi_init() method as long as that is executed prior to the first
+        instantiation of ParallelContext.
 
         The exact same Python files should exist in the same relative locations 
         on all host machines. 
@@ -220,7 +226,30 @@ ParallelContext
     .. warning::
         Not much checking for correctness or help in finding common bugs. 
 
+        The best sanity test of a working mpi environment is testmpi.py
+        .. code-block::
+            python
+
+            try:
+                from mpi4py import MPI
+            except:
+                pass
+            from neuron import h
+            h.nrnmpi_init()
+
+            pc = h.ParallelContext()
+            print ("I am %d of %d" % (pc.id(), pc.nhost()))
+
+            pc.barrier()
+            h.quit()            
          
+        which gives ( the output lines are in indeterminate order)
+        .. code-block::
+            mpiexec -n 3 python testmpi.py
+            numprocs=3
+            I am 0 of 3
+            I am 1 of 3
+            I am 2 of 3
 
 ----
 
@@ -1337,7 +1366,7 @@ Description:
 
 
     Syntax:
-        ``pc.mpi_init()``
+        ``h.nrnmpi_init()``
 
 
     Description:
@@ -1348,6 +1377,10 @@ Description:
         environement varialble has not been exported.
 
         launched nrniv without -mpi argument.
+
+        The mpi_init method name was removed from ParallelContext and replaced
+        with the HocTopLevelInterpreter method nrnmpi_init() because MPI
+        must be initialized prior to the first instantiation of ParallelContext.
 
          
 ----
@@ -2025,10 +2058,10 @@ Description:
             except:
                 pass
             from neuron import h
+            h.nrnmpi_init() #does nothing if mpi4py succeeded
             import time
 
             pc = h.ParallelContext() 
-            pc.mpi_init() #does nothing if mpi4py succeeded
             pc.subworlds(3)
 
             def f(arg):
