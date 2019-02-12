@@ -922,18 +922,26 @@ void ICS_Grid_node::set_num_threads(const int n)
 
 void ICS_Grid_node::do_grid_currents(double dt, int grid_id)
 {
-    //TODO: Avoid this call and put the code from do_currents in this method
-    printf("doing ics currents\n");
+
 }
 
 void ICS_Grid_node::volume_setup()
 {
-    printf("doing ics volume setup\n");
+    ics_adi_dir_x->ics_dg_adi_dir = ics_dg_adi_x;
+    ics_adi_dir_y->ics_dg_adi_dir = ics_dg_adi_y;
+    ics_adi_dir_z->ics_dg_adi_dir = ics_dg_adi_z;
 }
 
 int ICS_Grid_node::dg_adi()
 {
-    printf("doing ics dg_adi\n");
+    run_threaded_deltas(this, ics_adi_dir_x);
+    run_threaded_deltas(this, ics_adi_dir_y);
+    run_threaded_deltas(this, ics_adi_dir_z);
+    run_threaded_ics_dg_adi(this, ics_adi_dir_x);
+    run_threaded_ics_dg_adi(this, ics_adi_dir_y);
+    run_threaded_ics_dg_adi(this, ics_adi_dir_z);
+
+    //memcpy(states, ics_adi_dir_z->states_out, sizeof(double)*_num_nodes)*/
     return 0;
 }
 
