@@ -16,7 +16,7 @@ add_custom_command(
     OUTPUT ${AUTO_GENERATED_FILES}
     COMMAND ${PYTHON_EXECUTABLE}
             ARGS ${PROJECT_SOURCE_DIR}/src/language/code_generator.py
-                 ${CODE_GENERATOR_OPTS}
+                 ${CODE_GENERATOR_OPTS} --base-dir ${PROJECT_BINARY_DIR}/src
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/language
     DEPENDS ${PROJECT_SOURCE_DIR}/src/language/nmodl.yaml
     DEPENDS ${PYCODE}
@@ -27,4 +27,4 @@ unset(CODE_GENERATOR_OPTS)
 # =============================================================================
 # Target to propagate dependencies properly to lexer
 # =============================================================================
-add_custom_target(pyastgen DEPENDS ${PROJECT_SOURCE_DIR}/src/ast/ast.cpp)
+add_custom_target(pyastgen DEPENDS ${PROJECT_BINARY_DIR}/src/ast/ast.cpp)
