@@ -21,6 +21,7 @@ _diffs = numpy.array([])
 _states = numpy.array([])
 _node_fluxes = {'indices': [], 'type': [], 'source': [], 'scale': []}
 _has_node_fluxes = False
+_point_indices = {}
 
 # node data types
 _concentration_node = 0
@@ -489,11 +490,30 @@ class Node3D(Node):
         self._i = i
         self._j = j
         self._k = k
+        self._neighbors = None
         # TODO: store region as a weakref! (weakref.proxy?)
         self._r = r
         self._seg = seg
         self._speciesref = speciesref
         self._data_type = data_type
+
+        _point_indices[(i,j,k)] = index
+
+    def _find_neighbors(self):
+        pos_x_neighbor = _point_indices.get((self._i + 1, self._j, self. _k))
+        neg_x_neighbor = _point_indices.get((self._i - 1, self._j, self. _k))
+        pos_y_neighbor = _point_indices.get((self._i, self._j + 1, self. _k))
+        neg_y_neighbor = _point_indices.get((self._i, self._j - 1, self. _k))
+        pos_z_neighbor = _point_indices.get((self._i, self._j, self. _k + 1))
+        neg_z_neighbor = _point_indices.get((self._i, self._j, self. _k - 1))
+
+        self._neighbors = (pos_x_neighbor, neg_x_neighbor, pos_y_neighbor, neg_y_neighbor, pos_z_neighbor, neg_z_neighbor)
+
+        return self._neighbors
+
+    @property
+    def neighbors(self):
+        return self._neighbors if self._neighbors is not None else self._find_neighbors()  
     
     @property
     def surface_area(self):

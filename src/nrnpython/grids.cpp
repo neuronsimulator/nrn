@@ -146,43 +146,123 @@ ECS_Grid_node *ECS_make_Grid(PyHocObject* my_states, int my_num_states_x,
 // Insert a Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
 /* returns the grid number
    TODO: change this to returning the pointer */
-int insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x, 
+int ECS_insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x, 
     int my_num_states_y, int my_num_states_z, double my_dc_x, double my_dc_y,
     double my_dc_z, double my_dx, double my_dy, double my_dz, 
 	PyHocObject* my_alpha, PyHocObject* my_lambda, int bc, double bc_value,
     double atolscale) {
     int i = 0;
 
-
+    printf("in ecs insert\n");
     Grid_node *new_Grid = ECS_make_Grid(my_states, my_num_states_x, my_num_states_y, 
             my_num_states_z, my_dc_x, my_dc_y, my_dc_z, my_dx, my_dy, my_dz, 
 			my_alpha, my_lambda, bc, bc_value, atolscale);
-    Grid_node **head = &(Parallel_grids[grid_list_index]);
-    Grid_node *save;
 
-    if(!(*head)) {
-        *head = new_Grid;
-        save = *head;
-    }
-    else {
-		i++;	/*count the head as the first grid*/
-        save = *head;
-        Grid_node *end = *head;
-        while(end->next != NULL) {
-            i++;
-            end = end->next;
-        }
-        end->next = new_Grid;
-    }
+    return new_Grid->insert(grid_list_index);
+}
 
-	/*
-    while(save != NULL) {
-        printf("SIZE X: %d SIZE Y: %d SIZE Z: %d\n", save->size_x, save->size_y, save->size_z);
-        save = save->next;
-    }
-	*/
+Grid_node *ICS_make_Grid(double* my_states, long num_nodes, long* neighbors, 
+                long* ordered_x_nodes, long* ordered_y_nodes, long* ordered_z_nodes,
+                long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
+                long z_lines_length, double d, double dx) {
 
-    return i;
+    int k;
+    ICS_Grid_node *new_Grid = new ICS_Grid_node();
+    assert(new_Grid);
+
+    new_Grid->_num_nodes = num_nodes;
+
+    new_Grid->states = my_states;
+    new_Grid->states_x = (double*)malloc(sizeof(double)*new_Grid->_num_nodes);
+    new_Grid->states_y = (double*)malloc(sizeof(double)*new_Grid->_num_nodes);
+    new_Grid->states_cur = (double*)malloc(sizeof(double)*new_Grid->_num_nodes);
+    new_Grid->next = NULL;
+    
+    //stores the positive x,y, and z neighbors for each node. [node0_x, node0_y, node0_z, node1_x ...]
+    new_Grid->_neighbors = neighbors;
+    
+    /*Line definitions from Python. In pattern of [line_start_node, line_length, ...]
+      Array is sorted from longest to shortest line */
+    new_Grid->_sorted_x_lines = x_line_defs;
+    new_Grid->_sorted_y_lines = y_line_defs;
+    new_Grid->_sorted_z_lines = z_line_defs;
+
+    //Lengths of _sorted_lines arrays. Used to find thread start and stop indices
+    new_Grid->_x_lines_length = x_lines_length;
+    new_Grid->_y_lines_length = y_lines_length;
+    new_Grid->_z_lines_length = z_lines_length;
+
+    //Find the maximum line length for scratchpad memory allocation
+    long x_max = x_line_defs[1];
+    long y_max = y_line_defs[1];
+    long z_max = z_line_defs[1];
+    long xy_max = (x_max > y_max) ? x_max : y_max;
+    new_Grid->_line_length_max = (z_max > xy_max) ? z_max : xy_max;
+
+    new_Grid->ics_tasks = NULL;
+    new_Grid->ics_tasks = (ICSAdiGridData*)malloc(NUM_THREADS*sizeof(ICSAdiGridData));
+    
+    for(int k=0; k<NUM_THREADS; k++)
+    {
+        new_Grid->ics_tasks[k].RHS = (double*)malloc(sizeof(double) * (new_Grid->_line_length_max));
+        new_Grid->ics_tasks[k].scratchpad = (double*)malloc(sizeof(double) * (new_Grid->_line_length_max-1));
+        new_Grid->ics_tasks[k].g = new_Grid;
+    }    
+    new_Grid->ics_adi_dir_x = (ICSAdiDirection*)malloc(sizeof(ICSAdiDirection));
+    new_Grid->ics_adi_dir_x->states_in = new_Grid->states_x;
+    new_Grid->ics_adi_dir_x->states_out = new_Grid->states;
+    new_Grid->ics_adi_dir_x->ordered_start_stop_indices = (long*)malloc(sizeof(long)*NUM_THREADS*2);
+    new_Grid->ics_adi_dir_x->line_start_stop_indices = (long*)malloc(sizeof(long)*NUM_THREADS*2);
+    new_Grid->ics_adi_dir_x->ordered_nodes = (long*)malloc(sizeof(long)*new_Grid->_num_nodes);
+    new_Grid->ics_adi_dir_x->ordered_line_defs = (long*)malloc(sizeof(long)*new_Grid->_x_lines_length);
+    new_Grid->ics_adi_dir_x->deltas = (double*)malloc(sizeof(double)*new_Grid->_num_nodes);
+    new_Grid->ics_adi_dir_x->dc = d;
+    new_Grid->ics_adi_dir_x->d = dx;
+
+    new_Grid->ics_adi_dir_y = (ICSAdiDirection*)malloc(sizeof(ICSAdiDirection));
+    new_Grid->ics_adi_dir_y->states_in = new_Grid->states_y;
+    new_Grid->ics_adi_dir_y->states_out = new_Grid->states;
+    new_Grid->ics_adi_dir_y->ordered_start_stop_indices = (long*)malloc(sizeof(long)*NUM_THREADS*2);
+    new_Grid->ics_adi_dir_y->line_start_stop_indices = (long*)malloc(sizeof(long)*NUM_THREADS*2);
+    new_Grid->ics_adi_dir_y->ordered_nodes = (long*)malloc(sizeof(long)*new_Grid->_num_nodes);
+    new_Grid->ics_adi_dir_y->ordered_line_defs = (long*)malloc(sizeof(long)*new_Grid->_y_lines_length);
+    new_Grid->ics_adi_dir_y->deltas = (double*)malloc(sizeof(double)*new_Grid->_num_nodes);
+    new_Grid->ics_adi_dir_y->dc = d;
+    new_Grid->ics_adi_dir_y->d = dx;
+
+    new_Grid->ics_adi_dir_z = (ICSAdiDirection*)malloc(sizeof(ICSAdiDirection));
+    new_Grid->ics_adi_dir_z->states_in = new_Grid->states_cur;
+    new_Grid->ics_adi_dir_z->states_out = new_Grid->states;
+    new_Grid->ics_adi_dir_z->ordered_start_stop_indices = (long*)malloc(sizeof(long)*NUM_THREADS*2);
+    new_Grid->ics_adi_dir_z->line_start_stop_indices = (long*)malloc(sizeof(long)*NUM_THREADS*2);
+    new_Grid->ics_adi_dir_z->ordered_nodes = (long*)malloc(sizeof(long)*new_Grid->_num_nodes);
+    new_Grid->ics_adi_dir_z->ordered_line_defs = (long*)malloc(sizeof(long)*new_Grid->_z_lines_length);
+    new_Grid->ics_adi_dir_z->deltas = (double*)malloc(sizeof(double)*new_Grid->_num_nodes);
+    new_Grid->ics_adi_dir_z->dc = d;
+    new_Grid->ics_adi_dir_z->d = dx;
+
+    new_Grid->divide_x_work();
+    new_Grid->divide_y_work();
+    new_Grid->divide_z_work();
+
+    return new_Grid;
+}
+
+
+// Insert a Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
+/* returns the grid number
+   TODO: change this to returning the pointer */
+int ICS_insert(int grid_list_index, double* my_states, long num_nodes, long* neighbors,
+                long* ordered_x_nodes, long* ordered_y_nodes, long* ordered_z_nodes,
+                long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
+                long z_lines_length, double d, double dx) {
+
+    //TODO change ICS_make_Grid into a constructor
+    printf("in ics insert\n");
+    Grid_node *new_Grid = ICS_make_Grid(my_states, num_nodes, neighbors, ordered_x_nodes,
+            ordered_y_nodes, ordered_z_nodes, x_line_defs, x_lines_length, y_line_defs,
+            y_lines_length, z_line_defs, z_lines_length, d, dx);
+    return new_Grid->insert(grid_list_index);;
 }
 
 /*Set the diffusion coefficients*/
@@ -379,6 +459,30 @@ static double get_lambda_scalar(double* lambda, int idx)
 static double get_lambda_array(double* lambda, int idx)
 {
 	return lambda[idx];
+}
+
+int Grid_node::insert(int grid_list_index){
+
+    int i = 0;
+
+    Grid_node **head = &(Parallel_grids[grid_list_index]);
+    Grid_node *save;
+
+    if(!(*head)) {
+        *head = this;
+        save = *head;
+    }
+    else {
+		i++;	/*count the head as the first grid*/
+        save = *head;
+        Grid_node *end = *head;
+        while(end->next != NULL) {
+            i++;
+            end = end->next;
+        }
+        end->next = this;
+    }
+    return i;
 }
 
 /*****************************************************************************

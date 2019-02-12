@@ -135,6 +135,7 @@ class Grid_node {
     double (*get_lambda)(double*,int);
     double atolscale;
 
+    int insert(int grid_list_index);
     virtual void set_num_threads(const int n) = 0;
     virtual void do_grid_currents(double dt, int id) = 0;
     virtual void volume_setup() = 0;
@@ -280,10 +281,23 @@ ECS_Grid_node *ECS_make_Grid(PyHocObject* my_states, int my_num_states_x,
 //void free_Grid(Grid_node *grid);
 
 // Insert a Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
-extern "C" int insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x, 
+extern "C" int ECS_insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x, 
     int my_num_states_y, int my_num_states_z, double my_dc_x, double my_dc_y,
     double my_dc_z, double my_dx, double my_dy, double my_dz, 
 	PyHocObject* my_alpha, PyHocObject* my_lambda, int, double, double);
+
+Grid_node *ICS_make_Grid(double* my_states, long num_nodes, long* neighbors, 
+                long* ordered_x_nodes, long* ordered_y_nodes, long* ordered_z_nodes,
+                long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
+                long z_lines_length, double d, double dx);
+
+// Insert an  ICS_Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
+extern "C" int ICS_insert(int grid_list_index, double* my_states, long num_nodes, long* neighbors,
+                long* ordered_x_nodes, long* ordered_y_nodes, long* ordered_z_nodes,
+                long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
+                long z_lines_length, double d, double dx);
+
+
 
 // Set the diffusion coefficients for a given grid_id 
 extern "C" int set_diffusion(int grid_list_index, int grid_id, double dc_x, double dc_y, double dc_z);

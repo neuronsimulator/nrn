@@ -807,7 +807,7 @@ def _setup_matrices():
             #print 'index1d col sum:', sum(_euler_matrix[j, index1d] for j in xrange(n))
     """
     #CRxD
-    if n and euler_matrix_nnonzero > 0:
+    if species._has_1d and n and euler_matrix_nnonzero > 0:
         _update_node_data()
         section1d._transfer_to_legacy()
         set_euler_matrix(n, euler_matrix_nnonzero,

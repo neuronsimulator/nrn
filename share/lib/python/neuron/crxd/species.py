@@ -24,10 +24,30 @@ set_initialize.argtypes = [fptr_prototype]
 #setup_solver = nrn.setup_solver
 #setup_solver.argtypes = [ctypes.py_object, ctypes.py_object, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double]
 
-insert = nrn_dll_sym('insert')
-insert.argtypes = [ctypes.c_int, ctypes.py_object, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.py_object, ctypes.py_object, ctypes.c_int, ctypes.c_double, ctypes.c_double]
+ECS_insert = nrn_dll_sym('ECS_insert')
+ECS_insert.argtypes = [ctypes.c_int, ctypes.py_object, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.py_object, ctypes.py_object, ctypes.c_int, ctypes.c_double, ctypes.c_double]
 
-insert.restype = ctypes.c_int
+ECS_insert.restype = ctypes.c_int
+
+ICS_insert = nrn_dll_sym('ICS_insert')
+ICS_insert.argtypes = [
+    ctypes.c_int, 
+    numpy.ctypeslib.ndpointer(dtype=float), 
+    ctypes.c_long,
+    numpy.ctypeslib.ndpointer(dtype=int),
+    numpy.ctypeslib.ndpointer(dtype=int),
+    numpy.ctypeslib.ndpointer(dtype=int),
+    numpy.ctypeslib.ndpointer(dtype=int),
+    numpy.ctypeslib.ndpointer(dtype=int),
+    ctypes.c_long,
+    numpy.ctypeslib.ndpointer(dtype=int),
+    ctypes.c_long,
+    numpy.ctypeslib.ndpointer(dtype=int),
+    ctypes.c_long,
+    ctypes.c_double,
+    ctypes.c_double,]
+
+ICS_insert.restype = ctypes.c_int
 
 species_atolscale = nrn_dll_sym('species_atolscale')
 species_atolscale.argtypes = [ctypes.c_int, ctypes.c_double, ctypes.c_int, ctypes.POINTER(ctypes.c_int)]
@@ -49,6 +69,7 @@ def _get_all_species():
     return _defined_species
 
 _extracellular_diffusion_objects = weakref.WeakKeyDictionary()
+_intracellular_diffusion_objects = weakref.WeakKeyDictionary()
 
 _species_count = 0
 
@@ -360,6 +381,98 @@ def _xyz(seg):
     arc3d = [h.arc3d(i, sec=sec) for i in range(n3d)]
     return numpy.interp([seg.x * sec.L], arc3d, x3d)[0], numpy.interp([seg.x * sec.L], arc3d, y3d)[0], numpy.interp([seg.x * sec.L], arc3d, z3d)[0]
 
+class _IntracellularSpecies(_SpeciesMathable):
+    def __init__(self, region=None, d=0, name=None, charge=0, initial=0, nodes=0):
+        """
+            region = Intracellular object 
+            name = string of the name of the NEURON species (e.g. ca)
+            d = diffusion constant
+            charge = charge of the molecule (used for converting currents to concentration changes)
+            initial = initial concentration  
+            NOTE: For now, only define this AFTER the morphology is instantiated. In the future, this requirement can be relaxed.
+            TODO: remove this limitation
+        """
+
+        _intracellular_diffusion_objects[self] = None
+        # ensure 3D points exist
+        h.define_shape()
+        self._region = region
+        self._species = name
+        self._name = name
+        self._charge = charge
+        self._dx = region.dx
+        self._d = d
+        self._nodes_length = len(region._xs)
+        self._states = h.Vector(self._nodes_length)
+        self.neighbors = self.create_neighbors_array(nodes, self._nodes_length).reshape(3*self._nodes_length)
+        self._initial = initial
+        self.states = self._states.as_numpy()
+        self._nodes = nodes
+        for i, ele in enumerate(self._nodes):
+            ele.value = self._initial(ele)
+            self.states[i] = ele.value
+        
+        self._x_line_defs = self.line_defs(self._nodes, 'x', self._nodes_length)
+        self._y_line_defs = self.line_defs(self._nodes, 'y', self._nodes_length)
+        self._z_line_defs = self.line_defs(self._nodes, 'z', self._nodes_length)
+
+        self._ordered_x_nodes = self.ordered_nodes(self._x_line_defs, 'x', self.neighbors)
+        self._ordered_y_nodes = self.ordered_nodes(self._y_line_defs, 'y', self.neighbors)
+        self._ordered_z_nodes = self.ordered_nodes(self._z_line_defs, 'z', self.neighbors)
+
+        self._grid_id = ICS_insert(0, self.states, len(self.states), self.neighbors,
+                                    self._ordered_x_nodes, self._ordered_y_nodes, self._ordered_z_nodes,
+                                    self._x_line_defs, len(self._x_line_defs), self._y_line_defs, 
+                                    len(self._y_line_defs), self._z_line_defs, len(self._z_line_defs),
+                                    self._d, self._dx)
+    
+    #Line Definitions for each direction
+    def line_defs(self, nodes, direction, nodes_length):
+        line_defs = []
+        
+        indices = set(range(0, nodes_length))
+
+        pos_neg_from_dir = {'x': (0, 1), 'y': (2, 3), 'z': (4, 5)}
+        pos, neg = pos_neg_from_dir[direction]
+        while indices:
+            line_start = indices.pop()
+            line_length = 1
+            for my_dir in [pos, neg]:
+                node = nodes[line_start]
+                while (node.neighbors[my_dir] is not None) and indices:
+                    to_remove = node._neighbors[my_dir]
+                    node = nodes[to_remove]
+                    indices.remove(to_remove)
+                    line_length += 1
+
+            line_start = node._index
+            line_defs.append([line_start, line_length])
+
+        #sort list for parallelization
+        line_defs.sort(key=lambda x: x[1], reverse=True)
+        line_defs = numpy.asarray(line_defs, dtype=int)
+        line_defs = line_defs.reshape(2*len(line_defs))
+        return line_defs       
+
+    def ordered_nodes(self, p_line_defs, direction, neighbors):
+        offset_from_dir = {'x': 0, 'y': 1, 'z': 2}
+        offset = offset_from_dir[direction]
+        ordered_nodes = []
+        for i in range(0,len(p_line_defs) -1, 2):
+            current_node = p_line_defs[i]
+            line_length = p_line_defs[i+1]
+            ordered_nodes.append(current_node)
+            for j in range(1,line_length):
+                current_node = neighbors[current_node * 3 + offset]
+                ordered_nodes.append(current_node)
+        return numpy.asarray(ordered_nodes) 
+        
+    def create_neighbors_array(self, nodes, nodes_length):
+        my_array = numpy.zeros((nodes_length, 3), dtype=int)
+        for n in nodes:    
+            for i, ele in enumerate(n.neighbors[::2]):
+                my_array[n._index, i] = ele if ele is not None else -1
+        return my_array
 
 
 
@@ -423,9 +536,9 @@ class _ExtracellularSpecies(_SpeciesMathable):
         
         # TODO: if allowing different diffusion rates in different directions, verify that they go to the right ones
         if not hasattr(self._d,'__len__'):
-            self._grid_id = insert(0, self._states._ref_x[0], self._nx, self._ny, self._nz, self._d, self._d, self._d, self._dx[0], self._dx[1], self._dx[2], self._alpha, self._tortuosity, bc_type, bc_value, atolscale)
+            self._grid_id = ECS_insert(0, self._states._ref_x[0], self._nx, self._ny, self._nz, self._d, self._d, self._d, self._dx[0], self._dx[1], self._dx[2], self._alpha, self._tortuosity, bc_type, bc_value, atolscale)
         elif len(self._d) == 3:
-             self._grid_id = insert(0, self._states._ref_x[0], self._nx, self._ny, self._nz, self._d[0], self._d[1], self._d[2], self._dx[0], self._dx[1], self._dx[2], self._alpha, self._tortuosity, bc_type, bc_value, atolscale)
+             self._grid_id = ECS_insert(0, self._states._ref_x[0], self._nx, self._ny, self._nz, self._d[0], self._d[1], self._d[2], self._dx[0], self._dx[1], self._dx[2], self._alpha, self._tortuosity, bc_type, bc_value, atolscale)
         else:
             raise RxDException("Diffusion coefficient %s for %s is invalid. A single value D or a tuple of 3 values (Dx,Dy,Dz) is required for the diffusion coefficient." % (repr(d), name))  
 
@@ -733,7 +846,15 @@ class Species(_SpeciesMathable):
                     node._surface_area[_3doffset : _3doffset + len(xs)] = r._sa
                     node._diffs[_3doffset : _3doffset + len(xs)] = self._d
                     self_has_3d = True
-                    _has_3d = True
+                    _has_3d = True            
+        self._intracellular_nodes = []
+        if self._regions:
+            for r in self._regions:
+                if r._secs3d:
+                    xs, ys, zs, segs = r._xs, r._ys, r._zs, r._segs
+                    for i, (x, y, z, seg) in enumerate(zip(xs, ys, zs, segs)):
+                        self._intracellular_nodes.append(node.Node3D(i, x, y, z, r, seg, selfref))
+        self._intracellular_instances = [_IntracellularSpecies(r, d=self._d, charge=self.charge, initial=self.initial, nodes=self._intracellular_nodes) for r in self._regions if r._secs3d]
 
     def _do_init4(self):
         self._extracellular_nodes = []
@@ -1159,7 +1280,7 @@ class Species(_SpeciesMathable):
         initializer._do_init()
         
         # The first part here is for the 1D -- which doesn't keep live node objects -- the second part is for 3D
-        return nodelist.NodeList(list(itertools.chain.from_iterable([s.nodes for s in self._secs])) + self._nodes + self._extracellular_nodes)
+        return nodelist.NodeList(list(itertools.chain.from_iterable([s.nodes for s in self._secs])) + self._nodes + self._extracellular_nodes) 
 
 
     @property
