@@ -5,18 +5,18 @@ set_source_files_properties( ${AUTO_GENERATED_FILES} PROPERTIES GENERATED TRUE)
 
 
 set(PYNMODL_SOURCES
-        ${PROJECT_SOURCE_DIR}/src/pybind/pyast.cpp
-        ${PROJECT_SOURCE_DIR}/src/pybind/pyvisitor.cpp
-        ${PROJECT_SOURCE_DIR}/src/pybind/pysymtab.cpp
+        ${PROJECT_BINARY_DIR}/src/pybind/pyast.cpp
+        ${PROJECT_BINARY_DIR}/src/pybind/pyvisitor.cpp
+        ${PROJECT_BINARY_DIR}/src/pybind/pysymtab.cpp
         ${PROJECT_SOURCE_DIR}/src/pybind/pynmodl.cpp)
 
 set(PYNMODL_HEADERS
-        ${PROJECT_SOURCE_DIR}/src/ast/ast_decl.hpp
+        ${PROJECT_BINARY_DIR}/src/ast/ast_decl.hpp
         ${PROJECT_SOURCE_DIR}/src/ast/ast_common.hpp
-        ${PROJECT_SOURCE_DIR}/src/visitors/visitor.hpp
+        ${PROJECT_BINARY_DIR}/src/visitors/visitor.hpp
         ${PROJECT_SOURCE_DIR}/src/pybind/pybind_utils.hpp
-        ${PROJECT_SOURCE_DIR}/src/pybind/pyast.hpp
-        ${PROJECT_SOURCE_DIR}/src/pybind/pyvisitor.hpp)
+        ${PROJECT_BINARY_DIR}/src/pybind/pyast.hpp
+        ${PROJECT_BINARY_DIR}/src/pybind/pyvisitor.hpp)
 
 
 pybind11_add_module(_nmodl ${PYNMODL_HEADERS} ${PYNMODL_SOURCES}

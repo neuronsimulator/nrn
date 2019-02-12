@@ -17,6 +17,7 @@ import utils
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 parser = argparse.ArgumentParser()
 parser.add_argument('--clang-format')
+parser.add_argument('--base-dir')
 args = parser.parse_args()
 clang_format = args.clang_format
 
@@ -24,7 +25,10 @@ clang_format = args.clang_format
 nodes = LanguageParser("nmodl.yaml").parse_file()
 
 templates = Path(__file__).parent / 'templates'
-basedir = Path(__file__).resolve().parent.parent
+
+basedir = Path(args.base_dir) or Path(__file__).resolve().parent.parent
+for subdir in ['pybind', 'visitors', 'ast']:
+    (basedir / subdir).mkdir(parents=True, exist_ok=True)
 
 env = jinja2.Environment(loader=jinja2.FileSystemLoader(str(templates)),
                          trim_blocks=True,
