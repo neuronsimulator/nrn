@@ -38,7 +38,8 @@ BBSaveState
           pc.psolve(tstop)
 
     Note that files are saved in a subdirectory called "out" and restored
-    from a subdirectory called "in". A script filter
+    from a subdirectory called "in". An empty "out" folder should be created by
+    the user prior to calling save_test(). A script filter
     (see :meth:`BBSaveState.save_test`) is needed to copy and sometimes
     concatenate files from the out to the in subfolders. These files have
     an ascii format.
@@ -120,7 +121,9 @@ BBSaveState
         State of the model is saved in files within the subdirectory, `out`.
     The file `out/tmp` contains the value of t. Other files have the
         filename format tmp.<gid>.<rank> . Only in the case of multisplit
-        is it possible to have the same gid in more than one filename.
+        is it possible to have the same gid in more than one filename. Note
+        that the out folder needs to be created by the user prior to a call
+        to save_test().
 
         To prepare for a restore, the tmp.<gid>.<rank> files should be copied
         from the `out` subfolder to a subfolder called `in`, with the filename
