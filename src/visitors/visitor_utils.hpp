@@ -32,7 +32,7 @@ namespace nmodl {
     std::string to_nmodl(ast::AST* node);
 
     /** Given AST node, return the JSON string representation */
-    std::string to_json(ast::AST* node, bool compact = false);
+    std::string to_json(ast::AST* node, bool compact = false, bool expand = false);
 
 }  // namespace nmodl
 

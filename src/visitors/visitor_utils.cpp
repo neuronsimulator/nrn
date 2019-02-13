@@ -87,10 +87,11 @@ namespace nmodl {
     }
 
 
-    std::string to_json(ast::AST* node, bool compact) {
+    std::string to_json(ast::AST* node, bool compact, bool expand) {
         std::stringstream stream;
         JSONVisitor v(stream);
         v.compact_json(compact);
+        v.expand_keys(expand);
         node->accept(&v);
         v.flush();
         return stream.str();

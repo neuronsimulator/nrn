@@ -44,7 +44,9 @@ PYBIND11_MODULE(_nmodl, m_nmodl) {
 
     m_nmodl.def("to_nmodl", nmodl::to_nmodl);
     m_nmodl.def("to_json", nmodl::to_json,
-            py::arg("node"), py::arg("compact") = false);
+            py::arg("node"),
+            py::arg("compact") = false,
+            py::arg("expand") = false);
 
     init_visitor_module(m_nmodl);
     init_ast_module(m_nmodl);

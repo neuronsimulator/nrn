@@ -1,5 +1,4 @@
 import pytest
-import nmodl
 from nmodl.dsl import Driver
 
 CHANNEL = """NEURON  {

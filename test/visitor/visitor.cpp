@@ -1287,7 +1287,7 @@ SCENARIO("Running defuse analyzer") {
         )";
 
         std::string expected_text =
-            R"({"DerivativeBlock":[{"value":"D"},{"value":"U"},{"value":"D"}]})";
+            R"({"DerivativeBlock":[{"name":"D"},{"name":"U"},{"name":"D"}]})";
 
         THEN("Def-Use chains for individual usage is printed") {
             std::string input = reindent_text(nmodl_text);
@@ -1311,7 +1311,7 @@ SCENARIO("Running defuse analyzer") {
         )";
 
         std::string expected_text =
-            R"({"DerivativeBlock":[{"value":"U"},{"value":"D"},{"value":"U"}]})";
+            R"({"DerivativeBlock":[{"name":"U"},{"name":"D"},{"name":"U"}]})";
 
         THEN("Verbatim block is considered as use of the variable") {
             std::string input = reindent_text(nmodl_text);
@@ -1338,7 +1338,7 @@ SCENARIO("Running defuse analyzer") {
         )";
 
         std::string expected_text =
-            R"({"DerivativeBlock":[{"CONDITIONAL_BLOCK":[{"IF":[{"value":"LD"}]},{"ELSE":[{"value":"D"}]}]}]})";
+            R"({"DerivativeBlock":[{"CONDITIONAL_BLOCK":[{"IF":[{"name":"LD"}]},{"ELSE":[{"name":"D"}]}]}]})";
 
         THEN("Def-Use chains should return NONE") {
             std::string input = reindent_text(nmodl_text);
@@ -1363,7 +1363,7 @@ SCENARIO("Running defuse analyzer") {
         )";
 
         std::string expected_text =
-            R"({"DerivativeBlock":[{"CONDITIONAL_BLOCK":[{"value":"IF"},{"ELSE":[{"value":"U"},{"value":"D"}]}]}]})";
+            R"({"DerivativeBlock":[{"CONDITIONAL_BLOCK":[{"name":"IF"},{"ELSE":[{"name":"U"},{"name":"D"}]}]}]})";
 
         THEN("Def-Use chains should return USE") {
             std::string input = reindent_text(nmodl_text);
@@ -1390,7 +1390,7 @@ SCENARIO("Running defuse analyzer") {
         )";
 
         std::string expected_text =
-            R"({"DerivativeBlock":[{"CONDITIONAL_BLOCK":[{"IF":[{"value":"D"},{"value":"U"}]},{"ELSE":[{"value":"D"}]}]}]})";
+            R"({"DerivativeBlock":[{"CONDITIONAL_BLOCK":[{"IF":[{"name":"D"},{"name":"U"}]},{"ELSE":[{"name":"D"}]}]}]})";
 
         THEN("Def-Use chains should return DEF") {
             std::string input = reindent_text(nmodl_text);
@@ -1422,7 +1422,7 @@ SCENARIO("Running defuse analyzer") {
         )";
 
         std::string expected_text =
-            R"({"DerivativeBlock":[{"CONDITIONAL_BLOCK":[{"IF":[{"value":"D"}]}]},{"value":"U"},{"value":"D"},{"CONDITIONAL_BLOCK":[{"value":"IF"},{"ELSEIF":[{"value":"D"}]}]}]})";
+            R"({"DerivativeBlock":[{"CONDITIONAL_BLOCK":[{"IF":[{"name":"D"}]}]},{"name":"U"},{"name":"D"},{"CONDITIONAL_BLOCK":[{"name":"IF"},{"ELSEIF":[{"name":"D"}]}]}]})";
 
         THEN("Def-Use chains for individual usage is printed") {
             std::string input = reindent_text(nmodl_text);
@@ -1463,7 +1463,7 @@ SCENARIO("Running defuse analyzer") {
         )";
 
         std::string expected_text =
-            R"({"DerivativeBlock":[{"CONDITIONAL_BLOCK":[{"IF":[{"value":"LD"}]}]},{"CONDITIONAL_BLOCK":[{"IF":[{"CONDITIONAL_BLOCK":[{"value":"IF"},{"ELSE":[{"value":"D"}]}]}]},{"ELSEIF":[{"CONDITIONAL_BLOCK":[{"IF":[{"CONDITIONAL_BLOCK":[{"value":"IF"},{"ELSE":[{"value":"U"}]}]}]}]},{"value":"D"}]}]}]})";
+            R"({"DerivativeBlock":[{"CONDITIONAL_BLOCK":[{"IF":[{"name":"LD"}]}]},{"CONDITIONAL_BLOCK":[{"IF":[{"CONDITIONAL_BLOCK":[{"name":"IF"},{"ELSE":[{"name":"D"}]}]}]},{"ELSEIF":[{"CONDITIONAL_BLOCK":[{"IF":[{"CONDITIONAL_BLOCK":[{"name":"IF"},{"ELSE":[{"name":"U"}]}]}]}]},{"name":"D"}]}]}]})";
 
         THEN("Def-Use chains for nested statements calculated") {
             std::string input = reindent_text(nmodl_text);
