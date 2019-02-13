@@ -8,8 +8,14 @@ file(GLOB TEMPLATE_FILES "${PROJECT_SOURCE_DIR}/src/language/templates/*.cpp"
 
 file(GLOB PYCODE "${PROJECT_SOURCE_DIR}/src/language/*.py")
 
-if(CLANG_FORMAT_FOUND AND CLANG_FORMAT_VERSION_MAJOR GREATER_EQUAL 4)
-    set(CODE_GENERATOR_OPTS --clang-format=${CLANG_FORMAT_EXECUTABLE})
+if(ClangFormat_FOUND AND ClangFormat_VERSION_MAJOR GREATER_EQUAL 4)
+    set(CODE_GENERATOR_OPTS --clang-format=${ClangFormat_EXECUTABLE})
+    if(nmodl_ClangFormat_OPTIONS)
+        set(CODE_GENERATOR_OPTS
+                ${CODE_GENERATOR_OPTS}
+                --clang-format-opts
+                ${nmodl_ClangFormat_OPTIONS})
+    endif(nmodl_ClangFormat_OPTIONS)
 endif()
 
 add_custom_command(

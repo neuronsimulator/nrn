@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1.0 FATAL_ERROR)
-project(nmodl CXX)
+project(NMODL CXX)
 
 #=============================================================================
 # CMake common project settings
@@ -20,6 +20,22 @@ find_package(FLEX 2.6 REQUIRED)
 find_package(BISON 3.0 REQUIRED)
 
 #=============================================================================
+# HPC Coding Conventions
+#=============================================================================
+set(NMODL_ClangFormat_EXCLUDES_RE ".*/ext/.*$$"
+    CACHE STRING
+          "list of regular expressions to exclude C/C++ files from formatting"
+    FORCE)
+set(NMODL_CMakeFormat_EXCLUDES_RE ".*/ext/.*$$"
+    CACHE STRING
+          "list of regular expressions to exclude CMake files from formatting"
+    FORCE)
+set(NMODL_ClangFormat_DEPENDENCIES pyastgen parser-gen
+    CACHE STRING "list of CMake targets to build before formatting C++ code"
+    FORCE)
+add_subdirectory(cmake/hpc-coding-conventions/cpp)
+
+#=============================================================================
 # Include cmake modules
 #=============================================================================
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
@@ -27,7 +43,6 @@ include(GitRevision)
 include(FlexHelper)
 include(CompilerHelper)
 include(ClangTidyHelper)
-include(FindClangFormat)
 include(FindPythonModule)
 
 #=============================================================================
@@ -116,13 +131,3 @@ set(MEMORYCHECK_COMMAND_OPTIONS "--trace-children=yes \
                                  --show-possibly-lost=no")
 include (CTest)
 add_subdirectory(test)
-
-#=============================================================================
-# Clang format target
-#=============================================================================
-if(CLANG_FORMAT_FOUND)
-    add_custom_target(clang-format
-                      COMMAND
-                      ${CLANG_FORMAT_EXECUTABLE} -i
-                      --style=file ${FILES_FOR_CLANG_FORMAT})
-endif()

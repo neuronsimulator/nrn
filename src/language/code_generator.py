@@ -3,6 +3,7 @@ import filecmp
 import logging
 import os
 from pathlib import Path
+import shlex
 import shutil
 import subprocess
 import tempfile
@@ -16,10 +17,15 @@ import utils
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 parser = argparse.ArgumentParser()
-parser.add_argument('--clang-format')
+parser.add_argument('--clang-format', help="Path to clang-format executable")
+parser.add_argument('--clang-format-opts', help="Path to clang-format executable", nargs='+')
 parser.add_argument('--base-dir')
 args = parser.parse_args()
 clang_format = args.clang_format
+if clang_format:
+    clang_format = [clang_format]
+    if args.clang_format_opts:
+        clang_format += args.clang_format_opts
 
 # parse nmodl definition file and get list of abstract nodes
 nodes = LanguageParser("nmodl.yaml").parse_file()
@@ -54,7 +60,7 @@ for fn in templates.glob('*.[ch]pp'):
         os.write(fd, content.encode('utf-8'))
         os.close(fd)
         if clang_format:
-            subprocess.check_call([clang_format, '-i', tmp_path])
+            subprocess.check_call(clang_format + ['-i', tmp_path])
         if not filecmp.cmp(str(filename), tmp_path):
             shutil.move(tmp_path, filename)
             updated_files.append(str(fn.name))
@@ -63,7 +69,7 @@ for fn in templates.glob('*.[ch]pp'):
             fd.write(content)
             updated_files.append(str(fn.name))
         if clang_format:
-            subprocess.check_call([clang_format, '-i', filename])
+            subprocess.check_call(clang_format + ['-i', filename])
 
 if updated_files:
     logging.info('       Updating out of date template files : %s', ' '.join(updated_files))

@@ -1,7 +1,8 @@
-build
-cmake-build-debug
+*build*
 *~
 .DS_Store
 *.pyc
 *.swp
 .idea
+.pre-commit-config.yaml
+.clang-format

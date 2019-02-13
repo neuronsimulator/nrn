@@ -49,20 +49,3 @@ set_tests_properties(Visitor PROPERTIES
 add_test (NAME Pybind COMMAND python3 -m pytest ${PROJECT_SOURCE_DIR}/test/pybind)
 set_tests_properties(Pybind PROPERTIES
         ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}:$ENV{PYTHONPATH})
-
-#=============================================================================
-# Files for clang-format
-#=============================================================================
-set(FILES_FOR_CLANG_FORMAT
-    ${CMAKE_CURRENT_SOURCE_DIR}/utils/nmodl_constructs.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/utils/nmodl_constructs.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/utils/test_utils.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/modtoken/modtoken.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/lexer/tokens.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/parser/parser.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/visitor/visitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/printer/printer.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/symtab/symbol_table.cpp
-    ${FILES_FOR_CLANG_FORMAT}
-    PARENT_SCOPE
-)

@@ -1,7 +1,9 @@
 #include <memory>
 
+// clang-format off
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
+// clang-format on
 
 using logger_type = std::shared_ptr<spdlog::logger>;
 
