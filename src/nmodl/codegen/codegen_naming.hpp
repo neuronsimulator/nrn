@@ -1,6 +1,7 @@
 #ifndef CODEGEN_NAMING_HPP
 #define CODEGEN_NAMING_HPP
 
+#include <map>
 #include <string>
 
 namespace codegen {
