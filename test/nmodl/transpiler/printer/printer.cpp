@@ -16,7 +16,7 @@ TEST_CASE("JSON Printer Tests", "[JSONPrinter]") {
         p.pop_block();
         p.flush();
 
-        auto result = R"({"A":[{"value":"B"}]})";
+        auto result = R"({"A":[{"name":"B"}]})";
         REQUIRE(ss.str() == result);
     }
 
@@ -34,7 +34,24 @@ TEST_CASE("JSON Printer Tests", "[JSONPrinter]") {
         p.pop_block();
         p.flush();
 
-        auto result = R"({"A":[{"value":"B"},{"value":"C"},{"D":[{"value":"E"}]}]})";
+        auto result = R"({"A":[{"name":"B"},{"name":"C"},{"D":[{"name":"E"}]}]})";
+        REQUIRE(ss.str() == result);
+    }
+
+    SECTION("Test with nodes as separate tags") {
+        std::stringstream ss;
+        JSONPrinter p(ss);
+        p.compact_json(true);
+        p.expand_keys(true);
+
+        p.push_block("A");
+        p.add_node("B");
+        p.push_block("D");
+        p.add_node("E");
+        p.pop_block();
+        p.flush();
+
+        auto result = R"({"children":[{"name":"B"},{"children":[{"name":"E"}],"name":"D"}],"name":"A"})";
         REQUIRE(ss.str() == result);
     }
 }

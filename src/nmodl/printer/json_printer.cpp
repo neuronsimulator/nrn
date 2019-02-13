@@ -18,26 +18,31 @@ JSONPrinter::JSONPrinter(const std::string& filename) {
 }
 
 /// Add node to json (typically basic type)
-void JSONPrinter::add_node(std::string value, const std::string& name) {
+void JSONPrinter::add_node(std::string value, const std::string& key) {
     if (!block) {
         auto text = "Block not initialized (push_block missing?)";
         throw std::logic_error(text);
     }
 
     json j;
-    j[name] = value;
+    j[key] = value;
     block->front().push_back(j);
 }
 
 /// Add new json object (typically start of new block)
 /// name here is type of new block encountered
-void JSONPrinter::push_block(const std::string& name) {
+void JSONPrinter::push_block(const std::string& value, const std::string& key) {
     if (block) {
         stack.push(block);
     }
 
     json j;
-    j[name] = json::array();
+    if (expand) {
+        j[key] = value;
+        j[child_key] = json::array();
+    } else {
+        j[value] = json::array();
+    }
     block = std::shared_ptr<json>(new json(j));
 }
 

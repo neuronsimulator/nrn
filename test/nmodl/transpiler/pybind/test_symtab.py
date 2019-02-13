@@ -1,5 +1,4 @@
 import io
-import nmodl
 from nmodl.dsl import ast, visitor, symtab
 
 def test_symtab(ch_ast):

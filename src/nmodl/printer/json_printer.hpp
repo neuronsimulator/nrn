@@ -45,6 +45,13 @@ class JSONPrinter {
     /// true if need to print json in compact format
     bool compact = false;
 
+    /// true if we need to expand keys i.e. add separate key/value
+    /// pair for node name and it's children
+    bool expand = false;
+
+    /// json key for children
+    const std::string child_key = "children";
+
   public:
     JSONPrinter(const std::string& filename);
 
@@ -60,14 +67,18 @@ class JSONPrinter {
         flush();
     }
 
-    void push_block(const std::string& name);
-    void add_node(std::string value, const std::string& name = "value");
+    void push_block(const std::string& value, const std::string& key = "name");
+    void add_node(std::string value, const std::string& key = "name");
     void pop_block();
     void flush();
 
     /// print json in compact mode
     void compact_json(bool flag) {
         compact = flag;
+    }
+
+    void expand_keys(bool flag) {
+        expand = flag;
     }
 };
 
