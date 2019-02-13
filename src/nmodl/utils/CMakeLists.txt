@@ -2,6 +2,8 @@
 # Utility sources
 #=============================================================================
 set(UTIL_SOURCE_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/common_utils.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/string_utils.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/common_utils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/perf_stat.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/perf_stat.cpp
@@ -24,14 +26,3 @@ set_property(TARGET util_obj PROPERTY POSITION_INDEPENDENT_CODE ON)
 add_library(util
         STATIC
         $<TARGET_OBJECTS:util_obj>)
-
-#=============================================================================
-# Files for clang-format
-#=============================================================================
-set(FILES_FOR_CLANG_FORMAT
-    ${UTIL_SOURCE_FILES}
-    ${CMAKE_CURRENT_SOURCE_DIR}/common_utils.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/string_utils.hpp
-    ${FILES_FOR_CLANG_FORMAT}
-    PARENT_SCOPE
-)

@@ -46,6 +46,9 @@ When you wish to contribute to the code base, please consider the following guid
      git checkout -b my-fix-branch master
      ```
 * Create your patch, **including appropriate test cases**.
+* Enable `NMODL_FORMATTING` and `NMODL_PRECOMMIT` CMake variables
+  to ensure that your change follows coding conventions of this project.
+  Please see [README.md](./README.md) for more information.
 * Run the full test suite, and ensure that all tests pass.
 * Commit your changes using a descriptive commit message.
 

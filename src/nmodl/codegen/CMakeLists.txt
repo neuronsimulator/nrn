@@ -25,12 +25,3 @@ add_library(codegen
             ${CODEGEN_SOURCE_FILES})
 
 add_dependencies(codegen lexer util)
-
-#=============================================================================
-# Files for clang-format
-#=============================================================================
-set(FILES_FOR_CLANG_FORMAT
-    ${CODEGEN_SOURCE_FILES}
-    ${FILES_FOR_CLANG_FORMAT}
-    PARENT_SCOPE
-)

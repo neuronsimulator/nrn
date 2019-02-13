@@ -207,20 +207,8 @@ target_link_libraries(nmodl_lexer lexer)
 target_link_libraries(c_lexer lexer)
 
 #=============================================================================
-# Files for clang-format
-#=============================================================================
-set(FILES_FOR_CLANG_FORMAT
-    ${LEXER_SOURCE_FILES}
-    ${CMAKE_CURRENT_SOURCE_DIR}/main_nmodl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/main_c.cpp
-    ${DIFFEQ_DRIVER_FILES}
-    ${C_DRIVER_FILES}
-    ${FILES_FOR_CLANG_FORMAT}
-    PARENT_SCOPE
-)
-
-#=============================================================================
 # Install executable
 #=============================================================================
 install(TARGETS nmodl_lexer DESTINATION bin/lexer)
 install(TARGETS c_lexer DESTINATION bin/lexer)
+add_custom_target(parser-gen DEPENDS ${BISON_GENERATED_SOURCE_FILES})

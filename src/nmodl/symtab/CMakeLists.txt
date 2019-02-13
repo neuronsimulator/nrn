@@ -28,12 +28,3 @@ add_library(symtab
         $<TARGET_OBJECTS:symtab_obj>)
 
 add_dependencies(symtab lexer)
-
-#=============================================================================
-# Files for clang-format
-#=============================================================================
-set(FILES_FOR_CLANG_FORMAT
-    ${SYMTAB_SOURCES} ${SYMTAB_HEADERS}
-    ${FILES_FOR_CLANG_FORMAT}
-    PARENT_SCOPE
-)

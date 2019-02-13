@@ -22,12 +22,3 @@ set_property(TARGET printer_obj PROPERTY POSITION_INDEPENDENT_CODE ON)
 add_library(printer
         STATIC
         $<TARGET_OBJECTS:printer_obj>)
-
-#=============================================================================
-# Files for clang-format
-#=============================================================================
-set(FILES_FOR_CLANG_FORMAT
-    ${PRINTER_SOURCE_FILES}
-    ${FILES_FOR_CLANG_FORMAT}
-    PARENT_SCOPE
-)

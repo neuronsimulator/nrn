@@ -69,17 +69,6 @@ add_executable(nmodl_visitor main.cpp)
 target_link_libraries(nmodl_visitor printer visitor symtab util lexer)
 
 #=============================================================================
-# Files for clang-format
-#=============================================================================
-set(FILES_FOR_CLANG_FORMAT
-    ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
-    ${VISITOR_SOURCES} ${VISITOR_HEADERS}
-    ${FILES_FOR_CLANG_FORMAT}
-    PARENT_SCOPE
-)
-
-
-#=============================================================================
 # Install executable
 #=============================================================================
 install(TARGETS nmodl_visitor DESTINATION bin/visitor)
