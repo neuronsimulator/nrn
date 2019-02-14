@@ -87,7 +87,7 @@ void ics_find_deltas(long start, long stop, long node_start, double* delta, long
                 delta[current_index] = r *(next_state - 2.0 * current_state + prev_state);
                 ordered_index++;
             }
-            delta[current_index] = r * (current_state - next_state);
+            delta[next_index] = r * (current_state - next_state);
         }
         else
         {
