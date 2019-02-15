@@ -32,7 +32,7 @@ ECS_insert.restype = ctypes.c_int
 ICS_insert = nrn_dll_sym('ICS_insert')
 ICS_insert.argtypes = [
     ctypes.c_int, 
-    numpy.ctypeslib.ndpointer(dtype=float), 
+    ctypes.py_object, 
     ctypes.c_long,
     numpy.ctypeslib.ndpointer(dtype=int),
     numpy.ctypeslib.ndpointer(dtype=int),
@@ -311,8 +311,8 @@ class SpeciesOnRegion(_SpeciesMathable):
     @property
     def states(self):
         """A vector of all the states corresponding to this species"""
-        all_states = node._get_states()
-        return [all_states[i] for i in numpy.sort(self.indices())]
+        #TODO This should be restricted to the Region
+        return self._species().states
     
     @property
     def nodes(self):
@@ -336,6 +336,7 @@ class SpeciesOnRegion(_SpeciesMathable):
     @property
     def concentration(self):
         """An iterable of the current concentrations."""
+        print("Concentration being called")
         return self.nodes.concentration
     
     @concentration.setter
@@ -408,10 +409,9 @@ class _IntracellularSpecies(_SpeciesMathable):
         self._initial = initial
         self.states = self._states.as_numpy()
         self._nodes = nodes
-        for i, ele in enumerate(self._nodes):
-            ele.value = self._initial(ele)
-            self.states[i] = ele.value
-        
+        #for i in range(201,400):
+        #    self.states[i] = .5
+
         self._x_line_defs = self.line_defs(self._nodes, 'x', self._nodes_length)
         self._y_line_defs = self.line_defs(self._nodes, 'y', self._nodes_length)
         self._z_line_defs = self.line_defs(self._nodes, 'z', self._nodes_length)
@@ -420,7 +420,7 @@ class _IntracellularSpecies(_SpeciesMathable):
         self._ordered_y_nodes = self.ordered_nodes(self._y_line_defs, 'y', self.neighbors)
         self._ordered_z_nodes = self.ordered_nodes(self._z_line_defs, 'z', self.neighbors)
 
-        self._grid_id = ICS_insert(0, self.states, len(self.states), self.neighbors,
+        self._grid_id = ICS_insert(0, self._states._ref_x[0], len(self.states), self.neighbors,
                                     self._ordered_x_nodes, self._ordered_y_nodes, self._ordered_z_nodes,
                                     self._x_line_defs, len(self._x_line_defs), self._y_line_defs, 
                                     len(self._y_line_defs), self._z_line_defs, len(self._z_line_defs),
@@ -474,7 +474,11 @@ class _IntracellularSpecies(_SpeciesMathable):
                 my_array[n._index, i] = ele if ele is not None else -1
         return my_array
 
-
+    def _finitialize(self):
+        # Updated - now it will initialize using NodeExtracellular
+        # TODO: support more complicated initializations than just constants
+        if self._initial is None:
+            self.states[:] = 1
 
 class _ExtracellularSpecies(_SpeciesMathable):
     def __init__(self, region, d=0, name=None, charge=0, initial=0, atolscale=1.0, boundary_conditions=None):
@@ -827,6 +831,7 @@ class Species(_SpeciesMathable):
         self._nodes = []
         selfref = weakref.ref(self)
         self_has_3d = False
+        self._intracellular_nodes = []
         if self._regions:
             for r in self._regions:
                 if r._secs3d:
@@ -839,7 +844,7 @@ class Species(_SpeciesMathable):
                     self._3doffset_by_region[r] = _3doffset
                     
                     for i, x, y, z, seg in zip(list(range(len(xs))), xs, ys, zs, segs):
-                        self._nodes.append(node.Node3D(i + _3doffset, x, y, z, r, seg, selfref))
+                        self._intracellular_nodes.append(node.Node3D(i, x, y, z, r, seg, selfref))
                     # the region is now responsible for computing the correct volumes and surface areas
                         # this is done so that multiple species can use the same region without recomputing it
                     node._volumes[_3doffset : _3doffset + len(xs)] = r._vol
@@ -847,14 +852,7 @@ class Species(_SpeciesMathable):
                     node._diffs[_3doffset : _3doffset + len(xs)] = self._d
                     self_has_3d = True
                     _has_3d = True            
-        self._intracellular_nodes = []
-        if self._regions:
-            for r in self._regions:
-                if r._secs3d:
-                    xs, ys, zs, segs = r._xs, r._ys, r._zs, r._segs
-                    for i, (x, y, z, seg) in enumerate(zip(xs, ys, zs, segs)):
-                        self._intracellular_nodes.append(node.Node3D(i, x, y, z, r, seg, selfref))
-        self._intracellular_instances = [_IntracellularSpecies(r, d=self._d, charge=self.charge, initial=self.initial, nodes=self._intracellular_nodes) for r in self._regions if r._secs3d]
+        self._intracellular_instances = {r:_IntracellularSpecies(r, d=self._d, charge=self.charge, initial=self.initial, nodes=self._intracellular_nodes) for r in self._regions if r._secs3d}
 
     def _do_init4(self):
         self._extracellular_nodes = []
@@ -1280,7 +1278,7 @@ class Species(_SpeciesMathable):
         initializer._do_init()
         
         # The first part here is for the 1D -- which doesn't keep live node objects -- the second part is for 3D
-        return nodelist.NodeList(list(itertools.chain.from_iterable([s.nodes for s in self._secs])) + self._nodes + self._extracellular_nodes) 
+        return nodelist.NodeList(list(itertools.chain.from_iterable([s.nodes for s in self._secs])) + self._nodes + self._intracellular_nodes + self._extracellular_nodes) 
 
 
     @property

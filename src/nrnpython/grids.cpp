@@ -153,7 +153,6 @@ int ECS_insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x,
     double atolscale) {
     int i = 0;
 
-    printf("in ecs insert\n");
     Grid_node *new_Grid = ECS_make_Grid(my_states, my_num_states_x, my_num_states_y, 
             my_num_states_z, my_dc_x, my_dc_y, my_dc_z, my_dx, my_dy, my_dz, 
 			my_alpha, my_lambda, bc, bc_value, atolscale);
@@ -161,7 +160,7 @@ int ECS_insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x,
     return new_Grid->insert(grid_list_index);
 }
 
-Grid_node *ICS_make_Grid(double* my_states, long num_nodes, long* neighbors, 
+Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors, 
                 long* ordered_x_nodes, long* ordered_y_nodes, long* ordered_z_nodes,
                 long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
                 long z_lines_length, double d, double dx) {
@@ -172,7 +171,7 @@ Grid_node *ICS_make_Grid(double* my_states, long num_nodes, long* neighbors,
 
     new_Grid->_num_nodes = num_nodes;
 
-    new_Grid->states = my_states;
+    new_Grid->states = my_states->u.px_;
     new_Grid->states_x = (double*)malloc(sizeof(double)*new_Grid->_num_nodes);
     new_Grid->states_y = (double*)malloc(sizeof(double)*new_Grid->_num_nodes);
     new_Grid->states_cur = (double*)malloc(sizeof(double)*new_Grid->_num_nodes);
@@ -252,13 +251,12 @@ Grid_node *ICS_make_Grid(double* my_states, long num_nodes, long* neighbors,
 // Insert a Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
 /* returns the grid number
    TODO: change this to returning the pointer */
-int ICS_insert(int grid_list_index, double* my_states, long num_nodes, long* neighbors,
+int ICS_insert(int grid_list_index, PyHocObject* my_states, long num_nodes, long* neighbors,
                 long* ordered_x_nodes, long* ordered_y_nodes, long* ordered_z_nodes,
                 long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
                 long z_lines_length, double d, double dx) {
 
     //TODO change ICS_make_Grid into a constructor
-    printf("in ics insert\n");
     Grid_node *new_Grid = ICS_make_Grid(my_states, num_nodes, neighbors, ordered_x_nodes,
             ordered_y_nodes, ordered_z_nodes, x_line_defs, x_lines_length, y_line_defs,
             y_lines_length, z_line_defs, z_lines_length, d, dx);
@@ -947,7 +945,7 @@ int ICS_Grid_node::dg_adi()
 
 void ICS_Grid_node::scatter_grid_concentrations()
 {
-    printf("Scattering ics concentrations\n");
+    //printf("Scattering ics concentrations\n");
 }
 
 // Free a single Grid_node

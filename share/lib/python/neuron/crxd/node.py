@@ -602,11 +602,8 @@ class Node3D(Node):
     @property
     def value(self):
         """Gets the value associated with this Node."""
-        from . import rxd
-        if rxd._external_solver is not None:
-            _states[self._index] = rxd._external_solver.value(self)
-        return _states[self._index]
-    
+        return self._speciesref()._intracellular_instances[self._r].states[self._index]
+        
     @value.setter
     def value(self, v):
         """Sets the value associated with this Node.
@@ -614,10 +611,7 @@ class Node3D(Node):
         For Species nodes belonging to a deterministic simulation, this is a concentration.
         For Species nodes belonging to a stochastic simulation, this is the molecule count.
         """
-        from . import rxd
-        _states[self._index] = v
-        if rxd._external_solver is not None:
-            rxd._external_solver.update_value(self)
+        self._speciesref()._intracellular_instances[self._r].states[self._index] = v
 
 
 

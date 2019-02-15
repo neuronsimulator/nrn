@@ -286,13 +286,13 @@ extern "C" int ECS_insert(int grid_list_index, PyHocObject* my_states, int my_nu
     double my_dc_z, double my_dx, double my_dy, double my_dz, 
 	PyHocObject* my_alpha, PyHocObject* my_lambda, int, double, double);
 
-Grid_node *ICS_make_Grid(double* my_states, long num_nodes, long* neighbors, 
+Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors, 
                 long* ordered_x_nodes, long* ordered_y_nodes, long* ordered_z_nodes,
                 long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
                 long z_lines_length, double d, double dx);
 
 // Insert an  ICS_Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
-extern "C" int ICS_insert(int grid_list_index, double* my_states, long num_nodes, long* neighbors,
+extern "C" int ICS_insert(int grid_list_index, PyHocObject* my_states, long num_nodes, long* neighbors,
                 long* ordered_x_nodes, long* ordered_y_nodes, long* ordered_z_nodes,
                 long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
                 long z_lines_length, double d, double dx);
