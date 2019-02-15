@@ -120,7 +120,7 @@ static int submit_help(OcBBS* bbs) {
 	bbs->pkbegin();
 	i = 1;
 	if (hoc_is_double_arg(i)) {
-		bbs->pkint((id = (int)chkarg(i++, 0, 1e7)));
+		bbs->pkint((id = (int)chkarg(i++, 0, MD)));
 	}else{
 		bbs->pkint((id = --bbs->next_local_));
 	}
