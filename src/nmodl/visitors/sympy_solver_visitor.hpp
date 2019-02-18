@@ -1,9 +1,9 @@
 #pragma once
 
-#include <unordered_set>
-#include <vector>
 #include <pybind11/embed.h>
 #include <pybind11/stl.h>
+#include <set>
+#include <vector>
 
 #include "ast/ast.hpp"
 #include "symtab/symbol.hpp"
@@ -20,9 +20,9 @@
  * It will soon also deal with other solver methods.
  */
 
-class SympySolverVisitor : public AstVisitor {
+class SympySolverVisitor: public AstVisitor {
   private:
-    std::vector<std::shared_ptr<symtab::Symbol>> vars;
+    std::set<std::string> vars;
     /// method specified in solve block
     std::string solve_method;
 

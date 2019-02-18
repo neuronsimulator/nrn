@@ -20,6 +20,7 @@
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/perf_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
+#include "visitors/sympy_conductance_visitor.hpp"
 #include "visitors/sympy_solver_visitor.hpp"
 #include "visitors/verbatim_var_rename_visitor.hpp"
 #include "visitors/verbatim_visitor.hpp"
@@ -37,6 +38,10 @@ int main(int argc, const char* argv[]) {
     make_path(arg.scratch_dir);
 
     int error_count = 0;
+
+    if (arg.verbose) {
+        logger->set_level(spdlog::level::debug);
+    }
 
     if (arg.sympy) {
         pybind11::initialize_interpreter();
@@ -81,6 +86,19 @@ int main(int argc, const char* argv[]) {
             v.visit_program(ast.get());
             if (arg.ast_to_nmodl) {
                 ast_to_nmodl(ast.get(), arg.scratch_dir + "/" + mod_file + ".nmodl.verbrename.mod");
+            }
+        }
+
+        if (arg.sympy) {
+            SympyConductanceVisitor v;
+            v.visit_program(ast.get());
+            {
+                SymtabVisitor v(false);
+                v.visit_program(ast.get());
+            }
+            if (arg.ast_to_nmodl) {
+                ast_to_nmodl(ast.get(),
+                             arg.scratch_dir + "/" + mod_file + ".nmodl.conductance.mod");
             }
         }
 
