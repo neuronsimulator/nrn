@@ -1,3 +1,10 @@
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
 #include <algorithm>
 #include <cmath>
 
@@ -70,16 +77,16 @@ void CodegenHelperVisitor::find_ion_variables() {
     };
 
     /// iterate over all ion types and construct the Ion objects
-    for (auto& ion_var : ion_vars) {
+    for (auto& ion_var: ion_vars) {
         auto ion_name = ion_var->get_name();
         Ion ion(ion_name);
-        for (auto& read_var : read_ion_vars) {
+        for (auto& read_var: read_ion_vars) {
             auto var = read_var->get_name();
             if (ion_variable(var, ion_name)) {
                 ion.reads.push_back(var);
             }
         }
-        for (auto& write_var : write_ion_vars) {
+        for (auto& write_var: write_ion_vars) {
             auto varname = write_var->get_name();
             if (ion_variable(varname, ion_name)) {
                 ion.writes.push_back(varname);
@@ -94,15 +101,15 @@ void CodegenHelperVisitor::find_ion_variables() {
 
     /// once ions are populated, we can find all currents
     auto vars = psymtab->get_variables_with_properties(NmodlType::nonspecific_cur_var);
-    for (auto& var : vars) {
+    for (auto& var: vars) {
         info.currents.push_back(var->get_name());
     }
     vars = psymtab->get_variables_with_properties(NmodlType::electrode_cur_var);
-    for (auto& var : vars) {
+    for (auto& var: vars) {
         info.currents.push_back(var->get_name());
     }
-    for (auto& ion : info.ions) {
-        for (auto& var : ion.writes) {
+    for (auto& ion: info.ions) {
+        for (auto& var: ion.writes) {
             if (ion.is_ionic_current(var)) {
                 info.currents.push_back(var);
             }
@@ -134,7 +141,7 @@ void CodegenHelperVisitor::find_non_range_variables() {
     std::string variables;
 
     auto vars = psymtab->get_variables_with_properties(NmodlType::global_var);
-    for (auto& var : vars) {
+    for (auto& var: vars) {
         if (info.thread_safe && var->get_write_count() > 0) {
             var->mark_thread_safe();
             info.thread_variables.push_back(var);
@@ -172,7 +179,7 @@ void CodegenHelperVisitor::find_non_range_variables() {
                    | NmodlType::write_ion_var;
     // clang-format on
     vars = psymtab->get_variables(with, without);
-    for (auto& var : vars) {
+    for (auto& var: vars) {
         // some variables like area and diam are declared in parameter
         // block but they are not global
         if (var->get_name() == naming::DIAM_VARIABLE || var->get_name() == naming::AREA_VARIABLE ||
@@ -231,14 +238,14 @@ void CodegenHelperVisitor::find_non_range_variables() {
     }
 
     /// find total size of local variables in global scope
-    for (auto& var : info.top_local_variables) {
+    for (auto& var: info.top_local_variables) {
         info.top_local_thread_size += var->get_length();
     }
 
     /// find number of prime variables and total size
     auto primes = psymtab->get_variables_with_properties(NmodlType::prime_name);
     info.num_primes = primes.size();
-    for (auto& variable : primes) {
+    for (auto& variable: primes) {
         info.primes_size += variable->get_length();
     }
 
@@ -382,7 +389,7 @@ void CodegenHelperVisitor::find_range_variables() {
               | NmodlType::extern_neuron_variable;
     // clang-format on
     variables = psymtab->get_variables(with, without);
-    for (auto& variable : variables) {
+    for (auto& variable: variables) {
         // clang-format off
         auto properties = NmodlType::read_ion_var
                           | NmodlType::write_ion_var;
@@ -533,7 +540,7 @@ void CodegenHelperVisitor::visit_solve_block(SolveBlock* node) {
  */
 void CodegenHelperVisitor::visit_statement_block(ast::StatementBlock* node) {
     auto statements = node->get_statements();
-    for (auto& statement : statements) {
+    for (auto& statement: statements) {
         statement->accept(this);
         if (under_derivative_block && assign_lhs &&
             (assign_lhs->is_name() || assign_lhs->is_var_name())) {
@@ -608,7 +615,7 @@ void CodegenHelperVisitor::find_solve_node() {
 void CodegenHelperVisitor::visit_program(Program* node) {
     psymtab = node->get_symbol_table();
     auto blocks = node->get_blocks();
-    for (auto& block : blocks) {
+    for (auto& block: blocks) {
         info.top_blocks.push_back(block.get());
         if (block->is_verbatim()) {
             info.top_verbatim_blocks.push_back(block.get());

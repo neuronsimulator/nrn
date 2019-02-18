@@ -1,5 +1,11 @@
-#ifndef NMODL_CODEGEN_C_CUDA_VISITOR_HPP
-#define NMODL_CODEGEN_C_CUDA_VISITOR_HPP
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
+#pragma once
 
 #include "codegen/codegen_c_visitor.hpp"
 
@@ -8,7 +14,7 @@
  * \class CodegenCudaVisitor
  * \brief Visitor for printing CUDA backend
  */
-class CodegenCudaVisitor : public CodegenCVisitor {
+class CodegenCudaVisitor: public CodegenCVisitor {
     void print_atomic_op(const std::string& lhs, const std::string& op, const std::string& rhs);
 
   protected:
@@ -85,15 +91,11 @@ class CodegenCudaVisitor : public CodegenCVisitor {
                        std::string output_dir,
                        LayoutType layout,
                        std::string float_type)
-        : CodegenCVisitor(mod_file, output_dir, layout, float_type, ".cu") {
-    }
+        : CodegenCVisitor(mod_file, output_dir, layout, float_type, ".cu") {}
 
     CodegenCudaVisitor(std::string mod_file,
                        std::stringstream& stream,
                        LayoutType layout,
                        std::string float_type)
-        : CodegenCVisitor(mod_file, stream, layout, float_type) {
-    }
+        : CodegenCVisitor(mod_file, stream, layout, float_type) {}
 };
-
-#endif

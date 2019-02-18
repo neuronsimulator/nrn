@@ -1,9 +1,12 @@
-/******************************************************************************
+/**********************************************************************************
  *
  * @brief Bison grammar and parser implementation for C (11)
  *
  * NMODL has verbatim constructs that allow to specify C code sections within
  * nmodl implementation.
+ *
+ * CREDIT : This is based on bison specification available at
+ *          http://www.quut.com/c/ANSI-C-grammar-y-2011.html
  *****************************************************************************/
 
 %code requires

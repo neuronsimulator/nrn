@@ -1,3 +1,10 @@
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
 #include "printer/code_printer.hpp"
 #include "utils/string_utils.hpp"
 
@@ -46,7 +53,7 @@ void CodePrinter::add_line(const std::string& text) {
 
 void CodePrinter::add_multi_line(const std::string& text) {
     auto lines = stringutils::split_string(text, '\n');
-    for (const auto& line : lines) {
+    for (const auto& line: lines) {
         add_line(line);
     }
 }

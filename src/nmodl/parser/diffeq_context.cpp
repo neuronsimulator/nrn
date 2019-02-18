@@ -1,3 +1,10 @@
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
 #include <iostream>
 
 #include "lexer/diffeq_lexer.hpp"
@@ -6,7 +13,9 @@
 using namespace diffeq;
 
 
-Term::Term(const std::string& expr, const std::string& state) : expr(expr), b(expr) {
+Term::Term(const std::string& expr, const std::string& state)
+    : expr(expr)
+    , b(expr) {
     if (expr == state) {
         deriv = "1.0";
         a = "1.0";

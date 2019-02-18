@@ -1,5 +1,11 @@
-#ifndef NMODL_VERBATIM_CONTEXT
-#define NMODL_VERBATIM_CONTEXT
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
+#pragma once
 
 #include <iostream>
 
@@ -28,5 +34,3 @@ class VerbatimContext {
 };
 
 int Verbatim_parse(VerbatimContext*);
-
-#endif  // NMODL_VERBATIM_CONTEXT

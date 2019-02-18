@@ -1,3 +1,10 @@
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
 #include "codegen/codegen_info.hpp"
 
 using namespace codegen;
@@ -5,7 +12,7 @@ using namespace codegen;
 
 /// if any ion has write variable
 bool CodegenInfo::ion_has_write_variable() {
-    for (const auto& ion : ions) {
+    for (const auto& ion: ions) {
         if (!ion.writes.empty()) {
             return true;
         }
@@ -16,8 +23,8 @@ bool CodegenInfo::ion_has_write_variable() {
 
 /// if given variable is ion write variable
 bool CodegenInfo::is_ion_write_variable(const std::string& name) {
-    for (const auto& ion : ions) {
-        for (auto& var : ion.writes) {
+    for (const auto& ion: ions) {
+        for (auto& var: ion.writes) {
             if (var == name) {
                 return true;
             }
@@ -29,8 +36,8 @@ bool CodegenInfo::is_ion_write_variable(const std::string& name) {
 
 /// if given variable is ion read variable
 bool CodegenInfo::is_ion_read_variable(const std::string& name) {
-    for (const auto& ion : ions) {
-        for (auto& var : ion.reads) {
+    for (const auto& ion: ions) {
+        for (auto& var: ion.reads) {
             if (var == name) {
                 return true;
             }
@@ -48,7 +55,7 @@ bool CodegenInfo::is_ion_variable(const std::string& name) {
 
 /// if a current
 bool CodegenInfo::is_current(const std::string& name) {
-    for (auto& var : currents) {
+    for (auto& var: currents) {
         if (var == name) {
             return true;
         }
@@ -58,7 +65,7 @@ bool CodegenInfo::is_current(const std::string& name) {
 
 
 bool CodegenInfo::function_uses_table(std::string& name) const {
-    for (auto& function : functions_with_table) {
+    for (auto& function: functions_with_table) {
         if (name == function->get_node_name()) {
             return true;
         }

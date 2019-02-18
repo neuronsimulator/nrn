@@ -1,3 +1,10 @@
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
 #include "visitors/inline_visitor.hpp"
 #include "parser/c11_driver.hpp"
 
@@ -6,7 +13,7 @@ using namespace ast;
 bool InlineVisitor::can_inline_block(StatementBlock* block) {
     bool to_inline = true;
     const auto& statements = block->get_statements();
-    for (auto statement : statements) {
+    for (auto statement: statements) {
         /// inlining is disabled if function/procedure contains table or lag statement
         if (statement->is_table_statement() || statement->is_lag_statement()) {
             to_inline = false;
@@ -72,7 +79,7 @@ void InlineVisitor::inline_arguments(StatementBlock* inlined_block,
     size_t counter = 0;
     auto& statements = inlined_block->statements;
 
-    for (const auto& argument : callee_parameters) {
+    for (const auto& argument: callee_parameters) {
         auto name = argument->get_name()->clone();
         auto old_name = name->get_node_name();
         auto new_name = get_new_name(old_name, "in", inlined_variables);
@@ -199,10 +206,10 @@ void InlineVisitor::visit_function_call(FunctionCall* node) {
     bool inlined = false;
 
     if (function_definition->is_procedure_block()) {
-        auto proc = (ProcedureBlock*)function_definition;
+        auto proc = (ProcedureBlock*) function_definition;
         inlined = inline_function_call(proc, node, caller_block);
     } else if (function_definition->is_function_block()) {
-        auto func = (FunctionBlock*)function_definition;
+        auto func = (FunctionBlock*) function_definition;
         inlined = inline_function_call(func, node, caller_block);
     }
 
@@ -230,7 +237,7 @@ void InlineVisitor::visit_statement_block(StatementBlock* node) {
 
     auto& statements = node->statements;
 
-    for (auto& statement : statements) {
+    for (auto& statement: statements) {
         caller_statement = statement;
         statement_stack.push(statement);
         caller_statement->visit_children(this);
@@ -245,14 +252,14 @@ void InlineVisitor::visit_statement_block(StatementBlock* node) {
 
     /// check if any statement is candidate for replacement due to inlining
     /// this is typicall case of procedure calls
-    for (auto& statement : statements) {
+    for (auto& statement: statements) {
         if (replaced_statements.find(statement) != replaced_statements.end()) {
             statement.reset(replaced_statements[statement]);
         }
     }
 
     /// all statements from inlining needs to be added before the caller statement
-    for (auto& element : inlined_statements) {
+    for (auto& element: inlined_statements) {
         auto it = std::find(statements.begin(), statements.end(), element.first);
         if (it != statements.end()) {
             statements.insert(it, element.second.begin(), element.second.end());

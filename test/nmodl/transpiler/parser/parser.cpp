@@ -1,3 +1,10 @@
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
 #define CATCH_CONFIG_MAIN
 
 #include <string>
@@ -6,7 +13,7 @@
 #include "catch/catch.hpp"
 #include "parser/diffeq_driver.hpp"
 #include "parser/nmodl_driver.hpp"
-#include "test/utils/nmodl_constructs.h"
+#include "test/utils/nmodl_constructs.hpp"
 
 //=============================================================================
 // Parser tests
@@ -93,7 +100,7 @@ SCENARIO("Macros can be used anywhere in NMODL program") {
 }
 
 SCENARIO("Parser test for valid NMODL grammar constructs") {
-    for (const auto& construct : nmodl_valid_constructs) {
+    for (const auto& construct: nmodl_valid_constructs) {
         auto test_case = construct.second;
         GIVEN(test_case.name) {
             THEN("Parser successfully parses : " + test_case.input) {
@@ -104,7 +111,7 @@ SCENARIO("Parser test for valid NMODL grammar constructs") {
 }
 
 SCENARIO("Parser test for invalid NMODL grammar constructs") {
-    for (const auto& construct : nmdol_invalid_constructs) {
+    for (const auto& construct: nmdol_invalid_constructs) {
         auto test_case = construct.second;
         GIVEN(test_case.name) {
             THEN("Parser throws an exception while parsing : " + test_case.input) {
@@ -128,7 +135,7 @@ std::string solve_construct(const std::string& equation, std::string method) {
 SCENARIO("Solving differential equations using NEURON's implementation") {
     GIVEN("A differential equation") {
         int counter = 0;
-        for (const auto& test_case : diff_eq_constructs) {
+        for (const auto& test_case: diff_eq_constructs) {
             auto prefix = "." + std::to_string(counter);
             WHEN(prefix + " EQUATION = " + test_case.equation + " METHOD = " + test_case.method) {
                 THEN(prefix + " SOLUTION = " + test_case.solution) {

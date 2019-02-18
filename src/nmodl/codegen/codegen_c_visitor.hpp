@@ -1,5 +1,11 @@
-#ifndef NMODL_CODEGEN_C_VISITOR_HPP
-#define NMODL_CODEGEN_C_VISITOR_HPP
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
+#pragma once
 
 #include <algorithm>
 #include <cmath>
@@ -90,8 +96,10 @@ struct IndexVariableInfo {
                       bool is_vdata = false,
                       bool is_index = false,
                       bool is_integer = false)
-        : symbol(symbol), is_vdata(is_vdata), is_index(is_index), is_integer(is_integer) {
-    }
+        : symbol(symbol)
+        , is_vdata(is_vdata)
+        , is_index(is_index)
+        , is_integer(is_integer) {}
 };
 
 
@@ -134,7 +142,7 @@ struct ShadowUseStatement {
  *      - return statement in the verbatim block of inlined function not handled
  *        for example, see netstim.mod where we removed return from verbatim block
  */
-class CodegenCVisitor : public AstVisitor {
+class CodegenCVisitor: public AstVisitor {
   protected:
     using SymbolType = std::shared_ptr<symtab::Symbol>;
 
@@ -902,22 +910,20 @@ class CodegenCVisitor : public AstVisitor {
                     LayoutType layout,
                     std::string float_type,
                     std::string extension = ".cpp")
-        : printer(new CodePrinter(output_dir + "/" + mod_filename + extension)),
-          mod_filename(mod_filename),
-          layout(layout),
-          float_type(float_type) {
-    }
+        : printer(new CodePrinter(output_dir + "/" + mod_filename + extension))
+        , mod_filename(mod_filename)
+        , layout(layout)
+        , float_type(float_type) {}
 
 
     CodegenCVisitor(std::string mod_filename,
                     std::stringstream& stream,
                     LayoutType layout,
                     std::string float_type)
-        : printer(new CodePrinter(stream)),
-          mod_filename(mod_filename),
-          layout(layout),
-          float_type(float_type) {
-    }
+        : printer(new CodePrinter(stream))
+        , mod_filename(mod_filename)
+        , layout(layout)
+        , float_type(float_type) {}
 
     virtual void visit_binary_expression(ast::BinaryExpression* node) override;
     virtual void visit_binary_operator(ast::BinaryOperator* node) override;
@@ -975,7 +981,7 @@ void CodegenCVisitor::print_vector_elements(const std::vector<T>& elements,
 template <typename T>
 bool has_parameter_of_name(const T& node, const std::string& name) {
     auto parameters = node->get_parameters();
-    for (const auto& parameter : parameters) {
+    for (const auto& parameter: parameters) {
         if (parameter->get_node_name() == name) {
             return true;
         }
@@ -1020,5 +1026,3 @@ void CodegenCVisitor::print_function_declaration(const T& node, const std::strin
 
     enable_variable_name_lookup = true;
 }
-
-#endif

@@ -1,3 +1,10 @@
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
 #include <sstream>
 
 #include "parser/diffeq_driver.hpp"
@@ -50,8 +57,8 @@ void CnexpSolveVisitor::visit_binary_expression(BinaryExpression* node) {
             if (diffeq_driver.cnexp_possible(equation, solution)) {
                 auto statement = create_statement(solution);
                 auto expr_statement = std::dynamic_pointer_cast<ExpressionStatement>(statement);
-                auto bin_expr =
-                    std::dynamic_pointer_cast<BinaryExpression>(expr_statement->get_expression());
+                auto bin_expr = std::dynamic_pointer_cast<BinaryExpression>(
+                    expr_statement->get_expression());
                 lhs.reset(bin_expr->lhs->clone());
                 rhs.reset(bin_expr->rhs->clone());
             } else {

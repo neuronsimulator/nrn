@@ -1,3 +1,10 @@
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
 #define CATCH_CONFIG_RUNNER
 
 #include <string>
@@ -6,7 +13,7 @@
 #include <pybind11/embed.h>
 
 #include "parser/nmodl_driver.hpp"
-#include "test/utils/nmodl_constructs.h"
+#include "test/utils/nmodl_constructs.hpp"
 #include "test/utils/test_utils.hpp"
 #include "visitors/cnexp_solve_visitor.hpp"
 #include "visitors/defuse_analyze_visitor.hpp"

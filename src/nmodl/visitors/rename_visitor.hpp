@@ -1,5 +1,11 @@
-#ifndef VAR_RENAME_VISITOR_HPP
-#define VAR_RENAME_VISITOR_HPP
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
+#pragma once
 
 #include <string>
 
@@ -21,7 +27,7 @@
  * \todo : Add log/warning messages.
  */
 
-class RenameVisitor : public AstVisitor {
+class RenameVisitor: public AstVisitor {
   private:
     /// variable to rename
     std::string var_name;
@@ -36,8 +42,8 @@ class RenameVisitor : public AstVisitor {
     RenameVisitor() = default;
 
     RenameVisitor(std::string old_name, std::string new_name)
-        : var_name(old_name), new_var_name(new_name) {
-    }
+        : var_name(old_name)
+        , new_var_name(new_name) {}
 
     void set(std::string old_name, std::string new_name) {
         var_name = old_name;
@@ -52,5 +58,3 @@ class RenameVisitor : public AstVisitor {
     virtual void visit_prime_name(ast::PrimeName* node) override;
     virtual void visit_verbatim(ast::Verbatim* node) override;
 };
-
-#endif

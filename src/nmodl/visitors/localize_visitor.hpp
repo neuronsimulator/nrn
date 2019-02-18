@@ -1,5 +1,11 @@
-#ifndef NMODL_LOCALIZE_VISITOR_HPP
-#define NMODL_LOCALIZE_VISITOR_HPP
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
+#pragma once
 
 #include <map>
 #include <stack>
@@ -71,7 +77,7 @@
  *          }
  */
 
-class LocalizeVisitor : public AstVisitor {
+class LocalizeVisitor: public AstVisitor {
   private:
     /// ignore verbatim blocks while localizing
     bool ignore_verbatim = false;
@@ -87,10 +93,8 @@ class LocalizeVisitor : public AstVisitor {
   public:
     LocalizeVisitor() = default;
 
-    explicit LocalizeVisitor(bool ignore_verbatim) : ignore_verbatim(ignore_verbatim) {
-    }
+    explicit LocalizeVisitor(bool ignore_verbatim)
+        : ignore_verbatim(ignore_verbatim) {}
 
     virtual void visit_program(ast::Program* node) override;
 };
-
-#endif

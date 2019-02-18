@@ -1,3 +1,10 @@
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
 #define CATCH_CONFIG_MAIN
 
 #include <string>
@@ -51,7 +58,8 @@ TEST_CASE("JSON Printer Tests", "[JSONPrinter]") {
         p.pop_block();
         p.flush();
 
-        auto result = R"({"children":[{"name":"B"},{"children":[{"name":"E"}],"name":"D"}],"name":"A"})";
+        auto result =
+            R"({"children":[{"name":"B"},{"children":[{"name":"E"}],"name":"D"}],"name":"A"})";
         REQUIRE(ss.str() == result);
     }
 }

@@ -1,12 +1,19 @@
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
 #include <map>
 #include <memory>
 #include <string>
 
 #include "ast/ast.hpp"
 #include "parser/nmodl_driver.hpp"
+#include "visitor_utils.hpp"
 #include "visitors/json_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
-#include "visitor_utils.hpp"
 
 using namespace ast;
 
@@ -22,7 +29,7 @@ std::string get_new_name(const std::string& name,
 }
 
 LocalVarVector* get_local_variables(const StatementBlock* node) {
-    for (const auto& statement : node->statements) {
+    for (const auto& statement: node->statements) {
         if (statement->is_local_list_statement()) {
             auto local_statement = std::static_pointer_cast<LocalListStatement>(statement);
             return &(local_statement->variables);
@@ -73,8 +80,8 @@ std::shared_ptr<Statement> create_statement(const std::string& code_statement) {
     driver.parse_string(nmodl_text);
     auto ast = driver.ast();
     auto procedure = std::dynamic_pointer_cast<ProcedureBlock>(ast->blocks[0]);
-    auto statement =
-        std::shared_ptr<Statement>(procedure->get_statement_block()->get_statements()[0]->clone());
+    auto statement = std::shared_ptr<Statement>(
+        procedure->get_statement_block()->get_statements()[0]->clone());
     return statement;
 }
 
@@ -89,7 +96,7 @@ std::set<std::string> get_global_vars(Program* node) {
             syminfo::NmodlType::nonspecific_cur_var | syminfo::NmodlType::electrode_cur_var |
             syminfo::NmodlType::section_var | syminfo::NmodlType::constant_var |
             syminfo::NmodlType::extern_neuron_variable | syminfo::NmodlType::state_var;
-        for (auto globalvar : symtab->get_variables_with_properties(property)) {
+        for (auto globalvar: symtab->get_variables_with_properties(property)) {
             vars.insert(globalvar->get_name());
         }
     }
@@ -98,22 +105,22 @@ std::set<std::string> get_global_vars(Program* node) {
 
 namespace nmodl {
 
-    std::string to_nmodl(ast::AST* node) {
-        std::stringstream stream;
-        NmodlPrintVisitor v(stream);
-        node->accept(&v);
-        return stream.str();
-    }
+std::string to_nmodl(ast::AST* node) {
+    std::stringstream stream;
+    NmodlPrintVisitor v(stream);
+    node->accept(&v);
+    return stream.str();
+}
 
 
-    std::string to_json(ast::AST* node, bool compact, bool expand) {
-        std::stringstream stream;
-        JSONVisitor v(stream);
-        v.compact_json(compact);
-        v.expand_keys(expand);
-        node->accept(&v);
-        v.flush();
-        return stream.str();
-    }
+std::string to_json(ast::AST* node, bool compact, bool expand) {
+    std::stringstream stream;
+    JSONVisitor v(stream);
+    v.compact_json(compact);
+    v.expand_keys(expand);
+    node->accept(&v);
+    v.flush();
+    return stream.str();
+}
 
 }  // namespace nmodl

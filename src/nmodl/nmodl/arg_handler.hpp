@@ -1,5 +1,11 @@
-#ifndef NMODL_ARG_HANDLER_HPP
-#define NMODL_ARG_HANDLER_HPP
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
+#pragma once
 
 #include <string>
 #include <vector>
@@ -86,5 +92,3 @@ struct ArgumentHandler {
         return accel_backend == "CUDA";
     }
 };
-
-#endif

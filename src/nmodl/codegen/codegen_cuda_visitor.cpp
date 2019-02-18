@@ -1,3 +1,10 @@
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
 #include <fmt/format.h>
 
 #include "codegen/codegen_cuda_visitor.hpp"
@@ -142,11 +149,11 @@ void CodegenCudaVisitor::print_compute_functions() {
     print_top_verbatim_blocks();
     print_function_prototypes();
 
-    for (const auto& procedure : info.procedures) {
+    for (const auto& procedure: info.procedures) {
         print_procedure(procedure);
     }
 
-    for (const auto& function : info.functions) {
+    for (const auto& function: info.functions) {
         print_function(function);
     }
 

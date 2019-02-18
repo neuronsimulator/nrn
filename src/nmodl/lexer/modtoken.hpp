@@ -1,5 +1,11 @@
-#ifndef _LEXER_MODTOKEN_HPP_
-#define _LEXER_MODTOKEN_HPP_
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
+#pragma once
 
 #include <iomanip>
 #include <iostream>
@@ -41,13 +47,17 @@ class ModToken {
     bool external = false;
 
   public:
-    ModToken() : pos(nullptr, 0){};
+    ModToken()
+        : pos(nullptr, 0){};
 
-    explicit ModToken(bool ext) : pos(nullptr, 0), external(ext) {
-    }
+    explicit ModToken(bool ext)
+        : pos(nullptr, 0)
+        , external(ext) {}
 
-    ModToken(std::string str, int tok, nmodl::location& loc) : name(str), token(tok), pos(loc) {
-    }
+    ModToken(std::string str, int tok, nmodl::location& loc)
+        : name(str)
+        , token(tok)
+        , pos(loc) {}
 
     ModToken* clone() const {
         return new ModToken(*this);
@@ -73,5 +83,3 @@ class ModToken {
 
     friend std::ostream& operator<<(std::ostream& stream, const ModToken& mt);
 };
-
-#endif

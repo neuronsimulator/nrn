@@ -1,3 +1,10 @@
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
 #pragma once
 
 #include <memory>
@@ -84,13 +91,15 @@ class pythonibuf: public std::streambuf {
 }  // namespace pybind11
 
 class VisitorOStreamResources {
-protected:
+  protected:
     std::unique_ptr<pybind11::detail::pythonbuf> buf;
     std::unique_ptr<std::ostream> ostream;
-public:
+
+  public:
     VisitorOStreamResources() = default;
-    VisitorOStreamResources(pybind11::object object) : buf(new pybind11::detail::pythonbuf(object)),
-                                          ostream(new std::ostream(buf.get())) {}
+    VisitorOStreamResources(pybind11::object object)
+        : buf(new pybind11::detail::pythonbuf(object))
+        , ostream(new std::ostream(buf.get())) {}
     void flush() {
         ostream->flush();
     }

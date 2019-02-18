@@ -1,3 +1,10 @@
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
 #include "visitors/local_var_rename_visitor.hpp"
 #include "visitors/rename_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
@@ -23,7 +30,7 @@ void LocalVarRenameVisitor::visit_statement_block(StatementBlock* node) {
     symtab_stack.push(symtab);
 
     // first need to process all children : perform recursively from innermost block
-    for (const auto& item : node->get_statements()) {
+    for (const auto& item: node->get_statements()) {
         item->visit_children(this);
     }
 
@@ -46,7 +53,7 @@ void LocalVarRenameVisitor::visit_statement_block(StatementBlock* node) {
 
     RenameVisitor rename_visitor;
 
-    for (const auto& var : *variables) {
+    for (const auto& var: *variables) {
         std::string name = var->get_node_name();
         auto s = parent_symtab->lookup_in_scope(name);
         /// if symbol is a variable name (avoid renaming use of units like mV)

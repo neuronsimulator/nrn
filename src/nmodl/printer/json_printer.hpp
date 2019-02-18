@@ -1,5 +1,11 @@
-#ifndef _JSON_PRINTER_HPP_
-#define _JSON_PRINTER_HPP_
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
+#pragma once
 
 #include <fstream>
 #include <iostream>
@@ -56,12 +62,12 @@ class JSONPrinter {
     JSONPrinter(const std::string& filename);
 
     /// By default dump output to std::cout
-    JSONPrinter() : result(new std::ostream(std::cout.rdbuf())) {
-    }
+    JSONPrinter()
+        : result(new std::ostream(std::cout.rdbuf())) {}
 
     // Dump output to stringstream
-    JSONPrinter(std::ostream& os) : result(new std::ostream(os.rdbuf())) {
-    }
+    JSONPrinter(std::ostream& os)
+        : result(new std::ostream(os.rdbuf())) {}
 
     ~JSONPrinter() {
         flush();
@@ -81,5 +87,3 @@ class JSONPrinter {
         expand = flag;
     }
 };
-
-#endif

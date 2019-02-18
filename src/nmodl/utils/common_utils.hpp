@@ -1,5 +1,11 @@
-#ifndef _COMMON_UTILS_H_
-#define _COMMON_UTILS_H_
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
+#pragma once
 
 /** Check if the iterator is pointing to last element in the container */
 template <typename Iter, typename Cont>
@@ -22,5 +28,3 @@ T remove_extension(T const& filename) {
 
 /** Given directory path, create sub-directories */
 bool make_path(const std::string& path);
-
-#endif

@@ -1,5 +1,11 @@
-#ifndef LOCAL_VAR_RENAME_VISITOR_HPP
-#define LOCAL_VAR_RENAME_VISITOR_HPP
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
+#pragma once
 
 #include <map>
 #include <stack>
@@ -39,7 +45,7 @@
  * In this case ideally we should not rename.
  */
 
-class LocalVarRenameVisitor : public AstVisitor {
+class LocalVarRenameVisitor: public AstVisitor {
   private:
     /// non-null symbol table in the scope hierarchy
     symtab::SymbolTable* symtab = nullptr;
@@ -54,5 +60,3 @@ class LocalVarRenameVisitor : public AstVisitor {
     LocalVarRenameVisitor() = default;
     virtual void visit_statement_block(ast::StatementBlock* node) override;
 };
-
-#endif

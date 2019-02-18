@@ -1,5 +1,11 @@
-#ifndef CNEXP_SOLVE_VISITOR_HPP
-#define CNEXP_SOLVE_VISITOR_HPP
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
+#pragma once
 
 #include <string>
 
@@ -17,7 +23,7 @@
  * pass.
  */
 
-class CnexpSolveVisitor : public AstVisitor {
+class CnexpSolveVisitor: public AstVisitor {
   private:
     /// method specified in solve block
     std::string solve_method;
@@ -44,5 +50,3 @@ class CnexpSolveVisitor : public AstVisitor {
     void visit_binary_expression(ast::BinaryExpression* node) override;
     void visit_program(ast::Program* node) override;
 };
-
-#endif

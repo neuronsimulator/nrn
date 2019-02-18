@@ -1,3 +1,10 @@
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
 #include "visitors/rename_visitor.hpp"
 #include "parser/c11_driver.hpp"
 
@@ -37,7 +44,7 @@ void RenameVisitor::visit_verbatim(Verbatim* node) {
     auto tokens = driver.all_tokens();
 
     std::string result;
-    for (auto& token : tokens) {
+    for (auto& token: tokens) {
         if (token == var_name) {
             result += new_var_name;
         } else {

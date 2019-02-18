@@ -1,3 +1,10 @@
+# ***********************************************************************
+# Copyright (C) 2018-2019 Blue Brain Project
+#
+# This file is part of NMODL distributed under the terms of the GNU
+# Lesser General Public License. See top-level LICENSE file for details.
+# ***********************************************************************
+
 """Define basic classes used from parser
 
 Node is used to represent a node parsed from every rule

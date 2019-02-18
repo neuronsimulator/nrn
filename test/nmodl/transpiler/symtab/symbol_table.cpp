@@ -1,3 +1,10 @@
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
 #define CATCH_CONFIG_MAIN
 
 #include <string>
@@ -223,8 +230,8 @@ SCENARIO("Symbol table operations") {
             auto result = table->get_variables_with_properties(NmodlType::range_var);
             REQUIRE(result.size() == 4);
 
-            result =
-                table->get_variables_with_properties(NmodlType::range_var | NmodlType::pointer_var);
+            result = table->get_variables_with_properties(NmodlType::range_var |
+                                                          NmodlType::pointer_var);
             REQUIRE(result.size() == 4);
 
             auto with = NmodlType::range_var | NmodlType::param_assign;

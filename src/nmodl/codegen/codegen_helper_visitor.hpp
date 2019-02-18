@@ -1,5 +1,11 @@
-#ifndef CODEGEN_HELPER_VISITOR_HPP
-#define CODEGEN_HELPER_VISITOR_HPP
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
+#pragma once
 
 #include <string>
 
@@ -26,7 +32,7 @@
  *  - POINTER rng and if it's also assigned rng[4] then it is printed as one value.
  *    Need to check what is correct value.
  */
-class CodegenHelperVisitor : public AstVisitor {
+class CodegenHelperVisitor: public AstVisitor {
     using SymbolType = std::shared_ptr<symtab::Symbol>;
 
     /// holds all codegen related information
@@ -63,25 +69,23 @@ class CodegenHelperVisitor : public AstVisitor {
     /// run visitor and return information for code generation
     codegen::CodegenInfo analyze(ast::Program* node);
 
-    virtual void visit_elctrode_current(ast::ElctrodeCurrent* node) override;
-    virtual void visit_suffix(ast::Suffix* node) override;
-    virtual void visit_function_call(ast::FunctionCall* node) override;
-    virtual void visit_binary_expression(ast::BinaryExpression* node) override;
-    virtual void visit_conductance_hint(ast::ConductanceHint* node) override;
-    virtual void visit_procedure_block(ast::ProcedureBlock* node) override;
-    virtual void visit_function_block(ast::FunctionBlock* node) override;
-    virtual void visit_solve_block(ast::SolveBlock* node) override;
-    virtual void visit_statement_block(ast::StatementBlock* node) override;
-    virtual void visit_initial_block(ast::InitialBlock* node) override;
-    virtual void visit_breakpoint_block(ast::BreakpointBlock* node) override;
-    virtual void visit_derivative_block(ast::DerivativeBlock* node) override;
-    virtual void visit_net_receive_block(ast::NetReceiveBlock* node) override;
-    virtual void visit_bbcore_ptr(ast::BbcorePtr* node) override;
-    virtual void visit_watch(ast::Watch* node) override;
-    virtual void visit_watch_statement(ast::WatchStatement* node) override;
-    virtual void visit_for_netcon(ast::ForNetcon* node) override;
-    virtual void visit_table_statement(ast::TableStatement* node) override;
-    virtual void visit_program(ast::Program* node) override;
+    void visit_elctrode_current(ast::ElctrodeCurrent* node) override;
+    void visit_suffix(ast::Suffix* node) override;
+    void visit_function_call(ast::FunctionCall* node) override;
+    void visit_binary_expression(ast::BinaryExpression* node) override;
+    void visit_conductance_hint(ast::ConductanceHint* node) override;
+    void visit_procedure_block(ast::ProcedureBlock* node) override;
+    void visit_function_block(ast::FunctionBlock* node) override;
+    void visit_solve_block(ast::SolveBlock* node) override;
+    void visit_statement_block(ast::StatementBlock* node) override;
+    void visit_initial_block(ast::InitialBlock* node) override;
+    void visit_breakpoint_block(ast::BreakpointBlock* node) override;
+    void visit_derivative_block(ast::DerivativeBlock* node) override;
+    void visit_net_receive_block(ast::NetReceiveBlock* node) override;
+    void visit_bbcore_ptr(ast::BbcorePtr* node) override;
+    void visit_watch(ast::Watch* node) override;
+    void visit_watch_statement(ast::WatchStatement* node) override;
+    void visit_for_netcon(ast::ForNetcon* node) override;
+    void visit_table_statement(ast::TableStatement* node) override;
+    void visit_program(ast::Program* node) override;
 };
-
-#endif

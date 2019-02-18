@@ -1,3 +1,10 @@
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
 #define CATCH_CONFIG_MAIN
 
 #include <string>
@@ -27,44 +34,44 @@ nmodl::Parser::token_type token_type(const std::string& name) {
      * and we need to clean-up memory for those.
      * Todo: add tests later for checking values */
     switch (token) {
-        case Token::NAME:
-        case Token::METHOD:
-        case Token::SUFFIX:
-        case Token::VALENCE:
-        case Token::DEL:
-        case Token::DEL2: {
-            auto value = sym.value.as<ast::Name>();
-            break;
-        }
+    case Token::NAME:
+    case Token::METHOD:
+    case Token::SUFFIX:
+    case Token::VALENCE:
+    case Token::DEL:
+    case Token::DEL2: {
+        auto value = sym.value.as<ast::Name>();
+        break;
+    }
 
-        case Token::PRIME: {
-            auto value = sym.value.as<ast::PrimeName>();
-            break;
-        }
+    case Token::PRIME: {
+        auto value = sym.value.as<ast::PrimeName>();
+        break;
+    }
 
-        case Token::INTEGER: {
-            auto value = sym.value.as<ast::Integer>();
-            break;
-        }
+    case Token::INTEGER: {
+        auto value = sym.value.as<ast::Integer>();
+        break;
+    }
 
-        case Token::REAL: {
-            auto value = sym.value.as<ast::Double>();
-            break;
-        }
+    case Token::REAL: {
+        auto value = sym.value.as<ast::Double>();
+        break;
+    }
 
-        case Token::STRING: {
-            auto value = sym.value.as<ast::String>();
-            break;
-        }
+    case Token::STRING: {
+        auto value = sym.value.as<ast::String>();
+        break;
+    }
 
-        case Token::VERBATIM:
-        case Token::BLOCK_COMMENT:
-        case Token::LINE_PART: {
-            auto value = sym.value.as<std::string>();
-            break;
-        }
+    case Token::VERBATIM:
+    case Token::BLOCK_COMMENT:
+    case Token::LINE_PART: {
+        auto value = sym.value.as<std::string>();
+        break;
+    }
 
-        default: { auto value = sym.value.as<ModToken>(); }
+    default: { auto value = sym.value.as<ModToken>(); }
     }
 
     return token;

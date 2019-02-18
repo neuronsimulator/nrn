@@ -1,3 +1,14 @@
+/**********************************************************************************
+ *
+ * @brief Flex lexer implementation for C (11)
+ *
+ * NMODL has verbatim constructs that allow to specify C code sections within
+ * nmodl implementation.
+ *
+ * CREDIT : This is based on flex specification available at
+ *          http://www.quut.com/c/ANSI-C-grammar-l-2011.html
+ *****************************************************************************/
+
 %{
     #include <iostream>
 

@@ -1,3 +1,10 @@
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
 #include <fstream>
 #include <iostream>
 
@@ -12,8 +19,7 @@
 int main(int argc, const char* argv[]) {
     try {
         TCLAP::CmdLine cmd("C Parser: Standalone parser program for C");
-        TCLAP::ValueArg<std::string> filearg("", "file", "C input file path", false,
-                                             "", "string");
+        TCLAP::ValueArg<std::string> filearg("", "file", "C input file path", false, "", "string");
 
         cmd.add(filearg);
         cmd.parse(argc, argv);
