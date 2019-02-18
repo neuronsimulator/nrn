@@ -18,8 +18,9 @@
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/perf_visitor.hpp"
 #include "visitors/rename_visitor.hpp"
-#include "visitors/symtab_visitor.hpp"
+#include "visitors/sympy_conductance_visitor.hpp"
 #include "visitors/sympy_solver_visitor.hpp"
+#include "visitors/symtab_visitor.hpp"
 #include "visitors/verbatim_var_rename_visitor.hpp"
 #include "visitors/verbatim_visitor.hpp"
 
@@ -270,7 +271,7 @@ std::string run_nmodl_visitor(const std::string& text) {
 }
 
 SCENARIO("Test for AST back to NMODL transformation") {
-    for (const auto& construct : nmodl_valid_constructs) {
+    for (const auto& construct: nmodl_valid_constructs) {
         auto test_case = construct.second;
         std::string input_nmodl_text = reindent_text(test_case.input);
         std::string output_nmodl_text = reindent_text(test_case.output);
@@ -292,7 +293,7 @@ std::string run_var_rename_visitor(const std::string& text,
     driver.parse_string(text);
     auto ast = driver.ast();
     {
-        for (const auto& variable : variables) {
+        for (const auto& variable: variables) {
             RenameVisitor v(variable.first, variable.second);
             v.visit_program(ast.get());
         }
@@ -1264,7 +1265,7 @@ std::vector<DUChain> run_defuse_visitor(const std::string& text, const std::stri
         std::vector<DUChain> chains;
         DefUseAnalyzeVisitor v(ast->get_symbol_table());
 
-        for (const auto& block : ast->get_blocks()) {
+        for (const auto& block: ast->get_blocks()) {
             if (block->get_node_type() != AstNodeType::NEURON_BLOCK) {
                 chains.push_back(v.analyze(block.get(), variable));
             }
@@ -1977,7 +1978,7 @@ std::vector<std::string> run_sympy_solver_visitor(const std::string& text) {
     // run lookup visitor to extract results from AST
     AstLookupVisitor v_lookup;
     auto res = v_lookup.lookup(ast.get(), AstNodeType::DIFF_EQ_EXPRESSION);
-    for (auto r : res) {
+    for (auto r: res) {
         results.push_back(to_nmodl(r.get()));
     }
 
@@ -2131,6 +2132,650 @@ SCENARIO("SympySolver visitor", "[sympy]") {
         THEN("More SympySolver passes do nothing to the AST and don't throw") {
             REQUIRE_NOTHROW(run_sympy_visitor_passes(ast.get()));
             REQUIRE(AST_string == ast_to_string(ast.get()));
+        }
+    }
+}
+
+
+//=============================================================================
+// SympyConductance visitor tests
+//=============================================================================
+
+std::string run_sympy_conductance_visitor(const std::string& text) {
+    // construct AST from text
+    nmodl::Driver driver;
+    driver.parse_string(text);
+    auto ast = driver.ast();
+
+    // construct symbol table from AST
+    SymtabVisitor v_symtab;
+    v_symtab.visit_program(ast.get());
+
+    // run SympyConductance on AST
+    SympyConductanceVisitor v_sympy;
+    v_sympy.visit_program(ast.get());
+
+    // run lookup visitor to extract results from AST
+    AstLookupVisitor v_lookup;
+    // return BREAKPOINT block as JSON string
+    return reindent_text(
+        nmodl::to_nmodl(v_lookup.lookup(ast.get(), AstNodeType::BREAKPOINT_BLOCK)[0].get()));
+}
+
+std::string breakpoint_to_nmodl(const std::string& text) {
+    // construct AST from text
+    nmodl::Driver driver;
+    driver.parse_string(text);
+    auto ast = driver.ast();
+
+    // construct symbol table from AST
+    SymtabVisitor v_symtab;
+    v_symtab.visit_program(ast.get());
+
+    // run lookup visitor to extract results from AST
+    AstLookupVisitor v_lookup;
+    // return BREAKPOINT block as JSON string
+    return reindent_text(
+        nmodl::to_nmodl(v_lookup.lookup(ast.get(), AstNodeType::BREAKPOINT_BLOCK)[0].get()));
+}
+
+void run_sympy_conductance_passes(Program* node) {
+    // construct symbol table from AST
+    SymtabVisitor v_symtab;
+    v_symtab.visit_program(node);
+
+    // run SympySolver on AST several times
+    SympyConductanceVisitor v_sympy1;
+    v_sympy1.visit_program(node);
+    v_symtab.visit_program(node);
+    v_sympy1.visit_program(node);
+    v_symtab.visit_program(node);
+
+    // also use a second instance of SympySolver
+    SympyConductanceVisitor v_sympy2;
+    v_sympy2.visit_program(node);
+    v_symtab.visit_program(node);
+    v_sympy1.visit_program(node);
+    v_symtab.visit_program(node);
+    v_sympy2.visit_program(node);
+    v_symtab.visit_program(node);
+}
+
+SCENARIO("SympyConductance visitor", "[sympy]") {
+    // Test mod files below all based on:
+    // nmodldb/models/db/bluebrain/CortexSimplified/mod/Ca.mod
+    GIVEN("ion current, existing CONDUCTANCE hint & var") {
+        std::string nmodl_text = R"(
+            NEURON  {
+                SUFFIX Ca
+                USEION ca READ eca WRITE ica
+                RANGE gCabar, gCa, ica
+            }
+
+            UNITS   {
+                (S) = (siemens)
+                (mV) = (millivolt)
+                (mA) = (milliamp)
+            }
+
+            PARAMETER   {
+                gCabar = 0.00001 (S/cm2)
+            }
+
+            ASSIGNED    {
+                v   (mV)
+                eca (mV)
+                ica (mA/cm2)
+                gCa (S/cm2)
+                mInf
+                mTau
+                mAlpha
+                mBeta
+                hInf
+                hTau
+                hAlpha
+                hBeta
+            }
+
+            STATE   {
+                m
+                h
+            }
+
+            BREAKPOINT  {
+                CONDUCTANCE gCa USEION ca
+                SOLVE states METHOD cnexp
+                gCa = gCabar*m*m*h
+                ica = gCa*(v-eca)
+            }
+
+            DERIVATIVE states   {
+                m' = (mInf-m)/mTau
+                h' = (hInf-h)/hTau
+            }
+
+            INITIAL{
+                m = mInf
+                h = hInf
+            }
+        )";
+        std::string breakpoint_text = R"(
+            BREAKPOINT  {
+                CONDUCTANCE gCa USEION ca
+                SOLVE states METHOD cnexp
+                gCa = gCabar*m*m*h
+                ica = gCa*(v-eca)
+            }
+        )";
+        THEN("Do nothing") {
+            auto result = run_sympy_conductance_visitor(nmodl_text);
+            REQUIRE(result == breakpoint_to_nmodl(breakpoint_text));
+        }
+    }
+    GIVEN("ion current, no CONDUCTANCE hint, existing var") {
+        std::string nmodl_text = R"(
+            NEURON  {
+                SUFFIX Ca
+                USEION ca READ eca WRITE ica
+                RANGE gCabar, gCa, ica
+            }
+
+            UNITS   {
+                (S) = (siemens)
+                (mV) = (millivolt)
+                (mA) = (milliamp)
+            }
+
+            PARAMETER   {
+                gCabar = 0.00001 (S/cm2)
+            }
+
+            ASSIGNED    {
+                v   (mV)
+                eca (mV)
+                ica (mA/cm2)
+                gCa (S/cm2)
+                mInf
+                mTau
+                mAlpha
+                mBeta
+                hInf
+                hTau
+                hAlpha
+                hBeta
+            }
+
+            STATE   {
+                m
+                h
+            }
+
+            BREAKPOINT  {
+                SOLVE states METHOD cnexp
+                gCa = gCabar*m*m*h
+                ica = gCa*(v-eca)
+            }
+
+            DERIVATIVE states   {
+                m' = (mInf-m)/mTau
+                h' = (hInf-h)/hTau
+            }
+
+            INITIAL{
+                m = mInf
+                h = hInf
+            }
+        )";
+        std::string breakpoint_text = R"(
+            BREAKPOINT  {
+                CONDUCTANCE gCa USEION ca
+                SOLVE states METHOD cnexp
+                gCa = gCabar*m*m*h
+                ica = gCa*(v-eca)
+            }
+        )";
+        THEN("Add CONDUCTANCE hint using existing var") {
+            auto result = run_sympy_conductance_visitor(nmodl_text);
+            REQUIRE(result == breakpoint_to_nmodl(breakpoint_text));
+        }
+    }
+    GIVEN("ion current, no CONDUCTANCE hint, no existing var") {
+        std::string nmodl_text = R"(
+            NEURON  {
+                SUFFIX Ca
+                USEION ca READ eca WRITE ica
+                RANGE gCabar, ica
+            }
+
+            UNITS   {
+                (S) = (siemens)
+                (mV) = (millivolt)
+                (mA) = (milliamp)
+            }
+
+            PARAMETER   {
+                gCabar = 0.00001 (S/cm2)
+            }
+
+            ASSIGNED    {
+                v   (mV)
+                eca (mV)
+                ica (mA/cm2)
+                mInf
+                mTau
+                mAlpha
+                mBeta
+                hInf
+                hTau
+                hAlpha
+                hBeta
+            }
+
+            STATE   {
+                m
+                h
+            }
+
+            BREAKPOINT  {
+                SOLVE states METHOD cnexp
+                ica = (gCabar*m*m*h)*(v-eca)
+            }
+
+            DERIVATIVE states   {
+                m' = (mInf-m)/mTau
+                h' = (hInf-h)/hTau
+            }
+
+            INITIAL{
+                m = mInf
+                h = hInf
+            }
+        )";
+        std::string breakpoint_text = R"(
+            BREAKPOINT  {
+                LOCAL g_ca_0
+                CONDUCTANCE g_ca_0 USEION ca
+                g_ca_0 = gCabar*h*pow(m, 2)
+                SOLVE states METHOD cnexp
+                ica = (gCabar*m*m*h)*(v-eca)
+            }
+        )";
+        THEN("Add CONDUCTANCE hint with new local var") {
+            auto result = run_sympy_conductance_visitor(nmodl_text);
+            REQUIRE(result == breakpoint_to_nmodl(breakpoint_text));
+        }
+    }
+    GIVEN("2 ion currents, 1 CONDUCTANCE hint, 1 existing var") {
+        std::string nmodl_text = R"(
+            NEURON  {
+                SUFFIX Ca
+                USEION ca READ eca WRITE ica
+                USEION na READ ena WRITE ina
+                RANGE gCabar, gNabar, ica, ina
+            }
+
+            UNITS   {
+                (S) = (siemens)
+                (mV) = (millivolt)
+                (mA) = (milliamp)
+            }
+
+            PARAMETER   {
+                gCabar = 0.00001 (S/cm2)
+                gNabar = 0.00005 (S/cm2)
+            }
+
+            ASSIGNED    {
+                v   (mV)
+                eca (mV)
+                ica (mA/cm2)
+                ina (mA/cm2)
+                gCa (S/cm2)
+                mInf
+                mTau
+                mAlpha
+                mBeta
+                hInf
+                hTau
+                hAlpha
+                hBeta
+            }
+
+            STATE   {
+                m
+                h
+            }
+
+            BREAKPOINT  {
+                CONDUCTANCE gCa USEION ca
+                SOLVE states METHOD cnexp
+                gCa = gCabar*m*m*h
+                ica = gCa*(v-eca)
+                ina = (gNabar*m*h)*(v-eca)
+            }
+
+            DERIVATIVE states   {
+                m' = (mInf-m)/mTau
+                h' = (hInf-h)/hTau
+            }
+
+            INITIAL{
+                m = mInf
+                h = hInf
+            }
+        )";
+        std::string breakpoint_text = R"(
+            BREAKPOINT  {
+                LOCAL g_na_0
+                CONDUCTANCE g_na_0 USEION na
+                g_na_0 = gNabar*h*m
+                CONDUCTANCE gCa USEION ca
+                SOLVE states METHOD cnexp
+                gCa = gCabar*m*m*h
+                ica = gCa*(v-eca)
+                ina = (gNabar*m*h)*(v-eca)
+            }
+        )";
+        THEN("Add 1 CONDUCTANCE hint with new local var") {
+            auto result = run_sympy_conductance_visitor(nmodl_text);
+            REQUIRE(result == breakpoint_to_nmodl(breakpoint_text));
+        }
+    }
+    GIVEN("2 ion currents, no CONDUCTANCE hints, 1 existing var") {
+        std::string nmodl_text = R"(
+            NEURON  {
+                SUFFIX Ca
+                USEION ca READ eca WRITE ica
+                USEION na READ ena WRITE ina
+                RANGE gCabar, gNabar, ica, ina
+            }
+
+            UNITS   {
+                (S) = (siemens)
+                (mV) = (millivolt)
+                (mA) = (milliamp)
+            }
+
+            PARAMETER   {
+                gCabar = 0.00001 (S/cm2)
+                gNabar = 0.00005 (S/cm2)
+            }
+
+            ASSIGNED    {
+                v   (mV)
+                eca (mV)
+                ica (mA/cm2)
+                ina (mA/cm2)
+                gCa (S/cm2)
+                mInf
+                mTau
+                mAlpha
+                mBeta
+                hInf
+                hTau
+                hAlpha
+                hBeta
+            }
+
+            STATE   {
+                m
+                h
+            }
+
+            BREAKPOINT  {
+                SOLVE states METHOD cnexp
+                gCa = gCabar*m*m*h
+                ica = gCa*(v-eca)
+                ina = (gNabar*m*h)*(v-eca)
+            }
+
+            DERIVATIVE states   {
+                m' = (mInf-m)/mTau
+                h' = (hInf-h)/hTau
+            }
+
+            INITIAL{
+                m = mInf
+                h = hInf
+            }
+        )";
+        std::string breakpoint_text = R"(
+            BREAKPOINT  {
+                LOCAL g_na_0
+                CONDUCTANCE g_na_0 USEION na
+                CONDUCTANCE gCa USEION ca
+                g_na_0 = gNabar*h*m
+                SOLVE states METHOD cnexp
+                gCa = gCabar*m*m*h
+                ica = gCa*(v-eca)
+                ina = (gNabar*m*h)*(v-eca)
+            }
+        )";
+        THEN("Add 2 CONDUCTANCE hints, 1 with existing var, 1 with new local var") {
+            auto result = run_sympy_conductance_visitor(nmodl_text);
+            REQUIRE(result == breakpoint_to_nmodl(breakpoint_text));
+        }
+    }
+    GIVEN("2 ion currents, no CONDUCTANCE hints, no existing vars") {
+        std::string nmodl_text = R"(
+            NEURON  {
+                SUFFIX Ca
+                USEION ca READ eca WRITE ica
+                USEION na READ ena WRITE ina
+                RANGE gCabar, gNabar, ica, ina
+            }
+
+            UNITS   {
+                (S) = (siemens)
+                (mV) = (millivolt)
+                (mA) = (milliamp)
+            }
+
+            PARAMETER   {
+                gCabar = 0.00001 (S/cm2)
+                gNabar = 0.00005 (S/cm2)
+            }
+
+            ASSIGNED    {
+                v   (mV)
+                eca (mV)
+                ica (mA/cm2)
+                ina (mA/cm2)
+                gCa (S/cm2)
+                mInf
+                mTau
+                mAlpha
+                mBeta
+                hInf
+                hTau
+                hAlpha
+                hBeta
+            }
+
+            STATE   {
+                m
+                h
+            }
+
+            BREAKPOINT  {
+                SOLVE states METHOD cnexp
+                ica = (gCabar*m*m*h)*(v-eca)
+                ina = (gNabar*m*h)*(v-eca)
+            }
+
+            DERIVATIVE states   {
+                m' = (mInf-m)/mTau
+                h' = (hInf-h)/hTau
+            }
+
+            INITIAL{
+                m = mInf
+                h = hInf
+            }
+        )";
+        std::string breakpoint_text = R"(
+            BREAKPOINT  {
+                LOCAL g_ca_0, g_na_0
+                CONDUCTANCE g_na_0 USEION na
+                CONDUCTANCE g_ca_0 USEION ca
+                g_ca_0 = gCabar*h*pow(m, 2)
+                g_na_0 = gNabar*h*m
+                SOLVE states METHOD cnexp
+                ica = (gCabar*m*m*h)*(v-eca)
+                ina = (gNabar*m*h)*(v-eca)
+            }
+        )";
+        THEN("Add 2 CONDUCTANCE hints with 2 new local vars") {
+            auto result = run_sympy_conductance_visitor(nmodl_text);
+            REQUIRE(result == breakpoint_to_nmodl(breakpoint_text));
+        }
+    }
+    GIVEN("1 ion current, 1 nonspecific current, no CONDUCTANCE hints, no existing vars") {
+        std::string nmodl_text = R"(
+            NEURON  {
+                SUFFIX Ca
+                USEION ca READ eca WRITE ica
+                NONSPECIFIC_CURRENT ihcn
+                RANGE gCabar, ica
+            }
+
+            UNITS   {
+                (S) = (siemens)
+                (mV) = (millivolt)
+                (mA) = (milliamp)
+            }
+
+            PARAMETER   {
+                gCabar = 0.00001 (S/cm2)
+            }
+
+            ASSIGNED    {
+                v   (mV)
+                eca (mV)
+                ica (mA/cm2)
+                ihcn (mA/cm2)
+                gCa (S/cm2)
+                mInf
+                mTau
+                mAlpha
+                mBeta
+                hInf
+                hTau
+                hAlpha
+                hBeta
+            }
+
+            STATE   {
+                m
+                h
+            }
+
+            BREAKPOINT  {
+                SOLVE states METHOD cnexp
+                ica = (gCabar*m*m*h)*(v-eca)
+                ihcn = (0.1235*m*h)*(v-eca)
+            }
+
+            DERIVATIVE states   {
+                m' = (mInf-m)/mTau
+                h' = (hInf-h)/hTau
+            }
+
+            INITIAL{
+                m = mInf
+                h = hInf
+            }
+        )";
+        std::string breakpoint_text = R"(
+            BREAKPOINT  {
+                LOCAL g_ca_0, g__0
+                CONDUCTANCE g__0
+                CONDUCTANCE g_ca_0 USEION ca
+                g_ca_0 = gCabar*h*pow(m, 2)
+                g__0 = 0.1235*h*m
+                SOLVE states METHOD cnexp
+                ica = (gCabar*m*m*h)*(v-eca)
+                ihcn = (0.1235*m*h)*(v-eca)
+            }
+        )";
+        THEN("Add 2 CONDUCTANCE hints with 2 new local vars") {
+            auto result = run_sympy_conductance_visitor(nmodl_text);
+            REQUIRE(result == breakpoint_to_nmodl(breakpoint_text));
+        }
+    }
+    GIVEN("1 ion current, 1 nonspecific current, no CONDUCTANCE hints, 1 existing var") {
+        std::string nmodl_text = R"(
+            NEURON  {
+                SUFFIX Ca
+                USEION ca READ eca WRITE ica
+                NONSPECIFIC_CURRENT ihcn
+                RANGE gCabar, ica, gihcn
+            }
+
+            UNITS   {
+                (S) = (siemens)
+                (mV) = (millivolt)
+                (mA) = (milliamp)
+            }
+
+            PARAMETER   {
+                gCabar = 0.00001 (S/cm2)
+            }
+
+            ASSIGNED    {
+                v   (mV)
+                eca (mV)
+                ica (mA/cm2)
+                ihcn (mA/cm2)
+                gCa (S/cm2)
+                gihcn (S/cm2)
+                mInf
+                mTau
+                mAlpha
+                mBeta
+                hInf
+                hTau
+                hAlpha
+                hBeta
+            }
+
+            STATE   {
+                m
+                h
+            }
+
+            BREAKPOINT  {
+                SOLVE states METHOD cnexp
+                gihcn = 0.1235*m*h
+                ica = (gCabar*m*m*h)*(v-eca)
+                ihcn = gihcn*(v-eca)
+            }
+
+            DERIVATIVE states   {
+                m' = (mInf-m)/mTau
+                h' = (hInf-h)/hTau
+            }
+
+            INITIAL{
+                m = mInf
+                h = hInf
+            }
+        )";
+        std::string breakpoint_text = R"(
+            BREAKPOINT  {
+                LOCAL g_ca_0
+                CONDUCTANCE gihcn
+                CONDUCTANCE g_ca_0 USEION ca
+                g_ca_0 = gCabar*h*pow(m, 2)
+                SOLVE states METHOD cnexp
+                gihcn = 0.1235*m*h
+                ica = (gCabar*m*m*h)*(v-eca)
+                ihcn = gihcn*(v-eca)
+            }
+        )";
+        THEN("Add 2 CONDUCTANCE hints, 1 using existing var, 1 with new local var") {
+            auto result = run_sympy_conductance_visitor(nmodl_text);
+            REQUIRE(result == breakpoint_to_nmodl(breakpoint_text));
         }
     }
 }

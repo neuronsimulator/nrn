@@ -6,6 +6,7 @@
 #include "parser/nmodl_driver.hpp"
 #include "visitors/json_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
+#include "visitor_utils.hpp"
 
 using namespace ast;
 
@@ -75,6 +76,24 @@ std::shared_ptr<Statement> create_statement(const std::string& code_statement) {
     auto statement =
         std::shared_ptr<Statement>(procedure->get_statement_block()->get_statements()[0]->clone());
     return statement;
+}
+
+std::set<std::string> get_global_vars(Program* node) {
+    std::set<std::string> vars;
+    if (auto symtab = node->get_symbol_table()) {
+        syminfo::NmodlType property =
+            syminfo::NmodlType::global_var | syminfo::NmodlType::range_var |
+            syminfo::NmodlType::param_assign | syminfo::NmodlType::extern_var |
+            syminfo::NmodlType::prime_name | syminfo::NmodlType::dependent_def |
+            syminfo::NmodlType::read_ion_var | syminfo::NmodlType::write_ion_var |
+            syminfo::NmodlType::nonspecific_cur_var | syminfo::NmodlType::electrode_cur_var |
+            syminfo::NmodlType::section_var | syminfo::NmodlType::constant_var |
+            syminfo::NmodlType::extern_neuron_variable | syminfo::NmodlType::state_var;
+        for (auto globalvar : symtab->get_variables_with_properties(property)) {
+            vars.insert(globalvar->get_name());
+        }
+    }
+    return vars;
 }
 
 namespace nmodl {

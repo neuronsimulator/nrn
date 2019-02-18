@@ -2,6 +2,7 @@
 #define NMODL_VISITOR_UTILS
 
 #include <map>
+#include <set>
 #include <string>
 
 #include "ast/ast.hpp"
@@ -26,6 +27,9 @@ ast::LocalVar* add_local_variable(ast::StatementBlock* node, const std::string& 
 
 /** Create ast statement node from given code in string format */
 std::shared_ptr<ast::Statement> create_statement(const std::string& code_statement);
+
+/** Return set of strings with the names of all global variables */
+std::set<std::string> get_global_vars(ast::Program* node);
 
 namespace nmodl {
     /** Given AST node, return the NMODL string representation */
