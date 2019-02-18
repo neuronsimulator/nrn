@@ -1,5 +1,11 @@
-#ifndef VERBATIM_VAR_RENAME_VISITOR_HPP
-#define VERBATIM_VAR_RENAME_VISITOR_HPP
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
+#pragma once
 
 #include <stack>
 #include <string>
@@ -27,7 +33,7 @@
  * could be error prone.
  */
 
-class VerbatimVarRenameVisitor : public AstVisitor {
+class VerbatimVarRenameVisitor: public AstVisitor {
   private:
     /// non-null symbol table in the scope hierarchy
     symtab::SymbolTable* symtab = nullptr;
@@ -49,5 +55,3 @@ class VerbatimVarRenameVisitor : public AstVisitor {
     virtual void visit_verbatim(ast::Verbatim* node) override;
     virtual void visit_statement_block(ast::StatementBlock* node) override;
 };
-
-#endif

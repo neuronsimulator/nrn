@@ -1,3 +1,10 @@
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
 #include <utility>
 
 #include "visitors/perf_visitor.hpp"
@@ -6,8 +13,8 @@ using namespace ast;
 using namespace syminfo;
 using namespace symtab;
 
-PerfVisitor::PerfVisitor(const std::string& filename) : printer(new JSONPrinter(filename)) {
-}
+PerfVisitor::PerfVisitor(const std::string& filename)
+    : printer(new JSONPrinter(filename)) {}
 
 /// count math operations from all binary expressions
 void PerfVisitor::visit_binary_expression(BinaryExpression* node) {
@@ -16,65 +23,65 @@ void PerfVisitor::visit_binary_expression(BinaryExpression* node) {
     if (start_measurement) {
         auto value = node->get_op().get_value();
         switch (value) {
-            case BOP_ADDITION:
-                current_block_perf.n_add++;
-                break;
+        case BOP_ADDITION:
+            current_block_perf.n_add++;
+            break;
 
-            case BOP_SUBTRACTION:
-                current_block_perf.n_sub++;
-                break;
+        case BOP_SUBTRACTION:
+            current_block_perf.n_sub++;
+            break;
 
-            case BOP_MULTIPLICATION:
-                current_block_perf.n_mul++;
-                break;
+        case BOP_MULTIPLICATION:
+            current_block_perf.n_mul++;
+            break;
 
-            case BOP_DIVISION:
-                current_block_perf.n_div++;
-                break;
+        case BOP_DIVISION:
+            current_block_perf.n_div++;
+            break;
 
-            case BOP_POWER:
-                current_block_perf.n_pow++;
-                break;
+        case BOP_POWER:
+            current_block_perf.n_pow++;
+            break;
 
-            case BOP_AND:
-                current_block_perf.n_and++;
-                break;
+        case BOP_AND:
+            current_block_perf.n_and++;
+            break;
 
-            case BOP_OR:
-                current_block_perf.n_or++;
-                break;
+        case BOP_OR:
+            current_block_perf.n_or++;
+            break;
 
-            case BOP_GREATER:
-                current_block_perf.n_gt++;
-                break;
+        case BOP_GREATER:
+            current_block_perf.n_gt++;
+            break;
 
-            case BOP_GREATER_EQUAL:
-                current_block_perf.n_ge++;
-                break;
+        case BOP_GREATER_EQUAL:
+            current_block_perf.n_ge++;
+            break;
 
-            case BOP_LESS:
-                current_block_perf.n_lt++;
-                break;
+        case BOP_LESS:
+            current_block_perf.n_lt++;
+            break;
 
-            case BOP_LESS_EQUAL:
-                current_block_perf.n_le++;
-                break;
+        case BOP_LESS_EQUAL:
+            current_block_perf.n_le++;
+            break;
 
-            case BOP_ASSIGN:
-                current_block_perf.n_assign++;
-                assign_op = true;
-                break;
+        case BOP_ASSIGN:
+            current_block_perf.n_assign++;
+            assign_op = true;
+            break;
 
-            case BOP_NOT_EQUAL:
-                current_block_perf.n_ne++;
-                break;
+        case BOP_NOT_EQUAL:
+            current_block_perf.n_ne++;
+            break;
 
-            case BOP_EXACT_EQUAL:
-                current_block_perf.n_ee++;
-                break;
+        case BOP_EXACT_EQUAL:
+            current_block_perf.n_ee++;
+            break;
 
-            default:
-                throw std::logic_error("Binary operator not handled in perf visitor");
+        default:
+            throw std::logic_error("Binary operator not handled in perf visitor");
         }
     }
 
@@ -145,7 +152,7 @@ void PerfVisitor::measure_performance(AST* node) {
     start_measurement = false;
 
     /// clear var usage map
-    for (auto& var_set : var_usage) {
+    for (auto& var_set: var_usage) {
         var_set.second.clear();
     }
 }
@@ -212,7 +219,7 @@ void PerfVisitor::count_variables() {
     NmodlType property = NmodlType::range_var | NmodlType::dependent_def | NmodlType::state_var;
     auto variables = current_symtab->get_variables_with_properties(property);
 
-    for (auto& variable : variables) {
+    for (auto& variable: variables) {
         if (!variable->has_properties(NmodlType::global_var)) {
             num_instance_variables++;
             if (variable->has_properties(NmodlType::param_assign)) {
@@ -242,7 +249,7 @@ void PerfVisitor::count_variables() {
                NmodlType::pointer_var;
     variables = current_symtab->get_variables_with_properties(property);
     num_global_variables = 0;
-    for (auto& variable : variables) {
+    for (auto& variable: variables) {
         auto is_global = variable->has_properties(NmodlType::global_var);
         property = NmodlType::range_var | NmodlType::dependent_def;
         if (!variable->has_properties(property) || is_global) {
@@ -365,16 +372,16 @@ void PerfVisitor::visit_unary_expression(UnaryExpression* node) {
     if (start_measurement) {
         auto value = node->get_op().get_value();
         switch (value) {
-            case UOP_NEGATION:
-                current_block_perf.n_neg++;
-                break;
+        case UOP_NEGATION:
+            current_block_perf.n_neg++;
+            break;
 
-            case UOP_NOT:
-                current_block_perf.n_not++;
-                break;
+        case UOP_NOT:
+            current_block_perf.n_not++;
+            break;
 
-            default:
-                throw std::logic_error("Unary operator not handled in perf visitor");
+        default:
+            throw std::logic_error("Unary operator not handled in perf visitor");
         }
     }
     node->visit_children(this);

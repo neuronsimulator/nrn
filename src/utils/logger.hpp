@@ -1,5 +1,11 @@
-#ifndef NMODL_LOGGER_HPP
-#define NMODL_LOGGER_HPP
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
+#pragma once
 
 // clang-format off
 #include "spdlog/spdlog.h"
@@ -8,5 +14,3 @@
 
 using logger_type = std::shared_ptr<spdlog::logger>;
 extern logger_type logger;
-
-#endif

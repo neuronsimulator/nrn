@@ -1,5 +1,11 @@
-#ifndef VAR_USAGE_VISITOR_HPP
-#define VAR_USAGE_VISITOR_HPP
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
+#pragma once
 
 #include <string>
 
@@ -13,7 +19,7 @@
  * \todo : check if macro is considered as variable
  */
 
-class VarUsageVisitor : public AstVisitor {
+class VarUsageVisitor: public AstVisitor {
   private:
     /// variable to check usage
     std::string var_name;
@@ -26,5 +32,3 @@ class VarUsageVisitor : public AstVisitor {
 
     virtual void visit_name(ast::Name* node) override;
 };
-
-#endif

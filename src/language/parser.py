@@ -1,3 +1,10 @@
+# ***********************************************************************
+# Copyright (C) 2018-2019 Blue Brain Project
+#
+# This file is part of NMODL distributed under the terms of the GNU
+# Lesser General Public License. See top-level LICENSE file for details.
+# ***********************************************************************
+
 """Parser for parsing abstract NMODL language definition file
 
 Abstract definition file of NMODL has custom syntax for defining language

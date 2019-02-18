@@ -1,6 +1,6 @@
-#=============================================================================
+# =============================================================================
 # Codegen sources
-#=============================================================================
+# =============================================================================
 set(CODEGEN_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen_acc_visitor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen_acc_visitor.hpp
@@ -14,14 +14,11 @@ set(CODEGEN_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen_helper_visitor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen_info.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen_info.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_naming.hpp
-)
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_naming.hpp)
 
-#=============================================================================
+# =============================================================================
 # Codegen library and executable
-#=============================================================================
-add_library(codegen
-            STATIC
-            ${CODEGEN_SOURCE_FILES})
+# =============================================================================
+add_library(codegen STATIC ${CODEGEN_SOURCE_FILES})
 
 add_dependencies(codegen lexer util)

@@ -1,6 +1,6 @@
-#=============================================================================
+# =============================================================================
 # Utility sources
-#=============================================================================
+# =============================================================================
 set(UTIL_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/common_utils.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/string_utils.hpp
@@ -11,18 +11,13 @@ set(UTIL_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/table_data.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/logger.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/logger.cpp
-    ${CMAKE_BINARY_DIR}/version.cpp
-)
+    ${CMAKE_BINARY_DIR}/version.cpp)
 
-#=============================================================================
+# =============================================================================
 # Symbol table library
-#=============================================================================
+# =============================================================================
 
-add_library(util_obj
-        OBJECT
-        ${UTIL_SOURCE_FILES})
+add_library(util_obj OBJECT ${UTIL_SOURCE_FILES})
 set_property(TARGET util_obj PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-add_library(util
-        STATIC
-        $<TARGET_OBJECTS:util_obj>)
+add_library(util STATIC $<TARGET_OBJECTS:util_obj>)

@@ -1,5 +1,11 @@
-#ifndef NMODL_DEFUSE_ANALYZE_VISITOR_HPP
-#define NMODL_DEFUSE_ANALYZE_VISITOR_HPP
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
+#pragma once
 
 #include <map>
 #include <stack>
@@ -63,8 +69,8 @@ class DUInstance {
     /// usage of variable in case of if like statements
     std::vector<DUInstance> children;
 
-    DUInstance(DUState state) : state(state) {
-    }
+    DUInstance(DUState state)
+        : state(state) {}
 
     /// analyze all children and return "effective" usage
     DUState eval();
@@ -92,8 +98,8 @@ class DUChain {
     std::vector<DUInstance> chain;
 
     DUChain() = default;
-    DUChain(std::string name) : name(name) {
-    }
+    DUChain(std::string name)
+        : name(name) {}
 
     /// return "effective" usage of a variable
     DUState eval();
@@ -154,7 +160,7 @@ class DUChain {
  * in any of the if-elseif-else part then it is considered as "used". And
  * this is done recursively from innermost level to the top.
  */
-class DefUseAnalyzeVisitor : public AstVisitor {
+class DefUseAnalyzeVisitor: public AstVisitor {
   private:
     /// symbol table containing global variables
     symtab::SymbolTable* global_symtab = nullptr;
@@ -189,12 +195,12 @@ class DefUseAnalyzeVisitor : public AstVisitor {
   public:
     DefUseAnalyzeVisitor() = delete;
 
-    explicit DefUseAnalyzeVisitor(symtab::SymbolTable* symtab) : global_symtab(symtab) {
-    }
+    explicit DefUseAnalyzeVisitor(symtab::SymbolTable* symtab)
+        : global_symtab(symtab) {}
 
     DefUseAnalyzeVisitor(symtab::SymbolTable* symtab, bool ignore_verbatim)
-        : global_symtab(symtab), ignore_verbatim(ignore_verbatim) {
-    }
+        : global_symtab(symtab)
+        , ignore_verbatim(ignore_verbatim) {}
 
     virtual void visit_binary_expression(ast::BinaryExpression* node) override;
     virtual void visit_if_statement(ast::IfStatement* node) override;
@@ -240,17 +246,12 @@ class DefUseAnalyzeVisitor : public AstVisitor {
 
     /// statements / nodes that should not be used for def-use chain analysis
 
-    virtual void visit_conductance_hint(ast::ConductanceHint* /*node*/) override {
-    }
+    virtual void visit_conductance_hint(ast::ConductanceHint* /*node*/) override {}
 
-    virtual void visit_local_list_statement(ast::LocalListStatement* /*node*/) override {
-    }
+    virtual void visit_local_list_statement(ast::LocalListStatement* /*node*/) override {}
 
-    virtual void visit_argument(ast::Argument* /*node*/) override {
-    }
+    virtual void visit_argument(ast::Argument* /*node*/) override {}
 
     /// compute def-use chain for a variable within the node
     DUChain analyze(ast::Node* node, const std::string& name);
 };
-
-#endif

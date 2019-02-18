@@ -1,3 +1,10 @@
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
 #include <algorithm>
 #include <utility>
 
@@ -9,28 +16,28 @@ using namespace syminfo;
 /// DUState to string conversion for pretty-printing
 std::string to_string(DUState state) {
     switch (state) {
-        case DUState::U:
-            return "U";
-        case DUState::D:
-            return "D";
-        case DUState::LU:
-            return "LU";
-        case DUState::LD:
-            return "LD";
-        case DUState::CONDITIONAL_BLOCK:
-            return "CONDITIONAL_BLOCK";
-        case DUState::IF:
-            return "IF";
-        case DUState::ELSEIF:
-            return "ELSEIF";
-        case DUState::ELSE:
-            return "ELSE";
-        case DUState::UNKNOWN:
-            return "UNKNOWN";
-        case DUState::NONE:
-            return "NONE";
-        default:
-            throw std::runtime_error("Unhandled DUState?");
+    case DUState::U:
+        return "U";
+    case DUState::D:
+        return "D";
+    case DUState::LU:
+        return "LU";
+    case DUState::LD:
+        return "LD";
+    case DUState::CONDITIONAL_BLOCK:
+        return "CONDITIONAL_BLOCK";
+    case DUState::IF:
+        return "IF";
+    case DUState::ELSEIF:
+        return "ELSEIF";
+    case DUState::ELSE:
+        return "ELSE";
+    case DUState::UNKNOWN:
+        return "UNKNOWN";
+    case DUState::NONE:
+        return "NONE";
+    default:
+        throw std::runtime_error("Unhandled DUState?");
     }
 }
 
@@ -45,7 +52,7 @@ void DUInstance::print(JSONPrinter& printer) {
         printer.add_node(to_string(state));
     } else {
         printer.push_block(to_string(state));
-        for (auto& inst : children) {
+        for (auto& inst: children) {
             inst.print(printer);
         }
         printer.pop_block();
@@ -59,7 +66,7 @@ std::string DUChain::to_string(bool compact) {
     printer.compact_json(compact);
 
     printer.push_block(name);
-    for (auto& instance : chain) {
+    for (auto& instance: chain) {
         instance.print(printer);
     }
     printer.pop_block();
@@ -74,7 +81,7 @@ std::string DUChain::to_string(bool compact) {
  */
 DUState DUInstance::sub_block_eval() {
     DUState result = DUState::NONE;
-    for (auto& chain : children) {
+    for (auto& chain: children) {
         auto child_state = chain.eval();
         if (child_state == DUState::U || child_state == DUState::D) {
             result = child_state;
@@ -110,7 +117,7 @@ DUState DUInstance::conditional_block_eval() {
     DUState result = DUState::NONE;
     bool block_with_none = false;
 
-    for (auto& chain : children) {
+    for (auto& chain: children) {
         auto child_state = chain.eval();
         if (child_state == DUState::U) {
             result = child_state;
@@ -149,7 +156,7 @@ DUState DUInstance::eval() {
 /// or usage. Note that if-else blocks already evaluated.
 DUState DUChain::eval() {
     auto result = DUState::NONE;
-    for (auto& inst : chain) {
+    for (auto& inst: chain) {
         auto re = inst.eval();
         if (re == DUState::U || re == DUState::D) {
             result = re;
@@ -223,7 +230,7 @@ void DefUseAnalyzeVisitor::visit_if_statement(IfStatement* node) {
     current_chain = last_chain;
 
     /// visiting else if sub-blocks
-    for (const auto& item : node->get_elseifs()) {
+    for (const auto& item: node->get_elseifs()) {
         visit_with_new_chain(item.get(), DUState::ELSEIF);
     }
 

@@ -1,5 +1,11 @@
-#ifndef _NMODL_PERF_STAT_HPP_
-#define _NMODL_PERF_STAT_HPP_
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
+#pragma once
 
 #include <sstream>
 
@@ -84,5 +90,3 @@ class PerfStat {
     std::vector<std::string> keys();
     std::vector<std::string> values();
 };
-
-#endif

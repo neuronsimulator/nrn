@@ -1,13 +1,20 @@
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
 #include <fstream>
 #include <iostream>
-#include <sstream>
 #include <pybind11/embed.h>
+#include <sstream>
 
 #include "arg_handler.hpp"
-#include "codegen/codegen_cuda_visitor.hpp"
 #include "codegen/codegen_acc_visitor.hpp"
-#include "codegen/codegen_omp_visitor.hpp"
 #include "codegen/codegen_c_visitor.hpp"
+#include "codegen/codegen_cuda_visitor.hpp"
+#include "codegen/codegen_omp_visitor.hpp"
 #include "parser/nmodl_driver.hpp"
 #include "utils/common_utils.hpp"
 #include "utils/logger.hpp"
@@ -19,9 +26,9 @@
 #include "visitors/localize_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/perf_visitor.hpp"
-#include "visitors/symtab_visitor.hpp"
 #include "visitors/sympy_conductance_visitor.hpp"
 #include "visitors/sympy_solver_visitor.hpp"
+#include "visitors/symtab_visitor.hpp"
 #include "visitors/verbatim_var_rename_visitor.hpp"
 #include "visitors/verbatim_visitor.hpp"
 
@@ -47,7 +54,7 @@ int main(int argc, const char* argv[]) {
         pybind11::initialize_interpreter();
     }
 
-    for (auto& nmodl_file : arg.nmodl_files) {
+    for (auto& nmodl_file: arg.nmodl_files) {
         std::ifstream file(nmodl_file);
 
         if (!file.good()) {

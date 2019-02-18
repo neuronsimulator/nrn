@@ -1,3 +1,10 @@
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
 #include <algorithm>
 
 #include "visitors/defuse_analyze_visitor.hpp"
@@ -82,7 +89,7 @@ std::vector<std::string> LocalizeVisitor::variables_to_optimize() {
     auto variables = program_symtab->get_variables_with_properties(global_var_properties);
 
     std::vector<std::string> result;
-    for (auto& variable : variables) {
+    for (auto& variable: variables) {
         if (!variable->has_properties(excluded_var_properties)) {
             result.push_back(variable->get_name());
         }
@@ -98,12 +105,12 @@ void LocalizeVisitor::visit_program(Program* node) {
     }
 
     auto variables = variables_to_optimize();
-    for (const auto& varname : variables) {
+    for (const auto& varname: variables) {
         const auto& blocks = node->get_blocks();
         std::map<DUState, std::vector<std::shared_ptr<ast::Node>>> block_usage;
 
         /// compute def use chains
-        for (auto block : blocks) {
+        for (auto block: blocks) {
             if (node_for_def_use_analysis(block.get())) {
                 DefUseAnalyzeVisitor v(program_symtab, ignore_verbatim);
                 auto usages = v.analyze(block.get(), varname);
@@ -117,14 +124,14 @@ void LocalizeVisitor::visit_program(Program* node) {
         auto it = block_usage.find(DUState::U);
         if (it == block_usage.end()) {
             /// all blocks that are using variable should get local variable
-            for (auto& block : block_usage[DUState::D]) {
+            for (auto& block: block_usage[DUState::D]) {
                 auto block_ptr = dynamic_cast<Block*>(block.get());
                 auto statement_block = block_ptr->get_statement_block();
                 LocalVar* variable;
                 auto symbol = program_symtab->lookup(varname);
                 if (symbol->is_array()) {
-                    variable =
-                        add_local_variable(statement_block.get(), varname, symbol->get_length());
+                    variable = add_local_variable(statement_block.get(), varname,
+                                                  symbol->get_length());
                 } else {
                     variable = add_local_variable(statement_block.get(), varname);
                 }

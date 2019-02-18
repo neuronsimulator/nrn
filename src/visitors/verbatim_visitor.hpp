@@ -1,5 +1,11 @@
-#ifndef VERBATIM_VISITOR_HPP
-#define VERBATIM_VISITOR_HPP
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
+#pragma once
 
 #include <vector>
 
@@ -17,7 +23,7 @@
  * in ModelDB.
  */
 
-class VerbatimVisitor : public AstVisitor {
+class VerbatimVisitor: public AstVisitor {
   private:
     /// flag to enable/disable printing blocks as we visit them
     bool verbose = false;
@@ -38,5 +44,3 @@ class VerbatimVisitor : public AstVisitor {
         return blocks;
     }
 };
-
-#endif

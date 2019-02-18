@@ -1,5 +1,11 @@
-#ifndef _NMODL_SYMBOL_HPP_
-#define _NMODL_SYMBOL_HPP_
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
+#pragma once
 
 #include <map>
 #include <memory>
@@ -8,247 +14,248 @@
 #include "symtab/symbol_properties.hpp"
 
 namespace ast {
-    class AST;
+class AST;
 }
 
 namespace symtab {
 
-    /**
-     * \class Symbol
-     * \brief Represent symbol in symbol table
-     *
-     * Symbol table generator pass visit the AST and insert symbol for
-     * each node into symbol table. Symbol could appear multiple times
-     * in a block or different global blocks. NmodlType object has all
-     * nmodl properties information.
-     *
-     * \todo Multiple tokens (i.e. location information) for symbol should
-     *       be tracked
-     * \todo Scope information should be more than just string
-     * \todo Perf block should track information about all usage of the symbol
-     *       (would be helpful for perf modeling)
-     */
+/**
+ * \class Symbol
+ * \brief Represent symbol in symbol table
+ *
+ * Symbol table generator pass visit the AST and insert symbol for
+ * each node into symbol table. Symbol could appear multiple times
+ * in a block or different global blocks. NmodlType object has all
+ * nmodl properties information.
+ *
+ * \todo Multiple tokens (i.e. location information) for symbol should
+ *       be tracked
+ * \todo Scope information should be more than just string
+ * \todo Perf block should track information about all usage of the symbol
+ *       (would be helpful for perf modeling)
+ */
 
-    class Symbol {
-      private:
-        /// name of the symbol
-        std::string name;
+class Symbol {
+  private:
+    /// name of the symbol
+    std::string name;
 
-        /// original name in case of renaming
-        std::string renamed_from;
+    /// original name in case of renaming
+    std::string renamed_from;
 
-        /// unique id or index position when symbol is inserted into specific table
-        int id = 0;
+    /// unique id or index position when symbol is inserted into specific table
+    int id = 0;
 
-        /// ast node where symbol encountered first time
-        /// node is passed from visitor and hence we have
-        /// raw pointer instead of shared_ptr
-        ast::AST* node = nullptr;
+    /// ast node where symbol encountered first time
+    /// node is passed from visitor and hence we have
+    /// raw pointer instead of shared_ptr
+    ast::AST* node = nullptr;
 
-        /// token for position information
-        ModToken token;
+    /// token for position information
+    ModToken token;
 
-        /// properties of symbol from whole mod file
-        syminfo::NmodlType properties{syminfo::NmodlType::empty};
+    /// properties of symbol from whole mod file
+    syminfo::NmodlType properties{syminfo::NmodlType::empty};
 
-        /// status of symbol during various passes
-        syminfo::Status status{syminfo::Status::empty};
+    /// status of symbol during various passes
+    syminfo::Status status{syminfo::Status::empty};
 
-        /// scope of the symbol (block name)
-        std::string scope;
+    /// scope of the symbol (block name)
+    std::string scope;
 
-        /// number of times symbol is read
-        int read_count = 0;
+    /// number of times symbol is read
+    int read_count = 0;
 
-        /// number of times symbol is written
-        int write_count = 0;
+    /// number of times symbol is written
+    int write_count = 0;
 
-        /// order of derivative (for prime node)
-        int order = 0;
+    /// order of derivative (for prime node)
+    int order = 0;
 
-        /// order in which symbol arrives
-        int definition_order = -1;
+    /// order in which symbol arrives
+    int definition_order = -1;
 
-        /// value (for parameters, constant etc)
-        std::shared_ptr<double> value;
+    /// value (for parameters, constant etc)
+    std::shared_ptr<double> value;
 
-        /// true if array variable
-        bool array = false;
+    /// true if array variable
+    bool array = false;
 
-        /// number of elements
-        int length = 1;
+    /// number of elements
+    int length = 1;
 
-        // number of values in case of table variable
-        int num_values = 0;
+    // number of values in case of table variable
+    int num_values = 0;
 
-      public:
-        Symbol() = delete;
+  public:
+    Symbol() = delete;
 
-        Symbol(std::string name, ast::AST* node) : name(name), node(node) {
+    Symbol(std::string name, ast::AST* node)
+        : name(name)
+        , node(node) {}
+
+    Symbol(std::string name, ModToken token)
+        : name(name)
+        , token(token) {}
+
+    Symbol(std::string name, ast::AST* node, ModToken token)
+        : name(name)
+        , node(node)
+        , token(token) {}
+
+    void set_scope(std::string s) {
+        scope = s;
+    }
+
+    std::string get_name() {
+        return name;
+    }
+
+    int get_id() {
+        return id;
+    }
+
+    void set_id(int i) {
+        id = i;
+    }
+
+    void set_name(std::string new_name) {
+        if (renamed_from.empty()) {
+            renamed_from = name;
         }
+        name = new_name;
+    }
 
-        Symbol(std::string name, ModToken token) : name(name), token(token) {
-        }
+    std::string get_scope() {
+        return scope;
+    }
 
-        Symbol(std::string name, ast::AST* node, ModToken token)
-            : name(name), node(node), token(token) {
-        }
+    syminfo::NmodlType get_properties() {
+        return properties;
+    }
 
-        void set_scope(std::string s) {
-            scope = s;
-        }
+    syminfo::Status get_status() {
+        return status;
+    }
 
-        std::string get_name() {
-            return name;
-        }
+    void read() {
+        read_count++;
+    }
 
-        int get_id() {
-            return id;
-        }
+    void write() {
+        write_count++;
+    }
 
-        void set_id(int i) {
-            id = i;
-        }
+    ast::AST* get_node() {
+        return node;
+    }
 
-        void set_name(std::string new_name) {
-            if (renamed_from.empty()) {
-                renamed_from = name;
-            }
-            name = new_name;
-        }
+    ModToken get_token() {
+        return token;
+    }
 
-        std::string get_scope() {
-            return scope;
-        }
+    int get_read_count() const {
+        return read_count;
+    }
 
-        syminfo::NmodlType get_properties() {
-            return properties;
-        }
+    int get_write_count() const {
+        return write_count;
+    }
 
-        syminfo::Status get_status() {
-            return status;
-        }
+    int get_definition_order() const {
+        return definition_order;
+    }
 
-        void read() {
-            read_count++;
-        }
+    bool is_external_symbol_only();
 
-        void write() {
-            write_count++;
-        }
+    /// \todo : rename to has_any_property
+    bool has_properties(syminfo::NmodlType new_properties);
 
-        ast::AST* get_node() {
-            return node;
-        }
+    bool has_all_properties(syminfo::NmodlType new_properties);
 
-        ModToken get_token() {
-            return token;
-        }
+    bool has_any_status(syminfo::Status new_status);
 
-        int get_read_count() const {
-            return read_count;
-        }
+    bool has_all_status(syminfo::Status new_status);
 
-        int get_write_count() const {
-            return write_count;
-        }
+    void add_properties(syminfo::NmodlType new_properties);
 
-        int get_definition_order() const {
-            return definition_order;
-        }
+    void add_property(syminfo::NmodlType property);
 
-        bool is_external_symbol_only();
+    void inlined() {
+        status |= syminfo::Status::inlined;
+    }
 
-        /// \todo : rename to has_any_property
-        bool has_properties(syminfo::NmodlType new_properties);
+    void mark_created() {
+        status |= syminfo::Status::created;
+    }
 
-        bool has_all_properties(syminfo::NmodlType new_properties);
+    void mark_renamed() {
+        status |= syminfo::Status::renamed;
+    }
 
-        bool has_any_status(syminfo::Status new_status);
+    void mark_localized() {
+        status |= syminfo::Status::localized;
+    }
 
-        bool has_all_status(syminfo::Status new_status);
+    void mark_thread_safe() {
+        status |= syminfo::Status::thread_safe;
+    }
 
-        void add_properties(syminfo::NmodlType new_properties);
+    void created_from_state() {
+        mark_created();
+        status |= syminfo::Status::from_state;
+    }
 
-        void add_property(syminfo::NmodlType property);
+    void set_order(int new_order);
 
-        void inlined() {
-            status |= syminfo::Status::inlined;
-        }
+    void set_definition_order(int order) {
+        definition_order = order;
+    }
 
-        void mark_created() {
-            status |= syminfo::Status::created;
-        }
+    void set_value(double val) {
+        value = std::make_shared<double>(val);
+    }
 
-        void mark_renamed() {
-            status |= syminfo::Status::renamed;
-        }
+    void set_as_array(int len) {
+        array = true;
+        length = len;
+    }
 
-        void mark_localized() {
-            status |= syminfo::Status::localized;
-        }
+    bool is_array() {
+        return array;
+    }
 
-        void mark_thread_safe() {
-            status |= syminfo::Status::thread_safe;
-        }
+    void set_length(int len) {
+        length = len;
+    }
 
-        void created_from_state() {
-            mark_created();
-            status |= syminfo::Status::from_state;
-        }
+    int get_length() {
+        return length;
+    }
 
-        void set_order(int new_order);
+    int get_num_values() {
+        return num_values;
+    }
 
-        void set_definition_order(int order) {
-            definition_order = order;
-        }
+    void set_num_values(int n) {
+        num_values = n;
+    }
 
-        void set_value(double val) {
-            value = std::make_shared<double>(val);
-        }
+    std::string get_original_name() {
+        return renamed_from;
+    }
 
-        void set_as_array(int len) {
-            array = true;
-            length = len;
-        }
+    std::shared_ptr<double> get_value() {
+        return value;
+    }
 
-        bool is_array() {
-            return array;
-        }
+    void set_original_name(std::string new_name) {
+        renamed_from = new_name;
+    }
 
-        void set_length(int len) {
-            length = len;
-        }
+    std::string to_string();
 
-        int get_length() {
-            return length;
-        }
-
-        int get_num_values() {
-            return num_values;
-        }
-
-        void set_num_values(int n) {
-            num_values = n;
-        }
-
-        std::string get_original_name() {
-            return renamed_from;
-        }
-
-        std::shared_ptr<double> get_value() {
-            return value;
-        }
-
-        void set_original_name(std::string new_name) {
-            renamed_from = new_name;
-        }
-
-        std::string to_string();
-
-        bool is_variable();
-    };
+    bool is_variable();
+};
 
 }  // namespace symtab
-
-#endif

@@ -1,5 +1,11 @@
-#ifndef NMODL_INLINE_VISITOR_HPP
-#define NMODL_INLINE_VISITOR_HPP
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
+#pragma once
 
 #include <map>
 #include <stack>
@@ -107,7 +113,7 @@
  *  - Location of symbol/nodes after inlining still points to old nodes
  */
 
-class InlineVisitor : public AstVisitor {
+class InlineVisitor: public AstVisitor {
   private:
     /// statement block containing current function call
     ast::StatementBlock* caller_block = nullptr;
@@ -170,5 +176,3 @@ class InlineVisitor : public AstVisitor {
 
     virtual void visit_program(ast::Program* node) override;
 };
-
-#endif  //

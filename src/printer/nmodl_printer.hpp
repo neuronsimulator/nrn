@@ -1,5 +1,11 @@
-#ifndef _NMODL_PRINTER_HPP_
-#define _NMODL_PRINTER_HPP_
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
+#pragma once
 
 #include <fstream>
 #include <iostream>
@@ -25,10 +31,10 @@ class NMODLPrinter {
     size_t indent_level = 0;
 
   public:
-    NMODLPrinter() : result(new std::ostream(std::cout.rdbuf())) {
-    }
-    NMODLPrinter(std::ostream& stream) : result(new std::ostream(stream.rdbuf())) {
-    }
+    NMODLPrinter()
+        : result(new std::ostream(std::cout.rdbuf())) {}
+    NMODLPrinter(std::ostream& stream)
+        : result(new std::ostream(stream.rdbuf())) {}
     NMODLPrinter(const std::string& filename);
 
     ~NMODLPrinter() {
@@ -49,5 +55,3 @@ class NMODLPrinter {
     /// and decreases indentation level
     void pop_level();
 };
-
-#endif

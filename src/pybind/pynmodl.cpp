@@ -1,3 +1,10 @@
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
 #include <memory>
 #include <pybind11/iostream.h>
 #include <pybind11/pybind11.h>
@@ -43,10 +50,8 @@ PYBIND11_MODULE(_nmodl, m_nmodl) {
         .def("ast", &PyDriver::ast);
 
     m_nmodl.def("to_nmodl", nmodl::to_nmodl);
-    m_nmodl.def("to_json", nmodl::to_json,
-            py::arg("node"),
-            py::arg("compact") = false,
-            py::arg("expand") = false);
+    m_nmodl.def("to_json", nmodl::to_json, py::arg("node"), py::arg("compact") = false,
+                py::arg("expand") = false);
 
     init_visitor_module(m_nmodl);
     init_ast_module(m_nmodl);

@@ -1,5 +1,11 @@
-#ifndef NMODL_CODE_PRINTER_HPP
-#define NMODL_CODE_PRINTER_HPP
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
+#pragma once
 
 #include <fstream>
 #include <iostream>
@@ -23,10 +29,10 @@ class CodePrinter {
     const int NUM_SPACES = 4;
 
   public:
-    CodePrinter() : result(new std::ostream(std::cout.rdbuf())) {
-    }
-    CodePrinter(std::stringstream& stream) : result(new std::ostream(stream.rdbuf())) {
-    }
+    CodePrinter()
+        : result(new std::ostream(std::cout.rdbuf())) {}
+    CodePrinter(std::stringstream& stream)
+        : result(new std::ostream(stream.rdbuf())) {}
     CodePrinter(const std::string& filename);
 
     ~CodePrinter() {
@@ -66,5 +72,3 @@ class CodePrinter {
         return NUM_SPACES * indent_level;
     }
 };
-
-#endif

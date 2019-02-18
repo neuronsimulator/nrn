@@ -1,5 +1,11 @@
-#ifndef NMODL_TEST_CONSTRUCTS
-#define NMODL_TEST_CONSTRUCTS
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
+#pragma once
 
 #include <map>
 #include <string>
@@ -20,12 +26,15 @@ struct NmodlTestCase {
 
     NmodlTestCase() = delete;
 
-    NmodlTestCase(std::string name, std::string input) : name(name), input(input), output(input) {
-    }
+    NmodlTestCase(std::string name, std::string input)
+        : name(name)
+        , input(input)
+        , output(input) {}
 
     NmodlTestCase(std::string name, std::string input, std::string output)
-        : name(name), input(input), output(output) {
-    }
+        : name(name)
+        , input(input)
+        , output(output) {}
 };
 
 /// represent differential equation test
@@ -46,5 +55,3 @@ struct DiffEqTestCase {
 extern std::map<std::string, NmodlTestCase> nmdol_invalid_constructs;
 extern std::map<std::string, NmodlTestCase> nmodl_valid_constructs;
 extern std::vector<DiffEqTestCase> diff_eq_constructs;
-
-#endif

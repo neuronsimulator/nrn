@@ -1,5 +1,11 @@
-#ifndef NMODL_VISITOR_UTILS
-#define NMODL_VISITOR_UTILS
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
+#pragma once
 
 #include <map>
 #include <set>
@@ -32,12 +38,10 @@ std::shared_ptr<ast::Statement> create_statement(const std::string& code_stateme
 std::set<std::string> get_global_vars(ast::Program* node);
 
 namespace nmodl {
-    /** Given AST node, return the NMODL string representation */
-    std::string to_nmodl(ast::AST* node);
+/** Given AST node, return the NMODL string representation */
+std::string to_nmodl(ast::AST* node);
 
-    /** Given AST node, return the JSON string representation */
-    std::string to_json(ast::AST* node, bool compact = false, bool expand = false);
+/** Given AST node, return the JSON string representation */
+std::string to_json(ast::AST* node, bool compact = false, bool expand = false);
 
 }  // namespace nmodl
-
-#endif

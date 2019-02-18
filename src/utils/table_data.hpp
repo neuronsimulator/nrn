@@ -1,5 +1,11 @@
-#ifndef _NMODL_TABLE_DATA_HPP_
-#define _NMODL_TABLE_DATA_HPP_
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
+#pragma once
 
 #include <sstream>
 #include <vector>
@@ -32,5 +38,3 @@ struct TableData {
     void print(int indent = 0);
     void print(std::stringstream& stream, int indent = 0);
 };
-
-#endif

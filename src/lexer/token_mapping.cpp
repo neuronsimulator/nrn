@@ -1,3 +1,10 @@
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
 #include <cstring>
 #include <map>
 #include <vector>
@@ -7,11 +14,11 @@
 #include "parser/nmodl/nmodl_parser.hpp"
 
 namespace nmodl {
-    using Token = nmodl::Parser::token;
-    using TokenType = nmodl::Parser::token_type;
+using Token = nmodl::Parser::token;
+using TokenType = nmodl::Parser::token_type;
 
-    namespace internal {
-        // clang-format off
+namespace internal {
+// clang-format off
         /** Keywords from NMODL language : name and token pair
          *
          * \todo Some keywords have different token names, e.g. TITLE
@@ -110,22 +117,23 @@ namespace nmodl {
             {"PROTECT", Token::PROTECT},
             {"MUTEXLOCK", Token::NRNMUTEXLOCK},
             {"MUTEXUNLOCK", Token::NRNMUTEXUNLOCK}};
-        // clang-format on
+// clang-format on
 
-        /// numerical methods supported in nmodl
-        struct MethodInfo {
-            /// method types that will work with this method
-            int64_t subtype = 0;
+/// numerical methods supported in nmodl
+struct MethodInfo {
+    /// method types that will work with this method
+    int64_t subtype = 0;
 
-            /// if it's a variable timestep method
-            int varstep = 0;
+    /// if it's a variable timestep method
+    int varstep = 0;
 
-            MethodInfo() = default;
-            MethodInfo(int64_t s, int v) : subtype(s), varstep(v) {
-            }
-        };
+    MethodInfo() = default;
+    MethodInfo(int64_t s, int v)
+        : subtype(s)
+        , varstep(v) {}
+};
 
-        // clang-format off
+// clang-format off
         static std::map<std::string, MethodInfo> methods = {{"adams", MethodInfo(DERF | KINF, 0)},
                                                             {"runge", MethodInfo(DERF | KINF, 0)},
                                                             {"euler", MethodInfo(DERF | KINF, 0)},
@@ -145,30 +153,30 @@ namespace nmodl {
                                                             {"after_cvode", MethodInfo(0, 0)},
                                                             {"cvode_t", MethodInfo(0, 0)},
                                                             {"cvode_t_v", MethodInfo(0, 0)}};
-        // clang-format on
+// clang-format on
 
-        /** In the original implementation different vectors were created for
-         * extdef, extdef2, extdef3, extdef4 etc. Instead of that we are changing
-         * those vectors with <name, type> map. This will help us to search
-         * in single map and find it's type. The types are defined as follows:
-         *
-         * DefinitionType::EXT_DOUBLE : external names that can be used as doubles
-         *                              without giving an error message
-         *
-         * DefinitionType::EXT_2      : external function names that can be used with
-         *                              array and function name arguments
-         *
-         * DefinitionType::EXT_3      : function names that get two reset arguments
-         *
-         * DefinitionType::EXT_4      : functions that need a first arg of NrnThread*
-         *
-         * DefinitionType::EXT_5      : the extdef names that are not threadsafe
-         *
-         * These types were used so that it's easy to it to old implementation. */
+/** In the original implementation different vectors were created for
+ * extdef, extdef2, extdef3, extdef4 etc. Instead of that we are changing
+ * those vectors with <name, type> map. This will help us to search
+ * in single map and find it's type. The types are defined as follows:
+ *
+ * DefinitionType::EXT_DOUBLE : external names that can be used as doubles
+ *                              without giving an error message
+ *
+ * DefinitionType::EXT_2      : external function names that can be used with
+ *                              array and function name arguments
+ *
+ * DefinitionType::EXT_3      : function names that get two reset arguments
+ *
+ * DefinitionType::EXT_4      : functions that need a first arg of NrnThread*
+ *
+ * DefinitionType::EXT_5      : the extdef names that are not threadsafe
+ *
+ * These types were used so that it's easy to it to old implementation. */
 
-        enum class DefinitionType { EXT_DOUBLE, EXT_2, EXT_3, EXT_4, EXT_5 };
+enum class DefinitionType { EXT_DOUBLE, EXT_2, EXT_3, EXT_4, EXT_5 };
 
-        // clang-format off
+// clang-format off
         static std::map<std::string, DefinitionType> extern_definitions = {
             {"first_time", DefinitionType::EXT_DOUBLE},
             {"error", DefinitionType::EXT_DOUBLE},
@@ -272,77 +280,77 @@ namespace nmodl {
             {"schedule", DefinitionType::EXT_5},
             {"set_seed", DefinitionType::EXT_5},
             {"nrn_random_play", DefinitionType::EXT_5}};
-        // clang-format on
+// clang-format on
 
-        /** Internal NEURON variables that can be used in nmod files. The compiler
-         * passes like scope checker need to know if certain variable is undefined.
-         * Note that these are not used by lexer/parser. */
+/** Internal NEURON variables that can be used in nmod files. The compiler
+ * passes like scope checker need to know if certain variable is undefined.
+ * Note that these are not used by lexer/parser. */
 
-        static std::vector<std::string> neuron_vars = {"t", "dt", "celsius", "v", "diam", "area"};
+static std::vector<std::string> neuron_vars = {"t", "dt", "celsius", "v", "diam", "area"};
 
-        TokenType keyword_type(const std::string& name) {
-            return keywords[name];
-        }
+TokenType keyword_type(const std::string& name) {
+    return keywords[name];
+}
 
-        /** \todo: revisit implementation, this is no longer
-         *        necessary as token_type is sufficient
-         */
-        TokenType method_type(const std::string& /*name*/) {
-            return Token::METHOD;
-        }
+/** \todo: revisit implementation, this is no longer
+ *        necessary as token_type is sufficient
+ */
+TokenType method_type(const std::string& /*name*/) {
+    return Token::METHOD;
+}
 
-        bool is_externdef(const std::string& name) {
-            return (extern_definitions.find(name) != extern_definitions.end());
-        }
+bool is_externdef(const std::string& name) {
+    return (extern_definitions.find(name) != extern_definitions.end());
+}
 
-        DefinitionType extdef_type(const std::string& name) {
-            if (!is_externdef(name)) {
-                throw std::runtime_error("Can't find " + name + " in external definitions!");
-            }
-            return extern_definitions[name];
-        }
-
-    }  // namespace internal
-
-    /// methods exposed to lexer, parser and compilers passes
-
-    bool is_keyword(const std::string& name) {
-        return (internal::keywords.find(name) != internal::keywords.end());
+DefinitionType extdef_type(const std::string& name) {
+    if (!is_externdef(name)) {
+        throw std::runtime_error("Can't find " + name + " in external definitions!");
     }
+    return extern_definitions[name];
+}
 
-    bool is_method(const std::string& name) {
-        return (internal::methods.find(name) != internal::methods.end());
-    }
+}  // namespace internal
 
-    /// return token type for associated name (used by nmodl scanner)
-    TokenType token_type(const std::string& name) {
-        if (is_keyword(name)) {
-            return internal::keyword_type(name);
-        }
-        if (is_method(name)) {
-            return internal::method_type(name);
-        }
-        throw std::runtime_error("get_token_type called for non-existent token " + name);
-    }
+/// methods exposed to lexer, parser and compilers passes
 
-    /// return all external variables
-    std::vector<std::string> get_external_variables() {
-        std::vector<std::string> result;
-        result.insert(result.end(), internal::neuron_vars.begin(), internal::neuron_vars.end());
-        return result;
-    }
+bool is_keyword(const std::string& name) {
+    return (internal::keywords.find(name) != internal::keywords.end());
+}
 
-    /// return all solver methods as well as commonly used math functions
-    std::vector<std::string> get_external_functions() {
-        std::vector<std::string> result;
-        result.reserve(internal::methods.size());
-        for (auto& method : internal::methods) {
-            result.push_back(method.first);
-        }
-        for (auto& definition : internal::extern_definitions) {
-            result.push_back(definition.first);
-        }
-        return result;
+bool is_method(const std::string& name) {
+    return (internal::methods.find(name) != internal::methods.end());
+}
+
+/// return token type for associated name (used by nmodl scanner)
+TokenType token_type(const std::string& name) {
+    if (is_keyword(name)) {
+        return internal::keyword_type(name);
     }
+    if (is_method(name)) {
+        return internal::method_type(name);
+    }
+    throw std::runtime_error("get_token_type called for non-existent token " + name);
+}
+
+/// return all external variables
+std::vector<std::string> get_external_variables() {
+    std::vector<std::string> result;
+    result.insert(result.end(), internal::neuron_vars.begin(), internal::neuron_vars.end());
+    return result;
+}
+
+/// return all solver methods as well as commonly used math functions
+std::vector<std::string> get_external_functions() {
+    std::vector<std::string> result;
+    result.reserve(internal::methods.size());
+    for (auto& method: internal::methods) {
+        result.push_back(method.first);
+    }
+    for (auto& definition: internal::extern_definitions) {
+        result.push_back(definition.first);
+    }
+    return result;
+}
 
 }  // namespace nmodl

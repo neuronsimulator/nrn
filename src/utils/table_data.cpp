@@ -1,3 +1,10 @@
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
 #include <iostream>
 #include <numeric>
 
@@ -54,13 +61,13 @@ void TableData::print(std::stringstream& stream, int indent) {
         if ((extra_size % ncolumns) != 0) {
             column_pad++;
         }
-        for (auto& column : col_width) {
+        for (auto& column: col_width) {
             column += column_pad;
         }
     }
 
     /// check length of columns in each row to find max length required
-    for (const auto& row : rows) {
+    for (const auto& row: rows) {
         for (unsigned i = 0; i < row.size(); i++) {
             if (col_width[i] < (row[i].length()) + PADDING) {
                 col_width[i] = row[i].length() + PADDING;
@@ -91,7 +98,7 @@ void TableData::print(std::stringstream& stream, int indent) {
     stream << "\n" << gutter << separator_line;
 
     /// data rows
-    for (const auto& row : rows) {
+    for (const auto& row: rows) {
         stream << "\n" << gutter << "| ";
         for (unsigned i = 0; i < row.size(); i++) {
             stream << stringutils::align_text(row[i], col_width[i], alignments[i]) << " | ";

@@ -1,5 +1,11 @@
-#ifndef _NMODL_PERF_VISITOR_HPP_
-#define _NMODL_PERF_VISITOR_HPP_
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
+#pragma once
 
 #include <set>
 #include <stack>
@@ -34,7 +40,7 @@
  * which PerfVisitor should be inherited.
  */
 
-class PerfVisitor : public AstVisitor {
+class PerfVisitor: public AstVisitor {
   private:
     /// symbol table of current block being visited
     symtab::SymbolTable* current_symtab = nullptr;
@@ -271,24 +277,17 @@ class PerfVisitor : public AstVisitor {
     /// certain constructs needs to be excluded from usage counting
     /// and hence need to provide empty implementations
 
-    void visit_conductance_hint(ast::ConductanceHint* /*node*/) override {
-    }
+    void visit_conductance_hint(ast::ConductanceHint* /*node*/) override {}
 
-    void visit_local_list_statement(ast::LocalListStatement* /*node*/) override {
-    }
+    void visit_local_list_statement(ast::LocalListStatement* /*node*/) override {}
 
-    void visit_suffix(ast::Suffix* /*node*/) override {
-    }
+    void visit_suffix(ast::Suffix* /*node*/) override {}
 
-    void visit_useion(ast::Useion* /*node*/) override {
-    }
+    void visit_useion(ast::Useion* /*node*/) override {}
 
-    void visit_valence(ast::Valence* /*node*/) override {
-    }
+    void visit_valence(ast::Valence* /*node*/) override {}
 
     void print(std::stringstream& ss) {
         ss << stream.str();
     }
 };
-
-#endif
