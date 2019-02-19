@@ -14,6 +14,8 @@
 #include "pybind/pyvisitor.hpp"
 #include "visitors/lookup_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
+#include "visitors/sympy_conductance_visitor.hpp"
+#include "visitors/sympy_solver_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
 
 #pragma clang diagnostic push
@@ -97,5 +99,13 @@ void init_visitor_module(py::module& m) {
         .def("visit_{{ node.class_name | snake_case }}", &AstLookupVisitor::visit_{{ node.class_name | snake_case }})
         {% if loop.last -%};{% endif %}
     {% endfor %}
+
+    py::class_<SympySolverVisitor, AstVisitor> sympy_solver_visitor(m_visitor, "SympySolverVisitor");
+    sympy_solver_visitor.def(py::init<>())
+        .def("visit_program", &SympySolverVisitor::visit_program);
+
+    py::class_<SympyConductanceVisitor, AstVisitor> sympy_conductance_visitor(m_visitor, "SympyConductanceVisitor");
+    sympy_conductance_visitor.def(py::init<>())
+        .def("visit_program", &SympyConductanceVisitor::visit_program);
 }
 #pragma clang diagnostic pop
