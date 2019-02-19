@@ -773,13 +773,13 @@ def _setup_matrices():
                                     parent_1d = None if not parent_seg else parent_seg.sec
                                     if parent_1d == sec:
                                         # it is the parent of a 1d section
-                                        index1d, indices3d = _get_node_indices(s, r, sec, h.parent_connection(sec=sec1d), sec1d, h.section_orientation(sec=sec1d))
+                                        index1d, indices3d = _get_node_indices(s, r, sec, h.parent_connection(sec=sec1d), sec1d, sec1d.orientation())
                                         hybrid_neighbors[index1d] += indices3d
                                         hybrid_diams[index1d] = parent_1d_seg.diam
                                         break
                                     elif parent_1d == parent_sec:
                                         # it connects to the parent of a 1d section
-                                        index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), sec1d, h.section_orientation(sec=sec1d))
+                                        index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), sec1d, sec1d.orientation())
                                         hybrid_neighbors[index1d] += indices3d
                                         hybrid_diams[index1d] = parent_1d_seg.diam
                                         break
@@ -895,7 +895,7 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
     indices3d = list(set(indices3d))
     #print '3d matrix indices: %r' % indices3d
     # TODO: remove the need for this assertion
-    if x1d == h.section_orientation(sec=sec1d):
+    if x1d == sec1d.orientation():
         # TODO: make this whole thing more efficient
         # the parent node is the nonzero index on the first row before the diagonal
         first_row = min([node._index for node in species.nodes(region)(sec1d)])
@@ -905,7 +905,7 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
                 break
         else:
             raise RxDException('should never get here; could not find parent')
-    elif x1d == 1 - h.section_orientation(sec=sec1d):
+    elif x1d == 1 - sec1d.orientation():
         # the ending zero-volume node is the one after the last node
         # TODO: make this more efficient
         index_1d = max([node._index for node in species.nodes(region)(sec1d)]) + 1

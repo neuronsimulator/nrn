@@ -353,13 +353,12 @@ def _xyz(seg):
     """Return the (x, y, z) coordinate of the center of the segment."""
     # TODO: this is very inefficient, especially since we're calling this for each segment not for each section; fix
     sec = seg.sec
-    n3d = int(h.n3d(sec=sec))
-    x3d = [h.x3d(i, sec=sec) for i in range(n3d)]
-    y3d = [h.y3d(i, sec=sec) for i in range(n3d)]
-    z3d = [h.z3d(i, sec=sec) for i in range(n3d)]
-    arc3d = [h.arc3d(i, sec=sec) for i in range(n3d)]
+    n3d = sec.n3d()
+    x3d = [sec.x3d(i) for i in range(n3d)]
+    y3d = [sec.y3d(i) for i in range(n3d)]
+    z3d = [sec.z3d(i) for i in range(n3d)]
+    arc3d = [sec.arc3d(i) for i in range(n3d)]
     return numpy.interp([seg.x * sec.L], arc3d, x3d)[0], numpy.interp([seg.x * sec.L], arc3d, y3d)[0], numpy.interp([seg.x * sec.L], arc3d, z3d)[0]
-
 
 
 

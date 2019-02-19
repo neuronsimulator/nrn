@@ -175,17 +175,13 @@ class MultiCompartmentReaction(GeneralizedReaction):
             areas = numpy.fromiter(itertools.chain.from_iterable(list(self._regions[0]._geometry.volumes1d(sec) for sec in self._regions[0].secs)),dtype=float)
         neuron_areas = []
         for sec in self._regions[0].secs:
-            neuron_areas += [h.area((i + 0.5) / sec.nseg, sec=sec) for i in range(sec.nseg)]
+            neuron_areas += [seg.area() for seg in sec]
         neuron_areas = numpy.array(neuron_areas)
         # area_ratios is usually a vector of 1s
         area_ratios = areas / neuron_areas
         
         # still needs to be multiplied by the valence of each molecule
         self._memb_scales = -area_ratios * FARADAY / (10000 * molecules_per_mM_um3)
-        #print area_ratios
-        #print self._memb_scales
-        #import sys
-        #sys.exit()
         
         # since self._memb_scales is only used to compute currents as seen by the rest of NEURON,
         # we only use NEURON's areas 
@@ -243,7 +239,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
                         ecs_indices[s.name] = s[r]._extracellular()._locate_segments()
                         ecs_grids[s.name] = s[r]._extracellular()._grid_id
         for sec in self._regions[0].secs:
-            for i in range(sec.nseg):
+            for seg in sec:
                 local_ptrs = []
                 local_mapped = []
                 local_mapped_ecs = []
@@ -253,7 +249,6 @@ class MultiCompartmentReaction(GeneralizedReaction):
                     #Check for extracellular regions
                     if spname is not None:
                         name = '_ref_i%s' % (spname)
-                        seg = sec((i + 0.5) / sec.nseg)
                         local_ptrs.append(seg.__getattribute__(name))
                         uberlocal_map = [None, None]
                         uberlocal_map_ecs = [None, None]
