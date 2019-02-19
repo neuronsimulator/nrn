@@ -101,7 +101,7 @@ void init_visitor_module(py::module& m) {
     {% endfor %}
 
     py::class_<SympySolverVisitor, AstVisitor> sympy_solver_visitor(m_visitor, "SympySolverVisitor");
-    sympy_solver_visitor.def(py::init<>())
+    sympy_solver_visitor.def(py::init<bool>(), py::arg("use_pade_approx")=false)
         .def("visit_program", &SympySolverVisitor::visit_program);
 
     py::class_<SympyConductanceVisitor, AstVisitor> sympy_conductance_visitor(m_visitor, "SympyConductanceVisitor");
