@@ -34,6 +34,9 @@ struct ArgumentHandler {
     /// enable SymPy analytic integration
     bool sympy;
 
+    /// enable Pade approx in SymPy analytic integration
+    bool pade_approx;
+
     /// enable nmodl level inlining
     bool inlining;
 

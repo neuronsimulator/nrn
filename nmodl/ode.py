@@ -12,7 +12,7 @@ if not ((major >= 1) and (minor >= 2)):
     raise ImportError(f"Requires SympPy version >= 1.2, found {major}.{minor}")
 
 
-def integrate2c(diff_string, t_var, dt_var, vars):
+def integrate2c(diff_string, t_var, dt_var, vars, use_pade_approx=False):
     """Analytically integrate supplied derivative, return solution as C code.
 
     Derivative should be of the form "x' = f(x)",
@@ -26,6 +26,9 @@ def integrate2c(diff_string, t_var, dt_var, vars):
         t_var: name of time variable in NEURON
         dt_var: name of dt variable in NEURON
         vars: set of variables used in expression, e.g. {"x", "a"}
+        ues_pade_approx][]: if False:  return exact solution
+                         if True:   return (1,1) Pade approx to solution
+                                    correct to second order in dt_var
 
     Returns:
         String containing analytic integral of derivative as C code
@@ -76,11 +79,20 @@ def integrate2c(diff_string, t_var, dt_var, vars):
     # try to find analytic solution
     dt = sp.symbols(dt_var, real=True, positive=True)
     x_0 = sp.symbols(dependent_var, real=True)
-    solution = sp.dsolve(diffeq, x, ics={x.subs({t: 0}): x_0}).subs({t: dt})
-    # note dsolve can return a list of solutions, in which case the above fails
+    # note dsolve can return a list of solutions, in which case this fails:
+    solution = sp.dsolve(diffeq, x, ics={x.subs({t: 0}): x_0}).subs({t: dt}).rhs
+
+    if use_pade_approx:
+        # (1,1) order pade approximant, correct to 2nd order in dt,
+        # constructed from coefficients of 2nd order taylor expansion
+        taylor_series = sp.Poly(sp.series(solution, dt, 0, 3).removeO(), dt)
+        _a0 = taylor_series.nth(0)
+        _a1 = taylor_series.nth(1)
+        _a2 = taylor_series.nth(2)
+        solution = ((_a0*_a1 + (_a1*_a1-_a0*_a2)*dt)/(_a1-_a2*dt)).simplify()
 
     # return result as C code in NEURON format
-    return f"{sp.ccode(x_0)} = {sp.ccode(solution.rhs)}"
+    return f"{sp.ccode(x_0)} = {sp.ccode(solution)}"
 
 
 def differentiate2c(expression, dependent_var, vars):

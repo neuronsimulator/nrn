@@ -101,6 +101,13 @@ ArgumentHandler::ArgumentHandler(const int& argc, const char** argv) {
                 cmd,
                 false);
 
+        switch_arg_type pade_approx_arg(
+                "",
+                "enable-pade-approx",
+                "Enable Pade Approx in SymPy analytic integration",
+                cmd,
+                false);
+
         switch_arg_type inline_arg(
                 "",
                 "nmodl-inline",
@@ -181,6 +188,7 @@ ArgumentHandler::ArgumentHandler(const int& argc, const char** argv) {
         mlayout = layout_arg.getValue();
         verbose = verbose_arg.getValue();
         sympy = sympy_arg.getValue();
+        pade_approx = pade_approx_arg.getValue();
         inlining = inline_arg.getValue();
         localize_with_verbatim = localize_verbatim_arg.getValue();
         local_rename = local_rename_arg.getValue();

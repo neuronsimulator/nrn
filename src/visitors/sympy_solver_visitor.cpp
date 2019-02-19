@@ -43,15 +43,16 @@ void SympySolverVisitor::visit_diff_eq_expression(DiffEqExpression* node) {
         logger->warn("SympySolverVisitor: LHS of differential equation is not a PrimeName");
         return;
     }
-
     auto locals = py::dict("equation_string"_a = nmodl::to_nmodl(node),
                            "t_var"_a = codegen::naming::NTHREAD_T_VARIABLE,
-                           "dt_var"_a = codegen::naming::NTHREAD_DT_VARIABLE, "vars"_a = vars);
+                           "dt_var"_a = codegen::naming::NTHREAD_DT_VARIABLE,
+                           "vars"_a = vars,
+                           "use_pade_approx"_a = use_pade_approx);
     py::exec(R"(
             from nmodl.ode import integrate2c
             exception_message = ""
             try:
-                solution = integrate2c(equation_string, t_var, dt_var, vars)
+                solution = integrate2c(equation_string, t_var, dt_var, vars, use_pade_approx)
             except Exception as e:
                 # if we fail, fail silently and return empty string
                 solution = ""

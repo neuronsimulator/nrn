@@ -110,7 +110,7 @@ int main(int argc, const char* argv[]) {
         }
 
         if (arg.sympy) {
-            SympySolverVisitor v;
+            SympySolverVisitor v(arg.pade_approx);
             v.visit_program(ast.get());
         }
 
