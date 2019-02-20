@@ -27,7 +27,7 @@
 /** enable tracing parser for debugging */
 %define parse.trace
 
-/** add extra arguments to yyparse() and yylexe() methods */
+/** add extra arguments to yyparse() and yylex() methods */
 %parse-param {class Lexer& scanner}
 %parse-param {class Driver& driver}
 %lex-param   {c11::Scanner &scanner}
@@ -110,6 +110,7 @@
 %token    <std::string>    CASE
 %token    <std::string>    DEFAULT
 %token    <std::string>    IF
+%token    <std::string>    THEN
 %token    <std::string>    ELSE
 %token    <std::string>    SWITCH
 %token    <std::string>    WHILE
@@ -153,6 +154,11 @@
 %token    <std::string>    OR                  "|"
 %token    <std::string>    QUESTION            "?"
 %token    END              0                   "End of file"
+
+// Priorities/associativities.
+%nonassoc ATOMIC
+%right THEN ELSE // Same precedence, but "shift" wins.
+%left OPEN_PARENTHESIS
 
 %{
     #include "lexer/c11_lexer.hpp"
@@ -635,7 +641,7 @@ expression_statement
 
 selection_statement
     : IF "(" expression ")" statement ELSE statement
-    | IF "(" expression ")" statement
+    | IF "(" expression ")" statement %prec THEN
     | SWITCH "(" expression ")" statement
     ;
 
