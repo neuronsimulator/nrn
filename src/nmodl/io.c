@@ -127,11 +127,13 @@ char* Fgets(buf, size, f) char* buf; int size; FILE* f; {
 			if (!in_comment_) {
 				diag("Non-Ascii character in file:", buf);
 			}
+			lappendstr(filetxtlist, buf);
 			return buf;
 		}
 		*p++ = c;
 		if (c == '\n') {
 			*p = '\0';
+			lappendstr(filetxtlist, buf);
 			return buf;
 		}			
 	}

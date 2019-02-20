@@ -61,6 +61,9 @@ int             ilint;
 Item           *qlint;
 #endif
 
+int nmodl_text = 1;
+List* filetxtlist;
+
 extern int yyparse();
 
 #if NMODL && VECTORIZE
@@ -90,6 +93,9 @@ int main(argc, argv)
 		exit(0);
 	}
 #endif
+
+	filetxtlist = newlist();
+
 #if MAC
 	SIOUXSettings.asktosaveonclose = false;
 #if !SIMSYS
@@ -137,6 +143,7 @@ int main(argc, argv)
 	 * held in intermediate lists of specific structure.
 	 *
 	 */
+
 	/*
 	 * go through the list of solve statements and construct the model()
 	 * code 
@@ -171,6 +178,47 @@ no longer adequate for saying we can not */
 	IGNORE(fclose(fctlout));
 	IGNORE(fclose(fnumout));
 #endif
+
+#if !defined NMODL_TEXT
+#define NMODL_TEXT 1
+#endif
+#if NMODL && NMODL_TEXT
+#if 0
+/* test: temp.txt should be identical to text of input file except for INCLUDE */
+{
+	FILE* f = fopen("temp.txt", "w");
+	assert(f);
+	Item* q;
+	ITERATE(q, filetxtlist) {
+		char* s = STR(q);
+		fprintf(f, "%s", s);
+	}
+	fclose(f);
+}
+#endif
+ if (nmodl_text) {
+	Item* q;
+	fprintf(fcout, "\n#if NMODL_TEXT\nstatic const char* nmodl_file_text = \n");
+	fprintf(fcout, "\"%s\"\n", finname);
+	ITERATE(q, filetxtlist) {
+		char* s = STR(q);
+		char* cp;
+		fprintf(fcout, "  \"");
+		/* Escape double quote, backslash, and end each line with \n */
+		for (cp = s; *cp; ++cp) {
+			if (*cp =='"' || *cp == '\\' ) {
+				fprintf(fcout, "\\");
+			}
+			if (*cp == '\n') {
+				fprintf(fcout, "\\n\"");
+			}
+			fputc(*cp, fcout);
+		}
+	}
+	fprintf(fcout, "  ;\n#endif\n");
+}
+#endif
+
 	IGNORE(fclose(fcout));
 
 #if NMODL && VECTORIZE
