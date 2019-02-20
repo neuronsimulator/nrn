@@ -74,6 +74,7 @@ typedef struct ICSReactions {
     
     int num_mult;
     double **mc_multiplier;
+    int* mc_flux_idx;
     struct ICSReactions* next;
 } ICSReactions;
 
@@ -167,8 +168,8 @@ void set_num_threads_ecs(int n);
 void _rhs_variable_step_ecs(const double, const double*, double*);
 
 void clear_rates_ecs();
-void do_ics_reactions(double*, double*, double*);
-void get_all_reaction_rates(double*, double*);
+void do_ics_reactions(double*, double*, double*, double*);
+void get_all_reaction_rates(double*, double*, double*);
 void _ecs_ode_reinit(double*); 
 void do_currents(Grid_node*, double*, double, int);
 void TaskQueue_add_task(TaskQueue*, void* (*task)(void* args), void*, void*);

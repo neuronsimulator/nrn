@@ -72,7 +72,7 @@ _get_num_threads.restype = ctypes.c_int
 clear_rates = nrn_dll_sym('clear_rates')
 register_rate = nrn_dll_sym('register_rate')
 register_rate.argtypes = [ 
-        ctypes.c_int,                                                              #num species
+        ctypes.c_int,                                                               #num species
         ctypes.c_int,                                                               #num regions
         ctypes.c_int,                                                               #num seg
         numpy.ctypeslib.ndpointer(ctypes.c_int, flags='contiguous'),                #species ids
@@ -774,13 +774,13 @@ def _setup_matrices():
                                     parent_1d = None if not parent_seg else parent_seg.sec
                                     if parent_1d == sec:
                                         # it is the parent of a 1d section
-                                        index1d, indices3d = _get_node_indices(s, r, sec, h.parent_connection(sec=sec1d), sec1d, h.section_orientation(sec=sec1d))
+                                        index1d, indices3d = _get_node_indices(s, r, sec, h.parent_connection(sec=sec1d), sec1d, sec1d.orientation())
                                         hybrid_neighbors[index1d] += indices3d
                                         hybrid_diams[index1d] = parent_1d_seg.diam
                                         break
                                     elif parent_1d == parent_sec:
                                         # it connects to the parent of a 1d section
-                                        index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), sec1d, h.section_orientation(sec=sec1d))
+                                        index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), sec1d, sec1d.orientation())
                                         hybrid_neighbors[index1d] += indices3d
                                         hybrid_diams[index1d] = parent_1d_seg.diam
                                         break
@@ -896,7 +896,7 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
     indices3d = list(set(indices3d))
     #print '3d matrix indices: %r' % indices3d
     # TODO: remove the need for this assertion
-    if x1d == h.section_orientation(sec=sec1d):
+    if x1d == sec1d.orientation():
         # TODO: make this whole thing more efficient
         # the parent node is the nonzero index on the first row before the diagonal
         first_row = min([node._index for node in species.nodes(region)(sec1d)])
@@ -906,7 +906,7 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
                 break
         else:
             raise RxDException('should never get here; could not find parent')
-    elif x1d == 1 - h.section_orientation(sec=sec1d):
+    elif x1d == 1 - sec1d.orientation():
         # the ending zero-volume node is the one after the last node
         # TODO: make this more efficient
         index_1d = max([node._index for node in species.nodes(region)(sec1d)]) + 1
@@ -1063,11 +1063,11 @@ def _compile_reactions():
                     c_region.add_ecs_species(ecs_species_by_region[reg])
 
     # now setup the reactions
+    setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
     #if there are no reactions
     if location_count == 0 and len(ecs_regions_inv) == 0:
-        setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
         return None
-
+    
     #Setup intracellular and multicompartment reactions
     if location_count > 0:
         from . import rate, multiCompartmentReaction
@@ -1076,9 +1076,10 @@ def _compile_reactions():
             mc_mult_count = 0
             mc_mult_list = []
             species_ids_used = numpy.zeros((creg.num_species,creg.num_regions),bool)
+            flux_ids_used = numpy.zeros((creg.num_species,creg.num_regions),bool)
             ecs_species_ids_used = numpy.zeros((creg.num_ecs_species,creg.num_regions),bool)
             fxn_string = _c_headers 
-            fxn_string += 'void reaction(double** species, double** rhs, double* mult, double** species_ecs, double** rhs_ecs)\n{'
+            fxn_string += 'void reaction(double** species, double** rhs, double* mult, double** species_ecs, double** rhs_ecs, double** flux)\n{'
             # declare the "rate" variable if any reactions (non-rates)
             for rprt in list(creg._react_regions.keys()):
                 if not isinstance(rprt(),rate.Rate):
@@ -1124,6 +1125,10 @@ def _compile_reactions():
                             operator = '+=' if species_ids_used[species_id][region_id] else '='
                             fxn_string += "\n\trhs[%d][%d] %s mult[%d] * rate;" % (species_id, region_id, operator, mc_mult_count)
                             species_ids_used[species_id][region_id] = True
+                            if r._membrane_flux:
+                                operator = '+=' if flux_ids_used[species_id][region_id] else '='
+                                fxn_string += "\n\tif(flux) flux[%d][%d] %s rate;" % (species_id, region_id, operator)
+                                flux_ids_used[species_id][region_id] = True
                         #TODO: Fix problem if the whole region isn't part of the same aggregate c_region
                         mc_mult_count += 1
                     mc_mult_list.extend(r._mult.flatten())
@@ -1142,17 +1147,10 @@ def _compile_reactions():
                             fxn_string += "\n\trhs[%d][%d] %s (%g) * rate;" % (idx, region_id, operator, summed_mults[idx])
               
             fxn_string += "\n}\n"
-            #print "num_species=%i\t num_regions=%i\t num_segments=%i\n" % (creg.num_species, creg.num_regions, creg.num_segments)
-            #print creg.get_state_index()
-            #print "state_index %s \t num_ecs_species=%i\t ecs_species_ids %s\n" % (creg.get_state_index().shape, creg.num_ecs_species, creg.get_ecs_species_ids().shape)
-            #print "ecs_index %s\t mc_mult_count=%i \t mc_mult_list %s\n" % (creg.get_ecs_index().shape, mc_mult_count, numpy.array(mc_mult_list, dtype=ctypes.c_double).shape)
-            #print mc_mult_list
-            #print fxn_string
             register_rate(creg.num_species, creg.num_regions, creg.num_segments, creg.get_state_index(),
                           creg.num_ecs_species, creg.get_ecs_species_ids(), creg.get_ecs_index(),
-                          mc_mult_count, numpy.array(mc_mult_list, dtype=ctypes.c_double), 
+                          mc_mult_count, numpy.array(mc_mult_list, dtype=ctypes.c_double),
                           _c_compile(fxn_string))
-        setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
 
     
     #Setup extracellular reactions
