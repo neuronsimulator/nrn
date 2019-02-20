@@ -37,8 +37,10 @@ class SympySolverVisitor: public AstVisitor {
     const std::string cnexp_method = "cnexp";
     /// optionally replace solution with (1,1) pade approx
     bool use_pade_approx;
+
   public:
-    SympySolverVisitor(bool use_pade_approx=false) : use_pade_approx(use_pade_approx) {};
+    SympySolverVisitor(bool use_pade_approx = false)
+        : use_pade_approx(use_pade_approx){};
 
     void visit_solve_block(ast::SolveBlock* node) override;
     void visit_diff_eq_expression(ast::DiffEqExpression* node) override;

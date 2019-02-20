@@ -45,8 +45,7 @@ void SympySolverVisitor::visit_diff_eq_expression(DiffEqExpression* node) {
     }
     auto locals = py::dict("equation_string"_a = nmodl::to_nmodl(node),
                            "t_var"_a = codegen::naming::NTHREAD_T_VARIABLE,
-                           "dt_var"_a = codegen::naming::NTHREAD_DT_VARIABLE,
-                           "vars"_a = vars,
+                           "dt_var"_a = codegen::naming::NTHREAD_DT_VARIABLE, "vars"_a = vars,
                            "use_pade_approx"_a = use_pade_approx);
     py::exec(R"(
             from nmodl.ode import integrate2c
