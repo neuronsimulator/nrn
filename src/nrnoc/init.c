@@ -5,7 +5,7 @@ extern char* nrn_version();
 
 /* change this to correspond to the ../nmodl/nocpout nmodl_version_ string*/
 static char nmodl_version_[] =
-"7.5.0";
+"7.7.0";
 
 static char banner[] =
 "Duke, Yale, and the BlueBrain Project -- Copyright 1984-2018\n\

@@ -1035,6 +1035,18 @@ static Object** mt_pp_next(void* v) {
 	return hoc_temp_objptr(obj);
 }
 
+extern const char** nrn_nmodl_text_;
+static const char** mt_code(void* v) {
+  static const char* nullstr = "";
+  MechanismType* mt = (MechanismType*)v;
+  int type = mt->internal_type();
+  const char** p = nrn_nmodl_text_ + type;
+  if (*p) {
+    return p;
+  }
+  return &nullstr;
+}
+
 static void* mt_cons(Object* obj) {
 	MechanismType* mt = new MechanismType(int(chkarg(1, 0, 1)));
 	mt->ref();
@@ -1064,9 +1076,13 @@ static Member_ret_obj_func mt_retobj_members[] = {
 	"pp_next", mt_pp_next,
 	0,0
 };
+static Member_ret_str_func mt_retstr_func[] = {
+	"code", mt_code,
+	0,0
+};
 void MechanismType_reg() {
 	class2oc("MechanismType", mt_cons, mt_destruct, mt_members,
-		NULL, mt_retobj_members, NULL);
+		NULL, mt_retobj_members, mt_retstr_func);
 }
 
 /* static */ class MechTypeImpl {
