@@ -6,7 +6,7 @@ This is a source-to-source code generation framework for NMODL.
 #### Cloning Source
 
 ```
-git clone --recurse-submodules ssh://bbpcode.epfl.ch:22/incubator/nocmodl
+git clone --recurse-submodules git@github.com:BlueBrain/nmodl.git
 ```
 
 Note: This project uses git submodules which must be cloned along with the repository
@@ -20,7 +20,7 @@ itself.
 - C++ compiler (with c++11 support)
 - Python3 (>=3.6)
 - Python yaml (pyyaml)
-- Jinja2 (>=2.10)
+- Python Jinja2 (>=2.10)
 - Python textwrap
 - pybind11 (which should be fetched as submodule in ext/pybind11)
 - pytest (>=4.0.0) (only for tests)
@@ -30,7 +30,7 @@ itself.
 Many systems have older version of Flex and Bison. Make sure to have latest version of Flex (>=2.6) and Bison (>=3.0).
 
 
-On macos X we typically install packages via brew/macport and pip :
+On macos X packages are typically installed via brew/macport and pip:
 
 ```
 brew install flex bison
@@ -47,7 +47,7 @@ Make sure to have latest flex/bison in $PATH :
 export PATH=/usr/local/opt/flex:/usr/local/opt/bison:$PATH
 ```
 
-On Ubuntu (>=16.04) you should already have recent version of flex/bison:
+On Ubuntu (>=16.04) flex/bison versions are recent enough:
 
 ```
 $ flex --version
@@ -57,9 +57,9 @@ $ bison --version
 bison (GNU Bison) 3.0.4
 ```
 
-NMODL depends on Python 3, so make sure you have an up-to-date Python installation. On macos X Python 3 can be installed 
-through e.g. homebrew. On Ubuntu, depending on your version, Python 3 is either already available by default or can be easily
-obtained through
+NMODL depends on Python 3, so make sure to have an up-to-date Python installation.
+On macos X Python 3 can be installed through e.g. homebrew. On Ubuntu, depending on your version,
+Python 3 is either already available by default or can be easily obtained through
 
 ```
 $ apt-get install python3
@@ -70,7 +70,6 @@ Python yaml can be installed as :
 ```
 apt-get install python-yaml
 ```
-
 
 #### Build
 
