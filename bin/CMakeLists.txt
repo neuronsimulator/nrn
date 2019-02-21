@@ -27,6 +27,13 @@ string(REPLACE ";" " " CORENRN_OPTMODS "${CORENRN_OPTMECH_MODS}")
 # PGI add --c++11;-A option for c++11 flag
 string(REPLACE ";" " " CXX11_STANDARD_COMPILE_OPTION "${CMAKE_CXX11_STANDARD_COMPILE_OPTION}")
 
+
+# MPI path might be multiple directories
+if (MPI_C_INCLUDE_PATH)
+    string(REPLACE ";" " -I" CORENRN_MPI_INCLUDES "${MPI_C_INCLUDE_PATH}")
+endif()
+
+
 # Compiler flags depending on BUILD_TYPE shared as BUILD_TYPE_<LANG>_FLAGS
 string(TOUPPER "${CMAKE_BUILD_TYPE}" _BUILD_TYPE)
 set(BUILD_TYPE_C_FLAGS "${CMAKE_C_FLAGS_${_BUILD_TYPE}}")

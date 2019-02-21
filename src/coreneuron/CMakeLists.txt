@@ -305,6 +305,7 @@ set_target_properties(coreneuron PROPERTIES
                       SOVERSION ${VERSION_MAJOR}
                       CLEAN_DIRECT_OUTPUT 1)
 
+set_property(TARGET coreneuron PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 # Extract link defs to the whole project
 get_target_property(CORENRN_LINK_LIBS coreneuron LINK_LIBRARIES)

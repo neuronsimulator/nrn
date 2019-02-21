@@ -25,8 +25,8 @@ CORENRNLIB_FLAGS = -L$(libdir) -lcoreneuron
 
 # We rebuild the include dirs since a lot of stuff changes place
 INCLUDES = $(INCFLAGS) -I$(incdir) -I$(incdir)/coreneuron/utils/randoms
-ifneq (@MPI_C_INCLUDE_PATH@,)
-    INCLUDES += -I@MPI_C_INCLUDE_PATH@
+ifneq (@CORENRN_MPI_INCLUDES@,)
+    INCLUDES += -I@CORENRN_MPI_INCLUDES@
 endif
 ifneq (@reportinglib_INCLUDE_DIR@,)
     INCLUDES += -I@reportinglib_INCLUDE_DIR@
