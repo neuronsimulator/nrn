@@ -74,7 +74,7 @@ Once all dependencies are in place, build project as:
 
 ```
 mkdir -p nmodl/build
-cd nocmodl/build
+cd nmodl/build
 cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/nmodl
 make -j && make install
 ```
