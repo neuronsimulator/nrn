@@ -1,143 +1,201 @@
 ## NMODL
+> NEURON MOdeling Language Code Generation Framework
 
-This is a source-to-source code generation framework for NMODL.
+NMODL is a code generation framework for [NEURON Modeling Language](https://www.neuron.yale.edu/neuron/static/py_doc/modelspec/programmatic/mechanisms/nmodl.html). The main goals of this framework are :
 
+* Support for full NMODL specification
+* Providing modular tools for parsing, analysis and optimization
+* High level python interface
+* Optimised code generation for modern CPU/GPU architectures
+* Code generation backends compatible with existing simulators
+* Flexibility to implement new simulator backend with minimal efforts
+
+It is primarily designed to support optimised code generation backends but the underlying infrastructure can be used with high level python interface for model introspection and analysis.
+
+### Getting Started
+
+These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
 #### Cloning Source
 
+This project uses git submodules which must be cloned along with the repository itself:
+
 ```
-git clone --recurse-submodules git@github.com:BlueBrain/nmodl.git
+git clone --recursive git@github.com:BlueBrain/nmodl.git
 ```
 
-Note: This project uses git submodules which must be cloned along with the repository
-itself.
+#### Prerequisites
 
-#### Dependencies
+To build the project from source, modern C++ compiler with c++11 support is necessary. Make sure you have following packages available:
 
 - flex (>=2.6)
 - bison (>=3.0)
 - CMake (>=3.1)
-- C++ compiler (with c++11 support)
-- Python3 (>=3.6)
-- Python yaml (pyyaml)
-- Python Jinja2 (>=2.10)
-- Python textwrap
-- pybind11 (which should be fetched as submodule in ext/pybind11)
-- pytest (>=4.0.0) (only for tests)
+- Python (>=3.6)
+- Python packages : jinja2 (>=2.10), pyyaml (>=3.13), pytest (>=4.0.0), sympy (>=1.2), textwrap
 
-#### Getting Dependencies
+##### On OS X
 
-Many systems have older version of Flex and Bison. Make sure to have latest version of Flex (>=2.6) and Bison (>=3.0).
-
-
-On macos X packages are typically installed via brew/macport and pip:
+Often we have older version of flex and bison. We can get recent version of dependencies via brew/macport and pip:
 
 ```
-brew install flex bison
-pip install pyyaml
-
-# Or
-pip3 install pyyaml
+brew install flex bison cmake python3
+pip3 install Jinja2 PyYAML pytest sympy
 ```
 
 Make sure to have latest flex/bison in $PATH :
 
-
 ```
-export PATH=/usr/local/opt/flex:/usr/local/opt/bison:$PATH
-```
-
-On Ubuntu (>=16.04) flex/bison versions are recent enough:
-
-```
-$ flex --version
-flex 2.6.4
-
-$ bison --version
-bison (GNU Bison) 3.0.4
+export PATH=/usr/local/opt/flex:/usr/local/opt/bison:/usr/local/bin/:$PATH
 ```
 
-NMODL depends on Python 3, so make sure to have an up-to-date Python installation.
-On macos X Python 3 can be installed through e.g. homebrew. On Ubuntu, depending on your version,
-Python 3 is either already available by default or can be easily obtained through
+##### On Ubuntu
+
+On Ubuntu (>=16.04) flex/bison versions are recent enough. We can install Python3 and dependencies using:
 
 ```
-$ apt-get install python3
+apt-get install python3 python3-pip
+pip3 install Jinja2 PyYAML pytest sympy
 ```
 
-Python yaml can be installed as :
+##### On BB5
+
+On Blue Brain 5 system, we can load following modules :
 
 ```
-apt-get install python-yaml
+module load cmake/3.12.0 bison/3.0.5 flex/2.6.3 gcc/6.4.0 python3-dev
 ```
 
-#### Build
+#### Build Project
 
-Once all dependencies are in place, you can build cmake project as :
+##### Using CMake
+
+Once all dependencies are in place, build project as:
 
 ```
-mkdir nocmodl/build
+mkdir -p nmodl/build
 cd nocmodl/build
-cmake ..
-make
+cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/nmodl
+make -j && make install
 ```
 
-If flex / bison is installed in non-standard location then you can do :
+And set PYTHONPATH as:
 
 ```
-cmake .. -DCMAKE_PREFIX_PATH="/usr/local/opt/bison/;/usr/local/opt/flex"
-
- # Or,
-
-cmake .. -DFLEX_EXECUTABLE=/usr/local/opt/flex/bin/flex -DBISON_EXECUTABLE=/usr/local/opt/bison/bin/bison
+export PYTHONPATH=$HOME/nmodl/lib/python:$PYTHONPATH
 ```
 
-On BB5, you can do:
+##### Using pip
+
+Alternatively, we can build the project using pip as:
 
 ```
-module load cmake/3.12.0 bison/3.0.5 flex/2.6.3 gcc/6.4.0
-
-mkdir build && cd build
-cmake ..
-make VERBOSE=1
-make test
+pip3 install nmodl/. --target=$HOME/nmodl   # remove --target option if want to install 
 ```
 
-#### Running CoreNEURON
+And if --target option was used, set PYTHONPATH as:
 
-You can use NMODL code generator instead of MOD2 for CoreNEURON. You have to simply use extra CMake argument `-DMOD2C` pointing to `nmodl` binary:
+```
+export PYTHONPATH=$HOME/nmodl:$PYTHONPATH
+```
+
+#### Testing Installed Module
+
+If you install NMODL using CMake, you can run tests from build directory as:
+
+```
+$ make test
+Running tests...
+Test project /home/kumbhar/nmodl/build
+    Start 1: ModToken
+1/7 Test #1: ModToken .........................   Passed    0.01 sec
+...
+```
+
+We can use nmodl module from python as:
+
+```
+$ python3
+>>> import nmodl.dsl as nmodl
+>>> driver = nmodl.Driver()
+>>> driver.parse_string("NEURON { SUFFIX hh }")
+True
+>>> modast = driver.ast()
+>>> print ('%.100s' % modast)
+{"Program":[{"NeuronBlock":[{"StatementBlock":[{"Suffix":[{"Name":[{"String":[{"name":"SUFFIX"}]}]},
+```
+
+NMODL is now setup correctly!
+
+#### Understand Python API
+
+The user documentation for NMODL is incomplete and not available on GitHub yet. The best way to understand the API and usage is using Jupyter notebooks provided in docs directory :
+
+```
+cd nmodl/doc/notebooks
+jupyter notebook
+```
+
+You can look at [nmodl-python-tutorial.ipynb](doc/notebooks/nmodl-python-tutorial.ipynb) notebook for python interface tutorial. There is also [nmodl-python-sympy-examples.ipynb](doc/notebooks/nmodl-python-sympy-examples.ipynb)showing how [SymPy](https://www.sympy.org/en/index.html) is used in NMODL.
+
+
+#### Using NMODL For Code Generation
+
+Once you install project using CMake, you will have following binaries in the installation directory:
+
+```
+$ tree $HOME/nmodl/bin
+
+|-- lexer
+|   |-- c_lexer
+|   `-- nmodl_lexer
+|-- nmodl
+|-- parser
+|   |-- c_parser
+|   `-- nmodl_parser
+`-- visitor
+    `-- nmodl_visitor
+```
+
+The `nmodl_lexer` and `nmodl_parser` are standalone tools for testing mod files. If you want to test if given mod file can be successfully parsed by NMODL then you can do:
+
+```
+nmodl_parser --file <path>/hh.mod
+```
+
+To see how NMODL will generate the code for given mod file, you can do:
+
+```
+nmodl <path>/hh.mod
+```
+
+This will generate hh.cpp in the current directory. There are different optimisation options for code generation that you can see using:
+
+```
+nmodl --help
+```
+
+
+#### Using NMODL With CoreNEURON
+
+We can use NMODL instead of MOD2 for CoreNEURON. You have to simply use extra CMake argument `-DMOD2C` pointing to `nmodl` binary:
 
 ```
 git clone --recursive https://github.com/BlueBrain/CoreNeuron.git coreneuron
 mkdir coreneuron/build && cd coreneuron/build
-cmake .. -DMOD2C=/path/nocmodl/build/bin/nmodl
-make
+cmake .. -DMOD2C=<path>/bin/nmodl
+make -j
 make test
 ```
 
-#### Using NMODL
+> Note that the code generation backend is not complete yet.
 
-To run code generator, you can do:
 
-```
-./bin/nmodl ../test/input/channel.mod
-```
+### Development Conventions
 
-You can independently run lexer, parser or visitors as:
+If you are developing NMODL, make sure to enable both `NMODL_FORMATTING` and `NMODL_PRECOMMIT`
+CMake variables to ensure that your contributions follow the coding conventions of this project:
 
-```
-./bin/nmodl_lexer --file ../test/input/channel.mod
-./bin/nmodl_parser --file ../test/input/channel.mod
-./bin/nmodl_visitor --file ../test/input/channel.mod
-```
-
-#### Development Conventions
-
-Enable both `NMODL_FORMATTING` and `NMODL_PRECOMMIT`
-CMake variables to ensure that your contributions follow
-the coding conventions of this project.
-
-##### Usage
 ```cmake
 cmake -DNMODL_FORMATTING:BOOL=ON -DNMODL_PRECOMMIT:BOOL=ON <path>
 ```
@@ -150,12 +208,7 @@ make clang-format cmake-format
 ```
 
 The second option activates Git hooks that will discard commits that
-do not comply with coding conventions of this project.
-
-
-##### Requirements
-
-These 2 CMake variables require additional utilities:
+do not comply with coding conventions of this project. These 2 CMake variables require additional utilities:
 
 * [ClangFormat 7](https://releases.llvm.org/7.0.0/tools/clang/docs/ClangFormat.html)
 * [cmake-format](https://github.com/cheshirekow/cmake_format) Python package
@@ -164,32 +217,12 @@ These 2 CMake variables require additional utilities:
 _ClangFormat_ can be installed on Linux thanks
 to [LLVM apt page](http://apt.llvm.org/). On MacOS, there is a
 [brew recipe](https://gist.github.com/ffeu/0460bb1349fa7e4ab4c459a6192cbb25)
-to install ClangFormat 7.
-
-_cmake-format_ and _pre-commit_ utilities can be installed with *pip*.
-
-#### Running Tests
-
- You can run unit tests as:
-
-```
- make test
-```
-
- Or individual test binaries with verbode output:
-
- ```
- ./bin/test/testlexer -s
- ./bin/test/testmodtoken -s
- ./bin/test/testprinter -s
- ./bin/test/testsymtab -s
- ./bin/test/testvisitor -s
- ```
+to install clang-format 7. _cmake-format_ and _pre-commit_ utilities can be installed with *pip*.
 
 
-#### Memory Leaks and Clang Tidy
+##### Memory Leaks and Clang Tidy
 
-Test memory leaks using :
+If you want to test for memory leaks, do :
 
 ```
 valgrind --leak-check=full --track-origins=yes  ./bin/nmodl_lexer
@@ -205,4 +238,14 @@ If you want to enable `clang-tidy` checks with CMake, make sure to have `CMake >
 
 ```
 cmake .. -DENABLE_CLANG_TIDY=ON
+```
+
+##### Flex / Bison Paths
+
+If flex / bison is not in default $PATH, you can provide path to cmake as:
+
+```
+cmake .. -DFLEX_EXECUTABLE=/usr/local/opt/flex/bin/flex \
+         -DBISON_EXECUTABLE=/usr/local/opt/bison/bin/bison \
+         -DCMAKE_INSTALL_PREFIX=$HOME/nmodl
 ```
