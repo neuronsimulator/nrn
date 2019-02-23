@@ -4,6 +4,7 @@ import weakref
 import itertools
 import itertools
 from .rxdException import RxDException
+from .species import xyz_by_index
 import warnings
 _weakref_ref = weakref.ref
 
@@ -60,7 +61,7 @@ def get_scheme_rate1_rate2_regions_custom_dynamics_mass_action(args, kwargs):
         # because of the missing <>
         scheme = args[0]
         if not isinstance(scheme, rxdmath._Reaction):
-            raise RxDException('%r not a recognized reaction scheme' % self._scheme)
+            raise RxDException('%r not a recognized reaction scheme' % scheme)
         rate1 = args[1]
         rate2 = None
     else:
@@ -210,9 +211,9 @@ class GeneralizedReaction(object):
                 self._mult = [-areas / volumes[si] / molecules_per_mM_um3 for si in sources_indices] + [areas / volumes[di] / molecules_per_mM_um3 for di in dests_indices]
             #TODO: check for multicompartment reaction within the ECS
             elif len(sources_ecs) > 0 and len(dests_ecs) == 0:
-                self._mult = [-areas / numpy.prod(s()._extracellular()._dx)*s()._extracellular().alpha / molecules_per_mM_um3 for s in sources_ecs for di in dest_indices] + [areas / volumes[di] / molecules_per_mM_um3 for di in dests_indices]
+                self._mult = [-areas / (numpy.prod(s()._extracellular()._dx)*s().alpha_by_location(xyz_by_index(di))) / molecules_per_mM_um3 for s in sources_ecs for di in dests_indices] + [areas / volumes[di] / molecules_per_mM_um3 for di in dests_indices]
             elif len(sources_ecs) == 0 and len(dests_ecs) > 0:
-                self._mult = [-areas / volumes[si] / molecules_per_mM_um3 for si in sources_indices] + [areas / numpy.prod(s()._extracellular()._dx)*s()._extracellular().alpha / molecules_per_mM_um3 for si in sources_indices for s in dests_ecs]
+                self._mult = [-areas / volumes[si] / molecules_per_mM_um3 for si in sources_indices] + [areas / (numpy.prod(s()._extracellular()._dx)*s().alpha_by_location(xyz_by_index(si))) / molecules_per_mM_um3 for si in sources_indices for s in dests_ecs]
             
             else:
                 # If both the source & destination are in the ECS, they should use a reaction

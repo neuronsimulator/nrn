@@ -575,7 +575,7 @@ class Species(_SpeciesMathable):
                 regions = [r]
             else:
                 regions = r
-            return list(itertools.chain.from_iterable([s.indices for s in self._secs if s._sec in secs and s.region in regions]))
+            return list(itertools.chain.from_iterable([s.indices for s in self._secs if s._sec in secs and s.region in regions])) +  list(itertools.chain.from_iterable([self._indices3d(r) for r in regions]))
                 
             """for reg in regions:
                 ind = self.indices(reg)

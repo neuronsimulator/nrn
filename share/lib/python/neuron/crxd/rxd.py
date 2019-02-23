@@ -72,7 +72,7 @@ _get_num_threads.restype = ctypes.c_int
 clear_rates = nrn_dll_sym('clear_rates')
 register_rate = nrn_dll_sym('register_rate')
 register_rate.argtypes = [ 
-        ctypes.c_int,                                                              #num species
+        ctypes.c_int,                                                               #num species
         ctypes.c_int,                                                               #num regions
         ctypes.c_int,                                                               #num seg
         numpy.ctypeslib.ndpointer(ctypes.c_int, flags='contiguous'),                #species ids
@@ -372,8 +372,9 @@ def _ode_fun(t, y, ydot):
     states[_zero_volume_indices] = 0
 
 _rxd_induced_currents = None
-
+_memb_cur_ptrs= []
 def _setup_memb_currents():
+    global _memb_cur_ptrs
     initializer._do_init()
     # setup membrane fluxes from our stuff
     # TODO: cache the memb_cur_ptrs, memb_cur_charges, memb_net_charges, memb_cur_mapped
@@ -383,7 +384,7 @@ def _setup_memb_currents():
     SPECIES_ABSENT = -1
     # TODO: change so that this is only called when there are in fact currents
     rxd_memb_scales = []
-    memb_cur_ptrs = []
+    _memb_cur_ptrs = []
     memb_cur_charges = []
     memb_net_charges = []
     memb_cur_mapped = []
@@ -393,17 +394,17 @@ def _setup_memb_currents():
         if r and r._membrane_flux:
             scales = r._memb_scales
             rxd_memb_scales.extend(scales)
-            memb_cur_ptrs += r._cur_ptrs
+            _memb_cur_ptrs += r._cur_ptrs
             memb_cur_mapped += r._cur_mapped
             memb_cur_mapped_ecs += r._cur_mapped_ecs
             memb_cur_charges += [r._cur_charges] * len(scales)
             memb_net_charges += [r._net_charges] * len(scales)
     ecs_map = [SPECIES_ABSENT if i is None else i for i in list(itertools.chain.from_iterable(itertools.chain.from_iterable(memb_cur_mapped_ecs)))]
     ics_map = [SPECIES_ABSENT if i is None else i for i in list(itertools.chain.from_iterable(itertools.chain.from_iterable(memb_cur_mapped)))]
-    if memb_cur_ptrs:
+    if _memb_cur_ptrs:
         cur_counts = [len(x) for x in memb_cur_mapped]
         num_currents = numpy.array(cur_counts).sum()
-        setup_currents(len(memb_cur_ptrs),
+        setup_currents(len(_memb_cur_ptrs),
             num_currents,
             len(_curr_indices), # num_currents == len(_curr_indices) if no Extracellular
             _list_to_cint_array(cur_counts),
@@ -412,7 +413,7 @@ def _setup_memb_currents():
             _list_to_cint_array(_cur_node_indices),
             _list_to_cdouble_array(rxd_memb_scales),
             _list_to_cint_array(list(itertools.chain.from_iterable(memb_cur_charges))),
-            _list_to_pyobject_array(list(itertools.chain.from_iterable(memb_cur_ptrs))),
+            _list_to_pyobject_array(list(itertools.chain.from_iterable(_memb_cur_ptrs))),
             _list_to_cint_array(ics_map),
             _list_to_cint_array(ecs_map))
         
@@ -1062,11 +1063,11 @@ def _compile_reactions():
                     c_region.add_ecs_species(ecs_species_by_region[reg])
 
     # now setup the reactions
+    setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
     #if there are no reactions
     if location_count == 0 and len(ecs_regions_inv) == 0:
-        setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
         return None
-
+    
     #Setup intracellular and multicompartment reactions
     if location_count > 0:
         from . import rate, multiCompartmentReaction
@@ -1075,9 +1076,10 @@ def _compile_reactions():
             mc_mult_count = 0
             mc_mult_list = []
             species_ids_used = numpy.zeros((creg.num_species,creg.num_regions),bool)
+            flux_ids_used = numpy.zeros((creg.num_species,creg.num_regions),bool)
             ecs_species_ids_used = numpy.zeros((creg.num_ecs_species,creg.num_regions),bool)
             fxn_string = _c_headers 
-            fxn_string += 'void reaction(double** species, double** rhs, double* mult, double** species_ecs, double** rhs_ecs)\n{'
+            fxn_string += 'void reaction(double** species, double** rhs, double* mult, double** species_ecs, double** rhs_ecs, double** flux)\n{'
             # declare the "rate" variable if any reactions (non-rates)
             for rprt in list(creg._react_regions.keys()):
                 if not isinstance(rprt(),rate.Rate):
@@ -1123,6 +1125,10 @@ def _compile_reactions():
                             operator = '+=' if species_ids_used[species_id][region_id] else '='
                             fxn_string += "\n\trhs[%d][%d] %s mult[%d] * rate;" % (species_id, region_id, operator, mc_mult_count)
                             species_ids_used[species_id][region_id] = True
+                            if r._membrane_flux:
+                                operator = '+=' if flux_ids_used[species_id][region_id] else '='
+                                fxn_string += "\n\tif(flux) flux[%d][%d] %s rate;" % (species_id, region_id, operator)
+                                flux_ids_used[species_id][region_id] = True
                         #TODO: Fix problem if the whole region isn't part of the same aggregate c_region
                         mc_mult_count += 1
                     mc_mult_list.extend(r._mult.flatten())
@@ -1141,17 +1147,10 @@ def _compile_reactions():
                             fxn_string += "\n\trhs[%d][%d] %s (%g) * rate;" % (idx, region_id, operator, summed_mults[idx])
               
             fxn_string += "\n}\n"
-            #print "num_species=%i\t num_regions=%i\t num_segments=%i\n" % (creg.num_species, creg.num_regions, creg.num_segments)
-            #print creg.get_state_index()
-            #print "state_index %s \t num_ecs_species=%i\t ecs_species_ids %s\n" % (creg.get_state_index().shape, creg.num_ecs_species, creg.get_ecs_species_ids().shape)
-            #print "ecs_index %s\t mc_mult_count=%i \t mc_mult_list %s\n" % (creg.get_ecs_index().shape, mc_mult_count, numpy.array(mc_mult_list, dtype=ctypes.c_double).shape)
-            #print mc_mult_list
-            #print fxn_string
             register_rate(creg.num_species, creg.num_regions, creg.num_segments, creg.get_state_index(),
                           creg.num_ecs_species, creg.get_ecs_species_ids(), creg.get_ecs_index(),
-                          mc_mult_count, numpy.array(mc_mult_list, dtype=ctypes.c_double), 
+                          mc_mult_count, numpy.array(mc_mult_list, dtype=ctypes.c_double),
                           _c_compile(fxn_string))
-        setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
 
     
     #Setup extracellular reactions
