@@ -99,6 +99,19 @@ SCENARIO("Macros can be used anywhere in NMODL program") {
     }
 }
 
+SCENARIO("Parser for empty unit") {
+    std::string nmodl_text = R"(
+            FUNCTION ssCB(kdf(), kds()) (mM) {
+
+            }
+        )";
+    WHEN("FUNCTION is defined with empty unit") {
+        THEN("parser accepts without an error") {
+            REQUIRE(is_valid_construct(nmodl_text));
+        }
+    }
+}
+
 SCENARIO("Parser test for valid NMODL grammar constructs") {
     for (const auto& construct: nmodl_valid_constructs) {
         auto test_case = construct.second;

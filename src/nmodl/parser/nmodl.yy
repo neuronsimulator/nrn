@@ -574,11 +574,9 @@ units           :           {   $$ = nullptr;  }
 
 unit            :   "(" { scanner.scan_unit(); } ")"
                     {
+                        // @todo : empty units should be handled in semantic analysis
                         auto unit = scanner.get_unit();
                         auto text = unit->eval();
-                        if (text.size() == 0) {
-                            error(scanner.loc, "empty unit");
-                        }
                         $$ = new ast::Unit(unit);
                     }
                 ;
