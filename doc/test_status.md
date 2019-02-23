@@ -60,7 +60,7 @@ The following symbols are used in the document to descrive the status :
 |PROTECT | ✅ |
 |MUTEXLOCK | ✅ |
 |MUTEXUNLOCK | ✅ |
-| \|\| | ✅ |
+| &#124; &#124; | ✅ |
 | && | ✅ |
 | \> | ✅ |
 | \< | ✅ |
