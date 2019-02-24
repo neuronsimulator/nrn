@@ -160,16 +160,6 @@ int nrnopt_parse(int argc, const char* argv[]) {
         }
     }
 
-    // last the default config file
-    std::string cfg("config");
-    if (!opt->importFile(cfg.c_str(), '#')) {
-        if (nrnmpi_myid == 0)
-            std::cerr << "Info: No default arguments file provided: " << cfg << std::endl;
-    } else {
-        if (nrnmpi_myid == 0)
-            std::cout << "Read default configuration file: " << cfg << std::endl;
-    }
-
     std::string usage;
     std::vector<std::string> badOptions;
 
