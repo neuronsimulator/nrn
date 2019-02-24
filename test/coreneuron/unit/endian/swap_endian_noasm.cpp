@@ -31,7 +31,10 @@ THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #define SWAP_ENDIAN_CONFIG DisableAsm
+
+#ifndef SWAP_ENDIAN_DISABLE_ASM
 #define SWAP_ENDIAN_DISABLE_ASM
+#endif
 
 #include "swap_endian_common.ipp"
 
