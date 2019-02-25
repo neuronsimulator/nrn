@@ -44,13 +44,23 @@
 
 class SympyConductanceVisitor: public AstVisitor {
   private:
+    /// true while visiting breakpoint block
+    bool breakpoint_block = false;
     typedef std::map<std::string, std::string> string_map;
     typedef std::set<std::string> string_set;
+    // set of all variables for SymPy
     string_set vars;
+    // set of currents to ignore
     string_set i_ignore;
+    // map between current write names and ion names
     string_map i_name;
     bool NONSPECIFIC_CONDUCTANCE_ALREADY_EXISTS = false;
-    string_map binary_exprs;
+    // list in order of binary expressions in breakpoint
+    std::vector<std::string> ordered_binary_exprs;
+    // ditto but for LHS of expression only
+    std::vector<std::string> ordered_binary_exprs_lhs;
+    // map from lhs of binary expression to index of expression in above vector
+    std::map<std::string, std::size_t> binary_expr_index;
     std::vector<std::shared_ptr<ast::AST>> use_ion_nodes;
     std::vector<std::shared_ptr<ast::AST>> nonspecific_nodes;
 

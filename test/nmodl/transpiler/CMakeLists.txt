@@ -41,6 +41,9 @@ set_tests_properties(Visitor PROPERTIES ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DI
 # pybind11 tests
 # =============================================================================
 
+add_test(NAME Ode
+         COMMAND python3 -m pytest ${PROJECT_SOURCE_DIR}/test/ode)
+set_tests_properties(Ode PROPERTIES ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}:$ENV{PYTHONPATH})
 add_test(NAME Pybind
          COMMAND python3 -m pytest ${PROJECT_SOURCE_DIR}/test/pybind)
 set_tests_properties(Pybind PROPERTIES ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}:$ENV{PYTHONPATH})

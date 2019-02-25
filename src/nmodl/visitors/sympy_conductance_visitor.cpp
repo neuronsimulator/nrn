@@ -22,22 +22,29 @@ using namespace syminfo;
 std::vector<std::string> SympyConductanceVisitor::generate_statement_strings(
     BreakpointBlock* node) {
     std::vector<std::string> statements;
-    // iterate over binary expressions from breakpoint
-    for (const auto& expr: binary_exprs) {
-        auto lhs_str = expr.first;
-        auto equation_string = expr.second;
+    // iterate over binary expression lhs's from breakpoint
+    for (const auto& lhs_str: ordered_binary_exprs_lhs) {
         // look for a current name that matches lhs of expr (current write name)
         auto it = i_name.find(lhs_str);
         if (it != i_name.end()) {
+            const auto& equation_string = ordered_binary_exprs[binary_expr_index[lhs_str]];
             std::string i_name_str = it->second;
+            // SymPy needs the current expression & all previous expressions
+            std::vector<std::string> expressions(ordered_binary_exprs.begin(),
+                                                 ordered_binary_exprs.begin() +
+                                                     binary_expr_index[lhs_str] + 1);
             // differentiate dI/dV
-            auto locals = py::dict("equation_string"_a = equation_string, "vars"_a = vars);
+            auto locals = py::dict("expressions"_a = expressions, "vars"_a = vars);
             py::exec(R"(
                             from nmodl.ode import differentiate2c
                             exception_message = ""
                             try:
-                                rhs = equation_string.split("=")[1]
-                                solution = differentiate2c(rhs, "v", vars)
+                                rhs = expressions[-1].split("=", 1)[1]
+                                solution = differentiate2c(rhs,
+                                                           "v",
+                                                           vars,
+                                                           expressions[:-1]
+                                           )
                             except Exception as e:
                                 # if we fail, fail silently and return empty string
                                 solution = ""
@@ -47,7 +54,7 @@ std::vector<std::string> SympyConductanceVisitor::generate_statement_strings(
             auto dIdV = locals["solution"].cast<std::string>();
             auto exception_message = locals["exception_message"].cast<std::string>();
             if (!exception_message.empty()) {
-                logger->warn("SympyConductance :: python exception: " + exception_message);
+                logger->warn("SympyConductance :: python exception: {}", exception_message);
             }
             if (dIdV.empty()) {
                 logger->warn(
@@ -67,17 +74,18 @@ std::vector<std::string> SympyConductanceVisitor::generate_statement_strings(
                     // declare it
                     add_local_variable(node->get_statement_block().get(), g_var);
                     // asign dIdV to it
-                    std::string statement_str = g_var + " = " + dIdV;
+                    std::string statement_str = g_var;
+                    statement_str.append(" = ").append(dIdV);
                     statements.insert(statements.begin(), statement_str);
-                    logger->debug("SympyConductance :: Adding BREAKPOINT statement: " +
+                    logger->debug("SympyConductance :: Adding BREAKPOINT statement: {}",
                                   statement_str);
                 }
                 std::string statement_str = "CONDUCTANCE " + g_var;
-                if (i_name_str != "") {
+                if (!i_name_str.empty()) {
                     statement_str += " USEION " + i_name_str;
                 }
                 statements.push_back(statement_str);
-                logger->debug("SympyConductance :: Adding BREAKPOINT statement: " + statement_str);
+                logger->debug("SympyConductance :: Adding BREAKPOINT statement: {}", statement_str);
             }
         }
     }
@@ -85,10 +93,16 @@ std::vector<std::string> SympyConductanceVisitor::generate_statement_strings(
 }
 
 void SympyConductanceVisitor::visit_binary_expression(BinaryExpression* node) {
+    // only want binary expressions from breakpoint block
+    if (!breakpoint_block) {
+        return;
+    }
     // only want binary expressions of form x = ...
     if (node->lhs->is_var_name() && (node->op.get_value() == BinaryOp::BOP_ASSIGN)) {
         auto lhs_str = std::dynamic_pointer_cast<VarName>(node->lhs)->get_name()->get_node_name();
-        binary_exprs[lhs_str] = nmodl::to_nmodl(node);
+        binary_expr_index[lhs_str] = ordered_binary_exprs.size();
+        ordered_binary_exprs.push_back(nmodl::to_nmodl(node));
+        ordered_binary_exprs_lhs.push_back(lhs_str);
     }
 }
 
@@ -96,12 +110,12 @@ void SympyConductanceVisitor::lookup_nonspecific_statements() {
     // add NONSPECIFIC_CURRENT statements to i_name map between write vars and names
     // note that they don't have an ion name, so we set it to ""
     if (!NONSPECIFIC_CONDUCTANCE_ALREADY_EXISTS) {
-        for (auto ns_curr_ast: nonspecific_nodes) {
+        for (const auto& ns_curr_ast: nonspecific_nodes) {
             logger->debug("SympyConductance :: Found NONSPECIFIC_CURRENT statement");
-            for (auto write_name:
+            for (const auto& write_name:
                  std::dynamic_pointer_cast<Nonspecific>(ns_curr_ast).get()->get_currents()) {
                 std::string curr_write = write_name->get_node_name();
-                logger->debug("SympyConductance :: -> Adding non-specific current write name: " +
+                logger->debug("SympyConductance :: -> Adding non-specific current write name: {}",
                               curr_write);
                 i_name[curr_write] = "";
             }
@@ -111,18 +125,18 @@ void SympyConductanceVisitor::lookup_nonspecific_statements() {
 
 void SympyConductanceVisitor::lookup_useion_statements() {
     // add USEION statements to i_name map between write vars and names
-    for (auto useion_ast: use_ion_nodes) {
+    for (const auto& useion_ast: use_ion_nodes) {
         auto ion = std::dynamic_pointer_cast<Useion>(useion_ast).get();
         std::string ion_name = ion->get_node_name();
-        logger->debug("SympyConductance :: Found USEION statement " + nmodl::to_nmodl(ion));
+        logger->debug("SympyConductance :: Found USEION statement {}", nmodl::to_nmodl(ion));
         if (i_ignore.find(ion_name) != i_ignore.end()) {
-            logger->debug("SympyConductance :: -> Ignoring ion current name: " + ion_name);
+            logger->debug("SympyConductance :: -> Ignoring ion current name: {}", ion_name);
         } else {
-            auto wl = ion->get_writelist();
-            for (auto w: wl) {
+            for (const auto& w: ion->get_writelist()) {
                 std::string ion_write = w->get_node_name();
-                logger->debug("SympyConductance :: -> Adding ion write name: " + ion_write +
-                              " for ion current name: " + ion_name);
+                logger->debug(
+                    "SympyConductance :: -> Adding ion write name: {} for ion current name: {}",
+                    ion_write, ion_name);
                 i_name[ion_write] = ion_name;
             }
         }
@@ -132,11 +146,10 @@ void SympyConductanceVisitor::lookup_useion_statements() {
 void SympyConductanceVisitor::visit_conductance_hint(ConductanceHint* node) {
     // find existing CONDUCTANCE statements - do not want to alter them
     // so keep a set of ion names i_ignore that we should ignore later
-    logger->debug("SympyConductance :: Found existing CONDUCTANCE statement: " +
+    logger->debug("SympyConductance :: Found existing CONDUCTANCE statement: {}",
                   nmodl::to_nmodl(node));
-    auto ion = node->get_ion();
-    if (ion) {
-        logger->debug("SympyConductance :: -> Ignoring ion current name: " + ion->get_node_name());
+    if (auto ion = node->get_ion()) {
+        logger->debug("SympyConductance :: -> Ignoring ion current name: {}", ion->get_node_name());
         i_ignore.insert(ion->get_node_name());
     } else {
         logger->debug("SympyConductance :: -> Ignoring all non-specific currents");
@@ -146,14 +159,15 @@ void SympyConductanceVisitor::visit_conductance_hint(ConductanceHint* node) {
 
 void SympyConductanceVisitor::visit_breakpoint_block(BreakpointBlock* node) {
     // add any breakpoint local variables to vars
-    if (auto symtab = node->get_statement_block()->get_symbol_table()) {
-        for (auto localvar: symtab->get_variables_with_properties(NmodlType::local_var)) {
+    if (auto* symtab = node->get_statement_block()->get_symbol_table()) {
+        for (const auto& localvar: symtab->get_variables_with_properties(NmodlType::local_var)) {
             vars.insert(localvar->get_name());
         }
     }
-
     // visit BREAKPOINT block statements
+    breakpoint_block = true;
     node->visit_children(this);
+    breakpoint_block = false;
 
     // lookup USEION and NONSPECIFIC statements from NEURON block
     lookup_useion_statements();
@@ -181,7 +195,6 @@ void SympyConductanceVisitor::visit_breakpoint_block(BreakpointBlock* node) {
 
 void SympyConductanceVisitor::visit_program(Program* node) {
     vars = get_global_vars(node);
-
     AstLookupVisitor ast_lookup_visitor;
     use_ion_nodes = ast_lookup_visitor.lookup(node, AstNodeType::USEION);
     nonspecific_nodes = ast_lookup_visitor.lookup(node, AstNodeType::NONSPECIFIC);
