@@ -78,10 +78,9 @@ void SympySolverVisitor::visit_diff_eq_expression(DiffEqExpression* node) {
 
 void SympySolverVisitor::visit_derivative_block(ast::DerivativeBlock* node) {
     // get any local vars
-    auto symtab = node->get_statement_block()->get_symbol_table();
-    if (symtab) {
+    if (auto symtab = node->get_statement_block()->get_symbol_table()) {
         auto localvars = symtab->get_variables_with_properties(NmodlType::local_var);
-        for (auto v: localvars) {
+        for (const auto& v: localvars) {
             vars.insert(v->get_name());
         }
     }

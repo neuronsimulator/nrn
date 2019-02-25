@@ -87,7 +87,7 @@ std::shared_ptr<Statement> create_statement(const std::string& code_statement) {
 
 std::set<std::string> get_global_vars(Program* node) {
     std::set<std::string> vars;
-    if (auto symtab = node->get_symbol_table()) {
+    if (auto* symtab = node->get_symbol_table()) {
         syminfo::NmodlType property =
             syminfo::NmodlType::global_var | syminfo::NmodlType::range_var |
             syminfo::NmodlType::param_assign | syminfo::NmodlType::extern_var |
@@ -96,7 +96,7 @@ std::set<std::string> get_global_vars(Program* node) {
             syminfo::NmodlType::nonspecific_cur_var | syminfo::NmodlType::electrode_cur_var |
             syminfo::NmodlType::section_var | syminfo::NmodlType::constant_var |
             syminfo::NmodlType::extern_neuron_variable | syminfo::NmodlType::state_var;
-        for (auto globalvar: symtab->get_variables_with_properties(property)) {
+        for (const auto& globalvar: symtab->get_variables_with_properties(property)) {
             vars.insert(globalvar->get_name());
         }
     }

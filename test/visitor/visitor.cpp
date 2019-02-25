@@ -10,6 +10,7 @@
 #include <string>
 
 #include "catch/catch.hpp"
+#include "utils/logger.hpp"
 #include <pybind11/embed.h>
 
 #include "parser/nmodl_driver.hpp"
@@ -35,12 +36,12 @@ using json = nlohmann::json;
 using namespace ast;
 using namespace nmodl;
 using namespace syminfo;
-namespace py = pybind11;
 
 int main(int argc, char* argv[]) {
     // initialize python interpreter once for
     // entire catch executable
     pybind11::scoped_interpreter guard{};
+    logger->set_level(spdlog::level::debug);
     int result = Catch::Session().run(argc, argv);
     return result;
 }
@@ -1985,7 +1986,7 @@ std::vector<std::string> run_sympy_solver_visitor(const std::string& text) {
     // run lookup visitor to extract results from AST
     AstLookupVisitor v_lookup;
     auto res = v_lookup.lookup(ast.get(), AstNodeType::DIFF_EQ_EXPRESSION);
-    for (auto r: res) {
+    for (const auto& r: res) {
         results.push_back(to_nmodl(r.get()));
     }
 
@@ -2031,7 +2032,7 @@ SCENARIO("SympySolver visitor", "[sympy]") {
 
         THEN("No ODEs found - do nothing") {
             auto result = run_sympy_solver_visitor(nmodl_text);
-            REQUIRE(result.size() == 0);
+            REQUIRE(result.empty());
         }
     }
     GIVEN("Derivative block with ODES, solver method is not cnexp") {
@@ -2781,6 +2782,93 @@ SCENARIO("SympyConductance visitor", "[sympy]") {
             }
         )";
         THEN("Add 2 CONDUCTANCE hints, 1 using existing var, 1 with new local var") {
+            auto result = run_sympy_conductance_visitor(nmodl_text);
+            REQUIRE(result == breakpoint_to_nmodl(breakpoint_text));
+        }
+    }
+    // based on bluebrain/CortextPlastic/mod/ProbAMPANMDA.mod
+    GIVEN(
+        "2 ion currents, 1 nonspecific current, no CONDUCTANCE hints, indirect relation between "
+        "eqns") {
+        std::string nmodl_text = R"(
+            NEURON {
+                THREADSAFE
+                    POINT_PROCESS ProbAMPANMDA
+                    RANGE tau_r_AMPA, tau_d_AMPA, tau_r_NMDA, tau_d_NMDA
+                    RANGE Use, u, Dep, Fac, u0, mg, NMDA_ratio
+                    RANGE i, i_AMPA, i_NMDA, g_AMPA, g_NMDA, g, e
+                    NONSPECIFIC_CURRENT i, i_AMPA,i_NMDA
+                    POINTER rng
+                    RANGE synapseID, verboseLevel
+            }
+            PARAMETER {
+                    tau_r_AMPA = 0.2   (ms)  : dual-exponential conductance profile
+                    tau_d_AMPA = 1.7    (ms)  : IMPORTANT: tau_r < tau_d
+                    tau_r_NMDA = 0.29   (ms) : dual-exponential conductance profile
+                    tau_d_NMDA = 43     (ms) : IMPORTANT: tau_r < tau_d
+                    Use = 1.0   (1)   : Utilization of synaptic efficacy (just initial values! Use, Dep and Fac are overwritten by BlueBuilder assigned values) 
+                    Dep = 100   (ms)  : relaxation time constant from depression
+                    Fac = 10   (ms)  :  relaxation time constant from facilitation
+                    e = 0     (mV)  : AMPA and NMDA reversal potential
+                    mg = 1   (mM)  : initial concentration of mg2+
+                    mggate
+                    gmax = .001 (uS) : weight conversion factor (from nS to uS)
+                    u0 = 0 :initial value of u, which is the running value of Use
+                    NMDA_ratio = 0.71 (1) : The ratio of NMDA to AMPA
+                    synapseID = 0
+                    verboseLevel = 0
+            }
+            ASSIGNED {
+                    v (mV)
+                    i (nA)
+                    i_AMPA (nA)
+                    i_NMDA (nA)
+                    g_AMPA (uS)
+                    g_NMDA (uS)
+                    g (uS)
+                    factor_AMPA
+                    factor_NMDA
+                    rng
+            }
+            STATE {
+                    A_AMPA       : AMPA state variable to construct the dual-exponential profile - decays with conductance tau_r_AMPA
+                    B_AMPA       : AMPA state variable to construct the dual-exponential profile - decays with conductance tau_d_AMPA
+                    A_NMDA       : NMDA state variable to construct the dual-exponential profile - decays with conductance tau_r_NMDA
+                    B_NMDA       : NMDA state variable to construct the dual-exponential profile - decays with conductance tau_d_NMDA
+            }
+            BREAKPOINT {
+                    SOLVE state METHOD cnexp
+                    mggate = 1.2
+                    g_AMPA = gmax*(B_AMPA-A_AMPA) :compute time varying conductance as the difference of state variables B_AMPA and A_AMPA
+                    g_NMDA = gmax*(B_NMDA-A_NMDA) * mggate :compute time varying conductance as the difference of state variables B_NMDA and A_NMDA and mggate kinetics
+                    g = g_AMPA + g_NMDA
+                    i_AMPA = g_AMPA*(v-e) :compute the AMPA driving force based on the time varying conductance, membrane potential, and AMPA reversal
+                    i_NMDA = g_NMDA*(v-e) :compute the NMDA driving force based on the time varying conductance, membrane potential, and NMDA reversal
+                    i = i_AMPA + i_NMDA
+            }
+            DERIVATIVE state{
+                    A_AMPA' = -A_AMPA/tau_r_AMPA
+                    B_AMPA' = -B_AMPA/tau_d_AMPA
+                    A_NMDA' = -A_NMDA/tau_r_NMDA
+                    B_NMDA' = -B_NMDA/tau_d_NMDA
+            }
+        )";
+        std::string breakpoint_text = R"(
+            BREAKPOINT {
+                    CONDUCTANCE g
+                    CONDUCTANCE g_NMDA
+                    CONDUCTANCE g_AMPA
+                    SOLVE state METHOD cnexp
+                    mggate = 1.2
+                    g_AMPA = gmax*(B_AMPA-A_AMPA) :compute time varying conductance as the difference of state variables B_AMPA and A_AMPA
+                    g_NMDA = gmax*(B_NMDA-A_NMDA) * mggate :compute time varying conductance as the difference of state variables B_NMDA and A_NMDA and mggate kinetics
+                    g = g_AMPA + g_NMDA
+                    i_AMPA = g_AMPA*(v-e) :compute the AMPA driving force based on the time varying conductance, membrane potential, and AMPA reversal
+                    i_NMDA = g_NMDA*(v-e) :compute the NMDA driving force based on the time varying conductance, membrane potential, and NMDA reversal
+                    i = i_AMPA + i_NMDA
+            }
+        )";
+        THEN("Add 3 CONDUCTANCE hints, using existing vars") {
             auto result = run_sympy_conductance_visitor(nmodl_text);
             REQUIRE(result == breakpoint_to_nmodl(breakpoint_text));
         }
