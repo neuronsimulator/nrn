@@ -9,6 +9,11 @@ a linked list of Grid_nodes
 #include "nrnpython.h"
 #include "grids.h"
 
+static double get_alpha_scalar(double*, int);
+static double get_alpha_array(double*, int);
+static double get_lambda_scalar(double*, int);
+static double get_lambda_array(double*, int);
+
 extern int NUM_THREADS;
 double *dt_ptr;
 double *t_ptr;
@@ -157,15 +162,12 @@ int insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x,
             my_num_states_z, my_dc_x, my_dc_y, my_dc_z, my_dx, my_dy, my_dz, 
 			my_alpha, my_lambda, bc, bc_value, atolscale);
     Grid_node **head = &(Parallel_grids[grid_list_index]);
-    Grid_node *save;
 
     if(!(*head)) {
         *head = new_Grid;
-        save = *head;
     }
     else {
 		i++;	/*count the head as the first grid*/
-        save = *head;
         Grid_node *end = *head;
         while(end->next != NULL) {
             i++;

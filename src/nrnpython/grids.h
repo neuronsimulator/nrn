@@ -155,14 +155,6 @@ typedef struct AdiGridData{
     double* scratchpad;
 } AdiGridData;
 
-
-
-static double get_alpha_scalar(double*, int);
-static double get_alpha_array(double*, int);
-static double get_lambda_scalar(double*, int);
-static double get_lambda_array(double*, int);
-
-
 /***** GLOBALS *******************************************************************/
 extern double *dt_ptr;              // Universal ∆t
 extern double *t_ptr;               // Universal t

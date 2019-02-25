@@ -10,6 +10,9 @@
 
 #define loc(x,y,z)((z) + (y) *  grid->size_z + (x) *  grid->size_z *  grid->size_y)
 
+static void _rhs_variable_step_helper(Grid_node*, double const * const, double*);
+static void ecs_refresh_reactions(int);
+static int dg_adi(Grid_node*);
 /*
     Globals
 */
@@ -196,8 +199,8 @@ void ecs_register_subregion_reaction_ecs(int list_idx, int num_species, int* spe
  */
 ReactGridData* create_threaded_reactions(const int n)
 {
-	int i,k,load,react_count = 0,tasks_per_thread;
-	Grid_node* grid;
+	int i, k, load, tasks_per_thread;
+    int react_count = 0;
 	Reaction* react;
 
 	for(react = ecs_reactions; react != NULL; react = react -> next)
@@ -407,18 +410,14 @@ static void* gather_currents(void* dataptr)
 void do_currents(Grid_node* grid, double* output, double dt, int grid_id)
 {
     Py_ssize_t m, n, i;
-    Current_Triple* c;
     /*Currents to broadcast via MPI*/
     /*TODO: Handle multiple grids with one pass*/
     /*Maybe TODO: Should check #currents << #voxels and not the other way round*/
     double* val;
-    double* all_currents;
-    int proc_offset;
     //MEM_ZERO(output,sizeof(double)*grid->size_x*grid->size_y*grid->size_z);
     /* currents, via explicit Euler */
     n = grid->num_all_currents;
     m = grid->num_currents;
-    c = grid->current_list;
     CurrentData* tasks = (CurrentData*)malloc(NUM_THREADS*sizeof(CurrentData));
 #if NRNMPI    
     val = grid->all_currents + (nrnmpi_use?grid->proc_offsets[nrnmpi_myid]:0);
@@ -475,16 +474,12 @@ void do_currents(Grid_node* grid, double* output, double dt, int grid_id)
 
 void _fadvance_fixed_step_ecs(void) {
     Grid_node* grid;
-    double* states;
-    Current_Triple* c;
     double dt = (*dt_ptr);
 
     /*Currents to broadcast via MPI*/
     /*TODO: Handle multiple grids with one pass*/
     /*Maybe TODO: Should check #currents << #voxels and not the other way round*/
-    double* val;
-    double* all_currents;
-    int proc_offset, id;
+    int id;
 
 	if(threaded_reactions_tasks != NULL)
 	    run_threaded_reactions(threaded_reactions_tasks);
@@ -550,7 +545,6 @@ void ecs_atolscale(double* y)
     Grid_node* grid;
     Py_ssize_t i;
     int grid_size;
-    double* grid_states;
     y += states_cvode_offset;
     for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
         grid_size = grid->size_x * grid->size_y * grid->size_z;
@@ -582,10 +576,9 @@ void _ecs_ode_reinit(double* y) {
 
 void _rhs_variable_step_ecs(const double t, const double* states, double* ydot) {
 	Grid_node *grid;
-    Py_ssize_t n, i;
-    int grid_size, j, k;
+    Py_ssize_t i;
+    int grid_size;
 	double dt = *dt_ptr;
-    Current_Triple* c;
     double* grid_states;
     double const * const orig_states = states + states_cvode_offset;
     const unsigned char calculate_rhs = ydot == NULL ? 0 : 1;
@@ -674,7 +667,6 @@ static void _rhs_variable_step_helper(Grid_node* g, double const * const states,
 
 	/*indices*/
 	int index, prev_i, prev_j, prev_k, next_i ,next_j, next_k;
-	int xp, xm, yp, ym, zp, zm;
 	double div_x, div_y, div_z;
 
 	/* Euler advance x, y, z (all points) */

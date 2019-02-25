@@ -124,8 +124,9 @@ static void dg_adi_vol_x(Grid_node* g, const double dt, const int y, const int z
             RHS[0] = g->bc->value;
         }
         else
-        {
-	    RHS[0] = g->states[IDX(0,y,z)] + (dt/ALPHA(0,y,z))*
+        {   
+            x = 0;
+	        RHS[0] = g->states[IDX(0,y,z)] + (dt/ALPHA(0,y,z))*
 				    ((Fxy(yp,ypd,y) - Fxy(y,ymd,ym))/div_y 
 				+ 	 (Fxz(zp,zpd,z) - Fxz(z,zmd,zm))/div_z)
                 + dt*g->states_cur[IDX(0,y,z)];
