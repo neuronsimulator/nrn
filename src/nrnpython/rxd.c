@@ -11,6 +11,8 @@
 #include <../nrnoc/multicore.h>
 #include <nrnwrap_Python.h>
 
+static void ode_solve(double, double, double*, double*);
+
 extern int structure_change_cnt;
 int prev_structure_change_cnt = 0;
 unsigned char initialized = 0;
@@ -939,7 +941,7 @@ void register_rate(int nspecies, int nregions, int nseg, int* sidx, int necs, in
 void clear_rates()
 {
     ICSReactions *react, *prev;
-    int i, j, k;
+    int i, j;
     for(react = _reactions; react != NULL;)
     {
         for(i = 0; i < react->num_segments; i++)
@@ -1020,7 +1022,6 @@ static void free_SpeciesIndexList()
 }
 
 void setup_solver(double* my_states, int my_num_states, long* zvi, int num_zvi, PyHocObject* h_t_ref, PyHocObject* h_dt_ref) {
-    int i;
     states = my_states;
     num_states = my_num_states;
     _rxd_num_zvi = num_zvi;
@@ -1056,7 +1057,7 @@ void start_threads(const int n)
 
 void TaskQueue_add_task(TaskQueue* q, void* (*task)(void*), void* args, void* result)
 {
-    TaskList *t, *list;
+    TaskList *t;
     t = (TaskList*)malloc(sizeof(TaskList));
     t->task = task;
     t->args = args;
@@ -1189,7 +1190,6 @@ void set_reaction_indices( int num_locations, int* regions, int* num_species,
 	int* ecs_species_grid_ids, int* ecs_indices)
 {
 	int i, j, k, r, idx;
-	int max_ecs_species = 0;
 	Grid_node* grid;
 	unset_reaction_indices();
 	_num_locations = num_locations;
@@ -1324,8 +1324,7 @@ void set_reaction_indices( int num_locations, int* regions, int* num_species,
 
 void _fadvance(void) {
 	double dt = *dt_ptr;
-    double t = *t_ptr;
-	int i, j, k;
+	int i;
 	/*variables for diffusion*/
 	double *rhs; 
 	long* zvi = _rxd_zero_volume_indices;
@@ -1391,11 +1390,9 @@ void _rhs_variable_step(const double t, const double* p1, double* p2)
 {
 	long i, j, p, c;
     unsigned int k;
-    double dt = *dt_ptr;
     const unsigned char calculate_rhs = p2 == NULL ? 0 : 1;
     const double* my_states = p1 + _cvode_offset;
     double* ydot = p2 + _cvode_offset;
-    double st;
 	/*variables for diffusion*/
 	double *rhs;
 	long* zvi = _rxd_zero_volume_indices;
@@ -1479,20 +1476,16 @@ void _rhs_variable_step(const double t, const double* p1, double* p2)
 void get_reaction_rates(ICSReactions* react, double* states, double* rates, double* ydot)
 {
     int segment;
-    int i, j, idx, jac_i, jac_j, jac_idx;
-    int N = react->icsN + react->ecsN;  /*size of Jacobian (number species*regions for a segments)*/
-    double pd;
-    double dt = *dt_ptr;
-    
+    int i, j, idx;
     double** states_for_reaction = (double**)malloc(react->num_species*sizeof(double*));
     double** result_array = (double**)malloc(react->num_species*sizeof(double*));
-    double* mc_mult;
+    double* mc_mult = NULL;
     double** flux = NULL;
     if(react->num_mult > 0)
         mc_mult = (double*)malloc(react->num_mult*sizeof(double));
 
-    double** ecs_states_for_reaction;
-    double** ecs_result;
+    double** ecs_states_for_reaction = NULL;
+    double** ecs_result = NULL;
     if(react->num_ecs_species>0)
     {
         ecs_states_for_reaction = (double**)malloc(react->num_ecs_species*sizeof(double*));
@@ -1692,9 +1685,13 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double* c
 	            if(react->ecs_state[segment][i][j] != NULL)
 	            {
 	            	if(cvode_states != NULL)
+                    {
                         ecs_states_for_reaction[i][j] = cvode_states[react->ecs_index[segment][i][j]];
+                    }
                     else
+                    {
                         ecs_states_for_reaction[i][j] = *(react->ecs_state[segment][i][j]);
+                    }
 	            	ecs_states_for_reaction_dx[i][j] = ecs_states_for_reaction[i][j];
 	        	}
 	        }
@@ -1904,7 +1901,6 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double* c
 
 void do_ics_reactions(double* states, double* b, double* cvode_states, double* cvode_b)
 {
-    int i;
     ICSReactions* react;
     for(react = _reactions; react != NULL; react = react->next)
     {

@@ -119,7 +119,6 @@ void _fadvance(void);
 void _fadvance_fixed_step_ecs(void);
 
 int get_num_threads(void);
-static int dg_adi(Grid_node*);
 void set_adi_tort(Grid_node*);
 void set_adi_vol(Grid_node*);
 void set_adi_homogeneous(Grid_node *);
@@ -141,20 +140,6 @@ int ode_count(const int);
 
 void scatter_concentrations(void);
 
-static void update_boundaries_x(int i, int j, int k, int dj, int dk, double rate_x,
- double rate_y, double rate_z, int num_states_x, int num_states_y, int num_states_z,
- double const* const states, double* ydot);
-
-
-static void update_boundaries_y(int i, int j, int k, int di, int dk, double rate_x,
- double rate_y, double rate_z, int num_states_x, int num_states_y, int num_states_z,
- double const * const states, double* ydot);
-
-static void update_boundaries_z(int i, int j, int k, int di, int dj, double rate_x,
- double rate_y, double rate_z, int num_states_x, int num_states_y, int num_states_z,
- double const * const states, double* ydot);
-
-static void _rhs_variable_step_helper(Grid_node* grid, double const * const states, double* ydot);
 
 int find(const int, const int, const int, const int, const int);
 
@@ -162,7 +147,6 @@ void _rhs_variable_step_helper_tort(Grid_node*, double const * const, double*);
 
 void _rhs_variable_step_helper_vol(Grid_node*, double const * const, double*);
 
-static void ecs_refresh_reactions(int);
 void set_num_threads_ecs(int n);
 
 void _rhs_variable_step_ecs(const double, const double*, double*);
@@ -176,8 +160,6 @@ void TaskQueue_add_task(TaskQueue*, void* (*task)(void* args), void*, void*);
 void *TaskQueue_exe_tasks(void*);
 void start_threads(const int);
 void TaskQueue_sync(TaskQueue*);
-static void ode_solve(double, double, double*, double*);
-static void ode_jacobian(double, double*, double*);
 void ecs_atolscale(double*);
 
 
