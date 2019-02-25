@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.3.0 FATAL_ERROR)
 project(NMODL CXX)
 
 # =============================================================================
@@ -11,6 +11,11 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
+
+# =============================================================================
+# Compile static libraries with hidden visibility
+# =============================================================================
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
 # =============================================================================
 # Find required packages
@@ -37,11 +42,12 @@ add_subdirectory(cmake/hpc-coding-conventions/cpp)
 # Include cmake modules
 # =============================================================================
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-include(GitRevision)
-include(FlexHelper)
-include(CompilerHelper)
 include(ClangTidyHelper)
+include(CompilerHelper)
+include(FindClangFormat)
 include(FindPythonModule)
+include(FlexHelper)
+include(GitRevision)
 
 # =============================================================================
 # Find required python packages
@@ -107,7 +113,6 @@ add_subdirectory(src/printer)
 add_subdirectory(src/symtab)
 add_subdirectory(src/utils)
 add_subdirectory(src/visitors)
-
 add_subdirectory(src/pybind)
 
 # =============================================================================
