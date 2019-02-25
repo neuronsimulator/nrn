@@ -414,7 +414,7 @@ void do_currents(Grid_node* grid, double* output, double dt, int grid_id)
     double* val;
     double* all_currents;
     int proc_offset;
-    MEM_ZERO(output,sizeof(double)*grid->size_x*grid->size_y*grid->size_z);
+    //MEM_ZERO(output,sizeof(double)*grid->size_x*grid->size_y*grid->size_z);
     /* currents, via explicit Euler */
     n = grid->num_all_currents;
     m = grid->num_currents;
@@ -468,10 +468,7 @@ void do_currents(Grid_node* grid, double* output, double dt, int grid_id)
         for(i = 0; i < _memb_curr_total; i++)
         {
             if(_rxd_induced_currents_grid[i] == grid_id)
-            {
-                /*Added twice because we only record half the current (the intracellular half)*/
-                output[_rxd_induced_currents_ecs_idx[i]] += 2.0*_rxd_induced_currents_ecs[i]*_rxd_induced_currents_scale[i];
-            }
+                output[_rxd_induced_currents_ecs_idx[i]] += _rxd_induced_currents_ecs[i]*_rxd_induced_currents_scale[i];
         }
     }
 }
@@ -493,6 +490,7 @@ void _fadvance_fixed_step_ecs(void) {
 	    run_threaded_reactions(threaded_reactions_tasks);
 
     for (id = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, id++) {
+        MEM_ZERO(grid->states_cur,sizeof(double)*grid->size_x*grid->size_y*grid->size_z);
         do_currents(grid, grid->states_cur, dt, id);
 		switch(grid->VARIABLE_ECS_VOLUME)
 		{
@@ -599,14 +597,6 @@ void _rhs_variable_step_ecs(const double t, const double* states, double* ydot) 
     for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
         grid_states = grid->states;
         grid_size = grid->size_x * grid->size_y * grid->size_z;
-        /* start by clearing our part of ydot */
-
-        if (calculate_rhs) {
-            for (i = 0; i < grid_size; i++) {
-                ydot[i] = 0;
-            }
-            ydot += grid_size;
-        }
 
         /* copy the passed in states to local memory (needed to make reaction rates correct) */
         for (i = 0; i < grid_size; i++) {
@@ -669,7 +659,6 @@ void _rhs_variable_step_ecs(const double t, const double* states, double* ydot) 
         ydot += grid_size;
         states += grid_size;        
     }
-	
 }
 
 

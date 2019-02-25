@@ -97,6 +97,8 @@ static int ob_is_seg(Object*);
 extern int (*nrnpy_ob_is_seg)(Object*);
 static Object* seg_from_sec_x(Section*, double x);
 extern Object* (*nrnpy_seg_from_sec_x)(Section*, double x);
+static Section* o2sec(Object*);
+extern Section* (*nrnpy_o2sec_p_)(Object*);
 static void o2loc(Object*, Section**, double*);
 extern void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
 static void nrnpy_unreg_mech(int);
@@ -386,6 +388,18 @@ static int ob_is_seg(Object* o) {
     return 0;
   }
   return 1;
+}
+
+static Section* o2sec(Object* o) {
+  if (o->ctemplate->sym !=nrnpy_pyobj_sym_) {
+    hoc_execerror("not a Python nrn.Section", 0);
+  }
+  PyObject* po = nrnpy_hoc2pyobject(o);
+  if (!PyObject_TypeCheck(po, psection_type)) {
+    hoc_execerror("not a Python nrn.Section", 0);
+  }
+  NPySecObj* pysec = (NPySecObj*)po;
+  return pysec->sec_;
 }
 
 static void o2loc(Object* o, Section** psec, double* px) {
@@ -2102,6 +2116,7 @@ myPyMODINIT_FUNC nrnpy_nrn(void) {
   nrnpy_reg_mech_p_ = nrnpy_reg_mech;
   nrnpy_ob_is_seg = ob_is_seg;
   nrnpy_seg_from_sec_x = seg_from_sec_x;
+  nrnpy_o2sec_p_ = o2sec;
   nrnpy_o2loc_p_ = o2loc;
   nrnpy_pysec_name_p_ = pysec_name;
   nrnpy_pysec_cell_p_ = pysec_cell;

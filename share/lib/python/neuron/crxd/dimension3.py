@@ -23,14 +23,14 @@ def centroids_by_segment(sec):
     # TODO: fix the issue described in the warning
     #       (when this was written, these objects were only under development)
     
-    n3d = int(h.n3d(sec=sec))
+    n3d = sec.n3d()
     length = sec.L
     
-    arc3d = [h.arc3d(i, sec=sec) for i in range(n3d)]
-    x3d = numpy.array([h.x3d(i, sec=sec) for i in range(n3d)])
-    y3d = numpy.array([h.y3d(i, sec=sec) for i in range(n3d)])
-    z3d = numpy.array([h.z3d(i, sec=sec) for i in range(n3d)])
-    diam3d = numpy.array([h.diam3d(i, sec=sec) for i in range(n3d)])
+    arc3d = [sec.arc3d(i) for i in range(n3d)]
+    x3d = numpy.array([sec.x3d(i) for i in range(n3d)])
+    y3d = numpy.array([sec.y3d(i) for i in range(n3d)])
+    z3d = numpy.array([sec.z3d(i) for i in range(n3d)])
+    diam3d = numpy.array([sec.diam3d(i) for i in range(n3d)])
     
     dx = length / sec.nseg
     objs = {}
@@ -72,14 +72,14 @@ def objects_by_segment(sec):
     # TODO: fix the issue described in the warning
     #       (when this was written, these objects were only under development)
     
-    n3d = int(h.n3d(sec=sec))
+    n3d = sec.n3d()
     length = sec.L
     
-    arc3d = [h.arc3d(i, sec=sec) for i in range(n3d)]
-    x3d = numpy.array([h.x3d(i, sec=sec) for i in range(n3d)])
-    y3d = numpy.array([h.y3d(i, sec=sec) for i in range(n3d)])
-    z3d = numpy.array([h.z3d(i, sec=sec) for i in range(n3d)])
-    diam3d = numpy.array([h.diam3d(i, sec=sec) for i in range(n3d)])
+    arc3d = [sec.arc3d(i) for i in range(n3d)]
+    x3d = numpy.array([sec.x3d(i) for i in range(n3d)])
+    y3d = numpy.array([sec.y3d(i) for i in range(n3d)])
+    z3d = numpy.array([sec.z3d(i) for i in range(n3d)])
+    diam3d = numpy.array([sec.diam3d(i) for i in range(n3d)])
     
     dx = length / sec.nseg
     objs = {}

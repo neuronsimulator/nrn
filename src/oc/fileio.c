@@ -744,7 +744,7 @@ static int hoc_Load_file(int always, const char* name) {
 					hlp = 0;
 				}
 				if (path[0]) {
-					sprintf(fname, "%s/%s", path, base);
+					assert(snprintf(fname, hoc_load_file_size_, "%s/%s", path, base) < hoc_load_file_size_);
 #if USE_NRNFILEWRAP
 					f = nrn_fw_readaccess(expand_env_var(fname));
 #else
@@ -762,7 +762,7 @@ static int hoc_Load_file(int always, const char* name) {
 		if (!f) { /* try NEURONHOME/lib/hoc */
 			sprintf(path, "$(NEURONHOME)/lib/hoc");
 			assert(strlen(path) + strlen(base) + 1 < hoc_load_file_size_);
-			sprintf(fname, "%s/%s", path, base);
+			assert(snprintf(fname, hoc_load_file_size_, "%s/%s", path, base) < hoc_load_file_size_);
 #if USE_NRNFILEWRAP
 			f = nrn_fw_readaccess(expand_env_var(fname));
 #else

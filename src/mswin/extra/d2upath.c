@@ -45,7 +45,7 @@ char* hoc_dos2cygdrivepath(const char* d, int cygdrive) {
 
 char* hoc_dos2unixpath(const char* d) {
 #if defined(__MINGW32__)
-	return hoc_dos2cygdrivepath(d, 0);
+	return hoc_dos2cygdrivepath(d, 1);
 #else
 	return hoc_dos2cygdrivepath(d, 1);
 #endif

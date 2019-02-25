@@ -27,7 +27,7 @@ def _sort_secs(secs):
         all_sorted.wholetree(sec=root)
     secs_names = dict([(sec.hoc_internal_name(),sec) for sec in secs])
     for sec in secs:
-        if h.section_orientation(sec=sec):
+        if sec.orientation():
             raise RxDException('still need to deal with backwards sections')
     return [secs_names[sec.hoc_internal_name()] for sec in all_sorted if sec.hoc_internal_name() in secs_names]
 
@@ -120,7 +120,7 @@ class _c_region:
                 for sec in self._overlap:
                        for seg in sec:
                         (x,y,z) = species._xyz(seg)
-                        self.ecs_location_index[rid][sid][seg_idx] = s.index_from_xyz(x,y,z)
+                        self.ecs_location_index[rid][sid][seg_idx] = s().index_from_xyz(x,y,z)
                         seg_idx+=1
         self.ecs_location_index = self.ecs_location_index.transpose()
 
@@ -376,21 +376,21 @@ class Region(object):
         # NOTE: some care is necessary in constructing normal vector... must be
         #       based on end frusta, not on vector between end points
         if position == 0:
-            x = h.x3d(0, sec=sec)
-            y = h.y3d(0, sec=sec)
-            z = h.z3d(0, sec=sec)
-            nx = h.x3d(1, sec=sec) - x
-            ny = h.y3d(1, sec=sec) - y
-            nz = h.z3d(1, sec=sec) - z
+            x = sec.x3d(0)
+            y = sec.y3d(0)
+            z = sec.z3d(0)
+            nx = sec.x3d(1) - x
+            ny = sec.y3d(1) - y
+            nz = sec.z3d(1) - z
         elif position == 1:
-            n = int(h.n3d(sec=sec))
-            x = h.x3d(n - 1, sec=sec)
-            y = h.y3d(n - 1, sec=sec)
-            z = h.z3d(n - 1, sec=sec)
+            n = sec.n3d()
+            x = sec.x3d(n - 1)
+            y = sec.y3d(n - 1)
+            z = sec.z3d(n - 1)
             # NOTE: sign of the normal is irrelevant
-            nx = x - h.x3d(n - 2, sec=sec)
-            ny = y - h.y3d(n - 2, sec=sec)
-            nz = z - h.z3d(n - 2, sec=sec)
+            nx = x - sec.x3d(n - 2)
+            ny = y - sec.y3d(n - 2)
+            nz = z - sec.z3d(n - 2)
         else:
             raise RxDException('should never get here')
         # x, y, z = x * x1 + (1 - x) * x0, x * y1 + (1 - x) * y0, x * z1 + (1 - x) * z1

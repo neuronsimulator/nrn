@@ -260,7 +260,7 @@ void nrnhoc_topology(void) /* print the topology of the branched cable */
 	hoc_Item* q;
 
 	v_setup_vectors();
-	printf("\n");
+	Printf("\n");
 	ITERATE(q, section_list) {
 		Section* sec = (Section*)VOIDITM(q);
 		if (sec->parentsec == (Section*)0) {
@@ -276,7 +276,7 @@ static void dashes(Section* sec, int offset, int first)
 {
 	int i, scnt;
 	Section* ch;
-	char direc[10];
+	char direc[30];
 	extern double nrn_section_orientation();
 	
 	i = (int)nrn_section_orientation(sec);

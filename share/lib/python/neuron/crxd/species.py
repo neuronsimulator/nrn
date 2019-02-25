@@ -205,6 +205,19 @@ class SpeciesOnExtracellular(_SpeciesMathable):
         j = int((y - e._ylo) / e._dx[1])
         k = int((z - e._zlo) / e._dx[2])
         return self.node_by_ijk(i,j,k) 
+
+    def alpha_by_location(self, locs):
+        """Return a single alpha value for a homogeneous volume fraction of a list of alpha values for an inhomogeneous volume fraction at grid locations given in a list (locs)."""
+        e = self._extracellular()._region
+        if numpy.isscalar(e.alpha):
+            return e.alpha
+        alphas = []
+        for loc in locs:
+            i = int((loc[0] - e._xlo) / e._dx[0])
+            j = int((loc[1] - e._ylo) / e._dx[1])
+            k = int((loc[2] - e._zlo) / e._dx[2])
+            alphas.append(e.alpha[i,j,k])
+        return numpy.array(alphas)
     
     def node_by_ijk(self,i,j,k):
         index = 0
@@ -353,13 +366,12 @@ def _xyz(seg):
     """Return the (x, y, z) coordinate of the center of the segment."""
     # TODO: this is very inefficient, especially since we're calling this for each segment not for each section; fix
     sec = seg.sec
-    n3d = int(h.n3d(sec=sec))
-    x3d = [h.x3d(i, sec=sec) for i in range(n3d)]
-    y3d = [h.y3d(i, sec=sec) for i in range(n3d)]
-    z3d = [h.z3d(i, sec=sec) for i in range(n3d)]
-    arc3d = [h.arc3d(i, sec=sec) for i in range(n3d)]
+    n3d = sec.n3d()
+    x3d = [sec.x3d(i) for i in range(n3d)]
+    y3d = [sec.y3d(i) for i in range(n3d)]
+    z3d = [sec.z3d(i) for i in range(n3d)]
+    arc3d = [sec.arc3d(i) for i in range(n3d)]
     return numpy.interp([seg.x * sec.L], arc3d, x3d)[0], numpy.interp([seg.x * sec.L], arc3d, y3d)[0], numpy.interp([seg.x * sec.L], arc3d, z3d)[0]
-
 
 
 
@@ -452,13 +464,11 @@ class _ExtracellularSpecies(_SpeciesMathable):
         
     def _finitialize(self):
         # Updated - now it will initialize using NodeExtracellular
-        # TODO: support more complicated initializations than just constants
         if self._initial is None:
             if hasattr(h,'%so0_%s_ion' % (self._species, self._species)):
                 self.states[:] = getattr(h,'%so0_%s_ion' % (self._species, self._species))
             else:
                 self.states[:] = 0
-        warnings.warn('Extracellular currently not transferring concentrations to legacy grid until after first time step')
 
     def _ion_register(self):
         """modified from neuron.rxd.species.Species._ion_register"""
@@ -1194,4 +1204,12 @@ class Species(_SpeciesMathable):
             return self.__repr__()
         return str(self._name)
     
+def xyz_by_index(indices):
+    """Return the 3D location of the nodes at the given indices"""
+    if hasattr(indices,'count'):
+        index = indices
+    else:
+        index = [indices]
+    #TODO: make sure to include Node3D
+    return [[nd.x3d, nd.y3d, nd.z3d] for sp in _get_all_species().values() for s in sp()._secs for nd in s.nodes + sp()._nodes if sp() if nd._index in index]
 

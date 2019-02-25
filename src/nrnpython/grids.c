@@ -326,8 +326,6 @@ void free_Grid(Grid_node *grid) {
     free(grid->states_cur);
     free(grid->concentration_list);
     free(grid->current_list);
-	free(grid->alpha);
-	free(grid->lambda);
     free(grid->bc);
     free(grid->current_dest);
 #if NRNMPI

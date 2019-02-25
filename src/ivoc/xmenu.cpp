@@ -1095,7 +1095,7 @@ HocPushButton::~HocPushButton() {
 }
 void HocPushButton::write(ostream& o) {
 	char buf[200];
-        sprintf(buf, "xbutton(\"%s\",\"%s\")", getStr(), hideQuote(a_->name()));
+        assert(snprintf(buf, 200, "xbutton(\"%s\",\"%s\")", getStr(), hideQuote(a_->name())) < 200);
 	o << buf << endl;
 }
 
@@ -1116,7 +1116,7 @@ HocRadioButton::~HocRadioButton() {
 }
 void HocRadioButton::write(ostream& o) {
 	char buf[200];
-        sprintf(buf, "xradiobutton(\"%s\",\"%s\")", getStr(), hideQuote(a_->name()));
+        assert(snprintf(buf, 200, "xradiobutton(\"%s\",\"%s\")", getStr(), hideQuote(a_->name())) < 200);
 	o << buf << endl;
 }
 
@@ -1421,7 +1421,7 @@ void HocItem::help(const char* child) {
 HocLabel::HocLabel(const char* s) : HocItem(s) {}
 HocLabel::~HocLabel() {}
 void HocLabel::write(ostream& o) {
-	char buf[200];
+	char buf[210];
 	sprintf(buf, "xlabel(\"%s\")", hideQuote(getStr()));
 	o << buf << endl;
 }
@@ -2022,10 +2022,10 @@ void HocValEditor::write(ostream& o) {
 	}else{
 		usepointer=0;
 	}
-sprintf(buf, "xvalue(\"%s\",\"%s\", %d,\"%s\", %d, %d )", getStr(),
+assert(snprintf(buf, 200, "xvalue(\"%s\",\"%s\", %d,\"%s\", %d, %d )", getStr(),
 		variable_->string(), hoc_default_val_editor(),
 		hideQuote(action_->name()),
-		(int)canrun_, usepointer);
+		(int)canrun_, usepointer) < 200);
 	o << buf << endl;
 }
 

@@ -10,6 +10,8 @@
 #endif
 #include <assert.h>
 
+#define NRN_BUFSIZE 8192
+
 typedef struct Item {
 	short           itemtype;
 	short		itemsubtype;
