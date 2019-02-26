@@ -408,15 +408,16 @@ extern "C" int solve_core(int argc, char** argv) {
 
         // register all reports into reportinglib
         double min_report_dt = INT_MAX;
-        int num_report_mindelay = nrnopt_get_int("--num-report-mindelay");
-
-        set_num_mindelay_to_buffer(num_report_mindelay);
-
+        int report_buffer_size = nrnopt_get_int("--report-buffer-size");
         for (size_t i = 0; i < configs.size(); i++) {
             register_report(dt, tstop, delay, configs[i]);
             if (configs[i].report_dt < min_report_dt) {
                 min_report_dt = configs[i].report_dt;
             }
+        }
+        // Set the buffer size if is not the default value. Otherwise use report.conf on register_report
+        if (!nrnopt_is_default_value("--report-buffer-size")) {
+            set_report_buffer_size(report_buffer_size);
         }
         setup_report_engine(min_report_dt, delay);
         configs.clear();

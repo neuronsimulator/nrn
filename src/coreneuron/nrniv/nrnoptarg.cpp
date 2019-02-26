@@ -71,7 +71,7 @@ static param_int param_int_args[] = {
     {"--extracon -x", 0, 0, 10000000,
      "Number of extra random connections in each thread to other duplicate models (int)."},
     {"--seed -s", -1, 0, 100000000, "Initialization seed for random number generator (int)."},
-    {"--num-report-mindelay", 100, 1, 10000, "Number of min delay intervals to be buffered during reporting (int)."},
+    {"--report-buffer-size", 4, 1, 8, "Size in MB of the report buffer (int)."},
     {NULL, 0, 0, 0, NULL}};
 
 static param_dbl param_dbl_args[] = {
@@ -309,6 +309,10 @@ void nrnopt_modify_dbl(const char* name, double val) {
     std::string* s = new std::string(c);
     v->push_back(s);
     args.insert(args.begin(), v);
+}
+
+bool nrnopt_is_default_value(const char* name) {
+    return !opt->isSet(name);
 }
 
 // more compact display of parameters.
