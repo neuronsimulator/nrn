@@ -216,6 +216,7 @@ if(${CMAKE_C_COMPILER_ID} STREQUAL "PGI")
 endif()
 
 if(ENABLE_OPENACC)
+    set(COMPILE_LIBRARY_TYPE "STATIC")
     if(${CMAKE_C_COMPILER_ID} STREQUAL "PGI")
         add_definitions( -DPG_ACC_BUGS)
         set(ACC_FLAGS "-acc -Minline=size:200,levels:10")
@@ -232,7 +233,6 @@ if(ENABLE_OPENACC)
     if(ENABLE_CUDA_MODULES)
         find_package(CUDA 5.0)
         SET(CUDA_SEPARABLE_COMPILATION ON)
-
         if(CUDA_FOUND)
             if(ENABLE_SELECTIVE_GPU_PROFILING)
                 add_definitions( -DCUDA_PROFILING)
@@ -252,6 +252,7 @@ ELSE(ENABLE_OPENACC)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${IGNORE_UNKNOWN_PRAGMA_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${IGNORE_UNKNOWN_PRAGMA_FLAGS}")
 endif(ENABLE_OPENACC)
+
 
 if(DISABLE_NRN_TIMEOUT)
     add_definitions("-DDISABLE_TIMEOUT")

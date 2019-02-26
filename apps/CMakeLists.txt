@@ -27,21 +27,15 @@
 
 include_directories(${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/coreneuron ${CMAKE_CURRENT_SOURCE_DIR} ${PROJECT_BINARY_DIR}/coreneuron)
 
-# The mechanism registration function will be always defined from extra mechanisms in test directory
-add_definitions(-DADDITIONAL_MECHS)
-
-# LIbrary required for special
-add_library(coreneuron_main STATIC "coreneuron.cpp")
-
 add_executable(coreneuron_exec "${CMAKE_CURRENT_SOURCE_DIR}/coreneuron.cpp")
 
-set_target_properties(coreneuron_exec PROPERTIES
-                      OUTPUT_NAME "coreneuron_exec")
-
-target_link_libraries(coreneuron_exec coreneuron ${MPI_C_LIBRARIES} ${MPI_CXX_LIBRARIES} ${reportinglib_LIBRARY})
+target_link_libraries(coreneuron_exec corenrnmech
+                      ${MPI_C_LIBRARIES} ${MPI_CXX_LIBRARIES} ${reportinglib_LIBRARY})
 
 install(TARGETS coreneuron_exec
         DESTINATION "${CMAKE_INSTALL_BINDIR}")
 
-install(TARGETS coreneuron_main
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}")
+
+# Install main to recompile for special-core
+install(FILES coreneuron.cpp
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/coreneuron)

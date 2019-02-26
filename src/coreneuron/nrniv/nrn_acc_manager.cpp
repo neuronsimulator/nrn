@@ -53,8 +53,6 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
      */
     d_threads = (NrnThread*)acc_copyin(threads, sizeof(NrnThread) * nthreads);
 
-    printf("\n --- Copying to Device! --- ");
-
     if (interleave_info == NULL) {
         printf("\n Warning: No permutation data? Required for linear algebra!");
     }
@@ -73,11 +71,6 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
         }
 
         double* d__data;  // nrn_threads->_data on device
-
-        printf("\n -----------COPYING %d'th NrnThread TO DEVICE --------------- \n", i);
-#if defined(CUDA_PROFILING)
-        print_gpu_memory_usage();
-#endif
 
         /* -- copy _data to device -- */
 
@@ -401,9 +394,6 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
         } else {
             printf("\n WARNING: NrnThread %d not permuted, error for linear algebra?", i);
         }
-
-        printf("\n Compute thread on GPU? : %s, Stream : %d\n", (nt->compute_gpu) ? "Yes" : "No",
-               nt->stream_id);
     }
 
     if (nrn_ion_global_map_size) {

@@ -22,10 +22,8 @@ void print_gpu_memory_usage() {
 
 void start_cuda_profile() {
     cudaProfilerStart();
-    print_gpu_memory_usage();
 }
 
 void stop_cuda_profile() {
     cudaProfilerStop();
-    print_gpu_memory_usage();
 }

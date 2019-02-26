@@ -277,8 +277,8 @@ void register_compartment_report(NrnThread& nt,
         records_add_report((char*)config.output_path, gid, gid, gid, config.start, config.stop,
                            config.report_dt, sizemapping, (char*)config.type_str, extramapping,
                            (char*)config.unit);
-        
-        records_set_report_max_buffer_size_hint ((char*)config.output_path, config.buffer_size);	
+
+        records_set_report_max_buffer_size_hint ((char*)config.output_path, config.buffer_size);
 	/** add extra mapping */
         records_extra_mapping(config.output_path, gid, 5, extra);
         for (int var_idx = 0; var_idx < vars.size(); ++var_idx) {
@@ -315,8 +315,8 @@ void register_custom_report(NrnThread& nt,
         records_add_report((char*)config.output_path, gid, gid, gid, config.start, config.stop,
                            config.report_dt, sizemapping, (char*)config.type_str, extramapping,
                            (char*)config.unit);
-        
-        records_set_report_max_buffer_size_hint ((char*)config.output_path, config.buffer_size);	
+
+        records_set_report_max_buffer_size_hint ((char*)config.output_path, config.buffer_size);
 	/** add extra mapping : @todo api changes in reportinglib*/
         records_extra_mapping((char*)config.output_path, gid, 5, extra);
         for (int var_idx = 0; var_idx < vars.size(); ++var_idx) {

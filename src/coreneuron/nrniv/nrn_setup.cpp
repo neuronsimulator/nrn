@@ -791,7 +791,7 @@ void nrn_setup(const char* filesdat,
     delete[] gidgroups;
 
     if (nrnmpi_myid == 0) {
-        printf(" Nrn Setup Done (time: %g)\n", nrn_wtime() - time);
+        printf(" Setup Done   : %.2lf seconds \n", nrn_wtime() - time);
     }
 }
 

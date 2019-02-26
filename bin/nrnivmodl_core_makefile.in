@@ -9,29 +9,26 @@ MECH_VERSION = 0.0
 MODS_PATH = .
 OUTPUT = @CMAKE_HOST_SYSTEM_PROCESSOR@
 OPTMODS = @CORENRN_OPTMODS@
+DESTDIR =
 
-bindir = @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_BINDIR@
-libdir = @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_LIBDIR@
-incdir = @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_INCLUDEDIR@
-datadir= @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_DATADIR@/coreneuron
-datadir_mod2c = @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_DATADIR@/mod2c
+# Coreneuron dirs
+bindir := @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_BINDIR@
+libdir := @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_LIBDIR@
+incdir := @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_INCLUDEDIR@
+datadir:= @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_DATADIR@/coreneuron
+datadir_mod2c := @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_DATADIR@/mod2c
 
 # Additional variables set in CMAKE usable here
-# - @CORENRN_COMPILE_DEFS@
-# - @CORENRN_LINK_DEFS@
-
+# - @CORENRN_COMPILE_DEFS
+# - @CORENRN_LINK_DEFS
 LDFLAGS = $(LINKFLAGS) @CORENRN_LINK_DEFS@
 CORENRNLIB_FLAGS = -L$(libdir) -lcoreneuron
+OS_NAME := $(shell uname)
 
 # We rebuild the include dirs since a lot of stuff changes place
 INCLUDES = $(INCFLAGS) -I$(incdir) -I$(incdir)/coreneuron/utils/randoms
-ifneq (@CORENRN_MPI_INCLUDES@,)
-    INCLUDES += -I@CORENRN_MPI_INCLUDES@
-endif
-ifneq (@reportinglib_INCLUDE_DIR@,)
-    INCLUDES += -I@reportinglib_INCLUDE_DIR@
-endif
-
+INCLUDES += $(if @MPI_C_INCLUDE_PATH@, -I$(subst ;, -I,@MPI_C_INCLUDE_PATH@),)
+INCLUDES += $(if @reportinglib_INCLUDE_DIR@, -I$(subst ;, -I,@reportinglib_INCLUDE_DIR@),)
 
 CC = @CMAKE_C_COMPILER@
 CXX = @CMAKE_CXX_COMPILER@
@@ -43,18 +40,18 @@ CXXCOMPILE = $(CXX) $(CXXFLAGS) @CORENRN_COMPILE_DEFS@ $(INCLUDES)
 CXX_LINK_EXE = $(CXX) $(CXXFLAGS) @CMAKE_EXE_LINKER_FLAGS@
 CXX_LINK_SHARED = $(CXX) $(CXXFLAGS) @CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS@ @CMAKE_SHARED_LIBRARY_CXX_FLAGS@ @CMAKE_SHARED_LINKER_FLAGS@
 
-
-MODC_DIR = $(OUTPUT)/modc_core
-OBJS_DIR = $(OUTPUT)/build_core
+# File path config (internal)
+MODC_DIR = $(OUTPUT)/core/mod2c
+OBJS_DIR = $(OUTPUT)/core/build
 mod_files = $(sort $(notdir $(wildcard $(MODS_PATH)/*.mod)))
-mod_names = $(mod_files:.mod=)
+mod_names = $(mod_files:.mod=) $(OPTMODS:.mod=)
 modc_files = $(addprefix $(MODC_DIR)/,$(addsuffix .cpp,$(mod_names)))
 mod_objs   = $(addprefix $(OBJS_DIR)/,$(addsuffix .o,$(mod_names)))
 
 kinderiv_h = $(MODC_DIR)/_kinderiv.h
 mod_func_o = $(OBJS_DIR)/_mod_func.o
 mod_func_c = $(MODC_DIR)/_mod_func.cpp
-dimplic_src= $(datadir)/scopmath_core/dimplic.cpp
+dimplic_src= $(datadir)/dimplic.cpp
 dimplic_c  = $(MODC_DIR)/_dimplic.cpp
 dimplic_o  = $(OBJS_DIR)/_dimplic.o
 
@@ -63,55 +60,81 @@ LIB_SUFFIX_ = $(if $(MECH_NAME),_$(MECH_NAME),)
 coremech_libname = corenrnmech$(LIB_SUFFIX_)-$(MECH_VERSION)
 coremech_lib = $(OUTPUT)/lib$(coremech_libname)@CMAKE_SHARED_LIBRARY_SUFFIX@
 
+# If no DESTDIR (we are probably just building) we use $ORIGIN (@loader_path in OSX)
+_ORIGIN := $(if $(filter Darwin,$(OS_NAME)),@loader_path,$$ORIGIN)
+DESTDIR_RPATH = $(if $(DESTDIR),$(DESTDIR)/lib,$(_ORIGIN))
+
+C_RESET := \033[0m
+C_GREEN := \033[32m
+ECHO := $(if $(filter Darwin,$(OS_NAME)),echo,echo -e)
+
 
 # ======== MAIN BUILD RULES ============
 
 # Take the main and link with nrnmech.
-# RPATH is set for ORIGIN and coreneuron lib
+# RPATH is set for DESTDIR_RPATH and coreneuron lib
 $(special): $(coremech_lib)
-	$(CXX_LINK_EXE) $(libdir)/libcoreneuron_main.a -o $(special) -L $(OUTPUT) -l$(coremech_libname) \
-	  $(CORENRNLIB_FLAGS) -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(libdir) $(LDFLAGS)
+	@$(ECHO) " => $(C_GREEN)LINKING$(C_RESET) executable $(special) "
+	$(CXX_LINK_EXE) -I $(incdir) $(datadir)/coreneuron.cpp -o $(special) \
+	  -L $(OUTPUT) -l$(coremech_libname) $(CORENRNLIB_FLAGS) -Wl,-rpath,'$(DESTDIR_RPATH)' -Wl,-rpath,$(libdir) $(LDFLAGS)
 
 
 $(coremech_lib): $(mod_func_o) $(dimplic_o) $(mod_objs)
-	@echo "#BUILDING lib $(coremech_lib) from Mod files $(mod_files)"
-	$(CXX_LINK_SHARED) -o ${coremech_lib} \
-	  $(mod_func_o) $(dimplic_o) $(mod_objs) $(CORENRNLIB_FLAGS) $(LDFLAGS)
+	@$(ECHO) " => $(C_GREEN)LINKING$(C_RESET) library $(coremech_lib) Mod files: $(mod_files) (+ $(OPTMODS))"
+	$(CXX_LINK_SHARED) -I $(incdir) -DADDITIONAL_MECHS $(datadir)/enginemech.cpp -o ${coremech_lib} \
+	  $(mod_func_o) $(dimplic_o) $(mod_objs) $(datadir)/libscopmath.a $(CORENRNLIB_FLAGS) -Wl,-rpath,$(libdir) $(LDFLAGS)
 
 
 # Generic build cpp->o. Need PIC for shared lib
-$(OBJS_DIR)/%.o: $(MODC_DIR)/%.cpp $(kinderiv_h)
+$(OBJS_DIR)/%.o: $(MODC_DIR)/%.cpp $(kinderiv_h) | $(OBJS_DIR)
+	@$(ECHO) " -> $(C_GREEN)Compiling$(C_RESET) $<"
 	$(CXXCOMPILE) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c $< -o $@
 
 
-$(MODC_DIR)/%.cpp: $(MODS_PATH)/%.mod | $(OUTPUT)
+# Build cpp files with mod2c
+$(MODC_DIR)/%.cpp: $(MODS_PATH)/%.mod | $(MODC_DIR)
+	@$(ECHO) " -> $(C_GREEN)MOD2C$(C_RESET) $<"
 	MODLUNIT=$(datadir_mod2c)/nrnunits.lib \
 	  $(bindir)/mod2c_core $< -o $(MODC_DIR)/
 
+# If .mod doesnt exist attempt from previously built opt mods in shared/
+$(MODC_DIR)/%.cpp: $(datadir_mod2c)/%.cpp | $(MODC_DIR)
+	cp $< $@
+
 
 # Mod registration. Compiled by generic rule. Dont overwrite if not changed
-$(mod_func_c): build_always | $(OUTPUT)
+$(mod_func_c): build_always | $(MODC_DIR)
+	@$(ECHO) " -> $(C_GREEN)Generating$(C_RESET) $(mod_func_c)"
 	perl $(datadir)/mod_func.c.pl $(OPTMODS) $(mod_files) > $(mod_func_c).tmp
 	diff -q $(mod_func_c).tmp $(mod_func_c) || echo "Replacing mod_func.c" && mv $(mod_func_c).tmp $(mod_func_c)
 
 
 # Header to avoid function callbacks using function pointers
 # Move all mods to temp and bring back only those required
-$(kinderiv_h): $(modc_files) build_always | $(OUTPUT)
+$(kinderiv_h): $(modc_files) build_always | $(MODC_DIR)
+	@$(ECHO) " -> $(C_GREEN)Generating$(C_RESET) $(kinderiv_h)"
 	cd $(MODC_DIR) && mkdir -p _tmp &&	mv [^_]*.cpp _tmp/ && \
 	  mv $(addprefix _tmp/,$(notdir $(modc_files))) ./ || true
 	rm -rf $(MODC_DIR)/_tmp
 	cd $(MODC_DIR) && python $(datadir)/kinderiv.py
 
 
-$(dimplic_c): $(dimplic_src) | $(OUTPUT)
+$(dimplic_c): $(dimplic_src) | $(MODC_DIR)
 	cp $(dimplic_src) $(dimplic_c)
 
 
+install: $(special) $(coremech_lib)
+	install -d $(DESTDIR)/bin $(DESTDIR)/lib
+	install $(coremech_lib) $(DESTDIR)/lib
+	install $(special) $(DESTDIR)/bin
+
+
 # == INIT ==
-$(OUTPUT):
-	mkdir -p $(OUTPUT)
+$(MODC_DIR):
 	mkdir -p $(MODC_DIR)
+$(OBJS_DIR):
 	mkdir -p $(OBJS_DIR)
 
 .PHONY: build_always
+
+$(VERBOSE).SILENT:

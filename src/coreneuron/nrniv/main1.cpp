@@ -128,7 +128,8 @@ int corenrn_embedded_run(int nthread, int have_gaps, int use_mpi, const char* ar
     int argc = 0;
     char** argv;
     char* new_arg = prepare_args(argc, argv, use_mpi, arg);
-    solve_core(argc, argv);
+    mk_mech_init(argc, argv);
+    run_solve_core(argc, argv);
     free(new_arg);
     delete[] argv;
 
@@ -147,6 +148,8 @@ int nrn_feenableexcept() {
 #endif
 namespace coreneuron {
 void call_prcellstate_for_prcellgid(int prcellgid, int compute_gpu, int is_init);
+
+
 void nrn_init_and_load_data(int argc,
                             char* argv[],
                             bool is_mapping_needed = false,
@@ -195,14 +198,10 @@ void nrn_init_and_load_data(int argc,
     // full path of files.dat file
     std::string filesdat(nrnopt_get_str("--datpath") + "/" + nrnopt_get_str("--filesdat"));
 
-    // reads mechanism information from bbcore_mech.dat
-    mk_mech(nrnopt_get_str("--datpath").c_str());
 
     // read the global variable names and set their values from globals.dat
     set_globals(nrnopt_get_str("--datpath").c_str(), nrnopt_get_flag("--seed"),
                 nrnopt_get_int("--seed"));
-
-    report_mem_usage("After mk_mech");
 
     // set global variables for start time, timestep and temperature
     std::string restore_path = nrnopt_get_str("--restore");
@@ -238,11 +237,20 @@ void nrn_init_and_load_data(int argc,
     use_interleave_permute = nrnopt_get_int("--cell-permute");
     cellorder_nwarp = nrnopt_get_int("--nwarp");
     use_solve_interleave = nrnopt_get_int("--cell-permute");
+
 #if LAYOUT == 1
     // permuting not allowed for AoS
     use_interleave_permute = 0;
     use_solve_interleave = 0;
 #endif
+
+    if (nrnopt_get_flag("--gpu") && use_interleave_permute == 0) {
+        if (nrnmpi_myid == 0) {
+            printf(" WARNING : GPU execution requires --cell-permute type 1 or 2. Setting it to 1.\n");
+        }
+        use_interleave_permute = 1;
+        use_solve_interleave = 1;
+    }
 
     // pass by flag so existing tests do not need a changed nrn_setup prototype.
     nrn_setup_multiple = nrnopt_get_int("--multiple");
@@ -344,16 +352,34 @@ const char* nrn_version(int) {
 }
 }  // namespace coreneuron
 
+
+
+/// The following high-level functions are marked as "extern C"
+/// for compat with C, namely Neuron mod files.
+/// They split the previous solve_core so that intermediate init of external mechanisms can occur.
+/// See mech/corenrnmech.cpp for the new all-in-one solve_core (not compiled into the coreneuron
+/// lib since with nrnivmodl-core we have 'future' external mechanisms)
+
 using namespace coreneuron;
-extern "C" int solve_core(int argc, char** argv) {
+
+extern "C" void mk_mech_init(int argc, char** argv) {
+    // read command line parameters and parameter config files
+    nrnopt_parse(argc, (const char**)argv);
+
+    // reads mechanism information from bbcore_mech.dat
+    mk_mech(nrnopt_get_str("--datpath").c_str());
+}
+
+
+extern "C" int run_solve_core(int argc, char** argv) {
+
 #if NRNMPI
     nrnmpi_init(1, &argc, &argv);
 #endif
-
-    // read command line parameters and parameter config files
-    nrnopt_parse(argc, (const char**)argv);
     std::vector<ReportConfiguration> configs;
     bool reports_needs_finalize = false;
+
+    report_mem_usage("After mk_mech ang global initialization");
 
     if (nrnopt_get_str("--report-conf").size()) {
         if (nrnopt_get_int("--multiple") > 1) {
@@ -365,6 +391,7 @@ extern "C" int solve_core(int argc, char** argv) {
             reports_needs_finalize = configs.size();
         }
     }
+
     // initializationa and loading functions moved to separate
     nrn_init_and_load_data(argc, argv, configs.size() > 0);
     std::string checkpoint_path = nrnopt_get_str("--checkpoint");

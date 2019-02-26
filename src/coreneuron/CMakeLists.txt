@@ -29,10 +29,14 @@ include_directories(utils/randoms)
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${MPI_INCLUDE_PATH})
 
-FILE(GLOB_RECURSE coreneuron_all_headers "*.h*")
-FILE(GLOB_RECURSE coreneuron_all_templates "*.ipp")
-FILE(GLOB_RECURSE coreneuron_all_c_files "*.c*")
+file(GLOB_RECURSE coreneuron_all_headers "*.h*")
+file(GLOB_RECURSE coreneuron_all_templates "*.ipp")
 file(GLOB_RECURSE coreneuron_cuda_files "*.cu")
+file(GLOB_RECURSE coreneuron_all_c_files "nrniv/*.c*" "nrnmpi/*.c*" "nrnoc/*.c*"
+                                         "nrnomp/*.c*" "utils/*.c*")
+set(DIMPLIC_C "mech/dimplic.cpp")
+file(GLOB_RECURSE scopmath_c_files "scopmath_core/*.c*")
+
 
 # Compile and include MOD files
 
@@ -228,6 +232,7 @@ add_custom_command(OUTPUT "${KINDERIV_H}"
     DEPENDS ${MOD2C_OPTMECH_OUTPUTS} ${MOD2C_STDMECH_OUTPUTS} "${KINDERIV_PY}"
     COMMAND python "${KINDERIV_PY}"
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+add_custom_target(kinderiv DEPENDS "${KINDERIV_H}")
 
 if (EXPORT_MECHS_FUNCTIONS)
   # Create C file with all "get function pointers" methods
@@ -242,7 +247,8 @@ if (EXPORT_MECHS_FUNCTIONS)
 endif()
 
 # Add generated sources from MOD files
-set(GENERATED_MECH_C_FILES ${MOD_FUNC_C} ${MOD_FUNC_PTRS_C} ${MOD2C_STDMECH_OUTPUTS} ${MOD2C_OPTMECH_OUTPUTS})
+set(ADDITIONAL_MECH_C_FILES ${MOD_FUNC_C} ${MOD_FUNC_PTRS_C} ${DIMPLIC_C} ${MOD2C_OPTMECH_OUTPUTS})
+set(GENERATED_MECH_C_FILES ${ADDITIONAL_MECH_C_FILES}  ${MOD2C_STDMECH_OUTPUTS})
 
 # artificial cells must be on cpu, defaul nrnran123.c is for cpu, nrn_setup.cpp uses nrnran123 for only memory calculation purpose which should use cpu version of nrnran123
 set(NOACC_MECH_C_FILES
@@ -261,8 +267,6 @@ if(ENABLE_OPENACC)
     endif()
 endif()
 
-set(coreneuron_all_c_files ${coreneuron_all_c_files} ${GENERATED_MECH_C_FILES})
-
 #to indent generated c/cpp files
 if(CLANG_FORMAT_FOUND)
     add_custom_target(formatbuild
@@ -275,8 +279,6 @@ if(CLANG_FORMAT_FOUND)
 endif()
 
 
-add_library(coreneuron ${COMPILE_LIBRARY_TYPE} ${coreneuron_all_headers} ${coreneuron_all_templates} ${coreneuron_all_c_files} ${KINDERIV_H})
-
 set(link_cudacoreneuron)
 set(link_reportinglib)
 
@@ -288,6 +290,7 @@ if(ENABLE_OPENACC AND ENABLE_CUDA_MODULES)
         -gencode=arch=compute_50,code=sm_50
         -gencode=arch=compute_52,code=sm_52
         -gencode=arch=compute_52,code=compute_52
+        -Xcompiler -fPIC
     )
     set(link_cudacoreneuron cudacoreneuron)
 endif()
@@ -297,8 +300,20 @@ if(ENABLE_REPORTINGLIB)
 endif()
 
 
+
+############################################################
+# Target libs
+############################################################
+
+#
+# The coreneuron lib (only internal mechanisms)
+#
+add_library(coreneuron ${COMPILE_LIBRARY_TYPE} ${coreneuron_all_headers} ${coreneuron_all_templates}
+                       ${coreneuron_all_c_files} ${cudacorenrn_objs} ${MOD2C_STDMECH_OUTPUTS})
+add_dependencies(coreneuron kinderiv)
+
 target_link_libraries(coreneuron ${MPI_CXX_LIBRARIES}
-                      ${link_reportinglib} ${link_cudacoreneuron} ${CUDA_LIBRARIES} )
+                      ${link_reportinglib} ${link_cudacoreneuron} ${CUDA_LIBRARIES})
 
 set_target_properties(coreneuron PROPERTIES
                       VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}
@@ -315,31 +330,53 @@ set(CORENRN_LINK_LIBS ${CORENRN_LINK_LIBS} PARENT_SCOPE)
 set(CORENRN_OPTMECH_MODS "${MOD2C_OPTMECH_MODS}" PARENT_SCOPE)
 
 
-install(TARGETS coreneuron
+# The scopmath lib - should not contain dimplic
+add_library(scopmath STATIC ${coreneuron_all_headers} ${scopmath_c_files})
+set_target_properties(scopmath PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+#
+# The "complete" lib (coreneuron + opt mechs)
+#
+set(ENGINEMECH_C "mech/enginemech.cpp")
+add_library(corenrnmech ${COMPILE_LIBRARY_TYPE} ${coreneuron_all_headers} ${ENGINEMECH_C} ${ADDITIONAL_MECH_C_FILES})
+add_dependencies(corenrnmech kinderiv)
+
+# The mechanism registration function will be always defined (at least for halfgap)
+target_compile_definitions(corenrnmech PUBLIC -DADDITIONAL_MECHS)
+
+# Public link interface (default), so that end binary links with all, even if they'r static
+target_link_libraries(corenrnmech scopmath coreneuron)
+
+
+#########################################################
+# INSTALL
+#########################################################
+
+install(TARGETS coreneuron corenrnmech ${link_cudacoreneuron}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
-install(FILES "engine.h"
+install(FILES "engine.h" "enginemech.h"
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/coreneuron)
-
-if(ENABLE_HEADER_INSTALL)
-    install(DIRECTORY .
-            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/coreneuron
-            FILES_MATCHING PATTERN "*.h*" PATTERN "*.ipp")
-
-    install(FILES ${KINDERIV_PY}
-            DESTINATION ${CMAKE_INSTALL_DATADIR}/coreneuron)
-
-    install(FILES ${MOD_FUNC_C_PL}
-            DESTINATION ${CMAKE_INSTALL_DATADIR}/coreneuron)
-
-    install(DIRECTORY "scopmath_core"
-            DESTINATION ${CMAKE_INSTALL_DATADIR}/coreneuron
-            FILES_MATCHING PATTERN "dimplic.cpp")
-endif()
 
 install(PROGRAMS ${MOD2C_BINARY}
         DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 install(FILES ${MOD2C_UNITS}
         DESTINATION ${CMAKE_INSTALL_DATADIR}/mod2c)
+
+
+if(ENABLE_HEADER_INSTALL)
+    install(DIRECTORY .
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/coreneuron
+            FILES_MATCHING PATTERN "*.h*" PATTERN "*.ipp")
+
+    install(FILES ${KINDERIV_PY} ${MOD_FUNC_C_PL} ${DIMPLIC_C} ${ENGINEMECH_C}
+            DESTINATION ${CMAKE_INSTALL_DATADIR}/coreneuron)
+
+    install(TARGETS scopmath
+            DESTINATION ${CMAKE_INSTALL_DATADIR}/coreneuron)
+
+    install(FILES ${MOD2C_OPTMECH_OUTPUTS}
+            DESTINATION ${CMAKE_INSTALL_DATADIR}/mod2c)
+endif()
