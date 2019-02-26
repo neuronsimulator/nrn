@@ -15,9 +15,10 @@ AST tree nodes.
 
 import sys
 import yaml
+
 from argument import Argument
 from nodes import Node
-from node_info import *
+import node_info
 
 
 class LanguageParser:
@@ -27,17 +28,16 @@ class LanguageParser:
         self.filename = filename
         self.debug = debug
 
-    @classmethod
-    def is_token(self, name):
+    @staticmethod
+    def is_token(name):
         """check if the name (i.e. class) is a token type in lexer
 
         Lexims returned from Lexer have position and hence token object.
         Return True if this node is returned by lexer otherwise False
         """
-        if name in LEXER_DATA_TYPES or name in SYMBOL_BLOCK_TYPES or name in ADDITIONAL_TOKEN_BLOCKS:
-            return True
-        else:
-            return False
+        return (name in node_info.LEXER_DATA_TYPES or
+                name in node_info.SYMBOL_BLOCK_TYPES or
+                name in node_info.ADDITIONAL_TOKEN_BLOCKS)
 
     def parse_child_rule(self, child):
         """parse child specification and return argument as properties
@@ -58,7 +58,6 @@ class LanguageParser:
 
         # type i.e. class of the variable
         args.class_name = properties['type']
-
 
         if self.debug:
             print(('Child {}, {}'.format(args.varname, args.class_name)))
@@ -125,7 +124,6 @@ class LanguageParser:
 
         return args
 
-
     def parse_yaml_rules(self, nodelist, base_class=None):
         abstract_nodes = []
         nodes = []
@@ -148,7 +146,6 @@ class LanguageParser:
                 # classes like AST which don't have base class
                 # are not added (we print AST class separately)
                 if base_class:
-
                     args = Argument()
                     args.base_class = base_class
                     args.class_name = class_name
@@ -203,8 +200,7 @@ class LanguageParser:
         with open(self.filename, 'r') as stream:
             try:
                 rules = yaml.load(stream)
-                # abstract nodes are not used though
-                abstract_nodes, nodes = self.parse_yaml_rules(rules)
+                _, nodes = self.parse_yaml_rules(rules)
             except yaml.YAMLError as e:
                 print(("Error while parsing YAML definition file {0} : {1}".format(self.filename, e.strerror)))
                 sys.exit(1)

@@ -10,7 +10,6 @@ import filecmp
 import logging
 import os
 from pathlib import Path
-import shlex
 import shutil
 import subprocess
 import tempfile
