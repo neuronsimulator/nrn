@@ -69,7 +69,7 @@ void BBSDirectServer::handle1(int size, int tag, int cid) {
 	send = nil;
 	recv = nrnmpi_newbuf(size);
 	nrnmpi_ref(recv);
-	nrnmpi_bbsrecv(cid, recv);
+	tag = nrnmpi_bbsrecv(cid, recv);
 	++bbs_msg_cnt_;
 	if (size > 0) {
 		nrnmpi_upkbegin(recv);

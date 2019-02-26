@@ -2,14 +2,6 @@
 #define bbslsrv2_h
 
 #include <InterViews/resource.h>
-#include <pvm3.h>
-
-class PvmMessageList;
-class PvmPendingList;
-class PvmWorkList;
-class PvmReadyList;
-class PvmLookingToDoList;
-class PvmResultList;
 
 extern "C" {
 	void bbs_handle();
@@ -40,13 +32,6 @@ public:
 private:
 	void add_looking_todo(int cid);
 private:
-	PvmMessageList* messages_;
-	PvmPendingList* pending_;
-	PvmWorkList* work_;
-	PvmLookingToDoList* looking_todo_;
-	PvmReadyList* todo_;
-	PvmResultList* results_;
-	PvmLookingToDoList* send_context_;
 	int next_id_;
 	int context_buf_;
 	int remaining_context_cnt_;

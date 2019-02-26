@@ -250,6 +250,7 @@ int BBSClient::take_todo() {
 	while((type = get(0, TAKE_TODO)) == CONTEXT) {
 		upkbegin();
 		upkint(); // throw away userid
+		upkint(); // throw away info in reserved second slot for worker_id
 #if debug
 printf("%d execute context\n", nrnmpi_myid_bbs);
 fflush(stdout);

@@ -124,6 +124,7 @@ static int submit_help(OcBBS* bbs) {
 	}else{
 		bbs->pkint((id = --bbs->next_local_));
 	}
+        bbs->pkint(0); // space for working_id
 	if (ifarg(i+1)) {
 #if 1
 		int argtypes = 0;
@@ -1292,6 +1293,7 @@ void BBSImpl::return_args(int id) {
 	char* s;
 //printf("BBSImpl::return_args(%d):\n", id);
 	i = upkint(); // userid
+	int wid = upkint();
 	int style = upkint();
 //printf("message userid=%d style=%d\n", i, style);
 	switch (style) {

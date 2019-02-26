@@ -1,6 +1,6 @@
 from neuron import h
+h.nrnmpi_init()
 pc = h.ParallelContext()
-pc.mpi_init()
 
 id = int(pc.id())
 nhost = int(pc.nhost())
