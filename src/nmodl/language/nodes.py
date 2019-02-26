@@ -115,10 +115,6 @@ class BaseNode:
         return self.class_name == node_info.BOOLEAN_NODE
 
     @property
-    def is_identifier_node(self):
-        return self.class_name == node_info.IDENTIFIER_NODE
-
-    @property
     def is_name_node(self):
         return self.class_name == node_info.NAME_NODE
 
@@ -225,6 +221,12 @@ class ChildNode(BaseNode):
         reference = "" if self.is_base_type_node else "&&"
         return f"void {setter_method}({setter_type}{reference} {self.varname}) {{ this->{self.varname} = {self.varname}; }}"
 
+    def __repr__(self):
+        return "ChildNode(class_name='{}', nmodl_name='{}')".format(
+            self.class_name, self.nmodl_name)
+
+    __str__ = __repr__
+
 
 class Node(BaseNode):
     """represent a class for every rule in language specification"""
@@ -298,21 +300,13 @@ class Node(BaseNode):
         :return: True if need to print visit method for node in symtabjsonvisitor
                  otherwise False
         """
-        method_required = False
-
-        if self.has_children():
-
-            if(self.class_name in node_info.SYMBOL_VAR_TYPES or
-               self.class_name in node_info.SYMBOL_BLOCK_TYPES):
-                method_required = True
-
-            if self.is_program_node or self.has_parent_block_node():
-                method_required = True
-
-            if self.class_name in node_info.SYMBOL_TABLE_HELPER_NODES:
-                method_required = True
-
-        return method_required
+        return (self.has_children() and
+                (self.is_symbol_var_node or
+                 self.is_symbol_block_node or
+                 self.is_symbol_helper_node or
+                 self.is_program_node or
+                 self.has_parent_block_node()
+                 ))
 
     @property
     def is_base_class_number_node(self):
@@ -383,3 +377,9 @@ class Node(BaseNode):
     @property
     def non_base_members(self):
         return [child for child in self.children if not child.is_base_type_node]
+
+    def __repr__(self):
+        return "Node(class_name='{}', base_class='{}', nmodl_name='{}')".format(
+            self.class_name, self.base_class, self.nmodl_name)
+
+    __str__ = __repr__
