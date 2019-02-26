@@ -12,9 +12,10 @@ in language definition file. Each member variable of Node
 is represented by ChildNode.
 """
 
-from node_info import *
 import textwrap
-from utils import *
+
+import node_info
+from utils import to_snake_case
 
 
 class BaseNode:
@@ -32,27 +33,27 @@ class BaseNode:
         self.is_abstract = False
 
     def __lt__(self, other):
-        return (self.class_name < other.class_name)
+        return self.class_name < other.class_name
 
     def get_data_type_name(self):
         """ return type name for the node """
-        return DATA_TYPES[self.class_name]
+        return node_info.DATA_TYPES[self.class_name]
 
     @property
     def is_statement_block_node(self):
-        return self.class_name == STATEMENT_BLOCK_NODE
+        return self.class_name == node_info.STATEMENT_BLOCK_NODE
 
     @property
     def is_statement_node(self):
-        return self.class_name in STATEMENT_TYPES
+        return self.class_name in node_info.STATEMENT_TYPES
 
     @property
     def is_global_block_node(self):
-        return self.class_name in GLOBAL_BLOCKS
+        return self.class_name in node_info.GLOBAL_BLOCKS
 
     @property
     def is_prime_node(self):
-        return self.class_name == PRIME_NAME_NODE
+        return self.class_name == node_info.PRIME_NAME_NODE
 
     @property
     def is_program_node(self):
@@ -60,7 +61,7 @@ class BaseNode:
         check if current node is main program container node
         :return: True if main program block otherwise False
         """
-        return self.class_name == PROGRAM_BLOCK
+        return self.class_name == node_info.PROGRAM_BLOCK
 
     @property
     def is_block_node(self):
@@ -71,73 +72,73 @@ class BaseNode:
 
         :return: True or False
         """
-        return self.class_name in BLOCK_TYPES
+        return self.class_name in node_info.BLOCK_TYPES
 
     @property
     def is_unit_block(self):
-        return self.class_name == UNIT_BLOCK
+        return self.class_name == node_info.UNIT_BLOCK
 
     @property
     def is_data_type_node(self):
-        return self.class_name in DATA_TYPES
+        return self.class_name in node_info.DATA_TYPES
 
     @property
     def is_symbol_var_node(self):
-        return self.class_name in SYMBOL_VAR_TYPES
+        return self.class_name in node_info.SYMBOL_VAR_TYPES
 
     @property
     def is_symbol_helper_node(self):
-        return self.class_name in SYMBOL_TABLE_HELPER_NODES
+        return self.class_name in node_info.SYMBOL_TABLE_HELPER_NODES
 
     @property
     def is_symbol_block_node(self):
-        return self.class_name in SYMBOL_BLOCK_TYPES
+        return self.class_name in node_info.SYMBOL_BLOCK_TYPES
 
     @property
     def is_base_type_node(self):
-        return self.class_name in BASE_TYPES
+        return self.class_name in node_info.BASE_TYPES
 
     @property
     def is_string_node(self):
-        return self.class_name == STRING_NODE
+        return self.class_name == node_info.STRING_NODE
 
     @property
     def is_integer_node(self):
-        return self.class_name == INTEGER_NODE
+        return self.class_name == node_info.INTEGER_NODE
 
     @property
     def is_number_node(self):
-        return self.class_name == NUMBER_NODE
+        return self.class_name == node_info.NUMBER_NODE
 
     @property
     def is_boolean_node(self):
-        return self.class_name == BOOLEAN_NODE
+        return self.class_name == node_info.BOOLEAN_NODE
 
     @property
     def is_identifier_node(self):
-        return self.class_name == IDENTIFIER_NODE
+        return self.class_name == node_info.IDENTIFIER_NODE
 
     @property
     def is_name_node(self):
-        return self.class_name == NAME_NODE
+        return self.class_name == node_info.NAME_NODE
 
     @property
     def is_enum_node(self):
-        data_type = DATA_TYPES[self.class_name]
-        return data_type in ENUM_BASE_TYPES
+        data_type = node_info.DATA_TYPES[self.class_name]
+        return data_type in node_info.ENUM_BASE_TYPES
 
     @property
     def is_pointer_node(self):
-        return not (self.class_name in PTR_EXCLUDE_TYPES or
+        return not (self.class_name in node_info.PTR_EXCLUDE_TYPES or
                     self.is_base_type_node)
 
     @property
     def is_ptr_excluded_node(self):
-        return self.class_name in PTR_EXCLUDE_TYPES
+        return self.class_name in node_info.PTR_EXCLUDE_TYPES
 
     @property
     def requires_default_constructor(self):
-        return (self.class_name in LEXER_DATA_TYPES or
+        return (self.class_name in node_info.LEXER_DATA_TYPES or
                 self.is_program_node or
                 self.is_ptr_excluded_node)
 
@@ -257,14 +258,14 @@ class Node(BaseNode):
         Check if node is derived from BASE_BLOCK
         :return: True / False
         """
-        return self.base_class == BASE_BLOCK
+        return self.base_class == node_info.BASE_BLOCK
 
     def has_parent_block_node(self):
         """
         check is base or parent is structured base block
         :return: True if parent is BASE_BLOCK otherwise False
         """
-        return self.base_class == BASE_BLOCK
+        return self.base_class == node_info.BASE_BLOCK
 
     @property
     def is_base_block_node(self):
@@ -272,7 +273,7 @@ class Node(BaseNode):
         check if node is Block
         :return: True if node type/name is BASE_BLOCK
         """
-        return self.class_name == BASE_BLOCK
+        return self.class_name == node_info.BASE_BLOCK
 
     @property
     def is_symtab_needed(self):
@@ -301,13 +302,14 @@ class Node(BaseNode):
 
         if self.has_children():
 
-            if self.class_name in SYMBOL_VAR_TYPES or self.class_name in SYMBOL_BLOCK_TYPES:
+            if(self.class_name in node_info.SYMBOL_VAR_TYPES or
+               self.class_name in node_info.SYMBOL_BLOCK_TYPES):
                 method_required = True
 
             if self.is_program_node or self.has_parent_block_node():
                 method_required = True
 
-            if self.class_name in SYMBOL_TABLE_HELPER_NODES:
+            if self.class_name in node_info.SYMBOL_TABLE_HELPER_NODES:
                 method_required = True
 
         return method_required
@@ -317,7 +319,7 @@ class Node(BaseNode):
         """
         Check if node is of type Number
         """
-        return self.base_class == NUMBER_NODE
+        return self.base_class == node_info.NUMBER_NODE
 
     def ctor_declaration(self):
         args = [f'{c.get_typename()} {c.varname}' for c in self.children]

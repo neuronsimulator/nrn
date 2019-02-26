@@ -11,9 +11,9 @@ While generating ast and visitors we need to lookup for base data types,
 nmodl blocks defining variables, nmodl constructs that define variables
 etc. These all data types are defined in this file.
 
-\todo : Other way is to add extra attributes to YAML language definitions.
+TODO: Other way is to add extra attributes to YAML language definitions.
 YAML will  become more verbose but advantage would be that the YAML will be
-self sufficien, single definition file instead of hard-coded names here.
+self sufficient, single definition file instead of hard-coded names here.
 We should properties like is_enum, data_type, is_symbol, is_global etc.
 """
 
@@ -103,12 +103,12 @@ GLOBAL_BLOCKS = ["NeuronBlock",
 
 # when translating back to nmodl, we need print each statement
 # to new line. Those nodes are are used from this list.
-STATEMENT_TYPES=["Statement",
-                 "IndependentDef",
-                 "DependentDef",
-                 "ParamAssign",
-                 "ConstantStatement",
-                 "Stepped"]
+STATEMENT_TYPES = ["Statement",
+                   "IndependentDef",
+                   "DependentDef",
+                   "ParamAssign",
+                   "ConstantStatement",
+                   "Stepped"]
 
 # data types which have token as an argument to the constructor
 LEXER_DATA_TYPES = ["Name",
@@ -136,7 +136,7 @@ BLOCK_TYPES.remove("NeuronBlock")
 PTR_EXCLUDE_TYPES = ["BinaryOperator", "UnaryOperator", "ReactionOperator"]
 
 # these node names are explicitly added because they are used in ast/visitor
-# printer classes. In otder to avoid hardcoding in the printer functions, they
+# printer classes. In order to avoid hardcoding in the printer functions, they
 # are defined here.
 PROGRAM_BLOCK = "Program"
 BASE_BLOCK = "Block"
