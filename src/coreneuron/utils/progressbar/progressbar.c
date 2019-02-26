@@ -12,6 +12,7 @@
 
 #include <assert.h>
 #include <limits.h>
+#include <unistd.h>
 #include "progressbar.h"
 
 ///  How wide we assume the screen is if termcap fails.
@@ -32,6 +33,12 @@ enum { WHITESPACE_LENGTH = 2 };
 /// The amount of width taken up by the border of the bar component.
 enum { BAR_BORDER_WIDTH = 2 };
 
+/// The maximum number of bar redraws (to avoid frequent output in long runs)
+enum { BAR_DRAW_COUNT_MAX = 500 };
+
+enum { BAR_DRAW_INTERVAL = 1,
+       BAR_DRAW_INTERVAL_NOTTY = 5 };
+
 /// Models a duration of time broken into hour/minute/second components. The number of seconds
 /// should be less than the
 /// number of seconds in one minute, and the number of minutes should be less than the number of
@@ -43,6 +50,7 @@ typedef struct {
 } progressbar_time_components;
 
 static void progressbar_draw(const progressbar* bar);
+static int progressbar_remaining_seconds(const progressbar* bar);
 
 /**
  * Create a new progress bar with the specified label, max number of steps, and format string.
@@ -57,6 +65,7 @@ progressbar* progressbar_new_with_format(const char* label, unsigned long max, c
 
     new->max = max;
     new->value = 0;
+    new->draw_time_interval = isatty(STDOUT_FILENO)? BAR_DRAW_INTERVAL : BAR_DRAW_INTERVAL_NOTTY;
     new->t = 0;
     new->start = time(NULL);
     assert(3 == strlen(format) && "format must be 3 characters in length");
@@ -66,6 +75,8 @@ progressbar* progressbar_new_with_format(const char* label, unsigned long max, c
 
     progressbar_update_label(new, label);
     progressbar_draw(new);
+    new->prev_t = difftime(time(NULL), new->start);
+    new->drawn_count = 1;
 
     return new;
 }
@@ -90,11 +101,45 @@ void progressbar_free(progressbar* bar) {
 
 /**
  * Increment an existing progressbar by `value` steps.
+ * Additionally issues a redraw in case a certain time interval has elapsed (min: 1sec)
+ * Reasons for a larger interval are:
+ *  - Stdout is not TTY
+ *  - Respect BAR_DRAW_COUNT_MAX
  */
 void progressbar_update(progressbar* bar, unsigned long value, double t) {
     bar->value = value;
     bar->t = t;
+    int sim_time = difftime(time(NULL), bar->start);
+
+    // If there is not enough time passed to redraw the progress bar return
+    if ((sim_time - bar->prev_t) < bar->draw_time_interval) {
+        return;
+    }
+
     progressbar_draw(bar);
+
+    bar->drawn_count++;
+    bar->prev_t = sim_time;
+
+    if (bar->drawn_count >= BAR_DRAW_COUNT_MAX || sim_time < 15) {
+        // Dont change the interval after the limit. Simulation should be over any moment and
+        // avoid the calc of draw_time_interval which could raise DIV/0
+        // Also, dont do it the first 15sec to avoid really bad estimates which could potentially
+        // delay a better estimate too far away in the future.
+        return;
+    }
+
+    // Sample ETA to calculate the next interval until the redraw of the progressbar
+    int eta_s = progressbar_remaining_seconds(bar);
+    bar->draw_time_interval = eta_s / (BAR_DRAW_COUNT_MAX - bar->drawn_count);
+
+    if (bar->draw_time_interval < BAR_DRAW_INTERVAL_NOTTY) {
+        bar->draw_time_interval =
+            isatty(STDOUT_FILENO)
+                ? ((bar->draw_time_interval < BAR_DRAW_INTERVAL)? BAR_DRAW_INTERVAL
+                                                                : bar->draw_time_interval)
+                : BAR_DRAW_INTERVAL_NOTTY;
+    }
 }
 
 /**
@@ -191,6 +236,7 @@ static void progressbar_draw(const progressbar* bar) {
     fputc(' ', stdout);
     fprintf(stdout, ETA_FORMAT, bar->t, eta.hours, eta.minutes, eta.seconds);
     fputc('\r', stdout);
+    fflush(stdout);
 }
 
 /**

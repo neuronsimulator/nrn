@@ -974,7 +974,7 @@ void nrn_cleanup(bool clean_ion_global_map) {
             }
 
             if (ml->_thread) {
-                free (ml->_thread);
+                free(ml->_thread);
                 ml->_thread = NULL;
             }
 

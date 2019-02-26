@@ -72,7 +72,7 @@ namespace coreneuron {
 
 #define nparm 5
 static const char* mechanism[] = {/*just a template*/
-                            "0", "na_ion", "ena", "nao", "nai", 0, "ina", "dina_dv_", 0, 0};
+                                  "0", "na_ion", "ena", "nao", "nai", 0, "ina", "dina_dv_", 0, 0};
 
 void nrn_init_ion(NrnThread*, Memb_list*, int);
 void nrn_alloc_ion(double*, Datum*, int);
