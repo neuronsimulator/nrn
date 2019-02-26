@@ -18,7 +18,7 @@ We should properties like is_enum, data_type, is_symbol, is_global etc.
 """
 
 # yapf: disable
-BASE_TYPES = ["short",
+BASE_TYPES = {"short",
               "int",
               "float",
               "double",
@@ -29,16 +29,18 @@ BASE_TYPES = ["short",
               "FirstLastType",
               "QueueType",
               "BAType",
-              "UnitStateType"]
+              "UnitStateType",
+              }
 
 # base types which are enums
-ENUM_BASE_TYPES = ["BinaryOp",
+ENUM_BASE_TYPES = {"BinaryOp",
                    "UnaryOp",
                    "ReactionOp",
                    "FirstLastType",
                    "QueueType",
                    "BAType",
-                   "UnitStateType"]
+                   "UnitStateType",
+                   }
 
 # data types and then their return types
 DATA_TYPES = {"Boolean": "bool",
@@ -52,10 +54,11 @@ DATA_TYPES = {"Boolean": "bool",
               "UnitState": "UnitStateType",
               "BABlockType": "BAType",
               "QueueExpressionType": "QueueType",
-              "FirstLastTypeIndex": "FirstLastType"}
+              "FirstLastTypeIndex": "FirstLastType",
+              }
 
 # nodes which will go into symbol table
-SYMBOL_VAR_TYPES = ["LocalVar",
+SYMBOL_VAR_TYPES = {"LocalVar",
                     "ParamAssign",
                     "Argument",
                     "DependentDef",
@@ -73,12 +76,13 @@ SYMBOL_VAR_TYPES = ["LocalVar",
                     "BbcorePointerVar",
                     "ExternVar",
                     "PrimeName",
-                    "ConstantVar"]
+                    "ConstantVar",
+                    }
 
 # block nodes which will go into symbol table
 # these blocks doesn't define global variables but they
 # use variables from other global variables
-SYMBOL_BLOCK_TYPES = ["FunctionBlock",
+SYMBOL_BLOCK_TYPES = {"FunctionBlock",
                       "ProcedureBlock",
                       "DerivativeBlock",
                       "LinearBlock",
@@ -86,54 +90,63 @@ SYMBOL_BLOCK_TYPES = ["FunctionBlock",
                       "DiscreteBlock",
                       "PartialBlock",
                       "KineticBlock",
-                      "FunctionTableBlock"]
+                      "FunctionTableBlock"
+                      }
 
 # nodes which need extra handling to augument symbol table
-SYMBOL_TABLE_HELPER_NODES = ["TableStatement"]
+SYMBOL_TABLE_HELPER_NODES = {"TableStatement",
+                             }
 
 # blocks defining global variables
-GLOBAL_BLOCKS = ["NeuronBlock",
+GLOBAL_BLOCKS = {"NeuronBlock",
                  "ParamBlock",
                  "UnitBlock",
                  "StepBlock",
                  "IndependentBlock",
                  "DependentBlock",
                  "StateBlock",
-                 "ConstantBlock"]
+                 "ConstantBlock",
+                 }
 
 # when translating back to nmodl, we need print each statement
 # to new line. Those nodes are are used from this list.
-STATEMENT_TYPES = ["Statement",
+STATEMENT_TYPES = {"Statement",
                    "IndependentDef",
                    "DependentDef",
                    "ParamAssign",
                    "ConstantStatement",
-                   "Stepped"]
+                   "Stepped",
+                   }
 
 # data types which have token as an argument to the constructor
-LEXER_DATA_TYPES = ["Name",
+LEXER_DATA_TYPES = {"Name",
                     "PrimeName",
                     "Integer",
                     "Double",
                     "String",
-                    "FactorDef"]
+                    "FactorDef",
+                    }
 
 # while printing symbol table we needed setToken() method for StatementBlock and
 # hence need to add this
-ADDITIONAL_TOKEN_BLOCKS = ["StatementBlock"]
+ADDITIONAL_TOKEN_BLOCKS = {"StatementBlock",
+                           }
 
 # for printing NMODL, we need to know which nodes are block types.
 # TODO: NEURON block is removed because it has internal statement block
 # and we don't want to print extra brace block for NMODL
 # We are removing NeuronBlock because it has statement block which
 # prints braces already.
-BLOCK_TYPES = (GLOBAL_BLOCKS + ADDITIONAL_TOKEN_BLOCKS)
+BLOCK_TYPES = GLOBAL_BLOCKS | ADDITIONAL_TOKEN_BLOCKS
 BLOCK_TYPES.remove("NeuronBlock")
 
 # Note that these are nodes which are not of type pointer in AST.
 # This also means that they can't be optional because they will appear
 # as value type in AST.
-PTR_EXCLUDE_TYPES = ["BinaryOperator", "UnaryOperator", "ReactionOperator"]
+PTR_EXCLUDE_TYPES = {"BinaryOperator",
+                     "UnaryOperator",
+                     "ReactionOperator",
+                     }
 
 # these node names are explicitly added because they are used in ast/visitor
 # printer classes. In order to avoid hardcoding in the printer functions, they

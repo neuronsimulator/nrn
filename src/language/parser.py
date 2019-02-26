@@ -45,22 +45,17 @@ class LanguageParser:
         Child specification has additional option like list, optional,
         getName method etc.
         """
-
         # there is only one key and it has one value
-        varname = next(iter(list(child.keys())))
-        properties = next(iter(list(child.values())))
+        varname, properties = next(iter(child.items()))
 
-        # arguments holder for creating tree node
         args = Argument()
-
-        # node of the variable
         args.varname = varname
 
         # type i.e. class of the variable
         args.class_name = properties['type']
 
         if self.debug:
-            print(('Child {}, {}'.format(args.varname, args.class_name)))
+            print('Child {}, {}'.format(args.varname, args.class_name))
 
         # if there is add method for member in the class
         if 'add' in properties:
@@ -130,9 +125,12 @@ class LanguageParser:
 
         for node in nodelist:
             # name of the ast class and it's properties as dictionary
-            class_name = next(iter(list(node.keys())))
-            properties = next(iter(list(node.values())))
-            url = properties['url'] if 'url' in properties else None
+            class_name, properties = next(iter(node.items()))
+
+            args = Argument()
+            args.url = properties['url'] if 'url' in properties else None
+            args.class_name = class_name
+            args.description = properties['description']
 
             # yaml file has abstract classes and their subclasses with children as a property
             if 'children' in properties:
@@ -145,45 +143,35 @@ class LanguageParser:
 
                 # classes like AST which don't have base class
                 # are not added (we print AST class separately)
-                if base_class:
-                    args = Argument()
+                if base_class is not None:
                     args.base_class = base_class
-                    args.class_name = class_name
-                    args.description = properties['description']
-                    args.url = url
                     node = Node(args)
                     abstract_nodes.append(node)
                     nodes.insert(0, node)
                     if self.debug:
-                        print(('Abstract {}, {}'.format(base_class, class_name)))
+                        print('Abstract {}'.format(node))
             else:
-                # name of the node while printing back to NMODL
-                nmodl_name = properties['nmodl'] if 'nmodl' in properties else None
+                args.base_class = base_class if base_class else 'AST'
 
                 # check if we need token for the node
                 # todo : we will have token for every node
-                has_token = LanguageParser.is_token(class_name)
+                args.has_token = LanguageParser.is_token(class_name)
 
-                args = Argument()
-                args.base_class = base_class if base_class else 'AST'
-                args.class_name = class_name
-                args.description = properties['description']
-                args.nmodl_name = nmodl_name
-                args.has_token = has_token
-                args.url = url
+                # name of the node while printing back to NMODL
+                args.nmodl_name = properties['nmodl'] if 'nmodl' in properties else None
 
                 # create tree node and add to the list
                 node = Node(args)
                 nodes.append(node)
 
                 if self.debug:
-                    print(('Class {}, {}, {}'.format(base_class, class_name, nmodl_name)))
+                    print('Class {}'.format(node))
 
                 # now process all children specification
-                childs = properties['members'] if 'members' in properties else []
-                for child in childs:
-                    args = self.parse_child_rule(child)
-                    node.add_child(args)
+                if 'members' in properties:
+                    for child in properties['members']:
+                        args = self.parse_child_rule(child)
+                        node.add_child(args)
 
         # update the abstract nodes
         for absnode in abstract_nodes:
@@ -202,7 +190,8 @@ class LanguageParser:
                 rules = yaml.load(stream)
                 _, nodes = self.parse_yaml_rules(rules)
             except yaml.YAMLError as e:
-                print(("Error while parsing YAML definition file {0} : {1}".format(self.filename, e.strerror)))
+                print("Error while parsing YAML definition file {0} : {1}".format(
+                    self.filename, e.strerror))
                 sys.exit(1)
 
         return nodes
