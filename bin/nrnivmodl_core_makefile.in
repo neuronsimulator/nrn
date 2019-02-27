@@ -66,7 +66,6 @@ DESTDIR_RPATH = $(if $(DESTDIR),$(DESTDIR)/lib,$(_ORIGIN))
 
 C_RESET := \033[0m
 C_GREEN := \033[32m
-ECHO := $(if $(filter Darwin,$(OS_NAME)),echo,echo -e)
 
 
 # ======== MAIN BUILD RULES ============
@@ -74,37 +73,37 @@ ECHO := $(if $(filter Darwin,$(OS_NAME)),echo,echo -e)
 # Take the main and link with nrnmech.
 # RPATH is set for DESTDIR_RPATH and coreneuron lib
 $(special): $(coremech_lib)
-	@$(ECHO) " => $(C_GREEN)LINKING$(C_RESET) executable $(special) "
+	@printf " => $(C_GREEN)LINKING$(C_RESET) executable $(special)\n"
 	$(CXX_LINK_EXE) -I $(incdir) $(datadir)/coreneuron.cpp -o $(special) \
 	  -L $(OUTPUT) -l$(coremech_libname) $(CORENRNLIB_FLAGS) -Wl,-rpath,'$(DESTDIR_RPATH)' -Wl,-rpath,$(libdir) $(LDFLAGS)
 
 
 $(coremech_lib): $(mod_func_o) $(dimplic_o) $(mod_objs)
-	@$(ECHO) " => $(C_GREEN)LINKING$(C_RESET) library $(coremech_lib) Mod files: $(mod_files) (+ $(OPTMODS))"
+	@printf " => $(C_GREEN)LINKING$(C_RESET) library $(coremech_lib) Mod files: $(mod_files) (+ $(OPTMODS))\n"
 	$(CXX_LINK_SHARED) -I $(incdir) -DADDITIONAL_MECHS $(datadir)/enginemech.cpp -o ${coremech_lib} \
 	  $(mod_func_o) $(dimplic_o) $(mod_objs) $(datadir)/libscopmath.a $(CORENRNLIB_FLAGS) -Wl,-rpath,$(libdir) $(LDFLAGS)
 
 
 # Generic build cpp->o. Need PIC for shared lib
 $(OBJS_DIR)/%.o: $(MODC_DIR)/%.cpp $(kinderiv_h) | $(OBJS_DIR)
-	@$(ECHO) " -> $(C_GREEN)Compiling$(C_RESET) $<"
+	@printf " -> $(C_GREEN)Compiling$(C_RESET) $<\n"
 	$(CXXCOMPILE) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c $< -o $@
 
 
 # Build cpp files with mod2c
 $(MODC_DIR)/%.cpp: $(MODS_PATH)/%.mod | $(MODC_DIR)
-	@$(ECHO) " -> $(C_GREEN)MOD2C$(C_RESET) $<"
+	@printf " -> $(C_GREEN)MOD2C$(C_RESET) $<\n"
 	MODLUNIT=$(datadir_mod2c)/nrnunits.lib \
 	  $(bindir)/mod2c_core $< -o $(MODC_DIR)/
 
 # If .mod doesnt exist attempt from previously built opt mods in shared/
 $(MODC_DIR)/%.cpp: $(datadir_mod2c)/%.cpp | $(MODC_DIR)
-	cp $< $@
+	ln -s $< $@
 
 
 # Mod registration. Compiled by generic rule. Dont overwrite if not changed
 $(mod_func_c): build_always | $(MODC_DIR)
-	@$(ECHO) " -> $(C_GREEN)Generating$(C_RESET) $(mod_func_c)"
+	@printf " -> $(C_GREEN)Generating$(C_RESET) $(mod_func_c)\n"
 	perl $(datadir)/mod_func.c.pl $(OPTMODS) $(mod_files) > $(mod_func_c).tmp
 	diff -q $(mod_func_c).tmp $(mod_func_c) || echo "Replacing mod_func.c" && mv $(mod_func_c).tmp $(mod_func_c)
 
@@ -112,7 +111,7 @@ $(mod_func_c): build_always | $(MODC_DIR)
 # Header to avoid function callbacks using function pointers
 # Move all mods to temp and bring back only those required
 $(kinderiv_h): $(modc_files) build_always | $(MODC_DIR)
-	@$(ECHO) " -> $(C_GREEN)Generating$(C_RESET) $(kinderiv_h)"
+	@printf " -> $(C_GREEN)Generating$(C_RESET) $(kinderiv_h)\n"
 	cd $(MODC_DIR) && mkdir -p _tmp &&	mv [^_]*.cpp _tmp/ && \
 	  mv $(addprefix _tmp/,$(notdir $(modc_files))) ./ || true
 	rm -rf $(MODC_DIR)/_tmp
@@ -120,7 +119,7 @@ $(kinderiv_h): $(modc_files) build_always | $(MODC_DIR)
 
 
 $(dimplic_c): $(dimplic_src) | $(MODC_DIR)
-	cp $(dimplic_src) $(dimplic_c)
+	ln -s $(dimplic_src) $(dimplic_c)
 
 
 install: $(special) $(coremech_lib)
