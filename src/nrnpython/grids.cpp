@@ -642,11 +642,11 @@ static int find_min_element_index(const int thread_sizes[]){
 void ICS_Grid_node::divide_x_work(){
     int i, j, k;
     //nodes in each thread. (work each thread has to do)
-    int nodes_per_thread[NUM_THREADS] = {0};
+    int* nodes_per_thread = (int*)calloc(NUM_THREADS, sizeof(int));
     //number of lines in each thread
-    int lines_per_thread[NUM_THREADS] = {0};
+    int* lines_per_thread = (int*)calloc(NUM_THREADS, sizeof(int));
     //To determine which index to put the start node and line length in thread_line_defs
-    int thread_idx_counter[NUM_THREADS] = {0};
+    int* thread_idx_counter = (int*)calloc(NUM_THREADS, sizeof(int));
     //To determine which thread array to put the start node and line length in thread_line_defs
     int line_thread_id[_x_lines_length / 2];
     //Array of NUM_THREADS arrays that hold the line defs for each thread
@@ -687,7 +687,6 @@ void ICS_Grid_node::divide_x_work(){
             ordered_line_def_counter++;
         }
     }
-
     //Set direction node and line start/stop indices
     //thread 0 start and stop
     ics_adi_dir_x->ordered_start_stop_indices[0] = 0; 
@@ -735,11 +734,11 @@ void ICS_Grid_node::divide_x_work(){
 void ICS_Grid_node::divide_y_work(){
     int i, j, k;
     //nodes in each thread. (work each thread has to do)
-    int nodes_per_thread[NUM_THREADS] = {0};
+    int* nodes_per_thread = (int*)calloc(NUM_THREADS, sizeof(int));
     //number of lines in each thread
-    int lines_per_thread[NUM_THREADS] = {0};
+    int* lines_per_thread = (int*)calloc(NUM_THREADS, sizeof(int));
     //To determine which index to put the start node and line length in thread_line_defs
-    int thread_idx_counter[NUM_THREADS] = {0};
+    int* thread_idx_counter = (int*)calloc(NUM_THREADS, sizeof(int));
     //To determine which thread array to put the start node and line length in thread_line_defs
     int line_thread_id[_y_lines_length / 2];
     //Array of NUM_THREADS arrays that hold the line defs for each thread
@@ -828,11 +827,11 @@ void ICS_Grid_node::divide_y_work(){
 void ICS_Grid_node::divide_z_work(){
     int i, j, k;
     //nodes in each thread. (work each thread has to do)
-    int nodes_per_thread[NUM_THREADS] = {0};
+    int* nodes_per_thread = (int*)calloc(NUM_THREADS, sizeof(int));
     //number of lines in each thread
-    int lines_per_thread[NUM_THREADS] = {0};
+    int* lines_per_thread = (int*)calloc(NUM_THREADS, sizeof(int));
     //To determine which index to put the start node and line length in thread_line_defs
-    int thread_idx_counter[NUM_THREADS] = {0};
+    int* thread_idx_counter = (int*)calloc(NUM_THREADS, sizeof(int));
     //To determine which thread array to put the start node and line length in thread_line_defs
     int line_thread_id[_z_lines_length / 2];
     //Array of NUM_THREADS arrays that hold the line defs for each thread
