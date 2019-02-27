@@ -15,9 +15,9 @@
 
 #if NRNMPI
 #include "nrnmpidec.h"
-#include "nrnmpi_impl.h"
 #include "mpispike.h"
 #include <mpi.h>
+#include "nrnmpi_impl.h"
 
 extern void nrnbbs_context_wait();
 
@@ -41,17 +41,17 @@ static void make_spike_type() {
 
 	block_lengths[0] = block_lengths[1] = 1;
 
-	MPI_Get_address(&s, &addresses[0]);
-	MPI_Get_address(&(s.gid), &addresses[1]);
-	MPI_Get_address(&(s.spiketime), &addresses[2]);
+	guard(MPI_Get_address(&s, &addresses[0]));
+	guard(MPI_Get_address(&(s.gid), &addresses[1]));
+	guard(MPI_Get_address(&(s.spiketime), &addresses[2]));
 
 	displacements[0] = addresses[1] - addresses[0];
 	displacements[1] = addresses[2] - addresses[0];
 
-	MPI_Type_create_struct(2, block_lengths, displacements, typelist, &spike_type);
-	MPI_Type_commit(&spike_type);
+	guard(MPI_Type_create_struct(2, block_lengths, displacements, typelist, &spike_type));
+	guard(MPI_Type_commit(&spike_type));
 
-	MPI_Op_create((MPI_User_function*)pgvts_op, 1, &mpi_pgvts_op);
+	guard(MPI_Op_create((MPI_User_function*)pgvts_op, 1, &mpi_pgvts_op));
 }
 
 void nrnmpi_spike_initialize() {
@@ -77,17 +77,17 @@ static void make_spikebuf_type() {
 	block_lengths[1] = nrn_spikebuf_size;
 	block_lengths[2] = nrn_spikebuf_size;
 
-	MPI_Address(&s, &addresses[0]);
-	MPI_Address(&(s.nspike), &addresses[1]);
-	MPI_Address(&(s.gid[0]), &addresses[2]);
-	MPI_Address(&(s.spiketime[0]), &addresses[3]);
+	guard(MPI_Address(&s, &addresses[0]));
+	guard(MPI_Address(&(s.nspike), &addresses[1]));
+	guard(MPI_Address(&(s.gid[0]), &addresses[2]));
+	guard(MPI_Address(&(s.spiketime[0]), &addresses[3]));
 
 	displacements[0] = addresses[1] - addresses[0];
 	displacements[1] = addresses[2] - addresses[0];
 	displacements[2] = addresses[3] - addresses[0];
 
-	MPI_Type_struct(3, block_lengths, displacements, typelist, &spikebuf_type);
-	MPI_Type_commit(&spikebuf_type);
+	guard(MPI_Type_struct(3, block_lengths, displacements, typelist, &spikebuf_type));
+	guard(MPI_Type_commit(&spikebuf_type));
 }
 #endif
 
@@ -103,7 +103,7 @@ int nrnmpi_spike_exchange() {
 	}
 	nrnbbs_context_wait();
 #if nrn_spikebuf_size == 0
-	MPI_Allgather(&nout_, 1, MPI_INT, nin_, 1, MPI_INT, nrnmpi_comm);
+	guard(MPI_Allgather(&nout_, 1, MPI_INT, nin_, 1, MPI_INT, nrnmpi_comm));
 	n = nin_[0];
 	for (i=1; i < np; ++i) {
 		displs[i] = n;
@@ -115,10 +115,10 @@ int nrnmpi_spike_exchange() {
 			free(spikein_);
 			spikein_ = (NRNMPI_Spike*)hoc_Emalloc(icapacity_ * sizeof(NRNMPI_Spike)); hoc_malchk();
 		}
-		MPI_Allgatherv(spikeout_, nout_, spike_type, spikein_, nin_, displs, spike_type, nrnmpi_comm);
+		guard(MPI_Allgatherv(spikeout_, nout_, spike_type, spikein_, nin_, displs, spike_type, nrnmpi_comm));
 	}
 #else
-	MPI_Allgather(spbufout_, 1, spikebuf_type, spbufin_, 1, spikebuf_type, nrnmpi_comm);
+	guard(MPI_Allgather(spbufout_, 1, spikebuf_type, spbufin_, 1, spikebuf_type, nrnmpi_comm));
 	novfl = 0;
 	n = spbufin_[0].nspike;
 	if (n > nrn_spikebuf_size) {
@@ -145,7 +145,7 @@ int nrnmpi_spike_exchange() {
 			spikein_ = (NRNMPI_Spike*)hoc_Emalloc(icapacity_ * sizeof(NRNMPI_Spike)); hoc_malchk();
 		}
 		n1 = (nout_ > nrn_spikebuf_size) ? nout_ - nrn_spikebuf_size : 0;
-		MPI_Allgatherv(spikeout_, n1, spike_type, spikein_, nin_, displs, spike_type, nrnmpi_comm);
+		guard(MPI_Allgatherv(spikeout_, n1, spike_type, spikein_, nin_, displs, spike_type, nrnmpi_comm));
 	}
 	ovfl_ = novfl;
 #endif
@@ -180,7 +180,7 @@ int nrnmpi_spike_exchange_compressed() {
 	}
 	nrnbbs_context_wait();
 
-	MPI_Allgather(spfixout_, ag_send_size_, MPI_BYTE, spfixin_, ag_send_size_, MPI_BYTE, nrnmpi_comm);
+	guard(MPI_Allgather(spfixout_, ag_send_size_, MPI_BYTE, spfixin_, ag_send_size_, MPI_BYTE, nrnmpi_comm));
 	novfl = 0;
 	ntot = 0;
 	bstot = 0;
@@ -213,7 +213,7 @@ int nrnmpi_spike_exchange_compressed() {
 		completely separate from the spfixin_ since the latter
 		dynamically changes its size during a run.
 		*/
-		MPI_Allgatherv(spfixout_ + ag_send_size_, bs, MPI_BYTE, spfixin_ovfl_, byteovfl, displs, MPI_BYTE, nrnmpi_comm);
+		guard(MPI_Allgatherv(spfixout_ + ag_send_size_, bs, MPI_BYTE, spfixin_ovfl_, byteovfl, displs, MPI_BYTE, nrnmpi_comm));
 	}
 	ovfl_ = novfl;
 	return ntot;
@@ -223,7 +223,7 @@ double nrnmpi_mindelay(double m) {
 	double result;
 	if (!nrnmpi_use) { return m; }
 	nrnbbs_context_wait();
-	MPI_Allreduce(&m, &result, 1, MPI_DOUBLE, MPI_MIN, nrnmpi_comm);
+	guard(MPI_Allreduce(&m, &result, 1, MPI_DOUBLE, MPI_MIN, nrnmpi_comm));
 	return result;
 }
 
@@ -231,118 +231,118 @@ int nrnmpi_int_allmax(int x) {
 	int result;
 	if (nrnmpi_numprocs < 2) { return x; }
 	nrnbbs_context_wait();
-	MPI_Allreduce(&x, &result, 1, MPI_INT, MPI_MAX, nrnmpi_comm);
+	guard(MPI_Allreduce(&x, &result, 1, MPI_INT, MPI_MAX, nrnmpi_comm));
 	return result;
 }
 
 extern void nrnmpi_int_gather(int* s, int* r, int cnt, int root) {
-	MPI_Gather(s, cnt, MPI_INT, r, cnt, MPI_INT, root, nrnmpi_comm);
+	guard(MPI_Gather(s, cnt, MPI_INT, r, cnt, MPI_INT, root, nrnmpi_comm));
 }
 
 extern void nrnmpi_int_gatherv(int* s, int scnt,
     int* r, int* rcnt, int* rdispl, int root) {
-	MPI_Gatherv(s, scnt, MPI_INT,
-		r, rcnt, rdispl, MPI_INT, root, nrnmpi_comm);
+	guard(MPI_Gatherv(s, scnt, MPI_INT,
+		r, rcnt, rdispl, MPI_INT, root, nrnmpi_comm));
 }
 
 extern void nrnmpi_char_gatherv(char* s, int scnt,
     char* r, int* rcnt, int* rdispl, int root) {
-	MPI_Gatherv(s, scnt, MPI_CHAR,
-		r, rcnt, rdispl, MPI_CHAR, root, nrnmpi_comm);
+	guard(MPI_Gatherv(s, scnt, MPI_CHAR,
+		r, rcnt, rdispl, MPI_CHAR, root, nrnmpi_comm));
 }
 
 extern void nrnmpi_int_scatter(int* s, int* r, int cnt, int root) {
-	MPI_Scatter(s, cnt, MPI_INT, r, cnt, MPI_INT, root, nrnmpi_comm);
+	guard(MPI_Scatter(s, cnt, MPI_INT, r, cnt, MPI_INT, root, nrnmpi_comm));
 }
 
 extern void nrnmpi_char_scatterv(char* s, int* scnt, int* sdispl, char* r, int rcnt, int root) {
-	MPI_Scatterv(s, scnt, sdispl, MPI_CHAR, r, rcnt, MPI_CHAR, root, nrnmpi_comm);
+	guard(MPI_Scatterv(s, scnt, sdispl, MPI_CHAR, r, rcnt, MPI_CHAR, root, nrnmpi_comm));
 }
 
 extern void nrnmpi_int_alltoall(int* s, int* r, int n) {
-	MPI_Alltoall(s, n, MPI_INT, r, n, MPI_INT, nrnmpi_comm);
+	guard(MPI_Alltoall(s, n, MPI_INT, r, n, MPI_INT, nrnmpi_comm));
 }
 
 extern void nrnmpi_int_alltoallv(int* s, int* scnt, int* sdispl,
     int* r, int* rcnt, int* rdispl) {
-	MPI_Alltoallv(s, scnt, sdispl, MPI_INT,
-		r, rcnt, rdispl, MPI_INT, nrnmpi_comm);
+	guard(MPI_Alltoallv(s, scnt, sdispl, MPI_INT,
+		r, rcnt, rdispl, MPI_INT, nrnmpi_comm));
 }
 
 extern void nrnmpi_long_alltoallv(int64_t* s, int* scnt, int* sdispl,
     int64_t* r, int* rcnt, int* rdispl) {
-	MPI_Alltoallv(s, scnt, sdispl, MPI_INT64_T,
-		r, rcnt, rdispl, MPI_INT64_T, nrnmpi_comm);
+	guard(MPI_Alltoallv(s, scnt, sdispl, MPI_INT64_T,
+		r, rcnt, rdispl, MPI_INT64_T, nrnmpi_comm));
 }
 
 extern void nrnmpi_dbl_alltoallv(double* s, int* scnt, int* sdispl,
     double* r, int* rcnt, int* rdispl) {
-	MPI_Alltoallv(s, scnt, sdispl, MPI_DOUBLE,
-		r, rcnt, rdispl, MPI_DOUBLE, nrnmpi_comm);
+	guard(MPI_Alltoallv(s, scnt, sdispl, MPI_DOUBLE,
+		r, rcnt, rdispl, MPI_DOUBLE, nrnmpi_comm));
 }
 
 extern void nrnmpi_char_alltoallv(char* s, int* scnt, int* sdispl,
     char* r, int* rcnt, int* rdispl) {
-	MPI_Alltoallv(s, scnt, sdispl, MPI_CHAR,
-		r, rcnt, rdispl, MPI_CHAR, nrnmpi_comm);
+	guard(MPI_Alltoallv(s, scnt, sdispl, MPI_CHAR,
+		r, rcnt, rdispl, MPI_CHAR, nrnmpi_comm));
 }
 
 /* following are for the partrans */
 
 void nrnmpi_int_allgather(int* s, int* r, int n) {
-	MPI_Allgather(s, n,  MPI_INT, r, n, MPI_INT, nrnmpi_comm);
+	guard(MPI_Allgather(s, n,  MPI_INT, r, n, MPI_INT, nrnmpi_comm));
 }
 
 void nrnmpi_int_allgather_inplace(int* srcdest, int n) {
-	MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, srcdest, n,  MPI_INT, nrnmpi_comm);
+	guard(MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, srcdest, n,  MPI_INT, nrnmpi_comm));
 }
 
 void nrnmpi_int_allgatherv(int* s, int* r, int* n, int* dspl) {
-	MPI_Allgatherv(s, n[nrnmpi_myid],  MPI_INT,
-		r, n, dspl, MPI_INT, nrnmpi_comm);
+	guard(MPI_Allgatherv(s, n[nrnmpi_myid],  MPI_INT,
+		r, n, dspl, MPI_INT, nrnmpi_comm));
 }
 
 void nrnmpi_char_allgatherv(char* s, char* r, int* n, int* dspl) {
-	MPI_Allgatherv(s, n[nrnmpi_myid],  MPI_CHAR,
-		r, n, dspl, MPI_CHAR, nrnmpi_comm);
+	guard(MPI_Allgatherv(s, n[nrnmpi_myid],  MPI_CHAR,
+		r, n, dspl, MPI_CHAR, nrnmpi_comm));
 }
 
 void nrnmpi_long_allgatherv(int64_t* s, int64_t* r, int* n, int* dspl) {
-	MPI_Allgatherv(s, n[nrnmpi_myid],  MPI_INT64_T,
-		r, n, dspl, MPI_INT64_T, nrnmpi_comm);
+	guard(MPI_Allgatherv(s, n[nrnmpi_myid],  MPI_INT64_T,
+		r, n, dspl, MPI_INT64_T, nrnmpi_comm));
 }
 
 void nrnmpi_long_allgatherv_inplace(long* srcdest, int* n, int* dspl) {
-	MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, srcdest,
-		n, dspl, MPI_LONG, nrnmpi_comm);
+	guard(MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, srcdest,
+		n, dspl, MPI_LONG, nrnmpi_comm));
 }
 
 void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl) {
-	MPI_Allgatherv(s, n[nrnmpi_myid],  MPI_DOUBLE,
-		r, n, dspl, MPI_DOUBLE, nrnmpi_comm);
+	guard(MPI_Allgatherv(s, n[nrnmpi_myid],  MPI_DOUBLE,
+		r, n, dspl, MPI_DOUBLE, nrnmpi_comm));
 }
 
 void nrnmpi_dbl_allgatherv_inplace(double* srcdest, int* n, int* dspl) {
-	MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, srcdest,
-		n, dspl, MPI_DOUBLE, nrnmpi_comm);
+	guard(MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, srcdest,
+		n, dspl, MPI_DOUBLE, nrnmpi_comm));
 }
 
 void nrnmpi_dbl_broadcast(double* buf, int cnt, int root) {
-	MPI_Bcast(buf, cnt,  MPI_DOUBLE, root, nrnmpi_comm);
+	guard(MPI_Bcast(buf, cnt,  MPI_DOUBLE, root, nrnmpi_comm));
 }
 
 void nrnmpi_int_broadcast(int* buf, int cnt, int root) {
-	MPI_Bcast(buf, cnt,  MPI_INT, root, nrnmpi_comm);
+	guard(MPI_Bcast(buf, cnt,  MPI_INT, root, nrnmpi_comm));
 }
 
 void nrnmpi_char_broadcast(char* buf, int cnt, int root) {
-	MPI_Bcast(buf, cnt,  MPI_CHAR, root, nrnmpi_comm);
+	guard(MPI_Bcast(buf, cnt,  MPI_CHAR, root, nrnmpi_comm));
 }
 
 void nrnmpi_char_broadcast_world(char** pstr, int root) {
 	int sz;
 	sz = *pstr ? (strlen(*pstr) + 1) : 0;
-	MPI_Bcast(&sz, 1, MPI_INT, root, nrnmpi_world_comm);
+	guard(MPI_Bcast(&sz, 1, MPI_INT, root, nrnmpi_world_comm));
 	if (nrnmpi_myid_world != root) {
 		if (*pstr) { free(*pstr); *pstr = NULL; }
 		if (sz) {
@@ -350,13 +350,13 @@ void nrnmpi_char_broadcast_world(char** pstr, int root) {
 		}
 	}
 	if (sz) {
-		MPI_Bcast(*pstr, sz, MPI_CHAR, root, nrnmpi_world_comm);
+		guard(MPI_Bcast(*pstr, sz, MPI_CHAR, root, nrnmpi_world_comm));
 	}
 }
 
 int nrnmpi_int_sum_reduce(int in) {
 	int result;
-	MPI_Allreduce(&in, &result, 1, MPI_INT, MPI_SUM, nrnmpi_comm);
+	guard(MPI_Allreduce(&in, &result, 1, MPI_INT, MPI_SUM, nrnmpi_comm));
 	return result;
 }
 
@@ -366,7 +366,7 @@ void nrnmpi_assert_opstep(int opstep, double t) {
 	if (nrnmpi_numprocs < 2) { return; }
 	buf[0] = (double)opstep;
 	buf[1] = t;
-	MPI_Bcast(buf, 2, MPI_DOUBLE, 0, nrnmpi_comm);
+	guard(MPI_Bcast(buf, 2, MPI_DOUBLE, 0, nrnmpi_comm));
 	if (opstep != (int)buf[0]  || t != buf[1]) {
 		printf("%d opstep=%d %d  t=%g t-troot=%g\n", nrnmpi_myid, opstep,
 			(int)buf[0], t, t-buf[1]);
@@ -377,7 +377,7 @@ void nrnmpi_assert_opstep(int opstep, double t) {
 double nrnmpi_dbl_allmin(double x) {
 	double result;
 	if (nrnmpi_numprocs < 2) { return x; }
-	MPI_Allreduce(&x, &result, 1, MPI_DOUBLE, MPI_MIN, nrnmpi_comm);
+	guard(MPI_Allreduce(&x, &result, 1, MPI_DOUBLE, MPI_MIN, nrnmpi_comm));
 	return result;
 }
 
@@ -422,7 +422,7 @@ int nrnmpi_pgvts_least(double* t, int* op, int* init) {
 	for (i=0; i < 4; ++i) {
 		obuf[i] = ibuf[i];
 	}
-	MPI_Allreduce(ibuf, obuf, 4, MPI_DOUBLE, mpi_pgvts_op, nrnmpi_comm);
+	guard(MPI_Allreduce(ibuf, obuf, 4, MPI_DOUBLE, mpi_pgvts_op, nrnmpi_comm));
 	assert(obuf[0] <= *t);
 	if (obuf[0] == *t) {
 	  assert((int)obuf[1] <= *op);
@@ -444,26 +444,26 @@ int nrnmpi_pgvts_least(double* t, int* op, int* init) {
 
 /* following for splitcell.cpp transfer */
 void nrnmpi_send_doubles(double* pd, int cnt, int dest, int tag) {
-	MPI_Send(pd, cnt, MPI_DOUBLE, dest, tag, nrnmpi_comm);
+	guard(MPI_Send(pd, cnt, MPI_DOUBLE, dest, tag, nrnmpi_comm));
 }
 
 void nrnmpi_recv_doubles(double* pd, int cnt, int src, int tag) {
 	MPI_Status status;
-	MPI_Recv(pd, cnt, MPI_DOUBLE, src, tag, nrnmpi_comm, &status);
+	guard(MPI_Recv(pd, cnt, MPI_DOUBLE, src, tag, nrnmpi_comm, &status));
 }
 
 void nrnmpi_postrecv_doubles(double* pd, int cnt, int src, int tag, void** request) {
-	MPI_Irecv(pd, cnt, MPI_DOUBLE, src, tag, nrnmpi_comm, (MPI_Request*)request);
+	guard(MPI_Irecv(pd, cnt, MPI_DOUBLE, src, tag, nrnmpi_comm, (MPI_Request*)request));
 }
 
 void nrnmpi_wait(void** request) {
 	MPI_Status status;
-	MPI_Wait((MPI_Request*)request, &status);
+	guard(MPI_Wait((MPI_Request*)request, &status));
 }
 
 void nrnmpi_barrier() {
 	if (nrnmpi_numprocs < 2) { return; }
-	MPI_Barrier(nrnmpi_comm);
+	guard(MPI_Barrier(nrnmpi_comm));
 }
 
 double nrnmpi_dbl_allreduce(double x, int type) {
@@ -477,7 +477,7 @@ double nrnmpi_dbl_allreduce(double x, int type) {
 	}else{
 		t = MPI_MIN;
 	}
-	MPI_Allreduce(&x, &result, 1, MPI_DOUBLE, t, nrnmpi_comm);
+	guard(MPI_Allreduce(&x, &result, 1, MPI_DOUBLE, t, nrnmpi_comm));
 	return result;
 }
 
@@ -498,7 +498,7 @@ void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type) {
 	}else{
 		t = MPI_MIN;
 	}
-	MPI_Allreduce(src, dest, cnt, MPI_DOUBLE, t, nrnmpi_comm);
+	guard(MPI_Allreduce(src, dest, cnt, MPI_DOUBLE, t, nrnmpi_comm));
 	return;
 }
 
@@ -519,7 +519,7 @@ void nrnmpi_longdbl_allreduce_vec(longdbl* src, longdbl* dest, int cnt, int type
 	}else{
 		t = MPI_MIN;
 	}
-	MPI_Allreduce(src, dest, cnt, MPI_LONG_DOUBLE, t, nrnmpi_comm);
+	guard(MPI_Allreduce(src, dest, cnt, MPI_LONG_DOUBLE, t, nrnmpi_comm));
 	return;
 }
 
@@ -540,12 +540,12 @@ void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int type) {
 	}else{
 		t = MPI_MIN;
 	}
-	MPI_Allreduce(src, dest, cnt, MPI_LONG, t, nrnmpi_comm);
+	guard(MPI_Allreduce(src, dest, cnt, MPI_LONG, t, nrnmpi_comm));
 	return;
 }
 
 void nrnmpi_dbl_allgather(double* s, double* r, int n) {
-	MPI_Allgather(s, n,  MPI_DOUBLE, r, n, MPI_DOUBLE, nrnmpi_comm);
+	guard(MPI_Allgather(s, n,  MPI_DOUBLE, r, n, MPI_DOUBLE, nrnmpi_comm));
 }
 
 #if BGPDMA
@@ -554,7 +554,7 @@ static MPI_Comm bgp_comm;
 
 void nrnmpi_bgp_comm() {
 	if (!bgp_comm) {
-		MPI_Comm_dup(nrnmpi_comm, &bgp_comm);
+		guard(MPI_Comm_dup(nrnmpi_comm, &bgp_comm));
 	}
 }
 
@@ -563,17 +563,17 @@ void nrnmpi_bgp_multisend(NRNMPI_Spike* spk, int n, int* hosts) {
 	MPI_Request r;
 	MPI_Status status;
 	for (i=0; i < n; ++i) {
-		MPI_Isend(spk, 1, spike_type, hosts[i], 1, bgp_comm, &r);
-		MPI_Request_free(&r);
+		guard(MPI_Isend(spk, 1, spike_type, hosts[i], 1, bgp_comm, &r));
+		guard(MPI_Request_free(&r));
 	}
 }
 
 int nrnmpi_bgp_single_advance(NRNMPI_Spike* spk) {
 	int flag = 0;
 	MPI_Status status;
-	MPI_Iprobe(MPI_ANY_SOURCE, 1, bgp_comm, &flag, &status);
+	guard(MPI_Iprobe(MPI_ANY_SOURCE, 1, bgp_comm, &flag, &status));
 	if (flag) {
-		MPI_Recv(spk, 1, spike_type, MPI_ANY_SOURCE, 1, bgp_comm, &status);
+		guard(MPI_Recv(spk, 1, spike_type, MPI_ANY_SOURCE, 1, bgp_comm, &status));
 	}
 	return flag;
 }
@@ -582,7 +582,7 @@ static int iii;
 int nrnmpi_bgp_conserve(int nsend, int nrecv) {
 	int tcnts[2];
 	tcnts[0] = nsend - nrecv;
-	MPI_Allreduce(tcnts, tcnts+1, 1, MPI_INT, MPI_SUM, bgp_comm);
+	guard(MPI_Allreduce(tcnts, tcnts+1, 1, MPI_INT, MPI_SUM, bgp_comm));
 	return tcnts[1];
 }
 
