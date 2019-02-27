@@ -263,6 +263,9 @@ std::vector<NetCon*> netcon_in_presyn_order_;
 /// Only for setup vector of netcon source gids
 std::vector<int*> netcon_srcgid;
 
+/// Vector storing indexes (IDs) of different mechanisms of mod files between Neuron and CoreNeuron
+extern std::vector<int> different_mechanism_type;
+
 // Wrap read_phase1 and read_phase2 calls to allow using  nrn_multithread_job.
 // Args marshaled by store_phase_args are used by phase1_wrapper
 // and phase2_wrapper.
@@ -1137,10 +1140,31 @@ void read_phase2(FileHandler& F, int imult, NrnThread& nt) {
         nmech = F.read_int();
         tml_index = new int[nmech];
         ml_nodecount = new int[nmech];
+        int diff_mech_count = 0;
         for (int i = 0; i < nmech; ++i) {
             tml_index[i] = F.read_int();
             ml_nodecount[i] = F.read_int();
+            auto mechanism_differs =
+                std::find(different_mechanism_type.begin(), different_mechanism_type.end(),
+                          tml_index[i]) != different_mechanism_type.end();
+            if (mechanism_differs) {
+                if (nrnmpi_myid == 0) {
+                    printf("Error: %s is a different MOD file than used by NEURON!\n",
+                           nrn_get_mechname(tml_index[i]));
+                }
+                diff_mech_count++;
+            }
         }
+
+        if (diff_mech_count > 0) {
+            if (nrnmpi_myid == 0) {
+                printf(
+                    "Error : NEURON and CoreNEURON must use same mod files for compatibility, %d different mod file(s) found. Re-compile special and special-core!\n",
+                    diff_mech_count);
+            }
+            nrn_abort(1);
+        }
+
         nt._nidata = F.read_int();
         nt._nvdata = F.read_int();
         nt.n_weight = F.read_int();
@@ -2204,4 +2228,5 @@ size_t model_size(void) {
 
     return nbyte;
 }
+
 }  // namespace coreneuron
