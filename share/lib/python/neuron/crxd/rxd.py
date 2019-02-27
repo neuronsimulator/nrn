@@ -107,6 +107,9 @@ set_reaction_indices.argtypes = [ctypes.c_int, _int_ptr, _int_ptr, _int_ptr,
 ecs_register_reaction = nrn_dll_sym('ecs_register_reaction')
 ecs_register_reaction.argtype = [ctypes.c_int, ctypes.c_int, _int_ptr, fptr_prototype]
 
+#ics_register_reaction = nrn_dll_sym('ics_register_reaction')
+#ics_register_reaction.argtype = [ctypes.c_int, ctypes.c_int, _int_ptr, fptr_prototype]
+
 set_euler_matrix = nrn_dll_sym('rxd_set_euler_matrix')
 set_euler_matrix.argtypes = [
     ctypes.c_int,
@@ -1052,14 +1055,14 @@ def _compile_reactions():
     nseg_by_region = []     # a list of the number of segments for each region
     # a table for location,species -> state index
     location_index = []
-    for reg in regions_inv:
+    """for reg in regions_inv:
         rptr = weakref.ref(reg)
         for c_region in region._c_region_lookup[rptr]:
             for react in regions_inv[reg]:
                 c_region.add_reaction(react,rptr)
                 c_region.add_species(species_by_region[reg])
                 if reg in ecs_species_by_region:
-                    c_region.add_ecs_species(ecs_species_by_region[reg])
+                    c_region.add_ecs_species(ecs_species_by_region[reg])"""
 
     # now setup the reactions
     #if there are no reactions
@@ -1068,7 +1071,9 @@ def _compile_reactions():
         return None
 
     #Setup intracellular and multicompartment reactions
-    if location_count > 0:
+    testing_condition = True
+    if location_count > 0 and not testing_condition:
+        print("in this block")
         from . import rate, multiCompartmentReaction
         for creg in c_region_list:
             creg._initalize()
@@ -1153,7 +1158,43 @@ def _compile_reactions():
                           _c_compile(fxn_string))
         setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
 
-    
+    #Setup intracellular 3D reactions
+    if testing_condition:
+        print("in my new block")
+        if len(regions_inv) > 0:
+            ics_grid_ids = []
+            all_ics_gids = set()
+            fxn_string = _c_headers
+            fxn_string += 'void reaction(double* species_ecs, double*rhs)\n{'
+            for rptr in [r for rlist in list(regions_inv.values()) for r in rlist]:
+                if isinstance(rptr(), rate.Rate):
+                    for sp in [rptr()._species] + rptr()._involved_species:
+                        print("first reg = ", reg)
+                        s = sp()[reg]
+                        all_ics_gids.add(s._species()._intracellular_instances[reg]._grid_id)
+            all_ics_gids = list(all_ics_gids)
+            for reg in regions_inv:
+                print("reg = ", reg)
+                for rptr in regions_inv[reg]:
+                    print("rptr = ", rptr)
+                    r = rptr()
+                    print("r = ", r)
+                    print("r._rate = ", r._rate)
+                    rate_str = re.sub(r'species\[(\d+)\]\[\]',lambda m: "species_ecs[%i]" %  [pid for pid,gid in enumerate(all_ics_gids) if gid == int(m.groups()[0])][0], r._rate)
+                    print("rate_str = ",rate_str)
+                    if isinstance(r,rate.Rate):
+                        s = r._species()._intracellular_instances[reg]
+                        print("s = ", s)
+                        if s._grid_id in ics_grid_ids:
+                            operator = '+='
+                        else:
+                            operator = '='
+                            ics_grid_ids.append(s._grid_id)
+                        pid = [pid for pid,gid in enumerate(all_ics_gids) if gid == s._grid_id][0]
+                        fxn_string += "\n\trhs[%d] %s %s;" % (pid, operator, rate_str)
+            fxn_string += "\n}\n"
+            print(fxn_string)
+            ecs_register_reaction(0, len(all_ics_gids), _list_to_cint_array(all_ics_gids), _c_compile(fxn_string))                 
     #Setup extracellular reactions
     if len(ecs_regions_inv) > 0:
         grid_ids = []
@@ -1181,12 +1222,15 @@ def _compile_reactions():
         for reg in ecs_regions_inv:
             for rptr in ecs_regions_inv[reg]:
                 r = rptr()
+                print("rate_ecs = ", r._rate_ecs)
                 rate_str = re.sub(r'species_ecs\[(\d+)\]',lambda m: "species_ecs[%i]" %  [pid for pid,gid in enumerate(all_gids) if gid == int(m.groups()[0])][0], r._rate_ecs)
+                print(rate_str)
                 if isinstance(r,rate.Rate):
                     s = r._species()
                     #Get underlying rxd._ExtracellularSpecies for the grid_id
                     if isinstance(s, species.Species):
                         s = s[reg]._extracellular()
+                        print(s)
                     elif isinstance(s, species.SpeciesOnExtracellular):
                         s = s._extracellular()
                     if s._grid_id in grid_ids:
@@ -1215,6 +1259,7 @@ def _compile_reactions():
                         fxn_string += "\n\trhs[%d] %s (%s)*rate;" % (pid, operator, r._mult[idx])
                         idx += 1
         fxn_string += "\n}\n"
+        print(fxn_string)
         ecs_register_reaction(0, len(all_gids), _list_to_cint_array(all_gids), _c_compile(fxn_string))
 
 def _init():

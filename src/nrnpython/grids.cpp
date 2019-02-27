@@ -176,6 +176,27 @@ Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors
     new_Grid->states_y = (double*)malloc(sizeof(double)*new_Grid->_num_nodes);
     new_Grid->states_cur = (double*)malloc(sizeof(double)*new_Grid->_num_nodes);
     new_Grid->next = NULL;
+
+    new_Grid->size_x = new_Grid->_num_nodes;
+    new_Grid->size_y = 1;
+    new_Grid->size_z = 1;
+
+    new_Grid->concentration_list = NULL;
+    new_Grid->num_concentrations = 0;
+    new_Grid->current_list = NULL;
+    new_Grid->num_currents = 0;
+
+    #if NRNMPI
+        if(nrnmpi_use)
+        {
+            new_Grid->proc_offsets = (int*)malloc(nrnmpi_numprocs*sizeof(int));
+            new_Grid->proc_num_currents = (int*)malloc(nrnmpi_numprocs*sizeof(int));
+        }
+    #endif
+
+    new_Grid->num_all_currents = 0;
+    new_Grid->current_dest = NULL;
+    new_Grid->all_currents = NULL;
     
     //stores the positive x,y, and z neighbors for each node. [node0_x, node0_y, node0_z, node1_x ...]
     new_Grid->_neighbors = neighbors;
