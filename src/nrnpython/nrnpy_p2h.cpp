@@ -1067,5 +1067,8 @@ Object* py_alltoall_type(int size, int type) {
     --ho->refcount;
   }
   return ho;
+#else
+  assert(0);
+  return NULL;
 #endif
 }
