@@ -212,8 +212,8 @@ void set_grid_concentrations(int grid_list_index, int index_in_list, PyObject* g
     */
     /* TODO: note that these will need updating anytime the structure of the model changes... look at the structure change count at each advance and trigger a callback to regenerate if necessary */
     Grid_node* g;
-    Py_ssize_t i;
-    Py_ssize_t n = PyList_Size(grid_indices);
+    ssize_t i;
+    ssize_t n = (ssize_t)PyList_Size(grid_indices);
 
     /* Find the Grid Object */
     g = Parallel_grids[grid_list_index];
@@ -247,8 +247,8 @@ void set_grid_currents(int grid_list_index, int index_in_list, PyObject* grid_in
     */
     /* TODO: note that these will need updating anytime the structure of the model changes... look at the structure change count at each advance and trigger a callback to regenerate if necessary */
     Grid_node* g;
-    Py_ssize_t i;
-    Py_ssize_t n = PyList_Size(grid_indices);
+    ssize_t i;
+    ssize_t n = (ssize_t)PyList_Size(grid_indices);
     long* dests;
 
     /* Find the Grid Object */
