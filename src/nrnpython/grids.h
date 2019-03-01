@@ -112,7 +112,7 @@ typedef struct Grid_node {
     struct Grid_node *next;
     Concentration_Pair* concentration_list;
     Current_Triple* current_list;
-    Py_ssize_t num_concentrations, num_currents;
+    int num_concentrations, num_currents;
     
     /*used for MPI implementation*/
     int num_all_currents;
