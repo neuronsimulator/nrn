@@ -409,7 +409,7 @@ static void* gather_currents(void* dataptr)
  */
 void do_currents(Grid_node* grid, double* output, double dt, int grid_id)
 {
-    Py_ssize_t m, n, i;
+    int m, n, i;
     /*Currents to broadcast via MPI*/
     /*TODO: Handle multiple grids with one pass*/
     /*Maybe TODO: Should check #currents << #voxels and not the other way round*/
@@ -508,7 +508,7 @@ void _fadvance_fixed_step_ecs(void) {
 void scatter_concentrations(void) {
     /* transfer concentrations to classic NEURON */
     Grid_node* grid;
-    Py_ssize_t i, n;
+    int i, n;
     Concentration_Pair* cp;
     double* states;
 
@@ -543,7 +543,7 @@ int ode_count(const int offset) {
 void ecs_atolscale(double* y)
 {
     Grid_node* grid;
-    Py_ssize_t i;
+    int i;
     int grid_size;
     y += states_cvode_offset;
     for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
@@ -558,7 +558,7 @@ void ecs_atolscale(double* y)
 
 void _ecs_ode_reinit(double* y) {
     Grid_node* grid;
-    Py_ssize_t i;
+    int i;
     int grid_size;
     double* grid_states;
     y += states_cvode_offset;
@@ -576,7 +576,7 @@ void _ecs_ode_reinit(double* y) {
 
 void _rhs_variable_step_ecs(const double t, const double* states, double* ydot) {
 	Grid_node *grid;
-    Py_ssize_t i;
+    int i;
     int grid_size;
 	double dt = *dt_ptr;
     double* grid_states;
