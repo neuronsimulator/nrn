@@ -1320,8 +1320,6 @@ void NetCvode::use_daspk(bool b) {
 
 BAMechList::BAMechList(BAMechList** first) { // preserve the list order
 	next = nil;
-	indices = nil;
-	cnt = 0;
 	BAMechList* last;
 	if (*first) {
 		for (last = *first; last->next; last = last->next){}
@@ -1335,10 +1333,7 @@ void BAMechList::destruct(BAMechList** first) {
 	BAMechList* b, *bn;
 	for (b = *first; b; b = bn) {
 		bn = b->next;
-		if (b->indices) {
-			delete [] b->indices;
-			delete b;
-		}
+		delete b;
 	}
 	*first = nil;
 }
@@ -1864,54 +1859,24 @@ void NetCvode::fill_local_ba(int* celnum, NetCvodeThreadData& d) {
 	fill_local_ba_cnt(BEFORE_BREAKPOINT, celnum, d);
 	fill_local_ba_cnt(AFTER_SOLVE, celnum, d);
 	fill_local_ba_cnt(BEFORE_STEP, celnum, d);
-	fill_local_ba_alloc(d);
-	fill_local_ba_indices(BEFORE_BREAKPOINT, celnum, d);
-	fill_local_ba_indices(AFTER_SOLVE, celnum, d);
-	fill_local_ba_indices(BEFORE_STEP, celnum, d);
 }
 
 void NetCvode::fill_local_ba_cnt(int bat, int* celnum, NetCvodeThreadData& d) {
-	BAMech* bam;
-	int i;
-	for (bam = bamech_[bat]; bam; bam = bam->next) {
-		Memb_list* ml = memb_list + bam->type;
-		for (i=0; i < ml->nodecount; ++i) {
-			int inode = ml->nodelist[i]->v_node_index;
-			Cvode* cv = d.lcv_ + celnum[inode];
-			BAMechList* bl = cvbml(bat, bam, cv);
-			++bl->cnt;
-		}
-	}
-}
-void NetCvode::fill_local_ba_alloc(NetCvodeThreadData& d) {
-	int i;
-	for (i=0; i < d.nlcv_; ++i) {
-		BAMechList::alloc(d.lcv_[i].ctd_[0].before_breakpoint_);
-		BAMechList::alloc(d.lcv_[i].ctd_[0].after_solve_);
-		BAMechList::alloc(d.lcv_[i].ctd_[0].before_step_);
-	}
-}
-void NetCvode::fill_local_ba_indices(int bat, int* celnum, NetCvodeThreadData& d) {
-	BAMech* bam;
-	int i;
-	for (bam = bamech_[bat]; bam; bam = bam->next) {
-		Memb_list* ml = memb_list + bam->type;
-		for (i=0; i < ml->nodecount; ++i) {
-			int inode = ml->nodelist[i]->v_node_index;
-			Cvode* cv = d.lcv_ + celnum[inode];
-			BAMechList* bl = cvbml(bat, bam, cv);
-			bl->indices[bl->cnt] = i;
-			++bl->cnt;
-		}
-	}
-}
-
-void BAMechList::alloc(BAMechList* first) {
-	BAMechList* ba;
-	for (ba = first; ba; ba = ba->next) {
-		ba->indices = new int[ba->cnt];
-		ba->cnt = 0; // counts up again in fill_local_ba_indices
-	}
+  BAMech* bam;
+  for (bam = bamech_[bat]; bam; bam = bam->next) {
+    for (int icv = 0; icv < d.nlcv_; ++icv) {
+      Cvode* cv = d.lcv_ + icv;
+      assert(cv->nctd_ == 1);
+      for (CvMembList* cml = cv->ctd_[0].cv_memb_list_; cml; cml = cml->next) {
+        if (cml->index == bam->type) {
+          Memb_list* ml = cml->ml;
+          BAMechList* bl = cvbml(bat, bam, cv);
+          bl->bam = bam;
+          bl->ml = ml;
+        }
+      }
+    }
+  }
 }
 
 BAMechList* NetCvode::cvbml(int bat, BAMech* bam, Cvode* cv) {
@@ -2794,7 +2759,7 @@ void NetCvode::clear_events() {
 		// and have already been reclaimed by SelfEvent::reclaim()
 	}
 #endif
-	MUTCONSTRUCT(1)
+	if (!MUTCONSTRUCTED) {MUTCONSTRUCT(1);}
 	enqueueing_ = 0;
 	for (i=0; i < nrn_nthread; ++i) {
 		NetCvodeThreadData& d = p[i];
@@ -4312,9 +4277,10 @@ const char* NetCvode::statename(int is, int style) {
 		hdp_ = new HocDataPaths(2*n, style);
 		if (gcv_) {
 			for (it=0; it < nrn_nthread; ++it){
-				neq = gcv_->ctd_[it].nvsize_;
-				pv = gcv_->ctd_[it].pv_;
-				for (j=0; j < neq; ++j) {
+				CvodeThreadData& z = gcv_->ctd_[it];
+				neq = z.nvsize_;
+				pv = z.pv_;
+				for (j=0; j < z.nonvint_extra_offset_; ++j) {
 					hdp_->append(pv[j]);
 				}
 			}

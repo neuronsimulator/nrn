@@ -116,18 +116,28 @@ import _neuron_section
 h  = hoc.HocObject()
 version = h.nrnversion(5)
 __version__ = version
-
+_original_hoc_file = None
 if not hasattr(hoc, "__file__"):
   import platform
+  import os
   p = h.nrnversion(6)
   if "--prefix=" in p:
     p = p[p.find('--prefix=') + 9:]
     p = p[:p.find("'")]
   else:
     p = "/usr/local/nrn"
-  p = p + "/%s/lib/libnrnpython.so"%platform.machine()
-  setattr(hoc, "__file__", p)
-
+  if sys.version_info >= (3, 0):
+    import sysconfig
+    phoc = p + "/lib/python/neuron/hoc%s" % sysconfig.get_config_var('SO')
+  else:
+    phoc = p + "/lib/python/neuron/hoc.so"
+  if not os.path.isfile(phoc):
+    phoc = p + "/%s/lib/libnrnpython%d.so" % (platform.machine(), sys.version_info[0])
+  if not os.path.isfile(phoc):
+    phoc = p + "/%s/lib/libnrnpython.so" % platform.machine()
+  setattr(hoc, "__file__", phoc)
+else:
+  _original_hoc_file = hoc.__file__
 # As a workaround to importing doc at neuron import time
 # (which leads to chicken and egg issues on some platforms)
 # define a dummy help function which imports doc,
@@ -453,8 +463,8 @@ def nrn_dll(printpath=False):
 
     try:
         #extended? if there is a __file__, then use that
-        if printpath: print ("hoc.__file__ %s" % hoc.__file__)
-        the_dll = ctypes.cdll[hoc.__file__]
+        if printpath: print ("hoc.__file__ %s" % _original_hoc_file)
+        the_dll = ctypes.cdll[_original_hoc_file]
         return the_dll        
     except:
         pass

@@ -784,24 +784,26 @@ int hoc_pid(void) { return (int)getpid();} /* useful for making unique temporary
 /* readline should be avoided if stdin is not a terminal */
 int nrn_istty_;
 
+int hoc_main1_inited_;
+
 /* has got to be called first. oc can only be event driven after this returns */
 void hoc_main1_init(const char* pname, const char** envp)
 {
 	extern NrnFILEWrap *frin;
 	extern FILE	*fout;
-	static int inited = 0;
 
-	hoc_xopen_file_size_ = 200;
-	hoc_xopen_file_ = emalloc(hoc_xopen_file_size_);
+	if (!hoc_xopen_file_) {
+		hoc_xopen_file_size_ = 200;
+		hoc_xopen_file_ = emalloc(hoc_xopen_file_size_);
+	}
 	hoc_xopen_file_[0] = '\0';
 
 	hoc_promptstr = "oc>";
 	yystart = 1;
 	lineno = 0;
-	if (inited) {
+	if (hoc_main1_inited_) {
 		return;
 	}
-	inited = 1;
 
 	/* could have been forced with the -isatty option */
 	if (nrn_istty_ == 0) { /* if not set then */
@@ -841,6 +843,7 @@ void hoc_main1_init(const char* pname, const char** envp)
 #if defined(__GO32__)
 	setcbrk(0);
 #endif
+	hoc_main1_inited_ = 1;
 }
 
 HocStr* hocstr_create(size_t size) {

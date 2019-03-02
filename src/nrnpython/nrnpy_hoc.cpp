@@ -519,8 +519,16 @@ PyObject* nrnpy_hoc_pop() {
     case STRING:
       result = Py_BuildValue("s", *hoc_strpop());
       break;
-    case VAR:
-      result = Py_BuildValue("d", *hoc_pxpop());
+    case VAR: {
+      double* px = hoc_pxpop();
+      if (px) {
+        // unfortunately, this is nonsense if NMODL POINTER is pointing
+        // to something other than a double.
+        result = Py_BuildValue("d", *px);
+      }else{
+        PyErr_SetString(PyExc_AttributeError, "POINTER is NULL");
+      }
+    }
       break;
     case NUMBER:
       result = Py_BuildValue("d", hoc_xpop());
@@ -550,13 +558,23 @@ static int set_final_from_stk(PyObject* po) {
         err = 1;
       }
       break;
-    case VAR:
+    case VAR: {
       double x;
+      double* px;
       if (PyArg_Parse(po, "d", &x) == 1) {
-        *(hoc_pxpop()) = x;
+        px = hoc_pxpop();
+        if (px) {
+          // This is a future crash if NMODL POINTER is pointing
+          // to something other than a double.
+          *px = x;
+        }else{
+          PyErr_SetString(PyExc_AttributeError, "POINTER is NULL");
+          return -1;
+        }
       } else {
         err = 1;
       }
+    }
       break;
     case OBJECTVAR:
       PyHocObject* pho;
@@ -643,8 +661,21 @@ static void* fcall(void* vself, void* vargs) {
   return (void*)nrnpy_hoc_pop();
 }
 
+static PyObject* curargs_;
+
+PyObject* hocobj_call_arg(int i) {
+  return PyTuple_GetItem(curargs_, i);
+}
+
 static PyObject* hocobj_call(PyHocObject* self, PyObject* args,
                              PyObject* kwrds) {
+
+  // Hack to allow some python only methods to get the python args.
+  // without losing info about type bool, int, etc.
+  // eg pc.py_broadcast, pc.py_gather, pc.py_allgather
+  PyObject* prevargs_ = curargs_;
+  curargs_ = args;
+
   PyObject* section = 0;
   PyObject* result;
   if (kwrds && PyDict_Check(kwrds)) {
@@ -662,17 +693,20 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args,
     int num_kwargs = PyDict_Size(kwrds);
     if (num_kwargs > 1) {
       PyErr_SetString(PyExc_RuntimeError, "invalid keyword argument");
+      curargs_ = prevargs_;
       return NULL;
     }
     if (section) {
       section = nrnpy_pushsec(section);
       if (!section) {
         PyErr_SetString(PyExc_TypeError, "sec is not a Section");
+        curargs_ = prevargs_;
         return NULL;
       }
     } else {
       if (num_kwargs) {
         PyErr_SetString(PyExc_RuntimeError, "invalid keyword argument");
+        curargs_ = prevargs_;
         return NULL;
       }
     }
@@ -693,11 +727,13 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args,
     }
   } else {
     PyErr_SetString(PyExc_TypeError, "object is not callable");
+    curargs_ = prevargs_;
     return NULL;
   }
   if (section) {
     nrn_popsec();
   }
+  curargs_ = prevargs_;
   return result;
 }
 
@@ -1453,9 +1489,10 @@ static PyObject* hocobj_iter(PyObject* self) {
     } else if (po->ho_->ctemplate == hoc_list_template_) {
       return PySeqIter_New(self);
     } else if (po->ho_->ctemplate == hoc_sectionlist_template_) {
-      po->iteritem_ = ((hoc_Item*)po->ho_->u.this_pointer)->next;
-      Py_INCREF(self);
-      return self;
+      // need a clone of self so nested loops do not share iteritem_
+      PyObject* po2 = nrnpy_ho2po(po->ho_);
+      ((PyHocObject*)po2)->iteritem_ = ((hoc_Item*)po->ho_->u.this_pointer)->next;
+      return po2;
     }
   } else if (po->type_ == PyHoc::HocForallSectionIterator) {
     po->iteritem_ = section_list->next;
@@ -1681,6 +1718,22 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
       po->u.ho_ = nrnpy_po2ho(tp);
     }
     return 0;
+  }
+  if (po->ho_) {
+    if (po->ho_->ctemplate == hoc_vec_template_) {
+      Vect* vec = (Vect*)po->ho_->u.this_pointer;
+      int vec_size = vector_capacity(vec);
+      // allow Python style negative indices
+      if (i < 0) {
+        i += vec_size;
+      }
+      if (i >= vec_size || i < 0) {
+        PyErr_SetString(PyExc_IndexError, "index out of bounds");
+        return -1;
+      }
+      PyArg_Parse(arg, "d", vector_vec(vec) + i);
+      return 0;
+    }
   }
   if (!po->sym_ || po->type_ != PyHoc::HocArray) {
     PyErr_SetString(PyExc_TypeError, "unsubscriptable object");

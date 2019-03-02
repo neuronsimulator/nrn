@@ -16,108 +16,110 @@ False : [1.000000000000000e+00, 9.999975013886804e-01, 9.999774378669442e-01, 9.
 1e-5 : [1.000000000000000e+00, 1.000000000000000e+00, 1.000000000000000e+00, 1.000000000000000e+00, 1.000000000000000e+00, 1.000000000000000e+00, 1.000000000000000e+00, 1.000000000000000e+00, 9.999999999999994e-01, 9.999999999999730e-01, 9.999999999998286e-01, 9.999999999994353e-01, 9.999999999985202e-01, 9.999999999965848e-01, 9.999999999914210e-01, 9.999999999815654e-01, 9.999999999642780e-01, 9.999999999357950e-01, 9.999999998244792e-01, 9.999999995977931e-01, 9.999999987558622e-01, 9.999999969054565e-01, 9.999999933717028e-01, 9.999999871894636e-01, 9.999999770945371e-01, 9.999999615055236e-01, 9.999999384936957e-01, 9.999999057511308e-01, 9.999998222204165e-01, 9.999996889877317e-01, 9.999994874837332e-01, 9.999991954947148e-01, 9.999987869759613e-01, 9.999978778927705e-01, 9.999965094234943e-01, 9.999945377974357e-01, 9.999917976154713e-01, 9.999881018395195e-01, 9.999832421044147e-01, 9.999769893073577e-01, 9.999690944252573e-01, 9.999592894153977e-01, 9.999401848217710e-01, 9.999149868024271e-01, 9.998825523031706e-01, 9.998416677700163e-01, 9.997910595925650e-01, 9.997294043565842e-01, 9.996553389790078e-01, 9.995674703998642e-01, 9.994643850266534e-01, 9.993446578768627e-01, 9.992068613208905e-01, 9.990495732666037e-01, 9.988713847467867e-01, 9.986709069016458e-01, 9.984467774204933e-01, 9.981976664056399e-01, 9.979222816859891e-01, 9.976193735296895e-01, 9.972877388222079e-01, 9.969262246907040e-01, 9.965337316535895e-01, 9.961092162612745e-01, 9.956516933110915e-01, 9.951602375882754e-01, 9.946339852520572e-01, 9.940721347818040e-01, 9.934739476574072e-01, 9.928387486091628e-01, 9.921659257085935e-01, 9.914549300099351e-01, 9.907052751686757e-01, 9.899165365560477e-01, 9.890883505198331e-01, 9.882204130401707e-01, 9.873124787412751e-01, 9.863643591446407e-01, 9.853759215358775e-01, 9.843470868593674e-01, 9.832778285388312e-01, 9.821681700449177e-01, 9.810181837626457e-01, 9.798279882517430e-01, 9.785977472491776e-01, 9.773276666309043e-01, 9.760179936330398e-01, 9.746690135131258e-01, 9.732810490694735e-01, 9.718544574219034e-01, 9.703896283469345e-01, 9.688869823629818e-01, 9.662560899379753e-01, 9.635203094788860e-01, 9.606821993784824e-01, 9.577444920821762e-01, 9.547100690698106e-01, 9.515819411387303e-01, 9.483632227783803e-01, 9.450571205528219e-01, 9.416669021033438e-01, 9.381959001044843e-01, 9.346474739566473e-01, 9.310250020056358e-01, 9.273318651957428e-01, 9.235714575597201e-01, 9.197471440818522e-01, 9.158622774784529e-01, 9.119201741214706e-01, 9.079241164053400e-01, 9.038773101206564e-01, 8.997829152782374e-01, 8.956440506961761e-01, 8.914637634840353e-01, 8.872450198327338e-01, 8.829907105217275e-01, 8.787036576363941e-01, 8.707492329602121e-01, 8.687467373185769e-01, 8.667391783027991e-01, 8.647268019171629e-01, 8.627098501557753e-01, 8.585978518951599e-01, 8.544698540634895e-01, 8.503277143709528e-01, 8.461732532471191e-01, 8.420082065243172e-01, 8.378342644577640e-01, 8.336530592572513e-01, 8.294661714342418e-01, 8.252750957681314e-01, 8.210812733406646e-01, 8.168861006274361e-01, 8.126909233407180e-01, 8.084970284424999e-01, 8.018705279973948e-01, 7.952548736797830e-01, 7.886543612921902e-01, 7.820730077033664e-01, 7.755145256970315e-01, 7.689823477006539e-01, 7.624796584457091e-01, 7.560093783176929e-01, 7.495742104755058e-01, 7.431766425064636e-01, 7.368189634231701e-01, 7.305032400696735e-01, 7.242313466189446e-01, 7.180049652774664e-01, 7.118256479784464e-01, 7.056948260292686e-01, 7.032583361895295e-01, 7.008298605278855e-01, 6.984094704872370e-01, 6.959972341046202e-01, 6.935932152404094e-01, 6.889317430774708e-01, 6.817668350489530e-01, 6.746798127752269e-01, 6.676718057412527e-01, 6.607437322115557e-01, 6.538963343303841e-01, 6.471301405820917e-01, 6.404455883106537e-01, 6.387872416184449e-01, 6.371340113850150e-01, 6.354859019542481e-01, 6.323179670207283e-01, 6.291691359105558e-01, 6.243492415503886e-01, 6.195747895117473e-01, 6.148457081070352e-01, 6.101619207395151e-01, 6.055232995385412e-01, 6.009296920940354e-01, 5.963809255739797e-01, 5.884265027623434e-01, 5.806112287097513e-01, 5.729337321255051e-01, 5.653924575507177e-01, 5.579857024351769e-01, 5.561548261765027e-01, 5.543322219963571e-01, 5.525178614099090e-01, 5.497619521958399e-01, 5.470251014183799e-01, 5.421958421339816e-01, 5.374261214332550e-01, 5.327153071018452e-01, 5.280627574108234e-01, 5.234678232248013e-01, 5.189298444469039e-01, 5.144481596152644e-01, 5.100220936678099e-01, 5.056509822776560e-01, 5.013341346033774e-01, 4.970708987429328e-01, 4.928605836118120e-01, 4.887024961805134e-01, 4.845959781161491e-01, 4.805403497251276e-01, 4.765349346341766e-01, 4.725790728234394e-01, 4.686720914229373e-01, 4.648133480441644e-01, 4.610021778781840e-01, 4.572379175659361e-01, 4.535199244031417e-01, 4.498475710369739e-01, 4.462202101246375e-01, 4.426372375753840e-01, 4.390980179451507e-01, 4.356019205688260e-01, 4.321483548727800e-01, 4.287367136802313e-01, 4.253663991812640e-01, 4.220368327619753e-01, 4.187474280885136e-01, 4.154976300176047e-01, 4.122868660369579e-01, 4.091145681113114e-01, 4.043631518312791e-01, 3.996975359393022e-01, 3.951158478794149e-01, 3.906162701651016e-01, 3.861970390711226e-01, 3.841086119708872e-01, 3.820380229719526e-01, 3.799850857201517e-01, 3.779496187391600e-01, 3.745426919402392e-01, 3.711844377457629e-01, 3.678740151738357e-01, 3.646106065243293e-01, 3.613933918170190e-01, 3.582215709845467e-01, 3.550943187555968e-01, 3.520108594211252e-01, 3.489704836755959e-01, 3.459724290685680e-01, 3.430159438599149e-01, 3.401003272980346e-01, 3.372248857211048e-01, 3.343889511711801e-01, 3.315918392385992e-01, 3.288328612250609e-01, 3.261113573130471e-01, 3.234267379284118e-01, 3.207783627593125e-01]
 }
 
+def scalar_bistable(rxdstr):
+    if rxdstr == 'rxd':
+        from neuron import rxd
+    else:
+        from neuron import crxd as rxd
+    h.load_file('stdrun.hoc')
+    s = h.Section(name='s')
+    s.nseg = 101
+    cyt = rxd.Region(h.allsec())
+    c = rxd.Species(cyt, name='c', initial=lambda node: 1 if 0.4 < node.x < 0.6 else 0, d=1)
+    r = rxd.Rate(c, -c * (1-c)*(0.3-c))
+    h.finitialize()
+    h.run()
+
+    #check the results
+    result = h.Vector(c.nodes.concentration)
+    cmpV = h.Vector(scalar_bistable_data[rxdstr])
+    cmpV.sub(result)
+    cmpV.abs()
+    if cmpV.sum() < 1e-6:
+        sys.exit(0) 
+    sys.exit(-1)
+
+def trivial_ecs(scale):
+    from neuron import h, crxd as rxd
+    import numpy
+    import warnings
+    warnings.simplefilter("ignore", UserWarning)
+    h.load_file('stdrun.hoc')
+    tstop = 10
+    if scale:   #variable step case
+        h.CVode().active(True)
+        h.CVode().event(tstop)
+    else:           #fixed step case
+        h.dt = 0.1
+
+    sec = h.Section() #NEURON requires at least 1 section
+
+    # enable extracellular RxD
+    rxd.options.enable.extracellular = True
+
+    # simulation parameters
+    dx = 1.0    # voxel size
+    L = 9.0     # length of initial cube
+    Lecs = 21.0 # lengths of ECS
+
+    # define the extracellular region
+    extracellular = rxd.Extracellular(-Lecs/2., -Lecs/2., -Lecs/2.,
+                                      Lecs/2., Lecs/2., Lecs/2., dx=dx,
+                                      volume_fraction=0.2, tortuosity=1.6)
+
+    # define the extracellular species
+    k_rxd = rxd.Species(extracellular, name='k', d=2.62, charge=1,
+                        atolscale=scale, initial=lambda nd: 1.0 if 
+                        abs(nd.x3d) <= L/2. and abs(nd.y3d) <= L/2. and 
+                        abs(nd.z3d) <= L/2. else 0.0)
+
+    # record the concentration at (0,0,0)
+    ecs_vec = h.Vector()
+    ecs_vec.record(k_rxd[extracellular].node_by_location(0, 0, 0)._ref_value)
+    h.finitialize()
+    h.continuerun(tstop) #run the simulation
+    
+    # compare with previous solution 
+    ecs_vec.sub(h.Vector(trivial_ecs_data[scale]))
+    ecs_vec.abs()
+    if ecs_vec.sum() > 1e-9:
+        return -1
+    return 0
+    
+
 class RxDTestCase(unittest.TestCase):
     """Tests of rxd"""
 
-    def scalar_bistable(self, rxdstr):
-        if rxdstr == 'rxd':
-            from neuron import rxd
-        else:
-            from neuron import crxd as rxd
-        h.load_file('stdrun.hoc')
-        s = h.Section(name='s')
-        s.nseg = 101
-        cyt = rxd.Region(h.allsec())
-        c = rxd.Species(cyt, name='c', initial=lambda node: 1 if 0.4 < node.x < 0.6 else 0, d=1)
-        r = rxd.Rate(c, -c * (1-c)*(0.3-c))
-        h.finitialize()
-        h.run()
-
-        #check the results
-        result = h.Vector(c.nodes.concentration)
-        cmpV = h.Vector(scalar_bistable_data[rxdstr])
-        cmpV.sub(result)
-        cmpV.abs()
-        if cmpV.sum() < 1e-6:
-            sys.exit(0) 
-        sys.exit(-1)
-    
     def test_crxd(self):
-        p = Process(target=self.scalar_bistable, args=('crxd',))
+        p = Process(target=scalar_bistable, args=('crxd',))
         p.start()
         p.join()
         assert(p.exitcode == 0)
         return 0  
 
     def test_rxd(self):
-        p = Process(target=self.scalar_bistable, args=('rxd',))
+        p = Process(target=scalar_bistable, args=('rxd',))
         p.start()
         p.join()
         assert(p.exitcode == 0)
         return 0 
 
-    def trivial_ecs(self, scale):
-        from neuron import h, crxd as rxd
-        import numpy
-        h.load_file('stdrun.hoc')
-        tstop = 10
-        if scale:   #variable step case
-            h.CVode().active(True)
-            h.CVode().event(tstop)
-        else:           #fixed step case
-            h.dt = 0.1
-
-        sec = h.Section() #NEURON requires at least 1 section
-
-        # enable extracellular RxD
-        rxd.options.enable.extracellular = True
-
-        # simulation parameters
-        dx = 1.0    # voxel size
-        L = 9.0     # length of initial cube
-        Lecs = 21.0 # lengths of ECS
-
-        # define the extracellular region
-        extracellular = rxd.Extracellular(-Lecs/2., -Lecs/2., -Lecs/2.,
-                                          Lecs/2., Lecs/2., Lecs/2., dx=dx,
-                                          volume_fraction=0.2, tortuosity=1.6)
-
-        # define the extracellular species
-        k_rxd = rxd.Species(extracellular, name='k', d=2.62, charge=1,
-                            atolscale=scale, initial=lambda nd: 1.0 if 
-                            abs(nd.x3d) <= L/2. and abs(nd.y3d) <= L/2. and 
-                            abs(nd.z3d) <= L/2. else 0.0)
-
-        # record the concentration at (0,0,0)
-        ecs_vec = h.Vector()
-        ecs_vec.record(k_rxd[extracellular].node_by_location(0, 0, 0)._ref_value)
-        h.finitialize()
-        h.continuerun(tstop) #run the simulation
-        
-        # compare with previous solution 
-        ecs_vec.sub(h.Vector(trivial_ecs_data[scale]))
-        ecs_vec.abs()
-        if ecs_vec.sum() > 1e-9:
-            return -1
-        return 0
-        
-        
     def test_ecs_diffusion_fixed_step(self):
-        p = Process(target=self.trivial_ecs, args=(False,))
+        p = Process(target=trivial_ecs, args=(False,))
         p.start()
         p.join()
         assert(p.exitcode == 0)
         return 0  
 
     def test_ecs_diffusion_variable_step_coarse(self):
-        p = Process(target=self.trivial_ecs, args=(1e-2,))
+        p = Process(target=trivial_ecs, args=(1e-2,))
         p.start()
         p.join()
         assert(p.exitcode == 0)
         return 0 
 
     def test_ecs_diffusion_variable_step_fine(self):
-        p = Process(target=self.trivial_ecs, args=(1e-5,))
+        p = Process(target=trivial_ecs, args=(1e-5,))
         p.start()
         p.join()
         assert(p.exitcode == 0)

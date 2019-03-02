@@ -10,7 +10,7 @@ dnl distribution file names, banner, nrniv --version, and
 dnl nrnversion(5). If the PACKAGE_VERSION changes then also do a
 dnl git tag -a major.minor.micro consistent with that.
 
-AC_INIT([nrn],[7.6])
+AC_INIT([nrn],[7.7])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR(src/memacs/main.c)
 AM_INIT_AUTOMAKE([foreign])
@@ -525,6 +525,7 @@ AC_SUBST(modsubdir)
 AC_DEFINE_UNQUOTED(NRNHOSTCPU,"$host_cpu",[cpu type consistent with nrnivmodl])
 NRN_LIBDIR=$exec_prefix/lib
 AC_SUBST(NRN_LIBDIR)
+AC_DEFINE_UNQUOTED(NRN_LIBDIR,"$NRN_LIBDIR",[location of NEURON libraries])
 
 AC_SUBST(nrndef_unix)
 AC_SUBST(nrndef_mac)

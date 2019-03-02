@@ -97,6 +97,8 @@ static int ob_is_seg(Object*);
 extern int (*nrnpy_ob_is_seg)(Object*);
 static Object* seg_from_sec_x(Section*, double x);
 extern Object* (*nrnpy_seg_from_sec_x)(Section*, double x);
+static Section* o2sec(Object*);
+extern Section* (*nrnpy_o2sec_p_)(Object*);
 static void o2loc(Object*, Section**, double*);
 extern void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
 static void nrnpy_unreg_mech(int);
@@ -386,6 +388,18 @@ static int ob_is_seg(Object* o) {
     return 0;
   }
   return 1;
+}
+
+static Section* o2sec(Object* o) {
+  if (o->ctemplate->sym !=nrnpy_pyobj_sym_) {
+    hoc_execerror("not a Python nrn.Section", 0);
+  }
+  PyObject* po = nrnpy_hoc2pyobject(o);
+  if (!PyObject_TypeCheck(po, psection_type)) {
+    hoc_execerror("not a Python nrn.Section", 0);
+  }
+  NPySecObj* pysec = (NPySecObj*)po;
+  return pysec->sec_;
 }
 
 static void o2loc(Object* o, Section** psec, double* px) {
@@ -869,6 +883,13 @@ static PyObject* NPyMechObj_name(NPyMechObj* self) {
     result = PyString_FromString(memb_func[self->prop_->type].sym->name);
   }
   return result;
+}
+
+static PyObject* NPyMechObj_is_ion(NPyMechObj* self) {
+  if (self->prop_ && nrn_is_ion(self->prop_->type)) {
+      Py_RETURN_TRUE;
+  }
+  Py_RETURN_FALSE;
 }
 
 static PyObject* pymech_repr(PyObject* p) {
@@ -1688,10 +1709,15 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
   PyObject* result = NULL;
   NrnProperty np(self->prop_);
   int isptr = (strncmp(n, "_ref_", 5) == 0);
-  int bufsz = strlen(n) + 6;
+  char* mname = memb_func[self->prop_->type].sym->name;
+  int mnamelen = strlen(mname);
+  int bufsz = strlen(n) + mnamelen + 2;
   char *buf = new char[bufsz];
-  sprintf(buf, "%s_%s", isptr ? n + 5 : n,
-          memb_func[self->prop_->type].sym->name);
+  if (nrn_is_ion(self->prop_->type)) {
+    strcpy(buf, isptr ? n + 5 : n);
+  }else{
+    sprintf(buf, "%s_%s", isptr ? n + 5 : n, mname);
+  }
   Symbol* sym = np.find(buf);
   if (sym) {
     // printf("mech_getattro sym %s\n", sym->name);
@@ -1715,8 +1741,6 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
     }
   } else if (strcmp(n, "__dict__") == 0) {
     result = PyDict_New();
-    char* mname = memb_func[self->prop_->type].sym->name;
-    int mnamelen = strlen(mname);
     for (Symbol* s = np.first_var(); np.more_var(); s = np.next_var()) {
       if (!striptrail(buf, bufsz, s->name, mname)) {
         strcpy(buf, s->name);
@@ -1967,6 +1991,8 @@ static PyMemberDef NPySegObj_members[] = {
 static PyMethodDef NPyMechObj_methods[] = {
     {"name", (PyCFunction)NPyMechObj_name, METH_NOARGS,
      "Mechanism name (same as hoc suffix for density mechanism)"},
+    {"is_ion", (PyCFunction)NPyMechObj_is_ion, METH_NOARGS,
+     "Returns True if an ion mechanism"},
     {NULL}};
 
 static PyMethodDef NPyRangeVar_methods[] = {
@@ -2090,6 +2116,7 @@ myPyMODINIT_FUNC nrnpy_nrn(void) {
   nrnpy_reg_mech_p_ = nrnpy_reg_mech;
   nrnpy_ob_is_seg = ob_is_seg;
   nrnpy_seg_from_sec_x = seg_from_sec_x;
+  nrnpy_o2sec_p_ = o2sec;
   nrnpy_o2loc_p_ = o2loc;
   nrnpy_pysec_name_p_ = pysec_name;
   nrnpy_pysec_cell_p_ = pysec_cell;

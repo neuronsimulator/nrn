@@ -72,7 +72,7 @@ typedef struct {
     double scale_factor;
 } Current_Triple;
 
-typedef void (*ReactionRate)(double**, double**, double*, double**, double**);
+typedef void (*ReactionRate)(double**, double**, double*, double**, double**, double**);
 typedef void (*ECSReactionRate)(double*, double*);
 typedef struct Reaction {
 	struct Reaction* next;
@@ -112,7 +112,7 @@ typedef struct Grid_node {
     struct Grid_node *next;
     Concentration_Pair* concentration_list;
     Current_Triple* current_list;
-    Py_ssize_t num_concentrations, num_currents;
+    ssize_t num_concentrations, num_currents;
     
     /*used for MPI implementation*/
     int num_all_currents;
@@ -154,14 +154,6 @@ typedef struct AdiGridData{
     AdiDirection* adi_dir;
     double* scratchpad;
 } AdiGridData;
-
-
-
-static double get_alpha_scalar(double*, int);
-static double get_alpha_array(double*, int);
-static double get_lambda_scalar(double*, int);
-static double get_lambda_array(double*, int);
-
 
 /***** GLOBALS *******************************************************************/
 extern double *dt_ptr;              // Universal ∆t

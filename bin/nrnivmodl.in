@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 
 ARCH=@host_cpu@
 MODSUBDIR=@modsubdir@
@@ -67,8 +68,10 @@ incs=""
 if test $# -gt 0 ; then
 	for i in "$@" ; do
 		if test -d "$i" ; then
+			set +e
 			files="$files $(ls $i/*.mod)"
 			incs="$incs $(ls $i/*.inc)"
+			set -e
 		else
 			files="$files $i"
 		fi

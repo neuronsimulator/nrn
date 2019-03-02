@@ -245,6 +245,20 @@ extern void nrnmpi_int_gatherv(int* s, int scnt,
 		r, rcnt, rdispl, MPI_INT, root, nrnmpi_comm);
 }
 
+extern void nrnmpi_char_gatherv(char* s, int scnt,
+    char* r, int* rcnt, int* rdispl, int root) {
+	MPI_Gatherv(s, scnt, MPI_CHAR,
+		r, rcnt, rdispl, MPI_CHAR, root, nrnmpi_comm);
+}
+
+extern void nrnmpi_int_scatter(int* s, int* r, int cnt, int root) {
+	MPI_Scatter(s, cnt, MPI_INT, r, cnt, MPI_INT, root, nrnmpi_comm);
+}
+
+extern void nrnmpi_char_scatterv(char* s, int* scnt, int* sdispl, char* r, int rcnt, int root) {
+	MPI_Scatterv(s, scnt, sdispl, MPI_CHAR, r, rcnt, MPI_CHAR, root, nrnmpi_comm);
+}
+
 extern void nrnmpi_int_alltoall(int* s, int* r, int n) {
 	MPI_Alltoall(s, n, MPI_INT, r, n, MPI_INT, nrnmpi_comm);
 }
@@ -286,6 +300,11 @@ void nrnmpi_int_allgather_inplace(int* srcdest, int n) {
 void nrnmpi_int_allgatherv(int* s, int* r, int* n, int* dspl) {
 	MPI_Allgatherv(s, n[nrnmpi_myid],  MPI_INT,
 		r, n, dspl, MPI_INT, nrnmpi_comm);
+}
+
+void nrnmpi_char_allgatherv(char* s, char* r, int* n, int* dspl) {
+	MPI_Allgatherv(s, n[nrnmpi_myid],  MPI_CHAR,
+		r, n, dspl, MPI_CHAR, nrnmpi_comm);
 }
 
 void nrnmpi_long_allgatherv(int64_t* s, int64_t* r, int* n, int* dspl) {

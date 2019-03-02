@@ -160,10 +160,12 @@ printf("error %s line %d: index %d pid=%d is not less than id=%d\n",\
 	tobj.indvwhere(pid, "<", 0)
 	if (tobj.size > 1) {
 		err = 1
+	    if (!quiet) {
 printf("warning %s: more than one tree:\n", file.getname)
 		for i=0, tobj.size-1 {
 			printf("  root at line %d\n", iline.x[tobj.x[i]])
 		}
+	    }
 	}
 	// check for duplicate id
 	for i=1, id.size-1 if (id.x[i] == id.x[i-1]) {

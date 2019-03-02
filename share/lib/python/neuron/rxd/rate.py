@@ -95,8 +95,8 @@ class Rate(GeneralizedReaction):
         if self._regions != [None]:
             specified_regions = list(set.intersection(set(self._regions), set(sp_regions)))
             if specified_regions:
-                active_regions = list(set.intersection(set(active_regions), set(actr)))
                 actr = specified_regions
+                active_regions = list(set.intersection(set(active_regions), set(actr)))
             else:
                 warnings.warn("Error in rate %r\nThe regions specified %s are not appropriate regions %s will be used instead." % (self, [r._name for r in self._regions], [r._name for r in self._species()._regions]))
         

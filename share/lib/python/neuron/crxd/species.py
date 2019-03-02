@@ -38,6 +38,9 @@ _set_grid_concentrations.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.py_objec
 _set_grid_currents = nrn_dll_sym('set_grid_currents')
 _set_grid_currents.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.py_object, ctypes.py_object, ctypes.py_object]
 
+_delete_by_id = nrn_dll_sym('delete_by_id')
+_delete_by_id.argtypes = [ctypes.c_int]
+
 
 # The difference here is that defined species only exists after rxd initialization
 _all_species = []
@@ -202,6 +205,19 @@ class SpeciesOnExtracellular(_SpeciesMathable):
         j = int((y - e._ylo) / e._dx[1])
         k = int((z - e._zlo) / e._dx[2])
         return self.node_by_ijk(i,j,k) 
+
+    def alpha_by_location(self, locs):
+        """Return a single alpha value for a homogeneous volume fraction of a list of alpha values for an inhomogeneous volume fraction at grid locations given in a list (locs)."""
+        e = self._extracellular()._region
+        if numpy.isscalar(e.alpha):
+            return e.alpha
+        alphas = []
+        for loc in locs:
+            i = int((loc[0] - e._xlo) / e._dx[0])
+            j = int((loc[1] - e._ylo) / e._dx[1])
+            k = int((loc[2] - e._zlo) / e._dx[2])
+            alphas.append(e.alpha[i,j,k])
+        return numpy.array(alphas)
     
     def node_by_ijk(self,i,j,k):
         index = 0
@@ -350,13 +366,12 @@ def _xyz(seg):
     """Return the (x, y, z) coordinate of the center of the segment."""
     # TODO: this is very inefficient, especially since we're calling this for each segment not for each section; fix
     sec = seg.sec
-    n3d = int(h.n3d(sec=sec))
-    x3d = [h.x3d(i, sec=sec) for i in range(n3d)]
-    y3d = [h.y3d(i, sec=sec) for i in range(n3d)]
-    z3d = [h.z3d(i, sec=sec) for i in range(n3d)]
-    arc3d = [h.arc3d(i, sec=sec) for i in range(n3d)]
+    n3d = sec.n3d()
+    x3d = [sec.x3d(i) for i in range(n3d)]
+    y3d = [sec.y3d(i) for i in range(n3d)]
+    z3d = [sec.z3d(i) for i in range(n3d)]
+    arc3d = [sec.arc3d(i) for i in range(n3d)]
     return numpy.interp([seg.x * sec.L], arc3d, x3d)[0], numpy.interp([seg.x * sec.L], arc3d, y3d)[0], numpy.interp([seg.x * sec.L], arc3d, z3d)[0]
-
 
 
 
@@ -377,7 +392,6 @@ class _ExtracellularSpecies(_SpeciesMathable):
             
 
         """
-        warnings.warn('Note that changing the morphology after initialization in models with Extracellular regions is not yet supported (This is printed everytime regardless of whether there is an attempt to change morphology)')
         _extracellular_diffusion_objects[self] = None
 
         # ensure 3D points exist
@@ -438,14 +452,26 @@ class _ExtracellularSpecies(_SpeciesMathable):
     def __del__(self):
         # TODO: remove this object from the list of grids, possibly by reinserting all the others
         # NOTE: be careful about doing the right thing at program's end; some globals may no longer exist
-        warnings.warn('ExtracellularSpecies deleted; if this is happening anytime other than at the end of the program, then something will likely go wrong... since it should be deleted from the list of grids, but this has not been implemented yet.')
-
+        try:
+            if self in _extracellular_diffusion_objects: del _extracellular_diffusion_objects[self]
+            # remove the grid id
+            if _extracellular_diffusion_objects:
+                for sp in _extracellular_diffusion_objects:
+                    if hasattr(sp,'_grid_id') and sp._grid_id > self._grid_id:
+                        sp._grid_id -= 1
+            if hasattr(self,'_grid_id'): _delete_by_id(self._grid_id)
+        
+            nrn_dll_sym('structure_change_cnt', ctypes.c_int).value += 1
+        except:
+            return
+        
     def _finitialize(self):
         # Updated - now it will initialize using NodeExtracellular
-        # TODO: support more complicated initializations than just constants
         if self._initial is None:
-            self.states[:] = 0
-        warnings.warn('Extracellular currently not transferring concentrations to legacy grid until after first time step')
+            if hasattr(h,'%so0_%s_ion' % (self._species, self._species)):
+                self.states[:] = getattr(h,'%so0_%s_ion' % (self._species, self._species))
+            else:
+                self.states[:] = 0
 
     def _ion_register(self):
         """modified from neuron.rxd.species.Species._ion_register"""
@@ -739,12 +765,49 @@ class Species(_SpeciesMathable):
             # NOTE: can only init_diffusion_rates after the roots (parents)
             #       have been assigned
             sec._init_diffusion_rates()
+        self._update_node_data()    # is this really nessesary
         self._update_region_indices()
 
     def _do_init6(self):
         self._register_cptrs()
 
-
+    def __del__(self):
+        if not weakref or not weakref.ref:
+            # probably at exit -- not worth tidying up
+            return
+        
+        global _all_species, _defined_species
+        try:
+            from . import section1d, node
+        except:
+            # may not be able to import on exit
+            return 
+        
+        if self.name in _defined_species: del _defined_species[self.name]
+        _all_species = list(filter(lambda x: x() is not None or x() == self, _all_species))
+        # delete the secs
+        if hasattr(self,'_secs') and self._secs:
+            # remove the species root
+            # TODO: will this work with post initialization morphology changes
+            if self._has_adjusted_offsets:
+                self._secs[0]._nseg += self._num_roots
+                self._secs[0]._offset -= self._num_roots
+            self._secs.sort(key=lambda s: s._offset, reverse=True)
+            for sec in self._secs:
+                # node data is removed here in case references to sec remains
+                node._remove(sec._offset, sec._offset + sec._nseg + 1)
+                # shift offset to account for deleted sec
+                for secs in section1d._rxd_sec_lookup.values():
+                    for s in secs:
+                        if s() and s()._offset > sec._offset:
+                            s()._offset -= sec._nseg + 1
+                del sec
+        # set the remaining species offsets
+        for sr in _all_species:
+            s = sr()
+            if s is not None:
+                s._update_region_indices(True)
+        
     def _ion_register(self):
         charge = self._charge
         if self._name is not None:
@@ -821,9 +884,11 @@ class Species(_SpeciesMathable):
         raise RxDException('no such region')
 
     def _update_node_data(self):
+        nsegs_changed = 0
         for sec in self._secs:
-            sec._update_node_data()
-            
+            nsegs_changed += sec._update_node_data()
+        return nsegs_changed
+
     def concentrations(self):
         if self._secs:
             raise RxDException('concentrations only supports 3d and that is deprecated')
@@ -895,8 +960,11 @@ class Species(_SpeciesMathable):
             raise RxDException('Cannot set regions now; model already instantiated')
 
         
-    def _update_region_indices(self):
+    def _update_region_indices(self, update_offsets=False):
         # TODO: should this include 3D nodes? currently 1D only. (What faces the user?)
+        # update offset in case nseg has changed
+        if hasattr(self,'_secs') and self._secs and update_offsets:
+            self._offset = self._secs[0]._offset - self._num_roots
         self._region_indices = {}
         for s in self._secs:
             if s._region not in self._region_indices:
@@ -960,8 +1028,7 @@ class Species(_SpeciesMathable):
     def _setup_c_matrix(self, c):
         # TODO: this will need to be changed for three dimensions, or stochastic
         for s in self._secs:
-            for i in range(s._offset, s._offset + s.nseg):
-                c[i, i] = 1.
+            c[s._offset:s._offset + s.nseg] = 1.0
     
     def _setup_currents(self, indices, scales, ptrs, cur_map):
         from . import rxd
@@ -1140,4 +1207,12 @@ class Species(_SpeciesMathable):
             return self.__repr__()
         return str(self._name)
     
+def xyz_by_index(indices):
+    """Return the 3D location of the nodes at the given indices"""
+    if hasattr(indices,'count'):
+        index = indices
+    else:
+        index = [indices]
+    #TODO: make sure to include Node3D
+    return [[nd.x3d, nd.y3d, nd.z3d] for sp in _get_all_species().values() for s in sp()._secs for nd in s.nodes + sp()._nodes if sp() if nd._index in index]
 

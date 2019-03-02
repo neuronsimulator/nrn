@@ -980,7 +980,10 @@ void pargap_jacobi_rhs(double* b, double* x) {
   for (int i=0; i < visources_->count(); ++i) {
     Node* nd = visources_->item(i);
     NODEV(nd) = 0.0;
-    NODERHS(nd) = 0.0;
+  }
+  // Initialize rhs to 0.
+  for (int i=0; i < _nt->end; ++i) {
+    VEC_RHS(i) = 0.0;
   }
 
   for (int k=0; k < imped_current_type_count_; ++k) {

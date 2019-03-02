@@ -40,7 +40,7 @@ class RxDSection:
     @property
     def section_orientation(self):
         """The HOC section orientation."""
-        return h.section_orientation(sec=self._sec)
+        return self._sec.orientation()
 
     @property
     def L(self):

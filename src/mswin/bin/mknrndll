@@ -1,4 +1,5 @@
 #!sh
+set -e
 
 rm -f nrnmech.dll
 

@@ -149,7 +149,7 @@ conceptually simpler to merely repeat the whole process in a separate file*/
 /* extending to linear blocks. Same as nonlinear except that
 there is a linearsens call and we must be sure to keep proper state order */
 	int nstate, i, j, newjac;
-	char sname[256], dname[256];
+	char sname[256], dname[257];
 	Item *q, *q1;
 	List *senstmt;	/* nonlinear sens statements (saved in sensinfo) */
 	Symbol *oldfun, *newfun, *s;

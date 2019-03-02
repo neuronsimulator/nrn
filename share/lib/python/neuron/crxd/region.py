@@ -27,7 +27,7 @@ def _sort_secs(secs):
         all_sorted.wholetree(sec=root)
     secs_names = dict([(sec.hoc_internal_name(),sec) for sec in secs])
     for sec in secs:
-        if h.section_orientation(sec=sec):
+        if sec.orientation():
             raise RxDException('still need to deal with backwards sections')
     return [secs_names[sec.hoc_internal_name()] for sec in all_sorted if sec.hoc_internal_name() in secs_names]
 
@@ -47,7 +47,7 @@ class _c_region:
         self.num_ecs_species = 0
         self.num_segments = numpy.sum([x.nseg for x in self._overlap])
         self._ecs_react_species = set()
-        self._react_species = set()
+        self._react_species = list()
         self._react_regions = dict()
         self._initialized = False
         self.location_index = None
@@ -61,23 +61,27 @@ class _c_region:
             else:
                 _c_region_lookup[rptr] = [self]
    
-    def add_reaction(self,rptr,regions):
-        self._react_regions[rptr] = regions
+    def add_reaction(self,rptr,region):
+        if rptr in self._react_regions:
+           self._react_regions[rptr].add(region)
+        else:
+            self._react_regions[rptr] = {region}
         self._initialized = False
 
     def add_species(self,species_set):
         from .species import SpeciesOnRegion
         for s in species_set:
             if isinstance(s,SpeciesOnRegion):
-                self._react_species.add(s._species())
-            else:
-                self._react_species.add(s)
+                if s._species() and s._species not in self._react_species: 
+                    self._react_species.append(s._species)
+            elif weakref.ref(s) not in self._react_species: 
+                self._react_species.append(weakref.ref(s))
         self.num_species = len(self._react_species)
         self._initilized = False
 
     def add_ecs_species(self,species_set):
         for s in species_set:
-            self._ecs_react_species.add(s)
+            self._ecs_react_species.add(weakref.ref(s))
         self.num_ecs_species = len(self._ecs_react_species)
         self._initialized = False
 
@@ -107,7 +111,7 @@ class _c_region:
         #Set the local ids of the regions and species involved in the reactions
         self._ecs_species_ids = dict()
         for sid, s in zip(list(range(self.num_ecs_species)), self._ecs_react_species):   
-            self._ecs_species_ids[sid]= s._grid_id
+            self._ecs_species_ids[sid]= s()._grid_id
 
         #Setup the matrix to the ECS grid points
         for rid,r in zip(list(range(self.num_regions)), self._regions):
@@ -116,7 +120,7 @@ class _c_region:
                 for sec in self._overlap:
                        for seg in sec:
                         (x,y,z) = species._xyz(seg)
-                        self.ecs_location_index[rid][sid][seg_idx] = s.index_from_xyz(x,y,z)
+                        self.ecs_location_index[rid][sid][seg_idx] = s().index_from_xyz(x,y,z)
                         seg_idx+=1
         self.ecs_location_index = self.ecs_location_index.transpose()
 
@@ -132,13 +136,13 @@ class _c_region:
         for rid,r in zip(list(range(len(self._regions))), self._regions):  
             self._region_ids[r._id] = rid
         for sid, s in zip(list(range(self.num_species)), self._react_species):
-            self._species_ids[s._id] = sid
+            self._species_ids[s()._id] = sid
             
         
         #Setup the array to the state index 
         for rid,r in zip(list(range(self.num_regions)), self._regions):
             for sid, s in zip(list(range(self.num_species)), self._react_species):
-                indices = s.indices(r)
+                indices = s().indices(r)
                 try:
                     if indices == []:
                         self.location_index[rid][sid][:] = -1
@@ -153,10 +157,9 @@ class _c_region:
             self._ecs_initalize()
                                   
         for rptr in self._react_regions:
-            reagions = self._react_regions[rptr]
             rids = []
-            for r in self._regions:
-                rids.append(self._region_ids[r._id])
+            for r in self._react_regions[rptr]:
+                rids.append(self._region_ids[r()._id])
             self._react_regions[rptr] = rids
         self._initialized = True
 
@@ -373,21 +376,21 @@ class Region(object):
         # NOTE: some care is necessary in constructing normal vector... must be
         #       based on end frusta, not on vector between end points
         if position == 0:
-            x = h.x3d(0, sec=sec)
-            y = h.y3d(0, sec=sec)
-            z = h.z3d(0, sec=sec)
-            nx = h.x3d(1, sec=sec) - x
-            ny = h.y3d(1, sec=sec) - y
-            nz = h.z3d(1, sec=sec) - z
+            x = sec.x3d(0)
+            y = sec.y3d(0)
+            z = sec.z3d(0)
+            nx = sec.x3d(1) - x
+            ny = sec.y3d(1) - y
+            nz = sec.z3d(1) - z
         elif position == 1:
-            n = int(h.n3d(sec=sec))
-            x = h.x3d(n - 1, sec=sec)
-            y = h.y3d(n - 1, sec=sec)
-            z = h.z3d(n - 1, sec=sec)
+            n = sec.n3d()
+            x = sec.x3d(n - 1)
+            y = sec.y3d(n - 1)
+            z = sec.z3d(n - 1)
             # NOTE: sign of the normal is irrelevant
-            nx = x - h.x3d(n - 2, sec=sec)
-            ny = y - h.y3d(n - 2, sec=sec)
-            nz = z - h.z3d(n - 2, sec=sec)
+            nx = x - sec.x3d(n - 2)
+            ny = y - sec.y3d(n - 2)
+            nz = z - sec.z3d(n - 2)
         else:
             raise RxDException('should never get here')
         # x, y, z = x * x1 + (1 - x) * x0, x * y1 + (1 - x) * y0, x * z1 + (1 - x) * z1

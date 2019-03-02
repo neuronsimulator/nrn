@@ -61,6 +61,37 @@ def _allocate(num):
     _states.resize(total, refcheck=False)
     return start_index
 
+def _remove(start, stop):
+    """ delete old volumes, surface areas and diff values in from global arrays
+    """
+    global _volumes, _surface_area, _diffs, _states
+    #Remove entries that have to be recalculated
+    _volumes = numpy.delete(_volumes,list(range(start,stop)))
+    _surface_area = numpy.delete(_surface_area,list(range(start,stop)))
+    _diffs = numpy.delete(_diffs,list(range(start,stop)))
+    _states = numpy.delete(_states,list(range(start,stop)))
+
+def _replace(old_offset, old_nseg, new_offset, new_nseg):
+    """ delete old volumes, surface areas and diff values in from global arrays
+        move states so that the new segment value is equal to the old segment
+        value that contains its centre """
+    global _volumes, _surface_area, _diffs, _states
+    # remove entries that have to be recalculated
+    start = old_offset
+    stop = start + old_nseg + 1
+    
+    _volumes = numpy.delete(_volumes, list(range(start, stop)))
+    _surface_area = numpy.delete(_surface_area, list(range(start, stop)))
+    _diffs = numpy.delete(_diffs, list(range(start, stop)))
+    # replace states -- the new segment has the state from the old
+    # segment which contains it's centre
+
+    for j in range(new_nseg):
+        i = int(((j + 0.5) / new_nseg) * old_nseg)
+        _states[new_offset + j ] = _states[old_offset + i]
+    _states = numpy.delete(_states,list(range(start, stop)))
+
+
 _numpy_element_ref = neuron.numpy_element_ref
 
 class Node(object):
@@ -284,13 +315,7 @@ class Node(object):
     def _state_index(self):
         return self._index
 
-        
-    
-_h_n3d = h.n3d
-_h_x3d = h.x3d
-_h_y3d = h.y3d
-_h_z3d = h.z3d
-_h_arc3d = h.arc3d
+
 
 class Node1D(Node):
     def __init__(self, sec, i, location, data_type=_concentration_node):
@@ -322,10 +347,10 @@ class Node1D(Node):
     def _update_loc3d(self):
         sec = self._sec
         length = sec.L
-        normalized_arc3d = [_h_arc3d(i, sec=sec._sec) / length for i in range(int(_h_n3d(sec=sec._sec)))]
-        x3d = [_h_x3d(i, sec=sec._sec) for i in range(int(_h_n3d(sec=sec._sec)))]
-        y3d = [_h_y3d(i, sec=sec._sec) for i in range(int(_h_n3d(sec=sec._sec)))]
-        z3d = [_h_z3d(i, sec=sec._sec) for i in range(int(_h_n3d(sec=sec._sec)))]
+        normalized_arc3d = [sec._sec.arc3d(i) / length for i in range(sec._sec.n3d())]
+        x3d = [sec._sec.x3d(i) for i in range(sec._sec.n3d())]
+        y3d = [sec._sec.y3d(i) for i in range(sec._sec.n3d())]
+        z3d = [sec._sec.z3d(i) for i in range(sec._sec.n3d())]
         loc1d = self._location
         self._loc3d = (numpy.interp(loc1d, normalized_arc3d, x3d),
                        numpy.interp(loc1d, normalized_arc3d, y3d),

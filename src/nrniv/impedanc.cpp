@@ -371,7 +371,7 @@ int Imp::loc(Section* sec, double x){
 double Imp::transfer_amp(Section* sec, double x){
 	check();
 	int vloc = loc(sec, x);
-	return nli_ ? nli_->transfer_amp(vloc) : abs(transfer[vloc]);
+	return nli_ ? nli_->transfer_amp(istim, vloc) : abs(transfer[vloc]);
 }
 
 double Imp::input_amp(Section* sec, double x){
@@ -381,7 +381,7 @@ double Imp::input_amp(Section* sec, double x){
 
 double Imp::transfer_phase(Section* sec, double x){
 	check();
-	return nli_ ? nli_->transfer_phase(loc(sec, x)) : arg(transfer[loc(sec, x)]);
+	return nli_ ? nli_->transfer_phase(istim, loc(sec, x)) : arg(transfer[loc(sec, x)]);
 }
 
 double Imp::input_phase(Section* sec, double x){

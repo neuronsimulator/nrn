@@ -58,7 +58,6 @@ public:
 	size_t pickle_ret_size_;
 	static bool is_master_;
 	static bool started_, done_;
-	static bool use_pvm_;
 	static int mytid_;
 	static int debug_;
 	static bool master_works_;

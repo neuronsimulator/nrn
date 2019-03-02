@@ -3,8 +3,6 @@ from . import species, node, section1d, region
 from .nodelist import NodeList
 import weakref
 import numpy
-import scipy.sparse
-import scipy.sparse.linalg
 import ctypes
 import atexit
 from . import options
@@ -22,12 +20,6 @@ import platform
 # aliases to avoid repeatedly doing multiple hash-table lookups
 _numpy_array = numpy.array
 _numpy_zeros = numpy.zeros
-_scipy_sparse_linalg_bicgstab = scipy.sparse.linalg.bicgstab
-_scipy_sparse_eye = scipy.sparse.eye
-_scipy_sparse_linalg_spsolve = scipy.sparse.linalg.spsolve
-_scipy_sparse_dok_matrix = scipy.sparse.dok_matrix
-_scipy_sparse_linalg_factorized = scipy.sparse.linalg.factorized
-_scipy_sparse_coo_matrix = scipy.sparse.coo_matrix
 _species_get_all_species = species._get_all_species
 _node_get_states = node._get_states
 _section1d_transfer_to_legacy = section1d._transfer_to_legacy
@@ -47,6 +39,7 @@ make_time_ptr(h._ref_dt, h._ref_t)
 
 _double_ptr = ctypes.POINTER(ctypes.c_double)
 _int_ptr = ctypes.POINTER(_ctypes_c_int)
+_long_ptr = ctypes.POINTER(ctypes.c_long)
 
 
 fptr_prototype = ctypes.CFUNCTYPE(None)
@@ -67,7 +60,7 @@ _fih_transfer_ecs = h.FInitializeHandler(1, scatter_concentrations)
 rxd_set_no_diffusion = nrn_dll_sym('rxd_set_no_diffusion')
 
 setup_solver = nrn_dll_sym('setup_solver')
-setup_solver.argtypes = [ndpointer(ctypes.c_double), ctypes.c_int,  ctypes.POINTER(ctypes.c_long), ctypes.c_int, ctypes.py_object, ctypes.py_object]
+setup_solver.argtypes = [ndpointer(ctypes.c_double), ctypes.c_int,  numpy.ctypeslib.ndpointer(numpy.int_, flags='contiguous'), ctypes.c_int, ctypes.py_object, ctypes.py_object]
 
 #states = None
 _set_num_threads = nrn_dll_sym('set_num_threads')
@@ -79,7 +72,7 @@ _get_num_threads.restype = ctypes.c_int
 clear_rates = nrn_dll_sym('clear_rates')
 register_rate = nrn_dll_sym('register_rate')
 register_rate.argtypes = [ 
-        ctypes.c_int,                                                              #num species
+        ctypes.c_int,                                                               #num species
         ctypes.c_int,                                                               #num regions
         ctypes.c_int,                                                               #num seg
         numpy.ctypeslib.ndpointer(ctypes.c_int, flags='contiguous'),                #species ids
@@ -118,15 +111,11 @@ set_euler_matrix = nrn_dll_sym('rxd_set_euler_matrix')
 set_euler_matrix.argtypes = [
     ctypes.c_int,
     ctypes.c_int,
-    numpy.ctypeslib.ndpointer(numpy.int_, flags='contiguous'),
-    numpy.ctypeslib.ndpointer(numpy.int_, flags='contiguous'),
-    numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
+    _long_ptr,
+    _long_ptr,
+    _double_ptr,
     numpy.ctypeslib.ndpointer(numpy.int_, flags='contiguous'),
     ctypes.c_int,
-    numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
-    numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
-    numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
-    numpy.ctypeslib.ndpointer(numpy.intc, flags='contiguous'),
     numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
 ]
 rxd_setup_curr_ptrs = nrn_dll_sym('rxd_setup_curr_ptrs')
@@ -208,7 +197,6 @@ _cvode_object = h.CVode()
 last_diam_change_cnt = None
 last_structure_change_cnt = None
 
-_linmodadd = None
 _linmodadd_c = None
 _diffusion_matrix = None
 _curr_scales = None
@@ -217,9 +205,8 @@ _curr_indices = None
 
 _all_reactions = []
 
-_zero_volume_indices = []
+_zero_volume_indices = numpy.ndarray(0, dtype=numpy.int_)
 _nonzero_volume_indices = []
-
 
 nrn_tree_solve = nrn_dll_sym('nrn_tree_solve')
 nrn_tree_solve.restype = None
@@ -235,7 +222,6 @@ _diffusion_d = None
 _diffusion_a = None
 _diffusion_b = None
 _diffusion_p = None
-_c_diagonal = None
 _cur_node_indices = None
 _diffusion_a_ptr, _diffusion_b_ptr, _diffusion_p_ptr = None, None, None
 
@@ -385,39 +371,10 @@ def _ode_fun(t, y, ydot):
         
     states[_zero_volume_indices] = 0
 
-def _ode_solve(dt, t, b, y):
-    initializer.assert_initialized()
-    if _diffusion_matrix is None: _setup_matrices()
-    lo = _rxd_offset
-    hi = lo + len(_nonzero_volume_indices)
-    n = len(_node_get_states())
-    # TODO: this will need changed when can have both 1D and 3D
-    if species._has_3d:
-        if species._has_1d:
-            raise Exception('development issue: cvode currently does not support hybrid simulations (fix by shifting for zero volume indices)')
-        # NOTE: only working on the rxd part
-        rxd_b = b[lo : hi]
-        # TODO: make sure can handle both 1D and 3D
-        m = eye_minus_dt_J(n, dt)
-        # removed diagonal preconditioner since tests showed no improvement in convergence
-        result, info = _scipy_sparse_linalg_bicgstab(m, dt * rxd_b)
-        assert(info == 0)
-        b[lo : hi] = _react_matrix_solver(result)
-    else:
-        # 1D only; use Hines solver
-        full_b = numpy.zeros(n)
-        full_b[_nonzero_volume_indices] = b[lo : hi]
-        b[lo : hi] = _react_matrix_solver(_diffusion_matrix_solve(dt, full_b))[_nonzero_volume_indices]
-        # the following version computes the reaction matrix each time
-        #full_y = numpy.zeros(n)
-        #full_y[_nonzero_volume_indices] = y[lo : hi]
-        #b[lo : hi] = _reaction_matrix_solve(dt, full_y, _diffusion_matrix_solve(dt, full_b))[_nonzero_volume_indices]
-        # this line doesn't include the reaction contributions to the Jacobian
-        #b[lo : hi] = _diffusion_matrix_solve(dt, full_b)[_nonzero_volume_indices]
-
 _rxd_induced_currents = None
-
+_memb_cur_ptrs= []
 def _setup_memb_currents():
+    global _memb_cur_ptrs
     initializer._do_init()
     # setup membrane fluxes from our stuff
     # TODO: cache the memb_cur_ptrs, memb_cur_charges, memb_net_charges, memb_cur_mapped
@@ -427,7 +384,7 @@ def _setup_memb_currents():
     SPECIES_ABSENT = -1
     # TODO: change so that this is only called when there are in fact currents
     rxd_memb_scales = []
-    memb_cur_ptrs = []
+    _memb_cur_ptrs = []
     memb_cur_charges = []
     memb_net_charges = []
     memb_cur_mapped = []
@@ -437,17 +394,17 @@ def _setup_memb_currents():
         if r and r._membrane_flux:
             scales = r._memb_scales
             rxd_memb_scales.extend(scales)
-            memb_cur_ptrs += r._cur_ptrs
+            _memb_cur_ptrs += r._cur_ptrs
             memb_cur_mapped += r._cur_mapped
             memb_cur_mapped_ecs += r._cur_mapped_ecs
             memb_cur_charges += [r._cur_charges] * len(scales)
             memb_net_charges += [r._net_charges] * len(scales)
     ecs_map = [SPECIES_ABSENT if i is None else i for i in list(itertools.chain.from_iterable(itertools.chain.from_iterable(memb_cur_mapped_ecs)))]
     ics_map = [SPECIES_ABSENT if i is None else i for i in list(itertools.chain.from_iterable(itertools.chain.from_iterable(memb_cur_mapped)))]
-    if memb_cur_ptrs:
+    if _memb_cur_ptrs:
         cur_counts = [len(x) for x in memb_cur_mapped]
         num_currents = numpy.array(cur_counts).sum()
-        setup_currents(len(memb_cur_ptrs),
+        setup_currents(len(_memb_cur_ptrs),
             num_currents,
             len(_curr_indices), # num_currents == len(_curr_indices) if no Extracellular
             _list_to_cint_array(cur_counts),
@@ -456,7 +413,7 @@ def _setup_memb_currents():
             _list_to_cint_array(_cur_node_indices),
             _list_to_cdouble_array(rxd_memb_scales),
             _list_to_cint_array(list(itertools.chain.from_iterable(memb_cur_charges))),
-            _list_to_pyobject_array(list(itertools.chain.from_iterable(memb_cur_ptrs))),
+            _list_to_pyobject_array(list(itertools.chain.from_iterable(_memb_cur_ptrs))),
             _list_to_cint_array(ics_map),
             _list_to_cint_array(ecs_map))
         
@@ -488,83 +445,7 @@ def _currents(rhs):
 _last_m = None
 _last_preconditioner = None
 _fixed_step_count = 0
-from scipy.sparse.linalg import spilu as _spilu
-from scipy.sparse.linalg import LinearOperator as _LinearOperator
-from scipy.sparse import csc_matrix
 
-def eye_minus_dt_J(n, dt):
-    """correctly computes I - dt J as needed for the lhs of an advance.
-    
-    The difficulty here is that the _euler_matrix also contains conservation
-    equations. These are preserved unchanged (i.e. no +1).
-    
-    This reads two globals: _euler_matrix and _zero_volume_indices.
-    
-    n is the length of the state vector (including the conservation nodes).
-    """
-    m = _scipy_sparse_eye(n, n) - dt * _euler_matrix
-    # correct to account for algebraic conservation nodes which don't get the +1
-    for i in _zero_volume_indices:
-        m[i, i] -= 1
-    return m
-
-    
-
-def _fixed_step_solve(raw_dt):
-    initializer._do_init()
-    
-    global pinverse, _fixed_step_count
-    global _last_m, _last_dt, _last_preconditioner
-    
-    if species._species_count == 0:
-        return
-
-    # allow for skipping certain fixed steps
-    # warning: this risks numerical errors!
-    fixed_step_factor = options.fixed_step_factor
-    _fixed_step_count += 1
-    if _fixed_step_count % fixed_step_factor: return
-    dt = fixed_step_factor * raw_dt
-    
-    # TODO: this probably shouldn't be here
-    if _diffusion_matrix is None and _euler_matrix is None: _setup_matrices()
-
-    states = _node_get_states()[:]
-    if _diffusion_matrix is None:
-        return None
-
-    b = _rxd_reaction(states) - _diffusion_matrix * states
-
-    if not species._has_3d:
-        # use Hines solver since 1D only
-        states[:] += _diffusion_matrix_solve(dt, dt * b)
-
-        # clear the zero-volume "nodes"
-        states[_zero_volume_indices] = 0
-
-        # TODO: refactor so this isn't in section1d... probably belongs in node
-        _section1d_transfer_to_legacy()
-        
-        _last_preconditioner = None
-    else:
-        # TODO: this looks to be semi-implicit method because it doesn't take into account the reaction contribution to the Jacobian; do we care?
-        # the actual advance via implicit euler
-        n = len(states)
-        if _last_dt != dt or _last_preconditioner is None:
-            _last_m = eye_minus_dt_J(n, dt)
-            _last_preconditioner = _LinearOperator((n, n), _spilu(csc_matrix(_last_m)).solve)
-            _last_dt = dt
-        # removed diagonal preconditioner since tests showed no improvement in convergence
-        result, info = _scipy_sparse_linalg_bicgstab(_last_m, dt * b, M=_last_preconditioner)
-        assert(info == 0)
-        states[:] += result
-
-        # clear the zero-volume "nodes"
-        states[_zero_volume_indices] = 0
-
-        for sr in list(_species_get_all_species().values()):
-            s = sr()
-            if s is not None: s._transfer_to_legacy()
 
 def _rxd_reaction(states):
     # TODO: this probably shouldn't be here
@@ -601,132 +482,9 @@ _diffusion_d = None
 _diffusion_a = None
 _diffusion_b = None
 _diffusion_p = None
-_c_diagonal = None
 _cur_node_indices = None
 
 _diffusion_a_ptr, _diffusion_b_ptr, _diffusion_p_ptr = None, None, None
-
-def _diffusion_matrix_solve(dt, rhs):
-    # only get here if already initialized
-    global _last_dt
-    global _diffusion_a_ptr, _diffusion_d, _diffusion_b_ptr, _diffusion_p_ptr, _c_diagonal
-
-    if _diffusion_matrix is None: return numpy.array([])
-
-    n = len(rhs)
-
-    if _last_dt != dt:
-        global _c_diagonal, _diffusion_a_base, _diffusion_b_base, _diffusion_d_base
-        global _diffusion_a, _diffusion_b, _diffusion_p
-        _last_dt = dt
-        # clear _c_diagonal and _last_dt to trigger a recalculation
-        if _c_diagonal is None:
-            _diffusion_d_base = _numpy_array(_diffusion_matrix.diagonal())
-            _diffusion_a_base = _numpy_zeros(n)
-            _diffusion_b_base = _numpy_zeros(n)
-            # TODO: the int32 bit may be machine specific
-            _diffusion_p = _numpy_array([-1] * n, dtype=numpy.intc)
-            for j in range(n):
-                col = _diffusion_matrix[:, j]
-                col_nonzero = col.nonzero()
-                for i in col_nonzero[0]:
-                    if i < j:
-                        _diffusion_p[j] = i
-                        assert(_diffusion_a_base[j] == 0)
-                        _diffusion_a_base[j] = col[i, 0]
-                        _diffusion_b_base[j] = _diffusion_matrix[j, i]
-            _c_diagonal = _linmodadd_c.diagonal()
-        _diffusion_d = _c_diagonal + dt * _diffusion_d_base
-        _diffusion_b = dt * _diffusion_b_base
-        _diffusion_a = dt * _diffusion_a_base
-        _diffusion_a_ptr = _diffusion_a.ctypes.data_as(_double_ptr)
-        _diffusion_b_ptr = _diffusion_b.ctypes.data_as(_double_ptr)
-        _diffusion_p_ptr = _diffusion_p.ctypes.data_as(_int_ptr)
-    
-    result = _numpy_array(rhs)
-    d = _numpy_array(_diffusion_d)
-    d_ptr = d.ctypes.data_as(_double_ptr)
-    result_ptr = result.ctypes.data_as(_double_ptr)
-    
-    nrn_tree_solve(_diffusion_a_ptr, d_ptr, _diffusion_b_ptr, result_ptr,
-                   _diffusion_p_ptr, _ctypes_c_int(n))
-    return result
-
-def _get_jac(dt, states):
-    # only get here if already initialized
-    
-    # now handle the reaction contribution to the Jacobian
-    # this works as long as (I - dt(Jdiff + Jreact)) \approx (I - dtJreact)(I - dtJdiff)
-    count = 0
-    n = len(states)
-    rows = list(range(n))
-    cols = list(range(n))
-    data = [1] * n
-    for rptr in _all_reactions:
-        r = rptr()
-        if r:
-            # TODO: store weakrefs to r._jacobian_entries as well as r
-            #       this will reduce lookup time
-            r_rows, r_cols, r_data = r._jacobian_entries(states, multiply=-dt)
-            # TODO: can we predict the length of rows etc in advance so we
-            #       don't need to grow them?
-            rows += r_rows
-            cols += r_cols
-            data += r_data
-            count += 1
-            
-    if count > 0 and n > 0:
-        return scipy.sparse.coo_matrix((data, (rows, cols)), shape=(n, n))
-    return None
-
-def _reaction_matrix_solve(dt, states, rhs):
-    if not options.use_reaction_contribution_to_jacobian:
-        return rhs
-    jac = _get_jac(dt, states)
-    if jac is not None:
-        jac = jac.tocsr()
-        """
-        print 'states:', list(states)
-        print 'jacobian (_solve):'
-        m = jac.todense()
-        for i in xrange(m.shape[0]):
-            for j in xrange(m.shape[1]):
-                print ('%15g' % m[i, j]),
-            print    
-        """
-        #result, info = scipy.sparse.linalg.bicgstab(jac, rhs)
-        #assert(info == 0)
-        result = _scipy_sparse_linalg_spsolve(jac, rhs)
-    else:
-        result = rhs
-
-    return result
-
-_react_matrix_solver = None    
-def _reaction_matrix_setup(dt, unexpanded_states):
-    global _react_matrix_solver
-    if not options.use_reaction_contribution_to_jacobian:
-        _react_matrix_solver = lambda x: x
-        return
-
-    states = numpy.zeros(len(node._get_states()))
-    states[_nonzero_volume_indices] = unexpanded_states    
-    jac = _get_jac(dt, states)
-    if jac is not None:
-        jac = jac.tocsc()
-        """
-        print 'jacobian (_reaction_matrix_setup):'
-        m = jac.todense()
-        for i in xrange(m.shape[0]):
-            for j in xrange(m.shape[1]):
-                print ('%15g' % m[i, j]),
-            print
-        """
-        #result, info = scipy.sparse.linalg.bicgstab(jac, rhs)
-        #assert(info == 0)
-        _react_matrix_solver = _scipy_sparse_linalg_factorized(jac)
-    else:
-        _react_matrix_solver = lambda x: x
 
 def _setup():
     initializer._do_init()
@@ -811,30 +569,6 @@ def _ode_jacobian(dt, t, ypred, fpred):
     hi = lo + len(_nonzero_volume_indices)    
     _reaction_matrix_setup(dt, ypred[lo : hi])
 
-_orig_setup = _setup
-_orig_currents = _currents
-_orig_ode_count = _ode_count
-_orig_ode_reinit = _ode_reinit
-_orig_ode_fun = _ode_fun
-_orig_ode_solve = _ode_solve
-_orig_fixed_step_solve = _fixed_step_solve
-_orig_ode_jacobian = _ode_jacobian
-
-# wrapper functions allow swapping in experimental alternatives
-def _w_ode_jacobian(dt, t, ypred, fpred): return None #_ode_jacobian(dt, t, ypred, fpred)
-#def _w_conductance(d): return _conductance(d)
-_w_conductance = None
-def _w_setup(): return _setup()
-def _w_currents(rhs): return None 
-def _w_ode_count(offset): return None #_ode_count(offset)
-def _w_ode_reinit(y): return None 
-def _w_ode_fun(t, y, ydot): return None
-def _w_ode_solve(dt, t, b, y): return None # _ode_solve(dt, t, b, y)
-def _w_fixed_step_solve(raw_dt): return None # _section1d_transfer_to_legacy # _fixed_step_solve(raw_dt)
-def _w_atolscale(y): return None #_atolscale(y)
-_callbacks = [_w_setup, None, _w_currents, _w_conductance, _w_fixed_step_solve,
-              _w_ode_count, _w_ode_reinit, _w_ode_fun, _w_ode_solve, _w_ode_jacobian, _w_atolscale]
-
 _curr_ptr_vector = None
 _curr_ptr_storage = None
 _curr_ptr_storage_nrn = None
@@ -857,12 +591,24 @@ def _update_node_data(force=False):
         last_structure_change_cnt = _structure_change_count.value
         #if not species._has_3d:
         # TODO: merge this with the 3d/hybrid case?
+        nsegs_changed = 0
         for sr in list(_species_get_all_species().values()):
             s = sr()
-            if s is not None: s._update_node_data()
-        for sr in list(_species_get_all_species().values()):
-            s = sr()
-            if s is not None: s._update_region_indices()
+            if s is not None: nsegs_changed += s._update_node_data()
+        if nsegs_changed:
+            section1d._purge_cptrs()
+            for sr in list(_species_get_all_species().values()):
+                s = sr()
+                if s is not None:
+                    s._update_region_indices(True)
+                    s._register_cptrs()
+            if species._has_1d and species._1d_submatrix_n():
+                volumes = node._get_data()[0]
+                _zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
+            setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
+            # TODO: separate compiling reactions -- so the indices can be updated without recompiling
+            _compile_reactions()
+
         #end#if
         for rptr in _all_reactions:
             r = rptr()
@@ -886,14 +632,7 @@ def _update_node_data(force=False):
         else:
             _curr_ptr_vector = None
 
-        _curr_scales = _numpy_array(_curr_scales)        
-
-def _send_euler_matrix_to_c(nrow, nnonzero, nonzero_i, nonzero_j, nonzero_values, zero_volume_indices):
-    section1d._transfer_to_legacy()
-    set_euler_matrix(nrow, nnonzero, nonzero_i, nonzero_j, nonzero_values,
-                     zero_volume_indices, len(zero_volume_indices),
-                     _diffusion_a_base, _diffusion_b_base, _diffusion_d_base,
-                     _diffusion_p, _c_diagonal) 
+        #_curr_scales = _numpy_array(_curr_scales)        
 
 
 def _matrix_to_rxd_sparse(m):
@@ -906,42 +645,24 @@ def _matrix_to_rxd_sparse(m):
 
     return n, len(nonzero_i), numpy.ascontiguousarray(nonzero_i, dtype=numpy.int_), numpy.ascontiguousarray(nonzero_j, dtype=numpy.int_), nonzero_values
 
-def _calculate_diffusion_bases():
-    global _diffusion_a_base, _diffusion_b_base, _diffusion_d_base, _diffusion_p
-    global _c_diagonal
-    _diffusion_d_base = _numpy_array(_diffusion_matrix.diagonal())
-    n = len(_diffusion_d_base)
-    _diffusion_a_base = _numpy_zeros(n, dtype=numpy.double)
-    _diffusion_b_base = _numpy_zeros(n, dtype=numpy.double)
-    # TODO: the int32 bit may be machine specific
-    _diffusion_p = _numpy_array([-1] * n, dtype=numpy.intc)
-    for j in range(n):
-        col = _diffusion_matrix[:, j]
-        col_nonzero = col.nonzero()
-        for i in col_nonzero[0]:
-            if i < j:
-                _diffusion_p[j] = i
-                assert(_diffusion_a_base[j] == 0)
-                _diffusion_a_base[j] = col[i, 0]
-                _diffusion_b_base[j] = _diffusion_matrix[j, i]
-                break
-    _c_diagonal = _linmodadd_c.diagonal()
-
 
 _euler_matrix = None
 
 # TODO: make sure this does the right thing when the diffusion constant changes between two neighboring nodes
 def _setup_matrices():
-    global _linmodadd, _linmodadd_c, _diffusion_matrix, _linmodadd_b, _last_dt, _c_diagonal, _euler_matrix
-    global _euler_matrix_i, _euler_matrix_j, _euler_matrix_nonzero, _euler_matrix_nrow, _euler_matrix_nnonzero
-
+    global _curr_ptrs
     global _cur_node_indices
-    global _zero_volume_indices, _nonzero_volume_indices
+    global _zero_volume_indices
 
     # TODO: this sometimes seems to get called twice. Figure out why and fix, if possible.
 
+    # if the shape has changed update the nodes
+    _update_node_data()
+
     n = len(_node_get_states())
-        
+    
+    #TODO: Replace with ADI version 
+    """
     if species._has_3d:
         _euler_matrix = _scipy_sparse_dok_matrix((n, n), dtype=float)
 
@@ -958,13 +679,12 @@ def _setup_matrices():
         _zero_volume_indices = []
         _nonzero_volume_indices = list(range(len(_node_get_states())))
         
-
+    """
     if species._has_1d:
         n = species._1d_submatrix_n()
         # TODO: initialization is slow. track down why
         
         _last_dt = None
-        _c_diagonal = None
         
         for sr in list(_species_get_all_species().values()):
             s = sr()
@@ -973,37 +693,41 @@ def _setup_matrices():
         
         _update_node_data(True)
 
+        volumes = node._get_data()[0]
+        _zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
+        _nonzero_volume_indices = volumes.nonzero()[0]
+
         # remove old linearmodeladdition
-        _linmodadd = None
         _linmodadd_cur = None
         
         if n:        
             # create sparse matrix for C in cy'+gy=b
-            _linmodadd_c = _scipy_sparse_dok_matrix((n, n))
+            c_diagonal = numpy.zeros(n,dtype=ctypes.c_double)
             # most entries are 1 except those corresponding to the 0 and 1 ends
-            
-            
+                        
             # create the matrix G
-            if not species._has_3d:
-                # if we have both, then put the 1D stuff into the matrix that already exists for 3D
-                _diffusion_matrix = _scipy_sparse_dok_matrix((n, n))
+            #if not species._has_3d:
+            #    # if we have both, then put the 1D stuff into the matrix that already exists for 3D
+            _diffusion_matrix = [dict() for idx in range(n)]  
             for sr in list(_species_get_all_species().values()):
                 s = sr()
                 if s is not None:
                     s._setup_diffusion_matrix(_diffusion_matrix)
-                    s._setup_c_matrix(_linmodadd_c)
+                    s._setup_c_matrix(c_diagonal)
                     #print '_diffusion_matrix.shape = %r, n = %r, species._has_3d = %r' % (_diffusion_matrix.shape, n, species._has_3d)
-
-            
+            euler_matrix_i, euler_matrix_j, euler_matrix_nonzero = [], [], []
+            for i in range(n):
+                mat_i = _diffusion_matrix[i]
+                euler_matrix_i.extend(itertools.repeat(i,len(mat_i)))
+                euler_matrix_j.extend(mat_i.keys())
+                euler_matrix_nonzero.extend(mat_i.values())
+            euler_matrix_nnonzero = len(euler_matrix_nonzero)
+            assert(len(euler_matrix_i) == len(euler_matrix_j) == len(euler_matrix_nonzero))
             # modify C for cases where no diffusive coupling of 0, 1 ends
             # TODO: is there a better way to handle no diffusion?
-            for i in range(n):
-                if not _diffusion_matrix[i, i]:
-                    _linmodadd_c[i, i] = 1
-
-            
-            # and the vector b
-            _linmodadd_b = _h_vector(n)
+            #for i in range(n):
+            #    if not _diffusion_matrix[i, i]:
+            #        _linmodadd_c[i, i] = 1
 
             
             # setup for induced membrane currents
@@ -1016,16 +740,12 @@ def _setup_matrices():
                     
             #_cvode_object.re_init()    
 
-            _linmodadd_c = _linmodadd_c.tocsr()
-           
-            if species._has_3d:
-                _euler_matrix = -_diffusion_matrix
-
-    volumes = node._get_data()[0]
-    _zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
-    _nonzero_volume_indices = volumes.nonzero()[0]
+            #if species._has_3d:
+            #    _euler_matrix = -_diffusion_matrix
 
 
+    #TODO: Replace this this to handle 1d/3d hybrid models
+    """
     if species._has_1d and species._has_3d:
         # TODO: add connections to matrix; for now: find them
         hybrid_neighbors = collections.defaultdict(lambda: [])
@@ -1054,13 +774,13 @@ def _setup_matrices():
                                     parent_1d = None if not parent_seg else parent_seg.sec
                                     if parent_1d == sec:
                                         # it is the parent of a 1d section
-                                        index1d, indices3d = _get_node_indices(s, r, sec, h.parent_connection(sec=sec1d), sec1d, h.section_orientation(sec=sec1d))
+                                        index1d, indices3d = _get_node_indices(s, r, sec, h.parent_connection(sec=sec1d), sec1d, sec1d.orientation())
                                         hybrid_neighbors[index1d] += indices3d
                                         hybrid_diams[index1d] = parent_1d_seg.diam
                                         break
                                     elif parent_1d == parent_sec:
                                         # it connects to the parent of a 1d section
-                                        index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), sec1d, h.section_orientation(sec=sec1d))
+                                        index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), sec1d, sec1d.orientation())
                                         hybrid_neighbors[index1d] += indices3d
                                         hybrid_diams[index1d] = parent_1d_seg.diam
                                         break
@@ -1086,25 +806,25 @@ def _setup_matrices():
                 _euler_matrix[index1d, i] += rate * vol
             #print 'index1d row sum:', sum(_euler_matrix[index1d, j] for j in xrange(n))
             #print 'index1d col sum:', sum(_euler_matrix[j, index1d] for j in xrange(n))
-   
+    """
     #CRxD
-    if _euler_matrix is not None and _euler_matrix.nnz > 0:
-        _euler_matrix_nrow, _euler_matrix_nnonzero, _euler_matrix_i, _euler_matrix_j, _euler_matrix_nonzero = _matrix_to_rxd_sparse(_euler_matrix)
-        _calculate_diffusion_bases()
+    if n and euler_matrix_nnonzero > 0:
         _update_node_data()
-        _send_euler_matrix_to_c(_euler_matrix_nrow, _euler_matrix_nnonzero, _euler_matrix_i, _euler_matrix_j, _euler_matrix_nonzero, _zero_volume_indices)
-    elif _diffusion_matrix is not None and _diffusion_matrix.nnz > 0:
-        _euler_matrix_nrow, _euler_matrix_nnonzero, _euler_matrix_i, _euler_matrix_j, _euler_matrix_nonzero = _matrix_to_rxd_sparse(-_diffusion_matrix)
-        _calculate_diffusion_bases()
-        _update_node_data()
-        _send_euler_matrix_to_c(_euler_matrix_nrow, _euler_matrix_nnonzero, _euler_matrix_i, _euler_matrix_j, _euler_matrix_nonzero, _zero_volume_indices)
+        section1d._transfer_to_legacy()
+        set_euler_matrix(n, euler_matrix_nnonzero,
+                         _list_to_clong_array(euler_matrix_i),
+                         _list_to_clong_array(euler_matrix_j),
+                         _list_to_cdouble_array(euler_matrix_nonzero),
+                         _zero_volume_indices,
+                         len(_zero_volume_indices),
+                         c_diagonal)
     else:
         rxd_set_no_diffusion()
-        setup_solver(_node_get_states(), len(_node_get_states()), _list_to_clong_array(_zero_volume_indices), len(_zero_volume_indices), h._ref_t, h._ref_dt)
+        setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
     
     if _curr_indices is not None and len(_curr_indices) > 0:
         rxd_setup_curr_ptrs(len(_curr_indices), _list_to_cint_array(_curr_indices),
-            _curr_scales, _list_to_pyobject_array(_curr_ptrs))
+            numpy.concatenate(_curr_scales), _list_to_pyobject_array(_curr_ptrs))
 
     if section1d._all_cindices is not None and len(section1d._all_cindices) > 0:
         rxd_setup_conc_ptrs(len(section1d._all_cindices), 
@@ -1112,6 +832,7 @@ def _setup_matrices():
              _list_to_pyobject_array(section1d._all_cptrs))
 
     # we do this last because of performance issues with changing sparsity of csr matrices
+    """
     if _diffusion_matrix is not None:
         _diffusion_matrix = _diffusion_matrix.tocsr()
     if _euler_matrix is not None:
@@ -1138,7 +859,7 @@ def _setup_matrices():
             # TODO: _mat_for_zero_volume_nodes is used for CVode.
             #       Figure out if/how it has to be changed for hybrid 1D/3D sims (probably just augment with identity? or change how its used to avoid multiplying by I)
     
-
+    """
     
     """
     if pt1 in indices:
@@ -1175,7 +896,7 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
     indices3d = list(set(indices3d))
     #print '3d matrix indices: %r' % indices3d
     # TODO: remove the need for this assertion
-    if x1d == h.section_orientation(sec=sec1d):
+    if x1d == sec1d.orientation():
         # TODO: make this whole thing more efficient
         # the parent node is the nonzero index on the first row before the diagonal
         first_row = min([node._index for node in species.nodes(region)(sec1d)])
@@ -1185,7 +906,7 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
                 break
         else:
             raise RxDException('should never get here; could not find parent')
-    elif x1d == 1 - h.section_orientation(sec=sec1d):
+    elif x1d == 1 - sec1d.orientation():
         # the ending zero-volume node is the one after the last node
         # TODO: make this more efficient
         index_1d = max([node._index for node in species.nodes(region)(sec1d)]) + 1
@@ -1244,10 +965,12 @@ def _compile_reactions():
         
         #Find all the regions involved
         if isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
+            if not hasattr(r._mult, 'flatten'):
+                r._update_indices()
             react_regions = [s()._extracellular()._region for s in r._sources + r._dests if isinstance(s(),species.SpeciesOnExtracellular)] + [s()._region() for s in r._sources + r._dests if not isinstance(s(),species.SpeciesOnExtracellular)]
             react_regions +=  [sptr()._region() for sptr in sptrs if isinstance(sptr(),species.SpeciesOnRegion)]
         #if regions are specified - use those
-        elif None not in r._regions:
+        elif hasattr(r,'_active_regions'):
             react_regions = r._active_regions
         #Otherwise use all the regions where the species are
         else:
@@ -1334,17 +1057,17 @@ def _compile_reactions():
         rptr = weakref.ref(reg)
         for c_region in region._c_region_lookup[rptr]:
             for react in regions_inv[reg]:
-                c_region.add_reaction(react,regions_inv[reg])
+                c_region.add_reaction(react,rptr)
                 c_region.add_species(species_by_region[reg])
                 if reg in ecs_species_by_region:
                     c_region.add_ecs_species(ecs_species_by_region[reg])
 
     # now setup the reactions
+    setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
     #if there are no reactions
     if location_count == 0 and len(ecs_regions_inv) == 0:
-        setup_solver(_node_get_states(), len(_node_get_states()), _list_to_clong_array(_zero_volume_indices), len(_zero_volume_indices), h._ref_t, h._ref_dt)
         return None
-
+    
     #Setup intracellular and multicompartment reactions
     if location_count > 0:
         from . import rate, multiCompartmentReaction
@@ -1353,9 +1076,10 @@ def _compile_reactions():
             mc_mult_count = 0
             mc_mult_list = []
             species_ids_used = numpy.zeros((creg.num_species,creg.num_regions),bool)
+            flux_ids_used = numpy.zeros((creg.num_species,creg.num_regions),bool)
             ecs_species_ids_used = numpy.zeros((creg.num_ecs_species,creg.num_regions),bool)
             fxn_string = _c_headers 
-            fxn_string += 'void reaction(double** species, double** rhs, double* mult, double** species_ecs, double** rhs_ecs)\n{'
+            fxn_string += 'void reaction(double** species, double** rhs, double* mult, double** species_ecs, double** rhs_ecs, double** flux)\n{'
             # declare the "rate" variable if any reactions (non-rates)
             for rprt in list(creg._react_regions.keys()):
                 if not isinstance(rprt(),rate.Rate):
@@ -1401,11 +1125,16 @@ def _compile_reactions():
                             operator = '+=' if species_ids_used[species_id][region_id] else '='
                             fxn_string += "\n\trhs[%d][%d] %s mult[%d] * rate;" % (species_id, region_id, operator, mc_mult_count)
                             species_ids_used[species_id][region_id] = True
+                            if r._membrane_flux:
+                                operator = '+=' if flux_ids_used[species_id][region_id] else '='
+                                fxn_string += "\n\tif(flux) flux[%d][%d] %s rate;" % (species_id, region_id, operator)
+                                flux_ids_used[species_id][region_id] = True
                         #TODO: Fix problem if the whole region isn't part of the same aggregate c_region
                         mc_mult_count += 1
                     mc_mult_list.extend(r._mult.flatten())
                 else:
                     for region_id in creg._react_regions[rptr]:
+                        
                         rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate)
                         rate_str = re.sub(r'species\[(\d+)\]\[\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), region_id), rate_str)
                         fxn_string += "\n\trate = %s;" % rate_str
@@ -1418,17 +1147,10 @@ def _compile_reactions():
                             fxn_string += "\n\trhs[%d][%d] %s (%g) * rate;" % (idx, region_id, operator, summed_mults[idx])
               
             fxn_string += "\n}\n"
-            #print "num_species=%i\t num_regions=%i\t num_segments=%i\n" % (creg.num_species, creg.num_regions, creg.num_segments)
-            #print creg.get_state_index()
-            #print "state_index %s \t num_ecs_species=%i\t ecs_species_ids %s\n" % (creg.get_state_index().shape, creg.num_ecs_species, creg.get_ecs_species_ids().shape)
-            #print "ecs_index %s\t mc_mult_count=%i \t mc_mult_list %s\n" % (creg.get_ecs_index().shape, mc_mult_count, numpy.array(mc_mult_list, dtype=ctypes.c_double).shape)
-            #print mc_mult_list
-            #print fxn_string
             register_rate(creg.num_species, creg.num_regions, creg.num_segments, creg.get_state_index(),
                           creg.num_ecs_species, creg.get_ecs_species_ids(), creg.get_ecs_index(),
-                          mc_mult_count, numpy.array(mc_mult_list, dtype=ctypes.c_double), 
+                          mc_mult_count, numpy.array(mc_mult_list, dtype=ctypes.c_double),
                           _c_compile(fxn_string))
-        setup_solver(_node_get_states(), len(_node_get_states()), _list_to_clong_array(_zero_volume_indices), len(_zero_volume_indices), h._ref_t, h._ref_dt)
 
     
     #Setup extracellular reactions
@@ -1500,6 +1222,9 @@ def _init():
     initializer._do_init()
     # TODO: check about the 0<x<1 problem alluded to in the documentation
     h.define_shape()
+
+    # if the shape has changed update the nodes
+    _update_node_data()
     
     if species._has_1d:
         section1d._purge_cptrs()
@@ -1514,12 +1239,22 @@ def _init():
     _compile_reactions()
     _setup_memb_currents()
 
- 
+def _init_concentration():
+    if len(species._all_species) == 0:
+        return None
+    for sr in list(_species_get_all_species().values()):
+        s = sr()
+        if s is not None:
+            # TODO: are there issues with hybrid or 3D here? (I don't think so, but here's a bookmark just in case)
+            s._finitialize()
+
+
 
 _has_nbs_registered = False
 _nbs = None
+do_setup_matrices_fptr = None
 def _do_nbs_register():
-    global _has_nbs_registered, _nbs, _fih, _fih2
+    global _has_nbs_registered, _nbs, _fih, _fih2, _fih3, do_setup_matrices_fptr
     
     if not _has_nbs_registered:
         #from neuron import nonvint_block_supervisor as _nbs
@@ -1530,10 +1265,13 @@ def _do_nbs_register():
         #
         # register the initialization handler and the ion register handler
         #
-        _fih = h.FInitializeHandler(3, _init)
+        _fih = h.FInitializeHandler(_init_concentration)
+        _fih3 = h.FInitializeHandler(3, _init)
+
         set_setup_matrices = nrn_dll_sym('set_setup_matrices')
         set_setup_matrices.argtypes = [fptr_prototype]
         do_setup_matrices_fptr = fptr_prototype(_setup_matrices)
+        set_setup_matrices(do_setup_matrices_fptr)
 
         _fih2 = h.FInitializeHandler(3, initializer._do_ion_register)
 

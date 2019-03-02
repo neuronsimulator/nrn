@@ -84,6 +84,56 @@ static void dg_adi_vol_x(Grid_node* g, const double dt, const int y, const int z
             RHS[x] = g->bc->value;
         return;
     }
+
+    /*zero flux boundary condition*/
+    div_y = ((y==0||y==g->size_y-1)?1.0:0.5)*SQ(g->dy);
+	div_z = ((z==0||z==g->size_z-1)?1.0:0.5)*SQ(g->dz);
+    if(g->size_y == 1)
+    {
+        yp = 0;
+	    ypd = 0;
+	    ym = 0;
+	    ymd = 0;
+    }
+    else
+    {
+        yp = (y==g->size_y-1)?y-1:y+1;
+	    ypd = (y==g->size_y-1)?y:y+1;
+	    ym = (y==0)?y+1:y-1;
+	    ymd = (y==0)?1:y;
+    }
+    if(g->size_z == 1)
+    {
+        zp = 0;
+	    zpd = 0;
+	    zm = 0;
+	    zmd = 0;
+    }
+    else
+    {
+        zp = (z==g->size_z-1)?z-1:z+1;
+	    zpd = (z==g->size_z-1)?z:z+1;
+	    zm = (z==0)?z+1:z-1;
+	    zmd = (z==0)?1:z;
+    }
+
+    if(g->size_x == 1)
+    {
+        if(g->bc->type == DIRICHLET)
+        {
+            RHS[0] = g->bc->value;
+        }
+        else
+        {   
+            x = 0;
+	        RHS[0] = g->states[IDX(0,y,z)] + (dt/ALPHA(0,y,z))*
+				    ((Fxy(yp,ypd,y) - Fxy(y,ymd,ym))/div_y 
+				+ 	 (Fxz(zp,zpd,z) - Fxz(z,zmd,zm))/div_z)
+                + dt*g->states_cur[IDX(0,y,z)];
+        }
+        return;
+    }
+
     /*TODO: move allocation out of loop*/
 	diag = malloc(g->size_x*sizeof(double));
 	l_diag = malloc((g->size_x-1)*sizeof(double));
@@ -99,18 +149,6 @@ static void dg_adi_vol_x(Grid_node* g, const double dt, const int y, const int z
 		u_diag[x] = -dt*next/SQ(g->dx);
 	}
 
-
-	yp = (y==g->size_y-1)?y-1:y+1;
-	ypd = (y==g->size_y-1)?y:y+1;
-	ym = (y==0)?y+1:y-1;
-	ymd = (y==0)?1:y;
-	zp = (z==g->size_z-1)?z-1:z+1;
-	zpd = (z==g->size_z-1)?z:z+1;
-	zm = (z==0)?z+1:z-1;
-	zmd = (z==0)?1:z;
-
-	div_y = ((y==0||y==g->size_y-1)?1.0:0.5)*SQ(g->dy);
-	div_z = ((z==0||z==g->size_z-1)?1.0:0.5)*SQ(g->dz);
 
     if(g->bc->type == NEUMANN)
     {
@@ -195,6 +233,19 @@ static void dg_adi_vol_y(Grid_node* g, double const dt, int const x, int const z
         return;
     }
 
+    if(g->size_y == 1)
+    {
+        if(g->bc->type == DIRICHLET)
+        {
+            RHS[0] = g->bc->value;
+        }
+        else
+        {
+            RHS[0] =  state[x + z*g->size_x];
+        }
+        return;
+    }
+
 	diag = malloc(g->size_y*sizeof(double));
 	l_diag = malloc((g->size_y-1)*sizeof(double));
 	u_diag = malloc((g->size_y-1)*sizeof(double));
@@ -276,6 +327,18 @@ static void dg_adi_vol_z(Grid_node* g, double const dt, int const x, int const y
     {
         for(z=0; z<g->size_z; z++)
             RHS[z] = g->bc->value;
+        return;
+    }
+    if(g->size_z == 1)
+    {
+        if(g->bc->type == DIRICHLET)
+        {
+            RHS[0] = g->bc->value;
+        }
+        else
+        {
+            RHS[0] =  state[y + g->size_y*x];
+        }
         return;
     }
 
@@ -372,6 +435,53 @@ static void dg_adi_tort_x(Grid_node* g, const double dt, const int y, const int 
         return;
     }
 
+    /*zero flux boundary condition*/
+    div_y = (y==0||y==g->size_y-1)?2:1;
+	div_z = (z==0||z==g->size_z-1)?2:1;
+    if(g->size_y == 1)
+    {
+        yp = 0;
+	    ypd = 0;
+	    ym = 0;
+	    ymd = 0;
+    }
+    else
+    {
+        yp = (y==g->size_y-1)?y-1:y+1;
+	    ypd = (y==g->size_y-1)?y:y+1;
+	    ym = (y==0)?y+1:y-1;
+	    ymd = (y==0)?1:y;
+    }
+    if(g->size_z == 1)
+    {
+        zp = 0;
+	    zpd = 0;
+	    zm = 0;
+	    zmd = 0;
+    }
+    else
+    {
+        zp = (z==g->size_z-1)?z-1:z+1;
+	    zpd = (z==g->size_z-1)?z:z+1;
+	    zm = (z==0)?z+1:z-1;
+	    zmd = (z==0)?1:z;
+    }
+
+    if(g->size_x == 1)
+    {
+        if(g->bc->type == DIRICHLET)
+        {
+            RHS[0] = g->bc->value;
+        }
+        else
+        {
+            RHS[0] = g->states[IDX(0,y,z)] + dt*(g->states_cur[IDX(0,y,z)]
+                 + (DcY(0,ypd,z)*g->states[IDX(0,yp,z)] - (DcY(0,ypd,z)+DcY(0,ymd,z))*g->states[IDX(0,y,z)] + DcY(0,ymd,z)*g->states[IDX(0,ym,z)])/(div_y*SQ(g->dy))
+                 + (DcZ(0,y,zpd)*g->states[IDX(0,y,zp)] - (DcZ(0,y,zpd)+DcZ(0,y,zmd))*g->states[IDX(0,y,z)] + DcZ(0,y,zmd)*g->states[IDX(0,y,zm)])/(div_z*SQ(g->dz)));
+        }
+        return;
+    }
+
 	diag = malloc(g->size_x*sizeof(double));
 	l_diag = malloc((g->size_x-1)*sizeof(double));
 	u_diag = malloc((g->size_x-1)*sizeof(double));
@@ -382,19 +492,6 @@ static void dg_adi_tort_x(Grid_node* g, const double dt, const int y, const int 
 		diag[x] = 1. + dt*(DcX(x,y,z) + DcX(x+1,y,z))/(2.*SQ(g->dx));
 		u_diag[x] = -dt*DcX(x+1,y,z)/(2.*SQ(g->dx));
 	}
-
-	/*zero flux boundary condition*/
-	yp = (y==g->size_y-1)?y-1:y+1;
-	ypd = (y==g->size_y-1)?y:y+1;
-	ym = (y==0)?y+1:y-1;
-	ymd = (y==0)?1:y;
-	zp = (z==g->size_z-1)?z-1:z+1;
-	zpd = (z==g->size_z-1)?z:z+1;
-	zm = (z==0)?z+1:z-1;
-	zmd = (z==0)?1:z;
-
-	div_y = (y==0||y==g->size_y-1)?2:1;
-	div_z = (z==0||z==g->size_z-1)?2:1;
 
 
     if(g->bc->type == NEUMANN)
@@ -433,11 +530,11 @@ static void dg_adi_tort_x(Grid_node* g, const double dt, const int y, const int 
         __builtin_prefetch(&(g->states[IDX(x+PREFETCH,y,z)]), 0, 1);
         __builtin_prefetch(&(g->states[IDX(x+PREFETCH,yp,z)]), 0, 0);
         __builtin_prefetch(&(g->states[IDX(x+PREFETCH,ym,z)]), 0, 0);
+        
 		RHS[x] =  g->states[IDX(x,y,z)]
-			+ dt*((DcX(x+1,y,z)*g->states[IDX(x+1,y,z)] - (DcX(x+1,y,z)+DcX(x,y,z))*g->states[IDX(x,y,z)] + DcX(x,y,z)*g->states[IDX(x-1,y,z)])/(2.*SQ(g->dx))
-			+	  (DcY(x,ypd,z)*g->states[IDX(x,yp,z)] - (DcY(x,ypd,z)+DcY(x,ymd,z))*g->states[IDX(x,y,z)] + DcY(x,ymd,z)*g->states[IDX(x,ym,z)])/(div_y*SQ(g->dy))
-			+	  (DcZ(x,y,zpd)*g->states[IDX(x,y,zp)] - (DcZ(x,y,zpd)+DcZ(x,y,zmd))*g->states[IDX(x,y,z)] + DcZ(x,y,zmd)*g->states[IDX(x,y,zm)])/(div_z*SQ(g->dz)))
-            + dt*g->states_cur[IDX(x,y,z)];
+			+ dt*((DcX(x+1,y,z)*g->states[IDX(x+1,y,z)] - (DcX(x+1,y,z)+DcX(x,y,z))*g->states[IDX(x,y,z)] + DcX(x,y,z)*g->states[IDX(x-1,y,z)])/(2.*SQ(g->dx))  + g->states_cur[IDX(x,y,z)]
+            + (DcY(x,ypd,z)*g->states[IDX(x,yp,z)] - (DcY(x,ypd,z)+DcY(x,ymd,z))*g->states[IDX(x,y,z)] + DcY(x,ymd,z)*g->states[IDX(x,ym,z)])/(div_y*SQ(g->dy))
+            + (DcZ(x,y,zpd)*g->states[IDX(x,y,zp)] - (DcZ(x,y,zpd)+DcZ(x,y,zmd))*g->states[IDX(x,y,z)] + DcZ(x,y,zmd)*g->states[IDX(x,y,zm)])/(div_z*SQ(g->dz)));
 	}
 	
 	solve_dd_tridiag(g->size_x, l_diag, diag, u_diag, RHS, scratch);
@@ -469,6 +566,19 @@ static void dg_adi_tort_y(Grid_node* g, double const dt, int const x, int const 
     {
         for(y=0; y<g->size_y; y++)
             RHS[y] = g->bc->value;
+        return;
+    }
+
+    if(g->size_y == 1)
+    {
+        if(g->bc->type == DIRICHLET)
+        {
+            RHS[0] = g->bc->value;
+        }
+        else
+        {
+            RHS[0] =  state[x + z*g->size_x];
+        }
         return;
     }
 
@@ -550,6 +660,18 @@ static void dg_adi_tort_z(Grid_node* g, double const dt, int const x, int const 
         return;
     }
 
+    if(g->size_z == 1)
+    {
+        if(g->bc->type == DIRICHLET)
+        {
+            RHS[0] = g->bc->value;
+        }
+        else
+        {
+            RHS[0] =  state[y + g->size_y*x];
+        }
+        return;
+    }
 	diag = malloc(g->size_z*sizeof(double));
 	l_diag = malloc((g->size_z-1)*sizeof(double));
 	u_diag = malloc((g->size_z-1)*sizeof(double));

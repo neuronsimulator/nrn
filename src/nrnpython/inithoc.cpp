@@ -66,7 +66,7 @@ static void nrnpython_finalize() {
     Py_Finalize();
   }
 #if linux
-  if (system("stty sane")){} // 'if' to avoid ignoring return value warning
+  if (system("stty sane > /dev/null 2>&1")){} // 'if' to avoid ignoring return value warning
 #endif
 }
 

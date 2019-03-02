@@ -9,6 +9,11 @@ a linked list of Grid_nodes
 #include "nrnpython.h"
 #include "grids.h"
 
+static double get_alpha_scalar(double*, int);
+static double get_alpha_array(double*, int);
+static double get_lambda_scalar(double*, int);
+static double get_lambda_array(double*, int);
+
 extern int NUM_THREADS;
 double *dt_ptr;
 double *t_ptr;
@@ -157,15 +162,12 @@ int insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x,
             my_num_states_z, my_dc_x, my_dc_y, my_dc_z, my_dx, my_dy, my_dz, 
 			my_alpha, my_lambda, bc, bc_value, atolscale);
     Grid_node **head = &(Parallel_grids[grid_list_index]);
-    Grid_node *save;
 
     if(!(*head)) {
         *head = new_Grid;
-        save = *head;
     }
     else {
 		i++;	/*count the head as the first grid*/
-        save = *head;
         Grid_node *end = *head;
         while(end->next != NULL) {
             i++;
@@ -212,8 +214,8 @@ void set_grid_concentrations(int grid_list_index, int index_in_list, PyObject* g
     */
     /* TODO: note that these will need updating anytime the structure of the model changes... look at the structure change count at each advance and trigger a callback to regenerate if necessary */
     Grid_node* g;
-    Py_ssize_t i;
-    Py_ssize_t n = PyList_Size(grid_indices);
+    ssize_t i;
+    ssize_t n = (ssize_t)PyList_Size(grid_indices);
 
     /* Find the Grid Object */
     g = Parallel_grids[grid_list_index];
@@ -247,8 +249,8 @@ void set_grid_currents(int grid_list_index, int index_in_list, PyObject* grid_in
     */
     /* TODO: note that these will need updating anytime the structure of the model changes... look at the structure change count at each advance and trigger a callback to regenerate if necessary */
     Grid_node* g;
-    Py_ssize_t i;
-    Py_ssize_t n = PyList_Size(grid_indices);
+    ssize_t i;
+    ssize_t n = (ssize_t)PyList_Size(grid_indices);
     long* dests;
 
     /* Find the Grid Object */
@@ -321,18 +323,20 @@ void set_grid_currents(int grid_list_index, int index_in_list, PyObject* grid_in
 // Free a single Grid_node
 void free_Grid(Grid_node *grid) {
     int i;
-    free(grid->states);
     free(grid->states_x);
     free(grid->states_y);
     free(grid->states_cur);
     free(grid->concentration_list);
     free(grid->current_list);
-	free(grid->alpha);
-	free(grid->lambda);
     free(grid->bc);
     free(grid->current_dest);
-    free(grid->proc_offsets);
-    free(grid->proc_num_currents);
+#if NRNMPI
+    if(nrnmpi_use)
+    {
+        free(grid->proc_offsets);
+        free(grid->proc_num_currents);
+    }
+#endif
     free(grid->all_currents);
     free(grid->adi_dir_x);
     free(grid->adi_dir_y);
@@ -381,6 +385,19 @@ int delete(Grid_node **head, Grid_node *find) {
     temp->next = delete_me->next;
     free_Grid(delete_me);
     return 1;
+}
+
+void delete_by_id(int id) {
+    Grid_node *grid;
+    int k;
+    for(k = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, k++)
+    {
+        if(k == id)
+        {
+            delete(Parallel_grids, grid);
+            break;
+        }
+    }
 }
 
 
