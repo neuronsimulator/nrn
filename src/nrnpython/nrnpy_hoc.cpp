@@ -1719,6 +1719,22 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
     }
     return 0;
   }
+  if (po->ho_) {
+    if (po->ho_->ctemplate == hoc_vec_template_) {
+      Vect* vec = (Vect*)po->ho_->u.this_pointer;
+      int vec_size = vector_capacity(vec);
+      // allow Python style negative indices
+      if (i < 0) {
+        i += vec_size;
+      }
+      if (i >= vec_size || i < 0) {
+        PyErr_SetString(PyExc_IndexError, "index out of bounds");
+        return -1;
+      }
+      PyArg_Parse(arg, "d", vector_vec(vec) + i);
+      return 0;
+    }
+  }
   if (!po->sym_ || po->type_ != PyHoc::HocArray) {
     PyErr_SetString(PyExc_TypeError, "unsubscriptable object");
     return -1;
