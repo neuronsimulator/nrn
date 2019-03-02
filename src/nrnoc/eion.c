@@ -181,7 +181,7 @@ void ion_reg(const char* name, double valence)
 	}
 	val = global_charge(s->subtype);
 	if (valence != VAL_SENTINAL && val != VAL_SENTINAL && valence != val) {
-		fprintf(stderr, "%s ion valence defined differently in\n\
+		fprintf(stderr, "%s ion charge defined differently in\n\
 two USEION statements (%g and %g)\n",
 			s->name, valence, global_charge(s->subtype));
 		nrn_exit(1);
