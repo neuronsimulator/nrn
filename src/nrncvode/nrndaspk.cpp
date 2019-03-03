@@ -338,8 +338,8 @@ int Daspk::advance_tn(double tstop) {
 	double tn = cv_->tn_;
 	IDASetStopTime(mem_, tstop);
     int ier = IDASolve(mem_, tstop, &cv_->t_, cv_->y_, yp_, IDA_ONE_STEP);
-	if (ier != IDA_SUCCESS) {
-		//printf("DASPK advance_tn error\n");
+	if (ier != IDA_SUCCESS && ier != IDA_TSTOP_RETURN) {
+		//printf("DASPK advance_tn error %d\n", ier);
 		return ier;
 	}
 #if 0

@@ -1303,7 +1303,7 @@ if (net_cvode_instance->print_event_ > 1) {
 printf("t_=%.20g\n", t_);
 }
 #endif
-	if (err < 0 ) {
+	if (err != CV_SUCCESS && err != CV_TSTOP_RETURN) {
 		printf("CVode %p %s advance_tn failed, err=%d.\n", this, secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec), err);
 		(*pf_)(t_, y_, nil, (void*)this);
 		return err;
