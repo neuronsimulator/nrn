@@ -11,12 +11,13 @@
 #include <string>
 
 #include "ast/ast_decl.hpp"
-#include "visitors/visitor.hpp"
-
 #include "lexer/modtoken.hpp"
 #include "symtab/symbol_table.hpp"
+#include "visitors/visitor.hpp"
 
+namespace nmodl {
 namespace ast {
+
 /* enumaration of all binary operators in the language */
 typedef enum {
     BOP_ADDITION,
@@ -77,8 +78,11 @@ struct AST: public std::enable_shared_from_this<AST> {
 
     /* all AST nodes provide visit children and accept methods */
     virtual void visit_children(Visitor* v) = 0;
+
     virtual void accept(Visitor* v) = 0;
+
     virtual AstNodeType get_node_type() = 0;
+
     virtual std::string get_node_type_name() = 0;
 
     virtual std::string get_node_name() {
@@ -666,3 +670,4 @@ struct AST: public std::enable_shared_from_this<AST> {
 };
 
 }  // namespace ast
+}  // namespace nmodl

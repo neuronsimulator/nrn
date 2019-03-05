@@ -21,6 +21,8 @@
  * altogether.
  */
 
+namespace nmodl {
+namespace parser {
 namespace diffeq {
 
 /// operators beign supported as part of binary expressions
@@ -171,3 +173,5 @@ inline Term eval_derivative<MathOp::div>(Term& first,
 }
 
 }  // namespace diffeq
+}  // namespace parser
+}  // namespace nmodl

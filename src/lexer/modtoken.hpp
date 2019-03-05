@@ -33,6 +33,8 @@
  */
 
 class ModToken {
+    using LocationType = nmodl::parser::location;
+
   private:
     /// name of the token
     std::string name;
@@ -41,7 +43,7 @@ class ModToken {
     int token = -1;
 
     /// position of the token in mod file
-    nmodl::location pos;
+    LocationType pos;
 
     /// if token is externally defined symbol
     bool external = false;
@@ -54,7 +56,7 @@ class ModToken {
         : pos(nullptr, 0)
         , external(ext) {}
 
-    ModToken(std::string str, int tok, nmodl::location& loc)
+    ModToken(std::string str, int tok, LocationType& loc)
         : name(str)
         , token(tok)
         , pos(loc) {}

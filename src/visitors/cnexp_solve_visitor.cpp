@@ -14,22 +14,23 @@
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
 
-using namespace ast;
 
-void CnexpSolveVisitor::visit_solve_block(SolveBlock* node) {
+namespace nmodl {
+
+void CnexpSolveVisitor::visit_solve_block(ast::SolveBlock* node) {
     auto method = node->get_method();
     if (method) {
         solve_method = method->get_value()->eval();
     }
 }
 
-void CnexpSolveVisitor::visit_diff_eq_expression(DiffEqExpression* node) {
+void CnexpSolveVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
     differential_equation = true;
     node->visit_children(this);
     differential_equation = false;
 }
 
-void CnexpSolveVisitor::visit_binary_expression(BinaryExpression* node) {
+void CnexpSolveVisitor::visit_binary_expression(ast::BinaryExpression* node) {
     auto& lhs = node->lhs;
     auto& rhs = node->rhs;
     auto& op = node->op;
@@ -45,19 +46,20 @@ void CnexpSolveVisitor::visit_binary_expression(BinaryExpression* node) {
         return;
     }
 
-    auto name = std::dynamic_pointer_cast<VarName>(lhs)->get_name();
+    auto name = std::dynamic_pointer_cast<ast::VarName>(lhs)->get_name();
 
     if (name->is_prime_name()) {
         auto equation = nmodl::to_nmodl(node);
-        diffeq::Driver diffeq_driver;
+        parser::DiffeqDriver diffeq_driver;
 
         if (solve_method == cnexp_method) {
             std::string solution;
             /// check if ode can be solved with cnexp method
             if (diffeq_driver.cnexp_possible(equation, solution)) {
                 auto statement = create_statement(solution);
-                auto expr_statement = std::dynamic_pointer_cast<ExpressionStatement>(statement);
-                auto bin_expr = std::dynamic_pointer_cast<BinaryExpression>(
+                auto expr_statement = std::dynamic_pointer_cast<ast::ExpressionStatement>(
+                    statement);
+                auto bin_expr = std::dynamic_pointer_cast<ast::BinaryExpression>(
                     expr_statement->get_expression());
                 lhs.reset(bin_expr->lhs->clone());
                 rhs.reset(bin_expr->rhs->clone());
@@ -78,7 +80,9 @@ void CnexpSolveVisitor::visit_binary_expression(BinaryExpression* node) {
     }
 }
 
-void CnexpSolveVisitor::visit_program(Program* node) {
+void CnexpSolveVisitor::visit_program(ast::Program* node) {
     program_symtab = node->get_symbol_table();
     node->visit_children(this);
 }
+
+}  // namespace nmodl

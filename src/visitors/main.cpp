@@ -24,6 +24,7 @@
 
 #include "tclap/CmdLine.h"
 
+using namespace nmodl;
 using namespace symtab;
 
 /**
@@ -55,7 +56,7 @@ int main(int argc, const char* argv[]) {
         std::string mod_filename = remove_extension(base_name(filename));
 
         /// driver object creates lexer and parser, just call parser method
-        nmodl::Driver driver;
+        nmodl::parser::NmodlDriver driver;
         driver.parse_file(filename);
 
         /// shared_ptr to ast constructed from parsing nmodl file

@@ -15,6 +15,9 @@
 #include "utils/perf_stat.hpp"
 #include "visitors/ast_visitor.hpp"
 
+
+namespace nmodl {
+
 /**
  * \class PerfVisitor
  * \brief Visitor for measuring performance related information
@@ -291,3 +294,5 @@ class PerfVisitor: public AstVisitor {
         ss << stream.str();
     }
 };
+
+}  // namespace nmodl

@@ -14,6 +14,8 @@
 //@todo : error from pybind if std::underlying_typ is used
 using enum_type = long long;
 
+namespace nmodl {
+namespace symtab {
 namespace syminfo {
 
 /** kind of symbol */
@@ -212,8 +214,12 @@ enum class NmodlType : enum_type {
     discrete_block = 1L << 33
 };
 
-}  // namespace syminfo
 
+/// check if any property is set
+bool has_property(const NmodlType& obj, NmodlType property);
+
+/// check if any status is set
+bool has_status(const Status& obj, Status state);
 
 template <typename T>
 inline T operator|(T lhs, T rhs) {
@@ -251,3 +257,7 @@ std::string to_string(const T& obj) {
     stringutils::trim(text);
     return text;
 }
+
+}  // namespace syminfo
+}  // namespace symtab
+}  // namespace nmodl

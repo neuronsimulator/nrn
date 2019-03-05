@@ -10,6 +10,9 @@
 #include "codegen/codegen_c_visitor.hpp"
 
 
+namespace nmodl {
+namespace codegen {
+
 /**
  * \class CodegenOmpVisitor
  * \brief Visitor for printing c code with OpenMP backend
@@ -69,3 +72,6 @@ class CodegenOmpVisitor: public CodegenCVisitor {
                       std::string float_type)
         : CodegenCVisitor(mod_file, stream, layout, float_type) {}
 };
+
+}  // namespace codegen
+}  // namespace nmodl

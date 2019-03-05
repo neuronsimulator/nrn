@@ -11,7 +11,10 @@
 #include "symtab/symbol_properties.hpp"
 #include "utils/string_utils.hpp"
 
-using namespace syminfo;
+
+namespace nmodl {
+namespace symtab {
+namespace syminfo {
 
 /// check if any property is set
 bool has_property(const NmodlType& obj, NmodlType property) {
@@ -213,3 +216,7 @@ std::ostream& operator<<(std::ostream& os, const Status& obj) {
     os << to_string(obj);
     return os;
 }
+
+}  // namespace syminfo
+}  // namespace symtab
+}  // namespace nmodl

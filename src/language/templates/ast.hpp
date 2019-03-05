@@ -26,6 +26,8 @@
     {% if not node.is_abstract %} override {% endif %}
 {% endmacro %}
 
+
+namespace nmodl {
 namespace ast {
 
     {% for node in nodes %}
@@ -133,4 +135,6 @@ namespace ast {
     };
 
     {% endfor %}
+
 }  // namespace ast
+}  // namespace nmodl

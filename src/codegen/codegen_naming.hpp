@@ -10,8 +10,9 @@
 #include <map>
 #include <string>
 
-namespace codegen {
 
+namespace nmodl {
+namespace codegen {
 namespace naming {
 
 /// nmodl language version
@@ -151,3 +152,4 @@ const std::string THREAD_ARGS_PROTO("_threadargsproto_");
 
 }  // namespace naming
 }  // namespace codegen
+}  // namespace nmodl

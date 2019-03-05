@@ -9,6 +9,9 @@
 
 #include <sstream>
 
+
+namespace nmodl {
+
 /**
  * \class PerfStat
  * \brief Helper class to collect performance statistics
@@ -90,3 +93,5 @@ class PerfStat {
     std::vector<std::string> keys();
     std::vector<std::string> values();
 };
+
+}  // namespace nmodl

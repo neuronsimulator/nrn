@@ -13,8 +13,9 @@
 
 #include "symtab/symbol.hpp"
 
-namespace symtab {
 
+namespace nmodl {
+namespace symtab {
 
 /**
  * \class SymbolTable
@@ -254,3 +255,4 @@ class ModelSymbolTable {
 };
 
 }  // namespace symtab
+}  // namespace nmodl

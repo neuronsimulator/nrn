@@ -21,7 +21,10 @@
 {%- endmacro -%}
 
 namespace py = pybind11;
-using namespace ast;
+
+
+using namespace nmodl::ast;
+using nmodl::JSONVisitor;
 
 void init_ast_module(py::module& m) {
 

@@ -42,7 +42,7 @@ int main(int argc, const char* argv[]) {
         std::istream& in(file);
 
         /// driver object creates lexer and parser, just call parser method
-        c11::Driver driver;
+        nmodl::parser::CDriver driver;
 
         driver.set_verbose(true);
         driver.parse_stream(in);

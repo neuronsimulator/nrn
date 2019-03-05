@@ -8,6 +8,9 @@
 #include <algorithm>
 #include "visitors/lookup_visitor.hpp"
 
+
+namespace nmodl {
+
 using namespace ast;
 
 {% for node in nodes %}
@@ -37,3 +40,5 @@ std::vector<std::shared_ptr<ast::AST>> AstLookupVisitor::lookup(Program* node, A
     node->accept(this);
     return nodes;
 }
+
+}  // namespace nmodl

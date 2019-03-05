@@ -9,6 +9,9 @@
 
 #include "utils/logger.hpp"
 
+
+namespace nmodl {
+
 using logger_type = std::shared_ptr<spdlog::logger>;
 
 struct Logger {
@@ -22,3 +25,5 @@ struct Logger {
 
 Logger nmodl_logger("NMODL", "[%n] [%^%l%$] :: %v");
 logger_type logger = nmodl_logger.logger;
+
+}  // namespace nmodl

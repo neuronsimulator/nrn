@@ -12,6 +12,8 @@
 #include <memory>
 #include <sstream>
 
+namespace nmodl {
+
 /**
  * \class CodePrinter
  * \brief Helper class for printing C/C++ code
@@ -72,3 +74,5 @@ class CodePrinter {
         return NUM_SPACES * indent_level;
     }
 };
+
+}  // namespace nmodl

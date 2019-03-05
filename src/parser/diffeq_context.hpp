@@ -9,6 +9,8 @@
 
 #include <string>
 
+namespace nmodl {
+namespace parser {
 namespace diffeq {
 
 /**
@@ -129,3 +131,5 @@ class DiffEqContext {
 };
 
 }  // namespace diffeq
+}  // namespace parser
+}  // namespace nmodl

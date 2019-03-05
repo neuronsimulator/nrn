@@ -13,6 +13,7 @@
 #include "ast/ast.hpp"
 #include "symtab/symbol_table.hpp"
 
+namespace nmodl {
 namespace codegen {
 
 /**
@@ -371,3 +372,4 @@ struct CodegenInfo {
 };
 
 }  // namespace codegen
+}  // namespace nmodl

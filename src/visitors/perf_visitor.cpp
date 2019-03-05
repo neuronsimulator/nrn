@@ -9,74 +9,77 @@
 
 #include "visitors/perf_visitor.hpp"
 
-using namespace ast;
-using namespace syminfo;
-using namespace symtab;
+
+namespace nmodl {
+
+using symtab::Symbol;
+using symtab::syminfo::NmodlType;
+using symtab::syminfo::Status;
 
 PerfVisitor::PerfVisitor(const std::string& filename)
     : printer(new JSONPrinter(filename)) {}
 
 /// count math operations from all binary expressions
-void PerfVisitor::visit_binary_expression(BinaryExpression* node) {
+void PerfVisitor::visit_binary_expression(ast::BinaryExpression* node) {
     bool assign_op = false;
 
     if (start_measurement) {
         auto value = node->get_op().get_value();
         switch (value) {
-        case BOP_ADDITION:
+        case ast::BOP_ADDITION:
             current_block_perf.n_add++;
             break;
 
-        case BOP_SUBTRACTION:
+        case ast::BOP_SUBTRACTION:
             current_block_perf.n_sub++;
             break;
 
-        case BOP_MULTIPLICATION:
+        case ast::BOP_MULTIPLICATION:
             current_block_perf.n_mul++;
             break;
 
-        case BOP_DIVISION:
+        case ast::BOP_DIVISION:
             current_block_perf.n_div++;
             break;
 
-        case BOP_POWER:
+        case ast::BOP_POWER:
             current_block_perf.n_pow++;
             break;
 
-        case BOP_AND:
+        case ast::BOP_AND:
             current_block_perf.n_and++;
             break;
 
-        case BOP_OR:
+        case ast::BOP_OR:
             current_block_perf.n_or++;
             break;
 
-        case BOP_GREATER:
+        case ast::BOP_GREATER:
             current_block_perf.n_gt++;
             break;
 
-        case BOP_GREATER_EQUAL:
+        case ast::BOP_GREATER_EQUAL:
             current_block_perf.n_ge++;
             break;
 
-        case BOP_LESS:
+        case ast::BOP_LESS:
             current_block_perf.n_lt++;
             break;
 
-        case BOP_LESS_EQUAL:
+        case ast::BOP_LESS_EQUAL:
             current_block_perf.n_le++;
             break;
 
-        case BOP_ASSIGN:
+        case ast::BOP_ASSIGN:
             current_block_perf.n_assign++;
             assign_op = true;
             break;
 
-        case BOP_NOT_EQUAL:
+        case ast::BOP_NOT_EQUAL:
             current_block_perf.n_ne++;
             break;
 
-        case BOP_EXACT_EQUAL:
+        case ast::BOP_EXACT_EQUAL:
             current_block_perf.n_ee++;
             break;
 
@@ -115,7 +118,7 @@ void PerfVisitor::add_perf_to_printer(PerfStat& perf) {
  *  all children visited, we get total performance by summing
  *  perfstat of all children.
  */
-void PerfVisitor::measure_performance(AST* node) {
+void PerfVisitor::measure_performance(ast::AST* node) {
     start_measurement = true;
 
     node->visit_children(this);
@@ -158,7 +161,7 @@ void PerfVisitor::measure_performance(AST* node) {
 }
 
 /// count function calls and "most useful" or "commonly used" math functions
-void PerfVisitor::visit_function_call(FunctionCall* node) {
+void PerfVisitor::visit_function_call(ast::FunctionCall* node) {
     under_function_call = true;
 
     if (start_measurement) {
@@ -185,25 +188,25 @@ void PerfVisitor::visit_function_call(FunctionCall* node) {
 }
 
 /// every variable used is of type name, update counters
-void PerfVisitor::visit_name(Name* node) {
+void PerfVisitor::visit_name(ast::Name* node) {
     update_memory_ops(node->get_node_name());
     node->visit_children(this);
 }
 
 /// prime name derived from identifier and hence need to be handled here
-void PerfVisitor::visit_prime_name(PrimeName* node) {
+void PerfVisitor::visit_prime_name(ast::PrimeName* node) {
     update_memory_ops(node->get_node_name());
     node->visit_children(this);
 }
 
-void PerfVisitor::visit_if_statement(IfStatement* node) {
+void PerfVisitor::visit_if_statement(ast::IfStatement* node) {
     if (start_measurement) {
         current_block_perf.n_if++;
         node->visit_children(this);
     }
 }
 
-void PerfVisitor::visit_else_if_statement(ElseIfStatement* node) {
+void PerfVisitor::visit_else_if_statement(ast::ElseIfStatement* node) {
     if (start_measurement) {
         current_block_perf.n_elif++;
         node->visit_children(this);
@@ -225,7 +228,7 @@ void PerfVisitor::count_variables() {
             if (variable->has_properties(NmodlType::param_assign)) {
                 num_constant_instance_variables++;
             }
-            if (variable->has_any_status(syminfo::Status::localized)) {
+            if (variable->has_any_status(Status::localized)) {
                 num_localized_instance_variables++;
             }
         }
@@ -257,7 +260,7 @@ void PerfVisitor::count_variables() {
             if (variable->has_properties(NmodlType::param_assign)) {
                 num_constant_global_variables++;
             }
-            if (variable->has_any_status(syminfo::Status::localized)) {
+            if (variable->has_any_status(Status::localized)) {
                 num_localized_global_variables++;
             }
         }
@@ -306,7 +309,7 @@ void PerfVisitor::print_memory_usage() {
     }
 }
 
-void PerfVisitor::visit_program(Program* node) {
+void PerfVisitor::visit_program(ast::Program* node) {
     if (printer) {
         printer->push_block("BlockPerf");
     }
@@ -332,7 +335,7 @@ void PerfVisitor::visit_program(Program* node) {
  * blocks like net receive has nested initial blocks. Hence need
  * to maintain separate stack.
  */
-void PerfVisitor::visit_statement_block(StatementBlock* node) {
+void PerfVisitor::visit_statement_block(ast::StatementBlock* node) {
     /// starting new block, store current state
     blocks_perf.push(current_block_perf);
 
@@ -362,21 +365,21 @@ void PerfVisitor::visit_statement_block(StatementBlock* node) {
 /// and hence could/should not be skipped completely
 /// we can't ignore the block because it could have associated
 /// statement block (in theory)
-void PerfVisitor::visit_solve_block(SolveBlock* node) {
+void PerfVisitor::visit_solve_block(ast::SolveBlock* node) {
     under_solve_block = true;
     node->visit_children(this);
     under_solve_block = false;
 }
 
-void PerfVisitor::visit_unary_expression(UnaryExpression* node) {
+void PerfVisitor::visit_unary_expression(ast::UnaryExpression* node) {
     if (start_measurement) {
         auto value = node->get_op().get_value();
         switch (value) {
-        case UOP_NEGATION:
+        case ast::UOP_NEGATION:
             current_block_perf.n_neg++;
             break;
 
-        case UOP_NOT:
+        case ast::UOP_NOT:
             current_block_perf.n_not++;
             break;
 
@@ -409,7 +412,7 @@ bool PerfVisitor::symbol_to_skip(const std::shared_ptr<Symbol>& symbol) {
     return skip;
 }
 
-bool PerfVisitor::is_local_variable(const std::shared_ptr<symtab::Symbol>& symbol) {
+bool PerfVisitor::is_local_variable(const std::shared_ptr<Symbol>& symbol) {
     bool is_local = false;
     /// in the function when we write to function variable then consider it as local variable
     auto properties = NmodlType::local_var | NmodlType::argument | NmodlType::function_block;
@@ -419,7 +422,7 @@ bool PerfVisitor::is_local_variable(const std::shared_ptr<symtab::Symbol>& symbo
     return is_local;
 }
 
-bool PerfVisitor::is_constant_variable(const std::shared_ptr<symtab::Symbol>& symbol) {
+bool PerfVisitor::is_constant_variable(const std::shared_ptr<Symbol>& symbol) {
     bool is_constant = false;
     auto properties = NmodlType::param_assign;
     if (symbol->has_properties(properties)) {
@@ -488,3 +491,5 @@ void PerfVisitor::update_memory_ops(const std::string& name) {
         }
     }
 }
+
+}  // namespace nmodl

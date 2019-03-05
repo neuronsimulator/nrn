@@ -8,6 +8,8 @@
 #pragma once
 
 
+namespace nmodl {
+
 /* Abstract base class for all visitor implementations */
 class Visitor {
 
@@ -18,3 +20,5 @@ class Visitor {
         virtual void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}* node) = 0;
         {% endfor %}
 };
+
+}  // namespace nmodl

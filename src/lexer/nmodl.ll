@@ -26,7 +26,7 @@
 
    /** By default yylex returns int, we use token_type. Unfortunately
      * yyterminate by default returns 0, which is not of token_type. */
-   #define yyterminate() return nmodl::Parser::make_END(loc);
+   #define yyterminate() return NmodlParser::make_END(loc);
 
    /** Disables inclusion of unistd.h, which is not available under Visual
      * C++ on Win32. The C++ scanner uses STL streams instead. */
@@ -171,21 +171,21 @@ ELSE                    {
                                 /** Token for certain keywords need name_ptr value. */
                                 auto type = token_type(yytext);
                                 ModToken tok(yytext, type, loc);
-                                ast::Name value( new ast::String(yytext) );
+                                nmodl::ast::Name value( new nmodl::ast::String(yytext) );
                                 value.set_token(tok);
 
                                 switch (static_cast<int>(type)) {
                                     /** Tokens requiring name_ptr as value */
                                     case Token::METHOD:
-                                        return nmodl::Parser::make_METHOD(value, loc);
+                                        return NmodlParser::make_METHOD(value, loc);
                                     case Token::SUFFIX:
-                                        return nmodl::Parser::make_SUFFIX(value, loc);
+                                        return NmodlParser::make_SUFFIX(value, loc);
                                     case Token::VALENCE:
-                                        return nmodl::Parser::make_VALENCE(value, loc);
+                                        return NmodlParser::make_VALENCE(value, loc);
                                     case Token::DEL:
-                                        return nmodl::Parser::make_DEL(value, loc);
+                                        return NmodlParser::make_DEL(value, loc);
                                     case Token::DEL2:
-                                        return nmodl::Parser::make_DEL2(value, loc);
+                                        return NmodlParser::make_DEL2(value, loc);
 
                                     /** We have to store context for the reaction type */
                                     case Token::NONLINEAR:
@@ -393,7 +393,7 @@ ELSE                    {
 \?.*                    {
                             /** Todo : add grammar support for inline vs single-line comments
                               auto str = std::string(yytext);
-                              return nmodl::Parser::make_LINE_COMMENT(str, loc);
+                              return NmodlParser::make_LINE_COMMENT(str, loc);
                              */
                         }
 
@@ -426,19 +426,19 @@ ELSE                    {
                             auto str = "VERBATIM" + std::string(yytext);
                             BEGIN(INITIAL);
                             reset_end_position();
-                            return nmodl::Parser::make_VERBATIM(str, loc);
+                            return NmodlParser::make_VERBATIM(str, loc);
                          }
 
 <COPY_MODE>"ENDCOMMENT" {
                             auto str = "COMMENT" + std::string(yytext);
                             BEGIN(INITIAL);
                             reset_end_position();
-                            return nmodl::Parser::make_BLOCK_COMMENT(str, loc);
+                            return NmodlParser::make_BLOCK_COMMENT(str, loc);
                         }
 
 <COPY_MODE><<EOF>>      {
                             std::cout << "\n ERROR: Unexpected end of file in COPY_MODE! \n";
-                            return nmodl::Parser::make_END(loc);
+                            return NmodlParser::make_END(loc);
                         }
 
 <COPY_MODE>.            {
@@ -452,7 +452,7 @@ ELSE                    {
                             std::string str(yytext);
                             stringutils::trim_newline(str);
                             BEGIN(INITIAL);
-                            return nmodl::Parser::make_LINE_PART(str, loc);
+                            return NmodlParser::make_LINE_PART(str, loc);
                         }
 
 <LINE_MODE>.            {
@@ -464,7 +464,7 @@ ELSE                    {
                             /** If macro name doesn't start with character or value
                              *  is not an integer then it's invalid macro definition
                              */
-                            return nmodl::Parser::make_INVALID_TOKEN(loc);
+                            return NmodlParser::make_INVALID_TOKEN(loc);
                         }
 
 \"[^\"\n]*$             {
@@ -486,13 +486,13 @@ int NmodlFlexLexer::yylex() {
 }
 
 /** yy_flex_debug is member of parent scanner class */
-void nmodl::Lexer::set_debug(bool b) {
+void nmodl::parser::NmodlLexer::set_debug(bool b) {
     yy_flex_debug = b;
 }
 
 /** Scan unit which is a string between opening and closing parenthesis.
   * We store this in lexer itself and then consumed later from the parser. */
-void nmodl::Lexer::scan_unit() {
+void nmodl::parser::NmodlLexer::scan_unit() {
     /** We are interested in unit after first parenthesis.
      * So to get correct position update the location. */
     loc.step();
@@ -517,12 +517,12 @@ void nmodl::Lexer::scan_unit() {
     loc.columns(str.size());
 
     ModToken tok(str, Token::UNITS, loc);
-    last_unit = new ast::String(str);
+    last_unit = new nmodl::ast::String(str);
     last_unit->set_token(tok);
 }
 
 /** return last scanned unit, it shouln't be null pointer */
-ast::String* nmodl::Lexer::get_unit() {
+nmodl::ast::String* nmodl::parser::NmodlLexer::get_unit() {
     if (last_unit == nullptr) {
         throw std::runtime_error("Trying to get unscanned empty unit");
     }

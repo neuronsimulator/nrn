@@ -25,6 +25,9 @@
 using namespace fmt::literals;
 
 
+namespace nmodl {
+namespace codegen {
+
 /**
  * \enum BlockType
  * \brief Helper to represent various block types
@@ -1026,3 +1029,6 @@ void CodegenCVisitor::print_function_declaration(const T& node, const std::strin
 
     enable_variable_name_lookup = true;
 }
+
+}  // namespace codegen
+}  // namespace nmodl

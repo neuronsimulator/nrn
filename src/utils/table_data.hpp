@@ -12,6 +12,9 @@
 
 #include "utils/string_utils.hpp"
 
+
+namespace nmodl {
+
 /**
  * \class TableData
  * \brief Class to construct and pretty-print tabular data
@@ -38,3 +41,5 @@ struct TableData {
     void print(int indent = 0);
     void print(std::stringstream& stream, int indent = 0);
 };
+
+}  // namespace nmodl

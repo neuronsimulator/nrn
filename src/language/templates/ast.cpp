@@ -9,6 +9,7 @@
 #include "symtab/symbol_table.hpp"
 
 
+namespace nmodl {
 namespace ast {
 
     {% for node in nodes %}
@@ -68,4 +69,5 @@ namespace ast {
 
     {% endfor %}
 
-}
+}  // namespace ast
+}  // namespace nmodl

@@ -15,6 +15,8 @@
 
 using json = nlohmann::json;
 
+namespace nmodl {
+
 /**
  * \class JSONPrinter
  * \brief Helper class for printing AST in JSON format
@@ -87,3 +89,5 @@ class JSONPrinter {
         expand = flag;
     }
 };
+
+}  // namespace nmodl

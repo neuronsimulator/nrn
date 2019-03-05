@@ -29,12 +29,6 @@
  %code requires
  {
     #include "ast/ast.hpp"
-
-    /**
-     *  todo : not clear why %token requires below types and doesn't allow
-     *  specifying direct ast node types. Declare these type until
-     *  the issue is identified / fixed.
-     */
  }
 
 /** use C++ parser interface of bison */
@@ -50,10 +44,10 @@
 %define parse.trace
 
 /** add extra arguments to yyparse() and yylexe() methods */
-%parse-param {class Lexer& scanner}
-%parse-param {class Driver& driver}
-%lex-param { nmodl::Scanner &scanner }
-%lex-param { nmodl::Driver &driver }
+%parse-param {class NmodlLexer& scanner}
+%parse-param {class NmodlDriver& driver}
+%lex-param { nmodl::NmodlScanner &scanner }
+%lex-param { nmodl::NmodlDriver &driver }
 
 /** use variant based implementation of semantic values */
 %define api.value.type variant
@@ -64,13 +58,11 @@
 /** handle symbol to be handled as a whole (type, value, and possibly location) in scanner */
 %define api.token.constructor
 
-/** namespace to enclose parser */
-%name-prefix "nmodl"
-
-%define api.namespace {nmodl}
+/** specify the namespace for the parser class */
+%define api.namespace {nmodl::parser}
 
 /** set the parser's class identifier */
-%define parser_class_name {Parser}
+%define parser_class_name {NmodlParser}
 
 /** keep track of the current position within the input */
 %locations
@@ -375,9 +367,14 @@
     #include "parser/nmodl_driver.hpp"
     #include "parser/verbatim_context.hpp"
 
+    using nmodl::parser::NmodlParser;
+    using nmodl::parser::NmodlLexer;
+    using nmodl::parser::NmodlDriver;
+    using nmodl::parser::VerbatimContext;
+
     /// yylex takes scanner as well as driver reference
     /// \todo: check if driver argument is required
-    static nmodl::Parser::symbol_type yylex(nmodl::Lexer &scanner, nmodl::Driver &/*driver*/) {
+    static NmodlParser::symbol_type yylex(NmodlLexer &scanner, NmodlDriver &/*driver*/) {
         return scanner.next_token();
     }
 
@@ -2229,7 +2226,7 @@ std::string parse_with_verbatim_parser(std::string str) {
  *  and report all errors. For now simply abort.
  */
 
-void nmodl::Parser::error(const location &loc , const std::string &message) {
+void NmodlParser::error(const location &loc , const std::string &message) {
     std::stringstream ss;
     ss << "NMODL Parser Error : " << message << " [Location : " << loc << "]";
     throw std::runtime_error(ss.str());

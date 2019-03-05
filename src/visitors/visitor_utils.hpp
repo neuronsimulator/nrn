@@ -13,6 +13,8 @@
 
 #include "ast/ast.hpp"
 
+namespace nmodl {
+
 /** Return new name variable by appending "_suffix_COUNT" where COUNT is number
  * of times the given variable is already used.
  */
@@ -37,7 +39,6 @@ std::shared_ptr<ast::Statement> create_statement(const std::string& code_stateme
 /** Return set of strings with the names of all global variables */
 std::set<std::string> get_global_vars(ast::Program* node);
 
-namespace nmodl {
 /** Given AST node, return the NMODL string representation */
 std::string to_nmodl(ast::AST* node);
 

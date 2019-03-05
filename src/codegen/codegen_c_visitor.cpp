@@ -20,14 +20,15 @@
 #include "visitors/rename_visitor.hpp"
 #include "visitors/var_usage_visitor.hpp"
 
+using namespace fmt::literals;
+
+namespace nmodl {
+namespace codegen {
 
 using namespace ast;
-using namespace codegen;
-using namespace symtab;
-using namespace syminfo;
-using namespace fmt::literals;
-using SymbolType = std::shared_ptr<symtab::Symbol>;
 
+using symtab::syminfo::NmodlType;
+using SymbolType = std::shared_ptr<symtab::Symbol>;
 
 /****************************************************************************************/
 /*                            Overloaded visitor routines                               */
@@ -1708,7 +1709,7 @@ std::string CodegenCVisitor::replace_if_verbatim_variable(std::string name) {
  * handle it more elegantly.
  */
 std::string CodegenCVisitor::process_verbatim_text(std::string text) {
-    c11::Driver driver;
+    parser::CDriver driver;
     driver.scan_string(text);
     auto tokens = driver.all_tokens();
     std::string result;
@@ -3880,3 +3881,6 @@ void CodegenCVisitor::visit_program(Program* node) {
     rename_function_arguments();
     print_codegen_routines();
 }
+
+}  // namespace codegen
+}  // namespace nmodl

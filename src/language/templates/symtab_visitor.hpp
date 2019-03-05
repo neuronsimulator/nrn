@@ -11,6 +11,7 @@
 #include "visitors/ast_visitor.hpp"
 #include "symtab/symbol_table.hpp"
 
+namespace nmodl {
 
 /* Concrete visitor for constructing symbol table from AST */
 class SymtabVisitor : public AstVisitor {
@@ -28,9 +29,9 @@ public:
     SymtabVisitor(std::ostream &os, bool update = false) : printer(new JSONPrinter(os)), update(update) {}
     SymtabVisitor(std::string filename, bool update = false) : printer(new JSONPrinter(filename)), update(update) {}
 
-    void add_model_symbol_with_property(ast::Node* node, syminfo::NmodlType property);
+    void add_model_symbol_with_property(ast::Node* node, symtab::syminfo::NmodlType property);
 
-    void setup_symbol(ast::Node* node, syminfo::NmodlType property);
+    void setup_symbol(ast::Node* node, symtab::syminfo::NmodlType property);
 
     void setup_symbol_table(ast::AST* node, const std::string& name, bool is_global);
 
@@ -47,3 +48,4 @@ public:
     {% endfor %}
 };
 
+}  // namespace nmodl

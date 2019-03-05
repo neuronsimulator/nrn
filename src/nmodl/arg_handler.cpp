@@ -11,6 +11,8 @@
 #include "version/version.h"
 
 
+namespace nmodl {
+
 ArgumentHandler::ArgumentHandler(const int& argc, const char** argv) {
     // version string
     auto version = nmodl::version().to_string();
@@ -204,3 +206,5 @@ ArgumentHandler::ArgumentHandler(const int& argc, const char** argv) {
         std::cout << "Argument Error: " << e.error() << " for arg " << e.argId() << std::endl;
     }
 }
+
+}  // namespace nmodl

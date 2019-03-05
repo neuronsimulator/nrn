@@ -11,16 +11,17 @@
 #include "lexer/c11_lexer.hpp"
 #include "parser/c11_driver.hpp"
 
-namespace c11 {
+namespace nmodl {
+namespace parser {
 
-Driver::Driver(bool strace, bool ptrace)
+CDriver::CDriver(bool strace, bool ptrace)
     : trace_scanner(strace)
     , trace_parser(ptrace) {}
 
 /// parse c file provided as istream
-bool Driver::parse_stream(std::istream& in) {
-    Lexer scanner(*this, &in);
-    Parser parser(scanner, *this);
+bool CDriver::parse_stream(std::istream& in) {
+    CLexer scanner(*this, &in);
+    CParser parser(scanner, *this);
 
     this->lexer = &scanner;
     this->parser = &parser;
@@ -31,7 +32,7 @@ bool Driver::parse_stream(std::istream& in) {
 }
 
 //// parse c file
-bool Driver::parse_file(const std::string& filename) {
+bool CDriver::parse_file(const std::string& filename) {
     std::ifstream in(filename.c_str());
     streamname = filename;
 
@@ -42,37 +43,38 @@ bool Driver::parse_file(const std::string& filename) {
 }
 
 /// parser c provided as string (used for testing)
-bool Driver::parse_string(const std::string& input) {
+bool CDriver::parse_string(const std::string& input) {
     std::istringstream iss(input);
     return parse_stream(iss);
 }
 
-void Driver::error(const std::string& m, const class location& l) {
-    std::cerr << l << " : " << m << std::endl;
-}
-
-void Driver::error(const std::string& m) {
+void CDriver::error(const std::string& m) {
     std::cerr << m << std::endl;
 }
 
-void Driver::add_token(const std::string& text) {
+void CDriver::add_token(const std::string& text) {
     tokens.push_back(text);
     // here we will query and look into symbol table or register callback
 }
 
-void Driver::scan_string(std::string& text) {
+void CDriver::error(const std::string& m, const location& l) {
+    std::cerr << l << " : " << m << std::endl;
+}
+
+void CDriver::scan_string(std::string& text) {
     std::istringstream in(text);
-    Lexer scanner(*this, &in);
-    Parser parser(scanner, *this);
+    CLexer scanner(*this, &in);
+    CParser parser(scanner, *this);
     this->lexer = &scanner;
     this->parser = &parser;
     while (true) {
         auto sym = lexer->next_token();
         auto token = sym.token();
-        if (token == Parser::token::END) {
+        if (token == CParser::token::END) {
             break;
         }
     }
 }
 
-}  // namespace c11
+}  // namespace parser
+}  // namespace nmodl

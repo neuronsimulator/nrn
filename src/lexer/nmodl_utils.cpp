@@ -15,6 +15,9 @@
 #include "utils/string_utils.hpp"
 
 namespace nmodl {
+
+using Parser = parser::NmodlParser;
+
 /// create symbol for double/real ast class
 SymbolType double_symbol(double value, PositionType& pos) {
     ModToken token(std::to_string(value), Token::REAL, pos);

@@ -12,6 +12,8 @@
 %code requires
 {
     #include <string>
+    #include <sstream>
+
     #include "parser/c11_driver.hpp"
 }
 
@@ -28,10 +30,10 @@
 %define parse.trace
 
 /** add extra arguments to yyparse() and yylex() methods */
-%parse-param {class Lexer& scanner}
-%parse-param {class Driver& driver}
-%lex-param   {c11::Scanner &scanner}
-%lex-param   {c11::Driver &driver}
+%parse-param {class CLexer& scanner}
+%parse-param {class CDriver& driver}
+%lex-param   {nmodl::CScanner &scanner}
+%lex-param   {nmodl::CDriver &driver}
 
 /** use variant based implementation of semantic values */
 %define api.value.type variant
@@ -42,11 +44,11 @@
 /** handle symbol to be handled as a whole (type, value, and possibly location) in scanner */
 %define api.token.constructor
 
-/** namespace to enclose parser */
-%name-prefix "c11"
+/** specify the namespace for the parser class */
+%define api.namespace {nmodl::parser}
 
 /** set the parser's class identifier */
-%define parser_class_name {Parser}
+%define parser_class_name {CParser}
 
 /** keep track of the current position within the input */
 %locations
@@ -164,9 +166,13 @@
     #include "lexer/c11_lexer.hpp"
     #include "parser/c11_driver.hpp"
 
+    using nmodl::parser::CParser;
+    using nmodl::parser::CLexer;
+    using nmodl::parser::CDriver;
+
     /// yylex takes scanner as well as driver reference
     /// \todo: check if driver argument is required
-    static c11::Parser::symbol_type yylex(c11::Lexer &scanner, c11::Driver &/*driver*/) {
+    static CParser::symbol_type yylex(CLexer &scanner, CDriver &/*driver*/) {
         return scanner.next_token();
     }
 %}
@@ -686,7 +692,7 @@ declaration_list
 
 /** Bison expects error handler for parser */
 
-void c11::Parser::error(const location &loc , const std::string &message) {
+void CParser::error(const location &loc , const std::string &message) {
     std::stringstream ss;
     ss << "C Parser Error : " << message << " [Location : " << loc << "]";
     throw std::runtime_error(ss.str());

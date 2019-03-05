@@ -11,6 +11,8 @@
 #include "visitors/visitor.hpp"
 
 
+namespace nmodl {
+
 /**
  * \class AstLookupVisitor
  * \brief Visitor to find ast nodes based on on the ast types
@@ -49,3 +51,5 @@ class AstLookupVisitor : public Visitor {
             void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}* node) override;
         {% endfor %}
 };
+
+}  // namespace nmodl

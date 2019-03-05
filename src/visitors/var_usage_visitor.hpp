@@ -12,6 +12,9 @@
 #include "ast/ast.hpp"
 #include "visitors/ast_visitor.hpp"
 
+
+namespace nmodl {
+
 /**
  * \class VarUsageVisitor
  * \brief Check if variable is used in given block
@@ -32,3 +35,5 @@ class VarUsageVisitor: public AstVisitor {
 
     virtual void visit_name(ast::Name* node) override;
 };
+
+}  // namespace nmodl

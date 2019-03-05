@@ -9,11 +9,13 @@
 #include "visitors/rename_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
 
-using namespace ast;
-using namespace symtab;
+
+namespace nmodl {
+
+using symtab::SymbolTable;
 
 /// rename name conflicting variables in the statement block and it's all children
-void LocalVarRenameVisitor::visit_statement_block(StatementBlock* node) {
+void LocalVarRenameVisitor::visit_statement_block(ast::StatementBlock* node) {
     /// nothing to do
     if (node->get_statements().empty()) {
         return;
@@ -67,3 +69,5 @@ void LocalVarRenameVisitor::visit_statement_block(StatementBlock* node) {
         }
     }
 }
+
+}  // namespace nmodl

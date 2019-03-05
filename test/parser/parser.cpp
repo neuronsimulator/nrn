@@ -20,7 +20,7 @@
 //=============================================================================
 
 bool is_valid_construct(const std::string& construct) {
-    nmodl::Driver driver;
+    nmodl::parser::NmodlDriver driver;
     return driver.parse_string(construct);
 }
 
@@ -140,7 +140,7 @@ SCENARIO("Parser test for invalid NMODL grammar constructs") {
 //=============================================================================
 
 std::string solve_construct(const std::string& equation, std::string method) {
-    diffeq::Driver driver;
+    nmodl::parser::DiffeqDriver driver;
     auto solution = driver.solve(equation, std::move(method));
     return solution;
 }

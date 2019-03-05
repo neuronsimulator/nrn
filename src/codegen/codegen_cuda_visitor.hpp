@@ -9,6 +9,8 @@
 
 #include "codegen/codegen_c_visitor.hpp"
 
+namespace nmodl {
+namespace codegen {
 
 /**
  * \class CodegenCudaVisitor
@@ -99,3 +101,6 @@ class CodegenCudaVisitor: public CodegenCVisitor {
                        std::string float_type)
         : CodegenCVisitor(mod_file, stream, layout, float_type) {}
 };
+
+}  // namespace codegen
+}  // namespace nmodl

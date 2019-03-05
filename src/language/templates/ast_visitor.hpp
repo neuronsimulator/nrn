@@ -11,6 +11,8 @@
 #include "visitors/visitor.hpp"
 
 
+namespace nmodl {
+
 /* Basic visitor implementation */
 class AstVisitor : public Visitor {
 
@@ -19,3 +21,5 @@ class AstVisitor : public Visitor {
         void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}* node) override;
         {% endfor %}
 };
+
+}  // namespace nmodl

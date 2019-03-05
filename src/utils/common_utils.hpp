@@ -7,6 +7,9 @@
 
 #pragma once
 
+
+namespace nmodl {
+
 /** Check if the iterator is pointing to last element in the container */
 template <typename Iter, typename Cont>
 bool is_last(Iter iter, const Cont& cont) {
@@ -28,3 +31,5 @@ T remove_extension(T const& filename) {
 
 /** Given directory path, create sub-directories */
 bool make_path(const std::string& path);
+
+}  // namespace nmodl

@@ -13,6 +13,8 @@
 #include "symtab/symbol_table.hpp"
 #include "visitors/ast_visitor.hpp"
 
+namespace nmodl {
+namespace codegen {
 
 /**
  * \class CodegenHelperVisitor
@@ -89,3 +91,6 @@ class CodegenHelperVisitor: public AstVisitor {
     void visit_table_statement(ast::TableStatement* node) override;
     void visit_program(ast::Program* node) override;
 };
+
+}  // namespace codegen
+}  // namespace nmodl

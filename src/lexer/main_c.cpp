@@ -17,6 +17,7 @@
  * usage of scanner and driver class.
  */
 
+
 int main(int argc, const char* argv[]) {
     try {
         TCLAP::CmdLine cmd("C Lexer: Standalone lexer program for C");
@@ -42,17 +43,15 @@ int main(int argc, const char* argv[]) {
         std::cout << "\n C Lexer : Processing file : " << filename << std::endl;
 
         std::istream& in(file);
-        c11::Driver driver;
-        c11::Lexer scanner(driver, &in);
+        nmodl::parser::CDriver driver;
+        nmodl::parser::CLexer scanner(driver, &in);
 
-        using Token = c11::Parser::token;
-        using TokenType = c11::Parser::token_type;
-        using SymbolType = c11::Parser::symbol_type;
+        using Token = nmodl::parser::CParser::token;
 
         /// parse C file untile EOF, print each token
         while (true) {
-            SymbolType sym = scanner.next_token();
-            TokenType token = sym.token();
+            auto sym = scanner.next_token();
+            auto token = sym.token();
 
             /// end of file
             if (token == Token::END) {

@@ -11,6 +11,9 @@
 #include <sstream>
 #include <vector>
 
+
+namespace nmodl {
+
 /**
  * \brief String manipulation functions
  *
@@ -115,3 +118,5 @@ static inline std::string tolower(std::string text) {
 }
 
 }  // namespace stringutils
+
+}  // namespace nmodl

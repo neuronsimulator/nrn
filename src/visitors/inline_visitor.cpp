@@ -8,6 +8,8 @@
 #include "visitors/inline_visitor.hpp"
 #include "parser/c11_driver.hpp"
 
+
+namespace nmodl {
 using namespace ast;
 
 bool InlineVisitor::can_inline_block(StatementBlock* block) {
@@ -24,7 +26,7 @@ bool InlineVisitor::can_inline_block(StatementBlock* block) {
         if (statement->is_verbatim()) {
             auto node = static_cast<Verbatim*>(statement.get());
             auto text = node->get_statement()->eval();
-            c11::Driver driver;
+            parser::CDriver driver;
             driver.scan_string(text);
             if (driver.has_token("return")) {
                 to_inline = false;
@@ -307,3 +309,5 @@ void InlineVisitor::visit_program(Program* node) {
     }
     node->visit_children(this);
 }
+
+}  // namespace nmodl

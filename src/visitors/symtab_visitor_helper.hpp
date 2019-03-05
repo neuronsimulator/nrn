@@ -12,12 +12,14 @@
 #include "lexer/token_mapping.hpp"
 #include "visitors/symtab_visitor.hpp"
 
-using namespace ast;
-using namespace symtab;
-using namespace syminfo;
+
+namespace nmodl {
+
+using symtab::Symbol;
+using symtab::syminfo::NmodlType;
 
 // create symbol for given node
-static std::shared_ptr<Symbol> create_symbol_for_node(Node* node,
+static std::shared_ptr<Symbol> create_symbol_for_node(ast::Node* node,
                                                       NmodlType property,
                                                       bool under_state_block) {
     ModToken token;
@@ -45,14 +47,14 @@ static std::shared_ptr<Symbol> create_symbol_for_node(Node* node,
 
 /// helper function to setup/insert symbol into symbol table
 /// for the ast nodes which are of variable types
-void SymtabVisitor::setup_symbol(Node* node, NmodlType property) {
+void SymtabVisitor::setup_symbol(ast::Node* node, NmodlType property) {
     std::shared_ptr<Symbol> symbol;
     auto name = node->get_node_name();
 
     /// if prime variable is already exist in symbol table
     /// then just update the order
     if (node->is_prime_name()) {
-        auto prime = dynamic_cast<PrimeName*>(node);
+        auto prime = dynamic_cast<ast::PrimeName*>(node);
         symbol = modsymtab->lookup(name);
         if (symbol) {
             symbol->set_order(prime->get_order()->eval());
@@ -78,21 +80,21 @@ void SymtabVisitor::setup_symbol(Node* node, NmodlType property) {
     symbol = modsymtab->insert(symbol);
 
     if (node->is_param_assign()) {
-        auto parameter = dynamic_cast<ParamAssign*>(node);
+        auto parameter = dynamic_cast<ast::ParamAssign*>(node);
         auto value = parameter->get_value();
         auto name = parameter->get_name();
         if (value) {
             symbol->set_value(value->to_double());
         }
         if (name->is_indexed_name()) {
-            auto index_name = dynamic_cast<IndexedName*>(name.get());
-            auto length = dynamic_cast<Integer*>(index_name->get_length().get());
+            auto index_name = dynamic_cast<ast::IndexedName*>(name.get());
+            auto length = dynamic_cast<ast::Integer*>(index_name->get_length().get());
             symbol->set_as_array(length->eval());
         }
     }
 
     if (node->is_dependent_def()) {
-        auto variable = dynamic_cast<DependentDef*>(node);
+        auto variable = dynamic_cast<ast::DependentDef*>(node);
         auto length = variable->get_length();
         if (length) {
             symbol->set_as_array(length->eval());
@@ -100,7 +102,7 @@ void SymtabVisitor::setup_symbol(Node* node, NmodlType property) {
     }
 
     if (node->is_constant_var()) {
-        auto constant = dynamic_cast<ConstantVar*>(node);
+        auto constant = dynamic_cast<ast::ConstantVar*>(node);
         auto value = constant->get_value();
         if (value) {
             symbol->set_value(value->to_double());
@@ -108,11 +110,11 @@ void SymtabVisitor::setup_symbol(Node* node, NmodlType property) {
     }
 
     if (node->is_local_var()) {
-        auto variable = dynamic_cast<LocalVar*>(node);
+        auto variable = dynamic_cast<ast::LocalVar*>(node);
         auto name = variable->get_name();
         if (name->is_indexed_name()) {
-            auto index_name = dynamic_cast<IndexedName*>(name.get());
-            auto length = dynamic_cast<Integer*>(index_name->get_length().get());
+            auto index_name = dynamic_cast<ast::IndexedName*>(name.get());
+            auto length = dynamic_cast<ast::Integer*>(index_name->get_length().get());
             symbol->set_as_array(length->eval());
         }
     }
@@ -123,7 +125,7 @@ void SymtabVisitor::setup_symbol(Node* node, NmodlType property) {
 }
 
 
-void SymtabVisitor::add_model_symbol_with_property(Node* node, NmodlType property) {
+void SymtabVisitor::add_model_symbol_with_property(ast::Node* node, NmodlType property) {
     auto token = node->get_token();
     auto name = node->get_node_name();
     auto symbol = std::make_shared<Symbol>(name, node, *token);
@@ -154,7 +156,7 @@ static void add_external_symbols(symtab::ModelSymbolTable* symtab) {
 }
 
 
-void SymtabVisitor::setup_symbol_table(AST* node, const std::string& name, bool is_global) {
+void SymtabVisitor::setup_symbol_table(ast::AST* node, const std::string& name, bool is_global) {
     /// entering into new nmodl block
     auto symtab = modsymtab->enter_scope(name, node, is_global, node->get_symbol_table());
 
@@ -164,7 +166,7 @@ void SymtabVisitor::setup_symbol_table(AST* node, const std::string& name, bool 
 
     /// there is only one solve statement allowed in mod file
     if (node->is_solve_block()) {
-        auto solve_block = dynamic_cast<SolveBlock*>(node);
+        auto solve_block = dynamic_cast<ast::SolveBlock*>(node);
         block_to_solve = solve_block->get_block_name()->get_node_name();
     }
 
@@ -194,19 +196,19 @@ void SymtabVisitor::setup_symbol_table(AST* node, const std::string& name, bool 
  *  Symtab visitor could be called multiple times, after optimization passes,
  *  in which case we have to throw awayold symbol tables and setup new ones.
  */
-void SymtabVisitor::setup_symbol_table_for_program_block(Program* node) {
+void SymtabVisitor::setup_symbol_table_for_program_block(ast::Program* node) {
     modsymtab = node->get_model_symbol_table();
     modsymtab->set_mode(update);
     setup_symbol_table(node, node->get_node_type_name(), true);
 }
 
 
-void SymtabVisitor::setup_symbol_table_for_global_block(Node* node) {
+void SymtabVisitor::setup_symbol_table_for_global_block(ast::Node* node) {
     setup_symbol_table(node, node->get_node_type_name(), true);
 }
 
 
-void SymtabVisitor::setup_symbol_table_for_scoped_block(Node* node, const std::string& name) {
+void SymtabVisitor::setup_symbol_table_for_scoped_block(ast::Node* node, const std::string& name) {
     setup_symbol_table(node, name, false);
 }
 
@@ -217,7 +219,7 @@ void SymtabVisitor::setup_symbol_table_for_scoped_block(Node* node, const std::s
  * @todo : we assume table statement follows variable declaration
  */
 void SymtabVisitor::visit_table_statement(ast::TableStatement* node) {
-    auto update_symbol = [this](const NameVector& variables, NmodlType property, int num_values) {
+    auto update_symbol = [this](const ast::NameVector& variables, NmodlType property, int num_values) {
         for (auto& var : variables) {
             auto name = var->get_node_name();
             auto symbol = modsymtab->lookup(name);
@@ -231,3 +233,6 @@ void SymtabVisitor::visit_table_statement(ast::TableStatement* node) {
     update_symbol(node->get_table_vars(), NmodlType::table_statement_var, num_values);
     update_symbol(node->get_depend_vars(), NmodlType::table_dependent_var, num_values);
 }
+
+
+}  // namespace nmodl

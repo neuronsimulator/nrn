@@ -10,9 +10,10 @@
 #include "visitors/defuse_analyze_visitor.hpp"
 #include "visitors/localize_visitor.hpp"
 
-using namespace ast;
-using namespace symtab;
-using namespace syminfo;
+namespace nmodl {
+
+using symtab::Symbol;
+using symtab::syminfo::NmodlType;
 
 bool LocalizeVisitor::node_for_def_use_analysis(ast::Node* node) {
     auto type = node->get_node_type();
@@ -97,7 +98,7 @@ std::vector<std::string> LocalizeVisitor::variables_to_optimize() {
     return result;
 }
 
-void LocalizeVisitor::visit_program(Program* node) {
+void LocalizeVisitor::visit_program(ast::Program* node) {
     /// symtab visitor pass must be run before
     program_symtab = node->get_symbol_table();
     if (program_symtab == nullptr) {
@@ -125,9 +126,9 @@ void LocalizeVisitor::visit_program(Program* node) {
         if (it == block_usage.end()) {
             /// all blocks that are using variable should get local variable
             for (auto& block: block_usage[DUState::D]) {
-                auto block_ptr = dynamic_cast<Block*>(block.get());
+                auto block_ptr = dynamic_cast<ast::Block*>(block.get());
                 auto statement_block = block_ptr->get_statement_block();
-                LocalVar* variable;
+                ast::LocalVar* variable;
                 auto symbol = program_symtab->lookup(varname);
                 if (symbol->is_array()) {
                     variable = add_local_variable(statement_block.get(), varname,
@@ -149,3 +150,5 @@ void LocalizeVisitor::visit_program(Program* node) {
         }
     }
 }
+
+}  // namespace nmodl

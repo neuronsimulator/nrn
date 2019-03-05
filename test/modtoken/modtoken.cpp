@@ -14,16 +14,20 @@
 #include "lexer/nmodl_lexer.hpp"
 #include "parser/nmodl_driver.hpp"
 
+using namespace nmodl;
+using nmodl::parser::NmodlDriver;
+using nmodl::parser::NmodlLexer;
+
 /// retrieve token from lexer
 template <typename T>
 void symbol_type(const std::string& name, T& value) {
     std::istringstream ss(name);
     std::istream& in = ss;
 
-    nmodl::Driver driver;
-    nmodl::Lexer scanner(driver, &in);
+    NmodlDriver driver;
+    NmodlLexer scanner(driver, &in);
 
-    nmodl::Parser::symbol_type sym = scanner.next_token();
+    auto sym = scanner.next_token();
     value = sym.value.as<T>();
 }
 

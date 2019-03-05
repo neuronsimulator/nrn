@@ -10,6 +10,7 @@
 #include "visitors/ast_visitor.hpp"
 #include "printer/json_printer.hpp"
 
+namespace nmodl {
 
 /* Concrete visitor for printing AST in JSON format */
 class JSONVisitor : public AstVisitor {
@@ -30,3 +31,5 @@ class JSONVisitor : public AstVisitor {
         void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}* node) override;
         {% endfor %}
 };
+
+}  // namespace nmodl

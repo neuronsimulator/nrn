@@ -16,7 +16,7 @@
     /* the scanner state will include a field called yyextra
      * that can be used for user-defined state
      */
-    #define YY_EXTRA_TYPE VerbatimContext*
+    #define YY_EXTRA_TYPE nmodl::parser::VerbatimContext*
 
 
     /* we need to parse strings as well as files, we redefine YY_INPUT
@@ -135,14 +135,14 @@
 
 /* initialize nmodlext lexer context */
 
-void VerbatimContext::init_scanner() {
+void nmodl::parser::VerbatimContext::init_scanner() {
     yylex_init(&scanner);
     yyset_extra(this, scanner);
 }
 
 /* delete nmodlext lexer context */
 
-void VerbatimContext::destroy_scanner() {
+void nmodl::parser::VerbatimContext::destroy_scanner() {
     yylex_destroy(scanner);
 }
 

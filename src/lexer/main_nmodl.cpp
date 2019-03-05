@@ -20,6 +20,11 @@
  * location.
  */
 
+
+using SymbolType = nmodl::parser::NmodlParser::symbol_type;
+using Token = nmodl::parser::NmodlParser::token;
+using TokenType = nmodl::parser::NmodlParser::token_type;
+
 int main(int argc, const char* argv[]) {
     try {
         TCLAP::CmdLine cmd("NMODL Lexer: Standalone lexer program for NMODL");
@@ -41,14 +46,11 @@ int main(int argc, const char* argv[]) {
         std::istream& in(file);
 
         /// lexer instace use driver object for error reporting
-        nmodl::Driver driver;
+        nmodl::parser::NmodlDriver driver;
 
         /// lexer instace with stream to read-in tokens
-        nmodl::Lexer scanner(driver, &in);
+        nmodl::parser::NmodlLexer scanner(driver, &in);
 
-        using Token = nmodl::Parser::token;
-        using TokenType = nmodl::Parser::token_type;
-        using SymbolType = nmodl::Parser::symbol_type;
 
         /// parse nmodl file untile EOF, print each token
         while (true) {
@@ -62,7 +64,7 @@ int main(int argc, const char* argv[]) {
 
             /** Lexer returns different ast types base on token type. We
              * retrieve token object from each instance and print it.
-             * Note that value is of ast type i.e. ast::Name* etc. */
+             * Note that value is of ast type i.e. nmodl::ast::Name* etc. */
             switch (token) {
             /// token with name ast class
             case Token::NAME:
@@ -71,7 +73,7 @@ int main(int argc, const char* argv[]) {
             case Token::VALENCE:
             case Token::DEL:
             case Token::DEL2: {
-                auto value = sym.value.as<ast::Name*>();
+                auto value = sym.value.as<nmodl::ast::Name*>();
                 std::cout << *(value->get_token()) << std::endl;
                 delete value;
                 break;
@@ -79,7 +81,7 @@ int main(int argc, const char* argv[]) {
 
             /// token with prime ast class
             case Token::PRIME: {
-                auto value = sym.value.as<ast::PrimeName*>();
+                auto value = sym.value.as<nmodl::ast::PrimeName*>();
                 std::cout << *(value->get_token()) << std::endl;
                 delete value;
                 break;
@@ -87,7 +89,7 @@ int main(int argc, const char* argv[]) {
 
             /// token with integer ast class
             case Token::INTEGER: {
-                auto value = sym.value.as<ast::Integer*>();
+                auto value = sym.value.as<nmodl::ast::Integer*>();
                 std::cout << *(value->get_token()) << std::endl;
                 delete value;
                 break;
@@ -95,7 +97,7 @@ int main(int argc, const char* argv[]) {
 
             /// token with double/float ast class
             case Token::REAL: {
-                auto value = sym.value.as<ast::Double*>();
+                auto value = sym.value.as<nmodl::ast::Double*>();
                 std::cout << *(value->get_token()) << std::endl;
                 delete value;
                 break;
@@ -103,7 +105,7 @@ int main(int argc, const char* argv[]) {
 
             /// token with string ast class
             case Token::STRING: {
-                auto value = sym.value.as<ast::String*>();
+                auto value = sym.value.as<nmodl::ast::String*>();
                 std::cout << *(value->get_token()) << std::endl;
                 delete value;
                 break;
