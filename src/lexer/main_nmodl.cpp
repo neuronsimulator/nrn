@@ -6,131 +6,128 @@
  *************************************************************************/
 
 #include <fstream>
-#include <iostream>
+#include <streambuf>
 
+#include "CLI/CLI.hpp"
 #include "ast/ast.hpp"
 #include "lexer/nmodl_lexer.hpp"
 #include "parser/nmodl_driver.hpp"
-#include "tclap/CmdLine.h"
+#include "utils/logger.hpp"
 
 /**
- * Standlone lexer program for NMODL. This demonstrate basic
- * usage of scanner and driver class. We parse user provided
+ * Stand alone lexer program for NMODL. This demonstrate basic
+ * usage of scanner and driver classes. We parse user provided
  * nmodl file and print individual token with it's value and
  * location.
  */
 
+using namespace nmodl;
 
-using SymbolType = nmodl::parser::NmodlParser::symbol_type;
-using Token = nmodl::parser::NmodlParser::token;
-using TokenType = nmodl::parser::NmodlParser::token_type;
+using parser::NmodlDriver;
+using parser::NmodlLexer;
+using SymbolType = parser::NmodlParser::symbol_type;
+using Token = parser::NmodlParser::token;
+using TokenType = parser::NmodlParser::token_type;
 
-int main(int argc, const char* argv[]) {
-    try {
-        TCLAP::CmdLine cmd("NMODL Lexer: Standalone lexer program for NMODL");
-        TCLAP::ValueArg<std::string> filearg("", "file", "NMODL input file path", false,
-                                             "../test/input/channel.mod", "string");
+void tokenize(const std::string& mod_text) {
+    std::istringstream in(mod_text);
 
-        cmd.add(filearg);
-        cmd.parse(argc, argv);
+    /// lexer instance use driver object for error reporting
+    NmodlDriver driver;
 
-        std::string filename = filearg.getValue();
-        std::ifstream file(filename);
+    /// lexer instance with stream to read-in tokens
+    NmodlLexer scanner(driver, &in);
 
-        if (!file) {
-            throw std::runtime_error("Could not open file " + filename);
+    /// parse nmodl text and print token until EOF
+    while (true) {
+        SymbolType sym = scanner.next_token();
+        TokenType token = sym.token();
+
+        if (token == Token::END) {
+            break;
         }
 
-        std::cout << "\n NMODL Lexer : Processing file : " << filename << std::endl;
-
-        std::istream& in(file);
-
-        /// lexer instace use driver object for error reporting
-        nmodl::parser::NmodlDriver driver;
-
-        /// lexer instace with stream to read-in tokens
-        nmodl::parser::NmodlLexer scanner(driver, &in);
-
-
-        /// parse nmodl file untile EOF, print each token
-        while (true) {
-            SymbolType sym = scanner.next_token();
-            TokenType token = sym.token();
-
-            /// end of file
-            if (token == Token::END) {
-                break;
-            }
-
-            /** Lexer returns different ast types base on token type. We
-             * retrieve token object from each instance and print it.
-             * Note that value is of ast type i.e. nmodl::ast::Name* etc. */
-            switch (token) {
-            /// token with name ast class
-            case Token::NAME:
-            case Token::METHOD:
-            case Token::SUFFIX:
-            case Token::VALENCE:
-            case Token::DEL:
-            case Token::DEL2: {
-                auto value = sym.value.as<nmodl::ast::Name*>();
-                std::cout << *(value->get_token()) << std::endl;
-                delete value;
-                break;
-            }
+        /** Lexer returns different ast types base on token type. We
+         * retrieve token object from each instance and print it.
+         * Note that value is of ast type i.e. ast::Name* etc. */
+        switch (token) {
+        /// token with name ast class
+        case Token::NAME:
+        case Token::METHOD:
+        case Token::SUFFIX:
+        case Token::VALENCE:
+        case Token::DEL:
+        case Token::DEL2: {
+            auto value = sym.value.as<ast::Name*>();
+            std::cout << *(value->get_token()) << std::endl;
+            delete value;
+            break;
+        }
 
             /// token with prime ast class
-            case Token::PRIME: {
-                auto value = sym.value.as<nmodl::ast::PrimeName*>();
-                std::cout << *(value->get_token()) << std::endl;
-                delete value;
-                break;
-            }
+        case Token::PRIME: {
+            auto value = sym.value.as<ast::PrimeName*>();
+            std::cout << *(value->get_token()) << std::endl;
+            delete value;
+            break;
+        }
 
             /// token with integer ast class
-            case Token::INTEGER: {
-                auto value = sym.value.as<nmodl::ast::Integer*>();
-                std::cout << *(value->get_token()) << std::endl;
-                delete value;
-                break;
-            }
+        case Token::INTEGER: {
+            auto value = sym.value.as<ast::Integer*>();
+            std::cout << *(value->get_token()) << std::endl;
+            delete value;
+            break;
+        }
 
             /// token with double/float ast class
-            case Token::REAL: {
-                auto value = sym.value.as<nmodl::ast::Double*>();
-                std::cout << *(value->get_token()) << std::endl;
-                delete value;
-                break;
-            }
+        case Token::REAL: {
+            auto value = sym.value.as<ast::Double*>();
+            std::cout << *(value->get_token()) << std::endl;
+            delete value;
+            break;
+        }
 
             /// token with string ast class
-            case Token::STRING: {
-                auto value = sym.value.as<nmodl::ast::String*>();
-                std::cout << *(value->get_token()) << std::endl;
-                delete value;
-                break;
-            }
+        case Token::STRING: {
+            auto value = sym.value.as<ast::String*>();
+            std::cout << *(value->get_token()) << std::endl;
+            delete value;
+            break;
+        }
 
             /// token with string data type
-            case Token::VERBATIM:
-            case Token::BLOCK_COMMENT:
-            case Token::LINE_PART: {
-                auto str = sym.value.as<std::string>();
-                std::cout << str << std::endl;
-                break;
-            }
+        case Token::VERBATIM:
+        case Token::BLOCK_COMMENT:
+        case Token::LINE_PART: {
+            auto str = sym.value.as<std::string>();
+            std::cout << str << std::endl;
+            break;
+        }
 
             /// all remaining tokens has ModToken* as a vaue
-            default: {
-                auto token = sym.value.as<ModToken>();
-                std::cout << token << std::endl;
-            }
-            }
+        default: {
+            auto token = sym.value.as<ModToken>();
+            std::cout << token << std::endl;
         }
-    } catch (TCLAP::ArgException& e) {
-        std::cout << std::endl << "Argument Error: " << e.error() << " for arg " << e.argId();
-        return 1;
+        }
     }
+}
 
+
+int main(int argc, const char* argv[]) {
+    CLI::App app{"NMODL-Lexer : Standalone Lexer for NMODL Code"};
+
+    std::vector<std::string> files;
+    app.add_option("file", files, "One or more NMODL files")->required()->check(CLI::ExistingFile);
+
+    CLI11_PARSE(app, argc, argv);
+
+    for (const auto& file: files) {
+        logger->info("Processing file : {}", file);
+        std::ifstream f(file);
+        std::string mod((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+        tokenize(mod);
+    }
     return 0;
 }

@@ -162,8 +162,8 @@ add_library(lexer STATIC $<TARGET_OBJECTS:lexer_obj>)
 add_executable(nmodl_lexer main_nmodl.cpp)
 add_executable(c_lexer main_c.cpp)
 
-target_link_libraries(nmodl_lexer lexer)
-target_link_libraries(c_lexer lexer)
+target_link_libraries(nmodl_lexer lexer util)
+target_link_libraries(c_lexer lexer util)
 
 # =============================================================================
 # Install executable

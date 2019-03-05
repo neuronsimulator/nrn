@@ -4,3 +4,6 @@
 [submodule "cmake/hpc-coding-conventions"]
 	path = cmake/hpc-coding-conventions
 	url = https://github.com/BlueBrain/hpc-coding-conventions.git
+[submodule "ext/cli11"]
+	path = ext/cli11
+	url = https://github.com/CLIUtils/CLI11.git

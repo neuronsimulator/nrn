@@ -7,8 +7,8 @@
 add_executable(nmodl_parser main_nmodl.cpp)
 add_executable(c_parser main_c.cpp)
 
-target_link_libraries(nmodl_parser lexer)
-target_link_libraries(c_parser lexer)
+target_link_libraries(nmodl_parser lexer util)
+target_link_libraries(c_parser lexer util)
 
 # =============================================================================
 # Install executable

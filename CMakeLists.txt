@@ -72,6 +72,11 @@ message(STATUS "INCLUDING PYBIND11")
 add_subdirectory(ext/pybind11)
 
 # =============================================================================
+# Include path from external libraries
+# =============================================================================
+include_directories(${PROJECT_SOURCE_DIR}/ext/cli11/include)
+
+# =============================================================================
 # Project version from git and project directories
 # =============================================================================
 set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})

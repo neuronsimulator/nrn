@@ -6,63 +6,42 @@
  *************************************************************************/
 
 #include <fstream>
-#include <iostream>
 
+#include "CLI/CLI.hpp"
 #include "lexer/c11_lexer.hpp"
 #include "parser/c11_driver.hpp"
-#include "tclap/CmdLine.h"
+#include "utils/logger.hpp"
 
 /**
- * Standlone lexer program for C. This demonstrate basic
- * usage of scanner and driver class.
+ * Example of standalone lexer program for C codes that
+ * demonstrate use of CLexer and CDriver classes.
  */
 
-
 int main(int argc, const char* argv[]) {
-    try {
-        TCLAP::CmdLine cmd("C Lexer: Standalone lexer program for C");
-        TCLAP::ValueArg<std::string> filearg("", "file", "C input file path", false, "", "string");
+    CLI::App app{"C-Lexer : Standalone Lexer for C Code"};
 
-        cmd.add(filearg);
-        cmd.parse(argc, argv);
+    std::vector<std::string> files;
+    app.add_option("file", files, "One or more C files to process")
+        ->required()
+        ->check(CLI::ExistingFile);
 
-        std::string filename = filearg.getValue();
+    CLI11_PARSE(app, argc, argv);
 
-        if (filename.empty()) {
-            std::cerr << "Error : Pass input C file, see --help" << std::endl;
-            return 1;
-        }
-
-
-        std::ifstream file(filename);
-
-        if (!file) {
-            throw std::runtime_error("Could not open file " + filename);
-        }
-
-        std::cout << "\n C Lexer : Processing file : " << filename << std::endl;
-
-        std::istream& in(file);
+    for (const auto& f: files) {
+        nmodl::logger->info("Processing {}", f);
+        std::ifstream file(f);
         nmodl::parser::CDriver driver;
-        nmodl::parser::CLexer scanner(driver, &in);
+        nmodl::parser::CLexer scanner(driver, &file);
 
-        using Token = nmodl::parser::CParser::token;
-
-        /// parse C file untile EOF, print each token
+        /// parse C file and print token until EOF
         while (true) {
             auto sym = scanner.next_token();
             auto token = sym.token();
-
-            /// end of file
-            if (token == Token::END) {
+            if (token == nmodl::parser::CParser::token::END) {
                 break;
             }
-            std::cout << sym.value.as<std::string>();
+            std::cout << sym.value.as<std::string>() << std::endl;
         }
-    } catch (TCLAP::ArgException& e) {
-        std::cout << std::endl << "Argument Error: " << e.error() << " for arg " << e.argId();
-        return 1;
     }
-
     return 0;
 }

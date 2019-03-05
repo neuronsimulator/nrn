@@ -5,11 +5,11 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
-#include <fstream>
-#include <iostream>
 #include <sstream>
 
+#include "CLI/CLI.hpp"
 #include "parser/nmodl_driver.hpp"
+#include "utils/logger.hpp"
 #include "visitors/ast_visitor.hpp"
 #include "visitors/cnexp_solve_visitor.hpp"
 #include "visitors/inline_visitor.hpp"
@@ -22,40 +22,32 @@
 #include "visitors/verbatim_var_rename_visitor.hpp"
 #include "visitors/verbatim_visitor.hpp"
 
-#include "tclap/CmdLine.h"
-
 using namespace nmodl;
-using namespace symtab;
 
 /**
  * Standalone visitor program for NMODL. This demonstrate basic
- * usage of different visitors classes and driver class.
+ * usage of different visitor and driver classes.
  **/
 
 int main(int argc, const char* argv[]) {
-    try {
-        TCLAP::CmdLine cmd("NMODL Visitor: Standalone visitor program for NMODL");
-        TCLAP::ValueArg<std::string> filearg("", "file", "NMODL input file path", false,
-                                             "../test/input/channel.mod", "string");
-        TCLAP::SwitchArg verbosearg("", "verbose", "Enable verbose output", false);
+    CLI::App app{"NMODL Visitor : Runs standalone visitor classes"};
 
-        cmd.add(filearg);
-        cmd.add(verbosearg);
+    bool verbose = false;
+    std::vector<std::string> files;
 
-        cmd.parse(argc, argv);
+    app.add_flag("-v,--verbose", verbose, "Show intermediate output");
+    app.add_option("-f,--file,file", files, "One or more MOD files to process")
+        ->required()
+        ->check(CLI::ExistingFile);
 
-        std::string filename = filearg.getValue();
-        bool verbose = verbosearg.getValue();
+    CLI11_PARSE(app, argc, argv);
 
-        std::ifstream file(filename);
-
-        if (!file.good()) {
-            throw std::runtime_error("Could not open file " + filename);
-        }
+    for (const auto& filename: files) {
+        nmodl::logger->info("Processing {}", filename);
 
         std::string mod_filename = remove_extension(base_name(filename));
 
-        /// driver object creates lexer and parser, just call parser method
+        /// driver object that creates lexer and parser
         nmodl::parser::NmodlDriver driver;
         driver.parse_file(filename);
 
@@ -201,12 +193,6 @@ int main(int argc, const char* argv[]) {
             std::cout << ss.str() << std::endl;
             std::cout << "----PERF VISITOR FINISHED----" << std::endl;
         }
-
-
-    } catch (TCLAP::ArgException& e) {
-        std::cout << "Argument Error: " << e.error() << " for arg " << e.argId() << std::endl;
-        return 1;
     }
-
     return 0;
 }
