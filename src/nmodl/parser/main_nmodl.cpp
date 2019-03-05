@@ -5,53 +5,31 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
-#include <fstream>
-#include <iostream>
 
+#include "CLI/CLI.hpp"
 #include "parser/nmodl_driver.hpp"
-#include "tclap/CmdLine.h"
+#include "utils/logger.hpp"
 
 /**
- * Standlone parser program for NMODL. This demonstrate basic
- * usage of psrser and driver class.
- *
- * \todo Parser create ast during parse actions. We need to
- * hook up json/yaml writer in this example to dump ast.
+ * Standalone parser program for NMODL. This demonstrate
+ * basic usage of parser and driver classes.
  */
 
 int main(int argc, const char* argv[]) {
-    try {
-        TCLAP::CmdLine cmd("NMODL Parser: Standalone parser program for NMODL");
-        TCLAP::ValueArg<std::string> filearg("", "file", "NMODL input file path", false,
-                                             "../test/input/channel.mod", "string");
+    CLI::App app{"NMODL-Parser : Standalone Parser for NMODL"};
 
-        cmd.add(filearg);
-        cmd.parse(argc, argv);
+    std::vector<std::string> files;
+    app.add_option("file", files, "One or more MOD files to process")
+        ->required()
+        ->check(CLI::ExistingFile);
 
-        std::string filename = filearg.getValue();
-        std::ifstream file(filename);
+    CLI11_PARSE(app, argc, argv);
 
-        if (!file) {
-            throw std::runtime_error("Could not open file " + filename);
-        }
-
-        std::cout << "\n NMODL Parser : Processing file : " << filename << std::endl;
-
-        std::istream& in(file);
-
-        /// driver object creates lexer and parser, just call parser method
+    for (const auto& f: files) {
+        nmodl::logger->info("Processing {}", f);
         nmodl::parser::NmodlDriver driver;
-
         driver.set_verbose(true);
-        driver.parse_stream(in);
-
-        // driver.parse_file(filename);
-
-        std::cout << "----PARSING FINISHED----" << std::endl;
-    } catch (TCLAP::ArgException& e) {
-        std::cout << "Argument Error: " << e.error() << " for arg " << e.argId() << std::endl;
-        return 1;
+        driver.parse_file(f);
     }
-
     return 0;
 }

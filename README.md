@@ -127,7 +127,7 @@ True
 
 NMODL is now setup correctly!
 
-#### Understand Python API
+#### Using Python API
 
 The user documentation for NMODL is incomplete and not available on GitHub yet. The best way to understand the API and usage is using Jupyter notebooks provided in docs directory :
 
@@ -160,20 +160,103 @@ $ tree $HOME/nmodl/bin
 The `nmodl_lexer` and `nmodl_parser` are standalone tools for testing mod files. If you want to test if given mod file can be successfully parsed by NMODL then you can do:
 
 ```
-nmodl_parser --file <path>/hh.mod
+$ nmodl_parser <path>/hh.mod
 ```
 
-To see how NMODL will generate the code for given mod file, you can do:
+Main code generation program is `nmodl`. You can see all sub-commands supported using:
 
 ```
-nmodl <path>/hh.mod
+$ ./bin/nmodl -h
+
+NMODL : Source-to-Source Code Generation Framework
+Usage: ./bin/nmodl [OPTIONS] file... [SUBCOMMAND]
+
+Positionals:
+  file TEXT:FILE ... REQUIRED           One or more MOD files to process
+
+Options:
+  -h,--help                             Print this help message and exit
+  -H,--help-all                         Print this help message including all sub-commands
+  -o,--output TEXT=.                    Directory for backend code output
+  --scratch TEXT=tmp                    Directory for intermediate code output
+
+Subcommands:
+  host                                  HOST/CPU code backends
+  acc                                   Accelerator code backends
+  sympy                                 SymPy based analysis and optimizations
+  passes                                Analyse/Optimization passes
+  codegen                               Code generation options
 ```
 
-This will generate hh.cpp in the current directory. There are different optimisation options for code generation that you can see using:
+To see all command line options from every sub-command, you can do:
 
 ```
-nmodl --help
+$ ./bin/nmodl -H
+
+NMODL : Source-to-Source Code Generation Framework
+Usage: ./bin/nmodl [OPTIONS] file... [SUBCOMMAND]
+
+Positionals:
+  file TEXT:FILE ... REQUIRED           One or more MOD files to process
+
+Options:
+  -h,--help                             Print this help message and exit
+  -H,--help-all                         Print this help message including all sub-commands
+  -o,--output TEXT=.                    Directory for backend code output
+  --scratch TEXT=tmp                    Directory for intermediate code output
+
+Subcommands:
+host
+  HOST/CPU code backends
+  Options:
+    --c                                   C/C++ backend
+    --omp                                 C/C++ backend with OpenMP
+
+acc
+  Accelerator code backends
+  Options:
+    --oacc                                C/C++ backend with OpenACC
+    --cuda                                C/C++ backend with CUDA
+
+sympy
+  SymPy based analysis and optimizations
+  Options:
+    --analytic                            Solve ODEs using SymPy analytic integration
+    --pade                                Pade approximation in SymPy analytic integration
+    --conductance                         Add CONDUCTANCE keyword in BREAKPOINT
+
+passes
+  Analyse/Optimization passes
+  Options:
+    --inline                              Perform inlining at NMODL level
+    --localize                            Convert RANGE variables to LOCAL
+    --localize-verbatim                   Convert RANGE variables to LOCAL even if verbatim block exist
+    --local-rename                        Rename LOCAL variable if variable of same name exist in global scope
+    --verbatim-inline                     Inline even if verbatim block exist
+    --verbatim-rename                     Rename variables in verbatim block
+    --json-ast                            Write AST to JSON file
+    --nmodl-ast                           Write AST to NMODL file
+    --json-perf                           Write performance statistics to JSON file
+    --show-symtab                         Write symbol table to stdout
+
+codegen
+  Code generation options
+  Options:
+    --layout TEXT:{aos,soa}=soa           Memory layout for code generation
+    --datatype TEXT:{float,double}=soa    Data type for floating point variables
 ```
+
+To use code generation capability you can do:
+
+```
+$ nmodl <path>/hh.mod \
+		host --c \
+		sympy --analytic --pade --conductance \
+		passes --inline --localize --localize-verbatim \
+		--local-rename --verbatim-inline --verbatim-rename
+```
+
+This will generate hh.cpp in the current directory.
 
 
 #### Using NMODL With CoreNEURON
@@ -188,7 +271,7 @@ make -j
 make test
 ```
 
-> Note that the code generation backend is not complete yet.
+Note that the latest master has changed command line option. Use released version **`0.1`** for now.
 
 
 ### Development Conventions

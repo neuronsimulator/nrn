@@ -6,54 +6,36 @@
  *************************************************************************/
 
 #include <fstream>
-#include <iostream>
 
+#include "CLI/CLI.hpp"
 #include "parser/c11_driver.hpp"
-#include "tclap/CmdLine.h"
+#include "utils/logger.hpp"
 
 /**
- * Standlone parser program for C. This demonstrate basic
- * usage of psrser and driver class.
+ * Standalone parser program for C. This demonstrate basic
+ * usage of parser and driver class.
  */
 
 int main(int argc, const char* argv[]) {
-    try {
-        TCLAP::CmdLine cmd("C Parser: Standalone parser program for C");
-        TCLAP::ValueArg<std::string> filearg("", "file", "C input file path", false, "", "string");
+    CLI::App app{"C-Parser : Standalone Parser for C Code"};
 
-        cmd.add(filearg);
-        cmd.parse(argc, argv);
+    std::vector<std::string> files;
+    app.add_option("file", files, "One or more C files to process")
+        ->required()
+        ->check(CLI::ExistingFile);
 
-        std::string filename = filearg.getValue();
+    CLI11_PARSE(app, argc, argv);
 
-        if (filename.empty()) {
-            std::cerr << "Error : Pass input C file, see --help" << std::endl;
-            return 1;
-        }
+    for (const auto& f: files) {
+        nmodl::logger->info("Processing {}", f);
+        std::ifstream file(f);
 
-        std::ifstream file(filename);
-
-        if (!file) {
-            throw std::runtime_error("Could not open file " + filename);
-        }
-
-        std::cout << "\n C Parser : Processing file : " << filename << std::endl;
-
-        std::istream& in(file);
-
-        /// driver object creates lexer and parser, just call parser method
+        /// driver object creates lexer and parser
         nmodl::parser::CDriver driver;
-
         driver.set_verbose(true);
-        driver.parse_stream(in);
 
-        // driver.parse_file(filename);
-
-        std::cout << "----PARSING FINISHED----" << std::endl;
-    } catch (TCLAP::ArgException& e) {
-        std::cout << "Argument Error: " << e.error() << " for arg " << e.argId() << std::endl;
-        return 1;
+        /// just call parser method
+        driver.parse_stream(file);
     }
-
     return 0;
 }
