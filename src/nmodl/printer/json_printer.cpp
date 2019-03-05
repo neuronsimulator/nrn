@@ -7,6 +7,9 @@
 
 #include "printer/json_printer.hpp"
 
+
+namespace nmodl {
+
 /// Dump output to provided file
 JSONPrinter::JSONPrinter(const std::string& filename) {
     if (filename.empty()) {
@@ -76,3 +79,5 @@ void JSONPrinter::flush() {
         block = nullptr;
     }
 }
+
+}  // namespace nmodl

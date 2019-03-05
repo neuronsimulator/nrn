@@ -27,6 +27,8 @@
 {%- endmacro -%}
 
 namespace py = pybind11;
+using namespace nmodl;
+using namespace symtab;
 
 
 class PySymtabVisitor : private VisitorOStreamResources, public SymtabVisitor {
@@ -39,7 +41,6 @@ public:
                                              SymtabVisitor(*ostream, update) { };
 };
 
-using namespace symtab;
 
 void init_symtab_module(py::module& m) {
     py::module m_symtab = m.def_submodule("symtab");
@@ -71,7 +72,7 @@ void init_symtab_module(py::module& m) {
             .def("__and__",[](const syminfo::Status& x, syminfo::Status y) {
                 return x & y;
             })
-            .def("__str__", &to_string<syminfo::Status>);
+            .def("__str__", &syminfo::to_string<syminfo::Status>);
 
     py::enum_<syminfo::VariableType>(m_symtab, "VariableType")
             .value("array", syminfo::VariableType::array)
@@ -125,7 +126,7 @@ void init_symtab_module(py::module& m) {
             .def("__and__",[](const syminfo::NmodlType& x, syminfo::NmodlType y) {
                 return x & y;
             })
-            .def("__str__", &to_string<syminfo::NmodlType>);
+            .def("__str__", &syminfo::to_string<syminfo::NmodlType>);
 
 
     py::class_<Symbol, std::shared_ptr<Symbol>> symbol(m_symtab, "Symbol");
@@ -184,6 +185,6 @@ void init_symtab_module(py::module& m) {
         {% if loop.last -%};{% endif %}
     {% endfor %}
 
-
 }
+
 #pragma clang diagnostic pop

@@ -14,6 +14,8 @@
 #include "symtab/symbol_table.hpp"
 #include "visitors/ast_visitor.hpp"
 
+namespace nmodl {
+
 /**
  * \class LocalVarRenameVisitor
  * \brief Visitor to rename local variables conflicting with global scope
@@ -60,3 +62,5 @@ class LocalVarRenameVisitor: public AstVisitor {
     LocalVarRenameVisitor() = default;
     virtual void visit_statement_block(ast::StatementBlock* node) override;
 };
+
+}  // namespace nmodl

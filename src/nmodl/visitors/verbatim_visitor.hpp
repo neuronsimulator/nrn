@@ -12,6 +12,8 @@
 #include "ast/ast.hpp"
 #include "visitors/ast_visitor.hpp"
 
+namespace nmodl {
+
 /**
  * \class VerbatimVisitor
  * \brief Visitor for verbatim blocks of AST
@@ -44,3 +46,5 @@ class VerbatimVisitor: public AstVisitor {
         return blocks;
     }
 };
+
+}  // namespace nmodl

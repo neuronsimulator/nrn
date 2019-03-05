@@ -21,10 +21,11 @@
  */
 
 namespace nmodl {
-using PositionType = nmodl::location;
-using SymbolType = nmodl::Parser::symbol_type;
-using Token = nmodl::Parser::token;
-using TokenType = nmodl::Parser::token_type;
+
+using PositionType = parser::location;
+using SymbolType = parser::NmodlParser::symbol_type;
+using Token = parser::NmodlParser::token;
+using TokenType = parser::NmodlParser::token_type;
 
 SymbolType double_symbol(double value, PositionType& pos);
 SymbolType integer_symbol(int value, PositionType& pos, const char* text = nullptr);

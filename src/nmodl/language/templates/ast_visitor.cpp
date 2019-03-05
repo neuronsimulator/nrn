@@ -7,6 +7,9 @@
 
 #include "visitors/ast_visitor.hpp"
 
+
+namespace nmodl {
+
 using namespace ast;
 
 {% for node in nodes %}
@@ -15,3 +18,5 @@ void AstVisitor::visit_{{ node.class_name|snake_case }}({{ node.class_name }}* n
 }
 
 {% endfor %}
+
+}  // namespace nmodl

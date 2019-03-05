@@ -13,6 +13,9 @@
 #include "symtab/symbol_table.hpp"
 #include "visitors/ast_visitor.hpp"
 
+
+namespace nmodl {
+
 /**
  * \class VarRenameVisitor
  * \brief "Blindly" rename given variable to new name
@@ -58,3 +61,5 @@ class RenameVisitor: public AstVisitor {
     virtual void visit_prime_name(ast::PrimeName* node) override;
     virtual void visit_verbatim(ast::Verbatim* node) override;
 };
+
+}  // namespace nmodl

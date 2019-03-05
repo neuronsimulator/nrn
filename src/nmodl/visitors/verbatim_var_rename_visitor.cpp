@@ -8,10 +8,11 @@
 #include "visitors/verbatim_var_rename_visitor.hpp"
 #include "parser/c11_driver.hpp"
 
-using namespace ast;
-using namespace symtab;
 
-void VerbatimVarRenameVisitor::visit_statement_block(StatementBlock* node) {
+namespace nmodl {
+
+
+void VerbatimVarRenameVisitor::visit_statement_block(ast::StatementBlock* node) {
     if (node->get_statements().empty()) {
         return;
     }
@@ -68,10 +69,10 @@ std::string VerbatimVarRenameVisitor::rename_variable(std::string name) {
 /**
  * Parse verbatim blocks and rename variables used
  */
-void VerbatimVarRenameVisitor::visit_verbatim(Verbatim* node) {
+void VerbatimVarRenameVisitor::visit_verbatim(ast::Verbatim* node) {
     auto statement = node->get_statement();
     auto text = statement->eval();
-    c11::Driver driver;
+    parser::CDriver driver;
 
     driver.scan_string(text);
     auto tokens = driver.all_tokens();
@@ -82,3 +83,5 @@ void VerbatimVarRenameVisitor::visit_verbatim(Verbatim* node) {
     }
     statement->set(result);
 }
+
+}  // namespace nmodl

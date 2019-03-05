@@ -9,12 +9,16 @@
 #include "visitors/symtab_visitor.hpp"
 #include "visitors/symtab_visitor_helper.hpp"
 
+
+namespace nmodl {
+
 using namespace ast;
+using symtab::syminfo::NmodlType;
 
 {% for node in nodes %}
 {% if node.is_symtab_method_required and not node.is_symbol_helper_node %}
 {% set typename = node.class_name|snake_case %}
-{% set propname = "syminfo::NmodlType::" + typename %}
+{% set propname = "NmodlType::" + typename %}
 void SymtabVisitor::visit_{{ typename }}({{ node.class_name }}* node) {
     {% if node.is_symbol_var_node %}
     setup_symbol(node, {{ propname }});
@@ -32,3 +36,5 @@ void SymtabVisitor::visit_{{ typename }}({{ node.class_name }}* node) {
 
 {% endif %}
 {% endfor %}
+
+}  // namespace nmodl

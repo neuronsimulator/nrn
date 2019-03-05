@@ -10,8 +10,10 @@
 #include "lexer/diffeq_lexer.hpp"
 #include "utils/string_utils.hpp"
 
-using namespace diffeq;
 
+namespace nmodl {
+namespace parser {
+namespace diffeq {
 
 Term::Term(const std::string& expr, const std::string& state)
     : expr(expr)
@@ -70,13 +72,13 @@ std::string DiffEqContext::get_expr_for_nonlinear() {
 
     /// build lexer instance
     std::istringstream in(rhs);
-    Lexer scanner(&in);
+    DiffeqLexer scanner(&in);
 
     /// scan entire expression
     while (true) {
         auto sym = scanner.next_token();
         auto token = sym.token();
-        if (token == Parser::token::END) {
+        if (token == DiffeqParser::token::END) {
             break;
         }
         /// extract value of the token and check if it is a token
@@ -168,3 +170,7 @@ std::string DiffEqContext::get_solution(bool& cnexp_possible) {
     }
     return solution;
 }
+
+}  // namespace diffeq
+}  // namespace parser
+}  // namespace nmodl

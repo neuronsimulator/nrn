@@ -14,8 +14,10 @@
 #include "parser/nmodl/nmodl_parser.hpp"
 
 namespace nmodl {
-using Token = nmodl::Parser::token;
-using TokenType = nmodl::Parser::token_type;
+
+using Token = parser::NmodlParser::token;
+using TokenType = parser::NmodlParser::token_type;
+using Parser = parser::NmodlParser;
 
 namespace internal {
 // clang-format off

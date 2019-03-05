@@ -12,5 +12,9 @@
 #include "spdlog/sinks/stdout_color_sinks.h"
 // clang-format on
 
+namespace nmodl {
+
 using logger_type = std::shared_ptr<spdlog::logger>;
 extern logger_type logger;
+
+}  // namespace nmodl

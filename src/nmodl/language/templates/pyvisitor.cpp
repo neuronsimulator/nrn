@@ -108,4 +108,5 @@ void init_visitor_module(py::module& m) {
     sympy_conductance_visitor.def(py::init<>())
         .def("visit_program", &SympyConductanceVisitor::visit_program);
 }
+
 #pragma clang diagnostic pop

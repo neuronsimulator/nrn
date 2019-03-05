@@ -14,7 +14,7 @@
     #include "lexer/diffeq_lexer.hpp"
     #include "parser/diffeq_driver.hpp"
 
-    #define yyterminate() return Parser::make_END(loc);
+    #define yyterminate() return DiffeqParser::make_END(loc);
 
     #define YY_USER_ACTION { loc.step(); loc.columns(yyleng); }
 
@@ -68,19 +68,19 @@ E   [Ee][-+]?{D}+
 
 %%
 
-"+"                     { return Parser::make_ADD(yytext, loc); }
+"+"                     { return DiffeqParser::make_ADD(yytext, loc); }
 
-"-"                     { return Parser::make_SUB(yytext, loc); }
+"-"                     { return DiffeqParser::make_SUB(yytext, loc); }
 
-"*"                     { return Parser::make_MUL(yytext, loc); }
+"*"                     { return DiffeqParser::make_MUL(yytext, loc); }
 
-"/"                     { return Parser::make_DIV(yytext, loc); }
+"/"                     { return DiffeqParser::make_DIV(yytext, loc); }
 
-"("                     { return Parser::make_OPEN_PARENTHESIS(yytext, loc); }
+"("                     { return DiffeqParser::make_OPEN_PARENTHESIS(yytext, loc); }
 
-")"                     { return Parser::make_CLOSE_PARENTHESIS(yytext, loc); }
+")"                     { return DiffeqParser::make_CLOSE_PARENTHESIS(yytext, loc); }
 
-","                     { return Parser::make_COMMA(yytext, loc); }
+","                     { return DiffeqParser::make_COMMA(yytext, loc); }
 
 :.*                     { /* ignore inline comments */ }
 
@@ -90,9 +90,9 @@ E   [Ee][-+]?{D}+
 {D}+"."{D}*({E})?       |
 {D}*"."{D}+({E})?       |
 {D}+{E}                 |
-[a-zA-Z][a-zA-Z0-9_]*   { return Parser::make_ATOM(yytext, loc); }
+[a-zA-Z][a-zA-Z0-9_]*   { return DiffeqParser::make_ATOM(yytext, loc); }
 
-"\n"                    { return Parser::make_NEWLINE(yytext, loc); }
+"\n"                    { return DiffeqParser::make_NEWLINE(yytext, loc); }
 
 
 %%

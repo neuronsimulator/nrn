@@ -9,6 +9,10 @@
 
 #include <iostream>
 
+
+namespace nmodl {
+namespace parser {
+
 class VerbatimContext {
   public:
     void* scanner = nullptr;
@@ -28,9 +32,12 @@ class VerbatimContext {
     }
 
   protected:
-    /* defined in nmodlext.l */
     void init_scanner();
     void destroy_scanner();
 };
 
-int Verbatim_parse(VerbatimContext*);
+}  // namespace parser
+}  // namespace nmodl
+
+
+int Verbatim_parse(nmodl::parser::VerbatimContext*);

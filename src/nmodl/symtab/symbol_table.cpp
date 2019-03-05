@@ -12,10 +12,13 @@
 #include "utils/logger.hpp"
 #include "utils/table_data.hpp"
 
-using namespace ast;
-using namespace syminfo;
 
+namespace nmodl {
 namespace symtab {
+
+using namespace ast;
+using syminfo::NmodlType;
+using syminfo::Status;
 
 int SymbolTable::Table::counter = 0;
 
@@ -471,8 +474,8 @@ void SymbolTable::Table::print(std::stringstream& stream, std::string title, int
                 name += "[" + std::to_string(symbol->get_length()) + "]";
             }
             auto position = symbol->get_token().position();
-            auto properties = ::to_string(symbol->get_properties());
-            auto status = ::to_string(symbol->get_status());
+            auto properties = syminfo::to_string(symbol->get_properties());
+            auto status = syminfo::to_string(symbol->get_status());
             auto reads = std::to_string(symbol->get_read_count());
             std::string value;
             auto sym_value = symbol->get_value();
@@ -522,3 +525,4 @@ void ModelSymbolTable::print(std::stringstream& ss) {
 }
 
 }  // namespace symtab
+}  // namespace nmodl

@@ -6,7 +6,7 @@
 # ***********************************************************************
 
 import pytest
-from nmodl.dsl import Driver
+from nmodl.dsl import NmodlDriver
 
 CHANNEL = """NEURON  {
     SUFFIX NaTs2_t
@@ -32,6 +32,6 @@ DERIVATIVE states   {
 
 @pytest.fixture
 def ch_ast():
-    d = Driver()
+    d = NmodlDriver()
     d.parse_string(CHANNEL)
     return d.ast()

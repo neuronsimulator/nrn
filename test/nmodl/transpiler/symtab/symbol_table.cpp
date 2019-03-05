@@ -14,10 +14,9 @@
 #include "symtab/symbol.hpp"
 #include "symtab/symbol_table.hpp"
 
+using namespace nmodl;
 using namespace symtab;
 using namespace syminfo;
-
-extern bool has_property(const NmodlType& obj, NmodlType property);
 
 //=============================================================================
 // Symbol properties test

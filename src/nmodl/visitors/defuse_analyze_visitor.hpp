@@ -16,6 +16,8 @@
 #include "visitors/ast_visitor.hpp"
 
 
+namespace nmodl {
+
 /// state in def-use chain
 enum class DUState {
     /// global variable is used
@@ -255,3 +257,5 @@ class DefUseAnalyzeVisitor: public AstVisitor {
     /// compute def-use chain for a variable within the node
     DUChain analyze(ast::Node* node, const std::string& name);
 };
+
+}  // namespace nmodl

@@ -10,8 +10,9 @@
 
 #include "visitors/defuse_analyze_visitor.hpp"
 
-using namespace ast;
-using namespace syminfo;
+namespace nmodl {
+
+using symtab::syminfo::NmodlType;
 
 /// DUState to string conversion for pretty-printing
 std::string to_string(DUState state) {
@@ -166,7 +167,7 @@ DUState DUChain::eval() {
     return result;
 }
 
-void DefUseAnalyzeVisitor::visit_unsupported_node(Node* node) {
+void DefUseAnalyzeVisitor::visit_unsupported_node(ast::Node* node) {
     unsupported_node = true;
     node->visit_children(this);
     unsupported_node = false;
@@ -177,7 +178,7 @@ void DefUseAnalyzeVisitor::visit_unsupported_node(Node* node) {
  *  there is no inlining happened. In this case we mark the call as
  *  unsupported.
  */
-void DefUseAnalyzeVisitor::visit_function_call(FunctionCall* node) {
+void DefUseAnalyzeVisitor::visit_function_call(ast::FunctionCall* node) {
     std::string function_name = node->get_node_name();
     auto symbol = global_symtab->lookup_in_scope(function_name);
     if (symbol == nullptr || symbol->is_external_symbol_only()) {
@@ -187,7 +188,7 @@ void DefUseAnalyzeVisitor::visit_function_call(FunctionCall* node) {
     }
 }
 
-void DefUseAnalyzeVisitor::visit_statement_block(StatementBlock* node) {
+void DefUseAnalyzeVisitor::visit_statement_block(ast::StatementBlock* node) {
     auto symtab = node->get_symbol_table();
     if (symtab != nullptr) {
         current_symtab = symtab;
@@ -202,16 +203,16 @@ void DefUseAnalyzeVisitor::visit_statement_block(StatementBlock* node) {
 /** Nmodl grammar doesn't allow assignment operator on rhs (e.g. a = b + (b=c)
  *  and hence not necessary to keep track of assignment operator using stack.
  */
-void DefUseAnalyzeVisitor::visit_binary_expression(BinaryExpression* node) {
+void DefUseAnalyzeVisitor::visit_binary_expression(ast::BinaryExpression* node) {
     node->get_rhs()->visit_children(this);
-    if (node->get_op().get_value() == BOP_ASSIGN) {
+    if (node->get_op().get_value() == ast::BOP_ASSIGN) {
         visiting_lhs = true;
     }
     node->get_lhs()->visit_children(this);
     visiting_lhs = false;
 }
 
-void DefUseAnalyzeVisitor::visit_if_statement(IfStatement* node) {
+void DefUseAnalyzeVisitor::visit_if_statement(ast::IfStatement* node) {
     /// store previous chain
     auto previous_chain = current_chain;
 
@@ -249,7 +250,7 @@ void DefUseAnalyzeVisitor::visit_if_statement(IfStatement* node) {
  * \todo: one simple way would be to look for p_name in the string
  *        of verbatim block to find the variable usage.
  */
-void DefUseAnalyzeVisitor::visit_verbatim(Verbatim* node) {
+void DefUseAnalyzeVisitor::visit_verbatim(ast::Verbatim* node) {
     if (!ignore_verbatim) {
         current_chain->push_back(DUInstance(DUState::U));
     }
@@ -287,7 +288,7 @@ void DefUseAnalyzeVisitor::update_defuse_chain(const std::string& name) {
     }
 }
 
-void DefUseAnalyzeVisitor::visit_with_new_chain(Node* node, DUState state) {
+void DefUseAnalyzeVisitor::visit_with_new_chain(ast::Node* node, DUState state) {
     auto last_chain = current_chain;
     start_new_chain(state);
     node->visit_children(this);
@@ -317,3 +318,5 @@ DUChain DefUseAnalyzeVisitor::analyze(ast::Node* node, const std::string& name) 
 
     return usage;
 }
+
+}  // namespace nmodl

@@ -10,6 +10,8 @@
 #include "visitors/nmodl_visitor.hpp"
 
 
+namespace nmodl {
+
 /** Helper function to visit vector elements
  *
  * @tparam T
@@ -60,3 +62,5 @@ void NmodlPrintVisitor::visit_element(const std::vector<T>& elements,
         }
     }
 }
+
+}  // namespace nmodl

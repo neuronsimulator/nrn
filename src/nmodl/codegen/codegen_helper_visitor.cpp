@@ -14,11 +14,16 @@
 
 #include <fmt/format.h>
 
-using namespace ast;
-using namespace codegen;
-using namespace symtab;
-using namespace syminfo;
 using namespace fmt::literals;
+
+
+namespace nmodl {
+namespace codegen {
+
+using namespace ast;
+
+using symtab::syminfo::NmodlType;
+using symtab::syminfo::Status;
 
 /**
  * How symbols are stored in NEURON? See notes written in markdown file.
@@ -548,7 +553,7 @@ void CodegenHelperVisitor::visit_statement_block(ast::StatementBlock* node) {
             auto symbol = psymtab->lookup(name);
             if (symbol != nullptr) {
                 auto is_prime = symbol->has_properties(NmodlType::prime_name);
-                auto from_state = symbol->has_any_status(syminfo::Status::from_state);
+                auto from_state = symbol->has_any_status(Status::from_state);
                 if (is_prime || from_state) {
                     if (from_state) {
                         symbol = psymtab->lookup(name.substr(1, name.size()));
@@ -634,3 +639,6 @@ codegen::CodegenInfo CodegenHelperVisitor::analyze(ast::Program* node) {
     node->accept(this);
     return info;
 }
+
+}  // namespace codegen
+}  // namespace nmodl

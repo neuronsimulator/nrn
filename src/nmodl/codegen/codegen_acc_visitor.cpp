@@ -12,6 +12,9 @@
 using namespace fmt::literals;
 
 
+namespace nmodl {
+namespace codegen {
+
 /****************************************************************************************/
 /*                      Routines must be overloaded in backend                          */
 /****************************************************************************************/
@@ -118,3 +121,6 @@ void CodegenAccVisitor::print_rhs_d_shadow_variables() {
 bool CodegenAccVisitor::nrn_cur_reduction_loop_required() {
     return false;
 }
+
+}  // namespace codegen
+}  // namespace nmodl

@@ -18,6 +18,9 @@
 #include "visitors/rename_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
 
+
+namespace nmodl {
+
 /**
  * \class LocalizeVisitor
  * \brief Visitor to transform global variable usage to local
@@ -98,3 +101,5 @@ class LocalizeVisitor: public AstVisitor {
 
     virtual void visit_program(ast::Program* node) override;
 };
+
+}  // namespace nmodl

@@ -11,6 +11,9 @@
 #include "utils/string_utils.hpp"
 #include "utils/table_data.hpp"
 
+
+namespace nmodl {
+
 /**
  *   Print table data in below shown format: title as first row (centrally aligned),
  *   second row is header for individual column (centrally aligned) and then all data
@@ -24,8 +27,6 @@
  *   | v           | argument          |          109.17 |              0 |               0 |
  *   ----------------------------------------------------------------------------------------
  */
-
-using namespace stringutils;
 
 void TableData::print(std::stringstream& stream, int indent) {
     const int PADDING = 1;
@@ -78,7 +79,7 @@ void TableData::print(std::stringstream& stream, int indent) {
     std::stringstream header;
     header << "| ";
     for (size_t i = 0; i < headers.size(); i++) {
-        auto text = align_text(headers[i], col_width[i], text_alignment::center);
+        auto text = stringutils::align_text(headers[i], col_width[i], text_alignment::center);
         header << text << " | ";
     }
 
@@ -114,3 +115,5 @@ void TableData::print(int indent) {
     print(ss, indent);
     std::cout << ss.str();
 }
+
+}  // namespace nmodl

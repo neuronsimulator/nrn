@@ -11,6 +11,9 @@
 #include <string>
 #include <sys/stat.h>
 
+
+namespace nmodl {
+
 bool is_dir_exist(const std::string& path) {
     struct stat info {};
     if (stat(path.c_str(), &info) != 0) {
@@ -50,3 +53,5 @@ bool make_path(const std::string& path) {
         throw std::runtime_error(msg);
     }
 }
+
+}  // namespace nmodl

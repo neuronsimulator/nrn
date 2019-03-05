@@ -10,6 +10,9 @@
 #include <string>
 #include <vector>
 
+
+namespace nmodl {
+
 /**
  * \class ArgumentHandler
  * \brief Parser comamnd line arguments
@@ -95,3 +98,5 @@ struct ArgumentHandler {
         return accel_backend == "CUDA";
     }
 };
+
+}  // namespace nmodl

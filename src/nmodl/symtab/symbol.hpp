@@ -13,6 +13,9 @@
 #include "lexer/modtoken.hpp"
 #include "symtab/symbol_properties.hpp"
 
+
+namespace nmodl {
+
 namespace ast {
 class AST;
 }
@@ -259,3 +262,4 @@ class Symbol {
 };
 
 }  // namespace symtab
+}  // namespace nmodl

@@ -8,10 +8,11 @@
 #include "visitors/rename_visitor.hpp"
 #include "parser/c11_driver.hpp"
 
-using namespace ast;
+
+namespace nmodl {
 
 /// rename matching variable
-void RenameVisitor::visit_name(Name* node) {
+void RenameVisitor::visit_name(ast::Name* node) {
     std::string name = node->get_node_name();
     if (name == var_name) {
         auto value = node->get_value();
@@ -31,14 +32,14 @@ void RenameVisitor::visit_prime_name(ast::PrimeName* node) {
 /**
  * Parse verbatim blocks and rename variable if it is used.
  */
-void RenameVisitor::visit_verbatim(Verbatim* node) {
+void RenameVisitor::visit_verbatim(ast::Verbatim* node) {
     if (!rename_verbatim) {
         return;
     }
 
     auto statement = node->get_statement();
     auto text = statement->eval();
-    c11::Driver driver;
+    parser::CDriver driver;
 
     driver.scan_string(text);
     auto tokens = driver.all_tokens();
@@ -53,3 +54,5 @@ void RenameVisitor::visit_verbatim(Verbatim* node) {
     }
     statement->set(result);
 }
+
+}  // namespace nmodl

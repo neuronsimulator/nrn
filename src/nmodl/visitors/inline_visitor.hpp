@@ -17,6 +17,9 @@
 #include "visitors/rename_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
 
+
+namespace nmodl {
+
 /**
  * \class InlineVisitor
  * \brief Visitor to inline local procedure and function calls
@@ -176,3 +179,5 @@ class InlineVisitor: public AstVisitor {
 
     virtual void visit_program(ast::Program* node) override;
 };
+
+}  // namespace nmodl

@@ -10,6 +10,7 @@
 #include "ast/ast.hpp"
 #include "printer/nmodl_printer.hpp"
 
+namespace nmodl {
 
 /* Visitor for printing AST back to NMODL */
 class NmodlPrintVisitor : public Visitor {
@@ -27,3 +28,5 @@ class NmodlPrintVisitor : public Visitor {
         template<typename T>
         void visit_element(const std::vector<T>& elements, std::string separator, bool program, bool statement);
 };
+
+}  // namespace nmodl

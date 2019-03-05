@@ -12,6 +12,8 @@
 #include "ast/ast.hpp"
 #include "visitors/ast_visitor.hpp"
 
+namespace nmodl {
+
 /**
  * \class CnexpSolveVisitor
  * \brief Visitor that solves and replaces ODEs using cnexp method
@@ -50,3 +52,5 @@ class CnexpSolveVisitor: public AstVisitor {
     void visit_binary_expression(ast::BinaryExpression* node) override;
     void visit_program(ast::Program* node) override;
 };
+
+}  // namespace nmodl

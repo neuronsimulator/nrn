@@ -9,14 +9,14 @@
 
 int count_leading_spaces(std::string text) {
     int length = text.size();
-    stringutils::ltrim(text);
+    nmodl::stringutils::ltrim(text);
     int num_whitespaces = length - text.size();
     return num_whitespaces;
 }
 
 /// check if string has only whitespaces
 bool is_empty(std::string text) {
-    stringutils::trim(text);
+    nmodl::stringutils::trim(text);
     return text.empty();
 }
 

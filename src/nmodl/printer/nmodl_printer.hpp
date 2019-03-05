@@ -12,6 +12,8 @@
 #include <memory>
 #include <sstream>
 
+namespace nmodl {
+
 /**
  * \class NMODLPrinter
  * \brief Helper class for printing AST back to NMDOL test
@@ -55,3 +57,5 @@ class NMODLPrinter {
     /// and decreases indentation level
     void pop_level();
 };
+
+}  // namespace nmodl

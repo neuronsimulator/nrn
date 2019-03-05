@@ -12,6 +12,8 @@
 #include "utils/perf_stat.hpp"
 #include "utils/table_data.hpp"
 
+namespace nmodl {
+
 PerfStat operator+(const PerfStat& first, const PerfStat& second) {
     PerfStat result;
 
@@ -111,3 +113,5 @@ std::vector<std::string> PerfStat::values() {
 
     return row;
 }
+
+}  // namespace nmodl

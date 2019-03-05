@@ -15,7 +15,8 @@
 #include "symtab/symbol_table.hpp"
 
 
-namespace ast {
+using namespace nmodl;
+using namespace ast;
 
 struct PyAST: public AST {
   public:
@@ -76,5 +77,3 @@ struct PyAST: public AST {
 
     {% endfor %}
 };
-
-}  // namespace ast

@@ -8,9 +8,10 @@
 #include "visitors/verbatim_visitor.hpp"
 #include <iostream>
 
-using namespace ast;
 
-void VerbatimVisitor::visit_verbatim(Verbatim* node) {
+namespace nmodl {
+
+void VerbatimVisitor::visit_verbatim(ast::Verbatim* node) {
     std::string block;
     auto statement = node->get_statement();
     if (statement) {
@@ -24,3 +25,5 @@ void VerbatimVisitor::visit_verbatim(Verbatim* node) {
 
     blocks.push_back(block);
 }
+
+}  // namespace nmodl

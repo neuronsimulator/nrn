@@ -32,6 +32,12 @@
 #include "visitors/verbatim_var_rename_visitor.hpp"
 #include "visitors/verbatim_visitor.hpp"
 
+using namespace nmodl;
+using namespace codegen;
+
+using nmodl::codegen::LayoutType;
+
+
 void ast_to_nmodl(ast::Program* ast, const std::string& filename) {
     NmodlPrintVisitor v(filename);
     v.visit_program(ast);
@@ -68,7 +74,7 @@ int main(int argc, const char* argv[]) {
         std::string mod_file = remove_extension(base_name(nmodl_file));
 
         /// driver object creates lexer and parser, just call parser method
-        nmodl::Driver driver;
+        nmodl::parser::NmodlDriver driver;
         driver.parse_file(nmodl_file);
 
         /// shared_ptr to ast constructed from parsing nmodl file
@@ -195,7 +201,8 @@ int main(int argc, const char* argv[]) {
                 CodegenCVisitor visitor(mod_file, arg.output_dir, layout, arg.dtype);
                 visitor.visit_program(ast.get());
             } else if (arg.host_omp_backend()) {
-                CodegenOmpVisitor visitor(mod_file, arg.output_dir, layout, arg.dtype);
+                nmodl::codegen::CodegenOmpVisitor visitor(mod_file, arg.output_dir, layout,
+                                                          arg.dtype);
                 visitor.visit_program(ast.get());
             } else if (arg.host_acc_backend()) {
                 CodegenAccVisitor visitor(mod_file, arg.output_dir, layout, arg.dtype);

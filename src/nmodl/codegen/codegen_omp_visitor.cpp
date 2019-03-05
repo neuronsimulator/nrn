@@ -8,9 +8,10 @@
 #include "codegen/codegen_omp_visitor.hpp"
 
 
-using namespace symtab;
 using namespace fmt::literals;
-using SymbolType = std::shared_ptr<symtab::Symbol>;
+
+namespace nmodl {
+namespace codegen {
 
 
 /****************************************************************************************/
@@ -99,3 +100,6 @@ bool CodegenOmpVisitor::channel_task_dependency_enabled() {
 bool CodegenOmpVisitor::block_require_shadow_update(BlockType type) {
     return !(!channel_task_dependency_enabled() || type == BlockType::Initial);
 }
+
+}  // namespace codegen
+}  // namespace nmodl

@@ -5,25 +5,30 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
-#include "visitors/sympy_solver_visitor.hpp"
+#include <iostream>
+
 #include "codegen/codegen_naming.hpp"
 #include "symtab/symbol.hpp"
 #include "utils/logger.hpp"
 #include "visitor_utils.hpp"
-#include <iostream>
-using namespace ast;
+#include "visitors/sympy_solver_visitor.hpp"
+
+
 namespace py = pybind11;
 using namespace py::literals;
-using namespace syminfo;
 
-void SympySolverVisitor::visit_solve_block(SolveBlock* node) {
+namespace nmodl {
+
+using symtab::syminfo::NmodlType;
+
+void SympySolverVisitor::visit_solve_block(ast::SolveBlock* node) {
     auto method = node->get_method();
     if (method) {
         solve_method = method->get_value()->eval();
     }
 }
 
-void SympySolverVisitor::visit_diff_eq_expression(DiffEqExpression* node) {
+void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
     if (solve_method != cnexp_method) {
         logger->warn(
             "SympySolverVisitor: solve method not cnexp, so not integrating "
@@ -38,7 +43,7 @@ void SympySolverVisitor::visit_diff_eq_expression(DiffEqExpression* node) {
         logger->warn("SympySolverVisitor: LHS of differential equation is not a VariableName");
         return;
     }
-    auto lhs_name = std::dynamic_pointer_cast<VarName>(lhs)->get_name();
+    auto lhs_name = std::dynamic_pointer_cast<ast::VarName>(lhs)->get_name();
     if (!lhs_name->is_prime_name()) {
         logger->warn("SympySolverVisitor: LHS of differential equation is not a PrimeName");
         return;
@@ -66,8 +71,8 @@ void SympySolverVisitor::visit_diff_eq_expression(DiffEqExpression* node) {
     }
     if (!solution.empty()) {
         auto statement = create_statement(solution);
-        auto expr_statement = std::dynamic_pointer_cast<ExpressionStatement>(statement);
-        auto bin_expr = std::dynamic_pointer_cast<BinaryExpression>(
+        auto expr_statement = std::dynamic_pointer_cast<ast::ExpressionStatement>(statement);
+        auto bin_expr = std::dynamic_pointer_cast<ast::BinaryExpression>(
             expr_statement->get_expression());
         lhs.reset(bin_expr->lhs->clone());
         rhs.reset(bin_expr->rhs->clone());
@@ -91,3 +96,5 @@ void SympySolverVisitor::visit_program(ast::Program* node) {
     vars = get_global_vars(node);
     node->visit_children(this);
 }
+
+}  // namespace nmodl

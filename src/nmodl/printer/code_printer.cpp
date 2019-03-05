@@ -8,6 +8,8 @@
 #include "printer/code_printer.hpp"
 #include "utils/string_utils.hpp"
 
+namespace nmodl {
+
 CodePrinter::CodePrinter(const std::string& filename) {
     if (filename.empty()) {
         throw std::runtime_error("Empty filename for CodePrinter");
@@ -70,3 +72,5 @@ void CodePrinter::end_block(int num_newlines) {
     *result << "}";
     add_newline(num_newlines);
 }
+
+}  // namespace nmodl

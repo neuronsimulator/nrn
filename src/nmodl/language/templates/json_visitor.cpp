@@ -7,6 +7,9 @@
 
 #include "visitors/json_visitor.hpp"
 
+
+namespace nmodl {
+
 using namespace ast;
 
 {% for node in nodes %}
@@ -38,3 +41,5 @@ void JSONVisitor::visit_{{ node.class_name|snake_case }}({{ node.class_name }}* 
 }
 
 {% endfor %}
+
+}  // namespace nmodl

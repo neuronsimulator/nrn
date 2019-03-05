@@ -13,6 +13,8 @@
 #include "symtab/symbol_table.hpp"
 #include "visitors/ast_visitor.hpp"
 
+namespace nmodl {
+
 /**
  * \class VerbatimVarRenameVisitor
  * \brief Rename variable in verbatim block
@@ -55,3 +57,5 @@ class VerbatimVarRenameVisitor: public AstVisitor {
     virtual void visit_verbatim(ast::Verbatim* node) override;
     virtual void visit_statement_block(ast::StatementBlock* node) override;
 };
+
+}  // namespace nmodl

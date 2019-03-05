@@ -7,8 +7,9 @@
 
 #include "codegen/codegen_info.hpp"
 
-using namespace codegen;
 
+namespace nmodl {
+namespace codegen {
 
 /// if any ion has write variable
 bool CodegenInfo::ion_has_write_variable() {
@@ -72,3 +73,6 @@ bool CodegenInfo::function_uses_table(std::string& name) const {
     }
     return false;
 }
+
+}  // namespace codegen
+}  // namespace nmodl

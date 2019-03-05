@@ -11,6 +11,8 @@
 #include <utility>
 #include <vector>
 
+
+namespace nmodl {
 namespace ast {
 
     {% for node in nodes %}
@@ -29,4 +31,5 @@ namespace ast {
     using {{ node.class_name }}Vector = std::vector<std::shared_ptr<{{ node.class_name }}>>;
     {% endfor %}
 
-}
+}  // namespace ast
+}  // namespace nmodl

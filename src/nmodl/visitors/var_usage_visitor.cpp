@@ -9,6 +9,9 @@
 
 #include <utility>
 
+
+namespace nmodl {
+
 /// rename matching variable
 void VarUsageVisitor::visit_name(ast::Name* node) {
     std::string name = node->get_node_name();
@@ -23,3 +26,5 @@ bool VarUsageVisitor::variable_used(ast::Node* node, std::string name) {
     node->visit_children(this);
     return used;
 }
+
+}  // namespace nmodl

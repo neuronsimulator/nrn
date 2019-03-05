@@ -12,14 +12,15 @@
 #include "utils/string_utils.hpp"
 
 using namespace fmt::literals;
-using namespace symtab;
-using namespace syminfo;
 
+namespace nmodl {
+namespace codegen {
+
+using symtab::syminfo::NmodlType;
 
 /****************************************************************************************/
 /*                      Routines must be overloaded in backend                          */
 /****************************************************************************************/
-
 
 /**
  * As initial block is/can be executed on c/cpu backend, gpu/cuda
@@ -203,3 +204,6 @@ void CodegenCudaVisitor::print_codegen_routines() {
 
     print_namespace_end();
 }
+
+}  // namespace codegen
+}  // namespace nmodl

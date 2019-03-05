@@ -8,6 +8,8 @@
 #include "printer/nmodl_printer.hpp"
 #include "utils/string_utils.hpp"
 
+namespace nmodl {
+
 NMODLPrinter::NMODLPrinter(const std::string& filename) {
     if (filename.empty()) {
         throw std::runtime_error("Empty filename for NMODLPrinter");
@@ -47,3 +49,5 @@ void NMODLPrinter::pop_level() {
     add_indent();
     *result << "}";
 }
+
+}  // namespace nmodl

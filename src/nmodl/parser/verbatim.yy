@@ -34,7 +34,7 @@
 %defines
 
 /* yyparse() takes an extra argument context */
-%parse-param {VerbatimContext* context}
+%parse-param {nmodl::parser::VerbatimContext* context}
 
 /* reentrant lexer needs an extra argument for yylex() */
 %lex-param {void * scanner}
@@ -61,6 +61,9 @@
 %type   <string_ptr>    commentblock
 
 %{
+
+    using nmodl::parser::VerbatimContext;
+
     /* a macro that extracts the scanner state from the parser state for yylex */
     #define scanner context->scanner
 

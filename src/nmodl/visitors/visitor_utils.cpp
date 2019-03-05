@@ -15,7 +15,11 @@
 #include "visitors/json_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
 
+
+namespace nmodl {
+
 using namespace ast;
+using symtab::syminfo::NmodlType;
 
 std::string get_new_name(const std::string& name,
                          const std::string& suffix,
@@ -75,7 +79,7 @@ LocalVar* add_local_variable(StatementBlock* node, const std::string& varname, i
  *  if all statements can be part of procedure block.
  */
 std::shared_ptr<Statement> create_statement(const std::string& code_statement) {
-    nmodl::Driver driver;
+    nmodl::parser::NmodlDriver driver;
     auto nmodl_text = "PROCEDURE dummy() { " + code_statement + " }";
     driver.parse_string(nmodl_text);
     auto ast = driver.ast();
@@ -88,14 +92,13 @@ std::shared_ptr<Statement> create_statement(const std::string& code_statement) {
 std::set<std::string> get_global_vars(Program* node) {
     std::set<std::string> vars;
     if (auto* symtab = node->get_symbol_table()) {
-        syminfo::NmodlType property =
-            syminfo::NmodlType::global_var | syminfo::NmodlType::range_var |
-            syminfo::NmodlType::param_assign | syminfo::NmodlType::extern_var |
-            syminfo::NmodlType::prime_name | syminfo::NmodlType::dependent_def |
-            syminfo::NmodlType::read_ion_var | syminfo::NmodlType::write_ion_var |
-            syminfo::NmodlType::nonspecific_cur_var | syminfo::NmodlType::electrode_cur_var |
-            syminfo::NmodlType::section_var | syminfo::NmodlType::constant_var |
-            syminfo::NmodlType::extern_neuron_variable | syminfo::NmodlType::state_var;
+        NmodlType property = NmodlType::global_var | NmodlType::range_var |
+                             NmodlType::param_assign | NmodlType::extern_var |
+                             NmodlType::prime_name | NmodlType::dependent_def |
+                             NmodlType::read_ion_var | NmodlType::write_ion_var |
+                             NmodlType::nonspecific_cur_var | NmodlType::electrode_cur_var |
+                             NmodlType::section_var | NmodlType::constant_var |
+                             NmodlType::extern_neuron_variable | NmodlType::state_var;
         for (const auto& globalvar: symtab->get_variables_with_properties(property)) {
             vars.insert(globalvar->get_name());
         }
@@ -103,7 +106,6 @@ std::set<std::string> get_global_vars(Program* node) {
     return vars;
 }
 
-namespace nmodl {
 
 std::string to_nmodl(ast::AST* node) {
     std::stringstream stream;

@@ -13,14 +13,19 @@
 #include "visitor_utils.hpp"
 #include "visitors/sympy_conductance_visitor.hpp"
 
-using namespace ast;
+
 namespace py = pybind11;
 using namespace py::literals;
-using namespace syminfo;
+
+namespace nmodl {
+
+using ast::AstNodeType;
+using ast::BinaryOp;
+using symtab::syminfo::NmodlType;
 
 // Generate statement strings to be added to BREAKPOINT section
 std::vector<std::string> SympyConductanceVisitor::generate_statement_strings(
-    BreakpointBlock* node) {
+    ast::BreakpointBlock* node) {
     std::vector<std::string> statements;
     // iterate over binary expression lhs's from breakpoint
     for (const auto& lhs_str: ordered_binary_exprs_lhs) {
@@ -92,14 +97,15 @@ std::vector<std::string> SympyConductanceVisitor::generate_statement_strings(
     return statements;
 }
 
-void SympyConductanceVisitor::visit_binary_expression(BinaryExpression* node) {
+void SympyConductanceVisitor::visit_binary_expression(ast::BinaryExpression* node) {
     // only want binary expressions from breakpoint block
     if (!breakpoint_block) {
         return;
     }
     // only want binary expressions of form x = ...
     if (node->lhs->is_var_name() && (node->op.get_value() == BinaryOp::BOP_ASSIGN)) {
-        auto lhs_str = std::dynamic_pointer_cast<VarName>(node->lhs)->get_name()->get_node_name();
+        auto lhs_str =
+            std::dynamic_pointer_cast<ast::VarName>(node->lhs)->get_name()->get_node_name();
         binary_expr_index[lhs_str] = ordered_binary_exprs.size();
         ordered_binary_exprs.push_back(nmodl::to_nmodl(node));
         ordered_binary_exprs_lhs.push_back(lhs_str);
@@ -113,7 +119,7 @@ void SympyConductanceVisitor::lookup_nonspecific_statements() {
         for (const auto& ns_curr_ast: nonspecific_nodes) {
             logger->debug("SympyConductance :: Found NONSPECIFIC_CURRENT statement");
             for (const auto& write_name:
-                 std::dynamic_pointer_cast<Nonspecific>(ns_curr_ast).get()->get_currents()) {
+                 std::dynamic_pointer_cast<ast::Nonspecific>(ns_curr_ast).get()->get_currents()) {
                 std::string curr_write = write_name->get_node_name();
                 logger->debug("SympyConductance :: -> Adding non-specific current write name: {}",
                               curr_write);
@@ -126,7 +132,7 @@ void SympyConductanceVisitor::lookup_nonspecific_statements() {
 void SympyConductanceVisitor::lookup_useion_statements() {
     // add USEION statements to i_name map between write vars and names
     for (const auto& useion_ast: use_ion_nodes) {
-        auto ion = std::dynamic_pointer_cast<Useion>(useion_ast).get();
+        auto ion = std::dynamic_pointer_cast<ast::Useion>(useion_ast).get();
         std::string ion_name = ion->get_node_name();
         logger->debug("SympyConductance :: Found USEION statement {}", nmodl::to_nmodl(ion));
         if (i_ignore.find(ion_name) != i_ignore.end()) {
@@ -143,7 +149,7 @@ void SympyConductanceVisitor::lookup_useion_statements() {
     }
 }
 
-void SympyConductanceVisitor::visit_conductance_hint(ConductanceHint* node) {
+void SympyConductanceVisitor::visit_conductance_hint(ast::ConductanceHint* node) {
     // find existing CONDUCTANCE statements - do not want to alter them
     // so keep a set of ion names i_ignore that we should ignore later
     logger->debug("SympyConductance :: Found existing CONDUCTANCE statement: {}",
@@ -157,7 +163,7 @@ void SympyConductanceVisitor::visit_conductance_hint(ConductanceHint* node) {
     }
 };
 
-void SympyConductanceVisitor::visit_breakpoint_block(BreakpointBlock* node) {
+void SympyConductanceVisitor::visit_breakpoint_block(ast::BreakpointBlock* node) {
     // add any breakpoint local variables to vars
     if (auto* symtab = node->get_statement_block()->get_symbol_table()) {
         for (const auto& localvar: symtab->get_variables_with_properties(NmodlType::local_var)) {
@@ -193,7 +199,7 @@ void SympyConductanceVisitor::visit_breakpoint_block(BreakpointBlock* node) {
     }
 }
 
-void SympyConductanceVisitor::visit_program(Program* node) {
+void SympyConductanceVisitor::visit_program(ast::Program* node) {
     vars = get_global_vars(node);
     AstLookupVisitor ast_lookup_visitor;
     use_ion_nodes = ast_lookup_visitor.lookup(node, AstNodeType::USEION);
@@ -201,3 +207,5 @@ void SympyConductanceVisitor::visit_program(Program* node) {
 
     node->visit_children(this);
 }
+
+}  // namespace nmodl

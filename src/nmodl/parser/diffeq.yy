@@ -19,6 +19,7 @@
  {
     #include <string>
     #include "parser/diffeq_context.hpp"
+    #include "parser/diffeq_driver.hpp"
     #include "parser/diffeq_helper.hpp"
 }
 
@@ -38,9 +39,9 @@
 %locations
 
 /** add extra arguments to yyparse() and yylexe() methods */
-%parse-param {class Lexer& scanner}
+%parse-param {class DiffeqLexer& scanner}
 %parse-param {diffeq::DiffEqContext& context}
-%lex-param { diffeq::Scanner &scanner }
+%lex-param   {diffeq::DiffEqScanner &scanner }
 
 /** use variant based implementation of semantic values */
 %define api.value.type variant
@@ -51,11 +52,11 @@
 /** handle symbol to be handled as a whole (type, value, and possibly location) in scanner */
 %define api.token.constructor
 
-/** namespace to enclose parser */
-%name-prefix "diffeq"
+/** specify the namespace for the parser class */
+%define api.namespace {nmodl::parser}
 
 /** set the parser's class identifier */
-%define parser_class_name {Parser}
+%define parser_class_name {DiffeqParser}
 
 /** keep track of the current position within the input */
 %locations
@@ -74,7 +75,7 @@
 
 
 %type   <std::string>   top
-%type   <Term>          expression e arglist arg
+%type   <diffeq::Term>          expression e arglist arg
 
 
 /* operator associativity */
@@ -87,7 +88,14 @@
     #include <sstream>
     #include "lexer/diffeq_lexer.hpp"
 
-    static diffeq::Parser::symbol_type yylex(diffeq::Lexer &scanner) {
+    using nmodl::parser::DiffeqParser;
+    using nmodl::parser::DiffeqLexer;
+    using nmodl::parser::DiffeqDriver;
+    using nmodl::parser::diffeq::eval_derivative;
+    using nmodl::parser::diffeq::MathOp;
+    using nmodl::parser::diffeq::Term;
+
+    static DiffeqParser::symbol_type yylex(DiffeqLexer &scanner) {
         return scanner.next_token();
     }
 %}
@@ -102,7 +110,7 @@
  *
  *  \todo We pass the differential equation context to the parser to keep track of current
  *  solution and and also some global states like equation/derivative valid or not. We could
- *  add extra properties in Term class and avoid passing context to parser class. Need to
+ *  add extra properties in diffeq::Term class and avoid passing context to parser class. Need to
  *  check the implementation of other solvers in neuron before making changes.
  */
 
@@ -220,7 +228,7 @@ arg             : e                         {
 %%
 
 
-void diffeq::Parser::error(const location &loc , const std::string &message) {
+void DiffeqParser::error(const location &loc , const std::string &message) {
     std::stringstream ss;
     ss << "DiffEq Parser Error : " << message << " [Location : " << loc << "]";
     throw std::runtime_error(ss.str());

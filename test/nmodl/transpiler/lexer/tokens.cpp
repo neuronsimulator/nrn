@@ -14,18 +14,22 @@
 #include "lexer/nmodl_lexer.hpp"
 #include "parser/nmodl_driver.hpp"
 
-using Token = nmodl::Parser::token;
+using namespace nmodl;
+
+using nmodl::parser::NmodlDriver;
+using nmodl::parser::NmodlLexer;
+using parser::NmodlParser;
+using Token = NmodlParser::token;
+using TokenType = NmodlParser::token_type;
+using SymbolType = NmodlParser::symbol_type;
 
 /// just retrieve token type from lexer
-nmodl::Parser::token_type token_type(const std::string& name) {
+TokenType token_type(const std::string& name) {
     std::istringstream ss(name);
     std::istream& in = ss;
 
-    nmodl::Driver driver;
-    nmodl::Lexer scanner(driver, &in);
-
-    using TokenType = nmodl::Parser::token_type;
-    using SymbolType = nmodl::Parser::symbol_type;
+    NmodlDriver driver;
+    NmodlLexer scanner(driver, &in);
 
     SymbolType sym = scanner.next_token();
     TokenType token = sym.token();

@@ -5,14 +5,17 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
+#include "symtab/symbol.hpp"
 #include "fmt/format.h"
 
-#include "symtab/symbol.hpp"
 
-using namespace syminfo;
 using namespace fmt::literals;
 
+namespace nmodl {
 namespace symtab {
+
+using syminfo::NmodlType;
+using syminfo::Status;
 
 /** if symbol has only extern_token property : this is true
  *  for symbols which are external variables from neuron
@@ -92,12 +95,13 @@ bool Symbol::is_variable() {
 std::string Symbol::to_string() {
     std::string s(name);
     if (properties != NmodlType::empty) {
-        s += " [Properties : {}]"_format(::to_string(properties));
+        s += " [Properties : {}]"_format(syminfo::to_string(properties));
     }
     if (status != Status::empty) {
-        s += " [Status : {}]"_format(::to_string(status));
+        s += " [Status : {}]"_format(syminfo::to_string(status));
     }
     return s;
 }
 
 }  // namespace symtab
+}  // namespace nmodl
