@@ -2037,10 +2037,10 @@ SCENARIO("SympySolver visitor", "[sympy]") {
             REQUIRE(result.empty());
         }
     }
-    GIVEN("Derivative block with ODES, solver method is not cnexp") {
+    GIVEN("Derivative block with ODES, solver method is euler") {
         std::string nmodl_text = R"(
             BREAKPOINT  {
-                SOLVE states METHOD derivimplicit
+                SOLVE states METHOD euler
             }
             DERIVATIVE states {
                 m' = (mInf-m)/mTau
@@ -2049,11 +2049,11 @@ SCENARIO("SympySolver visitor", "[sympy]") {
             }
         )";
 
-        THEN("Solver method is not cnexp - do nothing") {
+        THEN("Construct forwards Euler solutions") {
             auto result = run_sympy_solver_visitor(nmodl_text);
             REQUIRE(result.size() == 2);
-            REQUIRE(result[0] == "m' = (mInf-m)/mTau");
-            REQUIRE(result[1] == "h' = (hInf-h)/hTau");
+            REQUIRE(result[0] == "m = (-dt*(m-mInf)+m*mTau)/mTau");
+            REQUIRE(result[1] == "h = (-dt*(h-hInf)+h*hTau)/hTau");
         }
     }
     GIVEN("Derivative block with linear ODES, solver method cnexp") {

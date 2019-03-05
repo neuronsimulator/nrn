@@ -26,8 +26,8 @@ def integrate2c(diff_string, t_var, dt_var, vars, use_pade_approx=False):
         t_var: name of time variable in NEURON
         dt_var: name of dt variable in NEURON
         vars: set of variables used in expression, e.g. {"x", "a"}
-        ues_pade_approx][]: if False:  return exact solution
-                         if True:   return (1,1) Pade approx to solution
+        uses_pade_approx: if False:  return exact solution
+                          if True:   return (1,1) Pade approx to solution
                                     correct to second order in dt_var
 
     Returns:
@@ -177,3 +177,47 @@ def differentiate2c(expression, dependent_var, vars, prev_expressions=None):
 
     # return result as C code in NEURON format
     return sp.ccode(diff)
+
+
+def forwards_euler2c(diff_string, dt_var, vars):
+    """Return forwards euler solution of diff_string as C code.
+
+    Derivative should be of the form "x' = f(x)",
+    and vars should contain the set of all the variables
+    referenced by f(x), for example:
+    -forwards_euler2c("x' = a*x", "a")
+    -forwards_euler2c("x' = a + b*x - sin(3.2)", {"a","b"})
+
+    Args:
+        diff_string: Derivative to be integrated e.g. "x' = a*x"
+        dt_var: name of dt variable in NEURON
+        vars: set of variables used in expression, e.g. {"x", "a"}
+
+    Returns:
+        String containing forwards Euler timestep as C code
+
+    Raises:
+        ImportError: if SymPy version is too old (<1.2)
+    """
+
+    # every symbol (a.k.a variable) that SymPy
+    # is going to manipulate needs to be declared
+    # explicitly
+    sympy_vars = {}
+    vars = set(vars)
+    dependent_var = diff_string.split("=")[0].split("'")[0].strip()
+    x = sp.symbols(dependent_var, real=True)
+    vars.discard(dependent_var)
+    # declare all other supplied variables
+    sympy_vars = {var: sp.symbols(var, real=True) for var in vars}
+    sympy_vars[dependent_var] = x
+
+    # parse string into SymPy equation
+    diffeq_rhs = sp.sympify(diff_string.split("=", 1)[1], locals=sympy_vars)
+
+    # forwards Euler solution is x + dx/dt * dt
+    dt = sp.symbols(dt_var, real=True, positive=True)
+    solution = (x + diffeq_rhs * dt).simplify().evalf()
+
+    # return result as C code in NEURON format
+    return f"{sp.ccode(x)} = {sp.ccode(solution)}"

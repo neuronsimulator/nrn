@@ -29,10 +29,11 @@ void SympySolverVisitor::visit_solve_block(ast::SolveBlock* node) {
 }
 
 void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
-    if (solve_method != cnexp_method) {
-        logger->warn(
-            "SympySolverVisitor: solve method not cnexp, so not integrating "
-            "expression analytically");
+    if ((solve_method != cnexp_method) && (solve_method != euler_method)) {
+        logger->debug(
+            "SympySolverVisitor :: solve method \"{}\" not {} or {}, so not integrating "
+            "expression analytically",
+            solve_method, cnexp_method, euler_method);
         return;
     }
 
@@ -40,34 +41,56 @@ void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
     auto& rhs = node->get_expression()->rhs;
 
     if (!lhs->is_var_name()) {
-        logger->warn("SympySolverVisitor: LHS of differential equation is not a VariableName");
+        logger->warn("SympySolverVisitor :: LHS of differential equation is not a VariableName");
         return;
     }
     auto lhs_name = std::dynamic_pointer_cast<ast::VarName>(lhs)->get_name();
     if (!lhs_name->is_prime_name()) {
-        logger->warn("SympySolverVisitor: LHS of differential equation is not a PrimeName");
+        logger->warn("SympySolverVisitor :: LHS of differential equation is not a PrimeName");
         return;
     }
     auto locals = py::dict("equation_string"_a = nmodl::to_nmodl(node),
                            "t_var"_a = codegen::naming::NTHREAD_T_VARIABLE,
                            "dt_var"_a = codegen::naming::NTHREAD_DT_VARIABLE, "vars"_a = vars,
                            "use_pade_approx"_a = use_pade_approx);
-    py::exec(R"(
-            from nmodl.ode import integrate2c
-            exception_message = ""
-            try:
-                solution = integrate2c(equation_string, t_var, dt_var, vars, use_pade_approx)
-            except Exception as e:
-                # if we fail, fail silently and return empty string
-                solution = ""
-                exception_message = str(e)
-        )",
-             py::globals(), locals);
-
+    if (solve_method == euler_method) {
+        logger->debug("SympySolverVisitor :: EULER - solving: {}", nmodl::to_nmodl(node));
+        // replace x' = f(x) differential equation
+        // with forwards Euler timestep:
+        // x = x + f(x) * dt
+        py::exec(R"(
+                from nmodl.ode import forwards_euler2c
+                exception_message = ""
+                try:
+                    solution = forwards_euler2c(equation_string, dt_var, vars)
+                except Exception as e:
+                    # if we fail, fail silently and return empty string
+                    solution = ""
+                    exception_message = str(e)
+            )",
+                 py::globals(), locals);
+    } else if (solve_method == cnexp_method) {
+        // replace x' = f(x) differential equation
+        // with analytic solution for x(t+dt) in terms of x(t)
+        // x = ...
+        logger->debug("SympySolverVisitor :: CNEXP - solving: {}", nmodl::to_nmodl(node));
+        py::exec(R"(
+                from nmodl.ode import integrate2c
+                exception_message = ""
+                try:
+                    solution = integrate2c(equation_string, t_var, dt_var, vars, use_pade_approx)
+                except Exception as e:
+                    # if we fail, fail silently and return empty string
+                    solution = ""
+                    exception_message = str(e)
+            )",
+                 py::globals(), locals);
+    }
     auto solution = locals["solution"].cast<std::string>();
+    logger->debug("SympySolverVisitor :: -> solution: {}", solution);
     auto exception_message = locals["exception_message"].cast<std::string>();
     if (!exception_message.empty()) {
-        logger->warn("SympySolverVisitor: python exception: " + exception_message);
+        logger->warn("SympySolverVisitor :: python exception: " + exception_message);
     }
     if (!solution.empty()) {
         auto statement = create_statement(solution);
@@ -77,7 +100,7 @@ void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
         lhs.reset(bin_expr->lhs->clone());
         rhs.reset(bin_expr->rhs->clone());
     } else {
-        logger->warn("SympySolverVisitor: analytic solution to differential equation not possible");
+        logger->warn("SympySolverVisitor :: solution to differential equation not possible");
     }
 }
 

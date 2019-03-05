@@ -22,11 +22,15 @@ namespace nmodl {
  * \class SympySolverVisitor
  * \brief Visitor for differential equations in derivative block
  *
- * When solver method is "cnexp", this class replaces the
- * differential equations with their analytic solution using SymPy,
- * i.e. it duplicates the functionality of CnexpSolveVisitor
+ * For solver method "cnexp":
+ * replace each the differential equation with its analytic
+ * solution using SymPy, optionally using the (1,1) order in dt
+ * Pade approximant to the solution.
  *
- * It will soon also deal with other solver methods.
+ * For solver method "euler":
+ * replace each the differential equation with a
+ * forwards Euler timestep
+ *
  */
 
 class SympySolverVisitor: public AstVisitor {
@@ -36,8 +40,9 @@ class SympySolverVisitor: public AstVisitor {
     std::string solve_method;
 
     /// solver method names
+    const std::string euler_method = "euler";
     const std::string cnexp_method = "cnexp";
-    /// optionally replace solution with (1,1) pade approx
+    /// optionally replace cnexp solution with (1,1) pade approx
     bool use_pade_approx;
 
   public:

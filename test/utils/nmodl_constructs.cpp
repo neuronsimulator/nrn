@@ -1583,7 +1583,7 @@ std::vector<DiffEqTestCase> diff_eq_constructs{
         {
             "GluSynapse.mod",
             "A_AMPA' = A_AMPA*A_AMPA",
-            "DA_AMPA = DA_AMPA/(1.0-dt*(((1.0)*(A_AMPA)+(A_AMPA)*(1.0))))",
+            "A_AMPA = A_AMPA+dt*(A_AMPA*A_AMPA)",
             "euler"
         },
 
@@ -1640,42 +1640,42 @@ std::vector<DiffEqTestCase> diff_eq_constructs{
         {
                 "GluSynapse.mod",
                 "A_AMPA' = -A_AMPA/tau_r_AMPA",
-                "DA_AMPA = DA_AMPA/(1.0-dt*((-1.0)/tau_r_AMPA))",
+                "A_AMPA = A_AMPA+dt*(-A_AMPA/tau_r_AMPA)",
                 "euler"
         },
 
         {
                 "GluSynapse.mod",
                 "m_VDCC' = (minf_VDCC-m_VDCC)/mtau_VDCC",
-                "Dm_VDCC = Dm_VDCC/(1.0-dt*((((-1.0)))/mtau_VDCC))",
+                "m_VDCC = m_VDCC+dt*((minf_VDCC-m_VDCC)/mtau_VDCC)",
                 "euler"
         },
 
         {
                 "GluSynapse.mod",
                 "cai_CR' = -(1e-9)*(ica_NMDA + ica_VDCC)*gamma_ca_CR/((1e-15)*volume_CR*2*FARADAY) - (cai_CR - min_ca_CR)/tau_ca_CR",
-                "Dcai_CR = Dcai_CR/(1.0-dt*((-((1.0))/tau_ca_CR)))",
+                "cai_CR = cai_CR+dt*(-(1e-9)*(ica_NMDA + ica_VDCC)*gamma_ca_CR/((1e-15)*volume_CR*2*FARADAY) - (cai_CR - min_ca_CR)/tau_ca_CR)",
                 "euler"
         },
 
         {
                 "GluSynapse.mod",
                 "effcai_GB' = -0.005*effcai_GB + (cai_CR - min_ca_CR)",
-                "Deffcai_GB = Deffcai_GB/(1.0-dt*((-0.005)*(1.0)))",
+                "effcai_GB = effcai_GB+dt*(-0.005*effcai_GB + (cai_CR - min_ca_CR))",
                 "euler"
         },
 
         {
                 "GluSynapse.mod",
                 "Rho_GB' = ( - Rho_GB*(1-Rho_GB)*(rho_star_GB-Rho_GB) + potentiate_GB*gamma_p_GB*(1-Rho_GB) - depress_GB*gamma_d_GB*Rho_GB ) / ((1e3)*tau_GB)",
-                "DRho_GB = DRho_GB/(1.0-dt*(((((((-1.0)*((1-Rho_GB))+(-Rho_GB)*(((-1.0)))))*((rho_star_GB-Rho_GB))+(-Rho_GB*(1-Rho_GB))*(((-1.0))))+(potentiate_GB*gamma_p_GB)*(((-1.0)))-(depress_GB*gamma_d_GB)*(1.0)))/((1e3)*tau_GB)))",
+                "Rho_GB = Rho_GB+dt*(( - Rho_GB*(1-Rho_GB)*(rho_star_GB-Rho_GB) + potentiate_GB*gamma_p_GB*(1-Rho_GB) - depress_GB*gamma_d_GB*Rho_GB ) / ((1e3)*tau_GB))",
                 "euler"
         },
 
         {
                 "GluSynapse.mod",
                 "Use_GB' = (Use_d_GB + Rho_GB*(Use_p_GB-Use_d_GB) - Use_GB) / ((1e3)*tau_Use_GB)",
-                "DUse_GB = DUse_GB/(1.0-dt*((((-1.0)))/((1e3)*tau_Use_GB)))",
+                "Use_GB = Use_GB+dt*((Use_d_GB + Rho_GB*(Use_p_GB-Use_d_GB) - Use_GB) / ((1e3)*tau_Use_GB))",
                 "euler"
         },
 
@@ -1735,14 +1735,14 @@ std::vector<DiffEqTestCase> diff_eq_constructs{
         {
             "syn_bip_gan.mod",
             "s' = (s_inf-s)/((1-s_inf)*tau*s)",
-            "Ds = Ds/(1.0-dt*((((s_inf-(s+0.001))/((1-s_inf)*tau*(s+0.001)))-((s_inf-s)/((1-s_inf)*tau*s)))/0.001))",
+            "s = s+dt*((s_inf-s)/((1-s_inf)*tau*s))",
             "euler"
         },
 
         {
             "syn_rod_bip.mod",
             "s' = (s_inf-s)/((1-s_inf)*tau*s)",
-            "Ds = Ds/(1.0-dt*((((s_inf-(s+0.001))/((1-s_inf)*tau*(s+0.001)))-((s_inf-s)/((1-s_inf)*tau*s)))/0.001))",
+            "s = s+dt*((s_inf-s)/((1-s_inf)*tau*s))",
             "euler"
         },
 
