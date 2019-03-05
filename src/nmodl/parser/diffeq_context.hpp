@@ -86,6 +86,9 @@ class DiffEqContext {
     /// return solution for cnexp method
     std::string get_cnexp_solution();
 
+    /// return solution for euler method
+    std::string get_euler_solution();
+
     /// return solution for non-cnexp method
     std::string get_non_cnexp_solution();
 

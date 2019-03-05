@@ -7,6 +7,7 @@
 
 #include <sstream>
 
+#include "codegen/codegen_naming.hpp"
 #include "parser/diffeq_driver.hpp"
 #include "symtab/symbol.hpp"
 #include "utils/logger.hpp"
@@ -66,7 +67,15 @@ void CnexpSolveVisitor::visit_binary_expression(ast::BinaryExpression* node) {
             } else {
                 std::cerr << "cnexp solver not possible";
             }
-        } else if (solve_method == derivimplicit_method || solve_method == euler_method) {
+        } else if (solve_method == euler_method) {
+            std::string solution = diffeq_driver.solve(equation, solve_method);
+            auto statement = create_statement(solution);
+            auto expr_statement = std::dynamic_pointer_cast<ast::ExpressionStatement>(statement);
+            auto bin_expr = std::dynamic_pointer_cast<ast::BinaryExpression>(
+                expr_statement->get_expression());
+            lhs.reset(bin_expr->lhs->clone());
+            rhs.reset(bin_expr->rhs->clone());
+        } else if (solve_method == derivimplicit_method) {
             auto varname = "D" + name->get_node_name();
             auto variable = new ast::Name(new ast::String(varname));
             lhs.reset(variable);

@@ -3449,29 +3449,6 @@ void CodegenCVisitor::print_net_receive() {
 
 
 /**
- * When euler method is used then derivative block is printed as separate function
- * which will be used for the callback from euler_thread function. Otherwise, derivative
- * block is printed as part of nrn_state itself.
- */
-void CodegenCVisitor::print_derivative_kernel_for_euler() {
-    assert(info.solve_node->is_derivative_block());
-    auto node = info.solve_node;
-    codegen = true;
-    auto instance = "{0}* inst = ({0}*)get_memb_list(nt)->instance;"_format(instance_struct());
-    auto arguments = external_method_parameters();
-
-    printer->add_newline(2);
-    printer->add_line("/* _euler_ state _{} */"_format(info.mod_suffix));
-    printer->start_block("int {}_{}({})"_format(node->get_node_name(), info.mod_suffix, arguments));
-    printer->add_line(instance);
-    print_statement_block(node->get_statement_block().get(), false, false);
-    printer->add_line("return 0;");
-    printer->end_block(1);
-    codegen = false;
-}
-
-
-/**
  * Todo: data is not derived. Need to add instance into instance struct?
  * data used here is wrong in AoS because as in original implementation,
  * data is not incremented every iteration for AoS. May be better to derive
@@ -3548,10 +3525,6 @@ void CodegenCVisitor::print_nrn_state() {
     }
     codegen = true;
 
-    if (info.euler_used) {
-        print_derivative_kernel_for_euler();
-    }
-
     if (info.derivimplicit_used) {
         print_derivative_kernel_for_derivimplicit();
     }
@@ -3587,12 +3560,6 @@ void CodegenCVisitor::print_nrn_state() {
             "{}, {}, {}, derivimplicit_{}_{}, {}"
             ""_format(num_primes, slist, dlist, block_name, suffix, thread_args);
         auto statement = "derivimplicit_thread({});"_format(args);
-        printer->add_line(statement);
-    } else if (info.euler_used) {
-        auto args =
-            "{}, {}, {}, _euler_{}_{}, {}"
-            ""_format(num_primes, slist, dlist, block_name, suffix, thread_args);
-        auto statement = "euler_thread({});"_format(args);
         printer->add_line(statement);
     } else {
         if (info.solve_node != nullptr) {

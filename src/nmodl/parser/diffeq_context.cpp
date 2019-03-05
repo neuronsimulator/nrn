@@ -137,6 +137,14 @@ std::string DiffEqContext::get_cnexp_solution() {
 
 
 /**
+ * Return solution for euler method
+ */
+std::string DiffEqContext::get_euler_solution() {
+    return state + " = " + state + "+dt*(" + rhs + ")";
+}
+
+
+/**
  * Return solution for non-cnexp method
  */
 std::string DiffEqContext::get_non_cnexp_solution() {
@@ -161,7 +169,10 @@ std::string DiffEqContext::get_non_cnexp_solution() {
  */
 std::string DiffEqContext::get_solution(bool& cnexp_possible) {
     std::string solution;
-    if (method == "cnexp" && !(deriv_invalid && eqn_invalid)) {
+    if (method == "euler") {
+        cnexp_possible = false;
+        solution = get_euler_solution();
+    } else if (method == "cnexp" && !(deriv_invalid && eqn_invalid)) {
         cnexp_possible = true;
         solution = get_cnexp_solution();
     } else {

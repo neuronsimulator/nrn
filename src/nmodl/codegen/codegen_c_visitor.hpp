@@ -794,10 +794,6 @@ class CodegenCVisitor: public AstVisitor {
     void print_net_receive();
 
 
-    /// derivative kernel when euler method is used
-    void print_derivative_kernel_for_euler();
-
-
     /// derivative kernel when derivimplicit method is used
     void print_derivative_kernel_for_derivimplicit();
 
