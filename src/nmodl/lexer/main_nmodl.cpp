@@ -58,41 +58,36 @@ void tokenize(const std::string& mod_text) {
         case Token::VALENCE:
         case Token::DEL:
         case Token::DEL2: {
-            auto value = sym.value.as<ast::Name*>();
-            std::cout << *(value->get_token()) << std::endl;
-            delete value;
+            auto value = sym.value.as<ast::Name>();
+            std::cout << *(value.get_token()) << std::endl;
             break;
         }
 
             /// token with prime ast class
         case Token::PRIME: {
-            auto value = sym.value.as<ast::PrimeName*>();
-            std::cout << *(value->get_token()) << std::endl;
-            delete value;
+            auto value = sym.value.as<ast::PrimeName>();
+            std::cout << *(value.get_token()) << std::endl;
             break;
         }
 
             /// token with integer ast class
         case Token::INTEGER: {
-            auto value = sym.value.as<ast::Integer*>();
-            std::cout << *(value->get_token()) << std::endl;
-            delete value;
+            auto value = sym.value.as<ast::Integer>();
+            std::cout << *(value.get_token()) << std::endl;
             break;
         }
 
             /// token with double/float ast class
         case Token::REAL: {
-            auto value = sym.value.as<ast::Double*>();
-            std::cout << *(value->get_token()) << std::endl;
-            delete value;
+            auto value = sym.value.as<ast::Double>();
+            std::cout << *(value.get_token()) << std::endl;
             break;
         }
 
             /// token with string ast class
         case Token::STRING: {
-            auto value = sym.value.as<ast::String*>();
-            std::cout << *(value->get_token()) << std::endl;
-            delete value;
+            auto value = sym.value.as<ast::String>();
+            std::cout << *(value.get_token()) << std::endl;
             break;
         }
 
@@ -118,16 +113,25 @@ void tokenize(const std::string& mod_text) {
 int main(int argc, const char* argv[]) {
     CLI::App app{"NMODL-Lexer : Standalone Lexer for NMODL Code"};
 
-    std::vector<std::string> files;
-    app.add_option("file", files, "One or more NMODL files")->required()->check(CLI::ExistingFile);
+    std::vector<std::string> mod_files;
+    std::vector<std::string> mod_texts;
+
+    app.add_option("file", mod_files, "One or more NMODL files")->check(CLI::ExistingFile);
+    app.add_option("--text", mod_texts, "One or more NMODL constructs as text");
 
     CLI11_PARSE(app, argc, argv);
 
-    for (const auto& file: files) {
+    for (const auto& file: mod_files) {
         logger->info("Processing file : {}", file);
         std::ifstream f(file);
-        std::string mod((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+        std::string mod{std::istreambuf_iterator<char>{f}, {}};
         tokenize(mod);
     }
+
+    for (const auto& text: mod_texts) {
+        logger->info("Processing text : {}", text);
+        tokenize(text);
+    }
+
     return 0;
 }

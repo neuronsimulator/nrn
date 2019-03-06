@@ -157,12 +157,6 @@ $ tree $HOME/nmodl/bin
     `-- nmodl_visitor
 ```
 
-The `nmodl_lexer` and `nmodl_parser` are standalone tools for testing mod files. If you want to test if given mod file can be successfully parsed by NMODL then you can do:
-
-```
-$ nmodl_parser <path>/hh.mod
-```
-
 Main code generation program is `nmodl`. You can see all sub-commands supported using:
 
 ```
@@ -258,6 +252,40 @@ $ nmodl <path>/hh.mod \
 
 This will generate hh.cpp in the current directory.
 
+##### Lexer and Parser
+
+The `nmodl_parser` is a standalone parsing tool for NMODL that one can use to check if NMODL construct is valid or if it can be correctly parsed by NMODL. You can parse a mod file as:
+
+```
+$ nmodl_parser <path>/file.mod
+```
+
+Or, pass NMODL construct on the command line as:
+
+```
+$ nmodl_parser --text "NEURON{ SUFFIX hh }"
+
+[NMODL] [info] :: Processing text : NEURON{ SUFFIX hh }
+```
+
+The `nmodl_lexer` is a standaline lexer tool for NMODL. You can test a mod file as:
+
+```
+$ nmodl_lexer <path>/file.mod
+```
+
+Or, pass NMODL construct on the command line as:
+
+```
+$ nmodl_lexer --text "NEURON{ SUFFIX hh }"
+
+[NMODL] [info] :: Processing text : NEURON{ SUFFIX hh }
+         NEURON at [1.1-6] type 332
+              { at [1.7] type 368
+         SUFFIX at [1.9-14] type 358
+             hh at [1.16-17] type 356
+              } at [1.19] type 369
+```
 
 #### Using NMODL With CoreNEURON
 
