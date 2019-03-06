@@ -40,7 +40,7 @@ std::shared_ptr<ast::Statement> create_statement(const std::string& code_stateme
 std::set<std::string> get_global_vars(ast::Program* node);
 
 /** Given AST node, return the NMODL string representation */
-std::string to_nmodl(ast::AST* node);
+std::string to_nmodl(ast::AST* node, const std::set<ast::AstNodeType>& exclude_types = {});
 
 /** Given AST node, return the JSON string representation */
 std::string to_json(ast::AST* node, bool compact = false, bool expand = false);

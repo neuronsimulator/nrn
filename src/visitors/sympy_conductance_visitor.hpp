@@ -18,6 +18,8 @@
 #include "symtab/symbol.hpp"
 #include "visitors/ast_visitor.hpp"
 #include "visitors/lookup_visitor.hpp"
+#include "visitors/visitor_utils.hpp"
+
 
 namespace nmodl {
 
@@ -81,6 +83,10 @@ class SympyConductanceVisitor: public AstVisitor {
     std::vector<std::string> generate_statement_strings(ast::BreakpointBlock* node);
     void lookup_useion_statements();
     void lookup_nonspecific_statements();
+
+    static std::string to_nmodl_for_sympy(ast::AST* node) {
+        return to_nmodl(node, {ast::AstNodeType::UNIT});
+    }
 
   public:
     SympyConductanceVisitor() = default;

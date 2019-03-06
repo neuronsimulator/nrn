@@ -76,6 +76,9 @@ using namespace ast;
 
 {%- for node in nodes %}
 void NmodlPrintVisitor::visit_{{ node.class_name|snake_case}}({{ node.class_name }}* node) {
+    if (is_exclude_type(node->get_node_type())) {
+        return;
+    }
     {{ add_element(node.nmodl_name) -}}
     {% call guard(node.prefix, node.suffix) -%}
     {% if node.is_block_node %}
