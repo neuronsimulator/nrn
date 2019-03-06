@@ -34,6 +34,8 @@ class AstLookupVisitor : public Visitor {
             types.push_back(type);
         }
 
+        AstLookupVisitor(std::vector<ast::AstNodeType> types) : types(types) {}
+
         std::vector<std::shared_ptr<ast::AST>> lookup(ast::Program* node, ast::AstNodeType type);
 
         std::vector<std::shared_ptr<ast::AST>> lookup(ast::Program* node, std::vector<ast::AstNodeType>& types);

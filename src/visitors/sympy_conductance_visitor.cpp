@@ -10,8 +10,9 @@
 
 #include "symtab/symbol.hpp"
 #include "utils/logger.hpp"
-#include "visitor_utils.hpp"
+#include "visitors/lookup_visitor.hpp"
 #include "visitors/sympy_conductance_visitor.hpp"
+#include "visitors/visitor_utils.hpp"
 
 
 namespace py = pybind11;
@@ -22,6 +23,28 @@ namespace nmodl {
 using ast::AstNodeType;
 using ast::BinaryOp;
 using symtab::syminfo::NmodlType;
+
+
+/**
+ * Analyse breakpoint block to check if it is safe to insert CONDUCTANCE statements
+ *
+ * Most of the mod files have simple breakpoint blocks without any control flow
+ * statements. SympyConductanceVisitor just collects all the statements in the
+ * breakpoint block and insert conductance statements. If there are control flow
+ * statements like `IF { a } ELSE { b }` block with conflicting current statements
+ * inside IF and ELSE blocks or VERBATIM block then the resulting CONDUCTANCE
+ * statements may be incorrect. For now the simple approach is to not generate
+ * CONDUCTANCE statements if if-else statements exist in the block.
+ *
+ * @param node Ast node for breakpoint block
+ * @return true if it is safe to insert conductance statements otherwise false
+ */
+static bool conductance_statement_possible(ast::BreakpointBlock* node) {
+    AstLookupVisitor v({AstNodeType::IF_STATEMENT, AstNodeType::VERBATIM});
+    node->accept(&v);
+    return v.get_nodes().empty();
+}
+
 
 // Generate statement strings to be added to BREAKPOINT section
 std::vector<std::string> SympyConductanceVisitor::generate_statement_strings(
@@ -164,6 +187,12 @@ void SympyConductanceVisitor::visit_conductance_hint(ast::ConductanceHint* node)
 };
 
 void SympyConductanceVisitor::visit_breakpoint_block(ast::BreakpointBlock* node) {
+    // return if it's not safe to insert conductance statements
+    if (!conductance_statement_possible(node)) {
+        logger->warn("SympyConductance :: Unsafe to insert CONDUCTANCE statement");
+        return;
+    }
+
     // add any breakpoint local variables to vars
     if (auto* symtab = node->get_statement_block()->get_symbol_table()) {
         for (const auto& localvar: symtab->get_variables_with_properties(NmodlType::local_var)) {
