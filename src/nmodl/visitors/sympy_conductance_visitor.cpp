@@ -130,7 +130,7 @@ void SympyConductanceVisitor::visit_binary_expression(ast::BinaryExpression* nod
         auto lhs_str =
             std::dynamic_pointer_cast<ast::VarName>(node->lhs)->get_name()->get_node_name();
         binary_expr_index[lhs_str] = ordered_binary_exprs.size();
-        ordered_binary_exprs.push_back(nmodl::to_nmodl(node));
+        ordered_binary_exprs.push_back(to_nmodl_for_sympy(node));
         ordered_binary_exprs_lhs.push_back(lhs_str);
     }
 }
@@ -157,7 +157,7 @@ void SympyConductanceVisitor::lookup_useion_statements() {
     for (const auto& useion_ast: use_ion_nodes) {
         auto ion = std::dynamic_pointer_cast<ast::Useion>(useion_ast).get();
         std::string ion_name = ion->get_node_name();
-        logger->debug("SympyConductance :: Found USEION statement {}", nmodl::to_nmodl(ion));
+        logger->debug("SympyConductance :: Found USEION statement {}", to_nmodl_for_sympy(ion));
         if (i_ignore.find(ion_name) != i_ignore.end()) {
             logger->debug("SympyConductance :: -> Ignoring ion current name: {}", ion_name);
         } else {
@@ -176,7 +176,7 @@ void SympyConductanceVisitor::visit_conductance_hint(ast::ConductanceHint* node)
     // find existing CONDUCTANCE statements - do not want to alter them
     // so keep a set of ion names i_ignore that we should ignore later
     logger->debug("SympyConductance :: Found existing CONDUCTANCE statement: {}",
-                  nmodl::to_nmodl(node));
+                  to_nmodl_for_sympy(node));
     if (auto ion = node->get_ion()) {
         logger->debug("SympyConductance :: -> Ignoring ion current name: {}", ion->get_node_name());
         i_ignore.insert(ion->get_node_name());

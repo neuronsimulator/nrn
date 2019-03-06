@@ -6,6 +6,8 @@
  *************************************************************************/
 
 #include <memory>
+#include <set>
+
 #include <pybind11/iostream.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -49,7 +51,8 @@ PYBIND11_MODULE(_nmodl, m_nmodl) {
         .def("parse_stream", &PyDriver::parse_stream)
         .def("ast", &PyDriver::ast);
 
-    m_nmodl.def("to_nmodl", nmodl::to_nmodl);
+    m_nmodl.def("to_nmodl", nmodl::to_nmodl, py::arg("node"),
+                py::arg("exclude_types") = std::set<nmodl::ast::AstNodeType>());
     m_nmodl.def("to_json", nmodl::to_json, py::arg("node"), py::arg("compact") = false,
                 py::arg("expand") = false);
 

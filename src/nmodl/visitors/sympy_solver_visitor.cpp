@@ -49,12 +49,15 @@ void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
         logger->warn("SympySolverVisitor :: LHS of differential equation is not a PrimeName");
         return;
     }
-    auto locals = py::dict("equation_string"_a = nmodl::to_nmodl(node),
-                           "t_var"_a = codegen::naming::NTHREAD_T_VARIABLE,
-                           "dt_var"_a = codegen::naming::NTHREAD_DT_VARIABLE, "vars"_a = vars,
-                           "use_pade_approx"_a = use_pade_approx);
+
+    const auto node_as_nmodl = to_nmodl_for_sympy(node);
+    const auto locals = py::dict("equation_string"_a = node_as_nmodl,
+                                 "t_var"_a = codegen::naming::NTHREAD_T_VARIABLE,
+                                 "dt_var"_a = codegen::naming::NTHREAD_DT_VARIABLE, "vars"_a = vars,
+                                 "use_pade_approx"_a = use_pade_approx);
+
     if (solve_method == euler_method) {
-        logger->debug("SympySolverVisitor :: EULER - solving: {}", nmodl::to_nmodl(node));
+        logger->debug("SympySolverVisitor :: EULER - solving: {}", node_as_nmodl);
         // replace x' = f(x) differential equation
         // with forwards Euler timestep:
         // x = x + f(x) * dt
@@ -73,7 +76,7 @@ void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
         // replace x' = f(x) differential equation
         // with analytic solution for x(t+dt) in terms of x(t)
         // x = ...
-        logger->debug("SympySolverVisitor :: CNEXP - solving: {}", nmodl::to_nmodl(node));
+        logger->debug("SympySolverVisitor :: CNEXP - solving: {}", node_as_nmodl);
         py::exec(R"(
                 from nmodl.ode import integrate2c
                 exception_message = ""
@@ -86,12 +89,15 @@ void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
             )",
                  py::globals(), locals);
     }
+
     auto solution = locals["solution"].cast<std::string>();
     logger->debug("SympySolverVisitor :: -> solution: {}", solution);
+
     auto exception_message = locals["exception_message"].cast<std::string>();
     if (!exception_message.empty()) {
         logger->warn("SympySolverVisitor :: python exception: " + exception_message);
     }
+
     if (!solution.empty()) {
         auto statement = create_statement(solution);
         auto expr_statement = std::dynamic_pointer_cast<ast::ExpressionStatement>(statement);

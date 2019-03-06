@@ -2876,3 +2876,37 @@ SCENARIO("SympyConductance visitor", "[sympy]") {
         }
     }
 }
+
+
+//=============================================================================
+// Sympy specific to_nmodl
+//=============================================================================
+
+SCENARIO("Sympy specific AST to NMODL conversion") {
+    GIVEN("NMODL block with unit usage") {
+        std::string nmodl = R"(
+            BREAKPOINT {
+                Pf_NMDA  =  (1/1.38) * 120 (mM) * 0.6
+                VDCC = gca_bar_VDCC * 4(um2)*PI*3(1/um3)
+                gca_bar_VDCC = 0.0372 (nS/um2)
+            }
+        )";
+
+        std::string expected = R"(
+            BREAKPOINT {
+                Pf_NMDA = (1/1.38)*120*0.6
+                VDCC = gca_bar_VDCC*4*PI*3
+                gca_bar_VDCC = 0.0372
+            }
+        )";
+
+        THEN("to_nmodl can ignore all units") {
+            auto input = reindent_text(nmodl);
+            NmodlDriver driver;
+            driver.parse_string(input);
+            auto ast = driver.ast();
+            auto result = to_nmodl(ast.get(), {AstNodeType::UNIT});
+            REQUIRE(result == reindent_text(expected));
+        }
+    }
+}

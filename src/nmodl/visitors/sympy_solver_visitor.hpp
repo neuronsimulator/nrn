@@ -42,8 +42,13 @@ class SympySolverVisitor: public AstVisitor {
     /// solver method names
     const std::string euler_method = "euler";
     const std::string cnexp_method = "cnexp";
+
     /// optionally replace cnexp solution with (1,1) pade approx
     bool use_pade_approx;
+
+    static std::string to_nmodl_for_sympy(ast::AST* node) {
+        return nmodl::to_nmodl(node, {ast::AstNodeType::UNIT});
+    }
 
   public:
     SympySolverVisitor(bool use_pade_approx = false)
