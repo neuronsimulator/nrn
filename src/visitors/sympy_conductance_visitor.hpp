@@ -43,7 +43,6 @@ namespace nmodl {
  * If an ion channel already has a CONDUCTANCE statement
  * then it does not modify it.
  *
- * TODO: take into account any functions called in breakpoint
  */
 
 class SympyConductanceVisitor: public AstVisitor {
