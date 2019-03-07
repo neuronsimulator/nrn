@@ -1969,7 +1969,11 @@ SCENARIO("Searching for ast nodes using AstLookupVisitor") {
 // SympySolver visitor tests
 //=============================================================================
 
-std::vector<std::string> run_sympy_solver_visitor(const std::string& text) {
+std::vector<std::string> run_sympy_solver_visitor(
+    const std::string& text,
+    bool pade = false,
+    bool cse = false,
+    AstNodeType ret_nodetype = AstNodeType::DIFF_EQ_EXPRESSION) {
     std::vector<std::string> results;
 
     // construct AST from text
@@ -1982,12 +1986,12 @@ std::vector<std::string> run_sympy_solver_visitor(const std::string& text) {
     v_symtab.visit_program(ast.get());
 
     // run SympySolver on AST
-    SympySolverVisitor v_sympy;
+    SympySolverVisitor v_sympy(pade, cse);
     v_sympy.visit_program(ast.get());
 
     // run lookup visitor to extract results from AST
     AstLookupVisitor v_lookup;
-    auto res = v_lookup.lookup(ast.get(), AstNodeType::DIFF_EQ_EXPRESSION);
+    auto res = v_lookup.lookup(ast.get(), ret_nodetype);
     for (const auto& r: res) {
         results.push_back(to_nmodl(r.get()));
     }
@@ -2144,6 +2148,55 @@ SCENARIO("SympySolver visitor", "[sympy]") {
             REQUIRE(AST_string == ast_to_string(ast.get()));
         }
     }
+    GIVEN("Derivative block of coupled & linear ODES, solver method sparse, no CSE") {
+        std::string nmodl_text = R"(
+            BREAKPOINT  {
+                SOLVE states METHOD sparse
+            }
+            DERIVATIVE states {
+                x' = a*z + b*h
+                y' = c + 2*x
+                z' = d*z - y
+            }
+        )";
+
+        std::string expected_result = R"(
+            DERIVATIVE states {
+                LOCAL tmp_x_old, tmp_y_old, tmp_z_old
+                tmp_x_old = x
+                tmp_y_old = y
+                tmp_z_old = z
+                x = (-a*dt*(dt*(c*dt+2*dt*(b*dt*h+tmp_x_old)+tmp_y_old)-tmp_z_old)+(b*dt*h+tmp_x_old)*(2*a*pow(dt, 3)-d*dt+1))/(2*a*pow(dt, 3)-d*dt+1)
+                y = (-2*a*pow(dt, 2)*(dt*(c*dt+2*dt*(b*dt*h+tmp_x_old)+tmp_y_old)-tmp_z_old)+(2*a*pow(dt, 3)-d*dt+1)*(c*dt+2*dt*(b*dt*h+tmp_x_old)+tmp_y_old))/(2*a*pow(dt, 3)-d*dt+1)
+                z = (-dt*(c*dt+2*dt*(b*dt*h+tmp_x_old)+tmp_y_old)+tmp_z_old)/(2*a*pow(dt, 3)-d*dt+1)
+            })";
+
+        std::string expected_cse_result = R"(
+            DERIVATIVE states {
+                LOCAL tmp_x_old, tmp_y_old, tmp_z_old, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5
+                tmp_x_old = x
+                tmp_y_old = y
+                tmp_z_old = z
+                tmp0 = 2*a
+                tmp1 = -d*dt+pow(dt, 3)*tmp0+1
+                tmp2 = 1/tmp1
+                tmp3 = b*dt*h+tmp_x_old
+                tmp4 = c*dt+2*dt*tmp3+tmp_y_old
+                tmp5 = dt*tmp4-tmp_z_old
+                x = -tmp2*(a*dt*tmp5-tmp1*tmp3)
+                y = -tmp2*(pow(dt, 2)*tmp0*tmp5-tmp1*tmp4)
+                z = -tmp2*tmp5
+            })";
+
+        THEN("Construct & solve linear system for backwards Euler") {
+            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
+                                                   AstNodeType::DERIVATIVE_BLOCK);
+            auto result_cse = run_sympy_solver_visitor(nmodl_text, true, true,
+                                                       AstNodeType::DERIVATIVE_BLOCK);
+            REQUIRE(result[0] == reindent_text(expected_result));
+            REQUIRE(result_cse[0] == reindent_text(expected_cse_result));
+        }
+    }
 }
 
 
@@ -2214,6 +2267,76 @@ void run_sympy_conductance_passes(ast::Program* node) {
 SCENARIO("SympyConductance visitor", "[sympy]") {
     // Test mod files below all based on:
     // nmodldb/models/db/bluebrain/CortexSimplified/mod/Ca.mod
+    GIVEN("breakpoint block containing VERBATIM statement") {
+        std::string nmodl_text = R"(
+            NEURON  {
+                SUFFIX Ca
+                USEION ca READ eca WRITE ica
+                RANGE gCabar, gCa, ica
+            }
+            BREAKPOINT  {
+                CONDUCTANCE gCa USEION ca
+                SOLVE states METHOD cnexp
+                VERBATIM
+                double z=0;
+                ENDVERBATIM
+                gCa = gCabar*m*m*h
+                ica = gCa*(v-eca)
+            }
+        )";
+        std::string breakpoint_text = R"(
+            BREAKPOINT  {
+                CONDUCTANCE gCa USEION ca
+                SOLVE states METHOD cnexp
+                VERBATIM
+                double z=0;
+                ENDVERBATIM
+                gCa = gCabar*m*m*h
+                ica = gCa*(v-eca)
+            }
+        )";
+        THEN("Do nothing") {
+            auto result = run_sympy_conductance_visitor(nmodl_text);
+            REQUIRE(result == breakpoint_to_nmodl(breakpoint_text));
+        }
+    }
+    GIVEN("breakpoint block containing IF/ELSE block") {
+        std::string nmodl_text = R"(
+            NEURON  {
+                SUFFIX Ca
+                USEION ca READ eca WRITE ica
+                RANGE gCabar, gCa, ica
+            }
+            BREAKPOINT  {
+                CONDUCTANCE gCa USEION ca
+                SOLVE states METHOD cnexp
+                IF(gCabar<1){
+                    gCa = gCabar*m*m*h
+                    ica = gCa*(v-eca)
+                } ELSE {
+                    gCa = 0
+                    ica = 0
+                }
+            }
+        )";
+        std::string breakpoint_text = R"(
+            BREAKPOINT  {
+                CONDUCTANCE gCa USEION ca
+                SOLVE states METHOD cnexp
+                IF(gCabar<1){
+                    gCa = gCabar*m*m*h
+                    ica = gCa*(v-eca)
+                } ELSE {
+                    gCa = 0
+                    ica = 0
+                }
+            }
+        )";
+        THEN("Do nothing") {
+            auto result = run_sympy_conductance_visitor(nmodl_text);
+            REQUIRE(result == breakpoint_to_nmodl(breakpoint_text));
+        }
+    }
     GIVEN("ion current, existing CONDUCTANCE hint & var") {
         std::string nmodl_text = R"(
             NEURON  {

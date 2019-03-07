@@ -171,6 +171,7 @@ Positionals:
 Options:
   -h,--help                             Print this help message and exit
   -H,--help-all                         Print this help message including all sub-commands
+  -v,--verbose                          Verbose logger output
   -o,--output TEXT=.                    Directory for backend code output
   --scratch TEXT=tmp                    Directory for intermediate code output
 
@@ -196,6 +197,7 @@ Positionals:
 Options:
   -h,--help                             Print this help message and exit
   -H,--help-all                         Print this help message including all sub-commands
+  -v,--verbose                          Verbose logger output
   -o,--output TEXT=.                    Directory for backend code output
   --scratch TEXT=tmp                    Directory for intermediate code output
 
@@ -217,6 +219,7 @@ sympy
   Options:
     --analytic                            Solve ODEs using SymPy analytic integration
     --pade                                Pade approximation in SymPy analytic integration
+    --cse                                 CSE (Common Subexpression Elimination) in SymPy analytic integration
     --conductance                         Add CONDUCTANCE keyword in BREAKPOINT
 
 passes
@@ -245,7 +248,7 @@ To use code generation capability you can do:
 ```
 $ nmodl <path>/hh.mod \
 		host --c \
-		sympy --analytic --pade --conductance \
+		sympy --analytic --pade --conductance --cse \
 		passes --inline --localize --localize-verbatim \
 		--local-rename --verbatim-inline --verbatim-rename
 ```

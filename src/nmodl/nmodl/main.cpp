@@ -10,12 +10,14 @@
 #include <vector>
 
 #include "CLI/CLI.hpp"
+#include "fmt/format.h"
+#include "pybind11/embed.h"
+
 #include "codegen/codegen_acc_visitor.hpp"
 #include "codegen/codegen_c_visitor.hpp"
 #include "codegen/codegen_cuda_visitor.hpp"
 #include "codegen/codegen_omp_visitor.hpp"
 #include "parser/nmodl_driver.hpp"
-#include "pybind11/embed.h"
 #include "utils/common_utils.hpp"
 #include "utils/logger.hpp"
 #include "visitors/ast_visitor.hpp"
@@ -32,6 +34,7 @@
 #include "visitors/verbatim_var_rename_visitor.hpp"
 #include "visitors/verbatim_visitor.hpp"
 
+using namespace fmt::literals;
 using namespace nmodl;
 using namespace codegen;
 using nmodl::parser::NmodlDriver;
@@ -41,6 +44,9 @@ int main(int argc, const char* argv[]) {
 
     /// list of mod files to process
     std::vector<std::string> mod_files;
+
+    /// true if debug logger statements should be shown
+    bool verbose(false);
 
     /// true if serial c code to be generated
     bool c_backend(true);
@@ -59,6 +65,9 @@ int main(int argc, const char* argv[]) {
 
     /// true if Pade approximation to be used
     bool sympy_pade(false);
+
+    /// true if CSE (temp variables) to be used
+    bool sympy_cse(false);
 
     /// true if conductance keyword can be added to breakpoint
     bool sympy_conductance(false);
@@ -108,6 +117,8 @@ int main(int argc, const char* argv[]) {
     app.get_formatter()->column_width(40);
     app.set_help_all_flag("-H,--help-all", "Print this help message including all sub-commands");
 
+    app.add_flag("-v,--verbose", verbose, "Verbose logger output")->ignore_case();
+
     app.add_option("file", mod_files, "One or more MOD files to process")
         ->ignore_case()
         ->required()
@@ -130,6 +141,7 @@ int main(int argc, const char* argv[]) {
     auto sympy_opt = app.add_subcommand("sympy", "SymPy based analysis and optimizations")->ignore_case();
     sympy_opt->add_flag("--analytic", sympy_analytic, "Solve ODEs using SymPy analytic integration")->ignore_case();
     sympy_opt->add_flag("--pade", sympy_pade, "Pade approximation in SymPy analytic integration")->ignore_case();
+    sympy_opt->add_flag("--cse", sympy_cse, "CSE (Common Subexpression Elimination) in SymPy analytic integration")->ignore_case();
     sympy_opt->add_flag("--conductance", sympy_conductance, "Add CONDUCTANCE keyword in BREAKPOINT")->ignore_case();
 
     auto passes_opt = app.add_subcommand("passes", "Analyse/Optimization passes")->ignore_case();
@@ -158,8 +170,12 @@ int main(int argc, const char* argv[]) {
         pybind11::initialize_interpreter();
     }
 
+    if (verbose) {
+        logger->set_level(spdlog::level::debug);
+    }
+
     /// write ast to nmodl
-    auto ast_to_nmodl = [&](ast::Program* ast, const std::string& filepath) {
+    auto ast_to_nmodl = [nmodl_ast](ast::Program* ast, const std::string& filepath) {
         if (nmodl_ast) {
             NmodlPrintVisitor v(filepath);
             v.visit_program(ast);
@@ -173,10 +189,9 @@ int main(int argc, const char* argv[]) {
         auto modfile = remove_extension(base_name(file));
 
         /// create file path for nmodl file
-        auto filepath = [&](std::string suffix) {
+        auto filepath = [scratch_dir, modfile](std::string suffix) {
             static int count = 0;
-            return scratch_dir + "/" + modfile + "." + std::to_string(count++) + "." + suffix +
-                   ".mod";
+            return "{}/{}.{}.{}.mod"_format(scratch_dir, modfile, std::to_string(count++), suffix);
         };
 
         /// driver object creates lexer and parser, just call parser method
@@ -234,7 +249,7 @@ int main(int argc, const char* argv[]) {
 
         if (sympy_analytic) {
             logger->info("Running sympy solve visitor");
-            SympySolverVisitor v(sympy_pade);
+            SympySolverVisitor v(sympy_pade, sympy_cse);
             v.visit_program(ast.get());
             ast_to_nmodl(ast.get(), filepath("sympy_solve"));
         }
