@@ -7,3 +7,6 @@
 [submodule "ext/cli11"]
 	path = ext/cli11
 	url = https://github.com/CLIUtils/CLI11.git
+[submodule "ext/eigen"]
+	path = ext/eigen
+	url = https://github.com/eigenteam/eigen-git-mirror.git

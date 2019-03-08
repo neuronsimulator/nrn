@@ -119,6 +119,7 @@ add_subdirectory(src/symtab)
 add_subdirectory(src/utils)
 add_subdirectory(src/visitors)
 add_subdirectory(src/pybind)
+add_subdirectory(src/solver)
 
 # =============================================================================
 # Memory checker options and add tests
