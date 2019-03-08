@@ -224,6 +224,7 @@ void CodegenHelperVisitor::find_non_range_variables() {
         info.derivimplicit_var_thread_id = 0;
         info.thread_data_index = 3;
         info.derivimplicit_list_num = 1;
+        info.thread_callback_register = true;
     }
 
     if (info.euler_used) {
