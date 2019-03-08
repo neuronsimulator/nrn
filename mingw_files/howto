@@ -46,6 +46,9 @@ bld () {
 PYVER=$1
 PYVS=${PYVS}-${PYVER}
 PYDIR=/f/python${PYVER}
+
+rm -f -f src/nrnpython/build
+
 ../nrn/configure --prefix=`pwd` -with-nrnpython=dynamic \
  --with-pyexe=$PYDIR/python \
  --host=x86_64-w64-mingw32 PYINCDIR="$PYDIR/include" \
