@@ -1209,15 +1209,10 @@ def _compile_reactions():
                 fxn_string += '\n\tdouble rate;'
                 break
         #get a list of all grid_ids invovled
-        for rptr in [r for rlist in list(ecs_regions_inv.values()) for r in rlist]:
-            if isinstance(rptr(),rate.Rate):
-                for sp in [rptr()._species] + rptr()._involved_species_ecs:
-                    s = sp()[reg]._extracellular() if isinstance(sp(), species.Species) else sp()
-                    all_gids.add(sp()._extracellular()._grid_id if isinstance(s, species.SpeciesOnExtracellular) else s._grid_id)
-            else:
-                for sp in rptr()._sources + rptr()._dests + rptr()._involved_species_ecs:
-                    s = sp()[reg]._extracellular() if isinstance(sp(), species.Species) else sp()
-                    all_gids.add(sp()._extracellular()._grid_id if isinstance(s, species.SpeciesOnExtracellular) else s._grid_id)
+        for reg in ecs_regions_inv:
+            for s in ecs_species_by_region[reg]:
+                sp = s[reg] if isinstance(s, species.Species) else s
+                all_gids.add(sp._extracellular()._grid_id if isinstance(sp, species.SpeciesOnExtracellular) else sp._grid_id)
         all_gids = list(all_gids)
         for reg in ecs_regions_inv:
             for rptr in ecs_regions_inv[reg]:
