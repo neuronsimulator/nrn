@@ -1160,18 +1160,27 @@ def _compile_reactions():
 
     #Setup intracellular 3D reactions
     if testing_condition:
-        print("in my new block")
+        print("regions involved = {}\n".format(regions_inv))
         if len(regions_inv) > 0:
             ics_grid_ids = []
             all_ics_gids = set()
             fxn_string = _c_headers
             fxn_string += 'void reaction(double* species_ecs, double*rhs)\n{'
-            for rptr in [r for rlist in list(regions_inv.values()) for r in rlist]:
+            """for rptr in [r for rlist in list(regions_inv.values()) for r in rlist]:
                 if isinstance(rptr(), rate.Rate):
                     for sp in [rptr()._species] + rptr()._involved_species:
                         print("first reg = ", reg)
                         s = sp()[reg]
-                        all_ics_gids.add(s._species()._intracellular_instances[reg]._grid_id)
+                        all_ics_gids.add(s._species()._intracellular_instances[reg]._grid_id)"""
+            print("regions_inv = {}\n".format(regions_inv))
+            for reg in regions_inv:
+                print("reg = {}\n".format(reg))
+                for s in species_by_region[reg] :
+                    print("species = {}".format(s))
+                    print("intra species = {}\n".format(s._intracellular_instances[reg]._name))
+                    sp = s._intracellular_instances[reg]
+                    all_ics_gids.add(sp._grid_id)
+                #    all_gids.add(sp._extracellular()._grid_id if isinstance(sp, species.SpeciesOnExtracellular) else sp._grid_id)
             all_ics_gids = list(all_ics_gids)
             for reg in regions_inv:
                 print("reg = ", reg)
@@ -1209,15 +1218,18 @@ def _compile_reactions():
                 fxn_string += '\n\tdouble rate;'
                 break
         #get a list of all grid_ids invovled
+        print("ecs_regions_inv = {}".format(ecs_regions_inv))
         for reg in ecs_regions_inv:
+            print("reg = {}".format(reg))
             for s in ecs_species_by_region[reg]:
-                sp = s[reg] if isinstance(s, species.Species) else s
+                sp = s[reg] if isinstance(s, species.Species) else None
+                print("sp = {}".format(sp))
                 all_gids.add(sp._extracellular()._grid_id if isinstance(sp, species.SpeciesOnExtracellular) else sp._grid_id)
         all_gids = list(all_gids)
         for reg in ecs_regions_inv:
             for rptr in ecs_regions_inv[reg]:
                 r = rptr()
-                print("rate_ecs = ", r._rate_ecs)
+                #print("rate_ecs = ", r._rate_ecs)
                 rate_str = re.sub(r'species_ecs\[(\d+)\]',lambda m: "species_ecs[%i]" %  [pid for pid,gid in enumerate(all_gids) if gid == int(m.groups()[0])][0], r._rate_ecs)
                 print(rate_str)
                 if isinstance(r,rate.Rate):
@@ -1225,7 +1237,7 @@ def _compile_reactions():
                     #Get underlying rxd._ExtracellularSpecies for the grid_id
                     if isinstance(s, species.Species):
                         s = s[reg]._extracellular()
-                        print(s)
+                        #print(s)
                     elif isinstance(s, species.SpeciesOnExtracellular):
                         s = s._extracellular()
                     if s._grid_id in grid_ids:
@@ -1254,7 +1266,7 @@ def _compile_reactions():
                         fxn_string += "\n\trhs[%d] %s (%s)*rate;" % (pid, operator, r._mult[idx])
                         idx += 1
         fxn_string += "\n}\n"
-        print(fxn_string)
+        #print(fxn_string)
         ecs_register_reaction(0, len(all_gids), _list_to_cint_array(all_gids), _c_compile(fxn_string))
 
 def _init():

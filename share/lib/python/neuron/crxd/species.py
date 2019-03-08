@@ -852,7 +852,7 @@ class Species(_SpeciesMathable):
                     node._diffs[_3doffset : _3doffset + len(xs)] = self._d
                     self_has_3d = True
                     _has_3d = True            
-        self._intracellular_instances = {r:_IntracellularSpecies(r, d=self._d, charge=self.charge, initial=self.initial, nodes=self._intracellular_nodes) for r in self._regions if r._secs3d}
+        self._intracellular_instances = {r:_IntracellularSpecies(r, d=self._d, charge=self.charge, initial=self.initial, nodes=self._intracellular_nodes, name=self._name) for r in self._regions if r._secs3d}
 
     def _do_init4(self):
         self._extracellular_nodes = []
