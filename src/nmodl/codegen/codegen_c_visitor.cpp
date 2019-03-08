@@ -2165,6 +2165,7 @@ void CodegenCVisitor::print_coreneuron_includes() {
     printer->add_line("#include <coreneuron/nrniv/nrniv_decl.h>");
     printer->add_line("#include <coreneuron/nrniv/ivocvect.h>");
     printer->add_line("#include <coreneuron/mech/mod2c_core_thread.h>");
+    printer->add_line("#include <coreneuron/scopmath_core/newton_struct.h>");
     printer->add_line("#include <_kinderiv.h>");
 }
 
@@ -2471,6 +2472,9 @@ void CodegenCVisitor::print_mechanism_register() {
     if (info.vectorize && (info.thread_data_index != 0)) {
         auto name = get_variable_name("ext_call_thread");
         printer->add_line("thread_mem_init({});"_format(name));
+    }
+
+    if (!info.thread_variables.empty()) {
         printer->add_line("{} = 0;"_format(get_variable_name("thread_data_in_use")));
     }
 
@@ -2570,11 +2574,14 @@ void CodegenCVisitor::print_thread_memory_callbacks() {
     printer->add_line("/** thread memory cleanup callback */");
     printer->start_block("static void thread_mem_cleanup(ThreadDatum* thread) ");
 
+    // clang-format off
     if (info.vectorize && info.derivimplicit_used) {
         int n = info.derivimplicit_list_num;
         printer->add_line("free(thread[dith{}()].pval);"_format(n));
-        printer->add_line("nrn_destroy_newtonspace(*newtonspace{}(thread));"_format(n));
+        printer->add_line("nrn_destroy_newtonspace(static_cast<NewtonSpace*>(*newtonspace{}(thread)));"_format(n));
     }
+    // clang-format on
+
     if (info.top_local_thread_size != 0) {
         auto line = "free(thread[top_local_var_tid()].pval);";
         printer->add_line(line);
@@ -3469,6 +3476,7 @@ void CodegenCVisitor::print_derivative_kernel_for_derivimplicit() {
     auto stride = (layout == LayoutType::aos) ? "" : "*pnodecount+id";
 
     printer->add_newline(2);
+
     // clang-format off
     printer->start_block("int {}_{}({})"_format(node->get_node_name(), suffix, ext_params));
     auto instance = "{0}* inst = ({0}*)get_memb_list(nt)->instance;"_format(instance_struct());
@@ -3486,13 +3494,24 @@ void CodegenCVisitor::print_derivative_kernel_for_derivimplicit() {
     printer->add_line("    savstate{}[i{}] = data[slist{}[i]{}];"_format(list_num, stride, list_num, stride));
     printer->add_line("}");
 
-    auto argument = "{}, slist{}, derivimplicit_{}_{}, dlist{}, {}"_format(primes_size, list_num+1, solve_block_name, suffix, list_num + 1, ext_args);
-    printer->add_line("int reset = nrn_newton_thread(*newtonspace{}(thread), {});"_format(list_num, argument));
+    auto argument = "{}, slist{}, _derivimplicit_{}_{}, dlist{}, {}"_format(primes_size, list_num+1, solve_block_name, suffix, list_num + 1, ext_args);
+    printer->add_line("int reset = nrn_newton_thread(static_cast<NewtonSpace*>(*newtonspace{}(thread)), {});"_format(list_num, argument));
     printer->add_line("return reset;");
     printer->end_block(3);
 
-    printer->start_block("int newton_{}_{}({}) "_format(node->get_node_name(), info.mod_suffix, external_method_parameters()));
+    /*
+     * TODO : To be backward compatible with mod2c we have to generate below
+     * comment marker in the generated cpp file for kinderiv.py to
+     * process it and generate correct _kinderiv.h
+     */
+    printer->add_line("/* _derivimplicit_ {} _{} */"_format(node->get_node_name(), info.mod_suffix));
+    printer->add_newline(1);
+
+    printer->start_block("int _newton_{}_{}({}) "_format(node->get_node_name(), info.mod_suffix, external_method_parameters()));
     printer->add_line(instance);
+    if (ion_variable_struct_required()) {
+        printer->add_line("IonCurVar ionvar = {0};");
+    }
     printer->add_line("double* savstate{} = (double*) thread[dith{}()].pval;"_format(list_num, list_num));
     printer->add_line(slist1);
     printer->add_line(dlist1);
@@ -3557,7 +3576,7 @@ void CodegenCVisitor::print_nrn_state() {
 
     if (info.derivimplicit_used) {
         auto args =
-            "{}, {}, {}, derivimplicit_{}_{}, {}"
+            "{}, {}, {}, _derivimplicit_{}_{}, {}"
             ""_format(num_primes, slist, dlist, block_name, suffix, thread_args);
         auto statement = "derivimplicit_thread({});"_format(args);
         printer->add_line(statement);

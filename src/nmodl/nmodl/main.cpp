@@ -88,7 +88,7 @@ int main(int argc, const char* argv[]) {
     bool verbatim_inline(false);
 
     /// true if verbatim blocks
-    bool verbatim_rename(false);
+    bool verbatim_rename(true);
 
     /// directory where code will be generated
     std::string output_dir(".");
