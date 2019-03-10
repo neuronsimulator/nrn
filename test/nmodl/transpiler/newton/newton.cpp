@@ -10,7 +10,7 @@
 #include <cmath>
 
 #include "catch/catch.hpp"
-#include "newton/newton.hpp"
+#include "nmodl/nmodl.hpp"
 
 
 using namespace nmodl;

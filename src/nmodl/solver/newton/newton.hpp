@@ -32,10 +32,10 @@ constexpr double EPS = 1e-12;
 // when |F|^2 < eps^2, solution has converged
 // returns number of iterations (-1 if failed to converge)
 template <int N, typename FUNC>
-int newton_solver(Eigen::Matrix<double, N, 1>& X,
-                  FUNC functor,
-                  double eps = EPS,
-                  int max_iter = MAX_ITER) {
+EIGEN_DEVICE_FUNC int newton_solver(Eigen::Matrix<double, N, 1>& X,
+                                    FUNC functor,
+                                    double eps = EPS,
+                                    int max_iter = MAX_ITER) {
     // Vector to store result of function F(X):
     Eigen::Matrix<double, N, 1> F;
     // Matrix to store jacobian of F(X):
@@ -65,7 +65,10 @@ int newton_solver(Eigen::Matrix<double, N, 1>& X,
 }
 
 template <typename FUNC, int N>
-int solver(Eigen::Matrix<double, N, 1>& X, FUNC functor, double eps, int max_iter) {
+EIGEN_DEVICE_FUNC int solver(Eigen::Matrix<double, N, 1>& X,
+                             FUNC functor,
+                             double eps,
+                             int max_iter) {
     Eigen::Matrix<double, N, 1> F;
     Eigen::Matrix<double, N, N> J;
     int iter = -1;
@@ -84,34 +87,34 @@ int solver(Eigen::Matrix<double, N, 1>& X, FUNC functor, double eps, int max_ite
 // use explicit inverse of F instead of LU decomposition
 // (more efficient for small matrices - not safe for large matrices)
 template <typename FUNC>
-int newton_solver(Eigen::Matrix<double, 1, 1>& X,
-                  FUNC functor,
-                  double eps = EPS,
-                  int max_iter = MAX_ITER) {
+EIGEN_DEVICE_FUNC int newton_solver(Eigen::Matrix<double, 1, 1>& X,
+                                    FUNC functor,
+                                    double eps = EPS,
+                                    int max_iter = MAX_ITER) {
     return solver<FUNC, 1>(X, functor, eps, max_iter);
 }
 
 template <typename FUNC>
-int newton_solver(Eigen::Matrix<double, 2, 1>& X,
-                  FUNC functor,
-                  double eps = EPS,
-                  int max_iter = MAX_ITER) {
+EIGEN_DEVICE_FUNC int newton_solver(Eigen::Matrix<double, 2, 1>& X,
+                                    FUNC functor,
+                                    double eps = EPS,
+                                    int max_iter = MAX_ITER) {
     return solver<FUNC, 2>(X, functor, eps, max_iter);
 }
 
 template <typename FUNC>
-int newton_solver(Eigen::Matrix<double, 3, 1>& X,
-                  FUNC functor,
-                  double eps = EPS,
-                  int max_iter = MAX_ITER) {
+EIGEN_DEVICE_FUNC int newton_solver(Eigen::Matrix<double, 3, 1>& X,
+                                    FUNC functor,
+                                    double eps = EPS,
+                                    int max_iter = MAX_ITER) {
     return solver<FUNC, 3>(X, functor, eps, max_iter);
 }
 
 template <typename FUNC>
-int newton_solver(Eigen::Matrix<double, 4, 1>& X,
-                  FUNC functor,
-                  double eps = EPS,
-                  int max_iter = MAX_ITER) {
+EIGEN_DEVICE_FUNC int newton_solver(Eigen::Matrix<double, 4, 1>& X,
+                                    FUNC functor,
+                                    double eps = EPS,
+                                    int max_iter = MAX_ITER) {
     return solver<FUNC, 4>(X, functor, eps, max_iter);
 }
 
