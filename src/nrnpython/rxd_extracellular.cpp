@@ -390,7 +390,7 @@ static void* gather_currents(void* dataptr)
  */
 void do_currents(Grid_node* grid, double* output, double dt, int grid_id)
 {
-    Py_ssize_t m, n, i;
+    ssize_t m, n, i;
     Current_Triple* c;
     /*Currents to broadcast via MPI*/
     /*TODO: Handle multiple grids with one pass*/
@@ -516,7 +516,7 @@ int ode_count(const int offset) {
 void ecs_atolscale(double* y)
 {
     Grid_node* grid;
-    Py_ssize_t i;
+    ssize_t i;
     int grid_size;
     double* grid_states;
     y += states_cvode_offset;
@@ -532,7 +532,7 @@ void ecs_atolscale(double* y)
 
 void _ecs_ode_reinit(double* y) {
     Grid_node* grid;
-    Py_ssize_t i;
+    ssize_t i;
     int grid_size;
     double* grid_states;
     y += states_cvode_offset;
@@ -550,7 +550,7 @@ void _ecs_ode_reinit(double* y) {
 
 void _rhs_variable_step_ecs(const double t, const double* states, double* ydot) {
 	Grid_node *grid;
-    Py_ssize_t n, i;
+    ssize_t n, i;
     int grid_size, j, k;
 	double dt = *dt_ptr;
     Current_Triple* c;

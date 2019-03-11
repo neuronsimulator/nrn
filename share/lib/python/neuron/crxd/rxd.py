@@ -1162,35 +1162,27 @@ def _compile_reactions():
     if testing_condition:
         print("regions involved = {}\n".format(regions_inv))
         if len(regions_inv) > 0:
-            ics_grid_ids = []
-            all_ics_gids = set()
-            fxn_string = _c_headers
-            fxn_string += 'void reaction(double* species_ecs, double*rhs)\n{'
-            """for rptr in [r for rlist in list(regions_inv.values()) for r in rlist]:
-                if isinstance(rptr(), rate.Rate):
-                    for sp in [rptr()._species] + rptr()._involved_species:
-                        print("first reg = ", reg)
-                        s = sp()[reg]
-                        all_ics_gids.add(s._species()._intracellular_instances[reg]._grid_id)"""
-            print("regions_inv = {}\n".format(regions_inv))
             for reg in regions_inv:
+                ics_grid_ids = []
+                all_ics_gids = set()
+                fxn_string = _c_headers
+                fxn_string += 'void reaction(double* species_ecs, double*rhs)\n{'
+                print("regions_inv = {}\n".format(regions_inv))
                 print("reg = {}\n".format(reg))
                 for s in species_by_region[reg] :
                     print("species = {}".format(s))
                     print("intra species = {}\n".format(s._intracellular_instances[reg]._name))
                     sp = s._intracellular_instances[reg]
                     all_ics_gids.add(sp._grid_id)
-                #    all_gids.add(sp._extracellular()._grid_id if isinstance(sp, species.SpeciesOnExtracellular) else sp._grid_id)
-            all_ics_gids = list(all_ics_gids)
-            for reg in regions_inv:
+                all_ics_gids = list(all_ics_gids)
                 print("reg = ", reg)
                 for rptr in regions_inv[reg]:
                     print("rptr = ", rptr)
                     r = rptr()
                     print("r = ", r)
-                    print("r._rate = ", r._rate)
+                    #print("r._rate = ", r._rate)
                     rate_str = re.sub(r'species\[(\d+)\]\[\]',lambda m: "species_ecs[%i]" %  [pid for pid,gid in enumerate(all_ics_gids) if gid == int(m.groups()[0])][0], r._rate)
-                    print("rate_str = ",rate_str)
+                    #print("rate_str = ",rate_str)
                     if isinstance(r,rate.Rate):
                         s = r._species()._intracellular_instances[reg]
                         print("s = ", s)
@@ -1201,37 +1193,37 @@ def _compile_reactions():
                             ics_grid_ids.append(s._grid_id)
                         pid = [pid for pid,gid in enumerate(all_ics_gids) if gid == s._grid_id][0]
                         fxn_string += "\n\trhs[%d] %s %s;" % (pid, operator, rate_str)
-            fxn_string += "\n}\n"
-            print(fxn_string)
-            ecs_register_reaction(0, len(all_ics_gids), _list_to_cint_array(all_ics_gids), _c_compile(fxn_string))                 
+                fxn_string += "\n}\n"
+                #print(fxn_string)
+                print("Calling ecs_register_reaction for intracellular")
+                ecs_register_reaction(0, len(all_ics_gids), _list_to_cint_array(all_ics_gids), _c_compile(fxn_string))                 
     #Setup extracellular reactions
     if len(ecs_regions_inv) > 0:
-        grid_ids = []
-        all_gids = set() 
-        fxn_string = _c_headers 
-        #TODO: find the nrn include path in python
-        #It is necessary for a couple of function in python that are not in math.h
-        fxn_string += 'void reaction(double* species_ecs, double* rhs)\n{'
-        # declare the "rate" variable if any reactions (non-rates)
-        for rptr in [r for rlist in list(ecs_regions_inv.values()) for r in rlist]:
-            if not isinstance(rptr(),rate.Rate):
-                fxn_string += '\n\tdouble rate;'
-                break
-        #get a list of all grid_ids invovled
-        print("ecs_regions_inv = {}".format(ecs_regions_inv))
         for reg in ecs_regions_inv:
-            print("reg = {}".format(reg))
+            grid_ids = []
+            all_gids = set() 
+            fxn_string = _c_headers 
+            #TODO: find the nrn include path in python
+            #It is necessary for a couple of function in python that are not in math.h
+            fxn_string += 'void reaction(double* species_ecs, double* rhs)\n{'
+            # declare the "rate" variable if any reactions (non-rates)
+            for rptr in [r for rlist in list(ecs_regions_inv.values()) for r in rlist]:
+                if not isinstance(rptr(),rate.Rate):
+                    fxn_string += '\n\tdouble rate;'
+                    break
+            #get a list of all grid_ids invovled
+            #print("ecs_regions_inv = {}".format(ecs_regions_inv))
+            #print("reg = {}".format(reg))
             for s in ecs_species_by_region[reg]:
                 sp = s[reg] if isinstance(s, species.Species) else None
-                print("sp = {}".format(sp))
+                #print("sp = {}".format(sp))
                 all_gids.add(sp._extracellular()._grid_id if isinstance(sp, species.SpeciesOnExtracellular) else sp._grid_id)
-        all_gids = list(all_gids)
-        for reg in ecs_regions_inv:
+            all_gids = list(all_gids)
             for rptr in ecs_regions_inv[reg]:
                 r = rptr()
                 #print("rate_ecs = ", r._rate_ecs)
                 rate_str = re.sub(r'species_ecs\[(\d+)\]',lambda m: "species_ecs[%i]" %  [pid for pid,gid in enumerate(all_gids) if gid == int(m.groups()[0])][0], r._rate_ecs)
-                print(rate_str)
+                #print(rate_str)
                 if isinstance(r,rate.Rate):
                     s = r._species()
                     #Get underlying rxd._ExtracellularSpecies for the grid_id
@@ -1265,9 +1257,10 @@ def _compile_reactions():
                         pid = [pid for pid,gid in enumerate(all_gids) if gid == s._grid_id][0]
                         fxn_string += "\n\trhs[%d] %s (%s)*rate;" % (pid, operator, r._mult[idx])
                         idx += 1
-        fxn_string += "\n}\n"
-        #print(fxn_string)
-        ecs_register_reaction(0, len(all_gids), _list_to_cint_array(all_gids), _c_compile(fxn_string))
+            fxn_string += "\n}\n"
+            #print(fxn_string)
+            print("Calling ecs_register_reaction for extracellular")
+            ecs_register_reaction(0, len(all_gids), _list_to_cint_array(all_gids), _c_compile(fxn_string))
 
 def _init():
     if len(species._all_species) == 0:
