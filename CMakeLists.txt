@@ -54,11 +54,11 @@ include(GitRevision)
 # =============================================================================
 message(STATUS "CHECKING FOR PYTHON")
 find_package(PythonInterp 3.6 REQUIRED)
-find_python_module(jinja2 REQUIRED)
-find_python_module(pytest REQUIRED)
-find_python_module(sympy REQUIRED)
-find_python_module(textwrap REQUIRED)
-find_python_module(yaml REQUIRED)
+find_python_module(jinja2 2.9.3 REQUIRED)
+find_python_module(pytest 3.3.0 REQUIRED)
+find_python_module(sympy 1.2 REQUIRED)
+find_python_module(textwrap 0.9 REQUIRED)
+find_python_module(yaml 3.12 REQUIRED)
 
 include_directories(${PROJECT_SOURCE_DIR}
                     ${PROJECT_SOURCE_DIR}/src
