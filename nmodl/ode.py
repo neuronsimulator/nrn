@@ -40,7 +40,7 @@ def make_unique_prefix(vars, default_prefix="tmp"):
 def solve_ode_system(diff_strings, t_var, dt_var, vars, do_cse=False):
     """Solve system of ODEs, return solution as C code.
 
-    If system is linear, constructs the backwards Euler linear 
+    If system is linear, constructs the backwards Euler linear
     system and solves analytically, optionally also
     with Common Subexpression Elimination if do_cse is true.
 
@@ -115,19 +115,20 @@ def solve_ode_system(diff_strings, t_var, dt_var, vars, do_cse=False):
     else:
         # otherwise: construct implicit euler solution in form F(x) = 0
         # also construct jacobian of this function dF/dx
+
+        # state vars to be stored in vector X for Newton solver
+        Xvecsubs = {}
+        for i, x_new in enumerate(state_vars):
+            Xvecsubs[x_new] = sp.symbols(f"X[{i}]")
         eqs = []
         for x_new, x_old, dxdt in zip(state_vars, old_state_vars, diff_eqs):
-            eqs.append(x_new - dt * dxdt - x_old)
-        for i, x in enumerate(state_vars):
-            code.append(f"X[{i}] = {sp.ccode(x)}")
+            eqs.append((x_new - dt * dxdt).subs(Xvecsubs) - x_new)
         for i, eq in enumerate(eqs):
             code.append(f"F[{i}] = {sp.ccode(eq.evalf().simplify())}")
         for i, jac in enumerate(sp.eye(jacobian.rows, jacobian.rows) - jacobian * dt):
-            code.append(f"J{i//jacobian.rows}[{i%jacobian.rows}] = {sp.ccode(jac.evalf().simplify())}")
-        new_local_vars.append("X")
-        new_local_vars.append("F")
-        for i in range(jacobian.rows):
-            new_local_vars.append(f"J{i}")
+            # todo: fix indexing to be ascending order
+            flat_index = jacobian.rows*(i%jacobian.rows) + (i//jacobian.rows)
+            code.append(f"J[{flat_index}] = {sp.ccode(jac.subs(Xvecsubs).evalf().simplify())}")
     return code, new_local_vars
 
 

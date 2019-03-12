@@ -354,6 +354,7 @@
                                   type: Statement
                                   vector: true
                                   public: true
+                                  add: true
                         - DerivativeBlock:
                             description: ".."
                             nmodl: "DERIVATIVE "

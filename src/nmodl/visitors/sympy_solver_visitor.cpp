@@ -21,16 +21,45 @@ namespace nmodl {
 
 using symtab::syminfo::NmodlType;
 
-void SympySolverVisitor::replace_binary_expression(ast::BinaryExpression* bin_expr,
-                                                   const std::string& new_binary_expr) {
-    auto& lhs = bin_expr->lhs;
-    auto& rhs = bin_expr->rhs;
-    auto new_statement = create_statement(new_binary_expr);
+void SympySolverVisitor::replace_diffeq_expression(ast::DiffEqExpression* expr,
+                                                   const std::string& new_expr) {
+    auto new_statement = create_statement(new_expr);
     auto new_expr_statement = std::dynamic_pointer_cast<ast::ExpressionStatement>(new_statement);
     auto new_bin_expr = std::dynamic_pointer_cast<ast::BinaryExpression>(
         new_expr_statement->get_expression());
-    lhs.reset(new_bin_expr->lhs->clone());
-    rhs.reset(new_bin_expr->rhs->clone());
+    expr->set_expression(std::move(new_bin_expr));
+}
+
+std::shared_ptr<ast::EigenNewtonSolverBlock>
+SympySolverVisitor::construct_eigen_newton_solver_block(
+    const std::vector<std::string>& setup_x,
+    const std::vector<std::string>& functor,
+    const std::vector<std::string>& update_state) {
+    auto setup_x_block = create_statement_block(setup_x);
+    auto functor_block = create_statement_block(functor);
+    auto update_state_block = create_statement_block(update_state);
+    return std::make_shared<ast::EigenNewtonSolverBlock>(setup_x_block, functor_block,
+                                                         update_state_block);
+}
+
+void SympySolverVisitor::remove_statements_from_block(ast::StatementBlock* block,
+                                                      const std::set<ast::Node*> statements) {
+    auto& statement_vec = block->statements;
+    statement_vec.erase(std::remove_if(statement_vec.begin(), statement_vec.end(),
+                                       [&statements](std::shared_ptr<ast::Statement>& s) {
+                                           return statements.find(s.get()) != statements.end();
+                                       }),
+                        statement_vec.end());
+}
+
+void SympySolverVisitor::visit_statement_block(ast::StatementBlock* node) {
+    current_statement_block = node;
+    node->visit_children(this);
+}
+
+void SympySolverVisitor::visit_expression_statement(ast::ExpressionStatement* node) {
+    current_diffeq_statement = node;
+    node->visit_children(this);
 }
 
 void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
@@ -46,12 +75,17 @@ void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
         logger->warn("SympySolverVisitor :: LHS of differential equation is not a PrimeName");
         return;
     }
+
+    prime_variables.push_back(lhs->get_node_name());
+    diffeq_statements.insert(current_diffeq_statement);
+
     const auto node_as_nmodl = to_nmodl_for_sympy(node);
     const auto locals = py::dict("equation_string"_a = node_as_nmodl,
                                  "t_var"_a = codegen::naming::NTHREAD_T_VARIABLE,
                                  "dt_var"_a = codegen::naming::NTHREAD_DT_VARIABLE, "vars"_a = vars,
                                  "use_pade_approx"_a = use_pade_approx);
-    if (solve_method == euler_method) {
+
+    if (solve_method == codegen::naming::EULER_METHOD) {
         logger->debug("SympySolverVisitor :: EULER - solving: {}", node_as_nmodl);
         // replace x' = f(x) differential equation
         // with forwards Euler timestep:
@@ -67,7 +101,7 @@ void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
                     exception_message = str(e)
             )",
                  py::globals(), locals);
-    } else if (solve_method == cnexp_method) {
+    } else if (solve_method == codegen::naming::CNEXP_METHOD) {
         // replace x' = f(x) differential equation
         // with analytic solution for x(t+dt) in terms of x(t)
         // x = ...
@@ -87,9 +121,9 @@ void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
         // for other solver methods: just collect the ODEs & return
         logger->debug("SympySolverVisitor :: adding ODE system: {}", to_nmodl_for_sympy(node));
         ode_system.push_back(to_nmodl_for_sympy(node));
-        binary_expressions_to_replace.push_back(node->get_expression());
         return;
     }
+
     // replace ODE with solution in AST
     auto solution = locals["solution"].cast<std::string>();
     logger->debug("SympySolverVisitor :: -> solution: {}", solution);
@@ -101,7 +135,7 @@ void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
     }
 
     if (!solution.empty()) {
-        replace_binary_expression(node->get_expression().get(), solution);
+        replace_diffeq_expression(node, solution);
     } else {
         logger->warn("SympySolverVisitor :: solution to differential equation not possible");
     }
@@ -120,15 +154,19 @@ void SympySolverVisitor::visit_derivative_block(ast::DerivativeBlock* node) {
     // get user specified solve method for this block
     solve_method = derivative_block_solve_method[node->get_node_name()];
 
-    // visit each differential equation:
-    // -for CNEXP or EULER, each equation is independent & is replaced with its solution
-    // -otherwise, each equation is added to ode_system (and to binary_expressions_to_replace)
+    /// clear information from previous derivative block if any
+    diffeq_statements.clear();
+    prime_variables.clear();
     ode_system.clear();
-    binary_expressions_to_replace.clear();
+
+    // visit each differential equation:
+    //  - for CNEXP or EULER, each equation is independent & is replaced with its solution
+    //  - otherwise, each equation is added to ode_system (and to binary_expressions_to_replace)
     node->visit_children(this);
 
-    // solve system of ODEs in ode_system
-    if (solve_method == "sparse" && !ode_system.empty()) {
+    /// if there are no odes collected then there is nothing to do
+    if (!ode_system.empty()) {
+        // solve system of ODEs in ode_system
         logger->debug("SympySolverVisitor :: Solving {} system of ODEs", solve_method);
         auto locals = py::dict("equation_strings"_a = ode_system,
                                "t_var"_a = codegen::naming::NTHREAD_T_VARIABLE,
@@ -146,48 +184,73 @@ void SympySolverVisitor::visit_derivative_block(ast::DerivativeBlock* node) {
                     exception_message = str(e)
             )",
                  py::globals(), locals);
+
         // returns a vector of solutions, i.e. new statements to add to block:
         auto solutions = locals["solutions"].cast<std::vector<std::string>>();
         // and a vector of new local variables that need to be declared in the block:
         auto new_local_vars = locals["new_local_vars"].cast<std::vector<std::string>>();
         auto exception_message = locals["exception_message"].cast<std::string>();
+
         if (!exception_message.empty()) {
             logger->warn("SympySolverVisitor :: solve_ode_system python exception: " +
                          exception_message);
             return;
         }
+
         // sanity check: must have at least as many solutions as ODE's to replace:
-        if (solutions.size() < binary_expressions_to_replace.size()) {
+        if (solutions.size() < ode_system.size()) {
             logger->warn("SympySolverVisitor :: Solve failed: fewer solutions than ODE's");
             return;
         }
+
         // declare new local vars
         if (!new_local_vars.empty()) {
             for (const auto& new_local_var: new_local_vars) {
                 logger->debug("SympySolverVisitor :: -> declaring new local variable: {}",
                               new_local_var);
-                add_local_variable(node->get_statement_block().get(), new_local_var);
+                add_local_variable(current_statement_block, new_local_var);
             }
         }
-        // add new statements: firstly by replacing old ODE binary expressions
-        auto sol = solutions.cbegin();
-        for (auto binary_expr: binary_expressions_to_replace) {
-            logger->debug("SympySolverVisitor :: -> replacing {} with statement: {}",
-                          to_nmodl_for_sympy(binary_expr.get()), *sol);
-            replace_binary_expression(binary_expr.get(), *sol);
-            ++sol;
+
+        if (solve_method == codegen::naming::SPARSE_METHOD) {
+            remove_statements_from_block(current_statement_block, diffeq_statements);
+            // get a copy of existing statements in block
+            auto statements = current_statement_block->get_statements();
+            // add new statements
+            for (const auto& sol: solutions) {
+                logger->debug("SympySolverVisitor :: -> adding statement: {}", sol);
+                statements.push_back(create_statement(sol));
+            }
+            // replace old set of statements in AST with new one
+            current_statement_block->set_statements(std::move(statements));
+        } else if (solve_method == codegen::naming::DERIVIMPLICIT_METHOD) {
+            /// Construct X from the state variables by using the original
+            /// ODE statements in the block. Also create statements to update
+            /// state variables from X
+            std::vector<std::string> setup_x_eqs;
+            std::vector<std::string> update_state_eqs;
+            for (int i = 0; i < prime_variables.size(); i++) {
+                auto statement = prime_variables[i] + " = " + "X[ " + std::to_string(i) + "]";
+                auto rev_statement = "X[ " + std::to_string(i) + "]" + " = " + prime_variables[i];
+                update_state_eqs.push_back(statement);
+                setup_x_eqs.push_back(rev_statement);
+            }
+
+            /// remove original ODE statements from the block where they initially appear
+            remove_statements_from_block(current_statement_block, diffeq_statements);
+
+            /// create newton solution block and add that as statement back in the block
+            /// statements in solutions : put F, J into new functor to be created for eigen
+            auto solver_block = construct_eigen_newton_solver_block(setup_x_eqs, solutions,
+                                                                    update_state_eqs);
+
+            if (vars.find("X") != vars.end()) {
+                logger->error("SympySolverVisitor :: -> X conflicts with NMODL variable");
+            }
+
+            current_statement_block->addStatement(
+                std::make_shared<ast::ExpressionStatement>(solver_block));
         }
-        // then by adding the rest as new statements to the block
-        // get a copy of existing statements in block
-        auto statements = node->get_statement_block()->get_statements();
-        while (sol != solutions.cend()) {
-            // add new statements to block
-            logger->debug("SympySolverVisitor :: -> adding statement: {}", *sol);
-            statements.push_back(create_statement(*sol));
-            ++sol;
-        }
-        // replace old set of statements in AST with new one
-        node->get_statement_block()->set_statements(std::move(statements));
     }
 }
 

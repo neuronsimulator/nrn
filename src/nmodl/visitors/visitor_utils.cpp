@@ -89,6 +89,30 @@ std::shared_ptr<Statement> create_statement(const std::string& code_statement) {
     return statement;
 }
 
+/**
+ * Convert given code statement (in string format) to corresponding ast node
+ *
+ * We create dummy nmodl procedure containing given code statement and then
+ * parse it using NMODL parser. As there will be only one block with single
+ * statement, we return first statement.
+ */
+std::shared_ptr<StatementBlock> create_statement_block(
+    const std::vector<std::string>& code_statements) {
+    nmodl::parser::NmodlDriver driver;
+    std::string nmodl_text = "PROCEDURE dummy() {\n";
+    for (auto& statement: code_statements) {
+        nmodl_text += statement + "\n";
+    }
+    nmodl_text += "}";
+    driver.parse_string(nmodl_text);
+    auto ast = driver.ast();
+    auto procedure = std::dynamic_pointer_cast<ProcedureBlock>(ast->blocks[0]);
+    auto statement_block = std::shared_ptr<StatementBlock>(
+        procedure->get_statement_block()->clone());
+    return statement_block;
+}
+
+
 std::set<std::string> get_global_vars(Program* node) {
     std::set<std::string> vars;
     if (auto* symtab = node->get_symbol_table()) {

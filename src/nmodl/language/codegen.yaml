@@ -1,0 +1,46 @@
+# *********************************************************************
+# Copyright (C) 2018-2019 Blue Brain Project
+#
+# This file is part of NMODL distributed under the terms of the GNU
+# Lesser General Public License. See top-level LICENSE file for details.
+# *********************************************************************
+
+######################### NMODL Abstract Language Definition ##############################
+#
+# PURPOSE
+# =======
+#
+# NMODL language specification in nmod.yaml takes care of representing NMODL language
+# AST generation. This AST is sufficient for NMODL level analysis and optimizations.
+# In order to perform code generation transformations, we need to perform various
+# transoformations on AST and add new node types. For example, PROCEDURE and FUNCTION
+# nodes in NMODL doesn't have return type (double by default).  Also, we can't represent
+# code generation specific information (e.g. variable or function qualifiers) with the
+# existing AST nodes. This yaml specification describe additional node types that can
+# be used for code generation purpose. Note that they are using same inheritance
+# hierarchy because we would like to use single AST to represent the NMODL with and
+# without code generation transformations.
+
+- AST:
+    children:
+      - Node:
+          children:
+            - Expression:
+                children:
+                  - Number:
+                  - Identifier:
+                  - Block:
+                      children:
+                        - EigenNewtonSolverBlock:
+                            description: "Represent newton solver solution block based on Eigen"
+                            members:
+                              - setup_x_block:
+                                  description: "update X from states"
+                                  type: StatementBlock
+                              - functor_block:
+                                  description: "odes as functor for eigen"
+                                  type: StatementBlock
+                              - update_states_block:
+                                  description: "update back states from X"
+                                  type: StatementBlock
+            - Statement:

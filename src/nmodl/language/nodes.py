@@ -382,4 +382,10 @@ class Node(BaseNode):
         return "Node(class_name='{}', base_class='{}', nmodl_name='{}')".format(
             self.class_name, self.base_class, self.nmodl_name)
 
+    def __eq__(self, other):
+        """
+        AST node name (i.e. class_name) is supposed to be unique, just compare it for equality
+        """
+        return self.class_name == other.class_name
+
     __str__ = __repr__
