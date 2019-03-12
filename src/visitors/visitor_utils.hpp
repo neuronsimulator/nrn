@@ -36,6 +36,10 @@ ast::LocalVar* add_local_variable(ast::StatementBlock* node, const std::string& 
 /** Create ast statement node from given code in string format */
 std::shared_ptr<ast::Statement> create_statement(const std::string& code_statement);
 
+/** Create ast statement block node from given code in string format */
+std::shared_ptr<ast::StatementBlock> create_statement_block(
+    const std::vector<std::string>& code_statements);
+
 /** Return set of strings with the names of all global variables */
 std::set<std::string> get_global_vars(ast::Program* node);
 

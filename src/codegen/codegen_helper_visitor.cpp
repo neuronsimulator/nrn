@@ -489,6 +489,11 @@ void CodegenHelperVisitor::visit_function_block(ast::FunctionBlock* node) {
 }
 
 
+void CodegenHelperVisitor::visit_eigen_newton_solver_block(ast::EigenNewtonSolverBlock* node) {
+    info.eigen_newton_solver_exist = true;
+}
+
+
 void CodegenHelperVisitor::visit_function_call(FunctionCall* node) {
     auto name = node->get_node_name();
     if (name == naming::NET_SEND_METHOD) {

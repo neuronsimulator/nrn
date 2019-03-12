@@ -465,13 +465,14 @@ bool CodegenCVisitor::need_semicolon(Statement* node) {
         || node->is_while_statement()) {
         return false;
     }
-    // clang-format on
     if (node->is_expression_statement()) {
-        auto statement = dynamic_cast<ExpressionStatement*>(node);
-        if (statement->get_expression()->is_statement_block()) {
+        auto expression = dynamic_cast<ExpressionStatement*>(node)->get_expression();
+        if (expression->is_statement_block()
+            || expression->is_eigen_newton_solver_block()) {
             return false;
         }
     }
+    // clang-format on
     return true;
 }
 
@@ -1615,6 +1616,45 @@ void CodegenCVisitor::print_function(ast::FunctionBlock* node) {
     codegen = false;
 }
 
+void CodegenCVisitor::visit_eigen_newton_solver_block(ast::EigenNewtonSolverBlock* node) {
+    // solution vector to store copy of state vars for Newton solver
+    printer->add_newline();
+    auto float_type = default_float_data_type();
+    printer->add_line("Eigen::Matrix<{}, {}, 1> X;"_format(float_type, info.num_primes));
+    print_statement_block(node->get_setup_x_block().get(), false, false);
+
+    // functor that evaluates F(X) and J(X) for Newton solver
+    printer->start_block("struct functor");
+    printer->add_line("NrnThread* nt;");
+    printer->add_line("{0}* inst;"_format(instance_struct()));
+    printer->add_line("int id;");
+
+    printer->add_line(
+        "functor(NrnThread* nt, {}* inst, int id) : nt(nt), inst(inst), id(id) {}"_format(
+            instance_struct(), "{}"));
+
+    printer->add_indent();
+    printer->add_text(
+        "void operator()(const Eigen::Matrix<{0}, {1}, 1>& X, Eigen::Matrix<{0}, {1}, "
+        "1>& F, "
+        "Eigen::Matrix<{0}, {1}, {1}>& Jm) const"_format(float_type, info.num_primes));
+    printer->start_block();
+    printer->add_line("{}* J = Jm.data();"_format(float_type));
+    print_statement_block(node->get_functor_block().get(), false, false);
+    printer->end_block(1);
+    printer->end_block(0);
+    printer->add_text(";");
+    printer->add_newline();
+
+    // call newton solver with functor and X matrix that contains state vars
+    printer->add_line("// call newton solver");
+    printer->add_line("functor newton_functor(nt, inst, id);");
+    printer->add_line("int newton_iterations = nmodl::newton::newton_solver(X, newton_functor);");
+
+    // assign newton solver results in matrix X to state vars
+    printer->add_line("// assign results to state vars");
+    print_statement_block(node->get_update_states_block().get(), false, false);
+}
 
 /****************************************************************************************/
 /*                           Code-specific helper routines                              */
@@ -1928,7 +1968,7 @@ void CodegenCVisitor::print_namespace_stop() {
  */
 
 void CodegenCVisitor::print_thread_getters() {
-    if (info.vectorize && info.derivimplicit_used) {
+    if (info.vectorize && info.derivimplicit_coreneuron_solver()) {
         int tid = info.derivimplicit_var_thread_id;
         int list = info.derivimplicit_list_num;
 
@@ -2167,6 +2207,7 @@ void CodegenCVisitor::print_coreneuron_includes() {
     printer->add_line("#include <coreneuron/mech/mod2c_core_thread.h>");
     printer->add_line("#include <coreneuron/scopmath_core/newton_struct.h>");
     printer->add_line("#include <_kinderiv.h>");
+    printer->add_line("#include <newton/newton.hpp>");
 }
 
 
@@ -2282,7 +2323,7 @@ void CodegenCVisitor::print_mechanism_global_var_structure() {
         printer->add_line("int* dlist1;");
         codegen_global_variables.push_back(make_symbol("slist1"));
         codegen_global_variables.push_back(make_symbol("dlist1"));
-        if (info.derivimplicit_used) {
+        if (info.derivimplicit_coreneuron_solver()) {
             printer->add_line("int* slist2;");
             codegen_global_variables.push_back(make_symbol("slist2"));
         }
@@ -2546,7 +2587,7 @@ void CodegenCVisitor::print_thread_memory_callbacks() {
     printer->add_line("/** thread memory allocation callback */");
     printer->start_block("static void thread_mem_init(ThreadDatum* thread) ");
 
-    if (info.vectorize && info.derivimplicit_used) {
+    if (info.vectorize && info.derivimplicit_coreneuron_solver()) {
         printer->add_line("thread[dith{}()].pval = NULL;"_format(info.derivimplicit_list_num));
     }
     if (info.vectorize && (info.top_local_thread_size != 0)) {
@@ -2575,7 +2616,7 @@ void CodegenCVisitor::print_thread_memory_callbacks() {
     printer->start_block("static void thread_mem_cleanup(ThreadDatum* thread) ");
 
     // clang-format off
-    if (info.vectorize && info.derivimplicit_used) {
+    if (info.vectorize && info.derivimplicit_coreneuron_solver()) {
         int n = info.derivimplicit_list_num;
         printer->add_line("free(thread[dith{}()].pval);"_format(n));
         printer->add_line("nrn_destroy_newtonspace(static_cast<NewtonSpace*>(*newtonspace{}(thread)));"_format(n));
@@ -2689,7 +2730,7 @@ void CodegenCVisitor::print_global_variable_setup() {
     }
 
     /// additional list for derivimplicit method
-    if (info.derivimplicit_used) {
+    if (info.derivimplicit_coreneuron_solver()) {
         auto primes = program_symtab->get_variables_with_properties(NmodlType::prime_name);
         auto slist2 = get_variable_name("slist2");
         auto nprimes = info.primes_size;
@@ -2999,7 +3040,7 @@ void CodegenCVisitor::print_nrn_init() {
     printer->add_line("/** initialize channel */");
 
     print_global_function_common_code(BlockType::Initial);
-    if (info.derivimplicit_used) {
+    if (info.derivimplicit_coreneuron_solver()) {
         printer->add_newline();
         int nequation = info.num_equations;
         int list_num = info.derivimplicit_list_num;
@@ -3030,7 +3071,7 @@ void CodegenCVisitor::print_nrn_init() {
     print_channel_iteration_tiling_block_end();
     printer->end_block(1);
 
-    if (info.derivimplicit_used) {
+    if (info.derivimplicit_coreneuron_solver()) {
         printer->add_line("*deriv{}_advance(thread) = 1;"_format(info.derivimplicit_list_num));
     }
     print_kernel_data_present_annotation_block_end();
@@ -3463,7 +3504,6 @@ void CodegenCVisitor::print_net_receive() {
  * slist needs to added as local variable
  */
 void CodegenCVisitor::print_derivative_kernel_for_derivimplicit() {
-    assert(info.solve_node->is_derivative_block());
     auto node = info.solve_node;
     codegen = true;
 
@@ -3544,7 +3584,7 @@ void CodegenCVisitor::print_nrn_state() {
     }
     codegen = true;
 
-    if (info.derivimplicit_used) {
+    if (info.derivimplicit_coreneuron_solver()) {
         print_derivative_kernel_for_derivimplicit();
     }
 
@@ -3570,18 +3610,19 @@ void CodegenCVisitor::print_nrn_state() {
     auto num_primes = info.num_primes;
     auto suffix = info.mod_suffix;
     auto block_name = info.solve_block_name;
-    auto num = info.derivimplicit_used ? info.derivimplicit_list_num : info.euler_list_num;
+    auto num = info.derivimplicit_coreneuron_solver() ? info.derivimplicit_list_num
+                                                      : info.euler_list_num;
     auto slist = get_variable_name("slist{}"_format(num));
     auto dlist = get_variable_name("dlist{}"_format(num));
 
-    if (info.derivimplicit_used) {
-        auto args =
-            "{}, {}, {}, _derivimplicit_{}_{}, {}"
-            ""_format(num_primes, slist, dlist, block_name, suffix, thread_args);
-        auto statement = "derivimplicit_thread({});"_format(args);
-        printer->add_line(statement);
-    } else {
-        if (info.solve_node != nullptr) {
+    if (info.solve_node != nullptr) {
+        if (info.derivimplicit_coreneuron_solver()) {
+            auto args =
+                "{}, {}, {}, _derivimplicit_{}_{}, {}"
+                ""_format(num_primes, slist, dlist, block_name, suffix, thread_args);
+            auto statement = "derivimplicit_thread({});"_format(args);
+            printer->add_line(statement);
+        } else {
             auto block = info.solve_node->get_statement_block();
             print_statement_block(block.get(), false, false);
         }

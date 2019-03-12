@@ -74,5 +74,21 @@ bool CodegenInfo::function_uses_table(std::string& name) const {
     return false;
 }
 
+/**
+ * Check if coreneuron internal derivimplicit solver needs to be used
+ *
+ * - if derivimplicit method is not used or solve block is empty
+ *   then there is nothing to do
+ * - if eigen solver block is used then coreneuron solver is not needed
+ */
+
+bool CodegenInfo::derivimplicit_coreneuron_solver() {
+    if (!derivimplicit_used || solve_node == nullptr || eigen_newton_solver_exist) {
+        return false;
+    }
+    return true;
+}
+
+
 }  // namespace codegen
 }  // namespace nmodl

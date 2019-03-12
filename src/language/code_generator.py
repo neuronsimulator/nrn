@@ -34,7 +34,12 @@ if clang_format:
         clang_format += args.clang_format_opts
 
 # parse nmodl definition file and get list of abstract nodes
-nodes = LanguageParser("nmodl.yaml").parse_file()
+nmodl_nodes = LanguageParser("nmodl.yaml").parse_file()
+codegen_nodes = LanguageParser("codegen.yaml").parse_file()
+
+# combine ast nodes from NMODL specification and codegen specification
+nodes = nmodl_nodes
+nodes.extend(x for x in codegen_nodes if x not in nodes)
 
 templates = Path(__file__).parent / 'templates'
 

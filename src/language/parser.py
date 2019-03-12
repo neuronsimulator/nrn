@@ -127,10 +127,14 @@ class LanguageParser:
             # name of the ast class and it's properties as dictionary
             class_name, properties = next(iter(node.items()))
 
+            # no need to process empty nodes
+            if properties is None:
+                continue
+
             args = Argument()
-            args.url = properties['url'] if 'url' in properties else None
+            args.url = properties.get('url', None)
             args.class_name = class_name
-            args.description = properties['description']
+            args.description = properties.get('description', '')
 
             # yaml file has abstract classes and their subclasses with children as a property
             if 'children' in properties:

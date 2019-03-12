@@ -28,6 +28,9 @@ const std::string EULER_METHOD("euler");
 /// cnexp method in nmodl
 const std::string CNEXP_METHOD("cnexp");
 
+/// sparse method in nmodl
+const std::string SPARSE_METHOD("sparse");
+
 /// net_event function call in nmodl
 const std::string NET_EVENT_METHOD("net_event");
 
