@@ -53,6 +53,7 @@ class Rate(GeneralizedReaction):
         
     def _do_init(self):
         rate = self._original_rate
+        print(rate)
         if not isinstance(rate, RangeVar):
             self._rate, self._involved_species = rxdmath._compile(rate)
         else:

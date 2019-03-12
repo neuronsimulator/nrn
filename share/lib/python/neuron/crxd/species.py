@@ -168,6 +168,7 @@ class _SpeciesMathable(object):
 
     @property
     def _semi_compile(self):
+        print("in _SpeciesMathable _semi_compile!!!!!!")
         return 'species[%d][]' % (self._id)
 
     def _involved_species(self, the_dict):
@@ -243,6 +244,7 @@ class SpeciesOnExtracellular(_SpeciesMathable):
                 
     @property
     def _semi_compile(self):
+        print("In ECS semi compile!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         return 'species_ecs[%d]' % (self._extracellular()._grid_id)
 
 class SpeciesOnRegion(_SpeciesMathable):
@@ -347,6 +349,7 @@ class SpeciesOnRegion(_SpeciesMathable):
         self.nodes.concentration = value
     @property
     def _semi_compile(self):
+        print("In semi compile!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         return 'species[%d][%d]' % (self._id, self._region()._id)
 
 # 3d matrix stuff
@@ -665,6 +668,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
         _set_grid_currents(grid_list, self._grid_id, grid_indices, neuron_pointers, scale_factors)
     @property
     def _semi_compile(self):
+        print("In _Extracellular_Species _semi_compile!!!!!!!!!!!!!!!!!!!!!!!")
         return 'species_ecs[%d]' % (self._grid_id)
 
 
@@ -831,7 +835,7 @@ class Species(_SpeciesMathable):
         self._nodes = []
         selfref = weakref.ref(self)
         self_has_3d = False
-        self._intracellular_nodes = []
+        self._intracellular_nodes = {}
         if self._regions:
             for r in self._regions:
                 if r._secs3d:
@@ -843,8 +847,10 @@ class Species(_SpeciesMathable):
                         _3doffset = node._allocate(len(xs))
                     self._3doffset_by_region[r] = _3doffset
                     
+                    self._intracellular_nodes_by_region = []
                     for i, x, y, z, seg in zip(list(range(len(xs))), xs, ys, zs, segs):
-                        self._intracellular_nodes.append(node.Node3D(i, x, y, z, r, seg, selfref))
+                        self._intracellular_nodes_by_region.append(node.Node3D(i, x, y, z, r, seg, selfref))
+                    self._intracellular_nodes[r] = self._intracellular_nodes_by_region
                     # the region is now responsible for computing the correct volumes and surface areas
                         # this is done so that multiple species can use the same region without recomputing it
                     node._volumes[_3doffset : _3doffset + len(xs)] = r._vol
@@ -852,7 +858,7 @@ class Species(_SpeciesMathable):
                     node._diffs[_3doffset : _3doffset + len(xs)] = self._d
                     self_has_3d = True
                     _has_3d = True            
-        self._intracellular_instances = {r:_IntracellularSpecies(r, d=self._d, charge=self.charge, initial=self.initial, nodes=self._intracellular_nodes, name=self._name) for r in self._regions if r._secs3d}
+        self._intracellular_instances = {r:_IntracellularSpecies(r, d=self._d, charge=self.charge, initial=self.initial, nodes=self._intracellular_nodes[r], name=self._name) for r in self._regions if r._secs3d}
 
     def _do_init4(self):
         self._extracellular_nodes = []
@@ -1276,9 +1282,11 @@ class Species(_SpeciesMathable):
         This can then be further restricted using the callable property of NodeList objects."""
 
         initializer._do_init()
-        
+        self._all_intracellular_nodes = []
+        for r in self.regions:
+            self._all_intracellular_nodes += self._intracellular_nodes[r]
         # The first part here is for the 1D -- which doesn't keep live node objects -- the second part is for 3D
-        return nodelist.NodeList(list(itertools.chain.from_iterable([s.nodes for s in self._secs])) + self._nodes + self._intracellular_nodes + self._extracellular_nodes) 
+        return nodelist.NodeList(list(itertools.chain.from_iterable([s.nodes for s in self._secs])) + self._nodes + self._all_intracellular_nodes + self._extracellular_nodes) 
 
 
     @property

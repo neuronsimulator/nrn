@@ -1166,7 +1166,7 @@ def _compile_reactions():
                 ics_grid_ids = []
                 all_ics_gids = set()
                 fxn_string = _c_headers
-                fxn_string += 'void reaction(double* species_ecs, double*rhs)\n{'
+                fxn_string += 'void reaction(double* species_ics, double*rhs)\n{'
                 print("regions_inv = {}\n".format(regions_inv))
                 print("reg = {}\n".format(reg))
                 for s in species_by_region[reg] :
@@ -1179,9 +1179,10 @@ def _compile_reactions():
                 for rptr in regions_inv[reg]:
                     print("rptr = ", rptr)
                     r = rptr()
-                    print("r = ", r)
-                    #print("r._rate = ", r._rate)
-                    rate_str = re.sub(r'species\[(\d+)\]\[\]',lambda m: "species_ecs[%i]" %  [pid for pid,gid in enumerate(all_ics_gids) if gid == int(m.groups()[0])][0], r._rate)
+                    print("r = ", r._rate)
+                    print([(pid,gid) for pid,gid in enumerate(all_ics_gids)])
+                    #print("r._rate = ", r._rate)\[(\d+)\]'species\[(\d+)\]\[\]'[pid for pid,gid in enumerate(all_ics_gids) if gid == int(m.groups()[0])])
+                    rate_str = re.sub(r'species\[(\d+)\]\[\]',lambda m: "species_ics[%i]" % [pid for pid,gid in enumerate(all_ics_gids) if gid == int(m.groups()[0])][0], r._rate)
                     #print("rate_str = ",rate_str)
                     if isinstance(r,rate.Rate):
                         s = r._species()._intracellular_instances[reg]
@@ -1194,7 +1195,7 @@ def _compile_reactions():
                         pid = [pid for pid,gid in enumerate(all_ics_gids) if gid == s._grid_id][0]
                         fxn_string += "\n\trhs[%d] %s %s;" % (pid, operator, rate_str)
                 fxn_string += "\n}\n"
-                #print(fxn_string)
+                print(fxn_string)
                 print("Calling ecs_register_reaction for intracellular")
                 ecs_register_reaction(0, len(all_ics_gids), _list_to_cint_array(all_ics_gids), _c_compile(fxn_string))                 
     #Setup extracellular reactions
@@ -1258,7 +1259,7 @@ def _compile_reactions():
                         fxn_string += "\n\trhs[%d] %s (%s)*rate;" % (pid, operator, r._mult[idx])
                         idx += 1
             fxn_string += "\n}\n"
-            #print(fxn_string)
+            print(fxn_string)
             print("Calling ecs_register_reaction for extracellular")
             ecs_register_reaction(0, len(all_gids), _list_to_cint_array(all_gids), _c_compile(fxn_string))
 
