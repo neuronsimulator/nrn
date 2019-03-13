@@ -1282,9 +1282,11 @@ class Species(_SpeciesMathable):
         This can then be further restricted using the callable property of NodeList objects."""
 
         initializer._do_init()
+
         self._all_intracellular_nodes = []
-        for r in self.regions:
-            self._all_intracellular_nodes += self._intracellular_nodes[r]
+        if self._intracellular_nodes:
+            for r in self.regions:
+                self._all_intracellular_nodes += self._intracellular_nodes[r]
         # The first part here is for the 1D -- which doesn't keep live node objects -- the second part is for 3D
         return nodelist.NodeList(list(itertools.chain.from_iterable([s.nodes for s in self._secs])) + self._nodes + self._all_intracellular_nodes + self._extracellular_nodes) 
 

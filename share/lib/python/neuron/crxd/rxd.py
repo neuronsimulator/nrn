@@ -973,7 +973,14 @@ def _compile_reactions():
             react_regions +=  [sptr()._region() for sptr in sptrs if isinstance(sptr(),species.SpeciesOnRegion)]
         #if regions are specified - use those
         elif hasattr(r,'_active_regions'):
-            react_regions = r._active_regions
+            print("I have active REGIONS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n\n\n\n\n\n\n\n\n\n\n")
+            print("active regions = {}".format(r._active_regions))
+            print("r._regions = {}".format(r._regions))
+            if r._regions[0] is None:
+                active_regions = r._active_regions
+            else:
+                active_regions = [reg for reg in r._active_regions if reg in r._regions]
+            react_regions = active_regions
         #Otherwise use all the regions where the species are
         else:
             react_regions = set()
@@ -1002,6 +1009,8 @@ def _compile_reactions():
                 if not isinstance(s, species.SpeciesOnExtracellular):
                     all_species_involed.add(s)
                     species_involved.append(s)
+            print("species_involved = {}\n".format(species_involved))
+            print("react regions = {}\n".format(react_regions))
             for reg in react_regions:
                 if isinstance(reg, region.Extracellular):
                     continue
@@ -1160,33 +1169,32 @@ def _compile_reactions():
 
     #Setup intracellular 3D reactions
     if testing_condition:
-        print("regions involved = {}\n".format(regions_inv))
+        region_names = [r._name for r in regions_inv]
+        print("regions involved = {}\n".format(region_names))
         if len(regions_inv) > 0:
             for reg in regions_inv:
+                print("reg = {}".format(reg._name))
                 ics_grid_ids = []
                 all_ics_gids = set()
                 fxn_string = _c_headers
                 fxn_string += 'void reaction(double* species_ics, double*rhs)\n{'
-                print("regions_inv = {}\n".format(regions_inv))
-                print("reg = {}\n".format(reg))
                 for s in species_by_region[reg] :
-                    print("species = {}".format(s))
                     print("intra species = {}\n".format(s._intracellular_instances[reg]._name))
                     sp = s._intracellular_instances[reg]
                     all_ics_gids.add(sp._grid_id)
                 all_ics_gids = list(all_ics_gids)
-                print("reg = ", reg)
+                print("reg = {} and regions_inv[reg] = {}".format(reg._name, regions_inv[reg]))
                 for rptr in regions_inv[reg]:
+                    print("reg = ", reg._name)
                     print("rptr = ", rptr)
                     r = rptr()
                     print("r = ", r._rate)
                     print([(pid,gid) for pid,gid in enumerate(all_ics_gids)])
-                    #print("r._rate = ", r._rate)\[(\d+)\]'species\[(\d+)\]\[\]'[pid for pid,gid in enumerate(all_ics_gids) if gid == int(m.groups()[0])])
                     rate_str = re.sub(r'species\[(\d+)\]\[\]',lambda m: "species_ics[%i]" % [pid for pid,gid in enumerate(all_ics_gids) if gid == int(m.groups()[0])][0], r._rate)
-                    #print("rate_str = ",rate_str)
                     if isinstance(r,rate.Rate):
                         s = r._species()._intracellular_instances[reg]
-                        print("s = ", s)
+                        print("s = {} and grid_id = {}".format(s._name, s._grid_id))
+                        print("ics_grid_ids = {}".format(ics_grid_ids))
                         if s._grid_id in ics_grid_ids:
                             operator = '+='
                         else:
@@ -1196,7 +1204,7 @@ def _compile_reactions():
                         fxn_string += "\n\trhs[%d] %s %s;" % (pid, operator, rate_str)
                 fxn_string += "\n}\n"
                 print(fxn_string)
-                print("Calling ecs_register_reaction for intracellular")
+                print("Calling ecs_register_reaction for intracellular {}".format(reg._name))
                 ecs_register_reaction(0, len(all_ics_gids), _list_to_cint_array(all_ics_gids), _c_compile(fxn_string))                 
     #Setup extracellular reactions
     if len(ecs_regions_inv) > 0:
