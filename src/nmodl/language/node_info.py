@@ -77,6 +77,7 @@ SYMBOL_VAR_TYPES = {"LocalVar",
                     "ExternVar",
                     "PrimeName",
                     "ConstantVar",
+                    "Define",
                     }
 
 # block nodes which will go into symbol table
