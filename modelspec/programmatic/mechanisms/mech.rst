@@ -33,7 +33,7 @@ General
 
 
     Description:
-        ``h.get_loc()`` pushes the section containing the POINT_PROCESS instance, pnt, 
+        ``pnt.get_loc()`` pushes the section containing the POINT_PROCESS instance, pnt, 
         onto the section stack (makes it the currently accessed section, readable via ``h.cas()``), and 
         returns the position (ranging from 0 to 1) of the POINT_PROCESS instance. 
         The section stack should be popped when the section is no longer needed. 
