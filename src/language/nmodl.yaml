@@ -744,12 +744,6 @@
                         - value:
                             description: "..."
                             type: ReactionOp
-                  - WrappedExpression:
-                      description: ".."
-                      members:
-                        - expression:
-                            description: "..."
-                            type: Expression
                   - ParenExpression:
                       description: ".."
                       members:
@@ -948,6 +942,7 @@
                         - name:
                             description: "..."
                             type: Name
+                            node_name: true
                         - value:
                             description: "..."
                             type: Integer

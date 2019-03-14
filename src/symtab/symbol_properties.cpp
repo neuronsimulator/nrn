@@ -167,6 +167,10 @@ std::vector<std::string> to_string_vector(const NmodlType& obj) {
         properties.emplace_back("discrete_block");
     }
 
+    if (has_property(obj, NmodlType::define)) {
+        properties.emplace_back("define");
+    }
+
     return properties;
 }
 

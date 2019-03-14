@@ -211,7 +211,10 @@ enum class NmodlType : enum_type {
     table_dependent_var = 1L << 32,
 
     /** Discrete Block */
-    discrete_block = 1L << 33
+    discrete_block = 1L << 33,
+
+    /** Define variable / macro */
+    define = 1L << 34
 };
 
 

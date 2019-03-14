@@ -22,6 +22,7 @@ add_custom_command(OUTPUT ${AUTO_GENERATED_FILES}
                            --base-dir ${PROJECT_BINARY_DIR}/src
                    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/language
                    DEPENDS ${PROJECT_SOURCE_DIR}/src/language/nmodl.yaml
+                   DEPENDS ${PROJECT_SOURCE_DIR}/src/language/codegen.yaml
                    DEPENDS ${PYCODE}
                    DEPENDS ${TEMPLATE_FILES}
                    COMMENT "-- NMODL : GENERATING AST CLASSES WITH PYTHON GENERATOR! --")

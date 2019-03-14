@@ -395,7 +395,7 @@ struct AST: public std::enable_shared_from_this<AST> {
     }
 
     virtual bool is_wrapped_expression() {
-        return true;
+        return false;
     }
 
     virtual bool is_paren_expression() {

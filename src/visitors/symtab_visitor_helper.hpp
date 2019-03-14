@@ -119,6 +119,11 @@ void SymtabVisitor::setup_symbol(ast::Node* node, NmodlType property) {
         }
     }
 
+    if (node->is_define()) {
+        auto define = dynamic_cast<ast::Define*>(node);
+        symbol->set_value(define->get_value()->to_double());
+    }
+
     /// visit children, most likely variables are already
     /// leaf nodes, not necessary to visit
     node->visit_children(this);

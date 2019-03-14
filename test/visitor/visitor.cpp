@@ -17,6 +17,7 @@
 #include "test/utils/nmodl_constructs.hpp"
 #include "test/utils/test_utils.hpp"
 #include "visitors/cnexp_solve_visitor.hpp"
+#include "visitors/constant_folder_visitor.hpp"
 #include "visitors/defuse_analyze_visitor.hpp"
 #include "visitors/inline_visitor.hpp"
 #include "visitors/json_visitor.hpp"
@@ -3165,6 +3166,135 @@ SCENARIO("Sympy specific AST to NMODL conversion") {
             auto ast = driver.ast();
             auto result = to_nmodl(ast.get(), {AstNodeType::UNIT});
             REQUIRE(result == reindent_text(expected));
+        }
+    }
+}
+
+
+//=============================================================================
+// Constant folding tests
+//=============================================================================
+
+std::string run_constant_folding_visitor(const std::string& text) {
+    NmodlDriver driver;
+    driver.parse_string(text);
+    auto ast = driver.ast();
+
+    SymtabVisitor().visit_program(ast.get());
+    ConstantFolderVisitor().visit_program(ast.get());
+
+    std::stringstream stream;
+    NmodlPrintVisitor(stream).visit_program(ast.get());
+    return stream.str();
+}
+
+TEST_CASE("Constant Folding Visitor") {
+    SECTION("Perform Successful Constant Folding") {
+        GIVEN("Simple integer expression") {
+            std::string nmodl_text = R"(
+                PROCEDURE dummy() {
+                    a = 1 + 2
+                }
+            )";
+            std::string expected_text = R"(
+                PROCEDURE dummy() {
+                    a = 3
+                }
+            )";
+            THEN("successfully folds") {
+                auto result = run_constant_folding_visitor(nmodl_text);
+                REQUIRE(reindent_text(result) == reindent_text(expected_text));
+            }
+        }
+
+        GIVEN("Complex expression") {
+            std::string nmodl_text = R"(
+                PROCEDURE dummy() {
+                    a = 1 + (2) + (2 / 2) + (((1+((2)))))
+                }
+            )";
+            std::string expected_text = R"(
+                PROCEDURE dummy() {
+                    a = 7
+                }
+            )";
+            THEN("successfully folds") {
+                auto result = run_constant_folding_visitor(nmodl_text);
+                REQUIRE(reindent_text(result) == reindent_text(expected_text));
+            }
+        }
+
+        GIVEN("Integer expression with define statement") {
+            std::string nmodl_text = R"(
+                DEFINE N 10
+
+                PROCEDURE dummy() {
+                    a = N + (2*N) + (N / 2) + (((1+((N)))))
+                    FROM i = 0 TO N-2 {
+                    }
+                }
+            )";
+            std::string expected_text = R"(
+                DEFINE N 10
+
+                PROCEDURE dummy() {
+                    a = 46
+                    FROM i = 0 TO 8 {
+                    }
+                }
+            )";
+            THEN("successfully folds") {
+                auto result = run_constant_folding_visitor(nmodl_text);
+                REQUIRE(reindent_text(result) == reindent_text(expected_text));
+            }
+        }
+
+        GIVEN("Only fold part of the statement") {
+            std::string nmodl_text = R"(
+                DEFINE N 10
+
+                PROCEDURE dummy() {
+                    a = N + 2.0 + b
+                    c = a + d
+                    d = 2^3
+                    e = 2 || 3
+                }
+            )";
+            std::string expected_text = R"(
+                DEFINE N 10
+
+                PROCEDURE dummy() {
+                    a = 12+b
+                    c = a+d
+                    d = 2^3
+                    e = 2 || 3
+                }
+            )";
+            THEN("successfully folds and keep other statements untouched") {
+                auto result = run_constant_folding_visitor(nmodl_text);
+                REQUIRE(reindent_text(result) == reindent_text(expected_text));
+            }
+        }
+
+        GIVEN("Don't remove parentheses if not simplifying") {
+            std::string nmodl_text = R"(
+                DEFINE N 10
+
+                PROCEDURE dummy() {
+                    a = ((N+1)+5)*(c+1+N)/(b - 2)
+                }
+            )";
+            std::string expected_text = R"(
+                DEFINE N 10
+
+                PROCEDURE dummy() {
+                    a = 16*(c+1+10)/(b-2)
+                }
+            )";
+            THEN("successfully folds and keep other statements untouched") {
+                auto result = run_constant_folding_visitor(nmodl_text);
+                REQUIRE(reindent_text(result) == reindent_text(expected_text));
+            }
         }
     }
 }

@@ -43,4 +43,10 @@
                               - update_states_block:
                                   description: "update back states from X"
                                   type: StatementBlock
+                  - WrappedExpression:
+                      description: "Wrap any other expression type"
+                      members:
+                        - expression:
+                            description: "Expression that is being wrapped"
+                            type: Expression
             - Statement:
