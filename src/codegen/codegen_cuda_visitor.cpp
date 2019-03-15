@@ -159,7 +159,7 @@ void CodegenCudaVisitor::print_compute_functions() {
     }
 
     print_net_send_buffering();
-    print_net_receive();
+    print_net_receive_kernel();
     print_net_receive_buffering();
     print_nrn_cur();
     print_nrn_state();
@@ -185,7 +185,7 @@ void CodegenCudaVisitor::print_wrapper_routine(std::string wraper_function, Bloc
 
 void CodegenCudaVisitor::codegen_wrapper_routines() {
     print_wrapper_routine("nrn_cur", BlockType::Equation);
-    print_wrapper_routine("nrn_sate", BlockType::State);
+    print_wrapper_routine("nrn_state", BlockType::State);
 }
 
 

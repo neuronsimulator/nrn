@@ -108,7 +108,7 @@ struct IndexVariableInfo {
 
 /**
  * \enum LayoutType
- * \brief Represent memory layout to use for code generation
+ * \brief Represents memory layout to use for code generation
  *
  */
 enum class LayoutType {
@@ -122,9 +122,9 @@ enum class LayoutType {
 
 /**
  * \class ShadowUseStatement
- * \brief Represent ion write statement during code generation
+ * \brief Represents ion write statement during code generation
  *
- * Ion update statement need use of shadow vectors for certain backends
+ * Ion update statement needs use of shadow vectors for certain backends
  * as atomics operations are not supported on cpu backend.
  *
  * \todo : if shadow_lhs is empty then we assume shadow statement not required
@@ -149,6 +149,8 @@ class CodegenCVisitor: public AstVisitor {
   protected:
     using SymbolType = std::shared_ptr<symtab::Symbol>;
 
+    using ParamVector = std::vector<std::tuple<std::string, std::string, std::string, std::string>>;
+
     /// name of mod file (without .mod suffix)
     std::string mod_filename;
 
@@ -168,7 +170,7 @@ class CodegenCVisitor: public AstVisitor {
     std::vector<IndexVariableInfo> codegen_int_variables;
 
     /// all global variables for the model
-    /// todo : this has become different than CodegenInfo
+    /// @todo: this has become different than CodegenInfo
     std::vector<SymbolType> codegen_global_variables;
 
     /// all ion variables that could be possibly written
@@ -195,8 +197,14 @@ class CodegenCVisitor: public AstVisitor {
     /// all ast information for code generation
     codegen::CodegenInfo info;
 
-    /// code printer object
-    std::unique_ptr<CodePrinter> printer;
+    /// code printer object for target (C, CUDA, ispc, ...)
+    std::shared_ptr<CodePrinter> target_printer;
+
+    /// code printer object for wrappers
+    std::shared_ptr<CodePrinter> wrapper_printer;
+
+    /// pointer to active code printer
+    std::shared_ptr<CodePrinter> printer;
 
     /// list of shadow statements in the current block
     std::vector<ShadowUseStatement> shadow_statements;
@@ -375,7 +383,11 @@ class CodegenCVisitor: public AstVisitor {
 
 
     /// convert given double value to string (for printing)
-    std::string double_to_string(double value);
+    virtual std::string double_to_string(double value);
+
+
+    /// convert given float value to string (for printing)
+    virtual std::string float_to_string(float value);
 
 
     /// get variable name for float variable
@@ -427,6 +439,7 @@ class CodegenCVisitor: public AstVisitor {
                                const std::string& separator,
                                const std::string& prefix = "");
 
+    std::string get_parameter_str(const ParamVector& params);
 
     /// check if function or procedure has argument with same name
     template <typename T>
@@ -486,7 +499,7 @@ class CodegenCVisitor: public AstVisitor {
 
 
     /// parameters for internally defined functions
-    std::string internal_method_parameters();
+    ParamVector internal_method_parameters();
 
 
     /// arguments for external functions
@@ -518,7 +531,13 @@ class CodegenCVisitor: public AstVisitor {
 
 
     /// restrict keyword
-    virtual std::string k_restrict();
+    virtual std::string ptr_type_qualifier();
+
+
+    virtual std::string param_type_qualifier();
+
+
+    virtual std::string param_ptr_qualifier();
 
 
     /// const keyword
@@ -594,7 +613,7 @@ class CodegenCVisitor: public AstVisitor {
 
 
     /// structure that wraps all global variables in the mod file
-    void print_mechanism_global_var_structure();
+    virtual void print_mechanism_global_var_structure();
 
 
     /// structure that wraps all range and int variables required for mod file
@@ -775,7 +794,7 @@ class CodegenCVisitor: public AstVisitor {
 
 
     /// common code section for net receive related methods
-    void print_net_receive_common_code(ast::Block* node);
+    void print_net_receive_common_code(ast::Block* node, bool need_mech_inst = true);
 
 
     /// kernel for buffering net_send events
@@ -786,8 +805,23 @@ class CodegenCVisitor: public AstVisitor {
     void print_send_event_move();
 
 
+    virtual std::string net_receive_buffering_declaration();
+
+
+    virtual void print_get_memb_list();
+
+    virtual void print_net_receive_loop_begin();
+
+
+    virtual void print_net_receive_loop_end();
+
+
     /// kernel for buffering net_receive events
     void print_net_receive_buffering();
+
+
+    /// net_receive kernel function definition
+    void print_net_receive_kernel();
 
 
     /// net_receive function definition
@@ -848,11 +882,11 @@ class CodegenCVisitor: public AstVisitor {
 
 
     /// common code for global functions like nrn_init, nrn_cur and nrn_state
-    void print_global_function_common_code(BlockType type);
+    virtual void print_global_function_common_code(BlockType type);
 
 
     /// nrn_init function definition
-    void print_nrn_init();
+    void print_nrn_init(bool skip_init_check = true);
 
 
     /// nrn_state / state update function definition
@@ -876,7 +910,7 @@ class CodegenCVisitor: public AstVisitor {
 
 
     /// all includes
-    void print_headers_include();
+    virtual void print_headers_include();
 
 
     /// start of namespaces
@@ -887,12 +921,12 @@ class CodegenCVisitor: public AstVisitor {
     void print_namespace_end();
 
 
-    /// common getter
+    /// common getters
     void print_common_getters();
 
 
     /// all classes
-    void print_data_structures();
+    virtual void print_data_structures();
 
 
     /// all compute functions for every backend
@@ -903,13 +937,32 @@ class CodegenCVisitor: public AstVisitor {
     virtual void print_codegen_routines();
 
 
+    /// entry point to code generation for wrappers
+    virtual void print_wrapper_routines();
+
+
+    CodegenCVisitor(std::string mod_filename,
+                    std::string output_dir,
+                    LayoutType layout,
+                    std::string float_type,
+                    std::string extension,
+                    std::string wrapper_ext)
+        : target_printer(new CodePrinter(output_dir + "/" + mod_filename + extension))
+        , wrapper_printer(new CodePrinter(output_dir + "/" + mod_filename + wrapper_ext))
+        , printer(target_printer)
+        , mod_filename(mod_filename)
+        , layout(layout)
+        , float_type(float_type) {}
+
+
   public:
     CodegenCVisitor(std::string mod_filename,
                     std::string output_dir,
                     LayoutType layout,
                     std::string float_type,
                     std::string extension = ".cpp")
-        : printer(new CodePrinter(output_dir + "/" + mod_filename + extension))
+        : target_printer(new CodePrinter(output_dir + "/" + mod_filename + extension))
+        , printer(target_printer)
         , mod_filename(mod_filename)
         , layout(layout)
         , float_type(float_type) {}
@@ -919,7 +972,8 @@ class CodegenCVisitor: public AstVisitor {
                     std::stringstream& stream,
                     LayoutType layout,
                     std::string float_type)
-        : printer(new CodePrinter(stream))
+        : target_printer(new CodePrinter(stream))
+        , printer(target_printer)
         , mod_filename(mod_filename)
         , layout(layout)
         , float_type(float_type) {}
@@ -1001,10 +1055,14 @@ bool has_parameter_of_name(const T& node, const std::string& name) {
 template <typename T>
 void CodegenCVisitor::print_function_declaration(const T& node, const std::string& name) {
     enable_variable_name_lookup = false;
+    auto type = default_float_data_type();
 
     /// internal and user provided arguments
     auto internal_params = internal_method_parameters();
     auto params = node->get_parameters();
+    for (const auto& param: params) {
+        internal_params.emplace_back("", type, "", param.get()->get_node_name());
+    }
 
     /// procedures have "int" return type by default
     std::string return_type = "int";
@@ -1014,15 +1072,8 @@ void CodegenCVisitor::print_function_declaration(const T& node, const std::strin
 
     print_device_method_annotation();
     printer->add_indent();
-    printer->add_text("inline {} {}({}"_format(return_type, method_name(name), internal_params));
-
-    /// print remaining of arguments to the function
-    if (!params.empty() && !internal_params.empty()) {
-        printer->add_text(", ");
-    }
-    auto type = default_float_data_type() + " ";
-    print_vector_elements(params, ", ", type);
-    printer->add_text(")");
+    printer->add_text("inline {} {}({})"_format(return_type, method_name(name),
+                                                get_parameter_str(internal_params)));
 
     enable_variable_name_lookup = true;
 }
