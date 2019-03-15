@@ -1040,7 +1040,6 @@ def _compile_reactions():
                 for reg in react_regions:
                     if not isinstance(reg, region.Extracellular):
                         continue
-
                     if reg in ecs_regions_inv:
                         ecs_regions_inv[reg].append(rptr)
                     else:
@@ -1067,7 +1066,6 @@ def _compile_reactions():
     #if there are no reactions
     if location_count == 0 and len(ecs_regions_inv) == 0:
         return None
-    
     #Setup intracellular and multicompartment reactions
     if location_count > 0:
         from . import rate, multiCompartmentReaction
@@ -1155,29 +1153,23 @@ def _compile_reactions():
     
     #Setup extracellular reactions
     if len(ecs_regions_inv) > 0:
-        grid_ids = []
-        all_gids = set() 
-        fxn_string = _c_headers 
-        #TODO: find the nrn include path in python
-        #It is necessary for a couple of function in python that are not in math.h
-        fxn_string += 'void reaction(double* species_ecs, double* rhs)\n{'
-        # declare the "rate" variable if any reactions (non-rates)
-        for rptr in [r for rlist in list(ecs_regions_inv.values()) for r in rlist]:
-            if not isinstance(rptr(),rate.Rate):
-                fxn_string += '\n\tdouble rate;'
-                break
-        #get a list of all grid_ids invovled
-        for rptr in [r for rlist in list(ecs_regions_inv.values()) for r in rlist]:
-            if isinstance(rptr(),rate.Rate):
-                for sp in [rptr()._species] + rptr()._involved_species_ecs:
-                    s = sp()[reg]._extracellular() if isinstance(sp(), species.Species) else sp()
-                    all_gids.add(sp()._extracellular()._grid_id if isinstance(s, species.SpeciesOnExtracellular) else s._grid_id)
-            else:
-                for sp in rptr()._sources + rptr()._dests + rptr()._involved_species_ecs:
-                    s = sp()[reg]._extracellular() if isinstance(sp(), species.Species) else sp()
-                    all_gids.add(sp()._extracellular()._grid_id if isinstance(s, species.SpeciesOnExtracellular) else s._grid_id)
-        all_gids = list(all_gids)
         for reg in ecs_regions_inv:
+            grid_ids = []
+            all_gids = set()
+            fxn_string = _c_headers
+            #TODO: find the nrn include path in python
+            #It is necessary for a couple of function in python that are not in math.h
+            fxn_string += 'void reaction(double* species_ecs, double* rhs)\n{'
+            # declare the "rate" variable if any reactions (non-rates)
+            for rptr in [r for rlist in list(ecs_regions_inv.values()) for r in rlist]:
+                if not isinstance(rptr(),rate.Rate):
+                    fxn_string += '\n\tdouble rate;'
+                    break
+            #get a list of all grid_ids involved
+            for s in ecs_species_by_region[reg]:
+                sp = s[reg] if isinstance(s, species.Species) else s
+                all_gids.add(sp._extracellular()._grid_id if isinstance(sp, species.SpeciesOnExtracellular) else sp._grid_id)
+            all_gids = list(all_gids)
             for rptr in ecs_regions_inv[reg]:
                 r = rptr()
                 rate_str = re.sub(r'species_ecs\[(\d+)\]',lambda m: "species_ecs[%i]" %  [pid for pid,gid in enumerate(all_gids) if gid == int(m.groups()[0])][0], r._rate_ecs)
@@ -1213,8 +1205,8 @@ def _compile_reactions():
                         pid = [pid for pid,gid in enumerate(all_gids) if gid == s._grid_id][0]
                         fxn_string += "\n\trhs[%d] %s (%s)*rate;" % (pid, operator, r._mult[idx])
                         idx += 1
-        fxn_string += "\n}\n"
-        ecs_register_reaction(0, len(all_gids), _list_to_cint_array(all_gids), _c_compile(fxn_string))
+            fxn_string += "\n}\n"
+            ecs_register_reaction(0, len(all_gids), _list_to_cint_array(all_gids), _c_compile(fxn_string))
 
 def _init():
     if len(species._all_species) == 0:
