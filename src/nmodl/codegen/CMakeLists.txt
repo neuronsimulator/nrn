@@ -14,6 +14,8 @@ set(CODEGEN_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen_helper_visitor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen_info.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen_info.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_ispc_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_ispc_visitor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen_naming.hpp)
 
 # =============================================================================
@@ -22,3 +24,8 @@ set(CODEGEN_SOURCE_FILES
 add_library(codegen STATIC ${CODEGEN_SOURCE_FILES})
 
 add_dependencies(codegen lexer util)
+
+# =============================================================================
+# Install include files
+# =============================================================================
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/fast_math.ispc DESTINATION include/nmodl)

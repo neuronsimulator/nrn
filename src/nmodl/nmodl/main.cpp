@@ -16,6 +16,7 @@
 #include "codegen/codegen_acc_visitor.hpp"
 #include "codegen/codegen_c_visitor.hpp"
 #include "codegen/codegen_cuda_visitor.hpp"
+#include "codegen/codegen_ispc_visitor.hpp"
 #include "codegen/codegen_omp_visitor.hpp"
 #include "parser/nmodl_driver.hpp"
 #include "utils/common_utils.hpp"
@@ -54,6 +55,9 @@ int main(int argc, const char* argv[]) {
 
     /// true if c code with openmp to be generated
     bool omp_backend(false);
+
+    /// true if ispc code to be generated
+    bool ispc_backend(false);
 
     /// true if c code with openacc to be generated
     bool oacc_backend(false);
@@ -136,6 +140,7 @@ int main(int argc, const char* argv[]) {
     auto host_opt = app.add_subcommand("host", "HOST/CPU code backends")->ignore_case();
     host_opt->add_flag("--c", c_backend, "C/C++ backend")->ignore_case();
     host_opt->add_flag("--omp", omp_backend, "C/C++ backend with OpenMP")->ignore_case();
+    host_opt->add_flag("--ispc", ispc_backend, "C/C++ backend with ISPC")->ignore_case();
 
     auto acc_opt = app.add_subcommand("acc", "Accelerator code backends")->ignore_case();
     acc_opt->add_flag("--oacc", oacc_backend, "C/C++ backend with OpenACC")->ignore_case();
@@ -167,6 +172,11 @@ int main(int argc, const char* argv[]) {
     // clang-format on
 
     CLI11_PARSE(app, argc, argv);
+
+    // if any of the other backends is used we force the C backend to be off.
+    if (omp_backend || ispc_backend) {
+        c_backend = false;
+    }
 
     make_path(output_dir);
     make_path(scratch_dir);
@@ -313,11 +323,19 @@ int main(int argc, const char* argv[]) {
                 CodegenCVisitor visitor(modfile, output_dir, mem_layout, data_type);
                 visitor.visit_program(ast.get());
             }
+
             if (omp_backend) {
                 logger->info("Running OpenMP backend code generator");
                 CodegenOmpVisitor visitor(modfile, output_dir, mem_layout, data_type);
                 visitor.visit_program(ast.get());
             }
+
+            if (ispc_backend) {
+                logger->info("Running ISPC backend code generator");
+                CodegenIspcVisitor visitor(modfile, output_dir, mem_layout, data_type);
+                visitor.visit_program(ast.get());
+            }
+
             if (oacc_backend) {
                 logger->info("Running OpenACC backend code generator");
                 CodegenAccVisitor visitor(modfile, output_dir, mem_layout, data_type);

@@ -65,7 +65,8 @@ void CodegenCVisitor::visit_float(Float* node) {
     if (!codegen) {
         return;
     }
-    printer->add_text(std::to_string(node->eval()));
+    auto value = node->eval();
+    printer->add_text(float_to_string(value));
 }
 
 
@@ -181,12 +182,14 @@ void CodegenCVisitor::visit_else_statement(ElseStatement* node) {
     node->visit_children(this);
 }
 
+
 void CodegenCVisitor::visit_while_statement(WhileStatement* node) {
     printer->add_text("while (");
     node->get_condition()->accept(this);
     printer->add_text(") ");
     node->get_statement_block()->accept(this);
 }
+
 
 void CodegenCVisitor::visit_from_statement(ast::FromStatement* node) {
     if (!codegen) {
@@ -441,6 +444,14 @@ std::string CodegenCVisitor::double_to_string(double value) {
         return "{:.1f}"_format(value);
     }
     return "{:.16g}"_format(value);
+}
+
+
+std::string CodegenCVisitor::float_to_string(float value) {
+    if (ceilf(value) == value) {
+        return "{:.1f}f"_format(value);
+    }
+    return "{:.16g}f"_format(value);
 }
 
 
@@ -967,6 +978,21 @@ std::vector<SymbolType> CodegenCVisitor::get_shadow_variables() {
 /*                      Routines must be overloaded in backend                          */
 /****************************************************************************************/
 
+/**
+ * Print parameters
+ */
+std::string CodegenCVisitor::get_parameter_str(const ParamVector& params) {
+    std::stringstream param_ss;
+    for (auto iter = params.begin(); iter != params.end(); iter++) {
+        param_ss << "{}{} {}{}"_format(std::get<0>(*iter), std::get<1>(*iter), std::get<2>(*iter),
+                                       std::get<3>(*iter));
+        if (!is_last(iter, params)) {
+            param_ss << ", ";
+        }
+    }
+    return param_ss.str();
+}
+
 
 void CodegenCVisitor::print_channel_iteration_task_begin(BlockType type) {
     // backend specific, do nothing
@@ -1225,7 +1251,7 @@ std::string CodegenCVisitor::compute_method_name(BlockType type) {
 
 
 // note extra empty space for pretty-printing if we skip the symbol
-std::string CodegenCVisitor::k_restrict() {
+std::string CodegenCVisitor::ptr_type_qualifier() {
     return "__restrict__ ";
 }
 
@@ -1418,7 +1444,8 @@ void CodegenCVisitor::print_table_check_function(ast::Block* node) {
 
     printer->add_newline(2);
     print_device_method_annotation();
-    printer->start_block("void check_{}({})"_format(method_name(name), internal_params));
+    printer->start_block(
+        "void check_{}({})"_format(method_name(name), get_parameter_str(internal_params)));
     {
         printer->add_line("if ( {} == 0) {}"_format(use_table_var, "{"));
         printer->add_line("    return;");
@@ -1481,6 +1508,7 @@ void CodegenCVisitor::print_table_check_function(ast::Block* node) {
     }
     printer->end_block(1);
 }
+
 
 void CodegenCVisitor::print_table_replacement_function(ast::Block* node) {
     auto name = node->get_node_name();
@@ -1566,6 +1594,7 @@ void CodegenCVisitor::print_check_table_thread_function() {
     printer->add_line("}");
 }
 
+
 void CodegenCVisitor::print_function_or_procedure(ast::Block* node, std::string& name) {
     printer->add_newline(2);
     print_function_declaration(node, name);
@@ -1584,6 +1613,7 @@ void CodegenCVisitor::print_function_or_procedure(ast::Block* node, std::string&
     printer->add_line("return ret_{};"_format(name));
     printer->end_block(1);
 }
+
 
 void CodegenCVisitor::print_procedure(ast::ProcedureBlock* node) {
     codegen = true;
@@ -1615,6 +1645,7 @@ void CodegenCVisitor::print_function(ast::FunctionBlock* node) {
     print_function_or_procedure(node, name);
     codegen = false;
 }
+
 
 void CodegenCVisitor::visit_eigen_newton_solver_block(ast::EigenNewtonSolverBlock* node) {
     // solution vector to store copy of state vars for Newton solver
@@ -1669,14 +1700,32 @@ std::string CodegenCVisitor::internal_method_arguments() {
 }
 
 
-std::string CodegenCVisitor::internal_method_parameters() {
-    std::string ion_var_arg;
+std::string CodegenCVisitor::param_type_qualifier() {
+    return "";
+}
+
+
+std::string CodegenCVisitor::param_ptr_qualifier() {
+    return "";
+}
+
+
+/// @todo: figure out how to correctly handle qualifiers
+CodegenCVisitor::ParamVector CodegenCVisitor::internal_method_parameters() {
+    auto params = ParamVector();
+    params.emplace_back("", "int", "", "id");
+    params.emplace_back(param_type_qualifier(), "int", "", "pnodecount");
+    params.emplace_back(param_type_qualifier(), "{}*"_format(instance_struct()),
+                        param_ptr_qualifier(), "inst");
     if (ion_variable_struct_required()) {
-        ion_var_arg = " IonCurVar& ionvar,";
+        params.emplace_back("", "IonCurVar&", "", "ionvar");
     }
-    return "int id, int pnodecount, {}* inst,{} double* data, "
-           "{}Datum* indexes, ThreadDatum* thread, "
-           "NrnThread* nt, double v"_format(instance_struct(), ion_var_arg, k_const());
+    params.emplace_back("", "double*", "", "data");
+    params.emplace_back(k_const(), "Datum*", "", "indexes");
+    params.emplace_back(param_type_qualifier(), "ThreadDatum*", "", "thread");
+    params.emplace_back(param_type_qualifier(), "NrnThread*", param_ptr_qualifier(), "nt");
+    params.emplace_back("", "double", "", "v");
+    return params;
 }
 
 
@@ -1742,6 +1791,7 @@ std::string CodegenCVisitor::replace_if_verbatim_variable(std::string name) {
     }
     return name;
 }
+
 
 /**
  * Processing commonly used constructs in the verbatim blocks.
@@ -2349,7 +2399,7 @@ void CodegenCVisitor::print_mechanism_global_var_structure() {
     }
 
     if (info.vectorize) {
-        printer->add_line("ThreadDatum* {}ext_call_thread;"_format(k_restrict()));
+        printer->add_line("ThreadDatum* {}ext_call_thread;"_format(ptr_type_qualifier()));
         codegen_global_variables.push_back(make_symbol("ext_call_thread"));
     }
 
@@ -2558,7 +2608,8 @@ void CodegenCVisitor::print_mechanism_register() {
         printer->add_line("add_nrn_artcell(mech_type, {});"_format(info.tqitem_index));
     }
     if (net_receive_buffering_required()) {
-        printer->add_line("hoc_register_net_receive_buffering(net_buf_receive, mech_type);");
+        printer->add_line("hoc_register_net_receive_buffering({}, mech_type);"_format(
+            method_name("net_buf_receive")));
     }
     if (info.num_net_receive_parameters != 0) {
         printer->add_line("pnt_receive[mech_type] = {};"_format(method_name("net_receive")));
@@ -2650,23 +2701,24 @@ void CodegenCVisitor::print_mechanism_range_var_structure() {
         auto name = var->get_name();
         auto type = get_range_var_float_type(var);
         auto qualifier = is_constant_variable(name) ? k_const() : "";
-        printer->add_line("{}{}* {}{};"_format(qualifier, type, k_restrict(), name));
+        printer->add_line("{}{}* {}{};"_format(qualifier, type, ptr_type_qualifier(), name));
     }
     for (auto& var: codegen_int_variables) {
         auto name = var.symbol->get_name();
         if (var.is_index || var.is_integer) {
             auto qualifier = var.is_constant ? k_const() : "";
-            printer->add_line("{}{}* {}{};"_format(qualifier, int_type, k_restrict(), name));
+            printer->add_line(
+                "{}{}* {}{};"_format(qualifier, int_type, ptr_type_qualifier(), name));
         } else {
             auto qualifier = var.is_constant ? k_const() : "";
             auto type = var.is_vdata ? "void*" : default_float_data_type();
-            printer->add_line("{}{}* {}{};"_format(qualifier, type, k_restrict(), name));
+            printer->add_line("{}{}* {}{};"_format(qualifier, type, ptr_type_qualifier(), name));
         }
     }
     if (channel_task_dependency_enabled()) {
         for (auto& var: codegen_shadow_variables) {
             auto name = var->get_name();
-            printer->add_line("{}* {}{};"_format(float_type, k_restrict(), name));
+            printer->add_line("{}* {}{};"_format(float_type, ptr_type_qualifier(), name));
         }
     }
     printer->end_block();
@@ -3011,30 +3063,32 @@ void CodegenCVisitor::print_global_function_common_code(BlockType type) {
     print_kernel_data_present_annotation_block_begin();
     printer->add_line("int nodecount = ml->nodecount;");
     printer->add_line("int pnodecount = ml->_nodecount_padded;");
-    printer->add_line("{}int* {}node_index = ml->nodeindices;"_format(k_const(), k_restrict()));
-    printer->add_line("double* {}data = ml->data;"_format(k_restrict()));
-    printer->add_line("{}double* {}voltage = nt->_actual_v;"_format(k_const(), k_restrict()));
+    printer->add_line(
+        "{}int* {}node_index = ml->nodeindices;"_format(k_const(), ptr_type_qualifier()));
+    printer->add_line("double* {}data = ml->data;"_format(ptr_type_qualifier()));
+    printer->add_line(
+        "{}double* {}voltage = nt->_actual_v;"_format(k_const(), ptr_type_qualifier()));
 
     if (type == BlockType::Equation) {
-        printer->add_line("double* {} vec_rhs = nt->_actual_rhs;"_format(k_restrict()));
-        printer->add_line("double* {} vec_d = nt->_actual_d;"_format(k_restrict()));
+        printer->add_line("double* {} vec_rhs = nt->_actual_rhs;"_format(ptr_type_qualifier()));
+        printer->add_line("double* {} vec_d = nt->_actual_d;"_format(ptr_type_qualifier()));
         print_rhs_d_shadow_variables();
     }
-    printer->add_line("Datum* {}indexes = ml->pdata;"_format(k_restrict()));
-    printer->add_line("ThreadDatum* {}thread = ml->_thread;"_format(k_restrict()));
+    printer->add_line("Datum* {}indexes = ml->pdata;"_format(ptr_type_qualifier()));
+    printer->add_line("ThreadDatum* {}thread = ml->_thread;"_format(ptr_type_qualifier()));
 
     if (type == BlockType::Initial) {
         printer->add_newline();
         printer->add_line("setup_instance(nt, ml);");
     }
     // clang-format off
-    printer->add_line("{0}* {1}inst = ({0}*) ml->instance;"_format(instance_struct(), k_restrict()));
+    printer->add_line("{0}* {1}inst = ({0}*) ml->instance;"_format(instance_struct(), ptr_type_qualifier()));
     // clang-format on
     printer->add_newline(1);
 }
 
 
-void CodegenCVisitor::print_nrn_init() {
+void CodegenCVisitor::print_nrn_init(bool skip_init_check) {
     codegen = true;
     printer->add_newline(2);
     printer->add_line("/** initialize channel */");
@@ -3053,7 +3107,9 @@ void CodegenCVisitor::print_nrn_init() {
         // clang-format on
     }
 
-    printer->start_block("if (_nrn_skip_initmodel == 0)");
+    if (skip_init_check) {
+        printer->start_block("if (_nrn_skip_initmodel == 0)");
+    }
 
     print_channel_iteration_tiling_block_begin(BlockType::Initial);
     print_channel_iteration_block_begin();
@@ -3075,7 +3131,9 @@ void CodegenCVisitor::print_nrn_init() {
         printer->add_line("*deriv{}_advance(thread) = 1;"_format(info.derivimplicit_list_num));
     }
     print_kernel_data_present_annotation_block_end();
-    printer->end_block(1);
+    if (skip_init_check) {
+        printer->end_block(1);
+    }
     codegen = false;
 }
 
@@ -3134,12 +3192,12 @@ void CodegenCVisitor::print_watch_activate() {
     codegen = false;
 }
 
+
 /**
  * Print kernel for watch activation
  * todo : similar to print_watch_activate, we are using only
  * first watch. need to verify with neuron/coreneuron about rest.
  */
-
 void CodegenCVisitor::print_watch_check() {
     if (info.watch_statements.empty()) {
         return;
@@ -3207,19 +3265,23 @@ void CodegenCVisitor::print_watch_check() {
 }
 
 
-void CodegenCVisitor::print_net_receive_common_code(Block* node) {
+void CodegenCVisitor::print_net_receive_common_code(Block* node, bool need_mech_inst) {
     printer->add_line("int tid = pnt->_tid;");
     printer->add_line("int id = pnt->_i_instance;");
     printer->add_line("double v = 0;");
-    printer->add_line("NrnThread* nt = nrn_threads + tid;");
-    printer->add_line("Memb_list* ml = nt->_ml_list[pnt->_type];");
-    printer->add_line("int nodecount = ml->nodecount;");
-    printer->add_line("int pnodecount = ml->_nodecount_padded;");
+    if (info.artificial_cell) {
+        printer->add_line("NrnThread* nt = nrn_threads + tid;");
+        printer->add_line("Memb_list* ml = nt->_ml_list[pnt->_type];");
+    }
+    printer->add_line("{}int nodecount = ml->nodecount;"_format(param_type_qualifier()));
+    printer->add_line("{}int pnodecount = ml->_nodecount_padded;"_format(param_type_qualifier()));
     printer->add_line("double* data = ml->data;");
     printer->add_line("double* weights = nt->weights;");
     printer->add_line("Datum* indexes = ml->pdata;");
     printer->add_line("ThreadDatum* thread = ml->_thread;");
-    printer->add_line("{0}* inst = ({0}*) ml->instance;"_format(instance_struct()));
+    if (need_mech_inst) {
+        printer->add_line("{0}* inst = ({0}*) ml->instance;"_format(instance_struct()));
+    }
 
     /// rename variables but need to see if they are actually used
     auto parameters = info.net_receive_node->get_parameters();
@@ -3338,6 +3400,7 @@ void CodegenCVisitor::print_net_init() {
     codegen = false;
 }
 
+
 void CodegenCVisitor::print_send_event_move() {
     printer->add_newline();
     printer->add_line("NetSendBuffer_t* nsb = ml->_net_send_buffer;");
@@ -3358,34 +3421,59 @@ void CodegenCVisitor::print_send_event_move() {
     // todo : update net send buffer count on device
 }
 
-void CodegenCVisitor::print_net_receive_buffering() {
-    if (!net_receive_required() || info.artificial_cell) {
-        return;
-    }
-    printer->add_newline(2);
-    printer->start_block("static inline void net_buf_receive(NrnThread* nt)");
+
+std::string CodegenCVisitor::net_receive_buffering_declaration() {
+    return "void {}(NrnThread* nt)"_format(method_name("net_buf_receive"));
+}
+
+
+void CodegenCVisitor::print_get_memb_list() {
     printer->add_line("Memb_list* ml = get_memb_list(nt);");
     printer->add_line("if (ml == NULL) {");
     printer->add_line("    return;");
     printer->add_line("}");
     printer->add_newline();
+}
+
+
+void CodegenCVisitor::print_net_receive_loop_begin() {
+    printer->add_line("int count = nrb->_displ_cnt;");
+    printer->start_block("for (int i = 0; i < count; i++)");
+}
+
+
+void CodegenCVisitor::print_net_receive_loop_end() {
+    printer->end_block(1);
+}
+
+
+void CodegenCVisitor::print_net_receive_buffering() {
+    if (!net_receive_required() || info.artificial_cell) {
+        return;
+    }
+    printer->add_newline(2);
+    printer->start_block(net_receive_buffering_declaration());
+
+    print_get_memb_list();
 
     auto net_receive = method_name("net_receive_kernel");
-    printer->add_line("NetReceiveBuffer_t* nrb = ml->_net_receive_buffer;");
-    printer->add_line("int count = nrb->_displ_cnt;");
-    printer->add_line("for (int i = 0; i < count; i++) {");
-    printer->add_line("    int start = nrb->_displ[i];");
-    printer->add_line("    int end = nrb->_displ[i+1];");
-    printer->add_line("    for (int j = start; j < end; j++) {");
-    printer->add_line("        int index = nrb->_nrb_index[j];");
-    printer->add_line("        int offset = nrb->_pnt_index[index];");
-    printer->add_line("        double t = nrb->_nrb_t[index];");
-    printer->add_line("        int weight_index = nrb->_weight_index[index];");
-    printer->add_line("        double flag = nrb->_nrb_flag[index];");
-    printer->add_line("        Point_process* point_process = nt->pntprocs + offset;");
-    printer->add_line("        {}(t, point_process, weight_index, flag);"_format(net_receive));
-    printer->add_line("    }");
-    printer->add_line("}");
+
+    printer->add_line(
+        "NetReceiveBuffer_t* {}nrb = ml->_net_receive_buffer;"_format(ptr_type_qualifier()));
+    print_net_receive_loop_begin();
+    printer->add_line("int start = nrb->_displ[i];");
+    printer->add_line("int end = nrb->_displ[i+1];");
+    printer->start_block("for (int j = start; j < end; j++)");
+    printer->add_line("int index = nrb->_nrb_index[j];");
+    printer->add_line("int offset = nrb->_pnt_index[index];");
+    printer->add_line("double t = nrb->_nrb_t[index];");
+    printer->add_line("int weight_index = nrb->_weight_index[index];");
+    printer->add_line("double flag = nrb->_nrb_flag[index];");
+    printer->add_line("Point_process* point_process = nt->pntprocs + offset;");
+    printer->add_line(
+        "{}(t, point_process, inst, nt, ml, weight_index, flag);"_format(net_receive));
+    printer->end_block(1);
+    print_net_receive_loop_end();
 
     if (info.net_send_used || info.net_event_used) {
         print_send_event_move();
@@ -3427,13 +3515,15 @@ void CodegenCVisitor::print_net_send_buffering() {
 }
 
 
-void CodegenCVisitor::print_net_receive() {
+void CodegenCVisitor::print_net_receive_kernel() {
     if (!net_receive_required()) {
         return;
     }
+    codegen = true;
+    printing_net_receive = true;
     auto node = info.net_receive_node;
 
-    /// rename arguments but need to see if they are actually used
+    /// rename arguments if same name is used
     auto parameters = node->get_parameters();
     for (auto& parameter: parameters) {
         auto name = parameter->get_node_name();
@@ -3444,39 +3534,57 @@ void CodegenCVisitor::print_net_receive() {
         }
     }
 
-    codegen = true;
-    printing_net_receive = true;
-    std::string function_name = method_name("net_receive_kernel");
-    std::string function_arguments = "double t, Point_process* pnt, int weight_index, double flag";
-
-    if (info.artificial_cell) {
-        function_name = method_name("net_receive");
-        function_arguments = "Point_process* pnt, int weight_index, double flag";
+    std::string name;
+    auto params = ParamVector();
+    if (!info.artificial_cell) {
+        name = method_name("net_receive_kernel");
+        params.emplace_back("", "double", "", "t");
+        params.emplace_back("", "Point_process*", "", "pnt");
+        params.emplace_back(param_type_qualifier(), "{}*"_format(instance_struct()),
+                            param_ptr_qualifier(), "inst");
+        params.emplace_back(param_type_qualifier(), "NrnThread*", param_ptr_qualifier(), "nt");
+        params.emplace_back(param_type_qualifier(), "Memb_list*", param_ptr_qualifier(), "ml");
+        params.emplace_back("", "int", "", "weight_index");
+        params.emplace_back("", "double", "", "flag");
+    } else {
+        name = method_name("net_receive");
+        params.emplace_back("", "Point_process*", "", "pnt");
+        params.emplace_back("", "int", "", "weight_index");
+        params.emplace_back("", "double", "", "flag");
     }
 
-    /// net receive kernel
     printer->add_newline(2);
-    printer->start_block("static void {}({}) "_format(function_name, function_arguments));
-    print_net_receive_common_code(node);
-
+    printer->start_block("static inline void {}({}) "_format(name, get_parameter_str(params)));
+    print_net_receive_common_code(node, info.artificial_cell);
     if (info.artificial_cell) {
         printer->add_line("double t = nt->_t;");
     }
-
     printer->add_line("{} = t;"_format(get_variable_name("tsave")));
-
     printer->add_indent();
     node->get_statement_block()->accept(this);
     printer->add_newline();
     printer->end_block();
     printer->add_newline();
 
-    /// net receive function
+    printing_net_receive = false;
+    codegen = false;
+}
+
+
+void CodegenCVisitor::print_net_receive() {
+    if (!net_receive_required()) {
+        return;
+    }
+    codegen = true;
+    printing_net_receive = true;
     if (!info.artificial_cell) {
-        function_name = method_name("net_receive");
-        function_arguments = "Point_process* pnt, int weight_index, double flag";
+        std::string name = method_name("net_receive");
+        auto params = ParamVector();
+        params.emplace_back("", "Point_process*", "", "pnt");
+        params.emplace_back("", "int", "", "weight_index");
+        params.emplace_back("", "double", "", "flag");
         printer->add_newline(2);
-        printer->start_block("static void {}({}) "_format(function_name, function_arguments));
+        printer->start_block("static void {}({}) "_format(name, get_parameter_str(params)));
         printer->add_line("NrnThread* nt = nrn_threads + pnt->_tid;");
         printer->add_line("Memb_list* ml = get_memb_list(nt);");
         printer->add_line("NetReceiveBuffer_t* nrb = ml->_net_receive_buffer;");
@@ -3662,7 +3770,7 @@ void CodegenCVisitor::print_nrn_current(BreakpointBlock* node) {
     auto block = node->get_statement_block().get();
     printer->add_newline(2);
     print_device_method_annotation();
-    printer->start_block("static inline double nrn_current({})"_format(args));
+    printer->start_block("static inline double nrn_current({})"_format(get_parameter_str(args)));
     printer->add_line("double current = 0.0;");
     print_statement_block(block, false, false);
     for (auto& current: info.currents) {
@@ -3812,7 +3920,6 @@ void CodegenCVisitor::print_nrn_cur() {
 /*                            Main code printing entry points                            */
 /****************************************************************************************/
 
-
 void CodegenCVisitor::print_headers_include() {
     print_standard_includes();
     print_backend_includes();
@@ -3863,6 +3970,7 @@ void CodegenCVisitor::print_compute_functions() {
     print_net_send_buffering();
     print_watch_activate();
     print_watch_check();
+    print_net_receive_kernel();
     print_net_receive();
     print_net_receive_buffering();
     print_nrn_init();
@@ -3893,6 +4001,11 @@ void CodegenCVisitor::print_codegen_routines() {
 }
 
 
+void CodegenCVisitor::print_wrapper_routines() {
+    // nothing to do
+}
+
+
 void CodegenCVisitor::visit_program(Program* node) {
     program_symtab = node->get_symbol_table();
 
@@ -3907,6 +4020,7 @@ void CodegenCVisitor::visit_program(Program* node) {
     update_index_semantics();
     rename_function_arguments();
     print_codegen_routines();
+    print_wrapper_routines();
 }
 
 }  // namespace codegen

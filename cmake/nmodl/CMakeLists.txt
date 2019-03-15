@@ -1,3 +1,10 @@
+# =============================================================================
+# Copyright (C) 2018-2019 Blue Brain Project
+#
+# This file is part of NMODL distributed under the terms of the GNU Lesser General Public License.
+# See top-level LICENSE file for details.
+# =============================================================================
+
 cmake_minimum_required(VERSION 3.3.0 FATAL_ERROR)
 project(NMODL CXX)
 
@@ -48,6 +55,7 @@ include(FindClangFormat)
 include(FindPythonModule)
 include(FlexHelper)
 include(GitRevision)
+include(RpathHelper)
 
 # =============================================================================
 # Find required python packages
