@@ -16,6 +16,7 @@
 #include "symtab/symbol.hpp"
 #include "visitors/ast_visitor.hpp"
 #include "visitors/lookup_visitor.hpp"
+#include "visitors/visitor_utils.hpp"
 
 namespace nmodl {
 
@@ -43,10 +44,6 @@ class SympySolverVisitor: public AstVisitor {
   private:
     /** Replace binary expression with new expression provided as string */
     static void replace_diffeq_expression(ast::DiffEqExpression* expr, const std::string& new_expr);
-
-    /** Remove statements from given statement block if they exist */
-    static void remove_statements_from_block(ast::StatementBlock* block,
-                                             const std::set<ast::Node*> statements);
 
     std::shared_ptr<ast::EigenNewtonSolverBlock> construct_eigen_newton_solver_block(
         const std::vector<std::string>& setup_x,

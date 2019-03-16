@@ -10,8 +10,8 @@
 #include "codegen/codegen_naming.hpp"
 #include "symtab/symbol.hpp"
 #include "utils/logger.hpp"
-#include "visitor_utils.hpp"
 #include "visitors/sympy_solver_visitor.hpp"
+#include "visitors/visitor_utils.hpp"
 
 
 namespace py = pybind11;
@@ -40,16 +40,6 @@ SympySolverVisitor::construct_eigen_newton_solver_block(
     auto update_state_block = create_statement_block(update_state);
     return std::make_shared<ast::EigenNewtonSolverBlock>(setup_x_block, functor_block,
                                                          update_state_block);
-}
-
-void SympySolverVisitor::remove_statements_from_block(ast::StatementBlock* block,
-                                                      const std::set<ast::Node*> statements) {
-    auto& statement_vec = block->statements;
-    statement_vec.erase(std::remove_if(statement_vec.begin(), statement_vec.end(),
-                                       [&statements](std::shared_ptr<ast::Statement>& s) {
-                                           return statements.find(s.get()) != statements.end();
-                                       }),
-                        statement_vec.end());
 }
 
 void SympySolverVisitor::visit_statement_block(ast::StatementBlock* node) {

@@ -1641,7 +1641,7 @@ conserve        :   CONSERVE react "=" expr
                     }
                 |   CONSERVE error
                     {
-
+                        error(scanner.loc, "conserve");
                     }
                 ;
 
@@ -1711,7 +1711,10 @@ reaction        :   REACTION react REACT1 react "(" expr "," expr ")"
                 ;
 
 
-react           :   varname     { $$ = $1; }
+react           :   varname
+                    {
+                        $$ = new ast::ReactVarName(nullptr, $1);
+                    }
                 |   integer varname
                     {
                         $$ = new ast::ReactVarName($1, $2);
@@ -1719,7 +1722,8 @@ react           :   varname     { $$ = $1; }
                 |   react "+" varname
                     {
                         auto op = ast::BinaryOperator(ast::BOP_ADDITION);
-                        $$ = new ast::BinaryExpression($1, op, $3);
+                        auto variable = new ast::ReactVarName(nullptr, $3);
+                        $$ = new ast::BinaryExpression($1, op, variable);
                     }
                 |   react "+" integer varname
                     {
