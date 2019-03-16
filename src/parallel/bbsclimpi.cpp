@@ -297,6 +297,7 @@ void BBSClient::return_args(int userid) {
 }
 
 void BBSClient::done() {
+	extern void (*p_nrnpython_finalize)();
 #if debug
 printf("%d BBSClient::done\n", nrnmpi_myid_bbs);
 fflush(stdout);
@@ -313,6 +314,7 @@ fflush(stdout);
 #endif
 	BBSImpl::done();
 	nrnmpi_terminate();
+	if (p_nrnpython_finalize) { (*p_nrnpython_finalize)(); }
 	exit(0);
 }
 
