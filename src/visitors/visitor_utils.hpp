@@ -40,6 +40,10 @@ std::shared_ptr<ast::Statement> create_statement(const std::string& code_stateme
 std::shared_ptr<ast::StatementBlock> create_statement_block(
     const std::vector<std::string>& code_statements);
 
+/**  Remove statements from given statement block if they exist */
+void remove_statements_from_block(ast::StatementBlock* block,
+                                  const std::set<ast::Node*> statements);
+
 /** Return set of strings with the names of all global variables */
 std::set<std::string> get_global_vars(ast::Program* node);
 

@@ -26,6 +26,7 @@
 #include "visitors/constant_folder_visitor.hpp"
 #include "visitors/inline_visitor.hpp"
 #include "visitors/json_visitor.hpp"
+#include "visitors/kinetic_block_visitor.hpp"
 #include "visitors/local_var_rename_visitor.hpp"
 #include "visitors/localize_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
@@ -250,30 +251,16 @@ int main(int argc, const char* argv[]) {
             ast_to_nmodl(ast.get(), filepath("verbatim_rename"));
         }
 
-        if (sympy_conductance) {
-            logger->info("Running sympy conductance visitor");
-            SympyConductanceVisitor().visit_program(ast.get());
+        {
+            logger->info("Running KINETIC block visitor");
+            KineticBlockVisitor().visit_program(ast.get());
             SymtabVisitor(update_symtab).visit_program(ast.get());
-            ast_to_nmodl(ast.get(), filepath("sympy_conductance"));
         }
 
         /// once we start modifying (especially removing) older constructs
         /// from ast then we should run symtab visitor in update mode so
         /// that old symbols (e.g. prime variables) are not lost
         update_symtab = true;
-
-        if (sympy_analytic) {
-            logger->info("Running sympy solve visitor");
-            SympySolverVisitor(sympy_pade, sympy_cse).visit_program(ast.get());
-            SymtabVisitor(update_symtab).visit_program(ast.get());
-            ast_to_nmodl(ast.get(), filepath("sympy_solve"));
-        }
-
-        {
-            logger->info("Running cnexp visitor");
-            CnexpSolveVisitor().visit_program(ast.get());
-            ast_to_nmodl(ast.get(), filepath("cnexp"));
-        }
 
         if (nmodl_const_folding) {
             logger->info("Running nmodl constant folding visitor");
@@ -301,6 +288,26 @@ int main(int argc, const char* argv[]) {
             LocalVarRenameVisitor().visit_program(ast.get());
             SymtabVisitor(update_symtab).visit_program(ast.get());
             ast_to_nmodl(ast.get(), filepath("localize"));
+        }
+
+        if (sympy_conductance) {
+            logger->info("Running sympy conductance visitor");
+            SympyConductanceVisitor().visit_program(ast.get());
+            SymtabVisitor(update_symtab).visit_program(ast.get());
+            ast_to_nmodl(ast.get(), filepath("sympy_conductance"));
+        }
+
+        if (sympy_analytic) {
+            logger->info("Running sympy solve visitor");
+            SympySolverVisitor(sympy_pade, sympy_cse).visit_program(ast.get());
+            SymtabVisitor(update_symtab).visit_program(ast.get());
+            ast_to_nmodl(ast.get(), filepath("sympy_solve"));
+        }
+
+        {
+            logger->info("Running cnexp visitor");
+            CnexpSolveVisitor().visit_program(ast.get());
+            ast_to_nmodl(ast.get(), filepath("cnexp"));
         }
 
         if (json_perfstat) {
