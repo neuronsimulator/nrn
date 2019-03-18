@@ -8,16 +8,22 @@
 #include <fstream>
 
 #include "CLI/CLI.hpp"
+#include "fmt/format.h"
+
 #include "parser/c11_driver.hpp"
 #include "utils/logger.hpp"
+#include "version/version.h"
 
 /**
  * Standalone parser program for C. This demonstrate basic
  * usage of parser and driver class.
  */
 
+using namespace fmt::literals;
+using namespace nmodl;
+
 int main(int argc, const char* argv[]) {
-    CLI::App app{"C-Parser : Standalone Parser for C Code"};
+    CLI::App app{"C-Parser : Standalone Parser for C Code({})"_format(version::to_string())};
 
     std::vector<std::string> files;
     app.add_option("file", files, "One or more C files to process")
@@ -27,11 +33,11 @@ int main(int argc, const char* argv[]) {
     CLI11_PARSE(app, argc, argv);
 
     for (const auto& f: files) {
-        nmodl::logger->info("Processing {}", f);
+        logger->info("Processing {}", f);
         std::ifstream file(f);
 
         /// driver object creates lexer and parser
-        nmodl::parser::CDriver driver;
+        parser::CDriver driver;
         driver.set_verbose(true);
 
         /// just call parser method

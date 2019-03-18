@@ -9,10 +9,13 @@
 #include <streambuf>
 
 #include "CLI/CLI.hpp"
+#include "fmt/format.h"
+
 #include "ast/ast.hpp"
 #include "lexer/nmodl_lexer.hpp"
 #include "parser/nmodl_driver.hpp"
 #include "utils/logger.hpp"
+#include "version/version.h"
 
 /**
  * Stand alone lexer program for NMODL. This demonstrate basic
@@ -21,6 +24,7 @@
  * location.
  */
 
+using namespace fmt::literals;
 using namespace nmodl;
 
 using parser::NmodlDriver;
@@ -111,7 +115,7 @@ void tokenize(const std::string& mod_text) {
 
 
 int main(int argc, const char* argv[]) {
-    CLI::App app{"NMODL-Lexer : Standalone Lexer for NMODL Code"};
+    CLI::App app{"NMODL-Lexer : Standalone Lexer for NMODL Code({})"_format(version::to_string())};
 
     std::vector<std::string> mod_files;
     std::vector<std::string> mod_texts;

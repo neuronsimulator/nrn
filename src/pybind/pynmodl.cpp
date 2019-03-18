@@ -14,6 +14,7 @@
 
 #include "parser/nmodl_driver.hpp"
 #include "pybind/pybind_utils.hpp"
+#include "version/version.h"
 #include "visitors/visitor_utils.hpp"
 
 namespace py = pybind11;
@@ -41,6 +42,9 @@ void init_ast_module(py::module& m);
 void init_symtab_module(py::module& m);
 
 PYBIND11_MODULE(_nmodl, m_nmodl) {
+    m_nmodl.doc() = "NMODL : Source-to-Source Code Generation Framework";
+    m_nmodl.attr("__version__") = nmodl::version::NMODL_VERSION;
+
     py::class_<PyDriver> nmodl_driver(m_nmodl, "NmodlDriver");
 
     // todo : what has changed ? fix this!

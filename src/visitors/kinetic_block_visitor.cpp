@@ -59,7 +59,8 @@ void KineticBlockVisitor::visit_conserve(ast::Conserve* node) {
     // NOTE! CONSERVE statement "implicitly takes into account COMPARTMENT factors on LHS"
     // see p244 of NEURON book
     // need to ensure that we do this in the same way: presumably need
-    // to either multiply or divide state vars on LHS of conserve statement by their COMPARTMENT factors?
+    // to either multiply or divide state vars on LHS of conserve statement by their COMPARTMENT
+    // factors?
     logger->debug("KineticBlockVisitor :: CONSERVE statement ignored (for now): {} = {}",
                   to_nmodl(node->get_react().get()), to_nmodl(node->get_expr().get()));
     statements_to_remove.insert(node);
@@ -102,7 +103,7 @@ void KineticBlockVisitor::visit_react_var_name(ast::ReactVarName* node) {
     // react_var_name node contains var_name and integer
     // var_name is the state variable which we convert to an index
     // integer is the value to be added to the stochiometric matrix at this index
-    if(in_reaction_statement){
+    if (in_reaction_statement) {
         auto varname = node->get_node_name();
         int count = node->get_value() ? node->get_value()->eval() : 1;
         process_reac_var(varname, count);
