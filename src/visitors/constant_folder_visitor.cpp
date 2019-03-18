@@ -6,6 +6,8 @@
  *************************************************************************/
 
 #include "visitors/constant_folder_visitor.hpp"
+#include "utils/logger.hpp"
+#include "visitors/visitor_utils.hpp"
 
 
 namespace nmodl {
@@ -107,7 +109,7 @@ void ConstantFolderVisitor::visit_wrapped_expression(ast::WrappedExpression* nod
     /// first expression which is wrapped
     auto expr = node->get_expression();
 
-    /// if wrapped expressesion is parentheses
+    /// if wrapped expression is parentheses
     bool is_parentheses = false;
 
     /// opposite to visit_paren_expression, we might have
@@ -155,6 +157,8 @@ void ConstantFolderVisitor::visit_wrapped_expression(ast::WrappedExpression* nod
         return;
     }
 
+    std::string nmodl_before = to_nmodl(binary_expr.get());
+
     /// compute the value of expression
     auto value = compute(get_value(lhs), op, get_value(rhs));
 
@@ -166,6 +170,9 @@ void ConstantFolderVisitor::visit_wrapped_expression(ast::WrappedExpression* nod
     } else {
         node->set_expression(std::make_shared<ast::Float>(value));
     }
+
+    std::string nmodl_after = to_nmodl(node->get_expression().get());
+    logger->debug("ConstantFolderVisitor : expression {} folded to {}", nmodl_before, nmodl_after);
 }
 
 }  // namespace nmodl

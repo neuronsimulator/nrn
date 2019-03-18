@@ -34,9 +34,9 @@ class AstLookupVisitor : public Visitor {
 
         AstLookupVisitor(const std::vector<ast::AstNodeType>& types) : types(types) {}
 
-        std::vector<std::shared_ptr<ast::AST>> lookup(ast::Program* node, ast::AstNodeType type);
+        std::vector<std::shared_ptr<ast::AST>> lookup(ast::AST* node, ast::AstNodeType type);
 
-        std::vector<std::shared_ptr<ast::AST>> lookup(ast::Program* node, std::vector<ast::AstNodeType>& types);
+        std::vector<std::shared_ptr<ast::AST>> lookup(ast::AST* node, std::vector<ast::AstNodeType>& types);
 
         const std::vector<std::shared_ptr<ast::AST>>& get_nodes() const noexcept {
             return nodes;
