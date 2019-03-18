@@ -25,7 +25,7 @@ void AstLookupVisitor::visit_{{ node.class_name|snake_case }}({{ node.class_name
 {% endfor %}
 
 
-std::vector<std::shared_ptr<ast::AST>> AstLookupVisitor::lookup(Program* node, std::vector<AstNodeType>& _types) {
+std::vector<std::shared_ptr<ast::AST>> AstLookupVisitor::lookup(AST* node, std::vector<AstNodeType>& _types) {
     nodes.clear();
     types = _types;
     node->accept(this);
@@ -33,7 +33,7 @@ std::vector<std::shared_ptr<ast::AST>> AstLookupVisitor::lookup(Program* node, s
 }
 
 
-std::vector<std::shared_ptr<ast::AST>> AstLookupVisitor::lookup(Program* node, AstNodeType type) {
+std::vector<std::shared_ptr<ast::AST>> AstLookupVisitor::lookup(AST* node, AstNodeType type) {
     nodes.clear();
     types.clear();
     types.push_back(type);

@@ -30,6 +30,7 @@
 #include "visitors/kinetic_block_visitor.hpp"
 #include "visitors/local_var_rename_visitor.hpp"
 #include "visitors/localize_visitor.hpp"
+#include "visitors/loop_unroll_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/perf_visitor.hpp"
 #include "visitors/sympy_conductance_visitor.hpp"
@@ -82,6 +83,9 @@ int main(int argc, const char* argv[]) {
 
     /// true if inlining at nmodl level to be done
     bool nmodl_inline(false);
+
+    /// true if unroll at nmodl level to be done
+    bool nmodl_unroll(false);
 
     /// true if perform constant folding at nmodl level to be done
     bool nmodl_const_folding(false);
@@ -158,6 +162,7 @@ int main(int argc, const char* argv[]) {
 
     auto passes_opt = app.add_subcommand("passes", "Analyse/Optimization passes")->ignore_case();
     passes_opt->add_flag("--inline", nmodl_inline, "Perform inlining at NMODL level")->ignore_case();
+    passes_opt->add_flag("--unroll", nmodl_unroll, "Perform loop unroll at NMODL level")->ignore_case();
     passes_opt->add_flag("--const-folding", nmodl_const_folding, "Perform constant folding at NMODL level")->ignore_case();
     passes_opt->add_flag("--localize", localize, "Convert RANGE variables to LOCAL")->ignore_case();
     passes_opt->add_flag("--localize-verbatim", localize_verbatim, "Convert RANGE variables to LOCAL even if verbatim block exist")->ignore_case();
@@ -268,6 +273,14 @@ int main(int argc, const char* argv[]) {
             logger->info("Running nmodl constant folding visitor");
             ConstantFolderVisitor().visit_program(ast.get());
             ast_to_nmodl(ast.get(), filepath("constfold"));
+        }
+
+        if (nmodl_unroll) {
+            logger->info("Running nmodl loop unroll visitor");
+            LoopUnrollVisitor().visit_program(ast.get());
+            ConstantFolderVisitor().visit_program(ast.get());
+            ast_to_nmodl(ast.get(), filepath("unroll"));
+            SymtabVisitor(update_symtab).visit_program(ast.get());
         }
 
         if (nmodl_inline) {
