@@ -21,6 +21,7 @@
 #include "parser/nmodl_driver.hpp"
 #include "utils/common_utils.hpp"
 #include "utils/logger.hpp"
+#include "version/version.h"
 #include "visitors/ast_visitor.hpp"
 #include "visitors/cnexp_solve_visitor.hpp"
 #include "visitors/constant_folder_visitor.hpp"
@@ -43,7 +44,8 @@ using namespace codegen;
 using nmodl::parser::NmodlDriver;
 
 int main(int argc, const char* argv[]) {
-    CLI::App app{"NMODL : Source-to-Source Code Generation Framework"};
+    CLI::App app{
+        "NMODL : Source-to-Source Code Generation Framework [{}]"_format(version::to_string())};
 
     /// list of mod files to process
     std::vector<std::string> mod_files;

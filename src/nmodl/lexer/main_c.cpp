@@ -8,17 +8,23 @@
 #include <fstream>
 
 #include "CLI/CLI.hpp"
+#include "fmt/format.h"
+
 #include "lexer/c11_lexer.hpp"
 #include "parser/c11_driver.hpp"
 #include "utils/logger.hpp"
+#include "version/version.h"
 
 /**
  * Example of standalone lexer program for C codes that
  * demonstrate use of CLexer and CDriver classes.
  */
 
+using namespace fmt::literals;
+using namespace nmodl;
+
 int main(int argc, const char* argv[]) {
-    CLI::App app{"C-Lexer : Standalone Lexer for C Code"};
+    CLI::App app{"C-Lexer : Standalone Lexer for C Code({})"_format(version::to_string())};
 
     std::vector<std::string> files;
     app.add_option("file", files, "One or more C files to process")
