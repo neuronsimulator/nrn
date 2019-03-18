@@ -19,6 +19,7 @@
 #include "visitors/lookup_visitor.hpp"
 #include "visitors/rename_visitor.hpp"
 #include "visitors/var_usage_visitor.hpp"
+#include "visitors/visitor_utils.hpp"
 
 using namespace fmt::literals;
 
@@ -2257,7 +2258,9 @@ void CodegenCVisitor::print_coreneuron_includes() {
     printer->add_line("#include <coreneuron/mech/mod2c_core_thread.h>");
     printer->add_line("#include <coreneuron/scopmath_core/newton_struct.h>");
     printer->add_line("#include <_kinderiv.h>");
-    printer->add_line("#include <newton/newton.hpp>");
+    if (info.eigen_newton_solver_exist) {
+        printer->add_line("#include <newton/newton.hpp>");
+    }
 }
 
 
@@ -3447,7 +3450,7 @@ void CodegenCVisitor::print_net_receive_loop_end() {
 }
 
 
-void CodegenCVisitor::print_net_receive_buffering() {
+void CodegenCVisitor::print_net_receive_buffering(bool need_mech_inst) {
     if (!net_receive_required() || info.artificial_cell) {
         return;
     }
@@ -3460,6 +3463,9 @@ void CodegenCVisitor::print_net_receive_buffering() {
 
     printer->add_line(
         "NetReceiveBuffer_t* {}nrb = ml->_net_receive_buffer;"_format(ptr_type_qualifier()));
+    if (need_mech_inst) {
+        printer->add_line("{0}* inst = ({0}*) ml->instance;"_format(instance_struct()));
+    }
     print_net_receive_loop_begin();
     printer->add_line("int start = nrb->_displ[i];");
     printer->add_line("int end = nrb->_displ[i+1];");

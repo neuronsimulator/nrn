@@ -307,7 +307,7 @@ void CodegenIspcVisitor::print_compute_functions() {
         }
     }
     print_net_receive_kernel();
-    print_net_receive_buffering();
+    print_net_receive_buffering(false);
     print_nrn_init(false);
     print_nrn_cur();
     print_nrn_state();

@@ -65,7 +65,7 @@ void CnexpSolveVisitor::visit_binary_expression(ast::BinaryExpression* node) {
                 lhs.reset(bin_expr->lhs->clone());
                 rhs.reset(bin_expr->rhs->clone());
             } else {
-                std::cerr << "cnexp solver not possible";
+                logger->error("cnexp solver not possible");
             }
         } else if (solve_method == euler_method) {
             std::string solution = diffeq_driver.solve(equation, solve_method);
@@ -84,7 +84,7 @@ void CnexpSolveVisitor::visit_binary_expression(ast::BinaryExpression* node) {
             symbol->created_from_state();
             program_symtab->insert(symbol);
         } else {
-            std::cerr << "solver method '" + solve_method + "' not supported";
+            logger->error("solver method '{}' not supported", solve_method);
         }
     }
 }
