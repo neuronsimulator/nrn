@@ -1263,27 +1263,19 @@ std::vector<DUChain> run_defuse_visitor(const std::string& text, const std::stri
     driver.parse_string(text);
     auto ast = driver.ast();
 
-    {
-        SymtabVisitor v;
-        v.visit_program(ast.get());
-    }
+    SymtabVisitor().visit_program(ast.get());
+    InlineVisitor().visit_program(ast.get());
 
-    {
-        InlineVisitor v1;
-        v1.visit_program(ast.get());
-    }
+    std::vector<DUChain> chains;
+    DefUseAnalyzeVisitor v(ast->get_symbol_table());
 
-    {
-        std::vector<DUChain> chains;
-        DefUseAnalyzeVisitor v(ast->get_symbol_table());
-
-        for (const auto& block: ast->get_blocks()) {
-            if (block->get_node_type() != AstNodeType::NEURON_BLOCK) {
-                chains.push_back(v.analyze(block.get(), variable));
-            }
-        }
-        return chains;
+    /// analyse only derivative blocks in this test
+    auto blocks = AstLookupVisitor().lookup(ast.get(), AstNodeType::DERIVATIVE_BLOCK);
+    for (auto& block: blocks) {
+        auto node = block.get();
+        chains.push_back(v.analyze(node, variable));
     }
+    return chains;
 }
 
 SCENARIO("Running defuse analyzer") {
@@ -1331,6 +1323,53 @@ SCENARIO("Running defuse analyzer") {
             auto chains = run_defuse_visitor(input, "tau");
             REQUIRE(chains[0].to_string(true) == expected_text);
             REQUIRE(chains[0].eval() == DUState::U);
+        }
+    }
+
+    GIVEN("use of array variables") {
+        std::string nmodl_text = R"(
+            DEFINE N 3
+            STATE {
+                m[N]
+                h[N]
+                n[N]
+                o[N]
+            }
+            DERIVATIVE states {
+                LOCAL tau[N]
+                tau[0] = 1                    : tau[0] is defined
+                tau[2] = 1 + tau[1] + tau[2]  : tau[1] is used; tau[2] is defined as well as used
+                m[0] = m[1]                   : m[0] is defined and used on next line; m[1] is used
+                h[1] = m[0] + h[0]            : h[0] is used; h[1] is defined
+                o[i] = 1                      : o[i] is defined for any i
+                n[i+1] = 1 + n[i]             : n[i] is used as well as defined for any i
+            }
+        )";
+
+        THEN("Def-Use analyser distinguishes variables by array index") {
+            std::string input = reindent_text(nmodl_text);
+            {
+                auto m0 = run_defuse_visitor(input, "m[0]");
+                auto m1 = run_defuse_visitor(input, "m[1]");
+                auto h1 = run_defuse_visitor(input, "h[1]");
+                auto tau0 = run_defuse_visitor(input, "tau[0]");
+                auto tau1 = run_defuse_visitor(input, "tau[1]");
+                auto tau2 = run_defuse_visitor(input, "tau[2]");
+                auto n0 = run_defuse_visitor(input, "n[0]");
+                auto n1 = run_defuse_visitor(input, "n[1]");
+                auto o0 = run_defuse_visitor(input, "o[0]");
+
+                REQUIRE(m0[0].to_string() == R"({"DerivativeBlock":[{"name":"D"},{"name":"U"}]})");
+                REQUIRE(m1[0].to_string() == R"({"DerivativeBlock":[{"name":"U"}]})");
+                REQUIRE(h1[0].to_string() == R"({"DerivativeBlock":[{"name":"D"}]})");
+                REQUIRE(tau0[0].to_string() == R"({"DerivativeBlock":[{"name":"LD"}]})");
+                REQUIRE(tau1[0].to_string() == R"({"DerivativeBlock":[{"name":"LU"}]})");
+                REQUIRE(tau2[0].to_string() ==
+                        R"({"DerivativeBlock":[{"name":"LU"},{"name":"LD"}]})");
+                REQUIRE(n0[0].to_string() == R"({"DerivativeBlock":[{"name":"U"},{"name":"D"}]})");
+                REQUIRE(n1[0].to_string() == R"({"DerivativeBlock":[{"name":"U"},{"name":"D"}]})");
+                REQUIRE(o0[0].to_string() == R"({"DerivativeBlock":[{"name":"D"}]})");
+            }
         }
     }
 

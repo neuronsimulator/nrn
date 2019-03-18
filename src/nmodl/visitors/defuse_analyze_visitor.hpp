@@ -13,7 +13,9 @@
 #include "ast/ast.hpp"
 #include "printer/json_printer.hpp"
 #include "symtab/symbol_table.hpp"
+#include "utils/logger.hpp"
 #include "visitors/ast_visitor.hpp"
+#include "visitors/visitor_utils.hpp"
 
 
 namespace nmodl {
@@ -189,6 +191,9 @@ class DefUseAnalyzeVisitor: public AstVisitor {
     /// starting visiting lhs of assignment statement
     bool visiting_lhs = false;
 
+    void process_variable(const std::string& name);
+    void process_variable(const std::string& name, int index);
+
     void update_defuse_chain(const std::string& name);
     void visit_unsupported_node(ast::Node* node);
     void visit_with_new_chain(ast::Node* node, DUState state);
@@ -238,13 +243,35 @@ class DefUseAnalyzeVisitor: public AstVisitor {
     }
 
     virtual void visit_var_name(ast::VarName* node) override {
-        update_defuse_chain(node->get_node_name());
-    };
+        std::string variable = to_nmodl(node);
+        process_variable(variable);
+    }
 
     virtual void visit_name(ast::Name* node) override {
-        update_defuse_chain(node->get_node_name());
-    };
+        std::string variable = to_nmodl(node);
+        process_variable(variable);
+    }
 
+    virtual void visit_indexed_name(ast::IndexedName* node) override {
+        std::string name = node->get_node_name();
+        auto length = node->get_length();
+
+        /// index should be an integer (e.g. after constant folding)
+        /// if this is not the case and then we can't determine exact
+        /// def-use chain
+        if (!length->is_integer()) {
+            /// check if variable name without index part is same
+            auto variable_name_prefix = variable_name.substr(0, variable_name.find("["));
+            if (name == variable_name_prefix) {
+                update_defuse_chain(variable_name_prefix);
+                std::string text = to_nmodl(node);
+                nmodl::logger->info("index used to access variable is not known : {} ", text);
+            }
+            return;
+        }
+        auto index = std::dynamic_pointer_cast<ast::Integer>(length);
+        process_variable(name, index->eval());
+    }
 
     /// statements / nodes that should not be used for def-use chain analysis
 
@@ -255,7 +282,7 @@ class DefUseAnalyzeVisitor: public AstVisitor {
     virtual void visit_argument(ast::Argument* /*node*/) override {}
 
     /// compute def-use chain for a variable within the node
-    DUChain analyze(ast::Node* node, const std::string& name);
+    DUChain analyze(ast::AST* node, const std::string& name);
 };
 
 }  // namespace nmodl

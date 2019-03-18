@@ -256,35 +256,52 @@ void DefUseAnalyzeVisitor::visit_verbatim(ast::Verbatim* node) {
     }
 }
 
-/** Update def-use chain if we encounter a variable that we are looking for.
+/**
+ * Update the Def-Use chain for given variable
+ *
+ * @param name Name of the variable excluding index or dimension
+ *
+ * Update def-use chain if we encounter a variable that we are looking for.
  * If we encounter non-supported construct then we mark that variable as "use"
  * because we haven't completely analyzed the usage. Marking that variable "U"
  * make sures that won't get optimized. Then we distinguish between local and
- * non-local variables. All variables that appear on lhs are maked as "definitions"
+ * non-local variables. All variables that appear on lhs are marked as "definitions"
  * whereas the one on rhs are marked as "usages".
  */
 void DefUseAnalyzeVisitor::update_defuse_chain(const std::string& name) {
-    if (name == variable_name) {
-        auto symbol = current_symtab->lookup_in_scope(name);
-        // variable properties that make it local
-        auto properties = NmodlType::local_var | NmodlType::argument;
-        auto is_local = symbol->has_properties(properties);
+    auto symbol = current_symtab->lookup_in_scope(name);
+    assert(symbol != nullptr);
+    // variable properties that make variable local
+    auto properties = NmodlType::local_var | NmodlType::argument;
+    auto is_local = symbol->has_properties(properties);
 
-        if (unsupported_node) {
-            current_chain->push_back(DUInstance(DUState::U));
-        } else if (visiting_lhs) {
-            if (is_local) {
-                current_chain->push_back(DUInstance(DUState::LD));
-            } else {
-                current_chain->push_back(DUInstance(DUState::D));
-            }
+    if (unsupported_node) {
+        current_chain->push_back(DUInstance(DUState::U));
+    } else if (visiting_lhs) {
+        if (is_local) {
+            current_chain->push_back(DUInstance(DUState::LD));
         } else {
-            if (is_local) {
-                current_chain->push_back(DUInstance(DUState::LU));
-            } else {
-                current_chain->push_back(DUInstance(DUState::U));
-            }
+            current_chain->push_back(DUInstance(DUState::D));
         }
+    } else {
+        if (is_local) {
+            current_chain->push_back(DUInstance(DUState::LU));
+        } else {
+            current_chain->push_back(DUInstance(DUState::U));
+        }
+    }
+}
+
+void DefUseAnalyzeVisitor::process_variable(const std::string& name) {
+    if (name == variable_name) {
+        update_defuse_chain(name);
+    }
+}
+
+void DefUseAnalyzeVisitor::process_variable(const std::string& name, int index) {
+    std::string fullname = name + "[" + std::to_string(index) + "]";
+    if (fullname == variable_name) {
+        update_defuse_chain(name);
     }
 }
 
@@ -300,7 +317,7 @@ void DefUseAnalyzeVisitor::start_new_chain(DUState state) {
     current_chain = &current_chain->back().children;
 }
 
-DUChain DefUseAnalyzeVisitor::analyze(ast::Node* node, const std::string& name) {
+DUChain DefUseAnalyzeVisitor::analyze(ast::AST* node, const std::string& name) {
     /// re-initialize state
     variable_name = name;
     visiting_lhs = false;
