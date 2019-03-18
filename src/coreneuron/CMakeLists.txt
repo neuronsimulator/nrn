@@ -324,7 +324,10 @@ set_property(TARGET coreneuron PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 # Extract link defs to the whole project
 get_target_property(CORENRN_LINK_LIBS coreneuron LINK_LIBRARIES)
-set(CORENRN_LINK_LIBS ${CORENRN_LINK_LIBS} PARENT_SCOPE)
+if(NOT CORENRN_LINK_LIBS)
+    set(CORENRN_LINK_LIBS "")
+endif()
+set(CORENRN_LINK_LIBS "${CORENRN_LINK_LIBS}" PARENT_SCOPE)
 
 # Share built-in OPTIONAL MODS also with rest of project
 set(CORENRN_OPTMECH_MODS "${MOD2C_OPTMECH_MODS}" PARENT_SCOPE)

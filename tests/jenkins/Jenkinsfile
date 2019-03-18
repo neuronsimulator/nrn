@@ -1,0 +1,272 @@
+pipeline {
+    agent {
+        label 'bb5'
+    }
+    stages {
+
+        stage('build corenrn AoS'){
+            steps {
+                sh 'sh tests/jenkins/install.sh AoS'
+            }
+        }
+
+        stage('build corenrn SoA'){
+            steps {
+                sh 'sh tests/jenkins/install.sh SoA'
+            }
+        }
+
+        stage('build corenrn GPU'){
+            steps {
+                sh 'sh tests/jenkins/install.sh GPU'
+            }
+        }
+
+        stage('unit and ring tests'){
+            parallel{
+                stage('AoS'){
+                    steps{
+                        sh 'sh tests/jenkins/ringtest.sh AoS'
+                    }
+                }
+                stage('SoA'){
+                    steps{
+                        sh 'sh tests/jenkins/ringtest.sh SoA'
+                    }
+                }
+                stage('GPU'){
+                    steps{
+                        sh 'sh tests/jenkins/ringtest.sh GPU'
+                    }
+                }
+            }
+        }
+
+        stage('checkout testcorenrn and ringtest'){
+            steps{
+                dir('testcorenrn'){
+                    git url: 'https://github.com/pramodk/testcorenrn.git'
+                }
+                dir('ringtest'){
+                    git url: 'https://github.com/nrnhines/ringtest.git'
+                }
+            }
+        }
+
+        stage('nrnivmodl'){
+            parallel{
+                stage('nrnivmodl testcorenrn'){
+                    steps{
+                        sh 'sh tests/jenkins/nrnivmodl.sh testcorenrn'
+                    }
+                }
+                stage('nrnivmodl ringtest'){
+                    steps{
+                        sh 'sh tests/jenkins/nrnivmodl.sh ringtest'
+                    }
+                }
+                stage('nrnivmodl-core testcorenrn AoS'){
+                    steps{
+                        sh 'sh tests/jenkins/nrnivmodl-core.sh testcorenrn AoS'
+                    }
+                }
+                stage('nrnivmodl-core testcorenrn SoA'){
+                    steps{
+                        sh 'sh tests/jenkins/nrnivmodl-core.sh testcorenrn SoA'
+                    }
+                }
+                stage('nrnivmodl-core ringtest AoS'){
+                    steps{
+                        sh 'sh tests/jenkins/nrnivmodl-core.sh ringtest AoS'
+                    }
+                }
+                stage('nrnivmodl-core ringtest SoA'){
+                    steps{
+                        sh 'sh tests/jenkins/nrnivmodl-core.sh ringtest SoA'
+                    }
+                }
+            }
+        }
+
+        stage('testcorenrn'){
+            parallel{
+                stage('deriv'){
+                    stages{
+                        stage('neuron'){
+                            steps{
+                                sh 'sh tests/jenkins/run_neuron.sh testcorenrn deriv 6'
+                            }
+                        }
+                        stage('corenrn AoS'){
+                            steps{
+                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn AoS deriv 6'
+                            }
+                        }
+                        stage('corenrn SoA'){
+                            steps{
+                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn SoA deriv 6'
+                            }
+                        }
+                    }
+                }
+                stage('gf'){
+                    stages{
+                        stage('neuron'){
+                            steps{
+                                sh 'sh tests/jenkins/run_neuron.sh testcorenrn gf 6'
+                            }
+                        }
+                        stage('corenrn AoS'){
+                            steps{
+                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn AoS gf 6'
+                            }
+                        }
+                        stage('corenrn SoA'){
+                            steps{
+                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn SoA gf 6'
+                            }
+                        }
+                    }
+                }
+                stage('kin'){
+                    stages{
+                        stage('neuron'){
+                            steps{
+                                sh 'sh tests/jenkins/run_neuron.sh testcorenrn kin 6'
+                            }
+                        }
+                        stage('corenrn AoS'){
+                            steps{
+                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn AoS kin 6'
+                            }
+                        }
+                        stage('corenrn SoA'){
+                            steps{
+                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn SoA kin 6'
+                            }
+                        }
+                    }
+                }
+                stage('conc'){
+                    stages{
+                        stage('neuron'){
+                            steps{
+                                sh 'sh tests/jenkins/run_neuron.sh testcorenrn conc 6'
+                            }
+                        }
+                        stage('corenrn AoS'){
+                            steps{
+                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn AoS conc 6'
+                            }
+                        }
+                        stage('corenrn SoA'){
+                            steps{
+                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn SoA conc 6'
+                            }
+                        }
+                    }
+                }
+                stage('watch'){
+                    stages{
+                        stage('neuron'){
+                            steps{
+                                sh 'sh tests/jenkins/run_neuron.sh testcorenrn watch 6'
+                            }
+                        }
+                        stage('corenrn AoS'){
+                            steps{
+                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn AoS watch 6'
+                            }
+                        }
+                        stage('corenrn SoA'){
+                            steps{
+                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn SoA watch 6'
+                            }
+                        }
+                    }
+                }
+                stage('bbcore'){
+                    stages{
+                        stage('neuron'){
+                            steps{
+                                sh 'sh tests/jenkins/run_neuron.sh testcorenrn bbcore 6'
+                            }
+                        }
+                        stage('corenrn AoS'){
+                            steps{
+                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn AoS bbcore 6'
+                            }
+                        }
+                        stage('corenrn SoA'){
+                            steps{
+                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn SoA bbcore 6'
+                            }
+                        }
+                    }
+                }
+                stage('vecplay'){
+                    stages{
+                        stage('neuron'){
+                            steps{
+                                sh 'sh tests/jenkins/run_neuron.sh testcorenrn vecplay 6'
+                            }
+                        }
+                        stage('corenrn AoS'){
+                            steps{
+                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn AoS vecplay 6'
+                            }
+                        }
+                        stage('corenrn SoA'){
+                            steps{
+                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn SoA vecplay 6'
+                            }
+                        }
+                    }
+                }
+                stage('patstim'){
+                    stages{
+                        stage('neuron'){
+                            steps{
+                                sh 'sh tests/jenkins/run_neuron.sh testcorenrn patstim 6'
+                            }
+                        }
+                        stage('corenrn AoS'){
+                            steps{
+                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn AoS patstim 6'
+                            }
+                        }
+                        stage('corenrn SoA'){
+                            steps{
+                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn SoA patstim 6'
+                            }
+                        }
+                    }
+                }
+                stage('ringtest parallel'){
+                    stages{
+                        stage('neuron'){
+                            steps{
+                                sh 'sh tests/jenkins/run_neuron.sh ringtest ringtest 6'
+                            }
+                        }
+                        stage('corenrn AoS'){
+                            steps{
+                                sh 'sh tests/jenkins/run_corenrn.sh ringtest AoS ringtest 6'
+                            }
+                        }
+                        stage('corenrn SoA 3 MPI Ranks'){
+                            steps{
+                                sh 'sh tests/jenkins/run_corenrn.sh ringtest SoA ringtest 3'
+                            }
+                        }
+                        stage('corenrn SoA 7 MPI Ranks'){
+                            steps{
+                                sh 'sh tests/jenkins/run_corenrn.sh ringtest SoA ringtest 7'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
