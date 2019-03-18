@@ -64,6 +64,11 @@ const char* corenrn_version() {
     return coreneuron::bbcore_write_version;
 }
 
+#ifdef ISPC_INTEROP
+// cf. utils/ispc_globals.c
+extern double ispc_celsius;
+#endif
+
 /**
  * If "export OMP_NUM_THREADS=n" is not set then omp by default sets
  * the number of threads equal to the number of cores on this node.
@@ -221,6 +226,9 @@ void nrn_init_and_load_data(int argc,
     }
     nrnopt_modify_dbl("--celsius", celsius);
 
+#ifdef ISPC_INTEROP
+    ispc_celsius = celsius;
+#endif
     // create net_cvode instance
     mk_netcvode();
 

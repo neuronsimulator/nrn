@@ -1,4 +1,4 @@
-# Copyright (c) 2016, Blue Brain Project
+# Copyright (c) 2019, Blue Brain Project
 # All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without modification,
@@ -34,6 +34,7 @@ file(GLOB_RECURSE coreneuron_all_templates "*.ipp")
 file(GLOB_RECURSE coreneuron_cuda_files "*.cu")
 file(GLOB_RECURSE coreneuron_all_c_files "nrniv/*.c*" "nrnmpi/*.c*" "nrnoc/*.c*"
                                          "nrnomp/*.c*" "utils/*.c*")
+
 set(DIMPLIC_C "mech/dimplic.cpp")
 file(GLOB_RECURSE scopmath_c_files "scopmath_core/*.c*")
 
@@ -42,6 +43,9 @@ file(GLOB_RECURSE scopmath_c_files "scopmath_core/*.c*")
 
 # set mod2c binary and files from built in
 if(NOT EXISTS ${MOD2C})
+    if(${ENABLE_ISPC_TARGET})
+        message(FATAL_ERROR "ispc targets can only be generated with the external nmodl compiler")
+    endif()
     set (MOD2C ${PROJECT_BINARY_DIR}/external/mod2c/bin/mod2c_core)
 endif()
 
@@ -54,8 +58,9 @@ message(STATUS "USING MOD2C ${MOD2C}")
 
 # Macro sets up build rule for .c files from .mod files.
 # Parameters:
-#    name     An arbitrary name to keep track of output .c files
-#    input    The path to the mod file
+#    KEY name               An arbitrary name to keep track of output .c files
+#    MODFILE input          The path to the mod file
+#    OUTTYPE <SERIAL|ISPC>  The output type (optional, defaults to serial)
 #
 # Because mod2c_core wants to write the .c file in the same directory
 # as the mod file, we copy the mod file to the binary directory first
@@ -63,20 +68,66 @@ message(STATUS "USING MOD2C ${MOD2C}")
 # The macro appends the names of the output files to MOD2C_${name}_OUTPUTS
 # and the names of the mod files (without directories) to MOD2C_${name}_MODS
 
-macro(mod2c_target name input)
-    get_filename_component(mod2c_source_ ${input} ABSOLUTE)
-    get_filename_component(mod2c_modname_ ${input} NAME)
-    string(REGEX REPLACE "\\.mod$" ".cpp" mod2c_cname_ "${mod2c_modname_}")
+macro(mod2c_target)
+    set(options)
+    set(oneValueArgs TARGET MODFILE KEY)
+    set(multiValueArgs)
+    cmake_parse_arguments(mod2c "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+    if("${mod2c_MODFILE}" STREQUAL "")
+        message(FATAL_ERROR "mod2c_target requires a MODFILE argument")
+    endif()
+    if("${mod2c_KEY}" STREQUAL "")
+        message(FATAL_ERROR "mod2c_target requires a KEY argument")
+    endif()
 
-    set(mod2c_output_ "${CMAKE_CURRENT_BINARY_DIR}/${mod2c_cname_}")
-    list(APPEND MOD2C_${name}_OUTPUTS "${mod2c_output_}")
-    list(APPEND MOD2C_${name}_MODS "${mod2c_modname_}")
+    get_filename_component(mod2c_source_ ${mod2c_MODFILE} ABSOLUTE)
+    get_filename_component(mod2c_modname_ ${mod2c_MODFILE} NAME)
 
-    add_custom_command(OUTPUT "${mod2c_output_}"
-      DEPENDS ${input} mod2c ${MOD2C_BINARY}
-      COMMAND ${CMAKE_COMMAND} -E copy "${mod2c_source_}" "${CMAKE_CURRENT_BINARY_DIR}"
-      COMMAND ${MOD2C} "${mod2c_modname_}"
-      WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+
+
+    if("${mod2c_TARGET}" STREQUAL "serial")
+        string(REGEX REPLACE "\\.mod$" ".cpp" mod2c_outname_ "${mod2c_modname_}")
+        set(nmodl_modearg "--c")
+    elseif("${mod2c_TARGET}" STREQUAL "ispc")
+        file(STRINGS ${mod2c_MODFILE} mod2c_mod_artcell REGEX "ARTIFICIAL_CELL")
+        if(NOT "${mod2c_mod_artcell}" STREQUAL "")
+            string(REGEX REPLACE "\\.mod$" ".cpp" mod2c_outname_ "${mod2c_modname_}")
+            set(nmodl_modearg "--c")
+        else()
+            string(REGEX REPLACE "\\.mod$" ".ispc" mod2c_outname_ "${mod2c_modname_}")
+            string(REGEX REPLACE "\\.mod$" ".cpp" mod2c_wrapper_outname_ "${mod2c_modname_}")
+            set(nmodl_modearg "--ispc")
+        endif()
+    elseif("${mod2c_TARGET}" STREQUAL "")
+        # default case
+        string(REGEX REPLACE "\\.mod$" ".cpp" mod2c_outname_ "${mod2c_modname_}")
+        set(nmodl_modearg "--c")
+    else()
+        message(SEND_ERROR "mod2c_target only supports serial and ispc generation for now: \"${mod2c_TARGET}\"")
+    endif()
+
+
+    set(mod2c_output_ "${CMAKE_CURRENT_BINARY_DIR}/${mod2c_outname_}")
+    list(APPEND MOD2C_${mod2c_KEY}_OUTPUTS "${mod2c_output_}")
+    if(DEFINED mod2c_wrapper_outname_)
+        set(mod2c_wrapper_output_ "${CMAKE_CURRENT_BINARY_DIR}/${mod2c_wrapper_outname_}")
+        list(APPEND MOD2C_${mod2c_KEY}_OUTPUTS "${mod2c_wrapper_output_}")
+        unset(mod2c_wrapper_outname_)
+    endif()
+    list(APPEND MOD2C_${mod2c_KEY}_MODS "${mod2c_modname_}")
+    if(${NMODL_FOUND})
+        add_custom_command(OUTPUT "${mod2c_output_}" "${mod2c_wrapper_output_}"
+                DEPENDS ${mod2c_MODFILE} ${MOD2C_BINARY}
+                COMMAND ${CMAKE_COMMAND} -E copy "${mod2c_source_}" "${CMAKE_CURRENT_BINARY_DIR}"
+                COMMAND ${MOD2C} "${mod2c_modname_}" -o "${CMAKE_CURRENT_BINARY_DIR}" host ${nmodl_modearg} ${NMODL_EXTRA_FLAGS}
+                WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+    else()
+        add_custom_command(OUTPUT "${mod2c_output_}"
+                DEPENDS ${mod2c_MODFILE} mod2c ${MOD2C_BINARY}
+                COMMAND ${CMAKE_COMMAND} -E copy "${mod2c_source_}" "${CMAKE_CURRENT_BINARY_DIR}"
+                COMMAND ${MOD2C} "${mod2c_modname_}"
+                WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+    endif()
 endmacro()
 
 # Function to check if mod file of specific filename is already added
@@ -144,7 +195,7 @@ macro(mod2c_from_file name modlist searchpath)
             else()
                 list(APPEND added_mod_files "${modpath_}")
                 list(APPEND mod_filenames "${filename}")
-                mod2c_target(${name} "${modpath_}")
+                mod2c_target(KEY ${name} MODFILE "${modpath_}" TARGET ${M2C_TARGET})
                 list(APPEND MOD_PATHS ${modpath_})
             endif()
 
@@ -162,7 +213,7 @@ macro(mod2c_from_file name modlist searchpath)
         message(WARNING "Note: halfgap.mod is found in specified mechanism search directory!")
     else()
         set(GAPMOD "${PROJECT_SOURCE_DIR}/tests/integration/ring_gap/mod/halfgap.mod")
-        mod2c_target(${name} "${GAPMOD}")
+            mod2c_target(KEY ${name} MODFILE "${GAPMOD}" TARGET ${M2C_TARGET})
         list(APPEND MOD_PATHS ${GAPMOD})
         message(STATUS "Adding halfgap.mod mod file for tests!")
     endif()
@@ -181,9 +232,14 @@ if (EXPORT_MECHS_FUNCTIONS)
       list(APPEND MOD_PATHS "${STDMODLIBPATH}/${MOD}")
   endforeach()
 endif()
+if(${ENABLE_ISPC_TARGET})
+    set(M2C_TARGET ispc)
+else()
+    set(M2C_TARGET serial)
+endif()
 
 foreach(MOD ${MECH_STDMODS})
-  mod2c_target(STDMECH "${STDMODLIBPATH}/${MOD}")
+    mod2c_target(KEY STDMECH MODFILE "${STDMODLIBPATH}/${MOD}" TARGET ${M2C_TARGET})
 endforeach()
 
 set(MECH_FILE_LISTS)
@@ -245,6 +301,23 @@ if (EXPORT_MECHS_FUNCTIONS)
       COMMAND perl "${MOD_FUNC_PTRS_C_PL}" ${MOD_PATHS} > "${MOD_FUNC_PTRS_C}"
       WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 endif()
+
+
+set_source_files_properties(${MOD2C_STDMECH_OUTPUTS} PROPERTIES GENERATED TRUE)
+set_source_files_properties(${MOD2C_OPTMECH_OUTPUTS} PROPERTIES GENERATED TRUE)
+
+
+if(ENABLE_ISPC_TARGET)
+    set(MOD2C_ISPC_STDMECH_OUTPUTS ${MOD2C_STDMECH_OUTPUTS})
+    list(FILTER MOD2C_ISPC_STDMECH_OUTPUTS INCLUDE REGEX ".*\.ispc$")
+    set(MOD2C_ISPC_OPTMECH_OUTPUTS ${MOD2C_OPTMECH_OUTPUTS})
+    list(FILTER MOD2C_ISPC_OPTMECH_OUTPUTS INCLUDE REGEX ".*\.ispc$")
+    set_source_files_properties(${MOD2C_ISPC_STDMECH_OUTPUTS} PROPERTIES LANGUAGE ISPC)
+    set_source_files_properties(${MOD2C_ISPC_STDMECH_OUTPUTS} PROPERTIES COMPILE_FLAGS "-I${nmodl_INCLUDE}")
+    set_source_files_properties(${MOD2C_ISPC_OPTMECH_OUTPUTS} PROPERTIES LANGUAGE ISPC)
+    set_source_files_properties(${MOD2C_ISPC_OPTMECH_OUTPUTS} PROPERTIES COMPILE_FLAGS "-I${nmodl_INCLUDE}")
+endif()
+
 
 # Add generated sources from MOD files
 set(ADDITIONAL_MECH_C_FILES ${MOD_FUNC_C} ${MOD_FUNC_PTRS_C} ${DIMPLIC_C} ${MOD2C_OPTMECH_OUTPUTS})

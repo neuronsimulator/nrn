@@ -25,48 +25,40 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 
 
-# Findmod2c
+# Findnmodl
 # -------------
 #
-# Find mod2c
+# Find nmodl
 #
-# Find the mod2c Blue Brain HPC utils library
+# Find the nmodl Blue Brain HPC utils library
 #
-# Using mod2c:
+# Using nmodl:
 #
 # ::
-#
-#   find_package(mod2c REQUIRED)
-#   include_directories(${mod2c_INCLUDE_DIRS})
-#   target_link_libraries(foo ${mod2c_LIBRARIES})
+#   set(NMODL_ROOT "" CACHE PATH "Path nmodl source-to-source compiler root")
+#   find_package(nmodl REQUIRED)
+#   include_directories(${nmodl_INCLUDE_DIRS})
+#   target_link_libraries(foo ${nmodl_LIBRARIES})
 #
 # This module sets the following variables:
 #
 # ::
 #
-#   mod2c_FOUND - set to true if the library is found
-#   mod2c_INCLUDE_DIRS - list of required include directories
-#   mod2c_LIBRARIES - list of libraries to be linked
-
-#=============================================================================
-# Copyright 2015 Adrien Devresse <adrien.devresse@epfl.ch>
-#
-#=============================================================================
-# (To distribute this file outside of CMake, substitute the full
-#  License text for the above reference.)
+#   nmodl_FOUND   - set to true if the library is found
+#   nmodl_INCLUDE - list of required include directories
+#   nmodl_BINARY  - the nmodl binary
 
 
 # UNIX paths are standard, no need to write.
-find_program(mod2c_BINARY
-  NAMES mod2c_core
-  PATHS "/usr/bin"
-  )
+find_program(nmodl_BINARY NAMES nmodl
+        HINTS "${NMODL_ROOT}/bin")
 
+find_path(nmodl_INCLUDE "fast_math.ispc" HINTS "${NMODL_ROOT}/include")
 
 # Checks 'REQUIRED', 'QUIET' and versions.
 include(FindPackageHandleStandardArgs)
 
-find_package_handle_standard_args(mod2c
-  FOUND_VAR mod2c_FOUND
-  REQUIRED_VARS mod2c_BINARY)
+find_package_handle_standard_args(nmodl
+  FOUND_VAR nmodl_FOUND
+  REQUIRED_VARS nmodl_BINARY nmodl_INCLUDE)
   

@@ -36,7 +36,7 @@
 
 # Initial Setup
 
-CMAKE_MINIMUM_REQUIRED(VERSION 3.1.0)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.7)
 PROJECT(coreneuron)
 set(CORENEURON_DESCRIPTION "BBP CoreNeuron simulator")
 
@@ -59,6 +59,8 @@ option(ENABLE_SPLAYTREE_QUEUING "Enable use of Splay tree for spike queuing" ON)
 option(ENABLE_CUDA_MODULES "Enable modules like Random123 written in CUDA" ON)
 option(ENABLE_NET_RECEIVE_BUFFERING "Enable event buffering in net_receive function" ON)
 option(ENABLE_OMP_RUNTIME_SCHEDULE "Use runtime schedule for OpenMP" OFF)
+option(ENABLE_ISPC_TARGET "Enable ispc interoperability structs and data" OFF)
+option(ENABLE_NMODL "Enable external nmodl source-to-source compiler" OFF)
 
 ## set C++11 standard to be default
 set(CMAKE_CXX_STANDARD 11)
@@ -71,7 +73,9 @@ set(FRONTEND_CXX_COMPILER g++ CACHE FILEPATH "C++ compiler for building mod2c [f
 set(ADDITIONAL_MECHPATH "" CACHE PATH "Search path for optional additional mechanism MOD files")
 set(ADDITIONAL_MECHS "" CACHE FILEPATH "File containing list of additional mechanism MOD files")
 
-# mod2c path (if external)
+set(NMODL_ROOT "" CACHE PATH "Path nmodl source-to-source compiler root")
+
+# mod2c path (if external) - will be overwriten if nmodl is requested and found
 set(MOD2C "" CACHE FILEPATH "Path of MOD2C binary")
 
 # test compilations
@@ -97,6 +101,23 @@ include(SetRpath)
 include(DeclareMod2CSubModule)
 include(FindPkgConfig)
 include(CTest)
+include(Findnmodl)
+
+# ispc support
+if (ENABLE_ISPC_TARGET)
+    enable_language(ISPC)
+    add_definitions("-DISPC_INTEROP=1")
+    set(ENABLE_NMODL ON)
+endif()
+
+if (ENABLE_NMODL)
+    find_package(nmodl REQUIRED)
+    set(MOD2C "${nmodl_BINARY}")
+    set(NMODL_EXTRA_FLAGS "" CACHE STRING "Extra NMODL options such as passes")
+    separate_arguments(NMODL_EXTRA_FLAGS UNIX_COMMAND "${NMODL_EXTRA_FLAGS}")
+    include_directories(${nmodl_INCLUDE})
+endif ()
+
 
 #Find all dependencies
 if (ENABLE_MPI)
