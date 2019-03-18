@@ -1285,7 +1285,7 @@ class Species(_SpeciesMathable):
 
         self._all_intracellular_nodes = []
         if self._intracellular_nodes:
-            for r in self.regions:
+            for r in self._regions:
                 self._all_intracellular_nodes += self._intracellular_nodes[r]
         # The first part here is for the 1D -- which doesn't keep live node objects -- the second part is for 3D
         return nodelist.NodeList(list(itertools.chain.from_iterable([s.nodes for s in self._secs])) + self._nodes + self._all_intracellular_nodes + self._extracellular_nodes) 
