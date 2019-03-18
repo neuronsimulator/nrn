@@ -973,14 +973,7 @@ def _compile_reactions():
             react_regions +=  [sptr()._region() for sptr in sptrs if isinstance(sptr(),species.SpeciesOnRegion)]
         #if regions are specified - use those
         elif hasattr(r,'_active_regions'):
-            print("I have active REGIONS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n\n\n\n\n\n\n\n\n\n\n")
-            print("active regions = {}".format(r._active_regions))
-            print("r._regions = {}".format(r._regions))
-            if r._regions[0] is None:
-                active_regions = r._active_regions
-            else:
-                active_regions = [reg for reg in r._active_regions if reg in r._regions]
-            react_regions = active_regions
+            react_regions = r._active_regions
         #Otherwise use all the regions where the species are
         else:
             react_regions = set()
@@ -1208,10 +1201,11 @@ def _compile_reactions():
                 ecs_register_reaction(0, len(all_ics_gids), _list_to_cint_array(all_ics_gids), _c_compile(fxn_string))                 
     #Setup extracellular reactions
     if len(ecs_regions_inv) > 0:
+        print(ecs_regions_inv)
         for reg in ecs_regions_inv:
             grid_ids = []
-            all_gids = set() 
-            fxn_string = _c_headers 
+            all_gids = set()
+            fxn_string = _c_headers
             #TODO: find the nrn include path in python
             #It is necessary for a couple of function in python that are not in math.h
             fxn_string += 'void reaction(double* species_ecs, double* rhs)\n{'
@@ -1220,12 +1214,10 @@ def _compile_reactions():
                 if not isinstance(rptr(),rate.Rate):
                     fxn_string += '\n\tdouble rate;'
                     break
-            #get a list of all grid_ids invovled
-            #print("ecs_regions_inv = {}".format(ecs_regions_inv))
-            #print("reg = {}".format(reg))
+            #get a list of all grid_ids involved
             for s in ecs_species_by_region[reg]:
-                sp = s[reg] if isinstance(s, species.Species) else None
-                #print("sp = {}".format(sp))
+                print(reg)
+                sp = s[reg] if isinstance(s, species.Species) else s
                 all_gids.add(sp._extracellular()._grid_id if isinstance(sp, species.SpeciesOnExtracellular) else sp._grid_id)
             all_gids = list(all_gids)
             for rptr in ecs_regions_inv[reg]:

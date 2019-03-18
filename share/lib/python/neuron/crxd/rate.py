@@ -108,11 +108,24 @@ class Rate(GeneralizedReaction):
         self._mult = [1]
         self._mult_extended = self._mult
         from . import  region
-        if not self._species() or isinstance(self._species(),species.SpeciesOnExtracellular) or all([isinstance(r,region.Extracellular) for r in self._regions]):
+        if not self._species() or isinstance(self._species(),species.SpeciesOnExtracellular) or all([isinstance(r,region.Extracellular) for r in self._regions]) or self._species()._intracellular_instances:
+            if self._regions != [None]:
+                self._active_regions = self._regions
+            elif self._species():
+                self._intracellular_active_regions = []
+                self._extracellular_active_regions = []
+
+                if isinstance(self._species(),species.SpeciesOnExtracellular):
+                    self._extracellular_active_regions = [self._species()._extracellular()._region]
+                if not isinstance(self._species(),species.SpeciesOnExtracellular) and self._species()._intracellular_instances:
+                    self._intracellular_active_regions = [reg for reg in self._species()._intracellular_instances.keys()]
+
+                self._active_regions = self._extracellular_active_regions + self._intracellular_active_regions
+
             for sptr in self._involved_species:
-                self._indices_dict[sptr()] = []
+                self._indices_dict[sptr()] = [] 
             return
-        
+
 
         active_secs = None
         
