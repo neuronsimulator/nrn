@@ -28,7 +28,7 @@ def make_unique_prefix(vars, default_prefix="tmp"):
         for v in vars:
             # if v is long enough to match prefix
             # and first part of it matches prefix
-            if ((len(v) >= len(prefix)) and (v[: len(prefix)] == prefix)):
+            if (len(v) >= len(prefix)) and (v[: len(prefix)] == prefix):
                 # append undescore to prefix, try again
                 prefix += "_"
                 break
@@ -100,9 +100,7 @@ def solve_ode_system(diff_strings, t_var, dt_var, vars, do_cse=False):
                 new_local_vars.append(sp.ccode(x_old))
                 code.append(f"{sp.ccode(x_old)} = {sp.ccode(x)}")
             if do_cse:
-                my_symbols = sp.utilities.iterables.numbered_symbols(
-                    prefix=prefix
-                )
+                my_symbols = sp.utilities.iterables.numbered_symbols(prefix=prefix)
                 sub_exprs, simplified_rhs = sp.cse(
                     rhs, symbols=my_symbols, optimizations="basic", order="canonical"
                 )
@@ -127,8 +125,10 @@ def solve_ode_system(diff_strings, t_var, dt_var, vars, do_cse=False):
             code.append(f"F[{i}] = {sp.ccode(eq.evalf().simplify())}")
         for i, jac in enumerate(sp.eye(jacobian.rows, jacobian.rows) - jacobian * dt):
             # todo: fix indexing to be ascending order
-            flat_index = jacobian.rows*(i%jacobian.rows) + (i//jacobian.rows)
-            code.append(f"J[{flat_index}] = {sp.ccode(jac.subs(Xvecsubs).evalf().simplify())}")
+            flat_index = jacobian.rows * (i % jacobian.rows) + (i // jacobian.rows)
+            code.append(
+                f"J[{flat_index}] = {sp.ccode(jac.subs(Xvecsubs).evalf().simplify())}"
+            )
     return code, new_local_vars
 
 
@@ -264,39 +264,65 @@ def differentiate2c(expression, dependent_var, vars, prev_expressions=None):
     # parse string into SymPy equation
     expr = sp.sympify(expression, locals=sympy_vars)
 
-    # parse previous equations into (lhs, rhs) pairs & reverse order
-    prev_eqs = [
-        (
-            sp.sympify(e.split("=", 1)[0], locals=sympy_vars),
-            sp.sympify(e.split("=", 1)[1], locals=sympy_vars),
-        )
-        for e in prev_expressions
-    ]
+    # parse previous expressions in the order that they came in
+    # substitute any x-dependent vars in rhs with their rhs expressions,
+    # so that the x-dependence (if any) is explicit in each equation
+    # and add boolean x_dependent flag for each equation
+    prev_eqs = []
+    for e in prev_expressions:
+        # parse into pairs of (lhs, rhs) SymPy expressions
+        e_lhs = sp.sympify(e.split("=", 1)[0], locals=sympy_vars)
+        e_rhs = sp.sympify(e.split("=", 1)[1], locals=sympy_vars)
+        # substitute in reverse order any x-dependent prior rhs
+        for lhs, rhs, x_dependent in reversed(prev_eqs):
+            if x_dependent:
+                e_rhs = e_rhs.subs(lhs, rhs)
+        # differentiate result w.r.t x to check if rhs depends on x
+        x_dependent = e_rhs.diff(x).simplify() != 0
+        # include boolean x_dependent flag with equation
+        prev_eqs.append((e_lhs, e_rhs, x_dependent))
+
+    # want to substitute equations in reverse order
     prev_eqs.reverse()
 
-    # substitute each prev equation in reverse order: latest first
-    for eq in prev_eqs:
-        expr = expr.subs(eq[0], eq[1])
+    # substitute each x-dependent prev equation in reverse order
+    for lhs, rhs, x_dependent in prev_eqs:
+        if x_dependent:
+            expr = expr.subs(lhs, rhs)
 
     # differentiate w.r.t. x
     diff = expr.diff(x).simplify()
 
-    # if expression is equal to one of the supplied vars, replace with this var
-    for v in sympy_vars:
-        if (diff - sympy_vars[v]).simplify() == 0:
-            diff = sympy_vars[v]
-    # or if equal to rhs of one of supplied equations, replace with lhs
-    for i_eq, eq in enumerate(prev_eqs):
-        # each supplied eq also needs recursive substitution of preceeding statements
-        # here, before comparison with diff expression
-        expr = eq[1]
-        for sub_eq in prev_eqs[i_eq:]:
-            expr = expr.subs(sub_eq[0], sub_eq[1])
-        if (diff - expr).simplify() == 0:
-            diff = eq[0]
+    # try to simplify expression in terms of existing variables
+    # ignore any exceptions here, since we already have a valid solution
+    # so if this further simplification step fails the error is not fatal
+    try:
+        # if expression is equal to one of the supplied vars, replace with this var
+        # can do a simple string comparison here since a var cannot be further simplified
+        diff_as_string = sp.ccode(diff)
+        for v in sympy_vars:
+            if diff_as_string == sp.ccode(sympy_vars[v]):
+                diff = sympy_vars[v]
+
+        # or if equal to rhs of one of the supplied equations, replace with lhs
+        # we need to substitute the constant prev expressions on both sides before comparing
+        for i_eq, prev_eq in enumerate(prev_eqs):
+            # each supplied eq, as well as our solution diff, need
+            # recursive substitution of any preceeding non-x-dependent statements
+            # before comparison
+            eq_rhs_sub = prev_eq[1]
+            diff_sub = diff
+            for lhs, rhs, x_dependent in prev_eqs[i_eq:]:
+                if not x_dependent:
+                    eq_rhs_sub = eq_rhs_sub.subs(lhs, rhs)
+                    diff_sub = diff_sub.subs(lhs, rhs)
+            if (diff_sub - eq_rhs_sub).simplify() == 0:
+                diff = prev_eq[0]
+    except Exception:
+        pass
 
     # return result as C code in NEURON format
-    return sp.ccode(diff)
+    return sp.ccode(diff.evalf())
 
 
 def forwards_euler2c(diff_string, dt_var, vars):

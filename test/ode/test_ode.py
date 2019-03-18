@@ -27,32 +27,30 @@ def test_differentiation():
 
     # simple examples, no prev_expressions
     assert differentiate2c("0", "x", "") == "0"
-    assert differentiate2c("x", "x", "") == "1"
+    assert differentiate2c("x", "x", "") == "1.0"
     assert differentiate2c("a", "x", "a") == "0"
     assert differentiate2c("a*x", "x", "a") == "a"
     assert differentiate2c("a*x", "a", "x") == "x"
     assert differentiate2c("a*x", "y", {"x", "y"}) == "0"
-    assert differentiate2c("a*x + b*x*x", "x", {"a", "b"}) == "a + 2*b*x"
+    assert differentiate2c("a*x + b*x*x", "x", {"a", "b"}) == "a + 2.0*b*x"
     assert differentiate2c("a*cos(x+b)", "x", {"a", "b"}) == "-a*sin(b + x)"
     assert (
         differentiate2c("a*cos(x+b) + c*x*x", "x", {"a", "b", "c"})
-        == "-a*sin(b + x) + 2*c*x"
+        == "-a*sin(b + x) + 2.0*c*x"
     )
 
     # single prev_expression to substitute
     assert differentiate2c("a*x + b", "x", {"a", "b", "c", "d"}, ["c = sqrt(d)"]) == "a"
-    assert differentiate2c("a*x + b", "x", {"a", "b"}, ["b = 2*x"]) == "a + 2"
+    assert differentiate2c("a*x + b", "x", {"a", "b"}, ["b = 2*x"]) == "a + 2.0"
 
     # multiple prev_eqs to substitute
     # (these statements should be in the same order as in the mod file)
-    assert differentiate2c("a*x + b", "x", {"a", "b"}, ["b = 2*x", "a = -2"]) == "0"
-    assert differentiate2c("a*x + b", "x", {"a", "b"}, ["b = 2*x", "a = -2"]) == "0"
+    assert differentiate2c("a*x + b", "x", {"a", "b", "c"}, ["b = 2*x", "a = 2*x*x*c"]) == "6.0*c*pow(x, 2) + 2.0"
+    assert differentiate2c("a*x + b", "x", {"a", "b", "c"}, ["b = 2*x^2", "a = c*cos(x)"]) == "-c*x*sin(x) + c*cos(x) + 4.0*x"
 
     # multiple prev_eqs to recursively substitute
     # note prev_eqs always substituted in reverse order
-    assert differentiate2c("a*x + b", "x", {"a", "b"}, ["a=3", "b = 2*a*x"]) == "9"
-    # if we can return result in terms of supplied var, do so
-    # even in this case where the supplied var a is equal to 3:
+    assert differentiate2c("a*x + b", "x", {"a", "b", "c"}, ["a=c*x", "b = 2*a*x"]) == "6.0*c*x"
     assert (
         differentiate2c(
             "a*x + b*c", "x", {"a", "b", "c"}, ["a=3", "b = 2*a*x", "c = a/x"]

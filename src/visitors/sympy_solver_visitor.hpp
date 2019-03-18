@@ -83,7 +83,7 @@ class SympySolverVisitor: public AstVisitor {
     std::vector<std::string> ode_system;
 
     static std::string to_nmodl_for_sympy(ast::AST* node) {
-        return nmodl::to_nmodl(node, {ast::AstNodeType::UNIT});
+        return nmodl::to_nmodl(node, {ast::AstNodeType::UNIT, ast::AstNodeType::UNIT_DEF});
     }
 
   public:
