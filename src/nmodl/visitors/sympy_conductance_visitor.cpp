@@ -50,6 +50,19 @@ static bool conductance_statement_possible(ast::BreakpointBlock* node) {
 std::vector<std::string> SympyConductanceVisitor::generate_statement_strings(
     ast::BreakpointBlock* node) {
     std::vector<std::string> statements;
+
+    // instead of passing all variables in the symbol table find out variables
+    // that are used in the current block and then pass to sympy
+    // name could be parameter or unit so check if it exist in symbol table
+    auto names_in_block = AstLookupVisitor().lookup(node, AstNodeType::NAME);
+    string_set used_names_in_block;
+    for (auto& name: names_in_block) {
+        auto varname = name->get_node_name();
+        if (all_vars.find(varname) != all_vars.end()) {
+            used_names_in_block.insert(varname);
+        }
+    }
+
     // iterate over binary expression lhs's from breakpoint
     for (const auto& lhs_str: ordered_binary_exprs_lhs) {
         // look for a current name that matches lhs of expr (current write name)
@@ -62,7 +75,7 @@ std::vector<std::string> SympyConductanceVisitor::generate_statement_strings(
                                                  ordered_binary_exprs.begin() +
                                                      binary_expr_index[lhs_str] + 1);
             // differentiate dI/dV
-            auto locals = py::dict("expressions"_a = expressions, "vars"_a = vars);
+            auto locals = py::dict("expressions"_a = expressions, "vars"_a = used_names_in_block);
             py::exec(R"(
                             from nmodl.ode import differentiate2c
                             exception_message = ""
@@ -91,11 +104,11 @@ std::vector<std::string> SympyConductanceVisitor::generate_statement_strings(
             } else {
                 std::string g_var = dIdV;
                 // if conductance g_var is not an existing variable, need to generate
-                // a new variable name, declare it, and asign it
-                if (vars.find(g_var) == vars.end()) {
+                // a new variable name, declare it, and assign it
+                if (all_vars.find(g_var) == all_vars.end()) {
                     // generate new variable name
                     std::map<std::string, int> var_map;
-                    for (auto const& v: vars) {
+                    for (auto const& v: all_vars) {
                         var_map[v] = 0;
                     }
                     g_var = get_new_name("g", i_name_str, var_map);
@@ -122,7 +135,7 @@ std::vector<std::string> SympyConductanceVisitor::generate_statement_strings(
 
 void SympyConductanceVisitor::visit_binary_expression(ast::BinaryExpression* node) {
     // only want binary expressions from breakpoint block
-    if (!breakpoint_block) {
+    if (!under_breakpoint_block) {
         return;
     }
     // only want binary expressions of form x = ...
@@ -196,13 +209,13 @@ void SympyConductanceVisitor::visit_breakpoint_block(ast::BreakpointBlock* node)
     // add any breakpoint local variables to vars
     if (auto* symtab = node->get_statement_block()->get_symbol_table()) {
         for (const auto& localvar: symtab->get_variables_with_properties(NmodlType::local_var)) {
-            vars.insert(localvar->get_name());
+            all_vars.insert(localvar->get_name());
         }
     }
     // visit BREAKPOINT block statements
-    breakpoint_block = true;
+    under_breakpoint_block = true;
     node->visit_children(this);
-    breakpoint_block = false;
+    under_breakpoint_block = false;
 
     // lookup USEION and NONSPECIFIC statements from NEURON block
     lookup_useion_statements();
@@ -229,7 +242,7 @@ void SympyConductanceVisitor::visit_breakpoint_block(ast::BreakpointBlock* node)
 }
 
 void SympyConductanceVisitor::visit_program(ast::Program* node) {
-    vars = get_global_vars(node);
+    all_vars = get_global_vars(node);
     AstLookupVisitor ast_lookup_visitor;
     use_ion_nodes = ast_lookup_visitor.lookup(node, AstNodeType::USEION);
     nonspecific_nodes = ast_lookup_visitor.lookup(node, AstNodeType::NONSPECIFIC);

@@ -2744,12 +2744,16 @@ std::string run_sympy_conductance_visitor(const std::string& text) {
     auto ast = driver.ast();
 
     // construct symbol table from AST
-    SymtabVisitor v_symtab;
-    v_symtab.visit_program(ast.get());
+    SymtabVisitor(false).visit_program(ast.get());
+
+    // run constant folding, inlining & local renaming first
+    ConstantFolderVisitor().visit_program(ast.get());
+    InlineVisitor().visit_program(ast.get());
+    LocalVarRenameVisitor().visit_program(ast.get());
+    SymtabVisitor(true).visit_program(ast.get());
 
     // run SympyConductance on AST
-    SympyConductanceVisitor v_sympy;
-    v_sympy.visit_program(ast.get());
+    SympyConductanceVisitor().visit_program(ast.get());
 
     // run lookup visitor to extract results from AST
     AstLookupVisitor v_lookup;
@@ -2798,7 +2802,7 @@ void run_sympy_conductance_passes(ast::Program* node) {
 }
 
 SCENARIO("SympyConductance visitor", "[sympy]") {
-    // Test mod files below all based on:
+    // First set of test mod files below all based on:
     // nmodldb/models/db/bluebrain/CortexSimplified/mod/Ca.mod
     GIVEN("breakpoint block containing VERBATIM statement") {
         std::string nmodl_text = R"(
@@ -3527,6 +3531,112 @@ SCENARIO("SympyConductance visitor", "[sympy]") {
             }
         )";
         THEN("Add 3 CONDUCTANCE hints, using existing vars") {
+            auto result = run_sympy_conductance_visitor(nmodl_text);
+            REQUIRE(result == breakpoint_to_nmodl(breakpoint_text));
+        }
+    }
+    // based on neurodamus/bbp/lib/modlib/GluSynapse.mod
+    GIVEN("1 nonspecific current, no CONDUCTANCE hints, many eqs & a function involved") {
+        std::string nmodl_text = R"(
+            NEURON {
+                GLOBAL tau_r_AMPA, E_AMPA
+                RANGE tau_d_AMPA, gmax_AMPA
+                RANGE g_AMPA
+                GLOBAL tau_r_NMDA, tau_d_NMDA, E_NMDA
+                RANGE g_NMDA
+                RANGE Use, Dep, Fac, Nrrp, u
+                RANGE tsyn, unoccupied, occupied
+                RANGE ica_NMDA
+                RANGE volume_CR
+                GLOBAL ljp_VDCC, vhm_VDCC, km_VDCC, mtau_VDCC, vhh_VDCC, kh_VDCC, htau_VDCC
+                RANGE gca_bar_VDCC, ica_VDCC
+                GLOBAL gamma_ca_CR, tau_ca_CR, min_ca_CR, cao_CR
+                GLOBAL tau_GB, gamma_d_GB, gamma_p_GB, rho_star_GB, tau_Use_GB, tau_effca_GB
+                RANGE theta_d_GB, theta_p_GB
+                RANGE rho0_GB
+                RANGE enable_GB, depress_GB, potentiate_GB
+                RANGE Use_d_GB, Use_p_GB
+                GLOBAL p_gen_RW, p_elim0_RW, p_elim1_RW
+                RANGE enable_RW, synstate_RW
+                GLOBAL mg, scale_mg, slope_mg
+                RANGE vsyn, NMDA_ratio, synapseID, selected_for_report, verbose
+                NONSPECIFIC_CURRENT i
+            }
+            UNITS {
+                (nA)    = (nanoamp)
+                (mV)    = (millivolt)
+                (uS)    = (microsiemens)
+                (nS)    = (nanosiemens)
+                (pS)    = (picosiemens)
+                (umho)  = (micromho)
+                (um)    = (micrometers)
+                (mM)    = (milli/liter)
+                (uM)    = (micro/liter)
+                FARADAY = (faraday) (coulomb)
+                PI      = (pi)      (1)
+                R       = (k-mole)  (joule/degC)
+            }
+            ASSIGNED {
+                g_AMPA          (uS)
+                g_NMDA          (uS)
+                ica_NMDA        (nA)
+                ica_VDCC        (nA)
+                depress_GB      (1)
+                potentiate_GB   (1)
+                v               (mV)
+                vsyn            (mV)
+                i               (nA)
+            }
+            FUNCTION nernst(ci(mM), co(mM), z) (mV) {
+                nernst = (1000) * R * (celsius + 273.15) / (z*FARADAY) * log(co/ci)
+            }
+            BREAKPOINT {
+                LOCAL Eca_syn, mggate, i_AMPA, gmax_NMDA, i_NMDA, Pf_NMDA, gca_bar_abs_VDCC, gca_VDCC
+                g_AMPA = (1e-3)*gmax_AMPA*(B_AMPA-A_AMPA)
+                i_AMPA = g_AMPA*(v-E_AMPA)
+                gmax_NMDA = gmax_AMPA*NMDA_ratio
+                mggate = 1 / (1 + exp(slope_mg * -(v)) * (mg / scale_mg))
+                g_NMDA = (1e-3)*gmax_NMDA*mggate*(B_NMDA-A_NMDA)
+                i_NMDA = g_NMDA*(v-E_NMDA)
+                Pf_NMDA  = (4*cao_CR) / (4*cao_CR + (1/1.38) * 120 (mM)) * 0.6
+                ica_NMDA = Pf_NMDA*g_NMDA*(v-40.0)
+                gca_bar_abs_VDCC = gca_bar_VDCC * 4(um2)*PI*(3(1/um3)/4*volume_CR*1/PI)^(2/3)
+                gca_VDCC = (1e-3) * gca_bar_abs_VDCC * m_VDCC * m_VDCC * h_VDCC
+                Eca_syn = nernst(cai_CR, cao_CR, 2)
+                ica_VDCC = gca_VDCC*(v-Eca_syn)
+                vsyn = v
+                i = i_AMPA + i_NMDA + ica_VDCC
+            }
+        )";
+        std::string breakpoint_text = R"(
+            BREAKPOINT {
+                LOCAL Eca_syn, mggate, i_AMPA, gmax_NMDA, i_NMDA, Pf_NMDA, gca_bar_abs_VDCC, gca_VDCC, nernst_in_0, g__0
+                CONDUCTANCE g__0
+                g__0 = (0.001*gmax_NMDA*mg*scale_mg*slope_mg*(A_NMDA-B_NMDA)*(E_NMDA-v)*exp(slope_mg*v)-0.001*gmax_NMDA*scale_mg*(A_NMDA-B_NMDA)*(mg+scale_mg*exp(slope_mg*v))*exp(slope_mg*v)+(g_AMPA+gca_VDCC)*pow(mg+scale_mg*exp(slope_mg*v), 2))/pow(mg+scale_mg*exp(slope_mg*v), 2)
+                g_AMPA = 0.001*gmax_AMPA*(B_AMPA-A_AMPA)
+                i_AMPA = g_AMPA*(v-E_AMPA)
+                gmax_NMDA = gmax_AMPA*NMDA_ratio
+                mggate = 1/(1+exp(slope_mg*-v)*(mg/scale_mg))
+                g_NMDA = 0.001*gmax_NMDA*mggate*(B_NMDA-A_NMDA)
+                i_NMDA = g_NMDA*(v-E_NMDA)
+                Pf_NMDA = (4*cao_CR)/(4*cao_CR+0.724638*120(mM))*0.6
+                ica_NMDA = Pf_NMDA*g_NMDA*(v-40)
+                gca_bar_abs_VDCC = gca_bar_VDCC*4(um2)*PI*(3(1/um3)/4*volume_CR*1/PI)^0.666667
+                gca_VDCC = 0.001*gca_bar_abs_VDCC*m_VDCC*m_VDCC*h_VDCC
+                {
+                    LOCAL ci_in_0, co_in_0, z_in_0
+                    ci_in_0 = cai_CR
+                    co_in_0 = cao_CR
+                    z_in_0 = 2
+                    nernst_in_0 = 1000*R*(celsius+273.15)/(z_in_0*FARADAY)*log(co_in_0/ci_in_0)
+                }
+                Eca_syn = nernst_in_0
+                ica_VDCC = gca_VDCC*(v-Eca_syn)
+                vsyn = v
+                i = i_AMPA+i_NMDA+ica_VDCC
+            }
+        )";
+        THEN("Add 1 CONDUCTANCE hint using new var") {
             auto result = run_sympy_conductance_visitor(nmodl_text);
             REQUIRE(result == breakpoint_to_nmodl(breakpoint_text));
         }
