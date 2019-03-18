@@ -79,11 +79,12 @@ std::vector<ReportConfiguration> create_report_configurations(const char* conf_f
         ReportConfiguration& report = reports[reports.size() - 1];
         // mechansim id registered in coreneuron
         report.mech_id = -1;
-        report.buffer_size = 4; //default size to 4 Mb
+        report.buffer_size = 4;  // default size to 4 Mb
         fgets(raw_line, MAX_FILEPATH_LEN, fp);
-        sscanf(raw_line, "\n%s %s %s %s %s %s %d %lf %lf %lf %d %d\n", report.name, report.target_name,
-                report.type_str, report_on, report.unit, report.format, &is_soma, &report.report_dt,
-                &report.start, &report.stop, &report.num_gids, &report.buffer_size);
+        sscanf(raw_line, "\n%s %s %s %s %s %s %d %lf %lf %lf %d %d\n", report.name,
+               report.target_name, report.type_str, report_on, report.unit, report.format, &is_soma,
+               &report.report_dt, &report.start, &report.stop, &report.num_gids,
+               &report.buffer_size);
         for (int i = 0; i < MAX_REPORT_NAME_LEN; i++) {
             report.type_str[i] = tolower(report.type_str[i]);
         }

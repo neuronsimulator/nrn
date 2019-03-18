@@ -64,7 +64,7 @@ class fixed_vector {
         return n_;
     }
 
-#if (USE_PTHREAD || defined(_OPENMP))
+#if defined(_OPENMP)
     void mutconstruct(int mkmut) {
         if (!mut_)
             MUTCONSTRUCT(mkmut)

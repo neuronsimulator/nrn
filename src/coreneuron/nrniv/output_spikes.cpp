@@ -45,7 +45,9 @@ namespace coreneuron {
 std::vector<double> spikevec_time;
 std::vector<int> spikevec_gid;
 
+#ifdef _OPENMP
 static MUTDEC
+#endif
 
     void
     mk_spikevec_buffer(int sz) {

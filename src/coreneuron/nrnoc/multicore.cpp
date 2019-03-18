@@ -73,233 +73,12 @@ int nrn_nthread = 0;
 NrnThread* nrn_threads = NULL;
 void (*nrn_mk_transfer_thread_data_)();
 
-static int nrn_thread_parallel_;
 static int table_check_cnt_;
 static ThreadDatum* table_check_;
 
-#if 0 && USE_PTHREAD
-static void* nulljob(NrnThread* nt) {
-	(void)nt; /* unused */
-	return (void*)0;
-}
-#endif
-
 int nrn_inthread_;
-#if USE_PTHREAD
 
-#include <pthread.h>
-//#include <sched.h> /* for sched_setaffinity */
-
-static int interpreter_locked;
-static pthread_mutex_t interpreter_lock_;
-static pthread_mutex_t* _interpreter_lock;
-
-static pthread_mutex_t nmodlmutex_;
-pthread_mutex_t* _nmodlmutex;
-
-static pthread_mutex_t nrn_malloc_mutex_;
-static pthread_mutex_t* _nrn_malloc_mutex;
-
-/* when PERMANENT is 0, we avoid false warnings with helgrind, but a bit slower */
-/* when 0, create/join instead of wait on condition. */
-#if !defined(NDEBUG)
-#define PERMANENT 0
-#endif
-#ifndef PERMANENT
-#define PERMANENT 1
-#endif
-
-#if PERMANENT
-static int busywait_;
-static int busywait_main_;
-#endif
-
-typedef volatile struct {
-    int flag;
-    int thread_id;
-    /* for nrn_solve etc.*/
-    void* (*job)(NrnThread*);
-} slave_conf_t;
-
-static pthread_t* slave_threads;
-
-#if PERMANENT
-static pthread_cond_t* cond;
-static pthread_mutex_t* mut;
-static slave_conf_t* wc;
-#endif
-
-static void wait_for_workers() {
-    int i;
-    for (i = 1; i < nrn_nthread; ++i) {
-#if PERMANENT
-        if (busywait_main_) {
-            while (wc[i].flag != 0) {
-                ;
-            }
-        } else {
-            pthread_mutex_lock(mut + i);
-            while (wc[i].flag != 0) {
-                pthread_cond_wait(cond + i, mut + i);
-            }
-            pthread_mutex_unlock(mut + i);
-        }
-#else
-        pthread_join(slave_threads[i], (void*)0);
-        /* if CORENEURON_OPENMP is off */
-        (void)busywait_;
-        (void)busywait_main_;
-        (void)nulljob;
-#endif
-    }
-}
-
-static void send_job_to_slave(int i, void* (*job)(NrnThread*)) {
-#if PERMANENT
-    pthread_mutex_lock(mut + i);
-    wc[i].job = job;
-    wc[i].flag = 1;
-    pthread_cond_signal(cond + i);
-    pthread_mutex_unlock(mut + i);
-#else
-    pthread_create(slave_threads + i, (void*)0, (void* (*)(void*))job, (void*)(nrn_threads + i));
-#endif
-}
-
-#if PERMANENT
-static void* slave_main(void* arg) {
-    slave_conf_t* my_wc = (slave_conf_t*)arg;
-    pthread_mutex_t* my_mut = mut + my_wc->thread_id;
-    pthread_cond_t* my_cond = cond + my_wc->thread_id;
-
-    for (;;) {
-        if (busywait_) {
-            while (my_wc->flag == 0) {
-                ;
-            }
-            if (my_wc->flag == 1) {
-                (*my_wc->job)(nrn_threads + my_wc->thread_id);
-            } else {
-                return (void*)0;
-            }
-            my_wc->flag = 0;
-            pthread_cond_signal(my_cond);
-        } else {
-            pthread_mutex_lock(my_mut);
-            while (my_wc->flag == 0) {
-                pthread_cond_wait(my_cond, my_mut);
-            }
-            pthread_mutex_unlock(my_mut);
-            pthread_mutex_lock(my_mut);
-            if (my_wc->flag == 1) {
-                pthread_mutex_unlock(my_mut);
-                (*my_wc->job)(nrn_threads + my_wc->thread_id);
-            } else {
-                pthread_mutex_unlock(my_mut);
-                return (void*)0;
-            }
-            pthread_mutex_lock(my_mut);
-            my_wc->flag = 0;
-            pthread_cond_signal(my_cond);
-            pthread_mutex_unlock(my_mut);
-        }
-    }
-    return (void*)0;
-}
-
-#endif
-
-static void threads_create_pthread() {
-    if (nrn_nthread > 1) {
-#if PERMANENT
-        int i;
-        CACHELINE_ALLOC(wc, slave_conf_t, nrn_nthread);
-        slave_threads = (pthread_t*)emalloc(sizeof(pthread_t) * nrn_nthread);
-        cond = (pthread_cond_t*)emalloc(sizeof(pthread_cond_t) * nrn_nthread);
-        mut = (pthread_mutex_t*)emalloc(sizeof(pthread_mutex_t) * nrn_nthread);
-        for (i = 1; i < nrn_nthread; ++i) {
-            wc[i].flag = 0;
-            wc[i].thread_id = i;
-            pthread_cond_init(cond + i, (void*)0);
-            pthread_mutex_init(mut + i, (void*)0);
-            pthread_create(slave_threads + i, (void*)0, slave_main, (void*)(wc + i));
-        }
-#else
-        slave_threads = (pthread_t*)emalloc(sizeof(pthread_t) * nrn_nthread);
-#endif /* PERMANENT */
-        if (!_interpreter_lock) {
-            interpreter_locked = 0;
-            _interpreter_lock = &interpreter_lock_;
-            pthread_mutex_init(_interpreter_lock, (void*)0);
-        }
-        if (!_nmodlmutex) {
-            _nmodlmutex = &nmodlmutex_;
-            pthread_mutex_init(_nmodlmutex, (void*)0);
-        }
-        if (!_nrn_malloc_mutex) {
-            _nrn_malloc_mutex = &nrn_malloc_mutex_;
-            pthread_mutex_init(_nrn_malloc_mutex, (void*)0);
-        }
-        nrn_thread_parallel_ = 1;
-    } else {
-        nrn_thread_parallel_ = 0;
-    }
-}
-
-static void threads_free_pthread() {
-    if (slave_threads) {
-#if PERMANENT
-        int i;
-        wait_for_workers();
-        for (i = 1; i < nrn_nthread; ++i) {
-            pthread_mutex_lock(mut + i);
-            wc[i].flag = -1;
-            pthread_cond_signal(cond + i);
-            pthread_mutex_unlock(mut + i);
-            pthread_join(slave_threads[i], (void*)0);
-            pthread_cond_destroy(cond + i);
-            pthread_mutex_destroy(mut + i);
-        }
-        free((char*)slave_threads);
-        free((char*)cond);
-        free((char*)mut);
-        free((char*)wc);
-        slave_threads = (pthread_t*)0;
-        cond = (pthread_cond_t*)0;
-        mut = (pthread_mutex_t*)0;
-        wc = (slave_conf_t*)0;
-#else
-        free((char*)slave_threads);
-        slave_threads = (pthread_t*)0;
-#endif /*PERMANENT*/
-    }
-    if (_interpreter_lock) {
-        pthread_mutex_destroy(_interpreter_lock);
-        _interpreter_lock = (pthread_mutex_t*)0;
-        interpreter_locked = 0;
-    }
-    if (_nmodlmutex) {
-        pthread_mutex_destroy(_nmodlmutex);
-        _nmodlmutex = (pthread_mutex_t*)0;
-    }
-    if (_nrn_malloc_mutex) {
-        pthread_mutex_destroy(_nrn_malloc_mutex);
-        _nrn_malloc_mutex = (pthread_mutex_t*)0;
-    }
-    nrn_thread_parallel_ = 0;
-}
-
-#else  /* USE_PTHREAD */
-
-static void threads_create_pthread() {
-    nrn_thread_parallel_ = 0;
-}
-static void threads_free_pthread() {
-    nrn_thread_parallel_ = 0;
-}
-#endif /* !USE_PTHREAD */
-
-void nrn_threads_create(int n, int parallel) {
+void nrn_threads_create(int n) {
     int i, j;
     NrnThread* nt;
     if (nrn_nthread != n) {
@@ -363,18 +142,11 @@ void nrn_threads_create(int n, int parallel) {
         v_structure_change = 1;
         diam_changed = 1;
     }
-    if (nrn_thread_parallel_ != parallel) {
-        threads_free_pthread();
-        if (parallel) {
-            threads_create_pthread();
-        }
-    }
     /*printf("nrn_threads_create %d %d\n", nrn_nthread, nrn_thread_parallel_);*/
 }
 
 void nrn_threads_free() {
     if (nrn_nthread) {
-        threads_free_pthread();
         free((void*)nrn_threads);
         nrn_threads = 0;
         nrn_nthread = 0;
@@ -460,26 +232,10 @@ void nrn_multithread_job(void* (*job)(NrnThread*)) {
 #endif
 // clang-format on
 #else
-
-/* old implementation */
-#if USE_PTHREAD
-    if (nrn_thread_parallel_) {
-        nrn_inthread_ = 1;
-        for (i = 1; i < nrn_nthread; ++i) {
-            send_job_to_slave(i, job);
-        }
-        (*job)(nrn_threads);
-        WAIT();
-        nrn_inthread_ = 0;
-    } else { /* sequential */
-#else
-    {
-#endif
-        for (i = 1; i < nrn_nthread; ++i) {
-            (*job)(nrn_threads + i);
-        }
-        (*job)(nrn_threads);
+    for (i = 1; i < nrn_nthread; ++i) {
+        (*job)(nrn_threads + i);
     }
+    (*job)(nrn_threads);
 #endif
 }
 }  // namespace coreneuron

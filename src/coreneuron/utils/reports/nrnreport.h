@@ -68,7 +68,7 @@ struct ReportConfiguration {
     double start;                           // start time of report
     double stop;                            // stop time of report
     int num_gids;                           // total number of gids
-    int buffer_size;                     // hint on buffer size used for this report
+    int buffer_size;                        // hint on buffer size used for this report
     std::set<int> target;                   // list of gids for this report
 };
 

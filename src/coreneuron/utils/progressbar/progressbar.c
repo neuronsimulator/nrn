@@ -36,8 +36,7 @@ enum { BAR_BORDER_WIDTH = 2 };
 /// The maximum number of bar redraws (to avoid frequent output in long runs)
 enum { BAR_DRAW_COUNT_MAX = 500 };
 
-enum { BAR_DRAW_INTERVAL = 1,
-       BAR_DRAW_INTERVAL_NOTTY = 5 };
+enum { BAR_DRAW_INTERVAL = 1, BAR_DRAW_INTERVAL_NOTTY = 5 };
 
 /// Models a duration of time broken into hour/minute/second components. The number of seconds
 /// should be less than the
@@ -65,7 +64,7 @@ progressbar* progressbar_new_with_format(const char* label, unsigned long max, c
 
     new->max = max;
     new->value = 0;
-    new->draw_time_interval = isatty(STDOUT_FILENO)? BAR_DRAW_INTERVAL : BAR_DRAW_INTERVAL_NOTTY;
+    new->draw_time_interval = isatty(STDOUT_FILENO) ? BAR_DRAW_INTERVAL : BAR_DRAW_INTERVAL_NOTTY;
     new->t = 0;
     new->start = time(NULL);
     assert(3 == strlen(format) && "format must be 3 characters in length");
@@ -136,8 +135,8 @@ void progressbar_update(progressbar* bar, unsigned long value, double t) {
     if (bar->draw_time_interval < BAR_DRAW_INTERVAL_NOTTY) {
         bar->draw_time_interval =
             isatty(STDOUT_FILENO)
-                ? ((bar->draw_time_interval < BAR_DRAW_INTERVAL)? BAR_DRAW_INTERVAL
-                                                                : bar->draw_time_interval)
+                ? ((bar->draw_time_interval < BAR_DRAW_INTERVAL) ? BAR_DRAW_INTERVAL
+                                                                 : bar->draw_time_interval)
                 : BAR_DRAW_INTERVAL_NOTTY;
     }
 }

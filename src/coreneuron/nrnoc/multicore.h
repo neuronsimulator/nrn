@@ -125,7 +125,7 @@ struct NrnThread {
     void* mapping;     /* section to segment mapping information */
 };
 
-extern void nrn_threads_create(int n, int parallel);
+extern void nrn_threads_create(int n);
 extern int nrn_nthread;
 extern NrnThread* nrn_threads;
 extern void nrn_multithread_job(void* (*)(NrnThread*));

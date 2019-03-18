@@ -149,7 +149,6 @@ int nrn_feenableexcept() {
 namespace coreneuron {
 void call_prcellstate_for_prcellgid(int prcellgid, int compute_gpu, int is_init);
 
-
 void nrn_init_and_load_data(int argc,
                             char* argv[],
                             bool is_mapping_needed = false,
@@ -198,7 +197,6 @@ void nrn_init_and_load_data(int argc,
     // full path of files.dat file
     std::string filesdat(nrnopt_get_str("--datpath") + "/" + nrnopt_get_str("--filesdat"));
 
-
     // read the global variable names and set their values from globals.dat
     set_globals(nrnopt_get_str("--datpath").c_str(), nrnopt_get_flag("--seed"),
                 nrnopt_get_int("--seed"));
@@ -246,7 +244,8 @@ void nrn_init_and_load_data(int argc,
 
     if (nrnopt_get_flag("--gpu") && use_interleave_permute == 0) {
         if (nrnmpi_myid == 0) {
-            printf(" WARNING : GPU execution requires --cell-permute type 1 or 2. Setting it to 1.\n");
+            printf(
+                " WARNING : GPU execution requires --cell-permute type 1 or 2. Setting it to 1.\n");
         }
         use_interleave_permute = 1;
         use_solve_interleave = 1;
@@ -352,8 +351,6 @@ const char* nrn_version(int) {
 }
 }  // namespace coreneuron
 
-
-
 /// The following high-level functions are marked as "extern C"
 /// for compat with C, namely Neuron mod files.
 /// They split the previous solve_core so that intermediate init of external mechanisms can occur.
@@ -370,9 +367,7 @@ extern "C" void mk_mech_init(int argc, char** argv) {
     mk_mech(nrnopt_get_str("--datpath").c_str());
 }
 
-
 extern "C" int run_solve_core(int argc, char** argv) {
-
 #if NRNMPI
     nrnmpi_init(1, &argc, &argv);
 #endif
@@ -442,7 +437,8 @@ extern "C" int run_solve_core(int argc, char** argv) {
                 min_report_dt = configs[i].report_dt;
             }
         }
-        // Set the buffer size if is not the default value. Otherwise use report.conf on register_report
+        // Set the buffer size if is not the default value. Otherwise use report.conf on
+        // register_report
         if (!nrnopt_is_default_value("--report-buffer-size")) {
             set_report_buffer_size(report_buffer_size);
         }

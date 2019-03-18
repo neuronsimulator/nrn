@@ -95,7 +95,7 @@ void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
         MPI_Initialized(&flag);
 
         if (!flag) {
-#if (USE_PTHREAD || defined(_OPENMP))
+#if defined(_OPENMP)
             int required = MPI_THREAD_FUNNELED;
             int provided;
             nrn_assert(MPI_Init_thread(pargc, pargv, required, &provided) == MPI_SUCCESS);

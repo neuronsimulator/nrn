@@ -180,7 +180,6 @@ static void mk_mech(std::istream& s) {
     for (int i = 0; mechanism[i]; i++) {
         (*mechanism[i])();
     }
-
 }
 
 /// Get mechanism type by the mechanism name

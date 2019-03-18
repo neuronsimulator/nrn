@@ -58,11 +58,16 @@ uint32_t nrnran123_get_globalindex() {
     return k.v[0];
 }
 
+#ifdef _OPENMP
 static MUTDEC void nrnran123_mutconstruct() {
     if (!mut_) {
         MUTCONSTRUCT(1);
     }
 }
+#else
+void nrnran123_mutconstruct() {
+}
+#endif
 
 nrnran123_State* nrnran123_newstream(uint32_t id1, uint32_t id2) {
     return nrnran123_newstream3(id1, id2, 0);

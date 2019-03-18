@@ -5,11 +5,12 @@
 #include <coreneuron/engine.h>
 
 #ifdef ADDITIONAL_MECHS
-namespace coreneuron{ extern void modl_reg(); }
+namespace coreneuron {
+extern void modl_reg();
+}
 #endif
 
 int solve_core(int argc, char** argv) {
-
     mk_mech_init(argc, argv);
 
 #ifdef ADDITIONAL_MECHS
