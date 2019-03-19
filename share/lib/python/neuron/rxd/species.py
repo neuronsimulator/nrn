@@ -673,7 +673,6 @@ class Species(_SpeciesMathable):
                 sec._offset += root_id
             self._has_adjusted_offsets = True
     
-    
     def _finitialize(self, skip_transfer=False):
         if self.initial is not None:
             if isinstance(self.initial, collections.Callable):
@@ -682,10 +681,14 @@ class Species(_SpeciesMathable):
             else:
                 for node in self.nodes:
                     node.concentration = self.initial
-            if not skip_transfer:
-                self._transfer_to_legacy()            
+        elif self.name is None:
+            for node in self.nodes:
+                node.concentration = 0
         else:
             self._import_concentration()
+            skip_transfer = False
+        if not skip_transfer:
+            self._transfer_to_legacy() 
     
     def _transfer_to_legacy(self):
         """Transfer concentrations to the standard NEURON grid"""
