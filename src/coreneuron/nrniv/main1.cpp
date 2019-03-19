@@ -368,6 +368,9 @@ const char* nrn_version(int) {
 using namespace coreneuron;
 
 extern "C" void mk_mech_init(int argc, char** argv) {
+#if NRNMPI
+    nrnmpi_init(1, &argc, &argv);
+#endif
     // read command line parameters and parameter config files
     nrnopt_parse(argc, (const char**)argv);
 
@@ -376,13 +379,10 @@ extern "C" void mk_mech_init(int argc, char** argv) {
 }
 
 extern "C" int run_solve_core(int argc, char** argv) {
-#if NRNMPI
-    nrnmpi_init(1, &argc, &argv);
-#endif
     std::vector<ReportConfiguration> configs;
     bool reports_needs_finalize = false;
 
-    report_mem_usage("After mk_mech ang global initialization");
+    report_mem_usage("After mk_mech");
 
     if (nrnopt_get_str("--report-conf").size()) {
         if (nrnopt_get_int("--multiple") > 1) {
