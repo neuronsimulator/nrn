@@ -116,6 +116,11 @@ if (ENABLE_NMODL)
     set(NMODL_EXTRA_FLAGS "" CACHE STRING "Extra NMODL options such as passes")
     separate_arguments(NMODL_EXTRA_FLAGS UNIX_COMMAND "${NMODL_EXTRA_FLAGS}")
     include_directories(${nmodl_INCLUDE})
+    if("$ENV{PYTHONPATH}" STREQUAL "")
+        set(ENV{PYTHONPATH} "${nmodl_PYTHONPATH}")
+    else()
+        set(ENV{PYTHONPATH} "${nmodl_PYTHONPATH}:$ENV{PYTHONPATH}")
+    endif ()
 endif ()
 
 

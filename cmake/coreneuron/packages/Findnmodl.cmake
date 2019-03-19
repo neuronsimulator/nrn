@@ -53,12 +53,13 @@
 find_program(nmodl_BINARY NAMES nmodl
         HINTS "${NMODL_ROOT}/bin")
 
-find_path(nmodl_INCLUDE "fast_math.ispc" HINTS "${NMODL_ROOT}/include")
+find_path(nmodl_INCLUDE "nmodl/fast_math.ispc" HINTS "${NMODL_ROOT}/include")
+find_path(nmodl_PYTHONPATH "nmodl/__init__.py" HINTS "${NMODL_ROOT}/lib/python")
 
 # Checks 'REQUIRED', 'QUIET' and versions.
 include(FindPackageHandleStandardArgs)
 
 find_package_handle_standard_args(nmodl
   FOUND_VAR nmodl_FOUND
-  REQUIRED_VARS nmodl_BINARY nmodl_INCLUDE)
+  REQUIRED_VARS nmodl_BINARY nmodl_INCLUDE nmodl_PYTHONPATH)
   
