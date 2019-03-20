@@ -168,7 +168,6 @@ class _SpeciesMathable(object):
 
     @property
     def _semi_compile(self):
-        print("in _SpeciesMathable _semi_compile!!!!!!")
         return 'species[%d][]' % (self._id)
 
     def _involved_species(self, the_dict):
@@ -244,7 +243,7 @@ class SpeciesOnExtracellular(_SpeciesMathable):
                 
     @property
     def _semi_compile(self):
-        print("In ECS semi compile!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        print("In SPECIESONECS semi compile!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         return 'species_ecs[%d]' % (self._extracellular()._grid_id)
 
 class SpeciesOnRegion(_SpeciesMathable):
@@ -315,6 +314,12 @@ class SpeciesOnRegion(_SpeciesMathable):
         """A vector of all the states corresponding to this species"""
         #TODO This should be restricted to the Region
         return self._species().states
+
+    @property
+    def states3D(self):
+        """A vector of all the 3D states corresponding to this species"""
+        #TODO This should be restricted to the Region
+        return self._species()._intracellular_instances[self._region()].states
     
     @property
     def nodes(self):
@@ -349,7 +354,6 @@ class SpeciesOnRegion(_SpeciesMathable):
         self.nodes.concentration = value
     @property
     def _semi_compile(self):
-        print("In semi compile!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         return 'species[%d][%d]' % (self._id, self._region()._id)
 
 # 3d matrix stuff
@@ -481,7 +485,11 @@ class _IntracellularSpecies(_SpeciesMathable):
         # Updated - now it will initialize using NodeExtracellular
         # TODO: support more complicated initializations than just constants
         if self._initial is None:
-            self.states[:] = 1
+            self.states[:] = 0
+
+    @property
+    def _semi_compile(self):
+        return 'species_ics[%d]' % (self._grid_id)
 
 class _ExtracellularSpecies(_SpeciesMathable):
     def __init__(self, region, d=0, name=None, charge=0, initial=0, atolscale=1.0, boundary_conditions=None):

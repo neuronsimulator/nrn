@@ -53,7 +53,6 @@ class Rate(GeneralizedReaction):
         
     def _do_init(self):
         rate = self._original_rate
-        print(rate)
         if not isinstance(rate, RangeVar):
             self._rate, self._involved_species = rxdmath._compile(rate)
         else:
@@ -83,6 +82,20 @@ class Rate(GeneralizedReaction):
 
         if ecs_region:
             self._rate_ecs, self._involved_species_ecs = rxdmath._compile(rate, extracellular=ecs_region)
+
+        ics3d_region = [r for r in self._regions if not isinstance(r, region.Extracellular)]
+        ics3d_region = ics3d_region[0] if len(ics3d_region) > 0 else None
+
+        if not ics3d_region:
+            if isinstance(self._species(), species.SpeciesOnRegion):
+                sp = self._species._species()
+            else:
+                sp = sp = self._species()
+            if sp and sp._intracellular_instances:
+                ics3d_region = sp._intracellular_instances[sp.regions[0]]._region
+
+        if ics3d_region:
+            self._rate, self._involved_species = rxdmath._compile(rate, intracellular3d=ics3d_region)        
 
     
     def __repr__(self):

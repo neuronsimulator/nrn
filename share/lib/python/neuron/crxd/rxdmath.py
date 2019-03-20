@@ -54,11 +54,11 @@ def analyze_reaction(r):
 # TODO: change this so that inputs are all automatically converted to numpy.array(s)
 #_compile is called by the reaction (Reaction._update_rates)
 # returns the rate and the species involved
-def _compile(arith, extracellular=None):
+def _compile(arith, extracellular=None, intracellular3d=None):
     initializer._do_init()
     #for extracellular reactions ensure the species are _ExtracellularSpecies
     arith = _ensure_arithmeticed(arith)
-    arith._ensure_extracellular(extracellular)
+    arith._ensure_extracellular(extracellular,intracellular3d)
     try:
         s = arith._semi_compile
         species_dict = {}
@@ -249,7 +249,7 @@ class _Product:
 
     #Change any Species to _ExtracellularSpecies so _semi_compile gives the
     #_grid_id and not the species _id
-    def _ensure_extracellular(self, extracellular = None):
+    def _ensure_extracellular(self, extracellular = None, intracellular3d=None):
         if extracellular:
             from . import species 
             for item in [self._a, self._b]:
@@ -258,6 +258,14 @@ class _Product:
                     items = ecs_species
                 elif hasattr(item,'_ensure_extracellular'):
                     item._ensure_extracellular(extracellular=extracellular)
+        if intracellular3d:
+            from . import species
+            for item in [self._a, self._b]:
+                if isinstance(item,species.Species):
+                    ics_species = item._intracellular_instances[intracellular3d]
+                    items = ics_species
+                elif hasattr(item,'_ensure_extracellular'):
+                    item._ensure_extracellular(intracellular3d=intracellular3d)
 
     @property
     def _semi_compile(self):
@@ -330,7 +338,7 @@ class _Arithmeticed:
 
     #Change any Species to _ExtracellularSpecies so _semi_compile gives the
     #_grid_id and not the species _id
-    def _ensure_extracellular(self, extracellular = None):
+    def _ensure_extracellular(self, extracellular = None, intracellular3d=None):
         if extracellular and hasattr(self,'_items'):
             from . import species 
             for item, count in zip(list(self._items.keys()), list(self._items.values())):
@@ -341,6 +349,16 @@ class _Arithmeticed:
                         self._items[ecs_species] = count
                     elif hasattr(item,'_ensure_extracellular'):
                         item._ensure_extracellular(extracellular=extracellular)
+        if intracellular3d and hasattr(self,'_items'):
+            from . import species
+            for item, count in zip(list(self._items.keys()), list(self._items.values())):
+                if count:
+                    if isinstance(item,species.Species):
+                        ics_species = item._intracellular_instances[intracellular3d]
+                        self._items.pop(item)
+                        self._items[ics_species] = count
+                    elif hasattr(item,'_ensure_extracellular'):
+                        item._ensure_extracellular(intracellular3d=intracellular3d)
 
 
 
