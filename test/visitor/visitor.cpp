@@ -2546,6 +2546,52 @@ SCENARIO("SympySolver visitor", "[sympy]") {
             REQUIRE(AST_string == ast_to_string(ast.get()));
         }
     }
+    GIVEN("Derivative block with cnexp solver method and conditional block") {
+        std::string nmodl_text = R"(
+            BREAKPOINT  {
+                SOLVE states METHOD derivimplicit
+            }
+
+            DERIVATIVE states {
+                IF (mInf == 1) {
+                    mInf = mInf+1
+                }
+                m' = (mInf-m)/mTau
+            }
+        )";
+        /// TODO : Note that the test is not correct because the ode is linear so the python
+        /// sympy solver call is returning the sparse solution, not the derivimplicit one
+        std::string expected_text = R"(
+            BREAKPOINT {
+                SOLVE states METHOD derivimplicit
+            }
+
+            DERIVATIVE states {
+                LOCAL tmp_m_old
+                IF (mInf == 1) {
+                    mInf = mInf+1
+                }
+                {
+                    X[0] = m
+                }{
+                    tmp_m_old = m
+                    m = (dt*mInf+mTau*tmp_m_old)/(dt+mTau)
+                }{
+                    m = X[0]
+                }
+            }
+        )";
+        NmodlDriver driver;
+        driver.parse_string(nmodl_text);
+        auto ast = driver.ast();
+        SymtabVisitor().visit_program(ast.get());
+        SympySolverVisitor().visit_program(ast.get());
+        std::string AST_string = ast_to_string(ast.get());
+
+        THEN("SympySolver correctly inserts ode to block") {
+            REQUIRE(AST_string == reindent_text(expected_text));
+        }
+    }
     GIVEN("Derivative block of coupled & linear ODES, solver method sparse, no CSE") {
         std::string nmodl_text = R"(
             BREAKPOINT  {

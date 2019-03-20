@@ -65,10 +65,13 @@ class SympySolverVisitor: public AstVisitor {
     std::set<ast::Node*> diffeq_statements;
 
     /// current expression statement being visited (to track ODEs)
-    ast::ExpressionStatement* current_diffeq_statement;
+    ast::ExpressionStatement* current_diffeq_statement = nullptr;
 
     /// current statement block being visited
-    ast::StatementBlock* current_statement_block;
+    ast::StatementBlock* current_statement_block = nullptr;
+
+    /// block where ode statements are appeared
+    ast::StatementBlock* block_with_odes = nullptr;
 
     /// method specified in solve block
     std::string solve_method;
