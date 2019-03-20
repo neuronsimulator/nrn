@@ -252,7 +252,12 @@ void SympySolverVisitor::visit_program(ast::Program* node) {
     auto solve_block_nodes = ast_lookup_visitor.lookup(node, ast::AstNodeType::SOLVE_BLOCK);
     for (const auto& block: solve_block_nodes) {
         if (auto block_ptr = std::dynamic_pointer_cast<ast::SolveBlock>(block)) {
-            std::string solve_method = block_ptr->get_method()->get_value()->eval();
+            std::string solve_method;
+            if (block_ptr->get_method()) {
+                // Note: solve method name is an optional especially LINEAR and NONLINEAR
+                // blocks do not have solve method specified
+                solve_method = block_ptr->get_method()->get_value()->eval();
+            }
             std::string block_name = block_ptr->get_block_name()->get_value()->eval();
             logger->debug("SympySolverVisitor :: Found SOLVE statement: using {} for {}",
                           solve_method, block_name);
