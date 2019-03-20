@@ -43,8 +43,10 @@ SympySolverVisitor::construct_eigen_newton_solver_block(
 }
 
 void SympySolverVisitor::visit_statement_block(ast::StatementBlock* node) {
+    auto prev_statement_block = current_statement_block;
     current_statement_block = node;
     node->visit_children(this);
+    current_statement_block = prev_statement_block;
 }
 
 void SympySolverVisitor::visit_expression_statement(ast::ExpressionStatement* node) {
@@ -65,6 +67,14 @@ void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
         logger->warn("SympySolverVisitor :: LHS of differential equation is not a PrimeName");
         return;
     }
+
+    /// all ode statements (typically) appear in the same statement block
+    /// so for now don't track track different blocks
+    if (block_with_odes != nullptr && block_with_odes != current_statement_block) {
+        logger->error(
+            "SympySolverVisitor :: differential equations are appearing in different blocks");
+    }
+    block_with_odes = current_statement_block;
 
     prime_variables.push_back(lhs->get_node_name());
     diffeq_statements.insert(current_diffeq_statement);
@@ -198,21 +208,21 @@ void SympySolverVisitor::visit_derivative_block(ast::DerivativeBlock* node) {
             for (const auto& new_local_var: new_local_vars) {
                 logger->debug("SympySolverVisitor :: -> declaring new local variable: {}",
                               new_local_var);
-                add_local_variable(current_statement_block, new_local_var);
+                add_local_variable(block_with_odes, new_local_var);
             }
         }
 
         if (solve_method == codegen::naming::SPARSE_METHOD) {
-            remove_statements_from_block(current_statement_block, diffeq_statements);
+            remove_statements_from_block(block_with_odes, diffeq_statements);
             // get a copy of existing statements in block
-            auto statements = current_statement_block->get_statements();
+            auto statements = block_with_odes->get_statements();
             // add new statements
             for (const auto& sol: solutions) {
                 logger->debug("SympySolverVisitor :: -> adding statement: {}", sol);
                 statements.push_back(create_statement(sol));
             }
             // replace old set of statements in AST with new one
-            current_statement_block->set_statements(std::move(statements));
+            block_with_odes->set_statements(std::move(statements));
         } else if (solve_method == codegen::naming::DERIVIMPLICIT_METHOD) {
             /// Construct X from the state variables by using the original
             /// ODE statements in the block. Also create statements to update
@@ -227,7 +237,7 @@ void SympySolverVisitor::visit_derivative_block(ast::DerivativeBlock* node) {
             }
 
             /// remove original ODE statements from the block where they initially appear
-            remove_statements_from_block(current_statement_block, diffeq_statements);
+            remove_statements_from_block(block_with_odes, diffeq_statements);
 
             /// create newton solution block and add that as statement back in the block
             /// statements in solutions : put F, J into new functor to be created for eigen
@@ -238,8 +248,7 @@ void SympySolverVisitor::visit_derivative_block(ast::DerivativeBlock* node) {
                 logger->error("SympySolverVisitor :: -> X conflicts with NMODL variable");
             }
 
-            current_statement_block->addStatement(
-                std::make_shared<ast::ExpressionStatement>(solver_block));
+            block_with_odes->addStatement(std::make_shared<ast::ExpressionStatement>(solver_block));
         }
     }
 }
