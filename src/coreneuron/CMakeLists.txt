@@ -386,7 +386,7 @@ add_library(coreneuron ${COMPILE_LIBRARY_TYPE} ${coreneuron_all_headers} ${coren
 add_dependencies(coreneuron kinderiv)
 
 target_link_libraries(coreneuron ${MPI_CXX_LIBRARIES}
-                      ${link_reportinglib} ${link_cudacoreneuron} ${CUDA_LIBRARIES})
+                      ${link_reportinglib} ${link_cudacoreneuron} ${CUDA_LIBRARIES} ${CALIPER_LIB})
 
 set_target_properties(coreneuron PROPERTIES
                       VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}

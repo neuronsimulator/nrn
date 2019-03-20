@@ -61,6 +61,7 @@ option(ENABLE_NET_RECEIVE_BUFFERING "Enable event buffering in net_receive funct
 option(ENABLE_OMP_RUNTIME_SCHEDULE "Use runtime schedule for OpenMP" OFF)
 option(ENABLE_ISPC_TARGET "Enable ispc interoperability structs and data" OFF)
 option(ENABLE_NMODL "Enable external nmodl source-to-source compiler" OFF)
+option(ENABLE_CALIPER "Enable Caliper instrumentation" OFF)
 
 ## set C++11 standard to be default
 set(CMAKE_CXX_STANDARD 11)
@@ -182,6 +183,18 @@ if(ENABLE_REPORTINGLIB)
         message(FATAL_ERROR "Enabled use of ReportingLib but ReportingLib installion not found!")
     endif(reportinglib_FOUND)
 endif(ENABLE_REPORTINGLIB)
+
+# Code instrumentation
+if(ENABLE_CALIPER)
+    find_package(caliper REQUIRED)
+    include_directories(${caliper_INCLUDE_DIR})
+    add_definitions("-DCORENEURON_CALIPER")
+    if(ENABLE_MPI)
+        set(CALIPER_LIB "caliper-mpi")
+    else()
+        set(CALIPER_LIB "caliper")
+    endif()
+endif(ENABLE_CALIPER)
 
 CHECK_INCLUDE_FILES (malloc.h have_malloc_h)
 if(have_malloc_h)

@@ -34,6 +34,8 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/nrn_acc_manager.h"
 #include "coreneuron/utils/reports/nrnreport.h"
 #include "coreneuron/utils/progressbar/progressbar.h"
+#include "coreneuron/nrniv/profiler_interface.h"
+
 namespace coreneuron {
 
 static void* nrn_fixed_step_thread(NrnThread*);
@@ -189,23 +191,32 @@ void update(NrnThread* _nt) {
     }
 }
 
+
 void nonvint(NrnThread* _nt) {
     NrnThreadMembList* tml;
     if (nrn_have_gaps) {
+        Instrumentor::phase_begin("gap-v-transfer");
         nrnthread_v_transfer(_nt);
+        Instrumentor::phase_end("gap-v-transfer");
     }
     errno = 0;
 
+    Instrumentor::phase_begin("state-update");
     for (tml = _nt->tml; tml; tml = tml->next)
         if (memb_func[tml->index].state) {
             mod_f_t s = memb_func[tml->index].state;
+            std::string ss("state-");
+            ss += nrn_get_mechname(tml->index);
+            Instrumentor::phase_begin(ss.c_str());
             (*s)(_nt, tml->ml, tml->index);
+            Instrumentor::phase_end(ss.c_str());
 #ifdef DEBUG
             if (errno) {
                 hoc_warning("errno set during calculation of states", (char*)0);
             }
 #endif
         }
+    Instrumentor::phase_end("state-update");
 }
 
 void nrn_ba(NrnThread* nt, int bat) {
@@ -221,7 +232,12 @@ void nrn_ba(NrnThread* nt, int bat) {
 static void* nrn_fixed_step_thread(NrnThread* nth) {
     /* check thresholds and deliver all (including binqueue)
        events up to t+dt/2 */
+    Instrumentor::phase_begin("timestep");
+
+    Instrumentor::phase_begin("deliver_events");
     deliver_net_events(nth);
+    Instrumentor::phase_end("deliver_events");
+
     nth->_t += .5 * nth->_dt;
 
     if (nth->ncell) {
@@ -233,16 +249,28 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
         #pragma acc wait(stream_id)
 // clang-format on
 #endif
-
         fixed_play_continuous(nth);
+
+        Instrumentor::phase_begin("setup_tree_matrix");
         setup_tree_matrix_minimal(nth);
+        Instrumentor::phase_end("setup_tree_matrix");
+
+        Instrumentor::phase_begin("matrix-solver");
         nrn_solve_minimal(nth);
+        Instrumentor::phase_end("matrix-solver");
+
+        Instrumentor::phase_begin("second_order_cur");
         second_order_cur(nth, secondorder);
+        Instrumentor::phase_end("second_order_cur");
+
+        Instrumentor::phase_begin("update");
         update(nth);
+        Instrumentor::phase_end("update");
     }
     if (!nrn_have_gaps) {
         nrn_fixed_step_lastpart(nth);
     }
+    Instrumentor::phase_end("timestep");
     return (void*)0;
 }
 
@@ -265,7 +293,9 @@ void* nrn_fixed_step_lastpart(NrnThread* nth) {
         nrn_ba(nth, BEFORE_STEP);
     }
 
+    Instrumentor::phase_begin("deliver_events");
     nrn_deliver_events(nth); /* up to but not past texit */
+    Instrumentor::phase_end("deliver_events");
     return (void*)0;
 }
 }  // namespace coreneuron

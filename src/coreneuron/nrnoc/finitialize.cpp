@@ -29,11 +29,14 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnoc/nrnoc_decl.h"
+#include "coreneuron/nrniv/profiler_interface.h"
+
 namespace coreneuron {
 void nrn_finitialize(int setv, double v) {
     int i;
     NrnThread* _nt;
 
+    Instrumentor::phase_begin("finitialize");
     t = 0.;
     dt2thread(-1.);
     nrn_thread_table_check();
@@ -105,5 +108,6 @@ void nrn_finitialize(int setv, double v) {
 #if NRNMPI
     nrn_spike_exchange(nrn_threads);
 #endif
+    Instrumentor::phase_end("finitialize");
 }
 }  // namespace coreneuron
