@@ -489,7 +489,7 @@ class _IntracellularSpecies(_SpeciesMathable):
 
     @property
     def _semi_compile(self):
-        return 'species_ics[%d]' % (self._grid_id)
+        return 'species_3d[%d]' % (self._grid_id)
 
 class _ExtracellularSpecies(_SpeciesMathable):
     def __init__(self, region, d=0, name=None, charge=0, initial=0, atolscale=1.0, boundary_conditions=None):
@@ -676,8 +676,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
         _set_grid_currents(grid_list, self._grid_id, grid_indices, neuron_pointers, scale_factors)
     @property
     def _semi_compile(self):
-        print("In _Extracellular_Species _semi_compile!!!!!!!!!!!!!!!!!!!!!!!")
-        return 'species_ecs[%d]' % (self._grid_id)
+        return 'species_3d[%d]' % (self._grid_id)
 
 
 
