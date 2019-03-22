@@ -930,7 +930,7 @@ def _compile_reactions():
     ecs_regions_inv = dict()
     ecs_species_by_region = dict()
     ecs_all_species_involed = set()
-    ecs_mc_species_involved = set()   
+    ecs_mc_species_involved = set()
     from . import rate, multiCompartmentReaction
 
     #Find sets of sections that contain the same regions
@@ -997,7 +997,7 @@ def _compile_reactions():
             species_involved = []
             for sp in sptrs:
                 s = sp()
-                if not isinstance(s, species.SpeciesOnExtracellular):
+                if not isinstance(s, species.SpeciesOnExtracellular) and not isinstance(s, species._ExtracellularSpecies):
                     all_species_involed.add(s)
                     species_involved.append(s)
             for reg in react_regions:
@@ -1035,8 +1035,6 @@ def _compile_reactions():
                     s = sp()
                     ecs_all_species_involed.add(s)
                     ecs_species_involved.append(s)
-                if any([isinstance(x, region.Region) for x in react_regions]):
-                    raise RxDException("Error: an %s cannot have both Extracellular and Intracellular regions. Use a MultiCompartmentReaction or specify the desired region with the 'region=' keyword argument", rptr().__class__)
                 for reg in react_regions:
                     if not isinstance(reg, region.Extracellular):
                         continue
