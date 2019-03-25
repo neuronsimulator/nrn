@@ -61,16 +61,18 @@ std::string CodegenIspcVisitor::double_to_string(double value) {
     if (std::ceil(value) == value) {
         return "{:.1f}d"_format(value);
     }
-    if ((value <= 1.0) or (value >= -1.0)) {
+    if ((value <= 1.0) && (value >= -1.0)) {
         return "{:f}d"_format(value);
     } else {
         auto e = std::log10(std::abs(value));
         if (e < 0.0) {
-            e = std::pow(10, std::ceil(-e));
-            return "({:f}d / {:.1f}d)"_format(value * e, e);
+            e = std::ceil(-e);
+            auto m = std::pow(10, e);
+            return "{:f}d-{:d}"_format(value * m, static_cast<int>(e));
         } else {
-            e = std::pow(10, std::floor(e));
-            return "({:f}d * {:.1f}d)"_format(value / e, e);
+            e = std::floor(e);
+            auto m = std::pow(10, e);
+            return "{:f}d{:d}"_format(value / m, static_cast<int>(e));
         }
     }
 }
@@ -80,16 +82,18 @@ std::string CodegenIspcVisitor::float_to_string(float value) {
     if (std::ceil(value) == value) {
         return "{:.1f}"_format(value);
     }
-    if ((value <= 1.0f) or (value >= -1.0f)) {
+    if ((value <= 1.0f) && (value >= -1.0f)) {
         return "{:f}"_format(value);
     } else {
         auto e = std::log10(std::abs(value));
         if (e < 0.0f) {
-            e = std::pow(10, std::ceil(-e));
-            return "({:f} / {:.1f})"_format(value * e, e);
+            e = std::ceil(-e);
+            auto m = std::pow(10, e);
+            return "{:f}e-{:d}"_format(value * m, static_cast<int>(e));
         } else {
-            e = std::pow(10, std::floor(e));
-            return "({:f} * {:.1f})"_format(value / e, e);
+            e = std::floor(e);
+            auto m = std::pow(10, e);
+            return "{:f}e{:d}"_format(value / m, static_cast<int>(e));
         }
     }
 }
