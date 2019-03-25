@@ -5,22 +5,22 @@
 # Lesser General Public License. See top-level LICENSE file for details.
 # ***********************************************************************
 
-from nmodl.ode import differentiate2c, make_unique_prefix
+from nmodl.ode import differentiate2c, _make_unique_prefix
 
 
 def test_make_unique_prefix():
 
     # if prefix matches start of any var, append underscores
     # to prefix until this is not true
-    assert make_unique_prefix(["a", "b", "ccc", "tmp"], "z") == "z"
-    assert make_unique_prefix(["a", "b", "ccc", "tmp"], "a") == "a_"
-    assert make_unique_prefix(["a", "b", "ccc", "tmp"], "az") == "az"
-    assert make_unique_prefix(["a", "b", "ccc", "tmp"], "cc") == "cc_"
-    assert make_unique_prefix(["a", "b", "ccc", "tmp"], "ccc") == "ccc_"
-    assert make_unique_prefix(["a", "b", "ccc", "tmp"], "tmp") == "tmp_"
-    assert make_unique_prefix(["a", "b", "tmp_", "tmp"], "tmp") == "tmp__"
-    assert make_unique_prefix(["a", "tmp2", "ccc", "x"], "tmp") == "tmp_"
-    assert make_unique_prefix(["a", "tmp2", "ccc", "x"], "tmpvar") == "tmpvar"
+    assert _make_unique_prefix(["a", "b", "ccc", "tmp"], "z") == "z"
+    assert _make_unique_prefix(["a", "b", "ccc", "tmp"], "a") == "a_"
+    assert _make_unique_prefix(["a", "b", "ccc", "tmp"], "az") == "az"
+    assert _make_unique_prefix(["a", "b", "ccc", "tmp"], "cc") == "cc_"
+    assert _make_unique_prefix(["a", "b", "ccc", "tmp"], "ccc") == "ccc_"
+    assert _make_unique_prefix(["a", "b", "ccc", "tmp"], "tmp") == "tmp_"
+    assert _make_unique_prefix(["a", "b", "tmp_", "tmp"], "tmp") == "tmp__"
+    assert _make_unique_prefix(["a", "tmp2", "ccc", "x"], "tmp") == "tmp_"
+    assert _make_unique_prefix(["a", "tmp2", "ccc", "x"], "tmpvar") == "tmpvar"
 
 
 def test_differentiation():

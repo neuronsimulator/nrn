@@ -481,6 +481,7 @@ bool CodegenCVisitor::need_semicolon(Statement* node) {
         auto expression = dynamic_cast<ExpressionStatement*>(node)->get_expression();
         if (expression->is_statement_block()
             || expression->is_eigen_newton_solver_block()
+            || expression->is_eigen_linear_solver_block()
             || expression->is_solution_expression()) {
             return false;
         }
@@ -1653,7 +1654,9 @@ void CodegenCVisitor::visit_eigen_newton_solver_block(ast::EigenNewtonSolverBloc
     // solution vector to store copy of state vars for Newton solver
     printer->add_newline();
     auto float_type = default_float_data_type();
-    printer->add_line("Eigen::Matrix<{}, {}, 1> X;"_format(float_type, info.num_primes));
+    int N = node->get_n_state_vars()->get_value();
+    printer->add_line("Eigen::Matrix<{}, {}, 1> X;"_format(float_type, N));
+
     print_statement_block(node->get_setup_x_block().get(), false, false);
 
     // functor that evaluates F(X) and J(X) for Newton solver
@@ -1661,32 +1664,67 @@ void CodegenCVisitor::visit_eigen_newton_solver_block(ast::EigenNewtonSolverBloc
     printer->add_line("NrnThread* nt;");
     printer->add_line("{0}* inst;"_format(instance_struct()));
     printer->add_line("int id;");
+    printer->add_line("double v;");
+    printer->add_line("Datum* indexes;");
+
+    print_statement_block(node->get_variable_block().get(), false, false);
+    printer->add_newline();
+
+    printer->start_block("void initialize()");
+    print_statement_block(node->get_initialize_block().get(), false, false);
+    printer->end_block(2);
 
     printer->add_line(
-        "functor(NrnThread* nt, {}* inst, int id) : nt(nt), inst(inst), id(id) {}"_format(
+        "functor(NrnThread* nt, {}* inst, int id, double v, Datum* indexes) : nt(nt), inst(inst), id(id), v(v), indexes(indexes) {}"_format(
             instance_struct(), "{}"));
 
     printer->add_indent();
     printer->add_text(
         "void operator()(const Eigen::Matrix<{0}, {1}, 1>& X, Eigen::Matrix<{0}, {1}, "
         "1>& F, "
-        "Eigen::Matrix<{0}, {1}, {1}>& Jm) const"_format(float_type, info.num_primes));
+        "Eigen::Matrix<{0}, {1}, {1}>& Jm) const"_format(float_type, N));
     printer->start_block();
     printer->add_line("{}* J = Jm.data();"_format(float_type));
     print_statement_block(node->get_functor_block().get(), false, false);
+    printer->end_block(2);
+
+    // assign newton solver results in matrix X to state vars
+    printer->start_block("void finalize()");
+    print_statement_block(node->get_finalize_block().get(), false, false);
     printer->end_block(1);
+
     printer->end_block(0);
     printer->add_text(";");
     printer->add_newline();
 
     // call newton solver with functor and X matrix that contains state vars
     printer->add_line("// call newton solver");
-    printer->add_line("functor newton_functor(nt, inst, id);");
+    printer->add_line("functor newton_functor(nt, inst, id, v, indexes);");
+    printer->add_line("newton_functor.initialize();");
     printer->add_line("int newton_iterations = nmodl::newton::newton_solver(X, newton_functor);");
 
     // assign newton solver results in matrix X to state vars
-    printer->add_line("// assign results to state vars");
     print_statement_block(node->get_update_states_block().get(), false, false);
+    printer->add_line("newton_functor.finalize();");
+}
+
+void CodegenCVisitor::visit_eigen_linear_solver_block(ast::EigenLinearSolverBlock* node) {
+    printer->add_newline();
+    std::string float_type = default_float_data_type();
+    int N = node->get_n_state_vars()->get_value();
+    printer->add_line("Eigen::Matrix<{0}, {1}, 1> X, F;"_format(float_type, N));
+    printer->add_line("Eigen::Matrix<{0}, {1}, {1}> Jm;"_format(float_type, N));
+    printer->add_line("{}* J = Jm.data();"_format(float_type));
+    print_statement_block(node->get_variable_block().get(), false, false);
+    print_statement_block(node->get_initialize_block().get(), false, false);
+    print_statement_block(node->get_setup_x_block().get(), false, false);
+
+    printer->add_newline();
+    printer->add_line(
+        "X = Eigen::PartialPivLU<Eigen::Ref<Eigen::Matrix<{0}, {1}, {1}>>>(Jm).solve(F);"_format(
+            float_type, N));
+    print_statement_block(node->get_update_states_block().get(), false, false);
+    print_statement_block(node->get_finalize_block().get(), false, false);
 }
 
 /****************************************************************************************/
@@ -2261,6 +2299,9 @@ void CodegenCVisitor::print_coreneuron_includes() {
     printer->add_line("#include <_kinderiv.h>");
     if (info.eigen_newton_solver_exist) {
         printer->add_line("#include <newton/newton.hpp>");
+    }
+    if (info.eigen_linear_solver_exist) {
+        printer->add_line("#include <Eigen/LU>");
     }
 }
 

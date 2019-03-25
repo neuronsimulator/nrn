@@ -31,9 +31,29 @@
                   - Identifier:
                   - Block:
                       children:
+                        - NrnStateBlock:
+                            nmodl: "NRN_STATE "
+                            description: "Represents the coreneuron nrn_state callback function"
+                            members:
+                              - solve_statements:
+                                  description: "solve blocks to be called or generated"
+                                  type: Statement
+                                  vector: true
                         - EigenNewtonSolverBlock:
                             description: "Represent newton solver solution block based on Eigen"
+                            nmodl: "EIGEN_NEWTON_SOLVE"
                             members:
+                              - n_state_vars:
+                                  description: "number of state vars used in solve"
+                                  type: Integer
+                                  prefix: {value: "["}
+                                  suffix: {value: "]"}
+                              - variable_block:
+                                  description: "Statements to be declared in the functor"
+                                  type: StatementBlock
+                              - initialize_block:
+                                  description: "Statement block to be executed before calling newton solver"
+                                  type: StatementBlock
                               - setup_x_block:
                                   description: "update X from states"
                                   type: StatementBlock
@@ -43,14 +63,33 @@
                               - update_states_block:
                                   description: "update back states from X"
                                   type: StatementBlock
-                        - NrnStateBlock:
-                            nmodl: "NRN_STATE "
-                            description: "Represents the coreneuron nrn_state callback function"
+                              - finalize_block:
+                                  description: "Statement block to be executed after calling newton solver"
+                                  type: StatementBlock                                  
+                        - EigenLinearSolverBlock:
+                            description: "Represent linear solver solution block based on Eigen"
+                            nmodl: "EIGEN_LINEAR_SOLVE"
                             members:
-                              - solve_statements:
-                                  description: "solve blocks to be called or generated"
-                                  type: Statement
-                                  vector: true
+                              - n_state_vars:
+                                  description: "number of state vars used in solve"
+                                  type: Integer
+                                  prefix: {value: "["}
+                                  suffix: {value: "]"}
+                              - variable_block:
+                                  description: "Statements to be declared in the functor"
+                                  type: StatementBlock
+                              - initialize_block:
+                                  description: "Statement block to be executed before calling linear solver"
+                                  type: StatementBlock
+                              - setup_x_block:
+                                  description: "update X from states"
+                                  type: StatementBlock
+                              - update_states_block:
+                                  description: "update back states from X"
+                                  type: StatementBlock
+                              - finalize_block:
+                                  description: "Statement block to be executed after calling linear solver"
+                                  type: StatementBlock                                  
                   - WrappedExpression:
                       description: "Wrap any other expression type"
                       members:

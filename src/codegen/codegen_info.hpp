@@ -333,6 +333,9 @@ struct CodegenInfo {
     /// true if eigen newton solver is used
     bool eigen_newton_solver_exist = false;
 
+    /// true if eigen linear solver is used
+    bool eigen_linear_solver_exist = false;
+
     /// if any ion has write variable
     bool ion_has_write_variable();
 
