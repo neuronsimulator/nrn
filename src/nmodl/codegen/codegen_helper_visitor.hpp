@@ -58,7 +58,6 @@ class CodegenHelperVisitor: public AstVisitor {
     /// lhs of assignment in derivative block
     std::shared_ptr<ast::Expression> assign_lhs;
 
-    void find_solve_node();
     void find_ion_variables();
     void find_table_variables();
     void find_range_variables();
@@ -79,11 +78,11 @@ class CodegenHelperVisitor: public AstVisitor {
     void visit_procedure_block(ast::ProcedureBlock* node) override;
     void visit_function_block(ast::FunctionBlock* node) override;
     void visit_eigen_newton_solver_block(ast::EigenNewtonSolverBlock* node) override;
-    void visit_solve_block(ast::SolveBlock* node) override;
     void visit_statement_block(ast::StatementBlock* node) override;
     void visit_initial_block(ast::InitialBlock* node) override;
     void visit_breakpoint_block(ast::BreakpointBlock* node) override;
     void visit_derivative_block(ast::DerivativeBlock* node) override;
+    void visit_derivimplicit_callback(ast::DerivimplicitCallback* node) override;
     void visit_net_receive_block(ast::NetReceiveBlock* node) override;
     void visit_bbcore_ptr(ast::BbcorePtr* node) override;
     void visit_watch(ast::Watch* node) override;
@@ -91,6 +90,7 @@ class CodegenHelperVisitor: public AstVisitor {
     void visit_for_netcon(ast::ForNetcon* node) override;
     void visit_table_statement(ast::TableStatement* node) override;
     void visit_program(ast::Program* node) override;
+    void visit_nrn_state_block(ast::NrnStateBlock* node) override;
 };
 
 }  // namespace codegen

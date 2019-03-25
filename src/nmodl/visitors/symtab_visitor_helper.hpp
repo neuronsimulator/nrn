@@ -136,7 +136,7 @@ void SymtabVisitor::add_model_symbol_with_property(ast::Node* node, NmodlType pr
     auto symbol = std::make_shared<Symbol>(name, node, *token);
     symbol->add_property(property);
 
-    if (name == block_to_solve) {
+    if (block_to_solve.find(name) != block_to_solve.cend()) {
         symbol->add_property(NmodlType::to_solve);
     }
 
@@ -172,7 +172,7 @@ void SymtabVisitor::setup_symbol_table(ast::AST* node, const std::string& name, 
     /// there is only one solve statement allowed in mod file
     if (node->is_solve_block()) {
         auto solve_block = dynamic_cast<ast::SolveBlock*>(node);
-        block_to_solve = solve_block->get_block_name()->get_node_name();
+        block_to_solve.insert(solve_block->get_block_name()->get_node_name());
     }
 
     /// not required at the moment but every node

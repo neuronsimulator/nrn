@@ -310,6 +310,18 @@ struct AST: public std::enable_shared_from_this<AST> {
         return false;
     }
 
+    virtual bool is_nrn_state_block() {
+        return false;
+    }
+
+    virtual bool is_solution_expression() {
+        return false;
+    }
+
+    virtual bool is_derivimplicit_callback() {
+        return false;
+    }
+
     virtual bool is_procedure_block() {
         return false;
     }

@@ -29,6 +29,7 @@
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/perf_visitor.hpp"
 #include "visitors/rename_visitor.hpp"
+#include "visitors/solve_block_visitor.hpp"
 #include "visitors/sympy_conductance_visitor.hpp"
 #include "visitors/sympy_solver_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
@@ -1750,18 +1751,10 @@ std::string run_cnexp_solve_visitor(const std::string& text) {
     driver.parse_string(text);
     auto ast = driver.ast();
 
-    {
-        SymtabVisitor v1;
-        v1.visit_program(ast.get());
-        CnexpSolveVisitor v2;
-        v2.visit_program(ast.get());
-    }
-
+    SymtabVisitor().visit_program(ast.get());
+    CnexpSolveVisitor().visit_program(ast.get());
     std::stringstream stream;
-    {
-        NmodlPrintVisitor v(stream);
-        v.visit_program(ast.get());
-    }
+    NmodlPrintVisitor(stream).visit_program(ast.get());
     return stream.str();
 }
 
@@ -1884,6 +1877,102 @@ SCENARIO("CnexpSolver visitor solving ODEs") {
     }
 }
 
+//=============================================================================
+// SolveBlock visitor tests
+//=============================================================================
+
+std::string run_solve_block_visitor(const std::string& text) {
+    NmodlDriver driver;
+    driver.parse_string(text);
+    auto ast = driver.ast();
+    SymtabVisitor().visit_program(ast.get());
+    CnexpSolveVisitor().visit_program(ast.get());
+    SolveBlockVisitor().visit_program(ast.get());
+    std::stringstream stream;
+    NmodlPrintVisitor(stream).visit_program(ast.get());
+    return stream.str();
+}
+
+TEST_CASE("SolveBlock visitor") {
+    SECTION("SolveBlock add NrnState block") {
+        GIVEN("Breakpoint block with single solve block in breakpoint") {
+            std::string nmodl_text = R"(
+            BREAKPOINT {
+                SOLVE states METHOD cnexp
+            }
+
+            DERIVATIVE states {
+                m' = (mInf-m)/mTau
+            }
+        )";
+
+            std::string output_nmodl = R"(
+            BREAKPOINT {
+                SOLVE states METHOD cnexp
+            }
+
+            DERIVATIVE states {
+                m = m+(1-exp(dt*((((-1)))/mTau)))*(-(((mInf))/mTau)/((((-1)))/mTau)-m)
+            }
+
+            NRN_STATE SOLVE states METHOD cnexp{
+                m = m+(1-exp(dt*((((-1)))/mTau)))*(-(((mInf))/mTau)/((((-1)))/mTau)-m)
+            }
+
+        )";
+
+            THEN("Single NrnState block gets added") {
+                auto result = run_solve_block_visitor(nmodl_text);
+                REQUIRE(reindent_text(output_nmodl) == reindent_text(result));
+            }
+        }
+
+        GIVEN("Breakpoint block with two solve block in breakpoint") {
+            std::string nmodl_text = R"(
+            BREAKPOINT {
+                SOLVE state1 METHOD cnexp
+                SOLVE state2 METHOD cnexp
+            }
+
+            DERIVATIVE state1 {
+                m' = (mInf-m)/mTau
+            }
+
+            DERIVATIVE state2 {
+                h' = (mInf-h)/mTau
+            }
+        )";
+
+            std::string output_nmodl = R"(
+            BREAKPOINT {
+                SOLVE state1 METHOD cnexp
+                SOLVE state2 METHOD cnexp
+            }
+
+            DERIVATIVE state1 {
+                m = m+(1-exp(dt*((((-1)))/mTau)))*(-(((mInf))/mTau)/((((-1)))/mTau)-m)
+            }
+
+            DERIVATIVE state2 {
+                h = h+(1-exp(dt*((((-1)))/mTau)))*(-(((mInf))/mTau)/((((-1)))/mTau)-h)
+            }
+
+            NRN_STATE SOLVE state1 METHOD cnexp{
+                m = m+(1-exp(dt*((((-1)))/mTau)))*(-(((mInf))/mTau)/((((-1)))/mTau)-m)
+            }
+            SOLVE state2 METHOD cnexp{
+                h = h+(1-exp(dt*((((-1)))/mTau)))*(-(((mInf))/mTau)/((((-1)))/mTau)-h)
+            }
+
+        )";
+
+            THEN("NrnState blok combining multiple solve nodes added") {
+                auto result = run_solve_block_visitor(nmodl_text);
+                REQUIRE(reindent_text(output_nmodl) == reindent_text(result));
+            }
+        }
+    }
+}
 
 //=============================================================================
 // Passes can run multiple times

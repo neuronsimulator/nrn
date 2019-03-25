@@ -19,6 +19,8 @@ set(VISITOR_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/loop_unroll_visitor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/loop_unroll_visitor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/nmodl_visitor_helper.ipp
+    ${CMAKE_CURRENT_SOURCE_DIR}/solve_block_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/solve_block_visitor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/perf_visitor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/perf_visitor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/rename_visitor.cpp

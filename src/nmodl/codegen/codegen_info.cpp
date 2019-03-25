@@ -83,10 +83,7 @@ bool CodegenInfo::function_uses_table(std::string& name) const {
  */
 
 bool CodegenInfo::derivimplicit_coreneuron_solver() {
-    if (!derivimplicit_used || solve_node == nullptr || eigen_newton_solver_exist) {
-        return false;
-    }
-    return true;
+    return !derivimplicit_callbacks.empty();
 }
 
 

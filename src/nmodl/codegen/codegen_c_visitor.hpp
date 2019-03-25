@@ -829,7 +829,7 @@ class CodegenCVisitor: public AstVisitor {
 
 
     /// derivative kernel when derivimplicit method is used
-    void print_derivative_kernel_for_derivimplicit();
+    void print_derivimplicit_kernel(ast::Block* block);
 
 
     /// block / loop for statement requiring reduction
@@ -998,12 +998,14 @@ class CodegenCVisitor: public AstVisitor {
     virtual void visit_program(ast::Program* node) override;
     virtual void visit_statement_block(ast::StatementBlock* node) override;
     virtual void visit_string(ast::String* node) override;
+    virtual void visit_solution_expression(ast::SolutionExpression* node) override;
     virtual void visit_unary_operator(ast::UnaryOperator* node) override;
     virtual void visit_unit(ast::Unit* node) override;
     virtual void visit_var_name(ast::VarName* node) override;
     virtual void visit_verbatim(ast::Verbatim* node) override;
     virtual void visit_watch_statement(ast::WatchStatement* node) override;
     virtual void visit_while_statement(ast::WhileStatement* node) override;
+    virtual void visit_derivimplicit_callback(ast::DerivimplicitCallback* node) override;
 };
 
 

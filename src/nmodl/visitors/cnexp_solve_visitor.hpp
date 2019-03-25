@@ -27,28 +27,30 @@ namespace nmodl {
 
 class CnexpSolveVisitor: public AstVisitor {
   private:
-    /// method specified in solve block
-    std::string solve_method;
-
     /// true while visiting differential equation
     bool differential_equation = false;
 
-    /// name of the cnexp method
-    const std::string cnexp_method = "cnexp";
-
-    /// name of the derivimplicit method
-    const std::string derivimplicit_method = "derivimplicit";
-
-    /// name of the euler method
-    const std::string euler_method = "euler";
-
+    /// global symbol table
     symtab::SymbolTable* program_symtab = nullptr;
+
+    /// a map holding solve block names and methods
+    std::map<std::string, std::string> solve_blocks;
+
+    /// method specified in solve block
+    std::string solve_method;
+
+    /// visiting derivative block
+    bool derivative_block = false;
+
+    /// the derivative name currently being visited
+    std::string derivative_block_name;
 
   public:
     CnexpSolveVisitor() = default;
 
     void visit_solve_block(ast::SolveBlock* node) override;
     void visit_diff_eq_expression(ast::DiffEqExpression* node) override;
+    void visit_derivative_block(ast::DerivativeBlock* node) override;
     void visit_binary_expression(ast::BinaryExpression* node) override;
     void visit_program(ast::Program* node) override;
 };

@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <map>
 #include <string>
 
 #include "ast/ast.hpp"
@@ -214,9 +213,6 @@ struct CodegenInfo {
     /// slist/dlist id for derivimplicit block
     int derivimplicit_list_num = -1;
 
-    /// slist/dlist id for for euler block
-    int euler_list_num = -1;
-
     /// number of solve blocks in mod file
     int num_solve_blocks = 0;
 
@@ -230,18 +226,11 @@ struct CodegenInfo {
     /// typically equal to number of primes
     int num_equations = 0;
 
-    /// block used in solve statement
-    /// typically derivative block or procedure
-    ast::Block* solve_node = nullptr;
-
-    /// \todo: name of the solve block
-    std::string solve_block_name;
-
-    /// solve method used
-    std::string solve_method;
-
     /// derivative block
     ast::BreakpointBlock* breakpoint_node = nullptr;
+
+    /// nrn_state block
+    ast::NrnStateBlock* nrn_state_block = nullptr;
 
     /// net receive block for point process
     ast::NetReceiveBlock* net_receive_node = nullptr;
@@ -257,6 +246,9 @@ struct CodegenInfo {
 
     /// all procedures defined in the mod file
     std::vector<ast::ProcedureBlock*> procedures;
+
+    /// derivimplicit callbacks need to be emited
+    std::vector<ast::DerivimplicitCallback*> derivimplicit_callbacks;
 
     /// all functions defined in the mod file
     std::vector<ast::FunctionBlock*> functions;
@@ -329,12 +321,6 @@ struct CodegenInfo {
     /// if mod file used dervimplicit method
     bool derivimplicit_used = false;
 
-    /// if mod file used euler method
-    bool euler_used = false;
-
-    /// if mod file used cnexp method
-    bool cnexp_used = false;
-
     /// all top level global blocks
     std::vector<ast::Node*> top_blocks;
 
@@ -359,7 +345,7 @@ struct CodegenInfo {
     /// if either read or write variable
     bool is_ion_variable(const std::string& name);
 
-    /// if a current
+    /// if given variable is a current
     bool is_current(const std::string& name);
 
     /// if watch statements are used

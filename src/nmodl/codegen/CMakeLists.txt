@@ -23,7 +23,7 @@ set(CODEGEN_SOURCE_FILES
 # =============================================================================
 add_library(codegen STATIC ${CODEGEN_SOURCE_FILES})
 
-add_dependencies(codegen lexer util)
+add_dependencies(codegen lexer util visitor)
 
 # =============================================================================
 # Install include files
