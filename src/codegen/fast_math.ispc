@@ -51,12 +51,12 @@ static inline uniform double inf() {
 
 static const uniform double EXP_LIMIT = 708.d;
 
-static const uniform double PX1exp = 1.26177193074810590878d * 0.0001d;
-static const uniform double PX2exp = 3.02994407707441961300d * 0.01d;
-static const uniform double PX3exp = 9.99999999999999999910d * 0.1d;
-static const uniform double QX1exp = 3.00198505138664455042d * 0.000001d;
-static const uniform double QX2exp = 2.52448340349684104192d * 0.001d;
-static const uniform double QX3exp = 2.27265548208155028766d * 0.1d;
+static const uniform double PX1exp = 1.26177193074810590878d-4;
+static const uniform double PX2exp = 3.02994407707441961300d-2;
+static const uniform double PX3exp = 9.99999999999999999910d-1;
+static const uniform double QX1exp = 3.00198505138664455042d-6;
+static const uniform double QX2exp = 2.52448340349684104192d-3;
+static const uniform double QX3exp = 2.27265548208155028766d-1;
 static const uniform double QX4exp = 2.00000000000000000009d;
 
 static const uniform double LOG2E = 1.4426950408889634073599d;
@@ -82,8 +82,8 @@ static inline double vexp(double initial_x) {
     double px = dpfloor(LOG2E * x + 0.5d);
     const int32 n = px;
 
-    x -= px * (6.93145751953125d * 0.1d);
-    x -= px * (1.42860682030941723212d * 0.000001d);
+    x -= px * 6.93145751953125d-1;
+    x -= px * 1.42860682030941723212d-6;
 
     const double xx = x * x;
 

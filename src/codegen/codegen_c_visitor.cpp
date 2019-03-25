@@ -236,15 +236,12 @@ void CodegenCVisitor::visit_binary_expression(BinaryExpression* node) {
     if (op == "^") {
         printer->add_text("pow(");
         lhs->accept(this);
-        printer->add_text(",");
+        printer->add_text(", ");
         rhs->accept(this);
         printer->add_text(")");
     } else {
-        if (op == "=" || op == "&&" || op == "||" || op == "==") {
-            op = " " + op + " ";
-        }
         lhs->accept(this);
-        printer->add_text(op);
+        printer->add_text(" " + op + " ");
         rhs->accept(this);
     }
 }
