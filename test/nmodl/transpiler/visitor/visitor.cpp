@@ -2113,12 +2113,10 @@ std::vector<std::string> run_kinetic_block_visitor(
     auto ast = driver.ast();
 
     // construct symbol table from AST
-    SymtabVisitor v_symtab;
-    v_symtab.visit_program(ast.get());
+    SymtabVisitor().visit_program(ast.get());
 
     // run KineticBlock visitor on AST
-    KineticBlockVisitor v_kinetic;
-    v_kinetic.visit_program(ast.get());
+    KineticBlockVisitor().visit_program(ast.get());
 
     // run lookup visitor to extract DERIVATIVE block(s) from AST
     AstLookupVisitor v_lookup;
@@ -2469,8 +2467,7 @@ std::vector<std::string> run_sympy_solver_visitor(
     auto ast = driver.ast();
 
     // construct symbol table from AST
-    SymtabVisitor v_symtab;
-    v_symtab.visit_program(ast.get());
+    SymtabVisitor().visit_program(ast.get());
 
     // run SympySolver on AST
     SympySolverVisitor v_sympy(pade, cse);
@@ -2512,7 +2509,7 @@ std::string ast_to_string(ast::Program* node) {
     return stream.str();
 }
 
-SCENARIO("SympySolver visitor", "[sympy]") {
+SCENARIO("SympySolver visitor: cnexp or euler", "[sympy][cnexp][euler]") {
     GIVEN("Derivative block without ODE, solver method cnexp") {
         std::string nmodl_text = R"(
             BREAKPOINT  {
@@ -2635,12 +2632,17 @@ SCENARIO("SympySolver visitor", "[sympy]") {
             REQUIRE(AST_string == ast_to_string(ast.get()));
         }
     }
-    GIVEN("Derivative block with cnexp solver method and conditional block") {
+}
+
+SCENARIO("SympySolver visitor: derivimplicit or sparse", "[sympy][derivimplicit][sparse]") {
+    GIVEN("Derivative block with derivimplicit solver method and conditional block") {
         std::string nmodl_text = R"(
+            STATE {
+                m
+            }
             BREAKPOINT  {
                 SOLVE states METHOD derivimplicit
             }
-
             DERIVATIVE states {
                 IF (mInf == 1) {
                     mInf = mInf+1
@@ -2648,45 +2650,43 @@ SCENARIO("SympySolver visitor", "[sympy]") {
                 m' = (mInf-m)/mTau
             }
         )";
-        /// TODO : Note that the test is not correct because the ode is linear so the python
-        /// sympy solver call is returning the sparse solution, not the derivimplicit one
-        std::string expected_text = R"(
-            BREAKPOINT {
-                SOLVE states METHOD derivimplicit
-            }
-
+        std::string expected_result = R"(
             DERIVATIVE states {
-                LOCAL tmp_m_old
-                IF (mInf == 1) {
-                    mInf = mInf+1
-                }
-                {
+                EIGEN_NEWTON_SOLVE[1]{
+                    LOCAL old_m
+                }{
+                    IF (mInf == 1) {
+                        mInf = mInf+1
+                    }
+                    old_m = m
+                }{
                     X[0] = m
                 }{
-                    tmp_m_old = m
-                    m = (dt*mInf+mTau*tmp_m_old)/(dt+mTau)
+                    F[0] = (-dt*(X[0]-mInf)+mTau*(-X[0]+old_m))/mTau
+                    J[0] = -(dt+mTau)/mTau
                 }{
                     m = X[0]
+                }{
                 }
-            }
-        )";
-        NmodlDriver driver;
-        driver.parse_string(nmodl_text);
-        auto ast = driver.ast();
-        SymtabVisitor().visit_program(ast.get());
-        SympySolverVisitor().visit_program(ast.get());
-        std::string AST_string = ast_to_string(ast.get());
-
+            })";
         THEN("SympySolver correctly inserts ode to block") {
-            REQUIRE(AST_string == reindent_text(expected_text));
+            CAPTURE(nmodl_text);
+            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
+                                                   AstNodeType::DERIVATIVE_BLOCK);
+            REQUIRE(result[0] == reindent_text(expected_result));
         }
     }
-    GIVEN("Derivative block of coupled & linear ODES, solver method sparse, no CSE") {
+
+    GIVEN("Derivative block of coupled & linear ODES, solver method sparse") {
         std::string nmodl_text = R"(
+            STATE {
+                x y z
+            }
             BREAKPOINT  {
                 SOLVE states METHOD sparse
             }
             DERIVATIVE states {
+                LOCAL a, b, c, d, h
                 x' = a*z + b*h
                 y' = c + 2*x
                 z' = d*z - y
@@ -2695,27 +2695,27 @@ SCENARIO("SympySolver visitor", "[sympy]") {
 
         std::string expected_result = R"(
             DERIVATIVE states {
-                LOCAL tmp_x_old, tmp_y_old, tmp_z_old
-                tmp_x_old = x
-                tmp_y_old = y
-                tmp_z_old = z
-                x = (-a*dt*(dt*(c*dt+2*dt*(b*dt*h+tmp_x_old)+tmp_y_old)-tmp_z_old)+(b*dt*h+tmp_x_old)*(2*a*pow(dt, 3)-d*dt+1))/(2*a*pow(dt, 3)-d*dt+1)
-                y = (-2*a*pow(dt, 2)*(dt*(c*dt+2*dt*(b*dt*h+tmp_x_old)+tmp_y_old)-tmp_z_old)+(2*a*pow(dt, 3)-d*dt+1)*(c*dt+2*dt*(b*dt*h+tmp_x_old)+tmp_y_old))/(2*a*pow(dt, 3)-d*dt+1)
-                z = (-dt*(c*dt+2*dt*(b*dt*h+tmp_x_old)+tmp_y_old)+tmp_z_old)/(2*a*pow(dt, 3)-d*dt+1)
+                LOCAL a, b, c, d, h, old_x, old_y, old_z
+                old_x = x
+                old_y = y
+                old_z = z
+                x = (-a*dt*(dt*(c*dt+2*dt*(b*dt*h+old_x)+old_y)-old_z)+(b*dt*h+old_x)*(2*a*pow(dt, 3)-d*dt+1))/(2*a*pow(dt, 3)-d*dt+1)
+                y = (-2*a*pow(dt, 2)*(dt*(c*dt+2*dt*(b*dt*h+old_x)+old_y)-old_z)+(2*a*pow(dt, 3)-d*dt+1)*(c*dt+2*dt*(b*dt*h+old_x)+old_y))/(2*a*pow(dt, 3)-d*dt+1)
+                z = (-dt*(c*dt+2*dt*(b*dt*h+old_x)+old_y)+old_z)/(2*a*pow(dt, 3)-d*dt+1)
             })";
 
         std::string expected_cse_result = R"(
             DERIVATIVE states {
-                LOCAL tmp_x_old, tmp_y_old, tmp_z_old, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5
-                tmp_x_old = x
-                tmp_y_old = y
-                tmp_z_old = z
+                LOCAL a, b, c, d, h, old_x, old_y, old_z, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5
+                old_x = x
+                old_y = y
+                old_z = z
                 tmp0 = 2*a
                 tmp1 = -d*dt+pow(dt, 3)*tmp0+1
                 tmp2 = 1/tmp1
-                tmp3 = b*dt*h+tmp_x_old
-                tmp4 = c*dt+2*dt*tmp3+tmp_y_old
-                tmp5 = dt*tmp4-tmp_z_old
+                tmp3 = b*dt*h+old_x
+                tmp4 = c*dt+2*dt*tmp3+old_y
+                tmp5 = dt*tmp4-old_z
                 x = -tmp2*(a*dt*tmp5-tmp1*tmp3)
                 y = -tmp2*(pow(dt, 2)*tmp0*tmp5-tmp1*tmp4)
                 z = -tmp2*tmp5
@@ -2733,8 +2733,7 @@ SCENARIO("SympySolver visitor", "[sympy]") {
     GIVEN("Derivative block including ODES with sparse method (from nmodl paper)") {
         std::string nmodl_text = R"(
             STATE {
-                mc
-                m
+                mc m
             }
             BREAKPOINT  {
                 SOLVE scheme1 METHOD sparse
@@ -2746,14 +2745,15 @@ SCENARIO("SympySolver visitor", "[sympy]") {
         )";
         std::string expected_result = R"(
             DERIVATIVE scheme1 {
-                LOCAL tmp_mc_old, tmp_m_old
-                tmp_mc_old = mc
-                tmp_m_old = m
-                mc = (b*dt*tmp_m_old+b*dt*tmp_mc_old+tmp_mc_old)/(a*dt+b*dt+1)
-                m = (a*dt*tmp_m_old+a*dt*tmp_mc_old+tmp_m_old)/(a*dt+b*dt+1)
+                LOCAL old_mc, old_m
+                old_mc = mc
+                old_m = m
+                mc = (b*dt*old_m+b*dt*old_mc+old_mc)/(a*dt+b*dt+1)
+                m = (a*dt*old_m+a*dt*old_mc+old_m)/(a*dt+b*dt+1)
             })";
 
         THEN("Construct & solver linear system") {
+            CAPTURE(nmodl_text);
             auto result = run_sympy_solver_visitor(nmodl_text, false, false,
                                                    AstNodeType::DERIVATIVE_BLOCK);
             REQUIRE(result[0] == reindent_text(expected_result));
@@ -2761,6 +2761,9 @@ SCENARIO("SympySolver visitor", "[sympy]") {
     }
     GIVEN("Derivative block including ODES with derivimplicit method") {
         std::string nmodl_text = R"(
+            STATE {
+                m h n
+            }
             BREAKPOINT  {
                 SOLVE states METHOD derivimplicit
             }
@@ -2774,32 +2777,40 @@ SCENARIO("SympySolver visitor", "[sympy]") {
         /// new derivative block with EigenNewtonSolverBlock node
         std::string expected_result = R"(
             DERIVATIVE states {
-                rates(v)
-                {
+                EIGEN_NEWTON_SOLVE[3]{
+                    LOCAL old_m, old_h, old_n
+                }{
+                    rates(v)
+                    old_m = m
+                    old_h = h
+                    old_n = n
+                }{
                     X[0] = m
                     X[1] = h
                     X[2] = n
                 }{
-                    F[0] = (dt*(X[0]+3*X[1]*mtau-minf)+mtau*(X[0]-m))/mtau
-                    F[1] = (-dt*(pow(X[0], 2)*htau-X[1]+hinf)+htau*(X[1]-h))/htau
-                    F[2] = (dt*(X[2]-ninf)+ntau*(X[2]-n))/ntau
-                    J[0] = dt/mtau+1
-                    J[3] = 3*dt
+                    F[0] = (-dt*(X[0]+3*X[1]*mtau-minf)+mtau*(-X[0]+old_m))/mtau
+                    F[1] = (dt*(pow(X[0], 2)*htau-X[1]+hinf)+htau*(-X[1]+old_h))/htau
+                    F[2] = (-dt*(X[2]-ninf)+ntau*(-X[2]+old_n))/ntau
+                    J[0] = -(dt+mtau)/mtau
+                    J[3] = -3*dt
                     J[6] = 0
-                    J[1] = -2*X[0]*dt
-                    J[4] = dt/htau+1
+                    J[1] = 2*X[0]*dt
+                    J[4] = -(dt+htau)/htau
                     J[7] = 0
                     J[2] = 0
                     J[5] = 0
-                    J[8] = dt/ntau+1
+                    J[8] = -(dt+ntau)/ntau
                 }{
                     m = X[0]
                     h = X[1]
                     n = X[2]
+                }{
                 }
             })";
 
         THEN("Construct & solver linear system using newton solver") {
+            CAPTURE(nmodl_text);
             auto result = run_sympy_solver_visitor(nmodl_text, false, false,
                                                    AstNodeType::DERIVATIVE_BLOCK);
             REQUIRE(result[0] == reindent_text(expected_result));
@@ -2807,6 +2818,9 @@ SCENARIO("SympySolver visitor", "[sympy]") {
     }
     GIVEN("Multiple derivative blocks each with derivimplicit method") {
         std::string nmodl_text = R"(
+            STATE {
+                m h
+            }
             BREAKPOINT {
                 SOLVE states1 METHOD derivimplicit
                 SOLVE states2 METHOD derivimplicit
@@ -2825,42 +2839,55 @@ SCENARIO("SympySolver visitor", "[sympy]") {
         /// EigenNewtonSolverBlock in each derivative block
         std::string expected_result_0 = R"(
             DERIVATIVE states1 {
-                {
+                EIGEN_NEWTON_SOLVE[2]{
+                    LOCAL old_m, old_h
+                }{
+                    old_m = m
+                    old_h = h
+                }{
                     X[0] = m
                     X[1] = h
                 }{
-                    F[0] = (dt*(X[0]-minf)+mtau*(X[0]-m))/mtau
-                    F[1] = (-dt*(pow(X[0], 2)*htau-X[1]+hinf)+htau*(X[1]-h))/htau
-                    J[0] = dt/mtau+1
+                    F[0] = (-dt*(X[0]-minf)+mtau*(-X[0]+old_m))/mtau
+                    F[1] = (dt*(pow(X[0], 2)*htau-X[1]+hinf)+htau*(-X[1]+old_h))/htau
+                    J[0] = -(dt+mtau)/mtau
                     J[2] = 0
-                    J[1] = -2*X[0]*dt
-                    J[3] = dt/htau+1
+                    J[1] = 2*X[0]*dt
+                    J[3] = -(dt+htau)/htau
                 }{
                     m = X[0]
                     h = X[1]
+                }{
                 }
             })";
         std::string expected_result_1 = R"(
             DERIVATIVE states2 {
-                {
-                    X[0] = h
-                    X[1] = m
+                EIGEN_NEWTON_SOLVE[2]{
+                    LOCAL old_h, old_m
                 }{
-                    F[0] = (-dt*(-X[0]+pow(X[1], 2)*htau+hinf)+htau*(X[0]-h))/htau
-                    F[1] = (-dt*(X[0]*mtau-X[1]+minf)+mtau*(X[1]-m))/mtau
-                    J[0] = dt/htau+1
-                    J[2] = -2*X[1]*dt
-                    J[1] = -dt
-                    J[3] = dt/mtau+1
+                    old_h = h
+                    old_m = m
                 }{
-                    h = X[0]
-                    m = X[1]
+                    X[0] = m
+                    X[1] = h
+                }{
+                    F[0] = (dt*(pow(X[0], 2)*htau-X[1]+hinf)+htau*(-X[1]+old_h))/htau
+                    F[1] = (dt*(-X[0]+X[1]*mtau+minf)+mtau*(-X[0]+old_m))/mtau
+                    J[0] = 2*X[0]*dt
+                    J[2] = -(dt+htau)/htau
+                    J[1] = -(dt+mtau)/mtau
+                    J[3] = dt
+                }{
+                    m = X[0]
+                    h = X[1]
+                }{
                 }
             })";
 
         THEN("Construct & solver linear system using newton solver") {
             auto result = run_sympy_solver_visitor(nmodl_text, false, false,
                                                    AstNodeType::DERIVATIVE_BLOCK);
+            CAPTURE(nmodl_text);
             REQUIRE(result[0] == reindent_text(expected_result_0));
             REQUIRE(result[1] == reindent_text(expected_result_1));
         }
@@ -3737,7 +3764,7 @@ SCENARIO("SympyConductance visitor", "[sympy]") {
                 ica_NMDA = Pf_NMDA*g_NMDA*(v-40.0)
                 gca_bar_abs_VDCC = gca_bar_VDCC * 4(um2)*PI*(3(1/um3)/4*volume_CR*1/PI)^(2/3)
                 gca_VDCC = (1e-3) * gca_bar_abs_VDCC * m_VDCC * m_VDCC * h_VDCC
-                Eca_syn = nernst(cai_CR, cao_CR, 2)
+                Eca_syn = FARADAY*nernst(cai_CR, cao_CR, 2)
                 ica_VDCC = gca_VDCC*(v-Eca_syn)
                 vsyn = v
                 i = i_AMPA + i_NMDA + ica_VDCC
@@ -3765,7 +3792,7 @@ SCENARIO("SympyConductance visitor", "[sympy]") {
                     z_in_0 = 2
                     nernst_in_0 = 1000*R*(celsius+273.15)/(z_in_0*FARADAY)*log(co_in_0/ci_in_0)
                 }
-                Eca_syn = nernst_in_0
+                Eca_syn = FARADAY*nernst_in_0
                 ica_VDCC = gca_VDCC*(v-Eca_syn)
                 vsyn = v
                 i = i_AMPA+i_NMDA+ica_VDCC
@@ -3941,6 +3968,443 @@ TEST_CASE("Constant Folding Visitor") {
     }
 }
 
+//=============================================================================
+// LINEAR solve block tests
+//=============================================================================
+
+SCENARIO("LINEAR solve block (SympySolver Visitor)", "[sympy][linear]") {
+    GIVEN("1 state-var numeric LINEAR solve block") {
+        std::string nmodl_text = R"(
+            STATE {
+                x
+            }
+            LINEAR lin {
+                ~ x = 5
+            })";
+        std::string expected_text = R"(
+            LINEAR lin {
+                x = 5
+            })";
+        THEN("solve analytically") {
+            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
+                                                   AstNodeType::LINEAR_BLOCK);
+            REQUIRE(reindent_text(result[0]) == reindent_text(expected_text));
+        }
+    }
+    GIVEN("1 state-var symbolic LINEAR solve block") {
+        std::string nmodl_text = R"(
+            STATE {
+                x
+            }
+            LINEAR lin {
+                ~ 2*a*x = 1
+            })";
+        std::string expected_text = R"(
+            LINEAR lin {
+                x = 0.5/a
+            })";
+        THEN("solve analytically") {
+            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
+                                                   AstNodeType::LINEAR_BLOCK);
+            REQUIRE(reindent_text(result[0]) == reindent_text(expected_text));
+        }
+    }
+    GIVEN("2 state-var LINEAR solve block") {
+        std::string nmodl_text = R"(
+            STATE {
+                x y
+            }
+            LINEAR lin {
+                ~ x + 4*y = 5*a
+                ~ x - y = 0
+            })";
+        std::string expected_text = R"(
+            LINEAR lin {
+                x = a
+                y = a
+            })";
+        THEN("solve analytically") {
+            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
+                                                   AstNodeType::LINEAR_BLOCK);
+            REQUIRE(reindent_text(result[0]) == reindent_text(expected_text));
+        }
+    }
+    GIVEN("2 state-var LINEAR solve block, post-solve statements") {
+        std::string nmodl_text = R"(
+            STATE {
+                x y
+            }
+            LINEAR lin {
+                ~ x + 4*y = 5*a
+                ~ x - y = 0
+                x = x + 2
+                y = y - a
+            })";
+        std::string expected_text = R"(
+            LINEAR lin {
+                x = a
+                y = a
+                x = x+2
+                y = y-a
+            })";
+        THEN("solve analytically, insert in correct location") {
+            CAPTURE(reindent_text(nmodl_text));
+            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
+                                                   AstNodeType::LINEAR_BLOCK);
+            REQUIRE(reindent_text(result[0]) == reindent_text(expected_text));
+        }
+    }
+    GIVEN("2 state-var LINEAR solve block, mixed & post-solve statements") {
+        std::string nmodl_text = R"(
+            STATE {
+                x y
+            }
+            LINEAR lin {
+                ~ x + 4*y = 5*a
+                a2 = 3*b
+                ~ x - y = 0
+                y = y - a
+            })";
+        std::string expected_text = R"(
+            LINEAR lin {
+                a2 = 3*b
+                x = a
+                y = a
+                y = y-a
+            })";
+        THEN("solve analytically, insert in correct location") {
+            CAPTURE(reindent_text(nmodl_text));
+            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
+                                                   AstNodeType::LINEAR_BLOCK);
+            REQUIRE(reindent_text(result[0]) == reindent_text(expected_text));
+        }
+    }
+    GIVEN("3 state-var LINEAR solve block") {
+        std::string nmodl_text = R"(
+            STATE {
+                x y z
+            }
+            LINEAR lin {
+                ~ x + 4*c*y = -5.343*a
+                ~ a + x/b + z - y = 0.842*b*b
+                ~ x + 1.3*y - 0.1*z/(a*a*b) = 1.43543/c
+            })";
+        std::string expected_text = R"(
+            LINEAR lin {
+                x = (4*pow(a, 2)*pow(b, 2)*(-c*(5.343*a+b*(-1*a+0.842*pow(b, 2)))*(4*c-1.3)+(1*b+4*c)*(5.343*a*c+1.43543))-(5.343*a*(1*b+4*c)-4*c*(5.343*a+b*(-1*a+0.842*pow(b, 2))))*(pow(a, 2)*pow(b, 2)*(4*c-1.3)+0.1*b+0.4*c))/((1*b+4*c)*(pow(a, 2)*pow(b, 2)*(4*c-1.3)+0.1*b+0.4*c))
+                y = (1*pow(a, 2)*pow(b, 2)*c*(5.343*a+b*(-1*a+0.842*pow(b, 2)))*(4*c-1.3)-1*pow(a, 2)*pow(b, 2)*(1*b+4*c)*(5.343*a*c+1.43543)-c*(5.343*a+b*(-1*a+0.842*pow(b, 2)))*(pow(a, 2)*pow(b, 2)*(4*c-1.3)+0.1*b+0.4*c))/(c*(1*b+4*c)*(pow(a, 2)*pow(b, 2)*(4*c-1.3)+0.1*b+0.4*c))
+                z = pow(a, 2)*b*(c*(5.343*a+b*(-1*a+0.842*pow(b, 2)))*(4*c-1.3)-(1*b+4*c)*(5.343*a*c+1.43543))/(c*(pow(a, 2)*pow(b, 2)*(4*c-1.3)+0.1*b+0.4*c))
+            })";
+        THEN("solve analytically") {
+            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
+                                                   AstNodeType::LINEAR_BLOCK);
+            REQUIRE(reindent_text(result[0]) == reindent_text(expected_text));
+        }
+    }
+    GIVEN("4 state-var LINEAR solve block") {
+        std::string nmodl_text = R"(
+            STATE {
+                w x y z
+            }
+            LINEAR lin {
+                ~ w + z/3.2 = -2.0*y
+                ~ x + 4*c*y = -5.343*a
+                ~ a + x/b + z - y = 0.842*b*b
+                ~ x + 1.3*y - 0.1*z/(a*a*b) = 1.43543/c
+            })";
+        std::string expected_text = R"(
+            LINEAR lin {
+                EIGEN_LINEAR_SOLVE[4]{
+                }{
+                }{
+                    X[0] = w
+                    X[1] = x
+                    X[2] = y
+                    X[3] = z
+                    F[0] = 0
+                    F[1] = 5.343*a
+                    F[2] = a-0.842*pow(b, 2)
+                    F[3] = -1.43543/c
+                    J[0] = -1
+                    J[4] = 0
+                    J[8] = -2
+                    J[12] = -0.3125
+                    J[1] = 0
+                    J[5] = -1
+                    J[9] = -4*c
+                    J[13] = 0
+                    J[2] = 0
+                    J[6] = -1/b
+                    J[10] = 1
+                    J[14] = -1
+                    J[3] = 0
+                    J[7] = -1
+                    J[11] = -1.3
+                    J[15] = 0.1/(pow(a, 2)*b)
+                }{
+                    w = X[0]
+                    x = X[1]
+                    y = X[2]
+                    z = X[3]
+                }{
+                }
+            })";
+        THEN("return matrix system to solve") {
+            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
+                                                   AstNodeType::LINEAR_BLOCK);
+            REQUIRE(reindent_text(result[0]) == reindent_text(expected_text));
+        }
+    }
+    GIVEN("12 state-var LINEAR solve block") {
+        std::string nmodl_text = R"(
+            STATE {
+                C1 C2 C3 C4 C5 I1 I2 I3 I4 I5 I6 O
+            }
+            LINEAR seqinitial {
+                ~          I1*bi1 + C2*b01 - C1*(    fi1+f01) = 0
+                ~ C1*f01 + I2*bi2 + C3*b02 - C2*(b01+fi2+f02) = 0
+                ~ C2*f02 + I3*bi3 + C4*b03 - C3*(b02+fi3+f03) = 0
+                ~ C3*f03 + I4*bi4 + C5*b04 - C4*(b03+fi4+f04) = 0
+                ~ C4*f04 + I5*bi5 + O*b0O  - C5*(b04+fi5+f0O) = 0
+                ~ C5*f0O + I6*bin          - O*(b0O+fin)      = 0
+                ~          C1*fi1 + I2*b11 - I1*(    bi1+f11) = 0
+                ~ I1*f11 + C2*fi2 + I3*b12 - I2*(b11+bi2+f12) = 0
+                ~ I2*f12 + C3*fi3 + I4*bi3 - I3*(b12+bi3+f13) = 0
+                ~ I3*f13 + C4*fi4 + I5*b14 - I4*(b13+bi4+f14) = 0
+                ~ I4*f14 + C5*fi5 + I6*b1n - I5*(b14+bi5+f1n) = 0
+                ~ C1 + C2 + C3 + C4 + C5 + O + I1 + I2 + I3 + I4 + I5 + I6 = 1
+            })";
+        std::string expected_text = R"(
+            LINEAR seqinitial {
+                EIGEN_LINEAR_SOLVE[12]{
+                }{
+                }{
+                    X[0] = C1
+                    X[1] = C2
+                    X[2] = C3
+                    X[3] = C4
+                    X[4] = C5
+                    X[5] = I1
+                    X[6] = I2
+                    X[7] = I3
+                    X[8] = I4
+                    X[9] = I5
+                    X[10] = I6
+                    X[11] = O
+                    F[0] = 0
+                    F[1] = 0
+                    F[2] = 0
+                    F[3] = 0
+                    F[4] = 0
+                    F[5] = 0
+                    F[6] = 0
+                    F[7] = 0
+                    F[8] = 0
+                    F[9] = 0
+                    F[10] = 0
+                    F[11] = -1
+                    J[0] = f01+fi1
+                    J[12] = -b01
+                    J[24] = 0
+                    J[36] = 0
+                    J[48] = 0
+                    J[60] = -bi1
+                    J[72] = 0
+                    J[84] = 0
+                    J[96] = 0
+                    J[108] = 0
+                    J[120] = 0
+                    J[132] = 0
+                    J[1] = -f01
+                    J[13] = b01+f02+fi2
+                    J[25] = -b02
+                    J[37] = 0
+                    J[49] = 0
+                    J[61] = 0
+                    J[73] = -bi2
+                    J[85] = 0
+                    J[97] = 0
+                    J[109] = 0
+                    J[121] = 0
+                    J[133] = 0
+                    J[2] = 0
+                    J[14] = -f02
+                    J[26] = b02+f03+fi3
+                    J[38] = -b03
+                    J[50] = 0
+                    J[62] = 0
+                    J[74] = 0
+                    J[86] = -bi3
+                    J[98] = 0
+                    J[110] = 0
+                    J[122] = 0
+                    J[134] = 0
+                    J[3] = 0
+                    J[15] = 0
+                    J[27] = -f03
+                    J[39] = b03+f04+fi4
+                    J[51] = -b04
+                    J[63] = 0
+                    J[75] = 0
+                    J[87] = 0
+                    J[99] = -bi4
+                    J[111] = 0
+                    J[123] = 0
+                    J[135] = 0
+                    J[4] = 0
+                    J[16] = 0
+                    J[28] = 0
+                    J[40] = -f04
+                    J[52] = b04+f0O+fi5
+                    J[64] = 0
+                    J[76] = 0
+                    J[88] = 0
+                    J[100] = 0
+                    J[112] = -bi5
+                    J[124] = 0
+                    J[136] = -b0O
+                    J[5] = 0
+                    J[17] = 0
+                    J[29] = 0
+                    J[41] = 0
+                    J[53] = -f0O
+                    J[65] = 0
+                    J[77] = 0
+                    J[89] = 0
+                    J[101] = 0
+                    J[113] = 0
+                    J[125] = -bin
+                    J[137] = b0O+fin
+                    J[6] = -fi1
+                    J[18] = 0
+                    J[30] = 0
+                    J[42] = 0
+                    J[54] = 0
+                    J[66] = bi1+f11
+                    J[78] = -b11
+                    J[90] = 0
+                    J[102] = 0
+                    J[114] = 0
+                    J[126] = 0
+                    J[138] = 0
+                    J[7] = 0
+                    J[19] = -fi2
+                    J[31] = 0
+                    J[43] = 0
+                    J[55] = 0
+                    J[67] = -f11
+                    J[79] = b11+bi2+f12
+                    J[91] = -b12
+                    J[103] = 0
+                    J[115] = 0
+                    J[127] = 0
+                    J[139] = 0
+                    J[8] = 0
+                    J[20] = 0
+                    J[32] = -fi3
+                    J[44] = 0
+                    J[56] = 0
+                    J[68] = 0
+                    J[80] = -f12
+                    J[92] = b12+bi3+f13
+                    J[104] = -bi3
+                    J[116] = 0
+                    J[128] = 0
+                    J[140] = 0
+                    J[9] = 0
+                    J[21] = 0
+                    J[33] = 0
+                    J[45] = -fi4
+                    J[57] = 0
+                    J[69] = 0
+                    J[81] = 0
+                    J[93] = -f13
+                    J[105] = b13+bi4+f14
+                    J[117] = -b14
+                    J[129] = 0
+                    J[141] = 0
+                    J[10] = 0
+                    J[22] = 0
+                    J[34] = 0
+                    J[46] = 0
+                    J[58] = -fi5
+                    J[70] = 0
+                    J[82] = 0
+                    J[94] = 0
+                    J[106] = -f14
+                    J[118] = b14+bi5+f1n
+                    J[130] = -b1n
+                    J[142] = 0
+                    J[11] = -1
+                    J[23] = -1
+                    J[35] = -1
+                    J[47] = -1
+                    J[59] = -1
+                    J[71] = -1
+                    J[83] = -1
+                    J[95] = -1
+                    J[107] = -1
+                    J[119] = -1
+                    J[131] = -1
+                    J[143] = -1
+                }{
+                    C1 = X[0]
+                    C2 = X[1]
+                    C3 = X[2]
+                    C4 = X[3]
+                    C5 = X[4]
+                    I1 = X[5]
+                    I2 = X[6]
+                    I3 = X[7]
+                    I4 = X[8]
+                    I5 = X[9]
+                    I6 = X[10]
+                    O = X[11]
+                }{
+                }
+            })";
+        THEN("return matrix system to be solved") {
+            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
+                                                   AstNodeType::LINEAR_BLOCK);
+            REQUIRE(reindent_text(result[0]) == reindent_text(expected_text));
+        }
+    }
+}
+
+//=============================================================================
+// NONLINEAR solve block tests
+//=============================================================================
+
+SCENARIO("NONLINEAR solve block (SympySolver Visitor)", "[sympy][nonlinear]") {
+    GIVEN("1 state-var numeric NONLINEAR solve block") {
+        std::string nmodl_text = R"(
+            STATE {
+                x
+            }
+            NONLINEAR nonlin {
+                ~ x = 5
+            })";
+        std::string expected_text = R"(
+            NONLINEAR nonlin {
+                EIGEN_NEWTON_SOLVE[1]{
+                }{
+                }{
+                    X[0] = x
+                }{
+                    F[0] = -X[0]+5
+                    J[0] = -1
+                }{
+                    x = X[0]
+                }{
+                }
+            })";
+        THEN("return F & J for newton solver") {
+            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
+                                                   AstNodeType::NON_LINEAR_BLOCK);
+            REQUIRE(reindent_text(result[0]) == reindent_text(expected_text));
+        }
+    }
+}
 
 //=============================================================================
 // Loop unroll tests

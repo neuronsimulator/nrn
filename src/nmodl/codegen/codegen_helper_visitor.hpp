@@ -78,6 +78,7 @@ class CodegenHelperVisitor: public AstVisitor {
     void visit_procedure_block(ast::ProcedureBlock* node) override;
     void visit_function_block(ast::FunctionBlock* node) override;
     void visit_eigen_newton_solver_block(ast::EigenNewtonSolverBlock* node) override;
+    void visit_eigen_linear_solver_block(ast::EigenLinearSolverBlock* node) override;
     void visit_statement_block(ast::StatementBlock* node) override;
     void visit_initial_block(ast::InitialBlock* node) override;
     void visit_breakpoint_block(ast::BreakpointBlock* node) override;

@@ -988,6 +988,7 @@ class CodegenCVisitor: public AstVisitor {
     virtual void visit_from_statement(ast::FromStatement* node) override;
     virtual void visit_function_call(ast::FunctionCall* node) override;
     virtual void visit_eigen_newton_solver_block(ast::EigenNewtonSolverBlock* node) override;
+    virtual void visit_eigen_linear_solver_block(ast::EigenLinearSolverBlock* node) override;
     virtual void visit_if_statement(ast::IfStatement* node) override;
     virtual void visit_indexed_name(ast::IndexedName* node) override;
     virtual void visit_integer(ast::Integer* node) override;

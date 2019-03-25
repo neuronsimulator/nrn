@@ -263,6 +263,7 @@ int main(int argc, const char* argv[]) {
             logger->info("Running KINETIC block visitor");
             KineticBlockVisitor().visit_program(ast.get());
             SymtabVisitor(update_symtab).visit_program(ast.get());
+            ast_to_nmodl(ast.get(), filepath("kinetic"));
         }
 
         /// once we start modifying (especially removing) older constructs

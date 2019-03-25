@@ -500,6 +500,9 @@ void CodegenHelperVisitor::visit_eigen_newton_solver_block(ast::EigenNewtonSolve
     info.eigen_newton_solver_exist = true;
 }
 
+void CodegenHelperVisitor::visit_eigen_linear_solver_block(ast::EigenLinearSolverBlock* node) {
+    info.eigen_linear_solver_exist = true;
+}
 
 void CodegenHelperVisitor::visit_function_call(FunctionCall* node) {
     auto name = node->get_node_name();
