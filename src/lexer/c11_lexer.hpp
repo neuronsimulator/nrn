@@ -28,7 +28,7 @@ namespace nmodl {
 namespace parser {
 
 /**
- * \class Lexer
+ * \class CLexer
  * \brief Represent Lexer/Scanner class for C (11) language parsing
  *
  * Lexer defined to add some extra function to the scanner class from flex.

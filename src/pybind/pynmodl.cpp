@@ -18,7 +18,84 @@
 #include "visitors/visitor_utils.hpp"
 
 namespace py = pybind11;
+using pybind11::literals::operator""_a;
 
+/** \brief docstring of Python symbols */
+namespace docstring {
+
+static const char* driver = R"(
+    This is the NmodlDriver class documentation
+)";
+
+static const char* driver_ast = R"(
+    Get ast
+
+    Returns:
+        Instance of :py:class:`Program`
+)";
+
+static const char* driver_parse_string = R"(
+    Parse C provided as a string (testing)
+
+    Args:
+        input (str): C code as string
+    Returns:
+        bool: true if success, false otherwise
+
+    >>> driver.parse_string("DEFINE NSTEP 6")
+    True
+)";
+
+static const char* driver_parse_file = R"(
+    Parse C file
+
+    Args:
+        filename (str): name of the C file
+
+    Returns:
+        bool: true if success, false otherwise
+)";
+
+static const char* driver_parse_stream = R"(
+    Parse C file provided as istream
+
+    Args:
+        in (file): ifstream object
+
+    Returns:
+        bool: true if success, false otherwise
+)";
+
+static const char* to_nmodl = R"(
+    Given AST node, return the JSON string representation
+
+    Args:
+        node (AST): AST node
+        excludeTypes (set of AstNodeType): Excluded node types
+
+    Returns:
+        str: JSON string representation
+)";
+
+static const char* to_json = R"(
+    Given AST node, return the NMODL string representation
+
+    Args:
+        node (AST): AST node
+        compact (bool): Compact node
+        expand (bool): Expand node
+
+    Returns:
+        str: NMODL string representation
+
+    >>> driver.parse_string("NEURON{}")
+    True
+    >>> ast = driver.ast()
+    >>> nmodl.to_json(ast, True)
+    '{"Program":[{"NeuronBlock":[{"StatementBlock":[]}]}]}'
+)";
+
+}  // namespace docstring
 
 class PyDriver: public nmodl::parser::NmodlDriver {
   public:
@@ -45,20 +122,17 @@ PYBIND11_MODULE(_nmodl, m_nmodl) {
     m_nmodl.doc() = "NMODL : Source-to-Source Code Generation Framework";
     m_nmodl.attr("__version__") = nmodl::version::NMODL_VERSION;
 
-    py::class_<PyDriver> nmodl_driver(m_nmodl, "NmodlDriver");
-
-    // todo : what has changed ? fix this!
-    // nmodl_driver.def(py::init<bool, bool>());
+    py::class_<PyDriver> nmodl_driver(m_nmodl, "NmodlDriver", docstring::driver);
     nmodl_driver.def(py::init<>())
-        .def("parse_string", &PyDriver::parse_string)
-        .def("parse_file", &PyDriver::parse_file)
-        .def("parse_stream", &PyDriver::parse_stream)
-        .def("ast", &PyDriver::ast);
+        .def("parse_string", &PyDriver::parse_string, "input"_a, docstring::driver_parse_string)
+        .def("parse_file", &PyDriver::parse_file, "filename"_a, docstring::driver_parse_file)
+        .def("parse_stream", &PyDriver::parse_stream, "in"_a, docstring::driver_parse_stream)
+        .def("ast", &PyDriver::ast, docstring::driver_ast);
 
-    m_nmodl.def("to_nmodl", nmodl::to_nmodl, py::arg("node"),
-                py::arg("exclude_types") = std::set<nmodl::ast::AstNodeType>());
-    m_nmodl.def("to_json", nmodl::to_json, py::arg("node"), py::arg("compact") = false,
-                py::arg("expand") = false);
+    m_nmodl.def("to_nmodl", nmodl::to_nmodl, "node"_a,
+                "exclude_types"_a = std::set<nmodl::ast::AstNodeType>(), docstring::to_nmodl);
+    m_nmodl.def("to_json", nmodl::to_json, "node"_a, "compact"_a = false, "expand"_a = false,
+                docstring::to_json);
 
     init_visitor_module(m_nmodl);
     init_ast_module(m_nmodl);

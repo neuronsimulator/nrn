@@ -26,11 +26,47 @@ namespace py = pybind11;
 using namespace nmodl::ast;
 using nmodl::JSONVisitor;
 
+using pybind11::literals::operator""_a;
+
+namespace docstring {
+
+static const char *binaryop_enum = R"(
+    BinaryOp enum
+)";
+
+static const char *astnodetype_enum = R"(
+    AstNodeType enum
+)";
+
+static const char *ast_class = R"(
+    AST class
+
+    Attributes:
+        basetype (BaseType): Stores the AST base type (int, bool, none, object). Further type
+                             information will come from the symbol table.
+)";
+
+static const char *visitchildren_method = R"(
+    Visit children
+
+    Args:
+        v (Visitor): the visitor
+)";
+
+static const char *accept_method = R"(
+    Accept
+
+    Args:
+        v (Visitor): the visitor
+)";
+
+}
+
 void init_ast_module(py::module& m) {
 
     py::module m_ast = m.def_submodule("ast");
 
-    py::enum_<BinaryOp>(m_ast, "BinaryOp")
+    py::enum_<BinaryOp>(m_ast, "BinaryOp", docstring::binaryop_enum)
             .value("BOP_ADDITION", BinaryOp::BOP_ADDITION)
             .value("BOP_SUBTRACTION", BinaryOp::BOP_SUBTRACTION)
             .value("BOP_MULTIPLICATION", BinaryOp::BOP_MULTIPLICATION)
@@ -47,7 +83,7 @@ void init_ast_module(py::module& m) {
             .value("BOP_EXACT_EQUAL", BinaryOp::BOP_EXACT_EQUAL)
             .export_values();
 
-    py::enum_<AstNodeType>(m_ast, "AstNodeType")
+    py::enum_<AstNodeType>(m_ast, "AstNodeType", docstring::astnodetype_enum)
     {% for node in nodes %}
             .value("{{ node.class_name|snake_case|upper }}", AstNodeType::{{ node.class_name|snake_case|upper }})
     {% endfor %}
@@ -55,10 +91,10 @@ void init_ast_module(py::module& m) {
 
 
 
-    py::class_<AST, PyAST, std::shared_ptr<AST>> ast_(m_ast, "AST");
+    py::class_<AST, PyAST, std::shared_ptr<AST>> ast_(m_ast, "AST", docstring::ast_class);
     ast_.def(py::init<>())
-            .def("visit_children", &AST::visit_children)
-            .def("accept", &AST::accept)
+            .def("visit_children", &AST::visit_children, "v"_a, docstring::visitchildren_method)
+            .def("accept", &AST::accept, "v"_a, docstring::accept_method)
             .def("get_shared_ptr", &AST::get_shared_ptr)
             .def("get_node_type", &AST::get_node_type)
             .def("get_node_type_name", &AST::get_node_type_name)

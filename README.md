@@ -99,6 +99,16 @@ And if --target option was used, set PYTHONPATH as:
 export PYTHONPATH=$HOME/nmodl:$PYTHONPATH
 ```
 
+##### Using setuptools
+
+Finally, we can also build the project using setuptools:
+
+```
+python3 setup.py install --prefix=<pathInstallationDir>
+```
+
+This will install nmodl on your system, run all the tests and generate the documentation.
+
 #### Testing Installed Module
 
 If you install NMODL using CMake, you can run tests from build directory as:
@@ -117,7 +127,7 @@ We can use nmodl module from python as:
 ```
 $ python3
 >>> import nmodl.dsl as nmodl
->>> driver = nmodl.Driver()
+>>> driver = nmodl.NmodlDriver()
 >>> driver.parse_string("NEURON { SUFFIX hh }")
 True
 >>> modast = driver.ast()
@@ -129,15 +139,100 @@ NMODL is now setup correctly!
 
 #### Using Python API
 
-The user documentation for NMODL is incomplete and not available on GitHub yet. The best way to understand the API and usage is using Jupyter notebooks provided in docs directory :
+The best way to understand the API and usage is using Jupyter notebooks provided in docs directory :
 
 ```
-cd nmodl/doc/notebooks
+cd nmodl/docs/notebooks
 jupyter notebook
 ```
 
-You can look at [nmodl-python-tutorial.ipynb](doc/notebooks/nmodl-python-tutorial.ipynb) notebook for python interface tutorial. There is also [nmodl-python-sympy-examples.ipynb](doc/notebooks/nmodl-python-sympy-examples.ipynb)showing how [SymPy](https://www.sympy.org/en/index.html) is used in NMODL.
+You can look at [nmodl-python-tutorial.ipynb](docs/notebooks/nmodl-python-tutorial.ipynb) notebook for python interface tutorial. There is also [nmodl-python-sympy-examples.ipynb](docs/notebooks/nmodl-python-sympy-examples.ipynb)showing how [SymPy](https://www.sympy.org/en/index.html) is used in NMODL.
 
+##### Documentation
+
+If you installed nmodl using setuptools as shown in the previous section, you will have all the documentation generated on build/sphinx.
+
+Otherwise, if you have already installed nmodl and setup the correct PYTHONPATH, you can build the documentation locally from the docs/ folder.
+
+```
+cd docs
+make html
+```
+
+Or using setuptools
+
+```
+python3 setup.py install_doc
+```
+
+If you dont want to change the PYTHONPATH, make sure that you have the shared library on the nmodl/ folder. It is copied there automatically by compiling and running the tests:
+
+```
+python3 setup.py test
+```
+
+Now you will have a new folder docs/_build/html or build/sphinx/html, depending if you run the first or the second command,
+where you can open the index.html with your favourite browser.
+
+Another option is to create an httpServer on this folder and open the browser on localhost:
+
+```
+cd docs/_build/html
+python2 -m SimpleHTTPServer 8080
+http://localhost:8080
+```
+
+To check the coverage of your documentation you can run:
+
+```
+cd nmodl/docs
+make coverage
+```
+
+The results will be stored on the docs/_build/coverage
+
+To run the code snippets on the documentation you can do:
+
+```
+cd nmodl/docs
+make doctest
+```
+
+Or with setuptools
+
+```
+python3 setup.py doctest
+```
+
+The output will be stored on the docs/_build/doctest or build/sphinx/doctest depending on the command used.
+
+To add new modules you could call sphinx-apidoc.
+
+```
+sphinx-apidoc -o docs/ nmodl/
+```
+
+This will generate "stubs" rst files for the new modules.
+The file will look like something like this:
+
+```
+.. automodule:: mymodule
+   :members:
+   :no-undoc-members:
+   :show-inheritance:
+```
+
+If you want to generate documentation for all the symbols of the module, you could add :imported-members:
+
+```
+.. automodule:: mymodule
+   :members:
+   :imported-members:
+   :no-undoc-members:
+   :show-inheritance:
+```
+
+After that you can run the "make html" command to generate documentation for the new modules.
 
 #### Using NMODL For Code Generation
 

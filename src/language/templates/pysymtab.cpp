@@ -27,9 +27,40 @@
 {%- endmacro -%}
 
 namespace py = pybind11;
+using pybind11::literals::operator""_a;
+
 using namespace nmodl;
 using namespace symtab;
 
+namespace docstring {
+
+    static const char *declarationtype_enum = R"(
+    DeclarationType enum
+)";
+
+static const char *symbol_class = R"(
+    Symbol class
+)";
+
+static const char *symboltable_class = R"(
+    SymbolTable class
+
+    Attributes:
+        name (str): name of the block
+        table (Table): table holding all symbols in the current block
+        node (AST): pointer to ast node for which current block symbol created
+        global (bool): true if current symbol table is global. blocks like neuron,
+                    parameter defines global variables and hence they go into single global symbol table
+        parent (SymbolTable): pointer to the symbol table of parent block in the mod file
+        children (dict of (str, SymbolTable)): symbol table for each enclosing block in the current nmodl block construct.
+)";
+
+static const char *symtabvisitor_class = R"(
+    SymtabVisitor class
+)";
+
+
+}
 
 class PySymtabVisitor : private VisitorOStreamResources, public SymtabVisitor {
 public:
@@ -45,7 +76,7 @@ public:
 void init_symtab_module(py::module& m) {
     py::module m_symtab = m.def_submodule("symtab");
 
-    py::enum_<syminfo::DeclarationType>(m_symtab, "DeclarationType")
+    py::enum_<syminfo::DeclarationType>(m_symtab, "DeclarationType", docstring::declarationtype_enum)
             .value("function", syminfo::DeclarationType::function)
             .value("variable", syminfo::DeclarationType::variable)
             .export_values();
@@ -129,8 +160,8 @@ void init_symtab_module(py::module& m) {
             .def("__str__", &syminfo::to_string<syminfo::NmodlType>);
 
 
-    py::class_<Symbol, std::shared_ptr<Symbol>> symbol(m_symtab, "Symbol");
-    symbol.def(py::init<std::string, ast::AST*>());
+    py::class_<Symbol, std::shared_ptr<Symbol>> symbol(m_symtab, "Symbol", docstring::symbol_class);
+    symbol.def(py::init<std::string, ast::AST*>(), "name"_a, "node"_a);
     symbol.def("get_token", &Symbol::get_token)
             .def("is_variable", &Symbol::is_variable)
             .def("is_external_symbol_only", &Symbol::is_external_symbol_only)
@@ -146,8 +177,8 @@ void init_symtab_module(py::module& m) {
             .def("has_all_status", &Symbol::has_all_status)
             .def("__str__", &Symbol::to_string);
 
-    py::class_<SymbolTable> symbol_table(m_symtab, "SymbolTable");
-    symbol_table.def(py::init<std::string, ast::AST*, bool>());
+    py::class_<SymbolTable> symbol_table(m_symtab, "SymbolTable", docstring::symboltable_class);
+    symbol_table.def(py::init<std::string, ast::AST*, bool>(), "name"_a, "node"_a, "global"_a);
     symbol_table.def("name", &SymbolTable::name)
             .def("type", &SymbolTable::type)
             .def("title", &SymbolTable::title)
@@ -165,13 +196,12 @@ void init_symtab_module(py::module& m) {
             .def("insert_table", &SymbolTable::insert_table)
             .def("__str__", &SymbolTable::to_string);
 
-    py::class_<SymtabVisitor, AstVisitor, PySymtabVisitor> symtab_visitor(m_symtab,
-                                                                          "SymtabVisitor");
+    py::class_<SymtabVisitor, AstVisitor, PySymtabVisitor> symtab_visitor(m_symtab, "SymtabVisitor", docstring::symtabvisitor_class);
     symtab_visitor.def(py::init<std::string, bool>(), py::arg("filename"),
                        py::arg("update") = false);
     symtab_visitor.def(py::init<py::object, bool>(), py::arg("ostream"), py::arg("update") = false);
     symtab_visitor.def(py::init<bool>(), py::arg("update") = false)
-            .def("add_model_symbol_with_property", &PySymtabVisitor::add_model_symbol_with_property)
+            .def("add_model_symbol_with_property", &PySymtabVisitor::add_model_symbol_with_property, "node"_a, "property"_a)
             .def("setup_symbol", &PySymtabVisitor::setup_symbol)
             .def("setup_symbol_table", &PySymtabVisitor::setup_symbol_table)
             .def("setup_symbol_table_for_program_block",

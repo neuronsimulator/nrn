@@ -138,8 +138,9 @@ def integrate2c(diff_string, t_var, dt_var, vars, use_pade_approx=False):
     Derivative should be of the form "x' = f(x)",
     and vars should contain the set of all the variables
     referenced by f(x), for example:
-    -integrate2c("x' = a*x", "a")
-    -integrate2c("x' = a + b*x - sin(3.2)", {"a","b"})
+
+    -``integrate2c ("x' = a*x", "a")``
+    -``integrate2c ("x' = a + b*x - sin(3.2)", {"a","b"})``
 
     Args:
         diff_string: Derivative to be integrated e.g. "x' = a*x"
@@ -236,8 +237,9 @@ def differentiate2c(expression, dependent_var, vars, prev_expressions=None):
     the prev_expressions, then it is simplified to this expression.
 
     Some simple examples of use:
-    -differentiate2c("a*x", "x", {"a"}) == "a"
-    -differentiate2c("cos(y) + b*y**2", "y", {"a","b"}) == "Dy = 2*b*y - sin(y)"
+
+    - ``nmodl.ode.differentiate2c ("a*x", "x", {"a"}) == "a"``
+    - ``differentiate2c ("cos(y) + b*y**2", "y", {"a","b"}) == "Dy = 2*b*y - sin(y)"``
 
     Args:
         expression: expression to be differentiated e.g. "a*x + b"
@@ -331,8 +333,9 @@ def forwards_euler2c(diff_string, dt_var, vars):
     Derivative should be of the form "x' = f(x)",
     and vars should contain the set of all the variables
     referenced by f(x), for example:
-    -forwards_euler2c("x' = a*x", "a")
-    -forwards_euler2c("x' = a + b*x - sin(3.2)", {"a","b"})
+
+    - ``forwards_euler2c("x' = a*x", "a")``
+    - ``forwards_euler2c("x' = a + b*x - sin(3.2)", {"a","b"})``
 
     Args:
         diff_string: Derivative to be integrated e.g. "x' = a*x"
