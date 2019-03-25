@@ -57,7 +57,6 @@ static void nrn_rhs(NrnThread* _nt) {
     double* vec_v = &(VEC_V(0));
     int* parent_index = _nt->_v_parent_index;
 
-    Instrumentor::phase_begin("nrn-rhs");
 // clang-format off
     #pragma acc parallel loop present(          \
         vec_rhs[0:i3], vec_d[0:i3])             \
@@ -104,7 +103,6 @@ The extracellular mechanism contribution is already done.
         vec_rhs[parent_index[i]] += vec_a[i] * dv;
     }
     // clang-format on
-    Instrumentor::phase_end("nrn-rhs");
 }
 
 /* calculate left hand side of
@@ -122,7 +120,6 @@ static void nrn_lhs(NrnThread* _nt) {
     int stream_id = _nt->stream_id;
 #endif
 
-    Instrumentor::phase_begin("nrn-lhs");
     i1 = 0;
     i2 = i1 + _nt->ncell;
     i3 = _nt->end;
@@ -131,7 +128,11 @@ static void nrn_lhs(NrnThread* _nt) {
     for (tml = _nt->tml; tml; tml = tml->next)
         if (memb_func[tml->index].jacob) {
             mod_f_t s = memb_func[tml->index].jacob;
+            std::string ss("cur-");
+            ss += nrn_get_mechname(tml->index);
+            Instrumentor::phase_begin(ss.c_str());
             (*s)(_nt, tml->ml, tml->index);
+            Instrumentor::phase_end(ss.c_str());
 #ifdef DEBUG
             if (errno) {
                 hoc_warning("errno set during calculation of jacobian", (char*)0);
@@ -165,7 +166,6 @@ static void nrn_lhs(NrnThread* _nt) {
         vec_d[parent_index[i]] -= vec_a[i];
     }
     // clang-format on
-    Instrumentor::phase_end("nrn-lhs");
 }
 
 /* for the fixed step method */

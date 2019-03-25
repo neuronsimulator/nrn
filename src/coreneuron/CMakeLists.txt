@@ -52,7 +52,7 @@ endif()
 set (MOD2C_BINARY ${MOD2C})
 get_filename_component(mod2c_install_prefix ${MOD2C} DIRECTORY)
 set (MOD2C_UNITS "${PROJECT_BINARY_DIR}/external/mod2c/share/nrnunits.lib")
-set(MOD2C env "MODLUNIT=${MOD2C_UNITS}" ${MOD2C})
+set(MOD2C env "MODLUNIT=${MOD2C_UNITS}" "PYTHONPATH=$ENV{PYTHONPATH}" ${MOD2C})
 
 message(STATUS "USING MOD2C ${MOD2C}")
 
@@ -386,7 +386,7 @@ add_library(coreneuron ${COMPILE_LIBRARY_TYPE} ${coreneuron_all_headers} ${coren
 add_dependencies(coreneuron kinderiv)
 
 target_link_libraries(coreneuron ${MPI_CXX_LIBRARIES}
-                      ${link_reportinglib} ${link_cudacoreneuron} ${CUDA_LIBRARIES} ${CALIPER_LIB})
+    ${link_reportinglib} ${link_cudacoreneuron} ${CUDA_LIBRARIES} ${CALIPER_LIB} ${CALIPER_MPI_LIB})
 
 set_target_properties(coreneuron PROPERTIES
                       VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}
