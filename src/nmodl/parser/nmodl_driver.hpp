@@ -18,7 +18,7 @@ namespace nmodl {
 namespace parser {
 
 /**
- * \class Driver
+ * \class NmodlDriver
  * \brief Class that binds all pieces together for parsing nmodl file
  *
  * Driver class bind components required for lexing, parsing and ast

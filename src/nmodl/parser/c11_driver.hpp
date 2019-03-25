@@ -25,7 +25,7 @@ class CParser;
 class location;
 
 /**
- * \class Driver
+ * \class CDriver
  * \brief Class that binds all pieces together for parsing C verbatim blocks
  */
 class CDriver {

@@ -16,7 +16,7 @@ namespace nmodl {
 namespace parser {
 
 /**
- * \class NmodlDriver
+ * \class DiffeqDriver
  * \brief Class that binds all pieces together for parsing differential equations
  *
  * Driver class bind components required for lexing, parsing and ast

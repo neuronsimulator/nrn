@@ -18,6 +18,42 @@
 #include "visitors/sympy_solver_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
 
+using pybind11::literals::operator""_a;
+
+namespace docstring {
+
+static const char *visitor_class = R"(
+    Visitor class
+)";
+
+static const char *astvisitor_class = R"(
+    AstVisitor class
+)";
+
+static const char *astlookupvisitor_class = R"(
+    AstLookupVisitor class
+
+    Attributes:
+        types (list of :class:`AstNodeType`): node types to search in the AST
+        nodes (list of AST): matching nodes found in the AST
+)";
+
+static const char *nmodlprintvisitor_class = R"(
+
+    NmodlPrintVisitor class
+)";
+
+static const char *sympysolvervisitor_class = R"(
+
+    SympySolverVisitor class
+)";
+
+static const char *sympyconductancevisitor_class = R"(
+
+    SympyConductanceVisitor class
+)";
+}
+
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCDFAInspection"
 {% macro var(node) -%}
@@ -65,21 +101,21 @@ public:
 void init_visitor_module(py::module& m) {
     py::module m_visitor = m.def_submodule("visitor");
 
-    py::class_<Visitor, PyVisitor> visitor(m_visitor, "Visitor");
+    py::class_<Visitor, PyVisitor> visitor(m_visitor, "Visitor", docstring::visitor_class);
     visitor.def(py::init<>())
     {% for node in nodes %}
         .def("visit_{{ node.class_name | snake_case }}", &Visitor::visit_{{ node.class_name | snake_case }})
         {% if loop.last -%};{% endif %}
     {% endfor %}
 
-    py::class_<AstVisitor, Visitor, PyAstVisitor> ast_visitor(m_visitor, "AstVisitor");
+    py::class_<AstVisitor, Visitor, PyAstVisitor> ast_visitor(m_visitor, "AstVisitor", docstring::astvisitor_class);
     ast_visitor.def(py::init<>())
     {% for node in nodes %}
         .def("visit_{{ node.class_name | snake_case }}", &AstVisitor::visit_{{ node.class_name | snake_case }})
         {% if loop.last -%};{% endif %}
     {% endfor %}
 
-    py::class_<PyNmodlPrintVisitor, Visitor> nmodl_visitor(m_visitor, "NmodlPrintVisitor");
+    py::class_<PyNmodlPrintVisitor, Visitor> nmodl_visitor(m_visitor, "NmodlPrintVisitor", docstring::nmodlprintvisitor_class);
     nmodl_visitor.def(py::init<std::string>());
     nmodl_visitor.def(py::init<py::object>());
     nmodl_visitor.def(py::init<>())
@@ -88,7 +124,7 @@ void init_visitor_module(py::module& m) {
         {% if loop.last -%};{% endif %}
     {% endfor %}
 
-    py::class_<AstLookupVisitor, Visitor> lookup_visitor(m_visitor, "AstLookupVisitor");
+    py::class_<AstLookupVisitor, Visitor> lookup_visitor(m_visitor, "AstLookupVisitor", docstring::astlookupvisitor_class);
     lookup_visitor.def(py::init<>())
         .def(py::init<ast::AstNodeType>())
         .def("get_nodes", &AstLookupVisitor::get_nodes)
@@ -100,11 +136,11 @@ void init_visitor_module(py::module& m) {
         {% if loop.last -%};{% endif %}
     {% endfor %}
 
-    py::class_<SympySolverVisitor, AstVisitor> sympy_solver_visitor(m_visitor, "SympySolverVisitor");
+    py::class_<SympySolverVisitor, AstVisitor> sympy_solver_visitor(m_visitor, "SympySolverVisitor", docstring::sympysolvervisitor_class);
     sympy_solver_visitor.def(py::init<bool>(), py::arg("use_pade_approx")=false)
         .def("visit_program", &SympySolverVisitor::visit_program);
 
-    py::class_<SympyConductanceVisitor, AstVisitor> sympy_conductance_visitor(m_visitor, "SympyConductanceVisitor");
+    py::class_<SympyConductanceVisitor, AstVisitor> sympy_conductance_visitor(m_visitor, "SympyConductanceVisitor", docstring::sympyconductancevisitor_class);
     sympy_conductance_visitor.def(py::init<>())
         .def("visit_program", &SympyConductanceVisitor::visit_program);
 }
