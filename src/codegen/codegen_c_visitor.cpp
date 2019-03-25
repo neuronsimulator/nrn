@@ -361,7 +361,7 @@ bool CodegenCVisitor::nrn_state_required() {
     if (info.artificial_cell) {
         return false;
     }
-    return info.solve_node != nullptr || info.currents.empty();
+    return info.nrn_state_block != nullptr || info.currents.empty();
 }
 
 
@@ -480,7 +480,8 @@ bool CodegenCVisitor::need_semicolon(Statement* node) {
     if (node->is_expression_statement()) {
         auto expression = dynamic_cast<ExpressionStatement*>(node)->get_expression();
         if (expression->is_statement_block()
-            || expression->is_eigen_newton_solver_block()) {
+            || expression->is_eigen_newton_solver_block()
+            || expression->is_solution_expression()) {
             return false;
         }
     }
@@ -3125,7 +3126,6 @@ void CodegenCVisitor::print_nrn_init(bool skip_init_check) {
 
     print_initial_block(info.initial_node);
     print_channel_iteration_block_end();
-
     print_shadow_reduction_statements();
     print_channel_iteration_tiling_block_end();
     printer->end_block(1);
@@ -3617,22 +3617,19 @@ void CodegenCVisitor::print_net_receive() {
  * actual variable names? [resolved now?]
  * slist needs to added as local variable
  */
-void CodegenCVisitor::print_derivative_kernel_for_derivimplicit() {
-    auto node = info.solve_node;
-    codegen = true;
-
+void CodegenCVisitor::print_derivimplicit_kernel(Block* block) {
     auto ext_args = external_method_arguments();
     auto ext_params = external_method_parameters();
     auto suffix = info.mod_suffix;
     auto list_num = info.derivimplicit_list_num;
-    auto solve_block_name = info.solve_block_name;
+    auto block_name = block->get_node_name();
     auto primes_size = info.primes_size;
     auto stride = (layout == LayoutType::aos) ? "" : "*pnodecount+id";
 
     printer->add_newline(2);
 
     // clang-format off
-    printer->start_block("int {}_{}({})"_format(node->get_node_name(), suffix, ext_params));
+    printer->start_block("int {}_{}({})"_format(block_name, suffix, ext_params));
     auto instance = "{0}* inst = ({0}*)get_memb_list(nt)->instance;"_format(instance_struct());
     auto slist1 = "int* slist{} = {};"_format(list_num, get_variable_name("slist{}"_format(list_num)));
     auto slist2 = "int* slist{} = {};"_format(list_num+1, get_variable_name("slist{}"_format(list_num+1)));
@@ -3648,7 +3645,7 @@ void CodegenCVisitor::print_derivative_kernel_for_derivimplicit() {
     printer->add_line("    savstate{}[i{}] = data[slist{}[i]{}];"_format(list_num, stride, list_num, stride));
     printer->add_line("}");
 
-    auto argument = "{}, slist{}, _derivimplicit_{}_{}, dlist{}, {}"_format(primes_size, list_num+1, solve_block_name, suffix, list_num + 1, ext_args);
+    auto argument = "{}, slist{}, _derivimplicit_{}_{}, dlist{}, {}"_format(primes_size, list_num+1, block_name, suffix, list_num + 1, ext_args);
     printer->add_line("int reset = nrn_newton_thread(static_cast<NewtonSpace*>(*newtonspace{}(thread)), {});"_format(list_num, argument));
     printer->add_line("return reset;");
     printer->end_block(3);
@@ -3658,10 +3655,10 @@ void CodegenCVisitor::print_derivative_kernel_for_derivimplicit() {
      * comment marker in the generated cpp file for kinderiv.py to
      * process it and generate correct _kinderiv.h
      */
-    printer->add_line("/* _derivimplicit_ {} _{} */"_format(node->get_node_name(), info.mod_suffix));
+    printer->add_line("/* _derivimplicit_ {} _{} */"_format(block_name, info.mod_suffix));
     printer->add_newline(1);
 
-    printer->start_block("int _newton_{}_{}({}) "_format(node->get_node_name(), info.mod_suffix, external_method_parameters()));
+    printer->start_block("int _newton_{}_{}({}) "_format(block_name, info.mod_suffix, external_method_parameters()));
     printer->add_line(instance);
     if (ion_variable_struct_required()) {
         printer->add_line("IonCurVar ionvar = {0};");
@@ -3670,7 +3667,7 @@ void CodegenCVisitor::print_derivative_kernel_for_derivimplicit() {
     printer->add_line(slist1);
     printer->add_line(dlist1);
     printer->add_line(dlist2);
-    print_statement_block(node->get_statement_block().get(), false, false);
+    print_statement_block(block->get_statement_block().get(), false, false);
     printer->add_line("int counter = -1;");
     printer->add_line("for (int i=0; i<{}; i++) {}"_format(info.num_primes, "{"));
     printer->add_line("    if (*deriv{}_advance(thread)) {}"_format(list_num, "{"));
@@ -3683,9 +3680,36 @@ void CodegenCVisitor::print_derivative_kernel_for_derivimplicit() {
     printer->add_line("return 0;");
     printer->end_block();
     // clang-format on
-    codegen = false;
 }
 
+void CodegenCVisitor::visit_derivimplicit_callback(ast::DerivimplicitCallback* node) {
+    if (!codegen) {
+        return;
+    }
+    auto thread_args = external_method_arguments();
+    auto num_primes = info.num_primes;
+    auto suffix = info.mod_suffix;
+    int num = info.derivimplicit_list_num;
+    auto slist = get_variable_name("slist{}"_format(num));
+    auto dlist = get_variable_name("dlist{}"_format(num));
+    auto block_name = node->get_node_to_solve()->get_node_name();
+
+    auto args =
+        "{}, {}, {}, _derivimplicit_{}_{}, {}"
+        ""_format(num_primes, slist, dlist, block_name, suffix, thread_args);
+    auto statement = "derivimplicit_thread({});"_format(args);
+    printer->add_line(statement);
+}
+
+void CodegenCVisitor::visit_solution_expression(SolutionExpression* node) {
+    auto block = node->get_node_to_solve().get();
+    if (block->is_statement_block()) {
+        auto statement_block = dynamic_cast<ast::StatementBlock*>(block);
+        print_statement_block(statement_block, false, false);
+    } else {
+        block->accept(this);
+    }
+}
 
 /****************************************************************************************/
 /*                                Print nrn_state routine                                */
@@ -3697,10 +3721,6 @@ void CodegenCVisitor::print_nrn_state() {
         return;
     }
     codegen = true;
-
-    if (info.derivimplicit_coreneuron_solver()) {
-        print_derivative_kernel_for_derivimplicit();
-    }
 
     printer->add_newline(2);
     printer->add_line("/** update state */");
@@ -3720,26 +3740,8 @@ void CodegenCVisitor::print_nrn_state() {
         printer->add_line(statement);
     }
 
-    auto thread_args = external_method_arguments();
-    auto num_primes = info.num_primes;
-    auto suffix = info.mod_suffix;
-    auto block_name = info.solve_block_name;
-    auto num = info.derivimplicit_coreneuron_solver() ? info.derivimplicit_list_num
-                                                      : info.euler_list_num;
-    auto slist = get_variable_name("slist{}"_format(num));
-    auto dlist = get_variable_name("dlist{}"_format(num));
-
-    if (info.solve_node != nullptr) {
-        if (info.derivimplicit_coreneuron_solver()) {
-            auto args =
-                "{}, {}, {}, _derivimplicit_{}_{}, {}"
-                ""_format(num_primes, slist, dlist, block_name, suffix, thread_args);
-            auto statement = "derivimplicit_thread({});"_format(args);
-            printer->add_line(statement);
-        } else {
-            auto block = info.solve_node->get_statement_block();
-            print_statement_block(block.get(), false, false);
-        }
+    if (info.nrn_state_block) {
+        info.nrn_state_block->visit_children(this);
     }
 
     if (info.currents.empty() && info.breakpoint_node != nullptr) {
@@ -3972,6 +3974,10 @@ void CodegenCVisitor::print_compute_functions() {
     for (const auto& function: info.functions) {
         print_function(function);
     }
+    for (const auto& callback: info.derivimplicit_callbacks) {
+        auto block = callback->get_node_to_solve().get();
+        print_derivimplicit_kernel(block);
+    }
     print_net_init();
     print_net_send_buffering();
     print_watch_activate();
@@ -4004,6 +4010,7 @@ void CodegenCVisitor::print_codegen_routines() {
     print_check_table_thread_function();
     print_mechanism_register();
     print_namespace_end();
+    codegen = false;
 }
 
 

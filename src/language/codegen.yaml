@@ -43,10 +43,32 @@
                               - update_states_block:
                                   description: "update back states from X"
                                   type: StatementBlock
+                        - NrnStateBlock:
+                            nmodl: "NRN_STATE "
+                            description: "Represents the coreneuron nrn_state callback function"
+                            members:
+                              - solve_statements:
+                                  description: "solve blocks to be called or generated"
+                                  type: Statement
+                                  vector: true
                   - WrappedExpression:
                       description: "Wrap any other expression type"
                       members:
                         - expression:
                             description: "Expression that is being wrapped"
+                            type: Expression
+                  - DerivimplicitCallback:
+                      description: "Represent a callback to NEURON's derivimplicit solver"
+                      members:
+                        - node_to_solve:
+                            description: "Block to be solved (typically derivative)"
+                            type: Block
+                  - SolutionExpression:
+                      description: "Represent solution of a block in the AST"
+                      members:
+                        - solve_block:
+                            type: SolveBlock
+                        - node_to_solve:
+                            description: "Block to be solved (callback node or solution node itself)"
                             type: Expression
             - Statement:

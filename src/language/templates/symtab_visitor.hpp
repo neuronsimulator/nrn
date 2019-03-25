@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <set>
+
 #include "visitors/json_visitor.hpp"
 #include "visitors/ast_visitor.hpp"
 #include "symtab/symbol_table.hpp"
@@ -20,7 +22,7 @@ private:
     symtab::ModelSymbolTable* modsymtab;
 
     std::unique_ptr<JSONPrinter> printer;
-    std::string block_to_solve;
+    std::set<std::string> block_to_solve;
     bool update = false;
     bool under_state_block = false;
 

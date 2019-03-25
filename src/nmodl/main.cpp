@@ -33,6 +33,7 @@
 #include "visitors/loop_unroll_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/perf_visitor.hpp"
+#include "visitors/solve_block_visitor.hpp"
 #include "visitors/sympy_conductance_visitor.hpp"
 #include "visitors/sympy_solver_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
@@ -323,6 +324,12 @@ int main(int argc, const char* argv[]) {
             logger->info("Running cnexp visitor");
             CnexpSolveVisitor().visit_program(ast.get());
             ast_to_nmodl(ast.get(), filepath("cnexp"));
+        }
+
+        {
+            SolveBlockVisitor().visit_program(ast.get());
+            SymtabVisitor(update_symtab).visit_program(ast.get());
+            ast_to_nmodl(ast.get(), filepath("solveblock"));
         }
 
         if (json_perfstat) {

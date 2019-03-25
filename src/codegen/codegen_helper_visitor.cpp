@@ -10,6 +10,7 @@
 
 #include "codegen/codegen_helper_visitor.hpp"
 #include "codegen/codegen_naming.hpp"
+#include "visitors/lookup_visitor.hpp"
 #include "visitors/rename_visitor.hpp"
 
 #include <fmt/format.h>
@@ -225,10 +226,6 @@ void CodegenHelperVisitor::find_non_range_variables() {
         info.thread_data_index = 3;
         info.derivimplicit_list_num = 1;
         info.thread_callback_register = true;
-    }
-
-    if (info.euler_used) {
-        info.euler_list_num = 1;
     }
 
     /// next thread id is allocated for top local variables
@@ -455,9 +452,13 @@ void CodegenHelperVisitor::visit_net_receive_block(NetReceiveBlock* node) {
 
 void CodegenHelperVisitor::visit_derivative_block(DerivativeBlock* node) {
     under_derivative_block = true;
-    info.solve_node = node;
     node->visit_children(this);
     under_derivative_block = false;
+}
+
+void CodegenHelperVisitor::visit_derivimplicit_callback(ast::DerivimplicitCallback* node) {
+    info.derivimplicit_used = true;
+    info.derivimplicit_callbacks.push_back(node);
 }
 
 
@@ -466,6 +467,12 @@ void CodegenHelperVisitor::visit_breakpoint_block(BreakpointBlock* node) {
     info.breakpoint_node = node;
     node->visit_children(this);
     under_breakpoint_block = false;
+}
+
+
+void CodegenHelperVisitor::visit_nrn_state_block(ast::NrnStateBlock* node) {
+    info.nrn_state_block = node;
+    node->visit_children(this);
 }
 
 
@@ -513,24 +520,6 @@ void CodegenHelperVisitor::visit_conductance_hint(ConductanceHint* node) {
         ion_name = ion->get_node_name();
     }
     info.conductances.push_back({ion_name, variable->get_node_name()});
-}
-
-
-void CodegenHelperVisitor::visit_solve_block(SolveBlock* node) {
-    info.num_solve_blocks++;
-    if (under_breakpoint_block) {
-        info.solve_block_name = node->get_block_name()->get_node_name();
-        if (node->get_method()) {
-            info.solve_method = node->get_method()->get_node_name();
-            if (info.solve_method == naming::DERIVIMPLICIT_METHOD) {
-                info.derivimplicit_used = true;
-            } else if (info.solve_method == naming::EULER_METHOD) {
-                info.euler_used = true;
-            } else if (info.solve_method == naming::CNEXP_METHOD) {
-                info.cnexp_used = true;
-            }
-        }
-    }
 }
 
 
@@ -610,19 +599,6 @@ void CodegenHelperVisitor::visit_table_statement(ast::TableStatement* node) {
 }
 
 
-void CodegenHelperVisitor::find_solve_node() {
-    if (info.solve_node != nullptr) {
-        return;
-    }
-    auto symbols = psymtab->get_variables_with_properties(NmodlType::to_solve);
-    if (!symbols.empty()) {
-        assert(symbols.size() == 1);
-        info.solve_node = dynamic_cast<Block*>(symbols.at(0)->get_node());
-        info.solve_block_name = symbols.at(0)->get_name();
-    }
-}
-
-
 void CodegenHelperVisitor::visit_program(Program* node) {
     psymtab = node->get_symbol_table();
     auto blocks = node->get_blocks();
@@ -636,7 +612,6 @@ void CodegenHelperVisitor::visit_program(Program* node) {
     find_range_variables();
     find_non_range_variables();
     find_ion_variables();
-    find_solve_node();
     find_table_variables();
 }
 
