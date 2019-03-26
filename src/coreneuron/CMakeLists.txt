@@ -83,8 +83,6 @@ macro(mod2c_target)
     get_filename_component(mod2c_source_ ${mod2c_MODFILE} ABSOLUTE)
     get_filename_component(mod2c_modname_ ${mod2c_MODFILE} NAME)
 
-
-
     if("${mod2c_TARGET}" STREQUAL "serial")
         string(REGEX REPLACE "\\.mod$" ".cpp" mod2c_outname_ "${mod2c_modname_}")
         set(nmodl_modearg "--c")
