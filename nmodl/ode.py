@@ -128,13 +128,13 @@ def _sympify_eqs(eq_strings, state_vars, vars):
         var_name, sympy_object = _var_to_sympy(var)
         sympy_vars[var_name] = sympy_object
 
-    # parse state vars using above sympy objects
+    # parse state vars & eqs using above sympy objects
     sympy_state_vars = []
     for state_var in state_vars:
         sympy_state_vars.append(sp.sympify(state_var, locals=sympy_vars))
     eqs = [
-        sp.sympify(eq.split("=", 1)[1], locals=sympy_vars)
-        - sp.sympify(eq.split("=", 1)[0], locals=sympy_vars)
+        (sp.sympify(eq.split("=", 1)[1], locals=sympy_vars)
+        - sp.sympify(eq.split("=", 1)[0], locals=sympy_vars)).expand()
         for eq in eq_strings
     ]
     return eqs, sympy_state_vars, sympy_vars
@@ -193,6 +193,7 @@ def solve_lin_system(eq_strings, vars, constants, small_system=False, do_cse=Fal
         # large linear system: construct and return matrix J, vector F such that
         # J X = F is the linear system to be solved for X by e.g. LU factorization
         matJ, vecF = sp.linear_eq_to_matrix(eqs, state_vars)
+
         # construct vector F
         for i, expr in enumerate(vecF):
             code.append(f"F[{i}] = {sp.ccode(expr.simplify().evalf())}")

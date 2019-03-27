@@ -127,12 +127,15 @@ void remove_statements_from_block(ast::StatementBlock* block,
 std::set<std::string> get_global_vars(Program* node) {
     std::set<std::string> vars;
     if (auto* symtab = node->get_symbol_table()) {
-        NmodlType property =
-            NmodlType::global_var | NmodlType::range_var | NmodlType::param_assign |
-            NmodlType::extern_var | NmodlType::prime_name | NmodlType::dependent_def |
-            NmodlType::read_ion_var | NmodlType::write_ion_var | NmodlType::nonspecific_cur_var |
-            NmodlType::electrode_cur_var | NmodlType::section_var | NmodlType::constant_var |
-            NmodlType::extern_neuron_variable | NmodlType::state_var | NmodlType::factor_def;
+        // NB: local_var included here as locals can be declared at global scope
+        NmodlType property = NmodlType::global_var | NmodlType::local_var | NmodlType::range_var |
+                             NmodlType::param_assign | NmodlType::extern_var |
+                             NmodlType::prime_name | NmodlType::dependent_def |
+                             NmodlType::read_ion_var | NmodlType::write_ion_var |
+                             NmodlType::nonspecific_cur_var | NmodlType::electrode_cur_var |
+                             NmodlType::section_var | NmodlType::constant_var |
+                             NmodlType::extern_neuron_variable | NmodlType::state_var |
+                             NmodlType::factor_def;
         for (const auto& globalvar: symtab->get_variables_with_properties(property)) {
             std::string var_name = globalvar->get_name();
             if (globalvar->is_array()) {
