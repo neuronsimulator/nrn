@@ -89,6 +89,9 @@ class KineticBlockVisitor: public AstVisitor {
     /// statements to remove from block
     std::set<ast::Node*> statements_to_remove;
 
+    /// current statement block being visited
+    ast::StatementBlock* current_statement_block = nullptr;
+
   public:
     KineticBlockVisitor() = default;
 
@@ -97,6 +100,7 @@ class KineticBlockVisitor: public AstVisitor {
     void visit_reaction_statement(ast::ReactionStatement* node) override;
     void visit_conserve(ast::Conserve* node) override;
     void visit_compartment(ast::Compartment* node) override;
+    void visit_statement_block(ast::StatementBlock* node) override;
     void visit_kinetic_block(ast::KineticBlock* node) override;
     void visit_program(ast::Program* node) override;
 };

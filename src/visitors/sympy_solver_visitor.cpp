@@ -35,7 +35,11 @@ void SympySolverVisitor::init_block_data(ast::Node* node) {
     if (auto symtab = node->get_statement_block()->get_symbol_table()) {
         auto localvars = symtab->get_variables_with_properties(NmodlType::local_var);
         for (const auto& localvar: localvars) {
-            vars.insert(localvar->get_name());
+            std::string var_name = localvar->get_name();
+            if (localvar->is_array()) {
+                var_name += "[" + std::to_string(localvar->get_length()) + "]";
+            }
+            vars.insert(var_name);
         }
     }
 }
@@ -173,7 +177,6 @@ void SympySolverVisitor::construct_eigen_solver_block(
         auto solver_block = std::make_shared<ast::EigenNewtonSolverBlock>(
             n_state_vars, variable_block, initialize_block, setup_x_block, functor_block,
             update_state_block, finalize_block);
-
         /// replace statement block with solver block as it contains all statements
         ast::StatementVector solver_block_statements{
             std::make_shared<ast::ExpressionStatement>(solver_block)};
@@ -288,6 +291,14 @@ void SympySolverVisitor::solve_non_linear_system(
 void SympySolverVisitor::visit_var_name(ast::VarName* node) {
     if (collect_state_vars) {
         std::string var_name = node->get_node_name();
+        if (node->get_name()->is_indexed_name()) {
+            auto index_name = std::dynamic_pointer_cast<ast::IndexedName>(node->get_name());
+            var_name +=
+                "[" +
+                std::to_string(
+                    std::dynamic_pointer_cast<ast::Integer>(index_name->get_length())->eval()) +
+                "]";
+        }
         // if var_name is a state var, add it to set
         if (std::find(all_state_vars.cbegin(), all_state_vars.cend(), var_name) !=
             all_state_vars.cend()) {
@@ -306,7 +317,9 @@ void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
         return;
     }
     auto lhs_name = std::dynamic_pointer_cast<ast::VarName>(lhs)->get_name();
-    if (!lhs_name->is_prime_name()) {
+    if ((lhs_name->is_indexed_name() &&
+         !std::dynamic_pointer_cast<ast::IndexedName>(lhs_name)->get_name()->is_prime_name()) ||
+        (!lhs_name->is_indexed_name() && !lhs_name->is_prime_name())) {
         logger->warn("SympySolverVisitor :: LHS of differential equation is not a PrimeName");
         return;
     }
@@ -315,7 +328,6 @@ void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
 
     const auto node_as_nmodl = to_nmodl_for_sympy(node);
     const auto locals = py::dict("equation_string"_a = node_as_nmodl,
-                                 "t_var"_a = codegen::naming::NTHREAD_T_VARIABLE,
                                  "dt_var"_a = codegen::naming::NTHREAD_DT_VARIABLE, "vars"_a = vars,
                                  "use_pade_approx"_a = use_pade_approx);
 
@@ -344,7 +356,7 @@ void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
                 from nmodl.ode import integrate2c
                 exception_message = ""
                 try:
-                    solution = integrate2c(equation_string, t_var, dt_var, vars, use_pade_approx)
+                    solution = integrate2c(equation_string, dt_var, vars, use_pade_approx)
                 except Exception as e:
                     # if we fail, fail silently and return empty string
                     solution = ""
@@ -354,11 +366,19 @@ void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
     } else {
         // for other solver methods: just collect the ODEs & return
         std::string eq_str = to_nmodl_for_sympy(node);
-        std::string state_var_name = lhs_name->get_node_name();
+        std::string var_name = lhs_name->get_node_name();
+        if (lhs_name->is_indexed_name()) {
+            auto index_name = std::dynamic_pointer_cast<ast::IndexedName>(lhs_name);
+            var_name +=
+                "[" +
+                std::to_string(
+                    std::dynamic_pointer_cast<ast::Integer>(index_name->get_length())->eval()) +
+                "]";
+        }
         logger->debug("SympySolverVisitor :: adding ODE system: {}", eq_str);
         eq_system.push_back(eq_str);
-        logger->debug("SympySolverVisitor :: adding state var: {}", state_var_name);
-        state_vars_in_block.insert(state_var_name);
+        logger->debug("SympySolverVisitor :: adding state var: {}", var_name);
+        state_vars_in_block.insert(var_name);
         expression_statements.insert(current_expression_statement);
         last_expression_statement = current_expression_statement;
         return;
@@ -396,22 +416,28 @@ void SympySolverVisitor::visit_derivative_block(ast::DerivativeBlock* node) {
     if (eq_system_is_valid && !eq_system.empty()) {
         // solve system of ODEs in eq_system
         logger->debug("SympySolverVisitor :: Solving {} system of ODEs", solve_method);
-
         // construct implicit Euler equations from ODEs
         std::vector<std::string> pre_solve_statements;
         for (auto& eq: eq_system) {
             auto split_eq = stringutils::split_string(eq, '=');
             auto x_prime_split = stringutils::split_string(split_eq[0], '\'');
             auto x = stringutils::trim(x_prime_split[0]);
+            std::string x_array_index = "";
+            std::string x_array_index_i = "";
+            if (x_prime_split.size() > 1 && stringutils::trim(x_prime_split[1]).size() > 2) {
+                x_array_index = stringutils::trim(x_prime_split[1]);
+                x_array_index_i = "_" + x_array_index.substr(1, x_array_index.size() - 2);
+            }
             auto dxdt = stringutils::trim(split_eq[1]);
-            auto old_x = "old_" + x;  // TODO: do this properly, check name is unique
+            auto old_x = "old_" + x + x_array_index_i;  // TODO: do this properly,
+                                                        // check name is unique
             // declare old_x
             logger->debug("SympySolverVisitor :: -> declaring new local variable: {}", old_x);
             add_local_variable(block_with_expression_statements, old_x);
             // assign old_x = x
-            pre_solve_statements.push_back(old_x + " = " + x);
-            eq = x + " = " + old_x + " + " + codegen::naming::NTHREAD_DT_VARIABLE + " * (" + dxdt +
-                 ")";
+            pre_solve_statements.push_back(old_x + " = " + x + x_array_index);
+            eq = x + x_array_index + " = " + old_x + " + " + codegen::naming::NTHREAD_DT_VARIABLE +
+                 " * (" + dxdt + ")";
             logger->debug("SympySolverVisitor :: -> constructed euler eq: {}", eq);
         }
 
@@ -521,8 +547,15 @@ void SympySolverVisitor::visit_program(ast::Program* node) {
     if (auto symtab = node->get_symbol_table()) {
         auto statevars = symtab->get_variables_with_properties(NmodlType::state_var);
         for (const auto& v: statevars) {
-            const auto& varname = v->get_name();
-            all_state_vars.push_back(varname);
+            std::string var_name = v->get_name();
+            if (v->is_array()) {
+                for (int i = 0; i < v->get_length(); ++i) {
+                    std::string var_name_i = var_name + "[" + std::to_string(i) + "]";
+                    all_state_vars.push_back(var_name_i);
+                }
+            } else {
+                all_state_vars.push_back(var_name);
+            }
         }
     }
 

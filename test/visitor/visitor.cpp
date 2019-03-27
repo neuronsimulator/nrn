@@ -2115,6 +2115,12 @@ std::vector<std::string> run_kinetic_block_visitor(
     // construct symbol table from AST
     SymtabVisitor().visit_program(ast.get());
 
+    // unroll loops and fold constants
+    ConstantFolderVisitor().visit_program(ast.get());
+    LoopUnrollVisitor().visit_program(ast.get());
+    ConstantFolderVisitor().visit_program(ast.get());
+    SymtabVisitor().visit_program(ast.get());
+
     // run KineticBlock visitor on AST
     KineticBlockVisitor().visit_program(ast.get());
 
@@ -2140,6 +2146,24 @@ SCENARIO("KineticBlock visitor", "[kinetic]") {
         std::string output_nmodl_text = R"(
             DERIVATIVE states {
                 x' = (a*c/3.2)
+            })";
+        THEN("Convert to equivalent DERIVATIVE block") {
+            auto result = run_kinetic_block_visitor(input_nmodl_text);
+            CAPTURE(input_nmodl_text);
+            REQUIRE(result[0] == reindent_text(output_nmodl_text));
+        }
+    }
+    GIVEN("KINETIC block with << reaction statement, 1 array state var") {
+        std::string input_nmodl_text = R"(
+            STATE {
+                x[1]
+            }
+            KINETIC states {
+                ~ x[0] << (a*c/3.2)
+            })";
+        std::string output_nmodl_text = R"(
+            DERIVATIVE states {
+                x'[0] = (a*c/3.2)
             })";
         THEN("Convert to equivalent DERIVATIVE block") {
             auto result = run_kinetic_block_visitor(input_nmodl_text);
@@ -2216,6 +2240,25 @@ SCENARIO("KineticBlock visitor", "[kinetic]") {
                 y' = (-1*(f(v)*x*y))
             })";
         THEN("Convert to equivalent DERIVATIVE block (ignore CONSERVE for now)") {
+            auto result = run_kinetic_block_visitor(input_nmodl_text);
+            CAPTURE(input_nmodl_text);
+            REQUIRE(result[0] == reindent_text(output_nmodl_text));
+        }
+    }
+    GIVEN("KINETIC block with -> reaction statement, array of 2 state var") {
+        std::string input_nmodl_text = R"(
+            STATE {
+                x[2]
+            }
+            KINETIC states {
+                ~ x[0] + x[1] -> (f(v))
+            })";
+        std::string output_nmodl_text = R"(
+            DERIVATIVE states {
+                x'[0] = (-1*(f(v)*x[0]*x[1]))
+                x'[1] = (-1*(f(v)*x[0]*x[1]))
+            })";
+        THEN("Convert to equivalent DERIVATIVE block") {
             auto result = run_kinetic_block_visitor(input_nmodl_text);
             CAPTURE(input_nmodl_text);
             REQUIRE(result[0] == reindent_text(output_nmodl_text));
@@ -2448,6 +2491,41 @@ SCENARIO("KineticBlock visitor", "[kinetic]") {
             REQUIRE(result[0] == reindent_text(output_nmodl_text));
         }
     }
+    GIVEN("KINETIC block with loop over array variable") {
+        std::string input_nmodl_text = R"(
+            DEFINE N 5
+            ASSIGNED {
+                a
+                b[N]
+                c[N]
+                d
+            }
+            STATE {
+                x[N]
+            }
+            KINETIC kin {
+                ~ x[0] << (a)
+                FROM i=0 TO N-2 {
+                    ~ x[i] <-> x[i+1] (b[i], c[i])
+                }
+                ~ x[N-1] -> (d)
+            })";
+        std::string output_nmodl_text = R"(
+            DERIVATIVE kin {
+                {
+                }
+                x'[0] = (a)+(-1*(b[0]*x[0]-c[0]*x[1]))
+                x'[1] = (1*(b[0]*x[0]-c[0]*x[1]))+(-1*(b[1]*x[1]-c[1]*x[2]))
+                x'[2] = (1*(b[1]*x[1]-c[1]*x[2]))+(-1*(b[2]*x[2]-c[2]*x[3]))
+                x'[3] = (1*(b[2]*x[2]-c[2]*x[3]))+(-1*(b[3]*x[3]-c[3]*x[4]))
+                x'[4] = (1*(b[3]*x[3]-c[3]*x[4]))+(-1*(d*x[4]))
+            })";
+        THEN("Convert to equivalent DERIVATIVE block") {
+            auto result = run_kinetic_block_visitor(input_nmodl_text);
+            CAPTURE(input_nmodl_text);
+            REQUIRE(result[0] == reindent_text(output_nmodl_text));
+        }
+    }
 }
 
 //=============================================================================
@@ -2469,9 +2547,14 @@ std::vector<std::string> run_sympy_solver_visitor(
     // construct symbol table from AST
     SymtabVisitor().visit_program(ast.get());
 
+    // unroll loops and fold constants
+    ConstantFolderVisitor().visit_program(ast.get());
+    LoopUnrollVisitor().visit_program(ast.get());
+    ConstantFolderVisitor().visit_program(ast.get());
+    SymtabVisitor().visit_program(ast.get());
+
     // run SympySolver on AST
-    SympySolverVisitor v_sympy(pade, cse);
-    v_sympy.visit_program(ast.get());
+    SympySolverVisitor(pade, cse).visit_program(ast.get());
 
     // run lookup visitor to extract results from AST
     AstLookupVisitor v_lookup;
@@ -2519,7 +2602,6 @@ SCENARIO("SympySolver visitor: cnexp or euler", "[sympy][cnexp][euler]") {
                 m = m + h
             }
         )";
-
         THEN("No ODEs found - do nothing") {
             auto result = run_sympy_solver_visitor(nmodl_text);
             REQUIRE(result.empty());
@@ -2536,12 +2618,47 @@ SCENARIO("SympySolver visitor: cnexp or euler", "[sympy][cnexp][euler]") {
                 z = a*b + c
             }
         )";
-
         THEN("Construct forwards Euler solutions") {
             auto result = run_sympy_solver_visitor(nmodl_text);
             REQUIRE(result.size() == 2);
             REQUIRE(result[0] == "m = (-dt*(m-mInf)+m*mTau)/mTau");
             REQUIRE(result[1] == "h = (-dt*(h-hInf)+h*hTau)/hTau");
+        }
+    }
+    GIVEN("Derivative block with ODE, 1 state var in array, solver method euler") {
+        std::string nmodl_text = R"(
+            STATE {
+                m[1]
+            }
+            BREAKPOINT  {
+                SOLVE states METHOD euler
+            }
+            DERIVATIVE states {
+                m'[0] = (mInf-m[0])/mTau
+            }
+        )";
+        THEN("Construct forwards Euler solutions") {
+            auto result = run_sympy_solver_visitor(nmodl_text);
+            REQUIRE(result.size() == 1);
+            REQUIRE(result[0] == "m[0] = (dt*(mInf-m[0])+mTau*m[0])/mTau");
+        }
+    }
+    GIVEN("Derivative block with ODE, 1 state var in array, solver method cnexp") {
+        std::string nmodl_text = R"(
+            STATE {
+                m[1]
+            }
+            BREAKPOINT  {
+                SOLVE states METHOD cnexp
+            }
+            DERIVATIVE states {
+                m'[0] = (mInf-m[0])/mTau
+            }
+        )";
+        THEN("Construct forwards Euler solutions") {
+            auto result = run_sympy_solver_visitor(nmodl_text);
+            REQUIRE(result.size() == 1);
+            REQUIRE(result[0] == "m[0] = mInf-(mInf-m[0])*exp(-dt/mTau)");
         }
     }
     GIVEN("Derivative block with linear ODES, solver method cnexp") {
@@ -2555,12 +2672,11 @@ SCENARIO("SympySolver visitor: cnexp or euler", "[sympy][cnexp][euler]") {
                 h' = hInf/hTau - h/hTau
             }
         )";
-
         THEN("Integrate equations analytically") {
             auto result = run_sympy_solver_visitor(nmodl_text);
             REQUIRE(result.size() == 2);
-            REQUIRE(result[0] == "m = mInf+(m-mInf)*exp(-dt/mTau)");
-            REQUIRE(result[1] == "h = hInf+(h-hInf)*exp(-dt/hTau)");
+            REQUIRE(result[0] == "m = mInf-(-m+mInf)*exp(-dt/mTau)");
+            REQUIRE(result[1] == "h = hInf-(-h+hInf)*exp(-dt/hTau)");
         }
     }
     GIVEN("Derivative block including non-linear but solvable ODES, solver method cnexp") {
@@ -2573,12 +2689,83 @@ SCENARIO("SympySolver visitor: cnexp or euler", "[sympy][cnexp][euler]") {
                 h' = c2 * h*h
             }
         )";
-
         THEN("Integrate equations analytically") {
             auto result = run_sympy_solver_visitor(nmodl_text);
             REQUIRE(result.size() == 2);
-            REQUIRE(result[0] == "m = mInf+(m-mInf)*exp(-dt/mTau)");
-            REQUIRE(result[1] == "h = -1/(c2*dt-1/h)");
+            REQUIRE(result[0] == "m = mInf-(-m+mInf)*exp(-dt/mTau)");
+            REQUIRE(result[1] == "h = -h/(c2*dt*h-1)");
+        }
+    }
+    GIVEN("Derivative block including array of 2 state vars, solver method cnexp") {
+        std::string nmodl_text = R"(
+            BREAKPOINT {
+                SOLVE states METHOD cnexp
+            }
+            STATE {
+                X[2]
+            }
+            DERIVATIVE states {
+                X'[0] = (mInf-X[0])/mTau
+                X'[1] = c2 * X[1]*X[1]
+            }
+        )";
+        THEN("Integrate equations analytically") {
+            auto result = run_sympy_solver_visitor(nmodl_text);
+            REQUIRE(result.size() == 2);
+            REQUIRE(result[0] == "X[0] = mInf-(mInf-X[0])*exp(-dt/mTau)");
+            REQUIRE(result[1] == "X[1] = -X[1]/(c2*dt*X[1]-1)");
+        }
+    }
+    GIVEN("Derivative block including loop over array vars, solver method cnexp") {
+        std::string nmodl_text = R"(
+            DEFINE N 3
+            BREAKPOINT {
+                SOLVE states METHOD cnexp
+            }
+            ASSIGNED {
+                mTau[N]
+            }
+            STATE {
+                X[N]
+            }
+            DERIVATIVE states {
+                FROM i=0 TO N-1 {
+                    X'[i] = (mInf-X[i])/mTau[i]
+                }
+            }
+        )";
+        THEN("Integrate equations analytically") {
+            auto result = run_sympy_solver_visitor(nmodl_text);
+            REQUIRE(result.size() == 3);
+            REQUIRE(result[0] == "X[0] = mInf-(mInf-X[0])*exp(-dt/mTau[0])");
+            REQUIRE(result[1] == "X[1] = mInf-(mInf-X[1])*exp(-dt/mTau[1])");
+            REQUIRE(result[2] == "X[2] = mInf-(mInf-X[2])*exp(-dt/mTau[2])");
+        }
+    }
+    GIVEN("Derivative block including loop over array vars, solver method euler") {
+        std::string nmodl_text = R"(
+            DEFINE N 3
+            BREAKPOINT {
+                SOLVE states METHOD euler
+            }
+            ASSIGNED {
+                mTau[N]
+            }
+            STATE {
+                X[N]
+            }
+            DERIVATIVE states {
+                FROM i=0 TO N-1 {
+                    X'[i] = (mInf-X[i])/mTau[i]
+                }
+            }
+        )";
+        THEN("Integrate equations analytically") {
+            auto result = run_sympy_solver_visitor(nmodl_text);
+            REQUIRE(result.size() == 3);
+            REQUIRE(result[0] == "X[0] = (dt*(mInf-X[0])+X[0]*mTau[0])/mTau[0]");
+            REQUIRE(result[1] == "X[1] = (dt*(mInf-X[1])+X[1]*mTau[1])/mTau[1]");
+            REQUIRE(result[2] == "X[2] = (dt*(mInf-X[2])+X[2]*mTau[2])/mTau[2]");
         }
     }
     GIVEN("Derivative block including ODES that can't currently be solved, solver method cnexp") {
@@ -2593,12 +2780,11 @@ SCENARIO("SympySolver visitor: cnexp or euler", "[sympy][cnexp][euler]") {
                 y' = c3 * y*y*y
             }
         )";
-
         THEN("Integrate equations analytically where possible, otherwise leave untouched") {
             auto result = run_sympy_solver_visitor(nmodl_text);
             REQUIRE(result.size() == 4);
             REQUIRE(result[0] == "z' = a/z+b/z/z");
-            REQUIRE(result[1] == "h = -1/(c2*dt-1/h)");
+            REQUIRE(result[1] == "h = -h/(c2*dt*h-1)");
             REQUIRE(result[2] == "x = a*dt+x");
             REQUIRE(result[3] == "y' = c3*y*y*y");
         }
@@ -2618,12 +2804,10 @@ SCENARIO("SympySolver visitor: cnexp or euler", "[sympy][cnexp][euler]") {
         auto ast = driver.ast();
 
         // construct symbol table from AST
-        SymtabVisitor v_symtab;
-        v_symtab.visit_program(ast.get());
+        SymtabVisitor().visit_program(ast.get());
 
         // run SympySolver on AST
-        SympySolverVisitor v_sympy;
-        v_sympy.visit_program(ast.get());
+        SympySolverVisitor().visit_program(ast.get());
 
         std::string AST_string = ast_to_string(ast.get());
 
@@ -2692,7 +2876,6 @@ SCENARIO("SympySolver visitor: derivimplicit or sparse", "[sympy][derivimplicit]
                 z' = d*z - y
             }
         )";
-
         std::string expected_result = R"(
             DERIVATIVE states {
                 LOCAL a, b, c, d, h, old_x, old_y, old_z
@@ -2703,7 +2886,6 @@ SCENARIO("SympySolver visitor: derivimplicit or sparse", "[sympy][derivimplicit]
                 y = (-2*a*pow(dt, 2)*(dt*(c*dt+2*dt*(b*dt*h+old_x)+old_y)-old_z)+(2*a*pow(dt, 3)-d*dt+1)*(c*dt+2*dt*(b*dt*h+old_x)+old_y))/(2*a*pow(dt, 3)-d*dt+1)
                 z = (-dt*(c*dt+2*dt*(b*dt*h+old_x)+old_y)+old_z)/(2*a*pow(dt, 3)-d*dt+1)
             })";
-
         std::string expected_cse_result = R"(
             DERIVATIVE states {
                 LOCAL a, b, c, d, h, old_x, old_y, old_z, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5
@@ -2751,8 +2933,107 @@ SCENARIO("SympySolver visitor: derivimplicit or sparse", "[sympy][derivimplicit]
                 mc = (b*dt*old_m+b*dt*old_mc+old_mc)/(a*dt+b*dt+1)
                 m = (a*dt*old_m+a*dt*old_mc+old_m)/(a*dt+b*dt+1)
             })";
-
         THEN("Construct & solver linear system") {
+            CAPTURE(nmodl_text);
+            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
+                                                   AstNodeType::DERIVATIVE_BLOCK);
+            REQUIRE(result[0] == reindent_text(expected_result));
+        }
+    }
+    GIVEN("Derivative block including ODES with sparse method - single var in array") {
+        std::string nmodl_text = R"(
+            STATE {
+                W[1]
+            }
+            ASSIGNED {
+                A[2]
+                B[1]
+            }
+            BREAKPOINT  {
+                SOLVE scheme1 METHOD sparse
+            }
+            DERIVATIVE scheme1 {
+                W'[0] = -A[0]*W[0] + B[0]*W[0] + 3*A[1]
+            }
+        )";
+        std::string expected_result = R"(
+            DERIVATIVE scheme1 {
+                LOCAL old_W_0
+                old_W_0 = W[0]
+                W[0] = (3*dt*A[1]+old_W_0)/(dt*A[0]-dt*B[0]+1)
+            })";
+        THEN("Construct & solver linear system") {
+            CAPTURE(nmodl_text);
+            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
+                                                   AstNodeType::DERIVATIVE_BLOCK);
+            REQUIRE(result[0] == reindent_text(expected_result));
+        }
+    }
+    GIVEN("Derivative block including ODES with sparse method - array vars") {
+        std::string nmodl_text = R"(
+            STATE {
+                M[2]
+            }
+            ASSIGNED {
+                A[2]
+                B[2]
+            }
+            BREAKPOINT  {
+                SOLVE scheme1 METHOD sparse
+            }
+            DERIVATIVE scheme1 {
+                M'[0] = -A[0]*M[0] + B[0]*M[1]
+                M'[1] = A[1]*M[0] - B[1]*M[1]
+            }
+        )";
+        std::string expected_result = R"(
+            DERIVATIVE scheme1 {
+                LOCAL old_M_0, old_M_1
+                old_M_0 = M[0]
+                old_M_1 = M[1]
+                M[0] = (dt*old_M_0*B[1]+dt*old_M_1*B[0]+old_M_0)/(pow(dt, 2)*A[0]*B[1]-pow(dt, 2)*A[1]*B[0]+dt*A[0]+dt*B[1]+1)
+                M[1] = -(dt*old_M_0*A[1]+old_M_1*(dt*A[0]+1))/(pow(dt, 2)*A[1]*B[0]-(dt*A[0]+1)*(dt*B[1]+1))
+            })";
+        THEN("Construct & solver linear system") {
+            CAPTURE(nmodl_text);
+            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
+                                                   AstNodeType::DERIVATIVE_BLOCK);
+            REQUIRE(result[0] == reindent_text(expected_result));
+        }
+    }
+    GIVEN("Derivative block including ODES with derivimplicit method - single var in array") {
+        std::string nmodl_text = R"(
+            STATE {
+                W[1]
+            }
+            ASSIGNED {
+                A[2]
+                B[1]
+            }
+            BREAKPOINT  {
+                SOLVE scheme1 METHOD derivimplicit
+            }
+            DERIVATIVE scheme1 {
+                W'[0] = -A[0]*W[0] + B[0]*W[0] + 3*A[1]
+            }
+        )";
+        std::string expected_result = R"(
+            DERIVATIVE scheme1 {
+                EIGEN_NEWTON_SOLVE[1]{
+                    LOCAL old_W_0
+                }{
+                    old_W_0 = W[0]
+                }{
+                    X[0] = W[0]
+                }{
+                    F[0] = -X[0]+dt*(-X[0]*A[0]+X[0]*B[0]+3*A[1])+old_W_0
+                    J[0] = -dt*(A[0]-B[0])-1
+                }{
+                    W[0] = X[0]
+                }{
+                }
+            })";
+        THEN("Construct newton solve block") {
             CAPTURE(nmodl_text);
             auto result = run_sympy_solver_visitor(nmodl_text, false, false,
                                                    AstNodeType::DERIVATIVE_BLOCK);
@@ -2769,7 +3050,7 @@ SCENARIO("SympySolver visitor: derivimplicit or sparse", "[sympy][derivimplicit]
             }
             DERIVATIVE states {
                 rates(v)
-                m' =  (minf-m)/mtau - 3*h
+                m' = (minf-m)/mtau - 3*h
                 h' = (hinf-h)/htau + m*m
                 n' = (ninf-n)/ntau
             }
@@ -2808,8 +3089,7 @@ SCENARIO("SympySolver visitor: derivimplicit or sparse", "[sympy][derivimplicit]
                 }{
                 }
             })";
-
-        THEN("Construct & solver linear system using newton solver") {
+        THEN("Construct newton solve block") {
             CAPTURE(nmodl_text);
             auto result = run_sympy_solver_visitor(nmodl_text, false, false,
                                                    AstNodeType::DERIVATIVE_BLOCK);
@@ -2883,8 +3163,7 @@ SCENARIO("SympySolver visitor: derivimplicit or sparse", "[sympy][derivimplicit]
                 }{
                 }
             })";
-
-        THEN("Construct & solver linear system using newton solver") {
+        THEN("Construct newton solve block") {
             auto result = run_sympy_solver_visitor(nmodl_text, false, false,
                                                    AstNodeType::DERIVATIVE_BLOCK);
             CAPTURE(nmodl_text);
@@ -4101,6 +4380,28 @@ SCENARIO("LINEAR solve block (SympySolver Visitor)", "[sympy][linear]") {
             REQUIRE(reindent_text(result[0]) == reindent_text(expected_text));
         }
     }
+    GIVEN("array state-var numeric LINEAR solve block") {
+        std::string nmodl_text = R"(
+            STATE {
+                s[3]
+            }
+            LINEAR lin {
+                ~ s[0] = 1
+                ~ s[1] = 3
+                ~ s[2] + s[1] = s[0]
+            })";
+        std::string expected_text = R"(
+            LINEAR lin {
+                s[0] = 1
+                s[1] = 3
+                s[2] = -2
+            })";
+        THEN("solve analytically") {
+            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
+                                                   AstNodeType::LINEAR_BLOCK);
+            REQUIRE(reindent_text(result[0]) == reindent_text(expected_text));
+        }
+    }
     GIVEN("4 state-var LINEAR solve block") {
         std::string nmodl_text = R"(
             STATE {
@@ -4395,6 +4696,50 @@ SCENARIO("NONLINEAR solve block (SympySolver Visitor)", "[sympy][nonlinear]") {
                     J[0] = -1
                 }{
                     x = X[0]
+                }{
+                }
+            })";
+        THEN("return F & J for newton solver") {
+            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
+                                                   AstNodeType::NON_LINEAR_BLOCK);
+            REQUIRE(reindent_text(result[0]) == reindent_text(expected_text));
+        }
+    }
+    GIVEN("array state-var numeric NONLINEAR solve block") {
+        std::string nmodl_text = R"(
+            STATE {
+                s[3]
+            }
+            NONLINEAR nonlin {
+                ~ s[0] = 1
+                ~ s[1] = 3
+                ~ s[2] + s[1] = s[0]
+            })";
+        std::string expected_text = R"(
+            NONLINEAR nonlin {
+                EIGEN_NEWTON_SOLVE[3]{
+                }{
+                }{
+                    X[0] = s[0]
+                    X[1] = s[1]
+                    X[2] = s[2]
+                }{
+                    F[0] = -X[0]+1
+                    F[1] = -X[1]+3
+                    F[2] = X[0]-X[1]-X[2]
+                    J[0] = -1
+                    J[3] = 0
+                    J[6] = 0
+                    J[1] = 0
+                    J[4] = -1
+                    J[7] = 0
+                    J[2] = 1
+                    J[5] = -1
+                    J[8] = -1
+                }{
+                    s[0] = X[0]
+                    s[1] = X[1]
+                    s[2] = X[2]
                 }{
                 }
             })";

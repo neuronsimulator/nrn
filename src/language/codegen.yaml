@@ -65,7 +65,7 @@
                                   type: StatementBlock
                               - finalize_block:
                                   description: "Statement block to be executed after calling newton solver"
-                                  type: StatementBlock                                  
+                                  type: StatementBlock
                         - EigenLinearSolverBlock:
                             description: "Represent linear solver solution block based on Eigen"
                             nmodl: "EIGEN_LINEAR_SOLVE"

@@ -1010,7 +1010,10 @@ asgn            :   varname "=" expr
                     {
                         auto expression = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_ASSIGN), $3);
                         auto name = $1->get_name();
-                        if (name->is_prime_name()) {
+                        if ((name->is_prime_name()) ||
+                            (name->is_indexed_name() &&
+                            std::dynamic_pointer_cast<ast::IndexedName>(name)->get_name()->is_prime_name()))
+                        {
                             $$ = new ast::DiffEqExpression(expression);
                         } else {
                             $$ = expression;
