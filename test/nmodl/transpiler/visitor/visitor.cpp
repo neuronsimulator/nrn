@@ -2846,7 +2846,7 @@ SCENARIO("SympySolver visitor: derivimplicit or sparse", "[sympy][derivimplicit]
                 }{
                     X[0] = m
                 }{
-                    F[0] = (-dt*(X[0]-mInf)+mTau*(-X[0]+old_m))/mTau
+                    F[0] = (-X[0]*dt+dt*mInf+mTau*(-X[0]+old_m))/mTau
                     J[0] = -(dt+mTau)/mTau
                 }{
                     m = X[0]
@@ -3026,8 +3026,8 @@ SCENARIO("SympySolver visitor: derivimplicit or sparse", "[sympy][derivimplicit]
                 }{
                     X[0] = W[0]
                 }{
-                    F[0] = -X[0]+dt*(-X[0]*A[0]+X[0]*B[0]+3*A[1])+old_W_0
-                    J[0] = -dt*(A[0]-B[0])-1
+                    F[0] = -X[0]*dt*A[0]+X[0]*dt*B[0]-X[0]+3*dt*A[1]+old_W_0
+                    J[0] = -dt*A[0]+dt*B[0]-1
                 }{
                     W[0] = X[0]
                 }{
@@ -3070,9 +3070,9 @@ SCENARIO("SympySolver visitor: derivimplicit or sparse", "[sympy][derivimplicit]
                     X[1] = h
                     X[2] = n
                 }{
-                    F[0] = (-dt*(X[0]+3*X[1]*mtau-minf)+mtau*(-X[0]+old_m))/mtau
-                    F[1] = (dt*(pow(X[0], 2)*htau-X[1]+hinf)+htau*(-X[1]+old_h))/htau
-                    F[2] = (-dt*(X[2]-ninf)+ntau*(-X[2]+old_n))/ntau
+                    F[0] = (-X[0]*dt+dt*minf+mtau*(-X[0]-3*X[1]*dt+old_m))/mtau
+                    F[1] = (-X[1]*dt+dt*hinf+htau*(pow(X[0], 2)*dt-X[1]+old_h))/htau
+                    F[2] = (-X[2]*dt+dt*ninf+ntau*(-X[2]+old_n))/ntau
                     J[0] = -(dt+mtau)/mtau
                     J[3] = -3*dt
                     J[6] = 0
@@ -3128,8 +3128,8 @@ SCENARIO("SympySolver visitor: derivimplicit or sparse", "[sympy][derivimplicit]
                     X[0] = m
                     X[1] = h
                 }{
-                    F[0] = (-dt*(X[0]-minf)+mtau*(-X[0]+old_m))/mtau
-                    F[1] = (dt*(pow(X[0], 2)*htau-X[1]+hinf)+htau*(-X[1]+old_h))/htau
+                    F[0] = (-X[0]*dt+dt*minf+mtau*(-X[0]+old_m))/mtau
+                    F[1] = (-X[1]*dt+dt*hinf+htau*(pow(X[0], 2)*dt-X[1]+old_h))/htau
                     J[0] = -(dt+mtau)/mtau
                     J[2] = 0
                     J[1] = 2*X[0]*dt
@@ -3151,8 +3151,8 @@ SCENARIO("SympySolver visitor: derivimplicit or sparse", "[sympy][derivimplicit]
                     X[0] = m
                     X[1] = h
                 }{
-                    F[0] = (dt*(pow(X[0], 2)*htau-X[1]+hinf)+htau*(-X[1]+old_h))/htau
-                    F[1] = (dt*(-X[0]+X[1]*mtau+minf)+mtau*(-X[0]+old_m))/mtau
+                    F[0] = (-X[1]*dt+dt*hinf+htau*(pow(X[0], 2)*dt-X[1]+old_h))/htau
+                    F[1] = (-X[0]*dt+dt*minf+mtau*(-X[0]+X[1]*dt+old_m))/mtau
                     J[0] = 2*X[0]*dt
                     J[2] = -(dt+htau)/htau
                     J[1] = -(dt+mtau)/mtau
