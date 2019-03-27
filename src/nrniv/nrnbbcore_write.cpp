@@ -89,13 +89,8 @@ functions here as well.
 #include <stdio.h>
 #include <stdlib.h>
 
-// for opendir and mkdir
-# if HAVE_DIRENT_H && HAVE_SYS_STAT_H
-#include <dirent.h>
-#include <sys/stat.h>
-#endif
-#include <errno.h>
-#include <sys/types.h>
+// for idDirExist and makePath
+#include <ocfile.h>
 
 #include <nrnran123.h> // globalindex written to globals.dat
 #include <section.h>
@@ -208,40 +203,31 @@ size_t nrnbbcore_write() {
     hoc_execerror("nrnbbcore_write requires the model already be initialized (cf finitialize(...))", NULL);
   }
   char fname[1024];
-  char path[1024];
-  sprintf(path, ".");
+  std::string path(".");
   if (ifarg(1)) {
-    strcpy(path, hoc_gargstr(1));
-# if HAVE_DIRENT_H && HAVE_SYS_STAT_H
+    path = hoc_gargstr(1);
     if (nrnmpi_myid == 0) {
-      DIR* dir = opendir(path);
-      if (dir) {
-        closedir(dir);
-      }else if (ENOENT == errno) {
-        if (mkdir(path, 0777)) {
-          hoc_execerror(path, "directory did not exist and mkdir for it failed");
+      if (!isDirExist(path)) {
+        if (!makePath(path)) {
+          hoc_execerror(path.c_str(), "directory did not exist and makePath for it failed");
         }
-      }else{
-        perror(NULL);
-        hoc_execerror("opendir failed for", path);
       }
     }
-#endif
     nrnmpi_barrier();
   }
 
   size_t rankbytes = part1(); // can arrange to be just before part2
 
-  assert(snprintf(fname, 1024, "%s/%s", path, "byteswap1.dat") < 1024);
+  assert(snprintf(fname, 1024, "%s/%s", path.c_str(), "byteswap1.dat") < 1024);
   write_byteswap1(fname);
 
-  assert(snprintf(fname, 1024, "%s/%s", path, "bbcore_mech.dat") < 1024);
+  assert(snprintf(fname, 1024, "%s/%s", path.c_str(), "bbcore_mech.dat") < 1024);
   write_memb_mech_types(fname);
 
-  assert(snprintf(fname, 1024, "%s/%s", path, "globals.dat") < 1024);
+  assert(snprintf(fname, 1024, "%s/%s", path.c_str(), "globals.dat") < 1024);
   write_globals(fname);
 
-  part2(path);
+  part2(path.c_str());
   return rankbytes;
 }
 
