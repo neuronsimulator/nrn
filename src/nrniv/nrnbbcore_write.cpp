@@ -213,7 +213,9 @@ size_t nrnbbcore_write() {
         }
       }
     }
+#ifdef NRNMPI
     nrnmpi_barrier();
+#endif
   }
 
   size_t rankbytes = part1(); // can arrange to be just before part2
