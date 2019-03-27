@@ -104,7 +104,7 @@ void KineticBlockVisitor::visit_react_var_name(ast::ReactVarName* node) {
     // var_name is the state variable which we convert to an index
     // integer is the value to be added to the stochiometric matrix at this index
     if (in_reaction_statement) {
-        auto varname = node->get_node_name();
+        auto varname = to_nmodl(node->get_name().get());
         int count = node->get_value() ? node->get_value()->eval() : 1;
         process_reac_var(varname, count);
     }
@@ -133,7 +133,6 @@ void KineticBlockVisitor::visit_reaction_statement(ast::ReactionStatement* node)
                 single_state_var = false;
             }
         }
-
         if (!lhs->is_react_var_name() || !single_state_var) {
             logger->warn(
                 "KineticBlockVisitor :: LHS of \"<<\" reaction statement must be a single state "
@@ -142,7 +141,7 @@ void KineticBlockVisitor::visit_reaction_statement(ast::ReactionStatement* node)
             return;
         }
         auto rhs = node->get_expression1();
-        std::string varname = std::dynamic_pointer_cast<ast::ReactVarName>(lhs)->get_node_name();
+        std::string varname = to_nmodl(lhs.get());
         // get index of state var
         const auto it = state_var_index.find(varname);
         if (it != state_var_index.cend()) {
@@ -195,6 +194,15 @@ void KineticBlockVisitor::visit_reaction_statement(ast::ReactionStatement* node)
 
     // increment statement counter
     ++i_statement;
+}
+
+void KineticBlockVisitor::visit_statement_block(ast::StatementBlock* node) {
+    auto prev_statement_block = current_statement_block;
+    current_statement_block = node;
+    node->visit_children(this);
+    // remove processed statements from current statement block
+    remove_statements_from_block(current_statement_block, statements_to_remove);
+    current_statement_block = prev_statement_block;
 }
 
 void KineticBlockVisitor::visit_kinetic_block(ast::KineticBlock* node) {
@@ -275,7 +283,13 @@ void KineticBlockVisitor::visit_kinetic_block(ast::KineticBlock* node) {
         }
         // if rhs of ODE is not empty, add to list of ODEs
         if (!ode_rhs.empty()) {
-            odes.push_back("{}' = {}"_format(state_var[j], ode_rhs));
+            auto state_var_split = stringutils::split_string(state_var[j], '[');
+            std::string var_str = state_var_split[0];
+            std::string index_str;
+            if (state_var_split.size() > 1) {
+                index_str = "[" + state_var_split[1];
+            }
+            odes.push_back("{}'{} = {}"_format(var_str, index_str, ode_rhs));
         }
     }
 
@@ -283,13 +297,13 @@ void KineticBlockVisitor::visit_kinetic_block(ast::KineticBlock* node) {
         logger->debug("KineticBlockVisitor :: ode : {}", ode);
     }
 
-    auto current_statement_block = node->get_statement_block();
-    // remove reaction statements from kinetic block
-    remove_statements_from_block(current_statement_block.get(), statements_to_remove);
+    auto kinetic_statement_block = node->get_statement_block();
+    // remove any remaining kinetic statements
+    remove_statements_from_block(kinetic_statement_block.get(), statements_to_remove);
     // add new statements
     for (const auto& ode: odes) {
         logger->debug("KineticBlockVisitor :: -> adding statement: {}", ode);
-        current_statement_block->addStatement(create_statement(ode));
+        kinetic_statement_block->addStatement(create_statement(ode));
     }
 
     // store pointer to kinetic block
@@ -297,6 +311,9 @@ void KineticBlockVisitor::visit_kinetic_block(ast::KineticBlock* node) {
 }
 
 void KineticBlockVisitor::visit_program(ast::Program* node) {
+    statements_to_remove.clear();
+    current_statement_block = nullptr;
+
     // get state variables - assign an index to each
     state_var_index.clear();
     state_var.clear();
@@ -304,10 +321,23 @@ void KineticBlockVisitor::visit_program(ast::Program* node) {
     if (auto symtab = node->get_symbol_table()) {
         auto statevars = symtab->get_variables_with_properties(NmodlType::state_var);
         for (const auto& v: statevars) {
-            const auto& varname = v->get_name();
-            logger->debug("state_var_index[{}] = {}", varname, state_var_count);
-            state_var_index[varname] = state_var_count++;
-            state_var.push_back(varname);
+            std::string var_name = v->get_name();
+            if (v->is_array()) {
+                // for array state vars we need to add each element of the array separately
+                var_name += "[";
+                for (int i = 0; i < v->get_length(); ++i) {
+                    std::string var_name_i = var_name + std::to_string(i) + "]";
+                    logger->debug("KineticBlockVisitor :: state_var_index[{}] = {}", var_name_i,
+                                  state_var_count);
+                    state_var_index[var_name_i] = state_var_count++;
+                    state_var.push_back(var_name_i);
+                }
+            } else {
+                logger->debug("KineticBlockVisitor :: state_var_index[{}] = {}", var_name,
+                              state_var_count);
+                state_var_index[var_name] = state_var_count++;
+                state_var.push_back(var_name);
+            }
         }
     }
 

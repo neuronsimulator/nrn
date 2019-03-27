@@ -134,7 +134,11 @@ std::set<std::string> get_global_vars(Program* node) {
             NmodlType::electrode_cur_var | NmodlType::section_var | NmodlType::constant_var |
             NmodlType::extern_neuron_variable | NmodlType::state_var | NmodlType::factor_def;
         for (const auto& globalvar: symtab->get_variables_with_properties(property)) {
-            vars.insert(globalvar->get_name());
+            std::string var_name = globalvar->get_name();
+            if (globalvar->is_array()) {
+                var_name += "[" + std::to_string(globalvar->get_length()) + "]";
+            }
+            vars.insert(var_name);
         }
     }
     return vars;

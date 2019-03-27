@@ -55,7 +55,7 @@ void CnexpSolveVisitor::visit_binary_expression(ast::BinaryExpression* node) {
     auto name = std::dynamic_pointer_cast<ast::VarName>(lhs)->get_name();
 
     if (name->is_prime_name()) {
-         auto equation = to_nmodl(node);
+        auto equation = to_nmodl(node);
         parser::DiffeqDriver diffeq_driver;
 
         if (solve_method == codegen::naming::CNEXP_METHOD) {
@@ -70,7 +70,8 @@ void CnexpSolveVisitor::visit_binary_expression(ast::BinaryExpression* node) {
                 lhs.reset(bin_expr->lhs->clone());
                 rhs.reset(bin_expr->rhs->clone());
             } else {
-                logger->warn("CnexpSolveVisitor :: cnexp solver not possible for {}", to_nmodl(node));
+                logger->warn("CnexpSolveVisitor :: cnexp solver not possible for {}",
+                             to_nmodl(node));
             }
         } else if (solve_method == codegen::naming::EULER_METHOD) {
             std::string solution = diffeq_driver.solve(equation, solve_method);
@@ -91,7 +92,7 @@ void CnexpSolveVisitor::visit_binary_expression(ast::BinaryExpression* node) {
                 program_symtab->insert(symbol);
             }
         } else {
-             logger->error("CnexpSolveVisitor :: solver method '{}' not supported", solve_method);
+            logger->error("CnexpSolveVisitor :: solver method '{}' not supported", solve_method);
         }
     }
 }
