@@ -279,7 +279,7 @@ proc xmlwrite() {local proximalid, pointcount, segmentcount, sectioncount, i, j,
                                     if (parentSeg<0) {
                                         arcFract =  arc3d(pointIndex)/L
                                         if (arcFract>=fract) {
-                                            parentSeg = segmentvec.x[cm(.00001)] + pointIndex -2
+                                            parentSeg = segmentvec.x[cm(.00001)] + pointIndex -1
                                         }
                                     }
                                 }
