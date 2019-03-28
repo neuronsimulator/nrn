@@ -55,7 +55,7 @@ class Rate(GeneralizedReaction):
     def _do_init(self):
         rate = copy.copy(self._original_rate)
         if not isinstance(rate, RangeVar):
-            self._rate, self._involved_species = rxdmath._compile(rate)
+            self._rate, self._involved_species = rxdmath._compile(rate, self._regions[0])
         else:
             self._involved_species = [weakref.ref(species)]
         self._update_indices()
@@ -82,7 +82,7 @@ class Rate(GeneralizedReaction):
         
 
         if ecs_region:
-            self._rate_ecs, self._involved_species_ecs = rxdmath._compile(rate, extracellular=ecs_region)
+            self._rate_ecs, self._involved_species_ecs = rxdmath._compile(rate, ecs_region)
 
         rate = self._original_rate
 
@@ -98,7 +98,7 @@ class Rate(GeneralizedReaction):
 
         if ics3d_region:
             print(rate, ics3d_region)
-            self._rate, self._involved_species = rxdmath._compile(rate, intracellular3d=ics3d_region)      
+            self._rate, self._involved_species = rxdmath._compile(rate, ics3d_region)      
 
     
     def __repr__(self):

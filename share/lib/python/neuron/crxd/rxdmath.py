@@ -55,22 +55,22 @@ def analyze_reaction(r):
 # TODO: change this so that inputs are all automatically converted to numpy.array(s)
 #_compile is called by the reaction (Reaction._update_rates)
 # returns the rate and the species involved
-def _compile(arith, extracellular=None, intracellular3d=None):
+def _compile(arith, region):
     initializer._do_init()
     #for extracellular reactions ensure the species are _ExtracellularSpecies
+    print("arith = {} \n".format(arith))
     arith = _ensure_arithmeticed(arith)
-    arith = arith._ensure_extracellular(extracellular,intracellular3d)
+    print("arith = {} \n".format(arith))
+    #arith = arith._ensure_extracellular(extracellular,intracellular3d)
     try:
-        s = arith._semi_compile
+        s = arith._semi_compile(region)
+        print("s is {} of type {}".format(s, type(s)))
         species_dict = {}
         arith._involved_species(species_dict)
     except AttributeError:
         species_dict = {}
         s = str(arith)
 
-    all_names = ['numpy', 'rxdmath'] + list(species_dict.keys())
-    command = 'lambda %s: %s ' % (', '.join(all_names), s)
-    species_index = [int(''.join(x for x in r if x.isdigit())) for r in list(species_dict.keys())]
     #C-version
     #Get the index rather than the key
     return (s, list(species_dict.values()))
@@ -282,9 +282,10 @@ class _Product:
                 p._b = self._b._ensure_extracellular(intracellular3d=intracellular3d)
         return p
 
-    @property
-    def _semi_compile(self):
-        return '(%s)*(%s)' % (self._a._semi_compile, self._b._semi_compile)
+
+    def _semi_compile(self, region):
+        return '(%s)*(%s)' % (self._a._semi_compile(region), self._b._semi_compile(region))
+
     def _involved_species(self, the_dict):
         self._a._involved_species(the_dict)
         self._b._involved_species(the_dict)
@@ -453,8 +454,8 @@ class _Arithmeticed:
         if not result:
             result = '0'
         return result
-    @property 
-    def _semi_compile(self):
+
+    def _semi_compile(self, region):
         items = []
         counts = []
         items_append = items.append
@@ -462,7 +463,8 @@ class _Arithmeticed:
         for item, count in zip(list(self._items.keys()), list(self._items.values())):
             if count:
                 try:
-                    items_append(item._semi_compile)
+                    print("item is {} and region is {}".format(item, region))
+                    items_append(item._semi_compile(region))
                 except AttributeError:
                     items_append('%s' % item)
                 counts_append(count)

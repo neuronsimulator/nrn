@@ -1171,7 +1171,7 @@ def _compile_reactions():
                 for i in range(len(sbr)):
                     print("sbr {} is {}".format(i,sbr[i]))
                 for s in species_by_region[reg] :
-                    sp = s._intracellular_instances[reg] if isinstance(s,species.Species) else s
+                    sp = s._species()._intracellular_instances[reg] if isinstance(s,species.SpeciesOnRegion) else s._intracellular_instances[reg]
                     print("Species type: {}".format(type(sp)))
                     all_ics_gids.add(sp._grid_id)
                 print("Grid IDs on region: {}".format(all_ics_gids))

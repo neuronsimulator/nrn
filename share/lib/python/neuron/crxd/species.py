@@ -73,7 +73,6 @@ _intracellular_diffusion_objects = weakref.WeakKeyDictionary()
 
 _species_count = 0
 
-_species_on_regions = []
 
 _has_1d = False
 _has_3d = False
@@ -166,9 +165,16 @@ class _SpeciesMathable(object):
         rxdmath._validate_reaction_terms(self2, other)
         return rxdmath._Reaction(self2, other, '<')
 
-    @property
-    def _semi_compile(self):
-        return 'species[%d][]' % (self._id)
+    def _semi_compile(self, reg):
+        from . import region
+        #region is Extracellular
+        if isinstance(reg, region.Extracellular):
+            print("calling extracellular_semi_compile") 
+        #region is 3d intracellular
+        if isinstance(reg, region.Region):
+            ics_instance = self._intracellular_instances[reg]
+            return ics_instance._semi_compile(reg)
+            
 
     def _involved_species(self, the_dict):
         the_dict[self._semi_compile] = weakref.ref(self)
@@ -243,18 +249,13 @@ class SpeciesOnExtracellular(_SpeciesMathable):
                 
     @property
     def _semi_compile(self):
-        print("In SPECIESONECS semi compile!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         return 'species_ecs[%d]' % (self._extracellular()._grid_id)
 
 class SpeciesOnRegion(_SpeciesMathable):
     def __init__(self, species, region):
         """The restriction of a Species to a Region."""
-        global _species_on_regions
         self._species = weakref.ref(species)
         self._region = weakref.ref(region)
-        if hasattr(species,'_id'):  
-            self._id = species._id
-        _species_on_regions.append(weakref.ref(self))
         
     def __eq__(self, other):
         """test for equality.
@@ -343,7 +344,6 @@ class SpeciesOnRegion(_SpeciesMathable):
     @property
     def concentration(self):
         """An iterable of the current concentrations."""
-        print("Concentration being called")
         return self.nodes.concentration
     
     @concentration.setter
@@ -352,9 +352,21 @@ class SpeciesOnRegion(_SpeciesMathable):
         
         This is equivalent to s.nodes.concentration = value"""
         self.nodes.concentration = value
+
+    def _semi_compile(self, reg):
+        from . import region
+        #region is Extracellular
+        if isinstance(reg, region.Extracellular):
+            print("calling extracellular_semi_compile") 
+        #region is 3d intracellular
+        #TODO Need to account for 1d/3d hybrid regions
+        elif isinstance(reg, region.Region):
+            ics_instance = self._species()._intracellular_instances[reg]
+            return ics_instance._semi_compile(reg)        
+
     @property
-    def _semi_compile(self):
-        return 'species[%d][%d]' % (self._id, self._region()._id)
+    def _id(self):
+        return self._species()._id
 
 # 3d matrix stuff
 def _setup_matrices_process_neighbors(pt1, pt2, indices, euler_matrix, index, diffs, vol, areal, arear, dx):
@@ -487,8 +499,9 @@ class _IntracellularSpecies(_SpeciesMathable):
         if self._initial is None:
             self.states[:] = 0
 
-    @property
-    def _semi_compile(self):
+    def _semi_compile(self, region):
+        if region is self._region:
+            print("regions are the same")
         return 'species_3d[%d]' % (self._grid_id)
 
 class _ExtracellularSpecies(_SpeciesMathable):
@@ -810,12 +823,6 @@ class Species(_SpeciesMathable):
         
         # TODO: remove this line when certain no longer need it (commented out 2013-04-17)
         # self._real_secs = region._sort_secs(sum([r.secs for r in regions], []))
-
-        #Set the SpeciesOnRegion id
-        for sp in _species_on_regions:
-            s = sp()
-            if s and s._species() == self:
-                s._id = self._id
     
     def _do_init2(self):
         # 1D section objects; NOT all sections this species lives on
