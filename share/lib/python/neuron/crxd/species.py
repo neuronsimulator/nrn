@@ -169,7 +169,8 @@ class _SpeciesMathable(object):
         from . import region
         #region is Extracellular
         if isinstance(reg, region.Extracellular):
-            print("calling extracellular_semi_compile") 
+            ecs_instance = self._extracellular_instances[reg]
+            return ecs_instance._semi_compile(reg)
         #region is 3d intracellular
         if isinstance(reg, region.Region):
             ics_instance = self._intracellular_instances[reg]
@@ -247,9 +248,8 @@ class SpeciesOnExtracellular(_SpeciesMathable):
  
 
                 
-    @property
-    def _semi_compile(self):
-        return 'species_ecs[%d]' % (self._extracellular()._grid_id)
+    def _semi_compile(self, reg):
+        return 'species_3d[%d]' % (self._extracellular()._grid_id)
 
 class SpeciesOnRegion(_SpeciesMathable):
     def __init__(self, species, region):
@@ -687,8 +687,10 @@ class _ExtracellularSpecies(_SpeciesMathable):
                     scale_factors.append(float(scale_factor * surface_area))
         #TODO: MultiCompartment reactions ?
         _set_grid_currents(grid_list, self._grid_id, grid_indices, neuron_pointers, scale_factors)
-    @property
-    def _semi_compile(self):
+    
+    def _semi_compile(self, reg):
+        if self._region is reg:
+            print("region is the same as {}".format(reg))
         return 'species_3d[%d]' % (self._grid_id)
 
 
@@ -876,7 +878,7 @@ class Species(_SpeciesMathable):
 
     def _do_init4(self):
         self._extracellular_nodes = []
-        self._extracellular_instances = [_ExtracellularSpecies(r, d=self._d, name=self.name, charge=self.charge, initial=self.initial, atolscale=self._atolscale, boundary_conditions=self._ecs_boundary_conditions) for r in self._extracellular_regions]
+        self._extracellular_instances = {r:_ExtracellularSpecies(r, d=self._d, name=self.name, charge=self.charge, initial=self.initial, atolscale=self._atolscale, boundary_conditions=self._ecs_boundary_conditions) for r in self._extracellular_regions}
         sp_ref = weakref.ref(self)
         for r in self._extracellular_regions:
             for i in range(r._nx):
@@ -1004,9 +1006,7 @@ class Species(_SpeciesMathable):
         elif isinstance(r, region.Extracellular):
             if not hasattr(self,'_extracellular_instances'):
                 initializer._do_init()
-            for e in self._extracellular_instances:
-                if e._region == r:
-                    return SpeciesOnExtracellular(self, e)
+            return SpeciesOnExtracellular(self, self._extracellular_instances[r])
         raise RxDException('no such region')
 
     def _update_node_data(self):
@@ -1228,8 +1228,8 @@ class Species(_SpeciesMathable):
     
     def _finitialize(self, skip_transfer=False):
         if hasattr(self,'_extracellular_instances'):
-            for r in self._extracellular_instances:
-                r._finitialize()
+            for r in self._extracellular_regions:
+                self._extracellular_instances[r]._finitialize()
         if self.initial is not None:
             if isinstance(self.initial, collections.Callable):
                 for node in self.nodes:
