@@ -30,6 +30,7 @@
 #include "visitors/perf_visitor.hpp"
 #include "visitors/rename_visitor.hpp"
 #include "visitors/solve_block_visitor.hpp"
+#include "visitors/steadystate_visitor.hpp"
 #include "visitors/sympy_conductance_visitor.hpp"
 #include "visitors/sympy_solver_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
@@ -4060,9 +4061,9 @@ SCENARIO("SympyConductance visitor", "[sympy]") {
                 mggate = 1/(1+exp(slope_mg*-v)*(mg/scale_mg))
                 g_NMDA = 0.001*gmax_NMDA*mggate*(B_NMDA-A_NMDA)
                 i_NMDA = g_NMDA*(v-E_NMDA)
-                Pf_NMDA = (4*cao_CR)/(4*cao_CR+0.724638*120(mM))*0.6
+                Pf_NMDA = (4*cao_CR)/(4*cao_CR+0.7246376811594204*120(mM))*0.6
                 ica_NMDA = Pf_NMDA*g_NMDA*(v-40)
-                gca_bar_abs_VDCC = gca_bar_VDCC*4(um2)*PI*(3(1/um3)/4*volume_CR*1/PI)^0.666667
+                gca_bar_abs_VDCC = gca_bar_VDCC*4(um2)*PI*(3(1/um3)/4*volume_CR*1/PI)^0.6666666666666666
                 gca_VDCC = 0.001*gca_bar_abs_VDCC*m_VDCC*m_VDCC*h_VDCC
                 {
                     LOCAL ci_in_0, co_in_0, z_in_0
@@ -4147,6 +4148,23 @@ TEST_CASE("Constant Folding Visitor") {
             std::string expected_text = R"(
                 PROCEDURE dummy() {
                     a = 3
+                }
+            )";
+            THEN("successfully folds") {
+                auto result = run_constant_folding_visitor(nmodl_text);
+                REQUIRE(reindent_text(result) == reindent_text(expected_text));
+            }
+        }
+
+        GIVEN("Simple double expression") {
+            std::string nmodl_text = R"(
+                PROCEDURE dummy() {
+                    a = 1.1 + 2e-10
+                }
+            )";
+            std::string expected_text = R"(
+                PROCEDURE dummy() {
+                    a = 1.1000000002
                 }
             )";
             THEN("successfully folds") {
@@ -4885,6 +4903,163 @@ TEST_CASE("Loop Unroll visitor") {
                 auto result = run_loop_unroll_visitor(input_nmodl);
                 REQUIRE(reindent_text(output_nmodl) == reindent_text(result));
             }
+        }
+    }
+}
+
+//=============================================================================
+// STEADYSTATE visitor tests
+//=============================================================================
+std::vector<std::string> run_steadystate_visitor(
+    const std::string& text,
+    std::vector<AstNodeType> ret_nodetypes = {AstNodeType::SOLVE_BLOCK,
+                                              AstNodeType::DERIVATIVE_BLOCK}) {
+    std::vector<std::string> results;
+    // construct AST from text
+    NmodlDriver driver;
+    driver.parse_string(text);
+    auto ast = driver.ast();
+
+    // construct symbol table from AST
+    SymtabVisitor().visit_program(ast.get());
+
+    // unroll loops and fold constants
+    ConstantFolderVisitor().visit_program(ast.get());
+    LoopUnrollVisitor().visit_program(ast.get());
+    ConstantFolderVisitor().visit_program(ast.get());
+    SymtabVisitor().visit_program(ast.get());
+
+    // Run kinetic block visitor first, so any kinetic blocks
+    // are converted into derivative blocks
+    KineticBlockVisitor().visit_program(ast.get());
+    SymtabVisitor().visit_program(ast.get());
+
+    // run SteadystateVisitor on AST
+    SteadystateVisitor().visit_program(ast.get());
+
+    // run lookup visitor to extract results from AST
+    auto res = AstLookupVisitor().lookup(ast.get(), ret_nodetypes);
+    for (const auto& r: res) {
+        results.push_back(to_nmodl(r.get()));
+    }
+    return results;
+}
+
+SCENARIO("SteadystateSolver visitor", "[steadystate]") {
+    GIVEN("STEADYSTATE sparse solve") {
+        std::string nmodl_text = R"(
+            BREAKPOINT  {
+                SOLVE states STEADYSTATE sparse
+            }
+            DERIVATIVE states {
+                m' = m + h
+            }
+        )";
+        std::string expected_text1 = R"(
+            DERIVATIVE states {
+                m' = m+h
+            })";
+        std::string expected_text2 = R"(
+            DERIVATIVE states_steadystate {
+                LOCAL dt_saved_value
+                dt_saved_value = dt
+                dt = 1000000000
+                m' = m+h
+                dt = dt_saved_value
+            })";
+        THEN("Construct DERIVATIVE block with steadystate solution & update SOLVE statement") {
+            auto result = run_steadystate_visitor(nmodl_text);
+            REQUIRE(result.size() == 3);
+            REQUIRE(result[0] == "SOLVE states_steadystate METHOD sparse");
+            REQUIRE(reindent_text(result[1]) == reindent_text(expected_text1));
+            REQUIRE(reindent_text(result[2]) == reindent_text(expected_text2));
+        }
+    }
+    GIVEN("STEADYSTATE derivimplicit solve") {
+        std::string nmodl_text = R"(
+            BREAKPOINT  {
+                SOLVE states STEADYSTATE derivimplicit
+            }
+            DERIVATIVE states {
+                m' = m + h
+            }
+        )";
+        std::string expected_text1 = R"(
+            DERIVATIVE states {
+                m' = m+h
+            })";
+        std::string expected_text2 = R"(
+            DERIVATIVE states_steadystate {
+                LOCAL dt_saved_value
+                dt_saved_value = dt
+                dt = 1e-09
+                m' = m+h
+                dt = dt_saved_value
+            })";
+        THEN("Construct DERIVATIVE block with steadystate solution & update SOLVE statement") {
+            auto result = run_steadystate_visitor(nmodl_text);
+            REQUIRE(result.size() == 3);
+            REQUIRE(result[0] == "SOLVE states_steadystate METHOD derivimplicit");
+            REQUIRE(reindent_text(result[1]) == reindent_text(expected_text1));
+            REQUIRE(reindent_text(result[2]) == reindent_text(expected_text2));
+        }
+    }
+    GIVEN("two STEADYSTATE solves") {
+        std::string nmodl_text = R"(
+            STATE {
+                Z[3]
+                x
+            }
+            BREAKPOINT  {
+                SOLVE states0 STEADYSTATE derivimplicit
+                SOLVE states1 STEADYSTATE sparse
+            }
+            DERIVATIVE states0 {
+                Z'[0] = Z[1] - Z[2]
+                Z'[1] = Z[0] + 2*Z[2]
+                Z'[2] = Z[0]*Z[0] - 3.10
+            }
+            DERIVATIVE states1 {
+                x' = x + c
+            }
+        )";
+        std::string expected_text1 = R"(
+            DERIVATIVE states0 {
+                Z'[0] = Z[1]-Z[2]
+                Z'[1] = Z[0]+2*Z[2]
+                Z'[2] = Z[0]*Z[0]-3.1
+            })";
+        std::string expected_text2 = R"(
+            DERIVATIVE states1 {
+                x' = x+c
+            })";
+        std::string expected_text3 = R"(
+            DERIVATIVE states0_steadystate {
+                LOCAL dt_saved_value
+                dt_saved_value = dt
+                dt = 1e-09
+                Z'[0] = Z[1]-Z[2]
+                Z'[1] = Z[0]+2*Z[2]
+                Z'[2] = Z[0]*Z[0]-3.1
+                dt = dt_saved_value
+            })";
+        std::string expected_text4 = R"(
+            DERIVATIVE states1_steadystate {
+                LOCAL dt_saved_value
+                dt_saved_value = dt
+                dt = 1000000000
+                x' = x+c
+                dt = dt_saved_value
+            })";
+        THEN("Construct DERIVATIVE blocks with steadystate solution & update SOLVE statements") {
+            auto result = run_steadystate_visitor(nmodl_text);
+            REQUIRE(result.size() == 6);
+            REQUIRE(result[0] == "SOLVE states0_steadystate METHOD derivimplicit");
+            REQUIRE(result[1] == "SOLVE states1_steadystate METHOD sparse");
+            REQUIRE(reindent_text(result[2]) == reindent_text(expected_text1));
+            REQUIRE(reindent_text(result[3]) == reindent_text(expected_text2));
+            REQUIRE(reindent_text(result[4]) == reindent_text(expected_text3));
+            REQUIRE(reindent_text(result[5]) == reindent_text(expected_text4));
         }
     }
 }

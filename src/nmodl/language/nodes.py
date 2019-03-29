@@ -107,6 +107,14 @@ class BaseNode:
         return self.class_name == node_info.INTEGER_NODE
 
     @property
+    def is_float_node(self):
+        return self.class_name == node_info.FLOAT_NODE
+
+    @property
+    def is_double_node(self):
+        return self.class_name == node_info.DOUBLE_NODE
+
+    @property
     def is_number_node(self):
         return self.class_name == node_info.NUMBER_NODE
 

@@ -400,6 +400,21 @@ std::map<std::string, NmodlTestCase> nmodl_valid_constructs{
     },
 
     {
+        "parameter_block_5",
+        {
+            "PARAMETER block with very small/large doubles",
+            R"(
+                PARAMETER {
+                    tau_r_AMPA = 1e-16
+                    tau_d_AMPA = 1.7e-22
+                    tau_r_NMDA = 1e+21
+                    tau_d_NMDA = 1.3643e+27
+                }
+            )"
+        }
+    },
+
+    {
         "step_block_1",
         {
             "STEP block with all statement types",
@@ -889,6 +904,12 @@ std::map<std::string, NmodlTestCase> nmodl_valid_constructs{
                     CONSERVE C+o = 1
                     CONSERVE pump+pumpca = TotalPump*parea*(1e+10)
                 }
+            )",
+            R"(
+                KINETIC ihkin {
+                    CONSERVE C+o = 1
+                    CONSERVE pump+pumpca = TotalPump*parea*(10000000000)
+                }
             )"
         }
     },
@@ -902,6 +923,14 @@ std::map<std::string, NmodlTestCase> nmodl_valid_constructs{
                     COMPARTMENT voli {cai}
                     COMPARTMENT diam*diam*PI/4 {qk}
                     COMPARTMENT (1e+10)*area1 {pump pumpca}
+                    COMPARTMENT i, diam*diam*vol[i]*1(um) {ca CaBuffer Buffer}
+                }
+            )",
+            R"(
+                KINETIC ihkin {
+                    COMPARTMENT voli {cai}
+                    COMPARTMENT diam*diam*PI/4 {qk}
+                    COMPARTMENT (10000000000)*area1 {pump pumpca}
                     COMPARTMENT i, diam*diam*vol[i]*1(um) {ca CaBuffer Buffer}
                 }
             )"
@@ -1323,15 +1352,10 @@ std::map<std::string, NmodlTestCase> nmodl_valid_constructs{
     {
         "steadystate_statement_1",
         {
-            "SOLVE statement using STEADYSTATE (which gets replaced with METHOD)",
+            "SOLVE statement using STEADYSTATE",
             R"(
                 INITIAL {
                     SOLVE kin STEADYSTATE sparse
-                }
-            )",
-            R"(
-                INITIAL {
-                    SOLVE kin METHOD sparse
                 }
             )"
         }

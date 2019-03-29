@@ -225,6 +225,8 @@ SymbolType token_symbol(const std::string& key, PositionType& pos, TokenType typ
         return Parser::make_START1(token, pos);
     case Token::STATE:
         return Parser::make_STATE(token, pos);
+    case Token::STEADYSTATE:
+        return Parser::make_STEADYSTATE(token, pos);
     case Token::STEP:
         return Parser::make_STEP(token, pos);
     case Token::STEPPED:

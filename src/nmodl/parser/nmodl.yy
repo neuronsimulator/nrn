@@ -88,6 +88,7 @@
 %token  <ModToken>              DERIVATIVE
 %token  <ModToken>              SOLVE
 %token  <ModToken>              USING
+%token  <ModToken>              STEADYSTATE
 %token  <ModToken>              WITH
 %token  <ModToken>              STEPPED
 %token  <ModToken>              DISCRETE
@@ -1454,11 +1455,16 @@ initstmt        :   INITIAL1 stmtlist "}"
 
 solveblk        :   SOLVE NAME_PTR ifsolerr
                     {
-                        $$ = new ast::SolveBlock($2, NULL, $3);
+                        $$ = new ast::SolveBlock($2, NULL, NULL, $3);
                     }
                 |   SOLVE NAME_PTR USING METHOD ifsolerr
                     {
-                        $$ = new ast::SolveBlock($2, $4.clone(), $5);
+                        $$ = new ast::SolveBlock($2, $4.clone(), NULL, $5);
+                    }
+                |
+                    SOLVE NAME_PTR STEADYSTATE METHOD ifsolerr
+                    {
+                        $$ = new ast::SolveBlock($2, NULL, $4.clone(), $5);
                     }
                 |   SOLVE error
                     {

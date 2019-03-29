@@ -34,6 +34,7 @@
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/perf_visitor.hpp"
 #include "visitors/solve_block_visitor.hpp"
+#include "visitors/steadystate_visitor.hpp"
 #include "visitors/sympy_conductance_visitor.hpp"
 #include "visitors/sympy_solver_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
@@ -281,6 +282,13 @@ int main(int argc, const char* argv[]) {
             KineticBlockVisitor().visit_program(ast.get());
             SymtabVisitor(update_symtab).visit_program(ast.get());
             ast_to_nmodl(ast.get(), filepath("kinetic"));
+        }
+
+        {
+            logger->info("Running STEADYSTATE visitor");
+            SteadystateVisitor().visit_program(ast.get());
+            SymtabVisitor(update_symtab).visit_program(ast.get());
+            ast_to_nmodl(ast.get(), filepath("steadystate"));
         }
 
         /// once we start modifying (especially removing) older constructs
