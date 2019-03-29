@@ -532,6 +532,11 @@
                                   type: Name
                                   optional: true
                                   prefix: {value: " METHOD "}
+                              - steadystate:
+                                  description: "..."
+                                  type: Name
+                                  optional: true
+                                  prefix: {value: " STEADYSTATE "}
                               - ifsolerr:
                                   description: "..."
                                   type: StatementBlock

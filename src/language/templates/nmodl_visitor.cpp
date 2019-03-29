@@ -89,6 +89,11 @@ void NmodlPrintVisitor::visit_{{ node.class_name|snake_case}}({{ node.class_name
             if(node->get_macro() == nullptr) {
                 printer->add_element(std::to_string(node->eval()));
             }
+        {% elif node.is_float_node or node.is_double_node %}
+            std::stringstream ss;
+            ss << std::setprecision(16);
+            ss << node->eval();
+            printer->add_element(ss.str());
         {% else %}
             std::stringstream ss;
             ss << node->eval();

@@ -25,6 +25,8 @@ set(VISITOR_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/perf_visitor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/rename_visitor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/rename_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/steadystate_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/steadystate_visitor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/sympy_conductance_visitor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/sympy_conductance_visitor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/sympy_solver_visitor.hpp

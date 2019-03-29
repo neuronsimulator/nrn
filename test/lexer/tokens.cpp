@@ -104,6 +104,8 @@ TEST_CASE("Lexer tests for valid tokens", "[Lexer]") {
         REQUIRE(token_type("1.32E+3") == Token::REAL);
         REQUIRE(token_type("1.32e-3") == Token::REAL);
         REQUIRE(token_type("32e-3") == Token::REAL);
+        REQUIRE(token_type("1e+23") == Token::REAL);
+        REQUIRE(token_type("1e-23") == Token::REAL);
     }
 
     SECTION("Tests for Name/Strings") {

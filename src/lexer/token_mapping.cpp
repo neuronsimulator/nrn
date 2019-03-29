@@ -55,7 +55,7 @@ namespace internal {
             {"DEL", Token::DEL},
             {"LOCAL", Token::LOCAL},
             {"METHOD", Token::USING},
-            {"STEADYSTATE", Token::USING},
+            {"STEADYSTATE", Token::STEADYSTATE},
             {"SENS", Token::SENS},
             {"STEP", Token::STEP},
             {"WITH", Token::WITH},

@@ -161,6 +161,8 @@ BINARY_EXPRESSION_NODE = "BinaryExpression"
 NAME_NODE = "Name"
 BOOLEAN_NODE = "Boolean"
 INTEGER_NODE = "Integer"
+FLOAT_NODE = "Float"
+DOUBLE_NODE = "Double"
 STATEMENT_BLOCK_NODE = "StatementBlock"
 UNIT_BLOCK = "UnitBlock"
 
