@@ -99,8 +99,27 @@ ast::StatementVector::iterator SympySolverVisitor::get_solution_location_iterato
     return it;
 }
 
-static bool has_local_statement(std::shared_ptr<ast::Statement> statement) {
-    return !AstLookupVisitor().lookup(statement.get(), ast::AstNodeType::LOCAL_VAR).empty();
+/**
+ * Check if provided statemenet is local variable declaration statement
+ * @param statement AST node representing statement in the MOD file
+ * @return True if statement is local variable declaration else False
+ *
+ * Statement declaration could be wrapped into another statement type like
+ * expression statement and hence we try to look inside if it's really a
+ * variable declaration.
+ */
+static bool is_local_statement(std::shared_ptr<ast::Statement> statement) {
+    if (statement->is_local_list_statement()) {
+        return true;
+    }
+    if (statement->is_expression_statement()) {
+        auto e_statement = std::dynamic_pointer_cast<ast::ExpressionStatement>(statement);
+        auto expression = e_statement->get_expression();
+        if (expression->is_local_list_statement()) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void SympySolverVisitor::construct_eigen_solver_block(
@@ -145,7 +164,7 @@ void SympySolverVisitor::construct_eigen_solver_block(
     // remaining statements in block should go into initialize_block
     ast::StatementVector initialize_statements;
     for (auto s: statements) {
-        if (has_local_statement(s)) {
+        if (is_local_statement(s)) {
             variable_statements.push_back(s);
         } else {
             initialize_statements.push_back(s);

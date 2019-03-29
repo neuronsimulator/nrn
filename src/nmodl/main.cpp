@@ -259,11 +259,6 @@ int main(int argc, const char* argv[]) {
             ast_to_nmodl(ast.get(), filepath("verbatim_rename"));
         }
 
-        /// once we start modifying (especially removing) older constructs
-        /// from ast then we should run symtab visitor in update mode so
-        /// that old symbols (e.g. prime variables) are not lost
-        update_symtab = true;
-
         if (nmodl_const_folding) {
             logger->info("Running nmodl constant folding visitor");
             ConstantFolderVisitor().visit_program(ast.get());
@@ -277,6 +272,21 @@ int main(int argc, const char* argv[]) {
             ast_to_nmodl(ast.get(), filepath("unroll"));
             SymtabVisitor(update_symtab).visit_program(ast.get());
         }
+
+        /// note that we can not symtab visitor in update mode as we
+        /// replace kinetic block with derivative block of same name
+        /// in global scope
+        {
+            logger->info("Running KINETIC block visitor");
+            KineticBlockVisitor().visit_program(ast.get());
+            SymtabVisitor(update_symtab).visit_program(ast.get());
+            ast_to_nmodl(ast.get(), filepath("kinetic"));
+        }
+
+        /// once we start modifying (especially removing) older constructs
+        /// from ast then we should run symtab visitor in update mode so
+        /// that old symbols (e.g. prime variables) are not lost
+        update_symtab = true;
 
         if (nmodl_inline) {
             logger->info("Running nmodl inline visitor");
@@ -298,13 +308,6 @@ int main(int argc, const char* argv[]) {
             LocalVarRenameVisitor().visit_program(ast.get());
             SymtabVisitor(update_symtab).visit_program(ast.get());
             ast_to_nmodl(ast.get(), filepath("localize"));
-        }
-
-        {
-            logger->info("Running KINETIC block visitor");
-            KineticBlockVisitor().visit_program(ast.get());
-            SymtabVisitor(update_symtab).visit_program(ast.get());
-            ast_to_nmodl(ast.get(), filepath("kinetic"));
         }
 
         if (sympy_conductance) {

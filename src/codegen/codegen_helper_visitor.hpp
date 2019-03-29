@@ -92,6 +92,10 @@ class CodegenHelperVisitor: public AstVisitor {
     void visit_table_statement(ast::TableStatement* node) override;
     void visit_program(ast::Program* node) override;
     void visit_nrn_state_block(ast::NrnStateBlock* node) override;
+    void visit_linear_block(ast::LinearBlock* node) override;
+    void visit_non_linear_block(ast::NonLinearBlock* node) override;
+    void visit_discrete_block(ast::DiscreteBlock* node) override;
+    void visit_partial_block(ast::PartialBlock* node) override;
 };
 
 }  // namespace codegen
