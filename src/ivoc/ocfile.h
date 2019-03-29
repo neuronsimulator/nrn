@@ -2,6 +2,7 @@
 #define ocfile_h
 
 #include <OS/string.h>
+#include <string>
 class File;
 class FileChooser;
 
@@ -46,5 +47,8 @@ private:
 #else
 #define BinaryMode(ocfile) /**/
 #endif
+
+bool isDirExist(const std::string& path);
+bool makePath(const std::string& path);
 
 #endif

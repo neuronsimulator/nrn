@@ -88,6 +88,10 @@ functions here as well.
 
 #include <stdio.h>
 #include <stdlib.h>
+
+// for idDirExist and makePath
+#include <ocfile.h>
+
 #include <nrnran123.h> // globalindex written to globals.dat
 #include <section.h>
 #include <parse.h>
@@ -119,7 +123,7 @@ extern short* nrn_is_artificial_;
 extern int nrn_is_ion(int type);
 extern double nrn_ion_charge(Symbol* sym);
 extern Symbol* hoc_lookup(const char*);
-extern int secondorder;
+extern int secondorder, diam_changed, v_structure_change, tree_changed;
 
 /* not NULL, need to write gap information */
 extern void (*nrnthread_v_transfer_)(NrnThread*);
@@ -195,25 +199,37 @@ size_t nrnbbcore_write() {
   if (!use_cachevec) {
     hoc_execerror("nrnbbcore_write requires cvode.cache_efficient(1)", NULL);
   }
+  if (tree_changed || v_structure_change || diam_changed) {
+    hoc_execerror("nrnbbcore_write requires the model already be initialized (cf finitialize(...))", NULL);
+  }
   char fname[1024];
-  char path[1024];
-  sprintf(path, ".");
+  std::string path(".");
   if (ifarg(1)) {
-    strcpy(path, hoc_gargstr(1));
+    path = hoc_gargstr(1);
+    if (nrnmpi_myid == 0) {
+      if (!isDirExist(path)) {
+        if (!makePath(path)) {
+          hoc_execerror(path.c_str(), "directory did not exist and makePath for it failed");
+        }
+      }
+    }
+#ifdef NRNMPI
+    nrnmpi_barrier();
+#endif
   }
 
   size_t rankbytes = part1(); // can arrange to be just before part2
 
-  assert(snprintf(fname, 1024, "%s/%s", path, "byteswap1.dat") < 1024);
+  assert(snprintf(fname, 1024, "%s/%s", path.c_str(), "byteswap1.dat") < 1024);
   write_byteswap1(fname);
 
-  assert(snprintf(fname, 1024, "%s/%s", path, "bbcore_mech.dat") < 1024);
+  assert(snprintf(fname, 1024, "%s/%s", path.c_str(), "bbcore_mech.dat") < 1024);
   write_memb_mech_types(fname);
 
-  assert(snprintf(fname, 1024, "%s/%s", path, "globals.dat") < 1024);
+  assert(snprintf(fname, 1024, "%s/%s", path.c_str(), "globals.dat") < 1024);
   write_globals(fname);
 
-  part2(path);
+  part2(path.c_str());
   return rankbytes;
 }
 
@@ -650,6 +666,8 @@ CellGroup* mk_cellgroups() {
   for (int i=0; i < nrn_nthread; ++i) {
     if (cgs[i].n_real_output && cgs[i].output_gid[0] >= 0) {
       cgs[i].group_id = cgs[i].output_gid[0];
+    }else{
+      hoc_execerror("A thread has no real cells or the first cell has no gid", NULL);
     }
   }
 
