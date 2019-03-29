@@ -133,7 +133,11 @@ struct CodegenInfo {
     /// name of the suffix
     std::string mod_suffix;
 
-    /// if mod file is vectorizable (always true for coreneuron)
+    /// true if mod file is vectorizable (which should be always true for coreneuron)
+    /// But there are some blocks like LINEAR are not thread safe in neuron or mod2c
+    /// context. In this case vectorize is used to determine number of float variable
+    /// in the data array (e.g. v). For such non thread methods or blocks vectorize is
+    /// false.
     bool vectorize = true;
 
     /// if mod file is thread safe (always true for coreneuron)
@@ -364,6 +368,9 @@ struct CodegenInfo {
     bool derivimplicit_coreneuron_solver();
 
     bool function_uses_table(std::string& name) const;
+
+    /// true if EigenNewtonSolver is used in nrn_state block
+    bool nrn_state_has_eigen_solver_block() const;
 };
 
 }  // namespace codegen

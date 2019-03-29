@@ -6,6 +6,7 @@
  *************************************************************************/
 
 #include "codegen/codegen_info.hpp"
+#include "visitors/lookup_visitor.hpp"
 
 
 namespace nmodl {
@@ -86,6 +87,19 @@ bool CodegenInfo::derivimplicit_coreneuron_solver() {
     return !derivimplicit_callbacks.empty();
 }
 
+/**
+ * Check if NrnState node in the AST has EigenSolverBlock node
+ *
+ * @return True if EigenSolverBlock exist in the node
+ */
+bool CodegenInfo::nrn_state_has_eigen_solver_block() const {
+    if (nrn_state_block == nullptr) {
+        return false;
+    }
+    return !AstLookupVisitor()
+                .lookup(nrn_state_block, ast::AstNodeType::EIGEN_NEWTON_SOLVER_BLOCK)
+                .empty();
+}
 
 }  // namespace codegen
 }  // namespace nmodl

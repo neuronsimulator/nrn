@@ -624,5 +624,21 @@ codegen::CodegenInfo CodegenHelperVisitor::analyze(ast::Program* node) {
     return info;
 }
 
+void CodegenHelperVisitor::visit_linear_block(ast::LinearBlock* node) {
+    info.vectorize = false;
+}
+
+void CodegenHelperVisitor::visit_non_linear_block(ast::NonLinearBlock* node) {
+    info.vectorize = false;
+}
+
+void CodegenHelperVisitor::visit_discrete_block(ast::DiscreteBlock* node) {
+    info.vectorize = false;
+}
+
+void CodegenHelperVisitor::visit_partial_block(ast::PartialBlock* node) {
+    info.vectorize = false;
+}
+
 }  // namespace codegen
 }  // namespace nmodl

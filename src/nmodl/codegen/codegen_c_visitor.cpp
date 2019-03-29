@@ -1660,9 +1660,12 @@ void CodegenCVisitor::visit_eigen_newton_solver_block(ast::EigenNewtonSolverBloc
     printer->start_block("struct functor");
     printer->add_line("NrnThread* nt;");
     printer->add_line("{0}* inst;"_format(instance_struct()));
-    printer->add_line("int id;");
+    printer->add_line("int id, pnodecount;");
     printer->add_line("double v;");
     printer->add_line("Datum* indexes;");
+    if (ion_variable_struct_required()) {
+        printer->add_line("IonCurVar ionvar = {0};");
+    }
 
     print_statement_block(node->get_variable_block().get(), false, false);
     printer->add_newline();
@@ -1672,7 +1675,7 @@ void CodegenCVisitor::visit_eigen_newton_solver_block(ast::EigenNewtonSolverBloc
     printer->end_block(2);
 
     printer->add_line(
-        "functor(NrnThread* nt, {}* inst, int id, double v, Datum* indexes) : nt(nt), inst(inst), id(id), v(v), indexes(indexes) {}"_format(
+        "functor(NrnThread* nt, {}* inst, int id, int pnodecount, double v, Datum* indexes) : nt(nt), inst(inst), id(id), pnodecount(pnodecount), v(v), indexes(indexes) {}"_format(
             instance_struct(), "{}"));
 
     printer->add_indent();
@@ -1696,7 +1699,7 @@ void CodegenCVisitor::visit_eigen_newton_solver_block(ast::EigenNewtonSolverBloc
 
     // call newton solver with functor and X matrix that contains state vars
     printer->add_line("// call newton solver");
-    printer->add_line("functor newton_functor(nt, inst, id, v, indexes);");
+    printer->add_line("functor newton_functor(nt, inst, id, pnodecount, v, indexes);");
     printer->add_line("newton_functor.initialize();");
     printer->add_line("int newton_iterations = nmodl::newton::newton_solver(X, newton_functor);");
 
@@ -2351,10 +2354,9 @@ void CodegenCVisitor::print_mechanism_global_var_structure() {
         }
     }
 
-    if (!info.vectorize) {
-        printer->add_line("{} v;"_format(float_type));
-        codegen_global_variables.push_back(make_symbol("v"));
-    }
+    /// Neuron and Coreneuron adds "v" to global variables when vectorize
+    /// is false. But as v is always local variable and passed as argument,
+    /// we don't need to use global variable v
 
     auto& top_locals = info.top_local_variables;
     if (!info.vectorize && !top_locals.empty()) {
@@ -2856,9 +2858,9 @@ void CodegenCVisitor::print_global_variable_setup() {
             printer->add_line("{} = 0.0;"_format(global_name));
         }
     }
-    if (!info.vectorize) {
-        printer->add_line("{} = 0.0;"_format(get_variable_name("v")));
-    }
+
+    /// note : v is not needed in global structure for nmodl even if vectorize is false
+
     if (!info.thread_variables.empty()) {
         printer->add_line("{} = 0;"_format(get_variable_name("thread_data_in_use")));
     }
@@ -3769,6 +3771,9 @@ void CodegenCVisitor::print_nrn_state() {
 
     printer->add_line("int node_id = node_index[id];");
     printer->add_line("double v = voltage[node_id];");
+
+    /// todo : eigen solver node also emits IonCurVar variable in the functor
+    /// but that shouldn't update ions in derivative block
     if (ion_variable_struct_required()) {
         printer->add_line("IonCurVar ionvar = {0};");
     }
@@ -4039,8 +4044,8 @@ void CodegenCVisitor::print_codegen_routines() {
     print_data_structures();
     print_global_variables_for_hoc();
     print_common_getters();
-    print_thread_memory_callbacks();
     print_memory_allocation_routine();
+    print_thread_memory_callbacks();
     print_global_variable_setup();
     print_instance_variable_setup();
     print_nrn_alloc();
@@ -4063,6 +4068,10 @@ void CodegenCVisitor::visit_program(Program* node) {
     CodegenHelperVisitor v;
     info = v.analyze(node);
     info.mod_file = mod_filename;
+
+    if (!info.vectorize) {
+        logger->warn("CodegenCVisitor : MOD file uses non-thread safe constructs of NMODL");
+    }
 
     codegen_float_variables = get_float_variables();
     codegen_int_variables = get_int_variables();
