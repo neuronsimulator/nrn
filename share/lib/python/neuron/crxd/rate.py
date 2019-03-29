@@ -54,12 +54,13 @@ class Rate(GeneralizedReaction):
 
         
     def _do_init(self):
-        rate = copy.copy(self._original_rate)
+        rate = self._original_rate
         if not isinstance(rate, RangeVar):
-            self._rate, self._involved_species = rxdmath._compile(rate, self._regions[0])
+            self._rate, self._involved_species = rxdmath._compile(rate, self._regions)
         else:
             self._involved_species = [weakref.ref(species)]
         self._update_indices()
+        print("rate = {}".format(self._rate))
     
     def __repr__(self):
         short_rate = self._original_rate._short_repr() if hasattr(self._original_rate,'_short_repr') else self._original_rate

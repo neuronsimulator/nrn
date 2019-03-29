@@ -1161,7 +1161,8 @@ def _compile_reactions():
     #Setup intracellular 3D reactions
     if testing_condition:
         if regions_inv:
-            print(regions_inv)
+            for reg in regions_inv:
+                all_ics_gids = set()
             for reg in regions_inv:
                 ics_grid_ids = []
                 all_ics_gids = set()
@@ -1171,7 +1172,7 @@ def _compile_reactions():
                 sbr = [s for s in species_by_region[reg]]
                 for i in range(len(sbr)):
                     print("sbr {} is {}".format(i,sbr[i]))
-                for s in species_by_region[reg] :
+                for s in species_by_region[reg]:
                     sp = s._species()._intracellular_instances[reg] if isinstance(s,species.SpeciesOnRegion) else s._intracellular_instances[reg]
                     print("Species type: {}".format(type(sp)))
                     all_ics_gids.add(sp._grid_id)
@@ -1179,9 +1180,9 @@ def _compile_reactions():
                 all_ics_gids = list(all_ics_gids)
                 for rptr in regions_inv[reg]:
                     r = rptr()
-                    print("(pid,gid) = {}".format([(pid,gid) for pid,gid in enumerate(all_ics_gids)]))
-                    print("rate = {}".format(r._rate))
-                    rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_ics[%i]" % [pid for pid,gid in enumerate(all_ics_gids) if gid == int(m.groups()[0])][0], r._rate)
+                    print("(pid,gid) = {}".format([(pid,gid) for pid,gid in enumerate(all_ics_gids[r])]))
+                    print("rate = {}".format(r._rate[reg]))
+                    rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_ics[%i]" % [pid for pid,gid in enumerate(all_ics_gids) if gid == int(m.groups()[0])][0], r._rate[reg])
                     if isinstance(r,rate.Rate):
                         s = r._species()._intracellular_instances[reg]
                         if s._grid_id in ics_grid_ids:

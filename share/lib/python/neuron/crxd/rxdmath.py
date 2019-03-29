@@ -62,18 +62,21 @@ def _compile(arith, region):
     arith = _ensure_arithmeticed(arith)
     print("arith = {} \n".format(arith))
     #arith = arith._ensure_extracellular(extracellular,intracellular3d)
-    try:
-        s = arith._semi_compile(region)
-        print("s is {} of type {}".format(s, type(s)))
-        species_dict = {}
-        arith._involved_species(species_dict)
-    except AttributeError:
-        species_dict = {}
-        s = str(arith)
+    s_by_reg = {}
+    species_dict = {}
+    for reg in region:
+        try:
+            s = arith._semi_compile(reg)
+            s_by_reg[reg] = s
+            arith._involved_species(species_dict)
+        except AttributeError:
+            print("weird attribute error\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
+            species_dict = {}
+            s = str(arith)
 
     #C-version
     #Get the index rather than the key
-    return (s, list(species_dict.values()))
+    return (s_by_reg, list(species_dict.values()))
     #(functools.partial(eval(command), numpy, sys.modules[__name__]), species_dict.values())
 
 
@@ -469,6 +472,7 @@ class _Arithmeticed:
                     items_append('%s' % item)
                 counts_append(count)
         result = ''
+        print(items, counts)
         for i, c in zip(items, counts):
             if result and c > 0:
                 result += '+'

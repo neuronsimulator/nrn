@@ -249,7 +249,10 @@ class SpeciesOnExtracellular(_SpeciesMathable):
 
                 
     def _semi_compile(self, reg):
-        return 'species_3d[%d]' % (self._extracellular()._grid_id)
+        #This will always be an ecs_instance
+        reg = self._extracellular()
+        ecs_instance = self._species()._extracellular_instances[reg]
+        return ecs_instance._semi_compile(reg)
 
 class SpeciesOnRegion(_SpeciesMathable):
     def __init__(self, species, region):
@@ -354,15 +357,10 @@ class SpeciesOnRegion(_SpeciesMathable):
         self.nodes.concentration = value
 
     def _semi_compile(self, reg):
-        from . import region
-        #region is Extracellular
-        if isinstance(reg, region.Extracellular):
-            print("calling extracellular_semi_compile") 
-        #region is 3d intracellular
-        #TODO Need to account for 1d/3d hybrid regions
-        elif isinstance(reg, region.Region):
-            ics_instance = self._species()._intracellular_instances[reg]
-            return ics_instance._semi_compile(reg)        
+        #Never an _ExtracellularSpecies since we are in SpeciesOnRegion
+        reg = self._region()
+        ics_instance = self._species()._intracellular_instances[reg]
+        return ics_instance._semi_compile(reg)
 
     @property
     def _id(self):
