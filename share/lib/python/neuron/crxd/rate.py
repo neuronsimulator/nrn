@@ -29,11 +29,12 @@ class Rate(GeneralizedReaction):
     def __init__(self, species, rate, regions=None, membrane_flux=False):
         """create a rate of change for a species on a given region or set of regions
         
-        if regions is None, then does it on all regions"""
+        if regions is None, then does it on all regions unless all the species in the rate are some combination SpeciesOnRegion and SpeciesOnExtracellular"""
         self._species = weakref.ref(species)
         self._original_rate = rate
         if not hasattr(regions, '__len__'):
             regions = [regions]
+            print("in here assinging regions to {}".format(regions))
         self._regions = regions
         self._membrane_flux = membrane_flux
         if membrane_flux not in (True, False):
@@ -59,47 +60,6 @@ class Rate(GeneralizedReaction):
         else:
             self._involved_species = [weakref.ref(species)]
         self._update_indices()
-        print("rate = {}".format(rate))
-        #Check to if it is an extracellular reaction
-        from . import  region, species
-        #Was an ECS region was passed to to the constructor 
-        ecs_region = [r for r in self._regions if isinstance(r, region.Extracellular)]
-        ecs_region = ecs_region[0] if len(ecs_region) > 0 else None
-        #Is the species passed to the constructor extracellular
-        if not ecs_region:
-            if isinstance(self._species(),species.SpeciesOnExtracellular):
-                ecs_region = self._species()._extracellular()
-            elif isinstance(self._species(),species._ExtracellularSpecies):
-                ecs_region = self._species()._region
-        #Is the species passed to the constructor defined on the ECS
-        if not ecs_region:
-            if isinstance(self._species(),species.SpeciesOnRegion):
-                sp = self._species()._species()
-            else:
-                sp = self._species()
-            if sp and sp._extracellular_instances:
-                ecs_region = sp._extracellular_instances[0]._region
-        
-
-        if ecs_region:
-            self._rate_ecs, self._involved_species_ecs = rxdmath._compile(rate, ecs_region)
-
-        rate = self._original_rate
-
-        ics3d_region = [r for r in self._regions if not isinstance(r, region.Extracellular)]
-        ics3d_region = ics3d_region[0] if len(ics3d_region) > 0 else None
-        if not ics3d_region:
-            if isinstance(self._species(), species.SpeciesOnRegion):
-                sp = self._species._species()
-            else:
-                sp = sp = self._species()
-            if sp and sp._intracellular_instances:
-                ics3d_region = sp._intracellular_instances[sp.regions[0]]._region
-
-        if ics3d_region:
-            print(rate, ics3d_region)
-            self._rate, self._involved_species = rxdmath._compile(rate, ics3d_region)      
-
     
     def __repr__(self):
         short_rate = self._original_rate._short_repr() if hasattr(self._original_rate,'_short_repr') else self._original_rate

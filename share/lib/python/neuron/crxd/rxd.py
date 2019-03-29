@@ -951,7 +951,7 @@ def _compile_reactions():
     for sets in matched_regions:
         c_region_list.append(_c_region(sets))
     
-
+    print("_all_reactions = {}".format(_all_reactions))
     for rptr in _all_reactions:
         r = rptr()
         if not r:
@@ -990,6 +990,7 @@ def _compile_reactions():
                 elif None not in s._regions:
                     [react_regions.add(reg) for reg in s._regions + s._extracellular_regions]
             react_regions = list(react_regions)
+        print("react_regions = {}".format(react_regions))
             #Only regions where ALL the species are present -- unless it is a membrane
             #from collections import Counter
             #from . import geometry as geo
@@ -1221,8 +1222,8 @@ def _compile_reactions():
             for rptr in ecs_regions_inv[reg]:
                 r = rptr()
                 print("(pid,gid) = {}".format([(pid,gid) for pid,gid in enumerate(all_gids)]))
-                print("rate = {}".format(r._rate_ecs))
-                rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_ecs[%i]" %  [pid for pid,gid in enumerate(all_gids) if gid == int(m.groups()[0])][0], r._rate_ecs)
+                print("rate = {}".format(r._rate))
+                rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_ecs[%i]" %  [pid for pid,gid in enumerate(all_gids) if gid == int(m.groups()[0])][0], r._rate)
                 if isinstance(r,rate.Rate):
                     s = r._species()
                     #Get underlying rxd._ExtracellularSpecies for the grid_id
