@@ -1,16 +1,12 @@
 [submodule "ext/pybind11"]
 	path = ext/pybind11
 	url = https://github.com/pybind/pybind11.git
-	shallow = true
 [submodule "cmake/hpc-coding-conventions"]
 	path = cmake/hpc-coding-conventions
 	url = https://github.com/BlueBrain/hpc-coding-conventions.git
-	shallow = true
 [submodule "ext/cli11"]
 	path = ext/cli11
 	url = https://github.com/CLIUtils/CLI11.git
-	shallow = true
 [submodule "ext/eigen"]
 	path = ext/eigen
 	url = https://github.com/eigenteam/eigen-git-mirror.git
-	shallow = true
