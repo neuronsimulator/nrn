@@ -98,6 +98,14 @@ ELSE	{ /* translate to lower case */
 	return s->type;
 }
 
+[a-zA-Z][a-zA-Z0-9_]*:[a-zA-Z0-9_]* { /*ONTOLOGY_ID*/
+	Symbol *s;
+
+	yylval.qp = putintoken(yytext, ONTOLOGY_ID);
+	s = SYM(yylval.qp);
+	return s->type;
+}
+
 {D}+	{ /*INTEGER*/
 	yylval.qp = putintoken(yytext, INTEGER); /* Numbers are not looked for */
 	return INTEGER;
