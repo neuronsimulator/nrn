@@ -22,10 +22,10 @@ UNITS {
 ? interface
 NEURON {
         SUFFIX hh
-        REPRESENTS [NCIT:C17145]   : sodium channel
-        REPRESENTS [NCIT:C17008]   : potassium channel
-        USEION na READ ena WRITE ina REPRESENTS [CHEBI:29101]
-        USEION k READ ek WRITE ik REPRESENTS [CHEBI:29103]
+        REPRESENTS NCIT:C17145   : sodium channel
+        REPRESENTS NCIT:C17008   : potassium channel
+        USEION na READ ena WRITE ina REPRESENTS CHEBI:29101
+        USEION k READ ek WRITE ik REPRESENTS CHEBI:29103
         NONSPECIFIC_CURRENT il
         RANGE gnabar, gkbar, gl, el, gna, gk
         GLOBAL minf, hinf, ninf, mtau, htau, ntau
