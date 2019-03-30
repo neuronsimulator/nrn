@@ -98,7 +98,7 @@ ELSE	{ /* translate to lower case */
 	return s->type;
 }
 
-[a-zA-Z][a-zA-Z0-9_]*:[a-zA-Z0-9_]* { /*ONTOLOGY_ID*/
+\[[a-zA-Z][a-zA-Z0-9_]*:[a-zA-Z0-9_]*\] { /*ONTOLOGY_ID*/
 	Symbol *s;
 
 	yylval.qp = putintoken(yytext, ONTOLOGY_ID);
