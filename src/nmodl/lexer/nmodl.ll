@@ -199,11 +199,18 @@ ELSE                    {
                                 /** value is not used */
                                 return token_symbol(yytext, loc, type);
                             } else {
-
+                                /** if flux variable is used in the kinetic block */
+                                if ( lexcontext == Token::KINETIC &&
+                                     (strcmp(yytext, "f_flux") == 0 || strcmp(yytext, "b_flux") == 0)) {
+                                     nmodl::ast::Name value( new nmodl::ast::String(yytext) );
+                                     ModToken tok(yytext, Token::FLUX_VAR, loc);
+                                     value.set_token(tok);
+                                     return NmodlParser::make_FLUX_VAR(value, loc);
+                                }
                                 /** Check if name is already defined as macro. If so, return token
                                   * as integer with token as it's name. Otherwise return it as
                                   * regular name token. */
-                                if (driver.is_defined_var(yytext)) {
+                                else if (driver.is_defined_var(yytext)) {
                                     auto value = driver.get_defined_var_value(yytext);
                                     return integer_symbol(value, loc, yytext);
                                 } else {
