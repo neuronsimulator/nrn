@@ -192,8 +192,71 @@ void KineticBlockVisitor::visit_reaction_statement(ast::ReactionStatement* node)
     node->visit_children(this);
     in_reaction_statement = false;
 
+    // generate fluxes
+    modfile_fflux = rate_eqs.k_f.back();
+    modfile_bflux = rate_eqs.k_b.back();
+
+    // contribution from state vars
+    for (int j = 0; j < state_var_count; ++j) {
+        std::string multiply_var = std::string("*").append(state_var[j]);
+        int nu_L = rate_eqs.nu_L[i_statement][j];
+        while (nu_L-- > 0) {
+            modfile_fflux += multiply_var;
+        }
+        int nu_R = rate_eqs.nu_R[i_statement][j];
+        while (nu_R-- > 0) {
+            modfile_bflux += multiply_var;
+        }
+    }
+    // contribution from non-state vars
+    if (!non_state_var_fflux[i_statement].empty()) {
+        modfile_fflux += std::string("*").append(non_state_var_fflux[i_statement]);
+    }
+    if (!non_state_var_bflux[i_statement].empty()) {
+        modfile_bflux += std::string("*").append(non_state_var_bflux[i_statement]);
+    }
+    fflux.emplace_back(modfile_fflux);
+    bflux.emplace_back(modfile_bflux);
+
+    // for substituting into modfile, empty flux should be 0
+    if (modfile_fflux.empty()) {
+        modfile_fflux = "0";
+    }
+    if (modfile_bflux.empty()) {
+        modfile_bflux = "0";
+    }
+
+    logger->debug("KineticBlockVisitor :: fflux[{}] = {}", i_statement, fflux[i_statement]);
+    logger->debug("KineticBlockVisitor :: bflux[{}] = {}", i_statement, bflux[i_statement]);
+
     // increment statement counter
     ++i_statement;
+}
+
+std::shared_ptr<ast::Expression> create_expr(const std::string& str_expr) {
+    auto statement = create_statement("dummy = " + str_expr);
+    auto expr = std::dynamic_pointer_cast<ast::ExpressionStatement>(statement)->get_expression();
+    return std::dynamic_pointer_cast<ast::BinaryExpression>(expr)->get_rhs();
+}
+
+void KineticBlockVisitor::visit_wrapped_expression(ast::WrappedExpression* node) {
+    // If a wrapped expression contains a variable with name "f_flux" or "b_flux",
+    // this variable should be replaced by the expression for the corresponding flux
+    // which depends on the previous reaction statement. The current expressions are
+    // stored as strings in "modfile_fflux" and "modfile_bflux"
+    if (node->get_expression()->is_name()) {
+        auto var_name = std::dynamic_pointer_cast<ast::Name>(node->get_expression());
+        if (var_name->get_node_name() == "f_flux") {
+            auto expr = create_expr(modfile_fflux);
+            logger->debug("KineticBlockVisitor :: replacing f_flux with {}", to_nmodl(expr.get()));
+            node->set_expression(std::move(expr));
+        } else if (var_name->get_node_name() == "b_flux") {
+            auto expr = create_expr(modfile_bflux);
+            logger->debug("KineticBlockVisitor :: replacing b_flux with {}", to_nmodl(expr.get()));
+            node->set_expression(std::move(expr));
+        }
+    }
+    node->visit_children(this);
 }
 
 void KineticBlockVisitor::visit_statement_block(ast::StatementBlock* node) {
@@ -213,13 +276,15 @@ void KineticBlockVisitor::visit_kinetic_block(ast::KineticBlock* node) {
     fflux.clear();
     bflux.clear();
     odes.clear();
+    modfile_fflux = "0";
+    modfile_bflux = "0";
 
     // allocate these vectors with empty strings
     compartment_factors = std::vector<std::string>(state_var_count);
     additive_terms = std::vector<std::string>(state_var_count);
     i_statement = 0;
 
-    // construct stochiometric matrices and rate vectors
+    // construct stoichiometric matrices and fluxes
     node->visit_children(this);
 
     // number of reaction statements
@@ -227,35 +292,6 @@ void KineticBlockVisitor::visit_kinetic_block(ast::KineticBlock* node) {
 
     // number of ODEs (= number of state vars)
     int Nj = state_var_count;
-
-    // generate fluxes
-    fflux = rate_eqs.k_f;
-    bflux = rate_eqs.k_b;
-    for (int i = 0; i < Ni; ++i) {
-        // contribution from state vars
-        for (int j = 0; j < Nj; ++j) {
-            std::string multiply_var = std::string("*").append(state_var[j]);
-            int nu_L = rate_eqs.nu_L[i][j];
-            while (nu_L-- > 0) {
-                fflux[i] += multiply_var;
-            }
-            int nu_R = rate_eqs.nu_R[i][j];
-            while (nu_R-- > 0) {
-                bflux[i] += multiply_var;
-            }
-        }
-        // contribution from non-state vars
-        if (!non_state_var_fflux[i].empty()) {
-            fflux[i] += std::string("*").append(non_state_var_fflux[i]);
-        }
-        if (!non_state_var_bflux[i].empty()) {
-            bflux[i] += std::string("*").append(non_state_var_bflux[i]);
-        }
-    }
-    for (int i = 0; i < Ni; ++i) {
-        logger->debug("KineticBlockVisitor :: fflux[{}] = {}", i, fflux[i]);
-        logger->debug("KineticBlockVisitor :: bflux[{}] = {}", i, bflux[i]);
-    }
 
     // generate ODEs
     for (int j = 0; j < Nj; ++j) {

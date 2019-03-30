@@ -65,6 +65,12 @@ class KineticBlockVisitor: public AstVisitor {
     std::vector<std::string> bflux;
     std::vector<std::string> odes;
 
+    /// current expressions for the `fflux`, `bflux` variables that can be used in the mod file
+    /// and that are determined by the preceeding kinetic reaction statement, i.e. their
+    /// value changes depending on their location inside the kinetic block
+    std::string modfile_fflux;
+    std::string modfile_bflux;
+
     /// number of state variables
     int state_var_count = 0;
 
@@ -95,6 +101,7 @@ class KineticBlockVisitor: public AstVisitor {
   public:
     KineticBlockVisitor() = default;
 
+    void visit_wrapped_expression(ast::WrappedExpression* node) override;
     void visit_reaction_operator(ast::ReactionOperator* node) override;
     void visit_react_var_name(ast::ReactVarName* node) override;
     void visit_reaction_statement(ast::ReactionStatement* node) override;

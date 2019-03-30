@@ -2172,6 +2172,28 @@ SCENARIO("KineticBlock visitor", "[kinetic]") {
             REQUIRE(result[0] == reindent_text(output_nmodl_text));
         }
     }
+    GIVEN("KINETIC block with << reaction statement, 1 array state var, flux vars") {
+        std::string input_nmodl_text = R"(
+            STATE {
+                x[1]
+            }
+            KINETIC states {
+                ~ x[0] << (a*c/3.2)
+                f0 = f_flux*2
+                f1 = b_flux + f_flux
+            })";
+        std::string output_nmodl_text = R"(
+            DERIVATIVE states {
+                f0 = 0*2
+                f1 = 0+0
+                x'[0] = (a*c/3.2)
+            })";
+        THEN("Convert to equivalent DERIVATIVE block") {
+            auto result = run_kinetic_block_visitor(input_nmodl_text);
+            CAPTURE(input_nmodl_text);
+            REQUIRE(result[0] == reindent_text(output_nmodl_text));
+        }
+    }
     GIVEN("KINETIC block with invalid << reaction statement with 2 state vars") {
         std::string input_nmodl_text = R"(
             STATE {
@@ -2189,16 +2211,20 @@ SCENARIO("KineticBlock visitor", "[kinetic]") {
             REQUIRE(result[0] == reindent_text(output_nmodl_text));
         }
     }
-    GIVEN("KINETIC block with -> reaction statement, 1 state var") {
+    GIVEN("KINETIC block with -> reaction statement, 1 state var, flux vars") {
         std::string input_nmodl_text = R"(
             STATE {
                 x
             }
             KINETIC states {
                 ~ x -> (a)
+                zf = f_flux
+                zb = b_flux
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE states {
+                zf = a*x
+                zb = 0
                 x' = (-1*(a*x))
             })";
         THEN("Convert to equivalent DERIVATIVE block") {
@@ -2265,7 +2291,7 @@ SCENARIO("KineticBlock visitor", "[kinetic]") {
             REQUIRE(result[0] == reindent_text(output_nmodl_text));
         }
     }
-    GIVEN("KINETIC block with one reaction statement, 1 state var, 1 non-state var") {
+    GIVEN("KINETIC block with one reaction statement, 1 state var, 1 non-state var, flux vars") {
         // Here c is NOT a state variable
         // see 9.9.2.1 of NEURON book
         // c should be treated as a constant, i.e.
@@ -2277,9 +2303,11 @@ SCENARIO("KineticBlock visitor", "[kinetic]") {
             }
             KINETIC states {
                 ~ x <-> c (r, r)
+                c1 = f_flux - b_flux
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE states {
+                c1 = r*x-r*c
                 x' = (-1*(r*x-r*c))
             })";
         THEN("Convert to equivalent DERIVATIVE block") {
@@ -2401,6 +2429,33 @@ SCENARIO("KineticBlock visitor", "[kinetic]") {
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE states {
+                x' = (-1*(a*x-b*y))
+                y' = (1*(a*x-b*y))+(-1*(c*y-d*z))
+                z' = (1*(c*y-d*z))
+            })";
+        THEN("Convert to equivalent DERIVATIVE block") {
+            auto result = run_kinetic_block_visitor(input_nmodl_text);
+            CAPTURE(input_nmodl_text);
+            REQUIRE(result[0] == reindent_text(output_nmodl_text));
+        }
+    }
+    GIVEN("KINETIC block with two dependent reaction statements, flux vars") {
+        std::string input_nmodl_text = R"(
+            STATE {
+                x y z
+            }
+            KINETIC states {
+                c0 = f_flux
+                ~ x <-> y (a, b)
+                c1 = f_flux + b_flux
+                ~ y <-> z (c, d)
+                c2 = f_flux - 2*b_flux
+            })";
+        std::string output_nmodl_text = R"(
+            DERIVATIVE states {
+                c0 = 0
+                c1 = a*x+b*y
+                c2 = c*y-2*d*z
                 x' = (-1*(a*x-b*y))
                 y' = (1*(a*x-b*y))+(-1*(c*y-d*z))
                 z' = (1*(c*y-d*z))
