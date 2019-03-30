@@ -116,7 +116,7 @@ static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 %token	<qp>	NEURON SUFFIX NONSPECIFIC READ WRITE USEION VALENCE THREADSAFE REPRESENTS
 %token	<qp>	GLOBAL SECTION RANGE POINTER BBCOREPOINTER EXTERNAL BEFORE AFTER WATCH
 %token	<qp>	ELECTRODE_CURRENT CONSTRUCTOR DESTRUCTOR NETRECEIVE FOR_NETCONS
-%type	<qp>	neuronblk nrnuse nrnlist optnrnlist valence initstmt bablk
+%type	<qp>	neuronblk nrnuse nrnlist optnrnlist valence initstmt bablk optontology
 %token	<qp>	CONDUCTANCE
 %type	<qp>	conducthint
 
@@ -1216,21 +1216,18 @@ nrnstmt: /*nothing*/
 	| nrnstmt THREADSAFE optnrnlist
 		{ threadsafe_seen($2, $3); }
 	;
-nrnuse: USEION NAME READ nrnlist valence
+nrnuse: USEION NAME READ nrnlist valence optontology
 		{nrn_use($2, $4, ITEM0, $5);}
-	|USEION NAME WRITE nrnlist valence
+	|USEION NAME WRITE nrnlist valence optontology
 		{nrn_use($2, ITEM0, $4, $5);}
-	|USEION NAME READ nrnlist WRITE nrnlist valence
-		{nrn_use($2, $4, $6, $7);}
-	|USEION NAME READ nrnlist valence REPRESENTS ONTOLOGY_ID
-		{nrn_use($2, $4, ITEM0, $5);}
-	|USEION NAME WRITE nrnlist valence REPRESENTS ONTOLOGY_ID
-		{nrn_use($2, ITEM0, $4, $5);}
-	|USEION NAME READ nrnlist WRITE nrnlist valence REPRESENTS ONTOLOGY_ID
+	|USEION NAME READ nrnlist WRITE nrnlist valence optontology
 		{nrn_use($2, $4, $6, $7);}
 	|USEION error
 		{myerr("syntax is: USEION ion READ list WRITE list REPRESENTS curie");}
 	;
+optontology: { $$ = NULL; }
+           | REPRESENTS ONTOLOGY_ID
+             { $$ = $2; }
 nrnlist: NAME
 	| nrnlist ',' NAME
 		{ delete($2); $$ = $3;}
