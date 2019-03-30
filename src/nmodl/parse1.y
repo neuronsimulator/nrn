@@ -1229,7 +1229,7 @@ nrnuse: USEION NAME READ nrnlist valence
 	|USEION NAME READ nrnlist WRITE nrnlist valence REPRESENTS ONTOLOGY_ID
 		{nrn_use($2, $4, $6, $7);}
 	|USEION error
-		{myerr("syntax is: USEION ion READ list WRITE list REPRESENTS cui");}
+		{myerr("syntax is: USEION ion READ list WRITE list REPRESENTS curie");}
 	;
 nrnlist: NAME
 	| nrnlist ',' NAME
