@@ -404,7 +404,9 @@ extern Memb_func* memb_func;\n\
 "#define NMODL_TEXT 1\n"
 "#if NMODL_TEXT\n"
 "static const char* nmodl_file_text;\n"
+"static const char* nmodl_filename;\n"
 "extern void hoc_reg_nmodl_text(int, const char*);\n"
+"extern void hoc_reg_nmodl_filename(int, const char*);\n"
 "#endif\n\n"
 		);
 	}
@@ -1101,7 +1103,7 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
 		lappendstr(defs_list, "  hoc_reg_bbcore_write(_mechtype, bbcore_write);\n");
 	}
 	if (nmodl_text) {
-		lappendstr(defs_list, "#if NMODL_TEXT\n  hoc_reg_nmodl_text(_mechtype, nmodl_file_text);\n#endif\n");
+		lappendstr(defs_list, "#if NMODL_TEXT\n  hoc_reg_nmodl_text(_mechtype, nmodl_file_text);\n  hoc_reg_nmodl_filename(_mechtype, nmodl_filename);\n#endif\n");
 	}
 	sprintf(buf, " hoc_register_prop_size(_mechtype, %d, %d);\n", parraycount, ppvar_cnt);
 	Lappendstr(defs_list, buf);

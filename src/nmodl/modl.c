@@ -198,8 +198,7 @@ no longer adequate for saying we can not */
 #endif
  if (nmodl_text) {
 	Item* q;
-	fprintf(fcout, "\n#if NMODL_TEXT\nstatic const char* nmodl_file_text = \n");
-	fprintf(fcout, "\"%s\\n\"\n", finname);
+	fprintf(fcout, "\n#if NMODL_TEXT\nstatic const char* nmodl_filename = \"%s\";\nstatic const char* nmodl_file_text = \n", finname);
 	ITERATE(q, filetxtlist) {
 		char* s = STR(q);
 		char* cp;
