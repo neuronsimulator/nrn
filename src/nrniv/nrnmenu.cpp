@@ -1047,6 +1047,18 @@ static const char** mt_code(void* v) {
   return &nullstr;
 }
 
+extern const char** nrn_nmodl_filename_;
+static const char** mt_file(void* v) {
+  static const char* nullstr = "";
+  MechanismType* mt = (MechanismType*)v;
+  int type = mt->internal_type();
+  const char** p = nrn_nmodl_filename_ + type;
+  if (*p) {
+    return p;
+  }
+  return &nullstr;
+}
+
 static void* mt_cons(Object* obj) {
 	MechanismType* mt = new MechanismType(int(chkarg(1, 0, 1)));
 	mt->ref();
@@ -1078,6 +1090,7 @@ static Member_ret_obj_func mt_retobj_members[] = {
 };
 static Member_ret_str_func mt_retstr_func[] = {
 	"code", mt_code,
+	"file", mt_file,
 	0,0
 };
 void MechanismType_reg() {
