@@ -624,6 +624,14 @@ class CodegenCVisitor: public AstVisitor {
     void print_ion_var_structure();
 
 
+    /// constructor of ion variables
+    virtual void print_ion_var_constructor(const std::vector<std::string>& members);
+
+
+    /// print ion variable
+    virtual void print_ion_variable();
+
+
     /// return floating point type for given range variable symbol
     std::string get_range_var_float_type(const SymbolType& symbol);
 

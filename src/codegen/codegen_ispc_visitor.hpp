@@ -142,6 +142,12 @@ class CodegenIspcVisitor: public CodegenCVisitor {
     void print_net_receive_buffering_wrapper();
 
 
+    void print_ion_var_constructor(const std::vector<std::string>& members) override;
+
+
+    void print_ion_variable() override;
+
+
     /// entry point to code generation
     void print_codegen_routines() override;
 
