@@ -13,6 +13,7 @@
 #include "fmt/format.h"
 #include "pybind11/embed.h"
 
+#include "ast/ast_decl.hpp"
 #include "codegen/codegen_acc_visitor.hpp"
 #include "codegen/codegen_c_visitor.hpp"
 #include "codegen/codegen_cuda_visitor.hpp"

@@ -12,7 +12,9 @@
 #include "codegen/codegen_ispc_visitor.hpp"
 #include "codegen/codegen_naming.hpp"
 #include "symtab/symbol_table.hpp"
+#include "utils/logger.hpp"
 #include "utils/string_utils.hpp"
+#include "visitors/lookup_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
 
 using namespace fmt::literals;
@@ -33,6 +35,10 @@ void CodegenIspcVisitor::visit_function_call(ast::FunctionCall* node) {
     if (!codegen) {
         return;
     }
+    if (node->get_node_name() == "printf") {
+        logger->warn("Not emitted in ispc: {}"_format(to_nmodl(node)));
+        return;
+    }
     auto fname = node->get_name().get();
     RenameVisitor("fabs", "abs").visit_name(fname);
     RenameVisitor("exp", "vexp").visit_name(fname);
@@ -49,6 +55,8 @@ void CodegenIspcVisitor::visit_var_name(ast::VarName* node) {
     }
     auto celsius_rename = RenameVisitor("celsius", "ispc_celsius");
     node->accept(&celsius_rename);
+    auto pi_rename = RenameVisitor("PI", "ISPC_PI");
+    node->accept(&pi_rename);
     CodegenCVisitor::visit_var_name(node);
 }
 
@@ -101,13 +109,16 @@ std::string CodegenIspcVisitor::float_to_string(float value) {
 
 std::string CodegenIspcVisitor::compute_method_name(BlockType type) {
     if (type == BlockType::Initial) {
-        return method_name("ispc_nrn_init");
+        return method_name(naming::NRN_INIT_METHOD);
     }
     if (type == BlockType::State) {
-        return method_name("ispc_nrn_state");
+        return method_name(naming::NRN_STATE_METHOD);
     }
     if (type == BlockType::Equation) {
-        return method_name("ispc_nrn_cur");
+        return method_name(naming::NRN_CUR_METHOD);
+    }
+    if (type == BlockType::Watch) {
+        return method_name(naming::NRN_WATCH_CHECK_METHOD);
     }
     throw std::runtime_error("compute_method_name not implemented");
 }
@@ -266,6 +277,14 @@ CodegenIspcVisitor::ParamVector CodegenIspcVisitor::get_global_function_parms(
 }
 
 
+void CodegenIspcVisitor::print_procedure(ast::ProcedureBlock* node) {
+    codegen = true;
+    auto name = node->get_node_name();
+    print_function_or_procedure(node, name);
+    codegen = false;
+}
+
+
 void CodegenIspcVisitor::print_global_function_common_code(BlockType type) {
     std::string method = compute_method_name(type);
 
@@ -294,8 +313,6 @@ void CodegenIspcVisitor::print_global_function_common_code(BlockType type) {
 
 
 void CodegenIspcVisitor::print_compute_functions() {
-    // print_top_verbatim_blocks(); @todo: see where to add this
-
     for (const auto& function: info.functions) {
         if (!program_symtab->lookup(function->get_node_name())
                  .get()
@@ -310,16 +327,29 @@ void CodegenIspcVisitor::print_compute_functions() {
             print_procedure(procedure);
         }
     }
-    print_net_receive_kernel();
-    print_net_receive_buffering(false);
-    print_nrn_init(false);
-    print_nrn_cur();
-    print_nrn_state();
+    if (!emit_fallback[BlockType::NetReceive]) {
+        print_net_receive_kernel();
+        print_net_receive_buffering(false);
+    }
+    if (!emit_fallback[BlockType::Initial]) {
+        print_nrn_init(false);
+    }
+    if (!emit_fallback[BlockType::Equation]) {
+        print_nrn_cur();
+    }
+    if (!emit_fallback[BlockType::State]) {
+        print_nrn_state();
+    }
 }
 
 
 // @todo : use base visitor function with provision to override specific qualifiers
-void CodegenIspcVisitor::print_mechanism_global_var_structure() {
+void CodegenIspcVisitor::print_mechanism_global_var_structure(bool wrapper) {
+    std::string decorator = "";
+    if (!wrapper) {
+        decorator = "uniform ";
+    }
+
     auto float_type = default_float_data_type();
     printer->add_newline(2);
     printer->add_line("/** all global variables */");
@@ -329,13 +359,13 @@ void CodegenIspcVisitor::print_mechanism_global_var_structure() {
     if (!info.ions.empty()) {
         for (const auto& ion: info.ions) {
             auto name = "{}_type"_format(ion.name);
-            printer->add_line("int {};"_format(name));
+            printer->add_line("{}int {};"_format(decorator, name));
             codegen_global_variables.push_back(make_symbol(name));
         }
     }
 
     if (info.point_process) {
-        printer->add_line("int point_type;");
+        printer->add_line("{}int point_type;"_format(decorator));
         codegen_global_variables.push_back(make_symbol("point_type"));
     }
 
@@ -344,14 +374,14 @@ void CodegenIspcVisitor::print_mechanism_global_var_structure() {
             auto name = var->get_name() + "0";
             auto symbol = program_symtab->lookup(name);
             if (symbol == nullptr) {
-                printer->add_line("{} {};"_format(float_type, name));
+                printer->add_line("{}{} {};"_format(decorator, float_type, name));
                 codegen_global_variables.push_back(make_symbol(name));
             }
         }
     }
 
     if (!info.vectorize) {
-        printer->add_line("{} v;"_format(float_type));
+        printer->add_line("{}{} v;"_format(decorator, float_type));
         codegen_global_variables.push_back(make_symbol("v"));
     }
 
@@ -361,27 +391,28 @@ void CodegenIspcVisitor::print_mechanism_global_var_structure() {
             auto name = var->get_name();
             auto length = var->get_length();
             if (var->is_array()) {
-                printer->add_line("{} {}[{}];"_format(float_type, name, length));
+                printer->add_line("{}{} {}[{}];"_format(decorator, float_type, name, length));
             } else {
-                printer->add_line("{} {};"_format(float_type, name));
+                printer->add_line("{}{} {};"_format(decorator, float_type, name));
             }
             codegen_global_variables.push_back(var);
         }
     }
 
     if (!info.thread_variables.empty()) {
-        printer->add_line("int thread_data_in_use;");
-        printer->add_line("{} thread_data[{}];"_format(float_type, info.thread_var_data_size));
+        printer->add_line("{}int thread_data_in_use;"_format(decorator));
+        printer->add_line(
+            "{}{} thread_data[{}];"_format(decorator, float_type, info.thread_var_data_size));
         codegen_global_variables.push_back(make_symbol("thread_data_in_use"));
         auto symbol = make_symbol("thread_data");
         symbol->set_as_array(info.thread_var_data_size);
         codegen_global_variables.push_back(symbol);
     }
 
-    printer->add_line("int reset;");
+    printer->add_line("{}int reset;"_format(decorator));
     codegen_global_variables.push_back(make_symbol("reset"));
 
-    printer->add_line("int mech_type;");
+    printer->add_line("{}int mech_type;"_format(decorator));
     codegen_global_variables.push_back(make_symbol("mech_type"));
 
     auto& globals = info.global_variables;
@@ -392,9 +423,9 @@ void CodegenIspcVisitor::print_mechanism_global_var_structure() {
             auto name = var->get_name();
             auto length = var->get_length();
             if (var->is_array()) {
-                printer->add_line("{} {}[{}];"_format(float_type, name, length));
+                printer->add_line("{}{} {}[{}];"_format(decorator, float_type, name, length));
             } else {
-                printer->add_line("{} {};"_format(float_type, name));
+                printer->add_line("{}{} {};"_format(decorator, float_type, name));
             }
             codegen_global_variables.push_back(var);
         }
@@ -404,43 +435,43 @@ void CodegenIspcVisitor::print_mechanism_global_var_structure() {
         for (const auto& var: constants) {
             auto name = var->get_name();
             auto value_ptr = var->get_value();
-            printer->add_line("{} {};"_format(float_type, name));
+            printer->add_line("{}{} {};"_format(decorator, float_type, name));
             codegen_global_variables.push_back(var);
         }
     }
 
     if (info.primes_size != 0) {
-        printer->add_line("int* {} slist1;"_format(""));
-        printer->add_line("int* {} dlist1;"_format(""));
+        printer->add_line("int* {}slist1;"_format(decorator));
+        printer->add_line("int* {}dlist1;"_format(decorator));
         codegen_global_variables.push_back(make_symbol("slist1"));
         codegen_global_variables.push_back(make_symbol("dlist1"));
         if (info.derivimplicit_used) {
-            printer->add_line("int* slist2;");
+            printer->add_line("int* {}slist2;"_format(decorator));
             codegen_global_variables.push_back(make_symbol("slist2"));
         }
     }
 
     if (info.table_count > 0) {
-        printer->add_line("double usetable;");
+        printer->add_line("{}double usetable;"_format(decorator));
         codegen_global_variables.push_back(make_symbol(naming::USE_TABLE_VARIABLE));
 
         for (const auto& block: info.functions_with_table) {
             auto name = block->get_node_name();
-            printer->add_line("{} tmin_{};"_format(float_type, name));
-            printer->add_line("{} mfac_{};"_format(float_type, name));
+            printer->add_line("{}{} tmin_{};"_format(decorator, float_type, name));
+            printer->add_line("{}{} mfac_{};"_format(decorator, float_type, name));
             codegen_global_variables.push_back(make_symbol("tmin_" + name));
             codegen_global_variables.push_back(make_symbol("mfac_" + name));
         }
 
         for (const auto& variable: info.table_statement_variables) {
             auto name = "t_" + variable->get_name();
-            printer->add_line("{}* {};"_format(float_type, name));
+            printer->add_line("{}* {}{};"_format(float_type, decorator, name));
             codegen_global_variables.push_back(make_symbol(name));
         }
     }
 
     if (info.vectorize) {
-        printer->add_line("ThreadDatum* {}ext_call_thread;"_format(""));
+        printer->add_line("ThreadDatum* {}ext_call_thread;"_format(decorator));
         codegen_global_variables.push_back(make_symbol("ext_call_thread"));
     }
 
@@ -448,8 +479,15 @@ void CodegenIspcVisitor::print_mechanism_global_var_structure() {
     printer->add_line("};");
 
     printer->add_newline(1);
-    printer->add_line("/** holds object of global variable */");
-    printer->add_line("{} {}_global;"_format(global_struct(), info.mod_suffix));
+    if (wrapper) {
+        printer->add_line("/** holds object of global variable */");
+        printer->start_block("extern \"C\"");
+        printer->add_line("{} {}_global;"_format(global_struct(), info.mod_suffix));
+        printer->end_block(2);
+    } else {
+        printer->add_line("/** holds object of global variable */");
+        printer->add_line("extern {} {}_global;"_format(global_struct(), info.mod_suffix));
+    }
 }
 
 
@@ -461,7 +499,7 @@ void CodegenIspcVisitor::print_data_structures() {
 
 
 void CodegenIspcVisitor::print_wrapper_data_structures() {
-    print_mechanism_global_var_structure();
+    print_mechanism_global_var_structure(true);
     print_mechanism_range_var_structure();
     print_ion_var_structure();
 }
@@ -512,6 +550,14 @@ void CodegenIspcVisitor::print_headers_include() {
     print_backend_includes();
 }
 
+void CodegenIspcVisitor::print_nmodl_constant() {
+    printer->add_newline(2);
+    printer->add_line("/** constants used in nmodl. */");
+    // we use here macros to work around ispc's PI being declared in global namespace
+    printer->add_line("static const uniform double FARADAY = 96485.3d;");
+    printer->add_line("static const uniform double ISPC_PI = 3.14159d;");
+    printer->add_line("static const uniform double R = 8.3145d;");
+}
 
 void CodegenIspcVisitor::print_wrapper_headers_include() {
     print_standard_includes();
@@ -551,16 +597,18 @@ void CodegenIspcVisitor::print_wrapper_routine(std::string wraper_function, Bloc
 void CodegenIspcVisitor::print_backend_compute_routine_decl() {
     auto params = get_global_function_parms("");
     auto compute_function = compute_method_name(BlockType::Initial);
-    printer->add_line(
-        "extern \"C\" void {}({});"_format(compute_function, get_parameter_str(params)));
+    if (!emit_fallback[BlockType::Initial]) {
+        printer->add_line(
+            "extern \"C\" void {}({});"_format(compute_function, get_parameter_str(params)));
+    }
 
-    if (nrn_cur_required()) {
+    if (nrn_cur_required() && !emit_fallback[BlockType::Equation]) {
         compute_function = compute_method_name(BlockType::Equation);
         printer->add_line(
             "extern \"C\" void {}({});"_format(compute_function, get_parameter_str(params)));
     }
 
-    if (nrn_state_required()) {
+    if (nrn_state_required() && !emit_fallback[BlockType::State]) {
         compute_function = compute_method_name(BlockType::State);
         printer->add_line(
             "extern \"C\" void {}({});"_format(compute_function, get_parameter_str(params)));
@@ -576,22 +624,120 @@ void CodegenIspcVisitor::print_backend_compute_routine_decl() {
     }
 }
 
+void CodegenIspcVisitor::determine_target() {
+    auto node_lv = AstLookupVisitor(incompatible_node_types);
+
+    if (info.initial_node) {
+        emit_fallback[BlockType::Initial] = !node_lv.lookup(info.initial_node).empty() ||
+                                            calls_function(info.initial_node, "net_send") ||
+                                            info.require_wrote_conc;
+    } else {
+        emit_fallback[BlockType::Initial] = info.net_receive_initial_node ||
+                                            info.require_wrote_conc;
+    }
+
+    if (info.net_receive_node) {
+        emit_fallback[BlockType::NetReceive] = !node_lv.lookup(info.net_receive_node).empty() ||
+                                               calls_function(info.net_receive_node, "net_send");
+    }
+
+    if (nrn_cur_required()) {
+        if (info.breakpoint_node) {
+            emit_fallback[BlockType::Equation] = !node_lv.lookup(info.breakpoint_node).empty();
+        } else {
+            emit_fallback[BlockType::Equation] = false;
+        }
+    }
+
+    if (nrn_state_required()) {
+        if (info.nrn_state_block) {
+            emit_fallback[BlockType::State] = !node_lv.lookup(info.nrn_state_block).empty();
+        } else {
+            emit_fallback[BlockType::State] = false;
+        }
+    }
+}
+
+void CodegenIspcVisitor::move_procs_to_wrapper() {
+    auto nameset = std::set<std::string>();
+
+    auto populate_nameset = [&nameset](ast::Block* block) {
+        auto name_lv = AstLookupVisitor(ast::AstNodeType::NAME);
+        if (block) {
+            auto names = name_lv.lookup(block);
+            for (const auto& name: names) {
+                nameset.insert(name->get_node_name());
+            }
+        }
+    };
+    populate_nameset(info.initial_node);
+    populate_nameset(info.nrn_state_block);
+    populate_nameset(info.breakpoint_node);
+
+    auto node_lv = AstLookupVisitor(incompatible_node_types);
+    auto target_procedures = std::vector<ast::ProcedureBlock*>();
+    for (auto it = info.procedures.begin(); it != info.procedures.end(); it++) {
+        auto procname = (*it)->get_name()->get_node_name();
+        if (nameset.find(procname) == nameset.end() || !node_lv.lookup(*it).empty()) {
+            wrapper_procedures.push_back(*it);
+        } else {
+            target_procedures.push_back(*it);
+        }
+    }
+    info.procedures = target_procedures;
+    auto target_functions = std::vector<ast::FunctionBlock*>();
+    for (auto it = info.functions.begin(); it != info.functions.end(); it++) {
+        auto procname = (*it)->get_name()->get_node_name();
+        if (nameset.find(procname) == nameset.end() || !node_lv.lookup(*it).empty()) {
+            wrapper_functions.push_back(*it);
+        } else {
+            target_functions.push_back(*it);
+        }
+    }
+    info.functions = target_functions;
+}
 
 void CodegenIspcVisitor::codegen_wrapper_routines() {
-    print_wrapper_routine("nrn_init", BlockType::Initial);
+    if (emit_fallback[BlockType::Initial]) {
+        logger->warn("Falling back to C backend for emitting Initial block");
+        fallback_codegen.print_nrn_init();
+    } else {
+        print_wrapper_routine(naming::NRN_INIT_METHOD, BlockType::Initial);
+    }
+
     if (nrn_cur_required()) {
-        print_wrapper_routine("nrn_cur", BlockType::Equation);
+        if (emit_fallback[BlockType::Equation]) {
+            logger->warn("Falling back to C backend for emitting breakpoint block");
+            fallback_codegen.print_nrn_cur();
+        } else {
+            print_wrapper_routine(naming::NRN_CUR_METHOD, BlockType::Equation);
+        }
     }
+
     if (nrn_state_required()) {
-        print_wrapper_routine("nrn_state", BlockType::State);
+        if (emit_fallback[BlockType::State]) {
+            logger->warn("Falling back to C backend for emitting state block");
+            fallback_codegen.print_nrn_state();
+        } else {
+            print_wrapper_routine(naming::NRN_STATE_METHOD, BlockType::State);
+        }
     }
+}
+
+
+void CodegenIspcVisitor::visit_program(ast::Program* node) {
+    fallback_codegen.setup(node);
+    CodegenCVisitor::visit_program(node);
 }
 
 
 void CodegenIspcVisitor::print_codegen_routines() {
     codegen = true;
+    determine_target();
+    move_procs_to_wrapper();
     print_backend_info();
     print_headers_include();
+    print_nmodl_constant();
 
     print_data_structures();
 
@@ -610,29 +756,59 @@ void CodegenIspcVisitor::print_codegen_wrapper_routines() {
     print_ispc_globals();
     print_namespace_begin();
 
-    print_nmodl_constant();
+    CodegenCVisitor::print_nmodl_constant();
     print_mechanism_info();
     print_wrapper_data_structures();
     print_global_variables_for_hoc();
     print_common_getters();
 
-    print_thread_memory_callbacks();
     print_memory_allocation_routine();
+    print_thread_memory_callbacks();
     print_global_variable_setup();
+    /* this is a godawful mess.. the global variables have to be copied over into the fallback
+     * such that they are available to the fallback generator.
+     */
+    fallback_codegen.set_codegen_global_variables(codegen_global_variables);
     print_instance_variable_setup();
     print_nrn_alloc();
-    print_check_table_thread_function();
+    print_top_verbatim_blocks();
 
+
+    for (const auto& function: wrapper_functions) {
+        if (!program_symtab->lookup(function->get_node_name())
+                 .get()
+                 ->has_all_status(Status::inlined)) {
+            fallback_codegen.print_function(function);
+        }
+    }
+    for (const auto& procedure: wrapper_procedures) {
+        if (!program_symtab->lookup(procedure->get_node_name())
+                 .get()
+                 ->has_all_status(Status::inlined)) {
+            fallback_codegen.print_procedure(procedure);
+        }
+    }
+
+    print_check_table_thread_function();
 
     print_net_init();
     print_net_send_buffering();
     print_watch_activate();
-    print_watch_check();
+    fallback_codegen.print_watch_check();  // requires C style variable declarations and loops
+
+    if (emit_fallback[BlockType::NetReceive]) {
+        logger->warn("Found VERBATIM code in net_receive block, falling back to C backend");
+        fallback_codegen.print_net_receive_kernel();
+        fallback_codegen.print_net_receive_buffering();
+    }
+
     print_net_receive();
 
     print_backend_compute_routine_decl();
 
-    print_net_receive_buffering_wrapper();
+    if (!emit_fallback[BlockType::NetReceive]) {
+        print_net_receive_buffering_wrapper();
+    }
     codegen_wrapper_routines();
 
     print_mechanism_register();

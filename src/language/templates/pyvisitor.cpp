@@ -129,6 +129,7 @@ void init_visitor_module(py::module& m) {
         .def(py::init<ast::AstNodeType>())
         .def("get_nodes", &AstLookupVisitor::get_nodes)
         .def("clear", &AstLookupVisitor::clear)
+        .def("lookup", (std::vector<std::shared_ptr<ast::AST>> (AstLookupVisitor::*)(ast::AST*)) &AstLookupVisitor::lookup)
         .def("lookup", (std::vector<std::shared_ptr<ast::AST>> (AstLookupVisitor::*)(ast::AST*, ast::AstNodeType)) &AstLookupVisitor::lookup)
         .def("lookup", (std::vector<std::shared_ptr<ast::AST>> (AstLookupVisitor::*)(ast::AST*, std::vector<ast::AstNodeType>&)) &AstLookupVisitor::lookup)
     {% for node in nodes %}

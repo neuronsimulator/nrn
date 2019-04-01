@@ -14,6 +14,7 @@
 #include "visitors/rename_visitor.hpp"
 
 #include <fmt/format.h>
+#include <set>
 
 using namespace fmt::literals;
 
@@ -118,6 +119,15 @@ void CodegenHelperVisitor::find_ion_variables() {
         for (auto& var: ion.writes) {
             if (ion.is_ionic_current(var)) {
                 info.currents.push_back(var);
+            }
+        }
+    }
+
+    /// check if worte_conc(...) will be needed
+    for (const auto& ion: info.ions) {
+        for (const auto& var: ion.writes) {
+            if (!ion.is_ionic_current(var) && !ion.is_rev_potential(var)) {
+                info.require_wrote_conc = true;
             }
         }
     }

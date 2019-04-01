@@ -41,4 +41,11 @@ std::vector<std::shared_ptr<ast::AST>> AstLookupVisitor::lookup(AST* node, AstNo
     return nodes;
 }
 
+
+std::vector<std::shared_ptr<ast::AST>> AstLookupVisitor::lookup(AST* node) {
+    nodes.clear();
+    node->accept(this);
+    return nodes;
+}
+
 }  // namespace nmodl

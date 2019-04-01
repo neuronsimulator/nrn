@@ -1949,9 +1949,9 @@ std::string CodegenCVisitor::process_shadow_update_statement(ShadowUseStatement&
 void CodegenCVisitor::print_nmodl_constant() {
     printer->add_newline(2);
     printer->add_line("/** constants used in nmodl */");
-    printer->add_line("static double FARADAY = 96485.3;");
-    printer->add_line("static double PI = 3.14159;");
-    printer->add_line("static double R = 8.3145;");
+    printer->add_line("static const double FARADAY = 96485.3;");
+    printer->add_line("static const double PI = 3.14159;");
+    printer->add_line("static const double R = 8.3145;");
 }
 
 
@@ -2323,7 +2323,7 @@ void CodegenCVisitor::print_coreneuron_includes() {
  * Note that static variables are already initialized to 0. We do the
  * same for some variables to keep same code as neuron.
  */
-void CodegenCVisitor::print_mechanism_global_var_structure() {
+void CodegenCVisitor::print_mechanism_global_var_structure(bool wrapper) {
     auto float_type = default_float_data_type();
     printer->add_newline(2);
     printer->add_line("/** all global variables */");
@@ -3796,6 +3796,7 @@ void CodegenCVisitor::visit_solution_expression(SolutionExpression* node) {
     }
 }
 
+
 /****************************************************************************************/
 /*                                Print nrn_state routine                                */
 /****************************************************************************************/
@@ -4107,7 +4108,12 @@ void CodegenCVisitor::print_wrapper_routines() {
 }
 
 
-void CodegenCVisitor::visit_program(Program* node) {
+void CodegenCVisitor::set_codegen_global_variables(std::vector<SymbolType>& global_vars) {
+    codegen_global_variables = global_vars;
+}
+
+
+void CodegenCVisitor::setup(Program* node) {
     program_symtab = node->get_symbol_table();
 
     CodegenHelperVisitor v;
@@ -4124,6 +4130,11 @@ void CodegenCVisitor::visit_program(Program* node) {
 
     update_index_semantics();
     rename_function_arguments();
+}
+
+
+void CodegenCVisitor::visit_program(Program* node) {
+    setup(node);
     print_codegen_routines();
     print_wrapper_routines();
 }
