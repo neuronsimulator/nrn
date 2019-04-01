@@ -180,7 +180,7 @@ void CodegenIspcVisitor::print_channel_iteration_tiling_block_begin(BlockType ty
  *
  * Use ispc foreach loop
  */
-void CodegenIspcVisitor::print_channel_iteration_block_begin() {
+void CodegenIspcVisitor::print_channel_iteration_block_begin(BlockType type) {
     printer->start_block("foreach (id = start ... end)");
 }
 

@@ -80,7 +80,7 @@ class CodegenIspcVisitor: public CodegenCVisitor {
 
 
     /// backend specific channel instance iteration block start
-    void print_channel_iteration_block_begin() override;
+    void print_channel_iteration_block_begin(BlockType type) override;
 
 
     /// backend specific channel iteration bounds
