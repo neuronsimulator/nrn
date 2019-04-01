@@ -33,8 +33,11 @@ class Rate(GeneralizedReaction):
         self._species = weakref.ref(species)
         self._original_rate = rate
         if not hasattr(regions, '__len__'):
-            regions = [regions]
-            print("in here assinging regions to {}".format(regions))
+            if regions is not None:
+                regions = [regions]
+            else:
+                print("species = {}".format(species))
+                regions = species._regions if hasattr(species, '_regions') else [species._region()]
         self._regions = regions
         self._membrane_flux = membrane_flux
         if membrane_flux not in (True, False):
@@ -56,6 +59,7 @@ class Rate(GeneralizedReaction):
     def _do_init(self):
         rate = self._original_rate
         if not isinstance(rate, RangeVar):
+            print("calling _compile for {}".format(self))
             self._rate, self._involved_species = rxdmath._compile(rate, self._regions)
         else:
             self._involved_species = [weakref.ref(species)]
@@ -85,7 +89,7 @@ class Rate(GeneralizedReaction):
         self._mult = [1]
         self._mult_extended = self._mult
         from . import  region
-        if not self._species() or isinstance(self._species(),species.SpeciesOnExtracellular) or all([isinstance(r,region.Extracellular) for r in self._regions]) or self._species()._intracellular_instances:
+        if not self._species():
             if self._regions != [None]:
                 self._active_regions = self._regions
             elif self._species():
@@ -94,8 +98,9 @@ class Rate(GeneralizedReaction):
 
                 if isinstance(self._species(),species.SpeciesOnExtracellular):
                     self._extracellular_active_regions = [self._species()._extracellular()._region]
-                if not isinstance(self._species(),species.SpeciesOnExtracellular) and self._species()._intracellular_instances:
-                    self._intracellular_active_regions = [reg for reg in self._species()._intracellular_instances.keys()]
+                sp = self._species() if isinstance(self._species(),species.Species) else self._species()._species()
+                if sp._intracellular_instances:
+                    self._intracellular_active_regions = [reg for reg in sp._intracellular_instances.keys()]
 
                 self._active_regions = self._extracellular_active_regions + self._intracellular_active_regions
 
@@ -116,8 +121,7 @@ class Rate(GeneralizedReaction):
                 active_regions = list(set.intersection(set(active_regions), set(actr)))
                 actr = specified_regions
             else:
-                warnings.warn("Error in rate %r\nThe regions specified %s are not appropriate regions %s will be used instead." % (self, [r._name for r in self._regions], [r._name for r in self._species()._regions]))
-
+                raise RxDException("Error in rate {}. The specified regions and species are incompatible.".format(self))
         #Note: This finds the sections where the all involved species exists
         #e.g. for Rate(A, B+C) if A sections [1,2,3] and B is on sections [1,2] and C is on sections [2,3]
         #The Rate will only effect A on section 2 (rather than have 3 different rates)

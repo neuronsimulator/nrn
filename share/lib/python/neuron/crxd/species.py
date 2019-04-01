@@ -172,10 +172,12 @@ class _SpeciesMathable(object):
             ecs_instance = self._extracellular_instances[reg]
             return ecs_instance._semi_compile(reg)
         #region is 3d intracellular
-        if isinstance(reg, region.Region):
+        if isinstance(reg, region.Region) and reg._secs3d:
+            print("self is {} and reg is {}".format(self, reg))
             ics_instance = self._intracellular_instances[reg]
             return ics_instance._semi_compile(reg)
-            
+        if isinstance(reg, region.Region) and reg._secs1d:
+            return 'species[%d][]' % (self._id)
 
     def _involved_species(self, the_dict):
         the_dict[self._semi_compile] = weakref.ref(self)
@@ -498,8 +500,6 @@ class _IntracellularSpecies(_SpeciesMathable):
             self.states[:] = 0
 
     def _semi_compile(self, region):
-        if region is self._region:
-            print("regions are the same")
         return 'species_3d[%d]' % (self._grid_id)
 
 class _ExtracellularSpecies(_SpeciesMathable):
@@ -687,8 +687,6 @@ class _ExtracellularSpecies(_SpeciesMathable):
         _set_grid_currents(grid_list, self._grid_id, grid_indices, neuron_pointers, scale_factors)
     
     def _semi_compile(self, reg):
-        if self._region is reg:
-            print("region is the same as {}".format(reg))
         return 'species_3d[%d]' % (self._grid_id)
 
 

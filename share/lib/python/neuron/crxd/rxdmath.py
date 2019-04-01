@@ -58,19 +58,21 @@ def analyze_reaction(r):
 def _compile(arith, region):
     initializer._do_init()
     #for extracellular reactions ensure the species are _ExtracellularSpecies
-    print("arith = {} \n".format(arith))
     arith = _ensure_arithmeticed(arith)
-    print("arith = {} \n".format(arith))
     #arith = arith._ensure_extracellular(extracellular,intracellular3d)
     s_by_reg = {}
     species_dict = {}
     for reg in region:
+        #TODO figure out what we are catching with attribute error
         try:
-            s = arith._semi_compile(reg)
+            #Checks to make sure the all species in arith are defined on the region
+            try:
+                s = arith._semi_compile(reg)
+            except KeyError:
+                continue
             s_by_reg[reg] = s
             arith._involved_species(species_dict)
         except AttributeError:
-            print("weird attribute error\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
             species_dict = {}
             s = str(arith)
 
@@ -466,13 +468,11 @@ class _Arithmeticed:
         for item, count in zip(list(self._items.keys()), list(self._items.values())):
             if count:
                 try:
-                    print("item is {} and region is {}".format(item, region))
                     items_append(item._semi_compile(region))
                 except AttributeError:
                     items_append('%s' % item)
                 counts_append(count)
         result = ''
-        print(items, counts)
         for i, c in zip(items, counts):
             if result and c > 0:
                 result += '+'
