@@ -47,7 +47,10 @@ enum class BlockType {
     State,
 
     /// watch block
-    Watch
+    Watch,
+
+    /// net_receive block
+    NetReceive
 };
 
 
@@ -561,7 +564,7 @@ class CodegenCVisitor: public AstVisitor {
 
 
     /// nmodl constants
-    void print_nmodl_constant();
+    virtual void print_nmodl_constant();
 
 
     /// top header printed in generated code
@@ -613,7 +616,7 @@ class CodegenCVisitor: public AstVisitor {
 
 
     /// structure that wraps all global variables in the mod file
-    virtual void print_mechanism_global_var_structure();
+    virtual void print_mechanism_global_var_structure(bool wrapper = false);
 
 
     /// structure that wraps all range and int variables required for mod file
@@ -764,24 +767,8 @@ class CodegenCVisitor: public AstVisitor {
     void print_function_prototypes();
 
 
-    /// print check_function() for function/procedure using table
-    void print_table_check_function(ast::Block* node);
-
-
-    /// print replacement function for function/procedure using table
-    void print_table_replacement_function(ast::Block* node);
-
-
     /// print check_table functions
     void print_check_table_thread_function();
-
-
-    /// nmodl function definition
-    void print_function(ast::FunctionBlock* node);
-
-
-    /// nmodl procedure definition
-    void print_procedure(ast::ProcedureBlock* node);
 
 
     /// print nmodl function or procedure (common code)
@@ -830,14 +817,6 @@ class CodegenCVisitor: public AstVisitor {
 
 
     virtual void print_net_receive_loop_end();
-
-
-    /// kernel for buffering net_receive events
-    void print_net_receive_buffering(bool need_mech_inst = true);
-
-
-    /// net_receive kernel function definition
-    void print_net_receive_kernel();
 
 
     /// net_receive function definition
@@ -901,28 +880,12 @@ class CodegenCVisitor: public AstVisitor {
     virtual void print_global_function_common_code(BlockType type);
 
 
-    /// nrn_init function definition
-    void print_nrn_init(bool skip_init_check = true);
-
-
-    /// nrn_state / state update function definition
-    void print_nrn_state();
-
-
-    /// nrn_cur / current update function definition
-    void print_nrn_cur();
-
-
     /// mechanism registration function
     void print_mechanism_register();
 
 
     /// print watch activate function
     void print_watch_activate();
-
-
-    /// print watch activate function
-    void print_watch_check();
 
 
     /// all includes
@@ -993,6 +956,66 @@ class CodegenCVisitor: public AstVisitor {
         , mod_filename(mod_filename)
         , layout(layout)
         , float_type(float_type) {}
+
+
+    CodegenCVisitor(std::string mod_filename,
+                    LayoutType layout,
+                    std::string float_type,
+                    std::shared_ptr<CodePrinter>& target_printer)
+        : target_printer(target_printer)
+        , printer(target_printer)
+        , mod_filename(mod_filename)
+        , layout(layout)
+        , float_type(float_type) {}
+
+
+    /// nrn_init function definition
+    void print_nrn_init(bool skip_init_check = true);
+
+
+    /// nrn_state / state update function definition
+    void print_nrn_state();
+
+
+    /// nrn_cur / current update function definition
+    void print_nrn_cur();
+
+
+    /// kernel for buffering net_receive events
+    void print_net_receive_buffering(bool need_mech_inst = true);
+
+
+    /// net_receive kernel function definition
+    void print_net_receive_kernel();
+
+
+    /// print watch activate function
+    void print_watch_check();
+
+
+    /// print check_function() for function/procedure using table
+    void print_table_check_function(ast::Block* node);
+
+
+    /// print replacement function for function/procedure using table
+    void print_table_replacement_function(ast::Block* node);
+
+
+    /// nmodl function definition
+    void print_function(ast::FunctionBlock* node);
+
+
+    /// nmodl procedure definition
+    virtual void print_procedure(ast::ProcedureBlock* node);
+
+
+    /** setup the Codgen, typically called from within visit_program but may be called from
+     *  specialized targets to setup this Code generator as fallback.
+     */
+    void setup(ast::Program* node);
+
+    void set_codegen_global_variables(std::vector<SymbolType>& global_vars);
+
 
     virtual void visit_binary_expression(ast::BinaryExpression* node) override;
     virtual void visit_binary_operator(ast::BinaryOperator* node) override;

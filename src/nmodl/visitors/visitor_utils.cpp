@@ -13,6 +13,7 @@
 #include "parser/nmodl_driver.hpp"
 #include "visitor_utils.hpp"
 #include "visitors/json_visitor.hpp"
+#include "visitors/lookup_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
 
 
@@ -145,6 +146,17 @@ std::set<std::string> get_global_vars(Program* node) {
         }
     }
     return vars;
+}
+
+
+bool calls_function(ast::AST* node, const std::string& name) {
+    auto lv = AstLookupVisitor(ast::AstNodeType::FUNCTION_CALL);
+    for (const auto& f: lv.lookup(node)) {
+        if (std::dynamic_pointer_cast<ast::FunctionCall>(f)->get_node_name() == name) {
+            return true;
+        }
+    }
+    return false;
 }
 
 

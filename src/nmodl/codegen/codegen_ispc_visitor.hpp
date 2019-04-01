@@ -20,9 +20,23 @@ namespace codegen {
 class CodegenIspcVisitor: public CodegenCVisitor {
     void print_atomic_op(const std::string& lhs, const std::string& op, const std::string& rhs);
 
+    /// ast nodes which are not compatible with ISPC target
+    const std::vector<ast::AstNodeType> incompatible_node_types{
+        ast::AstNodeType::VERBATIM, ast::AstNodeType::EIGEN_NEWTON_SOLVER_BLOCK,
+        ast::AstNodeType::EIGEN_LINEAR_SOLVER_BLOCK, ast::AstNodeType::WATCH_STATEMENT,
+        ast::AstNodeType::TABLE_STATEMENT};
 
     /// flag to indicate if visitor should print the the wrapper code
     bool wrapper_codegen = false;
+
+    /// fallback C code generator used to emit C code in the wrapper when emitting ISPC is not
+    /// supported
+    CodegenCVisitor fallback_codegen;
+
+    std::map<BlockType, bool> emit_fallback;
+
+    std::vector<ast::ProcedureBlock*> wrapper_procedures;
+    std::vector<ast::FunctionBlock*> wrapper_functions;
 
   protected:
     /// doubles are differently represented in ispc than in C
@@ -104,9 +118,15 @@ class CodegenIspcVisitor: public CodegenCVisitor {
 
     void print_wrapper_headers_include();
 
+    void print_nmodl_constant() override;
+
 
     /// all compute functions for every backend
     void print_compute_functions() override;
+
+
+    /// nmodl procedure definition
+    void print_procedure(ast::ProcedureBlock* node) override;
 
 
     void print_backend_compute_routine_decl();
@@ -121,7 +141,7 @@ class CodegenIspcVisitor: public CodegenCVisitor {
 
 
     /// structure that wraps all global variables in the mod file
-    void print_mechanism_global_var_structure() override;
+    void print_mechanism_global_var_structure(bool wrapper = false) override;
 
 
     void print_data_structures() override;
@@ -148,6 +168,14 @@ class CodegenIspcVisitor: public CodegenCVisitor {
     void print_ion_variable() override;
 
 
+    /// find out for main compute routines whether they are suitable to be emitted in ISPC backend
+    void determine_target();
+
+
+    /// move procedures and functions unused by compute kernels into the wrapper
+    void move_procs_to_wrapper();
+
+
     /// entry point to code generation
     void print_codegen_routines() override;
 
@@ -159,17 +187,20 @@ class CodegenIspcVisitor: public CodegenCVisitor {
                        std::string output_dir,
                        LayoutType layout,
                        std::string float_type)
-        : CodegenCVisitor(mod_file, output_dir, layout, float_type, ".ispc", ".cpp") {}
+        : CodegenCVisitor(mod_file, output_dir, layout, float_type, ".ispc", ".cpp")
+        , fallback_codegen(mod_file, layout, float_type, wrapper_printer) {}
 
 
     CodegenIspcVisitor(std::string mod_file,
                        std::stringstream& stream,
                        LayoutType layout,
                        std::string float_type)
-        : CodegenCVisitor(mod_file, stream, layout, float_type) {}
+        : CodegenCVisitor(mod_file, stream, layout, float_type)
+        , fallback_codegen(mod_file, layout, float_type, wrapper_printer) {}
 
     void visit_function_call(ast::FunctionCall* node) override;
     void visit_var_name(ast::VarName* node) override;
+    void visit_program(ast::Program* node) override;
 };
 
 }  // namespace codegen
