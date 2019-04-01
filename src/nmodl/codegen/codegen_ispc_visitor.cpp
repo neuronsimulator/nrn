@@ -474,6 +474,17 @@ void CodegenIspcVisitor::print_ispc_globals() {
 }
 
 
+void CodegenIspcVisitor::print_ion_var_constructor(const std::vector<std::string>& members) {
+    /// no constructor for ispc
+}
+
+
+void CodegenIspcVisitor::print_ion_variable() {
+    /// c syntax to zero initialize struct
+    printer->add_line("IonCurVar ionvar = {0};");
+}
+
+
 /****************************************************************************************/
 /*                    Main code printing entry points and wrappers                      */
 /****************************************************************************************/

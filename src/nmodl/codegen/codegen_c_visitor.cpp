@@ -1579,7 +1579,7 @@ void CodegenCVisitor::print_check_table_thread_function() {
     printer->add_line("    setup_instance(nt, ml);");
     printer->add_line("    {0}* inst = ({0}*) ml->instance;"_format(instance_struct()));
     printer->add_line("    double v = 0;");
-    printer->add_line("    IonCurVar ionvar = {0};");
+    printer->add_line("    IonCurVar ionvar;");
 
     for (const auto& function: info.functions_with_table) {
         auto name = method_name("check_" + function->get_node_name());
@@ -1664,7 +1664,7 @@ void CodegenCVisitor::visit_eigen_newton_solver_block(ast::EigenNewtonSolverBloc
     printer->add_line("double v;");
     printer->add_line("Datum* indexes;");
     if (ion_variable_struct_required()) {
-        printer->add_line("IonCurVar ionvar = {0};");
+        print_ion_variable();
     }
 
     print_statement_block(node->get_variable_block().get(), false, false);
@@ -2778,19 +2778,48 @@ void CodegenCVisitor::print_ion_var_structure() {
     printer->add_newline(2);
     printer->add_line("/** ion write variables */");
     printer->start_block("struct IonCurVar");
+
+    std::string float_type = default_float_data_type();
+    std::vector<std::string> members;
+
     for (auto& ion: info.ions) {
         for (auto& var: ion.writes) {
-            printer->add_line("{} {};"_format(default_float_data_type(), var));
+            printer->add_line("{} {};"_format(float_type, var));
+            members.push_back(var);
         }
     }
     for (auto& var: info.currents) {
         if (!info.is_ion_variable(var)) {
-            printer->add_line("{} {};"_format(default_float_data_type(), var));
+            printer->add_line("{} {};"_format(float_type, var));
+            members.push_back(var);
         }
     }
+
+    print_ion_var_constructor(members);
+
     printer->end_block();
     printer->add_text(";");
     printer->add_newline();
+}
+
+
+void CodegenCVisitor::print_ion_var_constructor(const std::vector<std::string>& members) {
+    /// constructor
+    printer->add_newline();
+    printer->add_line("IonCurVar() : ", 0);
+    for (int i = 0; i < members.size(); i++) {
+        printer->add_text("{}(0)"_format(members[i]));
+        if (i + 1 < members.size()) {
+            printer->add_text(", ");
+        }
+    }
+    printer->add_text(" {}");
+    printer->add_newline();
+}
+
+
+void CodegenCVisitor::print_ion_variable() {
+    printer->add_line("IonCurVar ionvar;");
 }
 
 
@@ -3066,7 +3095,7 @@ void CodegenCVisitor::print_initial_block(InitialBlock* node) {
     }
 
     if (ion_variable_struct_required()) {
-        printer->add_line("IonCurVar ionvar = {0};");
+        printer->add_line("IonCurVar ionvar;");
     }
 
     /// read ion statements
@@ -3701,7 +3730,7 @@ void CodegenCVisitor::print_derivimplicit_kernel(Block* block) {
     printer->start_block("int _newton_{}_{}({}) "_format(block_name, info.mod_suffix, external_method_parameters()));
     printer->add_line(instance);
     if (ion_variable_struct_required()) {
-        printer->add_line("IonCurVar ionvar = {0};");
+        print_ion_variable();
     }
     printer->add_line("double* savstate{} = (double*) thread[dith{}()].pval;"_format(list_num, list_num));
     printer->add_line(slist1);
@@ -3775,7 +3804,7 @@ void CodegenCVisitor::print_nrn_state() {
     /// todo : eigen solver node also emits IonCurVar variable in the functor
     /// but that shouldn't update ions in derivative block
     if (ion_variable_struct_required()) {
-        printer->add_line("IonCurVar ionvar = {0};");
+        print_ion_variable();
     }
 
     auto read_statements = ion_read_statements(BlockType::State);
@@ -3904,7 +3933,7 @@ void CodegenCVisitor::print_nrn_cur_kernel(BreakpointBlock* node) {
     printer->add_line("int node_id = node_index[id];");
     printer->add_line("double v = voltage[node_id];");
     if (ion_variable_struct_required()) {
-        printer->add_line("IonCurVar ionvar = {0};");
+        print_ion_variable();
     }
 
     auto read_statements = ion_read_statements(BlockType::Equation);

@@ -52,7 +52,7 @@ class CodePrinter {
 
     void add_text(const std::string&);
 
-    void add_line(const std::string&);
+    void add_line(const std::string&, int num_new_lines = 1);
 
     void add_multi_line(const std::string&);
 
