@@ -31,18 +31,29 @@ namespace codegen {
  *      for(int id=0; id<nodecount; id++) {
  *
  */
-void CodegenAccVisitor::print_channel_iteration_block_parallel_hint() {
-    printer->add_line("#pragma acc parallel loop");
+void CodegenAccVisitor::print_channel_iteration_block_parallel_hint(BlockType type) {
+    if (!info.artificial_cell) {
+        std::string present_clause = "present(node_index, data, voltage, indexes, thread";
+
+        if (type == BlockType::Equation) {
+            present_clause += ", vec_rhs, vec_d";
+        }
+        present_clause += ")";
+        printer->add_line("#pragma acc parallel loop {}"_format(present_clause));
+    }
 }
 
 
 void CodegenAccVisitor::print_atomic_reduction_pragma() {
-    printer->add_line("#pragma acc atomic update");
+    if (!info.artificial_cell) {
+        printer->add_line("#pragma acc atomic update");
+    }
 }
 
 
 void CodegenAccVisitor::print_backend_includes() {
     printer->add_line("#include <cuda.h>");
+    printer->add_line("#include <cuda_runtime_api.h>");
     printer->add_line("#include <openacc.h>");
 }
 
@@ -82,10 +93,12 @@ void CodegenAccVisitor::print_memory_allocation_routine() {
  *  }
  */
 void CodegenAccVisitor::print_kernel_data_present_annotation_block_begin() {
-    auto global_variable = "{}_global"_format(info.mod_suffix);
-    printer->add_line("#pragma acc data present(nt, ml, {})"_format(global_variable));
-    printer->add_line("{");
-    printer->increase_indent();
+    if (!info.artificial_cell) {
+        auto global_variable = "{}_global"_format(info.mod_suffix);
+        printer->add_line("#pragma acc data present(nt, ml, {})"_format(global_variable));
+        printer->add_line("{");
+        printer->increase_indent();
+    }
 }
 
 
@@ -108,8 +121,10 @@ void CodegenAccVisitor::print_nrn_cur_matrix_shadow_reduction() {
  * End of print_kernel_enter_data_begin
  */
 void CodegenAccVisitor::print_kernel_data_present_annotation_block_end() {
-    printer->decrease_indent();
-    printer->add_line("}");
+    if (!info.artificial_cell) {
+        printer->decrease_indent();
+        printer->add_line("}");
+    }
 }
 
 
@@ -120,6 +135,19 @@ void CodegenAccVisitor::print_rhs_d_shadow_variables() {
 
 bool CodegenAccVisitor::nrn_cur_reduction_loop_required() {
     return false;
+}
+
+
+void CodegenAccVisitor::print_global_variable_device_create_annotation() {
+    if (!info.artificial_cell) {
+        printer->add_line("#pragma acc declare create ({}_global)"_format(info.mod_suffix));
+    }
+}
+
+void CodegenAccVisitor::print_global_variable_device_update_annotation() {
+    if (!info.artificial_cell) {
+        printer->add_line("#pragma acc update device ({}_global)"_format(info.mod_suffix));
+    }
 }
 
 }  // namespace codegen

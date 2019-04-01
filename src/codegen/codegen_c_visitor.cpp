@@ -1058,7 +1058,7 @@ void CodegenCVisitor::print_kernel_data_present_annotation_block_end() {
  *      for(int id = 0; id < nodecount; id++) {
  *
  */
-void CodegenCVisitor::print_channel_iteration_block_parallel_hint() {
+void CodegenCVisitor::print_channel_iteration_block_parallel_hint(BlockType type) {
     printer->add_line("#pragma ivdep");
 }
 
@@ -1080,8 +1080,8 @@ bool CodegenCVisitor::shadow_vector_setup_required() {
  * For CPU backend we iterate over all node counts. For cuda we use thread
  * index to check if block needs to be executed or not.
  */
-void CodegenCVisitor::print_channel_iteration_block_begin() {
-    print_channel_iteration_block_parallel_hint();
+void CodegenCVisitor::print_channel_iteration_block_begin(BlockType type) {
+    print_channel_iteration_block_parallel_hint(type);
     printer->start_block("for (int id = start; id < end; id++) ");
 }
 
@@ -2453,6 +2453,9 @@ void CodegenCVisitor::print_mechanism_global_var_structure() {
     printer->add_newline(1);
     printer->add_line("/** holds object of global variable */");
     printer->add_line("{} {}_global;"_format(global_struct(), info.mod_suffix));
+
+    /// create copy on the device
+    print_global_variable_device_create_annotation();
 }
 
 
@@ -2823,6 +2826,16 @@ void CodegenCVisitor::print_ion_variable() {
 }
 
 
+void CodegenCVisitor::print_global_variable_device_create_annotation() {
+    // nothing for cpu
+}
+
+
+void CodegenCVisitor::print_global_variable_device_update_annotation() {
+    // nothing for cpu
+}
+
+
 void CodegenCVisitor::print_global_variable_setup() {
     std::vector<std::string> allocated_variables;
 
@@ -2931,6 +2944,9 @@ void CodegenCVisitor::print_global_variable_setup() {
                 "{} = (double*) mem_alloc({}, sizeof(double));"_format(name, num_values));
         }
     }
+
+    /// update device copy
+    print_global_variable_device_update_annotation();
 
     printer->add_newline();
     printer->add_line("setup_done = 1;");
@@ -3185,7 +3201,7 @@ void CodegenCVisitor::print_nrn_init(bool skip_init_check) {
     }
 
     print_channel_iteration_tiling_block_begin(BlockType::Initial);
-    print_channel_iteration_block_begin();
+    print_channel_iteration_block_begin(BlockType::Initial);
 
     print_post_channel_iteration_common_code();
 
@@ -3279,7 +3295,7 @@ void CodegenCVisitor::print_watch_check() {
     printer->add_line("/** routine to check watch activation */");
     print_global_function_common_code(BlockType::Watch);
     print_channel_iteration_tiling_block_begin(BlockType::Watch);
-    print_channel_iteration_block_begin();
+    print_channel_iteration_block_begin(BlockType::Watch);
     print_post_channel_iteration_common_code();
 
     for (int i = 0; i < info.watch_statements.size(); i++) {
@@ -3795,7 +3811,7 @@ void CodegenCVisitor::print_nrn_state() {
     printer->add_line("/** update state */");
     print_global_function_common_code(BlockType::State);
     print_channel_iteration_tiling_block_begin(BlockType::State);
-    print_channel_iteration_block_begin();
+    print_channel_iteration_block_begin(BlockType::State);
     print_post_channel_iteration_common_code();
 
     printer->add_line("int node_id = node_index[id];");
@@ -3976,7 +3992,7 @@ void CodegenCVisitor::print_nrn_cur() {
     printer->add_line("/** update current */");
     print_global_function_common_code(BlockType::Equation);
     print_channel_iteration_tiling_block_begin(BlockType::Equation);
-    print_channel_iteration_block_begin();
+    print_channel_iteration_block_begin(BlockType::Equation);
     print_post_channel_iteration_common_code();
     print_nrn_cur_kernel(info.breakpoint_node);
     print_nrn_cur_matrix_shadow_update();

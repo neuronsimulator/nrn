@@ -359,17 +359,6 @@ int main(int argc, const char* argv[]) {
         {
             auto mem_layout = layout == "aos" ? codegen::LayoutType::aos : codegen::LayoutType::soa;
 
-            if (c_backend) {
-                logger->info("Running C backend code generator");
-                CodegenCVisitor visitor(modfile, output_dir, mem_layout, data_type);
-                visitor.visit_program(ast.get());
-            }
-
-            if (omp_backend) {
-                logger->info("Running OpenMP backend code generator");
-                CodegenOmpVisitor visitor(modfile, output_dir, mem_layout, data_type);
-                visitor.visit_program(ast.get());
-            }
 
             if (ispc_backend) {
                 logger->info("Running ISPC backend code generator");
@@ -377,9 +366,21 @@ int main(int argc, const char* argv[]) {
                 visitor.visit_program(ast.get());
             }
 
-            if (oacc_backend) {
+            else if (oacc_backend) {
                 logger->info("Running OpenACC backend code generator");
                 CodegenAccVisitor visitor(modfile, output_dir, mem_layout, data_type);
+                visitor.visit_program(ast.get());
+            }
+
+            else if (omp_backend) {
+                logger->info("Running OpenMP backend code generator");
+                CodegenOmpVisitor visitor(modfile, output_dir, mem_layout, data_type);
+                visitor.visit_program(ast.get());
+            }
+
+            else if (c_backend) {
+                logger->info("Running C backend code generator");
+                CodegenCVisitor visitor(modfile, output_dir, mem_layout, data_type);
                 visitor.visit_program(ast.get());
             }
 

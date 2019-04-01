@@ -680,6 +680,14 @@ class CodegenCVisitor: public AstVisitor {
     void print_global_variable_setup();
 
 
+    /// pragma annotation to create global variables on the device
+    virtual void print_global_variable_device_create_annotation();
+
+
+    /// pragma annotation to update global variables from host to the device
+    virtual void print_global_variable_device_update_annotation();
+
+
     /// setup method for allocation of shadow vectors
     void print_shadow_vector_setup();
 
@@ -729,7 +737,7 @@ class CodegenCVisitor: public AstVisitor {
 
 
     /// ivdep like annotation for channel iterations
-    virtual void print_channel_iteration_block_parallel_hint();
+    virtual void print_channel_iteration_block_parallel_hint(BlockType type);
 
 
     /// annotations like "acc enter data present(...)" for main kernel
@@ -741,7 +749,7 @@ class CodegenCVisitor: public AstVisitor {
 
 
     /// backend specific channel instance iteration block start
-    virtual void print_channel_iteration_block_begin();
+    virtual void print_channel_iteration_block_begin(BlockType type);
 
 
     /// backend specific channel instance iteration block end

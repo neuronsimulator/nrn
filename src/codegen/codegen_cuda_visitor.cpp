@@ -107,7 +107,7 @@ void CodegenCudaVisitor::print_nrn_cur_matrix_shadow_update() {
  * For GPU backend its thread id less than total channel instances. Below we
  * assume we launch 1-d grid.
  */
-void CodegenCudaVisitor::print_channel_iteration_block_begin() {
+void CodegenCudaVisitor::print_channel_iteration_block_begin(BlockType type) {
     printer->add_line("int id = blockIdx.x * blockDim.x + threadIdx.x;");
     printer->start_block("if (id < end) ");
 }

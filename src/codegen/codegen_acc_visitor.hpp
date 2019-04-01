@@ -28,7 +28,7 @@ class CodegenAccVisitor: public CodegenCVisitor {
 
 
     /// ivdep like annotation for channel iterations
-    void print_channel_iteration_block_parallel_hint() override;
+    void print_channel_iteration_block_parallel_hint(BlockType type) override;
 
 
     /// atomic update pragma for reduction statements
@@ -62,6 +62,12 @@ class CodegenAccVisitor: public CodegenCVisitor {
     /// if reduction block in nrn_cur required
     bool nrn_cur_reduction_loop_required() override;
 
+
+    /// create global variable on the device
+    void print_global_variable_device_create_annotation() override;
+
+    /// update global variable from host to the device
+    void print_global_variable_device_update_annotation() override;
 
   public:
     CodegenAccVisitor(std::string mod_file,

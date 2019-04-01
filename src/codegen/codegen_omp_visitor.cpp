@@ -72,7 +72,7 @@ void CodegenOmpVisitor::print_channel_iteration_tiling_block_end() {
  *      for(int id=0; id<nodecount; id++) {
  *
  */
-void CodegenOmpVisitor::print_channel_iteration_block_parallel_hint() {
+void CodegenOmpVisitor::print_channel_iteration_block_parallel_hint(BlockType type) {
     printer->add_line("#pragma omp simd");
 }
 
