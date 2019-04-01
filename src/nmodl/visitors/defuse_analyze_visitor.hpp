@@ -26,6 +26,8 @@ enum class DUState {
     U,
     /// global variable is defined
     D,
+    /// global variable is conditionally defined
+    CD,
     /// local variable is used
     LU,
     /// local variable is used

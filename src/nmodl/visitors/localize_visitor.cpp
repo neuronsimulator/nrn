@@ -99,10 +99,11 @@ std::vector<std::string> LocalizeVisitor::variables_to_optimize() {
 }
 
 void LocalizeVisitor::visit_program(ast::Program* node) {
-    /// symtab visitor pass must be run before
+    /// symtab visitor pass need to be run before
     program_symtab = node->get_symbol_table();
     if (program_symtab == nullptr) {
-        throw std::runtime_error("localizer error : program node doesn't have symbol table");
+        logger->warn("LocalizeVisitor :: symbol table is not setup, returning");
+        return;
     }
 
     auto variables = variables_to_optimize();
@@ -124,28 +125,34 @@ void LocalizeVisitor::visit_program(ast::Program* node) {
         /// variable then we can't localize the variable
         auto it = block_usage.find(DUState::U);
         if (it == block_usage.end()) {
-            /// all blocks that are using variable should get local variable
-            for (auto& block: block_usage[DUState::D]) {
-                auto block_ptr = dynamic_cast<ast::Block*>(block.get());
-                auto statement_block = block_ptr->get_statement_block();
-                ast::LocalVar* variable;
-                auto symbol = program_symtab->lookup(varname);
-                if (symbol->is_array()) {
-                    variable = add_local_variable(statement_block.get(), varname,
-                                                  symbol->get_length());
-                } else {
-                    variable = add_local_variable(statement_block.get(), varname);
+            logger->debug("LocalizeVisitor : localized variable {}", varname);
+
+            /// all blocks that are have either definition or conditional definition
+            /// need local variable
+            for (auto state: {DUState::D, DUState::CD}) {
+                for (auto& block: block_usage[state]) {
+                    auto block_ptr = dynamic_cast<ast::Block*>(block.get());
+                    auto statement_block = block_ptr->get_statement_block();
+                    ast::LocalVar* variable;
+                    auto symbol = program_symtab->lookup(varname);
+
+                    if (symbol->is_array()) {
+                        variable = add_local_variable(statement_block.get(), varname,
+                                                      symbol->get_length());
+                    } else {
+                        variable = add_local_variable(statement_block.get(), varname);
+                    }
+
+                    /// mark variable as localized in global symbol table
+                    symbol->mark_localized();
+
+                    /// insert new symbol in the symbol table of current block
+                    auto symtab = statement_block->get_symbol_table();
+                    auto new_symbol = std::make_shared<Symbol>(varname, variable);
+                    new_symbol->add_property(NmodlType::local_var);
+                    new_symbol->mark_created();
+                    symtab->insert(new_symbol);
                 }
-
-                /// mark variable as localized in global symbol table
-                symbol->mark_localized();
-
-                /// insert new symbol into symbol table
-                auto symtab = statement_block->get_symbol_table();
-                auto new_symbol = std::make_shared<Symbol>(varname, variable);
-                new_symbol->add_property(NmodlType::local_var);
-                new_symbol->mark_created();
-                symtab->insert(new_symbol);
             }
         }
     }

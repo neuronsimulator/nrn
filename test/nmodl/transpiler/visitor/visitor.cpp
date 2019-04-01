@@ -1399,7 +1399,7 @@ SCENARIO("Running defuse analyzer") {
             std::string input = reindent_text(nmodl_text);
             auto chains = run_defuse_visitor(input, "tau");
             REQUIRE(chains[0].to_string() == expected_text);
-            REQUIRE(chains[0].eval() == DUState::NONE);
+            REQUIRE(chains[0].eval() == DUState::CD);
         }
     }
 
@@ -1455,6 +1455,34 @@ SCENARIO("Running defuse analyzer") {
         }
     }
 
+    GIVEN("conditional definition in nested block") {
+        std::string nmodl_text = R"(
+            NEURON {
+                RANGE tau, beta
+            }
+
+            DERIVATIVE states {
+                IF (1) {
+                    IF(11) {
+                        tau = 11.1
+                        exp(tau)
+                    }
+                } ELSE IF(1) {
+                    tau = 1
+                }
+            }
+        )";
+
+        std::string expected_text =
+            R"({"DerivativeBlock":[{"CONDITIONAL_BLOCK":[{"IF":[{"CONDITIONAL_BLOCK":[{"IF":[{"name":"D"},{"name":"U"}]}]}]},{"ELSEIF":[{"name":"D"}]}]}]})";
+
+        THEN("Def-Use chains should return DEF") {
+            std::string input = reindent_text(nmodl_text);
+            auto chains = run_defuse_visitor(input, "tau");
+            REQUIRE(chains[0].to_string() == expected_text);
+            REQUIRE(chains[0].eval() == DUState::CD);
+        }
+    }
 
     GIVEN("global variable usage in if-elseif-else block") {
         std::string nmodl_text = R"(

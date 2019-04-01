@@ -13,6 +13,7 @@
 #include "ast/ast.hpp"
 #include "printer/json_printer.hpp"
 #include "symtab/symbol_table.hpp"
+#include "utils/logger.hpp"
 #include "visitors/ast_visitor.hpp"
 #include "visitors/local_var_rename_visitor.hpp"
 #include "visitors/rename_visitor.hpp"
@@ -70,14 +71,6 @@ namespace nmodl {
  *   - We are excluding procedures/functions because they will be still using global
  *     variables. We need to have dead-code removal pass to eliminate unused procedures/
  *     functions before localizer pass.
- *   - For conditional block like below we are returning usage as NONE. May be better to
- *     return COND_D so that localizer can declare tau as LOCAL (this is artificial use
- *     case though) :
- *          BREAKPOINT {
- *              IF (1) {
- *                  tau = 11
- *              }
- *          }
  */
 
 class LocalizeVisitor: public AstVisitor {

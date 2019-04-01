@@ -21,6 +21,8 @@ std::string to_string(DUState state) {
         return "U";
     case DUState::D:
         return "D";
+    case DUState::CD:
+        return "CD";
     case DUState::LU:
         return "LU";
     case DUState::LD:
@@ -88,35 +90,43 @@ DUState DUInstance::sub_block_eval() {
             result = child_state;
             break;
         }
+        if (child_state == DUState::CD) {
+            result = DUState::CD;
+        }
     }
     return result;
 }
 
-/** Evaluate conditional block that contain sub-blocks like if, elseif and else.
- *  Note that sub-blocks are already evaluated by sub_block_eval() and has only
- *  single value. In order to find effective usage, we are using following rules:
- *  - If variable is "used" in any of the sub-block then it's effectively
- *    "U". This is because any branch can be taken.
- *  - If variable is "defined" in all sub-blocks doesn't mean that it's
- *      effectively "D". This is because if we can just have "if-elseif"
- *      which could be never be taken. Same for empty "if". In order to
- *      decide if it is "D", we make sure there is no empty block and there
- *      must be "else" block with "D". Note that "U" definitions are already
- *      covered in 1) and hence this rule is safe.
- *  - If there is an "if" with "D" or empty "if" followed by "D" in "else"
- *      block, we can't say it's definition. In this case we return "NONE"
- *      which is safe.
- *  - If there is empty "if" followed by "U" in "else" block, we can say
- *      it's "use". This is because for optimizations we don't want to "localize"
- *      this type of variable. This needs to be changed.
+/**
+ * Evaluate conditional block containing sub-blocks like if, elseif and else
  *
- *  \todo: Need to introduce new states like "conditional definition" to make that
- *         the variable is "can be" definition. And then we have to return appropriate
- *         state so that more analysis can be enabled.
+ * Note that sub-blocks are already evaluated by sub_block_eval() and has only
+ * leaf nodes. In order to find effective defuse, following rules are used:
+ *
+ *  - If variable is "used" in any of the sub-block then it's effectively
+ *    "U". This is because any branch can be taken at runtime.
+ *
+ *  - If variable is "defined" in all sub-blocks doesn't mean that it's
+ *    effectively "D". This is because if we can have just "if-elseif"
+ *    which could never be taken. Same for empty "if". In order to decide
+ *    if it is "D", we make sure there is no empty block and there must
+ *    be "else" block with "D". Note that "U" definitions are already
+ *    covered in 1) and hence this rule is safe.
+ *
+ *  - If there is an "if" with "D" or empty "if" followed by "D" in "else"
+ *    block, we can't say it's definition. In this case we return "CD".
+ *
+ *  - If there is empty "if" followed by "U" in "else" block, we can say
+ *    it's "use". This is because we don't want to "localize" such variables.
+ *
+ *  - If we reach else block with either D or CD and if there is no empty
+ *    block encountered, this means every block has either "D" or "CD". In
+ *    this case we can say that entire block effectively has "D".
  */
 DUState DUInstance::conditional_block_eval() {
     DUState result = DUState::NONE;
     bool block_with_none = false;
+    bool block_non_def_cdef = false;
 
     for (auto& chain: children) {
         auto child_state = chain.eval();
@@ -127,13 +137,12 @@ DUState DUInstance::conditional_block_eval() {
         if (child_state == DUState::NONE) {
             block_with_none = true;
         }
-        if (chain.state == DUState::ELSE && child_state == DUState::D) {
-            if (block_with_none) {
-                result = DUState::NONE;
-            } else {
-                result = child_state;
+        if (child_state == DUState::D || child_state == DUState::CD) {
+            result = DUState::CD;
+            if (chain.state == DUState::ELSE && !block_with_none) {
+                result = DUState::D;
+                break;
             }
-            break;
         }
     }
     return result;
@@ -162,6 +171,9 @@ DUState DUChain::eval() {
         if (re == DUState::U || re == DUState::D) {
             result = re;
             break;
+        }
+        if (re == DUState::CD) {
+            result = re;
         }
     }
     return result;
