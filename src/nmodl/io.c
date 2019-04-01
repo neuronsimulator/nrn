@@ -127,11 +127,13 @@ char* Fgets(buf, size, f) char* buf; int size; FILE* f; {
 			if (!in_comment_) {
 				diag("Non-Ascii character in file:", buf);
 			}
+			lappendstr(filetxtlist, buf);
 			return buf;
 		}
 		*p++ = c;
 		if (c == '\n') {
 			*p = '\0';
+			lappendstr(filetxtlist, buf);
 			return buf;
 		}			
 	}
@@ -351,6 +353,7 @@ static FILE* include_open(fname, err)
 	}
 	sprintf(buf, "../%s", fname); /* Next try next dir up. */
 	if ((f = fopen(buf, "r")) != NULL)
+	  strcpy(fname, buf);
 	  return f;
 
 	if (err) fprintf(stderr, "Couldn't open: %s\n", fname);
@@ -386,7 +389,9 @@ static FILE* include_open(fname, err)
 void include_file(q)
 	Item* q;
 {
+	char* pf = NULL;
 	char fname[NRN_BUFSIZE];
+	Item* qinc;
 	FileStackItem* fsi;
 	if (!filestack) {
 		filestack = newlist();
@@ -402,17 +407,31 @@ void include_file(q)
 	fsi->fp = fin;
 	strcpy(fsi->finname, finname);
 
+	strcpy(finname, fname);
 	if ((fin = include_open(fname, 0)) == (FILE*)0) {
 		include_open(fname, 1);
 		diag("Couldn't open ", fname);
 	}
 	fprintf(stderr, "INCLUDEing %s\n", fname);
-	strcpy(finname, fname);
 	ctp = (char*)0;
 	linenum = 0;
+
+	qinc = filetxtlist->prev;
+	sprintf(buf, ":::%s", STR(qinc));
+        replacstr(qinc, buf);
+#if HAVE_REALPATH
+	pf = realpath(fname, NULL);
+#endif
+	if (pf) {
+		sprintf(buf, ":::realpath %s\n", pf);
+		free(pf);
+		lappendstr(filetxtlist, buf);
+	}
 }
 
 static void pop_file_stack() {
+	sprintf(buf, ":::end INCLUDE %s\n", finname);
+	lappendstr(filetxtlist, buf);
 	FileStackItem* fsi;
 	fsi = (FileStackItem*)(SYM(filestack->prev));
 	delete(filestack->prev);	
