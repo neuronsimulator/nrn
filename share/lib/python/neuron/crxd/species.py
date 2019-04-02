@@ -154,8 +154,7 @@ class _SpeciesMathable(object):
 
     @property
     def d(self):
-        """diffusion constant. write-only"""
-        raise RxDException('diffusion constant is write-only')
+        return self._d
     
     @d.setter
     def d(self, value):
