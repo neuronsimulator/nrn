@@ -497,17 +497,20 @@ class Node3D(Node):
         self._speciesref = speciesref
         self._data_type = data_type
 
-        _point_indices[(i,j,k)] = index
+        if self._r in _point_indices:
+            _point_indices[self._r][(self._i,self._j,self._k)] = self._index
+        else:
+            _point_indices[self._r] = {}
 
     def _find_neighbors(self):
-        pos_x_neighbor = _point_indices.get((self._i + 1, self._j, self. _k))
-        neg_x_neighbor = _point_indices.get((self._i - 1, self._j, self. _k))
-        pos_y_neighbor = _point_indices.get((self._i, self._j + 1, self. _k))
-        neg_y_neighbor = _point_indices.get((self._i, self._j - 1, self. _k))
-        pos_z_neighbor = _point_indices.get((self._i, self._j, self. _k + 1))
-        neg_z_neighbor = _point_indices.get((self._i, self._j, self. _k - 1))
+        self._pos_x_neighbor = _point_indices[self._r].get((self._i + 1, self._j, self. _k))
+        self._neg_x_neighbor = _point_indices[self._r].get((self._i - 1, self._j, self. _k))
+        self._pos_y_neighbor = _point_indices[self._r].get((self._i, self._j + 1, self. _k))
+        self._neg_y_neighbor = _point_indices[self._r].get((self._i, self._j - 1, self. _k))
+        self._pos_z_neighbor = _point_indices[self._r].get((self._i, self._j, self. _k + 1))
+        self._neg_z_neighbor = _point_indices[self._r].get((self._i, self._j, self. _k - 1))
 
-        self._neighbors = (pos_x_neighbor, neg_x_neighbor, pos_y_neighbor, neg_y_neighbor, pos_z_neighbor, neg_z_neighbor)
+        self._neighbors = (self._pos_x_neighbor, self._neg_x_neighbor, self._pos_y_neighbor, self._neg_y_neighbor, self._pos_z_neighbor, self._neg_z_neighbor)
 
         return self._neighbors
 

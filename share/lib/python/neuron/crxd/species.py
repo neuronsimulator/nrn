@@ -422,14 +422,13 @@ class _IntracellularSpecies(_SpeciesMathable):
         self._charge = charge
         self._dx = region.dx
         self._d = d
-        self._nodes_length = len(region._xs)
+        self._nodes_length = len(self._region._xs)
         self._states = h.Vector(self._nodes_length)
         self.neighbors = self.create_neighbors_array(nodes, self._nodes_length).reshape(3*self._nodes_length)
         self._initial = initial
         self.states = self._states.as_numpy()
         self._nodes = nodes
-        #for i in range(201,400):
-        #    self.states[i] = .5
+        print("nodes_length = {} and len(self._nodes) = {}".format(self._nodes_length, len(self._nodes)))
 
         self._x_line_defs = self.line_defs(self._nodes, 'x', self._nodes_length)
         self._y_line_defs = self.line_defs(self._nodes, 'y', self._nodes_length)
@@ -460,7 +459,9 @@ class _IntracellularSpecies(_SpeciesMathable):
                 node = nodes[line_start]
                 while (node.neighbors[my_dir] is not None) and indices:
                     to_remove = node._neighbors[my_dir]
+                    #print("my_dir  = {}, to_remove = {}, name is {}, and region is {}".format(my_dir, to_remove, self._species, self._region))
                     node = nodes[to_remove]
+                    #print("node index now = {}".format(node._index))
                     indices.remove(to_remove)
                     line_length += 1
 

@@ -127,9 +127,13 @@ class Reaction(GeneralizedReaction):
                 ecs_region = sps[0]._extracellular_instances[0]._region
         
         if ecs_region:
-            self._rate_ecs, self._involved_species_ecs = rxdmath._compile(rate, extracellular=ecs_region)
+            self._rate_ecs, self._involved_species_ecs = rxdmath._compile(rate, ecs_region)
         
-        self._rate, self._involved_species = rxdmath._compile(rate, extracellular=None)
+        #TODO ask about this -> Grab region from regions species in _dest are defined on. I think if we have a species defined on dest its sources must also be defined on that region
+        for sptr in self._dests:
+            s = sptr() if isinstance(sptr(), species.Species) else sptr()._species()
+            self._react_regions = [reg for reg in s._regions]
+        self._rate, self._involved_species = rxdmath._compile(rate, self._react_regions)
 
         #Species are in at most one region
         trans_membrane = len({s()._region() for s in self._involved_species if isinstance(s(), species.SpeciesOnRegion)}) + len({s()._extracellular() for s in self._involved_species if isinstance(s(), species.SpeciesOnExtracellular)}) > 1 

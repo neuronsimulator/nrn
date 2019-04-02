@@ -951,7 +951,7 @@ def _compile_reactions():
     for sets in matched_regions:
         c_region_list.append(_c_region(sets))
     
-    print("_all_reactions = {}".format(_all_reactions))
+    print("c_region_list = {}".format(c_region_list))
     for rptr in _all_reactions:
         r = rptr()
         if not r:
@@ -1038,8 +1038,7 @@ def _compile_reactions():
                     s = sp()
                     ecs_all_species_involed.add(s)
                     ecs_species_involved.append(s)
-                if any([isinstance(x, region.Region) for x in react_regions]):
-                    raise RxDException("Error: an %s cannot have both Extracellular and Intracellular regions. Use a MultiCompartmentReaction or specify the desired region with the 'region=' keyword argument", rptr().__class__)
+
                 for reg in react_regions:
                     if not isinstance(reg, region.Extracellular):
                         continue
@@ -1163,13 +1162,14 @@ def _compile_reactions():
     if testing_condition:
         if regions_inv:
             for reg in regions_inv:
-                all_ics_gids = set()
-            for reg in regions_inv:
                 ics_grid_ids = []
                 all_ics_gids = set()
                 fxn_string = _c_headers
                 fxn_string += 'void reaction(double* species_ics, double*rhs)\n{'
-                sbr = [s for s in species_by_region[reg]]
+                for rptr in [r for rlist in list(regions_inv.values()) for r in rlist]:
+                    if not isinstance(rptr(),rate.Rate):
+                        fxn_string += '\n\tdouble rate;'
+                        break
                 for s in species_by_region[reg]:
                     ###TODO is this correct? are there any other cases I should worry about? Do I always make a species the intracellular instance for the region we are looping through?
                     sp = s._species()._intracellular_instances[s._region()] if isinstance(s,species.SpeciesOnRegion) else s._intracellular_instances[reg]
@@ -1189,6 +1189,25 @@ def _compile_reactions():
                             ics_grid_ids.append(s._grid_id)
                         pid = [pid for pid,gid in enumerate(all_ics_gids) if gid == s._grid_id][0]
                         fxn_string += "\n\trhs[%d] %s %s;" % (pid, operator, rate_str)
+                    else:
+                        idx = 0
+                        fxn_string += "\n\trate = %s;" %  rate_str
+                        for sp in r._sources + r._dests:
+                            s = sp()
+                            print("s is {} and is of type {}".format(s, type(s)))
+                            #Get underlying rxd._IntracellularSpecies for the grid_id
+                            if isinstance(s, species.Species):
+                                s = s._intracellular_instances[reg]
+                            elif isinstance(s, species.SpeciesOnRegion):
+                                s = s._species()._intracellular_instances[reg]
+                            if s._grid_id in ics_grid_ids:
+                                operator = '+=' 
+                            else:
+                                operator = '='
+                                ics_grid_ids.append(s._grid_id)
+                            pid = [pid for pid,gid in enumerate(all_ics_gids) if gid == s._grid_id][0]
+                            fxn_string += "\n\trhs[%d] %s (%s)*rate;" % (pid, operator, r._mult[idx])
+                            idx += 1                        
                 fxn_string += "\n}\n"
                 ecs_register_reaction(0, len(all_ics_gids), _list_to_cint_array(all_ics_gids), _c_compile(fxn_string))                 
     #Setup extracellular reactions
@@ -1208,17 +1227,12 @@ def _compile_reactions():
                     fxn_string += '\n\tdouble rate;'
                     break
             #get a list of all grid_ids involved
-            print("Region: {}".format(reg))
             for s in ecs_species_by_region[reg]:
                 sp = s[reg] if isinstance(s, species.Species) else s
-                print("Species type: {}".format(type(sp)))
                 all_gids.add(sp._extracellular()._grid_id if isinstance(sp, species.SpeciesOnExtracellular) else sp._grid_id)
-            print("Grid IDs on region: {}".format(all_gids))
             all_gids = list(all_gids)
             for rptr in ecs_regions_inv[reg]:
                 r = rptr()
-                print("(pid,gid) = {}".format([(pid,gid) for pid,gid in enumerate(all_gids)]))
-                print("rate = {}".format(r._rate))
                 rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_ecs[%i]" %  [pid for pid,gid in enumerate(all_gids) if gid == int(m.groups()[0])][0], r._rate)
                 if isinstance(r,rate.Rate):
                     s = r._species()
