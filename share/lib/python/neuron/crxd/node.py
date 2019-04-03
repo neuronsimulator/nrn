@@ -497,10 +497,8 @@ class Node3D(Node):
         self._speciesref = speciesref
         self._data_type = data_type
 
-        if self._r in _point_indices:
-            _point_indices[self._r][(self._i,self._j,self._k)] = self._index
-        else:
-            _point_indices[self._r] = {}
+        _point_indices.setdefault(self._r, {})
+        _point_indices[self._r][(self._i,self._j,self._k)] = self._index
 
     def _find_neighbors(self):
         self._pos_x_neighbor = _point_indices[self._r].get((self._i + 1, self._j, self. _k))

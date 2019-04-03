@@ -186,6 +186,11 @@ Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors
     new_Grid->current_list = NULL;
     new_Grid->num_currents = 0;
 
+    new_Grid->ics_nodes_per_seg = NULL;
+    new_Grid->ics_nodes_per_seg_start_indices = NULL;
+    new_Grid->ics_seg_ptrs = NULL;
+    new_Grid->ics_num_segs = NULL;
+
     #if NRNMPI
         if(nrnmpi_use)
         {
@@ -301,6 +306,38 @@ int set_diffusion(int grid_list_index, int grid_id, double dc_x, double dc_y, do
     node->dc_z = dc_z;
     return 0;
 }
+
+extern "C" void ics_set_grid_concentrations(int grid_list_index, int index_in_list, int64_t* nodes_per_seg, int64_t* nodes_per_seg_start_indices, PyObject* neuron_pointers) {
+    Grid_node* g;
+    ssize_t i;
+    ssize_t j;
+    ssize_t num_nodes;
+    ssize_t n = (ssize_t)PyList_Size(neuron_pointers);  //number of segments. nodes_per_seg should have the same length as neuron_pointers
+                                                        
+    int total_nodes = nodes_per_seg_start_indices[n];   //nodes_per_seg_lengths has length n + 1 since it has a 0 as the first start index
+
+    /* Find the Grid Object */
+    g = Parallel_grids[grid_list_index];
+    for (i = 0; i < index_in_list; i++) {
+        g = g->next;
+    }
+
+    g->ics_nodes_per_seg = (int64_t*)malloc(total_nodes*sizeof(int64_t));
+    g->ics_nodes_per_seg = nodes_per_seg;
+
+    g->ics_nodes_per_seg_start_indices = (int64_t*)malloc(n*sizeof(int64_t));
+    g->ics_nodes_per_seg_start_indices = nodes_per_seg_start_indices;
+
+    g->ics_seg_ptrs = (double**)malloc(n*sizeof(double*));
+    for(i = 0; i < n; i++){
+        g->ics_seg_ptrs[i] = ((PyHocObject*) PyList_GET_ITEM(neuron_pointers, i)) -> u.px_;
+    }
+
+    g->ics_num_segs = n;
+
+}
+
+
 
 /* TODO: make this work with Grid_node ptrs instead of pairs of list indices */
 extern "C" void set_grid_concentrations(int grid_list_index, int index_in_list, PyObject* grid_indices, PyObject* neuron_pointers) {
@@ -965,7 +1002,26 @@ int ICS_Grid_node::dg_adi()
 
 void ICS_Grid_node::scatter_grid_concentrations()
 {
-    //printf("Scattering ics concentrations\n");
+    ssize_t i, j, n;
+    double* my_states;
+    double total_seg_concentration;  
+    double average_seg_concentration;
+    int seg_start_index, seg_stop_index;
+
+    my_states = states;
+    n = ics_num_segs;
+
+    for (i = 0; i < n; i++) {
+        total_seg_concentration = 0.0;
+        seg_start_index = ics_nodes_per_seg_start_indices[i];
+        seg_stop_index = ics_nodes_per_seg_start_indices[i+1];
+        for(j = seg_start_index; j < seg_stop_index; j++){
+            total_seg_concentration += states[ics_nodes_per_seg[j]];
+        }
+        average_seg_concentration = total_seg_concentration / (seg_stop_index - seg_start_index);
+
+        *ics_seg_ptrs[i] = average_seg_concentration;
+    } 
 }
 
 // Free a single Grid_node

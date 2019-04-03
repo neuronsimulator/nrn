@@ -55,6 +55,9 @@ species_atolscale.argtypes = [ctypes.c_int, ctypes.c_double, ctypes.c_int, ctype
 _set_grid_concentrations = nrn_dll_sym('set_grid_concentrations')
 _set_grid_concentrations.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.py_object, ctypes.py_object]
 
+_ics_set_grid_concentrations = nrn_dll_sym('ics_set_grid_concentrations')
+_ics_set_grid_concentrations.argtypes = [ctypes.c_int, ctypes.c_int, numpy.ctypeslib.ndpointer(dtype=numpy.int64), numpy.ctypeslib.ndpointer(dtype=numpy.int64), ctypes.py_object]
+
 _set_grid_currents = nrn_dll_sym('set_grid_currents')
 _set_grid_currents.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.py_object, ctypes.py_object, ctypes.py_object]
 
@@ -361,8 +364,11 @@ class SpeciesOnRegion(_SpeciesMathable):
     def _semi_compile(self, reg):
         #Never an _ExtracellularSpecies since we are in SpeciesOnRegion
         reg = self._region()
-        ics_instance = self._species()._intracellular_instances[reg]
-        return ics_instance._semi_compile(reg)
+        if reg._secs3d:
+            ics_instance = self._species()._intracellular_instances[reg]
+            return ics_instance._semi_compile(reg)
+        elif reg._secs1d:
+            return 'species[%d][%d]' % (self._id, self._region()._id)
 
     @property
     def _id(self):
@@ -443,6 +449,8 @@ class _IntracellularSpecies(_SpeciesMathable):
                                     self._x_line_defs, len(self._x_line_defs), self._y_line_defs, 
                                     len(self._y_line_defs), self._z_line_defs, len(self._z_line_defs),
                                     self._d, self._dx)
+  
+        self._update_pointers()
     
     #Line Definitions for each direction
     def line_defs(self, nodes, direction, nodes_length):
@@ -495,10 +503,35 @@ class _IntracellularSpecies(_SpeciesMathable):
         return my_array
 
     def _finitialize(self):
-        # Updated - now it will initialize using NodeExtracellular
+        # Updated - now it will initialize using Node3D
         # TODO: support more complicated initializations than just constants
         if self._initial is None:
             self.states[:] = 0
+
+    def _update_pointers(self): 
+        self._seg_to_nodes = self._region._surface_nodes_by_seg
+        grid_list_start = 0
+        if self._nodes:
+            nrn_region = self._region._nrn_region
+            if nrn_region:
+                print("made it here!")
+                if(nrn_region != 'i'):
+                    raise RxDException('only "i" nrn_region supported for 3D simulations')
+                    #TODO remove this. Only have it for simplicity right now
+                
+                ion = '_ref_' + self._name + 'i'
+                self._neuron_pointers = [seg.__getattribute__(ion) for seg in self._seg_to_nodes.keys()]
+                self._nodes_per_seg = [nodes for nodes in self._seg_to_nodes.values()]
+                self._nodes_per_seg_start_indices = [len(nodes) for nodes in self._nodes_per_seg]
+                
+                #cast to numpy arrays to avoid calling PyList_GET_ITEM on every element
+                self._nodes_per_seg = list(itertools.chain.from_iterable(self._nodes_per_seg))
+                self._nodes_per_seg = numpy.asarray(self._nodes_per_seg, dtype=numpy.int64)
+
+                print("self._nodes_per_seg = {}".format(self._nodes_per_seg))
+                self._nodes_per_seg_start_indices = numpy.cumsum([0] + self._nodes_per_seg_start_indices, dtype=numpy.int64)
+                print("self._nodes_per_seg = {}".format(self._nodes_per_seg_start_indices))
+                _ics_set_grid_concentrations(grid_list_start, self._grid_id, self._nodes_per_seg, self._nodes_per_seg_start_indices, self._neuron_pointers)
 
     def _semi_compile(self, region):
         return 'species_3d[%d]' % (self._grid_id)

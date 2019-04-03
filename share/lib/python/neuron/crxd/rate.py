@@ -113,7 +113,7 @@ class Rate(GeneralizedReaction):
         
         # locate the regions containing all species (including the one that changes)
         active_regions = list(set.intersection(*[set(sptr()._regions + sptr()._extracellular_regions if isinstance(sptr(),species.Species) else [sptr()._region() if isinstance(sptr(),species.SpeciesOnRegion) else sptr()._extracellular()]) for sptr in list(self._involved_species) + [self._species]]))
-        sp_regions = self._species()._regions + self._species()._extracellular_regions if isinstance(self._species(),species.Species) else [sptr()._region() if isinstance(sptr(),species.SpeciesOnRegion) else sptr()._extracellular()]
+        sp_regions = self._species()._regions + self._species()._extracellular_regions if isinstance(self._species(),species.Species) else [sptr()._region() if isinstance(sptr(),species.SpeciesOnRegion) else sptr()._extracellular()]        
         actr = sp_regions
         if self._regions != [None]:
             specified_regions = list(set.intersection(set(self._regions), set(sp_regions)))
