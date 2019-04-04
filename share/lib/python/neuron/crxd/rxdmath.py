@@ -114,9 +114,9 @@ class _Function:
             return '%s(%s)' % (self._fname, self._obj._short_repr())
         except:
             return self.__repr__()
-    @property
-    def _semi_compile(self):
-        return '%s(%s)' % (self._fname, self._obj._semi_compile)
+    
+    def _semi_compile(self, region):
+        return '%s(%s)' % (self._fname, self._obj._semi_compile(region))
     def _involved_species(self, the_dict):
         self._obj._involved_species(the_dict)
 
@@ -144,9 +144,9 @@ class _Function2:
             return '%s(%s, %s)' % (self._fname, self._obj1._short_repr(), self._obj2._short_repr())
         except:
             return self.__repr__()
-    @property
-    def _semi_compile(self):
-        return '%s(%s, %s)' % (self._fname, self._obj1._semi_compile, self._obj2._semi_compile)
+ 
+    def _semi_compile(self, region):
+        return '%s(%s, %s)' % (self._fname, self._obj1._semi_compile(region), self._obj2._semi_compile(region))
     def _involved_species(self, the_dict):
         self._obj1._involved_species(the_dict)
         self._obj2._involved_species(the_dict)
@@ -468,6 +468,7 @@ class _Arithmeticed:
         for item, count in zip(list(self._items.keys()), list(self._items.values())):
             if count:
                 try:
+                    print("item is {} and type is {}".format(item, type(item)))
                     items_append(item._semi_compile(region))
                 except AttributeError:
                     items_append('%s' % item)
