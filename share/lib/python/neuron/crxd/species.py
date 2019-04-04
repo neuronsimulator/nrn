@@ -502,14 +502,25 @@ class _IntracellularSpecies(_SpeciesMathable):
                 my_array[n._index, i] = ele if ele is not None else -1
         return my_array
 
+    def _import_concentration(self):
+        ion = '_ref_' + self._name + self._region._nrn_region
+        for seg, nodes in self._region._nodes_by_seg.items():
+            segptr = seg.__getattribute__(ion)
+            value = segptr[0]
+            for node in nodes:
+                self._nodes[node].concentration = value
+
     def _finitialize(self):
         # Updated - now it will initialize using Node3D
         # TODO: support more complicated initializations than just constants
         if self._initial is None:
-            self.states[:] = 0
+            if self._region._nrn_region:
+                self._import_concentration()
+            else:
+                self.states[:] = 0
 
     def _update_pointers(self): 
-        self._seg_to_nodes = self._region._surface_nodes_by_seg
+        self._seg_to_surface_nodes = self._region._surface_nodes_by_seg
         grid_list_start = 0
         if self._nodes:
             nrn_region = self._region._nrn_region
@@ -520,17 +531,16 @@ class _IntracellularSpecies(_SpeciesMathable):
                     #TODO remove this. Only have it for simplicity right now
                 
                 ion = '_ref_' + self._name + 'i'
-                self._neuron_pointers = [seg.__getattribute__(ion) for seg in self._seg_to_nodes.keys()]
-                self._nodes_per_seg = [nodes for nodes in self._seg_to_nodes.values()]
+                self._neuron_pointers = [seg.__getattribute__(ion) for seg in self._seg_to_surface_nodes.keys()]
+                self._nodes_per_seg = [nodes for nodes in self._seg_to_surface_nodes.values()]
                 self._nodes_per_seg_start_indices = [len(nodes) for nodes in self._nodes_per_seg]
                 
                 #cast to numpy arrays to avoid calling PyList_GET_ITEM on every element
                 self._nodes_per_seg = list(itertools.chain.from_iterable(self._nodes_per_seg))
                 self._nodes_per_seg = numpy.asarray(self._nodes_per_seg, dtype=numpy.int64)
 
-                print("self._nodes_per_seg = {}".format(self._nodes_per_seg))
                 self._nodes_per_seg_start_indices = numpy.cumsum([0] + self._nodes_per_seg_start_indices, dtype=numpy.int64)
-                print("self._nodes_per_seg = {}".format(self._nodes_per_seg_start_indices))
+
                 _ics_set_grid_concentrations(grid_list_start, self._grid_id, self._nodes_per_seg, self._nodes_per_seg_start_indices, self._neuron_pointers)
 
     def _semi_compile(self, region):
@@ -1257,9 +1267,12 @@ class Species(_SpeciesMathable):
     
     
     def _finitialize(self, skip_transfer=False):
-        if hasattr(self,'_extracellular_instances'):
-            for r in self._extracellular_regions:
+        if self._extracellular_instances:
+            for r in self._extracellular_instances.keys():
                 self._extracellular_instances[r]._finitialize()
+        if self._intracellular_instances:
+            for r in self._intracellular_instances.keys():
+                self._intracellular_instances[r]._finitialize()
         if self.initial is not None:
             if isinstance(self.initial, collections.Callable):
                 for node in self.nodes:
