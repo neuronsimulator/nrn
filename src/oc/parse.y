@@ -438,8 +438,16 @@ if (0){YYERROR;}
 		{ $$ = $2; code(sec_access);}
 	| ACCESSKEYWORD ob
 		{ $$ = $2; hoc_ob_check(SECTION); code(sec_access_object);}
-	| INSERTKEYWORD MECHANISM
-		{ $$ = Code(mech_access); codesym($2);}
+	| INSERTKEYWORD anyname
+		{ Symbol* s = $2;
+			$$ = Code(mech_access);
+			if (s->type != MECHANISM) {
+				s = hoc_table_lookup(s->name, hoc_built_in_symlist);
+				if (!s || s->type != MECHANISM) {
+					acterror($2->name, "is not a MECHANISM");
+				}
+			}
+			codesym(s);}
 	| UNINSERTKEYWORD MECHANISM
 		{ $$ = Code(mech_uninsert); codesym($2);}
 	| section stmt
