@@ -28,8 +28,10 @@ from .plugins import set_solver
 # from geometry import ConstantArea, ConstantVolume
 # TODO: if we ever separate Parameter and State from species, then we need to
 #       rembember to call rxd._do_nbs_register()
-Parameter = Species
-State = Species
+class Parameter(Species):
+    pass
+class State(Species):
+    pass
 
 def _model_view(tree):
     from . import species
