@@ -68,8 +68,8 @@ typedef struct ICSReactions {
 
     /*ECS for MultiCompartment reactions*/
     int num_ecs_species;
-    double**** ecs_state;    /*[segment][ecs_species][region]*/
-    int*** ecs_index;
+    double*** ecs_state;    /*[segment][ecs_species]*/
+    int** ecs_index;
     int ecsN;    /*total number of ecs species*regions per segment*/
     
     int num_mult;

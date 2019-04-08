@@ -106,7 +106,7 @@ class _c_region:
         return ret
     def _ecs_initalize(self):
         from . import species
-        self.ecs_location_index = -numpy.ones((self.num_regions,self.num_ecs_species,self.num_segments),ctypes.c_int)
+        self.ecs_location_index = -numpy.ones((self.num_ecs_species,self.num_segments),ctypes.c_int)
 
         #Set the local ids of the regions and species involved in the reactions
         self._ecs_species_ids = dict()
@@ -114,14 +114,13 @@ class _c_region:
             self._ecs_species_ids[sid]= s()._grid_id
 
         #Setup the matrix to the ECS grid points
-        for rid,r in zip(list(range(self.num_regions)), self._regions):
-            for sid, s in zip(list(range(self.num_ecs_species)), self._ecs_react_species):
-                seg_idx = 0
-                for sec in self._overlap:
-                       for seg in sec:
-                        (x,y,z) = species._xyz(seg)
-                        self.ecs_location_index[rid][sid][seg_idx] = s().index_from_xyz(x,y,z)
-                        seg_idx+=1
+        for sid, s in zip(list(range(self.num_ecs_species)), self._ecs_react_species):
+            seg_idx = 0
+            for sec in self._overlap:
+                for seg in sec:
+                    (x,y,z) = species._xyz(seg)
+                    self.ecs_location_index[sid][seg_idx] = s().index_from_xyz(x,y,z)
+                    seg_idx+=1
         self.ecs_location_index = self.ecs_location_index.transpose()
 
     def _initalize(self):

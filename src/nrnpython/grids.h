@@ -72,7 +72,7 @@ typedef struct {
     double scale_factor;
 } Current_Triple;
 
-typedef void (*ReactionRate)(double**, double**, double*, double**, double**, double**);
+typedef void (*ReactionRate)(double**, double**, double*, double*, double*, double**);
 typedef void (*ECSReactionRate)(double*, double*);
 typedef struct Reaction {
 	struct Reaction* next;

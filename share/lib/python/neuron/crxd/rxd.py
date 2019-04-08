@@ -1075,7 +1075,7 @@ def _compile_reactions():
             flux_ids_used = numpy.zeros((creg.num_species,creg.num_regions),bool)
             ecs_species_ids_used = numpy.zeros((creg.num_ecs_species,creg.num_regions),bool)
             fxn_string = _c_headers 
-            fxn_string += 'void reaction(double** species, double** rhs, double* mult, double** species_ecs, double** rhs_ecs, double** flux)\n{'
+            fxn_string += 'void reaction(double** species, double** rhs, double* mult, double* species_ecs, double* rhs_ecs, double** flux)\n{'
             # declare the "rate" variable if any reactions (non-rates)
             for rprt in list(creg._react_regions.keys()):
                 if not isinstance(rprt(),rate.Rate):
@@ -1104,7 +1104,7 @@ def _compile_reactions():
                         region_id = creg._region_ids.get(sptr()._region()._id)
                     rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate)
                     rate_str = re.sub(r'species\[(\d+)\]\[\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), region_id), rate_str)
-                    rate_str = re.sub(r'species_ecs\[(\d+)\]',lambda m: "species_ecs[%i][%i]" %  (int(m.groups()[0]), region_id), rate_str)
+                    rate_str = re.sub(r'species_ecs\[(\d+)\]',lambda m: "species_ecs[%i]" %  int(m.groups()[0]), rate_str)
     
                     fxn_string += "\n\trate = %s;" % rate_str
     
@@ -1113,7 +1113,7 @@ def _compile_reactions():
                         if isinstance(s,species.SpeciesOnExtracellular):
                             species_id = s._extracellular()._grid_id
                             operator = '+=' if ecs_species_ids_used[species_id][region_id] else '='
-                            fxn_string += "\n\trhs_ecs[%d][%d] %s mult[%d] * rate;" % (species_id, region_id, operator, mc_mult_count)
+                            fxn_string += "\n\trhs_ecs[%d] %s mult[%d] * rate;" % (species_id, operator, mc_mult_count)
                             ecs_species_ids_used[species_id][region_id] = True
                         else:
                             species_id = creg._species_ids.get(s._id)
