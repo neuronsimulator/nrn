@@ -329,9 +329,8 @@ class _Quotient:
 
         return q
 
-    @property
-    def _semi_compile(self):
-        return '(%s)/(%s)' % (self._a._semi_compile, self._b._semi_compile)
+    def _semi_compile(self, region):
+        return '(%s)/(%s)' % (self._a._semi_compile(region), self._b._semi_compile(region))
     def _involved_species(self, the_dict):
         self._a._involved_species(the_dict)
         self._b._involved_species(the_dict)

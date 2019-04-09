@@ -242,7 +242,7 @@ class SpeciesOnExtracellular(_SpeciesMathable):
     def node_by_ijk(self,i,j,k):
         index = 0
         s = self._extracellular()
-        for ecs in self._species()._extracellular_instances:
+        for ecs in self._species()._extracellular_instances.values():
             if ecs == s:
                 e = s._region
                 index += (i * e._ny + j) * e._nz + k
@@ -255,7 +255,6 @@ class SpeciesOnExtracellular(_SpeciesMathable):
                 
     def _semi_compile(self, reg):
         #This will always be an ecs_instance
-        reg = self._extracellular()
         ecs_instance = self._species()._extracellular_instances[reg]
         return ecs_instance._semi_compile(reg)
 

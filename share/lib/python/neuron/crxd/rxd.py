@@ -1233,7 +1233,7 @@ def _compile_reactions():
             all_gids = list(all_gids)
             for rptr in ecs_regions_inv[reg]:
                 r = rptr()
-                rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_ecs[%i]" %  [pid for pid,gid in enumerate(all_gids) if gid == int(m.groups()[0])][0], r._rate)
+                rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_ecs[%i]" %  [pid for pid,gid in enumerate(all_gids) if gid == int(m.groups()[0])][0], r._rate_ecs[reg])
                 if isinstance(r,rate.Rate):
                     s = r._species()
                     #Get underlying rxd._ExtracellularSpecies for the grid_id
