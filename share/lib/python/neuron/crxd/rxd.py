@@ -1055,75 +1055,73 @@ def _compile_reactions():
     nseg_by_region = []     # a list of the number of segments for each region
     # a table for location,species -> state index
     location_index = []
-    """for reg in regions_inv:
+    regions_inv_1d = [reg for reg in regions_inv if not reg._secs3d]
+    regions_inv_3d = [reg for reg in regions_inv if reg._secs3d]
+    for reg in  regions_inv_1d:
         rptr = weakref.ref(reg)
         for c_region in region._c_region_lookup[rptr]:
             for react in regions_inv[reg]:
-                c_region.add_reaction(react,rptr)
+                c_region.add_reaction(react, rptr)
                 c_region.add_species(species_by_region[reg])
                 if reg in ecs_species_by_region:
-                    c_region.add_ecs_species(ecs_species_by_region[reg])"""
+                    c_region.add_ecs_species(ecs_species_by_region[reg])
 
     # now setup the reactions
+    setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
     #if there are no reactions
     if location_count == 0 and len(ecs_regions_inv) == 0:
-        setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
         return None
 
     #Setup intracellular and multicompartment reactions
-    testing_condition = True
-    if location_count > 0 and not testing_condition:
+    if location_count > 0:
         from . import rate, multiCompartmentReaction
         for creg in c_region_list:
+            print("creg is {}".format(creg))
+            if not creg._react_regions:
+                continue
             creg._initalize()
             mc_mult_count = 0
             mc_mult_list = []
             species_ids_used = numpy.zeros((creg.num_species,creg.num_regions),bool)
-            ecs_species_ids_used = numpy.zeros((creg.num_ecs_species,creg.num_regions),bool)
+            ecs_species_ids_used = numpy.zeros((creg.num_ecs_species),bool)
             fxn_string = _c_headers 
             fxn_string += 'void reaction(double** species, double** rhs, double* mult, double** species_ecs, double** rhs_ecs)\n{'
             # declare the "rate" variable if any reactions (non-rates)
-            for rprt in list(creg._react_regions.keys()):
+            for rprt in creg._react_regions:
                 if not isinstance(rprt(),rate.Rate):
                     fxn_string += '\n\tdouble rate;'
                     break
-            for rptr in  list(creg._react_regions.keys()):
+            for rptr in creg._react_regions:
                 r = rptr()
                 if isinstance(r,rate.Rate):
                     s = r._species()
-                    species_id = creg._species_ids.get(s._id)
-                    if isinstance(s,species.SpeciesOnRegion):
-                        region_ids = [creg._region_ids.get(s._region()._id)]
-                    else:
-                        region_ids = creg._react_regions[rptr]
-                    for region_id in region_ids:
-                        rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate)
-                        rate_str = re.sub(r'species\[(\d+)\]\[\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), region_id), rate_str)
+                    species_id = creg._species_ids[s._id]
+                    for reg in creg._react_regions[rptr]:
+                        print("reg is {}".format(reg))
+                        print("r._rate is {}".format(r._rate))
+                        region_id = creg._region_ids[reg()._id]
+                        rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate[reg()])
                         operator = '+=' if species_ids_used[species_id][region_id] else '='
                         fxn_string += "\n\trhs[%d][%d] %s %s;" % (species_id, region_id, operator, rate_str)
                         species_ids_used[species_id][region_id] = True
                 elif isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
                     #Lookup the region_id for the reaction
-                    for sptr in r._sources + r._dests:
-                        if isinstance(sptr(),species.SpeciesOnExtracellular):
-                            continue
-                        region_id = creg._region_ids.get(sptr()._region()._id)
-                    rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate)
-                    rate_str = re.sub(r'species\[(\d+)\]\[\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), region_id), rate_str)
-                    rate_str = re.sub(r'species_ecs\[(\d+)\]',lambda m: "species_ecs[%i][%i]" %  (int(m.groups()[0]), region_id), rate_str)
-    
-                    fxn_string += "\n\trate = %s;" % rate_str
+                    for reg in r._rate:
+                        rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate[reg])
+                        rate_str = re.sub(r'species_ecs\[(\d+)\]',lambda m: "species_ecs[%i]" %  creg._ecs_species_ids.get(int(m.groups()[0])), rate_str)
+                        fxn_string += "\n\trate = %s;" % rate_str
+                        break
     
                     for sptr in r._sources + r._dests:
                         s = sptr()
                         if isinstance(s,species.SpeciesOnExtracellular):
-                            species_id = s._extracellular()._grid_id
-                            operator = '+=' if ecs_species_ids_used[species_id][region_id] else '='
+                            species_id = creg._ecs_species_ids[s._extracellular()._grid_id]
+                            operator = '+=' if ecs_species_ids_used[species_id] else '='
                             fxn_string += "\n\trhs_ecs[%d][%d] %s mult[%d] * rate;" % (species_id, region_id, operator, mc_mult_count)
-                            ecs_species_ids_used[species_id][region_id] = True
+                            ecs_species_ids_used[species_id] = True
                         else:
-                            species_id = creg._species_ids.get(s._id)
-                            region_id = creg._region_ids.get(sptr()._region()._id)
+                            species_id = creg._species_ids[s._id]
+                            region_id = creg._region_ids[s._region()._id]
                             operator = '+=' if species_ids_used[species_id][region_id] else '='
                             fxn_string += "\n\trhs[%d][%d] %s mult[%d] * rate;" % (species_id, region_id, operator, mc_mult_count)
                             species_ids_used[species_id][region_id] = True
@@ -1131,10 +1129,12 @@ def _compile_reactions():
                         mc_mult_count += 1
                     mc_mult_list.extend(r._mult.flatten())
                 else:
-                    for region_id in creg._react_regions[rptr]:
-                        
-                        rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate)
-                        rate_str = re.sub(r'species\[(\d+)\]\[\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), region_id), rate_str)
+                    print("creg is {}".format(creg))
+                    print("creg._react_regions is {}".format(creg._react_regions))
+                    for reg in creg._react_regions[rptr]:
+                        print("reg()._id = {}".format(reg))
+                        region_id = creg._region_ids[reg()._id]
+                        rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate[reg()])
                         fxn_string += "\n\trate = %s;" % rate_str
                         summed_mults = collections.defaultdict(lambda: 0)
                         for (mult, sp) in zip(r._mult, r._sources + r._dests):
@@ -1159,57 +1159,56 @@ def _compile_reactions():
         setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
 
     #Setup intracellular 3D reactions
-    if testing_condition:
-        if regions_inv:
-            for reg in regions_inv:
-                ics_grid_ids = []
-                all_ics_gids = set()
-                fxn_string = _c_headers
-                fxn_string += 'void reaction(double* species_ics, double*rhs)\n{'
-                for rptr in [r for rlist in list(regions_inv.values()) for r in rlist]:
-                    if not isinstance(rptr(),rate.Rate):
-                        fxn_string += '\n\tdouble rate;'
-                        break
-                for s in species_by_region[reg]:
-                    ###TODO is this correct? are there any other cases I should worry about? Do I always make a species the intracellular instance for the region we are looping through?
-                    sp = s._species()._intracellular_instances[s._region()] if isinstance(s,species.SpeciesOnRegion) else s._intracellular_instances[reg]
-                    all_ics_gids.add(sp._grid_id)
-                all_ics_gids = list(all_ics_gids)
-                for rptr in regions_inv[reg]:
-                    r = rptr()
-                    if reg not in r._rate:
-                        continue
-                    rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_ics[%i]" % [pid for pid,gid in enumerate(all_ics_gids) if gid == int(m.groups()[0])][0], r._rate[reg])
-                    if isinstance(r,rate.Rate):
-                        s = r._species()._intracellular_instances[reg] if isinstance(r._species(), species.Species) else r._species()._species()._intracellular_instances[reg]
+    if regions_inv_3d:
+        for reg in regions_inv_3d:
+            ics_grid_ids = []
+            all_ics_gids = set()
+            fxn_string = _c_headers
+            fxn_string += 'void reaction(double* species_ics, double*rhs)\n{'
+            for rptr in [r for rlist in list(regions_inv.values()) for r in rlist]:
+                if not isinstance(rptr(),rate.Rate):
+                    fxn_string += '\n\tdouble rate;'
+                    break
+            for s in species_by_region[reg]:
+                ###TODO is this correct? are there any other cases I should worry about? Do I always make a species the intracellular instance for the region we are looping through?
+                sp = s._species()._intracellular_instances[s._region()] if isinstance(s,species.SpeciesOnRegion) else s._intracellular_instances[reg]
+                all_ics_gids.add(sp._grid_id)
+            all_ics_gids = list(all_ics_gids)
+            for rptr in regions_inv[reg]:
+                r = rptr()
+                if reg not in r._rate:
+                    continue
+                rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_ics[%i]" % [pid for pid,gid in enumerate(all_ics_gids) if gid == int(m.groups()[0])][0], r._rate[reg])
+                if isinstance(r,rate.Rate):
+                    s = r._species()._intracellular_instances[reg] if isinstance(r._species(), species.Species) else r._species()._species()._intracellular_instances[reg]
+                    if s._grid_id in ics_grid_ids:
+                        operator = '+='
+                    else:
+                        operator = '='
+                        ics_grid_ids.append(s._grid_id)
+                    pid = [pid for pid,gid in enumerate(all_ics_gids) if gid == s._grid_id][0]
+                    fxn_string += "\n\trhs[%d] %s %s;" % (pid, operator, rate_str)
+                else:
+                    idx = 0
+                    fxn_string += "\n\trate = %s;" %  rate_str
+                    for sp in r._sources + r._dests:
+                        s = sp()
+                        print("s is {} and is of type {}".format(s, type(s)))
+                        #Get underlying rxd._IntracellularSpecies for the grid_id
+                        if isinstance(s, species.Species):
+                            s = s._intracellular_instances[reg]
+                        elif isinstance(s, species.SpeciesOnRegion):
+                            s = s._species()._intracellular_instances[reg]
                         if s._grid_id in ics_grid_ids:
-                            operator = '+='
+                            operator = '+=' 
                         else:
                             operator = '='
                             ics_grid_ids.append(s._grid_id)
                         pid = [pid for pid,gid in enumerate(all_ics_gids) if gid == s._grid_id][0]
-                        fxn_string += "\n\trhs[%d] %s %s;" % (pid, operator, rate_str)
-                    else:
-                        idx = 0
-                        fxn_string += "\n\trate = %s;" %  rate_str
-                        for sp in r._sources + r._dests:
-                            s = sp()
-                            print("s is {} and is of type {}".format(s, type(s)))
-                            #Get underlying rxd._IntracellularSpecies for the grid_id
-                            if isinstance(s, species.Species):
-                                s = s._intracellular_instances[reg]
-                            elif isinstance(s, species.SpeciesOnRegion):
-                                s = s._species()._intracellular_instances[reg]
-                            if s._grid_id in ics_grid_ids:
-                                operator = '+=' 
-                            else:
-                                operator = '='
-                                ics_grid_ids.append(s._grid_id)
-                            pid = [pid for pid,gid in enumerate(all_ics_gids) if gid == s._grid_id][0]
-                            fxn_string += "\n\trhs[%d] %s (%s)*rate;" % (pid, operator, r._mult[idx])
-                            idx += 1                        
-                fxn_string += "\n}\n"
-                ecs_register_reaction(0, len(all_ics_gids), _list_to_cint_array(all_ics_gids), _c_compile(fxn_string))                 
+                        fxn_string += "\n\trhs[%d] %s (%s)*rate;" % (pid, operator, r._mult[idx])
+                        idx += 1                        
+            fxn_string += "\n}\n"
+            ecs_register_reaction(0, len(all_ics_gids), _list_to_cint_array(all_ics_gids), _c_compile(fxn_string))                 
     #Setup extracellular reactions
     print(ecs_regions_inv)
     if len(ecs_regions_inv) > 0:

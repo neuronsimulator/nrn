@@ -180,7 +180,7 @@ class _SpeciesMathable(object):
             ics_instance = self._intracellular_instances[reg]
             return ics_instance._semi_compile(reg)
         if isinstance(reg, region.Region) and reg._secs1d:
-            return 'species[%d][]' % (self._id)
+            return 'species[%d][%d]' % (self._id, reg._id)
 
     def _involved_species(self, the_dict):
         the_dict[self._semi_compile] = weakref.ref(self)

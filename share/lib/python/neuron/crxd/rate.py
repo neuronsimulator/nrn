@@ -36,8 +36,10 @@ class Rate(GeneralizedReaction):
             if regions is not None and not isinstance(regions, region.Extracellular):
                 regions = [regions]
             else:
-                if not species._extracellular_regions:
-                    regions = species._regions if hasattr(species, '_regions') else [species.region()]
+                if not hasattr(species, '_extracellular_regions'):
+                    regions = species._regions if hasattr(species, '_regions') else [species._region()]
+                elif not species._extracellular_regions:
+                    regions = species._regions if hasattr(species, '_regions') else [species._region()]
                 else:
                     regions = [None]
         else:
@@ -138,7 +140,7 @@ class Rate(GeneralizedReaction):
         #active_regions = list(set.intersection(*[set(sptr()._regions if isinstance(sptr(),species.Species) else [sptr()._region()]) for sptr in list(self._involved_species) + [self._species]]))
         #sp_regions = self._species()._regions if isinstance(self._species(),species.Species) else [self._species()._region()]
         active_regions = list(set.intersection(*[set(sptr()._regions + sptr()._extracellular_regions if isinstance(sptr(),species.Species) else [sptr()._region() if isinstance(sptr(),species.SpeciesOnRegion) else sptr()._extracellular()]) for sptr in list(self._involved_species) + [self._species]]))
-        sp_regions = self._species()._regions + self._species()._extracellular_regions if isinstance(self._species(),species.Species) else [sptr()._region() if isinstance(sptr(),species.SpeciesOnRegion) else sptr()._extracellular()]
+        sp_regions = self._species()._regions + self._species()._extracellular_regions if isinstance(self._species(),species.Species) else [self._species()._region() if isinstance(self._species(),species.SpeciesOnRegion) else self._species()._extracellular()]
         actr = sp_regions
         if self._regions != [None]:
             specified_regions = list(set.intersection(set(self._regions), set(sp_regions)))
