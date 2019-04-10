@@ -32,7 +32,10 @@ class Rate(GeneralizedReaction):
         self._species = weakref.ref(species)
         self._original_rate = rate
         if not hasattr(regions, '__len__'):
-            regions = [regions]
+            if regions is not None:
+                regions = [regions]
+            else:
+                regions = species._regions if hasattr(species, '_regions') else [species._region()]
         self._regions = regions
         self._membrane_flux = membrane_flux
         if membrane_flux not in (True, False):
@@ -54,35 +57,10 @@ class Rate(GeneralizedReaction):
     def _do_init(self):
         rate = self._original_rate
         if not isinstance(rate, RangeVar):
-            self._rate, self._involved_species = rxdmath._compile(rate)
+            self._rate, self._involved_species = rxdmath._compile(rate, self._regions)
         else:
             self._involved_species = [weakref.ref(species)]
         self._update_indices()
-
-        #Check to if it is an extracellular reaction
-        from . import  region, species
-        #Was an ECS region was passed to to the constructor 
-        ecs_region = [r for r in self._regions if isinstance(r, region.Extracellular)]
-        ecs_region = ecs_region[0] if len(ecs_region) > 0 else None
-        #Is the species passed to the constructor extracellular
-        if not ecs_region:
-            if isinstance(self._species(),species.SpeciesOnExtracellular):
-                ecs_region = self._species()._extracellular()
-            elif isinstance(self._species(),species._ExtracellularSpecies):
-                ecs_region = self._species()._region
-        #Is the species passed to the constructor defined on the ECS
-        if not ecs_region:
-            if isinstance(self._species(),species.SpeciesOnRegion):
-                sp = self._species()._species()
-            else:
-                sp = self._species()
-            if sp and sp._extracellular_instances:
-                ecs_region = sp._extracellular_instances[0]._region
-        
-
-        if ecs_region:
-            self._rate_ecs, self._involved_species_ecs = rxdmath._compile(rate, extracellular=ecs_region)
-
     
     def __repr__(self):
         short_rate = self._original_rate._short_repr() if hasattr(self._original_rate,'_short_repr') else self._original_rate

@@ -52,8 +52,6 @@ _extracellular_diffusion_objects = weakref.WeakKeyDictionary()
 
 _species_count = 0
 
-_species_on_regions = []
-
 _has_1d = False
 _has_3d = False
 
@@ -145,10 +143,19 @@ class _SpeciesMathable(object):
         rxdmath._validate_reaction_terms(self2, other)
         return rxdmath._Reaction(self2, other, '<')
 
-    @property
-    def _semi_compile(self):
-        return 'species[%d][]' % (self._id)
-
+    def _semi_compile(self, reg):
+        from . import region
+        #region is Extracellular
+        if isinstance(reg, region.Extracellular):
+            ecs_instance = self._extracellular_instances[reg]
+            return ecs_instance._semi_compile(reg)
+        #region is 3d intracellular
+        if isinstance(reg, region.Region) and reg._secs3d:
+            ics_instance = self._intracellular_instances[reg]
+            return ics_instance._semi_compile(reg)
+        if isinstance(reg, region.Region) and reg._secs1d:
+            return 'species[%d][%d]' % (self._id, reg._id)
+    
     def _involved_species(self, the_dict):
         the_dict[self._semi_compile] = weakref.ref(self)
 
@@ -221,7 +228,7 @@ class SpeciesOnExtracellular(_SpeciesMathable):
     def node_by_ijk(self,i,j,k):
         index = 0
         s = self._extracellular()
-        for ecs in self._species()._extracellular_instances:
+        for ecs in self._species()._extracellular_instances.values():
             if ecs == s:
                 e = s._region
                 index += (i * e._ny + j) * e._nz + k
@@ -232,19 +239,18 @@ class SpeciesOnExtracellular(_SpeciesMathable):
  
 
                 
-    @property
-    def _semi_compile(self):
-        return 'species_ecs[%d]' % (self._extracellular()._grid_id)
+    def _semi_compile(self, reg):
+        #This will always be an ecs_instance
+        #reg = self._extracellular()._region
+        #ecs_instance = self._species()._extracellular_instances[reg]
+        #return ecs_instance._semi_compile(reg)
+        return self._extracellular()._semi_compile(reg)
 
 class SpeciesOnRegion(_SpeciesMathable):
     def __init__(self, species, region):
         """The restriction of a Species to a Region."""
-        global _species_on_regions
         self._species = weakref.ref(species)
         self._region = weakref.ref(region)
-        if hasattr(species,'_id'):  
-            self._id = species._id
-        _species_on_regions.append(weakref.ref(self))
         
     def __eq__(self, other):
         """test for equality.
@@ -335,9 +341,18 @@ class SpeciesOnRegion(_SpeciesMathable):
         
         This is equivalent to s.nodes.concentration = value"""
         self.nodes.concentration = value
+    def _semi_compile(self, reg):
+        #Never an _ExtracellularSpecies since we are in SpeciesOnRegion
+        reg = self._region()
+        if reg._secs3d:
+            ics_instance = self._species()._intracellular_instances[reg]
+            return ics_instance._semi_compile(reg)
+        elif reg._secs1d:
+            return 'species[%d][%d]' % (self._id, self._region()._id)
+
     @property
-    def _semi_compile(self):
-        return 'species[%d][%d]' % (self._id, self._region()._id)
+    def _id(self):
+        return self._species()._id
 
 # 3d matrix stuff
 def _setup_matrices_process_neighbors(pt1, pt2, indices, euler_matrix, index, diffs, vol, areal, arear, dx):
@@ -558,8 +573,8 @@ class _ExtracellularSpecies(_SpeciesMathable):
                     scale_factors.append(float(scale_factor * surface_area))
         #TODO: MultiCompartment reactions ?
         _set_grid_currents(grid_list, self._grid_id, grid_indices, neuron_pointers, scale_factors)
-    @property
-    def _semi_compile(self):
+
+    def _semi_compile(self, reg):
         return 'species_ecs[%d]' % (self._grid_id)
 
 
@@ -695,12 +710,6 @@ class Species(_SpeciesMathable):
         # TODO: remove this line when certain no longer need it (commented out 2013-04-17)
         # self._real_secs = region._sort_secs(sum([r.secs for r in regions], []))
 
-        #Set the SpeciesOnRegion id
-        for sp in _species_on_regions:
-            s = sp()
-            if s and s._species() == self:
-                s._id = self._id
-    
     def _do_init2(self):
         # 1D section objects; NOT all sections this species lives on
         # TODO: this may be a problem... debug thoroughly
@@ -749,7 +758,7 @@ class Species(_SpeciesMathable):
 
     def _do_init4(self):
         self._extracellular_nodes = []
-        self._extracellular_instances = [_ExtracellularSpecies(r, d=self._d, name=self.name, charge=self.charge, initial=self.initial, atolscale=self._atolscale, boundary_conditions=self._ecs_boundary_conditions) for r in self._extracellular_regions]
+        self._extracellular_instances = {r : _ExtracellularSpecies(r, d=self._d, name=self.name, charge=self.charge, initial=self.initial, atolscale=self._atolscale, boundary_conditions=self._ecs_boundary_conditions) for r in self._extracellular_regions}
         sp_ref = weakref.ref(self)
         for r in self._extracellular_regions:
             for i in range(r._nx):
@@ -877,9 +886,8 @@ class Species(_SpeciesMathable):
         elif isinstance(r, region.Extracellular):
             if not hasattr(self,'_extracellular_instances'):
                 initializer._do_init()
-            for e in self._extracellular_instances:
-                if e._region == r:
-                    return SpeciesOnExtracellular(self, e)
+            if r in self._extracellular_instances:
+                return SpeciesOnExtracellular(self, self._extracellular_instances[r])
         raise RxDException('no such region')
 
     def _update_node_data(self):
@@ -1101,7 +1109,7 @@ class Species(_SpeciesMathable):
     
     def _finitialize(self, skip_transfer=False):
         if hasattr(self,'_extracellular_instances'):
-            for r in self._extracellular_instances:
+            for r in self._extracellular_instances.values():
                 r._finitialize()
         if self.initial is not None:
             if isinstance(self.initial, collections.Callable):

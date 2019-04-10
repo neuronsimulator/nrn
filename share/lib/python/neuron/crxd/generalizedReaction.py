@@ -151,9 +151,9 @@ class GeneralizedReaction(object):
             # so the reaction takes place everywhere the species is defined
             for sptr in self._involved_species:
                 self._indices_dict[sptr()] = []
-                #Setup for extracellular
-                self._mult = list(-1 for v in self._sources) + list(1 for v in self._dests)
-                self._mult = _numpy_array(self._mult)
+            #Setup for extracellular
+            self._mult = list(-1 for v in self._sources) + list(1 for v in self._dests)
+            self._mult = _numpy_array(self._mult)
             return
 
 

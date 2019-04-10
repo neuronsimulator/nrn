@@ -2,6 +2,7 @@ import math
 import numpy
 import weakref
 import functools
+import copy
 import sys
 from .rxdException import RxDException
 from . import initializer
@@ -54,25 +55,30 @@ def analyze_reaction(r):
 # TODO: change this so that inputs are all automatically converted to numpy.array(s)
 #_compile is called by the reaction (Reaction._update_rates)
 # returns the rate and the species involved
-def _compile(arith, extracellular=None):
+def _compile(arith, region):
     initializer._do_init()
     #for extracellular reactions ensure the species are _ExtracellularSpecies
     arith = _ensure_arithmeticed(arith)
-    arith._ensure_extracellular(extracellular)
-    try:
-        s = arith._semi_compile
-        species_dict = {}
-        arith._involved_species(species_dict)
-    except AttributeError:
-        species_dict = {}
-        s = str(arith)
+    #arith = arith._ensure_extracellular(extracellular,intracellular3d)
+    s_by_reg = {}
+    species_dict = {}
+    for reg in region:
+        #TODO figure out what we are catching with attribute error
+        try:
+            #Checks to make sure the all species in arith are defined on the region
+            try:
+                s = arith._semi_compile(reg)
+            except KeyError:
+                continue
+            s_by_reg[reg] = s
+            arith._involved_species(species_dict)
+        except AttributeError:
+            species_dict = {}
+            s = str(arith)
 
-    all_names = ['numpy', 'rxdmath'] + list(species_dict.keys())
-    command = 'lambda %s: %s ' % (', '.join(all_names), s)
-    species_index = [int(''.join(x for x in r if x.isdigit())) for r in list(species_dict.keys())]
     #C-version
     #Get the index rather than the key
-    return (s, list(species_dict.values()))
+    return (s_by_reg, list(species_dict.values()))
     #(functools.partial(eval(command), numpy, sys.modules[__name__]), species_dict.values())
 
 
@@ -108,9 +114,9 @@ class _Function:
             return '%s(%s)' % (self._fname, self._obj._short_repr())
         except:
             return self.__repr__()
-    @property
-    def _semi_compile(self):
-        return '%s(%s)' % (self._fname, self._obj._semi_compile)
+    
+    def _semi_compile(self, region):
+        return '%s(%s)' % (self._fname, self._obj._semi_compile(region))
     def _involved_species(self, the_dict):
         self._obj._involved_species(the_dict)
 
@@ -138,9 +144,9 @@ class _Function2:
             return '%s(%s, %s)' % (self._fname, self._obj1._short_repr(), self._obj2._short_repr())
         except:
             return self.__repr__()
-    @property
-    def _semi_compile(self):
-        return '%s(%s, %s)' % (self._fname, self._obj1._semi_compile, self._obj2._semi_compile)
+ 
+    def _semi_compile(self, region):
+        return '%s(%s, %s)' % (self._fname, self._obj1._semi_compile(region), self._obj2._semi_compile(region))
     def _involved_species(self, the_dict):
         self._obj1._involved_species(the_dict)
         self._obj2._involved_species(the_dict)
@@ -249,19 +255,42 @@ class _Product:
 
     #Change any Species to _ExtracellularSpecies so _semi_compile gives the
     #_grid_id and not the species _id
-    def _ensure_extracellular(self, extracellular = None):
+    def _ensure_extracellular(self, extracellular = None, intracellular3d=None):
+        p = _Product(self._a, self._b)
         if extracellular:
             from . import species 
+            #for item in [self._a, self._b]:
+                #if isinstance(item,species.Species):
+                #    ecs_species = item[extracellular]._extracellular()
+                #    items = ecs_species
+                #elif hasattr(item,'_ensure_extracellular'):
+                #if hasattr(item,'_ensure_extracellular'):
+                #    item._ensure_extracellular(extracellular=extracellular)
+            if hasattr(self._a, '_ensure_extracellular'):
+                p._a = self._a._ensure_extracellular(extracellular=extracellular)
+            if hasattr(self._b, '_ensure_extracellular'):
+                p._b = self._b._ensure_extracellular(extracellular=extracellular)
+            
+        """if intracellular3d:
+            from . import species
             for item in [self._a, self._b]:
                 if isinstance(item,species.Species):
-                    ecs_species = item[extracellular]._extracellular()
-                    items = ecs_species
+                    ics_species = item._intracellular_instances[intracellular3d]
+                    items = ics_species
                 elif hasattr(item,'_ensure_extracellular'):
-                    item._ensure_extracellular(extracellular=extracellular)
+                    item._ensure_extracellular(intracellular3d=intracellular3d)"""
+        if intracellular3d:
+            from . import species
+            if hasattr(self._a, '_ensure_extracellular'):
+                p._a = self._a._ensure_extracellular(intracellular3d=intracellular3d)
+            if hasattr(self._b, '_ensure_extracellular'):
+                p._b = self._b._ensure_extracellular(intracellular3d=intracellular3d)
+        return p
 
-    @property
-    def _semi_compile(self):
-        return '(%s)*(%s)' % (self._a._semi_compile, self._b._semi_compile)
+
+    def _semi_compile(self, region):
+        return '(%s)*(%s)' % (self._a._semi_compile(region), self._b._semi_compile(region))
+
     def _involved_species(self, the_dict):
         self._a._involved_species(the_dict)
         self._b._involved_species(the_dict)
@@ -275,19 +304,33 @@ class _Quotient:
 
     #Change any Species to _ExtracellularSpecies so _semi_compile gives the
     #_grid_id and not the species _id
-    def _ensure_extracellular(self, extracellular = None):
+    def _ensure_extracellular(self, extracellular = None, intracellular3d=None):
+        q = _Quotient(self._a, self._b)
         if extracellular:
             from . import species 
-            for item in [self._a, self._b]:
+            """for item in [self._a, self._b]:
                 if isinstance(item,species.Species):
                     ecs_species = item[extracellular]._extracellular()
                     items = ecs_species
                 elif hasattr(item,'_ensure_extracellular'):
-                    item._ensure_extracellular(extracellular=extracellular)
+                    item._ensure_extracellular(extracellular=extracellular)"""
+            if hasattr(self._a, '_ensure_extracellular'):
+                q._a = self._a._ensure_extracellular(extracellular=extracellular)
+            if hasattr(self._b, '_ensure_extracellular'):
+                q._b = self._b._ensure_extracellular(extracellular=extracellular)
 
-    @property
-    def _semi_compile(self):
-        return '(%s)/(%s)' % (self._a._semi_compile, self._b._semi_compile)
+
+        if intracellular3d:
+            from . import species
+            if hasattr(self._a, '_ensure_extracellular'):
+                q._a = self._a._ensure_extracellular(intracellular3d=intracellular3d)
+            if hasattr(self._b, '_ensure_extracellular'):
+                q._b = self._b._ensure_extracellular(intracellular3d=intracellular3d)
+
+        return q
+
+    def _semi_compile(self, region):
+        return '(%s)/(%s)' % (self._a._semi_compile(region), self._b._semi_compile(region))
     def _involved_species(self, the_dict):
         self._a._involved_species(the_dict)
         self._b._involved_species(the_dict)
@@ -308,10 +351,12 @@ class _Arithmeticed:
     def __init__(self, item, valid_reaction_term=True):
         if isinstance(item, dict):
             self._items = dict(item)
+            self._original_items = dict(item)
         elif isinstance(item, _Reaction):
             raise RxDException('Cannot do arithmetic on a reaction')
         else:
             self._items = {item: 1}
+            self._original_items = {item : 1}
         self._valid_reaction_term = valid_reaction_term
         self._compiled_form = None
     
@@ -330,20 +375,37 @@ class _Arithmeticed:
 
     #Change any Species to _ExtracellularSpecies so _semi_compile gives the
     #_grid_id and not the species _id
-    def _ensure_extracellular(self, extracellular = None):
+    def _ensure_extracellular(self, extracellular = None, intracellular3d=None):
+        new_arith = _Arithmeticed({})
         if extracellular and hasattr(self,'_items'):
             from . import species 
             for item, count in zip(list(self._items.keys()), list(self._items.values())):
                 if count:
                     if isinstance(item,species.Species):
                         ecs_species = item[extracellular]._extracellular()
-                        self._items.pop(item)
-                        self._items[ecs_species] = count
+                        #self._items.pop(item)
+                        new_arith._items[ecs_species] = count
                     elif hasattr(item,'_ensure_extracellular'):
-                        item._ensure_extracellular(extracellular=extracellular)
+                        new_arith._items[item._ensure_extracellular(extracellular=extracellular)] = count
+                    else:
+                        new_arith._items[item] = count
+        if intracellular3d and hasattr(self,'_items'):
+            from . import species
+            for item, count in zip(list(self._items.keys()), list(self._items.values())):
+                if count:
+                    if isinstance(item,species.Species):
+                        ics_species = item._intracellular_instances[intracellular3d]
+                        #self._items.pop(item)
+                        new_arith._items[ics_species] = count
+                        #self._items[ics_species] = count
+                    elif hasattr(item,'_ensure_extracellular'):
+                        new_arith._items[item._ensure_extracellular(intracellular3d=intracellular3d)] = count
+                    else:
+                        new_arith._items[item] = count
+        return new_arith
 
-
-
+    def copy(self):
+        return _Arithmeticed(self._original_items, self._valid_reaction_term)
     
     def _short_repr(self):
         from . import species
@@ -396,8 +458,8 @@ class _Arithmeticed:
         if not result:
             result = '0'
         return result
-    @property 
-    def _semi_compile(self):
+
+    def _semi_compile(self, region):
         items = []
         counts = []
         items_append = items.append
@@ -405,7 +467,7 @@ class _Arithmeticed:
         for item, count in zip(list(self._items.keys()), list(self._items.values())):
             if count:
                 try:
-                    items_append(item._semi_compile)
+                    items_append(item._semi_compile(region))
                 except AttributeError:
                     items_append('%s' % item)
                 counts_append(count)
