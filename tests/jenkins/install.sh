@@ -7,7 +7,7 @@ set -e
 CORENRN_TYPE="$1"
 
 if [ "${CORENRN_TYPE}" = "GPU" ]; then
-    module load pgi cuda hpe-mpi cmake
+    module load pgi cuda/9.0.176 hpe-mpi cmake boost
 
     mkdir build_${CORENRN_TYPE}
 else
