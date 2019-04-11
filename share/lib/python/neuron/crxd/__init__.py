@@ -17,6 +17,7 @@ from .reaction import Reaction
 from . import geometry
 from .multiCompartmentReaction import MultiCompartmentReaction
 from .rxd import re_init, set_solve_type, nthread
+from .rxdmath import v
 try:
   from . import dimension3
 except:

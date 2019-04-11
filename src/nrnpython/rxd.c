@@ -834,7 +834,7 @@ static void unset_reaction_indices()
 }
 
 
-void register_rate(int nspecies, int nregions, int nseg, int* sidx, int necs, int* ecs_ids, int* ecsidx, int nmult, double* mult, ReactionRate f)
+void register_rate(int nspecies, int nregions, int nseg, int* sidx, int necs, int* ecs_ids, int* ecsidx, int nmult, double* mult, PyHocObject** vptrs, ReactionRate f)
 {
     int i,j,k,idx, ecs_id, ecs_index, ecs_offset;
     Grid_node* grid;
@@ -847,6 +847,16 @@ void register_rate(int nspecies, int nregions, int nseg, int* sidx, int necs, in
     react->num_mult = nmult;
     react->icsN = 0;
     react->ecsN = 0;
+    if (vptrs != NULL)
+    {
+        react->vptrs = (double**)malloc(nseg*sizeof(double*));
+        for(i = 0; i < nseg; i++)
+           react->vptrs[i] = vptrs[i]->u.px_; 
+    }
+    else
+    {
+        react->vptrs = NULL;
+    }
     react->state_idx = (int***)malloc(nseg*sizeof(double**));
     for(i = 0, idx=0; i < nseg; i++)
     {
@@ -935,6 +945,8 @@ void clear_rates()
     int i, j;
     for(react = _reactions; react != NULL;)
     {
+        if(react->vptrs != NULL)
+            free(react->vptrs);
         for(i = 0; i < react->num_segments; i++)
         {
             for(j = 0; j < react->num_species; j++)
@@ -1473,6 +1485,7 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates, doub
 
     double* ecs_states_for_reaction = NULL;
     double* ecs_result = NULL;
+    double v = 0;
     if(react->num_ecs_species>0)
     {
         ecs_states_for_reaction = (double*)malloc(react->num_ecs_species*sizeof(double));
@@ -1525,7 +1538,10 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates, doub
             mc_mult[i] = react->mc_multiplier[i][segment];
         }
 
-	    react->reaction(states_for_reaction, result_array, mc_mult, ecs_states_for_reaction, ecs_result, flux);
+        if(react->vptrs != NULL)
+            v = *(react->vptrs[segment]);
+
+	    react->reaction(states_for_reaction, result_array, mc_mult, ecs_states_for_reaction, ecs_result, flux, v);
         
         for(i = 0; i < react->num_species; i++)
         {
@@ -1603,6 +1619,7 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double* c
     double* ecs_states_for_reaction_dx;
     double* ecs_result;
     double* ecs_result_dx;
+    double v = 0;
     if(react->num_ecs_species>0)
     {
         ecs_states_for_reaction = (double*)malloc(react->num_ecs_species*sizeof(double));
@@ -1620,6 +1637,9 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double* c
     }
     for(segment = 0; segment < react->num_segments; segment++)
     {
+        if(react->vptrs != NULL)
+            v = *(react->vptrs[segment]);
+
         for(i = 0; i < react->num_species; i++)
         {
             for(j = 0; j < react->num_regions; j++)
@@ -1663,7 +1683,7 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double* c
             mc_mult[i] = react->mc_multiplier[i][segment];
         }
 
-	    react->reaction(states_for_reaction, result_array, mc_mult, ecs_states_for_reaction, ecs_result, NULL);
+	    react->reaction(states_for_reaction, result_array, mc_mult, ecs_states_for_reaction, ecs_result, NULL, v);
 
 	    /*Calculate I - Jacobian for ICS reactions*/
         for(i = 0, idx = 0; i < react->num_species; i++)
@@ -1684,7 +1704,7 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double* c
 				    /* TODO: Handle approximating the Jacobian at a function upper
 				    * limit, e.g. acos(1)
 	       	        */
-				    react->reaction(states_for_reaction_dx, result_array_dx, mc_mult, ecs_states_for_reaction, ecs_result_dx, NULL);
+				    react->reaction(states_for_reaction_dx, result_array_dx, mc_mult, ecs_states_for_reaction, ecs_result_dx, NULL, v);
 	
 	       	    	for (jac_i = 0, jac_idx = 0; jac_i < react->num_species; jac_i++)
 					{
@@ -1735,7 +1755,7 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double* c
                 /* TODO: Handle approximating the Jacobian at a function upper
 				 * limit, e.g. acos(1)
 	       	     */
-				react->reaction(states_for_reaction, result_array_dx, mc_mult, ecs_states_for_reaction_dx, ecs_result_dx, NULL);
+				react->reaction(states_for_reaction, result_array_dx, mc_mult, ecs_states_for_reaction_dx, ecs_result_dx, NULL, v);
 	
 	       	    for (jac_i = 0, jac_idx = 0; jac_i < react->num_species; jac_i++)
 				{

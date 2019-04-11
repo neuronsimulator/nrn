@@ -80,6 +80,7 @@ register_rate.argtypes = [
         numpy.ctypeslib.ndpointer(ctypes.c_int, flags='contiguous'),                #ecs species ids
         ctypes.c_int,                                                               #num multicompartment reactions
         numpy.ctypeslib.ndpointer(ctypes.c_double, flags='contiguous'),             #multicompartment multipliers
+        ctypes.POINTER(ctypes.py_object),                                           #voltage pointers
         ]                                                                           #Reaction rate function
 
 setup_currents = nrn_dll_sym('setup_currents')
@@ -1077,7 +1078,7 @@ def _compile_reactions():
             flux_ids_used = numpy.zeros((creg.num_species,creg.num_regions),bool)
             ecs_species_ids_used = numpy.zeros((creg.num_ecs_species),bool)
             fxn_string = _c_headers 
-            fxn_string += 'void reaction(double** species, double** rhs, double* mult, double* species_ecs, double* rhs_ecs, double** flux)\n{'
+            fxn_string += 'void reaction(double** species, double** rhs, double* mult, double* species_ecs, double* rhs_ecs, double** flux, double v)\n{'
             # declare the "rate" variable if any reactions (non-rates)
             for rprt in creg._react_regions:
                 if not isinstance(rprt(),rate.Rate):
@@ -1138,6 +1139,7 @@ def _compile_reactions():
             register_rate(creg.num_species, creg.num_regions, creg.num_segments, creg.get_state_index(),
                           creg.num_ecs_species, creg.get_ecs_species_ids(), creg.get_ecs_index(),
                           mc_mult_count, numpy.array(mc_mult_list, dtype=ctypes.c_double),
+                          _list_to_pyobject_array(creg._vptrs),
                           _c_compile(fxn_string))
 
     

@@ -71,6 +71,7 @@ class Reaction(GeneralizedReaction):
             regions = [regions]
         self._regions = regions
         rxd._register_reaction(self)
+        self._voltage_dependent = scheme._voltage_dependent
 
         # initialize self if the rest of rxd is already initialized
         if initializer.is_initialized():

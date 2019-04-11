@@ -75,6 +75,7 @@ typedef struct ICSReactions {
     int num_mult;
     double **mc_multiplier;
     int* mc_flux_idx;
+    double** vptrs;
     struct ICSReactions* next;
 } ICSReactions;
 

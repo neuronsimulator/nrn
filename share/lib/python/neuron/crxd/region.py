@@ -53,6 +53,8 @@ class _c_region:
         self.location_index = None
         self.ecs_location_index = None
         self._ecs_species_ids = None
+        self._voltage_dependent = False
+        self._vptrs = None
         for rptr in self._regions:
             r = rptr()
             self._overlap.intersection(r._secs)
@@ -66,6 +68,8 @@ class _c_region:
            self._react_regions[rptr].add(region)
         else:
             self._react_regions[rptr] = {region}
+        if not self._voltage_dependent:
+            self._voltage_dependent = rptr()._voltage_dependent
         self._initialized = False
 
     def add_species(self,species_set):
@@ -151,6 +155,12 @@ class _c_region:
                 except ValueError:
                     raise RxDException("Rates and Reactions with species defined on different regions are not currently supported in crxd. Please try using rxd.") 
         self.location_index=self.location_index.transpose()
+        
+        if self._voltage_dependent:
+            self._vptrs = []
+            for sec in self._overlap:
+                for seg in sec:
+                    self._vptrs.append(seg._ref_v)
 
         #Setup the matrix to the ECS grid points
         if self.num_ecs_species > 0:
