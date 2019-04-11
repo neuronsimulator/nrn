@@ -33,6 +33,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnmpi/nrnmpidec.h"
 #include "coreneuron/nrnmpi/nrnmpi_impl.h"
 #include "coreneuron/nrnmpi/mpispike.h"
+#include "coreneuron/nrniv/profiler_interface.h"
 
 #if NRNMPI
 #include <mpi.h>
@@ -114,8 +115,12 @@ void wait_before_spike_exchange() {
 
 int nrnmpi_spike_exchange() {
     int i, n;
+    Instrumentor::phase_begin("spike-exchange");
+    Instrumentor::phase_begin("imbalance");
     wait_before_spike_exchange();
+    Instrumentor::phase_end("imbalance");
 
+    Instrumentor::phase_begin("communication");
 #if nrn_spikebuf_size > 0
     int n1, novfl;
 #endif
@@ -176,6 +181,8 @@ int nrnmpi_spike_exchange() {
     }
     ovfl_ = novfl;
 #endif
+    Instrumentor::phase_end("communication");
+    Instrumentor::phase_end("spike-exchange");
     return n;
 }
 
