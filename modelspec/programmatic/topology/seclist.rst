@@ -132,7 +132,7 @@ SectionList
 
 
     Syntax:
-        ``sl.allroots(sec=section)``
+        ``sl.allroots()``
 
 
     Description:
