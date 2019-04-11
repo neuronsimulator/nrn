@@ -106,6 +106,7 @@ static struct {			/* Keywords */
 			"PROTECT", PROTECT,
 			"MUTEXLOCK", NRNMUTEXLOCK,
 			"MUTEXUNLOCK", NRNMUTEXUNLOCK,
+			"REPRESENTS", REPRESENTS,
 	                0, 0
 };
 
