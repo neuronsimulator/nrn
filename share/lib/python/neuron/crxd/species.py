@@ -61,6 +61,10 @@ _ics_set_grid_concentrations.argtypes = [ctypes.c_int, ctypes.c_int, numpy.ctype
 _set_grid_currents = nrn_dll_sym('set_grid_currents')
 _set_grid_currents.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.py_object, ctypes.py_object, ctypes.py_object]
 
+_ics_set_grid_currents = nrn_dll_sym('ics_set_grid_currents')
+_ics_set_grid_currents.argtypes = [ctypes.c_int, ctypes.c_int, numpy.ctypeslib.ndpointer(dtype=numpy.int64), numpy.ctypeslib.ndpointer(dtype=numpy.int64), ctypes.py_object, numpy.ctypeslib.ndpointer(dtype=numpy.float_)]
+
+
 _delete_by_id = nrn_dll_sym('delete_by_id')
 _delete_by_id.argtypes = [ctypes.c_int]
 
@@ -523,24 +527,32 @@ class _IntracellularSpecies(_SpeciesMathable):
         grid_list_start = 0
         if self._nodes:
             nrn_region = self._region._nrn_region
-            if nrn_region:
-                print("made it here!")
-                if(nrn_region != 'i'):
-                    raise RxDException('only "i" nrn_region supported for 3D simulations')
-                    #TODO remove this. Only have it for simplicity right now
-                
-                ion = '_ref_' + self._name + 'i'
-                self._neuron_pointers = [seg.__getattribute__(ion) for seg in self._seg_to_surface_nodes.keys()]
-                self._nodes_per_seg = [nodes for nodes in self._seg_to_surface_nodes.values()]
-                self._nodes_per_seg_start_indices = [len(nodes) for nodes in self._nodes_per_seg]
+            if nrn_region:         
+                ion_conc = '_ref_' + self._name + nrn_region
+                self._concentration_neuron_pointers = [seg.__getattribute__(ion_conc) for seg in self._seg_to_surface_nodes.keys()]
+                self._surface_nodes_per_seg = [nodes for nodes in self._seg_to_surface_nodes.values()]
+                self._surface_nodes_per_seg_start_indices = [len(nodes) for nodes in self._surface_nodes_per_seg]
                 
                 #cast to numpy arrays to avoid calling PyList_GET_ITEM on every element
-                self._nodes_per_seg = list(itertools.chain.from_iterable(self._nodes_per_seg))
-                self._nodes_per_seg = numpy.asarray(self._nodes_per_seg, dtype=numpy.int64)
+                self._surface_nodes_per_seg = list(itertools.chain.from_iterable(self._surface_nodes_per_seg))
+                self._surface_nodes_per_seg = numpy.asarray(self._surface_nodes_per_seg, dtype=numpy.int64)
 
-                self._nodes_per_seg_start_indices = numpy.cumsum([0] + self._nodes_per_seg_start_indices, dtype=numpy.int64)
+                self._surface_nodes_per_seg_start_indices = numpy.cumsum([0] + self._surface_nodes_per_seg_start_indices, dtype=numpy.int64)
 
-                _ics_set_grid_concentrations(grid_list_start, self._grid_id, self._nodes_per_seg, self._nodes_per_seg_start_indices, self._neuron_pointers)
+                _ics_set_grid_concentrations(grid_list_start, self._grid_id, self._surface_nodes_per_seg, self._surface_nodes_per_seg_start_indices, self._concentration_neuron_pointers)
+
+                if self._name is not None and self._charge != 0:
+                    nrn_region_sign = {'i' : -1, 'o' : 1} 
+                    sign = nrn_region_sign[nrn_region]
+                    ion_curr = '_ref_' + nrn_region + self._name 
+                    tenthousand_over_charge_faraday = 10000. / (self._charge * h.FARADAY)
+                    scale_factor = tenthousand_over_charge_faraday / (numpy.prod(self._dx))              
+                    self._current_neuron_pointers = [seg.__getattribute__(ion_curr) for seg in self._seg_to_surface_nodes.keys()]
+                    #These are in the same order as self._surface_nodes_per_seg so self._surface_nodes_per_seg_start_indices will work for this list as well
+                    scale_factors = [sign * self._nodes[index].surface_area * scale_factor for index in self._surface_nodes_per_seg]
+                    self._scale_factors = numpy.asarray(scale_factors, dtype=numpy.float_)
+                    _ics_set_grid_currents(grid_list_start, self._grid_id, self._surface_nodes_per_seg, self._surface_nodes_per_seg_start_indices, self._current_neuron_pointers, self._scale_factors)
+
 
     def _semi_compile(self, region):
         return 'species_3d[%d]' % (self._grid_id)

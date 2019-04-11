@@ -312,7 +312,7 @@ extern "C" void ics_set_grid_concentrations(int grid_list_index, int index_in_li
     ssize_t i;
     ssize_t j;
     ssize_t num_nodes;
-    ssize_t n = (ssize_t)PyList_Size(neuron_pointers);  //number of segments. nodes_per_seg should have the same length as neuron_pointers
+    ssize_t n = (ssize_t)PyList_Size(neuron_pointers);  //number of segments. 
                                                         
     int total_nodes = nodes_per_seg_start_indices[n];   //nodes_per_seg_lengths has length n + 1 since it has a 0 as the first start index
 
@@ -335,6 +335,24 @@ extern "C" void ics_set_grid_concentrations(int grid_list_index, int index_in_li
 
     g->ics_num_segs = n;
 
+}
+
+extern "C" void ics_set_grid_currents(int grid_list_index, int index_in_list, int64_t* nodes_per_seg, int64_t* nodes_per_seg_start_indices, PyObject* neuron_pointers, double* scale_factors){
+    Grid_node*g;
+    ssize_t i, j, num_nodes;
+    ssize_t n = (ssize_t)PyList_Size(neuron_pointers); 
+    int total_nodes = nodes_per_seg_start_indices[n];   //nodes_per_seg_lengths has length n + 1 since it has a 0 as the first start index
+    printf("total nodes = %d\n", total_nodes);
+    /* Find the Grid Object */
+    g = Parallel_grids[grid_list_index];
+    for (i = 0; i < index_in_list; i++) {
+        g = g->next;
+    }
+
+    printf("scale factors: \n");
+    for(i = 0; i < total_nodes; i++){
+        printf("%.8f\n", scale_factors[i]);
+    }
 }
 
 
