@@ -180,7 +180,6 @@ class _SpeciesMathable(object):
             return ecs_instance._semi_compile(reg)
         #region is 3d intracellular
         if isinstance(reg, region.Region) and reg._secs3d:
-            print("self is {} and reg is {}".format(self, reg))
             ics_instance = self._intracellular_instances[reg]
             return ics_instance._semi_compile(reg)
         if isinstance(reg, region.Region) and reg._secs1d:
@@ -437,7 +436,6 @@ class _IntracellularSpecies(_SpeciesMathable):
         self._initial = initial
         self.states = self._states.as_numpy()
         self._nodes = nodes
-        print("nodes_length = {} and len(self._nodes) = {}".format(self._nodes_length, len(self._nodes)))
 
         self._x_line_defs = self.line_defs(self._nodes, 'x', self._nodes_length)
         self._y_line_defs = self.line_defs(self._nodes, 'y', self._nodes_length)
@@ -470,9 +468,7 @@ class _IntracellularSpecies(_SpeciesMathable):
                 node = nodes[line_start]
                 while (node.neighbors[my_dir] is not None) and indices:
                     to_remove = node._neighbors[my_dir]
-                    #print("my_dir  = {}, to_remove = {}, name is {}, and region is {}".format(my_dir, to_remove, self._species, self._region))
                     node = nodes[to_remove]
-                    #print("node index now = {}".format(node._index))
                     indices.remove(to_remove)
                     line_length += 1
 
@@ -546,10 +542,14 @@ class _IntracellularSpecies(_SpeciesMathable):
                     sign = nrn_region_sign[nrn_region]
                     ion_curr = '_ref_' + nrn_region + self._name 
                     tenthousand_over_charge_faraday = 10000. / (self._charge * h.FARADAY)
-                    scale_factor = tenthousand_over_charge_faraday / (numpy.prod(self._dx))              
+                    my_dx = self._dx
+                    # TODO: this better
+                    if not isinstance(my_dx, tuple):
+                        my_dx = (my_dx, my_dx, my_dx)
+                    scale_factor = tenthousand_over_charge_faraday / (numpy.prod(my_dx))              
                     self._current_neuron_pointers = [seg.__getattribute__(ion_curr) for seg in self._seg_to_surface_nodes.keys()]
                     #These are in the same order as self._surface_nodes_per_seg so self._surface_nodes_per_seg_start_indices will work for this list as well
-                    scale_factors = [sign * self._nodes[index].surface_area * scale_factor for index in self._surface_nodes_per_seg]
+                    scale_factors = [sign * node.surface_area * scale_factor for node in self._nodes]
                     self._scale_factors = numpy.asarray(scale_factors, dtype=numpy.float_)
                     _ics_set_grid_currents(grid_list_start, self._grid_id, self._surface_nodes_per_seg, self._surface_nodes_per_seg_start_indices, self._current_neuron_pointers, self._scale_factors)
 

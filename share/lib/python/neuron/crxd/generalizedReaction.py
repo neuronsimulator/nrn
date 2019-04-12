@@ -210,7 +210,6 @@ class GeneralizedReaction(object):
         volumes, surface_area, diffs = node._get_data()
         #self._mult = [list(-1. / volumes[sources_indices]) + list(1. / volumes[dests_indices])]
         if self._trans_membrane and active_regions:
-            print("in self._trans_membrane and active_regions")
             # note that this assumes (as is currently enforced) that if trans-membrane then only one region
             
             # TODO: verify the areas and volumes are in the same order!
@@ -230,7 +229,6 @@ class GeneralizedReaction(object):
                 # not a multicompartment reaction
                 RxDException("An extracellular source and destination is not possible with a multi-compartment reaction.")
         else:
-            print("in else")
             self._mult = list(-1 for v in sources_indices) + list(1 for v in dests_indices)
         self._mult = _numpy_array(self._mult)
         self._update_jac_cache()

@@ -467,7 +467,6 @@ class _Arithmeticed:
         for item, count in zip(list(self._items.keys()), list(self._items.values())):
             if count:
                 try:
-                    print("item is {} and type is {}".format(item, type(item)))
                     items_append(item._semi_compile(region))
                 except AttributeError:
                     items_append('%s' % item)

@@ -615,7 +615,11 @@ class Node3D(Node):
         _states[self._index] = v
         self._speciesref()._intracellular_instances[self._r].states[self._index] = v
 
-
+    @property
+    def _ref_value(self):
+        """Returns a HOC reference to the Node's value"""
+        return self._speciesref()._intracellular_instances[self._r]._states._ref_x[self._index]
+        
 
 class NodeExtracellular(Node):
     def __init__(self, index, i, j, k, r, speciesref, regionref):

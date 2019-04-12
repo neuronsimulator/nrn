@@ -186,10 +186,12 @@ Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors
     new_Grid->current_list = NULL;
     new_Grid->num_currents = 0;
 
-    new_Grid->ics_nodes_per_seg = NULL;
-    new_Grid->ics_nodes_per_seg_start_indices = NULL;
-    new_Grid->ics_seg_ptrs = NULL;
-    new_Grid->ics_num_segs = NULL;
+    new_Grid->ics_surface_nodes_per_seg = NULL;
+    new_Grid->ics_surface_nodes_per_seg_start_indices = NULL;
+    new_Grid->ics_concentration_seg_ptrs = NULL;
+    new_Grid->ics_scale_factors = NULL;
+    new_Grid->ics_current_seg_ptrs = NULL;
+    new_Grid->ics_states_cur = (double*)calloc(new_Grid->_num_nodes, sizeof(double));
 
     #if NRNMPI
         if(nrnmpi_use)
@@ -314,7 +316,7 @@ extern "C" void ics_set_grid_concentrations(int grid_list_index, int index_in_li
     ssize_t num_nodes;
     ssize_t n = (ssize_t)PyList_Size(neuron_pointers);  //number of segments. 
                                                         
-    int total_nodes = nodes_per_seg_start_indices[n];   //nodes_per_seg_lengths has length n + 1 since it has a 0 as the first start index
+    int total_surface_nodes = nodes_per_seg_start_indices[n];   //nodes_per_seg_lengths has length n + 1 since it has a 0 as the first start index
 
     /* Find the Grid Object */
     g = Parallel_grids[grid_list_index];
@@ -322,36 +324,37 @@ extern "C" void ics_set_grid_concentrations(int grid_list_index, int index_in_li
         g = g->next;
     }
 
-    g->ics_nodes_per_seg = (int64_t*)malloc(total_nodes*sizeof(int64_t));
-    g->ics_nodes_per_seg = nodes_per_seg;
+    g->ics_surface_nodes_per_seg = (int64_t*)malloc(total_surface_nodes*sizeof(int64_t));
+    g->ics_surface_nodes_per_seg = nodes_per_seg;
 
-    g->ics_nodes_per_seg_start_indices = (int64_t*)malloc(n*sizeof(int64_t));
-    g->ics_nodes_per_seg_start_indices = nodes_per_seg_start_indices;
+    g->ics_surface_nodes_per_seg_start_indices = (int64_t*)malloc(n*sizeof(int64_t));
+    g->ics_surface_nodes_per_seg_start_indices = nodes_per_seg_start_indices;
 
-    g->ics_seg_ptrs = (double**)malloc(n*sizeof(double*));
+    g->ics_concentration_seg_ptrs = (double**)malloc(n*sizeof(double*));
     for(i = 0; i < n; i++){
-        g->ics_seg_ptrs[i] = ((PyHocObject*) PyList_GET_ITEM(neuron_pointers, i)) -> u.px_;
+        g->ics_concentration_seg_ptrs[i] = ((PyHocObject*) PyList_GET_ITEM(neuron_pointers, i)) -> u.px_;
     }
 
     g->ics_num_segs = n;
 
 }
 
-extern "C" void ics_set_grid_currents(int grid_list_index, int index_in_list, int64_t* nodes_per_seg, int64_t* nodes_per_seg_start_indices, PyObject* neuron_pointers, double* scale_factors){
+extern "C" void ics_set_grid_currents(int grid_list_index, int index_in_list, int64_t* nodes_per_seg, int64_t* nodes_per_seg_start_indices, PyObject* neuron_pointers, double* scale_factors, int total_nodes){
     Grid_node*g;
     ssize_t i, j, num_nodes;
     ssize_t n = (ssize_t)PyList_Size(neuron_pointers); 
-    int total_nodes = nodes_per_seg_start_indices[n];   //nodes_per_seg_lengths has length n + 1 since it has a 0 as the first start index
-    printf("total nodes = %d\n", total_nodes);
+    int total_surface_nodes = nodes_per_seg_start_indices[n];   //nodes_per_seg_lengths has length n + 1 since it has a 0 as the first start index 
     /* Find the Grid Object */
     g = Parallel_grids[grid_list_index];
     for (i = 0; i < index_in_list; i++) {
         g = g->next;
     }
+    g->ics_scale_factors = scale_factors;
 
-    printf("scale factors: \n");
-    for(i = 0; i < total_nodes; i++){
-        printf("%.8f\n", scale_factors[i]);
+    g->ics_current_seg_ptrs = (double**)malloc(n*sizeof(double*));
+
+    for(i = 0; i < n; i++){
+        g->ics_current_seg_ptrs[i] = ((PyHocObject*) PyList_GET_ITEM(neuron_pointers, i)) -> u.px_;
     }
 }
 
@@ -995,7 +998,22 @@ void ICS_Grid_node::set_num_threads(const int n)
 
 void ICS_Grid_node::do_grid_currents(double dt, int grid_id)
 {
-
+    if(ics_current_seg_ptrs != NULL){
+        ssize_t i, j, n;
+        int seg_start_index, seg_stop_index;
+        int state_index;
+        double seg_cur;
+        n = ics_num_segs;
+        for(i = 0; i < n; i++){
+            seg_start_index = ics_surface_nodes_per_seg_start_indices[i];
+            seg_stop_index = ics_surface_nodes_per_seg_start_indices[i+1];
+            seg_cur = *ics_current_seg_ptrs[i];
+            for(j = seg_start_index; j < seg_stop_index; j++){
+                state_index = ics_surface_nodes_per_seg[j];
+                ics_states_cur[state_index] = seg_cur * ics_scale_factors[state_index] * dt;
+            }
+        }        
+    }
 }
 
 void ICS_Grid_node::volume_setup()
@@ -1031,14 +1049,14 @@ void ICS_Grid_node::scatter_grid_concentrations()
 
     for (i = 0; i < n; i++) {
         total_seg_concentration = 0.0;
-        seg_start_index = ics_nodes_per_seg_start_indices[i];
-        seg_stop_index = ics_nodes_per_seg_start_indices[i+1];
+        seg_start_index = ics_surface_nodes_per_seg_start_indices[i];
+        seg_stop_index = ics_surface_nodes_per_seg_start_indices[i+1];
         for(j = seg_start_index; j < seg_stop_index; j++){
-            total_seg_concentration += states[ics_nodes_per_seg[j]];
+            total_seg_concentration += states[ics_surface_nodes_per_seg[j]];
         }
         average_seg_concentration = total_seg_concentration / (seg_stop_index - seg_start_index);
 
-        *ics_seg_ptrs[i] = average_seg_concentration;
+        *ics_concentration_seg_ptrs[i] = average_seg_concentration;
     } 
 }
 

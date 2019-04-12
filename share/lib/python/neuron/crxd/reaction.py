@@ -122,7 +122,6 @@ class Reaction(GeneralizedReaction):
         if not ecs_region:
             sps = [s() for s in self._sources + self._dests if isinstance(s(),species.Species)]
             # only have an ecs reaction if all the species are defined on the ecs
-            print(sps)
             if sps and all(s._extracellular_instances for s in sps):
                 # assume all the ecs regions are the same
                 #ecs_region = sps[0]._extracellular_instances[0]._region

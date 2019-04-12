@@ -951,7 +951,6 @@ def _compile_reactions():
     for sets in matched_regions:
         c_region_list.append(_c_region(sets))
     
-    print("c_region_list = {}".format(c_region_list))
     for rptr in _all_reactions:
         r = rptr()
         if not r:
@@ -1002,7 +1001,6 @@ def _compile_reactions():
                 if not isinstance(s, species.SpeciesOnExtracellular) and not isinstance(s, species._ExtracellularSpecies):
                     all_species_involed.add(s)
                     species_involved.append(s)
-            print("react regions = {} and reaction is {}".format(react_regions, r))
             for reg in react_regions:
                 if isinstance(reg, region.Extracellular):
                     continue
@@ -1076,7 +1074,6 @@ def _compile_reactions():
     if location_count > 0:
         from . import rate, multiCompartmentReaction
         for creg in c_region_list:
-            print("creg is {}".format(creg))
             if not creg._react_regions:
                 continue
             creg._initalize()
@@ -1097,8 +1094,6 @@ def _compile_reactions():
                     s = r._species()
                     species_id = creg._species_ids[s._id]
                     for reg in creg._react_regions[rptr]:
-                        print("reg is {}".format(reg))
-                        print("r._rate is {}".format(r._rate))
                         region_id = creg._region_ids[reg()._id]
                         rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate[reg()])
                         operator = '+=' if species_ids_used[species_id][region_id] else '='
@@ -1129,10 +1124,7 @@ def _compile_reactions():
                         mc_mult_count += 1
                     mc_mult_list.extend(r._mult.flatten())
                 else:
-                    print("creg is {}".format(creg))
-                    print("creg._react_regions is {}".format(creg._react_regions))
                     for reg in creg._react_regions[rptr]:
-                        print("reg()._id = {}".format(reg))
                         region_id = creg._region_ids[reg()._id]
                         rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate[reg()])
                         fxn_string += "\n\trate = %s;" % rate_str
@@ -1145,7 +1137,6 @@ def _compile_reactions():
                             fxn_string += "\n\trhs[%d][%d] %s (%g) * rate;" % (idx, region_id, operator, summed_mults[idx])
               
             fxn_string += "\n}\n"
-            print(fxn_string)
             #print "num_species=%i\t num_regions=%i\t num_segments=%i\n" % (creg.num_species, creg.num_regions, creg.num_segments)
             #print creg.get_state_index()
             #print "state_index %s \t num_ecs_species=%i\t ecs_species_ids %s\n" % (creg.get_state_index().shape, creg.num_ecs_species, creg.get_ecs_species_ids().shape)
@@ -1193,7 +1184,6 @@ def _compile_reactions():
                     fxn_string += "\n\trate = %s;" %  rate_str
                     for sp in r._sources + r._dests:
                         s = sp()
-                        print("s is {} and is of type {}".format(s, type(s)))
                         #Get underlying rxd._IntracellularSpecies for the grid_id
                         if isinstance(s, species.Species):
                             s = s._intracellular_instances[reg]
@@ -1210,10 +1200,8 @@ def _compile_reactions():
             fxn_string += "\n}\n"
             ecs_register_reaction(0, len(all_ics_gids), _list_to_cint_array(all_ics_gids), _c_compile(fxn_string))                 
     #Setup extracellular reactions
-    print(ecs_regions_inv)
     if len(ecs_regions_inv) > 0:
         for reg in ecs_regions_inv:
-            print(type(reg))
             grid_ids = []
             all_gids = set()
             fxn_string = _c_headers
@@ -1265,9 +1253,7 @@ def _compile_reactions():
                         pid = [pid for pid,gid in enumerate(all_gids) if gid == s._grid_id][0]
                         fxn_string += "\n\trhs[%d] %s (%s)*rate;" % (pid, operator, r._mult[idx])
                         idx += 1
-            print("function string for region: {}".format(reg))
             fxn_string += "\n}\n"
-            print(fxn_string)
             ecs_register_reaction(0, len(all_gids), _list_to_cint_array(all_gids), _c_compile(fxn_string))
 
 def _init():

@@ -135,9 +135,12 @@ class Grid_node {
     double (*get_lambda)(double*,int);
     double atolscale;
 
-    int64_t* ics_nodes_per_seg;
-    int64_t* ics_nodes_per_seg_start_indices;
-    double** ics_seg_ptrs;
+    int64_t* ics_surface_nodes_per_seg;
+    int64_t* ics_surface_nodes_per_seg_start_indices;
+    double** ics_concentration_seg_ptrs;
+    double** ics_current_seg_ptrs;
+    double* ics_scale_factors;
+    double* ics_states_cur;
     int ics_num_segs;
 
     int insert(int grid_list_index);
