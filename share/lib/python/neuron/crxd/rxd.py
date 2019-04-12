@@ -169,6 +169,11 @@ def _list_to_pyobject_array(data):
         return (ctypes.py_object * len(data))(*tuple(data))
 
 def byeworld():
+    # prevent calling __del__ function that re-arrange states memory
+    species.Species.__del__ = lambda x: None 
+    species._ExtracellularSpecies.__del__ = lambda x: None
+    section1d.Section1D.__del__ = lambda x: None
+    
     # needed to prevent a seg-fault error at shutdown in at least some
     # combinations of NEURON and Python, which I think is due to objects
     # getting deleted out-of-order
