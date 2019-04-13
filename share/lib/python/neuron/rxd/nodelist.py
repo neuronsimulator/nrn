@@ -33,6 +33,22 @@ class NodeList(list):
         for node in self: node.concentration = value
     
     @property
+    def _ref_value(self):
+        if not self:
+            raise RxDException('no nodes')
+        if len(self) != 1:
+            raise RxDException('node not unique')
+        return self[0]._ref_value
+
+    @property
+    def _ref_concentration(self):
+        if not self:
+            raise RxDException('no nodes')
+        if len(self) != 1:
+            raise RxDException('node not unique')
+        return self[0]._ref_concentration
+    
+    @property
     def diff(self):
         """Returns the diffusion constant of the Node objects in the NodeList as an iterable."""
         return [node.diff for node in self]
