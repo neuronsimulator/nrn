@@ -623,6 +623,8 @@ class Species(_SpeciesMathable):
         # declare an update to the structure of the model (the number of differential equations has changed)
         nrn_dll_sym('structure_change_cnt', ctypes.c_int).value += 1
 
+        self._ion_register() 
+
         # initialize self if the rest of rxd is already initialized
         if initializer.is_initialized():
             if _has_3d:
