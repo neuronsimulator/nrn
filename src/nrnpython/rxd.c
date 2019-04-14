@@ -520,7 +520,7 @@ static void free_currents()
 
 void setup_currents(int num_currents, int num_fluxes, int num_nodes, int* num_species, int* net_charges, int* cur_idxs, int* node_idxs, double* scales,  int* charges, PyHocObject** ptrs, int* mapped, int* mapped_ecs)
 {
-    int i, j, k, id;
+    int i, j, k, id, side;
     Current_Triple* c;
     Grid_node* grid;
     
@@ -567,9 +567,12 @@ void setup_currents(int num_currents, int num_fluxes, int num_nodes, int* num_sp
         for(j = 0; j < num_species[i]; j++, k++)
         {
             _memb_cur_mapped[i][j] = (int*)malloc(2*sizeof(int));
-            memcpy(_memb_cur_mapped[i][j],&mapped[2*k],2*sizeof(int));
             _memb_cur_mapped_ecs[i][j] = (int*)malloc(2*sizeof(int));
-            memcpy(_memb_cur_mapped_ecs[i][j],&mapped_ecs[2*k],2*sizeof(int));
+            for(side = 0; side < 2; side++)
+            {
+                _memb_cur_mapped[i][j][side] = mapped[2*k + side];
+                _memb_cur_mapped_ecs[i][j][side] = mapped_ecs[2*k + side];
+            }
             if(_memb_cur_mapped[i][j][0] != SPECIES_ABSENT)
             {
                 _membrane_scale_lookup[cur_idxs[_memb_cur_mapped[i][j][0]]] = i;
@@ -577,7 +580,7 @@ void setup_currents(int num_currents, int num_fluxes, int num_nodes, int* num_sp
             }
             if(_memb_cur_mapped[i][j][1] != SPECIES_ABSENT)
             {
-                _membrane_scale_lookup[cur_idxs[_memb_cur_mapped[i][j][1]]] = i;
+                _membrane_scale_lookup[cur_idxs[_memb_cur_mapped[i][j][1]]] = i;    //Invalid write of size 4
                 _membrane_flux_lookup[cur_idxs[_memb_cur_mapped[i][j][1]]] = i;
             }
             if( _memb_cur_mapped[i][j][0] == SPECIES_ABSENT)
@@ -616,7 +619,7 @@ void setup_currents(int num_currents, int num_fluxes, int num_nodes, int* num_sp
 
     /*index into arrays of currents current*/
     _cur_indices = (int*)malloc(sizeof(int)*num_fluxes);  
-    memcpy(_cur_indices, cur_idxs, sizeof(int)*num_fluxes);
+    memcpy(_cur_indices, cur_idxs, sizeof(int)*num_fluxes); //Invalid read of size 8
 
     /*index into arrays of nodes/states*/
     _cur_node_indices = (int*)malloc(sizeof(int)*num_currents);
@@ -957,7 +960,7 @@ void clear_rates()
            
             if(react->num_ecs_species > 0)
             {
-                free(react->ecs_state);
+                free(react->ecs_state[i]);
             }
         }
         if(react->num_mult > 0)
@@ -1733,7 +1736,7 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double* c
 					}
                     // reset dx array
 	            	states_for_reaction_dx[i][j] -= dx;
-	                idx+=1;
+                    idx++;
 	        	}
 	        }
 	    }
@@ -1779,10 +1782,14 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double* c
 						m_set_val(jacobian, jac_idx, idx, (idx==jac_idx) - dt*pd);
 	                    jac_idx += 1;
 	       	        }
+                    else
+                    {
+                        m_set_val(jacobian, idx, idx, 1.0);
+                    }
 					// reset dx array
 	            	ecs_states_for_reaction_dx[i] -= dx;
-	                idx+=1;
 	        	}
+                idx++;
             }
 	    }
         // solve for x, destructively

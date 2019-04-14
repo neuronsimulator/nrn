@@ -62,6 +62,7 @@ class Reaction(GeneralizedReaction):
 
         self._original_rate_f = rate_f
         self._original_rate_b = rate_b
+        self._voltage_dependent = any([ar._voltage_dependent for ar in [scheme, rate_f, rate_b] if hasattr(ar,'_voltage_dependent')])
         self._membrane_flux = False
         self._dir = scheme._dir
         self._custom_dynamics = custom_dynamics
@@ -71,7 +72,6 @@ class Reaction(GeneralizedReaction):
             regions = [regions]
         self._regions = regions
         rxd._register_reaction(self)
-        self._voltage_dependent = scheme._voltage_dependent
 
         # initialize self if the rest of rxd is already initialized
         if initializer.is_initialized():

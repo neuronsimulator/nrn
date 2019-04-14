@@ -619,18 +619,19 @@ class _Arithmeticed:
         other = _ensure_arithmeticed(other)
         return other.__sub__(self)
 
-
-class _Vm(_Arithmeticed, object):
+class Vm(_Arithmeticed, object):
     """ represent the membrane potential in rxd rates and reactions """
+
+    class _Vm(object):
+        def __repr__(self):
+            return 'v'
+
+        @property
+        def _voltage_dependent(self):
+            return True
+
     def __init__(self):
-        super(_Vm, self).__init__('v', valid_reaction_term=True)
+        super(Vm, self).__init__(Vm._Vm(), valid_reaction_term=True)
 
-    @property
-    def _voltage_dependent(self):
-       return True 
-    
-    def __repr__(self):
-        return 'v'
-
-v = _Vm()
+v = Vm()
 

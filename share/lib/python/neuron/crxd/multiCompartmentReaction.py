@@ -64,6 +64,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
         self._scale_by_area = scale_by_area
         self._original_rate_f = rate_f
         self._original_rate_b = rate_b
+        self._voltage_dependent = any([ar._voltage_dependent for ar in [scheme, rate_f, rate_b] if hasattr(ar,'_voltage_dependent')])
         if custom_dynamics is not None and mass_action is not None:
             raise RxDException('Cannot specify both custom_dynamics and mass_action.')
         elif custom_dynamics is None and mass_action is None:
@@ -86,7 +87,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
             raise RxDException('must specify a membrane not a volume for the boundary')
         self._regions = [membrane]
         rxd._register_reaction(self)
-        self._voltage_dependent = scheme._voltage_dependent
+        
 
         # initialize self if the rest of rxd is already initialized
         if initializer.is_initialized():

@@ -115,7 +115,9 @@ class _SpeciesMathable(object):
         return _Arithmeticed(other) + self
     def __rmul__(self, other):
         return _Arithmeticed(self) * other
-    def __rdiv__(self, other):
+    def __rtruediv__(self, other):
+        return _Arithmeticed(other) / self
+    def __rfloordiv__(self, other):
         return _Arithmeticed(other) / self
     def __rsub__(self, other):
         return _Arithmeticed(other) - self

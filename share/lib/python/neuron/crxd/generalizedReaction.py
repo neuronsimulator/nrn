@@ -174,23 +174,26 @@ class GeneralizedReaction(object):
                     del active_regions[active_regions.index(r)] 
             else:
                 active_regions = []
-
+        
+        def intersection(los):
+            if los: return set.intersection(*los)
+            return None
     
         #If we haven't identified active_regions -- use the regions where all species are defined
         if len(active_regions) == 0 or active_regions == [None]:
             if self._trans_membrane:
-                src_regions =  list(set.intersection(*[set(sptr()._regions) for sptr in sources]))
+                src_regions = intersection([set(sptr()._regions) if isinstance(sptr(),species.Species) else {sptr()._region()} for sptr in sources])
                 if not src_regions:
                     raise RxDException("Error in %r. The source species do not share a common region" % self)
-                src_sections = set.intersection(*[set(reg.secs) for reg in src_regions if reg is not None])
-                dest_regions = list(set.intersection(*[set(sptr()._regions) for sptr in dests]))
+                src_sections = intersection([set(reg.secs) for reg in src_regions if reg is not None])
+                dest_regions = intersection([set(sptr()._regions) if isinstance(sptr(),species.Species) else {sptr()._region()} for sptr in dests])
                 if not dest_regions:
                     raise RxDException("Error in %r. The destination species do not share a common region" % self)
-                dest_sections = set.intersection(*[set(reg.secs) for reg in dest_regions if reg is not None])
+                dest_sections = intersection([set(reg.secs) for reg in dest_regions if reg is not None])
                 active_regions = src_regions + dest_regions
                 active_secs = set.union(src_sections,dest_sections)
             else:
-                active_regions = list(set.intersection(*[set(sptr()._regions) if isinstance(sptr(),species.Species) else {sptr()._region()} for sptr in sources + dests]))
+                active_regions = list(intersection([set(sptr()._regions) if isinstance(sptr(),species.Species) else {sptr()._region()} for sptr in sources + dests]))
                 if not active_regions:
                     raise RxDException("Error in %r. The species do not share a common region" % self)
                 active_secs = set.intersection(*[set(reg.secs) for reg in active_regions if reg])
