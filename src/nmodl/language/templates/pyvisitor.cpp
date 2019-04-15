@@ -12,6 +12,10 @@
 
 #include "pybind/pybind_utils.hpp"
 #include "pybind/pyvisitor.hpp"
+#include "visitors/constant_folder_visitor.hpp"
+#include "visitors/inline_visitor.hpp"
+#include "visitors/kinetic_block_visitor.hpp"
+#include "visitors/local_var_rename_visitor.hpp"
 #include "visitors/lookup_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/sympy_conductance_visitor.hpp"
@@ -43,15 +47,36 @@ static const char *nmodlprintvisitor_class = R"(
     NmodlPrintVisitor class
 )";
 
-static const char *sympysolvervisitor_class = R"(
+static const char *constantfoldervisitor_class = R"(
 
-    SympySolverVisitor class
+    ConstantFolderVisitor class
+)";
+
+static const char *inlinevisitor_class = R"(
+
+    InlineVisitor class
+)";
+
+static const char *kineticblockvisitor_class = R"(
+
+    KineticBlockVisitor class
+)";
+
+static const char *localvarrenamevisitor_class = R"(
+
+    LocalVarRenameVisitor class
 )";
 
 static const char *sympyconductancevisitor_class = R"(
 
     SympyConductanceVisitor class
 )";
+
+static const char *sympysolvervisitor_class = R"(
+
+    SympySolverVisitor class
+)";
+
 }
 
 #pragma clang diagnostic push
@@ -137,13 +162,29 @@ void init_visitor_module(py::module& m) {
         {% if loop.last -%};{% endif %}
     {% endfor %}
 
-    py::class_<SympySolverVisitor, AstVisitor> sympy_solver_visitor(m_visitor, "SympySolverVisitor", docstring::sympysolvervisitor_class);
-    sympy_solver_visitor.def(py::init<bool>(), py::arg("use_pade_approx")=false)
-        .def("visit_program", &SympySolverVisitor::visit_program);
+    py::class_<ConstantFolderVisitor, AstVisitor> constant_folder_visitor(m_visitor, "ConstantFolderVisitor", docstring::constantfoldervisitor_class);
+    constant_folder_visitor.def(py::init<>())
+        .def("visit_program", &ConstantFolderVisitor::visit_program);
+
+    py::class_<InlineVisitor, AstVisitor> inline_visitor(m_visitor, "InlineVisitor", docstring::inlinevisitor_class);
+    inline_visitor.def(py::init<>())
+        .def("visit_program", &InlineVisitor::visit_program);
+
+    py::class_<KineticBlockVisitor, AstVisitor> kinetic_block_visitor(m_visitor, "KineticBlockVisitor", docstring::kineticblockvisitor_class);
+    kinetic_block_visitor.def(py::init<>())
+        .def("visit_program", &KineticBlockVisitor::visit_program);
+
+    py::class_<LocalVarRenameVisitor, AstVisitor> local_var_rename_visitor(m_visitor, "LocalVarRenameVisitor", docstring::localvarrenamevisitor_class);
+    local_var_rename_visitor.def(py::init<>())
+        .def("visit_program", &LocalVarRenameVisitor::visit_program);
 
     py::class_<SympyConductanceVisitor, AstVisitor> sympy_conductance_visitor(m_visitor, "SympyConductanceVisitor", docstring::sympyconductancevisitor_class);
     sympy_conductance_visitor.def(py::init<>())
         .def("visit_program", &SympyConductanceVisitor::visit_program);
+
+    py::class_<SympySolverVisitor, AstVisitor> sympy_solver_visitor(m_visitor, "SympySolverVisitor", docstring::sympysolvervisitor_class);
+    sympy_solver_visitor.def(py::init<bool>(), py::arg("use_pade_approx")=false)
+        .def("visit_program", &SympySolverVisitor::visit_program);
 }
 
 #pragma clang diagnostic pop

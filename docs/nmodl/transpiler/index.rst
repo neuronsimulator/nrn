@@ -22,9 +22,13 @@ Welcome to nmodl's documentation!
    :maxdepth: 3
    :caption: Jupyter Notebooks:
 
-   notebooks/nmodl-python-sympy-examples
-   notebooks/nmodl-python-tutorial
-   notebooks/kinetic-schemes
+   notebooks/nmodl-python-tutorial.ipynb
+   notebooks/nmodl-odes-overview.ipynb
+   notebooks/nmodl-kinetic-schemes.ipynb
+   notebooks/nmodl-sympy-solver.ipynb
+   notebooks/nmodl-linear-solver.ipynb
+   notebooks/nmodl-nonlinear-solver.ipynb
+   notebooks/nmodl-sympy-conductance.ipynb
 
 .. toctree::
    :maxdepth: 2

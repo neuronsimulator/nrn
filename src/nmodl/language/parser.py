@@ -191,7 +191,7 @@ class LanguageParser:
 
         with open(self.filename, 'r') as stream:
             try:
-                rules = yaml.load(stream)
+                rules = yaml.safe_load(stream)
                 _, nodes = self.parse_yaml_rules(rules)
             except yaml.YAMLError as e:
                 print("Error while parsing YAML definition file {0} : {1}".format(
