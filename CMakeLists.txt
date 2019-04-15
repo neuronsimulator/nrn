@@ -46,6 +46,23 @@ set(NMODL_ClangFormat_DEPENDENCIES pyastgen parser-gen
 add_subdirectory(cmake/hpc-coding-conventions/cpp)
 
 # =============================================================================
+# Format & execute ipynb notebooks in place (pip install nbconvert clean-ipynb)
+# =============================================================================
+add_custom_target(nb-format
+                  jupyter
+                  nbconvert
+                  --to
+                  notebook
+                  --execute
+                  --inplace
+                  --ExecutePreprocessor.timeout=360
+                  "${CMAKE_SOURCE_DIR}/docs/notebooks/*.ipynb"
+                  &&
+                  clean_ipynb
+                  --keep-output
+                  "${CMAKE_SOURCE_DIR}/docs/notebooks/*.ipynb")
+
+# =============================================================================
 # Include cmake modules
 # =============================================================================
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
