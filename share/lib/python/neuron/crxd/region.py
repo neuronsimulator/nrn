@@ -27,7 +27,7 @@ def _sort_secs(secs):
         all_sorted.wholetree(sec=root)
     secs_names = dict([(sec.hoc_internal_name(),sec) for sec in secs])
     for sec in secs:
-        if h.section_orientation(sec=sec):
+        if sec.orientation():
             raise RxDException('still need to deal with backwards sections')
     return [secs_names[sec.hoc_internal_name()] for sec in all_sorted if sec.hoc_internal_name() in secs_names]
 
@@ -38,7 +38,7 @@ class _c_region:
     regions - a set of regions that occur in the same sections
     """
 
-    def __init__(self,regions):
+    def __init__(self, regions):
         global _c_region_lookup
         self._regions = [weakref.ref(r) for r in regions]
         self._overlap = set(self._regions[0]()._secs)
@@ -53,6 +53,11 @@ class _c_region:
         self.location_index = None
         self.ecs_location_index = None
         self._ecs_species_ids = None
+<<<<<<< HEAD
+=======
+        self._voltage_dependent = False
+        self._vptrs = None
+>>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
         for rptr in self._regions:
             r = rptr()
             self._overlap.intersection(r._secs)
@@ -66,6 +71,8 @@ class _c_region:
            self._react_regions[rptr].add(region)
         else:
             self._react_regions[rptr] = {region}
+        if not self._voltage_dependent:
+            self._voltage_dependent = rptr()._voltage_dependent
         self._initialized = False
 
     def add_species(self,species_set):
@@ -107,7 +114,7 @@ class _c_region:
 
     def _ecs_initalize(self):
         from . import species
-        self.ecs_location_index = -numpy.ones((self.num_regions,self.num_ecs_species,self.num_segments),ctypes.c_int)
+        self.ecs_location_index = -numpy.ones((self.num_ecs_species,self.num_segments),ctypes.c_int)
 
         #Set the local ids of the regions and species involved in the reactions
         self._ecs_species_ids = dict()
@@ -151,11 +158,21 @@ class _c_region:
                 except ValueError:
                     raise RxDException("Rates and Reactions with species defined on different regions are not currently supported in crxd. Please try using rxd.") 
         self.location_index=self.location_index.transpose()
+        
+        if self._voltage_dependent:
+            self._vptrs = []
+            for sec in self._overlap:
+                for seg in sec:
+                    self._vptrs.append(seg._ref_v)
 
         #Setup the matrix to the ECS grid points
         if self.num_ecs_species > 0:
             self._ecs_initalize()
                                   
+<<<<<<< HEAD
+=======
+
+>>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
         self._initialized = True
 
 
@@ -371,21 +388,21 @@ class Region(object):
         # NOTE: some care is necessary in constructing normal vector... must be
         #       based on end frusta, not on vector between end points
         if position == 0:
-            x = h.x3d(0, sec=sec)
-            y = h.y3d(0, sec=sec)
-            z = h.z3d(0, sec=sec)
-            nx = h.x3d(1, sec=sec) - x
-            ny = h.y3d(1, sec=sec) - y
-            nz = h.z3d(1, sec=sec) - z
+            x = sec.x3d(0)
+            y = sec.y3d(0)
+            z = sec.z3d(0)
+            nx = sec.x3d(1) - x
+            ny = sec.y3d(1) - y
+            nz = sec.z3d(1) - z
         elif position == 1:
-            n = int(h.n3d(sec=sec))
-            x = h.x3d(n - 1, sec=sec)
-            y = h.y3d(n - 1, sec=sec)
-            z = h.z3d(n - 1, sec=sec)
+            n = sec.n3d()
+            x = sec.x3d(n - 1)
+            y = sec.y3d(n - 1)
+            z = sec.z3d(n - 1)
             # NOTE: sign of the normal is irrelevant
-            nx = x - h.x3d(n - 2, sec=sec)
-            ny = y - h.y3d(n - 2, sec=sec)
-            nz = z - h.z3d(n - 2, sec=sec)
+            nx = x - sec.x3d(n - 2)
+            ny = y - sec.y3d(n - 2)
+            nz = z - sec.z3d(n - 2)
         else:
             raise RxDException('should never get here')
         # x, y, z = x * x1 + (1 - x) * x0, x * y1 + (1 - x) * y0, x * z1 + (1 - x) * z1

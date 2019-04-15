@@ -191,8 +191,8 @@ def modf(obj):
 # this seems to be okay; just have to avoid using pow in any other context
 def pow(obj1, obj2):
     return _Arithmeticed(_Function2(obj1, obj2, 'rxdmath._power', 'pow'), valid_reaction_term=False)
-def radians(obj1, obj2):
-    return _Arithmeticed(_Function2(obj1, obj2, 'numpy.radians', 'radians'), valid_reaction_term=False)
+def radians(obj):
+    return _Arithmeticed(_Function(obj, 'numpy.radians', 'radians'), valid_reaction_term=False)
 def sin(obj):
     return _Arithmeticed(_Function(obj, 'numpy.sin', 'sin'), valid_reaction_term=False)
 def sinh(obj):

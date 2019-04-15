@@ -50,6 +50,9 @@ done
 M=$N/mingw64
 X=x86_64-w64-mingw32
 gccver=`gcc --version | sed -n '1s/.* //p'`
+if test ! -d "$gccver" ; then
+  gccver=`gcc --version | sed -n '1s/.*)  *\([^ ]*\).*/\1/p'` 
+fi
 
 # all the folders involved that have files
 mkdir -p $M/bin

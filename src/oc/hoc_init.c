@@ -7,6 +7,7 @@
 #include "equation.h"
 
 #include "ocfunc.h"
+extern void hoc_nrnmpi_init();
 
 #if PVM
 extern int      numprocs(), myproc(), psync();
@@ -216,6 +217,7 @@ static struct { /* Builtin functions with multiple or variable args */
 	"mcell_ran4", hoc_mcran4,
 	"mcell_ran4_init", hoc_mcran4init,
 	"nrn_feenableexcept", nrn_feenableexcept,
+	"nrnmpi_init", hoc_nrnmpi_init,
 #if PVM
         "numprocs", numprocs,
         "myproc", myproc,

@@ -53,7 +53,6 @@ public:
 	virtual void done();
 
 	virtual void perror(const char*);
-	static void check_pvm();
 private:
 	KeepArgs* keepargs_;
 #if NRNMPI

@@ -62,6 +62,7 @@ class Reaction(GeneralizedReaction):
 
         self._original_rate_f = rate_f
         self._original_rate_b = rate_b
+        self._voltage_dependent = any([ar._voltage_dependent for ar in [scheme, rate_f, rate_b] if hasattr(ar,'_voltage_dependent')])
         self._membrane_flux = False
         self._dir = scheme._dir
         self._custom_dynamics = custom_dynamics
@@ -124,9 +125,14 @@ class Reaction(GeneralizedReaction):
             # only have an ecs reaction if all the species are defined on the ecs
             if sps and all(s._extracellular_instances for s in sps):
                 # assume all the ecs regions are the same
+<<<<<<< HEAD
                 #ecs_region = sps[0]._extracellular_instances[0]._region
                 ecs_region = [reg for reg in sps[0]._extracellular_instances.keys()]
         
+=======
+                ecs_region = sps[0]._extracellular_instances[0]._region
+
+>>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
         if ecs_region:
             self._rate_ecs, self._involved_species_ecs = rxdmath._compile(rate, ecs_region)
         
@@ -135,6 +141,10 @@ class Reaction(GeneralizedReaction):
             s = sptr() if isinstance(sptr(), species.Species) else sptr()._species()
             self._react_regions = [reg for reg in s._regions]
         self._rate, self._involved_species = rxdmath._compile(rate, self._react_regions)
+<<<<<<< HEAD
+=======
+
+>>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
 
         #Species are in at most one region
         trans_membrane = len({s()._region() for s in self._involved_species if isinstance(s(), species.SpeciesOnRegion)}) + len({s()._extracellular() for s in self._involved_species if isinstance(s(), species.SpeciesOnExtracellular)}) > 1 

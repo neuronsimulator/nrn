@@ -254,7 +254,7 @@ extern "C" {
 	extern const char** nrn_global_argv;
 	int always_false;
 	extern int nrn_is_python_extension;
-	extern int nrnmpi_init_pc();
+	extern void hoc_nrnmpi_init();
 #if NRNMPI_DYNAMICLOAD
         extern void nrnmpi_stubs();
         extern char* nrnmpi_load(int is_python);
@@ -348,7 +348,7 @@ void prargs(const char* s, int argc, const char** argv) {
 }
 #endif
 
-int nrnmpi_init_pc() {
+void hoc_nrnmpi_init() {
 #if NRNMPI
   if (!nrnmpi_use) {
 #if NRNMPI_DYNAMICLOAD
@@ -361,10 +361,11 @@ int nrnmpi_init_pc() {
     
     char** foo = (char**)nrn_global_argv;
     nrnmpi_init(2, &nrn_global_argc, &foo);
-    //if (nrnmpi_myid == 0) {printf("nrnmpi_init_pc called nrnmpi_init\n");}
+    //if (nrnmpi_myid == 0) {printf("hoc_nrnmpi_init called nrnmpi_init\n");}
   }
 #endif
-  return 0;
+  hoc_ret();
+  hoc_pushx(0.0);
 }
 
 // see nrnmain.cpp for the real main()

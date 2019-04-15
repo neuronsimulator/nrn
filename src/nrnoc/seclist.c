@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 #define HOC_L_LIST 1
+#include <nrnpython_config.h>
 #include "section.h"
 #include "neuron.h"
 #include "parse.h"
@@ -7,7 +8,16 @@
 #include "code.h"
 #include "hoc_membf.h"
 
+/* needs trailing '}' */
+#define ITERATE_REMOVE(q1,q2,lst) for (q1 = (lst)->next; q1 != (lst); q1 = q2){ \
+  q2 = q1->next; \
+  if (q1->element.sec->prop == NULL) { \
+    hoc_l_delete(q1); \
+    continue; \
+  }
+
 extern int hoc_return_type_code;
+Section* (*nrnpy_o2sec_p_)(Object* o);
 
 /*ARGSUSED*/
 static void* constructor(Object* ho)
@@ -27,9 +37,17 @@ static void destructor(void* v)
 	freelist(&sl);
 }
 
+static Section* arg1() {
+  if (ifarg(1) && nrnpy_o2sec_p_) {
+    Object* o = *hoc_objgetarg(1);		
+    return (*nrnpy_o2sec_p_)(o);
+  }
+  return chk_access();
+}
+
 static double append(void* v)
 {
-	Section* sec = chk_access();
+	Section* sec = arg1();
 	lappendsec((List*)v, sec);
 	section_ref(sec);
 	return 1.;
@@ -52,7 +70,7 @@ static double children(void* v)
 {
 	Section* sec;
 	List* sl;
-	sec = chk_access();
+	sec = arg1();
 	sl = (List*)v;
 	children1(sl, sec);
 	return 1.;
@@ -82,7 +100,7 @@ static double subtree(void* v)
 {
 	Section* sec;
 	List* sl;
-	sec = chk_access();
+	sec = arg1();
 	sl = (List*)v;
 	subtree1(sl, sec);
 	return 1.;
@@ -93,7 +111,7 @@ static double wholetree(void* v)
 	List* sl;
 	Section* s, *sec, *ch;
 	Item* i, *j, *first, *last;
-	sec = chk_access();
+	sec = arg1();
 	sl = (List*)v;
 	/*find root*/
 	for (s = sec; s->parentsec; s = s->parentsec) {}
@@ -119,6 +137,9 @@ static double allroots(void* v)
 
 static double seclist_remove(void* v)
 {
+#if USE_PYTHON
+	extern Symbol* nrnpy_pyobj_sym_;
+#endif
 	Section* sec, *s;
 	Item* q, *q1;
 	List* sl;
@@ -126,9 +147,13 @@ static double seclist_remove(void* v)
 
 	sl = (List*)v;
 	i = 0;
+#if USE_PYTHON
+    if (!ifarg(1) || (*hoc_objgetarg(1))->template->sym == nrnpy_pyobj_sym_) {
+#else
     if (!ifarg(1)) {
-	sec = chk_access();
-	ITERATE(q, sl) {
+#endif
+	sec = arg1();
+	ITERATE_REMOVE(q, q1, sl) /*{*/
 		if (sec == q->element.sec) {
 			delete(q);
 			section_unref(sec);
@@ -140,12 +165,12 @@ static double seclist_remove(void* v)
 	Object* o;
 	o = *hoc_objgetarg(1);
 	check_obj_type(o, "SectionList");
-	ITERATE(q, sl) {
+	ITERATE_REMOVE(q, q1, sl) /*{*/
 		s = hocSEC(q);
 		s->volatile_mark = 0;
 	}
 	sl = (List*)o->u.this_pointer;
-	ITERATE(q, sl) {
+	ITERATE_REMOVE(q, q1, sl) /*{*/
 		s = hocSEC(q);
 		s->volatile_mark = 1;
 	}
@@ -171,7 +196,7 @@ static double unique(void* v)
 	Item* q, *q1;
 	List* sl = (List*)v;
 	hoc_return_type_code = 1; /* integer */
-	ITERATE(q, sl) {
+	ITERATE_REMOVE(q, q1, sl) /*{*/
 		s = hocSEC(q);
 		s->volatile_mark = 0;
 	}
@@ -191,11 +216,11 @@ static double unique(void* v)
 static double contains(void* v)
 {
 	Section* s;
-	Item* q;
+	Item* q, *q1;
 	List* sl = (List*)v;
 	hoc_return_type_code = 2; /* boolean */
-	s = chk_access();
-	ITERATE(q, sl) {
+	s = arg1();
+	ITERATE_REMOVE(q, q1, sl) /*{*/
 		if (hocSEC(q) == s) {
 			return 1.;
 		}
@@ -205,10 +230,12 @@ static double contains(void* v)
 
 static double printnames(void* v)
 {
-	Item* q;
+	Item* q, *q1;
 	List* sl = (List*)v;
-	ITERATE(q, sl) {
-		printf("%s\n", secname(q->element.sec));
+	ITERATE_REMOVE(q, q1, sl) /*{*/
+		if (q->element.sec->prop) {
+			printf("%s\n", secname(q->element.sec));
+		}
 	}
 	return 1.;
 }
@@ -292,7 +319,7 @@ void forall_sectionlist(void) {
 
 void hoc_ifseclist(void) {
 	Inst *savepc = pc;
-	Item* q;
+	Item* q, *q1;
 	Section* sec = chk_access();
 	List* sl;
 	Object* ob;
@@ -307,7 +334,7 @@ void hoc_ifseclist(void) {
 	ob = *obp;
 	check(ob);
 	sl = (List*)(ob->u.this_pointer);
-	ITERATE(q, sl) {
+	ITERATE_REMOVE(q, q1, sl) /*{*/
 		if (sec == q->element.sec) {
 			hoc_execute(relative(savepc));
 			if (!hoc_returning) {

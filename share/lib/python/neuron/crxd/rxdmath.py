@@ -129,6 +129,12 @@ class _Function:
                 items = ecs_species
             elif hasattr(item,'_ensure_extracellular'):
                 item._ensure_extracellular(extracellular=extracellular)
+    @property
+    def _voltage_dependent(self):
+        if hasattr(self._obj,'_voltage_dependent') and self._obj._voltage_dependent:
+            return True
+        return False
+
 
 
 class _Function2:
@@ -160,6 +166,13 @@ class _Function2:
                     items = ecs_species
                 elif hasattr(item,'_ensure_extracellular'):
                     item._ensure_extracellular(extracellular=extracellular)
+    
+    @property
+    def _voltage_dependent(self):
+        for item in [self._obj1, self._obj2]:
+            if hasattr(item,'_voltage_dependent') and item._voltage_dependent:
+                return True
+        return False
 
 
 
@@ -230,8 +243,8 @@ def modf(obj):
 # this seems to be okay; just have to avoid using pow in any other context
 def pow(obj1, obj2):
     return _Arithmeticed(_Function2(obj1, obj2, 'rxdmath._power', 'pow'), valid_reaction_term=False)
-def radians(obj1, obj2):
-    return _Arithmeticed(_Function2(obj1, obj2, 'numpy.radians', 'radians'), valid_reaction_term=False)
+def radians(obj):
+    return _Arithmeticed(_Function(obj, 'numpy.radians', 'radians'), valid_reaction_term=False)
 def sin(obj):
     return _Arithmeticed(_Function(obj, 'numpy.sin', 'sin'), valid_reaction_term=False)
 def sinh(obj):
@@ -244,6 +257,7 @@ def tanh(obj):
     return _Arithmeticed(_Function(obj, 'numpy.tanh', 'tanh'), valid_reaction_term=False)
 def trunc(obj):
     return _Arithmeticed(_Function(obj, 'numpy.trunc', 'trunc'), valid_reaction_term=False)
+
 
 
 class _Product:
@@ -286,11 +300,25 @@ class _Product:
             if hasattr(self._b, '_ensure_extracellular'):
                 p._b = self._b._ensure_extracellular(intracellular3d=intracellular3d)
         return p
+<<<<<<< HEAD
 
 
     def _semi_compile(self, region):
         return '(%s)*(%s)' % (self._a._semi_compile(region), self._b._semi_compile(region))
 
+=======
+
+    @property
+    def _voltage_dependent(self):
+        for item in [self._a, self._b]:
+            if hasattr(item,'_voltage_dependent') and item._voltage_dependent:
+                return True
+        return False
+
+    def _semi_compile(self, region):
+        return '(%s)*(%s)' % (self._a._semi_compile(region), self._b._semi_compile(region))
+
+>>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
     def _involved_species(self, the_dict):
         self._a._involved_species(the_dict)
         self._b._involved_species(the_dict)
@@ -326,8 +354,20 @@ class _Quotient:
                 q._a = self._a._ensure_extracellular(intracellular3d=intracellular3d)
             if hasattr(self._b, '_ensure_extracellular'):
                 q._b = self._b._ensure_extracellular(intracellular3d=intracellular3d)
+<<<<<<< HEAD
 
         return q
+=======
+
+        return q
+
+    @property
+    def _voltage_dependent(self):
+        for item in [self._a, self._b]:
+            if hasattr(item,'_voltage_dependent') and item._voltage_dependent:
+                return True
+        return False
+>>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
 
     def _semi_compile(self, region):
         return '(%s)/(%s)' % (self._a._semi_compile(region), self._b._semi_compile(region))
@@ -344,6 +384,12 @@ class _Reaction:
     def __repr__(self):
         return '%s%s%s' % (str(self._lhs), self._dir, str(self._rhs))
     def __bool__(self):
+        return False
+    @property
+    def _voltage_dependent(self):
+        for item in [self._lhs, self._rhs]:
+            if hasattr(item,'_voltage_dependent') and item._voltage_dependent:
+                return True
         return False
 
 
@@ -404,9 +450,12 @@ class _Arithmeticed:
                         new_arith._items[item] = count
         return new_arith
 
+<<<<<<< HEAD
     def copy(self):
         return _Arithmeticed(self._original_items, self._valid_reaction_term)
     
+=======
+>>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
     def _short_repr(self):
         from . import species
         items = []
@@ -459,6 +508,16 @@ class _Arithmeticed:
             result = '0'
         return result
 
+<<<<<<< HEAD
+=======
+    @property
+    def _voltage_dependent(self):
+        for item in self._items:
+            if hasattr(item,'_voltage_dependent') and item._voltage_dependent:
+                return True
+        return False
+
+>>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
     def _semi_compile(self, region):
         items = []
         counts = []
@@ -582,5 +641,20 @@ class _Arithmeticed:
     def __rsub__(self, other):
         other = _ensure_arithmeticed(other)
         return other.__sub__(self)
-        
+
+class Vm(_Arithmeticed, object):
+    """ represent the membrane potential in rxd rates and reactions """
+
+    class _Vm(object):
+        def __repr__(self):
+            return 'v'
+
+        @property
+        def _voltage_dependent(self):
+            return True
+
+    def __init__(self):
+        super(Vm, self).__init__(Vm._Vm(), valid_reaction_term=True)
+
+v = Vm()
 

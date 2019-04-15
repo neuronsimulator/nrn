@@ -250,6 +250,7 @@ int BBSClient::take_todo() {
 	while((type = get(0, TAKE_TODO)) == CONTEXT) {
 		upkbegin();
 		upkint(); // throw away userid
+		upkint(); // throw away info in reserved second slot for worker_id
 #if debug
 printf("%d execute context\n", nrnmpi_myid_bbs);
 fflush(stdout);
@@ -296,6 +297,7 @@ void BBSClient::return_args(int userid) {
 }
 
 void BBSClient::done() {
+	extern void (*p_nrnpython_finalize)();
 #if debug
 printf("%d BBSClient::done\n", nrnmpi_myid_bbs);
 fflush(stdout);
@@ -312,6 +314,7 @@ fflush(stdout);
 #endif
 	BBSImpl::done();
 	nrnmpi_terminate();
+	if (p_nrnpython_finalize) { (*p_nrnpython_finalize)(); }
 	exit(0);
 }
 

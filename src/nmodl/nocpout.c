@@ -8,7 +8,7 @@ that version is compatible with this version.
 For now try to use something of the form d.d
 If this is changed then also change nrnoc/init.c
 */
-char* nmodl_version_ = "7.5.0";
+char* nmodl_version_ = "7.7.0";
 
 /* Point processes are now interfaced to nrnoc via objectvars.
 Thus, p-array variables and functions accessible to hoc do not have
@@ -254,6 +254,7 @@ void parout() {
 		vectorize = 0;
 		suffix[0] = '\0';
 		mechname = modbase;
+		nmodl_text = 0;
 	}else{
 		sprintf(suffix, "_%s", mechname);
 	}
@@ -397,6 +398,18 @@ extern void hoc_register_units(int, HocParmUnits*);\n\
 extern void nrn_promote(Prop*, int, int);\n\
 extern Memb_func* memb_func;\n\
 "	);
+
+	if (nmodl_text) {
+		Lappendstr(defs_list,"\n"
+"#define NMODL_TEXT 1\n"
+"#if NMODL_TEXT\n"
+"static const char* nmodl_file_text;\n"
+"static const char* nmodl_filename;\n"
+"extern void hoc_reg_nmodl_text(int, const char*);\n"
+"extern void hoc_reg_nmodl_filename(int, const char*);\n"
+"#endif\n\n"
+		);
+	}
 
 	/**** create special point process functions */
 	if (point_process) {
@@ -1088,6 +1101,9 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
 	}
 	if (use_bbcorepointer) {
 		lappendstr(defs_list, "  hoc_reg_bbcore_write(_mechtype, bbcore_write);\n");
+	}
+	if (nmodl_text) {
+		lappendstr(defs_list, "#if NMODL_TEXT\n  hoc_reg_nmodl_text(_mechtype, nmodl_file_text);\n  hoc_reg_nmodl_filename(_mechtype, nmodl_filename);\n#endif\n");
 	}
 	sprintf(buf, " hoc_register_prop_size(_mechtype, %d, %d);\n", parraycount, ppvar_cnt);
 	Lappendstr(defs_list, buf);

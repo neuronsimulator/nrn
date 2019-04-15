@@ -248,6 +248,7 @@ mv temp mknrndl2.sh
 #for neurondemo
 cd $D/demo/release
 export N=$D
+export MODLUNIT=$N/lib/nrnunits.lib
 export PATH="$DB:$D/mingw/bin:$PATH"
 sh $D/lib/mknrndl2.sh
 rm *.o *.c

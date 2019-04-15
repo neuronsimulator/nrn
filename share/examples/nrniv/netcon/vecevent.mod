@@ -36,7 +36,7 @@ ENDCOMMENT
 NEURON {
 	THREADSAFE
 	ARTIFICIAL_CELL VecStim
-	POINTER ptr
+	BBCOREPOINTER ptr
 }
 
 ASSIGNED {
@@ -98,6 +98,8 @@ ENDVERBATIM
 
 PROCEDURE play() {
 VERBATIM
+#if !NRNBBCORE
+  {
 	void** pv;
 	void* ptmp = NULL;
 	if (ifarg(1)) {
@@ -109,5 +111,49 @@ VERBATIM
 		hoc_obj_unref(*vector_pobj(*pv));
 	}
 	*pv = ptmp;
+  }
+#endif
 ENDVERBATIM
 }
+
+VERBATIM
+static void bbcore_write(double* xarray, int* iarray, int* xoffset, int* ioffset, _threadargsproto_) {
+  int i, dsize, *ia;
+  double *xa, *dv;
+  dsize = 0;
+  if (_p_ptr) {
+    dsize = vector_capacity(_p_ptr);
+  }
+  if (xarray) {
+    void* vec = _p_ptr;
+    ia = iarray + *ioffset;
+    xa = xarray + *xoffset;
+    ia[0] = dsize;
+    if (dsize) {
+      dv = vector_vec(vec);
+      for (i = 0; i < dsize; ++i) {
+         xa[i] = dv[i];
+      }
+    }
+  }
+  *ioffset += 1;
+  *xoffset += dsize;
+}
+
+static void bbcore_read(double* xarray, int* iarray, int* xoffset, int* ioffset, _threadargsproto_) {
+  int dsize, i, *ia;
+  double *xa, *dv;
+  assert(!_p_ptr);
+  xa = xarray + *xoffset;
+  ia = iarray + *ioffset;
+  dsize = ia[0];
+  _p_ptr = vector_new1(dsize);
+  dv = vector_vec(_p_ptr);
+  for (i = 0; i < dsize; ++i) {
+    dv[i] = xa[i];
+  }
+  *xoffset += dsize;
+  *ioffset += 1;
+}
+
+ENDVERBATIM

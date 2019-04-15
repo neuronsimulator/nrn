@@ -17,6 +17,7 @@ from .reaction import Reaction
 from . import geometry
 from .multiCompartmentReaction import MultiCompartmentReaction
 from .rxd import re_init, set_solve_type, nthread
+from .rxdmath import v
 try:
   from . import dimension3
 except:
@@ -28,8 +29,13 @@ from .plugins import set_solver
 # from geometry import ConstantArea, ConstantVolume
 # TODO: if we ever separate Parameter and State from species, then we need to
 #       rembember to call rxd._do_nbs_register()
-Parameter = Species
-State = Species
+class Parameter(Species):
+    def __repr__(self):
+        return 'Parameter(regions=%r, d=%r, name=%r, charge=%r, initial=%r)' % (self._regions, self._d, self._name, self._charge, self.initial)
+
+class State(Species):
+    def __repr__(self):
+        return 'State(regions=%r, d=%r, name=%r, charge=%r, initial=%r)' % (self._regions, self._d, self._name, self._charge, self.initial)
 
 def _model_view(tree):
     from . import species

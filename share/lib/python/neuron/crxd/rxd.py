@@ -72,7 +72,7 @@ _get_num_threads.restype = ctypes.c_int
 clear_rates = nrn_dll_sym('clear_rates')
 register_rate = nrn_dll_sym('register_rate')
 register_rate.argtypes = [ 
-        ctypes.c_int,                                                              #num species
+        ctypes.c_int,                                                               #num species
         ctypes.c_int,                                                               #num regions
         ctypes.c_int,                                                               #num seg
         numpy.ctypeslib.ndpointer(ctypes.c_int, flags='contiguous'),                #species ids
@@ -80,6 +80,7 @@ register_rate.argtypes = [
         numpy.ctypeslib.ndpointer(ctypes.c_int, flags='contiguous'),                #ecs species ids
         ctypes.c_int,                                                               #num multicompartment reactions
         numpy.ctypeslib.ndpointer(ctypes.c_double, flags='contiguous'),             #multicompartment multipliers
+        ctypes.POINTER(ctypes.py_object),                                           #voltage pointers
         ]                                                                           #Reaction rate function
 
 setup_currents = nrn_dll_sym('setup_currents')
@@ -171,6 +172,11 @@ def _list_to_pyobject_array(data):
         return (ctypes.py_object * len(data))(*tuple(data))
 
 def byeworld():
+    # do not call __del__ that rearrange memory for states
+    species.Species.__del__ = lambda x: None
+    species._ExtracellularSpecies.__del__ = lambda x: None
+    section1d.Section1D.__del__ = lambda x: None
+
     # needed to prevent a seg-fault error at shutdown in at least some
     # combinations of NEURON and Python, which I think is due to objects
     # getting deleted out-of-order
@@ -375,8 +381,9 @@ def _ode_fun(t, y, ydot):
     states[_zero_volume_indices] = 0
 
 _rxd_induced_currents = None
-
+_memb_cur_ptrs= []
 def _setup_memb_currents():
+    global _memb_cur_ptrs
     initializer._do_init()
     # setup membrane fluxes from our stuff
     # TODO: cache the memb_cur_ptrs, memb_cur_charges, memb_net_charges, memb_cur_mapped
@@ -386,7 +393,7 @@ def _setup_memb_currents():
     SPECIES_ABSENT = -1
     # TODO: change so that this is only called when there are in fact currents
     rxd_memb_scales = []
-    memb_cur_ptrs = []
+    _memb_cur_ptrs = []
     memb_cur_charges = []
     memb_net_charges = []
     memb_cur_mapped = []
@@ -396,17 +403,17 @@ def _setup_memb_currents():
         if r and r._membrane_flux:
             scales = r._memb_scales
             rxd_memb_scales.extend(scales)
-            memb_cur_ptrs += r._cur_ptrs
+            _memb_cur_ptrs += r._cur_ptrs
             memb_cur_mapped += r._cur_mapped
             memb_cur_mapped_ecs += r._cur_mapped_ecs
             memb_cur_charges += [r._cur_charges] * len(scales)
             memb_net_charges += [r._net_charges] * len(scales)
     ecs_map = [SPECIES_ABSENT if i is None else i for i in list(itertools.chain.from_iterable(itertools.chain.from_iterable(memb_cur_mapped_ecs)))]
     ics_map = [SPECIES_ABSENT if i is None else i for i in list(itertools.chain.from_iterable(itertools.chain.from_iterable(memb_cur_mapped)))]
-    if memb_cur_ptrs:
+    if _memb_cur_ptrs:
         cur_counts = [len(x) for x in memb_cur_mapped]
         num_currents = numpy.array(cur_counts).sum()
-        setup_currents(len(memb_cur_ptrs),
+        setup_currents(len(_memb_cur_ptrs),
             num_currents,
             len(_curr_indices), # num_currents == len(_curr_indices) if no Extracellular
             _list_to_cint_array(cur_counts),
@@ -415,7 +422,7 @@ def _setup_memb_currents():
             _list_to_cint_array(_cur_node_indices),
             _list_to_cdouble_array(rxd_memb_scales),
             _list_to_cint_array(list(itertools.chain.from_iterable(memb_cur_charges))),
-            _list_to_pyobject_array(list(itertools.chain.from_iterable(memb_cur_ptrs))),
+            _list_to_pyobject_array(list(itertools.chain.from_iterable(_memb_cur_ptrs))),
             _list_to_cint_array(ics_map),
             _list_to_cint_array(ecs_map))
         
@@ -776,13 +783,13 @@ def _setup_matrices():
                                     parent_1d = None if not parent_seg else parent_seg.sec
                                     if parent_1d == sec:
                                         # it is the parent of a 1d section
-                                        index1d, indices3d = _get_node_indices(s, r, sec, h.parent_connection(sec=sec1d), sec1d, h.section_orientation(sec=sec1d))
+                                        index1d, indices3d = _get_node_indices(s, r, sec, h.parent_connection(sec=sec1d), sec1d, sec1d.orientation())
                                         hybrid_neighbors[index1d] += indices3d
                                         hybrid_diams[index1d] = parent_1d_seg.diam
                                         break
                                     elif parent_1d == parent_sec:
                                         # it connects to the parent of a 1d section
-                                        index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), sec1d, h.section_orientation(sec=sec1d))
+                                        index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), sec1d, sec1d.orientation())
                                         hybrid_neighbors[index1d] += indices3d
                                         hybrid_diams[index1d] = parent_1d_seg.diam
                                         break
@@ -898,7 +905,7 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
     indices3d = list(set(indices3d))
     #print '3d matrix indices: %r' % indices3d
     # TODO: remove the need for this assertion
-    if x1d == h.section_orientation(sec=sec1d):
+    if x1d == sec1d.orientation():
         # TODO: make this whole thing more efficient
         # the parent node is the nonzero index on the first row before the diagonal
         first_row = min([node._index for node in species.nodes(region)(sec1d)])
@@ -908,7 +915,7 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
                 break
         else:
             raise RxDException('should never get here; could not find parent')
-    elif x1d == 1 - h.section_orientation(sec=sec1d):
+    elif x1d == 1 - sec1d.orientation():
         # the ending zero-volume node is the one after the last node
         # TODO: make this more efficient
         index_1d = max([node._index for node in species.nodes(region)(sec1d)]) + 1
@@ -932,7 +939,7 @@ def _compile_reactions():
     ecs_regions_inv = dict()
     ecs_species_by_region = dict()
     ecs_all_species_involed = set()
-    ecs_mc_species_involved = set()   
+    ecs_mc_species_involved = set()
     from . import rate, multiCompartmentReaction
 
     #Find sets of sections that contain the same regions
@@ -1036,11 +1043,13 @@ def _compile_reactions():
                     s = sp()
                     ecs_all_species_involed.add(s)
                     ecs_species_involved.append(s)
+<<<<<<< HEAD
 
+=======
+>>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
                 for reg in react_regions:
                     if not isinstance(reg, region.Extracellular):
                         continue
-
                     if reg in ecs_regions_inv:
                         ecs_regions_inv[reg].append(rptr)
                     else:
@@ -1069,7 +1078,6 @@ def _compile_reactions():
     #if there are no reactions
     if location_count == 0 and len(ecs_regions_inv) == 0:
         return None
-
     #Setup intracellular and multicompartment reactions
     if location_count > 0:
         from . import rate, multiCompartmentReaction
@@ -1080,9 +1088,13 @@ def _compile_reactions():
             mc_mult_count = 0
             mc_mult_list = []
             species_ids_used = numpy.zeros((creg.num_species,creg.num_regions),bool)
+<<<<<<< HEAD
+=======
+            flux_ids_used = numpy.zeros((creg.num_species,creg.num_regions),bool)
+>>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
             ecs_species_ids_used = numpy.zeros((creg.num_ecs_species),bool)
             fxn_string = _c_headers 
-            fxn_string += 'void reaction(double** species, double** rhs, double* mult, double** species_ecs, double** rhs_ecs)\n{'
+            fxn_string += 'void reaction(double** species, double** rhs, double* mult, double* species_ecs, double* rhs_ecs, double** flux, double v)\n{'
             # declare the "rate" variable if any reactions (non-rates)
             for rprt in creg._react_regions:
                 if not isinstance(rprt(),rate.Rate):
@@ -1106,13 +1118,20 @@ def _compile_reactions():
                         rate_str = re.sub(r'species_ecs\[(\d+)\]',lambda m: "species_ecs[%i]" %  creg._ecs_species_ids.get(int(m.groups()[0])), rate_str)
                         fxn_string += "\n\trate = %s;" % rate_str
                         break
+<<<<<<< HEAD
     
+=======
+>>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
                     for sptr in r._sources + r._dests:
                         s = sptr()
                         if isinstance(s,species.SpeciesOnExtracellular):
                             species_id = creg._ecs_species_ids[s._extracellular()._grid_id]
                             operator = '+=' if ecs_species_ids_used[species_id] else '='
+<<<<<<< HEAD
                             fxn_string += "\n\trhs_ecs[%d][%d] %s mult[%d] * rate;" % (species_id, region_id, operator, mc_mult_count)
+=======
+                            fxn_string += "\n\trhs_ecs[%d] %s mult[%d] * rate;" % (species_id, operator, mc_mult_count)
+>>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
                             ecs_species_ids_used[species_id] = True
                         else:
                             species_id = creg._species_ids[s._id]
@@ -1120,6 +1139,10 @@ def _compile_reactions():
                             operator = '+=' if species_ids_used[species_id][region_id] else '='
                             fxn_string += "\n\trhs[%d][%d] %s mult[%d] * rate;" % (species_id, region_id, operator, mc_mult_count)
                             species_ids_used[species_id][region_id] = True
+                            if r._membrane_flux:
+                                operator = '+=' if flux_ids_used[species_id][region_id] else '='
+                                fxn_string += "\n\tif(flux) flux[%d][%d] %s rate;" % (species_id, region_id, operator)
+                                flux_ids_used[species_id][region_id] = True
                         #TODO: Fix problem if the whole region isn't part of the same aggregate c_region
                         mc_mult_count += 1
                     mc_mult_list.extend(r._mult.flatten())
@@ -1137,17 +1160,11 @@ def _compile_reactions():
                             fxn_string += "\n\trhs[%d][%d] %s (%g) * rate;" % (idx, region_id, operator, summed_mults[idx])
               
             fxn_string += "\n}\n"
-            #print "num_species=%i\t num_regions=%i\t num_segments=%i\n" % (creg.num_species, creg.num_regions, creg.num_segments)
-            #print creg.get_state_index()
-            #print "state_index %s \t num_ecs_species=%i\t ecs_species_ids %s\n" % (creg.get_state_index().shape, creg.num_ecs_species, creg.get_ecs_species_ids().shape)
-            #print "ecs_index %s\t mc_mult_count=%i \t mc_mult_list %s\n" % (creg.get_ecs_index().shape, mc_mult_count, numpy.array(mc_mult_list, dtype=ctypes.c_double).shape)
-            #print mc_mult_list
-            #print fxn_string
             register_rate(creg.num_species, creg.num_regions, creg.num_segments, creg.get_state_index(),
                           creg.num_ecs_species, creg.get_ecs_species_ids(), creg.get_ecs_index(),
-                          mc_mult_count, numpy.array(mc_mult_list, dtype=ctypes.c_double), 
+                          mc_mult_count, numpy.array(mc_mult_list, dtype=ctypes.c_double),
+                          _list_to_pyobject_array(creg._vptrs),
                           _c_compile(fxn_string))
-        setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
 
     #Setup intracellular 3D reactions
     if regions_inv_3d:
