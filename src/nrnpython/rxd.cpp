@@ -698,7 +698,6 @@ extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, i
             /* fixed step solve */
 			_fadvance_fixed_step_3D();
 			_fadvance();
-            _fadvance_fixed_step_ecs();
             break;
         case 5:
             /* ode_count */
@@ -840,7 +839,7 @@ static void unset_reaction_indices()
 }
 
 
-void register_rate(int nspecies, int nregions, int nseg, int* sidx, int necs, int* ecs_ids, int* ecsidx, int nmult, double* mult, PyHocObject** vptrs, ReactionRate f)
+extern "C" void register_rate(int nspecies, int nregions, int nseg, int* sidx, int necs, int* ecs_ids, int* ecsidx, int nmult, double* mult, PyHocObject** vptrs, ReactionRate f)
 {
     int i,j,k,idx, ecs_id, ecs_index, ecs_offset;
     Grid_node* grid;
@@ -1026,7 +1025,7 @@ static void free_SpeciesIndexList()
     }
 }
 
-void setup_solver(double* my_states, int my_num_states, long* zvi, int num_zvi, PyHocObject* h_t_ref, PyHocObject* h_dt_ref) {
+extern "C" void setup_solver(double* my_states, int my_num_states, long* zvi, int num_zvi, PyHocObject* h_t_ref, PyHocObject* h_dt_ref) {
     states = my_states;
     num_states = my_num_states;
     _rxd_num_zvi = num_zvi;
@@ -1334,7 +1333,7 @@ void _fadvance(void) {
 	double *rhs; 
 	long* zvi = _rxd_zero_volume_indices;
     
-    rhs = calloc(num_states,sizeof(double));
+    rhs = (double*)calloc(num_states,sizeof(double));
     /*diffusion*/
     if(diffusion)
 	    mul(_rxd_euler_nrow, _rxd_euler_nnonzero, _rxd_euler_nonzero_i, _rxd_euler_nonzero_j, _rxd_euler_nonzero_values, states, rhs);

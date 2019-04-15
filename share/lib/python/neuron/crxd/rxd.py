@@ -1043,10 +1043,6 @@ def _compile_reactions():
                     s = sp()
                     ecs_all_species_involed.add(s)
                     ecs_species_involved.append(s)
-<<<<<<< HEAD
-
-=======
->>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
                 for reg in react_regions:
                     if not isinstance(reg, region.Extracellular):
                         continue
@@ -1088,10 +1084,7 @@ def _compile_reactions():
             mc_mult_count = 0
             mc_mult_list = []
             species_ids_used = numpy.zeros((creg.num_species,creg.num_regions),bool)
-<<<<<<< HEAD
-=======
             flux_ids_used = numpy.zeros((creg.num_species,creg.num_regions),bool)
->>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
             ecs_species_ids_used = numpy.zeros((creg.num_ecs_species),bool)
             fxn_string = _c_headers 
             fxn_string += 'void reaction(double** species, double** rhs, double* mult, double* species_ecs, double* rhs_ecs, double** flux, double v)\n{'
@@ -1115,23 +1108,15 @@ def _compile_reactions():
                     #Lookup the region_id for the reaction
                     for reg in r._rate:
                         rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate[reg])
-                        rate_str = re.sub(r'species_ecs\[(\d+)\]',lambda m: "species_ecs[%i]" %  creg._ecs_species_ids.get(int(m.groups()[0])), rate_str)
+                        rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_ecs[%i]" %  creg._ecs_species_ids.get(int(m.groups()[0])), rate_str)
                         fxn_string += "\n\trate = %s;" % rate_str
                         break
-<<<<<<< HEAD
-    
-=======
->>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
                     for sptr in r._sources + r._dests:
                         s = sptr()
                         if isinstance(s,species.SpeciesOnExtracellular):
                             species_id = creg._ecs_species_ids[s._extracellular()._grid_id]
                             operator = '+=' if ecs_species_ids_used[species_id] else '='
-<<<<<<< HEAD
-                            fxn_string += "\n\trhs_ecs[%d][%d] %s mult[%d] * rate;" % (species_id, region_id, operator, mc_mult_count)
-=======
                             fxn_string += "\n\trhs_ecs[%d] %s mult[%d] * rate;" % (species_id, operator, mc_mult_count)
->>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
                             ecs_species_ids_used[species_id] = True
                         else:
                             species_id = creg._species_ids[s._id]
@@ -1172,7 +1157,7 @@ def _compile_reactions():
             ics_grid_ids = []
             all_ics_gids = set()
             fxn_string = _c_headers
-            fxn_string += 'void reaction(double* species_ics, double*rhs)\n{'
+            fxn_string += 'void reaction(double* species_3d, double*rhs)\n{'
             for rptr in [r for rlist in list(regions_inv.values()) for r in rlist]:
                 if not isinstance(rptr(),rate.Rate):
                     fxn_string += '\n\tdouble rate;'
@@ -1186,7 +1171,7 @@ def _compile_reactions():
                 r = rptr()
                 if reg not in r._rate:
                     continue
-                rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_ics[%i]" % [pid for pid,gid in enumerate(all_ics_gids) if gid == int(m.groups()[0])][0], r._rate[reg])
+                rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_3d[%i]" % [pid for pid,gid in enumerate(all_ics_gids) if gid == int(m.groups()[0])][0], r._rate[reg])
                 if isinstance(r,rate.Rate):
                     s = r._species()._intracellular_instances[reg] if isinstance(r._species(), species.Species) else r._species()._species()._intracellular_instances[reg]
                     if s._grid_id in ics_grid_ids:
@@ -1224,7 +1209,7 @@ def _compile_reactions():
             fxn_string = _c_headers
             #TODO: find the nrn include path in python
             #It is necessary for a couple of function in python that are not in math.h
-            fxn_string += 'void reaction(double* species_ecs, double* rhs)\n{'
+            fxn_string += 'void reaction(double* species_3d, double* rhs)\n{'
             # declare the "rate" variable if any reactions (non-rates)
             for rptr in [r for rlist in list(ecs_regions_inv.values()) for r in rlist]:
                 if not isinstance(rptr(),rate.Rate):
@@ -1237,7 +1222,7 @@ def _compile_reactions():
             all_gids = list(all_gids)
             for rptr in ecs_regions_inv[reg]:
                 r = rptr()
-                rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_ecs[%i]" %  [pid for pid,gid in enumerate(all_gids) if gid == int(m.groups()[0])][0], r._rate_ecs[reg])
+                rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_3d[%i]" %  [pid for pid,gid in enumerate(all_gids) if gid == int(m.groups()[0])][0], r._rate_ecs)
                 if isinstance(r,rate.Rate):
                     s = r._species()
                     #Get underlying rxd._ExtracellularSpecies for the grid_id

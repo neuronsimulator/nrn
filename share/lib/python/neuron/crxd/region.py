@@ -53,11 +53,8 @@ class _c_region:
         self.location_index = None
         self.ecs_location_index = None
         self._ecs_species_ids = None
-<<<<<<< HEAD
-=======
         self._voltage_dependent = False
         self._vptrs = None
->>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
         for rptr in self._regions:
             r = rptr()
             self._overlap.intersection(r._secs)
@@ -169,10 +166,6 @@ class _c_region:
         if self.num_ecs_species > 0:
             self._ecs_initalize()
                                   
-<<<<<<< HEAD
-=======
-
->>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
         self._initialized = True
 
 

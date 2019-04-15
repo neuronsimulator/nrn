@@ -300,13 +300,6 @@ class _Product:
             if hasattr(self._b, '_ensure_extracellular'):
                 p._b = self._b._ensure_extracellular(intracellular3d=intracellular3d)
         return p
-<<<<<<< HEAD
-
-
-    def _semi_compile(self, region):
-        return '(%s)*(%s)' % (self._a._semi_compile(region), self._b._semi_compile(region))
-
-=======
 
     @property
     def _voltage_dependent(self):
@@ -318,7 +311,6 @@ class _Product:
     def _semi_compile(self, region):
         return '(%s)*(%s)' % (self._a._semi_compile(region), self._b._semi_compile(region))
 
->>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
     def _involved_species(self, the_dict):
         self._a._involved_species(the_dict)
         self._b._involved_species(the_dict)
@@ -354,10 +346,6 @@ class _Quotient:
                 q._a = self._a._ensure_extracellular(intracellular3d=intracellular3d)
             if hasattr(self._b, '_ensure_extracellular'):
                 q._b = self._b._ensure_extracellular(intracellular3d=intracellular3d)
-<<<<<<< HEAD
-
-        return q
-=======
 
         return q
 
@@ -367,7 +355,6 @@ class _Quotient:
             if hasattr(item,'_voltage_dependent') and item._voltage_dependent:
                 return True
         return False
->>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
 
     def _semi_compile(self, region):
         return '(%s)/(%s)' % (self._a._semi_compile(region), self._b._semi_compile(region))
@@ -450,12 +437,6 @@ class _Arithmeticed:
                         new_arith._items[item] = count
         return new_arith
 
-<<<<<<< HEAD
-    def copy(self):
-        return _Arithmeticed(self._original_items, self._valid_reaction_term)
-    
-=======
->>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
     def _short_repr(self):
         from . import species
         items = []
@@ -508,8 +489,6 @@ class _Arithmeticed:
             result = '0'
         return result
 
-<<<<<<< HEAD
-=======
     @property
     def _voltage_dependent(self):
         for item in self._items:
@@ -517,7 +496,6 @@ class _Arithmeticed:
                 return True
         return False
 
->>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
     def _semi_compile(self, region):
         items = []
         counts = []

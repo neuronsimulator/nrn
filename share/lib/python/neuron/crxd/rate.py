@@ -33,7 +33,6 @@ class Rate(GeneralizedReaction):
         self._original_rate = rate
         from . import region
         if not hasattr(regions, '__len__'):
-<<<<<<< HEAD
             if regions is not None and not isinstance(regions, region.Extracellular):
                 regions = [regions]
             else:
@@ -45,12 +44,6 @@ class Rate(GeneralizedReaction):
                     regions = [None]
         else:
             regions = [reg for reg in regions if not isinstance(reg, region.Extracellular)]
-=======
-            if regions is not None:
-                regions = [regions]
-            else:
-                regions = species._regions if hasattr(species, '_regions') else [species._region()]
->>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
         self._regions = regions
         self._membrane_flux = membrane_flux
         if membrane_flux not in (True, False):
@@ -78,7 +71,6 @@ class Rate(GeneralizedReaction):
         else:
             self._involved_species = [weakref.ref(species)]
         self._update_indices()
-<<<<<<< HEAD
 
         #Check to if it is an extracellular reaction
         from . import  region, species
@@ -109,8 +101,6 @@ class Rate(GeneralizedReaction):
         if hasattr(self,'_ecs_regions'):
             self._rate_ecs, self._involved_species_ecs = rxdmath._compile(rate, self._ecs_regions)
 
-=======
->>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
     
     def __repr__(self):
         short_rate = self._original_rate._short_repr() if hasattr(self._original_rate,'_short_repr') else self._original_rate
@@ -149,11 +139,6 @@ class Rate(GeneralizedReaction):
         active_secs = None
         
         # locate the regions containing all species (including the one that changes)
-<<<<<<< HEAD
-        #active_regions = list(set.intersection(*[set(sptr()._regions if isinstance(sptr(),species.Species) else [sptr()._region()]) for sptr in list(self._involved_species) + [self._species]]))
-        #sp_regions = self._species()._regions if isinstance(self._species(),species.Species) else [self._species()._region()]
-=======
->>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
         active_regions = list(set.intersection(*[set(sptr()._regions + sptr()._extracellular_regions if isinstance(sptr(),species.Species) else [sptr()._region() if isinstance(sptr(),species.SpeciesOnRegion) else sptr()._extracellular()]) for sptr in list(self._involved_species) + [self._species]]))
         sp_regions = self._species()._regions + self._species()._extracellular_regions if isinstance(self._species(),species.Species) else [self._species()._region() if isinstance(self._species(),species.SpeciesOnRegion) else self._species()._extracellular()]
         actr = sp_regions
@@ -173,10 +158,6 @@ class Rate(GeneralizedReaction):
                 for sptr in self._involved_species:
                     self._indices_dict[sptr()] = []
                 return
-<<<<<<< HEAD
-            #active_secs = list(set.union(*[set(reg.secs) for reg in actr]))
-=======
->>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
             active_secs = list(set.union(*[set(reg.secs) for reg in actr if hasattr(reg,'secs')]))
             active_regions = actr
             #if there are multiple regions on a segment for an involved species the rate is ambiguous
@@ -197,10 +178,6 @@ class Rate(GeneralizedReaction):
             else:
                 raise RxDException("Error in rate %r, the species do not share a common section" % self)
         else:
-<<<<<<< HEAD
-            #active_secs = set.union(*[set(reg.secs) for reg in active_regions if reg is not None])
-=======
->>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
             active_secs = set.union(*[set(reg.secs) for reg in active_regions if hasattr(reg, 'secs')])
             # store the indices
             for sptr in self._involved_species:

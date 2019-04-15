@@ -80,10 +80,6 @@ _intracellular_diffusion_objects = weakref.WeakKeyDictionary()
 
 _species_count = 0
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
 _has_1d = False
 _has_3d = False
 
@@ -189,11 +185,7 @@ class _SpeciesMathable(object):
             return ics_instance._semi_compile(reg)
         if isinstance(reg, region.Region) and reg._secs1d:
             return 'species[%d][%d]' % (self._id, reg._id)
-<<<<<<< HEAD
-
-=======
     
->>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
     def _involved_species(self, the_dict):
         the_dict[self._semi_compile] = weakref.ref(self)
 
@@ -279,15 +271,10 @@ class SpeciesOnExtracellular(_SpeciesMathable):
                 
     def _semi_compile(self, reg):
         #This will always be an ecs_instance
-<<<<<<< HEAD
-        ecs_instance = self._species()._extracellular_instances[reg]
-        return ecs_instance._semi_compile(reg)
-=======
         #reg = self._extracellular()._region
         #ecs_instance = self._species()._extracellular_instances[reg]
         #return ecs_instance._semi_compile(reg)
         return self._extracellular()._semi_compile(reg)
->>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
 
 class SpeciesOnRegion(_SpeciesMathable):
     def __init__(self, species, region):
@@ -390,10 +377,6 @@ class SpeciesOnRegion(_SpeciesMathable):
         
         This is equivalent to s.nodes.concentration = value"""
         self.nodes.concentration = value
-<<<<<<< HEAD
-
-=======
->>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
     def _semi_compile(self, reg):
         #Never an _ExtracellularSpecies since we are in SpeciesOnRegion
         reg = self._region()
@@ -549,7 +532,6 @@ class _IntracellularSpecies(_SpeciesMathable):
             else:
                 self.states[:] = 0
 
-<<<<<<< HEAD
     def _update_pointers(self): 
         self._seg_to_surface_nodes = self._region._surface_nodes_by_seg
         grid_list_start = 0
@@ -589,8 +571,6 @@ class _IntracellularSpecies(_SpeciesMathable):
     def _semi_compile(self, region):
         return 'species_3d[%d]' % (self._grid_id)
 
-=======
->>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
 class _ExtracellularSpecies(_SpeciesMathable):
     def __init__(self, region, d=0, name=None, charge=0, initial=0, atolscale=1.0, boundary_conditions=None):
         """
@@ -775,15 +755,9 @@ class _ExtracellularSpecies(_SpeciesMathable):
                     scale_factors.append(float(scale_factor * surface_area))
         #TODO: MultiCompartment reactions ?
         _set_grid_currents(grid_list, self._grid_id, grid_indices, neuron_pointers, scale_factors)
-<<<<<<< HEAD
     
     def _semi_compile(self, reg):
         return 'species_3d[%d]' % (self._grid_id)
-=======
-
-    def _semi_compile(self, reg):
-        return 'species_ecs[%d]' % (self._grid_id)
->>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
 
 
 
@@ -917,11 +891,6 @@ class Species(_SpeciesMathable):
         
         # TODO: remove this line when certain no longer need it (commented out 2013-04-17)
         # self._real_secs = region._sort_secs(sum([r.secs for r in regions], []))
-<<<<<<< HEAD
-    
-=======
-
->>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
     def _do_init2(self):
         # 1D section objects; NOT all sections this species lives on
         # TODO: this may be a problem... debug thoroughly
@@ -974,11 +943,7 @@ class Species(_SpeciesMathable):
 
     def _do_init4(self):
         self._extracellular_nodes = []
-<<<<<<< HEAD
-        self._extracellular_instances = {r:_ExtracellularSpecies(r, d=self._d, name=self.name, charge=self.charge, initial=self.initial, atolscale=self._atolscale, boundary_conditions=self._ecs_boundary_conditions) for r in self._extracellular_regions}
-=======
         self._extracellular_instances = {r : _ExtracellularSpecies(r, d=self._d, name=self.name, charge=self.charge, initial=self.initial, atolscale=self._atolscale, boundary_conditions=self._ecs_boundary_conditions) for r in self._extracellular_regions}
->>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
         sp_ref = weakref.ref(self)
         for r in self._extracellular_regions:
             for i in range(r._nx):
@@ -1106,12 +1071,8 @@ class Species(_SpeciesMathable):
         elif isinstance(r, region.Extracellular):
             if not hasattr(self,'_extracellular_instances'):
                 initializer._do_init()
-<<<<<<< HEAD
-            return SpeciesOnExtracellular(self, self._extracellular_instances[r])
-=======
             if r in self._extracellular_instances:
                 return SpeciesOnExtracellular(self, self._extracellular_instances[r])
->>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
         raise RxDException('no such region')
 
     def _update_node_data(self):
@@ -1332,18 +1293,12 @@ class Species(_SpeciesMathable):
     
     
     def _finitialize(self, skip_transfer=False):
-<<<<<<< HEAD
         if self._extracellular_instances:
             for r in self._extracellular_instances.keys():
                 self._extracellular_instances[r]._finitialize()
         if self._intracellular_instances:
             for r in self._intracellular_instances.keys():
                 self._intracellular_instances[r]._finitialize()
-=======
-        if hasattr(self,'_extracellular_instances'):
-            for r in self._extracellular_instances.values():
-                r._finitialize()
->>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
         if self.initial is not None:
             if isinstance(self.initial, collections.Callable):
                 for node in self.nodes:

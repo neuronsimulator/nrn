@@ -182,7 +182,6 @@ typedef struct ECSAdiGridData{
     int sizej;
     ECSAdiDirection* ecs_adi_dir;
     double* scratchpad;
-<<<<<<< HEAD
 } ECSAdiGridData;
 
 class ICS_Grid_node : public Grid_node{
@@ -259,9 +258,6 @@ static double get_alpha_array(double*, int);
 static double get_lambda_scalar(double*, int);
 static double get_lambda_array(double*, int);
 
-=======
-} AdiGridData;
->>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
 
 /***** GLOBALS *******************************************************************/
 extern double *dt_ptr;              // Universal ∆t

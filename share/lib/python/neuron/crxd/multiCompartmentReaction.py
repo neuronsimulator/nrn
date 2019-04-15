@@ -135,11 +135,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
         else:
             raise RxDException('unrecognized direction; should never happen')
         self._changing_species = list(set(self._sources + self._dests))
-<<<<<<< HEAD
-
-=======
         
->>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
         regs = []
         for sptr in self._changing_species:
             if isinstance(sptr(), species.Species):
@@ -149,11 +145,6 @@ class MultiCompartmentReaction(GeneralizedReaction):
             else:
                 regs.append(sptr()._region())
         self._rate, self._involved_species = rxdmath._compile(rate, regs)
-<<<<<<< HEAD
-
-
-=======
->>>>>>> 4bee42902f50fe65a4635a14dfcb76894e9e57a7
 
 
     @property
