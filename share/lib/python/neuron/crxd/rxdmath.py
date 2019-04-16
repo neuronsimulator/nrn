@@ -1,6 +1,5 @@
 import math
 import numpy
-import weakref
 import functools
 import sys
 from .rxdException import RxDException

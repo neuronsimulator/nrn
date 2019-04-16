@@ -89,8 +89,8 @@ class Reaction(GeneralizedReaction):
             # TODO: remove this limitation (probably means doing with rate_b what done with rate_f and making sure _sources and _dests are correct
             raise RxDException('pure reverse reaction currently not supported; reformulate as a forward reaction')
         
-        rate_f = copy.copy(self._original_rate_f)
-        rate_b = copy.copy(self._original_rate_b)
+        rate_f = rxdmath._ensure_arithmeticed(self._original_rate_f)
+        rate_b = rxdmath._ensure_arithmeticed(self._original_rate_b) 
         
         if not self._custom_dynamics:
             for k, v in zip(list(lhs.keys()), list(lhs.values())):
