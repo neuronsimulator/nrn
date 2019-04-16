@@ -696,8 +696,8 @@ extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, i
             break;
         case 4:
             /* fixed step solve */
-			_fadvance_fixed_step_3D();
 			_fadvance();
+            _fadvance_fixed_step_3D();
             break;
         case 5:
             /* ode_count */

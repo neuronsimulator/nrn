@@ -999,6 +999,7 @@ void ICS_Grid_node::set_num_threads(const int n)
 void ICS_Grid_node::do_grid_currents(double dt, int grid_id)
 {
     if(ics_current_seg_ptrs != NULL){
+        MEM_ZERO(ics_states_cur,sizeof(double)*_num_nodes);
         ssize_t i, j, n;
         int seg_start_index, seg_stop_index;
         int state_index;
@@ -1010,7 +1011,7 @@ void ICS_Grid_node::do_grid_currents(double dt, int grid_id)
             seg_cur = *ics_current_seg_ptrs[i];
             for(j = seg_start_index; j < seg_stop_index; j++){
                 state_index = ics_surface_nodes_per_seg[j];
-                ics_states_cur[state_index] = seg_cur * ics_scale_factors[state_index] * dt;
+                ics_states_cur[state_index] += seg_cur * ics_scale_factors[state_index] * dt;
             }
         }        
     }
@@ -1063,6 +1064,7 @@ void ICS_Grid_node::scatter_grid_concentrations()
 // Free a single Grid_node
 void ICS_Grid_node::free_Grid(){
     int i;
+    free(ics_states_cur);
     free(states_x);
     free(states_y);
     free(states_cur);

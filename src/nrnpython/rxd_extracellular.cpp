@@ -470,6 +470,7 @@ void _fadvance_fixed_step_3D(void) {
 	    run_threaded_reactions(threaded_reactions_tasks);
 
     for (id = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, id++) {
+        MEM_ZERO(grid->states_cur,sizeof(double)*grid->size_x*grid->size_y*grid->size_z);
         grid->do_grid_currents(dt, id);
         grid->volume_setup();
         grid->dg_adi();
@@ -820,7 +821,6 @@ static void ecs_dg_adi_x(ECS_Grid_node* g, const double dt, const int y, const i
         RHS[0] = g->bc->value;
         RHS[g->size_x-1] = g->bc->value;
     }
-
     for(x=1; x<g->size_x-1; x++)
     {
         __builtin_prefetch(&(g->states[IDX(x+PREFETCH,y,z)]), 0, 1);
