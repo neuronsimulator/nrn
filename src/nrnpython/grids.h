@@ -1,7 +1,7 @@
 /******************************************************************
 Author: Austin Lachance
 Date: 10/28/16
-Description: Header File for grids.c. Allows access to Grid_node
+Description: Header File for grids.cpp. Allows access to Grid_node
 and Flux_pair structs and their respective functions
 ******************************************************************/
 #include <stdio.h>
