@@ -784,9 +784,12 @@ void ICS_Grid_node::divide_x_work(){
 
     //Delete thread_line_defs array
     for(i = 0; i < NUM_THREADS; i++){
-        delete thread_line_defs[i];
+        free(thread_line_defs[i]);
     }
-    delete thread_line_defs;
+    free(thread_line_defs);
+    free(nodes_per_thread);
+    free(lines_per_thread);
+    free(thread_idx_counter);
 }
 
 void ICS_Grid_node::divide_y_work(){
@@ -877,9 +880,12 @@ void ICS_Grid_node::divide_y_work(){
 
     //Delete thread_line_defs array
     for(i = 0; i < NUM_THREADS; i++){
-        delete thread_line_defs[i];
+        free(thread_line_defs[i]);
     }
-    delete thread_line_defs;
+    free(thread_line_defs);
+    free(nodes_per_thread);
+    free(lines_per_thread);
+    free(thread_idx_counter);
 }
 
 void ICS_Grid_node::divide_z_work(){
@@ -971,9 +977,12 @@ void ICS_Grid_node::divide_z_work(){
 
     //Delete thread_line_defs array
     for(i = 0; i < NUM_THREADS; i++){
-        delete thread_line_defs[i];
+        free(thread_line_defs[i]);
     }
-    delete thread_line_defs;
+    free(thread_line_defs);
+    free(nodes_per_thread);
+    free(lines_per_thread);
+    free(thread_idx_counter);
 }
 
 
@@ -1064,7 +1073,9 @@ void ICS_Grid_node::scatter_grid_concentrations()
 // Free a single Grid_node
 void ICS_Grid_node::free_Grid(){
     int i;
-    free(ics_states_cur);
+    if(ics_current_seg_ptrs != NULL){
+        free(ics_states_cur);
+    }
     free(states_x);
     free(states_y);
     free(states_cur);
