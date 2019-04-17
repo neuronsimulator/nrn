@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ''' unit definitions '''
 
 # NEURON's default units
@@ -21,3 +22,8 @@ day = 24 * hour
 uV = 1e-3 * mV
 V = 1e3 * mV
 
+# variants using mu instead of u (available in Python3 only)
+# have to do it this way to avoid a SyntaxError in Python2
+globals()['μV'] = 1e-3 * mV
+globals()['μM'] = 1e-3 * mM
+globals()['μs'] = 1e-3 * ms
