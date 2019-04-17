@@ -47,4 +47,4 @@ add_custom_command(OUTPUT ${NMODL_PYTHON_FILES_OUT}
 # Install python binding components
 # =============================================================================
 install(TARGETS _nmodl DESTINATION lib/python/nmodl)
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/nmodl DESTINATION lib/python/)
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/nmodl DESTINATION lib/python/ FILES_MATCHING PATTERN "*.py")
