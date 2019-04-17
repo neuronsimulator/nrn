@@ -18,10 +18,13 @@
 #include "version/version.h"
 
 /**
- * Stand alone lexer program for NMODL. This demonstrate basic
- * usage of scanner and driver classes. We parse user provided
- * nmodl file and print individual token with it's value and
- * location.
+ * \file
+ *
+ * \brief Example of standalone lexer program for NMODL
+ *
+ * This example demonstrate basic usage of scanner and driver classes.
+ * We parse user provided nmodl file and print individual token with
+ * it's value and location.
  */
 
 using namespace fmt::literals;
@@ -32,6 +35,7 @@ using parser::NmodlLexer;
 using SymbolType = parser::NmodlParser::symbol_type;
 using Token = parser::NmodlParser::token;
 using TokenType = parser::NmodlParser::token_type;
+
 
 void tokenize(const std::string& mod_text) {
     std::istringstream in(mod_text);
@@ -67,35 +71,35 @@ void tokenize(const std::string& mod_text) {
             break;
         }
 
-            /// token with prime ast class
+        /// token with prime ast class
         case Token::PRIME: {
             auto value = sym.value.as<ast::PrimeName>();
             std::cout << *(value.get_token()) << std::endl;
             break;
         }
 
-            /// token with integer ast class
+        /// token with integer ast class
         case Token::INTEGER: {
             auto value = sym.value.as<ast::Integer>();
             std::cout << *(value.get_token()) << std::endl;
             break;
         }
 
-            /// token with double/float ast class
+        /// token with double/float ast class
         case Token::REAL: {
             auto value = sym.value.as<ast::Double>();
             std::cout << *(value.get_token()) << std::endl;
             break;
         }
 
-            /// token with string ast class
+        /// token with string ast class
         case Token::STRING: {
             auto value = sym.value.as<ast::String>();
             std::cout << *(value.get_token()) << std::endl;
             break;
         }
 
-            /// token with string data type
+        /// token with string data type
         case Token::VERBATIM:
         case Token::BLOCK_COMMENT:
         case Token::LINE_PART: {
@@ -104,7 +108,7 @@ void tokenize(const std::string& mod_text) {
             break;
         }
 
-            /// all remaining tokens has ModToken* as a vaue
+        /// all remaining tokens has ModToken* as a vaue
         default: {
             auto token = sym.value.as<ModToken>();
             std::cout << token << std::endl;

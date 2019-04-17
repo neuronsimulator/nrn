@@ -4,6 +4,8 @@
  *
  * This file is part of NMODL distributed under the terms of the GNU
  * Lesser General Public License. See top-level LICENSE file for details.
+ *
+ * @brief Lexer for NMODL specification
  *************************************************************************/
 
 %{
@@ -192,7 +194,7 @@ ELSE                    {
                                     case Token::LINEAR:
                                     case Token::PARTIAL:
                                     case Token::KINETIC:
-                                        lexcontext = type;
+                                        lexical_context = type;
                                         break;
                                 }
 
@@ -200,7 +202,7 @@ ELSE                    {
                                 return token_symbol(yytext, loc, type);
                             } else {
                                 /** if flux variable is used in the kinetic block */
-                                if ( lexcontext == Token::KINETIC &&
+                                if ( lexical_context == Token::KINETIC &&
                                      (strcmp(yytext, "f_flux") == 0 || strcmp(yytext, "b_flux") == 0)) {
                                      nmodl::ast::Name value( new nmodl::ast::String(yytext) );
                                      ModToken tok(yytext, Token::FLUX_VAR, loc);
@@ -280,19 +282,19 @@ ELSE                    {
 
 "~"                     {
                             /** return token depending on the reaction context */
-                            if (lexcontext == Token::NONLINEAR) {
+                            if (lexical_context == Token::NONLINEAR) {
                                 return token_symbol(yytext, loc, Token::NONLIN1);
                             }
 
-                            if (lexcontext == Token::LINEAR) {
+                            if (lexical_context == Token::LINEAR) {
                                 return token_symbol(yytext, loc, Token::LIN1);
                             }
 
-                            if (lexcontext == Token::PARTIAL) {
+                            if (lexical_context == Token::PARTIAL) {
                                 return token_symbol(yytext, loc, Token::TILDE);
                             }
 
-                            if (lexcontext == Token::KINETIC) {
+                            if (lexical_context == Token::KINETIC) {
                                 return token_symbol(yytext, loc, Token::REACTION);
                             }
 
@@ -481,13 +483,17 @@ ELSE                    {
 %%
 
 
-/** Some of the utility functions can't be defined outside due to macros.
-  * These are utility functions ported from original nmodl implementation. */
+/**
+ * Some of the utility functions can't be defined outside due to macros.
+ * These are utility functions ported from original nmodl implementation.
+ */
 
 
-/** This implementation of NmodlFlexLexer::yylex() is required to fill the
-  * vtable of the class NmodlFlexLexer. We define the scanner's main yylex
-  * function via YY_DECL to reside in the Lexer class instead. */
+/**
+ * This implementation of NmodlFlexLexer::yylex() is required to fill the
+ * vtable of the class NmodlFlexLexer. We define the scanner's main yylex
+ * function via YY_DECL to reside in the Lexer class instead.
+ */
 int NmodlFlexLexer::yylex() {
   throw std::runtime_error("next_token() should be used instead of yylex()");
 }
@@ -497,11 +503,15 @@ void nmodl::parser::NmodlLexer::set_debug(bool b) {
     yy_flex_debug = b;
 }
 
-/** Scan unit which is a string between opening and closing parenthesis.
-  * We store this in lexer itself and then consumed later from the parser. */
+/**
+ * Scan unit which is a string between opening and closing parenthesis.
+ * We store this in lexer itself and then consumed later from the parser.
+ */
 void nmodl::parser::NmodlLexer::scan_unit() {
-    /** We are interested in unit after first parenthesis.
-     * So to get correct position update the location. */
+    /**
+     * We are interested in unit after first parenthesis.
+     * So to get correct position update the location.
+     */
     loc.step();
     std::string str;
 
@@ -520,7 +530,8 @@ void nmodl::parser::NmodlLexer::scan_unit() {
     }
 
     /** YY_USER_ACTION is not executed if are consuming input
-      * using yyinput and hence increase location */
+     * using yyinput and hence increase location
+     */
     loc.columns(str.size());
 
     ModToken tok(str, Token::UNITS, loc);
@@ -528,7 +539,7 @@ void nmodl::parser::NmodlLexer::scan_unit() {
     last_unit->set_token(tok);
 }
 
-/** return last scanned unit, it shouln't be null pointer */
+/** Return last scanned unit, it shouln't be null pointer */
 nmodl::ast::String* nmodl::parser::NmodlLexer::get_unit() {
     if (last_unit == nullptr) {
         throw std::runtime_error("Trying to get unscanned empty unit");

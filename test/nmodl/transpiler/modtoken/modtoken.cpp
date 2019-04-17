@@ -14,11 +14,18 @@
 #include "lexer/nmodl_lexer.hpp"
 #include "parser/nmodl_driver.hpp"
 
+
+/** @file
+ *  @defgroup token_test Token Tests
+ *  @ingroup token
+ *  @brief All tests for @ref token_modtoken
+ *  @{
+ */
+
 using namespace nmodl;
 using nmodl::parser::NmodlDriver;
 using nmodl::parser::NmodlLexer;
 
-/// retrieve token from lexer
 template <typename T>
 void symbol_type(const std::string& name, T& value) {
     std::istringstream ss(name);
@@ -31,9 +38,8 @@ void symbol_type(const std::string& name, T& value) {
     value = sym.value.as<T>();
 }
 
-/// test symbol type returned by lexer
-TEST_CASE("Lexer symbol type tests", "[TokenPrinter]") {
-    SECTION("Symbol type : name ast class test") {
+TEST_CASE("Lexer symbol type tests") {
+    SECTION("test for ast class of type Name") {
         ast::Name value;
 
         {
@@ -51,7 +57,7 @@ TEST_CASE("Lexer symbol type tests", "[TokenPrinter]") {
         }
     }
 
-    SECTION("Symbol type : prime ast class test") {
+    SECTION("test for ast class of type Prime") {
         ast::PrimeName value;
 
         {
@@ -63,3 +69,5 @@ TEST_CASE("Lexer symbol type tests", "[TokenPrinter]") {
         }
     }
 }
+
+/** @} */  // end of token_test

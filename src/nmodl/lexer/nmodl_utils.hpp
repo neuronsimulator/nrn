@@ -7,18 +7,18 @@
 
 #pragma once
 
+/**
+ * \file nmodl_utils.hpp
+ * \brief Utility functions for NMODL lexer
+ *
+ * From nmodl lexer we return different symbols to parser. Instead of writing
+ * those functions in the flex implementation file, those commonly used routines
+ * are defined here. Some of these tasks were implemented in list.c file in the
+ * original mod2c implementation.
+ */
+
 #include "parser/nmodl/location.hh"
 #include "parser/nmodl/nmodl_parser.hpp"
-
-/**
- * \brief Utility functions for nmodl lexer
- *
- * From nmodl lexer we return different symbols to parser.
- * Instead of writing those functions in the flex implementation
- * file, those commonly used routines are defined here. Some of
- * these tasks were implemented in list.c file in the oiginal mod2c
- * implementation.
- */
 
 namespace nmodl {
 
