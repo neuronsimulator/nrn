@@ -18,16 +18,32 @@ namespace nmodl {
 
 using Parser = parser::NmodlParser;
 
-/// create symbol for double/real ast class
+/**
+ * Create a symbol for ast::Double AST class
+ *
+ * @param value Double value parsed by lexer
+ * @param pos Position of value in the mod file
+ * @return Symbol for double value
+ */
 SymbolType double_symbol(double value, PositionType& pos) {
     ModToken token(std::to_string(value), Token::REAL, pos);
-    ast::Double floatvalue(value);
-    floatvalue.set_token(token);
-    return Parser::make_REAL(floatvalue, pos);
+    ast::Double float_value(value);
+    float_value.set_token(token);
+    return Parser::make_REAL(float_value, pos);
 }
 
-/** Create symbol for integer ast class. Integer class also represent
- * macro definition and hence could have associated text. */
+
+/**
+ * Create a symbol for ast::Integer AST
+ *
+ * ast::Integer class also represent macro definition and
+ * hence could have associated text.
+ *
+ * @param value Integer value parsed by lexer
+ * @param pos Position of value in the mod file
+ * @param text associated macro for the value
+ * @return Symbol for integer value
+ */
 SymbolType integer_symbol(int value, PositionType& pos, const char* text) {
     ast::Name* macro = nullptr;
     ModToken token(std::to_string(value), Token::INTEGER, pos);
@@ -37,16 +53,25 @@ SymbolType integer_symbol(int value, PositionType& pos, const char* text) {
         macro->set_token(token);
     }
 
-    ast::Integer intvalue(value, macro);
-    intvalue.set_token(token);
-    return Parser::make_INTEGER(intvalue, pos);
+    ast::Integer int_value(value, macro);
+    int_value.set_token(token);
+    return Parser::make_INTEGER(int_value, pos);
 }
 
-/** Create symbol for name ast class.
+
+/**
+ * Create symbol for ast::Name AST class
  *
- * \todo In addition to keywords and methods, there are also external
- * definitions for math and neuron specific functions/variables. In the
- * token we should mark those as external. */
+ * @param text Text value parsed by lexer
+ * @param pos Position of value in the mod file
+ * @param type Token type returned by lexer (see parser::NmodlParser::token::yytokentype)
+ * @return Symbol for name value
+ *
+ * \todo
+ *      In addition to keywords and methods, there are also external
+ *      definitions for math and neuron specific functions/variables.
+ *      In the token we should mark those as external.
+ */
 SymbolType name_symbol(const std::string& text, PositionType& pos, TokenType type) {
     ModToken token(text, type, pos);
     ast::Name value(new ast::String(text));
@@ -54,9 +79,17 @@ SymbolType name_symbol(const std::string& text, PositionType& pos, TokenType typ
     return Parser::make_NAME(value, pos);
 }
 
-/** Create symbol for prime ast class. Prime has name as well as
- *  order. Text returned by lexer has single quote (') as an order.
- *  We count order and remove quote from text */
+
+/**
+ * Create symbol for ast::Prime AST class
+ *
+ * ast::Prime has name as well as order. Text returned by lexer has single
+ * quote (`'`) as an order. We count the order and remove quote from the text.
+ *
+ * @param text Prime variable name parsed by lexer
+ * @param pos Position of text in the mod file
+ * @return Symbol for prime variable
+ */
 SymbolType prime_symbol(std::string text, PositionType& pos) {
     ModToken token(text, Token::PRIME, pos);
     auto order = std::count(text.begin(), text.end(), '\'');
@@ -69,7 +102,13 @@ SymbolType prime_symbol(std::string text, PositionType& pos) {
     return Parser::make_PRIME(value, pos);
 }
 
-/// create symbol for string ast class
+
+/**
+ * Create symbol for ast::String AST class
+ * @param text Text value parsed by lexer
+ * @param pos Position of value in the mod file
+ * @return Symbol for string value
+ */
 SymbolType string_symbol(const std::string& text, PositionType& pos) {
     ModToken token(text, Token::STRING, pos);
     ast::String value(text);
@@ -77,13 +116,21 @@ SymbolType string_symbol(const std::string& text, PositionType& pos) {
     return Parser::make_STRING(value, pos);
 }
 
-/** Create symbol for generic / non-ast token. These tokens doesn't have
- * specific value to pass to the parser. They are more part of grammar.
- * Depending on the type of toke, we create appropriate symbol. From
- * lexer we pass token type (which is optional). This is required for
- * reaction parsing where we have "lexical context". Hence, if token
- * type is passed then we don't check/search for the token type. */
 
+/**
+ * Create symbol for AST class
+ *
+ * These tokens doesn't have specific value to pass to the parser. They are more
+ * part of grammar.  Depending on the type of toke, we create appropriate
+ * symbol. From lexer we pass token type (which is optional). This is required
+ * for reaction parsing where we have "lexical context". Hence, if token type is
+ * passed then we don't check/search for the token type.
+ *
+ * @param key Text parsed by lexer
+ * @param pos Position of value in the mod file
+ * @param type Token type returned by lexer (see parser::NmodlParser::token::yytokentype)
+ * @return Symbol for given token
+ */
 SymbolType token_symbol(const std::string& key, PositionType& pos, TokenType type) {
     /// if token type is not passed, check if it is keyword or method
     if (type == Token::UNKNOWN) {
@@ -94,9 +141,7 @@ SymbolType token_symbol(const std::string& key, PositionType& pos, TokenType typ
 
     ModToken token(key, type, pos);
 
-    /// lookup for token type and create approrpiate symbol type
     switch (static_cast<int>(type)) {
-    /// Most of the nmodl keywords
     case Token::AFTER:
         return Parser::make_AFTER(token, pos);
     case Token::BBCOREPOINTER:
@@ -322,8 +367,10 @@ SymbolType token_symbol(const std::string& key, PositionType& pos, TokenType typ
     case Token::PERIOD:
         return Parser::make_PERIOD(token, pos);
 
-    /** We hit default case for missing token type. This is more likely
-     * a bug in the implementation where we forgot to handle token type. */
+    /**
+     * we hit default case for missing token type. This is more likely
+     * a bug in the implementation where we forgot to handle token type.
+     */
     default:
         auto msg = "Token type not found while creating a symbol!";
         throw std::runtime_error(msg);

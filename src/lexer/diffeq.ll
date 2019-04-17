@@ -4,6 +4,8 @@
  *
  * This file is part of NMODL distributed under the terms of the GNU
  * Lesser General Public License. See top-level LICENSE file for details.
+ *
+ * @brief Lexer for ODEs from NMODL
  *************************************************************************/
 
 %{
@@ -11,6 +13,7 @@
     #include <cstdlib>
     #include <iostream>
     #include <stdlib.h>
+
     #include "lexer/diffeq_lexer.hpp"
     #include "parser/diffeq_driver.hpp"
 
@@ -84,7 +87,7 @@ E   [Ee][-+]?{D}+
 
 :.*                     { /* ignore inline comments */ }
 
-[ \t]                   { /* ignore spacing characters */ }
+[ \t]                   { /* ignore white spaces */ }
 
 {D}+                    |
 {D}+"."{D}*({E})?       |
@@ -96,7 +99,6 @@ E   [Ee][-+]?{D}+
 
 
 %%
-
 
 int DiffEqFlexLexer::yylex() {
   throw std::runtime_error("next_token() should be used instead of yylex()");

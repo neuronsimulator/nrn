@@ -1,12 +1,13 @@
 /**********************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
  *
- * @brief Flex lexer implementation for C (11)
- *
- * NMODL has verbatim constructs that allow to specify C code sections within
- * nmodl implementation.
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
  *
  * CREDIT : This is based on flex specification available at
  *          http://www.quut.com/c/ANSI-C-grammar-l-2011.html
+ *
+ * @brief C (11) lexer based
  *****************************************************************************/
 
 %{
@@ -381,7 +382,7 @@ WS  [ \t\v\n\f]
 
 {L}{A}*                                 {
                                             driver.add_token(yytext);
-                                            return check_type();
+                                            return get_token_type();
                                         }
 
 {HP}{H}+{IS}?                           {
@@ -693,7 +694,7 @@ int CFlexLexer::yylex() {
 }
 
 
-nmodl::parser::CParser::symbol_type nmodl::parser::CLexer::check_type() {
+nmodl::parser::CParser::symbol_type nmodl::parser::CLexer::get_token_type() {
     if (driver.is_typedef(yytext)) {
         return CParser::make_TYPEDEF_NAME(yytext, loc);
     }

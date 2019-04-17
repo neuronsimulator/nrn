@@ -6,6 +6,7 @@
  *************************************************************************/
 
 #include <fstream>
+#include <sstream>
 
 #include "CLI/CLI.hpp"
 #include "fmt/format.h"
@@ -16,38 +17,55 @@
 #include "version/version.h"
 
 /**
- * Example of standalone lexer program for C codes that
- * demonstrate use of CLexer and CDriver classes.
+ * \file
+ * \brief Example of standalone lexer program for C code
+ *
+ * This example demonstrate use of CLexer and CDriver classes
+ * to scan arbitrary C code.
  */
 
 using namespace fmt::literals;
 using namespace nmodl;
 
+
+void scan_c_code(std::istream& in) {
+    nmodl::parser::CDriver driver;
+    nmodl::parser::CLexer scanner(driver, &in);
+
+    /// parse C file and print token until EOF
+    while (true) {
+        auto sym = scanner.next_token();
+        auto token = sym.token();
+        if (token == nmodl::parser::CParser::token::END) {
+            break;
+        }
+        std::cout << sym.value.as<std::string>() << std::endl;
+    }
+}
+
+
 int main(int argc, const char* argv[]) {
     CLI::App app{"C-Lexer : Standalone Lexer for C Code({})"_format(version::to_string())};
 
-    std::vector<std::string> files;
-    app.add_option("file", files, "One or more C files to process")
-        ->required()
-        ->check(CLI::ExistingFile);
+    std::vector<std::string> c_files;
+    std::vector<std::string> c_codes;
+
+    app.add_option("file", c_files, "One or more C files to process")->check(CLI::ExistingFile);
+    app.add_option("--text", c_codes, "One or more C code as text");
 
     CLI11_PARSE(app, argc, argv);
 
-    for (const auto& f: files) {
-        nmodl::logger->info("Processing {}", f);
-        std::ifstream file(f);
-        nmodl::parser::CDriver driver;
-        nmodl::parser::CLexer scanner(driver, &file);
-
-        /// parse C file and print token until EOF
-        while (true) {
-            auto sym = scanner.next_token();
-            auto token = sym.token();
-            if (token == nmodl::parser::CParser::token::END) {
-                break;
-            }
-            std::cout << sym.value.as<std::string>() << std::endl;
-        }
+    for (const auto& file: c_files) {
+        nmodl::logger->info("Processing {}", file);
+        std::ifstream in(file);
+        scan_c_code(in);
     }
+
+    for (const auto& code: c_codes) {
+        nmodl::logger->info("Processing {}", code);
+        std::istringstream in(code);
+        scan_c_code(in);
+    }
+
     return 0;
 }

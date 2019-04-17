@@ -19,14 +19,22 @@ using Token = parser::NmodlParser::token;
 using TokenType = parser::NmodlParser::token_type;
 using Parser = parser::NmodlParser;
 
-namespace internal {
+/// details of lexer tokens
+namespace details {
+
 // clang-format off
-        /** Keywords from NMODL language : name and token pair
+
+        /**
+         * \brief Keywords from NMODL language
+         *
+         * Keywords are defined with key-value pair where key is name
+         * from scanner and value is token type used in parser.
          *
          * \todo Some keywords have different token names, e.g. TITLE
          * keyword has MODEL as a keyword. These token names are used
          * in multiple context and hence we are keeping original names.
-         * Once we finish code generation part then we change this. */
+         * Once we finish code generation part then we change this.
+         */
         static std::map<std::string, TokenType> keywords = {
             {"VERBATIM", Token::VERBATIM},
             {"COMMENT", Token::BLOCK_COMMENT},
@@ -121,21 +129,37 @@ namespace internal {
             {"MUTEXUNLOCK", Token::NRNMUTEXUNLOCK}};
 // clang-format on
 
-/// numerical methods supported in nmodl
+
+/**
+ * \class MethodInfo
+ * \brief Information about integration method
+ */
 struct MethodInfo {
-    /// method types that will work with this method
+    /// block types where this method will work with
     int64_t subtype = 0;
 
-    /// if it's a variable timestep method
-    int varstep = 0;
+    /// true if it is a variable timestep method
+    int variable_timestep = 0;
 
     MethodInfo() = default;
+
     MethodInfo(int64_t s, int v)
         : subtype(s)
-        , varstep(v) {}
+        , variable_timestep(v) {}
 };
 
+
 // clang-format off
+        /**
+         * Integration methods available in the NMODL
+         *
+         * Different integration methods are available in NMODL and they are used with
+         * different block types in NMODL. This variable provide list of method names,
+         * which blocks they can be used with and whether it is usable with variable
+         * timestep.
+         *
+         * \todo MethodInfo::subtype should be changed from integer flag to proper type
+         */
         static std::map<std::string, MethodInfo> methods = {{"adams", MethodInfo(DERF | KINF, 0)},
                                                             {"runge", MethodInfo(DERF | KINF, 0)},
                                                             {"euler", MethodInfo(DERF | KINF, 0)},
@@ -157,24 +181,26 @@ struct MethodInfo {
                                                             {"cvode_t_v", MethodInfo(0, 0)}};
 // clang-format on
 
-/** In the original implementation different vectors were created for
- * extdef, extdef2, extdef3, extdef4 etc. Instead of that we are changing
- * those vectors with <name, type> map. This will help us to search
+
+/**
+ * Definition type similar to old implementation
+ *
+ * In the original implementation of NMODL (mod2c, nocmodl) different vectors were
+ * created for \c extdef, \c extdef2, \c extdef3, \c extdef4 etc. We are changing
+ * those vectors with <c><name, type></c> map. This will help us to search
  * in single map and find it's type. The types are defined as follows:
  *
- * DefinitionType::EXT_DOUBLE : external names that can be used as doubles
- *                              without giving an error message
+ * - DefinitionType::EXT_DOUBLE : external names that can be used as doubles
+ *                                without giving an error message
+ * - DefinitionType::EXT_2      : external function names that can be used with
+ *                                array and function name arguments
+ * - DefinitionType::EXT_3      : function names that get two reset arguments
+ * - DefinitionType::EXT_4      : functions that need a first arg of \c NrnThread*
+ * - DefinitionType::EXT_5      : external definition names that are not \c threadsafe
  *
- * DefinitionType::EXT_2      : external function names that can be used with
- *                              array and function name arguments
- *
- * DefinitionType::EXT_3      : function names that get two reset arguments
- *
- * DefinitionType::EXT_4      : functions that need a first arg of NrnThread*
- *
- * DefinitionType::EXT_5      : the extdef names that are not threadsafe
- *
- * These types were used so that it's easy to it to old implementation. */
+ * \todo These types were implemented for easy migration from old implementation.
+ *       As first draft of code generation is complete, this can be now refactored.
+ */
 
 enum class DefinitionType { EXT_DOUBLE, EXT_2, EXT_3, EXT_4, EXT_5 };
 
@@ -284,72 +310,83 @@ enum class DefinitionType { EXT_DOUBLE, EXT_2, EXT_3, EXT_4, EXT_5 };
             {"nrn_random_play", DefinitionType::EXT_5}};
 // clang-format on
 
-/** Internal NEURON variables that can be used in nmod files. The compiler
- * passes like scope checker need to know if certain variable is undefined.
- * Note that these are not used by lexer/parser. */
 
+/**
+ * Variables from NEURON that are directly used in NMODL
+ *
+ * NEURON exposes certain variable that can be directly used in NMODLvar.
+ * The passes like scope checker needs to know if certain variable is
+ * undefined and hence these needs to be inserted into symbol table
+ */
 static std::vector<std::string> neuron_vars = {"t", "dt", "celsius", "v", "diam", "area"};
 
+
+/// Return token type for the keyword
 TokenType keyword_type(const std::string& name) {
     return keywords[name];
 }
 
-/** \todo: revisit implementation, this is no longer
- *        necessary as token_type is sufficient
+}  // namespace details
+
+
+/**
+ * Check if given name is a keyword in NMODL
+ * @param name token name
+ * @return true if name is a keyword
  */
-TokenType method_type(const std::string& /*name*/) {
-    return Token::METHOD;
-}
-
-bool is_externdef(const std::string& name) {
-    return (extern_definitions.find(name) != extern_definitions.end());
-}
-
-DefinitionType extdef_type(const std::string& name) {
-    if (!is_externdef(name)) {
-        throw std::runtime_error("Can't find " + name + " in external definitions!");
-    }
-    return extern_definitions[name];
-}
-
-}  // namespace internal
-
-/// methods exposed to lexer, parser and compilers passes
-
 bool is_keyword(const std::string& name) {
-    return (internal::keywords.find(name) != internal::keywords.end());
+    return (details::keywords.find(name) != details::keywords.end());
 }
 
+
+/**
+ * Check if given name is an integration method in NMODL
+ * @param name Name of the integration method
+ * @return true if name is an integration method in NMODL
+ */
 bool is_method(const std::string& name) {
-    return (internal::methods.find(name) != internal::methods.end());
+    return (details::methods.find(name) != details::methods.end());
 }
 
-/// return token type for associated name (used by nmodl scanner)
+
+/**
+ * Return token type for given token name
+ * @param name Token name from lexer
+ * @return type of NMODL token
+ */
 TokenType token_type(const std::string& name) {
     if (is_keyword(name)) {
-        return internal::keyword_type(name);
+        return details::keyword_type(name);
     }
     if (is_method(name)) {
-        return internal::method_type(name);
+        return Token::METHOD;
     }
-    throw std::runtime_error("get_token_type called for non-existent token " + name);
+    throw std::runtime_error("token_type called for non-existent token " + name);
 }
 
-/// return all external variables
+
+/**
+ * Return variables declared in NEURON that are available to NMODL
+ * @return vector of NEURON variables
+ */
 std::vector<std::string> get_external_variables() {
     std::vector<std::string> result;
-    result.insert(result.end(), internal::neuron_vars.begin(), internal::neuron_vars.end());
+    result.insert(result.end(), details::neuron_vars.begin(), details::neuron_vars.end());
     return result;
 }
 
-/// return all solver methods as well as commonly used math functions
+
+/**
+ * Return functions that can be used in the NMODL
+ * @return vector of function names used in NMODL
+ */
 std::vector<std::string> get_external_functions() {
     std::vector<std::string> result;
-    result.reserve(internal::methods.size());
-    for (auto& method: internal::methods) {
+    result.reserve(details::methods.size());
+    for (auto& method: details::methods) {
         result.push_back(method.first);
     }
-    for (auto& definition: internal::extern_definitions) {
+    for (auto& definition: details::extern_definitions) {
         result.push_back(definition.first);
     }
     return result;
