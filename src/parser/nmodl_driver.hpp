@@ -69,7 +69,7 @@ class NmodlDriver {
 
   public:
     /// file or input stream name (used by scanner for position), see todo
-    std::string streamname;
+    std::string stream_name;
 
     /// root of the ast
     std::shared_ptr<ast::Program> astRoot = nullptr;

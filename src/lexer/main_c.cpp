@@ -11,10 +11,10 @@
 #include "CLI/CLI.hpp"
 #include "fmt/format.h"
 
+#include "config/config.h"
 #include "lexer/c11_lexer.hpp"
 #include "parser/c11_driver.hpp"
 #include "utils/logger.hpp"
-#include "version/version.h"
 
 /**
  * \file

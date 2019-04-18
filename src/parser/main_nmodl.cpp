@@ -9,9 +9,9 @@
 #include "CLI/CLI.hpp"
 #include "fmt/format.h"
 
+#include "config/config.h"
 #include "parser/nmodl_driver.hpp"
 #include "utils/logger.hpp"
-#include "version/version.h"
 
 /**
  * Standalone parser program for NMODL. This demonstrate

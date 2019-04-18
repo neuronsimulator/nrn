@@ -11,9 +11,9 @@
 #include "fmt/format.h"
 #include "pybind11/embed.h"
 
+#include "config/config.h"
 #include "parser/nmodl_driver.hpp"
 #include "utils/logger.hpp"
-#include "version/version.h"
 #include "visitors/ast_visitor.hpp"
 #include "visitors/cnexp_solve_visitor.hpp"
 #include "visitors/constant_folder_visitor.hpp"

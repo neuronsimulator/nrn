@@ -12,9 +12,9 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include "config/config.h"
 #include "parser/nmodl_driver.hpp"
 #include "pybind/pybind_utils.hpp"
-#include "version/version.h"
 #include "visitors/visitor_utils.hpp"
 
 namespace py = pybind11;
