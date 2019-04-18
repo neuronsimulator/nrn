@@ -70,7 +70,7 @@
 /** Initializations before parsing : Use filename from driver to initialize location object */
 %initial-action
 {
-    @$.begin.filename = @$.end.filename = &driver.streamname;
+    @$.begin.filename = @$.end.filename = &driver.stream_name;
 };
 
 /** Tokens for lexer : we return ModToken object from lexer. This is useful when

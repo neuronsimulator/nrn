@@ -12,10 +12,10 @@
 #include "fmt/format.h"
 
 #include "ast/ast.hpp"
+#include "config/config.h"
 #include "lexer/nmodl_lexer.hpp"
 #include "parser/nmodl_driver.hpp"
 #include "utils/logger.hpp"
-#include "version/version.h"
 
 /**
  * \file

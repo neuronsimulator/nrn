@@ -34,7 +34,7 @@ bool NmodlDriver::parse_stream(std::istream& in) {
 //// parse nmodl file
 bool NmodlDriver::parse_file(const std::string& filename) {
     std::ifstream in(filename.c_str());
-    streamname = filename;
+    stream_name = filename;
 
     if (!in.good()) {
         return false;

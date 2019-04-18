@@ -11,38 +11,44 @@
 #include "fmt/format.h"
 
 #include "config/config.h"
-#include "parser/c11_driver.hpp"
+#include "parser/unit_driver.hpp"
 #include "utils/logger.hpp"
 
 /**
- * \file
- * Standalone parser program for C. This demonstrate basic
+ * Standalone parser program for Units. This demonstrate basic
  * usage of parser and driver class.
+ *
+ * \todo This is a placeholder and needs to be changed to parse
+ *       NMODL file and then show corresponding units.
  */
 
 using namespace fmt::literals;
 using namespace nmodl;
 
-int main(int argc, const char* argv[]) {
-    CLI::App app{"C-Parser : Standalone Parser for C Code({})"_format(version::to_string())};
-
-    std::vector<std::string> files;
-    app.add_option("file", files, "One or more C files to process")
-        ->required()
-        ->check(CLI::ExistingFile);
-
-    CLI11_PARSE(app, argc, argv);
-
+void parse_units(std::vector<std::string> files) {
     for (const auto& f: files) {
         logger->info("Processing {}", f);
         std::ifstream file(f);
 
         /// driver object creates lexer and parser
-        parser::CDriver driver;
+        parser::UnitDriver driver;
         driver.set_verbose(true);
 
         /// just call parser method
         driver.parse_stream(file);
     }
+}
+
+int main(int argc, const char* argv[]) {
+    CLI::App app{"Unit-Parser : Standalone Parser for Units({})"_format(version::to_string())};
+
+    std::vector<std::string> files;
+    files.push_back(NrnUnitsLib::get_path());
+    app.add_option("file", files, "One or more Units files to process");
+
+    CLI11_PARSE(app, argc, argv);
+
+    parse_units(files);
+
     return 0;
 }
