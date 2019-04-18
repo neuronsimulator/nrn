@@ -63,6 +63,9 @@ doctest_global_cleanup = textwrap.dedent(
 """
 )
 
+nbsphinx_execute = "always"
+nbsphinx_kernel_name = "python3"
+
 # Setup the breathe extension
 breathe_projects = {"NMODL C++ library": "./doxyoutput/xml"}
 breathe_default_project = "NMODL C++ library"

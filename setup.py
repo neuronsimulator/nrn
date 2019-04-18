@@ -101,15 +101,6 @@ class CMakeBuild(build_ext):
             ["cmake", "--build", "."] + build_args, cwd=self.build_temp
         )
 
-
-class NMODLInstall(install):
-    def run(self):
-        if not self.skip_build:
-            self.run_command("test")  # to install the shared library
-        self.run_command("install_doc")
-        super().run()
-
-
 class NMODLTest(test):
     """Custom disutils command that acts like as a replacement
     for the "test" command.
@@ -140,7 +131,7 @@ class NMODLTest(test):
         subprocess.check_call([sys.executable, __file__, "doctest"])
 
 
-install_requirements = ["jinja2>=2.10", "PyYAML>=3.13", "sympy>=1.2", "pytest>=4.0.0"]
+install_requirements = ["jinja2>=2.9", "PyYAML>=3.13", "sympy>=1.2"]
 
 setup(
     name="NMODL",
@@ -153,7 +144,6 @@ setup(
     ext_modules=[CMakeExtension("nmodl")],
     cmdclass=lazy_dict(
         build_ext=CMakeBuild,
-        install=NMODLInstall,
         test=NMODLTest,
         install_doc=get_sphinx_command,
         doctest=get_sphinx_command,
@@ -162,5 +152,5 @@ setup(
     setup_requires=["nbsphinx", "m2r", "exhale", "sphinx-rtd-theme", "sphinx<2"]
     + install_requirements,
     install_requires=install_requirements,
-    tests_require=["pytest>=4.0.0"],
+    tests_require=["pytest>=3.7.2"],
 )
