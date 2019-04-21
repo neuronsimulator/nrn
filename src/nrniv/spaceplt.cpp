@@ -264,6 +264,8 @@ static Member_func s_members[] = {
 static void* s_cons(Object*) {
 	char* var = NULL;
 	Object* pyobj = NULL;
+	Section* sec;
+	double x;
 	if (hoc_is_str_arg(1)) {
 		var = gargstr(1);
 	}else{
@@ -273,6 +275,14 @@ static void* s_cons(Object*) {
 #if HAVE_IV
 	s->ref();
 #endif
+    if (ifarg(2)) {
+    	nrn_seg_or_x_arg(2, &sec, &x);
+    	s->x_begin(x, sec);
+    }
+    if (ifarg(3)) {
+    	nrn_seg_or_x_arg(3, &sec, &x);
+    	s->x_end(x, sec);
+    }
 	return (void*)s;
 }
 
