@@ -655,7 +655,6 @@ try:
   _rvp_plot_callback = ctypes.py_object(_rvp_plot)
   set_rvp_plot(_rvp_plot_callback)
 except:
-  raise()
   pass
 
 def _has_scipy():
