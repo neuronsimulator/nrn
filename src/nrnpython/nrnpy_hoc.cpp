@@ -2358,6 +2358,77 @@ static void add2topdict(PyObject* dict) {
   }
 }
 
+static PyObject* nrnpy_vec_math = NULL;
+
+int nrnpy_vec_math_register(PyObject* callback) {
+  nrnpy_vec_math = callback;
+  return 0;
+}
+
+static bool pyobj_is_vector(PyObject* obj) {
+  if (PyObject_TypeCheck(obj, hocobject_type)) {
+    PyHocObject* obj_h = (PyHocObject*) obj;
+    if (obj_h->type_ == PyHoc::HocObject) {
+      // this is an object (e.g. Vector) not a function
+      if (obj_h->ho_->ctemplate == hoc_vec_template_) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+static PyObject* py_hocobj_math(const char* op, PyObject* obj1, PyObject* obj2) {
+  bool potentially_valid = false;
+  int reversed = 0;
+  if (pyobj_is_vector(obj1)) {
+    potentially_valid = true;
+  } else if (pyobj_is_vector(obj2)) {
+    potentially_valid = true;
+    reversed = 1;
+  }
+  if (!potentially_valid) {
+    Py_INCREF(Py_NotImplemented);
+    return Py_NotImplemented;
+  }
+  return PyObject_CallFunction(nrnpy_vec_math, "siOO", op, reversed, obj1, obj2);
+}
+
+static PyObject* py_hocobj_math_unary(const char* op, PyObject* obj) {
+  if (pyobj_is_vector(obj)) {
+    return PyObject_CallFunction(nrnpy_vec_math, "siO", op, 2, obj);
+  }
+  Py_INCREF(Py_NotImplemented);
+  return Py_NotImplemented;
+}
+
+static PyObject* py_hocobj_add(PyObject* obj1, PyObject* obj2) {
+  return py_hocobj_math("add", obj1, obj2);
+}
+
+static PyObject* py_hocobj_uabs(PyObject* obj) {
+  return py_hocobj_math_unary("uabs", obj);
+}
+
+static PyObject* py_hocobj_uneg(PyObject* obj) {
+  return py_hocobj_math_unary("uneg", obj);
+}
+
+static PyObject* py_hocobj_upos(PyObject* obj) {
+  return py_hocobj_math_unary("upos", obj);
+}
+
+static PyObject* py_hocobj_sub(PyObject* obj1, PyObject* obj2) {
+  return py_hocobj_math("sub", obj1, obj2);
+}
+
+static PyObject* py_hocobj_mul(PyObject* obj1, PyObject* obj2) {
+  return py_hocobj_math("mul", obj1, obj2);
+}
+
+static PyObject* py_hocobj_div(PyObject* obj1, PyObject* obj2) {
+  return py_hocobj_math("div", obj1, obj2);
+}
 static PyMemberDef hocobj_members[] = {{NULL, 0, 0, 0, NULL}};
 
 #if (PY_MAJOR_VERSION >= 3)
@@ -2432,6 +2503,7 @@ myPyMODINIT_FUNC nrnpy_hoc() {
   Symbol* s = NULL;
 #if PY_MAJOR_VERSION >= 3
   hocobject_type = (PyTypeObject*)PyType_FromSpec(&nrnpy_HocObjectType_spec);
+  hocobject_type->tp_as_number = &hocobj_as_number;
 #else
   hocobject_type = &nrnpy_HocObjectType;
 #endif
