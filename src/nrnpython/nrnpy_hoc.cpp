@@ -157,6 +157,8 @@ typedef struct {
   PyHoc::ObjectType type_;
 } PyHocObject;
 
+static PyObject* rvp_plot = NULL;
+
 static PyTypeObject* hocobject_type;
 static PyObject* hocobj_call(PyHocObject* self, PyObject* args,
                              PyObject* kwrds);
@@ -943,6 +945,8 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
 
       if (is_obj_type(self->ho_, "Vector")) {
         PyDict_SetItemString(dict, "__array_interface__", Py_None);
+      } else if (is_obj_type(self->ho_, "RangeVarPlot")) {
+        PyDict_SetItemString(dict, "plot", Py_None);
       }
       return dict;
     } else if (strncmp(n, "_ref_", 5) == 0) {
@@ -976,6 +980,9 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
                            array_interface_typestr, "version", 3, "data",
                            PyLong_FromVoidPtr(x), Py_True);
 
+    } else if (is_obj_type(self->ho_, "RangeVarPlot") && strcmp(n, "plot") == 0) {
+      //Py_INCREF(rvp_plot);
+      return PyObject_CallFunctionObjArgs(rvp_plot, (PyObject*) self, NULL);
     } else if (strcmp(n, "__doc__") == 0) {
       if (setup_doc_system()) {
         PyObject* docobj = NULL;
@@ -2093,6 +2100,11 @@ static IvocVect* nrnpy_vec_from_python(void* v) {
 static PyObject* (*vec_as_numpy)(int, double*);
 int nrnpy_set_vec_as_numpy(PyObject* (*p)(int, double*)) {
   vec_as_numpy = p;
+  return 0;
+}
+
+int nrnpy_set_rvp_plot(PyObject* p) {
+  rvp_plot = p;
   return 0;
 }
 
