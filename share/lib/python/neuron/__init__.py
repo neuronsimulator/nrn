@@ -712,6 +712,42 @@ if not embedded:
     print("Failed to setup nrnpy_pr")
     pass
 
+
+def nrnpy_vec_math(op, flag, arg1, arg2=None):
+  import numbers
+  valid_types = (numbers.Number, hoc.HocObject)
+  if isinstance(arg1, valid_types):
+    if flag == 2:
+      # unary
+      arg1 = arg1.c()
+      if op == 'uneg':
+        return arg1.mul(-1)
+      if op == 'upos':
+        return arg1
+      if op == 'uabs':
+        return arg1.abs()
+    elif isinstance(arg2, valid_types):
+      if flag == 1:
+        # either reversed (flag=1) or unary (flag=2)
+        arg2 = arg2.c()
+        if op in ('mul', 'add'):
+          return getattr(arg2, op)(arg1)
+        if op == 'div':
+          return arg2.pow(-1).mul(arg1)
+        if op == 'sub':
+          return arg2.mul(-1).add(arg1)
+      else:
+        arg1 = arg1.c()
+        return getattr(arg1, op)(arg2)
+
+  return NotImplemented
+
+try:
+  nrnpy_vec_math_register = nrn_dll_sym('nrnpy_vec_math_register')
+  nrnpy_vec_math_register(ctypes.py_object(nrnpy_vec_math))
+except:
+  print("Failed to setup nrnpy_vec_math")
+
 try:
   from neuron.psection import psection
   nrn.set_psection(psection)
