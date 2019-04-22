@@ -7,6 +7,7 @@ PY2TO3 = @PY2TO3@
 nobase_neuronhomepython_DATA = \
 \
 neuron/doc.py \
+neuron/units.py \
 neuron/gui.py \
 neuron/hclass2.py \
 neuron/hclass3.py \
