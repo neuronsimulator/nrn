@@ -69,7 +69,7 @@ void (*nrnmpi_splitcell_compute_)();
 #endif
 
 void (*nrn_multisplit_solve_)();
-void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
+extern void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
 
 /* used for vectorization and distance calculations */
 int section_count;
