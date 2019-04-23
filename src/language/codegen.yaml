@@ -33,81 +33,81 @@
                       children:
                         - NrnStateBlock:
                             nmodl: "NRN_STATE "
-                            description: "Represents the coreneuron nrn_state callback function"
+                            brief: "Represents the coreneuron nrn_state callback function"
                             members:
                               - solve_statements:
-                                  description: "solve blocks to be called or generated"
+                                  brief: "solve blocks to be called or generated"
                                   type: Statement
                                   vector: true
                         - EigenNewtonSolverBlock:
-                            description: "Represent newton solver solution block based on Eigen"
+                            brief: "Represent newton solver solution block based on Eigen"
                             nmodl: "EIGEN_NEWTON_SOLVE"
                             members:
                               - n_state_vars:
-                                  description: "number of state vars used in solve"
+                                  brief: "number of state vars used in solve"
                                   type: Integer
                                   prefix: {value: "["}
                                   suffix: {value: "]"}
                               - variable_block:
-                                  description: "Statements to be declared in the functor"
+                                  brief: "Statements to be declared in the functor"
                                   type: StatementBlock
                               - initialize_block:
-                                  description: "Statement block to be executed before calling newton solver"
+                                  brief: "Statement block to be executed before calling newton solver"
                                   type: StatementBlock
                               - setup_x_block:
-                                  description: "update X from states"
+                                  brief: "update X from states"
                                   type: StatementBlock
                               - functor_block:
-                                  description: "odes as functor for eigen"
+                                  brief: "odes as functor for eigen"
                                   type: StatementBlock
                               - update_states_block:
-                                  description: "update back states from X"
+                                  brief: "update back states from X"
                                   type: StatementBlock
                               - finalize_block:
-                                  description: "Statement block to be executed after calling newton solver"
+                                  brief: "Statement block to be executed after calling newton solver"
                                   type: StatementBlock
                         - EigenLinearSolverBlock:
-                            description: "Represent linear solver solution block based on Eigen"
+                            brief: "Represent linear solver solution block based on Eigen"
                             nmodl: "EIGEN_LINEAR_SOLVE"
                             members:
                               - n_state_vars:
-                                  description: "number of state vars used in solve"
+                                  brief: "number of state vars used in solve"
                                   type: Integer
                                   prefix: {value: "["}
                                   suffix: {value: "]"}
                               - variable_block:
-                                  description: "Statements to be declared in the functor"
+                                  brief: "Statements to be declared in the functor"
                                   type: StatementBlock
                               - initialize_block:
-                                  description: "Statement block to be executed before calling linear solver"
+                                  brief: "Statement block to be executed before calling linear solver"
                                   type: StatementBlock
                               - setup_x_block:
-                                  description: "update X from states"
+                                  brief: "update X from states"
                                   type: StatementBlock
                               - update_states_block:
-                                  description: "update back states from X"
+                                  brief: "update back states from X"
                                   type: StatementBlock
                               - finalize_block:
-                                  description: "Statement block to be executed after calling linear solver"
+                                  brief: "Statement block to be executed after calling linear solver"
                                   type: StatementBlock                                  
                   - WrappedExpression:
-                      description: "Wrap any other expression type"
+                      brief: "Wrap any other expression type"
                       members:
                         - expression:
-                            description: "Expression that is being wrapped"
+                            brief: "Expression that is being wrapped"
                             type: Expression
                   - DerivimplicitCallback:
-                      description: "Represent a callback to NEURON's derivimplicit solver"
+                      brief: "Represent a callback to NEURON's derivimplicit solver"
                       members:
                         - node_to_solve:
-                            description: "Block to be solved (typically derivative)"
+                            brief: "Block to be solved (typically derivative)"
                             type: Block
                   - SolutionExpression:
-                      description: "Represent solution of a block in the AST"
+                      brief: "Represent solution of a block in the AST"
                       members:
                         - solve_block:
                             type: SolveBlock
                         - node_to_solve:
-                            description: "Block to be solved (callback node or solution node itself)"
+                            brief: "Block to be solved (callback node or solution node itself)"
                             type: Expression
             - Statement:

@@ -17,6 +17,7 @@ class Argument:
         self.force_prefix = ""
         self.force_suffix = ""
         self.separator = ""
+        self.brief = ""
         self.description = ""
 
         # ChildNode

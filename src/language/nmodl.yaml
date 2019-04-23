@@ -78,370 +78,668 @@
 # specification
 
 - AST:
-    description: "Base class for AST"
+    brief: "Top level AST base class"
+    description: |
+                  Ast is a top level, abstract base class defining the interface
+                  for all nodes of Abstract Syntax Tree (AST).
     children:
       - Node:
-          description: "Base class for node in the AST"
+          brief: "Base class for all AST node"
+          description: |
+                  Base class for all nodes in the AST. This can replace ast::Ast in
+                  the next refactoring.
           children:
             - Expression:
-                description: "Represents a(n) expression"
+                brief: "Base class for all expressions in the NMODL"
+                description: |
+                        Base class for all expression types. This is one of the top level node
+                        in the AST representing higher level expression constructs. %Expressions
+                        can be a variable itself or complex binary expressions.
+
+                        \sa ast::Statement
                 children:
                   - String:
-                      description: "Represents a(n) double quoted string"
                       members:
                         - value:
-                            description: "string value"
+                            brief: "value of string"
                             type: std::string
+                      brief: "Represents a string"
+                      description: |
+                              All statements encapsulating text block are stored in the AST as ast::String.
+                              For example, nodes like ast::LineComment and ast::Verbatim block use ast::String::value
+                              to store the underlying text:
+
+                              \code{.mod}
+                                  COMMENT
+                                    This text is stored as String
+                                  ENDCOMMENT
+
+                                  VERBATIM
+                                      int *x;
+                                      *x = ...
+                                  ENDVERBATIM
+                              \endcode
                   - Number:
-                      description: "Represents a(n) number"
+                      brief: "Base class for all numbers"
+                      description: |
+                              Base class for all number types like ast::Integer, ast::Float and ast::Double.
                       children:
                         - Integer:
-                            description: "Represents a(n) integer number"
                             members:
                               - value:
-                                  description: "integer value"
+                                  brief: "value of integer"
                                   type: int
                               - macro:
-                                  description: "macro name for integer"
+                                  brief: "if integer is a macro then it's name"
                                   type: Name
                                   optional: true
+                            brief: "Represents an integer variable"
+                            description: |
+                                    Non floating value in the mod file is parsed as an integer. For example,
+                                    in the below code, integer literals like `0` and `11` are stored as ast::Integer
+                                    in the AST :
+
+                                    \code{.mod}
+                                        FROM i=0 TO N {
+                                            tau = X[i] + 11
+                                        }
+                                    \endcode
+
+                                    \sa ast::Float ast::Double
                         - Float:
-                            description: "Represents a(n) float number"
                             members:
                               - value:
-                                  description: "float value"
+                                  brief: "value of float"
                                   type: float
+                            brief: "Represents a float variable"
+                            description: |
+                                    Single precision float value in the mod file can be represented by ast::Float.
+
+                                    \note Currently every float variable in the NMODL is stored as ast::Double and hence
+                                    this type is note used. This will be changed soon for variables like ast::ParamAssign.
+
+                                    \sa ast::Integer ast::Double
                         - Double:
-                            description: "Represents a(n) double number"
                             members:
                               - value:
-                                  description: "double value"
+                                  brief: "value of double"
                                   type: double
+                            brief: "Represents a double variable"
+                            description: |
+                                    %Double precision float value in the mod file is represented by ast::Double.
+                                    For example, float literals like `0.1` in the mod file are parsed as double
+                                    and stored using ast::Double::value :
+
+                                    \code{.mod}
+                                        PROCEDURE foo() {
+                                          LOCAL x
+                                          x = 0.1 + tau
+                                        }
+                                    \endcode
+
+                                    Note that the variables are not classified ast integer or float in the AST. The
+                                    decision about variable types is done by code generation backends.
+
+                                    \sa ast::Integer ast::Float
                         - Boolean:
-                            description: "Represents a(n) boolean variable"
                             members:
                               - value:
-                                  description: "bool value"
+                                  brief: "value of boolean"
                                   type: int
+                            brief: "Represents a boolean variable"
+                            description: |
+                                    %Boolean values in the mod file can be represented by ast::Boolean.
+
+                                    \note Currently this type is used as only flag in some of the AST nodes. Similar to ast::Float,
+                                    this type was introduced for data type specific code generation support in the future.
                   - Identifier:
-                      description: "Represents a(n) identifier"
+                      brief: "Base class for all identifiers"
+                      description: |
+                              Base class for all variable types like ast::Name, ast::PrimeName and ast::Argument.
+
+                              \sa ast::Number
                       children:
                         - Name:
-                            description: "Represents a(n) name"
                             members:
                               - value:
-                                  description: "string value"
+                                  brief: "value of name"
                                   type: String
                                   node_name: true
+                            brief: "Represents a name"
+                            description: |
+                                    Whenever lexer encounters string variable, it returns a ast::Name
+                                    type. So, along with ast::Integer, ast::Double ast::String and ast::PrimeName,
+                                    ast::Name is one of the fundamental type in the AST. Many other variable types
+                                    (e.g. ast::GlobalVar, ast::RangeVar) have underlying value stored as ast::Name.
+
+                                    \note This node should be able to use std::string as value type instead of ast::String
                         - PrimeName:
-                            description: "Represents a(n) prime variable"
                             members:
                               - value:
-                                  description: "variable name"
+                                  brief: "name of prime variable"
                                   type: String
                                   node_name: true
                               - order:
-                                  description: "order of prime"
+                                  brief: "order of ODE"
                                   type: Integer
-                        - VarName:
-                            description: "Represents a(n) NMODL variable"
+                            brief: "Represents a prime variable (for ODE)"
+                            description: |
+                                    In case of ODE specification, all state variables appearing on LHS
+                                    with \` as suffix are parsed by lexer as ast::PrimeName. For example,
+                                    in below NMODL construct, m\` is stored as ast::PrimeName with `m` as a
+                                    ast::PrimeName::value and `1` as an ast::PrimeName::order.
+
+                                    \code
+                                        DERIVATIVE states {
+                                          m` = m + h
+                                        }
+                                    \endcode
+
+                        - IndexedName:
                             members:
                               - name:
-                                  description: "variable name"
+                                  brief: "name of array variable"
+                                  type: Identifier
+                                  node_name: true
+                              - length:
+                                  brief: "legth of an array or index position"
+                                  type: Expression
+                                  prefix: {value: "["}
+                                  suffix: {value: "]"}
+                            brief: "Represents specific element of an array variable"
+                            description: |
+                                    If variable is declared as an array or when array element is accessed,
+                                    it is stored in the ast as ast::IndexedName. For example, in below NMODL,
+                                    construct `m[4]` is stored as ast::IndexedName with `m` as ast::IndexedName::name
+                                    and `4` as ast::IndexedName::legth.
+
+                                    \code
+                                        STATE {
+                                          m[4]
+                                        }
+                                    \endcode
+                        - VarName:
+                            members:
+                              - name:
+                                  brief: "name of variable"
                                   type: Identifier
                                   node_name: true
                               - at:
-                                  description: "todo : Michael to define the semantics of this"
+                                  brief: "value specified with `@`"
                                   type: Integer
                                   optional: true
                                   prefix: {value: "@"}
                               - index:
-                                  description: "index value in case of array"
+                                  brief: "index value in case of array"
                                   type: Expression
                                   optional: true
                                   prefix: {value: "["}
                                   suffix: {value: "]"}
-                        - IndexedName:
-                            description: ".."
-                            members:
-                              - name:
-                                  description: "..."
-                                  type: Identifier
-                                  node_name: true
-                              - length:
-                                  description: "..."
-                                  type: Expression
-                                  prefix: {value: "["}
-                                  suffix: {value: "]"}
+                            brief: "Represents a variable"
+                            description: |
+                                    This type was introduced to store variables of different types like
+                                    ast::Name or ast::IndexedName in the AST.
+
+                                    \note With ast::Identifier as top level base class, this type can be
+                                    removed in the future refactoring.
                         - Argument:
-                            description: ".."
                             members:
                               - name:
-                                  description: "..."
+                                  brief: "name of the argument"
                                   type: Identifier
                                   node_name: true
                               - unit:
-                                  description: "..."
+                                  brief: "unit of the argument"
                                   type: Unit
                                   optional: true
+                            brief: "Represents an argument to function"
+                            description: |
+                                    In case of function definitions from different ast nodes like ast::FunctionBlock,
+                                    ast::ProcedureBlock, the arguments are store in the ast::Argument. For example,
+                                    in below NMODL construct, `weight` is stored as ast::Argument::name and `uS` is
+                                    stored as ast::Argument::unit:
+
+                                    \code {.mod}
+                                        NET_RECEIVE(weight (uS)) {
+                                            g = g + weight
+                                        }
+                                    \endcode
                         - ReactVarName:
-                            description: ".."
+                            brief: ".."
                             members:
                               - value:
-                                  description: "..."
+                                  brief: "..."
                                   type: Integer
                                   optional: true
                                   prefix: {value: " "}
                               - name:
-                                  description: "..."
+                                  brief: "..."
                                   type: VarName
                                   node_name: true
                         - ReadIonVar:
-                            description: ".."
+                            brief: ".."
                             members:
                               - name:
-                                  description: "..."
+                                  brief: "..."
                                   type: Name
                                   node_name: true
                         - WriteIonVar:
-                            description: ".."
+                            brief: ".."
                             members:
                               - name:
-                                  description: "..."
+                                  brief: "..."
                                   type: Name
                                   node_name: true
                         - NonspecificCurVar:
-                            description: ".."
+                            brief: ".."
                             members:
                               - name:
-                                  description: "..."
+                                  brief: "..."
                                   type: Name
                                   node_name: true
                         - ElectrodeCurVar:
-                            description: ".."
+                            brief: ".."
                             members:
                               - name:
-                                  description: "..."
+                                  brief: "..."
                                   type: Name
                                   node_name: true
                         - SectionVar:
-                            description: ".."
+                            brief: ".."
                             members:
                               - name:
-                                  description: "..."
+                                  brief: "..."
                                   type: Name
                                   node_name: true
                         - RangeVar:
-                            description: ".."
+                            brief: ".."
                             members:
                               - name:
-                                  description: "..."
+                                  brief: "..."
                                   type: Name
                                   node_name: true
                         - GlobalVar:
-                            description: ".."
+                            brief: ".."
                             members:
                               - name:
-                                  description: "..."
+                                  brief: "..."
                                   type: Name
                                   node_name: true
                         - PointerVar:
-                            description: ".."
+                            brief: ".."
                             members:
                               - name:
-                                  description: "..."
+                                  brief: "..."
                                   type: Name
                                   node_name: true
                         - BbcorePointerVar:
-                            description: ".."
+                            brief: ".."
                             members:
                               - name:
-                                  description: "..."
+                                  brief: "..."
                                   type: Name
                                   node_name: true
                         - ExternVar:
-                            description: ".."
+                            brief: ".."
                             members:
                               - name:
-                                  description: "..."
+                                  brief: "..."
                                   type: Name
                                   node_name: true
                         - ThreadsafeVar:
-                            description: ".."
+                            brief: ".."
                             members:
                               - name:
-                                  description: "..."
+                                  brief: "..."
                                   type: Name
                                   node_name: true
                   - Block:
-                      description: ".."
+                      brief: ".."
                       children:
                         - ParamBlock:
-                            description: ".."
                             nmodl: "PARAMETER "
                             members:
                               - statements:
-                                  description: "..."
+                                  brief: "vector of parameters"
                                   type: ParamAssign
                                   vector: true
+                            brief: "Represents a `PARAMETER` block in the NMODL"
+                            description: |
+                                    Variables whose values are normally specified by the user are parameters
+                                    and are declared in a `PARAMETER` block. Here is an example :
+
+                                    \code{.mod}
+                                        PARAMETER {
+                                            gkbar=.01   (mho/cm2) : Maximum Permeability
+                                            d1 = .84
+                                            k2 = .13e-6 (mM)
+                                            abar = .28  (/ms)
+                                            lcai (mV)
+                                        }
+                                    \endcode
+
+                                    All parameters are stored in the ast::ParamBlock::statements as vector.
+
                         - StepBlock:
-                            description: ".."
                             nmodl: "STEPPED "
                             members:
                               - statements:
-                                  description: "..."
+                                  brief: "vector of statements"
                                   type: Stepped
                                   vector: true
+                            brief: "Represents a `STEPPED` block in the NMODL"
+                            description: |
+                                    `STEPPED` has following form in the NMODL specification :
+
+                                    \code{.mod}
+                                        STEPPED {
+                                            name1 = number1 (mM)
+                                            name2 = number2, number3
+                                        }
+                                    \endcode
+
+                                    \todo Check ModelDB and other databse for example of channel.
                         - IndependentBlock:
-                            description: ".."
                             nmodl: "INDEPENDENT "
                             members:
                               - definitions:
-                                  description: "..."
+                                  brief: "..."
                                   type: IndependentDef
                                   vector: true
+                            brief: "Represents a `INDEPENDENT` block in the NMODL"
+                            description: |
+                                    `INDEPENDENT` has following form in the NMODL specification :
+
+                                    \code{.mod}
+                                        INDEPENDENT {
+                                          t FROM 0 TO 1 WITH 1 (ms)
+                                        }
+                                    \endcode
+
                         - DependentBlock:
-                            description: ".."
                             nmodl: "ASSIGNED "
                             members:
                               - definitions:
-                                  description: "..."
+                                  brief: "vector of assigned variables"
                                   type: DependentDef
                                   vector: true
+                            brief: "Represents a `ASSIGNED` block in the NMODL"
+                            description: |
+                                    The `ASSIGNED` block is used for declaring two kinds of variables :
+                                      - those that are given values outside the mod files
+                                      - those that appear on the left hand side of assignment statements within
+                                        the mod file
+
+                                    Below is an example of `ASSIGNED` block in the mod file:
+
+                                    \code{.mod}
+                                        ASSIGNED {
+                                            ina     (mA/cm2)
+                                            gna     (pS/um2)
+                                            mtau (ms)   htau (ms)
+                                            tadj
+                                        }
+                                    \endcode
+
                         - StateBlock:
-                            description: ".."
                             nmodl: "STATE "
                             members:
                               - definitions:
-                                  description: "..."
+                                  brief: "vector of state variables"
                                   type: DependentDef
                                   vector: true
+                            brief: "Represents a `STATE` block in the NMODL"
+                            description: |
+                                  If a model involves differential equations, families of algebraic equations,
+                                  or kinetic reaction schemes, their dependent variables or unknowns are to be
+                                  listed in the `STATE` block. Below is an example of `STATE`:
+
+                                    \code{.mod}
+                                        STATE {
+                                            m
+                                            h
+                                        }
+                                    \endcode
+
+                                    Note that the state variable specification has form of ast::DependentDef and
+                                    hence can have associated unit specification.
                         - PlotBlock:
-                            description: ".."
                             members:
                               - plot:
-                                  description: "..."
+                                  brief: "vector of plot variables"
                                   type: PlotDeclaration
+                            brief: "Represents a `PLOT` statement in the NMODL"
+                            description: |
+                                  `PLOT` construct doesn't have block scope but it's standalone, global scoped
+                                  statement of the form:
+
+                                    \code{.mod}
+                                        PLOT name1, index_var2 VS name3
+                                    \endcode
+
+                                    \todo Check ModelDB and other databse for example of channel.
+
                         - InitialBlock:
-                            description: ".."
                             nmodl: "INITIAL "
                             members:
                               - statement_block:
-                                  description: "..."
+                                  brief: "block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
+                            brief: "Represents a `INITIAL` block in the NMODL"
+                            description: |
+                                  The code in the `INITIAL` block is executed when the hoc function `finitialize()`
+                                  is called. Here is an example :
+
+                                    \code{.mod}
+                                        INITIAL {
+                                            rates(v+vshift)
+                                            m = minf
+                                            h = hinf
+                                            tadj = q10^((celsius - temp)/10)
+                                        }
+                                    \endcode
+
                         - ConstructorBlock:
-                            description: ".."
                             nmodl: "CONSTRUCTOR "
                             members:
                               - statement_block:
-                                  description: "..."
+                                  brief: "block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
+                            brief: "Represents a `CONSTRUCTOR` block in the NMODL"
+                            description: |
+                                  The code in the `CONSTRUCTOR` is called when the channel is instantiated. Like any
+                                  other global block, `CONSTRUCTOR` block can have any statements. It often used with
+                                  `VERBATIM` block for initialization purpose :
+
+                                    \code{.mod}
+                                        CONSTRUCTOR {
+                                            VERBATIM
+                                              if (ifarg(1)) { id= *getarg(1); } else { id= -1; }
+                                            ENDVERBATIM
+                                        }
+                                    \endcode
+
+                                    \sa ast::DestructorBlock
+
                         - DestructorBlock:
-                            description: ".."
                             nmodl: "DESTRUCTOR "
                             members:
                               - statement_block:
-                                  description: "..."
+                                  brief: "block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
+                            brief: "Represents a `DESTRUCTOR` block in the NMODL"
+                            description: |
+                                  The code in the `DESTRUCTOR` is called when the channel instance is deleted. It often
+                                  used with `VERBATIM` block for finalization purpose :
+
+                                    \code{.mod}
+                                        DESTRUCTOR {
+                                            VERBATIM {
+                                                nsyn = maxsyn = 0;
+                                                free(PRECAST);
+                                                link = 0;
+                                            }
+                                            ENDVERBATIM
+                                        }
+                                    \endcode
+
+                                    \sa ast::ConstructorBlock
                         - StatementBlock:
-                            description: ".."
                             members:
                               - statements:
-                                  description: "..."
+                                  brief: "vector of statements"
                                   type: Statement
                                   vector: true
                                   public: true
                                   add: true
+                            brief: "Represents block encapsulating list of statements"
+                            description: |
+                                  Statement block is used to hold list of statements between `{ }`. This
+                                  represents a new block scope in the mod file and has following form :
+
+                                    \code{.mod}
+                                        {
+                                            statement1
+                                            {
+                                              statement2
+                                            }
+                                        }
+                                    \endcode
+
+                                    Note that the statement blocks can be nested where inner block will
+                                    be wrapped as statement with ast::ExpressionStatement.
                         - DerivativeBlock:
-                            description: ".."
                             nmodl: "DERIVATIVE "
                             members:
                               - name:
-                                  description: "..."
+                                  brief: "name of the derivative block"
                                   type: Name
                                   node_name: true
                                   suffix: {value: " "}
                               - statement_block:
-                                  description: "..."
+                                  brief: "block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
+                            brief: "Represents `DERIVATIVE` block in the NMODL"
+                            description: |
+                                  This block is used to assign values to the derivatives of those
+                                  `STATE`s that are described by differential equations. The statements
+                                  in this block are of the form \f$y' = expr\f$. Here is an example :
+
+                                    \code{.mod}
+                                        DERIVATIVE states {
+                                            rates(v)
+                                            m' =  (minf-m)/mtau
+                                            h' = (hinf-h)/htau
+                                        }
+                                    \endcode
+
                         - LinearBlock:
-                            description: ".."
                             nmodl: "LINEAR "
                             members:
                               - name:
-                                  description: "..."
+                                  brief: "name of the linear block"
                                   type: Name
                                   node_name: true
                                   suffix: {value: " "}
                               - solvefor:
-                                  description: "..."
+                                  brief: "..."
                                   type: Name
                                   vector: true
                                   separator: ","
                                   prefix: {value: " SOLVEFOR "}
                               - statement_block:
-                                  description: "..."
+                                  brief: "block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
+                            brief: "Represents `LINEAR` block in the NMODL"
+                            description: |
+
+                                  A set of simultaneous equations can be specified in a `LINEAR` block.
+                                  Here is an example :
+
+                                    \code{.mod}
+                                        LINEAR clamp {
+                                            LOCAL t1, t2
+                                            t1 = tau1/dt
+                                            t2 = tau2/dt
+                                            ~ vi = v + fac*vo - fac*v
+                                            ~ t2*vo - t2*vo0 + vo = -gain * e
+                                            ~ -stim - e  +  vi - e  +  t1*vi - t1*e - t1*(vi0 - e0) = 0
+                                        }
+                                    \endcode
+
                         - NonLinearBlock:
-                            description: ".."
                             nmodl: "NONLINEAR "
                             members:
                               - name:
-                                  description: "..."
+                                  brief: "name of the non-linear block"
                                   type: Name
                                   node_name: true
                               - solvefor:
-                                  description: "..."
+                                  brief: "name of the integration method"
                                   type: Name
                                   vector: true
                                   separator: ","
                                   prefix: {value: " SOLVEFOR "}
                                   suffix: {value: " ", force: true}
                               - statement_block:
-                                  description: "..."
+                                  brief: "block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
+                            brief: "Represents `NONLINEAR` block in the NMODL"
+                            description: |
+
+                                  A set of simultaneous equations can be specified in a `NONLINEAR` block.
+                                  Here is an example :
+
+                                    \code{.mod}
+                                        NONLINEAR nonlin {
+                                            ~ s[0] = 1
+                                            ~ s[1] = 3
+                                            ~ s[2] + s[1] = s[0]
+                                        }
+                                    \endcode
+
                         - DiscreteBlock:
-                            description: ".."
+                            brief: ".."
                             nmodl: "DISCRETE "
                             members:
                               - name:
-                                  description: "..."
+                                  brief: "..."
                                   type: Name
                                   node_name: true
                                   suffix: {value: " "}
                               - statement_block:
-                                  description: "..."
+                                  brief: "block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
                         - PartialBlock:
-                            description: ".."
+                            brief: ".."
                             nmodl: "PARTIAL "
                             members:
                               - name:
-                                  description: "..."
+                                  brief: "..."
                                   type: Name
                                   node_name: true
                                   suffix: {value: " "}
                               - statement_block:
-                                  description: "..."
+                                  brief: "..."
                                   type: StatementBlock
                                   getter: {override: true}
                         - FunctionTableBlock:
-                            description: ".."
+                            brief: ".."
                             nmodl: "FUNCTION_TABLE "
                             members:
                               - name:
-                                  description: "..."
+                                  brief: "..."
                                   type: Name
                                   node_name: true
                               - parameters:
-                                  description: "..."
+                                  brief: "..."
                                   type: Argument
                                   vector: true
                                   prefix: {value: "(", force: true}
@@ -449,20 +747,20 @@
                                   separator: ", "
                                   getter: {override: true}
                               - unit:
-                                  description: "..."
+                                  brief: "..."
                                   type: Unit
                                   optional: true
                                   prefix: {value: " "}
                         - FunctionBlock:
-                            description: ".."
+                            brief: ".."
                             nmodl: "FUNCTION "
                             members:
                               - name:
-                                  description: "..."
+                                  brief: "..."
                                   type: Name
                                   node_name: true
                               - parameters:
-                                  description: "..."
+                                  brief: "..."
                                   type: Argument
                                   vector: true
                                   prefix: {value: "(", force: true}
@@ -470,25 +768,25 @@
                                   separator: ", "
                                   getter: {override: true}
                               - unit:
-                                  description: "..."
+                                  brief: "..."
                                   type: Unit
                                   optional: true
                                   prefix: {value: " "}
                                   suffix: {value: " ", force: true}
                               - statement_block:
-                                  description: "..."
+                                  brief: "block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
                         - ProcedureBlock:
-                            description: ".."
+                            brief: ".."
                             nmodl: "PROCEDURE "
                             members:
                               - name:
-                                  description: "..."
+                                  brief: "..."
                                   type: Name
                                   node_name: true
                               - parameters:
-                                  description: "..."
+                                  brief: "..."
                                   type: Argument
                                   vector: true
                                   prefix: {value: "(", force: true}
@@ -496,19 +794,19 @@
                                   separator: ", "
                                   getter: {override: true}
                               - unit:
-                                  description: "..."
+                                  brief: "..."
                                   type: Unit
                                   optional: true
                               - statement_block:
-                                  description: "..."
+                                  brief: "block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
                         - NetReceiveBlock:
-                            description: ".."
+                            brief: ".."
                             nmodl: "NET_RECEIVE "
                             members:
                               - parameters:
-                                  description: "..."
+                                  brief: "..."
                                   type: Argument
                                   vector: true
                                   prefix: {value: "(", force: true}
@@ -516,79 +814,79 @@
                                   separator: ", "
                                   getter: {override: true}
                               - statement_block:
-                                  description: "..."
+                                  brief: "block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
                         - SolveBlock:
-                            description: ".."
+                            brief: ".."
                             nmodl: SOLVE
                             members:
                               - block_name:
-                                  description: "..."
+                                  brief: "..."
                                   type: Name
                                   prefix: {value: " "}
                               - method:
-                                  description: "..."
+                                  brief: "..."
                                   type: Name
                                   optional: true
                                   prefix: {value: " METHOD "}
                               - steadystate:
-                                  description: "..."
+                                  brief: "..."
                                   type: Name
                                   optional: true
                                   prefix: {value: " STEADYSTATE "}
                               - ifsolerr:
-                                  description: "..."
+                                  brief: "..."
                                   type: StatementBlock
                                   optional: true
                                   prefix: {value: " IFERROR "}
                         - BreakpointBlock:
-                            description: ".."
+                            brief: ".."
                             nmodl: "BREAKPOINT "
                             members:
                               - statement_block:
-                                  description: "..."
+                                  brief: "block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
                         - TerminalBlock:
-                            description: ".."
+                            brief: ".."
                             nmodl: "TERMINAL "
                             members:
                               - statement_block:
-                                  description: "..."
+                                  brief: "block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
                         - BeforeBlock:
-                            description: ".."
+                            brief: ".."
                             nmodl: "BEFORE "
                             members:
                               - bablock:
-                                  description: "..."
+                                  brief: "..."
                                   type: BABlock
                         - AfterBlock:
-                            description: ".."
+                            brief: ".."
                             nmodl: "AFTER "
                             members:
                               - bablock:
-                                  description: "..."
+                                  brief: "..."
                                   type: BABlock
                         - BABlock:
-                            description: ".."
+                            brief: ".."
                             members:
                               - type:
-                                  description: "..."
+                                  brief: "..."
                                   type: BABlockType
                                   suffix: {value: " "}
                               - statement_block:
-                                  description: "..."
+                                  brief: "block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
                         - ForNetcon:
-                            description: ".."
+                            brief: ".."
                             nmodl: "FOR_NETCONS "
                             members:
                               - parameters:
-                                  description: "..."
+                                  brief: "..."
                                   type: Argument
                                   vector: true
                                   prefix: {value: "(", force: true}
@@ -596,977 +894,994 @@
                                   separator: ", "
                                   getter: {override: true}
                               - statement_block:
-                                  description: "..."
+                                  brief: "block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
                         - KineticBlock:
-                            description: ".."
+                            brief: ".."
                             nmodl: "KINETIC "
                             members:
                               - name:
-                                  description: "..."
+                                  brief: "..."
                                   type: Name
                                   node_name: true
                                   suffix: {value: " "}
                               - solvefor:
-                                  description: "..."
+                                  brief: "..."
                                   type: Name
                                   vector: true
                                   separator: ","
                               - statement_block:
-                                  description: "..."
+                                  brief: "block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
                         - MatchBlock:
-                            description: ".."
+                            brief: ".."
                             nmodl: MATCH
                             members:
                               - matchs:
-                                  description: "..."
+                                  brief: "..."
                                   type: Match
                                   vector: true
                                   separator: " "
                                   prefix: {value: " { "}
                                   suffix: {value: " }"}
                         - UnitBlock:
-                            description: ".."
+                            brief: ".."
                             nmodl: "UNITS "
                             members:
                               - definitions:
-                                  description: "..."
+                                  brief: "..."
                                   type: Expression
                                   vector: true
                         - ConstantBlock:
-                            description: ".."
+                            brief: ".."
                             nmodl: "CONSTANT "
                             members:
                               - statements:
-                                  description: "..."
+                                  brief: "..."
                                   type: ConstantStatement
                                   vector: true
                         - NeuronBlock:
-                            description: ".."
+                            brief: "Represent `NEURON` block in the mod file"
+                            description: |
+                                            The keyword `NEURON` introduces a special block which contains statements
+                                            that tell NMODL how to organize the variables for access at the NEURON user
+                                            level. Here is an example of `NEURON` block from `HH` channel:
+
+                                            \code{.mod}
+                                                NEURON {
+                                                        SUFFIX hh
+                                                        USEION na READ ena WRITE ina
+                                                        USEION k READ ek WRITE ik
+                                                        NONSPECIFIC_CURRENT il
+                                                        RANGE gnabar, gkbar, gl, el, gna, gk
+                                                        RANGE minf, hinf, ninf, mtau, htau, ntau
+                                                        THREADSAFE
+                                                }
+                                            \endcode
+
                             url: "https://www.neuron.yale.edu/neuron/static/py_doc/modelspec/programmatic/mechanisms/nmodl2.html#neuron"
                             nmodl: "NEURON "
                             members:
                               - statement_block:
-                                  description: "..."
+                                  brief: "block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
                   - Unit:
-                      description: ".."
+                      brief: ".."
                       members:
                         - name:
-                            description: "..."
+                            brief: "..."
                             type: String
                             node_name: true
                             prefix: {value: "("}
                             suffix: {value: ")"}
                   - DoubleUnit:
-                      description: ".."
+                      brief: ".."
                       members:
                         - value:
-                            description: "..."
+                            brief: "..."
                             type: Double
                         - unit:
-                            description: "..."
+                            brief: "..."
                             type: Unit
                             optional: true
                   - LocalVar:
-                      description: ".."
+                      brief: ".."
                       members:
                         - name:
-                            description: "..."
+                            brief: "..."
                             type: Identifier
                             node_name: true
                   - Limits:
-                      description: ".."
+                      brief: ".."
                       members:
                         - min:
-                            description: "..."
+                            brief: "..."
                             type: Double
                             prefix: {value: "<"}
                             suffix: {value: ","}
                         - max:
-                            description: "..."
+                            brief: "..."
                             type: Double
                             suffix: {value: ">"}
                   - NumberRange:
-                      description: ".."
+                      brief: ".."
                       members:
                         - min:
-                            description: "..."
+                            brief: "..."
                             type: Number
                             prefix: {value: "<"}
                             suffix: {value: ","}
                         - max:
-                            description: "..."
+                            brief: "..."
                             type: Number
                             suffix: {value: ">"}
                   - PlotVar:
-                      description: ".."
+                      brief: ".."
                       members:
                         - name:
-                            description: "..."
+                            brief: "..."
                             type: Identifier
                         - index:
-                            description: "..."
+                            brief: "..."
                             type: Integer
                             optional: true
                             prefix: {value: "["}
                             suffix: {value: "]"}
                   - ConstantVar:
-                      description: ".."
+                      brief: ".."
                       members:
                         - name:
-                            description: "..."
+                            brief: "..."
                             type: Name
                             node_name: true
                         - value:
-                            description: "..."
+                            brief: "..."
                             type: Number
                             prefix: {value: " = "}
                         - unit:
-                            description: "..."
+                            brief: "..."
                             type: Unit
                             optional: true
                             prefix: {value: " "}
                   - BinaryOperator:
-                      description: ".."
+                      brief: ".."
                       members:
                         - value:
-                            description: "..."
+                            brief: "..."
                             type: BinaryOp
                   - UnaryOperator:
-                      description: ".."
+                      brief: ".."
                       members:
                         - value:
-                            description: "..."
+                            brief: "..."
                             type: UnaryOp
                   - ReactionOperator:
-                      description: ".."
+                      brief: ".."
                       members:
                         - value:
-                            description: "..."
+                            brief: "..."
                             type: ReactionOp
                   - ParenExpression:
-                      description: ".."
+                      brief: ".."
                       members:
                         - expression:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                             prefix: {value: "("}
                             suffix: {value: ")"}
                   - BinaryExpression:
-                      description: ".."
+                      brief: ".."
                       members:
                         - lhs:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                             public: true
                         - op:
-                            description: "..."
+                            brief: "..."
                             type: BinaryOperator
                             public: true
                         - rhs:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                             public: true
                   - DiffEqExpression:
-                      description: "Represents differential equation in DERIVATIVE block"
+                      brief: "Represents differential equation in DERIVATIVE block"
                       members:
                         - expression:
-                            description: "Differential Expression"
+                            brief: "Differential Expression"
                             type: BinaryExpression
                             public: true
                   - UnaryExpression:
-                      description: ".."
+                      brief: ".."
                       members:
                         - op:
-                            description: "..."
+                            brief: "..."
                             type: UnaryOperator
                         - expression:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                   - NonLinEquation:
-                      description: ".."
+                      brief: ".."
                       nmodl: "~ "
                       members:
                         - lhs:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                             suffix: {value: " = "}
                         - rhs:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                   - LinEquation:
-                      description: ".."
+                      brief: ".."
                       nmodl: "~ "
                       members:
                         - left_linxpression:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                             suffix: {value: " = "}
                         - linxpression:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                   - FunctionCall:
-                      description: ".."
+                      brief: ".."
                       members:
                         - name:
-                            description: "..."
+                            brief: "..."
                             type: Name
                             node_name: true
                         - arguments:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                             vector: true
                             separator: ", "
                             prefix: {value: "(", force: true}
                             suffix: {value: ")", force: true}
                   - FirstLastTypeIndex:
-                      description: ".."
+                      brief: ".."
                       members:
                         - value:
-                            description: "..."
+                            brief: "..."
                             type: FirstLastType
                   - Watch:
-                      description: ".."
+                      brief: ".."
                       members:
                         - expression:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                             prefix: {value: "("}
                             suffix: {value: ")"}
                         - value:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                             prefix: {value: " "}
                   - QueueExpressionType:
-                      description: ".."
+                      brief: ".."
                       members:
                         - value:
-                            description: "..."
+                            brief: "..."
                             type: QueueType
                   - Match:
-                      description: ".."
+                      brief: ".."
                       members:
                         - name:
-                            description: "..."
+                            brief: "..."
                             type: Identifier
                         - expression:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                             optional: true
                   - BABlockType:
-                      description: ".."
+                      brief: ".."
                       members:
                         - value:
-                            description: "..."
+                            brief: "..."
                             type: BAType
                   - UnitDef:
-                      description: ".."
+                      brief: ".."
                       members:
                         - unit1:
-                            description: "..."
+                            brief: "..."
                             type: Unit
                             node_name: true
                         - unit2:
-                            description: "..."
+                            brief: "..."
                             type: Unit
                             prefix: {value: " = "}
                   - FactorDef:
-                      description: ".."
+                      brief: ".."
                       members:
                         - name:
-                            description: "..."
+                            brief: "..."
                             type: Name
                             node_name: true
                             suffix: {value: " ="}
                         - value:
-                            description: "..."
+                            brief: "..."
                             type: Double
                             optional: true
                             prefix: {value: " "}
                         - unit1:
-                            description: "..."
+                            brief: "..."
                             type: Unit
                             prefix: {value: " "}
                         - gt:
-                            description: "Todo: @Michael : rename variable gt as well"
+                            brief: "Todo: Michael : rename variable gt as well"
                             type: Boolean
                             nmodl: " ->"
                             optional: true
                         - unit2:
-                            description: "..."
+                            brief: "..."
                             type: Unit
                             optional: true
                             prefix: {value: " "}
                   - Valence:
-                      description: ".."
+                      brief: ".."
                       members:
                         - type:
                             type: Name
-                            description: "..."
+                            brief: "..."
                             prefix: {value: " "}
                             suffix: {value: " "}
                         - value:
-                            description: "..."
+                            brief: "..."
                             type: Double
 
             - Statement:
-                description: ".."
+                brief: ".."
                 children:
                   - UnitState:
-                      description: ".."
+                      brief: ".."
                       members:
                         - value:
-                            description: "..."
+                            brief: "..."
                             type: UnitStateType
                   - LocalListStatement:
-                      description: ".."
+                      brief: ".."
                       nmodl: "LOCAL "
                       members:
                         - variables:
-                            description: "..."
+                            brief: "..."
                             type: LocalVar
                             vector: true
                             separator: ", "
                             public: true
                   - Model:
-                      description: ".."
+                      brief: ".."
                       nmodl: TITLE
                       members:
                         - title:
-                            description: "..."
+                            brief: "..."
                             type: String
                   - Define:
-                      description: ".."
+                      brief: ".."
                       nmodl: "DEFINE "
                       members:
                         - name:
-                            description: "..."
+                            brief: "..."
                             type: Name
                             node_name: true
                         - value:
-                            description: "..."
+                            brief: "..."
                             type: Integer
                             prefix: {value: " "}
                   - Include:
-                      description: ".."
+                      brief: ".."
                       nmodl: "INCLUDE "
                       members:
                         - filename:
-                            description: "..."
+                            brief: "..."
                             type: String
                   - ParamAssign:
-                      description: ".."
+                      brief: ".."
                       members:
                         - name:
-                            description: "..."
+                            brief: "..."
                             type: Identifier
                             node_name: true
                         - value:
-                            description: "..."
+                            brief: "..."
                             type: Number
                             optional: true
                             prefix: {value: " = "}
                         - unit:
-                            description: "..."
+                            brief: "..."
                             type: Unit
                             optional: true
                             prefix: {value: " "}
                         - limit:
-                            description: "..."
+                            brief: "..."
                             type: Limits
                             optional: true
                             prefix: {value: " "}
                   - Stepped:
-                      description: ".."
+                      brief: ".."
                       members:
                         - name:
-                            description: "..."
+                            brief: "..."
                             type: Name
                         - values:
-                            description: "..."
+                            brief: "..."
                             type: Number
                             vector: true
                             prefix: {value: " = "}
                             separator: ", "
                         - unit:
-                            description: "..."
+                            brief: "..."
                             type: Unit
                             optional: true
                             prefix: {value: " "}
                   - IndependentDef:
-                      description: ".."
+                      brief: ".."
                       members:
                         - sweep:
-                            description: "..."
+                            brief: "..."
                             type: Boolean
                             optional: true
                             nmodl: "SWEEP "
                         - name:
-                            description: "..."
+                            brief: "..."
                             type: Name
                         - from:
-                            description: "..."
+                            brief: "..."
                             type: Number
                             prefix: {value: " FROM "}
                         - to:
-                            description: "..."
+                            brief: "..."
                             type: Number
                             prefix: {value: " TO "}
                         - with:
-                            description: "..."
+                            brief: "..."
                             type: Integer
                             prefix: {value: " WITH "}
                         - start:
-                            description: "..."
+                            brief: "..."
                             type: Number
                             prefix: {value: " START "}
                             optional: true
                         - unit:
-                            description: "..."
+                            brief: "..."
                             type: Unit
                             optional: true
                             prefix: {value: " "}
                   - DependentDef:
-                      description: ".."
+                      brief: ".."
                       members:
                         - name:
-                            description: "..."
+                            brief: "..."
                             type: Identifier
                             node_name: true
                         - length:
-                            description: "..."
+                            brief: "..."
                             type: Integer
                             optional: true
                             prefix: {value: "["}
                             suffix: {value: "]"}
                         - from:
-                            description: "..."
+                            brief: "..."
                             type: Number
                             prefix: {value: " FROM "}
                             optional: true
                         - to:
-                            description: "..."
+                            brief: "..."
                             type: Number
                             prefix: {value: " TO "}
                             optional: true
                         - start:
-                            description: "..."
+                            brief: "..."
                             type: Number
                             prefix: {value: " START "}
                             optional: true
                         - unit:
-                            description: "..."
+                            brief: "..."
                             type: Unit
                             optional: true
                             prefix: {value: " "}
                         - abstol:
-                            description: "..."
+                            brief: "..."
                             type: Double
                             prefix: {value: " <"}
                             suffix: {value: ">"}
                             optional: true
                   - PlotDeclaration:
-                      description: ".."
+                      brief: ".."
                       nmodl: "PLOT "
                       members:
                         - variables:
-                            description: "..."
+                            brief: "..."
                             type: PlotVar
                             vector: true
                             separator: ", "
                         - name:
-                            description: "..."
+                            brief: "..."
                             type: PlotVar
                             prefix: {value: " VS "}
                   - ConductanceHint:
-                      description: ".."
+                      brief: ".."
                       nmodl: "CONDUCTANCE "
                       members:
                         - conductance:
-                            description: "..."
+                            brief: "..."
                             type: Name
                         - ion:
-                            description: "..."
+                            brief: "..."
                             type: Name
                             optional: true
                             prefix: {value: " USEION "}
                   - ExpressionStatement:
-                      description: ".."
+                      brief: ".."
                       members:
                         - expression:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                   - ProtectStatement:
-                      description: ".."
+                      brief: ".."
                       nmodl: "PROTECT "
                       members:
                         - expression:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                   - FromStatement:
-                      description: ".."
+                      brief: ".."
                       nmodl: "FROM "
                       members:
                         - name:
-                            description: "..."
+                            brief: "..."
                             type: Name
                             node_name: true
                         - from:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                             prefix: {value: " = "}
                         - to:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                             prefix: {value: " TO "}
                         - increment:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                             prefix: {value: " BY "}
                             suffix: {value: " ", force: true}
                             optional: true
                         - statement_block:
-                            description: "..."
+                            brief: "..."
                             type: StatementBlock
                             getter: {override: true}
                   - ForAllStatement:
-                      description: ".."
+                      brief: ".."
                       nmodl: "FORALL "
                       members:
                         - name:
-                            description: "..."
+                            brief: "..."
                             type: Name
                             suffix: {value: " "}
                         - statement_block:
-                            description: "..."
+                            brief: "..."
                             type: StatementBlock
                             getter: {override: true}
                   - WhileStatement:
-                      description: ".."
+                      brief: ".."
                       nmodl: "WHILE "
                       members:
                         - condition:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                             prefix: {value: "("}
                             suffix: {value: ") "}
                         - statement_block:
-                            description: "..."
+                            brief: "..."
                             type: StatementBlock
                             getter: {override: true}
                   - IfStatement:
-                      description: ".."
+                      brief: ".."
                       nmodl: "IF "
                       members:
                         - condition:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                             prefix: {value: "("}
                             suffix: {value: ") "}
                         - statement_block:
-                            description: "..."
+                            brief: "..."
                             type: StatementBlock
                             getter: {override: true}
                         - elseifs:
-                            description: "..."
+                            brief: "..."
                             type: ElseIfStatement
                             vector: true
                         - elses:
-                            description: "..."
+                            brief: "..."
                             type: ElseStatement
                             optional: true
                   - ElseIfStatement:
-                      description: ".."
+                      brief: ".."
                       nmodl: " ELSE IF "
                       members:
                         - condition:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                             prefix: {value: "("}
                             suffix: {value: ") "}
                         - statement_block:
-                            description: "..."
+                            brief: "..."
                             type: StatementBlock
                             getter: {override: true}
                   - ElseStatement:
-                      description: ".."
+                      brief: ".."
                       nmodl: " ELSE "
                       members:
                         - statement_block:
-                            description: "..."
+                            brief: "..."
                             type: StatementBlock
                             getter: {override: true}
                   - PartialEquation:
-                      description: ".."
+                      brief: ".."
                       members:
                         - prime:
-                            description: "..."
+                            brief: "..."
                             type: PrimeName
                         - name1:
-                            description: "..."
+                            brief: "..."
                             type: Name
                         - name2:
-                            description: "..."
+                            brief: "..."
                             type: Name
                         - name3:
-                            description: "..."
+                            brief: "..."
                             type: Name
                   - PartialBoundary:
-                      description: ".."
+                      brief: ".."
                       nmodl: "~ "
                       members:
                         - del:
-                            description: "..."
+                            brief: "..."
                             type: Name
                             optional: true
                             suffix: {value: " "}
                         - name:
-                            description: "..."
+                            brief: "..."
                             type: Identifier
                         - index:
-                            description: "..."
+                            brief: "..."
                             type: FirstLastTypeIndex
                             optional: true
                             prefix: {value: "["}
                             suffix: {value: "]"}
                         - expression:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                             optional: true
                             prefix: {value: " = "}
                         - name1:
-                            description: "..."
+                            brief: "..."
                             type: Name
                             optional: true
                             prefix: {value: " = "}
                             suffix: {value: "*"}
                         - del2:
-                            description: "..."
+                            brief: "..."
                             type: Name
                             optional: true
                             suffix: {value: "("}
                         - name2:
-                            description: "..."
+                            brief: "..."
                             type: Name
                             optional: true
                             suffix: {value: ")"}
                         - name3:
-                            description: "..."
+                            brief: "..."
                             type: Name
                             optional: true
                             prefix: {value: "+"}
                   - WatchStatement:
-                      description: ".."
+                      brief: ".."
                       nmodl: "WATCH "
                       members:
                         - statements:
-                            description: "..."
+                            brief: "..."
                             type: Watch
                             vector: true
                             separator: ","
                             add: true
                   - MutexLock:
-                      description: ".."
+                      brief: ".."
                       nmodl: MUTEXLOCK
                   - MutexUnlock:
-                      description: ".."
+                      brief: ".."
                       nmodl: MUTEXUNLOCK
                   - Reset:
-                      description: ".."
+                      brief: ".."
                       nmodl: RESET
                   - Sens:
-                      description: ".."
+                      brief: ".."
                       nmodl: "SENS "
                       members:
                         - variables:
-                            description: "..."
+                            brief: "..."
                             type: VarName
                             vector: true
                             separator: ", "
                   - Conserve:
-                      description: ".."
+                      brief: ".."
                       nmodl: CONSERVE
                       members:
                         - react:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                             prefix: {value: " "}
                         - expr:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                             prefix: {value: " = "}
                   - Compartment:
-                      description: ".."
+                      brief: ".."
                       nmodl: COMPARTMENT
                       members:
                         - name:
-                            description: "..."
+                            brief: "..."
                             type: Name
                             optional: true
                             prefix: {value: " "}
                             suffix: {value: ","}
                         - expression:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                             prefix: {value: " "}
                         - names:
-                            description: "..."
+                            brief: "..."
                             type: Name
                             vector: true
                             prefix: {value: " {"}
                             suffix: {value: "}"}
                             separator: " "
                   - LonDifuse:
-                      description: ".."
+                      brief: ".."
                       nmodl: LONGITUDINAL_DIFFUSION
                       members:
                         - name:
-                            description: "..."
+                            brief: "..."
                             type: Name
                             optional: true
                             prefix: {value: " "}
                             suffix: {value: ","}
                         - expression:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                             prefix: {value: " "}
                         - names:
-                            description: "..."
+                            brief: "..."
                             type: Name
                             vector: true
                             prefix: {value: " {"}
                             suffix: {value: "}"}
                             separator: " "
                   - ReactionStatement:
-                      description: ".."
+                      brief: ".."
                       nmodl: "~ "
                       members:
                         - reaction1:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                         - op:
-                            description: "..."
+                            brief: "..."
                             type: ReactionOperator
                             prefix: {value: " "}
                         - reaction2:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                             prefix: {value: " "}
                             optional: true
                         - expression1:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                             prefix: {value: " ("}
                         - expression2:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                             prefix: {value: ", "}
                             suffix: {value: ")", force: true}
                             optional: true
                   - LagStatement:
-                      description: ".."
+                      brief: ".."
                       nmodl: "LAG "
                       members:
                         - name:
-                            description: "..."
+                            brief: "..."
                             type: Identifier
                         - byname:
-                            description: "..."
+                            brief: "..."
                             type: Name
                             prefix: {value: " BY "}
                   - QueueStatement:
-                      description: ".."
+                      brief: ".."
                       members:
                         - qtype:
-                            description: "..."
+                            brief: "..."
                             type: QueueExpressionType
                         - name:
-                            description: "..."
+                            brief: "..."
                             type: Identifier
                             prefix: {value: " "}
                   - ConstantStatement:
-                      description: ".."
+                      brief: ".."
                       members:
                         - constant:
-                            description: "..."
+                            brief: "..."
                             type: ConstantVar
                   - TableStatement:
-                      description: ".."
+                      brief: ".."
                       nmodl: "TABLE "
                       members:
                         - table_vars:
-                            description: "..."
+                            brief: "..."
                             type: Name
                             vector: true
                             separator: ","
                         - depend_vars:
-                            description: "..."
+                            brief: "..."
                             type: Name
                             vector: true
                             prefix: {value: " DEPEND "}
                             separator: ","
                         - from:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                             prefix: {value: " FROM "}
                         - to:
-                            description: "..."
+                            brief: "..."
                             type: Expression
                             prefix: {value: " TO "}
                         - with:
-                            description: "..."
+                            brief: "..."
                             type: Integer
                             prefix: {value: " WITH "}
                   - Suffix:
-                      description: ".."
+                      brief: ".."
                       members:
                         - type:
-                            description: "..."
+                            brief: "..."
                             type: Name
                             suffix: {value: " "}
                         - name:
-                            description: "..."
+                            brief: "..."
                             type: Name
                             node_name: true
                   - Useion:
-                      description: ".."
+                      brief: ".."
                       nmodl: "USEION "
                       members:
                         - name:
-                            description: "..."
+                            brief: "..."
                             type: Name
                             node_name: true
                         - readlist:
-                            description: "..."
+                            brief: "..."
                             type: ReadIonVar
                             vector: true
                             prefix: {value: " READ "}
                             separator: ", "
                         - writelist:
-                            description: "..."
+                            brief: "..."
                             type: WriteIonVar
                             vector: true
                             prefix: {value: " WRITE "}
                             separator: ", "
                         - valence:
-                            description: "..."
+                            brief: "..."
                             type: Valence
                             optional: true
                   - Nonspecific:
-                      description: ".."
+                      brief: ".."
                       nmodl: "NONSPECIFIC_CURRENT "
                       members:
                         - currents:
-                            description: "..."
+                            brief: "..."
                             type: NonspecificCurVar
                             vector: true
                             separator: ", "
                   - ElctrodeCurrent:
-                      description: ".."
+                      brief: ".."
                       nmodl: "ELECTRODE_CURRENT "
                       members:
                         - currents:
-                            description: "..."
+                            brief: "..."
                             type: ElectrodeCurVar
                             vector: true
                             separator: ", "
                   - Section:
-                      description: ".."
+                      brief: ".."
                       nmodl: "SECTION "
                       members:
                         - sections:
-                            description: "..."
+                            brief: "..."
                             type: SectionVar
                             vector: true
                             separator: ", "
                   - Range:
-                      description: ".."
+                      brief: ".."
                       nmodl: "RANGE "
                       members:
                         - variables:
-                            description: "..."
+                            brief: "..."
                             type: RangeVar
                             vector: true
                             separator: ", "
                   - Global:
-                      description: ".."
+                      brief: ".."
                       nmodl: "GLOBAL "
                       members:
                         - variables:
-                            description: "..."
+                            brief: "..."
                             type: GlobalVar
                             vector: true
                             separator: ", "
                   - Pointer:
-                      description: ".."
+                      brief: ".."
                       nmodl: "POINTER "
                       members:
                         - variables:
-                            description: "..."
+                            brief: "..."
                             type: PointerVar
                             vector: true
                             separator: ", "
                   - BbcorePtr:
-                      description: ".."
+                      brief: ".."
                       nmodl: "BBCOREPOINTER "
                       members:
                         - variables:
-                            description: "..."
+                            brief: "..."
                             type: BbcorePointerVar
                             vector: true
                             separator: ", "
                   - External:
-                      description: ".."
+                      brief: ".."
                       nmodl: "EXTERNAL "
                       members:
                         - variables:
-                            description: "..."
+                            brief: "..."
                             type: ExternVar
                             vector: true
                             separator: ", "
                   - ThreadSafe:
-                      description: ".."
+                      brief: ".."
                       nmodl: THREADSAFE
                       members:
                         - variables:
-                            description: "..."
+                            brief: "..."
                             type: ThreadsafeVar
                             vector: true
                             separator: ", "
                             prefix: {value: " "}
                   - Verbatim:
-                      description: "Represents a C code block"
+                      brief: "Represents a C code block"
                       nmodl: VERBATIM
                       members:
                         - statement:
-                            description: "C code as a string"
+                            brief: "C code as a string"
                             type: String
                             suffix: {value: "ENDVERBATIM"}
                   - LineComment:
-                      description: "Represents a one line comment in NMODL"
+                      brief: "Represents a one line comment in NMODL"
                       members:
                         - statement:
-                            description: "comment text"
+                            brief: "comment text"
                             type: String
                   - BlockComment:
-                      description: "Represents a multi-line comment in NMODL"
+                      brief: "Represents a multi-line comment in NMODL"
                       nmodl: COMMENT
                       members:
                         - statement:
-                            description: "comment text"
+                            brief: "comment text"
                             type: String
                             suffix: {value: "ENDCOMMENT"}
 
 - Program:
-    description: "Represents top level AST node for whole NMODL input"
+    brief: "Represents top level AST node for whole NMODL input"
     members:
       - blocks:
-          description: "..."
+          brief: "..."
           type: Node
           vector: true
           add: true

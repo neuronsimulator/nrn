@@ -31,18 +31,22 @@ namespace nmodl {
 namespace ast {
 
     {% for node in nodes %}
-    {{ '/* ' + node.description + ' */'}}
+    /**
+     * \brief {{ node.brief }}
+     *
+     * {{- node.get_description() -}}
+     */
     class {{ node.class_name }} : public {{ node.base_class }} {
     {% if node.private_members() %}
-    private:
+      private:
         {% for member in node.private_members() %}
-        {{ '// ' + member[2] }}
+        {{ '/// ' + member[2] }}
         {{ member[0] }} {{ member[1] }};
         {% endfor %}
     {% endif %}
-    public:
+      public:
         {% for member in node.public_members() %}
-        {{ '// ' + member[2] }}
+        {{ '/// ' + member[2] }}
         {{ member[0] }} {{ member[1] }};
         {% endfor %}
 
