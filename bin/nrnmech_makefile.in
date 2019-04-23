@@ -27,7 +27,9 @@ NJ_LIBS = @NRNJAVA_LIBS@
 PY_LIBS =
 NRNNI_LIBS = @NRNNI_LIBS@
 
-INCLUDES = -I. -I.. -I"$(pkgincludedir)" -I"$(libdir)" $(UserINCFLAGS) 
+INCLUDES = -I. -I.. -I"$(pkgincludedir)" -I"$(libdir)" $(UserINCFLAGS)
+# Use pwd by default, but user should override
+LIB_INSTALL_DIR = $(shell pwd)
 
 LIBTOOL = "$(pkgdatadir)/libtool" @LIBTOOLTAG@
 CC = @CC@
@@ -53,16 +55,29 @@ NRNIVLIBS = -L"$(libdir)" -lnrniv -livoc \
 NRNOCOBJS = "$(libobjdir)/ocmain.o" "$(libobjdir)/nrnnoiv.o" "$(libobjdir)/ocnoiv.o"
 NRNIVOBJS = "$(libobjdir)/nrnmain.o" "$(libobjdir)/ivocmain.o" "$(libobjdir)/nvkludge.o"
 
-.SUFFIXES:
+libnrnmech_la_OBJECTS = $(MODOBJFILES) mod_func.lo $(COBJFILES)
+libnrnmech_la_LIBADD = $(NRNOCLIBS) $(NRNIVLIBS)
 
 .SUFFIXES: .c .mod .lo
+
+
+# Create special similar to the original one but depend on libnrnmech.so
+special: libnrnmech.la
+	$(LINK) -rpath $(LIB_INSTALL_DIR) -lnrnmech $(NRNOCOBJS) $(libnrnmech_la_LIBADD) $(LIBS)
+
+
+libnrnmech.la: $(libnrnmech_la_OBJECTS) $(libnrnmech_la_DEPENDENCIES)
+	$(LINK) -rpath "$(libdir)" $(libnrnmech_la_LDFLAGS) $(libnrnmech_la_OBJECTS) $(libnrnmech_la_LIBADD) $(LIBS)
+	$(LIBTOOL) --mode=install install libnrnmech.la $(LIB_INSTALL_DIR)
+
+
 #
 # How to make a .o file from a .mod file.  Note that we have to delete the
 # .c file, or else make will get confused.  We have to go directly from
 # a .mod to a .o file because otherwise GNU make will try to use a rule
 # involving m2c.  Argh!!  Why did they have to build in so many implicit
 # rules?
-# 
+#
 #.mod.o:
 #	$(bindir)/nocmodl $* || (rm -f $*.c; exit 1)
 #	$(COMPILE) -c $*.c
@@ -76,7 +91,7 @@ NRNIVOBJS = "$(libobjdir)/nrnmain.o" "$(libobjdir)/ivocmain.o" "$(libobjdir)/nvk
 
 .mod.c:
 	"$(bindir)/nocmodl" $*
-	
+
 .c.lo:
 	$(LTCOMPILE) -c -o $@ `test -f '$<' || echo '$(srcdir)/'`$<
 
@@ -86,9 +101,3 @@ NRNIVOBJS = "$(libobjdir)/nrnmain.o" "$(libobjdir)/ivocmain.o" "$(libobjdir)/nvk
 
 mod_func.lo: mod_func.c
 	$(LTCOMPILE) -c -o $@ $*.c
-
-libnrnmech_la_OBJECTS = $(MODOBJFILES) mod_func.lo $(COBJFILES)
-libnrnmech_la_LIBADD = $(NRNOCLIBS) $(NRNIVLIBS)
-
-libnrnmech.la: $(libnrnmech_la_OBJECTS) $(libnrnmech_la_DEPENDENCIES)
-	$(LINK) -rpath "$(libdir)" $(libnrnmech_la_LDFLAGS) $(libnrnmech_la_OBJECTS) $(libnrnmech_la_LIBADD) $(LIBS)

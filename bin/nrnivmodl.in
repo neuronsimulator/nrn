@@ -163,30 +163,15 @@ if test -n "$cfiles" ; then
 	COBJS=`echo "$cfiles" | sed 's/\.c/.o/g'`
 fi
 
-@NRNMECH_DLL_STYLE_FALSE@make -j 4 -f "${MAKEFILEDIR}/nrniv_makefile" "$PURIFY" "$TRACE" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" special &&
-@NRNMECH_DLL_STYLE_FALSE@  echo "Successfully created $MODSUBDIR/special"
+@NRNMECH_DLL_STYLE_FALSE@make -j 4 -f "${MAKEFILEDIR}/nrniv_makefile" "$PURIFY" "$TRACE" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" special
 
 @NRNMECH_DLL_STYLE_TRUE@MODLO=`echo "$MODOBJS" | sed 's/\.o/.lo/g'`
 @NRNMECH_DLL_STYLE_TRUE@CLO=`echo "$COBJS" | sed 's/\.o/.lo/g'`
 @NRNMECH_DLL_STYLE_TRUE@if test "${mdir}" = "${prefix}/share/nrn/demo/release/powerpc" ; then
 @NRNMECH_DLL_STYLE_TRUE@  mdir='${NRNHOME}'/share/nrn/demo/release/${MODSUBDIR}
 @NRNMECH_DLL_STYLE_TRUE@fi
-@NRNMECH_DLL_STYLE_TRUE@make -j 4 -f "$MAKEFILEDIR/nrnmech_makefile" "MODOBJFILES=$MODLO" "COBJFILES=$CLO" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" libnrnmech.la &&
-@NRNMECH_DLL_STYLE_TRUE@  echo '#!/bin/sh
-@NRNMECH_DLL_STYLE_TRUE@if test "x${NRNHOME}" = "x" ; then
-@NRNMECH_DLL_STYLE_TRUE@	NRNHOME='"\"${prefix}\""'
-@NRNMECH_DLL_STYLE_TRUE@fi'> special &&
-@NRNMECH_DLL_STYLE_TRUE@  echo 'if test "x${NRNBIN}" = "x" ; then
-@NRNMECH_DLL_STYLE_TRUE@	NRNBIN='"\"${bindir}/\""'
-@NRNMECH_DLL_STYLE_TRUE@fi'>> special &&
-@NRNMECH_DLL_STYLE_TRUE@echo 'if test "@enable_carbon@" = "yes" ; then
-@NRNMECH_DLL_STYLE_TRUE@	NRNIV="${NRNBIN}nrniv.app/Contents/MacOS/nrniv"
-@NRNMECH_DLL_STYLE_TRUE@else
-@NRNMECH_DLL_STYLE_TRUE@	NRNIV="${NRNBIN}nrniv"
-@NRNMECH_DLL_STYLE_TRUE@fi' >> special &&
-@NRNMECH_DLL_STYLE_TRUE@  echo '"${NRNIV}"'" -dll \"${mdir}/.libs/libnrnmech.so\" \"\$@\"" >> special &&
-@NRNMECH_DLL_STYLE_TRUE@  chmod 755 special &&
-@NRNMECH_DLL_STYLE_TRUE@  echo "Successfully created $MODSUBDIR/special"
+@NRNMECH_DLL_STYLE_TRUE@make -j 4 -f "$MAKEFILEDIR/nrnmech_makefile" "MODOBJFILES=$MODLO" "COBJFILES=$CLO" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" special
+echo "Successfully created $MODSUBDIR/special"
 
 @NRNMECH_DLL_STYLE_TRUE@@MAC_DARWIN_TRUE@if false ; then
 @NRNMECH_DLL_STYLE_TRUE@@MAC_DARWIN_FALSE@if false ; then
