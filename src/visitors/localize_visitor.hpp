@@ -7,6 +7,11 @@
 
 #pragma once
 
+/**
+ * \file
+ * \brief \copybrief nmodl::visitor::LocalizeVisitor
+ */
+
 #include <map>
 #include <stack>
 
@@ -21,15 +26,22 @@
 
 
 namespace nmodl {
+namespace visitor {
+
+/**
+ * @addtogroup visitor_classes
+ * @{
+ */
 
 /**
  * \class LocalizeVisitor
- * \brief Visitor to transform global variable usage to local
+ * \brief %Visitor to transform global variable usage to local
  *
  * Motivation: As NMODL doesn't support returning multiple values,
  * procedures are often written with use of range variables that
  * can be made local. For example:
  *
+ * \code{.mod}
  *      NEURON {
  *          RANGE tau, alpha, beta
  *      }
@@ -44,11 +56,13 @@ namespace nmodl {
  *          tau = xx * 0.12 * some_var
  *          beta = yy * 0.11
  *      }
+ * \endcode
  *
  * In above example we are only interested in variable alpha computed in
  * DERIVATIVE block. If rates() is inlined into DERIVATIVE block then we
  * get:
  *
+ * \code{.mod}
  *       DERIVATIVE states() {
  *          ...
  *          {
@@ -57,6 +71,7 @@ namespace nmodl {
  *          }
  *          alpha = tau + beta
  *      }
+ * \endcode
  *
  * Now tau and beta could become local variables provided that their values
  * are not used in any other global blocks.
@@ -67,12 +82,11 @@ namespace nmodl {
  *     already inlined).
  *   - If every block has "definition" first then that variable is safe to "localize"
  *
- * \todo:
+ * \todo
  *   - We are excluding procedures/functions because they will be still using global
  *     variables. We need to have dead-code removal pass to eliminate unused procedures/
  *     functions before localizer pass.
  */
-
 class LocalizeVisitor: public AstVisitor {
   private:
     /// ignore verbatim blocks while localizing
@@ -95,4 +109,7 @@ class LocalizeVisitor: public AstVisitor {
     virtual void visit_program(ast::Program* node) override;
 };
 
+/** @} */  // end of visitor_classes
+
+}  // namespace visitor
 }  // namespace nmodl

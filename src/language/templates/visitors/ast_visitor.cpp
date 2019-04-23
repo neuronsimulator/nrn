@@ -9,6 +9,7 @@
 
 
 namespace nmodl {
+namespace visitor {
 
 using namespace ast;
 
@@ -19,4 +20,5 @@ void AstVisitor::visit_{{ node.class_name|snake_case }}({{ node.class_name }}* n
 
 {% endfor %}
 
+}  // namespace visitor
 }  // namespace nmodl

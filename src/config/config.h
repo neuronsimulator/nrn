@@ -7,6 +7,14 @@
 
 #pragma once
 
+/**
+ * \dir
+ * \brief Global project configurations
+ *
+ * \file
+ * \brief Version information and units file path
+ */
+
 #include <fstream>
 #include <string>
 #include <vector>
@@ -16,7 +24,7 @@ namespace nmodl {
 /**
  * \brief Project version information
  */
-struct version {
+struct Version {
     /// git revision id
     static const std::string GIT_REVISION;
 
@@ -30,13 +38,15 @@ struct version {
 };
 
 /**
- * \brief Information about unit specification with nrnunits.lib
+ * \brief Information of units database i.e. `nrnunits.lib`
  */
 struct NrnUnitsLib {
     /// paths where nrnunits.lib can be found
     static const std::vector<std::string> NRNUNITSLIB_PATH;
 
-    /// from possible paths, return one that exists
+    /**
+     * Return path of units database file
+     */
     static std::string get_path() {
         for (const auto& path: NRNUNITSLIB_PATH) {
             std::ifstream f(path.c_str());

@@ -7,51 +7,67 @@
 
 #pragma once
 
+/**
+ * \file
+ * \brief \copybrief nmodl::visitor::AstLookupVisitor
+ */
+
 #include "ast/ast.hpp"
 #include "visitors/visitor.hpp"
 
-
 namespace nmodl {
+namespace visitor {
+
+/**
+ * @addtogroup visitor_classes
+ * @{
+ */
 
 /**
  * \class AstLookupVisitor
- * \brief Visitor to find ast nodes based on on the ast types
+ * \brief %Visitor to find AST nodes based on their types
  */
+class AstLookupVisitor: public Visitor {
+  private:
+    /// node types to search in the ast
+    std::vector<ast::AstNodeType> types;
 
-class AstLookupVisitor : public Visitor {
-    private:
-        /// node types to search in the ast
-        std::vector<ast::AstNodeType> types;
+    /// matching nodes found in the ast
+    std::vector<std::shared_ptr<ast::Ast>> nodes;
 
-        /// matching nodes found in the ast
-        std::vector<std::shared_ptr<ast::AST>> nodes;
+  public:
+    AstLookupVisitor() = default;
 
-    public:
+    AstLookupVisitor(ast::AstNodeType type)
+        : types{type} {}
 
-        AstLookupVisitor() = default;
+    AstLookupVisitor(const std::vector<ast::AstNodeType>& types)
+        : types(types) {}
 
-        AstLookupVisitor(ast::AstNodeType type) : types{type} {}
+    std::vector<std::shared_ptr<ast::Ast>> lookup(ast::Ast* node);
 
-        AstLookupVisitor(const std::vector<ast::AstNodeType>& types) : types(types) {}
+    std::vector<std::shared_ptr<ast::Ast>> lookup(ast::Ast* node, ast::AstNodeType type);
 
-        std::vector<std::shared_ptr<ast::AST>> lookup(ast::AST *node);
+    std::vector<std::shared_ptr<ast::Ast>> lookup(ast::Ast* node,
+                                                  std::vector<ast::AstNodeType>& types);
 
-        std::vector<std::shared_ptr<ast::AST>> lookup(ast::AST* node, ast::AstNodeType type);
+    const std::vector<std::shared_ptr<ast::Ast>>& get_nodes() const noexcept {
+        return nodes;
+    }
 
-        std::vector<std::shared_ptr<ast::AST>> lookup(ast::AST* node, std::vector<ast::AstNodeType>& types);
+    void clear() {
+        types.clear();
+        nodes.clear();
+    }
 
-        const std::vector<std::shared_ptr<ast::AST>>& get_nodes() const noexcept {
-            return nodes;
-        }
-
-        void clear() {
-            types.clear();
-            nodes.clear();
-        }
-
-        {% for node in nodes %}
-            void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}* node) override;
-        {% endfor %}
+    // clang-format off
+    {% for node in nodes %}
+    void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}* node) override;
+    {% endfor %}
+    // clang-format on
 };
 
+/** @} */  // end of visitor_classes
+
+}  // namespace visitor
 }  // namespace nmodl

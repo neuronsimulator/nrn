@@ -7,14 +7,24 @@
 
 #pragma once
 
+/**
+ * \file
+ * \brief \copybrief nmodl::codegen::CodegenCudaVisitor
+ */
+
 #include "codegen/codegen_c_visitor.hpp"
 
 namespace nmodl {
 namespace codegen {
 
 /**
+ * @addtogroup codegen_backends
+ * @{
+ */
+
+/**
  * \class CodegenCudaVisitor
- * \brief Visitor for printing CUDA backend
+ * \brief %Visitor for printing CUDA backend
  */
 class CodegenCudaVisitor: public CodegenCVisitor {
     void print_atomic_op(const std::string& lhs, const std::string& op, const std::string& rhs);
@@ -102,6 +112,8 @@ class CodegenCudaVisitor: public CodegenCVisitor {
                        std::string float_type)
         : CodegenCVisitor(mod_file, stream, layout, float_type) {}
 };
+
+/** @} */  // end of codegen_backends
 
 }  // namespace codegen
 }  // namespace nmodl

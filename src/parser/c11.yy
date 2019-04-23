@@ -692,8 +692,8 @@ declaration_list
 
 /** Bison expects error handler for parser */
 
-void CParser::error(const location &loc , const std::string &message) {
+void CParser::error(const location &loc , const std::string &msg) {
     std::stringstream ss;
-    ss << "C Parser Error : " << message << " [Location : " << loc << "]";
+    ss << "C Parser Error : " << msg << " [Location : " << loc << "]";
     throw std::runtime_error(ss.str());
 }

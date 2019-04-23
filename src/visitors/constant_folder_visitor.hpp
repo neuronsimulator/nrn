@@ -7,6 +7,11 @@
 
 #pragma once
 
+/**
+ * \file
+ * \brief \copybrief nmodl::visitor::ConstantFolderVisitor
+ */
+
 #include <stack>
 #include <string>
 
@@ -14,7 +19,14 @@
 #include "utils/logger.hpp"
 #include "visitors/ast_visitor.hpp"
 
+
 namespace nmodl {
+namespace visitor {
+
+/**
+ * @addtogroup visitor_classes
+ * @{
+ */
 
 /**
  * \class ConstantFolderVisitor
@@ -23,18 +35,19 @@ namespace nmodl {
  * MOD file from user could have binary expressions that could be
  * expanded at compile time. For example, KINETIC blocks could have
  *
- * DEFINE NANN 10
+ * \code{.mod}
+ *      DEFINE NANN 10
  *
- * KINETIC states {
- *      FROM i=0 TO NANN-2 {
- *          ....
+ *      KINETIC states {
+ *          FROM i=0 TO NANN-2 {
+ *              ....
+ *          }
  *      }
- * }
+ * \endcode
  *
- * For passes like loop unroll, we need to evaluate NANN-2 at
+ * For passes like loop unroll, we need to evaluate `NANN-2` at
  * compile time and this pass perform such operations.
  */
-
 class ConstantFolderVisitor: public AstVisitor {
   public:
     ConstantFolderVisitor() = default;
@@ -42,4 +55,7 @@ class ConstantFolderVisitor: public AstVisitor {
     void visit_paren_expression(ast::ParenExpression* node) override;
 };
 
+/** @} */  // end of visitor_classes
+
+}  // namespace visitor
 }  // namespace nmodl

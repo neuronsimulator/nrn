@@ -17,10 +17,23 @@
 #include "pybind/pybind_utils.hpp"
 #include "visitors/visitor_utils.hpp"
 
+
+/**
+ * \dir
+ * \brief Python Interface Implementation
+ *
+ * \file
+ * \brief Top level nmodl Python module implementation
+ */
+
+
 namespace py = pybind11;
 using pybind11::literals::operator""_a;
 
-/** \brief docstring of Python symbols */
+
+namespace nmodl {
+
+/** \brief docstring of Python exposed API */
 namespace docstring {
 
 static const char* driver = R"(
@@ -35,50 +48,53 @@ static const char* driver_ast = R"(
 )";
 
 static const char* driver_parse_string = R"(
-    Parse C provided as a string (testing)
+    Parse NMODL provided as a string
 
     Args:
         input (str): C code as string
     Returns:
-        bool: true if success, false otherwise
+        AST: ast root node if success, throws an exception otherwise
 
-    >>> driver.parse_string("DEFINE NSTEP 6")
-    True
+    >>> ast = driver.parse_string("DEFINE NSTEP 6")
 )";
 
 static const char* driver_parse_file = R"(
-    Parse C file
+    Parse NMODL provided as a file
 
     Args:
         filename (str): name of the C file
 
     Returns:
-        bool: true if success, false otherwise
+        AST: ast root node if success, throws an exception otherwise
 )";
 
 static const char* driver_parse_stream = R"(
-    Parse C file provided as istream
+    Parse NMODL file provided as istream
 
     Args:
         in (file): ifstream object
 
     Returns:
-        bool: true if success, false otherwise
+        AST: ast root node if success, throws an exception otherwise
 )";
 
 static const char* to_nmodl = R"(
-    Given AST node, return the JSON string representation
+    Given AST node, return the NMODL string representation
 
     Args:
         node (AST): AST node
         excludeTypes (set of AstNodeType): Excluded node types
 
     Returns:
-        str: JSON string representation
+        str: NMODL string representation
+
+    >>> ast = driver.parse_string("NEURON{}")
+    >>> nmodl.to_nmodl(ast)
+    'NEURON {\n}\n'
 )";
 
 static const char* to_json = R"(
-    Given AST node, return the NMODL string representation
+    Given AST node, return the JSON string representation
 
     Args:
         node (AST): AST node
@@ -86,20 +102,23 @@ static const char* to_json = R"(
         expand (bool): Expand node
 
     Returns:
-        str: NMODL string representation
+        str: JSON string representation
 
-    >>> driver.parse_string("NEURON{}")
-    True
-    >>> ast = driver.ast()
+    >>> ast = driver.parse_string("NEURON{}")
     >>> nmodl.to_json(ast, True)
     '{"Program":[{"NeuronBlock":[{"StatementBlock":[]}]}]}'
 )";
 
 }  // namespace docstring
 
-class PyDriver: public nmodl::parser::NmodlDriver {
+
+/**
+ * \class PyNmodlDriver
+ * \brief Class to bridge C++ NmodlDriver with Python world using pybind11
+ */
+class PyNmodlDriver: public nmodl::parser::NmodlDriver {
   public:
-    bool parse_stream(py::object object) {
+    std::shared_ptr<nmodl::ast::Program> parse_stream(py::object object) {
         py::object tiob = py::module::import("io").attr("TextIOBase");
         if (py::isinstance(object, tiob)) {
             py::detail::pythonibuf<py::str> buf(object);
@@ -113,26 +132,45 @@ class PyDriver: public nmodl::parser::NmodlDriver {
     }
 };
 
+}  // namespace nmodl
+
 // forward declaration of submodule init functions
 void init_visitor_module(py::module& m);
 void init_ast_module(py::module& m);
 void init_symtab_module(py::module& m);
 
+
 PYBIND11_MODULE(_nmodl, m_nmodl) {
     m_nmodl.doc() = "NMODL : Source-to-Source Code Generation Framework";
-    m_nmodl.attr("__version__") = nmodl::version::NMODL_VERSION;
+    m_nmodl.attr("__version__") = nmodl::Version::NMODL_VERSION;
 
-    py::class_<PyDriver> nmodl_driver(m_nmodl, "NmodlDriver", docstring::driver);
+    py::class_<nmodl::PyNmodlDriver> nmodl_driver(m_nmodl, "NmodlDriver", nmodl::docstring::driver);
     nmodl_driver.def(py::init<>())
-        .def("parse_string", &PyDriver::parse_string, "input"_a, docstring::driver_parse_string)
-        .def("parse_file", &PyDriver::parse_file, "filename"_a, docstring::driver_parse_file)
-        .def("parse_stream", &PyDriver::parse_stream, "in"_a, docstring::driver_parse_stream)
-        .def("ast", &PyDriver::ast, docstring::driver_ast);
+        .def("parse_string",
+             &nmodl::PyNmodlDriver::parse_string,
+             "input"_a,
+             nmodl::docstring::driver_parse_string)
+        .def("parse_file",
+             &nmodl::PyNmodlDriver::parse_file,
+             "filename"_a,
+             nmodl::docstring::driver_parse_file)
+        .def("parse_stream",
+             &nmodl::PyNmodlDriver::parse_stream,
+             "in"_a,
+             nmodl::docstring::driver_parse_stream)
+        .def("get_ast", &nmodl::PyNmodlDriver::get_ast, nmodl::docstring::driver_ast);
 
-    m_nmodl.def("to_nmodl", nmodl::to_nmodl, "node"_a,
-                "exclude_types"_a = std::set<nmodl::ast::AstNodeType>(), docstring::to_nmodl);
-    m_nmodl.def("to_json", nmodl::to_json, "node"_a, "compact"_a = false, "expand"_a = false,
-                docstring::to_json);
+    m_nmodl.def("to_nmodl",
+                nmodl::to_nmodl,
+                "node"_a,
+                "exclude_types"_a = std::set<nmodl::ast::AstNodeType>(),
+                nmodl::docstring::to_nmodl);
+    m_nmodl.def("to_json",
+                nmodl::to_json,
+                "node"_a,
+                "compact"_a = false,
+                "expand"_a = false,
+                nmodl::docstring::to_json);
 
     init_visitor_module(m_nmodl);
     init_ast_module(m_nmodl);

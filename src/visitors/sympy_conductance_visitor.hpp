@@ -7,6 +7,11 @@
 
 #pragma once
 
+/**
+ * \file
+ * \brief \copybrief nmodl::visitor::SympyConductanceVisitor
+ */
+
 #include <map>
 #include <set>
 #include <vector>
@@ -22,29 +27,37 @@
 
 
 namespace nmodl {
+namespace visitor {
+
+/**
+ * @addtogroup visitor_classes
+ * @{
+ */
 
 /**
  * \class SympyConductanceVisitor
- * \brief Visitor for generating CONDUCTANCE statements for ions
+ * \brief %Visitor for generating CONDUCTANCE statements for ions
  *
- * This class visits each ion expresion I = ... in the breakpoint
- * and symbolically differentiates it to get dI/dV,
- * i.e. the conductance.
+ * This class visits each ion expression `I = ...` in the `BREAKPOINT`
+ * and symbolically differentiates it to get `dI/dV`, i.e. the conductance.
+ * If this coincides with an existing global variable `g` (e.g. when
+ * `I` is linear in `V`) then it will add
  *
- * If this coincides with an existing global variable g
- * (e.g. when I is linear in V) then it will add
- * CONDUCTANCE g USEION I
+ * \code{.mod}
+ *      CONDUCTANCE g USEION I
+ * \endcode
  *
- * If dI/dV is a more complicated expression, it generates
- * a new unique variable name g_unique, and adds two lines
- * CONDUCTANCE g_unique USEION I
- * g_unique = [dI/dV expression]
+ * If `dI/dV` is a more complicated expression, it generates a new unique
+ * variable name `g_unique`, and adds two lines
  *
- * If an ion channel already has a CONDUCTANCE statement
- * then it does not modify it.
+ * \code{.mod}
+ *      CONDUCTANCE g_unique USEION I
+ *      g_unique = [dI/dV expression]
+ * \endcode
  *
+ * If an ion channel already has a `CONDUCTANCE` statement then it does
+ * not modify it.
  */
-
 class SympyConductanceVisitor: public AstVisitor {
     typedef std::map<std::string, std::string> string_map;
     typedef std::set<std::string> string_set;
@@ -53,37 +66,37 @@ class SympyConductanceVisitor: public AstVisitor {
     /// true while visiting breakpoint block
     bool under_breakpoint_block = false;
 
-    // set of all variables for SymPy
+    /// set of all variables for SymPy
     string_set all_vars;
 
-    // set of currents to ignore
+    /// set of currents to ignore
     string_set i_ignore;
 
-    // map between current write names and ion names
+    /// map between current write names and ion names
     string_map i_name;
 
     bool NONSPECIFIC_CONDUCTANCE_ALREADY_EXISTS = false;
 
-    // list in order of binary expressions in breakpoint
+    /// list in order of binary expressions in breakpoint
     std::vector<std::string> ordered_binary_exprs;
 
-    // ditto but for LHS of expression only
+    /// ditto but for LHS of expression only
     std::vector<std::string> ordered_binary_exprs_lhs;
 
-    // map from lhs of binary expression to index of expression in above vector
+    /// map from lhs of binary expression to index of expression in above vector
     std::map<std::string, std::size_t> binary_expr_index;
 
-    // use ion ast nodes
-    std::vector<std::shared_ptr<ast::AST>> use_ion_nodes;
+    /// use ion ast nodes
+    std::vector<std::shared_ptr<ast::Ast>> use_ion_nodes;
 
-    // non specific currents
-    std::vector<std::shared_ptr<ast::AST>> nonspecific_nodes;
+    /// non specific currents
+    std::vector<std::shared_ptr<ast::Ast>> nonspecific_nodes;
 
     std::vector<std::string> generate_statement_strings(ast::BreakpointBlock* node);
     void lookup_useion_statements();
     void lookup_nonspecific_statements();
 
-    static std::string to_nmodl_for_sympy(ast::AST* node) {
+    static std::string to_nmodl_for_sympy(ast::Ast* node) {
         return to_nmodl(node, {ast::AstNodeType::UNIT, ast::AstNodeType::UNIT_DEF});
     }
 
@@ -95,4 +108,7 @@ class SympyConductanceVisitor: public AstVisitor {
     void visit_program(ast::Program* node) override;
 };
 
+/** @} */  // end of visitor_classes
+
+}  // namespace visitor
 }  // namespace nmodl

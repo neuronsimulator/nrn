@@ -7,6 +7,11 @@
 
 #pragma once
 
+/**
+ * \file
+ * \brief \copybrief nmodl::visitor::KineticBlockVisitor
+ */
+
 #include "ast/ast.hpp"
 #include "visitors/ast_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
@@ -17,10 +22,16 @@
 #include <vector>
 
 namespace nmodl {
+namespace visitor {
+
+/**
+ * @addtogroup visitor_classes
+ * @{
+ */
 
 /**
  * \class KineticBlockVisitor
- * \brief Visitor for kinetic block statements
+ * \brief %Visitor for kinetic block statements
  *
  * Replaces each KINETIC block with a DERIVATIVE block
  * containing a system of ODEs that is equivalent to
@@ -31,13 +42,12 @@ namespace nmodl {
  * matter. Also does not yet support array variables.
  *
  */
-
 class KineticBlockVisitor: public AstVisitor {
   private:
-    /// update stochiometric matrices with reaction var term
+    /// update stoichiometric matrices with reaction var term
     void process_reac_var(const std::string& varname, int count = 1);
 
-    /// stochiometric matrices nu_L, nu_R
+    /// stoichiometric matrices nu_L, nu_R
     /// forwards/backwards fluxes k_f, k_b
     /// (see kinetic_schemes.ipynb notebook for details)
     struct RateEqs {
@@ -112,4 +122,7 @@ class KineticBlockVisitor: public AstVisitor {
     void visit_program(ast::Program* node) override;
 };
 
+/** @} */  // end of visitor_classes
+
+}  // namespace visitor
 }  // namespace nmodl

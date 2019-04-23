@@ -11,10 +11,12 @@
 
 
 namespace nmodl {
+namespace visitor {
 
 /** Helper function to visit vector elements
  *
  * @tparam T
+ * @param elements vector of nodes/elements
  * @param separator separator to print for individual vector element
  * @param program  true if provided elements belong to program node
  * @param statement true if elements in vector of statement type
@@ -34,7 +36,7 @@ void NmodlPrintVisitor::visit_element(const std::vector<T>& elements,
         (*iter)->accept(this);
 
         /// print separator (e.g. comma, space)
-        if (!separator.empty() && !is_last(iter, elements)) {
+        if (!separator.empty() && !utils::is_last(iter, elements)) {
             printer->add_element(separator);
         }
 
@@ -46,7 +48,7 @@ void NmodlPrintVisitor::visit_element(const std::vector<T>& elements,
         /// if there are multiple inline comments then we want them to be
         /// contiguous and only last comment should have extra line.
         bool extra_newline = false;
-        if (!is_last(iter, elements)) {
+        if (!utils::is_last(iter, elements)) {
             extra_newline = true;
             if ((*iter)->is_line_comment() && (*(iter + 1))->is_line_comment()) {
                 extra_newline = false;
@@ -63,4 +65,5 @@ void NmodlPrintVisitor::visit_element(const std::vector<T>& elements,
     }
 }
 
+}  // namespace visitor
 }  // namespace nmodl

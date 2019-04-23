@@ -7,23 +7,32 @@
 
 #pragma once
 
+/**
+ * \file
+ * \brief \copybrief nmodl::visitor::SolveBlockVisitor
+ */
+
 #include "ast/ast.hpp"
 #include "symtab/symbol_table.hpp"
 #include "visitors/ast_visitor.hpp"
 
 namespace nmodl {
+namespace visitor {
 
+/**
+ * @addtogroup visitor_classes
+ * @{
+ */
 
 /**
  * \class SolveBlockVisitor
  * \brief Replace solve block statements with actual solution node in the AST
  *
- * Once sympy or cnexp passes are run, solve blocks can be replaced with solution
- * expression node that represent solution that is going to be solved. All solve
- * statements appearing in breakpoint block get added to NrnState block as solution
- * expression.
+ * Once SympySolverVisitor or NeuronSolveVisitor is ran, solve blocks can be replaced
+ * with solution expression node that represent solution that is going to be solved.
+ * All solve statements appearing in breakpoint block get added to NrnState block as
+ * solution expression.
  */
-
 class SolveBlockVisitor: public AstVisitor {
   private:
     symtab::SymbolTable* symtab = nullptr;
@@ -42,4 +51,7 @@ class SolveBlockVisitor: public AstVisitor {
     void visit_program(ast::Program* node) override;
 };
 
+/** @} */  // end of visitor_classes
+
+}  // namespace visitor
 }  // namespace nmodl

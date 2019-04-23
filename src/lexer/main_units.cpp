@@ -25,7 +25,7 @@ using namespace fmt::literals;
 using namespace nmodl;
 
 int main(int argc, const char* argv[]) {
-    CLI::App app{"Unit-Lexer : Standalone Lexer for Units({})"_format(version::to_string())};
+    CLI::App app{"Unit-Lexer : Standalone Lexer for Units({})"_format(Version::to_string())};
 
     std::vector<std::string> files;
     app.add_option("file", files, "One or more units files to process")

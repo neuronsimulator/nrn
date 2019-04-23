@@ -19,6 +19,7 @@ namespace py = pybind11;
 using namespace py::literals;
 
 namespace nmodl {
+namespace visitor {
 
 using symtab::syminfo::NmodlType;
 
@@ -85,7 +86,8 @@ ast::StatementVector::iterator SympySolverVisitor::get_solution_location_iterato
         while ((it != statements.end()) &&
                (std::dynamic_pointer_cast<ast::ExpressionStatement>(*it).get() !=
                 last_expression_statement)) {
-            logger->debug("SympySolverVisitor :: {} != {}", to_nmodl((*it).get()),
+            logger->debug("SympySolverVisitor :: {} != {}",
+                          to_nmodl((*it).get()),
                           to_nmodl(last_expression_statement));
             ++it;
         }
@@ -181,10 +183,12 @@ void SympySolverVisitor::construct_eigen_solver_block(
         /// create eigen linear solver block
         setup_x_eqs.insert(setup_x_eqs.end(), solutions.begin(), solutions.end());
         auto setup_x_block = create_statement_block(setup_x_eqs);
-        auto solver_block =
-            std::make_shared<ast::EigenLinearSolverBlock>(n_state_vars, variable_block,
-                                                          initialize_block, setup_x_block,
-                                                          update_state_block, finalize_block);
+        auto solver_block = std::make_shared<ast::EigenLinearSolverBlock>(n_state_vars,
+                                                                          variable_block,
+                                                                          initialize_block,
+                                                                          setup_x_block,
+                                                                          update_state_block,
+                                                                          finalize_block);
         /// replace statement block with solver block as it contains all statements
         ast::StatementVector solver_block_statements{
             std::make_shared<ast::ExpressionStatement>(solver_block)};
@@ -193,9 +197,13 @@ void SympySolverVisitor::construct_eigen_solver_block(
         /// create eigen newton solver block
         auto setup_x_block = create_statement_block(setup_x_eqs);
         auto functor_block = create_statement_block(solutions);
-        auto solver_block = std::make_shared<ast::EigenNewtonSolverBlock>(
-            n_state_vars, variable_block, initialize_block, setup_x_block, functor_block,
-            update_state_block, finalize_block);
+        auto solver_block = std::make_shared<ast::EigenNewtonSolverBlock>(n_state_vars,
+                                                                          variable_block,
+                                                                          initialize_block,
+                                                                          setup_x_block,
+                                                                          functor_block,
+                                                                          update_state_block,
+                                                                          finalize_block);
         /// replace statement block with solver block as it contains all statements
         ast::StatementVector solver_block_statements{
             std::make_shared<ast::ExpressionStatement>(solver_block)};
@@ -208,8 +216,11 @@ void SympySolverVisitor::solve_linear_system(const std::vector<std::string>& pre
     init_state_vars_vector();
     // call sympy linear solver
     bool small_system = (eq_system.size() <= SMALL_LINEAR_SYSTEM_MAX_STATES);
-    auto locals = py::dict("eq_strings"_a = eq_system, "state_vars"_a = state_vars, "vars"_a = vars,
-                           "small_system"_a = small_system, "do_cse"_a = elimination);
+    auto locals = py::dict("eq_strings"_a = eq_system,
+                           "state_vars"_a = state_vars,
+                           "vars"_a = vars,
+                           "small_system"_a = small_system,
+                           "do_cse"_a = elimination);
     py::exec(R"(
                 from nmodl.ode import solve_lin_system
                 exception_message = ""
@@ -225,7 +236,8 @@ void SympySolverVisitor::solve_linear_system(const std::vector<std::string>& pre
                     new_local_vars = [""]
                     exception_message = str(e)
                 )",
-             py::globals(), locals);
+             py::globals(),
+             locals);
     // returns a vector of solutions, i.e. new statements to add to block:
     auto solutions = locals["solutions"].cast<std::vector<std::string>>();
     // and a vector of new local variables that need to be declared in the block:
@@ -278,8 +290,8 @@ void SympySolverVisitor::solve_non_linear_system(
     // construct ordered vector of state vars used in non-linear system
     init_state_vars_vector();
     // call sympy non-linear solver
-    auto locals = py::dict("equation_strings"_a = eq_system, "state_vars"_a = state_vars,
-                           "vars"_a = vars);
+    auto locals =
+        py::dict("equation_strings"_a = eq_system, "state_vars"_a = state_vars, "vars"_a = vars);
     py::exec(R"(
                 from nmodl.ode import solve_non_lin_system
                 exception_message = ""
@@ -293,7 +305,8 @@ void SympySolverVisitor::solve_non_linear_system(
                     new_local_vars = [""]
                     exception_message = str(e)
                 )",
-             py::globals(), locals);
+             py::globals(),
+             locals);
     // returns a vector of solutions, i.e. new statements to add to block:
     auto solutions = locals["solutions"].cast<std::vector<std::string>>();
     // may also return a python exception message:
@@ -347,7 +360,8 @@ void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
 
     const auto node_as_nmodl = to_nmodl_for_sympy(node);
     const auto locals = py::dict("equation_string"_a = node_as_nmodl,
-                                 "dt_var"_a = codegen::naming::NTHREAD_DT_VARIABLE, "vars"_a = vars,
+                                 "dt_var"_a = codegen::naming::NTHREAD_DT_VARIABLE,
+                                 "vars"_a = vars,
                                  "use_pade_approx"_a = use_pade_approx);
 
     if (solve_method == codegen::naming::EULER_METHOD) {
@@ -365,7 +379,8 @@ void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
                     solution = ""
                     exception_message = str(e)
             )",
-                 py::globals(), locals);
+                 py::globals(),
+                 locals);
     } else if (solve_method == codegen::naming::CNEXP_METHOD) {
         // replace x' = f(x) differential equation
         // with analytic solution for x(t+dt) in terms of x(t)
@@ -381,7 +396,8 @@ void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
                     solution = ""
                     exception_message = str(e)
             )",
-                 py::globals(), locals);
+                 py::globals(),
+                 locals);
     } else {
         // for other solver methods: just collect the ODEs & return
         std::string eq_str = to_nmodl_for_sympy(node);
@@ -558,7 +574,8 @@ void SympySolverVisitor::visit_program(ast::Program* node) {
                 // LINEAR and NONLINEAR blocks do not have solve method specified
                 const auto& solve_method = block_ptr->get_method()->get_value()->eval();
                 logger->debug("SympySolverVisitor :: Found SOLVE statement: using {} for {}",
-                              solve_method, block_name);
+                              solve_method,
+                              block_name);
                 derivative_block_solve_method[block_name] = solve_method;
             }
         }
@@ -584,4 +601,5 @@ void SympySolverVisitor::visit_program(ast::Program* node) {
     node->visit_children(this);
 }
 
+}  // namespace visitor
 }  // namespace nmodl

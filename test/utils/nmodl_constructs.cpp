@@ -7,42 +7,54 @@
 
 #include "test/utils/nmodl_constructs.hpp"
 
-/** Guidelines for adding nmodl text constructs
+namespace nmodl {
+/// custom type to represent nmodl construct for testing
+namespace test_utils {
+
+/**
+ * Guidelines for adding nmodl text constructs
  *
  * As nmodl constructs are used to for testing ast to nmodl transformations,
  * consider following points:
- *
  *  - Leading whitespaces or empty lines are removed
- *
  *  - Use string literal to define nmodl text
  *    When ast is transformed back to nmodl, each statement has newline.
  *    Hence for easy comparison, input nmodl should be null terminated.
  *    One way to use format:
-
-      R"(
-            TITLE nmodl title
-      )"
-
+ *
+ *  \code
+ *          R"(
+ *              TITLE nmodl title
+ *          )"
+ *  \endcode
+ *
  *  - Do not use extra spaces (even though it's valid)
-
-     LOCAL a,b
-
-     instead of
-
-     LOCAL  a, b,   c
-
+ *
+ *  \code
+ *     LOCAL a,b
+ *  \endcode
+ *
+ *     instead of
+ *
+ *  \code
+ *     LOCAL  a, b,   c
+ *  \endcode
+ *
  *  - Use well indented blocks
-
-    NEURON {
-        RANGE x
-    }
-
-    instead of
-
-      NEURON  {
-        RANGE x
-    }
-
+ *
+ *  \code
+ *    NEURON {
+ *        RANGE x
+ *    }
+ *  \endcode
+ *
+ *    instead of
+ *
+ *  \code
+ *      NEURON  {
+ *        RANGE x
+ *    }
+ *  \endcode
  *
  * If nmodl transformation is different from input, third argument could be
  * provided with the expected nmodl.
@@ -1772,3 +1784,6 @@ std::vector<DiffEqTestCase> diff_eq_constructs{
 
     // clang-format on
 };
+
+}  // namespace test_utils
+}  // namespace nmodl

@@ -196,10 +196,17 @@ class ChildNode(BaseNode):
     def get_add_methods(self):
         s = ''
         if self.add_method:
-            method = f"""void add{self.class_name}({self.class_name} *n) {{
+            method = f"""
+                         /**
+                          * \\brief Add member to {self.varname} by raw pointer
+                          */
+                         void add{self.class_name}({self.class_name} *n) {{
                              {self.varname}.emplace_back(n);
                          }}
 
+                         /**
+                          * \\brief Add member to {self.varname} by shared_ptr
+                          */
                          void add{self.class_name}(std::shared_ptr<{self.class_name}> n) {{
                              {self.varname}.push_back(n);
                          }}
@@ -212,23 +219,48 @@ class ChildNode(BaseNode):
         if self.get_node_name:
             # string node should be evaluated and hence eval() method
             method_name = "eval" if self.is_string_node else "get_node_name"
-            method = f"""virtual std::string get_node_name() override {{
+            method = f"""
+                         /**
+                          * \\brief Return name of of the node
+                          *
+                          * Some ast nodes have a member marked designated as node name. For example,
+                          * in case of this ast::{self.class_name} has {self.varname} designated as a
+                          * node name.
+                          *
+                          * @return name of the node as std::string
+                          *
+                          * \\sa Ast::get_node_type_name
+                          */
+                         virtual std::string get_node_name() override {{
                              return {self.varname}->{method_name}();
                          }}"""
             s = textwrap.dedent(method)
         return s
 
-    def get_getter_method(self):
+    def get_getter_method(self, class_name):
         getter_method = self.getter_method if self.getter_method else "get_" + to_snake_case(self.varname)
         getter_override = " override" if self.getter_override else ""
         return_type = self.member_typename
-        return f"{return_type} {getter_method}(){getter_override}{{ return {self.varname}; }}"
+        return f"""
+                   /**
+                    * \\brief Getter for member variable \\ref {class_name}.{self.varname}
+                    */
+                   {return_type} {getter_method}(){getter_override}{{
+                       return {self.varname};
+                   }}"""
 
-    def get_setter_method(self):
+    def get_setter_method(self, class_name):
         setter_method = "set_" + to_snake_case(self.varname)
         setter_type = self.member_typename
         reference = "" if self.is_base_type_node else "&&"
-        return f"void {setter_method}({setter_type}{reference} {self.varname}) {{ this->{self.varname} = {self.varname}; }}"
+        return f"""
+                   /**
+                    * \\brief Setter for member variable \\ref {class_name}.{self.varname}
+                    */
+                   void {setter_method}({setter_type}{reference} {self.varname}) {{
+                       this->{self.varname} = {self.varname};
+                   }}
+                """
 
     def __repr__(self):
         return "ChildNode(class_name='{}', nmodl_name='{}')".format(

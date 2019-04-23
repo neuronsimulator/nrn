@@ -7,6 +7,11 @@
 
 #pragma once
 
+/**
+ * \file
+ * \brief Variour types to store code generation specific information
+ */
+
 #include <string>
 
 #include "ast/ast.hpp"
@@ -14,6 +19,11 @@
 
 namespace nmodl {
 namespace codegen {
+
+/**
+ * @addtogroup codegen_details
+ * @{
+ */
 
 /**
  * \class Conductance
@@ -375,6 +385,8 @@ struct CodegenInfo {
     /// if we need a call back to wrote_conc in neuron/coreneuron
     bool require_wrote_conc = false;
 };
+
+/** @} */  // end of codegen_backends
 
 }  // namespace codegen
 }  // namespace nmodl

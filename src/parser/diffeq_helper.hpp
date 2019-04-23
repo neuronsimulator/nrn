@@ -9,6 +9,9 @@
 
 #include "parser/diffeq_context.hpp"
 
+namespace nmodl {
+namespace parser {
+
 /**
  * \brief Helper functions for solving differential equations
  *
@@ -20,9 +23,6 @@
  * Need to revisit this, may be using better library like symengine
  * altogether.
  */
-
-namespace nmodl {
-namespace parser {
 namespace diffeq {
 
 /// operators beign supported as part of binary expressions

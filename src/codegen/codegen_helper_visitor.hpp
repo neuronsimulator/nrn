@@ -7,6 +7,11 @@
 
 #pragma once
 
+/**
+ * \file
+ * \brief \copybrief nmodl::codegen::CodegenHelperVisitor
+ */
+
 #include <string>
 
 #include "codegen/codegen_info.hpp"
@@ -17,24 +22,29 @@ namespace nmodl {
 namespace codegen {
 
 /**
+ * @addtogroup codegen_details
+ * @{
+ */
+
+/**
  * \class CodegenHelperVisitor
- * \brief Helper visitor to gather iformation for code generation
+ * \brief Helper visitor to gather AST information to help code generation
  *
  * Code generation pass needs various information from AST and symbol
  * table. Different code generation backends will need this information.
  * This helper pass visit ast and collect all information into single
  * class object of CodegenInfo.
  *
- * \todo:
- *  - determine vectorize as part of the pass
- *  - determine threadsafe as part of the pass
+ * \todo
+ *  - determine `vectorize` as part of the pass
+ *  - determine `threadsafe` as part of the pass
  *  - global variable order is not preserved, for example, below gives different order:
  *      NEURON block:    GLOBAL gq, gp
  *      PARAMETER block: gp = 11, gq[2]
  *  - POINTER rng and if it's also assigned rng[4] then it is printed as one value.
  *    Need to check what is correct value.
  */
-class CodegenHelperVisitor: public AstVisitor {
+class CodegenHelperVisitor: public visitor::AstVisitor {
     using SymbolType = std::shared_ptr<symtab::Symbol>;
 
     /// holds all codegen related information
@@ -97,6 +107,8 @@ class CodegenHelperVisitor: public AstVisitor {
     void visit_discrete_block(ast::DiscreteBlock* node) override;
     void visit_partial_block(ast::PartialBlock* node) override;
 };
+
+/** @} */  // end of codegen_details
 
 }  // namespace codegen
 }  // namespace nmodl

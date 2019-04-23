@@ -10,6 +10,7 @@
 
 
 namespace nmodl {
+namespace visitor {
 
 /// rename matching variable
 void RenameVisitor::visit_name(ast::Name* node) {
@@ -55,4 +56,5 @@ void RenameVisitor::visit_verbatim(ast::Verbatim* node) {
     statement->set(result);
 }
 
+}  // namespace visitor
 }  // namespace nmodl

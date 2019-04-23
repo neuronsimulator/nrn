@@ -128,9 +128,7 @@ We can use nmodl module from python as:
 $ python3
 >>> import nmodl.dsl as nmodl
 >>> driver = nmodl.NmodlDriver()
->>> driver.parse_string("NEURON { SUFFIX hh }")
-True
->>> modast = driver.ast()
+>>> modast = driver.parse_string("NEURON { SUFFIX hh }")
 >>> print ('%.100s' % modast)
 {"Program":[{"NeuronBlock":[{"StatementBlock":[{"Suffix":[{"Name":[{"String":[{"name":"SUFFIX"}]}]},
 ```

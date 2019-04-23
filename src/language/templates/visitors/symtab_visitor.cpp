@@ -11,6 +11,7 @@
 
 
 namespace nmodl {
+namespace visitor {
 
 using namespace ast;
 using symtab::syminfo::NmodlType;
@@ -37,4 +38,5 @@ void SymtabVisitor::visit_{{ typename }}({{ node.class_name }}* node) {
 {% endif %}
 {% endfor %}
 
+}  // namespace visitor
 }  // namespace nmodl

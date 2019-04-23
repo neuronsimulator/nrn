@@ -7,6 +7,11 @@
 
 #pragma once
 
+/**
+ * \file
+ * \brief \copybrief nmodl::visitor::DefUseAnalyzeVisitor
+ */
+
 #include <map>
 #include <stack>
 
@@ -19,8 +24,9 @@
 
 
 namespace nmodl {
+namespace visitor {
 
-/// state in def-use chain
+/// Represent a state in Def-Use chain
 enum class DUState {
     /// global variable is used
     U,
@@ -52,19 +58,22 @@ std::ostream& operator<<(std::ostream& os, DUState state);
  * \class DUInstance
  * \brief Represent use of a variable in the statement
  *
- * For a given variable, say tau, when we have statement like a = tau + c + tau
- * then def-use is simply [DUState::U, DUState::U]. But if we have if-else block like:
+ * For a given variable, say tau, when we have statement like `a = tau + c + tau`
+ * then def-use is simply `[DUState::U, DUState::U]`. But if we have if-else block
+ * like:
  *
- *  IF (...) {
- *      a = tau
- *      tau = c + d
- *  } ELSE {
- *      tau = b
- *  }
+ * \code{.mod}
+ *      IF (...) {
+ *          a = tau
+ *          tau = c + d
+ *      } ELSE {
+ *          tau = b
+ *      }
+ * \endcode
  *
- * Then to know the effective result, we have to analyze def-use in IF and ELSE
+ * Then to know the effective result, we have to analyze def-use in `IF` and `ELSE`
  * blocks i.e. if variable is used in any of the if-elseif-else block then it needs
- * to mark as "DUState::U". Hence we keep the track of all children in case of
+ * to mark as `DUState::U`. Hence we keep the track of all children in case of
  * statements like if-else.
  */
 class DUInstance {
@@ -87,13 +96,13 @@ class DUInstance {
     /// evaluate global usage i.e. with [D,U] states of children
     DUState conditional_block_eval();
 
-    void print(JSONPrinter& printer);
+    void print(printer::JSONPrinter& printer);
 };
 
 
 /**
  * \class DUChain
- * \brief Def-Use chain for ast node
+ * \brief Def-Use chain for an AST node
  */
 class DUChain {
   public:
@@ -116,13 +125,19 @@ class DUChain {
 
 
 /**
+ * @addtogroup visitor_classes
+ * @{
+ */
+
+/**
  * \class DefUseAnalyzeVisitor
- * \brief Visitor to return Def-Use chain for a given variable in the block/node
+ * \brief %Visitor to return Def-Use chain for a given variable in the block/node
  *
  * Motivation: For global to local variable transformation aka localizer
  * pass, we need to compute Def-Use chains for all global variables. For
  * example, if we have variable usage like:
  *
+ * \code{.mod}
  *      NEURON {
  *          RANGE tau, beta
  *      }
@@ -141,7 +156,7 @@ class DUChain {
  *         z = beta * 0.1
  *         alpha = x * y
  *      }
- *
+ * \endcode
  *
  * In the above example if we look at variable beta then it's defined before it's
  * usage and hence it can be safely made local. But variable alpha is used in first
@@ -152,15 +167,17 @@ class DUChain {
  * The analysis of if-elseif-else needs special attention because the def-use chain
  * needs re-cursive evaluation in order to find end-result. For example:
  *
- *  IF(...) {
- *     beta = y
- *  } ELSE {
+ * \code{.mod}
  *      IF(...) {
- *          beta = x
+ *          beta = y
  *      } ELSE {
- *          x = beta
- *     }
- *  }
+ *          IF(...) {
+ *              beta = x
+ *          } ELSE {
+ *              x = beta
+ *          }
+ *      }
+ * \endcode
  *
  * For if-else statements, in the above example, if the variable is used
  * in any of the if-elseif-else part then it is considered as "used". And
@@ -284,7 +301,10 @@ class DefUseAnalyzeVisitor: public AstVisitor {
     virtual void visit_argument(ast::Argument* /*node*/) override {}
 
     /// compute def-use chain for a variable within the node
-    DUChain analyze(ast::AST* node, const std::string& name);
+    DUChain analyze(ast::Ast* node, const std::string& name);
 };
 
+/** @} */  // end of visitor_classes
+
+}  // namespace visitor
 }  // namespace nmodl

@@ -7,6 +7,14 @@
 
 #pragma once
 
+/**
+ * \dir
+ * \brief Code generation backend implementations for CoreNEURON
+ *
+ * \file
+ * \brief \copybrief nmodl::codegen::CodegenCVisitor
+ */
+
 #include <algorithm>
 #include <cmath>
 #include <ctime>
@@ -24,9 +32,19 @@
 
 using namespace fmt::literals;
 
-
 namespace nmodl {
+/// encapsulates code generation backend implementations
 namespace codegen {
+
+/**
+ * @defgroup codegen Codegen Infrastructure
+ * @brief Implementations of code generation backends
+ *
+ * @defgroup codegen_details Codegen Helpers
+ * @ingroup codegen
+ * @brief Helper routines/types for code generation
+ * @{
+ */
 
 /**
  * \enum BlockType
@@ -138,20 +156,33 @@ struct ShadowUseStatement {
     std::string rhs;
 };
 
+/** @} */  // end of codegen_details
+
+
+using printer::CodePrinter;
+
+
+/**
+ * @defgroup codegen_backends Codegen Backends
+ * @ingroup codegen
+ * @brief Code generation backends for CoreNEURON
+ * @{
+ */
 
 /**
  * \class CodegenCVisitor
- * \brief Visitor for printing c code compatible with legacy api
+ * \brief %Visitor for printing C code compatible with legacy api of CoreNEURON
  *
- * \todo :
- *      - handle define statement (i.e. macro statement printing)
- *      - return statement in the verbatim block of inlined function not handled
- *        for example, see netstim.mod where we removed return from verbatim block
+ * \todo
+ *  - Handle define statement (i.e. macros)
+ *  - If there is a return statement in the verbatim block
+ *    of inlined function then it will be error. Need better
+ *    error checking. For example, see netstim.mod where we
+ *    have removed return from verbatim block.
  */
-class CodegenCVisitor: public AstVisitor {
+class CodegenCVisitor: public visitor::AstVisitor {
   protected:
     using SymbolType = std::shared_ptr<symtab::Symbol>;
-
     using ParamVector = std::vector<std::tuple<std::string, std::string, std::string, std::string>>;
 
     /// name of mod file (without .mod suffix)
@@ -1059,7 +1090,7 @@ void CodegenCVisitor::print_vector_elements(const std::vector<T>& elements,
     for (auto iter = elements.begin(); iter != elements.end(); iter++) {
         printer->add_text(prefix);
         (*iter)->accept(this);
-        if (!separator.empty() && !is_last(iter, elements)) {
+        if (!separator.empty() && !utils::is_last(iter, elements)) {
             printer->add_text(separator);
         }
     }
@@ -1114,11 +1145,14 @@ void CodegenCVisitor::print_function_declaration(const T& node, const std::strin
 
     print_device_method_annotation();
     printer->add_indent();
-    printer->add_text("inline {} {}({})"_format(return_type, method_name(name),
+    printer->add_text("inline {} {}({})"_format(return_type,
+                                                method_name(name),
                                                 get_parameter_str(internal_params)));
 
     enable_variable_name_lookup = true;
 }
+
+/** @} */  // end of codegen_backends
 
 }  // namespace codegen
 }  // namespace nmodl

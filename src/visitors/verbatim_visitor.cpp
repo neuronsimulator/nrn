@@ -10,6 +10,7 @@
 
 
 namespace nmodl {
+namespace visitor {
 
 void VerbatimVisitor::visit_verbatim(ast::Verbatim* node) {
     std::string block;
@@ -26,4 +27,5 @@ void VerbatimVisitor::visit_verbatim(ast::Verbatim* node) {
     blocks.push_back(block);
 }
 
+}  // namespace visitor
 }  // namespace nmodl

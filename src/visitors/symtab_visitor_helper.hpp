@@ -14,6 +14,7 @@
 
 
 namespace nmodl {
+namespace visitor {
 
 using symtab::Symbol;
 using symtab::syminfo::NmodlType;
@@ -68,7 +69,7 @@ void SymtabVisitor::setup_symbol(ast::Node* node, NmodlType property) {
     /// if so we have to return to avoid duplicate definition error.
     if (property == NmodlType::range_var || property == NmodlType::nonspecific_cur_var) {
         auto s = modsymtab->lookup(name);
-        if (s && s->has_properties(NmodlType::nonspecific_cur_var | NmodlType::range_var)) {
+        if (s && s->has_any_property(NmodlType::nonspecific_cur_var | NmodlType::range_var)) {
             s->add_property(property);
             return;
         }
@@ -161,7 +162,7 @@ static void add_external_symbols(symtab::ModelSymbolTable* symtab) {
 }
 
 
-void SymtabVisitor::setup_symbol_table(ast::AST* node, const std::string& name, bool is_global) {
+void SymtabVisitor::setup_symbol_table(ast::Ast* node, const std::string& name, bool is_global) {
     /// entering into new nmodl block
     auto symtab = modsymtab->enter_scope(name, node, is_global, node->get_symbol_table());
 
@@ -221,7 +222,7 @@ void SymtabVisitor::setup_symbol_table_for_scoped_block(ast::Node* node, const s
 /**
  * Visit table statement and update symbol in symbol table
  *
- * @todo : we assume table statement follows variable declaration
+ * @todo we assume table statement follows variable declaration
  */
 void SymtabVisitor::visit_table_statement(ast::TableStatement* node) {
     auto update_symbol = [this](const ast::NameVector& variables, NmodlType property, int num_values) {
@@ -239,5 +240,5 @@ void SymtabVisitor::visit_table_statement(ast::TableStatement* node) {
     update_symbol(node->get_depend_vars(), NmodlType::table_dependent_var, num_values);
 }
 
-
+}  // namespace visitor
 }  // namespace nmodl

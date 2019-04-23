@@ -32,6 +32,12 @@ namespace nmodl {
 namespace parser {
 
 /**
+ * @addtogroup lexer
+ * @addtogroup units
+ * @{
+ */
+
+/**
  * \class UnitLexer
  * \brief Represent Lexer/Scanner class for Units parsing
  *

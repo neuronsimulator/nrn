@@ -17,15 +17,16 @@
 #include "visitors/steadystate_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
 
-using namespace fmt::literals;
 
 namespace nmodl {
+namespace visitor {
 
+using namespace fmt::literals;
 using symtab::syminfo::NmodlType;
 
 std::shared_ptr<ast::DerivativeBlock> SteadystateVisitor::create_steadystate_block(
     std::shared_ptr<ast::SolveBlock> solve_block,
-    const std::vector<std::shared_ptr<ast::AST>>& deriv_blocks) {
+    const std::vector<std::shared_ptr<ast::Ast>>& deriv_blocks) {
     // new block to be returned
     std::shared_ptr<ast::DerivativeBlock> ss_block;
 
@@ -34,7 +35,8 @@ std::shared_ptr<ast::DerivativeBlock> SteadystateVisitor::create_steadystate_blo
     const auto steadystate_method = solve_block->get_steadystate()->get_value()->eval();
 
     logger->debug("SteadystateVisitor :: Found STEADYSTATE SOLVE statement: using {} for {}",
-                  steadystate_method, solve_block_name);
+                  steadystate_method,
+                  solve_block_name);
 
     ast::DerivativeBlock* deriv_block_ptr = nullptr;
     for (const auto& block_ptr: deriv_blocks) {
@@ -125,4 +127,5 @@ void SteadystateVisitor::visit_program(ast::Program* node) {
     }
 }
 
+}  // namespace visitor
 }  // namespace nmodl

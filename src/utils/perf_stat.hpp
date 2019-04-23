@@ -7,13 +7,24 @@
 
 #pragma once
 
+/**
+ * \file
+ * \brief Implement class for performance statistics
+ */
+
 #include <sstream>
 
 
 namespace nmodl {
+namespace utils {
 
 /**
- * \class PerfStat
+ * @addtogroup utils
+ * @{
+ */
+
+/**
+ * \struct PerfStat
  * \brief Helper class to collect performance statistics
  *
  * For code generation it is useful to know the performance
@@ -21,9 +32,7 @@ namespace nmodl {
  * groups performance characteristics of a single block in
  * nmodl.
  */
-
-class PerfStat {
-  public:
+struct PerfStat {
     /// name for pretty-printing
     std::string title;
 
@@ -88,10 +97,15 @@ class PerfStat {
     int n_unique_constant_write = 0;
 
     friend PerfStat operator+(const PerfStat& first, const PerfStat& second);
+
     void print(std::stringstream& stream);
 
     std::vector<std::string> keys();
+
     std::vector<std::string> values();
 };
 
+/** @} */  // end of utils
+
+}  // namespace utils
 }  // namespace nmodl

@@ -7,25 +7,38 @@
 
 #pragma once
 
+/**
+ * \file
+ * \brief \copybrief nmodl::visitor::NeuronSolveVisitor
+ */
+
 #include <string>
 
 #include "ast/ast.hpp"
 #include "visitors/ast_visitor.hpp"
 
+
 namespace nmodl {
+namespace visitor {
 
 /**
- * \class CnexpSolveVisitor
- * \brief Visitor that solves and replaces ODEs using cnexp method
- *
- * This pass solves ODEs in derivative block if cnexp method is used.
- * The original ODEs get replaced with the solution. This transformation
- * is performed at ast level. This is useful for performance modeling
- * purpose where we want to measure performance metrics using perfvisitor
- * pass.
+ * @addtogroup solver
+ * @addtogroup visitor_classes
+ * @{
  */
 
-class CnexpSolveVisitor: public AstVisitor {
+/**
+ * \class NeuronSolveVisitor
+ * \brief %Visitor that solves ODEs using old solvers of NEURON
+ *
+ * This pass solves ODEs in derivative block using `cnexp`, `euler` and
+ * `derivimplicit`method. This solved mimics original implementation in
+ * nocmodl/mod2c. The original ODEs get replaced with the solution and
+ * transformations are performed at AST level.
+ *
+ * \sa nmodl::visitor::SympySolverVisitor
+ */
+class NeuronSolveVisitor: public AstVisitor {
   private:
     /// true while visiting differential equation
     bool differential_equation = false;
@@ -46,7 +59,7 @@ class CnexpSolveVisitor: public AstVisitor {
     std::string derivative_block_name;
 
   public:
-    CnexpSolveVisitor() = default;
+    NeuronSolveVisitor() = default;
 
     void visit_solve_block(ast::SolveBlock* node) override;
     void visit_diff_eq_expression(ast::DiffEqExpression* node) override;
@@ -55,4 +68,7 @@ class CnexpSolveVisitor: public AstVisitor {
     void visit_program(ast::Program* node) override;
 };
 
+/** @} */  // end of visitor_classes
+
+}  // namespace visitor
 }  // namespace nmodl

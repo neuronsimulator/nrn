@@ -11,7 +11,10 @@
 #include <string>
 #include <vector>
 
-/// represent nmodl construct test
+namespace nmodl {
+namespace test_utils {
+
+/// represent nmodl test construct
 struct NmodlTestCase {
     /// name of the test
     std::string name;
@@ -37,7 +40,7 @@ struct NmodlTestCase {
         , output(output) {}
 };
 
-/// represent differential equation test
+/// represent differential equation test construct
 struct DiffEqTestCase {
     /// name of the mod file
     std::string name;
@@ -55,3 +58,6 @@ struct DiffEqTestCase {
 extern std::map<std::string, NmodlTestCase> nmdol_invalid_constructs;
 extern std::map<std::string, NmodlTestCase> nmodl_valid_constructs;
 extern std::vector<DiffEqTestCase> diff_eq_constructs;
+
+}  // namespace test_utils
+}  // namespace nmodl

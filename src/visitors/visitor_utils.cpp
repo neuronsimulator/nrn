@@ -18,6 +18,7 @@
 
 
 namespace nmodl {
+namespace visitor {
 
 using namespace ast;
 using symtab::syminfo::NmodlType;
@@ -82,8 +83,7 @@ LocalVar* add_local_variable(StatementBlock* node, const std::string& varname, i
 std::shared_ptr<Statement> create_statement(const std::string& code_statement) {
     nmodl::parser::NmodlDriver driver;
     auto nmodl_text = "PROCEDURE dummy() { " + code_statement + " }";
-    driver.parse_string(nmodl_text);
-    auto ast = driver.ast();
+    auto ast = driver.parse_string(nmodl_text);
     auto procedure = std::dynamic_pointer_cast<ProcedureBlock>(ast->blocks[0]);
     auto statement = std::shared_ptr<Statement>(
         procedure->get_statement_block()->get_statements()[0]->clone());
@@ -105,8 +105,7 @@ std::shared_ptr<StatementBlock> create_statement_block(
         nmodl_text += statement + "\n";
     }
     nmodl_text += "}";
-    driver.parse_string(nmodl_text);
-    auto ast = driver.ast();
+    auto ast = driver.parse_string(nmodl_text);
     auto procedure = std::dynamic_pointer_cast<ProcedureBlock>(ast->blocks[0]);
     auto statement_block = std::shared_ptr<StatementBlock>(
         procedure->get_statement_block()->clone());
@@ -117,7 +116,8 @@ std::shared_ptr<StatementBlock> create_statement_block(
 void remove_statements_from_block(ast::StatementBlock* block,
                                   const std::set<ast::Node*> statements) {
     auto& statement_vec = block->statements;
-    statement_vec.erase(std::remove_if(statement_vec.begin(), statement_vec.end(),
+    statement_vec.erase(std::remove_if(statement_vec.begin(),
+                                       statement_vec.end(),
                                        [&statements](std::shared_ptr<ast::Statement>& s) {
                                            return statements.find(s.get()) != statements.end();
                                        }),
@@ -149,7 +149,7 @@ std::set<std::string> get_global_vars(Program* node) {
 }
 
 
-bool calls_function(ast::AST* node, const std::string& name) {
+bool calls_function(ast::Ast* node, const std::string& name) {
     auto lv = AstLookupVisitor(ast::AstNodeType::FUNCTION_CALL);
     for (const auto& f: lv.lookup(node)) {
         if (std::dynamic_pointer_cast<ast::FunctionCall>(f)->get_node_name() == name) {
@@ -159,17 +159,20 @@ bool calls_function(ast::AST* node, const std::string& name) {
     return false;
 }
 
+}  // namespace visitor
 
-std::string to_nmodl(ast::AST* node, const std::set<ast::AstNodeType>& exclude_types) {
+
+std::string to_nmodl(ast::Ast* node, const std::set<ast::AstNodeType>& exclude_types) {
     std::stringstream stream;
-    NmodlPrintVisitor v(stream, exclude_types);
+    visitor::NmodlPrintVisitor v(stream, exclude_types);
     node->accept(&v);
     return stream.str();
 }
 
-std::string to_json(ast::AST* node, bool compact, bool expand) {
+
+std::string to_json(ast::Ast* node, bool compact, bool expand) {
     std::stringstream stream;
-    JSONVisitor v(stream);
+    visitor::JSONVisitor v(stream);
     v.compact_json(compact);
     v.expand_keys(expand);
     node->accept(&v);

@@ -11,6 +11,7 @@
 
 
 namespace nmodl {
+namespace visitor {
 
 /// check if given expression is a number
 /// note that the DEFINE node is already expanded to integer
@@ -175,4 +176,5 @@ void ConstantFolderVisitor::visit_wrapped_expression(ast::WrappedExpression* nod
     logger->debug("ConstantFolderVisitor : expression {} folded to {}", nmodl_before, nmodl_after);
 }
 
+}  // namespace visitor
 }  // namespace nmodl

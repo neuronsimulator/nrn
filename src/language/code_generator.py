@@ -33,7 +33,7 @@ if clang_format:
     if args.clang_format_opts:
         clang_format += args.clang_format_opts
 
-# parse NMODL and codegen definition file to get AST nodes
+# parse NMODL and codegen definition files to get AST nodes
 nmodl_nodes = LanguageParser("nmodl.yaml").parse_file()
 codegen_nodes = LanguageParser("codegen.yaml").parse_file()
 

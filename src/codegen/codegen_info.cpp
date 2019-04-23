@@ -12,6 +12,8 @@
 namespace nmodl {
 namespace codegen {
 
+using visitor::AstLookupVisitor;
+
 /// if any ion has write variable
 bool CodegenInfo::ion_has_write_variable() {
     for (const auto& ion: ions) {

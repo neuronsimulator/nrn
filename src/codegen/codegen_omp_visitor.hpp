@@ -7,6 +7,11 @@
 
 #pragma once
 
+/**
+ * \file
+ * \brief \copybrief nmodl::codegen::CodegenOmpVisitor
+ */
+
 #include "codegen/codegen_c_visitor.hpp"
 
 
@@ -14,8 +19,13 @@ namespace nmodl {
 namespace codegen {
 
 /**
+ * @addtogroup codegen_backends
+ * @{
+ */
+
+/**
  * \class CodegenOmpVisitor
- * \brief Visitor for printing c code with OpenMP backend
+ * \brief %Visitor for printing C code with OpenMP backend
  */
 class CodegenOmpVisitor: public CodegenCVisitor {
   protected:
@@ -72,6 +82,8 @@ class CodegenOmpVisitor: public CodegenCVisitor {
                       std::string float_type)
         : CodegenCVisitor(mod_file, stream, layout, float_type) {}
 };
+
+/** @} */  // end of codegen_backends
 
 }  // namespace codegen
 }  // namespace nmodl

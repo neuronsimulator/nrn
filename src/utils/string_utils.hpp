@@ -7,23 +7,30 @@
 
 #pragma once
 
-#include <algorithm>
-#include <sstream>
-#include <vector>
-
-
-namespace nmodl {
-
 /**
- * \brief String manipulation functions
+ * \file
+ * \brief Implement string manipulation functions
  *
  * String trimming and manipulation functions based on
  * stackoverflow.com/questions/216823/whats-the-best-way-to-trim-stdstring
  */
 
+#include <algorithm>
+#include <sstream>
+#include <vector>
+
+namespace nmodl {
+/// string utility functions
+namespace stringutils {
+
+/**
+ * @addtogroup utils
+ * @{
+ */
+
+/// text alignment when printing in the tabular form
 enum class text_alignment { left, right, center };
 
-namespace stringutils {
 /// Trim from start
 static inline std::string& ltrim(std::string& s) {
     s.erase(s.begin(),
@@ -117,6 +124,7 @@ static inline std::string tolower(std::string text) {
     return text;
 }
 
-}  // namespace stringutils
+/** @} */  // end of utils
 
+}  // namespace stringutils
 }  // namespace nmodl

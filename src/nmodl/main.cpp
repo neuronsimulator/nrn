@@ -24,7 +24,6 @@
 #include "utils/common_utils.hpp"
 #include "utils/logger.hpp"
 #include "visitors/ast_visitor.hpp"
-#include "visitors/cnexp_solve_visitor.hpp"
 #include "visitors/constant_folder_visitor.hpp"
 #include "visitors/inline_visitor.hpp"
 #include "visitors/json_visitor.hpp"
@@ -32,6 +31,7 @@
 #include "visitors/local_var_rename_visitor.hpp"
 #include "visitors/localize_visitor.hpp"
 #include "visitors/loop_unroll_visitor.hpp"
+#include "visitors/neuron_solve_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/perf_visitor.hpp"
 #include "visitors/solve_block_visitor.hpp"
@@ -45,11 +45,12 @@
 using namespace fmt::literals;
 using namespace nmodl;
 using namespace codegen;
+using namespace visitor;
 using nmodl::parser::NmodlDriver;
 
 int main(int argc, const char* argv[]) {
     CLI::App app{
-        "NMODL : Source-to-Source Code Generation Framework [{}]"_format(version::to_string())};
+        "NMODL : Source-to-Source Code Generation Framework [{}]"_format(Version::to_string())};
 
     /// list of mod files to process
     std::vector<std::string> mod_files;
@@ -189,8 +190,8 @@ int main(int argc, const char* argv[]) {
         c_backend = false;
     }
 
-    make_path(output_dir);
-    make_path(scratch_dir);
+    utils::make_path(output_dir);
+    utils::make_path(scratch_dir);
 
     if (sympy_opt) {
         pybind11::initialize_interpreter();
@@ -211,7 +212,7 @@ int main(int argc, const char* argv[]) {
     for (const auto& file: mod_files) {
         logger->info("Processing {}", file);
 
-        auto modfile = remove_extension(base_name(file));
+        auto modfile = utils::remove_extension(utils::base_name(file));
 
         /// create file path for nmodl file
         auto filepath = [scratch_dir, modfile](std::string suffix) {
@@ -221,14 +222,13 @@ int main(int argc, const char* argv[]) {
 
         /// driver object creates lexer and parser, just call parser method
         NmodlDriver driver;
-        driver.parse_file(file);
+
+        /// parse mod file and construct ast
+        auto ast = driver.parse_file(file);
 
         /// whether to update existing symbol table or create new
         /// one whenever we run symtab visitor.
         bool update_symtab = false;
-
-        /// parse mod file and construct ast
-        auto ast = driver.ast();
 
         /// just visit the ast
         AstVisitor().visit_program(ast.get());
@@ -335,7 +335,7 @@ int main(int argc, const char* argv[]) {
 
         {
             logger->info("Running cnexp visitor");
-            CnexpSolveVisitor().visit_program(ast.get());
+            NeuronSolveVisitor().visit_program(ast.get());
             ast_to_nmodl(ast.get(), filepath("cnexp"));
         }
 

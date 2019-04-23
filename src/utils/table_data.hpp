@@ -7,6 +7,11 @@
 
 #pragma once
 
+/**
+ * \file
+ * \brief Implement generic table data structure
+ */
+
 #include <sstream>
 #include <vector>
 
@@ -14,15 +19,20 @@
 
 
 namespace nmodl {
+namespace utils {
+
+/**
+ * @addtogroup utils
+ * @{
+ */
 
 /**
  * \class TableData
  * \brief Class to construct and pretty-print tabular data
  *
- * This class is used to construct and print tables (like symbol
- * table and performance tables).
+ * This class is used to construct and print tables (like
+ * nmodl::symtab::SymbolTable and performance tables).
  */
-
 struct TableData {
     using TableRowType = std::vector<std::string>;
 
@@ -36,10 +46,14 @@ struct TableData {
     std::vector<TableRowType> rows;
 
     /// alignment for every column of data rows
-    std::vector<text_alignment> alignments;
+    std::vector<stringutils::text_alignment> alignments;
 
     void print(int indent = 0);
+
     void print(std::stringstream& stream, int indent = 0);
 };
 
+/** @} */  // end of utils
+
+}  // namespace utils
 }  // namespace nmodl

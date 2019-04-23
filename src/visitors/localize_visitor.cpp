@@ -11,6 +11,7 @@
 #include "visitors/localize_visitor.hpp"
 
 namespace nmodl {
+namespace visitor {
 
 using symtab::Symbol;
 using symtab::syminfo::NmodlType;
@@ -56,7 +57,7 @@ bool LocalizeVisitor::node_for_def_use_analysis(ast::Node* node) {
 bool LocalizeVisitor::is_solve_procedure(ast::Node* node) {
     if (node->is_procedure_block()) {
         auto symbol = program_symtab->lookup(node->get_node_name());
-        if (symbol && symbol->has_properties(NmodlType::to_solve)) {
+        if (symbol && symbol->has_any_property(NmodlType::to_solve)) {
             return true;
         }
     }
@@ -91,7 +92,7 @@ std::vector<std::string> LocalizeVisitor::variables_to_optimize() {
 
     std::vector<std::string> result;
     for (auto& variable: variables) {
-        if (!variable->has_properties(excluded_var_properties)) {
+        if (!variable->has_any_property(excluded_var_properties)) {
             result.push_back(variable->get_name());
         }
     }
@@ -137,7 +138,8 @@ void LocalizeVisitor::visit_program(ast::Program* node) {
                     auto symbol = program_symtab->lookup(varname);
 
                     if (symbol->is_array()) {
-                        variable = add_local_variable(statement_block.get(), varname,
+                        variable = add_local_variable(statement_block.get(),
+                                                      varname,
                                                       symbol->get_length());
                     } else {
                         variable = add_local_variable(statement_block.get(), varname);
@@ -158,4 +160,5 @@ void LocalizeVisitor::visit_program(ast::Program* node) {
     }
 }
 
+}  // namespace visitor
 }  // namespace nmodl

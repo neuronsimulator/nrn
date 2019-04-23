@@ -7,6 +7,9 @@
 
 #include "utils/string_utils.hpp"
 
+namespace nmodl {
+namespace test_utils {
+
 int count_leading_spaces(std::string text) {
     int length = text.size();
     nmodl::stringutils::ltrim(text);
@@ -73,3 +76,6 @@ std::string reindent_text(const std::string& text) {
     }
     return indented_text;
 }
+
+}  // namespace test_utils
+}  // namespace nmodl

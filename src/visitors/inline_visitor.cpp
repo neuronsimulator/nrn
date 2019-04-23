@@ -10,6 +10,8 @@
 
 
 namespace nmodl {
+namespace visitor {
+
 using namespace ast;
 
 bool InlineVisitor::can_inline_block(StatementBlock* block) {
@@ -193,7 +195,7 @@ void InlineVisitor::visit_function_call(FunctionCall* node) {
     auto symbol = program_symtab->lookup_in_scope(function_name);
 
     /// nothing to do if called function is not defined or it's external
-    if (symbol == nullptr || symbol->is_external_symbol_only()) {
+    if (symbol == nullptr || symbol->is_external_variable()) {
         return;
     }
 
@@ -216,7 +218,7 @@ void InlineVisitor::visit_function_call(FunctionCall* node) {
     }
 
     if (inlined) {
-        symbol->inlined();
+        symbol->mark_inlined();
     }
 }
 
@@ -310,4 +312,5 @@ void InlineVisitor::visit_program(Program* node) {
     node->visit_children(this);
 }
 
+}  // namespace visitor
 }  // namespace nmodl

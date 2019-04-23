@@ -34,4 +34,4 @@ DERIVATIVE states   {
 def ch_ast():
     d = NmodlDriver()
     d.parse_string(CHANNEL)
-    return d.ast()
+    return d.get_ast()

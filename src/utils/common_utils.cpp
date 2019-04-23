@@ -13,6 +13,7 @@
 
 
 namespace nmodl {
+namespace utils {
 
 bool is_dir_exist(const std::string& path) {
     struct stat info {};
@@ -54,4 +55,5 @@ bool make_path(const std::string& path) {
     }
 }
 
+}  // namespace utils
 }  // namespace nmodl

@@ -21,6 +21,8 @@
 // Parser tests
 //=============================================================================
 
+using namespace nmodl::test_utils;
+
 // Driver is defined as global to store all the units inserted to it and to be
 // able to define complex units based on base units
 nmodl::parser::UnitDriver driver;

@@ -9,6 +9,10 @@
  * license information.
  *************************************************************************/
 
+/**
+ * \file
+ * \brief Implementation of different math functions with ISPC
+ */
 
 static inline double uint642dp(unsigned int64 ll) {
     return *((varying double*) (&ll));
@@ -76,7 +80,7 @@ static const uniform float PX6expf = 5.0000001201E-1f;
 
 static const uniform float LOG2EF = 1.44269504088896341f;
 
-
+/// double precision exp function
 static inline double vexp(double initial_x) {
     double x = initial_x;
     double px = dpfloor(LOG2E * x + 0.5d);
@@ -114,6 +118,7 @@ static inline double vexp(double initial_x) {
     return x;
 }
 
+/// single prevision exp function
 static inline float vexp(float initial_x) {
     float x = initial_x;
     float z = spfloor(LOG2EF * x + 0.5f);

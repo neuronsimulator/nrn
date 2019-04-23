@@ -49,13 +49,15 @@ using symtab::syminfo::Status;
  */
 void CodegenHelperVisitor::sort_with_mod2c_symbol_order(std::vector<SymbolType>& symbols) {
     /// first sort by global id to get in reverse order
-    std::sort(symbols.begin(), symbols.end(),
+    std::sort(symbols.begin(),
+              symbols.end(),
               [](const SymbolType& first, const SymbolType& second) -> bool {
                   return first->get_id() > second->get_id();
               });
 
     /// now order by name (to be same as neuron's bucket)
-    std::sort(symbols.begin(), symbols.end(),
+    std::sort(symbols.begin(),
+              symbols.end(),
               [](const SymbolType& first, const SymbolType& second) -> bool {
                   return first->get_name()[0] < second->get_name()[0];
               });
@@ -199,7 +201,7 @@ void CodegenHelperVisitor::find_non_range_variables() {
         // some variables like area and diam are declared in parameter
         // block but they are not global
         if (var->get_name() == naming::DIAM_VARIABLE || var->get_name() == naming::AREA_VARIABLE ||
-            var->has_properties(NmodlType::extern_neuron_variable)) {
+            var->has_any_property(NmodlType::extern_neuron_variable)) {
             continue;
         }
 
@@ -407,7 +409,7 @@ void CodegenHelperVisitor::find_range_variables() {
         auto properties = NmodlType::read_ion_var
                           | NmodlType::write_ion_var;
         // clang-format on
-        if (variable->has_properties(properties)) {
+        if (variable->has_any_property(properties)) {
             info.ion_state_vars.push_back(variable);
             info.dependent_vars.push_back(variable);
         }
@@ -560,7 +562,7 @@ void CodegenHelperVisitor::visit_statement_block(ast::StatementBlock* node) {
             auto name = assign_lhs->get_node_name();
             auto symbol = psymtab->lookup(name);
             if (symbol != nullptr) {
-                auto is_prime = symbol->has_properties(NmodlType::prime_name);
+                auto is_prime = symbol->has_any_property(NmodlType::prime_name);
                 auto from_state = symbol->has_any_status(Status::from_state);
                 if (is_prime || from_state) {
                     if (from_state) {

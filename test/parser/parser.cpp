@@ -15,13 +15,15 @@
 #include "parser/nmodl_driver.hpp"
 #include "test/utils/nmodl_constructs.hpp"
 
+using namespace nmodl::test_utils;
+
 //=============================================================================
 // Parser tests
 //=============================================================================
 
 bool is_valid_construct(const std::string& construct) {
     nmodl::parser::NmodlDriver driver;
-    return driver.parse_string(construct);
+    return driver.parse_string(construct) != nullptr;
 }
 
 

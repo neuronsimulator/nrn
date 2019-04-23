@@ -11,6 +11,7 @@
 
 
 namespace nmodl {
+namespace visitor {
 
 using symtab::SymbolTable;
 
@@ -70,4 +71,5 @@ void LocalVarRenameVisitor::visit_statement_block(ast::StatementBlock* node) {
     }
 }
 
+}  // namespace visitor
 }  // namespace nmodl

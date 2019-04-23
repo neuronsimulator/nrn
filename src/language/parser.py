@@ -150,8 +150,8 @@ class LanguageParser:
                 abstract_nodes.extend(child_abstract_nodes)
                 nodes.extend(child_nodes)
 
-                # classes like AST which don't have base class
-                # are not added (we print AST class separately)
+                # classes like Ast which don't have base class
+                # are not added (we print Ast class separately)
                 if base_class is not None:
                     args.base_class = base_class
                     node = Node(args)
@@ -160,7 +160,7 @@ class LanguageParser:
                     if self.debug:
                         print('Abstract {}'.format(node))
             else:
-                args.base_class = base_class if base_class else 'AST'
+                args.base_class = base_class if base_class else 'Ast'
 
                 # check if we need token for the node
                 # todo : we will have token for every node

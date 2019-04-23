@@ -7,14 +7,29 @@
 
 #pragma once
 
-#include "ast/ast.hpp"
-#include "visitors/visitor.hpp"
-#include "visitors/ast_visitor.hpp"
+/**
+ * \file
+ * \brief Visitors extending base visitors for Python interface
+ */
+
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-using namespace nmodl;
+#include "ast/ast.hpp"
+#include "visitors/visitor.hpp"
+#include "visitors/ast_visitor.hpp"
 
+using namespace nmodl;
+using namespace visitor;
+
+/**
+ * \brief Class mirroring nmodl::visitor::Visitor for Python bindings
+ *
+ * \details \copydetails nmodl::visitor::Visitor
+ *
+ * This class is used to interface nmodl::visitor::Visitor with the Python
+ * world using `pybind11`.
+ */
 class PyVisitor : public Visitor {
 public:
     using Visitor::Visitor;
@@ -24,7 +39,15 @@ public:
     {% endfor %}
 };
 
-/* Python interface of basic visitor implementation */
+
+/**
+ * \brief Class mirroring nmodl::visitor::AstVisitor for Python bindings
+ *
+ * \details \copydetails nmodl::visitor::AstVisitor
+ *
+ * This class is used to interface nmodl::visitor::AstVisitor with the Python
+ * world using `pybind11`.
+ */
 class PyAstVisitor : public AstVisitor {
 public:
     using AstVisitor::AstVisitor;
