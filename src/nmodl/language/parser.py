@@ -82,6 +82,10 @@ class LanguageParser:
         if 'node_name' in properties:
             args.get_node_name = properties['node_name']
 
+        # brief description of member variable
+        if 'brief' in properties:
+            args.brief = properties['brief']
+
         # description of member variable
         if 'description' in properties:
             args.description = properties['description']
@@ -134,6 +138,7 @@ class LanguageParser:
             args = Argument()
             args.url = properties.get('url', None)
             args.class_name = class_name
+            args.brief = properties.get('brief', '')
             args.description = properties.get('description', '')
 
             # yaml file has abstract classes and their subclasses with children as a property

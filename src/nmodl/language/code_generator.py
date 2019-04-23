@@ -55,7 +55,7 @@ if clang_format_file.exists():
     shutil.copy2(clang_format_file, temp_dir)
 
 env = jinja2.Environment(loader=jinja2.FileSystemLoader(str(templates_dir)),
-                         trim_blocks=False,
+                         trim_blocks=True,
                          lstrip_blocks=True)
 env.filters['snake_case'] = utils.to_snake_case
 

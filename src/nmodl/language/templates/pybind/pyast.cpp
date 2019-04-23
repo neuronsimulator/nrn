@@ -113,7 +113,7 @@ void init_ast_module(py::module& m) {
 
     {% for node in nodes %}
     py::class_<{{ node.class_name }}, std::shared_ptr<{{ node.class_name }}>> {{ var(node) }}(m_ast, "{{ node.class_name }}", {{ node.base_class | snake_case }}_);
-    {{ var(node) }}.doc() = "{{ node.description }}";
+    {{ var(node) }}.doc() = "{{ node.brief }}";
     {% if node.children %}
     {{ var(node) }}.def(py::init<{{ args(node.children) }}>());
     {% endif %}

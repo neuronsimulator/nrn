@@ -29,6 +29,7 @@ class BaseNode:
         self.separator = args.separator
         self.force_prefix = args.force_prefix
         self.force_suffix = args.force_suffix
+        self.brief = args.brief
         self.description = args.description
         self.is_abstract = False
 
@@ -357,7 +358,7 @@ class Node(BaseNode):
         """
         Return public members of the node
         """
-        members = [[child.member_typename, child.varname, child.description]
+        members = [[child.member_typename, child.varname, child.brief]
                    for child in self.children
                    if child.is_public]
 
@@ -367,7 +368,7 @@ class Node(BaseNode):
         """
         Return private members of the node
         """
-        members = [[child.member_typename, child.varname, child.description]
+        members = [[child.member_typename, child.varname, child.brief]
                    for child in self.children
                    if not child.is_public]
 
@@ -385,6 +386,19 @@ class Node(BaseNode):
     @property
     def non_base_members(self):
         return [child for child in self.children if not child.is_base_type_node]
+
+    def get_description(self):
+        """
+        Return description for the node in doxygen form
+        """
+        lines = self.description.split('\n')
+        description = ""
+        for i, line in enumerate(lines):
+            if i == 0:
+                description = ' ' + line + '\n'
+            else:
+                description += '  * ' + line + '\n'
+        return description
 
     def __repr__(self):
         return "Node(class_name='{}', base_class='{}', nmodl_name='{}')".format(

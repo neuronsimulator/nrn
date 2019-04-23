@@ -1,0 +1,51 @@
+#projectname {
+    display: none;
+}
+
+#projectlogo img {
+    margin: 0 10px !important;
+    width: 180px !important;
+}
+
+div.line {
+    margin: 4px !important;
+    line-height: 1.2 !important;
+}
+
+address.footer, hr.footer {
+    display: none;
+}
+
+span.lineno {
+    border-color: #b3acb1;
+}
+
+.header, .contents {
+    width: 80%;
+    max-width: 1140px;
+    margin: auto !important;
+    padding: 10px;
+    background: white;
+}
+
+div.header {
+    margin-top: 20px !important;
+}
+
+div#doc-content {
+    background-image: url("background.png");
+    background-repeat: repeat;
+    /* background: rgba(234, 201, 201, 0.3); */
+}
+
+#nav-sync img {
+    display: none;
+}
+
+span.comment {
+    color: #848080;
+}
+
+span.keyword {
+    color: #152292;
+}
