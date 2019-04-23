@@ -12,10 +12,12 @@
 #include "catch/catch.hpp"
 #include "printer/json_printer.hpp"
 
+using nmodl::printer::JSONPrinter;
+
 TEST_CASE("JSON Printer Tests", "[JSONPrinter]") {
     SECTION("Stringstream test 1") {
         std::stringstream ss;
-        nmodl::JSONPrinter p(ss);
+        JSONPrinter p(ss);
         p.compact_json(true);
 
         p.push_block("A");
@@ -29,7 +31,7 @@ TEST_CASE("JSON Printer Tests", "[JSONPrinter]") {
 
     SECTION("Stringstream test 2") {
         std::stringstream ss;
-        nmodl::JSONPrinter p(ss);
+        JSONPrinter p(ss);
         p.compact_json(true);
 
         p.push_block("A");
@@ -47,7 +49,7 @@ TEST_CASE("JSON Printer Tests", "[JSONPrinter]") {
 
     SECTION("Test with nodes as separate tags") {
         std::stringstream ss;
-        nmodl::JSONPrinter p(ss);
+        JSONPrinter p(ss);
         p.compact_json(true);
         p.expand_keys(true);
 

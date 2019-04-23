@@ -7,6 +7,11 @@
 
 #pragma once
 
+/**
+ * \file
+ * \brief \copybrief nmodl::visitor::PerfVisitor
+ */
+
 #include <set>
 #include <stack>
 
@@ -17,10 +22,16 @@
 
 
 namespace nmodl {
+namespace visitor {
+
+/**
+ * @addtogroup visitor_classes
+ * @{
+ */
 
 /**
  * \class PerfVisitor
- * \brief Visitor for measuring performance related information
+ * \brief %Visitor for measuring performance related information
  *
  * This visitor used to visit the ast and associated symbol tables
  * to measure the performance of every block in nmodl file. For
@@ -31,18 +42,18 @@ namespace nmodl {
  * be skipped (i.e. without visiting children). Note that this
  * pass must be run after symbol table generation pass.
  *
- * \todo : To measure the performance of statements like if, elseif
- * and else, we have to find maximum performance from if,elseif,else
- * and then use it to calculate total performance. In the current
- * implementation we are doing sum of all blocks. We need to override
- * IfStatement (which has all sub-blocks) and get maximum performance
- * of all statements recursively.
+ * \todo
+ *     - To measure the performance of statements like if, elseif
+ *       and else, we have to find maximum performance from if,elseif,else
+ *       and then use it to calculate total performance. In the current
+ *       implementation we are doing sum of all blocks. We need to override
+ *       IfStatement (which has all sub-blocks) and get maximum performance
+ *       of all statements recursively.
  *
- * \todo : In order to avoid empty implementations and checking
- * start_measurement, there should be "empty" ast visitor from
- * which PerfVisitor should be inherited.
+ *     - In order to avoid empty implementations and checking
+ *       start_measurement, there should be "empty" ast visitor from
+ *       which PerfVisitor should be inherited.
  */
-
 class PerfVisitor: public AstVisitor {
   private:
     /// symbol table of current block being visited
@@ -50,16 +61,16 @@ class PerfVisitor: public AstVisitor {
 
     /// performance stats of all blocks being visited
     /// in recursive chain
-    std::stack<PerfStat> blocks_perf;
+    std::stack<utils::PerfStat> blocks_perf;
 
     /// total performance of mod file
-    PerfStat total_perf;
+    utils::PerfStat total_perf;
 
     /// performance of current block
-    PerfStat current_block_perf;
+    utils::PerfStat current_block_perf;
 
     /// performance of current all childrens
-    std::stack<PerfStat> children_blocks_perf;
+    std::stack<utils::PerfStat> children_blocks_perf;
 
     /// whether to measure performance for current block
     bool start_measurement = false;
@@ -78,7 +89,7 @@ class PerfVisitor: public AstVisitor {
     bool under_net_receive_block = false;
 
     /// to print to json file
-    std::unique_ptr<JSONPrinter> printer;
+    std::unique_ptr<printer::JSONPrinter> printer;
 
     /// if not json, all goes to string
     std::stringstream stream;
@@ -129,11 +140,11 @@ class PerfVisitor: public AstVisitor {
 
     void count_variables();
 
-    void measure_performance(ast::AST* node);
+    void measure_performance(ast::Ast* node);
 
     void print_memory_usage();
 
-    void add_perf_to_printer(PerfStat& perf);
+    void add_perf_to_printer(utils::PerfStat& perf);
 
   public:
     PerfVisitor() = default;
@@ -144,7 +155,7 @@ class PerfVisitor: public AstVisitor {
         printer->compact_json(flag);
     }
 
-    PerfStat get_total_perfstat() {
+    utils::PerfStat get_total_perfstat() {
         return total_perf;
     }
 
@@ -295,4 +306,7 @@ class PerfVisitor: public AstVisitor {
     }
 };
 
+/** @} */  // end of visitor_classes
+
+}  // namespace visitor
 }  // namespace nmodl

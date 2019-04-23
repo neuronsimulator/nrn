@@ -19,11 +19,11 @@ namespace py = pybind11;
 using namespace py::literals;
 
 namespace nmodl {
+namespace visitor {
 
 using ast::AstNodeType;
 using ast::BinaryOp;
 using symtab::syminfo::NmodlType;
-
 
 /**
  * Analyse breakpoint block to check if it is safe to insert CONDUCTANCE statements
@@ -91,7 +91,8 @@ std::vector<std::string> SympyConductanceVisitor::generate_statement_strings(
                                 solution = ""
                                 exception_message = str(e)
                         )",
-                     py::globals(), locals);
+                     py::globals(),
+                     locals);
             auto dIdV = locals["solution"].cast<std::string>();
             auto exception_message = locals["exception_message"].cast<std::string>();
             if (!exception_message.empty()) {
@@ -178,7 +179,8 @@ void SympyConductanceVisitor::lookup_useion_statements() {
                 std::string ion_write = w->get_node_name();
                 logger->debug(
                     "SympyConductance :: -> Adding ion write name: {} for ion current name: {}",
-                    ion_write, ion_name);
+                    ion_write,
+                    ion_name);
                 i_name[ion_write] = ion_name;
             }
         }
@@ -250,4 +252,5 @@ void SympyConductanceVisitor::visit_program(ast::Program* node) {
     node->visit_children(this);
 }
 
+}  // namespace visitor
 }  // namespace nmodl

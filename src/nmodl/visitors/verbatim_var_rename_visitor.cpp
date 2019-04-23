@@ -10,7 +10,7 @@
 
 
 namespace nmodl {
-
+namespace visitor {
 
 void VerbatimVarRenameVisitor::visit_statement_block(ast::StatementBlock* node) {
     if (node->get_statements().empty()) {
@@ -47,11 +47,11 @@ void VerbatimVarRenameVisitor::visit_statement_block(ast::StatementBlock* node) 
 std::string VerbatimVarRenameVisitor::rename_variable(std::string name) {
     bool rename_plausible = false;
     auto new_name = name;
-    if (name.find(local_prefix) == 0) {
+    if (name.find(LOCAL_PREFIX) == 0) {
         new_name.erase(0, 2);
         rename_plausible = true;
     }
-    if (name.find(range_prefix) == 0) {
+    if (name.find(RANGE_PREFIX) == 0) {
         new_name.erase(0, 3);
         rename_plausible = true;
     }
@@ -84,4 +84,5 @@ void VerbatimVarRenameVisitor::visit_verbatim(ast::Verbatim* node) {
     statement->set(result);
 }
 
+}  // namespace visitor
 }  // namespace nmodl

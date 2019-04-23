@@ -10,6 +10,7 @@
 
 #include "lexer/nmodl_lexer.hpp"
 #include "parser/nmodl_driver.hpp"
+#include "utils/logger.hpp"
 
 namespace nmodl {
 namespace parser {
@@ -19,7 +20,7 @@ NmodlDriver::NmodlDriver(bool strace, bool ptrace)
     , trace_parser(ptrace) {}
 
 /// parse nmodl file provided as istream
-bool NmodlDriver::parse_stream(std::istream& in) {
+std::shared_ptr<ast::Program> NmodlDriver::parse_stream(std::istream& in) {
     NmodlLexer scanner(*this, &in);
     NmodlParser parser(scanner, *this);
 
@@ -28,24 +29,28 @@ bool NmodlDriver::parse_stream(std::istream& in) {
 
     scanner.set_debug(trace_scanner);
     parser.set_debug_level(trace_parser);
-    return (parser.parse() == 0);
+    parser.parse();
+    return astRoot;
 }
 
 //// parse nmodl file
-bool NmodlDriver::parse_file(const std::string& filename) {
+std::shared_ptr<ast::Program> NmodlDriver::parse_file(const std::string& filename) {
     std::ifstream in(filename.c_str());
     stream_name = filename;
 
     if (!in.good()) {
-        return false;
+        logger->error("Can not open file : {}", filename);
+        return nullptr;
     }
-    return parse_stream(in);
+    parse_stream(in);
+    return astRoot;
 }
 
 /// parser nmodl provided as string (used for testing)
-bool NmodlDriver::parse_string(const std::string& input) {
+std::shared_ptr<ast::Program> NmodlDriver::parse_string(const std::string& input) {
     std::istringstream iss(input);
-    return parse_stream(iss);
+    parse_stream(iss);
+    return astRoot;
 }
 
 void NmodlDriver::error(const std::string& m, const class location& l) {

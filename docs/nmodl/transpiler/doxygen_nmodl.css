@@ -49,3 +49,24 @@ span.comment {
 span.keyword {
     color: #152292;
 }
+
+/*
+body {
+    max-width: 1440px;
+    margin: auto;
+    background: #404040;
+}
+
+#side-nav {
+    left: auto;
+    padding-left: 10px;
+    padding-right: 15px;
+    background-image: url(background.png);
+}
+
+div#titlearea {
+    background: white;
+    background-image: url(background.png);
+}
+*/
+

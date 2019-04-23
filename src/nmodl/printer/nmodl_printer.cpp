@@ -9,6 +9,7 @@
 #include "utils/string_utils.hpp"
 
 namespace nmodl {
+namespace printer {
 
 NMODLPrinter::NMODLPrinter(const std::string& filename) {
     if (filename.empty()) {
@@ -50,4 +51,5 @@ void NMODLPrinter::pop_level() {
     *result << "}";
 }
 
+}  // namespace printer
 }  // namespace nmodl

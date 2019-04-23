@@ -7,6 +7,11 @@
 
 #pragma once
 
+/**
+ * \file
+ * \brief \copybrief nmodl::visitor::InlineVisitor
+ */
+
 #include <map>
 #include <stack>
 
@@ -19,14 +24,21 @@
 
 
 namespace nmodl {
+namespace visitor {
+
+/**
+ * @addtogroup visitor_classes
+ * @{
+ */
 
 /**
  * \class InlineVisitor
- * \brief Visitor to inline local procedure and function calls
+ * \brief %Visitor to inline local procedure and function calls
  *
  * Motivation: Mod files often have function and procedure calls. Procedure
  * typically has use of range variables like:
  *
+ * \code{.mod}
  *      NEURON {
  *          RANGE tau, alpha, beta
  *      }
@@ -41,6 +53,7 @@ namespace nmodl {
  *          tau = xx * 0.12 * some_var
  *          beta = yy * 0.11
  *      }
+ * \endcode
  *
  * One can reduce the memory bandwidth pressure by inlining rates() and then
  * replacing tau and beta with local variables. Many mod files from BlueBrain
@@ -75,47 +88,50 @@ namespace nmodl {
  *
  *  Examples:
  *
-             PROCEDURE rates_1() {
-                LOCAL x
-                rates_2(23.1)
-            }
-
-            PROCEDURE rates_2(y) {
-                LOCAL x
-                x = 21.1*v+y
-            }
-
+ * \code{.mod}
+ *      PROCEDURE rates_1() {
+ *          LOCAL x
+ *          rates_2(23.1)
+ *      }
+ *
+ *      PROCEDURE rates_2(y) {
+ *          LOCAL x
+ *          x = 21.1*v+y
+ *      }
+ * \endcode
+ *
  * The result of inlining :
-
-           PROCEDURE rates_1() {
-                LOCAL x, rates_2_in_0
-                {
-                    LOCAL x, y_in_0
-                    y_in_0 = 23.1
-                    x = 21.1*v+y_in_0
-                    rates_2_in_0 = 0
-                }
-          }
-
-          PROCEDURE rates_2(y) {
-                LOCAL x
-                x = 21.1*v+y
-          }
-
+ *
+ * \code{.mod}
+ *      PROCEDURE rates_1() {
+ *            LOCAL x, rates_2_in_0
+ *            {
+ *                LOCAL x, y_in_0
+ *                y_in_0 = 23.1
+ *                x = 21.1*v+y_in_0
+ *                rates_2_in_0 = 0
+ *            }
+ *      }
+ *
+ *      PROCEDURE rates_2(y) {
+ *            LOCAL x
+ *            x = 21.1*v+y
+ *      }
+ * \endcode
+ *
  *  - Arguments for function call are copied into local variables
  *  - Local statement gets added to callee block (if doesn't exist)
  *  - Procedure body gets appended with extra assignment statement with variable
  *    used for returning value.
  *
- * \todo:
+ * \todo
  *  - Recursive function calls are not supported and need to add checks to avoid stack explosion
  *  - Currently we rename variables more than necessary, this could be improved [low priority]
  *  - Function calls as part of an argument of function call itself are not completely inlined [low
- priority]
+ *    priority]
  *  - Symbol table pass needs to be re-run in order to update the definitions/usage
  *  - Location of symbol/nodes after inlining still points to old nodes
  */
-
 class InlineVisitor: public AstVisitor {
   private:
     /// statement block containing current function call
@@ -180,4 +196,7 @@ class InlineVisitor: public AstVisitor {
     virtual void visit_program(ast::Program* node) override;
 };
 
+/** @} */  // end of visitor_classes
+
+}  // namespace visitor
 }  // namespace nmodl

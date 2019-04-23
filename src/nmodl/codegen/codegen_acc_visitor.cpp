@@ -85,12 +85,14 @@ void CodegenAccVisitor::print_memory_allocation_routine() {
  * to accelerator. In this case, at very top level, we print pragma
  * for data present. For example:
  *
+ * \code{.cpp}
  *  void nrn_state(...) {
  *      #pragma acc data present (nt, ml...)
  *      {
  *
  *      }
  *  }
+ * \endcode
  */
 void CodegenAccVisitor::print_kernel_data_present_annotation_block_begin() {
     if (!info.artificial_cell) {

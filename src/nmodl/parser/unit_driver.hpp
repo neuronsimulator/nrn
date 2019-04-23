@@ -27,6 +27,12 @@ class UnitParser;
 class location;
 
 /**
+ * @addtogroup parser
+ * @addtogroup units
+ * @{
+ */
+
+/**
  * \class UnitDriver
  * \brief Class that binds all pieces together for parsing C units
  */
@@ -54,8 +60,13 @@ class UnitDriver {
     /// file or input stream name (used by scanner for position), see todo
     std::string stream_name;
 
+    /// \name Ctor & dtor
+    /// \{
+
     UnitDriver() = default;
     UnitDriver(bool strace, bool ptrace);
+
+    /// \}
 
     void error(const std::string& m);
     bool parse_stream(std::istream& in);

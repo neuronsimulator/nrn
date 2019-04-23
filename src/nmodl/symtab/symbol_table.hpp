@@ -7,40 +7,54 @@
 
 #pragma once
 
+/**
+ * \dir
+ * \brief Symbol table implementation
+ *
+ * \file
+ * \brief Implement classes for representing symbol table at block and file scope
+ */
+
 #include <map>
 #include <memory>
 #include <vector>
 
 #include "symtab/symbol.hpp"
 
-
 namespace nmodl {
 namespace symtab {
 
+
 /**
- * \class SymbolTable
- * \brief Represent symbol table for nmodl block
+ * @defgroup sym_tab Symbol Table Infrastructure
+ * @brief All %Symbol Table implementation details
+ *
+ * @{
+ */
+
+/**
+ * \brief Represent symbol table for a NMODL block
  *
  * Symbol Table is used to track information about every block construct
- * encountered in the nmodl. In NMODL, block constructs are NEURON,
- * PARAMETER NET_RECEIVE etc. Each block is considered a new scope.
+ * encountered in the nmodl. In NMODL, block constructs are NEURON, PARAMETER
+ * NET_RECEIVE etc. Each block is considered a new scope.
  *
- * NMODL supports nested block definitions (i.e. nested blocks). One
- * specific example of this is INITIAL block in NET_RECEIVE block. In this
- * case we need multiple scopes for single top level block of NMODL. In
- * the future if we enable block level scopes, we will need symbol tables
- * per block. Hence we are implementing BlockSymbolTable which stores
- * all symbol table information for specific NMODL block. Note that each
- * BlockSymbolTable implementation is recursive because while symbol
- * lookup we have to search first into local/current block. If lookup is
- * unsuccessfull then we have to traverse parent blocks until the end.
+ * NMODL supports nested block definitions (i.e. nested blocks). One specific
+ * example of this is INITIAL block in NET_RECEIVE block. In this case we need
+ * multiple scopes for single top level block of NMODL. In the future if we
+ * enable block level scopes, we will need symbol tables per block. Hence we are
+ * implementing BlockSymbolTable which stores all symbol table information for
+ * specific NMODL block. Note that each BlockSymbolTable implementation is
+ * recursive because while symbol lookup we have to search first into
+ * local/current block. If lookup is unsuccessful then we have to traverse
+ * parent blocks until the end.
  *
- * \todo Revisit when clone method is used and implementation of copy
- *       constructor
- * \todo Name may not require as we have added AST node
+ * \todo
+ *   - Revisit when clone method is used and implementation of copy
+ *     constructor
+ *   - Name may not require as we have added AST node
  */
 class SymbolTable {
-  private:
     /**
      * \class Table
      * \brief Helper class for implementing symbol table
@@ -52,6 +66,7 @@ class SymbolTable {
      * \todo Re-implement pretty printing
      */
     class Table {
+        /// number of tables
         static int counter;
 
       public:
@@ -67,17 +82,18 @@ class SymbolTable {
         /// pretty print
         void print(std::stringstream& stream, std::string title, int indent);
     };
+
     /// name of the block
     std::string symtab_name;
 
     /// table holding all symbols in the current block
     Table table;
 
-    /// pointer to ast node for which current block symbol created
-    ast::AST* node = nullptr;
+    /// pointer to ast node for which current symbol table created
+    ast::Ast* node = nullptr;
 
-    /// true if current symbol table is global. blocks like neuron,
-    /// parameter defines global variables and hence they go into
+    /// true if current symbol table is global. blocks like NEURON,
+    /// PARAMETER defines global variables and hence they go into
     /// single global symbol table
     bool global = false;
 
@@ -91,40 +107,55 @@ class SymbolTable {
     std::map<std::string, std::shared_ptr<SymbolTable>> children;
 
   public:
-    SymbolTable(std::string name, ast::AST* node, bool global = false)
+    /// \name Ctor & dtor
+    /// \{
+
+    SymbolTable(std::string name, ast::Ast* node, bool global = false)
         : symtab_name(name)
         , node(node)
         , global(global) {}
 
     SymbolTable(const SymbolTable& table);
 
-    std::string name() const {
-        return symtab_name;
-    }
+    /// \}
 
-    std::string type() const;
 
-    std::string title();
-
-    bool is_method_defined(const std::string& name) const;
-
-    /// todo: set token for every block from parser
-    std::string position() const;
-
-    bool global_scope() const {
-        return global;
-    }
+    /// \name Getter
+    /// \{
 
     SymbolTable* get_parent_table() const {
         return parent;
     }
 
-    std::string get_parent_table_name() {
+    std::string get_parent_table_name() const {
         return parent ? parent->name() : "None";
     }
 
-    std::shared_ptr<Symbol> lookup(const std::string& name) {
-        return table.lookup(name);
+    std::vector<std::shared_ptr<Symbol>> get_variables(syminfo::NmodlType with,
+                                                       syminfo::NmodlType without);
+
+    std::vector<std::shared_ptr<Symbol>> get_variables_with_properties(
+        syminfo::NmodlType properties,
+        bool all = false);
+
+    std::vector<std::shared_ptr<Symbol>> get_variables_with_status(syminfo::Status status,
+                                                                   bool all = false);
+
+    /// \}
+
+    /// convert symbol table to string
+    std::string to_string() {
+        std::stringstream s;
+        print(s, 0);
+        return s.str();
+    }
+
+    std::string name() const {
+        return symtab_name;
+    }
+
+    bool global_scope() const {
+        return global;
     }
 
     void insert(std::shared_ptr<Symbol> symbol) {
@@ -139,55 +170,56 @@ class SymbolTable {
         return table.symbols.size();
     }
 
-    /// \todo: revisit the usage as tokens will be pointing to old nodes
+    /**
+     * Create a copy of symbol table
+     * \todo revisit the usage as tokens will be pointing to old nodes
+     */
     SymbolTable* clone() {
         return new SymbolTable(*this);
     }
 
+    /// check if symbol with given name exist in the current table (but not in parents)
+    std::shared_ptr<Symbol> lookup(const std::string& name) {
+        return table.lookup(name);
+    }
+
+    /// check if symbol with given name exist in the current table (including all parents)
     std::shared_ptr<Symbol> lookup_in_scope(const std::string& name) const;
 
-    std::vector<std::shared_ptr<Symbol>> get_variables(syminfo::NmodlType with,
-                                                       syminfo::NmodlType without);
-
-    std::vector<std::shared_ptr<Symbol>> get_variables_with_properties(
-        syminfo::NmodlType properties,
-        bool all = false);
-
-    std::vector<std::shared_ptr<Symbol>> get_variables_with_status(syminfo::Status status,
-                                                                   bool all = false);
-
+    /// check if currently we are visiting global scope node
     bool under_global_scope();
 
+    /// insert new symbol table as one of the children block
     void insert_table(const std::string& name, std::shared_ptr<SymbolTable> table);
 
     void print(std::stringstream& ss, int level);
 
-    std::string to_string() {
-        std::stringstream s;
-        print(s, 0);
-        return s.str();
-    }
+    std::string title() const;
+
+    std::string position() const;
+
+    /// check if procedure/function with given name is defined
+    bool is_method_defined(const std::string& name) const;
 };
 
 /**
- * \class ModelSymbolTable
- * \brief Represent symbol table for nmodl block
+ * \brief Hold top level (i.e. global) symbol table for mod file
  *
- * SymbolTable is sufficient to hold information about all symbols in the
- * mod file. It might be sufficient to keep track of global symbol tables
- * and local symbol tables. But we construct symbol table using visitor
- * pass. In this case we visit ast and recursively create symbol table for
- * each block scope. In this case, ModelSymbolTable is provide interface
- * to build symbol table with visitor.
+ * symtab::SymbolTable is sufficient to hold information about all symbols in
+ * the mod file. It might be sufficient to keep track of global symbol tables
+ * and local symbol tables. But we construct symbol table using visitor pass. In
+ * this case we visit ast and recursively create symbol table for each block
+ * scope. In this case, ModelSymbolTable provides high level interface to build
+ * symbol table as part of visitor.
  *
- * \note For included mod file it's not clear yet whether we need to maintain
- *       separate ModelSymbolTable.
- * \note See command project in compiler teaching course for details
+ * \note
+ *   - For included mod file it's not clear yet whether we need to maintain
+ *     separate ModelSymbolTable.
+ *   - See command project in compiler teaching course for details
  *
  * \todo Unique name should be based on location. Use ModToken to get position.
  */
 class ModelSymbolTable {
-  private:
     /// symbol table for mod file (always top level symbol table)
     std::shared_ptr<SymbolTable> symtab = nullptr;
 
@@ -195,7 +227,7 @@ class ModelSymbolTable {
     SymbolTable* current_symtab = nullptr;
 
     /// return unique name by appending some counter value
-    std::string get_unique_name(const std::string& name, ast::AST* node, bool is_global);
+    std::string get_unique_name(const std::string& name, ast::Ast* node, bool is_global);
 
     /// name of top level global symbol table
     const std::string GLOBAL_SYMTAB_NAME = "NMODL_GLOBAL";
@@ -206,11 +238,6 @@ class ModelSymbolTable {
 
     /// current order of variable being defined
     int definition_order = 0;
-
-    /// if breakpoint block exist in the model
-    bool breakpoint_exist = false;
-
-    std::string model_suffix = "";
 
     /// insert symbol table in update mode
     std::shared_ptr<Symbol> update_mode_insert(const std::shared_ptr<Symbol>& symbol);
@@ -225,7 +252,7 @@ class ModelSymbolTable {
   public:
     /// entering into new nmodl block
     SymbolTable* enter_scope(const std::string& name,
-                             ast::AST* node,
+                             ast::Ast* node,
                              bool global,
                              SymbolTable* node_symtab);
 
@@ -238,21 +265,17 @@ class ModelSymbolTable {
     /// lookup for symbol into current as well as all parent tables
     std::shared_ptr<Symbol> lookup(const std::string& name);
 
-    /// pretty print
-    void print(std::stringstream& ss);
-
     /// re-initialize members to throw away old symbol tables
     /// this is required as symtab visitor pass runs multiple time
     void set_mode(bool update_mode);
 
-    bool has_breakpoint() const {
-        return breakpoint_exist;
-    }
-
-    std::string model_name() const {
-        return model_suffix;
+    /// pretty print
+    void print(std::stringstream& ss) {
+        symtab->print(ss, 0);
     }
 };
+
+/** @} */  // end of sym_tab
 
 }  // namespace symtab
 }  // namespace nmodl

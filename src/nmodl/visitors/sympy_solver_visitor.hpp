@@ -7,6 +7,11 @@
 
 #pragma once
 
+/**
+ * \file
+ * \brief \copybrief nmodl::visitor::SympySolverVisitor
+ */
+
 #include <pybind11/embed.h>
 #include <pybind11/stl.h>
 #include <set>
@@ -19,19 +24,25 @@
 #include "visitors/visitor_utils.hpp"
 
 namespace nmodl {
+namespace visitor {
+
+/**
+ * @addtogroup visitor_classes
+ * @{
+ */
 
 /**
  * \class SympySolverVisitor
- * \brief Visitor for systems of algebraic and differential equations
+ * \brief %Visitor for systems of algebraic and differential equations
  *
- * For DERIVATIVE block, solver method "cnexp":
+ * For DERIVATIVE block, solver method `cnexp`:
  *  - replace each ODE with its analytic solution
- *  - optionally using the (1,1) order Pade approximant in dt
+ *  - optionally using the `(1,1)` order Pade approximant in dt
  *
- * For DERIVATIVE block, solver method "euler":
+ * For `DERIVATIVE` block, solver method `euler`:
  *  - replace each ODE with forwards Euler timestep
  *
- * For DERIVATIVE block, solver method "sparse":
+ * For `DERIVATIVE` block, solver method `sparse`:
  *  - construct backwards Euler timestep linear system
  *  - for small systems: solves resulting linear algebraic equation by
  *    Gaussian elimination, replaces differential equations
@@ -39,21 +50,19 @@ namespace nmodl {
  *  - for large systems, returns matrix and vector of linear system
  *    to be solved by e.g. LU factorization
  *
- * For DERIVATIVE block, solver method "derivimplicit":
+ * For `DERIVATIVE` block, solver method `derivimplicit`:
  *  - construct backwards Euler timestep non-linear system
  *  - return function F and its Jacobian J to be solved by newton solver
  *
- * For LINEAR blocks:
+ * For `LINEAR` blocks:
  *  - for small systems: solve linear system of algebraic equations by
  *    Gaussian elimination, replace equations with solutions
  *  - for large systems: return matrix and vector of linear system
  *    to be solved by e.g. LU factorization
  *
- * For NON_LINEAR blocks:
+ * For `NON_LINEAR` blocks:
  *  - return function F and its Jacobian J to be solved by newton solver
- *
  */
-
 class SympySolverVisitor: public AstVisitor {
   private:
     /// clear any data from previous block & get set of block local vars + global vars
@@ -83,7 +92,7 @@ class SympySolverVisitor: public AstVisitor {
     void solve_non_linear_system(const std::vector<std::string>& pre_solve_statements = {});
 
     /// return NMODL string version of node, excluding any units
-    static std::string to_nmodl_for_sympy(ast::AST* node) {
+    static std::string to_nmodl_for_sympy(ast::Ast* node) {
         return nmodl::to_nmodl(node, {ast::AstNodeType::UNIT, ast::AstNodeType::UNIT_DEF});
     }
 
@@ -136,7 +145,7 @@ class SympySolverVisitor: public AstVisitor {
     /// optionally replace cnexp solution with (1,1) pade approx
     bool use_pade_approx;
 
-    // optionally do CSE (common subexpression elimination) for sparse solver
+    /// optionally do CSE (common subexpression elimination) for sparse solver
     bool elimination;
 
     /// max number of state vars allowed for small system linear solver
@@ -162,4 +171,7 @@ class SympySolverVisitor: public AstVisitor {
     void visit_program(ast::Program* node) override;
 };
 
+/** @} */  // end of visitor_classes
+
+}  // namespace visitor
 }  // namespace nmodl

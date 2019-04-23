@@ -20,8 +20,8 @@ def test_symtab(ch_ast):
     mInf = s.lookup('mInf')
     assert mInf is not None
     assert mInf.get_name() == "mInf"
-    assert mInf.has_properties(symtab.NmodlType.range_var) is True
-    assert mInf.has_properties(symtab.NmodlType.local_var) is False
+    assert mInf.has_any_property(symtab.NmodlType.range_var) is True
+    assert mInf.has_any_property(symtab.NmodlType.local_var) is False
 
     variables = s.get_variables_with_properties(symtab.NmodlType.range_var, True)
     assert len(variables) == 2

@@ -11,14 +11,15 @@
 #include "parser/diffeq_driver.hpp"
 #include "symtab/symbol.hpp"
 #include "utils/logger.hpp"
-#include "visitors/cnexp_solve_visitor.hpp"
+#include "visitors/neuron_solve_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
 
 
 namespace nmodl {
+namespace visitor {
 
-void CnexpSolveVisitor::visit_solve_block(ast::SolveBlock* node) {
+void NeuronSolveVisitor::visit_solve_block(ast::SolveBlock* node) {
     auto name = node->get_block_name()->get_node_name();
     auto method = node->get_method();
     solve_method = method ? method->get_value()->eval() : "";
@@ -26,7 +27,7 @@ void CnexpSolveVisitor::visit_solve_block(ast::SolveBlock* node) {
 }
 
 
-void CnexpSolveVisitor::visit_derivative_block(ast::DerivativeBlock* node) {
+void NeuronSolveVisitor::visit_derivative_block(ast::DerivativeBlock* node) {
     derivative_block_name = node->get_name()->get_node_name();
     derivative_block = true;
     node->visit_children(this);
@@ -34,14 +35,14 @@ void CnexpSolveVisitor::visit_derivative_block(ast::DerivativeBlock* node) {
 }
 
 
-void CnexpSolveVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
+void NeuronSolveVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
     differential_equation = true;
     node->visit_children(this);
     differential_equation = false;
 }
 
 
-void CnexpSolveVisitor::visit_binary_expression(ast::BinaryExpression* node) {
+void NeuronSolveVisitor::visit_binary_expression(ast::BinaryExpression* node) {
     auto& lhs = node->lhs;
     auto& rhs = node->rhs;
     auto& op = node->op;
@@ -70,7 +71,7 @@ void CnexpSolveVisitor::visit_binary_expression(ast::BinaryExpression* node) {
                 lhs.reset(bin_expr->lhs->clone());
                 rhs.reset(bin_expr->rhs->clone());
             } else {
-                logger->warn("CnexpSolveVisitor :: cnexp solver not possible for {}",
+                logger->warn("NeuronSolveVisitor :: cnexp solver not possible for {}",
                              to_nmodl(node));
             }
         } else if (solve_method == codegen::naming::EULER_METHOD) {
@@ -92,14 +93,15 @@ void CnexpSolveVisitor::visit_binary_expression(ast::BinaryExpression* node) {
                 program_symtab->insert(symbol);
             }
         } else {
-            logger->error("CnexpSolveVisitor :: solver method '{}' not supported", solve_method);
+            logger->error("NeuronSolveVisitor :: solver method '{}' not supported", solve_method);
         }
     }
 }
 
-void CnexpSolveVisitor::visit_program(ast::Program* node) {
+void NeuronSolveVisitor::visit_program(ast::Program* node) {
     program_symtab = node->get_symbol_table();
     node->visit_children(this);
 }
 
+}  // namespace visitor
 }  // namespace nmodl

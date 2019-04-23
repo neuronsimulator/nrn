@@ -5,7 +5,7 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
-/*
+/**
  * Bison specification for NMODL Extensions which includes
  * VERBATIM and COMMENT blocks
  */
@@ -15,31 +15,32 @@
     #include <cstdlib>
     #include <iostream>
     #include <cstring>
-    #include "parser/verbatim_context.hpp"
+
+    #include "parser/verbatim_driver.hpp"
 %}
 
-/* print out verbose error instead of just message 'syntax error' */
+/** print out verbose error instead of just message 'syntax error' */
 %error-verbose
 
-/* make a reentrant parser */
+/** make a reentrant parser */
 %pure-parser
 
-/* parser prefix */
+/** parser prefix */
 %name-prefix "Verbatim_"
 
-/* enable location tracking */
+/** enable location tracking */
 %locations
 
-/* generate header file */
+/** generate header file */
 %defines
 
-/* yyparse() takes an extra argument context */
-%parse-param {nmodl::parser::VerbatimContext* context}
+/** yyparse() takes an extra argument context */
+%parse-param {nmodl::parser::VerbatimDriver* context}
 
-/* reentrant lexer needs an extra argument for yylex() */
+/** reentrant lexer needs an extra argument for yylex() */
 %lex-param {void * scanner}
 
-/* token types */
+/** token types */
 %union 
 {
     char str;
@@ -62,14 +63,14 @@
 
 %{
 
-    using nmodl::parser::VerbatimContext;
+    using nmodl::parser::VerbatimDriver;
 
     /* a macro that extracts the scanner state from the parser state for yylex */
     #define scanner context->scanner
 
     extern int yylex(YYSTYPE*, YYLTYPE*, void*);
-    extern int yyparse(VerbatimContext*);
-    extern void yyerror(YYLTYPE*, VerbatimContext*, const char *);
+    extern int yyparse(VerbatimDriver*);
+    extern void yyerror(YYLTYPE*, VerbatimDriver*, const char *);
 %}
 
 
@@ -81,7 +82,7 @@
 
 top             : verbatimblock { $$ = $1; context->result = $1; }
                 | commentblock  { $$ = $1; context->result = $1; }
-                | error                 { printf("\n _ERROR_"); }
+                | error         { printf("\n _ERROR_");          }
                 ;
 
 verbatimblock   : VERBATIM charlist ENDVERBATIM     { $$ = $2; }
@@ -97,7 +98,7 @@ charlist        :                       { $$ = new std::string(""); }
 %%
 
 /** \todo : better error handling required */
-void yyerror(YYLTYPE* /*locp*/, VerbatimContext* /*context*/, const char *s) {
+void yyerror(YYLTYPE* /*locp*/, VerbatimDriver* /*context*/, const char *s) {
     std::printf("\n Error in verbatim parser :  %s \n", s);
     std::exit(1); 
 }

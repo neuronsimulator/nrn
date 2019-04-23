@@ -16,7 +16,6 @@
 #include "parser/nmodl_driver.hpp"
 #include "test/utils/nmodl_constructs.hpp"
 #include "test/utils/test_utils.hpp"
-#include "visitors/cnexp_solve_visitor.hpp"
 #include "visitors/constant_folder_visitor.hpp"
 #include "visitors/defuse_analyze_visitor.hpp"
 #include "visitors/inline_visitor.hpp"
@@ -26,6 +25,7 @@
 #include "visitors/localize_visitor.hpp"
 #include "visitors/lookup_visitor.hpp"
 #include "visitors/loop_unroll_visitor.hpp"
+#include "visitors/neuron_solve_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/perf_visitor.hpp"
 #include "visitors/rename_visitor.hpp"
@@ -40,6 +40,9 @@
 using json = nlohmann::json;
 
 using namespace nmodl;
+using namespace visitor;
+using namespace test_utils;
+
 using ast::AstNodeType;
 using nmodl::parser::NmodlDriver;
 using symtab::syminfo::NmodlType;
@@ -59,8 +62,7 @@ int main(int argc, char* argv[]) {
 
 std::vector<std::string> run_verbatim_visitor(const std::string& text) {
     NmodlDriver driver;
-    driver.parse_string(text);
-    auto ast = driver.ast();
+    auto ast = driver.parse_string(text);
 
     VerbatimVisitor v;
     v.visit_program(ast.get());
@@ -92,8 +94,7 @@ TEST_CASE("Verbatim Visitor") {
 
 std::string run_json_visitor(const std::string& text, bool compact = false) {
     NmodlDriver driver;
-    driver.parse_string(text);
-    auto ast = driver.ast();
+    auto ast = driver.parse_string(text);
     return to_json(ast.get(), compact);
 }
 
@@ -193,8 +194,7 @@ SCENARIO("Symbol table generation and Perf stat visitor pass") {
         )";
 
         NmodlDriver driver;
-        driver.parse_string(nmodl_text);
-        auto ast = driver.ast();
+        auto ast = driver.parse_string(nmodl_text);
 
         WHEN("Symbol table generator pass runs") {
             SymtabVisitor v;
@@ -203,19 +203,19 @@ SCENARIO("Symbol table generation and Perf stat visitor pass") {
 
             THEN("Can lookup for defined variables") {
                 auto symbol = symtab->lookup("m");
-                REQUIRE(symbol->has_properties(NmodlType::dependent_def));
-                REQUIRE_FALSE(symbol->has_properties(NmodlType::local_var));
+                REQUIRE(symbol->has_any_property(NmodlType::dependent_def));
+                REQUIRE_FALSE(symbol->has_any_property(NmodlType::local_var));
 
                 symbol = symtab->lookup("gNaTs2_tbar");
-                REQUIRE(symbol->has_properties(NmodlType::param_assign));
-                REQUIRE(symbol->has_properties(NmodlType::range_var));
+                REQUIRE(symbol->has_any_property(NmodlType::param_assign));
+                REQUIRE(symbol->has_any_property(NmodlType::range_var));
 
                 symbol = symtab->lookup("ena");
-                REQUIRE(symbol->has_properties(NmodlType::read_ion_var));
+                REQUIRE(symbol->has_any_property(NmodlType::read_ion_var));
             }
             THEN("Can lookup for defined functions") {
                 auto symbol = symtab->lookup("hBetaf");
-                REQUIRE(symbol->has_properties(NmodlType::function_block));
+                REQUIRE(symbol->has_any_property(NmodlType::function_block));
             }
             THEN("Non existent variable lookup returns nullptr") {
                 REQUIRE(symtab->lookup("xyz") == nullptr);
@@ -275,8 +275,7 @@ SCENARIO("Symbol table generation and Perf stat visitor pass") {
 
 std::string run_nmodl_visitor(const std::string& text) {
     NmodlDriver driver;
-    driver.parse_string(text);
-    auto ast = driver.ast();
+    auto ast = driver.parse_string(text);
 
     std::stringstream stream;
     NmodlPrintVisitor v(stream);
@@ -305,8 +304,7 @@ SCENARIO("Test for AST back to NMODL transformation") {
 std::string run_var_rename_visitor(const std::string& text,
                                    std::vector<std::pair<std::string, std::string>> variables) {
     NmodlDriver driver;
-    driver.parse_string(text);
-    auto ast = driver.ast();
+    auto ast = driver.parse_string(text);
     {
         for (const auto& variable: variables) {
             RenameVisitor v(variable.first, variable.second);
@@ -413,8 +411,7 @@ SCENARIO("Renaming any variable in mod file with RenameVisitor") {
 
 std::string run_local_var_rename_visitor(const std::string& text) {
     NmodlDriver driver;
-    driver.parse_string(text);
-    auto ast = driver.ast();
+    auto ast = driver.parse_string(text);
 
     {
         SymtabVisitor v;
@@ -666,8 +663,7 @@ SCENARIO("Presence of local variable in verbatim block") {
 
 std::string run_inline_visitor(const std::string& text) {
     NmodlDriver driver;
-    driver.parse_string(text);
-    auto ast = driver.ast();
+    auto ast = driver.parse_string(text);
 
     {
         SymtabVisitor v;
@@ -1263,8 +1259,7 @@ SCENARIO("Procedure inlining handles local-global name conflict") {
 
 std::vector<DUChain> run_defuse_visitor(const std::string& text, const std::string& variable) {
     NmodlDriver driver;
-    driver.parse_string(text);
-    auto ast = driver.ast();
+    auto ast = driver.parse_string(text);
 
     SymtabVisitor().visit_program(ast.get());
     InlineVisitor().visit_program(ast.get());
@@ -1564,8 +1559,7 @@ SCENARIO("Running defuse analyzer") {
 
 std::string run_localize_visitor(const std::string& text) {
     NmodlDriver driver;
-    driver.parse_string(text);
-    auto ast = driver.ast();
+    auto ast = driver.parse_string(text);
 
     {
         SymtabVisitor v1;
@@ -1777,11 +1771,10 @@ SCENARIO("Localizer test with multiple global blocks") {
 
 std::string run_cnexp_solve_visitor(const std::string& text) {
     NmodlDriver driver;
-    driver.parse_string(text);
-    auto ast = driver.ast();
+    auto ast = driver.parse_string(text);
 
     SymtabVisitor().visit_program(ast.get());
-    CnexpSolveVisitor().visit_program(ast.get());
+    NeuronSolveVisitor().visit_program(ast.get());
     std::stringstream stream;
     NmodlPrintVisitor(stream).visit_program(ast.get());
     return stream.str();
@@ -1912,10 +1905,9 @@ SCENARIO("CnexpSolver visitor solving ODEs") {
 
 std::string run_solve_block_visitor(const std::string& text) {
     NmodlDriver driver;
-    driver.parse_string(text);
-    auto ast = driver.ast();
+    auto ast = driver.parse_string(text);
     SymtabVisitor().visit_program(ast.get());
-    CnexpSolveVisitor().visit_program(ast.get());
+    NeuronSolveVisitor().visit_program(ast.get());
     SolveBlockVisitor().visit_program(ast.get());
     std::stringstream stream;
     NmodlPrintVisitor(stream).visit_program(ast.get());
@@ -2009,8 +2001,7 @@ TEST_CASE("SolveBlock visitor") {
 
 void run_visitor_passes(const std::string& text) {
     NmodlDriver driver;
-    driver.parse_string(text);
-    auto ast = driver.ast();
+    auto ast = driver.parse_string(text);
     {
         SymtabVisitor v1;
         InlineVisitor v2;
@@ -2052,7 +2043,7 @@ SCENARIO("Running visitor passes multiple time") {
 // Ast lookup visitor tests
 //=============================================================================
 
-std::vector<std::shared_ptr<ast::AST>> run_lookup_visitor(ast::Program* node,
+std::vector<std::shared_ptr<ast::Ast>> run_lookup_visitor(ast::Program* node,
                                                           std::vector<AstNodeType>& types) {
     AstLookupVisitor v;
     return v.lookup(node, types);
@@ -2061,8 +2052,7 @@ std::vector<std::shared_ptr<ast::AST>> run_lookup_visitor(ast::Program* node,
 SCENARIO("Searching for ast nodes using AstLookupVisitor") {
     auto to_ast = [](const std::string& text) {
         NmodlDriver driver;
-        driver.parse_string(text);
-        return driver.ast();
+        return driver.parse_string(text);
     };
 
     GIVEN("A mod file with nodes of type NEURON, RANGE, BinaryExpression") {
@@ -2138,8 +2128,7 @@ std::vector<std::string> run_kinetic_block_visitor(
 
     // construct AST from text including KINETIC block(s)
     NmodlDriver driver;
-    driver.parse_string(text);
-    auto ast = driver.ast();
+    auto ast = driver.parse_string(text);
 
     // construct symbol table from AST
     SymtabVisitor().visit_program(ast.get());
@@ -2625,8 +2614,7 @@ std::vector<std::string> run_sympy_solver_visitor(
 
     // construct AST from text
     NmodlDriver driver;
-    driver.parse_string(text);
-    auto ast = driver.ast();
+    auto ast = driver.parse_string(text);
 
     // construct symbol table from AST
     SymtabVisitor().visit_program(ast.get());
@@ -2884,8 +2872,7 @@ SCENARIO("SympySolver visitor: cnexp or euler", "[sympy][cnexp][euler]") {
         )";
         // construct AST from text
         NmodlDriver driver;
-        driver.parse_string(nmodl_text);
-        auto ast = driver.ast();
+        auto ast = driver.parse_string(nmodl_text);
 
         // construct symbol table from AST
         SymtabVisitor().visit_program(ast.get());
@@ -2939,8 +2926,8 @@ SCENARIO("SympySolver visitor: derivimplicit or sparse", "[sympy][derivimplicit]
             })";
         THEN("SympySolver correctly inserts ode to block") {
             CAPTURE(nmodl_text);
-            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
-                                                   AstNodeType::DERIVATIVE_BLOCK);
+            auto result =
+                run_sympy_solver_visitor(nmodl_text, false, false, AstNodeType::DERIVATIVE_BLOCK);
             REQUIRE(result[0] == reindent_text(expected_result));
         }
     }
@@ -2988,10 +2975,10 @@ SCENARIO("SympySolver visitor: derivimplicit or sparse", "[sympy][derivimplicit]
             })";
 
         THEN("Construct & solve linear system for backwards Euler") {
-            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
-                                                   AstNodeType::DERIVATIVE_BLOCK);
-            auto result_cse = run_sympy_solver_visitor(nmodl_text, true, true,
-                                                       AstNodeType::DERIVATIVE_BLOCK);
+            auto result =
+                run_sympy_solver_visitor(nmodl_text, false, false, AstNodeType::DERIVATIVE_BLOCK);
+            auto result_cse =
+                run_sympy_solver_visitor(nmodl_text, true, true, AstNodeType::DERIVATIVE_BLOCK);
             REQUIRE(result[0] == reindent_text(expected_result));
             REQUIRE(result_cse[0] == reindent_text(expected_cse_result));
         }
@@ -3019,8 +3006,8 @@ SCENARIO("SympySolver visitor: derivimplicit or sparse", "[sympy][derivimplicit]
             })";
         THEN("Construct & solver linear system") {
             CAPTURE(nmodl_text);
-            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
-                                                   AstNodeType::DERIVATIVE_BLOCK);
+            auto result =
+                run_sympy_solver_visitor(nmodl_text, false, false, AstNodeType::DERIVATIVE_BLOCK);
             REQUIRE(result[0] == reindent_text(expected_result));
         }
     }
@@ -3048,8 +3035,8 @@ SCENARIO("SympySolver visitor: derivimplicit or sparse", "[sympy][derivimplicit]
             })";
         THEN("Construct & solver linear system") {
             CAPTURE(nmodl_text);
-            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
-                                                   AstNodeType::DERIVATIVE_BLOCK);
+            auto result =
+                run_sympy_solver_visitor(nmodl_text, false, false, AstNodeType::DERIVATIVE_BLOCK);
             REQUIRE(result[0] == reindent_text(expected_result));
         }
     }
@@ -3080,8 +3067,8 @@ SCENARIO("SympySolver visitor: derivimplicit or sparse", "[sympy][derivimplicit]
             })";
         THEN("Construct & solver linear system") {
             CAPTURE(nmodl_text);
-            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
-                                                   AstNodeType::DERIVATIVE_BLOCK);
+            auto result =
+                run_sympy_solver_visitor(nmodl_text, false, false, AstNodeType::DERIVATIVE_BLOCK);
             REQUIRE(result[0] == reindent_text(expected_result));
         }
     }
@@ -3119,8 +3106,8 @@ SCENARIO("SympySolver visitor: derivimplicit or sparse", "[sympy][derivimplicit]
             })";
         THEN("Construct newton solve block") {
             CAPTURE(nmodl_text);
-            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
-                                                   AstNodeType::DERIVATIVE_BLOCK);
+            auto result =
+                run_sympy_solver_visitor(nmodl_text, false, false, AstNodeType::DERIVATIVE_BLOCK);
             REQUIRE(result[0] == reindent_text(expected_result));
         }
     }
@@ -3175,8 +3162,8 @@ SCENARIO("SympySolver visitor: derivimplicit or sparse", "[sympy][derivimplicit]
             })";
         THEN("Construct newton solve block") {
             CAPTURE(nmodl_text);
-            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
-                                                   AstNodeType::DERIVATIVE_BLOCK);
+            auto result =
+                run_sympy_solver_visitor(nmodl_text, false, false, AstNodeType::DERIVATIVE_BLOCK);
             REQUIRE(result[0] == reindent_text(expected_result));
         }
     }
@@ -3248,8 +3235,8 @@ SCENARIO("SympySolver visitor: derivimplicit or sparse", "[sympy][derivimplicit]
                 }
             })";
         THEN("Construct newton solve block") {
-            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
-                                                   AstNodeType::DERIVATIVE_BLOCK);
+            auto result =
+                run_sympy_solver_visitor(nmodl_text, false, false, AstNodeType::DERIVATIVE_BLOCK);
             CAPTURE(nmodl_text);
             REQUIRE(result[0] == reindent_text(expected_result_0));
             REQUIRE(result[1] == reindent_text(expected_result_1));
@@ -3265,8 +3252,7 @@ SCENARIO("SympySolver visitor: derivimplicit or sparse", "[sympy][derivimplicit]
 std::string run_sympy_conductance_visitor(const std::string& text) {
     // construct AST from text
     NmodlDriver driver;
-    driver.parse_string(text);
-    auto ast = driver.ast();
+    auto ast = driver.parse_string(text);
 
     // construct symbol table from AST
     SymtabVisitor(false).visit_program(ast.get());
@@ -3290,8 +3276,7 @@ std::string run_sympy_conductance_visitor(const std::string& text) {
 std::string breakpoint_to_nmodl(const std::string& text) {
     // construct AST from text
     NmodlDriver driver;
-    driver.parse_string(text);
-    auto ast = driver.ast();
+    auto ast = driver.parse_string(text);
 
     // construct symbol table from AST
     SymtabVisitor v_symtab;
@@ -4194,8 +4179,7 @@ SCENARIO("Sympy specific AST to NMODL conversion") {
         THEN("to_nmodl can ignore all units") {
             auto input = reindent_text(nmodl);
             NmodlDriver driver;
-            driver.parse_string(input);
-            auto ast = driver.ast();
+            auto ast = driver.parse_string(input);
             auto result = to_nmodl(ast.get(), {AstNodeType::UNIT});
             REQUIRE(result == reindent_text(expected));
         }
@@ -4209,8 +4193,7 @@ SCENARIO("Sympy specific AST to NMODL conversion") {
 
 std::string run_constant_folding_visitor(const std::string& text) {
     NmodlDriver driver;
-    driver.parse_string(text);
-    auto ast = driver.ast();
+    auto ast = driver.parse_string(text);
 
     SymtabVisitor().visit_program(ast.get());
     ConstantFolderVisitor().visit_program(ast.get());
@@ -4366,8 +4349,8 @@ SCENARIO("LINEAR solve block (SympySolver Visitor)", "[sympy][linear]") {
                 x = 5
             })";
         THEN("solve analytically") {
-            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
-                                                   AstNodeType::LINEAR_BLOCK);
+            auto result =
+                run_sympy_solver_visitor(nmodl_text, false, false, AstNodeType::LINEAR_BLOCK);
             REQUIRE(reindent_text(result[0]) == reindent_text(expected_text));
         }
     }
@@ -4384,8 +4367,8 @@ SCENARIO("LINEAR solve block (SympySolver Visitor)", "[sympy][linear]") {
                 x = 0.5/a
             })";
         THEN("solve analytically") {
-            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
-                                                   AstNodeType::LINEAR_BLOCK);
+            auto result =
+                run_sympy_solver_visitor(nmodl_text, false, false, AstNodeType::LINEAR_BLOCK);
             REQUIRE(reindent_text(result[0]) == reindent_text(expected_text));
         }
     }
@@ -4404,8 +4387,8 @@ SCENARIO("LINEAR solve block (SympySolver Visitor)", "[sympy][linear]") {
                 y = a
             })";
         THEN("solve analytically") {
-            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
-                                                   AstNodeType::LINEAR_BLOCK);
+            auto result =
+                run_sympy_solver_visitor(nmodl_text, false, false, AstNodeType::LINEAR_BLOCK);
             REQUIRE(reindent_text(result[0]) == reindent_text(expected_text));
         }
     }
@@ -4429,8 +4412,8 @@ SCENARIO("LINEAR solve block (SympySolver Visitor)", "[sympy][linear]") {
             })";
         THEN("solve analytically, insert in correct location") {
             CAPTURE(reindent_text(nmodl_text));
-            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
-                                                   AstNodeType::LINEAR_BLOCK);
+            auto result =
+                run_sympy_solver_visitor(nmodl_text, false, false, AstNodeType::LINEAR_BLOCK);
             REQUIRE(reindent_text(result[0]) == reindent_text(expected_text));
         }
     }
@@ -4454,8 +4437,8 @@ SCENARIO("LINEAR solve block (SympySolver Visitor)", "[sympy][linear]") {
             })";
         THEN("solve analytically, insert in correct location") {
             CAPTURE(reindent_text(nmodl_text));
-            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
-                                                   AstNodeType::LINEAR_BLOCK);
+            auto result =
+                run_sympy_solver_visitor(nmodl_text, false, false, AstNodeType::LINEAR_BLOCK);
             REQUIRE(reindent_text(result[0]) == reindent_text(expected_text));
         }
     }
@@ -4476,8 +4459,8 @@ SCENARIO("LINEAR solve block (SympySolver Visitor)", "[sympy][linear]") {
                 z = pow(a, 2)*b*(c*(5.343*a+b*(-1*a+0.842*pow(b, 2)))*(4*c-1.3)-(1*b+4*c)*(5.343*a*c+1.43543))/(c*(pow(a, 2)*pow(b, 2)*(4*c-1.3)+0.1*b+0.4*c))
             })";
         THEN("solve analytically") {
-            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
-                                                   AstNodeType::LINEAR_BLOCK);
+            auto result =
+                run_sympy_solver_visitor(nmodl_text, false, false, AstNodeType::LINEAR_BLOCK);
             REQUIRE(reindent_text(result[0]) == reindent_text(expected_text));
         }
     }
@@ -4498,8 +4481,8 @@ SCENARIO("LINEAR solve block (SympySolver Visitor)", "[sympy][linear]") {
                 s[2] = -2
             })";
         THEN("solve analytically") {
-            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
-                                                   AstNodeType::LINEAR_BLOCK);
+            auto result =
+                run_sympy_solver_visitor(nmodl_text, false, false, AstNodeType::LINEAR_BLOCK);
             REQUIRE(reindent_text(result[0]) == reindent_text(expected_text));
         }
     }
@@ -4552,8 +4535,8 @@ SCENARIO("LINEAR solve block (SympySolver Visitor)", "[sympy][linear]") {
                 }
             })";
         THEN("return matrix system to solve") {
-            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
-                                                   AstNodeType::LINEAR_BLOCK);
+            auto result =
+                run_sympy_solver_visitor(nmodl_text, false, false, AstNodeType::LINEAR_BLOCK);
             REQUIRE(reindent_text(result[0]) == reindent_text(expected_text));
         }
     }
@@ -4766,8 +4749,8 @@ SCENARIO("LINEAR solve block (SympySolver Visitor)", "[sympy][linear]") {
                 }
             })";
         THEN("return matrix system to be solved") {
-            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
-                                                   AstNodeType::LINEAR_BLOCK);
+            auto result =
+                run_sympy_solver_visitor(nmodl_text, false, false, AstNodeType::LINEAR_BLOCK);
             REQUIRE(reindent_text(result[0]) == reindent_text(expected_text));
         }
     }
@@ -4801,8 +4784,8 @@ SCENARIO("NONLINEAR solve block (SympySolver Visitor)", "[sympy][nonlinear]") {
                 }
             })";
         THEN("return F & J for newton solver") {
-            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
-                                                   AstNodeType::NON_LINEAR_BLOCK);
+            auto result =
+                run_sympy_solver_visitor(nmodl_text, false, false, AstNodeType::NON_LINEAR_BLOCK);
             REQUIRE(reindent_text(result[0]) == reindent_text(expected_text));
         }
     }
@@ -4845,8 +4828,8 @@ SCENARIO("NONLINEAR solve block (SympySolver Visitor)", "[sympy][nonlinear]") {
                 }
             })";
         THEN("return F & J for newton solver") {
-            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
-                                                   AstNodeType::NON_LINEAR_BLOCK);
+            auto result =
+                run_sympy_solver_visitor(nmodl_text, false, false, AstNodeType::NON_LINEAR_BLOCK);
             REQUIRE(reindent_text(result[0]) == reindent_text(expected_text));
         }
     }
@@ -4858,8 +4841,7 @@ SCENARIO("NONLINEAR solve block (SympySolver Visitor)", "[sympy][nonlinear]") {
 
 std::string run_loop_unroll_visitor(const std::string& text) {
     NmodlDriver driver;
-    driver.parse_string(text);
-    auto ast = driver.ast();
+    auto ast = driver.parse_string(text);
 
     SymtabVisitor().visit_program(ast.get());
     ConstantFolderVisitor().visit_program(ast.get());
@@ -5000,8 +4982,7 @@ std::vector<std::string> run_steadystate_visitor(
     std::vector<std::string> results;
     // construct AST from text
     NmodlDriver driver;
-    driver.parse_string(text);
-    auto ast = driver.ast();
+    auto ast = driver.parse_string(text);
 
     // construct symbol table from AST
     SymtabVisitor().visit_program(ast.get());

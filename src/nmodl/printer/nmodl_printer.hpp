@@ -7,23 +7,33 @@
 
 #pragma once
 
+/**
+ * \file
+ * \brief \copybrief nmodl::printer::NMODLPrinter
+ */
+
 #include <fstream>
 #include <iostream>
 #include <memory>
 #include <sstream>
 
 namespace nmodl {
+namespace printer {
+
+/**
+ * @addtogroup printer
+ * @{
+ */
 
 /**
  * \class NMODLPrinter
  * \brief Helper class for printing AST back to NMDOL test
  *
- * NmodlPrintVisitor transforms AST back to NMODL. This class
- * provided common functionality required by visitor to print
- * nmodl ascii file.
+ * NmodlPrintVisitor transforms AST back to NMODL. This class provided common
+ * functionality required by visitor to print nmodl ascii file.
  *
- * \todo : Implement Printer as base class to avoid duplication
- *         code between JSONPrinter and NMODLPrinter.
+ * \todo Implement Printer as base class to avoid duplication code between
+ *       JSONPrinter and NMODLPrinter.
  */
 class NMODLPrinter {
   private:
@@ -58,4 +68,7 @@ class NMODLPrinter {
     void pop_level();
 };
 
+/** @} */  // end of printer
+
+}  // namespace printer
 }  // namespace nmodl

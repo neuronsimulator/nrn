@@ -14,11 +14,12 @@
 #include "utils/string_utils.hpp"
 #include "visitor_utils.hpp"
 
-using namespace fmt::literals;
 
 namespace nmodl {
+namespace visitor {
 
 using symtab::syminfo::NmodlType;
+using namespace fmt::literals;
 
 void KineticBlockVisitor::process_reac_var(const std::string& varname, int count) {
     // lookup index of state var
@@ -29,11 +30,13 @@ void KineticBlockVisitor::process_reac_var(const std::string& varname, int count
         // this should be included in the fluxes:
         if (in_reaction_statement_lhs) {
             non_state_var_fflux[i_statement] = varname;
-            logger->debug("KineticBlockVisitor :: adding non-state fflux[{}] \"{}\"", i_statement,
+            logger->debug("KineticBlockVisitor :: adding non-state fflux[{}] \"{}\"",
+                          i_statement,
                           varname);
         } else {
             non_state_var_bflux[i_statement] = varname;
-            logger->debug("KineticBlockVisitor :: adding non-state bflux[{}] \"{}\"", i_statement,
+            logger->debug("KineticBlockVisitor :: adding non-state bflux[{}] \"{}\"",
+                          i_statement,
                           varname);
         }
         // but as it is not a state var, no ODE should be generated for it, i.e. no nu_L or nu_R
@@ -44,12 +47,16 @@ void KineticBlockVisitor::process_reac_var(const std::string& varname, int count
         if (in_reaction_statement_lhs) {
             // set element of nu_L matrix
             rate_eqs.nu_L[i_statement][i_statevar] += count;
-            logger->debug("KineticBlockVisitor :: nu_L[{}][{}] += {}", i_statement, i_statevar,
+            logger->debug("KineticBlockVisitor :: nu_L[{}][{}] += {}",
+                          i_statement,
+                          i_statevar,
                           count);
         } else {
             // set element of nu_R matrix
             rate_eqs.nu_R[i_statement][i_statevar] += count;
-            logger->debug("KineticBlockVisitor :: nu_R[{}][{}] += {}", i_statement, i_statevar,
+            logger->debug("KineticBlockVisitor :: nu_R[{}][{}] += {}",
+                          i_statement,
+                          i_statevar,
                           count);
         }
     }
@@ -62,7 +69,8 @@ void KineticBlockVisitor::visit_conserve(ast::Conserve* node) {
     // to either multiply or divide state vars on LHS of conserve statement by their COMPARTMENT
     // factors?
     logger->debug("KineticBlockVisitor :: CONSERVE statement ignored (for now): {} = {}",
-                  to_nmodl(node->get_react().get()), to_nmodl(node->get_expr().get()));
+                  to_nmodl(node->get_react().get()),
+                  to_nmodl(node->get_expr().get()));
     statements_to_remove.insert(node);
 }
 
@@ -81,7 +89,9 @@ void KineticBlockVisitor::visit_compartment(ast::Compartment* node) {
             compartment_factors[var_index] = expression;
             logger->debug(
                 "KineticBlockVisitor :: COMPARTMENT factor {} for state var {} (index {})",
-                expression, var_name, var_index);
+                expression,
+                var_name,
+                var_index);
         }
     }
     // add COMPARTMENT state to list of statements to remove
@@ -152,7 +162,8 @@ void KineticBlockVisitor::visit_reaction_statement(ast::ReactionStatement* node)
             }
             // add to additive terms for this state var
             additive_terms[var_index] += "({})"_format(expr);
-            logger->debug("KineticBlockVisitor :: '<<' reaction statement: {}' += {}", varname,
+            logger->debug("KineticBlockVisitor :: '<<' reaction statement: {}' += {}",
+                          varname,
                           expr);
         }
         return;
@@ -363,13 +374,15 @@ void KineticBlockVisitor::visit_program(ast::Program* node) {
                 var_name += "[";
                 for (int i = 0; i < v->get_length(); ++i) {
                     std::string var_name_i = var_name + std::to_string(i) + "]";
-                    logger->debug("KineticBlockVisitor :: state_var_index[{}] = {}", var_name_i,
+                    logger->debug("KineticBlockVisitor :: state_var_index[{}] = {}",
+                                  var_name_i,
                                   state_var_count);
                     state_var_index[var_name_i] = state_var_count++;
                     state_var.push_back(var_name_i);
                 }
             } else {
-                logger->debug("KineticBlockVisitor :: state_var_index[{}] = {}", var_name,
+                logger->debug("KineticBlockVisitor :: state_var_index[{}] = {}",
+                              var_name,
                               state_var_count);
                 state_var_index[var_name] = state_var_count++;
                 state_var.push_back(var_name);
@@ -397,4 +410,5 @@ void KineticBlockVisitor::visit_program(ast::Program* node) {
     node->set_blocks(std::move(blocks));
 }
 
+}  // namespace visitor
 }  // namespace nmodl

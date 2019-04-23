@@ -25,6 +25,11 @@ class CParser;
 class location;
 
 /**
+ * @addtogroup parser
+ * @{
+ */
+
+/**
  * \class CDriver
  * \brief Class that binds all pieces together for parsing C verbatim blocks
  */
@@ -99,6 +104,8 @@ class CDriver {
         return false;
     }
 };
+
+/** @} */  // end of parser
 
 }  // namespace parser
 }  // namespace nmodl

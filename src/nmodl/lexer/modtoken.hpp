@@ -64,6 +64,9 @@ class ModToken {
     bool external = false;
 
   public:
+    /// \name Ctor & dtor
+    /// \{
+
     ModToken()
         : pos(nullptr, 0){};
 
@@ -75,6 +78,8 @@ class ModToken {
         : name(name)
         , token(token)
         , pos(pos) {}
+
+    /// \}
 
     /// Return a new instance of token
     ModToken* clone() const {

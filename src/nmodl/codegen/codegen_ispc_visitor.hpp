@@ -7,6 +7,11 @@
 
 #pragma once
 
+/**
+ * \file
+ * \brief \copybrief nmodl::codegen::CodegenIspcVisitor
+ */
+
 #include "codegen/codegen_c_visitor.hpp"
 
 
@@ -14,16 +19,23 @@ namespace nmodl {
 namespace codegen {
 
 /**
+ * @addtogroup codegen_backends
+ * @{
+ */
+
+/**
  * \class CodegenIspcVisitor
- * \brief Visitor for printing ispc backend
+ * \brief %Visitor for printing C code with ISPC backend
  */
 class CodegenIspcVisitor: public CodegenCVisitor {
     void print_atomic_op(const std::string& lhs, const std::string& op, const std::string& rhs);
 
     /// ast nodes which are not compatible with ISPC target
     const std::vector<ast::AstNodeType> incompatible_node_types{
-        ast::AstNodeType::VERBATIM, ast::AstNodeType::EIGEN_NEWTON_SOLVER_BLOCK,
-        ast::AstNodeType::EIGEN_LINEAR_SOLVER_BLOCK, ast::AstNodeType::WATCH_STATEMENT,
+        ast::AstNodeType::VERBATIM,
+        ast::AstNodeType::EIGEN_NEWTON_SOLVER_BLOCK,
+        ast::AstNodeType::EIGEN_LINEAR_SOLVER_BLOCK,
+        ast::AstNodeType::WATCH_STATEMENT,
         ast::AstNodeType::TABLE_STATEMENT};
 
     /// flag to indicate if visitor should print the the wrapper code
@@ -202,6 +214,8 @@ class CodegenIspcVisitor: public CodegenCVisitor {
     void visit_var_name(ast::VarName* node) override;
     void visit_program(ast::Program* node) override;
 };
+
+/** @} */  // end of codegen_backends
 
 }  // namespace codegen
 }  // namespace nmodl

@@ -210,8 +210,8 @@ item
 
 /** Bison expects error handler for parser */
 
-void UnitParser::error(const location &loc , const std::string &message) {
+void UnitParser::error(const location &loc , const std::string &msg) {
     std::stringstream ss;
-    ss << "Unit Parser Error : " << message << " [Location : " << loc << "]";
+    ss << "Unit Parser Error : " << msg << " [Location : " << loc << "]";
     throw std::runtime_error(ss.str());
 }

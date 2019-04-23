@@ -12,14 +12,14 @@
     #include <cstdlib>
     #include <iostream>
     #include <stdlib.h>
-    #include "parser/verbatim_context.hpp"
+    #include "parser/verbatim_driver.hpp"
     #include "parser/verbatim_parser.hpp"
 
     /**
      * The scanner state will include a field called yyextra
      * that can be used for user-defined state
      */
-    #define YY_EXTRA_TYPE nmodl::parser::VerbatimContext*
+    #define YY_EXTRA_TYPE nmodl::parser::VerbatimDriver*
 
 
     /**
@@ -144,14 +144,14 @@
 
 
 /** initialize nmodlext lexer context */
-void nmodl::parser::VerbatimContext::init_scanner() {
+void nmodl::parser::VerbatimDriver::init_scanner() {
     yylex_init(&scanner);
     yyset_extra(this, scanner);
 }
 
 
 /** delete nmodlext lexer context */
-void nmodl::parser::VerbatimContext::destroy_scanner() {
+void nmodl::parser::VerbatimDriver::destroy_scanner() {
     yylex_destroy(scanner);
 }
 

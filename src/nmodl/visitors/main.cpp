@@ -15,13 +15,13 @@
 #include "parser/nmodl_driver.hpp"
 #include "utils/logger.hpp"
 #include "visitors/ast_visitor.hpp"
-#include "visitors/cnexp_solve_visitor.hpp"
 #include "visitors/constant_folder_visitor.hpp"
 #include "visitors/inline_visitor.hpp"
 #include "visitors/json_visitor.hpp"
 #include "visitors/kinetic_block_visitor.hpp"
 #include "visitors/local_var_rename_visitor.hpp"
 #include "visitors/localize_visitor.hpp"
+#include "visitors/neuron_solve_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/perf_visitor.hpp"
 #include "visitors/sympy_conductance_visitor.hpp"
@@ -32,16 +32,17 @@
 
 
 using namespace nmodl;
+using namespace visitor;
 using namespace fmt::literals;
 
 /**
- * Standalone visitor program for NMODL. This demonstrate basic
- * usage of different visitor and driver classes.
+ * \file
+ * \brief Standalone program demonstrating usage of different visitors and driver classes.
  **/
 
 int main(int argc, const char* argv[]) {
     CLI::App app{
-        "NMODL Visitor : Runs standalone visitor classes({})"_format(version::to_string())};
+        "NMODL Visitor : Runs standalone visitor classes({})"_format(Version::to_string())};
 
     bool verbose = false;
     std::vector<std::string> files;
@@ -68,17 +69,19 @@ int main(int argc, const char* argv[]) {
         {std::make_shared<SymtabVisitor>(), "symtab", "SymtabVisitor"},
         {std::make_shared<JSONVisitor>(), "json", "JSONVisitor"},
         {std::make_shared<VerbatimVisitor>(), "verbatim", "VerbatimVisitor"},
-        {std::make_shared<VerbatimVarRenameVisitor>(), "verbatim-rename",
+        {std::make_shared<VerbatimVarRenameVisitor>(),
+         "verbatim-rename",
          "VerbatimVarRenameVisitor"},
         {std::make_shared<KineticBlockVisitor>(), "kinetic-rewrite", "KineticBlockVisitor"},
         {std::make_shared<ConstantFolderVisitor>(), "const-fold", "ConstantFolderVisitor"},
-        {std::make_shared<InlineVisitor>(), "cnexp", "InlineVisitor"},
+        {std::make_shared<InlineVisitor>(), "inline", "InlineVisitor"},
         {std::make_shared<LocalVarRenameVisitor>(), "local-rename", "LocalVarRenameVisitor"},
         {std::make_shared<SymtabVisitor>(), "symtab", "SymtabVisitor"},
-        {std::make_shared<SympyConductanceVisitor>(), "sympy-cond", "SympyConductanceVisitor"},
-        {std::make_shared<SymtabVisitor>(), "symtab", "SymtabVisitor"},
+        {std::make_shared<SympyConductanceVisitor>(),
+         "sympy-conductance",
+         "SympyConductanceVisitor"},
         {std::make_shared<SympySolverVisitor>(), "sympy-solve", "SympySolverVisitor"},
-        {std::make_shared<CnexpSolveVisitor>(), "cnexp", "CnexpSolveVisitor"},
+        {std::make_shared<NeuronSolveVisitor>(), "neuron-solve", "NeuronSolveVisitor"},
         {std::make_shared<LocalizeVisitor>(), "localize", "LocalizeVisitor"},
         {std::make_shared<PerfVisitor>(), "perf", "PerfVisitor"},
     };
@@ -88,21 +91,20 @@ int main(int argc, const char* argv[]) {
     for (const auto& filename: files) {
         logger->info("Processing {}", filename);
 
-        std::string mod_file = remove_extension(base_name(filename));
+        std::string mod_file = utils::remove_extension(utils::base_name(filename));
 
         /// driver object that creates lexer and parser
         parser::NmodlDriver driver;
-        driver.parse_file(filename);
 
         /// shared_ptr to ast constructed from parsing nmodl file
-        auto ast = driver.ast().get();
+        auto ast = driver.parse_file(filename);
 
         /// run all visitors and generate mod file after each run
         for (const auto& visitor: visitors) {
             logger->info("Running {}", visitor.description);
-            visitor.v->visit_program(ast);
+            visitor.v->visit_program(ast.get());
             std::string file = mod_file + "." + visitor.id + ".mod";
-            NmodlPrintVisitor(file).visit_program(ast);
+            NmodlPrintVisitor(file).visit_program(ast.get());
             logger->info("NMODL visitor generated {}", file);
         }
     }

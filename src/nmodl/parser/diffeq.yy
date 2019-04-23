@@ -228,8 +228,8 @@ arg             : e                         {
 %%
 
 
-void DiffeqParser::error(const location &loc , const std::string &message) {
+void DiffeqParser::error(const location &loc , const std::string &msg) {
     std::stringstream ss;
-    ss << "DiffEq Parser Error : " << message << " [Location : " << loc << "]";
+    ss << "DiffEq Parser Error : " << msg << " [Location : " << loc << "]";
     throw std::runtime_error(ss.str());
 }

@@ -10,6 +10,7 @@
 
 
 namespace nmodl {
+namespace visitor {
 
 using namespace ast;
 
@@ -122,4 +123,5 @@ void NmodlPrintVisitor::visit_{{ node.class_name|snake_case}}({{ node.class_name
 
 {% endfor %}
 
+}  // namespace visitor
 }  // namespace nmodl

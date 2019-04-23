@@ -13,6 +13,7 @@
 
 namespace nmodl {
 namespace codegen {
+/// different variable names used in code generation
 namespace naming {
 
 /// nmodl language version

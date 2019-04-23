@@ -18,6 +18,11 @@
 
 #include "units.hpp"
 
+/**
+ * \file
+ * \brief Units processing while being processed from lexer and parser
+ */
+
 namespace nmodl {
 namespace units {
 
@@ -46,13 +51,19 @@ void Unit::add_nominator_double(std::string double_string) {
 }
 
 void Unit::add_nominator_dims(std::array<int, MAX_DIMS> dimensions) {
-    std::transform(unit_dimensions.begin(), unit_dimensions.end(), dimensions.begin(),
-                   unit_dimensions.begin(), std::plus<int>());
+    std::transform(unit_dimensions.begin(),
+                   unit_dimensions.end(),
+                   dimensions.begin(),
+                   unit_dimensions.begin(),
+                   std::plus<int>());
 }
 
 void Unit::add_denominator_dims(std::array<int, MAX_DIMS> dimensions) {
-    std::transform(unit_dimensions.begin(), unit_dimensions.end(), dimensions.begin(),
-                   unit_dimensions.begin(), std::minus<int>());
+    std::transform(unit_dimensions.begin(),
+                   unit_dimensions.end(),
+                   dimensions.begin(),
+                   unit_dimensions.begin(),
+                   std::minus<int>());
 }
 
 void Unit::add_nominator_unit(std::string nom) {
@@ -107,7 +118,8 @@ double Unit::parse_double(std::string double_string) {
     }
     // if *it reached an exponent related char, then the whole double number is read
     for (it = double_string.begin();
-         it != double_string.end() && *it != 'e' && *it != '+' && *it != '-'; ++it) {
+         it != double_string.end() && *it != 'e' && *it != '+' && *it != '-';
+         ++it) {
         s_number.push_back(*it);
     }
     // then read the magnitude of the double number
@@ -204,8 +216,8 @@ void UnitTable::calc_denominator_dims(std::shared_ptr<Unit> unit, std::string de
         while (changed_denominator_name) {
             changed_denominator_name = 0;
             for (const auto& it: prefixes) {
-                auto res = std::mismatch(it.first.begin(), it.first.end(),
-                                         denominator_name.begin());
+                auto res =
+                    std::mismatch(it.first.begin(), it.first.end(), denominator_name.begin());
                 if (res.first == it.first.end()) {
                     changed_denominator_name = 1;
                     denominator_prefix_factor *= it.second;

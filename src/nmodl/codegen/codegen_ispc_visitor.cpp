@@ -24,6 +24,9 @@ namespace codegen {
 
 using symtab::syminfo::Status;
 
+using visitor::AstLookupVisitor;
+using visitor::RenameVisitor;
+
 /****************************************************************************************/
 /*                            Overloaded visitor methods                                */
 /****************************************************************************************/
@@ -126,8 +129,10 @@ std::string CodegenIspcVisitor::compute_method_name(BlockType type) {
 
 std::string CodegenIspcVisitor::net_receive_buffering_declaration() {
     auto params = ParamVector();
-    params.emplace_back(param_type_qualifier(), "{}*"_format(instance_struct()),
-                        param_ptr_qualifier(), "inst");
+    params.emplace_back(param_type_qualifier(),
+                        "{}*"_format(instance_struct()),
+                        param_ptr_qualifier(),
+                        "inst");
     params.emplace_back(param_type_qualifier(), "NrnThread*", param_ptr_qualifier(), "nt");
     params.emplace_back(param_type_qualifier(), "Memb_list*", param_ptr_qualifier(), "ml");
 
@@ -268,8 +273,10 @@ void CodegenIspcVisitor::print_backend_namespace_stop() {
 CodegenIspcVisitor::ParamVector CodegenIspcVisitor::get_global_function_parms(
     std::string arg_qualifier) {
     auto params = ParamVector();
-    params.emplace_back(param_type_qualifier(), "{}*"_format(instance_struct()),
-                        param_ptr_qualifier(), "inst");
+    params.emplace_back(param_type_qualifier(),
+                        "{}*"_format(instance_struct()),
+                        param_ptr_qualifier(),
+                        "inst");
     params.emplace_back(param_type_qualifier(), "NrnThread*", param_ptr_qualifier(), "nt");
     params.emplace_back(param_type_qualifier(), "Memb_list*", param_ptr_qualifier(), "ml");
     params.emplace_back(param_type_qualifier(), "int", "", "type");
@@ -628,9 +635,9 @@ void CodegenIspcVisitor::determine_target() {
     auto node_lv = AstLookupVisitor(incompatible_node_types);
 
     if (info.initial_node) {
-        emit_fallback[BlockType::Initial] = !node_lv.lookup(info.initial_node).empty() ||
-                                            calls_function(info.initial_node, "net_send") ||
-                                            info.require_wrote_conc;
+        emit_fallback[BlockType::Initial] =
+            !node_lv.lookup(info.initial_node).empty() ||
+            visitor::calls_function(info.initial_node, "net_send") || info.require_wrote_conc;
     } else {
         emit_fallback[BlockType::Initial] = info.net_receive_initial_node ||
                                             info.require_wrote_conc;
@@ -638,7 +645,8 @@ void CodegenIspcVisitor::determine_target() {
 
     if (info.net_receive_node) {
         emit_fallback[BlockType::NetReceive] = !node_lv.lookup(info.net_receive_node).empty() ||
-                                               calls_function(info.net_receive_node, "net_send");
+                                               visitor::calls_function(info.net_receive_node,
+                                                                       "net_send");
     }
 
     if (nrn_cur_required()) {

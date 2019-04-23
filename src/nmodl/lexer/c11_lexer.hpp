@@ -74,9 +74,9 @@ class CLexer: public CFlexLexer {
      * @param in Input stream from where tokens will be read
      * @param out Output stream where output will be sent
      */
-    explicit CLexer(CDriver& drv, std::istream* in = nullptr, std::ostream* out = nullptr)
+    explicit CLexer(CDriver& driver, std::istream* in = nullptr, std::ostream* out = nullptr)
         : CFlexLexer(in, out)
-        , driver(drv) {}
+        , driver(driver) {}
 
     ~CLexer() override = default;
 

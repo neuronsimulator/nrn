@@ -9,6 +9,7 @@
 #include "utils/string_utils.hpp"
 
 namespace nmodl {
+namespace printer {
 
 CodePrinter::CodePrinter(const std::string& filename) {
     if (filename.empty()) {
@@ -73,4 +74,5 @@ void CodePrinter::end_block(int num_newlines) {
     add_newline(num_newlines);
 }
 
+}  // namespace printer
 }  // namespace nmodl

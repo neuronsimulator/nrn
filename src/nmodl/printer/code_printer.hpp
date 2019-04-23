@@ -7,21 +7,36 @@
 
 #pragma once
 
+/**
+ * \dir
+ * \brief Code printer implementations
+ *
+ * \file
+ * \brief \copybrief nmodl::printer::CodePrinter
+ */
+
 #include <fstream>
 #include <iostream>
 #include <memory>
 #include <sstream>
 
 namespace nmodl {
+/// implementation of various printers
+namespace printer {
+
+/**
+ * @defgroup printer Code Printers
+ * @brief Printers for translating AST to different forms
+ * @{
+ */
 
 /**
  * \class CodePrinter
  * \brief Helper class for printing C/C++ code
  *
- * This class provides common functionality required by code generation
- * visitor to print C/C++/Cuda code.
+ * This class provides common functionality required by code
+ * generation visitor to print C/C++/Cuda code.
  */
-
 class CodePrinter {
   private:
     std::ofstream ofs;
@@ -33,8 +48,10 @@ class CodePrinter {
   public:
     CodePrinter()
         : result(new std::ostream(std::cout.rdbuf())) {}
+
     CodePrinter(std::stringstream& stream)
         : result(new std::ostream(stream.rdbuf())) {}
+
     CodePrinter(const std::string& filename);
 
     ~CodePrinter() {
@@ -44,8 +61,7 @@ class CodePrinter {
     /// print whitespaces for indentation
     void add_indent();
 
-    /// start of new block scope (i.e. start with "{")
-    /// and increases indentation level
+    /// start a block scope (i.e. start with "{")
     void start_block();
 
     void start_block(std::string&&);
@@ -67,7 +83,6 @@ class CodePrinter {
     }
 
     /// end of current block scope (i.e. end with "}")
-    /// and decreases indentation level
     void end_block(int num_newlines = 0);
 
     int indent_spaces() {
@@ -75,4 +90,7 @@ class CodePrinter {
     }
 };
 
+/** @} */  // end of printer
+
+}  // namespace printer
 }  // namespace nmodl

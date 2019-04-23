@@ -51,18 +51,16 @@ Now we can parse any valid NMODL constructs using parsing interface.
 First, we have to create nmodl parser object using :class:`nmodl.NmodlDriver` and then we can use :func:`nmodl.NmodlDriver.parse_string` method:
 
     >>> driver = nmodl.NmodlDriver()
-    >>> driver.parse_string(channel)
-    True
+    >>> modast = driver.parse_string(channel)
 
 The :func:`nmodl.NmodlDriver.parse_string` method will throw an exception with parsing error if the input is invalid.
-Otherwise it returns True and internally creates :class:`nmodl.ast.AST` object. We can access the AST using :func:`nmodl.NmodlDriver.ast` method:
-
-    >>> modast = driver.ast()
+Otherwise it return :class:`nmodl.ast.AST` object.
 
 If we simply print AST object, we can see JSON representation:
 
     >>> print ('%.100s' % modast)  # only first 100 characters
     {"Program":[{"NeuronBlock":[{"StatementBlock":[{"Suffix":[{"Name":[{"String":[{"name":"SUFFIX"}]}]},
+
 
 Querying AST objects with Visitors
 ===========

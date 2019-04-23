@@ -368,12 +368,12 @@
 %{
     #include "lexer/nmodl_lexer.hpp"
     #include "parser/nmodl_driver.hpp"
-    #include "parser/verbatim_context.hpp"
+    #include "parser/verbatim_driver.hpp"
 
     using nmodl::parser::NmodlParser;
     using nmodl::parser::NmodlLexer;
     using nmodl::parser::NmodlDriver;
-    using nmodl::parser::VerbatimContext;
+    using nmodl::parser::VerbatimDriver;
 
     /// yylex takes scanner as well as driver reference
     /// \todo: check if driver argument is required
@@ -414,7 +414,7 @@
 
 top             :   all
                     {
-                        driver.astRoot.reset($1);
+                        driver.set_ast($1);
                     }
                 |   error
                     {
@@ -2250,7 +2250,7 @@ valence         :   { $$ = nullptr; }
 std::string parse_with_verbatim_parser(std::string str) {
     auto is = new std::istringstream(str.c_str());
 
-    VerbatimContext extcontext(is);
+    VerbatimDriver extcontext(is);
     Verbatim_parse(&extcontext);
 
     std::string ss(*(extcontext.result));
@@ -2264,8 +2264,8 @@ std::string parse_with_verbatim_parser(std::string str) {
  *  and report all errors. For now simply abort.
  */
 
-void NmodlParser::error(const location &loc , const std::string &message) {
+void NmodlParser::error(const location &loc , const std::string &msg) {
     std::stringstream ss;
-    ss << "NMODL Parser Error : " << message << " [Location : " << loc << "]";
+    ss << "NMODL Parser Error : " << msg << " [Location : " << loc << "]";
     throw std::runtime_error(ss.str());
 }

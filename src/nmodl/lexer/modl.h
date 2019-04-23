@@ -9,7 +9,7 @@
 
 /**
  * \file modl.h
- * \brief Definitions from mod2c/nocmodl implementation
+ * \brief Legacy macro definitions from mod2c/nocmodl implementation
  *
  * Original implementation of NMODL use various flags to help
  * code generation. These flags are implemented as bit masks

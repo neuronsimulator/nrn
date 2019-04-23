@@ -27,6 +27,7 @@ struct CopyFromPython {
     }
 };
 
+
 template <>
 struct CopyFromPython<str> {
     void operator()(char* start, size_t n, str data) {

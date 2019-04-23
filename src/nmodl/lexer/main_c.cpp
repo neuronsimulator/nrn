@@ -45,7 +45,7 @@ void scan_c_code(std::istream& in) {
 
 
 int main(int argc, const char* argv[]) {
-    CLI::App app{"C-Lexer : Standalone Lexer for C Code({})"_format(version::to_string())};
+    CLI::App app{"C-Lexer : Standalone Lexer for C Code({})"_format(Version::to_string())};
 
     std::vector<std::string> c_files;
     std::vector<std::string> c_codes;

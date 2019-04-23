@@ -100,19 +100,19 @@ SCENARIO("Symbol operations") {
         WHEN("added external property") {
             symbol.add_property(NmodlType::extern_neuron_variable);
             THEN("symbol becomes external") {
-                REQUIRE(symbol.is_external_symbol_only() == true);
+                REQUIRE(symbol.is_external_variable() == true);
             }
         }
         WHEN("added multiple properties to symbol") {
             symbol.add_property(property1);
             symbol.add_property(property2);
             THEN("symbol has multiple properties") {
-                REQUIRE(symbol.has_properties(property1) == true);
+                REQUIRE(symbol.has_any_property(property1) == true);
 
-                REQUIRE(symbol.has_properties(property3) == false);
+                REQUIRE(symbol.has_any_property(property3) == false);
 
                 symbol.add_property(property3);
-                REQUIRE(symbol.has_properties(property3) == true);
+                REQUIRE(symbol.has_any_property(property3) == true);
 
                 auto property = property1 | property2;
                 REQUIRE(symbol.has_all_properties(property) == true);
@@ -130,9 +130,9 @@ SCENARIO("Symbol operations") {
         WHEN("combined properties") {
             NmodlType property = NmodlType::factor_def | NmodlType::global_var;
             THEN("symbol has union of all properties") {
-                REQUIRE(symbol.has_properties(property) == false);
+                REQUIRE(symbol.has_any_property(property) == false);
                 symbol.add_properties(property);
-                REQUIRE(symbol.has_properties(property) == true);
+                REQUIRE(symbol.has_any_property(property) == true);
                 property |= symbol.get_properties();
                 REQUIRE(symbol.get_properties() == property);
             }
@@ -154,7 +154,6 @@ SCENARIO("Symbol table operations") {
             THEN("all members are initialized") {
                 REQUIRE(table->under_global_scope());
                 REQUIRE_THAT(table->name(), Catch::Contains("Na"));
-                REQUIRE_THAT(table->type(), Catch::Contains("Program"));
                 REQUIRE_THAT(table->get_parent_table_name(), Catch::Contains("None"));
                 REQUIRE_THAT(table->position(), Catch::Contains("UNKNOWN"));
             }
