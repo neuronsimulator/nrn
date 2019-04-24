@@ -2515,7 +2515,6 @@ myPyMODINIT_FUNC nrnpy_hoc() {
   Symbol* s = NULL;
 #if PY_MAJOR_VERSION >= 3
   hocobject_type = (PyTypeObject*)PyType_FromSpec(&nrnpy_HocObjectType_spec);
-  hocobject_type->tp_as_number = &hocobj_as_number;
 #else
   hocobject_type = &nrnpy_HocObjectType;
 #endif
