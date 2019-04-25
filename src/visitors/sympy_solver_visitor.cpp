@@ -31,6 +31,7 @@ void SympySolverVisitor::init_block_data(ast::Node* node) {
     last_expression_statement = nullptr;
     block_with_expression_statements = nullptr;
     eq_system_is_valid = true;
+    conserve_equation.clear();
     // get set of local block vars & global vars
     vars = global_vars;
     if (auto symtab = node->get_statement_block()->get_symbol_table()) {
@@ -436,6 +437,29 @@ void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
     }
 }
 
+void SympySolverVisitor::visit_conserve(ast::Conserve* node) {
+    // Replace ODE for state variable on LHS of CONSERVE statement with
+    // algebraic expression on RHS (see p244 of NEURON book)
+    logger->debug("SympySolverVisitor :: CONSERVE statement: {}", to_nmodl(node));
+    expression_statements.insert(node);
+    std::string conserve_equation_statevar;
+    if (node->get_react()->is_react_var_name()) {
+        conserve_equation_statevar = node->get_react()->get_node_name();
+    }
+    if (std::find(all_state_vars.cbegin(), all_state_vars.cend(), conserve_equation_statevar) ==
+        all_state_vars.cend()) {
+        logger->error(
+            "SympySolverVisitor :: Invalid CONSERVE statement for DERIVATIVE block, LHS should be "
+            "a state variable, instead found: {}. Ignoring CONSERVE statement",
+            to_nmodl(node->get_react().get()));
+        return;
+    }
+    auto conserve_equation_str = to_nmodl_for_sympy(node->get_expr().get());
+    logger->debug("SympySolverVisitor :: --> replace ODE for state var {} with equation {}",
+                  conserve_equation_statevar, conserve_equation_str);
+    conserve_equation[conserve_equation_statevar] = conserve_equation_str;
+}
+
 void SympySolverVisitor::visit_derivative_block(ast::DerivativeBlock* node) {
     /// clear information from previous block, get global vars + block local vars
     init_block_data(node);
@@ -464,18 +488,29 @@ void SympySolverVisitor::visit_derivative_block(ast::DerivativeBlock* node) {
                 x_array_index = stringutils::trim(x_prime_split[1]);
                 x_array_index_i = "_" + x_array_index.substr(1, x_array_index.size() - 2);
             }
-            auto dxdt = stringutils::trim(split_eq[1]);
-            auto old_x = "old_" + x + x_array_index_i;  // TODO: do this properly,
-                                                        // check name is unique
-            // declare old_x
-            logger->debug("SympySolverVisitor :: -> declaring new local variable: {}", old_x);
-            add_local_variable(block_with_expression_statements, old_x);
-            // assign old_x = x
-            pre_solve_statements.push_back(old_x + " = " + x + x_array_index);
-            // replace ODE with Euler equation
-            eq = x + x_array_index + " = " + old_x + " + " + codegen::naming::NTHREAD_DT_VARIABLE +
-                 " * (" + dxdt + ")";
-            logger->debug("SympySolverVisitor :: -> constructed Euler eq: {}", eq);
+            std::string state_var_name = x + x_array_index;
+            auto var_eq_pair = conserve_equation.find(state_var_name);
+            if (var_eq_pair != conserve_equation.cend()) {
+                // replace the ODE for this state var with corresponding CONSERVE equation
+                eq = state_var_name + " = " + var_eq_pair->second;
+                logger->debug(
+                    "SympySolverVisitor :: -> instead of Euler eq using CONSERVE equation: {} = {}",
+                    state_var_name, var_eq_pair->second);
+            } else {
+                // no CONSERVE equation, construct Euler equation
+                auto dxdt = stringutils::trim(split_eq[1]);
+                auto old_x = "old_" + x + x_array_index_i;  // TODO: do this properly,
+                                                            // check name is unique
+                // declare old_x
+                logger->debug("SympySolverVisitor :: -> declaring new local variable: {}", old_x);
+                add_local_variable(block_with_expression_statements, old_x);
+                // assign old_x = x
+                pre_solve_statements.push_back(old_x + " = " + x + x_array_index);
+                // replace ODE with Euler equation
+                eq = x + x_array_index + " = " + old_x + " + " +
+                     codegen::naming::NTHREAD_DT_VARIABLE + " * (" + dxdt + ")";
+                logger->debug("SympySolverVisitor :: -> constructed Euler eq: {}", eq);
+            }
         }
 
         if (solve_method == codegen::naming::SPARSE_METHOD) {

@@ -2280,10 +2280,36 @@ SCENARIO("KineticBlock visitor", "[kinetic]") {
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE states {
+                CONSERVE y = 1-x
                 x' = (-1*(f(v)*x*y))
                 y' = (-1*(f(v)*x*y))
             })";
-        THEN("Convert to equivalent DERIVATIVE block (ignore CONSERVE for now)") {
+        THEN("Convert to equivalent DERIVATIVE block, rewrite CONSERVE statement") {
+            auto result = run_kinetic_block_visitor(input_nmodl_text);
+            CAPTURE(input_nmodl_text);
+            REQUIRE(result[0] == reindent_text(output_nmodl_text));
+        }
+    }
+    GIVEN("KINETIC block with -> reaction statement, 2 state vars, CONSERVE & COMPARTMENT") {
+        std::string input_nmodl_text = R"(
+            STATE {
+                x y
+            }
+            KINETIC states {
+                COMPARTMENT a { x }
+                COMPARTMENT b { y }
+                ~ x + y -> (f(v))
+                CONSERVE x + y = 1
+            })";
+        std::string output_nmodl_text = R"(
+            DERIVATIVE states {
+                CONSERVE y = (1-(a*1*x))/(b*1)
+                x' = ((-1*(f(v)*x*y)))/(a)
+                y' = ((-1*(f(v)*x*y)))/(b)
+            })";
+        THEN(
+            "Convert to equivalent DERIVATIVE block, rewrite CONSERVE statement inc COMPARTMENT "
+            "factors") {
             auto result = run_kinetic_block_visitor(input_nmodl_text);
             CAPTURE(input_nmodl_text);
             REQUIRE(result[0] == reindent_text(output_nmodl_text));
@@ -2363,10 +2389,67 @@ SCENARIO("KineticBlock visitor", "[kinetic]") {
             })";
         std::string output_nmodl_text = R"(
             DERIVATIVE states {
+                CONSERVE y = 0-x
                 x' = (-1*(a*x-b*y))
                 y' = (1*(a*x-b*y))
             })";
-        THEN("Convert to equivalent DERIVATIVE block (ignore CONSERVE for now)") {
+        THEN("Convert to equivalent DERIVATIVE block, rewrite CONSERVE statement") {
+            auto result = run_kinetic_block_visitor(input_nmodl_text);
+            CAPTURE(input_nmodl_text);
+            REQUIRE(result[0] == reindent_text(output_nmodl_text));
+        }
+    }
+    // array vars in CONSERVE statements are implicit sums over elements
+    // see p34 of http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.42.7812&rep=rep1&type=pdf
+    GIVEN("KINETIC block with array state vars, CONSERVE statement") {
+        std::string input_nmodl_text = R"(
+            STATE {
+                x[3] y
+            }
+            KINETIC states {
+                ~ x[0] <-> x[1] (a, b)
+                ~ x[2] <-> y (c, d)
+                CONSERVE y + x = 1
+            })";
+        std::string output_nmodl_text = R"(
+            DERIVATIVE states {
+                CONSERVE x[2] = 1-y-x[0]-x[1]
+                x'[0] = (-1*(a*x[0]-b*x[1]))
+                x'[1] = (1*(a*x[0]-b*x[1]))
+                x'[2] = (-1*(c*x[2]-d*y))
+                y' = (1*(c*x[2]-d*y))
+            })";
+        THEN(
+            "Convert to equivalent DERIVATIVE block, rewrite CONSERVE statement after summing over "
+            "array elements, with last state var on LHS") {
+            auto result = run_kinetic_block_visitor(input_nmodl_text);
+            CAPTURE(input_nmodl_text);
+            REQUIRE(result[0] == reindent_text(output_nmodl_text));
+        }
+    }
+    // array vars in CONSERVE statements are implicit sums over elements
+    // see p34 of http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.42.7812&rep=rep1&type=pdf
+    GIVEN("KINETIC block with array state vars, re-ordered CONSERVE statement") {
+        std::string input_nmodl_text = R"(
+            STATE {
+                x[3] y
+            }
+            KINETIC states {
+                ~ x[0] <-> x[1] (a, b)
+                ~ x[2] <-> y (c, d)
+                CONSERVE x + y = 1
+            })";
+        std::string output_nmodl_text = R"(
+            DERIVATIVE states {
+                CONSERVE y = 1-x[0]-x[1]-x[2]
+                x'[0] = (-1*(a*x[0]-b*x[1]))
+                x'[1] = (1*(a*x[0]-b*x[1]))
+                x'[2] = (-1*(c*x[2]-d*y))
+                y' = (1*(c*x[2]-d*y))
+            })";
+        THEN(
+            "Convert to equivalent DERIVATIVE block, rewrite CONSERVE statement after summing over "
+            "array elements, with last state var on LHS") {
             auto result = run_kinetic_block_visitor(input_nmodl_text);
             CAPTURE(input_nmodl_text);
             REQUIRE(result[0] == reindent_text(output_nmodl_text));
@@ -2387,6 +2470,36 @@ SCENARIO("KineticBlock visitor", "[kinetic]") {
                 y' = ((1*(a*x-b*y)))/(c-d)
             })";
         THEN("Convert to equivalent DERIVATIVE block") {
+            auto result = run_kinetic_block_visitor(input_nmodl_text);
+            CAPTURE(input_nmodl_text);
+            REQUIRE(result[0] == reindent_text(output_nmodl_text));
+        }
+    }
+    GIVEN("KINETIC block with two CONSERVE statements") {
+        std::string input_nmodl_text = R"(
+            STATE {
+                c1 o1 o2 p0 p1
+            }
+            KINETIC ihkin {
+                evaluate_fct(v, cai)
+                ~ c1 <-> o1 (alpha, beta)
+                ~ p0 <-> p1 (k1ca, k2)
+                ~ o1 <-> o2 (k3p, k4)
+                CONSERVE p0+p1 = 1
+                CONSERVE c1+o1+o2 = 1
+            })";
+        std::string output_nmodl_text = R"(
+            DERIVATIVE ihkin {
+                evaluate_fct(v, cai)
+                CONSERVE p1 = 1-p0
+                CONSERVE o2 = 1-c1-o1
+                c1' = (-1*(alpha*c1-beta*o1))
+                o1' = (1*(alpha*c1-beta*o1))+(-1*(k3p*o1-k4*o2))
+                o2' = (1*(k3p*o1-k4*o2))
+                p0' = (-1*(k1ca*p0-k2*p1))
+                p1' = (1*(k1ca*p0-k2*p1))
+            })";
+        THEN("Convert to equivalent DERIVATIVE block, re-order both CONSERVE statements") {
             auto result = run_kinetic_block_visitor(input_nmodl_text);
             CAPTURE(input_nmodl_text);
             REQUIRE(result[0] == reindent_text(output_nmodl_text));
@@ -3004,10 +3117,151 @@ SCENARIO("SympySolver visitor: derivimplicit or sparse", "[sympy][derivimplicit]
                 mc = (b*dt*old_m+b*dt*old_mc+old_mc)/(a*dt+b*dt+1)
                 m = (a*dt*old_m+a*dt*old_mc+old_m)/(a*dt+b*dt+1)
             })";
-        THEN("Construct & solver linear system") {
+        THEN("Construct & solve linear system") {
+            CAPTURE(nmodl_text);
+            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
+                                                   AstNodeType::DERIVATIVE_BLOCK);
+            REQUIRE(result[0] == reindent_text(expected_result));
+        }
+    }
+    GIVEN("Derivative block with ODES with sparse method, CONSERVE statement of form m = ...") {
+        std::string nmodl_text = R"(
+            STATE {
+                mc m
+            }
+            BREAKPOINT  {
+                SOLVE scheme1 METHOD sparse
+            }
+            DERIVATIVE scheme1 {
+                mc' = -a*mc + b*m
+                m' = a*mc - b*m
+                CONSERVE m = 1 - mc
+            }
+        )";
+        std::string expected_result = R"(
+            DERIVATIVE scheme1 {
+                LOCAL old_mc
+                old_mc = mc
+                mc = (b*dt+old_mc)/(a*dt+b*dt+1)
+                m = (a*dt-old_mc+1)/(a*dt+b*dt+1)
+            })";
+        THEN("Construct & solve linear system, replace ODE for m with rhs of CONSERVE statement") {
+            CAPTURE(nmodl_text);
+            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
+                                                   AstNodeType::DERIVATIVE_BLOCK);
+            REQUIRE(result[0] == reindent_text(expected_result));
+        }
+    }
+    GIVEN(
+        "Derivative block with ODES with sparse method, invalid CONSERVE statement of form m + mc "
+        "= ...") {
+        std::string nmodl_text = R"(
+            STATE {
+                mc m
+            }
+            BREAKPOINT  {
+                SOLVE scheme1 METHOD sparse
+            }
+            DERIVATIVE scheme1 {
+                mc' = -a*mc + b*m
+                m' = a*mc - b*m
+                CONSERVE m + mc = 1
+            }
+        )";
+        std::string expected_result = R"(
+            DERIVATIVE scheme1 {
+                LOCAL old_mc, old_m
+                old_mc = mc
+                old_m = m
+                mc = (b*dt*old_m+b*dt*old_mc+old_mc)/(a*dt+b*dt+1)
+                m = (a*dt*old_m+a*dt*old_mc+old_m)/(a*dt+b*dt+1)
+            })";
+        THEN("Construct & solve linear system, ignore invalid CONSERVE statement") {
             CAPTURE(nmodl_text);
             auto result =
                 run_sympy_solver_visitor(nmodl_text, false, false, AstNodeType::DERIVATIVE_BLOCK);
+            REQUIRE(result[0] == reindent_text(expected_result));
+        }
+    }
+    GIVEN("Derivative block with ODES with sparse method, two CONSERVE statements") {
+        std::string nmodl_text = R"(
+            STATE {
+                c1 o1 o2 p0 p1
+            }
+            BREAKPOINT  {
+                SOLVE ihkin METHOD sparse
+            }
+            DERIVATIVE ihkin {
+                LOCAL alpha, beta, k3p, k4, k1ca, k2
+                evaluate_fct(v, cai)
+                CONSERVE p1 = 1-p0
+                CONSERVE o2 = 1-c1-o1
+                c1' = (-1*(alpha*c1-beta*o1))
+                o1' = (1*(alpha*c1-beta*o1))+(-1*(k3p*o1-k4*o2))
+                o2' = (1*(k3p*o1-k4*o2))
+                p0' = (-1*(k1ca*p0-k2*p1))
+                p1' = (1*(k1ca*p0-k2*p1))
+            })";
+        std::string expected_result = R"(
+            DERIVATIVE ihkin {
+                EIGEN_LINEAR_SOLVE[5]{
+                    LOCAL alpha, beta, k3p, k4, k1ca, k2, old_c1, old_o1, old_p0
+                }{
+                    evaluate_fct(v, cai)
+                    old_c1 = c1
+                    old_o1 = o1
+                    old_p0 = p0
+                }{
+                    X[0] = c1
+                    X[1] = o1
+                    X[2] = o2
+                    X[3] = p0
+                    X[4] = p1
+                    F[0] = -old_c1
+                    F[1] = -old_o1
+                    F[2] = -1
+                    F[3] = -old_p0
+                    F[4] = -1
+                    J[0] = -alpha*dt-1
+                    J[5] = beta*dt
+                    J[10] = 0
+                    J[15] = 0
+                    J[20] = 0
+                    J[1] = alpha*dt
+                    J[6] = -beta*dt-dt*k3p-1
+                    J[11] = dt*k4
+                    J[16] = 0
+                    J[21] = 0
+                    J[2] = -1
+                    J[7] = -1
+                    J[12] = -1
+                    J[17] = 0
+                    J[22] = 0
+                    J[3] = 0
+                    J[8] = 0
+                    J[13] = 0
+                    J[18] = -dt*k1ca-1
+                    J[23] = dt*k2
+                    J[4] = 0
+                    J[9] = 0
+                    J[14] = 0
+                    J[19] = -1
+                    J[24] = -1
+                }{
+                    c1 = X[0]
+                    o1 = X[1]
+                    o2 = X[2]
+                    p0 = X[3]
+                    p1 = X[4]
+                }{
+                }
+            })";
+        THEN(
+            "Construct & solve linear system, replacing ODEs for p1 and o2 with CONSERVE statement "
+            "algebraic relations") {
+            CAPTURE(nmodl_text);
+            auto result = run_sympy_solver_visitor(nmodl_text, false, false,
+                                                   AstNodeType::DERIVATIVE_BLOCK);
             REQUIRE(result[0] == reindent_text(expected_result));
         }
     }
@@ -3978,7 +4232,7 @@ SCENARIO("SympyConductance visitor", "[sympy]") {
                     tau_d_AMPA = 1.7    (ms)  : IMPORTANT: tau_r < tau_d
                     tau_r_NMDA = 0.29   (ms) : dual-exponential conductance profile
                     tau_d_NMDA = 43     (ms) : IMPORTANT: tau_r < tau_d
-                    Use = 1.0   (1)   : Utilization of synaptic efficacy (just initial values! Use, Dep and Fac are overwritten by BlueBuilder assigned values) 
+                    Use = 1.0   (1)   : Utilization of synaptic efficacy (just initial values! Use, Dep and Fac are overwritten by BlueBuilder assigned values)
                     Dep = 100   (ms)  : relaxation time constant from depression
                     Fac = 10   (ms)  :  relaxation time constant from facilitation
                     e = 0     (mV)  : AMPA and NMDA reversal potential
