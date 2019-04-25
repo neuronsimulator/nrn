@@ -62,16 +62,80 @@ void KineticBlockVisitor::process_reac_var(const std::string& varname, int count
     }
 }
 
+void KineticBlockVisitor::process_conserve_reac_var(const std::string& varname, int count) {
+    // subtract previous term from both sides of equation
+    if (conserve_equation_statevar != "") {
+        if (conserve_equation_factor.empty()) {
+            conserve_equation_str += " - " + conserve_equation_statevar;
+
+        } else {
+            conserve_equation_str += " - (" + conserve_equation_factor + " * " +
+                                     conserve_equation_statevar + ")";
+        }
+    }
+    // construct new term
+    auto compartment_factor = compartment_factors[state_var_index[varname]];
+    if (compartment_factor.empty()) {
+        if (count == 1) {
+            conserve_equation_factor = "";
+        } else {
+            conserve_equation_factor = std::to_string(count);
+        }
+    } else {
+        conserve_equation_factor = compartment_factor + "*" + std::to_string(count);
+    }
+    // if new term is not a state var raise error
+    if (state_var_index.find(varname) == state_var_index.cend()) {
+        logger->error(
+            "KineticBlockVisitor :: Error : CONSERVE statement should only contain state vars "
+            "on LHS, but found {}",
+            varname);
+    } else {
+        conserve_equation_statevar = varname;
+    }
+}
+
+std::shared_ptr<ast::Expression> create_expr(const std::string& str_expr) {
+    auto statement = create_statement("dummy = " + str_expr);
+    auto expr = std::dynamic_pointer_cast<ast::ExpressionStatement>(statement)->get_expression();
+    return std::dynamic_pointer_cast<ast::BinaryExpression>(expr)->get_rhs();
+}
+
 void KineticBlockVisitor::visit_conserve(ast::Conserve* node) {
-    // NOTE! CONSERVE statement "implicitly takes into account COMPARTMENT factors on LHS"
+    // rewrite CONSERVE statement in form x = ...
+    // where x was the last state var on LHS, and whose ODE should later be replaced with this
+    // equation note: CONSERVE statement "implicitly takes into account COMPARTMENT factors on LHS"
+    // this means that each state var on LHS must be multiplied by its compartment factor
+    // the RHS is just an expression, no compartment factors are taken into account
     // see p244 of NEURON book
-    // need to ensure that we do this in the same way: presumably need
-    // to either multiply or divide state vars on LHS of conserve statement by their COMPARTMENT
-    // factors?
-    logger->debug("KineticBlockVisitor :: CONSERVE statement ignored (for now): {} = {}",
-                  to_nmodl(node->get_react().get()),
-                  to_nmodl(node->get_expr().get()));
-    statements_to_remove.insert(node);
+    logger->debug("KineticBlockVisitor :: CONSERVE statement: {}", to_nmodl(node));
+    conserve_equation_str = "";
+    conserve_equation_statevar = "";
+    conserve_equation_factor = "";
+
+    in_conserve_statement = true;
+    // construct equation to replace ODE in conserve_equation_str
+    node->visit_children(this);
+    in_conserve_statement = false;
+
+    conserve_equation_str = to_nmodl(node->get_expr().get()) + conserve_equation_str;
+    if (!conserve_equation_factor.empty()) {
+        // divide by compartment factor of conserve_equation_statevar
+        conserve_equation_str = "(" + conserve_equation_str + ")/(" + conserve_equation_factor +
+                                ")";
+    }
+
+    auto lhs = create_expr(conserve_equation_statevar);
+    // set react (lhs) of CONSERVE to the state variable whose ODE should be replaced
+    node->set_react(std::move(lhs));
+    // set expr (rhs) of CONSERVE to the equation that should replace the ODE
+    auto rhs = create_expr(conserve_equation_str);
+    // note: this is still a valid (and equivalent) CONSERVE statement.
+    // later this block will become a DERIVATIVE block where it is no longer valid
+    // to have a CONSERVE statement, but it is parsed without issues, and
+    // the SympySolver will use to it replace the ODE (to replicate what neuron does)
+    node->set_expr(std::move(rhs));
+    logger->debug("KineticBlockVisitor :: --> {}", to_nmodl(node));
 }
 
 void KineticBlockVisitor::visit_compartment(ast::Compartment* node) {
@@ -110,13 +174,22 @@ void KineticBlockVisitor::visit_reaction_operator(ast::ReactionOperator* node) {
 }
 
 void KineticBlockVisitor::visit_react_var_name(ast::ReactVarName* node) {
-    // react_var_name node contains var_name and integer
-    // var_name is the state variable which we convert to an index
-    // integer is the value to be added to the stochiometric matrix at this index
+    // ReactVarName node contains a VarName and an Integer
+    // the VarName is the state variable which we convert to an index
+    // the Integer is the value to be added to the stoichiometric matrix at this index
+    auto varname = to_nmodl(node->get_name().get());
+    int count = node->get_value() ? node->get_value()->eval() : 1;
     if (in_reaction_statement) {
-        auto varname = to_nmodl(node->get_name().get());
-        int count = node->get_value() ? node->get_value()->eval() : 1;
         process_reac_var(varname, count);
+    } else if (in_conserve_statement) {
+        if (array_state_var_size.find(varname) != array_state_var_size.cend()) {
+            // state var is an array: need to sum over each element
+            for (int i = 0; i < array_state_var_size[varname]; ++i) {
+                process_conserve_reac_var(varname + "[" + std::to_string(i) + "]", count);
+            }
+        } else {
+            process_conserve_reac_var(varname, count);
+        }
     }
 }
 
@@ -192,7 +265,7 @@ void KineticBlockVisitor::visit_reaction_statement(ast::ReactionStatement* node)
     non_state_var_fflux.emplace_back();
     non_state_var_bflux.emplace_back();
 
-    // add a row of zeros to the stochiometric matrices
+    // add a row of zeros to the stoichiometric matrices
     rate_eqs.nu_L.emplace_back(std::vector<int>(state_var_count, 0));
     rate_eqs.nu_R.emplace_back(std::vector<int>(state_var_count, 0));
 
@@ -242,12 +315,6 @@ void KineticBlockVisitor::visit_reaction_statement(ast::ReactionStatement* node)
 
     // increment statement counter
     ++i_statement;
-}
-
-std::shared_ptr<ast::Expression> create_expr(const std::string& str_expr) {
-    auto statement = create_statement("dummy = " + str_expr);
-    auto expr = std::dynamic_pointer_cast<ast::ExpressionStatement>(statement)->get_expression();
-    return std::dynamic_pointer_cast<ast::BinaryExpression>(expr)->get_rhs();
 }
 
 void KineticBlockVisitor::visit_wrapped_expression(ast::WrappedExpression* node) {
@@ -363,6 +430,7 @@ void KineticBlockVisitor::visit_program(ast::Program* node) {
 
     // get state variables - assign an index to each
     state_var_index.clear();
+    array_state_var_size.clear();
     state_var.clear();
     state_var_count = 0;
     if (auto symtab = node->get_symbol_table()) {
@@ -370,6 +438,8 @@ void KineticBlockVisitor::visit_program(ast::Program* node) {
         for (const auto& v: statevars) {
             std::string var_name = v->get_name();
             if (v->is_array()) {
+                // CONSERVE statement needs to know this is an array state var, and its size:
+                array_state_var_size[var_name] = v->get_length();
                 // for array state vars we need to add each element of the array separately
                 var_name += "[";
                 for (int i = 0; i < v->get_length(); ++i) {

@@ -142,6 +142,10 @@ class SympySolverVisitor: public AstVisitor {
     /// vector of state vars used *in block* (in same order as all_state_vars)
     std::vector<std::string> state_vars;
 
+    /// map from state vars to the algebraic equation from CONSERVE statement that should replace
+    /// their ODE, if any
+    std::map<std::string, std::string> conserve_equation;
+
     /// optionally replace cnexp solution with (1,1) pade approx
     bool use_pade_approx;
 
@@ -161,6 +165,7 @@ class SympySolverVisitor: public AstVisitor {
 
     void visit_var_name(ast::VarName* node) override;
     void visit_diff_eq_expression(ast::DiffEqExpression* node) override;
+    void visit_conserve(ast::Conserve* node) override;
     void visit_derivative_block(ast::DerivativeBlock* node) override;
     void visit_lin_equation(ast::LinEquation* node) override;
     void visit_linear_block(ast::LinearBlock* node) override;

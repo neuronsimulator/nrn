@@ -37,9 +37,12 @@ namespace visitor {
  * containing a system of ODEs that is equivalent to
  * the original set of reaction statements
  *
- * Currently is only valid assuming the order
- * of statements within the KINETIC block does not
- * matter. Also does not yet support array variables.
+ * Note: assumes that the order of statements between the first and last
+ * reaction statement (those starting with "~") does not matter.
+ *
+ * If there is a CONSERVE statement it is rewritten in an equivalent
+ * form which is then be used by the SympySolver visitor to replace
+ * the ODE for the last state variable on the LHS of the CONSERVE statement
  *
  */
 class KineticBlockVisitor: public AstVisitor {
@@ -47,7 +50,10 @@ class KineticBlockVisitor: public AstVisitor {
     /// update stoichiometric matrices with reaction var term
     void process_reac_var(const std::string& varname, int count = 1);
 
-    /// stoichiometric matrices nu_L, nu_R
+    /// update CONSERVE statement with reaction var term
+    void process_conserve_reac_var(const std::string& varname, int count = 1);
+
+    /// stochiometric matrices nu_L, nu_R
     /// forwards/backwards fluxes k_f, k_b
     /// (see kinetic_schemes.ipynb notebook for details)
     struct RateEqs {
@@ -90,11 +96,27 @@ class KineticBlockVisitor: public AstVisitor {
     /// map from state variable to corresponding index
     std::map<std::string, int> state_var_index;
 
+    /// map from array state variable to its size (for summing over each element of any array state
+    /// vars in a CONSERVE statement)
+    std::map<std::string, int> array_state_var_size;
+
     /// true if we are visiting a reaction statement
     bool in_reaction_statement = false;
 
     /// true if we are visiting the left hand side of reaction statement
     bool in_reaction_statement_lhs = false;
+
+    /// true if we are visiting a CONSERVE statement
+    bool in_conserve_statement = false;
+
+    /// conserve statement equation as string
+    std::string conserve_equation_str;
+
+    /// conserve statement: current state variable being processed
+    std::string conserve_equation_statevar;
+
+    /// conserve statement: current state var multiplicative factor being processed
+    std::string conserve_equation_factor;
 
     /// current statement index
     int i_statement = 0;
