@@ -110,7 +110,9 @@ void CodegenCVisitor::visit_prime_name(PrimeName* node) {
 }
 
 
-/// \todo : validate how @ is being handled in neuron implementation
+/**
+ * \todo : Validate how @ is being handled in neuron implementation
+ */
 void CodegenCVisitor::visit_var_name(VarName* node) {
     if (!codegen) {
         return;
@@ -268,7 +270,7 @@ void CodegenCVisitor::visit_unary_operator(UnaryOperator* node) {
 
 
 /**
- * Statement block is top level construct (for every nmodl block).
+ * \details Statement block is top level construct (for every nmodl block).
  * Sometime we want to analyse ast nodes even if code generation is
  * false. Hence we visit children even if code generation is false.
  */
@@ -312,9 +314,7 @@ void CodegenCVisitor::visit_verbatim(Verbatim* node) {
 
 
 /**
- * Check if given statement needs to be skipped during code generation
- *
- * Certain statements like unit, comment, solve can/need to be skipped
+ * \details Certain statements like unit, comment, solve can/need to be skipped
  * during code generation. Note that solve block is wrapped in expression
  * statement and hence we have to check inner expression. It's also true
  * for the initial block defined inside net receive block.
@@ -387,7 +387,7 @@ bool CodegenCVisitor::net_receive_required() {
 
 
 /**
- * When floating point data type is not default (i.e. double) then we
+ * \details When floating point data type is not default (i.e. double) then we
  * have to copy old array to new type (for range variables).
  */
 bool CodegenCVisitor::range_variable_setup_required() {
@@ -433,9 +433,7 @@ int CodegenCVisitor::position_of_int_var(const std::string& name) {
 
 
 /**
- * Convert double value to string
- *
- * We can directly use to_string method but if user specify 7.0 then it gets
+ * \details We can directly use to_string method but if user specify 7.0 then it gets
  * printed as 7 (as integer). To avoid this, we use below wrapper. But note
  * that there are still issues. For example, if 1.1 is not exactly represented
  * in floating point, then it gets printed as 1.0999999999999. May be better
@@ -458,9 +456,7 @@ std::string CodegenCVisitor::float_to_string(float value) {
 
 
 /**
- * Check if given statement needs semicolon at the end of statement
- *
- * Statements like if, else etc. don't need semicolon at the end.
+ * \details Statements like if, else etc. don't need semicolon at the end.
  * (Note that it's valid to have "extraneous" semicolon). Also, statement
  * block can appear as statement using expression statement which need to
  * be inspected.
@@ -501,9 +497,7 @@ bool CodegenCVisitor::defined_method(const std::string& name) {
 
 
 /**
- * Return "current" for variable name used in breakpoint block
- *
- * Current variable used in breakpoint block could be local variable.
+ * \details Current variable used in breakpoint block could be local variable.
  * In this case, neuron has already renamed the variable name by prepending
  * "_l". In our implementation, the variable could have been renamed by
  * one of the pass. And hence, we search all local variables and check if
@@ -573,9 +567,7 @@ int CodegenCVisitor::int_variables_size() {
 
 
 /**
- * For given block type, return statements for all read ion variables
- *
- * Depending upon the block type, we have to print read/write ion variables
+ * \details Depending upon the block type, we have to print read/write ion variables
  * during code generation. Depending on block/procedure being printed, this
  * method return statements as vector. As different code backends could have
  * different variable names, we rely on backend-specific read_ion_variable_name
@@ -689,13 +681,13 @@ std::vector<ShadowUseStatement> CodegenCVisitor::ion_write_statements(BlockType 
 
 
 /**
- * Often top level verbatim blocks use variables with old names.
+ * \details Often top level verbatim blocks use variables with old names.
  * Here we process if we are processing verbatim block at global scope.
  */
 std::string CodegenCVisitor::process_verbatim_token(const std::string& token) {
     const std::string& name = token;
 
-    /**
+    /*
      * If given token is procedure name and if it's defined
      * in the current mod file then it must be replaced
      */
@@ -703,9 +695,9 @@ std::string CodegenCVisitor::process_verbatim_token(const std::string& token) {
         return method_name(token);
     }
 
-    /**
+    /*
      * Check if token is commongly used variable name in
-     * verbatim block like nt, _threadargs etc. If so, replace
+     * verbatim block like nt, \c \_threadargs etc. If so, replace
      * it and return.
      */
     auto new_name = replace_if_verbatim_variable(name);
@@ -713,7 +705,7 @@ std::string CodegenCVisitor::process_verbatim_token(const std::string& token) {
         return get_variable_name(new_name, false);
     }
 
-    /**
+    /*
      * For top level verbatim blocks we shouldn't replace variable
      * names with Instance because arguments are provided from coreneuron
      * and they are missing inst.
@@ -729,9 +721,7 @@ bool CodegenCVisitor::ion_variable_struct_required() {
 
 
 /**
- * Check if variable is qualified as constant
- *
- * This can be override in the backend. For example, parameters can be constant
+ * \details This can be override in the backend. For example, parameters can be constant
  * except in INITIAL block where they are set to 0. As initial block is/can be
  * executed on c/cpu backend, gpu/cuda backend can mark the parameter as constnat.
  */
@@ -751,7 +741,7 @@ bool CodegenCVisitor::is_constant_variable(std::string name) {
 
 
 /**
- * Once variables are populated, update index semantics to register with coreneuron
+ * \details Once variables are populated, update index semantics to register with coreneuron
  */
 void CodegenCVisitor::update_index_semantics() {
     int index = 0;
@@ -800,7 +790,7 @@ void CodegenCVisitor::update_index_semantics() {
         info.semantics.emplace_back(index++, naming::NET_SEND_SEMANTIC, 1);
     }
 
-    /**
+    /*
      * Number of semantics for watch is one greater than number of
      * actual watch statements in the mod file
      */
@@ -816,11 +806,8 @@ void CodegenCVisitor::update_index_semantics() {
 }
 
 
-/**
- * Return all floating point variables required for code generation
- */
 std::vector<SymbolType> CodegenCVisitor::get_float_variables() {
-    /// sort with definition order
+    // sort with definition order
     auto comparator = [](const SymbolType& first, const SymbolType& second) -> bool {
         return first->get_definition_order() < second->get_definition_order();
     };
@@ -829,7 +816,7 @@ std::vector<SymbolType> CodegenCVisitor::get_float_variables() {
     auto states = info.state_vars;
     states.insert(states.end(), info.ion_state_vars.begin(), info.ion_state_vars.end());
 
-    /// each state variable has corresponding Dstate variable
+    // each state variable has corresponding Dstate variable
     for (auto& variable: states) {
         auto name = "D" + variable->get_name();
         auto symbol = make_symbol(name);
@@ -861,8 +848,6 @@ std::vector<SymbolType> CodegenCVisitor::get_float_variables() {
 
 
 /**
- * Return all integer variables required for code generation
- *
  * IndexVariableInfo has following constructor arguments:
  *      - symbol
  *      - is_vdata   (false)
@@ -940,7 +925,7 @@ std::vector<IndexVariableInfo> CodegenCVisitor::get_int_variables() {
     }
 
     /**
-     * Variables for watch statements : note that there is one extra variable
+     * \note Variables for watch statements : there is one extra variable
      * used in coreneuron compared to actual watch statements for compatibility
      * with neuron (which uses one extra Datum variable)
      */
@@ -954,9 +939,7 @@ std::vector<IndexVariableInfo> CodegenCVisitor::get_int_variables() {
 
 
 /**
- * Return all ion write variables that require shadow vectors during code generation
- *
- * When we enable fine level parallelism at channel level, we have do updates
+ * \details When we enable fine level parallelism at channel level, we have do updates
  * to ion variables in atomic way. As cpus don't have atomic instructions in
  * simd loop, we have to use shadow vectors for every ion variables. Here
  * we return list of all such variables.
@@ -983,9 +966,6 @@ std::vector<SymbolType> CodegenCVisitor::get_shadow_variables() {
 /*                      Routines must be overloaded in backend                          */
 /****************************************************************************************/
 
-/**
- * Print parameters
- */
 std::string CodegenCVisitor::get_parameter_str(const ParamVector& params) {
     std::stringstream param_ss;
     for (auto iter = params.begin(); iter != params.end(); iter++) {
@@ -1011,9 +991,6 @@ void CodegenCVisitor::print_channel_iteration_task_end() {
 }
 
 
-/*
- * Depending on the backend, print loop for tiling channel iterations
- */
 void CodegenCVisitor::print_channel_iteration_tiling_block_begin(BlockType type) {
     // no tiling for cpu backend, just get loop bounds
     printer->add_line("int start = 0;");
@@ -1021,16 +998,13 @@ void CodegenCVisitor::print_channel_iteration_tiling_block_begin(BlockType type)
 }
 
 
-/**
- * End of tiled channel iteration block
- */
 void CodegenCVisitor::print_channel_iteration_tiling_block_end() {
     // backend specific, do nothing
 }
 
 
 /**
- * Each kernel like nrn_init, nrn_state and nrn_cur could be offloaded
+ * \details Each kernel such as \c nrn\_init, \c nrn\_state and \c nrn\_cur could be offloaded
  * to accelerator. In this case, at very top level, we print pragma
  * for data present. For example:
  *
@@ -1048,45 +1022,40 @@ void CodegenCVisitor::print_kernel_data_present_annotation_block_begin() {
 }
 
 
-/**
- * End of print_kernel_enter_data_begin
- */
 void CodegenCVisitor::print_kernel_data_present_annotation_block_end() {
     // backend specific, do nothing
 }
 
 
 /**
- * Depending programming model and compiler, we print compiler hint
+ * \details Depending programming model and compiler, we print compiler hint
  * for parallelization. For example:
  *
+ * \code
  *      #pragma ivdep
  *      for(int id = 0; id < nodecount; id++) {
  *
  *      #pragma acc parallel loop
  *      for(int id = 0; id < nodecount; id++) {
- *
+ * \endcode
  */
 void CodegenCVisitor::print_channel_iteration_block_parallel_hint(BlockType type) {
     printer->add_line("#pragma ivdep");
 }
 
 
-/// if reduction block in nrn_cur required
 bool CodegenCVisitor::nrn_cur_reduction_loop_required() {
     return channel_task_dependency_enabled() || info.point_process;
 }
 
-/// if shadow vectors required
+
 bool CodegenCVisitor::shadow_vector_setup_required() {
     return (channel_task_dependency_enabled() && !codegen_shadow_variables.empty());
 }
 
 
-/*
- * Depending on the backend, print condition/loop for iterating over channels
- *
- * For CPU backend we iterate over all node counts. For cuda we use thread
+/**
+ * \details For CPU backend we iterate over all node counts. For cuda we use thread
  * index to check if block needs to be executed or not.
  */
 void CodegenCVisitor::print_channel_iteration_block_begin(BlockType type) {
@@ -1372,8 +1341,6 @@ void CodegenCVisitor::print_top_verbatim_blocks() {
 
 
 /**
- * Rename function arguments that have same name with default inbuilt arguments
- *
  * \todo: issue with verbatim renaming. e.g. pattern.mod has info struct with
  * index variable. If we use "index" instead of "indexes" as default argument
  * then during verbatim replacement we don't know the index is which one. This
@@ -1596,9 +1563,11 @@ void CodegenCVisitor::print_check_table_thread_function() {
         printer->add_line("    {}({});"_format(name, arguments));
     }
 
-    /// todo : check_table_thread is called multiple times from coreneuron including
-    /// after finitialize. If we cleaup the instance then it will result in segfault
-    /// but if we don't then there is memory leak
+    /**
+     * \todo `check_table_thread` is called multiple times from coreneuron including
+     * after `finitialize`. If we cleaup the instance then it will result in segfault
+     * but if we don't then there is memory leak
+     */
     printer->add_line("    // cleanup_instance(ml);");
     printer->add_line("}");
 }
@@ -1646,7 +1615,7 @@ void CodegenCVisitor::print_function(ast::FunctionBlock* node) {
     auto name = node->get_node_name();
     auto return_var = "ret_" + name;
 
-    /// first rename return variable name
+    // first rename return variable name
     auto block = node->get_statement_block().get();
     RenameVisitor v(name, return_var);
     block->accept(&v);
@@ -1759,7 +1728,9 @@ std::string CodegenCVisitor::param_ptr_qualifier() {
 }
 
 
-/// @todo: figure out how to correctly handle qualifiers
+/**
+ * @todo: figure out how to correctly handle qualifiers
+ */
 CodegenCVisitor::ParamVector CodegenCVisitor::internal_method_parameters() {
     auto params = ParamVector();
     params.emplace_back("", "int", "", "id");
@@ -1795,16 +1766,13 @@ std::string CodegenCVisitor::external_method_parameters(bool table) {
 }
 
 
-/**
- * Function call arguments when function or procedure is external (i.e.
- * not visible at nmodl level)
- */
 std::string CodegenCVisitor::nrn_thread_arguments() {
     if (ion_variable_struct_required()) {
         return "id, pnodecount, ionvar, data, indexes, thread, nt, v";
     }
     return "id, pnodecount, data, indexes, thread, nt, v";
 }
+
 
 /**
  * Function call arguments when function or procedure is defined in the
@@ -1819,7 +1787,7 @@ std::string CodegenCVisitor::nrn_thread_internal_arguments() {
 
 
 /**
- * Commonly used variables in the verbatim blocks and their corresponding
+ * Replace commonly used variables in the verbatim blocks into their corresponding
  * variable name in the new code generation backend.
  */
 std::string CodegenCVisitor::replace_if_verbatim_variable(std::string name) {
@@ -1827,8 +1795,10 @@ std::string CodegenCVisitor::replace_if_verbatim_variable(std::string name) {
         name = naming::VERBATIM_VARIABLES_MAPPING.at(name);
     }
 
-    /// if function is defined the same mod file then the arguments must
-    /// contain mechanism instance as well.
+    /**
+     * if function is defined the same mod file then the arguments must
+     * contain mechanism instance as well.
+     */
     if (name == naming::THREAD_ARGS) {
         if (internal_method_call_encountered) {
             name = nrn_thread_internal_arguments();
@@ -1857,8 +1827,8 @@ std::string CodegenCVisitor::process_verbatim_text(std::string text) {
     for (size_t i = 0; i < tokens.size(); i++) {
         auto token = tokens[i];
 
-        /// check if we have function call in the verbatim block where
-        /// function is defined in the same mod file
+        // check if we have function call in the verbatim block where
+        // function is defined in the same mod file
         if (program_symtab->is_method_defined(token) && tokens[i + 1] == "(") {
             internal_method_call_encountered = true;
         }
@@ -1917,20 +1887,16 @@ std::string CodegenCVisitor::conc_write_statement(const std::string& ion_name,
  * like ionic current contributions needs to be atomically updated. In this
  * case we first update current mechanism's shadow vector and then add statement
  * to queue that will be used in reduction queue.
- *
- * @param statement Statement that might require reduction
- * @param type Type of the block
- * @return Original statement is reduction requires otherwise original statement
  */
 std::string CodegenCVisitor::process_shadow_update_statement(ShadowUseStatement& statement,
                                                              BlockType type) {
-    /// when there is no operator or rhs then that statement doesn't need shadow update
+    // when there is no operator or rhs then that statement doesn't need shadow update
     if (statement.op.empty() && statement.rhs.empty()) {
         auto text = statement.lhs + ";";
         return text;
     }
 
-    /// blocks like initial doesn't use shadow update (e.g. due to wrote_conc call)
+    // blocks like initial doesn't use shadow update (e.g. due to wrote_conc call)
     if (block_require_shadow_update(type)) {
         shadow_statements.push_back(statement);
         auto lhs = get_variable_name(shadow_varname(statement.lhs));
@@ -1939,7 +1905,7 @@ std::string CodegenCVisitor::process_shadow_update_statement(ShadowUseStatement&
         return text;
     }
 
-    /// return regular statement
+    // return regular statement
     auto lhs = get_variable_name(statement.lhs);
     auto text = "{} {} {};"_format(lhs, statement.op, statement.rhs);
     return text;
@@ -1952,12 +1918,9 @@ std::string CodegenCVisitor::process_shadow_update_statement(ShadowUseStatement&
 
 
 /**
- * NMODL constants from unit database
- *
- * todo : this should be replaced with constant handling from unit database
+ * \todo this should be replaced with constant handling from unit database
  */
-
-void CodegenCVisitor::print_nmodl_constant() {
+void CodegenCVisitor::print_nmodl_constants() {
     printer->add_newline(2);
     printer->add_line("/** constants used in nmodl */");
     printer->add_line("static const double FARADAY = 96485.3;");
@@ -2055,9 +2018,7 @@ void CodegenCVisitor::print_namespace_stop() {
 
 
 /**
- * Print getter methods used for accessing thread variables
- *
- * There are three types of thread variables currently considered:
+ * \details There are three types of thread variables currently considered:
  *      - top local thread variables
  *      - thread variables in the mod file
  *      - thread variables for solver
@@ -2200,13 +2161,6 @@ std::string CodegenCVisitor::update_if_ion_variable_name(const std::string& name
 }
 
 
-/**
- * Return variable name in the structure of mechanism properties
- *
- * @param name variable name that is being printed
- * @param use_instance if variable name should be with the instance object qualifier
- * @return use_instance whether print name using Instance structure (or data array if false)
- */
 std::string CodegenCVisitor::get_variable_name(const std::string& name, bool use_instance) {
     std::string varname = update_if_ion_variable_name(name);
 
@@ -2220,7 +2174,7 @@ std::string CodegenCVisitor::get_variable_name(const std::string& name, bool use
                          };
     // clang-format on
 
-    /// float variable
+    // float variable
     auto f = std::find_if(codegen_float_variables.begin(),
                           codegen_float_variables.end(),
                           symbol_comparator);
@@ -2228,14 +2182,14 @@ std::string CodegenCVisitor::get_variable_name(const std::string& name, bool use
         return float_variable_name(*f, use_instance);
     }
 
-    /// integer variable
+    // integer variable
     auto i =
         std::find_if(codegen_int_variables.begin(), codegen_int_variables.end(), index_comparator);
     if (i != codegen_int_variables.end()) {
         return int_variable_name(*i, varname, use_instance);
     }
 
-    /// global variable
+    // global variable
     auto g = std::find_if(codegen_global_variables.begin(),
                           codegen_global_variables.end(),
                           symbol_comparator);
@@ -2243,7 +2197,7 @@ std::string CodegenCVisitor::get_variable_name(const std::string& name, bool use
         return global_variable_name(*g);
     }
 
-    /// shadow variable
+    // shadow variable
     auto s = std::find_if(codegen_shadow_variables.begin(),
                           codegen_shadow_variables.end(),
                           symbol_comparator);
@@ -2255,13 +2209,13 @@ std::string CodegenCVisitor::get_variable_name(const std::string& name, bool use
         return "nt->_" + naming::NTHREAD_DT_VARIABLE;
     }
 
-    /// t in net_receive method is an argument to function and hence it should
-    /// ne used instead of nt->_t which is current time of thread
+    // t in net_receive method is an argument to function and hence it should
+    // ne used instead of nt->_t which is current time of thread
     if (varname == naming::NTHREAD_T_VARIABLE && !printing_net_receive) {
         return "nt->_" + naming::NTHREAD_T_VARIABLE;
     }
 
-    /// otherwise return original name
+    // otherwise return original name
     return varname;
 }
 
@@ -2322,9 +2276,7 @@ void CodegenCVisitor::print_coreneuron_includes() {
 
 
 /**
- * Print all static variables at file scope
- *
- * Variables required for type of ion, type of point process etc. are
+ * \details Variables required for type of ion, type of point process etc. are
  * of static int type. For any backend type (C,C++), it's ok to have
  * these variables as file scoped static variables.
  *
@@ -2369,9 +2321,9 @@ void CodegenCVisitor::print_mechanism_global_var_structure(bool wrapper) {
         }
     }
 
-    /// Neuron and Coreneuron adds "v" to global variables when vectorize
-    /// is false. But as v is always local variable and passed as argument,
-    /// we don't need to use global variable v
+    // Neuron and Coreneuron adds "v" to global variables when vectorize
+    // is false. But as v is always local variable and passed as argument,
+    // we don't need to use global variable v
 
     auto& top_locals = info.top_local_variables;
     if (!info.vectorize && !top_locals.empty()) {
@@ -2469,7 +2421,7 @@ void CodegenCVisitor::print_mechanism_global_var_structure(bool wrapper) {
     printer->add_line("/** holds object of global variable */");
     printer->add_line("{} {}_global;"_format(global_struct(), info.mod_suffix));
 
-    /// create copy on the device
+    // create copy on the device
     print_global_variable_device_create_annotation();
 }
 
@@ -2558,9 +2510,7 @@ void CodegenCVisitor::print_global_variables_for_hoc() {
 
 
 /**
- * Print register function for mechanisms
- *
- * Every mod file has register function to connect with the simulator.
+ * \details Every mod file has register function to connect with the simulator.
  * Various information about mechanism and callbacks get registered with
  * the simulator using suffix_reg() function.
  *
@@ -2584,10 +2534,10 @@ void CodegenCVisitor::print_mechanism_register() {
     printer->add_line("/** register channel with the simulator */");
     printer->start_block("void _{}_reg() "_format(info.mod_file));
 
-    /// allocate global variables
+    // allocate global variables
     printer->add_line("setup_global_variables();");
 
-    /// type related information
+    // type related information
     auto mech_type = get_variable_name("mech_type");
     auto suffix = add_escape_quote(info.mod_suffix);
     printer->add_newline();
@@ -2600,7 +2550,7 @@ void CodegenCVisitor::print_mechanism_register() {
     printer->add_newline();
     printer->add_line("_nrn_layout_reg(mech_type, get_memory_layout());");
 
-    /// register mechanism
+    // register mechanism
     auto args = register_mechanism_arguments();
     auto nobjects = num_thread_objects();
     if (info.point_process) {
@@ -2609,7 +2559,7 @@ void CodegenCVisitor::print_mechanism_register() {
         printer->add_line("register_mech({}, {});"_format(args, nobjects));
     }
 
-    /// types for ion
+    // types for ion
     for (const auto& ion: info.ions) {
         auto type = get_variable_name(ion.name + "_type");
         auto name = add_escape_quote(ion.name + "_ion");
@@ -2617,7 +2567,7 @@ void CodegenCVisitor::print_mechanism_register() {
     }
     printer->add_newline();
 
-    /**
+    /*
      *  If threads are used then memory is allocated in setup_global_variables.
      *  Register callbacks for thread allocation and cleanup. Note that thread_data_index
      *  represent total number of thread used minus 1 (i.e. index of last thread).
@@ -2641,18 +2591,18 @@ void CodegenCVisitor::print_mechanism_register() {
         printer->add_line("_nrn_thread_table_reg(mech_type, {});"_format(name));
     }
 
-    /// register read/write callbacks for pointers
+    // register read/write callbacks for pointers
     if (info.bbcore_pointer_used) {
         printer->add_line("hoc_reg_bbcore_read(mech_type, bbcore_read);");
         printer->add_line("hoc_reg_bbcore_write(mech_type, bbcore_write);");
     }
 
-    /// register size of double and int elements
+    // register size of double and int elements
     // clang-format off
     printer->add_line("hoc_register_prop_size(mech_type, float_variables_size(), int_variables_size());");
     // clang-format on
 
-    /// register semantics for index variables
+    // register semantics for index variables
     for (auto& semantic: info.semantics) {
         auto args = "mech_type, {}, {}"_format(semantic.index, add_escape_quote(semantic.name));
         printer->add_line("hoc_register_dparam_semantics({});"_format(args));
@@ -2662,7 +2612,7 @@ void CodegenCVisitor::print_mechanism_register() {
         printer->add_line("nrn_writes_conc(mech_type, 0);");
     }
 
-    /// register various information for point process type
+    // register various information for point process type
     if (info.net_event_used) {
         printer->add_line("add_nrn_has_net_event(mech_type);");
     }
@@ -2684,7 +2634,7 @@ void CodegenCVisitor::print_mechanism_register() {
         printer->add_line("hoc_register_net_send_buffering(mech_type);");
     }
 
-    /// register variables for hoc
+    // register variables for hoc
     printer->add_line("hoc_register_var(hoc_scalar_double, hoc_vector_double, NULL);");
     printer->end_block(1);
 }
@@ -2695,7 +2645,7 @@ void CodegenCVisitor::print_thread_memory_callbacks() {
         return;
     }
 
-    /// thread_mem_init callback
+    // thread_mem_init callback
     printer->add_newline(2);
     printer->add_line("/** thread memory allocation callback */");
     printer->start_block("static void thread_mem_init(ThreadDatum* thread) ");
@@ -2724,7 +2674,7 @@ void CodegenCVisitor::print_thread_memory_callbacks() {
     printer->end_block(3);
 
 
-    /// thread_mem_cleanup callback
+    // thread_mem_cleanup callback
     printer->add_line("/** thread memory cleanup callback */");
     printer->start_block("static void thread_mem_cleanup(ThreadDatum* thread) ");
 
@@ -2822,7 +2772,7 @@ void CodegenCVisitor::print_ion_var_structure() {
 
 
 void CodegenCVisitor::print_ion_var_constructor(const std::vector<std::string>& members) {
-    /// constructor
+    // constructor
     printer->add_newline();
     printer->add_line("IonCurVar() : ", 0);
     for (int i = 0; i < members.size(); i++) {
@@ -2863,7 +2813,7 @@ void CodegenCVisitor::print_global_variable_setup() {
     printer->add_line("    return;");
     printer->add_line("}");
 
-    /// offsets for state variables
+    // offsets for state variables
     if (info.primes_size != 0) {
         auto slist1 = get_variable_name("slist1");
         auto dlist1 = get_variable_name("dlist1");
@@ -2882,7 +2832,7 @@ void CodegenCVisitor::print_global_variable_setup() {
         }
     }
 
-    /// additional list for derivimplicit method
+    // additional list for derivimplicit method
     if (info.derivimplicit_coreneuron_solver()) {
         auto primes = program_symtab->get_variables_with_properties(NmodlType::prime_name);
         auto slist2 = get_variable_name("slist2");
@@ -2897,7 +2847,7 @@ void CodegenCVisitor::print_global_variable_setup() {
         allocated_variables.push_back(slist2);
     }
 
-    /// memory for thread member
+    // memory for thread member
     if (info.vectorize && (info.thread_data_index != 0)) {
         auto n = info.thread_data_index;
         auto alloc = "(ThreadDatum*) mem_alloc({}, sizeof(ThreadDatum))"_format(n);
@@ -2906,7 +2856,7 @@ void CodegenCVisitor::print_global_variable_setup() {
         allocated_variables.push_back(name);
     }
 
-    /// initialize global variables
+    // initialize global variables
     for (auto& var: info.state_vars) {
         auto name = var->get_name() + "0";
         auto symbol = program_symtab->lookup(name);
@@ -2916,13 +2866,13 @@ void CodegenCVisitor::print_global_variable_setup() {
         }
     }
 
-    /// note : v is not needed in global structure for nmodl even if vectorize is false
+    // note : v is not needed in global structure for nmodl even if vectorize is false
 
     if (!info.thread_variables.empty()) {
         printer->add_line("{} = 0;"_format(get_variable_name("thread_data_in_use")));
     }
 
-    /// initialize global variables
+    // initialize global variables
     for (auto& var: info.global_variables) {
         if (!var->is_array()) {
             auto name = get_variable_name(var->get_name());
@@ -2936,7 +2886,7 @@ void CodegenCVisitor::print_global_variable_setup() {
         }
     }
 
-    /// initialize constant variables
+    // initialize constant variables
     for (auto& var: info.constant_variables) {
         auto name = get_variable_name(var->get_name());
         auto value_ptr = var->get_value();
@@ -2960,7 +2910,7 @@ void CodegenCVisitor::print_global_variable_setup() {
         }
     }
 
-    /// update device copy
+    // update device copy
     print_global_variable_device_update_annotation();
 
     printer->add_newline();
@@ -3025,15 +2975,10 @@ void CodegenCVisitor::print_setup_range_variable() {
 
 
 /**
- * Floating point type for the given range variable (symbol)
- *
- * If floating point type like "float" is specified on command line then
+ * \details If floating point type like "float" is specified on command line then
  * we can't turn all variables to new type. This is because certain variables
  * are pointers to internal variables (e.g. ions). Hence, we check if given
  * variable can be safely converted to new type. If so, return new type.
- *
- * @param symbol Symbol for the range variable
- * @return Floating point type (float/double)
  */
 std::string CodegenCVisitor::get_range_var_float_type(const SymbolType& symbol) {
     // clang-format off
@@ -3128,13 +3073,13 @@ void CodegenCVisitor::print_initial_block(InitialBlock* node) {
         printer->add_line("IonCurVar ionvar;");
     }
 
-    /// read ion statements
+    // read ion statements
     auto read_statements = ion_read_statements(BlockType::Initial);
     for (auto& statement: read_statements) {
         printer->add_line(statement);
     }
 
-    /// initialize state variables (excluding ion state)
+    // initialize state variables (excluding ion state)
     for (auto& var: info.state_vars) {
         auto name = var->get_name();
         auto lhs = get_variable_name(name);
@@ -3142,13 +3087,13 @@ void CodegenCVisitor::print_initial_block(InitialBlock* node) {
         printer->add_line("{} = {};"_format(lhs, rhs));
     }
 
-    /// initial block
+    // initial block
     if (node != nullptr) {
         auto block = node->get_statement_block();
         print_statement_block(block.get(), false, false);
     }
 
-    /// write ion statements
+    // write ion statements
     auto write_statements = ion_write_statements(BlockType::Initial);
     for (auto& statement: write_statements) {
         auto text = process_shadow_update_statement(statement, BlockType::Initial);
@@ -3249,9 +3194,7 @@ void CodegenCVisitor::print_nrn_alloc() {
 }
 
 /**
- * Print nrn_watch_activate function used as a callback for every
- * WATCH statement in the mod file.
- * Todo : number of watch could be more than number of statements
+ * \todo number of watch could be more than number of statements
  * according to grammar. Check if this is correctly handled in neuron
  * and coreneuron.
  */
@@ -3266,7 +3209,7 @@ void CodegenCVisitor::print_watch_activate() {
     printer->start_block(
         "static void nrn_watch_activate({}, int id, int pnodecount, int watch_id) "_format(inst));
 
-    /// initialize all variables only during first watch statement
+    // initialize all variables only during first watch statement
     printer->add_line("if (watch_id == 0) {");
     for (int i = 0; i < info.watch_count; i++) {
         auto name = get_variable_name("watch{}"_format(i + 1));
@@ -3274,7 +3217,7 @@ void CodegenCVisitor::print_watch_activate() {
     }
     printer->add_line("}");
 
-    // todo : similar to neuron/coreneuron we are using
+    /// \todo : similar to neuron/coreneuron we are using
     // first watch and ignoring rest.
     for (int i = 0; i < info.watch_statements.size(); i++) {
         auto statement = info.watch_statements[i];
@@ -3296,8 +3239,7 @@ void CodegenCVisitor::print_watch_activate() {
 
 
 /**
- * Print kernel for watch activation
- * todo : similar to print_watch_activate, we are using only
+ * \todo similar to print_watch_activate, we are using only
  * first watch. need to verify with neuron/coreneuron about rest.
  */
 void CodegenCVisitor::print_watch_check() {
@@ -3385,7 +3327,7 @@ void CodegenCVisitor::print_net_receive_common_code(Block* node, bool need_mech_
         printer->add_line("{0}* inst = ({0}*) ml->instance;"_format(instance_struct()));
     }
 
-    /// rename variables but need to see if they are actually used
+    // rename variables but need to see if they are actually used
     auto parameters = info.net_receive_node->get_parameters();
     if (!parameters.empty()) {
         int i = 0;
@@ -3411,8 +3353,8 @@ void CodegenCVisitor::print_net_send_call(FunctionCall* node) {
     std::string weight_index = "weight_index";
     std::string pnt = "pnt";
 
-    /// for non-net-receieve functions there is no weight index argument
-    /// and artificial cell is in vdata which is void**
+    // for non-net-receieve functions there is no weight index argument
+    // and artificial cell is in vdata which is void**
     if (!printing_net_receive) {
         weight_index = "-1";
         auto var = get_variable_name("point_process");
@@ -3421,7 +3363,7 @@ void CodegenCVisitor::print_net_send_call(FunctionCall* node) {
         }
     }
 
-    /// artificial cells don't use spike buffering
+    // artificial cells don't use spike buffering
     // clang-format off
     if (info.artificial_cell) {
         printer->add_text("artcell_net_send(&{}, {}, {}, nt->_t+"_format(tqitem, weight_index, pnt));
@@ -3448,7 +3390,7 @@ void CodegenCVisitor::print_net_move_call(FunctionCall* node) {
     std::string weight_index = "-1";
     std::string pnt = "pnt";
 
-    /// artificial cells don't use spike buffering
+    // artificial cells don't use spike buffering
     // clang-format off
     if (info.artificial_cell) {
         printer->add_text("artcell_net_move(&{}, {}, {}, nt->_t+"_format(tqitem, weight_index, pnt));
@@ -3506,7 +3448,7 @@ void CodegenCVisitor::print_net_init() {
 void CodegenCVisitor::print_send_event_move() {
     printer->add_newline();
     printer->add_line("NetSendBuffer_t* nsb = ml->_net_send_buffer;");
-    // todo : update net send buffer on host
+    /// \todo Update net send buffer on host
     printer->add_line("for (int i=0; i < nsb->_cnt; i++) {");
     printer->add_line("    int type = nsb->_sendtype[i];");
     printer->add_line("    int tid = nt->id;");
@@ -3520,7 +3462,7 @@ void CodegenCVisitor::print_send_event_move() {
     // clang-format on
     printer->add_line("}");
     printer->add_line("nsb->_cnt = 0;");
-    // todo : update net send buffer count on device
+    /// \todo Update net send buffer count on device
 }
 
 
@@ -3628,7 +3570,7 @@ void CodegenCVisitor::print_net_receive_kernel() {
     printing_net_receive = true;
     auto node = info.net_receive_node;
 
-    /// rename arguments if same name is used
+    // rename arguments if same name is used
     auto parameters = node->get_parameters();
     for (auto& parameter: parameters) {
         auto name = parameter->get_node_name();
@@ -3712,7 +3654,7 @@ void CodegenCVisitor::print_net_receive() {
 
 
 /**
- * Todo: data is not derived. Need to add instance into instance struct?
+ * \todo Data is not derived. Need to add instance into instance struct?
  * data used here is wrong in AoS because as in original implementation,
  * data is not incremented every iteration for AoS. May be better to derive
  * actual variable names? [resolved now?]
@@ -3751,8 +3693,8 @@ void CodegenCVisitor::print_derivimplicit_kernel(Block* block) {
     printer->add_line("return reset;");
     printer->end_block(3);
 
-    /*
-     * TODO : To be backward compatible with mod2c we have to generate below
+    /**
+     * \todo To be backward compatible with mod2c we have to generate below
      * comment marker in the generated cpp file for kinderiv.py to
      * process it and generate correct _kinderiv.h
      */
@@ -3834,8 +3776,10 @@ void CodegenCVisitor::print_nrn_state() {
     printer->add_line("int node_id = node_index[id];");
     printer->add_line("double v = voltage[node_id];");
 
-    /// todo : eigen solver node also emits IonCurVar variable in the functor
-    /// but that shouldn't update ions in derivative block
+    /**
+     * \todo Eigen solver node also emits IonCurVar variable in the functor
+     * but that shouldn't update ions in derivative block
+     */
     if (ion_variable_struct_required()) {
         print_ion_variable();
     }
@@ -4064,7 +4008,7 @@ void CodegenCVisitor::print_common_getters() {
 
 
 void CodegenCVisitor::print_data_structures() {
-    print_mechanism_global_var_structure();
+    print_mechanism_global_var_structure(false);
     print_mechanism_range_var_structure();
     print_ion_var_structure();
 }
@@ -4101,7 +4045,7 @@ void CodegenCVisitor::print_codegen_routines() {
     print_backend_info();
     print_headers_include();
     print_namespace_begin();
-    print_nmodl_constant();
+    print_nmodl_constants();
     print_mechanism_info();
     print_data_structures();
     print_global_variables_for_hoc();

@@ -130,7 +130,7 @@ class CodegenIspcVisitor: public CodegenCVisitor {
 
     void print_wrapper_headers_include();
 
-    void print_nmodl_constant() override;
+    void print_nmodl_constants() override;
 
 
     /// all compute functions for every backend
@@ -153,7 +153,7 @@ class CodegenIspcVisitor: public CodegenCVisitor {
 
 
     /// structure that wraps all global variables in the mod file
-    void print_mechanism_global_var_structure(bool wrapper = false) override;
+    void print_mechanism_global_var_structure(bool wrapper) override;
 
 
     void print_data_structures() override;
