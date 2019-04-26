@@ -717,6 +717,8 @@ extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, i
         case 8:
             ode_solve(*t_ptr, *dt_ptr, p1, p2); /*solve mx=b replace b with x */
             /* TODO: we can probably reuse the dgadi code here... for now, we do nothing, which implicitly approximates the Jacobian as the identity matrix */
+            //y= p1 = states and b = p2 = RHS for x direction
+            ics_ode_solve(*t_ptr, *dt_ptr, p1, p2);
             break;
         case 9:
             //ode_jacobian(*dt_ptr, p1, p2); /* optionally prepare jacobian for fast ode_solve */
@@ -1475,6 +1477,63 @@ void _rhs_variable_step(const double t, const double* p1, double* p2)
         memcpy(ydot,rhs,sizeof(double)*num_states); //Invalid write of size 8
     }
     free(rhs);
+}
+
+//p1 = states = y p2 = RHS = ydot
+void ics_ode_solve(double dt, double* states, double* RHS) 
+{
+	Grid_node *grid;
+    ssize_t i;
+    int grid_size;
+	double dt = *dt_ptr;
+    double* grid_states;
+    double const * const orig_states = states + states_cvode_offset;
+    const unsigned char calculate_rhs = RHS == NULL ? 0 : 1;
+    double* const orig_RHS = RHS + states_cvode_offset;
+    states = orig_states;
+    RHS = orig_RHS;
+
+    /* prepare for advance by syncing data with local copy */
+    for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
+        grid_states = grid->states;
+        grid_size = grid->size_x * grid->size_y * grid->size_z;
+
+        /* copy the passed in states to local memory (needed to make reaction rates correct) */
+        for (i = 0; i < grid_size; i++) {
+            grid_states[i] = states[i];
+        }
+        states += grid_size;
+    }
+    /* transfer concentrations to classic NEURON states */
+    scatter_concentrations();
+
+    if (!calculate_rhs) {
+        return;
+    }
+	
+	states = orig_states;
+	RHS = orig_RHS;
+
+	/* TODO: reactions contribute to adaptive step-size*/
+	if(threaded_reactions_tasks != NULL)
+	    run_threaded_reactions(threaded_reactions_tasks);
+
+    /* process currents */
+    for (i = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, i++)
+    {
+        do_currents(grid, RHS, 1.0, i);
+        RHS += grid_size;
+    }
+	RHS = orig_RHS;
+
+    /* do the diffusion rates */
+    for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
+        grid->variable_step_ode_solve(states, RHS, dt);
+
+        RHS += grid_size;
+        states += grid_size;        
+    }
+
 }
 
 void get_reaction_rates(ICSReactions* react, double* states, double* rates, double* ydot)

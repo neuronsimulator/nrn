@@ -314,6 +314,7 @@ static void variable_step_delta(long start, long stop, long node_start, double* 
 //TODO: Can probably thread this relatively easily 
 void _ics_rhs_variable_step_helper(ICS_Grid_node* g, double const * const states, double* ydot)
 {
+    //I don't think I need this since I have the ordered indices
     int num_states = g->_num_nodes;
     //Find rate for each direction
     double dx = g->ics_adi_dir_x->d, dy = g->ics_adi_dir_y->d, dz = g->ics_adi_dir_z->d;
@@ -347,8 +348,77 @@ void _ics_rhs_variable_step_helper(ICS_Grid_node* g, double const * const states
     variable_step_delta(y_line_start, y_line_stop, y_node_start, ydot, y_line_defs, y_ordered_nodes, states, rate_y);
     //z contribution
     variable_step_delta(z_line_start, z_line_stop, z_node_start, ydot, z_line_defs, z_ordered_nodes, states, rate_z);
-    printf("ydot is:\n");
-    for(int i = 0; i < num_states; i++){
-        printf("%.10f\n",ydot[i]);
+}
+
+
+static void variable_step_x(ICS_Grid_node* g, int line_start, int line_stop, int node_start, , double* states, double* CVodeRHS, double* RHS, double* scratchpad)
+{
+    long* x_lines = g->ics_adi_dir_x->ordered_line_defs;
+    long* ordered_nodes = g->ics_adi_dir_x->ordered_nodes;
+
+    long current_index;
+    long ordered_index = node_start;
+    long N = 0;
+    for(int i = line_start; i < line_stop - 1; i += 2)
+    {
+        long N = x_lines[i+1];
+        long ordered_index_start = ordered_index;
+        for(int j = 0; j < N; j++)
+        {
+            current_index = ordered_nodes[ordered_index];
+            RHS[j] = CVodeRHS[current_index];
+            ordered_index++;            
+        }
+
+        solve_dd_clhs_tridiag(N, -r/2.0, 1.0+r, -r/2.0, 1.0+r/2.0, -r/2.0, -r/2.0, 1.0+r/2.0, RHS, scratchpad);
+
+        ordered_index = ordered_index_start;
+        for(int k = 0; k < N; k++)
+        {
+            current_index = ordered_nodes[ordered_index];
+            states[current_index] = RHS[k];
+            ordered_index++;
+        }
     }
+}
+static void variable_step_y(ICS_Grid_node* g, int line_start, int line_stop, int node_start, double r, double* states, double* RHS, double* scratchpad)
+static void variable_step_z(ICS_Grid_node* g, int line_start, int line_stop, int node_start, double r, double* states, double* RHS, double* scratchpad)
+
+void ics_ode_solve_helper(ICS_Grid_node* g, double dt, double* states, double* RHS)
+{   
+    int num_states = g->_num_nodes;
+    //Find rate for each direction
+    double dy = g->ics_adi_dir_y->d, dz = g->ics_adi_dir_z->d;
+    double dc_y = g->ics_adi_dir_y->dc, dc_z = g->ics_adi_dir_z->dc;
+
+    double rate_y = (dc_y * dt) / (dy * dy);
+    double rate_z = (dc_z * dt) / (dz * dz);
+
+    long x_line_start = g->ics_adi_dir_x->line_start_stop_indices[0];
+    long x_line_stop = g->ics_adi_dir_x->line_start_stop_indices[NUM_THREADS];
+    long x_node_start = g->ics_adi_dir_x->ordered_start_stop_indices[0];
+    long* x_line_defs = g->ics_adi_dir_x->ordered_line_defs;
+    long* x_ordered_nodes = g->ics_adi_dir_x->ordered_nodes;
+
+    long y_line_start = g->ics_adi_dir_y->line_start_stop_indices[0];
+    long y_line_stop = g->ics_adi_dir_y->line_start_stop_indices[NUM_THREADS];
+    long y_node_start = g->ics_adi_dir_y->ordered_start_stop_indices[0];
+    long* y_line_defs = g->ics_adi_dir_y->ordered_line_defs;
+    long* y_ordered_nodes = g->ics_adi_dir_y->ordered_nodes;
+    double* delta_y = g->ics_adi_dir_y->deltas;
+
+    long z_line_start = g->ics_adi_dir_z->line_start_stop_indices[0];
+    long z_line_stop = g->ics_adi_dir_z->line_start_stop_indices[NUM_THREADS];
+    long z_node_start = g->ics_adi_dir_z->ordered_start_stop_indices[0];
+    long* z_line_defs = g->ics_adi_dir_z->ordered_line_defs;
+    long* z_ordered_nodes = g->ics_adi_dir_z->ordered_nodes;
+    double* delta_z = g->ics_adi_dir_z->deltas;
+
+    //find deltas for y and z directions
+    ics_find_deltas(y_line_start, z_line_stop, y_node_start, delta_y, y_line_defs, y_ordered_nodes, states, rate_y);
+    ics_find_deltas(z_line_start, z_line_stop, z_node_start, delta_z, z_line_defs, z_ordered_nodes, states, rate_z); 
+
+    variable_step_x(g, x_line_start, x_line_stop, x_node_start, states, RHS, g->ics_tasks->RHS, g->ics_tasks->scratchpad);
+    variable_step_y();
+    variable_step_z();  
 }

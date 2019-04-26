@@ -155,6 +155,9 @@ int find(const int, const int, const int, const int, const int);
 void _ics_rhs_variable_step_helper(ICS_Grid_node*, double const* const, double*);
 void _rhs_variable_step_helper(Grid_node*, double const * const, double*);
 
+void ics_ode_solve(double, double, double*, double*);
+void ics_ode_solve_helper(double, double, double*, double*);
+
 void _rhs_variable_step_helper_tort(Grid_node*, double const * const, double*);
 
 void _rhs_variable_step_helper_vol(Grid_node*, double const * const, double*);
