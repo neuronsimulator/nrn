@@ -469,15 +469,20 @@ static void ode_solve(double t, double dt, double* p1, double* p2)
 
 static void ode_abs_tol(double* p1)
 {
-    int i;
+    int i, j;
     double* y = p1 + _cvode_offset;
     if(species_indices != NULL)
     {
         SpeciesIndexList* list;
         for(list = species_indices; list->next != NULL; list = list->next)
         {
-            for(i=0; i<list->length; i++)
-                y[list->indices[i]] *= list->atolscale;
+            for(i=0, j=0; i<list->length; i++)
+            {
+                for(; j < _rxd_num_zvi  && _rxd_zero_volume_indices[j] <= list->indices[i]; j++);
+                
+                y[list->indices[i] - j] *= list->atolscale; 
+            }
+
         }
     }
 }
