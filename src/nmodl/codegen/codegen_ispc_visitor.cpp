@@ -499,7 +499,7 @@ void CodegenIspcVisitor::print_mechanism_global_var_structure(bool wrapper) {
 
 
 void CodegenIspcVisitor::print_data_structures() {
-    print_mechanism_global_var_structure();
+    print_mechanism_global_var_structure(false);
     print_mechanism_range_var_structure();
     print_ion_var_structure();
 }
@@ -557,7 +557,7 @@ void CodegenIspcVisitor::print_headers_include() {
     print_backend_includes();
 }
 
-void CodegenIspcVisitor::print_nmodl_constant() {
+void CodegenIspcVisitor::print_nmodl_constants() {
     printer->add_newline(2);
     printer->add_line("/** constants used in nmodl. */");
     // we use here macros to work around ispc's PI being declared in global namespace
@@ -745,7 +745,7 @@ void CodegenIspcVisitor::print_codegen_routines() {
     move_procs_to_wrapper();
     print_backend_info();
     print_headers_include();
-    print_nmodl_constant();
+    print_nmodl_constants();
 
     print_data_structures();
 
@@ -764,7 +764,7 @@ void CodegenIspcVisitor::print_codegen_wrapper_routines() {
     print_ispc_globals();
     print_namespace_begin();
 
-    CodegenCVisitor::print_nmodl_constant();
+    CodegenCVisitor::print_nmodl_constants();
     print_mechanism_info();
     print_wrapper_data_structures();
     print_global_variables_for_hoc();
