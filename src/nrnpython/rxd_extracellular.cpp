@@ -10,7 +10,6 @@
 
 #define loc(x,y,z)((z) + (y) *  grid->size_z + (x) *  grid->size_z *  grid->size_y)
 
-static void _rhs_variable_step_helper(Grid_node*, double const * const, double*);
 static void ecs_refresh_reactions(int);
 static int dg_adi(Grid_node*);
 /*
@@ -473,8 +472,9 @@ void _fadvance_fixed_step_3D(void) {
         MEM_ZERO(grid->states_cur,sizeof(double)*grid->size_x*grid->size_y*grid->size_z);
         grid->do_grid_currents(dt, id);
         grid->volume_setup();
-        grid->dg_adi();
-        
+        if(grid->diffusable){
+            grid->dg_adi(); 
+        }
     }
     /* transfer concentrations */
     scatter_concentrations();
@@ -502,6 +502,8 @@ int ode_count(const int offset) {
     Grid_node* grid;
     for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
         count += grid->size_x * grid->size_y * grid->size_z;
+        printf("grid->size_x = %d\n", grid->size_x);
+        printf("count = %d\n", count);
     }
     return count;
 }
@@ -604,25 +606,16 @@ void _rhs_variable_step_ecs(const double t, const double* states, double* ydot) 
     /* do the diffusion rates */
     for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
         grid_size = grid->size_x * grid->size_y * grid->size_z;
-		switch(grid->VARIABLE_ECS_VOLUME)
-		{
-			case VOLUME_FRACTION:
-				_rhs_variable_step_helper_vol(grid, states, ydot);
-				break;
-			case TORTUOSITY:
-				_rhs_variable_step_helper_tort(grid, states, ydot);
-				break;
-			default:
-        		_rhs_variable_step_helper(grid, states, ydot);
-		}
+        grid->variable_step_diffusion(states, ydot);
 
         ydot += grid_size;
         states += grid_size;        
     }
+
 }
 
 
-static void _rhs_variable_step_helper(Grid_node* g, double const * const states, double* ydot) {
+void _rhs_variable_step_helper(Grid_node* g, double const * const states, double* ydot) {
     int num_states_x = g->size_x, num_states_y = g->size_y, num_states_z = g->size_z;
     double dx = g->dx, dy = g->dy, dz = g->dz;
     int i, j, k, stop_i, stop_j, stop_k;

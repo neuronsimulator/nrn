@@ -152,6 +152,9 @@ extern "C" void scatter_concentrations(void);
 
 int find(const int, const int, const int, const int, const int);
 
+void _ics_rhs_variable_step_helper(ICS_Grid_node*, double const* const, double*);
+void _rhs_variable_step_helper(Grid_node*, double const * const, double*);
+
 void _rhs_variable_step_helper_tort(Grid_node*, double const * const, double*);
 
 void _rhs_variable_step_helper_vol(Grid_node*, double const * const, double*);

@@ -44,6 +44,7 @@ ECS_Grid_node *ECS_make_Grid(PyHocObject* my_states, int my_num_states_x,
     new_Grid->size_y = my_num_states_y;
     new_Grid->size_z = my_num_states_z;
     
+    new_Grid->diffusable = true;
     new_Grid->dc_x = my_dc_x;
     new_Grid->dc_y = my_dc_y;
     new_Grid->dc_z = my_dc_z;
@@ -163,13 +164,15 @@ int ECS_insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x,
 Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors, 
                 long* ordered_x_nodes, long* ordered_y_nodes, long* ordered_z_nodes,
                 long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
-                long z_lines_length, double d, double dx) {
+                long z_lines_length, double d, double dx, bool is_diffusable) {
 
     int k;
     ICS_Grid_node *new_Grid = new ICS_Grid_node();
     assert(new_Grid);
 
     new_Grid->_num_nodes = num_nodes;
+    new_Grid->diffusable = is_diffusable;
+    new_Grid->atolscale = 1.0;
 
     new_Grid->states = my_states->u.px_;
     new_Grid->states_x = (double*)malloc(sizeof(double)*new_Grid->_num_nodes);
@@ -282,12 +285,12 @@ Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors
 int ICS_insert(int grid_list_index, PyHocObject* my_states, long num_nodes, long* neighbors,
                 long* ordered_x_nodes, long* ordered_y_nodes, long* ordered_z_nodes,
                 long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
-                long z_lines_length, double d, double dx) {
+                long z_lines_length, double d, double dx, bool is_diffusable) {
 
     //TODO change ICS_make_Grid into a constructor
     Grid_node *new_Grid = ICS_make_Grid(my_states, num_nodes, neighbors, ordered_x_nodes,
             ordered_y_nodes, ordered_z_nodes, x_line_defs, x_lines_length, y_line_defs,
-            y_lines_length, z_line_defs, z_lines_length, d, dx);
+            y_lines_length, z_line_defs, z_lines_length, d, dx, is_diffusable);
     return new_Grid->insert(grid_list_index);;
 }
 
@@ -628,6 +631,21 @@ int ECS_Grid_node::dg_adi()
     */
     memcpy(states, ecs_adi_dir_z->states_out, sizeof(double)*size_x*size_y*size_z);
     return 0;
+}
+
+void ECS_Grid_node::variable_step_diffusion(const double* states, double* ydot)
+{
+    switch(VARIABLE_ECS_VOLUME)
+    {
+        case VOLUME_FRACTION:
+            _rhs_variable_step_helper_vol(this, states, ydot);
+            break;
+        case TORTUOSITY:
+            _rhs_variable_step_helper_tort(this, states, ydot);
+            break;
+        default:
+            _rhs_variable_step_helper(this, states, ydot);
+    }
 }
 
 void ECS_Grid_node::scatter_grid_concentrations()
@@ -1044,6 +1062,24 @@ int ICS_Grid_node::dg_adi()
 
     //memcpy(states, ics_adi_dir_z->states_out, sizeof(double)*_num_nodes)*/
     return 0;
+}
+
+void ICS_Grid_node::variable_step_diffusion(const double* states, double* ydot)
+{
+    _ics_rhs_variable_step_helper(this, states, ydot);
+
+    //TODO: Get volume fraction/tortuosity working as well as take care of this in this file
+    /*switch(VARIABLE_ECS_VOLUME)
+    {
+        case VOLUME_FRACTION:
+            _ics_rhs_variable_step_helper_vol(this, states, ydot);
+            break;
+        case TORTUOSITY:
+            _ics_rhs_variable_step_helper_tort(this, states, ydot);
+            break;
+        default:
+            _ics_rhs_variable_step_helper(this, states, ydot);
+    }*/
 }
 
 void ICS_Grid_node::scatter_grid_concentrations()

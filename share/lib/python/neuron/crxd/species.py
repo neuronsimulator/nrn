@@ -45,7 +45,8 @@ ICS_insert.argtypes = [
     numpy.ctypeslib.ndpointer(dtype=int),
     ctypes.c_long,
     ctypes.c_double,
-    ctypes.c_double,]
+    ctypes.c_double,
+    ctypes.c_bool,]
 
 ICS_insert.restype = ctypes.c_int
 
@@ -424,7 +425,7 @@ def _xyz(seg):
     return numpy.interp([seg.x * sec.L], arc3d, x3d)[0], numpy.interp([seg.x * sec.L], arc3d, y3d)[0], numpy.interp([seg.x * sec.L], arc3d, z3d)[0]
 
 class _IntracellularSpecies(_SpeciesMathable):
-    def __init__(self, region=None, d=0, name=None, charge=0, initial=0, nodes=0):
+    def __init__(self, region=None, d=0, name=None, charge=0, initial=0, nodes=0, is_diffusable=True):
         """
             region = Intracellular object 
             name = string of the name of the NEURON species (e.g. ca)
@@ -434,7 +435,7 @@ class _IntracellularSpecies(_SpeciesMathable):
             NOTE: For now, only define this AFTER the morphology is instantiated. In the future, this requirement can be relaxed.
             TODO: remove this limitation
         """
-
+        print(is_diffusable)
         _intracellular_diffusion_objects[self] = None
         # ensure 3D points exist
         h.define_shape()
@@ -463,7 +464,7 @@ class _IntracellularSpecies(_SpeciesMathable):
                                     self._ordered_x_nodes, self._ordered_y_nodes, self._ordered_z_nodes,
                                     self._x_line_defs, len(self._x_line_defs), self._y_line_defs, 
                                     len(self._y_line_defs), self._z_line_defs, len(self._z_line_defs),
-                                    self._d, self._dx)
+                                    self._d, self._dx, is_diffusable)
   
         self._update_pointers()
     
@@ -921,25 +922,17 @@ class Species(_SpeciesMathable):
             for r in self._regions:
                 if r._secs3d:
                     xs, ys, zs, segs = r._xs, r._ys, r._zs, r._segs
-                    if not self_has_3d:
-                        self._3doffset = node._allocate(len(xs))
-                        _3doffset = self._3doffset
-                    else:
-                        _3doffset = node._allocate(len(xs))
-                    self._3doffset_by_region[r] = _3doffset
-                    
+                  
                     self._intracellular_nodes_by_region = []
                     for i, x, y, z, seg in zip(list(range(len(xs))), xs, ys, zs, segs):
                         self._intracellular_nodes_by_region.append(node.Node3D(i, x, y, z, r, seg, selfref))
                     self._intracellular_nodes[r] = self._intracellular_nodes_by_region
                     # the region is now responsible for computing the correct volumes and surface areas
                         # this is done so that multiple species can use the same region without recomputing it
-                    node._volumes[_3doffset : _3doffset + len(xs)] = r._vol
-                    node._surface_area[_3doffset : _3doffset + len(xs)] = r._sa
-                    node._diffs[_3doffset : _3doffset + len(xs)] = self._d
                     self_has_3d = True
-                    _has_3d = True            
-        self._intracellular_instances = {r:_IntracellularSpecies(r, d=self._d, charge=self.charge, initial=self.initial, nodes=self._intracellular_nodes[r], name=self._name) for r in self._regions if r._secs3d}
+                    _has_3d = True
+        is_diffusable = False if isinstance(self, Parameter) or isinstance(self, State) else True        
+        self._intracellular_instances = {r:_IntracellularSpecies(r, d=self._d, charge=self.charge, initial=self.initial, nodes=self._intracellular_nodes[r], name=self._name, is_diffusable=is_diffusable) for r in self._regions if r._secs3d}
 
     def _do_init4(self):
         self._extracellular_nodes = []
@@ -1032,6 +1025,8 @@ class Species(_SpeciesMathable):
 
 
     def _setup_matrices3d(self, euler_matrix):
+        return
+        #TODO: REmove this
         for r in self._regions:
             region_mesh = r._mesh.values
             indices = {}
@@ -1167,6 +1162,8 @@ class Species(_SpeciesMathable):
     
     def _indices3d(self, r=None):
         """return the indices of just the 3D nodes corresponding to this species in the given region"""
+        #TODO: Remove this
+        return []
         # TODO: this will need changed if 3D is to support more than one region
         if r is None or r == self._regions[0]:
             return list(range(self._3doffset, self._3doffset + len(self._nodes)))
@@ -1415,3 +1412,12 @@ def xyz_by_index(indices):
     #TODO: make sure to include Node3D
     return [[nd.x3d, nd.y3d, nd.z3d] for sp in _get_all_species().values() for s in sp()._secs for nd in s.nodes + sp()._nodes if sp() if nd._index in index]
 
+
+class Parameter(Species):
+    def __repr__(self):
+        return 'Parameter(regions=%r, d=%r, name=%r, charge=%r, initial=%r)' % (self._regions, self._d, self._name, self._charge, self.initial)
+
+
+class State(Species):
+    def __repr__(self):
+        return 'State(regions=%r, d=%r, name=%r, charge=%r, initial=%r)' % (self._regions, self._d, self._name, self._charge, self.initial)

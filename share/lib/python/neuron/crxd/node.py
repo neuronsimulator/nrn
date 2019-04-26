@@ -606,7 +606,6 @@ class Node3D(Node):
         For Species nodes belonging to a deterministic simulation, this is a concentration.
         For Species nodes belonging to a stochastic simulation, this is the molecule count.
         """
-        _states[self._index] = v
         self._speciesref()._intracellular_instances[self._r].states[self._index] = v
 
     @property

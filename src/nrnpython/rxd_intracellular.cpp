@@ -268,3 +268,87 @@ void run_threaded_ics_dg_adi(ICS_Grid_node* g, ICSAdiDirection* ics_adi_dir){
     /* wait for them to finish */
     TaskQueue_sync(AllTasks);
 }
+
+/* ------- Variable Step ICS Code ------- */
+static void variable_step_delta(long start, long stop, long node_start, double* ydot, long* line_defs, long* ordered_nodes, double const * const states, double r)
+{
+    long ordered_index = node_start;
+    long current_index = -1;
+    long next_index = -1;
+    double prev_state;
+    double current_state;
+    double next_state;
+    for(int i = start; i < stop - 1; i += 2)
+    {   
+        long line_start = ordered_nodes[ordered_index]; 
+        int line_length = line_defs[i+1];
+        if(line_length > 1)
+        {   
+            current_index = line_start;
+            ordered_index++;
+            next_index = ordered_nodes[ordered_index];
+            current_state = states[current_index];
+            next_state = states[next_index];
+            ydot[current_index] += r * (next_state - current_state);
+            ordered_index++;
+            for(int j = 1; j < line_length - 1; j++)
+            {
+                prev_state = current_state;
+                current_index = next_index;
+                next_index = ordered_nodes[ordered_index];
+                current_state = next_state;
+                next_state = states[next_index];
+                ydot[current_index] += r *(next_state - 2.0 * current_state + prev_state);
+                ordered_index++;
+            }
+            ydot[next_index] += r * (current_state - next_state);
+        }
+        else
+        {
+            ordered_index++;
+            ydot[line_start] += 0.0;
+        }
+    }      
+}
+
+//TODO: Can probably thread this relatively easily 
+void _ics_rhs_variable_step_helper(ICS_Grid_node* g, double const * const states, double* ydot)
+{
+    int num_states = g->_num_nodes;
+    //Find rate for each direction
+    double dx = g->ics_adi_dir_x->d, dy = g->ics_adi_dir_y->d, dz = g->ics_adi_dir_z->d;
+    double dc_x = g->ics_adi_dir_x->dc, dc_y = g->ics_adi_dir_y->dc, dc_z = g->ics_adi_dir_z->dc;
+    
+    double rate_x = dc_x / (dx * dx);
+    double rate_y = dc_y / (dy * dy);
+    double rate_z = dc_z / (dz * dz);
+
+    long x_line_start = g->ics_adi_dir_x->line_start_stop_indices[0];
+    long x_line_stop = g->ics_adi_dir_x->line_start_stop_indices[NUM_THREADS];
+    long x_node_start = g->ics_adi_dir_x->ordered_start_stop_indices[0];
+    long* x_line_defs = g->ics_adi_dir_x->ordered_line_defs;
+    long* x_ordered_nodes = g->ics_adi_dir_x->ordered_nodes;
+
+    long y_line_start = g->ics_adi_dir_y->line_start_stop_indices[0];
+    long y_line_stop = g->ics_adi_dir_y->line_start_stop_indices[NUM_THREADS];
+    long y_node_start = g->ics_adi_dir_y->ordered_start_stop_indices[0];
+    long* y_line_defs = g->ics_adi_dir_y->ordered_line_defs;
+    long* y_ordered_nodes = g->ics_adi_dir_y->ordered_nodes;
+
+    long z_line_start = g->ics_adi_dir_z->line_start_stop_indices[0];
+    long z_line_stop = g->ics_adi_dir_z->line_start_stop_indices[NUM_THREADS];
+    long z_node_start = g->ics_adi_dir_z->ordered_start_stop_indices[0];
+    long* z_line_defs = g->ics_adi_dir_z->ordered_line_defs;
+    long* z_ordered_nodes = g->ics_adi_dir_z->ordered_nodes;
+
+    //x contribution
+    variable_step_delta(x_line_start, x_line_stop, x_node_start, ydot, x_line_defs, x_ordered_nodes, states, rate_x);
+    //y contribution
+    variable_step_delta(y_line_start, y_line_stop, y_node_start, ydot, y_line_defs, y_ordered_nodes, states, rate_y);
+    //z contribution
+    variable_step_delta(z_line_start, z_line_stop, z_node_start, ydot, z_line_defs, z_ordered_nodes, states, rate_z);
+    printf("ydot is:\n");
+    for(int i = 0; i < num_states; i++){
+        printf("%.10f\n",ydot[i]);
+    }
+}

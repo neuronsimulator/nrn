@@ -111,6 +111,7 @@ class Grid_node {
     double dx;              // ∆X
     double dy;              // ∆Y
     double dz;              // ∆Z
+    bool diffusable;
     BoundaryConditions* bc;
     Concentration_Pair* concentration_list;
     Current_Triple* current_list;
@@ -148,6 +149,7 @@ class Grid_node {
     virtual void do_grid_currents(double dt, int id) = 0;
     virtual void volume_setup() = 0;
     virtual int dg_adi() = 0;
+    virtual void variable_step_diffusion(const double* states, double* ydot) = 0;
     virtual void scatter_grid_concentrations() = 0;
     virtual void free_Grid() = 0;
 };
@@ -164,6 +166,7 @@ class ECS_Grid_node : public Grid_node{
         void do_grid_currents(double dt, int id);  
         void volume_setup();
         int dg_adi();
+        void variable_step_diffusion(const double* states, double* ydot);
         void scatter_grid_concentrations();
         void free_Grid();
 };
@@ -222,6 +225,7 @@ class ICS_Grid_node : public Grid_node{
         void do_grid_currents(double dt, int id);  
         void volume_setup();
         int dg_adi();
+        void variable_step_diffusion(const double* states, double* ydot);
         void scatter_grid_concentrations();
         void free_Grid();
 };
@@ -297,13 +301,13 @@ extern "C" int ECS_insert(int grid_list_index, PyHocObject* my_states, int my_nu
 Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors, 
                 long* ordered_x_nodes, long* ordered_y_nodes, long* ordered_z_nodes,
                 long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
-                long z_lines_length, double d, double dx);
+                long z_lines_length, double d, double dx, bool is_diffusable);
 
 // Insert an  ICS_Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
 extern "C" int ICS_insert(int grid_list_index, PyHocObject* my_states, long num_nodes, long* neighbors,
                 long* ordered_x_nodes, long* ordered_y_nodes, long* ordered_z_nodes,
                 long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
-                long z_lines_length, double d, double dx);
+                long z_lines_length, double d, double dx, bool is_diffusable);
 
 
 

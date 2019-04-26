@@ -1603,7 +1603,7 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double* c
 {
     int segment;
     int i, j, idx, jac_i, jac_j, jac_idx;
-    int N = react->icsN + react->ecsN;  /*size of Jacobian (number species*regions for a segments)*/
+    int N = (react->icsN * react->num_regions) + react->ecsN;  /*size of Jacobian (number species*regions for a segments)*/
     double pd;
     double dt = *dt_ptr;
     double dx = FLT_EPSILON;
