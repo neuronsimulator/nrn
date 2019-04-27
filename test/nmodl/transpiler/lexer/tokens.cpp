@@ -81,14 +81,14 @@ TokenType token_type(const std::string& name) {
     return token;
 }
 
-TEST_CASE("Lexer tests for valid tokens", "[Lexer]") {
-    SECTION("Tests for some keywords") {
+TEST_CASE("NMODL Lexer returning valid token types", "[Lexer]") {
+    SECTION("Some keywords") {
         REQUIRE(token_type("VERBATIM Hello ENDVERBATIM") == Token::VERBATIM);
         REQUIRE(token_type("INITIAL") == Token::INITIAL1);
         REQUIRE(token_type("SOLVE") == Token::SOLVE);
     }
 
-    SECTION("Tests for language constructs") {
+    SECTION("NMODL language keywords and constructs") {
         REQUIRE(token_type(" h' = (hInf-h)/hTau\n") == Token::PRIME);
         REQUIRE(token_type("while") == Token::WHILE);
         REQUIRE(token_type("if") == Token::IF);
@@ -98,7 +98,7 @@ TEST_CASE("Lexer tests for valid tokens", "[Lexer]") {
         REQUIRE(token_type("ELSE") == Token::ELSE);
     }
 
-    SECTION("Tests for valid numbers") {
+    SECTION("Different number types") {
         REQUIRE(token_type("123") == Token::INTEGER);
         REQUIRE(token_type("123.32") == Token::REAL);
         REQUIRE(token_type("1.32E+3") == Token::REAL);
@@ -108,12 +108,12 @@ TEST_CASE("Lexer tests for valid tokens", "[Lexer]") {
         REQUIRE(token_type("1e-23") == Token::REAL);
     }
 
-    SECTION("Tests for Name/Strings") {
+    SECTION("Name/Strings types") {
         REQUIRE(token_type("neuron") == Token::NAME);
         REQUIRE(token_type("\"Quoted String\"") == Token::STRING);
     }
 
-    SECTION("Tests for (math) operators") {
+    SECTION("Logical operator types") {
         REQUIRE(token_type(">") == Token::GT);
         REQUIRE(token_type(">=") == Token::GE);
         REQUIRE(token_type("<") == Token::LT);
@@ -121,10 +121,9 @@ TEST_CASE("Lexer tests for valid tokens", "[Lexer]") {
         REQUIRE(token_type("!=") == Token::NE);
         REQUIRE(token_type("<->") == Token::REACT1);
         REQUIRE(token_type("~+") == Token::NONLIN1);
-        // REQUIRE( token_type("~") == Token::REACTION);
     }
 
-    SECTION("Tests for braces") {
+    SECTION("Brace types") {
         REQUIRE(token_type("{") == Token::OPEN_BRACE);
         REQUIRE(token_type("}") == Token::CLOSE_BRACE);
         REQUIRE(token_type("(") == Token::OPEN_PARENTHESIS);

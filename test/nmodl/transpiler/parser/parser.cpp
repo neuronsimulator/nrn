@@ -27,7 +27,7 @@ bool is_valid_construct(const std::string& construct) {
 }
 
 
-SCENARIO("NMODL can define macros using DEFINE keyword") {
+SCENARIO("NMODL can define macros using DEFINE keyword", "[parser]") {
     GIVEN("A valid macro definition") {
         WHEN("DEFINE NSTEP 6") {
             THEN("parser accepts without an error") {
@@ -87,7 +87,7 @@ SCENARIO("NMODL can define macros using DEFINE keyword") {
     }
 }
 
-SCENARIO("Macros can be used anywhere in NMODL program") {
+SCENARIO("Macros can be used anywhere in the mod file") {
     std::string nmodl_text = R"(
             DEFINE NSTEP 6
             PARAMETER {
@@ -101,7 +101,7 @@ SCENARIO("Macros can be used anywhere in NMODL program") {
     }
 }
 
-SCENARIO("Parser for empty unit") {
+SCENARIO("NMODL parser accepts empty unit specification") {
     std::string nmodl_text = R"(
             FUNCTION ssCB(kdf(), kds()) (mM) {
 
@@ -114,7 +114,7 @@ SCENARIO("Parser for empty unit") {
     }
 }
 
-SCENARIO("Parser test for valid NMODL grammar constructs") {
+SCENARIO("NMODL parser running number of valid NMODL constructs") {
     for (const auto& construct: nmodl_valid_constructs) {
         auto test_case = construct.second;
         GIVEN(test_case.name) {
@@ -125,7 +125,7 @@ SCENARIO("Parser test for valid NMODL grammar constructs") {
     }
 }
 
-SCENARIO("Parser test for invalid NMODL grammar constructs") {
+SCENARIO("NMODL parser running number of invalid NMODL constructs") {
     for (const auto& construct: nmdol_invalid_constructs) {
         auto test_case = construct.second;
         GIVEN(test_case.name) {
@@ -147,7 +147,7 @@ std::string solve_construct(const std::string& equation, std::string method) {
     return solution;
 }
 
-SCENARIO("Solving differential equations using NEURON's implementation") {
+SCENARIO("Legacy differential equation solver from NEURON solve number of ODE types") {
     GIVEN("A differential equation") {
         int counter = 0;
         for (const auto& test_case: diff_eq_constructs) {

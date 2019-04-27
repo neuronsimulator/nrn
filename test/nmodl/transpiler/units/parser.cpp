@@ -45,7 +45,7 @@ bool is_substring(const std::string& str1, const std::string& str2) {
     return str1.find(str2) != std::string::npos;
 }
 
-SCENARIO("Unit parser definition of units validity") {
+SCENARIO("Unit parser accepting valid units definition", "[unit][parser]") {
     GIVEN("A base unit") {
         WHEN("Base unit is *a*") {
             THEN("parser accepts without an error") {
@@ -152,7 +152,7 @@ SCENARIO("Unit parser definition of units validity") {
     }
 }
 
-SCENARIO("Unit parser definition of units correctness") {
+SCENARIO("Unit parser accepting dependent/nested units definition", "[unit][parser]") {
     GIVEN("Parsed the nrnunits.lib file") {
         WHEN("Multiple units definitions based on the units defined in nrnunits.lib") {
             THEN("parser accepts the units correctly") {

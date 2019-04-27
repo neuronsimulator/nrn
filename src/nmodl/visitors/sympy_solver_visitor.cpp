@@ -456,7 +456,8 @@ void SympySolverVisitor::visit_conserve(ast::Conserve* node) {
     }
     auto conserve_equation_str = to_nmodl_for_sympy(node->get_expr().get());
     logger->debug("SympySolverVisitor :: --> replace ODE for state var {} with equation {}",
-                  conserve_equation_statevar, conserve_equation_str);
+                  conserve_equation_statevar,
+                  conserve_equation_str);
     conserve_equation[conserve_equation_statevar] = conserve_equation_str;
 }
 
@@ -495,7 +496,8 @@ void SympySolverVisitor::visit_derivative_block(ast::DerivativeBlock* node) {
                 eq = state_var_name + " = " + var_eq_pair->second;
                 logger->debug(
                     "SympySolverVisitor :: -> instead of Euler eq using CONSERVE equation: {} = {}",
-                    state_var_name, var_eq_pair->second);
+                    state_var_name,
+                    var_eq_pair->second);
             } else {
                 // no CONSERVE equation, construct Euler equation
                 auto dxdt = stringutils::trim(split_eq[1]);

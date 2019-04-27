@@ -66,6 +66,7 @@ add_custom_target(nb-format
 # Include cmake modules
 # =============================================================================
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+include(Catch)
 include(ClangTidyHelper)
 include(CompilerHelper)
 include(FindClangFormat)

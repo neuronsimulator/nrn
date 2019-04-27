@@ -38,10 +38,9 @@ void symbol_type(const std::string& name, T& value) {
     value = sym.value.as<T>();
 }
 
-TEST_CASE("Lexer symbol type tests") {
-    SECTION("test for ast class of type Name") {
+TEST_CASE("NMODL Lexer returning valid ModToken object", "[token][modtoken]") {
+    SECTION("test for ast::Name") {
         ast::Name value;
-
         {
             std::stringstream ss;
             symbol_type("text", value);
@@ -57,9 +56,8 @@ TEST_CASE("Lexer symbol type tests") {
         }
     }
 
-    SECTION("test for ast class of type Prime") {
+    SECTION("test for ast::Prime") {
         ast::PrimeName value;
-
         {
             std::stringstream ss;
             symbol_type("h'' = ", value);

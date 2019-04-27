@@ -32,7 +32,7 @@ TokenType token_type(const std::string& name) {
     return scanner.next_token().token();
 }
 
-TEST_CASE("Lexer tests for valid tokens", "[Lexer]") {
+TEST_CASE("Unit Lexer tests for valid tokens", "[lexer][unit]") {
     SECTION("Tests for comments") {
         REQUIRE(token_type("/ comment") == Token::COMMENT);
         REQUIRE(token_type("/comment") == Token::COMMENT);
