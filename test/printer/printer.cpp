@@ -14,7 +14,7 @@
 
 using nmodl::printer::JSONPrinter;
 
-TEST_CASE("JSON Printer Tests", "[JSONPrinter]") {
+TEST_CASE("JSON printer converting object to string form", "[printer][json]") {
     SECTION("Stringstream test 1") {
         std::stringstream ss;
         JSONPrinter p(ss);

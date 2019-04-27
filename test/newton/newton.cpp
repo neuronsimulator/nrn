@@ -16,7 +16,7 @@ using namespace nmodl;
 
 constexpr double max_error_norm = 1e-12;
 
-SCENARIO("Non-linear system to solve with Newton Numerical Diff Solver", "[numerical]") {
+SCENARIO("Non-linear system to solve with Newton Numerical Diff Solver", "[numerical][solver]") {
     GIVEN("1 linear eq") {
         struct functor {
             void operator()(const Eigen::Matrix<double, 1, 1>& X,
@@ -38,6 +38,7 @@ SCENARIO("Non-linear system to solve with Newton Numerical Diff Solver", "[numer
             REQUIRE(F.norm() < max_error_norm);
         }
     }
+
     GIVEN("1 non-linear eq") {
         struct functor {
             void operator()(const Eigen::Matrix<double, 1, 1>& X,
@@ -58,6 +59,7 @@ SCENARIO("Non-linear system to solve with Newton Numerical Diff Solver", "[numer
             REQUIRE(F.norm() < max_error_norm);
         }
     }
+
     GIVEN("system of 2 non-linear eqs") {
         struct functor {
             void operator()(const Eigen::Matrix<double, 2, 1>& X,
@@ -78,6 +80,7 @@ SCENARIO("Non-linear system to solve with Newton Numerical Diff Solver", "[numer
             REQUIRE(F.norm() < max_error_norm);
         }
     }
+
     GIVEN("system of 3 non-linear eqs") {
         struct functor {
             double _x_old = 0.5;
@@ -108,6 +111,7 @@ SCENARIO("Non-linear system to solve with Newton Numerical Diff Solver", "[numer
             REQUIRE(F.norm() < max_error_norm);
         }
     }
+
     GIVEN("system of 4 non-linear eqs") {
         struct functor {
             double _X0_old = 1.2345;
@@ -136,6 +140,7 @@ SCENARIO("Non-linear system to solve with Newton Numerical Diff Solver", "[numer
             REQUIRE(F.norm() < max_error_norm);
         }
     }
+
     GIVEN("system of 5 non-linear eqs") {
         struct functor {
             void operator()(const Eigen::Matrix<double, 5, 1>& X,
@@ -161,6 +166,7 @@ SCENARIO("Non-linear system to solve with Newton Numerical Diff Solver", "[numer
             REQUIRE(F.norm() < max_error_norm);
         }
     }
+
     GIVEN("system of 10 non-linear eqs") {
         struct functor {
             void operator()(const Eigen::Matrix<double, 10, 1>& X,
@@ -195,7 +201,7 @@ SCENARIO("Non-linear system to solve with Newton Numerical Diff Solver", "[numer
     }
 }
 
-SCENARIO("Non-linear system to solve with Newton Solver", "[analytic]") {
+SCENARIO("Non-linear system to solve with Newton Solver", "[analytic][solver]") {
     GIVEN("1 linear eq") {
         struct functor {
             void operator()(const Eigen::Matrix<double, 1, 1>& X,
@@ -221,6 +227,7 @@ SCENARIO("Non-linear system to solve with Newton Solver", "[analytic]") {
             REQUIRE(F.norm() < max_error_norm);
         }
     }
+
     GIVEN("1 non-linear eq") {
         struct functor {
             void operator()(const Eigen::Matrix<double, 1, 1>& X,
@@ -244,6 +251,7 @@ SCENARIO("Non-linear system to solve with Newton Solver", "[analytic]") {
             REQUIRE(F.norm() < max_error_norm);
         }
     }
+
     GIVEN("system of 2 non-linear eqs") {
         struct functor {
             void operator()(const Eigen::Matrix<double, 2, 1>& X,
@@ -270,6 +278,7 @@ SCENARIO("Non-linear system to solve with Newton Solver", "[analytic]") {
             REQUIRE(F.norm() < max_error_norm);
         }
     }
+
     GIVEN("system of 3 non-linear eqs") {
         struct functor {
             double _x_old = 0.5;
@@ -311,6 +320,7 @@ SCENARIO("Non-linear system to solve with Newton Solver", "[analytic]") {
             REQUIRE(F.norm() < max_error_norm);
         }
     }
+
     GIVEN("system of 4 non-linear eqs") {
         struct functor {
             double _X0_old = 1.2345;
@@ -357,6 +367,7 @@ SCENARIO("Non-linear system to solve with Newton Solver", "[analytic]") {
             REQUIRE(F.norm() < max_error_norm);
         }
     }
+
     GIVEN("system of 5 non-linear eqs") {
         struct functor {
             void operator()(const Eigen::Matrix<double, 5, 1>& X,
@@ -410,6 +421,7 @@ SCENARIO("Non-linear system to solve with Newton Solver", "[analytic]") {
             REQUIRE(F.norm() < max_error_norm);
         }
     }
+
     GIVEN("system of 10 non-linear eqs") {
         struct functor {
             void operator()(const Eigen::Matrix<double, 10, 1>& X,
@@ -530,6 +542,7 @@ SCENARIO("Non-linear system to solve with Newton Solver", "[analytic]") {
                 J(9, 9) = 8.0 * X[9] + 1.0;
             }
         };
+
         Eigen::Matrix<double, 10, 1> X;
         X << 8.234, -5.46, 1.123, 0.8343, 5.555, 18.234, -2.46, 0.123, 10.8343, -4.685;
         Eigen::Matrix<double, 10, 1> F;

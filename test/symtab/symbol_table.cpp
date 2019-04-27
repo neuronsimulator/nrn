@@ -90,7 +90,7 @@ SCENARIO("Symbol properties can be added and converted to string") {
 // Symbol test
 //=============================================================================
 
-SCENARIO("Symbol operations") {
+SCENARIO("Multiple properties can be added to Symbol") {
     NmodlType property1 = NmodlType::argument;
     NmodlType property2 = NmodlType::range_var;
     NmodlType property3 = NmodlType::discrete_block;
@@ -144,7 +144,7 @@ SCENARIO("Symbol operations") {
 // Symbol table test
 //=============================================================================
 
-SCENARIO("Symbol table operations") {
+SCENARIO("Symbol table allows operations like insert, lookup") {
     GIVEN("A global SymbolTable") {
         auto program = std::make_shared<ast::Program>();
         auto table = std::make_shared<SymbolTable>("Na", program.get(), true);
@@ -257,7 +257,7 @@ SCENARIO("Symbol table operations") {
 // Model symbol table test
 //=============================================================================
 
-SCENARIO("Model symbol table operations") {
+SCENARIO("Global symbol table (ModelSymbol) allows scope based operations") {
     GIVEN("A Model symbolTable") {
         ModelSymbolTable mod_symtab;
 
