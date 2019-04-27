@@ -103,6 +103,18 @@ AC_HELP_STRING([--with-multisend=allreplay],[Allow ISend or BGP style dma, and w
 	use_bgpdma=no
 ])
 
+AC_ARG_WITH(spartrans,
+AC_HELP_STRING([--with-spartrans],[Allow the use of sparse Alltoallv for parallel transfer])
+,[
+	if test "$with_spartrans" = "yes" ; then
+		with_mpi=yes
+		use_spartrans=yes
+		NRN_DEFINE(USE_SPARTRANS,1,[Define to allow the use of non-blocking sparse Alltoallv for parallel transfer.])
+	fi
+],[
+	use_spartrans=no
+])
+
 ])dnl end of AC_NRN_PARANEURON
 
 AC_DEFUN([AC_NRN_MUSIC],[

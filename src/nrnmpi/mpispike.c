@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <assert.h>
 
 /* do not want the redef in the dynamic load case */
@@ -234,6 +235,84 @@ int nrnmpi_int_allmax(int x) {
 	MPI_Allreduce(&x, &result, 1, MPI_INT, MPI_MAX, nrnmpi_comm);
 	return result;
 }
+
+#define ALLTOALLV_SPARSE_TAG 101980
+
+/* Code derived from MPI_Alltoallv_sparse in MP-Gadget: https://github.com/MP-Gadget */
+
+static int MPI_Alltoallv_sparse(void *sendbuf, int *sendcnts, int *sdispls,
+				MPI_Datatype sendtype, void *recvbuf, int *recvcnts,
+				int *rdispls, MPI_Datatype recvtype, MPI_Comm comm) 
+{
+
+  int status;
+  int myrank;
+  int nranks;
+  status = MPI_Comm_rank(comm, &myrank);
+  assert(status == MPI_SUCCESS);
+  status = MPI_Comm_size(comm, &nranks);
+  assert(status == MPI_SUCCESS);
+
+  int rankp;
+  for(rankp = 0; nranks > (1 << rankp); rankp++);
+  
+  ptrdiff_t lb;
+  ptrdiff_t send_elsize;
+  ptrdiff_t recv_elsize;
+  
+  status = MPI_Type_get_extent(sendtype, &lb, &send_elsize);
+  assert(status == MPI_SUCCESS);
+  status = MPI_Type_get_extent(recvtype, &lb, &recv_elsize);
+  assert(status == MPI_SUCCESS);
+  
+  MPI_Request *requests = (MPI_Request*)hoc_Emalloc(nranks * 2 * sizeof(MPI_Request)); hoc_malchk();
+  assert(requests != NULL);
+  
+  int ngrp; int n_requests;
+  n_requests = 0;
+  for(ngrp = 0; ngrp < (1 << rankp); ngrp++)
+    {
+      int target = myrank ^ ngrp;
+      
+      if(target >= nranks) continue;
+      if(recvcnts[target] == 0) continue;
+      status = MPI_Irecv(((char*) recvbuf) + recv_elsize * rdispls[target], 
+                         recvcnts[target],
+                         recvtype, target, ALLTOALLV_SPARSE_TAG, comm, &requests[n_requests++]);
+      assert(status == MPI_SUCCESS);
+    }
+  
+  status = MPI_Barrier(comm);
+  assert(status == MPI_SUCCESS);
+  
+  for(ngrp = 0; ngrp < (1 << rankp); ngrp++)
+    {
+      int target = myrank ^ ngrp;
+      if(target >= nranks) continue;
+      if(sendcnts[target] == 0) continue;
+      status = MPI_Isend(((char*) sendbuf) + send_elsize * sdispls[target], 
+                         sendcnts[target],
+                         sendtype, target, ALLTOALLV_SPARSE_TAG, comm, &requests[n_requests++]);
+      assert(status == MPI_SUCCESS);
+    }
+  
+  status = MPI_Waitall(n_requests, requests, MPI_STATUSES_IGNORE);
+  assert(status == MPI_SUCCESS);
+  free(requests);
+  
+  status = MPI_Barrier(comm);
+  assert(status == MPI_SUCCESS);
+  
+  return MPI_SUCCESS;
+}
+
+
+extern void nrnmpi_dbl_alltoallv_sparse(int* s, int* scnt, int* sdispl, int* r, int* rcnt, int* rdispl) 
+{
+  MPI_Alltoallv_sparse(s, scnt, sdispl, MPI_DOUBLE, r, rcnt, rdispl, MPI_DOUBLE, nrnmpi_comm);
+}
+
+
 
 extern void nrnmpi_int_gather(int* s, int* r, int cnt, int root) {
 	MPI_Gather(s, cnt, MPI_INT, r, cnt, MPI_INT, root, nrnmpi_comm);
