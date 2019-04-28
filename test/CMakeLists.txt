@@ -73,6 +73,8 @@ foreach(test_name
         testunitlexer
         testunitparser)
   catch_discover_tests(${test_name}
+                       TEST_PREFIX
+                       "${test_name}/"
                        PROPERTIES
                        ENVIRONMENT
                        PYTHONPATH=${CMAKE_BINARY_DIR}:$ENV{PYTHONPATH})

@@ -261,7 +261,7 @@ void DefUseAnalyzeVisitor::visit_if_statement(ast::IfStatement* node) {
 /** We are not analyzing verbatim blocks yet and hence if there is
  *  a verbatim block we assume there is variable usage.
  *
- * \todo: one simple way would be to look for p_name in the string
+ * \todo One simple way would be to look for p_name in the string
  *        of verbatim block to find the variable usage.
  */
 void DefUseAnalyzeVisitor::visit_verbatim(ast::Verbatim* node) {

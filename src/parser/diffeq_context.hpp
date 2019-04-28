@@ -29,7 +29,7 @@ struct Term {
     /// derivative of the expression
     std::string deriv = "0.0";
 
-    /// \todo : need to check in neuron implementation?
+    /// \todo Need to check in neuron implementation?
     std::string a = "0.0";
     std::string b = "0.0";
 
@@ -96,7 +96,7 @@ class DiffEqContext {
     std::string get_cvode_linear_diffeq();
     std::string get_cvode_nonlinear_diffeq();
 
-    /// \todo: methods inherited neuron implementation
+    /// \todo Methods inherited neuron implementation
     std::string cvode_deriv();
     std::string cvode_eqnrhs();
 

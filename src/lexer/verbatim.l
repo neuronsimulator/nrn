@@ -28,8 +28,7 @@
      * context to read the next character. The parser context defaults is
      * to cin, but we will set it to an istringstream later.
      *
-     * \todo
-     *   - not able recognize NEWLINE character
+     * \todo Not able recognize NEWLINE character
      */
     #define YY_INPUT(buf,result,max_size)       \
     {                                           \
@@ -69,15 +68,13 @@
 
 /**
  * need to unput in buffer for custom routines
- * \todo : due to unused function warning this
- *         option is disabled
+ * \todo Check if unused function warning appears
  */
 %option nounput
 
 /**
  * need to input in buffer for custom routines
- * \todo : due to unused function warning this
- *         option is disabled
+ * \todo Check unused function warning
  */
 %option noinput
 

@@ -42,6 +42,11 @@
 #include "visitors/verbatim_var_rename_visitor.hpp"
 #include "visitors/verbatim_visitor.hpp"
 
+/**
+ * \dir
+ * \brief Main NMODL code generation program
+ */
+
 using namespace fmt::literals;
 using namespace nmodl;
 using namespace codegen;

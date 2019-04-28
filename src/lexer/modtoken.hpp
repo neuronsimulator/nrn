@@ -17,7 +17,7 @@
 namespace nmodl {
 
 /**
- * @defgroup token Token Infrastructure
+ * @defgroup token Token Implementation
  * @brief All token related implementation
  *
  * @defgroup token_modtoken Token Classes

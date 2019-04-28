@@ -163,7 +163,7 @@ std::string DiffEqContext::get_non_cnexp_solution() {
 /**
  * Return the solution for differential equation based on method used.
  *
- * \todo: Currently we have tested cnexp, euler and derivimplicit methods with
+ * \todo Currently we have tested cnexp, euler and derivimplicit methods with
  * all equations from BBP models. Need to test this against various other mod
  * files, especially kinetic schemes, reaction-diffusion etc.
  */

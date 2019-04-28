@@ -8,6 +8,10 @@
 #pragma once
 
 /**
+ *
+ * \dir
+ * \brief Visitors implementation
+ *
  * \file
  * \brief \copybrief nmodl::visitor::ConstantFolderVisitor
  */

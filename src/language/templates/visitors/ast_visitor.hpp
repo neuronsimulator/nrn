@@ -8,6 +8,10 @@
 #pragma once
 
 /**
+ *
+ * \dir
+ * \brief Auto generated visitors
+ *
  * \file
  * \brief \copybrief nmodl::visitor::AstVisitor
  */

@@ -29,17 +29,17 @@ namespace nmodl {
 namespace ast {
 
 /**
- * @defgroup ast AST Infrastructure
+ * @defgroup ast AST Implementation
  * @brief All AST related implementation details
  *
  * @defgroup ast_prop AST Properties
  * @ingroup ast
- * @brief Properties used with different members of AST classes
+ * @brief Properties and types used with of AST classes
  * @{
  */
 
 /**
- * \brief enum type for binary operators in NMODL
+ * \brief enum Type for binary operators in NMODL
  *
  * NMODL support different binary operators and this
  * type is used to store their value in the AST.

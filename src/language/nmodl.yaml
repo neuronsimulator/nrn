@@ -105,7 +105,7 @@
                   - String:
                       members:
                         - value:
-                            brief: "value of string"
+                            brief: "Value of string"
                             type: std::string
                       brief: "Represents a string"
                       description: |
@@ -131,7 +131,7 @@
                         - Integer:
                             members:
                               - value:
-                                  brief: "value of integer"
+                                  brief: "Value of integer"
                                   type: int
                               - macro:
                                   brief: "if integer is a macro then it's name"
@@ -153,7 +153,7 @@
                         - Float:
                             members:
                               - value:
-                                  brief: "value of float"
+                                  brief: "Value of float"
                                   type: float
                             brief: "Represents a float variable"
                             description: |
@@ -166,7 +166,7 @@
                         - Double:
                             members:
                               - value:
-                                  brief: "value of double"
+                                  brief: "Value of double"
                                   type: double
                             brief: "Represents a double variable"
                             description: |
@@ -188,7 +188,7 @@
                         - Boolean:
                             members:
                               - value:
-                                  brief: "value of boolean"
+                                  brief: "Value of boolean"
                                   type: int
                             brief: "Represents a boolean variable"
                             description: |
@@ -206,7 +206,7 @@
                         - Name:
                             members:
                               - value:
-                                  brief: "value of name"
+                                  brief: "Value of name"
                                   type: String
                                   node_name: true
                             brief: "Represents a name"
@@ -220,7 +220,7 @@
                         - PrimeName:
                             members:
                               - value:
-                                  brief: "name of prime variable"
+                                  brief: "Name of prime variable"
                                   type: String
                                   node_name: true
                               - order:
@@ -242,7 +242,7 @@
                         - IndexedName:
                             members:
                               - name:
-                                  brief: "name of array variable"
+                                  brief: "Name of array variable"
                                   type: Identifier
                                   node_name: true
                               - length:
@@ -265,11 +265,11 @@
                         - VarName:
                             members:
                               - name:
-                                  brief: "name of variable"
+                                  brief: "Name of variable"
                                   type: Identifier
                                   node_name: true
                               - at:
-                                  brief: "value specified with `@`"
+                                  brief: "Value specified with `@`"
                                   type: Integer
                                   optional: true
                                   prefix: {value: "@"}
@@ -289,14 +289,14 @@
                         - Argument:
                             members:
                               - name:
-                                  brief: "name of the argument"
+                                  brief: "Name of the argument"
                                   type: Identifier
                                   node_name: true
                               - unit:
-                                  brief: "unit of the argument"
+                                  brief: "Unit of the argument"
                                   type: Unit
                                   optional: true
-                            brief: "Represents an argument to function"
+                            brief: "Represents an argument to functions and procedures"
                             description: |
                                     In case of function definitions from different ast nodes like ast::FunctionBlock,
                                     ast::ProcedureBlock, the arguments are store in the ast::Argument. For example,
@@ -309,102 +309,108 @@
                                         }
                                     \endcode
                         - ReactVarName:
-                            brief: ".."
+                            brief: "TODO"
                             members:
                               - value:
-                                  brief: "..."
+                                  brief: "TODO"
                                   type: Integer
                                   optional: true
                                   prefix: {value: " "}
                               - name:
-                                  brief: "..."
+                                  brief: "TODO"
                                   type: VarName
                                   node_name: true
                         - ReadIonVar:
-                            brief: ".."
+                            brief: "TODO"
                             members:
                               - name:
-                                  brief: "..."
+                                  brief: "TODO"
                                   type: Name
                                   node_name: true
                         - WriteIonVar:
-                            brief: ".."
+                            brief: "TODO"
                             members:
                               - name:
-                                  brief: "..."
+                                  brief: "TODO"
                                   type: Name
                                   node_name: true
                         - NonspecificCurVar:
-                            brief: ".."
+                            brief: "TODO"
                             members:
                               - name:
-                                  brief: "..."
+                                  brief: "TODO"
                                   type: Name
                                   node_name: true
                         - ElectrodeCurVar:
-                            brief: ".."
+                            brief: "TODO"
                             members:
                               - name:
-                                  brief: "..."
+                                  brief: "TODO"
                                   type: Name
                                   node_name: true
                         - SectionVar:
-                            brief: ".."
+                            brief: "TODO"
                             members:
                               - name:
-                                  brief: "..."
+                                  brief: "TODO"
                                   type: Name
                                   node_name: true
                         - RangeVar:
-                            brief: ".."
+                            brief: "TODO"
                             members:
                               - name:
-                                  brief: "..."
+                                  brief: "TODO"
                                   type: Name
                                   node_name: true
                         - GlobalVar:
-                            brief: ".."
+                            brief: "TODO"
                             members:
                               - name:
-                                  brief: "..."
+                                  brief: "TODO"
                                   type: Name
                                   node_name: true
                         - PointerVar:
-                            brief: ".."
+                            brief: "TODO"
                             members:
                               - name:
-                                  brief: "..."
+                                  brief: "TODO"
                                   type: Name
                                   node_name: true
                         - BbcorePointerVar:
-                            brief: ".."
                             members:
                               - name:
-                                  brief: "..."
+                                  brief: "Variable name"
                                   type: Name
                                   node_name: true
+                            brief: "Represent a single variable of type BBCOREPOINTER"
+                            description: |
+                                    See ast::BbcorePtr for an example.
                         - ExternVar:
-                            brief: ".."
+                            brief: "TODO"
                             members:
                               - name:
-                                  brief: "..."
+                                  brief: "TODO"
                                   type: Name
                                   node_name: true
                         - ThreadsafeVar:
-                            brief: ".."
+                            brief: "TODO"
                             members:
                               - name:
-                                  brief: "..."
+                                  brief: "TODO"
                                   type: Name
                                   node_name: true
                   - Block:
-                      brief: ".."
+                      brief: "Base class for all block scoped nodes"
+                      description: |
+                              NMODL has different local and global block scoped nodes like
+                              ast::NeuronBlock, ast::ParamBlock, ast::IfStatement etc. Ast::Block
+                              is base class and defines common interface for these nodes.
                       children:
                         - ParamBlock:
                             nmodl: "PARAMETER "
                             members:
                               - statements:
-                                  brief: "vector of parameters"
+                                  brief: "Vector of parameters"
                                   type: ParamAssign
                                   vector: true
                             brief: "Represents a `PARAMETER` block in the NMODL"
@@ -428,7 +434,7 @@
                             nmodl: "STEPPED "
                             members:
                               - statements:
-                                  brief: "vector of statements"
+                                  brief: "Vector of statements"
                                   type: Stepped
                                   vector: true
                             brief: "Represents a `STEPPED` block in the NMODL"
@@ -447,7 +453,7 @@
                             nmodl: "INDEPENDENT "
                             members:
                               - definitions:
-                                  brief: "..."
+                                  brief: "TODO"
                                   type: IndependentDef
                                   vector: true
                             brief: "Represents a `INDEPENDENT` block in the NMODL"
@@ -464,7 +470,7 @@
                             nmodl: "ASSIGNED "
                             members:
                               - definitions:
-                                  brief: "vector of assigned variables"
+                                  brief: "Vector of assigned variables"
                                   type: DependentDef
                                   vector: true
                             brief: "Represents a `ASSIGNED` block in the NMODL"
@@ -489,7 +495,7 @@
                             nmodl: "STATE "
                             members:
                               - definitions:
-                                  brief: "vector of state variables"
+                                  brief: "Vector of state variables"
                                   type: DependentDef
                                   vector: true
                             brief: "Represents a `STATE` block in the NMODL"
@@ -510,7 +516,7 @@
                         - PlotBlock:
                             members:
                               - plot:
-                                  brief: "vector of plot variables"
+                                  brief: "Vector of plot variables"
                                   type: PlotDeclaration
                             brief: "Represents a `PLOT` statement in the NMODL"
                             description: |
@@ -527,7 +533,7 @@
                             nmodl: "INITIAL "
                             members:
                               - statement_block:
-                                  brief: "block with statements vector"
+                                  brief: "Block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
                             brief: "Represents a `INITIAL` block in the NMODL"
@@ -548,7 +554,7 @@
                             nmodl: "CONSTRUCTOR "
                             members:
                               - statement_block:
-                                  brief: "block with statements vector"
+                                  brief: "Block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
                             brief: "Represents a `CONSTRUCTOR` block in the NMODL"
@@ -571,7 +577,7 @@
                             nmodl: "DESTRUCTOR "
                             members:
                               - statement_block:
-                                  brief: "block with statements vector"
+                                  brief: "Block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
                             brief: "Represents a `DESTRUCTOR` block in the NMODL"
@@ -594,7 +600,7 @@
                         - StatementBlock:
                             members:
                               - statements:
-                                  brief: "vector of statements"
+                                  brief: "Vector of statements"
                                   type: Statement
                                   vector: true
                                   public: true
@@ -619,12 +625,12 @@
                             nmodl: "DERIVATIVE "
                             members:
                               - name:
-                                  brief: "name of the derivative block"
+                                  brief: "Name of the derivative block"
                                   type: Name
                                   node_name: true
                                   suffix: {value: " "}
                               - statement_block:
-                                  brief: "block with statements vector"
+                                  brief: "Block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
                             brief: "Represents `DERIVATIVE` block in the NMODL"
@@ -645,18 +651,18 @@
                             nmodl: "LINEAR "
                             members:
                               - name:
-                                  brief: "name of the linear block"
+                                  brief: "Name of the linear block"
                                   type: Name
                                   node_name: true
                                   suffix: {value: " "}
                               - solvefor:
-                                  brief: "..."
+                                  brief: "TODO"
                                   type: Name
                                   vector: true
                                   separator: ","
                                   prefix: {value: " SOLVEFOR "}
                               - statement_block:
-                                  brief: "block with statements vector"
+                                  brief: "Block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
                             brief: "Represents `LINEAR` block in the NMODL"
@@ -680,18 +686,18 @@
                             nmodl: "NONLINEAR "
                             members:
                               - name:
-                                  brief: "name of the non-linear block"
+                                  brief: "Name of the non-linear block"
                                   type: Name
                                   node_name: true
                               - solvefor:
-                                  brief: "name of the integration method"
+                                  brief: "Name of the integration method"
                                   type: Name
                                   vector: true
                                   separator: ","
                                   prefix: {value: " SOLVEFOR "}
                                   suffix: {value: " ", force: true}
                               - statement_block:
-                                  brief: "block with statements vector"
+                                  brief: "Block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
                             brief: "Represents `NONLINEAR` block in the NMODL"
@@ -709,41 +715,41 @@
                                     \endcode
 
                         - DiscreteBlock:
-                            brief: ".."
+                            brief: "TODO"
                             nmodl: "DISCRETE "
                             members:
                               - name:
-                                  brief: "..."
+                                  brief: "Name of the discrete block"
                                   type: Name
                                   node_name: true
                                   suffix: {value: " "}
                               - statement_block:
-                                  brief: "block with statements vector"
+                                  brief: "Block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
                         - PartialBlock:
-                            brief: ".."
+                            brief: "TODO"
                             nmodl: "PARTIAL "
                             members:
                               - name:
-                                  brief: "..."
+                                  brief: "Name of the partial block"
                                   type: Name
                                   node_name: true
                                   suffix: {value: " "}
                               - statement_block:
-                                  brief: "..."
+                                  brief: "Block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
                         - FunctionTableBlock:
-                            brief: ".."
+                            brief: "TODO"
                             nmodl: "FUNCTION_TABLE "
                             members:
                               - name:
-                                  brief: "..."
+                                  brief: "Name of the function table block"
                                   type: Name
                                   node_name: true
                               - parameters:
-                                  brief: "..."
+                                  brief: "Vector of the parameters"
                                   type: Argument
                                   vector: true
                                   prefix: {value: "(", force: true}
@@ -751,20 +757,20 @@
                                   separator: ", "
                                   getter: {override: true}
                               - unit:
-                                  brief: "..."
+                                  brief: "Unit if specified"
                                   type: Unit
                                   optional: true
                                   prefix: {value: " "}
                         - FunctionBlock:
-                            brief: ".."
+                            brief: "TODO"
                             nmodl: "FUNCTION "
                             members:
                               - name:
-                                  brief: "..."
+                                  brief: "Name of the function"
                                   type: Name
                                   node_name: true
                               - parameters:
-                                  brief: "..."
+                                  brief: "Vector of the parameters"
                                   type: Argument
                                   vector: true
                                   prefix: {value: "(", force: true}
@@ -772,25 +778,25 @@
                                   separator: ", "
                                   getter: {override: true}
                               - unit:
-                                  brief: "..."
+                                  brief: "Unit if specified"
                                   type: Unit
                                   optional: true
                                   prefix: {value: " "}
                                   suffix: {value: " ", force: true}
                               - statement_block:
-                                  brief: "block with statements vector"
+                                  brief: "Block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
                         - ProcedureBlock:
-                            brief: ".."
+                            brief: "TODO"
                             nmodl: "PROCEDURE "
                             members:
                               - name:
-                                  brief: "..."
+                                  brief: "Name of the procedure"
                                   type: Name
                                   node_name: true
                               - parameters:
-                                  brief: "..."
+                                  brief: "Vector of the parameters"
                                   type: Argument
                                   vector: true
                                   prefix: {value: "(", force: true}
@@ -798,19 +804,19 @@
                                   separator: ", "
                                   getter: {override: true}
                               - unit:
-                                  brief: "..."
+                                  brief: "Unit if specified"
                                   type: Unit
                                   optional: true
                               - statement_block:
-                                  brief: "block with statements vector"
+                                  brief: "Block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
                         - NetReceiveBlock:
-                            brief: ".."
+                            brief: "TODO"
                             nmodl: "NET_RECEIVE "
                             members:
                               - parameters:
-                                  brief: "..."
+                                  brief: "Parameters to the net receive block"
                                   type: Argument
                                   vector: true
                                   prefix: {value: "(", force: true}
@@ -818,79 +824,112 @@
                                   separator: ", "
                                   getter: {override: true}
                               - statement_block:
-                                  brief: "block with statements vector"
+                                  brief: "Block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
                         - SolveBlock:
-                            brief: ".."
+                            brief: "TODO"
                             nmodl: SOLVE
                             members:
                               - block_name:
-                                  brief: "..."
+                                  brief: "Name of the block to solve"
                                   type: Name
                                   prefix: {value: " "}
                               - method:
-                                  brief: "..."
+                                  brief: "Name of the integration method"
                                   type: Name
                                   optional: true
                                   prefix: {value: " METHOD "}
                               - steadystate:
-                                  brief: "..."
+                                  brief: "Name of the integration method"
                                   type: Name
                                   optional: true
                                   prefix: {value: " STEADYSTATE "}
                               - ifsolerr:
-                                  brief: "..."
+                                  brief: "Block to be executed on error"
                                   type: StatementBlock
                                   optional: true
                                   prefix: {value: " IFERROR "}
                         - BreakpointBlock:
-                            brief: ".."
                             nmodl: "BREAKPOINT "
                             members:
                               - statement_block:
-                                  brief: "block with statements vector"
+                                  brief: "Block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
+                            brief: "Represents a `BREAKPOINT` block in NMODL"
+                            description: |
+                                        The `BREAKPOINT` block is used to update current and conductance.
+                                        at each time step. Here is an example of `BEFORE` :
+
+                                        \code{.mod}
+                                            BREAKPOINT {
+                                                SOLVE states METHOD cnexp
+                                                gna = gnabar*m*m*m*h
+                                                ina = gna*(v - ena)
+                                                gk = gkbar*n*n*n*n
+                                                ik = gk*(v - ek)
+                                                il = gl*(v - el)
+                                            }
+                                        \endcode
+
+                                        \sa ast::DerivativeBlock ast::InitialBlock
                         - TerminalBlock:
-                            brief: ".."
+                            brief: "TODO"
                             nmodl: "TERMINAL "
                             members:
                               - statement_block:
-                                  brief: "block with statements vector"
+                                  brief: "Block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
                         - BeforeBlock:
-                            brief: ".."
                             nmodl: "BEFORE "
                             members:
                               - bablock:
-                                  brief: "..."
+                                  brief: "Block to be called before"
                                   type: BABlock
+                            brief: "Represents a `BEFORE` block in NMODL"
                         - AfterBlock:
-                            brief: ".."
                             nmodl: "AFTER "
                             members:
                               - bablock:
-                                  brief: "..."
+                                  brief: "Block to be called after"
                                   type: BABlock
+                            brief: "Represents a `AFTER` block in NMODL"
+                            description: |
+                                        This represents a block to be executed before another block.
+                                        Here is an example of `BEFORE` :
+
+                                        \code{.mod}
+                                            BEFORE STEP {
+                                              if (mode==1) {
+                                                if (ica<imax) {
+                                                  imax = ica
+                                                  timax = t
+                                                }
+                                              }
+                                            }
+                                        \endcode
                         - BABlock:
-                            brief: ".."
                             members:
                               - type:
-                                  brief: "..."
+                                  brief: "Type of NMODL block"
                                   type: BABlockType
                                   suffix: {value: " "}
                               - statement_block:
-                                  brief: "block with statements vector"
+                                  brief: "Block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
+                            brief: "Represents a block to be executed before or after another block"
+                            description: |
+                                        This represents a block to be executed before or after another
+                                        block in NMODL. See ast::BeforeBlock and ast::AfterBlock for usage.
                         - ForNetcon:
-                            brief: ".."
+                            brief: "TODO"
                             nmodl: "FOR_NETCONS "
                             members:
                               - parameters:
-                                  brief: "..."
+                                  brief: "Arguments to the for netcon block"
                                   type: Argument
                                   vector: true
                                   prefix: {value: "(", force: true}
@@ -898,55 +937,73 @@
                                   separator: ", "
                                   getter: {override: true}
                               - statement_block:
-                                  brief: "block with statements vector"
+                                  brief: "Block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
                         - KineticBlock:
-                            brief: ".."
+                            brief: "TODO"
                             nmodl: "KINETIC "
                             members:
                               - name:
-                                  brief: "..."
+                                  brief: "Name of the kinetic block"
                                   type: Name
                                   node_name: true
                                   suffix: {value: " "}
                               - solvefor:
-                                  brief: "..."
+                                  brief: "Solve for specification (TODO)"
                                   type: Name
                                   vector: true
                                   separator: ","
                               - statement_block:
-                                  brief: "block with statements vector"
+                                  brief: "Block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
                         - MatchBlock:
-                            brief: ".."
+                            brief: "TODO"
                             nmodl: MATCH
                             members:
                               - matchs:
-                                  brief: "..."
+                                  brief: "Vector of match statements"
                                   type: Match
                                   vector: true
                                   separator: " "
                                   prefix: {value: " { "}
                                   suffix: {value: " }"}
                         - UnitBlock:
-                            brief: ".."
+                            brief: "TODO"
                             nmodl: "UNITS "
                             members:
                               - definitions:
-                                  brief: "..."
+                                  brief: "Vector of unit statements"
                                   type: Expression
                                   vector: true
                         - ConstantBlock:
-                            brief: ".."
                             nmodl: "CONSTANT "
                             members:
                               - statements:
-                                  brief: "..."
+                                  brief: "Vector of constant statements"
                                   type: ConstantStatement
                                   vector: true
+                            brief: "Represent `CONSTANT` block in the mod file"
+                            description: |
+                                            Here is an example of `CONSTANT` block in mod file:
+
+                                            \code{.mod}
+                                                CONSTANT {
+                                                    q10 = 3
+
+                                                    cvm = 28.9 (mV)
+                                                    ckm = 6.2 (mV)
+                                                    ctm = 0.000505 (s)
+                                                }
+                                            \endcode
                         - NeuronBlock:
+                            nmodl: "NEURON "
+                            members:
+                              - statement_block:
+                                  brief: "Block with statements vector"
+                                  type: StatementBlock
+                                  getter: {override: true}
                             brief: "Represent `NEURON` block in the mod file"
                             description: |
                                             The keyword `NEURON` introduces a special block which contains statements
@@ -966,131 +1023,141 @@
                                             \endcode
 
                             url: "https://www.neuron.yale.edu/neuron/static/py_doc/modelspec/programmatic/mechanisms/nmodl2.html#neuron"
-                            nmodl: "NEURON "
-                            members:
-                              - statement_block:
-                                  brief: "block with statements vector"
-                                  type: StatementBlock
-                                  getter: {override: true}
                   - Unit:
-                      brief: ".."
+                      brief: "TODO"
                       members:
                         - name:
-                            brief: "..."
+                            brief: "TODO"
                             type: String
                             node_name: true
                             prefix: {value: "("}
                             suffix: {value: ")"}
                   - DoubleUnit:
-                      brief: ".."
+                      brief: "TODO"
                       members:
                         - value:
-                            brief: "..."
+                            brief: "TODO"
                             type: Double
                         - unit:
-                            brief: "..."
+                            brief: "TODO"
                             type: Unit
                             optional: true
                   - LocalVar:
-                      brief: ".."
+                      brief: "TODO"
                       members:
                         - name:
-                            brief: "..."
+                            brief: "TODO"
                             type: Identifier
                             node_name: true
                   - Limits:
-                      brief: ".."
+                      brief: "TODO"
                       members:
                         - min:
-                            brief: "..."
+                            brief: "TODO"
                             type: Double
                             prefix: {value: "<"}
                             suffix: {value: ","}
                         - max:
-                            brief: "..."
+                            brief: "TODO"
                             type: Double
                             suffix: {value: ">"}
                   - NumberRange:
-                      brief: ".."
+                      brief: "TODO"
                       members:
                         - min:
-                            brief: "..."
+                            brief: "TODO"
                             type: Number
                             prefix: {value: "<"}
                             suffix: {value: ","}
                         - max:
-                            brief: "..."
+                            brief: "TODO"
                             type: Number
                             suffix: {value: ">"}
                   - PlotVar:
-                      brief: ".."
+                      brief: "TODO"
                       members:
                         - name:
-                            brief: "..."
+                            brief: "TODO"
                             type: Identifier
                         - index:
-                            brief: "..."
+                            brief: "TODO"
                             type: Integer
                             optional: true
                             prefix: {value: "["}
                             suffix: {value: "]"}
                   - ConstantVar:
-                      brief: ".."
                       members:
                         - name:
-                            brief: "..."
+                            brief: "Name of the variable"
                             type: Name
                             node_name: true
                         - value:
-                            brief: "..."
+                            brief: "Value of the constant"
                             type: Number
                             prefix: {value: " = "}
                         - unit:
-                            brief: "..."
+                            brief: "Unit for the variable"
                             type: Unit
                             optional: true
                             prefix: {value: " "}
+                      brief: "Represents a variable in the ast::ConstantBlock"
+
                   - BinaryOperator:
-                      brief: ".."
                       members:
                         - value:
-                            brief: "..."
+                            brief: "Opearator"
                             type: BinaryOp
+                      brief: "Operator used in ast::BinaryExpression"
                   - UnaryOperator:
-                      brief: ".."
+                      brief: "TODO"
                       members:
                         - value:
-                            brief: "..."
+                            brief: "TODO"
                             type: UnaryOp
                   - ReactionOperator:
-                      brief: ".."
+                      brief: "TODO"
                       members:
                         - value:
-                            brief: "..."
+                            brief: "TODO"
                             type: ReactionOp
                   - ParenExpression:
-                      brief: ".."
+                      brief: "TODO"
                       members:
                         - expression:
-                            brief: "..."
+                            brief: "TODO"
                             type: Expression
                             prefix: {value: "("}
                             suffix: {value: ")"}
                   - BinaryExpression:
-                      brief: ".."
                       members:
                         - lhs:
-                            brief: "..."
+                            brief: "LHS of the binary expression"
                             type: Expression
                             public: true
                         - op:
-                            brief: "..."
+                            brief: "Opearator"
                             type: BinaryOperator
                             public: true
                         - rhs:
-                            brief: "..."
+                            brief: "RHS of the binary expression"
                             type: Expression
                             public: true
+                      brief: "Represents binary expression in the NMODL"
+                      description: |
+                              Any binary expression in the mod file is represented by this node type.
+                              For example, in below example, there are three binary expressions :
+
+                              \code{.mod}
+                                  BREAKPOINT {
+                                      SOLVE states METHOD cnexp
+                                      ina = gna*(v - ena)
+                                  }
+                              \endcode
+
+                              Note that the statement itself is stored in another type ast::ExpressionStatement.
+
+                              \sa ast::ExpressionStatement
+
                   - DiffEqExpression:
                       brief: "Represents differential equation in DERIVATIVE block"
                       members:
@@ -1099,116 +1166,121 @@
                             type: BinaryExpression
                             public: true
                   - UnaryExpression:
-                      brief: ".."
+                      brief: "TODO"
                       members:
                         - op:
-                            brief: "..."
+                            brief: "TODO"
                             type: UnaryOperator
                         - expression:
-                            brief: "..."
+                            brief: "TODO"
                             type: Expression
                   - NonLinEquation:
-                      brief: ".."
+                      brief: "TODO"
                       nmodl: "~ "
                       members:
                         - lhs:
-                            brief: "..."
+                            brief: "TODO"
                             type: Expression
                             suffix: {value: " = "}
                         - rhs:
-                            brief: "..."
+                            brief: "TODO"
                             type: Expression
                   - LinEquation:
-                      brief: ".."
+                      brief: "TODO"
                       nmodl: "~ "
                       members:
                         - left_linxpression:
-                            brief: "..."
+                            brief: "TODO"
                             type: Expression
                             suffix: {value: " = "}
                         - linxpression:
-                            brief: "..."
+                            brief: "TODO"
                             type: Expression
                   - FunctionCall:
-                      brief: ".."
+                      brief: "TODO"
                       members:
                         - name:
-                            brief: "..."
+                            brief: "TODO"
                             type: Name
                             node_name: true
                         - arguments:
-                            brief: "..."
+                            brief: "TODO"
                             type: Expression
                             vector: true
                             separator: ", "
                             prefix: {value: "(", force: true}
                             suffix: {value: ")", force: true}
                   - FirstLastTypeIndex:
-                      brief: ".."
+                      brief: "TODO"
                       members:
                         - value:
-                            brief: "..."
+                            brief: "TODO"
                             type: FirstLastType
                   - Watch:
-                      brief: ".."
+                      brief: "TODO"
                       members:
                         - expression:
-                            brief: "..."
+                            brief: "TODO"
                             type: Expression
                             prefix: {value: "("}
                             suffix: {value: ")"}
                         - value:
-                            brief: "..."
+                            brief: "TODO"
                             type: Expression
                             prefix: {value: " "}
                   - QueueExpressionType:
-                      brief: ".."
+                      brief: "TODO"
                       members:
                         - value:
-                            brief: "..."
+                            brief: "TODO"
                             type: QueueType
                   - Match:
-                      brief: ".."
+                      brief: "TODO"
                       members:
                         - name:
-                            brief: "..."
+                            brief: "TODO"
                             type: Identifier
                         - expression:
-                            brief: "..."
+                            brief: "TODO"
                             type: Expression
                             optional: true
                   - BABlockType:
-                      brief: ".."
                       members:
                         - value:
-                            brief: "..."
+                            brief: "block type"
                             type: BAType
+                      brief: "Type to represent different block types for before/after block"
+                      description: |
+                              Different NMODL blocks can be used with ast::BeforeBlock and ast::AfterBlock.
+                              This type is used to represent such block types.
+
+                              \sa ast::BeforeBlock as::AfterBlock
                   - UnitDef:
-                      brief: ".."
+                      brief: "TODO"
                       members:
                         - unit1:
-                            brief: "..."
+                            brief: "TODO"
                             type: Unit
                             node_name: true
                         - unit2:
-                            brief: "..."
+                            brief: "TODO"
                             type: Unit
                             prefix: {value: " = "}
                   - FactorDef:
-                      brief: ".."
+                      brief: "TODO"
                       members:
                         - name:
-                            brief: "..."
+                            brief: "TODO"
                             type: Name
                             node_name: true
                             suffix: {value: " ="}
                         - value:
-                            brief: "..."
+                            brief: "TODO"
                             type: Double
                             optional: true
                             prefix: {value: " "}
                         - unit1:
-                            brief: "..."
+                            brief: "TODO"
                             type: Unit
                             prefix: {value: " "}
                         - gt:
@@ -1217,647 +1289,680 @@
                             nmodl: " ->"
                             optional: true
                         - unit2:
-                            brief: "..."
+                            brief: "TODO"
                             type: Unit
                             optional: true
                             prefix: {value: " "}
                   - Valence:
-                      brief: ".."
+                      brief: "TODO"
                       members:
                         - type:
                             type: Name
-                            brief: "..."
+                            brief: "TODO"
                             prefix: {value: " "}
                             suffix: {value: " "}
                         - value:
-                            brief: "..."
+                            brief: "TODO"
                             type: Double
 
             - Statement:
-                brief: ".."
+                brief: "TODO"
                 children:
                   - UnitState:
-                      brief: ".."
+                      brief: "TODO"
                       members:
                         - value:
-                            brief: "..."
+                            brief: "TODO"
                             type: UnitStateType
                   - LocalListStatement:
-                      brief: ".."
+                      brief: "TODO"
                       nmodl: "LOCAL "
                       members:
                         - variables:
-                            brief: "..."
+                            brief: "TODO"
                             type: LocalVar
                             vector: true
                             separator: ", "
                             public: true
                   - Model:
-                      brief: ".."
+                      brief: "TODO"
                       nmodl: TITLE
                       members:
                         - title:
-                            brief: "..."
+                            brief: "TODO"
                             type: String
                   - Define:
-                      brief: ".."
                       nmodl: "DEFINE "
                       members:
                         - name:
-                            brief: "..."
+                            brief: "Name of the macro"
                             type: Name
                             node_name: true
                         - value:
-                            brief: "..."
+                            brief: "Value of the macro"
                             type: Integer
                             prefix: {value: " "}
+                      brief: "Represents a `DEFINE` statement in NMODL"
                   - Include:
-                      brief: ".."
+                      brief: "TODO"
                       nmodl: "INCLUDE "
                       members:
                         - filename:
-                            brief: "..."
+                            brief: "TODO"
                             type: String
                   - ParamAssign:
-                      brief: ".."
+                      brief: "TODO"
                       members:
                         - name:
-                            brief: "..."
+                            brief: "TODO"
                             type: Identifier
                             node_name: true
                         - value:
-                            brief: "..."
+                            brief: "TODO"
                             type: Number
                             optional: true
                             prefix: {value: " = "}
                         - unit:
-                            brief: "..."
+                            brief: "TODO"
                             type: Unit
                             optional: true
                             prefix: {value: " "}
                         - limit:
-                            brief: "..."
+                            brief: "TODO"
                             type: Limits
                             optional: true
                             prefix: {value: " "}
                   - Stepped:
-                      brief: ".."
+                      brief: "TODO"
                       members:
                         - name:
-                            brief: "..."
+                            brief: "TODO"
                             type: Name
                         - values:
-                            brief: "..."
+                            brief: "TODO"
                             type: Number
                             vector: true
                             prefix: {value: " = "}
                             separator: ", "
                         - unit:
-                            brief: "..."
+                            brief: "TODO"
                             type: Unit
                             optional: true
                             prefix: {value: " "}
                   - IndependentDef:
-                      brief: ".."
+                      brief: "TODO"
                       members:
                         - sweep:
-                            brief: "..."
+                            brief: "TODO"
                             type: Boolean
                             optional: true
                             nmodl: "SWEEP "
                         - name:
-                            brief: "..."
+                            brief: "TODO"
                             type: Name
                         - from:
-                            brief: "..."
+                            brief: "TODO"
                             type: Number
                             prefix: {value: " FROM "}
                         - to:
-                            brief: "..."
+                            brief: "TODO"
                             type: Number
                             prefix: {value: " TO "}
                         - with:
-                            brief: "..."
+                            brief: "TODO"
                             type: Integer
                             prefix: {value: " WITH "}
                         - start:
-                            brief: "..."
+                            brief: "TODO"
                             type: Number
                             prefix: {value: " START "}
                             optional: true
                         - unit:
-                            brief: "..."
+                            brief: "TODO"
                             type: Unit
                             optional: true
                             prefix: {value: " "}
                   - DependentDef:
-                      brief: ".."
                       members:
                         - name:
-                            brief: "..."
+                            brief: "Name of the variable"
                             type: Identifier
                             node_name: true
                         - length:
-                            brief: "..."
+                            brief: "Length in case of array"
                             type: Integer
                             optional: true
                             prefix: {value: "["}
                             suffix: {value: "]"}
                         - from:
-                            brief: "..."
+                            brief: "TODO"
                             type: Number
                             prefix: {value: " FROM "}
                             optional: true
                         - to:
-                            brief: "..."
+                            brief: "TODO"
                             type: Number
                             prefix: {value: " TO "}
                             optional: true
                         - start:
-                            brief: "..."
+                            brief: "TODO"
                             type: Number
                             prefix: {value: " START "}
                             optional: true
                         - unit:
-                            brief: "..."
+                            brief: "TODO"
                             type: Unit
                             optional: true
                             prefix: {value: " "}
                         - abstol:
-                            brief: "..."
+                            brief: "TODO"
                             type: Double
                             prefix: {value: " <"}
                             suffix: {value: ">"}
                             optional: true
+                      brief: "Represents a statement in `ASSIGNED` or `STATE` block"
                   - PlotDeclaration:
-                      brief: ".."
+                      brief: "TODO"
                       nmodl: "PLOT "
                       members:
                         - variables:
-                            brief: "..."
+                            brief: "TODO"
                             type: PlotVar
                             vector: true
                             separator: ", "
                         - name:
-                            brief: "..."
+                            brief: "TODO"
                             type: PlotVar
                             prefix: {value: " VS "}
                   - ConductanceHint:
-                      brief: ".."
                       nmodl: "CONDUCTANCE "
                       members:
                         - conductance:
-                            brief: "..."
+                            brief: "Conductance variable"
                             type: Name
                         - ion:
-                            brief: "..."
+                            brief: "Ion name"
                             type: Name
                             optional: true
                             prefix: {value: " USEION "}
+                      brief: "Represents `CONDUCTANCE` statement in NMODL"
+                      description: |
+                                If `I/V` relation in the `BREAKPOINT` block is ohomic then one can
+                                specify `CONDUCTANCE` hint for optimised code generation:
+
+                                \code{.mod}
+                                    CONDUCTANCE g USEION I
+                                \endcode
+
+                                \sa nmodl::visitor::SympyConductanceVisitor
+
                   - ExpressionStatement:
-                      brief: ".."
+                      brief: "TODO"
                       members:
                         - expression:
-                            brief: "..."
+                            brief: "TODO"
                             type: Expression
                   - ProtectStatement:
-                      brief: ".."
+                      brief: "TODO"
                       nmodl: "PROTECT "
                       members:
                         - expression:
-                            brief: "..."
+                            brief: "TODO"
                             type: Expression
                   - FromStatement:
-                      brief: ".."
+                      brief: "TODO"
                       nmodl: "FROM "
                       members:
                         - name:
-                            brief: "..."
+                            brief: "TODO"
                             type: Name
                             node_name: true
                         - from:
-                            brief: "..."
+                            brief: "TODO"
                             type: Expression
                             prefix: {value: " = "}
                         - to:
-                            brief: "..."
+                            brief: "TODO"
                             type: Expression
                             prefix: {value: " TO "}
                         - increment:
-                            brief: "..."
+                            brief: "TODO"
                             type: Expression
                             prefix: {value: " BY "}
                             suffix: {value: " ", force: true}
                             optional: true
                         - statement_block:
-                            brief: "..."
+                            brief: "TODO"
                             type: StatementBlock
                             getter: {override: true}
                   - ForAllStatement:
-                      brief: ".."
+                      brief: "TODO"
                       nmodl: "FORALL "
                       members:
                         - name:
-                            brief: "..."
+                            brief: "TODO"
                             type: Name
                             suffix: {value: " "}
                         - statement_block:
-                            brief: "..."
+                            brief: "TODO"
                             type: StatementBlock
                             getter: {override: true}
                   - WhileStatement:
-                      brief: ".."
+                      brief: "TODO"
                       nmodl: "WHILE "
                       members:
                         - condition:
-                            brief: "..."
+                            brief: "TODO"
                             type: Expression
                             prefix: {value: "("}
                             suffix: {value: ") "}
                         - statement_block:
-                            brief: "..."
+                            brief: "TODO"
                             type: StatementBlock
                             getter: {override: true}
                   - IfStatement:
-                      brief: ".."
+                      brief: "TODO"
                       nmodl: "IF "
                       members:
                         - condition:
-                            brief: "..."
+                            brief: "TODO"
                             type: Expression
                             prefix: {value: "("}
                             suffix: {value: ") "}
                         - statement_block:
-                            brief: "..."
+                            brief: "TODO"
                             type: StatementBlock
                             getter: {override: true}
                         - elseifs:
-                            brief: "..."
+                            brief: "TODO"
                             type: ElseIfStatement
                             vector: true
                         - elses:
-                            brief: "..."
+                            brief: "TODO"
                             type: ElseStatement
                             optional: true
                   - ElseIfStatement:
-                      brief: ".."
+                      brief: "TODO"
                       nmodl: " ELSE IF "
                       members:
                         - condition:
-                            brief: "..."
+                            brief: "TODO"
                             type: Expression
                             prefix: {value: "("}
                             suffix: {value: ") "}
                         - statement_block:
-                            brief: "..."
+                            brief: "TODO"
                             type: StatementBlock
                             getter: {override: true}
                   - ElseStatement:
-                      brief: ".."
+                      brief: "TODO"
                       nmodl: " ELSE "
                       members:
                         - statement_block:
-                            brief: "..."
+                            brief: "TODO"
                             type: StatementBlock
                             getter: {override: true}
                   - PartialEquation:
-                      brief: ".."
+                      brief: "TODO"
                       members:
                         - prime:
-                            brief: "..."
+                            brief: "TODO"
                             type: PrimeName
                         - name1:
-                            brief: "..."
+                            brief: "TODO"
                             type: Name
                         - name2:
-                            brief: "..."
+                            brief: "TODO"
                             type: Name
                         - name3:
-                            brief: "..."
+                            brief: "TODO"
                             type: Name
                   - PartialBoundary:
-                      brief: ".."
+                      brief: "TODO"
                       nmodl: "~ "
                       members:
                         - del:
-                            brief: "..."
+                            brief: "TODO"
                             type: Name
                             optional: true
                             suffix: {value: " "}
                         - name:
-                            brief: "..."
+                            brief: "TODO"
                             type: Identifier
                         - index:
-                            brief: "..."
+                            brief: "TODO"
                             type: FirstLastTypeIndex
                             optional: true
                             prefix: {value: "["}
                             suffix: {value: "]"}
                         - expression:
-                            brief: "..."
+                            brief: "TODO"
                             type: Expression
                             optional: true
                             prefix: {value: " = "}
                         - name1:
-                            brief: "..."
+                            brief: "TODO"
                             type: Name
                             optional: true
                             prefix: {value: " = "}
                             suffix: {value: "*"}
                         - del2:
-                            brief: "..."
+                            brief: "TODO"
                             type: Name
                             optional: true
                             suffix: {value: "("}
                         - name2:
-                            brief: "..."
+                            brief: "TODO"
                             type: Name
                             optional: true
                             suffix: {value: ")"}
                         - name3:
-                            brief: "..."
+                            brief: "TODO"
                             type: Name
                             optional: true
                             prefix: {value: "+"}
                   - WatchStatement:
-                      brief: ".."
                       nmodl: "WATCH "
                       members:
                         - statements:
-                            brief: "..."
+                            brief: "Vector of watch statements"
                             type: Watch
                             vector: true
                             separator: ","
                             add: true
+                      brief: "Represent WATCH statement in NMODL"
                   - MutexLock:
-                      brief: ".."
                       nmodl: MUTEXLOCK
+                      brief: "Represent MUTEXLOCK statement in NMODL"
                   - MutexUnlock:
-                      brief: ".."
                       nmodl: MUTEXUNLOCK
+                      brief: "Represent MUTEXUNLOCK statement in NMODL"
                   - Reset:
-                      brief: ".."
                       nmodl: RESET
+                      brief: "Represent RESET statement in NMODL"
                   - Sens:
-                      brief: ".."
                       nmodl: "SENS "
                       members:
                         - variables:
-                            brief: "..."
+                            brief: "TODO"
                             type: VarName
                             vector: true
                             separator: ", "
+                      brief: "Represent SENS statement in NMODL"
                   - Conserve:
-                      brief: ".."
                       nmodl: CONSERVE
                       members:
                         - react:
-                            brief: "..."
+                            brief: "TODO"
                             type: Expression
                             prefix: {value: " "}
                         - expr:
-                            brief: "..."
+                            brief: "TODO"
                             type: Expression
                             prefix: {value: " = "}
+                      brief: "Represent CONSERVE statement in NMODL"
                   - Compartment:
-                      brief: ".."
                       nmodl: COMPARTMENT
                       members:
                         - name:
-                            brief: "..."
+                            brief: "TODO"
                             type: Name
                             optional: true
                             prefix: {value: " "}
                             suffix: {value: ","}
                         - expression:
-                            brief: "..."
+                            brief: "TODO"
                             type: Expression
                             prefix: {value: " "}
                         - names:
-                            brief: "..."
+                            brief: "TODO"
                             type: Name
                             vector: true
                             prefix: {value: " {"}
                             suffix: {value: "}"}
                             separator: " "
+                      brief: "Represent COMPARTMENT statement in NMODL"
                   - LonDifuse:
-                      brief: ".."
                       nmodl: LONGITUDINAL_DIFFUSION
                       members:
                         - name:
-                            brief: "..."
+                            brief: "TODO"
                             type: Name
                             optional: true
                             prefix: {value: " "}
                             suffix: {value: ","}
                         - expression:
-                            brief: "..."
+                            brief: "TODO"
                             type: Expression
                             prefix: {value: " "}
                         - names:
-                            brief: "..."
+                            brief: "TODO"
                             type: Name
                             vector: true
                             prefix: {value: " {"}
                             suffix: {value: "}"}
                             separator: " "
+                      brief: "Represent LONGITUDINAL_DIFFUSION statement in NMODL"
                   - ReactionStatement:
-                      brief: ".."
+                      brief: "TODO"
                       nmodl: "~ "
                       members:
                         - reaction1:
-                            brief: "..."
+                            brief: "TODO"
                             type: Expression
                         - op:
-                            brief: "..."
+                            brief: "TODO"
                             type: ReactionOperator
                             prefix: {value: " "}
                         - reaction2:
-                            brief: "..."
+                            brief: "TODO"
                             type: Expression
                             prefix: {value: " "}
                             optional: true
                         - expression1:
-                            brief: "..."
+                            brief: "TODO"
                             type: Expression
                             prefix: {value: " ("}
                         - expression2:
-                            brief: "..."
+                            brief: "TODO"
                             type: Expression
                             prefix: {value: ", "}
                             suffix: {value: ")", force: true}
                             optional: true
                   - LagStatement:
-                      brief: ".."
                       nmodl: "LAG "
                       members:
                         - name:
-                            brief: "..."
+                            brief: "Name of the variable (TODO)"
                             type: Identifier
                         - byname:
-                            brief: "..."
+                            brief: "Name of the variable (TODO)"
                             type: Name
                             prefix: {value: " BY "}
+                      brief: "Represents a LAG statement in the mod file"
+                      description: |
+                                An example of LAG statement usage:
+
+                                \code{.mod}
+                                    PROCEDURE lates() {
+                                        LAG ina BY tau
+                                        neo = lag_ina_tau
+                                        if (ena < 70) {ena = 70}
+                                    }
+                                \endcode
                   - QueueStatement:
-                      brief: ".."
                       members:
                         - qtype:
-                            brief: "..."
+                            brief: "queue type (put/get)"
                             type: QueueExpressionType
                         - name:
-                            brief: "..."
+                            brief: "Name of the variable"
                             type: Identifier
                             prefix: {value: " "}
+                      brief: "Represent queue statement in NMODL"
                   - ConstantStatement:
-                      brief: ".."
                       members:
                         - constant:
-                            brief: "..."
+                            brief: "single constant variable"
                             type: ConstantVar
+                      brief: "Represent statement in CONSTANT block of NMODL"
+                      description: |
+                              \todo As ConstantStatement wraps a single ConstantVar,
+                                    this or ast::ConstantVar can be redundant in the future.
                   - TableStatement:
-                      brief: ".."
                       nmodl: "TABLE "
                       members:
                         - table_vars:
-                            brief: "..."
+                            brief: "Variables in the table"
                             type: Name
                             vector: true
                             separator: ","
                         - depend_vars:
-                            brief: "..."
+                            brief: "dependent variables"
                             type: Name
                             vector: true
                             prefix: {value: " DEPEND "}
                             separator: ","
                         - from:
-                            brief: "..."
+                            brief: "from value"
                             type: Expression
                             prefix: {value: " FROM "}
                         - to:
-                            brief: "..."
+                            brief: "to values"
                             type: Expression
                             prefix: {value: " TO "}
                         - with:
-                            brief: "..."
+                            brief: "an increment factor"
                             type: Integer
                             prefix: {value: " WITH "}
+                      brief: "Represents TABLE statement in NMODL"
                   - Suffix:
-                      brief: ".."
                       members:
                         - type:
-                            brief: "..."
+                            brief: "type of channel"
                             type: Name
                             suffix: {value: " "}
                         - name:
-                            brief: "..."
+                            brief: "Name of the channel"
                             type: Name
                             node_name: true
+                      brief: "Represents SUFFIX statement in NMODL"
                   - Useion:
-                      brief: ".."
                       nmodl: "USEION "
                       members:
                         - name:
-                            brief: "..."
+                            brief: "Name of ion"
                             type: Name
                             node_name: true
                         - readlist:
-                            brief: "..."
+                            brief: "Variables being read"
                             type: ReadIonVar
                             vector: true
                             prefix: {value: " READ "}
                             separator: ", "
                         - writelist:
-                            brief: "..."
+                            brief: "Variables being written"
                             type: WriteIonVar
                             vector: true
                             prefix: {value: " WRITE "}
                             separator: ", "
                         - valence:
-                            brief: "..."
+                            brief: "(TODO)"
                             type: Valence
                             optional: true
+                      brief: "Represents USEION statement in NMODL"
                   - Nonspecific:
-                      brief: ".."
                       nmodl: "NONSPECIFIC_CURRENT "
                       members:
                         - currents:
-                            brief: "..."
+                            brief: "Vector of non specific variables"
                             type: NonspecificCurVar
                             vector: true
                             separator: ", "
+                      brief: "Represents NONSPECIFIC_CURRENT variables statement in NMODL"
                   - ElctrodeCurrent:
-                      brief: ".."
                       nmodl: "ELECTRODE_CURRENT "
                       members:
                         - currents:
-                            brief: "..."
+                            brief: "Vector of electrode current variables"
                             type: ElectrodeCurVar
                             vector: true
                             separator: ", "
+                      brief: "Represents ELECTRODE_CURRENT variables statement in NMODL"
                   - Section:
-                      brief: ".."
                       nmodl: "SECTION "
                       members:
                         - sections:
-                            brief: "..."
+                            brief: "Vector of section variables"
                             type: SectionVar
                             vector: true
                             separator: ", "
+                      brief: "Represents SECTION variables statement in NMODL"
                   - Range:
-                      brief: ".."
                       nmodl: "RANGE "
                       members:
                         - variables:
-                            brief: "..."
+                            brief: "Vector of range variables"
                             type: RangeVar
                             vector: true
                             separator: ", "
+                      brief: "Represents RANGE variables statement in NMODL"
                   - Global:
-                      brief: ".."
+                      brief: "TODO"
                       nmodl: "GLOBAL "
                       members:
                         - variables:
-                            brief: "..."
+                            brief: "Vector of global variables"
                             type: GlobalVar
                             vector: true
                             separator: ", "
+                      brief: "Represents GLOBAL statement in NMODL"
                   - Pointer:
-                      brief: ".."
                       nmodl: "POINTER "
                       members:
                         - variables:
-                            brief: "..."
+                            brief: "Vector of pointer variables"
                             type: PointerVar
                             vector: true
                             separator: ", "
+                      brief: "Represents POINTER statement in NMODL"
                   - BbcorePtr:
-                      brief: ".."
                       nmodl: "BBCOREPOINTER "
                       members:
                         - variables:
-                            brief: "..."
+                            brief: "Vector of bbcore pointer variables"
                             type: BbcorePointerVar
                             vector: true
                             separator: ", "
+                      brief: "Represents BBCOREPOINTER statement in NMODL"
+                      description: |
+                                Here is an example of BBCOREPOINTER statement:
+
+                                \code{.mod}
+                                      NEURON {
+                                          THREADSAFE
+                                          POINT_PROCESS ProbAMPANMDA_EMS
+                                          BBCOREPOINTER rng, data
+                                \endcode
                   - External:
-                      brief: ".."
                       nmodl: "EXTERNAL "
                       members:
                         - variables:
-                            brief: "..."
+                            brief: "Vector of external variables"
                             type: ExternVar
                             vector: true
                             separator: ", "
+                      brief: "Represents EXTERNAL statement in NMODL"
                   - ThreadSafe:
-                      brief: ".."
                       nmodl: THREADSAFE
                       members:
                         - variables:
-                            brief: "..."
+                            brief: "Vector of thread safe variables"
                             type: ThreadsafeVar
                             vector: true
                             separator: ", "
                             prefix: {value: " "}
+                      brief: "Represents THREADSAFE statement in NMODL"
                   - Verbatim:
                       brief: "Represents a C code block"
                       nmodl: VERBATIM
@@ -1885,7 +1990,7 @@
     brief: "Represents top level AST node for whole NMODL input"
     members:
       - blocks:
-          brief: "..."
+          brief: "Vector of top level blocks in the mod file"
           type: Node
           vector: true
           add: true

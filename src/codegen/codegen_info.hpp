@@ -134,7 +134,7 @@ struct IndexSemantics {
  * Code generation passes require different information from AST. This
  * information is gathered in this single class.
  *
- * \todo : need to store all Define i.e. macro definitions?
+ * \todo Need to store all Define i.e. macro definitions?
  */
 struct CodegenInfo {
     /// name of mod file

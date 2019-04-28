@@ -85,7 +85,7 @@
     using nmodl::parser::UnitDriver;
 
     /// yylex takes scanner as well as driver reference
-    /// \todo: check if driver argument is required
+    /// \todo Check if driver argument is required
     static UnitParser::symbol_type yylex(UnitLexer &scanner, UnitDriver &/*driver*/) {
         return scanner.next_token();
     }

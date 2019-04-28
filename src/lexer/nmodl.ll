@@ -298,7 +298,7 @@ ELSE                    {
                                 return token_symbol(yytext, loc, Token::REACTION);
                             }
 
-                            /* \todo : should be parser error instead of exception */
+                            /* \todo Should be parser error instead of exception */
                             auto msg = "Lexer Error : Invalid context, no token matched for ~";
                             throw std::runtime_error(msg);
                         }

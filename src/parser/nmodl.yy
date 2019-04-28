@@ -376,7 +376,7 @@
     using nmodl::parser::VerbatimDriver;
 
     /// yylex takes scanner as well as driver reference
-    /// \todo: check if driver argument is required
+    /// \todo Check if driver argument is required
     static NmodlParser::symbol_type yylex(NmodlLexer &scanner, NmodlDriver &/*driver*/) {
         return scanner.next_token();
     }

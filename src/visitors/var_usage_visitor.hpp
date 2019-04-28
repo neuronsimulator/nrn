@@ -30,7 +30,7 @@ namespace visitor {
  * \class VarUsageVisitor
  * \brief Check if variable is used in given block
  *
- * \todo check if macro is considered as variable
+ * \todo Check if macro is considered as variable
  */
 
 class VarUsageVisitor: public AstVisitor {

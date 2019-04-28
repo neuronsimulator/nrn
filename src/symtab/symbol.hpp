@@ -264,7 +264,7 @@ class Symbol {
      * External variables are the variables that are defined in NEURON
      * and available in mod file.
      *
-     * \todo: Need to check if we should check two properties using
+     * \todo Need to check if we should check two properties using
      *        has_any_property instead of exact comparison
      *
      * \sa nmodl::details::NEURON_VARIABLES

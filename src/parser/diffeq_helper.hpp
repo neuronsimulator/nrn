@@ -19,7 +19,7 @@ namespace parser {
  * of various binary expressions and those are provided below. This
  * implementation is based on original neuron implementation.
  *
- * \todo : The implementations here are verbose and has duplicate code.
+ * \todo The implementations here are verbose and has duplicate code.
  * Need to revisit this, may be using better library like symengine
  * altogether.
  */

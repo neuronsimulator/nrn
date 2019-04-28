@@ -36,11 +36,11 @@ namespace codegen {
  * class object of CodegenInfo.
  *
  * \todo
- *  - determine `vectorize` as part of the pass
- *  - determine `threadsafe` as part of the pass
- *  - global variable order is not preserved, for example, below gives different order:
- *      NEURON block:    GLOBAL gq, gp
- *      PARAMETER block: gp = 11, gq[2]
+ *  - Determine `vectorize` as part of the pass
+ *  - Determine `threadsafe` as part of the pass
+ *  - Global variable order is not preserved, for example, below gives different order:
+ *    - NEURON block:    GLOBAL gq, gp
+ *    - PARAMETER block: gp = 11, gq[2]
  *  - POINTER rng and if it's also assigned rng[4] then it is printed as one value.
  *    Need to check what is correct value.
  */
