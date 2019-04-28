@@ -89,7 +89,9 @@ _mingw_mac.h
 _mingw_off_t.h
 _mingw_secapi.h
 assert.h
+corecrt.h
 corecrt_startup.h
+corecrt_wstdlib.h
 crtdefs.h
 errno.h
 inttypes.h
