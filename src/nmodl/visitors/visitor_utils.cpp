@@ -77,7 +77,7 @@ LocalVar* add_local_variable(StatementBlock* node, const std::string& varname, i
  * parse it using NMODL parser. As there will be only one block with single
  * statement, we return first statement.
  *
- * \todo : Need to revisit this during code generation passes to make sure
+ * \todo Need to revisit this during code generation passes to make sure
  *  if all statements can be part of procedure block.
  */
 std::shared_ptr<Statement> create_statement(const std::string& code_statement) {

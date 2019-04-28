@@ -13,7 +13,7 @@ namespace nmodl {
 namespace visitor {
 
 /**
- * @defgroup visitor Visitor Infrastructure
+ * @defgroup visitor Visitor Implementation
  * @brief All visitors related implementation details
  *
  * @defgroup visitor_classes Visitors

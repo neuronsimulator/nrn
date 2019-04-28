@@ -9,7 +9,7 @@
 
 /**
  * \dir
- * \brief Solver implementations
+ * \brief Newton solver implementations
  *
  * \file
  * \brief Implementation of Newton method for solving system of non-linear equations
@@ -22,7 +22,7 @@ namespace nmodl {
 namespace newton {
 
 /**
- * @defgroup solver Solver Infrastructure
+ * @defgroup solver Solver Implementation
  * @brief Solver implementation details
  *
  * Implementation of Newton method for solving system of non-linear equations using Eigen

@@ -218,7 +218,7 @@ void CodegenHelperVisitor::find_non_range_variables() {
     sort_with_mod2c_symbol_order(info.thread_variables);
 
     /**
-     * \todo: Below we calculate thread related id and sizes. This will
+     * \todo Below we calculate thread related id and sizes. This will
      * need to do from global analysis pass as here we are handling
      * top local variables, global variables, derivimplicit method.
      * There might be more use cases with other solver methods.
@@ -338,7 +338,7 @@ void CodegenHelperVisitor::find_range_variables() {
      * and those are not considered as range+state variables while printing instance
      * variables. Such read/write ion variables are dependent variables and hence they
      * will be printed at laster stage.
-     * \todo: need to validate with more models and mod2c details.
+     * \todo Need to validate with more models and mod2c details.
      */
     // clang-format off
     with = NmodlType::state_var;

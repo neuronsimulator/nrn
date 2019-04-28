@@ -53,7 +53,7 @@ void InlineVisitor::add_return_variable(StatementBlock* block, std::string& varn
  *  - if expression is wrapped expression
  *  - if wrapped expression is a function call
  *
- * \todo: add method to ast itself to simplify this implementation
+ * \todo Add method to ast itself to simplify this implementation
  */
 bool InlineVisitor::can_replace_statement(const std::shared_ptr<Statement>& statement) {
     if (!statement->is_expression_statement()) {
@@ -161,7 +161,7 @@ bool InlineVisitor::inline_function_call(ast::Block* callee,
     RenameVisitor visitor(function_name, new_varname);
     inlined_block->visit_children(&visitor);
 
-    /// \todo: have to re-run symtab visitor pass to update symbol table
+    /// \todo Have to re-run symtab visitor pass to update symbol table
     inlined_block->set_symbol_table(nullptr);
 
     /// each argument is added as new assignment statement

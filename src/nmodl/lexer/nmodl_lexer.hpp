@@ -7,6 +7,11 @@
 
 #pragma once
 
+/**
+ * \dir
+ * \brief Lexer implementations
+ */
+
 #include "ast/ast.hpp"
 #include "parser/nmodl/nmodl_parser.hpp"
 
@@ -34,7 +39,7 @@ namespace nmodl {
 namespace parser {
 
 /**
- * @defgroup lexer Lexer Infrastructure
+ * @defgroup lexer Lexer Implementation
  * @brief All lexer classes implementation
  *
  * @addtogroup lexer

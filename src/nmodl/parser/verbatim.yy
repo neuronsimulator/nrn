@@ -97,7 +97,7 @@ charlist        :                       { $$ = new std::string(""); }
 
 %%
 
-/** \todo : better error handling required */
+/** \todo Better error handling required */
 void yyerror(YYLTYPE* /*locp*/, VerbatimDriver* /*context*/, const char *s) {
     std::printf("\n Error in verbatim parser :  %s \n", s);
     std::exit(1); 

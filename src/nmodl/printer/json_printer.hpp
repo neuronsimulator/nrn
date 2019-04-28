@@ -38,10 +38,10 @@ using json = nlohmann::json;
  * construct JSON object from AST like data structures.  We use nlohmann's json
  * library which considerably simplify implementation.
  *
- * \todo We need to explicitly call flush() in order to get write/return
- *       results. We simply can't dump block in popBlock() because block itself will
+ * \todo We need to explicitly call `flush()` in order to get write/return
+ *       results. We simply can't dump block in `popBlock()` because block itself will
  *       be part of other parent elements. Also we are writing results to file,
- *       stringstream and cout. And hence we can't simply reset/clear previously
+ *       `stringstream` and `cout`. And hence we can't simply reset/clear previously
  *       written text.
  */
 class JSONPrinter {

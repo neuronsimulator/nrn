@@ -35,7 +35,7 @@ namespace nmodl {
 namespace units {
 
 /**
- * @defgroup units Unit Infrastructure
+ * @defgroup units Unit Implementation
  * @brief Units handling implementation details
  * @{
  */

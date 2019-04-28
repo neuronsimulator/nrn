@@ -171,7 +171,7 @@
     using nmodl::parser::CDriver;
 
     /// yylex takes scanner as well as driver reference
-    /// \todo: check if driver argument is required
+    /// \todo Check if driver argument is required
     static CParser::symbol_type yylex(CLexer &scanner, CDriver &/*driver*/) {
         return scanner.next_token();
     }

@@ -50,6 +50,33 @@ span.keyword {
     color: #152292;
 }
 
+dl.reflist dt {
+    color: #481120;
+}
+
+h2.groupheader {
+    margin-top: 0.75em;
+}
+
+tr.heading h2 {
+    margin-top: 4px;
+}
+
+h1 {
+    color: #7B3548;
+    font-size: 130%;
+}
+
+h2 {
+    color: #7B3548;
+    font-size: 115%;
+}
+
+h3 {
+    color: #7B3548;
+    font-size: 100%;
+}
+
 /*
 body {
     max-width: 1440px;

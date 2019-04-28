@@ -21,7 +21,7 @@ namespace nmodl {
 namespace utils {
 
 /**
- * @defgroup utils Utility Infrastructure
+ * @defgroup utils Utility Implementation
  * @brief Utility classes and function implementation
  * @{
  */

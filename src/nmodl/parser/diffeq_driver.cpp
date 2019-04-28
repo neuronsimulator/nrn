@@ -58,7 +58,7 @@ std::string DiffeqDriver::solve_equation(std::string& state,
     return context.get_solution(cnexp_possible);
 }
 
-/// \todo : instead of using neuron like api, we need to refactor
+/// \todo Instead of using neuron like api, we need to refactor
 bool DiffeqDriver::cnexp_possible(const std::string& equation, std::string& solution) {
     std::string state, rhs;
     int order = 0;
