@@ -229,7 +229,24 @@ class SpeciesOnExtracellular(_SpeciesMathable):
                 e = ecs._region
                 index += e._nz * e._ny * e._nz
         return self._species()._extracellular_nodes[index]
- 
+    @property
+    def nodes(self):
+        """A NodeList of the Node objects containing concentration data for the given Species and extracellular region.
+
+        The code
+
+            node_list = ca[ecs].nodes
+
+        is more efficient than the otherwise equivalent
+
+            node_list = ca.nodes(ecs)
+
+        because the former only creates the Node objects belonging to the restriction ca[cyt] whereas the second option
+        constructs all Node objects belonging to the Species ca and then culls the list to only include those also
+        belonging to the Region cyt.
+        """
+        initializer._do_init()
+        return nodelist.NodeList([nd for nd in self._species()._extracellular_nodes if nd.region == self._extracellular()._region])
 
                 
     @property
