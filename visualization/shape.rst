@@ -135,8 +135,8 @@ Shape
             
             from neuron import h
             sl = h.SectionList()
-            sl.append(sec=h.soma)
-            sl.append(sec=h.dendrite_1[8])
+            sl.append(h.soma)
+            sl.append(h.dendrite_1[8])
             h.Shape[0].observe(sl)
 
 
@@ -170,11 +170,11 @@ Shape
 
 
     Syntax:
-        ``.select()``
+        ``.select(sec=section)``
 
 
     Description:
-        Colors red the currently accessed section. 
+        Colors red the specified section. 
 
          
 
@@ -204,11 +204,11 @@ Shape
 
 
     Syntax:
-        ``section  shape.color(i)``
+        ``shape.color(i, sec=section)``
 
 
     Description:
-        colors the currently accessed section according to color index 
+        colors the specified section according to color index 
         (index same as specified in :class:`Graph` class). If there are several 
         sections to color it is more efficient to make a :class:`SectionList` and 
         use \ ``.color_list`` 
@@ -552,11 +552,11 @@ Shape
 
 
     Syntax:
-        ``section shape.len_scale(scl)``
+        ``shape.len_scale(scl, sec=section)``
 
 
     Description:
-        The drawing of the section length (currently accessed section) in the Shape 
+        The drawing of the section length (for the specified section) in the Shape 
         scene is scaled by the factor. Diameter is drawn normally. 
         Note that this does not change the physical length of the section but 
         only its appearance in this Shape instance. 
