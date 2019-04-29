@@ -630,6 +630,7 @@ int ECS_Grid_node::dg_adi()
     g->adi_dir_z->states_out = tmp;
     */
     memcpy(states, ecs_adi_dir_z->states_out, sizeof(double)*size_x*size_y*size_z);
+    //TODO: Should this return 0?
     return 0;
 }
 
@@ -660,6 +661,11 @@ void ECS_Grid_node::scatter_grid_concentrations()
     for (i = 0; i < n; i++) {
         (*cp[i].destination) = states[cp[i].source];
     }  
+}
+
+//TODO: Implement this
+void ECS_Grid_node::variable_step_ode_solve(const double* states, double* RHS, double dt)
+{
 }
 
 // Free a single Grid_node
@@ -1082,25 +1088,7 @@ void ICS_Grid_node::variable_step_diffusion(const double* states, double* ydot)
     }*/
 }
 
-void ICS_Grid_node::variable_step_diffusion(const double* states, double* ydot)
-{
-    _ics_rhs_variable_step_helper(this, states, ydot);
-
-    //TODO: Get volume fraction/tortuosity working as well as take care of this in this file
-    /*switch(VARIABLE_ECS_VOLUME)
-    {
-        case VOLUME_FRACTION:
-            _ics_rhs_variable_step_helper_vol(this, states, ydot);
-            break;
-        case TORTUOSITY:
-            _ics_rhs_variable_step_helper_tort(this, states, ydot);
-            break;
-        default:
-            _ics_rhs_variable_step_helper(this, states, ydot);
-    }*/
-}
-
-void ICS_Grid_node::variable_step_ode_solve(double* states,double* RHS, double dt)
+void ICS_Grid_node::variable_step_ode_solve(const double* states, double* RHS, double dt)
 {
     ics_ode_solve_helper(this, dt, states, RHS);
 }

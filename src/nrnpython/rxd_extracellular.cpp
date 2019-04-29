@@ -611,7 +611,7 @@ void _rhs_variable_step_ecs(const double t, const double* states, double* ydot) 
         ydot += grid_size;
         states += grid_size;        
     }
-
+    printf("did variable step solve (case 7)\n");
 }
 
 
@@ -665,7 +665,59 @@ void _rhs_variable_step_helper(Grid_node* g, double const * const states, double
     }
 }
 
+//p1 = b  p2 = states 
+void ics_ode_solve(double dt,  double* RHS, const double* states) 
+{
+	Grid_node *grid;
+    ssize_t i;
+    int grid_size;
+    double* grid_states;
+    double const * const orig_states = states + states_cvode_offset;
+    const unsigned char calculate_rhs = RHS == NULL ? 0 : 1;
+    double* const orig_RHS = RHS + states_cvode_offset;
+    states = orig_states;
+    RHS = orig_RHS;
 
+    /* prepare for advance by syncing data with local copy */
+    for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
+        grid_states = grid->states;
+        grid_size = grid->size_x * grid->size_y * grid->size_z;
+
+        /* copy the passed in states to local memory (needed to make reaction rates correct) */
+        for (i = 0; i < grid_size; i++) {
+            grid_states[i] = states[i];
+        }
+        states += grid_size;
+    }
+    /* transfer concentrations to classic NEURON states */
+    scatter_concentrations();
+    if (!calculate_rhs) {
+        return;
+    }
+	
+	states = orig_states;
+	RHS = orig_RHS;
+
+	/* TODO: reactions contribute to adaptive step-size*/
+	if(threaded_reactions_tasks != NULL)
+	    run_threaded_reactions(threaded_reactions_tasks);
+    /* process currents */
+    for (i = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, i++)
+    {
+        do_currents(grid, RHS, 1.0, i);
+        RHS += grid_size;
+    }
+	RHS = orig_RHS;
+
+    /* do the diffusion rates */
+    for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
+        grid->variable_step_ode_solve(states, RHS, dt);
+
+        RHS += grid_size;
+        states += grid_size;        
+    }
+    printf("did ics_ode_solve (case 8)\n");
+}
 /*****************************************************************************
 *
 * End variable step code
