@@ -46,7 +46,8 @@ ICS_insert.argtypes = [
     ctypes.c_long,
     ctypes.c_double,
     ctypes.c_double,
-    ctypes.c_bool,]
+    ctypes.c_bool,
+    ctypes.c_double,]
 
 ICS_insert.restype = ctypes.c_int
 
@@ -425,7 +426,7 @@ def _xyz(seg):
     return numpy.interp([seg.x * sec.L], arc3d, x3d)[0], numpy.interp([seg.x * sec.L], arc3d, y3d)[0], numpy.interp([seg.x * sec.L], arc3d, z3d)[0]
 
 class _IntracellularSpecies(_SpeciesMathable):
-    def __init__(self, region=None, d=0, name=None, charge=0, initial=0, nodes=0, is_diffusable=True):
+    def __init__(self, region=None, d=0, name=None, charge=0, initial=0, nodes=0, is_diffusable=True, atolscale=1.0):
         """
             region = Intracellular object 
             name = string of the name of the NEURON species (e.g. ca)
@@ -445,6 +446,7 @@ class _IntracellularSpecies(_SpeciesMathable):
         self._charge = charge
         self._dx = region.dx
         self._d = d
+        self._atolscale = atolscale
         self._nodes_length = len(self._region._xs)
         self._states = h.Vector(self._nodes_length)
         self.neighbors = self.create_neighbors_array(nodes, self._nodes_length).reshape(3*self._nodes_length)
@@ -464,7 +466,7 @@ class _IntracellularSpecies(_SpeciesMathable):
                                     self._ordered_x_nodes, self._ordered_y_nodes, self._ordered_z_nodes,
                                     self._x_line_defs, len(self._x_line_defs), self._y_line_defs, 
                                     len(self._y_line_defs), self._z_line_defs, len(self._z_line_defs),
-                                    self._d, self._dx, is_diffusable)
+                                    self._d, self._dx, is_diffusable, self._atolscale)
   
         self._update_pointers()
     
@@ -932,7 +934,7 @@ class Species(_SpeciesMathable):
                     self_has_3d = True
                     _has_3d = True
         is_diffusable = False if isinstance(self, Parameter) or isinstance(self, State) else True        
-        self._intracellular_instances = {r:_IntracellularSpecies(r, d=self._d, charge=self.charge, initial=self.initial, nodes=self._intracellular_nodes[r], name=self._name, is_diffusable=is_diffusable) for r in self._regions if r._secs3d}
+        self._intracellular_instances = {r:_IntracellularSpecies(r, d=self._d, charge=self.charge, initial=self.initial, nodes=self._intracellular_nodes[r], name=self._name, is_diffusable=is_diffusable, atolscale=self._atolscale) for r in self._regions if r._secs3d}
 
     def _do_init4(self):
         self._extracellular_nodes = []

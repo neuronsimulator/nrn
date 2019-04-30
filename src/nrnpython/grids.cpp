@@ -164,7 +164,7 @@ int ECS_insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x,
 Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors, 
                 long* ordered_x_nodes, long* ordered_y_nodes, long* ordered_z_nodes,
                 long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
-                long z_lines_length, double d, double dx, bool is_diffusable) {
+                long z_lines_length, double d, double dx, bool is_diffusable, double atolscale) {
 
     int k;
     ICS_Grid_node *new_Grid = new ICS_Grid_node();
@@ -172,7 +172,7 @@ Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors
 
     new_Grid->_num_nodes = num_nodes;
     new_Grid->diffusable = is_diffusable;
-    new_Grid->atolscale = 1.0;
+    new_Grid->atolscale = atolscale;
 
     new_Grid->states = my_states->u.px_;
     new_Grid->states_x = (double*)malloc(sizeof(double)*new_Grid->_num_nodes);
@@ -285,12 +285,12 @@ Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors
 int ICS_insert(int grid_list_index, PyHocObject* my_states, long num_nodes, long* neighbors,
                 long* ordered_x_nodes, long* ordered_y_nodes, long* ordered_z_nodes,
                 long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
-                long z_lines_length, double d, double dx, bool is_diffusable) {
+                long z_lines_length, double d, double dx, bool is_diffusable, double atolscale) {
 
     //TODO change ICS_make_Grid into a constructor
     Grid_node *new_Grid = ICS_make_Grid(my_states, num_nodes, neighbors, ordered_x_nodes,
             ordered_y_nodes, ordered_z_nodes, x_line_defs, x_lines_length, y_line_defs,
-            y_lines_length, z_line_defs, z_lines_length, d, dx, is_diffusable);
+            y_lines_length, z_line_defs, z_lines_length, d, dx, is_diffusable, atolscale);
     return new_Grid->insert(grid_list_index);;
 }
 

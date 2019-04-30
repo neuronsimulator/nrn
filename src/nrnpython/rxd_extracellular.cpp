@@ -280,7 +280,7 @@ void* ecs_do_reactions(void* dataptr)
 				stop = FALSE;
 			}
 			if(react->num_species_involved == 0)
-                return NULL;
+                continue;
             /*allocate data structures*/
 			jacobian = m_get(react->num_species_involved,react->num_species_involved);
         	b = v_get(react->num_species_involved);
@@ -577,9 +577,10 @@ void _rhs_variable_step_ecs(const double t, const double* states, double* ydot) 
 	ydot = orig_ydot;
 
 	/* TODO: reactions contribute to adaptive step-size*/
-	if(threaded_reactions_tasks != NULL)
+	if(threaded_reactions_tasks != NULL){
+        printf("doing reactions in variable step solver\n");
 	    run_threaded_reactions(threaded_reactions_tasks);
-	
+    }
 	for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next)
 	{
 		grid_states = grid->states;
@@ -699,16 +700,10 @@ void ics_ode_solve(double dt,  double* RHS, const double* states)
 	RHS = orig_RHS;
 
 	/* TODO: reactions contribute to adaptive step-size*/
-	if(threaded_reactions_tasks != NULL)
+	if(threaded_reactions_tasks != NULL){
+        printf("doing reactions in ode_solve\n");
 	    run_threaded_reactions(threaded_reactions_tasks);
-    /* process currents */
-    for (i = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, i++)
-    {
-        do_currents(grid, RHS, 1.0, i);
-        RHS += grid_size;
     }
-	RHS = orig_RHS;
-
     /* do the diffusion rates */
     for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
         grid->variable_step_ode_solve(states, RHS, dt);
