@@ -120,6 +120,7 @@ Reaction* ecs_create_reaction(int list_idx, int num_species, int* species_ids, E
 			{
 				r->subregion = NULL;
 				r->region_size = grid->size_x * grid->size_y * grid->size_z;
+                printf("react->region_size is %d\n",r->region_size);
 			}
 			else
 			{
@@ -182,7 +183,7 @@ void ecs_register_subregion_reaction_ecs(int list_idx, int num_species, int* spe
  */
 ReactGridData* create_threaded_reactions(const int n)
 {
-	int i, k, load, tasks_per_thread;
+	int i, k, load;
     int react_count = 0;
 	Reaction* react;
 
@@ -193,8 +194,9 @@ ReactGridData* create_threaded_reactions(const int n)
 		return NULL;
 
 	/*Divide the number of reactions between the threads*/
-	tasks_per_thread = (react_count + NUM_THREADS - 1) / n;
+	const int tasks_per_thread = (react_count) / n;
 	ReactGridData* tasks = (ReactGridData*)calloc(sizeof(ReactGridData), n);
+    const int extra = react_count % n;
 	
 	tasks[0].onset = (ReactSet*)malloc(sizeof(ReactSet));
 	tasks[0].onset->reaction = ecs_reactions;
@@ -206,13 +208,13 @@ ReactGridData* create_threaded_reactions(const int n)
 		{
 			if(!react->subregion || react->subregion[i])
 				load++;
-			if(load >= tasks_per_thread)
+			if(load >= tasks_per_thread + (extra>k))
 			{
 				tasks[k].offset = (ReactSet*)malloc(sizeof(ReactSet));
 				tasks[k].offset->reaction = react;
 				tasks[k].offset->idx = i;
 
-				if(++k < NUM_THREADS)
+				if(++k < n)
 				{
 					tasks[k].onset = (ReactSet*)malloc(sizeof(ReactSet));
 					tasks[k].onset->reaction = react;
@@ -220,14 +222,17 @@ ReactGridData* create_threaded_reactions(const int n)
 					load = 0;
 				}
 			}
-            if(k == NUM_THREADS - 1 && react -> next == NULL)
+            if(k == n - 1 && react -> next == NULL)
             {
                 tasks[k].offset = (ReactSet*)malloc(sizeof(ReactSet));
 				tasks[k].offset->reaction = react;
-				tasks[k].offset->idx = i-1;
+				tasks[k].offset->idx = i;
             }
 		}
 	}
+    for(k = 0; k < n; k++){
+        printf("thread %d onset index is %d and offset index is %d\n", k, tasks[k].onset->idx, tasks[k].offset->idx);
+    }
 	return tasks;
 }
 
@@ -254,93 +259,88 @@ void* ecs_do_reactions(void* dataptr)
     VEC *b;
     PERM *pivot;
 
-	for(react = ecs_reactions; react != NULL; react = react -> next)
+	for(react = task.onset->reaction, start_idx = task.onset->idx; react != NULL; react = react -> next, start_idx = 0)
 	{
-		/*find start location for this thread*/
-		if(started || react == task.onset->reaction)
-		{
-			if(!started)
-			{
-				started = TRUE;
-				start_idx = task.onset->idx;
-			}
-			else
-			{
-				start_idx = 0;
-			}
+        if(task.offset->reaction == react)
+        {
+            stop_idx = task.offset->idx;
+            stop = TRUE;
+        }
+        else
+        {
+            stop_idx = react->region_size-1;
+            stop = FALSE;
+        }
+        if(react->num_species_involved == 0)
+            continue;
+        /*allocate data structures*/
+        jacobian = m_get(react->num_species_involved,react->num_species_involved);
+        b = v_get(react->num_species_involved);
+        x = v_get(react->num_species_involved);
+        pivot = px_get(jacobian->m);
+        states_cache = (double*)malloc(sizeof(double)*react->num_species_involved);
+        states_cache_dx = (double*)malloc(sizeof(double)*react->num_species_involved);
+        results_array = (double*)malloc(react->num_species_involved*sizeof(double));
+        results_array_dx = (double*)malloc(react->num_species_involved*sizeof(double));
 
-			if(task.offset->reaction == react)
-			{
-				stop_idx = task.offset->idx;
-				stop = TRUE;
-			}
-			else
-			{
-				stop_idx = react->region_size-1;
-				stop = FALSE;
-			}
-			if(react->num_species_involved == 0)
-                continue;
-            /*allocate data structures*/
-			jacobian = m_get(react->num_species_involved,react->num_species_involved);
-        	b = v_get(react->num_species_involved);
-        	x = v_get(react->num_species_involved);
-			pivot = px_get(jacobian->m);
-			states_cache = (double*)malloc(sizeof(double)*react->num_species_involved);
-			states_cache_dx = (double*)malloc(sizeof(double)*react->num_species_involved);
-			results_array = (double*)malloc(react->num_species_involved*sizeof(double));
-			results_array_dx = (double*)malloc(react->num_species_involved*sizeof(double));
+        for(i = start_idx; i <= stop_idx; i++)
+        {
+            if(!react->subregion || react->subregion[i])
+            {
+                //TODO: this assumes grids are the same size/shape 
+                //      add interpolation in case they aren't      
+                for(j = 0; j < react->num_species_involved; j++)
+                {
+                    states_cache[j] = react->species_states[j][i];
+                    states_cache_dx[j] = react->species_states[j][i];
+                }
+                MEM_ZERO(results_array,react->num_species_involved*sizeof(double));
+                react->reaction(states_cache, results_array);
 
-			for(i = start_idx; i <= stop_idx; i++)
-			{
-				if(!react->subregion || react->subregion[i])
-				{
-					//TODO: this assumes grids are the same size/shape 
-	 				//      add interpolation in case they aren't      
-					for(j = 0; j < react->num_species_involved; j++)
-					{
-						states_cache[j] = react->species_states[j][i];
-						states_cache_dx[j] = react->species_states[j][i];
-					}
-                    MEM_ZERO(results_array,react->num_species_involved*sizeof(double));
-					react->reaction(states_cache, results_array);
+                for(j = 0; j < react->num_species_involved; j++)
+                {
+                    states_cache_dx[j] += dx;
+                    MEM_ZERO(results_array_dx,react->num_species_involved*sizeof(double));
+                    react->reaction(states_cache_dx, results_array_dx);
+                    v_set_val(b, j, dt*results_array[j]);
 
-					for(j = 0; j < react->num_species_involved; j++)
-					{
-						states_cache_dx[j] += dx;
-                        MEM_ZERO(results_array_dx,react->num_species_involved*sizeof(double));
-						react->reaction(states_cache_dx, results_array_dx);
-						v_set_val(b, j, dt*results_array[j]);
+                    for(k = 0; k < react->num_species_involved; k++)
+                    {
+                        pd = (results_array_dx[k] - results_array[k])/dx;
+                        m_set_val(jacobian, k, j, (j==k) - dt*pd);
+                    }
+                    states_cache_dx[j] -= dx;
+                }
+                // solve for x, destructively
+                if (react->num_species_involved ==1)
+                {
+                    react->species_states[0][i] += v_get_val(b, 0) / m_get_val(jacobian, 0, 0);
+                }
+                else
+                {
+                    LUfactor(jacobian, pivot); //Conditional jump or move depends on uninitialised value(s)
+                    LUsolve(jacobian, pivot, b, x);       
+                    for(j = 0; j < react->num_species_involved; j++)
+                    {
+                        react->species_states[j][i] += v_get_val(x,j);
+                        //printf("current index is %p and next index is %p\n",&react->species_states[j][i], &react->species_states[j][i+1]);
+                        //return NULL;
+                    }        
+                }
+            }
+        }
+        m_free(jacobian);
+        v_free(b);
+        v_free(x);
+        px_free(pivot);
 
-						for(k = 0; k < react->num_species_involved; k++)
-						{
-							pd = (results_array_dx[k] - results_array[k])/dx;
-							m_set_val(jacobian, k, j, (j==k) - dt*pd);
-						}
-						states_cache_dx[j] -= dx;
-					}
-					// solve for x, destructively
-        			LUfactor(jacobian, pivot); //Conditional jump or move depends on uninitialised value(s)
-        			LUsolve(jacobian, pivot, b, x);
-					for(j = 0; j < react->num_species_involved; j++)
-					{
-						react->species_states[j][i] += v_get_val(x,j);
-					}
-				}
-			}
-			m_free(jacobian);
-        	v_free(b);
-        	v_free(x);
-        	px_free(pivot);
+        SAFE_FREE(states_cache);
+        SAFE_FREE(states_cache_dx);
+        SAFE_FREE(results_array);
+        SAFE_FREE(results_array_dx);
 
-			SAFE_FREE(states_cache);
-			SAFE_FREE(states_cache_dx);
-			SAFE_FREE(results_array);
-			SAFE_FREE(results_array_dx);
-
-			if(stop)
-				return NULL;
-		}
+        if(stop)
+            return NULL;
 	}
 	return NULL;
 }
