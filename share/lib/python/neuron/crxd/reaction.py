@@ -104,6 +104,8 @@ class Reaction(GeneralizedReaction):
                     else:
                         rate_b *= k ** v
         rate = rate_f - rate_b
+        self._rate_arithmeticed = rate
+        
         self._sources = ref_list_with_mult(lhs)
         self._dests = ref_list_with_mult(rhs)
         
