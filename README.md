@@ -1,462 +1,175 @@
-## NMODL
-> NEURON MOdeling Language Code Generation Framework
+## The NMODL Framework
 
-NMODL is a code generation framework for [NEURON Modeling Language](https://www.neuron.yale.edu/neuron/static/py_doc/modelspec/programmatic/mechanisms/nmodl.html). The main goals of this framework are :
+The NMODL Framework is a code generation engine for **N**EURON **MOD**eling **L**anguage ([NMODL](https://www.neuron.yale.edu/neuron/static/py_doc/modelspec/programmatic/mechanisms/nmodl.html)). It is designed with modern compiler and code generation techniques to:
 
-* Support for full NMODL specification
-* Providing modular tools for parsing, analysis and optimization
-* High level python interface
-* Optimised code generation for modern CPU/GPU architectures
-* Code generation backends compatible with existing simulators
-* Flexibility to implement new simulator backend with minimal efforts
+* Provide **modular tools** for parsing, analysing and transforming NMODL
+* Provide **easy to use**, high level Python API
+* Generate **optimised code** for modern compute architectures including CPUs, GPUs
+* **Flexibility** to implement new simulator backends
+* Support for **full** NMODL specification
 
-It is primarily designed to support optimised code generation backends but the underlying infrastructure can be used with high level python interface for model introspection and analysis.
+### About NMODL
 
-### Getting Started
-
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
-
-#### Cloning Source
-
-This project uses git submodules which must be cloned along with the repository itself:
+Simulators like [NEURON](https://www.neuron.yale.edu/neuron/) use NMODL as a domain specific language (DSL) to describe a wide range of membrane and  intracellular submodels. Here is an example of exponential synapse specified in NMODL:
 
 ```
-git clone --recursive git@github.com:BlueBrain/nmodl.git
+NEURON {
+    POINT_PROCESS ExpSyn
+    RANGE tau, e, i
+    NONSPECIFIC_CURRENT i
+}
+UNITS {
+    (nA) = (nanoamp)
+    (mV) = (millivolt)
+    (uS) = (microsiemens)
+}
+PARAMETER {
+    tau = 0.1 (ms) <1e-9,1e9>
+    e = 0 (mV)
+}
+ASSIGNED {
+    v (mV)
+    i (nA)
+}
+STATE {
+    g (uS)
+}
+INITIAL {
+    g = 0
+}
+BREAKPOINT {
+    SOLVE state METHOD cnexp
+    i = g*(v - e)
+}
+DERIVATIVE state {
+    g' = -g/tau
+}
+NET_RECEIVE(weight (uS)) {
+    g = g + weight
+}
 ```
 
-#### Prerequisites
+### Installation
 
-To build the project from source, modern C++ compiler with c++11 support is necessary. Make sure you have following packages available:
+See [INSTALL.md](INSTALL.md) for detailed instructions to build the NMODL from source.
 
-- flex (>=2.6)
-- bison (>=3.0)
-- CMake (>=3.1)
-- Python (>=3.6)
-- Python packages : jinja2 (>=2.10), pyyaml (>=3.13), pytest (>=4.0.0), sympy (>=1.2), textwrap
+### Using the Python API
 
-##### On OS X
+Once the NMODL Framework is installed, you can use the Python parsing API as:
 
-Often we have older version of flex and bison. We can get recent version of dependencies via brew/macport and pip:
-
-```
-brew install flex bison cmake python3
-pip3 install Jinja2 PyYAML pytest sympy
+```python
+import nmodl.dsl as nmodl
+driver = nmodl.NmodlDriver()
+mod_ast = driver.parse_file("expsyn.mod")
 ```
 
-Make sure to have latest flex/bison in $PATH :
+`parse_file()]` returns Abstract Syntax Tree ([AST](https://en.wikipedia.org/wiki/Abstract_syntax_tree)) representation of input NMODL file. One can look at the AST in JSON form as:
 
+```python
+>>> print (nmodl.to_json(mod_ast))
+{
+  "Program": [
+    {
+      "NeuronBlock": [
+        {
+          "StatementBlock": [
+            {
+              "Suffix": [
+                {
+                  "Name": [
+                    {
+                      "String": [
+                        {
+                          "name": "POINT_PROCESS"
+                        }
+                    ...
 ```
-export PATH=/usr/local/opt/flex:/usr/local/opt/bison:/usr/local/bin/:$PATH
-```
+You can also use AST visualization API to look at the AST:
 
-##### On Ubuntu
+![alt text](docs/images/nmodl.ast.png "AST representation of expsyn.mod")
 
-On Ubuntu (>=16.04) flex/bison versions are recent enough. We can install Python3 and dependencies using:
+The central *Program* node represents the whole MOD file and each of it's children represent the block in the input NMODL file i.e. **expsyn.mod**. Once the AST is built, one can use exisiting visitors to perform various analysis/optimisations or one can write his own custom visitor using Python Visitor API. See [Python API tutorial](docs/notebooks/nmodl-python-tutorial.ipynb) for details.
 
-```
-apt-get install python3 python3-pip
-pip3 install Jinja2 PyYAML pytest sympy
-```
+One can also transform AST back into NMODL form simply as :
 
-##### On BB5
+```python
+>>> print (nmodl.to_nmodl(mod_ast))
+NEURON {
+    POINT_PROCESS ExpSyn
+    RANGE tau, e, i
+    NONSPECIFIC_CURRENT i
+}
 
-On Blue Brain 5 system, we can load following modules :
+UNITS {
+    (nA) = (nanoamp)
+    (mV) = (millivolt)
+    (uS) = (microsiemens)
+}
 
-```
-module load cmake/3.12.0 bison/3.0.5 flex/2.6.3 gcc/6.4.0 python3-dev
-```
-
-#### Build Project
-
-##### Using CMake
-
-Once all dependencies are in place, build project as:
-
-```
-mkdir -p nmodl/build
-cd nmodl/build
-cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/nmodl
-make -j && make install
-```
-
-And set PYTHONPATH as:
-
-```
-export PYTHONPATH=$HOME/nmodl/lib/python:$PYTHONPATH
-```
-
-##### Using pip
-
-Alternatively, we can build the project using pip as:
-
-```
-pip3 install nmodl/. --target=$HOME/nmodl   # remove --target option if want to install 
-```
-
-And if --target option was used, set PYTHONPATH as:
-
-```
-export PYTHONPATH=$HOME/nmodl:$PYTHONPATH
-```
-
-##### Using setuptools
-
-Finally, we can also build the project using setuptools:
-
-```
-python3 setup.py install --prefix=<pathInstallationDir>
-```
-
-This will install nmodl on your system, run all the tests and generate the documentation.
-
-#### Testing Installed Module
-
-If you install NMODL using CMake, you can run tests from build directory as:
-
-```
-$ make test
-Running tests...
-Test project /home/kumbhar/nmodl/build
-    Start 1: ModToken
-1/7 Test #1: ModToken .........................   Passed    0.01 sec
+PARAMETER {
+    tau = 0.1 (ms) <1e-09,1000000000>
+    e = 0 (mV)
+}
 ...
 ```
 
-We can use nmodl module from python as:
+### High Level Analysis and Code Generation
+
+The NMODL Framework provides rich model introspection and analysis capabilities using [various visitors TODO](). Here is an example of theoretical performance characterisation of channels and synapses from rat neocortical column microcircuit [published in 2015](https://www.cell.com/abstract/S0092-8674(15)01191-5):
+
+![alt text](docs/images/nmodl-perf-stats.png "Example of performance characterisation")
+
+To understand how you can write your own introspection and analysis tool, see [this tutorial](docs/notebooks/nmodl-python-tutorial.ipynb).
+
+Once analysis and optimization passes are performed, the NMODL Framework can generate optimised code for modern compute architectures including CPUs (Intel, AMD, ARM) and GPUs (NVIDIA, AMD) platforms. For example, [C++ TODO](), [OpenACC TODO](), [OpenMP TODO](), [CUDA TODO]() and [ISPC TODO]() backends are implemented and one can choose backends on command line as:
 
 ```
-$ python3
->>> import nmodl.dsl as nmodl
->>> driver = nmodl.NmodlDriver()
->>> modast = driver.parse_string("NEURON { SUFFIX hh }")
->>> print ('%.100s' % modast)
-{"Program":[{"NeuronBlock":[{"StatementBlock":[{"Suffix":[{"Name":[{"String":[{"name":"SUFFIX"}]}]},
+$ nmodl expsyn.mod host --ispc acc --cuda sympy --analytic
 ```
 
-NMODL is now setup correctly!
+Here is an example of generated ISPC kernel for [DERIVATIVE](https://www.neuron.yale.edu/neuron/static/py_doc/modelspec/programmatic/mechanisms/nmodl.html#derivative) block :
 
-#### Using Python API
+```c++
+export void nrn_state_ExpSyn(uniform ExpSyn_Instance* uniform inst, uniform NrnThread* uniform nt ...) {
+    uniform int nodecount = ml->nodecount;
+    const int* uniform node_index = ml->nodeindices;
+    const double* uniform voltage = nt->_actual_v;
 
-The best way to understand the API and usage is using Jupyter notebooks provided in docs directory :
+    int uniform start = 0;
+    int uniform end = nodecount;
 
-```
-cd nmodl/docs/notebooks
-jupyter notebook
-```
-
-You can look at [nmodl-python-tutorial.ipynb](docs/notebooks/nmodl-python-tutorial.ipynb) notebook for python interface tutorial. There is also [nmodl-python-sympy-examples.ipynb](docs/notebooks/nmodl-python-sympy-examples.ipynb)showing how [SymPy](https://www.sympy.org/en/index.html) is used in NMODL.
-
-##### Documentation
-
-If you installed nmodl using setuptools as shown in the previous section, you will have all the documentation generated on build/sphinx.
-
-Otherwise, if you have already installed nmodl and setup the correct PYTHONPATH, you can build the documentation locally from the docs/ folder.
-
-```
-cd docs
-make html
+    foreach (id = start ... end) {
+        int node_id = node_index[id];
+        double v = voltage[node_id];
+        inst->g[id] = inst->g[id] * vexp( -nt->_dt / inst->tau[id]);
+    }
+}
 ```
 
-Or using setuptools
+To know more about code generation backends, [see here TODO]().
 
-```
-python3 setup.py install_doc
-```
+### Documentation
 
-If you dont want to change the PYTHONPATH, make sure that you have the shared library on the nmodl/ folder. It is copied there automatically by compiling and running the tests:
+We are working on user documentation, you can find current drafts of :
 
-```
-python3 setup.py test
-```
+* User documentation on [Read the Docs TODO]()
+* Developer / API documentation with [Doxygen TODO]()
 
-Now you will have a new folder docs/_build/html or build/sphinx/html, depending if you run the first or the second command,
-where you can open the index.html with your favourite browser.
 
-Another option is to create an httpServer on this folder and open the browser on localhost:
+### Support / Contribuition
 
-```
-cd docs/_build/html
-python2 -m SimpleHTTPServer 8080
-http://localhost:8080
-```
+If you see any issue or need help, feel free to raise a ticket. If you would like to improve this framework, see open issues and [contribution guidelines](CONTRIBUTING.md).
 
-To check the coverage of your documentation you can run:
+### Citation
 
-```
-cd nmodl/docs
-make coverage
-```
+If you are referencing NMODL Framework in a publication, please cite the following paper:
 
-The results will be stored on the docs/_build/coverage
+* Pramod Kumbhar, Omar Awile, Liam Keegan, Jorge Alonso, James King, Michael Hines and Felix Schürmann. 2019. An optimizing multi-platform source-to-source compiler framework for the NEURON MODeling Language. In Eprint arXiv: TODO.
 
-To run the code snippets on the documentation you can do:
+### Authors
 
-```
-cd nmodl/docs
-make doctest
-```
+See [contributors](https://github.com/BlueBrain/nmodl/graphs/contributors).
 
-Or with setuptools
+### Funding
 
-```
-python3 setup.py doctest
-```
-
-The output will be stored on the docs/_build/doctest or build/sphinx/doctest depending on the command used.
-
-To add new modules you could call sphinx-apidoc.
-
-```
-sphinx-apidoc -o docs/ nmodl/
-```
-
-This will generate "stubs" rst files for the new modules.
-The file will look like something like this:
-
-```
-.. automodule:: mymodule
-   :members:
-   :no-undoc-members:
-   :show-inheritance:
-```
-
-If you want to generate documentation for all the symbols of the module, you could add :imported-members:
-
-```
-.. automodule:: mymodule
-   :members:
-   :imported-members:
-   :no-undoc-members:
-   :show-inheritance:
-```
-
-After that you can run the "make html" command to generate documentation for the new modules.
-
-#### Using NMODL For Code Generation
-
-Once you install project using CMake, you will have following binaries in the installation directory:
-
-```
-$ tree $HOME/nmodl/bin
-
-|-- lexer
-|   |-- c_lexer
-|   `-- nmodl_lexer
-|-- nmodl
-|-- parser
-|   |-- c_parser
-|   `-- nmodl_parser
-`-- visitor
-    `-- nmodl_visitor
-```
-
-Main code generation program is `nmodl`. You can see all sub-commands supported using:
-
-```
-$ ./bin/nmodl -h
-
-NMODL : Source-to-Source Code Generation Framework
-Usage: ./bin/nmodl [OPTIONS] file... [SUBCOMMAND]
-
-Positionals:
-  file TEXT:FILE ... REQUIRED           One or more MOD files to process
-
-Options:
-  -h,--help                             Print this help message and exit
-  -H,--help-all                         Print this help message including all sub-commands
-  -v,--verbose                          Verbose logger output
-  -o,--output TEXT=.                    Directory for backend code output
-  --scratch TEXT=tmp                    Directory for intermediate code output
-  --units TEXT=<path>/share/nrnunits.lib
-                                        Directory of units lib file
-
-Subcommands:
-  host                                  HOST/CPU code backends
-  acc                                   Accelerator code backends
-  sympy                                 SymPy based analysis and optimizations
-  passes                                Analyse/Optimization passes
-  codegen                               Code generation options
-```
-
-To see all command line options from every sub-command, you can do:
-
-```
-$ ./bin/nmodl -H
-
-NMODL : Source-to-Source Code Generation Framework
-Usage: ./bin/nmodl [OPTIONS] file... [SUBCOMMAND]
-
-Positionals:
-  file TEXT:FILE ... REQUIRED           One or more MOD files to process
-
-Options:
-  -h,--help                             Print this help message and exit
-  -H,--help-all                         Print this help message including all sub-commands
-  -v,--verbose                          Verbose logger output
-  -o,--output TEXT=.                    Directory for backend code output
-  --scratch TEXT=tmp                    Directory for intermediate code output
-  --units TEXT=<path>/share/nrnunits.lib
-                                        Directory of units lib file
-
-Subcommands:
-host
-  HOST/CPU code backends
-  Options:
-    --c                                   C/C++ backend
-    --omp                                 C/C++ backend with OpenMP
-
-acc
-  Accelerator code backends
-  Options:
-    --oacc                                C/C++ backend with OpenACC
-    --cuda                                C/C++ backend with CUDA
-
-sympy
-  SymPy based analysis and optimizations
-  Options:
-    --analytic                            Solve ODEs using SymPy analytic integration
-    --pade                                Pade approximation in SymPy analytic integration
-    --cse                                 CSE (Common Subexpression Elimination) in SymPy analytic integration
-    --conductance                         Add CONDUCTANCE keyword in BREAKPOINT
-
-passes
-  Analyse/Optimization passes
-  Options:
-    --inline                              Perform inlining at NMODL level
-    --localize                            Convert RANGE variables to LOCAL
-    --localize-verbatim                   Convert RANGE variables to LOCAL even if verbatim block exist
-    --local-rename                        Rename LOCAL variable if variable of same name exist in global scope
-    --verbatim-inline                     Inline even if verbatim block exist
-    --verbatim-rename                     Rename variables in verbatim block
-    --json-ast                            Write AST to JSON file
-    --nmodl-ast                           Write AST to NMODL file
-    --json-perf                           Write performance statistics to JSON file
-    --show-symtab                         Write symbol table to stdout
-
-codegen
-  Code generation options
-  Options:
-    --layout TEXT:{aos,soa}=soa           Memory layout for code generation
-    --datatype TEXT:{float,double}=soa    Data type for floating point variables
-```
-
-To use code generation capability you can do:
-
-```
-$ nmodl <path>/hh.mod \
-		host --c \
-		sympy --analytic --pade --conductance --cse \
-		passes --inline --localize --localize-verbatim \
-		--local-rename --verbatim-inline --verbatim-rename
-```
-
-This will generate hh.cpp in the current directory.
-
-##### Lexer and Parser
-
-The `nmodl_parser` is a standalone parsing tool for NMODL that one can use to check if NMODL construct is valid or if it can be correctly parsed by NMODL. You can parse a mod file as:
-
-```
-$ nmodl_parser <path>/file.mod
-```
-
-Or, pass NMODL construct on the command line as:
-
-```
-$ nmodl_parser --text "NEURON{ SUFFIX hh }"
-
-[NMODL] [info] :: Processing text : NEURON{ SUFFIX hh }
-```
-
-The `nmodl_lexer` is a standaline lexer tool for NMODL. You can test a mod file as:
-
-```
-$ nmodl_lexer <path>/file.mod
-```
-
-Or, pass NMODL construct on the command line as:
-
-```
-$ nmodl_lexer --text "NEURON{ SUFFIX hh }"
-
-[NMODL] [info] :: Processing text : NEURON{ SUFFIX hh }
-         NEURON at [1.1-6] type 332
-              { at [1.7] type 368
-         SUFFIX at [1.9-14] type 358
-             hh at [1.16-17] type 356
-              } at [1.19] type 369
-```
-
-#### Using NMODL With CoreNEURON
-
-We can use NMODL instead of MOD2 for CoreNEURON. You have to simply use extra CMake argument `-DMOD2C` pointing to `nmodl` binary:
-
-```
-git clone --recursive https://github.com/BlueBrain/CoreNeuron.git coreneuron
-mkdir coreneuron/build && cd coreneuron/build
-cmake .. -DMOD2C=<path>/bin/nmodl
-make -j
-make test
-```
-
-Note that the latest master has changed command line option. Use released version **`0.1`** for now.
-
-
-### Development Conventions
-
-If you are developing NMODL, make sure to enable both `NMODL_FORMATTING` and `NMODL_PRECOMMIT`
-CMake variables to ensure that your contributions follow the coding conventions of this project:
-
-```cmake
-cmake -DNMODL_FORMATTING:BOOL=ON -DNMODL_PRECOMMIT:BOOL=ON <path>
-```
-
-The first variable provides the following additional targets to format
-C, C++, and CMake files:
-
-```
-make clang-format cmake-format
-```
-
-The second option activates Git hooks that will discard commits that
-do not comply with coding conventions of this project. These 2 CMake variables require additional utilities:
-
-* [ClangFormat 7](https://releases.llvm.org/7.0.0/tools/clang/docs/ClangFormat.html)
-* [cmake-format](https://github.com/cheshirekow/cmake_format) Python package
-* [pre-commit](https://pre-commit.com/) Python package
-
-_ClangFormat_ can be installed on Linux thanks
-to [LLVM apt page](http://apt.llvm.org/). On MacOS, there is a
-[brew recipe](https://gist.github.com/ffeu/0460bb1349fa7e4ab4c459a6192cbb25)
-to install clang-format 7. _cmake-format_ and _pre-commit_ utilities can be installed with *pip*.
-
-
-##### Memory Leaks and Clang Tidy
-
-If you want to test for memory leaks, do :
-
-```
-valgrind --leak-check=full --track-origins=yes  ./bin/nmodl_lexer
-```
-
-Or using CTest as:
-
-```
-ctest -T memcheck
-```
-
-If you want to enable `clang-tidy` checks with CMake, make sure to have `CMake >= 3.5` and use following cmake option:
-
-```
-cmake .. -DENABLE_CLANG_TIDY=ON
-```
-
-##### Flex / Bison Paths
-
-If flex / bison is not in default $PATH, you can provide path to cmake as:
-
-```
-cmake .. -DFLEX_EXECUTABLE=/usr/local/opt/flex/bin/flex \
-         -DBISON_EXECUTABLE=/usr/local/opt/bison/bin/bison \
-         -DCMAKE_INSTALL_PREFIX=$HOME/nmodl
-```
+This work has been funded by the EPFL Blue Brain Project (funded by the Swiss ETH board), NIH grant number R01NS11613 (Yale University) and partially funded by the European Union's Horizon 2020 Framework Programme for Research and Innovation under Grant Agreement number 785907 (Human Brain Project SGA2).
