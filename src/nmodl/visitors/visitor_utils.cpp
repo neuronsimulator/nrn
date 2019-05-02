@@ -131,7 +131,7 @@ std::set<std::string> get_global_vars(Program* node) {
         // NB: local_var included here as locals can be declared at global scope
         NmodlType property = NmodlType::global_var | NmodlType::local_var | NmodlType::range_var |
                              NmodlType::param_assign | NmodlType::extern_var |
-                             NmodlType::prime_name | NmodlType::dependent_def |
+                             NmodlType::prime_name | NmodlType::assigned_definition |
                              NmodlType::read_ion_var | NmodlType::write_ion_var |
                              NmodlType::nonspecific_cur_var | NmodlType::electrode_cur_var |
                              NmodlType::section_var | NmodlType::constant_var |

@@ -189,7 +189,7 @@ void CodegenHelperVisitor::find_non_range_variables() {
     // clang-format off
     auto with = NmodlType::param_assign;
     auto without = NmodlType::range_var
-                   | NmodlType::dependent_def
+                   | NmodlType::assigned_definition
                    | NmodlType::global_var
                    | NmodlType::pointer_var
                    | NmodlType::bbcore_pointer_var
@@ -273,7 +273,7 @@ void CodegenHelperVisitor::find_non_range_variables() {
 
     // find special variables like diam, area
     // clang-format off
-    properties = NmodlType::dependent_def
+    properties = NmodlType::assigned_definition
             | NmodlType::param_assign;
     vars = psymtab->get_variables_with_properties(properties);
     for (auto& var : vars) {
@@ -318,25 +318,25 @@ void CodegenHelperVisitor::find_range_variables() {
     std::sort(info.range_parameter_vars.begin(), info.range_parameter_vars.end(), comparator);
 
     /**
-     * Second come dependent variables which are range variables.
+     * Second come assigned variables which are range variables.
      */
     // clang-format off
     with = NmodlType::range_var
-           | NmodlType::dependent_def;
+           | NmodlType::assigned_definition;
     without = NmodlType::global_var
               | NmodlType::pointer_var
               | NmodlType::bbcore_pointer_var
               | NmodlType::state_var
               | NmodlType::param_assign;
     // clang-format on
-    info.range_dependent_vars = psymtab->get_variables(with, without);
-    std::sort(info.range_dependent_vars.begin(), info.range_dependent_vars.end(), comparator);
+    info.range_assigned_vars = psymtab->get_variables(with, without);
+    std::sort(info.range_assigned_vars.begin(), info.range_assigned_vars.end(), comparator);
 
     /**
      * Third come state variables. All state variables are kind of range by default.
      * Note that some mod files like CaDynamics_E2.mod use cai as state variable
      * and those are not considered as range+state variables while printing instance
-     * variables. Such read/write ion variables are dependent variables and hence they
+     * variables. Such read/write ion variables are assigned variables and hence they
      * will be printed at laster stage.
      * \todo Need to validate with more models and mod2c details.
      */
@@ -353,16 +353,16 @@ void CodegenHelperVisitor::find_range_variables() {
 
     /**
      * Remaining variables are:
-     *  - all dependent variables without range
-     *  - read ion variables which appear in parameter or dependent block
+     *  - all assigned variables without range
+     *  - read ion variables which appear in parameter or assigned block
      *  - state variables which are not range but with ion variable of read/write type
      */
 
     /**
-     * first get dependent definition without read ion variables
+     * first get assigned definition without read ion variables
      */
     // clang-format off
-    with = NmodlType::dependent_def;
+    with = NmodlType::assigned_definition;
     without = NmodlType::global_var
               | NmodlType::pointer_var
               | NmodlType::bbcore_pointer_var
@@ -371,7 +371,7 @@ void CodegenHelperVisitor::find_range_variables() {
               | NmodlType::extern_neuron_variable
               | NmodlType::read_ion_var;
     // clang-format on
-    info.dependent_vars = psymtab->get_variables(with, without);
+    info.assigned_vars = psymtab->get_variables(with, without);
 
     /**
      * Now just use read-ion variables because every read-ion variable
@@ -388,7 +388,7 @@ void CodegenHelperVisitor::find_range_variables() {
               | NmodlType::extern_neuron_variable;
     // clang-format on
     auto variables = psymtab->get_variables(with, without);
-    info.dependent_vars.insert(info.dependent_vars.end(), variables.begin(), variables.end());
+    info.assigned_vars.insert(info.assigned_vars.end(), variables.begin(), variables.end());
 
     /*
      * We want to have state variables which are read or write ion variables.
@@ -411,7 +411,7 @@ void CodegenHelperVisitor::find_range_variables() {
         // clang-format on
         if (variable->has_any_property(properties)) {
             info.ion_state_vars.push_back(variable);
-            info.dependent_vars.push_back(variable);
+            info.assigned_vars.push_back(variable);
         }
     }
 }
@@ -420,8 +420,8 @@ void CodegenHelperVisitor::find_range_variables() {
 void CodegenHelperVisitor::find_table_variables() {
     auto property = NmodlType::table_statement_var;
     info.table_statement_variables = psymtab->get_variables_with_properties(property);
-    property = NmodlType::table_dependent_var;
-    info.table_dependent_variables = psymtab->get_variables_with_properties(property);
+    property = NmodlType::table_assigned_var;
+    info.table_assigned_variables = psymtab->get_variables_with_properties(property);
 }
 
 
@@ -587,7 +587,7 @@ void CodegenHelperVisitor::visit_binary_expression(BinaryExpression* node) {
 }
 
 
-void CodegenHelperVisitor::visit_bbcore_ptr(BbcorePtr* node) {
+void CodegenHelperVisitor::visit_bbcore_pointer(BbcorePointer* node) {
     info.bbcore_pointer_used = true;
 }
 

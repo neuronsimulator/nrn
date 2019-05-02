@@ -101,7 +101,7 @@ source_suffix = [".rst", ".md"]
 master_doc = "index"
 
 # General information about the project.
-project = "nmodl"
+project = "NMODL"
 copyright = "2019, BlueBrain HPC team"
 author = "BlueBrain HPC team"
 
@@ -199,7 +199,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "nmodl", "nmodl Documentation", [author], 1)]
+man_pages = [(master_doc, "NMODL", "NMODL Documentation", [author], 1)]
 
 
 # -- Options for Texinfo output -------------------------------------------
@@ -210,11 +210,11 @@ man_pages = [(master_doc, "nmodl", "nmodl Documentation", [author], 1)]
 texinfo_documents = [
     (
         master_doc,
-        "nmodl",
-        "nmodl Documentation",
+        "NMODL",
+        "NMODL Documentation",
         author,
-        "nmodl",
-        "One line description of project.",
+        "NMODL",
+        "Code Generation Framework For NEURON MODeling Language ",
         "Miscellaneous",
     )
 ]

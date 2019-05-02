@@ -275,11 +275,11 @@ struct CodegenInfo {
     /// range variables which are parameter as well
     std::vector<SymbolType> range_parameter_vars;
 
-    /// range variables which are dependent variables as well
-    std::vector<SymbolType> range_dependent_vars;
+    /// range variables which are assigned variables as well
+    std::vector<SymbolType> range_assigned_vars;
 
-    /// reamining dependent variables
-    std::vector<SymbolType> dependent_vars;
+    /// reamining assigned variables
+    std::vector<SymbolType> assigned_vars;
 
     /// state variables
     std::vector<SymbolType> state_vars;
@@ -318,7 +318,7 @@ struct CodegenInfo {
 
     /// table variables
     std::vector<SymbolType> table_statement_variables;
-    std::vector<SymbolType> table_dependent_variables;
+    std::vector<SymbolType> table_assigned_variables;
 
     /// function or procedures with table statement
     std::vector<ast::Block*> functions_with_table;

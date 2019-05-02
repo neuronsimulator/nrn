@@ -29,7 +29,7 @@ bool Symbol::is_variable() {
                                     | NmodlType::pointer_var
                                     | NmodlType::bbcore_pointer_var
                                     | NmodlType::extern_var
-                                    | NmodlType::dependent_def
+                                    | NmodlType::assigned_definition
                                     | NmodlType::read_ion_var
                                     | NmodlType::write_ion_var
                                     | NmodlType::nonspecific_cur_var

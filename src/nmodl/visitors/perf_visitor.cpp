@@ -222,7 +222,8 @@ void PerfVisitor::count_variables() {
     /// assigned block are not treated as range
     num_instance_variables = 0;
 
-    NmodlType property = NmodlType::range_var | NmodlType::dependent_def | NmodlType::state_var;
+    NmodlType property = NmodlType::range_var | NmodlType::assigned_definition |
+                         NmodlType::state_var;
     auto variables = current_symtab->get_variables_with_properties(property);
 
     for (auto& variable: variables) {
@@ -257,7 +258,7 @@ void PerfVisitor::count_variables() {
     num_global_variables = 0;
     for (auto& variable: variables) {
         auto is_global = variable->has_any_property(NmodlType::global_var);
-        property = NmodlType::range_var | NmodlType::dependent_def;
+        property = NmodlType::range_var | NmodlType::assigned_definition;
         if (!variable->has_any_property(property) || is_global) {
             num_global_variables++;
             if (variable->has_any_property(NmodlType::param_assign)) {

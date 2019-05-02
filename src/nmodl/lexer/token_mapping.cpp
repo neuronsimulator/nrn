@@ -39,7 +39,7 @@ static std::map<std::string, TokenType> keywords = {{"VERBATIM", Token::VERBATIM
                                                     {"CONSTANT", Token::CONSTANT},
                                                     {"PARAMETER", Token::PARAMETER},
                                                     {"INDEPENDENT", Token::INDEPENDENT},
-                                                    {"ASSIGNED", Token::DEPENDENT},
+                                                    {"ASSIGNED", Token::ASSIGNED},
                                                     {"INITIAL", Token::INITIAL1},
                                                     {"TERMINAL", Token::TERMINAL},
                                                     {"DERIVATIVE", Token::DERIVATIVE},

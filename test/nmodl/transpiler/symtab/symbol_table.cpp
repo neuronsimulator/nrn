@@ -188,9 +188,10 @@ SCENARIO("Symbol table allows operations like insert, lookup") {
                 REQUIRE(variables.empty());
                 WHEN("added global symbol") {
                     auto next_symbol = std::make_shared<Symbol>("gamma", ModToken());
-                    next_symbol->add_property(NmodlType::dependent_def);
+                    next_symbol->add_property(NmodlType::assigned_definition);
                     table->insert(next_symbol);
-                    auto variables = table->get_variables_with_properties(NmodlType::dependent_def);
+                    auto variables = table->get_variables_with_properties(
+                        NmodlType::assigned_definition);
                     THEN("table has global variable") {
                         REQUIRE(variables.size() == 1);
                     }
@@ -216,7 +217,7 @@ SCENARIO("Symbol table allows operations like insert, lookup") {
             symbol1->add_property(NmodlType::range_var | NmodlType::param_assign);
             symbol2->add_property(NmodlType::range_var | NmodlType::param_assign |
                                   NmodlType::state_var);
-            symbol3->add_property(NmodlType::range_var | NmodlType::dependent_def |
+            symbol3->add_property(NmodlType::range_var | NmodlType::assigned_definition |
                                   NmodlType::pointer_var);
             symbol4->add_property(NmodlType::range_var);
 
@@ -240,7 +241,7 @@ SCENARIO("Symbol table allows operations like insert, lookup") {
 
 
             with = NmodlType::range_var;
-            without = NmodlType::param_assign | NmodlType::dependent_def;
+            without = NmodlType::param_assign | NmodlType::assigned_definition;
             result = table->get_variables(with, without);
             REQUIRE(result.size() == 1);
             REQUIRE(result[0]->get_name() == "delta");

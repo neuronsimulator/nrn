@@ -25,7 +25,7 @@ def test_symtab(ch_ast):
 
     variables = s.get_variables_with_properties(symtab.NmodlType.range_var, True)
     assert len(variables) == 2
-    assert str(variables[0]) == "mInf [Properties : range dependent_def]"
+    assert str(variables[0]) == "mInf [Properties : range assigned_definition]"
 
 
 def test_visitor_python_io(ch_ast):

@@ -276,10 +276,10 @@ void ModelSymbolTable::update_order(const std::shared_ptr<Symbol>& present_symbo
     auto symbol = (present_symbol != nullptr) ? present_symbol : new_symbol;
 
     bool is_parameter = new_symbol->has_any_property(NmodlType::param_assign);
-    bool is_dependent_def = new_symbol->has_any_property(NmodlType::dependent_def);
+    bool is_assigned_definition = new_symbol->has_any_property(NmodlType::assigned_definition);
 
     if (symbol->get_definition_order() == -1) {
-        if (is_parameter || is_dependent_def) {
+        if (is_parameter || is_assigned_definition) {
             symbol->set_definition_order(definition_order++);
         }
     }

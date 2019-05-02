@@ -533,9 +533,9 @@ int CodegenCVisitor::float_variables_size() {
     };
 
     int float_size = count_length(info.range_parameter_vars);
-    float_size += count_length(info.range_dependent_vars);
+    float_size += count_length(info.range_assigned_vars);
     float_size += count_length(info.state_vars);
-    float_size += count_length(info.dependent_vars);
+    float_size += count_length(info.assigned_vars);
 
     /// for state variables we add Dstate variables
     float_size += info.state_vars.size();
@@ -812,7 +812,7 @@ std::vector<SymbolType> CodegenCVisitor::get_float_variables() {
         return first->get_definition_order() < second->get_definition_order();
     };
 
-    auto dependents = info.dependent_vars;
+    auto assigned = info.assigned_vars;
     auto states = info.state_vars;
     states.insert(states.end(), info.ion_state_vars.begin(), info.ion_state_vars.end());
 
@@ -821,16 +821,16 @@ std::vector<SymbolType> CodegenCVisitor::get_float_variables() {
         auto name = "D" + variable->get_name();
         auto symbol = make_symbol(name);
         symbol->set_definition_order(variable->get_definition_order());
-        dependents.push_back(symbol);
+        assigned.push_back(symbol);
     }
-    std::sort(dependents.begin(), dependents.end(), comparator);
+    std::sort(assigned.begin(), assigned.end(), comparator);
 
     auto variables = info.range_parameter_vars;
     variables.insert(variables.end(),
-                     info.range_dependent_vars.begin(),
-                     info.range_dependent_vars.end());
+                     info.range_assigned_vars.begin(),
+                     info.range_assigned_vars.end());
     variables.insert(variables.end(), info.state_vars.begin(), info.state_vars.end());
-    variables.insert(variables.end(), dependents.begin(), dependents.end());
+    variables.insert(variables.end(), assigned.begin(), assigned.end());
 
     if (info.vectorize) {
         variables.push_back(make_symbol(naming::VOLTAGE_UNUSED_VARIABLE));
@@ -2448,7 +2448,7 @@ void CodegenCVisitor::print_mechanism_info() {
     printer->add_line(add_escape_quote(info.mod_suffix) + ",");
     variable_printer(info.range_parameter_vars);
     printer->add_line("0,");
-    variable_printer(info.range_dependent_vars);
+    variable_printer(info.range_assigned_vars);
     printer->add_line("0,");
     variable_printer(info.state_vars);
     printer->add_line("0,");
