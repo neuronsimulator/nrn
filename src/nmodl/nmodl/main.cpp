@@ -21,6 +21,7 @@
 #include "codegen/codegen_omp_visitor.hpp"
 #include "config/config.h"
 #include "parser/nmodl_driver.hpp"
+#include "parser/unit_driver.hpp"
 #include "utils/common_utils.hpp"
 #include "utils/logger.hpp"
 #include "visitors/ast_visitor.hpp"
@@ -39,6 +40,7 @@
 #include "visitors/sympy_conductance_visitor.hpp"
 #include "visitors/sympy_solver_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
+#include "visitors/units_visitor.hpp"
 #include "visitors/verbatim_var_rename_visitor.hpp"
 #include "visitors/verbatim_visitor.hpp"
 
@@ -120,6 +122,9 @@ int main(int argc, const char* argv[]) {
     /// directory where intermediate file will be generated
     std::string scratch_dir("tmp");
 
+    /// directory where units lib file is located
+    std::string units_dir(NrnUnitsLib::get_path());
+
     /// true if ast should be converted to json
     bool json_ast(false);
 
@@ -152,6 +157,7 @@ int main(int argc, const char* argv[]) {
         ->ignore_case();
     app.add_option("--scratch", scratch_dir, "Directory for intermediate code output", true)
         ->ignore_case();
+    app.add_option("--units", units_dir, "Directory of units lib file", true)->ignore_case();
 
     auto host_opt = app.add_subcommand("host", "HOST/CPU code backends")->ignore_case();
     host_opt->add_flag("--c", c_backend, "C/C++ backend")->ignore_case();
@@ -295,6 +301,12 @@ int main(int argc, const char* argv[]) {
             SteadystateVisitor().visit_program(ast.get());
             SymtabVisitor(update_symtab).visit_program(ast.get());
             ast_to_nmodl(ast.get(), filepath("steadystate"));
+        }
+
+        /// Parsing units fron "nrnunits.lib" and mod files
+        {
+            logger->info("Parsing Units");
+            UnitsVisitor(units_dir).visit_program(ast.get());
         }
 
         /// once we start modifying (especially removing) older constructs

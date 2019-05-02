@@ -16,39 +16,35 @@
 
 /**
  * Standalone parser program for Units. This demonstrate basic
- * usage of parser and driver class.
+ * usage of parser and driver class to parse the `nrnunits.lib`
+ * file.
  *
- * \todo This is a placeholder and needs to be changed to parse
- *       NMODL file and then show corresponding units.
  */
 
 using namespace fmt::literals;
 using namespace nmodl;
 
-void parse_units(std::vector<std::string> files) {
-    for (const auto& f: files) {
-        logger->info("Processing {}", f);
-        std::ifstream file(f);
-
-        /// driver object creates lexer and parser
-        parser::UnitDriver driver;
-        driver.set_verbose(true);
-
-        /// just call parser method
-        driver.parse_stream(file);
-    }
-}
 
 int main(int argc, const char* argv[]) {
     CLI::App app{"Unit-Parser : Standalone Parser for Units({})"_format(Version::to_string())};
 
-    std::vector<std::string> files;
-    files.push_back(NrnUnitsLib::get_path());
-    app.add_option("file", files, "One or more Units files to process");
+    std::vector<std::string> units_files;
+    units_files.push_back(NrnUnitsLib::get_path());
+    app.add_option("units_files", units_files, "One or more Units files to process");
 
     CLI11_PARSE(app, argc, argv);
 
-    parse_units(files);
+    for (const auto& f: units_files) {
+        logger->info("Processing {}", f);
+        std::ifstream file(f);
+
+        // driver object creates lexer and parser
+        parser::UnitDriver driver;
+        driver.set_verbose(true);
+
+        // just call parser method
+        driver.parse_stream(file);
+    }
 
     return 0;
 }

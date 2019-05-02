@@ -200,6 +200,12 @@ item
         $2->add_denominator_unit($4);
         $$ = $2;
       }
+    | NEW_UNIT nominator DIVISION DOUBLE {
+          $2->add_unit($1);
+          $2->mul_factor(1/std::stod($4));
+          $2->add_denominator_unit($4);
+          $$ = $2;
+        }
     | NEW_UNIT INVALID_BASE_UNIT {
             error(scanner.loc, "Base units should be named by characters a-j");
           }

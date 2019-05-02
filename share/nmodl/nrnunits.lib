@@ -68,6 +68,11 @@ c			2.99792458+8 m/sec fuzz
 g			9.80665 m/sec2
 au			1.49597871+11 m fuzz
 mole			6.022169+23 fuzz
+mol             1
+/ mol is explicitly defined as a constant
+/ with value 1 to avoid "undefined unit"
+/ error with mod files that don't define
+/ it themselves
 /mole			6.022140857+23 fuzz
 e			1.6021917-19 coul fuzz
 /e			1.6021766208-19 coul fuzz
@@ -555,6 +560,11 @@ Xunit			1.00202-13m
 degC			K
 
 kelvin			K
+degK            K
+/ degK is explicitly defined as K to
+/ avoid "undefined unit" error with
+/ mod files that don't define it
+/ themselves
 brewster		1-12 m2/newton
 degF			5|9 degC
 degreesrankine		degF

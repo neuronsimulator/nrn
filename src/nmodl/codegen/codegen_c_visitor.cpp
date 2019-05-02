@@ -1918,14 +1918,20 @@ std::string CodegenCVisitor::process_shadow_update_statement(ShadowUseStatement&
 
 
 /**
- * \todo This should be replaced with constant handling from unit database
+ * NMODL constants from unit database
+ *
  */
 void CodegenCVisitor::print_nmodl_constants() {
-    printer->add_newline(2);
-    printer->add_line("/** constants used in nmodl */");
-    printer->add_line("static const double FARADAY = 96485.3;");
-    printer->add_line("static const double PI = 3.14159;");
-    printer->add_line("static const double R = 8.3145;");
+    if (!info.factor_definitions.empty()) {
+        printer->add_newline(2);
+        printer->add_line("/** constants used in nmodl */");
+        for (const auto& it: info.factor_definitions) {
+            std::stringstream ss;
+            ss << "static const double " << it->get_node_name() << " = ";
+            ss << it->get_value()->get_value() << ";";
+            printer->add_line(ss.str());
+        }
+    }
 }
 
 

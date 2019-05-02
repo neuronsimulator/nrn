@@ -46,6 +46,7 @@ TEST_CASE("Unit Lexer tests for valid tokens", "[lexer][unit]") {
         REQUIRE(token_type("1-1") == Token::DOUBLE);
         REQUIRE(token_type("1|100") == Token::FRACTION);
         REQUIRE(token_type(".03") == Token::DOUBLE);
+        REQUIRE(token_type("12345e-2") == Token::DOUBLE);
         REQUIRE(token_type("1|8.988e9") == Token::FRACTION);
     }
 
@@ -53,8 +54,12 @@ TEST_CASE("Unit Lexer tests for valid tokens", "[lexer][unit]") {
         REQUIRE(token_type("*a*") == Token::BASE_UNIT);
         REQUIRE(token_type("*k*") == Token::INVALID_BASE_UNIT);
         REQUIRE(token_type("planck") == Token::NEW_UNIT);
+        REQUIRE(token_type("mse-1") == Token::NEW_UNIT);
+        REQUIRE(token_type("mA/cm2") == Token::NEW_UNIT);
         REQUIRE(token_type(" m2") == Token::UNIT_POWER);
         REQUIRE(token_type(" m") == Token::UNIT);
+        REQUIRE(token_type(" m_2") == Token::UNIT);
+        REQUIRE(token_type(" m_unit2") == Token::UNIT);
         REQUIRE(token_type("yotta-") == Token::PREFIX);
     }
 
