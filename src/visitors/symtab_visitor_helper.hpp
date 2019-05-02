@@ -94,8 +94,8 @@ void SymtabVisitor::setup_symbol(ast::Node* node, NmodlType property) {
         }
     }
 
-    if (node->is_dependent_def()) {
-        auto variable = dynamic_cast<ast::DependentDef*>(node);
+    if (node->is_assigned_definition()) {
+        auto variable = dynamic_cast<ast::AssignedDefinition*>(node);
         auto length = variable->get_length();
         if (length) {
             symbol->set_as_array(length->eval());
@@ -237,7 +237,7 @@ void SymtabVisitor::visit_table_statement(ast::TableStatement* node) {
     };
     int num_values = node->get_with()->eval() + 1;
     update_symbol(node->get_table_vars(), NmodlType::table_statement_var, num_values);
-    update_symbol(node->get_depend_vars(), NmodlType::table_dependent_var, num_values);
+    update_symbol(node->get_depend_vars(), NmodlType::table_assigned_var, num_values);
 }
 
 }  // namespace visitor

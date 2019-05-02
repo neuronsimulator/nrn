@@ -91,7 +91,7 @@ SCENARIO("Symbol table generation with Perf stat visitor", "[visitor][performanc
 
             THEN("Can lookup for defined variables") {
                 auto symbol = symtab->lookup("m");
-                REQUIRE(symbol->has_any_property(NmodlType::dependent_def));
+                REQUIRE(symbol->has_any_property(NmodlType::assigned_definition));
                 REQUIRE_FALSE(symbol->has_any_property(NmodlType::local_var));
 
                 symbol = symtab->lookup("gNaTs2_tbar");

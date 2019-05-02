@@ -141,8 +141,8 @@ enum class NmodlType : enum_type {
     /// Prime Type
     prime_name = 1L << 7,
 
-    /// Dependent Def
-    dependent_def = 1L << 8,
+    /// Assigned Definition
+    assigned_definition = 1L << 8,
 
     /// Unit Def
     unit_def = 1L << 9,
@@ -213,8 +213,8 @@ enum class NmodlType : enum_type {
     /// variable is used in table statement
     table_statement_var = 1L << 31,
 
-    /// variable is used in table as dependent
-    table_dependent_var = 1L << 32,
+    /// variable is used in table as assigned
+    table_assigned_var = 1L << 32,
 
     /// Discrete Block
     discrete_block = 1L << 33,

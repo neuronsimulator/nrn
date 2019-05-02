@@ -166,8 +166,8 @@ SymbolType token_symbol(const std::string& key, PositionType& pos, TokenType typ
         return Parser::make_DEFINE1(token, pos);
     case Token::DEPEND:
         return Parser::make_DEPEND(token, pos);
-    case Token::DEPENDENT:
-        return Parser::make_DEPENDENT(token, pos);
+    case Token::ASSIGNED:
+        return Parser::make_ASSIGNED(token, pos);
     case Token::DERIVATIVE:
         return Parser::make_DERIVATIVE(token, pos);
     case Token::DESTRUCTOR:

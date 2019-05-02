@@ -54,8 +54,8 @@ std::vector<std::string> to_string_vector(const NmodlType& obj) {
         properties.emplace_back("prime_name");
     }
 
-    if (has_property(obj, NmodlType::dependent_def)) {
-        properties.emplace_back("dependent_def");
+    if (has_property(obj, NmodlType::assigned_definition)) {
+        properties.emplace_back("assigned_definition");
     }
 
     if (has_property(obj, NmodlType::unit_def)) {
@@ -110,8 +110,8 @@ std::vector<std::string> to_string_vector(const NmodlType& obj) {
         properties.emplace_back("table_statement_var");
     }
 
-    if (has_property(obj, NmodlType::table_dependent_var)) {
-        properties.emplace_back("table_dependent_var");
+    if (has_property(obj, NmodlType::table_assigned_var)) {
+        properties.emplace_back("table_assigned_var");
     }
 
     if (has_property(obj, NmodlType::constant_var)) {

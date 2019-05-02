@@ -103,7 +103,7 @@ Now we can query for variables in the symbol table based on name of variable:
 
     >>> cai = table.lookup('cai')
     >>> print (cai)
-    cai [Properties : prime_name dependent_def write_ion state_var]
+    cai [Properties : prime_name assigned_definition write_ion state_var]
 
 
 Custom AST Visitor

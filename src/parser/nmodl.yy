@@ -79,54 +79,94 @@
  *  lexer executable or tests, it's useful to return ModToken. Note that UNKNOWN
  *  token is added for convenience (with default arguments). */
 
-%token  <ModToken>              MODEL
-%token  <ModToken>              CONSTANT
-%token  <ModToken>              INDEPENDENT
-%token  <ModToken>              DEPENDENT
-%token  <ModToken>              STATE
-%token  <ModToken>              INITIAL1
-%token  <ModToken>              DERIVATIVE
-%token  <ModToken>              SOLVE
-%token  <ModToken>              USING
-%token  <ModToken>              STEADYSTATE
-%token  <ModToken>              WITH
-%token  <ModToken>              STEPPED
-%token  <ModToken>              DISCRETE
-%token  <ModToken>              FROM
-%token  <ModToken>              FORALL1
-%token  <ModToken>              TO
-%token  <ModToken>              BY
-%token  <ModToken>              WHILE
-%token  <ModToken>              IF
-%token  <ModToken>              ELSE
-%token  <ModToken>              START1
-%token  <ModToken>              STEP
-%token  <ModToken>              SENS
-%token  <ModToken>              SOLVEFOR
-%token  <ModToken>              PROCEDURE
-%token  <ModToken>              PARTIAL
-%token  <ModToken>              DEFINE1
-%token  <ModToken>              IFERROR
-%token  <ModToken>              PARAMETER
-%token  <ModToken>              DERFUNC
-%token  <ModToken>              EQUATION
-%token  <ModToken>              TERMINAL
-%token  <ModToken>              LINEAR
-%token  <ModToken>              NONLINEAR
-%token  <ModToken>              FUNCTION1
-%token  <ModToken>              LOCAL
-%token  <ModToken>              LIN1
-%token  <ModToken>              NONLIN1
-%token  <ModToken>              PUTQ
-%token  <ModToken>              GETQ
-%token  <ModToken>              TABLE
-%token  <ModToken>              DEPEND
+%token  <ModToken>              AFTER
+%token  <ModToken>              BBCOREPOINTER
+%token  <ModToken>              BEFORE
 %token  <ModToken>              BREAKPOINT
-%token  <ModToken>              INCLUDE1
+%token  <ModToken>              BY
+%token  <ModToken>              COMPARTMENT
+%token  <ModToken>              CONDUCTANCE
+%token  <ModToken>              CONSERVE
+%token  <ModToken>              CONSTANT
+%token  <ModToken>              CONSTRUCTOR
+%token  <ModToken>              DEFINE1
+%token  <ModToken>              DEPEND
+%token  <ModToken>              ASSIGNED
+%token  <ModToken>              DERFUNC
+%token  <ModToken>              DERIVATIVE
+%token  <ModToken>              DESTRUCTOR
+%token  <ModToken>              DISCRETE
+%token  <ModToken>              ELECTRODE_CURRENT
+%token  <ModToken>              ELSE
+%token  <ModToken>              EQUATION
+%token  <ModToken>              EXTERNAL
+%token  <ModToken>              FIRST
+%token  <ModToken>              FORALL1
+%token  <ModToken>              FOR_NETCONS
+%token  <ModToken>              FROM
+%token  <ModToken>              FUNCTION1
 %token  <ModToken>              FUNCTION_TABLE
-%token  <ModToken>              PROTECT
+%token  <ModToken>              GETQ
+%token  <ModToken>              GLOBAL
+%token  <ModToken>              IF
+%token  <ModToken>              IFERROR
+%token  <ModToken>              INCLUDE1
+%token  <ModToken>              INDEPENDENT
+%token  <ModToken>              INITIAL1
+%token  <ModToken>              KINETIC
+%token  <ModToken>              LAG
+%token  <ModToken>              LAST
+%token  <ModToken>              LIN1
+%token  <ModToken>              LINEAR
+%token  <ModToken>              LOCAL
+%token  <ModToken>              LONGDIFUS
+%token  <ModToken>              MATCH
+%token  <ModToken>              MODEL
+%token  <ModToken>              MODEL_LEVEL
+%token  <ModToken>              NETRECEIVE
+%token  <ModToken>              NEURON
+%token  <ModToken>              NONLIN1
+%token  <ModToken>              NONLINEAR
+%token  <ModToken>              NONSPECIFIC
 %token  <ModToken>              NRNMUTEXLOCK
 %token  <ModToken>              NRNMUTEXUNLOCK
+%token  <ModToken>              PARAMETER
+%token  <ModToken>              PARTIAL
+%token  <ModToken>              PLOT
+%token  <ModToken>              POINTER
+%token  <ModToken>              PROCEDURE
+%token  <ModToken>              PROTECT
+%token  <ModToken>              PUTQ
+%token  <ModToken>              RANGE
+%token  <ModToken>              REACT1
+%token  <ModToken>              REACTION
+%token  <ModToken>              READ
+%token  <ModToken>              RESET
+%token  <ModToken>              SECTION
+%token  <ModToken>              SENS
+%token  <ModToken>              SOLVE
+%token  <ModToken>              SOLVEFOR
+%token  <ModToken>              START1
+%token  <ModToken>              STATE
+%token  <ModToken>              STEADYSTATE
+%token  <ModToken>              STEP
+%token  <ModToken>              STEPPED
+%token  <ModToken>              SWEEP
+%token  <ModToken>              TABLE
+%token  <ModToken>              TERMINAL
+%token  <ModToken>              THREADSAFE
+%token  <ModToken>              TO
+%token  <ModToken>              UNITS
+%token  <ModToken>              UNITSOFF
+%token  <ModToken>              UNITSON
+%token  <ModToken>              USEION
+%token  <ModToken>              USING
+%token  <ModToken>              VS
+%token  <ModToken>              WATCH
+%token  <ModToken>              WHILE
+%token  <ModToken>              WITH
+%token  <ModToken>              WRITE
+
 %token  <ModToken>              OR
 %token  <ModToken>              AND
 %token  <ModToken>              GT
@@ -136,60 +176,28 @@
 %token  <ModToken>              NE
 %token  <ModToken>              NOT
 %token  <ModToken>              GE
-%token  <ModToken>              PLOT
-%token  <ModToken>              VS
-%token  <ModToken>              LAG
-%token  <ModToken>              RESET
-%token  <ModToken>              MATCH
-%token  <ModToken>              MODEL_LEVEL
-%token  <ModToken>              SWEEP
-%token  <ModToken>              FIRST
-%token  <ModToken>              LAST
-%token  <ModToken>              KINETIC
-%token  <ModToken>              CONSERVE
-%token  <ModToken>              REACTION
-%token  <ModToken>              REACT1
-%token  <ModToken>              COMPARTMENT
-%token  <ModToken>              UNITS
-%token  <ModToken>              UNITSON
-%token  <ModToken>              UNITSOFF
-%token  <ModToken>              LONGDIFUS
-%token  <ModToken>              NEURON
-%token  <ModToken>              NONSPECIFIC
-%token  <ModToken>              READ
-%token  <ModToken>              WRITE
-%token  <ModToken>              USEION
-%token  <ModToken>              THREADSAFE
-%token  <ModToken>              GLOBAL
-%token  <ModToken>              SECTION
-%token  <ModToken>              RANGE POINTER
-%token  <ModToken>              BBCOREPOINTER
-%token  <ModToken>              EXTERNAL
-%token  <ModToken>              BEFORE
-%token  <ModToken>              AFTER
-%token  <ModToken>              WATCH
-%token  <ModToken>              ELECTRODE_CURRENT
-%token  <ModToken>              CONSTRUCTOR
-%token  <ModToken>              DESTRUCTOR
-%token  <ModToken>              NETRECEIVE
-%token  <ModToken>              FOR_NETCONS
-%token  <ModToken>              CONDUCTANCE
+
 %token  <ast::Double>           REAL
 %token  <ast::Integer>          INTEGER
 %token  <ast::Integer>          DEFINEDVAR
+
 %token  <ast::Name>             NAME
 %token  <ast::Name>             METHOD
 %token  <ast::Name>             SUFFIX
 %token  <ast::Name>             VALENCE
 %token  <ast::Name>             DEL
 %token  <ast::Name>             DEL2
+%token  <ast::Name>             FLUX_VAR
+
 %token  <ast::PrimeName>        PRIME
+
 %token  <std::string>           VERBATIM
 %token  <std::string>           BLOCK_COMMENT
 %token  <std::string>           LINE_COMMENT
 %token  <std::string>           LINE_PART
+
 %token  <ast::String>           STRING
-%token  <ast::Name>             FLUX_VAR
+
 %token  <ModToken>              OPEN_BRACE          "{"
 %token  <ModToken>              CLOSE_BRACE         "}"
 %token  <ModToken>              OPEN_PARENTHESIS    "("
@@ -207,155 +215,158 @@
 %token  <ModToken>              COMMA               ","
 %token  <ModToken>              TILDE               "~"
 %token  <ModToken>              PERIOD              "."
+
 %token  END                     0                   "End of file"
 %token                          UNKNOWN
 %token                          INVALID_TOKEN
 
-/** Define terminal and nonterminal symbols : Instead of using AST classes
- *  directly, we are using typedefs like program_ptr. This is useful when we
- *  want to transparently change naming/type scheme. For example, raw pointer
- *  to smakrt pointers. Manually changing all types in bison specification is
- *  time consuming. Also, naming of termina/non-terminal symbols is kept same
- *  as NEURON. This helps during development and debugging. This could be
- *  once all implementation details get ported. */
 
-%type   <ast::Program*>                  all
-%type   <ast::Name*>                     Name
-%type   <ast::Number*>                   NUMBER
-%type   <ast::Double*>                   real
-%type   <ast::Expression*>               intexpr
-%type   <ast::Integer*>                  integer
-%type   <ast::Model*>                    model
-%type   <ast::Unit*>                     units
-%type   <ast::Integer*>                  optindex
-%type   <ast::Unit*>                     unit
-%type   <ast::Block*>                    proc
-%type   <ast::Limits*>                   limits
-%type   <ast::Double*>                   abstol
-%type   <ast::Identifier*>               name
-%type   <ast::Number*>                   number
-%type   <ast::Expression*>               primary
-%type   <ast::Expression*>               term
-%type   <ast::Expression*>               leftlinexpr
-%type   <ast::Expression*>               linexpr
-%type   <ast::NumberVector>              numlist
-%type   <ast::Expression*>               expr
-%type   <ast::Expression*>               aexpr
-%type   <ast::Statement*>                ostmt
-%type   <ast::Statement*>                astmt
-%type   <ast::StatementBlock*>           stmtlist
-%type   <ast::LocalListStatement*>       locallist
-%type   <ast::LocalVarVector>            locallist1
-%type   <ast::VarName*>                  varname
-%type   <ast::ExpressionVector>          exprlist
-%type   <ast::Define*>                   define1
-%type   <ast::QueueStatement*>           queuestmt
-%type   <ast::Expression*>               asgn
-%type   <ast::FromStatement*>            fromstmt
-%type   <ast::WhileStatement*>           whilestmt
-%type   <ast::IfStatement*>              ifstmt
-%type   <ast::ElseIfStatementVector>     optelseif
-%type   <ast::ElseStatement*>            optelse
-%type   <ast::SolveBlock*>               solveblk
-%type   <ast::WrappedExpression*>        funccall
-%type   <ast::StatementBlock*>           ifsolerr
-%type   <ast::Expression*>               opinc
-%type   <ast::Number*>                   opstart
-%type   <ast::VarNameVector>             senslist
-%type   <ast::Sens*>                     sens
-%type   <ast::LagStatement*>             lagstmt
-%type   <ast::ForAllStatement*>          forallstmt
-%type   <ast::ParamAssign*>              parmasgn
-%type   <ast::Stepped*>                  stepped
-%type   <ast::IndependentDef*>           indepdef
-%type   <ast::DependentDef*>             depdef
-%type   <ast::Block*>                    declare
-%type   <ast::ParamBlock*>               parmblk
-%type   <ast::ParamAssignVector>         parmbody
-%type   <ast::IndependentBlock*>         indepblk
-%type   <ast::IndependentDefVector>      indepbody
-%type   <ast::DependentBlock*>           depblk
-%type   <ast::DependentDefVector>        depbody
-%type   <ast::StateBlock*>               stateblk
-%type   <ast::StepBlock*>                stepblk
-%type   <ast::SteppedVector>             stepbdy
-%type   <ast::WatchStatement*>           watchstmt
-%type   <ast::BinaryOperator>            watchdir
-%type   <ast::Watch*>                    watch1
-%type   <ast::ForNetcon*>                fornetcon
-%type   <ast::PlotDeclaration*>          plotdecl
-%type   <ast::PlotVarVector>             pvlist
-%type   <ast::ConstantBlock*>            constblk
-%type   <ast::ConstantStatementVector>   conststmt
-%type   <ast::MatchBlock*>               matchblk
-%type   <ast::MatchVector>               matchlist
-%type   <ast::Match*>                    match
-%type   <ast::Identifier*>               matchname
-%type   <ast::PartialBoundary*>          pareqn
-%type   <ast::FirstLastTypeIndex*>       firstlast
-%type   <ast::ReactionStatement*>        reaction
-%type   <ast::Conserve*>                 conserve
-%type   <ast::Expression*>               react
-%type   <ast::Compartment*>              compart
-%type   <ast::LonDifuse*>                ldifus
-%type   <ast::NameVector>                namelist
-%type   <ast::UnitBlock*>                unitblk
-%type   <ast::ExpressionVector>          unitbody
-%type   <ast::UnitDef*>                  unitdef
-%type   <ast::FactorDef*>                factordef
-%type   <ast::NameVector>                solvefor
-%type   <ast::NameVector>                solvefor1
-%type   <ast::UnitState*>                uniton
-%type   <ast::NameVector>                tablst
-%type   <ast::NameVector>                tablst1
-%type   <ast::TableStatement*>           tablestmt
-%type   <ast::NameVector>                dependlst
-%type   <ast::ArgumentVector>            arglist
-%type   <ast::ArgumentVector>            arglist1
-%type   <ast::Integer*>                  locoptarray
-%type   <ast::NeuronBlock*>              neuronblk
-%type   <ast::Useion*>                   nrnuse
-%type   <ast::StatementVector>           nrnstmt
-%type   <ast::ReadIonVarVector>          nrnionrlist
-%type   <ast::WriteIonVarVector>         nrnionwlist
-%type   <ast::NonspecificCurVarVector>   nrnonspeclist
-%type   <ast::ElectrodeCurVarVector>     nrneclist
-%type   <ast::SectionVarVector>          nrnseclist
-%type   <ast::RangeVarVector>            nrnrangelist
-%type   <ast::GlobalVarVector>           nrnglobalist
-%type   <ast::PointerVarVector>          nrnptrlist
-%type   <ast::BbcorePointerVarVector>    nrnbbptrlist
-%type   <ast::ExternVarVector>           nrnextlist
-%type   <ast::ThreadsafeVarVector>       opthsafelist
-%type   <ast::ThreadsafeVarVector>       threadsafelist
-%type   <ast::Valence*>                  valence
-%type   <ast::ExpressionStatement*>      initstmt
-%type   <ast::BABlock*>                  bablk
-%type   <ast::ConductanceHint*>          conducthint
-%type   <ast::StatementVector>           stmtlist1
-%type   <ast::InitialBlock*>             initblk
-%type   <ast::ConstructorBlock*>         constructblk
-%type   <ast::DestructorBlock*>          destructblk
-%type   <ast::FunctionBlock*>            funcblk
-%type   <ast::KineticBlock*>             kineticblk
-%type   <ast::BreakpointBlock*>          brkptblk
-%type   <ast::DerivativeBlock*>          derivblk
-%type   <ast::LinearBlock*>              linblk
-%type   <ast::NonLinearBlock*>           nonlinblk
-%type   <ast::ProcedureBlock*>           procedblk
-%type   <ast::NetReceiveBlock*>          netrecblk
-%type   <ast::TerminalBlock*>            terminalblk
-%type   <ast::DiscreteBlock*>            discretblk
-%type   <ast::PartialBlock*>             partialblk
-%type   <ast::FunctionTableBlock*>       functableblk
-%type   <ast::Integer*>                  INTEGER_PTR
-%type   <ast::Name*>                     NAME_PTR
-%type   <ast::String*>                   STRING_PTR
-%type   <ast::WrappedExpression*>        flux_variable
+/** Bison production return types */
 
-/** Precedence and Associativity : specify operator precedency and
- *  associativity (from lower to higher. Note that '^' represent
- *  exponentiation. */
+
+%type   <ast::Program*>                     all
+
+%type   <ast::Double*>                      double
+%type   <ast::Identifier*>                  name
+%type   <ast::Integer*>                     integer
+%type   <ast::Name*>                        Name
+%type   <ast::Number*>                      NUMBER
+%type   <ast::Number*>                      number
+%type   <ast::VarName*>                     variable_name
+
+%type   <ast::Model*>                       model
+%type   <ast::Unit*>                        units
+%type   <ast::Integer*>                     optional_index
+%type   <ast::Unit*>                        unit
+%type   <ast::Block*>                       procedure
+%type   <ast::Limits*>                      limits
+%type   <ast::Double*>                      abs_tolerance
+%type   <ast::Expression*>                  integer_expression
+%type   <ast::Expression*>                  primary
+%type   <ast::Expression*>                  term
+%type   <ast::Expression*>                  left_linear_expression
+%type   <ast::Expression*>                  linear_expression
+%type   <ast::NumberVector>                 number_list
+%type   <ast::Expression*>                  expression
+%type   <ast::Expression*>                  watch_expression
+%type   <ast::Statement*>                   statement_type1
+%type   <ast::Statement*>                   statement_type2
+%type   <ast::StatementBlock*>              statement_list
+%type   <ast::LocalListStatement*>          local_statement
+%type   <ast::LocalVarVector>               local_var_list
+%type   <ast::ExpressionVector>             expression_list
+%type   <ast::Define*>                      define
+%type   <ast::QueueStatement*>              queue_statement
+%type   <ast::Expression*>                  assignment
+%type   <ast::FromStatement*>               from_statement
+%type   <ast::WhileStatement*>              while_statement
+%type   <ast::IfStatement*>                 if_statement
+%type   <ast::ElseIfStatementVector>        optional_else_if
+%type   <ast::ElseStatement*>               optional_else
+%type   <ast::WrappedExpression*>           function_call
+%type   <ast::StatementBlock*>              if_solution_error
+%type   <ast::Expression*>                  optional_increment
+%type   <ast::Number*>                      optional_start
+%type   <ast::VarNameVector>                sens_list
+%type   <ast::Sens*>                        sens
+%type   <ast::LagStatement*>                lag_statement
+%type   <ast::ForAllStatement*>             forall_statement
+%type   <ast::ParamAssign*>                 parameter_assignment
+%type   <ast::Stepped*>                     stepped_statement
+%type   <ast::IndependentDefinition*>       independent_definition
+%type   <ast::AssignedDefinition*>          dependent_definition
+%type   <ast::Block*>                       declare
+%type   <ast::ParamAssignVector>            parameter_block_body
+%type   <ast::IndependentDefinitionVector>  independent_block_body
+%type   <ast::AssignedDefinitionVector>     dependent_block_body
+%type   <ast::SteppedVector>                step_block_body
+%type   <ast::WatchStatement*>              watch_statement
+%type   <ast::BinaryOperator>               watch_direction
+%type   <ast::Watch*>                       watch
+%type   <ast::ForNetcon*>                   for_netcon
+%type   <ast::PlotDeclaration*>             plot_declaration
+%type   <ast::PlotVarVector>                plot_variable_list
+%type   <ast::ConstantStatementVector>      constant_statement
+%type   <ast::MatchVector>                  match_list
+%type   <ast::Match*>                       match
+%type   <ast::Identifier*>                  match_name
+%type   <ast::PartialBoundary*>             partial_equation
+%type   <ast::FirstLastTypeIndex*>          first_last
+%type   <ast::ReactionStatement*>           reaction_statement
+%type   <ast::Conserve*>                    conserve
+%type   <ast::Expression*>                  react
+%type   <ast::Compartment*>                 compartment
+%type   <ast::LonDifuse*>                   longitudinal_diffusion
+%type   <ast::NameVector>                   name_list
+%type   <ast::ExpressionVector>             unit_block_body
+%type   <ast::UnitDef*>                     unit_definition
+%type   <ast::FactorDef*>                   factor_definition
+%type   <ast::NameVector>                   optional_solvefor
+%type   <ast::NameVector>                   solvefor
+%type   <ast::UnitState*>                   unit_state
+%type   <ast::NameVector>                   optional_table_var_list
+%type   <ast::NameVector>                   table_var_list
+%type   <ast::TableStatement*>              table_statement
+%type   <ast::NameVector>                   optional_dependent_var_list
+%type   <ast::ArgumentVector>               optional_argument_list
+%type   <ast::ArgumentVector>               argument_list
+%type   <ast::Integer*>                     optional_array_index
+%type   <ast::Useion*>                      use_ion_statement
+%type   <ast::StatementVector>              neuron_statement
+%type   <ast::ReadIonVarVector>             read_ion_list
+%type   <ast::WriteIonVarVector>            write_ion_list
+%type   <ast::NonspecificCurVarVector>      nonspecific_var_list
+%type   <ast::ElectrodeCurVarVector>        electrode_current_var_list
+%type   <ast::SectionVarVector>             section_var_list
+%type   <ast::RangeVarVector>               range_var_list
+%type   <ast::GlobalVarVector>              global_var_list
+%type   <ast::PointerVarVector>             pointer_var_list
+%type   <ast::BbcorePointerVarVector>       bbcore_pointer_var_list
+%type   <ast::ExternVarVector>              external_var_list
+%type   <ast::ThreadsafeVarVector>          optional_threadsafe_var_list
+%type   <ast::ThreadsafeVarVector>          threadsafe_var_list
+%type   <ast::Valence*>                     valence
+%type   <ast::ExpressionStatement*>         initial_statement
+%type   <ast::ConductanceHint*>             conductance
+%type   <ast::StatementVector>              optional_statement_list
+%type   <ast::WrappedExpression*>           flux_variable
+
+%type   <ast::AssignedBlock*>               dependent_block
+%type   <ast::BABlock*>                     before_after_block
+%type   <ast::BreakpointBlock*>             breakpoint_block
+%type   <ast::ConstantBlock*>               constant_block
+%type   <ast::ConstructorBlock*>            constructor_block
+%type   <ast::DerivativeBlock*>             derivative_block
+%type   <ast::DestructorBlock*>             destructor_block
+%type   <ast::DiscreteBlock*>               discrete_block
+%type   <ast::FunctionBlock*>               function_block
+%type   <ast::FunctionTableBlock*>          function_table_block
+%type   <ast::IndependentBlock*>            independent_block
+%type   <ast::InitialBlock*>                initial_block
+%type   <ast::KineticBlock*>                kinetic_block
+%type   <ast::LinearBlock*>                 linear_block
+%type   <ast::MatchBlock*>                  match_block
+%type   <ast::NetReceiveBlock*>             net_receive_block
+%type   <ast::NeuronBlock*>                 neuron_block
+%type   <ast::NonLinearBlock*>              non_linear_block
+%type   <ast::ParamBlock*>                  parameter_block
+%type   <ast::PartialBlock*>                partial_block
+%type   <ast::ProcedureBlock*>              procedure_block
+%type   <ast::SolveBlock*>                  solve_block
+%type   <ast::StateBlock*>                  state_block
+%type   <ast::StepBlock*>                   step_block
+%type   <ast::TerminalBlock*>               terminal_block
+%type   <ast::UnitBlock*>                   unit_block
+
+%type   <ast::Integer*>                     INTEGER_PTR
+%type   <ast::Name*>                        NAME_PTR
+%type   <ast::String*>                      STRING_PTR
+
+/*
+ * Precedence and Associativity : specify operator precedency and
+ * associativity (from lower to higher. Note that '^' represent
+ * exponentiation.
+ */
 
 %left   OR
 %left   AND
@@ -398,7 +409,7 @@
  *  Note that YYLLOC_DEFAULT is not sufficient for all rules and hence
  *  we need to update @$ (especially @$.begin). Consider below example:
  *
- *  nrnstmt RANGE nrnrangelist
+ *  neuron_statement RANGE range_var_list
  *
  *  In this case we have to do : @$.begin = $1.begin (@$.end is already
  *  set to $3.end and hence don't need to update).
@@ -431,12 +442,12 @@ all             :   {
                         $1->addNode($2);
                         $$ = $1;
                     }
-                |   all locallist
+                |   all local_statement
                     {
                         $1->addNode($2);
                         $$ = $1;
                     }
-                |   all define1
+                |   all define
                     {
                         $1->addNode($2);
                         $$ = $1;
@@ -448,12 +459,12 @@ all             :   {
                     }
                 |   all MODEL_LEVEL INTEGER_PTR declare
                     {
-                        /** todo : This is discussed with Michael Hines. Model level was inserted
+                        /** todo This is discussed with Michael Hines. Model level was inserted
                          * by merge program which is no longer exist. This was to avoid the name
                          * collision in case of include. Idea was to have some kind of namespace!
                          */
                     }
-                |   all proc
+                |   all procedure
                     {
                         $1->addNode($2);
                         $$ = $1;
@@ -478,7 +489,7 @@ all             :   {
                         $1->addNode(statement);
                         $$ = $1;
                     }
-                |   all uniton
+                |   all unit_state
                     {
                         $1->addNode($2);
                         $$ = $1;
@@ -499,14 +510,14 @@ model           :   MODEL LINE_PART
                 ;
 
 
-define1         :   DEFINE1 NAME_PTR INTEGER_PTR
+define         :    DEFINE1 NAME_PTR INTEGER_PTR
                     {
                         $$ = new ast::Define($2, $3);
                         driver.add_defined_var($2->get_node_name(), $3->eval());
                     }
                 |   DEFINE1 error
                     {
-                        error(scanner.loc, "define1");
+                        error(scanner.loc, "define");
                     }
                 ;
 
@@ -515,32 +526,57 @@ Name            :   NAME_PTR    {   $$ = $1;    }
                 ;
 
 
-declare         :   parmblk     {   $$ = $1;    }
-                |   indepblk    {   $$ = $1;    }
-                |   depblk      {   $$ = $1;    }
-                |   stateblk    {   $$ = $1;    }
-                |   stepblk     {   $$ = $1;    }
-                |   plotdecl
+declare         :   parameter_block
+                    {
+                        $$ = $1;
+                    }
+                |   independent_block
+                    {
+                        $$ = $1;
+                    }
+                |   dependent_block
+                    {
+                        $$ = $1;
+                    }
+                |   state_block
+                    {
+                        $$ = $1;
+                    }
+                |   step_block
+                    {
+                        $$ = $1;
+                    }
+                |   plot_declaration
                     {
                         $$ = new ast::PlotBlock($1);
                     }
-                |   neuronblk   {   $$ = $1;    }
-                |   unitblk     {   $$ = $1;    }
-                |   constblk    {   $$ = $1;    }
+                |   neuron_block
+                    {
+                        $$ = $1;
+                    }
+                |   unit_block
+                    {
+                        $$ = $1;
+                    }
+                |   constant_block
+                    {
+                        $$ = $1;
+                    }
                 ;
 
 
-parmblk         :   PARAMETER "{" parmbody"}"
+parameter_block :   PARAMETER "{" parameter_block_body"}"
                     {
                         $$ = new ast::ParamBlock($3);
                     }
                 ;
 
 
-parmbody        :   {
+parameter_block_body :
+                    {
                         $$ = ast::ParamAssignVector();
                     }
-                |   parmbody parmasgn
+                |   parameter_block_body parameter_assignment
                     {
                         $1.emplace_back($2);
                         $$ = $1;
@@ -548,7 +584,7 @@ parmbody        :   {
                 ;
 
 
-parmasgn        :   NAME_PTR "=" number units limits
+parameter_assignment :  NAME_PTR "=" number units limits
                     {
                         $$ = new ast::ParamAssign($1, $3, $4, $5);
                     }
@@ -562,19 +598,24 @@ parmasgn        :   NAME_PTR "=" number units limits
                     }
                 |   error
                     {
-                        error(scanner.loc, "parmasgn");
+                        error(scanner.loc, "parameter_assignment");
                     }
                 ;
 
 
-units           :           {   $$ = nullptr;  }
-                |   unit    {   $$ = $1;    }
+units           :   {
+                        $$ = nullptr;
+                    }
+                |   unit
+                    {
+                        $$ = $1;
+                    }
                 ;
 
 
 unit            :   "(" { scanner.scan_unit(); } ")"
                     {
-                        // @todo : empty units should be handled in semantic analysis
+                        // @todo Empty units should be handled in semantic analysis
                         auto unit = scanner.get_unit();
                         auto text = unit->eval();
                         $$ = new ast::Unit(unit);
@@ -582,7 +623,7 @@ unit            :   "(" { scanner.scan_unit(); } ")"
                 ;
 
 
-uniton          :   UNITSON
+unit_state      :   UNITSON
                     {
                         $$ = new ast::UnitState(ast::UNIT_ON);
                     }
@@ -593,23 +634,27 @@ uniton          :   UNITSON
                 ;
 
 
-limits          :   {   $$ = nullptr;  }
-                |   LT real "," real GT
+limits          :   {
+                        $$ = nullptr;
+                    }
+                |   LT double "," double GT
                     {
                         $$ = new ast::Limits($2, $4);
                     }
                 ;
 
 
-stepblk         :   STEPPED "{" stepbdy "}"
+step_block      :   STEPPED "{" step_block_body "}"
                     {
                         $$ = new ast::StepBlock($3);
                     }
                 ;
 
 
-stepbdy         :   {   $$ = ast::SteppedVector();    }
-                |   stepbdy stepped
+step_block_body :   {
+                        $$ = ast::SteppedVector();
+                    }
+                |   step_block_body stepped_statement
                     {
                             $1.emplace_back($2);
                             $$ = $1;
@@ -617,20 +662,20 @@ stepbdy         :   {   $$ = ast::SteppedVector();    }
                 ;
 
 
-stepped         :   NAME_PTR "=" numlist units
+stepped_statement : NAME_PTR "=" number_list units
                     {
                         $$ = new ast::Stepped($1, $3, $4);
                     }
                 ;
 
 
-numlist         :   number "," number
+number_list     :   number "," number
                     {
                         $$ = ast::NumberVector();
                         $$.emplace_back($1);
                         $$.emplace_back($3);
                     }
-                |   numlist "," number
+                |   number_list "," number
                     {
                         $1.emplace_back($3);
                         $$ = $1;
@@ -638,12 +683,21 @@ numlist         :   number "," number
                 ;
 
 
-name            :   Name    {   $$ = $1;            }
-                |   PRIME   {   $$ = $1.clone();    }
+name            :   Name
+                    {
+                        $$ = $1;
+                    }
+                |   PRIME
+                    {
+                        $$ = $1.clone();
+                    }
                 ;
 
 
-number          :   NUMBER  {   $$ = $1;    }
+number          :   NUMBER
+                    {
+                        $$ = $1;
+                    }
                 |   "-" NUMBER
                     {
                         $2->negate();
@@ -652,17 +706,32 @@ number          :   NUMBER  {   $$ = $1;    }
                 ;
 
 
-NUMBER          :   integer     {   $$ = $1;            }
-                |   REAL        {   $$ = $1.clone();    }
+NUMBER          :   integer
+                    {
+                        $$ = $1;
+                    }
+                |   REAL
+                    {
+                        $$ = $1.clone();
+                    }
                 ;
 
 
-integer         :   INTEGER_PTR     {   $$ = $1;        }
-                |   DEFINEDVAR  {   $$ = $1.clone();    }
+integer         :   INTEGER_PTR
+                    {
+                        $$ = $1;
+                    }
+                |   DEFINEDVAR
+                    {
+                        $$ = $1.clone();
+                    }
                 ;
 
 
-real            :   REAL        {   $$ = $1.clone();    }
+double          :   REAL
+                    {
+                        $$ = $1.clone();
+                    }
                 |   integer
                     {
                         $$ = new ast::Double(double($1->eval()));
@@ -671,22 +740,23 @@ real            :   REAL        {   $$ = $1.clone();    }
                 ;
 
 
-indepblk        :   INDEPENDENT "{" indepbody "}"
+independent_block : INDEPENDENT "{" independent_block_body "}"
                     {
                         $$ = new ast::IndependentBlock($3);
                     }
                 ;
 
 
-indepbody       :   {
-                        $$ = ast::IndependentDefVector();
+independent_block_body :
+                    {
+                        $$ = ast::IndependentDefinitionVector();
                     }
-                |   indepbody indepdef
+                |   independent_block_body independent_definition
                     {
                         $1.emplace_back($2);
                         $$ = $1;
                     }
-                |   indepbody SWEEP indepdef
+                |   independent_block_body SWEEP independent_definition
                     {
                         $1.emplace_back($3);
                         $3->set_sweep(std::make_shared<ast::Boolean>(1));
@@ -695,13 +765,13 @@ indepbody       :   {
                 ;
 
 
-indepdef        :   NAME_PTR FROM number TO number withby integer opstart units
+independent_definition :  NAME_PTR FROM number TO number withby integer optional_start units
                     {
-                        $$ = new ast::IndependentDef(NULL, $1, $3, $5, $7, $8, $9);
+                        $$ = new ast::IndependentDefinition(NULL, $1, $3, $5, $7, $8, $9);
                     }
                 |   error
                     {
-                        error(scanner.loc, "indepdef");
+                        error(scanner.loc, "independent_definition");
                     }
                 ;
 
@@ -710,17 +780,18 @@ withby          :   WITH
                 ;
 
 
-depblk          :   DEPENDENT "{" depbody"}"
+dependent_block :   ASSIGNED "{" dependent_block_body "}"
                     {
-                        $$ = new ast::DependentBlock($3);
+                        $$ = new ast::AssignedBlock($3);
                     }
                 ;
 
 
-depbody         :   {
-                        $$ = ast::DependentDefVector();
+dependent_block_body :
+                    {
+                        $$ = ast::AssignedDefinitionVector();
                     }
-                |   depbody depdef
+                |   dependent_block_body dependent_definition
                     {
                         $1.emplace_back($2);
                         $$ = $1;
@@ -728,64 +799,76 @@ depbody         :   {
                 ;
 
 
-depdef          :   name opstart units abstol
+dependent_definition : name optional_start units abs_tolerance
                     {
-                        $$ = new ast::DependentDef($1, NULL, NULL, NULL, $2, $3, $4);
+                        $$ = new ast::AssignedDefinition($1, NULL, NULL, NULL, $2, $3, $4);
                     }
-                |   name "[" integer "]" opstart units abstol
+                |   name "[" integer "]" optional_start units abs_tolerance
                     {
-                        $$ = new ast::DependentDef($1, $3, NULL, NULL, $5, $6, $7);
+                        $$ = new ast::AssignedDefinition($1, $3, NULL, NULL, $5, $6, $7);
                     }
-                |   name FROM number TO number opstart units abstol
+                |   name FROM number TO number optional_start units abs_tolerance
                     {
-                        $$ = new ast::DependentDef($1, NULL, $3, $5, $6, $7, $8);
+                        $$ = new ast::AssignedDefinition($1, NULL, $3, $5, $6, $7, $8);
                     }
-                |   name "[" integer "]" FROM number TO number opstart units abstol
+                |   name "[" integer "]" FROM number TO number optional_start units abs_tolerance
                     {
-                        $$ = new ast::DependentDef($1, $3, $6, $8, $9, $10, $11);
+                        $$ = new ast::AssignedDefinition($1, $3, $6, $8, $9, $10, $11);
                     }
                 |   error
                     {
-                        error(scanner.loc, "depdef");
+                        error(scanner.loc, "dependent_definition");
                     }
                 ;
 
 
-opstart         :                   {   $$ = nullptr;  }
-                |   START1 number   {   $$ = $2;    }
+optional_start  :
+                    {
+                        $$ = nullptr;
+                    }
+                |   START1 number
+                    {
+                        $$ = $2;
+                    }
                 ;
 
 
-abstol          :                   {   $$ = nullptr;  }
-                |   LT real GT      {   $$ = $2;    }
+abs_tolerance   :
+                    {
+                        $$ = nullptr;
+                    }
+                |   LT double GT
+                    {
+                        $$ = $2;
+                    }
                 ;
 
 
-stateblk        :   STATE  "{" depbody "}"
+state_block     :   STATE  "{" dependent_block_body "}"
                     {
                         $$ = new ast::StateBlock($3);
                     }
                 ;
 
 
-plotdecl        :   PLOT pvlist VS name optindex
+plot_declaration :  PLOT plot_variable_list VS name optional_index
                     {
                         $$ = new ast::PlotDeclaration($2, new ast::PlotVar($4,$5));
                     }
                 |   PLOT error
                     {
-                        error(scanner.loc, "plotdecl");
+                        error(scanner.loc, "plot_declaration");
                     }
                 ;
 
 
-pvlist          :   name optindex
+plot_variable_list : name optional_index
                     {
                         $$ = ast::PlotVarVector();
                         auto variable = new ast::PlotVar($1, $2);
                         $$.emplace_back(variable);
                     }
-                |   pvlist "," name optindex
+                |   plot_variable_list "," name optional_index
                     {
                         $$ = $1;
                         auto variable = new ast::PlotVar($3, $4);
@@ -794,64 +877,115 @@ pvlist          :   name optindex
                 ;
 
 
-optindex        :                       {   $$ = nullptr;   }
-                |   "[" INTEGER_PTR "]" {   $$ = $2;        }
+optional_index  :
+                    {
+                        $$ = nullptr;
+                    }
+                |   "[" INTEGER_PTR "]"
+                    {
+                        $$ = $2;
+                    }
                 ;
 
 
-proc            :   initblk             {   $$ = $1;    }
-                |   derivblk            {   $$ = $1;    }
-                |   brkptblk            {   $$ = $1;    }
-                |   linblk              {   $$ = $1;    }
-                |   nonlinblk           {   $$ = $1;    }
-                |   funcblk             {   $$ = $1;    }
-                |   procedblk           {   $$ = $1;    }
-                |   netrecblk           {   $$ = $1;    }
-                |   terminalblk         {   $$ = $1;    }
-                |   discretblk          {   $$ = $1;    }
-                |   partialblk          {   $$ = $1;    }
-                |   kineticblk          {   $$ = $1;    }
-                |   constructblk        {   $$ = $1;    }
-                |   destructblk         {   $$ = $1;    }
-                |   functableblk        {   $$ = $1;    }
-                |   BEFORE bablk
+procedure       :   initial_block
+                    {
+                        $$ = $1;
+                    }
+                |   derivative_block
+                    {
+                        $$ = $1;
+                    }
+                |   breakpoint_block
+                    {
+                        $$ = $1;
+                    }
+                |   linear_block
+                    {
+                        $$ = $1;
+                    }
+                |   non_linear_block
+                    {
+                        $$ = $1;
+                    }
+                |   function_block
+                    {
+                        $$ = $1;
+                    }
+                |   procedure_block
+                    {
+                        $$ = $1;
+                    }
+                |   net_receive_block
+                    {
+                        $$ = $1;
+                    }
+                |   terminal_block
+                    {
+                        $$ = $1;
+                    }
+                |   discrete_block
+                    {
+                        $$ = $1;
+                    }
+                |   partial_block
+                    {
+                        $$ = $1;
+                    }
+                |   kinetic_block
+                    {
+                        $$ = $1;
+                    }
+                |   constructor_block
+                    {
+                        $$ = $1;
+                    }
+                |   destructor_block
+                    {
+                        $$ = $1;
+                    }
+                |   function_table_block
+                    {
+                        $$ = $1;
+                    }
+                |   BEFORE before_after_block
                     {
                         $$ = new ast::BeforeBlock($2);
                     }
-                |   AFTER bablk
+                |   AFTER before_after_block
                     {
                         $$ = new ast::AfterBlock($2);
                     }
                 ;
 
 
-initblk         :   INITIAL1 stmtlist "}"
+initial_block   :   INITIAL1 statement_list "}"
                     {
                         $$ = new ast::InitialBlock($2);
                     }
                 ;
 
 
-constructblk    :   CONSTRUCTOR stmtlist "}"
+constructor_block : CONSTRUCTOR statement_list "}"
                     {
                         $$ = new ast::ConstructorBlock($2);
                     }
                 ;
 
 
-destructblk     :   DESTRUCTOR stmtlist "}"
+destructor_block :  DESTRUCTOR statement_list "}"
                     {
                         $$ = new ast::DestructorBlock($2);
                     }
                 ;
 
 
-stmtlist        :   "{" stmtlist1
+statement_list  :   "{" optional_statement_list
                     {
                         $$ = new ast::StatementBlock($2);
                         $$->set_token($1);
                     }
-                |   "{" locallist stmtlist1
+                |   "{" local_statement optional_statement_list
                     {
                         $3.insert($3.begin(), std::shared_ptr<ast::LocalListStatement>($2));
                         $$ = new ast::StatementBlock($3);
@@ -860,7 +994,7 @@ stmtlist        :   "{" stmtlist1
                 ;
 
 
-conducthint     :   CONDUCTANCE Name
+conductance     :   CONDUCTANCE Name
                     {
                         $$ = new ast::ConductanceHint($2, NULL);
                     }
@@ -871,18 +1005,18 @@ conducthint     :   CONDUCTANCE Name
                 ;
 
 
-locallist       :   LOCAL locallist1
+local_statement :   LOCAL local_var_list
                     {
                         $$ = new ast::LocalListStatement($2);
                     }
                 |   LOCAL error
                     {
-                        error(scanner.loc, "locallist");
+                        error(scanner.loc, "local_statement");
                     }
                 ;
 
 
-locallist1      :   NAME_PTR locoptarray
+local_var_list  :   NAME_PTR optional_array_index
                     {
                         $$ = ast::LocalVarVector();
                         if($2) {
@@ -893,7 +1027,7 @@ locallist1      :   NAME_PTR locoptarray
                             $$.emplace_back(variable);
                         }
                     }
-                |   locallist1 "," NAME_PTR locoptarray
+                |   local_var_list "," NAME_PTR optional_array_index
                     {
                         if($4) {
                             auto variable = new ast::LocalVar(new ast::IndexedName($3, $4));
@@ -907,25 +1041,32 @@ locallist1      :   NAME_PTR locoptarray
                 ;
 
 
-locoptarray     :                       {   $$ = nullptr;  }
-                |   "[" integer "]"     {   $$ = $2;    }
+optional_array_index :
+                    {
+                        $$ = nullptr;
+                    }
+                |   "[" integer "]"
+                    {
+                        $$ = $2;
+                    }
                 ;
 
 
-stmtlist1       :   {
+optional_statement_list :
+                    {
                         $$ = ast::StatementVector();
                     }
-                |   stmtlist1 ostmt
+                |   optional_statement_list statement_type1
                     {
                         $1.emplace_back($2);
                         $$ = $1;
                     }
-                |   stmtlist1 astmt
+                |   optional_statement_list statement_type2
                     {
                         $1.emplace_back($2);
                         $$ = $1;
                     }
-                |   stmtlist1 LINE_COMMENT
+                |   optional_statement_list LINE_COMMENT
                     {
                         auto statement = new ast::LineComment(new ast::String($2));
                         $1.emplace_back(statement);
@@ -934,19 +1075,34 @@ stmtlist1       :   {
                 ;
 
 
-ostmt           :   fromstmt        {   $$ = $1;    }
-                |   forallstmt      {   $$ = $1;    }
-                |   whilestmt       {   $$ = $1;    }
-                |   ifstmt          {   $$ = $1;    }
-                |   stmtlist "}"
+statement_type1 :   from_statement
+                    {
+                        $$ = $1;
+                    }
+                |   forall_statement
+                    {
+                        $$ = $1;
+                    }
+                |   while_statement
+                    {
+                        $$ = $1;
+                    }
+                |   if_statement
+                    {
+                        $$ = $1;
+                    }
+                |   statement_list "}"
                     {
                         $$ = new ast::ExpressionStatement($1);
                     }
-                |   solveblk
+                |   solve_block
                     {
                         $$ = new ast::ExpressionStatement($1);
                     }
-                |   conducthint     {   $$ = $1;    }
+                |   conductance
+                    {
+                        $$ = $1;
+                    }
                 |   VERBATIM
                     {   auto text = parse_with_verbatim_parser($1);
                         $$ = new ast::Verbatim(new ast::String(text));
@@ -955,26 +1111,59 @@ ostmt           :   fromstmt        {   $$ = $1;    }
                     {   auto text = parse_with_verbatim_parser($1);
                         $$ = new ast::BlockComment(new ast::String(text));
                     }
-                |   sens            { $$ = $1; }
-                |   compart         { $$ = $1; }
-                |   ldifus          { $$ = $1; }
-                |   conserve        { $$ = $1; }
-                |   lagstmt         { $$ = $1; }
-                |   queuestmt       { $$ = $1; }
+                |   sens
+                    {
+                        $$ = $1;
+                    }
+                |   compartment
+                    {
+                        $$ = $1;
+                    }
+                |   longitudinal_diffusion
+                    {
+                        $$ = $1;
+                    }
+                |   conserve
+                    {
+                        $$ = $1;
+                    }
+                |   lag_statement
+                    {
+                        $$ = $1;
+                    }
+                |   queue_statement
+                    {
+                        $$ = $1;
+                    }
                 |   RESET
                     {
                         $$ = new ast::Reset();
                     }
-                |   matchblk
+                |   match_block
                     {
                         $$ = new ast::ExpressionStatement($1);
                     }
-                |   pareqn          { $$ = $1; }
-                |   tablestmt       { $$ = $1; }
-                |   uniton          { $$ = $1; }
-                |   initstmt        { $$ = $1; }
-                |   watchstmt       { $$ = $1; }
-                |   fornetcon
+                |   partial_equation
+                    {
+                        $$ = $1;
+                    }
+                |   table_statement
+                    {
+                        $$ = $1;
+                    }
+                |   unit_state
+                    {
+                        $$ = $1;
+                    }
+                |   initial_statement
+                    {
+                        $$ = $1;
+                    }
+                |   watch_statement
+                    {
+                        $$ = $1;
+                    }
+                |   for_netcon
                     {
                         $$ = new ast::ExpressionStatement($1);
                     }
@@ -988,28 +1177,31 @@ ostmt           :   fromstmt        {   $$ = $1;    }
                     }
                 |   error
                     {
-                        error(scanner.loc, "ostmt");
+                        error(scanner.loc, "statement_type1");
                     }
                 ;
 
 
-astmt           :   asgn
+statement_type2 :   assignment
                     {
                         $$ = new ast::ExpressionStatement($1);
                     }
-                |   PROTECT asgn
+                |   PROTECT assignment
                     {
                         $$ = new ast::ProtectStatement($2);
                     }
-                |   reaction      { $$ = $1; }
-                |   funccall
+                |   reaction_statement
+                    {
+                        $$ = $1;
+                    }
+                |   function_call
                     {
                         $$ = new ast::ExpressionStatement($1);
                     }
                 ;
 
 
-asgn            :   varname "=" expr
+assignment      :   variable_name "=" expression
                     {
                         auto expression = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_ASSIGN), $3);
                         auto name = $1->get_name();
@@ -1022,22 +1214,22 @@ asgn            :   varname "=" expr
                             $$ = expression;
                         }
                     }
-                |   nonlineqn expr "=" expr
+                |   nonlineqn expression "=" expression
                     {
                         $$ = new ast::NonLinEquation($2, $4);
                     }
-                |   lineqn leftlinexpr "=" linexpr
+                |   lineqn left_linear_expression "=" linear_expression
                     {
                         $$ = new ast::LinEquation($2, $4);
                     }
                 ;
 
 
-varname         :   name
+variable_name   :   name
                     {
                         $$ = new ast::VarName($1, nullptr, nullptr);
                     }
-                |   name "[" intexpr "]"
+                |   name "[" integer_expression "]"
                     {
                         $$ = new ast::VarName(new ast::IndexedName($1, $3), nullptr, nullptr);
                     }
@@ -1045,137 +1237,163 @@ varname         :   name
                     {
                         $$ = new ast::VarName($1, $3, nullptr);
                     }
-                |   NAME_PTR "@" integer "[" intexpr "]"
+                |   NAME_PTR "@" integer "[" integer_expression "]"
                     {
                         $$ = new ast::VarName($1, $3, $5);
                     }
                 ;
 
 
-intexpr         :   Name                    { $$ = $1; }
-                |   integer                 { $$ = $1; }
-                |   "(" intexpr ")"
+integer_expression : Name
                     {
-                        auto expr = new ast::ParenExpression($2);
-                        $$ = new ast::WrappedExpression(expr);
+                        $$ = $1;
                     }
-                |   intexpr "+" intexpr
+                |   integer
                     {
-                        auto expr = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_ADDITION), $3);
-                        $$ = new ast::WrappedExpression(expr);
+                        $$ = $1;
                     }
-                |   intexpr "-" intexpr
+                |   "(" integer_expression ")"
                     {
-                        auto expr = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_SUBTRACTION), $3);
-                        $$ = new ast::WrappedExpression(expr);
+                        auto expression = new ast::ParenExpression($2);
+                        $$ = new ast::WrappedExpression(expression);
                     }
-                |   intexpr "*" intexpr
+                |   integer_expression "+" integer_expression
                     {
-                        auto expr = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_MULTIPLICATION), $3);
-                        $$ = new ast::WrappedExpression(expr);
+                        auto expression = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_ADDITION), $3);
+                        $$ = new ast::WrappedExpression(expression);
                     }
-                |   intexpr "/" intexpr
+                |   integer_expression "-" integer_expression
                     {
-                        auto expr = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_DIVISION), $3);
-                        $$ = new ast::WrappedExpression(expr);
+                        auto expression = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_SUBTRACTION), $3);
+                        $$ = new ast::WrappedExpression(expression);
+                    }
+                |   integer_expression "*" integer_expression
+                    {
+                        auto expression = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_MULTIPLICATION), $3);
+                        $$ = new ast::WrappedExpression(expression);
+                    }
+                |   integer_expression "/" integer_expression
+                    {
+                        auto expression = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_DIVISION), $3);
+                        $$ = new ast::WrappedExpression(expression);
                     }
                 |   error
                     {
-                        error(scanner.loc, "intexpr");
+                        error(scanner.loc, "integer_expression");
                     }
                 ;
 
 
-expr            :   varname             { $$ = $1; }
-                |   flux_variable       { $$ = $1; }
-                |   real units
+expression      :   variable_name
+                    {
+                        $$ = $1;
+                    }
+                |   flux_variable
+                    {
+                        $$ = $1;
+                    }
+                |   double units
                     {
                         if($2)
                             $$ = new ast::DoubleUnit($1, $2);
                         else
                             $$ = $1;
                     }
-                |   funccall            { $$ = $1; }
-                |   "(" expr ")"
+                |   function_call
                     {
-                        auto expr = new ast::ParenExpression($2);
-                        $$ = new ast::WrappedExpression(expr);
+                        $$ = $1;
                     }
-                |   expr "+" expr
+                |   "(" expression ")"
                     {
-                        auto expr  = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_ADDITION), $3);
-                        $$ = new ast::WrappedExpression(expr);
+                        auto expression = new ast::ParenExpression($2);
+                        $$ = new ast::WrappedExpression(expression);
                     }
-                |   expr "-" expr
+                |   expression "+" expression
                     {
-                        auto expr  = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_SUBTRACTION), $3);
-                        $$ = new ast::WrappedExpression(expr);
+                        auto expression  = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_ADDITION), $3);
+                        $$ = new ast::WrappedExpression(expression);
                     }
-                |   expr "*" expr
+                |   expression "-" expression
                     {
-                        auto expr  = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_MULTIPLICATION), $3);
-                        $$ = new ast::WrappedExpression(expr);
+                        auto expression  = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_SUBTRACTION), $3);
+                        $$ = new ast::WrappedExpression(expression);
                     }
-                |   expr "/" expr
+                |   expression "*" expression
                     {
-                        auto expr  = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_DIVISION), $3);
-                        $$ = new ast::WrappedExpression(expr);
+                        auto expression  = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_MULTIPLICATION), $3);
+                        $$ = new ast::WrappedExpression(expression);
                     }
-                |   expr "^" expr
+                |   expression "/" expression
                     {
-                        auto expr  = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_POWER), $3);
-                        $$ = new ast::WrappedExpression(expr);
+                        auto expression  = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_DIVISION), $3);
+                        $$ = new ast::WrappedExpression(expression);
                     }
-                |   expr OR expr
+                |   expression "^" expression
+                    {
+                        auto expression  = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_POWER), $3);
+                        $$ = new ast::WrappedExpression(expression);
+                    }
+                |   expression OR expression
                     {
                         $$ = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_OR), $3);
                     }
-                |   expr AND expr
+                |   expression AND expression
                     {
                         $$ = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_AND), $3);
                     }
-                |   expr GT expr
+                |   expression GT expression
                     {
                         $$ = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_GREATER), $3);
                     }
-                |   expr LT expr
+                |   expression LT expression
                     {
                         $$ = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_LESS), $3);
                     }
-                |   expr GE expr
+                |   expression GE expression
                     {
                         $$ = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_GREATER_EQUAL), $3);
                     }
-                |   expr LE expr
+                |   expression LE expression
                     {
                         $$ = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_LESS_EQUAL), $3);
                     }
-                |   expr EQ expr
+                |   expression EQ expression
                     {
                         $$ = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_EXACT_EQUAL), $3);
                     }
-                |   expr NE expr
+                |   expression NE expression
                     {
                         $$ = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_NOT_EQUAL), $3);
                     }
-                |   NOT expr
+                |   NOT expression
                     {
                         $$ = new ast::UnaryExpression(ast::UnaryOperator(ast::UOP_NOT), $2);
                     }
-                |   "-" expr %prec UNARYMINUS
+                |   "-" expression %prec UNARYMINUS
                     {
                         $$ = new ast::UnaryExpression(ast::UnaryOperator(ast::UOP_NEGATION), $2);
                     }
                 |   error
                     {
-                        error(scanner.loc, "expr");
+                        error(scanner.loc, "expression");
                     }
                 ;
 
-                /** \todo Add extra rules for better error reporting :
-                | "(" expr      { yyerror("Unbalanced left parenthesis followed by valid expressions"); }
-                | "(" error     { yyerror("Unbalanced left parenthesis followed by non parseable"); }
-                |  expr ")"     { yyerror("Unbalanced right parenthesis"); }
+                /**
+                    \todo Add extra rules for better error reporting
+
+                | "(" expression
+                    {
+                        yyerror("Unbalanced left parenthesis followed by valid expressions");
+                    }
+                | "(" error
+                    {
+                        yyerror("Unbalanced left parenthesis followed by non parseable");
+                    }
+                |  expression ")"
+                    {
+                        yyerror("Unbalanced right parenthesis");
+                    }
                 */
 
 
@@ -1187,27 +1405,36 @@ lineqn          : LIN1
                 ;
 
 
-leftlinexpr     : linexpr       { $$ = $1; }
+left_linear_expression : linear_expression
+                {
+                    $$ = $1;
+                }
                 ;
 
 
-linexpr         :   primary     { $$ = $1; }
+linear_expression : primary
+                {
+                    $$ = $1;
+                }
                 |   "-" primary
                     {
                         $$ = new ast::UnaryExpression(ast::UnaryOperator(ast::UOP_NEGATION), $2);
                     }
-                |   linexpr "+" primary
+                |   linear_expression "+" primary
                     {
                         $$ = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_ADDITION), $3);
                     }
-                |   linexpr "-" primary
+                |   linear_expression "-" primary
                     {
                         $$ = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_SUBTRACTION), $3);
                     }
                 ;
 
 
-primary         :   term        { $$ = $1; }
+primary         :   term
+                    {
+                        $$ = $1;
+                    }
                 |   primary "*" term
                     {
                         $$ = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_MULTIPLICATION), $3);
@@ -1219,10 +1446,22 @@ primary         :   term        { $$ = $1; }
                 ;
 
 
-term            :   varname         { $$ = $1; }
-                |   real            { $$ = $1; }
-                |   funccall        { $$ = $1; }
-                |   "(" expr ")"    { $$ = new ast::ParenExpression($2); }
+term            :   variable_name
+                    {
+                        $$ = $1;
+                    }
+                |   double
+                    {
+                        $$ = $1;
+                    }
+                |   function_call
+                    {
+                        $$ = $1;
+                    }
+                |   "(" expression ")"
+                    {
+                        $$ = new ast::ParenExpression($2);
+                    }
                 |   error
                     {
                         error(scanner.loc, "term");
@@ -1230,7 +1469,7 @@ term            :   varname         { $$ = $1; }
                 ;
 
 
-funccall        :   NAME_PTR "(" exprlist ")"
+function_call   :   NAME_PTR "(" expression_list ")"
                     {
                         auto expression = new ast::FunctionCall($1, $3);
                         $$ = new ast::WrappedExpression(expression);
@@ -1238,10 +1477,10 @@ funccall        :   NAME_PTR "(" exprlist ")"
                 ;
 
 
-exprlist        :   {
+expression_list :   {
                         $$ = ast::ExpressionVector();
                     }
-                |   expr
+                |   expression
                     {
                         $$ = ast::ExpressionVector();
                         $$.emplace_back($1);
@@ -1251,12 +1490,12 @@ exprlist        :   {
                         $$ = ast::ExpressionVector();
                         $$.emplace_back($1);
                     }
-                |   exprlist "," expr
+                |   expression_list "," expression
                     {
                         $1.emplace_back($3);
                         $$ = $1;
                     }
-                |   exprlist "," STRING_PTR
+                |   expression_list "," STRING_PTR
                     {
                         $1.emplace_back($3);
                         $$ = $1;
@@ -1264,51 +1503,57 @@ exprlist        :   {
                 ;
 
 
-fromstmt        :   FROM NAME_PTR "=" intexpr TO intexpr opinc stmtlist "}"
+from_statement  :   FROM NAME_PTR "=" integer_expression TO integer_expression optional_increment statement_list "}"
                     {
                         $$ = new ast::FromStatement($2, $4, $6, $7, $8);
                     }
                 |   FROM error
                     {
-                        error(scanner.loc, "fromstmt");
+                        error(scanner.loc, "from_statement");
                     }
                 ;
 
 
-opinc           :               { $$ = nullptr; }
-                | BY intexpr    { $$ = $2; }
+optional_increment :
+                    {
+                        $$ = nullptr;
+                    }
+                | BY integer_expression
+                    {
+                        $$ = $2;
+                    }
                 ;
 
 
-forallstmt      :   FORALL1 NAME_PTR stmtlist "}"
+forall_statement :  FORALL1 NAME_PTR statement_list "}"
                     {
                         $$ = new ast::ForAllStatement($2, $3);
                     }
                 |   FORALL1 error
                     {
-                        error(scanner.loc, "forallstmt");
+                        error(scanner.loc, "forall_statement");
                     }
                 ;
 
 
-whilestmt       :   WHILE "(" expr ")" stmtlist "}"
+while_statement :   WHILE "(" expression ")" statement_list "}"
                     {
                         $$ = new ast::WhileStatement($3, $5);
                     }
                 ;
 
 
-ifstmt          :   IF "(" expr ")" stmtlist "}" optelseif optelse
+if_statement    :   IF "(" expression ")" statement_list "}" optional_else_if optional_else
                     {
                         $$ = new ast::IfStatement($3, $5, $7, $8);
                     }
                 ;
 
 
-optelseif       :   {
+optional_else_if :  {
                         $$ = ast::ElseIfStatementVector();
                     }
-                |   optelseif ELSE IF "(" expr ")" stmtlist "}"
+                |   optional_else_if ELSE IF "(" expression ")" statement_list "}"
                     {
                         $1.emplace_back(new ast::ElseIfStatement($5, $7));
                         $$ = $1;
@@ -1316,15 +1561,17 @@ optelseif       :   {
                 ;
 
 
-optelse         :   { $$ = nullptr; }
-                |   ELSE stmtlist "}"
+optional_else   :   {
+                        $$ = nullptr;
+                    }
+                |   ELSE statement_list "}"
                     {
                         $$ = new ast::ElseStatement($2);
                     }
                 ;
 
 
-derivblk        :   DERIVATIVE NAME_PTR stmtlist "}"
+derivative_block :  DERIVATIVE NAME_PTR statement_list "}"
                     {
                         $$ = new ast::DerivativeBlock($2, $3);
                         $$->set_token($1);
@@ -1332,7 +1579,7 @@ derivblk        :   DERIVATIVE NAME_PTR stmtlist "}"
                 ;
 
 
-linblk          :   LINEAR NAME_PTR solvefor stmtlist "}"
+linear_block    :   LINEAR NAME_PTR optional_solvefor statement_list "}"
                     {
                         $$ = new ast::LinearBlock($2, $3, $4);
                         $$->set_token($1);
@@ -1340,7 +1587,7 @@ linblk          :   LINEAR NAME_PTR solvefor stmtlist "}"
                 ;
 
 
-nonlinblk       :   NONLINEAR NAME_PTR solvefor stmtlist "}"
+non_linear_block :  NONLINEAR NAME_PTR optional_solvefor statement_list "}"
                     {
                         $$ = new ast::NonLinearBlock($2, $3, $4);
                         $$->set_token($1);
@@ -1348,43 +1595,43 @@ nonlinblk       :   NONLINEAR NAME_PTR solvefor stmtlist "}"
                 ;
 
 
-discretblk      :   DISCRETE NAME_PTR stmtlist "}"
+discrete_block  :   DISCRETE NAME_PTR statement_list "}"
                     {
                         $$ = new ast::DiscreteBlock($2, $3);
-                        // todo : disabled symbol table, remove this
+                        // todo Disabled symbol table, remove this
                         //$$->set_token($1);
                     }
                 ;
 
 
-partialblk      :   PARTIAL NAME_PTR stmtlist "}"
+partial_block   :   PARTIAL NAME_PTR statement_list "}"
                     {
                         $$ = new ast::PartialBlock($2, $3);
                         $$->set_token($1);
                     }
                 |   PARTIAL error
                     {
-                        error(scanner.loc, "partialblk");
+                        error(scanner.loc, "partial_block");
                     }
                 ;
 
 
-pareqn          :   "~" PRIME "=" NAME_PTR "*" DEL2 "(" NAME_PTR ")" "+" NAME_PTR
+partial_equation :  "~" PRIME "=" NAME_PTR "*" DEL2 "(" NAME_PTR ")" "+" NAME_PTR
                     {
                         $$ = new ast::PartialBoundary(NULL, $2.clone(), NULL, NULL, $4, $6.clone(), $8, $11);
                     }
-                |   "~" DEL NAME_PTR "[" firstlast "]" "=" expr
+                |   "~" DEL NAME_PTR "[" first_last "]" "=" expression
                     {
                         $$ = new ast::PartialBoundary($2.clone(), $3, $5, $8, NULL, NULL, NULL, NULL);
                     }
-                |   "~" NAME_PTR "[" firstlast "]" "=" expr
+                |   "~" NAME_PTR "[" first_last "]" "=" expression
                     {
                         $$ = new ast::PartialBoundary(NULL, $2, $4, $7, NULL, NULL, NULL, NULL);
                     }
                 ;
 
 
-firstlast       :   FIRST
+first_last      :   FIRST
                     {
                         $$ = new ast::FirstLastTypeIndex(ast::PEQ_FIRST);
                     }
@@ -1395,15 +1642,15 @@ firstlast       :   FIRST
                 ;
 
 
-functableblk    :   FUNCTION_TABLE NAME_PTR "(" arglist ")" units
-                    {
+function_table_block : FUNCTION_TABLE NAME_PTR "(" optional_argument_list ")" units
+                {
                         $$ = new ast::FunctionTableBlock($2, $4, $6);
                         $$->set_token($1);
-                    }
+                }
                 ;
 
 
-funcblk         :   FUNCTION1 NAME_PTR "(" arglist ")" units stmtlist "}"
+function_block  :   FUNCTION1 NAME_PTR "(" optional_argument_list ")" units statement_list "}"
                     {
                         $$ = new ast::FunctionBlock($2, $4, $6, $7);
                         $$->set_token($1);
@@ -1411,19 +1658,23 @@ funcblk         :   FUNCTION1 NAME_PTR "(" arglist ")" units stmtlist "}"
                 ;
 
 
-arglist         :   {
+optional_argument_list :
+                    {
                         $$ = ast::ArgumentVector();
                     }
-                |   arglist1 { $$ = $1; }
+                |   argument_list
+                    {
+                        $$ = $1;
+                    }
                 ;
 
 
-arglist1        :   name units
+argument_list   :   name units
                     {
                         $$ = ast::ArgumentVector();
                         $$.emplace_back(new ast::Argument($1, $2));
                     }
-                |   arglist1 "," name units
+                |   argument_list "," name units
                     {
                         $1.emplace_back(new ast::Argument($3, $4));
                         $$ = $1;
@@ -1431,139 +1682,151 @@ arglist1        :   name units
                 ;
 
 
-procedblk       :   PROCEDURE NAME_PTR "(" arglist ")" units stmtlist "}"
+procedure_block :   PROCEDURE NAME_PTR "(" optional_argument_list ")" units statement_list "}"
                     {
-                            $$ = new ast::ProcedureBlock($2, $4, $6, $7); $$->set_token($1);
+                        $$ = new ast::ProcedureBlock($2, $4, $6, $7); $$->set_token($1);
                     }
                 ;
 
 
-netrecblk       :   NETRECEIVE "(" arglist ")" stmtlist "}"
+net_receive_block : NETRECEIVE "(" optional_argument_list ")" statement_list "}"
                     {
                         $$ = new ast::NetReceiveBlock($3, $5);
                     }
                 |   NETRECEIVE error
                     {
-                        error(scanner.loc, "netrecblk");
+                        error(scanner.loc, "net_receive_block");
                     }
                 ;
 
 
-initstmt        :   INITIAL1 stmtlist "}"
+initial_statement : INITIAL1 statement_list "}"
                     {
                         $$ = new ast::ExpressionStatement(new ast::InitialBlock($2));
                     }
                 ;
 
 
-solveblk        :   SOLVE NAME_PTR ifsolerr
+solve_block     :   SOLVE NAME_PTR if_solution_error
                     {
                         $$ = new ast::SolveBlock($2, NULL, NULL, $3);
                     }
-                |   SOLVE NAME_PTR USING METHOD ifsolerr
+                |   SOLVE NAME_PTR USING METHOD if_solution_error
                     {
                         $$ = new ast::SolveBlock($2, $4.clone(), NULL, $5);
                     }
                 |
-                    SOLVE NAME_PTR STEADYSTATE METHOD ifsolerr
+                    SOLVE NAME_PTR STEADYSTATE METHOD if_solution_error
                     {
                         $$ = new ast::SolveBlock($2, NULL, $4.clone(), $5);
                     }
                 |   SOLVE error
                     {
-                        error(scanner.loc, "solveblk");
+                        error(scanner.loc, "solve_block");
                     }
                 ;
 
 
-ifsolerr        :                           { $$ = nullptr; }
-                |   IFERROR stmtlist "}"    { $$ = $2; }
+if_solution_error :
+                    {
+                        $$ = nullptr;
+                    }
+                |   IFERROR statement_list "}"
+                    {
+                        $$ = $2;
+                    }
                 ;
 
 
-solvefor        :                           { $$ = ast::NameVector(); }
-                | solvefor1                 { $$ = $1; }
+optional_solvefor :
+                    {
+                        $$ = ast::NameVector();
+                    }
+                |   solvefor
+                    {
+                        $$ = $1;
+                    }
                 ;
 
 
-solvefor1       :   SOLVEFOR NAME_PTR
+solvefor        :   SOLVEFOR NAME_PTR
                     {
                         $$ = ast::NameVector();
                         $$.emplace_back($2);
                     }
-                |   solvefor1 "," NAME_PTR
+                |   solvefor "," NAME_PTR
                     {
                         $1.emplace_back($3);
                         $$ = $1;
                     }
                 |   SOLVEFOR error
                     {
-                        error(scanner.loc, "solvefor1");
+                        error(scanner.loc, "solvefor");
                     }
                 ;
 
 
-brkptblk        :   BREAKPOINT stmtlist "}"
+breakpoint_block :  BREAKPOINT statement_list "}"
                     {
                         $$ = new ast::BreakpointBlock($2);
                     }
                 ;
 
 
-terminalblk     :   TERMINAL stmtlist "}"
+terminal_block  :   TERMINAL statement_list "}"
                     {
                         $$ = new ast::TerminalBlock($2);
                     }
                 ;
 
 
-bablk           :   BREAKPOINT stmtlist "}"
+before_after_block : BREAKPOINT statement_list "}"
                     {
                         $$ = new ast::BABlock(new ast::BABlockType(ast::BATYPE_BREAKPOINT), $2);
                     }
-                |   SOLVE stmtlist "}"
+                |   SOLVE statement_list "}"
                     {
                         $$ = new ast::BABlock(new ast::BABlockType(ast::BATYPE_SOLVE), $2);
                     }
-                |   INITIAL1 stmtlist "}"
+                |   INITIAL1 statement_list "}"
                     {
                         $$ = new ast::BABlock(new ast::BABlockType(ast::BATYPE_INITIAL), $2);
                     }
-                |   STEP stmtlist "}"
+                |   STEP statement_list "}"
                     {
                         $$ = new ast::BABlock(new ast::BABlockType(ast::BATYPE_STEP), $2);
                     }
                 |   error
                     {
-                        error(scanner.loc, "bablk");
+                        error(scanner.loc, "before_after_block");
                     }
                 ;
 
 
-watchstmt       :   WATCH watch1
+watch_statement :   WATCH watch
                     {
                         $$ = new ast::WatchStatement(ast::WatchVector());
                         $$->addWatch($2);
                     }
-                |   watchstmt "," watch1
+                |   watch_statement "," watch
                     {
                         $1->addWatch($3); $$ = $1;
                     }
                 |   WATCH error
                     {
-                        error(scanner.loc, "watchstmt");
+                        error(scanner.loc, "watch_statement");
                     }
                 ;
 
 
-watch1          :   "(" aexpr watchdir aexpr ")" real
+watch           :   "(" watch_expression watch_direction watch_expression ")" double
                     {
                         $$ = new ast::Watch( new ast::BinaryExpression($2, $3, $4), $6);
                     }
                 ;
 
 
-watchdir        :   GT
+watch_direction :   GT
                     {
                         $$ = ast::BinaryOperator(ast::BOP_GREATER);
                     }
@@ -1574,56 +1837,65 @@ watchdir        :   GT
                 ;
 
 
-fornetcon       :   FOR_NETCONS "(" arglist ")" stmtlist "}"
+for_netcon      :   FOR_NETCONS "(" optional_argument_list ")" statement_list "}"
                     {
                         $$ = new ast::ForNetcon($3, $5);
                     }
                 |   FOR_NETCONS error
                     {
-                        error(scanner.loc, "fornetcon");
+                        error(scanner.loc, "for_netcon");
                     }
                 ;
 
 
-aexpr           :   varname                 { $$ = $1; }
-                |   real units
+watch_expression :  variable_name
+                    {
+                        $$ = $1;
+                    }
+                |   double units
                     {
                         $$ = new ast::DoubleUnit($1, $2);
                     }
-                |   funccall                { $$ = $1; }
-                |   "(" aexpr ")"           { $$ = new ast::ParenExpression($2); }
-                |   aexpr "+" aexpr
+                |   function_call
+                    {
+                        $$ = $1;
+                    }
+                |   "(" watch_expression ")"
+                    {
+                        $$ = new ast::ParenExpression($2);
+                    }
+                |   watch_expression "+" watch_expression
                     {
                         $$ = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_ADDITION), $3);
                     }
-                |   aexpr "-" aexpr
+                |   watch_expression "-" watch_expression
                     {
                         $$ = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_SUBTRACTION), $3);
                     }
-                |   aexpr "*" aexpr
+                |   watch_expression "*" watch_expression
                     {
                         $$ = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_MULTIPLICATION), $3);
                     }
-                |   aexpr "/" aexpr
+                |   watch_expression "/" watch_expression
                     {
                         $$ = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_DIVISION), $3);
                     }
-                |   aexpr "^" aexpr
+                |   watch_expression "^" watch_expression
                     {
                         $$ = new ast::BinaryExpression($1, ast::BinaryOperator(ast::BOP_POWER), $3);
                     }
-                |   "-" aexpr %prec UNARYMINUS
+                |   "-" watch_expression %prec UNARYMINUS
                     {
                         $$ = new ast::UnaryExpression(ast::UnaryOperator(ast::UOP_NEGATION), $2);
                     }
                 |   error
                     {
-                        error(scanner.loc, "aexpr");
+                        error(scanner.loc, "watch_expression");
                     }
                 ;
 
 
-sens            :   SENS senslist
+sens            :   SENS sens_list
                     {
                         $$ = new ast::Sens($2);
                     }
@@ -1634,12 +1906,12 @@ sens            :   SENS senslist
                 ;
 
 
-senslist        :   varname
+sens_list       :   variable_name
                     {
                         $$ = ast::VarNameVector();
                         $$.emplace_back($1);
                     }
-                |   senslist "," varname
+                |   sens_list "," variable_name
                     {
                         $1.emplace_back($3);
                         $$ = $1;
@@ -1647,7 +1919,7 @@ senslist        :   varname
                 ;
 
 
-conserve        :   CONSERVE react "=" expr
+conserve        :   CONSERVE react "=" expression
                     {
                         $$ = new ast::Conserve($2, $4);
                     }
@@ -1658,34 +1930,34 @@ conserve        :   CONSERVE react "=" expr
                 ;
 
 
-compart         :   COMPARTMENT NAME_PTR "," expr "{" namelist "}"
+compartment     :   COMPARTMENT NAME_PTR "," expression "{" name_list "}"
                     {
                         $$ = new ast::Compartment($2, $4, $6);
                     }
-                |   COMPARTMENT expr "{" namelist "}"
+                |   COMPARTMENT expression "{" name_list "}"
                     {
                         $$ = new ast::Compartment(NULL, $2, $4);
                     }
                 ;
 
 
-ldifus          :   LONGDIFUS NAME_PTR "," expr "{" namelist "}"
+longitudinal_diffusion : LONGDIFUS NAME_PTR "," expression "{" name_list "}"
                     {
                         $$ = new ast::LonDifuse($2, $4, $6);
                     }
-                |   LONGDIFUS expr "{" namelist "}"
+                |   LONGDIFUS expression "{" name_list "}"
                     {
                         $$ = new ast::LonDifuse(NULL, $2, $4);
                     }
                 ;
 
 
-namelist        :   NAME_PTR
+name_list       :   NAME_PTR
                     {
                         $$ = ast::NameVector();
                         $$.emplace_back($1);
                     }
-                |   namelist NAME_PTR
+                |   name_list NAME_PTR
                     {
                         $1.emplace_back($2);
                         $$ = $1;
@@ -1693,7 +1965,7 @@ namelist        :   NAME_PTR
                 ;
 
 
-kineticblk      :   KINETIC NAME_PTR solvefor stmtlist "}"
+kinetic_block   :   KINETIC NAME_PTR optional_solvefor statement_list "}"
                     {
                         $$ = new ast::KineticBlock($2, $3, $4);
                         $$->set_token($1);
@@ -1701,43 +1973,43 @@ kineticblk      :   KINETIC NAME_PTR solvefor stmtlist "}"
                 ;
 
 
-reaction        :   REACTION react REACT1 react "(" expr "," expr ")"
+reaction_statement : REACTION react REACT1 react "(" expression "," expression ")"
                     {
                         auto op = ast::ReactionOperator(ast::LTMINUSGT);
                         $$ = new ast::ReactionStatement($2, op, $4, $6, $8);
                     }
-                |   REACTION react LT LT  "(" expr ")"
+                |   REACTION react LT LT  "(" expression ")"
                     {
                         auto op = ast::ReactionOperator(ast::LTLT);
                         $$ = new ast::ReactionStatement($2, op, NULL, $6, NULL);
                     }
-                |   REACTION react "-" GT "(" expr ")"
+                |   REACTION react "-" GT "(" expression ")"
                     {
                         auto op = ast::ReactionOperator(ast::MINUSGT);
                         $$ = new ast::ReactionStatement($2, op, NULL, $6, NULL);
                     }
                 |   REACTION error
                     {
-                        /** \todo Need to revisit reaction implementation */
+                        /** \todo Need to revisit reaction_statement implementation */
                     }
                 ;
 
 
-react           :   varname
+react           :   variable_name
                     {
                         $$ = new ast::ReactVarName(nullptr, $1);
                     }
-                |   integer varname
+                |   integer variable_name
                     {
                         $$ = new ast::ReactVarName($1, $2);
                     }
-                |   react "+" varname
+                |   react "+" variable_name
                     {
                         auto op = ast::BinaryOperator(ast::BOP_ADDITION);
                         auto variable = new ast::ReactVarName(nullptr, $3);
                         $$ = new ast::BinaryExpression($1, op, variable);
                     }
-                |   react "+" integer varname
+                |   react "+" integer variable_name
                     {
                         auto op = ast::BinaryOperator(ast::BOP_ADDITION);
                         auto variable = new ast::ReactVarName($3, $4);
@@ -1746,18 +2018,18 @@ react           :   varname
                 ;
 
 
-lagstmt         :   LAG name BY NAME_PTR
+lag_statement   :   LAG name BY NAME_PTR
                     {
                         $$ = new ast::LagStatement($2, $4);
                     }
                 |   LAG error
                     {
-                        error(scanner.loc, "lagstmt");
+                        error(scanner.loc, "lag_statement");
                     }
                 ;
 
 
-queuestmt       :   PUTQ name
+queue_statement :   PUTQ name
                     {
                         $$ = new ast::QueueStatement(new ast::QueueExpressionType(ast::PUT_QUEUE), $2);
                     }
@@ -1768,19 +2040,19 @@ queuestmt       :   PUTQ name
                 ;
 
 
-matchblk        :   MATCH "{" matchlist "}"
+match_block     :   MATCH "{" match_list "}"
                     {
                         $$ = new ast::MatchBlock($3);
                     }
                 ;
 
 
-matchlist       :   match
+match_list      :   match
                     {
                         $$ = ast::MatchVector();
                         $$.emplace_back($1);
                     }
-                |   matchlist match
+                |   match_list match
                     {
                         $1.emplace_back($2);
                         $$ = $1;
@@ -1792,13 +2064,13 @@ match           :   name
                     {
                         $$ = new ast::Match($1, NULL);
                     }
-                |   matchname "(" expr ")" "=" expr
+                |   match_name "(" expression ")" "=" expression
                     {
                         auto op = ast::BinaryOperator(ast::BOP_ASSIGN);
                         auto lhs = new ast::ParenExpression($3);
                         auto rhs = $6;
-                        auto expr = new ast::BinaryExpression(lhs, op, rhs);
-                        $$ = new ast::Match($1, expr);
+                        auto expression = new ast::BinaryExpression(lhs, op, rhs);
+                        $$ = new ast::Match($1, expression);
                     }
                 |   error
                     {
@@ -1807,7 +2079,10 @@ match           :   name
                 ;
 
 
-matchname       :   name    { $$ = $1; }
+match_name      :   name
+                    {
+                        $$ = $1;
+                    }
                 |   name "[" NAME_PTR "]"
                     {
                         $$ = new ast::IndexedName($1, $3);
@@ -1815,22 +2090,22 @@ matchname       :   name    { $$ = $1; }
                 ;
 
 
-unitblk         :   UNITS "{" unitbody "}"
+unit_block      :   UNITS "{" unit_block_body "}"
                     {
                         $$ = new ast::UnitBlock($3);
                     }
                 ;
 
 
-unitbody        :   {
+unit_block_body :   {
                         $$ = ast::ExpressionVector();
                     }
-                |   unitbody unitdef
+                |   unit_block_body unit_definition
                     {
                         $1.emplace_back($2);
                         $$ = $1;
                     }
-                |   unitbody factordef
+                |   unit_block_body factor_definition
                     {
                         $1.emplace_back($2);
                         $$ = $1;
@@ -1838,18 +2113,18 @@ unitbody        :   {
                 ;
 
 
-unitdef         :   unit "=" unit
+unit_definition :   unit "=" unit
                     {
                         $$ = new ast::UnitDef($1, $3);
                     }
                 |   unit error
                     {
-                        error(scanner.loc, "unitdef ");
+                        error(scanner.loc, "unit_definition ");
                     }
                 ;
 
 
-factordef       :   NAME_PTR "=" real unit
+factor_definition : NAME_PTR "=" double unit
                     {
                         $$ = new ast::FactorDef($1, $3, $4, NULL, NULL);
                         $$->set_token(*($1->get_token()));
@@ -1871,17 +2146,18 @@ factordef       :   NAME_PTR "=" real unit
                 ;
 
 
-constblk        :   CONSTANT "{" conststmt "}"
+constant_block  :   CONSTANT "{" constant_statement "}"
                     {
                         $$ = new ast::ConstantBlock($3);
                     }
                 ;
 
 
-conststmt       :   {
+constant_statement :
+                    {
                         $$ = ast::ConstantStatementVector();
                     }
-                |   conststmt NAME_PTR "=" number units
+                |   constant_statement NAME_PTR "=" number units
                     {
                         auto constant = new ast::ConstantVar($2, $4, $5);
                         $1.emplace_back(new ast::ConstantStatement(constant));
@@ -1890,28 +2166,34 @@ conststmt       :   {
                 ;
 
 
-tablestmt       :   TABLE tablst dependlst FROM expr TO expr WITH INTEGER_PTR
+table_statement :   TABLE optional_table_var_list optional_dependent_var_list FROM expression TO expression WITH INTEGER_PTR
                     {
                         $$ = new ast::TableStatement($2, $3, $5, $7, $9);
                     }
                 |   TABLE error
                     {
-                        error(scanner.loc, "tablestmt");
+                        error(scanner.loc, "table_statement");
                     }
                 ;
 
 
-tablst          :               {   $$ = ast::NameVector(); }
-                |   tablst1     {   $$ = $1; }
+optional_table_var_list :
+                    {
+                        $$ = ast::NameVector();
+                    }
+                |   table_var_list
+                    {
+                        $$ = $1;
+                    }
                 ;
 
 
-tablst1         :   Name
+table_var_list  :   Name
                     {
                         $$ = ast::NameVector();
                         $$.emplace_back($1);
                     }
-                |   tablst1 "," Name
+                |   table_var_list "," Name
                     {
                         $1.emplace_back($3);
                         $$ = $1;
@@ -1919,12 +2201,18 @@ tablst1         :   Name
                 ;
 
 
-dependlst       :                       { $$ = ast::NameVector(); }
-                |   DEPEND tablst1      { $$ = $2; }
+optional_dependent_var_list :
+                    {
+                        $$ = ast::NameVector();
+                    }
+                |   DEPEND table_var_list
+                    {
+                        $$ = $2;
+                    }
                 ;
 
 
-neuronblk       :   NEURON OPEN_BRACE nrnstmt CLOSE_BRACE
+neuron_block    :   NEURON OPEN_BRACE neuron_statement CLOSE_BRACE
                     {
                         auto block = new ast::StatementBlock($3);
                         block->set_token($2);
@@ -1933,58 +2221,61 @@ neuronblk       :   NEURON OPEN_BRACE nrnstmt CLOSE_BRACE
                 ;
 
 
-nrnstmt         :   { $$ = ast::StatementVector(); }
-                |   nrnstmt SUFFIX NAME_PTR
+neuron_statement :
+                    {
+                        $$ = ast::StatementVector();
+                    }
+                |   neuron_statement SUFFIX NAME_PTR
                     {
                         $1.emplace_back(new ast::Suffix($2.clone(), $3));
                         $$ = $1;
                     }
-                |   nrnstmt nrnuse
+                |   neuron_statement use_ion_statement
                     {
                         $1.emplace_back($2);
                         $$ = $1;
                     }
-                |   nrnstmt NONSPECIFIC nrnonspeclist
+                |   neuron_statement NONSPECIFIC nonspecific_var_list
                     {
                         $1.emplace_back(new ast::Nonspecific($3));
                         $$ = $1;
                     }
-                |   nrnstmt ELECTRODE_CURRENT nrneclist
+                |   neuron_statement ELECTRODE_CURRENT electrode_current_var_list
                     {
                         $1.emplace_back(new ast::ElctrodeCurrent($3));
                         $$ = $1;
                     }
-                |   nrnstmt SECTION nrnseclist
+                |   neuron_statement SECTION section_var_list
                     {
                         $1.emplace_back(new ast::Section($3));
                         $$ = $1;
                     }
-                |   nrnstmt RANGE nrnrangelist
+                |   neuron_statement RANGE range_var_list
                     {
                         $1.emplace_back(new ast::Range($3));
                         $$ = $1;
                     }
-                |   nrnstmt GLOBAL nrnglobalist
+                |   neuron_statement GLOBAL global_var_list
                     {
                         $1.emplace_back(new ast::Global($3));
                         $$ = $1;
                     }
-                |   nrnstmt POINTER nrnptrlist
+                |   neuron_statement POINTER pointer_var_list
                     {
                         $1.emplace_back(new ast::Pointer($3));
                         $$ = $1;
                     }
-                |   nrnstmt BBCOREPOINTER nrnbbptrlist
+                |   neuron_statement BBCOREPOINTER bbcore_pointer_var_list
                     {
-                        $1.emplace_back(new ast::BbcorePtr($3));
+                        $1.emplace_back(new ast::BbcorePointer($3));
                         $$ = $1;
                     }
-                |   nrnstmt EXTERNAL nrnextlist
+                |   neuron_statement EXTERNAL external_var_list
                     {
                         $1.emplace_back(new ast::External($3));
                         $$ = $1;
                     }
-                |   nrnstmt THREADSAFE opthsafelist
+                |   neuron_statement THREADSAFE optional_threadsafe_var_list
                     {
                         $1.emplace_back(new ast::ThreadSafe($3));
                         $$ = $1;
@@ -1992,206 +2283,212 @@ nrnstmt         :   { $$ = ast::StatementVector(); }
                 ;
 
 
-nrnuse          :   USEION NAME_PTR READ nrnionrlist valence
+use_ion_statement : USEION NAME_PTR READ read_ion_list valence
                     {
                         $$ = new ast::Useion($2, $4, ast::WriteIonVarVector(), $5);
                     }
-                |   USEION NAME_PTR WRITE nrnionwlist valence
+                |   USEION NAME_PTR WRITE write_ion_list valence
                     {
                         $$ = new ast::Useion($2, ast::ReadIonVarVector(), $4, $5);
                     }
-                |   USEION NAME_PTR READ nrnionrlist WRITE nrnionwlist valence
+                |   USEION NAME_PTR READ read_ion_list WRITE write_ion_list valence
                     {
                         $$ = new ast::Useion($2, $4, $6, $7);
                     }
                 |   USEION error
                     {
-                        error(scanner.loc, "nrnuse");
+                        error(scanner.loc, "use_ion_statement");
                     }
                 ;
 
 
-nrnionrlist     :   NAME_PTR
+read_ion_list   :   NAME_PTR
                     {
                         $$ = ast::ReadIonVarVector();
                         $$.emplace_back(new ast::ReadIonVar($1));
                     }
-                |   nrnionrlist "," NAME_PTR
+                |   read_ion_list "," NAME_PTR
                     {
                         $1.emplace_back(new ast::ReadIonVar($3));
                         $$ = $1;
                     }
                 |   error
                     {
-                        error(scanner.loc, "nrnionrlist");
+                        error(scanner.loc, "read_ion_list");
                     }
                 ;
 
 
-nrnionwlist     :   NAME_PTR
+write_ion_list  :   NAME_PTR
                     {
                         $$ = ast::WriteIonVarVector();
                         $$.emplace_back(new ast::WriteIonVar($1));
                     }
-                |   nrnionwlist "," NAME_PTR
+                |   write_ion_list "," NAME_PTR
                     {
                         $1.emplace_back(new ast::WriteIonVar($3));
                         $$ = $1;
                     }
                 |   error
                     {
-                        error(scanner.loc, "nrnionwlist");
+                        error(scanner.loc, "write_ion_list");
                     }
                 ;
 
 
-nrnonspeclist   :   NAME_PTR
+nonspecific_var_list : NAME_PTR
                     {
                         $$ = ast::NonspecificCurVarVector();
                         $$.emplace_back(new ast::NonspecificCurVar($1));
                     }
-                |   nrnonspeclist "," NAME_PTR
+                |   nonspecific_var_list "," NAME_PTR
                     {
                         $1.emplace_back(new ast::NonspecificCurVar($3));
                         $$ = $1;
                     }
                 |   error
                     {
-                        error(scanner.loc, "nrnonspeclist");
+                        error(scanner.loc, "nonspecific_var_list");
                     }
                 ;
 
 
-nrneclist       :   NAME_PTR
+electrode_current_var_list : NAME_PTR
                     {
                         $$ = ast::ElectrodeCurVarVector();
                         $$.emplace_back(new ast::ElectrodeCurVar($1));
                     }
-                |   nrneclist "," NAME_PTR
+                |   electrode_current_var_list "," NAME_PTR
                     {
                         $1.emplace_back(new ast::ElectrodeCurVar($3));
                         $$ = $1;
                     }
                 |   error
                     {
-                        error(scanner.loc, "nrneclist");
+                        error(scanner.loc, "electrode_current_var_list");
                     }
                 ;
 
 
-nrnseclist      :   NAME_PTR
+section_var_list :  NAME_PTR
                     {
                         $$ = ast::SectionVarVector();
                         $$.emplace_back(new ast::SectionVar($1));
                     }
-                |   nrnseclist "," NAME_PTR
+                |   section_var_list "," NAME_PTR
                     {
                         $1.emplace_back(new ast::SectionVar($3));
                         $$ = $1;
                     }
                 |   error
                     {
-                        error(scanner.loc, "nrnseclist");
+                        error(scanner.loc, "section_var_list");
                     }
                 ;
 
 
-nrnrangelist    :   NAME_PTR
+range_var_list  :   NAME_PTR
                     {
                         $$ = ast::RangeVarVector();
                         $$.emplace_back(new ast::RangeVar($1));
                     }
-                |   nrnrangelist "," NAME_PTR
+                |   range_var_list "," NAME_PTR
                     {
                         $1.emplace_back(new ast::RangeVar($3));
                         $$ = $1;
                     }
                 |   error
                     {
-                        error(scanner.loc, "nrnrangelist");
+                        error(scanner.loc, "range_var_list");
                     }
                 ;
 
 
-nrnglobalist    :   NAME_PTR
+global_var_list:   NAME_PTR
                     {
                         $$ = ast::GlobalVarVector();
                         $$.emplace_back(new ast::GlobalVar($1));
                     }
-                |   nrnglobalist "," NAME_PTR
+                |   global_var_list "," NAME_PTR
                     {
                         $1.emplace_back(new ast::GlobalVar($3));
                         $$ = $1;
                     }
                 |   error
                     {
-                        error(scanner.loc, "nrnglobalist");
+                        error(scanner.loc, "global_var_list");
                     }
                 ;
 
 
-nrnptrlist      :   NAME_PTR
+pointer_var_list :  NAME_PTR
                     {
                         $$ = ast::PointerVarVector();
                         $$.emplace_back(new ast::PointerVar($1));
                     }
-                |   nrnptrlist "," NAME_PTR
+                |   pointer_var_list "," NAME_PTR
                     {
                         $1.emplace_back(new ast::PointerVar($3));
                         $$ = $1;
                     }
                 |   error
                     {
-                        error(scanner.loc, "nrnptrlist");
+                        error(scanner.loc, "pointer_var_list");
                     }
                 ;
 
 
-nrnbbptrlist    :   NAME_PTR
+bbcore_pointer_var_list : NAME_PTR
                     {
                         $$ = ast::BbcorePointerVarVector();
                         $$.emplace_back(new ast::BbcorePointerVar($1));
                     }
-                |   nrnbbptrlist "," NAME_PTR
+                |   bbcore_pointer_var_list "," NAME_PTR
                     {
                         $1.emplace_back(new ast::BbcorePointerVar($3));
                         $$ = $1;
                     }
                 |   error
                     {
-                        error(scanner.loc, "nrnbbptrlist");
+                        error(scanner.loc, "bbcore_pointer_var_list");
                     }
                 ;
 
 
-nrnextlist      :   NAME_PTR
+external_var_list : NAME_PTR
                     {
                         $$ = ast::ExternVarVector();
                         $$.emplace_back(new ast::ExternVar($1));
                     }
-                |   nrnextlist "," NAME_PTR
+                |   external_var_list "," NAME_PTR
                     {
                         $1.emplace_back(new ast::ExternVar($3));
                         $$ = $1;
                     }
                 |   error
                     {
-                        error(scanner.loc, "nrnextlist");
+                        error(scanner.loc, "external_var_list");
                     }
                 ;
 
 
-opthsafelist    :                       { $$ = ast::ThreadsafeVarVector(); }
-                |   threadsafelist      { $$ = $1; }
+optional_threadsafe_var_list :
+                    {
+                        $$ = ast::ThreadsafeVarVector();
+                    }
+                |   threadsafe_var_list
+                    {
+                        $$ = $1;
+                    }
                 ;
 
 
-threadsafelist  :   NAME_PTR
+threadsafe_var_list : NAME_PTR
                     {
                         $$ = ast::ThreadsafeVarVector();
                         $$.emplace_back(new ast::ThreadsafeVar($1));
                     }
-                |   threadsafelist "," NAME_PTR
+                |   threadsafe_var_list "," NAME_PTR
                     {
                         $1.emplace_back(new ast::ThreadsafeVar($3));
                         $$ = $1;
@@ -2199,12 +2496,15 @@ threadsafelist  :   NAME_PTR
                 ;
 
 
-valence         :   { $$ = nullptr; }
-                |   VALENCE real
+valence         :
+                    {
+                        $$ = nullptr;
+                    }
+                |   VALENCE double
                     {
                         $$ = new ast::Valence($1.clone(), $2);
                     }
-                |   VALENCE "-" real
+                |   VALENCE "-" double
                     {
                         $3->negate();
                         $$ = new ast::Valence($1.clone(), $3);

@@ -611,10 +611,10 @@ struct Ast: public std::enable_shared_from_this<Ast> {
     }
 
     /**
-     *\brief Check if the ast node is an instance of ast::DependentBlock
-     * @return true if object of type ast::DependentBlock
+     *\brief Check if the ast node is an instance of ast::AssignedBlock
+     * @return true if object of type ast::AssignedBlock
      */
-    virtual bool is_dependent_block() {
+    virtual bool is_assigned_block() {
         return false;
     }
 
@@ -1091,18 +1091,18 @@ struct Ast: public std::enable_shared_from_this<Ast> {
     }
 
     /**
-     *\brief Check if the ast node is an instance of ast::IndependentDef
-     * @return true if object of type ast::IndependentDef
+     *\brief Check if the ast node is an instance of ast::IndependentDefinition
+     * @return true if object of type ast::IndependentDefinition
      */
-    virtual bool is_independent_def() {
+    virtual bool is_independent_definition() {
         return false;
     }
 
     /**
-     *\brief Check if the ast node is an instance of ast::DependentDef
-     * @return true if object of type ast::DependentDef
+     *\brief Check if the ast node is an instance of ast::AssignedDefinition
+     * @return true if object of type ast::AssignedDefinition
      */
-    virtual bool is_dependent_def() {
+    virtual bool is_assigned_definition() {
         return false;
     }
 
@@ -1371,10 +1371,10 @@ struct Ast: public std::enable_shared_from_this<Ast> {
     }
 
     /**
-     *\brief Check if the ast node is an instance of ast::BbcorePtr
-     * @return true if object of type ast::BbcorePtr
+     *\brief Check if the ast node is an instance of ast::BbcorePointer
+     * @return true if object of type ast::BbcorePointer
      */
-    virtual bool is_bbcore_ptr() {
+    virtual bool is_bbcore_pointer() {
         return false;
     }
 

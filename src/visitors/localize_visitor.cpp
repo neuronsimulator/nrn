@@ -78,7 +78,7 @@ std::vector<std::string> LocalizeVisitor::variables_to_optimize() {
                                      | NmodlType::section_var;
 
     NmodlType global_var_properties = NmodlType::range_var
-                                       | NmodlType::dependent_def
+                                       | NmodlType::assigned_definition
                                        | NmodlType::param_assign;
     // clang-format on
 

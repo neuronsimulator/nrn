@@ -86,13 +86,17 @@
     description: |
                   Ast is a top level, abstract base class defining the interface
                   for all nodes of Abstract Syntax Tree (AST).
+
     children:
+
       - Node:
           brief: "Base class for all AST node"
           description: |
                   Base class for all nodes in the AST. This can replace ast::Ast in
                   the next refactoring.
+
           children:
+
             - Expression:
                 brief: "Base class for all expressions in the NMODL"
                 description: |
@@ -101,7 +105,9 @@
                         can be a variable itself or complex binary expressions.
 
                         \sa ast::Statement
+
                 children:
+
                   - String:
                       members:
                         - value:
@@ -123,11 +129,14 @@
                                       *x = ...
                                   ENDVERBATIM
                               \endcode
+
                   - Number:
                       brief: "Base class for all numbers"
                       description: |
                               Base class for all number types like ast::Integer, ast::Float and ast::Double.
+
                       children:
+
                         - Integer:
                             members:
                               - value:
@@ -150,6 +159,7 @@
                                     \endcode
 
                                     \sa ast::Float ast::Double
+
                         - Float:
                             members:
                               - value:
@@ -163,6 +173,7 @@
                                     this type is note used. This will be changed soon for variables like ast::ParamAssign.
 
                                     \sa ast::Integer ast::Double
+
                         - Double:
                             members:
                               - value:
@@ -185,6 +196,7 @@
                                     decision about variable types is done by code generation backends.
 
                                     \sa ast::Integer ast::Float
+
                         - Boolean:
                             members:
                               - value:
@@ -196,13 +208,16 @@
 
                                     \note Currently this type is used as only flag in some of the AST nodes. Similar to ast::Float,
                                     this type was introduced for data type specific code generation support in the future.
+
                   - Identifier:
                       brief: "Base class for all identifiers"
                       description: |
                               Base class for all variable types like ast::Name, ast::PrimeName and ast::Argument.
 
                               \sa ast::Number
+
                       children:
+
                         - Name:
                             members:
                               - value:
@@ -217,6 +232,7 @@
                                     (e.g. ast::GlobalVar, ast::RangeVar) have underlying value stored as ast::Name.
 
                                     \note This node should be able to use std::string as value type instead of ast::String
+
                         - PrimeName:
                             members:
                               - value:
@@ -262,6 +278,7 @@
                                           m[4]
                                         }
                                     \endcode
+
                         - VarName:
                             members:
                               - name:
@@ -286,6 +303,7 @@
 
                                     \note With ast::Identifier as top level base class, this type can be
                                     removed in the future refactoring.
+
                         - Argument:
                             members:
                               - name:
@@ -308,6 +326,7 @@
                                             g = g + weight
                                         }
                                     \endcode
+
                         - ReactVarName:
                             brief: "TODO"
                             members:
@@ -320,6 +339,7 @@
                                   brief: "TODO"
                                   type: VarName
                                   node_name: true
+
                         - ReadIonVar:
                             brief: "TODO"
                             members:
@@ -327,6 +347,7 @@
                                   brief: "TODO"
                                   type: Name
                                   node_name: true
+
                         - WriteIonVar:
                             brief: "TODO"
                             members:
@@ -334,6 +355,7 @@
                                   brief: "TODO"
                                   type: Name
                                   node_name: true
+
                         - NonspecificCurVar:
                             brief: "TODO"
                             members:
@@ -341,6 +363,7 @@
                                   brief: "TODO"
                                   type: Name
                                   node_name: true
+
                         - ElectrodeCurVar:
                             brief: "TODO"
                             members:
@@ -348,6 +371,7 @@
                                   brief: "TODO"
                                   type: Name
                                   node_name: true
+
                         - SectionVar:
                             brief: "TODO"
                             members:
@@ -355,6 +379,7 @@
                                   brief: "TODO"
                                   type: Name
                                   node_name: true
+
                         - RangeVar:
                             brief: "TODO"
                             members:
@@ -362,6 +387,7 @@
                                   brief: "TODO"
                                   type: Name
                                   node_name: true
+
                         - GlobalVar:
                             brief: "TODO"
                             members:
@@ -369,6 +395,7 @@
                                   brief: "TODO"
                                   type: Name
                                   node_name: true
+
                         - PointerVar:
                             brief: "TODO"
                             members:
@@ -376,6 +403,7 @@
                                   brief: "TODO"
                                   type: Name
                                   node_name: true
+
                         - BbcorePointerVar:
                             members:
                               - name:
@@ -384,7 +412,8 @@
                                   node_name: true
                             brief: "Represent a single variable of type BBCOREPOINTER"
                             description: |
-                                    See ast::BbcorePtr for an example.
+                                    See ast::BbcorePointer for an example.
+
                         - ExternVar:
                             brief: "TODO"
                             members:
@@ -392,6 +421,7 @@
                                   brief: "TODO"
                                   type: Name
                                   node_name: true
+
                         - ThreadsafeVar:
                             brief: "TODO"
                             members:
@@ -399,13 +429,16 @@
                                   brief: "TODO"
                                   type: Name
                                   node_name: true
+
                   - Block:
                       brief: "Base class for all block scoped nodes"
                       description: |
                               NMODL has different local and global block scoped nodes like
                               ast::NeuronBlock, ast::ParamBlock, ast::IfStatement etc. Ast::Block
                               is base class and defines common interface for these nodes.
+
                       children:
+
                         - ParamBlock:
                             nmodl: "PARAMETER "
                             members:
@@ -449,12 +482,13 @@
                                     \endcode
 
                                     \todo Check ModelDB and other databse for example of channel.
+
                         - IndependentBlock:
                             nmodl: "INDEPENDENT "
                             members:
                               - definitions:
                                   brief: "TODO"
-                                  type: IndependentDef
+                                  type: IndependentDefinition
                                   vector: true
                             brief: "Represents a `INDEPENDENT` block in the NMODL"
                             description: |
@@ -466,12 +500,12 @@
                                         }
                                     \endcode
 
-                        - DependentBlock:
+                        - AssignedBlock:
                             nmodl: "ASSIGNED "
                             members:
                               - definitions:
                                   brief: "Vector of assigned variables"
-                                  type: DependentDef
+                                  type: AssignedDefinition
                                   vector: true
                             brief: "Represents a `ASSIGNED` block in the NMODL"
                             description: |
@@ -496,7 +530,7 @@
                             members:
                               - definitions:
                                   brief: "Vector of state variables"
-                                  type: DependentDef
+                                  type: AssignedDefinition
                                   vector: true
                             brief: "Represents a `STATE` block in the NMODL"
                             description: |
@@ -511,8 +545,9 @@
                                         }
                                     \endcode
 
-                                    Note that the state variable specification has form of ast::DependentDef and
+                                    Note that the state variable specification has form of ast::AssignedDefinition and
                                     hence can have associated unit specification.
+
                         - PlotBlock:
                             members:
                               - plot:
@@ -597,6 +632,7 @@
                                     \endcode
 
                                     \sa ast::ConstructorBlock
+
                         - StatementBlock:
                             members:
                               - statements:
@@ -621,6 +657,7 @@
 
                                     Note that the statement blocks can be nested where inner block will
                                     be wrapped as statement with ast::ExpressionStatement.
+
                         - DerivativeBlock:
                             nmodl: "DERIVATIVE "
                             members:
@@ -727,6 +764,7 @@
                                   brief: "Block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
+
                         - PartialBlock:
                             brief: "TODO"
                             nmodl: "PARTIAL "
@@ -740,6 +778,7 @@
                                   brief: "Block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
+
                         - FunctionTableBlock:
                             brief: "TODO"
                             nmodl: "FUNCTION_TABLE "
@@ -761,6 +800,7 @@
                                   type: Unit
                                   optional: true
                                   prefix: {value: " "}
+
                         - FunctionBlock:
                             brief: "TODO"
                             nmodl: "FUNCTION "
@@ -787,6 +827,7 @@
                                   brief: "Block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
+
                         - ProcedureBlock:
                             brief: "TODO"
                             nmodl: "PROCEDURE "
@@ -811,6 +852,7 @@
                                   brief: "Block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
+
                         - NetReceiveBlock:
                             brief: "TODO"
                             nmodl: "NET_RECEIVE "
@@ -827,6 +869,7 @@
                                   brief: "Block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
+
                         - SolveBlock:
                             brief: "TODO"
                             nmodl: SOLVE
@@ -850,6 +893,7 @@
                                   type: StatementBlock
                                   optional: true
                                   prefix: {value: " IFERROR "}
+
                         - BreakpointBlock:
                             nmodl: "BREAKPOINT "
                             members:
@@ -874,6 +918,7 @@
                                         \endcode
 
                                         \sa ast::DerivativeBlock ast::InitialBlock
+
                         - TerminalBlock:
                             brief: "TODO"
                             nmodl: "TERMINAL "
@@ -882,6 +927,7 @@
                                   brief: "Block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
+
                         - BeforeBlock:
                             nmodl: "BEFORE "
                             members:
@@ -889,6 +935,7 @@
                                   brief: "Block to be called before"
                                   type: BABlock
                             brief: "Represents a `BEFORE` block in NMODL"
+
                         - AfterBlock:
                             nmodl: "AFTER "
                             members:
@@ -910,6 +957,7 @@
                                               }
                                             }
                                         \endcode
+
                         - BABlock:
                             members:
                               - type:
@@ -924,6 +972,7 @@
                             description: |
                                         This represents a block to be executed before or after another
                                         block in NMODL. See ast::BeforeBlock and ast::AfterBlock for usage.
+
                         - ForNetcon:
                             brief: "TODO"
                             nmodl: "FOR_NETCONS "
@@ -940,6 +989,7 @@
                                   brief: "Block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
+
                         - KineticBlock:
                             brief: "TODO"
                             nmodl: "KINETIC "
@@ -958,6 +1008,7 @@
                                   brief: "Block with statements vector"
                                   type: StatementBlock
                                   getter: {override: true}
+
                         - MatchBlock:
                             brief: "TODO"
                             nmodl: MATCH
@@ -969,6 +1020,7 @@
                                   separator: " "
                                   prefix: {value: " { "}
                                   suffix: {value: " }"}
+
                         - UnitBlock:
                             brief: "TODO"
                             nmodl: "UNITS "
@@ -977,6 +1029,7 @@
                                   brief: "Vector of unit statements"
                                   type: Expression
                                   vector: true
+
                         - ConstantBlock:
                             nmodl: "CONSTANT "
                             members:
@@ -997,6 +1050,7 @@
                                                     ctm = 0.000505 (s)
                                                 }
                                             \endcode
+
                         - NeuronBlock:
                             nmodl: "NEURON "
                             members:
@@ -1023,6 +1077,7 @@
                                             \endcode
 
                             url: "https://www.neuron.yale.edu/neuron/static/py_doc/modelspec/programmatic/mechanisms/nmodl2.html#neuron"
+
                   - Unit:
                       brief: "TODO"
                       members:
@@ -1032,6 +1087,7 @@
                             node_name: true
                             prefix: {value: "("}
                             suffix: {value: ")"}
+
                   - DoubleUnit:
                       brief: "TODO"
                       members:
@@ -1042,6 +1098,7 @@
                             brief: "TODO"
                             type: Unit
                             optional: true
+
                   - LocalVar:
                       brief: "TODO"
                       members:
@@ -1049,6 +1106,7 @@
                             brief: "TODO"
                             type: Identifier
                             node_name: true
+
                   - Limits:
                       brief: "TODO"
                       members:
@@ -1061,6 +1119,7 @@
                             brief: "TODO"
                             type: Double
                             suffix: {value: ">"}
+
                   - NumberRange:
                       brief: "TODO"
                       members:
@@ -1073,6 +1132,7 @@
                             brief: "TODO"
                             type: Number
                             suffix: {value: ">"}
+
                   - PlotVar:
                       brief: "TODO"
                       members:
@@ -1085,6 +1145,7 @@
                             optional: true
                             prefix: {value: "["}
                             suffix: {value: "]"}
+
                   - ConstantVar:
                       members:
                         - name:
@@ -1108,18 +1169,21 @@
                             brief: "Opearator"
                             type: BinaryOp
                       brief: "Operator used in ast::BinaryExpression"
+
                   - UnaryOperator:
                       brief: "TODO"
                       members:
                         - value:
                             brief: "TODO"
                             type: UnaryOp
+
                   - ReactionOperator:
                       brief: "TODO"
                       members:
                         - value:
                             brief: "TODO"
                             type: ReactionOp
+
                   - ParenExpression:
                       brief: "TODO"
                       members:
@@ -1128,6 +1192,7 @@
                             type: Expression
                             prefix: {value: "("}
                             suffix: {value: ")"}
+
                   - BinaryExpression:
                       members:
                         - lhs:
@@ -1165,6 +1230,7 @@
                             brief: "Differential Expression"
                             type: BinaryExpression
                             public: true
+
                   - UnaryExpression:
                       brief: "TODO"
                       members:
@@ -1174,6 +1240,7 @@
                         - expression:
                             brief: "TODO"
                             type: Expression
+
                   - NonLinEquation:
                       brief: "TODO"
                       nmodl: "~ "
@@ -1185,6 +1252,7 @@
                         - rhs:
                             brief: "TODO"
                             type: Expression
+
                   - LinEquation:
                       brief: "TODO"
                       nmodl: "~ "
@@ -1196,6 +1264,7 @@
                         - linxpression:
                             brief: "TODO"
                             type: Expression
+
                   - FunctionCall:
                       brief: "TODO"
                       members:
@@ -1210,12 +1279,14 @@
                             separator: ", "
                             prefix: {value: "(", force: true}
                             suffix: {value: ")", force: true}
+
                   - FirstLastTypeIndex:
                       brief: "TODO"
                       members:
                         - value:
                             brief: "TODO"
                             type: FirstLastType
+
                   - Watch:
                       brief: "TODO"
                       members:
@@ -1228,6 +1299,7 @@
                             brief: "TODO"
                             type: Expression
                             prefix: {value: " "}
+
                   - QueueExpressionType:
                       brief: "TODO"
                       members:
@@ -1314,6 +1386,7 @@
                         - value:
                             brief: "TODO"
                             type: UnitStateType
+
                   - LocalListStatement:
                       brief: "TODO"
                       nmodl: "LOCAL "
@@ -1324,6 +1397,7 @@
                             vector: true
                             separator: ", "
                             public: true
+
                   - Model:
                       brief: "TODO"
                       nmodl: TITLE
@@ -1331,6 +1405,7 @@
                         - title:
                             brief: "TODO"
                             type: String
+
                   - Define:
                       nmodl: "DEFINE "
                       members:
@@ -1343,6 +1418,7 @@
                             type: Integer
                             prefix: {value: " "}
                       brief: "Represents a `DEFINE` statement in NMODL"
+
                   - Include:
                       brief: "TODO"
                       nmodl: "INCLUDE "
@@ -1350,6 +1426,7 @@
                         - filename:
                             brief: "TODO"
                             type: String
+
                   - ParamAssign:
                       brief: "TODO"
                       members:
@@ -1372,6 +1449,7 @@
                             type: Limits
                             optional: true
                             prefix: {value: " "}
+
                   - Stepped:
                       brief: "TODO"
                       members:
@@ -1389,7 +1467,8 @@
                             type: Unit
                             optional: true
                             prefix: {value: " "}
-                  - IndependentDef:
+
+                  - IndependentDefinition:
                       brief: "TODO"
                       members:
                         - sweep:
@@ -1422,7 +1501,8 @@
                             type: Unit
                             optional: true
                             prefix: {value: " "}
-                  - DependentDef:
+
+                  - AssignedDefinition:
                       members:
                         - name:
                             brief: "Name of the variable"
@@ -1461,6 +1541,7 @@
                             suffix: {value: ">"}
                             optional: true
                       brief: "Represents a statement in `ASSIGNED` or `STATE` block"
+
                   - PlotDeclaration:
                       brief: "TODO"
                       nmodl: "PLOT "
@@ -1474,6 +1555,7 @@
                             brief: "TODO"
                             type: PlotVar
                             prefix: {value: " VS "}
+
                   - ConductanceHint:
                       nmodl: "CONDUCTANCE "
                       members:
@@ -1502,6 +1584,7 @@
                         - expression:
                             brief: "TODO"
                             type: Expression
+
                   - ProtectStatement:
                       brief: "TODO"
                       nmodl: "PROTECT "
@@ -1509,6 +1592,7 @@
                         - expression:
                             brief: "TODO"
                             type: Expression
+
                   - FromStatement:
                       brief: "TODO"
                       nmodl: "FROM "
@@ -1535,6 +1619,7 @@
                             brief: "TODO"
                             type: StatementBlock
                             getter: {override: true}
+
                   - ForAllStatement:
                       brief: "TODO"
                       nmodl: "FORALL "
@@ -1547,6 +1632,7 @@
                             brief: "TODO"
                             type: StatementBlock
                             getter: {override: true}
+
                   - WhileStatement:
                       brief: "TODO"
                       nmodl: "WHILE "
@@ -1560,6 +1646,7 @@
                             brief: "TODO"
                             type: StatementBlock
                             getter: {override: true}
+
                   - IfStatement:
                       brief: "TODO"
                       nmodl: "IF "
@@ -1581,6 +1668,7 @@
                             brief: "TODO"
                             type: ElseStatement
                             optional: true
+
                   - ElseIfStatement:
                       brief: "TODO"
                       nmodl: " ELSE IF "
@@ -1594,6 +1682,7 @@
                             brief: "TODO"
                             type: StatementBlock
                             getter: {override: true}
+
                   - ElseStatement:
                       brief: "TODO"
                       nmodl: " ELSE "
@@ -1602,6 +1691,7 @@
                             brief: "TODO"
                             type: StatementBlock
                             getter: {override: true}
+
                   - PartialEquation:
                       brief: "TODO"
                       members:
@@ -1617,6 +1707,7 @@
                         - name3:
                             brief: "TODO"
                             type: Name
+
                   - PartialBoundary:
                       brief: "TODO"
                       nmodl: "~ "
@@ -1661,6 +1752,7 @@
                             type: Name
                             optional: true
                             prefix: {value: "+"}
+
                   - WatchStatement:
                       nmodl: "WATCH "
                       members:
@@ -1671,15 +1763,19 @@
                             separator: ","
                             add: true
                       brief: "Represent WATCH statement in NMODL"
+
                   - MutexLock:
                       nmodl: MUTEXLOCK
                       brief: "Represent MUTEXLOCK statement in NMODL"
+
                   - MutexUnlock:
                       nmodl: MUTEXUNLOCK
                       brief: "Represent MUTEXUNLOCK statement in NMODL"
+
                   - Reset:
                       nmodl: RESET
                       brief: "Represent RESET statement in NMODL"
+
                   - Sens:
                       nmodl: "SENS "
                       members:
@@ -1689,6 +1785,7 @@
                             vector: true
                             separator: ", "
                       brief: "Represent SENS statement in NMODL"
+
                   - Conserve:
                       nmodl: CONSERVE
                       members:
@@ -1701,6 +1798,7 @@
                             type: Expression
                             prefix: {value: " = "}
                       brief: "Represent CONSERVE statement in NMODL"
+
                   - Compartment:
                       nmodl: COMPARTMENT
                       members:
@@ -1722,6 +1820,7 @@
                             suffix: {value: "}"}
                             separator: " "
                       brief: "Represent COMPARTMENT statement in NMODL"
+
                   - LonDifuse:
                       nmodl: LONGITUDINAL_DIFFUSION
                       members:
@@ -1743,6 +1842,7 @@
                             suffix: {value: "}"}
                             separator: " "
                       brief: "Represent LONGITUDINAL_DIFFUSION statement in NMODL"
+
                   - ReactionStatement:
                       brief: "TODO"
                       nmodl: "~ "
@@ -1769,6 +1869,7 @@
                             prefix: {value: ", "}
                             suffix: {value: ")", force: true}
                             optional: true
+
                   - LagStatement:
                       nmodl: "LAG "
                       members:
@@ -1790,6 +1891,7 @@
                                         if (ena < 70) {ena = 70}
                                     }
                                 \endcode
+
                   - QueueStatement:
                       members:
                         - qtype:
@@ -1800,6 +1902,7 @@
                             type: Identifier
                             prefix: {value: " "}
                       brief: "Represent queue statement in NMODL"
+
                   - ConstantStatement:
                       members:
                         - constant:
@@ -1809,6 +1912,7 @@
                       description: |
                               \todo As ConstantStatement wraps a single ConstantVar,
                                     this or ast::ConstantVar can be redundant in the future.
+
                   - TableStatement:
                       nmodl: "TABLE "
                       members:
@@ -1836,6 +1940,7 @@
                             type: Integer
                             prefix: {value: " WITH "}
                       brief: "Represents TABLE statement in NMODL"
+
                   - Suffix:
                       members:
                         - type:
@@ -1847,6 +1952,7 @@
                             type: Name
                             node_name: true
                       brief: "Represents SUFFIX statement in NMODL"
+
                   - Useion:
                       nmodl: "USEION "
                       members:
@@ -1871,6 +1977,7 @@
                             type: Valence
                             optional: true
                       brief: "Represents USEION statement in NMODL"
+
                   - Nonspecific:
                       nmodl: "NONSPECIFIC_CURRENT "
                       members:
@@ -1880,6 +1987,7 @@
                             vector: true
                             separator: ", "
                       brief: "Represents NONSPECIFIC_CURRENT variables statement in NMODL"
+
                   - ElctrodeCurrent:
                       nmodl: "ELECTRODE_CURRENT "
                       members:
@@ -1889,6 +1997,7 @@
                             vector: true
                             separator: ", "
                       brief: "Represents ELECTRODE_CURRENT variables statement in NMODL"
+
                   - Section:
                       nmodl: "SECTION "
                       members:
@@ -1898,6 +2007,7 @@
                             vector: true
                             separator: ", "
                       brief: "Represents SECTION variables statement in NMODL"
+
                   - Range:
                       nmodl: "RANGE "
                       members:
@@ -1907,6 +2017,7 @@
                             vector: true
                             separator: ", "
                       brief: "Represents RANGE variables statement in NMODL"
+
                   - Global:
                       brief: "TODO"
                       nmodl: "GLOBAL "
@@ -1917,6 +2028,7 @@
                             vector: true
                             separator: ", "
                       brief: "Represents GLOBAL statement in NMODL"
+
                   - Pointer:
                       nmodl: "POINTER "
                       members:
@@ -1926,7 +2038,8 @@
                             vector: true
                             separator: ", "
                       brief: "Represents POINTER statement in NMODL"
-                  - BbcorePtr:
+
+                  - BbcorePointer:
                       nmodl: "BBCOREPOINTER "
                       members:
                         - variables:
@@ -1944,6 +2057,7 @@
                                           POINT_PROCESS ProbAMPANMDA_EMS
                                           BBCOREPOINTER rng, data
                                 \endcode
+
                   - External:
                       nmodl: "EXTERNAL "
                       members:
@@ -1953,6 +2067,7 @@
                             vector: true
                             separator: ", "
                       brief: "Represents EXTERNAL statement in NMODL"
+
                   - ThreadSafe:
                       nmodl: THREADSAFE
                       members:
@@ -1963,6 +2078,7 @@
                             separator: ", "
                             prefix: {value: " "}
                       brief: "Represents THREADSAFE statement in NMODL"
+
                   - Verbatim:
                       brief: "Represents a C code block"
                       nmodl: VERBATIM
@@ -1971,12 +2087,14 @@
                             brief: "C code as a string"
                             type: String
                             suffix: {value: "ENDVERBATIM"}
+
                   - LineComment:
                       brief: "Represents a one line comment in NMODL"
                       members:
                         - statement:
                             brief: "comment text"
                             type: String
+
                   - BlockComment:
                       brief: "Represents a multi-line comment in NMODL"
                       nmodl: COMMENT
