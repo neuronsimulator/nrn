@@ -25,7 +25,9 @@ About NMODL
    notebooks/nmodl-python-tutorial.ipynb
    notebooks/nmodl-odes-overview.ipynb
    notebooks/nmodl-kinetic-schemes.ipynb
-   notebooks/nmodl-sympy-solver.ipynb
+   notebooks/nmodl-sympy-solver-cnexp.ipynb
+   notebooks/nmodl-sympy-solver-sparse.ipynb
+   notebooks/nmodl-sympy-solver-derivimplicit.ipynb
    notebooks/nmodl-linear-solver.ipynb
    notebooks/nmodl-nonlinear-solver.ipynb
    notebooks/nmodl-sympy-conductance.ipynb
