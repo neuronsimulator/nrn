@@ -32,6 +32,8 @@ set(VISITOR_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/sympy_solver_visitor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/sympy_solver_visitor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/symtab_visitor_helper.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/units_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/units_visitor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/var_usage_visitor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/var_usage_visitor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/verbatim_var_rename_visitor.cpp

@@ -43,6 +43,7 @@ add_executable(testvisitor
                visitor/steadystate.cpp
                visitor/sympy_conductance.cpp
                visitor/sympy_solver.cpp
+               visitor/units.cpp
                visitor/verbatim.cpp)
 add_executable(testprinter printer/printer.cpp)
 add_executable(testsymtab symtab/symbol_table.cpp)

@@ -27,6 +27,7 @@
 #include "visitors/sympy_conductance_visitor.hpp"
 #include "visitors/sympy_solver_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
+#include "visitors/units_visitor.hpp"
 #include "visitors/verbatim_var_rename_visitor.hpp"
 #include "visitors/verbatim_visitor.hpp"
 
@@ -84,6 +85,7 @@ int main(int argc, const char* argv[]) {
         {std::make_shared<NeuronSolveVisitor>(), "neuron-solve", "NeuronSolveVisitor"},
         {std::make_shared<LocalizeVisitor>(), "localize", "LocalizeVisitor"},
         {std::make_shared<PerfVisitor>(), "perf", "PerfVisitor"},
+        {std::make_shared<UnitsVisitor>(NrnUnitsLib::get_path()), "units", "UnitsVisitor"},
     };
 
     pybind11::initialize_interpreter();

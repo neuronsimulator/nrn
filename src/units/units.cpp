@@ -105,7 +105,8 @@ void Unit::add_fraction(const std::string& fraction_string) {
 }
 
 double Unit::parse_double(std::string double_string) {
-    double d_number, d_magnitude;
+    long double d_number;
+    double d_magnitude;
     std::string s_number;
     std::string s_magnitude;
     std::string::const_iterator it;
@@ -128,18 +129,25 @@ double Unit::parse_double(std::string double_string) {
             s_magnitude.push_back(*itm);
         }
     }
-    d_number = std::stod(s_number);
+    d_number = std::stold(s_number);
     if (s_magnitude.empty()) {
         d_magnitude = 0.0;
     } else {
         d_magnitude = std::stod(s_magnitude);
     }
-    return d_number * std::pow(10.0, d_magnitude) * sign;
+    return static_cast<double>(d_number * powl(10.0, d_magnitude) * sign);
 }
 
 void UnitTable::calc_nominator_dims(std::shared_ptr<Unit> unit, std::string nominator_name) {
     double nominator_prefix_factor = 1.0;
     int nominator_power = 1;
+
+    // if the nominator is DOUBLE, divide it from the unit factor
+    if (nominator_name.front() >= '1' && nominator_name.front() <= '9') {
+        unit->mul_factor(1 / std::stod(nominator_name));
+        return;
+    }
+
     std::string nom_name = nominator_name;
     auto nominator = table.find(nominator_name);
 
@@ -190,7 +198,7 @@ void UnitTable::calc_nominator_dims(std::shared_ptr<Unit> unit, std::string nomi
     }
 
     // if the nominator is still not found in the table then output error
-    // else multiply its factor to the unit factor and calculate unit's dimentions
+    // else multiply its factor to the unit factor and calculate unit's dimensions
     if (nominator == table.end()) {
         std::stringstream ss;
         ss << "Unit " << nominator_name << " not defined!" << std::endl;
@@ -198,7 +206,7 @@ void UnitTable::calc_nominator_dims(std::shared_ptr<Unit> unit, std::string nomi
     } else {
         for (int i = 0; i < nominator_power; i++) {
             unit->mul_factor(nominator_prefix_factor * nominator->second->get_factor());
-            unit->add_nominator_dims(nominator->second->get_dims());
+            unit->add_nominator_dims(nominator->second->get_dimensions());
         }
     }
 }
@@ -206,6 +214,13 @@ void UnitTable::calc_nominator_dims(std::shared_ptr<Unit> unit, std::string nomi
 void UnitTable::calc_denominator_dims(std::shared_ptr<Unit> unit, std::string denominator_name) {
     double denominator_prefix_factor = 1.0;
     int denominator_power = 1;
+
+    // if the denominator is DOUBLE, divide it from the unit factor
+    if (denominator_name.front() >= '1' && denominator_name.front() <= '9') {
+        unit->mul_factor(std::stod(denominator_name));
+        return;
+    }
+
     std::string denom_name = denominator_name;
     auto denominator = table.find(denominator_name);
 
@@ -263,7 +278,7 @@ void UnitTable::calc_denominator_dims(std::shared_ptr<Unit> unit, std::string de
     } else {
         for (int i = 0; i < denominator_power; i++) {
             unit->mul_factor(1.0 / (denominator_prefix_factor * denominator->second->get_factor()));
-            unit->add_denominator_dims(denominator->second->get_dims());
+            unit->add_denominator_dims(denominator->second->get_dimensions());
         }
     }
 }
@@ -295,7 +310,8 @@ void UnitTable::insert(std::shared_ptr<Unit> unit) {
     for (const auto& it: unit->get_denominator_unit()) {
         calc_denominator_dims(unit, it);
     }
-    // if  unit is found in table replace it
+    // if unit is not in the table simply insert it, else replace with it with
+    // new definition
     auto find_unit_name = table.find(unit->get_name());
     if (find_unit_name == table.end()) {
         table.insert({unit->get_name(), unit});
@@ -312,9 +328,9 @@ void UnitTable::insert_prefix(std::shared_ptr<Prefix> prfx) {
 void UnitTable::print_units() const {
     for (const auto& it: table) {
         std::cout << std::fixed << std::setprecision(8) << it.first << " "
-                  << it.second->get_factor() << ": ";
-        for (const auto& dims: it.second->get_dims()) {
-            std::cout << dims << " ";
+                  << it.second->get_factor() << ":";
+        for (const auto& dims: it.second->get_dimensions()) {
+            std::cout << " " << dims;
         }
         std::cout << "\n";
     }
@@ -342,7 +358,7 @@ void UnitTable::print_units_sorted(std::stringstream& units_details) {
     for (const auto& it: sorted_elements) {
         units_details << std::fixed << std::setprecision(8) << it.first << " "
                       << it.second->get_factor() << ":";
-        for (const auto& dims: it.second->get_dims()) {
+        for (const auto& dims: it.second->get_dimensions()) {
             units_details << " " << dims;
         }
         units_details << "\n";

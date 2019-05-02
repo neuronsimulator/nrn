@@ -101,6 +101,7 @@ class CodegenHelperVisitor: public visitor::AstVisitor {
     void visit_for_netcon(ast::ForNetcon* node) override;
     void visit_table_statement(ast::TableStatement* node) override;
     void visit_program(ast::Program* node) override;
+    void visit_factor_def(ast::FactorDef* node) override;
     void visit_nrn_state_block(ast::NrnStateBlock* node) override;
     void visit_linear_block(ast::LinearBlock* node) override;
     void visit_non_linear_block(ast::NonLinearBlock* node) override;

@@ -172,7 +172,7 @@ class Unit {
     }
 
     /// Getter for the array of Unit's dimensions
-    std::array<int, MAX_DIMS> get_dims() const {
+    std::array<int, MAX_DIMS> get_dimensions() const {
         return unit_dimensions;
     }
 };
@@ -290,6 +290,11 @@ class UnitTable {
     /// Print the base units that are stored in the UnitTable to the
     /// stringstream base_units_details
     void print_base_units(std::stringstream& base_units_details);
+
+    /// Get base unit name based on the ID number of the dimension
+    std::string get_base_unit_name(int id){
+        return base_units_names[id];
+    }
 };
 
 /** @} */  // end of units

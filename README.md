@@ -267,6 +267,8 @@ Options:
   -v,--verbose                          Verbose logger output
   -o,--output TEXT=.                    Directory for backend code output
   --scratch TEXT=tmp                    Directory for intermediate code output
+  --units TEXT=<path>/share/nrnunits.lib
+                                        Directory of units lib file
 
 Subcommands:
   host                                  HOST/CPU code backends
@@ -293,6 +295,8 @@ Options:
   -v,--verbose                          Verbose logger output
   -o,--output TEXT=.                    Directory for backend code output
   --scratch TEXT=tmp                    Directory for intermediate code output
+  --units TEXT=<path>/share/nrnunits.lib
+                                        Directory of units lib file
 
 Subcommands:
 host

@@ -267,6 +267,9 @@ struct CodegenInfo {
     /// all functions defined in the mod file
     std::vector<ast::FunctionBlock*> functions;
 
+    /// all factors defined in the mod file
+    std::vector<ast::FactorDef*> factor_definitions;
+
     /// ions used in the mod file
     std::vector<Ion> ions;
 

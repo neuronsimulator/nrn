@@ -10,7 +10,7 @@ add_executable(units_parser main_units.cpp)
 
 target_link_libraries(nmodl_parser lexer util)
 target_link_libraries(c_parser lexer util)
-target_link_libraries(units_parser lexer util)
+target_link_libraries(units_parser util visitor lexer)
 
 # =============================================================================
 # Install executable

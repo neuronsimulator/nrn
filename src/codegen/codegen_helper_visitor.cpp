@@ -577,6 +577,10 @@ void CodegenHelperVisitor::visit_statement_block(ast::StatementBlock* node) {
     }
 }
 
+void CodegenHelperVisitor::visit_factor_def(ast::FactorDef* node) {
+    info.factor_definitions.push_back(node);
+}
+
 
 void CodegenHelperVisitor::visit_binary_expression(BinaryExpression* node) {
     if (node->get_op().eval() == "=") {
@@ -614,7 +618,7 @@ void CodegenHelperVisitor::visit_table_statement(ast::TableStatement* node) {
 }
 
 
-void CodegenHelperVisitor::visit_program(Program* node) {
+void CodegenHelperVisitor::visit_program(ast::Program* node) {
     psymtab = node->get_symbol_table();
     auto blocks = node->get_blocks();
     for (auto& block: blocks) {

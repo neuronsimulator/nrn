@@ -37,9 +37,23 @@
 
 %}
 
+/** regex for digits, exponents and double numbers */
 D   [0-9]
 E   [Ee]*[-+]?{D}+
 DBL ([-+]?{D})|([-+]?{D}+"."{D}*({E})?)|([-+]?{D}*"."{D}+({E})?)|([-+]?{D}+{E})
+
+/**
+  * regex for valid base units names and invalid base units names
+  * (maximum number of base units should be 10 and named from a to j)
+  */
+VALIDBASEUNIT      [a-j]
+INVALIDBASEUNIT    [k-zA-Z]
+
+/** regex for valid characters of units */
+CHAR    [a-zA-Z$\%]
+
+/** regex for name of new defined unit */
+NEWUNIT ({CHAR}+{D}*)|({CHAR}+{D}*"_"{CHAR}+{D}*)|({CHAR}+{D}*"/"{CHAR}+{D}*)|({CHAR}+{D}*"-"{CHAR}*{D}+)
 
 /** we do use yymore feature in copy modes */
 %option yymore
@@ -98,19 +112,19 @@ DBL ([-+]?{D})|([-+]?{D}+"."{D}*({E})?)|([-+]?{D}*"."{D}+({E})?)|([-+]?{D}+{E})
 
 %%
 
-"*"[a-j]"*"     {
+"*"{VALIDBASEUNIT}"*"     {
                     return UnitParser::make_BASE_UNIT(yytext, loc);
                 }
 
-"*"[k-zA-Z]"*"  {
+"*"{INVALIDBASEUNIT}"*"    {
                     return UnitParser::make_INVALID_BASE_UNIT(yytext, loc);
                 }
 
-^[a-zA-Z$\%]+{D}* {
+^{NEWUNIT}      {
                     return UnitParser::make_NEW_UNIT(yytext, loc);
                 }
 
-[a-zA-Z$\%]+    {
+{CHAR}+         {
                     return UnitParser::make_UNIT(yytext, loc);
                 }
 
