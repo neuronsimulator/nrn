@@ -1239,12 +1239,15 @@ static int nrnthread_dat2_mech(int tid, size_t i, int dsz_inst, int*& nodeindice
       data1 = contiguous_art_data(ml->data, n, sz); // delete after use
       nodeindices = NULL;
     }else{
-      nodeindices = ml->nodeindices;
+      nodeindices = ml->nodeindices; // allocated below if copy
       data1 = ml->data[0]; // do not delete after use
     }
     if (copy) {
-      if (!isart) for (int i=0; i < n; ++i) {
-        nodeindices[i] = ml->nodeindices[i];
+      if (!isart) {
+        nodeindices = new int[n];
+        for (int i=0; i < n; ++i) {
+          nodeindices[i] = ml->nodeindices[i];
+        }
       }
       int nn = n*sz;
       for (int i = 0; i < nn; ++i) {
@@ -1293,8 +1296,8 @@ static int nrnthread_dat2_3(int tid, int nweight, int*& output_vindex, double*& 
   // connections
   int n = cg.n_netcon;
   //printf("n_netcon=%d nweight=%d\n", n, nweight);
-  netcon_pnttype = cg.netcon_pnttype;
-  netcon_pntindex = cg.netcon_pntindex;
+  netcon_pnttype = cg.netcon_pnttype; cg.netcon_pnttype = NULL;
+  netcon_pntindex = cg.netcon_pntindex; cg.netcon_pntindex = NULL;
   // alloc a weight array and write netcon weights
   weights = new double[nweight];
   int iw = 0;
