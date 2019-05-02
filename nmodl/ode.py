@@ -5,12 +5,27 @@
 # Lesser General Public License. See top-level LICENSE file for details.
 # ***********************************************************************
 
+from importlib import import_module
+
 import sympy as sp
+
+# import known_functions through low-level mechanism because the ccode
+# module is overwritten in sympy and contents of that submodule cannot be
+# accessed through regular imports
+known_functions = import_module('sympy.printing.ccode').known_functions_C99
+known_functions.pop('Abs')
+known_functions['abs'] = 'fabs'
 
 major, minor = (int(v) for v in sp.__version__.split(".")[:2])
 if not ((major >= 1) and (minor >= 2)):
     raise ImportError(f"Requires SympPy version >= 1.2, found {major}.{minor}")
 
+def _get_custom_functions(fcts):
+    custom_functions = {}
+    for f in fcts:
+        if not f in known_functions.keys():
+            custom_functions[f] = f
+    return custom_functions
 
 def _make_unique_prefix(vars, default_prefix="tmp"):
     """Generate a unique prefix
@@ -140,7 +155,7 @@ def _sympify_eqs(eq_strings, state_vars, vars):
     return eqs, sympy_state_vars, sympy_vars
 
 
-def solve_lin_system(eq_strings, vars, constants, small_system=False, do_cse=False):
+def solve_lin_system(eq_strings, vars, constants, function_calls, small_system=False, do_cse=False):
     """Solve linear system of equations, return solution as C code.
 
     If system is small (small_system=True, typically N<=3):
@@ -156,6 +171,7 @@ def solve_lin_system(eq_strings, vars, constants, small_system=False, do_cse=Fal
         eqs: list of equations e.g. ["x + y = a", "y = 3 + b"]
         vars: list of variables to solve for, e.g. ["x", "y"]
         constants: set of any other symbolic expressions used, e.g. {"a", "b"}
+        function_calls: set of function calls used in the ODE
         small_system: if True, solve analytically by gaussian elimination
                       otherwise return matrix system to be solved
         do_cse: if True, do Common Subexpression Elimination
@@ -166,6 +182,7 @@ def solve_lin_system(eq_strings, vars, constants, small_system=False, do_cse=Fal
     """
 
     eqs, state_vars, sympy_vars = _sympify_eqs(eq_strings, vars, constants)
+    custom_fcts = _get_custom_functions(function_calls)
 
     code = []
     new_local_vars = []
@@ -188,7 +205,7 @@ def solve_lin_system(eq_strings, vars, constants, small_system=False, do_cse=Fal
                 code.append(f"{var} = {sp.ccode(expr.evalf())}")
             solution_vector = simplified_solution_vector[0]
         for var, expr in zip(state_vars, solution_vector):
-            code.append(f"{sp.ccode(var)} = {sp.ccode(expr.evalf(), contract=False)}")
+            code.append(f"{sp.ccode(var)} = {sp.ccode(expr.evalf(), contract=False, user_functions=custom_fcts)}")
     else:
         # large linear system: construct and return matrix J, vector F such that
         # J X = F is the linear system to be solved for X by e.g. LU factorization
@@ -201,12 +218,12 @@ def solve_lin_system(eq_strings, vars, constants, small_system=False, do_cse=Fal
         for i, expr in enumerate(matJ):
             # todo: fix indexing to be ascending order
             flat_index = matJ.rows * (i % matJ.rows) + (i // matJ.rows)
-            code.append(f"J[{flat_index}] = {sp.ccode(expr.simplify().evalf())}")
+            code.append(f"J[{flat_index}] = {sp.ccode(expr.simplify().evalf(), user_functions=custom_fcts)}")
 
     return code, new_local_vars
 
 
-def solve_non_lin_system(eq_strings, vars, constants):
+def solve_non_lin_system(eq_strings, vars, constants, function_calls):
     """Solve non-linear system of equations, return solution as C code.
 
       - returns a vector F, and its Jacobian J, both in terms of X
@@ -217,12 +234,15 @@ def solve_non_lin_system(eq_strings, vars, constants):
         eqs: list of equations e.g. ["x + y = a", "y = 3 + b"]
         vars: list of variables to solve for, e.g. ["x", "y"]
         constants: set of any other symbolic expressions used, e.g. {"a", "b"}
+        function_calls: set of function calls used in the ODE
 
     Returns:
         List of strings containing assignment statements
     """
 
     eqs, state_vars, sympy_vars = _sympify_eqs(eq_strings, vars, constants)
+
+    custom_fcts = _get_custom_functions(function_calls)
 
     jacobian = sp.Matrix(eqs).jacobian(state_vars)
 
@@ -235,7 +255,7 @@ def solve_non_lin_system(eq_strings, vars, constants):
         # todo: fix indexing to be ascending order
         flat_index = jacobian.rows * (i % jacobian.rows) + (i // jacobian.rows)
         code.append(
-            f"J[{flat_index}] = {sp.ccode(jac.simplify().subs(X_vec_map).evalf())}"
+            f"J[{flat_index}] = {sp.ccode(jac.simplify().subs(X_vec_map).evalf(), user_functions=custom_fcts)}"
         )
 
     return code
@@ -348,7 +368,7 @@ def integrate2c(diff_string, dt_var, vars, use_pade_approx=False):
     return f"{sp.ccode(x)} = {sp.ccode(solution.evalf())}"
 
 
-def forwards_euler2c(diff_string, dt_var, vars):
+def forwards_euler2c(diff_string, dt_var, vars, function_calls):
     """Return forwards euler solution of diff_string as C code.
 
     Derivative should be of the form "x' = f(x)",
@@ -361,6 +381,7 @@ def forwards_euler2c(diff_string, dt_var, vars):
         diff_string: Derivative to be integrated e.g. "x' = a*x"
         dt_var: name of timestep dt variable in NEURON
         vars: set of variables used in expression, e.g. {"x", "a"}
+        function_calls: set of function calls used in the ODE
 
     Returns:
         String containing forwards Euler timestep as C code
@@ -370,8 +391,9 @@ def forwards_euler2c(diff_string, dt_var, vars):
     dt = sp.symbols(dt_var, real=True, positive=True)
     solution = (x + dxdt * dt).simplify().evalf()
 
+    custom_fcts = _get_custom_functions(function_calls)
     # return result as C code in NEURON format
-    return f"{sp.ccode(x)} = {sp.ccode(solution)}"
+    return f"{sp.ccode(x)} = {sp.ccode(solution, user_functions=custom_fcts)}"
 
 
 def differentiate2c(expression, dependent_var, vars, prev_expressions=None):

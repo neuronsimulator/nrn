@@ -102,6 +102,9 @@ class SympySolverVisitor: public AstVisitor {
     /// local variables in current block + globals
     std::set<std::string> vars;
 
+    /// custom function calls used in ODE block
+    std::set<std::string> function_calls;
+
     /// map between derivative block names and associated solver method
     std::map<std::string, std::string> derivative_block_solve_method{};
 

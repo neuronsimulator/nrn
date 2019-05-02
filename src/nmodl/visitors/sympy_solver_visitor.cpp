@@ -44,6 +44,10 @@ void SympySolverVisitor::init_block_data(ast::Node* node) {
             vars.insert(var_name);
         }
     }
+    auto lv = AstLookupVisitor(ast::AstNodeType::FUNCTION_CALL);
+    for (const auto& call: lv.lookup(node->get_statement_block().get())) {
+        function_calls.insert(call->get_node_name());
+    }
 }
 
 void SympySolverVisitor::init_state_vars_vector() {
@@ -221,7 +225,8 @@ void SympySolverVisitor::solve_linear_system(const std::vector<std::string>& pre
                            "state_vars"_a = state_vars,
                            "vars"_a = vars,
                            "small_system"_a = small_system,
-                           "do_cse"_a = elimination);
+                           "do_cse"_a = elimination,
+                           "function_calls"_a = function_calls);
     py::exec(R"(
                 from nmodl.ode import solve_lin_system
                 exception_message = ""
@@ -229,6 +234,7 @@ void SympySolverVisitor::solve_linear_system(const std::vector<std::string>& pre
                     solutions, new_local_vars = solve_lin_system(eq_strings,
                                                                  state_vars,
                                                                  vars,
+                                                                 function_calls,
                                                                  small_system,
                                                                  do_cse)
                 except Exception as e:
@@ -291,15 +297,18 @@ void SympySolverVisitor::solve_non_linear_system(
     // construct ordered vector of state vars used in non-linear system
     init_state_vars_vector();
     // call sympy non-linear solver
-    auto locals =
-        py::dict("equation_strings"_a = eq_system, "state_vars"_a = state_vars, "vars"_a = vars);
+    auto locals = py::dict("equation_strings"_a = eq_system,
+                           "state_vars"_a = state_vars,
+                           "vars"_a = vars,
+                           "function_calls"_a = function_calls);
     py::exec(R"(
                 from nmodl.ode import solve_non_lin_system
                 exception_message = ""
                 try:
                     solutions = solve_non_lin_system(equation_strings,
                                                      state_vars,
-                                                     vars)
+                                                     vars,
+                                                     function_calls)
                 except Exception as e:
                     # if we fail, fail silently and return empty string
                     solutions = [""]
@@ -363,7 +372,8 @@ void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
     const auto locals = py::dict("equation_string"_a = node_as_nmodl,
                                  "dt_var"_a = codegen::naming::NTHREAD_DT_VARIABLE,
                                  "vars"_a = vars,
-                                 "use_pade_approx"_a = use_pade_approx);
+                                 "use_pade_approx"_a = use_pade_approx,
+                                 "function_calls"_a = function_calls);
 
     if (solve_method == codegen::naming::EULER_METHOD) {
         logger->debug("SympySolverVisitor :: EULER - solving: {}", node_as_nmodl);
@@ -374,7 +384,7 @@ void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
                 from nmodl.ode import forwards_euler2c
                 exception_message = ""
                 try:
-                    solution = forwards_euler2c(equation_string, dt_var, vars)
+                    solution = forwards_euler2c(equation_string, dt_var, vars, function_calls)
                 except Exception as e:
                     # if we fail, fail silently and return empty string
                     solution = ""
@@ -391,7 +401,8 @@ void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
                 from nmodl.ode import integrate2c
                 exception_message = ""
                 try:
-                    solution = integrate2c(equation_string, dt_var, vars, use_pade_approx)
+                    solution = integrate2c(equation_string, dt_var, vars,
+                                           use_pade_approx)
                 except Exception as e:
                     # if we fail, fail silently and return empty string
                     solution = ""

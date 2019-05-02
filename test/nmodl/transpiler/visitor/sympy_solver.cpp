@@ -118,6 +118,25 @@ SCENARIO("Solve ODEs with cnexp or euler method using SympySolverVisitor",
             REQUIRE(result[1] == "h = (-dt*(h-hInf)+h*hTau)/hTau");
         }
     }
+    GIVEN("Derivative block with calling external functions passes sympy") {
+        std::string nmodl_text = R"(
+            BREAKPOINT  {
+                SOLVE states METHOD euler
+            }
+            DERIVATIVE states {
+                m' = sawtooth(m)
+                n' = sin(n)
+                p' = my_user_func(p)
+            }
+        )";
+        THEN("Construct forward Euler interpreting external functions as symbols") {
+            auto result = run_sympy_solver_visitor(nmodl_text);
+            REQUIRE(result.size() == 3);
+            REQUIRE(result[0] == "m = dt*sawtooth(m)+m");
+            REQUIRE(result[1] == "n = dt*sin(n)+n");
+            REQUIRE(result[2] == "p = dt*my_user_func(p)+p");
+        }
+    }
     GIVEN("Derivative block with ODE, 1 state var in array, solver method euler") {
         std::string nmodl_text = R"(
             STATE {
