@@ -259,88 +259,102 @@ void* ecs_do_reactions(void* dataptr)
     VEC *b;
     PERM *pivot;
 
-	for(react = task.onset->reaction, start_idx = task.onset->idx; react != NULL; react = react -> next, start_idx = 0)
+	for(react = ecs_reactions; react != NULL; react = react -> next)
 	{
-        if(task.offset->reaction == react)
-        {
-            stop_idx = task.offset->idx;
-            stop = TRUE;
-        }
-        else
-        {
-            stop_idx = react->region_size-1;
-            stop = FALSE;
-        }
-        if(react->num_species_involved == 0)
-            continue;
-        /*allocate data structures*/
-        jacobian = m_get(react->num_species_involved,react->num_species_involved);
-        b = v_get(react->num_species_involved);
-        x = v_get(react->num_species_involved);
-        pivot = px_get(jacobian->m);
-        states_cache = (double*)malloc(sizeof(double)*react->num_species_involved);
-        states_cache_dx = (double*)malloc(sizeof(double)*react->num_species_involved);
-        results_array = (double*)malloc(react->num_species_involved*sizeof(double));
-        results_array_dx = (double*)malloc(react->num_species_involved*sizeof(double));
+		/*find start location for this thread*/
+		if(started || react == task.onset->reaction)
+		{
+			if(!started)
+			{
+				started = TRUE;
+				start_idx = task.onset->idx;
+			}
+			else
+			{
+				start_idx = 0;
+			}
 
-        for(i = start_idx; i <= stop_idx; i++)
-        {
-            if(!react->subregion || react->subregion[i])
-            {
-                //TODO: this assumes grids are the same size/shape 
-                //      add interpolation in case they aren't      
-                for(j = 0; j < react->num_species_involved; j++)
-                {
-                    states_cache[j] = react->species_states[j][i];
-                    states_cache_dx[j] = react->species_states[j][i];
-                }
-                MEM_ZERO(results_array,react->num_species_involved*sizeof(double));
-                react->reaction(states_cache, results_array);
+			if(task.offset->reaction == react)
+			{
+				stop_idx = task.offset->idx;
+				stop = TRUE;
+			}
+			else
+			{
+				stop_idx = react->region_size-1;
+				stop = FALSE;
+			}
+			if(react->num_species_involved == 0)
+                continue;
+            /*allocate data structures*/
+			jacobian = m_get(react->num_species_involved,react->num_species_involved);
+        	b = v_get(react->num_species_involved);
+        	x = v_get(react->num_species_involved);
+			pivot = px_get(jacobian->m);
+			states_cache = (double*)malloc(sizeof(double)*react->num_species_involved);
+			states_cache_dx = (double*)malloc(sizeof(double)*react->num_species_involved);
+			results_array = (double*)malloc(react->num_species_involved*sizeof(double));
+			results_array_dx = (double*)malloc(react->num_species_involved*sizeof(double));
 
-                for(j = 0; j < react->num_species_involved; j++)
-                {
-                    states_cache_dx[j] += dx;
-                    MEM_ZERO(results_array_dx,react->num_species_involved*sizeof(double));
-                    react->reaction(states_cache_dx, results_array_dx);
-                    v_set_val(b, j, dt*results_array[j]);
+			for(i = start_idx; i <= stop_idx; i++)
+			{
+				if(!react->subregion || react->subregion[i])
+				{
+					//TODO: this assumes grids are the same size/shape 
+	 				//      add interpolation in case they aren't      
+					for(j = 0; j < react->num_species_involved; j++)
+					{
+						states_cache[j] = react->species_states[j][i];
+						states_cache_dx[j] = react->species_states[j][i];
+					}
+                    MEM_ZERO(results_array,react->num_species_involved*sizeof(double));
+					react->reaction(states_cache, results_array);
 
-                    for(k = 0; k < react->num_species_involved; k++)
+					for(j = 0; j < react->num_species_involved; j++)
+					{
+						states_cache_dx[j] += dx;
+                        MEM_ZERO(results_array_dx,react->num_species_involved*sizeof(double));
+						react->reaction(states_cache_dx, results_array_dx);
+						v_set_val(b, j, dt*results_array[j]);
+
+						for(k = 0; k < react->num_species_involved; k++)
+						{
+							pd = (results_array_dx[k] - results_array[k])/dx;
+							m_set_val(jacobian, k, j, (j==k) - dt*pd);
+						}
+						states_cache_dx[j] -= dx;
+					}
+					// solve for x, destructively
+                    if (react->num_species_involved == 1)
                     {
-                        pd = (results_array_dx[k] - results_array[k])/dx;
-                        m_set_val(jacobian, k, j, (j==k) - dt*pd);
+                        react->species_states[0][i] += v_get_val(b, 0) / m_get_val(jacobian, 0, 0);
                     }
-                    states_cache_dx[j] -= dx;
-                }
-                // solve for x, destructively
-                if (react->num_species_involved ==1)
-                {
-                    react->species_states[0][i] += v_get_val(b, 0) / m_get_val(jacobian, 0, 0);
-                }
-                else
-                {
-                    LUfactor(jacobian, pivot); //Conditional jump or move depends on uninitialised value(s)
-                    LUsolve(jacobian, pivot, b, x);       
-                    for(j = 0; j < react->num_species_involved; j++)
+                    else
                     {
-                        react->species_states[j][i] += v_get_val(x,j);
-                        //printf("current index is %p and next index is %p\n",&react->species_states[j][i], &react->species_states[j][i+1]);
-                        //return NULL;
-                    }        
-                }
-            }
-        }
-        m_free(jacobian);
-        v_free(b);
-        v_free(x);
-        px_free(pivot);
+                        LUfactor(jacobian, pivot); //Conditional jump or move depends on uninitialised value(s)
+                        LUsolve(jacobian, pivot, b, x);       
+                        for(j = 0; j < react->num_species_involved; j++)
+                        {
+                            react->species_states[j][i] += v_get_val(x,j);
+                            //printf("current index is %p and next index is %p\n",&react->species_states[j][i], &react->species_states[j][i+1]);
+                            //return NULL;
+                        }        
+                    }
+				}
+			}
+			m_free(jacobian);
+        	v_free(b);
+        	v_free(x);
+        	px_free(pivot);
 
-        SAFE_FREE(states_cache);
-        SAFE_FREE(states_cache_dx);
-        SAFE_FREE(results_array);
-        SAFE_FREE(results_array_dx);
+			SAFE_FREE(states_cache);
+			SAFE_FREE(states_cache_dx);
+			SAFE_FREE(results_array);
+			SAFE_FREE(results_array_dx);
 
-        if(stop)
-            return NULL;
+			if(stop)
+				return NULL;
+		}
 	}
 	return NULL;
 }
