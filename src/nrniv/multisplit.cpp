@@ -1642,13 +1642,13 @@ void MultiSplitControl::pexch() {
 	id = nrnmpi_myid;
 	// assume only one thread when there is transfer info
 	NrnThread* nt = nrn_threads;
-	printf("%d nthost_=%d\n", id, nthost_);
+	Printf("%d nthost_=%d\n", id, nthost_);
 	for (i=0; i < nthost_; ++i) {
 		MultiSplitTransferInfo& ms = msti_[i];
-		printf("%d %d host=%d nnode=%d displ=%d\n", id, i, ms.host_, ms.nnode_, ms.displ_);
+		Printf("%d %d host=%d nnode=%d displ=%d\n", id, i, ms.host_, ms.nnode_, ms.displ_);
 		for (j=0; j < ms.nnode_; ++j) {
 			k = ms.nodeindex_[j];
-			printf("%d %d %d %d %s %d\n",
+			Printf("%d %d %d %d %s %d\n",
 id, i, j, k, secname(nt->_v_node[k]->sec), nt->_v_node[k]->sec_node_index_);
 		}
 	}
@@ -1766,62 +1766,62 @@ void MultiSplitControl::prstruct() {
   for (id=0; id < nrnmpi_numprocs; ++id) {
     nrnmpi_barrier();
     if (id == nrnmpi_myid) {
-	printf("myid=%d\n", id);	
-	printf(" MultiSplit %ld\n", multisplit_list_->count());
+	Printf("myid=%d\n", id);	
+	Printf(" MultiSplit %ld\n", multisplit_list_->count());
 	for (i=0; i < multisplit_list_->count(); ++i) {
 		MultiSplit* ms = multisplit_list_->item(i);
 		Node* nd = ms->nd[0];
-		printf("  %2d bbs=%d bi=%-2d rthost=%-4d %-4d %s{%d}", i, ms->backbone_style,
+		Printf("  %2d bbs=%d bi=%-2d rthost=%-4d %-4d %s{%d}", i, ms->backbone_style,
 			ms->back_index, ms->rthost, ms->sid[0], secname(ms->nd[0]->sec),
 			ms->nd[0]->sec_node_index_);
 		if (ms->nd[1]) {
-			printf("   %-4d %s{%d}", ms->sid[1], secname(ms->nd[1]->sec),
+			Printf("   %-4d %s{%d}", ms->sid[1], secname(ms->nd[1]->sec),
 			ms->nd[1]->sec_node_index_);
 		}
-		printf("\n");
+		Printf("\n");
 	}
     for (it = 0; it < nrn_nthread; ++it) {
 	NrnThread* _nt = nrn_threads + it;
 	MultiSplitThread& t = mth_[it];
-	printf(" backbone_begin=%d backbone_long_begin=%d backbone_interior_begin=%d\n", t.backbone_begin, t.backbone_long_begin, t.backbone_interior_begin);
-	printf(" backbone_sid1_begin=%d backbone_long_sid1_begin=%d backbone_end=%d\n", t.backbone_sid1_begin, t.backbone_long_sid1_begin, t.backbone_end);
-	printf(" nbackrt_=%d  i, backsid_[i], backAindex_[i], backBindex_[i]\n", t.nbackrt_);
+	Printf(" backbone_begin=%d backbone_long_begin=%d backbone_interior_begin=%d\n", t.backbone_begin, t.backbone_long_begin, t.backbone_interior_begin);
+	Printf(" backbone_sid1_begin=%d backbone_long_sid1_begin=%d backbone_end=%d\n", t.backbone_sid1_begin, t.backbone_long_sid1_begin, t.backbone_end);
+	Printf(" nbackrt_=%d  i, backsid_[i], backAindex_[i], backBindex_[i]\n", t.nbackrt_);
 	if (t.nbackrt_) {
 		for (int i=0; i < t.nbackrt_; ++i) {
-			printf("  %2d %2d %5d %5d", i, t.backsid_[i], t.backAindex_[i], t.backBindex_[i]);
+			Printf("  %2d %2d %5d %5d", i, t.backsid_[i], t.backAindex_[i], t.backBindex_[i]);
 			Node* nd = _nt->_v_node[t.backbone_begin + t.backAindex_[i]];
-			printf(" %s{%d}", secname(nd->sec), nd->sec_node_index_);
+			Printf(" %s{%d}", secname(nd->sec), nd->sec_node_index_);
 			nd = _nt->_v_node[t.backbone_begin + t.backBindex_[i]];
-			printf(" %s{%d}", secname(nd->sec), nd->sec_node_index_);
-			printf("\n");
+			Printf(" %s{%d}", secname(nd->sec), nd->sec_node_index_);
+			Printf("\n");
 		}
 	}
     }
-	printf(" ReducedTree %d\n", nrtree_);
+	Printf(" ReducedTree %d\n", nrtree_);
 	for (i=0; i < nrtree_; ++i) {
 		ReducedTree* rt = rtree_[i];
-		printf("  %d n=%d nmap=%d\n", i, rt->n, rt->nmap);
+		Printf("  %d n=%d nmap=%d\n", i, rt->n, rt->nmap);
 		rt->pr_map(tbsize, trecvbuf_);
 	}
-	printf(" MultiSplitTransferInfo %d\n", nthost_);
+	Printf(" MultiSplitTransferInfo %d\n", nthost_);
 	for (i=0; i < nthost_; ++i) {
 		MultiSplitTransferInfo& m = msti_[i];
-printf("  %d host=%d rthost=%d nnode=%d nnode_rt=%d size=%d tag=%d\n",
+Printf("  %d host=%d rthost=%d nnode=%d nnode_rt=%d size=%d tag=%d\n",
 i, m.host_, m.rthost_, m.nnode_, m.nnode_rt_, m.size_, m.tag_);
 		if (m.nnode_) {
-printf("    nodeindex=%p  nodeindex_buffer = %p\n", m.nodeindex_,nodeindex_buffer_);
+Printf("    nodeindex=%p  nodeindex_buffer = %p\n", m.nodeindex_,nodeindex_buffer_);
 		}
 	}
-	printf(" ndbsize=%d  i  nodeindex_buffer_=%p  nodeindex_rthost_=%p\n",
+	Printf(" ndbsize=%d  i  nodeindex_buffer_=%p  nodeindex_rthost_=%p\n",
 		ndbsize, nodeindex_buffer_, nodeindex_rthost_);
 	if (ndbsize) {
 		for (int i=0; i < ndbsize; ++i) {
-			printf("  %d %d %d\n", i, nodeindex_buffer_[i], nodeindex_rthost_[i]);
+			Printf("  %d %d %d\n", i, nodeindex_buffer_[i], nodeindex_rthost_[i]);
 		}
 	}
-	printf(" tbsize=%d trecvbuf_=%p tsendbuf_=%p\n", tbsize,
+	Printf(" tbsize=%d trecvbuf_=%p tsendbuf_=%p\n", tbsize,
 		trecvbuf_, tsendbuf_);
-	printf("\n");
+	Printf("\n");
     }
   }
   nrnmpi_barrier();
@@ -2577,35 +2577,35 @@ smap[i], *smap[i], smap[i+1], *smap[i+1]);
 
 void ReducedTree::pr_map(int tsize, double* trbuf) {
 	int i;
-	printf("  rmap\n");
+	Printf("  rmap\n");
 	for (i=0; i < nmap; ++i) {
   for (int it=0; it < nrn_nthread; ++it) {
     NrnThread* nt = nrn_threads + it;
     MultiSplitThread& t = msc_->mth_[it];
     int nb = t.backbone_end - t.backbone_begin;
 		if (rmap[i] >= trbuf && rmap[i] < (trbuf + tsize)) {
-			printf(" %2d rhs[%2d] += tbuf[%ld]\n", i, irmap[i], rmap[i]-trbuf);
+			Printf(" %2d rhs[%2d] += tbuf[%ld]\n", i, irmap[i], rmap[i]-trbuf);
 		}
 		if (rmap[i] >= nt->_actual_rhs && rmap[i] < (nt->_actual_rhs + nt->end)) {
 			Node* nd = nt->_v_node[rmap[i] - nt->_actual_rhs];
-			printf(" %2d rhs[%2d] rhs[%d] += rhs[%ld] \t%s{%d}\n", i, irmap[i], irmap[i], rmap[i] - nt->_actual_rhs, secname(nd->sec), nd->sec_node_index_);
+			Printf(" %2d rhs[%2d] rhs[%d] += rhs[%ld] \t%s{%d}\n", i, irmap[i], irmap[i], rmap[i] - nt->_actual_rhs, secname(nd->sec), nd->sec_node_index_);
 		}
 		if (rmap[i] >= nt->_actual_d && rmap[i] < (nt->_actual_d + nt->end)) {
-			printf(" %2d rhs[%2d]   d[%d] += d[%ld]\n", i, irmap[i], irmap[i] - n, rmap[i] - nt->_actual_d);
+			Printf(" %2d rhs[%2d]   d[%d] += d[%ld]\n", i, irmap[i], irmap[i] - n, rmap[i] - nt->_actual_d);
 		}
 		if (rmap[i] >= t.sid1A && rmap[i] < (t.sid1A + nb)) {
-			printf(" %2d rhs[%2d]   a[%d] += sid1A[%ld]", i, irmap[i], irmap[i] - 2*n, rmap[i]-t.sid1A);
+			Printf(" %2d rhs[%2d]   a[%d] += sid1A[%ld]", i, irmap[i], irmap[i] - 2*n, rmap[i]-t.sid1A);
 			int j = (rmap[i] - t.sid1A) + t.backbone_begin;
 			Node* nd = nt->_v_node[j];
-printf(" \tA(%d) %s{%d}", j, secname(nd->sec), nd->sec_node_index_);
-			printf("\n");
+Printf(" \tA(%d) %s{%d}", j, secname(nd->sec), nd->sec_node_index_);
+			Printf("\n");
 		}
 		if (rmap[i] >= t.sid1B && rmap[i] < (t.sid1B + nb)) {
-			printf(" %2d rhs[%2d]   b[%d] += sid1B[%ld]", i, irmap[i], irmap[i] - 3*n, rmap[i]-t.sid1B);
+			Printf(" %2d rhs[%2d]   b[%d] += sid1B[%ld]", i, irmap[i], irmap[i] - 3*n, rmap[i]-t.sid1B);
 			int j = (rmap[i] - t.sid1B) + t.backbone_begin;
 			Node* nd = nt->_v_node[j];
-printf("\tB(%d) %s{%d}", j, secname(nd->sec), nd->sec_node_index_);
-			printf("\n");
+Printf("\tB(%d) %s{%d}", j, secname(nd->sec), nd->sec_node_index_);
+			Printf("\n");
 		}
   }
 	}
@@ -3289,30 +3289,30 @@ printf("i=%d parent=%d\n", i, nt->_v_parent[i]->v_node_index);
 
 void MultiSplitControl::pmat(bool full) {
 int it, i, ip, is;
-printf("\n");
+Printf("\n");
   for (it=0; it < nrn_nthread; ++it) {
     NrnThread* _nt = nrn_threads + it;
     MultiSplitThread& t = mth_[it];
     for (i=0; i < _nt->end; ++i) {
 	is = _nt->_v_node[i]->_classical_parent ? _nt->_v_node[i]->sec_node_index_ : -1;
-	printf("%d %d %s %d", _nt->_v_node[i]->v_node_index,
+	Printf("%d %d %s %d", _nt->_v_node[i]->v_node_index,
 		_nt->_v_parent[i] ? _nt->_v_parent[i]->v_node_index : -1,
 		secname(_nt->_v_node[i]->sec), is);
 	if (_nt->_v_parent[i]) {
 		is = _nt->_v_parent[i]->_classical_parent ? _nt->_v_parent[i]->sec_node_index_ : -1;
-		printf("  ->  %s %d", secname(_nt->_v_parent[i]->sec), is);
-		printf("\t %10.5g  %10.5g", NODEB(_nt->_v_node[i]), NODEA(_nt->_v_node[i]));
+		Printf("  ->  %s %d", secname(_nt->_v_parent[i]->sec), is);
+		Printf("\t %10.5g  %10.5g", NODEB(_nt->_v_node[i]), NODEA(_nt->_v_node[i]));
 	}else{
-		printf(" root\t\t %10.5g  %10.5g", 0., 0.);
+		Printf(" root\t\t %10.5g  %10.5g", 0., 0.);
 	}
 
 	if (full) {
-		printf("  %10.5g  %10.5g", NODED(_nt->_v_node[i]), NODERHS(_nt->_v_node[i]));
+		Printf("  %10.5g  %10.5g", NODED(_nt->_v_node[i]), NODERHS(_nt->_v_node[i]));
 		if (t.sid0i && i >= t.backbone_begin   && i < t.backbone_end) {
-			printf("  %10.5g  %10.5g", t.S1B(i-t.backbone_begin), t.S1A(i-t.backbone_begin));
+			Printf("  %10.5g  %10.5g", t.S1B(i-t.backbone_begin), t.S1A(i-t.backbone_begin));
 		}
 	}
-	printf("\n");
+	Printf("\n");
     }
   }
 }
@@ -3371,14 +3371,14 @@ void MultiSplitControl::pmat1(const char* s) {
 		if (ms->nd[1]) {
 			a = mth_[it].S1A(0);
 		}
-		printf("%2d %s sid=%d %12.5g %12.5g %12.5g %12.5g\n", nrnmpi_myid,
+		Printf("%2d %s sid=%d %12.5g %12.5g %12.5g %12.5g\n", nrnmpi_myid,
 			s, ms->sid[0], b, d, a, rhs);
 		if (ms->nd[1]) {
 			d = D(ms->nd[1]->v_node_index);
 			rhs = RHS(ms->nd[1]->v_node_index);
 			a = 0.;
 			b = t.S1B(t.backbone_sid1_begin - t.backbone_begin);
-			printf("%2d %s sid=%d %12.5g %12.5g %12.5g %12.5g\n", nrnmpi_myid,
+			Printf("%2d %s sid=%d %12.5g %12.5g %12.5g %12.5g\n", nrnmpi_myid,
 				s, ms->sid[1], b, d, a, rhs);
 		}
 	}

@@ -190,9 +190,9 @@ static int l_ref2(Object* o, Object* ob, int nr) {
 				Object** obp = o->u.dataspace[s->u.oboff].pobj + i;
 				if (*obp == ob) {
 					if (total == 1) {
-printf("   %s.%s\n", hoc_object_name(o), s->name);
+Printf("   %s.%s\n", hoc_object_name(o), s->name);
 					}else{
-printf("   %s.%s[%d]\n", hoc_object_name(o), s->name, i);
+Printf("   %s.%s[%d]\n", hoc_object_name(o), s->name, i);
 					}
 					++nr;
 				}
@@ -213,9 +213,9 @@ static int l_ref1(Symlist* sl, Objectdata* data, Object* ob, int nr) {
 				Object** obp = data[s->u.oboff].pobj + i;
 				if (*obp == ob) {
 					if (total == 1) {
-printf("   %s\n",  s->name);
+Printf("   %s\n",  s->name);
 					}else{
-printf("   %s[%d]\n", s->name, i);
+Printf("   %s[%d]\n", s->name, i);
 					}
 					++nr;
 				}
@@ -245,7 +245,7 @@ static int l_ref3(Symbol* s, Object* ob, int nr) {
 	ITERATE(q, s->u.ctemplate->olist) {
 		OcBox* b = (OcBox*)(OBJ(q)->u.this_pointer);
 		if (b->keep_ref() == ob){
-			printf("   %s.ref\n", hoc_object_name(OBJ(q)));
+			Printf("   %s.ref\n", hoc_object_name(OBJ(q)));
 			++nr;
 		}
 	}
@@ -262,7 +262,7 @@ static int l_ref4(Symbol* s, Object* ob, int nr) {
 		OcList* list = (OcList*)(OBJ(q)->u.this_pointer);
 		if (list->refs_items()) for (i = 0; i < list->count(); ++i) {
 			if (list->object(i) == ob) {	
-printf("   %s.object(%ld)\n", hoc_object_name(OBJ(q)), i);
+Printf("   %s.object(%ld)\n", hoc_object_name(OBJ(q)), i);
 				++nr;
 			}
 		}
@@ -273,7 +273,7 @@ printf("   %s.object(%ld)\n", hoc_object_name(OBJ(q)), i);
 static double l_ref(void*) {
 	Object* ob = *hoc_objgetarg(1);
 	int nr = ob ? ob->refcount : 0;
-	printf("%s has %d references\n", hoc_object_name(ob), nr);
+	Printf("%s has %d references\n", hoc_object_name(ob), nr);
 	if (nr == 0) { return 0.; }
 	nr = 0;
 	nr = l_ref1(hoc_top_level_symlist, hoc_top_level_data, ob, nr);
@@ -283,7 +283,7 @@ static double l_ref(void*) {
 	nr = l_ref3(hoc_table_lookup("VBox", hoc_built_in_symlist), ob, nr);
 	nr = l_ref4(hoc_table_lookup("List", hoc_built_in_symlist), ob, nr);
 	
-	printf("  found %d of them\n", nr);
+	Printf("  found %d of them\n", nr);
 	return (double)nr;
 }
 

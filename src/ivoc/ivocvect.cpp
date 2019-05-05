@@ -750,10 +750,10 @@ static double v_printf(void *v) {
            fprintf(f->file(),"\n");
 	 } else {
 	   for (int i=start;i<=end;i++) {
-	     printf(format,x->elem(i));
-             if (extra_newline && !((i-start+1)%5)){ printf("\n");}
+	     Printf(format,x->elem(i));
+             if (extra_newline && !((i-start+1)%5)){ Printf("\n");}
 	   }
-           if(extra_newline) {printf("\n");}
+           if(extra_newline) {Printf("\n");}
 	 }
 	hoc_return_type_code = 1; // integer
 	return double(end-start+1);
@@ -2551,7 +2551,7 @@ static double 	simplex(double *p, int n, Vect *x, Vect *y, char* fcn)
 	nvortex = (double *)calloc(n*4,(unsigned)sizeof(double));
 
 	if( 0==evortex || 0==gvortex || 0==vortex || 0==nvortex ){
-		printf("allocation error in simplex()\n");
+		Printf("allocation error in simplex()\n");
 		nrn_exit(1);
 	}
 
