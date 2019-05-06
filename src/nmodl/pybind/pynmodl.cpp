@@ -170,6 +170,7 @@ PYBIND11_MODULE(_nmodl, m_nmodl) {
                 "node"_a,
                 "compact"_a = false,
                 "expand"_a = false,
+                "add_nmodl"_a = false,
                 nmodl::docstring::to_json);
 
     init_visitor_module(m_nmodl);
