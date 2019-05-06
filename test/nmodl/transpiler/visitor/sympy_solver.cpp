@@ -298,7 +298,10 @@ SCENARIO("Solve ODEs with cnexp or euler method using SympySolverVisitor",
             REQUIRE(result[0] == "z' = a/z+b/z/z");
             REQUIRE(result[1] == "h = -h/(c2*dt*h-1)");
             REQUIRE(result[2] == "x = a*dt+x");
-            REQUIRE(result[3] == "y' = c3*y*y*y");
+            /// sympy 1.4 able to solve ode but not older versions
+            bool last_result = (result[3] == "y' = c3*y*y*y" ||
+                                result[3] == "y = sqrt(-pow(y, 2)/(2*c3*dt*pow(y, 2)-1))");
+            REQUIRE(last_result);
         }
     }
     GIVEN("Derivative block with cnexp solver method, AST after SympySolver pass") {
@@ -948,16 +951,26 @@ SCENARIO("LINEAR solve block (SympySolver Visitor)", "[sympy][linear]") {
                 ~ a + x/b + z - y = 0.842*b*b
                 ~ x + 1.3*y - 0.1*z/(a*a*b) = 1.43543/c
             })";
-        std::string expected_text = R"(
+        std::string expected_text_sympy_13 = R"(
             LINEAR lin {
                 x = (4*pow(a, 2)*pow(b, 2)*(-c*(5.343*a+b*(-1*a+0.842*pow(b, 2)))*(4*c-1.3)+(1*b+4*c)*(5.343*a*c+1.43543))-(5.343*a*(1*b+4*c)-4*c*(5.343*a+b*(-1*a+0.842*pow(b, 2))))*(pow(a, 2)*pow(b, 2)*(4*c-1.3)+0.1*b+0.4*c))/((1*b+4*c)*(pow(a, 2)*pow(b, 2)*(4*c-1.3)+0.1*b+0.4*c))
                 y = (1*pow(a, 2)*pow(b, 2)*c*(5.343*a+b*(-1*a+0.842*pow(b, 2)))*(4*c-1.3)-1*pow(a, 2)*pow(b, 2)*(1*b+4*c)*(5.343*a*c+1.43543)-c*(5.343*a+b*(-1*a+0.842*pow(b, 2)))*(pow(a, 2)*pow(b, 2)*(4*c-1.3)+0.1*b+0.4*c))/(c*(1*b+4*c)*(pow(a, 2)*pow(b, 2)*(4*c-1.3)+0.1*b+0.4*c))
                 z = pow(a, 2)*b*(c*(5.343*a+b*(-1*a+0.842*pow(b, 2)))*(4*c-1.3)-(1*b+4*c)*(5.343*a*c+1.43543))/(c*(pow(a, 2)*pow(b, 2)*(4*c-1.3)+0.1*b+0.4*c))
             })";
+        std::string expected_text_sympy_14 = R"(
+            LINEAR lin {
+                x = (4*pow(a, 2)*pow(b, 2)*(-c*(5.343*a+b*(-a+0.842*pow(b, 2)))*(4*c-1.3)+(b+4*c)*(5.343*a*c+1.43543))-(5.343*a*(b+4*c)-4*c*(5.343*a+b*(-a+0.842*pow(b, 2))))*(pow(a, 2)*pow(b, 2)*(4*c-1.3)+0.1*b+0.4*c))/((b+4*c)*(pow(a, 2)*pow(b, 2)*(4*c-1.3)+0.1*b+0.4*c))
+                y = (pow(a, 2)*pow(b, 2)*c*(5.343*a+b*(-a+0.842*pow(b, 2)))*(4*c-1.3)-pow(a, 2)*pow(b, 2)*(b+4*c)*(5.343*a*c+1.43543)-c*(5.343*a+b*(-a+0.842*pow(b, 2)))*(pow(a, 2)*pow(b, 2)*(4*c-1.3)+0.1*b+0.4*c))/(c*(b+4*c)*(pow(a, 2)*pow(b, 2)*(4*c-1.3)+0.1*b+0.4*c))
+                z = pow(a, 2)*b*(c*(5.343*a+b*(-a+0.842*pow(b, 2)))*(4*c-1.3)-(b+4*c)*(5.343*a*c+1.43543))/(c*(pow(a, 2)*pow(b, 2)*(4*c-1.3)+0.1*b+0.4*c))
+            })";
+
         THEN("solve analytically") {
             auto result =
                 run_sympy_solver_visitor(nmodl_text, false, false, AstNodeType::LINEAR_BLOCK);
-            REQUIRE(reindent_text(result[0]) == reindent_text(expected_text));
+            bool result_match = (reindent_text(result[0]) ==
+                                     reindent_text(expected_text_sympy_13) ||
+                                 reindent_text(result[0]) == reindent_text(expected_text_sympy_14));
+            REQUIRE(result_match);
         }
     }
     GIVEN("array state-var numeric LINEAR solve block") {
@@ -1265,7 +1278,7 @@ SCENARIO("Solve NONLINEAR block using SympySolver Visitor", "[visitor][solver][s
             NONLINEAR nonlin {
                 ~ x = 5
             })";
-        std::string expected_text = R"(
+        std::string expected_text_sympy_13 = R"(
             NONLINEAR nonlin {
                 EIGEN_NEWTON_SOLVE[1]{
                 }{
@@ -1279,10 +1292,28 @@ SCENARIO("Solve NONLINEAR block using SympySolver Visitor", "[visitor][solver][s
                 }{
                 }
             })";
+        std::string expected_text_sympy_14 = R"(
+            NONLINEAR nonlin {
+                EIGEN_NEWTON_SOLVE[1]{
+                }{
+                }{
+                    X[0] = x
+                }{
+                    F[0] = 5-X[0]
+                    J[0] = -1
+                }{
+                    x = X[0]
+                }{
+                }
+            })";
+
         THEN("return F & J for newton solver") {
             auto result =
                 run_sympy_solver_visitor(nmodl_text, false, false, AstNodeType::NON_LINEAR_BLOCK);
-            REQUIRE(reindent_text(result[0]) == reindent_text(expected_text));
+            bool result_match = (reindent_text(result[0]) ==
+                                     reindent_text(expected_text_sympy_13) ||
+                                 reindent_text(result[0]) == reindent_text(expected_text_sympy_14));
+            REQUIRE(result_match);
         }
     }
     GIVEN("array state-var numeric NONLINEAR solve block") {
@@ -1295,7 +1326,7 @@ SCENARIO("Solve NONLINEAR block using SympySolver Visitor", "[visitor][solver][s
                 ~ s[1] = 3
                 ~ s[2] + s[1] = s[0]
             })";
-        std::string expected_text = R"(
+        std::string expected_text_sympy_13 = R"(
             NONLINEAR nonlin {
                 EIGEN_NEWTON_SOLVE[3]{
                 }{
@@ -1323,10 +1354,41 @@ SCENARIO("Solve NONLINEAR block using SympySolver Visitor", "[visitor][solver][s
                 }{
                 }
             })";
+        std::string expected_text_sympy_14 = R"(
+            NONLINEAR nonlin {
+                EIGEN_NEWTON_SOLVE[3]{
+                }{
+                }{
+                    X[0] = s[0]
+                    X[1] = s[1]
+                    X[2] = s[2]
+                }{
+                    F[0] = 1-X[0]
+                    F[1] = 3-X[1]
+                    F[2] = X[0]-X[1]-X[2]
+                    J[0] = -1
+                    J[3] = 0
+                    J[6] = 0
+                    J[1] = 0
+                    J[4] = -1
+                    J[7] = 0
+                    J[2] = 1
+                    J[5] = -1
+                    J[8] = -1
+                }{
+                    s[0] = X[0]
+                    s[1] = X[1]
+                    s[2] = X[2]
+                }{
+                }
+            })";
         THEN("return F & J for newton solver") {
             auto result =
                 run_sympy_solver_visitor(nmodl_text, false, false, AstNodeType::NON_LINEAR_BLOCK);
-            REQUIRE(reindent_text(result[0]) == reindent_text(expected_text));
+            bool result_match = (reindent_text(result[0]) ==
+                                     reindent_text(expected_text_sympy_13) ||
+                                 reindent_text(result[0]) == reindent_text(expected_text_sympy_14));
+            REQUIRE(result_match);
         }
     }
 }
