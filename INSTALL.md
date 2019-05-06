@@ -112,6 +112,9 @@ NMODL is now setup correctly!
 
 #### Generating Documentation
 
+In order to build the documentation you must have additionally `pandoc` installed. Use your
+system's package manager to do this (e.g. `apt install pandoc`).
+
 Once you have installed NMODL and setup the correct PYTHONPATH, you can build the documentation locally from the docs folder as:
 
 ```
