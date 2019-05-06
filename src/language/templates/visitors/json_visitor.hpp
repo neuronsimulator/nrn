@@ -32,7 +32,11 @@ namespace visitor {
  */
 class JSONVisitor: public AstVisitor {
   private:
+    /// json printer
     std::unique_ptr<printer::JSONPrinter> printer;
+
+    /// true if nmodl corresponding to ast node should be added to json
+    bool embed_nmodl = false;
 
   public:
     JSONVisitor()
@@ -47,9 +51,15 @@ class JSONVisitor: public AstVisitor {
     void flush() {
         printer->flush();
     }
+
     void compact_json(bool flag) {
         printer->compact_json(flag);
     }
+
+    void add_nmodl(bool flag) {
+        embed_nmodl = flag;
+    }
+
     void expand_keys(bool flag) {
         printer->expand_keys(flag);
     }

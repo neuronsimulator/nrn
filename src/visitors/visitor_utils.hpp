@@ -71,7 +71,10 @@ std::string to_nmodl(ast::Ast* node, const std::set<ast::AstNodeType>& exclude_t
 
 
 /// Given AST node, return the JSON string representation
-std::string to_json(ast::Ast* node, bool compact = false, bool expand = false);
+std::string to_json(ast::Ast* node,
+                    bool compact = false,
+                    bool expand = false,
+                    bool add_nmodl = false);
 
 
 }  // namespace nmodl

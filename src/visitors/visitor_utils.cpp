@@ -170,10 +170,11 @@ std::string to_nmodl(ast::Ast* node, const std::set<ast::AstNodeType>& exclude_t
 }
 
 
-std::string to_json(ast::Ast* node, bool compact, bool expand) {
+std::string to_json(ast::Ast* node, bool compact, bool expand, bool add_nmodl) {
     std::stringstream stream;
     visitor::JSONVisitor v(stream);
     v.compact_json(compact);
+    v.add_nmodl(add_nmodl);
     v.expand_keys(expand);
     node->accept(&v);
     v.flush();

@@ -6,6 +6,7 @@
  *************************************************************************/
 
 #include "printer/json_printer.hpp"
+#include "utils/logger.hpp"
 
 
 namespace nmodl {
@@ -38,6 +39,15 @@ void JSONPrinter::add_node(std::string value, const std::string& key) {
     json j;
     j[key] = value;
     block->front().push_back(j);
+}
+
+/// Add property to the block which is added last
+void JSONPrinter::add_block_property(std::string name, const std::string& value) {
+    if (block == nullptr) {
+        logger->warn("JSONPrinter : can't add property without block");
+        return;
+    }
+    (*block)[name] = value;
 }
 
 /// Add new json object (typically start of new block)
