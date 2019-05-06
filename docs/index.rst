@@ -37,7 +37,6 @@ About NMODL
    :caption: Reference:
 
    modules.rst
-   cpp_api/library_root
 
 Indices and tables
 ==================

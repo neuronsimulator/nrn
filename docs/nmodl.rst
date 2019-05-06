@@ -1,5 +1,5 @@
 Module contents
-================
+===============
 
 .. automodule:: nmodl
     :members:
@@ -9,7 +9,7 @@ Module contents
 
 
 Submodules
-=============
+==========
 
 nmodl.ast module
 ----------------

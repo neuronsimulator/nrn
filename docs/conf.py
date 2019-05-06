@@ -35,8 +35,6 @@ import nmodl  # isort:skip
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "breathe",
-    "exhale",
     "m2r",
     "nbsphinx",
     "sphinx.ext.autodoc",
@@ -65,29 +63,6 @@ doctest_global_cleanup = textwrap.dedent(
 
 nbsphinx_execute = "always"
 nbsphinx_kernel_name = "python3"
-
-# Setup the breathe extension
-breathe_projects = {"NMODL C++ library": "./doxyoutput/xml"}
-breathe_default_project = "NMODL C++ library"
-
-# Setup the exhale extension
-exhale_args = {
-    # These arguments are required
-    "containmentFolder": "./cpp_api",
-    "rootFileName": "library_root.rst",
-    "rootFileTitle": "C++ API",
-    "doxygenStripFromPath": "..",
-    # Suggested optional arguments
-    "createTreeView": True,
-    # TIP: if using the sphinx-bootstrap-theme, you need
-    "treeViewIsBootstrap": True,
-    "exhaleExecutesDoxygen": True,
-    # TODO: change to ../include?
-    "exhaleDoxygenStdin": """
-        INPUT = ../src
-        FILE_PATTERNS = *.c *.h *.cpp *.hpp *.ipp
-    """,
-}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

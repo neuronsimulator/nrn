@@ -15,9 +15,9 @@ import sys
 import sysconfig
 from distutils.version import LooseVersion
 
+from distutils.cmd import Command
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
-from setuptools.command.install import install
 from setuptools.command.test import test
 
 
@@ -41,6 +41,19 @@ def get_sphinx_command():
     return BuildDoc
 
 
+class InstallDoc(Command):
+    description = 'Install Sphinx documentation'
+    user_options = []
+    def initialize_options(self):
+        pass
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        self.run_command("test")
+        self.run_command("doctest")
+        self.run_command("buildhtml")
+
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=""):
         Extension.__init__(self, name, sources=[])
@@ -60,8 +73,8 @@ class CMakeBuild(build_ext):
         cmake_version = LooseVersion(
             re.search(r"version\s*([\d.]+)", out.decode()).group(1)
         )
-        if cmake_version < "3.1.0":
-            raise RuntimeError("CMake >= 3.1.0 is required")
+        if cmake_version < "3.3.0":
+            raise RuntimeError("CMake >= 3.3.0 is required")
 
         for ext in self.extensions:
             self.build_extension(ext)
@@ -128,10 +141,9 @@ class NMODLTest(test):
                 "test",
             ]
         )
-        subprocess.check_call([sys.executable, __file__, "doctest"])
 
 
-install_requirements = ["jinja2>=2.9", "PyYAML>=3.13", "sympy>=1.2"]
+install_requirements = ["jinja2>=2.9", "PyYAML>=3.13", "sympy>=1.3"]
 
 setup(
     name="NMODL",
@@ -145,11 +157,12 @@ setup(
     cmdclass=lazy_dict(
         build_ext=CMakeBuild,
         test=NMODLTest,
-        install_doc=get_sphinx_command,
+        install_doc=InstallDoc,
         doctest=get_sphinx_command,
+        buildhtml=get_sphinx_command,
     ),
     zip_safe=False,
-    setup_requires=["nbsphinx", "m2r", "exhale", "sphinx-rtd-theme", "sphinx<2"]
+    setup_requires=["nbsphinx", "m2r", "sphinx-rtd-theme", "sphinx>=2.0"]
     + install_requirements,
     install_requires=install_requirements,
     tests_require=["pytest>=3.7.2"],
