@@ -180,6 +180,24 @@ class ChildNode(BaseNode):
 
         return type_name
 
+    def get_shared_typename(self):
+        """returns the shared pointer type of the node for declaration
+
+        When node is of base type then it is returned as it is. Depending
+        on pointer or list, appropriate suffix is added. Some of the examples
+        of typename are Expression, ExpressionVector,
+        std::shared_ptr<Expression> etc.
+        """
+
+        type_name = self.class_name
+
+        if self.is_vector:
+            type_name += "Vector"
+        elif not self.is_base_type_node and not self.is_ptr_excluded_node:
+            type_name = "std::shared_ptr<" + type_name + ">"
+
+        return type_name
+
     @property
     def member_typename(self):
         """returns type when used as a member of the class"""
@@ -375,7 +393,7 @@ class Node(BaseNode):
 
     def ctor_declaration(self):
         args = [f'{c.get_typename()} {c.varname}' for c in self.children]
-        return f"{self.class_name}({', '.join(args)});"
+        return f"explicit {self.class_name}({', '.join(args)});"
 
     def ctor_definition(self):
         args = [f'{c.get_typename()} {c.varname}' for c in self.children]
@@ -388,7 +406,7 @@ class Node(BaseNode):
 
     def ctor_shrptr_declaration(self):
         args = [f'{c.member_typename} {c.varname}' for c in self.children]
-        return f"{self.class_name}({', '.join(args)});"
+        return f"explicit {self.class_name}({', '.join(args)});"
 
     def ctor_shrptr_definition(self):
         args = [f'{c.member_typename} {c.varname}' for c in self.children]
