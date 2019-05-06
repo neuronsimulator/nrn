@@ -61,7 +61,8 @@ target_link_libraries(testunitlexer lexer util)
 target_link_libraries(testunitparser lexer test_util config)
 
 # =============================================================================
-# Use catch_discover instead of add_test for granular test report
+# Use catch_discover instead of add_test for granular test report if CMAKE ver is greater than 3.9,
+# else use the normal add_test method
 # =============================================================================
 foreach(test_name
         testmodtoken
@@ -73,21 +74,30 @@ foreach(test_name
         testnewton
         testunitlexer
         testunitparser)
-  catch_discover_tests(${test_name}
-                       TEST_PREFIX
-                       "${test_name}/"
-                       PROPERTIES
-                       ENVIRONMENT
-                       PYTHONPATH=${CMAKE_BINARY_DIR}:$ENV{PYTHONPATH})
+
+  if(${CMAKE_VERSION} VERSION_GREATER "3.10")
+    catch_discover_tests(${test_name}
+                         TEST_PREFIX
+                         "${test_name}/"
+                         PROPERTIES
+                         ENVIRONMENT
+                         PYTHONPATH=${CMAKE_BINARY_DIR}:$ENV{PYTHONPATH})
+  else()
+    add_test(NAME ${test_name} COMMAND ${test_name})
+    if(${test_name} STREQUAL "testvisitor")
+      set_tests_properties(${test_name}
+                           PROPERTIES ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}:$ENV{PYTHONPATH})
+    endif()
+  endif()
 endforeach()
 
 # =============================================================================
 # pybind11 tests
 # =============================================================================
 add_test(NAME Ode
-         COMMAND python3 -m pytest ${PROJECT_SOURCE_DIR}/test/ode)
+         COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/ode)
 add_test(NAME Pybind
-         COMMAND python3 -m pytest ${PROJECT_SOURCE_DIR}/test/pybind)
+         COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/pybind)
 foreach(test_name Ode Pybind)
   set_tests_properties(${test_name}
                        PROPERTIES ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}:$ENV{PYTHONPATH})
