@@ -522,7 +522,7 @@ class Node3D(Node):
         """
         # TODO: should I have the commented out line?
         #rxd._update_node_data()
-        return _surface_area[self._index]
+        return self._r._sa[self._index]
         
     def satisfies(self, condition):
         """Tests if a Node satisfies a given condition.
