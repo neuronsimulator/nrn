@@ -27,7 +27,7 @@
 {%- endmacro -%}
 
 {% macro args(children) %}
-{% for c in children %} {{ c.get_typename() }} {%- if not loop.last %}, {% endif %} {% endfor %}
+{% for c in children %} {{ c.get_shared_typename() }} {%- if not loop.last %}, {% endif %} {% endfor %}
 {%- endmacro -%}
 // clang-format on
 
