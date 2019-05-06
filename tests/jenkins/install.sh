@@ -7,7 +7,7 @@ set -e
 CORENRN_TYPE="$1"
 
 if [ "${CORENRN_TYPE}" = "GPU" ]; then
-    module load pgi cuda/9.0.176 hpe-mpi cmake boost
+    module load pgi/19.4 cuda hpe-mpi cmake
 
     mkdir build_${CORENRN_TYPE}
 else
@@ -23,8 +23,8 @@ cd $WORKSPACE/build_${CORENRN_TYPE}
 echo "${CORENRN_TYPE} build"
 if [ "${CORENRN_TYPE}" = "GPU" ]; then
     cmake \
-        -DCMAKE_C_FLAGS:STRING="-O2 -ta=tesla:cuda9.0" \
-        -DCMAKE_CXX_FLAGS:STRING="-O2 -ta=tesla:cuda9.0" \
+        -DCMAKE_C_FLAGS:STRING="-O2" \
+        -DCMAKE_CXX_FLAGS:STRING="-O2 -D_GLIBCXX_USE_CXX11_ABI=0 -DR123_USE_SSE=0" \
         -DCOMPILE_LIBRARY_TYPE=STATIC  \
         -DCUDA_HOST_COMPILER=`which gcc` \
         -DCUDA_PROPAGATE_HOST_FLAGS=OFF \
