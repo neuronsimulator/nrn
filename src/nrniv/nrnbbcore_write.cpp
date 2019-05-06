@@ -49,7 +49,7 @@
 // all synapses and all artificial cells belonging to that thread. All
 // the synapses and artificial cells are in NrnThread.tml order. So there
 // are no exceptions in filling Point_process pointers from the data indices
-// on the corebluron side. PreSyn ordering is a bit more delicate.
+// on the coreneuron side. PreSyn ordering is a bit more delicate.
 // From netpar.cpp, the gid2out_ hash table defines an output_gid
 // ordering and gives us all the PreSyn
 // associated with real and artificial cells having gids. But those are
@@ -75,7 +75,7 @@ No POINTER to data outside of NrnThread.
 No POINTER to data in ARTIFICIAL_CELL (that data is not cache_efficient)
 nt->tml->pdata is not cache_efficient
 */
-// See corebluron/src/simcore/nrniv/nrn_setup.cpp for a description of
+// See coreneuron/nrniv/nrn_setup.cpp for a description of
 // the file format written by this file.
 
 /*
@@ -84,6 +84,10 @@ To do this we factored all major file writing components into a series
 of functions that return data that can be called from the coreneuron
 library. The file writing functionality is kept by also calling those
 functions here as well.
+Direct transfer mode disables error checking with regard to every thread
+having a real cell with a gid. Of course real and artificial cells without
+gids do not have spike information in the output raster file. Trajectory
+correctness has not been validated for cells without gids.
 */
 
 #include <stdio.h>
@@ -191,11 +195,16 @@ static NrnMappingInfo mapinfo;
 // add version string to the dataset files
 const char *bbcore_write_version = "1.2";
 
+// direct transfer or via files? The latter makes use of group_gid for
+// filename construction.
+static bool corenrn_direct;
+
 static size_t part1();
 static void part2(const char*);
 
 // accessible from ParallelContext.total_bytes()
 size_t nrnbbcore_write() {
+  corenrn_direct = false;
   if (!use_cachevec) {
     hoc_execerror("nrnbbcore_write requires cvode.cache_efficient(1)", NULL);
   }
@@ -663,7 +672,7 @@ CellGroup* mk_cellgroups() {
   nrncore_netpar_cellgroups_helper(cgs);
 
   // use first real cell gid, if it exists, as the group_id
-  for (int i=0; i < nrn_nthread; ++i) {
+  if (corenrn_direct == false) for (int i=0; i < nrn_nthread; ++i) {
     if (cgs[i].n_real_output && cgs[i].output_gid[0] >= 0) {
       cgs[i].group_id = cgs[i].output_gid[0];
     }else{
@@ -1802,6 +1811,7 @@ static core2nrn_callback_t cnbs[]  = {
 
 #if defined(HAVE_DLFCN_H)
 int nrncore_run(const char* arg) {
+  corenrn_direct = true;
   char* corenrn_lib = getenv("CORENEURONLIB");
   if (!corenrn_lib) {
     hoc_execerror("nrncore_run needs a CORENEURONLIB environment variable", NULL);
