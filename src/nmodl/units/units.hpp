@@ -78,7 +78,7 @@ class Unit {
     double unit_factor = 1.0;
 
     /// Array of MAX_DIMS size that keeps the Unit's dimensions
-    std::array<int, MAX_DIMS> unit_dimensions = {0};
+    std::array<int, MAX_DIMS> unit_dimensions{{0}};
 
     /// Name of the Unit
     std::string unit_name;
