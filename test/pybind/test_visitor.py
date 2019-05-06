@@ -48,6 +48,7 @@ def test_json_visitor(ch_ast):
                      '"name":"PrimeName","nmodl":"m\'"}')
     assert result_json == expected_json
 
+
 def test_custom_visitor(ch_ast):
 
     class StateVisitor(visitor.AstVisitor):

@@ -48,6 +48,9 @@ T remove_extension(T const& filename) {
 /// Given directory path, create sub-directories
 bool make_path(const std::string& path);
 
+/// Check if directory with given path exist
+bool is_dir_exist(const std::string& path);
+
 /** @} */  // end of utils
 
 }  // namespace utils
