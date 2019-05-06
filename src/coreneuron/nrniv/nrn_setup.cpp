@@ -1998,8 +1998,8 @@ for (int i=0; i < nt.end; ++i) {
                 py[j] = yvec1[j];
                 pt[j] = tvec1[j];
             }
-            delete[] yvec1;
-            delete[] tvec1;
+            // yvec1 and tvec1 are not deleted as that space is within
+            // NEURON Vector
         } else {
             F.read_array<double>(vector_vec(yvec), sz);
             F.read_array<double>(vector_vec(tvec), sz);
