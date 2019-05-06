@@ -43,6 +43,7 @@ add_custom_command(OUTPUT ${NMODL_PYTHON_FILES_OUT}
                            ${CMAKE_BINARY_DIR}/nmodl
                    DEPENDS ${NMODL_PYTHON_FILES_IN} $<TARGET_FILE:_nmodl>
                    COMMENT "-- COPYING NMODL PYTHON FILES --")
+
 # =============================================================================
 # Install python binding components
 # =============================================================================

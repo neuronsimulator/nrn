@@ -22,3 +22,7 @@ const std::string nmodl::Version::NMODL_VERSION = "@PROJECT_VERSION@";
  */
 const std::vector<std::string> nmodl::NrnUnitsLib::NRNUNITSLIB_PATH =
     {"@CMAKE_INSTALL_PREFIX@/share/nrnunits.lib", "@PROJECT_SOURCE_DIR@/share/nrnunits.lib"};
+
+ /// Path of nmodl examples
+const std::vector<std::string> nmodl::Config::NMODL_EXAMPLE_PATH =
+        {"@CMAKE_INSTALL_PREFIX@/share/example", "@PROJECT_SOURCE_DIR@/share/example"};

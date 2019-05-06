@@ -160,3 +160,8 @@ set(MEMORYCHECK_COMMAND_OPTIONS "--trace-children=yes \
                                  --show-possibly-lost=no")
 include(CTest)
 add_subdirectory(test)
+
+# =============================================================================
+# Install unit database, examples and utility scripts from share
+# =============================================================================
+install(DIRECTORY share/ DESTINATION share)
