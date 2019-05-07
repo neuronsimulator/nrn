@@ -16,7 +16,7 @@ SectionList
         Class for creating and managing a list of sections. Unlike a regular Python list, a ``SectionList`` allows including sections
         based on neuronal morphology (e.g. subtrees).
 
-        If ``sl`` is a :class:`SectionList`, then to turn that into a Python list, use ``py_list = [sec for sec in sl]``; note
+        If ``sl`` is a :class:`SectionList`, then to turn that into a Python list, use ``py_list = list(sl)``; note
         that iterating over a SectionList is supported, so it may not be neccessary to create a Python list.
 
         To turn a Python list ``py_list`` of Sections into a :class:`SectionList`, use:
