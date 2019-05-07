@@ -798,23 +798,67 @@ static PyObject* pysec_orientation(NPySecObj* self) {
   return Py_BuildValue("d", x);
 }
 
-static PyObject* pysec_children(NPySecObj* self) {
+static bool lappendsec(PyObject* const sl, Section* const s) {
+  PyObject* item = (PyObject*)newpysechelp(s);
+  if (!item) {
+    return false;
+  }
+  if (PyList_Append(sl, item) != 0) {
+    return false;
+  }
+  Py_XDECREF(item);
+  return true;
+}
+
+static PyObject* pysec_children1(PyObject* const sl, Section * const sec) {
+  for (Section* s = sec->child; s; s = s->sibling) {
+    if (!lappendsec(sl, s)) {
+      return NULL;
+    }
+  }
+  return sl;
+}
+
+static PyObject* pysec_children(NPySecObj* const self) {
+  Section* const sec = self->sec_;
+  PyObject* const result = PyList_New(0);
+  if (!result) {
+    return NULL;
+  }
+  return pysec_children1(result, sec);
+}
+
+static PyObject* pysec_subtree1(PyObject* const sl, Section* const sec)
+{
+  if (!lappendsec(sl, sec)) {
+    return NULL;
+  }
+  for (Section* s = sec->child; s; s = s->sibling) {
+    if (!pysec_subtree1(sl, s)) {
+      return NULL;
+    }
+  }
+  return sl;
+}
+
+static PyObject* pysec_subtree(NPySecObj* const self) {
+  Section* const sec = self->sec_;
+  PyObject* const result = PyList_New(0);
+  if (!result) {
+    return NULL;
+  }
+  return pysec_subtree1(result, sec);
+}
+
+static PyObject* pysec_wholetree(NPySecObj* const self) {
   Section* sec = self->sec_;
+  Section* s;
   PyObject* result = PyList_New(0);
   if (!result) {
     return NULL;
   }
-  for (Section* s = sec->child; s; s = s->sibling) {
-    PyObject* item = (PyObject*)newpysechelp(s);
-    if (!item) {
-      return NULL;
-    }
-    if (PyList_Append(result, item) != 0) {
-      return NULL;
-    }
-    Py_XDECREF(item);
-  }
-  return result;
+  for (s = sec; s->parentsec; s = s->parentsec) {}
+  return pysec_subtree1(result, s);
 }
 
 static PyObject* pysec2cell(NPySecObj* self) {
@@ -1923,6 +1967,10 @@ static PyMethodDef NPySecObj_methods[] = {
      "Returns 0.0 or 1.0  depending on the x value closest to parent."},
     {"children", (PyCFunction)pysec_children, METH_NOARGS,
      "Return list of child sections. Possibly an empty list"},
+    {"subtree", (PyCFunction)pysec_subtree, METH_NOARGS,
+     "Return list of sections in the subtree rooted at this section (including this section)."},
+    {"wholetree", (PyCFunction)pysec_wholetree, METH_NOARGS,
+     "Return list of all sections with a path to this section (including this section). The list has the important property that sections are in root to leaf order, depth-first traversal."},
     {"n3d", (PyCFunction)NPySecObj_n3d, METH_NOARGS,
      "Returns the number of 3D points."},
     {"x3d", (PyCFunction)NPySecObj_x3d, METH_VARARGS,
