@@ -37,6 +37,7 @@ About NMODL
    :caption: Reference:
 
    modules.rst
+   doxygen.rst
 
 Indices and tables
 ==================

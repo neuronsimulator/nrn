@@ -162,7 +162,7 @@ setup(
         buildhtml=get_sphinx_command,
     ),
     zip_safe=False,
-    setup_requires=["nbsphinx", "m2r", "sphinx-rtd-theme", "sphinx>=2.0"]
+    setup_requires=["nbsphinx>=0.3.2", "m2r", "sphinx-rtd-theme", "sphinx>=2.0"]
     + install_requirements,
     install_requires=install_requirements,
     tests_require=["pytest>=3.7.2"],

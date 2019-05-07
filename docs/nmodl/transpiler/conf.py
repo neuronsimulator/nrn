@@ -18,12 +18,19 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
+import subprocess
 import sys
 import textwrap
 
 sys.path.insert(0, os.path.abspath(".."))
 
 import nmodl  # isort:skip
+
+# Run doxygen
+subprocess.call('doxygen Doxyfile', shell=True)
+
+# Copy doxygen output to the sphinx output directory
+html_static_path = ['_static']
 
 # -- General configuration ------------------------------------------------
 
