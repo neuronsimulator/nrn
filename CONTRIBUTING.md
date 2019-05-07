@@ -1,11 +1,12 @@
-# Contributing to the NMODL
+# Contributing to the NMODL Framework
 
-We would love for you to contribute to the NMODL and help make it better than it is today. As a
+We would love for you to contribute to the NMODL Framework and help make it better than it is today. As a
 contributor, here are the guidelines we would like you to follow:
  - [Question or Problem?](#question)
  - [Issues and Bugs](#issue)
  - [Feature Requests](#feature)
  - [Submission Guidelines](#submit)
+ - [Development Conventions](#devconv)
 
 ## <a name="question"></a> Got a Question?
 
@@ -100,3 +101,53 @@ repository:
     ```
 
 [github]: https://github.com/BlueBrain/nmodl
+
+## <a name="devconv"></a> Development Conventions
+
+If you are developing NMODL, make sure to enable both `NMODL_FORMATTING` and `NMODL_PRECOMMIT`
+CMake variables to ensure that your contributions follow the coding conventions of this project:
+
+```cmake
+cmake -DNMODL_FORMATTING:BOOL=ON -DNMODL_PRECOMMIT:BOOL=ON <path>
+```
+
+The first variable provides the following additional targets to format
+C, C++, and CMake files:
+
+```
+make clang-format cmake-format
+```
+
+The second option activates Git hooks that will discard commits that
+do not comply with coding conventions of this project. These 2 CMake variables require additional utilities:
+
+* [ClangFormat 7](https://releases.llvm.org/7.0.0/tools/clang/docs/ClangFormat.html)
+* [cmake-format](https://github.com/cheshirekow/cmake_format)
+* [pre-commit](https://pre-commit.com/)
+
+clang-format can be installed on Linux thanks
+to [LLVM apt page](http://apt.llvm.org/). On MacOS, there is a
+[brew recipe](https://gist.github.com/ffeu/0460bb1349fa7e4ab4c459a6192cbb25)
+to install clang-format 7. _cmake-format_ and _pre-commit_ utilities can be installed with *pip*.
+
+
+### Memory Leaks and clang-tidy
+
+If you want to test for memory leaks, do :
+
+```
+valgrind --leak-check=full --track-origins=yes  ./bin/nmodl_lexer
+```
+
+Or using CTest as:
+
+```
+ctest -T memcheck
+```
+
+If you want to enable `clang-tidy` checks with CMake, make sure to have `CMake >= 3.5` and use following cmake option:
+
+```
+cmake .. -DENABLE_CLANG_TIDY=ON
+```
+

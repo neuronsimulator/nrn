@@ -1,58 +1,72 @@
-### Getting Started
+# Installing the NMODL Framework
+
+## Getting Started
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
-#### Cloning Source
+## Cloning Source
 
-This project uses git submodules which must be cloned along with the repository itself:
+The NMODL Framework is maintained on github. The best way to get the sources is to simply clone the repository.
 
-```
+**Note**: This project uses git submodules which must be cloned along with the repository itself:
+
+```sh
 git clone --recursive https://github.com/BlueBrain/nmodl.git
+cd nmodl
 ```
 
-#### Prerequisites
+## Prerequisites
 
-To build the project from source, modern C++ compiler with c++11 support is necessary. Make sure you have following packages available:
+To build the project from source, a modern C++ compiler with c++11 support is necessary. Make sure you have following packages available:
 
 - flex (>=2.6)
 - bison (>=3.0)
-- CMake (>=3.1)
+- CMake (>=3.3)
 - Python (>=3.6)
-- Python packages : jinja2 (>=2.10), pyyaml (>=3.13), pytest (>=4.0.0), sympy (>=1.2), textwrap
+- Python packages : jinja2 (>=2.10), pyyaml (>=3.13), pytest (>=4.0.0), sympy (>=1.3), textwrap
 
-##### On OS X
+### On OS X
 
-Often we have older version of flex and bison. We can get recent version of dependencies via brew/macport and pip:
+Typically the versions of bison and flex provided by the system are outdated and not compatible with our requirements.
+To get recent version of all dependencies we recommend using [homebrew](https://brew.sh/):
 
-```
+```sh
 brew install flex bison cmake python3
+```
+
+The necessary Python packages can then easily be added using the pip3 command.
+
+```sh
 pip3 install Jinja2 PyYAML pytest sympy
 ```
 
 Make sure to have latest flex/bison in $PATH :
 
-```
+```sh
 export PATH=/usr/local/opt/flex:/usr/local/opt/bison:/usr/local/bin/:$PATH
 ```
 
-##### On Ubuntu
+### On Ubuntu
 
-On Ubuntu (>=16.04) flex/bison versions are recent enough. We can install Python3 and dependencies using:
+On Ubuntu (>=16.04) flex/bison versions are recent enough and are installed along with the system toolchain:
 
+```sh
+apt-get install flex bison gcc python3 python3-pip
 ```
-apt-get install python3 python3-pip
+
+The Python dependencies are installed using:
+
+```sh
 pip3 install Jinja2 PyYAML pytest sympy
 ```
 
-> On Blue Brain B5 Supercomputer, use : module load cmake/3.12.0 bison/3.0.5 flex/2.6.3 gcc/6.4.0 python3-dev
+## Build Project
 
-#### Build Project
-
-##### Using CMake
+### Using CMake
 
 Once all dependencies are in place, build project as:
 
-```
+```sh
 mkdir -p nmodl/build
 cd nmodl/build
 cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/nmodl
@@ -61,15 +75,37 @@ make -j && make install
 
 And set PYTHONPATH as:
 
-```
+```sh
 export PYTHONPATH=$HOME/nmodl/lib/python:$PYTHONPATH
 ```
 
-#### Testing Installed Module
+#### Flex / Bison Paths
 
-If you install NMODL using CMake, you can run tests from build directory as:
+If flex / bison are not in your default $PATH, you can provide the path to cmake as:
 
 ```
+cmake .. -DFLEX_EXECUTABLE=/usr/local/opt/flex/bin/flex \
+         -DBISON_EXECUTABLE=/usr/local/opt/bison/bin/bison \
+         -DCMAKE_INSTALL_PREFIX=$HOME/nmodl
+```
+
+### Using Python setuptools
+
+If you are mainly interested in the NMODL Framework parsing and analysis tools and wish to use them from Python, we
+recommend building and installing using Python.
+
+```sh
+pip3 install --user .
+```
+
+This should build the NMODL framework and install it into your pip user `site-packages` folder such that it becomes
+available as a Python module.
+
+## Testing the Installed Module
+
+If you have installed the NMODL Framework using CMake, you can now run tests from the build directory as:
+
+```bash
 $ make test
 Running tests...
 Test project /Users/kumbhar/workarena/repos/bbp/incubator/nocmodl/cmake-build-debug
@@ -92,10 +128,9 @@ Test project /Users/kumbhar/workarena/repos/bbp/incubator/nocmodl/cmake-build-de
  ...
 ```
 
-We can use nmodl module from python as:
+To test the NMODL Framework python bindings, you can try a minimal example in your Python 3 interpeter as follows:
 
 ```python
-$ python3
 >>> import nmodl.dsl as nmodl
 >>> driver = nmodl.NmodlDriver()
 >>> modast = driver.parse_string("NEURON { SUFFIX hh }")
@@ -110,12 +145,13 @@ NEURON {
 NMODL is now setup correctly!
 
 
-#### Generating Documentation
+## Generating Documentation
 
 In order to build the documentation you must have additionally `pandoc` installed. Use your
-system's package manager to do this (e.g. `apt install pandoc`).
+system's package manager to do this (e.g. `sudo apt-get install pandoc`).
 
-Once you have installed NMODL and setup the correct PYTHONPATH, you can build the documentation locally from the docs folder as:
+Once you have installed NMODL and setup the correct `$PYTHONPATH`, you can build the documentation locally from the 
+docs folder as:
 
 ```
 cd docs
@@ -123,62 +159,9 @@ doxygen   # for API documentation
 make html # for user documentation
 ```
 
+Alternatively, you can install the documentation using the Python setuptools script:
 
-### Development Conventions
-
-If you are developing NMODL, make sure to enable both `NMODL_FORMATTING` and `NMODL_PRECOMMIT`
-CMake variables to ensure that your contributions follow the coding conventions of this project:
-
-```cmake
-cmake -DNMODL_FORMATTING:BOOL=ON -DNMODL_PRECOMMIT:BOOL=ON <path>
+```sh
+python3 setup.py buildhtml
 ```
 
-The first variable provides the following additional targets to format
-C, C++, and CMake files:
-
-```
-make clang-format cmake-format
-```
-
-The second option activates Git hooks that will discard commits that
-do not comply with coding conventions of this project. These 2 CMake variables require additional utilities:
-
-* [ClangFormat 7](https://releases.llvm.org/7.0.0/tools/clang/docs/ClangFormat.html)
-* [cmake-format](https://github.com/cheshirekow/cmake_format)
-* [pre-commit](https://pre-commit.com/)
-
-clang-format can be installed on Linux thanks
-to [LLVM apt page](http://apt.llvm.org/). On MacOS, there is a
-[brew recipe](https://gist.github.com/ffeu/0460bb1349fa7e4ab4c459a6192cbb25)
-to install clang-format 7. _cmake-format_ and _pre-commit_ utilities can be installed with *pip*.
-
-
-##### Memory Leaks and clang-tidy
-
-If you want to test for memory leaks, do :
-
-```
-valgrind --leak-check=full --track-origins=yes  ./bin/nmodl_lexer
-```
-
-Or using CTest as:
-
-```
-ctest -T memcheck
-```
-
-If you want to enable `clang-tidy` checks with CMake, make sure to have `CMake >= 3.5` and use following cmake option:
-
-```
-cmake .. -DENABLE_CLANG_TIDY=ON
-```
-
-##### Flex / Bison Paths
-
-If flex / bison is not in default $PATH, you can provide path to cmake as:
-
-```
-cmake .. -DFLEX_EXECUTABLE=/usr/local/opt/flex/bin/flex \
-         -DBISON_EXECUTABLE=/usr/local/opt/bison/bin/bison \
-         -DCMAKE_INSTALL_PREFIX=$HOME/nmodl
-```

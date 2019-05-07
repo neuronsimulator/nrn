@@ -1,8 +1,19 @@
 from ._nmodl.ast import *  # noqa
 from .config import *
 
-def ast_view(nmodl_ast):
-    """Visualize given NMODL AST by converting to JSON form"""
+def view(nmodl_ast):
+    """Visualize given NMODL AST in web browser
+
+    In memory representation of AST can be converted to JSON
+    form and it can be visualized using AST viewer implemented
+    using d3.js.
+
+    Args:
+        nmodl_ast: AST object of nmodl file or string
+
+    Returns:
+        None
+    """
     from ._nmodl import to_json
     from distutils.dir_util import copy_tree
     import getpass
