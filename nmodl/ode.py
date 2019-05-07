@@ -288,9 +288,9 @@ def integrate2c(diff_string, dt_var, vars, use_pade_approx=False):
         t_var: name of time variable t in NEURON
         dt_var: name of timestep variable dt in NEURON
         vars: set of variables used in expression, e.g. {"a", "b"}
-        use_pade_approx: if False:  return exact solution
-                         if True:   return (1,1) Pade approx to solution
-                                    correct to second order in dt_var
+        use_pade_approx: if False, return exact solution
+                         if True, return (1,1) Pade approx to solution
+                         correct to second order in dt_var
 
     Returns:
         string containing analytic integral of derivative as C code

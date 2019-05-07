@@ -116,7 +116,7 @@ PARAMETER {
 
 ### High Level Analysis and Code Generation
 
-The NMODL Framework provides rich model introspection and analysis capabilities using [various visitors TODO](). Here is an example of theoretical performance characterisation of channels and synapses from rat neocortical column microcircuit [published in 2015](https://www.cell.com/abstract/S0092-8674(15)01191-5):
+The NMODL Framework provides rich model introspection and analysis capabilities using [various visitors TODO](). Here is an example of theoretical performance characterisation of channels and synapses from rat neocortical column microcircuit [published in 2015](https://www.cell.com/abstract/S0092-8674%2815%2901191-5):
 
 ![alt text](docs/images/nmodl-perf-stats.png "Example of performance characterisation")
 
