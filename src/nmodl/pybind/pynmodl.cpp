@@ -36,10 +36,6 @@ namespace nmodl {
 /** \brief docstring of Python exposed API */
 namespace docstring {
 
-static const char* get_nmodl_example_dir = R"(
-    Get directory with NMODL examples
-)";
-
 static const char* driver = R"(
     This is the NmodlDriver class documentation
 )";
@@ -147,10 +143,6 @@ void init_symtab_module(py::module& m);
 PYBIND11_MODULE(_nmodl, m_nmodl) {
     m_nmodl.doc() = "NMODL : Source-to-Source Code Generation Framework";
     m_nmodl.attr("__version__") = nmodl::Version::NMODL_VERSION;
-
-    m_nmodl.def("example_dir",
-                &nmodl::Config::get_nmodl_example_dir,
-                nmodl::docstring::get_nmodl_example_dir);
 
     py::class_<nmodl::PyNmodlDriver> nmodl_driver(m_nmodl, "NmodlDriver", nmodl::docstring::driver);
     nmodl_driver.def(py::init<>())
