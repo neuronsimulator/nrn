@@ -10,7 +10,8 @@ About NMODL
    :maxdepth: 2
    :caption: Introduction:
 
-   readme
+   readme.rst
+   install.rst
 
 .. toctree::
    :maxdepth: 2
@@ -22,6 +23,7 @@ About NMODL
    :maxdepth: 3
    :caption: Jupyter Notebooks:
 
+   notebooks.rst
    notebooks/nmodl-python-tutorial.ipynb
    notebooks/nmodl-odes-overview.ipynb
    notebooks/nmodl-kinetic-schemes.ipynb
@@ -31,6 +33,12 @@ About NMODL
    notebooks/nmodl-linear-solver.ipynb
    notebooks/nmodl-nonlinear-solver.ipynb
    notebooks/nmodl-sympy-conductance.ipynb
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Contributing:
+
+   contributing.rst
 
 .. toctree::
    :maxdepth: 2
