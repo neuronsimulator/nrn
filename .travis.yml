@@ -1,0 +1,89 @@
+#=============================================================================
+# Travis NMODL settings
+#=============================================================================
+
+#=============================================================================
+# Environment
+#=============================================================================
+# Use new Travis infrastructure (Docker can't sudo yet)
+sudo: false
+
+#=============================================================================
+# Build matrix
+#=============================================================================
+matrix:
+  fast_finish: true
+  include:
+    - language: cpp
+      os: linux
+      dist: xenial
+      env:
+        - MATRIX_EVAL="CXX=g++"
+        - PYTHON_VERSION=3.6.7
+    - language: cpp
+      os: osx
+      env:
+        - MATRIX_EVAL="CXX=c++"
+
+#=============================================================================
+# Common Packages
+#=============================================================================
+addons:
+  # for Linux builds, we use APT
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - flex
+      - bison
+      - cmake
+      - python3-dev
+      - python3-pip
+  # for Mac builds, we use Homebrew
+  homebrew:
+    packages:
+      - flex
+      - bison
+      - cmake
+      - python@3
+
+#=============================================================================
+# Install dependencies / setup Spack
+#=============================================================================
+before_install:
+  # brew installed flex and bison is not in $PATH
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+        export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH;
+    else
+        pyenv global $PYTHON_VERSION;
+        ls /usr/bin/;
+    fi
+  - eval "${MATRIX_EVAL}"
+
+#=============================================================================
+# Install NMODL dependencies
+#=============================================================================
+install:
+  - echo "------- Install Dependencies -------"
+  - pip3 install -U pip setuptools
+  - pip3 install Jinja2 PyYAML pytest sympy --user
+
+#=============================================================================
+# Build, test and install
+#=============================================================================
+script:
+  - echo "------- Build, Test and Install -------"
+  - mkdir build && cd build
+  - cmake .. -DPYTHON_EXECUTABLE=`which python3` -DCMAKE_INSTALL_PREFIX=$HOME/nmodl
+  - make -j 2
+  - make test
+  - make install
+
+#=============================================================================
+# Notifications
+#=============================================================================
+notifications:
+  email:
+    recipients: pramod.s.kumbhar@gmail.com
+    on_success: change
+    on_failure: always
