@@ -60,6 +60,7 @@ neuron/crxd/plugins.py \
 neuron/crxd/rangevar.py \
 neuron/crxd/dimension3.py \
 neuron/crxd/initializer.py \
+neuron/crxd/export.py \
 neuron/crxd/geometry3d/*.* \
 \
 neuron/rxd/region.py \
