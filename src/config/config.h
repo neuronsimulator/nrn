@@ -60,22 +60,4 @@ struct NrnUnitsLib {
     }
 };
 
-/**
- * \brief Information about NMODL configurations (from share directory)
- */
-struct Config {
-    /// directories with nmodl examples
-    static const std::vector<std::string> NMODL_EXAMPLE_PATH;
-
-    /// Return path nmodl example directory
-    static std::string get_nmodl_example_dir() {
-        for (const auto& path: NMODL_EXAMPLE_PATH) {
-            if (nmodl::utils::is_dir_exist(path)) {
-                return path;
-            }
-        }
-        throw std::runtime_error("Could not found nmodl example directory");
-    }
-};
-
 }  // namespace nmodl

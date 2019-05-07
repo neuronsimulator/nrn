@@ -3,7 +3,7 @@
 # =============================================================================
 set_source_files_properties(${AUTO_GENERATED_FILES} PROPERTIES GENERATED TRUE)
 
-foreach(file ode.py dsl.py __init__.py)
+foreach(file ast.py config.py dsl.py ode.py symtab.py visitor.py __init__.py)
   list(APPEND NMODL_PYTHON_FILES_IN ${PROJECT_SOURCE_DIR}/nmodl/${file})
   list(APPEND NMODL_PYTHON_FILES_OUT ${PROJECT_BINARY_DIR}/nmodl/${file})
 endforeach()
@@ -48,4 +48,4 @@ add_custom_command(OUTPUT ${NMODL_PYTHON_FILES_OUT}
 # Install python binding components
 # =============================================================================
 install(TARGETS _nmodl DESTINATION lib/python/nmodl)
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/nmodl DESTINATION lib/python/ FILES_MATCHING PATTERN "*.py")
+install(DIRECTORY ${CMAKE_BINARY_DIR}/nmodl DESTINATION lib/python/ FILES_MATCHING PATTERN "*.py")
