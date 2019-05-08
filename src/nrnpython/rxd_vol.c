@@ -759,46 +759,83 @@ void _rhs_variable_step_helper_tort(Grid_node* g, double const * const states, d
     stop_i = num_states_x - 1;
     stop_j = num_states_y - 1;
     stop_k = num_states_z - 1;
+    if(g->bc->type == NEUMANN) {
+        for (i = 0, index = 0, prev_i = num_states_y*num_states_z, next_i = num_states_y*num_states_z; 
+            i < num_states_x; i++) {
+	        /*Zero flux boundary conditions*/
+		    div_x = (i==0||i==stop_i)?2.:1.;
+		    xpd = (i==stop_i)?i:i+1;
+		    xmd = (i==0)?1:i;
 
-    for (i = 0, index = 0, prev_i = num_states_y*num_states_z, next_i = num_states_y*num_states_z; 
-         i < num_states_x; i++) {
-	    /*Zero flux boundary conditions*/
-		div_x = (i==0||i==stop_i)?2.:1.;
-		xpd = (i==stop_i)?i:i+1;
-		xmd = (i==0)?1:i;
+            for(j = 0, prev_j = index + num_states_z, next_j = index + num_states_z; j < num_states_y; j++) {
+			    div_y = (j==0||j==stop_j)?2.:1.;
+                ypd = (j==stop_j)?j:j+1;
+			    ymd = (j==0)?1:j;
 
-        for(j = 0, prev_j = index + num_states_z, next_j = index + num_states_z; j < num_states_y; j++) {
-			div_y = (j==0||j==stop_j)?2.:1.;
-            ypd = (j==stop_j)?j:j+1;
-			ymd = (j==0)?1:j;
+			    for(k = 0, prev_k = index + 1, next_k = index + 1; k < num_states_z;
+                    k++, index++, prev_i++, next_i++, prev_j++, next_j++) {
+				    div_z = (k==0||k==stop_k)?2.:1.;
+				    zpd = (k==stop_k)?k:k+1;
+				    zmd = (k==0)?1:k;
 
-			for(k = 0, prev_k = index + 1, next_k = index + 1; k < num_states_z;
-                k++, index++, prev_i++, next_i++, prev_j++, next_j++) {
-				div_z = (k==0||k==stop_k)?2.:1.;
-				zpd = (k==stop_k)?k:k+1;
-				zmd = (k==0)?1:k;
+                    ydot[index] += rate_x * (DcX(xmd,j,k)*states[prev_i] -  
+                        (DcX(xmd,j,k)+DcX(xpd,j,k)) * states[index] + 
+					    DcX(xpd,j,k)*states[next_i])/div_x;
 
-                ydot[index] = rate_x * (DcX(xmd,j,k)*states[prev_i] -  
-                    (DcX(xmd,j,k)+DcX(xpd,j,k)) * states[index] + 
-					DcX(xpd,j,k)*states[next_i])/div_x;
+                    ydot[index] += rate_y * (DcY(i,ymd,k)*states[prev_j] - 
+                        (DcY(i,ymd,k)+DcY(i,ypd,k)) * states[index] +
+					    DcY(i,ypd,k)*states[next_j])/div_y;
 
-                ydot[index] += rate_y * (DcY(i,ymd,k)*states[prev_j] - 
-                    (DcY(i,ymd,k)+DcY(i,ypd,k)) * states[index] +
-					DcY(i,ypd,k)*states[next_j])/div_y;
+                    ydot[index] += rate_z * (DcZ(i,j,zmd)*states[prev_k] - 
+                        (DcZ(i,j,zmd)+DcZ(i,j,zpd)) * states[index] + 
+					    DcZ(i,j,zpd)*states[next_k])/div_z;
 
-                ydot[index] += rate_z * (DcZ(i,j,zmd)*states[prev_k] - 
-                    (DcZ(i,j,zmd)+DcZ(i,j,zpd)) * states[index] + 
-					DcZ(i,j,zpd)*states[next_k])/div_z;
+                    next_k = (k==stop_k-1)?index:index+2;
+                    prev_k = index;
 
-                next_k = (k==stop_k-1)?index:index+2;
-                prev_k = index;
-
+              }
+                prev_j = index - num_states_z;
+                next_j = (j==stop_j-1)?prev_j:index + num_states_z;
             }
-            prev_j = index - num_states_z;
-            next_j = (j==stop_j-1)?prev_j:index + num_states_z;
+            prev_i = index - num_states_y*num_states_z;
+            next_i = (i==stop_i-1)?prev_i:index+num_states_y*num_states_z;
         }
-        prev_i = index - num_states_y*num_states_z;
-        next_i = (i==stop_i-1)?prev_i:index+num_states_y*num_states_z;
+    }
+    else {
+        for (i = 0, index = 0, next_i = num_states_y*num_states_z; 
+             i < num_states_x; i++) {
+            for(j = 0, prev_j = index - num_states_z, next_j = index + num_states_z; j < num_states_y; j++) {
+                
+		    	for(k = 0, prev_k = index - 1, next_k = index + 1; k < num_states_z;
+                    k++, index++, prev_i++, next_i++, prev_j++, next_j++, next_k++, prev_k++) {
+                    
+                    if(i==0||i==stop_i||j==0||j==stop_j||k==0||k==stop_k)
+                    {
+                        //set to zero to prevent currents altering concentrations at the boundary
+                        ydot[index] = 0; 
+                    }
+                    else
+                    {
+
+                        ydot[index] += rate_x * (DcX(i,j,k)*states[prev_i] -  
+                            (DcX(i,j,k)+DcX(i+1,j,k)) * states[index] + 
+					        DcX(i+1,j,k)*states[next_i]);
+
+                        ydot[index] += rate_y * (DcY(i,j,k)*states[prev_j] - 
+                            (DcY(i,j,k)+DcY(i,j+1,k)) * states[index] +
+					        DcY(i,j+1,k)*states[next_j]);
+
+                        ydot[index] += rate_z * (DcZ(i,j,k)*states[prev_k] - 
+                            (DcZ(i,j,k)+DcZ(i,j,k+1)) * states[index] + 
+					        DcZ(i,j,k+1)*states[next_k]);
+                    }
+                }
+                prev_j = index - num_states_z;
+                next_j = index + num_states_z;
+            }
+            prev_i = index - num_states_y*num_states_z;
+            next_i = index + num_states_y*num_states_z;
+        }
     }
 }
 
@@ -825,47 +862,84 @@ void _rhs_variable_step_helper_vol(Grid_node* g, double const * const states, do
     stop_i = num_states_x - 1;
     stop_j = num_states_y - 1;
     stop_k = num_states_z - 1;
+    if(g->bc->type == NEUMANN) {
+        for (i = 0, index = 0, prev_i = num_states_y*num_states_z, next_i = num_states_y*num_states_z; 
+             i < num_states_x; i++) {
+	        /*Zero flux boundary conditions*/
+		    div_x = (i==0||i==stop_i)?2.:1.;
+		    xpd = (i==stop_i)?i:i+1;
+		    xmd = (i==0)?1:i;
 
-    for (i = 0, index = 0, prev_i = num_states_y*num_states_z, next_i = num_states_y*num_states_z; 
-         i < num_states_x; i++) {
-	    /*Zero flux boundary conditions*/
-		div_x = (i==0||i==stop_i)?2.:1.;
-		xpd = (i==stop_i)?i:i+1;
-		xmd = (i==0)?1:i;
+            for(j = 0, prev_j = index + num_states_z, next_j = index + num_states_z; j < num_states_y; j++) {
+			    div_y = (j==0||j==stop_j)?2.:1.;
+                ypd = (j==stop_j)?j:j+1;
+			    ymd = (j==0)?1:j;
 
-        for(j = 0, prev_j = index + num_states_z, next_j = index + num_states_z; j < num_states_y; j++) {
-			div_y = (j==0||j==stop_j)?2.:1.;
-            ypd = (j==stop_j)?j:j+1;
-			ymd = (j==0)?1:j;
-
-			for(k = 0, prev_k = index + 1, next_k = index + 1; k < num_states_z;
-                k++, index++, prev_i++, next_i++, prev_j++, next_j++) {
-				div_z = (k==0||k==stop_k)?2.:1.;
-				zpd = (k==stop_k)?k:k+1;
-				zmd = (k==0)?1:k;
+			    for(k = 0, prev_k = index + 1, next_k = index + 1; k < num_states_z;
+                    k++, index++, prev_i++, next_i++, prev_j++, next_j++) {
+				    div_z = (k==0||k==stop_k)?2.:1.;
+				    zpd = (k==stop_k)?k:k+1;
+				    zmd = (k==0)?1:k;
 				
-				/*x-direction*/
-                ydot[index] = rate_x * (FLUX(next_i,index)/LAMBDA(xpd,j,k) + 
-					FLUX(prev_i,index)/LAMBDA(xmd,j,k))/(VOLFRAC(index)*div_x);
+				    /*x-direction*/
+                    ydot[index] += rate_x * (FLUX(next_i,index)/LAMBDA(xpd,j,k) + 
+				    	FLUX(prev_i,index)/LAMBDA(xmd,j,k))/(VOLFRAC(index)*div_x);
 
-				/*y-direction*/
-				ydot[index] += rate_y * (FLUX(next_j,index)/LAMBDA(i,ypd,k) +
-                FLUX(prev_j,index)/LAMBDA(i,ymd,k))/(VOLFRAC(index)*div_y);
+				    /*y-direction*/
+				    ydot[index] += rate_y * (FLUX(next_j,index)/LAMBDA(i,ypd,k) +
+                    FLUX(prev_j,index)/LAMBDA(i,ymd,k))/(VOLFRAC(index)*div_y);
 
-				/*z-direction*/
-				ydot[index] += rate_z * (FLUX(next_k,index)/LAMBDA(i,j,zpd) + 
-					FLUX(prev_k,index)/LAMBDA(i,j,zmd))/(VOLFRAC(index)*div_z);
+				    /*z-direction*/
+				    ydot[index] += rate_z * (FLUX(next_k,index)/LAMBDA(i,j,zpd) + 
+				    	FLUX(prev_k,index)/LAMBDA(i,j,zmd))/(VOLFRAC(index)*div_z);
 
-                next_k = (k==stop_k-1)?index:index+2;
-                prev_k = index;
+                    next_k = (k==stop_k-1)?index:index+2;
+                    prev_k = index;
 
+                }
+                prev_j = index - num_states_z;
+                next_j = (j==stop_j-1)?prev_j:index + num_states_z;
             }
-            prev_j = index - num_states_z;
-            next_j = (j==stop_j-1)?prev_j:index + num_states_z;
+            prev_i = index - num_states_y*num_states_z;
+            next_i = (i==stop_i-1)?prev_i:index+num_states_y*num_states_z;
         }
-        prev_i = index - num_states_y*num_states_z;
-        next_i = (i==stop_i-1)?prev_i:index+num_states_y*num_states_z;
     }
+    else {
+        for (i = 0, index = 0, next_i = num_states_y*num_states_z; 
+             i < num_states_x; i++) {
+            for(j = 0, prev_j = index - num_states_z, next_j = index + num_states_z; j < num_states_y; j++) {
+                
+		    	for(k = 0, prev_k = index - 1, next_k = index + 1; k < num_states_z;
+                    k++, index++, prev_i++, next_i++, prev_j++, next_j++, next_k++, prev_k++) {
+                    
+                    if(i==0||i==stop_i||j==0||j==stop_j||k==0||k==stop_k)
+                    {
+                        //set to zero to prevent currents altering concentrations at the boundary
+                        ydot[index] = 0; 
+                    }
+                    else
+                    {
+				        /*x-direction*/
+                        ydot[index] += rate_x * (FLUX(next_i,index)/LAMBDA(i+1,j,k) + 
+				    	    FLUX(prev_i,index)/LAMBDA(i,j,k))/(VOLFRAC(index));
+
+				        /*y-direction*/
+				        ydot[index] += rate_y * (FLUX(next_j,index)/LAMBDA(i,j+1,k) +
+                        FLUX(prev_j,index)/LAMBDA(i,j,k))/(VOLFRAC(index));
+
+				        /*z-direction*/
+				        ydot[index] += rate_z * (FLUX(next_k,index)/LAMBDA(i,j,k+1) + 
+				    	    FLUX(prev_k,index)/LAMBDA(i,j,k))/(VOLFRAC(index));
+                    }
+                }
+                prev_j = index - num_states_z;
+                next_j = index + num_states_z;
+            }
+            prev_i = index - num_states_y*num_states_z;
+            next_i = index + num_states_y*num_states_z;
+        }
+    }
+
 }
 
 

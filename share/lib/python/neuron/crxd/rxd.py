@@ -142,6 +142,7 @@ double factorial(const double);
 double degrees(const double);
 void radians(const double, double*);
 double log1p(const double);
+double vtrap(const double, const double);
 """
 
 def _list_to_cint_array(data):
@@ -408,10 +409,25 @@ def _setup_memb_currents():
     ecs_map = [SPECIES_ABSENT if i is None else i for i in list(itertools.chain.from_iterable(itertools.chain.from_iterable(memb_cur_mapped_ecs)))]
     ics_map = [SPECIES_ABSENT if i is None else i for i in list(itertools.chain.from_iterable(itertools.chain.from_iterable(memb_cur_mapped)))]
     if _memb_cur_ptrs:
-        cur_counts = [len(x) for x in memb_cur_mapped]
-        num_currents = numpy.array(cur_counts).sum()
-        setup_currents(len(_memb_cur_ptrs),
-            num_currents,
+        cur_counts = [len(x) for x in memb_cur_mapped]  #TODO: is len(x) the same for all x?
+        num_fluxes = numpy.array(cur_counts).sum()
+        num_currents = len(_memb_cur_ptrs)
+        _memb_cur_ptrs = list(itertools.chain.from_iterable(_memb_cur_ptrs))
+        """print("num_currents",num_currents)
+        print("num_fluxes",num_fluxes)
+        print("num_nodes",len(_curr_indices))
+        print("num_species",len(cur_counts))
+        print("net_charges",len(memb_net_charges))
+        print("cur_idxs",len(_curr_indices))
+        print("node_idxs",len(_cur_node_indices))
+        print("scales",len(rxd_memb_scales))
+        print("charges", len(memb_cur_charges))
+        print("ptrs",len(_memb_cur_ptrs))
+        print("mapped",len(ics_map),min(abs(numpy.array(ics_map))),max(ics_map))
+        print("mapped_ecs",len(ecs_map),max(ecs_map))
+        """
+        setup_currents(num_currents,
+            num_fluxes,
             len(_curr_indices), # num_currents == len(_curr_indices) if no Extracellular
             _list_to_cint_array(cur_counts),
             _list_to_cint_array(memb_net_charges),
@@ -419,7 +435,7 @@ def _setup_memb_currents():
             _list_to_cint_array(_cur_node_indices),
             _list_to_cdouble_array(rxd_memb_scales),
             _list_to_cint_array(list(itertools.chain.from_iterable(memb_cur_charges))),
-            _list_to_pyobject_array(list(itertools.chain.from_iterable(_memb_cur_ptrs))),
+            _list_to_pyobject_array(_memb_cur_ptrs),
             _list_to_cint_array(ics_map),
             _list_to_cint_array(ecs_map))
         
@@ -597,48 +613,49 @@ def _update_node_data(force=False):
         last_structure_change_cnt = _structure_change_count.value
         #if not species._has_3d:
         # TODO: merge this with the 3d/hybrid case?
-        nsegs_changed = 0
-        for sr in list(_species_get_all_species().values()):
-            s = sr()
-            if s is not None: nsegs_changed += s._update_node_data()
-        if nsegs_changed:
-            section1d._purge_cptrs()
+        if initializer.is_initialized():
+            nsegs_changed = 0
             for sr in list(_species_get_all_species().values()):
                 s = sr()
-                if s is not None:
-                    s._update_region_indices(True)
-                    s._register_cptrs()
-            if species._has_1d and species._1d_submatrix_n():
-                volumes = node._get_data()[0]
-                _zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
-            setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
-            # TODO: separate compiling reactions -- so the indices can be updated without recompiling
-            _compile_reactions()
+                if s is not None: nsegs_changed += s._update_node_data()
+            if nsegs_changed:
+                section1d._purge_cptrs()
+                for sr in list(_species_get_all_species().values()):
+                    s = sr()
+                    if s is not None:
+                        s._update_region_indices(True)
+                        s._register_cptrs()
+                if species._has_1d and species._1d_submatrix_n():
+                    volumes = node._get_data()[0]
+                    _zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
+                setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
+                # TODO: separate compiling reactions -- so the indices can be updated without recompiling
+                _compile_reactions()
 
-        #end#if
-        for rptr in _all_reactions:
-            r = rptr()
-            if r is not None: r._update_indices()
-        _curr_indices = []
-        _curr_scales = []
-        _curr_ptrs = []
-        for sr in list(_species_get_all_species().values()):
-            s = sr()
-            if s is not None: s._setup_currents(_curr_indices, _curr_scales, _curr_ptrs, _cur_map)
+            #end#if
+            for rptr in _all_reactions:
+                r = rptr()
+                if r is not None: r._update_indices()
+            _curr_indices = []
+            _curr_scales = []
+            _curr_ptrs = []
+            for sr in list(_species_get_all_species().values()):
+                s = sr()
+                if s is not None: s._setup_currents(_curr_indices, _curr_scales, _curr_ptrs, _cur_map)
         
-        num = len(_curr_ptrs)
-        if num:
-            _curr_ptr_vector = _h_ptrvector(num)
-            _curr_ptr_vector.ptr_update_callback(_donothing)
-            for i, ptr in enumerate(_curr_ptrs):
-                _curr_ptr_vector.pset(i, ptr)
+            num = len(_curr_ptrs)
+            if num:
+                _curr_ptr_vector = _h_ptrvector(num)
+                _curr_ptr_vector.ptr_update_callback(_donothing)
+                for i, ptr in enumerate(_curr_ptrs):
+                    _curr_ptr_vector.pset(i, ptr)
             
-            _curr_ptr_storage_nrn = _h_vector(num)
-            _curr_ptr_storage = _curr_ptr_storage_nrn.as_numpy()
-        else:
-            _curr_ptr_vector = None
+                _curr_ptr_storage_nrn = _h_vector(num)
+                _curr_ptr_storage = _curr_ptr_storage_nrn.as_numpy()
+            else:
+                _curr_ptr_vector = None
 
-        #_curr_scales = _numpy_array(_curr_scales)        
+            #_curr_scales = _numpy_array(_curr_scales)        
 
 
 def _matrix_to_rxd_sparse(m):
@@ -687,7 +704,6 @@ def _setup_matrices():
         
     """
     if species._has_1d:
-        n = species._1d_submatrix_n()
         # TODO: initialization is slow. track down why
         
         _last_dt = None
@@ -705,7 +721,7 @@ def _setup_matrices():
 
         # remove old linearmodeladdition
         _linmodadd_cur = None
-        
+        n = species._1d_submatrix_n()
         if n:        
             # create sparse matrix for C in cy'+gy=b
             c_diagonal = numpy.zeros(n,dtype=ctypes.c_double)
@@ -714,7 +730,7 @@ def _setup_matrices():
             # create the matrix G
             #if not species._has_3d:
             #    # if we have both, then put the 1D stuff into the matrix that already exists for 3D
-            _diffusion_matrix = [dict() for idx in range(n)]  
+            _diffusion_matrix = [dict() for idx in range(n)]
             for sr in list(_species_get_all_species().values()):
                 s = sr()
                 if s is not None:
@@ -829,6 +845,7 @@ def _setup_matrices():
         setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
     
     if _curr_indices is not None and len(_curr_indices) > 0:
+        #_curr_ptrs = _curr_ptrs if isinstance(_curr_ptrs, ctypes.py_object) else _list_to_pyobject_array(_curr_ptrs)
         rxd_setup_curr_ptrs(len(_curr_indices), _list_to_cint_array(_curr_indices),
             numpy.concatenate(_curr_scales), _list_to_pyobject_array(_curr_ptrs))
 
@@ -1072,7 +1089,7 @@ def _compile_reactions():
         return None
     #Setup intracellular and multicompartment reactions
     if location_count > 0:
-        from . import rate, multiCompartmentReaction
+        from . import rate, multiCompartmentReaction, Parameter
         for creg in c_region_list:
             if not creg._react_regions:
                 continue
@@ -1109,16 +1126,19 @@ def _compile_reactions():
                         break
                     for sptr in r._sources + r._dests:
                         s = sptr()
-                        if isinstance(s,species.SpeciesOnExtracellular):
+                        
+                        if isinstance(s, species.SpeciesOnExtracellular):
                             species_id = creg._ecs_species_ids[s._extracellular()._grid_id]
                             operator = '+=' if ecs_species_ids_used[species_id] else '='
-                            fxn_string += "\n\trhs_ecs[%d] %s mult[%d] * rate;" % (species_id, operator, mc_mult_count)
+                            if not isinstance(s, species.ParameterOnExtracellular):
+                                fxn_string += "\n\trhs_ecs[%d] %s mult[%d] * rate;" % (species_id, operator, mc_mult_count)
                             ecs_species_ids_used[species_id] = True
                         else:
                             species_id = creg._species_ids[s._id]
                             region_id = creg._region_ids[s._region()._id]
                             operator = '+=' if species_ids_used[species_id][region_id] else '='
-                            fxn_string += "\n\trhs[%d][%d] %s mult[%d] * rate;" % (species_id, region_id, operator, mc_mult_count)
+                            if not isinstance(s, species.ParameterOnRegion):
+                                fxn_string += "\n\trhs[%d][%d] %s mult[%d] * rate;" % (species_id, region_id, operator, mc_mult_count)
                             species_ids_used[species_id][region_id] = True
                             if r._membrane_flux:
                                 operator = '+=' if flux_ids_used[species_id][region_id] else '='

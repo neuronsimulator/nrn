@@ -668,41 +668,134 @@ static void _rhs_variable_step_helper(Grid_node* g, double const * const states,
 	/*indices*/
 	int index, prev_i, prev_j, prev_k, next_i ,next_j, next_k;
 	double div_x, div_y, div_z;
+    unsigned char bc_x, bc_y, bc_z;
+    double bc;
 
 	/* Euler advance x, y, z (all points) */
     stop_i = num_states_x - 1;
     stop_j = num_states_y - 1;
     stop_k = num_states_z - 1;
-    for (i = 0, index = 0, prev_i = num_states_y*num_states_z, next_i = num_states_y*num_states_z; 
-         i < num_states_x; i++) {
-	    /*Zero flux boundary conditions*/
-		div_x = (i==0||i==stop_i)?2.:1.;
+    if(g->bc->type == NEUMANN) {
+        for (i = 0, index = 0, prev_i = num_states_y*num_states_z, next_i = num_states_y*num_states_z; 
+             i < num_states_x; i++) {
+    	    /*Zero flux boundary conditions*/
+	    	div_x = (i==0||i==stop_i)?2.:1.;
 
-        for(j = 0, prev_j = index + num_states_z, next_j = index + num_states_z; j < num_states_y; j++) {
-			div_y = (j==0||j==stop_j)?2.:1.;
-            
-			for(k = 0, prev_k = index + 1, next_k = index + 1; k < num_states_z;
-                k++, index++, prev_i++, next_i++, prev_j++, next_j++) {
-				div_z = (k==0||k==stop_k)?2.:1.;
+            for(j = 0, prev_j = index + num_states_z, next_j = index + num_states_z; j < num_states_y; j++) {
+    			div_y = (j==0||j==stop_j)?2.:1.;
+                
+		    	for(k = 0, prev_k = index + 1, next_k = index + 1; k < num_states_z;
+                    k++, index++, prev_i++, next_i++, prev_j++, next_j++) {
+				    div_z = (k==0||k==stop_k)?2.:1.;
 
-                ydot[index] += rate_x * (states[prev_i] -  
-                    2.0 * states[index] + states[next_i])/div_x;
+                    ydot[index] += rate_x * (states[prev_i] -  
+                        2.0 * states[index] + states[next_i])/div_x;
+    
+                    ydot[index] += rate_y * (states[prev_j] - 
+                        2.0 * states[index] + states[next_j])/div_y;
 
-                ydot[index] += rate_y * (states[prev_j] - 
-                    2.0 * states[index] + states[next_j])/div_y;
+                    ydot[index] += rate_z * (states[prev_k] - 
+                        2.0 * states[index] + states[next_k])/div_z;
+                    next_k = (k==stop_k-1)?index:index+2;
+                    prev_k = index;
 
-                ydot[index] += rate_z * (states[prev_k] - 
-                    2.0 * states[index] + states[next_k])/div_z;
-                next_k = (k==stop_k-1)?index:index+2;
-                prev_k = index;
-
+                }
+                prev_j = index - num_states_z;
+                next_j = (j==stop_j-1)?prev_j:index + num_states_z;
             }
-            prev_j = index - num_states_z;
-            next_j = (j==stop_j-1)?prev_j:index + num_states_z;
+            prev_i = index - num_states_y*num_states_z;
+            next_i = (i==stop_i-1)?prev_i:index+num_states_y*num_states_z;
         }
-        prev_i = index - num_states_y*num_states_z;
-        next_i = (i==stop_i-1)?prev_i:index+num_states_y*num_states_z;
     }
+    else {
+        for (i = 0, index = 0, next_i = num_states_y*num_states_z; 
+             i < num_states_x; i++) {
+            for(j = 0, prev_j = index - num_states_z, next_j = index + num_states_z; j < num_states_y; j++) {
+                
+		    	for(k = 0, prev_k = index - 1, next_k = index + 1; k < num_states_z;
+                    k++, index++, prev_i++, next_i++, prev_j++, next_j++, next_k++, prev_k++) {
+                    
+                    if(i==0||i==stop_i||j==0||j==stop_j||k==0||k==stop_k)
+                    {
+                        //set to zero to prevent currents altering concentrations at the boundary
+                        ydot[index] = 0; 
+                    }
+                    else
+                    {
+                        ydot[index] += rate_x * (states[prev_i] -  
+                            2.0 * states[index] + states[next_i]);
+    
+                        ydot[index] += rate_y * (states[prev_j] - 
+                            2.0 * states[index] + states[next_j]);
+
+                        ydot[index] += rate_z * (states[prev_k] - 
+                            2.0 * states[index] + states[next_k]);
+                    }
+                }
+                prev_j = index - num_states_z;
+                next_j = index + num_states_z;
+            }
+            prev_i = index - num_states_y*num_states_z;
+            next_i = index + num_states_y*num_states_z;
+        }
+    }
+/*
+        for (i = 1, index = (num_states_y+1)*num_states_z + 1,
+             prev_i = num_states_z + 1, next_i = (2*num_states_y+1)*num_states_z + 1; 
+             i < stop_i; i++) {
+            for (j = 1, prev_j = index - num_states_z, next_j = index + num_states_z; j < stop_j; j++) {
+                
+		    	for(k = 1, prev_k = index - 1, next_k = index + 1; k < stop_k;
+                    k++, index++, prev_i++, next_i++, prev_j++, next_j++, next_k++) {
+                    if(index != i*num_states_y*num_states_z + j*num_states_z + k)
+                    {
+                        fprintf(stderr,"%i \t %i %i %i\n", index,i,j,k);
+                    }
+                    if(prev_i != (i-1)*num_states_y*num_states_z + j*num_states_z + k)
+                    {
+                        fprintf(stderr,"prev_i %i %i \t %i %i %i\n", prev_i,(i-1)*num_states_y*num_states_z + j*num_states_z + k,i,j,k);
+                    }
+                    if(next_i != (i+1)*num_states_y*num_states_z + j*num_states_z + k)
+                    {
+                        fprintf(stderr,"next_i %i %i \t %i %i %i\n", next_i,(i+1)*num_states_y*num_states_z + j*num_states_z + k,i,j,k);
+                    }
+                    if(prev_j != i*num_states_y*num_states_z + (j-1)*num_states_z + k)
+                    {
+                        fprintf(stderr,"prev_j %i %i \t %i %i %i\n", prev_j,i*num_states_y*num_states_z + (j-1)*num_states_z + k,i,j,k);
+                    }
+                    if(next_j != i*num_states_y*num_states_z + (j+1)*num_states_z + k)
+                    {
+                        fprintf(stderr,"next_j %i %i \t %i %i %i\n", next_j,i*num_states_y*num_states_z + (j+1)*num_states_z + k,i,j,k);
+                    }
+                    if(prev_k != i*num_states_y*num_states_z + j*num_states_z + k-1)
+                    {
+                        fprintf(stderr,"prev_k %i %i \t %i %i %i\n", prev_k,i*num_states_y*num_states_z + j*num_states_z + k-1,i,j,k);
+                    }
+                    if(next_k != i*num_states_y*num_states_z + j*num_states_z + k+1)
+                    {
+                        fprintf(stderr,"next_k %i %i \t %i %i %i\n", next_k,i*num_states_y*num_states_z + j*num_states_z + k+1,i,j,k);
+                    }
+
+                    ydot[index] += rate_x * (states[prev_i] -  
+                        2.0 * states[index] + states[next_i]);
+    
+                    ydot[index] += rate_y * (states[prev_j] - 
+                        2.0 * states[index] + states[next_j]);
+
+                    ydot[index] += rate_z * (states[prev_k] - 
+                        2.0 * states[index] + states[next_k]);
+
+                }
+                index += 2; //skip z boundaries 
+                //prev_j = index - num_states_z;
+                //next_j = index + num_states_z;
+            }
+            index += 2*num_states_z; //skip y boundaries
+            //prev_i = index - num_states_y*num_states_z;
+            //next_i = index + num_states_y*num_states_z;
+        }
+    }
+    */
 }
 
 

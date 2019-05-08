@@ -255,6 +255,9 @@ def tanh(obj):
     return _Arithmeticed(_Function(obj, 'numpy.tanh', 'tanh'), valid_reaction_term=False)
 def trunc(obj):
     return _Arithmeticed(_Function(obj, 'numpy.trunc', 'trunc'), valid_reaction_term=False)
+def vtrap(obj1, obj2):
+    return _Arithmeticed(_Function2(obj1, obj2, 'vtrap', 'vtrap'), valid_reaction_term=False)
+
 
 
 

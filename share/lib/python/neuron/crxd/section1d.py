@@ -163,8 +163,10 @@ class Section1D(rxdsection.RxDSection):
                 raise RxDException('bad nrn_region for setting up currents (should never get here)')
             scales.append(sign * surface_area[self.indices] * 10000. / (self.species.charge * rxd.FARADAY * volumes[self.indices]))
             for i in range(self.nseg):
-                cur_map[self.species.name + self.nrn_region][self._sec((i + 0.5) / self.nseg)] = len(ptrs) + i
-            ptrs.extend([self._sec((i + 0.5) / self.nseg).__getattribute__(ion_curr) for i in range(self.nseg)])
+                seg = self._sec((i + 0.5) / self.nseg)
+                cur_map[self.species.name + self.nrn_region][seg] = len(ptrs)
+                ptrs.append(seg.__getattribute__(ion_curr))
+            #ptrs.extend([self._sec((i + 0.5) / self.nseg).__getattribute__(ion_curr) for i in range(self.nseg)])
 
     @property
     def nodes(self):

@@ -488,6 +488,12 @@ class _ExtracellularSpecies(_SpeciesMathable):
                 self.states[:] = getattr(h,'%so0_%s_ion' % (self._species, self._species))
             else:
                 self.states[:] = 0
+        if self._boundary_conditions:
+            for idx in [0, -1]:
+                self.states[idx, :, :] = self._boundary_conditions
+                self.states[:, idx, :] = self._boundary_conditions
+                self.states[:, :, idx] = self._boundary_conditions
+
 
     def _ion_register(self):
         """modified from neuron.rxd.species.Species._ion_register"""
@@ -683,8 +689,8 @@ class Species(_SpeciesMathable):
         if name is not None:
             if not isinstance(name, str):
                 raise RxDException('Species name must be a string')
-            if name in _defined_species and _defined_species[name]() is not None:
-                raise RxDException('Species "%s" previously defined: %r' % (name, _defined_species[name]()))
+            if name in _defined_species and _defined_species[name]() is not None and any([r in _defined_species[name]()._regions for r in self._regions]):
+                raise RxDException('Species "%s" previously defined on that region: %r' % (name, _defined_species[name]()))
         else:
             name = _species_count
         self._id = _species_count
@@ -1110,9 +1116,6 @@ class Species(_SpeciesMathable):
     
     
     def _finitialize(self, skip_transfer=False):
-        if hasattr(self,'_extracellular_instances'):
-            for r in self._extracellular_instances.values():
-                r._finitialize()
         if self.initial is not None:
             if isinstance(self.initial, collections.Callable):
                 for node in self.nodes:
@@ -1121,7 +1124,10 @@ class Species(_SpeciesMathable):
                 for node in self.nodes:
                     node.concentration = self.initial
             if not skip_transfer:
-                self._transfer_to_legacy()            
+                self._transfer_to_legacy() 
+        if hasattr(self,'_extracellular_instances'):
+            for r in self._extracellular_instances.values():
+                r._finitialize()
         else:
             self._import_concentration()
     
@@ -1224,4 +1230,41 @@ def xyz_by_index(indices):
         index = [indices]
     #TODO: make sure to include Node3D
     return [[nd.x3d, nd.y3d, nd.z3d] for sp in _get_all_species().values() for s in sp()._secs for nd in s.nodes + sp()._nodes if sp() if nd._index in index]
+
+
+class Parameter(Species):
+    def __init__(self, *args, **kwargs):
+        if 'value' in kwargs:
+            kwargs['initial'] = kwargs.pop('value')
+        if 'd' in kwargs and kwargs['d'] != 0:
+            raise RxDException("Parameters cannot diffuse, invalid keyword argument 'd=%g'" % kwargs['d'])
+        super(Parameter, self).__init__(*args, **kwargs)
+
+    def __repr__(self):
+        return 'Parameter(regions=%r, name=%r, charge=%r, initial=%r)' % (self._regions, self._name, self._charge, self.initial)
+
+    def __getitem__(self, r):
+        """Return a reference to those members of this parameter lying on the specific region @varregion.
+        The resulting object is a ParameterOnRegion or ParameterOnExtracellular.
+        This is useful for defining reaction schemes for MultiCompartmentReaction."""
+        if isinstance(r, region.Region):
+            return ParameterOnRegion(self, r)
+        elif isinstance(r, region.Extracellular):
+            if not hasattr(self,'_extracellular_instances'):
+                initializer._do_init()
+            if r in self._extracellular_instances:
+                return ParameterOnExtracellular(self, self._extracellular_instances[r])
+        raise RxDException('no such region')
+
+class ParameterOnRegion(SpeciesOnRegion):
+    pass
+
+class ParameterOnExtracellular(SpeciesOnExtracellular):
+    pass
+    
+
+class State(Species):
+    def __repr__(self):
+        return 'State(regions=%r, d=%r, name=%r, charge=%r, initial=%r)' % (self._regions, self._d, self._name, self._charge, self.initial)
+
 

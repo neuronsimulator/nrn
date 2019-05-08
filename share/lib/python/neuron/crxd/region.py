@@ -41,7 +41,7 @@ class _c_region:
     def __init__(self, regions):
         global _c_region_lookup
         self._regions = [weakref.ref(r) for r in regions]
-        self._overlap = set(self._regions[0]()._secs)
+        self._overlap = self._regions[0]()._secs
         self.num_regions = len(self._regions)
         self.num_species = 0
         self.num_ecs_species = 0
@@ -57,7 +57,7 @@ class _c_region:
         self._vptrs = None
         for rptr in self._regions:
             r = rptr()
-            self._overlap.intersection(r._secs)
+            self._overlap = [sec for sec in r._secs if sec in self._overlap]
             if r in _c_region_lookup:
                 _c_region_lookup[rptr].append(self)
             else:
@@ -124,7 +124,9 @@ class _c_region:
             for sec in self._overlap:
                 for seg in sec:
                     (x,y,z) = species._xyz(seg)
-                    self.ecs_location_index[sid][seg_idx] = s().index_from_xyz(x,y,z)
+                    #TODO: Returns none, causing an error.
+                    node_idx = s().index_from_xyz(x,y,z)
+                    self.ecs_location_index[sid][seg_idx] = node_idx if node_idx else -1
                     seg_idx+=1
         self.ecs_location_index = self.ecs_location_index.transpose()
 

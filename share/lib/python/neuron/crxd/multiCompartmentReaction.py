@@ -174,7 +174,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
         return 'MultiCompartmentReaction(%r, %s, rate_b=%s, membrane=%s, custom_dynamics=%r, membrane_flux=%r, scale_by_area=%r)' % (self._scheme, short_f, short_b, self._regions[0]._short_repr(), self._custom_dynamics, self._membrane_flux, self._scale_by_area)
     
     
-    def _do_memb_scales(self, cur_map):                    
+    def _do_memb_scales(self, cur_map):
         if not self._scale_by_area:
             narea = sum([sec.nseg for sec in self._regions[0].secs])
             areas = numpy.ones(narea)
@@ -258,15 +258,17 @@ class MultiCompartmentReaction(GeneralizedReaction):
                         local_ptrs.append(seg.__getattribute__(name))
                         uberlocal_map = [None, None]
                         uberlocal_map_ecs = [None, None]
-                        if spname + 'i' in cur_map:
+                        if spname + 'i' in cur_map and cur_map[spname + 'i']:
                             uberlocal_map[0] = cur_map[spname + 'i'][seg]
                         if spname + 'o' in cur_map:
-                                    #Original rxd extracellular region
+                            #Original rxd extracellular region
                             if seg in cur_map[spname + 'o']:
                                 uberlocal_map[1] = cur_map[spname + 'o'][seg]
-                            else:   #Extracellular space
+                            elif spname in ecs_grids:   #Extracellular space
                                 uberlocal_map_ecs[0] = ecs_grids[spname]      #TODO: Just pass the grid_id once per species
                                 uberlocal_map_ecs[1] = s[r]._extracellular().index_from_xyz(*species._xyz(seg))
+                        if uberlocal_map == [None, None]:
+                            print("Error %s" % spname, uberlocal_map, uberlocal_map_ecs)
                         local_mapped.append(uberlocal_map)
                         local_mapped_ecs.append(uberlocal_map_ecs)
                 self._cur_ptrs.append(tuple(local_ptrs))
