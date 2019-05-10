@@ -70,6 +70,7 @@ static PyTypeObject* range_type;
 PyObject* pmech_types;  // Python map for name to Mechanism
 PyObject* rangevars_;   // Python map for name to Symbol
 
+extern PyTypeObject* hocobject_type;
 extern Section* nrnpy_newsection(NPySecObj*);
 extern void simpleconnectsection();
 extern void nrn_change_nseg(Section*, int);
@@ -905,8 +906,14 @@ static PyObject* pysec_richcmp(NPySecObj* self, PyObject* other, int op) {
   if (PyObject_TypeCheck(other, psection_type)) {
     void* self_ptr = (void*)(self->sec_);
     other_ptr = (void*)(((NPySecObj*)other)->sec_);
+    return nrn_ptr_richcmp(self_ptr, other_ptr, op);
   }
-  return nrn_ptr_richcmp(self_ptr, other_ptr, op);
+  if (PyObject_TypeCheck(other, hocobject_type) || PyObject_TypeCheck(other, psegment_type)) {
+    // preserves comparison with NEURON objects as it existed prior to 7.7
+    return nrn_ptr_richcmp(self_ptr, other_ptr, op);
+  }
+  Py_INCREF(Py_NotImplemented);
+  return Py_NotImplemented;
 }
 
 static PyObject* pysec_same(NPySecObj* self, PyObject* args) {
