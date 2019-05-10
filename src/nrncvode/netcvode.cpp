@@ -39,6 +39,7 @@
 #include "netcon.h"
 #include "netcvode.h"
 #include "htlist.h"
+#include "nrnbbcore_write.h"
 
 typedef void (*ReceiveFunc)(Point_process*, double*, double);
 
@@ -110,6 +111,8 @@ extern double* nrn_recalc_ptr(double*);
 void* nrn_interthread_enqueue(NrnThread*);
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 Object* (*nrnpy_seg_from_sec_x)(Section*, double);
+void nrnthread_get_trajectory_requests(int tid, int& cnt, void**& vpr, int*& types, int*& indices);
+void nrnthread_trajectory_values(int tid, int cnt, void** vpr, double t, double* values);
 #if NRN_MUSIC
 extern void nrnmusic_injectlist(void*, double);
 #endif
@@ -5493,6 +5496,61 @@ void NetCvode::fixed_play_continuous(NrnThread* nt) {
 			pr->continuous(nt->_t);
 		}
 	}
+}
+
+void nrnthread_get_trajectory_requests(int tid, int& cnt, void**& vpr, int*& types, int*& indices) {
+  cnt = 0;
+  types = NULL;
+  indices = NULL;
+  vpr = NULL;
+  if (tid < nrn_nthread) {
+    PlayRecList* fr = net_cvode_instance->fixed_record_;
+    int cntp;
+    cntp = fr->count();
+    for (int i=0; i < cntp; ++i) {
+      PlayRecord* pr = fr->item(i);
+      if (pr->ith_ == tid) {
+        cnt++;
+      }
+    }
+    if (cnt == 0) {
+      return;
+    }
+    types = new int[cnt];
+    indices = new int[cnt];
+    vpr = new void*[cnt];
+    cnt = 0;
+    for (int i=0; i < cntp; ++i) {
+      PlayRecord* pr = fr->item(i);
+      if (pr->ith_ == tid) {
+        vpr[cnt] = (void*)pr;
+        nrn_dblpntr2nrncore(pr->pd_, nrn_threads[tid], types[cnt], indices[cnt]);
+        cnt++;
+      }
+    }
+#if 0
+    printf("nrnthread_get_trajectory_requests tid=%d cnt=%d\n", tid, cnt);
+    for (int i=0; i < cnt; ++i) {
+      PlayRecord* pr = (PlayRecord*)vpr[i];
+      printf("    %d  pd=%p  type=%d  index=%d\n", i, pr->pd_, types[i], indices[i]);
+    }
+#endif
+  }
+}
+
+void nrnthread_trajectory_values(int tid, int cnt, void** vpr, double tt, double* values) {
+  if (tid < 0) {
+    net_cvode_instance->record_init();
+    return;
+  }
+  if (tid < nrn_nthread) {
+    nrn_threads[tid]._t = tt;
+    for (int i=0; i < cnt; ++i) {
+      PlayRecord* pr = (PlayRecord*)vpr[i];
+      *pr->pd_ = values[i];
+      pr->continuous(tt);
+    }
+  }
 }
 
 // factored this out from deliver_net_events so we can

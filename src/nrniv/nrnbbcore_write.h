@@ -70,6 +70,7 @@ extern "C" {
 extern size_t nrncore_netpar_bytes();
 extern void nrncore_netpar_cellgroups_helper(CellGroup*);
 extern int nrncore_art2index(double* param); // find the Memb_list index
+extern void nrn_dblpntr2nrncore(double*, NrnThread&, int& type, int& etype);
 
 #if defined(__cplusplus)
 }

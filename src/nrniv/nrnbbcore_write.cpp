@@ -723,6 +723,31 @@ void datumtransform(CellGroup* cgs) {
   }
 }
 
+// Limited to pointers to voltage or data of non-artificial cell mechanisms.
+// Requires cache_efficient mode.
+// Input double* and NrnThread. Output type and index.
+// type == 0 means could not determine index.
+void nrn_dblpntr2nrncore(double* pd, NrnThread& nt, int& type, int& index) {
+  assert(use_cachevec);
+  int nnode = nt.end;
+  type = 0;
+  if (pd >= nt._actual_v && pd < (nt._actual_v + nnode)) {
+    type = -5; // signifies an index into voltage array portion of _data 
+    index = pd - nt._actual_v;
+  }else{
+    for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
+      if (nrn_is_artificial_[tml->index]) { continue; }
+      Memb_list* ml1 = tml->ml;
+      int nn = nrn_prop_param_size_[tml->index] * ml1->nodecount;
+      if (pd >= ml1->data[0] && pd < (ml1->data[0] + nn)) {
+        type = tml->index;
+        index = pd - ml1->data[0];
+        break;
+      }
+    }
+  }
+}
+
 void datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_list* ml) {
   NrnThread& nt = nrn_threads[ith];
   double* a = nt._actual_area;
@@ -819,24 +844,11 @@ void datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_list* ml) {
         // must be a pointer into nt->_data. Handling is similar to eion so
         // give proper index into the type.
         double* pd = dparam[j].pval;
-        etype = 0;
-        if (pd >= nt._actual_v && pd < (nt._actual_v + nnode)) {
-          etype = -5; // signifies an index into voltage array portion of _data 
-          eindex = pd - nt._actual_v;
-        }else{
-          for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
-            if (nrn_is_artificial_[tml->index]) { continue; }
-            Memb_list* ml1 = tml->ml;
-            int nn = nrn_prop_param_size_[tml->index] * ml1->nodecount;
-            if (pd >= ml1->data[0] && pd < (ml1->data[0] + nn)) {
-              etype = tml->index;
-              eindex = pd - ml1->data[0];
-              break;
-            }
-          }
+	nrn_dblpntr2nrncore(pd, nt, etype, eindex);
+        if (etype == 0) {
           fprintf(stderr, "POINTER is not pointing to voltage or mechanism data. Perhaps it should be a BBCOREPOINTER\n");
-          assert(etype != 0);
         }
+        assert(etype != 0);
         // pointer into one of the tml types?
       }else if (dmap[j] > 0 && dmap[j] < 1000) { // double* into eion type data
         Memb_list* eml = cg.type2ml[dmap[j]];
@@ -1791,6 +1803,11 @@ extern "C" {
 extern void get_partrans_setup_info(int, int&, int&, int&, int&, int*&, int*&, int*&);
 }
 
+extern "C" {
+void nrnthread_get_trajectory_requests(int tid, int& cnt, void**& vpr, int*& types, int*& indices);
+void nrnthread_trajectory_values(int tid, int cnt, void** vpr, double t, double* values);
+}
+
 static core2nrn_callback_t cnbs[]  = {
   {"nrn2core_group_ids_", (CNB)nrnthread_group_ids},
   {"nrn2core_mkmech_info_", (CNB)write_memb_mech_types_direct},
@@ -1806,6 +1823,9 @@ static core2nrn_callback_t cnbs[]  = {
   {"nrn2core_get_dat2_corepointer_mech_", (CNB)nrnthread_dat2_corepointer_mech},
   {"nrn2core_get_dat2_vecplay_", (CNB)nrnthread_dat2_vecplay},
   {"nrn2core_get_dat2_vecplay_inst_", (CNB)nrnthread_dat2_vecplay_inst},
+
+  {"nrn2core_get_trajectory_requests_", (CNB)nrnthread_get_trajectory_requests},
+  {"nrn2core_trajectory_values_", (CNB)nrnthread_trajectory_values},
   {NULL, NULL}
 };
 
