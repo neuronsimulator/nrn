@@ -27,7 +27,11 @@ THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <coreneuron/enginemech.h>
+#include "coreneuron/nrniv/profiler_interface.h"
 
 int main(int argc, char** argv) {
-    return solve_core(argc, argv);
+    coreneuron::Instrumentor::init_profile();
+    auto solve_core_result = solve_core(argc, argv);
+    coreneuron::Instrumentor::finalize_profile();
+    return solve_core_result;
 }
