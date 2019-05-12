@@ -5545,6 +5545,7 @@ void nrnthread_trajectory_values(int tid, int cnt, void** vpr, double tt, double
   }
   if (tid < nrn_nthread) {
     nrn_threads[tid]._t = tt;
+    if (tid == 0) { t = tt; }
     for (int i=0; i < cnt; ++i) {
       PlayRecord* pr = (PlayRecord*)vpr[i];
       *pr->pd_ = values[i];
