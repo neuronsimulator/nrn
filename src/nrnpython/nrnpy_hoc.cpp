@@ -7,6 +7,7 @@
 #include "oclist.h"
 #include "nrniv_mf.h"
 #include "nrnpy_utils.h"
+#include "../nrniv/shapeplt.h"
 #include <vector>
 
 #if defined(__MINGW32__) && NRNPYTHON_DYNAMICLOAD > 0
@@ -158,6 +159,7 @@ typedef struct {
 } PyHocObject;
 
 static PyObject* rvp_plot = NULL;
+static PyObject* plotshape_plot = NULL;
 
 PyTypeObject* hocobject_type;
 static PyObject* hocobj_call(PyHocObject* self, PyObject* args,
@@ -945,7 +947,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
 
       if (is_obj_type(self->ho_, "Vector")) {
         PyDict_SetItemString(dict, "__array_interface__", Py_None);
-      } else if (is_obj_type(self->ho_, "RangeVarPlot")) {
+      } else if (is_obj_type(self->ho_, "RangeVarPlot") || is_obj_type(self->ho_, "PlotShape")) {
         PyDict_SetItemString(dict, "plot", Py_None);
       }
       return dict;
@@ -981,8 +983,9 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
                            PyLong_FromVoidPtr(x), Py_True);
 
     } else if (is_obj_type(self->ho_, "RangeVarPlot") && strcmp(n, "plot") == 0) {
-      //Py_INCREF(rvp_plot);
       return PyObject_CallFunctionObjArgs(rvp_plot, (PyObject*) self, NULL);
+    } else if (is_obj_type(self->ho_, "PlotShape") && strcmp(n, "plot") == 0) {
+      return PyObject_CallFunctionObjArgs(plotshape_plot, (PyObject*) self, NULL);
     } else if (strcmp(n, "__doc__") == 0) {
       if (setup_doc_system()) {
         PyObject* docobj = NULL;
@@ -2103,8 +2106,9 @@ int nrnpy_set_vec_as_numpy(PyObject* (*p)(int, double*)) {
   return 0;
 }
 
-int nrnpy_set_rvp_plot(PyObject* p) {
-  rvp_plot = p;
+int nrnpy_set_graph_plots(PyObject* rvp_plot0, PyObject* plotshape_plot0) {
+  rvp_plot = rvp_plot0;
+  plotshape_plot = plotshape_plot0;
   return 0;
 }
 
@@ -2186,6 +2190,15 @@ static Object** nrnpy_vec_to_python(void* v) {
     }
   }
   return hoc_temp_objptr(ho);
+}
+
+PyObject* get_plotshape_variable(PyObject* sp) {
+  PyHocObject* pho = (PyHocObject*) sp;
+  if (!is_obj_type(pho->ho_, "PlotShape")) {
+    PyErr_SetString(PyExc_TypeError, "get_plotshape_variable only takes PlotShape objects");
+    return NULL;
+  }
+  return Py_BuildValue("s", ((ShapePlot*) pho->ho_->u.this_pointer)->varname());
 }
 
 // poorly follows __reduce__ and __setstate__

@@ -27,8 +27,10 @@ public:
 	virtual void flush();
 	virtual void fast_flush();
 	void update_ptrs();
+	Symbol* sym_;	// needed for when no IV and when IV exists but not used
 private:
 	ShapePlotImpl* spi_;
+
 };
 
 class ColorValue : public Resource, public Observable{

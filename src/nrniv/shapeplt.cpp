@@ -88,15 +88,20 @@ ENDGUI
 }
 
 static double sh_variable(void* v) {
-#if HAVE_IV
-IFGUI
 	Symbol* s;
 	s = hoc_table_lookup(gargstr(1), hoc_built_in_symlist);
 	if (s) {
+#if HAVE_IV
+IFGUI
 		((ShapePlot*)v)->variable(s);
-	}
+} else {
+		((ShapePlot*)v)->sym_ = s;
 ENDGUI
+#else
+		((ShapePlot*)v)->sym_ = s;
+	
 #endif
+	}
 	return 1.;
 }
 
@@ -410,6 +415,7 @@ void ShapePlotImpl::update(Observable*) {
 void ShapePlot::variable(Symbol* sym) {
 	GlyphIndex i;
 	spi_->sym_ = sym;
+        sym_ = sym; // helps varname work both with and without IV
 	i = glyph_index(spi_->variable_);
 	GLabel* g = new GLabel(spi_->sym_->name, colors->color(1), 1, 1, .5, .5);
 	if (i >= 0) {
@@ -429,7 +435,7 @@ void ShapePlot::variable(Symbol* sym) {
 	scale(-80, 40);
 }
 const char* ShapePlot::varname()const {
-	return spi_->sym_->name;
+	return sym_->name;
 }
 
 void ShapePlot::scale(float min, float max) {
