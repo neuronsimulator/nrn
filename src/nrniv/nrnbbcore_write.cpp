@@ -1265,7 +1265,7 @@ static int nrnthread_dat2_mech(int tid, size_t i, int dsz_inst, int*& nodeindice
     }
     if (copy) {
       if (!isart) {
-        nodeindices = new int[n];
+        nodeindices = (int*)emalloc(n*sizeof(int));
         for (int i=0; i < n; ++i) {
           nodeindices[i] = ml->nodeindices[i];
         }
