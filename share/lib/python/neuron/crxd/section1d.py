@@ -1,5 +1,5 @@
 import weakref
-from neuron import h
+from neuron import h, nrn
 from . import node, rxdsection, nodelist
 import numpy
 from .rxdException import RxDException
@@ -108,6 +108,24 @@ class Section1D(rxdsection.RxDSection):
             _rxd_sec_lookup[sec].append(weakref.ref(self))
         else:
             _rxd_sec_lookup[sec] = [weakref.ref(self)]
+
+    def __req__(self, other):
+        if isinstance(other, nrn.Section):
+            return self._sec == other
+        return id(self) == id(other)
+    
+    def __rne__(self, other):
+        # necessary for Python 2 but not for Python 3
+        return not (self == other)
+
+    def __eq__(self, other):
+        if isinstance(other, nrn.Section):
+            return self._sec == other
+        return id(self) == id(other)
+    
+    def __ne__(self, other):
+        # necessary for Python 2 but not for Python 3
+        return not (self == other)
 
     def _init_diffusion_rates(self):
         # call only after roots are set

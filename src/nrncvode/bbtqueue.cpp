@@ -68,9 +68,9 @@ bool TQItem::check() {
 static void prnt(const TQItem* b, int level) {
 	int i;
 	for (i=0; i < level; ++i) {
-		printf("    ");
+		Printf("    ");
 	}
-	printf("%g %c %d\n", b->t_, b->data_?'x':'o', b->w_);
+	Printf("%g %c %d\n", b->t_, b->data_?'x':'o', b->w_);
 }
 
 static void chk(TQItem* b, int level) {
@@ -232,7 +232,7 @@ TQItem* TQueue::find(double t) {
 			b = b->right_;
 		}
 	}
-printf("couldn't find %g\n", t);
+Printf("couldn't find %g\n", t);
 	return b;
 }
 
@@ -348,10 +348,10 @@ void TQueue::reverse(TQItem* b) { // switch item and parent
 	if (p) {
 		STAT(nbal)
 if(p->parent_) {
-	if (!p->parent_->check()) printf("p->parent failed start\n");
+	if (!p->parent_->check()) Printf("p->parent failed start\n");
 }
-if (!p->check()) printf("p failed at start\n");
-if (!b->check()) printf("b failed at start\n");
+if (!p->check()) Printf("p failed at start\n");
+if (!b->check()) Printf("b failed at start\n");
 		if (p->parent_) {
 			b->parent_ = p->parent_;
 			if (p->parent_->left_ == p) {
@@ -381,10 +381,10 @@ if (!b->check()) printf("b failed at start\n");
 		}
 		p->w_ = p->wleft() + p->wright() + 1;
 if(b->parent_) {
-	if (!b->parent_->check()) printf("b->parent failed end\n");
+	if (!b->parent_->check()) Printf("b->parent failed end\n");
 }
-if (!p->check()) printf("p failed at end\n");
-if (!b->check()) printf("b failed at end\n");
+if (!p->check()) Printf("p failed at end\n");
+if (!b->check()) Printf("b failed at end\n");
 	}
 }	
 
@@ -473,11 +473,11 @@ bool TQItem::unbalanced() {
 
 void TQueue::statistics() {
 #if COLLECT_TQueue_STATISTICS
-	printf("insertions=%lu  moves=%lu fastmoves=%lu removals=%lu calls to least=%lu\n", ninsert, nmove, nfastmove, nrem, nleast);
-	printf("calls to find=%lu balances=%lu complex removals=%lu\n", nfind, nbal, ncmplxrem);
-	printf("comparisons=%lu leastsearch=%lu findsearch=%lu\n", ncompare, nleastsrch, nfindsrch);
+	Printf("insertions=%lu  moves=%lu fastmoves=%lu removals=%lu calls to least=%lu\n", ninsert, nmove, nfastmove, nrem, nleast);
+	Printf("calls to find=%lu balances=%lu complex removals=%lu\n", nfind, nbal, ncmplxrem);
+	Printf("comparisons=%lu leastsearch=%lu findsearch=%lu\n", ncompare, nleastsrch, nfindsrch);
 #else
-	printf("Turn on COLLECT_TQueue_STATISTICS_ in tqueue.h\n");
+	Printf("Turn on COLLECT_TQueue_STATISTICS_ in tqueue.h\n");
 #endif
 }
 

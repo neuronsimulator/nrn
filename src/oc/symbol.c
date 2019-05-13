@@ -54,9 +54,9 @@ Symlist	*p_symlist = (Symlist *)0; /* current proc, func, or temp table */
 
 void print_symlist(const char* s, Symlist* tab) {
 	Symbol *sp;
-	printf("%s\n", s);
+	Printf("%s\n", s);
 	if (tab) for (sp=tab->first ; sp != (Symbol *) 0; sp = sp->next) {
-		printf("%s %p\n", sp->name, sp);
+		Printf("%s %p\n", sp->name, sp);
 	}
 }
 

@@ -25,7 +25,7 @@ HocEvent::~HocEvent() {
 }
 
 void HocEvent::pr(const char* s, double tt, NetCvode* ns) {
-	printf("%s HocEvent %s %.15g\n", s, stmt_ ? stmt_->name() : "", tt);
+	Printf("%s HocEvent %s %.15g\n", s, stmt_ ? stmt_->name() : "", tt);
 }
 
 HocEvent* HocEvent::alloc(const char* stmt, Object* ppobj, int reinit, Object* pyact) {

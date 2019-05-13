@@ -238,7 +238,24 @@ class SpeciesOnExtracellular(_SpeciesMathable):
                 e = ecs._region
                 index += e._nz * e._ny * e._nz
         return self._species()._extracellular_nodes[index]
- 
+    @property
+    def nodes(self):
+        """A NodeList of the Node objects containing concentration data for the given Species and extracellular region.
+
+        The code
+
+            node_list = ca[ecs].nodes
+
+        is more efficient than the otherwise equivalent
+
+            node_list = ca.nodes(ecs)
+
+        because the former only creates the Node objects belonging to the restriction ca[cyt] whereas the second option
+        constructs all Node objects belonging to the Species ca and then culls the list to only include those also
+        belonging to the Region cyt.
+        """
+        initializer._do_init()
+        return nodelist.NodeList([nd for nd in self._species()._extracellular_nodes if nd.region == self._extracellular()._region])
 
                 
     def _semi_compile(self, reg):
@@ -329,7 +346,12 @@ class SpeciesOnRegion(_SpeciesMathable):
         constructs all Node objects belonging to the Species ca and then culls the list to only include those also
         belonging to the Region cyt.
         """
-        initializer._do_init()
+        from . import rxd
+        h.doNotify()
+        if initializer.is_initialized():
+            rxd._update_node_data()
+        else:
+            initializer._do_init()
         return nodelist.NodeList(itertools.chain.from_iterable([s.nodes for s in self._species()._secs if s._region == self._region()]))
     
     @property
@@ -497,23 +519,24 @@ class _ExtracellularSpecies(_SpeciesMathable):
 
     def _ion_register(self):
         """modified from neuron.rxd.species.Species._ion_register"""
-        ion_type = h.ion_register(self._species, self._charge)
-        if ion_type == -1:
-            raise RxDException('Unable to register species: %s' % self._species)
-        # insert the species if not already present
-        ion_forms = [self._species + 'i', self._species + 'o', 'i' + self._species, 'e' + self._species]
-        for s in h.allsec():
-            try:
-                for i in ion_forms:
+        if self._species is not None:
+            ion_type = h.ion_register(self._species, self._charge)
+            if ion_type == -1:
+                raise RxDException('Unable to register species: %s' % self._species)
+            # insert the species if not already present
+            ion_forms = [self._species + 'i', self._species + 'o', 'i' + self._species, 'e' + self._species]
+            for s in h.allsec():
+                try:
+                    for i in ion_forms:
                     # this throws an exception if one of the ion forms is missing
-                    temp = s.__getattribute__(i)
-            except:
-                s.insert(self._species + '_ion')
-            # set to recalculate reversal potential automatically
-            # the last 1 says to set based on global initial concentrations
-            # e.g. nao0_na_ion, etc...
-            # TODO: this is happening GLOBALLY even to sections that aren't inside the extracellular domain (FIX THIS)
-            h.ion_style(self._species + '_ion', 3, 2, 1, 1, 1, sec=s)
+                        temp = s.__getattribute__(i)
+                except:
+                    s.insert(self._species + '_ion')
+                # set to recalculate reversal potential automatically
+                # the last 1 says to set based on global initial concentrations
+                # e.g. nao0_na_ion, etc...
+                # TODO: this is happening GLOBALLY even to sections that aren't inside the extracellular domain (FIX THIS)
+                h.ion_style(self._species + '_ion', 3, 2, 1, 1, 1, sec=s)
 
     def _nodes_by_location(self, i, j, k):
         return (i * self._ny + j) * self._nz + k
@@ -555,6 +578,8 @@ class _ExtracellularSpecies(_SpeciesMathable):
 
     def _update_pointers(self):
         # TODO: call this anytime the _grid_id changes and anytime the structure_change_count changes
+        if self._species is None or self._charge == 0:
+            return
         self._seg_indices = self._locate_segments()
         from .geometry import _surface_areas1d
 
@@ -648,6 +673,8 @@ class Species(_SpeciesMathable):
         _all_species.append(weakref.ref(self))
         # declare an update to the structure of the model (the number of differential equations has changed)
         nrn_dll_sym('structure_change_cnt', ctypes.c_int).value += 1
+
+        self._ion_register() 
 
         # initialize self if the rest of rxd is already initialized
         if initializer.is_initialized():
@@ -1187,8 +1214,12 @@ class Species(_SpeciesMathable):
         
         This can then be further restricted using the callable property of NodeList objects."""
 
-        initializer._do_init()
-         
+        from . import rxd
+        h.doNotify()
+        if initializer.is_initialized():
+            rxd._update_node_data()
+        else:
+            initializer._do_init()
         # The first part here is for the 1D -- which doesn't keep live node objects -- the second part is for 3D
         return nodelist.NodeList(list(itertools.chain.from_iterable([s.nodes for s in self._secs])) + self._nodes + self._extracellular_nodes)
 

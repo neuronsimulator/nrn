@@ -583,6 +583,80 @@ except:
   pass
 
 
+class _RangeVarPlot:
+  """Plots the current state of the RangeVarPlot on the graph.
+
+  Additional arguments and keyword arguments are passed to the graph's
+  plotting method.
+
+  Example, showing plotting to NEURON graphics, bokeh, and matplotlib:
+
+  .. code::
+
+    from matplotlib import pyplot
+    from neuron import h, gui
+    import bokeh.plotting as b
+    import math
+
+    dend = h.Section(name='dend')
+    dend.nseg = 55
+    dend.L = 6.28
+
+    # looping over dend.allseg instead of dend to set 0 and 1 ends
+    for seg in dend.allseg():
+        seg.v = math.sin(dend.L * seg.x)
+
+    r = h.RangeVarPlot('v', dend(0), dend(1))
+
+    # matplotlib
+    graph = pyplot.gca()
+    r.plot(graph, linewidth=10, color='r')
+
+    # NEURON Interviews graph
+    g = h.Graph()
+    r.plot(g, 2, 3)
+    g.exec_menu('View = plot')
+
+    # Bokeh
+    bg = b.Figure()
+    r.plot(bg, line_width=10)
+    b.show(bg)
+
+    pyplot.show()"""
+    
+  def __init__(self, rvp):
+    '''do not call directly'''
+    self._rvp = rvp
+  def __repr__(self):
+    return '{}.plot()'.format(repr(self._rvp))
+  def __call__(self, graph, *args, **kwargs):
+      
+      yvec = h.Vector()
+      xvec = h.Vector()
+      self._rvp.to_vector(yvec, xvec)
+      if isinstance(graph, hoc.HocObject):
+        return yvec.line(graph, xvec, *args)
+      if hasattr(graph, 'plot'):
+        # works with e.g. pyplot or a matplotlib axis
+        return graph.plot(xvec, yvec, *args, **kwargs)
+      if hasattr(graph, 'line'):
+        # works with e.g. bokeh
+        return graph.line(xvec, yvec, *args, **kwargs)
+      if str(type(graph)) == "<class 'matplotlib.figure.Figure'>":
+        raise Exception('plot to a matplotlib axis not a matplotlib figure')
+      raise Exception('Unable to plot to graphs of type {}'.format(type(graph)))
+
+try:
+  import ctypes
+  def _rvp_plot(rvp):
+    return _RangeVarPlot(rvp)
+
+  set_rvp_plot = nrn_dll_sym('nrnpy_set_rvp_plot')
+  _rvp_plot_callback = ctypes.py_object(_rvp_plot)
+  set_rvp_plot(_rvp_plot_callback)
+except:
+  pass
+
 def _has_scipy():
     """
     to check for scipy:
@@ -637,6 +711,42 @@ if not embedded:
   except:
     print("Failed to setup nrnpy_pr")
     pass
+
+
+def nrnpy_vec_math(op, flag, arg1, arg2=None):
+  import numbers
+  valid_types = (numbers.Number, hoc.HocObject)
+  if isinstance(arg1, valid_types):
+    if flag == 2:
+      # unary
+      arg1 = arg1.c()
+      if op == 'uneg':
+        return arg1.mul(-1)
+      if op == 'upos':
+        return arg1
+      if op == 'uabs':
+        return arg1.abs()
+    elif isinstance(arg2, valid_types):
+      if flag == 1:
+        # either reversed (flag=1) or unary (flag=2)
+        arg2 = arg2.c()
+        if op in ('mul', 'add'):
+          return getattr(arg2, op)(arg1)
+        if op == 'div':
+          return arg2.pow(-1).mul(arg1)
+        if op == 'sub':
+          return arg2.mul(-1).add(arg1)
+      else:
+        arg1 = arg1.c()
+        return getattr(arg1, op)(arg2)
+
+  return NotImplemented
+
+try:
+  nrnpy_vec_math_register = nrn_dll_sym('nrnpy_vec_math_register')
+  nrnpy_vec_math_register(ctypes.py_object(nrnpy_vec_math))
+except:
+  print("Failed to setup nrnpy_vec_math")
 
 try:
   from neuron.psection import psection

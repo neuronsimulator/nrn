@@ -1138,7 +1138,7 @@ void NetCvodeThreadData::interthread_send(double td, DiscreteEvent* db, NrnThrea
 	MUTLOCK
 #if PRINT_EVENT
 if (net_cvode_instance->print_event_) {
-printf("interthread send td=%.15g DE type=%d thread=%d target=%d %s\n",
+Printf("interthread send td=%.15g DE type=%d thread=%d target=%d %s\n",
 td, db->type(), nt->id, (db->type() == 2) ? PP2NT(((NetCon*)db)->target_)->id:-1,
 (db->type() == 2) ? hoc_object_name(((NetCon*)(db))->target_->ob):"?");
 }
@@ -1174,7 +1174,7 @@ void NetCvodeThreadData::enqueue(NetCvode* nc, NrnThread* nt) {
 		InterThreadEvent& ite = inter_thread_events_[i];
 #if PRINT_EVENT
 if (net_cvode_instance->print_event_) {
-printf("interthread enqueue td=%.15g DE type=%d thread=%d target=%d %s\n",
+Printf("interthread enqueue td=%.15g DE type=%d thread=%d target=%d %s\n",
 ite.t_, ite.de_->type(), nt->id, (ite.de_->type() == 2) ? PP2NT(((NetCon*)(ite.de_))->target_)->id:-1,
 (ite.de_->type() == 2) ? hoc_object_name(((NetCon*)(ite.de_))->target_->ob):"?");
 }
@@ -2328,7 +2328,7 @@ void NetCvode::move_event(TQItem* q, double tnew, NrnThread* nt) {
 #if PRINT_EVENT
 if (print_event_) {
 	SelfEvent* se = (SelfEvent*)q->data_;
-printf("NetCvode::move_event self event target %s t=%g, old=%g new=%g\n", hoc_object_name(se->target_->ob), nt->_t, q->t_, tnew);
+Printf("NetCvode::move_event self event target %s t=%g, old=%g new=%g\n", hoc_object_name(se->target_->ob), nt->_t, q->t_, tnew);
 }
 #endif
 #if USENEOSIM
@@ -2998,7 +2998,7 @@ void DiscreteEvent::pgvts_deliver(double tt, NetCvode* ns) {
 }
 
 void DiscreteEvent::pr(const char* s, double tt, NetCvode* ns) {
-	printf("%s DiscreteEvent %.15g\n", s, tt);
+	Printf("%s DiscreteEvent %.15g\n", s, tt);
 }
 
 void NetCon::send(double tt, NetCvode* ns, NrnThread* nt) {
@@ -3018,7 +3018,7 @@ void NetCon::send(double tt, NetCvode* ns, NrnThread* nt) {
 void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 	assert(target_);
 if (PP2NT(target_) != nt) {
-printf("NetCon::deliver nt=%d target=%d\n", nt->id, PP2NT(target_)->id);
+Printf("NetCon::deliver nt=%d target=%d\n", nt->id, PP2NT(target_)->id);
 }
 	assert(PP2NT(target_) == nt);
 	Cvode* cv = (Cvode*)target_->nvi_;
@@ -3066,13 +3066,13 @@ hoc_warning("errno set during NetCon deliver to NET_RECEIVE", (char*)0);
 }
 
 void NetCon::pr(const char* s, double tt, NetCvode* ns) {
-	printf("%s %s", s, hoc_object_name(obj_));
+	Printf("%s %s", s, hoc_object_name(obj_));
 	if (src_) {
-		printf(" src=%s",  src_->osrc_ ? hoc_object_name(src_->osrc_):secname(src_->ssrc_));
+		Printf(" src=%s",  src_->osrc_ ? hoc_object_name(src_->osrc_):secname(src_->ssrc_));
 	}else{
-		printf(" src=nil");
+		Printf(" src=nil");
 	}
-	printf(" target=%s %.15g\n", (target_?hoc_object_name(target_->ob):"nil"), tt);
+	Printf(" target=%s %.15g\n", (target_?hoc_object_name(target_->ob):"nil"), tt);
 }
 
 void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
@@ -3219,9 +3219,9 @@ hoc_execerror("internal error: Source delay is > NetCon delay", 0);
 }
 
 void PreSyn::pr(const char* s, double tt, NetCvode* ns) {
-	printf("%s", s);
-	printf(" PreSyn src=%s",  osrc_ ? hoc_object_name(osrc_):secname(ssrc_));
-	printf(" %.15g\n", tt);
+	Printf("%s", s);
+	Printf(" PreSyn src=%s",  osrc_ ? hoc_object_name(osrc_):secname(ssrc_));
+	Printf(" %.15g\n", tt);
 }
 
 SelfEvent::SelfEvent() {}
@@ -3379,8 +3379,8 @@ hoc_warning("errno set during SelfEvent deliver to NET_RECEIVE", (char*)0);
 }
 	
 void SelfEvent::pr(const char* s, double tt, NetCvode* ns) {
-	printf("%s", s);
-	printf(" SelfEvent target=%s %.15g flag=%g\n", hoc_object_name(target_->ob), tt, flag_);
+	Printf("%s", s);
+	Printf(" SelfEvent target=%s %.15g flag=%g\n", hoc_object_name(target_->ob), tt, flag_);
 }
 
 void PlayRecordEvent::frecord_init(TQItem* q) {
@@ -3399,7 +3399,7 @@ void PlayRecordEvent::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 NrnThread* PlayRecordEvent::thread() { return nrn_threads + plr_->ith_; }
 
 void PlayRecordEvent::pr(const char* s, double tt, NetCvode* ns) {
-	printf("%s PlayRecordEvent %.15g ", s, tt);
+	Printf("%s PlayRecordEvent %.15g ", s, tt);
 	plr_->pr();
 }
 
@@ -3418,7 +3418,7 @@ void TstopEvent::pgvts_deliver(double tt, NetCvode* ns) {
 }
 
 void TstopEvent::pr(const char* s, double tt, NetCvode* ns) {
-	printf("%s TstopEvent %.15g\n", s, tt);
+	Printf("%s TstopEvent %.15g\n", s, tt);
 }
 
 DiscreteEvent* TstopEvent::savestate_save() {
@@ -3431,7 +3431,7 @@ DiscreteEvent* TstopEvent::savestate_save() {
 
 void TstopEvent::savestate_restore(double tt, NetCvode* nc) {
 //	pr("savestate_restore", tt, nc);
-	printf("tstop_event_ onto queue\n");
+	Printf("tstop_event_ onto queue\n");
 	nc->tstop_event(tt);
 }
 
@@ -3451,14 +3451,14 @@ void NetCvode::local_retreat(double t, Cvode* cv) {
 	if (tq) {
 #if PRINT_EVENT
 		if (print_event_) {
-printf("microstep local retreat from %g (cvode_%p is at %g) for event onset=%g\n", cv->tqitem_->t_, cv, cv->t_, t);
+Printf("microstep local retreat from %g (cvode_%p is at %g) for event onset=%g\n", cv->tqitem_->t_, cv, cv->t_, t);
 		}
 #endif
 		cv->interpolate(t);
 		tq->move(cv->tqitem_, t);
 #if PRINT_EVENT
 		if (print_event_ > 1) {
-printf("after target solve time for %p is %g , dt=%g\n", cv, cv->time(), nt_dt);
+Printf("after target solve time for %p is %g , dt=%g\n", cv, cv->time(), nt_dt);
 		}
 #endif
 	}else{
@@ -3471,7 +3471,7 @@ void NetCvode::retreat(double t, Cvode* cv) {
 	TQueue* tq = p[cv->nth_ ? cv->nth_->id : 0].tq_;
 #if PRINT_EVENT
 	if (print_event_) {
-printf("microstep retreat from %g (cvode_%p is at %g) for event onset=%g\n",
+Printf("microstep retreat from %g (cvode_%p is at %g) for event onset=%g\n",
  tq ? cv->tqitem_->t_ : cv->t_, cv, cv->t_, t);
 	}
 #endif
@@ -3481,7 +3481,7 @@ printf("microstep retreat from %g (cvode_%p is at %g) for event onset=%g\n",
 	}
 #if PRINT_EVENT
 	if (print_event_ > 1) {
-printf("after target solve time for %p is %g , dt=%g\n", cv, cv->time(), dt);
+Printf("after target solve time for %p is %g , dt=%g\n", cv, cv->time(), dt);
 	}
 #endif
 }
@@ -3814,21 +3814,21 @@ void NetCvode::statistics(int i) {
 			}
 		}
 	}
-	printf("NetCon active=%lu (not sent)=%lu delivered=%lu\n", NetCon::netcon_send_active_, NetCon::netcon_send_inactive_, NetCon::netcon_deliver_);
-	printf("Condition O2 thresh detect=%lu via init=%lu effective=%lu abandoned=%lu (unnecesarily=%lu init+=%lu init-=%lu above=%lu below=%lu)\n",ConditionEvent::send_qthresh_, ConditionEvent::init_above_, ConditionEvent::deliver_qthresh_, ConditionEvent::abandon_, ConditionEvent::eq_abandon_, ConditionEvent::abandon_init_above_, ConditionEvent::abandon_init_below_, ConditionEvent::abandon_above_, ConditionEvent::abandon_below_);
-	printf("PreSyn send: mindelay=%lu direct=%lu\n", PreSyn::presyn_send_mindelay_, PreSyn::presyn_send_direct_);
-	printf("PreSyn deliver: O2 thresh=%lu  NetCon=%lu (send=%lu  deliver=%lu)\n", ConditionEvent::deliver_qthresh_, PreSyn::presyn_deliver_netcon_, PreSyn::presyn_deliver_ncsend_, PreSyn::presyn_deliver_direct_);
-	printf("SelfEvent send=%lu move=%lu deliver=%lu\n", SelfEvent::selfevent_send_, SelfEvent::selfevent_move_, SelfEvent::selfevent_deliver_);
-	printf("Watch send=%lu deliver=%lu\n", WatchCondition::watch_send_, WatchCondition::watch_deliver_);
-	printf("PlayRecord send=%lu deliver=%lu\n", PlayRecordEvent::playrecord_send_, PlayRecordEvent::playrecord_deliver_);
-	printf("HocEvent send=%lu deliver=%lu\n", HocEvent::hocevent_send_, HocEvent::hocevent_deliver_);
-	printf("SingleEvent deliver=%lu move=%lu\n", KSSingle::singleevent_deliver_, KSSingle::singleevent_move_);
-	printf("DiscreteEvent send=%lu deliver=%lu\n", DiscreteEvent::discretevent_send_, DiscreteEvent::discretevent_deliver_);
-	printf("%lu total events delivered  net_event=%lu\n", deliver_cnt_, net_event_cnt_);
-	printf("Discrete event TQueue\n");
+	Printf("NetCon active=%lu (not sent)=%lu delivered=%lu\n", NetCon::netcon_send_active_, NetCon::netcon_send_inactive_, NetCon::netcon_deliver_);
+	Printf("Condition O2 thresh detect=%lu via init=%lu effective=%lu abandoned=%lu (unnecesarily=%lu init+=%lu init-=%lu above=%lu below=%lu)\n",ConditionEvent::send_qthresh_, ConditionEvent::init_above_, ConditionEvent::deliver_qthresh_, ConditionEvent::abandon_, ConditionEvent::eq_abandon_, ConditionEvent::abandon_init_above_, ConditionEvent::abandon_init_below_, ConditionEvent::abandon_above_, ConditionEvent::abandon_below_);
+	Printf("PreSyn send: mindelay=%lu direct=%lu\n", PreSyn::presyn_send_mindelay_, PreSyn::presyn_send_direct_);
+	Printf("PreSyn deliver: O2 thresh=%lu  NetCon=%lu (send=%lu  deliver=%lu)\n", ConditionEvent::deliver_qthresh_, PreSyn::presyn_deliver_netcon_, PreSyn::presyn_deliver_ncsend_, PreSyn::presyn_deliver_direct_);
+	Printf("SelfEvent send=%lu move=%lu deliver=%lu\n", SelfEvent::selfevent_send_, SelfEvent::selfevent_move_, SelfEvent::selfevent_deliver_);
+	Printf("Watch send=%lu deliver=%lu\n", WatchCondition::watch_send_, WatchCondition::watch_deliver_);
+	Printf("PlayRecord send=%lu deliver=%lu\n", PlayRecordEvent::playrecord_send_, PlayRecordEvent::playrecord_deliver_);
+	Printf("HocEvent send=%lu deliver=%lu\n", HocEvent::hocevent_send_, HocEvent::hocevent_deliver_);
+	Printf("SingleEvent deliver=%lu move=%lu\n", KSSingle::singleevent_deliver_, KSSingle::singleevent_move_);
+	Printf("DiscreteEvent send=%lu deliver=%lu\n", DiscreteEvent::discretevent_send_, DiscreteEvent::discretevent_deliver_);
+	Printf("%lu total events delivered  net_event=%lu\n", deliver_cnt_, net_event_cnt_);
+	Printf("Discrete event TQueue\n");
 	p[0].tqe_->statistics();
 	if (p[0].tq_) {
-		printf("Variable step integrator TQueue\n");
+		Printf("Variable step integrator TQueue\n");
 		p[0].tq_->statistics();
 	}
 }
@@ -4581,7 +4581,7 @@ DiscreteEvent* DiscreteEvent::savestate_save() {
 
 void DiscreteEvent::savestate_restore(double tt, NetCvode* nc) {
 //	pr("savestate_restore", tt, nc);
-	printf("null_event_ onto queue\n");
+	Printf("null_event_ onto queue\n");
 	nc->null_event(tt);
 }
 
@@ -5200,7 +5200,7 @@ void ConditionEvent::abandon_statistics(Cvode* cv) {
 		// take fastidiousness to
 		// an extreme
 		STATISTICS(eq_abandon_);
-		printf("abandon when t == qthresh_->t_ = %20.15g\n", nt_t);
+		Printf("abandon when t == qthresh_->t_ = %20.15g\n", nt_t);
 	}
 	if (cv->t0_ == cv->tn_) { // inited
 		if (value() > 0.0) { // above threshold
@@ -5413,8 +5413,8 @@ hoc_warning("errno set during STECondition pgvts_deliver to NET_RECEIVE", (char*
 }
 
 void WatchCondition::pr(const char* s, double tt, NetCvode* ns) {
-	printf("%s", s);
-	printf(" WatchCondition %s %.15g flag=%g\n", hoc_object_name(pnt_->ob), tt, nrflag_);
+	Printf("%s", s);
+	Printf(" WatchCondition %s %.15g flag=%g\n", hoc_object_name(pnt_->ob), tt, nrflag_);
 }
 
 static Cvode* eval_cv;
@@ -5682,7 +5682,7 @@ void PlayRecord::play_add(Cvode* cv) {
 }
 
 void PlayRecord::pr() {
-	printf("PlayRecord\n");
+	Printf("PlayRecord\n");
 }
 
 TvecRecord::TvecRecord(Section* sec, IvocVect* t, Object* ppobj) : PlayRecord(&NODEV(sec->pnode[0]), ppobj) {

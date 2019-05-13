@@ -47,7 +47,7 @@ void hoc_stopsw(void)
 	start_time = y;
 #else
 	if (start_time==0) {
-		printf("Must use startsw() first.\n");
+		Printf("Must use startsw() first.\n");
 		Ret(0.);
 	} else {
 		time(&stop_time);

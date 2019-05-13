@@ -7,6 +7,7 @@ PY2TO3 = @PY2TO3@
 nobase_neuronhomepython_DATA = \
 \
 neuron/doc.py \
+neuron/units.py \
 neuron/gui.py \
 neuron/hclass2.py \
 neuron/hclass3.py \
@@ -59,6 +60,7 @@ neuron/crxd/plugins.py \
 neuron/crxd/rangevar.py \
 neuron/crxd/dimension3.py \
 neuron/crxd/initializer.py \
+neuron/crxd/export.py \
 neuron/crxd/geometry3d/*.* \
 \
 neuron/rxd/region.py \
