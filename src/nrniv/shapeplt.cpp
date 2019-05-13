@@ -382,7 +382,6 @@ ShapePlot::ShapePlot(Symbol* sym, SectionList* sl) : ShapeScene(sl) {
 		sl_ = NULL;
 	}
 	if (sl_) ++sl_->refcount;
-	ShapeScene:;
 	spi_ = new ShapePlotImpl(this, sym);
 	variable(spi_->sym_);
 	picker()->add_menu("Plot What?", new ActionCallback(ShapePlotImpl)(
