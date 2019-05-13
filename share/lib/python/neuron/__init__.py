@@ -707,9 +707,9 @@ class _PlotShapePlot(_WrapperPlot):
 
 
 
-          def _do_plot(self,
-                      sections=None,
-                      variable=None,
+          def _do_plot(self, val_min, val_max,
+                      sections,
+                      variable,
                       cmap=cm.cool,
                       **kwargs):
               """
@@ -734,7 +734,7 @@ class _PlotShapePlot(_WrapperPlot):
               kwargs.setdefault('color', 'black')
 
               # Plot each segement as a line
-              lines = []
+              lines = {}
               vals = []
               for sec in sections:
                   all_seg_pts = _segment_3d_pts(sec)
@@ -750,22 +750,12 @@ class _PlotShapePlot(_WrapperPlot):
                           except AttributeError:
                               # leave default color if no variable found
                               val = None
-                              print('val = None')
                           vals.append(val)
-                      lines.append(line)
+                      lines[line] = '%s at %s' % (val, seg)
               
               if variable is not None:
-                  have_values = True
-                  try:
-                      val_min = min(val for val in vals if val is not None)
-                      val_max = max(val for val in vals if val is not None)
-                      if val_min == val_max:
-                        val_min -= 0.5
-                        val_max += 0.5
-                      val_range = val_max - val_min
-                  except ValueError:
-                      have_values = False
-                  if have_values and val_range:
+                  val_range = val_max - val_min
+                  if val_range:
                       for sec in sections:
                           for line, val in zip(lines, vals):
                               if val is not None:
@@ -773,17 +763,29 @@ class _PlotShapePlot(_WrapperPlot):
                                   line.set_color(col)
               return lines
       return Axis3DWithNEURON(fig)
-      
+    
+
+    
     def _do_plot_on_matplotlib_figure(fig):
       import ctypes
-      # can in principle get variable via PyObject* get_plotshape_variable(PyObject* sp) {
-      get_plotshape_variable = nrn_dll_sym('get_plotshape_variable')
-      get_plotshape_variable.restype = ctypes.py_object
-      variable = get_plotshape_variable(ctypes.py_object(self._data))
-      kwargs.setdefault('variable', variable)
+      get_plotshape_data = nrn_dll_sym('get_plotshape_data')
+      get_plotshape_data.restype = ctypes.py_object
+      variable, lo, hi, secs = get_plotshape_data(ctypes.py_object(self._data))
+      kwargs.setdefault('picker', 2)
       result = _get_pyplot_axis3d(fig)
-      result._do_plot(*args, **kwargs)
+      _lines = result._do_plot(lo, hi, secs, variable, *args, **kwargs)
+      result._mouseover_text = ''
+      def _onpick(event):
+        if event.artist in _lines: 
+          result._mouseover_text = _lines[event.artist]
+        else:
+          result._mouseover_text = ''
+        return True
       result.auto_aspect()
+      fig.canvas.mpl_connect('pick_event', _onpick)
+      def format_coord(*args):
+        return result._mouseover_text
+      result.format_coord = format_coord
       return result
     
 

@@ -39,6 +39,7 @@ public:
 	virtual ~SectionList();
 	Section* begin();
 	Section* next();
+	Object* nrn_object();
 private:
 	SectionListImpl* sli_;
 };

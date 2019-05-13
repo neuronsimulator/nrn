@@ -2192,13 +2192,26 @@ static Object** nrnpy_vec_to_python(void* v) {
   return hoc_temp_objptr(ho);
 }
 
-PyObject* get_plotshape_variable(PyObject* sp) {
+PyObject* get_plotshape_data(PyObject* sp) {
   PyHocObject* pho = (PyHocObject*) sp;
+  ShapePlotInterface* spi;
   if (!is_obj_type(pho->ho_, "PlotShape")) {
     PyErr_SetString(PyExc_TypeError, "get_plotshape_variable only takes PlotShape objects");
     return NULL;
   }
-  return Py_BuildValue("s", ((ShapePlot*) pho->ho_->u.this_pointer)->varname());
+  void* that = pho->ho_->u.this_pointer;
+#if HAVE_IV
+IFGUI
+  spi = ((ShapePlot*) that);
+} else {
+  spi = ((ShapePlotData*) that);
+ENDGUI
+#else
+  spi = ((ShapePlotData*) that);
+#endif
+  Object* sl = spi->neuron_section_list();
+  PyObject* py_sl = nrnpy_ho2po(sl);
+  return Py_BuildValue("sffN",spi->varname(), spi->low(), spi->high(), py_sl);
 }
 
 // poorly follows __reduce__ and __setstate__

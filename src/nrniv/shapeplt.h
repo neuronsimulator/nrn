@@ -1,13 +1,45 @@
 #ifndef shapeplot_h
 #define shapeplot_h
 
+
+#if HAVE_IV
 #include "shape.h"
+#endif
 
 struct Symbol;
 class ShapePlotImpl;
 class SectionList;
 
-class ShapePlot : public ShapeScene {
+
+class ShapePlotInterface {
+public:
+	virtual void scale(float min, float max) = 0;
+	virtual const char* varname() const = 0;
+	virtual void variable(Symbol*) = 0;
+	virtual float low() = 0;
+	virtual float high() = 0;
+	virtual Object* neuron_section_list() = 0;
+};
+
+class ShapePlotData : public ShapePlotInterface {
+public:
+	ShapePlotData(Symbol* = NULL, Object* = NULL);
+	virtual ~ShapePlotData();
+	virtual void scale(float min, float max);
+	virtual const char* varname() const;
+	virtual void variable(Symbol*);
+	virtual float low();
+	virtual float high();
+	virtual Object* neuron_section_list();
+
+private:
+	Symbol* sym_;
+	float lo, hi;
+	Object* sl_;
+};
+
+#if HAVE_IV
+class ShapePlot : public ShapeScene, public ShapePlotInterface {
 public:
 	enum {TIME=ShapeScene::EXTRASHAPETOOL, SPACE, SHAPE};
 	ShapePlot(Symbol* = NULL, SectionList* = NULL);
@@ -15,8 +47,8 @@ public:
 	virtual void observe(SectionList* = NULL);
 	virtual void erase_all();
 	virtual void draw(Canvas*, const Allocation&) const;
-	void variable(Symbol*);
-	const char* varname()const;
+	virtual void variable(Symbol*);
+	virtual const char* varname()const;
 	virtual void scale(float min, float max);
 	virtual void save_phase1(ostream&);
 
@@ -26,10 +58,13 @@ public:
 	virtual void make_space_plot(Section* s1, float x1, Section* s2, float x2);
 	virtual void flush();
 	virtual void fast_flush();
+	virtual float low();
+	virtual float high();
+	virtual Object* neuron_section_list();
 	void update_ptrs();
-	Symbol* sym_;	// needed for when no IV and when IV exists but not used
 private:
 	ShapePlotImpl* spi_;
+	Object* sl_;
 
 };
 
@@ -40,8 +75,8 @@ public:
 	void set_scale(float low, float high);
 	const Color* get_color(float) const;
 	const Color* no_value() const;
-	float low() { return low_;}
-	float high() { return high_;}
+	float low() const { return low_;}
+	float high() const { return high_;}
 	Glyph* make_glyph();
 	void colormap(int size, bool global = false);
 	void colormap(int index, int red, int green, int blue);
@@ -66,4 +101,5 @@ private:
 	Coord xsize_, ysize_;
 	ShapeScene* ss_;
 };
+#endif
 #endif
