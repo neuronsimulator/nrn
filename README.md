@@ -229,7 +229,7 @@ We are working on user documentation, you can find current drafts of :
 
 If you would like to know more about the the NMODL Framework, see following paper:
 
-* Pramod Kumbhar, Omar Awile, Liam Keegan, Jorge Alonso, James King, Michael Hines and Felix Schürmann. 2019. An optimizing multi-platform source-to-source compiler framework for the NEURON MODeling Language. In Eprint : arXiv:submit/2678839.
+* Pramod Kumbhar, Omar Awile, Liam Keegan, Jorge Alonso, James King, Michael Hines and Felix Schürmann. 2019. An optimizing multi-platform source-to-source compiler framework for the NEURON MODeling Language. In Eprint : [arXiv:1905.02241](https://arxiv.org/pdf/1905.02241.pdf)
 
 
 ### Support / Contribuition
