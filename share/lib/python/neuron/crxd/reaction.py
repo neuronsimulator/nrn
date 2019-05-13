@@ -112,21 +112,21 @@ class Reaction(GeneralizedReaction):
         from . import region, species
         #Was an ECS region was passed to to the constructor 
         ecs_region = [r for r in self._regions if isinstance(r, region.Extracellular)]
-        ecs_region = ecs_region[0] if len(ecs_region) > 0 else None
         #Are any of of the sources or destinations passed to the constructor extracellular
         if not ecs_region:
             ecs_species = [s() for s in self._sources + self._dests if isinstance(s(),species.SpeciesOnExtracellular) or isinstance(s(),species._ExtracellularSpecies)]
             if ecs_species:
-                ecs_region = ecs_species[0]._region if isinstance(ecs_species[0],species._ExtracellularSpecies) else ecs_species[0]._extracellular()
+                ecs_region = [ecs_species[0]._region] if isinstance(ecs_species[0],species._ExtracellularSpecies) else [ecs_species[0]._extracellular()._region]
 
         #Are any of of the sources or destinations passed to the constructor defined on the ECS
         if not ecs_region:
             sps = [s() for s in self._sources + self._dests if isinstance(s(),species.Species)]
             # only have an ecs reaction if all the species are defined on the ecs
             if sps and all(s._extracellular_instances for s in sps):
-                # assume all the ecs regions are the same
-                ecs_region = sps[0]._extracellular_instances[0]._region
-
+                # take an intersection of all the extracellular regions 
+                ecs_region = list(sps[0]._extracellular_instances.keys())
+                for s in sps:
+                    ecs_region = [r for r in s._extracellular_instances.keys() if r in ecs_region]
         if ecs_region:
             self._rate_ecs, self._involved_species_ecs = rxdmath._compile(rate, ecs_region)
         

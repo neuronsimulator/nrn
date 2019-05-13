@@ -6,3 +6,4 @@ multicompartment_reactions.py
 multicompartment_reactions_del.py
 verify_no_initialization_order_issue.py
 reaction_test.py
+nodes_update.py

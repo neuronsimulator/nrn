@@ -583,7 +583,10 @@ class _ExtracellularSpecies(_SpeciesMathable):
         _set_grid_currents(grid_list, self._grid_id, grid_indices, neuron_pointers, scale_factors)
 
     def _semi_compile(self, reg):
-        return 'species_ecs[%d]' % (self._grid_id)
+        if isinstance(_defined_species[self._species](), Parameter):
+            return 'params_ecs[%d]' %  (self._grid_id)
+        else:
+            return 'species_ecs[%d]' % (self._grid_id)
 
 
 
@@ -1185,7 +1188,7 @@ class Species(_SpeciesMathable):
         This can then be further restricted using the callable property of NodeList objects."""
 
         initializer._do_init()
-        
+         
         # The first part here is for the 1D -- which doesn't keep live node objects -- the second part is for 3D
         return nodelist.NodeList(list(itertools.chain.from_iterable([s.nodes for s in self._secs])) + self._nodes + self._extracellular_nodes)
 
@@ -1233,12 +1236,44 @@ def xyz_by_index(indices):
 
 
 class Parameter(Species):
+    """
+    s = rxd.Parameter(regions, name = None, charge = 0, value = None, atolscale=1)
+        
+    Declare a parameter, it can be used in place of a rxd.Species, but unlike rxd.Speices a parameter will not change.
+    
+    Parameters:
+    regions -- a Region or list of Region objects containing the species
+    
+    name -- the name of the parameter; used for syncing with HOC (optional; default is none)
+    
+    charge -- the charge of the Parameter (optional; default is 0)
+    
+    value -- the value or None (if None, then imports from HOC if the species is defined at finitialize, else 0)
+    
+    atolscale -- scale factor for absolute tolerance in variable step integrations
+    
+    Note:
+    charge must match the charges specified in NMODL files for the same ion, if any.
+    """
     def __init__(self, *args, **kwargs):
         if 'value' in kwargs:
             kwargs['initial'] = kwargs.pop('value')
         if 'd' in kwargs and kwargs['d'] != 0:
             raise RxDException("Parameters cannot diffuse, invalid keyword argument 'd=%g'" % kwargs['d'])
         super(Parameter, self).__init__(*args, **kwargs)
+
+    def _semi_compile(self, reg):
+        from . import region
+        #region is Extracellular
+        if isinstance(reg, region.Extracellular):
+            ecs_instance = self._extracellular_instances[reg]
+            return ecs_instance._semi_compile(reg)
+        #region is 3d intracellular
+        if isinstance(reg, region.Region) and reg._secs3d:
+            ics_instance = self._intracellular_instances[reg]
+            return ics_instance._semi_compile(reg)
+        if isinstance(reg, region.Region) and reg._secs1d:
+            return 'params[%d][%d]' % (self._id, reg._id)
 
     def __repr__(self):
         return 'Parameter(regions=%r, name=%r, charge=%r, initial=%r)' % (self._regions, self._name, self._charge, self.initial)
@@ -1257,11 +1292,17 @@ class Parameter(Species):
         raise RxDException('no such region')
 
 class ParameterOnRegion(SpeciesOnRegion):
-    pass
+    def _semi_compile(self, reg):
+        reg = self._region()
+        if reg._secs3d:
+            ics_instance = self._species()._intracellular_instances[reg]
+            return ics_instance._semi_compile(reg)
+        elif reg._secs1d:
+            return 'params[%d][%d]' % (self._id, self._region()._id)
+
 
 class ParameterOnExtracellular(SpeciesOnExtracellular):
-    pass
-    
+    pass 
 
 class State(Species):
     def __repr__(self):

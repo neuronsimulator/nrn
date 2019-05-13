@@ -267,8 +267,6 @@ class MultiCompartmentReaction(GeneralizedReaction):
                             elif spname in ecs_grids:   #Extracellular space
                                 uberlocal_map_ecs[0] = ecs_grids[spname]      #TODO: Just pass the grid_id once per species
                                 uberlocal_map_ecs[1] = s[r]._extracellular().index_from_xyz(*species._xyz(seg))
-                        if uberlocal_map == [None, None]:
-                            print("Error %s" % spname, uberlocal_map, uberlocal_map_ecs)
                         local_mapped.append(uberlocal_map)
                         local_mapped_ecs.append(uberlocal_map_ecs)
                 self._cur_ptrs.append(tuple(local_ptrs))

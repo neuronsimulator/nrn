@@ -115,7 +115,7 @@ void clear_rates_ecs(void)
  * subregion - either NULL or a boolean array the same size as the grid
  * 	indicating if reaction occurs at a specific voxel
  */
-Reaction* ecs_create_reaction(int list_idx, int num_species, int* species_ids, ECSReactionRate f, unsigned char* subregion)
+Reaction* ecs_create_reaction(int list_idx, int num_species, int num_params, int* species_ids, ECSReactionRate f, unsigned char* subregion)
 {
 	Grid_node *grid;
 	Reaction* r;
@@ -147,11 +147,12 @@ Reaction* ecs_create_reaction(int list_idx, int num_species, int* species_ids, E
 		}	
 	}
 
-	r->num_species_involved=num_species;
+	r->num_species_involved = num_species;
+    r->num_params_involved = num_params;
 	r->species_states = (double**)malloc(sizeof(Grid_node*)*(r->num_species_involved));
 	assert(r->species_states);
 
-	for(i = 0; i < num_species; i++)
+	for(i = 0; i < num_species + num_params; i++)
 	{
 		/*Assumes grids are the same size (no interpolation) 
 		 *Assumes all the species will be in the same Parallel_grids list*/
@@ -171,9 +172,9 @@ Reaction* ecs_create_reaction(int list_idx, int num_species, int* species_ids, E
  * grid_id - the grid id within the linked list - this corresponds to species
  * ECSReactionRate - the reaction function
  */
-void ecs_register_reaction(int list_idx, int num_species, int* species_id, ECSReactionRate f)
+void ecs_register_reaction(int list_idx, int num_species, int num_params, int* species_id, ECSReactionRate f)
 {
-	ecs_create_reaction(list_idx, num_species, species_id, f, NULL);
+	ecs_create_reaction(list_idx, num_species, num_params, species_id, f, NULL);
 	ecs_refresh_reactions(NUM_THREADS);
 }
 
@@ -185,9 +186,9 @@ void ecs_register_reaction(int list_idx, int num_species, int* species_id, ECSRe
  * my_subregion - a boolean array indicating the voxels where a reaction occurs
  * ECSReactionRate - the reaction function
  */
-void ecs_register_subregion_reaction_ecs(int list_idx, int num_species, int* species_id, unsigned char* my_subregion, ECSReactionRate f)
+void ecs_register_subregion_reaction_ecs(int list_idx, int num_species, int num_params, int* species_id, unsigned char* my_subregion, ECSReactionRate f)
 {
-	ecs_create_reaction(list_idx, num_species, species_id, f,  my_subregion);
+	ecs_create_reaction(list_idx, num_species, num_params, species_id, f,  my_subregion);
 	ecs_refresh_reactions(NUM_THREADS);
 }
 
@@ -261,6 +262,7 @@ void* ecs_do_reactions(void* dataptr)
 	Reaction* react;
 
 	double* states_cache = NULL;
+    double* params_cache = NULL;
     double* states_cache_dx = NULL;
 	double* results_array = NULL;
 	double* results_array_dx = NULL;
@@ -304,6 +306,7 @@ void* ecs_do_reactions(void* dataptr)
         	x = v_get(react->num_species_involved);
 			pivot = px_get(jacobian->m);
 			states_cache = (double*)malloc(sizeof(double)*react->num_species_involved);
+            params_cache = (double*)malloc(sizeof(double)*react->num_params_involved);
 			states_cache_dx = (double*)malloc(sizeof(double)*react->num_species_involved);
 			results_array = (double*)malloc(react->num_species_involved*sizeof(double));
 			results_array_dx = (double*)malloc(react->num_species_involved*sizeof(double));
@@ -320,13 +323,17 @@ void* ecs_do_reactions(void* dataptr)
 						states_cache_dx[j] = react->species_states[j][i];
 					}
                     MEM_ZERO(results_array,react->num_species_involved*sizeof(double));
-					react->reaction(states_cache, results_array);
+					react->reaction(states_cache, params_cache, results_array);
+                    for(k = 0; j < react->num_species_involved + react->num_params_involved; k++, j++)
+					{
+						params_cache[k] = react->species_states[j][i];
+					}
 
 					for(j = 0; j < react->num_species_involved; j++)
 					{
 						states_cache_dx[j] += dx;
                         MEM_ZERO(results_array_dx,react->num_species_involved*sizeof(double));
-						react->reaction(states_cache_dx, results_array_dx);
+						react->reaction(states_cache_dx, params_cache, results_array_dx);
 						v_set_val(b, j, dt*results_array[j]);
 
 						for(k = 0; k < react->num_species_involved; k++)
@@ -352,6 +359,7 @@ void* ecs_do_reactions(void* dataptr)
 
 			SAFE_FREE(states_cache);
 			SAFE_FREE(states_cache_dx);
+            SAFE_FREE(params_cache);
 			SAFE_FREE(results_array);
 			SAFE_FREE(results_array_dx);
 
