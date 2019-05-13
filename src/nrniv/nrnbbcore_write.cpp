@@ -306,8 +306,18 @@ static size_t part1() {
   rankbytes += nrncore_netpar_bytes();
   //printf("%d bytes %ld\n", nrnmpi_myid, rankbytes);
   CellGroup* cgs = mk_cellgroups();
+
   datumtransform(cgs);
   return rankbytes;
+}
+
+static void part2_clean() {
+  if (artdata2index_) {
+    delete artdata2index_;
+    artdata2index_ = NULL;
+  }
+  delete [] cellgroups_;
+  cellgroups_ = NULL;
 }
 
 static void part2(const char* path) {
@@ -332,10 +342,6 @@ static void part2(const char* path) {
     }
     nrnbbcore_gap_write(path, group_ids);
     delete [] group_ids;
-  }
-  if (artdata2index_) {
-    delete artdata2index_;
-    artdata2index_ = NULL;
   }
 
   // filename data might have to be collected at hoc level since
@@ -365,8 +371,8 @@ static void part2(const char* path) {
       }
     }
   }
-  delete [] cellgroups_;
-  cellgroups_ = NULL;
+
+  part2_clean();
 }
 
 int nrncore_art2index(double* d) {
@@ -1308,9 +1314,10 @@ static int nrnthread_dat2_3(int tid, int nweight, int*& output_vindex, double*& 
   CellGroup& cg = cellgroups_[tid];
   NrnThread& nt = nrn_threads[tid];
 
-  output_vindex = cg.output_vindex;
+  output_vindex = new int[cg.n_real_output];
   output_threshold = new double[cg.n_real_output];
   for (int i=0; i < cg.n_real_output; ++i) {
+    output_vindex[i] = cg.output_vindex[i];
     output_threshold[i] = cg.output_ps[i] ? cg.output_ps[i]->threshold_ : 0.0;
   }
 
@@ -1823,6 +1830,7 @@ static core2nrn_callback_t cnbs[]  = {
   {"nrn2core_get_dat2_corepointer_mech_", (CNB)nrnthread_dat2_corepointer_mech},
   {"nrn2core_get_dat2_vecplay_", (CNB)nrnthread_dat2_vecplay},
   {"nrn2core_get_dat2_vecplay_inst_", (CNB)nrnthread_dat2_vecplay_inst},
+  {"nrn2core_part2_clean_", (CNB)part2_clean},
 
   {"nrn2core_get_trajectory_requests_", (CNB)nrnthread_get_trajectory_requests},
   {"nrn2core_trajectory_values_", (CNB)nrnthread_trajectory_values},
