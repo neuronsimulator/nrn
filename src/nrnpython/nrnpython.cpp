@@ -116,15 +116,55 @@ int nrnpy_pyrun(const char* fname) {
 }
 
 #if PY_MAJOR_VERSION >= 3
-static wchar_t** copy_argv_wcargv(int argc, char** argv) {
-  // adapted from frozenmain.c, left out error checking
-  wchar_t** argv_copy = (wchar_t**)PyMem_Malloc(sizeof(wchar_t*) * argc);
-  for (int i = 0; i < argc; ++i) {
-    size_t argsize = strlen(argv[i]);
-    argv_copy[i] = (wchar_t*)PyMem_Malloc((argsize + 1) * sizeof(wchar_t));
-    int count = mbstowcs(argv_copy[i], argv[i], argsize + 1);
+static wchar_t** wcargv;
+
+static void del_wcargv(int argc) {
+  if (wcargv) {
+    for (int i = 0; i < argc; ++i) {
+      PyMem_Free(wcargv[i]);
+    }
+    PyMem_Free(wcargv);
+    wcargv = NULL;
   }
-  return argv_copy;
+}
+
+static void copy_argv_wcargv(int argc, char** argv) {
+  del_wcargv(argc);
+  // basically a copy of code from Modules/python.c
+  wcargv = (wchar_t**)PyMem_Malloc(sizeof(wchar_t*) * argc);
+  if (!wcargv) {
+    fprintf(stderr, "out of memory\n");
+    exit(1);
+  }
+  for (int i = 0; i < argc; ++i) {
+#if 1
+    wcargv[i] = Py_DecodeLocale(argv[i], NULL);
+    if (!wcargv[i]) {
+      fprintf(stderr, "out of memory\n");
+      exit(1);
+    }
+#else
+#ifdef HAVE_BROKEN_MBSTOWCS
+    size_t argsize = strlen(argv[i]);
+#else
+    size_t argsize = mbstowcs(NULL, argv[i], 0);
+#endif
+    if (argsize == (size_t)-1) {
+      fprintf(stderr, "Could not convert argument %d to string\n", i);
+      exit(1);
+    }
+    wcargv[i] = (wchar_t*)PyMem_Malloc((argsize + 1) * sizeof(wchar_t));
+    if (!wcargv[i]) {
+      fprintf(stderr, "out of memory\n");
+      exit(1);
+    }
+    int count = mbstowcs(wcargv[i], argv[i], argsize + 1);
+    if (count == (size_t)-1) {
+      fprintf(stderr, "Could not convert argument %d to string\n", i);
+      exit(1);
+    }
+#endif
+  }
 }
 
 static wchar_t* mywstrdup(char* s) {
@@ -158,8 +198,8 @@ void nrnpython_start(int b) {
     nrnpy_site_problem = 0;
 #endif
 #if PY_MAJOR_VERSION >= 3
-    wchar_t** argv_copy = copy_argv_wcargv(nrn_global_argc, nrn_global_argv);
-    PySys_SetArgv(nrn_global_argc, argv_copy);
+    copy_argv_wcargv(nrn_global_argc, nrn_global_argv);
+    PySys_SetArgv(nrn_global_argc, wcargv);
 #else
     PySys_SetArgv(nrn_global_argc, nrn_global_argv);
 #endif
@@ -173,42 +213,17 @@ void nrnpython_start(int b) {
   if (b == 0 && started) {
     PyGILState_STATE gilsav = PyGILState_Ensure();
     Py_Finalize();
+#if PY_MAJOR_VERSION >= 3
+    del_wcargv(nrn_global_argc);
+#endif
     // because of finalize, no PyGILState_Release(gilsav);
     started = 0;
   }
   if (b == 2 && started) {
     int i;
 #if (PY_MAJOR_VERSION >= 3)
-    // basically a copy of code from Modules/python.c
-    wchar_t** argv_copy =
-        (wchar_t**)PyMem_Malloc(sizeof(wchar_t*) * nrn_global_argc);
-    if (!argv_copy) {
-      fprintf(stderr, "out of memory\n");
-      exit(1);
-    }
-    for (i = 0; i < nrn_global_argc; ++i) {
-#ifdef HAVE_BROKEN_MBSTOWCS
-      size_t argsize = strlen(argv[i]);
-#else
-      size_t argsize = mbstowcs(NULL, nrn_global_argv[i], 0);
-#endif
-      size_t count;
-      if (argsize == (size_t)-1) {
-        fprintf(stderr, "Could not convert argument %d to string\n", i);
-        exit(1);
-      }
-      argv_copy[i] = (wchar_t*)PyMem_Malloc((argsize + 1) * sizeof(wchar_t));
-      if (!argv_copy[i]) {
-        fprintf(stderr, "out of memory\n");
-        exit(1);
-      }
-      count = mbstowcs(argv_copy[i], nrn_global_argv[i], argsize + 1);
-      if (count == (size_t)-1) {
-        fprintf(stderr, "Could not convert argument %d to string\n", i);
-        exit(1);
-      }
-    }
-    PySys_SetArgv(nrn_global_argc, argv_copy);
+    copy_argv_wcargv(nrn_global_argc, nrn_global_argv);
+    PySys_SetArgv(nrn_global_argc, wcargv);
 #else
     PySys_SetArgv(nrn_global_argc, nrn_global_argv);
 #endif

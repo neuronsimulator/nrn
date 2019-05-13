@@ -159,7 +159,7 @@ typedef struct {
 
 static PyObject* rvp_plot = NULL;
 
-static PyTypeObject* hocobject_type;
+PyTypeObject* hocobject_type;
 static PyObject* hocobj_call(PyHocObject* self, PyObject* args,
                              PyObject* kwrds);
 
