@@ -265,6 +265,12 @@ class Extracellular:
             else:
                 self.tortuosity = tortuosity
                 self._tortuosity = h.Vector(self.tortuosity.flatten()).pow(2)
+    
+    def __repr__(self):
+        return 'Extracellular(xlo=%r, ylo=%r, zlo=%r, xhi=%r, yhi=%r, zhi=%r, tortuosity=%r, volume_fraction=%r)' % (self._xlo, self._ylo, self._zlo, self._xhi, self._yhi, self._zhi, self.tortuosity, self.alpha)
+
+    def _short_repr(self):
+        return 'Extracellular'
                 
 class Region(object):
     """Declare a conceptual region of the neuron.

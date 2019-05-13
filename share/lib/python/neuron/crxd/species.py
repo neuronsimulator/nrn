@@ -10,6 +10,7 @@ from .rxdException import RxDException
 from . import initializer
 import collections
 import ctypes
+import re
 
 #Now set in rxd.py
 #set_nonvint_block = neuron.nrn_dll_sym('set_nonvint_block')
@@ -93,7 +94,7 @@ def _ensure_extracellular():
         _extracellular_set_initialize(do_initialize_fptr)
     _extracellular_exists = True
 
-
+_ontology_id = re.compile('^\[[a-zA-Z][a-zA-Z0-9_]*:[a-zA-Z0-9_]*\]|[a-zA-Z][a-zA-Z0-9_]*:[a-zA-Z0-9_]*$')
 
 class _SpeciesMathable(object):
     # support arithmeticing
@@ -182,6 +183,14 @@ class SpeciesOnExtracellular(_SpeciesMathable):
         self._extracellular = weakref.ref(extracellular)
         self._id = _species_count
     
+    def __repr__(self):
+        return '%r[%r]' % (self._species(), self._extracellular()._region)
+        
+    def _short_repr(self):
+        return '%s[%s]' % (self._species()._short_repr(), self._extracellular()._region._short_repr())
+
+    def __str__(self):
+        return '%s[%s]' % (self._species()._short_repr(), self._extracellular()._region._short_repr())
 
     @property
     def states3d(self):
@@ -623,7 +632,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
 #       that two regions (e.g. apical and other_dendrites) are connected?
 
 class Species(_SpeciesMathable):
-    def __init__(self, regions=None, d=0, name=None, charge=0, initial=None, atolscale=1, ecs_boundary_conditions=None):
+    def __init__(self, regions=None, d=0, name=None, charge=0, initial=None, atolscale=1, ecs_boundary_conditions=None, represents=None):
         """s = rxd.Species(regions, d = 0, name = None, charge = 0, initial = None, atolscale=1)
     
         Declare a species.
@@ -643,6 +652,9 @@ class Species(_SpeciesMathable):
         atolscale -- scale factor for absolute tolerance in variable step integrations
 
         ecs_boundary_conditions  -- if Extracellular rxd is used ecs_boundary_conditions=None for zero flux boundaries or if ecs_boundary_conditions=the concentration at the boundary.
+
+        represents -- optionally provide CURIE (Compact URI) to annotate what the species represents e.g. CHEBI:29101 for sodium(1+)
+
         Note:
 
         charge must match the charges specified in NMODL files for the same ion, if any.
@@ -670,6 +682,10 @@ class Species(_SpeciesMathable):
         self.initial = initial
         self._atolscale = atolscale
         self._ecs_boundary_conditions = ecs_boundary_conditions
+        if represents and not _ontology_id.match(represents):
+            raise RxDException("The represents=%s is not valid CURIE" % represents)
+        else:
+            self.represents = represents
         _all_species.append(weakref.ref(self))
         # declare an update to the structure of the model (the number of differential equations has changed)
         nrn_dll_sym('structure_change_cnt', ctypes.c_int).value += 1
@@ -1243,7 +1259,8 @@ class Species(_SpeciesMathable):
 
 
     def __repr__(self):
-        return 'Species(regions=%r, d=%r, name=%r, charge=%r, initial=%r)' % (self._regions, self._d, self._name, self._charge, self.initial)
+        represents = ', represents=%s' % self.represents if self.represents else ''
+        return 'Species(regions=%r, d=%r, name=%r, charge=%r, initial=%r%s)' % (self._regions, self._d, self._name, self._charge, self.initial, represents)
     
     def _short_repr(self):
         if self._name is not None:
@@ -1268,7 +1285,7 @@ def xyz_by_index(indices):
 
 class Parameter(Species):
     """
-    s = rxd.Parameter(regions, name = None, charge = 0, value = None, atolscale=1)
+    s = rxd.Parameter(regions, name=None, charge=0, value=None, represents=None)
         
     Declare a parameter, it can be used in place of a rxd.Species, but unlike rxd.Speices a parameter will not change.
     
@@ -1281,16 +1298,19 @@ class Parameter(Species):
     
     value -- the value or None (if None, then imports from HOC if the species is defined at finitialize, else 0)
     
-    atolscale -- scale factor for absolute tolerance in variable step integrations
-    
+    represents -- optionally provide CURIE (Compact URI) to annotate what the species represents e.g. CHEBI:29101 for sodium(1+)
+
     Note:
     charge must match the charges specified in NMODL files for the same ion, if any.
     """
     def __init__(self, *args, **kwargs):
         if 'value' in kwargs:
+            if 'initial' in kwargs and kwargs['initial']  and kwargs['initial'] != kwargs['value']:
+                raise RxdException('Parameter cannot be assigned both a value=%g and initial=%g', kwargs['value'], kwargs['initial'])
             kwargs['initial'] = kwargs.pop('value')
         if 'd' in kwargs and kwargs['d'] != 0:
             raise RxDException("Parameters cannot diffuse, invalid keyword argument 'd=%g'" % kwargs['d'])
+        self._d = 0
         super(Parameter, self).__init__(*args, **kwargs)
 
     def _semi_compile(self, reg):
@@ -1307,7 +1327,18 @@ class Parameter(Species):
             return 'params[%d][%d]' % (self._id, reg._id)
 
     def __repr__(self):
-        return 'Parameter(regions=%r, name=%r, charge=%r, initial=%r)' % (self._regions, self._name, self._charge, self.initial)
+        represents = ', represents=%s' % self.represents if self.represents else ''
+        return 'Parameter(regions=%r, name=%r, charge=%r, value=%r%s)' % (self._regions, self._name, self._charge, self.initial, represents)
+
+    @property
+    def d(self):
+        return 0
+
+    @d.setter
+    def d(self, value):
+        if value != 0:
+            raise RxDException("Parameters cannot diffuse.")
+
 
     def __getitem__(self, r):
         """Return a reference to those members of this parameter lying on the specific region @varregion.

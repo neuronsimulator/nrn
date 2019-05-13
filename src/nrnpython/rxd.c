@@ -883,7 +883,6 @@ void register_rate(int nspecies, int nparam, int nregions, int nseg, int* sidx,
             react->state_idx[i][j] = (int*)malloc(nregions*sizeof(int));
             for(k = 0; k < nregions; k++, idx++)
             {
-                fprintf(stderr,"%i %i %i] sidx[%i] = %i\n",i,j,k,idx,sidx[idx]);
                 if(sidx[idx] < 0)
                 {
                     react->state_idx[i][j][k] = SPECIES_ABSENT;
