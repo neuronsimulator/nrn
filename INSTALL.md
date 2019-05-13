@@ -162,6 +162,6 @@ make html # for user documentation
 Alternatively, you can install the documentation using the Python setuptools script:
 
 ```sh
-python3 setup.py buildhtml
+python3 setup.py install_doc
 ```
 
