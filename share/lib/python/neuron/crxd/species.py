@@ -1392,7 +1392,12 @@ class Species(_SpeciesMathable):
         
         This can then be further restricted using the callable property of NodeList objects."""
 
-        initializer._do_init()
+        from . import rxd
+        h.doNotify()
+        if initializer.is_initialized():
+            rxd._update_node_data()
+        else:
+            initializer._do_init()
 
         self._all_intracellular_nodes = []
         if self._intracellular_nodes:
