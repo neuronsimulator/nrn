@@ -55,6 +55,15 @@ typedef struct {
         // 9 incomplete pointer to a hoc array (similar to 3)
 } PyHocObject;
 
+typedef struct Hybrid_data {
+    long num_1d_indices;
+    long* indices1d;
+    long* num_3d_indices_per_1d_seg;
+    long* indices3d;
+    double* rates;
+    double* volumes1d;
+    double* volumes3d;
+} Hybrid_data;
 
 typedef struct Flux_pair {
     double *flux;           // Value of flux
@@ -112,7 +121,9 @@ class Grid_node {
     double dy;              // ∆Y
     double dz;              // ∆Z
     bool diffusable;
+    bool hybrid;
     BoundaryConditions* bc;
+    Hybrid_data* hybrid_data;
     Concentration_Pair* concentration_list;
     Current_Triple* current_list;
     ssize_t num_concentrations, num_currents;
@@ -152,6 +163,7 @@ class Grid_node {
     virtual void variable_step_diffusion(const double* states, double* ydot) = 0;
     virtual void variable_step_ode_solve(const double* states, double* RHS, double dt) = 0;
     virtual void scatter_grid_concentrations() = 0;
+    virtual void hybrid_connections() = 0;
     virtual void free_Grid() = 0;
 };
 
@@ -170,6 +182,7 @@ class ECS_Grid_node : public Grid_node{
         void variable_step_diffusion(const double* states, double* ydot);
         void variable_step_ode_solve(const double* states, double* RHS, double dt);
         void scatter_grid_concentrations();
+        void hybrid_connections();
         void free_Grid();
 };
 
@@ -229,6 +242,7 @@ class ICS_Grid_node : public Grid_node{
         int dg_adi();
         void variable_step_diffusion(const double* states, double* ydot);
         void variable_step_ode_solve(const double* states, double* RHS, double dt);
+        void hybrid_connections();
         void scatter_grid_concentrations();
         void free_Grid();
 };

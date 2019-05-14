@@ -13,7 +13,62 @@ extern "C" {
 
 extern int NUM_THREADS;
 extern TaskQueue* AllTasks;
+extern double* states;
 const int ICS_PREFETCH = 3;
+
+/*
+ * Sets the data to be used by the grids for 1D/3D hybrid models
+ */
+extern "C" void set_hybrid_data(int64_t* num_1d_indices_per_grid, int64_t* num_3d_indices_per_grid, int64_t* hybrid_indices1d, int64_t* hybrid_indices3d, int64_t* num_3d_indices_per_1d_seg, int64_t* hybrid_grid_ids, double* rates, double* volumes1d, double* volumes3d)
+{
+    Grid_node* grid;
+    int i, j, id;
+    int grid_id_check = 0;
+
+    int index_ctr_1d = 0;
+    int index_ctr_3d = 0;
+
+    int num_grid_3d_indices;
+    int num_grid_1d_indices;
+
+    //loop over grids
+    for (id = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, id++) {
+        //if the grid we are on is the next grid in the hybrid grids
+        if(id == hybrid_grid_ids[grid_id_check])
+        {   
+            num_grid_1d_indices = num_1d_indices_per_grid[grid_id_check];
+            num_grid_3d_indices = num_3d_indices_per_grid[grid_id_check];
+            //Allocate memory for hybrid data
+            grid->hybrid = true;
+            grid->hybrid_data->indices1d = (long*)malloc(sizeof(long)*num_grid_1d_indices);
+            grid->hybrid_data->num_3d_indices_per_1d_seg = (long*)malloc(sizeof(long)*num_grid_1d_indices);
+            grid->hybrid_data->volumes1d = (double*)malloc(sizeof(long)*num_grid_1d_indices);
+
+
+            grid->hybrid_data->indices3d = (long*)malloc(sizeof(long)*num_grid_3d_indices);
+            grid->hybrid_data->rates = (double*)malloc(sizeof(long)*num_grid_3d_indices);
+            grid->hybrid_data->volumes3d = (double*)malloc(sizeof(long)*num_grid_3d_indices);
+
+
+            //Assign grid data
+            grid->hybrid_data->num_1d_indices = num_grid_1d_indices;
+            for(i = 0; i < num_grid_1d_indices; i++, index_ctr_1d++)
+            {
+                grid->hybrid_data->indices1d[index_ctr_1d] = hybrid_indices1d[index_ctr_1d];
+                grid->hybrid_data->num_3d_indices_per_1d_seg[index_ctr_1d] = num_3d_indices_per_1d_seg[index_ctr_1d];
+                grid->hybrid_data->volumes1d[index_ctr_1d] = volumes1d[index_ctr_1d];
+
+                for (j = 0; j < num_3d_indices_per_1d_seg[index_ctr_1d]; j++, index_ctr_3d++)
+                {
+                    grid->hybrid_data->indices3d[index_ctr_3d] = hybrid_indices3d[index_ctr_3d];
+                    grid->hybrid_data->rates[index_ctr_3d] = rates[index_ctr_3d];
+                    grid->hybrid_data->volumes3d[index_ctr_3d] = volumes3d[index_ctr_3d];
+                }
+            } 
+            grid_id_check++;
+        }
+    } 
+}
 
 /* solve_dd_clhs_tridiag uses Thomas Algorithm to solves a 
  * diagonally dominant tridiagonal matrix (Ax=b), where the
@@ -495,4 +550,37 @@ void ics_ode_solve_helper(ICS_Grid_node* g, double dt, const double* CVode_state
 
     memcpy(CVodeRHS, CVode_states_copy, sizeof(double)*num_states);
     free(CVode_states_copy);
+}
+
+void _ics_hybrid_helper(ICS_Grid_node* g)
+{   
+    double dt = *dt_ptr;
+    long num_1d_indices = g->hybrid_data->num_1d_indices;
+    long* indices1d = g->hybrid_data->indices1d;
+    long* num_3d_indices_per_1d_seg = g->hybrid_data->num_3d_indices_per_1d_seg;
+    long* indices3d = g->hybrid_data->indices3d;
+    double* rates = g->hybrid_data->rates;
+    double* volumes1d = g->hybrid_data->volumes1d;
+    double* volumes3d = g->hybrid_data->volumes3d;
+
+    double vol_1d, vol_3d, rate, conc_1d;
+    int my_3d_index, my_1d_index;
+    int vol_3d_index = 0;
+
+    for(int i = 0; i<num_1d_indices; i++)
+    {
+        vol_1d = volumes1d[i];
+        my_1d_index = indices1d[i];
+        conc_1d = states[my_1d_index];
+        for(int j=0; j<num_3d_indices_per_1d_seg[i]; j++, vol_3d_index++)
+        {
+            vol_3d = volumes3d[vol_3d_index];
+            //rate is rate of change of 3d concentration
+            my_3d_index = indices3d[vol_3d_index];
+            rate = (rates[vol_3d_index]) * (g->states[my_3d_index] - conc_1d);
+            //forward euler coupling
+            g->states[my_3d_index] -= dt * rate;
+            states[my_1d_index] += dt * rate * vol_3d / vol_1d; 
+        }
+    }
 }

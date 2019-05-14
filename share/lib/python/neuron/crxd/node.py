@@ -582,7 +582,7 @@ class Node3D(Node):
     
     @property
     def volume(self):
-        return _volumes[self._index]
+        return self._r._vol[self._index]
 
     @property
     def region(self):

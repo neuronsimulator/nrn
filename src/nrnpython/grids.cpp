@@ -238,6 +238,10 @@ Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors
         new_Grid->ics_tasks[k].scratchpad = (double*)malloc(sizeof(double) * (new_Grid->_line_length_max-1));
         new_Grid->ics_tasks[k].g = new_Grid;
     }    
+
+    new_Grid->hybrid = false;
+    new_Grid->hybrid_data = (Hybrid_data*)malloc(sizeof(Hybrid_data));
+
     new_Grid->ics_adi_dir_x = (ICSAdiDirection*)malloc(sizeof(ICSAdiDirection));
     new_Grid->ics_adi_dir_x->states_in = new_Grid->states_x;
     new_Grid->ics_adi_dir_x->states_out = new_Grid->states;
@@ -661,6 +665,10 @@ void ECS_Grid_node::scatter_grid_concentrations()
     for (i = 0; i < n; i++) {
         (*cp[i].destination) = states[cp[i].source];
     }  
+}
+
+void ECS_Grid_node::hybrid_connections()
+{
 }
 
 //TODO: Implement this
@@ -1093,6 +1101,10 @@ void ICS_Grid_node::variable_step_ode_solve(const double* states, double* RHS, d
     ics_ode_solve_helper(this, dt, states, RHS);
 }
 
+void ICS_Grid_node::hybrid_connections()
+{
+    _ics_hybrid_helper(this);
+}
 
 void ICS_Grid_node::scatter_grid_concentrations()
 {

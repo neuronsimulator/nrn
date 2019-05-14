@@ -1,6 +1,7 @@
 from neuron import h, nrn, nrn_dll_sym 
 from . import species, node, section1d, region
 from .nodelist import NodeList
+from .node import _point_indices
 import weakref
 import numpy
 import ctypes
@@ -106,7 +107,20 @@ set_reaction_indices.argtypes = [ctypes.c_int, _int_ptr, _int_ptr, _int_ptr,
     _int_ptr]
 
 ecs_register_reaction = nrn_dll_sym('ecs_register_reaction')
-ecs_register_reaction.argtype = [ctypes.c_int, ctypes.c_int, _int_ptr, fptr_prototype]
+ecs_register_reaction.argtypes = [ctypes.c_int, ctypes.c_int, _int_ptr, fptr_prototype]
+
+set_hybrid_data = nrn_dll_sym('set_hybrid_data')
+set_hybrid_data.argtypes = [    
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64),
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64),
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64),
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64),
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64),
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64),
+    numpy.ctypeslib.ndpointer(dtype=numpy.float_),
+    numpy.ctypeslib.ndpointer(dtype=numpy.float_),
+    numpy.ctypeslib.ndpointer(dtype=numpy.float_),
+]
 
 #ics_register_reaction = nrn_dll_sym('ics_register_reaction')
 #ics_register_reaction.argtype = [ctypes.c_int, ctypes.c_int, _int_ptr, fptr_prototype]
@@ -752,6 +766,115 @@ def _setup_matrices():
             #if species._has_3d:
             #    _euler_matrix = -_diffusion_matrix
 
+    #Hybrid logic
+    if species._has_1d and species._has_3d:
+        hybrid_neighbors = collections.defaultdict(lambda: [])
+        hybrid_diams = {}
+        hybrid_index1d_grid_ids = {}
+        grid_id_species = {}
+        dxs = set()
+        for sr in list(_species_get_all_species().values()):
+            s = sr()
+            if s is not None:
+                if s._intracellular_instances and s._secs:
+                    # have both 1D and 3D, so find the neighbors
+                    # for each of the 3D sections, find the parent sections
+                    for r in s._regions:
+                        grid_id = s._intracellular_instances[r]._grid_id
+                        grid_id_species.setdefault(grid_id, s._intracellular_instances[r])
+                        dxs.add(r._dx)
+                        for sec in r._secs3d:
+                            parent_seg = sec.trueparentseg()
+                            parent_sec = None if not parent_seg else parent_seg.sec
+                            # are any of these a match with a 1d section?
+                            if s._has_region_section(r, parent_sec):
+                                #this section has a 1d section that is a parent
+                                #don't think I need to do sec=sec...can probably just do sec.section_orientation etc. Ask Robert
+                                index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), parent_sec, h.parent_connection(sec=sec))
+                                hybrid_neighbors[index1d] += indices3d
+                                hybrid_diams[index1d] = parent_sec(h.parent_connection(sec=sec)).diam
+                                hybrid_index1d_grid_ids[index1d] = grid_id
+                            else:
+                                for sec1d in r._secs1d:
+                                    parent_1d_seg = sec1d.trueparentseg()
+                                    parent_1d = None if not parent_1d_seg else parent_1d_seg.sec 
+                                    if parent_1d == sec:
+                                        print("in the block we think we are in")
+                                        print("parent_1d = {}, sec = {} and sec_1d = {}".format(parent_1d, sec, sec1d))
+                                        # it is the parent of a 1d section
+                                        index1d, indices3d = _get_node_indices(s, r, sec, parent_1d_seg.x , sec1d, sec1d.orientation())
+                                        hybrid_neighbors[index1d] += indices3d
+                                        hybrid_diams[index1d] = sec1d(h.section_orientation(sec=sec1d)).diam
+                                        hybrid_index1d_grid_ids[index1d] = grid_id
+                                        
+                                    elif parent_1d == parent_sec:
+                                        # it connects to the parent of a 1d section
+                                        index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), sec1d, sec1d.orientation())
+                                        hybrid_neighbors[index1d] += indices3d
+                                        hybrid_diams[index1d] = sec1d(h.section_orientation(sec=sec1d)).diam
+                                        hybrid_index1d_grid_ids[index1d] = grid_id
+                                        
+        if len(dxs) > 1:
+            raise RxDException('currently require a unique value for dx')
+        dx = dxs.pop()
+        rates = []
+        volumes3d = []
+        volumes1d = []
+        hybrid_indices1d = []
+        hybrid_indices3d = []
+        num_3d_indices_per_1d_seg = []
+        
+        num_1d_indices_per_grid = []
+        num_3d_indices_per_grid = []
+
+
+        grid_id_indices1d = collections.defaultdict(lambda: [])
+        for index1d in hybrid_neighbors:
+            grid_id = hybrid_index1d_grid_ids[index1d]
+            grid_id_indices1d[grid_id].append(index1d)
+
+        hybrid_grid_ids = sorted(grid_id_indices1d.keys())
+        for grid_id in hybrid_grid_ids:
+            sp = grid_id_species[grid_id]
+            num_1d_indices_per_grid.append(len(grid_id_indices1d[grid_id]))
+            grid_3d_indices_cnt = 0
+            for index1d in grid_id_indices1d[grid_id]:
+                neighbors3d = set(hybrid_neighbors[index1d])
+                if neighbors3d:
+                    hybrid_indices1d.append(index1d)
+                    cnt_neighbors_3d = len(neighbors3d) 
+                    num_3d_indices_per_1d_seg.append(cnt_neighbors_3d)
+                    grid_3d_indices_cnt += cnt_neighbors_3d
+                    #TODO: need to make this by node
+                    d = sp._d
+                    area = (numpy.pi * 0.25 * hybrid_diams[index1d] ** 2) / len(neighbors3d)
+                    volumes1d.append(node._volumes[index1d])
+
+                    for i in neighbors3d:
+                        vol = sp._nodes[i].volume
+                        rate = d * area / (vol * dx / 2.)
+                        rates.append(rate)
+                        volumes3d.append(vol)
+                        hybrid_indices3d.append(i)
+
+            num_3d_indices_per_grid.append(grid_3d_indices_cnt)
+
+        num_1d_indices_per_grid = numpy.asarray(num_1d_indices_per_grid, dtype=numpy.int64)
+        num_3d_indices_per_grid = numpy.asarray(num_3d_indices_per_grid, dtype=numpy.int64)
+
+
+        hybrid_indices1d = numpy.asarray(hybrid_indices1d, dtype=numpy.int64)
+        num_3d_indices_per_1d_seg = numpy.asarray(num_3d_indices_per_1d_seg, dtype=numpy.int64)
+        hybrid_grid_ids = numpy.asarray(hybrid_grid_ids, dtype=numpy.int64)
+
+        hybrid_indices3d = numpy.asarray(hybrid_indices3d, dtype=numpy.int64)
+        rates = numpy.asarray(rates, dtype=numpy.float_)
+        volumes1d = numpy.asarray(volumes1d, dtype=numpy.float_)
+        volumes3d = numpy.asarray(volumes3d, dtype=numpy.float_)
+
+        set_hybrid_data(num_1d_indices_per_grid, num_3d_indices_per_grid, hybrid_indices1d, hybrid_indices3d, num_3d_indices_per_1d_seg, hybrid_grid_ids, rates, volumes1d, volumes3d)
+
+
 
     #TODO: Replace this this to handle 1d/3d hybrid models
     """
@@ -894,11 +1017,9 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
     #print '%r(%g) connects to the 1d section %r(%g)' % (sec3d, x3d, sec1d, x1d)
     #print 'disc indices: %r' % disc_indices
     indices3d = []
-    for node in species._nodes:
-        if node._r == region:
-            for i, j, k in disc_indices:
-                if node._i == i and node._j == j and node._k == k:
-                    indices3d.append(node._index)
+    for point in disc_indices:
+        if point in _point_indices[region]:
+            indices3d.append(_point_indices[region][point])
                     #print 'found node %d with coordinates (%g, %g, %g)' % (node._index, node.x3d, node.y3d, node.z3d)
     # discard duplicates...
     # TODO: really, need to figure out all the 3d nodes connecting to a given 1d endpoint, then unique that
@@ -908,13 +1029,14 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
     if x1d == sec1d.orientation():
         # TODO: make this whole thing more efficient
         # the parent node is the nonzero index on the first row before the diagonal
-        first_row = min([node._index for node in species.nodes(region)(sec1d)])
-        for j in range(first_row):
+        #first_row = min([node._index for node in species.nodes(region)(sec1d)])
+        index_1d = min([node._index for node in species.nodes(region)(sec1d)])
+        """for j in range(first_row):
             if _euler_matrix[first_row, j] != 0:
                 index_1d = j
                 break
         else:
-            raise RxDException('should never get here; could not find parent')
+            raise RxDException('should never get here; could not find parent')"""
     elif x1d == 1 - sec1d.orientation():
         # the ending zero-volume node is the one after the last node
         # TODO: make this more efficient

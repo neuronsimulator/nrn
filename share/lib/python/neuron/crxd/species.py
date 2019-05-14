@@ -88,10 +88,12 @@ _has_3d = False
 def _1d_submatrix_n():
     if not _has_1d:
         return 0
-    elif not _has_3d:
+    else:
+        return(len(node._states))
+    """elif not _has_3d:
         return len(node._states)
     else:
-        return numpy.min([sp()._indices3d() for sp in list(_get_all_species().values()) if sp() is not None])
+        return numpy.min([sp()._indices3d() for sp in list(_get_all_species().values()) if sp() is not None])"""
             
 _extracellular_has_setup = False
 _extracellular_exists = False
