@@ -490,6 +490,13 @@ void _fadvance_fixed_step_3D(void) {
             grid->dg_adi(); 
         }
     }
+    /* Probably should do hybrid stuff here */
+    for (id = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, id++) {
+        if(grid->hybrid)
+        {
+            grid->hybrid_connections();
+        }
+    } 
     /* transfer concentrations */
     scatter_concentrations();
 }

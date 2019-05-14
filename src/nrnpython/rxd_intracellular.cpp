@@ -30,9 +30,11 @@ extern "C" void set_hybrid_data(int64_t* num_1d_indices_per_grid, int64_t* num_3
 
     int num_grid_3d_indices;
     int num_grid_1d_indices;
+    printf("about to set hybrid data\n");
 
     //loop over grids
     for (id = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, id++) {
+        printf("in grid %d\n", id);
         //if the grid we are on is the next grid in the hybrid grids
         if(id == hybrid_grid_ids[grid_id_check])
         {   
@@ -68,6 +70,7 @@ extern "C" void set_hybrid_data(int64_t* num_1d_indices_per_grid, int64_t* num_3
             grid_id_check++;
         }
     } 
+    printf("hybrid data set\n");
 }
 
 /* solve_dd_clhs_tridiag uses Thomas Algorithm to solves a 

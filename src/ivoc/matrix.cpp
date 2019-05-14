@@ -130,9 +130,9 @@ static double m_printf(void* v) {
 	}
 	for (i=0; i < nrow; ++i) {
 		for (j=0; j < ncol; ++j) {
-			printf(f1, m->getval(i, j));
+			Printf(f1, m->getval(i, j));
 		}
-		printf("%s", f2);
+		Printf("%s", f2);
 	}
 	return 0.;	
 }

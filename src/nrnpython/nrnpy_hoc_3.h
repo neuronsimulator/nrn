@@ -1,3 +1,4 @@
+#include "nrnpython.h"
 
 static PyType_Slot nrnpy_HocObjectType_slots[] = {
     {Py_tp_dealloc, (void*)hocobj_dealloc},
@@ -17,6 +18,13 @@ static PyType_Slot nrnpy_HocObjectType_slots[] = {
     {Py_sq_length, (void*)hocobj_len},
     {Py_sq_item, (void*)hocobj_getitem},
     {Py_sq_ass_item, (void*)hocobj_setitem},
+    {Py_nb_add, (PyObject*)py_hocobj_add},
+    {Py_nb_subtract, (PyObject*)py_hocobj_sub},
+    {Py_nb_multiply, (PyObject*)py_hocobj_mul},
+    {Py_nb_negative, (PyObject*)py_hocobj_uneg},
+    {Py_nb_positive, (PyObject*)py_hocobj_upos},
+    {Py_nb_absolute, (PyObject*)py_hocobj_uabs},
+    {Py_nb_true_divide, (PyObject*)py_hocobj_div},
     {0, 0},
 };
 static PyType_Spec nrnpy_HocObjectType_spec = {

@@ -503,15 +503,33 @@ void modl_units() {
 
 void unit_init() {
 	char* s;
-	char buf[256];
+	char buf[1024];
 	inpfile = (FILE*)0;
 	UnitsOn = 1;
 	s = getenv("MODLUNIT");
 	if (s) {
+		/* note that on mingw, even if MODLUNIT set to /cygdrive/c/...
+		 * it ends up here as c:/... and that is good*/
+		/* printf("MODLUNIT=|%s|\n", s); */
 		if ((inpfile = fopen(s, "r")) == (FILE *)0) {
 diag("Bad MODLUNIT environment variable. Cant open:", s);
 		}
 	}
+#if defined(__MINGW32__)
+	if (!inpfile) {
+		s = strdup(neuronhome());
+		if (s) {
+			if (strncmp(s, "/cygdrive/", 10) == 0) {
+				/* /cygdrive/x/... to c:/... */
+				sprintf(buf, "%c:%s/lib/nrnunits.lib", s[10], s+11);
+			}else{
+				sprintf(buf, "%s/lib/nrnunits.lib", s);
+			}
+			inpfile = fopen(buf, "r");
+			free(s);
+		}
+	}
+#else
 	if (!inpfile && (inpfile = fopen(dfile, "r")) == (FILE *)0) {
 		if ((inpfile = fopen(dfilealt, "r")) == (FILE *)0) {
 			s = neuronhome();
@@ -521,6 +539,8 @@ diag("Bad MODLUNIT environment variable. Cant open:", s);
 			}
 		}
 	}
+#endif
+
 	if (!inpfile) {
 fprintf(stderr, "Set a MODLUNIT environment variable path to the units table file\n");
 fprintf(stderr, "Cant open units table in either of:\n%s\n", buf);

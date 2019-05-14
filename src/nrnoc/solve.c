@@ -69,6 +69,7 @@ void (*nrnmpi_splitcell_compute_)();
 #endif
 
 void (*nrn_multisplit_solve_)();
+extern void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
 
 /* used for vectorization and distance calculations */
 int section_count;
@@ -218,11 +219,13 @@ double topol_distance(Section* sec1, Node* node1, Section* sec2, Node* node2,
 static Section *origin_sec;
 
 void distance(void) {
-	double d, chkarg();
+	double d, d_origin, chkarg();
 	int mode;
 	Node* node, *node_exact();
 	Section *sec;	
 	static Node* origin_node;
+	Node* my_origin_node;
+	Section* my_origin_sec;
 	
 	if (tree_changed) {
 		setup_topology();
@@ -230,7 +233,20 @@ void distance(void) {
 			
 	if (ifarg(2)) {
 		nrn_seg_or_x_arg(2, &sec, &d);
-		mode = (int) chkarg(1, 0., 1.);
+		if (hoc_is_double_arg(1)) {
+			mode = (int) chkarg(1, 0., 1.);
+		}else{
+			mode = 2;
+			Object* o = *hoc_objgetarg(1);
+			my_origin_sec = (Section*)0;
+			if (nrnpy_o2loc_p_) {
+				(*nrnpy_o2loc_p_)(o, &my_origin_sec, &d_origin);
+			}
+			if (!my_origin_sec) {
+				hoc_execerror("Distance origin not valid.","If first argument is an Object, it needs to be a Python Segment object.");
+			}
+			my_origin_node = node_exact(my_origin_sec, d_origin);
+		}		
 	}else if (ifarg(1)) {
 		nrn_seg_or_x_arg(1, &sec, &d);
 		mode = 1;
@@ -244,10 +260,14 @@ void distance(void) {
 		origin_node = node;
 		origin_sec = sec;
 	}else{
-		if (!origin_sec || !origin_sec->prop) {
-hoc_execerror("Distance origin not valid.","Need to initialize origin with distance()");
+		if (mode != 2 && (!origin_sec || !origin_sec->prop)) {
+			hoc_execerror("Distance origin not valid.","Need to initialize origin with distance()");
 		}
-		d = topol_distance(origin_sec, origin_node, sec, node,
+		if (mode == 1) {
+			my_origin_sec = origin_sec;
+			my_origin_node = origin_node;
+		}
+		d = topol_distance(my_origin_sec, my_origin_node, sec, node,
 			&sec, &node );
 	}
 	hoc_retpushx(d);
