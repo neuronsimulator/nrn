@@ -342,26 +342,26 @@ void NonLinImpRep::didv() {
 		if (i == CAP) { continue; }
 		if (!memb_func[i].current) { continue; }
 		Memb_list* ml = tml->ml;
-		double* x1 = rv_; // use as temporary storage
-		double* x2 = jv_;
 		for (j = 0; j < ml->nodecount; ++j) { Node* nd = ml->nodelist[j];
+			double x1;
+			double x2;
 			// zero rhs
 			// save v
 			NODERHS(nd) = 0;
-			x1[j] = NODEV(nd);
+			x1 = NODEV(nd);
 			// v+dv
 			NODEV(nd) += delta_;
 			current(i, ml, j);
 			// save rhs
 			// zero rhs
 			// restore v
-			x2[j] = NODERHS(nd);
+			x2 = NODERHS(nd);
 			NODERHS(nd) = 0;
-			NODEV(nd) = x1[j];
+			NODEV(nd) = x1;
 			current(i, ml, j);
 			// conductance
 			// add to matrix
-			*diag_[v_index_[nd->v_node_index]-1] -= (x2[j] - NODERHS(nd))/delta_;
+			*diag_[v_index_[nd->v_node_index]-1] -= (x2 - NODERHS(nd))/delta_;
 		}
 	}
 }	
