@@ -30,11 +30,9 @@ extern "C" void set_hybrid_data(int64_t* num_1d_indices_per_grid, int64_t* num_3
 
     int num_grid_3d_indices;
     int num_grid_1d_indices;
-    printf("about to set hybrid data\n");
 
     //loop over grids
     for (id = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, id++) {
-        printf("in grid %d\n", id);
         //if the grid we are on is the next grid in the hybrid grids
         if(id == hybrid_grid_ids[grid_id_check])
         {   
@@ -70,7 +68,6 @@ extern "C" void set_hybrid_data(int64_t* num_1d_indices_per_grid, int64_t* num_3
             grid_id_check++;
         }
     } 
-    printf("hybrid data set\n");
 }
 
 /* solve_dd_clhs_tridiag uses Thomas Algorithm to solves a 
@@ -584,6 +581,38 @@ void _ics_hybrid_helper(ICS_Grid_node* g)
             //forward euler coupling
             g->states[my_3d_index] -= dt * rate;
             states[my_1d_index] += dt * rate * vol_3d / vol_1d; 
+        }
+    }
+}
+
+void _ics_variable_hybrid_helper(ICS_Grid_node* g, const double* cvode_states_3d, double* const ydot_3d, const double* cvode_states_1d, double *const  ydot_1d)
+{   
+    long num_1d_indices = g->hybrid_data->num_1d_indices;
+    long* indices1d = g->hybrid_data->indices1d;
+    long* num_3d_indices_per_1d_seg = g->hybrid_data->num_3d_indices_per_1d_seg;
+    long* indices3d = g->hybrid_data->indices3d;
+    double* rates = g->hybrid_data->rates;
+    double* volumes1d = g->hybrid_data->volumes1d;
+    double* volumes3d = g->hybrid_data->volumes3d;
+
+    double vol_1d, vol_3d, rate, conc_1d;
+    int my_3d_index, my_1d_index;
+    int vol_3d_index = 0;
+
+    for(int i = 0; i<num_1d_indices; i++)
+    {
+        vol_1d = volumes1d[i];
+        my_1d_index = indices1d[i];
+        conc_1d = cvode_states_1d[my_1d_index];
+        for(int j=0; j<num_3d_indices_per_1d_seg[i]; j++, vol_3d_index++)
+        {
+            vol_3d = volumes3d[vol_3d_index];
+            //rate is rate of change of 3d concentration
+            my_3d_index = indices3d[vol_3d_index];
+            rate = (rates[vol_3d_index]) * (cvode_states_3d[my_3d_index] - conc_1d);
+            //forward euler coupling
+            ydot_3d[my_3d_index] -= rate;
+            ydot_1d[my_1d_index] += rate * vol_3d / vol_1d; 
         }
     }
 }

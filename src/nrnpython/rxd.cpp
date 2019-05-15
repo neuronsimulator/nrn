@@ -712,7 +712,7 @@ extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, i
         case 7:
             /* ode_fun(t, y, ydot); from t and y determine ydot */
             _rhs_variable_step(*t_ptr, p1, p2);
-            _rhs_variable_step_ecs(*t_ptr, p1, p2);
+            _rhs_variable_step_ecs(*t_ptr, p1, p2, _cvode_offset);
             break;
         case 8:
             ode_solve(*t_ptr, *dt_ptr, p1, p2); /*solve mx=b replace b with x */

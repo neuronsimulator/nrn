@@ -164,6 +164,7 @@ class Grid_node {
     virtual void variable_step_ode_solve(const double* states, double* RHS, double dt) = 0;
     virtual void scatter_grid_concentrations() = 0;
     virtual void hybrid_connections() = 0;
+    virtual void variable_step_hybrid_connections(const double* cvode_states_3d, double* const ydot_3d, const double* cvode_states_1d, double *const  ydot_1d) = 0;
     virtual void free_Grid() = 0;
 };
 
@@ -181,6 +182,7 @@ class ECS_Grid_node : public Grid_node{
         int dg_adi();
         void variable_step_diffusion(const double* states, double* ydot);
         void variable_step_ode_solve(const double* states, double* RHS, double dt);
+        void variable_step_hybrid_connections(const double* cvode_states_3d, double* const ydot_3d, const double* cvode_states_1d, double *const  ydot_1d);
         void scatter_grid_concentrations();
         void hybrid_connections();
         void free_Grid();
@@ -243,6 +245,7 @@ class ICS_Grid_node : public Grid_node{
         void variable_step_diffusion(const double* states, double* ydot);
         void variable_step_ode_solve(const double* states, double* RHS, double dt);
         void hybrid_connections();
+        void variable_step_hybrid_connections(const double* cvode_states_3d, double* const ydot_3d, const double* cvode_states_1d, double *const  ydot_1d);
         void scatter_grid_concentrations();
         void free_Grid();
 };

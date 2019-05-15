@@ -799,8 +799,6 @@ def _setup_matrices():
                                     parent_1d_seg = sec1d.trueparentseg()
                                     parent_1d = None if not parent_1d_seg else parent_1d_seg.sec 
                                     if parent_1d == sec:
-                                        print("in the block we think we are in")
-                                        print("parent_1d = {}, sec = {} and sec_1d = {}".format(parent_1d, sec, sec1d))
                                         # it is the parent of a 1d section
                                         index1d, indices3d = _get_node_indices(s, r, sec, parent_1d_seg.x , sec1d, sec1d.orientation())
                                         hybrid_neighbors[index1d] += indices3d

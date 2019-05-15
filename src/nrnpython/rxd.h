@@ -153,6 +153,7 @@ extern "C" void scatter_concentrations(void);
 int find(const int, const int, const int, const int, const int);
 
 void _ics_hybrid_helper(ICS_Grid_node*);
+void _ics_variable_hybrid_helper(ICS_Grid_node*, const double*, double* const, const double*, double *const);
 
 void _ics_rhs_variable_step_helper(ICS_Grid_node*, double const* const, double*);
 void _rhs_variable_step_helper(Grid_node*, double const * const, double*);
@@ -167,7 +168,7 @@ void _rhs_variable_step_helper_vol(Grid_node*, double const * const, double*);
 static void ecs_refresh_reactions(int);
 void set_num_threads_3D(int n);
 
-void _rhs_variable_step_ecs(const double, const double*, double*);
+void _rhs_variable_step_ecs(const double, const double*, double*, const int);
 
 void clear_rates_ecs();
 void do_ics_reactions(double*, double*, double*, double*);
