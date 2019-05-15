@@ -657,17 +657,19 @@ static void _currents(double* rhs)
         rhs[idx] -= _memb_net_charges[i] * _rxd_induced_flux[i]/2.0;
         for(j = 0; j < _memb_species_count[i]; j++)
         {
-            current = (double)_memb_cur_charges[i][j] * _rxd_induced_flux[i]/2.0;
+            current = (double)_memb_cur_charges[i][j] * _rxd_induced_flux[i];
 
-            *(_memb_cur_ptrs[i][j]->u.px_) += current;
-
+           *(_memb_cur_ptrs[i][j]->u.px_) += current;
+ 
             for(side = 0; side < 2; side++)
             {
                 if(_memb_cur_mapped[i][j][side] == SPECIES_ABSENT)
                 {
                         /*Extracellular region is within the ECS grid*/
                         if(_memb_cur_mapped[i][j][(side+1)%2] != SPECIES_ABSENT) 
+                        {
                             _rxd_induced_currents_ecs[_memb_cur_mapped[i][j][(side+1)%2]] -= current;
+                        }
                 }
                 else
                 {

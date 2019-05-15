@@ -541,7 +541,6 @@ def _find_librxdmath():
     return dll
     
 def _c_compile(formula):
-    print(formula)
     filename = 'rxddll' + str(uuid.uuid1())
     with open(filename + '.c', 'w') as f:
         f.write(formula)

@@ -741,7 +741,7 @@ class Species(_SpeciesMathable):
                 for r in regions:
                     if r in _defined_species[name]:
                         raise RxDException('Species "%s" previously defined on region: %r' % (name, r))
-                    spsecs += r._secs
+                    if hasattr(r,'_secs'): spsecs += r._secs
                 spsecs = set(spsecs)
                 for r in  _defined_species[name]:
                     if any(spsecs.intersection(r._secs)):
@@ -1115,8 +1115,8 @@ class Species(_SpeciesMathable):
     def _setup_currents(self, indices, scales, ptrs, cur_map):
         from . import rxd
         if self.name:
-            cur_map[self.name + 'i'] = {}
-            cur_map[self.name + 'o'] = {}
+            if self.name + 'i' not in cur_map: cur_map[self.name + 'i'] = {}
+            if self.name + 'o' not in cur_map: cur_map[self.name + 'o'] = {}
         # 1D part
         for s in self._secs:
             s._setup_currents(indices, scales, ptrs, cur_map)
