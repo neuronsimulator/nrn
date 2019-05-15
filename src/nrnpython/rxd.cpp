@@ -711,14 +711,14 @@ extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, i
             break;
         case 7:
             /* ode_fun(t, y, ydot); from t and y determine ydot */
-            _rhs_variable_step(*t_ptr, p1, p2);
-            _rhs_variable_step_ecs(*t_ptr, p1, p2);
+            //_rhs_variable_step(*t_ptr, p1, p2);
+            //_rhs_variable_step_ecs(*t_ptr, p1, p2);
             break;
         case 8:
-            ode_solve(*t_ptr, *dt_ptr, p1, p2); /*solve mx=b replace b with x */
+            //ode_solve(*t_ptr, *dt_ptr, p1, p2); /*solve mx=b replace b with x */
             /* TODO: we can probably reuse the dgadi code here... for now, we do nothing, which implicitly approximates the Jacobian as the identity matrix */
             //y= p1 = states and b = p2 = RHS for x direction
-            ics_ode_solve(*dt_ptr, p1, p2);
+            //ics_ode_solve(*dt_ptr, p1, p2);
             break;
         case 9:
             //ode_jacobian(*dt_ptr, p1, p2); /* optionally prepare jacobian for fast ode_solve */
