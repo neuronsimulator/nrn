@@ -553,6 +553,7 @@ void ics_ode_solve_helper(ICS_Grid_node* g, double dt, const double* CVode_state
 
     memcpy(CVodeRHS, CVode_states_copy, sizeof(double)*num_states);
     free(CVode_states_copy);
+    printf("did ics_ode_solve\n");
 }
 
 void _ics_hybrid_helper(ICS_Grid_node* g)

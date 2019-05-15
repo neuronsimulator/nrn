@@ -107,7 +107,7 @@ set_reaction_indices.argtypes = [ctypes.c_int, _int_ptr, _int_ptr, _int_ptr,
     _int_ptr]
 
 ecs_register_reaction = nrn_dll_sym('ecs_register_reaction')
-ecs_register_reaction.argtypes = [ctypes.c_int, ctypes.c_int, _int_ptr, fptr_prototype]
+ecs_register_reaction.argtype = [ctypes.c_int, ctypes.c_int, _int_ptr, fptr_prototype]
 
 set_hybrid_data = nrn_dll_sym('set_hybrid_data')
 set_hybrid_data.argtypes = [    

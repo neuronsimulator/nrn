@@ -7,6 +7,7 @@
 #include <matrix2.h>
 #include <pthread.h>
 #include <nrnwrap_Python.h>
+#include <cmath>
 
 #define loc(x,y,z)((z) + (y) *  grid->size_z + (x) *  grid->size_z *  grid->size_y)
 
@@ -242,9 +243,11 @@ ReactGridData* create_threaded_reactions(const int n)
  */
 void* ecs_do_reactions(void* dataptr)
 {
+    printf("in ecs_do_reactions\n");
 	ReactGridData task = *(ReactGridData*)dataptr;
 	unsigned char started = FALSE, stop = FALSE;
-	int i, j, k, start_idx, stop_idx;
+	int i, j, k, n, start_idx, stop_idx;
+    double temp, ge_value, val_to_set;
 	double dt = *dt_ptr;
 	Reaction* react;
 
@@ -295,7 +298,7 @@ void* ecs_do_reactions(void* dataptr)
 			states_cache_dx = (double*)malloc(sizeof(double)*react->num_species_involved);
 			results_array = (double*)malloc(react->num_species_involved*sizeof(double));
 			results_array_dx = (double*)malloc(react->num_species_involved*sizeof(double));
-
+            printf("---------------------------------------------------------------------------\n");
 			for(i = start_idx; i <= stop_idx; i++)
 			{
 				if(!react->subregion || react->subregion[i])
@@ -324,21 +327,70 @@ void* ecs_do_reactions(void* dataptr)
 						}
 						states_cache_dx[j] -= dx;
 					}
-					// solve for x, destructively
+					// solve for x
                     if (react->num_species_involved == 1)
                     {
                         react->species_states[0][i] += v_get_val(b, 0) / m_get_val(jacobian, 0, 0);
                     }
                     else
                     {
-                        LUfactor(jacobian, pivot); //Conditional jump or move depends on uninitialised value(s)
-                        LUsolve(jacobian, pivot, b, x);       
+                        //find entry in leftmost column with largest absolute value
+                        //Pivot
+                        for (j = 0; j < react->num_species_involved; j++)
+                        {
+                            for(k = j + 1; k < react->num_species_involved; k++)
+                            {
+                                if (abs(m_get_val(jacobian, j, j)) < abs(m_get_val(jacobian, k, j)))
+                                {
+                                    for (n = 0; n < react->num_species_involved; n++)
+                                    {
+                                        temp = m_get_val(jacobian, j, n);
+                                        m_set_val(jacobian, j, n, m_get_val(jacobian, k, n));
+                                        m_set_val(jacobian, k, n, temp);
+                                    }
+                                }
+                            }
+                        }
+
+                        for (j = 0; j < react->num_species_involved - 1; j ++)
+                        {
+                            for (k = j + 1; k < react->num_species_involved; k++)
+                            {
+                                ge_value = m_get_val(jacobian, k, j) / m_get_val(jacobian, j, j);
+                                for (n = 0; n < react->num_species_involved; n++)
+                                {
+                                    val_to_set = m_get_val(jacobian, k, n) - ge_value * m_get_val(jacobian, j, n);
+                                    m_set_val(jacobian, k, n, val_to_set);
+                                }
+                                v_set_val(b, k, v_get_val(b, k) - ge_value * v_get_val(b, j));
+                            }
+                        }
+                        /*printf("Post gaussian elim matrix\n");
+                        printf("Matrix is:               x:      b:\n");
+                        for(int a1=0; a1 < react->num_species_involved; a1++)
+                        {
+                            for(int a2=0; a2< react->num_species_involved; a2++)
+                            {
+                                printf("%.5f ",m_get_val(jacobian,a1,a2));
+                            }
+                            printf("|%.5f |%.5f\n",v_get_val(x,a1), v_get_val(b,a1));
+                        }*/
+                        for (j = react->num_species_involved - 1; j >= 0; j--)
+                        {
+                            v_set_val(x, j, v_get_val(b, j));
+                            for (k = j + 1; k < react->num_species_involved; k++)
+                            {
+                                if (k != j)
+                                {
+                                    v_set_val(x, j, v_get_val(x, j) - m_get_val(jacobian, j, k) * v_get_val(x, k));
+                                }
+                            }
+                            v_set_val(x, j, v_get_val(x, j) / m_get_val(jacobian, j, j));
+                        }
                         for(j = 0; j < react->num_species_involved; j++)
                         {
                             react->species_states[j][i] += v_get_val(x,j);
-                            //printf("current index is %p and next index is %p\n",&react->species_states[j][i], &react->species_states[j][i+1]);
-                            //return NULL;
-                        }        
+                        }                       
                     }
 				}
 			}
@@ -575,7 +627,7 @@ void _rhs_variable_step_ecs(const double t, const double* states, double* ydot) 
     double* const orig_ydot = ydot + states_cvode_offset;
     states = orig_states;
     ydot = orig_ydot;
-
+    printf("about to loop through grids\n");
     /* prepare for advance by syncing data with local copy */
     for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
         grid_states = grid->states;
@@ -587,16 +639,17 @@ void _rhs_variable_step_ecs(const double t, const double* states, double* ydot) 
         }
         states += grid_size;
     }
+    printf("looped through grids and about to scatter\n");
     /* transfer concentrations to classic NEURON states */
     scatter_concentrations();
-
+    printf("scattered_concentrations\n");
     if (!calculate_rhs) {
         return;
     }
 	
 	states = orig_states;
 	ydot = orig_ydot;
-
+    printf("about to do reactions\n");
 	/* TODO: reactions contribute to adaptive step-size*/
 	if(threaded_reactions_tasks != NULL){
         printf("doing reactions in variable step solver\n");
