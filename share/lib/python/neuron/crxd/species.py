@@ -46,8 +46,9 @@ _delete_by_id.argtypes = [ctypes.c_int]
 # The difference here is that defined species only exists after rxd initialization
 _all_species = []
 _defined_species = {}
+_all_defined_species = []
 def _get_all_species():
-    return _defined_species
+    return _all_defined_species
 
 _extracellular_diffusion_objects = weakref.WeakKeyDictionary()
 
@@ -62,7 +63,7 @@ def _1d_submatrix_n():
     elif not _has_3d:
         return len(node._states)
     else:
-        return numpy.min([sp()._indices3d() for sp in list(_get_all_species().values()) if sp() is not None])
+        return numpy.min([sp()._indices3d() for sp in list(_get_all_species()) if sp() is not None])
             
 _extracellular_has_setup = False
 _extracellular_exists = False
@@ -617,7 +618,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
         _set_grid_currents(grid_list, self._grid_id, grid_indices, neuron_pointers, scale_factors)
 
     def _semi_compile(self, reg):
-        if isinstance(_defined_species[self._species](), Parameter):
+        if isinstance(_defined_species[self._species][self._region](), Parameter):
             return 'params_ecs[%d]' %  (self._grid_id)
         else:
             return 'species_ecs[%d]' % (self._grid_id)
@@ -735,13 +736,27 @@ class Species(_SpeciesMathable):
         if name is not None:
             if not isinstance(name, str):
                 raise RxDException('Species name must be a string')
-            if name in _defined_species and _defined_species[name]() is not None and any([r in _defined_species[name]()._regions for r in self._regions]):
-                raise RxDException('Species "%s" previously defined on that region: %r' % (name, _defined_species[name]()))
+            if name in _defined_species:
+                spsecs = []
+                for r in regions:
+                    if r in _defined_species[name]:
+                        raise RxDException('Species "%s" previously defined on region: %r' % (name, r))
+                    spsecs += r._secs
+                spsecs = set(spsecs)
+                for r in  _defined_species[name]:
+                    if any(spsecs.intersection(r._secs)):
+                        raise RxDException('Species "%s" previously defined on a region %r that overlaps with regions: %r' % (name, r, self._regions))
         else:
             name = _species_count
         self._id = _species_count
         _species_count += 1
-        _defined_species[name] = weakref.ref(self)
+        if name not in _defined_species:
+            _defined_species[name] = weakref.WeakKeyDictionary()
+        self._species = weakref.ref(self)
+        for r in regions:
+            _defined_species[name][r] = self._species
+        _all_defined_species.append(self._species)
+
         if regions is None:
             raise RxDException('Must specify region where species is present')
         if hasattr(regions, '__len__'):
@@ -756,7 +771,7 @@ class Species(_SpeciesMathable):
         if self._extracellular_regions:
             # make sure that the extracellular callbacks are configured, if necessary
             _ensure_extracellular()
-        self._species = weakref.ref(self)        
+              
         # at this point self._name is None if unnamed or a string == name if
         # named
         self._ion_register()                     
@@ -838,14 +853,20 @@ class Species(_SpeciesMathable):
             # probably at exit -- not worth tidying up
             return
         
-        global _all_species, _defined_species
+        global _all_species, _defined_species, _all_defined_species
         try:
             from . import section1d, node
         except:
             # may not be able to import on exit
             return 
         
-        if self.name in _defined_species: del _defined_species[self.name]
+        if self.name in _defined_species:
+            for r in self.regions:
+                if r in _defined_species[self.name]:
+                    del _defined_species[self.name][r]
+            if not any(_defined_species[self.name]):
+                del _defined_species[self.name]
+        _all_defined_species = list(filter(lambda x: x() is not None or x() == self, _all_defined_species))
         _all_species = list(filter(lambda x: x() is not None or x() == self, _all_species))
         # delete the secs
         if hasattr(self,'_secs') and self._secs:
@@ -1280,7 +1301,7 @@ def xyz_by_index(indices):
     else:
         index = [indices]
     #TODO: make sure to include Node3D
-    return [[nd.x3d, nd.y3d, nd.z3d] for sp in _get_all_species().values() for s in sp()._secs for nd in s.nodes + sp()._nodes if sp() if nd._index in index]
+    return [[nd.x3d, nd.y3d, nd.z3d] for sp in _get_all_species() for s in sp()._secs for nd in s.nodes + sp()._nodes if sp() if nd._index in index]
 
 
 class Parameter(Species):

@@ -294,14 +294,14 @@ def re_init():
     
         # update current pointers
         section1d._purge_cptrs()
-        for sr in list(_species_get_all_species().values()):
+        for sr in _species_get_all_species():
             s = sr()
             if s is not None:
                 s._register_cptrs()
         
         # update matrix equations
         _setup_matrices()
-    for sr in list(_species_get_all_species().values()):
+    for sr in _species_get_all_species():
         s = sr()
         if s is not None: s.re_init()
     # TODO: is this safe?        
@@ -320,7 +320,7 @@ _rxd_offset = None
 
 def _atolscale(y):
     real_index_lookup = {item: index for index, item in enumerate(_nonzero_volume_indices)}
-    for sr in list(_species_get_all_species().values()):
+    for sr in _species_get_all_species():
         s = sr()
         if s is not None:
             shifted_i = [real_index_lookup[i] + _rxd_offset for i in s.indices() if i in real_index_lookup]
@@ -541,6 +541,7 @@ def _find_librxdmath():
     return dll
     
 def _c_compile(formula):
+    print(formula)
     filename = 'rxddll' + str(uuid.uuid1())
     with open(filename + '.c', 'w') as f:
         f.write(formula)
@@ -618,12 +619,12 @@ def _update_node_data(force=False):
         # TODO: merge this with the 3d/hybrid case?
         if initializer.is_initialized():
             nsegs_changed = 0
-            for sr in list(_species_get_all_species().values()):
+            for sr in _species_get_all_species():
                 s = sr()
                 if s is not None: nsegs_changed += s._update_node_data()
             if nsegs_changed:
                 section1d._purge_cptrs()
-                for sr in list(_species_get_all_species().values()):
+                for sr in _species_get_all_species():
                     s = sr()
                     if s is not None:
                         s._update_region_indices(True)
@@ -642,7 +643,7 @@ def _update_node_data(force=False):
             _curr_indices = []
             _curr_scales = []
             _curr_ptrs = []
-            for sr in list(_species_get_all_species().values()):
+            for sr in _species_get_all_species():
                 s = sr()
                 if s is not None: s._setup_currents(_curr_indices, _curr_scales, _curr_ptrs, _cur_map)
         
@@ -711,7 +712,7 @@ def _setup_matrices():
         
         _last_dt = None
         
-        for sr in list(_species_get_all_species().values()):
+        for sr in _species_get_all_species():
             s = sr()
             if s is not None:
                 s._assign_parents()
@@ -734,7 +735,7 @@ def _setup_matrices():
             #if not species._has_3d:
             #    # if we have both, then put the 1D stuff into the matrix that already exists for 3D
             _diffusion_matrix = [dict() for idx in range(n)]
-            for sr in list(_species_get_all_species().values()):
+            for sr in _species_get_all_species():
                 s = sr()
                 if s is not None:
                     s._setup_diffusion_matrix(_diffusion_matrix)
@@ -1256,7 +1257,7 @@ def _init():
     if species._has_1d:
         section1d._purge_cptrs()
     
-    for sr in list(_species_get_all_species().values()):
+    for sr in _species_get_all_species():
         s = sr()
         if s is not None:
             # TODO: are there issues with hybrid or 3D here? (I don't think so, but here's a bookmark just in case)
@@ -1269,7 +1270,7 @@ def _init():
 def _init_concentration():
     if len(species._all_species) == 0:
         return None
-    for sr in list(_species_get_all_species().values()):
+    for sr in _species_get_all_species():
         s = sr()
         if s is not None:
             # TODO: are there issues with hybrid or 3D here? (I don't think so, but here's a bookmark just in case)
