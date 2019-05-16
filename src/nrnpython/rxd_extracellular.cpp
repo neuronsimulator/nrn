@@ -121,7 +121,6 @@ Reaction* ecs_create_reaction(int list_idx, int num_species, int* species_ids, E
 			{
 				r->subregion = NULL;
 				r->region_size = grid->size_x * grid->size_y * grid->size_z;
-                printf("react->region_size is %d\n",r->region_size);
 			}
 			else
 			{
@@ -231,9 +230,6 @@ ReactGridData* create_threaded_reactions(const int n)
             }
 		}
 	}
-    for(k = 0; k < n; k++){
-        printf("thread %d onset index is %d and offset index is %d\n", k, tasks[k].onset->idx, tasks[k].offset->idx);
-    }
 	return tasks;
 }
 
@@ -363,16 +359,7 @@ void* ecs_do_reactions(void* dataptr)
                                 v_set_val(b, k, v_get_val(b, k) - ge_value * v_get_val(b, j));
                             }
                         }
-                        /*printf("Post gaussian elim matrix\n");
-                        printf("Matrix is:               x:      b:\n");
-                        for(int a1=0; a1 < react->num_species_involved; a1++)
-                        {
-                            for(int a2=0; a2< react->num_species_involved; a2++)
-                            {
-                                printf("%.5f ",m_get_val(jacobian,a1,a2));
-                            }
-                            printf("|%.5f |%.5f\n",v_get_val(x,a1), v_get_val(b,a1));
-                        }*/
+
                         for (j = react->num_species_involved - 1; j >= 0; j--)
                         {
                             v_set_val(x, j, v_get_val(b, j));
@@ -573,8 +560,6 @@ int ode_count(const int offset) {
     Grid_node* grid;
     for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
         count += grid->size_x * grid->size_y * grid->size_z;
-        printf("grid->size_x = %d\n", grid->size_x);
-        printf("count = %d\n", count);
     }
     return count;
 }
