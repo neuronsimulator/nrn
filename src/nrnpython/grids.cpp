@@ -586,7 +586,7 @@ void ECS_Grid_node::set_num_threads(const int n)
         }
     }
     free(ecs_tasks);
-    ecs_tasks = (ECSAdiGridData*)malloc(NUM_THREADS*sizeof(ECSAdiGridData));
+    ecs_tasks = (ECSAdiGridData*)malloc(n*sizeof(ECSAdiGridData));
     for(i=0; i<n; i++)
     {
         ecs_tasks[i].scratchpad = (double*)malloc(sizeof(double) * MAX(size_x,MAX(size_y, size_z)));
@@ -1033,7 +1033,7 @@ void ICS_Grid_node::set_num_threads(const int n)
         }
     }
     free(ics_tasks);
-    ics_tasks = (ICSAdiGridData*)malloc(NUM_THREADS*sizeof(ICSAdiGridData));
+    ics_tasks = (ICSAdiGridData*)malloc(n*sizeof(ICSAdiGridData));
     for(i=0; i<n; i++)
     {
         ics_tasks[i].scratchpad = (double*)malloc(sizeof(double) * _line_length_max);

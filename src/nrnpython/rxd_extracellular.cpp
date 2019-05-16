@@ -47,7 +47,7 @@ static void ecs_refresh_reactions(const int n)
 	int k;
 	if(threaded_reactions_tasks != NULL)
 	{
-		for(k = 0; k<n; k++)
+		for(k = 0; k<NUM_THREADS; k++)
 		{
 			SAFE_FREE(threaded_reactions_tasks[k].onset);
 			SAFE_FREE(threaded_reactions_tasks[k].offset);
