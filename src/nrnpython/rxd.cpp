@@ -640,7 +640,6 @@ static void _currents(double* rhs)
     
     if(!_membrane_flux)
         return;
-
     get_all_reaction_rates(states, NULL, NULL);
     
     MEM_ZERO(_rxd_induced_currents, _memb_curr_total*sizeof(double));

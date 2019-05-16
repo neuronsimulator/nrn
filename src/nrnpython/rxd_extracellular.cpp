@@ -7,6 +7,7 @@
 #include <matrix2.h>
 #include <pthread.h>
 #include <nrnwrap_Python.h>
+#include <cmath>
 
 #define loc(x,y,z)((z) + (y) *  grid->size_z + (x) *  grid->size_z *  grid->size_y)
 
@@ -120,7 +121,6 @@ Reaction* ecs_create_reaction(int list_idx, int num_species, int* species_ids, E
 			{
 				r->subregion = NULL;
 				r->region_size = grid->size_x * grid->size_y * grid->size_z;
-                printf("react->region_size is %d\n",r->region_size);
 			}
 			else
 			{
@@ -230,9 +230,6 @@ ReactGridData* create_threaded_reactions(const int n)
             }
 		}
 	}
-    for(k = 0; k < n; k++){
-        printf("thread %d onset index is %d and offset index is %d\n", k, tasks[k].onset->idx, tasks[k].offset->idx);
-    }
 	return tasks;
 }
 
@@ -244,7 +241,8 @@ void* ecs_do_reactions(void* dataptr)
 {
 	ReactGridData task = *(ReactGridData*)dataptr;
 	unsigned char started = FALSE, stop = FALSE;
-	int i, j, k, start_idx, stop_idx;
+	int i, j, k, n, start_idx, stop_idx;
+    double temp, ge_value, val_to_set;
 	double dt = *dt_ptr;
 	Reaction* react;
 
@@ -295,7 +293,6 @@ void* ecs_do_reactions(void* dataptr)
 			states_cache_dx = (double*)malloc(sizeof(double)*react->num_species_involved);
 			results_array = (double*)malloc(react->num_species_involved*sizeof(double));
 			results_array_dx = (double*)malloc(react->num_species_involved*sizeof(double));
-
 			for(i = start_idx; i <= stop_idx; i++)
 			{
 				if(!react->subregion || react->subregion[i])
@@ -324,21 +321,61 @@ void* ecs_do_reactions(void* dataptr)
 						}
 						states_cache_dx[j] -= dx;
 					}
-					// solve for x, destructively
+					// solve for x
                     if (react->num_species_involved == 1)
                     {
                         react->species_states[0][i] += v_get_val(b, 0) / m_get_val(jacobian, 0, 0);
                     }
                     else
                     {
-                        LUfactor(jacobian, pivot); //Conditional jump or move depends on uninitialised value(s)
-                        LUsolve(jacobian, pivot, b, x);       
+                        //find entry in leftmost column with largest absolute value
+                        //Pivot
+                        for (j = 0; j < react->num_species_involved; j++)
+                        {
+                            for(k = j + 1; k < react->num_species_involved; k++)
+                            {
+                                if (abs(m_get_val(jacobian, j, j)) < abs(m_get_val(jacobian, k, j)))
+                                {
+                                    for (n = 0; n < react->num_species_involved; n++)
+                                    {
+                                        temp = m_get_val(jacobian, j, n);
+                                        m_set_val(jacobian, j, n, m_get_val(jacobian, k, n));
+                                        m_set_val(jacobian, k, n, temp);
+                                    }
+                                }
+                            }
+                        }
+
+                        for (j = 0; j < react->num_species_involved - 1; j ++)
+                        {
+                            for (k = j + 1; k < react->num_species_involved; k++)
+                            {
+                                ge_value = m_get_val(jacobian, k, j) / m_get_val(jacobian, j, j);
+                                for (n = 0; n < react->num_species_involved; n++)
+                                {
+                                    val_to_set = m_get_val(jacobian, k, n) - ge_value * m_get_val(jacobian, j, n);
+                                    m_set_val(jacobian, k, n, val_to_set);
+                                }
+                                v_set_val(b, k, v_get_val(b, k) - ge_value * v_get_val(b, j));
+                            }
+                        }
+
+                        for (j = react->num_species_involved - 1; j >= 0; j--)
+                        {
+                            v_set_val(x, j, v_get_val(b, j));
+                            for (k = j + 1; k < react->num_species_involved; k++)
+                            {
+                                if (k != j)
+                                {
+                                    v_set_val(x, j, v_get_val(x, j) - m_get_val(jacobian, j, k) * v_get_val(x, k));
+                                }
+                            }
+                            v_set_val(x, j, v_get_val(x, j) / m_get_val(jacobian, j, j));
+                        }
                         for(j = 0; j < react->num_species_involved; j++)
                         {
                             react->species_states[j][i] += v_get_val(x,j);
-                            //printf("current index is %p and next index is %p\n",&react->species_states[j][i], &react->species_states[j][i+1]);
-                            //return NULL;
-                        }        
+                        }                       
                     }
 				}
 			}
@@ -523,8 +560,6 @@ int ode_count(const int offset) {
     Grid_node* grid;
     for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
         count += grid->size_x * grid->size_y * grid->size_z;
-        printf("grid->size_x = %d\n", grid->size_x);
-        printf("count = %d\n", count);
     }
     return count;
 }
@@ -575,7 +610,6 @@ void _rhs_variable_step_ecs(const double t, const double* states, double* ydot) 
     double* const orig_ydot = ydot + states_cvode_offset;
     states = orig_states;
     ydot = orig_ydot;
-
     /* prepare for advance by syncing data with local copy */
     for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
         grid_states = grid->states;
@@ -589,17 +623,14 @@ void _rhs_variable_step_ecs(const double t, const double* states, double* ydot) 
     }
     /* transfer concentrations to classic NEURON states */
     scatter_concentrations();
-
     if (!calculate_rhs) {
         return;
     }
 	
 	states = orig_states;
 	ydot = orig_ydot;
-
 	/* TODO: reactions contribute to adaptive step-size*/
 	if(threaded_reactions_tasks != NULL){
-        printf("doing reactions in variable step solver\n");
 	    run_threaded_reactions(threaded_reactions_tasks);
     }
 	for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next)
@@ -633,7 +664,6 @@ void _rhs_variable_step_ecs(const double t, const double* states, double* ydot) 
         ydot += grid_size;
         states += grid_size;        
     }
-    printf("did variable step solve (case 7)\n");
 }
 
 
@@ -722,7 +752,6 @@ void ics_ode_solve(double dt,  double* RHS, const double* states)
 
 	/* TODO: reactions contribute to adaptive step-size*/
 	if(threaded_reactions_tasks != NULL){
-        printf("doing reactions in ode_solve\n");
 	    run_threaded_reactions(threaded_reactions_tasks);
     }
     /* do the diffusion rates */
@@ -732,7 +761,6 @@ void ics_ode_solve(double dt,  double* RHS, const double* states)
         RHS += grid_size;
         states += grid_size;        
     }
-    printf("did ics_ode_solve (case 8)\n");
 }
 /*****************************************************************************
 *

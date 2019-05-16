@@ -460,7 +460,6 @@ class _IntracellularSpecies(_SpeciesMathable):
             NOTE: For now, only define this AFTER the morphology is instantiated. In the future, this requirement can be relaxed.
             TODO: remove this limitation
         """
-        print(is_diffusable)
         _intracellular_diffusion_objects[self] = None
         # ensure 3D points exist
         h.define_shape()
