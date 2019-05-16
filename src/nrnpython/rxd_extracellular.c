@@ -75,7 +75,7 @@ void set_num_threads_ecs(const int n)
                 }
             }
             free(grid->tasks);
-            grid->tasks = (AdiGridData*)malloc(NUM_THREADS*sizeof(AdiGridData));
+            grid->tasks = (AdiGridData*)malloc(n*sizeof(AdiGridData));
             for(i=0; i<n; i++)
             {
                 grid->tasks[i].scratchpad = (double*)malloc(sizeof(double) * MAX(grid->size_x,MAX(grid->size_y,grid->size_z)));
