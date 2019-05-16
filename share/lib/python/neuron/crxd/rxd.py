@@ -791,7 +791,6 @@ def _setup_matrices():
                                 #this section has a 1d section that is a parent
                                 #don't think I need to do sec=sec...can probably just do sec.section_orientation etc. Ask Robert
                                 index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), parent_sec, h.parent_connection(sec=sec))
-                                print("index1d = {} and 3d are {} and came from if s._has_region_section(r, parent_sec):".format(index1d, indices3d))
                                 hybrid_neighbors[index1d] += indices3d
                                 hybrid_diams[index1d] = parent_sec(h.parent_connection(sec=sec)).diam
                                 hybrid_index1d_grid_ids[index1d] = grid_id
@@ -805,7 +804,6 @@ def _setup_matrices():
                                         hybrid_neighbors[index1d] += indices3d
                                         hybrid_diams[index1d] = sec1d(h.section_orientation(sec=sec1d)).diam
                                         hybrid_index1d_grid_ids[index1d] = grid_id
-                                        print("index1d = {} 3d are {} and came from if parent_1d == sec:".format(index1d, indices3d))
                                         
                                     elif parent_1d == parent_sec and parent_1d is not None:
                                         # it connects to the parent of a 1d section
@@ -813,7 +811,6 @@ def _setup_matrices():
                                         hybrid_neighbors[index1d] += indices3d
                                         hybrid_diams[index1d] = sec1d(h.section_orientation(sec=sec1d)).diam
                                         hybrid_index1d_grid_ids[index1d] = grid_id
-                                        print("index1d = {} and indices3d = {}:".format(index1d, indices3d))
                                         
         if len(dxs) > 1:
             raise RxDException('currently require a unique value for dx')
@@ -850,7 +847,6 @@ def _setup_matrices():
                     d = sp._d
                     area = (numpy.pi * 0.25 * hybrid_diams[index1d] ** 2) / len(neighbors3d)
                     volumes1d.append(node._volumes[index1d])
-                    print(node._volumes[index1d], area)
                     for i in neighbors3d:
                         vol = sp._nodes[i].volume
                         rate = d * area / (vol * dx / 2.)
