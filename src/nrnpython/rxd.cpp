@@ -16,6 +16,7 @@ extern "C" {
 static void ode_solve(double, double, double*, double*);
 
 extern int structure_change_cnt;
+extern int states_cvode_offset;
 int prev_structure_change_cnt = 0;
 unsigned char initialized = 0;
 
@@ -710,8 +711,8 @@ extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, i
             break;
         case 7:
             /* ode_fun(t, y, ydot); from t and y determine ydot */
-            //_rhs_variable_step(*t_ptr, p1, p2);
-            //_rhs_variable_step_ecs(*t_ptr, p1, p2);
+            _rhs_variable_step(*t_ptr, p1, p2);
+            _rhs_variable_step_ecs(*t_ptr, p1, p2, _cvode_offset);
             break;
         case 8:
             //ode_solve(*t_ptr, *dt_ptr, p1, p2); /*solve mx=b replace b with x */
@@ -1393,6 +1394,7 @@ void _ode_reinit(double* y)
 
 void _rhs_variable_step(const double t, const double* p1, double* p2) 
 {
+    Grid_node *grid;
 	long i, j, p, c;
     unsigned int k;
     const unsigned char calculate_rhs = p2 == NULL ? 0 : 1;
@@ -1401,6 +1403,9 @@ void _rhs_variable_step(const double t, const double* p1, double* p2)
 	/*variables for diffusion*/
 	double *rhs;
 	long* zvi = _rxd_zero_volume_indices;
+
+    double const * const orig_states3d = p1 + states_cvode_offset;
+    double* const orig_ydot3d = p2 + states_cvode_offset;
 
     /*Copy states from CVode*/ 
     if(_rxd_num_zvi > 0)
@@ -1451,6 +1456,19 @@ void _rhs_variable_step(const double t, const double* p1, double* p2)
     /*reactions*/
     MEM_ZERO(&ydot[num_states - _rxd_num_zvi], sizeof(double)*_ecs_count);
     get_all_reaction_rates(states, rhs, ydot);
+
+    const double* states3d = orig_states3d;
+    double* ydot3d = orig_ydot3d;
+    int grid_size;
+    for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
+        grid_size = grid->size_x * grid->size_y * grid->size_z;
+        if(grid->hybrid)
+        {
+            grid->variable_step_hybrid_connections(states3d, ydot3d, states, rhs);
+        }
+        ydot3d += grid_size;
+        states3d += grid_size;        
+    }
 
     /*Add currents to the result*/
     add_currents(rhs);

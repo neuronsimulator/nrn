@@ -671,6 +671,10 @@ void ECS_Grid_node::hybrid_connections()
 {
 }
 
+void ECS_Grid_node::variable_step_hybrid_connections(const double* cvode_states_3d, double* const ydot_3d, const double* cvode_states_1d, double *const  ydot_1d)
+{
+}
+
 //TODO: Implement this
 void ECS_Grid_node::variable_step_ode_solve(const double* states, double* RHS, double dt)
 {
@@ -1104,6 +1108,11 @@ void ICS_Grid_node::variable_step_ode_solve(const double* states, double* RHS, d
 void ICS_Grid_node::hybrid_connections()
 {
     _ics_hybrid_helper(this);
+}
+
+void ICS_Grid_node::variable_step_hybrid_connections(const double* cvode_states_3d, double* const ydot_3d, const double* cvode_states_1d, double *const  ydot_1d)
+{
+    _ics_variable_hybrid_helper(this, cvode_states_3d, ydot_3d, cvode_states_1d, ydot_1d);
 }
 
 void ICS_Grid_node::scatter_grid_concentrations()

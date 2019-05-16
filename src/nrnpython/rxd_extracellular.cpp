@@ -37,7 +37,7 @@ extern double* _rxd_induced_currents_ecs;
 extern double* _rxd_induced_currents_scale;
 
 
-static int states_cvode_offset;
+int states_cvode_offset;
 
 /*Update the global array of reaction tasks when the number of reactions 
  *or threads change.
@@ -526,14 +526,11 @@ void _fadvance_fixed_step_3D(void) {
         if(grid->diffusable){
             grid->dg_adi(); 
         }
-    }
-    /* Probably should do hybrid stuff here */
-    for (id = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, id++) {
         if(grid->hybrid)
         {
             grid->hybrid_connections();
         }
-    } 
+    }
     /* transfer concentrations */
     scatter_concentrations();
 }
@@ -599,15 +596,17 @@ void _ecs_ode_reinit(double* y) {
 }
 
 
-void _rhs_variable_step_ecs(const double t, const double* states, double* ydot) {
+void _rhs_variable_step_ecs(const double t, const double* states, double* ydot, const int _cvode_offset) {
 	Grid_node *grid;
     ssize_t i;
     int grid_size;
 	double dt = *dt_ptr;
     double* grid_states;
     double const * const orig_states = states + states_cvode_offset;
+    double const * const orig_1d_states = states + _cvode_offset;
     const unsigned char calculate_rhs = ydot == NULL ? 0 : 1;
     double* const orig_ydot = ydot + states_cvode_offset;
+    double* const orig_1d_ydot = ydot + _cvode_offset;
     states = orig_states;
     ydot = orig_ydot;
     /* prepare for advance by syncing data with local copy */
@@ -660,7 +659,7 @@ void _rhs_variable_step_ecs(const double t, const double* states, double* ydot) 
     for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
         grid_size = grid->size_x * grid->size_y * grid->size_z;
         grid->variable_step_diffusion(states, ydot);
-
+        
         ydot += grid_size;
         states += grid_size;        
     }
