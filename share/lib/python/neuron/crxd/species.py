@@ -158,7 +158,12 @@ class _SpeciesMathable(object):
             ics_instance = self._intracellular_instances[reg]
             return ics_instance._semi_compile(reg)
         if isinstance(reg, region.Region) and reg._secs1d:
-            return 'species[%d][%d]' % (self._id, reg._id)
+            if reg in self._regions:
+                return 'species[%d][%d]' % (self._id, reg._id)
+            elif len(self._regions) == 1:
+                return 'species[%d][%d]' % (self._id, self._regions[0]._id)
+            else:
+                raise RxDException("Species %r is not defined on region %r." % (self, reg))
     
     def _involved_species(self, the_dict):
         the_dict[self._semi_compile] = weakref.ref(self)
@@ -331,9 +336,8 @@ class SpeciesOnRegion(_SpeciesMathable):
         """
         if r == self._region():
             return self
-        else:
-            return SpeciesOnRegion(self._species, None)
-    
+        raise RxDException('no such region')
+ 
     @property
     def states(self):
         """A vector of all the states corresponding to this species"""
@@ -956,7 +960,7 @@ class Species(_SpeciesMathable):
         """Return a reference to those members of this species lying on the specific region @varregion.
         The resulting object is a SpeciesOnRegion.
         This is useful for defining reaction schemes for MultiCompartmentReaction."""
-        if isinstance(r, region.Region):
+        if isinstance(r, region.Region) and r in self._regions:
             return SpeciesOnRegion(self, r)
         elif isinstance(r, region.Extracellular):
             if not hasattr(self,'_extracellular_instances'):
@@ -1345,7 +1349,13 @@ class Parameter(Species):
             ics_instance = self._intracellular_instances[reg]
             return ics_instance._semi_compile(reg)
         if isinstance(reg, region.Region) and reg._secs1d:
-            return 'params[%d][%d]' % (self._id, reg._id)
+            if reg in self._regions:
+                return 'params[%d][%d]' % (self._id, reg._id)
+            elif len(self._regions) == 1:
+                return 'params[%d][%d]' % (self._id, self._regions[0]._id)
+            else:
+                raise RxDException("Parameter %r is not defined on region %r" % (self, reg))
+
 
     def __repr__(self):
         represents = ', represents=%s' % self.represents if self.represents else ''
@@ -1365,7 +1375,7 @@ class Parameter(Species):
         """Return a reference to those members of this parameter lying on the specific region @varregion.
         The resulting object is a ParameterOnRegion or ParameterOnExtracellular.
         This is useful for defining reaction schemes for MultiCompartmentReaction."""
-        if isinstance(r, region.Region):
+        if isinstance(r, region.Region) and r in self._regions:
             return ParameterOnRegion(self, r)
         elif isinstance(r, region.Extracellular):
             if not hasattr(self,'_extracellular_instances'):
