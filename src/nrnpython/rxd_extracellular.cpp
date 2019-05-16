@@ -243,7 +243,6 @@ ReactGridData* create_threaded_reactions(const int n)
  */
 void* ecs_do_reactions(void* dataptr)
 {
-    printf("in ecs_do_reactions\n");
 	ReactGridData task = *(ReactGridData*)dataptr;
 	unsigned char started = FALSE, stop = FALSE;
 	int i, j, k, n, start_idx, stop_idx;
@@ -298,7 +297,6 @@ void* ecs_do_reactions(void* dataptr)
 			states_cache_dx = (double*)malloc(sizeof(double)*react->num_species_involved);
 			results_array = (double*)malloc(react->num_species_involved*sizeof(double));
 			results_array_dx = (double*)malloc(react->num_species_involved*sizeof(double));
-            printf("---------------------------------------------------------------------------\n");
 			for(i = start_idx; i <= stop_idx; i++)
 			{
 				if(!react->subregion || react->subregion[i])
@@ -627,7 +625,6 @@ void _rhs_variable_step_ecs(const double t, const double* states, double* ydot) 
     double* const orig_ydot = ydot + states_cvode_offset;
     states = orig_states;
     ydot = orig_ydot;
-    printf("about to loop through grids\n");
     /* prepare for advance by syncing data with local copy */
     for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
         grid_states = grid->states;
@@ -639,20 +636,16 @@ void _rhs_variable_step_ecs(const double t, const double* states, double* ydot) 
         }
         states += grid_size;
     }
-    printf("looped through grids and about to scatter\n");
     /* transfer concentrations to classic NEURON states */
     scatter_concentrations();
-    printf("scattered_concentrations\n");
     if (!calculate_rhs) {
         return;
     }
 	
 	states = orig_states;
 	ydot = orig_ydot;
-    printf("about to do reactions\n");
 	/* TODO: reactions contribute to adaptive step-size*/
 	if(threaded_reactions_tasks != NULL){
-        printf("doing reactions in variable step solver\n");
 	    run_threaded_reactions(threaded_reactions_tasks);
     }
 	for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next)
@@ -686,7 +679,6 @@ void _rhs_variable_step_ecs(const double t, const double* states, double* ydot) 
         ydot += grid_size;
         states += grid_size;        
     }
-    printf("did variable step solve (case 7)\n");
 }
 
 
@@ -775,7 +767,6 @@ void ics_ode_solve(double dt,  double* RHS, const double* states)
 
 	/* TODO: reactions contribute to adaptive step-size*/
 	if(threaded_reactions_tasks != NULL){
-        printf("doing reactions in ode_solve\n");
 	    run_threaded_reactions(threaded_reactions_tasks);
     }
     /* do the diffusion rates */
@@ -785,7 +776,6 @@ void ics_ode_solve(double dt,  double* RHS, const double* states)
         RHS += grid_size;
         states += grid_size;        
     }
-    printf("did ics_ode_solve (case 8)\n");
 }
 /*****************************************************************************
 *

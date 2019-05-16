@@ -639,15 +639,12 @@ static void _currents(double* rhs)
     double current;
     
     if(!_membrane_flux)
-        printf("in this if statement\n");
         return;
-    printf("calling get_all_reaction_rates\n");
     get_all_reaction_rates(states, NULL, NULL);
     
     MEM_ZERO(_rxd_induced_currents, _memb_curr_total*sizeof(double));
     MEM_ZERO(_rxd_induced_currents_ecs, _memb_curr_total*sizeof(double));
 
-    printf("called memzero and about to loop\n");
     for(i = 0; i < _memb_count; i++)
     {
         idx = _cur_node_indices[i];
@@ -674,7 +671,6 @@ static void _currents(double* rhs)
             }
         }
     }
-    printf("made it through _currents\n");
 }
 
 extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, int thread_id) {
@@ -685,16 +681,13 @@ extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, i
         }
         switch (method) {
         case 0:
-            printf("in case 0\n");
             _setup();
             break;
         case 1:
-            printf("in case 1\n");
             _initialize();
             break;
         case 2:
             /* compute outward current to be subtracted from rhs */
-            printf("in case 2\n");
             _currents(p1);
             break;
         case 3:
@@ -702,31 +695,25 @@ extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, i
             break;
         case 4:
             /* fixed step solve */
-            printf("in case 4\n");
 			_fadvance();
             _fadvance_fixed_step_3D();
             break;
         case 5:
             /* ode_count */
-            printf("in case 5\n");
             _cvode_offset = size;
             _ecs_count = ode_count(size + num_states - _rxd_num_zvi);
             return _ecs_count + num_states - _rxd_num_zvi;
         case 6:
             /* ode_reinit(y) */
-            printf("in case 6\n");
             _ode_reinit(p1); //Invalid read of size 8 
             _ecs_ode_reinit(p1);
             break;
         case 7:
             /* ode_fun(t, y, ydot); from t and y determine ydot */
-            printf("in case 7\n");
             _rhs_variable_step(*t_ptr, p1, p2);
-            printf("calling 3d\n");
             _rhs_variable_step_ecs(*t_ptr, p1, p2);
             break;
         case 8:
-            printf("in case 8\n");
             ode_solve(*t_ptr, *dt_ptr, p1, p2); /*solve mx=b replace b with x */
             /* TODO: we can probably reuse the dgadi code here... for now, we do nothing, which implicitly approximates the Jacobian as the identity matrix */
             //y= p1 = states and b = p2 = RHS for x direction
@@ -736,7 +723,6 @@ extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, i
             //ode_jacobian(*dt_ptr, p1, p2); /* optionally prepare jacobian for fast ode_solve */
             break;
         case 10:
-            printf("in case 10\n");
             ode_abs_tol(p1);
             ecs_atolscale(p1);
             /* ode_abs_tol(y_abs_tolerance); fill with cvode.atol() * scalefactor */
