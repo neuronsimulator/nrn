@@ -36,7 +36,7 @@ extern double* _rxd_induced_currents_ecs;
 extern double* _rxd_induced_currents_scale;
 
 
-static int states_cvode_offset;
+int states_cvode_offset;
 
 /*Update the global array of reaction tasks when the number of reactions 
  *or threads change.
@@ -598,7 +598,6 @@ void _rhs_variable_step_ecs(const double t, const double* states, double* ydot, 
 
 	/* TODO: reactions contribute to adaptive step-size*/
 	if(threaded_reactions_tasks != NULL){
-        printf("doing reactions in variable step solver\n");
 	    run_threaded_reactions(threaded_reactions_tasks);
     }
 	for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next)
@@ -628,11 +627,7 @@ void _rhs_variable_step_ecs(const double t, const double* states, double* ydot, 
     for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
         grid_size = grid->size_x * grid->size_y * grid->size_z;
         grid->variable_step_diffusion(states, ydot);
-
-        if(grid->hybrid)
-        {
-            grid->variable_step_hybrid_connections(states, ydot, orig_1d_states, orig_1d_ydot);
-        }
+        
         ydot += grid_size;
         states += grid_size;        
     }
