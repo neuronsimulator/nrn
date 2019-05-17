@@ -98,7 +98,7 @@ class TriangularMesh:
                         if pt not in bad_pts: bad_pts.append(pt)
                         if neighbor not in bad_pts: bad_pts.append(neighbor)
                         # TODO: remove this; should never get here anyways
-                        print('exposed edge: (%g, %g, %g) to (%g, %g, %g)' % (pt + neighbor))
+                        print(('exposed edge: (%g, %g, %g) to (%g, %g, %g)' % (pt + neighbor)))
 
         if edge_count: return True
         #print 'total exposed edges: ', edge_count

@@ -11,9 +11,8 @@ def test(files):
     dt_eps = 1e-20
     
     try:
-        os.makedirs(os.path.join('test_data', 'crxd', 'wave1d'))
-        os.makedirs(os.path.join('test_data', 'crxd', 'ecs'))
         os.makedirs(os.path.join('test_data', 'wave1d'))
+        os.makedirs(os.path.join('test_data', 'ecs'))
     except OSError:
         pass
 

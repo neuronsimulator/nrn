@@ -11,9 +11,12 @@ from . import geometry as geo
 import weakref
 from . import initializer
 import warnings
+import math
+import ctypes
 
 _all_regions = []
 _region_count = 0
+_c_region_lookup = None  #a global dictionary linking a region to a list of _c_regions it is a part of
 
 def _sort_secs(secs):
     # sort the sections
@@ -24,19 +27,259 @@ def _sort_secs(secs):
         all_sorted.wholetree(sec=root)
     secs_names = dict([(sec.hoc_internal_name(),sec) for sec in secs])
     for sec in secs:
-        if h.section_orientation(sec=sec):
+        if sec.orientation():
             raise RxDException('still need to deal with backwards sections')
     return [secs_names[sec.hoc_internal_name()] for sec in all_sorted if sec.hoc_internal_name() in secs_names]
 
+
+class _c_region:
+    """
+    The overlapping regions that are used to parse the relevant indices for JIT C reactions. 
+    regions - a set of regions that occur in the same sections
+    """
+
+    def __init__(self, regions):
+        global _c_region_lookup
+        self._regions = [weakref.ref(r) for r in regions]
+        self._overlap = self._regions[0]()._secs
+        self.num_regions = len(self._regions)
+        self.num_species = 0
+        self.num_params = 0
+        self.num_ecs_species = 0
+        self.num_ecs_params = 0
+        self.num_segments = numpy.sum([x.nseg for x in self._overlap])
+        self._ecs_react_species = list()
+        self._ecs_react_params = list()
+        self._react_species = list()
+        self._react_params = list()
+        self._react_regions = dict()
+        self._initialized = False
+        self.location_index = None
+        self.ecs_location_index = None
+        self._ecs_species_ids = None
+        self._ecs_params_ids = None
+        self._voltage_dependent = False
+        self._vptrs = None
+        for rptr in self._regions:
+            r = rptr()
+            self._overlap = [sec for sec in r._secs if sec in self._overlap]
+            if r in _c_region_lookup:
+                _c_region_lookup[rptr].append(self)
+            else:
+                _c_region_lookup[rptr] = [self]
+   
+    def add_reaction(self, rptr, region):
+        if rptr in self._react_regions:
+           self._react_regions[rptr].add(region)
+        else:
+            self._react_regions[rptr] = {region}
+        if not self._voltage_dependent:
+            self._voltage_dependent = rptr()._voltage_dependent
+        self._initialized = False
+
+    def add_species(self,species_set):
+        from .species import SpeciesOnRegion, Parameter, ParameterOnRegion
+        for s in species_set:
+            if isinstance(s,ParameterOnRegion):
+                if s._species() and s._species not in self._react_params: 
+                    self._react_params.append(s._species)
+            elif isinstance(s._species(),Parameter) and s._species not in self._react_params:
+                self._react_params.append(weakref.ref(s))
+            elif isinstance(s,SpeciesOnRegion):
+                if s._species() and s._species not in self._react_species: 
+                    self._react_species.append(s._species)
+            elif weakref.ref(s) not in self._react_species: 
+                self._react_species.append(weakref.ref(s))
+        self.num_params = len(self._react_params)
+        self.num_species = len(self._react_species)
+        self._initilized = False
+
+    def add_ecs_species(self,species_set):
+        from .species import Parameter, ParameterOnExtracellular
+        for s in species_set:
+            sptr = s._extracellular
+            if isinstance(s,ParameterOnExtracellular):
+                if sptr not in self._ecs_react_params: self._ecs_react_params.append(sptr)
+            else:
+                if sptr not in self._ecs_react_species: self._ecs_react_species.append(sptr)
+        self.num_ecs_params = len(self._ecs_react_params)
+        self.num_ecs_species = len(self._ecs_react_species)
+        self._initialized = False
+
+    def get_ecs_index(self):
+        if not self._initialized:
+            self._initalize()
+        if self.ecs_location_index is None:
+            return numpy.ndarray(0, ctypes.c_int)
+        else:
+            return self.ecs_location_index.flatten()
+    
+    def get_state_index(self):
+        if not self._initialized:
+            self._initalize()
+        return self.location_index.flatten()
+
+    def get_ecs_species_ids(self):
+        ret = numpy.ndarray(self.num_ecs_species + self.num_ecs_params, ctypes.c_int)
+        if self.num_ecs_species + self.num_ecs_params > 0:
+            for i in self._ecs_species_ids:
+                ret[self._ecs_species_ids[i]] = i
+            for i in self._ecs_params_ids:
+                ret[self._ecs_params_ids[i] + self.num_ecs_species] = i 
+        return ret
+
+    def _ecs_initalize(self):
+        from . import species
+        self.ecs_location_index = -numpy.ones((self.num_ecs_species + self.num_ecs_params,self.num_segments),ctypes.c_int)
+
+        #Set the local ids of the regions and species involved in the reactions
+        self._ecs_species_ids = dict()
+        self._ecs_params_ids = dict()
+        for sid, s in enumerate(self._ecs_react_species):   
+            self._ecs_species_ids[s()._grid_id] = sid
+        for sid, s in enumerate(self._ecs_react_params):   
+            self._ecs_params_ids[s()._grid_id] = sid 
+
+        #Setup the matrix to the ECS grid points
+        for sid, s in enumerate(self._ecs_react_species + self._ecs_react_params):
+            seg_idx = 0
+            for sec in self._overlap:
+                for seg in sec:
+                    (x,y,z) = species._xyz(seg)
+                    #TODO: Returns none, causing an error.
+                    node_idx = s().index_from_xyz(x,y,z)
+                    self.ecs_location_index[sid][seg_idx] = node_idx if node_idx else -1
+                    seg_idx+=1
+        self.ecs_location_index = self.ecs_location_index.transpose()
+
+    def _initalize(self):
+        from .species import Species
+        self.location_index = -numpy.ones((self.num_regions, self.num_species + self.num_params, self.num_segments), ctypes.c_int)
+        from .species import SpeciesOnExtracellular, SpeciesOnRegion
+        
+        #Set the local ids of the regions and species involved in the reactions
+        self._species_ids = dict()
+        self._params_ids = dict()
+        self._region_ids = dict()
+        
+        for rid, r in enumerate(self._regions):  
+            self._region_ids[r()._id] = rid
+        for sid, s in enumerate(self._react_species):
+            self._species_ids[s()._id] = sid
+        for sid, s in enumerate(self._react_params):
+            self._params_ids[s()._id] = sid
+    
+        
+        #Setup the array to the state index 
+        for rid, r in enumerate(self._regions):
+            for sid, s in enumerate(self._react_species + self._react_params):
+                indices = s().indices(r())
+                try:
+                    if indices == []:
+                        self.location_index[rid][sid][:] = -1
+                    else: 
+                        self.location_index[rid][sid][:] = indices
+                except ValueError:
+                    raise RxDException("Rates and Reactions with species defined on different regions are not currently supported.") 
+        self.location_index=self.location_index.transpose()
+        
+        if self._voltage_dependent:
+            self._vptrs = []
+            for sec in self._overlap:
+                for seg in sec:
+                    self._vptrs.append(seg._ref_v)
+
+        #Setup the matrix to the ECS grid points
+        if self.num_ecs_species + self.num_ecs_params > 0:
+            self._ecs_initalize()
+        self._initialized = True
+
+
+class Extracellular:
+    """Declare an extracellular region
+
+    tortuosity = increase in path length due to obstacles, effective diffusion coefficient d/tortuosity^2. - either a single value for the whole region or a Vector giving a value for each voxel.
+
+    Assumes reflective boundary conditions, so you'll probably want to make sure the mesh extends far beyond the neuron
+
+    Assumes volume_fraction=1, i.e. that the extracellular space is empty. You'll probably want to lower this to
+    account for other cells. Note: the section volumes are assumed to be negligible and are ignored by the simulation.
+
+    Assumes tortuosity=1.
+    """
+    def __init__(self, xlo, ylo, zlo, xhi, yhi, zhi, dx, volume_fraction=1, tortuosity=1):
+        from . import options
+        if not options.enable.extracellular:
+            raise RxDException('Extracellular diffusion support is disabled. Override with rxd.options.enable.extracellular = True.')
+        self._xlo, self._ylo, self._zlo = xlo, ylo, zlo
+        if not hasattr(dx,'__len__'):
+            self._dx = (dx,dx,dx)
+        elif len(dx) == 3:
+            self._dx = dx
+        else:
+            raise RxDException('Extracellular region dx=%s is invalid, dx should be a number or a tuple (dx,dy,dz) for the length, width and height of the voxels' % repr(dx))
+
+        self._nx = int(math.ceil((xhi - xlo) / self._dx[0]))
+        self._ny = int(math.ceil((yhi - ylo) / self._dx[1]))
+        self._nz = int(math.ceil((zhi - zlo) / self._dx[2]))
+        self._xhi, self._yhi, self._zhi = xlo + self._dx[0] * self._nx, ylo + self._dx[1] * self._ny, zlo + self._dx[2] * self._nz
+
+        if(numpy.isscalar(volume_fraction)):
+            alpha = float(volume_fraction)
+            self._alpha = alpha
+            self.alpha = alpha
+        elif callable(volume_fraction):
+            alpha = numpy.ndarray((self._nx, self._ny, self._nz))
+            for i in range(self._nx):
+                for j in range(self._ny):
+                    for k in range(self._nz):
+                        alpha[i,j,k] = volume_fraction(self._xlo + i*self._dx[0], self._ylo + j*self._dx[1], self._zlo + k*self._dx[2])
+                self.alpha = alpha
+                self._alpha = h.Vector(alpha.flatten())
+                         
+        else:
+            alpha = numpy.array(volume_fraction)
+            if(alpha.shape != (self._nx, self._ny, self._nz)):
+                 raise RxDException('free volume fraction alpha must be a scalar or an array the same size as the grid: {0}x{1}x{2}'.format(self._nx, self._ny, self._nz ))
+ 
+            else:
+                self._alpha = h.Vector(alpha)
+                self.alpha = self._alpha.as_numpy().reshape(self._nx, self._ny, self._nz)
+                
+        if(numpy.isscalar(tortuosity)):
+            tortuosity = float(tortuosity)
+            self._tortuosity = tortuosity
+            self.tortuosity = tortuosity
+        elif callable(tortuosity):
+            self.tortuosity = numpy.ndarray((self._nx,self._ny,self._nz))
+            for i in range(self._nx):
+                for j in range(self._ny):
+                    for k in range(self._nz):
+                        self.tortuosity[i,j,k] = tortuosity(self._xlo + i*self._dx[0], self._ylo + j*self._dx[1], self._zlo + k*self._dx[2])
+            self._tortuosity = h.Vector(self.tortuosity.flatten()).pow(2)
+        else:
+            tortuosity = numpy.array(tortuosity)
+            if(tortuosity.shape != (self._nx, self._ny, self._nz)):
+                 raise RxDException('tortuosity must be a scalar or an array the same size as the grid: {0}x{1}x{2}'.format(self._nx, self._ny, self._nz ))
+    
+            else:
+                self.tortuosity = tortuosity
+                self._tortuosity = h.Vector(self.tortuosity.flatten()).pow(2)
+    
+    def __repr__(self):
+        return 'Extracellular(xlo=%r, ylo=%r, zlo=%r, xhi=%r, yhi=%r, zhi=%r, tortuosity=%r, volume_fraction=%r)' % (self._xlo, self._ylo, self._zlo, self._xhi, self._yhi, self._zhi, self.tortuosity, self.alpha)
+
+    def _short_repr(self):
+        return 'Extracellular'
+                
 class Region(object):
     """Declare a conceptual region of the neuron.
     
-    Examples: Cytosol, ER, extracellular space
+    Examples: Cytosol, ER
     """
     def __repr__(self):
         # Note: this used to print out dimension, but that's now on a per-segment basis
         # TODO: remove the note when that is fully true
-        #self._dx = None
         return 'Region(..., nrn_region=%r, geometry=%r, dx=%r, name=%r)' % (self.nrn_region, self._geometry, self.dx, self._name)
 
     def _short_repr(self):
@@ -45,11 +288,15 @@ class Region(object):
         else:
             return self.__repr__()
 
-    
     def _do_init(self):
         global _region_count
-        
-        del self._allow_setting
+       
+        #_do_init can be called multiple times due to a change in geometry
+        if hasattr(self,'_allow_setting'):
+            #here are things that must only happen once
+            del self._allow_setting
+            self._id = _region_count
+            _region_count += 1
         
         from . import rxd
         
@@ -57,9 +304,8 @@ class Region(object):
         # TODO: remove need for this bit
         nrn_region = self.nrn_region
 
-
         # TODO: self.dx needs to be removed... eventually that should be on a per-section basis
-        #       right now, it has to be consistent but this is unenforced
+        #       right now, it has to be consistent but 2this is unenforced
         if self.dx is None:
             self.dx = 0.25
         dx = self.dx
@@ -85,8 +331,7 @@ class Region(object):
         if self._secs3d and not(hasattr(self._geometry, 'volumes3d')):
             raise RxDException('selected geometry (%r) does not support 3d mode' % self._geometry)
         
-        self._id = _region_count
-        _region_count += 1
+
         if self._secs3d:
             if nrn_region == 'o':
                 raise RxDException('3d simulations do not support nrn_region="o" yet')
@@ -167,21 +412,21 @@ class Region(object):
         # NOTE: some care is necessary in constructing normal vector... must be
         #       based on end frusta, not on vector between end points
         if position == 0:
-            x = h.x3d(0, sec=sec)
-            y = h.y3d(0, sec=sec)
-            z = h.z3d(0, sec=sec)
-            nx = h.x3d(1, sec=sec) - x
-            ny = h.y3d(1, sec=sec) - y
-            nz = h.z3d(1, sec=sec) - z
+            x = sec.x3d(0)
+            y = sec.y3d(0)
+            z = sec.z3d(0)
+            nx = sec.x3d(1) - x
+            ny = sec.y3d(1) - y
+            nz = sec.z3d(1) - z
         elif position == 1:
-            n = int(h.n3d(sec=sec))
-            x = h.x3d(n - 1, sec=sec)
-            y = h.y3d(n - 1, sec=sec)
-            z = h.z3d(n - 1, sec=sec)
+            n = sec.n3d()
+            x = sec.x3d(n - 1)
+            y = sec.y3d(n - 1)
+            z = sec.z3d(n - 1)
             # NOTE: sign of the normal is irrelevant
-            nx = x - h.x3d(n - 2, sec=sec)
-            ny = y - h.y3d(n - 2, sec=sec)
-            nz = z - h.z3d(n - 2, sec=sec)
+            nx = x - sec.x3d(n - 2)
+            ny = y - sec.y3d(n - 2)
+            nz = z - sec.z3d(n - 2)
         else:
             raise RxDException('should never get here')
         # x, y, z = x * x1 + (1 - x) * x0, x * y1 + (1 - x) * y0, x * z1 + (1 - x) * z1

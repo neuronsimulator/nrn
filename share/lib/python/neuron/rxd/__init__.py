@@ -1,23 +1,18 @@
 from .rxdException import RxDException
-from .. import _has_rxd 
-if _has_rxd['crxd']:
-    raise RxDException('NEURON RxD module should not be used with CRxD.')
-else:
-   _has_rxd['rxd'] = True
 
-try:
-    import scipy
-except:
-    raise RxDException('NEURON RxD module requires SciPy')
+#import sys
+#if 'neuron.rxd' in sys.modules:
+#    raise RxDException('NEURON CRxD module cannot be used with NEURON RxD module.')
 
 from . import rxd
-from .species import Species
-from .region import Region
+from .species import Species, Parameter, State
+from .region import Region, Extracellular
 from .rate import Rate
 from .reaction import Reaction
 from . import geometry
 from .multiCompartmentReaction import MultiCompartmentReaction
-from .rxd import re_init, set_solve_type, _curr_ptr_vector, _curr_ptr_storage_nrn
+from .rxd import re_init, set_solve_type, nthread
+from .rxdmath import v
 try:
   from . import dimension3
 except:
@@ -29,8 +24,6 @@ from .plugins import set_solver
 # from geometry import ConstantArea, ConstantVolume
 # TODO: if we ever separate Parameter and State from species, then we need to
 #       rembember to call rxd._do_nbs_register()
-Parameter = Species
-State = Species
 
 def _model_view(tree):
     from . import species

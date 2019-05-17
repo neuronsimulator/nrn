@@ -31,8 +31,19 @@ class Rate(GeneralizedReaction):
         if regions is None, then does it on all regions"""
         self._species = weakref.ref(species)
         self._original_rate = rate
+        from . import region
         if not hasattr(regions, '__len__'):
-            regions = [regions]
+            if regions is not None and not isinstance(regions, region.Extracellular):
+                regions = [regions]
+            else:
+                if not hasattr(species, '_extracellular_regions'):
+                    regions = species._regions if hasattr(species, '_regions') else [species._region()]
+                elif not species._extracellular_regions:
+                    regions = species._regions if hasattr(species, '_regions') else [species._region()]
+                else:
+                    regions = [None]
+        else:
+            regions = [reg for reg in regions if not isinstance(reg, region.Extracellular)]
         self._regions = regions
         self._membrane_flux = membrane_flux
         if membrane_flux not in (True, False):
@@ -45,6 +56,8 @@ class Rate(GeneralizedReaction):
         
         # be careful, this could keep states alive
         self._original_rate = rate
+        
+        self._voltage_dependent = False if not hasattr(rate,'_voltage_dependent') else rate._voltage_dependent
 
         # initialize self if the rest of rxd is already initialized
         if initializer.is_initialized():
@@ -54,10 +67,40 @@ class Rate(GeneralizedReaction):
     def _do_init(self):
         rate = self._original_rate
         if not isinstance(rate, RangeVar):
-            self._rate, self._involved_species = rxdmath._compile(rate)
+            self._rate, self._involved_species = rxdmath._compile(rate, self._regions)
         else:
             self._involved_species = [weakref.ref(species)]
         self._update_indices()
+
+        #Check to if it is an extracellular reaction
+        from . import  region, species
+        #Was an ECS region was passed to to the constructor 
+        ecs_region = [r for r in self._regions if isinstance(r, region.Extracellular)]
+        #ecs_region = ecs_region[0] if len(ecs_region) > 0 else None
+        #commented above out line because we need to pass all ecs_regions in. 
+        #TODO review this code below...I am very tired. Also did this in reaction.py
+        ecs_region = ecs_region if len(ecs_region) > 0 else None
+        if ecs_region:
+            self._ecs_regions = ecs_region
+        #Is the species passed to the constructor extracellular
+        if not ecs_region:
+            if isinstance(self._species(),species.SpeciesOnExtracellular):
+                ecs_region = self._species()._extracellular()
+            elif isinstance(self._species(),species._ExtracellularSpecies):
+                ecs_region = self._species()._region
+        #Is the species passed to the constructor defined on the ECS
+        if not ecs_region:
+            if isinstance(self._species(),species.SpeciesOnRegion):
+                sp = self._species()._species()
+            else:
+                sp = self._species()
+            if sp and sp._extracellular_instances:
+                self._ecs_regions = [key for key  in sp._extracellular_instances.keys()]
+        
+
+        if hasattr(self,'_ecs_regions'):
+            self._rate_ecs, self._involved_species_ecs = rxdmath._compile(rate, self._ecs_regions)
+
     
     def __repr__(self):
         short_rate = self._original_rate._short_repr() if hasattr(self._original_rate,'_short_repr') else self._original_rate
@@ -81,16 +124,23 @@ class Rate(GeneralizedReaction):
         self._jac_cols = []
         self._mult = [1]
         self._mult_extended = self._mult
-
-        if not self._species():
+        from . import  region
+        if not self._species() or isinstance(self._species(),species.SpeciesOnExtracellular) or all([isinstance(r,region.Extracellular) for r in self._regions]):
+            if self._regions != [None]:
+                self._active_regions = self._regions
+            elif self._species():
+                if isinstance(self._species(),species.SpeciesOnExtracellular):
+                    self._active_regions = [self._species()._extracellular()._region]
             for sptr in self._involved_species:
                 self._indices_dict[sptr()] = []
             return
+        
 
-        active_secs = None 
+        active_secs = None
+        
         # locate the regions containing all species (including the one that changes)
-        active_regions = list(set.intersection(*[set(sptr()._regions if isinstance(sptr(),species.Species) else [sptr()._region()]) for sptr in self._involved_species + [self._species]]))
-        sp_regions = self._species()._regions if isinstance(self._species(),species.Species) else [self._species()._region()]
+        active_regions = list(set.intersection(*[set(sptr()._regions + sptr()._extracellular_regions if isinstance(sptr(),species.Species) else [sptr()._region() if isinstance(sptr(),species.SpeciesOnRegion) else sptr()._extracellular()]) for sptr in list(self._involved_species) + [self._species]]))
+        sp_regions = self._species()._regions + self._species()._extracellular_regions if isinstance(self._species(),species.Species) else [self._species()._region() if isinstance(self._species(),species.SpeciesOnRegion) else self._species()._extracellular()]
         actr = sp_regions
         if self._regions != [None]:
             specified_regions = list(set.intersection(set(self._regions), set(sp_regions)))
@@ -99,16 +149,17 @@ class Rate(GeneralizedReaction):
                 active_regions = list(set.intersection(set(active_regions), set(actr)))
             else:
                 warnings.warn("Error in rate %r\nThe regions specified %s are not appropriate regions %s will be used instead." % (self, [r._name for r in self._regions], [r._name for r in self._species()._regions]))
-        
+
         #Note: This finds the sections where the all involved species exists
         #e.g. for Rate(A, B+C) if A sections [1,2,3] and B is on sections [1,2] and C is on sections [2,3]
         #The Rate will only effect A on section 2 (rather than have 3 different rates)
         if not active_regions:  #They do not share a common region
-            if any(isinstance(sptr(),species.Species) for sptr in self._involved_species + [self._species]):
+            if any(isinstance(sptr(),species.Species) for sptr in list(self._involved_species) + [self._species]):
                 for sptr in self._involved_species:
                     self._indices_dict[sptr()] = []
                 return
-            active_secs = list(set.union(*[set(reg.secs) for reg in actr]))
+            active_secs = list(set.union(*[set(reg.secs) for reg in actr if hasattr(reg,'secs')]))
+            active_regions = actr
             #if there are multiple regions on a segment for an involved species the rate is ambiguous
             for sptr in self._involved_species:
                 s = sptr()
@@ -127,13 +178,14 @@ class Rate(GeneralizedReaction):
             else:
                 raise RxDException("Error in rate %r, the species do not share a common section" % self)
         else:
-            active_secs = set.union(*[set(reg.secs) for reg in active_regions if reg is not None])
+            active_secs = set.union(*[set(reg.secs) for reg in active_regions if hasattr(reg, 'secs')])
             # store the indices
             for sptr in self._involved_species:
                 s = sptr()
                 self._indices_dict[s] = s.indices(active_regions, active_secs)
             
-            self._indices = [self._species().indices(active_regions, active_secs)] 
+            self._indices = [self._species().indices(active_regions, active_secs)]
+        self._active_regions = active_regions  
         
         if isinstance(self._original_rate, RangeVar):
             nodes = []
