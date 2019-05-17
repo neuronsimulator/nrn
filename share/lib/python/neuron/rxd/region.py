@@ -288,6 +288,20 @@ class Region(object):
         else:
             return self.__repr__()
 
+    def mesh_eval(self):
+        from .species import _all_species
+        for spref in _all_species:
+            sp = spref()
+            if sp is not None:
+                if self in sp.regions:
+                    break
+        else:
+            return {'instantiated': False}
+        result = {'instantiated': True}
+        total_num_3d_segs = sum(sec.nseg for sec in self._secs3d)
+        segs_with_surface = {node.segment for node in sp.nodes if node.surface_area}
+        result['3dsegswithoutsurface'] = len(segs_with_surface) - total_num_3d_segs
+        return result
     def _do_init(self):
         global _region_count
        
