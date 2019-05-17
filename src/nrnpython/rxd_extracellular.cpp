@@ -99,7 +99,7 @@ void clear_rates_ecs(void)
  * subregion - either NULL or a boolean array the same size as the grid
  * 	indicating if reaction occurs at a specific voxel
  */
-Reaction* ecs_create_reaction(int list_idx, int num_species, int* species_ids, ECSReactionRate f, unsigned char* subregion)
+Reaction* ecs_create_reaction(int list_idx, int num_species, int num_params, int* species_ids, ECSReactionRate f, unsigned char* subregion)
 {
 	Grid_node *grid;
 	Reaction* r;
@@ -131,11 +131,12 @@ Reaction* ecs_create_reaction(int list_idx, int num_species, int* species_ids, E
 		}	
 	}
 
-	r->num_species_involved=num_species;
+	r->num_species_involved = num_species;
+    r->num_params_involved = num_params;
 	r->species_states = (double**)malloc(sizeof(Grid_node*)*(r->num_species_involved));
 	assert(r->species_states);
 
-	for(i = 0; i < num_species; i++)
+	for(i = 0; i < num_species + num_params; i++)
 	{
 		/*Assumes grids are the same size (no interpolation) 
 		 *Assumes all the species will be in the same Parallel_grids list*/
@@ -155,9 +156,9 @@ Reaction* ecs_create_reaction(int list_idx, int num_species, int* species_ids, E
  * grid_id - the grid id within the linked list - this corresponds to species
  * ECSReactionRate - the reaction function
  */
-extern "C" void ecs_register_reaction(int list_idx, int num_species, int* species_id, ECSReactionRate f)
+extern "C" void ecs_register_reaction(int list_idx, int num_species, int num_params, int* species_id, ECSReactionRate f)
 {
-	ecs_create_reaction(list_idx, num_species, species_id, f, NULL);
+	ecs_create_reaction(list_idx, num_species, num_params, species_id, f, NULL);
 	ecs_refresh_reactions(NUM_THREADS);
 }
 
@@ -169,9 +170,9 @@ extern "C" void ecs_register_reaction(int list_idx, int num_species, int* specie
  * my_subregion - a boolean array indicating the voxels where a reaction occurs
  * ECSReactionRate - the reaction function
  */
-void ecs_register_subregion_reaction_ecs(int list_idx, int num_species, int* species_id, unsigned char* my_subregion, ECSReactionRate f)
+void ecs_register_subregion_reaction_ecs(int list_idx, int num_species, int num_params, int* species_id, unsigned char* my_subregion, ECSReactionRate f)
 {
-	ecs_create_reaction(list_idx, num_species, species_id, f,  my_subregion);
+	ecs_create_reaction(list_idx, num_species, num_params, species_id, f,  my_subregion);
 	ecs_refresh_reactions(NUM_THREADS);
 }
 
@@ -247,6 +248,7 @@ void* ecs_do_reactions(void* dataptr)
 	Reaction* react;
 
 	double* states_cache = NULL;
+    double* params_cache = NULL;
     double* states_cache_dx = NULL;
 	double* results_array = NULL;
 	double* results_array_dx = NULL;
@@ -290,6 +292,7 @@ void* ecs_do_reactions(void* dataptr)
         	x = v_get(react->num_species_involved);
 			pivot = px_get(jacobian->m);
 			states_cache = (double*)malloc(sizeof(double)*react->num_species_involved);
+            params_cache = (double*)malloc(sizeof(double)*react->num_params_involved);
 			states_cache_dx = (double*)malloc(sizeof(double)*react->num_species_involved);
 			results_array = (double*)malloc(react->num_species_involved*sizeof(double));
 			results_array_dx = (double*)malloc(react->num_species_involved*sizeof(double));
@@ -305,13 +308,17 @@ void* ecs_do_reactions(void* dataptr)
 						states_cache_dx[j] = react->species_states[j][i];
 					}
                     MEM_ZERO(results_array,react->num_species_involved*sizeof(double));
-					react->reaction(states_cache, results_array);
+					react->reaction(states_cache, params_cache, results_array);
+                    for(k = 0; j < react->num_species_involved + react->num_params_involved; k++, j++)
+					{
+						params_cache[k] = react->species_states[j][i];
+					}
 
 					for(j = 0; j < react->num_species_involved; j++)
 					{
 						states_cache_dx[j] += dx;
                         MEM_ZERO(results_array_dx,react->num_species_involved*sizeof(double));
-						react->reaction(states_cache_dx, results_array_dx);
+						react->reaction(states_cache_dx, params_cache, results_array_dx);
 						v_set_val(b, j, dt*results_array[j]);
 
 						for(k = 0; k < react->num_species_involved; k++)
@@ -386,6 +393,7 @@ void* ecs_do_reactions(void* dataptr)
 
 			SAFE_FREE(states_cache);
 			SAFE_FREE(states_cache_dx);
+            SAFE_FREE(params_cache);
 			SAFE_FREE(results_array);
 			SAFE_FREE(results_array_dx);
 
@@ -679,41 +687,134 @@ void _rhs_variable_step_helper(Grid_node* g, double const * const states, double
 	/*indices*/
 	int index, prev_i, prev_j, prev_k, next_i ,next_j, next_k;
 	double div_x, div_y, div_z;
+    unsigned char bc_x, bc_y, bc_z;
+    double bc;
 
 	/* Euler advance x, y, z (all points) */
     stop_i = num_states_x - 1;
     stop_j = num_states_y - 1;
     stop_k = num_states_z - 1;
-    for (i = 0, index = 0, prev_i = num_states_y*num_states_z, next_i = num_states_y*num_states_z; 
-         i < num_states_x; i++) {
-	    /*Zero flux boundary conditions*/
-		div_x = (i==0||i==stop_i)?2.:1.;
+    if(g->bc->type == NEUMANN) {
+        for (i = 0, index = 0, prev_i = num_states_y*num_states_z, next_i = num_states_y*num_states_z; 
+             i < num_states_x; i++) {
+    	    /*Zero flux boundary conditions*/
+	    	div_x = (i==0||i==stop_i)?2.:1.;
 
-        for(j = 0, prev_j = index + num_states_z, next_j = index + num_states_z; j < num_states_y; j++) {
-			div_y = (j==0||j==stop_j)?2.:1.;
-            
-			for(k = 0, prev_k = index + 1, next_k = index + 1; k < num_states_z;
-                k++, index++, prev_i++, next_i++, prev_j++, next_j++) {
-				div_z = (k==0||k==stop_k)?2.:1.;
+            for(j = 0, prev_j = index + num_states_z, next_j = index + num_states_z; j < num_states_y; j++) {
+    			div_y = (j==0||j==stop_j)?2.:1.;
+                
+		    	for(k = 0, prev_k = index + 1, next_k = index + 1; k < num_states_z;
+                    k++, index++, prev_i++, next_i++, prev_j++, next_j++) {
+				    div_z = (k==0||k==stop_k)?2.:1.;
 
-                ydot[index] += rate_x * (states[prev_i] -  
-                    2.0 * states[index] + states[next_i])/div_x;
+                    ydot[index] += rate_x * (states[prev_i] -  
+                        2.0 * states[index] + states[next_i])/div_x;
+    
+                    ydot[index] += rate_y * (states[prev_j] - 
+                        2.0 * states[index] + states[next_j])/div_y;
 
-                ydot[index] += rate_y * (states[prev_j] - 
-                    2.0 * states[index] + states[next_j])/div_y;
+                    ydot[index] += rate_z * (states[prev_k] - 
+                        2.0 * states[index] + states[next_k])/div_z;
+                    next_k = (k==stop_k-1)?index:index+2;
+                    prev_k = index;
 
-                ydot[index] += rate_z * (states[prev_k] - 
-                    2.0 * states[index] + states[next_k])/div_z;
-                next_k = (k==stop_k-1)?index:index+2;
-                prev_k = index;
-
+                }
+                prev_j = index - num_states_z;
+                next_j = (j==stop_j-1)?prev_j:index + num_states_z;
             }
-            prev_j = index - num_states_z;
-            next_j = (j==stop_j-1)?prev_j:index + num_states_z;
+            prev_i = index - num_states_y*num_states_z;
+            next_i = (i==stop_i-1)?prev_i:index+num_states_y*num_states_z;
         }
-        prev_i = index - num_states_y*num_states_z;
-        next_i = (i==stop_i-1)?prev_i:index+num_states_y*num_states_z;
     }
+    else {
+        for (i = 0, index = 0, next_i = num_states_y*num_states_z; 
+             i < num_states_x; i++) {
+            for(j = 0, prev_j = index - num_states_z, next_j = index + num_states_z; j < num_states_y; j++) {
+                
+		    	for(k = 0, prev_k = index - 1, next_k = index + 1; k < num_states_z;
+                    k++, index++, prev_i++, next_i++, prev_j++, next_j++, next_k++, prev_k++) {
+                    
+                    if(i==0||i==stop_i||j==0||j==stop_j||k==0||k==stop_k)
+                    {
+                        //set to zero to prevent currents altering concentrations at the boundary
+                        ydot[index] = 0; 
+                    }
+                    else
+                    {
+                        ydot[index] += rate_x * (states[prev_i] -  
+                            2.0 * states[index] + states[next_i]);
+    
+                        ydot[index] += rate_y * (states[prev_j] - 
+                            2.0 * states[index] + states[next_j]);
+
+                        ydot[index] += rate_z * (states[prev_k] - 
+                            2.0 * states[index] + states[next_k]);
+                    }
+                }
+                prev_j = index - num_states_z;
+                next_j = index + num_states_z;
+            }
+            prev_i = index - num_states_y*num_states_z;
+            next_i = index + num_states_y*num_states_z;
+        }
+    }
+/*
+        for (i = 1, index = (num_states_y+1)*num_states_z + 1,
+             prev_i = num_states_z + 1, next_i = (2*num_states_y+1)*num_states_z + 1; 
+             i < stop_i; i++) {
+            for (j = 1, prev_j = index - num_states_z, next_j = index + num_states_z; j < stop_j; j++) {
+                
+		    	for(k = 1, prev_k = index - 1, next_k = index + 1; k < stop_k;
+                    k++, index++, prev_i++, next_i++, prev_j++, next_j++, next_k++) {
+                    if(index != i*num_states_y*num_states_z + j*num_states_z + k)
+                    {
+                        fprintf(stderr,"%i \t %i %i %i\n", index,i,j,k);
+                    }
+                    if(prev_i != (i-1)*num_states_y*num_states_z + j*num_states_z + k)
+                    {
+                        fprintf(stderr,"prev_i %i %i \t %i %i %i\n", prev_i,(i-1)*num_states_y*num_states_z + j*num_states_z + k,i,j,k);
+                    }
+                    if(next_i != (i+1)*num_states_y*num_states_z + j*num_states_z + k)
+                    {
+                        fprintf(stderr,"next_i %i %i \t %i %i %i\n", next_i,(i+1)*num_states_y*num_states_z + j*num_states_z + k,i,j,k);
+                    }
+                    if(prev_j != i*num_states_y*num_states_z + (j-1)*num_states_z + k)
+                    {
+                        fprintf(stderr,"prev_j %i %i \t %i %i %i\n", prev_j,i*num_states_y*num_states_z + (j-1)*num_states_z + k,i,j,k);
+                    }
+                    if(next_j != i*num_states_y*num_states_z + (j+1)*num_states_z + k)
+                    {
+                        fprintf(stderr,"next_j %i %i \t %i %i %i\n", next_j,i*num_states_y*num_states_z + (j+1)*num_states_z + k,i,j,k);
+                    }
+                    if(prev_k != i*num_states_y*num_states_z + j*num_states_z + k-1)
+                    {
+                        fprintf(stderr,"prev_k %i %i \t %i %i %i\n", prev_k,i*num_states_y*num_states_z + j*num_states_z + k-1,i,j,k);
+                    }
+                    if(next_k != i*num_states_y*num_states_z + j*num_states_z + k+1)
+                    {
+                        fprintf(stderr,"next_k %i %i \t %i %i %i\n", next_k,i*num_states_y*num_states_z + j*num_states_z + k+1,i,j,k);
+                    }
+
+                    ydot[index] += rate_x * (states[prev_i] -  
+                        2.0 * states[index] + states[next_i]);
+    
+                    ydot[index] += rate_y * (states[prev_j] - 
+                        2.0 * states[index] + states[next_j]);
+
+                    ydot[index] += rate_z * (states[prev_k] - 
+                        2.0 * states[index] + states[next_k]);
+
+                }
+                index += 2; //skip z boundaries 
+                //prev_j = index - num_states_z;
+                //next_j = index + num_states_z;
+            }
+            index += 2*num_states_z; //skip y boundaries
+            //prev_i = index - num_states_y*num_states_z;
+            //next_i = index + num_states_y*num_states_z;
+        }
+    }
+    */
 }
 
 //p1 = b  p2 = states 

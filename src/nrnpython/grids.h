@@ -81,12 +81,13 @@ typedef struct {
     double scale_factor;
 } Current_Triple;
 
-typedef void (*ReactionRate)(double**, double**, double*, double*, double*, double**, double);
-typedef void (*ECSReactionRate)(double*, double*);
+typedef void (*ReactionRate)(double**, double**, double**, double*, double*, double*, double*, double**, double);
+typedef void (*ECSReactionRate)(double*, double*, double*);
 typedef struct Reaction {
 	struct Reaction* next;
 	ECSReactionRate reaction;
 	unsigned int num_species_involved;
+    unsigned int num_params_involved;
 	double** species_states;
 	unsigned char* subregion;
 	unsigned int region_size;

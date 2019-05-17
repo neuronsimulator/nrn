@@ -93,12 +93,12 @@ class GeneralizedReaction(object):
         sources_ecs = [r for r in self._sources if isinstance(r(),species.SpeciesOnExtracellular)]
         dests_ecs = [r for r in self._dests if isinstance(r(),species.SpeciesOnExtracellular)]
         # locate the regions containing all species (including the one that changes)
-        if all(sptr() for sptr in sources) and all(dptr() for dptr in dests):
-            active_regions = [r for r in self._regions if all(sptr().indices(r) for sptr in sources + dests)]
-        else:
-            active_regions = []
+        #if all(sptr() for sptr in sources) and all(dptr() for dptr in dests):
+        #    active_regions = [r for r in self._regions if all(sptr().indices(r) for sptr in sources + dests)]
+        #else:
+        #    active_regions = []
         node_indices_append = node_indices.append
-        for r in active_regions:
+        for r in self._active_regions:
             for sec in r._secs:
                 for seg in sec:
                     node_indices_append(seg.node_index())

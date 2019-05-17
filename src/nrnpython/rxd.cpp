@@ -474,15 +474,19 @@ static void ode_solve(double t, double dt, double* p1, double* p2)
 
 static void ode_abs_tol(double* p1)
 {
-    int i;
+    int i, j;
     double* y = p1 + _cvode_offset;
     if(species_indices != NULL)
     {
         SpeciesIndexList* list;
         for(list = species_indices; list->next != NULL; list = list->next)
         {
-            for(i=0; i<list->length; i++)
-                y[list->indices[i]] *= list->atolscale;
+            for(i=0, j=0; i<list->length; i++)
+            {
+                for(; j < _rxd_num_zvi  && _rxd_zero_volume_indices[j] <= list->indices[i]; j++);
+                y[list->indices[i] - j] *= list->atolscale; 
+            }
+
         }
     }
 }
@@ -562,13 +566,14 @@ extern "C" void setup_currents(int num_currents, int num_fluxes, int num_nodes, 
         _memb_cur_charges[i] = (int*)malloc(sizeof(int)*num_species[i]);
         memcpy(_memb_cur_charges[i], &charges[k], sizeof(int)*num_species[i]);
         _memb_cur_ptrs[i] = (PyHocObject**)malloc(sizeof(PyHocObject*)*num_species[i]);
-        memcpy(_memb_cur_ptrs[i], &ptrs[k], sizeof(PyHocObject*)*num_species[i]);
+        //memcpy(_memb_cur_ptrs[i], &ptrs[k], sizeof(PyHocObject*)*num_species[i]);
         _memb_cur_mapped_ecs[i] = (int**)malloc(sizeof(int*)*num_species[i]);
         _memb_cur_mapped[i] =  (int**)malloc(sizeof(int*)*num_species[i]);
 
 
         for(j = 0; j < num_species[i]; j++, k++)
         {
+            _memb_cur_ptrs[i][j] = ptrs[k];
             _memb_cur_mapped[i][j] = (int*)malloc(2*sizeof(int));
             _memb_cur_mapped_ecs[i][j] = (int*)malloc(2*sizeof(int));
             for(side = 0; side < 2; side++)
@@ -576,26 +581,27 @@ extern "C" void setup_currents(int num_currents, int num_fluxes, int num_nodes, 
                 _memb_cur_mapped[i][j][side] = mapped[2*k + side];
                 _memb_cur_mapped_ecs[i][j][side] = mapped_ecs[2*k + side];
             }
+
             if(_memb_cur_mapped[i][j][0] != SPECIES_ABSENT)
             {
                 _membrane_scale_lookup[cur_idxs[_memb_cur_mapped[i][j][0]]] = i;
                 _membrane_flux_lookup[cur_idxs[_memb_cur_mapped[i][j][0]]] = i;
+                if(_memb_cur_mapped[i][j][1] == SPECIES_ABSENT)
+                {
+                    _rxd_induced_currents_grid[_memb_cur_mapped[i][j][0]] = _memb_cur_mapped_ecs[i][j][0];
+                    _rxd_induced_currents_ecs_idx[_memb_cur_mapped[i][j][0]] = _memb_cur_mapped_ecs[i][j][1];
+                }
             }
             if(_memb_cur_mapped[i][j][1] != SPECIES_ABSENT)
             {
-                _membrane_scale_lookup[cur_idxs[_memb_cur_mapped[i][j][1]]] = i;    //Invalid write of size 4
+                _membrane_scale_lookup[cur_idxs[_memb_cur_mapped[i][j][1]]] = i;
                 _membrane_flux_lookup[cur_idxs[_memb_cur_mapped[i][j][1]]] = i;
-            }
-            if( _memb_cur_mapped[i][j][0] == SPECIES_ABSENT)
-            {
-                _rxd_induced_currents_grid[_memb_cur_mapped[i][j][1]] = _memb_cur_mapped_ecs[i][j][0];
-                _rxd_induced_currents_ecs_idx[_memb_cur_mapped[i][j][1]] = _memb_cur_mapped_ecs[i][j][1];
-            }
-            else if(_memb_cur_mapped[i][j][1] == SPECIES_ABSENT)
-
-            {
-                _rxd_induced_currents_grid[_memb_cur_mapped[i][j][0]] = _memb_cur_mapped_ecs[i][j][0];
-                _rxd_induced_currents_ecs_idx[_memb_cur_mapped[i][j][0]] = _memb_cur_mapped_ecs[i][j][1];
+            
+                if(_memb_cur_mapped[i][j][0] == SPECIES_ABSENT)
+                {
+                    _rxd_induced_currents_grid[_memb_cur_mapped[i][j][1]] = _memb_cur_mapped_ecs[i][j][0];
+                    _rxd_induced_currents_ecs_idx[_memb_cur_mapped[i][j][1]] = _memb_cur_mapped_ecs[i][j][1]; 
+                }
             }
         }
     }
@@ -621,8 +627,8 @@ extern "C" void setup_currents(int num_currents, int num_fluxes, int num_nodes, 
     }
 
     /*index into arrays of currents current*/
-    _cur_indices = (int*)malloc(sizeof(int)*num_fluxes);  
-    memcpy(_cur_indices, cur_idxs, sizeof(int)*num_fluxes); //Invalid read of size 8
+    _cur_indices = (int*)malloc(sizeof(int)*num_currents);
+    memcpy(_cur_indices, cur_idxs, sizeof(int)*num_currents);
 
     /*index into arrays of nodes/states*/
     _cur_node_indices = (int*)malloc(sizeof(int)*num_currents);
@@ -653,16 +659,19 @@ static void _currents(double* rhs)
         rhs[idx] -= _memb_net_charges[i] * _rxd_induced_flux[i]/2.0;
         for(j = 0; j < _memb_species_count[i]; j++)
         {
-            current = (double)_memb_cur_charges[i][j] * _rxd_induced_flux[i]/2.0;
+            current = (double)_memb_cur_charges[i][j] * _rxd_induced_flux[i];
 
-            *(_memb_cur_ptrs[i][j]->u.px_) += current;
-
+           *(_memb_cur_ptrs[i][j]->u.px_) += current;
+ 
             for(side = 0; side < 2; side++)
             {
                 if(_memb_cur_mapped[i][j][side] == SPECIES_ABSENT)
                 {
-                        /*Extracellular region is within the ECS grid*/ 
-                        _rxd_induced_currents_ecs[_memb_cur_mapped[i][j][(side+1)%2]] -= current;
+                        /*Extracellular region is within the ECS grid*/
+                        if(_memb_cur_mapped[i][j][(side+1)%2] != SPECIES_ABSENT) 
+                        {
+                            _rxd_induced_currents_ecs[_memb_cur_mapped[i][j][(side+1)%2]] -= current;
+                        }
                 }
                 else
                 {
@@ -675,7 +684,7 @@ static void _currents(double* rhs)
 }
 
 extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, int thread_id) {
-        if(initialized && structure_change_cnt != prev_structure_change_cnt)
+        if(method > 0 && initialized && structure_change_cnt != prev_structure_change_cnt)
         {
             /*TODO: Exclude irrelevant (non-rxd) structural changes*/
             _setup_matrices(); 
@@ -841,16 +850,22 @@ static void unset_reaction_indices()
 }
 
 
-extern "C" void register_rate(int nspecies, int nregions, int nseg, int* sidx, int necs, int* ecs_ids, int* ecsidx, int nmult, double* mult, PyHocObject** vptrs, ReactionRate f)
+extern "C" void register_rate(int nspecies, int nparam, int nregions, int nseg,
+                              int* sidx, int necs, int necsparam, int* ecs_ids,
+                              int* ecsidx, int nmult, double* mult,
+                              PyHocObject** vptrs, ReactionRate f)
 {
     int i,j,k,idx, ecs_id, ecs_index, ecs_offset;
+    unsigned char counted;
     Grid_node* grid;
     ICSReactions* react = (ICSReactions*)malloc(sizeof(ICSReactions));
     react->reaction = f;
     react->num_species = nspecies;
     react->num_regions = nregions;
+    react->num_params = nparam;
     react->num_segments = nseg;
-    react->num_ecs_species = necs; 
+    react->num_ecs_species = necs;
+    react->num_ecs_params = necsparam; 
     react->num_mult = nmult;
     react->icsN = 0;
     react->ecsN = 0;
@@ -865,12 +880,12 @@ extern "C" void register_rate(int nspecies, int nregions, int nseg, int* sidx, i
         react->vptrs = NULL;
     }
     react->state_idx = (int***)malloc(nseg*sizeof(double**));
-    for(i = 0, idx=0; i < nseg; i++)
+    for(i = 0, idx = 0; i < nseg; i++)
     {
-        react->state_idx[i] = (int**)malloc(nspecies*sizeof(double*));
-        for(j = 0; j < nspecies; j++)
+        react->state_idx[i] = (int**)malloc((nspecies + nparam)*sizeof(int*));
+        for(j = 0; j < nspecies + nparam; j++)
         {
-            react->state_idx[i][j] = (int*)malloc(nregions*sizeof(double*));
+            react->state_idx[i][j] = (int*)malloc(nregions*sizeof(int));
             for(k = 0; k < nregions; k++, idx++)
             {
                 if(sidx[idx] < 0)
@@ -880,7 +895,8 @@ extern "C" void register_rate(int nspecies, int nregions, int nseg, int* sidx, i
                 else
                 {
                     react->state_idx[i][j][k] = sidx[idx];
-                    if(i==0) react->icsN++;
+                    if(i==0 && j < nspecies)
+                        react->icsN++;
                 }
             }
         } 
@@ -895,23 +911,23 @@ extern "C" void register_rate(int nspecies, int nregions, int nseg, int* sidx, i
         }
     }
 
-    if(react->num_ecs_species > 0)
+    if(react->num_ecs_species + react->num_ecs_params > 0)
     {
         react->ecs_state = (double***)malloc(nseg*sizeof(double**));
         react->ecs_index = (int**)malloc(nseg*sizeof(int*));
         for(i = 0; i < nseg; i++)
         {
-            react->ecs_state[i] = (double**)malloc(necs*sizeof(double*));
-            react->ecs_index[i] = (int*)malloc(necs*sizeof(int));
+            react->ecs_state[i] = (double**)malloc((necs+necsparam)*sizeof(double*));
+            react->ecs_index[i] = (int*)malloc((necs+necsparam)*sizeof(int));
         }
-        for(j = 0; j < necs; j++)
+        for(j = 0; j < necs + necsparam; j++)
         {
             ecs_offset = num_states - _rxd_num_zvi;
             for(ecs_id = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, ecs_id++)
 		    {
 	            if (ecs_id == ecs_ids[j])
 		    	{
-                    for(i = 0; i < nseg; i++)
+                    for(i = 0, counted=FALSE; i < nseg; i++)
                     {
                         //react->ecs_state[i][j][k] = (double*)malloc(sizeof(double));
                         //nseg x nregion x nspecies
@@ -921,7 +937,15 @@ extern "C" void register_rate(int nspecies, int nregions, int nseg, int* sidx, i
                         {
                             react->ecs_state[i][j] = &(grid->states[ecs_index]);
                             react->ecs_index[i][j] = ecs_offset + ecs_index;
-                            if(i==0) react->ecsN++;
+                            if(j < necs && !counted)
+                            {
+                                react->ecsN++;
+                                counted=TRUE;
+                            }
+                        }
+                        else
+                        {
+                            react->ecs_state[i][j] = NULL;
                         }
                     }
                 }
@@ -932,7 +956,7 @@ extern "C" void register_rate(int nspecies, int nregions, int nseg, int* sidx, i
     else
     {
         react->ecs_state = NULL;
-    }   
+    }
     if(_reactions == NULL)
     {
         _reactions = react;
@@ -962,7 +986,7 @@ extern "C" void clear_rates()
             }
             free(react->state_idx[i]);
            
-            if(react->num_ecs_species > 0)
+            if(react->num_ecs_species + react->num_ecs_params > 0)
             {
                 free(react->ecs_state[i]);
             }
@@ -1499,8 +1523,9 @@ void _rhs_variable_step(const double t, const double* p1, double* p2)
 void get_reaction_rates(ICSReactions* react, double* states, double* rates, double* ydot)
 {
     int segment;
-    int i, j, idx;
+    int i, j, k, idx;
     double** states_for_reaction = (double**)malloc(react->num_species*sizeof(double*));
+    double** params_for_reaction = (double**)malloc(react->num_params*sizeof(double*));
     double** result_array = (double**)malloc(react->num_species*sizeof(double*));
     double* mc_mult = NULL;
     double** flux = NULL;
@@ -1508,17 +1533,20 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates, doub
         mc_mult = (double*)malloc(react->num_mult*sizeof(double));
 
     double* ecs_states_for_reaction = NULL;
+    double* ecs_params_for_reaction = NULL;
     double* ecs_result = NULL;
     double v = 0;
-    if(react->num_ecs_species>0)
+    if(react->num_ecs_species > 0)
     {
         ecs_states_for_reaction = (double*)malloc(react->num_ecs_species*sizeof(double));
         ecs_result = (double*)malloc(react->num_ecs_species*sizeof(double));
     }
-    
+    if(react->num_ecs_params > 0)
+        ecs_params_for_reaction = (double*)malloc(react->num_ecs_params*sizeof(double));
+
     if(_membrane_flux)
     {
-        MEM_ZERO(_rxd_induced_flux,sizeof(double)*_memb_curr_total);
+        MEM_ZERO(_rxd_induced_flux, sizeof(double)*_memb_curr_total);
         flux = (double**)malloc(react->icsN*sizeof(double*));
         for(i = 0; i < react->icsN; i++)
             flux[i] = (double*)malloc(react->num_regions*sizeof(double));
@@ -1530,6 +1558,8 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates, doub
         result_array[i] = (double*)malloc(react->num_regions*sizeof(double));
         
     }
+    for(i = 0; i < react->num_params; i++)
+        params_for_reaction[i] = (double*)calloc(react->num_regions,sizeof(double));
     for(segment = 0; segment < react->num_segments; segment++)
     {
         for(i = 0; i < react->num_species; i++)
@@ -1542,11 +1572,26 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates, doub
         	    }
                 else
                 {
-                    states_for_reaction[i][j] = -1.0;
+                    states_for_reaction[i][j] = SPECIES_ABSENT;
                 }
 	        }
             MEM_ZERO(result_array[i],react->num_regions*sizeof(double));
 	    }
+        for(k = 0; i < react->num_species + react->num_params; i++, k++)
+        {
+            for(j = 0; j < react->num_regions; j++)
+	        {
+                if(react->state_idx[segment][i][j] != SPECIES_ABSENT)
+                {
+            	    params_for_reaction[k][j] = states[react->state_idx[segment][i][j]];
+        	    }
+                else
+                {
+                    params_for_reaction[k][j] = SPECIES_ABSENT;
+                }
+	        }
+	    }
+
 
 	    for(i = 0; i < react->num_ecs_species; i++)
 	    {
@@ -1555,6 +1600,13 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates, doub
 	         	ecs_states_for_reaction[i] = *(react->ecs_state[segment][i]);
 	        }
 	    }
+        for(k = 0; i < react->num_ecs_species + react->num_ecs_params; i++, k++)
+        {
+	        if(react->ecs_state[segment][i] != NULL)
+	        {
+	         	ecs_params_for_reaction[k] = *(react->ecs_state[segment][i]);
+	        }
+        }
         MEM_ZERO(ecs_result,react->num_ecs_species*sizeof(double));
 
         for(i = 0; i < react->num_mult; i++)
@@ -1565,7 +1617,7 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates, doub
         if(react->vptrs != NULL)
             v = *(react->vptrs[segment]);
 
-	    react->reaction(states_for_reaction, result_array, mc_mult, ecs_states_for_reaction, ecs_result, flux, v);
+	    react->reaction(states_for_reaction, params_for_reaction, result_array, mc_mult, ecs_states_for_reaction, ecs_params_for_reaction, ecs_result, flux, v);
         
         for(i = 0; i < react->num_species; i++)
         {
@@ -1621,8 +1673,8 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates, doub
 void solve_reaction(ICSReactions* react, double* states, double *bval, double* cvode_states, double* cvode_b)
 {
     int segment;
-    int i, j, idx, jac_i, jac_j, jac_idx;
-    int N = (react->icsN * react->num_regions) + react->ecsN;  /*size of Jacobian (number species*regions for a segments)*/
+    int i, j, k, idx, jac_i, jac_j, jac_idx;
+    int N = react->icsN + react->ecsN;  /*size of Jacobian (number species*regions for a segments)*/
     double pd;
     double dt = *dt_ptr;
     double dx = FLT_EPSILON;
@@ -1633,6 +1685,7 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double* c
     
     double** states_for_reaction = (double**)malloc(react->num_species*sizeof(double*));
     double** states_for_reaction_dx = (double**)malloc(react->num_species*sizeof(double*));
+    double** params_for_reaction = (double**)malloc(react->num_species*sizeof(double*));
     double** result_array = (double**)malloc(react->num_species*sizeof(double*));
     double** result_array_dx = (double**)malloc(react->num_species*sizeof(double*));
     double* mc_mult;
@@ -1641,16 +1694,21 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double* c
 
     double* ecs_states_for_reaction;
     double* ecs_states_for_reaction_dx;
+    double* ecs_params_for_reaction;
     double* ecs_result;
     double* ecs_result_dx;
     double v = 0;
-    if(react->num_ecs_species>0)
+    if(react->num_ecs_species > 0)
     {
         ecs_states_for_reaction = (double*)malloc(react->num_ecs_species*sizeof(double));
         ecs_states_for_reaction_dx = (double*)malloc(react->num_ecs_species*sizeof(double));
         ecs_result = (double*)malloc(react->num_ecs_species*sizeof(double));
         ecs_result_dx = (double*)malloc(react->num_ecs_species*sizeof(double));
     }
+
+    if(react->num_ecs_params > 0)
+        ecs_params_for_reaction = (double*)malloc(react->num_ecs_params*sizeof(double));
+
 
     for(i = 0; i < react->num_species; i++)
     {
@@ -1659,6 +1717,9 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double* c
         result_array[i] = (double*)malloc(react->num_regions*sizeof(double));
         result_array_dx[i] = (double*)malloc(react->num_regions*sizeof(double));
     }
+    for(i = 0; i < react->num_params; i++)
+        params_for_reaction[i] = (double*)malloc(react->num_regions*sizeof(double));
+
     for(segment = 0; segment < react->num_segments; segment++)
     {
         if(react->vptrs != NULL)
@@ -1675,7 +1736,7 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double* c
         	    }
                 else
                 {
-                    states_for_reaction[i][j] = -1.0;
+                    states_for_reaction[i][j] = SPECIES_ABSENT;
                     states_for_reaction_dx[i][j] = states_for_reaction[i][j];
                 }
 
@@ -1683,6 +1744,22 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double* c
             MEM_ZERO(result_array[i],react->num_regions*sizeof(double));
             MEM_ZERO(result_array_dx[i],react->num_regions*sizeof(double));
 	    }
+        for(k = 0; i < react->num_species + react->num_params; i++, k++)
+        {
+            for(j = 0; j < react->num_regions; j++)
+	        {
+                if(react->state_idx[segment][i][j] != SPECIES_ABSENT)
+                {
+            	    params_for_reaction[k][j] = states[react->state_idx[segment][i][j]];
+        	    }
+                else
+                {
+                    params_for_reaction[k][j] = SPECIES_ABSENT;
+                }
+
+	        }
+        }
+
 
 	    for(i = 0; i < react->num_ecs_species; i++)
 	    {
@@ -1699,15 +1776,28 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double* c
 	            ecs_states_for_reaction_dx[i] = ecs_states_for_reaction[i];
 	        }
         }
-        MEM_ZERO(ecs_result,react->num_ecs_species*sizeof(double));
-        MEM_ZERO(ecs_result_dx,react->num_ecs_species*sizeof(double));
+	    for(k = 0; i < react->num_ecs_species + react->num_ecs_params; i++, k++)
+	    {
+	        if(react->ecs_state[segment][i] != NULL)
+	        {
+                    ecs_params_for_reaction[k] = *(react->ecs_state[segment][i]);
+	        }
+        }
+
+        if(react->num_ecs_species > 0)
+        {
+            MEM_ZERO(ecs_result,react->num_ecs_species*sizeof(double));
+            MEM_ZERO(ecs_result_dx,react->num_ecs_species*sizeof(double));
+        }
         
         for(i = 0; i < react->num_mult; i++)
         {
             mc_mult[i] = react->mc_multiplier[i][segment];
         }
 
-	    react->reaction(states_for_reaction, result_array, mc_mult, ecs_states_for_reaction, ecs_result, NULL, v);
+	    react->reaction(states_for_reaction, params_for_reaction, result_array,
+                        mc_mult, ecs_states_for_reaction,
+                        ecs_params_for_reaction, ecs_result, NULL, v);
 
 	    /*Calculate I - Jacobian for ICS reactions*/
         for(i = 0, idx = 0; i < react->num_species; i++)
@@ -1728,7 +1818,11 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double* c
 				    /* TODO: Handle approximating the Jacobian at a function upper
 				    * limit, e.g. acos(1)
 	       	        */
-				    react->reaction(states_for_reaction_dx, result_array_dx, mc_mult, ecs_states_for_reaction, ecs_result_dx, NULL, v);
+				    react->reaction(states_for_reaction_dx, params_for_reaction,
+                                    result_array_dx, mc_mult,
+                                    ecs_states_for_reaction,
+                                    ecs_params_for_reaction, ecs_result_dx,
+                                    NULL, v);
 	
 	       	    	for (jac_i = 0, jac_idx = 0; jac_i < react->num_species; jac_i++)
 					{
@@ -1779,7 +1873,9 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double* c
                 /* TODO: Handle approximating the Jacobian at a function upper
 				 * limit, e.g. acos(1)
 	       	     */
-				react->reaction(states_for_reaction, result_array_dx, mc_mult, ecs_states_for_reaction_dx, ecs_result_dx, NULL, v);
+				react->reaction(states_for_reaction, params_for_reaction, result_array_dx,
+                                mc_mult, ecs_states_for_reaction_dx,
+                                ecs_params_for_reaction, ecs_result_dx, NULL, v);
 	
 	       	    for (jac_i = 0, jac_idx = 0; jac_i < react->num_species; jac_i++)
 				{
@@ -1814,9 +1910,8 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double* c
             }
 	    }
         // solve for x, destructively
-        tracecatch(LUfactor(jacobian, pivot);
-	        LUsolve(jacobian, pivot, b, x);,
-            "solve_reaction");  //Conditional jump or move depends on uninitialised value(s)
+        LUfactor(jacobian, pivot);
+	    LUsolve(jacobian, pivot, b, x);
 
         if(bval != NULL) //variable-step
         {
@@ -1845,9 +1940,7 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double* c
 	            {
 	                idx = react->state_idx[segment][i][j];
 	                if(idx != SPECIES_ABSENT)
-	                {
-                        states[idx] += v_get_val(x,jac_idx++);
-	                }
+                        states[idx] += v_get_val(x, jac_idx++);
 	            }
 	        }
             for(i = 0; i < react->num_ecs_species; i++)
@@ -1869,6 +1962,8 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double* c
         free(result_array[i]);
         free(result_array_dx[i]);
     }
+    for(i = 0; i < react->num_params; i++)
+        free(params_for_reaction[i]);
     if(react->num_mult > 0)
         free(mc_mult);
     free(states_for_reaction_dx);
@@ -1882,6 +1977,8 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double* c
 	    free(ecs_result);
 	    free(ecs_result_dx);
     }
+    if(react->num_ecs_params > 0)
+        free(ecs_params_for_reaction);
 }
 
 void do_ics_reactions(double* states, double* b, double* cvode_states, double* cvode_b)

@@ -10,6 +10,7 @@ from .rxdException import RxDException
 from . import initializer
 import collections
 import ctypes
+import re
 
 #Now set in rxd.py
 #set_nonvint_block = neuron.nrn_dll_sym('set_nonvint_block')
@@ -74,8 +75,9 @@ _delete_by_id.argtypes = [ctypes.c_int]
 # The difference here is that defined species only exists after rxd initialization
 _all_species = []
 _defined_species = {}
+_all_defined_species = []
 def _get_all_species():
-    return _defined_species
+    return _all_defined_species
 
 _extracellular_diffusion_objects = weakref.WeakKeyDictionary()
 _intracellular_diffusion_objects = weakref.WeakKeyDictionary()
@@ -93,7 +95,7 @@ def _1d_submatrix_n():
     """elif not _has_3d:
         return len(node._states)
     else:
-        return numpy.min([sp()._indices3d() for sp in list(_get_all_species().values()) if sp() is not None])"""
+        return numpy.min([sp()._indices3d() for sp in list(_get_all_species()) if sp() is not None])"""
             
 _extracellular_has_setup = False
 _extracellular_exists = False
@@ -125,7 +127,7 @@ def _ensure_extracellular():
         _extracellular_set_initialize(do_initialize_fptr)
     _extracellular_exists = True
 
-
+_ontology_id = re.compile('^\[[a-zA-Z][a-zA-Z0-9_]*:[a-zA-Z0-9_]*\]|[a-zA-Z][a-zA-Z0-9_]*:[a-zA-Z0-9_]*$')
 
 class _SpeciesMathable(object):
     # support arithmeticing
@@ -188,7 +190,12 @@ class _SpeciesMathable(object):
             ics_instance = self._intracellular_instances[reg]
             return ics_instance._semi_compile(reg)
         if isinstance(reg, region.Region) and reg._secs1d:
-            return 'species[%d][%d]' % (self._id, reg._id)
+            if reg in self._regions:
+                return 'species[%d][%d]' % (self._id, reg._id)
+            elif len(self._regions) == 1:
+                return 'species[%d][%d]' % (self._id, self._regions[0]._id)
+            else:
+                raise RxDException("Species %r is not defined on region %r." % (self, reg))
     
     def _involved_species(self, the_dict):
         the_dict[self._semi_compile] = weakref.ref(self)
@@ -214,6 +221,14 @@ class SpeciesOnExtracellular(_SpeciesMathable):
         self._extracellular = weakref.ref(extracellular)
         self._id = _species_count
     
+    def __repr__(self):
+        return '%r[%r]' % (self._species(), self._extracellular()._region)
+        
+    def _short_repr(self):
+        return '%s[%s]' % (self._species()._short_repr(), self._extracellular()._region._short_repr())
+
+    def __str__(self):
+        return '%s[%s]' % (self._species()._short_repr(), self._extracellular()._region._short_repr())
 
     @property
     def states3d(self):
@@ -353,9 +368,8 @@ class SpeciesOnRegion(_SpeciesMathable):
         """
         if r == self._region():
             return self
-        else:
-            return SpeciesOnRegion(self._species, None)
-    
+        raise RxDException('no such region')
+ 
     @property
     def states(self):
         """A vector of all the states corresponding to this species"""
@@ -694,6 +708,12 @@ class _ExtracellularSpecies(_SpeciesMathable):
                 self.states[:] = getattr(h,'%so0_%s_ion' % (self._species, self._species))
             else:
                 self.states[:] = 0
+        if self._boundary_conditions:
+            for idx in [0, -1]:
+                self.states[idx, :, :] = self._boundary_conditions
+                self.states[:, idx, :] = self._boundary_conditions
+                self.states[:, :, idx] = self._boundary_conditions
+
 
     def _ion_register(self):
         """modified from neuron.rxd.species.Species._ion_register"""
@@ -786,8 +806,10 @@ class _ExtracellularSpecies(_SpeciesMathable):
         _set_grid_currents(grid_list, self._grid_id, grid_indices, neuron_pointers, scale_factors)
     
     def _semi_compile(self, reg):
-        return 'species_3d[%d]' % (self._grid_id)
-
+        if isinstance(_defined_species[self._species][self._region](), Parameter):
+            return 'params_3d[%d]' %  (self._grid_id)
+        else:
+            return 'species_3d[%d]' % (self._grid_id)
 
 
 
@@ -798,7 +820,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
 #       that two regions (e.g. apical and other_dendrites) are connected?
 
 class Species(_SpeciesMathable):
-    def __init__(self, regions=None, d=0, name=None, charge=0, initial=None, atolscale=1, ecs_boundary_conditions=None):
+    def __init__(self, regions=None, d=0, name=None, charge=0, initial=None, atolscale=1, ecs_boundary_conditions=None, represents=None):
         """s = rxd.Species(regions, d = 0, name = None, charge = 0, initial = None, atolscale=1)
     
         Declare a species.
@@ -818,6 +840,9 @@ class Species(_SpeciesMathable):
         atolscale -- scale factor for absolute tolerance in variable step integrations
 
         ecs_boundary_conditions  -- if Extracellular rxd is used ecs_boundary_conditions=None for zero flux boundaries or if ecs_boundary_conditions=the concentration at the boundary.
+
+        represents -- optionally provide CURIE (Compact URI) to annotate what the species represents e.g. CHEBI:29101 for sodium(1+)
+
         Note:
 
         charge must match the charges specified in NMODL files for the same ion, if any.
@@ -845,6 +870,10 @@ class Species(_SpeciesMathable):
         self.initial = initial
         self._atolscale = atolscale
         self._ecs_boundary_conditions = ecs_boundary_conditions
+        if represents and not _ontology_id.match(represents):
+            raise RxDException("The represents=%s is not valid CURIE" % represents)
+        else:
+            self.represents = represents
         _all_species.append(weakref.ref(self))
         # declare an update to the structure of the model (the number of differential equations has changed)
         nrn_dll_sym('structure_change_cnt', ctypes.c_int).value += 1
@@ -894,13 +923,27 @@ class Species(_SpeciesMathable):
         if name is not None:
             if not isinstance(name, str):
                 raise RxDException('Species name must be a string')
-            if name in _defined_species and _defined_species[name]() is not None:
-                raise RxDException('Species "%s" previously defined: %r' % (name, _defined_species[name]()))
+            if name in _defined_species:
+                spsecs = []
+                for r in regions:
+                    if r in _defined_species[name]:
+                        raise RxDException('Species "%s" previously defined on region: %r' % (name, r))
+                    if hasattr(r,'_secs'): spsecs += r._secs
+                spsecs = set(spsecs)
+                for r in  _defined_species[name]:
+                    if any(spsecs.intersection(r._secs)):
+                        raise RxDException('Species "%s" previously defined on a region %r that overlaps with regions: %r' % (name, r, self._regions))
         else:
             name = _species_count
         self._id = _species_count
         _species_count += 1
-        _defined_species[name] = weakref.ref(self)
+        if name not in _defined_species:
+            _defined_species[name] = weakref.WeakKeyDictionary()
+        self._species = weakref.ref(self)
+        for r in regions:
+            _defined_species[name][r] = self._species
+        _all_defined_species.append(self._species)
+
         if regions is None:
             raise RxDException('Must specify region where species is present')
         if hasattr(regions, '__len__'):
@@ -915,7 +958,7 @@ class Species(_SpeciesMathable):
         if self._extracellular_regions:
             # make sure that the extracellular callbacks are configured, if necessary
             _ensure_extracellular()
-        self._species = weakref.ref(self)        
+              
         # at this point self._name is None if unnamed or a string == name if
         # named
         self._ion_register()                     
@@ -992,14 +1035,20 @@ class Species(_SpeciesMathable):
             # probably at exit -- not worth tidying up
             return
         
-        global _all_species, _defined_species
+        global _all_species, _defined_species, _all_defined_species
         try:
             from . import section1d, node
         except:
             # may not be able to import on exit
             return 
         
-        if self.name in _defined_species: del _defined_species[self.name]
+        if self.name in _defined_species:
+            for r in self.regions:
+                if r in _defined_species[self.name]:
+                    del _defined_species[self.name][r]
+            if not any(_defined_species[self.name]):
+                del _defined_species[self.name]
+        _all_defined_species = list(filter(lambda x: x() is not None or x() == self, _all_defined_species))
         _all_species = list(filter(lambda x: x() is not None or x() == self, _all_species))
         # delete the secs
         if hasattr(self,'_secs') and self._secs:
@@ -1091,7 +1140,7 @@ class Species(_SpeciesMathable):
         """Return a reference to those members of this species lying on the specific region @varregion.
         The resulting object is a SpeciesOnRegion.
         This is useful for defining reaction schemes for MultiCompartmentReaction."""
-        if isinstance(r, region.Region):
+        if isinstance(r, region.Region) and r in self._regions:
             return SpeciesOnRegion(self, r)
         elif isinstance(r, region.Extracellular):
             if not hasattr(self,'_extracellular_instances'):
@@ -1252,8 +1301,8 @@ class Species(_SpeciesMathable):
     def _setup_currents(self, indices, scales, ptrs, cur_map):
         from . import rxd
         if self.name:
-            cur_map[self.name + 'i'] = {}
-            cur_map[self.name + 'o'] = {}
+            if self.name + 'i' not in cur_map: cur_map[self.name + 'i'] = {}
+            if self.name + 'o' not in cur_map: cur_map[self.name + 'o'] = {}
         # 1D part
         for s in self._secs:
             s._setup_currents(indices, scales, ptrs, cur_map)
@@ -1334,7 +1383,7 @@ class Species(_SpeciesMathable):
                 for node in self.nodes:
                     node.concentration = self.initial
             if not skip_transfer:
-                self._transfer_to_legacy()            
+                self._transfer_to_legacy() 
         else:
             self._import_concentration()
     
@@ -1425,7 +1474,8 @@ class Species(_SpeciesMathable):
 
 
     def __repr__(self):
-        return 'Species(regions=%r, d=%r, name=%r, charge=%r, initial=%r)' % (self._regions, self._d, self._name, self._charge, self.initial)
+        represents = ', represents=%s' % self.represents if self.represents else ''
+        return 'Species(regions=%r, d=%r, name=%r, charge=%r, initial=%r%s)' % (self._regions, self._d, self._name, self._charge, self.initial, represents)
     
     def _short_repr(self):
         if self._name is not None:
@@ -1445,13 +1495,97 @@ def xyz_by_index(indices):
     else:
         index = [indices]
     #TODO: make sure to include Node3D
-    return [[nd.x3d, nd.y3d, nd.z3d] for sp in _get_all_species().values() for s in sp()._secs for nd in s.nodes + sp()._nodes if sp() if nd._index in index]
+    return [[nd.x3d, nd.y3d, nd.z3d] for sp in _get_all_species() for s in sp()._secs for nd in s.nodes + sp()._nodes if sp() if nd._index in index]
 
 
 class Parameter(Species):
-    def __repr__(self):
-        return 'Parameter(regions=%r, d=%r, name=%r, charge=%r, initial=%r)' % (self._regions, self._d, self._name, self._charge, self.initial)
+    """
+    s = rxd.Parameter(regions, name=None, charge=0, value=None, represents=None)
+        
+    Declare a parameter, it can be used in place of a rxd.Species, but unlike rxd.Speices a parameter will not change.
+    
+    Parameters:
+    regions -- a Region or list of Region objects containing the species
+    
+    name -- the name of the parameter; used for syncing with HOC (optional; default is none)
+    
+    charge -- the charge of the Parameter (optional; default is 0)
+    
+    value -- the value or None (if None, then imports from HOC if the species is defined at finitialize, else 0)
+    
+    represents -- optionally provide CURIE (Compact URI) to annotate what the species represents e.g. CHEBI:29101 for sodium(1+)
 
+    Note:
+    charge must match the charges specified in NMODL files for the same ion, if any.
+    """
+    def __init__(self, *args, **kwargs):
+        if 'value' in kwargs:
+            if 'initial' in kwargs and kwargs['initial']  and kwargs['initial'] != kwargs['value']:
+                raise RxdException("Parameter cannot be assigned both a 'value=%g' and 'initial=%g'" % (kwargs['value'], kwargs['initial']))
+            kwargs['initial'] = kwargs.pop('value')
+        if 'd' in kwargs and kwargs['d'] != 0:
+            raise RxDException("Parameters cannot diffuse, invalid keyword argument 'd=%g'" % kwargs['d'])
+        self._d = 0
+        super(Parameter, self).__init__(*args, **kwargs)
+
+    def _semi_compile(self, reg):
+        from . import region
+        #region is Extracellular
+        if isinstance(reg, region.Extracellular):
+            ecs_instance = self._extracellular_instances[reg]
+            return ecs_instance._semi_compile(reg)
+        #region is 3d intracellular
+        if isinstance(reg, region.Region) and reg._secs3d:
+            ics_instance = self._intracellular_instances[reg]
+            return ics_instance._semi_compile(reg)
+        if isinstance(reg, region.Region) and reg._secs1d:
+            if reg in self._regions:
+                return 'params[%d][%d]' % (self._id, reg._id)
+            elif len(self._regions) == 1:
+                return 'params[%d][%d]' % (self._id, self._regions[0]._id)
+            else:
+                raise RxDException("Parameter %r is not defined on region %r" % (self, reg))
+
+
+    def __repr__(self):
+        represents = ', represents=%s' % self.represents if self.represents else ''
+        return 'Parameter(regions=%r, name=%r, charge=%r, value=%r%s)' % (self._regions, self._name, self._charge, self.initial, represents)
+
+    @property
+    def d(self):
+        return 0
+
+    @d.setter
+    def d(self, value):
+        if value != 0:
+            raise RxDException("Parameters cannot diffuse.")
+
+
+    def __getitem__(self, r):
+        """Return a reference to those members of this parameter lying on the specific region @varregion.
+        The resulting object is a ParameterOnRegion or ParameterOnExtracellular.
+        This is useful for defining reaction schemes for MultiCompartmentReaction."""
+        if isinstance(r, region.Region) and r in self._regions:
+            return ParameterOnRegion(self, r)
+        elif isinstance(r, region.Extracellular):
+            if not hasattr(self,'_extracellular_instances'):
+                initializer._do_init()
+            if r in self._extracellular_instances:
+                return ParameterOnExtracellular(self, self._extracellular_instances[r])
+        raise RxDException('no such region')
+
+class ParameterOnRegion(SpeciesOnRegion):
+    def _semi_compile(self, reg):
+        reg = self._region()
+        if reg._secs3d:
+            ics_instance = self._species()._intracellular_instances[reg]
+            return ics_instance._semi_compile(reg)
+        elif reg._secs1d:
+            return 'params[%d][%d]' % (self._id, self._region()._id)
+
+
+class ParameterOnExtracellular(SpeciesOnExtracellular):
+    pass 
 
 class State(Species):
     def __repr__(self):

@@ -5,4 +5,10 @@ pure_diffusion.py
 multicompartment_reactions.py
 multicompartment_reactions_del.py
 verify_no_initialization_order_issue.py
+reaction_test.py
 nodes_update.py
+hh.py
+hh_cvode.py
+hh_param.py
+hh_param_cvode.py
+hh_morph.py

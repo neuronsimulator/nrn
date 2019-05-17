@@ -74,11 +74,14 @@ clear_rates = nrn_dll_sym('clear_rates')
 register_rate = nrn_dll_sym('register_rate')
 register_rate.argtypes = [ 
         ctypes.c_int,                                                               #num species
+        ctypes.c_int,                                                               #num parameters
         ctypes.c_int,                                                               #num regions
         ctypes.c_int,                                                               #num seg
         numpy.ctypeslib.ndpointer(ctypes.c_int, flags='contiguous'),                #species ids
-        ctypes.c_int, numpy.ctypeslib.ndpointer(ctypes.c_int, flags='contiguous'),  #num ecs species
+        ctypes.c_int,                                                               #num ecs species
+        ctypes.c_int,                                                               #num ecs parameters
         numpy.ctypeslib.ndpointer(ctypes.c_int, flags='contiguous'),                #ecs species ids
+        numpy.ctypeslib.ndpointer(ctypes.c_int, flags='contiguous'),                #ecs indices
         ctypes.c_int,                                                               #num multicompartment reactions
         numpy.ctypeslib.ndpointer(ctypes.c_double, flags='contiguous'),             #multicompartment multipliers
         ctypes.POINTER(ctypes.py_object),                                           #voltage pointers
@@ -107,7 +110,7 @@ set_reaction_indices.argtypes = [ctypes.c_int, _int_ptr, _int_ptr, _int_ptr,
     _int_ptr]
 
 ecs_register_reaction = nrn_dll_sym('ecs_register_reaction')
-ecs_register_reaction.argtype = [ctypes.c_int, ctypes.c_int, _int_ptr, fptr_prototype]
+ecs_register_reaction.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int, _int_ptr, ]
 
 set_hybrid_data = nrn_dll_sym('set_hybrid_data')
 set_hybrid_data.argtypes = [    
@@ -159,6 +162,7 @@ double factorial(const double);
 double degrees(const double);
 void radians(const double, double*);
 double log1p(const double);
+double vtrap(const double, const double);
 """
 
 def _list_to_cint_array(data):
@@ -307,14 +311,14 @@ def re_init():
     
         # update current pointers
         section1d._purge_cptrs()
-        for sr in list(_species_get_all_species().values()):
+        for sr in _species_get_all_species():
             s = sr()
             if s is not None:
                 s._register_cptrs()
         
         # update matrix equations
         _setup_matrices()
-    for sr in list(_species_get_all_species().values()):
+    for sr in _species_get_all_species():
         s = sr()
         if s is not None: s.re_init()
     # TODO: is this safe?        
@@ -333,7 +337,7 @@ _rxd_offset = None
 
 def _atolscale(y):
     real_index_lookup = {item: index for index, item in enumerate(_nonzero_volume_indices)}
-    for sr in list(_species_get_all_species().values()):
+    for sr in _species_get_all_species():
         s = sr()
         if s is not None:
             shifted_i = [real_index_lookup[i] + _rxd_offset for i in s.indices() if i in real_index_lookup]
@@ -425,10 +429,25 @@ def _setup_memb_currents():
     ecs_map = [SPECIES_ABSENT if i is None else i for i in list(itertools.chain.from_iterable(itertools.chain.from_iterable(memb_cur_mapped_ecs)))]
     ics_map = [SPECIES_ABSENT if i is None else i for i in list(itertools.chain.from_iterable(itertools.chain.from_iterable(memb_cur_mapped)))]
     if _memb_cur_ptrs:
-        cur_counts = [len(x) for x in memb_cur_mapped]
-        num_currents = numpy.array(cur_counts).sum()
-        setup_currents(len(_memb_cur_ptrs),
-            num_currents,
+        cur_counts = [len(x) for x in memb_cur_mapped]  #TODO: is len(x) the same for all x?
+        num_fluxes = numpy.array(cur_counts).sum()
+        num_currents = len(_memb_cur_ptrs)
+        _memb_cur_ptrs = list(itertools.chain.from_iterable(_memb_cur_ptrs))
+        """print("num_currents",num_currents)
+        print("num_fluxes",num_fluxes)
+        print("num_nodes",len(_curr_indices))
+        print("num_species",len(cur_counts))
+        print("net_charges",len(memb_net_charges))
+        print("cur_idxs",len(_curr_indices))
+        print("node_idxs",len(_cur_node_indices))
+        print("scales",len(rxd_memb_scales))
+        print("charges", len(memb_cur_charges))
+        print("ptrs",len(_memb_cur_ptrs))
+        print("mapped",len(ics_map),min(abs(numpy.array(ics_map))),max(ics_map))
+        print("mapped_ecs",len(ecs_map),max(ecs_map))
+        """
+        setup_currents(num_currents,
+            num_fluxes,
             len(_curr_indices), # num_currents == len(_curr_indices) if no Extracellular
             _list_to_cint_array(cur_counts),
             _list_to_cint_array(memb_net_charges),
@@ -436,7 +455,7 @@ def _setup_memb_currents():
             _list_to_cint_array(_cur_node_indices),
             _list_to_cdouble_array(rxd_memb_scales),
             _list_to_cint_array(list(itertools.chain.from_iterable(memb_cur_charges))),
-            _list_to_pyobject_array(list(itertools.chain.from_iterable(_memb_cur_ptrs))),
+            _list_to_pyobject_array(_memb_cur_ptrs),
             _list_to_cint_array(ics_map),
             _list_to_cint_array(ecs_map))
         
@@ -614,48 +633,49 @@ def _update_node_data(force=False):
         last_structure_change_cnt = _structure_change_count.value
         #if not species._has_3d:
         # TODO: merge this with the 3d/hybrid case?
-        nsegs_changed = 0
-        for sr in list(_species_get_all_species().values()):
-            s = sr()
-            if s is not None: nsegs_changed += s._update_node_data()
-        if nsegs_changed:
-            section1d._purge_cptrs()
-            for sr in list(_species_get_all_species().values()):
+        if initializer.is_initialized():
+            nsegs_changed = 0
+            for sr in _species_get_all_species():
                 s = sr()
-                if s is not None:
-                    s._update_region_indices(True)
-                    s._register_cptrs()
-            if species._has_1d and species._1d_submatrix_n():
-                volumes = node._get_data()[0]
-                _zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
-            setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
-            # TODO: separate compiling reactions -- so the indices can be updated without recompiling
-            _compile_reactions()
+                if s is not None: nsegs_changed += s._update_node_data()
+            if nsegs_changed:
+                section1d._purge_cptrs()
+                for sr in _species_get_all_species():
+                    s = sr()
+                    if s is not None:
+                        s._update_region_indices(True)
+                        s._register_cptrs()
+                if species._has_1d and species._1d_submatrix_n():
+                    volumes = node._get_data()[0]
+                    _zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
+                setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
+                # TODO: separate compiling reactions -- so the indices can be updated without recompiling
+                _compile_reactions()
 
-        #end#if
-        for rptr in _all_reactions:
-            r = rptr()
-            if r is not None: r._update_indices()
-        _curr_indices = []
-        _curr_scales = []
-        _curr_ptrs = []
-        for sr in list(_species_get_all_species().values()):
-            s = sr()
-            if s is not None: s._setup_currents(_curr_indices, _curr_scales, _curr_ptrs, _cur_map)
+            #end#if
+            for rptr in _all_reactions:
+                r = rptr()
+                if r is not None: r._update_indices()
+            _curr_indices = []
+            _curr_scales = []
+            _curr_ptrs = []
+            for sr in _species_get_all_species():
+                s = sr()
+                if s is not None: s._setup_currents(_curr_indices, _curr_scales, _curr_ptrs, _cur_map)
         
-        num = len(_curr_ptrs)
-        if num:
-            _curr_ptr_vector = _h_ptrvector(num)
-            _curr_ptr_vector.ptr_update_callback(_donothing)
-            for i, ptr in enumerate(_curr_ptrs):
-                _curr_ptr_vector.pset(i, ptr)
+            num = len(_curr_ptrs)
+            if num:
+                _curr_ptr_vector = _h_ptrvector(num)
+                _curr_ptr_vector.ptr_update_callback(_donothing)
+                for i, ptr in enumerate(_curr_ptrs):
+                    _curr_ptr_vector.pset(i, ptr)
             
-            _curr_ptr_storage_nrn = _h_vector(num)
-            _curr_ptr_storage = _curr_ptr_storage_nrn.as_numpy()
-        else:
-            _curr_ptr_vector = None
+                _curr_ptr_storage_nrn = _h_vector(num)
+                _curr_ptr_storage = _curr_ptr_storage_nrn.as_numpy()
+            else:
+                _curr_ptr_vector = None
 
-        #_curr_scales = _numpy_array(_curr_scales)        
+            #_curr_scales = _numpy_array(_curr_scales)        
 
 
 def _matrix_to_rxd_sparse(m):
@@ -704,12 +724,11 @@ def _setup_matrices():
         
     """
     if species._has_1d:
-        n = species._1d_submatrix_n()
         # TODO: initialization is slow. track down why
         
         _last_dt = None
         
-        for sr in list(_species_get_all_species().values()):
+        for sr in _species_get_all_species():
             s = sr()
             if s is not None:
                 s._assign_parents()
@@ -722,7 +741,7 @@ def _setup_matrices():
 
         # remove old linearmodeladdition
         _linmodadd_cur = None
-        
+        n = species._1d_submatrix_n()
         if n:        
             # create sparse matrix for C in cy'+gy=b
             c_diagonal = numpy.zeros(n,dtype=ctypes.c_double)
@@ -731,8 +750,8 @@ def _setup_matrices():
             # create the matrix G
             #if not species._has_3d:
             #    # if we have both, then put the 1D stuff into the matrix that already exists for 3D
-            _diffusion_matrix = [dict() for idx in range(n)]  
-            for sr in list(_species_get_all_species().values()):
+            _diffusion_matrix = [dict() for idx in range(n)]
+            for sr in _species_get_all_species():
                 s = sr()
                 if s is not None:
                     s._setup_diffusion_matrix(_diffusion_matrix)
@@ -952,6 +971,7 @@ def _setup_matrices():
         setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
     
     if _curr_indices is not None and len(_curr_indices) > 0:
+        #_curr_ptrs = _curr_ptrs if isinstance(_curr_ptrs, ctypes.py_object) else _list_to_pyobject_array(_curr_ptrs)
         rxd_setup_curr_ptrs(len(_curr_indices), _list_to_cint_array(_curr_indices),
             numpy.concatenate(_curr_scales), _list_to_pyobject_array(_curr_ptrs))
 
@@ -1146,10 +1166,8 @@ def _compile_reactions():
             if isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
                 for sp in sptrs:
                     s = sp()
-                    if isinstance(s,species._ExtracellularSpecies):
+                    if isinstance(s,species.SpeciesOnExtracellular):
                         ecs_mc_species_involved.add(s)
-                    elif isinstance(s,species.SpeciesOnExtracellular):
-                        ecs_mc_species_involved.add(s._extracellular())
                 for reg in react_regions:
                     if reg in list(ecs_species_by_region.keys()):
                         ecs_species_by_region[reg] = ecs_species_by_region[reg].union(ecs_mc_species_involved)
@@ -1195,7 +1213,7 @@ def _compile_reactions():
         return None
     #Setup intracellular and multicompartment reactions
     if location_count > 0:
-        from . import rate, multiCompartmentReaction
+        from . import rate, multiCompartmentReaction, Parameter
         for creg in c_region_list:
             if not creg._react_regions:
                 continue
@@ -1206,7 +1224,7 @@ def _compile_reactions():
             flux_ids_used = numpy.zeros((creg.num_species,creg.num_regions),bool)
             ecs_species_ids_used = numpy.zeros((creg.num_ecs_species),bool)
             fxn_string = _c_headers 
-            fxn_string += 'void reaction(double** species, double** rhs, double* mult, double* species_ecs, double* rhs_ecs, double** flux, double v)\n{'
+            fxn_string += 'void reaction(double** species, double** params, double** rhs, double* mult, double* species_3d, double* params_3d, double* rhs_3d, double** flux, double v)\n{'
             # declare the "rate" variable if any reactions (non-rates)
             for rprt in creg._react_regions:
                 if not isinstance(rprt(),rate.Rate):
@@ -1214,12 +1232,13 @@ def _compile_reactions():
                     break
             for rptr in creg._react_regions:
                 r = rptr()
-                if isinstance(r,rate.Rate):
+                if isinstance(r, rate.Rate):
                     s = r._species()
                     species_id = creg._species_ids[s._id]
                     for reg in creg._react_regions[rptr]:
                         region_id = creg._region_ids[reg()._id]
                         rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate[reg()])
+                        rate_str = re.sub(r'params\[(\d+)\]\[(\d+)\]',lambda m: "params[%i][%i]" %  (creg._params_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), rate_str)
                         operator = '+=' if species_ids_used[species_id][region_id] else '='
                         fxn_string += "\n\trhs[%d][%d] %s %s;" % (species_id, region_id, operator, rate_str)
                         species_ids_used[species_id][region_id] = True
@@ -1227,17 +1246,22 @@ def _compile_reactions():
                     #Lookup the region_id for the reaction
                     for reg in r._rate:
                         rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate[reg])
-                        rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_ecs[%i]" %  creg._ecs_species_ids.get(int(m.groups()[0])), rate_str)
+                        rate_str = re.sub(r'params\[(\d+)\]\[(\d+)\]',lambda m: "params[%i][%i]" %  (creg._params_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), rate_str)
+                        rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_3d[%i]" %  creg._ecs_species_ids.get(int(m.groups()[0])), rate_str)
+                        rate_str = re.sub(r'params_3d\[(\d+)\]',lambda m: "params_3d[%i]" %  creg._ecs_params_ids.get(int(m.groups()[0])), rate_str)
+
                         fxn_string += "\n\trate = %s;" % rate_str
                         break
                     for sptr in r._sources + r._dests:
                         s = sptr()
-                        if isinstance(s,species.SpeciesOnExtracellular):
-                            species_id = creg._ecs_species_ids[s._extracellular()._grid_id]
-                            operator = '+=' if ecs_species_ids_used[species_id] else '='
-                            fxn_string += "\n\trhs_ecs[%d] %s mult[%d] * rate;" % (species_id, operator, mc_mult_count)
-                            ecs_species_ids_used[species_id] = True
-                        else:
+                        
+                        if isinstance(s, species.SpeciesOnExtracellular):
+                            if not isinstance(s, species.ParameterOnExtracellular):
+                                species_id = creg._ecs_species_ids[s._extracellular()._grid_id]
+                                operator = '+=' if ecs_species_ids_used[species_id] else '='
+                                fxn_string += "\n\trhs_3d[%d] %s mult[%d] * rate;" % (species_id, operator, mc_mult_count)
+                                ecs_species_ids_used[species_id] = True
+                        elif not isinstance(s, species.Parameter) and not isinstance(s, species.ParameterOnRegion): 
                             species_id = creg._species_ids[s._id]
                             region_id = creg._region_ids[s._region()._id]
                             operator = '+=' if species_ids_used[species_id][region_id] else '='
@@ -1247,7 +1271,7 @@ def _compile_reactions():
                                 operator = '+=' if flux_ids_used[species_id][region_id] else '='
                                 fxn_string += "\n\tif(flux) flux[%d][%d] %s rate;" % (species_id, region_id, operator)
                                 flux_ids_used[species_id][region_id] = True
-                        #TODO: Fix problem if the whole region isn't part of the same aggregate c_region
+                            #TODO: Fix problem if the whole region isn't part of the same aggregate c_region
                         mc_mult_count += 1
                     mc_mult_list.extend(r._mult.flatten())
                 else:
@@ -1262,11 +1286,13 @@ def _compile_reactions():
                             operator = '+=' if species_ids_used[idx][region_id] else '='
                             species_ids_used[idx][region_id] = True
                             fxn_string += "\n\trhs[%d][%d] %s (%g) * rate;" % (idx, region_id, operator, summed_mults[idx])
-              
             fxn_string += "\n}\n"
-            register_rate(creg.num_species, creg.num_regions, creg.num_segments, creg.get_state_index(),
-                          creg.num_ecs_species, creg.get_ecs_species_ids(), creg.get_ecs_index(),
-                          mc_mult_count, numpy.array(mc_mult_list, dtype=ctypes.c_double),
+            register_rate(creg.num_species, creg.num_params, creg.num_regions,
+                          creg.num_segments, creg.get_state_index(),
+                          creg.num_ecs_species, creg.num_ecs_params,
+                          creg.get_ecs_species_ids(), creg.get_ecs_index(),
+                          mc_mult_count,
+                          numpy.array(mc_mult_list, dtype=ctypes.c_double),
                           _list_to_pyobject_array(creg._vptrs),
                           _c_compile(fxn_string))
 
@@ -1325,10 +1351,11 @@ def _compile_reactions():
         for reg in ecs_regions_inv:
             grid_ids = []
             all_gids = set()
+            param_gids = set()
             fxn_string = _c_headers
             #TODO: find the nrn include path in python
             #It is necessary for a couple of function in python that are not in math.h
-            fxn_string += 'void reaction(double* species_3d, double* rhs)\n{'
+            fxn_string += 'void reaction(double* species_3d, double* params_3d, double* rhs)\n{'
             # declare the "rate" variable if any reactions (non-rates)
             for rptr in [r for rlist in list(ecs_regions_inv.values()) for r in rlist]:
                 if not isinstance(rptr(),rate.Rate):
@@ -1336,16 +1363,24 @@ def _compile_reactions():
                     break
             #get a list of all grid_ids involved
             for s in ecs_species_by_region[reg]:
-                sp = s[reg] if isinstance(s, species.Species) else s
-                all_gids.add(sp._extracellular()._grid_id if isinstance(sp, species.SpeciesOnExtracellular) else sp._grid_id)
+                if isinstance(s, species.Parameter) or isinstance(s, species.ParameterOnExtracellular):
+                    sp = s[reg] if isinstance(s, species.Species) else s
+                    param_gids.add(sp._extracellular()._grid_id if isinstance(sp, species.SpeciesOnExtracellular) else sp._grid_id)
+                else:
+                    sp = s[reg] if isinstance(s, species.Species) else s
+                    all_gids.add(sp._extracellular()._grid_id if isinstance(sp, species.SpeciesOnExtracellular) else sp._grid_id)
             all_gids = list(all_gids)
+            param_gids = list(param_gids)
             for rptr in ecs_regions_inv[reg]:
                 r = rptr()
-                rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_3d[%i]" %  [pid for pid,gid in enumerate(all_gids) if gid == int(m.groups()[0])][0], r._rate_ecs)
+                rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_3d[%i]" %  [pid for pid, gid in enumerate(all_gids) if gid == int(m.groups()[0])][0], r._rate_ecs[reg])
+                rate_str = re.sub(r'params_3d\[(\d+)\]',lambda m: "params_3d[%i]" %  [pid for pid, gid in enumerate(param_gids) if gid == int(m.groups()[0])][0], rate_str)
                 if isinstance(r,rate.Rate):
                     s = r._species()
                     #Get underlying rxd._ExtracellularSpecies for the grid_id
-                    if isinstance(s, species.Species):
+                    if isinstance(s, species.Parameter) or isinstance(s, species.ParameterOnExtracellular):
+                        continue
+                    elif isinstance(s, species.Species):
                         s = s[reg]._extracellular()
                     elif isinstance(s, species.SpeciesOnExtracellular):
                         s = s._extracellular()
@@ -1362,6 +1397,9 @@ def _compile_reactions():
                     for sp in r._sources + r._dests:
                         s = sp()
                         #Get underlying rxd._ExtracellularSpecies for the grid_id
+                        if isinstance(s, species.Parameter) or isinstance(s, species.ParameterOnExtracellular):
+                            idx += 1
+                            continue
                         if isinstance(s, species.Species):
                             s = s[reg]._extracellular()
                         elif isinstance(s, species.SpeciesOnExtracellular):
@@ -1375,7 +1413,7 @@ def _compile_reactions():
                         fxn_string += "\n\trhs[%d] %s (%s)*rate;" % (pid, operator, r._mult[idx])
                         idx += 1
             fxn_string += "\n}\n"
-            ecs_register_reaction(0, len(all_gids), _list_to_cint_array(all_gids), _c_compile(fxn_string))
+            ecs_register_reaction(0, len(all_gids), len(param_gids), _list_to_cint_array(all_gids + param_gids), _c_compile(fxn_string))
 
 def _init():
     if len(species._all_species) == 0:
@@ -1390,7 +1428,7 @@ def _init():
     if species._has_1d:
         section1d._purge_cptrs()
     
-    for sr in list(_species_get_all_species().values()):
+    for sr in _species_get_all_species():
         s = sr()
         if s is not None:
             # TODO: are there issues with hybrid or 3D here? (I don't think so, but here's a bookmark just in case)
@@ -1403,7 +1441,7 @@ def _init():
 def _init_concentration():
     if len(species._all_species) == 0:
         return None
-    for sr in list(_species_get_all_species().values()):
+    for sr in _species_get_all_species():
         s = sr()
         if s is not None:
             # TODO: are there issues with hybrid or 3D here? (I don't think so, but here's a bookmark just in case)

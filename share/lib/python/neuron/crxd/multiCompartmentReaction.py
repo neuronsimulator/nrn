@@ -174,7 +174,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
         return 'MultiCompartmentReaction(%r, %s, rate_b=%s, membrane=%s, custom_dynamics=%r, membrane_flux=%r, scale_by_area=%r)' % (self._scheme, short_f, short_b, self._regions[0]._short_repr(), self._custom_dynamics, self._membrane_flux, self._scale_by_area)
     
     
-    def _do_memb_scales(self, cur_map):                    
+    def _do_memb_scales(self, cur_map):
         if not self._scale_by_area:
             narea = sum([sec.nseg for sec in self._regions[0].secs])
             areas = numpy.ones(narea)
@@ -238,37 +238,36 @@ class MultiCompartmentReaction(GeneralizedReaction):
         self._cur_mapped = []
         self._cur_mapped_ecs = []
         ecs_grids = dict()
+        all_grids = []
         for sp in itertools.chain(self._sources, self._dests):
             s = sp()._species()
             if s.name is not None:
                 for r in s.regions:
                     if isinstance(s[r],species.SpeciesOnExtracellular):
-                        ecs_grids[s.name] = s[r]._extracellular()._grid_id
+                        ecs_grids[s.name] = s[r]._extracellular()
+                if s.name not in all_grids: all_grids.append(s.name)
         for sec in self._regions[0].secs:
             for seg in sec:
                 local_ptrs = []
                 local_mapped = []
                 local_mapped_ecs = []
-                for sp in itertools.chain(self._sources, self._dests):
-                    s = sp()._species()
-                    spname = s.name
+                for spname in all_grids:
                     #Check for extracellular regions
-                    if spname is not None:
-                        name = '_ref_i%s' % (spname)
-                        local_ptrs.append(seg.__getattribute__(name))
-                        uberlocal_map = [None, None]
-                        uberlocal_map_ecs = [None, None]
-                        if spname + 'i' in cur_map:
-                            uberlocal_map[0] = cur_map[spname + 'i'][seg]
-                        if spname + 'o' in cur_map:
-                                    #Original rxd extracellular region
-                            if seg in cur_map[spname + 'o']:
-                                uberlocal_map[1] = cur_map[spname + 'o'][seg]
-                            else:   #Extracellular space
-                                uberlocal_map_ecs[0] = ecs_grids[spname]      #TODO: Just pass the grid_id once per species
-                                uberlocal_map_ecs[1] = s[r]._extracellular().index_from_xyz(*species._xyz(seg))
-                        local_mapped.append(uberlocal_map)
-                        local_mapped_ecs.append(uberlocal_map_ecs)
+                    name = '_ref_i%s' % (spname)
+                    local_ptrs.append(seg.__getattribute__(name))
+                    uberlocal_map = [None, None]
+                    uberlocal_map_ecs = [None, None]
+                    if spname + 'i' in cur_map and cur_map[spname + 'i']:
+                        uberlocal_map[0] = cur_map[spname + 'i'][seg]
+                    if spname + 'o' in cur_map:
+                        #Original rxd extracellular region
+                        if seg in cur_map[spname + 'o']:
+                            uberlocal_map[1] = cur_map[spname + 'o'][seg]
+                        elif spname in ecs_grids:   #Extracellular space
+                            uberlocal_map_ecs[0] = ecs_grids[spname]._grid_id      #TODO: Just pass the grid_id once per species
+                            uberlocal_map_ecs[1] = ecs_grids[spname].index_from_xyz(*species._xyz(seg))
+                    local_mapped.append(uberlocal_map)
+                    local_mapped_ecs.append(uberlocal_map_ecs)
                 self._cur_ptrs.append(tuple(local_ptrs))
                 self._cur_mapped.append(tuple(local_mapped))
                 self._cur_mapped_ecs.append(local_mapped_ecs)
