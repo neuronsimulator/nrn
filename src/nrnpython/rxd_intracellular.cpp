@@ -380,19 +380,19 @@ void _ics_rhs_variable_step_helper(ICS_Grid_node* g, double const * const states
     double rate_z = dc_z / (dz * dz);
 
     long x_line_start = g->ics_adi_dir_x->line_start_stop_indices[0];
-    long x_line_stop = g->ics_adi_dir_x->line_start_stop_indices[NUM_THREADS];
+    long x_line_stop = g->ics_adi_dir_x->line_start_stop_indices[NUM_THREADS * 2 - 1];
     long x_node_start = g->ics_adi_dir_x->ordered_start_stop_indices[0];
     long* x_line_defs = g->ics_adi_dir_x->ordered_line_defs;
     long* x_ordered_nodes = g->ics_adi_dir_x->ordered_nodes;
 
     long y_line_start = g->ics_adi_dir_y->line_start_stop_indices[0];
-    long y_line_stop = g->ics_adi_dir_y->line_start_stop_indices[NUM_THREADS];
+    long y_line_stop = g->ics_adi_dir_y->line_start_stop_indices[NUM_THREADS * 2 - 1];
     long y_node_start = g->ics_adi_dir_y->ordered_start_stop_indices[0];
     long* y_line_defs = g->ics_adi_dir_y->ordered_line_defs;
     long* y_ordered_nodes = g->ics_adi_dir_y->ordered_nodes;
 
     long z_line_start = g->ics_adi_dir_z->line_start_stop_indices[0];
-    long z_line_stop = g->ics_adi_dir_z->line_start_stop_indices[NUM_THREADS];
+    long z_line_stop = g->ics_adi_dir_z->line_start_stop_indices[NUM_THREADS * 2 - 1];
     long z_node_start = g->ics_adi_dir_z->ordered_start_stop_indices[0];
     long* z_line_defs = g->ics_adi_dir_z->ordered_line_defs;
     long* z_ordered_nodes = g->ics_adi_dir_z->ordered_nodes;
@@ -514,20 +514,20 @@ void ics_ode_solve_helper(ICS_Grid_node* g, double dt, const double* CVode_state
     double rate_z = (dc_z * dt) / (dz * dz);
 
     long x_line_start = g->ics_adi_dir_x->line_start_stop_indices[0];
-    long x_line_stop = g->ics_adi_dir_x->line_start_stop_indices[NUM_THREADS];
+    long x_line_stop = g->ics_adi_dir_x->line_start_stop_indices[NUM_THREADS * 2 - 1];
     long x_node_start = g->ics_adi_dir_x->ordered_start_stop_indices[0];
     long* x_line_defs = g->ics_adi_dir_x->ordered_line_defs;
     long* x_ordered_nodes = g->ics_adi_dir_x->ordered_nodes;
 
     long y_line_start = g->ics_adi_dir_y->line_start_stop_indices[0];
-    long y_line_stop = g->ics_adi_dir_y->line_start_stop_indices[NUM_THREADS];
+    long y_line_stop = g->ics_adi_dir_y->line_start_stop_indices[NUM_THREADS * 2 - 1];
     long y_node_start = g->ics_adi_dir_y->ordered_start_stop_indices[0];
     long* y_line_defs = g->ics_adi_dir_y->ordered_line_defs;
     long* y_ordered_nodes = g->ics_adi_dir_y->ordered_nodes;
     double* delta_y = g->ics_adi_dir_y->deltas;
 
     long z_line_start = g->ics_adi_dir_z->line_start_stop_indices[0];
-    long z_line_stop = g->ics_adi_dir_z->line_start_stop_indices[NUM_THREADS];
+    long z_line_stop = g->ics_adi_dir_z->line_start_stop_indices[NUM_THREADS * 2 - 1];
     long z_node_start = g->ics_adi_dir_z->ordered_start_stop_indices[0];
     long* z_line_defs = g->ics_adi_dir_z->ordered_line_defs;
     long* z_ordered_nodes = g->ics_adi_dir_z->ordered_nodes;
