@@ -1415,7 +1415,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * Print block / loop for statement requiring reduction
      *
      */
-    void print_shadow_reduction_block_begin();
+    virtual void print_shadow_reduction_block_begin();
 
 
     /**
