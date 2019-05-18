@@ -28,7 +28,19 @@ namespace codegen {
  * \brief %Visitor for printing C code with ISPC backend
  */
 class CodegenIspcVisitor: public CodegenCVisitor {
+
+    /**
+     * Prints an ISPC atomic operation
+     *
+     * \note This is currently not used because of performance issues on KNL. Instead reduction
+     * operations are serialized.
+     *
+     * \param lhs Reduction left-hand-side operand
+     * \param op  Reducation operation. Currently only \c += and \c -= are supported
+     * \param rhs Reduction right-hand-side operand
+     */
     void print_atomic_op(const std::string& lhs, const std::string& op, const std::string& rhs);
+
 
     /// ast nodes which are not compatible with ISPC target
     const std::vector<ast::AstNodeType> incompatible_node_types{
@@ -83,12 +95,15 @@ class CodegenIspcVisitor: public CodegenCVisitor {
     void print_backend_includes() override;
 
 
-    /// update to matrix elements with/without shadow vectors
-    void print_nrn_cur_matrix_shadow_update() override;
-
-
     /// reduction to matrix elements from shadow vectors
     void print_nrn_cur_matrix_shadow_reduction() override;
+
+
+    /**
+     * Print block / loop for statement requiring reduction
+     *
+     */
+    void print_shadow_reduction_block_begin() override;
 
 
     /// setup method for setting matrix shadow vectors
