@@ -792,7 +792,7 @@ def _setup_matrices():
         hybrid_index1d_grid_ids = {}
         grid_id_species = {}
         dxs = set()
-        for sr in list(_species_get_all_species().values()):
+        for sr in _species_get_all_species():
             s = sr()
             if s is not None:
                 if s._intracellular_instances and s._secs:
@@ -1301,8 +1301,9 @@ def _compile_reactions():
         for reg in regions_inv_3d:
             ics_grid_ids = []
             all_ics_gids = set()
+            #ics_param_gids = set()
             fxn_string = _c_headers
-            fxn_string += 'void reaction(double* species_3d, double*rhs)\n{'
+            fxn_string += 'void reaction(double* species_3d, double* params_3d, double*rhs)\n{'
             for rptr in [r for rlist in list(regions_inv.values()) for r in rlist]:
                 if not isinstance(rptr(),rate.Rate):
                     fxn_string += '\n\tdouble rate;'
@@ -1345,7 +1346,7 @@ def _compile_reactions():
                         fxn_string += "\n\trhs[%d] %s (%s)*rate;" % (pid, operator, r._mult[idx])
                         idx += 1                        
             fxn_string += "\n}\n"
-            ecs_register_reaction(0, len(all_ics_gids), _list_to_cint_array(all_ics_gids), _c_compile(fxn_string))                 
+            ecs_register_reaction(0, len(all_ics_gids), 0, _list_to_cint_array(all_ics_gids), _c_compile(fxn_string))                 
     #Setup extracellular reactions
     if len(ecs_regions_inv) > 0:
         for reg in ecs_regions_inv:
