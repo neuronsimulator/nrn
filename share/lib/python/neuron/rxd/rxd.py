@@ -1106,9 +1106,14 @@ def _compile_reactions():
         if isinstance(r,rate.Rate):
             if not r._species():
                 continue
-            sptrs = set(list(r._involved_species) + [r._species])
+            sptrs = set([r._species])
         else:
-            sptrs  = set(list(r._involved_species) + r._dests + r._sources)
+            sptrs  = set(r._dests + r._sources)
+
+        if hasattr(r,'_involved_species') and r._involved_species:
+            sptrs = sptrs.union(set(r._involved_species))
+        if hasattr(r,'_involved_species_ecs') and r._involved_species_ecs:
+            sptrs = sptrs.union(set(r._involved_species_ecs)) 
         
         #Find all the regions involved
         if isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
