@@ -476,8 +476,8 @@ Shape
                     arc = ss.push_selected()
                     if arc >= 0:
                         ss.select()
-                        print '%g from %s(%g)' % (d, h.secname(), a)
-                        h.pop_section()
+                        print('%g from %s(%g)' % (d, h.secname(), a))
+                    h.pop_section()
 
             ss.menu_tool('test', p)
             ss.exec_menu('test')
@@ -519,7 +519,7 @@ Shape
             arc = shape.push_selected()
             if arc >= 0:
                 # do something, then end with:
-                h.pop_section()
+            h.pop_section()
 
 
     Description:
