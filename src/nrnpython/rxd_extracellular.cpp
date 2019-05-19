@@ -133,7 +133,7 @@ Reaction* ecs_create_reaction(int list_idx, int num_species, int num_params, int
 
 	r->num_species_involved = num_species;
     r->num_params_involved = num_params;
-	r->species_states = (double**)malloc(sizeof(Grid_node*)*(r->num_species_involved));
+	r->species_states = (double**)malloc(sizeof(Grid_node*)*(num_species + num_params));
 	assert(r->species_states);
 
 	for(i = 0; i < num_species + num_params; i++)
@@ -308,11 +308,11 @@ void* ecs_do_reactions(void* dataptr)
 						states_cache_dx[j] = react->species_states[j][i];
 					}
                     MEM_ZERO(results_array,react->num_species_involved*sizeof(double));
-					react->reaction(states_cache, params_cache, results_array);
-                    for(k = 0; j < react->num_species_involved + react->num_params_involved; k++, j++)
+					for(k = 0; j < react->num_species_involved + react->num_params_involved; k++, j++)
 					{
 						params_cache[k] = react->species_states[j][i];
 					}
+                    react->reaction(states_cache, params_cache, results_array);
 
 					for(j = 0; j < react->num_species_involved; j++)
 					{

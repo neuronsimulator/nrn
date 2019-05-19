@@ -67,7 +67,12 @@ class Rate(GeneralizedReaction):
     def _do_init(self):
         rate = self._original_rate
         if not isinstance(rate, RangeVar):
-            self._rate, self._involved_species = rxdmath._compile(rate, self._regions)
+            if self._regions and self._regions != [None]:
+                self._rate, self._involved_species = rxdmath._compile(rate, self._regions)
+            elif hasattr(self._species(),'_regions'):
+                self._rate, self._involved_species = rxdmath._compile(rate, self._species()._regions)
+            elif hasattr(self._species(),'_region'):
+                self._rate, self._involved_species = rxdmath._compile(rate, [self._species()._region()])
         else:
             self._involved_species = [weakref.ref(species)]
         self._update_indices()
@@ -131,8 +136,9 @@ class Rate(GeneralizedReaction):
             elif self._species():
                 if isinstance(self._species(),species.SpeciesOnExtracellular):
                     self._active_regions = [self._species()._extracellular()._region]
-            for sptr in self._involved_species:
-                self._indices_dict[sptr()] = []
+            if hasattr(self, '_involved_species'):
+                for sptr in self._involved_species:
+                    self._indices_dict[sptr()] = []
             return
         
 
@@ -178,7 +184,10 @@ class Rate(GeneralizedReaction):
             else:
                 raise RxDException("Error in rate %r, the species do not share a common section" % self)
         else:
-            active_secs = set.union(*[set(reg.secs) for reg in active_regions if hasattr(reg, 'secs')])
+            active_secs = [set(reg.secs) for reg in active_regions if hasattr(reg, 'secs')]
+            if active_secs:
+                active_secs = set.union(*active_secs)
+            else: active_secs = set()
             # store the indices
             for sptr in self._involved_species:
                 s = sptr()

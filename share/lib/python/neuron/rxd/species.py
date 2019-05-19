@@ -609,7 +609,10 @@ class _IntracellularSpecies(_SpeciesMathable):
 
 
     def _semi_compile(self, region):
-        return 'species_3d[%d]' % (self._grid_id)
+        if isinstance(_defined_species[self._species][self._region](), Parameter):
+            return 'params_3d[%d]' %  (self._grid_id)
+        else:
+            return 'species_3d[%d]' % (self._grid_id)
 
 class _ExtracellularSpecies(_SpeciesMathable):
     def __init__(self, region, d=0, name=None, charge=0, initial=0, atolscale=1.0, boundary_conditions=None):
