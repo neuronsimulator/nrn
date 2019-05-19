@@ -1084,7 +1084,10 @@ int ICS_Grid_node::dg_adi()
 
 void ICS_Grid_node::variable_step_diffusion(const double* states, double* ydot)
 {
-    _ics_rhs_variable_step_helper(this, states, ydot);
+    if(diffusable)
+    {
+        _ics_rhs_variable_step_helper(this, states, ydot);
+    }
 
     //TODO: Get volume fraction/tortuosity working as well as take care of this in this file
     /*switch(VARIABLE_ECS_VOLUME)
@@ -1102,7 +1105,10 @@ void ICS_Grid_node::variable_step_diffusion(const double* states, double* ydot)
 
 void ICS_Grid_node::variable_step_ode_solve(const double* states, double* RHS, double dt)
 {
-    ics_ode_solve_helper(this, dt, states, RHS);
+    if (diffusable)
+    {
+        ics_ode_solve_helper(this, dt, states, RHS);
+    }
 }
 
 void ICS_Grid_node::hybrid_connections()
