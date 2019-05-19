@@ -19,9 +19,20 @@
 #define HOCMOD hoc
 #endif
 
+extern PyTypeObject* psection_type;
+
+// copied from nrnpy_nrn
+typedef struct {
+  PyObject_HEAD Section* sec_;
+  char* name_;
+  PyObject* cell_;
+} NPySecObj;
+
 extern "C" {
 
 #include "parse.h"
+void (*nrnpy_sectionlist_helper_)(void*, Object*);
+void lvappendsec_and_ref(void* sl, Section* sec);
 extern Section* nrn_noerr_access();
 extern void hoc_pushs(Symbol*);
 extern double* hoc_evalpointer();
@@ -2510,11 +2521,42 @@ char get_endian_character() {
   return endian_character;
 }
 
+static void sectionlist_helper_(void* sl, Object* args) {
+  if (!args || args->ctemplate->sym != nrnpy_pyobj_sym_) {
+    hoc_execerror("argument must be a Python iterable", "");
+  }
+  PyObject* pargs = nrnpy_hoc2pyobject(args);
+  
+  PyObject *iterator = PyObject_GetIter(pargs);
+  PyObject *item;
+
+  if (iterator == NULL) {
+    PyErr_Clear();
+    hoc_execerror("argument must be an iterable", "");
+  }
+
+  while (item = PyIter_Next(iterator)) {
+    if (!PyObject_TypeCheck(item, psection_type)) {
+      hoc_execerror("iterable must contain only Section objects", 0);
+    }
+    NPySecObj* pysec = (NPySecObj*)item;
+    lvappendsec_and_ref(sl, pysec->sec_);
+    Py_DECREF(item);
+  }
+
+  Py_DECREF(iterator);
+  if (PyErr_Occurred()) {
+    PyErr_Clear();
+    hoc_execerror("argument must be a Python iterable", "");
+  }
+}
+
 myPyMODINIT_FUNC nrnpy_hoc() {
   PyObject* m;
   nrnpy_vec_from_python_p_ = nrnpy_vec_from_python;
   nrnpy_vec_to_python_p_ = nrnpy_vec_to_python;
   nrnpy_vec_as_numpy_helper_ = vec_as_numpy_helper;
+  nrnpy_sectionlist_helper_ = sectionlist_helper_;
   PyLockGIL lock;
 
   char endian_character = 0;
