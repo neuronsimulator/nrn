@@ -27,9 +27,8 @@ Optimization
 
         *funname* 
             the name of the function to minimize, eg. least square difference between model and data. 
-            The funname must take two arguments, the first arg, ``$1``, 
-            is the number of elements in second arg vector, ``$&2``. The ith index of the 
-            vector is given by ``$&2[i]``. 
+            The funname must take two arguments, the first arg 
+            is the number of elements in second arg vector.. 
 
         *x* 
             is a double :class:`Vector` of at least length *n*. Prior to the call set 
@@ -67,12 +66,12 @@ Optimization
             python
 
             from neuron import h 
-            v = h.Vector(2) 
+            v = h.Vector([0, 0]) 
             def efun(v): 
-              return (v.x[0]+v.x[1] - 5)**2 + 5*(v.x[0]-v.x[1] - 15)**2 
-            h.attr_praxis(1e-5, .5, 0) 
+              return (v[0] + v[1] - 5) ** 2 + 5 * (v[0] -v[1] - 15) ** 2 
+            h.attr_praxis(1e-5, 0.5, 0) 
             e = h.fit_praxis(efun, v) 
-            print "e=%g x=%g y=%g\n"%(e, v.x[0], v.x[1]) 
+            print("e=%g x=%g y=%g\n"%(e, v[0], v[1]))
 
 
     .. warning::
@@ -94,7 +93,7 @@ Optimization
     Syntax:
         ``h.attr_praxis(tolerance, maxstepsize, printmode)``
 
-        ``previous_index = attr_praxis(mcell_ran4_index)``
+        ``previous_index = h.attr_praxis(mcell_ran4_index)``
 
 
     Description:
