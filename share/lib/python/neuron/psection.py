@@ -1,15 +1,9 @@
 def psection(sec):
-    from neuron import h, _has_rxd
+    from neuron import h
     try:
-        if _has_rxd['crxd']:
-            from neuron import crxd as rxd
-            from neuron.crxd import region, species
-            from neuron.crxd import rxd as rxd_module
-
-        else:
-            from neuron import rxd
-            from neuron.rxd import region, species
-            from neuron.rxd import rxd as rxd_module
+        from neuron import rxd
+        from neuron.rxd import region, species
+        from neuron.rxd import rxd as rxd_module
         have_rxd = True
     except:
       have_rxd = False
