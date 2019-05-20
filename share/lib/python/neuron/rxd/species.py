@@ -6,6 +6,7 @@ from . import node, nodelist, rxdmath, region
 import numpy
 import warnings
 import itertools
+from . import options
 from .rxdException import RxDException
 from . import initializer
 import collections
@@ -572,8 +573,13 @@ class _IntracellularSpecies(_SpeciesMathable):
             else:
                 self.states[:] = 0
 
-    def _update_pointers(self): 
-        self._seg_to_surface_nodes = self._region._surface_nodes_by_seg
+    def _update_pointers(self):
+        if options.concentration_nodes_3d == "surface":
+            self._seg_to_surface_nodes = self._region._surface_nodes_by_seg
+        elif options.concentration_nodes_3d == "all":
+            self._seg_to_surface_nodes = self._region._nodes_by_seg
+        else:
+            raise RxDException("options.concentration_nodes_3d must be 'surface' or 'all'")
         grid_list_start = 0
         if self._nodes:
             nrn_region = self._region._nrn_region

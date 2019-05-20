@@ -791,6 +791,7 @@ def _setup_matrices():
         hybrid_diams = {}
         hybrid_index1d_grid_ids = {}
         grid_id_species = {}
+        index1d_sec1d = {}
         dxs = set()
         for sr in _species_get_all_species():
             s = sr()
@@ -813,6 +814,7 @@ def _setup_matrices():
                                 hybrid_neighbors[index1d] += indices3d
                                 hybrid_diams[index1d] = parent_sec(h.parent_connection(sec=sec)).diam
                                 hybrid_index1d_grid_ids[index1d] = grid_id
+                                index1d_sec1d[index1d] = parent_sec
                             else:
                                 for sec1d in r._secs1d:
                                     parent_1d_seg = sec1d.trueparentseg()
@@ -823,6 +825,7 @@ def _setup_matrices():
                                         hybrid_neighbors[index1d] += indices3d
                                         hybrid_diams[index1d] = sec1d(h.section_orientation(sec=sec1d)).diam
                                         hybrid_index1d_grid_ids[index1d] = grid_id
+                                        index1d_sec1d[index1d] = sec1d
                                         
                                     elif parent_1d == parent_sec and parent_1d is not None:
                                         # it connects to the parent of a 1d section
@@ -830,6 +833,7 @@ def _setup_matrices():
                                         hybrid_neighbors[index1d] += indices3d
                                         hybrid_diams[index1d] = sec1d(h.section_orientation(sec=sec1d)).diam
                                         hybrid_index1d_grid_ids[index1d] = grid_id
+                                        index1d_sec1d[index1d] = sec1d
                                         
         if len(dxs) > 1:
             raise RxDException('currently require a unique value for dx')
@@ -857,6 +861,8 @@ def _setup_matrices():
             grid_3d_indices_cnt = 0
             for index1d in grid_id_indices1d[grid_id]:
                 neighbors3d = set(hybrid_neighbors[index1d])
+                sec1d = index1d_sec1d[index1d]
+                seg_length1d = sec1d.L/sec1d.nseg
                 if neighbors3d:
                     hybrid_indices1d.append(index1d)
                     cnt_neighbors_3d = len(neighbors3d) 
@@ -868,7 +874,7 @@ def _setup_matrices():
                     volumes1d.append(node._volumes[index1d])
                     for i in neighbors3d:
                         vol = sp._nodes[i].volume
-                        rate = d * area / (vol * dx / 2.)
+                        rate = d * area / (vol * (dx + seg_length1d) / 2)
                         rates.append(rate)
                         volumes3d.append(vol)
                         hybrid_indices3d.append(i)

@@ -11,6 +11,8 @@ extern "C" {
 #include <nrnwrap_Python.h>
 #include <unistd.h>
 
+#include<cmath>
+
 extern int NUM_THREADS;
 extern TaskQueue* AllTasks;
 extern double* states;
@@ -565,24 +567,46 @@ void _ics_hybrid_helper(ICS_Grid_node* g)
 
     double vol_1d, vol_3d, rate, conc_1d;
     int my_3d_index, my_1d_index;
-    int vol_3d_index = 0;
+    int vol_3d_index;
 
+    int total_num_3d_indices_per_1d_seg = 0;
+    for(int i = 0; i < num_1d_indices; i++) {
+        total_num_3d_indices_per_1d_seg += num_3d_indices_per_1d_seg[i];
+    }
+
+    // store the state values in the order that we need them
+    double* old_g_states = (double*) malloc(sizeof(double) * total_num_3d_indices_per_1d_seg);
+
+    vol_3d_index = 0;
+    for(int i = 0; i < num_1d_indices; i++) {
+        for (int j = 0; j < num_3d_indices_per_1d_seg[i]; j++, vol_3d_index++) {
+            old_g_states[vol_3d_index] = g->states[indices3d[vol_3d_index]];
+        }
+    }
+
+    vol_3d_index = 0;
     for(int i = 0; i<num_1d_indices; i++)
     {
         vol_1d = volumes1d[i];
         my_1d_index = indices1d[i];
         conc_1d = states[my_1d_index];
+
+
+        //printf("for 1d index %d: volume 1d = %g and conc1d = %g\n", my_1d_index, vol_1d, conc_1d);
         for(int j=0; j<num_3d_indices_per_1d_seg[i]; j++, vol_3d_index++)
         {
             vol_3d = volumes3d[vol_3d_index];
             //rate is rate of change of 3d concentration
             my_3d_index = indices3d[vol_3d_index];
-            rate = (rates[vol_3d_index]) * (g->states[my_3d_index] - conc_1d);
+            rate = (rates[vol_3d_index]) * (old_g_states[vol_3d_index] - conc_1d);
             //forward euler coupling
             g->states[my_3d_index] -= dt * rate;
             states[my_1d_index] += dt * rate * vol_3d / vol_1d; 
+            //printf("for 3d index %d: volume 3d = %g and states3d = %g and rate3d = %g\n", my_3d_index, vol_3d, g->states[my_3d_index], rates[vol_3d_index]);
         }
     }
+
+    free(old_g_states);
 }
 
 void _ics_variable_hybrid_helper(ICS_Grid_node* g, const double* cvode_states_3d, double* const ydot_3d, const double* cvode_states_1d, double *const  ydot_1d)

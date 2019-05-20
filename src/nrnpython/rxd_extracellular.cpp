@@ -531,12 +531,12 @@ void _fadvance_fixed_step_3D(void) {
         MEM_ZERO(grid->states_cur,sizeof(double)*grid->size_x*grid->size_y*grid->size_z);
         grid->do_grid_currents(dt, id);
         grid->volume_setup();
-        if(grid->diffusable){
-            grid->dg_adi(); 
-        }
         if(grid->hybrid)
         {
             grid->hybrid_connections();
+        }
+        if(grid->diffusable){
+            grid->dg_adi(); 
         }
     }
     /* transfer concentrations */

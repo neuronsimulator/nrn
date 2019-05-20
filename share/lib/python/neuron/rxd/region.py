@@ -350,70 +350,44 @@ class Region(object):
             if nrn_region == 'o':
                 raise RxDException('3d simulations do not support nrn_region="o" yet')
 
-            self._mesh, sa, vol, self._tri = self._geometry.volumes3d(self._secs3d, dx=dx)
-            sa_values = sa.values
-            vol_values = vol.values
-            self._objs = {}
-            # TODO: handle soma outlines correctly
-            if not hasattr(self.secs, 'sections'):
-                for sec in self._secs3d:
-                    # NOTE: previously used centroids_by_segment instead
-                    #       but that did bad things with spines
-                    self._objs.update(dimension3.objects_by_segment(sec))
-            mesh_values = self._mesh.values
-            xs, ys, zs = mesh_values.nonzero()
-            mesh_xs, mesh_ys, mesh_zs = self._mesh._xs, self._mesh._ys, self._mesh._zs
-            segs = []
-            on_surface = []
+            internal_voxels, surface_voxels, mesh_grid = self._geometry.volumes3d(self._secs3d, dx=dx)
+
+            self._sa = numpy.array([val[1] for val in surface_voxels.values()] + [0 for val in internal_voxels.values()])
+            #TODO: Use Fractional Volumes with diffusion
+            #self._vol = numpy.array([val[0] for val in surface_voxels.values()] + [val[0] for val in internal_voxels.values()])
+            self._vol = dx ** 3 * numpy.ones(len(surface_voxels) + len(internal_voxels))
+            self._mesh_grid = mesh_grid
+
+            self._points = [key for key in surface_voxels.keys()] + [key for key in internal_voxels.keys()]
+
             nodes_by_seg = {}
             surface_nodes_by_seg = {}
+            # creates tuples of x, y, and z coordinates where a point is (xs[i], ys[i], zs[i])
+            self._xs, self._ys, self._zs = zip(*self._points)
+            segs = []
 
-            # process surface area info
-            self._sa = numpy.array([sa_values[x, y, z] for x, y, z in zip(xs, ys, zs)])
-            on_surface = self._sa != 0
-            
-            # volumes
-            self._vol = numpy.array([vol_values[x, y, z] for x, y, z in zip(xs, ys, zs)])
-            
-            # map each node to a segment
-            for x, y, z, is_surf in zip(xs, ys, zs, on_surface):
-                # compute distances to all objects to figure out which one
-                # is closest
-                # TODO: be smarter about this: use the chunkification code
-                #       from geometry3d
-                closest = None
-                closest_dist = float('inf')
-                myx, myy, myz = mesh_xs[x], mesh_ys[y], mesh_zs[z]
-                for s, obs in zip(list(self._objs.keys()), list(self._objs.values())):
-                    for o in obs:
-                        # _distance is like distance except ignores end plates
-                        # when inside
-                        dist = o._distance(myx, myy, myz)
-                        if dist < closest_dist:
-                            closest = s
-                            closest_dist = dist
-                seg = closest
-                segs.append(seg)
-                
-                # TODO: predeclare these so don't have to check each time
-                # TODO: don't use segments; use internal names to avoid keeping sections alive
-                if seg not in nodes_by_seg:
-                    nodes_by_seg[seg] = []
-                    surface_nodes_by_seg[seg] = []
-                nodes_by_seg[seg].append(len(segs) - 1)
+            for i, p in enumerate(self._points):
+                if p in surface_voxels:
+                    seg = surface_voxels[p][2]
+                    segs.append(seg)
 
-                if is_surf:
-                    surface_nodes_by_seg[seg].append(len(segs) - 1)
-            
-            # NOTE: This stuff is for 3D part only
+                    surface_nodes_by_seg.setdefault(seg, [])
+                    surface_nodes_by_seg[seg].append(i)
+
+                    nodes_by_seg.setdefault(seg, [])
+                    nodes_by_seg[seg].append(i)
+
+                else:
+                    seg = internal_voxels[p][1]
+                    segs.append(seg)
+
+                    nodes_by_seg.setdefault(seg, [])
+                    nodes_by_seg[seg].append(i)
+
             self._surface_nodes_by_seg = surface_nodes_by_seg
-            self._nodes_by_seg = nodes_by_seg
-            self._on_surface = on_surface
-            self._xs = xs
-            self._ys = ys
-            self._zs = zs
-            # TODO: don't do this! This might keep the section alive!
-            self._segs = segs
+            self._nodes_by_seg = nodes_by_seg 
+            
+            self._segs = list(segs)
         self._dx = self.dx
     
     def _indices_from_sec_x(self, sec, position):
@@ -447,9 +421,14 @@ class Region(object):
         r = sec(position).diam * 0.5
         plane_of_disc = geometry3d.graphicsPrimitives.Plane(x, y, z, nx, ny, nz)
         potential_coordinates = []
-        mesh = self._mesh
-        xs, ys, zs = mesh._xs, mesh._ys, mesh._zs
-        xlo, ylo, zlo = xs[0], ys[0], zs[0]
+
+        xs = numpy.arange(self._mesh_grid['xlo'], self._mesh_grid['xhi'] + self._mesh_grid['dx'], self._mesh_grid['dx'])
+        ys = numpy.arange(self._mesh_grid['ylo'], self._mesh_grid['yhi'] + self._mesh_grid['dy'], self._mesh_grid['dy'])
+        zs = numpy.arange(self._mesh_grid['zlo'], self._mesh_grid['zhi'] + self._mesh_grid['dz'], self._mesh_grid['dz'])
+        xlo = self._mesh_grid['xlo']
+        ylo = self._mesh_grid['ylo']
+        zlo = self._mesh_grid['zlo']
+
         # locate the indices of the cube containing the sphere containing the disc
         # TODO: write this more efficiently
         i_indices = [i for i, a in enumerate(xs) if abs(a - x) < r]

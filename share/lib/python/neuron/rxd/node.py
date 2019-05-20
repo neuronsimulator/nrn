@@ -554,15 +554,18 @@ class Node3D(Node):
     @property
     def x3d(self):
         # TODO: need to modify this to work with 1d
-        return self._r._mesh.xs[self._i]
+        mesh = self._r._mesh_grid
+        return mesh['xlo'] + self._i * mesh['dx']
     @property
     def y3d(self):
         # TODO: need to modify this to work with 1d
-        return self._r._mesh.ys[self._j]
+        mesh = self._r._mesh_grid
+        return mesh['ylo'] + self._j * mesh['dy']
     @property
     def z3d(self):
         # TODO: need to modify this to work with 1d
-        return self._r._mesh.zs[self._k]
+        mesh = self._r._mesh_grid
+        return mesh['zlo'] + self._k * mesh['dz']
     
     @property
     def x(self):
