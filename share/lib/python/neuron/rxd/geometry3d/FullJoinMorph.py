@@ -107,7 +107,7 @@ def fullmorph(source, dx, soma_step=100):
     final_intern_voxels = {}			# final output of internal voxels
 
     for seg in final_seg_dict.keys():
-        h.distance(0, h.SectionRef(sec=seg.sec).root(0))           # reset the root in case multiple cells
+        distance_root = h.SectionRef(sec=seg.sec).root(0)
         for item in final_seg_dict[seg]:
             if item in object_pts.keys():
                 [yesvox, surface, miss] = voxelize(grid, item, object_pts[item])
@@ -121,7 +121,7 @@ def fullmorph(source, dx, soma_step=100):
             yesvox = yesvox - surface.keys()
             for i in yesvox:  
                 if i in final_intern_voxels.keys():
-                    if h.distance(seg) < h.distance(final_intern_voxels[i][1]):
+                    if h.distance(distance_root, seg) < h.distance(distance_root, final_intern_voxels[i][1]):
                         final_intern_voxels[i][1] = seg
                 else:                 
                     final_intern_voxels[i] = [dx**3, seg]
@@ -131,7 +131,7 @@ def fullmorph(source, dx, soma_step=100):
                     total_surface_voxels[i][0].append(item)
                     # update the distances list to the minimum at each vertex
                     total_surface_voxels[i][1] = [min(total_surface_voxels[i][1][j], surface[i][j]) for j in range(8)]
-                    if h.distance(seg) < h.distance(total_surface_voxels[i][2]):
+                    if h.distance(distance_root, seg) < h.distance(distance_root, total_surface_voxels[i][2]):
                         total_surface_voxels[i][2] = seg
                 else:
                     total_surface_voxels[i] = [[item], surface[i], seg]
