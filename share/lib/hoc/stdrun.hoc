@@ -257,7 +257,7 @@ proc buildmenu() {local has_rxd
     xmenu()
     if (has_rxd) {
         /* check for rxd or crxd at runtime rather than at import */
-        xbutton("RxD Builder", "nrnpython(\"if neuron._has_rxd['crxd']:\\n\\timport neuron.crxd.gui\\n\\tneuron.crxd.gui.RxDBuilder()\\nelse:\\n\\timport neuron.rxd.gui\\n\\tneuron.rxd.gui.RxDBuilder()\")")
+        xbutton("RxD Builder", "nrnpython(\"import neuron.rxd.gui\\nneuron.rxd.gui.RxDBuilder()\")")
     }
     xmenu()
 }

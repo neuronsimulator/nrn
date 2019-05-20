@@ -877,7 +877,10 @@ class Species(_SpeciesMathable):
             raise RxDException("The represents=%s is not valid CURIE" % represents)
         else:
             self.represents = represents
+        initializer._init_lock.acquire()
         _all_species.append(weakref.ref(self))
+        initializer._init_lock.acquire()
+
         # declare an update to the structure of the model (the number of differential equations has changed)
         nrn_dll_sym('structure_change_cnt', ctypes.c_int).value += 1
 
@@ -896,6 +899,8 @@ class Species(_SpeciesMathable):
                     #       (pointers would be invalid; anything else?)
                     raise RxDException('Currently cannot add species containing 1D after 3D species defined and initialized. To work-around: reorder species definition.')
             self._do_init()
+
+
     
     def _do_init(self):
         self._do_init1()
