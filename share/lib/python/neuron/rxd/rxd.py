@@ -294,8 +294,11 @@ def _unregister_reaction(r):
 def _register_reaction(r):
     # TODO: should we search to make sure that (a weakref to) r hasn't already been added?
     global _all_reactions, _external_solver_initialized
+    initializer._init_lock.acquire()
     _all_reactions.append(_weakref_ref(r))
     _external_solver_initialized = False
+    initializer._init_lock.release()
+
     
 def _after_advance():
     global last_diam_change_cnt
