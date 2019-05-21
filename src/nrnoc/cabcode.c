@@ -59,7 +59,7 @@ void nrn_secstack(i) int i; {
 	if (skip_secstack_check) { return; }
 #if 1
 	if (isecstack > i) {
-		printf("The sectionstack index should be %d but it is %d\n", i, isecstack);
+		Printf("The sectionstack index should be %d but it is %d\n", i, isecstack);
 hoc_warning("prior to version 5.3 the section stack would not have been properly popped\n\
 and the currently accessed section would have been ", secname(secstack[isecstack]));
 	}

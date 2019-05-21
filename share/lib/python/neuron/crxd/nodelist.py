@@ -7,6 +7,16 @@ class NodeList(list):
     def __call__(self, restriction):
         """returns a sub-NodeList consisting of nodes satisfying restriction"""
         return NodeList([i for i in self if i.satisfies(restriction)])
+
+    def __getitem__(self, key):
+        if isinstance(key, slice):
+            return NodeList(list.__getitem__(self, key))
+        else:
+            return list.__getitem__(self, key)
+    
+    def __getslice__(self, i, j):
+        # Python 2 support for simple slicing
+        return NodeList(list.__getslice__(self, i, j))    
     
     @property
     def value(self):

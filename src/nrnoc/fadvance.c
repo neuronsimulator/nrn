@@ -112,7 +112,7 @@ there (hence nrn_tbase_)
 double nrn_ndt_, nrn_tbase_, nrn_dt_;
 void nrn_chk_ndt() {
 	if (dt != nrn_dt_ || t != nrn_tbase_ + nrn_ndt_ * nrn_dt_) {
-if (nrnmpi_myid == 0) printf("nrn_chk_ndt t=%g dt=%g old nrn_tbase_=%g nrn_ndt_=%g nrn_dt_=%g\n",
+if (nrnmpi_myid == 0) Printf("nrn_chk_ndt t=%g dt=%g old nrn_tbase_=%g nrn_ndt_=%g nrn_dt_=%g\n",
 t, dt, nrn_tbase_, nrn_ndt_, nrn_dt_);
 		nrn_dt_ = dt;
 		nrn_tbase_ = t;
@@ -636,20 +636,20 @@ void nrn_print_matrix(NrnThread* _nt) {
 		int i, n = spGetSize(_nt->_sp13mat, 0);
 		spPrint(_nt->_sp13mat, 1, 1, 1);
 		for (i=1; i <= n; ++i) {
-			printf("%d %g\n", i, _nt->_actual_rhs[i]);
+			Printf("%d %g\n", i, _nt->_actual_rhs[i]);
 		}
 	}
     }else if (_nt) {
 	for (inode = 0; inode <  _nt->end; ++inode) {
 		nd = _nt->_v_node[inode];
-printf("%d %g %g %g %g\n", inode, ClassicalNODEB(nd), ClassicalNODEA(nd), NODED(nd), NODERHS(nd));
+Printf("%d %g %g %g %g\n", inode, ClassicalNODEB(nd), ClassicalNODEA(nd), NODED(nd), NODERHS(nd));
 	}		
     }else{
 	for (isec = 0; isec < section_count; ++isec) {
 		sec = secorder[isec];
 		for (inode = 0; inode < sec->nnode; ++inode) {
 			nd = sec->pnode[inode];
-printf("%d %d %g %g %g %g\n", isec, inode, ClassicalNODEB(nd), ClassicalNODEA(nd), NODED(nd), NODERHS(nd));
+Printf("%d %d %g %g %g %g\n", isec, inode, ClassicalNODEB(nd), ClassicalNODEA(nd), NODED(nd), NODERHS(nd));
 		}
 	}
     }

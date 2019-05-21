@@ -108,6 +108,8 @@ class Node(object):
             return self.region == condition
         elif isinstance(condition, nrn.Segment):
             return self.segment == condition
+        elif isinstance(condition, region.Extracellular):
+            return self.region == condition
         raise RxDException('selector %r not supported for this node type' % condition)
         
     @property
@@ -630,7 +632,11 @@ class NodeExtracellular(Node):
     @property
     def z3d(self):
         return self._regionref()._zlo + (self._k+0.5)*self._regionref()._dx[2]
-    
+
+    @property
+    def region(self):
+        """The extracellular space containing the node."""
+        return self._regionref() 
 
     @property
     def d(self):
