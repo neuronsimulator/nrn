@@ -1811,8 +1811,9 @@ extern void get_partrans_setup_info(int, int&, int&, int&, int&, int*&, int*&, i
 }
 
 extern "C" {
-void nrnthread_get_trajectory_requests(int tid, int& cnt, void**& vpr, int*& types, int*& indices);
-void nrnthread_trajectory_values(int tid, int cnt, void** vpr, double t, double* values);
+void nrnthread_get_trajectory_requests(int tid, int bsize, int& ntrajec, void**& vpr, int*& types, int*& indices, double**& varrays);
+void nrnthread_trajectory_values(int tid, int ntrajec, void** vpr, double t, double* values);
+void nrnthread_trajectory_return(int tid, int ntrajec, int vecsz, void** vpr, double t);
 }
 
 static core2nrn_callback_t cnbs[]  = {
@@ -1834,6 +1835,7 @@ static core2nrn_callback_t cnbs[]  = {
 
   {"nrn2core_get_trajectory_requests_", (CNB)nrnthread_get_trajectory_requests},
   {"nrn2core_trajectory_values_", (CNB)nrnthread_trajectory_values},
+  {"nrn2core_trajectory_return_", (CNB)nrnthread_trajectory_return},
   {NULL, NULL}
 };
 
