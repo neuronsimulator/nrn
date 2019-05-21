@@ -36,12 +36,15 @@ class Rate(GeneralizedReaction):
             if regions is not None and not isinstance(regions, region.Extracellular):
                 regions = [regions]
             else:
-                if not hasattr(species, '_extracellular_regions'):
-                    regions = species._regions if hasattr(species, '_regions') else [species._region()]
-                elif not species._extracellular_regions:
-                    regions = species._regions if hasattr(species, '_regions') else [species._region()]
+                if hasattr(species,'_extracellular'):
+                     regions = [species._extracellular()._region]
                 else:
-                    regions = [None]
+                    if not hasattr(species, '_extracellular_regions'):
+                        regions = species._regions if hasattr(species, '_regions') else [species._region()]
+                    elif not species._extracellular_regions:
+                        regions = species._regions if hasattr(species, '_regions') else [species._region()]
+                    else:
+                        regions = [None]
         else:
             regions = [reg for reg in regions if not isinstance(reg, region.Extracellular)]
         self._regions = regions

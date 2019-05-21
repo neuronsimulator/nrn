@@ -70,16 +70,19 @@ class _c_region:
    
     def add_reaction(self, rptr, region):
         if rptr in self._react_regions:
-           self._react_regions[rptr].add(region)
+            if region not in self._react_regions[rptr]:
+                self._react_regions[rptr].append(region)
         else:
-            self._react_regions[rptr] = {region}
+            self._react_regions[rptr] = [region]
         if not self._voltage_dependent:
             self._voltage_dependent = rptr()._voltage_dependent
         self._initialized = False
 
     def add_species(self,species_set):
         from .species import SpeciesOnRegion, Parameter, ParameterOnRegion
-        for s in species_set:
+        species = list(species_set)
+        species.sort(key=lambda sp: sp._species()._id if isinstance(sp, SpeciesOnRegion) else sp._id)
+        for s in species:
             if isinstance(s,ParameterOnRegion):
                 if s._species() and s._species not in self._react_params: 
                     self._react_params.append(s._species)
@@ -95,8 +98,10 @@ class _c_region:
         self._initilized = False
 
     def add_ecs_species(self,species_set):
-        from .species import Parameter, ParameterOnExtracellular
-        for s in species_set:
+        from .species import SpeciesOnExtracellular, Parameter, ParameterOnExtracellular
+        species = list(species_set)
+        species.sort(key=lambda sp: sp._extracellular()._grid_id if isinstance(sp, SpeciesOnExtracellular) else sp._grid_id)
+        for s in species:
             sptr = s._extracellular
             if isinstance(s,ParameterOnExtracellular):
                 if sptr not in self._ecs_react_params: self._ecs_react_params.append(sptr)

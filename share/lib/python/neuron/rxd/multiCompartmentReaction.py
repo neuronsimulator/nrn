@@ -87,7 +87,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
             raise RxDException('must specify a membrane not a volume for the boundary')
         self._regions = [membrane]
         rxd._register_reaction(self)
-        
+
 
         # initialize self if the rest of rxd is already initialized
         if initializer.is_initialized():
