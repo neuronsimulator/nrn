@@ -358,6 +358,17 @@ int find_triangles(double value0, double value1, double value2, double value3, d
     if (value5 < 0) cubeIndex |= 32;
     if (value6 < 0) cubeIndex |= 64;
     if (value7 < 0) cubeIndex |= 128;
+
+    if (cubeIndex == 0) {
+        if (value0 <= 0) cubeIndex |= 1;
+        if (value1 <= 0) cubeIndex |= 2;
+        if (value2 <= 0) cubeIndex |= 4;
+        if (value3 <= 0) cubeIndex |= 8;
+        if (value4 <= 0) cubeIndex |= 16;
+        if (value5 <= 0) cubeIndex |= 32;
+        if (value6 <= 0) cubeIndex |= 64;
+        if (value7 <= 0) cubeIndex |= 128;
+    }
     
     /*
     if isinf(value0) printf('value0 is inf\n');
