@@ -55,7 +55,7 @@ rm -f -f src/nrnpython/build
  --with-paranrn=dynamic MPICC=x86_64-w64-mingw32-gcc \
  MPICXX=x86_64-w64-mingw32-g++ \
  CFLAGS='-DMSMPI_NO_SAL -I/c/ms-mpi/include -O2' \
- CXXFLAGS='-DMSMPI_NO_SAL -I/c/ms-mpi/include -O2' \
+ CXXFLAGS='-DMSMPI_NO_SAL -D_hypot=hypot -I/c/ms-mpi/include -O2' \
  LIBS='-L/c/ms-mpi/lib/x64 -lmsmpi' \
   PYINCDIR=$PYDIR/include \
   PYLIBDIR=$PYDIR/libs \

@@ -200,7 +200,6 @@ for f in $DB/hocmodule*.dll ; do
 done
 set +e
 cp $B/share/lib/python/neuron/rxd/geometry3d/*.pyd $D/lib/python/neuron/rxd/geometry3d
-cp $B/share/lib/python/neuron/crxd/geometry3d/*.pyd $D/lib/python/neuron/crxd/geometry3d
 set -e
 fi
 
