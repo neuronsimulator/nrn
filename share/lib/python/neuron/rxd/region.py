@@ -80,9 +80,7 @@ class _c_region:
 
     def add_species(self,species_set):
         from .species import SpeciesOnRegion, Parameter, ParameterOnRegion
-        species = list(species_set)
-        species.sort(key=lambda sp: sp._species()._id if isinstance(sp, SpeciesOnRegion) else sp._id)
-        for s in species:
+        for s in species_set:
             if isinstance(s,ParameterOnRegion):
                 if s._species() and s._species not in self._react_params: 
                     self._react_params.append(s._species)
@@ -98,10 +96,8 @@ class _c_region:
         self._initilized = False
 
     def add_ecs_species(self,species_set):
-        from .species import SpeciesOnExtracellular, Parameter, ParameterOnExtracellular
-        species = list(species_set)
-        species.sort(key=lambda sp: sp._extracellular()._grid_id if isinstance(sp, SpeciesOnExtracellular) else sp._grid_id)
-        for s in species:
+        from .species import ParameterOnExtracellular
+        for s in species_set:
             sptr = s._extracellular
             if isinstance(s,ParameterOnExtracellular):
                 if sptr not in self._ecs_react_params: self._ecs_react_params.append(sptr)
@@ -136,6 +132,9 @@ class _c_region:
     def _ecs_initalize(self):
         from . import species
         self.ecs_location_index = -numpy.ones((self.num_ecs_species + self.num_ecs_params,self.num_segments),ctypes.c_int)
+        
+        self._ecs_react_species.sort(key=lambda sp: sp()._extracellular()._grid_id if isinstance(sp(), species.SpeciesOnExtracellular) else sp()._grid_id)
+        self._ecs_react_params.sort(key=lambda sp: sp()._extracellular()._grid_id if isinstance(sp(), species.ParameterOnExtracellular) else sp()._grid_id)
 
         #Set the local ids of the regions and species involved in the reactions
         self._ecs_species_ids = dict()
@@ -158,15 +157,19 @@ class _c_region:
         self.ecs_location_index = self.ecs_location_index.transpose()
 
     def _initalize(self):
-        from .species import Species
+        from .species import Species, SpeciesOnRegion
         self.location_index = -numpy.ones((self.num_regions, self.num_species + self.num_params, self.num_segments), ctypes.c_int)
-        from .species import SpeciesOnExtracellular, SpeciesOnRegion
+        from .species import SpeciesOnExtracellular, SpeciesOnRegion, ParameterOnRegion
         
         #Set the local ids of the regions and species involved in the reactions
         self._species_ids = dict()
         self._params_ids = dict()
         self._region_ids = dict()
-        
+        self._react_species.sort(key=lambda sp: sp()._species()._id if isinstance(sp(), SpeciesOnRegion) else sp()._id)
+        self._react_params.sort(key=lambda sp: sp()._species()._id if isinstance(sp(), ParameterOnRegion) else sp()._id)
+
+        self._regions.sort(key=lambda rp: rp()._id) 
+
         for rid, r in enumerate(self._regions):  
             self._region_ids[r()._id] = rid
         for sid, s in enumerate(self._react_species):
