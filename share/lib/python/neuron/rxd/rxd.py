@@ -864,6 +864,8 @@ def _setup_matrices():
             grid_3d_indices_cnt = 0
             for index1d in grid_id_indices1d[grid_id]:
                 neighbors3d = set(hybrid_neighbors[index1d])
+                if len(neighbors3d) < 1:
+                    raise RxDException('No 3D neighbors detected for 1D segment. Try reducing dx')
                 sec1d = index1d_sec1d[index1d]
                 seg_length1d = sec1d.L/sec1d.nseg
                 if neighbors3d:
