@@ -112,11 +112,8 @@ def fullmorph(source, dx, soma_step=100):
 
     for do_spheres in [False, True]:
         for seg in final_seg_dict:
-            print()
-            print(seg,':')
             distance_root = h.SectionRef(sec=seg.sec).root(0)
             for item in [my_item for my_item in final_seg_dict[seg] if isinstance(my_item, Sphere) == do_spheres]:
-                print(item)
                 if item in object_pts:
                     [yesvox, surface, miss] = voxelize(grid, item, object_pts[item])
                 else:

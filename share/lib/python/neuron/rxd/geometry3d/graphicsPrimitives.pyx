@@ -141,7 +141,6 @@ cdef class Sphere:
         def __get__(self): return self._zhi
     cpdef double distance(self, double x, double y, double z):
         d = sqrt((x - self._x) ** 2 + (y - self._y) ** 2 + (z - self._z) ** 2) - self._r
-        old_d = d
         for clip in self.clips:
             d = max(d, clip.distance(x, y, z))
         return d

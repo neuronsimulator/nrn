@@ -106,9 +106,9 @@ cdef tangent_sphere(cone, int whichend):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef list join_outside(double x0, double y0, double z0, double r0, double x1, double y1, double z1, double r1, double x2, double y2, double z2, double r2, double dx):
+cdef tuple get_infinite_cones(double x0, double y0, double z0, double r0, double x1, double y1, double z1, double r1, double x2, double y2, double z2, double r2):
     cdef double deltar, deltanr
-    cdef numpy.ndarray[numpy.float_t, ndim=1] pt1, radial_vec, nradial_vec, axis, naxis
+    cdef numpy.ndarray[numpy.float_t, ndim=1] axis, naxis
     
     axis = numpy.array([x2 - x1, y2 - y1, z2 - z1])
     naxis = numpy.array([x1 - x0, y1 - y0, z1 - z0])
@@ -119,9 +119,40 @@ cdef list join_outside(double x0, double y0, double z0, double r0, double x1, do
     # sphere, clipped to extended cones
     # CTNG:trimsphere
     #
+    offset0 = r0
+    offset1 = r1
+    offset1b = r1
+    offset2 = r2
+    if r0 - deltanr * offset0 < 0:
+        # don't go that far (reduce offset0 so that this comes out 0)
+        offset0 = r0 / deltanr
+    if r1 + deltanr * offset1 < 0:
+        offset1 = -r1 / deltanr
+    if r1 - deltar * offset1b < 0:
+        offset1b = r1 / deltar
+    if r2 + deltar * offset2 < 0:
+        offset2 = -r2 / deltar
+
+    c0 = Cone(x0 - naxis[0] * offset0, y0 - naxis[1] * offset0, z0 - naxis[2] * offset0, r0 - deltanr * offset0, x1 + naxis[0] * offset1, y1 + naxis[1] * offset1, z1 + naxis[2] * offset1, r1 + deltanr * offset1)
+    c1 = Cone(x1 - axis[0] * offset1b, y1 - axis[1] * offset1b, z1 - axis[2] * offset1b, r1 - deltar * offset1b, x2 + axis[0] * offset2, y2 + axis[1] * offset2, z2 + axis[2] * offset2, r2 + deltar * offset2)
+    return c0, c1
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef list join_outside(double x0, double y0, double z0, double r0, double x1, double y1, double z1, double r1, double x2, double y2, double z2, double r2, double dx):
+    cdef numpy.ndarray[numpy.float_t, ndim=1] pt1, radial_vec, nradial_vec, axis, naxis
+
+    c0, c1 = get_infinite_cones(x0, y0, z0, r0, x1, y1, z1, r1, x2, y2, z2, r2)
+
+    axis = numpy.array([x2 - x1, y2 - y1, z2 - z1])
+    naxis = numpy.array([x1 - x0, y1 - y0, z1 - z0])
+    axis /= linalg.norm(axis); naxis /= linalg.norm(naxis)
+    #
+    # sphere, clipped to extended cones
+    # CTNG:trimsphere
+    #
     sp = Sphere(x1, y1, z1, r1)
-    c0 = Cone(x0 - naxis[0] * r0, y0 - naxis[1] * r0, z0 - naxis[2] * r0, r0 - deltanr * r0, x1 + naxis[0] * r1, y1 + naxis[1] * r1, z1 + naxis[2] * r1, r1 + deltanr * r1)
-    c1 = Cone(x1 - axis[0] * r1, y1 - axis[1] * r1, z1 - axis[2] * r1, r1 - deltar * r1, x2 + axis[0] * r2, y2 + axis[1] * r2, z2 + axis[2] * r2, r2 + deltar * r2)
     sp.set_clip([Intersection([c0, c1])])
     
     result = [sp]
@@ -485,31 +516,19 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
                 # no need to clip if the cones are perfectly aligned
                 
                 if all(axis == naxis):
-                    #parallel
-                    '''
-                    if r0 == r1 == r2:
-                        # two parallel cylinders with equal radii: join by combining
-                        # TODO: we can remove the original two if we can find them
-                        join_item = Cylinder(x0, y0, z0, x2, y2, z2, r2)
-                        #join_items_needing_clipped.append((join_item, neighbor_left, neighbor_right))
-                        if neighbor_left: clip = neighbor_left.get_clip()
-                        if neighbor_right: clip += neighbor_right.get_clip()
-                        join_item.set_clip(clip)
-
-                        objects.append(join_item)
-                        with cython.wraparound(True):
-                            joingroup.append(objects[-1])
-                    else:'''
-                    #parallel non-cylinder or cylinder cones
+                    #parallel    
                     sp = Sphere(x1, y1, z1, r1)
-                    sp.set_clip([Plane(x0, y0, z0, -naxis[0], -naxis[1], -naxis[2]), Plane(x2, y2, z2, axis[0], axis[1], axis[2])])
+                    c0, c1 = get_infinite_cones(x0, y0, z0, r0, x1, y1, z1, r1, x2, y2, z2, r2)
+
+                    sp.set_clip([c0, c1, Plane(x0, y0, z0, -naxis[0], -naxis[1], -naxis[2]), Plane(x2, y2, z2, axis[0], axis[1], axis[2])])
                     objects.append(sp)
                     with cython.wraparound(True):
                         joingroup.append(objects[-1])
                 elif r0 == r1 == r2:
                     # simplest join: two non-parallel cylinders (no need for all that nastiness below)
                     sp = Sphere(x1, y1, z1, r1)
-                    sp.set_clip([Plane(x0, y0, z0, -naxis[0], -naxis[1], -naxis[2]), Plane(x2, y2, z2, axis[0], axis[1], axis[2])])
+                    c0, c1 = get_infinite_cones(x0, y0, z0, r0, x1, y1, z1, r1, x2, y2, z2, r2)
+                    sp.set_clip([Intersection([c0, c1, Plane(x0, y0, z0, -naxis[0], -naxis[1], -naxis[2]), Plane(x2, y2, z2, axis[0], axis[1], axis[2])])])
                     objects.append(sp)
                     with cython.wraparound(True):
                         joingroup.append(objects[-1])
