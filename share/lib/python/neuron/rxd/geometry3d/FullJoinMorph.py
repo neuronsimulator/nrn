@@ -39,6 +39,9 @@ def all_in(dist):
             return False 
     return True
 
+def sort_spheres_last(item):
+    return 1 if isinstance(item, Sphere) else 0
+
 def fullmorph(source, dx, soma_step=100):
     start = time.time()
 
@@ -83,6 +86,7 @@ def fullmorph(source, dx, soma_step=100):
     for jg in join_groups:
         seg = find_parent_seg(jg, segment_dict, join_objects)
         for item in jg:
+            #if isinstance(item, Sphere): continue # TODO: don't do this... just a test
             if (not(isinstance(item, Cone) or isinstance(item, Cylinder))) or (item in join_objects):
                 if seg in final_seg_dict.keys():
                     final_seg_dict[seg].append(item)
@@ -106,35 +110,39 @@ def fullmorph(source, dx, soma_step=100):
     total_surface_voxels = {}
     final_intern_voxels = {}			# final output of internal voxels
 
-    for seg in final_seg_dict.keys():
-        h.distance(0, h.SectionRef(sec=seg.sec).root(0))           # reset the root in case multiple cells
-        for item in final_seg_dict[seg]:
-            if item in object_pts.keys():
-                [yesvox, surface, miss] = voxelize(grid, item, object_pts[item])
-            else:
-                [yesvox, surface, miss] = voxelize(grid, item)
-            if miss:
-                missed += 1
-                missed_voxels.add(miss)
-
-            # must take only the internal voxels for that item (set diff)
-            yesvox = yesvox - surface.keys()
-            for i in yesvox:  
-                if i in final_intern_voxels.keys():
-                    if h.distance(seg) < h.distance(final_intern_voxels[i][1]):
-                        final_intern_voxels[i][1] = seg
-                else:                 
-                    final_intern_voxels[i] = [dx**3, seg]
-
-            for i in surface.keys():
-                if i in total_surface_voxels.keys():				
-                    total_surface_voxels[i][0].append(item)
-                    # update the distances list to the minimum at each vertex
-                    total_surface_voxels[i][1] = [min(total_surface_voxels[i][1][j], surface[i][j]) for j in range(8)]
-                    if h.distance(seg) < h.distance(total_surface_voxels[i][2]):
-                        total_surface_voxels[i][2] = seg
+    for do_spheres in [False, True]:
+        for seg in final_seg_dict:
+            print()
+            print(seg,':')
+            distance_root = h.SectionRef(sec=seg.sec).root(0)
+            for item in [my_item for my_item in final_seg_dict[seg] if isinstance(my_item, Sphere) == do_spheres]:
+                print(item)
+                if item in object_pts:
+                    [yesvox, surface, miss] = voxelize(grid, item, object_pts[item])
                 else:
-                    total_surface_voxels[i] = [[item], surface[i], seg]
+                    [yesvox, surface, miss] = voxelize(grid, item)
+                if miss:
+                    missed += 1
+                    missed_voxels.add(miss)
+
+                # must take only the internal voxels for that item (set diff)
+                yesvox = yesvox - surface.keys()
+                for i in yesvox:  
+                    if i in final_intern_voxels.keys():
+                        if h.distance(distance_root, seg) < h.distance(distance_root, final_intern_voxels[i][1]) and not isinstance(item, Sphere):
+                            final_intern_voxels[i][1] = seg
+                    else:                 
+                        final_intern_voxels[i] = [dx**3, seg]
+
+                for i in surface.keys():
+                    if i in total_surface_voxels.keys():				
+                        total_surface_voxels[i][0].append(item)
+                        # update the distances list to the minimum at each vertex
+                        total_surface_voxels[i][1] = [min(total_surface_voxels[i][1][j], surface[i][j]) for j in range(8)]
+                        if h.distance(distance_root, seg) < h.distance(distance_root, total_surface_voxels[i][2]) and not isinstance(item, Sphere):
+                            total_surface_voxels[i][2] = seg
+                    else:
+                        total_surface_voxels[i] = [[item], surface[i], seg]
 
     # take internal voxels out of surface voxels
     for vox in final_intern_voxels.keys():

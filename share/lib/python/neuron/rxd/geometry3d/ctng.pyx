@@ -486,6 +486,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
                 
                 if all(axis == naxis):
                     #parallel
+                    '''
                     if r0 == r1 == r2:
                         # two parallel cylinders with equal radii: join by combining
                         # TODO: we can remove the original two if we can find them
@@ -498,13 +499,13 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
                         objects.append(join_item)
                         with cython.wraparound(True):
                             joingroup.append(objects[-1])
-                    else:
-                        #parallel non-cylinder cones
-                        sp = Sphere(x1, y1, z1, r1)
-                        sp.set_clip([Plane(x0, y0, z0, -naxis[0], -naxis[1], -naxis[2]), Plane(x2, y2, z2, axis[0], axis[1], axis[2])])
-                        objects.append(sp)
-                        with cython.wraparound(True):
-                            joingroup.append(objects[-1])
+                    else:'''
+                    #parallel non-cylinder or cylinder cones
+                    sp = Sphere(x1, y1, z1, r1)
+                    sp.set_clip([Plane(x0, y0, z0, -naxis[0], -naxis[1], -naxis[2]), Plane(x2, y2, z2, axis[0], axis[1], axis[2])])
+                    objects.append(sp)
+                    with cython.wraparound(True):
+                        joingroup.append(objects[-1])
                 elif r0 == r1 == r2:
                     # simplest join: two non-parallel cylinders (no need for all that nastiness below)
                     sp = Sphere(x1, y1, z1, r1)
