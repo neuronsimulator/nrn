@@ -9,7 +9,7 @@ endif
 ctng.cpp: ctng.pyx
 	$(CYTHON) $(geosrc)/ctng.pyx -o ctng.cpp
 
-surfaces.cpp: surfaces.pyx marching_cubes2.c llgramarea.c
+surfaces.cpp: surfaces.pyx 
 	$(CYTHON) $(geosrc)/surfaces.pyx -o surfaces.cpp
 
 
@@ -18,8 +18,7 @@ graphicsPrimitives.cpp: graphicsPrimitives.pyx
 
 pkginclude_HEADERS = 
 EXTRA_DIST = ctng.cpp ctng.pyx surfaces.cpp surfaces.pyx \
-	graphicsPrimitives.cpp graphicsPrimitives.pyx \
-	marching_cubes2.c llgramarea.c
+	graphicsPrimitives.cpp graphicsPrimitives.pyx 
 
 if BUILD_RX3D
 if BUILD_MINGW
@@ -29,7 +28,7 @@ mingwargs = @rxd_mingw_args@
 force: ctng.cpp surfaces.cpp graphicsPrimitives.cpp
 else
 mingwargs =
-install-exec-am: ctng.cpp surfaces.cpp graphicsPrimitives.cpp marching_cubes2.c llgramarea.c
+install-exec-am: ctng.cpp surfaces.cpp graphicsPrimitives.cpp 
 endif
 	if test ! -f graphicsPrimitives.cpp ; then \
 		cp $(geosrc)/graphicsPrimitives.cpp  . ; \
@@ -39,12 +38,6 @@ endif
 	fi
 	if test ! -f surfaces.cpp ; then \
 		cp $(geosrc)/surfaces.cpp  . ; \
-	fi
-	if test ! -f marching_cubes2.c ; then \
-		cp $(geosrc)/marching_cubes2.c  . ; \
-	fi
-	if test ! -f llgramarea.c ; then \
-		cp $(geosrc)/llgramarea.c  . ; \
 	fi
 #if BUILD_MINGW
 	if ! grep -q '_hypot' ctng.cpp ; then \

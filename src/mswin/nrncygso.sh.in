@@ -190,7 +190,7 @@ fi # NPYONLY no
 
       echo 'make libnrnpython${NPYVER}.dll'
       z=../nrnpython
-      lnpyfiles="$z/grids.o $z/nrnpy_hoc.o $z/nrnpy_nrn.o $z/nrnpy_p2h.o $z/nrnpython.o $z/rxd.o $z/rxd_vol.o $z/rxd_extracellular.o"
+      lnpyfiles="$z/grids.o $z/nrnpy_hoc.o $z/nrnpy_nrn.o $z/nrnpy_p2h.o $z/nrnpython.o $z/rxd.o $z/rxd_vol.o $z/rxd_extracellular.o $z/rxd_llgramarea.o $z/rxd_marching_cubes.o $z/rxd_intracellular.o"
       $CXX -shared $lnpyfiles -L. -lnrniv -o libnrnpython${NPYVER}.dll \
         @NRNPYTHON_PYLIBLINK@ \
         -L${IVLIBDIR} -lIVhines \

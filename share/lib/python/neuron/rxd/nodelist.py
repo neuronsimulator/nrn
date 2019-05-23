@@ -7,6 +7,16 @@ class NodeList(list):
     def __call__(self, restriction):
         """returns a sub-NodeList consisting of nodes satisfying restriction"""
         return NodeList([i for i in self if i.satisfies(restriction)])
+
+    def __getitem__(self, key):
+        if isinstance(key, slice):
+            return NodeList(list.__getitem__(self, key))
+        else:
+            return list.__getitem__(self, key)
+    
+    def __getslice__(self, i, j):
+        # Python 2 support for simple slicing
+        return NodeList(list.__getslice__(self, i, j))    
     
     @property
     def value(self):
@@ -46,8 +56,8 @@ class NodeList(list):
             raise RxDException('no nodes')
         if len(self) != 1:
             raise RxDException('node not unique')
-        return self[0]._ref_concentration
-    
+        return self[0]._ref_concentration    
+
     @property
     def diff(self):
         """Returns the diffusion constant of the Node objects in the NodeList as an iterable."""

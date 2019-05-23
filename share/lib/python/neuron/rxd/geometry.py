@@ -27,10 +27,8 @@ class RxDGeometry:
 def _volumes1d(sec):
     if not isinstance(sec, nrn.Section):
         sec = sec._sec
-    arc3d = [h.arc3d(i, sec=sec)
-             for i in range(int(h.n3d(sec=sec)))]
-    diam3d = [h.diam3d(i, sec=sec)
-              for i in range(int(h.n3d(sec=sec)))]
+    arc3d = [sec.arc3d(i) for i in range(sec.n3d())]
+    diam3d = [sec.diam3d(i) for i in range(sec.n3d())]
     vols = numpy.zeros(sec.nseg)
     dx = sec.L / sec.nseg
     for iseg in range(sec.nseg):
@@ -55,10 +53,10 @@ def _make_surfacearea1d_function(scale):
     def result(sec):
         if not isinstance(sec, nrn.Section):
             sec = sec._sec
-        arc3d = [h.arc3d(i, sec=sec)
-                for i in range(int(h.n3d(sec=sec)))]
-        diam3d = [h.diam3d(i, sec=sec)
-                for i in range(int(h.n3d(sec=sec)))]
+        arc3d = [sec.arc3d(i)
+                for i in range(sec.n3d())]
+        diam3d = [sec.diam3d(i)
+                for i in range(sec.n3d())]
         sas = numpy.zeros(sec.nseg)
         dx = sec.L / sec.nseg
         for iseg in range(sec.nseg):
@@ -83,10 +81,10 @@ def _make_perimeter_function(scale):
     def result(sec):
         if not isinstance(sec, nrn.Section):
             sec = sec._sec
-            arc3d = [h.arc3d(i, sec=sec)
-                     for i in range(int(h.n3d(sec=sec)))]
-            diam3d = [h.diam3d(i, sec=sec)
-                      for i in range(int(h.n3d(sec=sec)))]
+            arc3d = [sec.arc3d(i)
+                     for i in range(sec.n3d())]
+            diam3d = [sec.diam3d(i)
+                      for i in range(sec.n3d())]
             area_pos = numpy.linspace(0, sec.L, sec.nseg + 1)
             diams = numpy.interp(area_pos, arc3d, diam3d)
             return scale * diams  
@@ -98,10 +96,10 @@ _perimeter1d = _make_perimeter_function(numpy.pi)
 def _neighbor_areas1d(sec):
     if not isinstance(sec, nrn.Section):
         sec = sec._sec
-    arc3d = [h.arc3d(i, sec=sec)
-             for i in range(int(h.n3d(sec=sec)))]
-    diam3d = [h.diam3d(i, sec=sec)
-              for i in range(int(h.n3d(sec=sec)))]
+    arc3d = [sec.arc3d(i)
+             for i in range(sec.n3d())]
+    diam3d = [sec.diam3d(i)
+              for i in range(sec.n3d())]
     area_pos = numpy.linspace(0, sec.L, sec.nseg + 1)
     diams = numpy.interp(area_pos, arc3d, diam3d)
     return numpy.pi * 0.25 * diams ** 2
@@ -336,10 +334,10 @@ class Shell(RxDGeometry):
     def neighbor_areas1d(self, sec):
         if not isinstance(sec, nrn.Section):
             sec = sec._sec
-        arc3d = [h.arc3d(i, sec=sec)
-                 for i in range(int(h.n3d(sec=sec)))]
-        diam3d = [h.diam3d(i, sec=sec)
-                  for i in range(int(h.n3d(sec=sec)))]
+        arc3d = [sec.arc3d(i)
+                 for i in range(sec.n3d())]
+        diam3d = [sec.diam3d(i)
+                  for i in range(sec.n3d())]
         area_pos = numpy.linspace(0, sec.L, sec.nseg + 1)
         diams = numpy.interp(area_pos, arc3d, diam3d)
         if self._type == _lo_hi_shell:
@@ -351,10 +349,10 @@ class Shell(RxDGeometry):
     def volumes1d(self, sec):
         if not isinstance(sec, nrn.Section):
             sec = sec._sec
-        arc3d = [h.arc3d(i, sec=sec)
-                 for i in range(int(h.n3d(sec=sec)))]
-        diam3d = [h.diam3d(i, sec=sec)
-                  for i in range(int(h.n3d(sec=sec)))]
+        arc3d = [sec.arc3d(i)
+                 for i in range(sec.n3d())]
+        diam3d = [sec.diam3d(i)
+                  for i in range(sec.n3d())]
         vols = numpy.zeros(sec.nseg)
         dx = sec.L / sec.nseg
         for iseg in range(sec.nseg):

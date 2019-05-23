@@ -1,5 +1,5 @@
-from neuron import h, rxd, gui
-from neuron.rxd import initializer
+from neuron import h, crxd as rxd, gui
+from neuron.crxd import initializer
 
 h.CVode().active(1)                
 

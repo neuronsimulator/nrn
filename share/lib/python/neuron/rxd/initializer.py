@@ -1,4 +1,5 @@
 import itertools
+from threading import RLock
 
 # TODO: monkey-patch everything that requires an init so only even attempts once
 
@@ -9,11 +10,12 @@ def _do_ion_register():
         if obj is not None:
             obj._ion_register()
 
-
+_init_lock = RLock()
 has_initialized = False
 def _do_init():
-    global has_initialized
+    global has_initialized, _init_lock
     if has_initialized: return
+    _init_lock.acquire()
     from . import species, region, rxd
     if len(species._all_species) > 0:
         has_initialized = True
@@ -39,11 +41,16 @@ def _do_init():
             obj = obj()
             if obj is not None:
                 obj._do_init4()
+        for obj in species._all_species:
+            obj = obj()
+            if obj is not None:
+                obj._do_init5()
         for obj in rxd._all_reactions:
             obj = obj()
             if obj is not None:
                 obj._do_init()
         rxd._init()
+    _init_lock.release()
 
 
 def is_initialized():

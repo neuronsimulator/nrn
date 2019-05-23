@@ -6,13 +6,13 @@ def test(files):
     import re, array, numpy
     from scipy import interpolate
     
+    
     tol = 1e-10
     dt_eps = 1e-20
     
     try:
-        os.makedirs(os.path.join('test_data', 'crxd', 'wave1d'))
-        os.makedirs(os.path.join('test_data', 'crxd', 'ecs'))
         os.makedirs(os.path.join('test_data', 'wave1d'))
+        os.makedirs(os.path.join('test_data', 'ecs'))
     except OSError:
         pass
 
@@ -108,6 +108,7 @@ def test(files):
 if __name__ == '__main__':
     import os
     import sys
+    import shutil
     
     abspath = os.path.abspath(__file__)
     dname = os.path.dirname(abspath)
@@ -123,6 +124,12 @@ if __name__ == '__main__':
         if os.path.isfile(fname):
             # compile any mod files
             os.chdir(os.path.join('tests', dr))
+            # remove old compiled files
+            #TODO: is x86_64 universal
+            try:
+                shutil.rmtree('x86_64')
+            except OSError:
+                pass
             os.system('nrnivmodl')
             os.chdir(dname)
             with open(fname) as f:
