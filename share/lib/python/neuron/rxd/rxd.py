@@ -1252,12 +1252,13 @@ def _compile_reactions():
                     s = r._species()
                     species_id = creg._species_ids[s._id]
                     for reg in creg._react_regions[rptr]:
-                        region_id = creg._region_ids[reg()._id]
-                        rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate[reg()])
-                        rate_str = re.sub(r'params\[(\d+)\]\[(\d+)\]',lambda m: "params[%i][%i]" %  (creg._params_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), rate_str)
-                        operator = '+=' if species_ids_used[species_id][region_id] else '='
-                        fxn_string += "\n\trhs[%d][%d] %s %s;" % (species_id, region_id, operator, rate_str)
-                        species_ids_used[species_id][region_id] = True
+                        if reg() in r._rate:
+                            region_id = creg._region_ids[reg()._id]
+                            rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate[reg()])
+                            rate_str = re.sub(r'params\[(\d+)\]\[(\d+)\]',lambda m: "params[%i][%i]" %  (creg._params_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), rate_str)
+                            operator = '+=' if species_ids_used[species_id][region_id] else '='
+                            fxn_string += "\n\trhs[%d][%d] %s %s;" % (species_id, region_id, operator, rate_str)
+                            species_ids_used[species_id][region_id] = True
                 elif isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
                     #Lookup the region_id for the reaction
                     for reg in r._rate:
