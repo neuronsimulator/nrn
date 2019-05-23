@@ -1,3 +1,4 @@
+#cython: language_level=2
 from neuron import h
 import numpy
 import itertools
@@ -619,7 +620,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
                                 neighbor_copy = Cone(x0, y0, z0, r0, x1, y1, z1, r1)
                             clips.append(Union([
                                 Plane(x1, y1, z1, -naxis[0], -naxis[1], -naxis[2]),
-                                neighbor_copy]))
+                                Plane(x0, y0, z0, axis[0], axis[1], axis[2])]))
 
 #                        join_type = '%d%s' % (corner_count, 's' if sharp_turn else 'm')
 #                        join_counts[join_type] += 1
@@ -683,11 +684,12 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
 
         if joingroup:
             join_groups.append(joingroup)
-
+    
     for cone in all_cones:
         clip = cone_clip_db[cone]
         if clip:
             cone.set_clip([Union(clip)])
+            
         
     #####################################################################
     #
