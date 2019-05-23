@@ -159,7 +159,37 @@ def fullmorph(source, dx, soma_step=100):
             V = simplevolume(itemlist, distances, vox, grid)
             A = surface_area(distances[0], distances[1], distances[2], distances[3], distances[4], distances[5], distances[6], distances[7], 0,dx,0,dy,0,dz)
             final_surface_voxels[vox] = [V, A, seg]
-
+            
+    def has_vox(*vox):
+        return vox in final_surface_voxels or vox in final_intern_voxels
+    
+    # if an internal voxel doesn't have a neighbor... then it's not internal
+    # TODO: this should never happen, and seems to only happen when there
+    #       is surface that passes exactly through the boundary
+    #       Figure out how to handle that, and remove this; it slows things down a lot
+    actually_surface_voxels = []
+    for vox, (vol, seg) in final_intern_voxels.items():
+        i, j, k = vox
+        area = 0
+        if not has_vox(i + 1, j, k):
+            area += dx ** 2
+        if not has_vox(i - 1, j, k):
+            area += dx ** 2
+        if not has_vox(i, j + 1, k):
+            area += dx ** 2
+        if not has_vox(i, j - 1, k):
+            area += dx ** 2
+        if not has_vox(i, j, k + 1):
+            area += dx ** 2
+        if not has_vox(i, j, k - 1):
+            area += dx ** 2
+        if area:
+            final_surface_voxels[vox] = [vol, area, seg]
+            actually_surface_voxels.append(vox)
+    
+    for vox in actually_surface_voxels:
+        del final_intern_voxels[vox]
+ 
     # make sure to keep track of poss_missed for each cone; total should be 0
     """if missed > 0:
         print("{} objects have inaccurate voxelization, probably due to resolution errors.".format(missed))
