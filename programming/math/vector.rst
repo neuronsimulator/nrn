@@ -36,18 +36,18 @@ Vector
 	A Vector is itself an iterable and can be used in any context that takes an iterable, e.g.,
 
         .. code-block::
-	   python
+           python
 
-           for x in vec: print x
-	   [x for x in vec]
-	   numpy.array(vec)
+           for x in vec: print(x)
+           [x for x in vec]
+           numpy.array(vec)
 
         A Vector object created with this class can be thought of as 
 	containing a  one dimensional x array with elements of type float.
-        Individual elements of this array can 
-        be manipulated with a :samp:`{objref}.x[{index}]` notation. 
-	Alternatively, a :samp:`{objref}[{index}]` notation can be used to access Vector elements **but 
-	cannot be used to set elements.**  Vector slices are not directly supported but are replicated with the functionality
+	The :samp:`{objref}[{index}]` notation can be used to read and set Vector elements
+    (setting requires NEURON 7.7+). An older syntax :samp:`{objref}.x[{index}]` works on
+    all Python-supporting versions of NEURON.
+    Vector slices are not directly supported but are replicated with the functionality
 	of Vector.c() (see below).
 
         A vector can be created with length *size* and with each element set to the value of *init* or can be created using
@@ -64,39 +64,20 @@ Vector
         method are used as source values by the method to compute values which replace 
         the old values in vsrcdest.  The return value is simply an additional reference to the same Vector.
 
-        For example, v1 = v2 + v3 would be written, 
+        Beginning with NEURON 7.7, Vectors support arithmetic operations; e.g. one can write
+        ``v1 = v2*s2 + v3*s3 + v4*s4``.
+        
+        .. note::
+        
+            In older code, you may see the use of the arithmetic functions
+            add, mul, etc. Those functions changed the vectors they operated on, so to avoid this,
+            the .c() method was used to create a new copy of a vector. The expression that can
+            now be written ``v1 = v2*s2 + v3*s3 + v4*s4`` using the older form would be written as
 
-        .. code-block::
-            none
+            .. code-block::
+                none
 
-            v1 = v2.add(v3) 
-
-        However, this results in two, sometimes undesirable, side effects. First, 
-        the v2 elements are changed so that the original values are lost. Furthermore, 
-        v1 at the end is a reference to the same Vector object pointed to by v2. 
-        That is, if you subsequently change the elements of v2, the elements 
-        of v1 will change as well since v1 and v2 are in fact both labels for the same object. 
-         
-        To avoid these side effects, one can use the Vector.c() function 
-        which returns a reference to a new h.Vector which is a copy of the original. ie. 
-
-        .. code-block::
-            none
-
-            	v1 = v2.c().add(v3) 
-
-        leaves v2 unchanged, and v1 points to a new h.Vector. 
-        One can build up elaborate vector expressions in this manner, ie 
-        v1 = v2*s2 + v3*s3 + v4*s4 could be written 
-
-        .. code-block::
-            none
-
-            	v1 = v2.c().mul(s2).add(v3.c().mul(s3)).add(v4.c().mul(s4)) 
-
-        If the expressions get too complex it is probably clearer to employ 
-        temporary objects to break the process into several separate expressions. 
-         
+                    v1 = v2.c().mul(s2).add(v3.c().mul(s3)).add(v4.c().mul(s4))          
 
     Examples:
 
@@ -156,10 +137,13 @@ Vector
         Vector indices range from 0 to len(Vector)-1 
         Vector contents can also be accessed with ``vec.get(index)`` or set with ``vec.set(index, value)``
 
+        **This is not recommended for new code; use vec[index] instead.**
+
     Example:
-        ``print vec.x[0], vec[0]`` prints the value of the 0th (first) element twice. 
+        ``print(vec.x[0], vec[0])`` prints the value of the 0th (first) element twice. 
          
-        ``vec.x[i] = 3`` sets the i'th element to 3. **Cannot** use vec[i] here.
+        ``vec.x[i] = 3`` sets the i'th element to 3. Beginning with NEURON 7.7, it suffices
+        to write ``vec[i] = 3`` instead.
 
         .. code-block::
             python
@@ -173,7 +157,7 @@ Vector
         memory will cause the pointer to be invalid. In this case, the field editor will display the string, "Free'd". 
 
 	.. warning::
-        ``vec.x[-1]`` or ``vec[-1]`` returns the value of the last element of the vector but ``vec._ref_x`` cannot be accessed in
+        ``vec.x[-1]`` or ``vec[-1]`` return or set the value of the last element of the vector but ``vec._ref_x`` cannot be accessed in
 	this way.
 
 ----
@@ -186,18 +170,15 @@ Vector
 
 
     Description:
-        Deprecated in favor of len(vec); note that ``len(vec) == int(vec.size())``
+        Deprecated in favor of len(vec); note that ``len(vec) == vec.size()``
         Return the number of elements in the vector. The last element has the index: 
-        ``int(vec.size() - 1)`` which can be abbreviated using -1 as above.
-        
-        Due to the way NEURON connects with Python, numerical routines all return a
-        float, and it may be necessary to explicitly convert it to an ``int``:
+        ``vec.size() - 1`` which can be abbreviated using -1 as above.
 
         .. code-block::
             python
             
-            for i in xrange(int(vec.size())):
-                print vec[i]
+            for i in range(vec.size()):
+                print(vec[i])
         
     .. note::
             
@@ -206,7 +187,7 @@ Vector
         .. code-block::
             python
 
-            for item in vec: print item
+            for item in vec: print(item)
 
     .. note::
     
@@ -311,7 +292,7 @@ Vector
 
 
     Description:
-        Set vector element index to value.  Equivalent to ``vec.x[i] = expr`` notation.
+        Set vector element index to value.  Equivalent to ``vec[i] = expr`` notation.
 
 ----
 
@@ -335,7 +316,7 @@ Vector
             vec = h.Vector(20,5) 
             vec.fill(9,2,7) 
 
-        assigns 9 to vec.x[2] through vec.x[7] 
+        assigns 9 to vec[2] through vec[7] 
         (a total of 6 elements) 
 
     .. seealso::
@@ -394,7 +375,7 @@ Vector
 	
 
         Transfers take place on exit from ``finitialize()`` and on exit from ``fadvance()``. 
-        At the end of ``finitialize()``, ``v.x[0] = var``. At the end of ``fadvance``, 
+        At the end of ``finitialize()``, ``v[0] = var``. At the end of ``fadvance``, 
         *var* will be saved if ``t`` (after being incremented by ``fadvance``) 
         is equal or greater than the associated time of the 
         next index. The system maintains a set of record vectors and the vector will 
@@ -407,14 +388,14 @@ Vector
          
         The record semantics can be thought of as:
  
-        ``var(t) -> v.x[index]`` 
+        ``var(t) -> v[index]`` 
          
         The default relationship between ``index`` and 
         ``t`` is ``t = index*dt``. 
  
         In the second form, ``t = index*Dt``. 
  
-        In the third form, ``t = tvec.x[index]``. 
+        In the third form, ``t = tvec[index]``. 
          
         For the local variable timestep method, :meth:`CVode.use_local_dt` and/or multiple 
         threads, :meth:`ParallelContext.nthread` , it is 
@@ -491,10 +472,10 @@ Vector
         The same vector can be played into different variables. 
          
         The index form immediately sets the var (or executes the stmt) with the 
-        value of vsrc.x[index] 
+        value of vsrc[index] 
          
         The play semantics can be thought of as 
-        ``v.x[index] -> var(t)`` where t(index) is Dt*index or tvec.x[index] 
+        ``v[index] -> var(t)`` where t(index) is Dt*index or tvec[index] 
         The discrete event delivery system is used to determine the precise 
         time at which values are copied from vsrc to var. Note that for variable 
         step methods, unless continuity is specifically requested, the function 
@@ -505,7 +486,7 @@ Vector
          
         For the fixed step method, 
         transfers take place on entry to :func:`finitialize` and  on entry to :func:`fadvance`. 
-        At the beginning of :func:`finitialize`, ``var = v.x[0]``. On :func:`fadvance` a transfer will 
+        At the beginning of :func:`finitialize`, ``var = v[0]``. On :func:`fadvance` a transfer will 
         take place if t will be equal 
         or greater than the associated time of the next index after the ``fadvance`` increment.
 	For the variable step methods, transfers take place exactly at the times specified by the Dt 
@@ -795,8 +776,8 @@ Vector
     Description:
         Copies some or all of *vsrc* into *vdest*. 
         If the dest_start argument is present (an integer index), 
-        source elements (beginning at *src*``.x[0]``) 
-        are copied to  *vdest* beginning at *dest*``.x[dest_start]``, 
+        source elements (beginning at *src*``[0]``) 
+        are copied to  *vdest* beginning at *dest*``[dest_start]``, 
         *Src_start* and *src_end* here refer to indices of *vsrcx*, 
         not *vdest*.  If *vdest* is too small for the size required by *vsrc* and the 
         arguments, then it is resized to hold the data. 
@@ -902,9 +883,10 @@ Vector
         the label. For a complete copy including the label use :meth:`Vector.cl`. 
         (Identical to the :meth:`Vector.at` function but has a short name that suggests 
         copy or clone). Useful in the construction of filter chains. 
-        Note that with no arguments, it is not necessary to type the 
-        parentheses. 
-         
+
+        In versions of NEURON before 7.7, this was often used in building Vectors
+        from other Vectors, e.g. ``vec2 = vec1.c().add(1)``; in new code, it is
+        recommended to use the shorter equivalent ``vec2 = vec1 + 1``.         
 
          
 
@@ -1161,7 +1143,7 @@ Vector
             vs.printf()
              
             print vs.indwhere(">", .3) 
-            print "note roundoff error, vs.x[3] - .3 =", vs.x[3] - .3 
+            print "note roundoff error, vs[3] - .3 =", vs[3] - .3 
             print vs.indwhere("==", .5) 
              
             vd = vs.c().indvwhere(vs, "[)", .3, .7) 
@@ -1520,7 +1502,7 @@ Vector
             vec.apply("sin") 
             vec.plot(g, .1) 
             def do_run():
-                for i in xrange(len(vec)):
+                for i in range(len(vec)):
                     vec.rotate(1)
                     g.flush()
                     h.doNotify()
@@ -1583,7 +1565,7 @@ Vector
             vec = h.Vector() 
             vec.indgen(0,10, .1) 
             vec.apply("sin")
-            for i in xrange(4):
+            for i in range(4):
                 vec.line(g, 0.1)
                 vec.rotate(10)
 
@@ -1706,13 +1688,13 @@ Vector
         This function returns a vector that contains the counts in each bin, so while it is 
         to execute ``newvect = h.Vector()``. 
          
-        The first element of ``newvect`` is 0 (``newvect.x[0] = 0``). 
-        For ``ii > 0``, ``newvect.x[ii]`` equals the number of 
+        The first element of ``newvect`` is 0 (``newvect[0] = 0``). 
+        For ``ii > 0``, ``newvect[ii]`` equals the number of 
         items 
         in ``vsrc`` whose values lie in the half open interval 
         ``[a,b)`` 
         where ``b = low + ii*width`` and ``a = b - width``. 
-        In other words, ``newvect.x[ii]`` is the number of items in 
+        In other words, ``newvect[ii]`` is the number of items in 
         ``vsrc`` 
         that fall in the bin just below the boundary ``b``. 
          
@@ -1743,7 +1725,7 @@ Vector
             v3 = h.Vector(1)  
             v3.index(hist, v2)  
             v3.rotate(-1)            # so different y's within each pair 
-            v3.x[0] = 0  
+            v3[0] = 0  
             v3.plot(g, v2)
 
         .. image:: ../../images/vector-histogram.png
@@ -1921,7 +1903,7 @@ Vector
 
             def race():
                 vec.fill(0)
-                for i in xrange(300):
+                for i in range(300):
                     vec.addrand(r)
                     g.flush()
                     h.doNotify()
@@ -2129,10 +2111,10 @@ Vector
             from neuron import h
             v = h.Vector(5).indgen()
             n = v.as_numpy()
-            print n #[0.  1.  2.  3.  4.]
-            v.x[1] += 10
+            print(n) #[0.  1.  2.  3.  4.]
+            v[1] += 10
             n[2] += 20
-            print n #[  0.  11.  22.   3.   4.]
+            print(n) #[  0.  11.  22.   3.   4.]
             v.printf() #0	11	22	3	4
 
 
@@ -2278,8 +2260,8 @@ Vector
 
             #... 
             xs = h.Vector(10) 
-            xs.indgen() 
-            ys = xs.c().mul(xs) 
+            xs.indgen()
+            ys = xs * xs
             ys.line(g, xs, 1, 0) # black reference line 
              
             xd = h.Vector() 
@@ -2352,9 +2334,8 @@ Vector
 
             from neuron import h
             vec = h.Vector(range(6)) 
+            vec = vec * vec
             vec1 = h.Vector()
-            for i, val in enumerate(vec):
-                vec.x[i] = val ** 2
             vec1.deriv(vec, 0.1) 
 
         creates ``vec1`` with elements: 
@@ -2475,10 +2456,8 @@ Vector
                                     # an x-squared function, dx = 0.1
 
             # print every 10th index
-            for i in xrange(0, len(vec1), 10):
-                print vec1.x[i],
-
-            print
+            for i in range(0, len(vec1), 10):
+                print(vec1[i])
 
 
         will print the following elements  of 
@@ -2487,8 +2466,12 @@ Vector
         .. code-block::
             python
 
-            0	0.385	2.87 
-            9.455	22.14	42.925 
+            0
+            0.385
+            2.87 
+            9.455
+            22.14
+            42.925 
 
         The integration naturally becomes more accurate as 
         *dx* is reduced and the size of the vector is increased.  If the vector 
@@ -3304,8 +3287,8 @@ Refer to this source for further information.
             v1 = h.Vector(16) 
             v2 = h.Vector(16) 
             v3 = h.Vector() 
-            v1.x[5] = v1.x[6] = 1 
-            v2.x[3] = v2.x[4] = 3 
+            v1[5] = v1[6] = 1 
+            v2[3] = v2[4] = 3 
             v3.convlv(v1, v2) 
             v1.printf() 
             v2.printf() 
@@ -3373,12 +3356,12 @@ Refer to this source for further information.
          
         The complex frequency domain is represented in the vector as pairs of 
         numbers --- except for the first two numbers. 
-        vec.x[0] is the amplitude of the 0 frequency cosine (constant) 
-        and vec.x[1] is the amplitude of the highest (N/2) frequency cosine 
+        vec[0] is the amplitude of the 0 frequency cosine (constant) 
+        and vec[1] is the amplitude of the highest (N/2) frequency cosine 
         (ie. alternating 1,-1's in the time domain) 
-        vec.x[2, 3] is the amplitude of the cos(2*PI*i/n), sin(2*PI*i/n) components 
+        vec[2, 3] is the amplitude of the cos(2*PI*i/n), sin(2*PI*i/n) components 
         (ie. one whole wave in the time domain) 
-        vec.x[n-2, n-1] is the amplitude of the cos(PI*(n-1)*i/n), sin(PI*(n-1)*i/n) 
+        vec[n-2, n-1] is the amplitude of the cos(PI*(n-1)*i/n), sin(PI*(n-1)*i/n) 
         components. The following example of a pure time domain sine wave 
         sampled at 16 points should be played with to see where 
         the specified frequency appears in the frequency domain vector (note that if the 
@@ -3472,7 +3455,7 @@ Refer to this source for further information.
         integer. The resultant real (cosine amplitudes) and imaginary (sine amplitudes) 
         frequency components are stored in the N/2 + 1 
         locations of the vfr_dest and vfi_dest vectors respectively (Note: 
-        vfi_dest.x[0] and vfi_dest.x[N/2] are always set to 0. The index i in the 
+        vfi_dest[0] and vfi_dest[N/2] are always set to 0. The index i in the 
         frequency domain is the number of full pure sinusoid waves in the time domain. 
         ie. if the time domain has length T then the frequency of the i'th component 
         is i/T. 
@@ -3507,22 +3490,22 @@ Refer to this source for further information.
                     vfr.fft(vt, 1) 
                     n = len(vfr)
                     vfr.div(n/2) 
-                    vfr.x[0] /= 2	# makes the spectrum appear discontinuous 
-                    vfr.x[1] /= 2	# but the amplitudes are intuitive 
+                    vfr[0] /= 2	# makes the spectrum appear discontinuous 
+                    vfr[1] /= 2	# but the amplitudes are intuitive 
                     vfi.copy(vfr, 0, 1, -1, 1, 2)   # odd elements 
                     vfr.copy(vfr, 0, 0, -1, 1, 2)   # even elements 
                     vfr.resize(n/2+1) 
                     vfi.resize(n/2+1) 
-                    vfr.x[n/2] = vfi.x[0]           #highest cos started in vfr.x[1]
-                    vfi.x[0] = vfi.x[n/2] = 0       # weights for sin(0*i)and sin(PI*i) 
+                    vfr[n/2] = vfi[0]           #highest cos started in vfr[1]
+                    vfi[0] = vfi[n/2] = 0       # weights for sin(0*i)and sin(PI*i) 
                 else:                # inverse
                     # shuffle vfr and vfi into vt
                     n = len(vfr)
                     vt.copy(vfr, 0, 0, n-2, 2, 1) 
-                    vt.x[1] = vfr.x[n-1] 
+                    vt[1] = vfr[n-1] 
                     vt.copy(vfi, 3, 1, n-2, 2, 1) 
-                    vt.x[0] *= 2 
-                    vt.x[1] *= 2  
+                    vt[0] *= 2 
+                    vt[1] *= 2  
                     vt.fft(vt, -1) 
 
 
@@ -3666,7 +3649,7 @@ Refer to this source for further information.
 
         .. math::
         
-            v1.x[i] = \sum_{j=1}^n {\text{number of spikes in bin i of trace j}}
+            v1[i] = \sum_{j=1}^n {\text{number of spikes in bin i of trace j}}
 
         Then trials would be assigned the value n.  Of course, if 
         the elements of vsrchist are divided by n before calling psth(), 
@@ -3704,8 +3687,8 @@ Refer to this source for further information.
 
             r = h.Random() 
                     
-            for ii in xrange(VECSIZE):
-                v1.x[ii] = int(r.uniform(0, 10))
+            for ii in range(VECSIZE):
+                v1[ii] = int(r.uniform(0, 10))
 
             v1.plot(g1) 
 

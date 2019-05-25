@@ -135,7 +135,7 @@ Running and Saving Batch Jobs
             h.batch_save()    # This clears whatever list existed and starts a new 
             		          # list of variables to be saved. 
             h.batch_save(soma(0.5)._ref_v, axon(1)._ref_v)
-            for i in xrange(3):
+            for i in range(3):
                 h.batch_save(dend[i](0.3)._ref_v)
 
         specifies five quantities to be saved from each :func:`batch_run`. 

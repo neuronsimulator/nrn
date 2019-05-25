@@ -63,7 +63,7 @@ mcell_ran4
                     self.g2.erase()
                     highindex_ptr = h.ref(self.highindex)
                     for i in range(len(self.vec)):            
-                        self.vec.x[i] = h.mcell_ran4(highindex_ptr) 
+                        self.vec[i] = h.mcell_ran4(highindex_ptr) 
                     # resync the highindex (needed for the GUI)
                     self.highindex = highindex_ptr[0]
                     self.hist = self.vec.histogram(0, 1, 0.1) 

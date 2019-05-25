@@ -476,15 +476,13 @@ Random Class
             hist = h.Vector(vec.size()) 
             g = h.Graph() 
             g.size(-3, 2, 0, 50) 
-            hist.plot(g, vec) 
-            i = 0
-            while (i<500):
+            hist.plot(g, vec)
+            for i in range(500):
             	x = r.repick() 
-            	print i, x 
+            	print('%d %g' % (i, x))
             	j = int((x+3)*10) # -3 to 2 -> 0 to 50 
-            	i += 1
             	if j >= 0:
-            		hist.x[j] += 1
+            		hist[j] += 1
             	g.flush() 
             	h.doNotify() 
 
@@ -520,9 +518,9 @@ Random Class
             n=20 
             xvec = h.Vector(n*3)	# bins look like discrete spikes 
             for i in range(n): 
-            	xvec.x[3*i] = i-.1 
-            	xvec.x[3*i+1] = i 
-            	xvec.x[3*i+2] = i+.1 
+            	xvec[3*i] = i-.1 
+            	xvec[3*i+1] = i 
+            	xvec[3*i+2] = i+.1 
             
             hist = h.Vector(xvec.size()) 
             g = h.Graph() 
@@ -537,7 +535,7 @@ Random Class
             	i=i+1
             	if j >= hist.size():  # don't let any off the edge 
             		j = hist.size() - 1
-            	hist.x[j] = hist.x[j]+1 
+            	hist[j] = hist[j]+1 
             	g.flush() 
             	h.doNotify() 
             
@@ -573,24 +571,22 @@ Random Class
             n=20 
             xvec = h.Vector(n*3) 
             for i in range(n): 
-            	xvec.x[3*i] = i-.1 
-            	xvec.x[3*i+1] = i 
-            	xvec.x[3*i+2] = i+.1 
+            	xvec[3*i] = i-.1 
+            	xvec[3*i+1] = i 
+            	xvec[3*i+2] = i+.1 
             
             hist = h.Vector(xvec.size()) 
             g = h.Graph() 
             g.size(0, 15, 0, 120) 
-            hist.plot(g, xvec) 
-            i = 0
-            while (i<500):
+            hist.plot(g, xvec)
+            for i in range(500):
             	x = r.repick() 
-            	print i, x 
-            	i += 1
+            	print('%d %g' % (i, x))
             	j = int(x) 
             	j = 3*j+1 
             	if j >= hist.size():
             		j = hist.size() -1 
-            	hist.x[j] = hist.x[j]+1 
+            	hist[j] = hist[j]+1 
             	g.flush() 
             	h.doNotify() 
             
@@ -633,7 +629,7 @@ Random Class
             hist.plot(g) 
             for i in range(500):
             	j = int(r.repick()) # r.repick() always returns a float even though the binomial always is an integer
-            	hist.x[j] += 1
+            	hist[j] += 1
             	g.flush() 
             	h.doNotify() 
 

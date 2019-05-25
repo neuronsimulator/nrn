@@ -95,11 +95,11 @@ LinearMechanism
             # ideal voltage clamp. 
             c = h.Matrix(2, 2, 2) # sparse - no elements used 
             g = h.Matrix(2, 2) 
-            y = h.Vector(2)       # y.x[1] is injected current 
+            y = h.Vector(2)       # y[1] is injected current 
             b = h.Vector(2) 
             g.setval(0, 1, -1)
             g.setval(1, 0, 1)
-            b.x[1] = 10           # voltage clamp level 
+            b[1] = 10           # voltage clamp level 
              
             model = h.LinearMechanism(c, g, y, b, 0.5, sec=soma) 
 
@@ -156,7 +156,7 @@ LinearMechanism
             b = h.Vector(2)
 
             def callback():
-              b.x[1] = -sin(y[0])
+              b[1] = -sin(y[0])
 
             nlm = h.LinearMechanism(callback, cmat, gmat, y, y0, b)
 
@@ -171,8 +171,8 @@ LinearMechanism
 
             def prun(theta0, omega0):
               graph.erase()
-              y0.x[0] = theta0
-              y0.x[1] = omega0
+              y0[0] = theta0
+              y0[1] = omega0
               h.run()
               trajec.line(graph, tvec)
 

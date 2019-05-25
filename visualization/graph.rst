@@ -45,7 +45,7 @@ Graph
             g.beginline()
 
             # define a sine wave, 0 <= x <= 10
-            for i in xrange(101):
+            for i in range(101):
                 x = i * 0.1
                 g.line(x, math.sin(x))
 
@@ -269,7 +269,7 @@ Graph
 
             g.begin()
 
-            for i in xrange(101):
+            for i in range(101):
                 h.x = i * 0.1
                 g.plot(h.x)
 
@@ -400,7 +400,7 @@ Graph
             g.xexpr('3*cos(t)') 
 
             g.begin()
-            for i in xrange(64):
+            for i in range(64):
                 # h.t ranges from 0 to 6.3 \approx 2 * pi
                 h.t = i * 0.1
                 g.plot(h.t)
@@ -1137,13 +1137,13 @@ Graph
             def crossact_vflag1(i, c, xvec, yvec):
               '''For g.crosshair_action(crossact_vflag1, 1)'''
               i = int(i)
-              print ("i=%d x[i]=%g y[i]=%g c=%c" % (i, xvec.x[i], yvec.x[i], int(c)))
+              print ("i=%d x[i]=%g y[i]=%g c=%c" % (i, xvec[i], yvec[i], int(c)))
 
             g.crosshair_action(crossact_vflag1, 1)
 
             # plot something
             x = h.Vector().indgen(50, 100, 1)
-            y = x.c().add(50)
+            y = x + 50 # needs NEURON 7.7+
             y.line(g, x)
 
             # now click/drag on the plotted line and occasionally press a key

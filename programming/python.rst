@@ -193,8 +193,8 @@ Description:
 
             h('strdef s') 
             h('{x = 3  s = "hello"}') 
-            print h.x          # prints 3.0 
-            print h.s          # prints hello 
+            print(h.x)          # prints 3.0 
+            print(h.s)          # prints hello 
 
         And if it is assigned a value in the python world it will be that value 
         in the Hoc world. (Note that any numeric python type becomes a double 
@@ -240,8 +240,8 @@ Description:
             python
 
             x = h.vec.size     # not 5 but a python callable object 
-            print x            # prints: Vector[0].size() 
-            print x()          # prints 5.0 
+            print(x)            # prints: Vector[0].size() 
+            print(x())          # prints 5
 
         This is also true for indices 
 
@@ -249,10 +249,10 @@ Description:
             python
 
             h.vec.indgen().add(10) # fills elements with 10, 11, ..., 14 
-            print h.vec.x[2]   # prints 12.0 
+            print(h.vec[2])    # prints 12.0 
             x = h.vec.x        # a python indexable object 
-            print x            # prints Vector[0].x[?] 
-            print x[2]         # prints 12.0 
+            print(x)           # prints Vector[0].x[?] 
+            print(x[2])        # prints 12.0 
 
         The hoc object can be created directly in Python. E.g. 
 
@@ -269,16 +269,16 @@ Description:
 
             v = h.Vector(4).indgen().add(10) 
             for x in v : 
-              print x 
+              print(x)
              
             l = h.List() ; l.append(v); l.append(v); l.append(v) 
             for x in l : 
-              print x 
+              print(x)
              
             h('objref o[2][3]') 
             for x in h.o : 
               for y in x : 
-                print x, y 
+                print(x, y)
              
 
          
@@ -292,21 +292,18 @@ Description:
 
         makes ax a Python :class:`~neuron.h.Section` which references the hoc 
         axon section. Many hoc functions require a currently accessed section 
-        and for these a typical idiom is 
-
-        .. code-block::
-            python
-
-            ax.push() ; print secname() ; h.pop_section() 
-
-        More compact is to use the "sec" keyword parameter after the last positional 
+        and for these a typical idiom is to use the "sec" keyword parameter after the last positional 
         parameter which makes the Section value the currently accessed section during 
         the scope of the function call. e.g 
 
         .. code-block::
             python
 
-            print secname(sec=ax) 
+            print(h.secname(sec=ax))
+
+        Most such functions now have an alternative form that avoids the need for
+        sec=; often they are available as section methods. This is usually listed
+        in the function definition.
 
          
         Point processes are handled by direct object creation as in 
@@ -401,7 +398,7 @@ Description:
 
             v = h.Vector(4).indgen().add(10) 
             y = v._ref_x[1]    # holds pointer to second element of v 
-            print v.x[2], y[1] # prints 12.0 12.0 
+            print v[2], y[1]   # prints 12.0 12.0 
             y[1] = 50 
             v.printf()         # prints 10 11 50 13 
 
@@ -476,7 +473,7 @@ Description:
               pass 
             v = MyVector(10) 
             v.zzz = 'hello' # a new attribute 
-            print v.size() # call any base method 
+            print(v.size()) # call any base method 
 
         If you override a base method such as 'size' use 
 
@@ -561,7 +558,7 @@ Description:
             hoc.hoc_ac(25) 
             hoc.execute('print hoc_ac_') # prints 25 
             hoc.execute('hoc_ac_ = 17') 
-            print hoc.hoc_ac()  # prints 17 
+            print(hoc.hoc_ac())  # prints 17 
 
 
          

@@ -41,7 +41,7 @@ String Parsing (sscanf)
 
             from neuron import h
             s = h.ref('')
-            x = [h.ref(0) for i in xrange(20)]
+            x = [h.ref(0) for i in range(20)]
             y = h.ref(0)
 
             count = h.sscanf("this is a test\n", "%s", s)
@@ -84,7 +84,7 @@ String Parsing (sscanf)
             count = h.sscanf("1 2 3 4 5 6 7 8 9 10", "%f%f%f%f%f%f%f%f%f%f%f", x[0], x[1], x[2],
                 x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11], x[12])
             print('Should only have non-zero values for x indices 0 - 9')
-            for i in xrange(13):
+            for i in range(13):
                 print('%d %g' % (i, x[i][0]))
 
             # the following are invalid and therefore raise a RuntimeError exception

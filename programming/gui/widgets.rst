@@ -259,7 +259,7 @@ a class. This allows multiple independent instances to be created. For example:
 
             h.xpanel('panel')
             h.xmenu('menu')
-            for i in xrange(1, 11):
+            for i in range(1, 11):
                 h.xradiobutton('item %d' % i, (a, i))
 
             h.xmenu()

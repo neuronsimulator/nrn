@@ -632,13 +632,13 @@ Matrix
             for i in range(int(m.nrow())):
                 for j in range(int(m.ncol())):
                     m.setval(i, j, i*j + 1)
-            print "b"
+            print("b")
             b.printf()
-            print "m"
+            print("m")
             m.printf() 
-            print
+            print()
             print "solution of m*x = b"
-            print
+            print()
             m.solv(b).printf() 
 
 
@@ -650,14 +650,14 @@ Matrix
             m.setdiag(-1, -1) 
             m.setdiag(1, -1) 
             b = h.Vector(1000) 
-            b.x[500] = 1 
+            b[500] = 1 
             x = m.solv(b) 
-            print
+            print()
             x.printf("%8.3f", 475, 525) 
 
-            b.x[500] = 0
-            b.x[499] = 1 
-            print
+            b[500] = 0
+            b[499] = 1 
+            print()
             m.solv(b,1).printf("%8.3f", 475, 535) 
 
     .. warning::
@@ -692,7 +692,7 @@ Matrix
             m.printf() 
             ex = h.ref(0)
             mant = m.det(ex) 
-            print mant*10**ex[0]
+            print(mant*10**ex[0])
 
 
 
@@ -729,11 +729,11 @@ Matrix
                 else:
                     m1.setdiag(i, -1) 
             m2 = m1.inverse() 
-            print "m1" 
+            print("m1")
             m1.printf()
-            print "m2" 
+            print("m2")
             m2.printf(" %8.5f") 
-            print "m1*m2" 
+            print("m1*m2" )
             m1.mulm(m2).printf(" %8.5f") 
 
 
@@ -1229,7 +1229,7 @@ Matrix
     Description:
         Copies the matrix elements into a :class:`Vector` in column order. 
         i.e the jth column starts 
-        at vobj.x[msrc.nrow*j] . 
+        at vobj[msrc.nrow*j] . 
         The vector is sized to nrow*ncol. 
 
     Example:

@@ -184,7 +184,7 @@ ParallelContext
             # pretend g is a Vector assigned earlier to conductances to test 
             for i in range(20): 
                 for sec in h.allsec():
-                    sec.gnabar_hh = g.x[i]
+                    sec.gnabar_hh = g[i]
                 for j in range(5):
                     stim.amp = s[j]
                     h.run()
@@ -197,7 +197,7 @@ ParallelContext
 
             def single_run(i, j):
                 for sec in h.allsec():
-                    sec.gnabar_hh = g.x[i]
+                    sec.gnabar_hh = g[i]
                 stim.amp = s[j]
                 h.run()
 
@@ -1419,7 +1419,7 @@ Description:
         value, or minimum value respectively 
          
         If the first arg is a :class:`Vector` the reduce is done element-wise. ie 
-        min of each rank's v.x[0] returned in each rank's v.x[0], etc. Note that 
+        min of each rank's v[0] returned in each rank's v[0], etc. Note that 
         each vector must have the same size. 
 
          
@@ -1456,7 +1456,7 @@ Description:
     Description:
         Analogous to MPI_Alltoallv(...). vcnts must be of size pc.nhost and 
         vcnts.sum must equal the size of vsrc. 
-        For host i, vcnts.x[j] elements of 
+        For host i, vcnts[j] elements of 
         vsrc are sent to host j beginning at the index vcnts.sum(0,j-1). 
         On host j, those elements are put into vdest beginning at the location 
         after the elements received from hosts 0 to i-1. 
@@ -1485,7 +1485,7 @@ Description:
                 else:
                   break 
 
-              cnts.x[i] = k 
+              cnts[i] = k 
 
             pc.alltoall(vsrc, cnts, vdest)  
 
@@ -2737,7 +2737,7 @@ Description:
     Description:
         The vector, vec, of size maxspikes, is used to accumulate histogram information about the 
         maximum number of spikes sent by any cpu during the spike exchange process. 
-        Every spike exchange, vec.x[max_spikes_sent_by_any_host] is incremented by 1. 
+        Every spike exchange, vec[max_spikes_sent_by_any_host] is incremented by 1. 
         It only makes sense to do this on one cpu, normally pc.id() == 0. 
         If some host sends more than maxspikes at the end of an
         integration interval, no element of vec is incremented.

@@ -135,7 +135,7 @@ ParallelNetManager
 
             .. code::
 
-                for i in xrange(ncell):
+                for i in range(ncell):
                     if pnm.gid_exists(i):
                         pnm.register_cell(i, h.IntFire1())
 
@@ -175,7 +175,7 @@ ParallelNetManager
 
             .. code::
 
-                for i in xrange(ncell):
+                for i in range(ncell):
                     pnm.nc_append(i, (i + 1) % ncell, -1, 1.1, 2) 
 
             Again, it only has to be called if i, or i + 1, or both, are on this machine. 

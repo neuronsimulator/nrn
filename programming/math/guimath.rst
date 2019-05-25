@@ -64,7 +64,7 @@ GUIMath
 
 
     Description:
-        return 1 if the point is inside the box, 0 otherwise 
+        return True if the point is inside the box, False otherwise 
 
          
 
@@ -100,18 +100,18 @@ GUIMath
             from neuron import h
 
             gm = h.GUIMath()
-            print 'default rounding mode %d' % gm.feround()
+            print('default rounding mode %d' % gm.feround())
 
             def test_round(mode):
                 gm = h.GUIMath()
                 old = gm.feround(mode)
                 x = 0
-                for i in xrange(1, 1000001):
+                for i in range(1, 1000001):
                     x += 0.1
-                print 'round mode %d x=%25.17lf' % (mode, x)
+                print('round mode %d x=%25.17lf' % (mode, x))
                 gm.feround(old)
 
-            for i in xrange(1, 5):
+            for i in range(1, 5):
                 test_round(i)
 
         Output:

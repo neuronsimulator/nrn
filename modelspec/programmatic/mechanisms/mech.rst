@@ -643,7 +643,7 @@ General
       pc.psolve(7)
       
       for i, tsp in enumerate(out[0]):
-        print ("%g %d" %(tsp, int(out[1].x[i])))
+        print ("%g %d" %(tsp, int(out[1][i])))
 
   Output:
     Notice that 2.1 is the first output because (0, 0) is discarded by PatternStim

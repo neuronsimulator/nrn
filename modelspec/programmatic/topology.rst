@@ -38,7 +38,7 @@ This document describes the construction and manipulation of a stylized topology
 
             soma = h.Section(name='soma')
             axon = h.Section(name='axon')
-            dend = [h.Section(name='dend[%d]' % i) for i in xrange(3)]
+            dend = [h.Section(name='dend[%d]' % i) for i in range(3)]
             for sec in h.allsec():
                 print sec
 
@@ -129,7 +129,7 @@ This document describes the construction and manipulation of a stylized topology
             from neuron import h, gui
             soma = h.Section(name='soma')
             axon = h.Section(name='axon')
-            dend = [h.Section(name='dend[%d]' % i) for i in xrange(3)]
+            dend = [h.Section(name='dend[%d]' % i) for i in range(3)]
             for sec in dend:
                 sec.connect(soma(1), 0)
 
@@ -408,7 +408,7 @@ This document describes the construction and manipulation of a stylized topology
             from neuron import h, gui
             soma = h.Section(name='soma')
             axon = h.Section(name='axon')
-            dend = [h.Section(name='dend[%d]' % i) for i in xrange(3)]
+            dend = [h.Section(name='dend[%d]' % i) for i in range(3)]
             for section in h.allsec():
                 if h.issection('s.*', sec=section):
                     print section

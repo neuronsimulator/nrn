@@ -34,7 +34,7 @@ Layout
                 g = h.Graph()          # the new graph is declared
                 g.size(-4, 4, -4, 4)   # and given a size
                 g.begin()
-                for i in xrange(629):
+                for i in range(629):
                     t = 0.01 * i
                     g.line(3 * cos(t), 3 * sin(n * t))
                 g.flush()              # draw the plot
@@ -48,12 +48,12 @@ Layout
             deck.map()                 # put the deck on the screen
             deck.flip_to(0)            # show the first plot of the deck
             h.xpanel('flip to')        # create a panel titled "flip to"
-            for i in xrange(ncard):    # create radio buttons which will bring each card to the front
+            for i in range(ncard):    # create radio buttons which will bring each card to the front
                 h.xradiobutton('card %d' % (i + 1), flip_function(i), i == 0)
 
             h.xpanel()                 # close off the set of panel commands
 
-            for i in xrange(1, ncard): # now that the first card appears on the screen, make the rest
+            for i in range(1, ncard): # now that the first card appears on the screen, make the rest
                 deck.intercept(1)      # reopen the deck
                 mkgraph(i + 1)         # make a plot for each other card
                 deck.intercept(0)      # close the deck
@@ -452,7 +452,7 @@ Layout
 
             def show_all_sizes():
                 vboxes = h.List('VBox')
-                for i in xrange(int(vboxes.count())):
+                for i in range(int(vboxes.count())):
                     size(vboxes.object(i))
 
             show_all_sizes()
