@@ -289,7 +289,7 @@ Random Class
 
             r.MCellRan4(1) 
             for i in range(6):
-                print i, r.repick() 
+                print('%d %g' % (i, r.repick()))
 
             idum = r.seq() 
             print("idum = {}".format(idum ))
@@ -518,21 +518,18 @@ Random Class
             n=20 
             xvec = h.Vector(n*3)	# bins look like discrete spikes 
             for i in range(n): 
-            	xvec[3*i] = i-.1 
+            	xvec[3*i] = i - 0.1 
             	xvec[3*i+1] = i 
-            	xvec[3*i+2] = i+.1 
+            	xvec[3*i+2] = i + .1 
             
             hist = h.Vector(xvec.size()) 
             g = h.Graph() 
             g.size(0, 15, 0, 120) 
             hist.plot(g, xvec) 
-            i = 0
-            while (i<500):
+            for i in range(500):
             	x = r.repick() 
-            	print i, x 
-            	j = int(x) 
-            	j = 3*j+1 
-            	i=i+1
+            	print('%d %g' % (i, x))
+            	j = 3 * int(x) + 1 
             	if j >= hist.size():  # don't let any off the edge 
             		j = hist.size() - 1
             	hist[j] = hist[j]+1 

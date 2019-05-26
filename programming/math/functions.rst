@@ -104,7 +104,7 @@ Diagnostics:
             from neuron import h
 
             for i in range(6,12):
-                print i, h.exp(i)
+                print('%g %g' % (i, h.exp(i)))
         
         .. note::
         
@@ -211,13 +211,13 @@ Diagnostics:
 
             h.atan2(0,0) 
             for i in range(-1,2):
-                print h.atan2(i*1e-6, 10) 
+                print(h.atan2(i*1e-6, 10))
             for i in range(-1,2):
-                print h.atan2(i*1e-6, -10) 
+                print(h.atan2(i*1e-6, -10))
             for i in range(-1,2):
-                print h.atan2(10, i*1e-6) 
+                print(h.atan2(10, i*1e-6))
             for i in range(-1,2):
-                print h.atan2(-10, i*1e-6)
+                print(h.atan2(-10, i*1e-6))
             h.atan2(10,10) 
             h.atan2(10,-10) 
             h.atan2(-10,10) 

@@ -23,9 +23,9 @@ Dialog Boxes
             from neuron import h, gui
 
             if h.boolean_dialog('Do you prefer to code in Python or HOC?', 'Python', 'HOC'):
-                print 'You prefer Python!'
+                print('You prefer Python!')
             else:
-                print 'You prefer HOC!'
+                print('You prefer HOC!')
 
     .. image:: ../../images/boolean_dialog.png
         :align: center
@@ -85,9 +85,9 @@ Dialog Boxes
 
             my_str = h.ref('')
             if h.string_dialog('Type a string:', my_str):
-                print 'You typed:', my_str[0]
+                print('You typed: %s' % my_str[0])
             else:
-                print 'You canceled'    
+                print('You canceled')
                 
         .. image:: ../../images/string_dialog.png
             :align: center

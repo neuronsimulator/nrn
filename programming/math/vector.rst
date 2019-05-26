@@ -263,13 +263,13 @@ Vector
             python
 
             y = h.Vector(10) 
-            print len(y) 
-            print y.buffer_size() 
+            print(len(y))
+            print(y.buffer_size())
             y.resize(5) 
-            print len(y)
-            print y.buffer_size() 
-            print y.buffer_size(100) 
-            print len(y) 
+            print(len(y))
+            print(y.buffer_size())
+            print(y.buffer_size(100))
+            print(len(y))
 
 ----
 
@@ -343,9 +343,9 @@ Vector
 
             from neuron import h
             vec = h.Vector() 
-            print vec.label() 
+            print(vec.label())
             vec.label("hello") 
-            print vec.label() 
+            print(vec.label())
 
 
     .. seealso::
@@ -1142,9 +1142,9 @@ Vector
             vs.indgen(0, .9, .1) 
             vs.printf()
              
-            print vs.indwhere(">", .3) 
-            print "note roundoff error, vs[3] - .3 =", vs[3] - .3 
-            print vs.indwhere("==", .5) 
+            print(vs.indwhere(">", .3))
+            print("note roundoff error, vs[3] - 0.3 = %g" % (vs[3] - 0.3))
+            print(vs.indwhere("==", .5))
              
             vd = vs.c().indvwhere(vs, "[)", .3, .7) 
             vd.printf()
@@ -2009,7 +2009,7 @@ Vector
             vec = h.Vector() 
             vec.indgen(0, 10, 2) 
             h("func sq(){return $1*$1}")
-            print vec.reduce("sq", 100) 
+            print(vec.reduce("sq", 100))
 
         displays the value 320. 
          
@@ -2024,7 +2024,7 @@ Vector
          
             def sq(x):
                 return x * x
-            print sum((sq(x) for x in vec), 100)
+            print(sum((sq(x) for x in vec), 100))
          
 
 ----
@@ -2208,7 +2208,7 @@ Vector
                 if a == 0:
                     g.line(x, y)
                     g.flush()
-                    print a, x, y
+                    print('{} {} {}'.format(a, x, y))
                 return (x - 1) ** 2 + (y - 0.5) ** 2
 
             dvec = h.Vector(2) 
@@ -2221,7 +2221,7 @@ Vector
             b = h.ref(1) 
             g.beginline() 
             error = dvec.fit(fvec, fun, ivec, a, b) 
-            print a[0], b[0], error 
+            print('{} {} {}'.format(a[0], b[0], error))
 
 
     .. warning::

@@ -95,7 +95,7 @@ ParallelContext
                 while pc.working():      # gather results
                     s += pc.pyret()      # the return value for the executed function
 
-            print s
+            print(s)
             pc.done()                    # tell workers to quit
 
          
@@ -270,9 +270,11 @@ ParallelContext
         .. code-block::
             python
 
+            import math
+
             if pc.nhost() == 1:
                for i in range(20):
-                  print i, sin(i) 
+                  print('%d %g' % (i, sin(i)))
                
             else: 
                for i in range(20):
@@ -280,11 +282,12 @@ ParallelContext
                
              
                while pc.working():
-                  print pc.userid(), pc.pyret()
+                  print('%d %g' % (pc.userid(), pc.pyret()))
 
     .. note::
 
-        The return value in Python is of type ``float``; it is thus often useful to use ``n = int(pc.nhost())`` instead.
+        Prior to NEURON 7.6, this function returned a value of type ``float``;
+        in more recent versions of NEURON, the return is an ``int``.
                
             
 
@@ -313,8 +316,8 @@ ParallelContext
 
     .. note::
 
-        The return value in Python is of type ``float``; it is thus often useful to use ``n = int(pc.id())`` instead.
-         
+        Prior to NEURON 7.6, this function returned a value of type ``float``;
+        in more recent versions of NEURON, the return is an ``int``.
 
 ----
 
@@ -436,7 +439,7 @@ ParallelContext
                 id = pc.working()
                 if id == 0: break
                 # gather results of previous pc.submit calls
-                print id, pc.pyret()            			
+                print('{} {}'.format(id, pc.pyret()))
         
         Note that if the submission did not have an explicit userid then 
         all the arguments of the executed function may be unpacked. 
@@ -1526,8 +1529,8 @@ Description:
 
           from neuron import h
           pc = h.ParallelContext()
-          nhost = int(pc.nhost())
-          rank = int(pc.id())
+          nhost = pc.nhost()
+          rank = pc.id()
           
           #Keep host output from being intermingled.
           #Not always completely successful.
@@ -1542,13 +1545,17 @@ Description:
           
           data = [(rank, i) for i in range(nhost)]
           
-          if rank == 0: print 'source data'
-              for r in serialize(): print rank, data
+          if rank == 0:
+              print('source data')
+              for r in serialize():
+                  print('{} {}'.format(rank, data))
           
-              data = pc.py_alltoall(data)
+          data = pc.py_alltoall(data)
           
-          if rank == 0: print 'destination data'
-              for r in serialize(): print rank, data
+          if rank == 0:
+              print('destination data')
+              for r in serialize():
+                  print('{} {}'.format(rank, data))
           
           pc.runworker()
           pc.done()
@@ -1606,15 +1613,15 @@ Description:
           
           from neuron import h
           pc = h.ParallelContext()
-          nhost = int(pc.nhost())
-          rank = int(pc.id())
+          nhost = pc.nhost()
+          rank = pc.id()
           
           src = rank
           dest = pc.py_allgather(src) 
 
           def pr(label, val):
             from time import sleep
-            sleep(.1) # try to avoid mixing different pr output
+            sleep(0.1) # try to avoid mixing different pr output
             print("%d: %s: %s" % (rank, label, val))
 
           pr("allgather src", src)  

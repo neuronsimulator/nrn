@@ -44,12 +44,12 @@ StateTransitionEvent
       fih = h.FInitializeHandler(1, fteinit)
 
       def foo(src): # current state is the destination. arg gives the source
-        print h.t, " transition ", src, int(ste.state()), " t-tnext =", h.t-tnext[0]
+        print('{} transition {} {} t-tnext = {}'.format(h.t, src, int(ste.state()), h.t-tnext[0]))
         tnext[0] += 1.0 # update for next transition
       
       ste.transition(0, 0, h._ref_t, tnext, (foo, 0))
 
-      print "default dt=0.025 fixed step run"
+      print("default dt=0.025 fixed step run")
       h.run()
       
       h.steps_per_ms = 64

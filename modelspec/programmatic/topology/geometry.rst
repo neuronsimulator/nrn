@@ -119,7 +119,9 @@ truncated cones as long as the diameter does not change too much.
         seg.diam = numpy.interp(seg.x, [0, 1], [10, 100])
 
     for seg in sec.allseg():
-        print seg.x, seg.diam, seg.area(), h.PI * seg.diam * sec.L / sec.nseg, seg.ri(), 0.01 * sec.Ra * sec.L / 2 / sec.nseg / (h.PI * (seg.diam / 2) ** 2)
+        print('{} {} {} {} {} {}'.format(seg.x, seg.diam, seg.area(),
+                h.PI * seg.diam * sec.L / sec.nseg, seg.ri(),
+                0.01 * sec.Ra * sec.L / 2 / sec.nseg / (h.PI * (seg.diam / 2) ** 2)))
 
 Output:
 
@@ -189,14 +191,14 @@ Example:
                 seg.diam = numpy.interp(seg.x, [0, 1], [10, 40])
 
         s = h.Shape()
-        s.show(0)
+        s.show(False)
         s.color(2, sec=a) # color section "a" red
         h.topology()
         h.finitialize()
         for sec in h.allsec():
-            print sec
+            print(sec)
             for i in range(sec.n3d()):
-                print i, sec.x3d(i), sec.y3d(i), sec.z3d(i), sec.diam3d(i)
+                print('%d: (%g, %g, %g; %g)' % (i, sec.x3d(i), sec.y3d(i), sec.z3d(i), sec.diam3d(i)))
 
     .. image:: ../../../images/geometry1.png
         :align: center
@@ -231,7 +233,7 @@ Example:
         from neuron import h, gui
 
         def pr(nseg):
-            h.pt3dclear(sec=sec)
+            sec.pt3dclear()
             sec.nseg = nseg
             setup_diam()
             h.define_shape()
@@ -243,7 +245,7 @@ Example:
 
         def print_stats():
             for seg in sec.allseg():
-                print seg.x * sec.L, seg.diam, seg.area(), seg.ri()
+                print('%g %g %g %g' % (seg.x * sec.L, seg.diam, seg.area(), seg.ri()))
 
         h.xpanel("change nseg")
         h.xradiobutton("nseg = 3", (pr, 3))
@@ -259,12 +261,12 @@ Example:
         print_stats()
 
         s = h.Shape()
-        s.show(0)
+        s.show(False)
 
         for i in range(sec.n3d()):
-            print i, sec.arc3d(i), sec.diam3d(i)
+            print('%d: %g %g') % (i, sec.arc3d(i), sec.diam3d(i)))
 
-        print "L=", sec.L
+        print("L= %g" % sec.L)
         print_stats()
 
          
@@ -340,9 +342,12 @@ Example:
 
         s = h.Shape() 
         s.show(0) 
-        print sec.L 
+        print(sec.L)
         for seg in sec.allseg():
-            print seg.x, seg.diam, seg.area(), h.PI * seg.diam * sec.L / sec.nseg, seg.ri(), 0.01 * sec.Ra * sec.L / 2 / sec.nseg / (h.PI * (seg.diam / 2) ** 2)
+            print('{} {} {} {} {} {}'.format(
+                seg.x, seg.diam, seg.area(), h.PI * seg.diam * sec.L / sec.nseg,
+                seg.ri(),
+                0.01 * sec.Ra * sec.L / 2 / sec.nseg / (h.PI * (seg.diam / 2) ** 2)))
 
     .. image:: ../../../images/geometry3.png
         :align: center
@@ -422,7 +427,11 @@ Defining the 3D Shape
     Description:
         Destroy the 3d location info in ``section``.
         With an argument, that amount of space is allocated for storage of 
-        3-d points in that section. 
+        3-d points in that section.
+    
+    .. note::
+
+        A more object-oriented approach is to use ``sec.pt3dclear()`` instead.
 
          
 
@@ -484,7 +493,9 @@ Defining the 3D Shape
 
         The vectorized form was added in NEURON 7.5.
 
-         
+    .. note::
+
+        A more object-oriented approach is to use ``sec.pt3dadd`` instead.
 
 ----
 
@@ -892,7 +903,7 @@ Reading 3D Data from NEURON
             python
 
             for seg in sec.allseg():
-                print seg.x * sec.L, seg.area(), seg.ri()
+                print('%g %g %g' % (seg.x * sec.L, seg.area(), seg.ri()))
 
         will print the arc length, the segment area at that arc length, and the resistance along that length 
         for the section ``sec``. 
@@ -987,18 +998,19 @@ Reading 3D Data from NEURON
             import time
 
             diam_change_cnt = neuron.nrn_dll_sym('diam_change_cnt', ctypes.c_int)
-            print h.diam_changed, diam_change_cnt.value        # 1 0
+            print('{} {}'.format(h.diam_changed, diam_change_cnt.value)    # 1 0
 
-            s = h.Section()
-            print h.diam_changed, diam_change_cnt.value        # 1 0
+            s = h.Section(name='s')
+            print('{} {}'.format(h.diam_changed, diam_change_cnt.value)    # 1 0
 
             time.sleep(0.2)
-            print h.diam_changed, diam_change_cnt.value        # 0 1
+            print('{} {}'.format(h.diam_changed, diam_change_cnt.value)    # 0 1
 
             s.diam = 42
-            print h.diam_changed, diam_change_cnt.value        # 1 1
+            print('{} {}'.format(h.diam_changed, diam_change_cnt.value)    # 1 1
+
             time.sleep(0.2)
-            print h.diam_changed, diam_change_cnt.value        # 1 2
+            print('{} {}'.format(h.diam_changed, diam_change_cnt.value)    # 1 2
 
          
          

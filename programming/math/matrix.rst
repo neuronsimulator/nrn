@@ -430,7 +430,7 @@ Matrix
             f.ropen() 
             m = h.Matrix() 
             m.scanf(f) 
-            print m.nrow(), m.ncol()
+            print('{} {}'.format(m.nrow(), m.ncol()))
 
     .. warning::
         Works only for full matrix types 
@@ -475,11 +475,11 @@ Matrix
         .. code-block::
             python
 
-            print "v1", v1 
+            print("v1 {}".format(v1))
             v1.printf() 
-            print "m", m 
+            print("m {}".format(m))
             m.printf()
-            print "m*v1" 
+            print("m * v1")
             m.mulv(v1).printf()
 
         A sparse example 
@@ -637,7 +637,7 @@ Matrix
             print("m")
             m.printf() 
             print()
-            print "solution of m*x = b"
+            print("solution of m*x = b")
             print()
             m.solv(b).printf() 
 
@@ -999,7 +999,7 @@ Matrix
             m.setval(0, 5, 1)
             m.setval(5, 0, 1) 
             for i in range(6): 
-                print i 
+                print(i)
                 m.pow(i).printf() 
 
 
@@ -1086,17 +1086,17 @@ Matrix
                 dvec = a.svd(umat, vmat) 
                 dmat = h.Matrix(a.nrow(), a.ncol()) 
                 dmat.setdiag(0, dvec) 
-                print "dvec"
+                print("dvec")
                 dvec.printf()
-                print "dmat"
+                print("dmat")
                 dmat.printf() 
-                print "umat"
+                print("umat")
                 umat.printf() 
-                print "vmat"
+                print("vmat")
                 vmat.printf() 
-                print "input "
+                print("input ")
                 a.printf() 
-                print "ut*d*v" 
+                print("ut*d*v")
                 umat.transpose().mulm(dmat).mulm(vmat).printf() 
  
 
@@ -1192,16 +1192,16 @@ Matrix
  
             q = h.Matrix(1,1) 
             e = m.symmeig(q) 
-            print "eigenvectors" 
+            print("eigenvectors")
             q.printf()
-            print
-            print "eigenvalues" 
+            print()
+            print("eigenvalues")
             e.printf()
-            print
-            print "qt*m*q" 
+            print()
+            print("qt*m*q")
             q.transpose().mulm(m).mulm(q).printf() 
-            print
-            print "qt*q" 
+            print()
+            print("qt*q")
             q.transpose().mulm(q).printf()
 
          

@@ -49,7 +49,7 @@ StringFunctions (String Manipulation Class)
             s = h.ref("hello")
             sf = h.StringFunctions()
             length = sf.len(s)
-            print length
+            print(length)
          
 
 ----
@@ -103,7 +103,7 @@ StringFunctions (String Manipulation Class)
             s2 = h.ref("")
             sf = h.StringFunctions()
             index = sf.head(s1, "[e]", s2)
-            print s2[0]
+            print(s2[0])
 
          
 
@@ -137,7 +137,7 @@ StringFunctions (String Manipulation Class)
             s2 = h.ref("")
             sf = h.StringFunctions()
             index = sf.tail(s1, "[e]", s2)
-            print s2[0]         
+            print(s2[0])
 
 
 ----
@@ -163,7 +163,7 @@ StringFunctions (String Manipulation Class)
             s = h.ref("hello")
             sf = h.StringFunctions()
             sf.right(s, 3)
-            print s[0]
+            print(s[0])
 
 
          
@@ -191,7 +191,7 @@ StringFunctions (String Manipulation Class)
             s = h.ref("hello")
             sf = h.StringFunctions()
             sf.left(s, 3)
-            print s[0]
+            print(s[0])
              
 
 ----
@@ -202,13 +202,14 @@ StringFunctions (String Manipulation Class)
 
 
     Syntax:
-        ``.is_name(str)``
+        ``.is_name(item)``
 
 
     Description:
-        Returns 1 if the *str* is the name of a symbol, 0 otherwise. 
+        Returns True if the *item* is the name of a symbol, False otherwise. 
         This is so useful that the same thing is available with the top level 
-        :func:`name_declared` function. 
+        :func:`name_declared` function (except that returns 1 or 0 instead of True
+        or False). 
 
     Example:
         .. code-block::
@@ -218,7 +219,7 @@ StringFunctions (String Manipulation Class)
             s1 = h.ref("hello world")
             sf = h.StringFunctions()
             name = sf.is_name(s1)
-            print name
+            print(name)
 
 
     Here is an example with one string that works, 
@@ -229,9 +230,13 @@ StringFunctions (String Manipulation Class)
             from neuron import h
             sf = h.StringFunctions()
             # valid name
-            print sf.is_name("xvalue")
+            print(sf.is_name("xvalue"))
             # invalid name
-            print sf.is_name("xsquiggle")
+            print(sf.is_name("xsquiggle"))
+    
+    .. note::
+
+        This is approximately equivalent to ``item in dir(h)``.
 ----
 
 
@@ -300,7 +305,7 @@ StringFunctions (String Manipulation Class)
             sf = h.StringFunctions()
             v = h.Vector()
             al = sf.alias_list(v)
-            print al
+            print(al)
 
          
 
@@ -356,12 +361,12 @@ StringFunctions (String Manipulation Class)
             syn = h.ExpSyn(s1(0.5))
             sf = h.StringFunctions()
             # not point process
-            print sf.is_point_process(s1)
+            print(sf.is_point_process(s1))
             # point process
-            print sf.is_point_process(syn)
+            print(sf.is_point_process(syn))
             c = h.IntFire1()
             # point process
-            print ssf.is_point_process(c)   
+            print(ssf.is_point_process(c))
 
 ----
 
@@ -393,6 +398,6 @@ StringFunctions (String Manipulation Class)
             sf = h.StringFunctions()
             c = h.IntFire1()
             # artificial 
-            print sf.is_artificial(c)
+            print(sf.is_artificial(c))
             # not artificial
-            print sf.is_artificial(syn)       
+            print(sf.is_artificial(syn))

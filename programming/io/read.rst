@@ -68,7 +68,7 @@ Read from Terminal and Files
             # ndat is number of data points
             ndat = 2
             x = r_open(ndat)
-            print x
+            print(x)
 
 
     .. seealso::
@@ -104,9 +104,9 @@ Read from Terminal and Files
 
             def response(answer):
                 if (answer == 0):
-                    print "No"
+                    print("No")
                 else:
-                    print "Yes"
+                    print("Yes")
 
             i = 0 
             while i == 0:
@@ -138,9 +138,9 @@ Read from Terminal and Files
         into numbers are skipped. 
 
     Example:
-        Suppose in response to the HOC command: ``print fscan(), fscan()`` 
+        Suppose in response to the command: ``print(fscan(), fscan())`` 
         the user types: ``this is a number 1.3e4 this is not45 this is 25`` 
-        Then HOC will print: ``13000 25`` 
+        Then NEURON will print: ``13000 25`` 
          
 
         .. code-block::

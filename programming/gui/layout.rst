@@ -26,7 +26,7 @@ Layout
             from math import sin, cos
 
             deck = h.Deck()
-            deck.intercept(1)         # all following windows will be placed in the deck
+            deck.intercept(True)      # all following windows will be placed in the deck
             ncard = 10                # there will be 10 cards in the deck
 
             def mkgraph(n):
@@ -44,17 +44,17 @@ Layout
                 return lambda: deck.flip_to(i)
 
             mkgraph(1)                 # make the first graph, so it will appear while the other
-            deck.intercept(0)          # 9 graphs are being made
+            deck.intercept(False)      # 9 graphs are being made
             deck.map()                 # put the deck on the screen
             deck.flip_to(0)            # show the first plot of the deck
             h.xpanel('flip to')        # create a panel titled "flip to"
-            for i in range(ncard):    # create radio buttons which will bring each card to the front
+            for i in range(ncard):     # create radio buttons which will bring each card to the front
                 h.xradiobutton('card %d' % (i + 1), flip_function(i), i == 0)
 
             h.xpanel()                 # close off the set of panel commands
 
-            for i in range(1, ncard): # now that the first card appears on the screen, make the rest
-                deck.intercept(1)      # reopen the deck
+            for i in range(1, ncard):  # now that the first card appears on the screen, make the rest
+                deck.intercept(True)   # reopen the deck
                 mkgraph(i + 1)         # make a plot for each other card
                 deck.intercept(0)      # close the deck
 
@@ -77,11 +77,11 @@ Layout
 
 
     Syntax:
-        ``.intercept(1 or 0)``
+        ``.intercept(True or False)``
 
 
     Description:
-        When the argument is 1, all window creation is intercepted and the window 
+        When the argument is True (or 1), all window creation is intercepted and the window 
         contents are placed in a deck rather than independently on the screen. 
          
 
@@ -306,13 +306,13 @@ Layout
 
 
     Syntax:
-        ``box.intercept(1)``
+        ``box.intercept(True)``
 
-        ``box.intercept(0)``
+        ``box.intercept(False)``
 
 
     Description:
-        When the argument is 1, all window creation is intercepted and the window 
+        When the argument is True (or 1), all window creation is intercepted and the window 
         contents are placed in a box rather than independently on the screen. 
 
     Example:
@@ -323,20 +323,20 @@ Layout
             from neuron import h, gui
 
             vbox = h.VBox()
-            vbox.intercept(1)	# all following creations go into the "vbox" box 
+            vbox.intercept(True)	# all following creations go into the "vbox" box 
             g = h.Graph() 
             h.xpanel("") 
             x = h.ref(3)
             h.xpvalue('x', x) 
 
             def on_button_press():
-                print 'you pressed the button'
+                print('you pressed the button')
 
             h.xbutton("press me", on_button_press) 
 
             h.xpanel() 
-            vbox.intercept(0)   # ends intercept mode 
-            vbox.map()		    # draw the box and its contents 
+            vbox.intercept(False)   # ends intercept mode 
+            vbox.map()		        # draw the box and its contents 
 
         .. image:: ../../images/vbox-intercept.png
             :align: center
@@ -411,8 +411,8 @@ Layout
 
 
     Description:
-        Return 1 if box has a window (mapped and not enclosed in another box). 
-        Otherwise return 0. 
+        Return True if box has a window (mapped and not enclosed in another box). 
+        Otherwise return False. 
 
 
 ----
@@ -444,7 +444,7 @@ Layout
                 if obj.ismapped():
                     s = numpy.array([0, 0, 0, 0], 'd')
                     obj.size(neuron.numpy_element_ref(s, 0))
-                    print obj.hname(), s[0], s[1], s[2], s[3]
+                    print('%s %g %g %g %g' % (obj.hname(), s[0], s[1], s[2], s[3]))
 
             # create two vboxes, but only map 1
             vb1, vb2 = h.VBox(), h.VBox()
@@ -452,7 +452,7 @@ Layout
 
             def show_all_sizes():
                 vboxes = h.List('VBox')
-                for i in range(int(vboxes.count())):
+                for i in range(vboxes.count()):
                     size(vboxes.object(i))
 
             show_all_sizes()
@@ -621,7 +621,7 @@ Layout
 
 
     Syntax:
-        ``b.full_request(1)``
+        ``b.full_request(True)``
 
 
     Description:

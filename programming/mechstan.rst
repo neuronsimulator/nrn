@@ -76,7 +76,7 @@ MechanismStandard (Parameter Control)
                 s = h.ref('')
                 for i in range(-1, 4):
                     ms = h.MechanismStandard(msname, i)
-                    print '\n', msname, '  vartype=%d' % i
+                    print('\n{}   vartype={}'.format(msname, i))
                     for j in range(int(ms.count())):
                         k = ms.name(s, j)
                         print('%-5d %-20s size=%d' % (j, s[0], k))
@@ -88,7 +88,7 @@ MechanismStandard (Parameter Control)
                     for j in range(int(mt.count())):
                         mt.select(j)
                         mt.selected(msname)
-                        print '\n\n', msname[0], ' mechanismtype=%d' % j
+                        print('\n\n{} mechanismtype={}'.format(msname[0], j))
                         pname(msname[0])
 
 
@@ -443,5 +443,5 @@ MechanismStandard (Parameter Control)
             # read the name of the mechanism
             ms.name(name_strref)
 
-            print name_strref[0]    # displays: hh
+            print(name_strref[0])    # displays: hh
 

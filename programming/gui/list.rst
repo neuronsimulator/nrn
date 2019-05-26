@@ -346,7 +346,7 @@ List
             def on_click():
                 item_id = my_list.selected()
                 if item_id >= 0: # check to make sure selection isn't dragged off
-                    print 'Item %d selected (%s)' % (item_id, my_list.o(item_id).s)
+                    print('Item %d selected (%s)' % (item_id, my_list.o(item_id).s))
 
 
             for word in ['Python', 'HOC', 'NEURON', 'NMODL']:

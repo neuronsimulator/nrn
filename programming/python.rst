@@ -333,11 +333,11 @@ Description:
 
             h('proc chgstr() { $s1 = "goodbye" }') 
             s = h.ref('hello') 
-            print s[0]          # notice the index to dereference. prints hello 
+            print(s[0])          # notice the index to dereference. prints hello 
             h.chgstr(s) 
-            print s[0]          # prints goodbye 
+            print(s[0])          # prints goodbye 
             h.sprint(s, 'value is %d', 2+2) 
-            print s[0]          # prints value is 4 
+            print(s[0])          # prints value is 4 
 
         and here is an example that changes a pointer to a double 
 
@@ -346,9 +346,9 @@ Description:
 
             h('proc chgval() { $&1 = $2 }') 
             x = h.ref(5) 
-            print x[0]          # prints 5.0 
+            print(x[0])          # prints 5.0 
             h.chgval(x, 1+1) 
-            print x[0]          # prints 2.0 
+            print(x[0])          # prints 2.0 
 
         Finally, here is an example that changes a objref arg. 
 
@@ -357,9 +357,9 @@ Description:
 
             h('proc chgobj() { $o1 = new List() }') 
             v = h.ref([1,2,3])  # references a Python object 
-            print v[0]          # prints [1, 2, 3] 
+            print(v[0])          # prints [1, 2, 3] 
             h.chgobj(v) 
-            print v[0]          # prints List[0] 
+            print(v[0])          # prints List[0] 
 
         Unfortunately, the HocObject.ref() is not often useful since it is not really 
         a pointer to a variable. For example consider 
@@ -369,11 +369,11 @@ Description:
 
             h('x = 1') 
             y = h.ref(h.x) 
-            print y         # prints hoc ref value 1 
-            print h.x, y[0] # prints 1.0 1.0 
+            print(y)                     # prints hoc ref value 1 
+            print('%g %g' % (h.x, y[0])) # prints 1.0 1.0 
             h.x = 2 
-            print h.x, y[0] # prints 2.0 1.0 
-
+            print('%g %g' % (h.x, y[0])) # prints 2.0 1.0 
+            
         and thus in not what is needed in the most common 
         case of a hoc function holding a pointer to a variable such as 
         :meth:`Vector.record` or :meth:`Vector.play`. For this one needs the :samp:`_ref_{varname}` idiom 
@@ -384,12 +384,12 @@ Description:
 
             h('x = 1') 
             y = h._ref_x 
-            print y          # prints pointer to hoc value 1 
-            print h.x, y[0]  # prints 1.0 1.0 
+            print(y)                     # prints pointer to hoc value 1
+            print('%g %g' % (h.x, y[0])) # prints 1.0 1.0 
             h.x = 2 
-            print h.x, y[0]  # prints 2.0 2.0 
+            print('%g %g' % (h.x, y[0])) # prints 2.0 2.0 
             y[0] = 3 
-            print h.x, y[0]  # prints 3.0 3.0 
+            print('%g %g' % (h.x, y[0])) # prints 3.0 3.0 
 
         Of course, this works only for hoc variables, not python variables.  For 
         arrays, use all the index arguments and prefix the name with _ref_.  The 
@@ -402,7 +402,7 @@ Description:
 
             v = h.Vector(4).indgen().add(10) 
             y = v._ref_x[1]    # holds pointer to second element of v 
-            print v[2], y[1]   # prints 12.0 12.0 
+            print('%g %g' % (v[2], y[1])) # prints 12.0 12.0 
             y[1] = 50 
             v.printf()         # prints 10 11 50 13 
 
@@ -411,12 +411,12 @@ Description:
         .. code-block::
             python
 
-            v = h.Vector() 
-            v.record(h.soma(.5)._ref_v, sec = h.soma) 
-            pi = h.Vector() 
-            pi.record(h.soma(.5).pas._ref_i, sec = h.soma) 
-            ip = h.Vector() 
-            ip.record(h.soma(.5)._ref_i_pas, sec = h.soma) 
+            from neuron import h
+            soma = h.Section(name='soma')
+            soma.insert('pas')
+            v = h.Vector().record(soma(0.5)._ref_v)
+            pi = h.Vector().record(soma(0.5).pas._ref_i)
+            ip = h.Vector().record(soma(0.5)._ref_i_pas)
 
          
         The factory idiom is one way to create Hoc objects and use them 
@@ -454,8 +454,8 @@ Description:
             apnd(('a', 'b', 'c')) # Python tuple in hoc List 
             apnd({'a':1, 'b':2, 'c':3}) # Python dictionary in hoc List 
             item = list.object 
-            for i in range(0, int(list.count())) : # notice the irksome cast to int. 
-              print item(i) 
+            for i in range(list.count()): 
+              print(item(i))
              
             h('for i=0, List[0].count-1 print List[0].object(i)') 
 
@@ -629,14 +629,14 @@ Description:
             import neuron 
             h = neuron.h 
             sec = h.Section() 
-            print sec        # prints <nrn.Section object at 0x2a96982108> 
-            print sec.name() # prints PySec_2a96982108 
-            sec.nseg = 3     # section has 3 segments (compartments) 
-            sec.insert("hh") # all compartments have the hh mechanism 
-            sec.L = 20       # Length of the entire section is 20 um. 
-            for seg in sec :   # iterates over the section compartments 
-              for mech in seg : # iterates over the segment mechanisms 
-                print sec.name(), seg.x, mech.name() 
+            print(sec)         # prints <nrn.Section object at 0x2a96982108> 
+            print(sec.name())  # prints PySec_2a96982108 
+            sec.nseg = 3       # section has 3 segments (compartments) 
+            sec.insert("hh")   # all compartments have the hh mechanism 
+            sec.L = 20         # Length of the entire section is 20 um. 
+            for seg in sec:    # iterates over the section compartments 
+              for mech in seg: # iterates over the segment mechanisms 
+                print('%s %g %s' % (sec.name(), seg.x, mech.name()))
 
         A Python Section can be made the currently accessed 
         section by using its push method. Be sure to use :func:`pop_section` 
@@ -672,7 +672,7 @@ Description:
             python
 
             sr = h.SectionRef(sec=h.dend[2])
-            sr.root.push(); print h.secname(); h.pop_section() 
+            sr.root.push(); print(h.secname()); h.pop_section() 
 
         or, more compactly, 
         
@@ -680,7 +680,7 @@ Description:
             python
 
             sr = h.SectionRef(sec=h.dend[2]) 
-            print sr.root.name(), h.secname(sec=sr.root) 
+            print('%s %s' % (sr.root.name(), h.secname(sec=sr.root)))
 
          
         Iteration over sections is accomplished with 
@@ -803,9 +803,9 @@ HOC accessing Python
             python
 
             nrnpython("import sys") 
-            nrnpython("print sys.path") 
+            nrnpython("print(sys.path)") 
             nrnpython("a = [1,2,3]") 
-            nrnpython("print a") 
+            nrnpython("print(a)") 
             nrnpython("from neuron import h") 
             nrnpython("h('print PI')") 
             

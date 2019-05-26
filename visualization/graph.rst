@@ -1173,7 +1173,7 @@ Graph
             g.vector(num_elements, x._ref_x[0], y._ref_x[0])
 
             def crosshair(x, y, key):
-                print 'x = %g, y = %g, key = %c' % (x, y, key)
+                print('x = %g, y = %g, key = %c' % (x, y, key)(
 
             g.crosshair_action(crosshair)
 

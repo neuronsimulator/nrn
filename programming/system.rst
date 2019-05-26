@@ -80,7 +80,7 @@ Machine Identification
         ``h.unix_mac_pc()``
 
     Description:
-        Return 1 if unix, 2 if mac, 3 if mswin, or 4 if mac osx darwin 
+        Return 1 if unix, 2 if (an older) mac, 3 if mswin, or 4 if mac osx darwin 
         is the operating system. This 
         is useful when deciding if a machine specific function can be called or 
         a dll can be loaded.
@@ -93,13 +93,13 @@ Machine Identification
             type = h.unix_mac_pc()
 
             if type == 1:
-                print "This os is unix based"
+                print("This os is unix based")
             elif type == 2:
-                print "This os is mac based"
+                print("This os is mac based")
             elif type == 3:
-                print "This os is mswin based"
+                print("This os is mswin based")
             elif type == 4:
-                print "This os is mac osx darwin based"
+                print("This os is mac osx darwin based")
          
 
 
@@ -170,7 +170,7 @@ Machine Identification
             NEURON -- VERSION 7.1 (296:ff4976021aae) 2009-02-27 
 
             for i in range(6): 
-                print i,": ", h.nrnversion(i)
+                print('{} : {}'.format(i, h.nrnversion(i)))
             
             0 :  7.5
             1 :  NEURON -- VERSION 7.5 (1482:5fb6a5cbbdb7) 2016-11-25
@@ -280,11 +280,15 @@ Timing
             python
 
             from neuron import h, gui
-            from math import *
+            from math import sin
             h.startsw()
             for i in range(100000):
                 x = sin(0.2)
-            print h.stopsw()
+            print(h.stopsw())
+    
+    .. note::
+
+        A pure Python alternative would be to use the time module's time function.
 
 
 

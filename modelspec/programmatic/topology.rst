@@ -40,7 +40,7 @@ This document describes the construction and manipulation of a stylized topology
             axon = h.Section(name='axon')
             dend = [h.Section(name='dend[%d]' % i) for i in range(3)]
             for sec in h.allsec():
-                print sec
+                print(sec)
 
 
         prints the names of all the sections which have been created:
@@ -411,7 +411,7 @@ This document describes the construction and manipulation of a stylized topology
             dend = [h.Section(name='dend[%d]' % i) for i in range(3)]
             for section in h.allsec():
                 if h.issection('s.*', sec=section):
-                    print section
+                    print(section)
 
         will print ``soma`` 
 
@@ -419,7 +419,7 @@ This document describes the construction and manipulation of a stylized topology
 
             for section in h.allsec():
                 if h.issection('d.*2]', sec=section):
-                    print section
+                    print(section)
 
         will print ``dend[2]`` 
 
@@ -428,7 +428,7 @@ This document describes the construction and manipulation of a stylized topology
 
             for section in h.allsec():
                 if h.issection(".*a.*", sec=section):
-                    print section
+                    print(section)
 
         will print all names which contain the letter "a" 
 
@@ -441,7 +441,7 @@ This document describes the construction and manipulation of a stylized topology
 
     .. note::
 
-        This can also be done using Python's ``re`` module and testing the :meth:`Section.hname`.
+        This can also be done using Python's ``re`` module and testing ``str(sec)`` 
 
     .. warning::
 
@@ -472,7 +472,7 @@ This document describes the construction and manipulation of a stylized topology
 
             for sec in h.allsec():
                 if h.ismembrane('hh', sec=sec) and h.ismembrane('ca_ion', sec=sec):
-                    print sec
+                    print(sec)
 
         will print the names of all the sections which contain both Hodgkin-Huxley and Calcium ions. 
 
@@ -513,7 +513,7 @@ This document describes the construction and manipulation of a stylized topology
 
     Description:
         This function is superseded by the easier to use, ``str(section)``. The below examples
-        can be more cleanly written as: ``s = str(soma)``, ``print soma``, and ``for sec in h.allsec(): for seg in sec: print seg``.
+        can be more cleanly written as: ``s = str(soma)``, ``print(soma)``, and ``for sec in h.allsec(): for seg in sec: print(seg)``.
 
         Returns the name of ``section``. Usage is 
 
@@ -525,7 +525,7 @@ This document describes the construction and manipulation of a stylized topology
 
         .. code::
 
-            print h.secname(sec=soma)
+            print(h.secname(sec=soma))
 
         or 
 
@@ -552,6 +552,12 @@ This document describes the construction and manipulation of a stylized topology
     Description:
         Print info about ``section`` in a format which is executable in HOC. 
         (length, parent, diameter, membrane information) 
+    
+    .. note::
+
+        Beginning in NEURON 7.6, ``section.psection()`` returns a Python dictionary
+        with all the information displayed by h.psection and more (e.g.
+        sec.psection() returns information about reaction-diffusion kinetics).
          
 
 
