@@ -50,7 +50,9 @@ Obsolete Pointer Functions
         currently accessed section. This pointer can be used as the argument 
         to :func:`push_section`. Functions that return pointers coded as doubles 
         are unsafe with 64 bit pointers. This function has been superseded by 
-        :class:`SectionRef`. See :meth:`~SectionRef.sec`. 
+        :class:`SectionRef` and in Python the use of Section objects.
+        
+    See :meth:`~SectionRef.sec`. 
 
          
 

@@ -11,6 +11,8 @@ SectionList
     Syntax:
         ``sl = h.SectionList()``
 
+        ``sl = h.SectionList(python_iterable_of_sections)``
+
 
     Description:
         Class for creating and managing a list of sections. Unlike a regular Python list, a ``SectionList`` allows including sections
@@ -19,14 +21,15 @@ SectionList
         If ``sl`` is a :class:`SectionList`, then to turn that into a Python list, use ``py_list = list(sl)``; note
         that iterating over a SectionList is supported, so it may not be neccessary to create a Python list.
 
-        To turn a Python list ``py_list`` of Sections into a :class:`SectionList`, use:
+        The second syntax creates a SectionList from the Python iterable and is equivalent
+        to:
 
         .. code-block::
             python
 
             sl = h.SectionList()
-            for sec in py_list:
-                sl.append(sec=sec)
+            for sec in python_iterable_of_sections:
+                sl.append(sec)
 
     .. seealso::
         :class:`SectionBrowser`, :class:`Shape`, :meth:`RangeVarPlot.list`
@@ -41,6 +44,8 @@ SectionList
 
 
     Syntax:
+        ``sl.append(section)``
+        
         ``sl.append(sec=section)``
 
 
@@ -80,6 +85,8 @@ SectionList
 
 
     Syntax:
+        ``sl.children(section)``
+
         ``sl.children(sec=section)``
 
 
@@ -87,6 +94,27 @@ SectionList
         Appends the sections connected to ``section``. 
         Note that this includes children connected at position 0 of 
         parent. 
+    
+    .. note::
+
+        To get a (Python) list of a section's children, use the section's
+        ``children`` method. For example:
+
+        .. code::
+            python
+
+            >>> from neuron import h
+            >>> s = h.Section(name='s')
+            >>> t = h.Section(name='t')
+            >>> u = h.Section(name='u')
+            >>> t.connect(s)
+            t
+            >>> u.connect(s)
+            u
+            >>> t.children()
+            []
+            >>> s.children()
+            [u, t]
 
          
 
@@ -98,13 +126,19 @@ SectionList
 
 
     Syntax:
+
+        ``sl.subtree(section)``
+    
         ``sl.subtree(sec=section)``
 
 
     Description:
         Appends the subtree of the ``section``. (including that one). 
 
-         
+    .. note::
+
+        To get a (Python) list of a section's subtree, use the section's
+        ``subtree`` method.         
 
 ----
 
@@ -114,14 +148,21 @@ SectionList
 
 
     Syntax:
+
+        ``sl.wholetree(section)``
+
         ``sl.wholetree(sec=section)``
 
 
     Description:
         Appends all sections which have a path to the ``section``. 
-        (including the currently accessed section). The section list has the 
+        (including the specified section). The section list has the 
         important property that the sections are in root to leaf order. 
 
+    .. note::
+
+        To get a (Python) list of a section's wholetree, use the section's
+        ``wholetree`` method. 
          
 
 ----
@@ -173,5 +214,13 @@ SectionList
 
     Description:
         print the names of the sections in the list. 
+
+        ``sl.printnames()`` is approximately equivalent to:
+
+        .. code::
+            python
+
+            for sec in sl:
+                print(sec)
          
 

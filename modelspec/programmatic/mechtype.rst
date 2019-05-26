@@ -101,13 +101,13 @@ MechanismType
 
 
     Syntax:
-        ``mt.remove()``
+        ``mt.remove(sec=section)``
 
 
     Description:
         For distributed mechanisms invoked with the "insert" statement. 
-        Deletes selected mechanism from currently 
-        accessed section. A noop if the mechanism is not in the section. 
+        Deletes selected mechanism from the specified section. A noop
+        if the mechanism is not in the section. 
 
          
 

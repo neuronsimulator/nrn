@@ -40,7 +40,7 @@ LinearMechanism
          
         The arguments after the b vector specify which voltages and current 
         balance equations are coupled to this system. The scalar form, x, with 
-        a currently accessed section means that the first equation 
+        the specified `section` means that the first equation 
         is added to the current balance equation at this location and the first 
         dependent variable is a copy of the membrane potential. If the 
         system is coupled to more than one location, then  sl must be a SectionList 
@@ -114,7 +114,7 @@ LinearMechanism
     
         Does not work with the CVODE integrator but does work with the
         differential-algebraic solver IDA. Note that if the standard
-        run system is loaded, ``h.cvode_active(1)`` will automatically
+        run system is loaded, ``h.cvode_active(True)`` will automatically
         choose the correct variable step integrator.
 
     .. warning::
@@ -178,7 +178,7 @@ LinearMechanism
 
             h.dt /= 10
             h.cvode.atol(1e-5)
-            h.cvode_active(1)
+            h.cvode_active(True)
             prun(0, 1.9999) # 2.0001 will keep it rotating
             graph.exec_menu("View = plot")
 

@@ -541,9 +541,10 @@ Description:
 
         h.setdata_mechname(x) 
 
-    where ``mechname`` is the mechanism name. For range variables there must 
-    of course be a currently accessed section. In the case of Point processes, 
-    one calls procedures using the object notation 
+    where ``mechname`` is the mechanism name. For range variables one must
+    of course pass in a ``sec=section`` argument (otherwise the so-called
+    currently accessed section, discoverable via h.cas(), is used).
+    In the case of Point processes, one calls procedures using the object notation 
 
     .. code-block::
         python

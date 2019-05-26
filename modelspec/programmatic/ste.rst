@@ -54,13 +54,13 @@ StateTransitionEvent
       
       h.steps_per_ms = 64
       h.dt = 1.0/h.steps_per_ms
-      print "dt=1/64 fixed step run ", h.dt
+      print("dt=1/64 fixed step run %g" % h.dt)
       h.run()
 
       for i in [1,2]:
         h.cvode.condition_order(i)
-        print "cvode.condition_order() = %d" % int(h.cvode.condition_order())
-        h.cvode_active(1)
+        print("cvode.condition_order() = %d" % int(h.cvode.condition_order()))
+        h.cvode_active(True)
         h.run()
 
     The results of a run are:

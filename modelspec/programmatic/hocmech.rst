@@ -8,7 +8,8 @@ HOC-based Mechanisms
     The functions on this page create density mechanisms and point processes from
     HOC templates; they have no direct way to use a Python class, but a HOC wrapper
     is possible as is inlining a HOC template inside of a file as shown in the
-    example. For faster code, use NMODL to implement mechanisms.
+    example. For faster code, use NMODL (directly or after conversion from NeuroML/LEMS),
+    the channel builder, or in NEURON 7.7+ the rxd module to implement mechanisms.
 
 
 .. function:: make_pointprocess

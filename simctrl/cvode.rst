@@ -398,13 +398,13 @@ CVode
     Syntax:
         ``x = cvode.active()``
 
-        ``x = cvode.active(0)``
+        ``x = cvode.active(False or True)``
 
-        ``x = cvode.active(1)``
+        ``x = cvode.active(0 or 1)``
 
         **following two not yet implemented**
 
-        ``x = cvode.active(1, dt)``
+        ``x = cvode.active(True, dt)``
 
         ``x = cvode.active(tvec)``
 
@@ -415,9 +415,10 @@ CVode
          
         This function allows one to toggle between the normal integration 
         method and the CVode method with no changes to existing interpreter 
-        code. The return value is whether CVode is active. 
+        code. The return value is True is CVode is active; otherwise it is
+        False.
          
-        With only a single 1 arg, the fadvance calls CVode to do a single 
+        With only a single True (or 1) arg, the fadvance calls CVode to do a single 
         variable time step. 
          
         With the dt arg, fadvance returns at t+dt. 
@@ -611,9 +612,9 @@ CVode
         .. code-block::
             python
 
-            h.CVode().active(0) 
+            h.CVode().active(False) 
             h.fadvance() 
-            h.CVode().active(1) 
+            h.CVode().active(True) 
 
         in order to allow the use of the CVode functions assigning state and 
         evaluating states and dstates/dt; use via:
@@ -690,7 +691,7 @@ CVode
 
             result = h.ref('')
             soma = h.Section(name='soma')
-            h.cvode_active(1)
+            h.cvode_active(True)
             h.cvode.statename(0, result)
             print(result[0])         
 

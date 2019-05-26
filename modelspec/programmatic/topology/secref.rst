@@ -202,11 +202,11 @@ SectionRef
 
 
     Description:
-        Returns 1.0 if this section reference is the currently accessed (default) section, 0.0 otherwise. 
+        Returns True if this section reference is the currently accessed (default) section, False otherwise. 
 
     .. note::
 
-        An equivalent expression that evaluates to True or False is ``(sref.sec == h.cas())``.
+        An equivalent expression is ``(sref.sec == h.cas())``.
 
          
 
@@ -222,7 +222,7 @@ SectionRef
 
 
     Description:
-        Returns 1.0 if the referenced section has not been deleted, 0.0 otherwise. 
+        Returns True if the referenced section has not been deleted, False otherwise. 
 
     .. seealso::
         :func:`delete_section`, :func:`section_exists`

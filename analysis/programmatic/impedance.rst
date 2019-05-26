@@ -85,12 +85,12 @@ Impedance
 
 
     Syntax:
-        ``.loc(x)``
+        ``.loc(x, sec=section)``
 
 
     Description:
         A fixed current stimulus or voltage electrode location 
-        at position 0<=x<=1 of the currently accessed section. 
+        at position 0<=x<=1 of the specified section. 
         This is needed for the transfer impedance calculation. Note that 
         transfer impedances obey the relation 
         \ ``v(x)/i(loc) == v(loc)/i(x)`` where *loc* is the fixed location and 
@@ -217,13 +217,13 @@ Impedance
 
 
     Syntax:
-        ``.transfer(x)``
+        ``.transfer(x, sec=section)``
 
 
     Description:
         absolute amplitude of the transfer impedance between the position 
-        specified in the \ ``loc(x)`` call above and 0<=x<=1 of 
-        currently accessed section at the freq specified by a previous 
+        specified in the \ ``loc(x)`` call above and 0<=x<=1 of the
+        specified section at the freq specified by a previous 
         compute(freq). The value returned can be thought of as either 
         \ ``|v(loc)/i(x)| or |v(x)/i(loc)|`` 
         Probably the more useful way of thinking about it is to assume 
@@ -245,11 +245,11 @@ Impedance
 
 
     Syntax:
-        ``.input(x)``
+        ``.input(x, sec=section)``
 
 
     Description:
-        absolute amplitude of \ ``v(x)/i(x)`` of the currently accessed section 
+        absolute amplitude of \ ``v(x)/i(x)`` of the specified section 
 
          
 

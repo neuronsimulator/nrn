@@ -235,10 +235,33 @@ NetCon
         If the source was an object, the section is not pushed and the return 
         value is -1. 
 
+    .. warning::
+
+        This function modifies the section stack. It is generally safer to use
+        :meth:`NetCon.preseg` instead.
          
 
 ----
 
+.. method:: NetCon.preseg
+
+
+    Syntax:
+        .. code-block::
+            python
+
+            seg = netcon.preseg()
+
+
+    Description:
+
+        Returns a segment associated with the source variable. However, note that
+        the location is 0.5 unless the source is a membrane potential and 
+        located at 0, or 1, in which case the segment is correct. The section,
+        accessible via `seg.sec` is always correct.
+         
+
+----
 
 
 .. method:: NetCon.postloc
@@ -259,6 +282,26 @@ NetCon
         The x return value is the 
         relative location of the point process in that section. 
 
+        In new code, it is recommended to use :meth:`NetCon.postseg` to avoid modifying
+        the section stack.
+
+----
+
+
+.. method:: NetCon.postseg
+
+
+    Syntax:
+        .. code-block::
+            python
+
+            seg = netcon.postseg()
+
+    Description:
+
+        Returns the segment containing the target point process. The section is
+        accessible via ``seg.sec`` and the normalized position ``x`` is accessible
+        via ``seg.x``.
          
 
 ----

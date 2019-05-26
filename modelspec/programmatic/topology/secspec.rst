@@ -26,8 +26,10 @@ one section within a single statement.
 sec= for functions
 ~~~~~~~~~~~~~~~~~~
 
-Many NEURON functions refer to a specific Section. To specify the Section,
-use a ``sec=`` keyword argument.
+Many NEURON functions refer to a specific Section. In recent versions of NEURON,
+most of these either are available as section methods or take a section or segment
+directly. For older code or for the remaining exceptions, the active section may
+be specified using a ``sec=`` keyword argument.
 
 For example:
 

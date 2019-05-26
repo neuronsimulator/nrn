@@ -1,6 +1,10 @@
 .. _python:
 
-         
+.. warning::
+
+    Some of the idioms on this page are out of date, but they still work.
+    See the NEURON Python tutorial for modern idioms.
+
 Python Language
 ---------------
 
@@ -573,13 +577,6 @@ Description:
     Syntax:
         ``sec = h.cas()``
 
-        ``or``
-
-        ``import nrn``
-
-        ``sec = nrn.cas()``
-
-
     Description:
         Returns the :ref:`currently accessed section <CurrentlyAccessedSection>` as a Python 
         :class:`~neuron.h.Section` object. 
@@ -587,14 +584,14 @@ Description:
         .. code-block::
             python
 
-            import neuron 
-            neuron.h(''' 
+            from neuron import h
+            h(''' 
               create soma, dend[3], axon 
               access dend[1] 
             ''') 
              
             sec = h.cas() 
-            print sec, sec.name() 
+            print(sec)
 
 
          
@@ -611,11 +608,6 @@ Description:
 
         ``sec = h.Section([name='string', [cell=self])``
 
-        ``or``
-
-        ``import nrn``
-
-        ``sec = nrn.Section()``
 
 
     Description:

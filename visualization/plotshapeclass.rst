@@ -292,7 +292,7 @@ PlotShape
 
 
     Description:
-        colors the currently accessed section according to color index 
+        colors the specified section according to color index 
         (index same as specified in Graph class). If there are several 
         sections to color it is more efficient to make a SectionList and 
         use \ ``.color_list`` 

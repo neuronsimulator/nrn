@@ -26,8 +26,8 @@ SectionBrowser
 
             from neuron import h, gui
             soma = h.Section(name='soma')
-            sl = h.SectionList()
-            sl.append()
+            dend = h.Section(name='dend')
+            sl = h.SectionList([soma])  # only the soma will be shown
             sb = h.SectionBrowser(sl)
             
     
@@ -47,11 +47,11 @@ SectionBrowser
 
 
     Syntax:
-        ``.select()``
+        ``.select(sec=section)``
 
 
     Description:
-        currently accessed section is highlighted. 
+        specified section is highlighted. 
 
     Example:
 
@@ -63,7 +63,7 @@ SectionBrowser
             axon = h.Section(name='axon')
 
             sb = h.SectionBrowser()
-            sb.select()        
+            sb.select(sec=axon)        
 
     .. image:: ../../images/secbrows-select.png
         :align: center
@@ -96,14 +96,14 @@ SectionBrowser
             axon = h.Section(name='axon')
 
             def select(sec):
-                print 'select:', sec, type(sec)
+                print('select: {} {}'.format(sec, type(sec)))
 
             def accept(sec):
-                print 'accept:', sec
+                print('accept: {}'.format(sec))
 
             sb = h.SectionBrowser()
             sb.select_action(select)
-            sb.accept_action(select)
+            sb.accept_action(accept)
 
     .. note::
 
@@ -139,10 +139,10 @@ SectionBrowser
             axon = h.Section(name='axon')
 
             def select(sec):
-                print 'select:', sec, type(sec)
+                print('select: {} {}'.format(sec, type(sec)))
 
             def accept(sec):
-                print 'accept:', sec
+                print('accept: {}'.format(sec))
 
             sb = h.SectionBrowser()
             sb.select_action(select)
