@@ -24,6 +24,7 @@ datadir_mod2c := @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_DATADIR@/mod2c
 LDFLAGS = $(LINKFLAGS) @CORENRN_LINK_DEFS@
 CORENRNLIB_FLAGS = -L$(libdir) -lcoreneuron
 OS_NAME := $(shell uname)
+_cm =,
 
 # We rebuild the include dirs since a lot of stuff changes place
 INCLUDES = $(INCFLAGS) -I$(incdir) -I$(incdir)/coreneuron/utils/randoms
@@ -57,11 +58,12 @@ dimplic_o  = $(OBJS_DIR)/_dimplic.o
 
 special  = $(OUTPUT)/special-core
 LIB_SUFFIX_ = $(if $(MECH_NAME),_$(MECH_NAME),)
-coremech_libname = corenrnmech$(LIB_SUFFIX_)-$(MECH_VERSION)
+coremech_libname = corenrnmech$(LIB_SUFFIX_).$(MECH_VERSION)
 coremech_lib = $(OUTPUT)/lib$(coremech_libname)@CMAKE_SHARED_LIBRARY_SUFFIX@
 
 # If no DESTDIR (we are probably just building) we use $ORIGIN (@loader_path in OSX)
 _ORIGIN := $(if $(filter Darwin,$(OS_NAME)),@loader_path,$$ORIGIN)
+_SONAME := -Wl,$(if $(filter Darwin,$(OS_NAME)),-install_name${_cm}@rpath/,-soname${_cm})$(notdir ${coremech_lib})
 DESTDIR_RPATH = $(if $(DESTDIR),$(DESTDIR)/lib,$(_ORIGIN))
 
 C_RESET := \033[0m
@@ -78,9 +80,9 @@ $(special): $(coremech_lib)
 	  -L $(OUTPUT) -l$(coremech_libname) $(CORENRNLIB_FLAGS) -Wl,-rpath,'$(DESTDIR_RPATH)' -Wl,-rpath,$(libdir) $(LDFLAGS)
 
 
-$(coremech_lib): $(mod_func_o) $(dimplic_o) $(mod_objs)
+$(coremech_lib): $(mod_func_o) $(dimplic_o) $(mod_objs) build_always
 	@printf " => $(C_GREEN)LINKING$(C_RESET) library $(coremech_lib) Mod files: $(mod_files) (+ $(OPTMODS))\n"
-	$(CXX_LINK_SHARED) -I $(incdir) -DADDITIONAL_MECHS $(datadir)/enginemech.cpp -o ${coremech_lib} \
+	$(CXX_LINK_SHARED) -I $(incdir) -DADDITIONAL_MECHS $(datadir)/enginemech.cpp -o ${coremech_lib} ${_SONAME} \
 	  $(mod_func_o) $(dimplic_o) $(mod_objs) $(datadir)/libscopmath.a $(CORENRNLIB_FLAGS) -Wl,-rpath,$(libdir) $(LDFLAGS)
 
 
@@ -105,7 +107,7 @@ $(MODC_DIR)/%.cpp: $(datadir_mod2c)/%.cpp | $(MODC_DIR)
 $(mod_func_c): build_always | $(MODC_DIR)
 	@printf " -> $(C_GREEN)Generating$(C_RESET) $(mod_func_c)\n"
 	perl $(datadir)/mod_func.c.pl $(OPTMODS) $(mod_files) > $(mod_func_c).tmp
-	diff -q $(mod_func_c).tmp $(mod_func_c) || echo "Replacing mod_func.c" && mv $(mod_func_c).tmp $(mod_func_c)
+	diff -q $(mod_func_c).tmp $(mod_func_c) || { echo "Replacing mod_func.c"; mv $(mod_func_c).tmp $(mod_func_c); }
 
 
 # Header to avoid function callbacks using function pointers
