@@ -399,8 +399,8 @@ void VecPlayStepSave::savestate_write(FILE* f) {
 }
 void VecPlayStepSave::savestate_read(FILE* f) {
 	char buf[100];
-	assert(fgets(buf, 100, f));
-	assert(sscanf(buf, "%d\n", &curindex_) == 1);
+	nrn_assert(fgets(buf, 100, f));
+	nrn_assert(sscanf(buf, "%d\n", &curindex_) == 1);
 }
 
 PlayRecordSave* VecPlayContinuous::savestate_save() {
@@ -428,6 +428,6 @@ void VecPlayContinuousSave::savestate_write(FILE* f) {
 }
 void VecPlayContinuousSave::savestate_read(FILE* f) {
 	char buf[100];
-	assert(fgets(buf, 100, f));
-	assert(sscanf(buf, "%d %d %d\n", &last_index_, &discon_index_, &ubound_index_) == 3);
+	nrn_assert(fgets(buf, 100, f));
+	nrn_assert(sscanf(buf, "%d %d %d\n", &last_index_, &discon_index_, &ubound_index_) == 3);
 }

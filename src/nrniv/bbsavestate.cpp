@@ -442,19 +442,19 @@ BBSS_TxtFileIn::~BBSS_TxtFileIn() {
 }
 void BBSS_TxtFileIn::i(int& j, int chk) {
 	int k;
-	assert(fscanf(f, "%d\n", &k) == 1);
+	nrn_assert(fscanf(f, "%d\n", &k) == 1);
 	if (chk) {
 		assert (j == k);
 	}
 	j = k;
 }
 void BBSS_TxtFileIn::d(int n, double* p) {
-	for (int i=0; i < n; ++i) { assert(fscanf(f, " %lf", p+i) == 1); }
-	assert(fscanf(f, "\n") == 0);
+	for (int i=0; i < n; ++i) { nrn_assert(fscanf(f, " %lf", p+i) == 1); }
+	nrn_assert(fscanf(f, "\n") == 0);
 }
 void BBSS_TxtFileIn::s(char* cp, int chk) {
 	char buf[100];
-	assert(fscanf(f, "%[^\n]\n", buf)==1);
+	nrn_assert(fscanf(f, "%[^\n]\n", buf)==1);
 	if (chk) {
 		assert(strcmp(buf, cp) == 0);
 	}
@@ -625,13 +625,13 @@ static double save_test_bin(void* v) {//only for whole cells
 		buf = new char[global_size];
 		bbss_save_global(ref, buf, global_size);
 		sprintf(fname, "binbufout/global.%d", global_size);
-		assert(f = fopen(fname, "w"));
+		nrn_assert(f = fopen(fname, "w"));
 		fwrite(buf, sizeof(char), global_size, f);
 		fclose(f);
 		delete [] buf;
 
 		sprintf(fname, "binbufout/global.size");
-		assert(f = fopen(fname, "w"));
+		nrn_assert(f = fopen(fname, "w"));
 		fprintf(f, "%d\n", global_size);
 		fclose(f);
 	}
@@ -639,13 +639,13 @@ static double save_test_bin(void* v) {//only for whole cells
 		buf = new char[sizes[i]];
 		bbss_save(ref, gids[i], buf, sizes[i]);
 		sprintf(fname, "binbufout/%d.%d", gids[i], sizes[i]);
-		assert(f = fopen(fname, "w"));
+		nrn_assert(f = fopen(fname, "w"));
 		fwrite(buf, sizeof(char), sizes[i], f);
 		fclose(f);
 		delete [] buf;
 
 		sprintf(fname, "binbufout/%d.size", gids[i]);
-		assert(f = fopen(fname, "w"));
+		nrn_assert(f = fopen(fname, "w"));
 		fprintf(f, "%d\n", sizes[i]);
 		fclose(f);
 	}
@@ -878,8 +878,8 @@ static double restore_test_bin(void* v) { //assumes whole cells
 	ref = bbss_buffer_counts(&len, &gids, &sizes, &global_size);
 
 	sprintf(fname, "binbufin/global.size");
-	assert(f = fopen(fname, "r"));
-	assert(fscanf(f, "%d\n", &sz) == 1);
+	nrn_assert(f = fopen(fname, "r"));
+	nrn_assert(fscanf(f, "%d\n", &sz) == 1);
 	fclose(f);
 	global_size = sz;
 	buf = new char[sz];
@@ -888,7 +888,7 @@ static double restore_test_bin(void* v) { //assumes whole cells
 	f = fopen(fname, "r");
 	if (!f) { printf("%d fail open for read %s\n", nrnmpi_myid, fname);}
 	assert(f);
-	assert(fread(buf, sizeof(char), global_size, f) == global_size);
+	nrn_assert(fread(buf, sizeof(char), global_size, f) == global_size);
 	fclose(f);
 	bbss_restore_global(ref, buf, global_size);
 	delete [] buf;
@@ -897,8 +897,8 @@ static double restore_test_bin(void* v) { //assumes whole cells
 		npiece = 1;
 
 		sprintf(fname, "binbufin/%d.size", gids[i]);
-		assert(f = fopen(fname, "r"));
-		assert(fscanf(f, "%d\n", &sz) == 1);
+		nrn_assert(f = fopen(fname, "r"));
+		nrn_assert(fscanf(f, "%d\n", &sz) == 1);
 		fclose(f);
 		//if (sz != sizes[i]) {
 		//	printf("%d note sz=%d size=%d\n", nrnmpi_myid, sz, sizes[i]);
@@ -909,7 +909,7 @@ static double restore_test_bin(void* v) { //assumes whole cells
 		f = fopen(fname, "r");
 		if (!f) { printf("%d fail open for read %s\n", nrnmpi_myid,fname);}
 		assert(f);
-		assert(fread(buf, sizeof(char), sz, f) == sz);
+		nrn_assert(fread(buf, sizeof(char), sz, f) == sz);
 		fclose(f);
 		bbss_restore(ref, gids[i], npiece, buf, sz);
 		delete [] buf;

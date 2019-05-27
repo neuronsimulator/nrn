@@ -20,6 +20,7 @@
 
 #include <../../nrnconf.h>
 #include <hocassrt.h>
+#include <nrnassrt.h>
 #if HAVE_POSIX_MEMALIGN
 #define HAVE_MEMALIGN 1
 #endif
@@ -148,7 +149,7 @@ N_Vector N_VNew_NrnSerialLD(long int length)
 
     /* Allocate memory */
 #if HAVE_MEMALIGN
-    assert(posix_memalign((void**)&data, 64, length*sizeof(realtype)) == 0);
+    nrn_assert(posix_memalign((void**)&data, 64, length*sizeof(realtype)) == 0);
 #else
     data = (realtype *) malloc(length * sizeof(realtype));
 #endif
@@ -352,7 +353,7 @@ N_Vector N_VClone_NrnSerialLD(N_Vector w)
 
     /* Allocate memory */
 #if HAVE_MEMALIGN
-    assert(posix_memalign((void**)&data, 64, length*sizeof(realtype)) == 0);
+    nrn_assert(posix_memalign((void**)&data, 64, length*sizeof(realtype)) == 0);
 #else
     data = (realtype *) malloc(length * sizeof(realtype));
 #endif

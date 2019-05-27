@@ -1179,7 +1179,7 @@ void bgp_dma_setup() {
 	mconfig->nconnections = n_mymulticast_; //max_multisend_targets;
 	mconfig->connectionlist = new void*[n_mymulticast_];
 	mconfig->clientdata = NULL;
-	assert(DCMF_Multicast_register (&mpw->protocol, mconfig) == DCMF_SUCCESS);
+	nrn_assert(DCMF_Multicast_register (&mpw->protocol, mconfig) == DCMF_SUCCESS);
 
 	for (int i = 0; i < n_mymulticast_; ++i) {
 		MyMulticastInfo* mci = mci_+ i;

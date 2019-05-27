@@ -86,7 +86,7 @@ void nrnjava_init();
 #define PATH_SEPARATOR ':'
 #endif
 
-#define NULL_CHECK(arg) assert((arg))
+#define NULL_CHECK(arg) nrn_assert((arg))
 #if USEJVM == 2
 /*
  * List of VM options to be specified when the VM is created.

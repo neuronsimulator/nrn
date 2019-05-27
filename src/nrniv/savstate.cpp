@@ -29,9 +29,9 @@ extern short* nrn_is_artificial_;
 static void tqcallback(const TQItem* tq, int i);
 };
 
-#define ASSERTfgets(a,b,c) assert(fgets(a,b,c) != 0)
-#define ASSERTfread(a,b,c,d) assert(fread(a,b,c,d) == c)
-#define ASSERTfwrite(a,b,c,d) assert(fwrite(a,b,c,d) == c)
+#define ASSERTfgets(a,b,c) nrn_assert(fgets(a,b,c) != 0)
+#define ASSERTfread(a,b,c,d) nrn_assert(fread(a,b,c,d) == c)
+#define ASSERTfwrite(a,b,c,d) nrn_assert(fwrite(a,b,c,d) == c)
 
 class SaveState : public Resource {
 public:
@@ -759,7 +759,7 @@ void SaveState::read(OcFile* ocf, bool close) {
 	for (int i=0, j=0; i < n_memb_func; ++i) if (nrn_is_artificial_[i]) {
 		int nt = 0, nc = 0, ns = 0;
 		ASSERTfgets(buf, 200, f);
-		assert(sscanf(buf, "%d %d %d\n", &nt, &nc, &ns) == 3);
+		nrn_assert(sscanf(buf, "%d %d %d\n", &nt, &nc, &ns) == 3);
 		assert(nt == i && nc == memb_list[i].nodecount);
 		assert(ns == nc * ssi[i].size);
 		acell_[j].ncell = nc;

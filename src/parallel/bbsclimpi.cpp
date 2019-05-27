@@ -334,7 +334,7 @@ fflush(stdout);
 		is_master_ = false;
 		nrnmpi_pkbegin(request_);
 		nrnmpi_enddata(request_);
-		assert(get(HELLO) == HELLO);
+		nrn_assert(get(HELLO) == HELLO);
 		return;
 	}
 #endif
