@@ -1566,6 +1566,14 @@ class Parameter(Species):
         return 'Parameter(regions=%r, name=%r, charge=%r, value=%r%s)' % (self._regions, self._name, self._charge, self.initial, represents)
 
     @property
+    def value(self):
+        return self.initial
+    
+    @value.setter
+    def value(self, v):
+        self.initial = v
+    
+    @property
     def d(self):
         return 0
 
