@@ -704,6 +704,7 @@ class _PlotShapePlot(_WrapperPlot):
               y = np.interp(seg_l, arc3d, y3d)
               z = np.interp(seg_l, arc3d, z3d)
               self.plot([x], [y], [z], marker)
+              return self
 
 
 
