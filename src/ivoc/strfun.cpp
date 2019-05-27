@@ -30,6 +30,7 @@ static double l_substr(void*) {
 	char* s1 = gargstr(1);
 	char* s2 = gargstr(2);
 	char* p = strstr(s1, s2);
+	hoc_return_type_code = 1; // integer
 	if (p) {
 		return double(p - s1);
 	}else{
@@ -58,6 +59,7 @@ static double l_head(void*) {
 	}else{
 		hoc_assign_str(head, "");
 	}
+	hoc_return_type_code = 1; // integer
 	return double(i);
 }
 
@@ -72,6 +74,7 @@ static double l_tail(void*) {
 	}else{
 		hoc_assign_str(tail, "");
 	}
+	hoc_return_type_code = 1; // integer
 	return double(i);
 }
 
@@ -274,6 +277,7 @@ static double l_ref(void*) {
 	Object* ob = *hoc_objgetarg(1);
 	int nr = ob ? ob->refcount : 0;
 	Printf("%s has %d references\n", hoc_object_name(ob), nr);
+	hoc_return_type_code = 1; // integer
 	if (nr == 0) { return 0.; }
 	nr = 0;
 	nr = l_ref1(hoc_top_level_symlist, hoc_top_level_data, ob, nr);
