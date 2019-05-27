@@ -398,7 +398,7 @@ int find_triangles(double value0, double value1, double value2, double value3, d
     if (et & 1024) vi(position[2], position[6], value2, value6, vertexList[10]);
     if (et & 2048) vi(position[3], position[7], value3, value7, vertexList[11]);
     
-    int* tt = triTable[cubeIndex];
+    int const * const tt = triTable[cubeIndex];
     int i, j, k, count;
     for (i = 0, count = 0; i < 16; i += 3, count++) {
         if (tt[i] == -1) break;
