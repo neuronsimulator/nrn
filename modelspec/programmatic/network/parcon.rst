@@ -3071,9 +3071,11 @@ Parallel Transfer
         threads. 
         The methods in this section are only available in the multicore version of NEURON. 
          
-        Multiple threads cannot be used with :func:`extracellular`, :func:`LinearMechanism`, 
-        and only with the fixed step and global variable time step integration 
-        methods. 
+        Multiple threads can only be used with fixed step or global variable time step integration methods.
+	Also, they cannot be used with :func:`extracellular`, :func:`LinearMechanism`, 
+	or the rxd (reaction-diffusion) module. Note that rxd provides its own threading
+	for extracellular diffusion and 3d intracellular simulation, specified via
+	e.g. ``rxd.nthread(4)``.
          
         Mechanisms that are not thread safe can only be used by thread 0. 
          
