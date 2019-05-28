@@ -246,7 +246,7 @@ static double compute(void* v) {
 static double location(void* v) {
 	Imp* imp = (Imp*)v;
 	double x;
-	Section* sec;
+	Section* sec = NULL;
 	if (hoc_is_double_arg(1)) {
 		x = chkarg(1, -1., 1.);
 		if (x >= 0.0) { sec = chk_access(); }
