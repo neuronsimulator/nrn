@@ -938,6 +938,9 @@ void pargap_jacobi_setup(int mode) {
     }
   }
  }
+  if (target_ptr_need_update_cnt_ > target_ptr_update_cnt_) { 
+    target_ptr_update();
+  }
   TransferThreadData* ttd = transfer_thread_data_;
   if (mode == 0) { // setup
     if (visources_->count()) {vgap1 = new double[visources_->count()];}
