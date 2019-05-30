@@ -45,6 +45,7 @@ static void mk_ttd();
 extern double t;
 extern int v_structure_change;
 extern int structure_change_cnt;
+extern int nrn_node_ptr_change_cnt_;
 extern double* nrn_recalc_ptr(double*);
 extern const char *bbcore_write_version;
 // see lengthy comment in ../nrnoc/fadvance.c
@@ -200,6 +201,7 @@ static int max_targets_;
 
 static int target_ptr_update_cnt_ = 0;
 static int target_ptr_need_update_cnt_ = 0;
+static int vptr_change_cnt_ = 0;
 
 static bool is_setup_;
 static void alloclists();
@@ -362,6 +364,7 @@ void nrn_partrans_update_ptrs() {
 		    }
 		}
 	}
+	vptr_change_cnt_ = nrn_node_ptr_change_cnt_;
 	// the target vgap pointers also need updating but they will not
 	// change til after this returns ... (verify this)
 	++target_ptr_need_update_cnt_;
@@ -582,6 +585,9 @@ void thread_vi_compute(NrnThread* _nt) {
 
 void mpi_transfer() {
 	int i, n = outsrc_buf_size_;
+	if (nrn_node_ptr_change_cnt_ > vptr_change_cnt_) {
+		nrn_partrans_update_ptrs();
+	}
 	for (i=0; i < n; ++i) {
 		outsrc_buf_[i] = *poutsrc_[i];
 	}
