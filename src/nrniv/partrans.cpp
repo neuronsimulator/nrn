@@ -685,12 +685,10 @@ void nrnmpi_setup_transfer() {
 		return;
 	}
     if (nrnmpi_numprocs > 1) {
-	if (!insrccnt_) {
-		insrccnt_ = new int[nrnmpi_numprocs];
-		insrcdspl_ = new int[nrnmpi_numprocs+1];
-		outsrccnt_ = new int[nrnmpi_numprocs];
-		outsrcdspl_ = new int[nrnmpi_numprocs+1];
-	}
+        if (insrccnt_) { delete [] insrccnt_; insrccnt_ = NULL; }
+        if (insrcdspl_) { delete [] insrcdspl_; insrcdspl_ = NULL; }
+        if (outsrccnt_) { delete [] outsrccnt_; outsrccnt_ = NULL; }
+        if (outsrcdspl_) { delete [] outsrcdspl_; outsrcdspl_ = NULL; }
 
 	// This is an old comment prior to using the want_to_have rendezvous
 	// rank function in want2have.cpp. The old method did not scale

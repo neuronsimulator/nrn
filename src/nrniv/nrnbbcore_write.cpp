@@ -1417,6 +1417,8 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     fprintf(f, "%d\n", tml_index[i]);
     fprintf(f, "%d\n", ml_nodecount[i]);
   }
+  delete [] tml_index;
+  delete [] ml_nodecount;
 
   fprintf(f, "%d nidata\n", 0);
   fprintf(f, "%d nvdata\n", nvdata);
@@ -1473,7 +1475,9 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
   int n = cg.n_netcon;
 //printf("n_netcon=%d nweight=%d\n", n, nweight);
   writeint(netcon_pnttype, n);
+  delete [] netcon_pnttype;
   writeint(netcon_pntindex, n);
+  delete [] netcon_pntindex;
   writedbl(weights, nweight);
   delete [] weights;
   writedbl(delays, n);
