@@ -803,40 +803,41 @@ def _setup_matrices():
                     # have both 1D and 3D, so find the neighbors
                     # for each of the 3D sections, find the parent sections
                     for r in s._regions:
-                        grid_id = s._intracellular_instances[r]._grid_id
-                        grid_id_species.setdefault(grid_id, s._intracellular_instances[r])
-                        dxs.add(r._dx)
-                        for sec in r._secs3d:
-                            parent_seg = sec.trueparentseg()
-                            parent_sec = None if not parent_seg else parent_seg.sec
-                            # are any of these a match with a 1d section?
-                            if s._has_region_section(r, parent_sec):
-                                #this section has a 1d section that is a parent
-                                #don't think I need to do sec=sec...can probably just do sec.section_orientation etc. Ask Robert
-                                index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), parent_sec, h.parent_connection(sec=sec))
-                                hybrid_neighbors[index1d] += indices3d
-                                hybrid_diams[index1d] = parent_sec(h.parent_connection(sec=sec)).diam
-                                hybrid_index1d_grid_ids[index1d] = grid_id
-                                index1d_sec1d[index1d] = parent_sec
-                            else:
-                                for sec1d in r._secs1d:
-                                    parent_1d_seg = sec1d.trueparentseg()
-                                    parent_1d = None if not parent_1d_seg else parent_1d_seg.sec 
-                                    if parent_1d == sec:
-                                        # it is the parent of a 1d section
-                                        index1d, indices3d = _get_node_indices(s, r, sec, parent_1d_seg.x , sec1d, sec1d.orientation())
-                                        hybrid_neighbors[index1d] += indices3d
-                                        hybrid_diams[index1d] = sec1d(h.section_orientation(sec=sec1d)).diam
-                                        hybrid_index1d_grid_ids[index1d] = grid_id
-                                        index1d_sec1d[index1d] = sec1d
-                                        
-                                    elif parent_1d == parent_sec and parent_1d is not None:
-                                        # it connects to the parent of a 1d section
-                                        index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), sec1d, sec1d.orientation())
-                                        hybrid_neighbors[index1d] += indices3d
-                                        hybrid_diams[index1d] = sec1d(h.section_orientation(sec=sec1d)).diam
-                                        hybrid_index1d_grid_ids[index1d] = grid_id
-                                        index1d_sec1d[index1d] = sec1d
+                        if r in s._intracellular_instances:
+                            grid_id = s._intracellular_instances[r]._grid_id
+                            grid_id_species.setdefault(grid_id, s._intracellular_instances[r])
+                            dxs.add(r._dx)
+                            for sec in r._secs3d:
+                                parent_seg = sec.trueparentseg()
+                                parent_sec = None if not parent_seg else parent_seg.sec
+                                # are any of these a match with a 1d section?
+                                if s._has_region_section(r, parent_sec):
+                                    #this section has a 1d section that is a parent
+                                    #don't think I need to do sec=sec...can probably just do sec.section_orientation etc. Ask Robert
+                                    index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), parent_sec, h.parent_connection(sec=sec))
+                                    hybrid_neighbors[index1d] += indices3d
+                                    hybrid_diams[index1d] = parent_sec(h.parent_connection(sec=sec)).diam
+                                    hybrid_index1d_grid_ids[index1d] = grid_id
+                                    index1d_sec1d[index1d] = parent_sec
+                                else:
+                                    for sec1d in r._secs1d:
+                                        parent_1d_seg = sec1d.trueparentseg()
+                                        parent_1d = None if not parent_1d_seg else parent_1d_seg.sec 
+                                        if parent_1d == sec:
+                                            # it is the parent of a 1d section
+                                            index1d, indices3d = _get_node_indices(s, r, sec, parent_1d_seg.x , sec1d, sec1d.orientation())
+                                            hybrid_neighbors[index1d] += indices3d
+                                            hybrid_diams[index1d] = sec1d(h.section_orientation(sec=sec1d)).diam
+                                            hybrid_index1d_grid_ids[index1d] = grid_id
+                                            index1d_sec1d[index1d] = sec1d
+                                            
+                                        elif parent_1d == parent_sec and parent_1d is not None:
+                                            # it connects to the parent of a 1d section
+                                            index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), sec1d, sec1d.orientation())
+                                            hybrid_neighbors[index1d] += indices3d
+                                            hybrid_diams[index1d] = sec1d(h.section_orientation(sec=sec1d)).diam
+                                            hybrid_index1d_grid_ids[index1d] = grid_id
+                                            index1d_sec1d[index1d] = sec1d
                                         
         if len(dxs) > 1:
             raise RxDException('currently require a unique value for dx')
@@ -898,8 +899,13 @@ def _setup_matrices():
         rates = numpy.asarray(rates, dtype=numpy.float_)
         volumes1d = numpy.asarray(volumes1d, dtype=numpy.float_)
         volumes3d = numpy.asarray(volumes3d, dtype=numpy.float_)
-
-        set_hybrid_data(num_1d_indices_per_grid, num_3d_indices_per_grid, hybrid_indices1d, hybrid_indices3d, num_3d_indices_per_1d_seg, hybrid_grid_ids, rates, volumes1d, volumes3d)
+        print("hybrid_indices1d = {}".format(hybrid_indices1d))
+        print("hybrid_indices3d = {}".format(hybrid_indices3d))
+        print("rates = {}".format(rates))
+        print("volumes1d = {}".format(volumes1d))
+        print("volumes3d = {}".format(volumes3d))
+        
+        #set_hybrid_data(num_1d_indices_per_grid, num_3d_indices_per_grid, hybrid_indices1d, hybrid_indices3d, num_3d_indices_per_1d_seg, hybrid_grid_ids, rates, volumes1d, volumes3d)
 
 
 
@@ -1211,7 +1217,7 @@ def _compile_reactions():
     nseg_by_region = []     # a list of the number of segments for each region
     # a table for location,species -> state index
     location_index = []
-    regions_inv_1d = [reg for reg in regions_inv if not reg._secs3d]
+    regions_inv_1d = [reg for reg in regions_inv if reg._secs1d]
     regions_inv_3d = [reg for reg in regions_inv if reg._secs3d]
     for reg in  regions_inv_1d:
         rptr = weakref.ref(reg)
@@ -1254,7 +1260,7 @@ def _compile_reactions():
                     for reg in creg._react_regions[rptr]:
                         if reg() in r._rate:
                             region_id = creg._region_ids[reg()._id]
-                            rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate[reg()])
+                            rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate[reg()][0])
                             rate_str = re.sub(r'params\[(\d+)\]\[(\d+)\]',lambda m: "params[%i][%i]" %  (creg._params_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), rate_str)
                             operator = '+=' if species_ids_used[species_id][region_id] else '='
                             fxn_string += "\n\trhs[%d][%d] %s %s;" % (species_id, region_id, operator, rate_str)
@@ -1262,7 +1268,7 @@ def _compile_reactions():
                 elif isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
                     #Lookup the region_id for the reaction
                     for reg in r._rate:
-                        rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate[reg])
+                        rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate[reg][0])
                         rate_str = re.sub(r'params\[(\d+)\]\[(\d+)\]',lambda m: "params[%i][%i]" %  (creg._params_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), rate_str)
                         rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_3d[%i]" %  creg._ecs_species_ids.get(int(m.groups()[0])), rate_str)
                         rate_str = re.sub(r'params_3d\[(\d+)\]',lambda m: "params_3d[%i]" %  creg._ecs_params_ids.get(int(m.groups()[0])), rate_str)
@@ -1294,7 +1300,7 @@ def _compile_reactions():
                 else:
                     for reg in creg._react_regions[rptr]:
                         region_id = creg._region_ids[reg()._id]
-                        rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate[reg()])
+                        rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate[reg()][0])
                         fxn_string += "\n\trate = %s;" % rate_str
                         summed_mults = collections.defaultdict(lambda: 0)
                         for (mult, sp) in zip(r._mult, r._sources + r._dests):
@@ -1339,7 +1345,7 @@ def _compile_reactions():
                 r = rptr()
                 if reg not in r._rate:
                     continue
-                rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_3d[%i]" % [pid for pid,gid in enumerate(all_ics_gids) if gid == int(m.groups()[0])][0], r._rate[reg])
+                rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_3d[%i]" % [pid for pid,gid in enumerate(all_ics_gids) if gid == int(m.groups()[0])][0], r._rate[reg][-1])
                 rate_str = re.sub(r'params_3d\[(\d+)\]',lambda m: "params_3d[%i]" %  [pid for pid, gid in enumerate(ics_param_gids) if gid == int(m.groups()[0])][0], rate_str)
                 if isinstance(r,rate.Rate):
                     s = r._species()
@@ -1407,7 +1413,7 @@ def _compile_reactions():
             param_gids = list(param_gids)
             for rptr in ecs_regions_inv[reg]:
                 r = rptr()
-                rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_3d[%i]" %  [pid for pid, gid in enumerate(all_gids) if gid == int(m.groups()[0])][0], r._rate_ecs[reg])
+                rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_3d[%i]" %  [pid for pid, gid in enumerate(all_gids) if gid == int(m.groups()[0])][0], r._rate_ecs[reg][-1])
                 rate_str = re.sub(r'params_3d\[(\d+)\]',lambda m: "params_3d[%i]" %  [pid for pid, gid in enumerate(param_gids) if gid == int(m.groups()[0])][0], rate_str)
                 if isinstance(r,rate.Rate):
                     s = r._species()

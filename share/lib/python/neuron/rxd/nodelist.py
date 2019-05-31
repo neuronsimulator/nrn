@@ -104,7 +104,7 @@ class NodeList(list):
         
         for r in regions:
             # TODO: if allowing multiple regions, need to change this
-            result = numpy.empty(r._mesh.shape)
+            result = numpy.empty((max(r._xs)+5, max(r._ys)+5, max(r._zs)+5))
             result.fill(numpy.nan)
             
             for node in self:

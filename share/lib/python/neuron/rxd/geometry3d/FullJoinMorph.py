@@ -59,7 +59,7 @@ def fullmorph(source, dx, soma_step=100):
     	zs += [sec.z3d(i) for i in range(sec.n3d())]
     	diams += [sec.diam3d(i) for i in range(sec.n3d())]
     	arcs += [sec.arc3d(i + 1) - sec.arc3d(i) for i in range(sec.n3d() - 1)]
-
+    # TODO: include segment boundaries when checking cone lengths
     # warning on minimum size of dx
     check = min(min(diams)/math.sqrt(3), min(arcs)/math.sqrt(3))
     if (dx > check):

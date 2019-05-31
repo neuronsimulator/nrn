@@ -41,13 +41,12 @@ class _c_region:
     def __init__(self, regions):
         global _c_region_lookup
         self._regions = [weakref.ref(r) for r in regions]
-        self._overlap = self._regions[0]()._secs
+        self._overlap = self._regions[0]()._secs1d
         self.num_regions = len(self._regions)
         self.num_species = 0
         self.num_params = 0
         self.num_ecs_species = 0
         self.num_ecs_params = 0
-        self.num_segments = numpy.sum([x.nseg for x in self._overlap])
         self._ecs_react_species = list()
         self._ecs_react_params = list()
         self._react_species = list()
@@ -62,7 +61,7 @@ class _c_region:
         self._vptrs = None
         for rptr in self._regions:
             r = rptr()
-            self._overlap = [sec for sec in r._secs if sec in self._overlap]
+            self._overlap = [sec for sec in r._secs1d if sec in self._overlap]
             if r in _c_region_lookup:
                 _c_region_lookup[rptr].append(self)
             else:
@@ -158,6 +157,7 @@ class _c_region:
 
     def _initalize(self):
         from .species import Species, SpeciesOnRegion
+        self.num_segments = numpy.sum([x.nseg for x in self._overlap])
         self.location_index = -numpy.ones((self.num_regions, self.num_species + self.num_params, self.num_segments), ctypes.c_int)
         from .species import SpeciesOnExtracellular, SpeciesOnRegion, ParameterOnRegion
         
@@ -181,7 +181,7 @@ class _c_region:
         #Setup the array to the state index 
         for rid, r in enumerate(self._regions):
             for sid, s in enumerate(self._react_species + self._react_params):
-                indices = s().indices(r())
+                indices = s()._indices1d(r())
                 try:
                     if indices == []:
                         self.location_index[rid][sid][:] = -1
