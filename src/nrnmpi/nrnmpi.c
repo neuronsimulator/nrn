@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 #include <assert.h>
+#include "nrnassrt.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -24,7 +25,7 @@ extern double nrn_timeus();
 
 #if NRNMPI
 #include <mpi.h>
-#define asrt(arg) assert(arg == MPI_SUCCESS)
+#define asrt(arg) nrn_assert(arg == MPI_SUCCESS)
 #define USE_HPM 0
 #if USE_HPM
 #include <libhpm.h>

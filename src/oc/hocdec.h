@@ -10,7 +10,8 @@ extern "C" {
 
 #include    <stdio.h>
 #include	"nrnapi.h"
-#include	"hocassrt.h"
+#include	"hocassrt.h" /* hoc_execerror instead of abort */
+#include "nrnassrt.h" /* assert in case of side effects (eg. scanf) */
 #include	<string.h>
 
 #define gargstr hoc_gargstr

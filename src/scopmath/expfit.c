@@ -61,6 +61,7 @@ static char RCSid[] =
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
+#include "../oc/nrnassrt.h"
 #include "errcodes.h"
 #include "scoplib.h"
 
@@ -236,14 +237,14 @@ double *deltat, **data;
     rewind(refdata);
 
     for (i = 0; i < 7; i++)
-	assert(fgets(tmpstr, 80, refdata));
+	nrn_assert(fgets(tmpstr, 80, refdata));
     sscanf(tmpstr, "%lf %lf", &temp, *data);
-    assert(fgets(tmpstr, 80, refdata));
+    nrn_assert(fgets(tmpstr, 80, refdata));
     sscanf(tmpstr, "%lf %lf", deltat, *data + 1);
     *deltat -= temp;
     for (i = 2; i < npts; i++)
     {
-	assert(fgets(tmpstr, 80, refdata));
+	nrn_assert(fgets(tmpstr, 80, refdata));
 	sscanf(tmpstr, "%lf %lf", &temp, *data + i);
     }
 

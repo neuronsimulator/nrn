@@ -1,12 +1,18 @@
 import neuron
-from neuron import h, nrn, hoc
+from neuron import h, nrn, hoc, nrn_dll_sym
 from . import region
 from . import rxdsection
 import numpy
 import weakref
 from .rxdException import RxDException
 import warnings
+import ctypes
 import collections
+
+#function to change extracellular diffusion
+set_diffusion = nrn_dll_sym('set_diffusion')
+set_diffusion.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_double, ctypes.c_double, ctypes.c_double]
+set_diffusion.restype = ctypes.c_int
 
 # data storage
 _volumes = numpy.array([])
@@ -15,6 +21,7 @@ _diffs = numpy.array([])
 _states = numpy.array([])
 _node_fluxes = {'indices': [], 'type': [], 'source': [], 'scale': []}
 _has_node_fluxes = False
+_point_indices = {}
 
 # node data types
 _concentration_node = 0
@@ -55,6 +62,37 @@ def _allocate(num):
     _states.resize(total, refcheck=False)
     return start_index
 
+def _remove(start, stop):
+    """ delete old volumes, surface areas and diff values in from global arrays
+    """
+    global _volumes, _surface_area, _diffs, _states
+    #Remove entries that have to be recalculated
+    _volumes = numpy.delete(_volumes,list(range(start,stop)))
+    _surface_area = numpy.delete(_surface_area,list(range(start,stop)))
+    _diffs = numpy.delete(_diffs,list(range(start,stop)))
+    _states = numpy.delete(_states,list(range(start,stop)))
+
+def _replace(old_offset, old_nseg, new_offset, new_nseg):
+    """ delete old volumes, surface areas and diff values in from global arrays
+        move states so that the new segment value is equal to the old segment
+        value that contains its centre """
+    global _volumes, _surface_area, _diffs, _states
+    # remove entries that have to be recalculated
+    start = old_offset
+    stop = start + old_nseg + 1
+    
+    _volumes = numpy.delete(_volumes, list(range(start, stop)))
+    _surface_area = numpy.delete(_surface_area, list(range(start, stop)))
+    _diffs = numpy.delete(_diffs, list(range(start, stop)))
+    # replace states -- the new segment has the state from the old
+    # segment which contains it's centre
+
+    for j in range(new_nseg):
+        i = int(((j + 0.5) / new_nseg) * old_nseg)
+        _states[new_offset + j ] = _states[old_offset + i]
+    _states = numpy.delete(_states,list(range(start, stop)))
+
+
 _numpy_element_ref = neuron.numpy_element_ref
 
 class Node(object):
@@ -71,6 +109,8 @@ class Node(object):
             return self.region == condition
         elif isinstance(condition, nrn.Segment):
             return self.segment == condition
+        elif isinstance(condition, region.Extracellular):
+            return self.region == condition
         raise RxDException('selector %r not supported for this node type' % condition)
         
     @property
@@ -273,13 +313,12 @@ class Node(object):
         _node_fluxes['source'].append(source)
         _node_fluxes['scale'].append(scale)
         _has_node_fluxes = True
-        
     
-_h_n3d = h.n3d
-_h_x3d = h.x3d
-_h_y3d = h.y3d
-_h_z3d = h.z3d
-_h_arc3d = h.arc3d
+    @value.getter
+    def _state_index(self):
+        return self._index
+
+
 
 class Node1D(Node):
     def __init__(self, sec, i, location, data_type=_concentration_node):
@@ -308,14 +347,13 @@ class Node1D(Node):
         self._loc3d = None
         self._data_type = data_type
 
-
     def _update_loc3d(self):
         sec = self._sec
         length = sec.L
-        normalized_arc3d = [_h_arc3d(i, sec=sec._sec) / length for i in range(int(_h_n3d(sec=sec._sec)))]
-        x3d = [_h_x3d(i, sec=sec._sec) for i in range(int(_h_n3d(sec=sec._sec)))]
-        y3d = [_h_y3d(i, sec=sec._sec) for i in range(int(_h_n3d(sec=sec._sec)))]
-        z3d = [_h_z3d(i, sec=sec._sec) for i in range(int(_h_n3d(sec=sec._sec)))]
+        normalized_arc3d = [sec._sec.arc3d(i) / length for i in range(sec._sec.n3d())]
+        x3d = [sec._sec.x3d(i) for i in range(sec._sec.n3d())]
+        y3d = [sec._sec.y3d(i) for i in range(sec._sec.n3d())]
+        z3d = [sec._sec.z3d(i) for i in range(sec._sec.n3d())]
         loc1d = self._location
         self._loc3d = (numpy.interp(loc1d, normalized_arc3d, x3d),
                        numpy.interp(loc1d, normalized_arc3d, y3d),
@@ -448,11 +486,31 @@ class Node3D(Node):
         self._i = i
         self._j = j
         self._k = k
+        self._neighbors = None
         # TODO: store region as a weakref! (weakref.proxy?)
         self._r = r
         self._seg = seg
         self._speciesref = speciesref
         self._data_type = data_type
+
+        _point_indices.setdefault(self._r, {})
+        _point_indices[self._r][(self._i,self._j,self._k)] = self._index
+
+    def _find_neighbors(self):
+        self._pos_x_neighbor = _point_indices[self._r].get((self._i + 1, self._j, self. _k))
+        self._neg_x_neighbor = _point_indices[self._r].get((self._i - 1, self._j, self. _k))
+        self._pos_y_neighbor = _point_indices[self._r].get((self._i, self._j + 1, self. _k))
+        self._neg_y_neighbor = _point_indices[self._r].get((self._i, self._j - 1, self. _k))
+        self._pos_z_neighbor = _point_indices[self._r].get((self._i, self._j, self. _k + 1))
+        self._neg_z_neighbor = _point_indices[self._r].get((self._i, self._j, self. _k - 1))
+
+        self._neighbors = (self._pos_x_neighbor, self._neg_x_neighbor, self._pos_y_neighbor, self._neg_y_neighbor, self._pos_z_neighbor, self._neg_z_neighbor)
+
+        return self._neighbors
+
+    @property
+    def neighbors(self):
+        return self._neighbors if self._neighbors is not None else self._find_neighbors()  
     
     @property
     def surface_area(self):
@@ -466,7 +524,7 @@ class Node3D(Node):
         """
         # TODO: should I have the commented out line?
         #rxd._update_node_data()
-        return _surface_area[self._index]
+        return self._r._sa[self._index]
         
     def satisfies(self, condition):
         """Tests if a Node satisfies a given condition.
@@ -496,15 +554,18 @@ class Node3D(Node):
     @property
     def x3d(self):
         # TODO: need to modify this to work with 1d
-        return self._r._mesh.xs[self._i]
+        mesh = self._r._mesh_grid
+        return mesh['xlo'] + self._i * mesh['dx']
     @property
     def y3d(self):
         # TODO: need to modify this to work with 1d
-        return self._r._mesh.ys[self._j]
+        mesh = self._r._mesh_grid
+        return mesh['ylo'] + self._j * mesh['dy']
     @property
     def z3d(self):
         # TODO: need to modify this to work with 1d
-        return self._r._mesh.zs[self._k]
+        mesh = self._r._mesh_grid
+        return mesh['zlo'] + self._k * mesh['dz']
     
     @property
     def x(self):
@@ -526,7 +587,7 @@ class Node3D(Node):
     
     @property
     def volume(self):
-        return _volumes[self._index]
+        return self._r._vol[self._index]
 
     @property
     def region(self):
@@ -541,11 +602,8 @@ class Node3D(Node):
     @property
     def value(self):
         """Gets the value associated with this Node."""
-        from . import rxd
-        if rxd._external_solver is not None:
-            _states[self._index] = rxd._external_solver.value(self)
-        return _states[self._index]
-    
+        return self._speciesref()._intracellular_instances[self._r].states[self._index]
+        
     @value.setter
     def value(self, v):
         """Sets the value associated with this Node.
@@ -553,7 +611,91 @@ class Node3D(Node):
         For Species nodes belonging to a deterministic simulation, this is a concentration.
         For Species nodes belonging to a stochastic simulation, this is the molecule count.
         """
+        self._speciesref()._intracellular_instances[self._r].states[self._index] = v
+
+    @property
+    def _ref_value(self):
+        """Returns a HOC reference to the Node's value"""
+        return self._speciesref()._intracellular_instances[self._r]._states._ref_x[self._index]
+        
+
+class NodeExtracellular(Node):
+    def __init__(self, index, i, j, k, r, speciesref, regionref):
+        """
+            Parameters
+            ----------
+            
+            index : int
+                the offset into the global rxd data
+            i : int
+                the x coordinate in the region's matrix
+            j : int
+                the y coordinate in the region's matrix
+            k : int
+                the z coordinate in the region's matrix
+        """
+        self._index = index
+        self._i = i
+        self._j = j
+        self._k = k
+        self._r = r
+        # TODO: store region as a weakref! (weakref.proxy?)
+        self._speciesref = speciesref
+        self._regionref = regionref
+        # TODO: support _molecule_node data type
+        self._data_type = _concentration_node
+    
+    @property
+    def x3d(self):
+        return self._regionref()._xlo + (self._i+0.5)*self._regionref()._dx[0]
+    @property
+    def y3d(self):
+        return self._regionref()._ylo + (self._j+0.5)*self._regionref()._dx[1]
+    @property
+    def z3d(self):
+        return self._regionref()._zlo + (self._k+0.5)*self._regionref()._dx[2]
+
+    @property
+    def region(self):
+        """The extracellular space containing the node."""
+        return self._regionref() 
+
+    @property
+    def d(self):
+        """Gets the diffusion rate within the compartment."""
+        return self._speciesref()._d
+    @d.setter
+    def d(self, value):
+        """Sets the diffusion rate within the compartment."""
         from . import rxd
-        _states[self._index] = v
-        if rxd._external_solver is not None:
-            rxd._external_solver.update_value(self)
+        # TODO: Replace zero with Parallel_grids id (here an in insert call)
+        if hasattr(value,'__len__'):
+            set_diffusion(0,self._speciesref()._grid_id, value[0], value[1], value[2])
+        else:
+            set_diffusion(0,self._speciesref()._grid_id, value, value, value)
+
+    @property
+    def value(self):
+        """Gets the value associated with this Node."""
+        return self._speciesref().__getitem__(self._r).states3d[self._i,self._j,self._k] 
+        
+    @value.setter
+    def value(self, v):
+        """Sets the value associated with this Node.
+        
+        For Species nodes belonging to a deterministic simulation, this is a concentration.
+        For Species nodes belonging to a stochastic simulation, this is the molecule count.
+        """
+        self._speciesref().__getitem__(self._r).states3d[self._i,self._j,self._k] = v
+
+
+    @property
+    def _ref_value(self):
+        """Returns a HOC reference to the Node's value"""
+        return self._speciesref().__getitem__(self._regionref())._extracellular()._states._ref_x[self._index]
+        
+    @value.getter
+    def _state_index(self):
+        return self._index
+
+

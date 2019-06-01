@@ -62,6 +62,7 @@ class Reaction(GeneralizedReaction):
 
         self._original_rate_f = rate_f
         self._original_rate_b = rate_b
+        self._voltage_dependent = any([ar._voltage_dependent for ar in [scheme, rate_f, rate_b] if hasattr(ar,'_voltage_dependent')])
         self._membrane_flux = False
         self._dir = scheme._dir
         self._custom_dynamics = custom_dynamics
@@ -75,11 +76,11 @@ class Reaction(GeneralizedReaction):
         # initialize self if the rest of rxd is already initialized
         if initializer.is_initialized():
             self._do_init()
-            self._update_indices()
 
 
     def _do_init(self):
         self._update_rates()
+        self._update_indices()
 
     def _update_rates(self):
         lhs = self._scheme._lhs._items
@@ -88,8 +89,8 @@ class Reaction(GeneralizedReaction):
             # TODO: remove this limitation (probably means doing with rate_b what done with rate_f and making sure _sources and _dests are correct
             raise RxDException('pure reverse reaction currently not supported; reformulate as a forward reaction')
         
-        rate_f = copy.copy(self._original_rate_f)
-        rate_b = copy.copy(self._original_rate_b)
+        rate_f = rxdmath._ensure_arithmeticed(self._original_rate_f)
+        rate_b = rxdmath._ensure_arithmeticed(self._original_rate_b) 
         
         if not self._custom_dynamics:
             for k, v in zip(list(lhs.keys()), list(lhs.values())):
@@ -104,13 +105,48 @@ class Reaction(GeneralizedReaction):
                     else:
                         rate_b *= k ** v
         rate = rate_f - rate_b
+        self._rate_arithmeticed = rate
+        
         self._sources = ref_list_with_mult(lhs)
         self._dests = ref_list_with_mult(rhs)
-        self._rate, self._involved_species = rxdmath._compile(rate)
         
-        trans_membrane = any(isinstance(s(), species.SpeciesOnRegion) for s in self._involved_species)
+        #Check to if it is an extracellular reaction
+        from . import region, species
+        #Was an ECS region was passed to to the constructor 
+        ecs_region = [r for r in self._regions if isinstance(r, region.Extracellular)]
+        
+        #Are any of of the sources or destinations passed to the constructor extracellular
+        if not ecs_region:
+            ecs_species = [s() for s in self._sources + self._dests if isinstance(s(),species.SpeciesOnExtracellular) or isinstance(s(),species._ExtracellularSpecies)]
+            if ecs_species:
+                ecs_region = [ecs_species[0]._region] if isinstance(ecs_species[0],species._ExtracellularSpecies) else [ecs_species[0]._extracellular()._region]
+
+        #Are any of of the sources or destinations passed to the constructor defined on the ECS
+        if not ecs_region:
+            sps = [s() for s in self._sources + self._dests if isinstance(s(),species.Species)]
+            # only have an ecs reaction if all the species are defined on the ecs
+            if sps and all(s._extracellular_instances for s in sps):
+                # take an intersection of all the extracellular regions 
+                ecs_region = list(sps[0]._extracellular_instances.keys())
+                for s in sps:
+                    ecs_region = [r for r in s._extracellular_instances.keys() if r in ecs_region]
+        if ecs_region:
+            self._rate_ecs, self._involved_species_ecs = rxdmath._compile(rate, ecs_region)
+        
+        #TODO ask about this -> Grab region from regions species in _dest are defined on. I think if we have a species defined on dest its sources must also be defined on that region
+        for sptr in self._dests:
+            s = sptr() if isinstance(sptr(), species.Species) else sptr()._species()
+            self._react_regions = [reg for reg in s._regions]
+        self._rate, self._involved_species = rxdmath._compile(rate, self._react_regions)
+
+        #Species are in at most one region
+        trans_membrane = len({s()._region() for s in self._involved_species if isinstance(s(), species.SpeciesOnRegion)}) + len({s()._extracellular()._region for s in self._involved_species if isinstance(s(), species.SpeciesOnExtracellular)}) > 1 
         if trans_membrane:
             raise RxDException('Reaction does not support multi-compartment dynamics. Use MultiCompartmentReaction.')
+        
+        #Recompile all the reactions in C
+        if hasattr(self, '_mult'):
+            rxd._compile_reactions()
 
     
     @property

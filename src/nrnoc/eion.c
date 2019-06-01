@@ -109,7 +109,7 @@ void ion_reg(const char* name, double valence)
 	double val;
 #define VAL_SENTINAL -10000.
 
-	{int n = strlen(name) + 10;
+	{int n = 2*strlen(name) + 10; /*name used twice in initialization name */
 	  for (i=0; i < 7; ++i) {
 		buf[i] = emalloc(n);
 	  }

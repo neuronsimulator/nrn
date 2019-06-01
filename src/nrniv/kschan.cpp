@@ -653,32 +653,32 @@ static double ks_pr(void* v) {
 	Symbol* s;
 
 	int i, j;
-	printf("%s type properties\n", hoc_object_name(ks->obj_));
-printf("name=%s is_point_=%s ion_=%s cond_model_=%d\n", ks->name_.string(), (ks->is_point() ? "true" : "false"), ks->ion_.string(), ks->cond_model_);
-printf("  ngate=%d nstate=%d nhhstate=%d nligand=%d ntrans=%d ivkstrans=%d iligtrans=%d\n",
+	Printf("%s type properties\n", hoc_object_name(ks->obj_));
+Printf("name=%s is_point_=%s ion_=%s cond_model_=%d\n", ks->name_.string(), (ks->is_point() ? "true" : "false"), ks->ion_.string(), ks->cond_model_);
+Printf("  ngate=%d nstate=%d nhhstate=%d nligand=%d ntrans=%d ivkstrans=%d iligtrans=%d\n",
 ks->ngate_, ks->nstate_, ks->nhhstate_, ks->nligand_, ks->ntrans_,
 ks->ivkstrans_, ks->iligtrans_);
-	printf("  default gmax=%g erev=%g\n", ks->gmax_deflt_, ks->erev_deflt_);
+	Printf("  default gmax=%g erev=%g\n", ks->gmax_deflt_, ks->erev_deflt_);
 	for (i=0; i < ks->ngate_; ++i) {
-printf("    gate %d index=%d nstate=%d power=%d\n",
+Printf("    gate %d index=%d nstate=%d power=%d\n",
 i, ks->gc_[i].sindex_, ks->gc_[i].nstate_, ks->gc_[i].power_);
 	}
 	for (i=0; i < ks->nligand_; ++i) {
-		printf("    ligand %d %s\n", i, ks->ligands_[i]->name);
+		Printf("    ligand %d %s\n", i, ks->ligands_[i]->name);
 	}
 	for (i=0; i < ks->iligtrans_; ++i) {
 		kt = ks->trans_ + i;
-printf("    trans %d src=%d target=%d type=%d\n", i, kt->src_, kt->target_, kt->type_);
-printf("        f0 type=%d   f1 type=%d\n", kt->f0?kt->f0->type():-1, kt->f1?kt->f1->type():-1);
+Printf("    trans %d src=%d target=%d type=%d\n", i, kt->src_, kt->target_, kt->type_);
+Printf("        f0 type=%d   f1 type=%d\n", kt->f0?kt->f0->type():-1, kt->f1?kt->f1->type():-1);
 	}
 	for (i=ks->iligtrans_; i < ks->ntrans_; ++i) {
 		kt = ks->trans_ + i;
-printf("    trans %d src=%d target=%d type=%d ligindex=%d\n", i, kt->src_, kt->target_, kt->type_, kt->ligand_index_);
-printf("        f0 type=%d   f1 type=%d\n", kt->f0?kt->f0->type():-1, kt->f1?kt->f1->type():-1);
+Printf("    trans %d src=%d target=%d type=%d ligindex=%d\n", i, kt->src_, kt->target_, kt->type_, kt->ligand_index_);
+Printf("        f0 type=%d   f1 type=%d\n", kt->f0?kt->f0->type():-1, kt->f1?kt->f1->type():-1);
 	}
-	printf("    state names and fractional conductance\n");
+	Printf("    state names and fractional conductance\n");
 	for (i=0; i < ks->nstate_; ++i) {
-		printf("    %d %s %g\n", i, ks->state_[i].string(), ks->state_[i].f_);
+		Printf("    %d %s %g\n", i, ks->state_[i].string(), ks->state_[i].f_);
 	}
 	return 1;
 }
@@ -928,21 +928,21 @@ void KSChan::build() {
 	if (looksym(suffix)) {
 		hoc_execerror(suffix, "already exists");
 	}
-	assert((m_kschan[0] = strdup(m_kschan_pat[0])) != 0);
-	assert((m_kschan[1] = strdup(suffix)) != 0);
-	assert(snprintf(buf, 100,  "gmax%s", unsuffix) < 100);
-	assert((m_kschan[2] = strdup(buf)) != 0);
+	nrn_assert((m_kschan[0] = strdup(m_kschan_pat[0])) != 0);
+	nrn_assert((m_kschan[1] = strdup(suffix)) != 0);
+	nrn_assert(snprintf(buf, 100,  "gmax%s", unsuffix) < 100);
+	nrn_assert((m_kschan[2] = strdup(buf)) != 0);
 	int aoff = 0;
 	if (!ion_sym_) {
-		assert(snprintf(buf, 100, "e%s", unsuffix) < 100);
-		assert((m_kschan[3] = strdup(buf)) != 0);
+		nrn_assert(snprintf(buf, 100, "e%s", unsuffix) < 100);
+		nrn_assert((m_kschan[3] = strdup(buf)) != 0);
 		aoff = 1;
 	}
 	m_kschan[3+aoff] = 0;
-	assert(snprintf(buf, 100, "g%s", unsuffix) < 100);
-	assert((m_kschan[4+aoff] = strdup(buf)) != 0);
-	assert(snprintf(buf, 100, "i%s", unsuffix) < 100);
-	assert((m_kschan[5+aoff] = strdup(buf)) != 0);
+	nrn_assert(snprintf(buf, 100, "g%s", unsuffix) < 100);
+	nrn_assert((m_kschan[4+aoff] = strdup(buf)) != 0);
+	nrn_assert(snprintf(buf, 100, "i%s", unsuffix) < 100);
+	nrn_assert((m_kschan[5+aoff] = strdup(buf)) != 0);
 	m_kschan[6+aoff] = 0;
 	m_kschan[7+aoff] = 0;
 	soffset_ = 3+aoff; // first state points here in p array
@@ -969,7 +969,7 @@ void KSChan::setname(const char* s) {
 		i = 0;
 		while (strcmp(mechsym_->name, name_.string()) != 0
 		    &&	looksym(name_.string())){
-			printf("KSChan::setname %s already in use\n", name_.string());
+			Printf("KSChan::setname %s already in use\n", name_.string());
 			sprintf(old_suffix, "%s%d", s, i);
 			name_ = old_suffix;
 			++i;
@@ -1217,7 +1217,7 @@ printf("switch from useion to non-specific\n");
 		Symbol* sym = looksym(buf);
 		if (!sym || sym->type != MECHANISM ||
 memb_func[sym->subtype].alloc != memb_func[looksym("na_ion")->subtype].alloc) {
-			printf("%s is not an ion mechanism", sym->name);
+			Printf("%s is not an ion mechanism", sym->name);
 		}		
 		if (ion_sym_) { // there already is an ion
 			if (strcmp(ion_sym_->name, buf) != 0) { //is it different
@@ -2003,7 +2003,7 @@ void KSChan::sname_install() {
 		buf1[0]='\0';
 		while (looksym(buf, searchsym)) {
 			sprintf(buf1, "%s%d", state_[i].string(), j++);
-			assert(snprintf(buf, 100, "%s%s", buf1, unsuffix) < 100);
+			nrn_assert(snprintf(buf, 100, "%s%s", buf1, unsuffix) < 100);
 		}
 		free(snew[i + soffset_]->name);
 		snew[i + soffset_]->name = strdup(buf);

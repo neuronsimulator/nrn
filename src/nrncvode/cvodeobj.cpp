@@ -284,6 +284,7 @@ static double jacobian(void* v) {
 	if (ifarg(1)) {
 		d->jacobian((int)chkarg(1, 0, 2));
 	}
+	hoc_return_type_code = 1; // int
 	return double(d->jacobian());
 }
 
@@ -378,6 +379,7 @@ static double cache_efficient(void* v) {
 		int i = (int)chkarg(1,0,1);
 		nrn_cachevec(i);
 	}
+	hoc_return_type_code = 2; // boolean
 	return (double) use_cachevec;
 }
 
@@ -398,6 +400,7 @@ static double condition_order(void* v) {
 		int i = (int)chkarg(1,1,2);
 		d->condition_order(i);
 	}
+	hoc_return_type_code = 1; // integer
 	return (double) d->condition_order();
 }
 
@@ -407,6 +410,7 @@ static double debug_event(void* v) {
 		int i = (int)chkarg(1, 0, 10);
 		d->print_event_ = i;
 	}
+	hoc_return_type_code = 1; // integer
 	return (double)d->print_event_;
 }
 
@@ -530,10 +534,12 @@ static double use_parallel(void* v) {
 }
 
 static double nrn_structure_change_count(void* v) {
+	hoc_return_type_code = 1; // integer
 	return double(structure_change_cnt);
 }
 
 static double nrn_diam_change_count(void* v) {
+	hoc_return_type_code = 1; // integer
 	return double(diam_change_cnt);
 }
 
@@ -790,8 +796,8 @@ bool Cvode::at_time(double te, NrnThread* nt) {
 	// beyond the current step.
 	if (nt->_vcv) {
 if (te <= tstop_ && te > t0_) {
-printf("te=%g t0_=%g tn_=%g t_=%g t=%g\n", te, t0_, tn_, t_, nt_t);
-printf("te-t0_=%g  tstop_-te=%g\n", te - t0_, tstop_ - te);
+Printf("te=%g t0_=%g tn_=%g t_=%g t=%g\n", te, t0_, tn_, t_, nt_t);
+Printf("te-t0_=%g  tstop_-te=%g\n", te - t0_, tstop_ - te);
 }
 		assert( te > tstop_ || te <= t0_);
 	}
@@ -1073,7 +1079,7 @@ int Cvode::cvode_init(double) {
         err = CVodeReInit(mem_, t0_, y_);
         err = CVodeSetUserData(mem_, (void*)this);
         if (err != SUCCESS){
-			printf("Cvode %p %s CVReInit error %d\n", this, secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec), err);
+			Printf("Cvode %p %s CVReInit error %d\n", this, secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec), err);
 			return err;
 		}
 	}else{
@@ -1089,7 +1095,7 @@ int Cvode::cvode_init(double) {
 
         err = CVodeSetUserData(mem_, (void*)this);
         if (err != SUCCESS){
-			printf("Cvode %p %s CVodeMalloc error %d\n", this, secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec), err);
+			Printf("Cvode %p %s CVodeMalloc error %d\n", this, secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec), err);
 			return err;
 		}
 		maxorder(ncv_->maxorder());
@@ -1259,12 +1265,12 @@ if (tout < t0_) {
 		// The fudge case was avoided by returning from the
 		// Cvode::handle_step when a first order condition check
 		// puts an event on the queue equal to t_
-printf("Cvode::interpolate assert error t0=%g tout-t0=%g eps*t_=%g\n", t0_, tout-t0_, NetCvode::eps(t_));
+Printf("Cvode::interpolate assert error t0=%g tout-t0=%g eps*t_=%g\n", t0_, tout-t0_, NetCvode::eps(t_));
 //	}
 	tout = t0_;
 }
 if (tout > tn_) {
-printf("Cvode::interpolate assert error tn=%g tn-tout=%g  eps*t_=%g\n", tn_, tn_-tout, NetCvode::eps(t_));
+Printf("Cvode::interpolate assert error tn=%g tn-tout=%g  eps*t_=%g\n", tn_, tn_-tout, NetCvode::eps(t_));
 	tout = tn_;
 }
 #endif
@@ -1287,7 +1293,7 @@ printf("Cvode::interpolate assert error tn=%g tn-tout=%g  eps*t_=%g\n", tn_, tn_
 int Cvode::cvode_advance_tn() {
 #if PRINT_EVENT
 if (net_cvode_instance->print_event_ > 1) {
-printf("Cvode::cvode_advance_tn %p %d initialize_=%d tstop=%.20g t_=%.20g to ",
+Printf("Cvode::cvode_advance_tn %p %d initialize_=%d tstop=%.20g t_=%.20g to ",
 this, nth_?nth_->id:0, initialize_, tstop_, t_);
 }
 #endif
@@ -1300,11 +1306,11 @@ this, nth_?nth_->id:0, initialize_, tstop_, t_);
     int err = CVode(mem_, tstop_, y_, &t_, CV_ONE_STEP);
 #if PRINT_EVENT
 if (net_cvode_instance->print_event_ > 1) {
-printf("t_=%.20g\n", t_);
+Printf("t_=%.20g\n", t_);
 }
 #endif
 	if (err != CV_SUCCESS && err != CV_TSTOP_RETURN) {
-		printf("CVode %p %s advance_tn failed, err=%d.\n", this, secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec), err);
+		Printf("CVode %p %s advance_tn failed, err=%d.\n", this, secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec), err);
 		(*pf_)(t_, y_, nil, (void*)this);
 		return err;
 	}
@@ -1327,7 +1333,7 @@ printf("t_=%.20g\n", t_);
 int Cvode::cvode_interpolate(double tout) {
 #if PRINT_EVENT
 if (net_cvode_instance->print_event_ > 1) {
-printf("Cvode::cvode_interpolate %p %d initialize_%d t=%.20g to ",
+Printf("Cvode::cvode_interpolate %p %d initialize_%d t=%.20g to ",
 this, nth_?nth_->id:0, initialize_, t_);
 }
 #endif
@@ -1337,11 +1343,11 @@ this, nth_?nth_->id:0, initialize_, t_);
 	int err = CVode(mem_, tout, y_, &t_, CV_NORMAL);
 #if PRINT_EVENT
 if (net_cvode_instance->print_event_ > 1) {
-printf("%.20g\n", t_);
+Printf("%.20g\n", t_);
 }
 #endif
 	if (err < 0) {
-		printf("CVode %p %s interpolate failed, err=%d.\n", this, secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec), err);
+		Printf("CVode %p %s interpolate failed, err=%d.\n", this, secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec), err);
 		return err;
 	}
 	(*pf_)(t_, y_, nil, (void*)this);
@@ -1380,23 +1386,23 @@ N_Vector Cvode::acorvec() {
 
 void Cvode::statistics() {
 #if 1
-	printf("\nCvode instance %p %s statistics : %d %s states\n",
+	Printf("\nCvode instance %p %s statistics : %d %s states\n",
 		this, secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec), neq_,
 		(use_daspk_ ? "IDA" : "CVode"));
-	printf("   %d advance_tn, %d interpolate, %d init (%d due to at_time)\n", advance_calls_, interpolate_calls_, init_calls_, ts_inits_);
-	printf("   %d function evaluations, %d mx=b solves, %d jacobian setups\n", f_calls_, mxb_calls_, jac_calls_);
+	Printf("   %d advance_tn, %d interpolate, %d init (%d due to at_time)\n", advance_calls_, interpolate_calls_, init_calls_, ts_inits_);
+	Printf("   %d function evaluations, %d mx=b solves, %d jacobian setups\n", f_calls_, mxb_calls_, jac_calls_);
 	if (use_daspk_) {
 		daspk_->statistics();
 		return;
 	}
 #else
-	printf("\nCVode Statistics.. \n\n");
-	printf("internal steps = %d\nfunction evaluations = %d\n",
+	Printf("\nCVode Statistics.. \n\n");
+	Printf("internal steps = %d\nfunction evaluations = %d\n",
 		iopt_[NST], iopt_[NFE]);
-	printf("newton iterations = %d  setups = %d\n nonlinear convergence failures = %d\n\
+	Printf("newton iterations = %d  setups = %d\n nonlinear convergence failures = %d\n\
  local error test failures = %ld\n",
 		iopt_[NNI], iopt_[NSETUPS], iopt_[NCFN], iopt_[NETF]);
-	printf("order=%d stepsize=%g\n", iopt_[QU], h());
+	Printf("order=%d stepsize=%g\n", iopt_[QU], h());
 #endif
 }
 

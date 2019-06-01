@@ -88,6 +88,10 @@ functions here as well.
 
 #include <stdio.h>
 #include <stdlib.h>
+
+// for idDirExist and makePath
+#include <ocfile.h>
+
 #include <nrnran123.h> // globalindex written to globals.dat
 #include <section.h>
 #include <parse.h>
@@ -119,7 +123,7 @@ extern short* nrn_is_artificial_;
 extern int nrn_is_ion(int type);
 extern double nrn_ion_charge(Symbol* sym);
 extern Symbol* hoc_lookup(const char*);
-extern int secondorder;
+extern int secondorder, diam_changed, v_structure_change, tree_changed;
 
 /* not NULL, need to write gap information */
 extern void (*nrnthread_v_transfer_)(NrnThread*);
@@ -195,25 +199,37 @@ size_t nrnbbcore_write() {
   if (!use_cachevec) {
     hoc_execerror("nrnbbcore_write requires cvode.cache_efficient(1)", NULL);
   }
+  if (tree_changed || v_structure_change || diam_changed) {
+    hoc_execerror("nrnbbcore_write requires the model already be initialized (cf finitialize(...))", NULL);
+  }
   char fname[1024];
-  char path[1024];
-  sprintf(path, ".");
+  std::string path(".");
   if (ifarg(1)) {
-    strcpy(path, hoc_gargstr(1));
+    path = hoc_gargstr(1);
+    if (nrnmpi_myid == 0) {
+      if (!isDirExist(path)) {
+        if (!makePath(path)) {
+          hoc_execerror(path.c_str(), "directory did not exist and makePath for it failed");
+        }
+      }
+    }
+#ifdef NRNMPI
+    nrnmpi_barrier();
+#endif
   }
 
   size_t rankbytes = part1(); // can arrange to be just before part2
 
-  assert(snprintf(fname, 1024, "%s/%s", path, "byteswap1.dat") < 1024);
+  nrn_assert(snprintf(fname, 1024, "%s/%s", path.c_str(), "byteswap1.dat") < 1024);
   write_byteswap1(fname);
 
-  assert(snprintf(fname, 1024, "%s/%s", path, "bbcore_mech.dat") < 1024);
+  nrn_assert(snprintf(fname, 1024, "%s/%s", path.c_str(), "bbcore_mech.dat") < 1024);
   write_memb_mech_types(fname);
 
-  assert(snprintf(fname, 1024, "%s/%s", path, "globals.dat") < 1024);
+  nrn_assert(snprintf(fname, 1024, "%s/%s", path.c_str(), "globals.dat") < 1024);
   write_globals(fname);
 
-  part2(path);
+  part2(path.c_str());
   return rankbytes;
 }
 
@@ -650,6 +666,8 @@ CellGroup* mk_cellgroups() {
   for (int i=0; i < nrn_nthread; ++i) {
     if (cgs[i].n_real_output && cgs[i].output_gid[0] >= 0) {
       cgs[i].group_id = cgs[i].output_gid[0];
+    }else{
+      hoc_execerror("A thread has no real cells or the first cell has no gid", NULL);
     }
   }
 
@@ -1221,12 +1239,15 @@ static int nrnthread_dat2_mech(int tid, size_t i, int dsz_inst, int*& nodeindice
       data1 = contiguous_art_data(ml->data, n, sz); // delete after use
       nodeindices = NULL;
     }else{
-      nodeindices = ml->nodeindices;
+      nodeindices = ml->nodeindices; // allocated below if copy
       data1 = ml->data[0]; // do not delete after use
     }
     if (copy) {
-      if (!isart) for (int i=0; i < n; ++i) {
-        nodeindices[i] = ml->nodeindices[i];
+      if (!isart) {
+        nodeindices = new int[n];
+        for (int i=0; i < n; ++i) {
+          nodeindices[i] = ml->nodeindices[i];
+        }
       }
       int nn = n*sz;
       for (int i = 0; i < nn; ++i) {
@@ -1275,8 +1296,8 @@ static int nrnthread_dat2_3(int tid, int nweight, int*& output_vindex, double*& 
   // connections
   int n = cg.n_netcon;
   //printf("n_netcon=%d nweight=%d\n", n, nweight);
-  netcon_pnttype = cg.netcon_pnttype;
-  netcon_pntindex = cg.netcon_pntindex;
+  netcon_pnttype = cg.netcon_pnttype; cg.netcon_pnttype = NULL;
+  netcon_pntindex = cg.netcon_pntindex; cg.netcon_pntindex = NULL;
   // alloc a weight array and write netcon weights
   weights = new double[nweight];
   int iw = 0;
@@ -1355,7 +1376,7 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
   char fname[1000];
   if (cg.n_output <= 0) { return; }
   assert(cg.group_id >= 0);
-  assert(snprintf(fname, 1000, "%s/%d_1.dat", path, cg.group_id) < 1000);
+  nrn_assert(snprintf(fname, 1000, "%s/%d_1.dat", path, cg.group_id) < 1000);
   FILE* f = fopen(fname, "wb");
   if (!f) {
     hoc_execerror("nrnbbcore_write write_nrnthread could not open for writing:", fname);
@@ -1372,7 +1393,7 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
   if (cg.netcon_srcgid) {delete [] cg.netcon_srcgid; cg.netcon_srcgid = NULL; }
   fclose(f);
 
-  assert(snprintf(fname, 1000, "%s/%d_2.dat", path, cg.group_id) < 1000);
+  nrn_assert(snprintf(fname, 1000, "%s/%d_2.dat", path, cg.group_id) < 1000);
   f = fopen(fname, "w");
   if (!f) {
     hoc_execerror("nrnbbcore_write write_nrnthread could not open for writing:", fname);
@@ -1396,6 +1417,8 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     fprintf(f, "%d\n", tml_index[i]);
     fprintf(f, "%d\n", ml_nodecount[i]);
   }
+  delete [] tml_index;
+  delete [] ml_nodecount;
 
   fprintf(f, "%d nidata\n", 0);
   fprintf(f, "%d nvdata\n", nvdata);
@@ -1452,7 +1475,9 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
   int n = cg.n_netcon;
 //printf("n_netcon=%d nweight=%d\n", n, nweight);
   writeint(netcon_pnttype, n);
+  delete [] netcon_pnttype;
   writeint(netcon_pntindex, n);
+  delete [] netcon_pntindex;
   writedbl(weights, nweight);
   delete [] weights;
   writedbl(delays, n);

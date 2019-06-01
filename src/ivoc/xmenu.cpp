@@ -1095,7 +1095,7 @@ HocPushButton::~HocPushButton() {
 }
 void HocPushButton::write(ostream& o) {
 	char buf[200];
-        assert(snprintf(buf, 200, "xbutton(\"%s\",\"%s\")", getStr(), hideQuote(a_->name())) < 200);
+        nrn_assert(snprintf(buf, 200, "xbutton(\"%s\",\"%s\")", getStr(), hideQuote(a_->name())) < 200);
 	o << buf << endl;
 }
 
@@ -1116,7 +1116,7 @@ HocRadioButton::~HocRadioButton() {
 }
 void HocRadioButton::write(ostream& o) {
 	char buf[200];
-        assert(snprintf(buf, 200, "xradiobutton(\"%s\",\"%s\")", getStr(), hideQuote(a_->name())) < 200);
+        nrn_assert(snprintf(buf, 200, "xradiobutton(\"%s\",\"%s\")", getStr(), hideQuote(a_->name())) < 200);
 	o << buf << endl;
 }
 
@@ -2022,7 +2022,7 @@ void HocValEditor::write(ostream& o) {
 	}else{
 		usepointer=0;
 	}
-assert(snprintf(buf, 200, "xvalue(\"%s\",\"%s\", %d,\"%s\", %d, %d )", getStr(),
+nrn_assert(snprintf(buf, 200, "xvalue(\"%s\",\"%s\", %d,\"%s\", %d, %d )", getStr(),
 		variable_->string(), hoc_default_val_editor(),
 		hideQuote(action_->name()),
 		(int)canrun_, usepointer) < 200);

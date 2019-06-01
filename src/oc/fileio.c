@@ -267,7 +267,7 @@ int hoc_xopen1(const char* name, const char* rcs) /* read and execute a hoc prog
 		const char* retry;
 		retry = expand_env_var(fname);
 		free(fname);
-		assert((fname = strdup(retry)));
+		nrn_assert((fname = strdup(retry)));
 #if MAC
 		if ((fin = nrn_fw_fopen(retry, "rb")) == NULL) {
 #else
@@ -283,7 +283,7 @@ int hoc_xopen1(const char* name, const char* rcs) /* read and execute a hoc prog
 
 	save_lineno = hoc_lineno;
 	hoc_lineno = 0;
-	assert((savname = strdup(hoc_xopen_file_)));
+	nrn_assert((savname = strdup(hoc_xopen_file_)));
 	if (strlen(fname) >= hoc_xopen_file_size_) {
 		hoc_xopen_file_size_ = strlen(fname) + 100;
 		hoc_xopen_file_ = erealloc(hoc_xopen_file_, hoc_xopen_file_size_);
@@ -744,7 +744,7 @@ static int hoc_Load_file(int always, const char* name) {
 					hlp = 0;
 				}
 				if (path[0]) {
-					assert(snprintf(fname, hoc_load_file_size_, "%s/%s", path, base) < hoc_load_file_size_);
+					nrn_assert(snprintf(fname, hoc_load_file_size_, "%s/%s", path, base) < hoc_load_file_size_);
 #if USE_NRNFILEWRAP
 					f = nrn_fw_readaccess(expand_env_var(fname));
 #else
@@ -762,7 +762,7 @@ static int hoc_Load_file(int always, const char* name) {
 		if (!f) { /* try NEURONHOME/lib/hoc */
 			sprintf(path, "$(NEURONHOME)/lib/hoc");
 			assert(strlen(path) + strlen(base) + 1 < hoc_load_file_size_);
-			assert(snprintf(fname, hoc_load_file_size_, "%s/%s", path, base) < hoc_load_file_size_);
+			nrn_assert(snprintf(fname, hoc_load_file_size_, "%s/%s", path, base) < hoc_load_file_size_);
 #if USE_NRNFILEWRAP
 			f = nrn_fw_readaccess(expand_env_var(fname));
 #else

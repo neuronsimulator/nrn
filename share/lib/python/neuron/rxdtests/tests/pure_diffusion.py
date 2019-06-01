@@ -4,7 +4,7 @@ Robert A McDougal
 March 2013 - June 2014
 """
 
-from neuron import h, rxd
+from neuron import h, crxd as rxd
 from matplotlib import pyplot
 import numpy
 import __main__

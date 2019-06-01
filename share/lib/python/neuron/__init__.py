@@ -583,6 +583,237 @@ except:
   pass
 
 
+class _WrapperPlot:
+  def __init__(self, data):
+    '''do not call directly'''
+    self._data = data
+  def __repr__(self):
+    return '{}.plot()'.format(repr(self._data))
+
+class _RangeVarPlot(_WrapperPlot):
+  """Plots the current state of the RangeVarPlot on the graph.
+
+  Additional arguments and keyword arguments are passed to the graph's
+  plotting method.
+
+  Example, showing plotting to NEURON graphics, bokeh, and matplotlib:
+
+  .. code::
+
+    from matplotlib import pyplot
+    from neuron import h, gui
+    import bokeh.plotting as b
+    import math
+
+    dend = h.Section(name='dend')
+    dend.nseg = 55
+    dend.L = 6.28
+
+    # looping over dend.allseg instead of dend to set 0 and 1 ends
+    for seg in dend.allseg():
+        seg.v = math.sin(dend.L * seg.x)
+
+    r = h.RangeVarPlot('v', dend(0), dend(1))
+
+    # matplotlib
+    graph = pyplot.gca()
+    r.plot(graph, linewidth=10, color='r')
+
+    # NEURON Interviews graph
+    g = h.Graph()
+    r.plot(g, 2, 3)
+    g.exec_menu('View = plot')
+
+    # Bokeh
+    bg = b.Figure()
+    r.plot(bg, line_width=10)
+    b.show(bg)
+
+    pyplot.show()"""
+    
+  def __call__(self, graph, *args, **kwargs):      
+      yvec = h.Vector()
+      xvec = h.Vector()
+      self._data.to_vector(yvec, xvec)
+      if isinstance(graph, hoc.HocObject):
+        return yvec.line(graph, xvec, *args)
+      if hasattr(graph, 'plot'):
+        # works with e.g. pyplot or a matplotlib axis
+        return graph.plot(xvec, yvec, *args, **kwargs)
+      if hasattr(graph, 'line'):
+        # works with e.g. bokeh
+        return graph.line(xvec, yvec, *args, **kwargs)
+      if str(type(graph)) == "<class 'matplotlib.figure.Figure'>":
+        raise Exception('plot to a matplotlib axis not a matplotlib figure')
+      raise Exception('Unable to plot to graphs of type {}'.format(type(graph)))
+
+
+class _PlotShapePlot(_WrapperPlot):
+  '''Plots the currently selected data on an object.
+
+  Currently only pyplot is supported, e.g.
+
+  from matplotlib import pyplot
+  ps = h.PlotShape(False)
+  ps.variable('v')
+  ps.plot(pyplot)
+  pyplot.show()
+
+  Limitations: many. Currently only supports plotting a full cell colored based on a variable.'''
+  # TODO: handle pointmark, specified sections, color
+  def __call__(self, graph, *args, **kwargs):
+    def _get_pyplot_axis3d(fig):
+      '''requires matplotlib'''
+      from matplotlib.pyplot import cm
+      import matplotlib.pyplot as plt
+      from mpl_toolkits.mplot3d import Axes3D
+      import numpy as np
+      from neuron.gui2.utilities import _segment_3d_pts
+
+      class Axis3DWithNEURON(Axes3D):
+          def auto_aspect(self):
+              """sets the x, y, and z range symmetric around the center
+
+              Probably needs a square figure to preserve lengths as you rotate."""
+              bounds = [self.get_xlim(), self.get_ylim(), self.get_zlim()]
+              half_delta_max = max([(item[1] - item[0]) / 2 for item in bounds])
+              xmid = sum(bounds[0]) / 2
+              ymid = sum(bounds[1]) / 2
+              zmid = sum(bounds[2]) / 2
+              self.auto_scale_xyz([xmid - half_delta_max, xmid + half_delta_max],
+                                  [ymid - half_delta_max, ymid + half_delta_max],
+                                  [zmid - half_delta_max, zmid + half_delta_max])
+
+          def mark(self, segment, marker='or', **kwargs):
+              """plot a marker on a segment
+              
+              Args:
+                  segment = the segment to mark
+                  marker = matplotlib marker
+                  **kwargs = passed to matplotlib's plot
+              """
+              # TODO: there has to be a better way to do this
+              sec = segment.sec
+              n3d = sec.n3d()
+              arc3d = [sec.arc3d(i) for i in range(n3d)]
+              x3d = np.array([sec.x3d(i) for i in range(n3d)])
+              y3d = np.array([sec.y3d(i) for i in range(n3d)])
+              z3d = np.array([sec.z3d(i) for i in range(n3d)])
+              seg_l = sec.L * segment.x
+              x = np.interp(seg_l, arc3d, x3d)
+              y = np.interp(seg_l, arc3d, y3d)
+              z = np.interp(seg_l, arc3d, z3d)
+              self.plot([x], [y], [z], marker)
+              return self
+
+
+
+          def _do_plot(self, val_min, val_max,
+                      sections,
+                      variable,
+                      cmap=cm.cool,
+                      **kwargs):
+              """
+              Plots a 3D shapeplot
+              Args:
+                  sections = list of h.Section() objects to be plotted
+                  **kwargs passes on to matplotlib (e.g. linewidth=2 for thick lines)
+              Returns:
+                  lines = list of line objects making up shapeplot
+              """
+              # Adapted from
+              # https://github.com/ahwillia/PyNeuron-Toolbox/blob/master/PyNeuronToolbox/morphology.py
+              # Accessed 2019-04-11, which had an MIT license
+              
+              # Default is to plot all sections. 
+              if sections is None:
+                  sections = list(h.allsec())
+
+              h.define_shape()
+              
+              # default color is black
+              kwargs.setdefault('color', 'black')
+
+              # Plot each segement as a line
+              lines = {}
+              vals = []
+              for sec in sections:
+                  all_seg_pts = _segment_3d_pts(sec)
+                  for seg, (xs, ys, zs, _, _) in zip(sec, all_seg_pts):
+                      line, = self.plot(xs, ys, zs, '-', **kwargs)
+                      if variable is not None:
+                          try:
+                              if '.' in variable:
+                                  mech, var = variable.split('.')
+                                  val = getattr(getattr(seg, mech), var)
+                              else:
+                                  val = getattr(seg, variable)
+                          except AttributeError:
+                              # leave default color if no variable found
+                              val = None
+                          vals.append(val)
+                      lines[line] = '%s at %s' % (val, seg)
+              
+              if variable is not None:
+                  val_range = val_max - val_min
+                  if val_range:
+                      for sec in sections:
+                          for line, val in zip(lines, vals):
+                              if val is not None:
+                                  col = cmap(int(255 * (val - val_min) / (val_range)))
+                                  line.set_color(col)
+              return lines
+      return Axis3DWithNEURON(fig)
+    
+
+    
+    def _do_plot_on_matplotlib_figure(fig):
+      import ctypes
+      get_plotshape_data = nrn_dll_sym('get_plotshape_data')
+      get_plotshape_data.restype = ctypes.py_object
+      variable, lo, hi, secs = get_plotshape_data(ctypes.py_object(self._data))
+      kwargs.setdefault('picker', 2)
+      result = _get_pyplot_axis3d(fig)
+      _lines = result._do_plot(lo, hi, secs, variable, *args, **kwargs)
+      result._mouseover_text = ''
+      def _onpick(event):
+        if event.artist in _lines: 
+          result._mouseover_text = _lines[event.artist]
+        else:
+          result._mouseover_text = ''
+        return True
+      result.auto_aspect()
+      fig.canvas.mpl_connect('pick_event', _onpick)
+      def format_coord(*args):
+        return result._mouseover_text
+      result.format_coord = format_coord
+      return result
+    
+
+    if hasattr(graph, '__name__') and graph.__name__ == 'matplotlib.pyplot':
+      fig = graph.figure()
+      return _do_plot_on_matplotlib_figure(fig)
+    elif str(type(graph)) == "<class 'matplotlib.figure.Figure'>":
+      return _do_plot_on_matplotlib_figure(graph)
+    else:
+      raise NotImplementedError
+
+try:
+  import ctypes
+  def _rvp_plot(rvp):
+    return _RangeVarPlot(rvp)
+
+  def _plotshape_plot(ps):
+    return _PlotShapePlot(ps)
+
+
+  set_graph_plots = nrn_dll_sym('nrnpy_set_graph_plots')
+  _rvp_plot_callback = ctypes.py_object(_rvp_plot)
+  _plotshape_plot_callback = ctypes.py_object(_plotshape_plot)
+  set_graph_plots(_rvp_plot_callback, _plotshape_plot_callback)
+except:
+  pass
+
 def _has_scipy():
     """
     to check for scipy:
@@ -615,9 +846,6 @@ def nrnpy_pr(stdoe, s):
     sys.stderr.write(s.decode())
   return 0
 
-#flag to prevent both rxd and crxd being used
-_has_rxd = {'rxd':False,'crxd':False}
-
 if not embedded:
   try:
     # nrnpy_pr callback in place of hoc printf
@@ -637,6 +865,42 @@ if not embedded:
   except:
     print("Failed to setup nrnpy_pr")
     pass
+
+
+def nrnpy_vec_math(op, flag, arg1, arg2=None):
+  import numbers
+  valid_types = (numbers.Number, hoc.HocObject)
+  if isinstance(arg1, valid_types):
+    if flag == 2:
+      # unary
+      arg1 = arg1.c()
+      if op == 'uneg':
+        return arg1.mul(-1)
+      if op == 'upos':
+        return arg1
+      if op == 'uabs':
+        return arg1.abs()
+    elif isinstance(arg2, valid_types):
+      if flag == 1:
+        # either reversed (flag=1) or unary (flag=2)
+        arg2 = arg2.c()
+        if op in ('mul', 'add'):
+          return getattr(arg2, op)(arg1)
+        if op == 'div':
+          return arg2.pow(-1).mul(arg1)
+        if op == 'sub':
+          return arg2.mul(-1).add(arg1)
+      else:
+        arg1 = arg1.c()
+        return getattr(arg1, op)(arg2)
+
+  return NotImplemented
+
+try:
+  nrnpy_vec_math_register = nrn_dll_sym('nrnpy_vec_math_register')
+  nrnpy_vec_math_register(ctypes.py_object(nrnpy_vec_math))
+except:
+  print("Failed to setup nrnpy_vec_math")
 
 try:
   from neuron.psection import psection

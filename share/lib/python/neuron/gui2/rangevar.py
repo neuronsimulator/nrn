@@ -1,9 +1,6 @@
-from neuron import h, _has_rxd
+from neuron import h
 try:
-    if _has_rxd['crxd']:
-        from neuron.crxd import species
-    else:
-        from neuron.rxd import species
+    from neuron.rxd import species
     have_rxd = True
 except:
   have_rxd = False

@@ -76,9 +76,9 @@ void hoc_audit_from_hoc_main1(int argc, const char **argv, const char **envp)
 	}
 	/* since file open for entire session will have to make the name unique*/
 	sprintf(buf, "if [ ! -d %s ] ; then mkdir %s ; fi", AUDIT_DIR, AUDIT_DIR);
-	assert(system(buf) >= 0);
+	nrn_assert(system(buf) >= 0);
 	sprintf(buf, "mkdir %s/%d", AUDIT_DIR, hoc_pid());
-	assert(system(buf) >= 0);
+	nrn_assert(system(buf) >= 0);
 	sprintf(buf, "%s/hocaudit.sh %d %s", AUDIT_SCRIPT_DIR, hoc_pid(), AUDIT_DIR);
 	if ((audit_pipe = popen(buf, "w")) == (FILE*)0) {
 		hoc_warning("Could not connect to hocaudit.sh via pipe:", buf);
@@ -240,12 +240,12 @@ static void xopen_audit(void) {
 	strcpy(buf, "rm ");
 	bp = buf + strlen(buf);
 	/* get the temporary file name */
-	assert(fgets(bp, 200, retrieve_audit.pipe));
+	nrn_assert(fgets(bp, 200, retrieve_audit.pipe));
 /*printf("xopen_audit: %s", bp);*/
 	bp[strlen(bp) - 1] = '\0';
 	hoc_xopen1(bp, "");
 #if 1
-	assert(system(buf) >= 0);
+	nrn_assert(system(buf) >= 0);
 #endif
 #endif
 }
@@ -270,9 +270,9 @@ int hoc_retrieve_audit(int id)
 	if ((retrieve_audit.pipe = popen(buf, "r")) == (FILE*)0) {
 		hoc_execerror("Could not connect via pipe:", buf);
 	}
-	assert(fgets(retdir, 200, retrieve_audit.pipe));
+	nrn_assert(fgets(retdir, 200, retrieve_audit.pipe));
 	xopen_audit();
-	assert(!fgets(buf, 200, retrieve_audit.pipe));
+	nrn_assert(!fgets(buf, 200, retrieve_audit.pipe));
 /*	pclose(retrieve_audit.pipe);*/
 	retrieve_audit = save;
 	fprintf(stderr, "should now delete %s", retdir);
@@ -285,7 +285,7 @@ void hoc_xopen_from_audit(const char *fname)
 #if !OCSMALL
 	char buf[200];
 	/* check the synchronization */
-	assert(fgets(buf, 200, retrieve_audit.pipe));
+	nrn_assert(fgets(buf, 200, retrieve_audit.pipe));
 	buf[strlen(buf)-1] = '\0';
 	if(strncmp(buf, fname, strlen(fname)) != 0) {
 fprintf(stderr, "Warning: xopen_from_audit files have different names %s %s\n", fname, buf);
@@ -299,7 +299,7 @@ void hoc_emacs_from_audit(void) {
 	int i;
 	char buf[200];
 	/* check synchronization */
-	assert(fgets(buf, 200, retrieve_audit.pipe));
+	nrn_assert(fgets(buf, 200, retrieve_audit.pipe));
 	i = strncmp(buf, "em", 2);
 	assert(i == 0);
 	xopen_audit();

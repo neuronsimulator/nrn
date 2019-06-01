@@ -69,6 +69,7 @@ set to 1. This means that the mechanism vectors need to be re-determined.
 int v_structure_change;
 int structure_change_cnt;
 int diam_change_cnt;
+int nrn_node_ptr_change_cnt_;
 
 #endif
 extern int section_count;
@@ -1429,7 +1430,7 @@ z = psec->pt3d[psec->npt3d-1].z*arc1 + psec->pt3d[0].z*(1-arc1);
 			continue;
 		}
 		if (fabs(y1) < 1e-6 && fabs(x1) < 1e-6) {
-printf("nrn_define_shape: %s first and last 3-d point at same (x,y)\n", secname(psec));
+Printf("nrn_define_shape: %s first and last 3-d point at same (x,y)\n", secname(psec));
 			angle = 0.;
 		}else{
 			angle = atan2(y1, x1);
@@ -1847,7 +1848,7 @@ void node_data(void) {
 
 #else
 void node_data(void) {
-	printf("recalc_diam=%d nrn_area_ri=%d\n", recalc_diam_count_, nrn_area_ri_count_);
+	Printf("recalc_diam=%d nrn_area_ri=%d\n", recalc_diam_count_, nrn_area_ri_count_);
 	hoc_retpushx(0.);
 }
 
@@ -2146,7 +2147,7 @@ double* nrn_recalc_ptr(double* old) {
 
 void nrn_register_recalc_ptr_callback(Pfrv f) {
 	if (n_recalc_ptr_callback >= 20) {
-		printf("More than 20 recalc_ptr_callback functions\n");
+		Printf("More than 20 recalc_ptr_callback functions\n");
 		exit(1);
 	}
 	recalc_ptr_callback[n_recalc_ptr_callback++] = f;
@@ -2246,6 +2247,7 @@ void nrn_recalc_node_ptrs(void) {
 	old_actual_area_ = 0;
 	n_old_thread_ = 0;
 
+	nrn_node_ptr_change_cnt_++;
 	nrn_cache_prop_realloc();
 	nrn_recalc_ptrvector();
 }

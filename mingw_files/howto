@@ -46,13 +46,16 @@ bld () {
 PYVER=$1
 PYVS=${PYVS}-${PYVER}
 PYDIR=/f/python${PYVER}
+
+rm -f -f src/nrnpython/build
+
 ../nrn/configure --prefix=`pwd` -with-nrnpython=dynamic \
  --with-pyexe=$PYDIR/python \
  --host=x86_64-w64-mingw32 PYINCDIR="$PYDIR/include" \
  --with-paranrn=dynamic MPICC=x86_64-w64-mingw32-gcc \
  MPICXX=x86_64-w64-mingw32-g++ \
  CFLAGS='-DMSMPI_NO_SAL -I/c/ms-mpi/include -O2' \
- CXXFLAGS='-DMSMPI_NO_SAL -I/c/ms-mpi/include -O2' \
+ CXXFLAGS='-DMSMPI_NO_SAL -D_hypot=hypot -I/c/ms-mpi/include -O2' \
  LIBS='-L/c/ms-mpi/lib/x64 -lmsmpi' \
   PYINCDIR=$PYDIR/include \
   PYLIBDIR=$PYDIR/libs \

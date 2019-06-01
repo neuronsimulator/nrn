@@ -482,7 +482,7 @@ AC_FUNC_MEMCMP
 AC_TYPE_SIGNAL
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(ftime getcwd getpw gethostname gettimeofday mkdir putenv setenv select strdup strstr index bzero bcopy stty lockf isatty mkstemp)
-AC_CHECK_FUNCS(setitimer sigaction fesetround posix_memalign mallinfo)
+AC_CHECK_FUNCS(setitimer sigaction fesetround posix_memalign mallinfo realpath)
 NRN_CHECK_SIGNAL(SIGBUS)
 NRN_CHECK_SIGNAL(SIGSEGV)
 dnl Do this after the above checks, so they're run with the C compiler rather
@@ -620,8 +620,6 @@ AC_CONFIG_FILES([
 	src/nrnpython/setup.py
 	share/lib/python/neuron/rxd/geometry3d/Makefile
         share/lib/python/neuron/rxd/geometry3d/setup.py
-    share/lib/python/neuron/crxd/geometry3d/Makefile
-        share/lib/python/neuron/crxd/geometry3d/setup.py
 ])
 fi	
 

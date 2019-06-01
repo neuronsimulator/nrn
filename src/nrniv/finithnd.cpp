@@ -53,15 +53,15 @@ static double allprint(void* v) {
 		FIHList* fl = FInitialHandler::fihlist_[type];
 		if (fl && fl->count() > 0) {
 			cnt = fl->count();
-			printf("Type %d FInitializeHandler statements\n", type);
+			Printf("Type %d FInitializeHandler statements\n", type);
 			for (i=0; i < cnt; ++i) {
 				FInitialHandler* f = fl->item(i);
 				if (f->stmt_->pyobject()) {
-printf("\t%s\n", hoc_object_name(f->stmt_->pyobject()));
+Printf("\t%s\n", hoc_object_name(f->stmt_->pyobject()));
 				}else if (f->stmt_->object()) {
-printf("\t%s.%s\n", hoc_object_name(f->stmt_->object()), f->stmt_->name());
+Printf("\t%s.%s\n", hoc_object_name(f->stmt_->object()), f->stmt_->name());
 				}else{
-					printf("\t%s\n", f->stmt_->name());
+					Printf("\t%s\n", f->stmt_->name());
 				}
 			}
 		}

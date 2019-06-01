@@ -286,13 +286,13 @@ static Pfrv initfcns[MAXINITFCNS];
 void hoc_prstack(void) {
 	int i;
 	Datum* s;
-	printf("interpreter stack: %ld \n", (stackp - stack)/2);
+	Printf("interpreter stack: %ld \n", (stackp - stack)/2);
 	for (i=0, s = stackp - 1; s > stack; --s, ++i) {
 		if (i > 10) {
-			printf("...\n");
+			Printf("...\n");
 			break;
 		}
-		printf("%d stacktype=%d\n", i, s->i);
+		Printf("%d stacktype=%d\n", i, s->i);
 		--s;
 	}
 }
