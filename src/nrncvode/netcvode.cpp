@@ -338,7 +338,7 @@ DiscreteEvent* PlayRecordEvent::savestate_read(FILE* f) {
 	DiscreteEvent* de = nil;
 	char buf[100];
 	int type, plr_index;
-	assert(fgets(buf, 100, f));
+	nrn_assert(fgets(buf, 100, f));
 	sscanf(buf, "%d %d\n", &type, &plr_index);
 	PlayRecord* plr = net_cvode_instance->playrec_item(plr_index);
 	assert(plr && plr->type() == type);
@@ -353,8 +353,8 @@ PlayRecordSave* PlayRecord::savestate_read(FILE* f) {
 	PlayRecordSave* prs = nil;
 	int type, index;
 	char buf[100];
-	assert(fgets(buf, 100, f));
-	assert(sscanf(buf, "%d %d\n", &type, &index) == 2);
+	nrn_assert(fgets(buf, 100, f));
+	nrn_assert(sscanf(buf, "%d %d\n", &type, &index) == 2);
 	PlayRecord* plr = net_cvode_instance->playrec_item(index);
 	assert(plr->type() == type);
 	switch (type) {
@@ -3253,8 +3253,8 @@ DiscreteEvent* SelfEvent::savestate_read(FILE* f) {
 	int ppindex, ncindex, moff, pptype, iml;
 	double flag;
 	Object* obj;
-	assert(fgets(buf, 300, f));
-	assert(sscanf(buf, "%s %d %d %d %d %lf\n", ppname, &ppindex, &pptype, &ncindex, &moff, &flag) == 6);
+	nrn_assert(fgets(buf, 300, f));
+	nrn_assert(sscanf(buf, "%s %d %d %d %d %lf\n", ppname, &ppindex, &pptype, &ncindex, &moff, &flag) == 6);
 #if 0
 	// use of hoc_name2obj is way too inefficient
 	se->target_ = ob2pntproc(hoc_name2obj(ppname, ppindex));
@@ -4705,7 +4705,7 @@ DiscreteEvent* NetCon::savestate_read(FILE* f) {
 	int index;
 	char buf[200];
 //	fscanf(f, "%d\n", &index);
-	assert(fgets(buf, 200, f));
+	nrn_assert(fgets(buf, 200, f));
 	sscanf(buf, "%d\n", &index);
 	NetCon* nc = NetConSave::index2netcon(index);
 	assert(nc);
@@ -4941,8 +4941,8 @@ DiscreteEvent* PreSyn::savestate_read(FILE* f) {
 	PreSyn* ps = nil;
 	char buf[200];
 	int index, tid;
-	assert(fgets(buf, 200, f));
-	assert(sscanf(buf, "%d %d\n", &index, &tid) == 2);
+	nrn_assert(fgets(buf, 200, f));
+	nrn_assert(sscanf(buf, "%d %d\n", &index, &tid) == 2);
 	ps = PreSynSave::hindx2presyn(index);
 	assert(ps);
 	ps->nt_ = nrn_threads + tid;
@@ -5907,8 +5907,8 @@ void VecRecordDiscreteSave::savestate_write(FILE* f) {
 }
 void VecRecordDiscreteSave::savestate_read(FILE* f) {
 	char buf[100];
-	assert(fgets(buf, 100, f));
-	assert(sscanf(buf, "%d\n", &cursize_) == 1);
+	nrn_assert(fgets(buf, 100, f));
+	nrn_assert(sscanf(buf, "%d\n", &cursize_) == 1);
 }
 
 void VecRecordDiscrete::disconnect(Observable*) {

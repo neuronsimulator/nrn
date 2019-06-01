@@ -19,11 +19,21 @@
 extern int hoc_return_type_code;
 Section* (*nrnpy_o2sec_p_)(Object* o);
 
+void (*nrnpy_sectionlist_helper_)(List*, Object*) = 0;
+
+void lvappendsec_and_ref(void* sl, Section* sec) {
+	lappendsec((List*) sl, sec);
+	section_ref(sec);
+}
+
 /*ARGSUSED*/
 static void* constructor(Object* ho)
 {
 	List* sl;
-	sl = newlist();	
+	sl = newlist();
+	if (nrnpy_sectionlist_helper_ && ifarg(1)) {
+		nrnpy_sectionlist_helper_(sl, *hoc_objgetarg(1));
+	}
 	return (void*)sl;
 }
 
@@ -48,8 +58,7 @@ static Section* arg1() {
 static double append(void* v)
 {
 	Section* sec = arg1();
-	lappendsec((List*)v, sec);
-	section_ref(sec);
+	lvappendsec_and_ref(v, sec);
 	return 1.;
 }
 

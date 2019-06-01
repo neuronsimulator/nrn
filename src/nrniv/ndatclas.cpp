@@ -265,6 +265,11 @@ Section* SectionList::next() {
 	return sec;
 }
 
+Object* SectionList::nrn_object() {
+Object* ob = sli_->ob_;
+	return ob;
+}
+
 #if 0
 //---------------------------------------------------
 NrnSection::NrnSection(Section* sec) {

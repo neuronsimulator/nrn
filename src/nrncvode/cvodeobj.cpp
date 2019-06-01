@@ -265,6 +265,7 @@ static double jacobian(void* v) {
 	if (ifarg(1)) {
 		d->jacobian((int)chkarg(1, 0, 2));
 	}
+	hoc_return_type_code = 1; // int
 	return double(d->jacobian());
 }
 
@@ -359,6 +360,7 @@ static double cache_efficient(void* v) {
 		int i = (int)chkarg(1,0,1);
 		nrn_cachevec(i);
 	}
+	hoc_return_type_code = 2; // boolean
 	return (double) use_cachevec;
 }
 
@@ -379,6 +381,7 @@ static double condition_order(void* v) {
 		int i = (int)chkarg(1,1,2);
 		d->condition_order(i);
 	}
+	hoc_return_type_code = 1; // integer
 	return (double) d->condition_order();
 }
 
@@ -388,6 +391,7 @@ static double debug_event(void* v) {
 		int i = (int)chkarg(1, 0, 10);
 		d->print_event_ = i;
 	}
+	hoc_return_type_code = 1; // integer
 	return (double)d->print_event_;
 }
 
@@ -511,10 +515,12 @@ static double use_parallel(void* v) {
 }
 
 static double nrn_structure_change_count(void* v) {
+	hoc_return_type_code = 1; // integer
 	return double(structure_change_cnt);
 }
 
 static double nrn_diam_change_count(void* v) {
+	hoc_return_type_code = 1; // integer
 	return double(diam_change_cnt);
 }
 

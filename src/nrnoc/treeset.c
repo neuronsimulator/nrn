@@ -69,6 +69,7 @@ set to 1. This means that the mechanism vectors need to be re-determined.
 int v_structure_change;
 int structure_change_cnt;
 int diam_change_cnt;
+int nrn_node_ptr_change_cnt_;
 
 #endif
 extern int section_count;
@@ -2246,6 +2247,7 @@ void nrn_recalc_node_ptrs(void) {
 	old_actual_area_ = 0;
 	n_old_thread_ = 0;
 
+	nrn_node_ptr_change_cnt_++;
 	nrn_cache_prop_realloc();
 	nrn_recalc_ptrvector();
 }

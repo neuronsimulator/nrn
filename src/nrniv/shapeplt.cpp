@@ -15,7 +15,9 @@
 #include <ivstream.h>
 #include <stdio.h>
 #include "scenepic.h"
+#endif
 #include "shapeplt.h"
+#if HAVE_IV
 #include "graph.h"
 #include "ivoc.h"
 #include "nrnoc2iv.h"
@@ -66,7 +68,11 @@ static double sh_scale(void* v) {
 #if HAVE_IV
 IFGUI
 	((ShapePlot*)v)->scale(float(*getarg(1)), float(*getarg(2)));
+} else {
+	((ShapePlotData*)v)->scale(float(*getarg(1)), float(*getarg(2)));
 ENDGUI
+#else
+	((ShapePlotData*)v)->scale(float(*getarg(1)), float(*getarg(2)));
 #endif
 	return 1.;
 }
@@ -88,15 +94,19 @@ ENDGUI
 }
 
 static double sh_variable(void* v) {
-#if HAVE_IV
-IFGUI
 	Symbol* s;
 	s = hoc_table_lookup(gargstr(1), hoc_built_in_symlist);
 	if (s) {
-		((ShapePlot*)v)->variable(s);
-	}
+#if HAVE_IV
+IFGUI
+		((ShapePlot*) v) -> variable(s);
+} else {
+		((ShapePlotData*) v) -> variable(s);
 ENDGUI
+#else
+		((ShapePlotData*) v) -> variable(s);
 #endif
+	}
 	return 1.;
 }
 
@@ -263,23 +273,30 @@ static Member_ret_obj_func retobj_members[] = {
 };
 
 static void* sh_cons(Object* ho) {
-#if HAVE_IV
-	ShapePlot* sh = NULL;
-IFGUI
 	int i=1;
 	int iarg=1;
 	SectionList* sl = NULL;
+	Object* ob = NULL;
 	// first arg may be an object.
 	if (ifarg(iarg)) {
 		if (hoc_is_object_arg(iarg)) {
-			sl = new SectionList(*hoc_objgetarg(iarg));
+			ob = *hoc_objgetarg(iarg);
+			check_obj_type(ob, "SectionList");
+#if HAVE_IV
+IFGUI
+			sl = new SectionList(ob);
 			sl->ref();
+ENDGUI
+#endif
 			++iarg;
 		}
 	}
 	if (ifarg(iarg)) {
 		i = int(chkarg(iarg,0,1));
 	}
+#if HAVE_IV
+IFGUI
+	ShapePlot* sh = NULL;
 	sh = new ShapePlot(NULL, sl);
 	Resource::unref(sl);
 	sh->ref();
@@ -287,10 +304,14 @@ IFGUI
 	if (i) {
 		sh->view(200);
 	}
-ENDGUI
 	return (void*)sh;
+} else {
+	ShapePlotData* spd = new ShapePlotData(NULL, ob);
+	return (void*)spd;
+ENDGUI
 #else
-	return 0;
+	ShapePlotData* sh = new ShapePlotData(NULL, ob);
+	return (void*)sh;
 #endif
 }
 
@@ -355,6 +376,12 @@ declareActionCallback(ShapePlotImpl);
 implementActionCallback(ShapePlotImpl);
 
 ShapePlot::ShapePlot(Symbol* sym, SectionList* sl) : ShapeScene(sl) {
+	if (sl) {
+		sl_ = sl->nrn_object();
+	} else {
+		sl_ = NULL;
+	}
+	if (sl_) ++sl_->refcount;
 	spi_ = new ShapePlotImpl(this, sym);
 	variable(spi_->sym_);
 	picker()->add_menu("Plot What?", new ActionCallback(ShapePlotImpl)(
@@ -371,11 +398,28 @@ ShapePlot::ShapePlot(Symbol* sym, SectionList* sl) : ShapeScene(sl) {
 	spi_->colorbar();
 }
 ShapePlot::~ShapePlot() {
+	if (sl_) hoc_dec_refcount(&sl_);
 	color_value()->detach(spi_);
 	delete spi_;
 }
+
+
+float ShapePlot::low() {
+	return color_value()->low();
+}
+float ShapePlot::high() {
+	return color_value()->high();
+}
+
+Object* ShapePlot::neuron_section_list() {
+	return sl_;
+}
+
 void ShapePlot::observe(SectionList* sl) {
 //	printf("ShapePlot::observe\n");
+	if (sl_) hoc_dec_refcount(&sl_);
+	sl_ = sl -> nrn_object();
+	if (sl_) ++sl_->refcount;
 	ShapeScene::observe(sl);
 	if (spi_->showing_) {
 		PolyGlyph* pg = shape_section_list();
@@ -435,6 +479,8 @@ const char* ShapePlot::varname()const {
 void ShapePlot::scale(float min, float max) {
 	color_value()->set_scale(min, max);
 }
+
+
 void ShapePlot::save_phase1(ostream& o) {
 	o << "{" << endl;
 	save_class(o, "PlotShape");
@@ -899,6 +945,7 @@ void ColorValue::set_scale(float low, float high) {
 	}
 	notify();
 }
+
 const Color* ColorValue::get_color(float val) const {
 	float x = (val - low_)/(high_ - low_);
     if (csize_) {
@@ -1074,3 +1121,46 @@ void Hinton::fast_draw(Canvas* c, Coord x, Coord y, bool) const {
 }
 
 #endif //HAVE_IV
+
+ShapePlotData::ShapePlotData(Symbol* sym, Object* sl) {
+	sym_ = sym;
+	sl_ = sl;
+	if (sl_) {
+		++sl_->refcount;
+	}
+}
+
+ShapePlotData::~ShapePlotData() {
+	if (sl_) {
+		hoc_dec_refcount(&sl_);
+	}
+}
+
+float ShapePlotData::low() {
+	return lo;
+}
+
+float ShapePlotData::high() {
+	return hi;
+}
+
+void ShapePlotData::scale(float min, float max) {
+	lo = min;
+	hi = max;
+}
+
+void ShapePlotData::variable(Symbol* sym) {
+	sym_ = sym;
+	scale(-80, 40);
+}
+
+const char* ShapePlotData::varname() const {
+	if (sym_ == NULL) {
+		return "v";
+	}
+	return sym_->name;
+}
+
+Object* ShapePlotData::neuron_section_list() {
+	return sl_;
+}

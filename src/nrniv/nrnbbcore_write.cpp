@@ -229,13 +229,13 @@ size_t nrnbbcore_write() {
 
   size_t rankbytes = part1(); // can arrange to be just before part2
 
-  assert(snprintf(fname, 1024, "%s/%s", path.c_str(), "byteswap1.dat") < 1024);
+  nrn_assert(snprintf(fname, 1024, "%s/%s", path.c_str(), "byteswap1.dat") < 1024);
   write_byteswap1(fname);
 
-  assert(snprintf(fname, 1024, "%s/%s", path.c_str(), "bbcore_mech.dat") < 1024);
+  nrn_assert(snprintf(fname, 1024, "%s/%s", path.c_str(), "bbcore_mech.dat") < 1024);
   write_memb_mech_types(fname);
 
-  assert(snprintf(fname, 1024, "%s/%s", path.c_str(), "globals.dat") < 1024);
+  nrn_assert(snprintf(fname, 1024, "%s/%s", path.c_str(), "globals.dat") < 1024);
   write_globals(fname);
 
   part2(path.c_str());
@@ -1404,7 +1404,7 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
   char fname[1000];
   if (cg.n_output <= 0) { return; }
   assert(cg.group_id >= 0);
-  assert(snprintf(fname, 1000, "%s/%d_1.dat", path, cg.group_id) < 1000);
+  nrn_assert(snprintf(fname, 1000, "%s/%d_1.dat", path, cg.group_id) < 1000);
   FILE* f = fopen(fname, "wb");
   if (!f) {
     hoc_execerror("nrnbbcore_write write_nrnthread could not open for writing:", fname);
@@ -1421,7 +1421,7 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
   if (cg.netcon_srcgid) {delete [] cg.netcon_srcgid; cg.netcon_srcgid = NULL; }
   fclose(f);
 
-  assert(snprintf(fname, 1000, "%s/%d_2.dat", path, cg.group_id) < 1000);
+  nrn_assert(snprintf(fname, 1000, "%s/%d_2.dat", path, cg.group_id) < 1000);
   f = fopen(fname, "w");
   if (!f) {
     hoc_execerror("nrnbbcore_write write_nrnthread could not open for writing:", fname);
@@ -1445,6 +1445,8 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     fprintf(f, "%d\n", tml_index[i]);
     fprintf(f, "%d\n", ml_nodecount[i]);
   }
+  delete [] tml_index;
+  delete [] ml_nodecount;
 
   fprintf(f, "%d nidata\n", 0);
   fprintf(f, "%d nvdata\n", nvdata);
@@ -1501,7 +1503,9 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
   int n = cg.n_netcon;
 //printf("n_netcon=%d nweight=%d\n", n, nweight);
   writeint(netcon_pnttype, n);
+  delete [] netcon_pnttype;
   writeint(netcon_pntindex, n);
+  delete [] netcon_pntindex;
   writedbl(weights, nweight);
   delete [] weights;
   writedbl(delays, n);

@@ -227,7 +227,7 @@ proc nrnmainmenu() {
 proc helpmenu() {
     if (nrnpython("import webbrowser")) {
 	    xmenu("Help", 1)
-	    xbutton("Programmer's Reference", "nrnpython(\"webbrowser.open('https://neuron.yale.edu/neuron/static/new_doc/index.html')\")")
+	    xbutton("Programmer's Reference", "nrnpython(\"webbrowser.open('https://neuron.yale.edu/neuron/static/py_doc/index.html')\")")
 	    xbutton("Tutorials", "nrnpython(\"webbrowser.open('http://neuron.yale.edu/neuron/docs')\")")
 	    xbutton("NEURON Forum", "nrnpython(\"webbrowser.open('https://neuron.yale.edu/phpBB/')\")")
 	    xbutton("NEURON Models on ModelDB", "nrnpython(\"webbrowser.open('http://senselab.med.yale.edu/ModelDB/ModelList.cshtml?id=1882')\")")
@@ -258,7 +258,7 @@ proc buildmenu() {local has_rxd
     xmenu()
     if (has_rxd) {
         /* check for rxd or crxd at runtime rather than at import */
-        xbutton("RxD Builder", "nrnpython(\"if neuron._has_rxd['crxd']:\\n\\timport neuron.crxd.gui\\n\\tneuron.crxd.gui.RxDBuilder()\\nelse:\\n\\timport neuron.rxd.gui\\n\\tneuron.rxd.gui.RxDBuilder()\")")
+        xbutton("RxD Builder", "nrnpython(\"import neuron.rxd.gui\\nneuron.rxd.gui.RxDBuilder()\")")
     }
     xmenu()
 }
