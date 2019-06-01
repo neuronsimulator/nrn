@@ -290,7 +290,7 @@ void NetParEvent::pgvts_deliver(double tt, NetCvode* nc){
 }
 
 void NetParEvent::pr(const char* m, double tt, NetCvode* nc){
-	printf("%s NetParEvent %d t=%.15g tt-t=%g\n", m, ithread_, tt, tt - nrn_threads[ithread_]._t);
+	Printf("%s NetParEvent %d t=%.15g tt-t=%g\n", m, ithread_, tt, tt - nrn_threads[ithread_]._t);
 }
 
 DiscreteEvent* NetParEvent::savestate_save(){
@@ -303,8 +303,8 @@ DiscreteEvent* NetParEvent::savestate_save(){
 DiscreteEvent* NetParEvent::savestate_read(FILE* f){
 	int i;
 	char buf[100];
-	assert(fgets(buf, 100, f));
-	assert(sscanf(buf, "%d\n", &i) == 1);
+	nrn_assert(fgets(buf, 100, f));
+	nrn_assert(sscanf(buf, "%d\n", &i) == 1);
 	//printf("NetParEvent::savestate_read %d\n", i);
 	NetParEvent* npe = new NetParEvent();
 	npe->ithread_ = i;
@@ -1315,8 +1315,8 @@ static double set_mindelay(double maxdelay) {
 		double od = mindelay_;
 		mindelay = set_mindelay(maxdelay);
 		if (nrnmpi_myid == 0) {
-printf("Notice: The global minimum NetCon delay is %g, so turned off the cvode.queue_mode\n", od);
-printf("   use_self_queue option. The interprocessor minimum NetCon delay is %g\n", mindelay);
+Printf("Notice: The global minimum NetCon delay is %g, so turned off the cvode.queue_mode\n", od);
+Printf("   use_self_queue option. The interprocessor minimum NetCon delay is %g\n", mindelay);
 		}
 	}
 	errno = 0;
@@ -1414,16 +1414,16 @@ int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth) {
 	if (use_bgpdma_ == 3) {	assert(HAVE_DCMF_RECORD_REPLAY); }
 #if TWOPHASE
 	use_phase2_ = (xchng_meth & 8) ? 1 : 0;
-	if (nrnmpi_myid == 0) {printf("use_phase2_ = %d\n", use_phase2_);}
+	if (nrnmpi_myid == 0) {Printf("use_phase2_ = %d\n", use_phase2_);}
 #endif
 #if HAVE_DCMF_RECORD_REPLAY
 	use_dcmf_record_replay = (use_bgpdma_ == 3 ? 1 : 0);
-	if (nrnmpi_myid == 0) {printf("use_dcmf_record_replay = %d\n", use_dcmf_record_replay);}
+	if (nrnmpi_myid == 0) {Printf("use_dcmf_record_replay = %d\n", use_dcmf_record_replay);}
 #endif
 	if (use_bgpdma_ == 3) { use_bgpdma_ = 2; }
 	if (use_bgpdma_ == 2) { assert(BGPDMA & 2); }
 	if (use_bgpdma_ == 1) { assert(BGPDMA & 1); }
-	if (nrnmpi_myid == 0) {printf("use_bgpdma_ = %d\n", use_bgpdma_);}
+	if (nrnmpi_myid == 0) {Printf("use_bgpdma_ = %d\n", use_bgpdma_);}
 #else // BGPDMA == 0
 	assert(xchng_meth == 0);
 #endif
@@ -1457,7 +1457,7 @@ if (nrnmpi_myid == 0) {hoc_warning("ParallelContext.spike_compress cannot be use
 			// we can only do this after everything is set up
 			mk_localgid_rep();
 			if (!nrn_use_localgid_ && nrnmpi_myid == 0) {
-printf("Notice: gid compression did not succeed. Probably more than 255 cells on one cpu.\n");
+Printf("Notice: gid compression did not succeed. Probably more than 255 cells on one cpu.\n");
 			}
 		}
 		if (!nrn_use_localgid_) {

@@ -767,15 +767,8 @@ void Cvode::before_after(BAMechList* baml, NrnThread* nt) {
 	for (ba = baml; ba; ba = ba->next) {
 		Pfridot f = (Pfridot)ba->bam->f;
 		Memb_list* ml = ba->ml;
-		if (ba->indices) {
-			for (j=0; j < ba->cnt; ++j) {
-				i = ba->indices[j];
+		for (i=0; i < ml->nodecount; ++i) {
 	(*f)(ml->nodelist[i], ml->data[i], ml->pdata[i], ml->_thread, nt);
-			}
-		}else{
-			for (i=0; i < ml->nodecount; ++i) {
-	(*f)(ml->nodelist[i], ml->data[i], ml->pdata[i], ml->_thread, nt);
-			}
 		}
 	}
 }
@@ -975,9 +968,10 @@ void Cvode::dstates(double* pd) {
 	int i, id;
     for (id=0; id < nctd_; ++id) {
 	CvodeThreadData& z = ctd_[id];
-	for (i=0; i < z.nvsize_; ++i) {
+	for (i=0; i < z.nonvint_extra_offset_; ++i) {
 		pd[i + z.nvoffset_] = *z.pvdot_[i];
-	}	
+	}
+	nrn_nonvint_block_ode_fun(z.nvsize_, n_vector_data(y_, id), pd, id);
     }
 }
 

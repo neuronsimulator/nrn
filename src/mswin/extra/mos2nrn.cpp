@@ -66,12 +66,14 @@ int main(int argc, char** argv) {
 	buf = new char[strlen(args) + 3*strlen(nh) + 200 + strlen(temp)];
 	
 #if defined(MINGW)
+#if 0
 	if (nh[1] == ':') {
 		nh[1] = nh[0];
 		nh[0] = '/';
 	}
-	
-	sprintf(buf, "%s\\mingw\\bin\\bash.exe %s/lib/mos2nrn3.sh %s %s %s", nrnhome, nh, temp, nh, args);
+#endif
+
+	sprintf(buf, "%s\\mingw\\usr\\bin\\bash.exe %s/lib/mos2nrn3.sh %s %s %s", nrnhome, nh, temp, nh, args);
 #else
 	sprintf(buf, "%s\\bin\\sh %s/lib/mos2nrn.sh %s %s", nrnhome, nh, nh, args);
 #endif

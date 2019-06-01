@@ -25,7 +25,7 @@ HocEvent::~HocEvent() {
 }
 
 void HocEvent::pr(const char* s, double tt, NetCvode* ns) {
-	printf("%s HocEvent %s %.15g\n", s, stmt_ ? stmt_->name() : "", tt);
+	Printf("%s HocEvent %s %.15g\n", s, stmt_ ? stmt_->name() : "", tt);
 }
 
 HocEvent* HocEvent::alloc(const char* stmt, Object* ppobj, int reinit, Object* pyact) {
@@ -159,16 +159,16 @@ DiscreteEvent* HocEvent::savestate_read(FILE* f) {
 	int have_stmt, have_obj, index;
 	char stmt[256], objname[100], buf[200];
 	Object* obj = nil;
-//	assert(fscanf(f, "%d %d\n", &have_stmt, &have_obj) == 2);
-	assert(fgets(buf, 200, f));
-	assert(sscanf(buf, "%d %d\n", &have_stmt, &have_obj) == 2);	
+//	nrn_assert(fscanf(f, "%d %d\n", &have_stmt, &have_obj) == 2);
+	nrn_assert(fgets(buf, 200, f));
+	nrn_assert(sscanf(buf, "%d %d\n", &have_stmt, &have_obj) == 2);	
 	if (have_stmt) {
-		assert(fgets(stmt, 256, f));
+		nrn_assert(fgets(stmt, 256, f));
 		stmt[strlen(stmt)-1] = '\0';
 		if (have_obj) {
-//			assert(fscanf(f, "%s %d\n", objname, &index) == 1);
-			assert(fgets(buf, 200, f));
-			assert(sscanf(buf, "%s %d\n", objname, &index) == 1);
+//			nrn_assert(fscanf(f, "%s %d\n", objname, &index) == 1);
+			nrn_assert(fgets(buf, 200, f));
+			nrn_assert(sscanf(buf, "%s %d\n", objname, &index) == 1);
 			obj = hoc_name2obj(objname, index);
 		}
 		he->stmt_ = new HocCommand(stmt, obj);

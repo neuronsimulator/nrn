@@ -109,7 +109,7 @@ void ion_reg(const char* name, double valence)
 	double val;
 #define VAL_SENTINAL -10000.
 
-	{int n = strlen(name) + 10;
+	{int n = 2*strlen(name) + 10; /*name used twice in initialization name */
 	  for (i=0; i < 7; ++i) {
 		buf[i] = emalloc(n);
 	  }
@@ -181,7 +181,7 @@ void ion_reg(const char* name, double valence)
 	}
 	val = global_charge(s->subtype);
 	if (valence != VAL_SENTINAL && val != VAL_SENTINAL && valence != val) {
-		fprintf(stderr, "%s ion valence defined differently in\n\
+		fprintf(stderr, "%s ion charge defined differently in\n\
 two USEION statements (%g and %g)\n",
 			s->name, valence, global_charge(s->subtype));
 		nrn_exit(1);

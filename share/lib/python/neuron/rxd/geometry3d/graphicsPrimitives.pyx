@@ -1,3 +1,4 @@
+#cython: language_level=2
 # this contains cone, spherecone, and cylinder code translated and modified from Barbier and
 # Galin 2004's example code
 # see /u/ramcd/spatial/experiments/one_time_tests/2012-06-28/cone.cpp
@@ -6,7 +7,6 @@
 
 import bisect
 cimport cython
-from neuron.rxd.rxdException import RxDException
 
 cdef extern from "math.h":
     double sqrt(double)
@@ -103,22 +103,31 @@ cdef class Plane:
 
 
 cdef class Sphere:
-    cdef double x, y, z, r, _xlo, _xhi, _ylo, _yhi, _zlo, _zhi
+    cdef double _x, _y, _z, _r
+    cdef _xlo, _xhi, _ylo, _yhi, _zlo, _zhi
     cdef list clips
     property primitives:
         def __get__(self): return [self]
 
     def __init__(self, double x, double y, double z, double r):
-        self.x, self.y, self.z, self.r = x, y, z, r
+        self._x, self._y, self._z, self._r = x, y, z, r
         self._xlo, self._xhi = x - r, x + r
         self._ylo, self._yhi = y - r, y + r
         self._zlo, self._zhi = z - r, z + r
         self.clips = []
     def __repr__(self):
         if self.clips:
-            return 'Sphere(%g, %g, %g, %g; clips=%r)' % (self.x, self.y, self.z, self.r, self.clips)
+            return 'Sphere(%g, %g, %g, %g; clips=%r)' % (self._x, self._y, self._z, self._r, self.clips)
         else:
-            return 'Sphere(%g, %g, %g, %g)' % (self.x, self.y, self.z, self.r)
+            return 'Sphere(%g, %g, %g, %g)' % (self._x, self._y, self._z, self._r)
+    property x:
+        def __get__(self): return self._x
+    property y:
+        def __get__(self): return self._y
+    property z:
+        def __get__(self): return self._z
+    property r:
+        def __get__(self): return self._r
     property xlo:
         def __get__(self): return self._xlo
     property xhi:
@@ -132,15 +141,14 @@ cdef class Sphere:
     property zhi:
         def __get__(self): return self._zhi
     cpdef double distance(self, double x, double y, double z):
-        d = sqrt((x - self.x) ** 2 + (y - self.y) ** 2 + (z - self.z) ** 2) - self.r
-        old_d = d
+        d = sqrt((x - self._x) ** 2 + (y - self._y) ** 2 + (z - self._z) ** 2) - self._r
         for clip in self.clips:
             d = max(d, clip.distance(x, y, z))
         return d
     def starting_points(self, xs, ys, zs):
         #for theta in numpy.arange(0, 2 * numpy.pi, 10):
         # TODO: this only works right if the entire object is inside the domain
-        return sum([c.starting_points(xs, ys, zs) for c in self.clips], [(bisect.bisect_left(xs, self.x - self.r), bisect.bisect_left(ys, self.y), bisect.bisect_left(zs, self.z))])
+        return sum([c.starting_points(xs, ys, zs) for c in self.clips], [(bisect.bisect_left(xs, self._x - self._r), bisect.bisect_left(ys, self._y), bisect.bisect_left(zs, self._z))])
     cpdef bint overlaps_x(self, double lo, double hi):
         return lo <= self._xhi and hi >= self._xlo
     cpdef bint overlaps_y(self, double lo, double hi):
@@ -288,29 +296,6 @@ cdef class Cylinder:
         return d
 
 
-    cpdef double _distance(self, double px, double py, double pz):
-        """returns the distance to the cylinder, but not including the end plate
-           if inside (and including the end plate if outside)"""
-        cdef double nx, ny, nz, y, yy, xx, d
-        nx, ny, nz = px - self.cx, py - self.cy, pz - self.cz
-        y = abs(self.axisx * nx + self.axisy * ny + self.axisz * nz)
-        yy = y * y
-        xx = nx * nx + ny * ny + nz * nz - yy
-        if y < self.h:
-            # this is the part where we ignore the end plate if inside
-            d = sqrt(xx) - self.r
-        else:
-            y -= self.h
-            if xx < self.rr:
-                d = y
-            else:
-                yy = y * y
-                x = sqrt(xx) - self.r
-                d = sqrt(yy + x * x)
-                
-        for clip in self.clips:
-            d = max(d, clip.distance(px, py, pz))
-        return d
 
 
         
@@ -502,7 +487,7 @@ cdef class Cone:
         self.x0, self.y0, self.z0, self.r0, self.x1, self.y1, self.z1, self.r1 = x0, y0, z0, r0, x1, y1, z1, r1
         
         if r0 < 0:
-            raise RxDException('At least one Cone radius must be positive')
+            raise Exception('At least one Cone radius must be positive')
         if r1 < 0:
             axisx, axisy, axisz = (x1 - x0, y1 - y0, z1 - z0)
             length = sqrt(axisx ** 2 + axisy ** 2 + axisz ** 2)
@@ -597,47 +582,7 @@ cdef class Cone:
                         # end faces could be closer than the cone itself
                         d = max(rx, y - self.length)
 
-        for clip in self.clips:
-            d = max(d, clip.distance(px, py, pz))
-        return d
 
-
-    cpdef double _distance(self, double px, double py, double pz):
-        """returns the distance to the frustum, but not including the end plate
-           if inside (and including the end plate if outside)"""
-        cdef double nx, ny, nz, y, yy, xx, ry, rx, d
-        nx, ny, nz = px - self.x0, py - self.y0, pz - self.z0
-        y = nx * self.axisx + ny * self.axisy + nz * self.axisz
-        yy = y * y
-        xx = nx * nx + ny * ny + nz * nz - yy
-        # in principle, xx >= 0, however roundoff errors may cause trouble
-        if xx < 0: xx = 0
-
-        if y < 0:
-            # always nonnegative distance in this case (i.e. outside)
-            if xx < self.rra:
-                d = -y
-            else:
-                x = sqrt(xx) - self.r0
-                d = sqrt(x * x + yy)
-        elif xx < self.rrb and y > self.length:
-            # outside
-            d = y - self.length
-        else:
-            x = sqrt(xx) - self.r0
-            # y >= 0 always at this point (and if outside, not in the cylinder extending through the small end face)
-            ry = x * self.side1 + y * self.side2
-            if ry < 0:
-                # if ry < 0 (and y > 0 from above), then outside the cone
-                d = sqrt(x * x + yy)
-            else:
-                rx = x * self.side2 - y * self.side1
-                if ry > self.conelength and y > self.length:
-                    ry -= self.conelength
-                    d = sqrt(rx * rx + ry * ry)
-                else:
-                    d = rx
-                    # this is the part where we are ignoring the end faces
 
         for clip in self.clips:
             d = max(d, clip.distance(px, py, pz))
@@ -656,6 +601,13 @@ cdef class Cone:
 cdef class SkewCone:
     cdef double x0, y0, z0, r0, x1, y1, z1, r1, rra, rrb, axisx, axisy, axisz, conelength, side1, side2
     cdef double length, _xlo, _xhi, _ylo, _yhi, _zlo, _zhi, sx, sy, sz, planed
+    property _x0:
+        def __get__(self): return self.x0
+    property _y0:
+        def __get__(self): return self.y0
+    property _z0:
+        def __get__(self): return self.z0
+
     property xlo:
         def __get__(self): return self._xlo
     property xhi:
@@ -717,7 +669,7 @@ cdef class SkewCone:
     def starting_points(self, xs, ys, zs):
         # TODO: this only works right if the entire object is inside the domain
         return [(bisect.bisect_left(xs, self.x0), bisect.bisect_left(ys, self.y0), bisect.bisect_left(zs, self.z0))]
-        #return sum([c.starting_points(xs, ys, zs) for c in self.clips], [(bisect.bisect_left(xs, self.x0), bisect.bisect_left(ys, self.y0), bisect.bisect_left(zs, self.z0))])
+        #return sum([c.starting_points(xs, ys, zs) for c in self.clips], [(bisect.bisect_left(xs, self._x0), bisect.bisect_left(ys, self.y0), bisect.bisect_left(zs, self.z0))])
     
     # TODO: allow clipping?
     cpdef double distance(self, double px, double py, double pz):
@@ -771,4 +723,3 @@ cdef class SkewCone:
         return lo <= self._yhi and hi >= self._ylo
     cpdef bint overlaps_z(self, double lo, double hi):
         return lo <= self._zhi and hi >= self._zlo
-

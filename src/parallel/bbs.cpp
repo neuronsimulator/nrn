@@ -7,7 +7,7 @@
 #include "oc2iv.h"
 #include "bbs.h"
 #include "bbslocal.h"
-#if defined(HAVE_PVM3_H) || defined(NRNMPI)
+#if defined(NRNMPI)
 #include "bbsdirect.h"
 #include "bbsrcli.h"
 #endif
@@ -34,7 +34,6 @@ bool BBSImpl::master_works_ = true;
 #define debug BBSImpl::debug_
 
 int BBSImpl::debug_ = 0;
-bool BBSImpl::use_pvm_;
 int BBSImpl::mytid_;
 
 static int etaskcnt;
@@ -49,50 +48,14 @@ BBS::BBS(int n) {
 	init(n);
 }
 
-#ifdef HAVE_PVM3_H
-void BBS::init(int n) {
-//printf("BBS::init\n");
-//fflush(stdout);
-	if (!BBSImpl::started_) {
-		if (nrnmpi_numprocs_bbs < 2) { // master first time call
-			nrnmpi_numprocs_bbs = 1; // the minimum
-			if (n == 0) { // demand local
-				BBSImpl::use_pvm_ = false;
-			}else{
-				BBSDirect::check_pvm();
-			}
-			BBSImpl::is_master_ = true;
-		}else{
-			BBSImpl::use_pvm_ = true;
-		}
-	}
-	if (BBSImpl::use_pvm_ == false) {
-//printf("new BBSLocal\n");
-//fflush(stdout);
-		impl_ = new BBSLocal();
-	}else{
-		if (BBSImpl::is_master_) {
-//printf("new BBSDirect\n");
-//fflush(stdout);
-			impl_ = new BBSDirect();
-		}else{
-//printf("new BBSClient\n");
-//fflush(stdout);
-			impl_ = new BBSClient();
-		}
-	}
-}
-#else //!HAVE_PVM3_H
 #if NRNMPI
 void BBS::init(int) {
 	if (nrnmpi_use == 0) {
 		BBSImpl::is_master_ = true;
-		BBSImpl::use_pvm_ = false;
 		impl_ = new BBSLocal();
 		return;
 	}
 	if (!BBSImpl::started_) {
-		BBSImpl::use_pvm_ = false;
 		BBSImpl::is_master_ = (nrnmpi_myid_bbs == 0) ? true : false;
 		BBSImpl::master_works_ = true;
 //printf("%d BBS::init is_master=%d\n", nrnmpi_myid_bbs, BBSImpl::is_master_);
@@ -121,14 +84,12 @@ void BBS::init(int) {
 #else // !NRNMPI
 void BBS::init(int) {
 	if (!BBSImpl::started_) {
-		BBSImpl::use_pvm_ = false;
 		BBSImpl::is_master_ = true;
 		BBSImpl::master_works_ = true;
 	}
 	impl_ = new BBSLocal();
 }
 #endif // !NRNMPI
-#endif // !HAVE_PVM3_H
 
 BBSImpl::BBSImpl() {
 	runworker_called_ = 0;
@@ -338,6 +299,7 @@ void BBSImpl::execute(int id) { // assumes a "_todo" message in receive buffer
 printf("execute begin %g: working_id_=%d\n",st, working_id_);
 		}
 		userid = upkint();
+		int wid = upkint();
 		hoc_ac_ = double(id);
 		rs = execute_helper(&n, id); //builds and execute hoc statement
 		et = time() - st;
@@ -348,6 +310,7 @@ et, working_id_, hoc_ac_);
 		}
 		pkbegin();
 		pkint(userid);
+		pkint(wid);
 		pkint(rs?1:0);
 		if (!rs) {
 			pkdouble(hoc_ac_);
@@ -424,6 +387,7 @@ bool BBSImpl::working(int& id, double& x, int& userid) {
 		}
 		if (id != 0) {
 			userid = upkint();
+			int wid = upkint();
 			rtype = upkint();
 			if (rtype == 0) {
 				x = upkdouble();

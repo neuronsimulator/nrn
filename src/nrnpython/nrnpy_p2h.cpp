@@ -21,6 +21,7 @@ extern void hoc_stkobj_unref(Object*);
 extern void hoc_tobj_unref(Object**);
 extern int hoc_ipop();
 PyObject* nrnpy_hoc2pyobject(Object*);
+PyObject* hocobj_call_arg(int);
 Object* nrnpy_pyobject_in_obj(PyObject*);
 int nrnpy_ho_eq_po(Object*, PyObject*);
 extern void* (*nrnpy_save_thread)();
@@ -44,7 +45,7 @@ extern Object* (*nrnpy_pickle2po)(char*, size_t size);
 extern char* (*nrnpy_callpicklef)(char*, size_t size, int narg,
                                   size_t* retsize);
 extern int (*nrnpy_pysame)(Object*, Object*);  // contain same Python object
-extern Object* (*nrnpympi_alltoall)(Object*, int);
+extern Object* (*nrnpympi_alltoall_type)(int, int);
 typedef struct {
   PyObject_HEAD Section* sec_;
   char* name_;
@@ -72,7 +73,7 @@ static int guigetstr(Object*, char**);
 static char* po2pickle(Object*, size_t* size);
 static Object* pickle2po(char*, size_t size);
 static char* call_picklef(char*, size_t size, int narg, size_t* retsize);
-static Object* py_alltoall(Object*, int);
+static Object* py_alltoall_type(int, int);
 static int pysame(Object*, Object*);
 static PyObject* main_module;
 static PyObject* main_namespace;
@@ -133,7 +134,7 @@ void nrnpython_reg_real() {
   nrnpy_po2pickle = po2pickle;
   nrnpy_pickle2po = pickle2po;
   nrnpy_callpicklef = call_picklef;
-  nrnpympi_alltoall = py_alltoall;
+  nrnpympi_alltoall_type = py_alltoall_type;
   nrnpy_pysame = pysame;
   nrnpy_save_thread = save_thread;
   nrnpy_restore_thread = restore_thread;
@@ -752,26 +753,201 @@ int* mk_displ(int* cnts) {
   return displ;
 }
 
-Object* py_alltoall(Object* o, int size) {
+static PyObject* char2pylist(char* buf, int np, int* cnt, int* displ) {
+  PyObject* plist = PyList_New(np);
+  assert(plist != NULL);
+  for (int i = 0; i < np; ++i) {
+    if (cnt[i] == 0) {
+      Py_INCREF(Py_None); // 'Fatal Python error: deallocating None' eventually
+      PyList_SetItem(plist, i, Py_None);
+    } else {
+      PyObject* p = unpickle(buf + displ[i], cnt[i]);
+      PyList_SetItem(plist, i, p);
+    }
+  }
+  return plist;
+}
+
+#if NRNMPI
+static PyObject* py_allgather(PyObject* psrc){
   int np = nrnmpi_numprocs;
-  PyObject* psrc = nrnpy_hoc2pyobject(o);
-  if (!PyList_Check(psrc)) {
-    hoc_execerror("Argument must be a Python list", 0);
+  size_t sz;
+  char* sbuf = pickle(psrc, &sz);
+  // what are the counts from each rank
+  int* rcnt = new int[np];
+  rcnt[nrnmpi_myid] = int(sz);
+  nrnmpi_int_allgather_inplace(rcnt, 1);
+  int* rdispl = mk_displ(rcnt);
+  char* rbuf = new char[rdispl[np]];
+
+  nrnmpi_char_allgatherv(sbuf, rbuf, rcnt, rdispl);
+  delete [] sbuf;
+  
+  PyObject* pdest = char2pylist(rbuf, np, rcnt, rdispl);
+  delete [] rbuf;
+  delete [] rcnt;
+  delete [] rdispl;
+  return pdest;
+}
+
+static PyObject* py_gather(PyObject* psrc, int root){
+  int np = nrnmpi_numprocs;
+  size_t sz;
+  char* sbuf = pickle(psrc, &sz);
+  // what are the counts from each rank
+  int scnt = int(sz);
+  int* rcnt = NULL;
+  if (root == nrnmpi_myid) {
+    rcnt = new int[np];
   }
-  if (PyList_Size(psrc) != np) {
-    hoc_execerror("py_alltoall list size must be nhost", 0);
+  nrnmpi_int_gather(&scnt, rcnt, 1, root);
+  int* rdispl = NULL;
+  char* rbuf = NULL;
+  if (root == nrnmpi_myid) {
+    rdispl = mk_displ(rcnt);
+    rbuf = new char[rdispl[np]];
   }
-  if (np == 1) {
-    return o;
+
+  nrnmpi_char_gatherv(sbuf, scnt, rbuf, rcnt, rdispl, root);
+  delete [] sbuf;
+  
+  PyObject* pdest = Py_None;
+  if (root == nrnmpi_myid) {
+    pdest = char2pylist(rbuf, np, rcnt, rdispl);
+    delete [] rbuf;
+    delete [] rcnt;
+    delete [] rdispl;
+  }else{
+    Py_INCREF(pdest);
   }
+  return pdest;
+}
+
+static PyObject* py_broadcast(PyObject* psrc, int root){
+  // Note: root returns reffed psrc.
+  int np = nrnmpi_numprocs;
+  char* buf = NULL;
+  int cnt = 0;
+  if (root == nrnmpi_myid) {
+    size_t sz;
+    buf = pickle(psrc, &sz);
+    cnt = int(sz);
+  }
+  nrnmpi_int_broadcast(&cnt, 1, root);
+  if (root != nrnmpi_myid) {
+    buf = new char[cnt];
+  }
+  nrnmpi_char_broadcast(buf, cnt, root);
+  PyObject* pdest = psrc;
+  if (root != nrnmpi_myid) {
+    pdest = unpickle(buf, size_t(cnt));
+  }else{
+    Py_INCREF(pdest);
+  }
+  delete [] buf;
+  return pdest;
+}
+#endif
+
+//type 1-alltoall, 2-allgather, 3-gather, 4-broadcast, 5-scatter
+// size for 3, 4, 5 refer to rootrank.
+Object* py_alltoall_type(int size, int type) {
+  int np = nrnmpi_numprocs; // of subworld communicator
+  PyObject* psrc = NULL;
+  PyObject* pdest = NULL;
+
+  if (type == 1 || type == 5) { // alltoall, scatter
+    Object* o = *hoc_objgetarg(1);
+   if (type == 1 || nrnmpi_myid == size) {// if scatter only root must be a list
+    psrc = nrnpy_hoc2pyobject(o);
+    if (!PyList_Check(psrc)) {
+      hoc_execerror("Argument must be a Python list", 0);
+    }
+    if (PyList_Size(psrc) != np) {
+      if (type == 1) {
+        hoc_execerror("py_alltoall list size must be nhost", 0);
+      }else{
+        hoc_execerror("py_scatter list size must be nhost", 0);
+      }
+    }
+   }
+    if (np == 1) {
+      if (type == 1) {
+        return o;
+      }else{ // return psrc[0]
+        pdest = PyList_GetItem(psrc, 0);
+	Py_INCREF(pdest);
+        Object* ho = nrnpy_po2ho(pdest);
+        if (ho) {
+          --ho->refcount;
+        }
+        Py_XDECREF(pdest);
+        return ho;
+      }
+    }
+  }else{
+    // Get the raw PyObject* arg. So things like None, int, bool are preserved.
+    psrc = hocobj_call_arg(0);
+    Py_INCREF(psrc);
+
+    if (np == 1) {
+      if (type == 4) { // broadcast is just the PyObject
+        pdest = psrc;
+      }else{ // allgather and gather must wrap psrc in list
+        pdest = PyList_New(1);
+        PyList_SetItem(pdest, 0, psrc);
+      }
+      Object* ho = nrnpy_po2ho(pdest);
+      if (ho) {
+        --ho->refcount;
+      }
+      Py_XDECREF(pdest);
+      return ho;
+    }
+  }
+
 #if NRNMPI
   setpickle();
-  int* scnt = new int[np];
+  int root;
+
+ if (type == 2) {
+    pdest = py_allgather(psrc);
+    Py_DECREF(psrc);
+ }else if (type != 1 && type != 5) {
+    root = size;
+    if (root < 0 || root >= np) {
+      hoc_execerror("root rank must be >= 0 and < nhost", 0);
+    }
+    if (type == 3) {
+      pdest = py_gather(psrc, root);
+    }else if (type == 4) {
+      pdest = py_broadcast(psrc, root);
+    }
+    Py_DECREF(psrc);
+ }else{
+
+  if (type == 5) { // scatter
+    root = size;
+    size = 0; // calculate dest size (cannot be -1 so cannot return it)
+  }
+
+  char* s = NULL;
+  int* scnt = NULL;
+  int* sdispl = NULL;
+  char* r = NULL;
+  int* rcnt = NULL;
+  int* rdispl = NULL;
+
+        // setup source buffer for transfer s, scnt, sdispl
+        // for alltoall, each rank handled identically
+        // for scatter, root handled as list all, other ranks handled as None
+        if (type == 1 || nrnmpi_myid == root) { // psrc is list of nhost items
+
+  scnt = new int[np];
   for (int i = 0; i < np; ++i) {
     scnt[i] = 0;
   }
 
-  PyObject* pdest;
   PyObject* iterator = PyObject_GetIter(psrc);
   PyObject* p;
 
@@ -779,7 +955,6 @@ Object* py_alltoall(Object* o, int size) {
   if (size > 0) {         // or else the positive number specified
     bufsz = size;
   }
-  char* s = 0;
   if (size >= 0) {  // otherwise count only
     s = new char[bufsz];
   }
@@ -813,20 +988,28 @@ Object* py_alltoall(Object* o, int size) {
   }
   Py_DECREF(iterator);
 
+        // scatter equivalent to alltoall NONE list for not root ranks.
+        }else if (type == 5 && nrnmpi_myid != root){
+  // nothing to setup, s, scnt, sdispl already NULL
+	}
+
+        // destinations need to know receive counts. Then transfer data.
+        if (type == 1) { // alltoall
+
   // what are destination counts
   int* ones = new int[np];
   for (int i = 0; i < np; ++i) {
     ones[i] = 1;
   }
-  int* sdispl = mk_displ(ones);
-  int* rcnt = new int[np];
+  sdispl = mk_displ(ones);
+  rcnt = new int[np];
   nrnmpi_int_alltoallv(scnt, ones, sdispl, rcnt, ones, sdispl);
   delete[] ones;
   delete[] sdispl;
 
   // exchange
   sdispl = mk_displ(scnt);
-  int* rdispl = mk_displ(rcnt);
+  rdispl = mk_displ(rcnt);
   char* r = 0;
   if (size < 0) {
     pdest = PyTuple_New(2);
@@ -837,31 +1020,55 @@ Object* py_alltoall(Object* o, int size) {
     delete[] rcnt;
     delete[] rdispl;
   } else {
-    r = new char[rdispl[np]];
+    r = new char[rdispl[np] + 1]; //force > 0 for all None case
     nrnmpi_char_alltoallv(s, scnt, sdispl, r, rcnt, rdispl);
     delete[] s;
     delete[] scnt;
     delete[] sdispl;
 
-    pdest = PyList_New(np);
-    assert(pdest != NULL);
-    for (int i = 0; i < np; ++i) {
-      if (rcnt[i] == 0) {
-        PyList_SetItem(pdest, i, Py_None);
-      } else {
-        PyObject* p = unpickle(r + rdispl[i], rcnt[i]);
-        PyList_SetItem(pdest, i, p);
-      }
-    }
+    pdest = char2pylist(r, np, rcnt, rdispl);
 
     delete[] r;
     delete[] rcnt;
     delete[] rdispl;
   }
+
+        }else{ // scatter
+
+  // destination counts
+  rcnt = new int[1];
+  nrnmpi_int_scatter(scnt, rcnt, 1, root);
+  r = new char[rcnt[0] + 1]; // rcnt[0] can be 0
+
+  // exchange
+  if (nrnmpi_myid == root) {sdispl = mk_displ(scnt);}
+  nrnmpi_char_scatterv(s, scnt, sdispl, r, rcnt[0], root);
+  if (s) delete[] s;
+  if (scnt) delete[] scnt;
+  if (sdispl) delete[] sdispl;
+
+  if (rcnt[0]) {
+    pdest = unpickle(r, size_t(rcnt[0]));
+  }else{
+    pdest = Py_None;
+    Py_INCREF(pdest);
+  }
+
+  delete[] r;
+  delete[] rcnt;
+  assert (rdispl == NULL);
+
+        }
+
+ }
   Object* ho = nrnpy_po2ho(pdest);
-  --ho->refcount;
+  Py_XDECREF(pdest);
+  if (ho) {
+    --ho->refcount;
+  }
   return ho;
 #else
-  return o;
+  assert(0);
+  return NULL;
 #endif
 }

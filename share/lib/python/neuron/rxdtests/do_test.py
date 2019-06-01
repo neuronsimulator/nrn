@@ -29,11 +29,7 @@ def do_test(test_to_run, results_location, num_record=10):
 
     def collect_data():
         """grabs the membrane potential data, h.t, and the rxd state values"""
-        from neuron import _has_rxd
-        if _has_rxd['crxd']:
-            from neuron import crxd as rxd
-        else:
-            from neuron import rxd    
+        from neuron import rxd    
         data['record_count'] += 1
         if data['record_count'] > num_record:
             save_and_cleanup()

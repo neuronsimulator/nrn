@@ -61,7 +61,7 @@ else:
                                  define_macros=define_macros,
                                  include_dirs=include_dirs),
                        Extension("surfaces",
-                                 sources=["surfaces.cpp", "marching_cubes2.c", "llgramarea.c"],
+                                 sources=["surfaces.cpp", nrn_srcdir + "/src/nrnpython/rxd_marching_cubes.c", nrn_srcdir + "/src/nrnpython/rxd_llgramarea.c"],
                                  define_macros=define_macros,
                                  include_dirs=include_dirs)],
     )

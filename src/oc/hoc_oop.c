@@ -169,7 +169,7 @@ assert(sym->public != 2);
 	    b = (hoc_fin == stdin);
 #endif	    
 	    if (nrnmpi_myid_world == 0 &&(hoc_print_first_instance && b)) {
-	        NOT_PARALLEL_SUB(printf("first instance of %s\n", sym->name);)
+	        NOT_PARALLEL_SUB(Printf("first instance of %s\n", sym->name);)
 	    }
 		sym->defined_on_the_fly = 1;
 	}
@@ -1503,6 +1503,7 @@ void class2oc(
 	Member_ret_obj_func* mobjret,
 	Member_ret_str_func* strret
 ){
+	extern int hoc_main1_inited_;
 	Symbol* tsym, *s;
 	Template* t;
 	int i;
@@ -1514,7 +1515,7 @@ void class2oc(
 	tsym->subtype = CPLUSOBJECT;
 	hoc_begintemplate(tsym);
 	t = tsym->u.template;
-	if (t->id > hoc_max_builtin_class_id) {
+	if (!hoc_main1_inited_ && t->id > hoc_max_builtin_class_id) {
 		hoc_max_builtin_class_id = t->id;
 	}
 	t->constructor = cons;
@@ -2054,9 +2055,9 @@ void hoc_allobjects1(Symlist* sl, int nspace) {
 			ITERATE(q, t->olist) {
 				o = OBJ(q);
 				for (i=0; i < nspace; ++i) {
-					printf("   ");
+					Printf("   ");
 				}
-printf("%s with %d refs\n", hoc_object_name(o), o->refcount);
+Printf("%s with %d refs\n", hoc_object_name(o), o->refcount);
 			}
 			hoc_allobjects1(t->symtable, nspace+1);
 		}
@@ -2073,9 +2074,9 @@ void hoc_allobjects2(Symbol* s, int nspace) {
 		ITERATE(q, t->olist) {
 			o = OBJ(q);
 			for (i=0; i < nspace; ++i) {
-				printf("   ");
+				Printf("   ");
 			}
-printf("%s with %d refs\n", hoc_object_name(o), o->refcount);
+Printf("%s with %d refs\n", hoc_object_name(o), o->refcount);
 		}
 	}
 }
@@ -2101,13 +2102,13 @@ static void hoc_list_allobjref(Symlist *sl, Objectdata *data, int depth) {
 			for (i=0; i<total; i++) {
 				obp = data[s->u.oboff].pobj + i;
 				for (id=0; id<depth; id++) {
-					printf("   ");
+					Printf("   ");
 				}
 				if (*obp) {
-printf("obp %s[%d] -> %s with %d refs.\n",
+Printf("obp %s[%d] -> %s with %d refs.\n",
 	s->name, i, hoc_object_name(*obp), (*obp)->refcount);
 				}else{
-					printf("obp %s[%d] -> NULL\n", s->name, i);
+					Printf("obp %s[%d] -> NULL\n", s->name, i);
 				}
 				if (*obp && !(*obp)->recurse
 				   && s->subtype != CPLUSOBJECT

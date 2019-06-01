@@ -63,31 +63,47 @@ NonLinImp::~NonLinImp() {
 		delete rep_;
 	}
 }
-double NonLinImp::transfer_amp(int vloc) {
+double NonLinImp::transfer_amp(int curloc, int vloc) {
+	if (nrnmpi_numprocs > 1 && nrnthread_v_transfer_ && curloc != rep_->iloc_) {
+          hoc_execerror("current injection site change not allowed with both gap junctions and nhost > 1", 0);
+	}
+	if (curloc != rep_->iloc_) {
+	  solve(curloc);
+	}
 	double x = rep_->rv_[vloc];
 	double y = rep_->jv_[vloc];
 	return sqrt(x*x+y*y);
 }
 double NonLinImp::input_amp(int curloc) {
 	if (nrnmpi_numprocs > 1 && nrnthread_v_transfer_) {
-	  hoc_execerror("not allowed with both gap junctions and nhost>0", 0);
+	  hoc_execerror("not allowed with both gap junctions and nhost>1", 0);
 	}
-	solve(curloc);
+	if (curloc != rep_->iloc_) {
+	  solve(curloc);
+	}
 	if (curloc < 0) { return 0.0; }
 	double x = rep_->rv_[curloc];
 	double y = rep_->jv_[curloc];
 	return sqrt(x*x+y*y);
 }
-double NonLinImp::transfer_phase(int vloc) {
+double NonLinImp::transfer_phase(int curloc, int vloc) {
+	if (nrnmpi_numprocs > 1 && nrnthread_v_transfer_ && curloc != rep_->iloc_) {
+          hoc_execerror("current injection site change not allowed with both gap junctions and nhost > 1", 0);
+	}
+	if (curloc != rep_->iloc_) {
+	  solve(curloc);
+	}
 	double x = rep_->rv_[vloc];
 	double y = rep_->jv_[vloc];
 	return atan2(y, x);
 }
 double NonLinImp::input_phase(int curloc) {
 	if (nrnmpi_numprocs > 1 && nrnthread_v_transfer_) {
-	  hoc_execerror("not allowed with both gap junctions and nhost>0", 0);
+	  hoc_execerror("not allowed with both gap junctions and nhost>1", 0);
 	}
-	solve(curloc);
+	if (curloc != rep_->iloc_) {
+	  solve(curloc);
+	}
 	if (curloc < 0) { return 0.0; }
 	double x = rep_->rv_[curloc];
 	double y = rep_->jv_[curloc];
@@ -95,10 +111,12 @@ double NonLinImp::input_phase(int curloc) {
 }
 double NonLinImp::ratio_amp(int clmploc, int vloc) {
 	if (nrnmpi_numprocs > 1 && nrnthread_v_transfer_) {
-	  hoc_execerror("not allowed with both gap junctions and nhost>0", 0);
+	  hoc_execerror("not allowed with both gap junctions and nhost>1", 0);
 	}
-	solve(clmploc);
 	if (clmploc < 0) { return 0.0; }
+	if (clmploc != rep_->iloc_) {
+	  solve(clmploc);
+	}
 	double ax,bx,cx, ay,by,cy,bb;
 	ax = rep_->rv_[vloc];
 	ay = rep_->jv_[vloc];
@@ -324,26 +342,26 @@ void NonLinImpRep::didv() {
 		if (i == CAP) { continue; }
 		if (!memb_func[i].current) { continue; }
 		Memb_list* ml = tml->ml;
-		double* x1 = rv_; // use as temporary storage
-		double* x2 = jv_;
 		for (j = 0; j < ml->nodecount; ++j) { Node* nd = ml->nodelist[j];
+			double x1;
+			double x2;
 			// zero rhs
 			// save v
 			NODERHS(nd) = 0;
-			x1[j] = NODEV(nd);
+			x1 = NODEV(nd);
 			// v+dv
 			NODEV(nd) += delta_;
 			current(i, ml, j);
 			// save rhs
 			// zero rhs
 			// restore v
-			x2[j] = NODERHS(nd);
+			x2 = NODERHS(nd);
 			NODERHS(nd) = 0;
-			NODEV(nd) = x1[j];
+			NODEV(nd) = x1;
 			current(i, ml, j);
 			// conductance
 			// add to matrix
-			*diag_[v_index_[nd->v_node_index]-1] -= (x2[j] - NODERHS(nd))/delta_;
+			*diag_[v_index_[nd->v_node_index]-1] -= (x2 - NODERHS(nd))/delta_;
 		}
 	}
 }	

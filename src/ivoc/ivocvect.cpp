@@ -375,18 +375,8 @@ static int possible_destvec(int arg, Vect*& dest) {
 	}
 }
 
-static double v_record(void* v) {
-	nrn_vecsim_add(v, true);
-	return 1.;
-}
-
 static double v_play_remove(void* v) {
 	nrn_vecsim_remove(v);
-	return 1.;
-}
-
-static double v_play(void* v) {
-	nrn_vecsim_add(v, false);
 	return 1.;
 }
 
@@ -760,10 +750,10 @@ static double v_printf(void *v) {
            fprintf(f->file(),"\n");
 	 } else {
 	   for (int i=start;i<=end;i++) {
-	     printf(format,x->elem(i));
-             if (extra_newline && !((i-start+1)%5)){ printf("\n");}
+	     Printf(format,x->elem(i));
+             if (extra_newline && !((i-start+1)%5)){ Printf("\n");}
 	   }
-           if(extra_newline) {printf("\n");}
+           if(extra_newline) {Printf("\n");}
 	 }
 	hoc_return_type_code = 1; // integer
 	return double(end-start+1);
@@ -878,6 +868,18 @@ static double v_scantil(void *v) {
 }
 
 
+
+static Object** v_record(void* v) {
+        Vect* vp = (Vect*)v;
+	nrn_vecsim_add(v, true);
+	return vp->temp_objvar();
+}
+
+static Object** v_play(void* v) {
+        Vect* vp = (Vect*)v;
+	nrn_vecsim_add(v, false);
+	return vp->temp_objvar();
+}
 
 /*ARGSUSED*/
 static Object** v_plot(void* v) {
@@ -2549,7 +2551,7 @@ static double 	simplex(double *p, int n, Vect *x, Vect *y, char* fcn)
 	nvortex = (double *)calloc(n*4,(unsigned)sizeof(double));
 
 	if( 0==evortex || 0==gvortex || 0==vortex || 0==nvortex ){
-		printf("allocation error in simplex()\n");
+		Printf("allocation error in simplex()\n");
 		nrn_exit(1);
 	}
 
@@ -3631,8 +3633,6 @@ static Member_func v_members[] = {
 	"dot",          v_dot,
 	"eq",           v_eq,
 
-	"record",	v_record,
-	"play",		v_play,
 	"play_remove",	v_play_remove,
 
         "fwrite",       v_fwrite,
@@ -3719,6 +3719,9 @@ static Member_ret_obj_func v_retobj_members[] = {
 	"line",         v_line,
 	"mark",         v_mark,
 	"ploterr",      v_ploterr,
+
+	"record",	v_record,
+	"play",		v_play,
 
 	"from_python",	v_from_python,
 	"to_python",	v_to_python,

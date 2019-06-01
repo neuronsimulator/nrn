@@ -90,12 +90,12 @@ static double s_rename(void* v) {
 
 	sec = (Section*)v;
 	if (!sec->prop) {
-		printf("SectionRef[???].sec is a deleted section\n");
+		Printf("SectionRef[???].sec is a deleted section\n");
 		return 0.;
 	}
 	qsec = sec->prop->dparam[8].itm;
 	if (sec->prop->dparam[0].sym) {
-		printf("%s must first be unnamed\n", secname(sec));
+		Printf("%s must first be unnamed\n", secname(sec));
 		return 0.;
 	}
 
@@ -112,7 +112,7 @@ static double s_rename(void* v) {
 	hoc_objectdata = hoc_top_level_data;
 	if (sym) {
 		if (sym->type != SECTION || (sym->arayinfo && sym->arayinfo->nsub > 1)) {
-			printf("The new name already exists and is not a SECTION or has a dimension > 1\n");
+			Printf("The new name already exists and is not a SECTION or has a dimension > 1\n");
 			hoc_objectdata = obdsav;
 			return 0;
 		}
@@ -121,7 +121,7 @@ static double s_rename(void* v) {
 		pitm = hoc_top_level_data[sym->u.oboff].psecitm;
 		for (i=0; i < n; ++i) {
 			if (pitm[i]) {
-				printf("Previously existing %s[%d] points to a section which is being deleted\n", sym->name, i);
+				Printf("Previously existing %s[%d] points to a section which is being deleted\n", sym->name, i);
 				sec_free(pitm[i]);
 			}
 		}
@@ -153,7 +153,7 @@ static double s_rename(void* v) {
 			/*assert(is_obj_type(ob, "SectionRef")*/
 			sec = (Section*)ob->u.this_pointer;
 			if (!sec->prop) {
-	printf("%s references a deleted section\n", hoc_object_name(ob));
+	Printf("%s references a deleted section\n", hoc_object_name(ob));
 				hoc_objectdata = obdsav;
 				return 0;
 			}

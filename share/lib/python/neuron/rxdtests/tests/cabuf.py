@@ -1,4 +1,4 @@
-from neuron import h, rxd, gui
+from neuron import h, crxd as rxd, gui
 from matplotlib import pyplot
 
 # reaction rates

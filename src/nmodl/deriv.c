@@ -2,6 +2,7 @@
 
 #include "modl.h"
 #include "symbol.h"
+#include "../oc/nrnassrt.h"
 #include <ctype.h>
 #undef METHOD
 #include "parse1.h"
@@ -17,6 +18,10 @@ int dtsav_for_nrn_state;
 static void copylist();
 List* massage_list_;
 List* netrec_cnexp;
+
+/* SmallBuf size */
+#undef SB
+#define SB 256
 
 #if VECTORIZE
 extern int vectorize;
@@ -310,7 +315,7 @@ static Symbol *next_forderiv()
 {
 	char *name;
 	Symbol *s;
-	char units[256];
+	char units[SB];
 	
 	if (++indx >= maxindx) {
 		return SYM0;
@@ -318,7 +323,7 @@ static Symbol *next_forderiv()
 	name = name_forderiv(indx);
 	if((s = lookup(name)) == SYM0) {
 		s = install(name, PRIME);
-Sprintf(units, "%s/%s^%d", base_units, STR(indeplist->prev), indx);
+nrn_assert(snprintf(units, SB, "%s/%s^%d", base_units, STR(indeplist->prev), indx) < SB);
 		depinstall(1, s, forderiv->araydim, "0", "1", units, ITEM0, 1, "");
 		s->usage |= DEP;
 	}
@@ -326,7 +331,7 @@ Sprintf(units, "%s/%s^%d", base_units, STR(indeplist->prev), indx);
 		diag(s->name, " must have same dimension as associated state");
 	}
 	if (!(s->subtype & STAT)) {/* Dstate changes to state */
-Sprintf(units, "%s/%s^%d", base_units, STR(indeplist->prev), indx);
+nrn_assert(snprintf(units, SB, "%s/%s^%d", base_units, STR(indeplist->prev), indx) < SB);
 		s->subtype &= ~DEP;
 		depinstall(1, s, forderiv->araydim, "0", "1", units, ITEM0, 1, "");
 		depinstall(1, s, forderiv->araydim, "0", "1", units, ITEM0, 1, "");
@@ -425,7 +430,7 @@ void massagederiv(q1, q2, q3, q4, sensused)
 	Item *q1, *q2, *q3, *q4; int sensused;
 {
 	int count = 0, deriv_implicit, solve_seen;
-	char units[256];
+	char units[SB];
 	Item *qs, *q, *mixed_eqns();
 	Symbol *s, *derfun, *state;
 
@@ -462,7 +467,7 @@ void massagederiv(q1, q2, q3, q4, sensused)
 		s = SYM(qs);
 		if (!(s->subtype & DEP) && !(s->subtype & STAT)) {
 IGNORE(init_forderiv(s));
-Sprintf(units, "%s/%s^%d", base_units, STR(indeplist->prev), maxindx);
+nrn_assert(snprintf(units, SB, "%s/%s^%d", base_units, STR(indeplist->prev), maxindx) > SB);
 depinstall(0, s, s->araydim, "0", "1", units, ITEM0, 0, "");
 		}
 		/* high order: make sure

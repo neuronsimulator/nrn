@@ -97,10 +97,10 @@ bool TQItem::check() {
 static void prnt(const TQItem* b, int level) {
 	int i;
 	for (i=0; i < level; ++i) {
-		printf("    ");
+		Printf("    ");
 	}
 //	printf("%g %c %d\n", b->t_, b->data_?'x':'o', b->red_);
-	printf("%g %c %d Q=%p D=%p\n", b->t_, b->data_?'x':'o', b->red_, b, b->data_);
+	Printf("%g %c %d Q=%p D=%p\n", b->t_, b->data_?'x':'o', b->red_, b, b->data_);
 }
 
 static void chk(TQItem* b, int level) {
@@ -232,11 +232,11 @@ PSTOP(1)
 
 void TQueue::statistics() {
 #if COLLECT_TQueue_STATISTICS
-	printf("insertions=%lu  moves=%lu fastmoves=%lu removals=%lu calls to least=%lu\n", ninsert, nmove, nfastmove, nrem, nleast);
-	printf("calls to find=%lu balances=%lu complex removals=%lu\n", nfind, nbal, ncmplxrem);
-	printf("comparisons=%lu leastsearch=%lu findsearch=%lu\n", ncompare, nleastsrch, nfindsrch);
+	Printf("insertions=%lu  moves=%lu fastmoves=%lu removals=%lu calls to least=%lu\n", ninsert, nmove, nfastmove, nrem, nleast);
+	Printf("calls to find=%lu balances=%lu complex removals=%lu\n", nfind, nbal, ncmplxrem);
+	Printf("comparisons=%lu leastsearch=%lu findsearch=%lu\n", ncompare, nleastsrch, nfindsrch);
 #else
-	printf("Turn on COLLECT_TQueue_STATISTICS_ in tqueue.h\n");
+	Printf("Turn on COLLECT_TQueue_STATISTICS_ in tqueue.h\n");
 #endif
 }
 

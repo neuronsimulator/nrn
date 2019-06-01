@@ -174,8 +174,6 @@ public:
 	void fill_global_ba(NrnThread*, int, BAMechList**);
 	void fill_local_ba(int*, NetCvodeThreadData&);
 	void fill_local_ba_cnt(int, int*, NetCvodeThreadData&);
-	void fill_local_ba_alloc(NetCvodeThreadData&);
-	void fill_local_ba_indices(int, int*, NetCvodeThreadData&);
 	BAMechList* cvbml(int, BAMech*, Cvode*);
 	void maxstate_analyse();
 	void maxstate_analyze_1(int, Cvode&, MaxStateItem*, CvodeThreadData&);

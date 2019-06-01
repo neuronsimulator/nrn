@@ -61,7 +61,7 @@ typedef struct {
   int attr_from_sec_; // so section.xraxial[0] = e assigns to all segments.
 } NPyRangeVar;
 
-static PyTypeObject* psection_type;
+PyTypeObject* psection_type;
 static PyTypeObject* pallsegiter_type;
 static PyTypeObject* psegment_type;
 static PyTypeObject* pmech_generic_type;
@@ -70,6 +70,7 @@ static PyTypeObject* range_type;
 PyObject* pmech_types;  // Python map for name to Mechanism
 PyObject* rangevars_;   // Python map for name to Symbol
 
+extern PyTypeObject* hocobject_type;
 extern Section* nrnpy_newsection(NPySecObj*);
 extern void simpleconnectsection();
 extern void nrn_change_nseg(Section*, int);
@@ -97,6 +98,8 @@ static int ob_is_seg(Object*);
 extern int (*nrnpy_ob_is_seg)(Object*);
 static Object* seg_from_sec_x(Section*, double x);
 extern Object* (*nrnpy_seg_from_sec_x)(Section*, double x);
+static Section* o2sec(Object*);
+extern Section* (*nrnpy_o2sec_p_)(Object*);
 static void o2loc(Object*, Section**, double*);
 extern void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
 static void nrnpy_unreg_mech(int);
@@ -386,6 +389,18 @@ static int ob_is_seg(Object* o) {
     return 0;
   }
   return 1;
+}
+
+static Section* o2sec(Object* o) {
+  if (o->ctemplate->sym !=nrnpy_pyobj_sym_) {
+    hoc_execerror("not a Python nrn.Section", 0);
+  }
+  PyObject* po = nrnpy_hoc2pyobject(o);
+  if (!PyObject_TypeCheck(po, psection_type)) {
+    hoc_execerror("not a Python nrn.Section", 0);
+  }
+  NPySecObj* pysec = (NPySecObj*)po;
+  return pysec->sec_;
 }
 
 static void o2loc(Object* o, Section** psec, double* px) {
@@ -784,23 +799,67 @@ static PyObject* pysec_orientation(NPySecObj* self) {
   return Py_BuildValue("d", x);
 }
 
-static PyObject* pysec_children(NPySecObj* self) {
+static bool lappendsec(PyObject* const sl, Section* const s) {
+  PyObject* item = (PyObject*)newpysechelp(s);
+  if (!item) {
+    return false;
+  }
+  if (PyList_Append(sl, item) != 0) {
+    return false;
+  }
+  Py_XDECREF(item);
+  return true;
+}
+
+static PyObject* pysec_children1(PyObject* const sl, Section * const sec) {
+  for (Section* s = sec->child; s; s = s->sibling) {
+    if (!lappendsec(sl, s)) {
+      return NULL;
+    }
+  }
+  return sl;
+}
+
+static PyObject* pysec_children(NPySecObj* const self) {
+  Section* const sec = self->sec_;
+  PyObject* const result = PyList_New(0);
+  if (!result) {
+    return NULL;
+  }
+  return pysec_children1(result, sec);
+}
+
+static PyObject* pysec_subtree1(PyObject* const sl, Section* const sec)
+{
+  if (!lappendsec(sl, sec)) {
+    return NULL;
+  }
+  for (Section* s = sec->child; s; s = s->sibling) {
+    if (!pysec_subtree1(sl, s)) {
+      return NULL;
+    }
+  }
+  return sl;
+}
+
+static PyObject* pysec_subtree(NPySecObj* const self) {
+  Section* const sec = self->sec_;
+  PyObject* const result = PyList_New(0);
+  if (!result) {
+    return NULL;
+  }
+  return pysec_subtree1(result, sec);
+}
+
+static PyObject* pysec_wholetree(NPySecObj* const self) {
   Section* sec = self->sec_;
+  Section* s;
   PyObject* result = PyList_New(0);
   if (!result) {
     return NULL;
   }
-  for (Section* s = sec->child; s; s = s->sibling) {
-    PyObject* item = (PyObject*)newpysechelp(s);
-    if (!item) {
-      return NULL;
-    }
-    if (PyList_Append(result, item) != 0) {
-      return NULL;
-    }
-    Py_XDECREF(item);
-  }
-  return result;
+  for (s = sec; s->parentsec; s = s->parentsec) {}
+  return pysec_subtree1(result, s);
 }
 
 static PyObject* pysec2cell(NPySecObj* self) {
@@ -847,8 +906,14 @@ static PyObject* pysec_richcmp(NPySecObj* self, PyObject* other, int op) {
   if (PyObject_TypeCheck(other, psection_type)) {
     void* self_ptr = (void*)(self->sec_);
     other_ptr = (void*)(((NPySecObj*)other)->sec_);
+    return nrn_ptr_richcmp(self_ptr, other_ptr, op);
   }
-  return nrn_ptr_richcmp(self_ptr, other_ptr, op);
+  if (PyObject_TypeCheck(other, hocobject_type) || PyObject_TypeCheck(other, psegment_type)) {
+    // preserves comparison with NEURON objects as it existed prior to 7.7
+    return nrn_ptr_richcmp(self_ptr, other_ptr, op);
+  }
+  Py_INCREF(Py_NotImplemented);
+  return Py_NotImplemented;
 }
 
 static PyObject* pysec_same(NPySecObj* self, PyObject* args) {
@@ -869,6 +934,13 @@ static PyObject* NPyMechObj_name(NPyMechObj* self) {
     result = PyString_FromString(memb_func[self->prop_->type].sym->name);
   }
   return result;
+}
+
+static PyObject* NPyMechObj_is_ion(NPyMechObj* self) {
+  if (self->prop_ && nrn_is_ion(self->prop_->type)) {
+      Py_RETURN_TRUE;
+  }
+  Py_RETURN_FALSE;
 }
 
 static PyObject* pymech_repr(PyObject* p) {
@@ -1688,10 +1760,15 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
   PyObject* result = NULL;
   NrnProperty np(self->prop_);
   int isptr = (strncmp(n, "_ref_", 5) == 0);
-  int bufsz = strlen(n) + 6;
+  char* mname = memb_func[self->prop_->type].sym->name;
+  int mnamelen = strlen(mname);
+  int bufsz = strlen(n) + mnamelen + 2;
   char *buf = new char[bufsz];
-  sprintf(buf, "%s_%s", isptr ? n + 5 : n,
-          memb_func[self->prop_->type].sym->name);
+  if (nrn_is_ion(self->prop_->type)) {
+    strcpy(buf, isptr ? n + 5 : n);
+  }else{
+    sprintf(buf, "%s_%s", isptr ? n + 5 : n, mname);
+  }
   Symbol* sym = np.find(buf);
   if (sym) {
     // printf("mech_getattro sym %s\n", sym->name);
@@ -1715,8 +1792,6 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
     }
   } else if (strcmp(n, "__dict__") == 0) {
     result = PyDict_New();
-    char* mname = memb_func[self->prop_->type].sym->name;
-    int mnamelen = strlen(mname);
     for (Symbol* s = np.first_var(); np.more_var(); s = np.next_var()) {
       if (!striptrail(buf, bufsz, s->name, mname)) {
         strcpy(buf, s->name);
@@ -1899,6 +1974,10 @@ static PyMethodDef NPySecObj_methods[] = {
      "Returns 0.0 or 1.0  depending on the x value closest to parent."},
     {"children", (PyCFunction)pysec_children, METH_NOARGS,
      "Return list of child sections. Possibly an empty list"},
+    {"subtree", (PyCFunction)pysec_subtree, METH_NOARGS,
+     "Return list of sections in the subtree rooted at this section (including this section)."},
+    {"wholetree", (PyCFunction)pysec_wholetree, METH_NOARGS,
+     "Return list of all sections with a path to this section (including this section). The list has the important property that sections are in root to leaf order, depth-first traversal."},
     {"n3d", (PyCFunction)NPySecObj_n3d, METH_NOARGS,
      "Returns the number of 3D points."},
     {"x3d", (PyCFunction)NPySecObj_x3d, METH_VARARGS,
@@ -1967,6 +2046,8 @@ static PyMemberDef NPySegObj_members[] = {
 static PyMethodDef NPyMechObj_methods[] = {
     {"name", (PyCFunction)NPyMechObj_name, METH_NOARGS,
      "Mechanism name (same as hoc suffix for density mechanism)"},
+    {"is_ion", (PyCFunction)NPyMechObj_is_ion, METH_NOARGS,
+     "Returns True if an ion mechanism"},
     {NULL}};
 
 static PyMethodDef NPyRangeVar_methods[] = {
@@ -2090,6 +2171,7 @@ myPyMODINIT_FUNC nrnpy_nrn(void) {
   nrnpy_reg_mech_p_ = nrnpy_reg_mech;
   nrnpy_ob_is_seg = ob_is_seg;
   nrnpy_seg_from_sec_x = seg_from_sec_x;
+  nrnpy_o2sec_p_ = o2sec;
   nrnpy_o2loc_p_ = o2loc;
   nrnpy_pysec_name_p_ = pysec_name;
   nrnpy_pysec_cell_p_ = pysec_cell;

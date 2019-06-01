@@ -30,6 +30,9 @@ extern int unput();
 %}
 D	[0-9]
 E	[Ee][-+]?{D}+
+
+%x ontology
+
 %%
 [a-zA-Z][a-zA-Z0-9_]*'+ { /*PRIME possibly high order*/
 	char *cp, buf[256];
@@ -88,6 +91,19 @@ ELSE	{ /* translate to lower case */
 	return SYM(yylval.qp)->type;
 	}
 
+REPRESENTS	{
+	BEGIN(ontology);
+	Symbol *s;
+
+	yylval.qp = putintoken(yytext, NAME);
+	s = SYM(yylval.qp);
+	return s->type;
+}
+
+<ontology>\n {
+	BEGIN(INITIAL);
+}
+
 [a-zA-Z][a-zA-Z0-9_]* { /*NAME*/
 	Symbol *s;
 
@@ -95,6 +111,15 @@ ELSE	{ /* translate to lower case */
 	s = SYM(yylval.qp);
 	if (s->type == PRIME)
 		diag(yytext, " being used as derivative variable");
+	return s->type;
+}
+
+<ontology>\[[a-zA-Z][a-zA-Z0-9_]*:[a-zA-Z0-9_]*\]|[a-zA-Z][a-zA-Z0-9_]*:[a-zA-Z0-9_]* { /*ONTOLOGY_ID*/
+	Symbol *s;
+
+	yylval.qp = putintoken(yytext, ONTOLOGY_ID);
+	s = SYM(yylval.qp);
+	BEGIN(INITIAL);
 	return s->type;
 }
 

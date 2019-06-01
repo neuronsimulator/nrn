@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 
 ARCH=@host_cpu@
 MODSUBDIR=@modsubdir@
@@ -50,7 +51,7 @@ fi
 UserLDFLAGS=""
 if [ "$1" = "-loadflags" ] ; then
        UserLDFLAGS="$2"
-       shift 
+       shift
        shift
 fi
 
@@ -67,14 +68,17 @@ incs=""
 if test $# -gt 0 ; then
 	for i in "$@" ; do
 		if test -d "$i" ; then
-			files="$files $(ls $i/*.mod)"
-			incs="$incs $(ls $i/*.inc)"
+			set +e
+			files="$files $(unset LC_ALL; ls $i/*.mod)"
+			incs="$incs $(unset LC_ALL; ls $i/*.inc)"
+			set -e
 		else
 			files="$files $i"
 		fi
 	done
 else
-	files=$(ls *.mod)
+	# Unset LC_ALL for consistent mod order
+	files=$(unset LC_ALL; ls *.mod)
 fi
 
 mfiles=""

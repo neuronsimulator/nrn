@@ -45,6 +45,7 @@ void hoc_checkpoint(void) { hoc_ret(); hoc_pushx(0.);}
 void hoc_pwman_place(void) { hoc_ret(); hoc_pushx(0.);}
 void hoc_save_session(void) { hoc_ret(); hoc_pushx(0.);}
 void hoc_print_session(void) { hoc_ret(); hoc_pushx(0.);}
+void hoc_nrnmpi_init(void) { hoc_ret(); hoc_pushx(0.);}
 
 void hoc_class_registration(void) {}
 

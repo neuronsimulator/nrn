@@ -34,10 +34,7 @@ public:
 	BAMechList* next;
 	BAMech* bam;
 	Memb_list* ml;
-	int* indices; // if nil then all in ml
-	int cnt; // number of indices if non nil
 	static void destruct(BAMechList** first);
-	static void alloc(BAMechList* first);
 };
 
 #define CTD(i) ctd_[((nctd_ > 1) ? (i) : 0)]

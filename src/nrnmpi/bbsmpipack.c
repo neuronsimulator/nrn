@@ -22,6 +22,12 @@
 #include <nrnmpi_impl.h>
 #include <hocdec.h>
 
+#if 0
+#define guard(f) nrn_assert(f == MPI_SUCCESS)
+#else
+#define guard(f) {int _i = f; if (_i != MPI_SUCCESS) {printf("%s %d\n", #f, _i); assert(0);}}
+#endif
+
 #define nrnmpidebugleak 0
 #define debug 0
 
@@ -54,7 +60,7 @@ printf("%d unpack upkpos=%d pkposition=%d keypos=%d size=%d\n",
   nrnmpi_myid_bbs, r->upkpos, r->pkposition, r->keypos, r->size);
 #endif
 assert(r->upkpos >= 0 && r->size >= r->upkpos);
-	MPI_Unpack(r->buf, r->size, &r->upkpos, type, 2, MPI_INT, nrn_bbs_comm); 
+	guard(MPI_Unpack(r->buf, r->size, &r->upkpos, type, 2, MPI_INT, nrn_bbs_comm)); 
 #if debug
 printf("%d unpack r=%p size=%d upkpos=%d type[0]=%d datatype=%d  type[1]=%d  count=%d\n", nrnmpi_myid_bbs, r, r->size, r->upkpos, type[0], my_datatype, type[1], count);
 #endif
@@ -63,7 +69,7 @@ printf("%d unpack size=%d upkpos=%d type[0]=%d   datatype=%d  type[1]=%d  count=
 }
 	assert(type[0] == my_datatype);
 	assert(type[1] == count);
-	MPI_Unpack(r->buf, r->size, &r->upkpos, buf, count, mytypes[my_datatype], nrn_bbs_comm);
+	guard(MPI_Unpack(r->buf, r->size, &r->upkpos, buf, count, mytypes[my_datatype], nrn_bbs_comm));
 }
 
 void nrnmpi_upkbegin(bbsmpibuf* r) {
@@ -77,13 +83,13 @@ assert(r && r->buf && r->size > 0);
 		hoc_execerror("subworld process with nhost > 0 cannot use", "the bulletin board");
 	}
 	r->upkpos = 0;
-	MPI_Unpack(r->buf, r->size, &r->upkpos,
-		&p, 1, MPI_INT, nrn_bbs_comm);
+	guard(MPI_Unpack(r->buf, r->size, &r->upkpos,
+		&p, 1, MPI_INT, nrn_bbs_comm));
 if (p > r->size) {
 printf("\n %d nrnmpi_upkbegin keypos=%d size=%d\n", nrnmpi_myid_bbs, p, r->size);
 }
 assert(p <= r->size);
-	MPI_Unpack(r->buf, r->size, &p, &type, 1, MPI_INT, nrn_bbs_comm);
+	guard(MPI_Unpack(r->buf, r->size, &p, &type, 1, MPI_INT, nrn_bbs_comm));
 #if debug
 printf("%d nrnmpi_upkbegin type=%d keypos=%d\n", nrnmpi_myid_bbs, type, p);
 #endif
@@ -140,11 +146,23 @@ void nrnmpi_upkvec(int n, double* x, bbsmpibuf* r) {
 	unpack(x, n, my_MPI_DOUBLE, r, "upkvec");
 }
 
+#if NRNMPI_DYNAMICLOAD
+/* for some unknown reason mpiexec -n 2 python3 test0.py gives
+load_nrnmpi: /home/hines/neuron/nrndynam/x86_64/lib/libnrnmpi.so: undefined symbol: cxx_char_alloc
+So fill this in explicitly in nrnmpi_dynam.c
+*/
+char* (*p_cxx_char_alloc)(int len);
+#endif
+
 char* nrnmpi_upkstr(bbsmpibuf* r) {
 	int len;
 	char* s;
 	unpack(&len, 1, my_MPI_INT, r, "upkstr length");
+#if NRNMPI_DYNAMICLOAD
+	s = (*p_cxx_char_alloc)(len+1); /* will be delete not free */
+#else
 	s = cxx_char_alloc(len+1); /* will be delete not free */
+#endif
 	unpack(s, len, my_MPI_CHAR, r, "upkstr string");
 	s[len] = '\0';
 	return s;
@@ -155,7 +173,11 @@ char* nrnmpi_upkpickle(size_t* size, bbsmpibuf* r) {
 	char* s;
 	unpack(&len, 1, my_MPI_INT, r, "upkpickle length");
 	*size = len;
+#if NRNMPI_DYNAMICLOAD
+	s = (*p_cxx_char_alloc)(len+1); /* will be delete not free */
+#else
 	s = cxx_char_alloc(len + 1); /* will be delete, not free */
+#endif
 	unpack(s, len, my_MPI_PICKLE, r, "upkpickle data");
 	return s;
 }
@@ -179,7 +201,7 @@ void nrnmpi_pkbegin(bbsmpibuf* r) {
 #if debug
 printf("%d nrnmpi_pkbegin %p size=%d pkposition=%d\n", nrnmpi_myid_bbs, r, r->size, r->pkposition);
 #endif
-	MPI_Pack(&type, 1, MPI_INT, r->buf, r->size, &r->pkposition, nrn_bbs_comm);
+	guard(MPI_Pack(&type, 1, MPI_INT, r->buf, r->size, &r->pkposition, nrn_bbs_comm));
 }
 
 void nrnmpi_enddata(bbsmpibuf* r) {
@@ -189,7 +211,7 @@ void nrnmpi_enddata(bbsmpibuf* r) {
 #if debug
 printf("%d nrnmpi_enddata %p size=%d pkposition=%d\n", nrnmpi_myid_bbs, r, r->size, p);
 #endif
-	MPI_Pack_size(1, MPI_INT, nrn_bbs_comm, &isize);
+	guard(MPI_Pack_size(1, MPI_INT, nrn_bbs_comm, &isize));
 oldsize = r->size;
 	resize(r, r->pkposition + isize);
 #if debug
@@ -197,11 +219,11 @@ if (oldsize < r->pkposition + isize) {
 	printf("%d %p need %d more. end up with total of %d\n", nrnmpi_myid_bbs, r, isize, r->size);
 }
 #endif
-	MPI_Pack(&type, 1, MPI_INT, r->buf, r->size, &r->pkposition, nrn_bbs_comm);
+	guard(MPI_Pack(&type, 1, MPI_INT, r->buf, r->size, &r->pkposition, nrn_bbs_comm));
 #if debug
 printf("%d nrnmpi_enddata buf=%p size=%d pkposition=%d\n", nrnmpi_myid_bbs, r->buf, r->size, r->pkposition);
 #endif
-	MPI_Pack(&p, 1, MPI_INT, r->buf, r->size, &type, nrn_bbs_comm);
+	guard(MPI_Pack(&p, 1, MPI_INT, r->buf, r->size, &type, nrn_bbs_comm));
 #if debug
 printf("%d after nrnmpi_enddata, %d was packed at beginning and 0 was packed before %d\n", nrnmpi_myid_bbs, p, r->pkposition);
 #endif
@@ -213,8 +235,8 @@ static void pack(void* inbuf, int incount, int my_datatype, bbsmpibuf* r, const 
 #if debug
 printf("%d pack %p count=%d type=%d outbuf-%p pkposition=%d %s\n", nrnmpi_myid_bbs, r, incount, my_datatype, r->buf, r->pkposition, e);
 #endif
-	MPI_Pack_size(incount, mytypes[my_datatype], nrn_bbs_comm, &dsize);
-	MPI_Pack_size(2, MPI_INT, nrn_bbs_comm, &isize);
+	guard(MPI_Pack_size(incount, mytypes[my_datatype], nrn_bbs_comm, &dsize));
+	guard(MPI_Pack_size(2, MPI_INT, nrn_bbs_comm, &isize));
 oldsize = r->size;
 	resize(r, r->pkposition + dsize + isize);
 #if debug
@@ -223,8 +245,8 @@ if (oldsize < r->pkposition + dsize + isize) {
 }
 #endif
 	type[0] = my_datatype;  type[1] = incount;
-	MPI_Pack(type, 2, MPI_INT, r->buf, r->size, &r->pkposition, nrn_bbs_comm);
-	MPI_Pack(inbuf, incount, mytypes[my_datatype], r->buf, r->size, &r->pkposition, nrn_bbs_comm);
+	guard(MPI_Pack(type, 2, MPI_INT, r->buf, r->size, &r->pkposition, nrn_bbs_comm));
+	guard(MPI_Pack(inbuf, incount, mytypes[my_datatype], r->buf, r->size, &r->pkposition, nrn_bbs_comm));
 #if debug
 printf("%d pack done pkposition=%d\n", nrnmpi_myid_bbs, r->pkposition);
 #endif
@@ -263,11 +285,27 @@ void nrnmpi_bbssend(int dest, int tag, bbsmpibuf* r) {
 #if debug
 printf("%d nrnmpi_bbssend %p dest=%d tag=%d size=%d\n", nrnmpi_myid_bbs, r, dest, tag, (r)?r->size:0);
 #endif
+
+	/* Some MPI implementations limit tags to be less than full MPI_INT domain
+	   so pack tag if > 20 in second slot (now reserved) of buffer and use 20 as the tag.
+	*/
+	if (tag > 20) {
+		int save_position = r->pkposition;
+		int save_upkpos = r->upkpos;
+		nrnmpi_upkbegin(r);
+		nrnmpi_upkint(r);
+		r->pkposition = r->upkpos;
+		nrnmpi_pkint(tag, r);
+		r->pkposition = save_position;
+		r->upkpos = save_upkpos;
+		tag = 20;
+	}
+
 	if (r) {
 		assert( r->buf && r->keypos <= r->size);
-		MPI_Send(r->buf, r->size, MPI_PACKED, dest, tag, nrn_bbs_comm);
+		guard(MPI_Send(r->buf, r->size, MPI_PACKED, dest, tag, nrn_bbs_comm));
 	}else{
-		MPI_Send(NULL, 0, MPI_PACKED, dest, tag, nrn_bbs_comm);
+		guard(MPI_Send(NULL, 0, MPI_PACKED, dest, tag, nrn_bbs_comm));
 	}
 	errno = 0;
 #if debug
@@ -284,14 +322,29 @@ int nrnmpi_bbsrecv(int source, bbsmpibuf* r) {
 #if debug
 printf("%d nrnmpi_bbsrecv %p\n", nrnmpi_myid_bbs, r);
 #endif
-	MPI_Probe(source, MPI_ANY_TAG, nrn_bbs_comm, &status);
-	MPI_Get_count(&status, MPI_PACKED, &size);
+	guard(MPI_Probe(source, MPI_ANY_TAG, nrn_bbs_comm, &status));
+	guard(MPI_Get_count(&status, MPI_PACKED, &size));
 #if debug
 printf("%d nrnmpi_bbsrecv probe size=%d source=%d tag=%d\n", nrnmpi_myid_bbs, size, status.MPI_SOURCE, status.MPI_TAG);
 #endif
 	resize(r, size);
-	MPI_Recv(r->buf, r->size, MPI_PACKED, source, MPI_ANY_TAG, nrn_bbs_comm, &status);
+	guard(MPI_Recv(r->buf, r->size, MPI_PACKED, source, MPI_ANY_TAG, nrn_bbs_comm, &status));
 	errno = 0;
+	/* Some MPI implementations limit tags to be less than full MPI_INT domain
+	   In the past we allowed  TODO mesages to have tags > 20 (FIRSTID of src/parallel/bbssrv.h)
+	   To fix the bug we no longer send or receive such tags and instead
+	   copy the tag into the second pkint of the r->buf and send with
+	   a tag of 20.
+	*/
+	if (status.MPI_TAG == 20) {
+		int tag;
+		int save_upkpos = r->upkpos; /* possibly not needed */
+		nrnmpi_upkbegin(r);
+		nrnmpi_upkint(r);
+		tag = nrnmpi_upkint(r);
+		r->upkpos = save_upkpos;
+		return tag;
+	}
 	return status.MPI_TAG;
 }
 
@@ -314,11 +367,11 @@ printf("%d nrnmpi_bbssendrecv nothing available so send\n", nrnmpi_myid_bbs);
 int nrnmpi_iprobe(int* size, int* tag, int* source) {
 	int flag = 0;
 	MPI_Status status;
-	MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, nrn_bbs_comm, &flag, &status);
+	guard(MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, nrn_bbs_comm, &flag, &status));
 	if (flag) {
 		if (source) *source = status.MPI_SOURCE;
 		if (tag) *tag = status.MPI_TAG;
-		if (size) MPI_Get_count(&status, MPI_PACKED, size);
+		if (size) guard(MPI_Get_count(&status, MPI_PACKED, size));
 	}
 	return flag;
 }
@@ -326,10 +379,10 @@ int nrnmpi_iprobe(int* size, int* tag, int* source) {
 void nrnmpi_probe(int* size, int* tag, int* source) {
 	int flag = 0;
 	MPI_Status status;
-	MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, nrn_bbs_comm, &status);
+	guard(MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, nrn_bbs_comm, &status));
 	if (source) *source = status.MPI_SOURCE;
 	if (tag) *tag = status.MPI_TAG;
-	if (size) MPI_Get_count(&status, MPI_PACKED, size);
+	if (size) guard(MPI_Get_count(&status, MPI_PACKED, size));
 }
 
 bbsmpibuf* nrnmpi_newbuf(int size) {

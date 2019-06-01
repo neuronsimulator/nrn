@@ -2,16 +2,16 @@
 // there has to be a better way to get working __nonzero__
 // but putting it into hocobj_methods did not work.
 static PyNumberMethods hocobj_as_number = {
-    0,                       /* nb_add */
-    0,                       /* nb_subtract */
-    0,                       /* nb_multiply */
-    0,                       /* nb_divide */
+    py_hocobj_add,           /* nb_add */
+    py_hocobj_sub,           /* nb_subtract */
+    py_hocobj_mul,           /* nb_multiply */
+    py_hocobj_div,           /* nb_divide */
     0,                       /* nb_remainder */
     0,                       /* nb_divmod */
     0,                       /* nb_power */
-    0,                       /* nb_negative */
-    0,                       /* nb_positive */
-    0,                       /* nb_absolute */
+    py_hocobj_uneg,          /* nb_negative */
+    py_hocobj_upos,          /* nb_positive */
+    py_hocobj_uabs,          /* nb_absolute */
     (inquiry)hocobj_nonzero, /* nb_nonzero */
     0,                       /* nb_invert */
     0,                       /* nb_lshift */
@@ -39,7 +39,7 @@ static PyNumberMethods hocobj_as_number = {
     0,                       /* nb_floor_divide */
     0,                       /* nb_true_divide */
     0,                       /* nb_inplace_floor_divide */
-    0,                       /* nb_inplace_true_divide */
+    py_hocobj_div,           /* nb_inplace_true_divide */
 #if PYTHON_API_VERSION > 1012
     0, /* nb_index */
 #endif
@@ -77,7 +77,7 @@ static PyTypeObject nrnpy_HocObjectType = {
     hocobj_getattro,                          /*tp_getattro*/
     hocobj_setattro,                          /*tp_setattro*/
     0,                                        /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE| Py_TPFLAGS_CHECKTYPES, /*tp_flags*/
     ccast hocobj_docstring,                   /* tp_doc */
     0,                                        /* tp_traverse */
     0,                                        /* tp_clear */

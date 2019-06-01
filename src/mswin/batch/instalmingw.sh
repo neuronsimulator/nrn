@@ -200,7 +200,6 @@ for f in $DB/hocmodule*.dll ; do
 done
 set +e
 cp $B/share/lib/python/neuron/rxd/geometry3d/*.pyd $D/lib/python/neuron/rxd/geometry3d
-cp $B/share/lib/python/neuron/crxd/geometry3d/*.pyd $D/lib/python/neuron/crxd/geometry3d
 set -e
 fi
 
@@ -217,6 +216,7 @@ if true ; then
 cd $S/src/mswin
 cp bin/mknrndll bin/neurondemo bin/nrngui $DB
 cp bin/mknrndll $DB/nrnivmodl
+cp bin/nrnivmodl.bat $DB/nrnivmodl.bat
 rm -f $Z
 zip -l $Z notes.txt
 #do the lib shell scripts in unix format
@@ -247,6 +247,7 @@ mv temp mknrndl2.sh
 #for neurondemo
 cd $D/demo/release
 export N=$D
+export MODLUNIT=$N/lib/nrnunits.lib
 export PATH="$DB:$D/mingw/bin:$PATH"
 sh $D/lib/mknrndl2.sh
 rm *.o *.c

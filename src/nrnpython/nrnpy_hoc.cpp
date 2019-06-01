@@ -7,6 +7,7 @@
 #include "oclist.h"
 #include "nrniv_mf.h"
 #include "nrnpy_utils.h"
+#include "../nrniv/shapeplt.h"
 #include <vector>
 
 #if defined(__MINGW32__) && NRNPYTHON_DYNAMICLOAD > 0
@@ -18,9 +19,20 @@
 #define HOCMOD hoc
 #endif
 
+extern PyTypeObject* psection_type;
+
+// copied from nrnpy_nrn
+typedef struct {
+  PyObject_HEAD Section* sec_;
+  char* name_;
+  PyObject* cell_;
+} NPySecObj;
+
 extern "C" {
 
 #include "parse.h"
+extern void (*nrnpy_sectionlist_helper_)(void*, Object*);
+void lvappendsec_and_ref(void* sl, Section* sec);
 extern Section* nrn_noerr_access();
 extern void hoc_pushs(Symbol*);
 extern double* hoc_evalpointer();
@@ -157,7 +169,10 @@ typedef struct {
   PyHoc::ObjectType type_;
 } PyHocObject;
 
-static PyTypeObject* hocobject_type;
+static PyObject* rvp_plot = NULL;
+static PyObject* plotshape_plot = NULL;
+
+PyTypeObject* hocobject_type;
 static PyObject* hocobj_call(PyHocObject* self, PyObject* args,
                              PyObject* kwrds);
 
@@ -519,8 +534,16 @@ PyObject* nrnpy_hoc_pop() {
     case STRING:
       result = Py_BuildValue("s", *hoc_strpop());
       break;
-    case VAR:
-      result = Py_BuildValue("d", *hoc_pxpop());
+    case VAR: {
+      double* px = hoc_pxpop();
+      if (px) {
+        // unfortunately, this is nonsense if NMODL POINTER is pointing
+        // to something other than a double.
+        result = Py_BuildValue("d", *px);
+      }else{
+        PyErr_SetString(PyExc_AttributeError, "POINTER is NULL");
+      }
+    }
       break;
     case NUMBER:
       result = Py_BuildValue("d", hoc_xpop());
@@ -550,13 +573,23 @@ static int set_final_from_stk(PyObject* po) {
         err = 1;
       }
       break;
-    case VAR:
+    case VAR: {
       double x;
+      double* px;
       if (PyArg_Parse(po, "d", &x) == 1) {
-        *(hoc_pxpop()) = x;
+        px = hoc_pxpop();
+        if (px) {
+          // This is a future crash if NMODL POINTER is pointing
+          // to something other than a double.
+          *px = x;
+        }else{
+          PyErr_SetString(PyExc_AttributeError, "POINTER is NULL");
+          return -1;
+        }
       } else {
         err = 1;
       }
+    }
       break;
     case OBJECTVAR:
       PyHocObject* pho;
@@ -643,8 +676,21 @@ static void* fcall(void* vself, void* vargs) {
   return (void*)nrnpy_hoc_pop();
 }
 
+static PyObject* curargs_;
+
+PyObject* hocobj_call_arg(int i) {
+  return PyTuple_GetItem(curargs_, i);
+}
+
 static PyObject* hocobj_call(PyHocObject* self, PyObject* args,
                              PyObject* kwrds) {
+
+  // Hack to allow some python only methods to get the python args.
+  // without losing info about type bool, int, etc.
+  // eg pc.py_broadcast, pc.py_gather, pc.py_allgather
+  PyObject* prevargs_ = curargs_;
+  curargs_ = args;
+
   PyObject* section = 0;
   PyObject* result;
   if (kwrds && PyDict_Check(kwrds)) {
@@ -662,17 +708,20 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args,
     int num_kwargs = PyDict_Size(kwrds);
     if (num_kwargs > 1) {
       PyErr_SetString(PyExc_RuntimeError, "invalid keyword argument");
+      curargs_ = prevargs_;
       return NULL;
     }
     if (section) {
       section = nrnpy_pushsec(section);
       if (!section) {
         PyErr_SetString(PyExc_TypeError, "sec is not a Section");
+        curargs_ = prevargs_;
         return NULL;
       }
     } else {
       if (num_kwargs) {
         PyErr_SetString(PyExc_RuntimeError, "invalid keyword argument");
+        curargs_ = prevargs_;
         return NULL;
       }
     }
@@ -693,11 +742,13 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args,
     }
   } else {
     PyErr_SetString(PyExc_TypeError, "object is not callable");
+    curargs_ = prevargs_;
     return NULL;
   }
   if (section) {
     nrn_popsec();
   }
+  curargs_ = prevargs_;
   return result;
 }
 
@@ -907,6 +958,8 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
 
       if (is_obj_type(self->ho_, "Vector")) {
         PyDict_SetItemString(dict, "__array_interface__", Py_None);
+      } else if (is_obj_type(self->ho_, "RangeVarPlot") || is_obj_type(self->ho_, "PlotShape")) {
+        PyDict_SetItemString(dict, "plot", Py_None);
       }
       return dict;
     } else if (strncmp(n, "_ref_", 5) == 0) {
@@ -940,6 +993,10 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
                            array_interface_typestr, "version", 3, "data",
                            PyLong_FromVoidPtr(x), Py_True);
 
+    } else if (is_obj_type(self->ho_, "RangeVarPlot") && strcmp(n, "plot") == 0) {
+      return PyObject_CallFunctionObjArgs(rvp_plot, (PyObject*) self, NULL);
+    } else if (is_obj_type(self->ho_, "PlotShape") && strcmp(n, "plot") == 0) {
+      return PyObject_CallFunctionObjArgs(plotshape_plot, (PyObject*) self, NULL);
     } else if (strcmp(n, "__doc__") == 0) {
       if (setup_doc_system()) {
         PyObject* docobj = NULL;
@@ -1453,9 +1510,10 @@ static PyObject* hocobj_iter(PyObject* self) {
     } else if (po->ho_->ctemplate == hoc_list_template_) {
       return PySeqIter_New(self);
     } else if (po->ho_->ctemplate == hoc_sectionlist_template_) {
-      po->iteritem_ = ((hoc_Item*)po->ho_->u.this_pointer)->next;
-      Py_INCREF(self);
-      return self;
+      // need a clone of self so nested loops do not share iteritem_
+      PyObject* po2 = nrnpy_ho2po(po->ho_);
+      ((PyHocObject*)po2)->iteritem_ = ((hoc_Item*)po->ho_->u.this_pointer)->next;
+      return po2;
     }
   } else if (po->type_ == PyHoc::HocForallSectionIterator) {
     po->iteritem_ = section_list->next;
@@ -1681,6 +1739,22 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
       po->u.ho_ = nrnpy_po2ho(tp);
     }
     return 0;
+  }
+  if (po->ho_) {
+    if (po->ho_->ctemplate == hoc_vec_template_) {
+      Vect* vec = (Vect*)po->ho_->u.this_pointer;
+      int vec_size = vector_capacity(vec);
+      // allow Python style negative indices
+      if (i < 0) {
+        i += vec_size;
+      }
+      if (i >= vec_size || i < 0) {
+        PyErr_SetString(PyExc_IndexError, "index out of bounds");
+        return -1;
+      }
+      PyArg_Parse(arg, "d", vector_vec(vec) + i);
+      return 0;
+    }
   }
   if (!po->sym_ || po->type_ != PyHoc::HocArray) {
     PyErr_SetString(PyExc_TypeError, "unsubscriptable object");
@@ -2043,6 +2117,12 @@ int nrnpy_set_vec_as_numpy(PyObject* (*p)(int, double*)) {
   return 0;
 }
 
+int nrnpy_set_graph_plots(PyObject* rvp_plot0, PyObject* plotshape_plot0) {
+  rvp_plot = rvp_plot0;
+  plotshape_plot = plotshape_plot0;
+  return 0;
+}
+
 static Object** vec_as_numpy_helper(int size, double* data) {
   if (vec_as_numpy) {
     PyObject* po = (*vec_as_numpy)(size, data);
@@ -2121,6 +2201,28 @@ static Object** nrnpy_vec_to_python(void* v) {
     }
   }
   return hoc_temp_objptr(ho);
+}
+
+PyObject* get_plotshape_data(PyObject* sp) {
+  PyHocObject* pho = (PyHocObject*) sp;
+  ShapePlotInterface* spi;
+  if (!is_obj_type(pho->ho_, "PlotShape")) {
+    PyErr_SetString(PyExc_TypeError, "get_plotshape_variable only takes PlotShape objects");
+    return NULL;
+  }
+  void* that = pho->ho_->u.this_pointer;
+#if HAVE_IV
+IFGUI
+  spi = ((ShapePlot*) that);
+} else {
+  spi = ((ShapePlotData*) that);
+ENDGUI
+#else
+  spi = ((ShapePlotData*) that);
+#endif
+  Object* sl = spi->neuron_section_list();
+  PyObject* py_sl = nrnpy_ho2po(sl);
+  return Py_BuildValue("sffN",spi->varname(), spi->low(), spi->high(), py_sl);
 }
 
 // poorly follows __reduce__ and __setstate__
@@ -2305,6 +2407,77 @@ static void add2topdict(PyObject* dict) {
   }
 }
 
+static PyObject* nrnpy_vec_math = NULL;
+
+int nrnpy_vec_math_register(PyObject* callback) {
+  nrnpy_vec_math = callback;
+  return 0;
+}
+
+static bool pyobj_is_vector(PyObject* obj) {
+  if (PyObject_TypeCheck(obj, hocobject_type)) {
+    PyHocObject* obj_h = (PyHocObject*) obj;
+    if (obj_h->type_ == PyHoc::HocObject) {
+      // this is an object (e.g. Vector) not a function
+      if (obj_h->ho_->ctemplate == hoc_vec_template_) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+static PyObject* py_hocobj_math(const char* op, PyObject* obj1, PyObject* obj2) {
+  bool potentially_valid = false;
+  int reversed = 0;
+  if (pyobj_is_vector(obj1)) {
+    potentially_valid = true;
+  } else if (pyobj_is_vector(obj2)) {
+    potentially_valid = true;
+    reversed = 1;
+  }
+  if (!potentially_valid) {
+    Py_INCREF(Py_NotImplemented);
+    return Py_NotImplemented;
+  }
+  return PyObject_CallFunction(nrnpy_vec_math, "siOO", op, reversed, obj1, obj2);
+}
+
+static PyObject* py_hocobj_math_unary(const char* op, PyObject* obj) {
+  if (pyobj_is_vector(obj)) {
+    return PyObject_CallFunction(nrnpy_vec_math, "siO", op, 2, obj);
+  }
+  Py_INCREF(Py_NotImplemented);
+  return Py_NotImplemented;
+}
+
+static PyObject* py_hocobj_add(PyObject* obj1, PyObject* obj2) {
+  return py_hocobj_math("add", obj1, obj2);
+}
+
+static PyObject* py_hocobj_uabs(PyObject* obj) {
+  return py_hocobj_math_unary("uabs", obj);
+}
+
+static PyObject* py_hocobj_uneg(PyObject* obj) {
+  return py_hocobj_math_unary("uneg", obj);
+}
+
+static PyObject* py_hocobj_upos(PyObject* obj) {
+  return py_hocobj_math_unary("upos", obj);
+}
+
+static PyObject* py_hocobj_sub(PyObject* obj1, PyObject* obj2) {
+  return py_hocobj_math("sub", obj1, obj2);
+}
+
+static PyObject* py_hocobj_mul(PyObject* obj1, PyObject* obj2) {
+  return py_hocobj_math("mul", obj1, obj2);
+}
+
+static PyObject* py_hocobj_div(PyObject* obj1, PyObject* obj2) {
+  return py_hocobj_math("div", obj1, obj2);
+}
 static PyMemberDef hocobj_members[] = {{NULL, 0, 0, 0, NULL}};
 
 #if (PY_MAJOR_VERSION >= 3)
@@ -2348,11 +2521,42 @@ char get_endian_character() {
   return endian_character;
 }
 
+static void sectionlist_helper_(void* sl, Object* args) {
+  if (!args || args->ctemplate->sym != nrnpy_pyobj_sym_) {
+    hoc_execerror("argument must be a Python iterable", "");
+  }
+  PyObject* pargs = nrnpy_hoc2pyobject(args);
+  
+  PyObject *iterator = PyObject_GetIter(pargs);
+  PyObject *item;
+
+  if (iterator == NULL) {
+    PyErr_Clear();
+    hoc_execerror("argument must be an iterable", "");
+  }
+
+  while (item = PyIter_Next(iterator)) {
+    if (!PyObject_TypeCheck(item, psection_type)) {
+      hoc_execerror("iterable must contain only Section objects", 0);
+    }
+    NPySecObj* pysec = (NPySecObj*)item;
+    lvappendsec_and_ref(sl, pysec->sec_);
+    Py_DECREF(item);
+  }
+
+  Py_DECREF(iterator);
+  if (PyErr_Occurred()) {
+    PyErr_Clear();
+    hoc_execerror("argument must be a Python iterable", "");
+  }
+}
+
 myPyMODINIT_FUNC nrnpy_hoc() {
   PyObject* m;
   nrnpy_vec_from_python_p_ = nrnpy_vec_from_python;
   nrnpy_vec_to_python_p_ = nrnpy_vec_to_python;
   nrnpy_vec_as_numpy_helper_ = vec_as_numpy_helper;
+  nrnpy_sectionlist_helper_ = sectionlist_helper_;
   PyLockGIL lock;
 
   char endian_character = 0;

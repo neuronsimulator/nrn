@@ -35,7 +35,7 @@ FILE
 	*fparout,		/* output file descriptor for filename.var */
 	*fcout;			/* output file descriptor for filename.c */
 
-char            finname[200];	/* filename.mod  or second argument */
+char            finname[NRN_BUFSIZE];	/* filename.mod  or second argument */
 Item	*parseroot;
 Item	*title;
 
@@ -139,8 +139,9 @@ static void openfiles(argc, argv)
 	int             argc;
 	char           *argv[];
 {
-	char *cp, modprefix[200];
+	char *cp, modprefix[NRN_BUFSIZE - 5];
 	if (argc > 1) {
+		assert(strlen(argv[1]) < NRN_BUFSIZE);
 		sprintf(modprefix, "%s", argv[1]);
 		cp = strstr(modprefix, ".mod");
 		if (cp) {

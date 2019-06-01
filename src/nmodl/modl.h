@@ -213,6 +213,9 @@ extern char    *sprintf();
 #endif
 #endif
 
+extern int nmodl_text; /* if 1, the text of the mod file is a string in the mod file */
+extern List* filetxtlist;
+
 extern List
 		*newlist(),	/* begins new empty list */
 		*inputtext();	/* used by parser to get block text from

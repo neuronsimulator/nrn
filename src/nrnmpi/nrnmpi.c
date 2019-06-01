@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 #include <assert.h>
+#include "nrnassrt.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -24,7 +25,7 @@ extern double nrn_timeus();
 
 #if NRNMPI
 #include <mpi.h>
-#define asrt(arg) assert(arg == MPI_SUCCESS)
+#define asrt(arg) nrn_assert(arg == MPI_SUCCESS)
 #define USE_HPM 0
 #if USE_HPM
 #include <libhpm.h>
@@ -57,6 +58,12 @@ void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
 #if NRNMPI
 	int i, b, flag;
 	static int called = 0;
+	if (nrnmpi_under_nrncontrol == 2) {
+		int flag;
+		MPI_Initialized(&flag);
+		if (flag) { return; }
+		called = 0;
+	}
 	if (called) { return; }
 	called = 1;
 	nrnmpi_use = 1;
@@ -94,6 +101,10 @@ for (i=0; i < *pargc; ++i) {
 				break;
 			}
 		}
+		if (nrnmpi_under_nrncontrol_ == 2) {
+			b = 1;
+			nrnmpi_under_nrncontrol_ = 1;
+		}
 		if (nrnmusic) { b = 1; }
 		if (!b) {
 			nrnmpi_use = 0;
@@ -114,6 +125,9 @@ for (i=0; i < *pargc; ++i) {
 #else
 			asrt(MPI_Init(pargc, pargv));
 #endif
+			nrnmpi_under_nrncontrol_ = 1;
+		}else{
+			nrnmpi_under_nrncontrol_ = 0;
 		}
 
 #if NRN_MUSIC

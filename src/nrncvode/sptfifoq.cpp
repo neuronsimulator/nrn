@@ -44,9 +44,9 @@ bool TQItem::check() {
 static void prnt(const TQItem* b, int level) {
 	int i;
 	for (i=0; i < level; ++i) {
-		printf("    ");
+		Printf("    ");
 	}
-	printf("%g %c %d Q=%p D=%p\n", b->t_, b->data_?'x':'o', b->cnt_, b, b->data_);
+	Printf("%g %c %d Q=%p D=%p\n", b->t_, b->data_?'x':'o', b->cnt_, b, b->data_);
 }
 
 static void chk(TQItem* b, int level) {
@@ -149,14 +149,14 @@ void TQueue::move(TQItem* i, double tnew) {
 
 void TQueue::statistics() {
 #if COLLECT_TQueue_STATISTICS
-	printf("insertions=%lu  moves=%lu removals=%lu calls to least=%lu\n",
+	Printf("insertions=%lu  moves=%lu removals=%lu calls to least=%lu\n",
 		ninsert, nmove, nrem, nleast);
-	printf("calls to find=%lu\n",
+	Printf("calls to find=%lu\n",
 		nfind);
-	printf("comparisons=%lu\n",
+	Printf("comparisons=%lu\n",
 		sptree_->enqcmps);
 #else
-	printf("Turn on COLLECT_TQueue_STATISTICS_ in tqueue.h\n");
+	Printf("Turn on COLLECT_TQueue_STATISTICS_ in tqueue.h\n");
 #endif
 }
 
@@ -283,7 +283,7 @@ TQItem* FifoQ::dequeue() {
 	return q;
 }
 void FifoQ::remove(TQItem* q) {
-	printf("FifoQ remove %p\n", q);
+	Printf("FifoQ remove %p\n", q);
 	if (head_ == q) { head_ = q->right_; }
 	if (tail_ == q) { tail_ = q->left_; }
 	if (q->left_) { q->left_->right_ = q->right_; }
