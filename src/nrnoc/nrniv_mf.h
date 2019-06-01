@@ -58,6 +58,8 @@ extern void artcell_net_send(void**, double*, Point_process*, double, double);
 extern void artcell_net_move(void**, Point_process*, double);
 extern void register_destructor(Pvmp);
 extern void hoc_register_synonym(int, void(*)(int, double**, Datum**));
+extern double* nrn_spGetElement(char*, int, int);
+extern int nrn_vmx_index(Node*);
 extern double* _getelm(int, int);
 extern double* _nrn_thread_getelm(void*, int, int);
 extern int sparse(void**, int, int*, int*, double*, double*, double,

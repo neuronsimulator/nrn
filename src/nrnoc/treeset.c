@@ -17,6 +17,13 @@
 #include "nonvintblock.h"
 #include "nrndae_c.h"
 
+double* nrn_spGetElement(char* mat, int row, int col) {
+  return spGetElement(mat, row+1, col+1);
+}
+int nrn_vmx_index(Node* nd) {
+	return nd->eqn_index_ + nlayer;
+}
+
 #if CVODE
 extern int cvode_active_;
 #endif
@@ -596,6 +603,16 @@ void* setup_tree_matrix(NrnThread* _nt){
 	nrn_lhs(_nt);
 	nrn_nonvint_block_current(_nt->end, _nt->_actual_rhs, _nt->id);
 	nrn_nonvint_block_conductance(_nt->end, _nt->_actual_d, _nt->id);
+if (1) {
+  if (use_sparse13) {
+    int i, neq;
+    neq = spGetSize(_nt->_sp13mat, 0);
+    for (i=1; i <= neq; ++i) {
+      double* d = spGetElement(_nt->_sp13mat, i, i);
+      printf("i=%d d=%g\n", i, *d);
+    }
+  }
+}
 	return (void*)0;
 }
 
@@ -2018,7 +2035,13 @@ printf("nrn_matrix_node_alloc use_sparse13=%d cvode_active_=%d nrn_use_daspk_=%d
 		neqn = nt->end + nrndae_extra_eqn_count();
 		extn = 0;
 		if (nt->_ecell_memb_list) {
-			extn =  nt->_ecell_memb_list->nodecount * nlayer;
+			/* 2 because IDA initialization requires for each
+			   layer i, not only vx[i] but vmx[i] where
+			   vmx[i] = vx[i-1] - vx[i] and vmx is used
+			   only for IDA with vx[-1] interpreted as v + vx[0]
+			   All vmx in each node follow the vx in each node.
+			*/
+			extn =  nt->_ecell_memb_list->nodecount * 2 * nlayer;
 		}
 /*printf(" %d extracellular nodes\n", extn);*/
 		neqn += extn;
@@ -2030,7 +2053,7 @@ printf("nrn_matrix_node_alloc use_sparse13=%d cvode_active_=%d nrn_use_daspk_=%d
 		for (in=0, i=1; in < nt->end; ++in, ++i) {
 			nt->_v_node[in]->eqn_index_ = i;
 			if (nt->_v_node[in]->extnode) {
-				i += nlayer;
+				i += 2*nlayer;
 			}
 		}
 		for (in = 0; in < nt->end; ++in) {
@@ -2045,11 +2068,15 @@ printf("nrn_matrix_node_alloc use_sparse13=%d cvode_active_=%d nrn_use_daspk_=%d
 			nd->_d = spGetElement(nt->_sp13mat, i, i);
 			if (nde) {
 			    for (ie = 0; ie < nlayer; ++ie) {
+				double* vmx;
 				k = i + ie + 1;
 				nde->_d[ie] = spGetElement(nt->_sp13mat, k, k);
 				nde->_rhs[ie] = nt->_actual_rhs + k;
 				nde->_x21[ie] = spGetElement(nt->_sp13mat, k, k-1);
 				nde->_x12[ie] = spGetElement(nt->_sp13mat, k-1, k);
+				/* for fixed step method vmx=0 as vmx is unused */
+//				vmx = nrn_spGetElement(nt->_sp13mat, k+nlayer, k+nlayer);
+//				*vmx = 1.0;
 			    }
 			}
 			if (pnd) {

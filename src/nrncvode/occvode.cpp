@@ -343,6 +343,13 @@ void Cvode::daspk_init_eqn(){
 	// cvode order primarily in that cap and no-cap nodes are not
 	// distinguished.
 	// note that only one thread is allowed for sparse right now.
+
+	// The replacement of our old heuristic initialization algorithm
+	// by the built-in IDACalcIC method requires c*(v1' - v2') terms
+	// be replaced by c*v12' and the additional equation v12 = v1 - v2.
+	// (only necessary if v2 is not ground). We need to handle that
+	// issue here for extracellular. Basically, for every extracelular
+	// node we need to introduce nlayer vm variables.
 	NrnThread* _nt = nrn_threads;
 	CvodeThreadData& z = ctd_[0];
 	double vtol;

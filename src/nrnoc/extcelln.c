@@ -364,6 +364,13 @@ void nrn_setup_ext(NrnThread* _nt)
 		nd = ndlist[i];
 		nde = nd->extnode;
 		pnd = _nt->_v_parent[nd->v_node_index];
+
+		for (j = 0; j < nlayer; ++j) {
+		  int k = nrn_vmx_index(nd) + j;
+		  double* pvx = nrn_spGetElement(_nt->_sp13mat, k, k);
+		  *pvx = 1.0;
+		}
+
 		if (pnd) {
 			pd = nde->param;
 			/* series resistance and capacitance to ground */
