@@ -223,7 +223,8 @@ void CodegenIspcVisitor::print_shadow_reduction_block_begin() {
 
 void CodegenIspcVisitor::print_rhs_d_shadow_variables() {
     if (info.point_process) {
-        printer->add_line("double* uniform shadow_rhs = nt->{};"_format(naming::NTHREAD_RHS_SHADOW));
+        printer->add_line(
+            "double* uniform shadow_rhs = nt->{};"_format(naming::NTHREAD_RHS_SHADOW));
         printer->add_line("double* uniform shadow_d = nt->{};"_format(naming::NTHREAD_D_SHADOW));
     }
 }

@@ -2537,9 +2537,6 @@ void CodegenCVisitor::print_mechanism_register() {
     printer->add_line("/** register channel with the simulator */");
     printer->start_block("void _{}_reg() "_format(info.mod_file));
 
-    // allocate global variables
-    printer->add_line("setup_global_variables();");
-
     // type related information
     auto mech_type = get_variable_name("mech_type");
     auto suffix = add_escape_quote(info.mod_suffix);
@@ -2569,6 +2566,9 @@ void CodegenCVisitor::print_mechanism_register() {
         printer->add_line(type + " = nrn_get_mechtype(" + name + ");");
     }
     printer->add_newline();
+
+    // allocate global variables
+    printer->add_line("setup_global_variables();");
 
     /*
      *  If threads are used then memory is allocated in setup_global_variables.
@@ -2998,6 +2998,14 @@ std::string CodegenCVisitor::get_range_var_float_type(const SymbolType& symbol) 
     return float_data_type();
 }
 
+/**
+ * \details For CPU/Host target there is no device pointer. In this case
+ * just use the host variable name directly.
+ */
+std::string CodegenCVisitor::get_variable_device_pointer(std::string variable, std::string /*type*/) {
+    return variable;
+}
+
 
 void CodegenCVisitor::print_instance_variable_setup() {
     if (range_variable_setup_required()) {
@@ -3022,14 +3030,22 @@ void CodegenCVisitor::print_instance_variable_setup() {
     }
 
     printer->add_line("Datum* indexes = ml->pdata;");
+
+    std::string float_type = default_float_data_type();
+    std::string int_type = default_int_data_type();
+    std::string float_type_pointer = float_type + "*";
+    std::string int_type_pointer = int_type + "*";
+
     int id = 0;
     std::vector<std::string> variables_to_free;
+
     for (auto& var: codegen_float_variables) {
         auto name = var->get_name();
-        auto default_type = default_float_data_type();
         auto range_var_type = get_range_var_float_type(var);
-        if (default_type == range_var_type) {
-            printer->add_line("inst->{} = ml->data+{}{};"_format(name, id, stride));
+        if (float_type == range_var_type) {
+            auto variable = "ml->data+{}{}"_format(id, stride);
+            auto device_variable = get_variable_device_pointer(variable, float_type_pointer);
+            printer->add_line("inst->{} = {};"_format(name, device_variable));
         } else {
             printer->add_line("inst->{} = setup_range_variable(ml->data+{}{}, pnodecount);"_format(
                 name, id, stride));
@@ -3040,12 +3056,20 @@ void CodegenCVisitor::print_instance_variable_setup() {
 
     for (auto& var: codegen_int_variables) {
         auto name = var.symbol->get_name();
+        std::string variable = name;
+        std::string type = "";
         if (var.is_index || var.is_integer) {
-            printer->add_line("inst->{} = ml->pdata;"_format(name));
+            variable = "ml->pdata";
+            type = int_type_pointer;
+        } else if (var.is_vdata) {
+            variable = "nt->_vdata";
+            type = "void**";
         } else {
-            auto data = var.is_vdata ? "_vdata" : "_data";
-            printer->add_line("inst->{} = nt->{};"_format(name, data));
+            variable = "nt->_data";
+            type = info.artificial_cell ? "void*" : float_type_pointer;
         }
+        auto device_variable = get_variable_device_pointer(variable, type);
+        printer->add_line("inst->{} = {};"_format(name, device_variable));
     }
 
     printer->add_line("ml->instance = (void*) inst;");
@@ -3487,6 +3511,7 @@ void CodegenCVisitor::print_get_memb_list() {
 
 void CodegenCVisitor::print_net_receive_loop_begin() {
     printer->add_line("int count = nrb->_displ_cnt;");
+    print_channel_iteration_block_parallel_hint(BlockType::NetReceive);
     printer->start_block("for (int i = 0; i < count; i++)");
 }
 
@@ -3506,6 +3531,8 @@ void CodegenCVisitor::print_net_receive_buffering(bool need_mech_inst) {
     print_get_memb_list();
 
     auto net_receive = method_name("net_receive_kernel");
+
+    print_kernel_data_present_annotation_block_begin();
 
     printer->add_line(
         "NetReceiveBuffer_t* {}nrb = ml->_net_receive_buffer;"_format(ptr_type_qualifier()));
@@ -3535,6 +3562,7 @@ void CodegenCVisitor::print_net_receive_buffering(bool need_mech_inst) {
     printer->add_line("nrb->_displ_cnt = 0;");
     printer->add_line("nrb->_cnt = 0;");
 
+    print_kernel_data_present_annotation_block_end();
     printer->end_block(1);
 }
 
