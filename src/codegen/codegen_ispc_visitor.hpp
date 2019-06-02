@@ -28,7 +28,6 @@ namespace codegen {
  * \brief %Visitor for printing C code with ISPC backend
  */
 class CodegenIspcVisitor: public CodegenCVisitor {
-
     /**
      * Prints an ISPC atomic operation
      *

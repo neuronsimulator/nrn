@@ -1585,6 +1585,12 @@ class CodegenCVisitor: public visitor::AstVisitor {
     virtual void print_wrapper_routines();
 
 
+    /**
+     * Get device variable pointer for corresponding host variable
+     */
+    virtual std::string get_variable_device_pointer(std::string variable, std::string type);
+
+
     CodegenCVisitor(std::string mod_filename,
                     std::string output_dir,
                     LayoutType layout,

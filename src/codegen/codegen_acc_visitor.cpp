@@ -32,15 +32,22 @@ namespace codegen {
  *
  */
 void CodegenAccVisitor::print_channel_iteration_block_parallel_hint(BlockType type) {
-    if (!info.artificial_cell) {
-        std::string present_clause = "present(node_index, data, voltage, indexes, thread";
+    if (info.artificial_cell) {
+        return;
+    }
 
+    std::string present_clause = "present(inst";
+
+    if (type == BlockType::NetReceive) {
+        present_clause += ", nrb";
+    } else {
+        present_clause += ", node_index, data, voltage, indexes, thread";
         if (type == BlockType::Equation) {
             present_clause += ", vec_rhs, vec_d";
         }
-        present_clause += ")";
-        printer->add_line("#pragma acc parallel loop {}"_format(present_clause));
     }
+    present_clause += ")";
+    printer->add_line("#pragma acc parallel loop {} async(nt->stream_id)"_format(present_clause));
 }
 
 
@@ -150,6 +157,13 @@ void CodegenAccVisitor::print_global_variable_device_update_annotation() {
     if (!info.artificial_cell) {
         printer->add_line("#pragma acc update device ({}_global)"_format(info.mod_suffix));
     }
+}
+
+std::string CodegenAccVisitor::get_variable_device_pointer(std::string variable, std::string type) {
+    if (info.artificial_cell) {
+        return variable;
+    }
+    return "({}) acc_deviceptr({})"_format(type, variable);
 }
 
 }  // namespace codegen

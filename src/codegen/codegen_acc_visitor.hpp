@@ -79,6 +79,9 @@ class CodegenAccVisitor: public CodegenCVisitor {
     /// update global variable from host to the device
     void print_global_variable_device_update_annotation() override;
 
+    std::string get_variable_device_pointer(std::string variable, std::string type) override;
+
+
   public:
     CodegenAccVisitor(std::string mod_file,
                       std::string output_dir,
