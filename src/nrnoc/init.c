@@ -185,6 +185,10 @@ int nrn_is_artificial(int pnttype) {
 
 int nrn_is_cable(void) {return 1;}
 
+void nrn_ion_used_reg(int type, nrn_ion_is_used_t f) {
+	memb_func[type].ion_is_used = f;
+}
+
 #if 0 && defined(WIN32)
 int mswin_load_dll(char* cp1) {
 	if (nrnmpi_myid < 1) if (!nrn_nobanner_ && nrn_istty_) {
@@ -469,6 +473,7 @@ void nrn_register_mech_common(
 	memb_func[type].state = stat;
 	memb_func[type].initialize = initialize;
 	memb_func[type].destructor = (void*)0;
+	memb_func[type].ion_is_used = (nrn_ion_is_used_t)0;
 #if VECTORIZE
 	memb_func[type].vectorized = vectorized ? 1:0;
 	memb_func[type].thread_size_ = vectorized ? (vectorized - 1) : 0;

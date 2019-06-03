@@ -13,6 +13,7 @@ typedef void (*Pvmp)(Prop*);
 typedef int (*nrn_ode_count_t)(int);
 typedef void (*nrn_ode_map_t)(int, double**, double**, double*, Datum*, double*, int);
 typedef void (*nrn_ode_synonym_t)(int, double**, Datum**);
+typedef int (*nrn_ion_is_used_t)(int);
 /* eventually replace following with Pvmp */
 typedef void (*nrn_bamech_t)(Node*, double*, Datum*, Datum*, struct NrnThread*);
 
@@ -47,6 +48,7 @@ typedef struct Memb_func {
 	void* hoc_mech;
 	void (*setdata_)(struct Prop*);
 	int* dparam_semantics; // for nrncore writing.
+	nrn_ion_is_used_t ion_is_used;
 } Memb_func;
 
 

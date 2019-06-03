@@ -821,6 +821,18 @@ static const char *_mechanism[] = {\n\
 		}
 		q=q->next->next->next;
 	}
+	if (useion != useion->next) { /* if not empty */
+		Sprintf(buf, "extern void nrn_ion_used_reg(int, int(*)(int));\n");
+		Lappendstr(defs_list, buf);
+		Lappendstr(defs_list, "static int _ion_is_used(int _type) {\n");
+		ITERATE(q, useion) {
+			sion = SYM(q);
+Sprintf(buf, "    if(_%s_sym->subtype == _type) { return 1; }\n", sion->name);
+			Lappendstr(defs_list, buf);
+			q = q->next->next->next;
+		}
+		Lappendstr(defs_list, "    return 0;\n}\n");
+	}
 	
 	Lappendstr(defs_list, "\n\
 extern Prop* need_memb(Symbol*);\n\n\
@@ -1086,6 +1098,10 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
 	}
 #endif
 	Lappendstr(defs_list, "_mechtype = nrn_get_mechtype(_mechanism[1]);\n");
+	if (useion != useion->next) { /* non empty */
+		Lappendstr(defs_list, "    nrn_ion_used_reg(_mechtype, _ion_is_used);\n");
+	}
+	
 	lappendstr(defs_list, "    _nrn_setdata_reg(_mechtype, _setdata);\n");
 	if (vectorize && thread_mem_init_list->next != thread_mem_init_list) {
 		lappendstr(defs_list, "    _nrn_thread_reg(_mechtype, 1, _thread_mem_init);\n");

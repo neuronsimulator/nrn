@@ -902,8 +902,14 @@ void mech_uninsert1(Section* sec, Symbol* s)
 		return;
 	}
 	if (nrn_is_ion(type)) {
-		hoc_warning("Not allowed to uninsert ions at this time", s->name);
-		return;
+		/* can only uninsert if no mechanism is using the ion */
+		for (m = sec->pnode[0]->prop; m; m = m->next) {
+			nrn_ion_is_used_t f = memb_func[m->type].ion_is_used;
+			if (f && f(type)) {
+		hoc_warning("Cannot uninsert ion: used by", memb_func[m->type].sym->name);
+			return;
+			}
+		}
 	}
 #if METHOD3
 	if (_method3) {
