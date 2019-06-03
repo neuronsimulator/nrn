@@ -899,13 +899,8 @@ def _setup_matrices():
         rates = numpy.asarray(rates, dtype=numpy.float_)
         volumes1d = numpy.asarray(volumes1d, dtype=numpy.float_)
         volumes3d = numpy.asarray(volumes3d, dtype=numpy.float_)
-        print("hybrid_indices1d = {}".format(hybrid_indices1d))
-        print("hybrid_indices3d = {}".format(hybrid_indices3d))
-        print("rates = {}".format(rates))
-        print("volumes1d = {}".format(volumes1d))
-        print("volumes3d = {}".format(volumes3d))
-        
-        #set_hybrid_data(num_1d_indices_per_grid, num_3d_indices_per_grid, hybrid_indices1d, hybrid_indices3d, num_3d_indices_per_1d_seg, hybrid_grid_ids, rates, volumes1d, volumes3d)
+
+        set_hybrid_data(num_1d_indices_per_grid, num_3d_indices_per_grid, hybrid_indices1d, hybrid_indices3d, num_3d_indices_per_1d_seg, hybrid_grid_ids, rates, volumes1d, volumes3d)
 
 
 
