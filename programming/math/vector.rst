@@ -721,9 +721,9 @@ Vector
     Description:
         Return whether or not 
         the vector contains *value* as at least one 
-        of its elements (to within :data:`float_epsilon`). A return value of 1 signifies true; 0 signifies false. 
-	This can be made into a boolean truth value with Python function bool()
-
+        of its elements (to within :data:`float_epsilon`). It returns True if the value is found; otherwise
+	it returns False. (In NEURON 7.5 and before, this method returned 1 or 0 instead of True or False, respectively.)
+	
     Example:
 
         .. code-block::
@@ -733,14 +733,14 @@ Vector
             vec.indgen(5) 
             vec.contains(30) 
 
-        returns a 1, meaning the vector does contain an element whose value is 30. 
+        returns True, meaning the vector does contain an element whose value is 30. 
 
         .. code-block::
             python
 
             vec.contains(50) 
 
-        returns a 0.  The vector does not contain an element whose value is 50. 
+        returns False.  The vector does not contain an element whose value is 50. 
 
     .. note::
     
