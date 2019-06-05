@@ -1,6 +1,6 @@
 #Example copied from the RxD tutorial
 #http://www.neuron.yale.edu/neuron/static/docs/rxd/index.html
-from neuron import rxd, h, gui
+from neuron import crxd as rxd, h, gui
 from matplotlib import pyplot
 import numpy
 pyplot.ion()

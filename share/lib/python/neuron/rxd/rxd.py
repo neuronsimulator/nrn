@@ -1,27 +1,26 @@
-import neuron
-from neuron import h, nrn
-from . import species, node, section1d, region, morphology
+from neuron import h, nrn, nrn_dll_sym 
+from . import species, node, section1d, region
 from .nodelist import NodeList
+from .node import _point_indices
 import weakref
 import numpy
-import scipy.sparse
-import scipy.sparse.linalg
 import ctypes
 import atexit
 from . import options
 from .rxdException import RxDException
 from . import initializer 
 import collections
-
+import os
+from distutils import sysconfig
+import uuid
+import sys
+import itertools
+from numpy.ctypeslib import ndpointer
+import re
+import platform
 # aliases to avoid repeatedly doing multiple hash-table lookups
 _numpy_array = numpy.array
 _numpy_zeros = numpy.zeros
-_scipy_sparse_linalg_bicgstab = scipy.sparse.linalg.bicgstab
-_scipy_sparse_eye = scipy.sparse.eye
-_scipy_sparse_linalg_spsolve = scipy.sparse.linalg.spsolve
-_scipy_sparse_dok_matrix = scipy.sparse.dok_matrix
-_scipy_sparse_linalg_factorized = scipy.sparse.linalg.factorized
-_scipy_sparse_coo_matrix = scipy.sparse.coo_matrix
 _species_get_all_species = species._get_all_species
 _node_get_states = node._get_states
 _section1d_transfer_to_legacy = section1d._transfer_to_legacy
@@ -30,17 +29,180 @@ _weakref_ref = weakref.ref
 
 _external_solver = None
 _external_solver_initialized = False
+_windows_dll_files = []
+_windows_dll = []
+
+
+
+make_time_ptr = nrn_dll_sym('make_time_ptr')
+make_time_ptr.argtypes = [ctypes.py_object, ctypes.py_object]
+make_time_ptr(h._ref_dt, h._ref_t)
+
+_double_ptr = ctypes.POINTER(ctypes.c_double)
+_int_ptr = ctypes.POINTER(_ctypes_c_int)
+_long_ptr = ctypes.POINTER(ctypes.c_long)
+
+
+fptr_prototype = ctypes.CFUNCTYPE(None)
+set_nonvint_block = nrn_dll_sym('set_nonvint_block')
+set_nonvint_block(nrn_dll_sym('rxd_nonvint_block'))
+
+set_setup = nrn_dll_sym('set_setup')
+set_setup.argtypes = [fptr_prototype]
+set_initialize = nrn_dll_sym('set_initialize')
+set_initialize.argtypes = [fptr_prototype]
+
+scatter_concentrations = nrn_dll_sym('scatter_concentrations')
+
+# Transfer extracellular concentrations to NEURON
+_fih_transfer_ecs = h.FInitializeHandler(1, scatter_concentrations)
+
+
+rxd_set_no_diffusion = nrn_dll_sym('rxd_set_no_diffusion')
+
+setup_solver = nrn_dll_sym('setup_solver')
+setup_solver.argtypes = [ndpointer(ctypes.c_double), ctypes.c_int,  numpy.ctypeslib.ndpointer(numpy.int_, flags='contiguous'), ctypes.c_int, ctypes.py_object, ctypes.py_object]
+
+#states = None
+_set_num_threads = nrn_dll_sym('set_num_threads')
+_set_num_threads.argtypes = [ctypes.c_int]
+_get_num_threads = nrn_dll_sym('get_num_threads')
+_get_num_threads.restype = ctypes.c_int
+
+
+clear_rates = nrn_dll_sym('clear_rates')
+register_rate = nrn_dll_sym('register_rate')
+register_rate.argtypes = [ 
+        ctypes.c_int,                                                               #num species
+        ctypes.c_int,                                                               #num parameters
+        ctypes.c_int,                                                               #num regions
+        ctypes.c_int,                                                               #num seg
+        numpy.ctypeslib.ndpointer(ctypes.c_int, flags='contiguous'),                #species ids
+        ctypes.c_int,                                                               #num ecs species
+        ctypes.c_int,                                                               #num ecs parameters
+        numpy.ctypeslib.ndpointer(ctypes.c_int, flags='contiguous'),                #ecs species ids
+        numpy.ctypeslib.ndpointer(ctypes.c_int, flags='contiguous'),                #ecs indices
+        ctypes.c_int,                                                               #num multicompartment reactions
+        numpy.ctypeslib.ndpointer(ctypes.c_double, flags='contiguous'),             #multicompartment multipliers
+        ctypes.POINTER(ctypes.py_object),                                           #voltage pointers
+        ]                                                                           #Reaction rate function
+
+setup_currents = nrn_dll_sym('setup_currents')
+setup_currents.argtypes = [
+    ctypes.c_int,   #number of membrane currents
+    ctypes.c_int,   #number induced currents
+    _int_ptr,       #number of species involved in each membrane current
+    _int_ptr,       #charges of the species involved in each membrane current
+    _int_ptr,       #node indices
+    _double_ptr,    #scaling (areas) of the fluxes
+    _int_ptr,       #charges for each species in each reation
+    ctypes.POINTER(ctypes.py_object),    #hoc pointers
+    _int_ptr,       #maps for membrane fluxes
+    _int_ptr        #maps for ecs fluxes
+]
+    
+
+set_reaction_indices = nrn_dll_sym('set_reaction_indices')
+set_reaction_indices.argtypes = [ctypes.c_int, _int_ptr, _int_ptr, _int_ptr, 
+    _int_ptr,_int_ptr,_double_ptr, ctypes.c_int, _int_ptr, _int_ptr, _int_ptr,
+    _int_ptr]
+
+ecs_register_reaction = nrn_dll_sym('ecs_register_reaction')
+ecs_register_reaction.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int, _int_ptr, ]
+
+set_hybrid_data = nrn_dll_sym('set_hybrid_data')
+set_hybrid_data.argtypes = [    
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64),
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64),
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64),
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64),
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64),
+    numpy.ctypeslib.ndpointer(dtype=numpy.int64),
+    numpy.ctypeslib.ndpointer(dtype=numpy.float_),
+    numpy.ctypeslib.ndpointer(dtype=numpy.float_),
+    numpy.ctypeslib.ndpointer(dtype=numpy.float_),
+]
+
+#ics_register_reaction = nrn_dll_sym('ics_register_reaction')
+#ics_register_reaction.argtype = [ctypes.c_int, ctypes.c_int, _int_ptr, fptr_prototype]
+
+set_euler_matrix = nrn_dll_sym('rxd_set_euler_matrix')
+set_euler_matrix.argtypes = [
+    ctypes.c_int,
+    ctypes.c_int,
+    _long_ptr,
+    _long_ptr,
+    _double_ptr,
+    numpy.ctypeslib.ndpointer(numpy.int_, flags='contiguous'),
+    ctypes.c_int,
+    numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
+]
+rxd_setup_curr_ptrs = nrn_dll_sym('rxd_setup_curr_ptrs')
+rxd_setup_curr_ptrs.argtypes = [
+    ctypes.c_int,
+    _int_ptr,
+    numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
+    ctypes.POINTER(ctypes.py_object),
+]
+
+rxd_setup_conc_ptrs = nrn_dll_sym('rxd_setup_conc_ptrs')
+rxd_setup_conc_ptrs.argtypes = [
+    ctypes.c_int,
+    _int_ptr,
+    ctypes.POINTER(ctypes.py_object)
+]
+
+_c_headers = """#include <math.h>
+/*Some functions supported by numpy that aren't included in math.h
+ * names and arguments match the wrappers used in rxdmath.py
+ */
+double factorial(const double);
+double degrees(const double);
+void radians(const double, double*);
+double log1p(const double);
+double vtrap(const double, const double);
+"""
+
+def _list_to_cint_array(data):
+    if data is None or len(data) == 0:
+        return None
+    else:
+        return (ctypes.c_int * len(data))(*tuple(data))
+
+def _list_to_cdouble_array(data):
+    if data is None or len(data) == 0:
+        return None
+    else:
+        return (ctypes.c_double * len(data))(*tuple(data))
+
+def _list_to_clong_array(data):
+    if data is None or len(data) == 0:
+        return None
+    else:
+        return (ctypes.c_long * len(data))(*tuple(data))
+
+def _list_to_pyobject_array(data):
+    if data is None or len(data) == 0:
+        return None
+    else:
+        return (ctypes.py_object * len(data))(*tuple(data))
 
 def byeworld():
-    # needed to prevent a seg-fault error at shudown in at least some
+    # do not call __del__ that rearrange memory for states
+    species.Species.__del__ = lambda x: None
+    species._ExtracellularSpecies.__del__ = lambda x: None
+    section1d.Section1D.__del__ = lambda x: None
+
+    # needed to prevent a seg-fault error at shutdown in at least some
     # combinations of NEURON and Python, which I think is due to objects
     # getting deleted out-of-order
     global _react_matrix_solver
     try:
         del _react_matrix_solver
     except NameError:
-        # if it already didn't exist, that's fine
+    #    # if it already didn't exist, that's fine
         pass
+    _windows_remove_dlls()
     
 atexit.register(byeworld)
 
@@ -60,7 +222,6 @@ _cvode_object = h.CVode()
 last_diam_change_cnt = None
 last_structure_change_cnt = None
 
-_linmodadd = None
 _linmodadd_c = None
 _diffusion_matrix = None
 _curr_scales = None
@@ -69,14 +230,10 @@ _curr_indices = None
 
 _all_reactions = []
 
-_zero_volume_indices = []
+_zero_volume_indices = numpy.ndarray(0, dtype=numpy.int_)
 _nonzero_volume_indices = []
 
-_double_ptr = ctypes.POINTER(ctypes.c_double)
-_int_ptr = ctypes.POINTER(_ctypes_c_int)
-
-
-nrn_tree_solve = neuron.nrn_dll_sym('nrn_tree_solve')
+nrn_tree_solve = nrn_dll_sym('nrn_tree_solve')
 nrn_tree_solve.restype = None
 
 _dptr = _double_ptr
@@ -84,6 +241,14 @@ _dptr = _double_ptr
 _dimensions = collections.defaultdict(lambda: 1)
 _default_dx = 0.25
 _default_method = 'deterministic'
+
+#CRxD
+_diffusion_d = None
+_diffusion_a = None
+_diffusion_b = None
+_diffusion_p = None
+_cur_node_indices = None
+_diffusion_a_ptr, _diffusion_b_ptr, _diffusion_p_ptr = None, None, None
 
 def set_solve_type(domain=None, dimension=None, dx=None, nsubseg=None, method=None):
     """Specify the numerical discretization and solver options.
@@ -119,16 +284,23 @@ def set_solve_type(domain=None, dimension=None, dx=None, nsubseg=None, method=No
 
 def _unregister_reaction(r):
     global _all_reactions
+    initializer._init_lock.acquire()
     for i, r2 in enumerate(_all_reactions):
-        if r2() == r:
+        if not r2():
+            del _all_reactions[i]
+        elif r2() == r:
             del _all_reactions[i]
             break
+    initializer._init_lock.acquire()
 
 def _register_reaction(r):
     # TODO: should we search to make sure that (a weakref to) r hasn't already been added?
     global _all_reactions, _external_solver_initialized
+    initializer._init_lock.acquire()
     _all_reactions.append(_weakref_ref(r))
     _external_solver_initialized = False
+    initializer._init_lock.release()
+
     
 def _after_advance():
     global last_diam_change_cnt
@@ -144,14 +316,14 @@ def re_init():
     
         # update current pointers
         section1d._purge_cptrs()
-        for sr in list(_species_get_all_species().values()):
+        for sr in _species_get_all_species():
             s = sr()
             if s is not None:
                 s._register_cptrs()
         
         # update matrix equations
         _setup_matrices()
-    for sr in list(_species_get_all_species().values()):
+    for sr in _species_get_all_species():
         s = sr()
         if s is not None: s.re_init()
     # TODO: is this safe?        
@@ -161,7 +333,7 @@ def re_init():
     
 def _invalidate_matrices():
     # TODO: make a separate variable for this?
-    global last_structure_change_cnt, _diffusion_matrix, _external_solver_initialized
+    global _diffusion_matrix, _external_solver_initialized, last_structure_change_cnt
     _diffusion_matrix = None
     last_structure_change_cnt = None
     _external_solver_initialized = False
@@ -170,17 +342,16 @@ _rxd_offset = None
 
 def _atolscale(y):
     real_index_lookup = {item: index for index, item in enumerate(_nonzero_volume_indices)}
-    for sr in list(_species_get_all_species().values()):
+    for sr in _species_get_all_species():
         s = sr()
         if s is not None:
             shifted_i = [real_index_lookup[i] + _rxd_offset for i in s.indices() if i in real_index_lookup]
             y[shifted_i] *= s._atolscale
 
 def _ode_count(offset):
-    global last_structure_change_cnt
-    global _rxd_offset
+    global _rxd_offset, last_structure_change_cnt, _structure_change_count
     initializer._do_init()
-    _rxd_offset = offset
+    _rxd_offset = offset - len(_nonzero_volume_indices)
     if _diffusion_matrix is None or last_structure_change_cnt != _structure_change_count.value: _setup_matrices()
     last_structure_change_cnt = _structure_change_count.value
     return len(_nonzero_volume_indices)
@@ -193,7 +364,7 @@ def _ode_fun(t, y, ydot):
     lo = _rxd_offset
     hi = lo + len(_nonzero_volume_indices)
     if lo == hi: return
-    states = _node_get_states()
+    states = _node_get_states().copy()
     states[_nonzero_volume_indices] = y[lo : hi]
 
     # need to fill in the zero volume states with the correct concentration
@@ -221,9 +392,9 @@ def _ode_fun(t, y, ydot):
     """
     # TODO: make this so that the section1d parts use cptrs (can't do this directly for 3D because sum, but could maybe move that into the C)
     # the old way: _section1d_transfer_to_legacy()
-    for sr in list(_species_get_all_species().values()):
-        s = sr()
-        if s is not None: s._transfer_to_legacy()
+#    for sr in _species_get_all_species().values():
+#        s = sr()
+#        if s is not None: s._transfer_to_legacy()
 
     
     if ydot is not None:
@@ -232,75 +403,68 @@ def _ode_fun(t, y, ydot):
         
     states[_zero_volume_indices] = 0
 
-def _ode_solve(dt, t, b, y):
-    #print "%1.10e] ode_solve %1.10e\t%1.10e  %1.10e" %(t,dt,h.ParallelContext().t(0),h.ParallelContext().dt(0))
-    initializer.assert_initialized()
-    if _diffusion_matrix is None: _setup_matrices()
-    lo = _rxd_offset
-    hi = lo + len(_nonzero_volume_indices)
-    n = len(_node_get_states())
-    # TODO: this will need changed when can have both 1D and 3D
-    if species._has_3d:
-        if species._has_1d:
-            raise Exception('development issue: cvode currently does not support hybrid simulations (fix by shifting for zero volume indices)')
-        # NOTE: only working on the rxd part
-        rxd_b = b[lo : hi]
-        # TODO: make sure can handle both 1D and 3D
-        m = eye_minus_dt_J(n, dt)
-        # removed diagonal preconditioner since tests showed no improvement in convergence
-        result, info = _scipy_sparse_linalg_bicgstab(m, dt * rxd_b)
-        assert(info == 0)
-        b[lo : hi] = _react_matrix_solver(result)
-    else:
-        # 1D only; use Hines solver
-        full_b = numpy.zeros(n)
-        full_b[_nonzero_volume_indices] = b[lo : hi]
-        full_b =  _react_matrix_solver(_diffusion_matrix_solve(dt, full_b))
-        b[lo : hi] = full_b[_nonzero_volume_indices]
-        #for i,x in zip(range(len(full_b)),full_b):
-        #    print "full_b[%i] = %1.20e" %(i,x)
-        # the following version computes the reaction matrix each time
-        #full_y = numpy.zeros(n)
-        #full_y[_nonzero_volume_indices] = y[lo : hi]
-        #b[lo : hi] = _reaction_matrix_solve(dt, full_y, _diffusion_matrix_solve(dt, full_b))[_nonzero_volume_indices]
-        # this line doesn't include the reaction contributions to the Jacobian
-        #b[lo : hi] = _diffusion_matrix_solve(dt, full_b)[_nonzero_volume_indices]
-
 _rxd_induced_currents = None
-
-def _currents(rhs):
+_memb_cur_ptrs= []
+def _setup_memb_currents():
+    global _memb_cur_ptrs
     initializer._do_init()
     # setup membrane fluxes from our stuff
     # TODO: cache the memb_cur_ptrs, memb_cur_charges, memb_net_charges, memb_cur_mapped
     #       because won't change very often
-    global _rxd_induced_currents
-
     # need this; think it's because of initialization of mod files
     if _curr_indices is None: return
-
+    SPECIES_ABSENT = -1
     # TODO: change so that this is only called when there are in fact currents
-    _rxd_induced_currents = _numpy_zeros(len(_curr_indices))
-    rxd_memb_flux = []
-    memb_cur_ptrs = []
+    rxd_memb_scales = []
+    _memb_cur_ptrs = []
     memb_cur_charges = []
     memb_net_charges = []
     memb_cur_mapped = []
-    rxd_memb_scales = []
+    memb_cur_mapped_ecs = []
     for rptr in _all_reactions:
         r = rptr()
         if r and r._membrane_flux:
-            # NOTE: memb_flux contains any scaling we need
-            new_fluxes = r._get_memb_flux(_node_get_states())
-            rxd_memb_scales.extend(r._memb_scales)
-            rxd_memb_flux += list(new_fluxes)
-            memb_cur_ptrs += r._cur_ptrs
+            scales = r._memb_scales
+            rxd_memb_scales.extend(scales)
+            _memb_cur_ptrs += r._cur_ptrs
             memb_cur_mapped += r._cur_mapped
-            memb_cur_charges += [r._cur_charges] * len(new_fluxes)
-            memb_net_charges += [r._net_charges] * len(new_fluxes)
-    
-
-    # TODO: is this in any way dimension dependent?
-
+            memb_cur_mapped_ecs += r._cur_mapped_ecs
+            memb_cur_charges += [r._cur_charges] * len(scales)
+            memb_net_charges += [r._net_charges] * len(scales)
+    ecs_map = [SPECIES_ABSENT if i is None else i for i in list(itertools.chain.from_iterable(itertools.chain.from_iterable(memb_cur_mapped_ecs)))]
+    ics_map = [SPECIES_ABSENT if i is None else i for i in list(itertools.chain.from_iterable(itertools.chain.from_iterable(memb_cur_mapped)))]
+    if _memb_cur_ptrs:
+        cur_counts = [len(x) for x in memb_cur_mapped]  #TODO: is len(x) the same for all x?
+        num_fluxes = numpy.array(cur_counts).sum()
+        num_currents = len(_memb_cur_ptrs)
+        _memb_cur_ptrs = list(itertools.chain.from_iterable(_memb_cur_ptrs))
+        """
+        print("num_currents",num_currents)
+        print("num_fluxes",num_fluxes)
+        print("num_nodes",_curr_indices)
+        print("num_species",cur_counts)
+        print("net_charges",memb_net_charges)
+        print("cur_idxs",_curr_indices)
+        print("node_idxs",_cur_node_indices)
+        print("scales",rxd_memb_scales)
+        print("charges", memb_cur_charges)
+        print("ptrs",_memb_cur_ptrs)
+        print("mapped",ics_map,min(abs(numpy.array(ics_map))),max(ics_map))
+        print("mapped_ecs",ecs_map,max(ecs_map))
+        """
+        setup_currents(num_currents,
+            num_fluxes,
+            _list_to_cint_array(cur_counts),
+            _list_to_cint_array(memb_net_charges),
+            _list_to_cint_array(_cur_node_indices),
+            _list_to_cdouble_array(rxd_memb_scales),
+            _list_to_cint_array(list(itertools.chain.from_iterable(memb_cur_charges))),
+            _list_to_pyobject_array(_memb_cur_ptrs),
+            _list_to_cint_array(ics_map),
+            _list_to_cint_array(ecs_map))
+        
+def _currents(rhs):
+    return
     if rxd_memb_flux:
         # TODO: remove the asserts when this is verified to work
         assert(len(rxd_memb_flux) == len(_cur_node_indices))
@@ -327,81 +491,7 @@ def _currents(rhs):
 _last_m = None
 _last_preconditioner = None
 _fixed_step_count = 0
-from scipy.sparse.linalg import spilu as _spilu
-from scipy.sparse.linalg import LinearOperator as _LinearOperator
-from scipy.sparse import csc_matrix
 
-def eye_minus_dt_J(n, dt):
-    """correctly computes I - dt J as needed for the lhs of an advance.
-    
-    The difficulty here is that the _euler_matrix also contains conservation
-    equations. These are preserved unchanged (i.e. no +1).
-    
-    This reads two globals: _euler_matrix and _zero_volume_indices.
-    
-    n is the length of the state vector (including the conservation nodes).
-    """
-    m = _scipy_sparse_eye(n, n) - dt * _euler_matrix
-    # correct to account for algebraic conservation nodes which don't get the +1
-    for i in _zero_volume_indices:
-        m[i, i] -= 1
-    return m
-
-    
-
-def _fixed_step_solve(raw_dt):
-    initializer._do_init()
-    global pinverse, _fixed_step_count
-    global _last_m, _last_dt, _last_preconditioner
-
-    if species._species_count == 0:
-        return
-
-    # allow for skipping certain fixed steps
-    # warning: this risks numerical errors!
-    fixed_step_factor = options.fixed_step_factor
-    _fixed_step_count += 1
-    if _fixed_step_count % fixed_step_factor: return
-    dt = fixed_step_factor * raw_dt
-    
-    # TODO: this probably shouldn't be here
-    if _diffusion_matrix is None and _euler_matrix is None: _setup_matrices()
-
-    states = _node_get_states()[:]
-
-    b = _rxd_reaction(states) - _diffusion_matrix * states
-    
-
-    if not species._has_3d:
-        # use Hines solver since 1D only
-        states[:] += _reaction_matrix_solve(dt, states, _diffusion_matrix_solve(dt, dt * b))
-
-        # clear the zero-volume "nodes"
-        states[_zero_volume_indices] = 0
-
-        # TODO: refactor so this isn't in section1d... probably belongs in node
-        _section1d_transfer_to_legacy()
-        
-        _last_preconditioner = None
-    else:
-        # TODO: this looks to be semi-implicit method because it doesn't take into account the reaction contribution to the Jacobian; do we care?
-        # the actual advance via implicit euler
-        n = len(states)
-        if _last_dt != dt or _last_preconditioner is None:
-            _last_m = eye_minus_dt_J(n, dt)
-            _last_preconditioner = _LinearOperator((n, n), _spilu(csc_matrix(_last_m)).solve)
-            _last_dt = dt
-        # removed diagonal preconditioner since tests showed no improvement in convergence
-        result, info = _scipy_sparse_linalg_bicgstab(_last_m, dt * b, M=_last_preconditioner)
-        assert(info == 0)
-        states[:] += result
-
-        # clear the zero-volume "nodes"
-        states[_zero_volume_indices] = 0
-
-        for sr in list(_species_get_all_species().values()):
-            s = sr()
-            if s is not None: s._transfer_to_legacy()
 
 def _rxd_reaction(states):
     # TODO: this probably shouldn't be here
@@ -414,19 +504,19 @@ def _rxd_reaction(states):
     
     if _curr_ptr_vector is not None:
         _curr_ptr_vector.gather(_curr_ptr_storage_nrn)
-        b[_curr_indices] = _curr_scales * (_curr_ptr_storage - _rxd_induced_currents)
+        b[_curr_indices] = _curr_scales * (_curr_ptr_storage - _rxd_induced_currents)   
     
-    #b[_curr_indices] = _curr_scales * [ptr[0] for ptr in _curr_ptrs]
+    b[_curr_indices] = _curr_scales * [ptr[0] for ptr in _curr_ptrs]
 
     # TODO: store weak references to the r._evaluate in addition to r so no
     #       repeated lookups
-    for rptr in _all_reactions:
-        r = rptr()
-        if r:
-            indices, mult, rate = r._evaluate(states)
-            # we split this in parts to allow for multiplicities and to allow stochastic to make the same changes in different places
-            for i, m in zip(indices, mult):
-                b[i] += m * rate
+    #for rptr in _all_reactions:
+    #    r = rptr()
+    #    if r:
+    #        indices, mult, rate = r._evaluate(states)
+    #        we split this in parts to allow for multiplicities and to allow stochastic to make the same changes in different places
+    #        for i, m in zip(indices, mult):
+    #            b[i] += m * rate
 
     node._apply_node_fluxes(b)
     return b
@@ -438,132 +528,9 @@ _diffusion_d = None
 _diffusion_a = None
 _diffusion_b = None
 _diffusion_p = None
-_c_diagonal = None
 _cur_node_indices = None
 
 _diffusion_a_ptr, _diffusion_b_ptr, _diffusion_p_ptr = None, None, None
-
-def _diffusion_matrix_solve(dt, rhs):
-    # only get here if already initialized
-    global _last_dt
-    global _diffusion_a_ptr, _diffusion_d, _diffusion_b_ptr, _diffusion_p_ptr, _c_diagonal
-
-    if _diffusion_matrix is None: return numpy.array([])
-
-    n = len(rhs)
-
-    if _last_dt != dt:
-        global _c_diagonal, _diffusion_a_base, _diffusion_b_base, _diffusion_d_base
-        global _diffusion_a, _diffusion_b, _diffusion_p
-        _last_dt = dt
-        # clear _c_diagonal and _last_dt to trigger a recalculation
-        if _c_diagonal is None:
-            _diffusion_d_base = _numpy_array(_diffusion_matrix.diagonal())
-            _diffusion_a_base = _numpy_zeros(n)
-            _diffusion_b_base = _numpy_zeros(n)
-            # TODO: the int32 bit may be machine specific
-            _diffusion_p = _numpy_array([-1] * n, dtype=numpy.int32)
-            for j in range(n):
-                col = _diffusion_matrix[:, j]
-                col_nonzero = col.nonzero()
-                for i in col_nonzero[0]:
-                    if i < j:
-                        _diffusion_p[j] = i
-                        assert(_diffusion_a_base[j] == 0)
-                        _diffusion_a_base[j] = col[i, 0]
-                        _diffusion_b_base[j] = _diffusion_matrix[j, i]
-            _c_diagonal = _linmodadd_c.diagonal()
-        _diffusion_d = _c_diagonal + dt * _diffusion_d_base
-        _diffusion_b = dt * _diffusion_b_base
-        _diffusion_a = dt * _diffusion_a_base
-        _diffusion_a_ptr = _diffusion_a.ctypes.data_as(_double_ptr)
-        _diffusion_b_ptr = _diffusion_b.ctypes.data_as(_double_ptr)
-        _diffusion_p_ptr = _diffusion_p.ctypes.data_as(_int_ptr)
-    
-    result = _numpy_array(rhs)
-    d = _numpy_array(_diffusion_d)
-    d_ptr = d.ctypes.data_as(_double_ptr)
-    result_ptr = result.ctypes.data_as(_double_ptr)
-    
-    nrn_tree_solve(_diffusion_a_ptr, d_ptr, _diffusion_b_ptr, result_ptr,
-                   _diffusion_p_ptr, _ctypes_c_int(n))
-    return result
-
-def _get_jac(dt, states):
-    # only get here if already initialized
-    
-    # now handle the reaction contribution to the Jacobian
-    # this works as long as (I - dt(Jdiff + Jreact)) \approx (I - dtJreact)(I - dtJdiff)
-    count = 0
-    n = len(states)
-    rows = list(range(n))
-    cols = list(range(n))
-    data = [1] * n
-    for rptr in _all_reactions:
-        r = rptr()
-        if r:
-            # TODO: store weakrefs to r._jacobian_entries as well as r
-            #       this will reduce lookup time
-            r_rows, r_cols, r_data = r._jacobian_entries(states, multiply=-dt)
-            # TODO: can we predict the length of rows etc in advance so we
-            #       don't need to grow them?
-            rows += r_rows
-            cols += r_cols
-            data += r_data
-            count += 1
-            
-    if count > 0 and n > 0:
-        return scipy.sparse.coo_matrix((data, (rows, cols)), shape=(n, n))
-    return None
-
-def _reaction_matrix_solve(dt, states, rhs):
-    if not options.use_reaction_contribution_to_jacobian:
-        return rhs
-    jac = _get_jac(dt, states)
-    if jac is not None:
-        jac = jac.tocsr()
-        """
-        print 'states:', list(states)
-        print 'jacobian (_solve):'
-        m = jac.todense()
-        for i in xrange(m.shape[0]):
-            for j in xrange(m.shape[1]):
-                print ('%15g' % m[i, j]),
-            print    
-        """
-        #result, info = scipy.sparse.linalg.bicgstab(jac, rhs)
-        #assert(info == 0)
-        result = _scipy_sparse_linalg_spsolve(jac, rhs)
-    else:
-        result = rhs
-
-    return result
-
-_react_matrix_solver = None    
-def _reaction_matrix_setup(dt, unexpanded_states):
-    global _react_matrix_solver
-    if not options.use_reaction_contribution_to_jacobian:
-        _react_matrix_solver = lambda x: x
-        return
-
-    states = numpy.zeros(len(node._get_states()))
-    states[_nonzero_volume_indices] = unexpanded_states    
-    jac = _get_jac(dt, states)
-    if jac is not None:
-        jac = jac.tocsc()
-        """
-        print 'jacobian (_reaction_matrix_setup):'
-        m = jac.todense()
-        for i in xrange(m.shape[0]):
-            for j in xrange(m.shape[1]):
-                print ('%15g' % m[i, j]),
-            print
-        """
-        #result, info = scipy.sparse.linalg.bicgstab(jac, rhs)
-        #assert(info == 0)
-        _react_matrix_solver = _scipy_sparse_linalg_factorized(jac)
-    else:
-        _react_matrix_solver = lambda x: x
 
 def _setup():
     initializer._do_init()
@@ -571,6 +538,73 @@ def _setup():
     global _last_dt, _external_solver_initialized
     _last_dt = None
     _external_solver_initialized = False
+    
+    # Using C-code for reactions
+    options.use_reaction_contribution_to_jacobian = False
+
+def _find_librxdmath():
+    import glob
+    base_path = os.path.join(h.neuronhome(), "..", "..", platform.machine(), "lib", "librxdmath")
+    success = False 
+    for extension in ['', '.dll', '.so', '.dylib']:
+        dll = base_path  + extension
+        try:
+            success = os.path.exists(dll) 
+        except:
+            pass
+        if success: break
+    if not success:
+        if sys.platform.lower().startswith("win"):
+            dll = os.path.join(h.neuronhome(), 'bin', 'librxdmath.dll')
+            success = os.path.exists(dll)
+        if not success:
+            raise RxDException('unable to connect to the librxdmath library')
+    return dll
+    
+def _c_compile(formula):
+    filename = 'rxddll' + str(uuid.uuid1())
+    with open(filename + '.c', 'w') as f:
+        f.write(formula)
+    math_library = '-lm'
+    fpic = '-fPIC'
+    try:
+        gcc = os.environ["CC"]
+    except:
+        #when running on windows try and used the gcc included with NEURON
+        if sys.platform.lower().startswith("win"):
+            math_library = ''
+            fpic = ''
+            gcc = os.path.join(h.neuronhome(),"mingw","mingw64","bin","x86_64-w64-mingw32-gcc.exe")
+            if not os.path.isfile(gcc):
+                raise RxDException("unable to locate a C compiler. Please `set CC=<path to C compiler>`")
+        else:
+            gcc = "gcc"
+    #TODO: Check this works on non-Linux machines
+    gcc_cmd =  "%s -I%s -I%s " % (gcc, sysconfig.get_python_inc(), os.path.join(h.neuronhome(), "..", "..", "include", "nrn"))
+    gcc_cmd += "-shared %s  %s.c %s " % (fpic, filename, _find_librxdmath())
+    gcc_cmd += "-o %s.so %s" % (filename, math_library)
+    if sys.platform.lower().startswith("win"):
+        my_path = os.getenv('PATH')
+        os.putenv('PATH', my_path + ';' + os.path.join(h.neuronhome(),"mingw","mingw64","bin"))
+        os.system(gcc_cmd)
+        os.putenv('PATH', my_path)
+    else:
+        os.system(gcc_cmd)
+    #TODO: Find a better way of letting the system locate librxdmath.so.0
+    rxdmath_dll = ctypes.cdll[_find_librxdmath()]
+    dll = ctypes.cdll['./%s.so' % filename]
+    reaction = dll.reaction
+    reaction.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double)] 
+    reaction.restype = ctypes.c_double
+    os.remove(filename + '.c')
+    if sys.platform.lower().startswith("win"):
+        #cannot remove dll that are in use
+        _windows_dll.append(weakref.ref(dll))
+        _windows_dll_files.append(filename + ".so")
+    else:
+        os.remove(filename + '.so')
+    return reaction
+
 
 def _conductance(d):
     pass
@@ -581,30 +615,6 @@ def _ode_jacobian(dt, t, ypred, fpred):
     hi = lo + len(_nonzero_volume_indices)    
     _reaction_matrix_setup(dt, ypred[lo : hi])
 
-_orig_setup = _setup
-_orig_currents = _currents
-_orig_ode_count = _ode_count
-_orig_ode_reinit = _ode_reinit
-_orig_ode_fun = _ode_fun
-_orig_ode_solve = _ode_solve
-_orig_fixed_step_solve = _fixed_step_solve
-_orig_ode_jacobian = _ode_jacobian
-
-# wrapper functions allow swapping in experimental alternatives
-def _w_ode_jacobian(dt, t, ypred, fpred): return _ode_jacobian(dt, t, ypred, fpred)
-#def _w_conductance(d): return _conductance(d)
-_w_conductance = None
-def _w_setup(): return _setup()
-def _w_currents(rhs): return _currents(rhs)
-def _w_ode_count(offset): return _ode_count(offset)
-def _w_ode_reinit(y): return _ode_reinit(y)
-def _w_ode_fun(t, y, ydot): return _ode_fun(t, y, ydot)
-def _w_ode_solve(dt, t, b, y): return _ode_solve(dt, t, b, y)
-def _w_fixed_step_solve(raw_dt): return _fixed_step_solve(raw_dt)
-def _w_atolscale(y): return _atolscale(y)
-_callbacks = [_w_setup, None, _w_currents, _w_conductance, _w_fixed_step_solve,
-              _w_ode_count, _w_ode_reinit, _w_ode_fun, _w_ode_solve, _w_ode_jacobian, _w_atolscale]
-
 _curr_ptr_vector = None
 _curr_ptr_storage = None
 _curr_ptr_storage_nrn = None
@@ -613,8 +623,8 @@ _cur_map = None
 _h_ptrvector = h.PtrVector
 _h_vector = h.Vector
 
-_structure_change_count = neuron.nrn_dll_sym('structure_change_cnt', _ctypes_c_int)
-_diam_change_count = neuron.nrn_dll_sym('diam_change_cnt', _ctypes_c_int)
+_structure_change_count = nrn_dll_sym('structure_change_cnt', _ctypes_c_int)
+_diam_change_count = nrn_dll_sym('diam_change_cnt', _ctypes_c_int)
 
 def _donothing(): pass
 
@@ -627,50 +637,80 @@ def _update_node_data(force=False):
         last_structure_change_cnt = _structure_change_count.value
         #if not species._has_3d:
         # TODO: merge this with the 3d/hybrid case?
-        for sr in list(_species_get_all_species().values()):
-            s = sr()
-            if s is not None: s._update_node_data()
-        for sr in list(_species_get_all_species().values()):
-            s = sr()
-            if s is not None: s._update_region_indices()
-        #end#if
-        for rptr in _all_reactions:
-            r = rptr()
-            if r is not None: r._update_indices()
-        _curr_indices = []
-        _curr_scales = []
-        _curr_ptrs = []
-        for sr in list(_species_get_all_species().values()):
-            s = sr()
-            if s is not None: s._setup_currents(_curr_indices, _curr_scales, _curr_ptrs, _cur_map)
-        
-        num = len(_curr_ptrs)
-        if num:
-            _curr_ptr_vector = _h_ptrvector(num)
-            _curr_ptr_vector.ptr_update_callback(_donothing)
-            for i, ptr in enumerate(_curr_ptrs):
-                _curr_ptr_vector.pset(i, ptr)
-            
-            _curr_ptr_storage_nrn = _h_vector(num)
-            _curr_ptr_storage = _curr_ptr_storage_nrn.as_numpy()
-        else:
-            _curr_ptr_vector = None
+        if initializer.is_initialized():
+            nsegs_changed = 0
+            for sr in _species_get_all_species():
+                s = sr()
+                if s is not None: nsegs_changed += s._update_node_data()
+            if nsegs_changed:
+                section1d._purge_cptrs()
+                for sr in _species_get_all_species():
+                    s = sr()
+                    if s is not None:
+                        s._update_region_indices(True)
+                        s._register_cptrs()
+                if species._has_1d and species._1d_submatrix_n():
+                    volumes = node._get_data()[0]
+                    _zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
+                setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
+                # TODO: separate compiling reactions -- so the indices can be updated without recompiling
+                _compile_reactions()
 
-        _curr_scales = _numpy_array(_curr_scales)        
+            #end#if
+            for rptr in _all_reactions:
+                r = rptr()
+                if r is not None: r._update_indices()
+            _curr_indices = []
+            _curr_scales = []
+            _curr_ptrs = []
+            for sr in _species_get_all_species():
+                s = sr()
+                if s is not None: s._setup_currents(_curr_indices, _curr_scales, _curr_ptrs, _cur_map)
         
+            num = len(_curr_ptrs)
+            if num:
+                _curr_ptr_vector = _h_ptrvector(num)
+                _curr_ptr_vector.ptr_update_callback(_donothing)
+                for i, ptr in enumerate(_curr_ptrs):
+                    _curr_ptr_vector.pset(i, ptr)
+            
+                _curr_ptr_storage_nrn = _h_vector(num)
+                _curr_ptr_storage = _curr_ptr_storage_nrn.as_numpy()
+            else:
+                _curr_ptr_vector = None
+
+            #_curr_scales = _numpy_array(_curr_scales)        
+
+
+def _matrix_to_rxd_sparse(m):
+    """precondition: assumes m a numpy array"""
+    nonzero_i, nonzero_j = list(zip(*list(m.keys())))
+    nonzero_values = numpy.ascontiguousarray(list(m.values()), dtype=numpy.float64)
+
+    # number of rows
+    n = m.shape[1]
+
+    return n, len(nonzero_i), numpy.ascontiguousarray(nonzero_i, dtype=numpy.int_), numpy.ascontiguousarray(nonzero_j, dtype=numpy.int_), nonzero_values
+
 
 _euler_matrix = None
 
 # TODO: make sure this does the right thing when the diffusion constant changes between two neighboring nodes
 def _setup_matrices():
-    global _linmodadd, _linmodadd_c, _diffusion_matrix, _linmodadd_b, _last_dt, _c_diagonal, _euler_matrix
+    global _curr_ptrs
     global _cur_node_indices
-    global _zero_volume_indices, _nonzero_volume_indices
+    global _zero_volume_indices
+    global _diffusion_matrix
 
     # TODO: this sometimes seems to get called twice. Figure out why and fix, if possible.
 
+    # if the shape has changed update the nodes
+    _update_node_data()
+
     n = len(_node_get_states())
-        
+    
+    #TODO: Replace with ADI version 
+    """
     if species._has_3d:
         _euler_matrix = _scipy_sparse_dok_matrix((n, n), dtype=float)
 
@@ -687,52 +727,55 @@ def _setup_matrices():
         _zero_volume_indices = []
         _nonzero_volume_indices = list(range(len(_node_get_states())))
         
-
+    """
     if species._has_1d:
-        n = species._1d_submatrix_n()
-    
         # TODO: initialization is slow. track down why
         
         _last_dt = None
-        _c_diagonal = None
         
-        for sr in list(_species_get_all_species().values()):
+        for sr in _species_get_all_species():
             s = sr()
             if s is not None:
                 s._assign_parents()
         
         _update_node_data(True)
 
+        volumes = node._get_data()[0]
+        _zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
+        _nonzero_volume_indices = volumes.nonzero()[0]
+
         # remove old linearmodeladdition
-        _linmodadd = None
         _linmodadd_cur = None
-        
+        n = species._1d_submatrix_n()
         if n:        
             # create sparse matrix for C in cy'+gy=b
-            _linmodadd_c = _scipy_sparse_dok_matrix((n, n))
+            c_diagonal = numpy.zeros(n,dtype=ctypes.c_double)
             # most entries are 1 except those corresponding to the 0 and 1 ends
-            
-            
+                        
             # create the matrix G
-            if not species._has_3d:
-                # if we have both, then put the 1D stuff into the matrix that already exists for 3D
-                _diffusion_matrix = _scipy_sparse_dok_matrix((n, n))
-            for sr in list(_species_get_all_species().values()):
+            #if not species._has_3d:
+            #    # if we have both, then put the 1D stuff into the matrix that already exists for 3D
+            from collections import OrderedDict
+            _diffusion_matrix = [OrderedDict() for idx in range(n)]
+            for sr in _species_get_all_species():
                 s = sr()
                 if s is not None:
-                    #print '_diffusion_matrix.shape = %r, n = %r, species._has_3d = %r' % (_diffusion_matrix.shape, n, species._has_3d)
                     s._setup_diffusion_matrix(_diffusion_matrix)
-                    s._setup_c_matrix(_linmodadd_c)
-            
+                    s._setup_c_matrix(c_diagonal)
+                    #print '_diffusion_matrix.shape = %r, n = %r, species._has_3d = %r' % (_diffusion_matrix.shape, n, species._has_3d)
+            euler_matrix_i, euler_matrix_j, euler_matrix_nonzero = [], [], []
+            for i in range(n):
+                mat_i = _diffusion_matrix[i]
+                euler_matrix_i.extend(itertools.repeat(i,len(mat_i)))
+                euler_matrix_j.extend(mat_i.keys())
+                euler_matrix_nonzero.extend(mat_i.values())
+            euler_matrix_nnonzero = len(euler_matrix_nonzero)
+            assert(len(euler_matrix_i) == len(euler_matrix_j) == len(euler_matrix_nonzero))
             # modify C for cases where no diffusive coupling of 0, 1 ends
             # TODO: is there a better way to handle no diffusion?
-            for i in range(n):
-                if not _diffusion_matrix[i, i]:
-                    _linmodadd_c[i, i] = 1
-
-            
-            # and the vector b
-            _linmodadd_b = _h_vector(n)
+            #for i in range(n):
+            #    if not _diffusion_matrix[i, i]:
+            #        _linmodadd_c[i, i] = 1
 
             
             # setup for induced membrane currents
@@ -745,16 +788,127 @@ def _setup_matrices():
                     
             #_cvode_object.re_init()    
 
-            _linmodadd_c = _linmodadd_c.tocsr()
-            
-            if species._has_3d:
-                _euler_matrix = -_diffusion_matrix
-            
-        volumes = node._get_data()[0]
-        _zero_volume_indices = numpy.where(volumes == 0)[0]
-        _nonzero_volume_indices = volumes.nonzero()[0]
+            #if species._has_3d:
+            #    _euler_matrix = -_diffusion_matrix
+
+    #Hybrid logic
+    if species._has_1d and species._has_3d:
+        hybrid_neighbors = collections.defaultdict(lambda: [])
+        hybrid_diams = {}
+        hybrid_index1d_grid_ids = {}
+        grid_id_species = {}
+        index1d_sec1d = {}
+        dxs = set()
+        for sr in _species_get_all_species():
+            s = sr()
+            if s is not None:
+                if s._intracellular_instances and s._secs:
+                    # have both 1D and 3D, so find the neighbors
+                    # for each of the 3D sections, find the parent sections
+                    for r in s._regions:
+                        if r in s._intracellular_instances:
+                            grid_id = s._intracellular_instances[r]._grid_id
+                            grid_id_species.setdefault(grid_id, s._intracellular_instances[r])
+                            dxs.add(r._dx)
+                            for sec in r._secs3d:
+                                parent_seg = sec.trueparentseg()
+                                parent_sec = None if not parent_seg else parent_seg.sec
+                                # are any of these a match with a 1d section?
+                                if s._has_region_section(r, parent_sec):
+                                    #this section has a 1d section that is a parent
+                                    #don't think I need to do sec=sec...can probably just do sec.section_orientation etc. Ask Robert
+                                    index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), parent_sec, h.parent_connection(sec=sec))
+                                    hybrid_neighbors[index1d] += indices3d
+                                    hybrid_diams[index1d] = parent_sec(h.parent_connection(sec=sec)).diam
+                                    hybrid_index1d_grid_ids[index1d] = grid_id
+                                    index1d_sec1d[index1d] = parent_sec
+                                else:
+                                    for sec1d in r._secs1d:
+                                        parent_1d_seg = sec1d.trueparentseg()
+                                        parent_1d = None if not parent_1d_seg else parent_1d_seg.sec 
+                                        if parent_1d == sec:
+                                            # it is the parent of a 1d section
+                                            index1d, indices3d = _get_node_indices(s, r, sec, parent_1d_seg.x , sec1d, sec1d.orientation())
+                                            hybrid_neighbors[index1d] += indices3d
+                                            hybrid_diams[index1d] = sec1d(h.section_orientation(sec=sec1d)).diam
+                                            hybrid_index1d_grid_ids[index1d] = grid_id
+                                            index1d_sec1d[index1d] = sec1d
+                                            
+                                        elif parent_1d == parent_sec and parent_1d is not None:
+                                            # it connects to the parent of a 1d section
+                                            index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), sec1d, sec1d.orientation())
+                                            hybrid_neighbors[index1d] += indices3d
+                                            hybrid_diams[index1d] = sec1d(h.section_orientation(sec=sec1d)).diam
+                                            hybrid_index1d_grid_ids[index1d] = grid_id
+                                            index1d_sec1d[index1d] = sec1d
+                                        
+        if len(dxs) > 1:
+            raise RxDException('currently require a unique value for dx')
+        dx = dxs.pop()
+        rates = []
+        volumes3d = []
+        volumes1d = []
+        hybrid_indices1d = []
+        hybrid_indices3d = []
+        num_3d_indices_per_1d_seg = []
+        
+        num_1d_indices_per_grid = []
+        num_3d_indices_per_grid = []
 
 
+        grid_id_indices1d = collections.defaultdict(lambda: [])
+        for index1d in hybrid_neighbors:
+            grid_id = hybrid_index1d_grid_ids[index1d]
+            grid_id_indices1d[grid_id].append(index1d)
+
+        hybrid_grid_ids = sorted(grid_id_indices1d.keys())
+        for grid_id in hybrid_grid_ids:
+            sp = grid_id_species[grid_id]
+            num_1d_indices_per_grid.append(len(grid_id_indices1d[grid_id]))
+            grid_3d_indices_cnt = 0
+            for index1d in grid_id_indices1d[grid_id]:
+                neighbors3d = set(hybrid_neighbors[index1d])
+                if len(neighbors3d) < 1:
+                    raise RxDException('No 3D neighbors detected for 1D segment. Try perturbing dx')
+                sec1d = index1d_sec1d[index1d]
+                seg_length1d = sec1d.L/sec1d.nseg
+                if neighbors3d:
+                    hybrid_indices1d.append(index1d)
+                    cnt_neighbors_3d = len(neighbors3d) 
+                    num_3d_indices_per_1d_seg.append(cnt_neighbors_3d)
+                    grid_3d_indices_cnt += cnt_neighbors_3d
+                    #TODO: need to make this by node
+                    d = sp._d
+                    area = (numpy.pi * 0.25 * hybrid_diams[index1d] ** 2) / len(neighbors3d)
+                    volumes1d.append(node._volumes[index1d])
+                    for i in neighbors3d:
+                        vol = sp._nodes[i].volume
+                        rate = d * area / (vol * (dx + seg_length1d) / 2)
+                        rates.append(rate)
+                        volumes3d.append(vol)
+                        hybrid_indices3d.append(i)
+
+            num_3d_indices_per_grid.append(grid_3d_indices_cnt)
+
+        num_1d_indices_per_grid = numpy.asarray(num_1d_indices_per_grid, dtype=numpy.int64)
+        num_3d_indices_per_grid = numpy.asarray(num_3d_indices_per_grid, dtype=numpy.int64)
+
+
+        hybrid_indices1d = numpy.asarray(hybrid_indices1d, dtype=numpy.int64)
+        num_3d_indices_per_1d_seg = numpy.asarray(num_3d_indices_per_1d_seg, dtype=numpy.int64)
+        hybrid_grid_ids = numpy.asarray(hybrid_grid_ids, dtype=numpy.int64)
+
+        hybrid_indices3d = numpy.asarray(hybrid_indices3d, dtype=numpy.int64)
+        rates = numpy.asarray(rates, dtype=numpy.float_)
+        volumes1d = numpy.asarray(volumes1d, dtype=numpy.float_)
+        volumes3d = numpy.asarray(volumes3d, dtype=numpy.float_)
+
+        set_hybrid_data(num_1d_indices_per_grid, num_3d_indices_per_grid, hybrid_indices1d, hybrid_indices3d, num_3d_indices_per_1d_seg, hybrid_grid_ids, rates, volumes1d, volumes3d)
+
+
+
+    #TODO: Replace this this to handle 1d/3d hybrid models
+    """
     if species._has_1d and species._has_3d:
         # TODO: add connections to matrix; for now: find them
         hybrid_neighbors = collections.defaultdict(lambda: [])
@@ -769,27 +923,29 @@ def _setup_matrices():
                     for r in s._regions:
                         dxs.add(r._dx)
                         for sec in r._secs3d:
-                            parent_sec = morphology.parent(sec)
+                            parent_seg = sec.trueparentseg()
+                            parent_sec = None if not parent_seg else parent_seg.sec
                             # are any of these a match with a 1d section?
                             if s._has_region_section(r, parent_sec):
                                 # this section has a 1d section that is a parent
                                 index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), parent_sec, h.parent_connection(sec=sec))
                                 hybrid_neighbors[index1d] += indices3d
-                                hybrid_diams[index1d] = parent_sec(h.parent_connection(sec=sec)).diam
+                                hybrid_diams[index1d] = parent_seg.diam
                             else:
                                 for sec1d in r._secs1d:
-                                    parent_1d = morphology.parent(sec1d)
+                                    parent_1d_seg = sec1d.trueparentseg()
+                                    parent_1d = None if not parent_seg else parent_seg.sec
                                     if parent_1d == sec:
                                         # it is the parent of a 1d section
-                                        index1d, indices3d = _get_node_indices(s, r, sec, h.parent_connection(sec=sec1d), sec1d, h.section_orientation(sec=sec1d))
+                                        index1d, indices3d = _get_node_indices(s, r, sec, h.parent_connection(sec=sec1d), sec1d, sec1d.orientation())
                                         hybrid_neighbors[index1d] += indices3d
-                                        hybrid_diams[index1d] = sec1d(h.section_orientation(sec=sec1d)).diam
+                                        hybrid_diams[index1d] = parent_1d_seg.diam
                                         break
                                     elif parent_1d == parent_sec:
                                         # it connects to the parent of a 1d section
-                                        index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), sec1d, h.section_orientation(sec=sec1d))
+                                        index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), sec1d, sec1d.orientation())
                                         hybrid_neighbors[index1d] += indices3d
-                                        hybrid_diams[index1d] = sec1d(h.section_orientation(sec=sec1d)).diam
+                                        hybrid_diams[index1d] = parent_1d_seg.diam
                                         break
         if len(dxs) > 1:
             raise RxDException('currently require a unique value for dx')
@@ -813,8 +969,34 @@ def _setup_matrices():
                 _euler_matrix[index1d, i] += rate * vol
             #print 'index1d row sum:', sum(_euler_matrix[index1d, j] for j in xrange(n))
             #print 'index1d col sum:', sum(_euler_matrix[j, index1d] for j in xrange(n))
+    """
+    #CRxD
+    if species._has_1d and n and euler_matrix_nnonzero > 0:
+        _update_node_data()
+        section1d._transfer_to_legacy()
+        set_euler_matrix(n, euler_matrix_nnonzero,
+                         _list_to_clong_array(euler_matrix_i),
+                         _list_to_clong_array(euler_matrix_j),
+                         _list_to_cdouble_array(euler_matrix_nonzero),
+                         _zero_volume_indices,
+                         len(_zero_volume_indices),
+                         c_diagonal)
+    else:
+        rxd_set_no_diffusion()
+        setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
     
+    if _curr_indices is not None and len(_curr_indices) > 0:
+        #_curr_ptrs = _curr_ptrs if isinstance(_curr_ptrs, ctypes.py_object) else _list_to_pyobject_array(_curr_ptrs)
+        rxd_setup_curr_ptrs(len(_curr_indices), _list_to_cint_array(_curr_indices),
+            numpy.concatenate(_curr_scales), _list_to_pyobject_array(_curr_ptrs))
+
+    if section1d._all_cindices is not None and len(section1d._all_cindices) > 0:
+        rxd_setup_conc_ptrs(len(section1d._all_cindices), 
+             _list_to_cint_array(section1d._all_cindices), 
+             _list_to_pyobject_array(section1d._all_cptrs))
+
     # we do this last because of performance issues with changing sparsity of csr matrices
+    """
     if _diffusion_matrix is not None:
         _diffusion_matrix = _diffusion_matrix.tocsr()
     if _euler_matrix is not None:
@@ -841,9 +1023,9 @@ def _setup_matrices():
             # TODO: _mat_for_zero_volume_nodes is used for CVode.
             #       Figure out if/how it has to be changed for hybrid 1D/3D sims (probably just augment with identity? or change how its used to avoid multiplying by I)
     
-
-
-        """
+    """
+    
+    """
     if pt1 in indices:
         ileft = indices[pt1]
         dleft = (d + diffs[ileft]) * 0.5
@@ -867,72 +1049,500 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
     #print '%r(%g) connects to the 1d section %r(%g)' % (sec3d, x3d, sec1d, x1d)
     #print 'disc indices: %r' % disc_indices
     indices3d = []
-    for node in species._nodes:
-        if node._r == region:
-            for i, j, k in disc_indices:
-                if node._i == i and node._j == j and node._k == k:
-                    indices3d.append(node._index)
+    for point in disc_indices:
+        if point in _point_indices[region]:
+            indices3d.append(_point_indices[region][point])
                     #print 'found node %d with coordinates (%g, %g, %g)' % (node._index, node.x3d, node.y3d, node.z3d)
     # discard duplicates...
     # TODO: really, need to figure out all the 3d nodes connecting to a given 1d endpoint, then unique that
     indices3d = list(set(indices3d))
     #print '3d matrix indices: %r' % indices3d
     # TODO: remove the need for this assertion
-    if x1d == h.section_orientation(sec=sec1d):
+    if x1d == sec1d.orientation():
         # TODO: make this whole thing more efficient
         # the parent node is the nonzero index on the first row before the diagonal
-        first_row = min([node._index for node in species.nodes(region)(sec1d)])
-        for j in range(first_row):
+        #first_row = min([node._index for node in species.nodes(region)(sec1d)])
+        index_1d = min([node._index for node in species.nodes(region)(sec1d)])
+        """for j in range(first_row):
             if _euler_matrix[first_row, j] != 0:
                 index_1d = j
                 break
         else:
-            raise RxDException('should never get here; could not find parent')
-    elif x1d == 1 - h.section_orientation(sec=sec1d):
+            raise RxDException('should never get here; could not find parent')"""
+    elif x1d == 1 - sec1d.orientation():
         # the ending zero-volume node is the one after the last node
         # TODO: make this more efficient
         index_1d = max([node._index for node in species.nodes(region)(sec1d)]) + 1
     else:
         raise RxDException('should never get here; _get_node_indices apparently only partly converted to allow connecting to 1d in middle')
     #print '1d index is %d' % index_1d
+    
     return index_1d, indices3d
+
+def _compile_reactions():
+    #clear all previous reactions (intracellular & extracellular) and the
+    #supporting indexes
+    #_windows_remove_dlls()
+    clear_rates()
     
+    regions_inv = dict() #regions -> reactions that occur there
+    species_by_region = dict()
+    all_species_involed = set()
+    location_count = 0
+    
+    ecs_regions_inv = dict()
+    ecs_species_by_region = dict()
+    ecs_all_species_involed = set()
+    ecs_mc_species_involved = set()
+    from . import rate, multiCompartmentReaction
+
+    #Find sets of sections that contain the same regions
+    from .region import _c_region
+    matched_regions = [] # the different combinations of regions that arise in different sections
+    for nrnsec in list(section1d._rxd_sec_lookup.keys()):
+        set_of_regions = set() # a set of the regions that occur in a given section
+        for sec in section1d._rxd_sec_lookup[nrnsec]:
+            if sec(): set_of_regions.add(sec()._region)
+        if set_of_regions not in matched_regions:
+            matched_regions.append(set_of_regions)
+    region._c_region_lookup = dict()
+    
+    #create a c_region instance for each of the unique sets of regions
+    c_region_list = []
+    for sets in matched_regions:
+        c_region_list.append(_c_region(sets))
+    
+    for rptr in _all_reactions:
+        r = rptr()
+        if not r:
+            continue
+
+        #Find all the species involved
+        if isinstance(r,rate.Rate):
+            if not r._species():
+                continue
+            sptrs = set([r._species])
+        else:
+            sptrs  = set(r._dests + r._sources)
+
+        if hasattr(r,'_involved_species') and r._involved_species:
+            sptrs = sptrs.union(set(r._involved_species))
+        if hasattr(r,'_involved_species_ecs') and r._involved_species_ecs:
+            sptrs = sptrs.union(set(r._involved_species_ecs)) 
+        
+        #Find all the regions involved
+        if isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
+            if not hasattr(r._mult, 'flatten'):
+                r._update_indices()
+            react_regions = [s()._extracellular()._region for s in r._sources + r._dests if isinstance(s(),species.SpeciesOnExtracellular)] + [s()._region() for s in r._sources + r._dests if not isinstance(s(),species.SpeciesOnExtracellular)]
+            react_regions +=  [sptr()._region() for sptr in sptrs if isinstance(sptr(),species.SpeciesOnRegion)]
+        #if regions are specified - use those
+        elif hasattr(r,'_active_regions'):
+            react_regions = r._active_regions
+        #Otherwise use all the regions where the species are
+        else:
+            react_regions = set()
+            nsp = 0
+            for sp in sptrs:
+                s = sp()
+                nsp += 1
+                if isinstance(s,species.SpeciesOnRegion):
+                    react_regions.add(s._region())
+                elif isinstance(s,species.SpeciesOnExtracellular):
+                    react_regions.add(s._extracellular()._region)
+                elif isinstance(s,species._ExtracellularSpecies):
+                    react_regions.add(s._region)
+                elif None not in s._regions:
+                    [react_regions.add(reg) for reg in s._regions + s._extracellular_regions]
+            react_regions = list(react_regions)
+            #Only regions where ALL the species are present -- unless it is a membrane
+            #from collections import Counter
+            #from . import geometry as geo
+            #react_regions = [reg for reg, count in Counter(react_regions).iteritems() if count == nsp or isinstance(reg.geometry,geo.ScalableBorder)]
+        #Any intracellular regions
+        if not all([isinstance(x, region.Extracellular) for x in react_regions]):
+            species_involved = []
+            for sp in sptrs:
+                s = sp()
+                if not isinstance(s, species.SpeciesOnExtracellular) and not isinstance(s, species._ExtracellularSpecies):
+                    all_species_involed.add(s)
+                    species_involved.append(s)
+            for reg in react_regions:
+                if isinstance(reg, region.Extracellular):
+                    continue
+                if reg in regions_inv:
+                    regions_inv[reg].append(rptr)
+                else:
+                    regions_inv[reg] = [rptr]
+                if reg in species_by_region:
+                    species_by_region[reg] = species_by_region[reg].union(species_involved)
+                else:
+                    species_by_region[reg] = set(species_involved)
+                    for sec in reg._secs:
+                        location_count += sec.nseg
+        #Any extracellular regions
+        if any([isinstance(x, region.Extracellular) for x in react_regions]):
+            #MultiCompartment - so can have both extracellular and intracellular regions
+            if isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
+                for sp in sptrs:
+                    s = sp()
+                    if isinstance(s,species.SpeciesOnExtracellular):
+                        ecs_mc_species_involved.add(s)
+                for reg in react_regions:
+                    if reg in list(ecs_species_by_region.keys()):
+                        ecs_species_by_region[reg] = ecs_species_by_region[reg].union(ecs_mc_species_involved)
+                    else:
+                        ecs_species_by_region[reg] = set(ecs_mc_species_involved)
+            #Otherwise - reaction can only have extracellular regions
+            else:
+                ecs_species_involved = []
+                for sp in sptrs:
+                    s = sp()
+                    ecs_all_species_involed.add(s)
+                    ecs_species_involved.append(s)
+                for reg in react_regions:
+                    if not isinstance(reg, region.Extracellular):
+                        continue
+                    if reg in ecs_regions_inv:
+                        ecs_regions_inv[reg].append(rptr)
+                    else:
+                        ecs_regions_inv[reg] = [rptr]
+                    if reg in ecs_species_by_region:
+                        ecs_species_by_region[reg] = ecs_species_by_region[reg].union(ecs_species_involved)
+                    else:
+                        ecs_species_by_region[reg] = set(ecs_species_involved)
+    #Create lists of indexes for intracellular reactions and rates
+    nseg_by_region = []     # a list of the number of segments for each region
+    # a table for location,species -> state index
+    location_index = []
+    regions_inv_1d = [reg for reg in regions_inv if not reg._secs3d]
+    regions_inv_1d.sort(key=lambda r: r._id)
+    regions_inv_3d = [reg for reg in regions_inv if reg._secs3d]
+    for reg in regions_inv_1d:
+        rptr = weakref.ref(reg)
+        for c_region in region._c_region_lookup[rptr]:
+            for react in regions_inv[reg]:
+                c_region.add_reaction(react, rptr)
+                c_region.add_species(species_by_region[reg])
+                if reg in ecs_species_by_region:
+                    c_region.add_ecs_species(ecs_species_by_region[reg])
+
+    # now setup the reactions
+    setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
+    #if there are no reactions
+    if location_count == 0 and len(ecs_regions_inv) == 0:
+        return None
+    #Setup intracellular and multicompartment reactions
+    if location_count > 0:
+        from . import rate, multiCompartmentReaction, Parameter
+        for creg in c_region_list:
+            if not creg._react_regions:
+                continue
+            creg._initalize()
+            mc_mult_count = 0
+            mc_mult_list = []
+            species_ids_used = numpy.zeros((creg.num_species,creg.num_regions),bool)
+            flux_ids_used = numpy.zeros((creg.num_species,creg.num_regions),bool)
+            ecs_species_ids_used = numpy.zeros((creg.num_ecs_species),bool)
+            fxn_string = _c_headers 
+            fxn_string += 'void reaction(double** species, double** params, double** rhs, double* mult, double* species_3d, double* params_3d, double* rhs_3d, double** flux, double v)\n{'
+            # declare the "rate" variable if any reactions (non-rates)
+            for rprt in creg._react_regions:
+                if not isinstance(rprt(),rate.Rate):
+                    fxn_string += '\n\tdouble rate;'
+                    break
+            for rptr in _all_reactions:
+                if rptr not in creg._react_regions:
+                    continue
+                r = rptr()
+                if isinstance(r, rate.Rate):
+                    s = r._species()
+                    species_id = creg._species_ids[s._id]
+                    for reg in creg._react_regions[rptr]:
+                        if reg() in r._rate:
+                            region_id = creg._region_ids[reg()._id]
+                            rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate[reg()][0])
+                            rate_str = re.sub(r'params\[(\d+)\]\[(\d+)\]',lambda m: "params[%i][%i]" %  (creg._params_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), rate_str)
+                            operator = '+=' if species_ids_used[species_id][region_id] else '='
+                            fxn_string += "\n\trhs[%d][%d] %s %s;" % (species_id, region_id, operator, rate_str)
+                            species_ids_used[species_id][region_id] = True
+                elif isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
+                    #Lookup the region_id for the reaction
+                    for reg in r._rate:
+                        rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate[reg][0])
+                        rate_str = re.sub(r'params\[(\d+)\]\[(\d+)\]',lambda m: "params[%i][%i]" %  (creg._params_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), rate_str)
+                        rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_3d[%i]" %  creg._ecs_species_ids.get(int(m.groups()[0])), rate_str)
+                        rate_str = re.sub(r'params_3d\[(\d+)\]',lambda m: "params_3d[%i]" %  creg._ecs_params_ids.get(int(m.groups()[0])), rate_str)
+
+                        fxn_string += "\n\trate = %s;" % rate_str
+                        break
+                    for sptr in r._sources + r._dests:
+                        s = sptr()
+                        
+                        if isinstance(s, species.SpeciesOnExtracellular):
+                            if not isinstance(s, species.ParameterOnExtracellular):
+                                species_id = creg._ecs_species_ids[s._extracellular()._grid_id]
+                                operator = '+=' if ecs_species_ids_used[species_id] else '='
+                                fxn_string += "\n\trhs_3d[%d] %s mult[%d] * rate;" % (species_id, operator, mc_mult_count)
+                                ecs_species_ids_used[species_id] = True
+                        elif not isinstance(s, species.Parameter) and not isinstance(s, species.ParameterOnRegion): 
+                            species_id = creg._species_ids[s._id]
+                            region_id = creg._region_ids[s._region()._id]
+                            operator = '+=' if species_ids_used[species_id][region_id] else '='
+                            fxn_string += "\n\trhs[%d][%d] %s mult[%d] * rate;" % (species_id, region_id, operator, mc_mult_count)
+                            species_ids_used[species_id][region_id] = True
+                            if r._membrane_flux:
+                                operator = '+=' if flux_ids_used[species_id][region_id] else '='
+                                fxn_string += "\n\tif(flux) flux[%d][%d] %s rate;" % (species_id, region_id, operator)
+                                flux_ids_used[species_id][region_id] = True
+                            #TODO: Fix problem if the whole region isn't part of the same aggregate c_region
+                        mc_mult_count += 1
+                    mc_mult_list.extend(r._mult.flatten())
+                else:
+                    for reg in creg._react_regions[rptr]:
+                        region_id = creg._region_ids[reg()._id]
+                        rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate[reg()][0])
+                        fxn_string += "\n\trate = %s;" % rate_str
+                        summed_mults = collections.defaultdict(lambda: 0)
+                        for (mult, sp) in zip(r._mult, r._sources + r._dests):
+                            summed_mults[creg._species_ids.get(sp()._id)] += mult
+                        for idx in sorted(summed_mults.keys()):
+                            operator = '+=' if species_ids_used[idx][region_id] else '='
+                            species_ids_used[idx][region_id] = True
+                            fxn_string += "\n\trhs[%d][%d] %s (%g) * rate;" % (idx, region_id, operator, summed_mults[idx])
+            fxn_string += "\n}\n"
+            numpy.save('/tmp/mults.npy',numpy.array(mc_mult_list))
+            register_rate(creg.num_species, creg.num_params, creg.num_regions,
+                          creg.num_segments, creg.get_state_index(),
+                          creg.num_ecs_species, creg.num_ecs_params,
+                          creg.get_ecs_species_ids(), creg.get_ecs_index(),
+                          mc_mult_count,
+                          numpy.array(mc_mult_list, dtype=ctypes.c_double),
+                          _list_to_pyobject_array(creg._vptrs),
+                          _c_compile(fxn_string))
+
+    #Setup intracellular 3D reactions
+    if regions_inv_3d:
+        for reg in regions_inv_3d:
+            ics_grid_ids = []
+            all_ics_gids = set()
+            ics_param_gids = set()
+            fxn_string = _c_headers
+            fxn_string += 'void reaction(double* species_3d, double* params_3d, double*rhs)\n{'
+            for rptr in [r for rlist in list(regions_inv.values()) for r in rlist]:
+                if not isinstance(rptr(),rate.Rate):
+                    fxn_string += '\n\tdouble rate;'
+                    break
+            for s in species_by_region[reg]:
+                if isinstance(s, species.Parameter) or isinstance(s, species.ParameterOnRegion):
+                    sp = s._species()._intracellular_instances[s._region()] if isinstance(s,species.SpeciesOnRegion) else s._intracellular_instances[reg]
+                    ics_param_gids.add(sp._grid_id)
+                else:
+                     ###TODO is this correct? are there any other cases I should worry about? Do I always make a species the intracellular instance for the region we are looping through?
+                    sp = s._species()._intracellular_instances[s._region()] if isinstance(s,species.SpeciesOnRegion) else s._intracellular_instances[reg]
+                    all_ics_gids.add(sp._grid_id)
+            all_ics_gids = list(all_ics_gids)
+            ics_param_gids = list(ics_param_gids)
+            for rptr in regions_inv[reg]:
+                r = rptr()
+                if reg not in r._rate:
+                    continue
+                rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_3d[%i]" % [pid for pid,gid in enumerate(all_ics_gids) if gid == int(m.groups()[0])][0], r._rate[reg][-1])
+                rate_str = re.sub(r'params_3d\[(\d+)\]',lambda m: "params_3d[%i]" %  [pid for pid, gid in enumerate(ics_param_gids) if gid == int(m.groups()[0])][0], rate_str)
+                if isinstance(r,rate.Rate):
+                    s = r._species()
+                    #Get underlying rxd._IntracellularSpecies for the grid_id
+                    if isinstance(s, species.Parameter) or isinstance(s, species.ParameterOnRegion):
+                        continue
+                    elif isinstance(s, species.Species):
+                        s = s._intracellular_instances[reg]
+                    elif isinstance(s, species.SpeciesOnRegion):
+                        s = s._species()._intracellular_instances[s._region()]
+                    if s._grid_id in ics_grid_ids:
+                        operator = '+=' 
+                    else:
+                        operator = '='
+                        ics_grid_ids.append(s._grid_id)
+                    pid = [pid for pid,gid in enumerate(all_ics_gids) if gid == s._grid_id][0]
+                    fxn_string += "\n\trhs[%d] %s %s;" % (pid, operator, rate_str)
+                else:
+                    idx=0
+                    fxn_string += "\n\trate = %s;" %  rate_str
+                    for sp in r._sources + r._dests:
+                        s = sp()
+                        #Get underlying rxd._IntracellularSpecies for the grid_id
+                        if isinstance(s, species.Parameter) or isinstance(s, species.ParameterOnRegion):
+                            idx += 1
+                            continue
+                        if isinstance(s, species.Species):
+                            s = s._intracellular_instances[reg]
+                        elif isinstance(s, species.SpeciesOnRegion):
+                            s = s._species()._intracellular_instances[s._region()]
+                        if s._grid_id in ics_grid_ids:
+                            operator = '+=' 
+                        else:
+                            operator = '='
+                            ics_grid_ids.append(s._grid_id)
+                        pid = [pid for pid,gid in enumerate(all_ics_gids) if gid == s._grid_id][0]
+                        fxn_string += "\n\trhs[%d] %s (%s)*rate;" % (pid, operator, r._mult[idx])
+                        idx += 1
+            fxn_string += "\n}\n"
+            ecs_register_reaction(0, len(all_ics_gids), len(ics_param_gids), _list_to_cint_array(all_ics_gids + ics_param_gids), _c_compile(fxn_string))                 
+    #Setup extracellular reactions
+    if len(ecs_regions_inv) > 0:
+        for reg in ecs_regions_inv:
+            grid_ids = []
+            all_gids = set()
+            param_gids = set()
+            fxn_string = _c_headers
+            #TODO: find the nrn include path in python
+            #It is necessary for a couple of function in python that are not in math.h
+            fxn_string += 'void reaction(double* species_3d, double* params_3d, double* rhs)\n{'
+            # declare the "rate" variable if any reactions (non-rates)
+            for rptr in [r for rlist in list(ecs_regions_inv.values()) for r in rlist]:
+                if not isinstance(rptr(),rate.Rate):
+                    fxn_string += '\n\tdouble rate;'
+                    break
+            #get a list of all grid_ids involved
+            for s in ecs_species_by_region[reg]:
+                if isinstance(s, species.Parameter) or isinstance(s, species.ParameterOnExtracellular):
+                    sp = s[reg] if isinstance(s, species.Species) else s
+                    param_gids.add(sp._extracellular()._grid_id if isinstance(sp, species.SpeciesOnExtracellular) else sp._grid_id)
+                else:
+                    sp = s[reg] if isinstance(s, species.Species) else s
+                    all_gids.add(sp._extracellular()._grid_id if isinstance(sp, species.SpeciesOnExtracellular) else sp._grid_id)
+            all_gids = list(all_gids)
+            param_gids = list(param_gids)
+            for rptr in ecs_regions_inv[reg]:
+                r = rptr()
+                rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_3d[%i]" %  [pid for pid, gid in enumerate(all_gids) if gid == int(m.groups()[0])][0], r._rate_ecs[reg][-1])
+                rate_str = re.sub(r'params_3d\[(\d+)\]',lambda m: "params_3d[%i]" %  [pid for pid, gid in enumerate(param_gids) if gid == int(m.groups()[0])][0], rate_str)
+                if isinstance(r,rate.Rate):
+                    s = r._species()
+                    #Get underlying rxd._ExtracellularSpecies for the grid_id
+                    if isinstance(s, species.Parameter) or isinstance(s, species.ParameterOnExtracellular):
+                        continue
+                    elif isinstance(s, species.Species):
+                        s = s[reg]._extracellular()
+                    elif isinstance(s, species.SpeciesOnExtracellular):
+                        s = s._extracellular()
+                    if s._grid_id in grid_ids:
+                        operator = '+=' 
+                    else:
+                        operator = '='
+                        grid_ids.append(s._grid_id)
+                    pid = [pid for pid,gid in enumerate(all_gids) if gid == s._grid_id][0]
+                    fxn_string += "\n\trhs[%d] %s %s;" % (pid, operator, rate_str)
+                else:
+                    idx=0
+                    fxn_string += "\n\trate = %s;" %  rate_str
+                    for sp in r._sources + r._dests:
+                        s = sp()
+                        #Get underlying rxd._ExtracellularSpecies for the grid_id
+                        if isinstance(s, species.Parameter) or isinstance(s, species.ParameterOnExtracellular):
+                            idx += 1
+                            continue
+                        if isinstance(s, species.Species):
+                            s = s[reg]._extracellular()
+                        elif isinstance(s, species.SpeciesOnExtracellular):
+                            s = s._extracellular()
+                        if s._grid_id in grid_ids:
+                            operator = '+=' 
+                        else:
+                            operator = '='
+                            grid_ids.append(s._grid_id)
+                        pid = [pid for pid,gid in enumerate(all_gids) if gid == s._grid_id][0]
+                        fxn_string += "\n\trhs[%d] %s (%s)*rate;" % (pid, operator, r._mult[idx])
+                        idx += 1
+            fxn_string += "\n}\n"
+            ecs_register_reaction(0, len(all_gids), len(param_gids), _list_to_cint_array(all_gids + param_gids), _c_compile(fxn_string))
+
 def _init():
+    if len(species._all_species) == 0:
+        return None
     initializer._do_init()
-    
     # TODO: check about the 0<x<1 problem alluded to in the documentation
     h.define_shape()
+
+    # if the shape has changed update the nodes
+    _update_node_data()
     
     if species._has_1d:
         section1d._purge_cptrs()
     
-    for sr in list(_species_get_all_species().values()):
+    for sr in _species_get_all_species():
         s = sr()
         if s is not None:
             # TODO: are there issues with hybrid or 3D here? (I don't think so, but here's a bookmark just in case)
             s._register_cptrs()
             s._finitialize()
     _setup_matrices()
+    _compile_reactions()
+    _setup_memb_currents()
+
+def _init_concentration():
+    if len(species._all_species) == 0:
+        return None
+    for sr in _species_get_all_species():
+        s = sr()
+        if s is not None:
+            # TODO: are there issues with hybrid or 3D here? (I don't think so, but here's a bookmark just in case)
+            s._finitialize()
+
+
 
 _has_nbs_registered = False
 _nbs = None
+do_setup_matrices_fptr = None
 def _do_nbs_register():
-    global _has_nbs_registered, _nbs, _fih, _fih2
+    global _has_nbs_registered, _nbs, _fih, _fih2, _fih3, do_setup_matrices_fptr
     
     if not _has_nbs_registered:
-        from neuron import nonvint_block_supervisor as _nbs
+        #from neuron import nonvint_block_supervisor as _nbs
 
         _has_nbs_registered = True
-        _nbs.register(_callbacks)
+        #_nbs.register(_callbacks)  not used
     
         #
         # register the initialization handler and the ion register handler
         #
-        _fih = h.FInitializeHandler(_init)
+        _fih = h.FInitializeHandler(_init_concentration)
+        _fih3 = h.FInitializeHandler(3, _init)
+
+        set_setup_matrices = nrn_dll_sym('set_setup_matrices')
+        set_setup_matrices.argtypes = [fptr_prototype]
+        do_setup_matrices_fptr = fptr_prototype(_setup_matrices)
+        set_setup_matrices(do_setup_matrices_fptr)
+
         _fih2 = h.FInitializeHandler(3, initializer._do_ion_register)
+
 
         #
         # register scatter/gather mechanisms
         #
         _cvode_object.extra_scatter_gather(0, _after_advance)
+        
 
+# register the Python callbacks
+do_setup_fptr = fptr_prototype(_setup)
+do_initialize_fptr = fptr_prototype(_init)
+set_setup(do_setup_fptr)
+set_initialize(do_initialize_fptr)
+
+def _windows_remove_dlls():
+    global _windows_dll_files, _windows_dll
+    for (dll_ptr,filepath) in zip(_windows_dll,_windows_dll_files):
+        dll = dll_ptr()
+        if dll:
+            handle = dll._handle
+            del dll
+            ctypes.windll.kernel32.FreeLibrary(handle)
+        os.remove(filepath)
+    _windows_dll_files = []
+    _windows_dll = []
+        
+        
+def nthread(n=None):
+    if(n):
+        _set_num_threads(n)
+    return _get_num_threads()

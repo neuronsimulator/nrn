@@ -297,7 +297,9 @@ void BBSClient::return_args(int userid) {
 }
 
 void BBSClient::done() {
+#if defined(USE_PYTHON)
 	extern void (*p_nrnpython_finalize)();
+#endif
 #if debug
 printf("%d BBSClient::done\n", nrnmpi_myid_bbs);
 fflush(stdout);
@@ -314,7 +316,9 @@ fflush(stdout);
 #endif
 	BBSImpl::done();
 	nrnmpi_terminate();
+#if defined(USE_PYTHON)
 	if (p_nrnpython_finalize) { (*p_nrnpython_finalize)(); }
+#endif
 	exit(0);
 }
 
@@ -334,7 +338,7 @@ fflush(stdout);
 		is_master_ = false;
 		nrnmpi_pkbegin(request_);
 		nrnmpi_enddata(request_);
-		assert(get(HELLO) == HELLO);
+		nrn_assert(get(HELLO) == HELLO);
 		return;
 	}
 #endif

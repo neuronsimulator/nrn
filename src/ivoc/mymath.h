@@ -80,6 +80,7 @@ public:
 	static bool lt(double x, double y, double e) { return x < (y-e); }
 	static bool le(double x, double y, double e) { return x <= (y+e); }
 	static bool eq(double x, double y, double e) { return Math::equal(x,y,e);}
+	static bool eq2(double x, double y, double e) { return x - y <= e && y - x <= e; }
 };
 
 inline void MyMath::extend(Extension& e, const Extension& x) {

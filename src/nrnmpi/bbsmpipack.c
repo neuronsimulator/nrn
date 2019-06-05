@@ -23,7 +23,7 @@
 #include <hocdec.h>
 
 #if 0
-#define guard(f) assert(f == MPI_SUCCESS)
+#define guard(f) nrn_assert(f == MPI_SUCCESS)
 #else
 #define guard(f) {int _i = f; if (_i != MPI_SUCCESS) {printf("%s %d\n", #f, _i); assert(0);}}
 #endif

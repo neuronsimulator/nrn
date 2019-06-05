@@ -31,7 +31,7 @@ typedef struct {
 extern "C" {
 
 #include "parse.h"
-void (*nrnpy_sectionlist_helper_)(void*, Object*);
+extern void (*nrnpy_sectionlist_helper_)(void*, Object*);
 void lvappendsec_and_ref(void* sl, Section* sec);
 extern Section* nrn_noerr_access();
 extern void hoc_pushs(Symbol*);

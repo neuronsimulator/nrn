@@ -245,32 +245,52 @@ static double compute(void* v) {
 
 static double location(void* v) {
 	Imp* imp = (Imp*)v;
-	double x = chkarg(1, -1., 1.);
+	double x;
 	Section* sec = NULL;
-	if (x >= 0.0) { sec = chk_access(); }
+	if (hoc_is_double_arg(1)) {
+		x = chkarg(1, -1., 1.);
+		if (x >= 0.0) { sec = chk_access(); }
+	}else{
+		nrn_seg_or_x_arg(1, &sec, &x);
+	}
 	imp->location(sec, x);
 	return 0.;
 }
 
 static double transfer_amp(void* v) {
 	Imp* imp = (Imp*)v;
-	return imp->transfer_amp(chk_access(), chkarg(1, 0., 1.));
+	double x;
+	Section* sec;
+	nrn_seg_or_x_arg(1, &sec, &x);
+	return imp->transfer_amp(sec, x);
 }
 static double input_amp(void* v) {
 	Imp* imp = (Imp*)v;
-	return imp->input_amp(chk_access(), chkarg(1, 0., 1.));
+	double x;
+	Section* sec;
+	nrn_seg_or_x_arg(1, &sec, &x);
+	return imp->input_amp(sec, x);
 }
 static double transfer_phase(void* v) {
 	Imp* imp = (Imp*)v;
-	return imp->transfer_phase(chk_access(), chkarg(1, 0., 1.));
+	double x;
+	Section* sec;
+	nrn_seg_or_x_arg(1, &sec, &x);
+	return imp->transfer_phase(sec, x);
 }
 static double input_phase(void* v) {
 	Imp* imp = (Imp*)v;
-	return imp->input_phase(chk_access(), chkarg(1, 0., 1.));
+	double x;
+	Section* sec;
+	nrn_seg_or_x_arg(1, &sec, &x);
+	return imp->input_phase(sec, x);
 }
 static double ratio_amp(void* v) {
 	Imp* imp = (Imp*)v;
-	return imp->ratio_amp(chk_access(), chkarg(1, 0., 1.));
+	double x;
+	Section* sec;
+	nrn_seg_or_x_arg(1, &sec, &x);
+	return imp->ratio_amp(sec, x);
 }
 
 static double deltafac(void* v) {

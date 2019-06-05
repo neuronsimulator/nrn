@@ -704,6 +704,7 @@ class _PlotShapePlot(_WrapperPlot):
               y = np.interp(seg_l, arc3d, y3d)
               z = np.interp(seg_l, arc3d, z3d)
               self.plot([x], [y], [z], marker)
+              return self
 
 
 
@@ -844,9 +845,6 @@ def nrnpy_pr(stdoe, s):
   else:
     sys.stderr.write(s.decode())
   return 0
-
-#flag to prevent both rxd and crxd being used
-_has_rxd = {'rxd':False,'crxd':False}
 
 if not embedded:
   try:

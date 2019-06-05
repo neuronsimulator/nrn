@@ -418,7 +418,7 @@ Object* ShapePlot::neuron_section_list() {
 void ShapePlot::observe(SectionList* sl) {
 //	printf("ShapePlot::observe\n");
 	if (sl_) hoc_dec_refcount(&sl_);
-	sl_ = sl -> nrn_object();
+	sl_ = sl ? sl -> nrn_object() : NULL;
 	if (sl_) ++sl_->refcount;
 	ShapeScene::observe(sl);
 	if (spi_->showing_) {

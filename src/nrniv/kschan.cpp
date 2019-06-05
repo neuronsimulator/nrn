@@ -928,21 +928,21 @@ void KSChan::build() {
 	if (looksym(suffix)) {
 		hoc_execerror(suffix, "already exists");
 	}
-	assert((m_kschan[0] = strdup(m_kschan_pat[0])) != 0);
-	assert((m_kschan[1] = strdup(suffix)) != 0);
-	assert(snprintf(buf, 100,  "gmax%s", unsuffix) < 100);
-	assert((m_kschan[2] = strdup(buf)) != 0);
+	nrn_assert((m_kschan[0] = strdup(m_kschan_pat[0])) != 0);
+	nrn_assert((m_kschan[1] = strdup(suffix)) != 0);
+	nrn_assert(snprintf(buf, 100,  "gmax%s", unsuffix) < 100);
+	nrn_assert((m_kschan[2] = strdup(buf)) != 0);
 	int aoff = 0;
 	if (!ion_sym_) {
-		assert(snprintf(buf, 100, "e%s", unsuffix) < 100);
-		assert((m_kschan[3] = strdup(buf)) != 0);
+		nrn_assert(snprintf(buf, 100, "e%s", unsuffix) < 100);
+		nrn_assert((m_kschan[3] = strdup(buf)) != 0);
 		aoff = 1;
 	}
 	m_kschan[3+aoff] = 0;
-	assert(snprintf(buf, 100, "g%s", unsuffix) < 100);
-	assert((m_kschan[4+aoff] = strdup(buf)) != 0);
-	assert(snprintf(buf, 100, "i%s", unsuffix) < 100);
-	assert((m_kschan[5+aoff] = strdup(buf)) != 0);
+	nrn_assert(snprintf(buf, 100, "g%s", unsuffix) < 100);
+	nrn_assert((m_kschan[4+aoff] = strdup(buf)) != 0);
+	nrn_assert(snprintf(buf, 100, "i%s", unsuffix) < 100);
+	nrn_assert((m_kschan[5+aoff] = strdup(buf)) != 0);
 	m_kschan[6+aoff] = 0;
 	m_kschan[7+aoff] = 0;
 	soffset_ = 3+aoff; // first state points here in p array
@@ -2003,7 +2003,7 @@ void KSChan::sname_install() {
 		buf1[0]='\0';
 		while (looksym(buf, searchsym)) {
 			sprintf(buf1, "%s%d", state_[i].string(), j++);
-			assert(snprintf(buf, 100, "%s%s", buf1, unsuffix) < 100);
+			nrn_assert(snprintf(buf, 100, "%s%s", buf1, unsuffix) < 100);
 		}
 		free(snew[i + soffset_]->name);
 		snew[i + soffset_]->name = strdup(buf);
