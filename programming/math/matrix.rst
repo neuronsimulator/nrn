@@ -99,8 +99,9 @@ Matrix
 
     .. note::
 
-        Do to the way NEURON and Python interact, the returned value is of type float; it is not an int.
-        Thus it cannot be used directly as input to range; instead, use e.g. ``int(m.nrow())``.
+        This method currently returns an integer, but prior to NEURON 7.6, it returned a float.
+        In older versions, it was thus sometimes necessary to cast the result to an int before
+        using e.g. range.
 
 
 ----
@@ -117,8 +118,9 @@ Matrix
 
     .. note::
 
-        Do to the way NEURON and Python interact, the returned value is of type float; it is not an int.
-        Thus it cannot be used directly as input to range; instead, use e.g. ``int(m.ncol())``.         
+        This method currently returns an integer, but prior to NEURON 7.6, it returned a float.
+        In older versions, it was thus sometimes necessary to cast the result to an int before
+        using e.g. range.
 
 ----
 
@@ -222,8 +224,8 @@ Matrix
             from neuron import h
 
             m = h.Matrix(4,6) 
-            for i in range(int(m.nrow())):
-                for j in range(int(m.ncol())):
+            for i in range(m.nrow()):
+                for j in range(m.ncol()):
                     m.setval(i, j, 1 + 10*i+j) 
 
             m.printf()
@@ -323,9 +325,9 @@ Matrix
             def sparse_print(m): 
                 m.printf()
                 print('m.nrow()', m.nrow())
-                for i in range(int(m.nrow())):    
+                for i in range(m.nrow()):    
                     print("%d  " % i, end='')
-                    for jx in range(int(m.sprowlen(i))):
+                    for jx in range(m.sprowlen(i)):
                         j = h.ref(0)
                         x=m.spgetrowval(i, jx, j) 
                         print("  %d:%f" % (j[0], x), end='')
@@ -578,14 +580,14 @@ Matrix
             from neuron import h
 
             m = h.Matrix(4,4) 
-            for i in range(int(m.nrow())):
-                for j in range(int(m.ncol())):
+            for i in range(m.nrow()):
+                for j in range(m.ncol()):
                     m.setval(i, j, 1 + 10*j + 100*i)
             m.printf()
 
-            for i in range(int(1-m.nrow()), int(m.ncol())):
+            for i in range(1 - m.nrow(), m.ncol()):
                 print("diagonal %d: " % i, end='')
-                print(list(m.getdiag(i))[max(0, -i) : int(m.nrow() - i)])
+                print(list(m.getdiag(i))[max(0, -i) : (m.nrow() - i)])
 
 
     .. warning::
@@ -629,8 +631,8 @@ Matrix
             b = h.Vector(3) 
             b.indgen(1,1) 
             m = h.Matrix(3, 3) 
-            for i in range(int(m.nrow())):
-                for j in range(int(m.ncol())):
+            for i in range(m.nrow()):
+                for j in range(m.ncol()):
                     m.setval(i, j, i*j + 1)
             print("b")
             b.printf()
@@ -1107,7 +1109,7 @@ Matrix
             a = h.Matrix(6, 6) 
             r = h.Random() 
             r.discunif(1,10) 
-            for i in range(int(a.nrow())):
+            for i in range(a.nrow()):
                 a.setrow(i, a.getrow(i).setrand(r)) 
             svdtest(a) 
  

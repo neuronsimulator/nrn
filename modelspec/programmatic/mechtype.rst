@@ -41,7 +41,7 @@ MechanismType
             # Print the names of all density mechanisms 
             mt = h.MechanismType(0) 
             mname  = h.ref('')
-            for i in range(int(mt.count())):
+            for i in range(mt.count()):
             	mt.select(i) 
             	mt.selected(mname) 
             	print(mname[0])

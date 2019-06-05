@@ -1694,8 +1694,8 @@ Description:
           
           from neuron import h
           pc = h.ParallelContext()
-          nhost = int(pc.nhost())
-          rank = int(pc.id())
+          nhost = pc.nhost()
+          rank = pc.id()
 
           root = 0 # any specific rank
           src = rank
@@ -1744,7 +1744,10 @@ Description:
           2: alltoall dest: [None, None, None, None]
           0: alltoall dest: [0, 1, 2, 3]
 
- 
+    .. note::
+
+        Prior to NEURON 7.6, pc.nhost() and pc.id() returned a float instead of an int.
+
 ----
 
 
@@ -1777,8 +1780,8 @@ Description:
           
           from neuron import h
           pc = h.ParallelContext()
-          nhost = int(pc.nhost())
-          rank = int(pc.id())
+          nhost = pc.nhost()
+          rank = pc.id()
 
           root = 0 # any specific rank
           src = [i for i in range(nhost)] if rank == root else None
@@ -1861,8 +1864,8 @@ Description:
           
           from neuron import h
           pc = h.ParallelContext()
-          nhost = int(pc.nhost())
-          rank = int(pc.id())
+          nhost = pc.nhost()
+          rank = pc.id()
 
           root = 0 # any specific rank
           src = rank if rank == root else None
