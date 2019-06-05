@@ -140,6 +140,9 @@ SectionList
         To get a (Python) list of a section's subtree, use the section's
         ``subtree`` method.         
 
+    .. seealso::
+        :meth:`Section.subtree`
+
 ----
 
 
@@ -163,6 +166,9 @@ SectionList
 
         To get a (Python) list of a section's wholetree, use the section's
         ``wholetree`` method. 
+
+    .. seealso::
+        :meth:`Section.wholetree`
          
 
 ----
