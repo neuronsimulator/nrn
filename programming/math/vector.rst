@@ -28,12 +28,13 @@ Vector
         ``obj = h.Vector(python_iterable)``
 
     Description:
-        NEURON's Vector class provides functionality that is similar (and partly interchangeable) with a numpy
-	one-dimensional array of doubles.  
-	The reason for the continued use of Vector is both due to back-compatibility and due to the many faster C-level
-	extensions that have been written as NMOD programs that make use of this class.
 
-	A Vector is itself an iterable and can be used in any context that takes an iterable, e.g.,
+        NEURON's Vector class provides functionality that is similar (and partly interchangeable) with a numpy
+        one-dimensional array of doubles.  
+        The reason for the continued use of Vector is both due to back-compatibility and due to the many faster C-level
+        extensions that have been written as NMOD programs that make use of this class.
+
+        A Vector is itself an iterable and can be used in any context that takes an iterable, e.g.,
 
         .. code-block::
            python
@@ -43,15 +44,15 @@ Vector
            numpy.array(vec)
 
         A Vector object created with this class can be thought of as 
-	containing a  one dimensional x array with elements of type float.
-	The :samp:`{objref}[{index}]` notation can be used to read and set Vector elements
-    (setting requires NEURON 7.7+). An older syntax :samp:`{objref}.x[{index}]` works on
-    all Python-supporting versions of NEURON.
-    Vector slices are not directly supported but are replicated with the functionality
-	of Vector.c() (see below).
+        containing a  one dimensional x array with elements of type float.
+        The :samp:`{objref}[{index}]` notation can be used to read and set Vector elements
+        (setting requires NEURON 7.7+). An older syntax :samp:`{objref}.x[{index}]` works on
+        all Python-supporting versions of NEURON.
+        Vector slices are not directly supported but are replicated with the functionality
+        of Vector.c() (see below).
 
         A vector can be created with length *size* and with each element set to the value of *init* or can be created using
-	a Python iterable.
+        a Python iterable.
          
         Vector methods that modify the elements are generally of the form 
 
@@ -156,9 +157,9 @@ Vector
         editor since, if vec is resized to be larger than vec.buffer_size() a reallocation of the
         memory will cause the pointer to be invalid. In this case, the field editor will display the string, "Free'd". 
 
-	.. warning::
+    .. warning::
         ``vec.x[-1]`` or ``vec[-1]`` return or set the value of the last element of the vector but ``vec._ref_x`` cannot be accessed in
-	this way.
+    this way.
 
 ----
 
@@ -371,8 +372,8 @@ Vector
          
         Details: 
         NEURON pointers in python are handled using the _ref_ syntax.  e.g., soma(0.5)._ref_v
-	To save a scalar from NEURON that scalar must exist in NEURON's scope.
-	
+    To save a scalar from NEURON that scalar must exist in NEURON's scope.
+    
 
         Transfers take place on exit from ``finitialize()`` and on exit from ``fadvance()``. 
         At the end of ``finitialize()``, ``v[0] = var``. At the end of ``fadvance``, 
@@ -418,7 +419,7 @@ Vector
     Example:
 
         If NEURON has loaded its standard run library, the time course of membrane potential in the
-	middle of a section called "terminal" can be captured to a vector called dv by
+    middle of a section called "terminal" can be captured to a vector called dv by
 
         .. code-block::
             python
@@ -428,7 +429,7 @@ Vector
 
         Note that the next "run" will overwrite the previous time course stored 
         in the vector as it automatically performs an "init" before running a simulation.
-	Thus dv should be copied to another vector ( see :func:`copy` ). 
+    Thus dv should be copied to another vector ( see :func:`copy` ). 
         To remove 
         dv from the list of record vectors, the easiest method is to destroy the instance 
         with 
@@ -489,7 +490,7 @@ Vector
         At the beginning of :func:`finitialize`, ``var = v[0]``. On :func:`fadvance` a transfer will 
         take place if t will be equal 
         or greater than the associated time of the next index after the ``fadvance`` increment.
-	For the variable step methods, transfers take place exactly at the times specified by the Dt 
+    For the variable step methods, transfers take place exactly at the times specified by the Dt 
         or tvec arguments. 
          
         The system maintains a set of play vectors and the vector will be removed 
@@ -547,12 +548,12 @@ Vector
 
     .. seealso::
         :meth:`Vector.record`, :meth:`Vector.play_remove`
-	
+    
     Example of playing into a segment's ina:
 
         .. code-block::
             python
-	    
+        
             from neuron import h, gui
             import numpy
 
@@ -680,7 +681,7 @@ Vector
         turns ``vec`` into a 37 element vector, whose first ten elements = 4, whose 
         second ten elements = 5, whose third ten elements = 6, and whose 31st, 32nd, 
         and 33rd elements = 7, 8, and 9, and 34-37 are 4,1,2,7.  Note that the Vector created to pass the Python list
-	into append is immediately discarded. Remember, index 32 refers to the 33rd element. 
+    into append is immediately discarded. Remember, index 32 refers to the 33rd element. 
          
 ----
 
@@ -722,8 +723,8 @@ Vector
         Return whether or not 
         the vector contains *value* as at least one 
         of its elements (to within :data:`float_epsilon`). It returns True if the value is found; otherwise
-	it returns False. (In NEURON 7.5 and before, this method returned 1 or 0 instead of True or False, respectively.)
-	
+    it returns False. (In NEURON 7.5 and before, this method returned 1 or 0 instead of True or False, respectively.)
+    
     Example:
 
         .. code-block::
@@ -2098,8 +2099,9 @@ Vector
 
 
     Description:
+    
         The numpyarray points into the data of the Hoc Vector, i.e. does not
-	copy the data. Do not
+        copy the data. Do not
         use the numpyarray if the Vector is destroyed.
 
 
@@ -2427,7 +2429,7 @@ Vector
             vec = h.Vector([0, 1, 4, 9, 16, 25]) 
             vec1 = h.Vector() 
             vec1.integral(vec, 1)	# Euler integral of vec elements approximating 
-            			            # an x-squared function, dx = 0.1 
+                                    # an x-squared function, dx = 0.1 
             vec1.printf() 
 
         will print the following elements in ``vec1`` to the screen: 

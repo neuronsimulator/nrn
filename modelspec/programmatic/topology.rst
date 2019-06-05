@@ -259,6 +259,109 @@ This document describes the construction and manipulation of a stylized topology
 
 ----
 
+.. method:: Section.subtree()
+
+    Syntax:
+        ``section.subtree()``
+
+    Description:
+        Returns a Python list of the sub-tree of the Section
+
+    Example:
+        .. code-block::
+            python
+
+            >>> from neuron import h
+            >>> soma = h.Section(name='soma')
+            >>> dend1 = h.Section(name='dend1')
+            >>> dend2 = h.Section(name='dend2')
+            >>> dend3 = h.Section(name='dend3')
+            >>> dend4 = h.Section(name='dend4')
+            >>> dend5 = h.Section(name='dend5')
+            >>> dend2.connect(soma)
+            dend2
+            >>> dend1.connect(soma)
+            dend1
+            >>> dend3.connect(dend2)
+            dend3
+            >>> dend4.connect(dend2)
+            dend4
+            >>> dend5.connect(dend4)
+            dend5
+            >>> h.topology()
+
+            |-|       soma(0-1)
+               `|       dend2(0-1)
+                 `|       dend3(0-1)
+                 `|       dend4(0-1)
+                   `|       dend5(0-1)
+                `|       dend1(0-1)
+
+            1.0
+            >>> dend2.subtree()
+            [dend2, dend4, dend5, dend3]
+            >>> dend7 = h.Section(name='dend7')
+            >>> dend7.subtree()
+            [dend7]
+            >>> dend1.subtree()
+            [dend1]
+            >>> dend4.subtree()
+            [dend4, dend5]
+            >>> soma.subtree()
+            [soma, dend1, dend2, dend4, dend5, dend3]
+
+----
+
+.. method:: Section.wholetree()
+
+    Syntax:
+        ``section.wholetree()``
+
+    Description:
+        Returns a Python list of the whole tree of the Section
+
+    Example:
+        .. code-block::
+            python
+
+            >>> from neuron import h
+            >>> soma = h.Section(name='soma')
+            >>> dend1 = h.Section(name='dend1')
+            >>> dend2 = h.Section(name='dend2')
+            >>> dend3 = h.Section(name='dend3')
+            >>> dend4 = h.Section(name='dend4')
+            >>> dend5 = h.Section(name='dend5')
+            >>> dend2.connect(soma)
+            dend2
+            >>> dend1.connect(soma)
+            dend1
+            >>> dend3.connect(dend2)
+            dend3
+            >>> dend4.connect(dend2)
+            dend4
+            >>> dend5.connect(dend4)
+            dend5
+            >>> h.topology()
+
+            |-|       soma(0-1)
+               `|       dend2(0-1)
+                 `|       dend3(0-1)
+                 `|       dend4(0-1)
+                   `|       dend5(0-1)
+               `|       dend1(0-1)
+
+            1.0
+            >>> dend2.wholetree()
+            [soma, dend1, dend2, dend4, dend5, dend3]
+            >>> dend7 = h.Section(name='dend7')
+            >>> dend7.wholetree()
+            [dend7]
+            >>> soma.wholetree()
+            [soma, dend1, dend2, dend4, dend5, dend3]
+            >>> dend3.wholetree()
+            [soma, dend1, dend2, dend4, dend5, dend3]
+----
+
 .. function:: topology
 
 

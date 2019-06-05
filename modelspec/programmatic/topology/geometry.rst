@@ -921,11 +921,12 @@ Reading 3D Data from NEURON
     Syntax:
         ``h.distance(sec=section)`` or ``h.distance(0, x, sec=section)`` or ``h.distance(0, section(x))``
 
-        ``len = distance(x, sec=section)`` or ``len = distance(1, x, sec=section)``
+        ``length = h.distance(x, sec=section)`` or ``length = h.distance(1, x, sec=section)``
 
-
+        ``length = h.distance(segment1, segment2)``
 
     Description:
+
         Compute the path distance between two points on a neuron. 
         If a continuous path does not exist the return value is 1e20. 
          
@@ -946,6 +947,22 @@ Reading 3D Data from NEURON
         origin. Note that distance is measured from the centers of 
         segments. 
 
+    Example:
+    
+        .. code-block::
+            python
+
+            from neuron import h
+
+            soma = h.Section(name='soma')
+            dend = h.Section(name='dend')
+            dend.connect(soma(0.5))       
+            
+            soma.L = 10
+            dend.L = 50
+
+            length = h.distance(soma(0.5), dend(1))
+            
     .. warning::
         When subtrees are connected by :meth:`ParallelContext.multisplit` , the 
         distance function returns 1e20 if the path spans the split location. 
@@ -954,6 +971,7 @@ Reading 3D Data from NEURON
 
         Support for the variants of this function using a segment (i.e. with ``section(x)``)
         was added in NEURON 7.5.
+        The two segment form requires NEURON 7.7+.
 
     .. seealso::
         :class:`RangeVarPlot`
