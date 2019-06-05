@@ -536,7 +536,7 @@ class _Arithmeticed:
                 try:
                     items_append(item._semi_compile(region, instruction))
                 except AttributeError:
-                    items_append('%s' % item)
+                    items_append('%r' % item)
                 counts_append(count)
         result = ''
         for i, c in zip(items, counts):

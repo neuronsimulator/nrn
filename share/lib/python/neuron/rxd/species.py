@@ -146,10 +146,14 @@ class _SpeciesMathable(object):
         return _Arithmeticed(self) * other
     def __div__(self, other):
         return _Arithmeticed(self) / other
+    def __rdiv__(self, other):
+        return _Arithmeticed(other) / self
     def __radd__(self, other):
         return _Arithmeticed(other) + self
     def __rmul__(self, other):
         return _Arithmeticed(self) * other
+    def __truediv__(self, other):
+        return _Arithmeticed(self) / other
     def __rtruediv__(self, other):
         return _Arithmeticed(other) / self
     def __rfloordiv__(self, other):
@@ -312,6 +316,16 @@ class SpeciesOnExtracellular(_SpeciesMathable):
         #ecs_instance = self._species()._extracellular_instances[reg]
         #return ecs_instance._semi_compile(reg)
         return self._extracellular()._semi_compile(reg, instruction)
+
+    @property
+    def d(self):
+        return self._extracellular()._d
+    
+    @d.setter
+    def d(self, value):
+        self._extracellular().d = value
+
+
 
 class SpeciesOnRegion(_SpeciesMathable):
     def __init__(self, species, region):
@@ -781,7 +795,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
         Note: the current version keeps all the sections alive (i.e. they will never be garbage collected)
         TODO: fix this
         """
-        result = {}
+        result = {} 
         for sec in h.allsec():
             result[sec] = [self.index_from_xyz(*_xyz(seg)) for seg in sec]
         return result
@@ -803,19 +817,21 @@ class _ExtracellularSpecies(_SpeciesMathable):
                     grid_indices.append(i)
                     neuron_pointers.append(seg.__getattribute__(stateo))
         _set_grid_concentrations(grid_list, self._grid_id, grid_indices, neuron_pointers)
-
-        tenthousand_over_charge_faraday = 10000. / (self._charge * h.FARADAY)
-        scale_factor = tenthousand_over_charge_faraday / (numpy.prod(self._dx))
-        ispecies = '_ref_i' + self._species
-        neuron_pointers = []
-        scale_factors = []
-        for sec, indices in self._seg_indices.items():
-            for seg, surface_area, i in zip(sec, _surface_areas1d(sec), indices):
-                if i is not None:
-                    neuron_pointers.append(seg.__getattribute__(ispecies))
-                    scale_factors.append(float(scale_factor * surface_area))
-        #TODO: MultiCompartment reactions ?
-        _set_grid_currents(grid_list, self._grid_id, grid_indices, neuron_pointers, scale_factors)
+        if isinstance(_defined_species[self._species][self._region](), Parameter):
+            _set_grid_currents(grid_list, self._grid_id, [], [], [])
+        else:
+            tenthousand_over_charge_faraday = 10000. / (self._charge * h.FARADAY)
+            scale_factor = tenthousand_over_charge_faraday / (numpy.prod(self._dx))
+            ispecies = '_ref_i' + self._species
+            neuron_pointers = []
+            scale_factors = []
+            for sec, indices in self._seg_indices.items():
+                for seg, surface_area, i in zip(sec, _surface_areas1d(sec), indices):
+                    if i is not None:
+                        neuron_pointers.append(seg.__getattribute__(ispecies))
+                        scale_factors.append(float(scale_factor * surface_area))
+            #TODO: MultiCompartment reactions ?
+            _set_grid_currents(grid_list, self._grid_id, grid_indices, neuron_pointers, scale_factors)
     
     def _semi_compile(self, reg, instruction):
         if isinstance(_defined_species[self._species][self._region](), Parameter):
@@ -823,6 +839,14 @@ class _ExtracellularSpecies(_SpeciesMathable):
         else:
             return 'species_3d[%d]' % (self._grid_id)
 
+    @property
+    def d(self):
+        return self._d
+    
+    @d.setter
+    def d(self, value):
+        if self._d != value:
+            self._d = value
 
 
 # TODO: make sure that we can make this work where things diffuse across the

@@ -175,14 +175,15 @@ class MultiCompartmentReaction(GeneralizedReaction):
     
     
     def _do_memb_scales(self, cur_map):
+        #TODO: Support intracellular 3D reactions
         if not self._scale_by_area:
-            narea = sum([sec.nseg for sec in self._regions[0].secs])
+            narea = sum([sec.nseg for sec in self._regions[0]._secs1d])
             areas = numpy.ones(narea)
         else:
             # TODO: simplify this expression
-            areas = numpy.fromiter(itertools.chain.from_iterable(list(self._regions[0]._geometry.volumes1d(sec) for sec in self._regions[0].secs)),dtype=float)
+            areas = numpy.fromiter(itertools.chain.from_iterable(list(self._regions[0]._geometry.volumes1d(sec) for sec in self._regions[0]._secs1d)),dtype=float)
         neuron_areas = []
-        for sec in self._regions[0].secs:
+        for sec in self._regions[0]._secs1d:
             neuron_areas += [seg.area() for seg in sec]
         neuron_areas = numpy.array(neuron_areas)
         # area_ratios is usually a vector of 1s
@@ -246,7 +247,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
                     if isinstance(s[r],species.SpeciesOnExtracellular):
                         ecs_grids[s.name] = s[r]._extracellular()
                 if s.name not in all_grids: all_grids.append(s.name)
-        for sec in self._regions[0].secs:
+        for sec in self._regions[0]._secs1d:
             for seg in sec:
                 local_ptrs = []
                 local_mapped = []

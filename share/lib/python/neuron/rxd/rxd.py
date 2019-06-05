@@ -91,10 +91,8 @@ setup_currents = nrn_dll_sym('setup_currents')
 setup_currents.argtypes = [
     ctypes.c_int,   #number of membrane currents
     ctypes.c_int,   #number induced currents
-    ctypes.c_int,   #number of nodes with membrane currents
     _int_ptr,       #number of species involved in each membrane current
     _int_ptr,       #charges of the species involved in each membrane current
-    _int_ptr,       #node indices
     _int_ptr,       #node indices
     _double_ptr,    #scaling (areas) of the fluxes
     _int_ptr,       #charges for each species in each reation
@@ -286,10 +284,14 @@ def set_solve_type(domain=None, dimension=None, dx=None, nsubseg=None, method=No
 
 def _unregister_reaction(r):
     global _all_reactions
+    initializer._init_lock.acquire()
     for i, r2 in enumerate(_all_reactions):
-        if r2() == r:
+        if not r2():
+            del _all_reactions[i]
+        elif r2() == r:
             del _all_reactions[i]
             break
+    initializer._init_lock.acquire()
 
 def _register_reaction(r):
     # TODO: should we search to make sure that (a weakref to) r hasn't already been added?
@@ -436,25 +438,24 @@ def _setup_memb_currents():
         num_fluxes = numpy.array(cur_counts).sum()
         num_currents = len(_memb_cur_ptrs)
         _memb_cur_ptrs = list(itertools.chain.from_iterable(_memb_cur_ptrs))
-        """print("num_currents",num_currents)
+        """
+        print("num_currents",num_currents)
         print("num_fluxes",num_fluxes)
-        print("num_nodes",len(_curr_indices))
-        print("num_species",len(cur_counts))
-        print("net_charges",len(memb_net_charges))
-        print("cur_idxs",len(_curr_indices))
-        print("node_idxs",len(_cur_node_indices))
-        print("scales",len(rxd_memb_scales))
-        print("charges", len(memb_cur_charges))
-        print("ptrs",len(_memb_cur_ptrs))
-        print("mapped",len(ics_map),min(abs(numpy.array(ics_map))),max(ics_map))
-        print("mapped_ecs",len(ecs_map),max(ecs_map))
+        print("num_nodes",_curr_indices)
+        print("num_species",cur_counts)
+        print("net_charges",memb_net_charges)
+        print("cur_idxs",_curr_indices)
+        print("node_idxs",_cur_node_indices)
+        print("scales",rxd_memb_scales)
+        print("charges", memb_cur_charges)
+        print("ptrs",_memb_cur_ptrs)
+        print("mapped",ics_map,min(abs(numpy.array(ics_map))),max(ics_map))
+        print("mapped_ecs",ecs_map,max(ecs_map))
         """
         setup_currents(num_currents,
             num_fluxes,
-            len(_curr_indices), # num_currents == len(_curr_indices) if no Extracellular
             _list_to_cint_array(cur_counts),
             _list_to_cint_array(memb_net_charges),
-            _list_to_cint_array(_curr_indices),
             _list_to_cint_array(_cur_node_indices),
             _list_to_cdouble_array(rxd_memb_scales),
             _list_to_cint_array(list(itertools.chain.from_iterable(memb_cur_charges))),
@@ -699,6 +700,7 @@ def _setup_matrices():
     global _curr_ptrs
     global _cur_node_indices
     global _zero_volume_indices
+    global _diffusion_matrix
 
     # TODO: this sometimes seems to get called twice. Figure out why and fix, if possible.
 
@@ -753,7 +755,8 @@ def _setup_matrices():
             # create the matrix G
             #if not species._has_3d:
             #    # if we have both, then put the 1D stuff into the matrix that already exists for 3D
-            _diffusion_matrix = [dict() for idx in range(n)]
+            from collections import OrderedDict
+            _diffusion_matrix = [OrderedDict() for idx in range(n)]
             for sr in _species_get_all_species():
                 s = sr()
                 if s is not None:
@@ -1212,9 +1215,10 @@ def _compile_reactions():
     nseg_by_region = []     # a list of the number of segments for each region
     # a table for location,species -> state index
     location_index = []
-    regions_inv_1d = [reg for reg in regions_inv if reg._secs1d]
+    regions_inv_1d = [reg for reg in regions_inv if not reg._secs3d]
+    regions_inv_1d.sort(key=lambda r: r._id)
     regions_inv_3d = [reg for reg in regions_inv if reg._secs3d]
-    for reg in  regions_inv_1d:
+    for reg in regions_inv_1d:
         rptr = weakref.ref(reg)
         for c_region in region._c_region_lookup[rptr]:
             for react in regions_inv[reg]:
@@ -1247,7 +1251,9 @@ def _compile_reactions():
                 if not isinstance(rprt(),rate.Rate):
                     fxn_string += '\n\tdouble rate;'
                     break
-            for rptr in creg._react_regions:
+            for rptr in _all_reactions:
+                if rptr not in creg._react_regions:
+                    continue
                 r = rptr()
                 if isinstance(r, rate.Rate):
                     s = r._species()
@@ -1305,6 +1311,7 @@ def _compile_reactions():
                             species_ids_used[idx][region_id] = True
                             fxn_string += "\n\trhs[%d][%d] %s (%g) * rate;" % (idx, region_id, operator, summed_mults[idx])
             fxn_string += "\n}\n"
+            numpy.save('/tmp/mults.npy',numpy.array(mc_mult_list))
             register_rate(creg.num_species, creg.num_params, creg.num_regions,
                           creg.num_segments, creg.get_state_index(),
                           creg.num_ecs_species, creg.num_ecs_params,
