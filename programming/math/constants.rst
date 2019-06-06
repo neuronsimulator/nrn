@@ -1,18 +1,23 @@
 Constants
 ~~~~~~~~~
 
-The following mathematical and physical constants are built-in: 
+The following mathematical and physical constants are available through the ``h`` module: 
 
-.. code-block::
-    none
+::
 
-            "PI",   3.14159265358979323846, 
-            "E",    2.71828182845904523536, 
-            "GAMMA",0.57721566490153286060, /* Euler */ 
-            "DEG", 57.29577951308232087680, /* deg/radian */ 
-            "PHI",  1.61803398874989484820, /* golden ratio */ 
-            "FARADAY", 96484.56,    /*coulombs/mole*/ 
-            "R", 8.31441,           /*molar gas constant, joules/mole/deg-K*/ 
+    h.PI        3.14159265358979323846
+    
+    h.E         2.71828182845904523536
+    
+    h.GAMMA     0.57721566490153286060 (Euler)
+    
+    h.DEG       57.29577951308232087680 (deg/radian)
+    
+    h.PHI       1.61803398874989484820 (golden ratio)
+    
+    h.FARADAY   96484.56 (coulombs/mole)
+    
+    h.R         8.31441 (molar gas constant, joules/mole/deg-K)
 
 
 .. warning::
