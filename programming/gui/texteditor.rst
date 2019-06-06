@@ -59,9 +59,11 @@ TextEditor
 
 
     Description:
-        Returns 1 if the TextEditor in read only mode. 
-        Returns 0 if text entry by the user is allowed. 
-        Change the mode with the argument form using 0 or 1. 
+        Returns True if the TextEditor in read only mode. 
+        Returns False if text entry by the user is allowed. 
+        Change the mode with the argument form using False (or 0) or True (or 1). 
+        
+        Prior to NEURON 7.6, this method returned 0 or 1 instead of False or True.
 
          
 
