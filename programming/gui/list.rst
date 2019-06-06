@@ -44,11 +44,11 @@ List
             clamps = h.IClamp(), h.IClamp(), h.IClamp()
 
             all_iclamps = h.List('IClamp')
-            print('There are initially %d IClamp objects.' % all_iclamps.count()) # 3
+            print('There are initially %d IClamp objects.' % len(all_iclamps)) # 3
 
             another = h.IClamp()
 
-            print('There are now %d IClamp objects.' % all_iclamps.count())       # 4
+            print('There are now %d IClamp objects.' % len(all_iclamps))       # 4
 
          
 
@@ -169,7 +169,9 @@ List
 
 
     Description:
-        Return the number of objects in the list. 
+        Return the number of objects in the list.
+        
+        This is mostly useful for legacy code. A more Python solution is to just use ``len(my_list)``.
 
          
 
@@ -234,7 +236,7 @@ List
 
             def label_with_lengths():
                 item_id = h.hoc_ac_
-                item = my_list.o(item_id).s
+                item = my_list[item_id].s
                 return '%s (%d)' % (item, len(item))
 
             my_list.browser('Words!', label_with_lengths)
@@ -330,7 +332,7 @@ List
         Execute a command (a Python funciton handle) when an item in the 
         list :meth:`List.browser` is selected by single clicking the mouse. 
          
-        If the second arg exists and is 1 then the action is only called on 
+        If the second arg exists and is 1 (or True) then the action is only called on 
         the mouse button release. If nothing is selected at that time then 
         :data:`hoc_ac_` = -1 
 
@@ -346,7 +348,7 @@ List
             def on_click():
                 item_id = my_list.selected()
                 if item_id >= 0: # check to make sure selection isn't dragged off
-                    print('Item %d selected (%s)' % (item_id, my_list.o(item_id).s))
+                    print('Item %d selected (%s)' % (item_id, my_list[item_id].s))
 
 
             for word in ['Python', 'HOC', 'NEURON', 'NMODL']:
@@ -396,6 +398,8 @@ List
 
     Description:
         Return the object at index *i*. 
+        
+        This is mostly useful for legacy code. In Python, use, e.g. ``my_list[i]`` instead.
 
          
 
@@ -414,5 +418,8 @@ List
 
     Description:
         Return the object at index *i*. 
+        
+        This is mostly useful for legacy code. In Python, use, e.g. ``my_list[i]`` instead.
+
 
 
