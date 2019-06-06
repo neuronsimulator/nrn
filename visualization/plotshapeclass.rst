@@ -14,7 +14,63 @@ PlotShape
 
 ----
 
+.. method:: PlotShape.plot
 
+    
+    Syntax:
+
+        ``ps = h.PlotShape(seclist=h.allsec(), False)``
+
+        ``ps.plot(pyplot)``
+
+        ``pyplot.show()``
+
+    Description:
+        In NEURON 7.7+, PlotShape.plot works with and without Interviews support. Variables, sectionlists, and scale are supported.
+        Clicking on a segment displays the value and the segment id.
+
+    Example:
+        If no seclist argument is provided, PlotShape.plot will plot all sections
+
+
+        .. code-block::
+            python
+
+            from neuron import h
+            from matplotlib import pyplot 
+            h.load_file('c91662.ses')
+            for sec in h.allsec():
+                if 'apic' in str(sec):
+                    sec.v = 0
+            ps = h.PlotShape(False)  #False tells h.PlotShape not to use NEURON's gui
+            ps.plot(pyplot)
+            pyplot.show()
+        
+        .. note::
+            In Jupyter, you can use %matplotlib notebook to get interactive PlotShape
+    
+    Example:
+        You can also pass in a SectionList argument to only plot specific sections
+
+
+        .. code-block::   
+            python
+
+            from neuron import h
+            from matplotlib import pyplot, cm
+            h.load_file('c91662.ses')
+            sl = h.SectionList()
+            for sec in h.allsec():
+                if 'apic' in str(sec):
+                    sec.v = 0
+                    sl.append(sec=sec)
+            ps = h.PlotShape(sl, False)
+            ps.scale(-80, 40)
+            ps.variable('v')
+            ax = ps.plot(pyplot, cmap=cm.jet)
+            pyplot.show()    
+            
+----
 
 .. method:: PlotShape.scale
 
