@@ -4,7 +4,22 @@
 #include "nrnoc2iv.h"
 #include "vrecitem.h"
 
+#include <vector>
+#include <utility>
+
+typedef std::vector< std::pair< double*, IvocVect* > > GLineRecordEData;
+
 class GraphLine;
+
+class GLineRecordExprInfo {
+public:
+  GLineRecordExprInfo(const char* expr);
+  virtual ~GLineRecordExprInfo();
+  GLineRecordEData pd_and_vec;
+  Symbol* esym; //parsed expr
+  Symlist* symlist_;
+  bool saw_t;
+};
 
 class GLineRecord : public PlayRecord {
 public:
@@ -19,6 +34,7 @@ public:
 	void plot(int, double);
 	GraphLine* gl_;
 	IvocVect* v_; // to allow CoreNEURON to save trajectory.
+	GLineRecordExprInfo* expr_info_;
 };
 
 #endif

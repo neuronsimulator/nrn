@@ -111,9 +111,9 @@ extern double* nrn_recalc_ptr(double*);
 void* nrn_interthread_enqueue(NrnThread*);
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 Object* (*nrnpy_seg_from_sec_x)(Section*, double);
-void nrnthread_get_trajectory_requests(int tid, int bsize, int& ntrajec, void**& vpr, int*& types, int*& indices, double**& varrays);
-void nrnthread_trajectory_values(int tid, int ntrajec, void** vpr, double t, double* values);
-void nrnthread_trajectory_return(int tid, int ntrajec, int vecsz, void** vpr, double t);
+void nrnthread_get_trajectory_requests(int tid, int bsize, int& n_pr, void**& vpr, int& n_trajec, int*& types, int*& indices, double**& varrays);
+void nrnthread_trajectory_values(int tid, int n_pr, void** vpr, double t, int n_trajec, double* values);
+void nrnthread_trajectory_return(int tid, int n_pr, int vecsz, void** vpr, double t);
 #if NRN_MUSIC
 extern void nrnmusic_injectlist(void*, double);
 #endif
@@ -5499,70 +5499,109 @@ void NetCvode::fixed_play_continuous(NrnThread* nt) {
 	}
 }
 
+// nrnthread_get_trajectory_requests helper for buffered trajectories
+static void trajec_buffered(NrnThread& nt, int bsize, IvocVect* v, double* pd,
+    int i_pr, PlayRecord* pr, void** vpr,
+    int i_trajec, int* types, int* indices, double** varrays)
+{
+  if (v->buffer_size() < bsize) {
+    v->buffer_size(bsize);
+  }
+  vpr[i_pr] = pr;
+  varrays[i_trajec] = vector_vec(v);
+  nrn_dblpntr2nrncore(pd, nt, types[i_trajec], indices[i_trajec]);
+}
+
 // Transfer of trajectories from CoreNEURON to NEURON.
 // bsize == 0: Most flexible interactivity, transfer on a per time step basis.
 // bsize > 0: Greatest performance, fill the entire trajectory arrays on
 // the CoreNEURON side and transferring at the end of a CoreNEURON run.
 // Here, we ensure the arrays have at least bsize size (i.e. at least tstop/dt)
 // and CoreNEURON will start filling from the beginning of the arrays.
+// n_pr refers the the number of PlayRecord instances in the vpr array.
+// n_trajec refers to the number of trajectories to be recorded on the
+// CoreNEURON side and is the size of the types, indices, and varrays.
+// n_pr is different from n_trajec when one of the GLineRecord instances has
+// a gl_->name that is an expression that contains several range variables.
 void nrnthread_get_trajectory_requests(int tid, int bsize,
-int& ntrajec, void**& vpr, int*& types, int*& indices, double**& varrays) {
-  ntrajec = 0;
+int& n_pr, void**& vpr, int& n_trajec, int*& types, int*& indices, double**& varrays) {
+  n_pr = 0;
+  n_trajec = 0;
   types = NULL;
   indices = NULL;
   vpr = NULL;
   varrays = NULL;
   if (tid < nrn_nthread) {
+    NrnThread& nt = nrn_threads[tid];
     PlayRecList* fr = net_cvode_instance->fixed_record_;
     int cntp;
     cntp = fr->count();
     for (int i=0; i < cntp; ++i) {
       PlayRecord* pr = fr->item(i);
       if (pr->ith_ == tid && (pr->type() == TvecRecordType || pr->type() == YvecRecordType || pr->type() == GLineRecordType)) {
-        ntrajec++;
+        n_pr++;
+        if (pr->type() == GLineRecordType) {
+          if (pr->pd_ == NULL) {
+            GLineRecord* glr = (GLineRecord*)pr;
+            assert(glr->expr_info_);
+            GLineRecordExprInfo& einfo = *glr->expr_info_;
+            n_trajec += einfo.pd_and_vec.size();
+          }else{
+            n_trajec++;
+          }
+        }
       }
     }
-    if (ntrajec == 0) {
+    if (n_pr == 0) {
       return;
     }
-    types = new int[ntrajec];
-    indices = new int[ntrajec];
-    vpr = new void*[ntrajec];
+    vpr = new void*[n_pr];
+    types = new int[n_trajec];
+    indices = new int[n_trajec];
     if (bsize >  0) {
-      varrays = new double*[ntrajec];
+      varrays = new double*[n_trajec];
     }
-    ntrajec = 0;
+    // everything allocated, start over and fill
+    n_pr = 0;
+    n_trajec = 0;
     for (int i=0; i < cntp; ++i) {
       PlayRecord* pr = fr->item(i);
-      if (pr->ith_ == tid && (pr->type() == TvecRecordType || pr->type() == YvecRecordType || pr->type() == GLineRecordType)) {
-        if (bsize > 0) {
+      if (pr->ith_ == tid) {
+        if (bsize > 0) { // buffered 
           IvocVect* v = NULL;
           if (pr->type() == TvecRecordType) {
             v = ((TvecRecord*)pr)->t_;
+            trajec_buffered(nt, bsize, v, pr->pd_, n_pr++, pr, vpr, n_trajec++, types, indices, varrays);
           }else if (pr->type() == YvecRecordType) {
             v = ((YvecRecord*)pr)->y_;
+            trajec_buffered(nt, bsize, v, pr->pd_, n_pr++, pr, vpr, n_trajec++, types, indices, varrays);
           }else if (pr->type() == GLineRecordType) {
             GLineRecord* glr = (GLineRecord*)pr;
-            if (!glr->v_) {
-              glr->v_ = new IvocVect(bsize);
+            if (pr->pd_) { // glr->gl_->name is an expression resolved to a double*
+              if (!glr->v_) {
+                glr->v_ = new IvocVect(bsize);
+              }
+              v = glr->v_;
+              trajec_buffered(nt, bsize, v, pr->pd_, n_pr++, pr, vpr, n_trajec++, types, indices, varrays);
+            }else{ // glr->gl_->name expression involves several range variables
+              GLineRecordEData& ed = glr->expr_info_->pd_and_vec;
+              for (GLineRecordEData::iterator it = ed.begin(); it != ed.end(); ++it) {
+                double* pd = (*it).first;
+                assert(pd);
+                v = (*it).second;
+                if (v == NULL) {
+                  v = (*it).second = new IvocVect(bsize);
+                }
+                trajec_buffered(nt, bsize, v, pd, n_pr, pr, vpr, n_trajec++, types, indices, varrays);
+              }
             }
-            v = glr->v_;
-          }else{
-            assert(0);
           }
-          if (v->buffer_size() < bsize) {
-            v->buffer_size(bsize);
-          }
-          varrays[ntrajec] = vector_vec(v);
         }
-        vpr[ntrajec] = (void*)pr;
-        nrn_dblpntr2nrncore(pr->pd_, nrn_threads[tid], types[ntrajec], indices[ntrajec]);
-        ntrajec++;
       }
     }
 #if 1
-    printf("nrnthread_get_trajectory_requests tid=%d ntrajec=%d\n", tid, ntrajec);
-    for (int i=0; i < ntrajec; ++i) {
+    printf("nrnthread_get_trajectory_requests tid=%d n_trajec=%d\n", tid, n_trajec);
+    for (int i=0; i < n_trajec; ++i) {
       PlayRecord* pr = (PlayRecord*)vpr[i];
       printf("    %d  pd=%p  type=%d  index=%d\n", i, pr->pd_, types[i], indices[i]);
     }
@@ -5570,7 +5609,7 @@ int& ntrajec, void**& vpr, int*& types, int*& indices, double**& varrays) {
   }
 }
 
-void nrnthread_trajectory_values(int tid, int cnt, void** vpr, double tt, double* values) {
+void nrnthread_trajectory_values(int tid, int n_pr, void** vpr, double tt, int n_trajec,  double* values) {
   if (tid < 0) {
     net_cvode_instance->record_init();
     return;
@@ -5578,7 +5617,8 @@ void nrnthread_trajectory_values(int tid, int cnt, void** vpr, double tt, double
   if (tid < nrn_nthread) {
     nrn_threads[tid]._t = tt;
     if (tid == 0) { t = tt; }
-    for (int i=0; i < cnt; ++i) {
+    assert(n_pr == n_trajec);
+    for (int i=0; i < n_pr; ++i) {
       PlayRecord* pr = (PlayRecord*)vpr[i];
       *pr->pd_ = values[i];
       pr->continuous(tt);
@@ -5591,7 +5631,12 @@ void nrnthread_trajectory_values(int tid, int cnt, void** vpr, double tt, double
 // this, each Vector needs only be resized to the actual vecsz.
 // Note that we have not bothered to fill the variables on the hoc side with
 // the last values, though we did fill t.
-void nrnthread_trajectory_return(int tid, int ntrajec, int vecsz, void** vpr, double tt) {
+// In the case where glr->pd_ = NULL, the GraphLine is an expression that
+// cannot be interpreted as a pointer and the expression involves one or
+// more range variables that individually were resolved into pointers. In
+// this case in glr->plot, the relevant Vector elements are copied into those
+// pointers and the expression is then evaluated and plotted.
+void nrnthread_trajectory_return(int tid, int n_pr, int vecsz, void** vpr, double tt) {
   if (tid < 0) {
     net_cvode_instance->record_init();
     return;
@@ -5599,7 +5644,7 @@ void nrnthread_trajectory_return(int tid, int ntrajec, int vecsz, void** vpr, do
   if (tid < nrn_nthread) {
     nrn_threads[tid]._t = tt;
     if (tid == 0) { t = tt; }
-    for (int i=0; i < ntrajec; ++i) {
+    for (int i=0; i < n_pr; ++i) {
       PlayRecord* pr = (PlayRecord*)vpr[i];
       IvocVect* v = NULL;
       if (pr->type() == TvecRecordType) {

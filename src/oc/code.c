@@ -2499,7 +2499,8 @@ Inst* Code(Pfrv f) {		/* install one instruction or operand */
 
 Inst* codei(int f)
 {
-	progp->i = f;
+	/* progp->i = f; */ /* causes debugzz problem as high order bits not zeroed */
+	progp->pf = (void*)f;
 	return codechk();
 }
 
