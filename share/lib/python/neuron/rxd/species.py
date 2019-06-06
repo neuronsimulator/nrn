@@ -51,6 +51,11 @@ ICS_insert.argtypes = [
     ctypes.c_bool,
     ctypes.c_double,]
 
+#function to change extracellular diffusion
+set_diffusion = nrn_dll_sym('set_diffusion')
+set_diffusion.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_double, ctypes.c_double, ctypes.c_double]
+set_diffusion.restype = ctypes.c_int
+
 ICS_insert.restype = ctypes.c_int
 
 species_atolscale = nrn_dll_sym('species_atolscale')
@@ -212,11 +217,16 @@ class _SpeciesMathable(object):
     @d.setter
     def d(self, value):
         from . import rxd
-        if hasattr(self, '_allow_setting'):
-            self._d = value
-        else:
+        self._d = value
+        if hasattr(self, '_extracellular_instances'):
+            for ecs in self._extracellular_instances.values():
+                ecs.d = value
+        if hasattr(self, '_intracellular_instances'):
+            for ics in self._intracellular_instances.values():
+                ics.d = value
+        if initializer.is_initialized() and hasattr(self,'_region_indices'):
             _volumes, _surface_area, _diffs = node._get_data()
-            _diffs[self.indices()] = value
+            _diffs[self._indices1d()] = value
             rxd._setup_matrices()
 
 class SpeciesOnExtracellular(_SpeciesMathable):
@@ -637,6 +647,16 @@ class _IntracellularSpecies(_SpeciesMathable):
             else:
                 return 'species_3d[%d]' % (self._grid_id)
 
+    @property
+    def d(self):
+        return self._d
+    
+    @d.setter
+    def d(self, value):
+        if self._d != value:
+            self._d = value
+            set_diffusion(0, self._grid_id, value, value, value)
+
 class _ExtracellularSpecies(_SpeciesMathable):
     def __init__(self, region, d=0, name=None, charge=0, initial=0, atolscale=1.0, boundary_conditions=None):
         """
@@ -847,6 +867,10 @@ class _ExtracellularSpecies(_SpeciesMathable):
     def d(self, value):
         if self._d != value:
             self._d = value
+            if hasattr(value,'__len__'):
+                set_diffusion(0, self._grid_id, value[0], value[1], value[2])
+            else:
+                set_diffusion(0, self._grid_id, value, value, value)
 
 
 # TODO: make sure that we can make this work where things diffuse across the
