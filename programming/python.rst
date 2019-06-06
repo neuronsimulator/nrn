@@ -131,7 +131,7 @@ Description:
         python
 
         from neuron import h
-        h('nrn_load_dll("$(NEURONHOME)/demo/release/x86_64/.libs/libnrnmech.so")') 
+        h.nrn_load_dll("$(NEURONHOME)/demo/release/x86_64/.libs/libnrnmech.so")
 
 
 .. _python_accessing_hoc:
@@ -215,7 +215,10 @@ Description:
         ``h('strdef s')``.
 
 
-        Any hoc object can be handled in Python. 
+        Any hoc object can be handled in Python, and can use Python idioms for that type of
+        object despite being created in hoc. e.g. in hoc, you would have to use vec.size() to
+        get the Vector's size. This still works in Python, but you can also use the Pythonic
+        len(h.vec): 
 
         .. code-block::
             python
@@ -223,17 +226,17 @@ Description:
             h('objref vec') 
             h('vec = new Vector(5)') 
             print(h.vec)        # prints Vector[0] 
-            print(h.vec.size()) # prints 5.0 
+            print(len(h.vec))   # prints 5.0 
 
-        There is, however, often no need to create a hoc object; e.g. if no HOC code
-        needed to access the :class:`Vector`, the above is equivalent to
+        There is, however, in pure Python models never a need to create a hoc object;
+        e.g. if no HOC code needed to access the :class:`Vector`, the above is equivalent to
 
         .. code-block::
             python
 
             vec = h.Vector(5)
             print(vec)
-            print(vec.size())
+            print(len(vec))
 
         Note that any hoc object method or field may be called, or evaluated/assigned 
         using the normal dot notation which is consistent between hoc and python. 
@@ -258,12 +261,14 @@ Description:
             print(x)           # prints Vector[0].x[?] 
             print(x[2])        # prints 12.0 
 
+        Note that the .x notation is not needed in Python for reading or (as of NEURON 7.7) writing to vectors.
+
         The hoc object can be created directly in Python. E.g. 
 
         .. code-block::
             python
 
-            v = h.Vector(10).indgen.add(10) 
+            v = h.Vector(range(10, 20)) 
 
          
         Iteration over hoc Vector, List, and arrays is supported. e.g. 
@@ -271,17 +276,17 @@ Description:
         .. code-block::
             python
 
-            v = h.Vector(4).indgen().add(10) 
-            for x in v : 
+            v = h.Vector(range(10, 14)) 
+            for x in v: 
               print(x)
              
-            l = h.List() ; l.append(v); l.append(v); l.append(v) 
-            for x in l : 
+            l = h.List(); l.append(v); l.append(v); l.append(v) 
+            for x in l: 
               print(x)
              
             h('objref o[2][3]') 
-            for x in h.o : 
-              for y in x : 
+            for x in h.o: 
+              for y in x: 
                 print(x, y)
              
 
@@ -295,15 +300,27 @@ Description:
             ax = h.axon 
 
         makes ax a Python :class:`~neuron.h.Section` which references the hoc 
-        axon section. Many hoc functions require a currently accessed section 
-        and for these a typical idiom is to use the "sec" keyword parameter after the last positional 
-        parameter which makes the Section value the currently accessed section during 
+        axon section. Many hoc functions use the currently accessed section;
+        most of these are now available as section methods, however for user
+        written hoc and in legacy code, a "sec" keyword parameter temporarily
+        makes the Section value the currently accessed section during 
         the scope of the function call. e.g 
 
         .. code-block::
             python
 
             print(h.secname(sec=ax))
+        
+        .. note::
+
+            In Python, one can simply:
+
+            .. code-block::
+                python
+
+                print(ax)
+            
+            Or use ``str(ax)`` to get the name of the section ax.
 
         Most such functions now have an alternative form that avoids the need for
         sec=; often they are available as section methods. This is usually listed
@@ -315,16 +332,10 @@ Description:
         .. code-block::
             python
 
-            stim = IClamp(1.0, sec = ax) 
-             #or 
             stim = IClamp(ax(1.0)) 
-
-        The latter is a somewhat simpler idiom that uses the Segment object which knows both the 
-        section and the location in the section and can also be used with the 
-        stim.loc function. 
-         
+        
         Many hoc functions use call by reference and return information by 
-        changing the value of an argument. These are called from the python 
+        changing the value of an argument. These are called from the Python 
         world by passing a HocObject.ref() object. Here is an example that 
         changes a string. 
 
@@ -400,7 +411,7 @@ Description:
         .. code-block::
             python
 
-            v = h.Vector(4).indgen().add(10) 
+            v = h.Vector(range(10, 14)) 
             y = v._ref_x[1]    # holds pointer to second element of v 
             print('%g %g' % (v[2], y[1])) # prints 12.0 12.0 
             y[1] = 50 
@@ -448,14 +459,13 @@ Description:
             python
 
             h('obfunc newlist() { return new List() }') 
-            list = h.newlist() 
-            apnd = list.append 
+            my_list = h.newlist() 
+            apnd = my_list.append 
             apnd([1,2,3])      # Python list in hoc List 
             apnd(('a', 'b', 'c')) # Python tuple in hoc List 
             apnd({'a':1, 'b':2, 'c':3}) # Python dictionary in hoc List 
-            item = list.object 
-            for i in range(list.count()): 
-              print(item(i))
+            for item in my_list:
+                print(item)
              
             h('for i=0, List[0].count-1 print List[0].object(i)') 
 
@@ -475,6 +485,7 @@ Description:
 
             class MyVector(neuron.hclass(neuron.h.Vector)) : 
               pass 
+            
             v = MyVector(10) 
             v.zzz = 'hello' # a new attribute 
             print(v.size()) # call any base method 
@@ -592,6 +603,9 @@ Description:
              
             sec = h.cas() 
             print(sec)
+        
+        It is generally best to avoid writing code that manipulatesd the section stack. Use Python
+        section objects, sec=, and section methods instead.
 
 
          
@@ -636,7 +650,7 @@ Description:
             sec.L = 20         # Length of the entire section is 20 um. 
             for seg in sec:    # iterates over the section compartments 
               for mech in seg: # iterates over the segment mechanisms 
-                print('%s %g %s' % (sec.name(), seg.x, mech.name()))
+                print('%s %g %s' % (sec, seg.x, mech.name()))
 
         A Python Section can be made the currently accessed 
         section by using its push method. Be sure to use :func:`pop_section` 
@@ -653,7 +667,7 @@ Description:
             {p.sec.push() psection() pop_section()} 
             ''') 
             #or 
-            print(str(sec))
+            print(sec)
             h.psection(sec=sec) 
 
         When calling a hoc function it is generally preferred to named sec arg style 
@@ -664,6 +678,18 @@ Description:
             python
 
             h.psection(sec=sec) 
+        
+        The ``psection`` section method is different, in that it returns a Python dictionary rather
+        than printing to the screen. It also provides more information, such as reaction-diffusion
+        mechanisms that are present. One could, for example, do
+
+        .. code-block::
+            python
+
+            from pprint import pprint
+            pprint(sec.psection())
+        
+        The section ``psection`` method was added in NEURON 7.6.
 
          
         With a :class:`SectionRef` one can, for example, 
@@ -674,7 +700,7 @@ Description:
             sr = h.SectionRef(sec=h.dend[2])
             sr.root.push(); print(h.secname()); h.pop_section() 
 
-        or, more compactly, 
+        or, more compactly and avoiding the modification of the section stack, 
         
         .. code-block::
             python
@@ -689,11 +715,21 @@ Description:
             python
 
             for s in h.allsec(): 
-              print(str(s))
+              print(s)
              
             sl = h.SectionList(); sl.wholetree() 
             for s in sl: 
-              print(str(s))
+              print(s)
+        
+        In lieu of using a SectionList, one can get the whole tree containing a given section
+        as a Python list via:
+
+        .. code-block::
+            python
+
+            tree_secs = my_sec.wholetree()
+        
+        (The wholetree section method was added in NEURON 7.7.)
 
 
          
