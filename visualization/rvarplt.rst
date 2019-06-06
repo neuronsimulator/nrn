@@ -39,8 +39,12 @@ RangeVarPlot
         to say ``sec=`` unless you want to refer to a section that is not the one
         whose data is being plotted. The current section may be read via ``h.cas()``.
 
+        In NEURON 7.7+, RangeVarPlot's constructor takes optional begin and end arguments.
+        In Python, these would typically be segments, but they can also be normalized position 
+        on a single segment.
+
     .. seealso::
-        :func:`distance`, :meth:`Graph.addobject`
+        :func:`distance`, :meth:`Graph.addobject`, :meth:`RangeVarPlot.plot`
 
 
     Example (plotting by name):
@@ -125,6 +129,65 @@ RangeVarPlot
             g.addobject(rvp) 
 ----
 
+
+
+.. method:: RangeVarPlot.plot
+
+
+    Syntax:
+        ``from matplotlib import pyplot``
+
+        ``h.RangeVarPlot('v', soma(0.5), dend(1)).plot(pyplot)``
+
+        ``pyplot.show()``
+
+
+    Description:
+        In NEURON 7.7+, RangeVarPlot.plot plots the current state of the path on any of a number of types of graphs,
+        including NEURON Graph objects, matplotlib, bokeh, and anything with a .plot or .line method taking x and y values. 
+        Any additional arguments or keyword arguments are passed to the graph's plotting method. 
+
+    Example: 
+        Plotting to a matplotlib axis (instead of pyplot itself), bokeh, and NEURON's Graph objects and passing optional
+        arguments to each:
+
+        .. code-block::
+            python
+
+            from neuron import h, gui
+            from matplotlib import pyplot
+            import bokeh.plotting as b
+            import math
+
+            dend = h.Section(name='dend')
+            dend.nseg = 55
+            dend.L = 6.28
+
+            #looping over dend.allseg instead of dend to set 0 and 1 ends
+            for seg in dend.allseg():
+                seg.v = math.sin(dend.L * seg.x)
+
+            r = h.RangeVarPlot('v', dend(0), dend(1)) #Three argument constructor in 7.7+
+
+            #matplotlib 
+            graph = pyplot.gca()
+            r.plot(graph, linewidth=10, color='r')
+
+            #NEURON graph
+            g = h.Graph()
+            r.plot(g, 2, 3)
+            g.exec_menu('View = plot')
+
+            #Bokeh
+            bg = b.Figure()
+            r.plot(bg, line_width=10)
+            b.show(bg)
+
+            pyplot.show()   
+
+         
+
+----
 
 
 .. method:: RangeVarPlot.begin
