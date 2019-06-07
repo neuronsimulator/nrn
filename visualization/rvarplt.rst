@@ -135,11 +135,9 @@ RangeVarPlot
 
 
     Syntax:
-        ``from matplotlib import pyplot``
-
-        ``h.RangeVarPlot('v', soma(0.5), dend(1)).plot(pyplot)``
-
-        ``pyplot.show()``
+        ``rvp.plot(graph_object)``
+        
+        ``rvp.plot(graph_object, arg1, ..., kwarg1=val1, ...)``
 
 
     Description:
