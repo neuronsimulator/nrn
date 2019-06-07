@@ -194,7 +194,7 @@ RangeVarPlot
 
 
     Syntax:
-        ``rvp.bedgin(segment)``
+        ``rvp.begin(segment)``
         
         ``rvp.begin(x, sec=section)``
 
