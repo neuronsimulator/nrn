@@ -19,15 +19,21 @@ PlotShape
     
     Syntax:
 
-        ``ps = h.PlotShape(seclist=h.allsec(), False)``
-
-        ``ps.plot(pyplot)``
-
-        ``pyplot.show()``
+        ``ps.plot(matplotlib_object)``
 
     Description:
-        In NEURON 7.7+, PlotShape.plot works with and without Interviews support. Variables, sectionlists, and scale are supported.
+        In NEURON 7.7+, PlotShape.plot works both with and without Interviews support.
+	Variables, sectionlists, and scale are supported.
         Clicking on a segment displays the value and the segment id.
+	
+	Extra arguments and keyword arguments are passed to the underlying graphics library
+	(currently only matplotlib ``Figure`` objects and ``pyplot`` are supported).
+
+    .. note::
+    
+        If Interviews is enabled, the flag ``False`` must be passed to the ``h.PlotShape``
+	constructor to avoid additionally displaying a PlotShape using Interviews graphics.
+	See the example:
 
     Example:
         If no seclist argument is provided, PlotShape.plot will plot all sections
@@ -38,11 +44,11 @@ PlotShape
 
             from neuron import h
             from matplotlib import pyplot 
-            h.load_file('c91662.ses')
+            h.load_file('c91662.ses')  # a morphology file
             for sec in h.allsec():
                 if 'apic' in str(sec):
                     sec.v = 0
-            ps = h.PlotShape(False)  #False tells h.PlotShape not to use NEURON's gui
+            ps = h.PlotShape(False)  # False tells h.PlotShape not to use NEURON's gui
             ps.plot(pyplot)
             pyplot.show()
         
@@ -59,11 +65,9 @@ PlotShape
             from neuron import h
             from matplotlib import pyplot, cm
             h.load_file('c91662.ses')
-            sl = h.SectionList()
-            for sec in h.allsec():
-                if 'apic' in str(sec):
-                    sec.v = 0
-                    sl.append(sec=sec)
+            sl = h.SectionList([sec for sec in h.allsec() if 'apic' in str(sec)])
+            for sec in sl:
+                sec.v = 0
             ps = h.PlotShape(sl, False)
             ps.scale(-80, 40)
             ps.variable('v')
