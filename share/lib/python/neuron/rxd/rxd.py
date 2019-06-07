@@ -1310,7 +1310,6 @@ def _compile_reactions():
                             species_ids_used[idx][region_id] = True
                             fxn_string += "\n\trhs[%d][%d] %s (%g) * rate;" % (idx, region_id, operator, summed_mults[idx])
             fxn_string += "\n}\n"
-            numpy.save('/tmp/mults.npy',numpy.array(mc_mult_list))
             register_rate(creg.num_species, creg.num_params, creg.num_regions,
                           creg.num_segments, creg.get_state_index(),
                           creg.num_ecs_species, creg.num_ecs_params,
