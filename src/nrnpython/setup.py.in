@@ -69,25 +69,24 @@ libdirs = [destdir + "@NRN_LIBDIR@",
 ]
 epre='-Wl,-R'
 
-@MAC_DARWIN_FALSE@readline="readline"
-@MAC_DARWIN_TRUE@readline="readline"
+@MAC_DARWIN_FALSE@readline="readline@READLINE_SOSUFFIX@"
+@MAC_DARWIN_TRUE@readline="readline@READLINE_SOSUFFIX@"
 
 
 hoc_module = Extension(
-      "neuron.hoc",
-      ["inithoc.cpp"],
-      library_dirs=libdirs,
-      @setup_extra_link_args@ = [ epre+libdirs[0],epre+libdirs[1] ],
-      #extra_objects = [],
-      libraries = [
-	"nrnpython@npy_pyver10@",
+    "neuron.hoc",
+    ["inithoc.cpp"],
+    library_dirs=libdirs,
+    @setup_extra_link_args@ = [ epre+libdirs[0],epre+libdirs[1] ],
+    #extra_objects = [],
+    libraries = [
+        "nrnpython@npy_pyver10@",
         "nrnoc", "oc", "nrniv", "ivoc",
-        @BUILD_MEMACS_TRUE@"memacs",
-	"meschach", "neuron_gnu",
-	@BUILD_NRNMPI_DYNAMIC_FALSE@"nrnmpi",
+        @BUILD_MEMACS_TRUE@"memacs", readline,
+        "meschach", "neuron_gnu",
+        @BUILD_NRNMPI_DYNAMIC_FALSE@"nrnmpi",
         "scopmath", "sparse13", "sundials",
-	readline,
-	"@IVHINES@",
+        "@IVHINES@",
       ],
       include_dirs = include_dirs,
       define_macros=defines
