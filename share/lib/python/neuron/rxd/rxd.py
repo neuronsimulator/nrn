@@ -902,7 +902,6 @@ def _setup_matrices():
         rates = numpy.asarray(rates, dtype=numpy.float_)
         volumes1d = numpy.asarray(volumes1d, dtype=numpy.float_)
         volumes3d = numpy.asarray(volumes3d, dtype=numpy.float_)
-
         set_hybrid_data(num_1d_indices_per_grid, num_3d_indices_per_grid, hybrid_indices1d, hybrid_indices3d, num_3d_indices_per_1d_seg, hybrid_grid_ids, rates, volumes1d, volumes3d)
 
 
@@ -1328,24 +1327,28 @@ def _compile_reactions():
             all_ics_gids = set()
             ics_param_gids = set()
             fxn_string = _c_headers
+            if all([isinstance(r(), multiCompartmentReaction.MultiCompartmentReaction) for rlist in list(regions_inv.values()) for r in rlist]):
+                break
             fxn_string += 'void reaction(double* species_3d, double* params_3d, double*rhs)\n{'
             for rptr in [r for rlist in list(regions_inv.values()) for r in rlist]:
-                if not isinstance(rptr(),rate.Rate):
+                if not isinstance(rptr(), rate.Rate):
                     fxn_string += '\n\tdouble rate;'
                     break
             for s in species_by_region[reg]:
-                if isinstance(s, species.Parameter) or isinstance(s, species.ParameterOnRegion):
-                    sp = s._species()._intracellular_instances[s._region()] if isinstance(s,species.SpeciesOnRegion) else s._intracellular_instances[reg]
-                    ics_param_gids.add(sp._grid_id)
-                else:
-                     ###TODO is this correct? are there any other cases I should worry about? Do I always make a species the intracellular instance for the region we are looping through?
-                    sp = s._species()._intracellular_instances[s._region()] if isinstance(s,species.SpeciesOnRegion) else s._intracellular_instances[reg]
-                    all_ics_gids.add(sp._grid_id)
+                spe = s._species() if isinstance(s,species.SpeciesOnRegion) else s
+                if hasattr(spe, '_intracellular_instances') and spe._intracellular_instances and reg in spe._intracellular_instances:
+                    if isinstance(s, species.Parameter) or isinstance(s, species.ParameterOnRegion):
+                        sp = spe._intracellular_instances[reg]
+                        ics_param_gids.add(sp._grid_id)
+                    else:
+                         ###TODO is this correct? are there any other cases I should worry about? Do I always make a species the intracellular instance for the region we are looping through?
+                        sp = spe._intracellular_instances[reg]
+                        all_ics_gids.add(sp._grid_id)
             all_ics_gids = list(all_ics_gids)
             ics_param_gids = list(ics_param_gids)
             for rptr in regions_inv[reg]:
                 r = rptr()
-                if reg not in r._rate:
+                if isinstance(r,multiCompartmentReaction.MultiCompartmentReaction) or reg not in r._rate:
                     continue
                 rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_3d[%i]" % [pid for pid,gid in enumerate(all_ics_gids) if gid == int(m.groups()[0])][0], r._rate[reg][-1])
                 rate_str = re.sub(r'params_3d\[(\d+)\]',lambda m: "params_3d[%i]" %  [pid for pid, gid in enumerate(ics_param_gids) if gid == int(m.groups()[0])][0], rate_str)
@@ -1377,7 +1380,10 @@ def _compile_reactions():
                         if isinstance(s, species.Species):
                             s = s._intracellular_instances[reg]
                         elif isinstance(s, species.SpeciesOnRegion):
-                            s = s._species()._intracellular_instances[s._region()]
+                            if s._region() in s._species()._intracellular_instances:
+                                s = s._species()._intracellular_instances[s._region()]
+                            else:
+                                continue
                         if s._grid_id in ics_grid_ids:
                             operator = '+=' 
                         else:

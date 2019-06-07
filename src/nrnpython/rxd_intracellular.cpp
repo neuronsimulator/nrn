@@ -24,7 +24,7 @@ const int ICS_PREFETCH = 3;
 extern "C" void set_hybrid_data(int64_t* num_1d_indices_per_grid, int64_t* num_3d_indices_per_grid, int64_t* hybrid_indices1d, int64_t* hybrid_indices3d, int64_t* num_3d_indices_per_1d_seg, int64_t* hybrid_grid_ids, double* rates, double* volumes1d, double* volumes3d)
 {
     Grid_node* grid;
-    int i, j, id;
+    int i, j, k, id;
     int grid_id_check = 0;
 
     int index_ctr_1d = 0;
@@ -54,17 +54,17 @@ extern "C" void set_hybrid_data(int64_t* num_1d_indices_per_grid, int64_t* num_3
 
             //Assign grid data
             grid->hybrid_data->num_1d_indices = num_grid_1d_indices;
-            for(i = 0; i < num_grid_1d_indices; i++, index_ctr_1d++)
+            for(i = 0, k = 0; i < num_grid_1d_indices; i++, index_ctr_1d++)
             {
-                grid->hybrid_data->indices1d[index_ctr_1d] = hybrid_indices1d[index_ctr_1d];
-                grid->hybrid_data->num_3d_indices_per_1d_seg[index_ctr_1d] = num_3d_indices_per_1d_seg[index_ctr_1d];
-                grid->hybrid_data->volumes1d[index_ctr_1d] = volumes1d[index_ctr_1d];
+                grid->hybrid_data->indices1d[i] = hybrid_indices1d[index_ctr_1d];
+                grid->hybrid_data->num_3d_indices_per_1d_seg[i] = num_3d_indices_per_1d_seg[index_ctr_1d];
+                grid->hybrid_data->volumes1d[i] = volumes1d[index_ctr_1d];
 
-                for (j = 0; j < num_3d_indices_per_1d_seg[index_ctr_1d]; j++, index_ctr_3d++)
+                for (j = 0; j < num_3d_indices_per_1d_seg[index_ctr_1d]; j++, index_ctr_3d++, k++)
                 {
-                    grid->hybrid_data->indices3d[index_ctr_3d] = hybrid_indices3d[index_ctr_3d];
-                    grid->hybrid_data->rates[index_ctr_3d] = rates[index_ctr_3d];
-                    grid->hybrid_data->volumes3d[index_ctr_3d] = volumes3d[index_ctr_3d];
+                    grid->hybrid_data->indices3d[k] = hybrid_indices3d[index_ctr_3d];
+                    grid->hybrid_data->rates[k] = rates[index_ctr_3d];
+                    grid->hybrid_data->volumes3d[k] = volumes3d[index_ctr_3d];
                 }
             } 
             grid_id_check++;
