@@ -134,6 +134,20 @@ class MultiCompartmentReaction(GeneralizedReaction):
             rate = rate_f
         else:
             raise RxDException('unrecognized direction; should never happen')
+
+        # check for 3D sections
+        src3d = set()
+        dst3d = set()
+        mem3d = set(self._regions[0]._secs3d)
+        sources = [s()._region() for s in self._sources if not isinstance(s(),species.SpeciesOnExtracellular)]
+        dests = [s()._region() for s in self._dests if not isinstance(s(),species.SpeciesOnExtracellular)]
+        for reg in sources:
+            if reg._secs3d: src3d.add(*reg._secs3d)
+        for reg in dests:
+            if reg._secs3d: dst3d.add(*reg._secs3d)
+        if src3d.intersection(dst3d).intersection(mem3d):
+            raise RxDException('Multicompartment reactions in 3D are not yet supported.')
+
         self._changing_species = list(set(self._sources + self._dests))
         
         regs = []
