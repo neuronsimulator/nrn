@@ -73,6 +73,7 @@ void Graph::simgraph() {
 
 GLineRecordExprInfo::GLineRecordExprInfo(const char* expr) {
   symlist_ = NULL;
+  expr_ = expr;
   esym = hoc_parse_expr(expr, &symlist_);
   Inst* inst = esym->u.u_proc->defn.in;
   int sz = esym->u.u_proc->size;
@@ -83,41 +84,8 @@ GLineRecordExprInfo::GLineRecordExprInfo(const char* expr) {
     hoc_debugzz(inst + i);
   }
 #endif
-  // execute the expr Inst by Inst but when rangepoint or
-  // rangevareval are seen, execute a series of stack machine instructions
-  // that give us the pointer to the range variable (see the implementation
-  // in nrn/src/nrnoc/cabcode.c) but leaving the stack as though the
-  // original instruction was executed.
-  Inst* pcsav = hoc_pc;
-  hoc_pc = inst;
-  for (hoc_pc = inst; hoc_pc != STOP;) { // run machine analogous to hoc_execute(inst);
-    double* pd = NULL;
-    Symbol* sym;
-    Inst* pc1 = hoc_pc++; // must be incremented before the function return.
-    if (hoc_pc->pf == rangepoint) {
-        hoc_pushx(0.5); // arc position
-        rangevarevalpointer();
-        pd = hoc_pxpop();
-        hoc_pushx(*pd);
-    }else if (hoc_pc->pf == rangevareval) {
-        rangevarevalpointer();
-        pd = hoc_pxpop();
-        hoc_pushx(*pd);
-    }else if (hoc_pc->pf == varpush) {
-        sym = (hoc_pc + 1)->sym;
-        if (strcmp(sym->name, "t") == 0) {
-          saw_t = true;
-        }
-        hoc_varpush();
-    }else{
-        (*((pc1)->pf))();
-        break;
-    }
-    if (pd) {
-      pd_and_vec.push_back(std::pair<double*, IvocVect*>(pd, NULL));
-    }
-  }
-  hoc_pc = pcsav;
+  // Do not figure out the pd of pd_and_vec here since there may
+  // be reallocation of memory because of cache_efficient.
 }
 
 GLineRecordExprInfo::~GLineRecordExprInfo() {
@@ -127,6 +95,59 @@ GLineRecordExprInfo::~GLineRecordExprInfo() {
     }
   }
   hoc_free_list(&symlist_);
+}
+
+void GLineRecordExprInfo::fill_pd() {
+  // Call only if cache_efficient will not change pointers before useing
+  // the results of his computation.
+
+  // Get rid of old pd_and_vec info.
+  for (GLineRecordEData::iterator it = pd_and_vec.begin(); it != pd_and_vec.end(); ++it) {
+    if ((*it).second) {
+      delete (*it).second;
+    }
+  }
+  pd_and_vec.resize(0);
+
+  // Execute the expr Inst by Inst but when rangepoint or
+  // rangevareval are seen, execute a series of stack machine instructions
+  // that give us the pointer to the range variable (see the implementation
+  // in nrn/src/nrnoc/cabcode.c) but leaving the stack as though the
+  // original instruction was executed.
+  Inst* pcsav = hoc_pc;
+  for (hoc_pc = esym->u.u_proc->defn.in; hoc_pc->in != STOP;) { // run machine analogous to hoc_execute(inst);
+    double* pd = NULL;
+    Symbol* sym;
+    Inst* pc1 = hoc_pc++; // must be incremented before the function return.
+    if (pc1->pf == rangepoint) {
+        hoc_pushx(0.5); // arc position
+        rangevarevalpointer();
+        pd = hoc_pxpop();
+        hoc_pushx(*pd);
+    }else if (pc1->pf == rangevareval) {
+        rangevarevalpointer();
+        pd = hoc_pxpop();
+        hoc_pushx(*pd);
+    }else if (pc1->pf == varpush) {
+        sym = (pc1 + 1)->sym;
+        if (strcmp(sym->name, "t") == 0) {
+          saw_t = true;
+        }
+        hoc_varpush();
+    }else{
+        (*((pc1)->pf))();
+    }
+    if (pd) {
+      pd_and_vec.push_back(std::pair<double*, IvocVect*>(pd, NULL));
+    }
+  }
+  hoc_pc = pcsav;
+#if 1
+  printf("\n%s\n", expr_.c_str());
+  for (GLineRecordEData::iterator it = pd_and_vec.begin(); it != pd_and_vec.end(); ++it) {
+    printf("  pd=%p\n", (*it).first);
+  }
+#endif
 }
 
 GLineRecord::GLineRecord(GraphLine* gl) : PlayRecord(NULL){
@@ -172,6 +193,7 @@ void GLineRecord::plot(int vecsz, double tstop) {
   DataVec* x = (DataVec*)gl_->x_data();
   DataVec* y = (DataVec*)gl_->y_data();
   if (v_) {
+    v_->resize(vecsz);
     double* v = vector_vec(v_);
     for (int i=0; i < vecsz; ++i) {
       x->add(dt*i);
@@ -187,7 +209,7 @@ void GLineRecord::plot(int vecsz, double tstop) {
         *pd = (*it).second->elem(i);
       }
       double val = hoc_run_expr(ef.esym);
-//      y->add(val);
+      y->add(val);
     }
   }else{
     assert(0);

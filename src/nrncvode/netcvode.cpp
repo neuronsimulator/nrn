@@ -5545,6 +5545,7 @@ int& n_pr, void**& vpr, int& n_trajec, int*& types, int*& indices, double**& var
             GLineRecord* glr = (GLineRecord*)pr;
             assert(glr->expr_info_);
             GLineRecordExprInfo& einfo = *glr->expr_info_;
+            einfo.fill_pd();
             n_trajec += einfo.pd_and_vec.size();
           }else{
             n_trajec++;
@@ -5594,6 +5595,7 @@ int& n_pr, void**& vpr, int& n_trajec, int*& types, int*& indices, double**& var
                 }
                 trajec_buffered(nt, bsize, v, pd, n_pr, pr, vpr, n_trajec++, types, indices, varrays);
               }
+              n_pr++;
             }
           }
         }
@@ -5649,18 +5651,18 @@ void nrnthread_trajectory_return(int tid, int n_pr, int vecsz, void** vpr, doubl
       IvocVect* v = NULL;
       if (pr->type() == TvecRecordType) {
         v = ((TvecRecord*)pr)->t_;
+        assert(v->buffer_size() >= vecsz);
+        v->resize(vecsz);
       }else if (pr->type() == YvecRecordType) {
         v = ((YvecRecord*)pr)->y_;
+        assert(v->buffer_size() >= vecsz);
+        v->resize(vecsz);
       }else if (pr->type() == GLineRecordType) {
         GLineRecord* glr = (GLineRecord*)pr;
-        v = glr->v_;
-        v->resize(vecsz);
         glr->plot(vecsz, tt);
       }else{
         assert(0);
       }
-      assert(v->buffer_size() >= vecsz);
-      v->resize(vecsz);
     }
   }
 }

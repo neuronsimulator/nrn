@@ -6,6 +6,7 @@
 
 #include <vector>
 #include <utility>
+#include <string>
 
 typedef std::vector< std::pair< double*, IvocVect* > > GLineRecordEData;
 
@@ -15,7 +16,9 @@ class GLineRecordExprInfo {
 public:
   GLineRecordExprInfo(const char* expr);
   virtual ~GLineRecordExprInfo();
+  void fill_pd();
   GLineRecordEData pd_and_vec;
+  std::string expr_;
   Symbol* esym; //parsed expr
   Symlist* symlist_;
   bool saw_t;
