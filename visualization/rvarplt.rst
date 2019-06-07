@@ -129,6 +129,7 @@ RangeVarPlot
             imp... #specify impedance computation 
             g = h.Graph() 
             g.addobject(rvp) 
+
 ----
 
 
@@ -193,6 +194,8 @@ RangeVarPlot
 
 
     Syntax:
+        ``rvp.bedgin(segment)``
+        
         ``rvp.begin(x, sec=section)``
 
 
