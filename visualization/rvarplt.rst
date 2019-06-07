@@ -10,16 +10,22 @@ RangeVarPlot
 
 
     Syntax:
-        ``h.RangeVarPlot("rangevar")``
+        ``h.RangeVarPlot("rangevar" [, start_segment, stop_segment])``
+        
 
-        ``h.RangeVarPlot(py_callable)``
+        ``h.RangeVarPlot(py_callable [, start_segment, stop_segment])``
 
 
     Description:
         Class for making a space plot. eg. voltage as function of path between 
-        two points on a cell.  For plotting, an object of this type needs 
-        to be inserted in a Graph with 
-        \ ``g.addobject(rvp)`` 
+        two points on a cell.  Specification of the start and stop segments is
+        optional, but if one is specified both must be specified.
+        
+        For Interviews plotting, an object of this type needs 
+        to be inserted in a Graph with ``g.addobject(rvp)``. Alternatively, in
+        NEURON 7.7+, the RangeVarPlot's plot method can be used to plot a snapshot
+        of the values on a Graph object, a bokeh plot, a matplotlib plot, or anything
+        with a compatible interface to the last two.
         By default, the location of the path nearest the root is location 0 
         (the origin) of the space plot. 
          
@@ -71,9 +77,7 @@ RangeVarPlot
             h.finitialize(-65)
             h.continuerun(1)
 
-            rvp = h.RangeVarPlot('v')
-            rvp.begin(0, sec=dend1)
-            rvp.end(1, sec=dend2)
+            rvp = h.RangeVarPlot('v', dend1(0), dend2(1))
             g = h.Graph()
             g.addobject(rvp)
             g.size(0, 1002, -70, 50)
@@ -105,9 +109,7 @@ RangeVarPlot
                     y = 1 + x ** 2
                 return y
 
-            rvp = h.RangeVarPlot(my_func)
-            rvp.begin(0, sec=dend1)
-            rvp.end(1, sec=dend2)
+            rvp = h.RangeVarPlot(my_func, dend1(0), dend2(1))
             g = h.Graph()
             g.addobject(rvp)
             g.size(0, 1002, 0, 2)
@@ -128,7 +130,6 @@ RangeVarPlot
             g = h.Graph() 
             g.addobject(rvp) 
 ----
-
 
 
 .. method:: RangeVarPlot.plot
@@ -196,8 +197,13 @@ RangeVarPlot
 
 
     Description:
-        Starts the path for the space plot at the segment ``section(x)``.
-
+        Begins the path for the space plot at the specified segment. Using the first syntax
+        is recommended in later code; the second is another way to specify the segment ``section(x)``.
+    
+    .. note::
+    
+         Beginning with NEURON 7.7, one can also specify the beginning and ending segments in the
+         RangeVarPlot constructor; e.g. ``rvp = h.RangeVarPlot('v', soma(0), distal(1)``
          
 
 ----
@@ -208,11 +214,19 @@ RangeVarPlot
 
 
     Syntax:
+        ``rvp.end(segment)``
+        
         ``rvp.end(x, sec=section)``
 
 
     Description:
-        Ends the path for the space plot at the segment ``section(x)``.
+        Ends the path for the space plot at the specified segment. Using the first syntax
+        is recommended in later code; the second is another way to specify the segment ``section(x)``.
+    
+    .. note::
+    
+         Beginning with NEURON 7.7, one can also specify the beginning and ending segments in the
+         RangeVarPlot constructor; e.g. ``rvp = h.RangeVarPlot('v', soma(0), distal(1)``
 
          
 
