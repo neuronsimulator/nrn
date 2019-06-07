@@ -1772,6 +1772,7 @@ if (!ISARRAY(sym)) {
 	hoc_thisobject = obsav;
 	hoc_symlist = slsav;
     }
+if (strcmp(sym->name, "v_init") == 0) {printf("eval %s push %g\n", sym->name, d); }
 	pushxm(d);
 }
 
@@ -2499,8 +2500,8 @@ Inst* Code(Pfrv f) {		/* install one instruction or operand */
 
 Inst* codei(int f)
 {
-	/* progp->i = f; */ /* causes debugzz problem as high order bits not zeroed */
-	progp->pf = (void*)f;
+	progp->pf = NULL;/* zero high order bits to avoid debugzz problem */
+	progp->i = f; 
 	return codechk();
 }
 

@@ -19,7 +19,7 @@ extern "C" {
 #include "glinerec.h"
 #include "netcvode.h"
 #include "cvodeobj.h"
-
+#include "ocjump.h"
 
 
 #if HAVE_IV // to end of file
@@ -71,53 +71,10 @@ void Graph::simgraph() {
 	}
 }
 
-GLineRecordExprInfo::GLineRecordExprInfo(const char* expr) {
-  symlist_ = NULL;
-  expr_ = expr;
-  esym = hoc_parse_expr(expr, &symlist_);
-  Inst* inst = esym->u.u_proc->defn.in;
-  int sz = esym->u.u_proc->size;
-  bool saw_t = false;
-#if 1
-  printf("\n%s\n", expr);
-  for (int i = 0; i < sz; ++i) {
-    hoc_debugzz(inst + i);
-  }
-#endif
-  // Do not figure out the pd of pd_and_vec here since there may
-  // be reallocation of memory because of cache_efficient.
-}
-
-GLineRecordExprInfo::~GLineRecordExprInfo() {
-  for (GLineRecordEData::iterator it = pd_and_vec.begin(); it != pd_and_vec.end(); ++it) {
-    if ((*it).second) {
-      delete (*it).second;
-    }
-  }
-  hoc_free_list(&symlist_);
-}
-
-void GLineRecordExprInfo::fill_pd() {
-  // Call only if cache_efficient will not change pointers before useing
-  // the results of his computation.
-
-  // Get rid of old pd_and_vec info.
-  for (GLineRecordEData::iterator it = pd_and_vec.begin(); it != pd_and_vec.end(); ++it) {
-    if ((*it).second) {
-      delete (*it).second;
-    }
-  }
-  pd_and_vec.resize(0);
-
-  // Execute the expr Inst by Inst but when rangepoint or
-  // rangevareval are seen, execute a series of stack machine instructions
-  // that give us the pointer to the range variable (see the implementation
-  // in nrn/src/nrnoc/cabcode.c) but leaving the stack as though the
-  // original instruction was executed.
+void GLineRecord::fill_pd1() {
   Inst* pcsav = hoc_pc;
-  for (hoc_pc = esym->u.u_proc->defn.in; hoc_pc->in != STOP;) { // run machine analogous to hoc_execute(inst);
+  for (hoc_pc = gl_->expr_->u.u_proc->defn.in; hoc_pc->in != STOP;) { // run machine analogous to hoc_execute(inst);
     double* pd = NULL;
-    Symbol* sym;
     Inst* pc1 = hoc_pc++; // must be incremented before the function return.
     if (pc1->pf == rangepoint) {
         hoc_pushx(0.5); // arc position
@@ -129,22 +86,60 @@ void GLineRecordExprInfo::fill_pd() {
         pd = hoc_pxpop();
         hoc_pushx(*pd);
     }else if (pc1->pf == varpush) {
-        sym = (pc1 + 1)->sym;
+        Symbol* sym = hoc_pc->sym;
         if (strcmp(sym->name, "t") == 0) {
-          saw_t = true;
+          saw_t_ = true;
         }
         hoc_varpush();
     }else{
         (*((pc1)->pf))();
     }
     if (pd) {
-      pd_and_vec.push_back(std::pair<double*, IvocVect*>(pd, NULL));
+      pd_and_vec_.push_back(std::pair<double*, IvocVect*>(pd, NULL));
     }
   }
   hoc_pc = pcsav;
-#if 1
-  printf("\n%s\n", expr_.c_str());
-  for (GLineRecordEData::iterator it = pd_and_vec.begin(); it != pd_and_vec.end(); ++it) {
+
+#if 0
+  Symbol* esym = gl_->expr_;
+  int sz = esym->u.u_proc->size;
+  Inst* inst = esym->u.u_proc->defn.in;
+  printf("\n%s\n", gl_->name());
+  for (int i = 0; i < sz; ++i) {
+    hoc_debugzz(inst + i);
+  }
+#endif
+}
+
+void GLineRecord::fill_pd() {
+  // Call only if cache_efficient will not change pointers before useing
+  // the results of his computation.
+
+  // Get rid of old pd_and_vec_ info.
+  for (GLineRecordEData::iterator it = pd_and_vec_.begin(); it != pd_and_vec_.end(); ++it) {
+    if ((*it).second) {
+      delete (*it).second;
+    }
+  }
+  pd_and_vec_.resize(0);
+  saw_t_ = false;
+  pd_ = gl_->pval_;
+  if (pd_) {
+    return;
+  }
+
+  // Execute the expr Inst by Inst but when rangepoint or
+  // rangevareval are seen, execute a series of stack machine instructions
+  // that give us the pointer to the range variable (see the implementation
+  // in nrn/src/nrnoc/cabcode.c) but leaving the stack as though the
+  // original instruction was executed.
+  assert(gl_->expr_);
+  ObjectContext objc(gl_->obj_);
+  fill_pd1();
+  objc.restore();
+#if 0
+  printf("\n%s\n", gl_->name());
+  for (GLineRecordEData::iterator it = pd_and_vec_.begin(); it != pd_and_vec_.end(); ++it) {
     printf("  pd=%p\n", (*it).first);
   }
 #endif
@@ -155,12 +150,8 @@ GLineRecord::GLineRecord(GraphLine* gl) : PlayRecord(NULL){
 //	printf("GLineRecord %p name=%s\n", this, gl->name());
 	gl_ = gl;
 	gl_->simgraph_activate(true);
-//	pd_ = hoc_val_pointer(gl->name());
 	v_ = NULL;
-	expr_info_ = NULL;
-	if (pd_ == NULL) {
-		expr_info_ = new GLineRecordExprInfo(gl->name());
-	}
+	saw_t_ = false;
 }
 
 GLineRecord::~GLineRecord(){
@@ -170,10 +161,13 @@ GLineRecord::~GLineRecord(){
 		delete v_;
 		v_ = NULL;
 	}
-	if (expr_info_) {
-		delete expr_info_;
-		expr_info_ = NULL;
-	}
+
+  for (GLineRecordEData::iterator it = pd_and_vec_.begin(); it != pd_and_vec_.end(); ++it) {
+    if ((*it).second) {
+      delete (*it).second;
+    }
+  }
+
 	for (i = grl->count()-1; i >= 0; --i) {
 		if (grl->item(i) == this) {
 			gl_->simgraph_activate(false);
@@ -199,18 +193,18 @@ void GLineRecord::plot(int vecsz, double tstop) {
       x->add(dt*i);
       y->add(v[i]);
     }
-  }else if (expr_info_) {
-    GLineRecordExprInfo& ef = *expr_info_;
+  }else if (gl_->expr_) {
     // transfer elements to range variables and plot expression result
+    ObjectContext obc(NULL);
     for (int i=0; i < vecsz; ++i) {
       x->add(dt*i);
-      for (GLineRecordEData::iterator it = ef.pd_and_vec.begin(); it != ef.pd_and_vec.end(); ++it) {
+      for (GLineRecordEData::iterator it = pd_and_vec_.begin(); it != pd_and_vec_.end(); ++it) {
         double* pd = (*it).first;
         *pd = (*it).second->elem(i);
       }
-      double val = hoc_run_expr(ef.esym);
-      y->add(val);
+      gl_->plot();
     }
+    obc.restore();
   }else{
     assert(0);
   }

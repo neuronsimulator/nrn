@@ -5543,10 +5543,9 @@ int& n_pr, void**& vpr, int& n_trajec, int*& types, int*& indices, double**& var
         if (pr->type() == GLineRecordType) {
           if (pr->pd_ == NULL) {
             GLineRecord* glr = (GLineRecord*)pr;
-            assert(glr->expr_info_);
-            GLineRecordExprInfo& einfo = *glr->expr_info_;
-            einfo.fill_pd();
-            n_trajec += einfo.pd_and_vec.size();
+            assert(glr->gl_->expr_);
+            glr->fill_pd();
+            n_trajec += glr->pd_and_vec_.size();
           }else{
             n_trajec++;
           }
@@ -5585,7 +5584,7 @@ int& n_pr, void**& vpr, int& n_trajec, int*& types, int*& indices, double**& var
               v = glr->v_;
               trajec_buffered(nt, bsize, v, pr->pd_, n_pr++, pr, vpr, n_trajec++, types, indices, varrays);
             }else{ // glr->gl_->name expression involves several range variables
-              GLineRecordEData& ed = glr->expr_info_->pd_and_vec;
+              GLineRecordEData& ed = glr->pd_and_vec_;
               for (GLineRecordEData::iterator it = ed.begin(); it != ed.end(); ++it) {
                 double* pd = (*it).first;
                 assert(pd);
@@ -5601,7 +5600,7 @@ int& n_pr, void**& vpr, int& n_trajec, int*& types, int*& indices, double**& var
         }
       }
     }
-#if 1
+#if 0
     printf("nrnthread_get_trajectory_requests tid=%d n_trajec=%d\n", tid, n_trajec);
     for (int i=0; i < n_trajec; ++i) {
       PlayRecord* pr = (PlayRecord*)vpr[i];
