@@ -90,7 +90,7 @@ hoc_module = Extension(
         @BUILD_NRNMPI_DYNAMIC_FALSE@"nrnmpi",
         "scopmath", "sparse13", "sundials",
         "@IVHINES@",
-      ], + sundials_libs,
+      ] + sundials_libs,
       include_dirs = include_dirs,
       define_macros=defines
     )
