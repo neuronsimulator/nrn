@@ -59,7 +59,7 @@ def fullmorph(source, dx, soma_step=100):
     	zs += [sec.z3d(i) for i in range(sec.n3d())]
     	diams += [sec.diam3d(i) for i in range(sec.n3d())]
     	arcs += [sec.arc3d(i + 1) - sec.arc3d(i) for i in range(sec.n3d() - 1)]
-
+    # TODO: include segment boundaries when checking cone lengths
     # warning on minimum size of dx
     check = min(min(diams)/math.sqrt(3), min(arcs)/math.sqrt(3))
     if (dx > check):
@@ -123,7 +123,7 @@ def fullmorph(source, dx, soma_step=100):
                     missed_voxels.add(miss)
 
                 # must take only the internal voxels for that item (set diff)
-                yesvox = yesvox - surface.keys()
+                yesvox = yesvox - set(surface.keys())
                 for i in yesvox:  
                     if i in final_intern_voxels.keys():
                         if h.distance(distance_root, seg) < h.distance(distance_root, final_intern_voxels[i][1]) and not isinstance(item, Sphere):

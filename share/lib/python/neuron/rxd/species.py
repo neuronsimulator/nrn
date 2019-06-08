@@ -51,6 +51,11 @@ ICS_insert.argtypes = [
     ctypes.c_bool,
     ctypes.c_double,]
 
+#function to change extracellular diffusion
+set_diffusion = nrn_dll_sym('set_diffusion')
+set_diffusion.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_double, ctypes.c_double, ctypes.c_double]
+set_diffusion.restype = ctypes.c_int
+
 ICS_insert.restype = ctypes.c_int
 
 species_atolscale = nrn_dll_sym('species_atolscale')
@@ -146,10 +151,14 @@ class _SpeciesMathable(object):
         return _Arithmeticed(self) * other
     def __div__(self, other):
         return _Arithmeticed(self) / other
+    def __rdiv__(self, other):
+        return _Arithmeticed(other) / self
     def __radd__(self, other):
         return _Arithmeticed(other) + self
     def __rmul__(self, other):
         return _Arithmeticed(self) * other
+    def __truediv__(self, other):
+        return _Arithmeticed(self) / other
     def __rtruediv__(self, other):
         return _Arithmeticed(other) / self
     def __rfloordiv__(self, other):
@@ -180,17 +189,17 @@ class _SpeciesMathable(object):
         rxdmath._validate_reaction_terms(self2, other)
         return rxdmath._Reaction(self2, other, '<')
 
-    def _semi_compile(self, reg):
+    def _semi_compile(self, reg, instruction):
         from . import region
         #region is Extracellular
         if isinstance(reg, region.Extracellular):
             ecs_instance = self._extracellular_instances[reg]
-            return ecs_instance._semi_compile(reg)
+            return ecs_instance._semi_compile(reg, instruction)
         #region is 3d intracellular
-        if isinstance(reg, region.Region) and reg._secs3d:
+        if isinstance(reg, region.Region) and instruction == 'do_3d':
             ics_instance = self._intracellular_instances[reg]
-            return ics_instance._semi_compile(reg)
-        if isinstance(reg, region.Region) and reg._secs1d:
+            return ics_instance._semi_compile(reg, instruction)
+        if isinstance(reg, region.Region) and instruction == 'do_1d':
             if reg in self._regions:
                 return 'species[%d][%d]' % (self._id, reg._id)
             elif len(self._regions) == 1:
@@ -208,11 +217,16 @@ class _SpeciesMathable(object):
     @d.setter
     def d(self, value):
         from . import rxd
-        if hasattr(self, '_allow_setting'):
-            self._d = value
-        else:
+        self._d = value
+        if hasattr(self, '_extracellular_instances'):
+            for ecs in self._extracellular_instances.values():
+                ecs.d = value
+        if hasattr(self, '_intracellular_instances'):
+            for ics in self._intracellular_instances.values():
+                ics.d = value
+        if initializer.is_initialized() and hasattr(self,'_region_indices'):
             _volumes, _surface_area, _diffs = node._get_data()
-            _diffs[self.indices()] = value
+            _diffs[self._indices1d()] = value
             rxd._setup_matrices()
 
 class SpeciesOnExtracellular(_SpeciesMathable):
@@ -306,12 +320,22 @@ class SpeciesOnExtracellular(_SpeciesMathable):
         return nodelist.NodeList([nd for nd in self._species()._extracellular_nodes if nd.region == self._extracellular()._region])
 
                 
-    def _semi_compile(self, reg):
+    def _semi_compile(self, reg, instruction):
         #This will always be an ecs_instance
         #reg = self._extracellular()._region
         #ecs_instance = self._species()._extracellular_instances[reg]
         #return ecs_instance._semi_compile(reg)
-        return self._extracellular()._semi_compile(reg)
+        return self._extracellular()._semi_compile(reg, instruction)
+
+    @property
+    def d(self):
+        return self._extracellular()._d
+    
+    @d.setter
+    def d(self, value):
+        self._extracellular().d = value
+
+
 
 class SpeciesOnRegion(_SpeciesMathable):
     def __init__(self, species, region):
@@ -418,14 +442,16 @@ class SpeciesOnRegion(_SpeciesMathable):
         
         This is equivalent to s.nodes.concentration = value"""
         self.nodes.concentration = value
-    def _semi_compile(self, reg):
+    def _semi_compile(self, reg, instruction):
         #Never an _ExtracellularSpecies since we are in SpeciesOnRegion
         reg = self._region()
-        if reg._secs3d:
+        if instruction == 'do_3d':
             ics_instance = self._species()._intracellular_instances[reg]
-            return ics_instance._semi_compile(reg)
+            return ics_instance._semi_compile(reg, instruction)
         elif reg._secs1d:
             return 'species[%d][%d]' % (self._id, self._region()._id)
+        else:
+            raise RxDException('There are no 1D sections defined on {}'.format(reg))
 
     @property
     def _id(self):
@@ -614,11 +640,22 @@ class _IntracellularSpecies(_SpeciesMathable):
                     _ics_set_grid_currents(grid_list_start, self._grid_id, self._surface_nodes_per_seg, self._surface_nodes_per_seg_start_indices, self._current_neuron_pointers, self._scale_factors)
 
 
-    def _semi_compile(self, region):
-        if isinstance(_defined_species[self._species][self._region](), Parameter):
-            return 'params_3d[%d]' %  (self._grid_id)
-        else:
-            return 'species_3d[%d]' % (self._grid_id)
+    def _semi_compile(self, region, instruction):
+        if instruction == 'do_3d':
+            if isinstance(_defined_species[self._species][self._region](), Parameter):
+                return 'params_3d[%d]' %  (self._grid_id)
+            else:
+                return 'species_3d[%d]' % (self._grid_id)
+
+    @property
+    def d(self):
+        return self._d
+    
+    @d.setter
+    def d(self, value):
+        if self._d != value:
+            self._d = value
+            set_diffusion(0, self._grid_id, value, value, value)
 
 class _ExtracellularSpecies(_SpeciesMathable):
     def __init__(self, region, d=0, name=None, charge=0, initial=0, atolscale=1.0, boundary_conditions=None):
@@ -778,7 +815,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
         Note: the current version keeps all the sections alive (i.e. they will never be garbage collected)
         TODO: fix this
         """
-        result = {}
+        result = {} 
         for sec in h.allsec():
             result[sec] = [self.index_from_xyz(*_xyz(seg)) for seg in sec]
         return result
@@ -800,26 +837,40 @@ class _ExtracellularSpecies(_SpeciesMathable):
                     grid_indices.append(i)
                     neuron_pointers.append(seg.__getattribute__(stateo))
         _set_grid_concentrations(grid_list, self._grid_id, grid_indices, neuron_pointers)
-
-        tenthousand_over_charge_faraday = 10000. / (self._charge * h.FARADAY)
-        scale_factor = tenthousand_over_charge_faraday / (numpy.prod(self._dx))
-        ispecies = '_ref_i' + self._species
-        neuron_pointers = []
-        scale_factors = []
-        for sec, indices in self._seg_indices.items():
-            for seg, surface_area, i in zip(sec, _surface_areas1d(sec), indices):
-                if i is not None:
-                    neuron_pointers.append(seg.__getattribute__(ispecies))
-                    scale_factors.append(float(scale_factor * surface_area))
-        #TODO: MultiCompartment reactions ?
-        _set_grid_currents(grid_list, self._grid_id, grid_indices, neuron_pointers, scale_factors)
+        if isinstance(_defined_species[self._species][self._region](), Parameter):
+            _set_grid_currents(grid_list, self._grid_id, [], [], [])
+        else:
+            tenthousand_over_charge_faraday = 10000. / (self._charge * h.FARADAY)
+            scale_factor = tenthousand_over_charge_faraday / (numpy.prod(self._dx))
+            ispecies = '_ref_i' + self._species
+            neuron_pointers = []
+            scale_factors = []
+            for sec, indices in self._seg_indices.items():
+                for seg, surface_area, i in zip(sec, _surface_areas1d(sec), indices):
+                    if i is not None:
+                        neuron_pointers.append(seg.__getattribute__(ispecies))
+                        scale_factors.append(float(scale_factor * surface_area))
+            #TODO: MultiCompartment reactions ?
+            _set_grid_currents(grid_list, self._grid_id, grid_indices, neuron_pointers, scale_factors)
     
-    def _semi_compile(self, reg):
+    def _semi_compile(self, reg, instruction):
         if isinstance(_defined_species[self._species][self._region](), Parameter):
             return 'params_3d[%d]' %  (self._grid_id)
         else:
             return 'species_3d[%d]' % (self._grid_id)
 
+    @property
+    def d(self):
+        return self._d
+    
+    @d.setter
+    def d(self, value):
+        if self._d != value:
+            self._d = value
+            if hasattr(value,'__len__'):
+                set_diffusion(0, self._grid_id, value[0], value[1], value[2])
+            else:
+                set_diffusion(0, self._grid_id, value, value, value)
 
 
 # TODO: make sure that we can make this work where things diffuse across the
@@ -1464,7 +1515,8 @@ class Species(_SpeciesMathable):
         self._all_intracellular_nodes = []
         if self._intracellular_nodes:
             for r in self._regions:
-                self._all_intracellular_nodes += self._intracellular_nodes[r]
+                if r in self._intracellular_nodes:
+                    self._all_intracellular_nodes += self._intracellular_nodes[r]
         # The first part here is for the 1D -- which doesn't keep live node objects -- the second part is for 3D
         return nodelist.NodeList(list(itertools.chain.from_iterable([s.nodes for s in self._secs])) + self._nodes + self._all_intracellular_nodes + self._extracellular_nodes) 
 
@@ -1542,17 +1594,17 @@ class Parameter(Species):
         self._d = 0
         super(Parameter, self).__init__(*args, **kwargs)
 
-    def _semi_compile(self, reg):
+    def _semi_compile(self, reg, instruction):
         from . import region
         #region is Extracellular
         if isinstance(reg, region.Extracellular):
             ecs_instance = self._extracellular_instances[reg]
-            return ecs_instance._semi_compile(reg)
+            return ecs_instance._semi_compile(reg, instruction)
         #region is 3d intracellular
-        if isinstance(reg, region.Region) and reg._secs3d:
+        if isinstance(reg, region.Region) and instruction == 'do_3d':
             ics_instance = self._intracellular_instances[reg]
-            return ics_instance._semi_compile(reg)
-        if isinstance(reg, region.Region) and reg._secs1d:
+            return ics_instance._semi_compile(reg, instruction)
+        if isinstance(reg, region.Region) and instruction == 'do_1d':
             if reg in self._regions:
                 return 'params[%d][%d]' % (self._id, reg._id)
             elif len(self._regions) == 1:
@@ -1597,13 +1649,21 @@ class Parameter(Species):
         raise RxDException('no such region')
 
 class ParameterOnRegion(SpeciesOnRegion):
-    def _semi_compile(self, reg):
-        reg = self._region()
+    def _semi_compile(self, reg, instruction):
+        """reg = self._region()
         if reg._secs3d:
             ics_instance = self._species()._intracellular_instances[reg]
-            return ics_instance._semi_compile(reg)
+            return ics_instance._semi_compile(reg, instruction)
+        elif reg._secs1d:
+            return 'params[%d][%d]' % (self._id, self._region()._id)"""
+        reg = self._region()
+        if instruction == 'do_3d':
+            ics_instance = self._species()._intracellular_instances[reg]
+            return ics_instance._semi_compile(reg, instruction)
         elif reg._secs1d:
             return 'params[%d][%d]' % (self._id, self._region()._id)
+        else:    
+            raise RxDException('Instruction for ParameterOnRegion semi_compile was neither 1d or 3d')
 
 
 class ParameterOnExtracellular(SpeciesOnExtracellular):
