@@ -28,7 +28,7 @@ extern void fcurrent(), fmatrix(), frecord_init();
 extern void issection(), ismembrane(), sectionname(), psection();
 extern void pop_section(), push_section(), section_exists();
 extern void delete_section();
-extern int secondorder, diam_changed, nrn_shape_changed_, nrn_netrec_state_adjust;
+extern int secondorder, diam_changed, nrn_shape_changed_, nrn_netrec_state_adjust, nrn_sparse_partrans;
 extern double clamp_resist;
 extern double celsius;
 extern int stoprun;

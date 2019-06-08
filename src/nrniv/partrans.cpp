@@ -595,13 +595,16 @@ void mpi_transfer() {
 #if PARANEURON
 	if (nrnmpi_numprocs > 1) {
 		double wt = nrnmpi_wtime();
-#if USE_SPARTRANS                
-		nrnmpi_dbl_alltoallv_sparse(outsrc_buf_, outsrccnt_, outsrcdspl_,
-					    insrc_buf_, insrccnt_, insrcdspl_);
-#else
-		nrnmpi_dbl_alltoallv(outsrc_buf_, outsrccnt_, outsrcdspl_,
-                                     insrc_buf_, insrccnt_, insrcdspl_);
-#endif
+                if (nrn_sparse_partrans > 0)
+                  {
+                    nrnmpi_dbl_alltoallv_sparse(outsrc_buf_, outsrccnt_, outsrcdspl_,
+                                                insrc_buf_, insrccnt_, insrcdspl_);
+                  }
+                else
+                  {
+                    nrnmpi_dbl_alltoallv(outsrc_buf_, outsrccnt_, outsrcdspl_,
+                                         insrc_buf_, insrccnt_, insrcdspl_);
+                  }
 		nrnmpi_transfer_wait_ += nrnmpi_wtime() - wt;
 		errno = 0;
 	}
