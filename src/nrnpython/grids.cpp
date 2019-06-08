@@ -295,7 +295,7 @@ int ICS_insert(int grid_list_index, PyHocObject* my_states, long num_nodes, long
     Grid_node *new_Grid = ICS_make_Grid(my_states, num_nodes, neighbors, ordered_x_nodes,
             ordered_y_nodes, ordered_z_nodes, x_line_defs, x_lines_length, y_line_defs,
             y_lines_length, z_line_defs, z_lines_length, d, dx, is_diffusable, atolscale);
-    return new_Grid->insert(grid_list_index);;
+    return new_Grid->insert(grid_list_index);
 }
 
 /*Set the diffusion coefficients*/
@@ -310,9 +310,27 @@ int set_diffusion(int grid_list_index, int grid_id, double dc_x, double dc_y, do
         if(node == NULL)
             return -1;
     }
-    node->dc_x = dc_x;
-    node->dc_y = dc_y;
-    node->dc_z = dc_z;
+    if(ICS_Grid_node* ics_node = dynamic_cast<ICS_Grid_node*>(node))
+    {
+        ics_node->ics_adi_dir_x->dc = dc_x;
+        ics_node->ics_adi_dir_y->dc = dc_y;
+        ics_node->ics_adi_dir_z->dc = dc_z;
+    }
+    else if(ECS_Grid_node* ecs_node = dynamic_cast<ECS_Grid_node*>(node))
+    {
+        if(node->get_lambda == &get_lambda_scalar)
+        {
+            ecs_node->dc_x = dc_x/SQ(node->lambda[0]);
+            ecs_node->dc_y = dc_y/SQ(node->lambda[0]);
+            ecs_node->dc_z = dc_z/SQ(node->lambda[0]);
+        }
+        else
+        {
+            ecs_node->dc_x = dc_x;
+            ecs_node->dc_y = dc_y;
+            ecs_node->dc_z = dc_z;
+        }
+    }
     return 0;
 }
 
