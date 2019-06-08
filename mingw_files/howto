@@ -40,14 +40,14 @@ cd ~/neuron/nrnwinobj
 
 PYVS="py"
 
-export CYTHON=cython2
+export CYTHON=cython
 
 bld () {
 PYVER=$1
 PYVS=${PYVS}-${PYVER}
-PYDIR=/f/python${PYVER}
+PYDIR=/e/python${PYVER}
 
-rm -f -f src/nrnpython/build
+rm -r -f src/nrnpython/build
 
 ../nrn/configure --prefix=`pwd` -with-nrnpython=dynamic \
  --with-pyexe=$PYDIR/python \
@@ -55,7 +55,7 @@ rm -f -f src/nrnpython/build
  --with-paranrn=dynamic MPICC=x86_64-w64-mingw32-gcc \
  MPICXX=x86_64-w64-mingw32-g++ \
  CFLAGS='-DMSMPI_NO_SAL -I/c/ms-mpi/include -O2' \
- CXXFLAGS='-DMSMPI_NO_SAL -D_hypot=hypot -I/c/ms-mpi/include -O2' \
+ CXXFLAGS='-DMSMPI_NO_SAL -I/c/ms-mpi/include -O2' \
  LIBS='-L/c/ms-mpi/lib/x64 -lmsmpi' \
   PYINCDIR=$PYDIR/include \
   PYLIBDIR=$PYDIR/libs \
@@ -84,7 +84,7 @@ fi
 
 echo "scp src/mswin/$n1  hines@neuron.yale.edu:/home/htdocs/ftp/neuron/versions/alpha/$n2"
 
-h=michaelhines@192.168.2.7
+h=hines@10.10.0.2
 scp src/mswin/$n1 $h:vmshared/$n2
 if true ; then
 ssh $h scp vmshared/$n2 hines@neuron.yale.edu:/home/htdocs/ftp/neuron/versions/alpha/$n2
