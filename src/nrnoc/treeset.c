@@ -603,16 +603,17 @@ void* setup_tree_matrix(NrnThread* _nt){
 	nrn_lhs(_nt);
 	nrn_nonvint_block_current(_nt->end, _nt->_actual_rhs, _nt->id);
 	nrn_nonvint_block_conductance(_nt->end, _nt->_actual_d, _nt->id);
-if (1) {
+#if 0
   if (use_sparse13) {
     int i, neq;
     neq = spGetSize(_nt->_sp13mat, 0);
     for (i=1; i <= neq; ++i) {
+      /* requires TRANSLATE YES in sparse13/spconfig.h */
       double* d = spGetElement(_nt->_sp13mat, i, i);
       printf("i=%d d=%g\n", i, *d);
     }
   }
-}
+#endif
 	return (void*)0;
 }
 
@@ -2031,17 +2032,18 @@ printf("nrn_matrix_node_alloc use_sparse13=%d cvode_active_=%d nrn_use_daspk_=%d
 	++nrn_matrix_cnt_;
 	if (use_sparse13) {
 		int in, err, extn, neqn, j;
+		int extnfac= cvode_active_ ? 2 : 1;
 		nt = nrn_threads;
 		neqn = nt->end + nrndae_extra_eqn_count();
 		extn = 0;
 		if (nt->_ecell_memb_list) {
-			/* 2 because IDA initialization requires for each
-			   layer i, not only vx[i] but vmx[i] where
+			/* extnfac because IDA initialization requires for
+			   each layer i, not only vx[i] but vmx[i] where
 			   vmx[i] = vx[i-1] - vx[i] and vmx is used
 			   only for IDA with vx[-1] interpreted as v + vx[0]
 			   All vmx in each node follow the vx in each node.
 			*/
-			extn =  nt->_ecell_memb_list->nodecount * 2 * nlayer;
+			extn =  nt->_ecell_memb_list->nodecount * extnfac * nlayer;
 		}
 /*printf(" %d extracellular nodes\n", extn);*/
 		neqn += extn;
@@ -2053,7 +2055,7 @@ printf("nrn_matrix_node_alloc use_sparse13=%d cvode_active_=%d nrn_use_daspk_=%d
 		for (in=0, i=1; in < nt->end; ++in, ++i) {
 			nt->_v_node[in]->eqn_index_ = i;
 			if (nt->_v_node[in]->extnode) {
-				i += 2*nlayer;
+				i += extnfac*nlayer;
 			}
 		}
 		for (in = 0; in < nt->end; ++in) {

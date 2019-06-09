@@ -250,7 +250,7 @@
 /* NEURON's nonlinz.cpp uses cmplx_spGetElement after previous use of matrix */
 #define  TRANSLATE                      YES
 #else
-#define  TRANSLATE                      NO /* instead of YES */
+#define  TRANSLATE                      YES /* instead of YES */
 #endif
 #define  INITIALIZE                     NO /* instead of YES */
 #define  DIAGONAL_PIVOTING              YES
