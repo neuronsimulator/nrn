@@ -62,18 +62,46 @@ def _compile(arith, region):
     s_by_reg = {}
     species_dict = {}
     for reg in region:
-        #TODO figure out what we are catching with attribute error
-        try:
-            #Checks to make sure the all species in arith are defined on the region
+        #Check to see if region has both 1D and 3D
+        if hasattr(reg,'_secs1d') and reg._secs1d and hasattr(reg,'_secs3d') and reg._secs3d:
+            for instruction in ['do_1d', 'do_3d']:        
+                #TODO figure out what we are catching with attribute error
+                try:
+                    #If it is a hybrid model, we need to do semi compile for both the 1D and the 3D
+                    #Checks to make sure the all species in arith are defined on the region
+                    try:
+                        s = arith._semi_compile(reg, instruction)
+                    except KeyError:
+                        continue
+                    #s_by_reg[reg] = s
+                    s_by_reg.setdefault(reg, [])
+                    s_by_reg[reg].append(s)
+                    arith._involved_species(species_dict)
+                except AttributeError:
+                    species_dict = {}
+                    s = str(arith)
+        else:
+            if hasattr(reg,'_secs1d') and reg._secs1d:
+                instruction = 'do_1d'
+            elif hasattr(reg,'_secs3d') and reg._secs3d:
+                instruction = 'do_3d'
+            #Do extracellular
+            else:
+                instruction = None
             try:
-                s = arith._semi_compile(reg)
-            except KeyError:
-                continue
-            s_by_reg[reg] = s
-            arith._involved_species(species_dict)
-        except AttributeError:
-            species_dict = {}
-            s = str(arith)
+                #Non-Hybrid model so there are no additional instructions and behavior is normal
+                #Checks to make sure the all species in arith are defined on the region
+                try:
+                    s = arith._semi_compile(reg, instruction)
+                except KeyError:
+                    continue
+                #s_by_reg[reg] = s
+                s_by_reg.setdefault(reg, [])
+                s_by_reg[reg].append(s)
+                arith._involved_species(species_dict)
+            except AttributeError:
+                species_dict = {}
+                s = str(arith)           
 
     #C-version
     #Get the index rather than the key
@@ -114,8 +142,8 @@ class _Function:
         except:
             return self.__repr__()
     
-    def _semi_compile(self, region):
-        return '%s(%s)' % (self._fname, self._obj._semi_compile(region))
+    def _semi_compile(self, region, instruction):
+        return '%s(%s)' % (self._fname, self._obj._semi_compile(region, instruction))
     def _involved_species(self, the_dict):
         self._obj._involved_species(the_dict)
 
@@ -150,8 +178,8 @@ class _Function2:
         except:
             return self.__repr__()
  
-    def _semi_compile(self, region):
-        return '%s(%s, %s)' % (self._fname, self._obj1._semi_compile(region), self._obj2._semi_compile(region))
+    def _semi_compile(self, region, instruction):
+        return '%s(%s, %s)' % (self._fname, self._obj1._semi_compile(region, instruction), self._obj2._semi_compile(region, instruction))
     def _involved_species(self, the_dict):
         self._obj1._involved_species(the_dict)
         self._obj2._involved_species(the_dict)
@@ -310,8 +338,8 @@ class _Product:
                 return True
         return False
 
-    def _semi_compile(self, region):
-        return '(%s)*(%s)' % (self._a._semi_compile(region), self._b._semi_compile(region))
+    def _semi_compile(self, region, instruction):
+        return '(%s)*(%s)' % (self._a._semi_compile(region, instruction), self._b._semi_compile(region, instruction))
 
     def _involved_species(self, the_dict):
         self._a._involved_species(the_dict)
@@ -358,8 +386,8 @@ class _Quotient:
                 return True
         return False
 
-    def _semi_compile(self, region):
-        return '(%s)/(%s)' % (self._a._semi_compile(region), self._b._semi_compile(region))
+    def _semi_compile(self, region, instruction):
+        return '(%s)/(%s)' % (self._a._semi_compile(region, instruction), self._b._semi_compile(region, instruction))
     def _involved_species(self, the_dict):
         self._a._involved_species(the_dict)
         self._b._involved_species(the_dict)
@@ -498,7 +526,7 @@ class _Arithmeticed:
                 return True
         return False
 
-    def _semi_compile(self, region):
+    def _semi_compile(self, region, instruction):
         items = []
         counts = []
         items_append = items.append
@@ -506,9 +534,9 @@ class _Arithmeticed:
         for item, count in zip(list(self._items.keys()), list(self._items.values())):
             if count:
                 try:
-                    items_append(item._semi_compile(region))
+                    items_append(item._semi_compile(region, instruction))
                 except AttributeError:
-                    items_append('%s' % item)
+                    items_append('%r' % item)
                 counts_append(count)
         result = ''
         for i, c in zip(items, counts):

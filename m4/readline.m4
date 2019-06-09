@@ -41,6 +41,7 @@ AC_HELP_STRING([-with-readline=dir],[Specify the location of the readline librar
  elif test "$with_readline" = "no" ; then # build our own
    echo "build our own version of libreadline"
    READLINE_LIBS="-lreadline $TERMCAP_LIB"
+   READLINE_SOSUFFIX=0
    build_readline=yes
    NRN_READLINE_LIBS="../readline/libreadline.la $TERMCAP_LIB"
    NRN_READLINE_DEP="../readline/libreadline.la"
@@ -96,7 +97,10 @@ exit 1
 MEMACSLIB="-lmemacs"
 MEMACSLIBLA="../memacs/libmemacs.la"
 
+AC_SUBST(READLINE_SOSUFFIX)
+
 else dnl end of with_memacs and beginning of without_memacs
+
 echo "no memacs or anything else that depends on terminal capabilities"
 READLINE_LIBS=""
 NRN_READLINE_LIBS=""
@@ -108,6 +112,8 @@ MEMACSLIB=""
 MEMACSLIBLA=""
 fi
 
+eval SHREXT=$shrext_cmds
+AC_SUBST(SHREXT)
 AC_SUBST(READLINE_LIBS)
 AC_SUBST(NRN_READLINE_LIBS)
 AC_SUBST(NRN_READLINE_DEP)

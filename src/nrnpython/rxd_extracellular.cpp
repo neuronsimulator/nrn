@@ -510,7 +510,9 @@ void do_currents(Grid_node* grid, double* output, double dt, int grid_id)
         for(i = 0; i < _memb_curr_total; i++)
         {
             if(_rxd_induced_currents_grid[i] == grid_id)
-                output[_rxd_induced_currents_ecs_idx[i]] += _rxd_induced_currents_ecs[i]*_rxd_induced_currents_scale[i];
+            {
+                output[_rxd_induced_currents_ecs_idx[i]] -= _rxd_induced_currents_ecs[i] * _rxd_induced_currents_scale[i];
+            }
         }
     }
 }

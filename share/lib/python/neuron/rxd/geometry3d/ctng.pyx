@@ -424,7 +424,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
             # do this by connecting to local center axis
             # CTNG:connectdends
 
-            if psec == soma_sec:
+            if psec == soma_sec and soma_sec is not None:
                 pt = (x[1], y[1], z[1])
                 cp = closest_pt(pt, f_pts, somaz)
                 # NEURON includes the wire point at the center; we want to connect
@@ -433,13 +433,15 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
                 x[0], y[0] = cp
                 z[0] = somaz
                 d[0] = d[1]
-                """# cap this with a sphere for smooth joins
+                
+                '''# cap this with a sphere for smooth joins
                 sphere_cap = Sphere(x[0], y[0], z[0], d[0] * 0.5)
                 # make sure sphere doesn't stick out of wrong side of cylinder
                 sphere_cap.set_clip([Plane(x[1], y[1], z[1], x[1] - x[0], y[1] - y[0], z[1] - z[0])])
                 objects.append(sphere_cap)
                 with cython.wraparound(True):
-                    soma_objects.append(objects[-1])"""
+                    soma_objects.append(objects[-1])'''
+            
 
             for i in range(len(x) - 1):
                 d0, d1 = d[i : i + 2]
@@ -582,13 +584,13 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
                                 joingroup.append(objects[-1])
                                 obj_pts_dict[objects[-1]] = corner_pts
                                 if my_corner_count == 1:
-                                    objects.append(tangent_sphere(neighbor_left, 1))
-                                    objects[-1].set_clip([Plane(x2, y2, z2, naxis[0], naxis[1], naxis[2])])
+                                    objects.append(sp)
+                                    objects[-1].set_clip([Plane(x0, y0, z0, -axis[0], -axis[1], -axis[2]), Plane(x2, y2, z2, naxis[0], naxis[1], naxis[2])])
                                     joingroup.append(objects[-1])
                                     obj_pts_dict[objects[-1]] = corner_pts
                                 else:
-                                    objects.append(tangent_sphere(cone, 0))
-                                    objects[-1].set_clip([Plane(x0, y0, z0, -axis[0], -axis[1], -axis[2])])
+                                    objects.append(sp)
+                                    objects[-1].set_clip([Plane(x0, y0, z0, -axis[0], -axis[1], -axis[2]), Plane(x2, y2, z2, naxis[0], naxis[1], naxis[2])])
                                     joingroup.append(objects[-1])
                                     obj_pts_dict[objects[-1]] = corner_pts
 
