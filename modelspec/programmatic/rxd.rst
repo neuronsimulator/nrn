@@ -8,12 +8,6 @@ Basic Reaction-Diffusion
     
     geometry3d.rst
 
-
-.. warning::
-
-    These functions are experimental.
-    Please contact the NEURON developers with issues and be sure to validate your results.
-
 .. currentmodule:: neuron.rxd
 .. autoclass:: Region
     :members: __init__, nrn_region, secs
