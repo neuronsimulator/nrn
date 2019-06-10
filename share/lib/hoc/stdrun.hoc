@@ -234,12 +234,7 @@ proc helpmenu() {
     }
 }
 
-proc buildmenu() {local has_rxd
-    has_rxd = 0
-    if (nrnpython("import neuron")) {
-        pyobj = new PythonObject()
-        has_rxd = pyobj.neuron._has_scipy()
-    }    
+proc buildmenu() {
     xmenu("Build", 1)
     xbutton("single compartment", "load_file(\"single.hoc\") makesinglecompartment()")
     xbutton("Cell Builder", "load_file(\"celbild.hoc\") makecellbuilder()")
@@ -255,10 +250,7 @@ proc buildmenu() {local has_rxd
     xbutton("Point", "load_file(\"chanbild.hoc\", \"ChannelBuild\") chanbild(0)")
     xmenu("import KSChan", "cbimportmenu()")
     xmenu()
-    if (has_rxd) {
-        /* check for rxd or crxd at runtime rather than at import */
-        xbutton("RxD Builder", "nrnpython(\"import neuron.rxd.gui\\nneuron.rxd.gui.RxDBuilder()\")")
-    }
+    xbutton("RxD Builder", "nrnpython(\"import neuron.rxd.gui\\nneuron.rxd.gui.RxDBuilder()\")")
     xmenu()
 }
 proc cbimportmenu() {local i, j
