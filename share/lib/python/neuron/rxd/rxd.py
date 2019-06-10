@@ -1214,7 +1214,7 @@ def _compile_reactions():
     nseg_by_region = []     # a list of the number of segments for each region
     # a table for location,species -> state index
     location_index = []
-    regions_inv_1d = [reg for reg in regions_inv if not reg._secs3d]
+    regions_inv_1d = [reg for reg in regions_inv if reg._secs1d]
     regions_inv_1d.sort(key=lambda r: r._id)
     regions_inv_3d = [reg for reg in regions_inv if reg._secs3d]
     for reg in regions_inv_1d:
