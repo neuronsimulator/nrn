@@ -607,7 +607,7 @@ class _IntracellularSpecies(_SpeciesMathable):
         else:
             raise RxDException("options.concentration_nodes_3d must be 'surface' or 'all'")
         grid_list_start = 0
-        if self._nodes:
+        if self._nodes and self._name:
             nrn_region = self._region._nrn_region
             if nrn_region:         
                 ion_conc = '_ref_' + self._name + nrn_region
@@ -642,7 +642,14 @@ class _IntracellularSpecies(_SpeciesMathable):
 
     def _semi_compile(self, region, instruction):
         if instruction == 'do_3d':
-            if isinstance(_defined_species[self._species][self._region](), Parameter):
+            if self._species:
+                sp = _defined_species[self._species][self._region]()
+            else:
+                for s in _all_species:
+                    if self in s()._intracellular_instances.values():
+                        sp = s()
+                        break
+            if isinstance(sp, Parameter):
                 return 'params_3d[%d]' %  (self._grid_id)
             else:
                 return 'species_3d[%d]' % (self._grid_id)
@@ -854,7 +861,14 @@ class _ExtracellularSpecies(_SpeciesMathable):
             _set_grid_currents(grid_list, self._grid_id, grid_indices, neuron_pointers, scale_factors)
     
     def _semi_compile(self, reg, instruction):
-        if isinstance(_defined_species[self._species][self._region](), Parameter):
+        if self._species:
+            sp = _defined_species[self._species][self._region]()
+        else:
+            for s in _all_species:
+                if self in s()._extracellular_instances.values():
+                    sp = s()
+                    break
+        if isinstance(sp, Parameter):
             return 'params_3d[%d]' %  (self._grid_id)
         else:
             return 'species_3d[%d]' % (self._grid_id)
