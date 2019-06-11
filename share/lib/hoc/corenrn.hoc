@@ -5,6 +5,7 @@ strdef tstr
 external tstop, cvode, stdinit, coreneuronrunning_, flushPlot
 
 proc init() {
+  perstep = 0
   pc = new ParallelContext()
   build()
 }
@@ -16,6 +17,7 @@ proc build() {
   box.intercept(1)
   xpanel("")
   xbutton("CoreNEURON Run", "run()")
+  xcheckbox("persteptransfer", &perstep)
   xpanel()
   box.intercept(0)
 }
@@ -44,7 +46,7 @@ proc run() {
   coreneuronrunning_ = 1
   stdinit()
   coreneuronrunning_ = 0
-  pc.nrncore_run(tstr)
+  pc.nrncore_run(tstr, perstep)
   flushPlot()
 }
 

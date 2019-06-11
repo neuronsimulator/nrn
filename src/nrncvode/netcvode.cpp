@@ -112,9 +112,10 @@ extern double* nrn_recalc_ptr(double*);
 void* nrn_interthread_enqueue(NrnThread*);
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 Object* (*nrnpy_seg_from_sec_x)(Section*, double);
-void nrnthread_get_trajectory_requests(int tid, int bsize, int& n_pr, void**& vpr, int& n_trajec, int*& types, int*& indices, double**& varrays);
+void nrnthread_get_trajectory_requests(int tid, int& bsize, int& n_pr, void**& vpr, int& n_trajec, int*& types, int*& indices, double**& varrays);
 void nrnthread_trajectory_values(int tid, int n_pr, void** vpr, double t, int n_trajec, double* values);
 void nrnthread_trajectory_return(int tid, int n_pr, int vecsz, void** vpr, double t);
+bool nrn_trajectory_request_per_time_step_ = false;
 #if NRN_MUSIC
 extern void nrnmusic_injectlist(void*, double);
 #endif
@@ -5502,6 +5503,9 @@ void NetCvode::fixed_play_continuous(NrnThread* nt) {
 
 // nrnthread_get_trajectory_requests helper for buffered trajectories
 // also for per time step return (no Vector and varrays is NULL)
+// if bsize > 0 then vectors need to be at least that size
+// However determination of whether to do per time step return or buffering
+// can be specified on the NEURON side.
 static void trajec_buffered(NrnThread& nt, int bsize, IvocVect* v, double* pd,
     int i_pr, PlayRecord* pr, void** vpr,
     int i_trajec, int* types, int* indices, double** varrays)
@@ -5532,8 +5536,13 @@ static void trajec_buffered(NrnThread& nt, int bsize, IvocVect* v, double* pd,
 // CoreNEURON side and is the size of the types, indices, and varrays.
 // n_pr is different from n_trajec when one of the GLineRecord instances has
 // a gl_->name that is an expression that contains several range variables.
-void nrnthread_get_trajectory_requests(int tid, int bsize,
+void nrnthread_get_trajectory_requests(int tid, int& bsize,
 int& n_pr, void**& vpr, int& n_trajec, int*& types, int*& indices, double**& varrays) {
+  if (bsize > 0) { // but would NEURON rather use per time step mode
+    if (nrn_trajectory_request_per_time_step_) {
+      bsize = 0;
+    }
+  }
   n_pr = 0;
   n_trajec = 0;
   types = NULL;
@@ -5613,7 +5622,7 @@ int& n_pr, void**& vpr, int& n_trajec, int*& types, int*& indices, double**& var
       }
     }
 #if 0
-    printf("nrnthread_get_trajectory_requests tid=%d n_pr=%d n_trajec=%d\n", tid, n_pr, n_trajec);
+    printf("nrnthread_get_trajectory_requests tid=%d bsize=%d n_pr=%d n_trajec=%d\n", tid, bsize, n_pr, n_trajec);
     int i_trajec = 0;
     double* pd;
     for (int i=0; i < n_pr; ++i) {
