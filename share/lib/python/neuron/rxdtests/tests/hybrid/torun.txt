@@ -1,0 +1,4 @@
+bistable_hybrid_cvode.py
+bistable_hybrid.py
+pure_diffusion_hybrid_cvode.py
+pure_diffusion_hybrid.py
