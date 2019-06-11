@@ -1772,7 +1772,6 @@ if (!ISARRAY(sym)) {
 	hoc_thisobject = obsav;
 	hoc_symlist = slsav;
     }
-if (strcmp(sym->name, "v_init") == 0) {printf("eval %s push %g\n", sym->name, d); }
 	pushxm(d);
 }
 
