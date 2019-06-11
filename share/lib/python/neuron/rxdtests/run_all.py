@@ -9,12 +9,11 @@ def test(files):
     
     tol = 1e-10
     dt_eps = 1e-20
-    
-    try:
-        os.makedirs(os.path.join('test_data', 'wave1d'))
-        os.makedirs(os.path.join('test_data', 'ecs'))
-    except OSError:
-        pass
+    for dr in ['wave1d', 'ecs', '3d', 'hybrid']:
+        try:
+            os.makedirs(os.path.join('test_data', dr))
+        except OSError:
+            pass
 
     passed_list = []
     failed_list = []

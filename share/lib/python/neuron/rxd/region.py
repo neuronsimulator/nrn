@@ -367,7 +367,7 @@ class Region(object):
             self._mesh_grid = mesh_grid
 
             self._points = [key for key in surface_voxels.keys()] + [key for key in internal_voxels.keys()]
-
+            self._points = sorted(self._points, key=lambda pt: pt[0])
             nodes_by_seg = {}
             surface_nodes_by_seg = {}
             # creates tuples of x, y, and z coordinates where a point is (xs[i], ys[i], zs[i])

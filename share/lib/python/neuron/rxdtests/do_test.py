@@ -35,7 +35,18 @@ def do_test(test_to_run, results_location, num_record=10):
             save_and_cleanup()
         
         all_potentials = [seg.v for seg in itertools.chain.from_iterable(h.allsec())]
-        all_rxd = list(rxd.node._states)
+        rxd_1d = list(rxd.node._states)
+        rxd_3d = []
+        rxd_ecs = []
+        for sp in rxd.species._all_species:
+            s = sp()
+            if s and hasattr(s, '_intracellular_instances'):
+                for ics in s._intracellular_instances.values():
+                    rxd_3d += list(ics.states)
+            if s and hasattr(s, '_extracellular_instances'):
+                for ecs in s._extracellular_instances.values():
+                    rxd_ecs += list(ecs.states.flatten())
+        all_rxd = rxd_1d + rxd_3d + rxd_ecs
         local_data = [h.t] + all_potentials + all_rxd
 
         # remove data before t=0
