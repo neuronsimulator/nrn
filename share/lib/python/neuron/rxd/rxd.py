@@ -291,7 +291,7 @@ def _unregister_reaction(r):
         elif r2() == r:
             del _all_reactions[i]
             break
-    initializer._init_lock.acquire()
+    initializer._init_lock.release()
 
 def _register_reaction(r):
     # TODO: should we search to make sure that (a weakref to) r hasn't already been added?
