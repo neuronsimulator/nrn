@@ -123,7 +123,7 @@ def fullmorph(source, dx, soma_step=100):
                     missed_voxels.add(miss)
 
                 # must take only the internal voxels for that item (set diff)
-                yesvox = yesvox - surface.keys()
+                yesvox = yesvox - set(surface.keys())
                 for i in yesvox:  
                     if i in final_intern_voxels.keys():
                         if h.distance(distance_root, seg) < h.distance(distance_root, final_intern_voxels[i][1]) and not isinstance(item, Sphere):

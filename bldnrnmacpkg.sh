@@ -6,7 +6,8 @@ set -ex
 #10.7 possible if one builds with pythons that are consisent with that.
 export MACOSX_DEPLOYMENT_TARGET=10.9
 
-INST=/Applications/NEURON-7.6
+INST=/Applications/NEURON-7.7
+export PATH=$INST/nrn/x86_64/bin:$PATH
 
 if false ; then
   cd $HOME/neuron/iv
@@ -17,7 +18,9 @@ if false ; then
   make install
 fi
 
+rm -r -f $INST/nrn
 cd $HOME/neuron/nrnobj
+rm -r -f $HOME/neuron/nrnobj/*
 
 PYVS="py"
 

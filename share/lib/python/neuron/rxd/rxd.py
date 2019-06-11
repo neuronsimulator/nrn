@@ -91,10 +91,8 @@ setup_currents = nrn_dll_sym('setup_currents')
 setup_currents.argtypes = [
     ctypes.c_int,   #number of membrane currents
     ctypes.c_int,   #number induced currents
-    ctypes.c_int,   #number of nodes with membrane currents
     _int_ptr,       #number of species involved in each membrane current
     _int_ptr,       #charges of the species involved in each membrane current
-    _int_ptr,       #node indices
     _int_ptr,       #node indices
     _double_ptr,    #scaling (areas) of the fluxes
     _int_ptr,       #charges for each species in each reation
@@ -286,10 +284,14 @@ def set_solve_type(domain=None, dimension=None, dx=None, nsubseg=None, method=No
 
 def _unregister_reaction(r):
     global _all_reactions
+    initializer._init_lock.acquire()
     for i, r2 in enumerate(_all_reactions):
-        if r2() == r:
+        if not r2():
+            del _all_reactions[i]
+        elif r2() == r:
             del _all_reactions[i]
             break
+    initializer._init_lock.acquire()
 
 def _register_reaction(r):
     # TODO: should we search to make sure that (a weakref to) r hasn't already been added?
@@ -436,25 +438,24 @@ def _setup_memb_currents():
         num_fluxes = numpy.array(cur_counts).sum()
         num_currents = len(_memb_cur_ptrs)
         _memb_cur_ptrs = list(itertools.chain.from_iterable(_memb_cur_ptrs))
-        """print("num_currents",num_currents)
+        """
+        print("num_currents",num_currents)
         print("num_fluxes",num_fluxes)
-        print("num_nodes",len(_curr_indices))
-        print("num_species",len(cur_counts))
-        print("net_charges",len(memb_net_charges))
-        print("cur_idxs",len(_curr_indices))
-        print("node_idxs",len(_cur_node_indices))
-        print("scales",len(rxd_memb_scales))
-        print("charges", len(memb_cur_charges))
-        print("ptrs",len(_memb_cur_ptrs))
-        print("mapped",len(ics_map),min(abs(numpy.array(ics_map))),max(ics_map))
-        print("mapped_ecs",len(ecs_map),max(ecs_map))
+        print("num_nodes",_curr_indices)
+        print("num_species",cur_counts)
+        print("net_charges",memb_net_charges)
+        print("cur_idxs",_curr_indices)
+        print("node_idxs",_cur_node_indices)
+        print("scales",rxd_memb_scales)
+        print("charges", memb_cur_charges)
+        print("ptrs",_memb_cur_ptrs)
+        print("mapped",ics_map,min(abs(numpy.array(ics_map))),max(ics_map))
+        print("mapped_ecs",ecs_map,max(ecs_map))
         """
         setup_currents(num_currents,
             num_fluxes,
-            len(_curr_indices), # num_currents == len(_curr_indices) if no Extracellular
             _list_to_cint_array(cur_counts),
             _list_to_cint_array(memb_net_charges),
-            _list_to_cint_array(_curr_indices),
             _list_to_cint_array(_cur_node_indices),
             _list_to_cdouble_array(rxd_memb_scales),
             _list_to_cint_array(list(itertools.chain.from_iterable(memb_cur_charges))),
@@ -699,6 +700,7 @@ def _setup_matrices():
     global _curr_ptrs
     global _cur_node_indices
     global _zero_volume_indices
+    global _diffusion_matrix
 
     # TODO: this sometimes seems to get called twice. Figure out why and fix, if possible.
 
@@ -753,7 +755,8 @@ def _setup_matrices():
             # create the matrix G
             #if not species._has_3d:
             #    # if we have both, then put the 1D stuff into the matrix that already exists for 3D
-            _diffusion_matrix = [dict() for idx in range(n)]
+            from collections import OrderedDict
+            _diffusion_matrix = [OrderedDict() for idx in range(n)]
             for sr in _species_get_all_species():
                 s = sr()
                 if s is not None:
@@ -899,7 +902,6 @@ def _setup_matrices():
         rates = numpy.asarray(rates, dtype=numpy.float_)
         volumes1d = numpy.asarray(volumes1d, dtype=numpy.float_)
         volumes3d = numpy.asarray(volumes3d, dtype=numpy.float_)
-
         set_hybrid_data(num_1d_indices_per_grid, num_3d_indices_per_grid, hybrid_indices1d, hybrid_indices3d, num_3d_indices_per_1d_seg, hybrid_grid_ids, rates, volumes1d, volumes3d)
 
 
@@ -1213,8 +1215,9 @@ def _compile_reactions():
     # a table for location,species -> state index
     location_index = []
     regions_inv_1d = [reg for reg in regions_inv if reg._secs1d]
+    regions_inv_1d.sort(key=lambda r: r._id)
     regions_inv_3d = [reg for reg in regions_inv if reg._secs3d]
-    for reg in  regions_inv_1d:
+    for reg in regions_inv_1d:
         rptr = weakref.ref(reg)
         for c_region in region._c_region_lookup[rptr]:
             for react in regions_inv[reg]:
@@ -1247,7 +1250,9 @@ def _compile_reactions():
                 if not isinstance(rprt(),rate.Rate):
                     fxn_string += '\n\tdouble rate;'
                     break
-            for rptr in creg._react_regions:
+            for rptr in _all_reactions:
+                if rptr not in creg._react_regions:
+                    continue
                 r = rptr()
                 if isinstance(r, rate.Rate):
                     s = r._species()
@@ -1321,24 +1326,28 @@ def _compile_reactions():
             all_ics_gids = set()
             ics_param_gids = set()
             fxn_string = _c_headers
+            if all([isinstance(r(), multiCompartmentReaction.MultiCompartmentReaction) for rlist in list(regions_inv.values()) for r in rlist]):
+                break
             fxn_string += 'void reaction(double* species_3d, double* params_3d, double*rhs)\n{'
             for rptr in [r for rlist in list(regions_inv.values()) for r in rlist]:
-                if not isinstance(rptr(),rate.Rate):
+                if not isinstance(rptr(), rate.Rate):
                     fxn_string += '\n\tdouble rate;'
                     break
             for s in species_by_region[reg]:
-                if isinstance(s, species.Parameter) or isinstance(s, species.ParameterOnRegion):
-                    sp = s._species()._intracellular_instances[s._region()] if isinstance(s,species.SpeciesOnRegion) else s._intracellular_instances[reg]
-                    ics_param_gids.add(sp._grid_id)
-                else:
-                     ###TODO is this correct? are there any other cases I should worry about? Do I always make a species the intracellular instance for the region we are looping through?
-                    sp = s._species()._intracellular_instances[s._region()] if isinstance(s,species.SpeciesOnRegion) else s._intracellular_instances[reg]
-                    all_ics_gids.add(sp._grid_id)
+                spe = s._species() if isinstance(s,species.SpeciesOnRegion) else s
+                if hasattr(spe, '_intracellular_instances') and spe._intracellular_instances and reg in spe._intracellular_instances:
+                    if isinstance(s, species.Parameter) or isinstance(s, species.ParameterOnRegion):
+                        sp = spe._intracellular_instances[reg]
+                        ics_param_gids.add(sp._grid_id)
+                    else:
+                         ###TODO is this correct? are there any other cases I should worry about? Do I always make a species the intracellular instance for the region we are looping through?
+                        sp = spe._intracellular_instances[reg]
+                        all_ics_gids.add(sp._grid_id)
             all_ics_gids = list(all_ics_gids)
             ics_param_gids = list(ics_param_gids)
             for rptr in regions_inv[reg]:
                 r = rptr()
-                if reg not in r._rate:
+                if isinstance(r,multiCompartmentReaction.MultiCompartmentReaction) or reg not in r._rate:
                     continue
                 rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_3d[%i]" % [pid for pid,gid in enumerate(all_ics_gids) if gid == int(m.groups()[0])][0], r._rate[reg][-1])
                 rate_str = re.sub(r'params_3d\[(\d+)\]',lambda m: "params_3d[%i]" %  [pid for pid, gid in enumerate(ics_param_gids) if gid == int(m.groups()[0])][0], rate_str)
@@ -1370,7 +1379,10 @@ def _compile_reactions():
                         if isinstance(s, species.Species):
                             s = s._intracellular_instances[reg]
                         elif isinstance(s, species.SpeciesOnRegion):
-                            s = s._species()._intracellular_instances[s._region()]
+                            if s._region() in s._species()._intracellular_instances:
+                                s = s._species()._intracellular_instances[s._region()]
+                            else:
+                                continue
                         if s._grid_id in ics_grid_ids:
                             operator = '+=' 
                         else:

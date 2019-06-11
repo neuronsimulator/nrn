@@ -227,10 +227,10 @@ class Extracellular:
         else:
             raise RxDException('Extracellular region dx=%s is invalid, dx should be a number or a tuple (dx,dy,dz) for the length, width and height of the voxels' % repr(dx))
 
-        self._nx = int(math.ceil((xhi - xlo) / self._dx[0]))
-        self._ny = int(math.ceil((yhi - ylo) / self._dx[1]))
-        self._nz = int(math.ceil((zhi - zlo) / self._dx[2]))
-        self._xhi, self._yhi, self._zhi = xlo + self._dx[0] * self._nx, ylo + self._dx[1] * self._ny, zlo + self._dx[2] * self._nz
+        self._nx = int(math.ceil(float(xhi - xlo) / self._dx[0]))
+        self._ny = int(math.ceil(float(yhi - ylo) / self._dx[1]))
+        self._nz = int(math.ceil(float(zhi - zlo) / self._dx[2]))
+        self._xhi, self._yhi, self._zhi = xlo + float(self._dx[0]) * self._nx, ylo + float(self._dx[1]) * self._ny, zlo + float(self._dx[2]) * self._nz
 
         if(numpy.isscalar(volume_fraction)):
             alpha = float(volume_fraction)

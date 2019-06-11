@@ -112,6 +112,9 @@ static void have_to_want(
     have_r_data, have_r_cnt, have_r_displ,
     rendezvous_rank
   );
+  delete [] have_s_cnt;
+  delete [] have_s_displ;
+  delete [] have_s_data;
   // assume it is an error if two ranks have the same key so create
   // hash table of key2rank. Will also need it for matching have and want
   HAVEWANT2Int havekey2rank = HAVEWANT2Int(have_r_displ[nhost]);
@@ -197,6 +200,7 @@ sprintf(buf, "key = %lld is wanted but does not exist\n", (long long)key);
     want_s_data[want_s_displ[r] + want_s_cnt[r]] = key;
     ++want_s_cnt[r];
   }
+  delete [] want_s_ownerranks;
   delete [] old_want_s_data;
   want_r_cnt = srccnt2destcnt(want_s_cnt);
   want_r_displ = cnt2displ(want_r_cnt);

@@ -97,7 +97,6 @@ double* _rxd_induced_currents_scale;    /*array of Extracellular current scales*
 int* _memb_net_charges;     /*array length _memb_count of charges*/
 int* _cur_node_indices;      /*array length _memb_count into nodes index*/
 
-int* _cur_indices;          /*array length _memb_curr_total into _rxd_induced_currents index*/
 
 int* _memb_species_count;   /*array of length _memb_count
                              number of species involved in each membrane
@@ -116,8 +115,7 @@ int* _rxd_induced_currents_grid = NULL;
 int* _rxd_induced_currents_ecs_idx = NULL;
 
 unsigned char _membrane_flux = FALSE;   /*TRUE if any membrane fluxes are in the model*/
-int* _membrane_flux_lookup; /*states index -> position in _rxd_induced_flux*/
-int* _membrane_scale_lookup; /*sates index -> poisition in _rxd_flux_scale*/
+int* _membrane_lookup; /*states index -> position in _rxd_induced_flux*/
 
 
 static void transfer_to_legacy()
@@ -331,20 +329,30 @@ extern "C" void rxd_set_euler_matrix(int nrow, int nnonzero, long* nonzero_i,
 
 static void add_currents(double * result)
 {
-    long k;
-	/*Add currents to the result*/
+    long i, j, k, idx;
+    short side;
+    /*Add currents to the result*/
+        for (k = 0; k < _curr_count; k++)
+            result[_curr_indices[k]] += _curr_scales[k] * (*_curr_ptrs[k]->u.px_);
+
+    /*Subtract rxd induced currents*/
     if(_membrane_flux)
     {
-	    for (k = 0; k < _curr_count; k++)
+        for(i = 0, k = 0; i < _memb_count; i++)
         {
-    	    result[_curr_indices[k]] += _curr_scales[k] * (*_curr_ptrs[k]->u.px_ - _rxd_induced_currents[k]);
+            for(j = 0; j < _memb_species_count[i]; j++, k++)
+            {
+                for(side = 0; side < 2; side++)
+                {            
+                    idx = _memb_cur_mapped[i][j][side];
+                    if (idx != SPECIES_ABSENT)
+                    {
+                        result[_curr_indices[idx]] -= _curr_scales[idx] * _rxd_induced_currents[i];
+                    }
+                }
+            }
         }
     }
-    else
-    {
-        for (k =0; k < _curr_count; k++)
-            result[_curr_indices[k]] += _curr_scales[k] * (*_curr_ptrs[k]->u.px_);
-	}
 }
 static void mul(int nrow, int nnonzero, long* nonzero_i, long* nonzero_j, const double* nonzero_values, const double* v, double* result) {
     long i, j, k;
@@ -510,13 +518,11 @@ static void free_currents()
     free(_memb_cur_ptrs);
     free(_memb_cur_mapped);
     free(_memb_species_count);
-    free(_cur_indices);
     free(_cur_node_indices);
     free(_rxd_induced_flux);
     free(_rxd_induced_currents);
     free(_rxd_flux_scale);
-    free(_membrane_flux_lookup);
-    free(_membrane_scale_lookup);
+    free(_membrane_lookup);
     free(_memb_cur_mapped_ecs);
     free(_rxd_induced_currents_grid);
     free(_rxd_induced_currents_ecs);
@@ -525,9 +531,9 @@ static void free_currents()
     _membrane_flux = FALSE; 
 }
 
-extern "C" void setup_currents(int num_currents, int num_fluxes, int num_nodes, int* num_species, int* net_charges, int* cur_idxs, int* node_idxs, double* scales,  int* charges, PyHocObject** ptrs, int* mapped, int* mapped_ecs)
+extern "C" void setup_currents(int num_currents, int num_fluxes, int* num_species, int* net_charges, int* node_idxs, double* scales,  int* charges, PyHocObject** ptrs, int* mapped, int* mapped_ecs)
 {
-    int i, j, k, id, side;
+    int i, j, k, id, side, idx;
     Current_Triple* c;
     Grid_node* grid;
     
@@ -535,7 +541,6 @@ extern "C" void setup_currents(int num_currents, int num_fluxes, int num_nodes, 
     
     _memb_count = num_currents;
     _memb_curr_total = num_fluxes;
-    _memb_curr_nodes = num_nodes;
     _memb_species_count = (int*)malloc(sizeof(int)*num_currents);
     memcpy(_memb_species_count,num_species,sizeof(int)*num_currents);
 
@@ -545,12 +550,10 @@ extern "C" void setup_currents(int num_currents, int num_fluxes, int num_nodes, 
     _rxd_flux_scale = (double*)malloc(sizeof(double)*num_currents);
     memcpy(_rxd_flux_scale,scales,sizeof(double)*num_currents);
 
-    /*TODO: if memory is an issue - replace with sorted list of cur_idxs*/
-    _membrane_flux_lookup = (int*)malloc(sizeof(int)*num_states);
-    memset(_membrane_flux_lookup, SPECIES_ABSENT, sizeof(int)*num_states);
+    /*TODO: if memory is an issue - replace with a map*/
+    _membrane_lookup = (int*)malloc(sizeof(int)*num_states);
+     memset(_membrane_lookup, SPECIES_ABSENT, sizeof(int)*num_states);
 
-    _membrane_scale_lookup = (int*)malloc(sizeof(int)*num_states);
-     memset(_membrane_scale_lookup, SPECIES_ABSENT, sizeof(int)*num_states);
     _memb_cur_charges = (int**)malloc(sizeof(int*)*num_currents);
     _memb_cur_ptrs = (PyHocObject***)malloc(sizeof(PyHocObject**)*num_currents);     
     _memb_cur_charges = (int**)malloc(sizeof(int*)*num_currents);
@@ -558,10 +561,9 @@ extern "C" void setup_currents(int num_currents, int num_fluxes, int num_nodes, 
     _memb_cur_mapped = (int***)malloc(sizeof(int**)*num_currents);
     _rxd_induced_currents_grid = (int*)malloc(sizeof(int)*_memb_curr_total);
     memset(_rxd_induced_currents_grid, SPECIES_ABSENT, sizeof(int)*_memb_curr_total);
-
     _rxd_induced_currents_ecs_idx = (int*)malloc(sizeof(int)*_memb_curr_total);
 
-    for(i = 0, k = 0; i < num_currents; i++)
+    for(i = 0, idx = 0, k = 0; i < num_currents; i++)
     {
         _memb_cur_charges[i] = (int*)malloc(sizeof(int)*num_species[i]);
         memcpy(_memb_cur_charges[i], &charges[k], sizeof(int)*num_species[i]);
@@ -576,31 +578,23 @@ extern "C" void setup_currents(int num_currents, int num_fluxes, int num_nodes, 
             _memb_cur_ptrs[i][j] = ptrs[k];
             _memb_cur_mapped[i][j] = (int*)malloc(2*sizeof(int));
             _memb_cur_mapped_ecs[i][j] = (int*)malloc(2*sizeof(int));
+
+
             for(side = 0; side < 2; side++)
             {
                 _memb_cur_mapped[i][j][side] = mapped[2*k + side];
                 _memb_cur_mapped_ecs[i][j][side] = mapped_ecs[2*k + side];
             }
-
-            if(_memb_cur_mapped[i][j][0] != SPECIES_ABSENT)
+            for(side = 0; side < 2; side++)
             {
-                _membrane_scale_lookup[cur_idxs[_memb_cur_mapped[i][j][0]]] = i;
-                _membrane_flux_lookup[cur_idxs[_memb_cur_mapped[i][j][0]]] = i;
-                if(_memb_cur_mapped[i][j][1] == SPECIES_ABSENT)
+                if(_memb_cur_mapped[i][j][side] != SPECIES_ABSENT)
                 {
-                    _rxd_induced_currents_grid[_memb_cur_mapped[i][j][0]] = _memb_cur_mapped_ecs[i][j][0];
-                    _rxd_induced_currents_ecs_idx[_memb_cur_mapped[i][j][0]] = _memb_cur_mapped_ecs[i][j][1];
-                }
-            }
-            if(_memb_cur_mapped[i][j][1] != SPECIES_ABSENT)
-            {
-                _membrane_scale_lookup[cur_idxs[_memb_cur_mapped[i][j][1]]] = i;
-                _membrane_flux_lookup[cur_idxs[_memb_cur_mapped[i][j][1]]] = i;
-            
-                if(_memb_cur_mapped[i][j][0] == SPECIES_ABSENT)
-                {
-                    _rxd_induced_currents_grid[_memb_cur_mapped[i][j][1]] = _memb_cur_mapped_ecs[i][j][0];
-                    _rxd_induced_currents_ecs_idx[_memb_cur_mapped[i][j][1]] = _memb_cur_mapped_ecs[i][j][1]; 
+                    _membrane_lookup[_curr_indices[_memb_cur_mapped[i][j][side]]] = i;
+                    if(_memb_cur_mapped[i][j][(side+1)%2] == SPECIES_ABSENT)
+                    {
+                        _rxd_induced_currents_grid[k] = _memb_cur_mapped_ecs[i][j][0];
+                        _rxd_induced_currents_ecs_idx[k] = _memb_cur_mapped_ecs[i][j][1];
+                    }
                 }
             }
         }
@@ -612,28 +606,25 @@ extern "C" void setup_currents(int num_currents, int num_fluxes, int num_nodes, 
     {
         for (id = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, id++)
         {
-            if(_rxd_induced_currents_grid[i] != id)
-                continue;
-            c = grid->current_list;
-            for(j = 0; j < grid->num_all_currents; j++)
+            if(_rxd_induced_currents_grid[i] == id)
             {
-                if(c[j].destination == _rxd_induced_currents_ecs_idx[i])
+                c = grid->current_list;
+                for(j = 0; j < grid->num_all_currents; j++)
                 {
-                    _rxd_induced_currents_scale[i] = c[j].scale_factor/(grid->VARIABLE_ECS_VOLUME == VOLUME_FRACTION ? grid->alpha[c[i].destination] : grid->alpha[0]);
-                    break;
+                    if(ptrs[i]->u.px_ == c[j].source)
+                    {
+                        _rxd_induced_currents_scale[i] = c[j].scale_factor/(grid->VARIABLE_ECS_VOLUME == VOLUME_FRACTION ? grid->alpha[c[j].destination] : grid->alpha[0]);
+                        assert(c[j].destination == _rxd_induced_currents_ecs_idx[i]);
+                        break;
+                    }
                 }
+                break;
             }
         }
     }
-
-    /*index into arrays of currents current*/
-    _cur_indices = (int*)malloc(sizeof(int)*num_currents);
-    memcpy(_cur_indices, cur_idxs, sizeof(int)*num_currents);
-
     /*index into arrays of nodes/states*/
     _cur_node_indices = (int*)malloc(sizeof(int)*num_currents);
     memcpy(_cur_node_indices, node_idxs, sizeof(int)*num_currents);
-
     _membrane_flux = TRUE;
     _rxd_induced_currents = (double*)malloc(sizeof(double)*_memb_curr_total);
     _rxd_induced_flux = (double*)malloc(sizeof(double)*_memb_curr_total);
@@ -642,7 +633,7 @@ extern "C" void setup_currents(int num_currents, int num_fluxes, int num_nodes, 
 
 static void _currents(double* rhs)
 {
-    int i, j, idx, side;
+    int i, j, k, idx, side;
     double current;
     
     if(!_membrane_flux)
@@ -652,14 +643,17 @@ static void _currents(double* rhs)
     MEM_ZERO(_rxd_induced_currents, _memb_curr_total*sizeof(double));
     MEM_ZERO(_rxd_induced_currents_ecs, _memb_curr_total*sizeof(double));
 
-    for(i = 0; i < _memb_count; i++)
+    for(i = 0, k = 0; i < _memb_count; i++)
     {
         idx = _cur_node_indices[i];
-        
-        rhs[idx] -= _memb_net_charges[i] * _rxd_induced_flux[i]/2.0;
-        for(j = 0; j < _memb_species_count[i]; j++)
+        rhs[idx] -= (double)_memb_net_charges[i] * _rxd_induced_flux[i]/2.0;
+
+        for(j = 0; j < _memb_species_count[i]; j++, k++)
         {
+
             current = (double)_memb_cur_charges[i][j] * _rxd_induced_flux[i];
+            //fprintf(stderr,"%i %i (%i) idx %i curr %1.10e\n", i, j, k, idx, current);
+            //rhs[idx] -= current;
 
            *(_memb_cur_ptrs[i][j]->u.px_) += current;
  
@@ -670,12 +664,12 @@ static void _currents(double* rhs)
                         /*Extracellular region is within the ECS grid*/
                         if(_memb_cur_mapped[i][j][(side+1)%2] != SPECIES_ABSENT) 
                         {
-                            _rxd_induced_currents_ecs[_memb_cur_mapped[i][j][(side+1)%2]] -= current;
+                            _rxd_induced_currents_ecs[k] += current;
                         }
                 }
                 else
                 {
-                        _rxd_induced_currents[_memb_cur_mapped[i][j][side]] += current;
+                        _rxd_induced_currents[k] += current;
                 }
 
             }
@@ -1626,9 +1620,9 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates, doub
                 idx = react->state_idx[segment][i][j];
                 if(idx != SPECIES_ABSENT)
                 {
-                    if(_membrane_flux && _membrane_flux_lookup[idx] != SPECIES_ABSENT)
+                    if(_membrane_flux && _membrane_lookup[idx] != SPECIES_ABSENT)
                     {
-                        _rxd_induced_flux[_membrane_flux_lookup[idx]] -= _rxd_flux_scale[_membrane_scale_lookup[idx]] * flux[i][j];
+                        _rxd_induced_flux[_membrane_lookup[idx]] -= _rxd_flux_scale[_membrane_lookup[idx]] * flux[i][j];
                     }
                     if(rates != NULL)
                     {

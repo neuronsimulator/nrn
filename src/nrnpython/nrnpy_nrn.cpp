@@ -61,7 +61,7 @@ typedef struct {
   int attr_from_sec_; // so section.xraxial[0] = e assigns to all segments.
 } NPyRangeVar;
 
-static PyTypeObject* psection_type;
+PyTypeObject* psection_type;
 static PyTypeObject* pallsegiter_type;
 static PyTypeObject* psegment_type;
 static PyTypeObject* pmech_generic_type;

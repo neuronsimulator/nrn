@@ -172,12 +172,12 @@ NrnFILEWrap* nrn_fw_read(const char* path, const char* mode){
 		FILE* f = fopen(path, mode);
 		if (f) {
 			struct stat bs;
-			assert(!fstat(fileno(f), &bs));
+			nrn_assert(!fstat(fileno(f), &bs));
 			sz = bs.st_size;
 			isz = sz;
 			if (sz > 0) {
 				buf = (unsigned char*)emalloc(sz+2);
-				assert(fread(buf, 1, sz, f) == sz);
+				nrn_assert(fread(buf, 1, sz, f) == sz);
 			}
 			fclose(f);
 #if 1

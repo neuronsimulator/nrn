@@ -7,6 +7,7 @@
 #include "oclist.h"
 #include "nrniv_mf.h"
 #include "nrnpy_utils.h"
+#include "../nrniv/shapeplt.h"
 #include <vector>
 
 #if defined(__MINGW32__) && NRNPYTHON_DYNAMICLOAD > 0
@@ -18,9 +19,20 @@
 #define HOCMOD hoc
 #endif
 
+extern PyTypeObject* psection_type;
+
+// copied from nrnpy_nrn
+typedef struct {
+  PyObject_HEAD Section* sec_;
+  char* name_;
+  PyObject* cell_;
+} NPySecObj;
+
 extern "C" {
 
 #include "parse.h"
+extern void (*nrnpy_sectionlist_helper_)(void*, Object*);
+void lvappendsec_and_ref(void* sl, Section* sec);
 extern Section* nrn_noerr_access();
 extern void hoc_pushs(Symbol*);
 extern double* hoc_evalpointer();
@@ -158,6 +170,7 @@ typedef struct {
 } PyHocObject;
 
 static PyObject* rvp_plot = NULL;
+static PyObject* plotshape_plot = NULL;
 
 PyTypeObject* hocobject_type;
 static PyObject* hocobj_call(PyHocObject* self, PyObject* args,
@@ -945,7 +958,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
 
       if (is_obj_type(self->ho_, "Vector")) {
         PyDict_SetItemString(dict, "__array_interface__", Py_None);
-      } else if (is_obj_type(self->ho_, "RangeVarPlot")) {
+      } else if (is_obj_type(self->ho_, "RangeVarPlot") || is_obj_type(self->ho_, "PlotShape")) {
         PyDict_SetItemString(dict, "plot", Py_None);
       }
       return dict;
@@ -981,8 +994,9 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
                            PyLong_FromVoidPtr(x), Py_True);
 
     } else if (is_obj_type(self->ho_, "RangeVarPlot") && strcmp(n, "plot") == 0) {
-      //Py_INCREF(rvp_plot);
       return PyObject_CallFunctionObjArgs(rvp_plot, (PyObject*) self, NULL);
+    } else if (is_obj_type(self->ho_, "PlotShape") && strcmp(n, "plot") == 0) {
+      return PyObject_CallFunctionObjArgs(plotshape_plot, (PyObject*) self, NULL);
     } else if (strcmp(n, "__doc__") == 0) {
       if (setup_doc_system()) {
         PyObject* docobj = NULL;
@@ -2103,8 +2117,9 @@ int nrnpy_set_vec_as_numpy(PyObject* (*p)(int, double*)) {
   return 0;
 }
 
-int nrnpy_set_rvp_plot(PyObject* p) {
-  rvp_plot = p;
+int nrnpy_set_graph_plots(PyObject* rvp_plot0, PyObject* plotshape_plot0) {
+  rvp_plot = rvp_plot0;
+  plotshape_plot = plotshape_plot0;
   return 0;
 }
 
@@ -2186,6 +2201,28 @@ static Object** nrnpy_vec_to_python(void* v) {
     }
   }
   return hoc_temp_objptr(ho);
+}
+
+PyObject* get_plotshape_data(PyObject* sp) {
+  PyHocObject* pho = (PyHocObject*) sp;
+  ShapePlotInterface* spi;
+  if (!is_obj_type(pho->ho_, "PlotShape")) {
+    PyErr_SetString(PyExc_TypeError, "get_plotshape_variable only takes PlotShape objects");
+    return NULL;
+  }
+  void* that = pho->ho_->u.this_pointer;
+#if HAVE_IV
+IFGUI
+  spi = ((ShapePlot*) that);
+} else {
+  spi = ((ShapePlotData*) that);
+ENDGUI
+#else
+  spi = ((ShapePlotData*) that);
+#endif
+  Object* sl = spi->neuron_section_list();
+  PyObject* py_sl = nrnpy_ho2po(sl);
+  return Py_BuildValue("sffN",spi->varname(), spi->low(), spi->high(), py_sl);
 }
 
 // poorly follows __reduce__ and __setstate__
@@ -2484,11 +2521,42 @@ char get_endian_character() {
   return endian_character;
 }
 
+static void sectionlist_helper_(void* sl, Object* args) {
+  if (!args || args->ctemplate->sym != nrnpy_pyobj_sym_) {
+    hoc_execerror("argument must be a Python iterable", "");
+  }
+  PyObject* pargs = nrnpy_hoc2pyobject(args);
+  
+  PyObject *iterator = PyObject_GetIter(pargs);
+  PyObject *item;
+
+  if (iterator == NULL) {
+    PyErr_Clear();
+    hoc_execerror("argument must be an iterable", "");
+  }
+
+  while (item = PyIter_Next(iterator)) {
+    if (!PyObject_TypeCheck(item, psection_type)) {
+      hoc_execerror("iterable must contain only Section objects", 0);
+    }
+    NPySecObj* pysec = (NPySecObj*)item;
+    lvappendsec_and_ref(sl, pysec->sec_);
+    Py_DECREF(item);
+  }
+
+  Py_DECREF(iterator);
+  if (PyErr_Occurred()) {
+    PyErr_Clear();
+    hoc_execerror("argument must be a Python iterable", "");
+  }
+}
+
 myPyMODINIT_FUNC nrnpy_hoc() {
   PyObject* m;
   nrnpy_vec_from_python_p_ = nrnpy_vec_from_python;
   nrnpy_vec_to_python_p_ = nrnpy_vec_to_python;
   nrnpy_vec_as_numpy_helper_ = vec_as_numpy_helper;
+  nrnpy_sectionlist_helper_ = sectionlist_helper_;
   PyLockGIL lock;
 
   char endian_character = 0;

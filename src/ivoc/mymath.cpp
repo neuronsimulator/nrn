@@ -47,7 +47,7 @@ int nrn_feround(int mode) {
 		assert(0);
 	}
 	if (mode > 0 && mode < 5) {
-		assert(fesetround(round_mode[mode-1]) == 0);
+		nrn_assert(fesetround(round_mode[mode-1]) == 0);
 	}
 	return oldmode;
 #else
