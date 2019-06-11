@@ -14,14 +14,14 @@ h.dt = 1*minute
 #def run_sim():
 def declare_parameters(**kwargs):
     '''enables clean declaration of parameters in top namespace'''
-    for key, value in kwargs.items():
-        globals()[key] = rxd.Parameter(r, name=key, initial=value)
+    for key in sorted(kwargs):
+        globals()[key] = rxd.Parameter(r, name=key, value=kwargs[key])
 
 
 def declare_species(**kwargs):
     '''enables clean declaration of species in top namespace'''
-    for key, value in kwargs.items():
-        globals()[key] = rxd.Species(r, name=key, initial=value, atolscale=1 * nM)
+    for key in sorted(kwargs):
+        globals()[key] = rxd.Species(r, name=key, initial=kwargs[key], atolscale=1 * nM)
 
 def recorder(ptr):
     '''return a vector that records the pointer'''
@@ -123,7 +123,7 @@ h.finitialize(-65)
 h.CVode().active(True)
 print("starting simulation")
 start = time.time()
-h.continuerun(6*hour)
+h.continuerun(72*hour)
 finish = time.time() - start
 print(finish)
 

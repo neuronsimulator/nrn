@@ -24,7 +24,7 @@ r = rxd.Region(h.allsec(),dx=0.25)
 
 rxd.set_solve_type([dend1], dimension=3)
 
-ca = rxd.Species(r, d=diff_constant,initial=lambda node:
+ca = rxd.Species(r, d=diff_constant, atolscale=0.1, initial=lambda node:
                                                  1 if (0.8 < node.x and node.segment in dend1) or (node.x < 0.2 and node.segment in dend2) else 0)
 bistable_reaction = rxd.Rate(ca, -ca * (1 - ca) * (0.01 - ca))
 h.finitialize()
