@@ -112,8 +112,8 @@ extern double* nrn_recalc_ptr(double*);
 void* nrn_interthread_enqueue(NrnThread*);
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 Object* (*nrnpy_seg_from_sec_x)(Section*, double);
-void nrnthread_get_trajectory_requests(int tid, int& bsize, int& n_pr, void**& vpr, int& n_trajec, int*& types, int*& indices, double**& varrays);
-void nrnthread_trajectory_values(int tid, int n_pr, void** vpr, double t, int n_trajec, double* values);
+void nrnthread_get_trajectory_requests(int tid, int& bsize, int& n_pr, void**& vpr, int& n_trajec, int*& types, int*& indices, double**& pvars, double**& varrays);
+void nrnthread_trajectory_values(int tid, int n_pr, void** vpr, double t);
 void nrnthread_trajectory_return(int tid, int n_pr, int vecsz, void** vpr, double t);
 bool nrn_trajectory_request_per_time_step_ = false;
 #if NRN_MUSIC
@@ -5508,13 +5508,15 @@ void NetCvode::fixed_play_continuous(NrnThread* nt) {
 // can be specified on the NEURON side.
 static void trajec_buffered(NrnThread& nt, int bsize, IvocVect* v, double* pd,
     int i_pr, PlayRecord* pr, void** vpr,
-    int i_trajec, int* types, int* indices, double** varrays)
+    int i_trajec, int* types, int* indices, double** pvars, double** varrays)
 {
   if (bsize > 0) {
     if (v->buffer_size() < bsize) {
       v->buffer_size(bsize);
     }
     varrays[i_trajec] = vector_vec(v);
+  }else{
+    pvars[i_trajec] = pd;
   }
   vpr[i_pr] = pr;
   if (pd == &nt._t) {
@@ -5536,8 +5538,11 @@ static void trajec_buffered(NrnThread& nt, int bsize, IvocVect* v, double* pd,
 // CoreNEURON side and is the size of the types, indices, and varrays.
 // n_pr is different from n_trajec when one of the GLineRecord instances has
 // a gl_->name that is an expression that contains several range variables.
+// Per time step transfer now uses pvars so CoreNEURON scatters values
+// to pvars instead of collecting in double array.
 void nrnthread_get_trajectory_requests(int tid, int& bsize,
-int& n_pr, void**& vpr, int& n_trajec, int*& types, int*& indices, double**& varrays) {
+int& n_pr, void**& vpr,
+int& n_trajec, int*& types, int*& indices, double**& pvars, double**& varrays) {
   if (bsize > 0) { // but would NEURON rather use per time step mode
     if (nrn_trajectory_request_per_time_step_) {
       bsize = 0;
@@ -5549,6 +5554,7 @@ int& n_pr, void**& vpr, int& n_trajec, int*& types, int*& indices, double**& var
   indices = NULL;
   vpr = NULL;
   varrays = NULL;
+  pvars = NULL;
   if (tid < nrn_nthread) {
     NrnThread& nt = nrn_threads[tid];
     PlayRecList* fr = net_cvode_instance->fixed_record_;
@@ -5581,7 +5587,9 @@ int& n_pr, void**& vpr, int& n_trajec, int*& types, int*& indices, double**& var
     indices = new int[n_trajec];
     if (bsize > 0) {
       varrays = new double*[n_trajec];
-    }
+    }else{
+      pvars = new double*[n_trajec];
+    } // if both varrays and pvars are NULL then CoreNEURON will return values every time step
     // everything allocated, start over and fill
     n_pr = 0;
     n_trajec = 0;
@@ -5592,10 +5600,10 @@ int& n_pr, void**& vpr, int& n_trajec, int*& types, int*& indices, double**& var
           IvocVect* v = NULL;
           if (pr->type() == TvecRecordType) {
             v = ((TvecRecord*)pr)->t_;
-            trajec_buffered(nt, bsize, v, &nt._t, n_pr++, pr, vpr, n_trajec++, types, indices, varrays);
+            trajec_buffered(nt, bsize, v, &nt._t, n_pr++, pr, vpr, n_trajec++, types, indices, pvars, varrays);
           }else if (pr->type() == YvecRecordType) {
             v = ((YvecRecord*)pr)->y_;
-            trajec_buffered(nt, bsize, v, pr->pd_, n_pr++, pr, vpr, n_trajec++, types, indices, varrays);
+            trajec_buffered(nt, bsize, v, pr->pd_, n_pr++, pr, vpr, n_trajec++, types, indices, pvars, varrays);
           }else if (pr->type() == GLineRecordType) {
             GLineRecord* glr = (GLineRecord*)pr;
             if (pr->pd_) { // glr->gl_->name is an expression resolved to a double*
@@ -5603,7 +5611,7 @@ int& n_pr, void**& vpr, int& n_trajec, int*& types, int*& indices, double**& var
                 glr->v_ = new IvocVect(bsize);
               }
               v = glr->v_;
-              trajec_buffered(nt, bsize, v, pr->pd_, n_pr++, pr, vpr, n_trajec++, types, indices, varrays);
+              trajec_buffered(nt, bsize, v, pr->pd_, n_pr++, pr, vpr, n_trajec++, types, indices, pvars, varrays);
             }else{ // glr->gl_->name expression involves several range variables
               GLineRecordEData& ed = glr->pd_and_vec_;
               for (GLineRecordEData::iterator it = ed.begin(); it != ed.end(); ++it) {
@@ -5613,7 +5621,7 @@ int& n_pr, void**& vpr, int& n_trajec, int*& types, int*& indices, double**& var
                 if (bsize && v == NULL) {
                   v = (*it).second = new IvocVect(bsize);
                 }
-                trajec_buffered(nt, bsize, v, pd, n_pr, pr, vpr, n_trajec++, types, indices, varrays);
+                trajec_buffered(nt, bsize, v, pd, n_pr, pr, vpr, n_trajec++, types, indices, pvars, varrays);
               }
               n_pr++;
             }
@@ -5642,7 +5650,7 @@ int& n_pr, void**& vpr, int& n_trajec, int*& types, int*& indices, double**& var
   }
 }
 
-void nrnthread_trajectory_values(int tid, int n_pr, void** vpr, double tt, int n_trajec,  double* values) {
+void nrnthread_trajectory_values(int tid, int n_pr, void** vpr, double tt){ //, int n_trajec,  double* values) {
   if (tid < 0) {
     net_cvode_instance->record_init();
     return;
@@ -5651,10 +5659,10 @@ void nrnthread_trajectory_values(int tid, int n_pr, void** vpr, double tt, int n
     ObjectContext obc(NULL); // in case GLineRecord with expression.
     nrn_threads[tid]._t = tt;
     if (tid == 0) { t = tt; }
-    assert(n_pr == n_trajec);
     int i_trajec = 0;
     for (int i=0; i < n_pr; ++i) {
       PlayRecord* pr = (PlayRecord*)vpr[i];
+#if 0 // per time step mode now scatters to pvars in CoreNEURON
       if (pr->pd_) {
         *pr->pd_ = values[i_trajec++];
       }else{
@@ -5667,6 +5675,7 @@ void nrnthread_trajectory_values(int tid, int n_pr, void** vpr, double tt, int n
           *pd = values[i_trajec++];
         }
       }
+#endif
       pr->continuous(tt);
     }
     obc.restore();
