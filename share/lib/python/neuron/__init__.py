@@ -736,6 +736,7 @@ class _PlotShapePlot(_WrapperPlot):
 
               # Plot each segement as a line
               lines = {}
+              lines_list = []
               vals = []
               for sec in sections:
                   all_seg_pts = _segment_3d_pts(sec)
@@ -753,12 +754,12 @@ class _PlotShapePlot(_WrapperPlot):
                               val = None
                           vals.append(val)
                       lines[line] = '%s at %s' % (val, seg)
-              
+                      lines_list.append(line)
               if variable is not None:
                   val_range = val_max - val_min
                   if val_range:
                       for sec in sections:
-                          for line, val in zip(lines, vals):
+                          for line, val in zip(lines_list, vals):
                               if val is not None:
                                   col = cmap(int(255 * (val - val_min) / (val_range)))
                                   line.set_color(col)
