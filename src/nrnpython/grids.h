@@ -236,9 +236,9 @@ class ICS_Grid_node : public Grid_node{
         struct ICSAdiDirection* ics_adi_dir_y;
         struct ICSAdiDirection* ics_adi_dir_z;
         
-        void divide_x_work();
-        void divide_y_work();
-        void divide_z_work();
+        void divide_x_work(const int nthreads);
+        void divide_y_work(const int nthreads);
+        void divide_z_work(const int nthreads);
         void set_num_threads(const int n);
         void do_grid_currents(double dt, int id);  
         void volume_setup();
