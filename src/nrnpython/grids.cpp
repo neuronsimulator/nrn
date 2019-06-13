@@ -275,9 +275,9 @@ Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors
     new_Grid->ics_adi_dir_z->dc = d;
     new_Grid->ics_adi_dir_z->d = dx;
 
-    new_Grid->divide_x_work();
-    new_Grid->divide_y_work();
-    new_Grid->divide_z_work();
+    new_Grid->divide_x_work(NUM_THREADS);
+    new_Grid->divide_y_work(NUM_THREADS);
+    new_Grid->divide_z_work(NUM_THREADS);
 
     return new_Grid;
 }
@@ -739,10 +739,10 @@ void ECS_Grid_node::free_Grid(){
 * Begin ICS_Grid_node Functions
 *
 *****************************************************************************/
-static int find_min_element_index(const int thread_sizes[]){
+static int find_min_element_index(const int thread_sizes[], const int nthreads){
     int new_min_index = 0;
     int min_element = thread_sizes[0];
-    for(int i = 0; i < NUM_THREADS; i++){
+    for(int i = 0; i < nthreads; i++){
         if(min_element > thread_sizes[i]){
             min_element = thread_sizes[i];
             new_min_index = i;
@@ -751,31 +751,31 @@ static int find_min_element_index(const int thread_sizes[]){
     return new_min_index;
 }
 
-void ICS_Grid_node::divide_x_work(){
+void ICS_Grid_node::divide_x_work(const int nthreads){
     int i, j, k;
     //nodes in each thread. (work each thread has to do)
-    int* nodes_per_thread = (int*)calloc(NUM_THREADS, sizeof(int));
+    int* nodes_per_thread = (int*)calloc(nthreads, sizeof(int));
     //number of lines in each thread
-    int* lines_per_thread = (int*)calloc(NUM_THREADS, sizeof(int));
+    int* lines_per_thread = (int*)calloc(nthreads, sizeof(int));
     //To determine which index to put the start node and line length in thread_line_defs
-    int* thread_idx_counter = (int*)calloc(NUM_THREADS, sizeof(int));
+    int* thread_idx_counter = (int*)calloc(nthreads, sizeof(int));
     //To determine which thread array to put the start node and line length in thread_line_defs
     int line_thread_id[_x_lines_length / 2];
-    //Array of NUM_THREADS arrays that hold the line defs for each thread
-    int** thread_line_defs = (int**)malloc(NUM_THREADS*sizeof(int*));
+    //Array of nthreads arrays that hold the line defs for each thread
+    int** thread_line_defs = (int**)malloc(nthreads*sizeof(int*));
 
     int min_index = 0;
 
     //Find the total line length for each thread
     for(i = 0; i < _x_lines_length; i+=2){
-        min_index = find_min_element_index(nodes_per_thread); 
+        min_index = find_min_element_index(nodes_per_thread, nthreads); 
         nodes_per_thread[min_index] += _sorted_x_lines[i+1];
         line_thread_id[i/2] = min_index;
         lines_per_thread[min_index] += 1;
     } 
 
     //Allocate memory for each array in thread_line_defs
-    for(i = 0; i < NUM_THREADS; i++){
+    for(i = 0; i < nthreads; i++){
         thread_line_defs[i] = (int*)malloc(lines_per_thread[i]*2*sizeof(int));
     }
     
@@ -793,7 +793,7 @@ void ICS_Grid_node::divide_x_work(){
 
     //Populate ordered_line_def
     int ordered_line_def_counter = 0;
-    for(i = 0; i< NUM_THREADS; i++){
+    for(i = 0; i< nthreads; i++){
         for(j=0; j<lines_per_thread[i]*2;j++){
             ics_adi_dir_x->ordered_line_defs[ordered_line_def_counter] = thread_line_defs[i][j];
             ordered_line_def_counter++;
@@ -807,7 +807,7 @@ void ICS_Grid_node::divide_x_work(){
     ics_adi_dir_x->line_start_stop_indices[1] = lines_per_thread[0]*2;
     long start_node;
     long line_start_node;
-    for(i = 2; i < NUM_THREADS * 2; i+=2){
+    for(i = 2; i < nthreads * 2; i+=2){
         start_node = ics_adi_dir_x->ordered_start_stop_indices[i-1];
         ics_adi_dir_x->ordered_start_stop_indices[i] = start_node;
         ics_adi_dir_x->ordered_start_stop_indices[i+1] = start_node + nodes_per_thread[i/2];
@@ -821,7 +821,7 @@ void ICS_Grid_node::divide_x_work(){
     //Put the Nodes in order in the ordered_nodes array
     int ordered_node_idx_counter = 0;
     int current_node;
-    for(i = 0; i < NUM_THREADS; i++){
+    for(i = 0; i < nthreads; i++){
         for(j = 0; j < lines_per_thread[i] * 2; j+=2){
             current_node = thread_line_defs[i][j];
             ics_adi_dir_x->ordered_nodes[ordered_node_idx_counter] = current_node;
@@ -837,7 +837,7 @@ void ICS_Grid_node::divide_x_work(){
     }
 
     //Delete thread_line_defs array
-    for(i = 0; i < NUM_THREADS; i++){
+    for(i = 0; i < nthreads; i++){
         free(thread_line_defs[i]);
     }
     free(thread_line_defs);
@@ -846,31 +846,31 @@ void ICS_Grid_node::divide_x_work(){
     free(thread_idx_counter);
 }
 
-void ICS_Grid_node::divide_y_work(){
+void ICS_Grid_node::divide_y_work(const int nthreads){
     int i, j, k;
     //nodes in each thread. (work each thread has to do)
-    int* nodes_per_thread = (int*)calloc(NUM_THREADS, sizeof(int));
+    int* nodes_per_thread = (int*)calloc(nthreads, sizeof(int));
     //number of lines in each thread
-    int* lines_per_thread = (int*)calloc(NUM_THREADS, sizeof(int));
+    int* lines_per_thread = (int*)calloc(nthreads, sizeof(int));
     //To determine which index to put the start node and line length in thread_line_defs
-    int* thread_idx_counter = (int*)calloc(NUM_THREADS, sizeof(int));
+    int* thread_idx_counter = (int*)calloc(nthreads, sizeof(int));
     //To determine which thread array to put the start node and line length in thread_line_defs
     int line_thread_id[_y_lines_length / 2];
-    //Array of NUM_THREADS arrays that hold the line defs for each thread
-    int** thread_line_defs = (int**)malloc(NUM_THREADS*sizeof(int*));
+    //Array of nthreads arrays that hold the line defs for each thread
+    int** thread_line_defs = (int**)malloc(nthreads*sizeof(int*));
 
     int min_index = 0;
 
     //Find the total line length for each thread
     for(i = 0; i < _y_lines_length; i+=2){
-        min_index = find_min_element_index(nodes_per_thread); 
+        min_index = find_min_element_index(nodes_per_thread, nthreads); 
         nodes_per_thread[min_index] += _sorted_y_lines[i+1];
         line_thread_id[i/2] = min_index;
         lines_per_thread[min_index] += 1;
     } 
 
     //Allocate memory for each array in thread_line_defs
-    for(i = 0; i < NUM_THREADS; i++){
+    for(i = 0; i < nthreads; i++){
         thread_line_defs[i] = (int*)malloc(lines_per_thread[i]*2*sizeof(int));
     }
     
@@ -888,7 +888,7 @@ void ICS_Grid_node::divide_y_work(){
 
     //Populate ordered_line_def
     int ordered_line_def_counter = 0;
-    for(i = 0; i< NUM_THREADS; i++){
+    for(i = 0; i< nthreads; i++){
         for(j=0; j<lines_per_thread[i]*2;j++){
             ics_adi_dir_y->ordered_line_defs[ordered_line_def_counter] = thread_line_defs[i][j];
             ordered_line_def_counter++;
@@ -904,7 +904,7 @@ void ICS_Grid_node::divide_y_work(){
 
     long start_node;
     long line_start_node;
-    for(i = 2; i < NUM_THREADS * 2; i+=2){
+    for(i = 2; i < nthreads * 2; i+=2){
         start_node = ics_adi_dir_y->ordered_start_stop_indices[i-1];
         ics_adi_dir_y->ordered_start_stop_indices[i] = start_node;
         ics_adi_dir_y->ordered_start_stop_indices[i+1] = start_node + nodes_per_thread[i/2];
@@ -917,7 +917,7 @@ void ICS_Grid_node::divide_y_work(){
     //Put the Nodes in order in the ordered_nodes array
     int ordered_node_idx_counter = 0;
     int current_node;
-    for(i = 0; i < NUM_THREADS; i++){
+    for(i = 0; i < nthreads; i++){
         for(j = 0; j < lines_per_thread[i] * 2; j+=2){
             current_node = thread_line_defs[i][j];
             ics_adi_dir_y->ordered_nodes[ordered_node_idx_counter] = current_node;
@@ -933,7 +933,7 @@ void ICS_Grid_node::divide_y_work(){
     }
 
     //Delete thread_line_defs array
-    for(i = 0; i < NUM_THREADS; i++){
+    for(i = 0; i < nthreads; i++){
         free(thread_line_defs[i]);
     }
     free(thread_line_defs);
@@ -942,24 +942,24 @@ void ICS_Grid_node::divide_y_work(){
     free(thread_idx_counter);
 }
 
-void ICS_Grid_node::divide_z_work(){
+void ICS_Grid_node::divide_z_work(const int nthreads){
     int i, j, k;
     //nodes in each thread. (work each thread has to do)
-    int* nodes_per_thread = (int*)calloc(NUM_THREADS, sizeof(int));
+    int* nodes_per_thread = (int*)calloc(nthreads, sizeof(int));
     //number of lines in each thread
-    int* lines_per_thread = (int*)calloc(NUM_THREADS, sizeof(int));
+    int* lines_per_thread = (int*)calloc(nthreads, sizeof(int));
     //To determine which index to put the start node and line length in thread_line_defs
-    int* thread_idx_counter = (int*)calloc(NUM_THREADS, sizeof(int));
+    int* thread_idx_counter = (int*)calloc(nthreads, sizeof(int));
     //To determine which thread array to put the start node and line length in thread_line_defs
     int line_thread_id[_z_lines_length / 2];
-    //Array of NUM_THREADS arrays that hold the line defs for each thread
-    int** thread_line_defs = (int**)malloc(NUM_THREADS*sizeof(int*));
+    //Array of nthreads arrays that hold the line defs for each thread
+    int** thread_line_defs = (int**)malloc(nthreads*sizeof(int*));
 
     int min_index = 0;
 
     //Find the total line length for each thread
     for(i = 0; i < _z_lines_length; i+=2){
-        min_index = find_min_element_index(nodes_per_thread); 
+        min_index = find_min_element_index(nodes_per_thread, nthreads); 
         nodes_per_thread[min_index] += _sorted_z_lines[i+1];
         line_thread_id[i/2] = min_index;
         lines_per_thread[min_index] += 1;
@@ -967,7 +967,7 @@ void ICS_Grid_node::divide_z_work(){
 
     //Allocate memory for each array in thread_line_defs
     //Add indices to Grid_data
-    for(i = 0; i < NUM_THREADS; i++){
+    for(i = 0; i < nthreads; i++){
         thread_line_defs[i] = (int*)malloc(lines_per_thread[i]*2*sizeof(int));
     }
     
@@ -985,7 +985,7 @@ void ICS_Grid_node::divide_z_work(){
 
     //Populate ordered_line_def
     int ordered_line_def_counter = 0;
-    for(i = 0; i< NUM_THREADS; i++){
+    for(i = 0; i< nthreads; i++){
         for(j=0; j<lines_per_thread[i]*2;j++){
             ics_adi_dir_z->ordered_line_defs[ordered_line_def_counter] = thread_line_defs[i][j];
             ordered_line_def_counter++;
@@ -1001,7 +1001,7 @@ void ICS_Grid_node::divide_z_work(){
 
     long start_node;
     long line_start_node;
-    for(i = 2; i < NUM_THREADS * 2; i+=2){
+    for(i = 2; i < nthreads * 2; i+=2){
         start_node = ics_adi_dir_z->ordered_start_stop_indices[i-1];
         ics_adi_dir_z->ordered_start_stop_indices[i] = start_node;
         ics_adi_dir_z->ordered_start_stop_indices[i+1] = start_node + nodes_per_thread[i/2];
@@ -1014,7 +1014,7 @@ void ICS_Grid_node::divide_z_work(){
     //Put the Nodes in order in the ordered_nodes array
     int ordered_node_idx_counter = 0;
     int current_node;
-    for(i = 0; i < NUM_THREADS; i++){
+    for(i = 0; i < nthreads; i++){
         for(j = 0; j < lines_per_thread[i] * 2; j+=2){
             current_node = thread_line_defs[i][j];
             ics_adi_dir_z->ordered_nodes[ordered_node_idx_counter] = current_node;
@@ -1030,7 +1030,7 @@ void ICS_Grid_node::divide_z_work(){
     }
 
     //Delete thread_line_defs array
-    for(i = 0; i < NUM_THREADS; i++){
+    for(i = 0; i < nthreads; i++){
         free(thread_line_defs[i]);
     }
     free(thread_line_defs);
@@ -1048,20 +1048,44 @@ void ICS_Grid_node::set_num_threads(const int n)
         for(i = 0; i<NUM_THREADS; i++)
         {
             free(ics_tasks[i].scratchpad);
+            free(ics_tasks[i].RHS);
         }
     }
     free(ics_tasks);
     ics_tasks = (ICSAdiGridData*)malloc(n*sizeof(ICSAdiGridData));
     for(i=0; i<n; i++)
     {
-        ics_tasks[i].scratchpad = (double*)malloc(sizeof(double) * _line_length_max);
+        ics_tasks[i].RHS = (double*)malloc(sizeof(double) * _line_length_max);
+        ics_tasks[i].scratchpad = (double*)malloc(sizeof(double) * _line_length_max - 1);
         ics_tasks[i].g = this;
     }
+
+    free(ics_adi_dir_x->ordered_start_stop_indices);
+    free(ics_adi_dir_x->line_start_stop_indices);
+
+    free(ics_adi_dir_y->ordered_start_stop_indices);
+    free(ics_adi_dir_y->line_start_stop_indices);
+
+    free(ics_adi_dir_z->ordered_start_stop_indices);
+    free(ics_adi_dir_z->line_start_stop_indices);
+
+    ics_adi_dir_x->ordered_start_stop_indices = (long*)malloc(sizeof(long)*n*2);
+    ics_adi_dir_x->line_start_stop_indices = (long*)malloc(sizeof(long)*n*2);
+
+    ics_adi_dir_y->ordered_start_stop_indices = (long*)malloc(sizeof(long)*n*2);
+    ics_adi_dir_y->line_start_stop_indices = (long*)malloc(sizeof(long)*n*2);
+
+    ics_adi_dir_z->ordered_start_stop_indices = (long*)malloc(sizeof(long)*n*2);
+    ics_adi_dir_z->line_start_stop_indices = (long*)malloc(sizeof(long)*n*2);
+
+    divide_x_work(n);
+    divide_y_work(n);
+    divide_z_work(n);
 }
 
 void ICS_Grid_node::do_grid_currents(double dt, int grid_id)
 {
-    if(ics_current_seg_ptrs != NULL){
+    if(ics_current_seg_ptrs != NULL){  
         MEM_ZERO(ics_states_cur,sizeof(double)*_num_nodes);
         ssize_t i, j, n;
         int seg_start_index, seg_stop_index;
