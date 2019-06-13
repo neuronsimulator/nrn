@@ -304,6 +304,8 @@ public:
 	virtual void update(Observable*);
 	DataPointers* py_data() { return dp_; }
 	void update_ptrs();
+	void record_install();
+	void record_uninstall();
 private:
 	DataPointers* dp_;
 	CopyString name_;

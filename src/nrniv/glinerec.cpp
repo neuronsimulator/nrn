@@ -154,6 +154,20 @@ GLineRecord::GLineRecord(GraphLine* gl) : PlayRecord(NULL){
 	saw_t_ = false;
 }
 
+GVectorRecord::GVectorRecord(GraphVector* gv) : PlayRecord(NULL) {
+  printf("GVectorRecord %p\n", this);
+  gv_ = gv;
+}
+
+void GraphVector::record_install() {
+  printf("GraphVector::record_install()\n");
+  GVectorRecord* gvr = new GVectorRecord(this);
+}
+
+void GraphVector::record_uninstall() {
+  printf("GraphVector::record_uninstall()\n");
+}
+
 GLineRecord::~GLineRecord(){
 //	printf("~GLineRecord %p\n", this);
 	int i;
@@ -176,12 +190,39 @@ GLineRecord::~GLineRecord(){
 		}
 	}
 }
+
+GVectorRecord::~GVectorRecord() {
+  printf("~GVectorRecord %p\n", this);
+#if 0 // for now not allowing vector buffering
+  for (GLineRecordEData::iterator it = pd_and_vec_.begin(); it != pd_and_vec_.end(); ++it) {
+    if ((*it).second) {
+      delete (*it).second;
+    }
+  }
+#endif
+}
+
 void GLineRecord::record_init() {
   gl_->simgraph_init();
 }
+
+void GVectorRecord::record_init() {
+}
+
 void GLineRecord::continuous(double t) {
   gl_->simgraph_continuous(t);
 }
+
+void GVectorRecord::continuous(double t) {
+}
+
+int GVectorRecord::count() {
+  return gv_->py_data()->count();
+}
+double* GVectorRecord::pdata(int i) {
+  return gv_->py_data()->p(i);
+}
+
 void GLineRecord::plot(int vecsz, double tstop) {
   double dt = tstop/double(vecsz-1);
   DataVec* x = (DataVec*)gl_->x_data();

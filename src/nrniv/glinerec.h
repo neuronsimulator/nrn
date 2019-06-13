@@ -10,8 +10,6 @@
 
 typedef std::vector< std::pair< double*, IvocVect* > > GLineRecordEData;
 
-class GraphLine;
-
 class GLineRecord : public PlayRecord {
 public:
 	GLineRecord(GraphLine*);
@@ -30,6 +28,21 @@ public:
 	void fill_pd1();
 	GLineRecordEData pd_and_vec_;
 	bool saw_t_;
+};
+
+class GVectorRecord : public PlayRecord {
+public:
+	GVectorRecord(GraphVector*);
+	virtual ~GVectorRecord();
+	virtual void install(Cvode* cv) { record_add(cv); }
+	virtual void record_init();
+	virtual void continuous(double t);
+	virtual bool uses(void* v) { return (void*)gv_ == v; }
+        virtual int type() { return GVectorRecordType; }
+
+	int count();
+	double* pdata(int);
+	GraphVector* gv_;
 };
 
 #endif

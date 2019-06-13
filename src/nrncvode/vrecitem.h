@@ -23,6 +23,7 @@ struct Section;
 #define TvecRecordType 5
 #define YvecRecordType 6
 #define GLineRecordType 7
+#define GVectorRecordType 8
 
 // used by PlayRecord subclasses that utilize discrete events
 class PlayRecordEvent : public DiscreteEvent {

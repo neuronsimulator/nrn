@@ -733,7 +733,7 @@ void datumtransform(CellGroup* cgs) {
 // Requires cache_efficient mode.
 // Input double* and NrnThread. Output type and index.
 // type == 0 means could not determine index.
-void nrn_dblpntr2nrncore(double* pd, NrnThread& nt, int& type, int& index) {
+int nrn_dblpntr2nrncore(double* pd, NrnThread& nt, int& type, int& index) {
   assert(use_cachevec);
   int nnode = nt.end;
   type = 0;
@@ -752,6 +752,7 @@ void nrn_dblpntr2nrncore(double* pd, NrnThread& nt, int& type, int& index) {
       }
     }
   }
+  return type == 0 ? 1 : 0;
 }
 
 void datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_list* ml) {
