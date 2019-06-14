@@ -1231,6 +1231,24 @@ def _compile_reactions():
     #if there are no reactions
     if location_count == 0 and len(ecs_regions_inv) == 0:
         return None
+
+    def localize_index(creg, rate):
+        rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',
+            lambda m: "species[%i][%i]" % 
+                (creg._species_ids.get(int(m.groups()[0])),
+                 creg._region_ids.get(int(m.groups()[1]))), rate)
+        rate_str = re.sub(r'params\[(\d+)\]\[(\d+)\]', 
+            lambda m: "params[%i][%i]" % 
+                (creg._params_ids.get(int(m.groups()[0])),
+                 creg._region_ids.get(int(m.groups()[1]))), rate_str)
+        rate_str = re.sub(r'species_3d\[(\d+)\]',
+            lambda m: "species_3d[%i]" % 
+                creg._ecs_species_ids.get(int(m.groups()[0])), rate_str)
+        rate_str = re.sub(r'params_3d\[(\d+)\]',
+            lambda m: "params_3d[%i]" % 
+                creg._ecs_params_ids.get(int(m.groups()[0])), rate_str)
+        return rate_str
+
     #Setup intracellular and multicompartment reactions
     if location_count > 0:
         from . import rate, multiCompartmentReaction, Parameter
@@ -1260,24 +1278,18 @@ def _compile_reactions():
                     for reg in creg._react_regions[rptr]:
                         if reg() in r._rate:
                             region_id = creg._region_ids[reg()._id]
-                            rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate[reg()][0])
-                            rate_str = re.sub(r'params\[(\d+)\]\[(\d+)\]',lambda m: "params[%i][%i]" %  (creg._params_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), rate_str)
+                            rate_str = localize_index(creg, r._rate[reg()][0])
                             operator = '+=' if species_ids_used[species_id][region_id] else '='
                             fxn_string += "\n\trhs[%d][%d] %s %s;" % (species_id, region_id, operator, rate_str)
                             species_ids_used[species_id][region_id] = True
                 elif isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
                     #Lookup the region_id for the reaction
                     for reg in r._rate:
-                        rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate[reg][0])
-                        rate_str = re.sub(r'params\[(\d+)\]\[(\d+)\]',lambda m: "params[%i][%i]" %  (creg._params_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), rate_str)
-                        rate_str = re.sub(r'species_3d\[(\d+)\]',lambda m: "species_3d[%i]" %  creg._ecs_species_ids.get(int(m.groups()[0])), rate_str)
-                        rate_str = re.sub(r'params_3d\[(\d+)\]',lambda m: "params_3d[%i]" %  creg._ecs_params_ids.get(int(m.groups()[0])), rate_str)
-
+                        rate_str = localize_index(creg, r._rate[reg][0])
                         fxn_string += "\n\trate = %s;" % rate_str
                         break
                     for sptr in r._sources + r._dests:
                         s = sptr()
-                        
                         if isinstance(s, species.SpeciesOnExtracellular):
                             if not isinstance(s, species.ParameterOnExtracellular):
                                 species_id = creg._ecs_species_ids[s._extracellular()._grid_id]
@@ -1300,7 +1312,8 @@ def _compile_reactions():
                 else:
                     for reg in creg._react_regions[rptr]:
                         region_id = creg._region_ids[reg()._id]
-                        rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',lambda m: "species[%i][%i]" %  (creg._species_ids.get(int(m.groups()[0])), creg._region_ids.get(int(m.groups()[1]))), r._rate[reg()][0])
+                        rate_str = localize_index(creg, r._rate[reg()][0])
+
                         fxn_string += "\n\trate = %s;" % rate_str
                         summed_mults = collections.defaultdict(lambda: 0)
                         for (mult, sp) in zip(r._mult, r._sources + r._dests):
