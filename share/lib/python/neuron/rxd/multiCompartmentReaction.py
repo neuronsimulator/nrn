@@ -189,15 +189,25 @@ class MultiCompartmentReaction(GeneralizedReaction):
     
     
     def _do_memb_scales(self, cur_map):
+        from . import species
+        sources = [r for r in self._sources if not isinstance(r(),species.SpeciesOnExtracellular)]
+        dests = [r for r in self._dests if not isinstance(r(),species.SpeciesOnExtracellular)]
+
+        # flux occurs on sections which have both source, destination and membrane 
+        active_secs = self._regions[0]._secs1d
+        for sp in sources + dests:
+            if sp() and sp()._region():
+                active_secs = [sec for sec in active_secs if sec in sp()._region()._secs1d]
+
         #TODO: Support intracellular 3D reactions
         if not self._scale_by_area:
-            narea = sum([sec.nseg for sec in self._regions[0]._secs1d])
+            narea = sum([sec.nseg for sec in active_secs])
             areas = numpy.ones(narea)
         else:
             # TODO: simplify this expression
-            areas = numpy.fromiter(itertools.chain.from_iterable(list(self._regions[0]._geometry.volumes1d(sec) for sec in self._regions[0]._secs1d)),dtype=float)
+            areas = numpy.fromiter(itertools.chain.from_iterable(list(self._regions[0]._geometry.volumes1d(sec) for sec in active_secs)), dtype=float)
         neuron_areas = []
-        for sec in self._regions[0]._secs1d:
+        for sec in active_secs:
             neuron_areas += [seg.area() for seg in sec]
         neuron_areas = numpy.array(neuron_areas)
         # area_ratios is usually a vector of 1s
@@ -215,10 +225,6 @@ class MultiCompartmentReaction(GeneralizedReaction):
             # TODO: don't assume/require always inside/outside on one side...
             #       if no nrn_region specified, then (make so that) no contribution
             #       to membrane flux
-            from . import species
-            sources = [r for r in self._sources if not isinstance(r(),species.SpeciesOnExtracellular)]
-            dests = [r for r in self._dests if not isinstance(r(),species.SpeciesOnExtracellular)]
-        
             sources_ecs = [r for r in self._sources if isinstance(r(),species.SpeciesOnExtracellular)]
             dests_ecs = [r for r in self._dests if isinstance(r(),species.SpeciesOnExtracellular)]
 
@@ -261,7 +267,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
                     if isinstance(s[r],species.SpeciesOnExtracellular):
                         ecs_grids[s.name] = s[r]._extracellular()
                 if s.name not in all_grids: all_grids.append(s.name)
-        for sec in self._regions[0]._secs1d:
+        for sec in active_secs:
             for seg in sec:
                 local_ptrs = []
                 local_mapped = []
