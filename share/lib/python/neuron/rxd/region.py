@@ -470,7 +470,14 @@ class Region(object):
         .. note:: dimension and dx will be deprecated in a future version
         """
         self._allow_setting = True
-        self.secs = secs
+        if hasattr(secs,'__len__'):
+            self.secs = secs
+        else:
+            self.secs = [secs]
+        from nrn import Section
+        for sec in self.secs:
+            if not isinstance(sec,Section):
+                raise RxDException("Error: Region 'secs' must be a list of NEURON sections, %r is not a valid NEURON section." % sec)
         self.nrn_region = nrn_region
         self.geometry = geometry
         

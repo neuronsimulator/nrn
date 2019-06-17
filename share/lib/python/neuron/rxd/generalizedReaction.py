@@ -201,7 +201,21 @@ class GeneralizedReaction(object):
             active_secs = set.intersection(*[set(reg.secs) for reg in active_regions if reg])
 
         self._active_regions = active_regions
-        active_secs_list = [sec for reg in active_regions if reg for sec in reg.secs if sec in active_secs]
+        from .multiCompartmentReaction import MultiCompartmentReaction
+        if isinstance(self, MultiCompartmentReaction):
+            sources = [r for r in self._sources if not isinstance(r(),species.SpeciesOnExtracellular)]
+            dests = [r for r in self._dests if not isinstance(r(),species.SpeciesOnExtracellular)]
+
+            # flux occurs on sections which have both source, destination and membrane 
+            active_secs_list = self._regions[0]._secs1d
+            for sp in sources + dests:
+                if sp() and sp()._region():
+                    active_secs_list = [sec for sec in active_secs_list if sec in sp()._region()._secs1d]
+        else:
+            active_secs_list = [sec for reg in active_regions if reg for sec in reg.secs if sec in active_secs]
+
+
+
         # store the indices
         for sptr in self._involved_species:
             s = sptr()
