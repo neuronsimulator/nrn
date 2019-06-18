@@ -79,6 +79,10 @@ struct PyAst: public Ast {
         PYBIND11_OVERLOAD(std::string, Ast, get_node_name, );
     }
 
+    std::string get_nmodl_name() override {
+        PYBIND11_OVERLOAD(std::string, Ast, get_nmodl_name, );
+    }
+
     std::shared_ptr<Ast> get_shared_ptr() override {
         PYBIND11_OVERLOAD(std::shared_ptr<Ast>, Ast, get_shared_ptr, );
     }

@@ -1,0 +1,182 @@
+/*************************************************************************
+ * Copyright (C) 2018-2019 Blue Brain Project
+ *
+ * This file is part of NMODL distributed under the terms of the GNU
+ * Lesser General Public License. See top-level LICENSE file for details.
+ *************************************************************************/
+
+#pragma once
+
+/**
+ * \file
+ * \brief \copybrief nmodl::codegen::CodegenCompatibilityVisitor
+ */
+
+#include <map>
+#include <set>
+
+#include "ast/ast.hpp"
+#include "codegen_naming.hpp"
+#include "symtab/symbol_table.hpp"
+#include "utils/logger.hpp"
+#include "visitors/ast_visitor.hpp"
+
+using namespace fmt::literals;
+
+namespace nmodl {
+namespace codegen {
+
+using namespace ast;
+
+/**
+ * @addtogroup codegen_backends
+ * @{
+ */
+
+/**
+ * \class CodegenCompatibilityVisitor
+ * \brief %Visitor for printing compatibility issues of the mod file
+ */
+class CodegenCompatibilityVisitor: public visitor::AstVisitor {
+    /// Typedef for defining FunctionPointer that points to the
+    /// function needed to be called for every kind of error
+    typedef std::string (CodegenCompatibilityVisitor::*FunctionPointer)(ast::Ast* node,
+                                                                        std::shared_ptr<ast::Ast>&);
+
+    /// Unordered_map to find the function needed to be called in
+    /// for every ast::AstNodeType that is unsupported
+    std::map<ast::AstNodeType, FunctionPointer> unhandled_ast_types_func = {
+        {AstNodeType::MATCH_BLOCK,
+         &CodegenCompatibilityVisitor::return_error_without_name<MatchBlock>},
+        {AstNodeType::BEFORE_BLOCK,
+         &CodegenCompatibilityVisitor::return_error_without_name<BeforeBlock>},
+        {AstNodeType::AFTER_BLOCK,
+         &CodegenCompatibilityVisitor::return_error_without_name<AfterBlock>},
+        {AstNodeType::TERMINAL_BLOCK,
+         &CodegenCompatibilityVisitor::return_error_without_name<TerminalBlock>},
+        {AstNodeType::DISCRETE_BLOCK,
+         &CodegenCompatibilityVisitor::return_error_with_name<DiscreteBlock>},
+        {AstNodeType::PARTIAL_BLOCK,
+         &CodegenCompatibilityVisitor::return_error_with_name<PartialBlock>},
+        {AstNodeType::FUNCTION_TABLE_BLOCK,
+         &CodegenCompatibilityVisitor::return_error_without_name<FunctionTableBlock>},
+        {AstNodeType::CONSTANT_BLOCK,
+         &CodegenCompatibilityVisitor::return_error_without_name<ConstantBlock>},
+        {AstNodeType::CONSTRUCTOR_BLOCK,
+         &CodegenCompatibilityVisitor::return_error_without_name<ConstructorBlock>},
+        {AstNodeType::DESTRUCTOR_BLOCK,
+         &CodegenCompatibilityVisitor::return_error_without_name<DestructorBlock>},
+        {AstNodeType::INDEPENDENT_BLOCK,
+         &CodegenCompatibilityVisitor::return_error_without_name<IndependentBlock>},
+        {AstNodeType::SOLVE_BLOCK,
+         &CodegenCompatibilityVisitor::return_error_if_solve_method_is_unhandled},
+        {AstNodeType::GLOBAL_VAR, &CodegenCompatibilityVisitor::return_error_global_var},
+        {AstNodeType::POINTER_VAR, &CodegenCompatibilityVisitor::return_error_pointer},
+        {AstNodeType::BBCORE_POINTER_VAR,
+         &CodegenCompatibilityVisitor::return_error_if_no_bbcore_read_write}};
+
+    /// Set of handled solvers by the NMODL \c C++ code generator
+    const std::set<std::string> handled_solvers{codegen::naming::CNEXP_METHOD,
+                                                codegen::naming::EULER_METHOD,
+                                                codegen::naming::DERIVIMPLICIT_METHOD,
+                                                codegen::naming::SPARSE_METHOD};
+
+    /// Vector that stores all the ast::Node that are unhandled
+    /// by the NMODL \c C++ code generator
+    std::vector<std::shared_ptr<ast::Ast>> unhandled_ast_nodes;
+
+  public:
+    /// \name Ctor & dtor
+    /// \{
+
+    /// Default CodegenCompatibilityVisitor constructor
+    CodegenCompatibilityVisitor() = default;
+
+    /// \}
+
+    /// Function that searches the ast::Ast for nodes that
+    /// are incompatible with NMODL \c C++ code generator
+    ///
+    /// \param node Ast
+    /// \return bool if there are unhandled nodes or not
+    bool find_unhandled_ast_nodes(Ast* node);
+
+    /// Takes as parameter an std::shared_ptr<ast::Ast>,
+    /// searches if the method used for solving is supported
+    /// and if it is not it returns a relative error message
+    ///
+    /// \param node Not used by the function
+    /// \param ast_node Ast node which is checked
+    /// \return std::string error
+    std::string return_error_if_solve_method_is_unhandled(ast::Ast* node,
+                                                          std::shared_ptr<ast::Ast>& ast_node);
+
+    /// Takes as parameter an std::shared_ptr<ast::Ast> node
+    /// and returns a relative error with the name, the type
+    /// and the location of the unhandled statement
+    ///
+    /// \tparam T Type of node parameter in the ast::Ast
+    /// \param node Not used by the function
+    /// \param ast_node Ast node which is checked
+    /// \return std::string error
+    template <typename T>
+    std::string return_error_with_name(ast::Ast* node, std::shared_ptr<ast::Ast>& ast_node) {
+        auto real_type_block = std::dynamic_pointer_cast<T>(ast_node);
+        return "\"{}\" {}construct found at [{}] is not handled\n"_format(
+            ast_node->get_node_name(),
+            real_type_block->get_nmodl_name(),
+            real_type_block->get_token()->position());
+    }
+
+    /// Takes as parameter an std::shared_ptr<ast::Ast> node
+    /// and returns a relative error with the type and the
+    /// location of the unhandled statement
+    ///
+    /// \tparam T Type of node parameter in the ast::Ast
+    /// \param node Not used by the function
+    /// \param ast_node Ast node which is checked
+    /// \return std::string error
+    template <typename T>
+    std::string return_error_without_name(ast::Ast* node, std::shared_ptr<ast::Ast>& ast_node) {
+        auto real_type_block = std::dynamic_pointer_cast<T>(ast_node);
+        return "{}construct found at [{}] is not handled\n"_format(
+            real_type_block->get_nmodl_name(), real_type_block->get_token()->position());
+    }
+
+    /// Takes as parameter the ast::Ast to read the symbol table
+    /// and an std::shared_ptr<ast::Ast> node and returns relative
+    /// error if a variable that is writen in the mod file is
+    /// defined as GLOBAL instead of RANGE
+    ///
+    /// \param node Ast
+    /// \param ast_node Ast node which is checked
+    /// \return std::string error
+    std::string return_error_global_var(ast::Ast* node, std::shared_ptr<ast::Ast>& ast_node);
+
+    /// Takes as parameter an std::shared_ptr<ast::Ast> node
+    /// and returns a relative error with the name and the
+    /// location of the pointer, as well as a suggestion to
+    /// define it as BBCOREPOINTER
+    ///
+    /// \param node Not used by the function
+    /// \param ast_node Ast node which is checked
+    /// \return std::string error
+    std::string return_error_pointer(ast::Ast* node, std::shared_ptr<ast::Ast>& ast_node);
+
+    /// Takes as parameter the ast::Ast and checks if the
+    /// functions "bbcore_read" and "bbcore_write" are defined
+    /// in any of the ast::Ast VERBATIM blocks. The function is
+    /// called if there is a BBCORE_POINTER defined in the mod
+    /// file
+    ///
+    /// \param node Ast
+    /// \param ast_node Not used by the function
+    /// \return std::string error
+    std::string return_error_if_no_bbcore_read_write(ast::Ast* node,
+                                                     std::shared_ptr<ast::Ast>& ast_node);
+};
+
+/** @} */  // end of codegen_backends
+
+}  // namespace codegen
+}  // namespace nmodl

@@ -133,6 +133,27 @@ class ModToken {
      * \endcode
      */
     friend std::ostream& operator<<(std::ostream& stream, const ModToken& mt);
+
+    /**
+     * Overload \c + operator to create an object whose position starts
+     * from the start line and column of the first adder and finishes
+     * at the end line and column of the second adder
+     *
+     *
+     * For example:
+     *
+     * \code
+     *      a at [118.9-14]
+     *      b at [121.4-5]
+     * \endcode
+     *
+     * Output:
+     *
+     * \code
+     *      (a + b) at [118.9-121.5]
+     * \endcode
+     */
+    friend ModToken operator+(ModToken adder1, ModToken adder2);
 };
 
 /** @} */  // end of token_modtoken

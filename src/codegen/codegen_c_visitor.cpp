@@ -3002,7 +3002,8 @@ std::string CodegenCVisitor::get_range_var_float_type(const SymbolType& symbol) 
  * \details For CPU/Host target there is no device pointer. In this case
  * just use the host variable name directly.
  */
-std::string CodegenCVisitor::get_variable_device_pointer(std::string variable, std::string /*type*/) {
+std::string CodegenCVisitor::get_variable_device_pointer(std::string variable,
+                                                         std::string /*type*/) {
     return variable;
 }
 

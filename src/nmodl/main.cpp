@@ -16,6 +16,7 @@
 #include "ast/ast_decl.hpp"
 #include "codegen/codegen_acc_visitor.hpp"
 #include "codegen/codegen_c_visitor.hpp"
+#include "codegen/codegen_compatibility_visitor.hpp"
 #include "codegen/codegen_cuda_visitor.hpp"
 #include "codegen/codegen_ispc_visitor.hpp"
 #include "codegen/codegen_omp_visitor.hpp"
@@ -116,6 +117,10 @@ int main(int argc, const char* argv[]) {
     /// true if verbatim blocks
     bool verbatim_rename(true);
 
+    /// true if code generation is forced to happed even if there
+    /// is any incompatibility
+    bool force_codegen(false);
+
     /// directory where code will be generated
     std::string output_dir(".");
 
@@ -158,6 +163,9 @@ int main(int argc, const char* argv[]) {
     app.add_option("--scratch", scratch_dir, "Directory for intermediate code output", true)
         ->ignore_case();
     app.add_option("--units", units_dir, "Directory of units lib file", true)->ignore_case();
+    app.add_flag("--force_codegen",
+                 force_codegen,
+                 "Force code generation even if there is any incompatibility");
 
     auto host_opt = app.add_subcommand("host", "HOST/CPU code backends")->ignore_case();
     host_opt->add_flag("--c", c_backend, "C/C++ backend")->ignore_case();
@@ -248,6 +256,22 @@ int main(int argc, const char* argv[]) {
         {
             logger->info("Running symtab visitor");
             SymtabVisitor(update_symtab).visit_program(ast.get());
+        }
+
+        {
+            // make sure to run perf visitor because code generator
+            // looks for read/write counts const/non-const declaration
+            PerfVisitor().visit_program(ast.get());
+        }
+
+        {
+            // Compatibility Checking
+            logger->info("Running code compatibility checker");
+            // If there is an incompatible construct and code generation is not forced exit NMODL
+            if (CodegenCompatibilityVisitor().find_unhandled_ast_nodes(ast.get()) &&
+                !force_codegen) {
+                return 1;
+            }
         }
 
         if (show_symtab) {
@@ -366,12 +390,6 @@ int main(int argc, const char* argv[]) {
             auto file = scratch_dir + "/" + modfile + ".perf.json";
             logger->info("Writing performance statistics to {}", file);
             PerfVisitor(file).visit_program(ast.get());
-        }
-
-        {
-            // make sure to run perf visitor because code generator
-            // looks for read/write counts const/non-const declaration
-            PerfVisitor().visit_program(ast.get());
         }
 
         {
