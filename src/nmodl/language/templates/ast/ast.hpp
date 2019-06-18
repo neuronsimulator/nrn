@@ -168,6 +168,23 @@ namespace ast {
             return "{{ node.class_name }}";
         }
 
+        {% if node.nmodl_name %}
+        /**
+        * \brief Return NMODL statement of ast node as std::string
+        *
+        * Every node is related to a special statement in the NMODL. This
+        * statement can be returned as a std::string for printing to
+        * text/json form.
+        *
+        * @return name of the statement as a string i.e. "{{ node.nmodl_name }}"
+        *
+        * \sa Ast::get_nmodl_name
+        */
+        {{ virtual(node) }} std::string get_nmodl_name() override {
+            return "{{ node.nmodl_name }}";
+        }
+        {% endif %}
+
         /**
          * \brief Get std::shared_ptr from `this` pointer of the current ast node
          */

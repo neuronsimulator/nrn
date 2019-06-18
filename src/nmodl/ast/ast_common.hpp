@@ -180,6 +180,21 @@ struct Ast: public std::enable_shared_from_this<Ast> {
     virtual std::string get_node_type_name() = 0;
 
     /**
+     * \brief Return NMODL statement of ast node as std::string
+     *
+     * Every node is related to a special statement in the NMODL. This
+     * statement can be returned as a std::string for printing to
+     * text/json form.
+     *
+     * @return name of the statement as a string
+     *
+     * \sa Ast::get_nmodl_name
+     */
+    virtual std::string get_nmodl_name() {
+        throw std::runtime_error("get_nmodl_name not implemented");
+    }
+
+    /**
      * \brief Accept (or visit) the AST node using current visitor
      *
      * Instead of visiting children of AST node, like Ast::visit_children,

@@ -28,16 +28,6 @@ class LanguageParser:
         self.filename = filename
         self.debug = debug
 
-    @staticmethod
-    def is_token(name):
-        """check if the name (i.e. class) is a token type in lexer
-
-        Lexims returned from Lexer have position and hence token object.
-        Return True if this node is returned by lexer otherwise False
-        """
-        return (name in node_info.LEXER_DATA_TYPES or
-                name in node_info.SYMBOL_BLOCK_TYPES or
-                name in node_info.ADDITIONAL_TOKEN_BLOCKS)
 
     def parse_child_rule(self, child):
         """parse child specification and return argument as properties
@@ -162,9 +152,8 @@ class LanguageParser:
             else:
                 args.base_class = base_class if base_class else 'Ast'
 
-                # check if we need token for the node
-                # todo : we will have token for every node
-                args.has_token = LanguageParser.is_token(class_name)
+                # store token in every node
+                args.has_token = True
 
                 # name of the node while printing back to NMODL
                 args.nmodl_name = properties['nmodl'] if 'nmodl' in properties else None

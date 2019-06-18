@@ -4,6 +4,8 @@
 set(CODEGEN_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen_acc_visitor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen_acc_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_compatibility_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_compatibility_visitor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen_cuda_visitor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen_cuda_visitor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen_omp_visitor.cpp

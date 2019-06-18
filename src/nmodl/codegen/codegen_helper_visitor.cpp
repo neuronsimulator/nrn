@@ -171,15 +171,6 @@ void CodegenHelperVisitor::find_non_range_variables() {
     }
 
     /**
-     * todo : move this to separate pass
-     */
-    if (!variables.empty()) {
-        std::string message =
-            "Global variables are updated in compute blocks, convert them to range? : ";
-        throw std::runtime_error(message + variables);
-    }
-
-    /**
      * If parameter is not a range and used only as read variable then it becomes global
      * variable. To qualify it as thread variable it must be be written at least once and
      * mod file must be marked as thread safe.

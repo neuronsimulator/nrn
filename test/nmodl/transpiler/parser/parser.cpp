@@ -11,12 +11,15 @@
 #include <utility>
 
 #include "catch/catch.hpp"
+#include "lexer/modtoken.hpp"
 #include "parser/diffeq_driver.hpp"
 #include "parser/nmodl_driver.hpp"
 #include "test/utils/nmodl_constructs.hpp"
+#include "test/utils/test_utils.hpp"
+#include "visitors/lookup_visitor.hpp"
 
 using namespace nmodl::test_utils;
-
+using nmodl::visitor::AstLookupVisitor;
 //=============================================================================
 // Parser tests
 //=============================================================================
@@ -161,5 +164,39 @@ SCENARIO("Legacy differential equation solver from NEURON solve number of ODE ty
             }
             counter++;
         }
+    }
+}
+
+
+//=============================================================================
+// Check if parsed NEURON block has correct token information
+//=============================================================================
+
+void parse_neuron_block_string(const std::string& name, nmodl::ModToken& value) {
+    nmodl::parser::NmodlDriver driver;
+    driver.parse_string(name);
+
+    auto ast_program = driver.get_ast();
+    std::vector<std::shared_ptr<nmodl::ast::Ast>> neuron_blocks =
+        AstLookupVisitor().lookup(ast_program->get_shared_ptr().get(),
+                                  nmodl::ast::AstNodeType::NEURON_BLOCK);
+    value = *(neuron_blocks[0]->get_token());
+}
+
+SCENARIO("Check if a NEURON block is parsed with correct location info in its token") {
+    GIVEN("A single NEURON block") {
+        nmodl::ModToken value;
+
+        std::stringstream ss;
+        std::string neuron_block = R"(
+        NEURON {
+            SUFFIX it
+            USEION ca READ cai,cao WRITE ica
+            RANGE gcabar, m_inf, tau_m, alph1, alph2, KK, shift
+        }
+        )";
+        parse_neuron_block_string(reindent_text(neuron_block), value);
+        ss << value;
+        REQUIRE(ss.str() == "         NEURON at [1.1-5.1] type 303");
     }
 }
