@@ -18,10 +18,10 @@
 #include "nrndae_c.h"
 
 double* nrn_spGetElement(char* mat, int row, int col) {
-  return spGetElement(mat, row+1, col+1);
+  return spGetElement(mat, row, col);
 }
 int nrn_vmx_index(Node* nd) {
-	return nd->eqn_index_ + nlayer;
+	return nd->eqn_index_ + nlayer + 1;
 }
 
 #if CVODE
@@ -2032,7 +2032,7 @@ printf("nrn_matrix_node_alloc use_sparse13=%d cvode_active_=%d nrn_use_daspk_=%d
 	++nrn_matrix_cnt_;
 	if (use_sparse13) {
 		int in, err, extn, neqn, j;
-		int extnfac= cvode_active_ ? 2 : 1;
+		int extnfac= (1 || cvode_active_) ? 2 : 1;
 		nt = nrn_threads;
 		neqn = nt->end + nrndae_extra_eqn_count();
 		extn = 0;
@@ -2045,7 +2045,6 @@ printf("nrn_matrix_node_alloc use_sparse13=%d cvode_active_=%d nrn_use_daspk_=%d
 			*/
 			extn =  nt->_ecell_memb_list->nodecount * extnfac * nlayer;
 		}
-/*printf(" %d extracellular nodes\n", extn);*/
 		neqn += extn;
 		nt->_actual_rhs = (double*)ecalloc(neqn+1, sizeof(double));
 		nt->_sp13mat = spCreate(neqn, 0, &err);

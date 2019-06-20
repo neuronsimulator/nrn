@@ -220,6 +220,16 @@ void Daspk::ida_init() {
 
         ier = IDASVtolerances(mem, cv_->ncv_->rtol_, cv_->atolnvec_);
         assert(ier == IDA_SUCCESS);
+#if 1
+{
+  double* atol = cv_->n_vector_data(cv_->atolnvec_, 0);
+  CvodeThreadData& z = cv_->ctd_[0];
+  printf("IDASVtolerances %d\n", z.nvsize_);
+  for (int i=0; i < z.nvsize_; ++i) {
+    printf("  %d %g\n", i, atol[i]);
+  }
+}
+#endif
 
         mem->ida_linit = NULL;
 		mem->ida_lsetup = msetup;
@@ -301,6 +311,8 @@ int Daspk::init() {
 
     //pstate("before IDACalcIC", t, cv_->y_, yp_);
     if (IDACalcIC(mem_, IDA_YA_YDP_INIT, t+1.0) != IDA_SUCCESS) {
+fprintf(stderr, "IDACalcIC failed, aborting\n");
+//abort();
         hoc_execerror("IDACalcIC failed", 0);
     }
     //pstate("after IDACalcIC", t, cv_->y_, yp_);
@@ -598,9 +610,8 @@ for (i=0; i < z.nvsize_; ++i) {
 			Extnode* nde = nd->extnode;
 			double cdvm;
 			if (nde) {
-				cdvm = 1e-3 * cd[0] * (yprime[j] - yprime[j+1]);
+				cdvm = 1e-3 * cd[0] * yprime[j+1+nlayer];
 				delta[j] -= cdvm;
-				delta[j+1] += cdvm;
 				// i_cap
 				cd[1] = cdvm;
 #if I_MEMBRANE
@@ -627,7 +638,7 @@ for (i=0; i < z.nvsize_; ++i) {
 		for (i=0; i < n; ++i) {
 			double* cd = ml->data[i];
 			Node* nd = ml->nodelist[i];
-			int j = nd->eqn_index_;
+			int j = nd->eqn_index_; // vext[0] wrt delta
 #if I_MEMBRANE
 			// i_membrane = sav_rhs --- even for zero area nodes
 			cd[1+3*nlayer] = cd[3+3*nlayer];
@@ -637,22 +648,29 @@ for (i=0; i < z.nvsize_; ++i) {
 			// otherwise loop over layer,
 			// xc is (pd + 2*(nlayer))[layer]
 			// and deal with yprime[i+layer]-yprime[i+layer+1]
+			// Note that xc[layer] is the capacitance between
+			// layer and layer+1 (layer = nlayer is ground)
+			// however vm[layer] is v[layer-1] - v[layer]
+			// with v[nlayer-1] is vm (since v[nlayer] is ground)
 			delta[j] -= 1e-3 * cd[2] * yprime[j];
+			// the vm = v[j-1] - v[j] equation
+			delta[j + nlayer] = -y[j + nlayer] + y[j-1] - y[j];
 #else
-			int k, jj;
-			double x;
-			k = nlayer-1;
-			jj = j+k;
-			delta[jj] -= 1e-3*cd[2*nlayer+k]*(yprime[jj]);
-			for (k=nlayer-2; k >= 0; --k) {
-				// k=0 refers to stuff between layer 0 and 1
-				// j is for vext[0]				
-				jj = j+k;
-				x = 1e-3*cd[2*nlayer+k]*(yprime[jj] - yprime[jj+1]);
-				delta[jj] -= x;
-				delta[jj+1] += x; // last one in iteration is nlayer-1
+			//vm[layer] == v[layer-1] - v[layer] equation
+			for (int k = 0; k < nlayer; ++k) {
+				int jj = j + k;
+				delta[jj + nlayer] = -(y[jj + nlayer] - y[jj-1] + y[jj]);
 			}
-			
+			for (int ivmx=1; ivmx < nlayer; ++ivmx) {
+				int ivx = ivmx - 1;
+				double x = 1e-3*cd[2*nlayer+ivx]*yprime[j+ivmx+nlayer];
+				delta[j + ivx] -= x;
+			}
+			// the last vx[nlayer-1] (is vmx[nlayer])
+			int ivx = nlayer-1;
+			int jj = j + ivx;
+			double x = 1e-3*cd[2*nlayer+ivx]*yprime[jj];
+			delta[jj] -= x;
 #endif
 		}
 	}
@@ -675,10 +693,11 @@ for (i=0; i < z.nvsize_; ++i) {
 		}
 	}
 	before_after(z.after_solve_, nt);
-#if 0
+#if 1
 printf("Cvode::res exit res_=%d tt=%20.12g\n", res_, tt);
+double* id = n_vector_data(daspk_->id_, nt->id);
 for (i=0; i < z.nvsize_; ++i) {
-	printf("   %d %g %g %g\n", i, y[i], yprime[i], delta[i]);
+	printf("   %d %g %g %g %g\n", i, id[i], y[i], yprime[i], delta[i]);
 }
 #endif
 	nt->_vcv = 0;
@@ -713,8 +732,8 @@ int Cvode::setid(double* id, NrnThread* nt) {
 			Extnode* nde = nd->extnode;
 			if (nde) {
 				if (cd[0]) {
-					id[j] = 1.0;
-					id[j+1] = 1.0;
+// first vmx is a differential component (the membrane cm is non-zero)
+					id[j + nlayer + 1] = 1.0;
 				}
 			}else{
 				if (cd[0]) {
@@ -730,7 +749,20 @@ int Cvode::setid(double* id, NrnThread* nt) {
 		for (int i=0; i < n; ++i) {
 			double* cd = ml->data[i];
 			Node* nd = ml->nodelist[i];
-			int j = nd->eqn_index_;
+			int j = nd->eqn_index_; // first vx relative to delta
+			// cd points to proper capacitance (first is membrane)
+			for (int ivx = 0; ivx < nlayer; ++ivx) {
+				int ivmx = ivx + 1;
+				int icd = ivx;
+				if (cd[2*nlayer + icd]) { // vmx is differential
+					if (ivmx < nlayer){
+						id[j + ivmx + nlayer] = 1.0;
+					}else{
+						id[j + ivx] = 1.0;
+					}
+				}
+			}
+#if 0
 #if EXTRACELLULAR == 1
 			// only works for one layer
 			// otherwise loop over layer,
@@ -756,6 +788,7 @@ int Cvode::setid(double* id, NrnThread* nt) {
 					id[jj + 1] = 1.0;
 				}
 			}
+#endif
 #endif
 		}
 	}

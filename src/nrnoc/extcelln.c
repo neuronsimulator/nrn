@@ -183,8 +183,13 @@ static void extcell_init(NrnThread* nt, Memb_list* ml, int type) {
 hoc_execerror("Extracellular mechanism only works with fixed step methods and daspk", 0);
 	}
 	for (i=0; i < ndcount; ++i) {
+		Node* nd = ndlist[i];
+		Extnode* nde = nd->extnode;
+		double vtmp = NODEV(nd);
 		for (j = 0; j < nlayer; ++j) {
-			ndlist[i]->extnode->v[j] = 0.;
+			nde->v[j] = 0.;
+			nde->vm[j] = vtmp - nde->v[j];
+			vtmp = nde->v[j];
 		}
 #if I_MEMBRANE
 		pd = data[i];
@@ -366,10 +371,19 @@ void nrn_setup_ext(NrnThread* _nt)
 		pnd = _nt->_v_parent[nd->v_node_index];
 
 #if 1
-		if (cvode_active_) for (j = 0; j < nlayer; ++j) {
-		  int k = nrn_vmx_index(nd) + j;
-		  double* pvx = nrn_spGetElement(_nt->_sp13mat, k, k);
-		  *pvx = 1.0;
+		if (1 || cvode_active_) {
+		  double* rhs = _nt->_actual_rhs;
+		  int ki = nd->eqn_index_; /* start with v (interpreted as vi */
+		  for (j = 0; j < nlayer; ++j) {
+		    int k = nrn_vmx_index(nd) + j;
+		    double* pvx = nrn_spGetElement(_nt->_sp13mat, k, k);
+		    *pvx = 1.0;
+		    pvx = nrn_spGetElement(_nt->_sp13mat, k, ki++);
+		    *pvx = -1.0;
+		    pvx = nrn_spGetElement(_nt->_sp13mat, k, ki);
+		    *pvx = 1.0;
+		    rhs[k] = 0.0; /* unnecessary since rhs zeroed earlier */
+		  }
 		}
 #endif
 		if (pnd) {

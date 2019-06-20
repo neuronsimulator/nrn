@@ -417,6 +417,8 @@ void Cvode::daspk_init_eqn(){
 					k = i + ie + 1;
 					z.pv_[k] = nde->v + ie;
 					z.pvdot_[k] = nde->_rhs[ie];
+					z.pv_[k+nlayer] = nde->vm + ie;
+					z.pvdot_[k+nlayer] = _nt->_actual_rhs + (k+nlayer+1);
 				}
 			}
 		}

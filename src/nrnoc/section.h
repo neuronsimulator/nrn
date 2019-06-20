@@ -198,6 +198,7 @@ typedef struct Extnode {
 	/* This is reconciled during update. */
 	
 	double	v[nlayer]; /* v external. */
+	double	vm[nlayer]; /* vm external. Note vm[0] is membrane potential*/
 	double	_a[nlayer];
 	double	_b[nlayer];
 	double* _d[nlayer];
