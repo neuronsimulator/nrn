@@ -554,7 +554,6 @@ extern "C" void setup_currents(int num_currents, int num_fluxes, int* num_specie
     _membrane_lookup = (int*)malloc(sizeof(int)*num_states);
      memset(_membrane_lookup, SPECIES_ABSENT, sizeof(int)*num_states);
 
-    _memb_cur_charges = (int**)malloc(sizeof(int*)*num_currents);
     _memb_cur_ptrs = (PyHocObject***)malloc(sizeof(PyHocObject**)*num_currents);     
     _memb_cur_charges = (int**)malloc(sizeof(int*)*num_currents);
     _memb_cur_mapped_ecs = (int***)malloc(sizeof(int*)*num_currents);        
@@ -639,7 +638,6 @@ static void _currents(double* rhs)
     if(!_membrane_flux)
         return;
     get_all_reaction_rates(states, NULL, NULL);
-    
     MEM_ZERO(_rxd_induced_currents, _memb_curr_total*sizeof(double));
     MEM_ZERO(_rxd_induced_currents_ecs, _memb_curr_total*sizeof(double));
 
@@ -652,7 +650,6 @@ static void _currents(double* rhs)
         {
 
             current = (double)_memb_cur_charges[i][j] * _rxd_induced_flux[i];
-            //fprintf(stderr,"%i %i (%i) idx %i curr %1.10e\n", i, j, k, idx, current);
             //rhs[idx] -= current;
 
            *(_memb_cur_ptrs[i][j]->u.px_) += current;
@@ -1540,7 +1537,6 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates, doub
 
     if(_membrane_flux)
     {
-        MEM_ZERO(_rxd_induced_flux, sizeof(double)*_memb_curr_total);
         flux = (double**)malloc(react->icsN*sizeof(double*));
         for(i = 0; i < react->icsN; i++)
             flux[i] = (double*)malloc(react->num_regions*sizeof(double));
@@ -1661,6 +1657,16 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates, doub
     }
     free(states_for_reaction);
     free(result_array);
+    for(i = 0; i < react->num_params; i++)
+    {
+        free(params_for_reaction[i]);
+    }
+    free(params_for_reaction);
+    if(react->num_ecs_params>0)
+    {
+        free(ecs_params_for_reaction);
+    }
+
 
 }
 
@@ -1679,7 +1685,7 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double* c
     
     double** states_for_reaction = (double**)malloc(react->num_species*sizeof(double*));
     double** states_for_reaction_dx = (double**)malloc(react->num_species*sizeof(double*));
-    double** params_for_reaction = (double**)malloc(react->num_species*sizeof(double*));
+    double** params_for_reaction = (double**)malloc(react->num_params*sizeof(double*));
     double** result_array = (double**)malloc(react->num_species*sizeof(double*));
     double** result_array_dx = (double**)malloc(react->num_species*sizeof(double*));
     double* mc_mult;
@@ -1962,6 +1968,7 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double* c
         free(mc_mult);
     free(states_for_reaction_dx);
     free(states_for_reaction);
+    free(params_for_reaction);
     free(result_array);
     free(result_array_dx);
     if(react->num_ecs_species > 0)
@@ -1988,6 +1995,8 @@ void do_ics_reactions(double* states, double* b, double* cvode_states, double* c
 void get_all_reaction_rates(double* states, double* rates, double* ydot)
 {
     ICSReactions* react;
+    if(_membrane_flux)
+        MEM_ZERO(_rxd_induced_flux, sizeof(double)*_memb_curr_total);
     for(react = _reactions; react != NULL; react = react->next)
     {
         if(react->icsN + react->ecsN > 0)

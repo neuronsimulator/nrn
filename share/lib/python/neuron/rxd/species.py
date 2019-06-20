@@ -736,7 +736,8 @@ class _ExtracellularSpecies(_SpeciesMathable):
         # set up the ion mechanism and enable active Nernst potential calculations
         self._ion_register()
 
-        self._update_pointers()
+        # moved to _finitialize -- in case the species is created before all the sections are
+        #self._update_pointers()
 
     def __del__(self):
         # TODO: remove this object from the list of grids, possibly by reinserting all the others
@@ -766,6 +767,8 @@ class _ExtracellularSpecies(_SpeciesMathable):
                 self.states[idx, :, :] = self._boundary_conditions
                 self.states[:, idx, :] = self._boundary_conditions
                 self.states[:, :, idx] = self._boundary_conditions
+        # necessary if section where created after the _ExtracellularSpecies 
+        self._update_pointers()
 
 
     def _ion_register(self):
@@ -1010,7 +1013,7 @@ class Species(_SpeciesMathable):
                     if hasattr(r,'_secs'): spsecs += r._secs
                 spsecs = set(spsecs)
                 for r in  _defined_species[name]:
-                    if any(spsecs.intersection(r._secs)):
+                    if hasattr(r,'_secs') and any(spsecs.intersection(r._secs)):
                         raise RxDException('Species "%s" previously defined on a region %r that overlaps with regions: %r' % (name, r, self._regions))
         else:
             name = _species_count
