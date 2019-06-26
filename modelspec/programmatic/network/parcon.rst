@@ -976,7 +976,7 @@ ParallelContext
             python
 
             wait = pc.wait_time() 
-            pc.solve(tstop) 
+            pc.psolve(tstop) 
             wait = pc.wait_time() - wait 
 
 
