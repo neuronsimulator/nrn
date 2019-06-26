@@ -607,7 +607,7 @@ class _IntracellularSpecies(_SpeciesMathable):
         else:
             raise RxDException("options.concentration_nodes_3d must be 'surface' or 'all'")
         grid_list_start = 0
-        if self._nodes:
+        if self._nodes and self._name:
             nrn_region = self._region._nrn_region
             if nrn_region:         
                 ion_conc = '_ref_' + self._name + nrn_region
@@ -642,7 +642,14 @@ class _IntracellularSpecies(_SpeciesMathable):
 
     def _semi_compile(self, region, instruction):
         if instruction == 'do_3d':
-            if isinstance(_defined_species[self._species][self._region](), Parameter):
+            if self._species:
+                sp = _defined_species[self._species][self._region]()
+            else:
+                for s in _all_species:
+                    if self in s()._intracellular_instances.values():
+                        sp = s()
+                        break
+            if isinstance(sp, Parameter):
                 return 'params_3d[%d]' %  (self._grid_id)
             else:
                 return 'species_3d[%d]' % (self._grid_id)
@@ -729,7 +736,8 @@ class _ExtracellularSpecies(_SpeciesMathable):
         # set up the ion mechanism and enable active Nernst potential calculations
         self._ion_register()
 
-        self._update_pointers()
+        # moved to _finitialize -- in case the species is created before all the sections are
+        #self._update_pointers()
 
     def __del__(self):
         # TODO: remove this object from the list of grids, possibly by reinserting all the others
@@ -759,6 +767,8 @@ class _ExtracellularSpecies(_SpeciesMathable):
                 self.states[idx, :, :] = self._boundary_conditions
                 self.states[:, idx, :] = self._boundary_conditions
                 self.states[:, :, idx] = self._boundary_conditions
+        # necessary if section where created after the _ExtracellularSpecies 
+        self._update_pointers()
 
 
     def _ion_register(self):
@@ -854,7 +864,14 @@ class _ExtracellularSpecies(_SpeciesMathable):
             _set_grid_currents(grid_list, self._grid_id, grid_indices, neuron_pointers, scale_factors)
     
     def _semi_compile(self, reg, instruction):
-        if isinstance(_defined_species[self._species][self._region](), Parameter):
+        if self._species:
+            sp = _defined_species[self._species][self._region]()
+        else:
+            for s in _all_species:
+                if self in s()._extracellular_instances.values():
+                    sp = s()
+                    break
+        if isinstance(sp, Parameter):
             return 'params_3d[%d]' %  (self._grid_id)
         else:
             return 'species_3d[%d]' % (self._grid_id)
@@ -936,7 +953,7 @@ class Species(_SpeciesMathable):
             self.represents = represents
         initializer._init_lock.acquire()
         _all_species.append(weakref.ref(self))
-        initializer._init_lock.acquire()
+        
 
         # declare an update to the structure of the model (the number of differential equations has changed)
         nrn_dll_sym('structure_change_cnt', ctypes.c_int).value += 1
@@ -956,7 +973,7 @@ class Species(_SpeciesMathable):
                     #       (pointers would be invalid; anything else?)
                     raise RxDException('Currently cannot add species containing 1D after 3D species defined and initialized. To work-around: reorder species definition.')
             self._do_init()
-
+        initializer._init_lock.release()
 
     
     def _do_init(self):
@@ -996,7 +1013,7 @@ class Species(_SpeciesMathable):
                     if hasattr(r,'_secs'): spsecs += r._secs
                 spsecs = set(spsecs)
                 for r in  _defined_species[name]:
-                    if any(spsecs.intersection(r._secs)):
+                    if hasattr(r,'_secs') and any(spsecs.intersection(r._secs)):
                         raise RxDException('Species "%s" previously defined on a region %r that overlaps with regions: %r' % (name, r, self._regions))
         else:
             name = _species_count

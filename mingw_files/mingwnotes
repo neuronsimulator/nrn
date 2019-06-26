@@ -1,6 +1,6 @@
 http://www.symscape.com/configure-msmpi-for-mingw-w64
 
-Installed msmpisdk.msi and MsMpiSetup.exe in c:\ms-mpi  (version 9.0)
+Installed msmpisdk.msi and MsMpiSetup.exe in c:\ms-mpi  (version 10.0)
 Change Bin, Lib, Include to bin, lib, include
 cp c:/Windows/System32/msmpi.dll c:/ms-mpi/lib/x64
 cp c:/Windows/SysWoW64/msmpi.dll c:/ms-mpi/lib/x86 #optional
@@ -8,12 +8,13 @@ add #include <stdint.h> in /c/ms-mpi/include/mpi.h
 
 #important. Wasted a day because I did not do this. the symptom is a
 # crash in libnrnmpi.dll
-gendef msmpi.dll
-x86_64-w64-mingw32-dlltool -d msmpi.def -l libmsmpi.a -D msmpi.dll
+gendef msmpi.dll # creates msmpi.def
+#x86_64-w64-mingw32-dlltool -d msmpi.def -l libmsmpi.a -D msmpi.dll
+dlltool -d msmpi.def -l libmsmpi.a -D msmpi.dll # creates libmsmpi.a
 
 #gendef can be built from mingw source via
-#git clone https;//github.com/msys2-contrib/mingw-w64
-#cd mingw-64/mingw-w64-tools/gendef
+#git clone https://github.com/msys2-contrib/mingw-w64
+#cd mingw-w64/mingw-w64-tools/gendef
 #./configure --prefix=`pwd`
 #make # may have to get rid of the -Werror
 #cp gendef.exe /mingw64/bin
@@ -21,13 +22,23 @@ x86_64-w64-mingw32-dlltool -d msmpi.def -l libmsmpi.a -D msmpi.dll
 in cygwin terminal
  cp /usr/include/w32api/sal.h c:/ms-mpi/include
 No, instead use a -DMSMPI_NO_SAL in CFLAGS
+No, version 10.0 should not have -DMSMPI_NO_SAL
 
 in neuron/nrnwinobj
-PYDIR=/c/python27
- ../nrn/configure --prefix=`pwd` -with-nrnpython=dynamic \
+PYVER=37
+PYDIR=/c/python${PYVER}
+
+../nrn/configure --prefix=`pwd` -with-nrnpython=dynamic \
+ --with-pyexe=$PYDIR/python \
  --host=x86_64-w64-mingw32 PYINCDIR="$PYDIR/include" \
  --with-paranrn=dynamic MPICC=x86_64-w64-mingw32-gcc \
  MPICXX=x86_64-w64-mingw32-g++ \
- CFLAGS='-DMSMPI_NO_SAL -I/c/ms-mpi/include' LIBS='-L/c/ms-mpi/lib/x64 -lmsmpi' \
- PYLIBDIR=$PYDIR/libs   PYLIB="-L$PYDIR/libs -lpython27" \
- PYLIBLINK="-L$PYDIR/libs -lpython27"
+ CFLAGS='-I/c/ms-mpi/include -O2' \
+ CXXFLAGS='-I/c/ms-mpi/include -O2' \
+ LIBS='-L/c/ms-mpi/lib/x64 -lmsmpi' \
+  PYINCDIR=$PYDIR/include \
+  PYLIBDIR=$PYDIR/libs \
+  PYLIB="-L$PYDIR/libs -lpython${PYVER}" \
+  PYLIBLINK="-L$PYDIR/libs -lpython${PYVER}" \
+  MPILIBS='-L/c/ms-mpi/lib/x64 -lmsmpi' # --disable-maintainer-mode
+

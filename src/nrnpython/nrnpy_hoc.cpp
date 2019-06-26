@@ -852,6 +852,18 @@ PyObject* nrn_hocobj_ptr(double* pd) {
   return result;
 }
 
+int nrn_is_hocobj_ptr(PyObject* po, double*& pd) {
+  int ret = 0;
+  if (PyObject_TypeCheck(po, hocobject_type)) {
+    PyHocObject* hpo = (PyHocObject*)po;
+    if (hpo->type_ == PyHoc::HocScalarPtr) {
+      pd = hpo->u.px_;
+      ret = 1;
+    }
+  }
+  return ret;
+}
+
 static void symlist2dict(Symlist* sl, PyObject* dict) {
   PyObject* nn = Py_BuildValue("");
   for (Symbol* s = sl->first; s; s = s->next) {
@@ -1285,6 +1297,19 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname,
                self->ho_->ctemplate->sym == nrnpy_pyobj_sym_) {
       PyObject* p = nrnpy_hoc2pyobject(self->ho_);
       return PyObject_GenericSetAttr(p, pyname, value);
+    }else if (strncmp(n, "_ref_", 5) == 0) {
+        extern int nrn_pointer_assign(Prop*, Symbol*, PyObject*);
+        Symbol* rvsym = getsym(n+5, self->ho_, 0);
+        if (rvsym && rvsym->type == RANGEVAR) {
+          Prop* prop = ob2pntproc_0(self->ho_)->prop;
+          if (!prop) {
+            PyErr_SetString(PyExc_TypeError, "Point_process not located in a section");
+            return -1;
+          }
+          err = nrn_pointer_assign(prop, rvsym, value);
+          return err;
+        }
+        sym = getsym(n, self->ho_, 1);
     } else {
       sym = getsym(n, self->ho_, 1);
     }
@@ -1858,7 +1883,12 @@ static PyObject* setpointer(PyObject* self, PyObject* args) {
       if (!sym || sym->type != RANGEVAR || sym->subtype != NRNPOINTER) {
         goto done;
       }
-      ppd = &ob2pntproc(hpp->ho_)->prop->dparam[sym->u.rng.index].pval;
+      Prop* prop = ob2pntproc_0(hpp->ho_)->prop;
+      if (!prop) {
+        PyErr_SetString(PyExc_TypeError, "Point_process not located in a section");
+        return NULL;
+      }
+      ppd = &prop->dparam[sym->u.rng.index].pval;
     } else {
       ppd = nrnpy_setpointer_helper(name, pp);
       if (!ppd) {

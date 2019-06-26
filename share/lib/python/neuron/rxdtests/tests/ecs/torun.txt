@@ -2,3 +2,4 @@ ecs_example_cvode.py
 ecs_example.py
 ecs_multi_example_cvode.py
 ecs_multi_example.py
+ecs_before_sections.py

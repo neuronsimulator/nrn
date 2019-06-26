@@ -367,7 +367,7 @@ class Region(object):
             self._mesh_grid = mesh_grid
 
             self._points = [key for key in surface_voxels.keys()] + [key for key in internal_voxels.keys()]
-
+            self._points = sorted(self._points, key=lambda pt: pt[0])
             nodes_by_seg = {}
             surface_nodes_by_seg = {}
             # creates tuples of x, y, and z coordinates where a point is (xs[i], ys[i], zs[i])
@@ -470,7 +470,14 @@ class Region(object):
         .. note:: dimension and dx will be deprecated in a future version
         """
         self._allow_setting = True
-        self.secs = secs
+        if hasattr(secs,'__len__'):
+            self.secs = secs
+        else:
+            self.secs = [secs]
+        from nrn import Section
+        for sec in self.secs:
+            if not isinstance(sec,Section):
+                raise RxDException("Error: Region 'secs' must be a list of NEURON sections, %r is not a valid NEURON section." % sec)
         self.nrn_region = nrn_region
         self.geometry = geometry
         
