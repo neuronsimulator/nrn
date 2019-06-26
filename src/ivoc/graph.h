@@ -277,14 +277,15 @@ public:
 	void simgraph_init();
 	void simgraph_continuous(double);
 	void update_ptrs();
-private:
+
 	Symbol* expr_;
 	double* pval_;
+	Object* obj_;
+private:
 	LineExtension* extension_;
 	const Color* save_color_;
 	const Brush* save_brush_;
 	bool valid_;
-	Object* obj_;
 	DataVec* simgraph_x_sav_;
 };
 
@@ -303,6 +304,8 @@ public:
 	virtual void update(Observable*);
 	DataPointers* py_data() { return dp_; }
 	void update_ptrs();
+	void record_install();
+	void record_uninstall();
 private:
 	DataPointers* dp_;
 	CopyString name_;

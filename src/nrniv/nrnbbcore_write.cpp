@@ -49,7 +49,7 @@
 // all synapses and all artificial cells belonging to that thread. All
 // the synapses and artificial cells are in NrnThread.tml order. So there
 // are no exceptions in filling Point_process pointers from the data indices
-// on the corebluron side. PreSyn ordering is a bit more delicate.
+// on the coreneuron side. PreSyn ordering is a bit more delicate.
 // From netpar.cpp, the gid2out_ hash table defines an output_gid
 // ordering and gives us all the PreSyn
 // associated with real and artificial cells having gids. But those are
@@ -75,7 +75,7 @@ No POINTER to data outside of NrnThread.
 No POINTER to data in ARTIFICIAL_CELL (that data is not cache_efficient)
 nt->tml->pdata is not cache_efficient
 */
-// See corebluron/src/simcore/nrniv/nrn_setup.cpp for a description of
+// See coreneuron/nrniv/nrn_setup.cpp for a description of
 // the file format written by this file.
 
 /*
@@ -84,6 +84,10 @@ To do this we factored all major file writing components into a series
 of functions that return data that can be called from the coreneuron
 library. The file writing functionality is kept by also calling those
 functions here as well.
+Direct transfer mode disables error checking with regard to every thread
+having a real cell with a gid. Of course real and artificial cells without
+gids do not have spike information in the output raster file. Trajectory
+correctness has not been validated for cells without gids.
 */
 
 #include <stdio.h>
@@ -191,11 +195,16 @@ static NrnMappingInfo mapinfo;
 // add version string to the dataset files
 const char *bbcore_write_version = "1.2";
 
+// direct transfer or via files? The latter makes use of group_gid for
+// filename construction.
+static bool corenrn_direct;
+
 static size_t part1();
 static void part2(const char*);
 
 // accessible from ParallelContext.total_bytes()
 size_t nrnbbcore_write() {
+  corenrn_direct = false;
   if (!use_cachevec) {
     hoc_execerror("nrnbbcore_write requires cvode.cache_efficient(1)", NULL);
   }
@@ -297,8 +306,18 @@ static size_t part1() {
   rankbytes += nrncore_netpar_bytes();
   //printf("%d bytes %ld\n", nrnmpi_myid, rankbytes);
   CellGroup* cgs = mk_cellgroups();
+
   datumtransform(cgs);
   return rankbytes;
+}
+
+static void part2_clean() {
+  if (artdata2index_) {
+    delete artdata2index_;
+    artdata2index_ = NULL;
+  }
+  delete [] cellgroups_;
+  cellgroups_ = NULL;
 }
 
 static void part2(const char* path) {
@@ -323,10 +342,6 @@ static void part2(const char* path) {
     }
     nrnbbcore_gap_write(path, group_ids);
     delete [] group_ids;
-  }
-  if (artdata2index_) {
-    delete artdata2index_;
-    artdata2index_ = NULL;
   }
 
   // filename data might have to be collected at hoc level since
@@ -356,8 +371,8 @@ static void part2(const char* path) {
       }
     }
   }
-  delete [] cellgroups_;
-  cellgroups_ = NULL;
+
+  part2_clean();
 }
 
 int nrncore_art2index(double* d) {
@@ -663,7 +678,7 @@ CellGroup* mk_cellgroups() {
   nrncore_netpar_cellgroups_helper(cgs);
 
   // use first real cell gid, if it exists, as the group_id
-  for (int i=0; i < nrn_nthread; ++i) {
+  if (corenrn_direct == false) for (int i=0; i < nrn_nthread; ++i) {
     if (cgs[i].n_real_output && cgs[i].output_gid[0] >= 0) {
       cgs[i].group_id = cgs[i].output_gid[0];
     }else{
@@ -712,6 +727,32 @@ void datumtransform(CellGroup* cgs) {
       }
     }
   }
+}
+
+// Limited to pointers to voltage or data of non-artificial cell mechanisms.
+// Requires cache_efficient mode.
+// Input double* and NrnThread. Output type and index.
+// type == 0 means could not determine index.
+int nrn_dblpntr2nrncore(double* pd, NrnThread& nt, int& type, int& index) {
+  assert(use_cachevec);
+  int nnode = nt.end;
+  type = 0;
+  if (pd >= nt._actual_v && pd < (nt._actual_v + nnode)) {
+    type = -5; // signifies an index into voltage array portion of _data 
+    index = pd - nt._actual_v;
+  }else{
+    for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
+      if (nrn_is_artificial_[tml->index]) { continue; }
+      Memb_list* ml1 = tml->ml;
+      int nn = nrn_prop_param_size_[tml->index] * ml1->nodecount;
+      if (pd >= ml1->data[0] && pd < (ml1->data[0] + nn)) {
+        type = tml->index;
+        index = pd - ml1->data[0];
+        break;
+      }
+    }
+  }
+  return type == 0 ? 1 : 0;
 }
 
 void datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_list* ml) {
@@ -810,24 +851,11 @@ void datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_list* ml) {
         // must be a pointer into nt->_data. Handling is similar to eion so
         // give proper index into the type.
         double* pd = dparam[j].pval;
-        etype = 0;
-        if (pd >= nt._actual_v && pd < (nt._actual_v + nnode)) {
-          etype = -5; // signifies an index into voltage array portion of _data 
-          eindex = pd - nt._actual_v;
-        }else{
-          for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
-            if (nrn_is_artificial_[tml->index]) { continue; }
-            Memb_list* ml1 = tml->ml;
-            int nn = nrn_prop_param_size_[tml->index] * ml1->nodecount;
-            if (pd >= ml1->data[0] && pd < (ml1->data[0] + nn)) {
-              etype = tml->index;
-              eindex = pd - ml1->data[0];
-              break;
-            }
-          }
+	nrn_dblpntr2nrncore(pd, nt, etype, eindex);
+        if (etype == 0) {
           fprintf(stderr, "POINTER is not pointing to voltage or mechanism data. Perhaps it should be a BBCOREPOINTER\n");
-          assert(etype != 0);
         }
+        assert(etype != 0);
         // pointer into one of the tml types?
       }else if (dmap[j] > 0 && dmap[j] < 1000) { // double* into eion type data
         Memb_list* eml = cg.type2ml[dmap[j]];
@@ -1244,7 +1272,7 @@ static int nrnthread_dat2_mech(int tid, size_t i, int dsz_inst, int*& nodeindice
     }
     if (copy) {
       if (!isart) {
-        nodeindices = new int[n];
+        nodeindices = (int*)emalloc(n*sizeof(int));
         for (int i=0; i < n; ++i) {
           nodeindices[i] = ml->nodeindices[i];
         }
@@ -1287,9 +1315,10 @@ static int nrnthread_dat2_3(int tid, int nweight, int*& output_vindex, double*& 
   CellGroup& cg = cellgroups_[tid];
   NrnThread& nt = nrn_threads[tid];
 
-  output_vindex = cg.output_vindex;
+  output_vindex = new int[cg.n_real_output];
   output_threshold = new double[cg.n_real_output];
   for (int i=0; i < cg.n_real_output; ++i) {
+    output_vindex[i] = cg.output_vindex[i];
     output_threshold[i] = cg.output_ps[i] ? cg.output_ps[i]->threshold_ : 0.0;
   }
 
@@ -1786,6 +1815,12 @@ extern "C" {
 extern void get_partrans_setup_info(int, int&, int&, int&, int&, int*&, int*&, int*&);
 }
 
+extern "C" {
+void nrnthread_get_trajectory_requests(int tid, int& bsize, int& ntrajec, void**& vpr, int*& types, int*& indices, double**& pvars, double**& varrays);
+void nrnthread_trajectory_values(int tid, int n_pr, void** vpr, double t);
+void nrnthread_trajectory_return(int tid, int n_pr, int vecsz, void** vpr, double t);
+}
+
 static core2nrn_callback_t cnbs[]  = {
   {"nrn2core_group_ids_", (CNB)nrnthread_group_ids},
   {"nrn2core_mkmech_info_", (CNB)write_memb_mech_types_direct},
@@ -1801,11 +1836,17 @@ static core2nrn_callback_t cnbs[]  = {
   {"nrn2core_get_dat2_corepointer_mech_", (CNB)nrnthread_dat2_corepointer_mech},
   {"nrn2core_get_dat2_vecplay_", (CNB)nrnthread_dat2_vecplay},
   {"nrn2core_get_dat2_vecplay_inst_", (CNB)nrnthread_dat2_vecplay_inst},
+  {"nrn2core_part2_clean_", (CNB)part2_clean},
+
+  {"nrn2core_get_trajectory_requests_", (CNB)nrnthread_get_trajectory_requests},
+  {"nrn2core_trajectory_values_", (CNB)nrnthread_trajectory_values},
+  {"nrn2core_trajectory_return_", (CNB)nrnthread_trajectory_return},
   {NULL, NULL}
 };
 
 #if defined(HAVE_DLFCN_H)
 int nrncore_run(const char* arg) {
+  corenrn_direct = true;
   char* corenrn_lib = getenv("CORENEURONLIB");
   if (!corenrn_lib) {
     hoc_execerror("nrncore_run needs a CORENEURONLIB environment variable", NULL);
