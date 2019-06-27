@@ -27,15 +27,16 @@
 #include "shared/sundialsmath.h"
 #include "kssingle.h"
 #include "ocnotify.h"
-#include "ocjump.h"
 #if HAVE_IV
 #include "ivoc.h"
+#include "glinerec.h"
+#include "ocjump.h"
 #endif
+#include "vrecitem.h"
 #include "oclist.h"
 #define PROFILE 0
 #include "profile.h"
 #include "ivocvect.h"
-#include "glinerec.h"
 #include "nrnste.h"
 #include "netcon.h"
 #include "netcvode.h"
@@ -5573,6 +5574,7 @@ int& n_trajec, int*& types, int*& indices, double**& pvars, double**& varrays) {
         if (pr->type() == TvecRecordType || pr->type() == YvecRecordType) {
           n_pr++;
           n_trajec++;
+#if HAVE_IV
         }else if (pr->type() == GLineRecordType) {
           n_pr++;
           if (pr->pd_ == NULL) {
@@ -5598,6 +5600,7 @@ int& n_trajec, int*& types, int*& indices, double**& pvars, double**& varrays) {
               }
             }
           }
+#endif // HAVE_IV
         }
       }
     }
@@ -5629,6 +5632,7 @@ int& n_trajec, int*& types, int*& indices, double**& pvars, double**& varrays) {
             v = ((YvecRecord*)pr)->y_;
             err = trajec_buffered(nt, bsize, v, pr->pd_, n_pr++, pr, vpr, n_trajec++, types, indices, pvars, varrays);
             if (err) { n_pr--; n_trajec--; }
+#if HAVE_IV
           }else if (pr->type() == GLineRecordType) {
             GLineRecord* glr = (GLineRecord*)pr;
             if (pr->pd_) { // glr->gl_->name is an expression resolved to a double*
@@ -5673,6 +5677,7 @@ int& n_trajec, int*& types, int*& indices, double**& pvars, double**& varrays) {
                 n_trajec = n;
               }
             }
+#endif // HAVE_IV
           }
         }
       }
@@ -5712,23 +5717,29 @@ void nrnthread_trajectory_values(int tid, int n_pr, void** vpr, double tt){ //, 
     return;
   }
   if (tid < nrn_nthread) {
+#if HAVE_IV
     ObjectContext obc(NULL); // in case GLineRecord with expression.
+#endif // HAVE_IV
     nrn_threads[tid]._t = tt;
     if (tid == 0) { t = tt; }
     int i_trajec = 0;
     int flush = 0;
     for (int i=0; i < n_pr; ++i) {
       PlayRecord* pr = (PlayRecord*)vpr[i];
+      pr->continuous(tt);
+#if HAVE_IV
       if (pr->type() == GVectorRecordType) { // see the movie
         flush = 1;
       }
-      pr->continuous(tt);
     }
     if (flush) {
       Oc oc;
       oc.run("screen_update()\n");
     }
     obc.restore();
+#else
+    }
+#endif // HAVE_IV
   }
 }
 
@@ -5761,9 +5772,11 @@ void nrnthread_trajectory_return(int tid, int n_pr, int vecsz, void** vpr, doubl
         v = ((YvecRecord*)pr)->y_;
         assert(v->buffer_size() >= vecsz);
         ((ParentVect*)v)->resize(vecsz); // do not zero
+#if HAVE_IV
       }else if (pr->type() == GLineRecordType) {
         GLineRecord* glr = (GLineRecord*)pr;
         glr->plot(vecsz, tt);
+#endif // HAVE_IV
       }else{
         assert(0);
       }

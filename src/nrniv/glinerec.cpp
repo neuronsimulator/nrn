@@ -16,14 +16,15 @@ extern "C" {
 }
 
 #include <OS/list.h>
-#include "glinerec.h"
+#include "nrnoc2iv.h"
+#include "vrecitem.h"
 #include "netcvode.h"
 #include "cvodeobj.h"
-#include "ocjump.h"
-
 
 #if HAVE_IV // to end of file
 #include "graph.h"
+#include "glinerec.h"
+#include "ocjump.h"
 
 extern "C" {
 extern NetCvode* net_cvode_instance;
@@ -155,17 +156,17 @@ GLineRecord::GLineRecord(GraphLine* gl) : PlayRecord(NULL){
 }
 
 GVectorRecord::GVectorRecord(GraphVector* gv) : PlayRecord(NULL) {
-  printf("GVectorRecord %p\n", this);
+  //printf("GVectorRecord %p\n", this);
   gv_ = gv;
 }
 
 void GraphVector::record_install() {
-  printf("GraphVector::record_install()\n");
+  //printf("GraphVector::record_install()\n");
   GVectorRecord* gvr = new GVectorRecord(this);
 }
 
 void GraphVector::record_uninstall() {
-  printf("GraphVector::record_uninstall()\n");
+  //printf("GraphVector::record_uninstall()\n");
 }
 
 GLineRecord::~GLineRecord(){
@@ -250,9 +251,6 @@ void GLineRecord::plot(int vecsz, double tstop) {
     assert(0);
   }
 }
-#else
+#else // do not HAVE_IV
 void NetCvode::simgraph_remove() {}
-void GLineRecord::record_init() {}
-void GLineRecord::continuous(double) {}
-void GLineREcord::plot(int, double) {}
-#endif
+#endif // HAVE_IV
