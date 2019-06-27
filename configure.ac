@@ -347,6 +347,7 @@ else
 fi
 AM_CONDITIONAL(NRNMECH_DLL_STYLE, test x${linux_nrnmech} = xyes)
 AM_CONDITIONAL(MAC_DARWIN, test x${macdarwin} = xyes)
+AM_CONDITIONAL(USING_CMAKE, false)
 
 if test x${addlibdl} = xyes ; then
 	LIBS="$LIBS -ldl"

@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 
 ARCH=@host_cpu@
 MODSUBDIR=@modsubdir@
@@ -23,7 +24,7 @@ fi
 export NRNDEMO
 
 if [ ! -f "${NRNDEMO}neuron" ] ; then
-	(cd "${NRNDEMO}release" ; "${NRNBIN}nrnivmodl" ; cd .. ; ln -s release/${MODSUBDIR}/special neuron)
+	(cd "${NRNDEMO}release" ; "${NRNBIN}nrnivmodl" ; cd .. ; rm -f neuron ; ln -s release/${MODSUBDIR}/special neuron)
 fi
 
 "${NRNDEMO}neuron" "${NRNDEMO}demo.hoc" "$@" -
