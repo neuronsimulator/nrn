@@ -156,17 +156,17 @@ GLineRecord::GLineRecord(GraphLine* gl) : PlayRecord(NULL){
 }
 
 GVectorRecord::GVectorRecord(GraphVector* gv) : PlayRecord(NULL) {
-  printf("GVectorRecord %p\n", this);
+  //printf("GVectorRecord %p\n", this);
   gv_ = gv;
 }
 
 void GraphVector::record_install() {
-  printf("GraphVector::record_install()\n");
+  //printf("GraphVector::record_install()\n");
   GVectorRecord* gvr = new GVectorRecord(this);
 }
 
 void GraphVector::record_uninstall() {
-  printf("GraphVector::record_uninstall()\n");
+  //printf("GraphVector::record_uninstall()\n");
 }
 
 GLineRecord::~GLineRecord(){
