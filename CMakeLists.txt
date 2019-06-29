@@ -142,11 +142,13 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "CYGWIN")
 endif()
 
 # generate foo from foo.in files
-configure_ac_file(nrnconf.h)
+configure_ac_file(nrnconf.h .)
+#Note:until the autoconf configure becomes operational in cmake,
+#just copy the autoconf .h files derived from .h.in into the
+#proper build locations.
+
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/include/
   DESTINATION include)
 
-#add_subdirectory(src/bin/)
-#add_subdirectory(src/lib)
-#add_subdirectory(src/include)
+add_subdirectory(src/nrniv)
