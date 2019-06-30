@@ -9,200 +9,71 @@
 # files that compile and go into libnrniv.so
 
 set(ocsrcdir ${PROJECT_SOURCE_DIR}/src/oc)
-set(OC_SRC
-  ${ocsrcdir}/parse.y
-  ${ocsrcdir}/bksub.c
-  ${ocsrcdir}/getelm.c
-  ${ocsrcdir}/lineq.c
-  ${ocsrcdir}/subrows.c
-  ${ocsrcdir}/prmat.c
-  ${ocsrcdir}/code2.c
-  ${ocsrcdir}/debug.c
-  ${ocsrcdir}/ocerf.c
-  ${ocsrcdir}/fileio.c
-  ${ocsrcdir}/ftime.c
-  ${ocsrcdir}/getsym.c
-  ${ocsrcdir}/hoc.c
-  ${ocsrcdir}/hocedit.c
-  ${ocsrcdir}/math.c
-  ${ocsrcdir}/nonlin.c
-  ${ocsrcdir}/list.c
-  ${ocsrcdir}/regexp.c
-  ${ocsrcdir}/audit.c
-  ${ocsrcdir}/symbol.c
-  ${ocsrcdir}/version.c
-  ${ocsrcdir}/xred.c
-  ${ocsrcdir}/parallel.c
-  ${ocsrcdir}/functabl.c
-  ${ocsrcdir}/plot.c
-  ${ocsrcdir}/plt.c
-  ${ocsrcdir}/axis.c
-  ${ocsrcdir}/settext.c
-  ${ocsrcdir}/x.c
-  ${ocsrcdir}/fmenu.c
-  ${ocsrcdir}/termio.c
-  ${ocsrcdir}/isoc99.c
-  ${ocsrcdir}/scoprand.c
-  ${ocsrcdir}/cygwinprt.c
-  ${ocsrcdir}/nrnfilewrap.c
-  ${ocsrcdir}/isaac64.c
-  ${ocsrcdir}/mcran4.c
-  ${ocsrcdir}/nrnisaac.c
-  ${ocsrcdir}/nrnran123.c)
+set(RanFiles isaac64.c mcran4.c nrnisaac.c nrnran123.c)
+# append to list (first arg) by prepending second arg/ to all remaining args
+mymklist(OC_SRC "${ocsrcdir}"
+  parse.y bksub.c getelm.c lineq.c subrows.c prmat.c
+  code2.c debug.c ocerf.c fileio.c ftime.c
+  getsym.c hoc.c hocedit.c math.c nonlin.c
+  list.c regexp.c audit.c symbol.c
+  version.c xred.c parallel.c functabl.c plot.c plt.c axis.c
+  settext.c x.c fmenu.c termio.c isoc99.c
+  scoprand.c ${RanFiles} cygwinprt.c nrnfilewrap.c
+)
+#message(NOTICE " OC_SRC ${OC_SRC}")
 
 #$(nrnmpidynam) nothing or nrnmpi_dynam.c
 
-#message(STATUS " OC_SRC is ${OC_SRC}")
-
 set(nrnocsrcdir ${PROJECT_SOURCE_DIR}/src/nrnoc)
-set(NRNOC_SRC
-  ${nrnocsrcdir}/cabcode.c
-  ${nrnocsrcdir}/capac.c
-  ${nrnocsrcdir}/clamp.c
-  ${nrnocsrcdir}/eion.c
-  ${nrnocsrcdir}/extcelln.c
-  ${nrnocsrcdir}/fadvance.c
-  ${nrnocsrcdir}/fstim.c
-  ${nrnocsrcdir}/init.c
-  ${nrnocsrcdir}/nrnnemo.c
-  ${nrnocsrcdir}/point.c
-  ${nrnocsrcdir}/psection.c
-  ${nrnocsrcdir}/solve.c
-  ${nrnocsrcdir}/synapse.c
-  ${nrnocsrcdir}/treeset.c
-  ${nrnocsrcdir}/hoc_init.c
-  ${nrnocsrcdir}/code.c
-  ${nrnocsrcdir}/hoc_oop.c
-  ${nrnocsrcdir}/seclist.c
-  ${nrnocsrcdir}/method3.c
-  ${nrnocsrcdir}/hocprax.c
-  ${nrnocsrcdir}/secref.c
-  ${nrnocsrcdir}/ldifus.c
-  ${nrnocsrcdir}/hocusr.c
-  ${PROJECT_BINARY_DIR}/src/nrnoc/hocusr.h
-  ${nrnocsrcdir}/nrnversion.c
-  ${nrnocsrcdir}/nrnversion.h
-  ${nrnocsrcdir}/nrntimeout.c
-  ${nrnocsrcdir}/passive0.c)
+mymklist(NRNOC_SRC ${nrnocsrcdir}
+  cabcode.c capac.c clamp.c eion.c
+  extcelln.c fadvance.c fstim.c init.c nrnnemo.c point.c
+  psection.c solve.c synapse.c treeset.c hoc_init.c code.c hoc_oop.c
+  seclist.c method3.c hocprax.c secref.c ldifus.c hocusr.c nrnversion.c
+  nrnversion.h nrntimeout.c passive0.c
+)
+list(APPEND NRNOC_SRC ${PROJECT_BINARY_DIR}/src/nrnoc/hocusr.h)
 
 set_source_files_properties(
   ${nrnocsrcdir}/code.c ${nrnocsrcdir}/hoc_init.c ${nrnocsrcdir}/hoc_oop.c  
   PROPERTIES COMPILE_DEFINITIONS CABLE=1)
 
 set(ivocsrcdir ${PROJECT_SOURCE_DIR}/src/ivoc)
-set(IVOC_SRC
-  ${ivocsrcdir}/ivoc.cpp
-  ${ivocsrcdir}/xmenu.cpp
-  ${ivocsrcdir}/graph.cpp
-  ${ivocsrcdir}/rubband.cpp
-  ${ivocsrcdir}/grmanip.cpp
-  ${ivocsrcdir}/apwindow.cpp
-  ${ivocsrcdir}/pwman.cpp
-  ${ivocsrcdir}/scene.cpp
-  ${ivocsrcdir}/xyview.cpp
-  ${ivocsrcdir}/rect.cpp
-  ${ivocsrcdir}/mymath.cpp
-  ${ivocsrcdir}/axis.cpp
-  ${ivocsrcdir}/utility.cpp
-  ${ivocsrcdir}/idraw.cpp
-  ${ivocsrcdir}/symchoos.cpp
-  ${ivocsrcdir}/htlist.cpp
-  ${ivocsrcdir}/ocpicker.cpp
-  ${ivocsrcdir}/scenepic.cpp
-  ${ivocsrcdir}/oclist.cpp
-  ${ivocsrcdir}/ocbrowsr.cpp
-  ${ivocsrcdir}/objcmd.cpp
-  ${ivocsrcdir}/ocbox.cpp
-  ${ivocsrcdir}/ocfile.cpp
-  ${ivocsrcdir}/hocmark.cpp
-  ${ivocsrcdir}/oc2iv.cpp
-  ${ivocsrcdir}/epsprint.cpp
-  ${ivocsrcdir}/ivocvect.cpp
-  ${ivocsrcdir}/ivocrand.cpp
-  ${ivocsrcdir}/octimer.cpp
-  ${ivocsrcdir}/ocdeck.cpp
-  ${ivocsrcdir}/bndedval.cpp
-  ${ivocsrcdir}/ochelp.cpp
-  ${ivocsrcdir}/checkpnt.cpp
-  ${ivocsrcdir}/graphvec.cpp
-  ${ivocsrcdir}/strfun.cpp
-  ${ivocsrcdir}/ocobserv.cpp
-  ${ivocsrcdir}/fourier.cpp
-  ${ivocsrcdir}/cbwidget.cpp
-  ${ivocsrcdir}/matrix.cpp
-  ${ivocsrcdir}/ocmatrix.cpp
-  ${ivocsrcdir}/ocpointer.cpp
-  ${ivocsrcdir}/gifimage.cpp
-  ${ivocsrcdir}/ocnoiv1.cpp
-  ${ivocsrcdir}/grglyph.cpp
-  ${ivocsrcdir}/mlinedit.cpp
-  ${ivocsrcdir}/ivocman1.cpp
-  ${ivocsrcdir}/ocptrvector.cpp)
+mymklist(IVOC_SRC "${ivocsrcdir}"
+  ivoc.cpp xmenu.cpp graph.cpp rubband.cpp grmanip.cpp
+  apwindow.cpp pwman.cpp scene.cpp xyview.cpp rect.cpp mymath.cpp
+  axis.cpp utility.cpp idraw.cpp symchoos.cpp htlist.cpp
+  ocpicker.cpp scenepic.cpp oclist.cpp
+  ocbrowsr.cpp objcmd.cpp ocbox.cpp ocfile.cpp hocmark.cpp oc2iv.cpp
+  epsprint.cpp ivocvect.cpp ivocrand.cpp
+  octimer.cpp ocdeck.cpp bndedval.cpp ochelp.cpp checkpnt.cpp
+  graphvec.cpp strfun.cpp ocobserv.cpp fourier.cpp
+  cbwidget.cpp matrix.cpp ocmatrix.cpp
+  ocpointer.cpp gifimage.cpp ocnoiv1.cpp grglyph.cpp mlinedit.cpp
+  ivocman1.cpp ocptrvector.cpp
+)
 
 #$(sysdep_sources)
 
 set(nrnivsrcdir ${PROJECT_SOURCE_DIR}/src/nrniv)
-set(NRNIV_SRC
-  ${nrnivsrcdir}/nrnmenu.cpp
-  ${nrnivsrcdir}/shape.cpp
-  ${nrnivsrcdir}/classreg.cpp
-  ${nrnivsrcdir}/rotate3d.cpp
-  ${nrnivsrcdir}/datapath.cpp
-  ${nrnivsrcdir}/symdir.cpp
-  ${nrnivsrcdir}/spaceplt.cpp
-  ${nrnivsrcdir}/shapeplt.cpp
-  ${nrnivsrcdir}/ppshape.cpp
-  ${nrnivsrcdir}/secbrows.cpp
-  ${nrnivsrcdir}/ndatclas.cpp
-  ${nrnivsrcdir}/impedanc.cpp
-  ${nrnivsrcdir}/savstate.cpp
-  ${nrnivsrcdir}/hocmech.cpp
-  ${nrnivsrcdir}/ocjump.cpp
-  ${nrnivsrcdir}/vrecord.cpp
-  ${nrnivsrcdir}/cvodestb.cpp
-  ${nrnivsrcdir}/occvode.cpp
-  ${nrnivsrcdir}/cvodeobj.cpp
-  ${nrnivsrcdir}/cvtrset.cpp
-  ${nrnivsrcdir}/tqueue.cpp
-  ${nrnivsrcdir}/netcvode.cpp
-  ${nrnivsrcdir}/singlech.cpp
-  ${nrnivsrcdir}/nrndaspk.cpp
-  ${nrnivsrcdir}/glinerec.cpp
-  ${nrnivsrcdir}/cxprop.cpp
-  ${nrnivsrcdir}/ocbbs.cpp
-  ${nrnivsrcdir}/bbs.cpp
-  ${nrnivsrcdir}/bbslocal.cpp
-  ${nrnivsrcdir}/bbslsrv.cpp
-  ${nrnivsrcdir}/bbsrcli.cpp
-  ${nrnivsrcdir}/bbsdirect.cpp
-  ${nrnivsrcdir}/bbslsrv2.cpp
-  ${nrnivsrcdir}/bbssrv.cpp
-  ${nrnivsrcdir}/linmod.cpp
-  ${nrnivsrcdir}/linmod1.cpp
-  ${nrnivsrcdir}/cachevec.cpp
-  ${nrnivsrcdir}/kschan.cpp
-  ${nrnivsrcdir}/kssingle.cpp
-  ${nrnivsrcdir}/nonlinz.cpp
-  ${nrnivsrcdir}/finithnd.cpp
-  ${nrnivsrcdir}/nrnste.cpp
-  ${nrnivsrcdir}/nrnrtime.cpp
-  ${nrnivsrcdir}/nvector_nrnthread.c
-  ${nrnivsrcdir}/nrnpy.cpp
-  ${nrnivsrcdir}/prcellstate.cpp
-  ${nrnivsrcdir}/nvector_nrnthread_ld.c
-  ${nrnivsrcdir}/nvector_nrnserial_ld.c
-  ${nrnivsrcdir}/bgpmeminfo.c
-  ${nrnivsrcdir}/netpar.cpp
-  ${nrnivsrcdir}/partrans.cpp
-  ${nrnivsrcdir}/splitcell.cpp
-  ${nrnivsrcdir}/multisplit.cpp
-  ${nrnivsrcdir}/bbsavestate.cpp
-  ${nrnivsrcdir}/nrnbbcore_write.cpp
-  ${nrnivsrcdir}/pysecname2sec.cpp
-  ${nrnivsrcdir}/nrndae.cpp
-  ${nrnivsrcdir}/matrixmap.cpp
-  ${nrnivsrcdir}/geometry3d.cpp
-  )
+mymklist(NRNIV_SRC "${nrnivsrcdir}"
+  nrnmenu.cpp shape.cpp classreg.cpp rotate3d.cpp
+  datapath.cpp symdir.cpp spaceplt.cpp shapeplt.cpp ppshape.cpp
+  secbrows.cpp ndatclas.cpp impedanc.cpp savstate.cpp hocmech.cpp
+  ocjump.cpp vrecord.cpp cvodestb.cpp occvode.cpp
+  cvodeobj.cpp cvtrset.cpp tqueue.cpp netcvode.cpp singlech.cpp
+  nrndaspk.cpp glinerec.cpp cxprop.cpp
+  ocbbs.cpp bbs.cpp bbslocal.cpp bbslsrv.cpp
+  bbsrcli.cpp bbsdirect.cpp bbslsrv2.cpp bbssrv.cpp
+  linmod.cpp linmod1.cpp cachevec.cpp
+  kschan.cpp kssingle.cpp nonlinz.cpp finithnd.cpp nrnste.cpp
+  nrnrtime.cpp nvector_nrnthread.c nrnpy.cpp prcellstate.cpp
+  nvector_nrnthread_ld.c nvector_nrnserial_ld.c
+  bgpmeminfo.c
+  netpar.cpp partrans.cpp splitcell.cpp multisplit.cpp
+  bbsavestate.cpp nrnbbcore_write.cpp pysecname2sec.cpp
+  nrndae.cpp matrixmap.cpp geometry3d.cpp
+)
 
 #$(PARSRC1)
 

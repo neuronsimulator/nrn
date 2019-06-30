@@ -137,3 +137,18 @@ macro(my_check_cxx_symbol_exists name ilist var)
   endif()
 endmacro()
 
+# append pre/name into lst for each name arg after pre
+macro(mymklist _lst pre)
+  #set(${_lst} "") # don't initialize
+  foreach(name ${ARGN})
+    list(APPEND ${_lst} ${pre}/${name})
+  endforeach(name)
+endmacro()
+
+#example
+if (0)
+mymklist(lst "foo"
+  one two three
+)
+message(NOTICE "${lst}")
+endif()
