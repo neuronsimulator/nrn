@@ -17,8 +17,9 @@ mymklist(OC_SRC "${ocsrcdir}"
   getsym.c hoc.c hocedit.c math.c nonlin.c
   list.c regexp.c audit.c symbol.c
   version.c xred.c parallel.c functabl.c plot.c plt.c axis.c
-  settext.c x.c fmenu.c termio.c isoc99.c
+  settext.c x.c fmenu.c isoc99.c
   scoprand.c ${RanFiles} cygwinprt.c nrnfilewrap.c
+  #get termio.c from src/emacs
 )
 #message(NOTICE " OC_SRC ${OC_SRC}")
 
@@ -98,7 +99,101 @@ set_property(
     USEMATRIX=1 USECVODE=1 CABLE=1
   )
 
+# sundials sources
+mymklist(SUNDIALS_SRC "${PROJECT_SOURCE_DIR}/src/sundials/cvodes"
+        cvband.c
+        cvbandpre.c
+        cvbbdpre.c
+        cvdense.c
+        cvdiag.c
+        cvodea.c
+        cvodes.c
+        cvodesio.c
+        cvspgmr.c
+)
+mymklist(SUNDIALS_SRC "${PROJECT_SOURCE_DIR}/src/sundials/ida"
+        idaband.c
+        idabbdpre.c
+        ida.c
+        idadense.c
+        idaic.c
+        idaio.c
+        idaspgmr.c
+)
+set(PARSRC1 nvector_parallel.c)
+mymklist(SUNDIALS_SRC "${PROJECT_SOURCE_DIR}/src/sundials/shared"
+        nvector.c nvector_serial.c smalldense.c spgmr.c sundialsmath.c
+        ${PARSRC1}
+)
+
+# meschach matrix sources
+mymklist(MESCH_SRC "${PROJECT_SOURCE_DIR}/src/mesch"
+arnoldi.c bdfactor.c bkpfacto.c chfactor.c
+  arnoldi.c bdfactor.c bkpfacto.c chfactor.c
+        conjgrad.c copy.c dmacheps.c err.c extras.c fft.c givens.c hessen.c
+        hsehldr.c init.c iter0.c iternsym.c itersym.c ivecop.c lanczos.c
+        lufactor.c machine.c matlab.c matop.c matrixio.c meminfo.c memory.c
+        memstat.c mfunc.c norm.c otherio.c pxop.c qrfactor.c schur.c
+        solve.c sparse.c sparseio.c spbkp.c spchfctr.c splufctr.c sprow.c
+        spswap.c submat.c svd.c symmeig.c update.c vecop.c version.c
+        zcopy.c zfunc.c zgivens.c zhessen.c zhsehldr.c zlufctr.c zmachine.c
+        zmatio.c zmatlab.c zmatop.c zmemory.c znorm.c zqrfctr.c zschur.c
+        zsolve.c zvecop.c
+)
+
+# sparse13 matrix sources
+mymklist(SPARSE13_SRC "${PROJECT_SOURCE_DIR}/src/sparse13"
+  spalloc.c spbuild.c spfactor.c spoutput.c
+        spsolve.c sputils.c
+        cspalloc.c cspbuild.c cspfactor.c cspoutput.c
+        cspsolve.c csputils.c
+)
+
+if (0) # seem to be listed in OC_SRC
+# sparse matrix sources
+mymklist(SPARSE_SRC "${PROJECT_SOURCE_DIR}/src/sparse"
+  bksub.c getelm.c lineq.c lineq.h prmat.c subrows.c
+)
+endif()
+
+# scopmath sources
+mymklist(SCOPMATH_SRC "${PROJECT_SOURCE_DIR}/src/scopmath"
+  abort.c adams.c adeuler.c adrunge.c advance.c
+        boundary.c crank.c crout.c csoda.c csodabnc.c deflate.c
+        dimplic.c scoperf.c euler.c expfit.c exprand.c f2cmisc.c factoria.c
+        force.c gauss.c gear.c getmem.c harmonic.c heun.c hyperbol.c
+        invert.c lag.c legendre.c newton.c normrand.c perpulse.c
+        perstep.c poisrand.c poisson.c praxis.c pulse.c quad.c ramp.c
+        revhyper.c revsawto.c revsigmo.c romberg.c runge.c
+        sawtooth.c schedule.c seidel.c sigmoid.c simeq.c simplex.c
+        sparse.c vsparse.c spline.c squarewa.c ssimplic.c step.c
+        threshol.c tridiag.c sparse_thread.c newton_thread.c crout_thread.c
+        ssimplic_thread.c
+)
+set_source_files_properties(
+  ${SCOPMATH_SRC}
+  PROPERTIES COMPILE_DEFINITIONS HOC=1
+    COMPILE_FLAGS -I${PROJECT_SOURCE_DIR}/src/scopmath
+)
+
+
+# memacs sources
+mymklist(MEMACS_SRC "${PROJECT_SOURCE_DIR}/src/memacs"
+  ansi.c basic.c bind.c buffer.c display.c file.c
+        fileio.c line.c lock.c main1.c random.c region.c
+        search.c spawn.c tcap.c termio.c window.c word.c
+)
+
+# readline sources
+mymklist(READLINE_SRC "${PROJECT_SOURCE_DIR}/src/readline"
+#  readline.c history.c funmap.c keymaps.c
+)
+
 set (base ${OC_SRC} ${NRNOC_SRC} ${IVOC_SRC} ${NRNIV_SRC})
+set (nrnivlibsrc ${base} ${SUNDIALS_SRC} ${MESCH_SRC}
+  ${SPARSE13_SRC} ${SCOPMATH_SRC} ${MEMACS_SRC} ${READLINE_SRC}
+)
+
 # since everone #include <../../nrnconf.h>
 set (nrnconfhelp ${PROJECT_BINARY_DIR}/src/nrnoc ${PROJECT_BINARY_DIR}/src/oc)
 set (base_include ${nrnconfhelp} ${nrnivsrcdir} ${ivocsrcdir} ${nrnocsrcdir} ${ocsrcdir})
@@ -119,9 +214,13 @@ list(APPEND base_include ${PROJECT_BINARY_DIR}/src/nrncvode)
 list(APPEND base_include ${PROJECT_BINARY_DIR}/src/sundials)
 list(APPEND base_include ${PROJECT_SOURCE_DIR}/src/sundials)
 list(APPEND base_include ${PROJECT_SOURCE_DIR}/src/sundials/shared)
+list(APPEND base_include ${PROJECT_BINARY_DIR}/src/sundials/shared)
 list(APPEND base_include ${PROJECT_SOURCE_DIR}/src/sundials/cvodes)
 list(APPEND base_include ${PROJECT_SOURCE_DIR}/src/sundials/ida)
 list(APPEND base_include ${PROJECT_SOURCE_DIR}/../ivcmake/build/install/include)
+
+#avoid sundials/shared/nvector_serial.c error for #include <../../../nrnconf.h>
+file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/sundials/shared)
 
 configure_ac_file(nrnmpiuse.h src/oc)
 configure_ac_file(nrnrtuse.h src/oc)
@@ -167,4 +266,16 @@ set_source_files_properties(${ocsrcdir}/hocusr.c
 
 include_directories(${base_include})
 
-add_library(nrniv SHARED ${base})
+add_library(nrniv1 SHARED ${nrnivlibsrc})
+set_property(TARGET nrniv1 PROPERTY OUTPUT_NAME nrniv)
+
+mymklist(nrnbinsrc "${PROJECT_SOURCE_DIR}/src/ivoc/"
+  nrnmain.cpp ivocmain.cpp)
+
+mymklist(nrnbinsrc "${PROJECT_SOURCE_DIR}/src/oc/"
+  ockludge.c modlreg.c
+)
+
+add_executable(nrniv ${nrnbinsrc})
+set(IVLIB ${PROJECT_SOURCE_DIR}/../ivcmake/build/install/lib)
+target_link_libraries(nrniv nrniv1 interviews ${X11_LIBRARIES})
