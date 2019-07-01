@@ -12,7 +12,7 @@ set(ocsrcdir ${PROJECT_SOURCE_DIR}/src/oc)
 set(RanFiles isaac64.c mcran4.c nrnisaac.c nrnran123.c)
 # append to list (first arg) by prepending second arg/ to all remaining args
 mymklist(OC_SRC "${ocsrcdir}"
-  parse.y bksub.c getelm.c lineq.c subrows.c prmat.c
+  parse.c bksub.c getelm.c lineq.c subrows.c prmat.c
   code2.c debug.c ocerf.c fileio.c ftime.c
   getsym.c hoc.c hocedit.c math.c nonlin.c
   list.c regexp.c audit.c symbol.c
@@ -41,7 +41,7 @@ set_source_files_properties(
 
 set(ivocsrcdir ${PROJECT_SOURCE_DIR}/src/ivoc)
 mymklist(IVOC_SRC "${ivocsrcdir}"
-  ivoc.cpp xmenu.cpp graph.cpp rubband.cpp grmanip.cpp
+  ivocmain.cpp ivoc.cpp xmenu.cpp graph.cpp rubband.cpp grmanip.cpp
   apwindow.cpp pwman.cpp scene.cpp xyview.cpp rect.cpp mymath.cpp
   axis.cpp utility.cpp idraw.cpp symchoos.cpp htlist.cpp
   ocpicker.cpp scenepic.cpp oclist.cpp
@@ -51,11 +51,16 @@ mymklist(IVOC_SRC "${ivocsrcdir}"
   graphvec.cpp strfun.cpp ocobserv.cpp fourier.cpp
   cbwidget.cpp matrix.cpp ocmatrix.cpp
   ocpointer.cpp gifimage.cpp ocnoiv1.cpp grglyph.cpp mlinedit.cpp
-  ivocman1.cpp ocptrvector.cpp
+  ocptrvector.cpp
 )
 
 #$(sysdep_sources)
+mymklist(IVOC_SRC "${ivocsrcdir}"
+  xdep.cpp field.cpp
+)
 
+# nrniv sources
+set(PARSRC1 nvector_nrnparallel_ld.c)
 set(nrnivsrcdir ${PROJECT_SOURCE_DIR}/src/nrniv)
 mymklist(NRNIV_SRC "${nrnivsrcdir}"
   nrnmenu.cpp shape.cpp classreg.cpp rotate3d.cpp
@@ -74,9 +79,8 @@ mymklist(NRNIV_SRC "${nrnivsrcdir}"
   netpar.cpp partrans.cpp splitcell.cpp multisplit.cpp
   bbsavestate.cpp nrnbbcore_write.cpp pysecname2sec.cpp
   nrndae.cpp matrixmap.cpp geometry3d.cpp
+  ${PARSRC1}
 )
-
-#$(PARSRC1)
 
 set_property(
   SOURCE ${nrnocsrcdir}/code.c ${nrnocsrcdir}/hoc_init.c ${nrnocsrcdir}/hoc_oop.c
@@ -122,8 +126,9 @@ mymklist(SUNDIALS_SRC "${PROJECT_SOURCE_DIR}/src/sundials/ida"
 )
 set(PARSRC1 nvector_parallel.c)
 mymklist(SUNDIALS_SRC "${PROJECT_SOURCE_DIR}/src/sundials/shared"
-        nvector.c nvector_serial.c smalldense.c spgmr.c sundialsmath.c
-        ${PARSRC1}
+  band.c dense.c iterative.c
+  nvector.c nvector_serial.c smalldense.c spgmr.c sundialsmath.c
+  ${PARSRC1}
 )
 
 # meschach matrix sources
@@ -189,9 +194,45 @@ mymklist(READLINE_SRC "${PROJECT_SOURCE_DIR}/src/readline"
 #  readline.c history.c funmap.c keymaps.c
 )
 
+# nrnmpi sources
+mymklist(NRNMPI_SRC "${PROJECT_SOURCE_DIR}/src/nrnmpi"
+  nrnmpi.c bbsmpipack.c mpispike.c nrnrt.c
+)
+
+# ancient gnu double_avec and random distributions and generators
+mymklist(NRNGNU_SRC "${PROJECT_SOURCE_DIR}/src/gnu"
+  ACG.cpp Binomial.cpp Complex.cpp DiscUnif.cpp
+  Erlang.cpp Geom.cpp HypGeom.cpp LogNorm.cpp MLCG.cpp NegExp.cpp
+  Normal.cpp Poisson.cpp RNG.cpp Random.cpp RndInt.cpp SmplHist.cpp
+  SmplStat.cpp Uniform.cpp Weibull.cpp builtin.cpp d_avec.cpp d_vec.cpp
+)
+
+# nrnpython sources
+mymklist(NRNPYTHON_SRC "${PROJECT_SOURCE_DIR}/src/nrnpython"
+  nrnpython.cpp nrnpy_hoc.cpp nrnpy_nrn.cpp nrnpy_p2h.cpp
+  grids.cpp rxd.cpp rxd_extracellular.cpp rxd_intracellular.cpp
+  rxd_vol.cpp rxd_marching_cubes.c rxd_llgramarea.c
+)
+
+# built-in mod files
+mymklist(MODFILE_MOD "{PROJECT_SOURCE_DIR}/src/nrnoc"
+  apcount.mod  feature.mod   intfire2.mod  oclmp.mod    ppmark.mod  syn.mod
+  exp2syn.mod  hh.mod        intfire4.mod  passive.mod  stim.mod    vclmp.mod
+  expsyn.mod   intfire1.mod  netstim.mod   pattern.mod  svclmp.mod  xmech.mod
+)
+
+#nmodl sources
+mymklist(NMODL_SRC "{PROJECT_SOURCE_DIR}/src/nmodl"
+  parse1.y diffeq.y lex.l consist.c deriv.c discrete.c
+  init.c io.c kinetic.c list.c modl.c nocpout.c noccout.c parsact.c
+  netrec_discon.c
+  partial.c sens.c simultan.c solve.c symbol.c units.c version.c
+)
+
 set (base ${OC_SRC} ${NRNOC_SRC} ${IVOC_SRC} ${NRNIV_SRC})
 set (nrnivlibsrc ${base} ${SUNDIALS_SRC} ${MESCH_SRC}
-  ${SPARSE13_SRC} ${SCOPMATH_SRC} ${MEMACS_SRC} ${READLINE_SRC}
+  ${SPARSE13_SRC} ${SCOPMATH_SRC} ${MEMACS_SRC} ${READLINE_SRC} ${NRNMPI_SRC}
+  ${NRNGNU_SRC} ${NRNPYTHON_SRC}
 )
 
 # since everone #include <../../nrnconf.h>
@@ -264,18 +305,21 @@ set_source_files_properties(${ocsrcdir}/hocusr.c
 
 #message(STATUS " base is ${base}")
 
-include_directories(${base_include})
+include_directories(${base_include} ${PYTHON_INCLUDE_DIRS})
 
 add_library(nrniv1 SHARED ${nrnivlibsrc})
 set_property(TARGET nrniv1 PROPERTY OUTPUT_NAME nrniv)
 
 mymklist(nrnbinsrc "${PROJECT_SOURCE_DIR}/src/ivoc/"
-  nrnmain.cpp ivocmain.cpp)
+  nrnmain.cpp
+)
 
 mymklist(nrnbinsrc "${PROJECT_SOURCE_DIR}/src/oc/"
   ockludge.c modlreg.c
 )
 
 add_executable(nrniv ${nrnbinsrc})
-set(IVLIB ${PROJECT_SOURCE_DIR}/../ivcmake/build/install/lib)
-target_link_libraries(nrniv nrniv1 interviews ${X11_LIBRARIES})
+set(IV_LIBRARIES -L${PROJECT_SOURCE_DIR}/../ivcmake/build/install/lib -linterviews)
+target_link_libraries(nrniv nrniv1 ${IV_LIBRARIES} ${X11_LIBRARIES}
+  ${MPI_C_LIBRARIES} ${PYTHON_LIBRARIES} readline
+)

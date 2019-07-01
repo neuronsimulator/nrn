@@ -19,18 +19,30 @@ option(NRN_BUILD_SHARED "Build libraries shared or static" OFF)
 # =============================================================================
 # Compile static libraries with hidden visibility
 # =============================================================================
-set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+#set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
 # =============================================================================
 # Find required packages
 # =============================================================================
 message(STATUS "CHECKING FOR X11")
+#find_package(iv)
 find_package(X11)
+find_package(MPI)
+find_package(PythonInterp) #currently active
+find_package(PythonLibs) # consistent with above
 
 if(NOT ${X11_FOUND})
   if (APPLE)
     message(FATAL_ERROR "You must install XQuartz from https://www.xquartz.org/ to build iv")
   endif()
+endif()
+
+if(NOT ${MPI_FOUND})
+  message(FATAL_ERROR " MPI not found")
+endif()
+
+if(NOT ${PYTHONLIBS_FOUND})
+  message(FATAL_ERROR " Python libraries not found")
 endif()
 
 # =============================================================================
