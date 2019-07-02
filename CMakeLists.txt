@@ -25,7 +25,7 @@ option(NRN_BUILD_SHARED "Build libraries shared or static" OFF)
 # Find required packages
 # =============================================================================
 message(STATUS "CHECKING FOR X11")
-#find_package(iv)
+find_package(iv)
 find_package(BISON)
 find_package(FLEX)
 find_package(X11)
