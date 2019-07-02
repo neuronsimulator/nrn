@@ -304,7 +304,6 @@ list(APPEND base_include ${PROJECT_SOURCE_DIR}/src/sundials/shared)
 list(APPEND base_include ${PROJECT_BINARY_DIR}/src/sundials/shared)
 list(APPEND base_include ${PROJECT_SOURCE_DIR}/src/sundials/cvodes)
 list(APPEND base_include ${PROJECT_SOURCE_DIR}/src/sundials/ida)
-list(APPEND base_include ${PROJECT_SOURCE_DIR}/../ivcmake/build/install/include)
 
 #avoid sundials/shared/nvector_serial.c error for #include <../../../nrnconf.h>
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/sundials/shared)
@@ -351,8 +350,15 @@ set_source_files_properties(${ocsrcdir}/hocusr.c
 
 include_directories(${base_include} ${PYTHON_INCLUDE_DIRS})
 
-add_library(nrniv1 SHARED ${nrnivlibsrc})
-set_property(TARGET nrniv1 PROPERTY OUTPUT_NAME nrniv)
+# handy trick to see that the correct iv headers are visible:
+#get_target_property(iv_interface_includes iv_interviews INTERFACE_INCLUDE_DIRECTORIES)
+#message("IV interface includes: ${iv_interface_includes}")
+
+add_library(nrniv_lib SHARED ${nrnivlibsrc})
+target_link_libraries(nrniv_lib iv_interviews ${X11_LIBRARIES}
+  ${MPI_C_LIBRARIES} ${PYTHON_LIBRARIES} readline
+)
+set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
 
 mymklist(nrnbinsrc "${PROJECT_SOURCE_DIR}/src/ivoc/"
   nrnmain.cpp
@@ -363,7 +369,7 @@ mymklist(nrnbinsrc "${PROJECT_SOURCE_DIR}/src/oc/"
 )
 
 add_executable(nrniv ${nrnbinsrc})
-set(IV_LIBRARIES ${PROJECT_SOURCE_DIR}/../ivcmake/build/install/lib/libinterviews.so)
-target_link_libraries(nrniv nrniv1 ${IV_LIBRARIES} ${X11_LIBRARIES}
+#set(IV_LIBRARIES ${PROJECT_SOURCE_DIR}/../ivcmake/build/install/lib/libinterviews.so)
+target_link_libraries(nrniv nrniv_lib iv_interviews ${X11_LIBRARIES}
   ${MPI_C_LIBRARIES} ${PYTHON_LIBRARIES} readline
 )
