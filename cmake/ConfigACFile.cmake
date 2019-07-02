@@ -152,3 +152,13 @@ mymklist(lst "foo"
 )
 message(NOTICE "${lst}")
 endif()
+
+# append prenamepost into lst for each name arg after pre
+macro(myprepostlist _lst pre post)
+  #set(${_lst} "") # don't initialize
+  foreach(name ${ARGN})
+    list(APPEND ${_lst} ${pre}${name}${post})
+  endforeach(name)
+endmacro()
+
+

@@ -215,24 +215,70 @@ mymklist(NRNPYTHON_SRC "${PROJECT_SOURCE_DIR}/src/nrnpython"
 )
 
 # built-in mod files
-mymklist(MODFILE_MOD "{PROJECT_SOURCE_DIR}/src/nrnoc"
-  apcount.mod  feature.mod   intfire2.mod  oclmp.mod    ppmark.mod  syn.mod
-  exp2syn.mod  hh.mod        intfire4.mod  passive.mod  stim.mod    vclmp.mod
-  expsyn.mod   intfire1.mod  netstim.mod   pattern.mod  svclmp.mod  xmech.mod
+mymklist(modfile_bases "${PROJECT_SOURCE_DIR}/src/nrnoc"
+  apcount feature intfire2 oclmp ppmark syn
+  exp2syn hh intfire4 passive stim vclmp
+  expsyn intfire1 netstim pattern svclmp
+)
+myprepostlist(MODFILE_MOD "" ".mod"
+  ${modfile_bases}
+)
+myprepostlist(MODFILE_C "" ".c"
+  ${modfile_bases}
+)
+
+set_source_files_properties(${MODFILE_C}
+  PROPERTIES GENERATED TRUE
 )
 
 #nmodl sources
-mymklist(NMODL_SRC "{PROJECT_SOURCE_DIR}/src/nmodl"
-  parse1.y diffeq.y lex.l consist.c deriv.c discrete.c
+set(nmodlsrcdir ${PROJECT_SOURCE_DIR}/src/nmodl)
+mymklist(NMODL_SRC "${nmodlsrcdir}"
+  parse1.c diffeq.c lex.c consist.c deriv.c discrete.c
   init.c io.c kinetic.c list.c modl.c nocpout.c noccout.c parsact.c
   netrec_discon.c
   partial.c sens.c simultan.c solve.c symbol.c units.c version.c
 )
 
+set_property(
+  SOURCE ${NMODL_SRC}
+  APPEND
+  PROPERTY COMPILE_DEFINITIONS
+    NMODL=1 NOCMODL=1 CVODE=1 VECTORIZE=1
+  )
+
+
+
+BISON_TARGET(nocmodlparser ${nmodlsrcdir}/parse1.y ${nmodlsrcdir}/parse1.c
+  DEFINES_FILE ${nmodlsrcdir}/parse1.h)
+
+BISON_TARGET(nocmodlparser ${nmodlsrcdir}/diffeq.y ${nmodlsrcdir}/diffeq.c
+  DEFINES_FILE ${nmodlsrcdir}/diffeq.h)
+
+FLEX_TARGET(nocmodllexer ${nmodlsrcdir}/lex.l ${nmodlsrcdir}/lex.c)
+
+add_executable(nocmodl ${NMODL_SRC})
+
+
+macro(nocmodl_mod_to_c bname)
+add_custom_command(
+  OUTPUT ${bname}.c
+  COMMAND
+    nocmodl ${bname}.mod
+  COMMAND sed "'s/_reg()/_reg_()/'" ${bname}.c > ${bname}.c.tmp
+  COMMAND mv ${bname}.c.tmp ${bname}.c
+  DEPENDS ${PROJECT_BINARY_DIR}/bin/nocmodl ${bname}.mod
+)
+endmacro()
+
+foreach(name ${modfile_bases})
+  nocmodl_mod_to_c(${name})
+endforeach(name)
+
 set (base ${OC_SRC} ${NRNOC_SRC} ${IVOC_SRC} ${NRNIV_SRC})
 set (nrnivlibsrc ${base} ${SUNDIALS_SRC} ${MESCH_SRC}
   ${SPARSE13_SRC} ${SCOPMATH_SRC} ${MEMACS_SRC} ${READLINE_SRC} ${NRNMPI_SRC}
-  ${NRNGNU_SRC} ${NRNPYTHON_SRC}
+  ${NRNGNU_SRC} ${NRNPYTHON_SRC} ${MODFILE_C}
 )
 
 # since everone #include <../../nrnconf.h>
@@ -275,9 +321,7 @@ configure_ac_file(mos2nrn.h src/uxnrnbbs)
 configure_ac_file(ivstream.h src/ivos)
 configure_ac_file(njconf.h src/nrnjava)
 configure_ac_file(nmodlconf.h .)
-
-# bison parser generation
-find_package(BISON)
+configure_ac_file(nrnunits.lib share/nrn/lib)
 
 BISON_TARGET(ocparser ${ocsrcdir}/parse.y ${ocsrcdir}/parse.c
   DEFINES_FILE ${ocsrcdir}/parse.h)
@@ -319,7 +363,7 @@ mymklist(nrnbinsrc "${PROJECT_SOURCE_DIR}/src/oc/"
 )
 
 add_executable(nrniv ${nrnbinsrc})
-set(IV_LIBRARIES -L${PROJECT_SOURCE_DIR}/../ivcmake/build/install/lib -linterviews)
+set(IV_LIBRARIES ${PROJECT_SOURCE_DIR}/../ivcmake/build/install/lib/libinterviews.so)
 target_link_libraries(nrniv nrniv1 ${IV_LIBRARIES} ${X11_LIBRARIES}
   ${MPI_C_LIBRARIES} ${PYTHON_LIBRARIES} readline
 )

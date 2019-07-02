@@ -26,6 +26,8 @@ option(NRN_BUILD_SHARED "Build libraries shared or static" OFF)
 # =============================================================================
 message(STATUS "CHECKING FOR X11")
 #find_package(iv)
+find_package(BISON)
+find_package(FLEX)
 find_package(X11)
 find_package(MPI)
 find_package(PythonInterp) #currently active
