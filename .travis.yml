@@ -22,6 +22,7 @@ matrix:
         - PYTHON_VERSION=3.6.7
     - language: cpp
       os: osx
+      osx_image: xcode10.2
       env:
         - MATRIX_EVAL="CXX=c++"
 
