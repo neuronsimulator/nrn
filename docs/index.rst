@@ -12,6 +12,7 @@ About NMODL
 
    readme.rst
    install.rst
+   language.rst
 
 .. toctree::
    :maxdepth: 2
