@@ -147,7 +147,7 @@ install_requirements = ["jinja2>=2.9", "PyYAML>=3.13", "sympy>=1.3"]
 
 setup(
     name="NMODL",
-    version="0.1",
+    version="0.2",
     author="Blue Brain Project",
     author_email="bbp-ou-hpc@groupes.epfl.ch",
     description="NEURON Modelling Language Source-to-Source Compiler Framework",
