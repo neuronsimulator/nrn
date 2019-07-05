@@ -12,6 +12,19 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
+#some nrnconf.h and nmodlconf.h definitions
+set(NRNHOST "\"${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_NAME}\"")
+set(NRNHOSTCPU "\"${CMAKE_SYSTEM_PROCESSOR}\"")
+set(PACKAGE "\"nrn\"")
+set(PACKAGE_BUGREPORT "\"\"")
+set(PACKAGE_NAME "${PACKAGE}")
+set(PACKAGE_STRING "\"nrn ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}\"")
+set(PACKAGE_TARNAME "${PACKAGE}")
+set(PACKAGE_URL "\"\"")
+set(PACKAGE_VERSION "\"${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}\"")
+set(VERSION "\"${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}\"")
+set(NRN_LIBDIR "\"${CMAKE_INSTALL_PREFIX}/${CMAKE_SYSTEM_PROCESSOR}/lib\"")
+set(NEURON_DATA_DIR "\"${CMAKE_INSTALL_PREFIX}/share/nrn\"")
 
 option(NRN_BUILD_SHARED "Build libraries shared or static" OFF)
 
@@ -101,6 +114,7 @@ my_check_include_files(unistd.h HAVE_UNISTD_H)
 my_check_include_files(varargs.h HAVE_VARARGS_H)
 my_check_include_files(_g_config.h HAVE__G_CONFIG_H)
 my_check_include_files(sys/timeb.h HAVE_SYS_TIMEB_H)
+check_include_files("dlfcn.h;stdint.h;stddef.h;inttypes.h;stdlib.h;strings.h;string.h;float.h" STDC_HEADERS)
 
 message(STATUS "INC_FILE_LIST ${INC_FILE_LIST}")
 
@@ -136,7 +150,7 @@ my_check_symbol_exists("sigaction" "" HAVE_SIGACTION)
 my_check_symbol_exists("SIGBUS" "signal.h" HAVE_SIGBUS)
 my_check_symbol_exists("SIGSEGV" "signal.h" HAVE_SIGSEGV)
 #my_check_cxx_symbol_exists("std::stringstream" "sstream" HAVE_SSTREAM)
-set(HAVE_SSTREAM 1) # should alwasy exist these days
+set(HAVE_SSTREAM /**/) # should always exist these days
 my_check_symbol_exists("strdup" "" HAVE_STRDUP)
 my_check_symbol_exists("strstr" "" HAVE_STRSTR)
 my_check_symbol_exists("stty" "" HAVE_STTY)
