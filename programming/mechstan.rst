@@ -300,7 +300,7 @@ MechanismStandard (Parameter Control)
         copies parameter values from this mechanism standard to ... 
 
 
-        ``ms.out()`` 
+        ``ms.out(sec=section)`` 
             the mechanism located in ``section`` (all segments). 
 
         ``ms.out(x, sec=section)`` 
@@ -338,7 +338,7 @@ MechanismStandard (Parameter Control)
 
         ``varname`` follows the HOC form convention of ``name_mech``; e.g. ``gnabar_hh``.
 
-        See :meth:`MechanismStandard._in` for an example.
+        See :meth:`MechanismStandard.out` for an example.
          
 
 ----
