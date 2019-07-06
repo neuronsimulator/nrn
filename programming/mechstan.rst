@@ -19,6 +19,9 @@ MechanismStandard (Parameter Control)
 
 
     Description:
+        In Python, consider the use of 'dir()' as an alternative to MechanismStandard -- N.B. dir() will work at the segment level but not section level.
+	When using MechanismStandard, note use of ._in() described below which allows identification of a particular section or segment.
+
         With no vartype or vartype = 1, this provides 
         storage for parameter values of a membrane mechanism or point process. 
         This class is useful in maintaining a default set of parameters and can 
