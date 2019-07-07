@@ -25,9 +25,57 @@ set(PACKAGE_VERSION "\"${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}\"")
 set(VERSION "\"${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}\"")
 set(NRN_LIBDIR "\"${CMAKE_INSTALL_PREFIX}/${CMAKE_SYSTEM_PROCESSOR}/lib\"")
 set(NEURON_DATA_DIR "\"${CMAKE_INSTALL_PREFIX}/share/nrn\"")
+set(SUNDIALS_DOUBLE_PRECISION 1)
+set(SUNDIALS_USE_GENERIC_MATH 1)
+set(LT_OBJDIR "\".libs/\"")
+#INCLUDE(TestBigEndian)
+#TEST_BIG_ENDIAN(WORDS_BIGENDIAN)
+set(YYTEXT_POINTER 1)
+set(TIME_WITH_SYS_TIME 1)
+set(HAVE_NAMESPACES "/**/")
+set(HAVE_STTY 0)
+set(IVOS_FABS "::fabs") # complicated configure test but I don't think this is ever not the case anymore
+set(HAVE_STL "/**/") # nowadays universal for CXX
+set(DLL_DEFAULT_FNAME "\"${CMAKE_SYSTEM_PROCESSOR}/.libs/libnrnmech.so\"")
 
 option(NRN_BUILD_SHARED "Build libraries shared or static" OFF)
+option(ENABLE_INTERVIEWS "Link with INTERVIEWS GUI library" ON)
+option(ENABLE_LegacyFR "Original faraday, R, etc. instead of 2017 nist constants in share/lib/nrnunits.lib" ON)
+option(ENABLE_NRNMECH_DLL_STYLE "Dynamically load nrnmech shared library" ON)
+option(ENABLE_DISCRETE_EVENT_OBSERVER "Set to OFF if do not want Observer to be a subclass of DiscreteEvent" ON)
+option(ENABLE_PYTHON "Python interpreter available" ON)
+option(ENABLE_THREADS "Allow use of pthreads" ON)
+option(ENABLE_MPI "Allow use of MPI" ON)
 
+if (ENABLE_DISCRETE_EVENT_OBSERVER)
+  set(DISCRETE_EVENT_OBSERVER 1)
+else()
+  set(DISCRETE_EVENT_OBSERVER 0)
+endif()
+
+if (ENABLE_LegacyFR)
+  set (LegacyFR 1)
+  set (LegacyY "")
+  set (LegacyN "/")
+else()
+  set (LegacyFR 0)
+  set (LegacyY "/")
+  set (LegacyN "")
+endif()
+
+if (ENABLE_NRNMECH_DLL_STYLE)
+  set(NRNMECH_DLL_STYLE 1)
+else()
+  set(NRNMECH_DLL_STYLE 0)
+endif()
+
+
+#these two don't start out as #undef but as #define so need their explicit
+#@...@ replacments
+#set(NEURON_BIN_DIR "\"${CMAKE_INSTALL_PREFIX}/${CMAKE_SYSTEM_PROCESSOR}/bin\"")
+#set(NRN_CONFIG_ARGS "\"unknown\"") # ends up as "" since no @...@
+set (prefix ${CMAKE_INSTALL_PREFIX})
+set (host_cpu ${CMAKE_SYSTEM_PROCESSOR})
 
 # =============================================================================
 # Compile static libraries with hidden visibility
@@ -38,26 +86,54 @@ option(NRN_BUILD_SHARED "Build libraries shared or static" OFF)
 # Find required packages
 # =============================================================================
 message(STATUS "CHECKING FOR X11")
-find_package(iv REQUIRED)
 find_package(BISON)
 find_package(FLEX)
-find_package(X11)
-find_package(MPI)
-find_package(PythonInterp) #currently active
-find_package(PythonLibs) # consistent with above
 
-if(NOT ${X11_FOUND})
-  if (APPLE)
-    message(FATAL_ERROR "You must install XQuartz from https://www.xquartz.org/ to build iv")
+if (ENABLE_MPI)
+  find_package(MPI REQUIRED)
+  set(NRNMPI 1)
+  set(PARANEURON 1)
+else()
+  set(NRNMPI 0)
+  set(PARANEURON 0)
+endif()
+
+if (ENABLE_INTERVIEWS)
+  find_package(X11)
+  if(NOT ${X11_FOUND})
+    if (APPLE)
+      message(FATAL_ERROR "You must install XQuartz from https://www.xquartz.org/ to build iv")
+    else()
+      find_package(X11 REQUIRED)
+    endif()
   endif()
+
+  find_package(iv REQUIRED)
+  set (HAVE_IV 1)
+  set (NRNOC_X11 1)
+else()
+  set (HAVE_IV 0)
+  set (NRNOC_X11 0)
 endif()
 
-if(NOT ${MPI_FOUND})
-  message(FATAL_ERROR " MPI not found")
+# python or python3 is also needed to make hocusr.h from neuron.h
+find_package(PythonInterp REQUIRED) #currently active
+message(NOTICE "ENABLE_PYTHON ${ENABLE_PYTHON}")
+if (ENABLE_PYTHON)
+  message(NOTICE " inside ENABLE_PYTHON")
+  find_package(PythonLibs REQUIRED) # consistent with above
+  set(USE_PYTHON 1)
+  message(NOTICE "USE_PYTHON ${USE_PYTHON}")
+else()
+  set(USE_PYTHON 0)
 endif()
 
-if(NOT ${PYTHONLIBS_FOUND})
-  message(FATAL_ERROR " Python libraries not found")
+if (ENABLE_THREADS)
+  set(THREADS_PREFER_PTHREAD_FLAG ON)
+  find_package(Threads REQUIRED)
+  set(USE_PTHREAD 1)
+else()
+  set(USE_PTHREAD 0)
 endif()
 
 # =============================================================================
@@ -80,6 +156,10 @@ have_dir(dirent.h HAVE_DIRENT_H)
 have_dir(ndir.h HAVE_NDIR_H)
 have_dir(sys/dir.h HAVE_SYS_DIR_H)
 have_dir(sys/ndir.h HAVE_SYS_NDIR_H)
+if (HAVE_DIRENT_H) # autoconf sets to 0 in this case
+  set(HAVE_SYS_DIR_H 0)
+endif()
+
 
 # like check_include_files but makes a INC_FILE_LIST of those that exist
 my_check_include_files(alloca.h HAVE_ALLOCA_H)
@@ -112,9 +192,9 @@ my_check_include_files(sys/wait.h HAVE_SYS_WAIT_H)
 my_check_include_files(termio.h HAVE_TERMIO_H)
 my_check_include_files(unistd.h HAVE_UNISTD_H)
 my_check_include_files(varargs.h HAVE_VARARGS_H)
-my_check_include_files(_g_config.h HAVE__G_CONFIG_H)
 my_check_include_files(sys/timeb.h HAVE_SYS_TIMEB_H)
 check_include_files("dlfcn.h;stdint.h;stddef.h;inttypes.h;stdlib.h;strings.h;string.h;float.h" STDC_HEADERS)
+check_include_files("_G_config.h" HAVE__G_CONFIG_H LANGUAGE CXX)
 
 message(STATUS "INC_FILE_LIST ${INC_FILE_LIST}")
 
