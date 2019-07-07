@@ -22,7 +22,12 @@ mymklist(OC_SRC "${ocsrcdir}"
   #get termio.c from src/emacs
 )
 #message(NOTICE " OC_SRC ${OC_SRC}")
-
+set_property(
+  SOURCE ${OC_SRC}
+  APPEND
+  PROPERTY COMPILE_DEFINITIONS
+    OOP=1 HOC=1 INTERVIEWS=1
+)
 #$(nrnmpidynam) nothing or nrnmpi_dynam.c
 
 set(nrnocsrcdir ${PROJECT_SOURCE_DIR}/src/nrnoc)
@@ -35,9 +40,12 @@ mymklist(NRNOC_SRC ${nrnocsrcdir}
 )
 list(APPEND NRNOC_SRC ${PROJECT_BINARY_DIR}/src/nrnoc/hocusr.h)
 
-set_source_files_properties(
-  ${nrnocsrcdir}/code.c ${nrnocsrcdir}/hoc_init.c ${nrnocsrcdir}/hoc_oop.c  
-  PROPERTIES COMPILE_DEFINITIONS CABLE=1)
+set_property(
+  SOURCE ${nrnocsrcdir}/code.c ${nrnocsrcdir}/hoc_init.c ${nrnocsrcdir}/hoc_oop.c  
+  APPEND
+  PROPERTY COMPILE_DEFINITIONS
+    CABLE=1
+)
 
 set(ivocsrcdir ${PROJECT_SOURCE_DIR}/src/ivoc)
 mymklist(IVOC_SRC "${ivocsrcdir}"
@@ -100,7 +108,7 @@ set_property(
   SOURCE ${NRNIV_SRC}
   APPEND
   PROPERTY COMPILE_DEFINITIONS
-    USEMATRIX=1 USECVODE=1 CABLE=1
+    USEMATRIX=1 USECVODE=1 CABLE=1 USEBBS=1 OOP=1
   )
 
 # sundials sources
@@ -175,10 +183,17 @@ mymklist(SCOPMATH_SRC "${PROJECT_SOURCE_DIR}/src/scopmath"
         threshol.c tridiag.c sparse_thread.c newton_thread.c crout_thread.c
         ssimplic_thread.c
 )
-set_source_files_properties(
-  ${SCOPMATH_SRC}
-  PROPERTIES COMPILE_DEFINITIONS HOC=1
-    COMPILE_FLAGS -I${PROJECT_SOURCE_DIR}/src/scopmath
+set_property(
+  SOURCE ${SCOPMATH_SRC}
+  APPEND
+  PROPERTY COMPILE_DEFINITIONS HOC=1
+)
+set_property(
+  SOURCE ${SCOPMATH_SRC}
+  APPEND
+  #not available with cmake 3.10.2
+  #PROPERTY INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}/src/scopmath"
+  PROPERTY COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src/scopmath"
 )
 
 
