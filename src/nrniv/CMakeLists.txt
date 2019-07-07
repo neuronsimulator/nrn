@@ -336,6 +336,7 @@ configure_ac_file(ivstream.h src/ivos)
 configure_ac_file(njconf.h src/nrnjava)
 configure_ac_file(nmodlconf.h .)
 configure_ac_file(nrnunits.lib share/lib)
+configure_ac_file(nrn.defaults share/lib)
 
 BISON_TARGET(ocparser ${ocsrcdir}/parse.y ${ocsrcdir}/parse.c
   DEFINES_FILE ${ocsrcdir}/parse.h)

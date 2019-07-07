@@ -38,6 +38,18 @@ set(IVOS_FABS "::fabs") # complicated configure test but I don't think this is e
 set(HAVE_STL "/**/") # nowadays universal for CXX
 set(DLL_DEFAULT_FNAME "\"${CMAKE_SYSTEM_PROCESSOR}/.libs/libnrnmech.so\"")
 
+# for nrn.defaults
+set(nrndef_unix "//")
+set(nrndef_mac "//")
+set(nrndef_mswin "//")
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+  set(nrndef_unix "")
+elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  set(nrndef_mac "")
+elseif (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  set(nrndef_mswin "")
+endif()
+
 option(NRN_BUILD_SHARED "Build libraries shared or static" OFF)
 option(ENABLE_INTERVIEWS "Link with INTERVIEWS GUI library" ON)
 option(ENABLE_LegacyFR "Original faraday, R, etc. instead of 2017 nist constants in share/lib/nrnunits.lib" ON)
