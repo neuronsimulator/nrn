@@ -42,10 +42,14 @@ set(DLL_DEFAULT_FNAME "\"${CMAKE_SYSTEM_PROCESSOR}/.libs/libnrnmech.so\"")
 set(nrndef_unix "//")
 set(nrndef_mac "//")
 set(nrndef_mswin "//")
+set(MAC_DARWIN_TRUE "\#")
+set(MAC_DARWIN_FALSE "")
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   set(nrndef_unix "")
 elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(nrndef_mac "")
+  set(MAC_DARWIN_TRUE "")
+  set(MAC_DARWIN_FALSE "\#")
 elseif (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(nrndef_mswin "")
 endif()
@@ -88,6 +92,10 @@ endif()
 #set(NRN_CONFIG_ARGS "\"unknown\"") # ends up as "" since no @...@
 set (prefix ${CMAKE_INSTALL_PREFIX})
 set (host_cpu ${CMAKE_SYSTEM_PROCESSOR})
+
+set (exec_prefix ${prefix})
+set (bindir \${exec_prefix}/bin)
+set (modsubdir ${host_cpu})
 
 # =============================================================================
 # Compile static libraries with hidden visibility
@@ -270,5 +278,27 @@ configure_ac_file(nrnconf.h .)
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/lib
   DESTINATION share/nrn)
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo
+  DESTINATION share/nrn)
+install(FILES ${PROJECT_BINARY_DIR}/share/lib/nrnunits.lib
+  ${PROJECT_BINARY_DIR}/share/lib/nrn.defaults
+  DESTINATION ${CMAKE_INSTALL_PREFIX}/share/nrn/lib
+)
+
+set(NRNMECH_DLL_STYLE_FALSE "\#")
+set(NRNMECH_DLL_STYLE_TRUE "")
+configure_ac_file(nrngui bin)
+configure_ac_file(neurondemo bin)
+configure_ac_file(nrnivmodl bin)
+configure_ac_file(nrnmech_makefile bin)
+install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/nrngui
+  ${PROJECT_BINARY_DIR}/bin/neurondemo
+  ${PROJECT_BINARY_DIR}/bin/nrnivmodl
+  DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+)
+install(FILES ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile
+  DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+)
+
 
 add_subdirectory(src/nrniv)
