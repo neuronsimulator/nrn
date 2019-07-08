@@ -1422,7 +1422,7 @@ CVode
 
 
     Syntax:
-        ``mode = cvode.cache_efficient(0or1)``
+        ``mode = cvode.cache_efficient(True or False)``
 
 
     Description:
@@ -1430,15 +1430,11 @@ CVode
         all the elements of each type are contiguous in memory. Pointers to these 
         elements used by the GUI, Vector, Pointer, etc. are updated. 
          
-        Much of the implementation was contributed by Hubert Eichner 
-
-        .. code-block::
-            none
-
-            <eichnerh@in.tum.de> 
-
+        Much of the implementation was contributed by Hubert Eichner <eichnerh@in.tum.de> 
          
-        :meth:`ParallelContext.multisplit` automatically sets cache_efficient(1) 
+        :meth:`ParallelContext.multisplit` automatically sets h.CVode().cache_efficient(True) 
+        
+        0 or 1 can be used instead of ``False`` or ``True``, respectively.
 
          
 
