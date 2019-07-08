@@ -1338,6 +1338,86 @@ CVode
 
 
 
+.. method:: CVode.structure_change_count
+
+
+    Syntax:
+        ``intcnt = cvode.structure_change_count()``
+
+
+    Description:
+        Returns the integer internal value of structure_change_cnt.
+        Structure_change_cnt is internally incremented whenever the
+        low level computable structures of the model have been setup
+        due to a change in number of segments, sections, topology, etc,
+        and some internal function requires that the computable structures
+        are consistent with the user level description of the model such as
+        finitialize, fadvance, define_shape, and many others.
+
+         
+----
+
+
+
+.. method:: CVode.diam_change_count
+
+
+    Syntax:
+        ``cnt = cvode.diam_change_count()``
+
+
+    Description:
+        Returns the integer internal value of diam_change_cnt.
+        Diam_change_cnt is internally incremented whenever some internal
+        function checks the diam_changed flag and calls the internal
+        recalc_diam() function.
+         
+----
+
+
+
+.. method:: CVode.extra_scatter_gather
+
+
+    Syntax:
+        ``cvode.extra_scatter_gather(direction, pycallable)``
+
+
+    Description:
+        If the direction is 0, the pycallable is
+        called immediately AFTER cvode has scattered its state variables.
+        If the direction is 1, the pycallable is called immediately BEFORE
+        cvode gathers the values of the state variables.
+
+        For the fixed step method, the direction 0 pycallable is called
+        after voltages have been updated and immediately before the
+        nonvint part (before DERIVATIVE, KINETIC, etc. blocks). It is also
+        called during cvode.re_init() when cvode is inactive.
+
+    .. warning::
+        Works only for fixed and global variable time step methods.
+        Works only with single thread. 
+
+         
+----
+
+
+
+.. method:: CVode.extra_scatter_gather_remove
+
+
+    Syntax:
+        ``cvode.extra_scatter_gather_remove(pycallable)``
+
+
+    Description:
+        Removes the pycallable from list of callbacks used when cvode
+        scatters its state variables or gathers its dstate variable.
+         
+----
+
+
+
 .. method:: CVode.cache_efficient
 
 
