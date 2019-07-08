@@ -19,7 +19,7 @@ MechanismStandard (Parameter Control)
 
 
     Description:
-        In Python, consider the use of 'psection()' which encapsulates MechanismType and MechanismStandard so as to return a dictionary.
+        In Python, consider the use of 'sec.psection()' which encapsulates MechanismType and MechanismStandard so as to return a dictionary.
 
         With no vartype or vartype = 1, this provides 
         storage for parameter values of a membrane mechanism or point process. 
