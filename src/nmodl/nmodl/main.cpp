@@ -259,14 +259,10 @@ int main(int argc, const char* argv[]) {
         }
 
         {
-            // make sure to run perf visitor because code generator
-            // looks for read/write counts const/non-const declaration
-            PerfVisitor().visit_program(ast.get());
-        }
-
-        {
             // Compatibility Checking
             logger->info("Running code compatibility checker");
+            // run perfvisitor to update read/wrie counts
+            PerfVisitor().visit_program(ast.get());
             // If there is an incompatible construct and code generation is not forced exit NMODL
             if (CodegenCompatibilityVisitor().find_unhandled_ast_nodes(ast.get()) &&
                 !force_codegen) {
@@ -390,6 +386,12 @@ int main(int argc, const char* argv[]) {
             auto file = scratch_dir + "/" + modfile + ".perf.json";
             logger->info("Writing performance statistics to {}", file);
             PerfVisitor(file).visit_program(ast.get());
+        }
+
+        {
+            // make sure to run perf visitor because code generator
+            // looks for read/write counts const/non-const declaration
+            PerfVisitor().visit_program(ast.get());
         }
 
         {
