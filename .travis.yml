@@ -37,6 +37,7 @@ addons:
     packages:
       - flex
       - bison
+      - libboost-all-dev
       - cmake
       - python3-dev
       - python3-pip
@@ -45,6 +46,7 @@ addons:
     packages:
       - flex
       - bison
+      - boost
       - cmake
       - python@3
 
@@ -79,6 +81,18 @@ script:
   - make -j 2
   - make test
   - make install
+
+#=============================================================================
+# Build CoreNEURON and run tests
+#=============================================================================
+after_success:
+  - echo "------- Build and Test CoreNEURON -------"
+  - cd $HOME
+  - git clone --recursive https://github.com/BlueBrain/CoreNeuron.git
+  - mkdir CoreNeuron/build && cd CoreNeuron/build
+  - cmake .. -DENABLE_MPI=OFF -DENABLE_NMODL=ON -DNMODL_ROOT=$HOME/nmodl -DNMODL_EXTRA_FLAGS="passes --verbatim-rename --inline sympy --analytic"
+  - make -j
+  - make test
 
 #=============================================================================
 # Notifications
