@@ -96,6 +96,23 @@ class SympySolverVisitor: public AstVisitor {
         return nmodl::to_nmodl(node, {ast::AstNodeType::UNIT, ast::AstNodeType::UNIT_DEF});
     }
 
+    /// Function used by SympySolverVisitor::filter_X to replace the name X in a std::string
+    /// to X_operator
+    std::string& replaceAll(std::string& context,
+                            const std::string& from,
+                            const std::string& to) const;
+
+    /// Check original_vector for elements that contain a variable named original_string and
+    /// rename it to substitution_string
+    std::vector<std::string> filter_string_vector(const std::vector<std::string>& original_vector,
+                                                  const std::string& original_string,
+                                                  const std::string& substitution_string) const;
+
+    /// Return a std::string in the form <original_string>_<random_string>, where
+    /// random_string is a string defined in the nmodl::utils::SingletonRandomString
+    /// for the original_string
+    std::string suffix_random_string(const std::string& original_string) const;
+
     /// global variables
     std::set<std::string> global_vars;
 

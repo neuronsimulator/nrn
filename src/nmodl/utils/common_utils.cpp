@@ -7,6 +7,7 @@
 
 #include <cerrno>
 #include <iostream>
+#include <random>
 #include <stdexcept>
 #include <string>
 #include <sys/stat.h>
@@ -53,6 +54,21 @@ bool make_path(const std::string& path) {
         auto msg = "Can not create directory " + path;
         throw std::runtime_error(msg);
     }
+}
+
+std::string generate_random_string(const int len) {
+    std::string s(len, 0);
+    static const char alphanum[] =
+        "0123456789"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "abcdefghijklmnopqrstuvwxyz";
+    std::random_device dev;
+    std::mt19937 rng(dev());
+    std::uniform_int_distribution<std::mt19937::result_type> dist(0, (sizeof(alphanum) - 1));
+    for (int i = 0; i < len; ++i) {
+        s[i] = alphanum[dist(rng)];
+    }
+    return s;
 }
 
 }  // namespace utils
