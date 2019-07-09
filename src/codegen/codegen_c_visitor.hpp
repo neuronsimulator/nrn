@@ -1776,6 +1776,13 @@ class CodegenCVisitor: public visitor::AstVisitor {
      */
     void set_codegen_global_variables(std::vector<SymbolType>& global_vars);
 
+    /**
+     * Find unique variable name defined in nmodl::utils::SingletonRandomString by the
+     * nmodl::visitor::SympySolverVisitor
+     * @param original_name Original name of variable to change
+     * @return std::string Unique name produced as <original_name>_<random_string>
+     */
+    std::string find_var_unique_name(const std::string& original_name);
 
     virtual void visit_binary_expression(ast::BinaryExpression* node) override;
     virtual void visit_binary_operator(ast::BinaryOperator* node) override;

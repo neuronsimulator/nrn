@@ -129,10 +129,63 @@ static bool is_local_statement(std::shared_ptr<ast::Statement> statement) {
     return false;
 }
 
+std::string& SympySolverVisitor::replaceAll(std::string& context,
+                                            const std::string& from,
+                                            const std::string& to) const {
+    std::size_t lookHere = 0;
+    std::size_t foundHere;
+    while ((foundHere = context.find(from, lookHere)) != std::string::npos) {
+        context.replace(foundHere, from.size(), to);
+        lookHere = foundHere + to.size();
+    }
+    return context;
+}
+
+std::vector<std::string> SympySolverVisitor::filter_string_vector(
+    const std::vector<std::string>& original_vector,
+    const std::string& original_string,
+    const std::string& substitution_string) const {
+    std::vector<std::string> filtered_vector;
+    for (auto element: original_vector) {
+        std::string filtered_element = replaceAll(element, original_string, substitution_string);
+        filtered_vector.push_back(filtered_element);
+    }
+    return filtered_vector;
+}
+
+std::string SympySolverVisitor::suffix_random_string(const std::string& original_string) const {
+    std::string new_string = original_string;
+    std::string random_string;
+    auto singleton_random_string_class = nmodl::utils::SingletonRandomString<4>::instance();
+    // Check if there is a variable defined in the mod file as original_string and if yes
+    // try to use a different string for the matrices created by sympy in the form
+    // <original_string>_<random_string>
+    while (vars.find(new_string) != vars.end()) {
+        random_string = singleton_random_string_class->reset_random_string(original_string);
+        new_string = original_string;
+        new_string += "_" + random_string;
+    }
+    return new_string;
+}
+
 void SympySolverVisitor::construct_eigen_solver_block(
     const std::vector<std::string>& pre_solve_statements,
     const std::vector<std::string>& solutions,
     bool linear) {
+    // Provide random string to append to X, J, Jm and F matrices that
+    // are produced by sympy
+    std::string unique_X = suffix_random_string("X");
+    std::string unique_J = suffix_random_string("J");
+    std::string unique_Jm = suffix_random_string("Jm");
+    std::string unique_F = suffix_random_string("F");
+
+    // filter solutions for matrices named "X", "J", "Jm" and "F" and change them to
+    // unique_X, unique_J, unique_Jm and unique_F respectively
+    auto solutions_filtered = filter_string_vector(solutions, "X[", unique_X + "[");
+    solutions_filtered = filter_string_vector(solutions_filtered, "J[", unique_J + "[");
+    solutions_filtered = filter_string_vector(solutions_filtered, "Jm[", unique_Jm + "[");
+    solutions_filtered = filter_string_vector(solutions_filtered, "F[", unique_F + "[");
+
     // find out where to insert solution in statement block
     auto& statements = block_with_expression_statements->statements;
     auto it = get_solution_location_iterator(statements);
@@ -146,18 +199,15 @@ void SympySolverVisitor::construct_eigen_solver_block(
     std::vector<std::string> setup_x_eqs;
     std::vector<std::string> update_state_eqs;
     for (int i = 0; i < state_vars.size(); i++) {
-        auto statement = state_vars[i] + " = X[" + std::to_string(i) + "]";
-        auto rev_statement = "X[" + std::to_string(i) + "] = " + state_vars[i];
+        auto statement = state_vars[i] + " = " + unique_X + "[" + std::to_string(i) + "]";
+        auto rev_statement = unique_X + "[" + std::to_string(i) + "] = " + state_vars[i];
         update_state_eqs.push_back(statement);
         setup_x_eqs.push_back(rev_statement);
-        logger->debug("SympySolverVisitor :: setup_x: {}", rev_statement);
+        logger->debug("SympySolverVisitor :: setup_", unique_X, ": {}", rev_statement);
         logger->debug("SympySolverVisitor :: update_state: {}", statement);
     }
-    // TODO: make unique name for Eigen vector if clashes
-    if (vars.find("X") != vars.end()) {
-        logger->error("SympySolverVisitor :: -> X conflicts with NMODL variable");
-    }
-    for (const auto& sol: solutions) {
+
+    for (const auto& sol: solutions_filtered) {
         logger->debug("SympySolverVisitor :: -> adding statement: {}", sol);
     }
     // statements after last diff/linear/non-linear eq statement go into finalize_block
@@ -186,7 +236,7 @@ void SympySolverVisitor::construct_eigen_solver_block(
 
     if (linear) {
         /// create eigen linear solver block
-        setup_x_eqs.insert(setup_x_eqs.end(), solutions.begin(), solutions.end());
+        setup_x_eqs.insert(setup_x_eqs.end(), solutions_filtered.begin(), solutions_filtered.end());
         auto setup_x_block = create_statement_block(setup_x_eqs);
         auto solver_block = std::make_shared<ast::EigenLinearSolverBlock>(n_state_vars,
                                                                           variable_block,
@@ -201,7 +251,7 @@ void SympySolverVisitor::construct_eigen_solver_block(
     } else {
         /// create eigen newton solver block
         auto setup_x_block = create_statement_block(setup_x_eqs);
-        auto functor_block = create_statement_block(solutions);
+        auto functor_block = create_statement_block(solutions_filtered);
         auto solver_block = std::make_shared<ast::EigenNewtonSolverBlock>(n_state_vars,
                                                                           variable_block,
                                                                           initialize_block,
