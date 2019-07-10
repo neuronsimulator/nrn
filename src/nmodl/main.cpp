@@ -163,9 +163,6 @@ int main(int argc, const char* argv[]) {
     app.add_option("--scratch", scratch_dir, "Directory for intermediate code output", true)
         ->ignore_case();
     app.add_option("--units", units_dir, "Directory of units lib file", true)->ignore_case();
-    app.add_flag("--force_codegen",
-                 force_codegen,
-                 "Force code generation even if there is any incompatibility");
 
     auto host_opt = app.add_subcommand("host", "HOST/CPU code backends")->ignore_case();
     host_opt->add_flag("--c", c_backend, "C/C++ backend")->ignore_case();
@@ -200,6 +197,8 @@ int main(int argc, const char* argv[]) {
     auto codegen_opt = app.add_subcommand("codegen", "Code generation options")->ignore_case();
     codegen_opt->add_option("--layout", layout, "Memory layout for code generation", true)->ignore_case()->check(CLI::IsMember({"aos", "soa"}));
     codegen_opt->add_option("--datatype", layout, "Data type for floating point variables", true)->ignore_case()->check(CLI::IsMember({"float", "double"}));
+    codegen_opt->add_flag("--force", force_codegen, "Force code generation even if there is any incompatibility");
+
     // clang-format on
 
     CLI11_PARSE(app, argc, argv);
