@@ -54,6 +54,15 @@ elseif (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(nrndef_mswin "")
 endif()
 
+#for nrnmech_makefile
+set(CMAKE_INSTALL_BINDIR bin)
+set(CMAKE_INSTALL_LIBDIR lib)
+set(CMAKE_INSTALL_INCLUDEDIR include)
+set(CMAKE_INSTALL_DATADIR share/nrn)
+#------modified coreneuron/extra/CMakeLists.txt
+include(${CMAKE_CURRENT_SOURCE_DIR}/bin/CMakeListsNrnMech.txt)
+#------end of modified coreneuron/extra/CMakeLists.txt
+
 option(NRN_BUILD_SHARED "Build libraries shared or static" OFF)
 option(ENABLE_INTERVIEWS "Link with INTERVIEWS GUI library" ON)
 option(ENABLE_LegacyFR "Original faraday, R, etc. instead of 2017 nist constants in share/lib/nrnunits.lib" ON)
@@ -84,7 +93,8 @@ if (ENABLE_NRNMECH_DLL_STYLE)
 else()
   set(NRNMECH_DLL_STYLE 0)
 endif()
-
+set(USING_CMAKE_FALSE "#")
+set(USING_CMAKE_TRUE "")
 
 #these two don't start out as #undef but as #define so need their explicit
 #@...@ replacments
@@ -284,13 +294,24 @@ install(FILES ${PROJECT_BINARY_DIR}/share/lib/nrnunits.lib
   ${PROJECT_BINARY_DIR}/share/lib/nrn.defaults
   DESTINATION ${CMAKE_INSTALL_PREFIX}/share/nrn/lib
 )
+install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/cleanup
+  DESTINATION ${CMAKE_INSTALL_PREFIX}/share/nrn/lib
+)
 
 set(NRNMECH_DLL_STYLE_FALSE "\#")
 set(NRNMECH_DLL_STYLE_TRUE "")
 configure_ac_file(nrngui bin)
 configure_ac_file(neurondemo bin)
 configure_ac_file(nrnivmodl bin)
-configure_ac_file(nrnmech_makefile bin)
+#nrnmech_makefile.in is intimately bound up with autoconf (libtool)
+#configure_ac_file(nrnmech_makefile bin)
+#so instead use a modified copy of the CoreNEURON version of
+#nrnivmodl_core_makefile.in
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/bin/nrnivmodl_makefile.cmk
+  ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile
+  @ONLY
+)
+
 install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/nrngui
   ${PROJECT_BINARY_DIR}/bin/neurondemo
   ${PROJECT_BINARY_DIR}/bin/nrnivmodl
@@ -300,5 +321,19 @@ install(FILES ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile
   DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
 )
 
+# paths to *.h files for installing into <prefix>/include
+my_find_files(inst_inc
+  cabvars.h    hoc_membf.h   neuron.h      nrnjava.h     options.h
+  cspmatrix.h  hocparse.h    nmodlmutex.h  nrnoc_ml.h    scoplib_ansi.h
+  cspredef.h   md1redef.h    nrn_ansi.h    scoplib.h
+  hocassrt.h   md2redef.h    nrnapi.h      nrnran123.h   section.h
+  hocdec.h     membdef.h     nrnassrt.h    nrnredef.h    spconfig.h
+  hocgetsym.h  membfunc.h    nrncvode.h    oc_ansi.h     spmatrix.h
+  hoc.h        multicore.h   nrnisaac.h    ocfunc.h
+  hoclist.h    multisplit.h  nrniv_mf.h    ocmisc.h
+)
+install(FILES ${inst_inc} ${PROJECT_BINARY_DIR}/src/oc/nrnpthread.h
+  DESTINATION ${CMAKE_INSTALL_PREFIX}/include
+)
 
 add_subdirectory(src/nrniv)

@@ -1,0 +1,130 @@
+#
+# This makefile has the rules necessary for making the custom version of coreneuron
+# executable called "special-core" from various mod files.
+# Mod files are looked up in the cwd, unless MODS_PATH is set
+
+# Modified to replace the autoconf processed file nrnmech_makefile.in
+
+# Mechanisms version are by default 0.0, but should be overriden
+MECH_NAME =
+MECH_VERSION = 0.0
+MODS_PATH = .
+OUTPUT = @CMAKE_HOST_SYSTEM_PROCESSOR@
+OPTMODS = @CORENRN_OPTMODS@
+DESTDIR =
+
+# Coreneuron dirs
+bindir := @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_BINDIR@
+libdir := @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_LIBDIR@
+incdir := @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_INCLUDEDIR@
+datadir:= @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_DATADIR@/
+datadir_mod2c := @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_DATADIR@/lib
+
+# Additional variables set in CMAKE usable here
+# - @CORENRN_COMPILE_DEFS
+# - @CORENRN_LINK_DEFS
+LDFLAGS = $(LINKFLAGS) @CORENRN_LINK_DEFS@
+CORENRNLIB_FLAGS = -L$(libdir) -lnrniv
+OS_NAME := $(shell uname)
+_cm =,
+
+# We rebuild the include dirs since a lot of stuff changes place
+INCLUDES = $(INCFLAGS) -I$(incdir)
+INCLUDES += $(if @MPI_C_INCLUDE_PATH@, -I$(subst ;, -I,@MPI_C_INCLUDE_PATH@),)
+INCLUDES += $(if @reportinglib_INCLUDE_DIR@, -I$(subst ;, -I,@reportinglib_INCLUDE_DIR@),)
+
+CC = @CMAKE_C_COMPILER@
+CXX = @CMAKE_CXX_COMPILER@
+CFLAGS = @BUILD_TYPE_C_FLAGS@ @CMAKE_C_FLAGS@
+CXXFLAGS = @BUILD_TYPE_CXX_FLAGS@ @CMAKE_CXX_FLAGS@ @CXX11_STANDARD_COMPILE_OPTION@
+
+COMPILE = $(CC) $(CFLAGS) @CORENRN_COMPILE_DEFS@ $(INCLUDES)
+CXXCOMPILE = $(CXX) $(CXXFLAGS) @CORENRN_COMPILE_DEFS@ $(INCLUDES)
+CXX_LINK_EXE = $(CXX) $(CXXFLAGS) @CMAKE_EXE_LINKER_FLAGS@
+CXX_LINK_SHARED = $(CXX) $(CXXFLAGS) @CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS@ @CMAKE_SHARED_LIBRARY_CXX_FLAGS@ @CMAKE_SHARED_LINKER_FLAGS@
+
+# File path config (internal)
+MODC_DIR = $(OUTPUT)
+OBJS_DIR = $(OUTPUT)
+mod_files = $(sort $(notdir $(wildcard $(MODS_PATH)/*.mod)))
+mod_names = $(mod_files:.mod=) $(OPTMODS:.mod=)
+modc_files = $(addprefix $(MODC_DIR)/,$(addsuffix .c,$(mod_names)))
+mod_objs   = $(addprefix $(OBJS_DIR)/,$(addsuffix .o,$(mod_names)))
+
+mod_func_o = $(OBJS_DIR)/mod_func.o
+mod_func_c = $(MODC_DIR)/mod_func.c
+
+special  = $(OUTPUT)/special
+LIB_SUFFIX_ = $(if $(MECH_NAME),_$(MECH_NAME),)
+coremech_libname = nrnmech$(LIB_SUFFIX_).$(MECH_VERSION)
+coremech_lib = $(OUTPUT)/lib$(coremech_libname)@CMAKE_SHARED_LIBRARY_SUFFIX@
+
+# If no DESTDIR (we are probably just building) we use $ORIGIN (@loader_path in OSX)
+_ORIGIN := $(if $(filter Darwin,$(OS_NAME)),@loader_path,$$ORIGIN)
+_SONAME := -Wl,$(if $(filter Darwin,$(OS_NAME)),-install_name${_cm}@rpath/,-soname${_cm})$(notdir ${coremech_lib})
+DESTDIR_RPATH = $(if $(DESTDIR),$(DESTDIR)/lib,$(_ORIGIN))
+
+C_RESET := \033[0m
+C_GREEN := \033[32m
+
+
+# ======== MAIN BUILD RULES ============
+
+# Take the main and link with nrnmech.
+# RPATH is set for DESTDIR_RPATH and coreneuron lib
+$(special): $(coremech_lib)
+	@printf " => $(C_GREEN)LINKING$(C_RESET) executable $(special)\n"
+	$(CXX_LINK_EXE) -I $(incdir) $(datadir)/coreneuron.cpp -o $(special) \
+	  -L $(OUTPUT) -l$(coremech_libname) $(CORENRNLIB_FLAGS) -Wl,-rpath,'$(DESTDIR_RPATH)' -Wl,-rpath,$(libdir) $(LDFLAGS)
+
+
+$(coremech_lib): mod_func.o $(mod_objs) build_always
+	@printf " => $(C_GREEN)LINKING$(C_RESET) library $(coremech_lib) Mod files: $(mod_files) (+ $(OPTMODS))\n"
+	(cd .. ; $(CXX_LINK_SHARED) -I $(incdir) -o ${coremech_lib} ${_SONAME} \
+	  $(mod_func_o) $(mod_objs) $(CORENRNLIB_FLAGS) -Wl,-rpath,$(libdir) $(LDFLAGS))
+	(cd .. ; rm -f .libs/libnrnmech.so ; mkdir -p $(OBJS_DIR)/.libs ; ln -s ../../$(coremech_lib) $(OBJS_DIR)/.libs/libnrnmech.so)
+
+mod_func.o: mod_func.c
+	@printf " -> $(C_GREEN)Compiling$(C_RESET) $<\n"
+	$(COMPILE) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c $< -o $@
+
+# Generic build c->o. Need PIC for shared lib
+$(OBJS_DIR)/%.o: $(MODC_DIR)/%.c | $(OBJS_DIR)
+	@printf " -> $(C_GREEN)Compiling$(C_RESET) $<\n"
+	(cd .. ; $(COMPILE) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c $< -o $@)
+
+
+# Build c files with nocmodl
+$(MODC_DIR)/%.c: $(MODS_PATH)/%.mod | $(MODC_DIR)
+	@printf " -> $(C_GREEN)MOD2C$(C_RESET) $<\n"
+	MODLUNIT=$(datadir_mod2c)/nrnunits.lib \
+	  $(bindir)/nocmodl $<
+
+# If .mod doesnt exist attempt from previously built opt mods in shared/
+$(MODC_DIR)/%.cpp: $(datadir_mod2c)/%.cpp | $(MODC_DIR)
+	ln -s $< $@
+
+
+# Mod registration. Compiled by generic rule. Dont overwrite if not changed
+#$(mod_func_c): build_always | $(MODC_DIR)
+#	@printf " -> $(C_GREEN)Generating$(C_RESET) $(mod_func_c)\n"
+#	perl $(datadir_mod2c)/mod_func.c.pl $(OPTMODS) $(mod_files) > $(mod_func_c).tmp
+#	diff -q $(mod_func_c).tmp $(mod_func_c) || { echo "Replacing mod_func.c"; mv $(mod_func_c).tmp $(mod_func_c); }
+
+
+install: $(special) $(coremech_lib)
+	install -d $(DESTDIR)/bin $(DESTDIR)/lib
+	install $(coremech_lib) $(DESTDIR)/lib
+	install $(special) $(DESTDIR)/bin
+
+libnrnmech.la: $(coremech_lib)
+
+# == INIT ==
+$(MODC_DIR):
+	mkdir -p $(MODC_DIR)
+#$(OBJS_DIR):
+#	mkdir -p $(OBJS_DIR)
+
+.PHONY: build_always
+
+$(VERBOSE).SILENT:

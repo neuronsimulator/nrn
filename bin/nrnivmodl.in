@@ -171,7 +171,8 @@ fi
 @NRNMECH_DLL_STYLE_TRUE@if test "${mdir}" = "${prefix}/share/nrn/demo/release/powerpc" ; then
 @NRNMECH_DLL_STYLE_TRUE@  mdir='${NRNHOME}'/share/nrn/demo/release/${MODSUBDIR}
 @NRNMECH_DLL_STYLE_TRUE@fi
-@NRNMECH_DLL_STYLE_TRUE@make -j 4 -f "$MAKEFILEDIR/nrnmech_makefile" "MODOBJFILES=$MODLO" "COBJFILES=$CLO" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" libnrnmech.la &&
+@NRNMECH_DLL_STYLE_TRUE@@USING_CMAKE_FALSE@make -j 4 -f "$MAKEFILEDIR/nrnmech_makefile" "MODOBJFILES=$MODLO" "COBJFILES=$CLO" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" libnrnmech.la &&
+@NRNMECH_DLL_STYLE_TRUE@@USING_CMAKE_TRUE@make -j 4 -f "$MAKEFILEDIR/nrnmech_makefile" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" libnrnmech.la &&
 @NRNMECH_DLL_STYLE_TRUE@  echo '#!/bin/sh
 @NRNMECH_DLL_STYLE_TRUE@if test "x${NRNHOME}" = "x" ; then
 @NRNMECH_DLL_STYLE_TRUE@	NRNHOME='"\"${prefix}\""'

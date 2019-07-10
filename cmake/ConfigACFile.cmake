@@ -172,3 +172,20 @@ macro(myprepostlist _lst pre post)
 endmacro()
 
 
+macro(my_find_files _lst)
+  foreach(name ${ARGN})
+#    set(pname)
+    execute_process(
+      COMMAND find ${PROJECT_SOURCE_DIR}/src -name ${name}
+      RESULTS_VARIABLE res
+      OUTPUT_VARIABLE pname
+    )
+    message(NOTICE " ${name} ${res} ${pname}")
+    if (res EQUAL 0)
+      string(REGEX REPLACE "\n$" "" pname "${pname}")
+      list(APPEND ${_lst} ${pname})
+    else()
+      message(FATAL_ERROR " ${name} not found |${pname}|")
+    endif()
+  endforeach(name)
+endmacro()
