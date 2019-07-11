@@ -32,7 +32,7 @@ macro(configure_ac_file file dir)
   # rm -r -f *
   execute_process(COMMAND cp ${PROJECT_SOURCE_DIR}/aconf/${dir}/${file} ${bdir}/cmk_${file})
  endif()
-  execute_process(COMMAND cmp ${bdir}/cmk_${file} ${bdir}/${file}
+  execute_process(COMMAND cmp -s ${bdir}/cmk_${file} ${bdir}/${file}
     RESULT_VARIABLE result)
   if (${result} EQUAL 0)
     file(REMOVE ${bdir}/cmk_${file})
@@ -180,7 +180,6 @@ macro(my_find_files _lst)
       RESULTS_VARIABLE res
       OUTPUT_VARIABLE pname
     )
-    message(NOTICE " ${name} ${res} ${pname}")
     if (res EQUAL 0)
       string(REGEX REPLACE "\n$" "" pname "${pname}")
       list(APPEND ${_lst} ${pname})

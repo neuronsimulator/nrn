@@ -323,21 +323,6 @@ list(APPEND base_include ${PROJECT_SOURCE_DIR}/src/sundials/ida)
 #avoid sundials/shared/nvector_serial.c error for #include <../../../nrnconf.h>
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/sundials/shared)
 
-configure_ac_file(nrnmpiuse.h src/oc)
-configure_ac_file(nrnrtuse.h src/oc)
-configure_ac_file(nrnpthread.h src/oc)
-configure_ac_file(nrnconfigargs.h src/nrnoc)
-configure_ac_file(nrnpython_config.h src/nrnpython)
-configure_ac_file(bbsconf.h src/parallel)
-configure_ac_file(nrnneosm.h src/nrncvode)
-configure_ac_file(sundials_config.h src/sundials)
-configure_ac_file(mos2nrn.h src/uxnrnbbs)
-configure_ac_file(ivstream.h src/ivos)
-configure_ac_file(njconf.h src/nrnjava)
-configure_ac_file(nmodlconf.h .)
-configure_ac_file(nrnunits.lib share/lib)
-configure_ac_file(nrn.defaults share/lib)
-
 BISON_TARGET(ocparser ${ocsrcdir}/parse.y ${ocsrcdir}/parse.c
   DEFINES_FILE ${ocsrcdir}/parse.h)
 
@@ -373,7 +358,7 @@ include_directories(${base_include} ${iv_interface_includes})
 
 add_library(nrniv_lib SHARED ${nrnivlibsrc})
 target_link_libraries(nrniv_lib iv_interviews ${X11_LIBRARIES}
-  ${MPI_C_LIBRARIES} ${PYTHON_LIBRARIES} readline "-undefined dynamic_lookup"
+  ${MPI_C_LIBRARIES} ${PYTHON_LIBRARIES} readline # "-undefined dynamic_lookup"
 )
 set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
 
@@ -387,7 +372,7 @@ mymklist(nrnbinsrc "${PROJECT_SOURCE_DIR}/src/oc/"
 
 add_executable(nrniv ${nrnbinsrc})
 #set(IV_LIBRARIES ${PROJECT_SOURCE_DIR}/../ivcmake/build/install/lib/libinterviews.so)
-target_link_libraries(nrniv nrniv_lib readline)
+target_link_libraries(nrniv nrniv_lib)# readline)
 
 install(TARGETS nrniv nocmodl DESTINATION bin)
 install(TARGETS nrniv_lib DESTINATION lib)
