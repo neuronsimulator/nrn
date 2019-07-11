@@ -189,3 +189,7 @@ macro(my_find_files _lst)
     endif()
   endforeach(name)
 endmacro()
+
+macro(my_copy_no_clobber f1 f2)
+  execute_process(COMMAND cp -n ${f1} ${f2})
+endmacro()
