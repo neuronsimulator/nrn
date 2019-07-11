@@ -9,7 +9,7 @@ set(READLINE_SOURCE_FILES
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-find_package(curses REQUIRED)
+find_package(Curses REQUIRED)
 
 # =============================================================================
 # readline library
