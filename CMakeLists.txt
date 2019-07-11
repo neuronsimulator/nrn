@@ -137,7 +137,7 @@ if (ENABLE_INTERVIEWS)
       find_package(X11 REQUIRED)
     endif()
   endif()
-
+  include_directories(${X11_INCLUDE_DIR})
   find_package(iv REQUIRED)
   set (HAVE_IV 1)
   set (NRNOC_X11 1)
@@ -338,5 +338,12 @@ my_find_files(inst_inc
 install(FILES ${inst_inc} ${PROJECT_BINARY_DIR}/src/oc/nrnpthread.h
   DESTINATION ${CMAKE_INSTALL_PREFIX}/include
 )
+
+# build readline if on OSX
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    add_subdirectory(src/readline)
+else()
+    find_package(readline REQUIRED)
+endif()
 
 add_subdirectory(src/nrniv)
