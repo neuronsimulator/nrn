@@ -108,11 +108,11 @@ Once the NMODL Framework is installed, you can use the Python parsing API to loa
 
 ```python
 from nmodl import dsl
-import os
 
-expsyn = os.path.join(dsl.example_dir(), "expsyn.mod")
+examples = dsl.list_examples() 
+nmodl_string = dsl.load_example(examples[-1])
 driver = dsl.NmodlDriver()
-modast = driver.parse_file(expsyn)
+modast = driver.parse_string(nmodl_string)
 ```
 
 The `parse_file` API returns Abstract Syntax Tree ([AST](https://en.wikipedia.org/wiki/Abstract_syntax_tree)) representation of input NMODL file. One can look at the AST by converting to JSON form as:
