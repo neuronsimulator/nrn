@@ -3,7 +3,7 @@
 # =============================================================================
 set_source_files_properties(${AUTO_GENERATED_FILES} PROPERTIES GENERATED TRUE)
 
-foreach(file ast.py config.py dsl.py ode.py symtab.py visitor.py __init__.py)
+foreach(file ast.py dsl.py ode.py symtab.py visitor.py __init__.py)
   list(APPEND NMODL_PYTHON_FILES_IN ${PROJECT_SOURCE_DIR}/nmodl/${file})
   list(APPEND NMODL_PYTHON_FILES_OUT ${PROJECT_BINARY_DIR}/nmodl/${file})
 endforeach()

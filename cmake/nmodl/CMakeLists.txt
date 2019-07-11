@@ -110,8 +110,6 @@ set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 # generate file with version number from git and nrnunits.lib file path
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config/config.cpp.in
                ${CMAKE_CURRENT_BINARY_DIR}/config.cpp @ONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/nmodl/config.py.in ${PROJECT_SOURCE_DIR}/nmodl/config.py
-               @ONLY)
 
 # generate Doxyfile with correct source paths
 configure_file(${PROJECT_SOURCE_DIR}/docs/Doxyfile.in ${PROJECT_SOURCE_DIR}/docs/Doxyfile)

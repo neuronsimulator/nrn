@@ -153,6 +153,7 @@ setup(
     description="NEURON Modelling Language Source-to-Source Compiler Framework",
     long_description="",
     packages=["nmodl"],
+    include_package_data=True,
     ext_modules=[CMakeExtension("nmodl")],
     cmdclass=lazy_dict(
         build_ext=CMakeBuild,
