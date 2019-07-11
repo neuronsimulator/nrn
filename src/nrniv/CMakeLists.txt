@@ -351,15 +351,19 @@ set_source_files_properties(${ocsrcdir}/hocusr.c
 
 include_directories(${base_include} ${PYTHON_INCLUDE_DIRS})
 
-# handy trick to see that the correct iv headers are visible:
-get_target_property(iv_interface_includes iv_interviews INTERFACE_INCLUDE_DIRECTORIES)
-message("IV interface includes: ${iv_interface_includes}")
-include_directories(${base_include} ${iv_interface_includes})
-
 add_library(nrniv_lib SHARED ${nrnivlibsrc})
-target_link_libraries(nrniv_lib iv_interviews ${X11_LIBRARIES}
-  ${MPI_C_LIBRARIES} ${PYTHON_LIBRARIES} readline # "-undefined dynamic_lookup"
+target_link_libraries(nrniv_lib ${X11_LIBRARIES}
+  ${MPI_C_LIBRARIES} ${PYTHON_LIBRARIES} readline
 )
+
+if (ENABLE_INTERVIEWS)
+  # handy trick to see that the correct iv headers are visible:
+  get_target_property(iv_interface_includes iv_interviews INTERFACE_INCLUDE_DIRECTORIES)
+  message("IV interface includes: ${iv_interface_includes}")
+  include_directories(${iv_interface_includes})
+  target_link_libraries(nrniv_lib iv_interviews)
+endif()
+
 set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
 
 mymklist(nrnbinsrc "${PROJECT_SOURCE_DIR}/src/ivoc/"
@@ -372,7 +376,7 @@ mymklist(nrnbinsrc "${PROJECT_SOURCE_DIR}/src/oc/"
 
 add_executable(nrniv ${nrnbinsrc})
 #set(IV_LIBRARIES ${PROJECT_SOURCE_DIR}/../ivcmake/build/install/lib/libinterviews.so)
-target_link_libraries(nrniv nrniv_lib)# readline)
+target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE} ${Readline_LIBRARY})
 
 install(TARGETS nrniv nocmodl DESTINATION bin)
 install(TARGETS nrniv_lib DESTINATION lib)

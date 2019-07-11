@@ -46,6 +46,8 @@ find_package(FLEX)
 
 if (ENABLE_MPI)
   find_package(MPI REQUIRED)
+  # TODO : include this for only selective target
+  include_directories(${MPI_INCLUDE_PATH})
   set(NRNMPI 1)
   set(PARANEURON 1)
 else()
@@ -136,11 +138,18 @@ install(FILES ${inst_inc} ${PROJECT_BINARY_DIR}/src/oc/nrnpthread.h
   DESTINATION ${CMAKE_INSTALL_PREFIX}/include
 )
 
-# build readline if on OSX
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+find_package(readline)
+
+# if readline not found or if we are on OSX, use internal readline
+# also clear library variable
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin" OR NOT ${READLINE_FOUND})
     add_subdirectory(src/readline)
-else()
-#    find_package(readline REQUIRED)
+    set(INTERNAL_READLINE readline)
+    unset(Readline_LIBRARY CACHE)
+endif()
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  set(CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS "${CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS} -undefined dynamic_lookup")
 endif()
 
 add_subdirectory(src/nrniv)
