@@ -72,6 +72,13 @@ epre='-Wl,-R'
 @MAC_DARWIN_FALSE@readline="readline@READLINE_SOSUFFIX@"
 @MAC_DARWIN_TRUE@readline="readline@READLINE_SOSUFFIX@"
 
+@USING_CMAKE_TRUE@using_cmake=True
+@USING_CMAKE_FALSE@using_cmake=False
+if using_cmake:
+  libs = [#"nrnpython@npy_pyver10@",
+    "nrniv",
+    @USING_CMAKE_TRUE@"@IVHINES@"
+  ]
 
 hoc_module = Extension(
     "neuron.hoc",
@@ -79,7 +86,7 @@ hoc_module = Extension(
     library_dirs=libdirs,
     @setup_extra_link_args@ = [ epre+libdirs[0],epre+libdirs[1] ],
     #extra_objects = [],
-    libraries = [
+    libraries = libs if using_cmake else [
         "nrnpython@npy_pyver10@",
         "nrnoc", "oc", "nrniv", "ivoc",
         @BUILD_MEMACS_TRUE@"memacs", readline,

@@ -12,7 +12,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
-# needed in both bin and config
+# needed in several subdirectoy configurations
 set (prefix ${CMAKE_INSTALL_PREFIX})
 set (host_cpu ${CMAKE_SYSTEM_PROCESSOR})
 set (exec_prefix ${prefix})
@@ -28,6 +28,9 @@ option(ENABLE_DISCRETE_EVENT_OBSERVER "Set to OFF if do not want Observer to be 
 option(ENABLE_PYTHON "Python interpreter available" ON)
 option(ENABLE_THREADS "Allow use of pthreads" ON)
 option(ENABLE_MPI "Allow use of MPI" ON)
+option(ENABLE_MEMACS "Allow use of memacs" ON)
+option(ENABLE_RX3D "Allow use of rx3d" OFF)
+set(INSTALL_NEURON_MODULE "--home=${CMAKE_INSTALL_PREFIX}" CACHE STRING "NO or text after python setup.py install")
 
 set(USING_CMAKE_FALSE "#")
 set(USING_CMAKE_TRUE "")
@@ -154,3 +157,6 @@ endif()
 
 add_subdirectory(src/nrniv)
 add_subdirectory(bin)
+if (ENABLE_PYTHON)
+  add_subdirectory(src/nrnpython)
+endif()
