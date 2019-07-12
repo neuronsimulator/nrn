@@ -30,6 +30,12 @@ char* hoc_back2forward(char* s);
 // at time of configure (using the python first in the PATH).
 #if defined(NRNPYTHON_DYNAMICLOAD)
 
+#if defined(NRNCMAKE)
+// CMAKE installs libnrnpythonx.so not in <prefix>/x86_64/lib but <prefix>/lib
+#undef NRNHOSTCPU
+#define NRNHOSTCPU "."
+#endif
+
 #ifdef MINGW
 #define RTLD_NOW 0
 #define RTLD_GLOBAL 0

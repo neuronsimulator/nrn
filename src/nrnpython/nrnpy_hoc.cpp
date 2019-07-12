@@ -10,6 +10,12 @@
 #include "../nrniv/shapeplt.h"
 #include <vector>
 
+#if defined(NRNPYTHON_DYNAMICLOAD) && NRNPYTHON_DYNAMICLOAD > 0
+// when compiled with different Python.h, force correct value
+#undef NRNPYTHON_DYNAMICLOAD
+#define NRNPYTHON_DYNAMICLOAD PY_MAJOR_VERSION
+#endif
+
 #if defined(__MINGW32__) && NRNPYTHON_DYNAMICLOAD > 0
 // want to end up with a string like "hoc36"
 #define HOCMOD_1(s) HOCMOD_2(s)

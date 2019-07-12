@@ -5,10 +5,14 @@ from distutils.sysconfig import get_python_version
 import sys
 import os
 
+@USING_CMAKE_TRUE@using_cmake=True
+@USING_CMAKE_FALSE@using_cmake=False
+
 # NRNPYTHON_DEFINES which were enabled at configure time
 extern_defines = "@NRNPYTHON_DEFINES@"
 nrnpython_exec = "@NRNPYTHON_EXEC@"
 nrnpython_pyver = "@NRNPYTHON_PYVER@"
+nrnpython_pyver10 = "nrnpython"
 nrn_srcdir = "@NRN_SRCDIR@"
 build_rx3d = @BUILD_RX3D@
 ivlibdir = "@IV_LIBDIR@"
@@ -23,7 +27,13 @@ instdir = destdir + "@prefix@"
 if nrn_srcdir[0] != '/' :
     nrn_srcdir = '../../' + nrn_srcdir
 
-if nrnpython_pyver!=get_python_version():
+if using_cmake and "@BUILD_NRNPYTHON_DYNAMIC_TRUE@" == "":
+  # can do all the setup.py without re-configure.
+  nrnpython_pyver = get_python_version()
+  nrnpython_exec = sys.executable
+  nrnpython_pyver10 = "nrnpython" + str(sys.version_info[0])
+else:
+  if nrnpython_pyver!=get_python_version():
     print ("Error:")
     print ("NEURON configure time python: "+nrnpython_exec+"  "+ nrnpython_pyver)
     print ("Python presently executing setup.py: "+sys.executable+"   "+ get_python_version())
@@ -62,6 +72,7 @@ os.environ["CXX"]=mpicxx_bin
 #################################
 
 include_dirs = [nrn_srcdir+'/src/oc', '../oc', nrn_srcdir+'/src/nrnmpi']
+@MAC_DARWIN_TRUE@include_dirs.append("@CMAKE_OSX_SYSROOT@/usr/include")
 defines = []
 
 libdirs = [destdir + "@NRN_LIBDIR@",
@@ -72,6 +83,11 @@ epre='-Wl,-R'
 @MAC_DARWIN_FALSE@readline="readline@READLINE_SOSUFFIX@"
 @MAC_DARWIN_TRUE@readline="readline@READLINE_SOSUFFIX@"
 
+if using_cmake:
+  libs = [@BUILD_NRNPYTHON_DYNAMIC_TRUE@nrnpython_pyver10,
+    "nrniv",
+    @USING_CMAKE_TRUE@"@IVHINES@"
+  ]
 
 hoc_module = Extension(
     "neuron.hoc",
@@ -79,7 +95,7 @@ hoc_module = Extension(
     library_dirs=libdirs,
     @setup_extra_link_args@ = [ epre+libdirs[0],epre+libdirs[1] ],
     #extra_objects = [],
-    libraries = [
+    libraries = libs if using_cmake else [
         "nrnpython@npy_pyver10@",
         "nrnoc", "oc", "nrniv", "ivoc",
         @BUILD_MEMACS_TRUE@"memacs", readline,

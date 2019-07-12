@@ -1315,10 +1315,12 @@ static int nrnthread_dat2_3(int tid, int nweight, int*& output_vindex, double*& 
   CellGroup& cg = cellgroups_[tid];
   NrnThread& nt = nrn_threads[tid];
 
-  output_vindex = new int[cg.n_real_output];
+  output_vindex = new int[cg.n_presyn];
   output_threshold = new double[cg.n_real_output];
-  for (int i=0; i < cg.n_real_output; ++i) {
+  for (int i=0; i < cg.n_presyn; ++i) {
     output_vindex[i] = cg.output_vindex[i];
+  }
+  for (int i=0; i < cg.n_real_output; ++i) {
     output_threshold[i] = cg.output_ps[i] ? cg.output_ps[i]->threshold_ : 0.0;
   }
 

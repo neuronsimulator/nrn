@@ -68,7 +68,6 @@ mymklist(IVOC_SRC "${ivocsrcdir}"
 )
 
 # nrniv sources
-set(PARSRC1 nvector_nrnparallel_ld.c)
 set(nrnivsrcdir ${PROJECT_SOURCE_DIR}/src/nrniv)
 mymklist(NRNIV_SRC "${nrnivsrcdir}"
   nrnmenu.cpp shape.cpp classreg.cpp rotate3d.cpp
@@ -87,8 +86,9 @@ mymklist(NRNIV_SRC "${nrnivsrcdir}"
   netpar.cpp partrans.cpp splitcell.cpp multisplit.cpp
   bbsavestate.cpp nrnbbcore_write.cpp pysecname2sec.cpp
   nrndae.cpp matrixmap.cpp geometry3d.cpp
-  ${PARSRC1}
 )
+# goes into libnrniv.so unless ENABLE_MPI is OFF
+mymklist(PARSRC1 "${PROJECT_SOURCE_DIR}/src/nrniv" nvector_nrnparallel_ld.c)
 
 set_property(
   SOURCE ${nrnocsrcdir}/code.c ${nrnocsrcdir}/hoc_init.c ${nrnocsrcdir}/hoc_oop.c
@@ -96,6 +96,13 @@ set_property(
   PROPERTY COMPILE_DEFINITIONS
     CABLE=1
   )
+
+set_property(
+  SOURCE ${PROJECT_SOURCE_DIR}/src/nrniv/nrnpy.cpp
+    ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.c
+  APPEND
+  PROPERTY COMPILE_DEFINITIONS NRNCMAKE
+)
 
 set_property(
   SOURCE ${IVOC_SRC}
@@ -132,12 +139,12 @@ mymklist(SUNDIALS_SRC "${PROJECT_SOURCE_DIR}/src/sundials/ida"
         idaio.c
         idaspgmr.c
 )
-set(PARSRC1 nvector_parallel.c)
 mymklist(SUNDIALS_SRC "${PROJECT_SOURCE_DIR}/src/sundials/shared"
   band.c dense.c iterative.c
   nvector.c nvector_serial.c smalldense.c spgmr.c sundialsmath.c
-  ${PARSRC1}
 )
+# goes into libnrniv.so unless ENABLE_MPI is OFF
+mymklist(PARSRC1 "${PROJECT_SOURCE_DIR}/src/sundials/shared" nvector_parallel.c)
 
 # meschach matrix sources
 mymklist(MESCH_SRC "${PROJECT_SOURCE_DIR}/src/mesch"
@@ -209,10 +216,12 @@ mymklist(READLINE_SRC "${PROJECT_SOURCE_DIR}/src/readline"
 #  readline.c history.c funmap.c keymaps.c
 )
 
-# nrnmpi sources
+# nrnmpi sources (only if "${NRNMPI_DYNAMIC}" matches "NO")
 mymklist(NRNMPI_SRC "${PROJECT_SOURCE_DIR}/src/nrnmpi"
   nrnmpi.c bbsmpipack.c mpispike.c nrnrt.c
 )
+
+set (NRNMPI_SRC ${NRNMPI_SRC} PARENT_SCOPE)
 
 # ancient gnu double_avec and random distributions and generators
 mymklist(NRNGNU_SRC "${PROJECT_SOURCE_DIR}/src/gnu"
@@ -222,12 +231,13 @@ mymklist(NRNGNU_SRC "${PROJECT_SOURCE_DIR}/src/gnu"
   SmplStat.cpp Uniform.cpp Weibull.cpp builtin.cpp d_avec.cpp d_vec.cpp
 )
 
-# nrnpython sources
+# nrnpython sources (only if "${NRNPYTHON_DYNAMIC}" MATCHES "NO")
 mymklist(NRNPYTHON_SRC "${PROJECT_SOURCE_DIR}/src/nrnpython"
   nrnpython.cpp nrnpy_hoc.cpp nrnpy_nrn.cpp nrnpy_p2h.cpp
   grids.cpp rxd.cpp rxd_extracellular.cpp rxd_intracellular.cpp
   rxd_vol.cpp rxd_marching_cubes.c rxd_llgramarea.c
 )
+set (NRNPYTHON_SRC ${NRNPYTHON_SRC} PARENT_SCOPE)
 
 # built-in mod files
 mymklist(modfile_bases "${PROJECT_SOURCE_DIR}/src/nrnoc"
@@ -292,9 +302,37 @@ endforeach(name)
 
 set (base ${OC_SRC} ${NRNOC_SRC} ${IVOC_SRC} ${NRNIV_SRC})
 set (nrnivlibsrc ${base} ${SUNDIALS_SRC} ${MESCH_SRC}
-  ${SPARSE13_SRC} ${SCOPMATH_SRC} ${MEMACS_SRC} ${READLINE_SRC} ${NRNMPI_SRC}
-  ${NRNGNU_SRC} ${NRNPYTHON_SRC} ${MODFILE_C}
+  ${SPARSE13_SRC} ${SCOPMATH_SRC} ${MEMACS_SRC} ${READLINE_SRC}
+  ${NRNGNU_SRC} ${MODFILE_C}
 )
+
+if (ENABLE_MPI)
+  list(APPEND nrnivlibsrc ${PARSRC1})
+endif()
+
+if("${NRNMPI_DYNAMIC}" MATCHES "NO")
+  list(APPEND nrnivlibsrc ${NRNMPI_SRC})
+else()
+  list(APPEND nrnivlibsrc ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.c)
+
+  mymklist(NRNMPI_DYNAM_INC "${PROJECT_SOURCE_DIR}/src/nrnmpi"
+    nrnmpi_dynam.h nrnmpi_dynam_cinc nrnmpi_dynam_wrappers.inc)
+
+  add_custom_command(OUTPUT ${NRNMPI_DYNAM_INC}
+    COMMAND sh mkdynam.sh
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/nrnmpi
+    DEPENDS ${PROJECT_SOURCE_DIR}/src/nrnmpi/mkdynam.sh
+      ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpidec.h
+  )
+
+  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.c
+    PROPERTIES OBJECT_DEPENDS ${NRNMPI_DYNAM_INC})
+
+endif()
+
+if ("${NRNPYTHON_DYNAMIC}" MATCHES "NO")
+  list(APPEND nrnivlibsrc ${NRNPYTHON_SRC})
+endif()
 
 # since everone #include <../../nrnconf.h>
 set (nrnconfhelp ${PROJECT_BINARY_DIR}/src/nrnoc ${PROJECT_BINARY_DIR}/src/oc)
@@ -349,12 +387,28 @@ set_source_files_properties(${ocsrcdir}/hocusr.c
 
 #message(STATUS " base is ${base}")
 
-include_directories(${base_include} ${PYTHON_INCLUDE_DIRS})
+include_directories(${base_include})
+if (ENABLE_PYTHON)
+  include_directories(${PYTHON_INCLUDE_DIRS})
+endif()
 
 add_library(nrniv_lib SHARED ${nrnivlibsrc})
-target_link_libraries(nrniv_lib ${X11_LIBRARIES}
-  ${MPI_C_LIBRARIES} ${PYTHON_LIBRARIES} readline
-)
+target_link_libraries(nrniv_lib ${X11_LIBRARIES} readline)
+
+if (ENABLE_PYTHON AND "${NRNPYTHON_DYNAMIC}" MATCHES "NO")
+target_link_libraries(nrniv_lib ${PYTHON_LIBRARIES})
+endif()
+
+if (ENABLE_MPI AND "${NRNMPI_DYNAMIC}" MATCHES "NO")
+target_link_libraries(nrniv_lib ${MPI_C_LIBRARIES})
+endif()
+
+if (ENABLE_MPI AND "${NRNMPI_DYNAMIC}" MATCHES "YES")
+  add_library(nrnmpi_lib SHARED ${NRNMPI_SRC})
+  target_link_libraries(nrnmpi_lib ${MPI_C_LIBRARIES})
+  set_property(TARGET nrnmpi_lib PROPERTY OUTPUT_NAME nrnmpi)
+  install(TARGETS nrnmpi_lib DESTINATION lib)
+endif()
 
 if (ENABLE_INTERVIEWS)
   # handy trick to see that the correct iv headers are visible:

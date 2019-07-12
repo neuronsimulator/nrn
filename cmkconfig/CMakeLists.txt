@@ -9,7 +9,7 @@ set(PACKAGE_TARNAME "${PACKAGE}")
 set(PACKAGE_URL "\"\"")
 set(PACKAGE_VERSION "\"${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}\"")
 set(VERSION "\"${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}\"")
-set(NRN_LIBDIR "\"${CMAKE_INSTALL_PREFIX}/${CMAKE_SYSTEM_PROCESSOR}/lib\"")
+set(NRN_LIBDIR "\"${CMAKE_INSTALL_PREFIX}/lib\"")
 set(NEURON_DATA_DIR "\"${CMAKE_INSTALL_PREFIX}/share/nrn\"")
 set(SUNDIALS_DOUBLE_PRECISION 1)
 set(SUNDIALS_USE_GENERIC_MATH 1)
@@ -23,6 +23,10 @@ set(HAVE_STTY 0)
 set(IVOS_FABS "::fabs") # complicated configure test but I don't think this is ever not the case anymore
 set(HAVE_STL "/**/") # nowadays universal for CXX
 set(DLL_DEFAULT_FNAME "\"${CMAKE_SYSTEM_PROCESSOR}/.libs/libnrnmech.so\"")
+
+if (NOT "${NRNPYTHON_DYNAMIC}" MATCHES "NO")
+set(NRNPYTHON_DYNAMICLOAD 3) # the value needs to be made not to matter
+endif()
 
 # for nrn.defaults
 set(nrndef_unix "//")
