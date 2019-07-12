@@ -32,6 +32,7 @@ _cm =,
 INCLUDES = $(INCFLAGS) -I$(incdir)
 INCLUDES += $(if @MPI_C_INCLUDE_PATH@, -I$(subst ;, -I,@MPI_C_INCLUDE_PATH@),)
 INCLUDES += $(if @reportinglib_INCLUDE_DIR@, -I$(subst ;, -I,@reportinglib_INCLUDE_DIR@),)
+INCLUDES += $(if @CMAKE_OSX_SYSROOT@, -isysroot @CMAKE_OSX_SYSROOT@)
 
 CC = @CMAKE_C_COMPILER@
 CXX = @CMAKE_CXX_COMPILER@
