@@ -98,6 +98,12 @@ set_property(
   )
 
 set_property(
+  SOURCE ${PROJECT_SOURCE_DIR}/src/nrniv/nrnpy.cpp
+  APPEND
+  PROPERTY COMPILE_DEFINITIONS NRNCMAKE
+)
+
+set_property(
   SOURCE ${IVOC_SRC}
   APPEND
   PROPERTY COMPILE_DEFINITIONS
@@ -222,12 +228,13 @@ mymklist(NRNGNU_SRC "${PROJECT_SOURCE_DIR}/src/gnu"
   SmplStat.cpp Uniform.cpp Weibull.cpp builtin.cpp d_avec.cpp d_vec.cpp
 )
 
-# nrnpython sources
+# nrnpython sources (only if "${NRNPYTHON_DYNAMIC}" MATCHES "NO")
 mymklist(NRNPYTHON_SRC "${PROJECT_SOURCE_DIR}/src/nrnpython"
   nrnpython.cpp nrnpy_hoc.cpp nrnpy_nrn.cpp nrnpy_p2h.cpp
   grids.cpp rxd.cpp rxd_extracellular.cpp rxd_intracellular.cpp
   rxd_vol.cpp rxd_marching_cubes.c rxd_llgramarea.c
 )
+set (NRNPYTHON_SRC ${NRNPYTHON_SRC} PARENT_SCOPE)
 
 # built-in mod files
 mymklist(modfile_bases "${PROJECT_SOURCE_DIR}/src/nrnoc"
@@ -293,8 +300,12 @@ endforeach(name)
 set (base ${OC_SRC} ${NRNOC_SRC} ${IVOC_SRC} ${NRNIV_SRC})
 set (nrnivlibsrc ${base} ${SUNDIALS_SRC} ${MESCH_SRC}
   ${SPARSE13_SRC} ${SCOPMATH_SRC} ${MEMACS_SRC} ${READLINE_SRC} ${NRNMPI_SRC}
-  ${NRNGNU_SRC} ${NRNPYTHON_SRC} ${MODFILE_C}
+  ${NRNGNU_SRC} ${MODFILE_C}
 )
+
+if (ENABLE_PYTHON AND "${NRNPYTHON_DYNAMIC}" MATCHES "NO")
+  list(APPEND nrnivlibsrc ${NRNPYTHON_SRC})
+endif()
 
 # since everone #include <../../nrnconf.h>
 set (nrnconfhelp ${PROJECT_BINARY_DIR}/src/nrnoc ${PROJECT_BINARY_DIR}/src/oc)
@@ -349,12 +360,18 @@ set_source_files_properties(${ocsrcdir}/hocusr.c
 
 #message(STATUS " base is ${base}")
 
-include_directories(${base_include} ${PYTHON_INCLUDE_DIRS})
+include_directories(${base_include})
+if (ENABLE_PYTHON)
+  include_directories(${PYTHON_INCLUDE_DIRS})
+endif()
 
 add_library(nrniv_lib SHARED ${nrnivlibsrc})
 target_link_libraries(nrniv_lib ${X11_LIBRARIES}
-  ${MPI_C_LIBRARIES} ${PYTHON_LIBRARIES} readline
+  ${MPI_C_LIBRARIES} readline
 )
+if (ENABLE_PYTHON AND "${NRNPYTHON_DYNAMIC}" MATCHES "NO")
+target_link_libraries(nrniv_lib ${PYTHON_LIBRARIES})
+endif()
 
 if (ENABLE_INTERVIEWS)
   # handy trick to see that the correct iv headers are visible:

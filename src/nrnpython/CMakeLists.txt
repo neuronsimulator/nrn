@@ -3,9 +3,11 @@ set(NRN_SRCDIR ${PROJECT_SOURCE_DIR})
 
 set(NRNPYTHON_DEFINES "")
 
+# if NRN_PYTHON_DYNAMIC then the following three will be
+# determined from the actual pyexe that runs setup.py
 set(NRNPYTHON_EXEC ${PYTHON_EXECUTABLE})
-
 set(NRNPYTHON_PYVER ${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR})
+set(npy_pyver10 "")
 
 #reset since no " allowed
 set(PACKAGE_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
@@ -34,8 +36,6 @@ set(READLINE_SOSUFFIX "")
 
 set(setup_extra_link_args "extra_link_args") # or #
 
-set(npy_pyver10 "")
-
 if (ENABLE_INTERVIEWS)
  set(IVHINES "interviews")
 else()
@@ -50,18 +50,67 @@ endif()
 
 set(BUILD_NRNMPI_DYNAMIC_FALSE "#")
 
+set(BUILD_NRNPYTHON_DYNAMIC_TRUE "")
+set(BUILD_NRNPYTHON_DYNAMIC_FALSE "#")
+if ("${NRNPYTHON_DYNAMIC}" MATCHES "NO")
+  set(BUILD_NRNPYTHON_DYNAMIC_TRUE "#")
+  set(BUILD_NRNPYTHON_DYNAMIC_FALSE "")
+  set(pyexelist ${PYTHON_EXECUTABLE})
+elseif ("${NRNPYTHON_DYNAMIC}" MATCHES "YES")
+  set(pyexelist ${PYTHON_EXECUTABLE})
+else()
+  set(pyexelist ${NRNPYTHON_DYNAMIC})
+endif()
+
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
 )
 configure_ac_file(setup.py src/nrnpython)
 
-if ("${INSTALL_NEURON_MODULE}" EQUAL "NO")
+message(NOTICE: " NRNPYTHON_SRC ${NRNPYTHON_SRC}")
+
+if ("${INSTALL_NEURON_MODULE}" MATCHES "NO")
   message(STATUS "neuron module will not be automatically installed")
 else()
-  install(CODE "
-    message(STATUS \"neuron module install using ${INSTALL_NEURON_MODULE}\")
-    execute_process(COMMAND ${PYTHON_EXECUTABLE} setup.py install ${INSTALL_NEURON_MODULE}
-      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  set(pyinst "${INSTALL_NEURON_MODULE}")
+  if ("${pyinst}" MATCHES "YES")
+    set(pyinst "--home ${CMAKE_INSTALL_PREFIX}")
+  endif()
+  foreach (pyexe ${pyexelist})
+    message(STATUS " Configured to install neuron module with the command: ${pyexe} setup.py install ${pyinst}")
+  endforeach(pyexe)
+
+#can get the include dir from distutils.sysconfig.get_python_inc()
+  set(idir
+    . ../oc ../nrnoc ../ivoc ../nrniv ../ivos ../gnu ../mesch
+    ../nrnmpi
+    ${PROJECT_BINARY_DIR}/src/nrnpython
+    ${PROJECT_BINARY_DIR}/src/ivos
+    ${PROJECT_BINARY_DIR}/src/oc
+    ${iv_INCLUDE}
+  )
+  if (NOT "${NRNPYTHON_DYNAMIC}" MATCHES "NO") #todo only if python2 in list
+    add_library(nrnpython2 SHARED ${NRNPYTHON_SRC})
+    target_include_directories(nrnpython2 BEFORE PUBLIC
+      /usr/include/python2.7 ${idir}
     )
-  ")
+    install(TARGETS nrnpython2 DESTINATION lib)
+  endif()
+
+  if (NOT "${NRNPYTHON_DYNAMIC}" MATCHES "NO") #todo only if python3 in list
+    add_library(nrnpython3 SHARED ${NRNPYTHON_SRC})
+    target_include_directories(nrnpython3 BEFORE PUBLIC
+      /usr/include/python3.6 ${idir}
+    )
+    install(TARGETS nrnpython3 DESTINATION lib)
+  endif()
+
+  foreach(pyexe ${pyexelist})
+    install(CODE "
+      message(STATUS \" neuron module install with command: ${pyexe} setup.py install ${pyinst}\")
+      execute_process(COMMAND ${pyexe} setup.py install ${pyinst}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+      )
+    ")
+  endforeach(pyexe)
 endif()

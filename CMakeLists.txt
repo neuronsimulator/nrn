@@ -20,17 +20,34 @@ set (bindir \${exec_prefix}/bin)
 set (libdir \${exec_prefix}/lib)
 set (PACKAGE "\"nrn\"")
 
-option(NRN_BUILD_SHARED "Build libraries shared or static" OFF)
+option(NRN_BUILD_SHARED "Build libraries shared or static" ON)
 option(ENABLE_INTERVIEWS "Link with INTERVIEWS GUI library" ON)
 option(ENABLE_LegacyFR "Original faraday, R, etc. instead of 2017 nist constants in share/lib/nrnunits.lib" ON)
 option(ENABLE_NRNMECH_DLL_STYLE "Dynamically load nrnmech shared library" ON)
 option(ENABLE_DISCRETE_EVENT_OBSERVER "Set to OFF if do not want Observer to be a subclass of DiscreteEvent" ON)
-option(ENABLE_PYTHON "Python interpreter available" ON)
+option(ENABLE_PYTHON "Python interpreter available -- python3 fallback to python" ON)
 option(ENABLE_THREADS "Allow use of pthreads" ON)
 option(ENABLE_MPI "Allow use of MPI" ON)
 option(ENABLE_MEMACS "Allow use of memacs" ON)
 option(ENABLE_RX3D "Allow use of rx3d" OFF)
-set(INSTALL_NEURON_MODULE "--home=${CMAKE_INSTALL_PREFIX}" CACHE STRING "NO or text after python setup.py install")
+
+set(INSTALL_NEURON_MODULE "YES" CACHE STRING "\"NO\", means do not \
+install the neuron module.  \"Yes\", means to install with --home in \
+CMAKE_INSTALL_PREFIX.  For installation using other modes or locations \
+use an appropriate string that goes after python setup.py install")
+
+set(NRNPYTHON_DYNAMIC "NO" CACHE STRING "\"NO\", means the nrnpython
+interface is linked into libnrniv.so.  \"YES\" means the nrnpython
+interface consistent with default python3 (falling back to python) is
+built and loaded dynamically at run time (nrniv still works in the
+absence of any Python at all).  A ';' separated list of executable
+pythons are used to create a separate interface for each.  When one of
+those versions of Python is lauched,
+  import neuron
+will automatically load the appropriate module interface along with the
+rest of neuron.  (And
+  nrniv -pyexe <python>
+will work with any <python> in the list of python executables.")
 
 set(USING_CMAKE_FALSE "#")
 set(USING_CMAKE_TRUE "")
@@ -75,6 +92,7 @@ else()
 endif()
 
 # python or python3 is also needed to make hocusr.h from neuron.h
+set(Python_ADDITIONAL_VERSIONS 3.6) # 3.x priority, then 2.x
 find_package(PythonInterp REQUIRED) #currently active
 message(NOTICE "ENABLE_PYTHON ${ENABLE_PYTHON}")
 if (ENABLE_PYTHON)

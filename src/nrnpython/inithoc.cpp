@@ -10,6 +10,12 @@
 #include <Python.h>
 #include <stdlib.h>
 
+#if defined(NRNPYTHON_DYNAMICLOAD) && NRNPYTHON_DYNAMICLOAD > 0
+// when compiled with different Python.h, force correct value
+#undef NRNPYTHON_DYNAMICLOAD
+#define NRNPYTHON_DYNAMICLOAD PY_MAJOR_VERSION
+#endif
+
 extern "C" {
 
 // int nrn_global_argc;
