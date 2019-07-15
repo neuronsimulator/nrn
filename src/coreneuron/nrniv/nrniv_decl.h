@@ -55,6 +55,8 @@ extern void nrn_setup(const char* filesdat,
                       bool is_mapping_needed,
                       int byte_swap,
                       bool run_setup_cleanup = true);
+extern double* stdindex2ptr(int mtype, int index, NrnThread&);
+extern void delete_trajectory_requests(NrnThread&);
 extern int nrn_setup_multiple;
 extern int nrn_setup_extracon;
 extern void nrn_cleanup(bool clean_ion_global_map = true);

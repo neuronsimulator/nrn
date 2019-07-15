@@ -57,7 +57,9 @@ static MUTDEC
     } catch (const std::length_error& le) {
         std::cerr << "Lenght error" << le.what() << std::endl;
     }
-    MUTCONSTRUCT(1);
+    if (!MUTCONSTRUCTED) {
+        MUTCONSTRUCT(1);
+    }
 }
 
 void spikevec_lock() {

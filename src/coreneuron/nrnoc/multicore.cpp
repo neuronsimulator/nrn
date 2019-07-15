@@ -137,6 +137,7 @@ void nrn_threads_create(int n) {
                 nt->_net_send_buffer_cnt = 0;
                 nt->_watch_types = NULL;
                 nt->mapping = NULL;
+                nt->trajec_requests = NULL;
             }
         }
         v_structure_change = 1;

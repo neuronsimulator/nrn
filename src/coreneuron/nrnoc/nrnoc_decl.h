@@ -58,6 +58,8 @@ extern void nrn_finitialize(int setv, double v);
 extern void nrn_fixed_step_group_minimal(int n);
 extern void nrn_fixed_step_minimal(void);
 extern void* nrn_fixed_step_lastpart(NrnThread*);
+extern void nrncore2nrn_send_init();
+extern void nrncore2nrn_send_values(NrnThread*);
 extern void update(NrnThread*);
 extern void* setup_tree_matrix_minimal(NrnThread*);
 extern void alloc_mech(int);

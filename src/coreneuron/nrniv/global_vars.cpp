@@ -82,7 +82,7 @@ void set_globals(const char* path, bool cli_global_seed, int cli_global_seed_val
         double val;
         int n;
 
-        fscanf(f, "%s\n", line);
+        nrn_assert(fscanf(f, "%s\n", line) == 1);
         check_bbcore_write_version(line);
 
         for (;;) {

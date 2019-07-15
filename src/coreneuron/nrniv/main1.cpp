@@ -64,6 +64,8 @@ const char* corenrn_version() {
     return coreneuron::bbcore_write_version;
 }
 
+void (*nrn2core_part2_clean_)();
+
 #ifdef ISPC_INTEROP
 // cf. utils/ispc_globals.c
 extern double ispc_celsius;
@@ -358,6 +360,58 @@ void handle_forward_skip(double forwardskip, int prcellgid) {
 const char* nrn_version(int) {
     return "version id unimplemented";
 }
+
+// bsize = 0 then per step transfer
+// bsize > 1 then full trajectory save into arrays.
+void get_nrn_trajectory_requests(int bsize) {
+  if (nrn2core_get_trajectory_requests_) {
+    for (int tid=0; tid < nrn_nthread; ++tid) {
+      NrnThread& nt = nrn_threads[tid];
+      int n_pr;
+      int n_trajec;
+      int* types;
+      int* indices;
+      void** vpr;
+      double** varrays;
+      double** pvars;
+
+      // bsize is passed by reference, the return value will determine if
+      // per step return or entire trajectory return.
+      (*nrn2core_get_trajectory_requests_)(tid, bsize, n_pr, vpr, n_trajec, types, indices, pvars, varrays);
+      delete_trajectory_requests(nt);
+      if (n_trajec) {
+        TrajectoryRequests* tr = new TrajectoryRequests;
+        nt.trajec_requests = tr;
+        tr->bsize = bsize;
+        tr->n_pr = n_pr;
+        tr->n_trajec = n_trajec;
+        tr->vsize = 0;
+        tr->vpr = vpr;
+        tr->gather = new double*[n_trajec];
+        tr->varrays = varrays;
+        tr->scatter = pvars;
+        for (int i=0; i < n_trajec; ++i) {
+          tr->gather[i] = stdindex2ptr(types[i], indices[i], nt);
+        }
+        delete [] types;
+        delete [] indices;
+      }
+    }
+  }
+}
+
+static void trajectory_return() {
+  if (nrn2core_trajectory_return_) {
+    for (int tid=0; tid < nrn_nthread; ++tid) {
+      NrnThread& nt = nrn_threads[tid];
+      TrajectoryRequests* tr = nt.trajec_requests;
+      if (tr && tr->varrays) {
+        (*nrn2core_trajectory_return_)(tid, tr->n_pr, tr->vsize, tr->vpr, nt._t);
+      }
+    }
+  }
+}
+
 }  // namespace coreneuron
 
 /// The following high-level functions are marked as "extern C"
@@ -423,15 +477,6 @@ extern "C" int run_solve_core(int argc, char** argv) {
     // clang-format on
     {
         double v = nrnopt_get_dbl("--voltage");
-
-        // TODO : if some ranks are empty then restore will go in deadlock
-        // phase (as some ranks won't have restored anything and hence return
-        // false in checkpoint_initialize
-        if (!checkpoint_initialize()) {
-            nrn_finitialize(v != 1000., v);
-        }
-
-        report_mem_usage("After nrn_finitialize");
         double dt = nrnopt_get_dbl("--dt");
         double delay = nrnopt_get_dbl("--mindelay");
         double tstop = nrnopt_get_dbl("--tstop");
@@ -441,6 +486,24 @@ extern "C" int run_solve_core(int argc, char** argv) {
                    tstop, t);
             abort();
         }
+
+        // In direct mode there are likely trajectory record requests
+        // to allow processing in NEURON after simulation by CoreNEURON
+        if (corenrn_embedded) {
+            // arg is vector size required but NEURON can instead
+            // specify that returns will be on a per time step basis.
+            get_nrn_trajectory_requests(int(tstop/dt) + 2);
+            (*nrn2core_part2_clean_)();
+        }
+
+        // TODO : if some ranks are empty then restore will go in deadlock
+        // phase (as some ranks won't have restored anything and hence return
+        // false in checkpoint_initialize
+        if (!checkpoint_initialize()) {
+            nrn_finitialize(v != 1000., v);
+        }
+
+        report_mem_usage("After nrn_finitialize");
 
         // register all reports into reportinglib
         double min_report_dt = INT_MAX;
@@ -473,6 +536,10 @@ extern "C" int run_solve_core(int argc, char** argv) {
         BBS_netpar_solve(nrnopt_get_dbl("--tstop"));
         Instrumentor::phase_end("simulation");
         Instrumentor::stop_profile();
+        // direct mode and full trajectory gathering on CoreNEURON, send back.
+        if (corenrn_embedded) {
+            trajectory_return();
+        }
         // Report global cell statistics
         report_cell_stats();
 

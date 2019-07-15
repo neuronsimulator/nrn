@@ -118,11 +118,14 @@ void mk_mech(const char* datpath) {
 
 // we are embedded in NEURON, get info as stringstream from nrnbbcore_write.cpp
 static void mk_mech() {
+    static bool done = false;
+    if (done) { return; }
     nrn_need_byteswap = 0;
     std::stringstream ss;
     nrn_assert(nrn2core_mkmech_info_);
     (*nrn2core_mkmech_info_)(ss);
     mk_mech(ss);
+    done = true;
 }
 
 static void mk_mech(std::istream& s) {

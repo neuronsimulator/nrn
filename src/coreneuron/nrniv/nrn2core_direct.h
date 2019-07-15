@@ -87,6 +87,33 @@ extern int (*nrn2core_get_dat2_vecplay_inst_)(int tid,
                                               int& sz,
                                               double*& yvec,
                                               double*& tvec);
+
+extern void (*nrn2core_part2_clean_)();
+
+/* what variables to send back to NEURON on each time step */
+extern void (*nrn2core_get_trajectory_requests_)(int tid,
+                                                int& bsize,
+                                                int& n_pr,
+                                                void**& vpr,
+                                                int& n_trajec,
+                                                int*& types,
+                                                int*& indices,
+                                                double**& pvars,
+                                                double**& varrays);
+
+/* send values to NEURON on each time step */
+extern void (*nrn2core_trajectory_values_)(int tid,
+                                          int n_pr,
+                                          void** vpr,
+                                          double t);
+
+/* Filled the Vector data arrays and send back the sizes at end of run */
+extern void (*nrn2core_trajectory_return_)(int tid,
+                                          int n_pr,
+                                          int vecsz,
+                                          void** vpr,
+                                          double t);
+
 }
 
 #endif /* nrn2core_direct_h */
