@@ -92,7 +92,7 @@ else()
 endif()
 
 # python or python3 is also needed to make hocusr.h from neuron.h
-set(Python_ADDITIONAL_VERSIONS 3.6) # 3.x priority, then 2.x
+set(Python_ADDITIONAL_VERSIONS 3) # 3.x priority, then 2.x
 find_package(PythonInterp REQUIRED) #currently active
 message(NOTICE "ENABLE_PYTHON ${ENABLE_PYTHON}")
 if (ENABLE_PYTHON)

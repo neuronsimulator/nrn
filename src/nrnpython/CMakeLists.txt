@@ -21,9 +21,11 @@ set(CXX ${CMAKE_CXX_COMPILER})
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(MAC_DARWIN_TRUE "")
   set(MAC_DARWIN_FALSE "\#")
+  set(setup_extra_link_args "#extra_link_args")
 else()
   set(MAC_DARWIN_TRUE "\#")
   set(MAC_DARWIN_FALSE "")
+  set(setup_extra_link_args "extra_link_args")
 endif()
 
 if (ENABLE_RX3D)
@@ -33,8 +35,6 @@ else()
 endif()
 
 set(READLINE_SOSUFFIX "")
-
-set(setup_extra_link_args "extra_link_args") # or #
 
 if (ENABLE_INTERVIEWS)
  set(IVHINES "interviews")
@@ -81,24 +81,25 @@ else()
   endforeach(pyexe)
 
 #can get the include dir from distutils.sysconfig.get_python_inc()
-  set(idir
-    . ../oc ../nrnoc ../ivoc ../nrniv ../ivos ../gnu ../mesch
-    ../nrnmpi
-    ${PROJECT_BINARY_DIR}/src/nrnpython
-    ${PROJECT_BINARY_DIR}/src/ivos
-    ${PROJECT_BINARY_DIR}/src/oc
-    ${iv_INCLUDE}
-  )
-  if (NOT "${NRNPYTHON_DYNAMIC}" MATCHES "NO") #todo only if python2 in list
+  if (NOT "${NRNPYTHON_DYNAMIC}" MATCHES "NO")
+    set(idir
+      . ../oc ../nrnoc ../ivoc ../nrniv ../ivos ../gnu ../mesch
+      ../nrnmpi
+      ${PROJECT_BINARY_DIR}/src/nrnpython
+      ${PROJECT_BINARY_DIR}/src/ivos
+      ${PROJECT_BINARY_DIR}/src/oc
+      ${iv_INCLUDE}
+    )
+
     add_library(nrnpython2 SHARED ${NRNPYTHON_SRC})
     target_include_directories(nrnpython2 BEFORE PUBLIC
       /usr/include/python2.7 ${idir}
     )
+    add_dependencies(nrnpython2 nrniv_lib)
     install(TARGETS nrnpython2 DESTINATION lib)
-  endif()
 
-  if (NOT "${NRNPYTHON_DYNAMIC}" MATCHES "NO") #todo only if python3 in list
     add_library(nrnpython3 SHARED ${NRNPYTHON_SRC})
+    add_dependencies(nrnpython3 nrniv_lib)
     target_include_directories(nrnpython3 BEFORE PUBLIC
       /usr/include/python3.6 ${idir}
     )
