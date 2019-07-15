@@ -27,15 +27,17 @@ namespace coreneuron {
 
 namespace detail {
 
-    /*! \class Instrumentor
-     *  \brief Instrumentation infrastructure for benchmarking and profiling.
-     *
-     *  The Instrumentor class exposes static methods that can be used to
-     *  toggle with fine-grained resolution the profiling of specific
-     *  areas within the code.
-     */
+/*! \class Instrumentor
+ *  \brief Instrumentation infrastructure for benchmarking and profiling.
+ *
+ *  The Instrumentor class exposes static methods that can be used to
+ *  toggle with fine-grained resolution the profiling of specific
+ *  areas within the code.
+ */
 template <class... TProfilerImpl>
 struct Instrumentor {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-value"
     /*! \fn phase_begin
      *  \brief Activate the collection of profiling data within a code region.
      *
@@ -128,6 +130,7 @@ struct Instrumentor {
     inline static void finalize_profile() {
         std::initializer_list<int>{(TProfilerImpl::finalize_profile(), 0)...};
     }
+#pragma clang diagnostic pop
 };
 
 #if defined(CORENEURON_CALIPER)
@@ -220,29 +223,26 @@ struct Tau {
 #if defined(LIKWID_PERFMON)
 
 struct Likwid {
-    inline static void phase_begin(const char* name){
+    inline static void phase_begin(const char* name) {
         LIKWID_MARKER_START(name);
     };
 
-    inline static void phase_end(const char* name){
+    inline static void phase_end(const char* name) {
         LIKWID_MARKER_STOP(name);
     };
 
-    inline static void start_profile() {};
+    inline static void start_profile(){};
 
-    inline static void stop_profile() {};
+    inline static void stop_profile(){};
 
-    inline static void init_profile(){
+    inline static void init_profile() {
         LIKWID_MARKER_INIT;
 
 #pragma omp parallel
-        {
-            LIKWID_MARKER_THREADINIT;
-        }
-
+        { LIKWID_MARKER_THREADINIT; }
     };
 
-    inline static void finalize_profile(){
+    inline static void finalize_profile() {
         LIKWID_MARKER_CLOSE;
     };
 };
@@ -258,9 +258,7 @@ struct NullInstrumentor {
     inline static void finalize_profile(){};
 };
 
-}  // namespace detail
-
-using Instrumentor = detail::Instrumentor<
+using InstrumentorImpl = detail::Instrumentor<
 #if defined CORENEURON_CALIPER
     detail::Caliper,
 #endif
@@ -277,5 +275,41 @@ using Instrumentor = detail::Instrumentor<
     detail::Likwid,
 #endif
     detail::NullInstrumentor>;
+}  // namespace detail
+
+namespace Instrumentor {
+struct phase {
+    phase(const char* name) {
+        detail::InstrumentorImpl::phase_begin(name);
+    }
+    ~phase() {
+        detail::InstrumentorImpl::phase_end("");
+    }
+};
+
+inline static void start_profile() {
+    detail::InstrumentorImpl::start_profile();
+}
+
+inline static void stop_profile() {
+    detail::InstrumentorImpl::stop_profile();
+}
+
+inline static void phase_begin(const char* name) {
+    detail::InstrumentorImpl::phase_begin(name);
+}
+
+inline static void phase_end(const char* name) {
+    detail::InstrumentorImpl::phase_end(name);
+}
+
+inline static void init_profile() {
+    detail::InstrumentorImpl::init_profile();
+}
+
+inline static void finalize_profile() {
+    detail::InstrumentorImpl::finalize_profile();
+}
+}
 
 }  // namespace coreneuron

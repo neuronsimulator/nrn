@@ -74,9 +74,8 @@ static void nrn_rhs(NrnThread* _nt) {
             mod_f_t s = memb_func[tml->index].current;
             std::string ss("cur-");
             ss += nrn_get_mechname(tml->index);
-            Instrumentor::phase_begin(ss.c_str());
+            Instrumentor::phase p(ss.c_str());
             (*s)(_nt, tml->ml, tml->index);
-            Instrumentor::phase_end(ss.c_str());
 #ifdef DEBUG
             if (errno) {
                 hoc_warning("errno set during calculation of currents", (char*)0);
@@ -130,9 +129,8 @@ static void nrn_lhs(NrnThread* _nt) {
             mod_f_t s = memb_func[tml->index].jacob;
             std::string ss("cur-");
             ss += nrn_get_mechname(tml->index);
-            Instrumentor::phase_begin(ss.c_str());
+            Instrumentor::phase p(ss.c_str());
             (*s)(_nt, tml->ml, tml->index);
-            Instrumentor::phase_end(ss.c_str());
 #ifdef DEBUG
             if (errno) {
                 hoc_warning("errno set during calculation of jacobian", (char*)0);

@@ -116,9 +116,11 @@ void wait_before_spike_exchange() {
 int nrnmpi_spike_exchange() {
     int i, n;
     Instrumentor::phase_begin("spike-exchange");
-    Instrumentor::phase_begin("imbalance");
-    wait_before_spike_exchange();
-    Instrumentor::phase_end("imbalance");
+
+    {
+        Instrumentor::phase p("imbalance");
+        wait_before_spike_exchange();
+    }
 
     Instrumentor::phase_begin("communication");
 #if nrn_spikebuf_size > 0

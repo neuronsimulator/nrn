@@ -6,5 +6,5 @@
  */
 
 extern "C" {
-    double ispc_celsius;
+double ispc_celsius;
 }
