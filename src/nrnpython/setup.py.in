@@ -72,6 +72,7 @@ os.environ["CXX"]=mpicxx_bin
 #################################
 
 include_dirs = [nrn_srcdir+'/src/oc', '../oc', nrn_srcdir+'/src/nrnmpi']
+@MAC_DARWIN_TRUE@include_dirs.append("@CMAKE_OSX_SYSROOT@/usr/include")
 defines = []
 
 libdirs = [destdir + "@NRN_LIBDIR@",
