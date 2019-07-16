@@ -118,6 +118,7 @@ endif()
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 include(RpathHelper)
 include(ConfigACFile)
+include(NrnPyDynamic)
 
 # =============================================================================
 # Project version from git and project directories

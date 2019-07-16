@@ -91,19 +91,23 @@ else()
       ${iv_INCLUDE}
     )
 
-    add_library(nrnpython2 SHARED ${NRNPYTHON_SRC})
-    target_include_directories(nrnpython2 BEFORE PUBLIC
-      /usr/include/python2.7 ${idir}
-    )
-    add_dependencies(nrnpython2 nrniv_lib)
-    install(TARGETS nrnpython2 DESTINATION lib)
+    if (NRNPYTHON_INCLUDE2)
+      add_library(nrnpython2 SHARED ${NRNPYTHON_SRC})
+      target_include_directories(nrnpython2 BEFORE PUBLIC
+        ${NRNPYTHON_INCLUDE2} ${idir}
+      )
+      add_dependencies(nrnpython2 nrniv_lib)
+      install(TARGETS nrnpython2 DESTINATION lib)
+    endif()
 
-    add_library(nrnpython3 SHARED ${NRNPYTHON_SRC})
-    add_dependencies(nrnpython3 nrniv_lib)
-    target_include_directories(nrnpython3 BEFORE PUBLIC
-      /usr/include/python3.6 ${idir}
-    )
-    install(TARGETS nrnpython3 DESTINATION lib)
+    if (NRNPYTHON_INCLUDE3)
+      add_library(nrnpython3 SHARED ${NRNPYTHON_SRC})
+      add_dependencies(nrnpython3 nrniv_lib)
+      target_include_directories(nrnpython3 BEFORE PUBLIC
+        ${NRNPYTHON_INCLUDE3} ${idir}
+      )
+      install(TARGETS nrnpython3 DESTINATION lib)
+    endif()
   endif()
 
   foreach(pyexe ${pyexelist})
