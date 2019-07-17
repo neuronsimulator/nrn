@@ -49,6 +49,15 @@ rest of neuron.  (And
   nrniv -pyexe <python>
 will work with any <python> in the list of python executables.")
 
+set(NRNMPI_DYNAMIC "NO" CACHE STRING "\"No\", means the nrnmpi
+is linked into libnrniv.so.  \"YES\", means the nrnmpi interface
+consistent with default mpi is built and loaded dynamically at run
+time (nrniv still works in the absence of any mpi at all). A ';'
+separated list of paths to mpi package bin directories is used to
+create a separate libnrnmpi_xxx.so interface for each. When nrniv
+is launched with the -mpi argument, the first mpi found will determine
+which interface is dynamically loaded.")
+
 set(USING_CMAKE_FALSE "#")
 set(USING_CMAKE_TRUE "")
 
@@ -92,7 +101,7 @@ else()
 endif()
 
 # python or python3 is also needed to make hocusr.h from neuron.h
-set(Python_ADDITIONAL_VERSIONS 3) # 3.x priority, then 2.x
+set(Python_ADDITIONAL_VERSIONS 3.6) # 3.x priority, then 2.x
 find_package(PythonInterp REQUIRED) #currently active
 message(NOTICE "ENABLE_PYTHON ${ENABLE_PYTHON}")
 if (ENABLE_PYTHON)
@@ -119,6 +128,7 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 include(RpathHelper)
 include(ConfigACFile)
 include(NrnPyDynamic)
+include(NrnMPIDynamic)
 
 # =============================================================================
 # Project version from git and project directories
