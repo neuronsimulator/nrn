@@ -392,6 +392,16 @@ if (ENABLE_PYTHON)
   include_directories(${PYTHON_INCLUDE_DIRS})
 endif()
 
+if (NOT ENABLE_INTERVIEWS)
+  set(ivos_src_dir ${PROJECT_SOURCE_DIR}/src/ivos)
+  mymklist(ivos_src "${ivos_src_dir}"
+    file.cpp listimpl.cpp math.cpp memory.cpp
+    string.cpp ustring.cpp
+    observe.cpp regexp.cpp resource.cpp
+  )
+  list(APPEND nrnivlibsrc ${ivos_src})
+endif()
+
 add_library(nrniv_lib SHARED ${nrnivlibsrc})
 target_link_libraries(nrniv_lib ${X11_LIBRARIES} readline)
 
@@ -416,6 +426,8 @@ if (ENABLE_INTERVIEWS)
   message("IV interface includes: ${iv_interface_includes}")
   include_directories(${iv_interface_includes})
   target_link_libraries(nrniv_lib iv_interviews)
+else()
+  include_directories(nrniv_lib ${ivos_src_dir} ${PROJECT_BINARY_DIR}/src/ivos)
 endif()
 
 set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)

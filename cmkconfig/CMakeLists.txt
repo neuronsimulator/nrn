@@ -197,5 +197,9 @@ configure_ac_file(njconf.h src/nrnjava)
 configure_ac_file(nmodlconf.h .)
 configure_ac_file(nrnunits.lib share/lib)
 configure_ac_file(nrn.defaults share/lib)
-
+if (NOT ENABLE_INTERVIEWS)
+  configure_ac_file(ivstream.h src/ivos)
+  my_copy_no_clobber("${PROJECT_SOURCE_DIR}/cmk_nrnconf.h.in" "${PROJECT_SOURCE_DIR}/config.h.in")
+  configure_ac_file(config.h .)
+endif()
 

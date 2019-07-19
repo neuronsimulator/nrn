@@ -85,9 +85,10 @@ epre='-Wl,-R'
 
 if using_cmake:
   libs = [@BUILD_NRNPYTHON_DYNAMIC_TRUE@nrnpython_pyver10,
-    "nrniv",
-    @USING_CMAKE_TRUE@"@IVHINES@"
+    "nrniv"
   ]
+  if "@IVHINES@" != "":
+    libs.append("@IVHINES@")
 
 hoc_module = Extension(
     "neuron.hoc",
