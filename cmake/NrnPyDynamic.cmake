@@ -4,7 +4,7 @@
 # Depending on the pythons used either or both of
 # NRNPYTHON_INCLUDE3 or NRNPYTHON_INCLUDE2 will be defined
 
-if (NRNPYTHON_DYNAMIC MATCHES "NO" OR NOT ENABLE_PYTHON)
+if (NRNPYTHON_DYNAMIC MATCHES "NO" OR NOT NRN_ENABLE_PYTHON)
   #do nothing
 elseif (NRNPYTHON_DYNAMIC MATCHES "YES")
   #use the default python already determined

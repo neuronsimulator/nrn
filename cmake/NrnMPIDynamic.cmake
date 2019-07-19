@@ -14,7 +14,7 @@ macro (myvarnames_beginning_with pre)
   endforeach()
 endmacro()
 
-if (NOT ENABLE_MPI AND NOT NRNMPI_DYNAMIC MATCHES "NO")
+if (NOT NRN_ENABLE_MPI AND NOT NRNMPI_DYNAMIC MATCHES "NO")
   set(NRNMPI_DYNAMIC "NO")
 endif()
 

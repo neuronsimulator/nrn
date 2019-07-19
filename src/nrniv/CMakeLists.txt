@@ -87,7 +87,7 @@ mymklist(NRNIV_SRC "${nrnivsrcdir}"
   bbsavestate.cpp nrnbbcore_write.cpp pysecname2sec.cpp
   nrndae.cpp matrixmap.cpp geometry3d.cpp
 )
-# goes into libnrniv.so unless ENABLE_MPI is OFF
+# goes into libnrniv.so unless NRN_ENABLE_MPI is OFF
 mymklist(PARSRC1 "${PROJECT_SOURCE_DIR}/src/nrniv" nvector_nrnparallel_ld.c)
 
 set_property(
@@ -143,7 +143,7 @@ mymklist(SUNDIALS_SRC "${PROJECT_SOURCE_DIR}/src/sundials/shared"
   band.c dense.c iterative.c
   nvector.c nvector_serial.c smalldense.c spgmr.c sundialsmath.c
 )
-# goes into libnrniv.so unless ENABLE_MPI is OFF
+# goes into libnrniv.so unless NRN_ENABLE_MPI is OFF
 mymklist(PARSRC1 "${PROJECT_SOURCE_DIR}/src/sundials/shared" nvector_parallel.c)
 
 # meschach matrix sources
@@ -306,7 +306,7 @@ set (nrnivlibsrc ${base} ${SUNDIALS_SRC} ${MESCH_SRC}
   ${NRNGNU_SRC} ${MODFILE_C}
 )
 
-if (ENABLE_MPI)
+if (NRN_ENABLE_MPI)
   list(APPEND nrnivlibsrc ${PARSRC1})
 endif()
 
@@ -388,11 +388,11 @@ set_source_files_properties(${ocsrcdir}/hocusr.c
 #message(STATUS " base is ${base}")
 
 include_directories(${base_include})
-if (ENABLE_PYTHON)
+if (NRN_ENABLE_PYTHON)
   include_directories(${PYTHON_INCLUDE_DIRS})
 endif()
 
-if (NOT ENABLE_INTERVIEWS)
+if (NOT NRN_ENABLE_INTERVIEWS)
   set(ivos_src_dir ${PROJECT_SOURCE_DIR}/src/ivos)
   mymklist(ivos_src "${ivos_src_dir}"
     file.cpp listimpl.cpp math.cpp memory.cpp
@@ -405,22 +405,22 @@ endif()
 add_library(nrniv_lib SHARED ${nrnivlibsrc})
 target_link_libraries(nrniv_lib ${X11_LIBRARIES} readline)
 
-if (ENABLE_PYTHON AND "${NRNPYTHON_DYNAMIC}" MATCHES "NO")
+if (NRN_ENABLE_PYTHON AND "${NRNPYTHON_DYNAMIC}" MATCHES "NO")
 target_link_libraries(nrniv_lib ${PYTHON_LIBRARIES})
 endif()
 
-if (ENABLE_MPI AND "${NRNMPI_DYNAMIC}" MATCHES "NO")
+if (NRN_ENABLE_MPI AND "${NRNMPI_DYNAMIC}" MATCHES "NO")
 target_link_libraries(nrniv_lib ${MPI_C_LIBRARIES})
 endif()
 
-if (ENABLE_MPI AND "${NRNMPI_DYNAMIC}" MATCHES "YES")
+if (NRN_ENABLE_MPI AND "${NRNMPI_DYNAMIC}" MATCHES "YES")
   add_library(nrnmpi_lib SHARED ${NRNMPI_SRC})
   target_link_libraries(nrnmpi_lib ${MPI_C_LIBRARIES})
   set_property(TARGET nrnmpi_lib PROPERTY OUTPUT_NAME nrnmpi)
   install(TARGETS nrnmpi_lib DESTINATION lib)
 endif()
 
-if (ENABLE_INTERVIEWS)
+if (NRN_ENABLE_INTERVIEWS)
   # handy trick to see that the correct iv headers are visible:
   get_target_property(iv_interface_includes iv_interviews INTERFACE_INCLUDE_DIRECTORIES)
   message("IV interface includes: ${iv_interface_includes}")

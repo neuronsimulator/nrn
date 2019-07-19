@@ -1,16 +1,31 @@
 cmake_minimum_required(VERSION 3.3.0 FATAL_ERROR)
-project(nrn C CXX)
+project(NEURON C CXX)
 
 # =============================================================================
 # CMake common project settings
 # =============================================================================
 set(PROJECT_VERSION_MAJOR 7)
 set(PROJECT_VERSION_MINOR 7)
-set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_STANDARD 98)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
+set(CMAKE_BUILD_TYPE RelWithDebInfo)
+
+# =============================================================================
+# Common build options
+# =============================================================================
+option(NRN_BUILD_SHARED "Build shared libraries (OFF for static)" ON)
+option(NRN_ENABLE_INTERVIEWS "Enable GUI with INTERVIEWS" ON)
+option(NRN_ENABLE_LEGACY_FR "Use original faraday, R, etc. instead of 2017 nist constants in share/lib/nrnunits.lib" ON)
+option(NRN_ENABLE_MECH_DLL_STYLE "Dynamically load nrnmech shared library" ON)
+option(NRN_ENABLE_DISCRETE_EVENT_OBSERVER "Enable Observer to be a subclass of DiscreteEvent" ON)
+option(NRN_ENABLE_PYTHON "Enable Python interpreter support (default python3 fallback to python)" ON)
+option(NRN_ENABLE_THREADS "Allow use of Pthreads" ON)
+option(NRN_ENABLE_MPI "Enable MPI support" ON)
+option(NRN_ENABLE_MEMACS "Enable use of memacs" ON)
+option(NRN_ENABLE_RX3D "Enable rx3d support" OFF)
+
 
 # needed in several subdirectoy configurations
 set (prefix ${CMAKE_INSTALL_PREFIX})
@@ -20,16 +35,7 @@ set (bindir \${exec_prefix}/bin)
 set (libdir \${exec_prefix}/lib)
 set (PACKAGE "\"nrn\"")
 
-option(NRN_BUILD_SHARED "Build libraries shared or static" ON)
-option(ENABLE_INTERVIEWS "Link with INTERVIEWS GUI library" ON)
-option(ENABLE_LegacyFR "Original faraday, R, etc. instead of 2017 nist constants in share/lib/nrnunits.lib" ON)
-option(ENABLE_NRNMECH_DLL_STYLE "Dynamically load nrnmech shared library" ON)
-option(ENABLE_DISCRETE_EVENT_OBSERVER "Set to OFF if do not want Observer to be a subclass of DiscreteEvent" ON)
-option(ENABLE_PYTHON "Python interpreter available -- python3 fallback to python" ON)
-option(ENABLE_THREADS "Allow use of pthreads" ON)
-option(ENABLE_MPI "Allow use of MPI" ON)
-option(ENABLE_MEMACS "Allow use of memacs" ON)
-option(ENABLE_RX3D "Allow use of rx3d" OFF)
+
 
 set(INSTALL_NEURON_MODULE "YES" CACHE STRING "\"NO\", means do not \
 install the neuron module.  \"Yes\", means to install with --home in \
@@ -73,7 +79,7 @@ message(STATUS "CHECKING FOR X11")
 find_package(BISON)
 find_package(FLEX)
 
-if (ENABLE_MPI)
+if (NRN_ENABLE_MPI)
   find_package(MPI REQUIRED)
   # TODO : include this for only selective target
   include_directories(${MPI_INCLUDE_PATH})
@@ -84,7 +90,7 @@ else()
   set(PARANEURON 0)
 endif()
 
-if (ENABLE_INTERVIEWS)
+if (NRN_ENABLE_INTERVIEWS)
   find_package(X11)
   if(NOT ${X11_FOUND})
     if (APPLE)
@@ -103,9 +109,9 @@ endif()
 # python or python3 is also needed to make hocusr.h from neuron.h
 set(Python_ADDITIONAL_VERSIONS 3.6) # 3.x priority, then 2.x
 find_package(PythonInterp REQUIRED) #currently active
-message(NOTICE "ENABLE_PYTHON ${ENABLE_PYTHON}")
-if (ENABLE_PYTHON)
-  message(NOTICE " inside ENABLE_PYTHON")
+message(NOTICE "NRN_ENABLE_PYTHON ${NRN_ENABLE_PYTHON}")
+if (NRN_ENABLE_PYTHON)
+  message(NOTICE " inside NRN_ENABLE_PYTHON")
   find_package(PythonLibs REQUIRED) # consistent with above
   set(USE_PYTHON 1)
   message(NOTICE "USE_PYTHON ${USE_PYTHON}")
@@ -113,7 +119,7 @@ else()
   set(USE_PYTHON 0)
 endif()
 
-if (ENABLE_THREADS)
+if (NRN_ENABLE_THREADS)
   set(THREADS_PREFER_PTHREAD_FLAG ON)
   find_package(Threads REQUIRED)
   set(USE_PTHREAD 1)
@@ -186,6 +192,6 @@ endif()
 
 add_subdirectory(src/nrniv)
 add_subdirectory(bin)
-if (ENABLE_PYTHON)
+if (NRN_ENABLE_PYTHON)
   add_subdirectory(src/nrnpython)
 endif()
