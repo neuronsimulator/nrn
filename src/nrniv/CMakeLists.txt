@@ -216,7 +216,7 @@ mymklist(READLINE_SRC "${PROJECT_SOURCE_DIR}/src/readline"
 #  readline.c history.c funmap.c keymaps.c
 )
 
-# nrnmpi sources (only if "${NRNMPI_DYNAMIC}" matches "NO")
+# nrnmpi sources (only if "${NRN_ENABLE_MPI_DYNAMIC}" matches "NO")
 mymklist(NRNMPI_SRC "${PROJECT_SOURCE_DIR}/src/nrnmpi"
   nrnmpi.c bbsmpipack.c mpispike.c nrnrt.c
 )
@@ -231,7 +231,7 @@ mymklist(NRNGNU_SRC "${PROJECT_SOURCE_DIR}/src/gnu"
   SmplStat.cpp Uniform.cpp Weibull.cpp builtin.cpp d_avec.cpp d_vec.cpp
 )
 
-# nrnpython sources (only if "${NRNPYTHON_DYNAMIC}" MATCHES "NO")
+# nrnpython sources (only if "${NRN_ENABLE_PYTHON_DYNAMIC}" MATCHES "NO")
 mymklist(NRNPYTHON_SRC "${PROJECT_SOURCE_DIR}/src/nrnpython"
   nrnpython.cpp nrnpy_hoc.cpp nrnpy_nrn.cpp nrnpy_p2h.cpp
   grids.cpp rxd.cpp rxd_extracellular.cpp rxd_intracellular.cpp
@@ -310,7 +310,7 @@ if (NRN_ENABLE_MPI)
   list(APPEND nrnivlibsrc ${PARSRC1})
 endif()
 
-if("${NRNMPI_DYNAMIC}" MATCHES "NO")
+if("${NRN_ENABLE_MPI_DYNAMIC}" MATCHES "NO")
   list(APPEND nrnivlibsrc ${NRNMPI_SRC})
 else()
   list(APPEND nrnivlibsrc ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.c)
@@ -330,7 +330,7 @@ else()
 
 endif()
 
-if ("${NRNPYTHON_DYNAMIC}" MATCHES "NO")
+if ("${NRN_ENABLE_PYTHON_DYNAMIC}" MATCHES "NO")
   list(APPEND nrnivlibsrc ${NRNPYTHON_SRC})
 endif()
 
@@ -405,15 +405,15 @@ endif()
 add_library(nrniv_lib SHARED ${nrnivlibsrc})
 target_link_libraries(nrniv_lib ${X11_LIBRARIES} readline)
 
-if (NRN_ENABLE_PYTHON AND "${NRNPYTHON_DYNAMIC}" MATCHES "NO")
+if (NRN_ENABLE_PYTHON AND "${NRN_ENABLE_PYTHON_DYNAMIC}" MATCHES "NO")
 target_link_libraries(nrniv_lib ${PYTHON_LIBRARIES})
 endif()
 
-if (NRN_ENABLE_MPI AND "${NRNMPI_DYNAMIC}" MATCHES "NO")
+if (NRN_ENABLE_MPI AND "${NRN_ENABLE_MPI_DYNAMIC}" MATCHES "NO")
 target_link_libraries(nrniv_lib ${MPI_C_LIBRARIES})
 endif()
 
-if (NRN_ENABLE_MPI AND "${NRNMPI_DYNAMIC}" MATCHES "YES")
+if (NRN_ENABLE_MPI AND "${NRN_ENABLE_MPI_DYNAMIC}" MATCHES "YES")
   add_library(nrnmpi_lib SHARED ${NRNMPI_SRC})
   target_link_libraries(nrnmpi_lib ${MPI_C_LIBRARIES})
   set_property(TARGET nrnmpi_lib PROPERTY OUTPUT_NAME nrnmpi)

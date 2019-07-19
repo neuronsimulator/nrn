@@ -1,18 +1,18 @@
-# verify that NRNPYTHON_DYNAMIC is valid and determine
+# verify that NRN_ENABLE_PYTHON_DYNAMIC is valid and determine
 # an include directory for version 2 and/or 3 for
 # building libnrnpython<major>.so
 # Depending on the pythons used either or both of
 # NRNPYTHON_INCLUDE3 or NRNPYTHON_INCLUDE2 will be defined
 
-if (NRNPYTHON_DYNAMIC MATCHES "NO" OR NOT NRN_ENABLE_PYTHON)
+if (NRN_ENABLE_PYTHON_DYNAMIC MATCHES "NO" OR NOT NRN_ENABLE_PYTHON)
   #do nothing
-elseif (NRNPYTHON_DYNAMIC MATCHES "YES")
+elseif (NRN_ENABLE_PYTHON_DYNAMIC MATCHES "YES")
   #use the default python already determined
   set (NRNPYTHON_INCLUDE${PYTHON_VERSION_MAJOR} ${PYTHON_INCLUDE_DIRS})
 else()
   #run each python to determine major and include dir.
   #fatal error if any fails
-  foreach(pyexe ${NRNPYTHON_DYNAMIC})
+  foreach(pyexe ${NRN_ENABLE_PYTHON_DYNAMIC})
     message(STATUS "checking that ${pyexe} is a working python")
     # worked on my machine with python3x but python2 gave wrong inc dir
     #execute_process(COMMAND ${pyexe} -c "from sysconfig import get_paths as p ; print(p()[\"include\"]) ; import sys ; print(sys.version_info[0]) ; quit()"

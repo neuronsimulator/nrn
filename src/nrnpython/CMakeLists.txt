@@ -52,14 +52,14 @@ set(BUILD_NRNMPI_DYNAMIC_FALSE "#")
 
 set(BUILD_NRNPYTHON_DYNAMIC_TRUE "")
 set(BUILD_NRNPYTHON_DYNAMIC_FALSE "#")
-if ("${NRNPYTHON_DYNAMIC}" MATCHES "NO")
+if ("${NRN_ENABLE_PYTHON_DYNAMIC}" MATCHES "NO")
   set(BUILD_NRNPYTHON_DYNAMIC_TRUE "#")
   set(BUILD_NRNPYTHON_DYNAMIC_FALSE "")
   set(pyexelist ${PYTHON_EXECUTABLE})
-elseif ("${NRNPYTHON_DYNAMIC}" MATCHES "YES")
+elseif ("${NRN_ENABLE_PYTHON_DYNAMIC}" MATCHES "YES")
   set(pyexelist ${PYTHON_EXECUTABLE})
 else()
-  set(pyexelist ${NRNPYTHON_DYNAMIC})
+  set(pyexelist ${NRN_ENABLE_PYTHON_DYNAMIC})
 endif()
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
@@ -69,10 +69,10 @@ configure_ac_file(setup.py src/nrnpython)
 
 message(NOTICE: " NRNPYTHON_SRC ${NRNPYTHON_SRC}")
 
-if ("${INSTALL_NEURON_MODULE}" MATCHES "NO")
+if ("${NRN_ENABLE_MODULE_INSTALL}" MATCHES "NO")
   message(STATUS "neuron module will not be automatically installed")
 else()
-  set(pyinst "${INSTALL_NEURON_MODULE}")
+  set(pyinst "${NRN_ENABLE_MODULE_INSTALL}")
   if ("${pyinst}" MATCHES "YES")
     set(pyinst "--home ${CMAKE_INSTALL_PREFIX}")
   endif()
@@ -81,7 +81,7 @@ else()
   endforeach(pyexe)
 
 #can get the include dir from distutils.sysconfig.get_python_inc()
-  if (NOT "${NRNPYTHON_DYNAMIC}" MATCHES "NO")
+  if (NOT "${NRN_ENABLE_PYTHON_DYNAMIC}" MATCHES "NO")
     set(idir
       . ../oc ../nrnoc ../ivoc ../nrniv ../ivos ../gnu ../mesch
       ../nrnmpi

@@ -24,7 +24,7 @@ set(IVOS_FABS "::fabs") # complicated configure test but I don't think this is e
 set(HAVE_STL "/**/") # nowadays universal for CXX
 set(DLL_DEFAULT_FNAME "\"${CMAKE_SYSTEM_PROCESSOR}/.libs/libnrnmech.so\"")
 
-if (NOT "${NRNPYTHON_DYNAMIC}" MATCHES "NO")
+if (NOT "${NRN_ENABLE_PYTHON_DYNAMIC}" MATCHES "NO")
 set(NRNPYTHON_DYNAMICLOAD 3) # the value needs to be made not to matter
 endif()
 
