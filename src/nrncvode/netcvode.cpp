@@ -2839,17 +2839,6 @@ void NetCvode::init_events() {
 
 			for (i=dil.count()-1; i >= 0; --i) {
 				NetCon* d = dil.item(i);
-				if (d->target_) {
-					int type = d->target_->prop->type;
-					if (pnt_receive_init[type]) {
-(*pnt_receive_init[type])(d->target_, d->weight_, 0);
-					}else{
-						//not the first
-						for (j = d->cnt_-1; j > 0; --j) {
-							d->weight_[j] = 0.;
-						}
-					}
-				}
 				if (ps->use_min_delay_ && ps->delay_ != d->delay_) {
 					ps->use_min_delay_ = false;
 				}
@@ -2859,6 +2848,28 @@ hoc_warning("Use of the event fifo queue is turned off due to more than one valu
 					nrn_use_fifo_queue_ = false;
 				}
 #endif
+			}
+		}
+	}
+	// iterate over all NetCon in creation order to call
+	// NETRECEIVE INITIAL blocks.
+	static hoc_List* nclist = NULL;
+        if (!nclist) {
+		Symbol* sym = hoc_lookup("NetCon");
+		nclist = sym->u.ctemplate->olist;
+	}
+	ITERATE(q, nclist) {
+		Object* obj = OBJ(q);
+		NetCon* d = (NetCon*)obj->u.this_pointer;
+		if (d->target_) {
+			int type = d->target_->prop->type;
+			if (pnt_receive_init[type]) {
+(*pnt_receive_init[type])(d->target_, d->weight_, 0);
+			}else{
+				//not the first
+				for (j = d->cnt_-1; j > 0; --j) {
+					d->weight_[j] = 0.;
+				}
 			}
 		}
 	}
