@@ -62,6 +62,7 @@ set(NRN_ENABLE_MPI_DYNAMIC "NO" CACHE STRING "Enable dynamic MPI library support
 # =============================================================================
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 include(CompilerHelper)
+include(HelperFunctions)
 include(RpathHelper)
 include(PlatformHelper)
 

@@ -1,8 +1,6 @@
 # =============================================================================
-# Lists of files used in various CMake targets
+# Lists of header files to install
 # =============================================================================
-
-# list of header files to install
 set (NRN_HEADERS_TO_INSTALL
   cabvars.h
   cspmatrix.h
@@ -41,4 +39,10 @@ set (NRN_HEADERS_TO_INSTALL
   section.h
   spconfig.h
   spmatrix.h
+)
+
+# =============================================================================
+# Lists of header included and checked using check_include_files
+# =============================================================================
+set (NRN_HEADERS_INCLUDE_LIST
 )

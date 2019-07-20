@@ -65,7 +65,7 @@ endif()
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
 )
-configure_ac_file(setup.py src/nrnpython)
+nrn_configure_file(setup.py src/nrnpython)
 
 message(NOTICE: " NRNPYTHON_SRC ${NRNPYTHON_SRC}")
 
