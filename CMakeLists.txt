@@ -168,3 +168,42 @@ install(FILES
   ${NRN_HEADERS_PATHS} ${PROJECT_BINARY_DIR}/src/oc/nrnpthread.h
   DESTINATION ${CMAKE_INSTALL_PREFIX}/include
 )
+
+# =============================================================================
+# Print build status
+# =============================================================================
+
+message(STATUS "")
+message(STATUS "Configured NEURON ${PROJECT_VERSION}")
+message(STATUS "")
+
+string(TOLOWER "${CMAKE_GENERATOR}" cmake_generator_tolower)
+if(cmake_generator_tolower MATCHES "makefile")
+  message(STATUS "Some things you can do now:")
+  message(STATUS "--------------+--------------------------------------------------------------")
+  message(STATUS "Command       |   Description")
+  message(STATUS "--------------+--------------------------------------------------------------")
+  message(STATUS "make install  | Install NEURON. Headers will be installed to:")
+  message(STATUS "              |     <CMAKE_INSTALL_PREFIX>/<INCLUDE_INSTALL_DIR>")
+  message(STATUS "              |   Using the following values:")
+  message(STATUS "              |     CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
+  message(STATUS "              |   Change the install location of Eigen headers using:")
+  message(STATUS "              |     cmake . -DCMAKE_INSTALL_PREFIX=yourprefix")
+  message(STATUS "make doc      | Build the API documentation, requires Sphinx")
+  message(STATUS "make uninstall| Removes files installed by make install")
+  message(STATUS "--------------+--------------------------------------------------------------")
+  message(STATUS " Build options configured [1/0 : ON/OFF]")
+  message(STATUS "--------------+--------------------------------------------------------------")
+  message(STATUS "Interviews    | ${HAVE_IV}")
+  message(STATUS "MPI           | ${NRNMPI}")
+  message(STATUS "Python        | ${USE_PYTHON}")
+  message(STATUS "RXD           | ${NRN_ENABLE_RX3D}")
+  message(STATUS "Shared        | ${NRN_BUILD_SHARED}")
+  message(STATUS "Python (Int)  | ${PYTHON_EXECUTABLE}")
+  message(STATUS "Python (Lib)  | ${PYTHON_LIBRARY}")
+  message(STATUS "--------------+--------------------------------------------------------------")
+  message(STATUS " See documentation : https://www.neuron.yale.edu/neuron/")
+  message(STATUS "--------------+--------------------------------------------------------------")
+endif()
+
+message(STATUS "")
