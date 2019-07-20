@@ -11,7 +11,7 @@
 set(ocsrcdir ${PROJECT_SOURCE_DIR}/src/oc)
 set(RanFiles isaac64.c mcran4.c nrnisaac.c nrnran123.c)
 # append to list (first arg) by prepending second arg/ to all remaining args
-mymklist(OC_SRC "${ocsrcdir}"
+nrn_create_file_list(OC_SRC "${ocsrcdir}"
   parse.c bksub.c getelm.c lineq.c subrows.c prmat.c
   code2.c debug.c ocerf.c fileio.c ftime.c
   getsym.c hoc.c hocedit.c math.c nonlin.c
@@ -31,7 +31,7 @@ set_property(
 #$(nrnmpidynam) nothing or nrnmpi_dynam.c
 
 set(nrnocsrcdir ${PROJECT_SOURCE_DIR}/src/nrnoc)
-mymklist(NRNOC_SRC ${nrnocsrcdir}
+nrn_create_file_list(NRNOC_SRC ${nrnocsrcdir}
   cabcode.c capac.c clamp.c eion.c
   extcelln.c fadvance.c fstim.c init.c nrnnemo.c point.c
   psection.c solve.c synapse.c treeset.c hoc_init.c code.c hoc_oop.c
@@ -48,7 +48,7 @@ set_property(
 )
 
 set(ivocsrcdir ${PROJECT_SOURCE_DIR}/src/ivoc)
-mymklist(IVOC_SRC "${ivocsrcdir}"
+nrn_create_file_list(IVOC_SRC "${ivocsrcdir}"
   ivocmain.cpp ivoc.cpp xmenu.cpp graph.cpp rubband.cpp grmanip.cpp
   apwindow.cpp pwman.cpp scene.cpp xyview.cpp rect.cpp mymath.cpp
   axis.cpp utility.cpp idraw.cpp symchoos.cpp htlist.cpp
@@ -63,13 +63,13 @@ mymklist(IVOC_SRC "${ivocsrcdir}"
 )
 
 #$(sysdep_sources)
-mymklist(IVOC_SRC "${ivocsrcdir}"
+nrn_create_file_list(IVOC_SRC "${ivocsrcdir}"
   xdep.cpp field.cpp
 )
 
 # nrniv sources
 set(nrnivsrcdir ${PROJECT_SOURCE_DIR}/src/nrniv)
-mymklist(NRNIV_SRC "${nrnivsrcdir}"
+nrn_create_file_list(NRNIV_SRC "${nrnivsrcdir}"
   nrnmenu.cpp shape.cpp classreg.cpp rotate3d.cpp
   datapath.cpp symdir.cpp spaceplt.cpp shapeplt.cpp ppshape.cpp
   secbrows.cpp ndatclas.cpp impedanc.cpp savstate.cpp hocmech.cpp
@@ -88,7 +88,7 @@ mymklist(NRNIV_SRC "${nrnivsrcdir}"
   nrndae.cpp matrixmap.cpp geometry3d.cpp
 )
 # goes into libnrniv.so unless NRN_ENABLE_MPI is OFF
-mymklist(PARSRC1 "${PROJECT_SOURCE_DIR}/src/nrniv" nvector_nrnparallel_ld.c)
+nrn_create_file_list(PARSRC1 "${PROJECT_SOURCE_DIR}/src/nrniv" nvector_nrnparallel_ld.c)
 
 set_property(
   SOURCE ${nrnocsrcdir}/code.c ${nrnocsrcdir}/hoc_init.c ${nrnocsrcdir}/hoc_oop.c
@@ -119,7 +119,7 @@ set_property(
   )
 
 # sundials sources
-mymklist(SUNDIALS_SRC "${PROJECT_SOURCE_DIR}/src/sundials/cvodes"
+nrn_create_file_list(SUNDIALS_SRC "${PROJECT_SOURCE_DIR}/src/sundials/cvodes"
         cvband.c
         cvbandpre.c
         cvbbdpre.c
@@ -130,7 +130,7 @@ mymklist(SUNDIALS_SRC "${PROJECT_SOURCE_DIR}/src/sundials/cvodes"
         cvodesio.c
         cvspgmr.c
 )
-mymklist(SUNDIALS_SRC "${PROJECT_SOURCE_DIR}/src/sundials/ida"
+nrn_create_file_list(SUNDIALS_SRC "${PROJECT_SOURCE_DIR}/src/sundials/ida"
         idaband.c
         idabbdpre.c
         ida.c
@@ -139,15 +139,15 @@ mymklist(SUNDIALS_SRC "${PROJECT_SOURCE_DIR}/src/sundials/ida"
         idaio.c
         idaspgmr.c
 )
-mymklist(SUNDIALS_SRC "${PROJECT_SOURCE_DIR}/src/sundials/shared"
+nrn_create_file_list(SUNDIALS_SRC "${PROJECT_SOURCE_DIR}/src/sundials/shared"
   band.c dense.c iterative.c
   nvector.c nvector_serial.c smalldense.c spgmr.c sundialsmath.c
 )
 # goes into libnrniv.so unless NRN_ENABLE_MPI is OFF
-mymklist(PARSRC1 "${PROJECT_SOURCE_DIR}/src/sundials/shared" nvector_parallel.c)
+nrn_create_file_list(PARSRC1 "${PROJECT_SOURCE_DIR}/src/sundials/shared" nvector_parallel.c)
 
 # meschach matrix sources
-mymklist(MESCH_SRC "${PROJECT_SOURCE_DIR}/src/mesch"
+nrn_create_file_list(MESCH_SRC "${PROJECT_SOURCE_DIR}/src/mesch"
 arnoldi.c bdfactor.c bkpfacto.c chfactor.c
   arnoldi.c bdfactor.c bkpfacto.c chfactor.c
         conjgrad.c copy.c dmacheps.c err.c extras.c fft.c givens.c hessen.c
@@ -162,7 +162,7 @@ arnoldi.c bdfactor.c bkpfacto.c chfactor.c
 )
 
 # sparse13 matrix sources
-mymklist(SPARSE13_SRC "${PROJECT_SOURCE_DIR}/src/sparse13"
+nrn_create_file_list(SPARSE13_SRC "${PROJECT_SOURCE_DIR}/src/sparse13"
   spalloc.c spbuild.c spfactor.c spoutput.c
         spsolve.c sputils.c
         cspalloc.c cspbuild.c cspfactor.c cspoutput.c
@@ -171,13 +171,13 @@ mymklist(SPARSE13_SRC "${PROJECT_SOURCE_DIR}/src/sparse13"
 
 if (0) # seem to be listed in OC_SRC
 # sparse matrix sources
-mymklist(SPARSE_SRC "${PROJECT_SOURCE_DIR}/src/sparse"
+nrn_create_file_list(SPARSE_SRC "${PROJECT_SOURCE_DIR}/src/sparse"
   bksub.c getelm.c lineq.c lineq.h prmat.c subrows.c
 )
 endif()
 
 # scopmath sources
-mymklist(SCOPMATH_SRC "${PROJECT_SOURCE_DIR}/src/scopmath"
+nrn_create_file_list(SCOPMATH_SRC "${PROJECT_SOURCE_DIR}/src/scopmath"
   abort.c adams.c adeuler.c adrunge.c advance.c
         boundary.c crank.c crout.c csoda.c csodabnc.c deflate.c
         dimplic.c scoperf.c euler.c expfit.c exprand.c f2cmisc.c factoria.c
@@ -205,26 +205,26 @@ set_property(
 
 
 # memacs sources
-mymklist(MEMACS_SRC "${PROJECT_SOURCE_DIR}/src/memacs"
+nrn_create_file_list(MEMACS_SRC "${PROJECT_SOURCE_DIR}/src/memacs"
   ansi.c basic.c bind.c buffer.c display.c file.c
         fileio.c line.c lock.c main1.c random.c region.c
         search.c spawn.c tcap.c termio.c window.c word.c
 )
 
 # readline sources
-mymklist(READLINE_SRC "${PROJECT_SOURCE_DIR}/src/readline"
+nrn_create_file_list(READLINE_SRC "${PROJECT_SOURCE_DIR}/src/readline"
 #  readline.c history.c funmap.c keymaps.c
 )
 
 # nrnmpi sources (only if "${NRN_ENABLE_MPI_DYNAMIC}" matches "NO")
-mymklist(NRNMPI_SRC "${PROJECT_SOURCE_DIR}/src/nrnmpi"
+nrn_create_file_list(NRNMPI_SRC "${PROJECT_SOURCE_DIR}/src/nrnmpi"
   nrnmpi.c bbsmpipack.c mpispike.c nrnrt.c
 )
 
 set (NRNMPI_SRC ${NRNMPI_SRC} PARENT_SCOPE)
 
 # ancient gnu double_avec and random distributions and generators
-mymklist(NRNGNU_SRC "${PROJECT_SOURCE_DIR}/src/gnu"
+nrn_create_file_list(NRNGNU_SRC "${PROJECT_SOURCE_DIR}/src/gnu"
   ACG.cpp Binomial.cpp Complex.cpp DiscUnif.cpp
   Erlang.cpp Geom.cpp HypGeom.cpp LogNorm.cpp MLCG.cpp NegExp.cpp
   Normal.cpp Poisson.cpp RNG.cpp Random.cpp RndInt.cpp SmplHist.cpp
@@ -232,7 +232,7 @@ mymklist(NRNGNU_SRC "${PROJECT_SOURCE_DIR}/src/gnu"
 )
 
 # nrnpython sources (only if "${NRN_ENABLE_PYTHON_DYNAMIC}" MATCHES "NO")
-mymklist(NRNPYTHON_SRC "${PROJECT_SOURCE_DIR}/src/nrnpython"
+nrn_create_file_list(NRNPYTHON_SRC "${PROJECT_SOURCE_DIR}/src/nrnpython"
   nrnpython.cpp nrnpy_hoc.cpp nrnpy_nrn.cpp nrnpy_p2h.cpp
   grids.cpp rxd.cpp rxd_extracellular.cpp rxd_intracellular.cpp
   rxd_vol.cpp rxd_marching_cubes.c rxd_llgramarea.c
@@ -240,17 +240,16 @@ mymklist(NRNPYTHON_SRC "${PROJECT_SOURCE_DIR}/src/nrnpython"
 set (NRNPYTHON_SRC ${NRNPYTHON_SRC} PARENT_SCOPE)
 
 # built-in mod files
-mymklist(modfile_bases "${PROJECT_SOURCE_DIR}/src/nrnoc"
+nrn_create_file_list(modfile_bases "${PROJECT_SOURCE_DIR}/src/nrnoc"
   apcount feature intfire2 oclmp ppmark syn
   exp2syn hh intfire4 passive stim vclmp
   expsyn intfire1 netstim pattern svclmp
 )
-myprepostlist(MODFILE_MOD "" ".mod"
-  ${modfile_bases}
-)
-myprepostlist(MODFILE_C "" ".c"
-  ${modfile_bases}
-)
+
+foreach(modfile ${modfile_bases})
+  list(APPEND MODFILE_MOD ${modfile}.mod)
+  list(APPEND MODFILE_C ${modfile}.c)
+endforeach()
 
 set_source_files_properties(${MODFILE_C}
   PROPERTIES GENERATED TRUE
@@ -258,7 +257,7 @@ set_source_files_properties(${MODFILE_C}
 
 #nmodl sources
 set(nmodlsrcdir ${PROJECT_SOURCE_DIR}/src/nmodl)
-mymklist(NMODL_SRC "${nmodlsrcdir}"
+nrn_create_file_list(NMODL_SRC "${nmodlsrcdir}"
   parse1.c diffeq.c lex.c consist.c deriv.c discrete.c
   init.c io.c kinetic.c list.c modl.c nocpout.c noccout.c parsact.c
   netrec_discon.c
@@ -315,7 +314,7 @@ if("${NRN_ENABLE_MPI_DYNAMIC}" MATCHES "NO")
 else()
   list(APPEND nrnivlibsrc ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.c)
 
-  mymklist(NRNMPI_DYNAM_INC "${PROJECT_SOURCE_DIR}/src/nrnmpi"
+  nrn_create_file_list(NRNMPI_DYNAM_INC "${PROJECT_SOURCE_DIR}/src/nrnmpi"
     nrnmpi_dynam.h nrnmpi_dynam_cinc nrnmpi_dynam_wrappers.inc)
 
   add_custom_command(OUTPUT ${NRNMPI_DYNAM_INC}
@@ -394,7 +393,7 @@ endif()
 
 if (NOT NRN_ENABLE_INTERVIEWS)
   set(ivos_src_dir ${PROJECT_SOURCE_DIR}/src/ivos)
-  mymklist(ivos_src "${ivos_src_dir}"
+  nrn_create_file_list(ivos_src "${ivos_src_dir}"
     file.cpp listimpl.cpp math.cpp memory.cpp
     string.cpp ustring.cpp
     observe.cpp regexp.cpp resource.cpp
@@ -432,11 +431,11 @@ endif()
 
 set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
 
-mymklist(nrnbinsrc "${PROJECT_SOURCE_DIR}/src/ivoc/"
+nrn_create_file_list(nrnbinsrc "${PROJECT_SOURCE_DIR}/src/ivoc/"
   nrnmain.cpp
 )
 
-mymklist(nrnbinsrc "${PROJECT_SOURCE_DIR}/src/oc/"
+nrn_create_file_list(nrnbinsrc "${PROJECT_SOURCE_DIR}/src/oc/"
   ockludge.c modlreg.c
 )
 
