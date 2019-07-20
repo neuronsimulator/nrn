@@ -1,4 +1,3 @@
-
 #some nrnconf.h and nmodlconf.h definitions
 set(NRNHOST "\"${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_NAME}\"")
 set(NRNHOSTCPU "\"${CMAKE_SYSTEM_PROCESSOR}\"")

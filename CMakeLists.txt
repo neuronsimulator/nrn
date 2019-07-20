@@ -43,9 +43,9 @@ option(NRN_ENABLE_RX3D "Enable rx3d support" OFF)
 #                 of any Python at all).
 #   - <string>  : semicolon (;) separated list of python executable used to create a separate
 #                 interface for each. When one of those versions of Python is lauched,
-#                 "import neuron" will automatically load the appropriate module interface along with
-#                 the rest of neuron. Alsom nrniv -pyexe <python> will work with any <python> in the
-#                 list of python executables.
+#                 "import neuron" will automatically load the appropriate module interface along
+#                 with the rest of neuron. Alsom nrniv -pyexe <python> will work with any <python>
+#                 in the list of python executables.
 # Dynamic MPI support:
 #   - NO        : nrnmpi is linked into libnrniv.so
 #   - YES       : nrnmpi interface is consistent with default mpi is built and loaded dynamically
@@ -61,6 +61,9 @@ set(NRN_ENABLE_MPI_DYNAMIC "NO" CACHE STRING "Enable dynamic MPI library support
 # Include cmake modules
 # =============================================================================
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+include(CompilerHelper)
+include(RpathHelper)
+include(PlatformHelper)
 
 # =============================================================================
 # Find required packages
@@ -70,15 +73,14 @@ find_package(FLEX)
 find_package(readline)
 
 # =============================================================================
-# Enable Python/MPI/IV/Pthead if found
+# Enable MPI/Python/IV/Pthead if found
 # =============================================================================
-
 # enable mpi if found
 if (NRN_ENABLE_MPI)
   find_package(MPI REQUIRED)
+  include_directories(${MPI_INCLUDE_PATH})
   set(NRNMPI 1)
   set(PARANEURON 1)
-  include_directories(${MPI_INCLUDE_PATH})
 else()
   set(NRNMPI 0)
   set(PARANEURON 0)
@@ -95,14 +97,13 @@ if (NRN_ENABLE_INTERVIEWS)
     endif()
   endif()
   find_package(iv REQUIRED)
-  set (HAVE_IV 1)
   include_directories(${X11_INCLUDE_DIR})
+  set (HAVE_IV 1)
 else()
   set(HAVE_IV 0)
 endif()
 
-# enable python support : interpreter needed to make hocusr.h from neuron.h
-# prefer python3 over python2
+# enable python support (interpreter needed to make hocusr.h from neuron.h, prefer Python 3)
 set(Python_ADDITIONAL_VERSIONS 3.6)
 find_package(PythonInterp REQUIRED)
 if (NRN_ENABLE_PYTHON)
@@ -112,6 +113,7 @@ else()
   set(USE_PYTHON 0)
 endif()
 
+# enable threads if found
 if (NRN_ENABLE_THREADS)
   set(THREADS_PREFER_PTHREAD_FLAG ON)
   find_package(Threads REQUIRED)
@@ -121,78 +123,47 @@ else()
 endif()
 
 # =============================================================================
-# Include cmake modules
+# Add CMake modules AFTER setting options
 # =============================================================================
-include(RpathHelper)
 include(ConfigACFile)
-include(NrnPyDynamic)
-include(NrnMPIDynamic)
-
-# needed in several subdirectoy configurations
-set (prefix ${CMAKE_INSTALL_PREFIX})
-set (host_cpu ${CMAKE_SYSTEM_PROCESSOR})
-set (exec_prefix ${prefix})
-set (bindir \${exec_prefix}/bin)
-set (libdir \${exec_prefix}/lib)
-set (PACKAGE "\"nrn\"")
-
-set(USING_CMAKE_FALSE "#")
-set(USING_CMAKE_TRUE "")
-
+include(NeuronFileLists)
+include(PythonDynamicHelper)
+include(MPIDynamicHelper)
+include(FilesHelper)
 
 # =============================================================================
 # Project version from git and project directories
 # =============================================================================
-
-add_definitions(-DHAVE_CONFIG_H)
-
-if(${CMAKE_SYSTEM_NAME} MATCHES "CYGWIN")
-  set(CYGWIN 1)
-endif()
-
-add_subdirectory(cmkconfig)
-
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/lib
-  DESTINATION share/nrn)
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo
-  DESTINATION share/nrn)
-install(FILES ${PROJECT_BINARY_DIR}/share/lib/nrnunits.lib
-  ${PROJECT_BINARY_DIR}/share/lib/nrn.defaults
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/share/nrn/lib
-)
-install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/cleanup
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/share/nrn/lib
-)
-
-# paths to *.h files for installing into <prefix>/include
-my_find_files(inst_inc
-  cabvars.h    hoc_membf.h   neuron.h      nrnjava.h     options.h
-  cspmatrix.h  hocparse.h    nmodlmutex.h  nrnoc_ml.h    scoplib_ansi.h
-  cspredef.h   md1redef.h    nrn_ansi.h    scoplib.h
-  hocassrt.h   md2redef.h    nrnapi.h      nrnran123.h   section.h
-  hocdec.h     membdef.h     nrnassrt.h    nrnredef.h    spconfig.h
-  hocgetsym.h  membfunc.h    nrncvode.h    oc_ansi.h     spmatrix.h
-  hoc.h        multicore.h   nrnisaac.h    ocfunc.h
-  hoclist.h    multisplit.h  nrniv_mf.h    ocmisc.h
-)
-install(FILES ${inst_inc} ${PROJECT_BINARY_DIR}/src/oc/nrnpthread.h
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/include
-)
-
-# if readline not found or if we are on OSX, use internal readline
-# also clear library variable
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin" OR NOT ${READLINE_FOUND})
-    add_subdirectory(src/readline)
-    set(INTERNAL_READLINE readline)
-    unset(Readline_LIBRARY CACHE)
-endif()
-
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  set(CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS "${CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS} -undefined dynamic_lookup")
-endif()
-
+add_subdirectory(cmake_config)
 add_subdirectory(src/nrniv)
 add_subdirectory(bin)
 if (NRN_ENABLE_PYTHON)
   add_subdirectory(src/nrnpython)
 endif()
+if (NRN_MACOS_BUILD OR NOT ${READLINE_FOUND})
+    add_subdirectory(src/readline)
+    set(INTERNAL_READLINE readline)
+    unset(Readline_LIBRARY CACHE)
+endif()
+
+# =============================================================================
+# Install targets
+# =============================================================================
+# find headers to install
+nrn_find_project_files(NRN_HEADERS_PATHS ${NRN_HEADERS_TO_INSTALL})
+
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/lib DESTINATION share/nrn)
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo DESTINATION share/nrn)
+install(FILES
+  ${PROJECT_BINARY_DIR}/share/lib/nrnunits.lib
+  ${PROJECT_BINARY_DIR}/share/lib/nrn.defaults
+  DESTINATION ${CMAKE_INSTALL_PREFIX}/share/nrn/lib
+)
+install(PROGRAMS
+  ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/cleanup
+  DESTINATION ${CMAKE_INSTALL_PREFIX}/share/nrn/lib
+)
+install(FILES
+  ${NRN_HEADERS_PATHS} ${PROJECT_BINARY_DIR}/src/oc/nrnpthread.h
+  DESTINATION ${CMAKE_INSTALL_PREFIX}/include
+)

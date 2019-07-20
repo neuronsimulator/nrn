@@ -1,3 +1,20 @@
+######## COPIED FROM TOP LEVEL
+# needed in several subdirectoy configurations
+add_definitions(-DHAVE_CONFIG_H)
+
+set (prefix ${CMAKE_INSTALL_PREFIX})
+set (host_cpu ${CMAKE_SYSTEM_PROCESSOR})
+set (exec_prefix ${prefix})
+set (bindir \${exec_prefix}/bin)
+set (libdir \${exec_prefix}/lib)
+set (PACKAGE "\"nrn\"")
+
+set(USING_CMAKE_FALSE "#")
+set(USING_CMAKE_TRUE "")
+##########################
+
+
+
 # Just as autoconf transforms file.in into file
 # so configure_ac_file transforms CMAKE_CURRENT_SOURCE_DIR/file.in
 # into CMAKE_CURRENT_BINARY_DIR/file
@@ -171,23 +188,6 @@ macro(myprepostlist _lst pre post)
   endforeach(name)
 endmacro()
 
-
-macro(my_find_files _lst)
-  foreach(name ${ARGN})
-#    set(pname)
-    execute_process(
-      COMMAND find ${PROJECT_SOURCE_DIR}/src -name ${name}
-      RESULTS_VARIABLE res
-      OUTPUT_VARIABLE pname
-    )
-    if (res EQUAL 0)
-      string(REGEX REPLACE "\n$" "" pname "${pname}")
-      list(APPEND ${_lst} ${pname})
-    else()
-      message(FATAL_ERROR " ${name} not found |${pname}|")
-    endif()
-  endforeach(name)
-endmacro()
 
 macro(my_copy_no_clobber f1 f2)
   execute_process(COMMAND cp -n ${f1} ${f2})
