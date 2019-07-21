@@ -60,7 +60,9 @@ set(NRN_ENABLE_MPI_DYNAMIC "NO" CACHE STRING "Enable dynamic MPI library support
 # =============================================================================
 # Include cmake modules
 # =============================================================================
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+list(APPEND CMAKE_MODULE_PATH
+            ${PROJECT_SOURCE_DIR}/cmake
+            ${PROJECT_SOURCE_DIR}/cmake/modules)
 include(CompilerHelper)
 include(MacroHelper)
 include(RpathHelper)
@@ -130,7 +132,6 @@ include(ConfigFileSetting)
 include(NeuronFileLists)
 include(PythonDynamicHelper)
 include(MPIDynamicHelper)
-include(FilesHelper)
 
 # =============================================================================
 # Project version from git and project directories
@@ -172,38 +173,40 @@ install(FILES
 # =============================================================================
 # Print build status
 # =============================================================================
-
 message(STATUS "")
 message(STATUS "Configured NEURON ${PROJECT_VERSION}")
 message(STATUS "")
-
 string(TOLOWER "${CMAKE_GENERATOR}" cmake_generator_tolower)
 if(cmake_generator_tolower MATCHES "makefile")
   message(STATUS "Some things you can do now:")
   message(STATUS "--------------+--------------------------------------------------------------")
   message(STATUS "Command       |   Description")
   message(STATUS "--------------+--------------------------------------------------------------")
-  message(STATUS "make install  | Install NEURON. Headers will be installed to:")
-  message(STATUS "              |     <CMAKE_INSTALL_PREFIX>/<INCLUDE_INSTALL_DIR>")
-  message(STATUS "              |   Using the following values:")
-  message(STATUS "              |     CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
-  message(STATUS "              |   Change the install location of Eigen headers using:")
-  message(STATUS "              |     cmake . -DCMAKE_INSTALL_PREFIX=yourprefix")
+  message(STATUS "make install  | Will install NEURON to: ${CMAKE_INSTALL_PREFIX}")
+  message(STATUS "              | Change the install location of NEURON using:")
+  message(STATUS "              |     cmake <src_path> -DCMAKE_INSTALL_PREFIX=<install_path>")
   message(STATUS "make doc      | Build the API documentation, requires Sphinx")
   message(STATUS "make uninstall| Removes files installed by make install")
   message(STATUS "--------------+--------------------------------------------------------------")
-  message(STATUS " Build options configured [1/0 : ON/OFF]")
+  message(STATUS " Build option | Status")
   message(STATUS "--------------+--------------------------------------------------------------")
   message(STATUS "Interviews    | ${HAVE_IV}")
   message(STATUS "MPI           | ${NRNMPI}")
+  if(NRN_ENABLE_MPI)
+  message(STATUS "  INC         | ${MPI_INCLUDE_PATH}")
+  message(STATUS "  LIB         | ${MPI_LIBRARY}")
+  endif()
   message(STATUS "Python        | ${USE_PYTHON}")
+  if(NRN_ENABLE_PYTHON)
+  message(STATUS "  EXE         | ${PYTHON_EXECUTABLE}")
+  message(STATUS "  LIB         | ${PYTHON_LIBRARY}")
+  message(STATUS "  INC(2)      | ${NRNPYTHON_INCLUDE2}")
+  message(STATUS "  INC(3)      | ${NRNPYTHON_INCLUDE3}")
+  endif()
   message(STATUS "RXD           | ${NRN_ENABLE_RX3D}")
   message(STATUS "Shared        | ${NRN_BUILD_SHARED}")
-  message(STATUS "Python (Int)  | ${PYTHON_EXECUTABLE}")
-  message(STATUS "Python (Lib)  | ${PYTHON_LIBRARY}")
   message(STATUS "--------------+--------------------------------------------------------------")
   message(STATUS " See documentation : https://www.neuron.yale.edu/neuron/")
   message(STATUS "--------------+--------------------------------------------------------------")
 endif()
-
 message(STATUS "")

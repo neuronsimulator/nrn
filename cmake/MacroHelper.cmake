@@ -181,3 +181,36 @@ endmacro()
 macro(nrn_set_string variable value)
   set(${variable} \"${value}\")
 endmacro()
+
+# =============================================================================
+# Given list of file names, find their path in project source tree
+# =============================================================================
+macro(nrn_find_project_files list_name)
+  foreach(name ${ARGN})
+    execute_process(
+      COMMAND find ${PROJECT_SOURCE_DIR}/src -name ${name}
+      RESULTS_VARIABLE result
+      OUTPUT_VARIABLE filepath
+    )
+    if ( (NOT result EQUAL 0) OR filepath STREQUAL "")
+      message(FATAL_ERROR " ${name} not found in ${PROJECT_SOURCE_DIR}/src")
+    else()
+      string(REGEX REPLACE "\n$" "" filepath "${filepath}")
+      list(APPEND ${list_name} ${filepath})
+    endif()
+  endforeach(name)
+endmacro()
+
+# =============================================================================
+# Utility macro to print all matching CMake variables
+# =============================================================================
+# example usage : nrn_print_matching_variables("[Mm][Pp][Ii]")
+macro (nrn_print_matching_variables prefix_regex)
+  get_cmake_property(variable_names VARIABLES)
+  list (SORT variable_names)
+  foreach (variable ${variable_names})
+    if (variable MATCHES "^${prefix_regex}")
+      message(NOTICE " ${variable} ${${variable}}")
+    endif()
+  endforeach()
+endmacro()
