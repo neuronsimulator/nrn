@@ -13,8 +13,6 @@ set(NEURON_DATA_DIR "\"${CMAKE_INSTALL_PREFIX}/share/nrn\"")
 set(SUNDIALS_DOUBLE_PRECISION 1)
 set(SUNDIALS_USE_GENERIC_MATH 1)
 set(LT_OBJDIR "\".libs/\"")
-#INCLUDE(TestBigEndian)
-#TEST_BIG_ENDIAN(WORDS_BIGENDIAN)
 set(YYTEXT_POINTER 1)
 set(TIME_WITH_SYS_TIME 1)
 set(HAVE_NAMESPACES "/**/")
@@ -22,6 +20,9 @@ set(HAVE_STTY 0)
 set(IVOS_FABS "::fabs") # complicated configure test but I don't think this is ever not the case anymore
 set(HAVE_STL "/**/") # nowadays universal for CXX
 set(DLL_DEFAULT_FNAME "\"${CMAKE_SYSTEM_PROCESSOR}/.libs/libnrnmech.so\"")
+
+#INCLUDE(TestBigEndian)
+#TEST_BIG_ENDIAN(WORDS_BIGENDIAN)
 
 if (NOT "${NRN_ENABLE_PYTHON_DYNAMIC}" MATCHES "NO")
 set(NRNPYTHON_DYNAMICLOAD 3) # the value needs to be made not to matter
@@ -33,6 +34,7 @@ set(nrndef_mac "//")
 set(nrndef_mswin "//")
 set(MAC_DARWIN_TRUE "\#")
 set(MAC_DARWIN_FALSE "")
+
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   set(nrndef_unix "")
 elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -43,6 +45,9 @@ elseif (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(nrndef_mswin "")
 endif()
 
+# =============================================================================
+# Options based on user provided build options
+# =============================================================================
 if (NRN_ENABLE_DISCRETE_EVENT_OBSERVER)
   set(DISCRETE_EVENT_OBSERVER 1)
 else()
@@ -65,6 +70,13 @@ else()
   set(NRNMECH_DLL_STYLE 0)
 endif()
 
+if (NRN_ENABLE_INTERVIEWS)
+  set (NRNOC_X11 1)
+else()
+  set (NRNOC_X11 0)
+endif()
+
+
 #these two don't start out as #undef but as #define so need their explicit
 #@...@ replacments
 #set(NEURON_BIN_DIR "\"${CMAKE_INSTALL_PREFIX}/${CMAKE_SYSTEM_PROCESSOR}/bin\"")
@@ -76,21 +88,21 @@ set (exec_prefix ${prefix})
 set (bindir \${exec_prefix}/bin)
 set (modsubdir ${host_cpu})
 
-if (NRN_ENABLE_INTERVIEWS)
-  set (NRNOC_X11 1)
-else()
-  set (NRNOC_X11 0)
-endif()
-
+# =============================================================================
+# Check direcotry manipulation header
+# =============================================================================
 nrn_check_dir_exists(dirent.h HAVE_DIRENT_H)
 nrn_check_dir_exists(ndir.h HAVE_NDIR_H)
 nrn_check_dir_exists(sys/dir.h HAVE_SYS_DIR_H)
 nrn_check_dir_exists(sys/ndir.h HAVE_SYS_NDIR_H)
-if (HAVE_DIRENT_H) # autoconf sets to 0 in this case
+# similar to autoconf, set it to 0
+if (HAVE_DIRENT_H)
   set(HAVE_SYS_DIR_H 0)
 endif()
 
-# like check_include_files but makes a NRN_HEADERS_INCLUDE_LIST of those that exist
+# =============================================================================
+# Similar to check_include_files but also construct NRN_HEADERS_INCLUDE_LIST
+# =============================================================================
 nrn_check_include_files(alloca.h HAVE_ALLOCA_H)
 nrn_check_include_files(dlfcn.h HAVE_DLFCN_H)
 nrn_check_include_files(fcntl.h HAVE_FCNTL_H)
@@ -122,6 +134,7 @@ nrn_check_include_files(termio.h HAVE_TERMIO_H)
 nrn_check_include_files(unistd.h HAVE_UNISTD_H)
 nrn_check_include_files(varargs.h HAVE_VARARGS_H)
 nrn_check_include_files(sys/timeb.h HAVE_SYS_TIMEB_H)
+
 check_include_files("dlfcn.h;stdint.h;stddef.h;inttypes.h;stdlib.h;strings.h;string.h;float.h" STDC_HEADERS)
 check_include_files("_G_config.h" HAVE__G_CONFIG_H LANGUAGE CXX)
 
@@ -133,12 +146,9 @@ nrn_check_symbol_exists("alloca" "" HAVE_ALLOCA)
 nrn_check_symbol_exists("bcopy" "" HAVE_BCOPY)
 nrn_check_symbol_exists("bzero" "" HAVE_BZERO)
 nrn_check_symbol_exists("doprnt" "" HAVE_DOPRNT)
-#nrn_check_symbol_exists("DIR" "dirent.h" HAVE_DIRENT_H) #see nrn_check_dir_exists above
-nrn_check_cxx_symbol_exists("fesetround" "" HAVE_FESETROUND)
 nrn_check_symbol_exists("ftime" "" HAVE_FTIME)
 nrn_check_symbol_exists("getcwd" "" HAVE_GETCWD)
 nrn_check_symbol_exists("gethostname" "" HAVE_GETHOSTNAME)
-nrn_check_cxx_symbol_exists("getpw" "sys/types.h;pwd.h" HAVE_GETPW)
 nrn_check_symbol_exists("gettimeofday" "" HAVE_GETTIMEOFDAY)
 nrn_check_symbol_exists("index" "" HAVE_INDEX)
 nrn_check_symbol_exists("isatty" "" HAVE_ISATTY)
@@ -158,28 +168,43 @@ nrn_check_symbol_exists("setitimer" "" HAVE_SETITIMER)
 nrn_check_symbol_exists("sigaction" "" HAVE_SIGACTION)
 nrn_check_symbol_exists("SIGBUS" "signal.h" HAVE_SIGBUS)
 nrn_check_symbol_exists("SIGSEGV" "signal.h" HAVE_SIGSEGV)
-#nrn_check_cxx_symbol_exists("std::stringstream" "sstream" HAVE_SSTREAM)
-set(HAVE_SSTREAM /**/) # should always exist these days
 nrn_check_symbol_exists("strdup" "" HAVE_STRDUP)
 nrn_check_symbol_exists("strstr" "" HAVE_STRSTR)
 nrn_check_symbol_exists("stty" "" HAVE_STTY)
 nrn_check_symbol_exists("vprintf" "" HAVE_VPRINTF)
 
-nrn_check_signal_return_type(RETSIGTYPE) # very likely void
+nrn_check_cxx_symbol_exists("getpw" "sys/types.h;pwd.h" HAVE_GETPW)
+#nrn_check_symbol_exists("DIR" "dirent.h" HAVE_DIRENT_H) #see nrn_check_dir_exists above
+nrn_check_cxx_symbol_exists("fesetround" "" HAVE_FESETROUND)
+#nrn_check_cxx_symbol_exists("std::stringstream" "sstream" HAVE_SSTREAM)
+set(HAVE_SSTREAM /**/) # should always exist these days
 
+# =============================================================================
+# Set return type of signal in RETSIGTYPE
+# =============================================================================
+nrn_check_signal_return_type(RETSIGTYPE)
+
+# =============================================================================
+# Check data types
+# =============================================================================
 nrn_check_type_exists(sys/types.h gid_t int gid_t)
 nrn_check_type_exists(sys/types.h off_t "long int" off_t)
 nrn_check_type_exists(sys/types.h pid_t int pid_t)
 nrn_check_type_exists(sys/types.h size_t "unsigned int" size_t)
 nrn_check_type_exists(sys/types.h uid_t int uid_t)
 
-# nrnconf.h.in and nmodlconf.h.in were originally generated from
-# config.h.in generated by autoheader. We use
-#repository copy cmk_nrnconf.h.in to create these files.
-nrn_copy_file_without_overwrite("${PROJECT_SOURCE_DIR}/cmk_nrnconf.h.in" "${PROJECT_SOURCE_DIR}/nrnconf.h.in")
-nrn_copy_file_without_overwrite("${PROJECT_SOURCE_DIR}/cmk_nrnconf.h.in" "${PROJECT_SOURCE_DIR}/nmodlconf.h.in")
+# =============================================================================
+# Copy cmake specific template files
+# =============================================================================
+# nrnconf.h.in and nmodlconf.h.in were originally generated from config.h.in
+# generated by autoheader. We use repository copy cmake_nrnconf.h.in to create
+# these files.
+nrn_copy_file_without_overwrite("${PROJECT_SOURCE_DIR}/cmake_nrnconf.h.in" "${PROJECT_SOURCE_DIR}/nrnconf.h.in")
+nrn_copy_file_without_overwrite("${PROJECT_SOURCE_DIR}/cmake_nrnconf.h.in" "${PROJECT_SOURCE_DIR}/nmodlconf.h.in")
 
-# generate foo from foo.in files
+# =============================================================================
+# Generate file from file.in template
+# =============================================================================
 nrn_configure_file(nrnconf.h .)
 nrn_configure_file(nmodlconf.h .)
 nrn_configure_file(nrnmpiuse.h src/oc)
@@ -196,9 +221,13 @@ nrn_configure_file(njconf.h src/nrnjava)
 nrn_configure_file(nmodlconf.h .)
 nrn_configure_file(nrnunits.lib share/lib)
 nrn_configure_file(nrn.defaults share/lib)
+
+# =============================================================================
+# If IV is not provided, configure local files
+# =============================================================================
 if (NOT NRN_ENABLE_INTERVIEWS)
   nrn_configure_file(ivstream.h src/ivos)
-  nrn_copy_file_without_overwrite("${PROJECT_SOURCE_DIR}/cmk_nrnconf.h.in" "${PROJECT_SOURCE_DIR}/config.h.in")
+  nrn_copy_file_without_overwrite("${PROJECT_SOURCE_DIR}/cmake_nrnconf.h.in" "${PROJECT_SOURCE_DIR}/config.h.in")
   nrn_configure_file(config.h .)
 endif()
 
