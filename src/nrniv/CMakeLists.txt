@@ -9,6 +9,51 @@
 # days. Other groups can, and should be, factored out
 
 # =============================================================================
+# Build nocmodl : source-to-source compiler for NMODL
+# =============================================================================
+flex_target(nocmodllexer ${NRN_NMODL_SRC_DIR}/lex.l ${NRN_NMODL_SRC_DIR}/lex.c)
+
+bison_target(nocmodlparser
+             ${NRN_NMODL_SRC_DIR}/parse1.y
+             ${NRN_NMODL_SRC_DIR}/parse1.c
+             DEFINES_FILE
+             ${NRN_NMODL_SRC_DIR}/parse1.h)
+
+bison_target(nocmodlparser
+             ${NRN_NMODL_SRC_DIR}/diffeq.y
+             ${NRN_NMODL_SRC_DIR}/diffeq.c
+             DEFINES_FILE
+             ${NRN_NMODL_SRC_DIR}/diffeq.h)
+
+set_property(SOURCE ${NRN_NMODL_SRC_FILES}
+             APPEND
+             PROPERTY COMPILE_DEFINITIONS
+                      NMODL=1
+                      NOCMODL=1
+                      CVODE=1
+                      VECTORIZE=1)
+add_executable(nocmodl ${NRN_NMODL_SRC_FILES})
+
+# =============================================================================
+# Translate all MOD files to C and mark them generated
+# =============================================================================
+foreach(modfile ${NRN_MODFILE_BASE_NAMES})
+  nocmodl_mod_to_c(${modfile})
+  list(APPEND NRN_MODFILE_C ${modfile}.c)
+endforeach()
+
+set_source_files_properties(${NRN_MODFILE_C} PROPERTIES GENERATED TRUE)
+
+# =============================================================================
+# Bison parser for HOC interpreter
+# =============================================================================
+bison_target(ocparser
+             ${NRN_OC_SRC_DIR}/parse.y
+             ${NRN_OC_SRC_DIR}/parse.c
+             DEFINES_FILE
+             ${NRN_OC_SRC_DIR}/parse.h)
+
+# =============================================================================
 # Source code lists
 # =============================================================================
 set(NRN_BASE_SRC_FILES
@@ -75,51 +120,6 @@ set(NRN_INCLUDE_DIRS
     ${PROJECT_SOURCE_DIR}/src/sundials/cvodes
     ${PROJECT_SOURCE_DIR}/src/sundials/ida
     ${PROJECT_SOURCE_DIR}/src/sundials/shared)
-
-# =============================================================================
-# Build nocmodl : source-to-source compiler for NMODL
-# =============================================================================
-flex_target(nocmodllexer ${NRN_NMODL_SRC_DIR}/lex.l ${NRN_NMODL_SRC_DIR}/lex.c)
-
-bison_target(nocmodlparser
-             ${NRN_NMODL_SRC_DIR}/parse1.y
-             ${NRN_NMODL_SRC_DIR}/parse1.c
-             DEFINES_FILE
-             ${NRN_NMODL_SRC_DIR}/parse1.h)
-
-bison_target(nocmodlparser
-             ${NRN_NMODL_SRC_DIR}/diffeq.y
-             ${NRN_NMODL_SRC_DIR}/diffeq.c
-             DEFINES_FILE
-             ${NRN_NMODL_SRC_DIR}/diffeq.h)
-
-set_property(SOURCE ${NRN_NMODL_SRC_FILES}
-             APPEND
-             PROPERTY COMPILE_DEFINITIONS
-                      NMODL=1
-                      NOCMODL=1
-                      CVODE=1
-                      VECTORIZE=1)
-add_executable(nocmodl ${NRN_NMODL_SRC_FILES})
-
-# =============================================================================
-# Translate all MOD files to C and mark them generated
-# =============================================================================
-foreach(modfile ${NRN_MODFILE_BASE_NAMES})
-  nocmodl_mod_to_c(${modfile})
-  list(APPEND NRN_MODFILE_C ${modfile}.c)
-endforeach()
-
-set_source_files_properties(${NRN_MODFILE_C} PROPERTIES GENERATED TRUE)
-
-# =============================================================================
-# Bison parser for HOC interpreter
-# =============================================================================
-bison_target(ocparser
-             ${NRN_OC_SRC_DIR}/parse.y
-             ${NRN_OC_SRC_DIR}/parse.c
-             DEFINES_FILE
-             ${NRN_OC_SRC_DIR}/parse.h)
 
 # =============================================================================
 # Helper commands : generate various headers
@@ -263,7 +263,12 @@ endif()
 # Final executable
 # =============================================================================
 add_executable(nrniv ${NRN_BIN_SRC_FILES})
-target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE} ${Readline_LIBRARY})
+target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE})
+
+# TODO: unset in top level CMake is not working
+if (NOT NRN_MACOS_BUILD AND ${READLINE_FOUND})
+  target_link_libraries(nrniv ${Readline_LIBRARY})
+endif()
 
 # =============================================================================
 # Install binary and library targets
