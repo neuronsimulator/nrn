@@ -43,7 +43,7 @@ endif()
 string(TOUPPER "${CMAKE_BUILD_TYPE}" _BUILD_TYPE)
 set(BUILD_TYPE_C_FLAGS "${CMAKE_C_FLAGS_${_BUILD_TYPE}}")
 set(BUILD_TYPE_CXX_FLAGS "${CMAKE_CXX_FLAGS_${_BUILD_TYPE}}")
-message("CXX Compile Flags from BUILD_TYPE: ${BUILD_TYPE_CXX_FLAGS}")
+message(STATUS "CXX Compile Flags from BUILD_TYPE: ${BUILD_TYPE_CXX_FLAGS}")
 
 if (FALSE) # done in top level CMakeLists.txt
 configure_file(${nmodl_makefile}.in ${nmodl_makefile} @ONLY)
