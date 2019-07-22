@@ -89,8 +89,8 @@ static void work_around() {
 	MPI_Recv(0,0,0,0,0,c,0);
 	MPI_Sendrecv(0,0,0,0,0,0,0,0,0,0,c,0);
 	MPI_Iprobe(0,0,c,0,0);
-	MPI_Address(0,0);
-	MPI_Type_struct(0,0,0,0,0);
+	MPI_Get_address(0,0);
+	MPI_Type_create_struct(0,0,0,0,0);
 	MPI_Type_commit(0);
 	MPI_Allgather(0,0,0,0,0,0,c);
 	MPI_Allgatherv(0,0,0,0,0,0,0,c);

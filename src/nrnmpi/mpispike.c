@@ -77,16 +77,16 @@ static void make_spikebuf_type() {
 	block_lengths[1] = nrn_spikebuf_size;
 	block_lengths[2] = nrn_spikebuf_size;
 
-	MPI_Address(&s, &addresses[0]);
-	MPI_Address(&(s.nspike), &addresses[1]);
-	MPI_Address(&(s.gid[0]), &addresses[2]);
-	MPI_Address(&(s.spiketime[0]), &addresses[3]);
+	MPI_Get_address(&s, &addresses[0]);
+	MPI_Get_address(&(s.nspike), &addresses[1]);
+	MPI_Get_address(&(s.gid[0]), &addresses[2]);
+	MPI_Get_address(&(s.spiketime[0]), &addresses[3]);
 
 	displacements[0] = addresses[1] - addresses[0];
 	displacements[1] = addresses[2] - addresses[0];
 	displacements[2] = addresses[3] - addresses[0];
 
-	MPI_Type_struct(3, block_lengths, displacements, typelist, &spikebuf_type);
+	MPI_Type_create_struct(3, block_lengths, displacements, typelist, &spikebuf_type);
 	MPI_Type_commit(&spikebuf_type);
 }
 #endif
