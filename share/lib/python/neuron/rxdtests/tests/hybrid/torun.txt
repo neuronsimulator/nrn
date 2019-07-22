@@ -1,0 +1,6 @@
+bistable_hybrid_cvode.py
+bistable_hybrid_cvode_change_nthread.py
+bistable_hybrid.py
+bistable_hybrid_change_nthread.py
+pure_diffusion_hybrid_cvode.py
+pure_diffusion_hybrid.py

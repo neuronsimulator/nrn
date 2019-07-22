@@ -72,6 +72,7 @@ extern "C" {
 	extern size_t nrnbbcore_write();
 	extern size_t nrnbbcore_register_mapping();
 	extern int nrncore_run(const char*);
+	extern bool nrn_trajectory_request_per_time_step_;
 
 }
 
@@ -974,6 +975,9 @@ static double nrnbbcorewrite(void*) {
 }
 
 static double nrncorerun(void*) {
+	if (ifarg(2)) {
+	  nrn_trajectory_request_per_time_step_ = chkarg(2, 0., 1.) != 0.0;
+	}
 	return double(nrncore_run(gargstr(1)));
 }
 

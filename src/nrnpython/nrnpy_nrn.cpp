@@ -85,6 +85,7 @@ extern int diam_changed;
 extern void mech_insert1(Section*, int);
 extern void mech_uninsert1(Section*, Symbol*);
 extern PyObject* nrn_hocobj_ptr(double*);
+extern int nrn_is_hocobj_ptr(PyObject*, double*&);
 extern PyObject* nrnpy_forall(PyObject* self, PyObject* args);
 extern Object* nrnpy_po2ho(PyObject*);
 extern Object* nrnpy_pyobject_in_obj(PyObject*);
@@ -943,6 +944,15 @@ static PyObject* NPyMechObj_is_ion(NPyMechObj* self) {
   Py_RETURN_FALSE;
 }
 
+static PyObject* NPyMechObj_segment(NPyMechObj* self) {
+  PyObject* result = NULL;
+  if (self->pyseg_) {
+    result = (PyObject*)(self->pyseg_);
+    Py_INCREF(result);
+  }
+  return result;
+}
+
 static PyObject* pymech_repr(PyObject* p) {
   NPyMechObj* pymech = (NPyMechObj*)p;
   Section* sec = pymech->pyseg_->pysec_->sec_;
@@ -1668,6 +1678,25 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
   return result;
 }
 
+int nrn_pointer_assign(Prop* prop, Symbol* sym, PyObject* value) {
+  int err = 0;
+  if (sym->subtype == NRNPOINTER) {
+    double* pd;
+    double** ppd = &prop->dparam[sym->u.rng.index].pval;
+    assert(ppd);
+    if (nrn_is_hocobj_ptr(value, pd)) {
+      *ppd = pd;
+    }else{
+      PyErr_SetString(PyExc_ValueError, "must be a hoc pointer");
+      err = -1;
+    }
+  }else{
+     PyErr_SetString(PyExc_AttributeError, " For assignment, only POINTER var can have a _ref_ prefix");
+     err = -1;
+  }
+  return err;
+}
+
 static int segment_setattro(NPySegObj* self, PyObject* pyname,
                             PyObject* value) {
   PyObject* rv;
@@ -1724,6 +1753,17 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname,
         // cannot execute because xraxial is an array
         diam_changed = 1;
       }
+    }
+  }else if (strncmp(n, "_ref_", 5) == 0) {
+    Symbol* rvsym = hoc_table_lookup(n + 5, hoc_built_in_symlist);
+    if (rvsym && rvsym->type == RANGEVAR) {
+      Node* nd = node_exact(self->pysec_->sec_, self->x_);
+      assert(nd);
+      Prop* prop = nrn_mechanism(rvsym->u.rng.type, nd);
+      assert(prop);
+      err = nrn_pointer_assign(prop, rvsym, value);
+    } else {
+      err = PyObject_GenericSetAttr((PyObject*)self, pyname, value);
     }
   } else {
     err = PyObject_GenericSetAttr((PyObject*)self, pyname, value);
@@ -1819,22 +1859,31 @@ static int mech_setattro(NPyMechObj* self, PyObject* pyname, PyObject* value) {
   }
   // printf("mech_setattro %s\n", n);
   NrnProperty np(self->prop_);
-  char buf[200];
-  sprintf(buf, "%s_%s", n, memb_func[self->prop_->type].sym->name);
+  int isptr = (strncmp(n, "_ref_", 5) == 0);
+  char* mname = memb_func[self->prop_->type].sym->name;
+  int mnamelen = strlen(mname);
+  int bufsz = strlen(n) + mnamelen + 2;
+  char *buf = new char[bufsz];
+  sprintf(buf, "%s_%s", isptr ? n + 5 : n, mname);
   Symbol* sym = np.find(buf);
+  delete [] buf;
   if (sym) {
-    double x;
-    if (PyArg_Parse(value, "d", &x) == 1) {
+    if (isptr) {
+      err = nrn_pointer_assign(self->prop_, sym, value);
+    }else{
+      double x;
       double* pd = np.prop_pval(sym, 0);
       if (pd) {
-        *pd = x;
-      } else {
+        if (PyArg_Parse(value, "d", &x) == 1) {
+          *pd = x;
+        } else {
+          PyErr_SetString(PyExc_ValueError, "must be a double");
+          err = -1;
+        }
+      }else{
         rv_noexist(self->pyseg_->pysec_->sec_, sym->name, self->pyseg_->x_, 2);
         err = 1;
       }
-    } else {
-      PyErr_SetString(PyExc_ValueError, "must be a double");
-      err = -1;
     }
   } else {
     err = PyObject_GenericSetAttr((PyObject*)self, pyname, value);
@@ -2048,6 +2097,8 @@ static PyMethodDef NPyMechObj_methods[] = {
      "Mechanism name (same as hoc suffix for density mechanism)"},
     {"is_ion", (PyCFunction)NPyMechObj_is_ion, METH_NOARGS,
      "Returns True if an ion mechanism"},
+    {"segment", (PyCFunction)NPyMechObj_segment, METH_NOARGS,
+     "Returns the segment of the Mechanism instance"},
     {NULL}};
 
 static PyMethodDef NPyRangeVar_methods[] = {

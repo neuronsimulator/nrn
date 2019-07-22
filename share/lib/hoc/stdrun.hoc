@@ -181,6 +181,7 @@ global_ra = 35.4
 {variable_domain(&global_ra, 1e-3, 1e6) units(&global_ra, "ohm-cm")}
 strdef temp_string_, temp_string2_
 temp_string_ = "t"
+coreneuronrunning_ = 0
 
 proc prjnrn() {	// Project management.
 	save_session("start.ses")   
@@ -234,12 +235,7 @@ proc helpmenu() {
     }
 }
 
-proc buildmenu() {local has_rxd
-    has_rxd = 0
-    if (nrnpython("import neuron")) {
-        pyobj = new PythonObject()
-        has_rxd = pyobj.neuron._has_scipy()
-    }    
+proc buildmenu() {
     xmenu("Build", 1)
     xbutton("single compartment", "load_file(\"single.hoc\") makesinglecompartment()")
     xbutton("Cell Builder", "load_file(\"celbild.hoc\") makecellbuilder()")
@@ -255,10 +251,7 @@ proc buildmenu() {local has_rxd
     xbutton("Point", "load_file(\"chanbild.hoc\", \"ChannelBuild\") chanbild(0)")
     xmenu("import KSChan", "cbimportmenu()")
     xmenu()
-    if (has_rxd) {
-        /* check for rxd or crxd at runtime rather than at import */
-        xbutton("RxD Builder", "nrnpython(\"import neuron.rxd.gui\\nneuron.rxd.gui.RxDBuilder()\")")
-    }
+    xbutton("RxD Builder", "nrnpython(\"import neuron.rxd.gui\\nneuron.rxd.gui.RxDBuilder()\")")
     xmenu()
 }
 proc cbimportmenu() {local i, j
@@ -288,6 +281,7 @@ proc toolmenu() {
 	xbutton("RunButton", "xpanel(\"Run\") xcheckbox(\"Init & Run\", &running_,\"runbutton()\") xpanel()")
 	xbutton("VariableStepControl", "numericalmethodpanel.map()")
 	xbutton("Parallel Computing", "load_file(\"parcom.hoc\", \"ParallelComputeTool\") execute(\"ParallelComputeTool[0].map()\")")
+	xbutton("CoreNEURON", "load_file(\"corenrn.hoc\", \"CoreNeuronRun\") execute(\"CoreNeuronRun[0].map()\")")
 	pointprocessesmenu()
 	distmechmenu()
 	fittingmenu()
@@ -571,7 +565,7 @@ proc advance() {
 
 proc cvode_simgraph() {local i, j
 	cvode.simgraph_remove()
-	if (cvode.active && cvode.use_local_dt) {
+	if ( coreneuronrunning_ || (cvode.active && cvode.use_local_dt)) {
 		for j=0,n_graph_lists-1 {
 			for i=0,graphList[j].count-1 graphList[j].object(i).simgraph()
 		}

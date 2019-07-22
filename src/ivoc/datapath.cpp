@@ -20,6 +20,8 @@ void nrn_vecsim_remove(void*) {printf("nrn_vecsym_remove implemented in nrniv\n"
 #if HAVE_IV
 void graphLineRecDeleted(GraphLine*){}
 void Graph::simgraph(){}
+void GraphVector::record_install(){}
+void GraphVector::record_uninstall(){}
 #endif
 // another hack so ivoc will have these names which nrniv gets elsewhere
 extern "C" {

@@ -1,0 +1,57 @@
+begintemplate CoreNeuronRun
+public box, map, save, pc
+objref pc, this, box
+strdef tstr
+external tstop, cvode, stdinit, coreneuronrunning_, flushPlot
+
+proc init() {
+  perstep = 0
+  pc = new ParallelContext()
+  build()
+}
+
+proc build() {
+  box = new VBox()
+  box.ref(this)
+  box.save("save()")
+  box.intercept(1)
+  xpanel("")
+  xbutton("CoreNEURON Run", "run()")
+  xcheckbox("persteptransfer", &perstep)
+  xpanel()
+  box.intercept(0)
+}
+
+proc map() {
+  if (box.ismapped) return
+  sprint(tstr, "%s", this)
+  if (numarg() > 1) {
+    box.map(tstr, $2, $3, $4, $5)
+  }else{
+    box.map(tstr)
+  }
+}
+
+proc save() {
+  box.save("load_file(\"corenrn.hoc\", \"CoreNeuronRun\")\n}")
+  box.save("{ocbox_ = CoreNeuronRun[0]}")
+  box.save("{object_push(ocbox_)}")
+  box.save("{object_pop()}")
+  box.save("{\n")
+}
+
+proc run() {
+  sprint(tstr, "-e %g", tstop)
+  cvode.cache_efficient(1)
+  coreneuronrunning_ = 1
+  stdinit()
+  coreneuronrunning_ = 0
+  pc.nrncore_run(tstr, perstep)
+  flushPlot()
+}
+
+endtemplate CoreNeuronRun
+
+objref tobj
+tobj = new CoreNeuronRun()
+objref tobj

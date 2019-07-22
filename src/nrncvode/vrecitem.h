@@ -15,11 +15,15 @@ class StmtInfo;
 struct NrnThread;
 struct Section;
 
-// SaveState subtypes for PlayRecordType
+// SaveState subtypes for PlayRecordType and trajectory return type
 #define VecRecordDiscreteType 1
 #define VecRecordDtType 2
 #define VecPlayStepType 3
 #define VecPlayContinuousType 4
+#define TvecRecordType 5
+#define YvecRecordType 6
+#define GLineRecordType 7
+#define GVectorRecordType 8
 
 // used by PlayRecord subclasses that utilize discrete events
 class PlayRecordEvent : public DiscreteEvent {
@@ -98,6 +102,7 @@ public:
 	virtual void install(Cvode*);
 	virtual void record_init();
 	virtual void continuous(double t);
+	virtual int type() { return TvecRecordType; }
 
 	virtual void disconnect(Observable*);
 	virtual bool uses(void* v) { return (void*)t_ == v; }
@@ -113,6 +118,7 @@ public:
 	virtual void install(Cvode*);
 	virtual void record_init();
 	virtual void continuous(double t);
+	virtual int type() { return YvecRecordType; }
 
 	virtual void disconnect(Observable*);
 	virtual bool uses(void* v) { return (void*)y_== v ;}

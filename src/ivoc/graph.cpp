@@ -3249,11 +3249,13 @@ GraphVector::GraphVector(const char* name, const Color* color, const Brush* brus
 	name_ = name;
 	keepable_ = true;
 	disconnect_defer_ = false;
+	record_install();
 }
 GraphVector::~GraphVector() {
 	Oc oc;
 	oc.notify_pointer_disconnect(this);
 	dp_->unref();
+	record_uninstall();
 }
 
 const char* GraphVector::name()const {
