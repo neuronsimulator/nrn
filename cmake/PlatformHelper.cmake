@@ -1,8 +1,13 @@
 # =============================================================================
 # Platform specific settings
 # =============================================================================
-if(CMAKE_HOST_WIN32)
-    set(NRN_WINDOWS_BUILD TRUE)
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+  set(NRN_LINUX_BUILD TRUE)
+endif()
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  set(NRN_WINDOWS_BUILD TRUE)
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -10,5 +15,5 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "CYGWIN")
-  set(CYGWIN 1)
+  set(NRN_CYGWIN_BUILD TRUE)
 endif()

@@ -1,48 +1,63 @@
-#some nrnconf.h and nmodlconf.h definitions
-set(NRNHOST "\"${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_NAME}\"")
-set(NRNHOSTCPU "\"${CMAKE_SYSTEM_PROCESSOR}\"")
-set(PACKAGE_BUGREPORT "\"\"")
+# =============================================================================
+# Definitions used in nrnconf.h and nmodlconf.h
+# =============================================================================
 set(PACKAGE_NAME "${PACKAGE}")
-set(PACKAGE_STRING "\"nrn ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}\"")
 set(PACKAGE_TARNAME "${PACKAGE}")
+set(PACKAGE_BUGREPORT "\"\"")
 set(PACKAGE_URL "\"\"")
-set(PACKAGE_VERSION "\"${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}\"")
-set(VERSION "\"${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}\"")
-set(NRN_LIBDIR "\"${CMAKE_INSTALL_PREFIX}/lib\"")
-set(NEURON_DATA_DIR "\"${CMAKE_INSTALL_PREFIX}/share/nrn\"")
-set(SUNDIALS_DOUBLE_PRECISION 1)
-set(SUNDIALS_USE_GENERIC_MATH 1)
-set(LT_OBJDIR "\".libs/\"")
+# some of the variables need to be double quoted strings as they are used in
+# the above mentioned template files
+nrn_set_string(NRNHOST "${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_NAME}")
+nrn_set_string(NRNHOSTCPU "${CMAKE_SYSTEM_PROCESSOR}")
+nrn_set_string(PACKAGE_STRING "nrn ${PROJECT_VERSION}")
+nrn_set_string(PACKAGE_VERSION "${PROJECT_VERSION}")
+nrn_set_string(VERSION "${PROJECT_VERSION}")
+nrn_set_string(NRN_LIBDIR "${CMAKE_INSTALL_PREFIX}/lib")
+nrn_set_string(NEURON_DATA_DIR "${CMAKE_INSTALL_PREFIX}/share/nrn")
+nrn_set_string(LT_OBJDIR ".libs/")
+nrn_set_string(DLL_DEFAULT_FNAME "${CMAKE_SYSTEM_PROCESSOR}/.libs/libnrnmech.so")
+
 set(YYTEXT_POINTER 1)
 set(TIME_WITH_SYS_TIME 1)
 set(HAVE_NAMESPACES "/**/")
 set(HAVE_STTY 0)
-set(IVOS_FABS "::fabs") # complicated configure test but I don't think this is ever not the case anymore
-set(HAVE_STL "/**/") # nowadays universal for CXX
-set(DLL_DEFAULT_FNAME "\"${CMAKE_SYSTEM_PROCESSOR}/.libs/libnrnmech.so\"")
+# below two are universal nowadays
+set(IVOS_FABS "::fabs")
+set(HAVE_STL "/**/")
+set(prefix ${CMAKE_INSTALL_PREFIX})
+set(host_cpu ${CMAKE_SYSTEM_PROCESSOR})
+set(exec_prefix ${prefix})
+set(bindir \${exec_prefix}/bin)
+set(modsubdir ${host_cpu})
 
-#INCLUDE(TestBigEndian)
-#TEST_BIG_ENDIAN(WORDS_BIGENDIAN)
+# TODO : these two don't start out as #undef but as #define so need their
+# explicit @...@ replacments
+# set(NEURON_BIN_DIR "\"${CMAKE_INSTALL_PREFIX}/${CMAKE_SYSTEM_PROCESSOR}/bin\"")
+# set(NRN_CONFIG_ARGS "\"unknown\"") # ends up as "" since no @...@
 
-if (NOT "${NRN_ENABLE_PYTHON_DYNAMIC}" MATCHES "NO")
-set(NRNPYTHON_DYNAMICLOAD 3) # the value needs to be made not to matter
-endif()
-
+# =============================================================================
+# Platform specific options (get expanded to comments)
+# =============================================================================
 # for nrn.defaults
 set(nrndef_unix "//")
 set(nrndef_mac "//")
 set(nrndef_mswin "//")
+# for setup.py
 set(MAC_DARWIN_TRUE "\#")
 set(MAC_DARWIN_FALSE "")
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+if (NRN_LINUX_BUILD)
   set(nrndef_unix "")
-elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+elseif (NRN_MACOS_BUILD)
   set(nrndef_mac "")
   set(MAC_DARWIN_TRUE "")
   set(MAC_DARWIN_FALSE "\#")
-elseif (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+elseif (NRN_WINDOWS_BUILD)
   set(nrndef_mswin "")
+endif()
+
+if(NRN_CYGWIN_BUILD)
+  set(CYGWIN 1)
 endif()
 
 # =============================================================================
@@ -76,29 +91,16 @@ else()
   set (NRNOC_X11 0)
 endif()
 
-
-#these two don't start out as #undef but as #define so need their explicit
-#@...@ replacments
-#set(NEURON_BIN_DIR "\"${CMAKE_INSTALL_PREFIX}/${CMAKE_SYSTEM_PROCESSOR}/bin\"")
-#set(NRN_CONFIG_ARGS "\"unknown\"") # ends up as "" since no @...@
-set (prefix ${CMAKE_INSTALL_PREFIX})
-set (host_cpu ${CMAKE_SYSTEM_PROCESSOR})
-
-set (exec_prefix ${prefix})
-set (bindir \${exec_prefix}/bin)
-set (modsubdir ${host_cpu})
-
-# =============================================================================
-# Check direcotry manipulation header
-# =============================================================================
-nrn_check_dir_exists(dirent.h HAVE_DIRENT_H)
-nrn_check_dir_exists(ndir.h HAVE_NDIR_H)
-nrn_check_dir_exists(sys/dir.h HAVE_SYS_DIR_H)
-nrn_check_dir_exists(sys/ndir.h HAVE_SYS_NDIR_H)
-# similar to autoconf, set it to 0
-if (HAVE_DIRENT_H)
-  set(HAVE_SYS_DIR_H 0)
+if (NOT "${NRN_ENABLE_PYTHON_DYNAMIC}" MATCHES "NO")
+  # the value needs to be made not to matter
+  set(NRNPYTHON_DYNAMICLOAD 3)
 endif()
+
+# =============================================================================
+# Dependencies option
+# =============================================================================
+set(SUNDIALS_DOUBLE_PRECISION 1)
+set(SUNDIALS_USE_GENERIC_MATH 1)
 
 # =============================================================================
 # Similar to check_include_files but also construct NRN_HEADERS_INCLUDE_LIST
@@ -135,13 +137,17 @@ nrn_check_include_files(unistd.h HAVE_UNISTD_H)
 nrn_check_include_files(varargs.h HAVE_VARARGS_H)
 nrn_check_include_files(sys/timeb.h HAVE_SYS_TIMEB_H)
 
+# =============================================================================
+# Check for standard headers
+# =============================================================================
 check_include_files("dlfcn.h;stdint.h;stddef.h;inttypes.h;stdlib.h;strings.h;string.h;float.h" STDC_HEADERS)
 check_include_files("_G_config.h" HAVE__G_CONFIG_H LANGUAGE CXX)
 
-message(STATUS "NRN_HEADERS_INCLUDE_LIST ${NRN_HEADERS_INCLUDE_LIST}")
-
-#like check_symbol_exists but internally <files> arg is "${NRN_HEADERS_INCLUDE_LIST}"
-#unless not empty.
+# =============================================================================
+# Check symbol using check_cxx_symbol_exists but use ${NRN_HEADERS_INCLUDE_LIST}
+# =============================================================================
+# note that this must be called after all *check_include_files because we use
+# NRN_HEADERS_INCLUDE_LIST is second argument (headers) is empty.
 nrn_check_symbol_exists("alloca" "" HAVE_ALLOCA)
 nrn_check_symbol_exists("bcopy" "" HAVE_BCOPY)
 nrn_check_symbol_exists("bzero" "" HAVE_BZERO)
@@ -172,17 +178,10 @@ nrn_check_symbol_exists("strdup" "" HAVE_STRDUP)
 nrn_check_symbol_exists("strstr" "" HAVE_STRSTR)
 nrn_check_symbol_exists("stty" "" HAVE_STTY)
 nrn_check_symbol_exists("vprintf" "" HAVE_VPRINTF)
-
 nrn_check_cxx_symbol_exists("getpw" "sys/types.h;pwd.h" HAVE_GETPW)
-#nrn_check_symbol_exists("DIR" "dirent.h" HAVE_DIRENT_H) #see nrn_check_dir_exists above
 nrn_check_cxx_symbol_exists("fesetround" "" HAVE_FESETROUND)
-#nrn_check_cxx_symbol_exists("std::stringstream" "sstream" HAVE_SSTREAM)
-set(HAVE_SSTREAM /**/) # should always exist these days
-
-# =============================================================================
-# Set return type of signal in RETSIGTYPE
-# =============================================================================
-nrn_check_signal_return_type(RETSIGTYPE)
+# not necessary to check as it should be always there
+set(HAVE_SSTREAM /**/)
 
 # =============================================================================
 # Check data types
@@ -192,6 +191,22 @@ nrn_check_type_exists(sys/types.h off_t "long int" off_t)
 nrn_check_type_exists(sys/types.h pid_t int pid_t)
 nrn_check_type_exists(sys/types.h size_t "unsigned int" size_t)
 nrn_check_type_exists(sys/types.h uid_t int uid_t)
+
+# =============================================================================
+# Set return type of signal in RETSIGTYPE
+# =============================================================================
+nrn_check_signal_return_type(RETSIGTYPE)
+
+# =============================================================================
+# Check direcotry manipulation header
+# =============================================================================
+nrn_check_dir_exists(dirent.h HAVE_DIRENT_H)
+nrn_check_dir_exists(ndir.h HAVE_NDIR_H)
+nrn_check_dir_exists(sys/dir.h HAVE_SYS_DIR_H)
+nrn_check_dir_exists(sys/ndir.h HAVE_SYS_NDIR_H)
+if (HAVE_DIRENT_H)
+  set(HAVE_SYS_DIR_H 0)
+endif()
 
 # =============================================================================
 # Copy cmake specific template files
@@ -223,7 +238,7 @@ nrn_configure_file(nrnunits.lib share/lib)
 nrn_configure_file(nrn.defaults share/lib)
 
 # =============================================================================
-# If IV is not provided, configure local files
+# If Interviews is not provided, configure local files
 # =============================================================================
 if (NOT NRN_ENABLE_INTERVIEWS)
   nrn_configure_file(ivstream.h src/ivos)
