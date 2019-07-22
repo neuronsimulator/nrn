@@ -67,7 +67,7 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
 )
 nrn_configure_file(setup.py src/nrnpython)
 
-message(NOTICE: " NRNPYTHON_SRC ${NRNPYTHON_SRC}")
+message(NOTICE: " NRN_NRNPYTHON_SRC_FILES ${NRN_NRNPYTHON_SRC_FILES}")
 
 if ("${NRN_ENABLE_MODULE_INSTALL}" MATCHES "NO")
   message(STATUS "neuron module will not be automatically installed")
@@ -92,7 +92,7 @@ else()
     )
 
     if (NRNPYTHON_INCLUDE2)
-      add_library(nrnpython2 SHARED ${NRNPYTHON_SRC})
+      add_library(nrnpython2 SHARED ${NRN_NRNPYTHON_SRC_FILES})
       target_include_directories(nrnpython2 BEFORE PUBLIC
         ${NRNPYTHON_INCLUDE2} ${idir}
       )
@@ -101,7 +101,7 @@ else()
     endif()
 
     if (NRNPYTHON_INCLUDE3)
-      add_library(nrnpython3 SHARED ${NRNPYTHON_SRC})
+      add_library(nrnpython3 SHARED ${NRN_NRNPYTHON_SRC_FILES})
       add_dependencies(nrnpython3 nrniv_lib)
       target_include_directories(nrnpython3 BEFORE PUBLIC
         ${NRNPYTHON_INCLUDE3} ${idir}

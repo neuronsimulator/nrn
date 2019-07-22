@@ -151,7 +151,7 @@ endif()
 # Install targets
 # =============================================================================
 # find headers to install
-nrn_find_project_files(NRN_HEADERS_PATHS ${NRN_HEADERS_TO_INSTALL})
+nrn_find_project_files(NRN_HEADERS_PATHS ${HEADER_FILES_TO_INSTALL})
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/lib DESTINATION share/nrn)
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo DESTINATION share/nrn)
