@@ -1,52 +1,51 @@
+# =============================================================================
+# Set various variables used in template files
+# =============================================================================
+# TODO: for nrn.defaults but these are repeated in cmake_config/CMakeLists.txt
+set(modsubdir ${CMAKE_SYSTEM_PROCESSOR})
+set(NRNMECH_DLL_STYLE_FALSE "\#")
+set(NRNMECH_DLL_STYLE_TRUE "")
 
-set (modsubdir ${host_cpu})
-
-# for nrn.defaults
 set(nrndef_unix "//")
 set(nrndef_mac "//")
 set(nrndef_mswin "//")
 set(MAC_DARWIN_TRUE "\#")
 set(MAC_DARWIN_FALSE "")
-if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+if (NRN_LINUX_BUILD)
   set(nrndef_unix "")
-elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+elseif (NRN_MACOS_BUILD)
   set(nrndef_mac "")
   set(MAC_DARWIN_TRUE "")
   set(MAC_DARWIN_FALSE "\#")
-elseif (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+elseif (NRN_WINDOWS_BUILD)
   set(nrndef_mswin "")
 endif()
 
-#for nrnmech_makefile
+# for nrnmech_makefile
 set(CMAKE_INSTALL_BINDIR bin)
 set(CMAKE_INSTALL_LIBDIR lib)
 set(CMAKE_INSTALL_INCLUDEDIR include)
 set(CMAKE_INSTALL_DATADIR share/nrn)
-#------modified coreneuron/extra/CMakeLists.txt
-include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeListsNrnMech.txt)
-#------end of modified coreneuron/extra/CMakeLists.txt
 
-set(NRNMECH_DLL_STYLE_FALSE "\#")
-set(NRNMECH_DLL_STYLE_TRUE "")
+# =============================================================================
+# Adapted from CoreNEURON
+# =============================================================================
+include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeListsNrnMech.txt)
+
+# =============================================================================
+# nrnmech_makefile.in is bound up with autoconf, used based on coreneuron Configure templates
+# =============================================================================
 nrn_configure_file(nrngui bin)
 nrn_configure_file(neurondemo bin)
 nrn_configure_file(nrnivmodl bin)
-#nrnmech_makefile.in is intimately bound up with autoconf (libtool)
-#nrn_configure_file(nrnmech_makefile bin)
-#so instead use a modified copy of the CoreNEURON version of
-#nrnivmodl_core_makefile.in
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/nrnivmodl_makefile.cmk
-  ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile
-  @ONLY
-)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/nrnivmodl_makefile_cmake.in
+               ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile @ONLY)
 
-install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/nrngui
-  ${PROJECT_BINARY_DIR}/bin/neurondemo
-  ${PROJECT_BINARY_DIR}/bin/nrnivmodl
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
-)
-install(FILES ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
-)
+# =============================================================================
+# Install targets
+# =============================================================================
+install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/nrngui ${PROJECT_BINARY_DIR}/bin/neurondemo
+                 ${PROJECT_BINARY_DIR}/bin/nrnivmodl
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
-
+install(FILES ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
