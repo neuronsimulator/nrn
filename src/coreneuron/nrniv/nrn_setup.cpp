@@ -821,10 +821,6 @@ void nrn_setup(const char* filesdat,
     model_size();
     delete [] gidgroups;
     delete [] imult;
-    if (nrnthread_chkpnt) {
-        delete [] nrnthread_chkpnt;
-        nrnthread_chkpnt = NULL;
-    }
 
     if (nrnmpi_myid == 0) {
         printf(" Setup Done   : %.2lf seconds \n", nrn_wtime() - time);
@@ -1008,6 +1004,12 @@ void nrn_cleanup(bool clean_ion_global_map) {
     clear_event_queue(); // delete left-over TQItem
     gid2in.clear();
     gid2out.clear();
+
+    // clean nrnthread_chkpnt
+    if (nrnthread_chkpnt) {
+        delete [] nrnthread_chkpnt;
+        nrnthread_chkpnt = nullptr;
+    }
 
     // clean ezOpt parser allocated memory (if any)
     nrnopt_delete();
