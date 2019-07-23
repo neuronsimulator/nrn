@@ -28,11 +28,11 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeListsNrnMech.txt)
 
 set(NRNMECH_DLL_STYLE_FALSE "\#")
 set(NRNMECH_DLL_STYLE_TRUE "")
-configure_ac_file(nrngui bin)
-configure_ac_file(neurondemo bin)
-configure_ac_file(nrnivmodl bin)
+nrn_configure_file(nrngui bin)
+nrn_configure_file(neurondemo bin)
+nrn_configure_file(nrnivmodl bin)
 #nrnmech_makefile.in is intimately bound up with autoconf (libtool)
-#configure_ac_file(nrnmech_makefile bin)
+#nrn_configure_file(nrnmech_makefile bin)
 #so instead use a modified copy of the CoreNEURON version of
 #nrnivmodl_core_makefile.in
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/nrnivmodl_makefile.cmk
