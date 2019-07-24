@@ -21,37 +21,55 @@
 namespace coreneuron {
 extern InterleaveInfo* interleave_info;
 void copy_ivoc_vect_to_device(IvocVect*& iv, IvocVect*& div);
+void nrn_ion_global_map_copyto_device();
+void nrn_VecPlay_copyto_device(NrnThread* nt, void** d_vecplay);
+void init_gpu(int nthreads, NrnThread* threads);
 
 /* note: threads here are corresponding to global nrn_threads array */
 void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
 #ifdef _OPENACC
 
-    if (nthreads <= 0) {
-        printf("\n Warning: No threads to copy on GPU! ");
-        return;
-    }
+    init_gpu(nthreads, threads);
+    nrn_ion_global_map_copyto_device();
 
-    /** @todo: currently only checking nvidia gpu */
-    int num_gpus = acc_get_num_devices(acc_device_nvidia);
-    if (num_gpus == 0) {
-        printf("\n WARNING: Enabled GPU execution but couldn't find NVIDIA GPU! \n");
-    }
+#ifdef UNIFIED_MEMORY
 
     int i;
-    NrnThread* d_threads;
 
-    /* @todo: why dt is not setup at this moment? */
     for (i = 0; i < nthreads; i++) {
-        (threads + i)->_dt = dt;
-        /* this thread will be computed on GPU */
-        (threads + i)->compute_gpu = 1;
+        NrnThread* nt = threads + i;  // NrnThread on host
+
+        if (nt->n_presyn) {
+            PreSyn* d_presyns = (PreSyn*)acc_copyin(nt->presyns, sizeof(PreSyn) * nt->n_presyn);
+        }
+
+        if (nt->n_vecplay) {
+            /* copy VecPlayContinuous instances */
+
+            printf("\n Warning: VectorPlay used but NOT implemented on GPU! ");
+
+            /** just empty containers */
+            void** d_vecplay = (void**)acc_copyin(nt->_vecplay, sizeof(void*) * nt->n_vecplay);
+            // note: we are using unified memory for NrnThread. Once VecPlay is copied to gpu,
+            // we dont want to update nt->vecplay because it will also set gpu pointer of vecplay
+            // inside nt on cpu (due to unified memory).
+
+            nrn_VecPlay_copyto_device(nt, d_vecplay);
+        }
+
+        if (!nt->_permute && nt->end > 0) {
+            printf("\n WARNING: NrnThread %d not permuted, error for linear algebra?", i);
+        }
     }
+
+#else
+    int i;
 
     /* -- copy NrnThread to device. this needs to be contigious vector because offset is used to
      * find
      * corresponding NrnThread using Point_process in NET_RECEIVE block
      */
-    d_threads = (NrnThread*)acc_copyin(threads, sizeof(NrnThread) * nthreads);
+    NrnThread* d_threads = (NrnThread*)acc_copyin(threads, sizeof(NrnThread) * nthreads);
 
     if (interleave_info == NULL) {
         printf("\n Warning: No permutation data? Required for linear algebra!");
@@ -62,14 +80,9 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
     for (i = 0; i < nthreads; i++) {
         NrnThread* nt = threads + i;      // NrnThread on host
         NrnThread* d_nt = d_threads + i;  // NrnThread on device
-
-        if (nt->end <= 0) {
-            // this is an empty thread and could be only artificial
-            // cells. In this case nothing is executed on gpu.
-            nt->compute_gpu = 0;
+        if (!nt->compute_gpu) {
             continue;
         }
-
         double* d__data;  // nrn_threads->_data on device
 
         /* -- copy _data to device -- */
@@ -319,33 +332,7 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
             void** d_vecplay = (void**)acc_copyin(nt->_vecplay, sizeof(void*) * nt->n_vecplay);
             acc_memcpy_to_device(&(d_nt->_vecplay), &d_vecplay, sizeof(void**));
 
-            for (int i = 0; i < nt->n_vecplay; i++) {
-                VecPlayContinuous* vecplay_instance = (VecPlayContinuous*)nt->_vecplay[i];
-
-                /** just VecPlayContinuous object */
-                void* d_p = (void*)acc_copyin(vecplay_instance, sizeof(VecPlayContinuous));
-                acc_memcpy_to_device(&(d_vecplay[i]), &d_p, sizeof(void*));
-
-                VecPlayContinuous* d_vecplay_instance = (VecPlayContinuous*)d_p;
-
-                /** copy y_, t_ and discon_indices_ */
-                copy_ivoc_vect_to_device(vecplay_instance->y_, d_vecplay_instance->y_);
-                copy_ivoc_vect_to_device(vecplay_instance->t_, d_vecplay_instance->t_);
-                copy_ivoc_vect_to_device(vecplay_instance->discon_indices_,
-                                         d_vecplay_instance->discon_indices_);
-
-                /** copy PlayRecordEvent : todo: verify this */
-                PlayRecordEvent* d_e_ =
-                    (PlayRecordEvent*)acc_copyin(vecplay_instance->e_, sizeof(PlayRecordEvent));
-                acc_memcpy_to_device(&(d_e_->plr_), &d_vecplay_instance,
-                                     sizeof(VecPlayContinuous*));
-                acc_memcpy_to_device(&(d_vecplay_instance->e_), &d_e_, sizeof(PlayRecordEvent*));
-
-                /** copy pd_ : note that it's pointer inside ml->data and hence data itself is
-                 * already on GPU */
-                double* d_pd_ = (double*)acc_deviceptr(vecplay_instance->pd_);
-                acc_memcpy_to_device(&(d_vecplay_instance->pd_), &d_pd_, sizeof(double*));
-            }
+            nrn_VecPlay_copyto_device(nt, d_vecplay);
         }
 
         if (nt->_permute) {
@@ -396,17 +383,7 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
         }
     }
 
-    if (nrn_ion_global_map_size) {
-        double** d_data =
-            (double**)acc_copyin(nrn_ion_global_map, sizeof(double*) * nrn_ion_global_map_size);
-        for (int j = 0; j < nrn_ion_global_map_size; j++) {
-            if (nrn_ion_global_map[j]) {
-                /* @todo: fix this constant size 3 :( */
-                double* d_mechmap = (double*)acc_copyin(nrn_ion_global_map[j], 3 * sizeof(double));
-                acc_memcpy_to_device(&(d_data[j]), &d_mechmap, sizeof(double*));
-            }
-        }
-    }
+#endif
 #else
     (void)threads;
     (void)nthreads;
@@ -554,7 +531,7 @@ void update_net_receive_buffer(NrnThread* nt) {
 
 #ifdef _OPENACC
             if (nt->compute_gpu) {
-                // note that dont update nrb otherwise we loose pointers
+                // note that dont update nrb otherwise we lose pointers
 
                 /* update scalar elements */
                 acc_update_device(&nrb->_cnt, sizeof(int));
@@ -981,4 +958,70 @@ void nrn_sparseobj_copyto_device(SparseObj* so) {
     }
 #endif
 }
+
+#ifdef _OPENACC
+
+void nrn_ion_global_map_copyto_device() {
+    if (nrn_ion_global_map_size) {
+        double** d_data =
+            (double**)acc_copyin(nrn_ion_global_map, sizeof(double*) * nrn_ion_global_map_size);
+        for (int j = 0; j < nrn_ion_global_map_size; j++) {
+            if (nrn_ion_global_map[j]) {
+                /* @todo: fix this constant size 3 :( */
+                double* d_mechmap = (double*)acc_copyin(nrn_ion_global_map[j], 3 * sizeof(double));
+                acc_memcpy_to_device(&(d_data[j]), &d_mechmap, sizeof(double*));
+            }
+        }
+    }
+}
+
+void init_gpu(int nthreads, NrnThread* threads) {
+    if (nthreads <= 0) {
+        printf("\n Warning: No threads to copy on GPU! ");
+        return;
+    }
+
+    /** @todo: currently only checking nvidia gpu */
+    int num_gpus = acc_get_num_devices(acc_device_nvidia);
+    if (num_gpus == 0) {
+        printf("\n WARNING: Enabled GPU execution but couldn't find NVIDIA GPU! \n");
+    }
+
+    for (int i = 0; i < nthreads; i++) {
+        // empty thread or only artificial cells should be on cpu
+        NrnThread* nt = threads + i;
+        nt->compute_gpu = (nt->end > 0) ? 1 : 0;
+        nt->_dt = dt;
+    }
+}
+
+void nrn_VecPlay_copyto_device(NrnThread* nt, void** d_vecplay) {
+    for (int i = 0; i < nt->n_vecplay; i++) {
+        VecPlayContinuous* vecplay_instance = (VecPlayContinuous*)nt->_vecplay[i];
+
+        /** just VecPlayContinuous object */
+        void* d_p = (void*)acc_copyin(vecplay_instance, sizeof(VecPlayContinuous));
+        acc_memcpy_to_device(&(d_vecplay[i]), &d_p, sizeof(void*));
+
+        VecPlayContinuous* d_vecplay_instance = (VecPlayContinuous*)d_p;
+
+        /** copy y_, t_ and discon_indices_ */
+        copy_ivoc_vect_to_device(vecplay_instance->y_, d_vecplay_instance->y_);
+        copy_ivoc_vect_to_device(vecplay_instance->t_, d_vecplay_instance->t_);
+        copy_ivoc_vect_to_device(vecplay_instance->discon_indices_,
+                                 d_vecplay_instance->discon_indices_);
+
+        /** copy PlayRecordEvent : todo: verify this */
+        PlayRecordEvent* d_e_ =
+            (PlayRecordEvent*)acc_copyin(vecplay_instance->e_, sizeof(PlayRecordEvent));
+        acc_memcpy_to_device(&(d_e_->plr_), &d_vecplay_instance, sizeof(VecPlayContinuous*));
+        acc_memcpy_to_device(&(d_vecplay_instance->e_), &d_e_, sizeof(PlayRecordEvent*));
+
+        /** copy pd_ : note that it's pointer inside ml->data and hence data itself is
+         * already on GPU */
+        double* d_pd_ = (double*)acc_deviceptr(vecplay_instance->pd_);
+        acc_memcpy_to_device(&(d_vecplay_instance->pd_), &d_pd_, sizeof(double*));
+    }
+}
+#endif
 }  // namespace coreneuron

@@ -5,6 +5,7 @@
 #include "coreneuron/nrniv/cellorder.h"
 #include "coreneuron/nrniv/tnode.h"
 #include "coreneuron/nrniv/lpt.h"
+#include "coreneuron/nrniv/memory.h"
 
 #include "coreneuron/nrniv/node_permute.h"  // for print_quality
 #include <set>
@@ -80,13 +81,13 @@ InterleaveInfo& InterleaveInfo::operator=(const InterleaveInfo& info) {
 
 InterleaveInfo::~InterleaveInfo() {
     if (stride) {
-        delete[] stride;
-        delete[] firstnode;
-        delete[] lastnode;
-        delete[] cellsize;
+        free_memory(stride);
+        free_memory(firstnode);
+        free_memory(lastnode);
+        free_memory(cellsize);
     }
     if (stridedispl) {
-        delete[] stridedispl;
+        free_memory(stridedispl);
     }
     if (idle) {
         delete[] nnode;

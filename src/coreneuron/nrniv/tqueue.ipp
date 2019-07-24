@@ -79,8 +79,8 @@ TQueue<C>::~TQueue() {
     delete binq_;
 
     if (least_) {
-      delete least_;
-      least_ = NULL;
+        delete least_;
+        least_ = NULL;
     }
 
     /// Clear the splay tree

@@ -63,6 +63,7 @@ option(ENABLE_ISPC_TARGET "Enable ispc interoperability structs and data" OFF)
 option(ENABLE_NMODL "Enable external nmodl source-to-source compiler" OFF)
 option(ENABLE_CALIPER "Enable Caliper instrumentation" OFF)
 option(CORENEURON_ENABLE_LIKWID "Enable LIKWID instrumentation" OFF)
+option(ENABLE_UNIFIED "Enable Unified Memory implementation of GPU" OFF)
 
 ## set C++11 standard to be default
 set(CMAKE_CXX_STANDARD 11)
@@ -264,6 +265,9 @@ endif()
 
 if(ENABLE_OPENACC)
     set(COMPILE_LIBRARY_TYPE "STATIC")
+    if (ENABLE_UNIFIED)
+        add_definitions( -DUNIFIED_MEMORY)
+    endif()
     if(${CMAKE_C_COMPILER_ID} STREQUAL "PGI")
         add_definitions( -DPG_ACC_BUGS)
         set(ACC_FLAGS "-acc -Minline=size:200,levels:10")

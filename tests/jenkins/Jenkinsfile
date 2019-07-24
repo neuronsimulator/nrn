@@ -28,9 +28,15 @@ pipeline {
             }
         }
 
-        stage('build corenrn GPU'){
+        stage('build corenrn GPU-non-unified'){
             steps {
-                sh 'sh tests/jenkins/install_coreneuron.sh GPU'
+                sh 'sh tests/jenkins/install_coreneuron.sh GPU-non-unified'
+            }
+        }
+
+        stage('build corenrn GPU-unified'){
+            steps {
+                sh 'sh tests/jenkins/install_coreneuron.sh GPU-unified'
             }
         }
 
@@ -46,9 +52,14 @@ pipeline {
                         sh 'sh tests/jenkins/ringtest.sh SoA'
                     }
                 }
-                stage('GPU'){
+                stage('GPU-non-unified'){
                     steps{
-                        sh 'sh tests/jenkins/ringtest.sh GPU'
+                        sh 'sh tests/jenkins/ringtest.sh GPU-non-unified'
+                    }
+                }
+                stage('GPU-unified'){
+                    steps{
+                        sh 'sh tests/jenkins/ringtest.sh GPU-unified'
                     }
                 }
             }

@@ -60,14 +60,14 @@ struct NrnThreadBAList {
 };
 
 struct TrajectoryRequests {
-    void** vpr; /* PlayRecord Objects known by NEURON */
+    void** vpr;       /* PlayRecord Objects known by NEURON */
     double** scatter; /* if bsize == 0, each time step */
     double** varrays; /* if bsize > 0, the Vector data pointers. */
-    double** gather; /* pointers to values that get scattered to NEURON */
-    int n_pr; /* number of PlayRecord instances */
-    int n_trajec; /* number of trajectories requested */
-    int bsize; /* buffer size of the Vector data */
-    int vsize; /* number of elements in varrays so far */
+    double** gather;  /* pointers to values that get scattered to NEURON */
+    int n_pr;         /* number of PlayRecord instances */
+    int n_trajec;     /* number of trajectories requested */
+    int bsize;        /* buffer size of the Vector data */
+    int vsize;        /* number of elements in varrays so far */
 };
 
 /* for OpenACC, in order to avoid an error while update PreSyn, with virtual base
@@ -132,8 +132,8 @@ struct NrnThread {
     int _net_send_buffer_cnt;
     int* _net_send_buffer;
 
-    int* _watch_types; /* NULL or 0 terminated array of integers */
-    void* mapping;     /* section to segment mapping information */
+    int* _watch_types;                   /* NULL or 0 terminated array of integers */
+    void* mapping;                       /* section to segment mapping information */
     TrajectoryRequests* trajec_requests; /* per time step values returned to NEURON */
 };
 

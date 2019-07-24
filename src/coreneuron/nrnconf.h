@@ -78,7 +78,7 @@ extern void* emalloc(size_t size);
 extern void* ecalloc(size_t n, size_t size);
 extern void* erealloc(void* ptr, size_t size);
 extern void* emalloc_align(size_t size, size_t alignment);
-extern void* ecalloc_align(size_t n, size_t alignment, size_t size);
+extern void* ecalloc_align(size_t n, size_t size, size_t alignment);
 extern double hoc_Exp(double x);
 extern void check_bbcore_write_version(const char*);
 
