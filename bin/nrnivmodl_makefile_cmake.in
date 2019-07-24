@@ -10,7 +10,6 @@ MECH_NAME =
 MECH_VERSION = 0.0
 MODS_PATH = .
 OUTPUT = @CMAKE_HOST_SYSTEM_PROCESSOR@
-OPTMODS = @NRN_OPTMODS@
 DESTDIR =
 
 # install dirs
@@ -48,7 +47,7 @@ CXX_LINK_SHARED = $(CXX) $(CXXFLAGS) @CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS@ @CM
 MODC_DIR = $(OUTPUT)
 OBJS_DIR = $(OUTPUT)
 mod_files = $(sort $(notdir $(wildcard $(MODS_PATH)/*.mod)))
-mod_names = $(mod_files:.mod=) $(OPTMODS:.mod=)
+mod_names = $(mod_files:.mod=)
 modc_files = $(addprefix $(MODC_DIR)/,$(addsuffix .c,$(mod_names)))
 mod_objs   = $(addprefix $(OBJS_DIR)/,$(addsuffix .o,$(mod_names)))
 
@@ -78,12 +77,11 @@ $(special): $(mech_lib)
 	$(CXX_LINK_EXE) -I $(incdir) $(datadir)/coreneuron.cpp -o $(special) \
 	  -L $(OUTPUT) -l$(mech_libname) $(NRNLIB_FLAGS) -Wl,-rpath,'$(DESTDIR_RPATH)' -Wl,-rpath,$(libdir) $(LDFLAGS)
 
-
 $(mech_lib): mod_func.o $(mod_objs) build_always
-	@printf " => $(C_GREEN)LINKING$(C_RESET) library $(mech_lib) Mod files: $(mod_files) (+ $(OPTMODS))\n"
+	@printf " => $(C_GREEN)LINKING$(C_RESET) library $(mech_lib) Mod files: $(mod_files)\n"
 	(cd .. ; $(CXX_LINK_SHARED) -I $(incdir) -o ${mech_lib} ${_SONAME} \
 	  $(mod_func_o) $(mod_objs) $(NRNLIB_FLAGS) -Wl,-rpath,$(libdir) $(LDFLAGS))
-	(cd .. ; rm -f .libs/libnrnmech.so ; mkdir -p $(OBJS_DIR)/.libs ; ln -s ../../$(mech_lib) $(OBJS_DIR)/.libs/libnrnmech.so)
+	(cd .. ; rm -f $(OBJS_DIR)/.libs/libnrnmech.so ; mkdir -p $(OBJS_DIR)/.libs ; ln -s ../../$(mech_lib) $(OBJS_DIR)/.libs/libnrnmech.so)
 
 mod_func.o: mod_func.c
 	@printf " -> $(C_GREEN)Compiling$(C_RESET) $<\n"
@@ -104,14 +102,6 @@ $(MODC_DIR)/%.c: $(MODS_PATH)/%.mod | $(MODC_DIR)
 # If .mod doesnt exist attempt from previously built opt mods in shared/
 $(MODC_DIR)/%.cpp: $(datadir_mod2c)/%.cpp | $(MODC_DIR)
 	ln -s $< $@
-
-
-# Mod registration. Compiled by generic rule. Dont overwrite if not changed
-#$(mod_func_c): build_always | $(MODC_DIR)
-#	@printf " -> $(C_GREEN)Generating$(C_RESET) $(mod_func_c)\n"
-#	perl $(datadir_mod2c)/mod_func.c.pl $(OPTMODS) $(mod_files) > $(mod_func_c).tmp
-#	diff -q $(mod_func_c).tmp $(mod_func_c) || { echo "Replacing mod_func.c"; mv $(mod_func_c).tmp $(mod_func_c); }
-
 
 install: $(special) $(mech_lib)
 	install -d $(DESTDIR)/bin $(DESTDIR)/lib
