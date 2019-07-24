@@ -302,6 +302,16 @@ pipeline {
                                 sh 'sh tests/jenkins/run_corenrn.sh ringtest SoA ringtest 7'
                             }
                         }
+                        stage('corenrn restore AoS'){
+                            steps{
+                                sh 'sh tests/jenkins/run_corenrn_restore.sh AoS 6'
+                            }
+                        }
+                        stage('corenrn restore SoA'){
+                            steps{
+                                sh 'sh tests/jenkins/run_corenrn_restore.sh SoA 6'
+                            }
+                        }
                     }
                 }
             }
