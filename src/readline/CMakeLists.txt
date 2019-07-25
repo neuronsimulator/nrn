@@ -14,5 +14,11 @@ find_package(Curses REQUIRED)
 # =============================================================================
 # readline library
 # =============================================================================
-add_library(readline SHARED ${READLINE_SOURCE_FILES})
+add_library(readline STATIC ${READLINE_SOURCE_FILES})
 target_link_libraries(readline curses)
+set_property(TARGET readline PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+# =============================================================================
+# Install target
+# =============================================================================
+install(TARGETS readline DESTINATION lib)

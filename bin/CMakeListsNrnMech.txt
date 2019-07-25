@@ -2,57 +2,40 @@
 # included by nrn/CMakeLists.txt to define substitutions needed
 # to create nrnmech_makefile that is called by nrnivmodl
 
-set(nmodl_makefile "nrnmech_makefile")
-set(nmodl_compile_scipt "nrnivmodl")
 
-get_directory_property(CORENRN_COMPILE_FLAGS COMPILE_DEFINITIONS)
+get_directory_property(NRN_COMPILE_DEFS COMPILE_DEFINITIONS)
 
-if (CORENRN_COMPILE_FLAGS)
-    set(CORENRN_COMPILE_DEFS "-D${CORENRN_COMPILE_FLAGS}")
-    string(REPLACE ";" " -D" CORENRN_COMPILE_DEFS "${CORENRN_COMPILE_DEFS}")
+if (NRN_COMPILE_DEFS)
+    set(NRN_COMPILE_DEFS "-D${NRN_COMPILE_DEFS}")
+    string(REPLACE ";" " -D" NRN_COMPILE_DEFS "${NRN_COMPILE_DEFS}")
 endif()
 
-# Link libraries
+# extract link defs to the whole project
+get_target_property(NRN_LINK_LIBS nrniv_lib LINK_LIBRARIES)
+if(NOT NRN_LINK_LIBS)
+    set(NRN_LINK_LIBS "")
+endif()
+
 # CMake does some magic to transform sys libs to -l<libname>. We replicate it
-foreach(link_lib ${CORENRN_LINK_LIBS})
+foreach(link_lib ${NRN_LINK_LIBS})
     get_filename_component(pth ${link_lib} DIRECTORY)
     if(NOT pth)
-       string(APPEND CORENRN_LINK_DEFS " -l${link_lib}")
+       string(APPEND NRN_LINK_DEFS " -l${link_lib}")
     elseif("${pth}" MATCHES "^(/lib|/lib64|/usr/lib|/usr/lib64)$")
         get_filename_component(libname ${link_lib} NAME_WE)
         string(REGEX REPLACE "^lib" "" libname ${libname})
-        string(APPEND CORENRN_LINK_DEFS " -l${libname}")
+        string(APPEND NRN_LINK_DEFS " -l${libname}")
     else()
-        string(APPEND CORENRN_LINK_DEFS " ${link_lib}")
+        string(APPEND NRN_LINK_DEFS " ${link_lib}")
     endif()
 endforeach()
-#message("CORENRN_LINK_LIBS: ${CORENRN_LINK_LIBS}, CORENRN_LINK_DEFS: ${CORENRN_LINK_DEFS}")
-
-# Additional mods
-string(REPLACE ";" " " CORENRN_OPTMODS "${CORENRN_OPTMECH_MODS}")
+message("NRN_LINK_LIBS: ${NRN_LINK_LIBS}, NRN_LINK_DEFS: ${NRN_LINK_DEFS}")
 
 # PGI add --c++11;-A option for c++11 flag
 string(REPLACE ";" " " CXX11_STANDARD_COMPILE_OPTION "${CMAKE_CXX11_STANDARD_COMPILE_OPTION}")
-
-# MPI path might be multiple directories
-if (MPI_C_INCLUDE_PATH)
-    string(REPLACE ";" " -I" CORENRN_MPI_INCLUDES "${MPI_C_INCLUDE_PATH}")
-endif()
 
 # Compiler flags depending on BUILD_TYPE shared as BUILD_TYPE_<LANG>_FLAGS
 string(TOUPPER "${CMAKE_BUILD_TYPE}" _BUILD_TYPE)
 set(BUILD_TYPE_C_FLAGS "${CMAKE_C_FLAGS_${_BUILD_TYPE}}")
 set(BUILD_TYPE_CXX_FLAGS "${CMAKE_CXX_FLAGS_${_BUILD_TYPE}}")
 message(STATUS "CXX Compile Flags from BUILD_TYPE: ${BUILD_TYPE_CXX_FLAGS}")
-
-if (FALSE) # done in top level CMakeLists.txt
-configure_file(${nmodl_makefile}.in ${nmodl_makefile} @ONLY)
-
-# Makefile
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${nmodl_makefile}
-        DESTINATION ${CMAKE_INSTALL_DATADIR}/coreneuron/)
-
-# Launcher
-install(PROGRAMS ${nmodl_compile_scipt}
-        DESTINATION ${CMAKE_INSTALL_BINDIR})
-endif()
