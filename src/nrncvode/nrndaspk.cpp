@@ -183,6 +183,8 @@ Daspk::Daspk(Cvode* cv, int neq) {
 	cv_ = cv;
 	yp_ = cv->nvnew(neq);
 	delta_ = cv->nvnew(neq);
+	N_VConst(0.0, yp_);
+	N_VConst(0.0, delta_);
 	id_ = cv->nvnew(neq);
 	spmat_ = nil;
 	mem_ = nil;
@@ -220,7 +222,7 @@ void Daspk::ida_init() {
 
         ier = IDASVtolerances(mem, cv_->ncv_->rtol_, cv_->atolnvec_);
         assert(ier == IDA_SUCCESS);
-#if 1
+#if 0
 {
   double* atol = cv_->n_vector_data(cv_->atolnvec_, 0);
   CvodeThreadData& z = cv_->ctd_[0];
@@ -550,10 +552,11 @@ void Cvode::daspk_gather_y(double* y, int tid) {
 // psol and also why all the non-voltage odes are scaled by dt at the
 // end of it.
 
+static int res_;
 int Cvode::res(double tt, double* y, double* yprime, double* delta, NrnThread* nt) {
 	CvodeThreadData& z = ctd_[nt->id];
 	++f_calls_;
-	static int res_;
+//	static int res_;
 	int i;
 	nt->_t = tt;
 	res_++;
@@ -612,6 +615,7 @@ for (i=0; i < z.nvsize_; ++i) {
 			if (nde) {
 				cdvm = 1e-3 * cd[0] * yprime[j+1+nlayer];
 				delta[j] -= cdvm;
+				delta[j+1] += cdvm;
 				// i_cap
 				cd[1] = cdvm;
 #if I_MEMBRANE
@@ -665,6 +669,7 @@ for (i=0; i < z.nvsize_; ++i) {
 				int ivx = ivmx - 1;
 				double x = 1e-3*cd[2*nlayer+ivx]*yprime[j+ivmx+nlayer];
 				delta[j + ivx] -= x;
+				delta[j + ivx + 1] += x;
 			}
 			// the last vx[nlayer-1] (is vmx[nlayer])
 			int ivx = nlayer-1;
@@ -693,11 +698,11 @@ for (i=0; i < z.nvsize_; ++i) {
 		}
 	}
 	before_after(z.after_solve_, nt);
-#if 1
+#if 0
 printf("Cvode::res exit res_=%d tt=%20.12g\n", res_, tt);
 double* id = n_vector_data(daspk_->id_, nt->id);
 for (i=0; i < z.nvsize_; ++i) {
-	printf("   %d %g %g %g %g\n", i, id[i], y[i], yprime[i], delta[i]);
+	printf("   %d %g %15g %15g %15g\n", i, id[i], y[i], yprime[i], delta[i]);
 }
 #endif
 	nt->_vcv = 0;
@@ -811,9 +816,9 @@ int Cvode::psol(double tt, double* y, double* b, double cj, NrnThread* _nt) {
 	_nt->_t = tt;
 
 #if 0
-printf("Cvode::psol tt=%g solvestate=%d \n", tt, solve_state_);
+printf("Cvode::psol enter res=%d tt=%g solvestate=%d \n", res_, tt, solve_state_);
 for (i=0; i < z.nvsize_; ++i) {
-printf(" %g", b[i]);
+printf(" %d %15g %15g\n", i, y[i], b[i]);
 }
 printf("\n");
 #endif
@@ -834,19 +839,19 @@ printf("\n");
 	scatter_ydot(b, _nt->id);
 #if 0
 printf("before nrn_solve matrix cj=%g\n", cj);
-spPrint((char*)sp13mat_, 1,1,1);
+spPrint(_nt->_sp13mat, 1,1,1);
 printf("before nrn_solve actual_rhs=\n");
 for (i=0; i < z.neq_v_; ++i) {
-	printf("%d %g\n", i+1, actual_rhs[i+1]);
+	printf("%d %g\n", i+1, _nt->_actual_rhs[i+1]);
 }
 #endif
 	daspk_nrn_solve(_nt); // not the cvode one
 #if 0
 //printf("after nrn_solve matrix\n");
-//spPrint((char*)sp13mat_, 1,1,1);
+//spPrint(_nt->_sp13mat, 1,1,1);
 printf("after nrn_solve actual_rhs=\n");
-for (i=0; i < neq_v_; ++i) {
-	printf("%d %g\n", i+1, actual_rhs[i+1]);
+for (i=0; i < z.neq_v_; ++i) {
+	printf("%d %g\n", i+1, _nt->_actual_rhs[i+1]);
 }
 #endif
 	solve_state_ = INVALID; // but not if using sparse13
@@ -859,8 +864,9 @@ for (i=0; i < neq_v_; ++i) {
 		b[i] *= _nt->_dt;
 	}
 #if 0
+printf("returning res=%d b=\n", res_);
 for (i=0; i < z.nvsize_; ++i) {
-printf(" %g", b[i]);
+printf(" %d %g\n", i, b[i]);
 }
 printf("\n");
 #endif
