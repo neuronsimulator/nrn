@@ -16,12 +16,15 @@ if(NOT NRN_LINK_LIBS)
     set(NRN_LINK_LIBS "")
 endif()
 
+# Interview might have linked to libnrniv but we don't want to link to special
+list(REMOVE_ITEM NRN_LINK_LIBS "iv_interviews")
+
 # CMake does some magic to transform sys libs to -l<libname>. We replicate it
 foreach(link_lib ${NRN_LINK_LIBS})
-    get_filename_component(pth ${link_lib} DIRECTORY)
-    if(NOT pth)
+    get_filename_component(dir_path ${link_lib} DIRECTORY)
+    if(NOT dir_path)
        string(APPEND NRN_LINK_DEFS " -l${link_lib}")
-    elseif("${pth}" MATCHES "^(/lib|/lib64|/usr/lib|/usr/lib64)$")
+    elseif("${dir_path}" MATCHES "^(/lib|/lib64|/usr/lib|/usr/lib64)$")
         get_filename_component(libname ${link_lib} NAME_WE)
         string(REGEX REPLACE "^lib" "" libname ${libname})
         string(APPEND NRN_LINK_DEFS " -l${libname}")
