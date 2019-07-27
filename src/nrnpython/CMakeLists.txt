@@ -112,7 +112,7 @@ if(NOT "${NRN_ENABLE_MODULE_INSTALL}" MATCHES "NO")
         ${PROJECT_BINARY_DIR}/src/nrnpython
         ${PROJECT_BINARY_DIR}/src/ivos
         ${PROJECT_BINARY_DIR}/src/oc
-        ${iv_INCLUDE})
+        ${IV_INCLUDE_DIR})
 
     # build python2 library and install it
     if(NRNPYTHON_INCLUDE2)
