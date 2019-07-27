@@ -83,17 +83,20 @@ epre='-Wl,-R'
 @MAC_DARWIN_FALSE@readline="readline@READLINE_SOSUFFIX@"
 @MAC_DARWIN_TRUE@readline="readline@READLINE_SOSUFFIX@"
 
+extra_link_args = []
 if using_cmake:
   libs = [@BUILD_NRNPYTHON_DYNAMIC_TRUE@nrnpython_pyver10,
     "nrniv"
   ]
   if "@IVHINES@" != "":
     libs.append("@IVHINES@")
+  extra_link_args.append("-Wl,-rpath,@loader_path/../../")
 
 hoc_module = Extension(
     "neuron.hoc",
     ["inithoc.cpp"],
     library_dirs=libdirs,
+    @MAC_DARWIN_TRUE@extra_link_args = extra_link_args,
     @setup_extra_link_args@ = [ epre+libdirs[0],epre+libdirs[1] ],
     #extra_objects = [],
     libraries = libs if using_cmake else [
