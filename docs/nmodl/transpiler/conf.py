@@ -22,8 +22,6 @@ import subprocess
 import sys
 import textwrap
 
-sys.path.insert(0, os.path.abspath(".."))
-
 import nmodl  # isort:skip
 
 # Run doxygen
