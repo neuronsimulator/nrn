@@ -41,6 +41,8 @@ addons:
       - cmake
       - python3-dev
       - python3-pip
+      - doxygen
+      - pandoc
   # for Mac builds, we use Homebrew
   homebrew:
     packages:
@@ -70,6 +72,9 @@ install:
   - echo "------- Install Dependencies -------"
   - pip3 install -U pip setuptools
   - pip3 install Jinja2 PyYAML pytest sympy --user
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      pip3 install -U --user sphinx nbsphinx>=0.3.2 m2r sphinx-rtd-theme jupyter;
+    fi
 
 #=============================================================================
 # Build, test and install
@@ -83,9 +88,17 @@ script:
   - make install
 
 #=============================================================================
-# Build CoreNEURON and run tests
+# Build Documentation, CoreNEURON and run tests
 #=============================================================================
 after_success:
+  - export PYTHONPATH=$HOME/nmodl/lib/python:$PYTHONPATH
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      echo "------- Build Documentation -------";
+      cd $TRAVIS_BUILD_DIR/docs;
+      doxygen && make html;
+      rm -rf _build/doctrees && touch _build/.nojekyll;
+      echo "<meta http-equiv=\"refresh\" content=\"0; url=./html/index.html\" />" > _build/index.html;
+    fi
   - echo "------- Build and Test CoreNEURON -------"
   - cd $HOME
   - git clone --recursive https://github.com/BlueBrain/CoreNeuron.git
@@ -102,3 +115,18 @@ notifications:
     recipients: pramod.s.kumbhar@gmail.com
     on_success: change
     on_failure: always
+
+
+#=============================================================================
+# Documentation deployment
+#=============================================================================
+deploy:
+  provider: pages
+  skip_cleanup: true
+  github_token: $GITHUB_TOKEN
+  keep_history: false
+  local_dir: $TRAVIS_BUILD_DIR/docs/_build/
+  target_branch: gh-pages
+  on:
+    branch: master
+    condition: $TRAVIS_OS_NAME = linux
