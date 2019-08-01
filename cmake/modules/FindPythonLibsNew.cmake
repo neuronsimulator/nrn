@@ -2,7 +2,7 @@
 # Find libraries corresponding to Python interpreter
 # =============================================================================
 # Using this module from Pybind11, see: github.com/pybind/pybind11/pull/207
-#
+
 # - Find python libraries
 # This module finds the libraries corresponding to the Python interpreter
 # FindPythonInterp provides.
@@ -187,6 +187,11 @@ MARK_AS_ADVANCED(
   PYTHON_LIBRARY
   PYTHON_INCLUDE_DIR
 )
+
+# Make sure Python includes exist
+if(NOT EXISTS ${PYTHON_INCLUDE_DIR})
+  message(FATAL_ERROR "Could not find Python.h in ${PYTHON_INCLUDE_DIR}, install python-dev package (e.g. On Ubuntu : apt-get install python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}-dev)")
+endif()
 
 # We use PYTHON_INCLUDE_DIR, PYTHON_LIBRARY and PYTHON_DEBUG_LIBRARY for the
 # cache entries because they are meant to specify the location of a single
