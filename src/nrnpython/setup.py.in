@@ -91,6 +91,7 @@ if using_cmake:
   if "@IVHINES@" != "":
     libs.append("@IVHINES@")
   extra_link_args.append("-Wl,-rpath,@loader_path/../../")
+  extra_link_args.append("-Wl,-rpath,%s" % ivlibdir)
 
 hoc_module = Extension(
     "neuron.hoc",
