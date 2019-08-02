@@ -150,7 +150,8 @@ static void set_nrnpylib() {
     free(bfnrnhome);
     #else
     char* line = new char[linesz+1];
-    sprintf(line, "bash nrnpyenv.sh %s",
+    sprintf(line, "bash %s/../../%s/bin/nrnpyenv.sh %s",
+     neuron_home, NRNHOSTCPU,
       (nrnpy_pyexe && strlen(nrnpy_pyexe) > 0) ? nrnpy_pyexe : "");
    #endif
     FILE* p = popen(line, "r");

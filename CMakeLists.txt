@@ -73,6 +73,7 @@ include(PlatformHelper)
 # =============================================================================
 find_package(BISON)
 find_package(FLEX)
+find_package (Threads)
 find_package(readline)
 
 # =============================================================================
@@ -202,7 +203,8 @@ if(cmake_generator_tolower MATCHES "makefile")
   message(STATUS "Python        | ${USE_PYTHON}")
   if(NRN_ENABLE_PYTHON)
   message(STATUS "  EXE         | ${PYTHON_EXECUTABLE}")
-  message(STATUS "  LIB         | ${PYTHON_LIBRARY}")
+  message(STATUS "  INC         | ${PYTHON_INCLUDE_DIRS}")
+  message(STATUS "  LIB         | ${PYTHON_LIBRARIES}")
   if (NOT NRN_ENABLE_PYTHON_DYNAMIC MATCHES "NO")
   message(STATUS "  INC(2)      | ${NRNPYTHON_INCLUDE2}")
   message(STATUS "  INC(3)      | ${NRNPYTHON_INCLUDE3}")

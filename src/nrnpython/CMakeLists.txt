@@ -15,7 +15,7 @@ set(PACKAGE_VERSION ${PROJECT_VERSION})
 set(NRN_LIBDIR ${CMAKE_INSTALL_PREFIX}/lib)
 
 # set by IV's cmake module
-set(IV_LIBDIR "${iv_LIB}")
+set(IV_LIBDIR "${IV_INCLUDE_DIR}/../lib")
 
 # no suffix for readline
 set(READLINE_SOSUFFIX "")

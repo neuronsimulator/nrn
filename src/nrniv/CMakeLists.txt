@@ -262,7 +262,7 @@ endif()
 # Final executable
 # =============================================================================
 add_executable(nrniv ${NRN_BIN_SRC_FILES})
-target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE})
+target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE} ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS} )
 
 # TODO: unset in top level CMake is not working
 if (NOT NRN_MACOS_BUILD AND ${READLINE_FOUND})
