@@ -73,6 +73,7 @@ include(PlatformHelper)
 # =============================================================================
 find_package(BISON)
 find_package(FLEX)
+find_package (Threads)
 find_package(readline)
 
 # =============================================================================
