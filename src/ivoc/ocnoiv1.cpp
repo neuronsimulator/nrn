@@ -9,12 +9,13 @@ extern "C" {
 
 extern void hoc_ret();
 extern void hoc_pushx(double);
+extern void nrn_shape_update();
 
 void ivoc_help(const char*){}
 void ivoc_cleanup() {}
 int hoc_readcheckpoint(char*){ return 0; }
 
-void hoc_notify_iv() {hoc_ret(); hoc_pushx(0.);}
+void hoc_notify_iv() {nrn_shape_update(); hoc_ret(); hoc_pushx(0.);}
 void hoc_xpvalue() {	hoc_ret(); hoc_pushx(0.);}
 void hoc_xlabel() { hoc_ret(); hoc_pushx(0.);}
 void hoc_xbutton() { hoc_ret(); hoc_pushx(0.);}

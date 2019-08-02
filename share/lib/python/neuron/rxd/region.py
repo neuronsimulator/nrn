@@ -360,8 +360,9 @@ class Region(object):
 
             internal_voxels, surface_voxels, mesh_grid = self._geometry.volumes3d(self._secs3d, dx=dx)
 
-            self._sa = numpy.array([val[1] for val in surface_voxels.values()] + [0 for val in internal_voxels.values()])
-            #TODO: Use Fractional Volumes with diffusion
+            #self._sa = numpy.array([val[1] for val in surface_voxels.values()] + [0 for val in internal_voxels.values()])
+            self._sa = numpy.zeros(len(surface_voxels) + len(internal_voxels))
+            #TODO: When merging in fractional volume branch, change self._vol to also be sorted based on points. See self._sa for reference
             #self._vol = numpy.array([val[0] for val in surface_voxels.values()] + [val[0] for val in internal_voxels.values()])
             self._vol = dx ** 3 * numpy.ones(len(surface_voxels) + len(internal_voxels))
             self._mesh_grid = mesh_grid
@@ -384,6 +385,7 @@ class Region(object):
 
                     nodes_by_seg.setdefault(seg, [])
                     nodes_by_seg[seg].append(i)
+                    self._sa[i] = surface_voxels[p][1]
 
                 else:
                     seg = internal_voxels[p][1]

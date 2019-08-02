@@ -332,39 +332,48 @@ static FILE* include_open(fname, err)
 	FILE* f = (FILE*)0;
 	FileStackItem* fsi;
 	char* dirs, *colon;
-	char buf2[NRN_BUFSIZE];
+	/* since dirs is a ':' separated list of paths, there is no
+	   limit to the size and so allocate from size of dirs and free
+	*/
+	char *buf, *buf2;
 	if(fname[0] == '/') { /* highest precedence is complete filename */
 		return fopen(fname, "r");
 	}
 	
 	fsi = (FileStackItem*)(SYM(filestack->prev));
+	buf = emalloc(NRN_BUFSIZE);
 	if (getprefix(buf, fsi->finname)) {
 		strcat(buf, fname);
 		f = fopen(buf, "r"); /* first try in directory of last file */
 		if (f) {
 			strcpy(fname, buf);
+			free(buf);
 			return f;
 		}
 		if (err) fprintf(stderr, "Couldn't open: %s\n", buf);
 	}
 	f = fopen(fname, "r"); /* next try current working directory */
 	if (f) {
+		free(buf);
 		return f;
 	}
 	sprintf(buf, "../%s", fname); /* Next try next dir up. */
-	if ((f = fopen(buf, "r")) != NULL)
+	if ((f = fopen(buf, "r")) != NULL) {
 	  strcpy(fname, buf);
+	  free(buf);
 	  return f;
-
+	}
+	
 	if (err) fprintf(stderr, "Couldn't open: %s\n", fname);
 	/* try all the directories in the environment variable */
 	/* a colon separated list of directories */
 	dirs = getenv("MODL_INCLUDE");
 	if (dirs) {
-		strcpy(buf, dirs);
+		buf = stralloc(dirs, buf); /* frees old buf and allocates */
 		dirs = buf;
 		colon = dirs;
 		for (dirs = colon; *dirs; dirs = colon){
+			buf2 = NULL;
 			for(; *colon; ++colon) {
 				if (*colon == ':') {
 					*colon = '\0';
@@ -372,16 +381,21 @@ static FILE* include_open(fname, err)
 					break;
 				}
 			}
+			buf2 = emalloc(strlen(dirs) + 2 + strlen(fname));
 			strcpy(buf2, dirs);
 			strcat(buf2, "/");
 			strcat(buf2, fname);
 			f = fopen(buf2, "r");
 			if (f) {
 				strcpy(fname, buf2);
+				free(buf);
+				free(buf2);
 				return f;
 			}
 			if (err) fprintf(stderr, "Couldn't open: %s\n", buf2);
+			free(buf2);
 		}
+		free(buf);
 	}
 	return f;
 }
