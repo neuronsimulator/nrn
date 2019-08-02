@@ -505,6 +505,23 @@ set(MODFILE_BASE_NAMES
     pattern
     svclmp)
 
+set(MODLUNIT_FILES_LIST
+    parse1.c
+    lex.c
+    consist.c
+    declare.c
+    init.c
+    io.c
+    kinunit.c
+    list.c
+    model.c
+    nrnunit.c
+    passn.c
+    symbol.c
+    units.c
+    units1.c
+    version.c)
+
 set(NMODL_FILES_LIST
     parse1.c
     diffeq.c
@@ -549,6 +566,7 @@ set(NRN_OC_SRC_DIR ${PROJECT_SOURCE_DIR}/src/oc)
 set(NRN_NRNOC_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nrnoc)
 set(NRN_IVOC_SRC_DIR ${PROJECT_SOURCE_DIR}/src/ivoc)
 set(NRN_NRNIV_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nrniv)
+set(NRN_MODLUNIT_SRC_DIR ${PROJECT_SOURCE_DIR}/src/modlunit)
 set(NRN_NMODL_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nmodl)
 set(NRN_IVOS_SRC_DIR ${PROJECT_SOURCE_DIR}/src/ivos)
 
@@ -577,6 +595,7 @@ nrn_create_file_list(NRN_NRNPYTHON_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnpython
 nrn_create_file_list(NRN_MODFILE_BASE_NAMES ${PROJECT_SOURCE_DIR}/src/nrnoc ${MODFILE_BASE_NAMES})
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/ivoc/ nrnmain.cpp)
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/oc/ ockludge.c modlreg.c)
+nrn_create_file_list(NRN_MODLUNIT_SRC_FILES ${NRN_MODLUNIT_SRC_DIR} ${MODLUNIT_FILES_LIST})
 nrn_create_file_list(NRN_NMODL_SRC_FILES ${NRN_NMODL_SRC_DIR} ${NMODL_FILES_LIST})
 nrn_create_file_list(NRNMPI_DYNAMIC_INCLUDE_FILE ${PROJECT_SOURCE_DIR}/src/nrnmpi
                      ${MPI_DYNAMIC_INCLUDE})

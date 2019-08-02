@@ -9,6 +9,24 @@
 # days. Other groups can, and should be, factored out
 
 # =============================================================================
+# Build modlunit : Mod file unitx checker
+# =============================================================================
+flex_target(modlunitlexer ${NRN_MODLUNIT_SRC_DIR}/lex.l ${NRN_MODLUNIT_SRC_DIR}/lex.c)
+
+bison_target(modlunitparser
+             ${NRN_MODLUNIT_SRC_DIR}/parse1.y
+             ${NRN_MODLUNIT_SRC_DIR}/parse1.c
+             DEFINES_FILE
+             ${NRN_MODLUNIT_SRC_DIR}/parse1.h)
+
+set_property(SOURCE ${NRN_MODLUNIT_SRC_FILES}
+             APPEND
+             PROPERTY COMPILE_DEFINITIONS
+                      NRNUNIT=1)
+
+add_executable(modlunit ${NRN_MODLUNIT_SRC_FILES})
+
+# =============================================================================
 # Build nocmodl : source-to-source compiler for NMODL
 # =============================================================================
 flex_target(nocmodllexer ${NRN_NMODL_SRC_DIR}/lex.l ${NRN_NMODL_SRC_DIR}/lex.c)
@@ -32,6 +50,7 @@ set_property(SOURCE ${NRN_NMODL_SRC_FILES}
                       NOCMODL=1
                       CVODE=1
                       VECTORIZE=1)
+
 add_executable(nocmodl ${NRN_NMODL_SRC_FILES})
 
 # =============================================================================
@@ -272,5 +291,5 @@ endif()
 # =============================================================================
 # Install binary and library targets
 # =============================================================================
-install(TARGETS nrniv nocmodl DESTINATION bin)
+install(TARGETS nrniv nocmodl modlunit DESTINATION bin)
 install(TARGETS nrniv_lib DESTINATION lib)
