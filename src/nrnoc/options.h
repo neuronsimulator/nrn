@@ -48,3 +48,6 @@ in one section is set but no others. But only the first time through treeset.
 #endif
 
 #define MULTICORE 1		/* not optional */
+
+#define USE_VMX 1		/* must use if USE_IDACalcIC */
+#define USE_IDACalcIC 1		/* IDA does its own initialization */

@@ -2032,7 +2032,11 @@ printf("nrn_matrix_node_alloc use_sparse13=%d cvode_active_=%d nrn_use_daspk_=%d
 	++nrn_matrix_cnt_;
 	if (use_sparse13) {
 		int in, err, extn, neqn, j;
+#if USE_VMX
 		int extnfac= (1 || cvode_active_) ? 2 : 1;
+#else
+		in extnfac = 1;
+#endif
 		nt = nrn_threads;
 		neqn = nt->end + nrndae_extra_eqn_count();
 		extn = 0;

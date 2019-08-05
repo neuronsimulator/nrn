@@ -88,7 +88,7 @@ hoc_module = Extension(
         @BUILD_MEMACS_TRUE@"memacs", readline,
         "meschach", "neuron_gnu",
         @BUILD_NRNMPI_DYNAMIC_FALSE@"nrnmpi",
-        "scopmath", "sparse13", "sundials",
+        "scopmath", "sparse13",
         "@IVHINES@",
       ] + sundials_libs,
       include_dirs = include_dirs,

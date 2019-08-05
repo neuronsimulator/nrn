@@ -275,7 +275,7 @@ N_VGetArrayPointer(ida->delta_)[i]);
 	return norm;
 }
 
-#if 1 // initialization using IDACalcIC
+#if USE_IDACalcIC // initialization using IDACalcIC
 int Daspk::init() {
     int ier;
     extern double t;
@@ -613,7 +613,12 @@ for (i=0; i < z.nvsize_; ++i) {
 			Extnode* nde = nd->extnode;
 			double cdvm;
 			if (nde) {
+#if USE_IDACalcIC
 				cdvm = 1e-3 * cd[0] * yprime[j+1+nlayer];
+#else
+				cdvm = 1e-3 * cd[0] * (yprime[j] - yprime[j+1]);
+#endif
+				// two nodes of the membrane capacitance
 				delta[j] -= cdvm;
 				delta[j+1] += cdvm;
 				// i_cap
@@ -657,14 +662,18 @@ for (i=0; i < z.nvsize_; ++i) {
 			// however vm[layer] is v[layer-1] - v[layer]
 			// with v[nlayer-1] is vm (since v[nlayer] is ground)
 			delta[j] -= 1e-3 * cd[2] * yprime[j];
+#if USE_VMX
 			// the vm = v[j-1] - v[j] equation
 			delta[j + nlayer] = -y[j + nlayer] + y[j-1] - y[j];
-#else
+#endif // USE_VMX
+#else // EXTRACELLULAR > 1
+#if USE_VMX
 			//vm[layer] == v[layer-1] - v[layer] equation
 			for (int k = 0; k < nlayer; ++k) {
 				int jj = j + k;
 				delta[jj + nlayer] = -(y[jj + nlayer] - y[jj-1] + y[jj]);
 			}
+
 			for (int ivmx=1; ivmx < nlayer; ++ivmx) {
 				int ivx = ivmx - 1;
 				double x = 1e-3*cd[2*nlayer+ivx]*yprime[j+ivmx+nlayer];
@@ -676,7 +685,22 @@ for (i=0; i < z.nvsize_; ++i) {
 			int jj = j + ivx;
 			double x = 1e-3*cd[2*nlayer+ivx]*yprime[jj];
 			delta[jj] -= x;
-#endif
+#else // not USE_VMX
+			int k, jj;
+			double x;
+			k = nlayer-1;
+			jj = j+k;
+			delta[jj] -= 1e-3*cd[2*nlayer+k]*(yprime[jj]);
+			for (k=nlayer-2; k >= 0; --k) {
+				// k=0 refers to stuff between layer 0 and 1
+				// j is for vext[0]				
+				jj = j+k;
+				x = 1e-3*cd[2*nlayer+k]*(yprime[jj] - yprime[jj+1]);
+				delta[jj] -= x;
+				delta[jj+1] += x; // last one in iteration is nlayer-1
+			}
+#endif // USE_VMX
+#endif // EXTRACELLULAR
 		}
 	}
 
@@ -698,7 +722,8 @@ for (i=0; i < z.nvsize_; ++i) {
 		}
 	}
 	before_after(z.after_solve_, nt);
-#if 0
+#define DBG 0
+#if DBG
 printf("Cvode::res exit res_=%d tt=%20.12g\n", res_, tt);
 double* id = n_vector_data(daspk_->id_, nt->id);
 for (i=0; i < z.nvsize_; ++i) {
@@ -815,7 +840,7 @@ int Cvode::psol(double tt, double* y, double* b, double cj, NrnThread* _nt) {
 	int i;
 	_nt->_t = tt;
 
-#if 0
+#if DBG
 printf("Cvode::psol enter res=%d tt=%g solvestate=%d \n", res_, tt, solve_state_);
 for (i=0; i < z.nvsize_; ++i) {
 printf(" %d %15g %15g\n", i, y[i], b[i]);
@@ -837,7 +862,7 @@ printf("\n");
 		solve_state_ = FACTORED;
 	}
 	scatter_ydot(b, _nt->id);
-#if 0
+#if DBG
 printf("before nrn_solve matrix cj=%g\n", cj);
 spPrint(_nt->_sp13mat, 1,1,1);
 printf("before nrn_solve actual_rhs=\n");
@@ -846,7 +871,7 @@ for (i=0; i < z.neq_v_; ++i) {
 }
 #endif
 	daspk_nrn_solve(_nt); // not the cvode one
-#if 0
+#if DBG
 //printf("after nrn_solve matrix\n");
 //spPrint(_nt->_sp13mat, 1,1,1);
 printf("after nrn_solve actual_rhs=\n");
@@ -863,7 +888,7 @@ for (i=0; i < z.neq_v_; ++i) {
 	for (i=z.neq_v_; i < z.nvsize_; ++i) {
 		b[i] *= _nt->_dt;
 	}
-#if 0
+#if DBG
 printf("returning res=%d b=\n", res_);
 for (i=0; i < z.nvsize_; ++i) {
 printf(" %d %g\n", i, b[i]);

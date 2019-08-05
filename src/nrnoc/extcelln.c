@@ -209,6 +209,12 @@ void extcell_node_create(Node* nd) {
 		for (j=0; j < nlayer; ++j) {
 			nde->v[j] = 0.;
 		}
+#if USE_VMX
+		nde->v[nlayer] = 0.; /* more properly NODEV(nd) - nde->v[0] */
+		for (j=1; j < nlayer; ++j) {
+			nde->v[nlayer + j] = 0.;
+		}
+#endif
 		nde->param = (double *)0;
 		for (p = nd->prop; p; p = p->next) {
 			if (p->type == EXTRACELL) {
@@ -370,7 +376,7 @@ void nrn_setup_ext(NrnThread* _nt)
 		nde = nd->extnode;
 		pnd = _nt->_v_parent[nd->v_node_index];
 
-#if 1
+#if USE_VMX
 		if (1 || cvode_active_) {
 		  double* rhs = _nt->_actual_rhs;
 		  int ki = nd->eqn_index_; /* start with v (interpreted as vi */

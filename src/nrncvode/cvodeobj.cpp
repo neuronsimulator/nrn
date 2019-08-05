@@ -916,6 +916,7 @@ void Cvode::init_prepare() {
 		init_eqn();
 		if (neq_ > 0) {
 			y_ = nvnew(neq_);
+			N_VConst(0.0, y_);
 			if (use_daspk_) {
 				alloc_daspk();
 			}else{
