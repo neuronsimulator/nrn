@@ -22,7 +22,8 @@
 #define HOCMOD_2(s) #s
 #define HOCMOD "hoc" HOCMOD_1(NRNPYTHON_DYNAMICLOAD)
 #else
-#define HOCMOD hoc
+// TODO: didn't enable dynamic load and end up with error if below is not a string
+#define HOCMOD "hoc"
 #endif
 
 extern PyTypeObject* psection_type;

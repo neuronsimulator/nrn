@@ -237,6 +237,8 @@ nrn_configure_file(njconf.h src/nrnjava)
 nrn_configure_file(nmodlconf.h .)
 nrn_configure_file(nrnunits.lib share/lib)
 nrn_configure_file(nrn.defaults share/lib)
+#TODO temporary workaround for mingw
+file(COPY ${PROJECT_BINARY_DIR}/share/lib/nrnunits.lib DESTINATION ${PROJECT_BINARY_DIR}/lib)
 
 # =============================================================================
 # If Interviews is not provided, configure local files

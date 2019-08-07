@@ -34,27 +34,35 @@ extern char* dlerror();
 #endif
 /*#include "../mswin/windll/dll.h"*/
 /*static struct DLL* dll;*/
-#endif
+#endif // WIN32
+
 #if defined(WIN32) || defined(NRNMECH_DLL_STYLE)
 extern char* nrn_mech_dll; /* declared in hoc_init.c so ivocmain.cpp can see it */
 #endif
+
 #if defined(WIN32)
 #undef DLL_DEFAULT_FNAME
 #define DLL_DEFAULT_FNAME "nrnmech.dll"
-#endif
+#endif // WIN32
+
 #if defined(NRNMECH_DLL_STYLE)
 #if defined(DARWIN)
+
 #ifndef DLL_DEFAULT_FNAME
 #define DLL_DEFAULT_FNAME "libnrnmech.dylib"
 #endif
+
 #if __GNUC__ < 4
 #include "osxdlfcn.h"
 #include "osxdlfcn.c"
 #else
 #include <dlfcn.h>
-#endif
+#endif // __GNUC__
+
 #else
+#if defined(HAVE_DLFCN_H) && !defined(__MINGW32__)
 #include <dlfcn.h>
+#endif
 #ifndef DLL_DEFAULT_FNAME
 #define DLL_DEFAULT_FNAME "./libnrnmech.so"
 #endif
