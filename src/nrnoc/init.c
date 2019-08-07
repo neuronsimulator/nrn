@@ -347,7 +347,7 @@ void hoc_last_init(void)
 	for (m = mechanism; *m; m++) {
 		(*m)();
 	}
-#if !MAC
+#if !MAC && !defined(WIN32)
 	modl_reg();
 #endif
 	hoc_register_limits(0, _hoc_parm_limits);
