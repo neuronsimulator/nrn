@@ -175,6 +175,9 @@ set(IVOC_FILE_LIST
     xdep.cpp
     xmenu.cpp
     xyview.cpp)
+if(MINGW)
+  list(APPEND IVOC_FILE_LIST ivocwin.cpp)
+endif()
 
 # =============================================================================
 # Files in nrniv directory
