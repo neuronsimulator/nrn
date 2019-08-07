@@ -153,10 +153,7 @@ if (NRN_MACOS_BUILD OR NOT ${READLINE_FOUND})
     set(INTERNAL_READLINE readline)
     unset(Readline_LIBRARY CACHE)
 endif()
-if (MINGW)
-    # TODO check if this is optional with ncurses
-    find_package(Termcap REQUIRED)
-endif()
+
 # =============================================================================
 # Install targets
 # =============================================================================
