@@ -55,12 +55,20 @@ endif()
 
 if(NRN_MACOS_BUILD)
   set(MAC_DARWIN_TRUE "")
-  set(MAC_DARWIN_FALSE "\#")
+  set(MAC_DARWIN_FALSE "#")
   set(setup_extra_link_args "#extra_link_args")
 else()
-  set(MAC_DARWIN_TRUE "\#")
+  set(MAC_DARWIN_TRUE "#")
   set(MAC_DARWIN_FALSE "")
   set(setup_extra_link_args "extra_link_args")
+endif()
+
+if(NRN_WINDOWS_BUILD)
+  set(WIN_MINGW_TRUE "")
+  set(WIN_MINGW_FALSE "#")
+else()
+  set(WIN_MINGW_TRUE "#")
+  set(WIN_MINGW_FALSE "")
 endif()
 
 if(NRN_ENABLE_MEMACS)
@@ -80,6 +88,13 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp DESTINATION ${CMAKE_CURRENT_BI
 nrn_configure_file(setup.py src/nrnpython)
 
 # =============================================================================
+# Setup MinGW toolchain for setuptools
+# =============================================================================
+if(MINGW)
+  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/setup.cfg "[build]\ncompiler=mingw32")
+endif()
+
+# =============================================================================
 # If NEURON python module installation is enabled
 # =============================================================================
 if(NOT "${NRN_ENABLE_MODULE_INSTALL}" MATCHES "NO")
@@ -87,7 +102,12 @@ if(NOT "${NRN_ENABLE_MODULE_INSTALL}" MATCHES "NO")
   # check arguments for setup.py install : if user has just provided YES, then use default
   set(pyinst "${NRN_ENABLE_MODULE_INSTALL}")
   if("${pyinst}" MATCHES "YES")
-    set(pyinst "--home ${CMAKE_INSTALL_PREFIX}")
+    set(install_path ${CMAKE_INSTALL_PREFIX})
+    # replace windows path of the form C:/msys64 to C:\msys64
+    if(MINGW)
+      string(REPLACE ":/" ":\\" install_path "${install_path}")
+    endif()
+    set(pyinst "--home ${install_path}")
   endif()
   # show commands to user
   foreach(pyexe ${NRN_PYTHON_EXE_LIST})

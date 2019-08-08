@@ -279,6 +279,11 @@ else()
   include_directories(nrniv_lib ${NRN_IVOS_SRC_DIR} ${PROJECT_BINARY_DIR}/src/ivos)
 endif()
 
+# TODO could be true for other platforms as well?
+if(MINGW)
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
+  target_link_libraries(nrniv_lib -static-libgcc -static-libstdc++)
+endif()
 # =============================================================================
 # Final executable
 # =============================================================================
