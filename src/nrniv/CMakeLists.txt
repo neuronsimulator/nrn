@@ -119,6 +119,7 @@ set(NRN_INCLUDE_DIRS
     ${NRN_OC_SRC_DIR}
     ${PROJECT_BINARY_DIR}
     ${PROJECT_BINARY_DIR}/src/nrncvode
+    ${PROJECT_BINARY_DIR}/src/nrnjava
     ${PROJECT_BINARY_DIR}/src/nrnoc
     ${PROJECT_BINARY_DIR}/src/nrnpython
     ${PROJECT_BINARY_DIR}/src/oc
@@ -245,11 +246,12 @@ if(NRN_ENABLE_PYTHON)
   include_directories(${PYTHON_INCLUDE_DIRS})
 endif()
 
+
 # =============================================================================
 # All source directories to include
 # =============================================================================
 add_library(nrniv_lib SHARED ${NRN_NRNIV_LIB_SRC_FILES})
-target_link_libraries(nrniv_lib ${X11_LIBRARIES} readline)
+target_link_libraries(nrniv_lib ${X11_LIBRARIES} ${TERMCAP_LIBRARIES} readline)
 set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
 
 # =============================================================================
@@ -277,11 +279,19 @@ else()
   include_directories(nrniv_lib ${NRN_IVOS_SRC_DIR} ${PROJECT_BINARY_DIR}/src/ivos)
 endif()
 
+# TODO could be true for other platforms as well?
+if(MINGW)
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
+  target_link_libraries(nrniv_lib -static-libgcc -static-libstdc++)
+endif()
 # =============================================================================
 # Final executable
 # =============================================================================
 add_executable(nrniv ${NRN_BIN_SRC_FILES})
-target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE} ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS} )
+target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE} ${CMAKE_THREAD_LIBS_INIT})
+if (NOT MINGW)
+  target_link_libraries(nrniv ${CMAKE_DL_LIBS})
+endif()
 
 # TODO: unset in top level CMake is not working
 if (NOT NRN_MACOS_BUILD AND ${READLINE_FOUND})

@@ -594,7 +594,11 @@ static double save_test(void* v) {
 	BBSaveState* ss = (BBSaveState*)v;
 	usebin_ = 0;
 	if (nrnmpi_myid == 0) { // save global time
+#ifdef WIN32
+		mkdir("bbss_out");
+#else
 		mkdir("bbss_out", 0770);
+#endif
 		BBSS_IO* io = new BBSS_TxtFileOut("bbss_out/tmp");
 		io->d(1, nrn_threads->_t);
 		delete io;

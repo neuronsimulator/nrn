@@ -187,15 +187,10 @@ endmacro()
 # =============================================================================
 macro(nrn_find_project_files list_name)
   foreach(name ${ARGN})
-    execute_process(
-      COMMAND find ${PROJECT_SOURCE_DIR}/src -name ${name}
-      RESULTS_VARIABLE result
-      OUTPUT_VARIABLE filepath
-    )
-    if ( (NOT result EQUAL 0) OR filepath STREQUAL "")
+    file(GLOB_RECURSE filepath "${PROJECT_SOURCE_DIR}/src/*${name}")
+    if (filepath STREQUAL "")
       message(FATAL_ERROR " ${name} not found in ${PROJECT_SOURCE_DIR}/src")
     else()
-      string(REGEX REPLACE "\n$" "" filepath "${filepath}")
       list(APPEND ${list_name} ${filepath})
     endif()
   endforeach(name)
@@ -223,5 +218,6 @@ macro(nocmodl_mod_to_c modfile_basename)
                      COMMAND nocmodl ${modfile_basename}.mod
                      COMMAND sed "'s/_reg()/_reg_()/'" ${modfile_basename}.c > ${modfile_basename}.c.tmp
                      COMMAND mv ${modfile_basename}.c.tmp ${modfile_basename}.c
-                     DEPENDS ${PROJECT_BINARY_DIR}/bin/nocmodl ${modfile_basename}.mod)
+                     DEPENDS ${PROJECT_BINARY_DIR}/bin/nocmodl ${modfile_basename}.mod
+		     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src/nrniv)
 endmacro()

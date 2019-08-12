@@ -16,7 +16,7 @@ set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 # =============================================================================
 # Build options (boolean)
 # =============================================================================
-option(NRN_BUILD_SHARED "Build shared libraries (otherwise static library)" ON)
+option(NRN_ENABLE_SHARED "Build shared libraries (otherwise static library)" ON)
 option(NRN_ENABLE_INTERVIEWS "Enable GUI with INTERVIEWS" ON)
 option(NRN_ENABLE_LEGACY_FR "Use original faraday, R, etc. instead of 2017 nist constants" ON)
 option(NRN_ENABLE_MECH_DLL_STYLE "Dynamically load nrnmech shared library" ON)
@@ -126,6 +126,11 @@ else()
   set(USE_PTHREAD 0)
 endif()
 
+# TODO check if this is optional with ncurses
+if (MINGW)
+    find_package(Termcap REQUIRED)
+endif()
+
 # =============================================================================
 # Add CMake modules AFTER setting options
 # =============================================================================
@@ -211,7 +216,7 @@ if(cmake_generator_tolower MATCHES "makefile")
   endif()
   endif()
   message(STATUS "RXD           | ${NRN_ENABLE_RX3D}")
-  message(STATUS "Shared        | ${NRN_BUILD_SHARED}")
+  message(STATUS "Shared        | ${NRN_ENABLE_SHARED}")
   message(STATUS "--------------+--------------------------------------------------------------")
   message(STATUS " See documentation : https://www.neuron.yale.edu/neuron/")
   message(STATUS "--------------+--------------------------------------------------------------")
