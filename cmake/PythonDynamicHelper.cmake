@@ -1,10 +1,10 @@
 # =============================================================================
 # Configure support for dynamic Python to use multiple Python versions
 # =============================================================================
-# NEURON can be built with python module that can be usabe from muliple
+# NEURON can be built with python modules that can be usable from multiple
 # versions of Python. Here we check if NRN_ENABLE_PYTHON_DYNAMIC is valid
 # and determine an include directory for version 2 and/or 3 to build
-# libnrnpython<major>.so. Depending on the pythons used either or both of
+# libnrnpython<major>.so. Depending on the pythons used, either or both of
 # NRNPYTHON_INCLUDE3 or NRNPYTHON_INCLUDE2 will be defined.
 
 if (NRN_ENABLE_PYTHON_DYNAMIC MATCHES "NO" OR NOT NRN_ENABLE_PYTHON)

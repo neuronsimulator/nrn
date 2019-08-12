@@ -44,11 +44,11 @@ option(NRN_ENABLE_RX3D "Enable rx3d support" OFF)
 #   - <string>  : semicolon (;) separated list of python executable used to create a separate
 #                 interface for each. When one of those versions of Python is lauched,
 #                 "import neuron" will automatically load the appropriate module interface along
-#                 with the rest of neuron. Alsom nrniv -pyexe <python> will work with any <python>
+#                 with the rest of neuron. Also nrniv -pyexe <python> will work with any <python>
 #                 in the list of python executables.
 # Dynamic MPI support:
 #   - NO        : nrnmpi is linked into libnrniv.so
-#   - YES       : nrnmpi interface is consistent with default mpi is built and loaded dynamically
+#   - YES       : nrnmpi interface consistent with default mpi is built and loaded dynamically
 #                 at run time (nrniv still works in the absence of any mpi at all).
 #   - <string>  : semicolon (;) separated list of MPI's bin directories to create a separate
 #                 libnrnmpi_xxx.so interface for each. When nrniv is launched with the -mpi argument,
