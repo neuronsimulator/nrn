@@ -49,7 +49,8 @@ ICS_insert.argtypes = [
     ctypes.c_double,
     ctypes.c_double,
     ctypes.c_bool,
-    ctypes.c_double,]
+    ctypes.c_double,
+    numpy.ctypeslib.ndpointer(dtype=float),]
 
 #function to change extracellular diffusion
 set_diffusion = nrn_dll_sym('set_diffusion')
@@ -82,6 +83,7 @@ _delete_by_id.argtypes = [ctypes.c_int]
 _all_species = []
 _defined_species = {}
 _all_defined_species = []
+_defined_species_by_gid = []
 def _get_all_species():
     return _all_defined_species
 
@@ -191,8 +193,15 @@ class _SpeciesMathable(object):
 
     def _semi_compile(self, reg, instruction):
         from . import region
+
         #region is Extracellular
-        if isinstance(reg, region.Extracellular):
+
+        # if the species is only define on one extracellular region then use that
+        if len(self._regions) == 0 and len(self._extracellular_regions) == 1:
+            reg = self._extracellular_regions[0]
+
+        #region is Extracellular
+        if isinstance(reg, region.Extracellular) or len(self._regions) == 0:
             ecs_instance = self._extracellular_instances[reg]
             return ecs_instance._semi_compile(reg, instruction)
         #region is 3d intracellular
@@ -202,8 +211,6 @@ class _SpeciesMathable(object):
         if isinstance(reg, region.Region) and instruction == 'do_1d':
             if reg in self._regions:
                 return 'species[%d][%d]' % (self._id, reg._id)
-            elif len(self._regions) == 1:
-                return 'species[%d][%d]' % (self._id, self._regions[0]._id)
             else:
                 raise RxDException("Species %r is not defined on region %r." % (self, reg))
     
@@ -269,12 +276,18 @@ class SpeciesOnExtracellular(_SpeciesMathable):
         else:
             raise RxDException('unknown axes argument; valid options: xyz, xy, xz, yz, x, y and z')
 
-    def node_by_location(self,x,y,z):
+    def node_by_location(self, x, y, z):
         e = self._extracellular()._region
-        i = int((x - e._xlo) / e._dx[0])
-        j = int((y - e._ylo) / e._dx[1])
-        k = int((z - e._zlo) / e._dx[2])
-        return self.node_by_ijk(i,j,k) 
+        if (e._xlo <= x <= e._xhi and 
+            e._ylo <= y <= e._yhi and
+            e._zlo <= z <= e._zhi):  
+            i = int((x - e._xlo) / e._dx[0])
+            j = int((y - e._ylo) / e._dx[1])
+            k = int((z - e._zlo) / e._dx[2])
+            return self.node_by_ijk(i,j,k)
+        raise RxDException("Location (%1.2f %1.2f, %1.2f) is not in extracellular region %r", x, y, z, self._extracellular()._region)
+
+
 
     def alpha_by_location(self, locs):
         """Return a single alpha value for a homogeneous volume fraction of a list of alpha values for an inhomogeneous volume fraction at grid locations given in a list (locs)."""
@@ -335,6 +348,8 @@ class SpeciesOnExtracellular(_SpeciesMathable):
     def d(self, value):
         self._extracellular().d = value
 
+    def defined_on_region(self, r):
+        return r == self._extracellular()
 
 
 class SpeciesOnRegion(_SpeciesMathable):
@@ -429,7 +444,12 @@ class SpeciesOnRegion(_SpeciesMathable):
             rxd._update_node_data()
         else:
             initializer._do_init()
-        return nodelist.NodeList(itertools.chain.from_iterable([s.nodes for s in self._species()._secs if s._region == self._region()]))
+        my_nodes = [s.nodes for s in self._species()._secs if s._region == self._region()]
+        try:
+            my_nodes.append(self.instance3d._nodes)
+        except:
+            pass
+        return nodelist.NodeList(itertools.chain.from_iterable(my_nodes))
     
     @property
     def concentration(self):
@@ -452,6 +472,19 @@ class SpeciesOnRegion(_SpeciesMathable):
             return 'species[%d][%d]' % (self._id, self._region()._id)
         else:
             raise RxDException('There are no 1D sections defined on {}'.format(reg))
+
+    def defined_on_region(self, r):
+        return r == self._region()
+
+    @property
+    def instance3d(self):
+        sp = self._species()
+        r = self._region()
+        if r in sp._intracellular_instances:
+            return sp._intracellular_instances[r]
+        else:
+            raise RxDException("There are no 3D species defined on {}".format(r))
+        
 
     @property
     def _id(self):
@@ -526,13 +559,16 @@ class _IntracellularSpecies(_SpeciesMathable):
         self._ordered_y_nodes = self.ordered_nodes(self._y_line_defs, 'y', self.neighbors)
         self._ordered_z_nodes = self.ordered_nodes(self._z_line_defs, 'z', self.neighbors)
 
+        self._alphas = self.create_alphas()
+
         self._grid_id = ICS_insert(0, self._states._ref_x[0], len(self.states), self.neighbors,
                                     self._ordered_x_nodes, self._ordered_y_nodes, self._ordered_z_nodes,
                                     self._x_line_defs, len(self._x_line_defs), self._y_line_defs, 
                                     len(self._y_line_defs), self._z_line_defs, len(self._z_line_defs),
-                                    self._d, self._dx, is_diffusable, self._atolscale)
+                                    self._d, self._dx, is_diffusable, self._atolscale, self._alphas)
   
         self._update_pointers()
+        _defined_species_by_gid.append(self)
     
     #Line Definitions for each direction
     def line_defs(self, nodes, direction, nodes_length):
@@ -581,6 +617,10 @@ class _IntracellularSpecies(_SpeciesMathable):
             for i, ele in enumerate(n.neighbors[::2]):
                 my_array[n._index, i] = ele if ele is not None else -1
         return my_array
+    
+    def create_alphas(self):
+        alphas = [vol/self._dx**3 for vol in self._region._vol]
+        return numpy.asarray(alphas, dtype=numpy.float)
 
     def _import_concentration(self):
         ion = '_ref_' + self._name + self._region._nrn_region
@@ -706,6 +746,24 @@ class _IntracellularSpecies(_SpeciesMathable):
             self._d = value
             set_diffusion(0, self._grid_id, value, value, value)
 
+    #TODO Can we do this better?
+    def _index_from_point(self, point):
+        for i, n in enumerate(self._nodes):
+            if point == (n._i, n._j, n._k):
+                return i
+    
+    #TODO Can I do this better?
+    def _mc3d_indices_start(self, r):
+        indices = []
+        for sec in r._secs3d:
+            for seg in sec:
+                first_index = r._nodes_by_seg[seg][0]
+                point = r._points[first_index]
+                indices.append(self._index_from_point(point))
+        return min(indices)
+
+
+
 class _ExtracellularSpecies(_SpeciesMathable):
     def __init__(self, region, d=0, name=None, charge=0, initial=0, atolscale=1.0, boundary_conditions=None):
         """
@@ -780,6 +838,8 @@ class _ExtracellularSpecies(_SpeciesMathable):
 
         # moved to _finitialize -- in case the species is created before all the sections are
         #self._update_pointers()
+
+        _defined_species_by_gid.append(self)
 
     def __del__(self):
         # TODO: remove this object from the list of grids, possibly by reinserting all the others
@@ -1004,17 +1064,8 @@ class Species(_SpeciesMathable):
 
         # initialize self if the rest of rxd is already initialized
         if initializer.is_initialized():
-            if _has_3d:
-                if isinstance(regions, region.Region) and not regions._secs1d:
-                    pass
-                elif hasattr(regions, '__len__') and all(not r._secs1d for r in regions):
-                    pass
-                else:
-                    # TODO: remove this limitation
-                    #       one strategy would be to just redo the whole thing; what are the implications of that?
-                    #       (pointers would be invalid; anything else?)
-                    raise RxDException('Currently cannot add species containing 1D after 3D species defined and initialized. To work-around: reorder species definition.')
             self._do_init()
+            rxd._update_node_data(True, True)
         initializer._init_lock.release()
 
     
@@ -1119,7 +1170,6 @@ class Species(_SpeciesMathable):
             for r in self._regions:
                 if r._secs3d:
                     xs, ys, zs, segs = r._xs, r._ys, r._zs, r._segs
-                  
                     self._intracellular_nodes_by_region = []
                     for i, x, y, z, seg in zip(list(range(len(xs))), xs, ys, zs, segs):
                         self._intracellular_nodes_by_region.append(node.Node3D(i, x, y, z, r, seg, selfref))
@@ -1132,16 +1182,19 @@ class Species(_SpeciesMathable):
         self._intracellular_instances = {r:_IntracellularSpecies(r, d=self._d, charge=self.charge, initial=self.initial, nodes=self._intracellular_nodes[r], name=self._name, is_diffusable=is_diffusable, atolscale=self._atolscale) for r in self._regions if r._secs3d}
 
     def _do_init4(self):
-        self._extracellular_nodes = []
+        extracellular_nodes = []
         self._extracellular_instances = {r : _ExtracellularSpecies(r, d=self._d, name=self.name, charge=self.charge, initial=self.initial, atolscale=self._atolscale, boundary_conditions=self._ecs_boundary_conditions) for r in self._extracellular_regions}
         sp_ref = weakref.ref(self)
+        index = 0
         for r in self._extracellular_regions:
+            r_ref = weakref.ref(r)
             for i in range(r._nx):
                 for j in range(r._ny):
-                    for k in range(r._nz):
-                        self._extracellular_nodes.append(node.NodeExtracellular((i * r._ny + j) * r._nz + k, i, j, k, r, sp_ref, weakref.ref(r)))
-           
-    
+                    extracellular_nodes += [node.NodeExtracellular(idx, i, j, k, sp_ref, r_ref) for k, idx in enumerate(range(index, index + r._nz))]
+                    index += r._nz
+            #extracellular_nodes += [node.NodeExtracellular(idx, i, j, k, sp_ref, r_ref) for i, idxx in  enumerate(range(index, index + r._nx * r._ny * r._nz, r._ny * r._nz)) for j, idxy in enumerate(range(idxx, idxx + r._nz * r._ny, r._nz)) for k,idx in enumerate(range(idxy, idxy + r._nz))]
+            #index = len(extracellular_nodes)
+        self._extracellular_nodes = extracellular_nodes
     def _do_init5(self):
         # final initialization
         for sec in self._secs:
@@ -1300,8 +1353,17 @@ class Species(_SpeciesMathable):
         idx = self._indices1d()
         species_atolscale(self._id, self._atolscale, len(idx), (ctypes.c_int * len(idx))(*idx))
         # 3D stuff
-        for intra in self._intracellular_instances.values():
-            intra._register_cptrs()
+        self._concentration_ptrs = []
+        self._seg_order = []
+        if self._nodes and self.name is not None:
+            for r in self._regions:
+                nrn_region = r._nrn_region
+                if nrn_region is not None:
+                    ion = '_ref_' + self.name + nrn_region
+                    current_region_segs = list(r._nodes_by_seg.keys())
+                    self._seg_order += current_region_segs
+                    for seg in current_region_segs:
+                        self._concentration_ptrs.append(seg.__getattribute__(ion))    
 
     @property
     def charge(self):
@@ -1403,7 +1465,10 @@ class Species(_SpeciesMathable):
             else:   #Find the intersection
                 interseg = set.intersection(*[set(reg.secs) for reg in r if reg is not None])
                 return self.indices(r,interseg)
-    
+
+    def defined_on_region(self, r):
+        return r in self._regions or r in self._extracellular_regions
+        
     def _setup_diffusion_matrix(self, g):
         for s in self._secs:
             s._setup_diffusion_matrix(g)
@@ -1510,8 +1575,21 @@ class Species(_SpeciesMathable):
         for sec in self._secs: sec._transfer_to_legacy()
         
         # 3D part
-        for intra in self._intracellular_instances.values():
-            intra._transfer_to_legacy()
+        nodes = self._nodes
+        if nodes:
+            non_none_regions = [r for r in self._regions if r._nrn_region is not None]
+            if non_none_regions:
+                if any(r._nrn_region != 'i' for r in non_none_regions):
+                    raise RxDException('only "i" nrn_region supported for 3D simulations')
+                    # TODO: remove this requirement
+                    #       the issue here is that the code below would need to keep track of which nodes are in which nrn_region
+                    #       that's not that big of a deal, but when this was coded, there were other things preventing this from working                    
+                for seg, ptr in zip(self._seg_order, self._concentration_ptrs):
+                    all_nodes_in_seg = list(itertools.chain.from_iterable(r._surface_nodes_by_seg[seg] for r in non_none_regions))
+                    if all_nodes_in_seg:
+                        # TODO: if everything is 3D, then this should always have something, but for sections that aren't in 3D, won't have anything here
+                        # TODO: vectorize this, don't recompute denominator unless a structure change event happened
+                        ptr[0] = sum(nodes[node].concentration * nodes[node].volume for node in all_nodes_in_seg) / sum(nodes[node].volume for node in all_nodes_in_seg)
     
     def _import_concentration(self, init=True):
         """Read concentrations from the standard NEURON grid"""
@@ -1521,8 +1599,20 @@ class Species(_SpeciesMathable):
         for sec in self._secs: sec._import_concentration(init)
 
         # now the 3D stuff
-        for intra in self._intracellular_instances.values():
-            intra._import_concentration(self, init)
+        nodes = self._nodes
+        if nodes:
+            # TODO: replace this with a pointer vec for speed
+            #       not a huge priority since import happens rarely if at all
+            i = 0
+            seg_order = self._seg_order
+            conc_ptr = self._concentration_ptrs
+            for r in self._regions:
+                if r._nrn_region is not None:
+                    seg, ptr = seg_order[i], conc_ptr[i]
+                    i += 1
+                    value = ptr[0]
+                    for node in r._nodes_by_seg[seg]:
+                        nodes[node].concentration = value
     
     @property
     def nodes(self):

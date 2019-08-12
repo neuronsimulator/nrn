@@ -3,6 +3,8 @@
 
 /* Algorithms for Fourier Transform Spectral Methods */
 
+#define _USE_MATH_DEFINES
+
 #include <math.h>
 #include <stdio.h>
 #include <stddef.h>

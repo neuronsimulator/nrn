@@ -32,7 +32,7 @@ else()
   set(IVHINES "")
 endif()
 
-# use compiler from CMaek
+# use compiler from CMake
 set(CC ${CMAKE_C_COMPILER})
 set(CXX ${CMAKE_CXX_COMPILER})
 
@@ -43,24 +43,34 @@ set(BUILD_NRNMPI_DYNAMIC_FALSE "#")
 set(BUILD_NRNPYTHON_DYNAMIC_TRUE "")
 set(BUILD_NRNPYTHON_DYNAMIC_FALSE "#")
 
-if("${NRN_ENABLE_PYTHON_DYNAMIC}" MATCHES "NO")
+if(NRN_ENABLE_PYTHON_DYNAMIC)
+  if("${NRN_PYTHON_DYNAMIC}" STREQUAL "")
+    set(NRN_PYTHON_EXE_LIST ${PYTHON_EXECUTABLE} CACHE INTERNAL "" FORCE)
+  else()
+    set(NRN_PYTHON_EXE_LIST ${NRN_PYTHON_DYNAMIC} CACHE INTERNAL "" FORCE)
+  endif()
+else()
   set(BUILD_NRNPYTHON_DYNAMIC_TRUE "#")
   set(BUILD_NRNPYTHON_DYNAMIC_FALSE "")
-  set(NRN_PYTHON_EXE_LIST ${PYTHON_EXECUTABLE})
-elseif("${NRN_ENABLE_PYTHON_DYNAMIC}" MATCHES "YES")
-  set(NRN_PYTHON_EXE_LIST ${PYTHON_EXECUTABLE})
-else()
-  set(NRN_PYTHON_EXE_LIST ${NRN_ENABLE_PYTHON_DYNAMIC})
+  set(NRN_PYTHON_EXE_LIST ${PYTHON_EXECUTABLE} CACHE INTERNAL "" FORCE)
 endif()
 
 if(NRN_MACOS_BUILD)
   set(MAC_DARWIN_TRUE "")
-  set(MAC_DARWIN_FALSE "\#")
+  set(MAC_DARWIN_FALSE "#")
   set(setup_extra_link_args "#extra_link_args")
 else()
-  set(MAC_DARWIN_TRUE "\#")
+  set(MAC_DARWIN_TRUE "#")
   set(MAC_DARWIN_FALSE "")
   set(setup_extra_link_args "extra_link_args")
+endif()
+
+if(NRN_WINDOWS_BUILD)
+  set(WIN_MINGW_TRUE "")
+  set(WIN_MINGW_FALSE "#")
+else()
+  set(WIN_MINGW_TRUE "#")
+  set(WIN_MINGW_FALSE "")
 endif()
 
 if(NRN_ENABLE_MEMACS)
@@ -70,35 +80,34 @@ else()
 endif()
 
 # =============================================================================
-# Todo: add description of why this is copied
-# =============================================================================
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-
-# =============================================================================
 # All variables are set, prepare setup.py for python module install
 # =============================================================================
 nrn_configure_file(setup.py src/nrnpython)
 
 # =============================================================================
+# Setup MinGW toolchain for setuptools
+# =============================================================================
+if(MINGW)
+  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/setup.cfg "[build]\ncompiler=mingw32")
+endif()
+
+# =============================================================================
 # If NEURON python module installation is enabled
 # =============================================================================
-if(NOT "${NRN_ENABLE_MODULE_INSTALL}" MATCHES "NO")
+if(NRN_ENABLE_MODULE_INSTALL)
 
   # check arguments for setup.py install : if user has just provided YES, then use default
-  set(pyinst "${NRN_ENABLE_MODULE_INSTALL}")
-  if("${pyinst}" MATCHES "YES")
-    set(pyinst "--home ${CMAKE_INSTALL_PREFIX}")
+  if("${NRN_MODULE_INSTALL_OPTIONS}" STREQUAL "")
+    set(install_path ${CMAKE_INSTALL_PREFIX})
+    # replace windows path of the form C:/msys64 to C:\msys64
+    if(MINGW)
+      string(REPLACE ":/" ":\\\\" install_path "${install_path}")
+    endif()
+    set(NRN_MODULE_INSTALL_OPTIONS "--home ${install_path}" CACHE INTERNAL "" FORCE)
   endif()
-  # show commands to user
-  foreach(pyexe ${NRN_PYTHON_EXE_LIST})
-    message(
-      STATUS
-        "Install neuron module with: ${pyexe} setup.py install ${pyinst}"
-      )
-  endforeach(pyexe)
 
   # user has selected dynamic python support (could be multiple versions)
-  if(NOT "${NRN_ENABLE_PYTHON_DYNAMIC}" MATCHES "NO")
+  if(NRN_ENABLE_PYTHON_DYNAMIC)
     set(INCLUDE_DIRS
         .
         ../oc
@@ -114,28 +123,44 @@ if(NOT "${NRN_ENABLE_MODULE_INSTALL}" MATCHES "NO")
         ${PROJECT_BINARY_DIR}/src/oc
         ${IV_INCLUDE_DIR})
 
-    # build python2 library and install it
-    if(NRNPYTHON_INCLUDE2)
-      add_library(nrnpython2 SHARED ${NRN_NRNPYTHON_SRC_FILES})
-      target_include_directories(nrnpython2 BEFORE PUBLIC ${NRNPYTHON_INCLUDE2} ${INCLUDE_DIRS})
-      add_dependencies(nrnpython2 nrniv_lib)
-      install(TARGETS nrnpython2 DESTINATION lib)
-    endif()
+    if (LINK_AGAINST_PYTHON)
+      list(LENGTH NRN_PYTHON_EXE_LIST _num_pythons)
+      math(EXPR num_pythons "${_num_pythons} - 1")
+      foreach (val RANGE ${num_pythons})
+        list(GET NRN_PYTHON_VER_LIST ${val} pyver)
+        list(GET NRN_PYTHON_INCLUDE_LIST ${val} pyinc)
+        list(GET NRN_PYTHON_LIB_LIST ${val} pylib)
+        add_library(nrnpython${pyver} SHARED ${NRN_NRNPYTHON_SRC_FILES})
+        target_include_directories(nrnpython${pyver} BEFORE PUBLIC ${pyinc} ${INCLUDE_DIRS})
+        target_link_libraries(nrnpython${pyver} nrniv_lib ${pylib} ${Readline_LIBRARY})
+        add_dependencies(nrnpython${pyver} nrniv_lib)
+        install(TARGETS nrnpython${pyver} DESTINATION lib)
+      endforeach()
+    else()
+      # build python2 library and install it
+      if(NRNPYTHON_INCLUDE2)
+        add_library(nrnpython2 SHARED ${NRN_NRNPYTHON_SRC_FILES})
+        target_include_directories(nrnpython2 BEFORE PUBLIC ${NRNPYTHON_INCLUDE2} ${INCLUDE_DIRS})
+        add_dependencies(nrnpython2 nrniv_lib)
+        install(TARGETS nrnpython2 DESTINATION lib)
+      endif()
 
-    # build python3 library and install it
-    if(NRNPYTHON_INCLUDE3)
-      add_library(nrnpython3 SHARED ${NRN_NRNPYTHON_SRC_FILES})
-      add_dependencies(nrnpython3 nrniv_lib)
-      target_include_directories(nrnpython3 BEFORE PUBLIC ${NRNPYTHON_INCLUDE3} ${INCLUDE_DIRS})
-      install(TARGETS nrnpython3 DESTINATION lib)
+      # build python3 library and install it
+      if(NRNPYTHON_INCLUDE3)
+        add_library(nrnpython3 SHARED ${NRN_NRNPYTHON_SRC_FILES})
+        add_dependencies(nrnpython3 nrniv_lib)
+        target_include_directories(nrnpython3 BEFORE PUBLIC ${NRNPYTHON_INCLUDE3} ${INCLUDE_DIRS})
+        install(TARGETS nrnpython3 DESTINATION lib)
+      endif()
     endif()
   endif()
 
   # for each python detected / provided by user, install module at install time
   foreach(pyexe ${NRN_PYTHON_EXE_LIST})
     install(CODE "
-      message(STATUS \"Installing neuron module with: ${pyexe} setup.py install ${pyinst}\")
-      execute_process(COMMAND ${pyexe} setup.py install ${pyinst}
+      message(STATUS \"Installing neuron module with: ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}\")
+      execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp)
+      execute_process(COMMAND ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       )
     ")

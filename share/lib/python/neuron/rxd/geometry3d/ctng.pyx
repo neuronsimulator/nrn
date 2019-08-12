@@ -200,7 +200,7 @@ cdef list join_outside(double x0, double y0, double z0, double r0, double x1, do
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform=False):    
+def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform=False, relevant_pts=None):    
     cdef list objects = []
     cdef list soma_objects = []
     cdef dict cone_segment_dict = {}
@@ -373,14 +373,20 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
         all_cones = []
         pts_cones_db = {}
         diam_db = {}
-        for branch, psec in zip(branches, parent_sec_name):
+
+        for (k, branch), psec in zip(enumerate(branches), parent_sec_name):
             #################### modified from geometry.py ##################
             # make sure cones split across electrical segments
-            arc3d = ([branch.arc3d(i) for i in range(branch.n3d())])
-            diam3d = ([branch.diam3d(i) for i in range(branch.n3d())])
-            x3d = ([branch.x3d(i) for i in range(branch.n3d())])
-            y3d = ([branch.y3d(i) for i in range(branch.n3d())])
-            z3d = ([branch.z3d(i) for i in range(branch.n3d())])
+            if relevant_pts:
+                rng = relevant_pts[k]
+            else:
+                rng = range(branch.n3d())
+            
+            arc3d = ([branch.arc3d(i) for i in rng])
+            diam3d = ([branch.diam3d(i) for i in rng])
+            x3d = ([branch.x3d(i) for i in rng])
+            y3d = ([branch.y3d(i) for i in rng])
+            z3d = ([branch.z3d(i) for i in rng])
 
             x = numpy.array([])
             y = numpy.array([])
@@ -390,7 +396,6 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
             dx = branch.L / branch.nseg
             for iseg, seg in enumerate(branch):
                 # get a list of all pts in the segment, including end points
-
                 lo = iseg * dx
                 hi = (iseg + 1) * dx
 

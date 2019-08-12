@@ -156,24 +156,27 @@ class GeneralizedReaction(object):
             self._mult = _numpy_array(self._mult)
             return
 
-
+        from .multiCompartmentReaction import MultiCompartmentReaction
         # locate the regions containing all species (including the one that changes)
+        # (we do not need every species to be on the same region for multi compartment reactions)
         if all(sptr() for sptr in sources) and all(dptr() for dptr in dests):
             active_regions = [r for r in self._regions if all(sptr().indices(r) for sptr in sources + dests)]
         else:
             active_regions = []
-        for sptr in self._involved_species:
-            s = sptr()
-            if s and not isinstance(s,species.SpeciesOnExtracellular):
-                for r in self._regions:
-                    if r in active_regions and not s.indices(r):
+        # MultiCompartmentReactions do not require involved species to share common regions
+        if not isinstance(self, MultiCompartmentReaction):
+            for sptr in self._involved_species:
+                s = sptr()
+                if s and not isinstance(s,species.SpeciesOnExtracellular):
+                    for r in self._regions:
+                        if r in active_regions and not s.indices(r):
+                            del active_regions[active_regions.index(r)]
+                elif s and isinstance(s,species.SpeciesOnExtracellular):
+                    r = s._extracellular()._region
+                    if r in active_regions:
                         del active_regions[active_regions.index(r)]
-            elif s and isinstance(s,species.SpeciesOnExtracellular):
-                r = s._extracellular()
-                if r in active_regions:
-                    del active_regions[active_regions.index(r)] 
-            else:
-                active_regions = []
+                else:
+                    active_regions = []
         
         def intersection(los):
             if los: return set.intersection(*los)
@@ -190,7 +193,7 @@ class GeneralizedReaction(object):
                 if not dest_regions:
                     raise RxDException("Error in %r. The destination species do not share a common region" % self)
                 dest_sections = intersection([set(reg.secs) for reg in dest_regions if reg is not None])
-                active_regions = src_regions + dest_regions
+                active_regions = set.union(src_regions,dest_regions)
                 active_secs = set.union(src_sections,dest_sections)
             else:
                 active_regions = list(intersection([set(sptr()._regions) if isinstance(sptr(),species.Species) else {sptr()._region()} for sptr in sources + dests]))
@@ -201,7 +204,7 @@ class GeneralizedReaction(object):
             active_secs = set.intersection(*[set(reg.secs) for reg in active_regions if reg])
 
         self._active_regions = active_regions
-        from .multiCompartmentReaction import MultiCompartmentReaction
+        
         if isinstance(self, MultiCompartmentReaction):
             sources = [r for r in self._sources if not isinstance(r(),species.SpeciesOnExtracellular)]
             dests = [r for r in self._dests if not isinstance(r(),species.SpeciesOnExtracellular)]
@@ -223,7 +226,6 @@ class GeneralizedReaction(object):
                 self._indices_dict[s] = s.indices(active_regions,active_secs)
         sources_indices = [sptr().indices(active_regions,active_secs) for sptr in sources]
         dests_indices = [dptr().indices(active_regions,active_secs) for dptr in dests]
-        
         self._indices = sources_indices + dests_indices
         volumes, surface_area, diffs = node._get_data()
         #self._mult = [list(-1. / volumes[sources_indices]) + list(1. / volumes[dests_indices])]
@@ -238,9 +240,9 @@ class GeneralizedReaction(object):
                 self._mult = [-areas / volumes[si] / molecules_per_mM_um3 for si in sources_indices] + [areas / volumes[di] / molecules_per_mM_um3 for di in dests_indices]
             #TODO: check for multicompartment reaction within the ECS
             elif len(sources_ecs) > 0 and len(dests_ecs) == 0:
-                self._mult = [-areas / (numpy.prod(s()._extracellular()._dx)*s().alpha_by_location(xyz_by_index(di))) / molecules_per_mM_um3 for s in sources_ecs for di in dests_indices] + [areas / volumes[di] / molecules_per_mM_um3 for di in dests_indices]
+                self._mult = [-areas / (numpy.prod(s()._extracellular()._dx)*s().alpha_by_location(xyz_by_index(di))) / molecules_per_mM_um3 for s, di in zip(sources_ecs, dests_indices)] + [areas / volumes[di] / molecules_per_mM_um3 for di in dests_indices]
             elif len(sources_ecs) == 0 and len(dests_ecs) > 0:
-                self._mult = [-areas / volumes[si] / molecules_per_mM_um3 for si in sources_indices] + [areas / (numpy.prod(s()._extracellular()._dx)*s().alpha_by_location(xyz_by_index(si))) / molecules_per_mM_um3 for si in sources_indices for s in dests_ecs]
+                self._mult = [-areas / volumes[si] / molecules_per_mM_um3 for si in sources_indices] + [areas / (numpy.prod(s()._extracellular()._dx)*s().alpha_by_location(xyz_by_index(si))) / molecules_per_mM_um3 for s, si in zip(dests_ecs, sources_indices)]
             
             else:
                 # If both the source & destination are in the ECS, they should use a reaction

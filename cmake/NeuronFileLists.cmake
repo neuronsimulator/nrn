@@ -132,7 +132,6 @@ set(IVOC_FILE_LIST
     cbwidget.cpp
     checkpnt.cpp
     epsprint.cpp
-    field.cpp
     fourier.cpp
     gifimage.cpp
     graph.cpp
@@ -172,9 +171,13 @@ set(IVOC_FILE_LIST
     strfun.cpp
     symchoos.cpp
     utility.cpp
-    xdep.cpp
     xmenu.cpp
     xyview.cpp)
+if(MINGW)
+  list(APPEND IVOC_FILE_LIST ivocwin.cpp)
+else()
+  list(APPEND IVOC_FILE_LIST field.cpp xdep.cpp)
+endif()
 
 # =============================================================================
 # Files in nrniv directory
@@ -471,7 +474,7 @@ set(NRNGNU_FILES_LIST
     d_avec.cpp
     d_vec.cpp)
 
-# nrnpython sources (only if "${NRN_ENABLE_PYTHON_DYNAMIC}" MATCHES "NO")
+  # nrnpython sources (only if ${NRN_ENABLE_PYTHON_DYNAMIC} is OFF}
 set(NRNPYTHON_FILES_LIST
     nrnpython.cpp
     nrnpy_hoc.cpp

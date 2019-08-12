@@ -95,13 +95,13 @@ if(NRN_ENABLE_MPI)
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_PARALLEL_SRC_FILES})
 endif()
 
-if("${NRN_ENABLE_MPI_DYNAMIC}" MATCHES "NO")
-  list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_NRNMPI_SRC_FILES})
-else()
+if(NRN_ENABLE_MPI_DYNAMIC)
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.c)
+else()
+  list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_NRNMPI_SRC_FILES})
 endif()
 
-if("${NRN_ENABLE_PYTHON_DYNAMIC}" MATCHES "NO")
+if(NOT NRN_ENABLE_PYTHON_DYNAMIC AND NRN_ENABLE_PYTHON)
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_NRNPYTHON_SRC_FILES})
 endif()
 
@@ -119,6 +119,7 @@ set(NRN_INCLUDE_DIRS
     ${NRN_OC_SRC_DIR}
     ${PROJECT_BINARY_DIR}
     ${PROJECT_BINARY_DIR}/src/nrncvode
+    ${PROJECT_BINARY_DIR}/src/nrnjava
     ${PROJECT_BINARY_DIR}/src/nrnoc
     ${PROJECT_BINARY_DIR}/src/nrnpython
     ${PROJECT_BINARY_DIR}/src/oc
@@ -163,7 +164,7 @@ add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/src/nrnoc/hocusr.h
                    DEPENDS ${NRN_NRNOC_SRC_DIR}/neuron.h ${NRN_OC_SRC_DIR}/mk_hocusr_h.py)
 
 # header for dynamic mpi
-if(NOT "${NRN_ENABLE_MPI_DYNAMIC}" MATCHES "NO")
+if(NRN_ENABLE_MPI_DYNAMIC)
   add_custom_command(OUTPUT ${NRNMPI_DYNAMIC_INCLUDE_FILE}
                      COMMAND sh mkdynam.sh
                      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/nrnmpi
@@ -191,6 +192,10 @@ set_property(SOURCE ${PROJECT_SOURCE_DIR}/src/nrniv/nrnpy.cpp
                     ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.c
              APPEND
              PROPERTY COMPILE_DEFINITIONS NRNCMAKE)
+
+set_property(SOURCE ${PROJECT_SOURCE_DIR}/src/nrniv/nrnpy.cpp
+             APPEND
+             PROPERTY COMPILE_DEFINITIONS USE_LIBNRNPYTHON_MAJORMINOR=${USE_LIBNRNPYTHON_MAJORMINOR})
 
 set_property(SOURCE ${NRN_IVOC_SRC_FILES}
              APPEND
@@ -229,8 +234,16 @@ set_source_files_properties(${NRN_OC_SRC_DIR}/hocusr.c
                             OBJECT_DEPENDS
                             ${PROJECT_BINARY_DIR}/src/nrnoc/hocusr.h)
 
-if(NOT "${NRN_ENABLE_MPI_DYNAMIC}" MATCHES "NO")
+if(NRN_ENABLE_MPI_DYNAMIC)
   set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.c
+                              PROPERTIES
+                              OBJECT_DEPENDS
+                              ${NRNMPI_DYNAMIC_INCLUDE_FILE})
+  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi.c
+                              PROPERTIES
+                              OBJECT_DEPENDS
+                              ${NRNMPI_DYNAMIC_INCLUDE_FILE})
+  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/bbsmpipack.c
                               PROPERTIES
                               OBJECT_DEPENDS
                               ${NRNMPI_DYNAMIC_INCLUDE_FILE})
@@ -249,24 +262,28 @@ endif()
 # All source directories to include
 # =============================================================================
 add_library(nrniv_lib SHARED ${NRN_NRNIV_LIB_SRC_FILES})
-target_link_libraries(nrniv_lib ${X11_LIBRARIES} readline)
+target_link_libraries(nrniv_lib ${X11_LIBRARIES} ${TERMCAP_LIBRARIES} readline)
 set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
 
 # =============================================================================
 # Link with all libraries
 # =============================================================================
-if(NRN_ENABLE_PYTHON AND "${NRN_ENABLE_PYTHON_DYNAMIC}" MATCHES "NO")
+if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
   target_link_libraries(nrniv_lib ${PYTHON_LIBRARIES})
 endif()
 
 if(NRN_ENABLE_MPI)
-  if("${NRN_ENABLE_MPI_DYNAMIC}" MATCHES "NO")
-    target_link_libraries(nrniv_lib ${MPI_C_LIBRARIES})
-  elseif("${NRN_ENABLE_MPI_DYNAMIC}" MATCHES "YES")
+  if(NRN_ENABLE_MPI_DYNAMIC)
     add_library(nrnmpi_lib SHARED ${NRN_NRNMPI_SRC_FILES})
     target_link_libraries(nrnmpi_lib ${MPI_C_LIBRARIES})
+    if (MINGW)
+      add_dependencies(nrnmpi_lib nrniv_lib)
+      target_link_libraries(nrnmpi_lib nrniv_lib)
+    endif()
     set_property(TARGET nrnmpi_lib PROPERTY OUTPUT_NAME nrnmpi)
     install(TARGETS nrnmpi_lib DESTINATION lib)
+  else()
+    target_link_libraries(nrniv_lib ${MPI_C_LIBRARIES})
   endif()
 endif()
 
@@ -281,7 +298,10 @@ endif()
 # Final executable
 # =============================================================================
 add_executable(nrniv ${NRN_BIN_SRC_FILES})
-target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE} ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS} )
+target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE} ${CMAKE_THREAD_LIBS_INIT})
+if (NOT MINGW)
+  target_link_libraries(nrniv ${CMAKE_DL_LIBS})
+endif()
 
 # TODO: unset in top level CMake is not working
 if (NOT NRN_MACOS_BUILD AND ${READLINE_FOUND})

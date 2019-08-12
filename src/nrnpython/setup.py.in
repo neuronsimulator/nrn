@@ -8,14 +8,25 @@ import os
 @USING_CMAKE_TRUE@using_cmake=True
 @USING_CMAKE_FALSE@using_cmake=False
 
+# TODO temporary workaround for mingw + cmake
+# When running with mingw-cmake, the path of the form C:/msys64/xyz
+# needs to be transformed to C:\msys64/xyz.
+def get_escaped_path(path):
+  if using_cmake:
+    @USING_CMAKE_TRUE@@WIN_MINGW_TRUE@return path.replace(":/", ":\\")
+    return path
+  else:
+    return path
+
 # NRNPYTHON_DEFINES which were enabled at configure time
 extern_defines = "@NRNPYTHON_DEFINES@"
-nrnpython_exec = "@NRNPYTHON_EXEC@"
+nrnpython_exec = get_escaped_path("@NRNPYTHON_EXEC@")
 nrnpython_pyver = "@NRNPYTHON_PYVER@"
 nrnpython_pyver10 = "nrnpython"
-nrn_srcdir = "@NRN_SRCDIR@"
+@USING_CMAKE_TRUE@use_libnrnpython_majorminor = @USE_LIBNRNPYTHON_MAJORMINOR@
+nrn_srcdir = get_escaped_path("@NRN_SRCDIR@")
 build_rx3d = @BUILD_RX3D@
-ivlibdir = "@IV_LIBDIR@"
+ivlibdir = get_escaped_path("@IV_LIBDIR@")
 if ivlibdir == "" :
     ivlibdir = '.'
 
@@ -23,8 +34,13 @@ destdir = os.getenv("DESTDIR")
 if not destdir:
   destdir = ""
 
-instdir = destdir + "@prefix@"
+instdir = destdir + get_escaped_path("@prefix@")
 if nrn_srcdir[0] != '/' :
+  if using_cmake:
+    @USING_CMAKE_TRUE@@WIN_MINGW_TRUE@nrn_srcdir = nrn_srcdir
+    @USING_CMAKE_TRUE@@WIN_MINGW_FALSE@nrn_srcdir = '../../' + nrn_srcdir
+    pass
+  else:
     nrn_srcdir = '../../' + nrn_srcdir
 
 if using_cmake and "@BUILD_NRNPYTHON_DYNAMIC_TRUE@" == "":
@@ -32,6 +48,9 @@ if using_cmake and "@BUILD_NRNPYTHON_DYNAMIC_TRUE@" == "":
   nrnpython_pyver = get_python_version()
   nrnpython_exec = sys.executable
   nrnpython_pyver10 = "nrnpython" + str(sys.version_info[0])
+  if use_libnrnpython_majorminor == 1:
+    nrnpython_pyver10 = "nrnpython" + str(sys.version_info[0]) + str(sys.version_info[1])
+
 else:
   if nrnpython_pyver!=get_python_version():
     print ("Error:")
@@ -44,8 +63,8 @@ else:
 ldefs = extern_defines.split('-D')
 
 # if using MPI then at least for linking need special paths and libraries
-mpicc_bin = "@CC@"
-mpicxx_bin = "@CXX@"
+mpicc_bin = get_escaped_path("@CC@")
+mpicxx_bin = get_escaped_path("@CXX@")
 import os
 os.environ["CC"]=mpicc_bin
 os.environ["CXX"]=mpicxx_bin
@@ -75,7 +94,7 @@ include_dirs = [nrn_srcdir+'/src/oc', '../oc', nrn_srcdir+'/src/nrnmpi']
 @MAC_DARWIN_TRUE@include_dirs.append("@CMAKE_OSX_SYSROOT@/usr/include")
 defines = []
 
-libdirs = [destdir + "@NRN_LIBDIR@",
+libdirs = [destdir + get_escaped_path("@NRN_LIBDIR@"),
   ivlibdir
 ]
 epre='-Wl,-R'

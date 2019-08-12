@@ -33,11 +33,10 @@ macro(nrn_check_dir_exists HEADER VARIABLE)
     # try to compile
     try_compile(RESULT_VAR ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/conftest.c)
     if (${RESULT_VAR})
-      set(RESULT_VAR 1)
+      set(${VARIABLE} 1)
     else()
-      set(RESULT_VAR 0)
+      set(${VARIABLE} 0)
     endif()
-    set(${VARIABLE} ${RESULT_VAR})
     message(STATUS "nrn_check_dir_existss ${HEADER}: ${RESULT_VAR}")
     file(REMOVE "conftest.c")
   endif()
@@ -138,8 +137,7 @@ endmacro()
 # Perform check_symbol_exists using NRN_HEADERS_INCLUDE_LIST if empty header_list
 # =============================================================================
 macro(nrn_check_symbol_exists name header_list variable)
-  string(COMPARE EQUAL "${header_list}" "" empty)
-  if (${empty})
+  if ("${header_list}" STREQUAL "")
     check_symbol_exists("${name}" "${NRN_HEADERS_INCLUDE_LIST}" ${variable})
   else()
     check_symbol_exists("${name}" "${header_list}" ${variable})
@@ -151,8 +149,7 @@ endmacro()
 # =============================================================================
 # note that sometimes, though it should have succeeded, cc  fails but c++ succeeds
 macro(nrn_check_cxx_symbol_exists name header_list variable)
-  string(COMPARE EQUAL "${header_list}" "" empty)
-  if (${empty})
+  if ("${header_list}" STREQUAL "")
     check_cxx_symbol_exists("${name}" "${NRN_HEADERS_INCLUDE_LIST}" ${variable})
   else()
     check_cxx_symbol_exists("${name}" "${header_list}" ${variable})
@@ -187,15 +184,10 @@ endmacro()
 # =============================================================================
 macro(nrn_find_project_files list_name)
   foreach(name ${ARGN})
-    execute_process(
-      COMMAND find ${PROJECT_SOURCE_DIR}/src -name ${name}
-      RESULTS_VARIABLE result
-      OUTPUT_VARIABLE filepath
-    )
-    if ( (NOT result EQUAL 0) OR filepath STREQUAL "")
+    file(GLOB_RECURSE filepath "${PROJECT_SOURCE_DIR}/src/*${name}")
+    if (filepath STREQUAL "")
       message(FATAL_ERROR " ${name} not found in ${PROJECT_SOURCE_DIR}/src")
     else()
-      string(REGEX REPLACE "\n$" "" filepath "${filepath}")
       list(APPEND ${list_name} ${filepath})
     endif()
   endforeach(name)
@@ -205,7 +197,7 @@ endmacro()
 # Utility macro to print all matching CMake variables
 # =============================================================================
 # example usage : nrn_print_matching_variables("[Mm][Pp][Ii]")
-macro (nrn_print_matching_variables prefix_regex)
+macro(nrn_print_matching_variables prefix_regex)
   get_cmake_property(variable_names VARIABLES)
   list (SORT variable_names)
   foreach (variable ${variable_names})
@@ -223,5 +215,6 @@ macro(nocmodl_mod_to_c modfile_basename)
                      COMMAND nocmodl ${modfile_basename}.mod
                      COMMAND sed "'s/_reg()/_reg_()/'" ${modfile_basename}.c > ${modfile_basename}.c.tmp
                      COMMAND mv ${modfile_basename}.c.tmp ${modfile_basename}.c
-                     DEPENDS ${PROJECT_BINARY_DIR}/bin/nocmodl ${modfile_basename}.mod)
+                     DEPENDS ${PROJECT_BINARY_DIR}/bin/nocmodl ${modfile_basename}.mod
+		     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src/nrniv)
 endmacro()

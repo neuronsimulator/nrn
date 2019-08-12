@@ -28,9 +28,9 @@ set(CMAKE_INSTALL_INCLUDEDIR include)
 set(CMAKE_INSTALL_DATADIR share/nrn)
 
 # =============================================================================
-# Adapted from CoreNEURON
+# Inclode nrnivmodl Makefile generator, adapted from CoreNEURON
 # =============================================================================
-include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeListsNrnMech.txt)
+include(CMakeListsNrnMech)
 
 # =============================================================================
 # nrnmech_makefile.in is bound up with autoconf, used based on coreneuron Configure templates
@@ -49,7 +49,7 @@ install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/nrngui ${PROJECT_BINARY_DIR}/bin/neur
         DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
 install(FILES ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/nrnpyenv.sh
+install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/nrnpyenv.sh
               ${CMAKE_CURRENT_SOURCE_DIR}/sortspike
               ${CMAKE_CURRENT_SOURCE_DIR}/mkthreadsafe
               ${CMAKE_CURRENT_SOURCE_DIR}/nrnpyenv.sh

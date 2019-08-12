@@ -19,29 +19,14 @@ _volumes = numpy.array([])
 _surface_area = numpy.array([])
 _diffs = numpy.array([])
 _states = numpy.array([])
-_node_fluxes = {'indices': [], 'type': [], 'source': [], 'scale': []}
+_node_fluxes = {'index': [], 'type': [], 'source': [], 'scale': [], 'region': []}
 _has_node_fluxes = False
+
 _point_indices = {}
 
 # node data types
 _concentration_node = 0
 _molecule_node = 1
-
-def _apply_node_fluxes(dy):
-    # TODO: what if the nodes go away because a section is destroyed?
-    if _has_node_fluxes:
-        # TODO: be smarter. Use PtrVector when possible. Handle constants efficiently.
-        for index, t, source, scale in zip(_node_fluxes['indices'], _node_fluxes['type'], _node_fluxes['source'], _node_fluxes['scale']):
-            if t == 1:
-                delta = source[0]
-            elif t == 2:
-                delta = source()
-            elif t == 3:
-                delta = source
-            else:
-                raise RxDException('Unknown flux source type. Users should never see this.')
-            # TODO: check this... make sure scale shouldn't be divided by volume
-            dy[index] += delta / scale / _volumes[index]
 
 def _get_data():
     return (_volumes, _surface_area, _diffs)
@@ -72,6 +57,14 @@ def _remove(start, stop):
     _diffs = numpy.delete(_diffs,list(range(start,stop)))
     _states = numpy.delete(_states,list(range(start,stop)))
 
+    # remove _node_flux
+    for (i,idx) in enumerate(_node_fluxes['index']):
+        if idx in dels:
+            for lst in _node_fluxes.values():
+               del lst[i]
+    
+
+
 def _replace(old_offset, old_nseg, new_offset, new_nseg):
     """ delete old volumes, surface areas and diff values in from global arrays
         move states so that the new segment value is equal to the old segment
@@ -81,9 +74,12 @@ def _replace(old_offset, old_nseg, new_offset, new_nseg):
     start = old_offset
     stop = start + old_nseg + 1
     
-    _volumes = numpy.delete(_volumes, list(range(start, stop)))
-    _surface_area = numpy.delete(_surface_area, list(range(start, stop)))
-    _diffs = numpy.delete(_diffs, list(range(start, stop)))
+    dels = list(range(start, stop))
+    _volumes = numpy.delete(_volumes, dels)
+    _surface_area = numpy.delete(_surface_area, dels)
+    _diffs = numpy.delete(_diffs, dels)
+
+
     # replace states -- the new segment has the state from the old
     # segment which contains it's centre
 
@@ -91,6 +87,12 @@ def _replace(old_offset, old_nseg, new_offset, new_nseg):
         i = int(((j + 0.5) / new_nseg) * old_nseg)
         _states[new_offset + j ] = _states[old_offset + i]
     _states = numpy.delete(_states,list(range(start, stop)))
+
+    # update _node_flux index
+    for (i,idx) in enumerate(_node_fluxes['index']):
+        if idx in dels:
+            j = int(((idx + 0.5) / new_nseg) * old_nseg)
+            _node_fluxes['index'][i] = j
 
 
 _numpy_element_ref = neuron.numpy_element_ref
@@ -244,7 +246,7 @@ class Node(object):
             concentration depends on the volume of the node. (This scaling is
             handled automatically by NEURON's rxd module.)
         """
-        global _has_node_fluxes
+        global _has_node_fluxes, _node_fluxes
         if len(args) not in (1, 2):
             raise RxDException('node.include_flux takes only one or two arguments')
         if 'units' in kwargs:
@@ -284,6 +286,7 @@ class Node(object):
         elif len(args) == 1 and isinstance(args[0], collections.Callable):
             flux_type = 2
             source = args[0]
+            warnings.warn("Adding a python callback may slow down execution. Consider using a Rate and Parameter.") 
         elif len(args) == 2:
             flux_type = 1
             try:
@@ -307,12 +310,21 @@ class Node(object):
                     pass
             if not success:
                 raise RxDException('unsupported flux form')
-        
-        _node_fluxes['indices'].append(self._index)
-        _node_fluxes['type'].append(flux_type)
+        _node_fluxes['index'].append(self._index)
+        if isinstance(self, Node1D):
+            _node_fluxes['type'].append(-1)
+        else:
+            _node_fluxes['type'].append(self._grid_id)
         _node_fluxes['source'].append(source)
         _node_fluxes['scale'].append(scale)
+        if isinstance(self, Node1D):
+            _node_fluxes['region'].append(None)
+        else:
+            _node_fluxes['region'].append(weakref.ref(self._r))
+        from .rxd import _structure_change_count
+        _structure_change_count.value += 1
         _has_node_fluxes = True
+
     
     @value.getter
     def _state_index(self):
@@ -510,7 +522,11 @@ class Node3D(Node):
 
     @property
     def neighbors(self):
-        return self._neighbors if self._neighbors is not None else self._find_neighbors()  
+        return self._neighbors if self._neighbors is not None else self._find_neighbors()
+
+    @property
+    def _grid_id(self):
+        return self._speciesref()._intracellular_instances[self._r]._grid_id 
     
     @property
     def surface_area(self):
@@ -620,7 +636,7 @@ class Node3D(Node):
         
 
 class NodeExtracellular(Node):
-    def __init__(self, index, i, j, k, r, speciesref, regionref):
+    def __init__(self, index, i, j, k, speciesref, regionref):
         """
             Parameters
             ----------
@@ -638,7 +654,6 @@ class NodeExtracellular(Node):
         self._i = i
         self._j = j
         self._k = k
-        self._r = r
         # TODO: store region as a weakref! (weakref.proxy?)
         self._speciesref = speciesref
         self._regionref = regionref
@@ -661,6 +676,11 @@ class NodeExtracellular(Node):
         return self._regionref() 
 
     @property
+    def _r(self):
+        """The extracellular space containing the node."""
+        return self._regionref() 
+
+    @property
     def d(self):
         """Gets the diffusion rate within the compartment."""
         return self._speciesref()._d
@@ -670,9 +690,9 @@ class NodeExtracellular(Node):
         from . import rxd
         # TODO: Replace zero with Parallel_grids id (here an in insert call)
         if hasattr(value,'__len__'):
-            set_diffusion(0,self._speciesref()._grid_id, value[0], value[1], value[2])
+            set_diffusion(0, self._grid_id, value[0], value[1], value[2])
         else:
-            set_diffusion(0,self._speciesref()._grid_id, value, value, value)
+            set_diffusion(0, self._grid_id, value, value, value)
 
     @property
     def value(self):
@@ -697,5 +717,18 @@ class NodeExtracellular(Node):
     @value.getter
     def _state_index(self):
         return self._index
+
+    @property 
+    def volume(self):
+        ecs = self._regionref()
+        if numpy.isscalar(ecs.alpha):
+            return numpy.prod(ecs._dx) * ecs.alpha
+        else:
+            return numpy.prod(ecs._dx) * ecs.alpha[self._i, self._j, self._k]
+
+    @property
+    def _grid_id(self):
+        return self._speciesref()._extracellular_instances[self._r]._grid_id
+
 
 

@@ -134,7 +134,11 @@ if test "$z" = "Darwin" ; then
     fi
     unset DYLD_PRINT_LIBRARIES  
   fi
-  PYLIB_DARWIN=$z
+  if test -f "$z" ; then
+    PYLIB_DARWIN=$z
+  else
+    PYLIB_DARWIN=""
+  fi
   export PYLIB_DARWIN
 fi
 
