@@ -1,7 +1,9 @@
+#include <../../nrnconf.h>
 #include "nrnmpiuse.h"
 #include "nrnpthread.h"
 #include <stdio.h>
 #include <stdint.h>
+#include <dlfcn.h>
 #include "nrnmpi.h"
 #include "nrnpython_config.h"
 #if defined(__MINGW32__)
@@ -25,9 +27,65 @@ extern void nrnpy_hoc();
 #endif
 
 #if NRNMPI_DYNAMICLOAD
+
+#ifdef DARWIN
+#include <mach-o/dyld.h>
+#else
+#include <link.h>
+#endif
+#include <string.h>
+#include <stdlib.h>
+
 extern void nrnmpi_stubs();
 extern char* nrnmpi_load(int is_python);
-#endif
+
+#ifdef DARWIN
+int is_mpi_loaded() {
+  void* handle;
+  void* symbol;
+
+  int i;
+  uint32_t count = _dyld_image_count();
+  for(i=0; i<count; i++) {
+    handle = dlopen (_dyld_get_image_name(i), RTLD_LAZY);
+    if (!handle) {
+      printf("Cannot open %s\n", _dyld_get_image_name(i));
+      continue;
+    }
+
+    symbol = dlsym(handle, "MPI_Init");
+    if (symbol != NULL)  {
+      dlclose(handle);
+      return 1;
+    }
+    
+    dlclose(handle);
+  }
+  return 0;
+}
+#else
+static int is_mpi_loaded(struct dl_phdr_info *info, size_t size, void *data) {
+  void* handle;
+  void* symbol;
+  char* error;
+  
+  handle = dlopen (info->dlpi_name, RTLD_LAZY);
+  if (!handle) {
+    printf("Cannot open %s\n", info->dlpi_name);
+    return 0;
+  }
+
+  symbol = dlsym(handle, "MPI_Init");
+  if (symbol != NULL)  {
+    dlclose(handle);
+    return 1;
+  }
+
+  dlclose(handle);
+  return 0;
+}
+#endif //Darwin
+#endif 
 #if NRNPYTHON_DYNAMICLOAD
 extern int nrnpy_site_problem;
 #define HOCMOD(a, b) HOCMOD_(a, b)
@@ -124,37 +182,48 @@ void inithoc() {
 
 #if NRNMPI_DYNAMICLOAD
   nrnmpi_stubs();
-  // if nrnmpi_load succeeds (MPI available), pmes is nil.
-  pmes = nrnmpi_load(1);
-#endif //NRNMPI_DYNAMICLOAD
-
+#ifdef DARWIN
+  if (getenv("NEURON_INIT_MPI") || is_mpi_loaded()) {
+#else
+  if (getenv("NEURON_INIT_MPI") || dl_iterate_phdr(is_mpi_loaded, NULL)) {
+#endif
+    // if nrnmpi_load succeeds (MPI available), pmes is nil.
+    pmes = nrnmpi_load(1);
+    if (pmes) {
+      printf(
+        "NEURON_INIT_MPI exists in env but NEURON cannot initialize MPI "
+        "because:\n%s\n",
+        pmes);
+      exit(1);
+    } else {
+      mpi_mes = getenv("NEURON_INIT_MPI")? 2: 1;
+      argc = argc_mpi;
+      argv = (char**)argv_mpi;
+    }
+  } else {
+    // no mpi
+    mpi_mes = 3;
+  }
+#else
   // avoid having to include the c++ version of mpi.h
   if (!pmes) {
     nrnmpi_wrap_mpi_init(&flag);
   }
-  // MPI_Initialized(&flag);
-
   if (flag) {
     mpi_mes = 1;
-
     argc = argc_mpi;
     argv = (char**)argv_mpi;
   } else if (getenv("NEURON_INIT_MPI")) {
     // force NEURON to initialize MPI
     mpi_mes = 2;
-    if (pmes) {
-      printf(
-          "NEURON_INIT_MPI exists in env but NEURON cannot initialize MPI "
-          "because:\n%s\n",
-          pmes);
-      exit(1);
-    } else {
-      argc = argc_mpi;
-      argv = (char**)argv_mpi;
-    }
+    argc = argc_mpi;
+    argv = (char**)argv_mpi;
   } else {
+    //no mpi
     mpi_mes = 3;
   }
+#endif
+
   if (pmes && mpi_mes == 2){exit(1);}  // avoid unused variable warning
 
 #endif //NRNMPI
