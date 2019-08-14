@@ -2297,7 +2297,7 @@ void CodegenCVisitor::print_coreneuron_includes() {
     printer->add_line("#include <coreneuron/nrniv/ivocvect.h>");
     printer->add_line("#include <coreneuron/mech/mod2c_core_thread.h>");
     printer->add_line("#include <coreneuron/scopmath_core/newton_struct.h>");
-    printer->add_line("#include <_kinderiv.h>");
+    printer->add_line("#include \"_kinderiv.h\"");
     if (info.eigen_newton_solver_exist) {
         printer->add_line("#include <newton/newton.hpp>");
     }
