@@ -1,3 +1,5 @@
+
+
 # =============================================================================
 # Definitions used in nrnconf.h and nmodlconf.h
 # =============================================================================
@@ -7,6 +9,8 @@ set(PACKAGE_BUGREPORT "\"\"")
 set(PACKAGE_URL "\"\"")
 # some of the variables need to be double quoted strings as they are used in
 # the above mentioned template files
+# name for libraries
+nrn_set_string(PACKAGE "nrn")
 nrn_set_string(NRNHOST "${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_NAME}")
 nrn_set_string(NRNHOSTCPU "${CMAKE_SYSTEM_PROCESSOR}")
 nrn_set_string(PACKAGE_STRING "nrn ${PROJECT_VERSION}")
@@ -16,6 +20,9 @@ nrn_set_string(NRN_LIBDIR "${CMAKE_INSTALL_PREFIX}/lib")
 nrn_set_string(NEURON_DATA_DIR "${CMAKE_INSTALL_PREFIX}/share/nrn")
 nrn_set_string(LT_OBJDIR ".libs/")
 nrn_set_string(DLL_DEFAULT_FNAME "${CMAKE_SYSTEM_PROCESSOR}/.libs/libnrnmech.so")
+
+# indicate nmodl config is used
+add_definitions(-DHAVE_CONFIG_H)
 
 set(YYTEXT_POINTER 1)
 set(TIME_WITH_SYS_TIME 1)
@@ -29,6 +36,15 @@ set(host_cpu ${CMAKE_SYSTEM_PROCESSOR})
 set(exec_prefix ${prefix})
 set(bindir \${exec_prefix}/bin)
 set(modsubdir ${host_cpu})
+set(bindir \${exec_prefix}/bin)
+set(libdir \${exec_prefix}/lib)
+
+# =============================================================================
+# Comment or empty character to enable/disable cmake specific settings
+# =============================================================================
+# adding `#` makes a comment in the python whereas empty enable code
+set(USING_CMAKE_FALSE "#")
+set(USING_CMAKE_TRUE "")
 
 # TODO : these two don't start out as #undef but as #define so need their
 # explicit @...@ replacments
@@ -87,7 +103,7 @@ else()
   set (NRNOC_X11 0)
 endif()
 
-if (NOT "${NRN_ENABLE_PYTHON_DYNAMIC}" MATCHES "NO")
+if (NRN_ENABLE_PYTHON_DYNAMIC)
   # the value needs to be made not to matter
   set(NRNPYTHON_DYNAMICLOAD 3)
 endif()
