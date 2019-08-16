@@ -166,6 +166,7 @@ REPRESENTS	{
 	if (lexcontext == NONLINEAR) return NONLIN1;
 	if (lexcontext == LINEAR) return LIN1;
 	if (lexcontext == PARTIAL) return yytext[0];
+	if (lexcontext == INT) return yytext[0];
 	if (lexcontext == KINETIC) return REACTION;
 	diag("equations can't occur in this type of block", (char *)0);
 	}

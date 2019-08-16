@@ -83,7 +83,7 @@ static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 %token	<qp>	VERBATIM COMMENT MODEL CONSTANT INDEPENDENT DEPENDENT STATE
 %token	<qp>	INITIAL1 DERIVATIVE SOLVE USING WITH STEPPED DISCRETE
 %token	<qp>	FROM FORALL1 TO BY WHILE IF ELSE START1 STEP SENS SOLVEFOR
-%token	<qp>	PROCEDURE PARTIAL DEL DEL2 DEFINE1 IFERROR PARAMETER
+%token	<qp>	PROCEDURE PARTIAL DEL DEL2 DEFINE1 IFERROR PARAMETER INT
 %token	<qp>	DERFUNC EQUATION TERMINAL LINEAR NONLINEAR FUNCTION1 LOCAL
 %token	<qp>	METHOD LIN1 NONLIN1 PUTQ GETQ TABLE DEPEND BREAKPOINT
 %token	<qp>	INCLUDE1 FUNCTION_TABLE PROTECT NRNMUTEXLOCK NRNMUTEXUNLOCK
@@ -605,6 +605,10 @@ intexpr: Name
 	| intexpr '-' intexpr
 	| intexpr '*' intexpr
 	| intexpr '/' intexpr
+	| INT '(' expr ')' {
+		lastok = $4;
+		replacstr($1, " (int)");
+		}
 	| error {myerr("Illegal integer expression");}
 	;
 expr:	varname

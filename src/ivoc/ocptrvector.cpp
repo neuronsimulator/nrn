@@ -14,11 +14,14 @@
 #include "ocptrvector.h"
 #include "objcmd.h"
 #include "ivocvect.h"
+#include "graph.h"
+#include <OS/math.h>
 
 extern "C" int hoc_return_type_code;
 static double dummy;
 
 OcPtrVector::OcPtrVector(int sz) {
+	label_ = NULL;
 	pd_ = new double*[sz];
 	size_ = sz;
 	update_cmd_ = NULL;
@@ -30,6 +33,7 @@ OcPtrVector::OcPtrVector(int sz) {
 OcPtrVector::~OcPtrVector() {
 	delete [] pd_;
 	ptr_update_cmd(NULL);
+	if (label_) { free(label_); } // allocated by strdup
 }
 
 void OcPtrVector::resize(int sz) {
@@ -85,6 +89,14 @@ void OcPtrVector::setval(int i, double x) {
 double OcPtrVector::getval(int i) {
 	assert(i < size_);
 	return *pd_[i];
+}
+
+static double ptr_label(void* v) {
+	char*& s = ((OcPtrVector*)v)->label_;
+	if (s) { free(s); }
+        if (ifarg(1)) {
+	  s = strdup(gargstr(1));
+	}
 }
 
 static double resize(void* v) {
@@ -148,6 +160,70 @@ static double ptr_update_callback(void* v) {
 	return 0.;
 }
 
+//  a copy of ivocvect::v_plot with y+i replaced by y[i]
+static int narg() {
+  int i=0;
+  while (ifarg(i++));
+  return i-2;
+}
+
+static double ptr_plot(void* v) {
+	OcPtrVector* opv = (OcPtrVector*)v;
+#if HAVE_IV
+IFGUI
+        int i;
+	double** y = opv->pd_;
+	int n = opv->size_;
+	char* label = opv->label_;
+
+        Object* ob1 = *hoc_objgetarg(1);
+	check_obj_type(ob1, "Graph");
+	Graph* g = (Graph*)(ob1->u.this_pointer);
+
+	GraphVector* gv = new GraphVector("");
+
+	if (ifarg(5)) {
+		hoc_execerror("PtrVector.plot:", "too many arguments");
+	}
+	if (narg() == 3) {
+	  gv->color((colors->color(int(*getarg(2)))));
+	  gv->brush((brushes->brush(int(*getarg(3)))));
+	} else if (narg() == 4) {
+	  gv->color((colors->color(int(*getarg(3)))));
+	  gv->brush((brushes->brush(int(*getarg(4)))));
+	}
+
+	if (narg() == 2 || narg() == 4) {
+	         // passed a vector or xinterval and possibly line attributes
+	   if (hoc_is_object_arg(2)) {
+                 // passed a vector
+             Vect* vp2 = vector_arg(2);
+	     n = Math::min(n, vp2->capacity());
+	     for (i=0; i < n; ++i) gv->add(vp2->elem(i), y[i]);
+           } else {
+                 // passed xinterval
+	     double interval = *getarg(2);
+             for (i=0; i < n; ++i) gv->add(i * interval, y[i]);
+           }
+	} else {
+	         // passed line attributes or nothing
+	   for (i=0; i < n; ++i) gv->add(i, y[i]);
+	}
+
+	if (label) {
+		GLabel* glab = g->label(label);
+		gv->label(glab);
+		((GraphItem*)g->component(g->glyph_index(glab)))->save(false);
+	}
+	g->append(new GPolyLineItem(gv));
+	
+        g->flush();
+ENDGUI
+#endif
+	return 0.0;
+}
+
+
 static Member_func members[] = {
 	"size", get_size,
 	"resize", resize,
@@ -157,6 +233,8 @@ static Member_func members[] = {
 	"scatter", scatter,
 	"gather", gather,
 	"ptr_update_callback", ptr_update_callback,
+	"plot", ptr_plot,
+	"label", ptr_label,
 	0, 0
 };
 
