@@ -139,10 +139,10 @@ endif()
 # =============================================================================
 # Add CMake modules AFTER setting options
 # =============================================================================
-include(ConfigFileSetting)
 include(NeuronFileLists)
-include(PythonDynamicHelper)
 include(MPIDynamicHelper)
+include(ConfigFileSetting)
+include(PythonDynamicHelper)
 
 # =============================================================================
 # Project version from git and project directories
