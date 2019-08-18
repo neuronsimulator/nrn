@@ -321,7 +321,8 @@ void nrn_rhs_ext(NrnThread* _nt)
 			j = nlayer-1;
 			*nde->_rhs[j] -= xg[j] * (nde->v[j] - e_extracellular);
 			for (--j; j >= 0; --j) { /* between j and j+1 layer */
-				double x = xg[j]*(nde->v[j] - nde->v[j+1]);
+				double x = xg[j]*(nde->v[j + nlayer]);
+//				double x = xg[j]*(nde->v[j] - nde->v[j+1]);
 				*nde->_rhs[j] -= x;
 				*nde->_rhs[j+1] += x;
 			}
@@ -358,6 +359,26 @@ void nrn_setup_ext(NrnThread* _nt)
 	for (i=0; i < cnt; ++i) {
 		nd = ndlist[i];
 		nde = nd->extnode;
+#if I_MEMBRANE
+		pd = ml->data[i];
+		sav_g = NODED(nd);
+#endif
+#if USE_VMX
+{
+		double* pvx;
+		int ki = nd->eqn_index_;
+		int k = nrn_vmx_index(nd);
+		/* nd->_d is cm/dt + di/dvm + electrode */
+		/* nde->_d only has -ELECTRODE_CURRENT contribution */
+		d = NODED(nd) + (*nde->_d[0]); /* membrane current only */
+		NODED(nd) = -(*nde->_d[0]); /* now only electrod */
+		*nde->_d[0] = 0.0;
+		pvx = nrn_spGetElement(_nt->_sp13mat,ki, k);
+		*pvx = d;
+		pvx = nrn_spGetElement(_nt->_sp13mat,ki+1, k);
+		*pvx = -d;
+}
+#else /* not USE_VMX */
 		d = NODED(nd);
 		/* nde->_d only has -ELECTRODE_CURRENT contribution */
 		d = (*nde->_d[0] += NODED(nd));
@@ -365,48 +386,73 @@ void nrn_setup_ext(NrnThread* _nt)
 		/* i.e. d =  cm/dt + di/dvm */
 		*nde->_x12[0] -= d;
 		*nde->_x21[0] -= d;
-#if I_MEMBRANE
-		pd = ml->data[i];
-		sav_g = d;
-#endif
+#endif /* USE_VMX */
 	}
 	/* series resistance, capacitance, and axial terms. */
 	for (i=0; i < cnt; ++i) {
 		nd = ndlist[i];
 		nde = nd->extnode;
 		pnd = _nt->_v_parent[nd->v_node_index];
-
 #if USE_VMX
 		if (1 || cvode_active_) {
+		  double* pvx;
 		  double* rhs = _nt->_actual_rhs;
 		  int ki = nd->eqn_index_; /* start with v (interpreted as vi */
 		  for (j = 0; j < nlayer; ++j) {
 		    int k = nrn_vmx_index(nd) + j;
-		    double* pvx = nrn_spGetElement(_nt->_sp13mat, k, k);
+
+		    /* equation k for vm (vij) is vij - vi + vj = 0 */
+		    pvx = nrn_spGetElement(_nt->_sp13mat, k, k);
 		    *pvx = 1.0;
 		    pvx = nrn_spGetElement(_nt->_sp13mat, k, ki++);
 		    *pvx = -1.0;
 		    pvx = nrn_spGetElement(_nt->_sp13mat, k, ki);
 		    *pvx = 1.0;
 		    rhs[k] = 0.0; /* unnecessary since rhs zeroed earlier */
+
 		  }
 		}
 #endif
-		if (pnd) {
-			pd = nde->param;
-			/* series resistance and capacitance to ground */
-			j = 0;
-			for (;; ) { /* between j and j+1 layer */
-				mfac =  (xg[j] + xc[j]*cfac);
-				*nde->_d[j] += mfac;
-				++j;
-				if (j == nlayer) {
-					break;
-				}
-				*nde->_d[j] += mfac;
-				*nde->_x12[j] -= mfac;
-				*nde->_x21[j] -= mfac;
+		/* series resistance and capacitance to ground */
+		pd = nde->param;
+		j = 0;
+#if VMX
+		/* If j+1 layer not ground, the capacitor for layer j
+	   	    is added to equation j and subtracted from layer
+		    j+1 with respect to vm voltage of layer j+1.
+		    If j+1 layer is ground, the capacitor for layer j
+		    is added to equation j with respect to v voltage of
+		    layer j.
+		*/
+		for (j = 0; j < nlayer; ++j) { /* between j and j+1 layer */
+			double* pvx;
+			int k, kv
+			mfac =  (xg[j] + xc[j]*cfac);
+			k = nd->eqn_index_ + 1 + j;
+			if (j < nlayer -1 ) { /* use vm */
+			  kv = k + nlayer;
+			  pvx = nrn_spGetElement(_nt->_sp13mat, k+1, kv);
+			  *pvx -= mfac;
+			}else{
+			  kv = k;
 			}
+			pvx = nrn_spGetElement(_nt->_sp13mat, k, kv);
+			*pvx += mfac;
+		}
+#else
+		for (;; ) { /* between j and j+1 layer */
+			mfac =  (xg[j] + xc[j]*cfac);
+			*nde->_d[j] += mfac;
+			++j;
+			if (j == nlayer) {
+				break;
+			}
+			*nde->_d[j] += mfac;
+			*nde->_x12[j] -= mfac;
+			*nde->_x21[j] -= mfac;
+		}
+#endif
+		if (pnd) {
 			pnde = pnd->extnode;
 			/* axial connections */
 			if (pnde) { /* parent sec may not be extracellular */

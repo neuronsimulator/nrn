@@ -19,7 +19,7 @@ in one section is set but no others. But only the first time through treeset.
 #if _CRAY
 #define EXTRACELLULAR	0  /* this form of gaussian elimination is vectorized*/
 #else
-#define EXTRACELLULAR	2	/* number of extracellular layers */
+#define EXTRACELLULAR	1	/* number of extracellular layers */
 #endif
 
 #define DIAMLIST	1	/* section contains diameter info */

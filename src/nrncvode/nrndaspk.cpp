@@ -731,7 +731,7 @@ for (i=0; i < z.nvsize_; ++i) {
 }
 #endif
 	nt->_vcv = 0;
-#if 0
+#if 1
 double e = 0;
 for (i=0; i < z.nvsize_; ++i) {
 	e += delta[i]*delta[i];
