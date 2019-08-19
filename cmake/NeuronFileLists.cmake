@@ -474,7 +474,7 @@ set(NRNGNU_FILES_LIST
     d_avec.cpp
     d_vec.cpp)
 
-# nrnpython sources (only if "${NRN_ENABLE_PYTHON_DYNAMIC}" MATCHES "NO")
+  # nrnpython sources (only if ${NRN_ENABLE_PYTHON_DYNAMIC} is OFF}
 set(NRNPYTHON_FILES_LIST
     nrnpython.cpp
     nrnpy_hoc.cpp

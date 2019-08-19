@@ -98,7 +98,7 @@ print(s.get_config_var('MULTIARCH') or '');
 if(NOT _PYTHON_SUCCESS MATCHES 0)
     if(PythonLibsNew_FIND_REQUIRED)
         message(FATAL_ERROR
-            "Python config failure:\n${_PYTHON_ERROR_VALUE}")
+            "Python config failure:\n${_PYTHON_VALUES}\n${_PYTHON_ERROR_VALUE}")
     endif()
     set(PYTHONLIBS_FOUND FALSE)
     return()

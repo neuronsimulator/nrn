@@ -9,7 +9,7 @@ set(PROJECT_VERSION_MINOR 7)
 set(CMAKE_CXX_STANDARD 98)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_BUILD_TYPE RelWithDebInfo)
+set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Empty or one of Debug, Release, RelWithDebInfo")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 
@@ -42,7 +42,7 @@ option(NRN_ENABLE_RX3D "Enable rx3d support" OFF)
 #                 is built and loaded dynamically at run time (nrniv still works in the absence
 #                 of any Python at all).
 #   - <string>  : semicolon (;) separated list of python executable used to create a separate
-#                 interface for each. When one of those versions of Python is lauched,
+#                 interface for each. When one of those versions of Python is launched,
 #                 "import neuron" will automatically load the appropriate module interface along
 #                 with the rest of neuron. Also nrniv -pyexe <python> will work with any <python>
 #                 in the list of python executables.
@@ -53,9 +53,14 @@ option(NRN_ENABLE_RX3D "Enable rx3d support" OFF)
 #   - <string>  : semicolon (;) separated list of MPI's bin directories to create a separate
 #                 libnrnmpi_xxx.so interface for each. When nrniv is launched with the -mpi argument,
 #                 the first mpi found will determine which interface is dynamically loaded."
-set(NRN_ENABLE_MODULE_INSTALL YES CACHE STRING "Enable NEURON module installation (with setup.py)")
-set(NRN_ENABLE_PYTHON_DYNAMIC "NO" CACHE STRING "Enable dynamic Python version support")
-set(NRN_ENABLE_MPI_DYNAMIC "NO" CACHE STRING "Enable dynamic MPI library support")
+option(NRN_ENABLE_MODULE_INSTALL "Enable installation of NEURON Python module" ON)
+set(NRN_MODULE_INSTALL_OPTIONS "" CACHE STRING "setup.py options, leave empty for --home <install prefix>")
+
+option(NRN_ENABLE_PYTHON_DYNAMIC "Enable dynamic Python version support" OFF)
+set(NRN_PYTHON_DYNAMIC "" CACHE STRING "semicolon (;) seperated list of python executables to create interface for (default python3)")
+
+option(NRN_ENABLE_MPI_DYNAMIC "Enable dynamic MPI library support" OFF)
+set(NRN_MPI_DYNAMIC "" CACHE STRING "semicolon (;) seperated list of MPI bin directories to build against (default to first found mpi)")
 
 # =============================================================================
 # Include cmake modules
@@ -73,7 +78,7 @@ include(PlatformHelper)
 # =============================================================================
 find_package(BISON)
 find_package(FLEX)
-find_package (Threads)
+find_package(Threads)
 find_package(readline)
 
 # =============================================================================
@@ -93,8 +98,8 @@ endif()
 # enable interviews if found
 if (NRN_ENABLE_INTERVIEWS)
   find_package(X11)
-  if(NOT ${X11_FOUND})
-    if (APPLE)
+  if(NOT X11_FOUND)
+    if(APPLE)
       message(FATAL_ERROR "You must install XQuartz from https://www.xquartz.org/ to build iv")
     else()
       message(FATAL_ERROR "You must install X11 to build iv e.g. 'apt install libx11-dev libxcomposite-dev' on Ubuntu")
@@ -103,14 +108,14 @@ if (NRN_ENABLE_INTERVIEWS)
   find_package(iv REQUIRED)
   get_target_property(IV_INCLUDE_DIR iv_interviews INTERFACE_INCLUDE_DIRECTORIES)
   include_directories(${X11_INCLUDE_DIR})
-  set (HAVE_IV 1)
+  set(HAVE_IV 1)
 else()
   set(HAVE_IV 0)
 endif()
 
 # enable python support (interpreter needed to make hocusr.h from neuron.h, prefer Python 3)
 find_package(PythonInterp REQUIRED)
-if (NRN_ENABLE_PYTHON)
+if(NRN_ENABLE_PYTHON)
   find_package(PythonLibsNew ${PYTHON_VERSION_MAJOR} REQUIRED)
   set(USE_PYTHON 1)
 else()
@@ -118,7 +123,7 @@ else()
 endif()
 
 # enable threads if found
-if (NRN_ENABLE_THREADS)
+if(NRN_ENABLE_THREADS)
   set(THREADS_PREFER_PTHREAD_FLAG ON)
   find_package(Threads REQUIRED)
   set(USE_PTHREAD 1)
@@ -134,24 +139,24 @@ endif()
 # =============================================================================
 # Add CMake modules AFTER setting options
 # =============================================================================
-include(ConfigFileSetting)
 include(NeuronFileLists)
-include(PythonDynamicHelper)
 include(MPIDynamicHelper)
+include(ConfigFileSetting)
+include(PythonDynamicHelper)
 
 # =============================================================================
 # Project version from git and project directories
 # =============================================================================
-add_subdirectory(cmake_config)
+#add_subdirectory(cmake_config)
 add_subdirectory(src/nrniv)
 add_subdirectory(bin)
 if (NRN_ENABLE_PYTHON)
   add_subdirectory(src/nrnpython)
 endif()
-if (NRN_MACOS_BUILD OR NOT ${READLINE_FOUND})
-    add_subdirectory(src/readline)
-    set(INTERNAL_READLINE readline)
-    unset(Readline_LIBRARY CACHE)
+if(NRN_MACOS_BUILD OR NOT READLINE_FOUND)
+  add_subdirectory(src/readline)
+  set(INTERNAL_READLINE readline)
+  unset(Readline_LIBRARY CACHE)
 endif()
 
 # =============================================================================
@@ -210,7 +215,7 @@ if(cmake_generator_tolower MATCHES "makefile")
   message(STATUS "  EXE         | ${PYTHON_EXECUTABLE}")
   message(STATUS "  INC         | ${PYTHON_INCLUDE_DIRS}")
   message(STATUS "  LIB         | ${PYTHON_LIBRARIES}")
-  if (NOT NRN_ENABLE_PYTHON_DYNAMIC MATCHES "NO")
+  if (NRN_ENABLE_PYTHON_DYNAMIC)
   message(STATUS "  INC(2)      | ${NRNPYTHON_INCLUDE2}")
   message(STATUS "  INC(3)      | ${NRNPYTHON_INCLUDE3}")
   endif()

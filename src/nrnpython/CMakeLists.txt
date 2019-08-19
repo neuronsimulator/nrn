@@ -43,14 +43,16 @@ set(BUILD_NRNMPI_DYNAMIC_FALSE "#")
 set(BUILD_NRNPYTHON_DYNAMIC_TRUE "")
 set(BUILD_NRNPYTHON_DYNAMIC_FALSE "#")
 
-if("${NRN_ENABLE_PYTHON_DYNAMIC}" MATCHES "NO")
+if(NRN_ENABLE_PYTHON_DYNAMIC)
+  if("${NRN_PYTHON_DYNAMIC}" MATCHES "")
+    set(NRN_PYTHON_EXE_LIST ${PYTHON_EXECUTABLE})
+  else()
+    set(NRN_PYTHON_EXE_LIST ${NRN_PYTHON_DYNAMIC})
+  endif()
+else()
   set(BUILD_NRNPYTHON_DYNAMIC_TRUE "#")
   set(BUILD_NRNPYTHON_DYNAMIC_FALSE "")
   set(NRN_PYTHON_EXE_LIST ${PYTHON_EXECUTABLE})
-elseif("${NRN_ENABLE_PYTHON_DYNAMIC}" MATCHES "YES")
-  set(NRN_PYTHON_EXE_LIST ${PYTHON_EXECUTABLE})
-else()
-  set(NRN_PYTHON_EXE_LIST ${NRN_ENABLE_PYTHON_DYNAMIC})
 endif()
 
 if(NRN_MACOS_BUILD)
@@ -97,28 +99,27 @@ endif()
 # =============================================================================
 # If NEURON python module installation is enabled
 # =============================================================================
-if(NOT "${NRN_ENABLE_MODULE_INSTALL}" MATCHES "NO")
+if(NRN_ENABLE_MODULE_INSTALL)
 
   # check arguments for setup.py install : if user has just provided YES, then use default
-  set(pyinst "${NRN_ENABLE_MODULE_INSTALL}")
-  if("${pyinst}" MATCHES "YES")
+  if("${NRN_MODULE_INSTALL_OPTIONS}" MATCHES "")
     set(install_path ${CMAKE_INSTALL_PREFIX})
     # replace windows path of the form C:/msys64 to C:\msys64
     if(MINGW)
       string(REPLACE ":/" ":\\" install_path "${install_path}")
     endif()
-    set(pyinst "--home ${install_path}")
+    set(NRN_MODULE_INSTALL_OPTIONS "--home ${install_path}")
   endif()
   # show commands to user
   foreach(pyexe ${NRN_PYTHON_EXE_LIST})
     message(
       STATUS
-        "Install neuron module with: ${pyexe} setup.py install ${pyinst}"
+        "Install neuron module with: ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}"
       )
   endforeach(pyexe)
 
   # user has selected dynamic python support (could be multiple versions)
-  if(NOT "${NRN_ENABLE_PYTHON_DYNAMIC}" MATCHES "NO")
+  if(NRN_ENABLE_PYTHON_DYNAMIC)
     set(INCLUDE_DIRS
         .
         ../oc
@@ -154,8 +155,8 @@ if(NOT "${NRN_ENABLE_MODULE_INSTALL}" MATCHES "NO")
   # for each python detected / provided by user, install module at install time
   foreach(pyexe ${NRN_PYTHON_EXE_LIST})
     install(CODE "
-      message(STATUS \"Installing neuron module with: ${pyexe} setup.py install ${pyinst}\")
-      execute_process(COMMAND ${pyexe} setup.py install ${pyinst}
+      message(STATUS \"Installing neuron module with: ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}\")
+      execute_process(COMMAND ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       )
     ")

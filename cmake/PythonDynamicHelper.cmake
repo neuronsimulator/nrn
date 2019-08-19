@@ -7,34 +7,39 @@
 # libnrnpython<major>.so. Depending on the pythons used, either or both of
 # NRNPYTHON_INCLUDE3 or NRNPYTHON_INCLUDE2 will be defined.
 
-if (NRN_ENABLE_PYTHON_DYNAMIC MATCHES "NO" OR NOT NRN_ENABLE_PYTHON)
-  # nothing to do
-  message(STATUS "Python dynamic support disabled")
-elseif (NRN_ENABLE_PYTHON_DYNAMIC MATCHES "YES")
-  # use the default python already determined
-  set (NRNPYTHON_INCLUDE${PYTHON_VERSION_MAJOR} ${PYTHON_INCLUDE_DIRS})
-  message(STATUS "Python dynamic support with headers: ${NRNPYTHON_INCLUDE${PYTHON_VERSION_MAJOR}}")
-else()
-  # run each python provided by user to determine major and include directory
-  message(STATUS "Dynamic Python support")
-  foreach(pyexe ${NRN_ENABLE_PYTHON_DYNAMIC})
-    message(STATUS "  checking if ${pyexe} is a working python")
-    execute_process(COMMAND ${pyexe} -c "from distutils.sysconfig import get_python_inc as p ; print(p()) ; import sys ; print(sys.version_info[0]) ; quit()"
-      RESULT_VARIABLE result
-      OUTPUT_VARIABLE std_output
-      ERROR_VARIABLE  err_output
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if(result EQUAL 0)
-      string(REGEX MATCH .$ major_version ${std_output})
-      string(REGEX MATCH ^[^\n]* incval ${std_output})
-      if (NOT NRNPYTHON_INCLUDE${major_version})
-        set (NRNPYTHON_INCLUDE${major_version} ${incval})
-      endif()
+if (NRN_ENABLE_PYTHON)
+  if (NRN_ENABLE_PYTHON_DYNAMIC)
+    if ("${NRN_PYTHON_DYNAMIC}" MATCHES "")
+      # use the default python already determined
+      # NB: we are constructing here a variable name NRNPYTHON_INCLUDE[2|3]
+      set(NRNPYTHON_INCLUDE${PYTHON_VERSION_MAJOR} ${PYTHON_INCLUDE_DIRS})
+      message(STATUS "Python dynamic support with headers: ${NRNPYTHON_INCLUDE${PYTHON_VERSION_MAJOR}}")
     else()
-      message(FATAL_ERROR "Error while checking ${pyexe} : ${result}")
+      # run each python provided by user to determine major and include directory
+      message(STATUS "Dynamic Python support")
+      foreach(pyexe ${NRN_PYTHON_DYNAMIC})
+        message(STATUS "Checking if ${pyexe} is a working python")
+        execute_process(COMMAND ${pyexe} -c "from distutils.sysconfig import get_python_inc as p; print(p()); import sys; print(sys.version_info[0]); quit()"
+          RESULT_VARIABLE result
+          OUTPUT_VARIABLE std_output
+          ERROR_VARIABLE  err_output
+          OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        if(result EQUAL 0)
+          string(REGEX MATCH .$ major_version ${std_output})
+          string(REGEX MATCH ^[^\n]* incval ${std_output})
+          if (NOT NRNPYTHON_INCLUDE${major_version})
+            set (NRNPYTHON_INCLUDE${major_version} ${incval})
+          endif()
+        else()
+          message(FATAL_ERROR "Error while checking ${pyexe} : ${result}\n${std_output}\n${err_output}")
+        endif()
+      endforeach()
     endif()
-  endforeach()
+  else()
+    # nothing to do
+    message(STATUS "Python dynamic support disabled")
+  endif()
 endif()
 
 # check Python.h exists under provided include directory
