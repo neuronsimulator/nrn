@@ -22,15 +22,12 @@ elseif (NRN_WINDOWS_BUILD)
 endif()
 
 # for nrnmech_makefile
-set(CMAKE_INSTALL_BINDIR bin)
-set(CMAKE_INSTALL_LIBDIR lib)
-set(CMAKE_INSTALL_INCLUDEDIR include)
 set(CMAKE_INSTALL_DATADIR share/nrn)
 
 # =============================================================================
-# Adapted from CoreNEURON
+# Inclode nrnivmodl Makefile generator, adapted from CoreNEURON
 # =============================================================================
-include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeListsNrnMech.txt)
+include(CMakeListsNrnMech)
 
 # =============================================================================
 # nrnmech_makefile.in is bound up with autoconf, used based on coreneuron Configure templates
