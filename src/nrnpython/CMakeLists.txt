@@ -106,7 +106,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
     set(install_path ${CMAKE_INSTALL_PREFIX})
     # replace windows path of the form C:/msys64 to C:\msys64
     if(MINGW)
-      string(REPLACE ":/" ":\\" install_path "${install_path}")
+      string(REPLACE ":/" ":\\\\" install_path "${install_path}")
     endif()
     set(NRN_MODULE_INSTALL_OPTIONS "--home ${install_path}")
   endif()

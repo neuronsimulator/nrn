@@ -96,7 +96,7 @@ else()
 endif()
 
 # enable interviews if found
-if (NRN_ENABLE_INTERVIEWS)
+if (NRN_ENABLE_INTERVIEWS AND NOT NRN_WINDOWS_BUILD)
   find_package(X11)
   if(NOT X11_FOUND)
     if(APPLE)
