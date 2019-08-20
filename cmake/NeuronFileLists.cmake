@@ -132,7 +132,6 @@ set(IVOC_FILE_LIST
     cbwidget.cpp
     checkpnt.cpp
     epsprint.cpp
-    field.cpp
     fourier.cpp
     gifimage.cpp
     graph.cpp
@@ -172,11 +171,12 @@ set(IVOC_FILE_LIST
     strfun.cpp
     symchoos.cpp
     utility.cpp
-    xdep.cpp
     xmenu.cpp
     xyview.cpp)
 if(MINGW)
   list(APPEND IVOC_FILE_LIST ivocwin.cpp)
+else()
+  list(APPEND IVOC_FILE_LIST field.cpp xdep.cpp)
 endif()
 
 # =============================================================================

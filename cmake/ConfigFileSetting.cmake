@@ -96,7 +96,7 @@ else()
   set(NRNMECH_DLL_STYLE 0)
 endif()
 
-if (NRN_ENABLE_INTERVIEWS)
+if (NRN_ENABLE_INTERVIEWS AND NOT MINGW)
   set (NRNOC_X11 1)
 else()
   set (NRNOC_X11 0)
