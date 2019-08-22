@@ -2272,13 +2272,31 @@ void hoc_secname(void) {
 	hoc_pushstr(&buf);
 }
 
+static double chk_void2dbl(void* vp, const char* mes) {
+#define maxvoid2dbl (1L<<53)
+	size_t n = (size_t)vp;
+
+#if 0
+	printf("sizeof void*, size_t, and double = %zd, %zd, %zd\n",
+	  sizeof(void*), sizeof(size_t), sizeof(double));
+	printf("(double)((1<<53) - 1)=%.20g\n", (double)(maxvoid2dbl - 1));
+	printf("(double)((1<<53) + 0)=%.20g\n", (double)(maxvoid2dbl));
+	printf("(double)((1<<53) + 1)=%.20g\n", (double)(maxvoid2dbl + 1));
+	printf("(size_t)(vp) = %zd\n", n);
+#endif
+	if (n > maxvoid2dbl) {
+		hoc_execerror(mes, "pointer too large to be represented by a double");
+	}
+	return (double)n;
+}
+
 void this_section(void) {
 	/* return section number of currently accessed section at
 		arc length postition x */
 	
 	Section* sec;
 	sec = chk_access();
-	hoc_retpushx((double)(size_t)(sec));
+	hoc_retpushx(chk_void2dbl(sec, "this_section"));
 }
 void this_node(void) {
 	/* return node number of currently accessed section at
@@ -2288,7 +2306,7 @@ void this_node(void) {
 	Node* nd;
 	sec = chk_access();
 	nd = node_exact(sec, *getarg(1));
-	hoc_retpushx((double)(size_t)nd);
+	hoc_retpushx(chk_void2dbl(nd, "this_node"));
 }
 void parent_section(void) {
 	/* return section number of currently accessed section at
@@ -2296,7 +2314,7 @@ void parent_section(void) {
 	
 	Section* sec;
 	sec = chk_access();
-	hoc_retpushx((double)(size_t)(sec->parentsec));
+	hoc_retpushx(chk_void2dbl(sec->parentsec, "parent_section"));
 }
 void parent_connection(void) {
 	Section* sec;
@@ -2312,9 +2330,11 @@ void section_orientation(void) {
 
 void parent_node(void) {
 	Section* sec;
-	hoc_execerror("parent_node() needs to be re-implemented", 0);
+	if (tree_changed) {
+		setup_topology();
+	}
 	sec = chk_access();
-	hoc_retpushx((double)(size_t)(sec->parentnode));
+	hoc_retpushx(chk_void2dbl(sec->parentnode, "parent_node"));
 }
 
 void pop_section(void) {
