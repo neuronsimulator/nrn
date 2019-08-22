@@ -2273,21 +2273,24 @@ void hoc_secname(void) {
 }
 
 static double chk_void2dbl(void* vp, const char* mes) {
-#define maxvoid2dbl (1L<<53)
-	size_t n = (size_t)vp;
-
+  size_t n = (size_t)vp;
+  if (sizeof(void*) == 8) {
+    size_t maxvoid2dbl = ((size_t)1)<<53;
 #if 0
-	printf("sizeof void*, size_t, and double = %zd, %zd, %zd\n",
-	  sizeof(void*), sizeof(size_t), sizeof(double));
-	printf("(double)((1<<53) - 1)=%.20g\n", (double)(maxvoid2dbl - 1));
-	printf("(double)((1<<53) + 0)=%.20g\n", (double)(maxvoid2dbl));
-	printf("(double)((1<<53) + 1)=%.20g\n", (double)(maxvoid2dbl + 1));
-	printf("(size_t)(vp) = %zd\n", n);
+    printf("sizeof void*, size_t, and double = %zd, %zd, %zd\n",
+      sizeof(void*), sizeof(size_t), sizeof(double));
+    printf("(double)((1<<53) - 1)=%.20g\n", (double)(maxvoid2dbl - 1));
+    printf("(double)((1<<53) + 0)=%.20g\n", (double)(maxvoid2dbl));
+    printf("(double)((1<<53) + 1)=%.20g\n", (double)(maxvoid2dbl + 1));
+    printf("(size_t)(vp) = %zd\n", n);
 #endif
-	if (n > maxvoid2dbl) {
-		hoc_execerror(mes, "pointer too large to be represented by a double");
-	}
-	return (double)n;
+    if (n > maxvoid2dbl) {
+      hoc_execerror(mes, "pointer too large to be represented by a double");
+    }
+  } else if (sizeof(void*) > 8) {
+    hoc_execerror(mes, "not implemented for sizeof(void*) > 8");
+  }
+  return (double)n;
 }
 
 void this_section(void) {
