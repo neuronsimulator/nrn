@@ -97,6 +97,7 @@ static double ptr_label(void* v) {
         if (ifarg(1)) {
 	  s = strdup(gargstr(1));
 	}
+	return 0.;
 }
 
 static double resize(void* v) {
