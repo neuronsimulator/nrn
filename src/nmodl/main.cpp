@@ -103,7 +103,7 @@ int main(int argc, const char* argv[]) {
     bool nmodl_const_folding(false);
 
     /// true if range variables to be converted to local
-    bool localize(false);
+    bool nmodl_localize(false);
 
     /// true if localize variables even if verbatim block is used
     bool localize_verbatim(false);
@@ -165,39 +165,84 @@ int main(int argc, const char* argv[]) {
     app.add_option("--units", units_dir, "Directory of units lib file", true)->ignore_case();
 
     auto host_opt = app.add_subcommand("host", "HOST/CPU code backends")->ignore_case();
-    host_opt->add_flag("--c", c_backend, "C/C++ backend")->ignore_case();
-    host_opt->add_flag("--omp", omp_backend, "C/C++ backend with OpenMP")->ignore_case();
-    host_opt->add_flag("--ispc", ispc_backend, "C/C++ backend with ISPC")->ignore_case();
+    host_opt->add_flag("--c", c_backend, "C/C++ backend ({})"_format(c_backend))->ignore_case();
+    host_opt->add_flag("--omp", omp_backend, "C/C++ backend with OpenMP ({})"_format(omp_backend))
+        ->ignore_case();
+    host_opt->add_flag("--ispc", ispc_backend, "C/C++ backend with ISPC ({})"_format(ispc_backend))
+        ->ignore_case();
 
     auto acc_opt = app.add_subcommand("acc", "Accelerator code backends")->ignore_case();
-    acc_opt->add_flag("--oacc", oacc_backend, "C/C++ backend with OpenACC")->ignore_case();
-    acc_opt->add_flag("--cuda", cuda_backend, "C/C++ backend with CUDA")->ignore_case();
+    acc_opt
+        ->add_flag("--oacc", oacc_backend, "C/C++ backend with OpenACC ({})"_format(oacc_backend))
+        ->ignore_case();
+    acc_opt->add_flag("--cuda", cuda_backend, "C/C++ backend with CUDA ({})"_format(cuda_backend))
+        ->ignore_case();
 
     // clang-format off
     auto sympy_opt = app.add_subcommand("sympy", "SymPy based analysis and optimizations")->ignore_case();
-    sympy_opt->add_flag("--analytic", sympy_analytic, "Solve ODEs using SymPy analytic integration")->ignore_case();
-    sympy_opt->add_flag("--pade", sympy_pade, "Pade approximation in SymPy analytic integration")->ignore_case();
-    sympy_opt->add_flag("--cse", sympy_cse, "CSE (Common Subexpression Elimination) in SymPy analytic integration")->ignore_case();
-    sympy_opt->add_flag("--conductance", sympy_conductance, "Add CONDUCTANCE keyword in BREAKPOINT")->ignore_case();
+    sympy_opt->add_flag("--analytic",
+        sympy_analytic,
+        "Solve ODEs using SymPy analytic integration ({})"_format(sympy_analytic))->ignore_case();
+    sympy_opt->add_flag("--pade",
+        sympy_pade,
+        "Pade approximation in SymPy analytic integration ({})"_format(sympy_pade))->ignore_case();
+    sympy_opt->add_flag("--cse",
+        sympy_cse,
+        "CSE (Common Subexpression Elimination) in SymPy analytic integration ({})"_format(sympy_cse))->ignore_case();
+    sympy_opt->add_flag("--conductance",
+        sympy_conductance,
+        "Add CONDUCTANCE keyword in BREAKPOINT ({})"_format(sympy_conductance))->ignore_case();
 
     auto passes_opt = app.add_subcommand("passes", "Analyse/Optimization passes")->ignore_case();
-    passes_opt->add_flag("--inline", nmodl_inline, "Perform inlining at NMODL level")->ignore_case();
-    passes_opt->add_flag("--unroll", nmodl_unroll, "Perform loop unroll at NMODL level")->ignore_case();
-    passes_opt->add_flag("--const-folding", nmodl_const_folding, "Perform constant folding at NMODL level")->ignore_case();
-    passes_opt->add_flag("--localize", localize, "Convert RANGE variables to LOCAL")->ignore_case();
-    passes_opt->add_flag("--localize-verbatim", localize_verbatim, "Convert RANGE variables to LOCAL even if verbatim block exist")->ignore_case();
-    passes_opt->add_flag("--local-rename", local_rename, "Rename LOCAL variable if variable of same name exist in global scope")->ignore_case();
-    passes_opt->add_flag("--verbatim-inline", verbatim_inline, "Inline even if verbatim block exist")->ignore_case();
-    passes_opt->add_flag("--verbatim-rename", verbatim_rename, "Rename variables in verbatim block")->ignore_case();
-    passes_opt->add_flag("--json-ast", json_ast, "Write AST to JSON file")->ignore_case();
-    passes_opt->add_flag("--nmodl-ast", nmodl_ast, "Write AST to NMODL file")->ignore_case();
-    passes_opt->add_flag("--json-perf", json_perfstat, "Write performance statistics to JSON file")->ignore_case();
-    passes_opt->add_flag("--show-symtab", show_symtab, "Write symbol table to stdout")->ignore_case();
+    passes_opt->add_flag("--inline",
+        nmodl_inline,
+        "Perform inlining at NMODL level ({})"_format(nmodl_inline))->ignore_case();
+    passes_opt->add_flag("--unroll",
+        nmodl_unroll,
+        "Perform loop unroll at NMODL level ({})"_format(nmodl_unroll))->ignore_case();
+    passes_opt->add_flag("--const-folding",
+        nmodl_const_folding,
+        "Perform constant folding at NMODL level ({})"_format(nmodl_const_folding))->ignore_case();
+    passes_opt->add_flag("--localize",
+        nmodl_localize,
+        "Convert RANGE variables to LOCAL ({})"_format(nmodl_localize))->ignore_case();
+    passes_opt->add_flag("--localize-verbatim",
+        localize_verbatim,
+        "Convert RANGE variables to LOCAL even if verbatim block exist ({})"_format(localize_verbatim))->ignore_case();
+    passes_opt->add_flag("--local-rename",
+        local_rename,
+        "Rename LOCAL variable if variable of same name exist in global scope ({})"_format(local_rename))->ignore_case();
+    passes_opt->add_flag("--verbatim-inline",
+        verbatim_inline,
+        "Inline even if verbatim block exist ({})"_format(verbatim_inline))->ignore_case();
+    passes_opt->add_flag("--verbatim-rename",
+        verbatim_rename,
+        "Rename variables in verbatim block ({})"_format(verbatim_rename))->ignore_case();
+    passes_opt->add_flag("--json-ast",
+        json_ast,
+        "Write AST to JSON file ({})"_format(json_ast))->ignore_case();
+    passes_opt->add_flag("--nmodl-ast",
+        nmodl_ast,
+        "Write AST to NMODL file ({})"_format(nmodl_ast))->ignore_case();
+    passes_opt->add_flag("--json-perf",
+        json_perfstat,
+        "Write performance statistics to JSON file ({})"_format(json_perfstat))->ignore_case();
+    passes_opt->add_flag("--show-symtab",
+        show_symtab,
+        "Write symbol table to stdout ({})"_format(show_symtab))->ignore_case();
 
     auto codegen_opt = app.add_subcommand("codegen", "Code generation options")->ignore_case();
-    codegen_opt->add_option("--layout", layout, "Memory layout for code generation", true)->ignore_case()->check(CLI::IsMember({"aos", "soa"}));
-    codegen_opt->add_option("--datatype", layout, "Data type for floating point variables", true)->ignore_case()->check(CLI::IsMember({"float", "double"}));
-    codegen_opt->add_flag("--force", force_codegen, "Force code generation even if there is any incompatibility");
+    codegen_opt->add_option("--layout",
+        layout,
+        "Memory layout for code generation",
+        true)->ignore_case()->check(CLI::IsMember({"aos", "soa"}));
+    codegen_opt->add_option("--datatype",
+        layout,
+        "Data type for floating point variables",
+        true)->ignore_case()->check(CLI::IsMember({"float", "double"}));
+    codegen_opt->add_flag("--force",
+        force_codegen,
+        "Force code generation even if there is any incompatibility");
 
     // clang-format on
 
@@ -346,7 +391,7 @@ int main(int argc, const char* argv[]) {
             ast_to_nmodl(ast.get(), filepath("local_rename"));
         }
 
-        if (localize) {
+        if (nmodl_localize) {
             // localize pass must follow rename pass to avoid conflict
             logger->info("Running localize visitor");
             LocalizeVisitor(localize_verbatim).visit_program(ast.get());
