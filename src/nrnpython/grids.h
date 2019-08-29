@@ -111,6 +111,7 @@ class Grid_node {
     double *states;         // Array of doubles representing Grid space
     double *states_x;
     double *states_y;
+    double *states_z;       //TODO: This is only used by ICS, is it necessary? 
     double *states_cur;
     int size_x;          // Size of X dimension
     int size_y;          // Size of Y dimension
@@ -133,6 +134,8 @@ class Grid_node {
     int num_all_currents;
     int* proc_offsets;
     int* proc_num_currents;
+    int* proc_flux_offsets;
+    int* proc_num_fluxes;
     long* current_dest;
     double* all_currents;
     /*Extension to handle a variable diffusion characteristics of a grid*/
@@ -153,12 +156,17 @@ class Grid_node {
     double** ics_concentration_seg_ptrs;
     double** ics_current_seg_ptrs;
     double* ics_scale_factors;
-    double* ics_states_cur;
     int ics_num_segs;
 
     int insert(int grid_list_index);
+    int node_flux_count = 0;
+    long * node_flux_idx;
+    double * node_flux_scale;
+    PyObject ** node_flux_src;
+
     virtual void set_num_threads(const int n) = 0;
     virtual void do_grid_currents(double dt, int id) = 0;
+    virtual void apply_node_flux3D(double dt, double* states) = 0;
     virtual void volume_setup() = 0;
     virtual int dg_adi() = 0;
     virtual void variable_step_diffusion(const double* states, double* ydot) = 0;
@@ -178,7 +186,8 @@ class ECS_Grid_node : public Grid_node{
         struct ECSAdiDirection* ecs_adi_dir_z;
 
         void set_num_threads(const int n);
-        void do_grid_currents(double dt, int id);  
+        void do_grid_currents(double dt, int id);
+        void apply_node_flux3D(double dt, double* states);
         void volume_setup();
         int dg_adi();
         void variable_step_diffusion(const double* states, double* ydot);
@@ -240,7 +249,8 @@ class ICS_Grid_node : public Grid_node{
         void divide_y_work(const int nthreads);
         void divide_z_work(const int nthreads);
         void set_num_threads(const int n);
-        void do_grid_currents(double dt, int id);  
+        void do_grid_currents(double dt, int id);
+        void apply_node_flux3D(double dt, double* states); 
         void volume_setup();
         int dg_adi();
         void variable_step_diffusion(const double* states, double* ydot);
@@ -340,3 +350,5 @@ int remove(Grid_node **head, Grid_node *find);
 
 // Destroy the list located at list_index and free all memory
 void empty_list(int list_index);
+
+void apply_node_flux(int, long*, double*, PyObject**, double, double*);

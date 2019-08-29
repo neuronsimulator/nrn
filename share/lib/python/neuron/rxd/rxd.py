@@ -152,6 +152,15 @@ rxd_setup_conc_ptrs.argtypes = [
     ctypes.POINTER(ctypes.py_object)
 ]
 
+rxd_include_node_flux1D = nrn_dll_sym('rxd_include_node_flux1D')
+rxd_include_node_flux1D.argtypes = [ctypes.c_int, _long_ptr, _double_ptr,
+                                    ctypes.POINTER(ctypes.py_object)]
+
+rxd_include_node_flux3D = nrn_dll_sym('rxd_include_node_flux3D')
+rxd_include_node_flux3D.argtypes = [ctypes.c_int, _int_ptr, _int_ptr, _long_ptr,
+                                    _double_ptr,
+                                    ctypes.POINTER(ctypes.py_object)]
+
 _c_headers = """#include <math.h>
 /*Some functions supported by numpy that aren't included in math.h
  * names and arguments match the wrappers used in rxdmath.py
@@ -330,6 +339,7 @@ def re_init():
     _cvode_object.re_init()
 
     _external_solver_initialized = False
+    _include_flux()
     
 def _invalidate_matrices():
     # TODO: make a separate variable for this?
@@ -340,14 +350,6 @@ def _invalidate_matrices():
 
 _rxd_offset = None
 
-def _atolscale(y):
-    real_index_lookup = {item: index for index, item in enumerate(_nonzero_volume_indices)}
-    for sr in _species_get_all_species():
-        s = sr()
-        if s is not None:
-            shifted_i = [real_index_lookup[i] + _rxd_offset for i in s.indices() if i in real_index_lookup]
-            y[shifted_i] *= s._atolscale
-
 def _ode_count(offset):
     global _rxd_offset, last_structure_change_cnt, _structure_change_count
     initializer._do_init()
@@ -356,52 +358,6 @@ def _ode_count(offset):
     last_structure_change_cnt = _structure_change_count.value
     return len(_nonzero_volume_indices)
 
-def _ode_reinit(y):
-    y[_rxd_offset : _rxd_offset + len(_nonzero_volume_indices)] = _node_get_states()[_nonzero_volume_indices]
-
-def _ode_fun(t, y, ydot):
-    initializer.assert_initialized()
-    lo = _rxd_offset
-    hi = lo + len(_nonzero_volume_indices)
-    if lo == hi: return
-    states = _node_get_states().copy()
-    states[_nonzero_volume_indices] = y[lo : hi]
-
-    # need to fill in the zero volume states with the correct concentration
-    # this assumes that states at the zero volume indices is zero (although that
-    # assumption could be easily removed)
-    #matrix = _scipy_sparse_dok_matrix((len(_zero_volume_indices), len(states)))
-    """
-    for i, row in enumerate(_zero_volume_indices):
-        d = _diffusion_matrix[row, row]
-        if d:
-            nzj = _diffusion_matrix[row].nonzero()[1]
-            print 'nzj:', nzj
-            for j in nzj:
-                matrix[i, j] = -_diffusion_matrix[row, j] / d
-    states[_zero_volume_indices] = matrix * states
-    """
-    if len(_zero_volume_indices):
-        states[_zero_volume_indices] = _mat_for_zero_volume_nodes * states
-    """
-    for i in _zero_volume_indices:
-        v = _diffusion_matrix[i] * states
-        d = _diffusion_matrix[i, i]
-        if d:
-            states[i] = -v / d
-    """
-    # TODO: make this so that the section1d parts use cptrs (can't do this directly for 3D because sum, but could maybe move that into the C)
-    # the old way: _section1d_transfer_to_legacy()
-#    for sr in _species_get_all_species().values():
-#        s = sr()
-#        if s is not None: s._transfer_to_legacy()
-
-    
-    if ydot is not None:
-        # diffusion_matrix = - jacobian    
-        ydot[lo : hi] = (_rxd_reaction(states) - _diffusion_matrix * states)[_nonzero_volume_indices]
-        
-    states[_zero_volume_indices] = 0
 
 _rxd_induced_currents = None
 _memb_cur_ptrs= []
@@ -493,34 +449,6 @@ _last_preconditioner = None
 _fixed_step_count = 0
 
 
-def _rxd_reaction(states):
-    # TODO: this probably shouldn't be here
-    # TODO: this was included in the 3d, probably shouldn't be there either
-    # TODO: if its None and there is 3D... should we do anything special?
-    if _diffusion_matrix is None and not species._has_3d: _setup_matrices()
-
-    b = _numpy_zeros(len(states))
-    
-    
-    if _curr_ptr_vector is not None:
-        _curr_ptr_vector.gather(_curr_ptr_storage_nrn)
-        b[_curr_indices] = _curr_scales * (_curr_ptr_storage - _rxd_induced_currents)   
-    
-    b[_curr_indices] = _curr_scales * [ptr[0] for ptr in _curr_ptrs]
-
-    # TODO: store weak references to the r._evaluate in addition to r so no
-    #       repeated lookups
-    #for rptr in _all_reactions:
-    #    r = rptr()
-    #    if r:
-    #        indices, mult, rate = r._evaluate(states)
-    #        we split this in parts to allow for multiplicities and to allow stochastic to make the same changes in different places
-    #        for i, m in zip(indices, mult):
-    #            b[i] += m * rate
-
-    node._apply_node_fluxes(b)
-    return b
-    
 _last_preconditioner_dt = 0
 _last_dt = None
 _last_m = None
@@ -655,6 +583,7 @@ def _update_node_data(force=False):
                 setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
                 # TODO: separate compiling reactions -- so the indices can be updated without recompiling
                 _compile_reactions()
+                _include_flux(True)
 
             #end#if
             for rptr in _all_reactions:
@@ -1497,6 +1426,52 @@ def _init():
     _setup_matrices()
     _compile_reactions()
     _setup_memb_currents()
+    _include_flux()
+
+def _include_flux(force=False):
+    from .node import _node_fluxes
+    from . import node
+    if force or node._has_node_fluxes:
+        index1D = []
+        source1D = []
+        scale1D = []
+        grids = dict()
+        for idx, t, src, sc, rptr in zip(_node_fluxes['index'], 
+                                     _node_fluxes['type'],
+                                     _node_fluxes['source'],
+                                     _node_fluxes['scale'],
+                                     _node_fluxes['region']):
+            if t == -1:
+                index1D.append(idx)
+                source1D.append(src)
+                scale1D.append(sc * node._volumes[idx])
+            else:
+                gid = t
+                if gid not in grids:
+                    grids[gid] = {'index':[], 'source': [], 'scale':[]}
+                grids[gid]['index'].append(idx)
+                grids[gid]['source'].append(src)
+                grids[gid]['scale'].append(sc * rptr().volume(idx))
+        counts3D = []
+        grids3D = sorted(grids.keys())
+        index3D = []
+        source3D = []
+        scale3D = []
+        for gid in grids3D: 
+            counts3D.append(len(grids[gid]['index']))
+            index3D.extend(grids[gid]['index'])
+            source3D.extend(grids[gid]['source'])
+            scale3D.extend(grids[gid]['scale'])
+        rxd_include_node_flux1D(len(index1D), _list_to_clong_array(index1D),
+                                _list_to_cdouble_array(scale1D),
+                                _list_to_pyobject_array(source1D))
+         
+        rxd_include_node_flux3D(len(grids3D), _list_to_cint_array(counts3D),
+                                _list_to_cint_array(grids3D),
+                                _list_to_clong_array(index3D),
+                                _list_to_cdouble_array(scale3D),
+                                _list_to_pyobject_array(source3D))
+        node._has_node_fluxes = False
 
 def _init_concentration():
     if len(species._all_species) == 0:

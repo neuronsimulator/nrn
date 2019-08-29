@@ -14,7 +14,7 @@ extern "C" {
 #include <nrnwrap_Python.h>
 
 static void ode_solve(double, double, double*, double*);
-
+extern PyTypeObject* hocobject_type;
 extern int structure_change_cnt;
 extern int states_cvode_offset;
 int prev_structure_change_cnt = 0;
@@ -118,6 +118,14 @@ unsigned char _membrane_flux = FALSE;   /*TRUE if any membrane fluxes are in the
 int* _membrane_lookup; /*states index -> position in _rxd_induced_flux*/
 
 
+int _node_flux_count = 0;
+long* _node_flux_idx = NULL;
+double* _node_flux_scale = NULL;
+PyObject** _node_flux_src = NULL;
+
+
+
+
 static void transfer_to_legacy()
 {
 	/*TODO: support 3D*/
@@ -215,6 +223,149 @@ extern "C" void rxd_setup_conc_ptrs(int conc_count, int* conc_index,
 	memcpy(_conc_ptrs, conc_ptrs, sizeof(PyHocObject*)*conc_count);
     
 }
+
+extern "C" void rxd_include_node_flux3D(int grid_count, int* grid_counts, 
+                                        int* grids, long* index, double* scales,
+                                        PyObject** sources)
+{
+    Grid_node* g;
+    int i = 0, j, k, n, grid_id;
+    int offset = 0;
+    
+    for(g = Parallel_grids[0]; g != NULL; g = g->next)
+    {
+        if(g->node_flux_count > 0)
+        {
+            g->node_flux_count = 0;
+            free(g->node_flux_scale);
+            free(g->node_flux_idx);
+            free(g->node_flux_src);
+        }
+    }
+    for(grid_id=0, g = Parallel_grids[0]; g != NULL; grid_id++, g = g->next)
+    {
+#if NRNMPI
+        if(nrnmpi_use && dynamic_cast<ECS_Grid_node*>(g))
+        {
+            if (grid_id == grids[i])
+                n = grid_counts[i++];
+            else
+                n = 0;
+            
+            g->proc_num_fluxes[nrnmpi_myid] = n;
+            nrnmpi_int_allgather_inplace(g->proc_num_fluxes, 1);
+            
+            g->proc_flux_offsets[0] = 0; 
+            for(j = 1; j < nrnmpi_numprocs; j++)
+                g->proc_flux_offsets[j] =  g->proc_flux_offsets[j-1] + 
+                                      g->proc_num_fluxes[j-1];
+            g->node_flux_count = g->proc_flux_offsets[j-1] + g->proc_num_fluxes[j-1];
+            /*Copy array of the indexes and scales -- sources are evaluated at runtime*/
+            g->node_flux_idx = (long*)malloc(g->node_flux_count*sizeof(long));
+            g->node_flux_scale = (double*)malloc(g->node_flux_count*sizeof(double));
+            g->node_flux_src = (PyObject**)allocopy(&sources[offset], n*sizeof(PyObject*));
+
+            for(j = 0, k = g->proc_flux_offsets[nrnmpi_myid]; j < n; j++, k++)
+            {
+                g->node_flux_idx[k] = index[offset + j];
+                g->node_flux_scale[k] = scales[offset + j];
+            }
+            nrnmpi_long_allgatherv_inplace(g->node_flux_idx, g->proc_num_fluxes, g->proc_flux_offsets);
+            nrnmpi_dbl_allgatherv_inplace(g->node_flux_scale, g->proc_num_fluxes, g->proc_flux_offsets);
+
+            offset += n;
+        }
+        else
+        {
+            if(grid_id == grids[i])
+            {
+                g->node_flux_count = grid_counts[i];
+                g->node_flux_idx = (long*)allocopy(&index[offset], grid_counts[i]*sizeof(long));
+                g->node_flux_scale = (double*)allocopy(&scales[offset], grid_counts[i]*sizeof(double));
+                g->node_flux_src = (PyObject**)allocopy(&sources[offset], grid_counts[i]*sizeof(PyObject*));
+                offset += grid_counts[i++];
+            }
+        }
+#else
+        if(grid_id == grids[i])
+        {
+           g->node_flux_count = grid_counts[i];
+           g->node_flux_idx = (long*)allocopy(&index[offset], grid_counts[i]*sizeof(long));
+           g->node_flux_scale = (double*)allocopy(&scales[offset], grid_counts[i]*sizeof(double));
+           g->node_flux_src = (PyObject**)allocopy(&sources[offset], grid_counts[i]*sizeof(PyObject*));
+           offset += grid_counts[i++];
+        }
+#endif
+    }
+}
+
+extern "C" void rxd_include_node_flux1D(int n, long* index, double* scales,
+                                        PyObject** sources)
+{
+    int i;
+    if (_node_flux_count != 0)
+    {
+        free(_node_flux_idx);
+        free(_node_flux_scale);
+        free(_node_flux_src);
+    }
+    _node_flux_count = n;
+    _node_flux_idx = (long*)allocopy(index, n*sizeof(long)*n);
+    _node_flux_scale = (double*)allocopy(scales, n*sizeof(double));
+    _node_flux_src = (PyObject**)allocopy(sources, n*sizeof(PyObject*));
+}
+
+
+
+void apply_node_flux(int n, long* index, double* scale, PyObject** source, double dt, double* states)
+{
+    long i, j;
+    PyObject *result;
+    PyHocObject *src;
+    
+    for(i = 0; i < n; i++)
+    {
+        if(index == NULL)
+            j = i;
+        else
+            j = index[i];
+        if(PyFloat_Check(source[i]))
+        {
+            states[j] += dt * PyFloat_AsDouble(source[i]) / scale[i];
+        }
+        else if(PyCallable_Check(source[i]))
+        {
+            /* It is a Python function or a PyHocObject*/
+            if (PyObject_TypeCheck(source[i], hocobject_type))
+            {
+                src = (PyHocObject*)source[i];
+                /*TODO: check it is a reference */
+                states[j] +=  dt * *(src->u.px_) / scale[i];
+            }
+            else
+            {
+                result = PyEval_CallObject(source[i], NULL);
+                if(PyFloat_Check(result) || PyLong_Check(result))
+                {
+                    states[j] += dt* PyFloat_AsDouble(result) / scale[i];
+                }
+                else
+                {
+                    PyErr_SetString(PyExc_Exception, "node._include_flux callback did not return a number.\n");
+                }
+            }
+        }
+        else
+        {
+            PyErr_SetString(PyExc_Exception, "node._include_flux unrecognised source term.\n");
+        }
+    }
+}
+
+static void apply_node_flux1D(double dt, double *states)
+{
+    apply_node_flux(_node_flux_count, _node_flux_idx, _node_flux_scale, _node_flux_src, dt, states);
+} 
 
 extern "C" void rxd_set_euler_matrix(int nrow, int nnonzero, long* nonzero_i,
                           long* nonzero_j, double* nonzero_values,
@@ -1378,7 +1529,10 @@ void _fadvance(void) {
     free(rhs);
 
     /*reactions*/
-    do_ics_reactions(states, NULL, NULL, NULL);	
+    do_ics_reactions(states, NULL, NULL, NULL);
+   
+    /*node fluxes*/
+    apply_node_flux1D(dt, states);
 
 	transfer_to_legacy();
 }
@@ -1471,6 +1625,7 @@ void _rhs_variable_step(const double t, const double* p1, double* p2)
     /*reactions*/
     MEM_ZERO(&ydot[num_states - _rxd_num_zvi], sizeof(double)*_ecs_count);
     get_all_reaction_rates(states, rhs, ydot);
+    
 
     const double* states3d = orig_states3d;
     double* ydot3d = orig_ydot3d;
@@ -1487,6 +1642,9 @@ void _rhs_variable_step(const double t, const double* p1, double* p2)
 
     /*Add currents to the result*/
     add_currents(rhs);
+
+    /*Add node fluxes to the result*/
+    apply_node_flux1D(1.0, rhs);
     
     /* increment states by rhs which is now really deltas */
     if(_rxd_num_zvi > 0)
@@ -1506,7 +1664,7 @@ void _rhs_variable_step(const double t, const double* p1, double* p2)
     }
     else
     {
-        memcpy(ydot,rhs,sizeof(double)*num_states); //Invalid write of size 8
+        memcpy(ydot,rhs,sizeof(double)*num_states);
     }
     free(rhs);
 }

@@ -182,5 +182,5 @@ void *TaskQueue_exe_tasks(void*);
 void start_threads(const int);
 void TaskQueue_sync(TaskQueue*);
 void ecs_atolscale(double*);
-
+void apply_node_flux3D(Grid_node*, double, double*);
 

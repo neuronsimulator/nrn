@@ -532,6 +532,8 @@ void _fadvance_fixed_step_3D(void) {
     for (id = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, id++) {
         MEM_ZERO(grid->states_cur,sizeof(double)*grid->size_x*grid->size_y*grid->size_z);
         grid->do_grid_currents(dt, id);
+        grid->apply_node_flux3D(dt, NULL);
+        
         grid->volume_setup();
         if(grid->hybrid)
         {
@@ -661,6 +663,10 @@ void _rhs_variable_step_ecs(const double t, const double* states, double* ydot, 
     for (i = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, i++)
     {
         do_currents(grid, ydot, 1.0, i);
+
+        /*Add node fluxes to the result*/
+        grid->apply_node_flux3D(1.0, ydot);
+        
         ydot += grid_size;
     }
 	ydot = orig_ydot;
@@ -1000,12 +1006,12 @@ static void ecs_dg_adi_x(ECS_Grid_node* g, const double dt, const int y, const i
         RHS[0] =  g->states[IDX(0,y,z)] 
            + dt*((g->dc_x/SQ(g->dx))*(g->states[IDX(1,y,z)] - 2.*g->states[IDX(0,y,z)] + g->states[IDX(1,y,z)])/4.0
            + (g->dc_y/SQ(g->dy))*(g->states[IDX(0,yp,z)] - 2.*g->states[IDX(0,y,z)] + g->states[IDX(0,ym,z)])/div_y
-           + (g->dc_z/SQ(g->dz))*(g->states[IDX(0,y,zp)] - 2.*g->states[IDX(0,y,z)] + g->states[IDX(0,y,zm)])/div_z + g->states_cur[IDX(0,y,z)]);
+           + (g->dc_z/SQ(g->dz))*(g->states[IDX(0,y,zp)] - 2.*g->states[IDX(0,y,z)] + g->states[IDX(0,y,zm)])/div_z) + g->states_cur[IDX(0,y,z)];
         x = g->size_x-1;
         RHS[x] = g->states[IDX(x,y,z)] 
            + dt*((g->dc_x/SQ(g->dx))*(g->states[IDX(x-1,y,z)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x-1,y,z)])/4.0
            + (g->dc_y/SQ(g->dy))*(g->states[IDX(x,yp,z)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x,ym,z)])/div_y
-           + (g->dc_z/SQ(g->dz))*(g->states[IDX(x,y,zp)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x,y,zm)])/div_z + g->states_cur[IDX(x,y,z)]);
+           + (g->dc_z/SQ(g->dz))*(g->states[IDX(x,y,zp)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x,y,zm)])/div_z) + g->states_cur[IDX(x,y,z)];
     }
     else
     {
@@ -1020,7 +1026,7 @@ static void ecs_dg_adi_x(ECS_Grid_node* g, const double dt, const int y, const i
         RHS[x] =  g->states[IDX(x,y,z)] 
                + dt*((g->dc_x/SQ(g->dx))*(g->states[IDX(x+1,y,z)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x-1,y,z)])/2.
                    + (g->dc_y/SQ(g->dy))*(g->states[IDX(x,yp,z)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x,ym,z)])/div_y
-                   + (g->dc_z/SQ(g->dz))*(g->states[IDX(x,y,zp)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x,y,zm)])/div_z + g->states_cur[IDX(x,y,z)]);
+                   + (g->dc_z/SQ(g->dz))*(g->states[IDX(x,y,zp)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x,y,zm)])/div_z) + g->states_cur[IDX(x,y,z)];
 
     }
     if(g->bc->type == NEUMANN)

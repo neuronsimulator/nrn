@@ -279,6 +279,12 @@ class Extracellular:
 
     def _short_repr(self):
         return 'Extracellular'
+
+    def volume(self, index):
+        """Returns the volume of the voxel at a given index"""
+        if numpy.isscalar(self.alpha):
+            return numpy.prod(self._dx) * self.alpha
+        return numpy.prod(self._dx) * self.alpha[index]
                 
 class Region(object):
     """Declare a conceptual region of the neuron.
@@ -576,4 +582,8 @@ class Region(object):
         if hasattr(self, '_allow_setting'):
             self._secs = value
         else:
-            raise RxDException('Cannot set secs now; model already instantiated')    
+            raise RxDException('Cannot set secs now; model already instantiated')
+    def volume(self, index):
+        """Returns the volume of the voxel at a given index"""
+        return self._vol[index]
+ 

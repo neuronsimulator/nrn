@@ -197,7 +197,7 @@ void ics_dg_adi_x(ICS_Grid_node* g, int line_start, int line_stop, int node_star
     double* delta_x = g->ics_adi_dir_x->deltas;
     double* delta_y = g->ics_adi_dir_y->deltas;
     double* delta_z = g->ics_adi_dir_z->deltas;
-    double* ics_states_cur = g->ics_states_cur;
+    double* states_cur = g->states_cur;
 
     long* x_lines = g->ics_adi_dir_x->ordered_line_defs;
     long* ordered_nodes = g->ics_adi_dir_x->ordered_nodes;
@@ -212,7 +212,7 @@ void ics_dg_adi_x(ICS_Grid_node* g, int line_start, int line_stop, int node_star
         for(int j = 0; j < N; j++)
         {
             current_index = ordered_nodes[ordered_index];
-            RHS[j] = delta_x[current_index]/2.0 + delta_y[current_index] + delta_z[current_index] + states[current_index] + ics_states_cur[current_index];
+            RHS[j] = delta_x[current_index]/2.0 + delta_y[current_index] + delta_z[current_index] + states[current_index] + states_cur[current_index];
             ordered_index++;            
         }
 
