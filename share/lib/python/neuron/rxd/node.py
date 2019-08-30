@@ -321,11 +321,9 @@ class Node(object):
             _node_fluxes['region'].append(None)
         else:
             _node_fluxes['region'].append(weakref.ref(self._r))
+        from .rxd import _structure_change_count
+        _structure_change_count.value += 1
         _has_node_fluxes = True
-        from . initializer import is_initialized
-        if is_initialized():
-            from .rxd import _include_flux
-            _include_flux()
 
     
     @value.getter

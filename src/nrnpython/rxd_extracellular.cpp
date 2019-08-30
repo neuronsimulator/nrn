@@ -491,18 +491,18 @@ void do_currents(Grid_node* grid, double* output, double dt, int grid_id)
     {
         nrnmpi_dbl_allgatherv_inplace(grid->all_currents, grid->proc_num_currents, grid->proc_offsets);
         for(i = 0; i < n; i++)
-            output[grid->current_dest[i]] += grid->all_currents[i];
+            output[grid->current_dest[i]] += dt * grid->all_currents[i];
     }
     else
     {
         for(i = 0; i < n; i++)
         {
-            output[grid->current_list[i].destination] += grid->all_currents[i];
+            output[grid->current_list[i].destination] += dt * grid->all_currents[i];
         }
     }
 #else
     for(i = 0; i < n; i++)
-        output[grid->current_list[i].destination] +=  grid->all_currents[i];
+        output[grid->current_list[i].destination] +=  dt * grid->all_currents[i];
 #endif
     /*Remove the contribution from membrane currents*/
     if(_membrane_flux)
@@ -511,7 +511,7 @@ void do_currents(Grid_node* grid, double* output, double dt, int grid_id)
         {
             if(_rxd_induced_currents_grid[i] == grid_id)
             {
-                output[_rxd_induced_currents_ecs_idx[i]] -= _rxd_induced_currents_ecs[i] * _rxd_induced_currents_scale[i];
+                output[_rxd_induced_currents_ecs_idx[i]] -= dt * (_rxd_induced_currents_ecs[i] * _rxd_induced_currents_scale[i]);
             }
         }
     }

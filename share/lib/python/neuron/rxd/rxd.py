@@ -339,7 +339,6 @@ def re_init():
     _cvode_object.re_init()
 
     _external_solver_initialized = False
-    _include_flux()
     
 def _invalidate_matrices():
     # TODO: make a separate variable for this?
@@ -630,6 +629,9 @@ def _setup_matrices():
     global _cur_node_indices
     global _zero_volume_indices
     global _diffusion_matrix
+
+    # update _node_fluxes in C
+    _include_flux()
 
     # TODO: this sometimes seems to get called twice. Figure out why and fix, if possible.
 
@@ -1426,7 +1428,6 @@ def _init():
     _setup_matrices()
     _compile_reactions()
     _setup_memb_currents()
-    _include_flux()
 
 def _include_flux(force=False):
     from .node import _node_fluxes
