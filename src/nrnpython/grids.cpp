@@ -99,6 +99,8 @@ ECS_Grid_node *ECS_make_Grid(PyHocObject* my_states, int my_num_states_x,
     {
         new_Grid->proc_offsets = (int*)malloc(nrnmpi_numprocs*sizeof(int));
         new_Grid->proc_num_currents = (int*)malloc(nrnmpi_numprocs*sizeof(int));
+        new_Grid->proc_flux_offsets = (int*)malloc(nrnmpi_numprocs*sizeof(int));
+        new_Grid->proc_num_fluxes = (int*)malloc(nrnmpi_numprocs*sizeof(int));
     }
 #endif
     new_Grid->num_all_currents = 0;
@@ -139,6 +141,11 @@ ECS_Grid_node *ECS_make_Grid(PyHocObject* my_states, int my_num_states_x,
 
     new_Grid->atolscale = atolscale;
 
+    new_Grid->node_flux_count = 0;
+    new_Grid->node_flux_idx = NULL;
+    new_Grid->node_flux_scale = NULL;
+    new_Grid->node_flux_src = NULL;
+
 
     return new_Grid;
 }
@@ -177,6 +184,7 @@ Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors
     new_Grid->states = my_states->u.px_;
     new_Grid->states_x = (double*)malloc(sizeof(double)*new_Grid->_num_nodes);
     new_Grid->states_y = (double*)malloc(sizeof(double)*new_Grid->_num_nodes);
+    new_Grid->states_z = (double*)malloc(sizeof(double)*new_Grid->_num_nodes);
     new_Grid->states_cur = (double*)malloc(sizeof(double)*new_Grid->_num_nodes);
     new_Grid->next = NULL;
 
@@ -194,13 +202,15 @@ Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors
     new_Grid->ics_concentration_seg_ptrs = NULL;
     new_Grid->ics_scale_factors = NULL;
     new_Grid->ics_current_seg_ptrs = NULL;
-    new_Grid->ics_states_cur = (double*)calloc(new_Grid->_num_nodes, sizeof(double));
 
     #if NRNMPI
         if(nrnmpi_use)
         {
             new_Grid->proc_offsets = (int*)malloc(nrnmpi_numprocs*sizeof(int));
             new_Grid->proc_num_currents = (int*)malloc(nrnmpi_numprocs*sizeof(int));
+            new_Grid->proc_num_fluxes = (int*)malloc(nrnmpi_numprocs*sizeof(int));
+            new_Grid->proc_flux_offsets = (int*)malloc(nrnmpi_numprocs*sizeof(int));
+
         }
     #endif
 
@@ -265,7 +275,7 @@ Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors
     new_Grid->ics_adi_dir_y->d = dx;
 
     new_Grid->ics_adi_dir_z = (ICSAdiDirection*)malloc(sizeof(ICSAdiDirection));
-    new_Grid->ics_adi_dir_z->states_in = new_Grid->states_cur;
+    new_Grid->ics_adi_dir_z->states_in = new_Grid->states_z;
     new_Grid->ics_adi_dir_z->states_out = new_Grid->states;
     new_Grid->ics_adi_dir_z->ordered_start_stop_indices = (long*)malloc(sizeof(long)*NUM_THREADS*2);
     new_Grid->ics_adi_dir_z->line_start_stop_indices = (long*)malloc(sizeof(long)*NUM_THREADS*2);
@@ -278,6 +288,12 @@ Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors
     new_Grid->divide_x_work(NUM_THREADS);
     new_Grid->divide_y_work(NUM_THREADS);
     new_Grid->divide_z_work(NUM_THREADS);
+    
+    new_Grid->node_flux_count = 0;
+    new_Grid->node_flux_idx = NULL;
+    new_Grid->node_flux_scale = NULL;
+    new_Grid->node_flux_src = NULL;
+
 
     return new_Grid;
 }
@@ -618,6 +634,39 @@ void ECS_Grid_node::do_grid_currents(double dt, int grid_id)
     do_currents(this, states_cur, dt, grid_id);
 }
 
+void ECS_Grid_node::apply_node_flux3D(double dt, double* ydot)
+{
+    double* dest;
+    if (ydot == NULL)
+        dest = states_cur;
+    else
+        dest = ydot;
+#if NRNMPI
+    double* sources;
+    int i;
+    int offset;
+    if(nrnmpi_use)
+    {
+        sources = (double*)calloc(node_flux_count,sizeof(double));
+        offset = proc_flux_offsets[nrnmpi_myid];
+        apply_node_flux(proc_num_fluxes[nrnmpi_myid], NULL, &node_flux_scale[offset], node_flux_src, dt, &sources[offset]);
+        
+        nrnmpi_dbl_allgatherv_inplace(sources, proc_num_fluxes, proc_flux_offsets);
+        
+        for(i = 0; i < node_flux_count; i++)
+            dest[node_flux_idx[i]] += sources[i];
+        free(sources);
+    }
+    else
+    {
+        apply_node_flux(node_flux_count, node_flux_idx, node_flux_scale, node_flux_src, dt, dest);
+    }
+#else
+    apply_node_flux(node_flux_count, node_flux_idx, node_flux_scale, node_flux_src, dt, dest);
+#endif
+}
+
+
 void ECS_Grid_node::volume_setup()
 {
     switch(VARIABLE_ECS_VOLUME)
@@ -713,12 +762,20 @@ void ECS_Grid_node::free_Grid(){
     {
         free(proc_offsets);
         free(proc_num_currents);
+        free(proc_flux_offsets);
+        free(proc_num_fluxes);
     }
 #endif
     free(all_currents);
     free(ecs_adi_dir_x);
     free(ecs_adi_dir_y);
     free(ecs_adi_dir_z);
+    if(node_flux_count > 0)
+    {
+        free(node_flux_idx);
+        free(node_flux_scale);
+        free(node_flux_src);
+    }
 
 
     if(ecs_tasks != NULL)
@@ -1081,10 +1138,22 @@ void ICS_Grid_node::set_num_threads(const int n)
     divide_z_work(n);
 }
 
+
+
+void ICS_Grid_node::apply_node_flux3D(double dt, double* ydot)
+{
+    double* dest;
+    if (ydot == NULL)
+        dest = states_cur;
+    else
+        dest = ydot;
+    apply_node_flux(node_flux_count, node_flux_idx, node_flux_scale, node_flux_src, dt, dest);
+}
+
 void ICS_Grid_node::do_grid_currents(double dt, int grid_id)
 {
+    MEM_ZERO(states_cur,sizeof(double)*_num_nodes);
     if(ics_current_seg_ptrs != NULL){  
-        MEM_ZERO(ics_states_cur,sizeof(double)*_num_nodes);
         ssize_t i, j, n;
         int seg_start_index, seg_stop_index;
         int state_index;
@@ -1096,7 +1165,7 @@ void ICS_Grid_node::do_grid_currents(double dt, int grid_id)
             seg_cur = *ics_current_seg_ptrs[i];
             for(j = seg_start_index; j < seg_stop_index; j++){
                 state_index = ics_surface_nodes_per_seg[j];
-                ics_states_cur[state_index] += seg_cur * ics_scale_factors[state_index] * dt;
+                states_cur[state_index] += seg_cur * ics_scale_factors[state_index] * dt;
             }
         }        
     }
@@ -1188,11 +1257,9 @@ void ICS_Grid_node::scatter_grid_concentrations()
 // Free a single Grid_node
 void ICS_Grid_node::free_Grid(){
     int i;
-    if(ics_current_seg_ptrs != NULL){
-        free(ics_states_cur);
-    }
     free(states_x);
     free(states_y);
+    free(states_z);
     free(states_cur);
     free(concentration_list);
     free(current_list);
@@ -1205,13 +1272,20 @@ void ICS_Grid_node::free_Grid(){
     {
         free(proc_offsets);
         free(proc_num_currents);
+        free(proc_num_fluxes);
+        free(proc_flux_offsets);
     }
 #endif
     free(all_currents);
     free(ics_adi_dir_x);
     free(ics_adi_dir_y);
     free(ics_adi_dir_z);
-
+    if(node_flux_count > 0)
+    {
+        free(node_flux_idx);
+        free(node_flux_scale);
+        free(node_flux_src);
+    }
 
     if(ics_tasks != NULL)
     {   
