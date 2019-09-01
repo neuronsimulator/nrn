@@ -96,6 +96,7 @@ class Rate(GeneralizedReaction):
                 ecs_region = self._species()._extracellular()
             elif isinstance(self._species(),species._ExtracellularSpecies):
                 ecs_region = self._species()._region
+
         #Is the species passed to the constructor defined on the ECS
         if not ecs_region:
             if isinstance(self._species(),species.SpeciesOnRegion):
@@ -108,6 +109,10 @@ class Rate(GeneralizedReaction):
 
         if hasattr(self,'_ecs_regions'):
             self._rate_ecs, self._involved_species_ecs = rxdmath._compile(rate, self._ecs_regions)
+            for sp in self._involved_species_ecs:
+                if ecs_region and isinstance(sp(), species.SpeciesOnRegion):
+                    raise RxDException('Error Rate %r: an extracellular rate can not depend on a SpeciesOnRegion' % self._original_rate)
+
 
     
     def __repr__(self):

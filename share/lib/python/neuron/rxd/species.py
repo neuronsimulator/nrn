@@ -191,8 +191,15 @@ class _SpeciesMathable(object):
 
     def _semi_compile(self, reg, instruction):
         from . import region
+
         #region is Extracellular
-        if isinstance(reg, region.Extracellular):
+
+        # if the species is only define on one extracellular region then use that
+        if len(self._regions) == 0 and len(self._extracellular_regions) == 1:
+            reg = self._extracellular_regions[0]
+
+        #region is Extracellular
+        if isinstance(reg, region.Extracellular) or len(self._regions) == 0:
             ecs_instance = self._extracellular_instances[reg]
             return ecs_instance._semi_compile(reg, instruction)
         #region is 3d intracellular
@@ -202,8 +209,6 @@ class _SpeciesMathable(object):
         if isinstance(reg, region.Region) and instruction == 'do_1d':
             if reg in self._regions:
                 return 'species[%d][%d]' % (self._id, reg._id)
-            elif len(self._regions) == 1:
-                return 'species[%d][%d]' % (self._id, self._regions[0]._id)
             else:
                 raise RxDException("Species %r is not defined on region %r." % (self, reg))
     
@@ -269,12 +274,18 @@ class SpeciesOnExtracellular(_SpeciesMathable):
         else:
             raise RxDException('unknown axes argument; valid options: xyz, xy, xz, yz, x, y and z')
 
-    def node_by_location(self,x,y,z):
+    def node_by_location(self, x, y, z):
         e = self._extracellular()._region
-        i = int((x - e._xlo) / e._dx[0])
-        j = int((y - e._ylo) / e._dx[1])
-        k = int((z - e._zlo) / e._dx[2])
-        return self.node_by_ijk(i,j,k) 
+        if (e._xlo <= x <= e._xhi and 
+            e._ylo <= y <= e._yhi and
+            e._zlo <= z <= e._zhi):  
+            i = int((x - e._xlo) / e._dx[0])
+            j = int((y - e._ylo) / e._dx[1])
+            k = int((z - e._zlo) / e._dx[2])
+            return self.node_by_ijk(i,j,k)
+        raise RxDException("Location (%1.2f %1.2f, %1.2f) is not in extracellular region %r", x, y, z, self._extracellular()._region)
+
+
 
     def alpha_by_location(self, locs):
         """Return a single alpha value for a homogeneous volume fraction of a list of alpha values for an inhomogeneous volume fraction at grid locations given in a list (locs)."""
@@ -1004,17 +1015,8 @@ class Species(_SpeciesMathable):
 
         # initialize self if the rest of rxd is already initialized
         if initializer.is_initialized():
-            if _has_3d:
-                if isinstance(regions, region.Region) and not regions._secs1d:
-                    pass
-                elif hasattr(regions, '__len__') and all(not r._secs1d for r in regions):
-                    pass
-                else:
-                    # TODO: remove this limitation
-                    #       one strategy would be to just redo the whole thing; what are the implications of that?
-                    #       (pointers would be invalid; anything else?)
-                    raise RxDException('Currently cannot add species containing 1D after 3D species defined and initialized. To work-around: reorder species definition.')
             self._do_init()
+            rxd._update_node_data(True, True)
         initializer._init_lock.release()
 
     
