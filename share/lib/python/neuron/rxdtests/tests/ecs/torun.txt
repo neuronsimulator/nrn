@@ -5,4 +5,3 @@ ecs_multi_example.py
 ecs_before_sections.py
 ecs_include_flux.py
 ecs_include_flux_cvode.py
-ecs_include_flux_mpi.py

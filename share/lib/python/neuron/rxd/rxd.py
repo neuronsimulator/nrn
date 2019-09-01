@@ -92,10 +92,8 @@ setup_currents.argtypes = [
     ctypes.c_int,   #number of membrane currents
     ctypes.c_int,   #number induced currents
     _int_ptr,       #number of species involved in each membrane current
-    _int_ptr,       #charges of the species involved in each membrane current
     _int_ptr,       #node indices
     _double_ptr,    #scaling (areas) of the fluxes
-    _int_ptr,       #charges for each species in each reation
     ctypes.POINTER(ctypes.py_object),    #hoc pointers
     _int_ptr,       #maps for membrane fluxes
     _int_ptr        #maps for ecs fluxes
@@ -372,8 +370,6 @@ def _setup_memb_currents():
     # TODO: change so that this is only called when there are in fact currents
     rxd_memb_scales = []
     _memb_cur_ptrs = []
-    memb_cur_charges = []
-    memb_net_charges = []
     memb_cur_mapped = []
     memb_cur_mapped_ecs = []
     for rptr in _all_reactions:
@@ -384,8 +380,6 @@ def _setup_memb_currents():
             _memb_cur_ptrs += r._cur_ptrs
             memb_cur_mapped += r._cur_mapped
             memb_cur_mapped_ecs += r._cur_mapped_ecs
-            memb_cur_charges += [r._cur_charges] * len(scales)
-            memb_net_charges += [r._net_charges] * len(scales)
     ecs_map = [SPECIES_ABSENT if i is None else i for i in list(itertools.chain.from_iterable(itertools.chain.from_iterable(memb_cur_mapped_ecs)))]
     ics_map = [SPECIES_ABSENT if i is None else i for i in list(itertools.chain.from_iterable(itertools.chain.from_iterable(memb_cur_mapped)))]
     if _memb_cur_ptrs:
@@ -398,11 +392,9 @@ def _setup_memb_currents():
         print("num_fluxes",num_fluxes)
         print("num_nodes",_curr_indices)
         print("num_species",cur_counts)
-        print("net_charges",memb_net_charges)
         print("cur_idxs",_curr_indices)
         print("node_idxs",_cur_node_indices)
         print("scales",rxd_memb_scales)
-        print("charges", memb_cur_charges)
         print("ptrs",_memb_cur_ptrs)
         print("mapped",ics_map,min(abs(numpy.array(ics_map))),max(ics_map))
         print("mapped_ecs",ecs_map,max(ecs_map))
@@ -410,10 +402,8 @@ def _setup_memb_currents():
         setup_currents(num_currents,
             num_fluxes,
             _list_to_cint_array(cur_counts),
-            _list_to_cint_array(memb_net_charges),
             _list_to_cint_array(_cur_node_indices),
             _list_to_cdouble_array(rxd_memb_scales),
-            _list_to_cint_array(list(itertools.chain.from_iterable(memb_cur_charges))),
             _list_to_pyobject_array(_memb_cur_ptrs),
             _list_to_cint_array(ics_map),
             _list_to_cint_array(ecs_map))
@@ -555,7 +545,7 @@ _diam_change_count = nrn_dll_sym('diam_change_cnt', _ctypes_c_int)
 
 def _donothing(): pass
 
-def _update_node_data(force=False):
+def _update_node_data(force=False, newspecies=False):
     global last_diam_change_cnt, last_structure_change_cnt, _curr_indices, _curr_scales, _curr_ptrs, _cur_map
     global _curr_ptr_vector, _curr_ptr_storage, _curr_ptr_storage_nrn
     if last_diam_change_cnt != _diam_change_count.value or _structure_change_count.value != last_structure_change_cnt or force:
@@ -569,7 +559,7 @@ def _update_node_data(force=False):
             for sr in _species_get_all_species():
                 s = sr()
                 if s is not None: nsegs_changed += s._update_node_data()
-            if nsegs_changed:
+            if nsegs_changed or newspecies:
                 section1d._purge_cptrs()
                 for sr in _species_get_all_species():
                     s = sr()
@@ -581,8 +571,13 @@ def _update_node_data(force=False):
                     _zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
                 setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
                 # TODO: separate compiling reactions -- so the indices can be updated without recompiling
-                _compile_reactions()
                 _include_flux(True)
+                _setup_memb_currents()
+                for rptr in _all_reactions:
+                    r = rptr()
+                    if r is not None:
+                       r._setup_membrane_fluxes(_cur_node_indices, _cur_map)
+                _compile_reactions()
 
             #end#if
             for rptr in _all_reactions:
@@ -1059,7 +1054,6 @@ def _compile_reactions():
             sptrs = sptrs.union(set(r._involved_species))
         if hasattr(r,'_involved_species_ecs') and r._involved_species_ecs:
             sptrs = sptrs.union(set(r._involved_species_ecs)) 
-        
         #Find all the regions involved
         if isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
             if not hasattr(r._mult, 'flatten'):
@@ -1116,8 +1110,11 @@ def _compile_reactions():
             if isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
                 for sp in sptrs:
                     s = sp()
-                    if isinstance(s,species.SpeciesOnExtracellular):
+                    if isinstance(s, species.SpeciesOnExtracellular):
                         ecs_mc_species_involved.add(s)
+                    if isinstance(s, species.Species) and s._extracellular_instances:
+                        for ecs in s._extracellular_instances.keys():
+                            ecs_mc_species_involved.add(s[ecs])
                 for reg in react_regions:
                     if reg in list(ecs_species_by_region.keys()):
                         ecs_species_by_region[reg] = ecs_species_by_region[reg].union(ecs_mc_species_involved)
@@ -1219,7 +1216,7 @@ def _compile_reactions():
                         rate_str = localize_index(creg, r._rate[reg][0])
                         fxn_string += "\n\trate = %s;" % rate_str
                         break
-                    for sptr in r._sources + r._dests:
+                    for i, sptr in enumerate(r._sources + r._dests):
                         s = sptr()
                         if isinstance(s, species.SpeciesOnExtracellular):
                             if not isinstance(s, species.ParameterOnExtracellular):
@@ -1235,7 +1232,7 @@ def _compile_reactions():
                             species_ids_used[species_id][region_id] = True
                             if r._membrane_flux:
                                 operator = '+=' if flux_ids_used[species_id][region_id] else '='
-                                fxn_string += "\n\tif(flux) flux[%d][%d] %s rate;" % (species_id, region_id, operator)
+                                fxn_string += "\n\tif(flux) flux[%d][%d] %s %1.1f * rate;" % (species_id, region_id, operator, r._cur_charges[i])
                                 flux_ids_used[species_id][region_id] = True
                             #TODO: Fix problem if the whole region isn't part of the same aggregate c_region
                         mc_mult_count += 1
