@@ -168,7 +168,20 @@ std::map<std::string, NmodlTestCase> nmdol_invalid_constructs{
                 }
             )"
         }
+    },
+
+    {
+        "neuron_block_1",
+        {
+            "Invalid CURIE statement",
+            R"(
+                NEURON {
+                    REPRESENTS xx
+                }
+            )"
+        }
     }
+
 
     // clang-format on
 };
@@ -477,10 +490,14 @@ std::map<std::string, NmodlTestCase> nmodl_valid_constructs{
             R"(
                 NEURON {
                     SUFFIX ProbAMPANMDA
+                    REPRESENTS NCIT:C17145
+                    REPRESENTS [NCIT:C17145]
                     USEION na READ ena
                     USEION na READ ena, kna
                     USEION na WRITE ena, kna VALENCE 2.1
                     USEION na READ ena WRITE ina
+                    USEION k READ ek WRITE ik REPRESENTS CHEBI:29103
+                    USEION na READ ena WRITE ina VALENCE 3.3 REPRESENTS NCIT:C17
                     NONSPECIFIC_CURRENT i
                     NONSPECIFIC_CURRENT i, j
                     ELECTRODE_CURRENT i

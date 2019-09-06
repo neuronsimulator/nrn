@@ -96,6 +96,7 @@ TEST_CASE("NMODL Lexer returning valid token types", "[Lexer]") {
         REQUIRE(token_type("WHILE") == Token::WHILE);
         REQUIRE(token_type("IF") == Token::IF);
         REQUIRE(token_type("ELSE") == Token::ELSE);
+        REQUIRE(token_type("REPRESENTS NCIT:C17145") == Token::REPRESENTS);
     }
 
     SECTION("Different number types") {
