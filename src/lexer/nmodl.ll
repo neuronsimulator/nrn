@@ -41,6 +41,9 @@
 D   [0-9]
 E   [Ee][-+]?{D}+
 
+/** regex for ontology id */
+O_ID [a-zA-Z][a-zA-Z0-9_]*:[a-zA-Z0-9_]*
+
 /** we do use yymore feature in copy modes */
 %option yymore
 
@@ -96,6 +99,9 @@ E   [Ee][-+]?{D}+
 /* mode for TITLE and single line comment */
 %x LINE_MODE
 
+/* mode for ontology information */
+%x ONTOLOGY_MODE
+
 /* enable use of start condition stacks */
 %option stack
 
@@ -131,6 +137,12 @@ ELSE                    {
                             return token_symbol(yytext, loc);
                         }
 
+"REPRESENTS"	        {
+                            /** start of ontology information */
+                            BEGIN(ONTOLOGY_MODE);
+                            return token_symbol(yytext, loc, Token::REPRESENTS);
+                        }
+
 "VERBATIM"              {
                             /** start of verbatim block */
                             BEGIN(COPY_MODE);
@@ -151,6 +163,12 @@ ELSE                    {
                             /** start of nmodl title. We return rest of line as LINE_PART. */
                             BEGIN(LINE_MODE);
                             return token_symbol(yytext, loc);
+                        }
+
+<ONTOLOGY_MODE>\[{O_ID}\]|{O_ID} {
+                            /** name of ontology */
+                            BEGIN(INITIAL);
+                            return NmodlParser::make_ONTOLOGY_ID(yytext, loc);
                         }
 
 <MACRO_NAME_MODE>[a-zA-Z][a-zA-Z0-9_]* {
@@ -359,6 +377,7 @@ ELSE                    {
                             return token_symbol(yytext, loc, Token::COMMA);
                         }
 
+<ONTOLOGY_MODE>[ \t]    |
 <MACRO_NAME_MODE>[ \t]  |
 <MACRO_VALUE_MODE>[ \t] |
 [ \t]                   {
@@ -476,6 +495,13 @@ ELSE                    {
                             return NmodlParser::make_INVALID_TOKEN(loc);
                         }
 
+<ONTOLOGY_MODE>.       |
+<ONTOLOGY_MODE>\n      {
+                            /** if ontology id is not matched before end of line */
+                            auto msg = "Lexer Error : while parsing ontology information with REPRESENTS";
+                            throw std::runtime_error(msg);
+                        }
+
 \"[^\"\n]*$             {
                             std::cout << "\n ERROR: Unterminated string (e.g. for printf) \n";
                         }
@@ -515,7 +541,7 @@ void nmodl::parser::NmodlLexer::scan_unit() {
     loc.step();
     std::string str;
 
-    /** Unit is a string until close parenthis */
+    /** Unit is a string until close parenthesis */
     while (1) {
         auto lastch =  yyinput();
         if(lastch == ')') {
@@ -523,7 +549,7 @@ void nmodl::parser::NmodlLexer::scan_unit() {
             break;
         }
         else if ( lastch == '\n' || lastch == 0) {
-            std::cout << "ERROR: While parsing unit, closing parenthis not found";
+            std::cout << "ERROR: While parsing unit, closing parenthesis not found";
             break;
         }
         str += lastch;

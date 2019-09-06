@@ -366,7 +366,8 @@ SymbolType token_symbol(const std::string& key, PositionType& pos, TokenType typ
         return Parser::make_COMMA(token, pos);
     case Token::PERIOD:
         return Parser::make_PERIOD(token, pos);
-
+    case Token::REPRESENTS:
+        return Parser::make_REPRESENTS(token, pos);
     /**
      * we hit default case for missing token type. This is more likely
      * a bug in the implementation where we forgot to handle token type.

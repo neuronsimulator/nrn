@@ -1488,6 +1488,14 @@ struct Ast: public std::enable_shared_from_this<Ast> {
     virtual bool is_solution_expression() {
         return false;
     }
+
+    /**
+     *\brief Check if the ast node is an instance of ast::OntologyStatement
+     * @return true if object of type ast::OntologyStatement
+     */
+    virtual bool is_ontology_statement() {
+        return false;
+    }
 };
 
 /** @} */  // end of ast_class
