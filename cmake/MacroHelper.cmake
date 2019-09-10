@@ -137,7 +137,7 @@ endmacro()
 # Perform check_symbol_exists using NRN_HEADERS_INCLUDE_LIST if empty header_list
 # =============================================================================
 macro(nrn_check_symbol_exists name header_list variable)
-  if ("${header_list}" MATCHES "")
+  if ("${header_list}" STREQUAL "")
     check_symbol_exists("${name}" "${NRN_HEADERS_INCLUDE_LIST}" ${variable})
   else()
     check_symbol_exists("${name}" "${header_list}" ${variable})
@@ -149,7 +149,7 @@ endmacro()
 # =============================================================================
 # note that sometimes, though it should have succeeded, cc  fails but c++ succeeds
 macro(nrn_check_cxx_symbol_exists name header_list variable)
-  if ("${header_list}" MATCHES "")
+  if ("${header_list}" STREQUAL "")
     check_cxx_symbol_exists("${name}" "${NRN_HEADERS_INCLUDE_LIST}" ${variable})
   else()
     check_cxx_symbol_exists("${name}" "${header_list}" ${variable})

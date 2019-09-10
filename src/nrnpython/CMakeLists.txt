@@ -44,7 +44,7 @@ set(BUILD_NRNPYTHON_DYNAMIC_TRUE "")
 set(BUILD_NRNPYTHON_DYNAMIC_FALSE "#")
 
 if(NRN_ENABLE_PYTHON_DYNAMIC)
-  if("${NRN_PYTHON_DYNAMIC}" MATCHES "")
+  if("${NRN_PYTHON_DYNAMIC}" STREQUAL "")
     set(NRN_PYTHON_EXE_LIST ${PYTHON_EXECUTABLE})
   else()
     set(NRN_PYTHON_EXE_LIST ${NRN_PYTHON_DYNAMIC})
@@ -102,7 +102,7 @@ endif()
 if(NRN_ENABLE_MODULE_INSTALL)
 
   # check arguments for setup.py install : if user has just provided YES, then use default
-  if("${NRN_MODULE_INSTALL_OPTIONS}" MATCHES "")
+  if("${NRN_MODULE_INSTALL_OPTIONS}" STREQUAL "")
     set(install_path ${CMAKE_INSTALL_PREFIX})
     # replace windows path of the form C:/msys64 to C:\msys64
     if(MINGW)

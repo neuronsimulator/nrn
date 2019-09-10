@@ -7,7 +7,7 @@
 
 if(NRN_ENABLE_MPI)
   if (NRN_ENABLE_MPI_DYNAMIC)
-    if("${NRN_MPI_DYNAMIC}" MATCHES "")
+    if("${NRN_MPI_DYNAMIC}" STREQUAL "")
       set(NRNMPI_DYNAMICLOAD 1)
     else()
       message(FATAL_ERROR "NRN_ENABLE_MPI_DYNAMIC doesn't support multiple MPI yet")

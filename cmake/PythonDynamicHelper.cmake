@@ -9,7 +9,8 @@
 
 if (NRN_ENABLE_PYTHON)
   if (NRN_ENABLE_PYTHON_DYNAMIC)
-    if ("${NRN_PYTHON_DYNAMIC}" MATCHES "")
+    message(STATUS "NRN_PYTHON_DYNAMIC \"${NRN_PYTHON_DYNAMIC}\"")
+    if ("${NRN_PYTHON_DYNAMIC}" STREQUAL "")
       # use the default python already determined
       # NB: we are constructing here a variable name NRNPYTHON_INCLUDE[2|3]
       set(NRNPYTHON_INCLUDE${PYTHON_VERSION_MAJOR} ${PYTHON_INCLUDE_DIRS})
