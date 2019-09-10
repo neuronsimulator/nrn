@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2016, Blue Brain Project
+Copyright (c) 2019, Blue Brain Project
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -26,22 +26,10 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef output_spikes_h
-#define output_spikes_h
+#include <cstring>
 
-#include <vector>
-#include <utility>
-namespace coreneuron {
-void output_spikes(const char* outpath);
-void mk_spikevec_buffer(int);
-
-extern std::vector<double> spikevec_time;
-extern std::vector<int> spikevec_gid;
-
-void clear_spike_vectors();
-void validation(std::vector<std::pair<double, int> >& res);
-
-void spikevec_lock();
-void spikevec_unlock();
-}  // namespace coreneuron
-#endif
+unsigned strcat_at_pos(char* dest, unsigned start_position, char* src, unsigned src_length) {
+    memcpy(dest + start_position, src, src_length);
+    dest[start_position + src_length] = '\0';
+    return start_position + src_length;
+}
