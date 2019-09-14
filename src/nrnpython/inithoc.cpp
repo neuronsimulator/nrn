@@ -1,3 +1,4 @@
+#include <../../nrnconf.h>
 #include "nrnmpiuse.h"
 #include "nrnpthread.h"
 #include <stdio.h>
@@ -40,6 +41,65 @@ extern int nrn_is_python_extension;
 extern int nrn_nobanner_;
 extern int ivocmain(int, char**, char**);
 extern int nrn_main_launch;
+
+#if NRNMPI_DYNAMICLOAD
+#include <dlfcn.h>
+/**
+ * Check for existance of MPI symbol in process memory space
+ *
+ * In case of dynamic mpi build we want to avoid loading MPI library
+ * if program is being executed serially. is_mpi_loaded() function
+ * helps to find out if MPI library is already loaded in process
+ * memory space.
+ */
+#ifdef DARWIN
+#include <mach-o/dyld.h>
+/**
+ * On OSX there is dl_iterate_phdr and hence we have to iterate
+ * through all libraries loaded in process memory space and then
+ * check if MPI symbol exist in each library.
+ */
+bool is_mpi_loaded() {
+  bool result = false;
+  uint32_t count = _dyld_image_count();
+  for(uint32_t i = 0; i < count; i++) {
+    void* handle = dlopen (_dyld_get_image_name(i), RTLD_LAZY);
+    if (handle) {
+      void* symbol = dlsym(handle, "MPI_Init");
+      dlclose(handle);
+      if (symbol != NULL)  {
+        result = true;
+        break;
+      }
+    }
+  }
+  return result;
+}
+#else
+#include <link.h>
+/**
+ * On linix we can use dl_iterate_phdr by providing handle to function
+ * that can check the existance of symbol using dlopen + dlsym. The
+ * approach is same as OSX.
+ */
+static int is_mpi_loaded_impl(struct dl_phdr_info *info, size_t size, void *data) {
+  int result = 0;
+  void* handle = dlopen (info->dlpi_name, RTLD_LAZY);
+  if (handle) {
+    void* symbol = dlsym(handle, "MPI_Init");
+    dlclose(handle);
+    if (symbol != NULL)  {
+      result = 1;
+    }
+  }
+  return result;
+}
+
+bool is_mpi_loaded() {
+    return dl_iterate_phdr(is_mpi_loaded_impl, NULL);
+}
+#endif //Darwin
+#endif // NRNMPI_DYNAMICLOAD
 
 #ifdef NRNMPI
 
@@ -122,15 +182,31 @@ void inithoc() {
   int mpi_mes = 0;  // for printing an mpi message only once.
   char* pmes = 0;
 
+  /**
+   * We decide to load MPI based on following condition:
+   * - NEURON_INIT_MPI takes precedence
+   *   - if set to 1 then initialize MPI (init_mpi == 2 means force mpi initialization)
+   *   - if set to 0 then do not initialize MPI (init_mpi == 0 disable mpi initialization)
+   * - if NEURON_INIT_MPI is not set then
+   *   - initialize MPI if mpi library is loaded externally (e.g. from mpi4py)
+   */
+  char* env_mpi = getenv("NEURON_INIT_MPI");
+  int init_mpi = 1;
+  if (env_mpi != NULL) {
+    if(strcmp(env_mpi, "0") == 0) {
+      init_mpi = 0;
+    } else if(strcmp(env_mpi, "1") == 0) {
+      init_mpi = 2;
+    }
+  }
+
 #if NRNMPI_DYNAMICLOAD
   nrnmpi_stubs();
-  int init_mpi = 1;
-  char* env_mpi = getenv("NEURON_INIT_MPI");
-  // We dont load dynamically MPI if NEURON_INIT_MPI exists and is 0
-  if(env_mpi != NULL && strcmp(env_mpi, "0") == 0) {
-    init_mpi = 0;
-  }
-  if (init_mpi) {
+  /**
+   * In dynamic mpi build we load mpi if it is forced or if mpi
+   * library has been already loaded.
+   */
+  if (init_mpi == 2 ||  (init_mpi == 1 && is_mpi_loaded())) {
     // if nrnmpi_load succeeds (MPI available), pmes is nil.
     pmes = nrnmpi_load(1);
     if (pmes) {
@@ -153,12 +229,16 @@ void inithoc() {
   if (!pmes) {
     nrnmpi_wrap_mpi_init(&flag);
   }
-  if (flag) {
+  /**
+   * In case of normal non-dynamic mpi build
+   *  - initialize mpi if user has not requested disabling (init_mpi != 0) and mpi is linked (flag = 1)
+   *  - initialize mpi if user has forced initialization (init_mpi = 2)
+   */
+  if (flag && init_mpi != 0) {
     mpi_mes = 1;
     argc = argc_mpi;
     argv = (char**)argv_mpi;
-  } else if (getenv("NEURON_INIT_MPI")) {
-    // force NEURON to initialize MPI
+  } else if (init_mpi == 2) {
     mpi_mes = 2;
     argc = argc_mpi;
     argv = (char**)argv_mpi;
