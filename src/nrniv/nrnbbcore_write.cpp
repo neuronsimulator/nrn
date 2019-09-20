@@ -738,8 +738,11 @@ int nrn_dblpntr2nrncore(double* pd, NrnThread& nt, int& type, int& index) {
   int nnode = nt.end;
   type = 0;
   if (pd >= nt._actual_v && pd < (nt._actual_v + nnode)) {
-    type = -5; // signifies an index into voltage array portion of _data 
+    type = voltage; // signifies an index into voltage array portion of _data
     index = pd - nt._actual_v;
+  } else if (pd >= nt._nrn_fast_imem->_nrn_sav_rhs && pd < (nt._nrn_fast_imem->_nrn_sav_rhs + nnode)) {
+    type = i_membrane_; // signifies an index into i_membrane_ array portion of _data
+    index = pd - nt._nrn_fast_imem->_nrn_sav_rhs;
   }else{
     for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
       if (nrn_is_artificial_[tml->index]) { continue; }
@@ -1846,6 +1849,8 @@ static core2nrn_callback_t cnbs[]  = {
   {NULL, NULL}
 };
 
+extern int nrn_use_fast_imem;
+
 #if defined(HAVE_DLFCN_H)
 int nrncore_run(const char* arg) {
   corenrn_direct = true;
@@ -1885,12 +1890,12 @@ int nrncore_run(const char* arg) {
     hoc_execerror("Could not get symbol corenrn_embedded_run from", corenrn_lib);
   }
   part1();
-  int (*r)(int, int, int, const char*) = (int (*)(int, int, int, const char*))sym;
+  int (*r)(int, int, int, int, const char*) = (int (*)(int, int, int, int, const char*))sym;
   int have_gap = nrnthread_v_transfer_ ? 1 : 0;
 #if !NRNMPI
 #define nrnmpi_use 0
 #endif
-  return r(nrn_nthread, have_gap, nrnmpi_use, arg);
+  return r(nrn_nthread, have_gap, nrnmpi_use, nrn_use_fast_imem, arg);
 }
 #else
 int nrncore_run(const char*) {
