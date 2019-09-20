@@ -187,10 +187,17 @@ class DistributedBoundary(RxDGeometry):
         return self._perim_per_area
         
     def volumes3d(self, source, dx=0.25, xlo=None, xhi=None, ylo=None, yhi=None, zlo=None, zhi=None, n_soma_step=100):
-        mesh, surface_areas, volumes, triangles = geometry3d.voxelize2(source, dx=dx, xlo=xlo, xhi=xhi, ylo=ylo, yhi=yhi, zlo=zlo, zhi=zhi, n_soma_step=n_soma_step)
-        volumes._values *= self._area_per_vol # volume on 2D boundaries is actually the area; the amount of space for holding things
-        surface_areas._values *= 0 
-        return mesh, surface_areas, volumes, triangles
+        #mesh, surface_areas, volumes, triangles = geometry3d.voxelize2(source, dx=dx)
+        #volumes._values *= self._area_per_vol # volume on 2D boundaries is actually the area; the amount of space for holding things
+        #surface_areas._values *= 0 
+        #return mesh, surface_areas, volumes, triangles
+        internal_voxels, surface_voxels, mesh_grid = geometry3d.voxelize2(source, dx=dx)
+        area_per_vol = self._area_per_vol
+        for key in internal_voxels:
+            internal_voxels[key][0] *= area_per_vol
+        for key in surface_voxels:
+            surface_voxels[key][0] *= area_per_vol
+        return internal_voxels, surface_voxels, mesh_grid
     
     def __repr__(self):
         if self._perim_per_area == 0:
@@ -223,10 +230,17 @@ class FractionalVolume(RxDGeometry):
         self.neighbor_area_fraction = volume_fraction if neighbor_areas_fraction is None else neighbor_areas_fraction
         
     def volumes3d(self, source, dx=0.25, xlo=None, xhi=None, ylo=None, yhi=None, zlo=None, zhi=None, n_soma_step=100):
-        mesh, surface_areas, volumes, triangles = geometry3d.voxelize2(source, dx=dx, xlo=xlo, xhi=xhi, ylo=ylo, yhi=yhi, zlo=zlo, zhi=zhi, n_soma_step=n_soma_step)
-        surface_areas._values *= self._surface_fraction
-        volumes._values *= self._volume_fraction
-        return mesh, surface_areas, volumes, triangles
+        #mesh, surface_areas, volumes, triangles = geometry3d.voxelize2(source, dx=dx)
+        #surface_areas._values *= self._surface_fraction
+        #volumes._values *= self._volume_fraction
+        #return mesh, surface_areas, volumes, triangles
+        internal_voxels, surface_voxels, mesh_grid = geometry3d.voxelize2(source, dx=dx)
+        volume_fraction = self._volume_fraction
+        for key in internal_voxels:
+            internal_voxels[key][0] *= volume_fraction
+        for key in surface_voxels:
+            surface_voxels[key][0] *= volume_fraction
+        return internal_voxels, surface_voxels, mesh_grid
     
     def __repr__(self):
         return 'FractionalVolume(volume_fraction=%r, surface_fraction=%r, neighbor_areas_fraction=%r)' % (self._volume_fraction, self._surface_fraction, self._neighbor_areas_fraction)
