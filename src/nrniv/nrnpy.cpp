@@ -353,12 +353,13 @@ static void* load_nrnpython_helper(const char* npylib) {
 
 static void load_nrnpython(int pyver10, const char* pylib) {
 	void* handle = NULL;
-#if defined(__MINGW32__)
+#if defined(__MINGW32__) || (defined(USE_LIBNRNPYTHON_MAJORMINOR) && USE_LIBNRNPYTHON_MAJORMINOR == YES)
 	char name[256];
+//printf("pylib %s\n", pylib?pylib:"null");
 	if (pyver10 > 1) {
 		sprintf(name, "libnrnpython%d", pyver10);
 	} else if (pylib && strstr(pylib, "ython") != NULL) {
-		char* cp = strstr(pylib, "ython") + 5;
+		const char* cp = strstr(pylib, "ython") + 5;
 		sprintf(name, "libnrnpython%c%c", cp[0], cp[1]);
 	} else {
 		sprintf(name, "libnrnpython27");

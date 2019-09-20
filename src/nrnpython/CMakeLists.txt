@@ -32,7 +32,7 @@ else()
   set(IVHINES "")
 endif()
 
-# use compiler from CMaek
+# use compiler from CMake
 set(CC ${CMAKE_C_COMPILER})
 set(CXX ${CMAKE_CXX_COMPILER})
 
@@ -135,20 +135,35 @@ if(NRN_ENABLE_MODULE_INSTALL)
         ${PROJECT_BINARY_DIR}/src/oc
         ${IV_INCLUDE_DIR})
 
-    # build python2 library and install it
-    if(NRNPYTHON_INCLUDE2)
-      add_library(nrnpython2 SHARED ${NRN_NRNPYTHON_SRC_FILES})
-      target_include_directories(nrnpython2 BEFORE PUBLIC ${NRNPYTHON_INCLUDE2} ${INCLUDE_DIRS})
-      add_dependencies(nrnpython2 nrniv_lib)
-      install(TARGETS nrnpython2 DESTINATION lib)
-    endif()
+    if (LINK_AGAINST_PYTHON)
+      list(LENGTH NRN_PYTHON_EXE_LIST len1)
+      math(EXPR len2 "${len1} - 1")
+      foreach (val RANGE ${len2})
+        list(GET NRN_PYTHON_VER_LIST ${val} pyver)
+        list(GET NRN_PYTHON_INCLUDE_LIST ${val} pyinc)
+        list(GET NRN_PYTHON_LIB_LIST ${val} pylib)
+        add_library(nrnpython${pyver} SHARED ${NRN_NRNPYTHON_SRC_FILES})
+        target_include_directories(nrnpython${pyver} BEFORE PUBLIC ${pyinc} ${INCLUDE_DIRS})
+	target_link_libraries(nrnpython${pyver} nrniv_lib ${pylib} ${Readline_LIBRARY})
+        add_dependencies(nrnpython${pyver} nrniv_lib)
+        install(TARGETS nrnpython${pyver} DESTINATION lib)
+      endforeach()
+    else()
+      # build python2 library and install it
+      if(NRNPYTHON_INCLUDE2)
+        add_library(nrnpython2 SHARED ${NRN_NRNPYTHON_SRC_FILES})
+        target_include_directories(nrnpython2 BEFORE PUBLIC ${NRNPYTHON_INCLUDE2} ${INCLUDE_DIRS})
+        add_dependencies(nrnpython2 nrniv_lib)
+        install(TARGETS nrnpython2 DESTINATION lib)
+      endif()
 
-    # build python3 library and install it
-    if(NRNPYTHON_INCLUDE3)
-      add_library(nrnpython3 SHARED ${NRN_NRNPYTHON_SRC_FILES})
-      add_dependencies(nrnpython3 nrniv_lib)
-      target_include_directories(nrnpython3 BEFORE PUBLIC ${NRNPYTHON_INCLUDE3} ${INCLUDE_DIRS})
-      install(TARGETS nrnpython3 DESTINATION lib)
+      # build python3 library and install it
+      if(NRNPYTHON_INCLUDE3)
+        add_library(nrnpython3 SHARED ${NRN_NRNPYTHON_SRC_FILES})
+        add_dependencies(nrnpython3 nrniv_lib)
+        target_include_directories(nrnpython3 BEFORE PUBLIC ${NRNPYTHON_INCLUDE3} ${INCLUDE_DIRS})
+        install(TARGETS nrnpython3 DESTINATION lib)
+      endif()
     endif()
   endif()
 

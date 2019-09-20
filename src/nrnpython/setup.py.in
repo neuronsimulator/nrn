@@ -23,6 +23,7 @@ extern_defines = "@NRNPYTHON_DEFINES@"
 nrnpython_exec = get_escaped_path("@NRNPYTHON_EXEC@")
 nrnpython_pyver = "@NRNPYTHON_PYVER@"
 nrnpython_pyver10 = "nrnpython"
+use_libnrnpython_majorminor = "@USE_LIBNRNPYTHON_MAJORMINOR@"
 nrn_srcdir = get_escaped_path("@NRN_SRCDIR@")
 build_rx3d = @BUILD_RX3D@
 ivlibdir = get_escaped_path("@IV_LIBDIR@")
@@ -46,6 +47,9 @@ if using_cmake and "@BUILD_NRNPYTHON_DYNAMIC_TRUE@" == "":
   nrnpython_pyver = get_python_version()
   nrnpython_exec = sys.executable
   nrnpython_pyver10 = "nrnpython" + str(sys.version_info[0])
+  if use_libnrnpython_majorminor is "YES":
+    nrnpython_pyver10 = "nrnpython" + str(sys.version_info[0]) + str(sys.version_info[1])
+
 else:
   if nrnpython_pyver!=get_python_version():
     print ("Error:")
