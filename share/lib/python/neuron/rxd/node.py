@@ -636,7 +636,7 @@ class Node3D(Node):
         
 
 class NodeExtracellular(Node):
-    def __init__(self, index, i, j, k, r, speciesref, regionref):
+    def __init__(self, index, i, j, k, speciesref, regionref):
         """
             Parameters
             ----------
@@ -654,7 +654,6 @@ class NodeExtracellular(Node):
         self._i = i
         self._j = j
         self._k = k
-        self._r = r
         # TODO: store region as a weakref! (weakref.proxy?)
         self._speciesref = speciesref
         self._regionref = regionref
@@ -673,6 +672,11 @@ class NodeExtracellular(Node):
 
     @property
     def region(self):
+        """The extracellular space containing the node."""
+        return self._regionref() 
+
+    @property
+    def _r(self):
         """The extracellular space containing the node."""
         return self._regionref() 
 
