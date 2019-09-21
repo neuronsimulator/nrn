@@ -171,7 +171,7 @@ int ECS_insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x,
 Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors, 
                 long* ordered_x_nodes, long* ordered_y_nodes, long* ordered_z_nodes,
                 long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
-                long z_lines_length, double d, double dx, bool is_diffusable, double atolscale) {
+                long z_lines_length, double d, double dx, bool is_diffusable, double atolscale, double* ics_alphas) {
 
     int k;
     ICS_Grid_node *new_Grid = new ICS_Grid_node();
@@ -218,6 +218,8 @@ Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors
     new_Grid->current_dest = NULL;
     new_Grid->all_currents = NULL;
     
+    new_Grid->_ics_alphas = ics_alphas;
+
     //stores the positive x,y, and z neighbors for each node. [node0_x, node0_y, node0_z, node1_x ...]
     new_Grid->_neighbors = neighbors;
     
@@ -247,6 +249,9 @@ Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors
         new_Grid->ics_tasks[k].RHS = (double*)malloc(sizeof(double) * (new_Grid->_line_length_max));
         new_Grid->ics_tasks[k].scratchpad = (double*)malloc(sizeof(double) * (new_Grid->_line_length_max-1));
         new_Grid->ics_tasks[k].g = new_Grid;
+        new_Grid->ics_tasks[k].u_diag = (double*)malloc(sizeof(double) * new_Grid->_line_length_max - 1);
+        new_Grid->ics_tasks[k].diag = (double*)malloc(sizeof(double) * new_Grid->_line_length_max);
+        new_Grid->ics_tasks[k].l_diag = (double*)malloc(sizeof(double) * new_Grid->_line_length_max - 1);
     }    
 
     new_Grid->hybrid = false;
@@ -305,12 +310,12 @@ Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors
 int ICS_insert(int grid_list_index, PyHocObject* my_states, long num_nodes, long* neighbors,
                 long* ordered_x_nodes, long* ordered_y_nodes, long* ordered_z_nodes,
                 long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
-                long z_lines_length, double d, double dx, bool is_diffusable, double atolscale) {
+                long z_lines_length, double d, double dx, bool is_diffusable, double atolscale, double* ics_alphas) {
 
     //TODO change ICS_make_Grid into a constructor
     Grid_node *new_Grid = ICS_make_Grid(my_states, num_nodes, neighbors, ordered_x_nodes,
             ordered_y_nodes, ordered_z_nodes, x_line_defs, x_lines_length, y_line_defs,
-            y_lines_length, z_line_defs, z_lines_length, d, dx, is_diffusable, atolscale);
+            y_lines_length, z_line_defs, z_lines_length, d, dx, is_diffusable, atolscale, ics_alphas);
     return new_Grid->insert(grid_list_index);
 }
 
@@ -1113,6 +1118,9 @@ void ICS_Grid_node::set_num_threads(const int n)
         ics_tasks[i].RHS = (double*)malloc(sizeof(double) * _line_length_max);
         ics_tasks[i].scratchpad = (double*)malloc(sizeof(double) * _line_length_max - 1);
         ics_tasks[i].g = this;
+        ics_tasks[i].u_diag = (double*)malloc(sizeof(double) * _line_length_max - 1);
+        ics_tasks[i].diag = (double*)malloc(sizeof(double) * _line_length_max);
+        ics_tasks[i].l_diag = (double*)malloc(sizeof(double) * _line_length_max - 1);
     }
 
     free(ics_adi_dir_x->ordered_start_stop_indices);
@@ -1264,6 +1272,7 @@ void ICS_Grid_node::free_Grid(){
     free(concentration_list);
     free(current_list);
 	free(alpha);
+    free(_ics_alphas);
 	free(lambda);
     free(bc);
     free(current_dest);

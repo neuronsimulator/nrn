@@ -163,7 +163,6 @@ class GeneralizedReaction(object):
             active_regions = [r for r in self._regions if all(sptr().indices(r) for sptr in sources + dests)]
         else:
             active_regions = []
-
         # MultiCompartmentReactions do not require involved species to share common regions
         if not isinstance(self, MultiCompartmentReaction):
             for sptr in self._involved_species:

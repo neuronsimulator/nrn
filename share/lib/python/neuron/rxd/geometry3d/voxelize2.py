@@ -9,7 +9,7 @@ _max_chunks = 10000000
 
 #TODO: should we expand this to also compute the area between neighboring nodes?
 
-def voxelize2(source, dx=0.25, xlo=None, xhi=None, ylo=None, yhi=None, zlo=None, zhi=None, n_soma_step=100):
+def voxelize2(source, dx=0.25, xlo=None, xhi=None, ylo=None, yhi=None, zlo=None, zhi=None, n_soma_step=100, relevant_pts=None):
     """
     Generates a cartesian mesh of the volume of a neuron, together with discretized information on
     surface areas and volumes. This is more accurate than voxelize, which only checks the center
@@ -35,7 +35,9 @@ def voxelize2(source, dx=0.25, xlo=None, xhi=None, ylo=None, yhi=None, zlo=None,
         Maximum z value. If omitted or None, uses maximum z value in the geometry.
     n_soma_step : integer, optional
         Number of pieces to slice a soma outline into.
-        
+
+    relevant_pts : list, optional
+        A list for each section in sources with a list of the 3D points in that section that should be used.
 
     Returns
     -------
@@ -102,7 +104,7 @@ def voxelize2(source, dx=0.25, xlo=None, xhi=None, ylo=None, yhi=None, zlo=None,
         the later does not. Up to one soma outline is currently supported.
     """
     
-    objects = ctng.constructive_neuronal_geometry(source, n_soma_step, dx)
+    objects = ctng.constructive_neuronal_geometry(source, n_soma_step, dx, relevant_pts=relevant_pts)
     
     if xlo is None: xlo = min(obj.xlo for obj in objects) - 3 * dx
     if ylo is None: ylo = min(obj.ylo for obj in objects) - 3 * dx

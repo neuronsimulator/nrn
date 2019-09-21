@@ -30,7 +30,7 @@ import numpy
 ip33d = ip3._intracellular_instances[cyt]
 con = []
 for seg in sec:
-    con.append(numpy.mean(ip33d.states[ip33d._seg_to_surface_nodes[seg]]*nd.volume/seg.volume()))
+    con.append(numpy.mean([nd.concentration*nd.volume for nd in ip3.nodes(seg)])/seg.volume())
 print(con)
 
 con1D = [0.0, 0.0009302760807252256, 0.0, 1000.0, 0.0, 0.0009302760807252256, 0.0, 0.0, 0.0, 0.000930276080725227, 0.0]
