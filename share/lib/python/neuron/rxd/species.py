@@ -1182,16 +1182,19 @@ class Species(_SpeciesMathable):
         self._intracellular_instances = {r:_IntracellularSpecies(r, d=self._d, charge=self.charge, initial=self.initial, nodes=self._intracellular_nodes[r], name=self._name, is_diffusable=is_diffusable, atolscale=self._atolscale) for r in self._regions if r._secs3d}
 
     def _do_init4(self):
-        self._extracellular_nodes = []
+        extracellular_nodes = []
         self._extracellular_instances = {r : _ExtracellularSpecies(r, d=self._d, name=self.name, charge=self.charge, initial=self.initial, atolscale=self._atolscale, boundary_conditions=self._ecs_boundary_conditions) for r in self._extracellular_regions}
         sp_ref = weakref.ref(self)
+        index = 0
         for r in self._extracellular_regions:
+            r_ref = weakref.ref(r)
             for i in range(r._nx):
                 for j in range(r._ny):
-                    for k in range(r._nz):
-                        self._extracellular_nodes.append(node.NodeExtracellular((i * r._ny + j) * r._nz + k, i, j, k, r, sp_ref, weakref.ref(r)))
-           
-    
+                    extracellular_nodes += [node.NodeExtracellular(idx, i, j, k, sp_ref, r_ref) for k, idx in enumerate(range(index, index + r._nz))]
+                    index += r._nz
+            #extracellular_nodes += [node.NodeExtracellular(idx, i, j, k, sp_ref, r_ref) for i, idxx in  enumerate(range(index, index + r._nx * r._ny * r._nz, r._ny * r._nz)) for j, idxy in enumerate(range(idxx, idxx + r._nz * r._ny, r._nz)) for k,idx in enumerate(range(idxy, idxy + r._nz))]
+            #index = len(extracellular_nodes)
+        self._extracellular_nodes = extracellular_nodes
     def _do_init5(self):
         # final initialization
         for sec in self._secs:
