@@ -12,6 +12,7 @@
 #include "classreg.h"
 #include "nonvintblock.h"
 #include "nrnmpi.h"
+#include <ctype.h> // for pylib2pyver10
 
 extern "C" {
 extern int nrn_nopython;
@@ -150,8 +151,13 @@ static void set_nrnpylib() {
     free(bfnrnhome);
     #else
     char* line = new char[linesz+1];
+#if defined(NRNCMAKE)
+    sprintf(line, "bash %s/../../bin/nrnpyenv.sh %s",
+     neuron_home,
+#else
     sprintf(line, "bash %s/../../%s/bin/nrnpyenv.sh %s",
      neuron_home, NRNHOSTCPU,
+#endif
       (nrnpy_pyexe && strlen(nrnpy_pyexe) > 0) ? nrnpy_pyexe : "");
    #endif
     FILE* p = popen(line, "r");
@@ -340,30 +346,58 @@ static void* load_nrnpython_helper(const char* npylib) {
 	char name[2048];
 #ifdef MINGW
 	sprintf(name, "%s.dll", npylib);
-#else
+#else // !MINGW
 #if DARWIN
+#if defined(NRNCMAKE)
+	sprintf(name, "%s/../../lib/%s.dylib", neuron_home, npylib);
+#else // !NRNCMAKE
 	sprintf(name, "%s/../../%s/lib/%s.dylib", neuron_home, NRNHOSTCPU, npylib);
-#else
+#endif // NRNCMAKE
+#else // !DARWIN
+#if defined(NRNCMAKE)
+	sprintf(name, "%s/../../lib/%s.so", neuron_home, npylib);
+#else // !NRNCMAKE
 	sprintf(name, "%s/../../%s/lib/%s.so", neuron_home, NRNHOSTCPU, npylib);
-#endif
-#endif
+#endif // NRNCMAKE
+#endif // DARWIN
+#endif // MINGW
+printf("load_nrnpython_helper %s\n", name);
 	void* handle = dlopen(name, RTLD_NOW);
 	return handle;
+}
+
+static int pylib2pyver10(const char* pylib) {
+  // check backwards for N.N or NN // obvious limitations
+  int n1 = -1; int n2 = -1;
+  for (const char* cp = pylib + strlen(pylib) -1 ; cp > pylib; --cp) {
+    if (isdigit(*cp)) {
+      if (n2 < 0) {
+        n2 = digittoint(*cp);
+      } else { 
+        n1 = digittoint(*cp);
+        return n1*10 + n2;
+      }
+    }else if (*cp == '.') {
+      // skip
+    }else{ // 
+      // start over
+      n2 = -1;
+    }
+  }
+  return 0;
 }
 
 static void load_nrnpython(int pyver10, const char* pylib) {
 	void* handle = NULL;
 #if defined(__MINGW32__) || (defined(USE_LIBNRNPYTHON_MAJORMINOR) && USE_LIBNRNPYTHON_MAJORMINOR == YES)
 	char name[256];
+	int pv10 = pyver10;
 //printf("pylib %s\n", pylib?pylib:"null");
-	if (pyver10 > 1) {
-		sprintf(name, "libnrnpython%d", pyver10);
-	} else if (pylib && strstr(pylib, "ython") != NULL) {
-		const char* cp = strstr(pylib, "ython") + 5;
-		sprintf(name, "libnrnpython%c%c", cp[0], cp[1]);
-	} else {
-		sprintf(name, "libnrnpython27");
+	if (pyver10 < 1 && pylib) {
+		pv10 = pylib2pyver10(pylib);
 	}
+	sprintf(name, "libnrnpython%d", pv10);
+//printf("name %s\n", name);
 	handle = load_nrnpython_helper(name);
 	if (!handle) {
 printf("Could not load %s\n", name);
