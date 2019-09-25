@@ -29,7 +29,7 @@ void VerbatimVarRenameVisitor::visit_statement_block(ast::StatementBlock* node) 
 
     // first need to process all children : perform recursively from innermost block
     for (const auto& item: node->get_statements()) {
-        item->accept(this);
+        item->accept(*this);
     }
 
     /// go back to previous block in hierarchy

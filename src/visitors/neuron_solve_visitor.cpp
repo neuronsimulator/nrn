@@ -30,14 +30,14 @@ void NeuronSolveVisitor::visit_solve_block(ast::SolveBlock* node) {
 void NeuronSolveVisitor::visit_derivative_block(ast::DerivativeBlock* node) {
     derivative_block_name = node->get_name()->get_node_name();
     derivative_block = true;
-    node->visit_children(this);
+    node->visit_children(*this);
     derivative_block = false;
 }
 
 
 void NeuronSolveVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
     differential_equation = true;
-    node->visit_children(this);
+    node->visit_children(*this);
     differential_equation = false;
 }
 
@@ -100,7 +100,7 @@ void NeuronSolveVisitor::visit_binary_expression(ast::BinaryExpression* node) {
 
 void NeuronSolveVisitor::visit_program(ast::Program* node) {
     program_symtab = node->get_symbol_table();
-    node->visit_children(this);
+    node->visit_children(*this);
 }
 
 }  // namespace visitor

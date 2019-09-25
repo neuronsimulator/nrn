@@ -22,7 +22,7 @@ namespace ast {
     /// {{node.class_name}} member functions definition
     ///
 
-    void {{ node.class_name }}::visit_children(visitor::Visitor* v) {
+    void {{ node.class_name }}::visit_children(visitor::Visitor& v) {
     {% for child in node.non_base_members %}
         {% if child.is_vector %}
         /// visit each element of vector

@@ -267,7 +267,7 @@ namespace ast {
         /**
          * \brief Set token for the current ast node
          */
-        void set_token(ModToken& tok) { token = std::shared_ptr<ModToken>(new ModToken(tok)); }
+        void set_token(ModToken& tok) { token = std::make_shared<ModToken>(tok); }
         {% endif %}
 
         {% if node.is_symtab_needed %}
@@ -317,7 +317,7 @@ namespace ast {
          *
          * \sa Ast::visit_children for example.
          */
-        {{ virtual(node) }} void visit_children (visitor::Visitor* v) override;
+        {{ virtual(node) }} void visit_children (visitor::Visitor& v) override;
 
         /**
          * \brief accept (or visit) the current AST node using provided visitor
@@ -330,8 +330,8 @@ namespace ast {
          *
          * \sa Ast::accept for example.
          */
-        {{ virtual(node) }} void accept(visitor::Visitor* v) override {
-            v->visit_{{ node.class_name | snake_case }}(this);
+        {{ virtual(node) }} void accept(visitor::Visitor& v) override {
+            v.visit_{{ node.class_name | snake_case }}(this);
         }
 
         /// \}

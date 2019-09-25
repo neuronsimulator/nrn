@@ -59,7 +59,7 @@ void CodegenCVisitor::visit_integer(Integer* node) {
     auto macro = node->get_macro();
     auto value = node->get_value();
     if (macro) {
-        macro->accept(this);
+        macro->accept(*this);
     } else {
         printer->add_text(std::to_string(value));
     }
@@ -96,7 +96,7 @@ void CodegenCVisitor::visit_name(Name* node) {
     if (!codegen) {
         return;
     }
-    node->visit_children(this);
+    node->visit_children(*this);
 }
 
 
@@ -120,14 +120,14 @@ void CodegenCVisitor::visit_var_name(VarName* node) {
     auto name = node->get_name();
     auto at_index = node->get_at();
     auto index = node->get_index();
-    name->accept(this);
+    name->accept(*this);
     if (at_index) {
         printer->add_text("@");
-        at_index->accept(this);
+        at_index->accept(*this);
     }
     if (index) {
         printer->add_text("[");
-        index->accept(this);
+        index->accept(*this);
         printer->add_text("]");
     }
 }
@@ -137,9 +137,9 @@ void CodegenCVisitor::visit_indexed_name(IndexedName* node) {
     if (!codegen) {
         return;
     }
-    node->get_name()->accept(this);
+    node->get_name()->accept(*this);
     printer->add_text("[");
-    node->get_length()->accept(this);
+    node->get_length()->accept(*this);
     printer->add_text("]");
 }
 
@@ -159,13 +159,13 @@ void CodegenCVisitor::visit_if_statement(IfStatement* node) {
         return;
     }
     printer->add_text("if (");
-    node->get_condition()->accept(this);
+    node->get_condition()->accept(*this);
     printer->add_text(") ");
-    node->get_statement_block()->accept(this);
+    node->get_statement_block()->accept(*this);
     print_vector_elements(node->get_elseifs(), "");
     auto elses = node->get_elses();
     if (elses) {
-        elses->accept(this);
+        elses->accept(*this);
     }
 }
 
@@ -175,9 +175,9 @@ void CodegenCVisitor::visit_else_if_statement(ElseIfStatement* node) {
         return;
     }
     printer->add_text(" else if (");
-    node->get_condition()->accept(this);
+    node->get_condition()->accept(*this);
     printer->add_text(") ");
-    node->get_statement_block()->accept(this);
+    node->get_statement_block()->accept(*this);
 }
 
 
@@ -186,15 +186,15 @@ void CodegenCVisitor::visit_else_statement(ElseStatement* node) {
         return;
     }
     printer->add_text(" else ");
-    node->visit_children(this);
+    node->visit_children(*this);
 }
 
 
 void CodegenCVisitor::visit_while_statement(WhileStatement* node) {
     printer->add_text("while (");
-    node->get_condition()->accept(this);
+    node->get_condition()->accept(*this);
     printer->add_text(") ");
-    node->get_statement_block()->accept(this);
+    node->get_statement_block()->accept(*this);
 }
 
 
@@ -208,17 +208,17 @@ void CodegenCVisitor::visit_from_statement(ast::FromStatement* node) {
     auto inc = node->get_increment();
     auto block = node->get_statement_block();
     printer->add_text("for(int {}="_format(name));
-    from->accept(this);
+    from->accept(*this);
     printer->add_text("; {}<="_format(name));
-    to->accept(this);
+    to->accept(*this);
     if (inc) {
         printer->add_text("; {}+="_format(name));
-        inc->accept(this);
+        inc->accept(*this);
     } else {
         printer->add_text("; {}++"_format(name));
     }
     printer->add_text(")");
-    block->accept(this);
+    block->accept(*this);
 }
 
 
@@ -227,7 +227,7 @@ void CodegenCVisitor::visit_paren_expression(ParenExpression* node) {
         return;
     }
     printer->add_text("(");
-    node->get_expression()->accept(this);
+    node->get_expression()->accept(*this);
     printer->add_text(")");
 }
 
@@ -241,14 +241,14 @@ void CodegenCVisitor::visit_binary_expression(BinaryExpression* node) {
     auto rhs = node->get_rhs();
     if (op == "^") {
         printer->add_text("pow(");
-        lhs->accept(this);
+        lhs->accept(*this);
         printer->add_text(", ");
-        rhs->accept(this);
+        rhs->accept(*this);
         printer->add_text(")");
     } else {
-        lhs->accept(this);
+        lhs->accept(*this);
         printer->add_text(" " + op + " ");
-        rhs->accept(this);
+        rhs->accept(*this);
     }
 }
 
@@ -276,7 +276,7 @@ void CodegenCVisitor::visit_unary_operator(UnaryOperator* node) {
  */
 void CodegenCVisitor::visit_statement_block(StatementBlock* node) {
     if (!codegen) {
-        node->visit_children(this);
+        node->visit_children(*this);
         return;
     }
     print_statement_block(node);
@@ -1263,7 +1263,7 @@ void CodegenCVisitor::print_statement_block(ast::StatementBlock* node,
         if (!statement->is_verbatim()) {
             printer->add_indent();
         }
-        statement->accept(this);
+        statement->accept(*this);
         if (need_semicolon(statement.get())) {
             printer->add_text(";");
         }
@@ -1327,7 +1327,7 @@ void CodegenCVisitor::print_top_verbatim_blocks() {
     for (const auto& block: info.top_blocks) {
         if (block->is_verbatim()) {
             printer->add_newline(2);
-            block->accept(this);
+            block->accept(*this);
         }
     }
 
@@ -1351,12 +1351,12 @@ void CodegenCVisitor::rename_function_arguments() {
         RenameVisitor v(arg, "arg_" + arg);
         for (const auto& function: info.functions) {
             if (has_parameter_of_name(function, arg)) {
-                function->accept(&v);
+                function->accept(v);
             }
         }
         for (const auto& function: info.procedures) {
             if (has_parameter_of_name(function, arg)) {
-                function->accept(&v);
+                function->accept(v);
             }
         }
     }
@@ -1387,7 +1387,7 @@ static TableStatement* get_table_statement(ast::Block* node) {
     // TableStatementVisitor v;
 
     AstLookupVisitor v(AstNodeType::TABLE_STATEMENT);
-    node->accept(&v);
+    node->accept(v);
 
     auto table_statements = v.get_nodes();
 
@@ -1443,13 +1443,13 @@ void CodegenCVisitor::print_table_check_function(ast::Block* node) {
 
             printer->add_indent();
             printer->add_text("{} = "_format(tmin_name));
-            from->accept(this);
+            from->accept(*this);
             printer->add_text(";");
             printer->add_newline();
 
             printer->add_indent();
             printer->add_text("double tmax = ");
-            to->accept(this);
+            to->accept(*this);
             printer->add_text(";");
             printer->add_newline();
 
@@ -1615,7 +1615,7 @@ void CodegenCVisitor::print_function(ast::FunctionBlock* node) {
     // first rename return variable name
     auto block = node->get_statement_block().get();
     RenameVisitor v(name, return_var);
-    block->accept(&v);
+    block->accept(v);
 
     print_function_or_procedure(node, name);
     codegen = false;
@@ -3286,7 +3286,7 @@ void CodegenCVisitor::print_watch_activate() {
         printer->add_indent();
         printer->add_text("{} = 2 + "_format(varname));
         auto watch = statement->get_statements().front();
-        watch->get_expression()->visit_children(this);
+        watch->get_expression()->visit_children(*this);
         printer->add_text(";");
         printer->add_newline();
 
@@ -3324,7 +3324,7 @@ void CodegenCVisitor::print_watch_check() {
         // start block 2
         printer->add_indent();
         printer->add_text("if (");
-        watch->get_expression()->accept(this);
+        watch->get_expression()->accept(*this);
         printer->add_text(") {");
         printer->add_newline();
         printer->increase_indent();
@@ -3339,7 +3339,7 @@ void CodegenCVisitor::print_watch_check() {
         auto t = get_variable_name("t");
         printer->add_text(
             "ml->_net_send_buffer, 0, {}, 0, {}, {}+0.0, "_format(tqitem, point_process, t));
-        watch->get_value()->accept(this);
+        watch->get_value()->accept(*this);
         printer->add_text(");");
         printer->add_newline();
 
@@ -3398,7 +3398,7 @@ void CodegenCVisitor::print_net_receive_common_code(Block* node, bool need_mech_
                 auto statement = "double* {} = weights + weight_index + {};"_format(name, i);
                 printer->add_line(statement);
                 RenameVisitor vr(name, "*" + name);
-                node->visit_children(&vr);
+                node->visit_children(vr);
             }
             i++;
         }
@@ -3512,7 +3512,7 @@ static void rename_net_receive_arguments(ast::NetReceiveBlock* net_receive_node,
         auto var_used = VarUsageVisitor().variable_used(node, name);
         if (var_used) {
             RenameVisitor vr(name, "(*" + name + ")");
-            node->get_statement_block()->visit_children(&vr);
+            node->get_statement_block()->visit_children(vr);
         }
     }
 }
@@ -3705,7 +3705,7 @@ void CodegenCVisitor::print_net_receive_kernel() {
     }
     printer->add_line("{} = t;"_format(get_variable_name("tsave")));
     printer->add_indent();
-    node->get_statement_block()->accept(this);
+    node->get_statement_block()->accept(*this);
     printer->add_newline();
     printer->end_block();
     printer->add_newline();
@@ -3845,7 +3845,7 @@ void CodegenCVisitor::visit_solution_expression(SolutionExpression* node) {
         auto statement_block = dynamic_cast<ast::StatementBlock*>(block);
         print_statement_block(statement_block, false, false);
     } else {
-        block->accept(this);
+        block->accept(*this);
     }
 }
 
@@ -3885,7 +3885,7 @@ void CodegenCVisitor::print_nrn_state() {
     }
 
     if (info.nrn_state_block) {
-        info.nrn_state_block->visit_children(this);
+        info.nrn_state_block->visit_children(*this);
     }
 
     if (info.currents.empty() && info.breakpoint_node != nullptr) {

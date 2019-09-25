@@ -15,7 +15,7 @@ namespace visitor {
 
 void SolveBlockVisitor::visit_breakpoint_block(ast::BreakpointBlock* node) {
     in_breakpoint_block = true;
-    node->visit_children(this);
+    node->visit_children(*this);
     in_breakpoint_block = false;
 }
 
@@ -64,7 +64,7 @@ ast::SolutionExpression* SolveBlockVisitor::create_solution_expression(
  * @param node Ast node for SOLVE statement in the mod file
  */
 void SolveBlockVisitor::visit_expression_statement(ast::ExpressionStatement* node) {
-    node->visit_children(this);
+    node->visit_children(*this);
     if (node->get_expression()->is_solve_block()) {
         auto solve_block = dynamic_cast<ast::SolveBlock*>(node->get_expression().get());
         auto sol_expr = create_solution_expression(solve_block);
@@ -78,7 +78,7 @@ void SolveBlockVisitor::visit_expression_statement(ast::ExpressionStatement* nod
 
 void SolveBlockVisitor::visit_program(ast::Program* node) {
     symtab = node->get_symbol_table();
-    node->visit_children(this);
+    node->visit_children(*this);
     /// add new node NrnState with solve blocks from breakpoint block
     if (!nrn_state_solve_statements.empty()) {
         auto nrn_state = new ast::NrnStateBlock(nrn_state_solve_statements);

@@ -165,7 +165,7 @@ bool calls_function(ast::Ast* node, const std::string& name) {
 std::string to_nmodl(ast::Ast* node, const std::set<ast::AstNodeType>& exclude_types) {
     std::stringstream stream;
     visitor::NmodlPrintVisitor v(stream, exclude_types);
-    node->accept(&v);
+    node->accept(v);
     return stream.str();
 }
 
@@ -176,7 +176,7 @@ std::string to_json(ast::Ast* node, bool compact, bool expand, bool add_nmodl) {
     v.compact_json(compact);
     v.add_nmodl(add_nmodl);
     v.expand_keys(expand);
-    node->accept(&v);
+    node->accept(v);
     v.flush();
     return stream.str();
 }

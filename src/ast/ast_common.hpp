@@ -208,13 +208,13 @@ struct Ast: public std::enable_shared_from_this<Ast> {
      *       to visit the node itself in the visitor.
      *
      * \code{.cpp}
-     *   void IndexedName::accept(visitor::Visitor* v) override {
-     *       v->visit_indexed_name(this);
+     *   void IndexedName::accept(visitor::Visitor& v) override {
+     *       v.visit_indexed_name(this);
      *   }
      * \endcode
      *
      */
-    virtual void accept(visitor::Visitor* v) = 0;
+    virtual void accept(visitor::Visitor& v) = 0;
 
     /**
      * \brief Visit children i.e. member of AST node using provided visitor
@@ -228,13 +228,13 @@ struct Ast: public std::enable_shared_from_this<Ast> {
      *       ast::IndexedName node children are visited instead of node itself.
      *
      * \code{.cpp}
-     * void IndexedName::visit_children(visitor::Visitor* v) {
+     * void IndexedName::visit_children(visitor::Visitor& v) {
      *    name->accept(v);
      *    length->accept(v);
      * }
      * \endcode
      */
-    virtual void visit_children(visitor::Visitor* v) = 0;
+    virtual void visit_children(visitor::Visitor& v) = 0;
 
     /**
      * \brief Create a copy of the current node

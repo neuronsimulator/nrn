@@ -27,7 +27,7 @@ void RenameVisitor::visit_name(ast::Name* node) {
  * by parser. To be safe we are only renaming prime variable.
  */
 void RenameVisitor::visit_prime_name(ast::PrimeName* node) {
-    node->visit_children(this);
+    node->visit_children(*this);
 }
 
 /**

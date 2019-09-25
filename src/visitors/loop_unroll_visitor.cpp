@@ -55,7 +55,7 @@ class IndexRemover: public AstVisitor {
     }
 
     virtual void visit_binary_expression(ast::BinaryExpression* node) override {
-        node->visit_children(this);
+        node->visit_children(*this);
         if (under_indexed_name) {
             /// first recursively replaces childrens
             /// replace lhs & rhs if they have matching index variable
@@ -68,7 +68,7 @@ class IndexRemover: public AstVisitor {
 
     virtual void visit_indexed_name(ast::IndexedName* node) override {
         under_indexed_name = true;
-        node->visit_children(this);
+        node->visit_children(*this);
         /// once all children are replaced, do the same for index
         auto length = replace_for_name(node->get_length());
         node->set_length(std::move(length));
@@ -137,7 +137,7 @@ static std::shared_ptr<ast::ExpressionStatement> unroll_for_loop(
  * Parse verbatim blocks and rename variable if it is used.
  */
 void LoopUnrollVisitor::visit_statement_block(ast::StatementBlock* node) {
-    node->visit_children(this);
+    node->visit_children(*this);
 
     for (auto iter = node->statements.begin(); iter != node->statements.end(); iter++) {
         if ((*iter)->is_from_statement()) {

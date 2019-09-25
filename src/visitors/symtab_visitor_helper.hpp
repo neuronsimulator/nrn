@@ -127,7 +127,7 @@ void SymtabVisitor::setup_symbol(ast::Node* node, NmodlType property) {
 
     /// visit children, most likely variables are already
     /// leaf nodes, not necessary to visit
-    node->visit_children(this);
+    node->visit_children(*this);
 }
 
 
@@ -187,7 +187,7 @@ void SymtabVisitor::setup_symbol_table(ast::Ast* node, const std::string& name, 
     }
 
     /// look for all children blocks recursively
-    node->visit_children(this);
+    node->visit_children(*this);
 
     /// existing nmodl block
     modsymtab->leave_scope();

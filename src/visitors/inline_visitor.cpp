@@ -94,7 +94,7 @@ void InlineVisitor::inline_arguments(StatementBlock* inlined_block,
 
         /// variables in cloned block needs to be renamed
         RenameVisitor visitor(old_name, new_name);
-        inlined_block->visit_children(&visitor);
+        inlined_block->visit_children(visitor);
 
         auto lhs = new VarName(name->clone(), nullptr, nullptr);
         auto rhs = caller_expressions.at(counter)->clone();
@@ -159,7 +159,7 @@ bool InlineVisitor::inline_function_call(ast::Block* callee,
     /// function definition has function name as return value. we have to rename
     /// it with new variable name
     RenameVisitor visitor(function_name, new_varname);
-    inlined_block->visit_children(&visitor);
+    inlined_block->visit_children(visitor);
 
     /// \todo Have to re-run symtab visitor pass to update symbol table
     inlined_block->set_symbol_table(nullptr);
@@ -189,7 +189,7 @@ bool InlineVisitor::inline_function_call(ast::Block* callee,
 
 void InlineVisitor::visit_function_call(FunctionCall* node) {
     /// argument can be function call itself
-    node->visit_children(this);
+    node->visit_children(*this);
 
     std::string function_name = node->get_name()->get_node_name();
     auto symbol = program_symtab->lookup_in_scope(function_name);
@@ -205,7 +205,7 @@ void InlineVisitor::visit_function_call(FunctionCall* node) {
     }
 
     /// first inline called function
-    function_definition->visit_children(this);
+    function_definition->visit_children(*this);
 
     bool inlined = false;
 
@@ -244,7 +244,7 @@ void InlineVisitor::visit_statement_block(StatementBlock* node) {
     for (auto& statement: statements) {
         caller_statement = statement;
         statement_stack.push(statement);
-        caller_statement->visit_children(this);
+        caller_statement->visit_children(*this);
         statement_stack.pop();
     }
 
@@ -293,7 +293,7 @@ void InlineVisitor::visit_statement_block(StatementBlock* node) {
  *  also replaced with new variable node from the inlining result.
  */
 void InlineVisitor::visit_wrapped_expression(WrappedExpression* node) {
-    node->visit_children(this);
+    node->visit_children(*this);
     auto e = node->get_expression();
     if (e->is_function_call()) {
         auto expression = static_cast<FunctionCall*>(e.get());
@@ -309,7 +309,7 @@ void InlineVisitor::visit_program(Program* node) {
     if (program_symtab == nullptr) {
         throw std::runtime_error("Program node doesn't have symbol table");
     }
-    node->visit_children(this);
+    node->visit_children(*this);
 }
 
 }  // namespace visitor

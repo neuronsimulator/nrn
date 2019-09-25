@@ -440,7 +440,7 @@ void CodegenHelperVisitor::visit_initial_block(InitialBlock* node) {
     } else {
         info.initial_node = node;
     }
-    node->visit_children(this);
+    node->visit_children(*this);
 }
 
 
@@ -448,14 +448,14 @@ void CodegenHelperVisitor::visit_net_receive_block(NetReceiveBlock* node) {
     under_net_receive_block = true;
     info.net_receive_node = node;
     info.num_net_receive_parameters = node->get_parameters().size();
-    node->visit_children(this);
+    node->visit_children(*this);
     under_net_receive_block = false;
 }
 
 
 void CodegenHelperVisitor::visit_derivative_block(DerivativeBlock* node) {
     under_derivative_block = true;
-    node->visit_children(this);
+    node->visit_children(*this);
     under_derivative_block = false;
 }
 
@@ -468,20 +468,20 @@ void CodegenHelperVisitor::visit_derivimplicit_callback(ast::DerivimplicitCallba
 void CodegenHelperVisitor::visit_breakpoint_block(BreakpointBlock* node) {
     under_breakpoint_block = true;
     info.breakpoint_node = node;
-    node->visit_children(this);
+    node->visit_children(*this);
     under_breakpoint_block = false;
 }
 
 
 void CodegenHelperVisitor::visit_nrn_state_block(ast::NrnStateBlock* node) {
     info.nrn_state_block = node;
-    node->visit_children(this);
+    node->visit_children(*this);
 }
 
 
 void CodegenHelperVisitor::visit_procedure_block(ast::ProcedureBlock* node) {
     info.procedures.push_back(node);
-    node->visit_children(this);
+    node->visit_children(*this);
     if (table_statement_used) {
         table_statement_used = false;
         info.functions_with_table.push_back(node);
@@ -491,7 +491,7 @@ void CodegenHelperVisitor::visit_procedure_block(ast::ProcedureBlock* node) {
 
 void CodegenHelperVisitor::visit_function_block(ast::FunctionBlock* node) {
     info.functions.push_back(node);
-    node->visit_children(this);
+    node->visit_children(*this);
     if (table_statement_used) {
         table_statement_used = false;
         info.functions_with_table.push_back(node);
@@ -547,7 +547,7 @@ void CodegenHelperVisitor::visit_conductance_hint(ConductanceHint* node) {
 void CodegenHelperVisitor::visit_statement_block(ast::StatementBlock* node) {
     auto statements = node->get_statements();
     for (auto& statement: statements) {
-        statement->accept(this);
+        statement->accept(*this);
         if (under_derivative_block && assign_lhs &&
             (assign_lhs->is_name() || assign_lhs->is_var_name())) {
             auto name = assign_lhs->get_node_name();
@@ -577,8 +577,8 @@ void CodegenHelperVisitor::visit_binary_expression(BinaryExpression* node) {
     if (node->get_op().eval() == "=") {
         assign_lhs = node->get_lhs();
     }
-    node->get_lhs()->accept(this);
-    node->get_rhs()->accept(this);
+    node->get_lhs()->accept(*this);
+    node->get_rhs()->accept(*this);
 }
 
 
@@ -594,7 +594,7 @@ void CodegenHelperVisitor::visit_watch(ast::Watch* node) {
 
 void CodegenHelperVisitor::visit_watch_statement(ast::WatchStatement* node) {
     info.watch_statements.push_back(node);
-    node->visit_children(this);
+    node->visit_children(*this);
 }
 
 
@@ -618,7 +618,7 @@ void CodegenHelperVisitor::visit_program(ast::Program* node) {
             info.top_verbatim_blocks.push_back(block.get());
         }
     }
-    node->visit_children(this);
+    node->visit_children(*this);
     find_range_variables();
     find_non_range_variables();
     find_ion_variables();
@@ -627,7 +627,7 @@ void CodegenHelperVisitor::visit_program(ast::Program* node) {
 
 
 codegen::CodegenInfo CodegenHelperVisitor::analyze(ast::Program* node) {
-    node->accept(this);
+    node->accept(*this);
     return info;
 }
 

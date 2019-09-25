@@ -41,7 +41,7 @@ using symtab::syminfo::NmodlType;
  */
 static bool conductance_statement_possible(ast::BreakpointBlock* node) {
     AstLookupVisitor v({AstNodeType::IF_STATEMENT, AstNodeType::VERBATIM});
-    node->accept(&v);
+    node->accept(v);
     return v.get_nodes().empty();
 }
 
@@ -216,7 +216,7 @@ void SympyConductanceVisitor::visit_breakpoint_block(ast::BreakpointBlock* node)
     }
     // visit BREAKPOINT block statements
     under_breakpoint_block = true;
-    node->visit_children(this);
+    node->visit_children(*this);
     under_breakpoint_block = false;
 
     // lookup USEION and NONSPECIFIC statements from NEURON block
@@ -249,7 +249,7 @@ void SympyConductanceVisitor::visit_program(ast::Program* node) {
     use_ion_nodes = ast_lookup_visitor.lookup(node, AstNodeType::USEION);
     nonspecific_nodes = ast_lookup_visitor.lookup(node, AstNodeType::NONSPECIFIC);
 
-    node->visit_children(this);
+    node->visit_children(*this);
 }
 
 }  // namespace visitor
