@@ -65,7 +65,7 @@ SCENARIO("Searching for ast nodes using AstLookupVisitor", "[visitor][lookup]") 
 
             THEN("Can find NEURON block") {
                 AstLookupVisitor v(AstNodeType::NEURON_BLOCK);
-                ast->accept(&v);
+                ast->accept(v);
                 auto nodes = v.get_nodes();
                 REQUIRE(nodes.size() == 1);
 

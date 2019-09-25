@@ -183,7 +183,7 @@ DUState DUChain::eval() {
 
 void DefUseAnalyzeVisitor::visit_unsupported_node(ast::Node* node) {
     unsupported_node = true;
-    node->visit_children(this);
+    node->visit_children(*this);
     unsupported_node = false;
 }
 
@@ -196,7 +196,7 @@ void DefUseAnalyzeVisitor::visit_function_call(ast::FunctionCall* node) {
     std::string function_name = node->get_node_name();
     auto symbol = global_symtab->lookup_in_scope(function_name);
     if (symbol == nullptr || symbol->is_external_variable()) {
-        node->visit_children(this);
+        node->visit_children(*this);
     } else {
         visit_unsupported_node(node);
     }
@@ -209,7 +209,7 @@ void DefUseAnalyzeVisitor::visit_statement_block(ast::StatementBlock* node) {
     }
 
     symtab_stack.push(current_symtab);
-    node->visit_children(this);
+    node->visit_children(*this);
     symtab_stack.pop();
     current_symtab = symtab_stack.top();
 }
@@ -218,11 +218,11 @@ void DefUseAnalyzeVisitor::visit_statement_block(ast::StatementBlock* node) {
  *  and hence not necessary to keep track of assignment operator using stack.
  */
 void DefUseAnalyzeVisitor::visit_binary_expression(ast::BinaryExpression* node) {
-    node->get_rhs()->visit_children(this);
+    node->get_rhs()->visit_children(*this);
     if (node->get_op().get_value() == ast::BOP_ASSIGN) {
         visiting_lhs = true;
     }
-    node->get_lhs()->visit_children(this);
+    node->get_lhs()->visit_children(*this);
     visiting_lhs = false;
 }
 
@@ -237,10 +237,10 @@ void DefUseAnalyzeVisitor::visit_if_statement(ast::IfStatement* node) {
     /// visiting if sub-block
     auto last_chain = current_chain;
     start_new_chain(DUState::IF);
-    node->get_condition()->accept(this);
+    node->get_condition()->accept(*this);
     auto block = node->get_statement_block();
     if (block) {
-        block->accept(this);
+        block->accept(*this);
     }
     current_chain = last_chain;
 
@@ -322,7 +322,7 @@ void DefUseAnalyzeVisitor::process_variable(const std::string& name, int index) 
 void DefUseAnalyzeVisitor::visit_with_new_chain(ast::Node* node, DUState state) {
     auto last_chain = current_chain;
     start_new_chain(state);
-    node->visit_children(this);
+    node->visit_children(*this);
     current_chain = last_chain;
 }
 
@@ -344,7 +344,7 @@ DUChain DefUseAnalyzeVisitor::analyze(ast::Ast* node, const std::string& name) {
 
     /// analyze given node
     symtab_stack.push(current_symtab);
-    node->visit_children(this);
+    node->visit_children(*this);
     symtab_stack.pop();
 
     return usage;

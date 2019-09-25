@@ -532,7 +532,7 @@ void SympySolverVisitor::visit_derivative_block(ast::DerivativeBlock* node) {
     // visit each differential equation:
     //  - for CNEXP or EULER, each equation is independent & is replaced with its solution
     //  - otherwise, each equation is added to eq_system
-    node->visit_children(this);
+    node->visit_children(*this);
 
     if (eq_system_is_valid && !eq_system.empty()) {
         // solve system of ODEs in eq_system
@@ -596,7 +596,7 @@ void SympySolverVisitor::visit_lin_equation(ast::LinEquation* node) {
     last_expression_statement = current_expression_statement;
     logger->debug("SympySolverVisitor :: adding linear eq: {}", lin_eq);
     collect_state_vars = true;
-    node->visit_children(this);
+    node->visit_children(*this);
     collect_state_vars = false;
 }
 
@@ -607,7 +607,7 @@ void SympySolverVisitor::visit_linear_block(ast::LinearBlock* node) {
     init_block_data(node);
 
     // collect linear equations
-    node->visit_children(this);
+    node->visit_children(*this);
 
     if (eq_system_is_valid && !eq_system.empty()) {
         solve_linear_system();
@@ -624,7 +624,7 @@ void SympySolverVisitor::visit_non_lin_equation(ast::NonLinEquation* node) {
     last_expression_statement = current_expression_statement;
     logger->debug("SympySolverVisitor :: adding non-linear eq: {}", non_lin_eq);
     collect_state_vars = true;
-    node->visit_children(this);
+    node->visit_children(*this);
     collect_state_vars = false;
 }
 
@@ -635,7 +635,7 @@ void SympySolverVisitor::visit_non_linear_block(ast::NonLinearBlock* node) {
     init_block_data(node);
 
     // collect non-linear equations
-    node->visit_children(this);
+    node->visit_children(*this);
 
     if (eq_system_is_valid && !eq_system.empty()) {
         solve_non_linear_system();
@@ -645,14 +645,14 @@ void SympySolverVisitor::visit_non_linear_block(ast::NonLinearBlock* node) {
 void SympySolverVisitor::visit_expression_statement(ast::ExpressionStatement* node) {
     auto prev_expression_statement = current_expression_statement;
     current_expression_statement = node;
-    node->visit_children(this);
+    node->visit_children(*this);
     current_expression_statement = prev_expression_statement;
 }
 
 void SympySolverVisitor::visit_statement_block(ast::StatementBlock* node) {
     auto prev_statement_block = current_statement_block;
     current_statement_block = node;
-    node->visit_children(this);
+    node->visit_children(*this);
     current_statement_block = prev_statement_block;
 }
 
@@ -696,7 +696,7 @@ void SympySolverVisitor::visit_program(ast::Program* node) {
         }
     }
 
-    node->visit_children(this);
+    node->visit_children(*this);
 }
 
 }  // namespace visitor

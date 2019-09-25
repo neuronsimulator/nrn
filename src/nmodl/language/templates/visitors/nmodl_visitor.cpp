@@ -69,7 +69,7 @@ using namespace ast;
         printer->add_element(op);
     {% else %}
         {% call guard(child.prefix, child.suffix) %}
-        node->get_{{ child.varname }}(){{ "->" if child.is_pointer_node else "." }}accept(this);
+        node->get_{{ child.varname }}(){{ "->" if child.is_pointer_node else "." }}accept(*this);
         {% endcall %}
     {%- endif %}
 {%- endmacro -%}

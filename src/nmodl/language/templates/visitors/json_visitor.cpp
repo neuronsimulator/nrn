@@ -20,7 +20,7 @@ void JSONVisitor::visit_{{ node.class_name|snake_case }}({{ node.class_name }}* 
     if (embed_nmodl) {
         printer->add_block_property("nmodl", to_nmodl(node));
     }
-    node->visit_children(this);
+    node->visit_children(*this);
     {% if node.is_data_type_node %}
             {% if node.is_integer_node %}
     if(!node->get_macro()) {

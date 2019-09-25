@@ -22,7 +22,7 @@ namespace visitor {
 
 void UnitsVisitor::visit_program(ast::Program* node) {
     units_driver.parse_file(units_dir);
-    node->visit_children(this);
+    node->visit_children(*this);
 }
 
 /**

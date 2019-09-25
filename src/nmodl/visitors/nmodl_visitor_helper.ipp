@@ -33,7 +33,7 @@ void NmodlPrintVisitor::visit_element(const std::vector<T>& elements,
             printer->add_indent();
         }
 
-        (*iter)->accept(this);
+        (*iter)->accept(*this);
 
         /// print separator (e.g. comma, space)
         if (!separator.empty() && !utils::is_last(iter, elements)) {

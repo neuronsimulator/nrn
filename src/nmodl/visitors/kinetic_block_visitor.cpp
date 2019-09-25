@@ -115,7 +115,7 @@ void KineticBlockVisitor::visit_conserve(ast::Conserve* node) {
 
     in_conserve_statement = true;
     // construct equation to replace ODE in conserve_equation_str
-    node->visit_children(this);
+    node->visit_children(*this);
     in_conserve_statement = false;
 
     conserve_equation_str = to_nmodl(node->get_expr().get()) + conserve_equation_str;
@@ -273,7 +273,7 @@ void KineticBlockVisitor::visit_reaction_statement(ast::ReactionStatement* node)
     // add the corresponding integer to the new row in the matrix
     in_reaction_statement = true;
     in_reaction_statement_lhs = true;
-    node->visit_children(this);
+    node->visit_children(*this);
     in_reaction_statement = false;
 
     // generate fluxes
@@ -334,13 +334,13 @@ void KineticBlockVisitor::visit_wrapped_expression(ast::WrappedExpression* node)
             node->set_expression(std::move(expr));
         }
     }
-    node->visit_children(this);
+    node->visit_children(*this);
 }
 
 void KineticBlockVisitor::visit_statement_block(ast::StatementBlock* node) {
     auto prev_statement_block = current_statement_block;
     current_statement_block = node;
-    node->visit_children(this);
+    node->visit_children(*this);
     // remove processed statements from current statement block
     remove_statements_from_block(current_statement_block, statements_to_remove);
     current_statement_block = prev_statement_block;
@@ -363,7 +363,7 @@ void KineticBlockVisitor::visit_kinetic_block(ast::KineticBlock* node) {
     i_statement = 0;
 
     // construct stoichiometric matrices and fluxes
-    node->visit_children(this);
+    node->visit_children(*this);
 
     // number of reaction statements
     int Ni = static_cast<int>(rate_eqs.k_f.size());
@@ -461,7 +461,7 @@ void KineticBlockVisitor::visit_program(ast::Program* node) {
     }
 
     // replace reaction statements within each kinetic block with equivalent ODEs
-    node->visit_children(this);
+    node->visit_children(*this);
 
     // change KINETIC blocks -> DERIVATIVE blocks
     auto blocks = node->get_blocks();

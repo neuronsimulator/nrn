@@ -46,7 +46,7 @@ using namespace ast;
  */
 struct PyAst: public Ast {
 
-    void visit_children(visitor::Visitor* v) override {
+    void visit_children(visitor::Visitor& v) override {
         PYBIND11_OVERLOAD_PURE(void,            /// Return type
                                Ast,             /// Parent class
                                visit_children,  /// Name of function in C++ (must match Python name)
@@ -54,7 +54,7 @@ struct PyAst: public Ast {
         );
     }
 
-    void accept(visitor::Visitor* v) override {
+    void accept(visitor::Visitor& v) override {
         PYBIND11_OVERLOAD_PURE(void, Ast, accept, v);
     }
 

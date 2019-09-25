@@ -57,9 +57,9 @@ void CodegenIspcVisitor::visit_var_name(ast::VarName* node) {
         return;
     }
     auto celsius_rename = RenameVisitor("celsius", "ispc_celsius");
-    node->accept(&celsius_rename);
+    node->accept(celsius_rename);
     auto pi_rename = RenameVisitor("PI", "ISPC_PI");
-    node->accept(&pi_rename);
+    node->accept(pi_rename);
     CodegenCVisitor::visit_var_name(node);
 }
 

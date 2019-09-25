@@ -234,7 +234,7 @@ void init_ast_module(py::module& m) {
             std::stringstream ss;
             JSONVisitor v(ss);
             v.compact_json(true);
-            n.accept(&v);
+            n.accept(v);
             return ss.str();
         });
 

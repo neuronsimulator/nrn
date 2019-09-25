@@ -76,7 +76,7 @@ static double compute(double lhs, ast::BinaryOp op, double rhs) {
  *  parenthesis_exp => binary_expression => ...
  */
 void ConstantFolderVisitor::visit_paren_expression(ast::ParenExpression* node) {
-    node->visit_children(this);
+    node->visit_children(*this);
     auto expr = node->get_expression();
     if (expr->is_wrapped_expression()) {
         auto e = std::dynamic_pointer_cast<ast::WrappedExpression>(expr);
@@ -105,7 +105,7 @@ void ConstantFolderVisitor::visit_paren_expression(ast::ParenExpression* node) {
  * }
  */
 void ConstantFolderVisitor::visit_wrapped_expression(ast::WrappedExpression* node) {
-    node->visit_children(this);
+    node->visit_children(*this);
 
     /// first expression which is wrapped
     auto expr = node->get_expression();
