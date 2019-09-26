@@ -729,7 +729,11 @@ void datumtransform(CellGroup* cgs) {
   }
 }
 
-// Limited to pointers to voltage or data of non-artificial cell mechanisms.
+// This function is related to stdindex2ptr in CoreNeuron to determine which values should
+// be transferred from CoreNeuron. Types correspond to the value to be transferred based on
+// mech_type enum or non-artificial cell mechanisms.
+// Limited to pointers to voltage, nt._nrn_fast_imem->_nrn_sav_rhs (fast_imem value) or
+// data of non-artificial cell mechanisms.
 // Requires cache_efficient mode.
 // Input double* and NrnThread. Output type and index.
 // type == 0 means could not determine index.
