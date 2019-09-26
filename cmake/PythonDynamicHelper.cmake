@@ -15,7 +15,9 @@
 # we construct the lists
 # NRN_PYTHON_VER_LIST, NRN_PYTHON_INCLUDE_LIST, and NRN_PYTHON_LIB_LIST
 
-set(LINK_AGAINST_PYTHON ON)
+set(LINK_AGAINST_PYTHON ${MINGW})
+#set(LINK_AGAINST_PYTHON ON)
+message(STATUS "LINK_AGAINST_PYTHON ${LINK_AGAINST_PYTHON}")
 set(NRN_PYTHON_VER_LIST "")
 set(NRN_PYTHON_INCLUDE_LIST "")
 set(NRN_PYTHON_LIB_LIST "")
@@ -24,10 +26,11 @@ set(NRN_PYTHON_LIB_LIST "")
 # or libnrnpython<major><minor> . The latter is required for mingw. 
 # This is here instead of in src/nrnpython/CMakeLists.txt as src/nrniv/CMakeLists
 # needs it for nrniv/nrnpy.cpp
-set(USE_LIBNRNPYTHON_MAJORMINOR NO)
+set(USE_LIBNRNPYTHON_MAJORMINOR 0)
 if (LINK_AGAINST_PYTHON)
-  set(USE_LIBNRNPYTHON_MAJORMINOR YES)  
+  set(USE_LIBNRNPYTHON_MAJORMINOR 1)  
 endif()  
+message(STATUS "USE_LIBNRNPYTHON_MAJORMINOR ${USE_LIBNRNPYTHON_MAJORMINOR}")
 
 if (NRN_ENABLE_PYTHON)
   if (NRN_ENABLE_PYTHON_DYNAMIC)

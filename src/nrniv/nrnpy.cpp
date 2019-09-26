@@ -395,7 +395,7 @@ static int pylib2pyver10(const char* pylib) {
 
 static void load_nrnpython(int pyver10, const char* pylib) {
 	void* handle = NULL;
-#if (defined(__MINGW32__) || (defined(USE_LIBNRNPYTHON_MAJORMINOR) && USE_LIBNRNPYTHON_MAJORMINOR == YES))
+#if (defined(__MINGW32__) || (defined(USE_LIBNRNPYTHON_MAJORMINOR) && USE_LIBNRNPYTHON_MAJORMINOR == 1))
 	char name[256];
 	int pv10 = pyver10;
 //printf("pylib %s\n", pylib?pylib:"null");
