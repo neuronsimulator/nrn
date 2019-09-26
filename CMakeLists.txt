@@ -80,6 +80,7 @@ find_package(BISON)
 find_package(FLEX)
 find_package(Threads)
 find_package(readline)
+#find_package(termcap)
 
 # =============================================================================
 # Enable MPI/Python/IV/Pthead if found

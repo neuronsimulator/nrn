@@ -36,6 +36,8 @@ extern char* nrnmpi_load(int is_python);
 #endif
 #if NRNPYTHON_DYNAMICLOAD
 extern int nrnpy_site_problem;
+#endif
+#if NRNPYTHON_DYNAMICLOAD && !__MINGW32__
 #define HOCMOD(a, b) HOCMOD_(a, b)
 #define HOCMOD_(a, b) a ## b
 #else

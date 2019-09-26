@@ -277,6 +277,11 @@ if(NRN_ENABLE_MPI)
   if(NRN_ENABLE_MPI_DYNAMIC)
     add_library(nrnmpi_lib SHARED ${NRN_NRNMPI_SRC_FILES})
     target_link_libraries(nrnmpi_lib ${MPI_C_LIBRARIES})
+    if (MINGW)
+      add_dependencies(nrnmpi_lib nrniv_lib)
+      #target_link_libraries(nrnmpi_lib ${PROJECT_BINARY_DIR}/src/nrniv/libnrniv.dll.a)
+      target_link_libraries(nrnmpi_lib nrniv_lib)
+    endif()
     set_property(TARGET nrnmpi_lib PROPERTY OUTPUT_NAME nrnmpi)
     install(TARGETS nrnmpi_lib DESTINATION lib)
   else()
@@ -291,11 +296,6 @@ else()
   include_directories(nrniv_lib ${NRN_IVOS_SRC_DIR} ${PROJECT_BINARY_DIR}/src/ivos)
 endif()
 
-# TODO could be true for other platforms as well?
-if(MINGW)
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
-  target_link_libraries(nrniv_lib -static-libgcc -static-libstdc++)
-endif()
 # =============================================================================
 # Final executable
 # =============================================================================
