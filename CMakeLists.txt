@@ -32,13 +32,13 @@ option(NRN_ENABLE_RX3D "Enable rx3d support" OFF)
 # =============================================================================
 
 # NEURON module installation:
-#   - NO        : do not install
-#   - YES       : install with --home in ${CMAKE_INSTALL_PREFIX}
+#   - OFF       : do not install
+#   - ON        : install with --home in ${CMAKE_INSTALL_PREFIX}
 #   - <string>  : install using other modes or locations using an appropriate
 #                 string that goes after python setup.py install
 # Dynamic Python version support:
-#   - NO        : nrnpython interface is linked into libnrniv.so
-#   - YES       : nrnpython interface consistent with default python3 (falling back to python)
+#   - OFF       : nrnpython interface is linked into libnrniv.so
+#   - ON        : nrnpython interface consistent with default python3 (falling back to python)
 #                 is built and loaded dynamically at run time (nrniv still works in the absence
 #                 of any Python at all).
 #   - <string>  : semicolon (;) separated list of python executable used to create a separate
@@ -47,8 +47,8 @@ option(NRN_ENABLE_RX3D "Enable rx3d support" OFF)
 #                 with the rest of neuron. Also nrniv -pyexe <python> will work with any <python>
 #                 in the list of python executables.
 # Dynamic MPI support:
-#   - NO        : nrnmpi is linked into libnrniv.so
-#   - YES       : nrnmpi interface consistent with default mpi is built and loaded dynamically
+#   - OFF       : nrnmpi is linked into libnrniv.so
+#   - ON        : nrnmpi interface consistent with default mpi is built and loaded dynamically
 #                 at run time (nrniv still works in the absence of any mpi at all).
 #   - <string>  : semicolon (;) separated list of MPI's bin directories to create a separate
 #                 libnrnmpi_xxx.so interface for each. When nrniv is launched with the -mpi argument,
@@ -80,7 +80,6 @@ find_package(BISON)
 find_package(FLEX)
 find_package(Threads)
 find_package(readline)
-#find_package(termcap)
 
 # =============================================================================
 # Enable MPI/Python/IV/Pthead if found
@@ -120,6 +119,9 @@ endif()
 find_package(PythonInterp REQUIRED)
 if(NRN_ENABLE_PYTHON)
   find_package(PythonLibsNew ${PYTHON_VERSION_MAJOR} REQUIRED)
+  set(NRN_DEFAULT_PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE})
+  set(NRN_DEFAULT_PYTHON_LIBRARIES ${PYTHON_LIBRARIES})
+  set(NRN_DEFAULT_PYTHON_INCLUDE_DIRS ${PYTHON_INCLUDE_DIRS})
   set(USE_PYTHON 1)
 else()
   set(USE_PYTHON 0)
@@ -136,7 +138,7 @@ endif()
 
 # TODO check if this is optional with ncurses
 if (MINGW)
-    find_package(Termcap REQUIRED)
+  find_package(Termcap REQUIRED)
 endif()
 
 # =============================================================================
@@ -150,7 +152,6 @@ include(PythonDynamicHelper)
 # =============================================================================
 # Project version from git and project directories
 # =============================================================================
-#add_subdirectory(cmake_config)
 add_subdirectory(src/nrniv)
 add_subdirectory(bin)
 if (NRN_ENABLE_PYTHON)
@@ -204,24 +205,35 @@ if(cmake_generator_tolower MATCHES "makefile")
   message(STATUS "--------------+--------------------------------------------------------------")
   message(STATUS " Build option | Status")
   message(STATUS "--------------+--------------------------------------------------------------")
-  message(STATUS "Interviews    | ${HAVE_IV}")
+  message(STATUS "Interviews    | ${NRN_ENABLE_INTERVIEWS}")
   if (${HAVE_IV})
   message(STATUS "  PATH        | ${iv_DIR}")
   message(STATUS "  INC         | ${IV_INCLUDE_DIR}")
   endif()
-  message(STATUS "MPI           | ${NRNMPI}")
+  message(STATUS "MPI           | ${NRN_ENABLE_MPI}")
   if(NRN_ENABLE_MPI)
   message(STATUS "  INC         | ${MPI_INCLUDE_PATH}")
   message(STATUS "  LIB         | ${MPI_LIBRARY}")
   endif()
-  message(STATUS "Python        | ${USE_PYTHON}")
+  message(STATUS "Python        | ${NRN_ENABLE_PYTHON}")
   if(NRN_ENABLE_PYTHON)
-  message(STATUS "  EXE         | ${PYTHON_EXECUTABLE}")
-  message(STATUS "  INC         | ${PYTHON_INCLUDE_DIRS}")
-  message(STATUS "  LIB         | ${PYTHON_LIBRARIES}")
+  message(STATUS "  EXE         | ${NRN_DEFAULT_PYTHON_EXECUTABLE}")
+  message(STATUS "  INC         | ${NRN_DEFAULT_PYTHON_INCLUDE_DIRS}")
+  message(STATUS "  LIB         | ${NRN_DEFAULT_PYTHON_LIBRARIES}")
+  message(STATUS "  DYNAMIC     | ${NRN_ENABLE_PYTHON_DYNAMIC}")
   if (NRN_ENABLE_PYTHON_DYNAMIC)
-  message(STATUS "  INC(2)      | ${NRNPYTHON_INCLUDE2}")
-  message(STATUS "  INC(3)      | ${NRNPYTHON_INCLUDE3}")
+    list(LENGTH NRN_PYTHON_VER_LIST _version_length)
+    math(EXPR version_length "${_version_length} - 1")
+    foreach(val RANGE ${version_length})
+      list(GET NRN_PYTHON_DYNAMIC ${val} exe)
+      list(GET NRN_PYTHON_VER_LIST ${val} version)
+      list(GET NRN_PYTHON_INCLUDE_LIST ${val} include)
+      list(GET NRN_PYTHON_LIB_LIST ${val} lib)
+      message(STATUS "    EXE       | ${exe}")
+      message(STATUS "    INC       | ${include}")
+      message(STATUS "    LIB       | ${lib}")
+      message(STATUS "    MODULE    | ${exe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}")
+    endforeach(val)
   endif()
   endif()
   message(STATUS "RXD           | ${NRN_ENABLE_RX3D}")

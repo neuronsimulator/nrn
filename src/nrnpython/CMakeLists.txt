@@ -108,15 +108,8 @@ if(NRN_ENABLE_MODULE_INSTALL)
     if(MINGW)
       string(REPLACE ":/" ":\\\\" install_path "${install_path}")
     endif()
-    set(NRN_MODULE_INSTALL_OPTIONS "--home ${install_path}")
+    set(NRN_MODULE_INSTALL_OPTIONS "--home ${install_path}" PARENT_SCOPE)
   endif()
-  # show commands to user
-  foreach(pyexe ${NRN_PYTHON_EXE_LIST})
-    message(
-      STATUS
-        "Install neuron module with: ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}"
-      )
-  endforeach(pyexe)
 
   # user has selected dynamic python support (could be multiple versions)
   if(NRN_ENABLE_PYTHON_DYNAMIC)
