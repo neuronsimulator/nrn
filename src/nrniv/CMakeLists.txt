@@ -258,7 +258,6 @@ if(NRN_ENABLE_PYTHON)
   include_directories(${PYTHON_INCLUDE_DIRS})
 endif()
 
-
 # =============================================================================
 # All source directories to include
 # =============================================================================
@@ -279,7 +278,6 @@ if(NRN_ENABLE_MPI)
     target_link_libraries(nrnmpi_lib ${MPI_C_LIBRARIES})
     if (MINGW)
       add_dependencies(nrnmpi_lib nrniv_lib)
-      #target_link_libraries(nrnmpi_lib ${PROJECT_BINARY_DIR}/src/nrniv/libnrniv.dll.a)
       target_link_libraries(nrnmpi_lib nrniv_lib)
     endif()
     set_property(TARGET nrnmpi_lib PROPERTY OUTPUT_NAME nrnmpi)

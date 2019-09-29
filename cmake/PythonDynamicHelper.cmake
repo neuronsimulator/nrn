@@ -1,6 +1,7 @@
 # =============================================================================
 # Configure support for dynamic Python to use multiple Python versions
 # =============================================================================
+#
 # NEURON can be built with python modules that can be usable from multiple
 # versions of Python. Here we check if NRN_ENABLE_PYTHON_DYNAMIC is valid
 # and determine an include directory for version 2 and/or 3 to build
@@ -12,29 +13,28 @@
 # NRN_PYTHON_DYNAMIC list. This is because libnrnpython<major><minor>.dll
 # must be linked against the specfic libpython to avoid undefined name errors.
 # Thus, at least for MINGW, parallel to the NRN_PYTHON_DYNAMIC list
-# we construct the lists
-# NRN_PYTHON_VER_LIST, NRN_PYTHON_INCLUDE_LIST, and NRN_PYTHON_LIB_LIST
+# we construct the lists NRN_PYTHON_VER_LIST, NRN_PYTHON_INCLUDE_LIST,
+# and NRN_PYTHON_LIB_LIST
 
 set(LINK_AGAINST_PYTHON ${MINGW})
-#set(LINK_AGAINST_PYTHON ON)
-message(STATUS "LINK_AGAINST_PYTHON ${LINK_AGAINST_PYTHON}")
-set(NRN_PYTHON_VER_LIST "" CACHE INTERNAL "")
-set(NRN_PYTHON_INCLUDE_LIST "" CACHE INTERNAL "")
-set(NRN_PYTHON_LIB_LIST "" CACHE INTERNAL "")
+set(NRN_PYTHON_VER_LIST "" CACHE INTERNAL "" FORCE)
+set(NRN_PYTHON_INCLUDE_LIST "" CACHE INTERNAL "" FORCE)
+set(NRN_PYTHON_LIB_LIST "" CACHE INTERNAL "" FORCE)
 
 # Inform setup.py and nrniv/nrnpy.cpp whether libnrnpython name is libnrnpython<major>
-# or libnrnpython<major><minor> . The latter is required for mingw. 
+# or libnrnpython<major><minor> . The latter is required for mingw.
 # This is here instead of in src/nrnpython/CMakeLists.txt as src/nrniv/CMakeLists
 # needs it for nrniv/nrnpy.cpp
 set(USE_LIBNRNPYTHON_MAJORMINOR 0)
 if (LINK_AGAINST_PYTHON)
-  set(USE_LIBNRNPYTHON_MAJORMINOR 1)  
-endif()  
-message(STATUS "USE_LIBNRNPYTHON_MAJORMINOR ${USE_LIBNRNPYTHON_MAJORMINOR}")
+  set(USE_LIBNRNPYTHON_MAJORMINOR 1)
+endif()
+
+message(STATUS "Link against python library : ${LINK_AGAINST_PYTHON}")
+message(STATUS "Use MAJORMINOR version for libnrnpython : ${USE_LIBNRNPYTHON_MAJORMINOR}")
 
 if (NRN_ENABLE_PYTHON)
   if (NRN_ENABLE_PYTHON_DYNAMIC)
-    message(STATUS "NRN_PYTHON_DYNAMIC \"${NRN_PYTHON_DYNAMIC}\"")
     if ("${NRN_PYTHON_DYNAMIC}" STREQUAL "")
       # use the default python already determined
       if (LINK_AGAINST_PYTHON)
@@ -44,13 +44,9 @@ if (NRN_ENABLE_PYTHON)
       endif()
       # NB: we are constructing here a variable name NRNPYTHON_INCLUDE${PYVER}
       set(NRNPYTHON_INCLUDE${PYVER} ${PYTHON_INCLUDE_DIRS})
-      message(STATUS "Python dynamic support with headers: ${NRNPYTHON_INCLUDE${PYVER}}")
-      if (LINK_AGAINST_PYTHON)
-        list(APPEND NRN_PYTHON_VER_LIST "${PYVER}")
-        list(APPEND NRN_PYTHON_INCLUDE_LIST "${PYTHON_INCLUDE_DIRS}")
-        list(APPEND NRN_PYTHON_LIB_LIST "${PYTHON_LIBRARIES}")
-        message(STATUS "Python dynamic support with libraries: ${PYTHON_LIBRARIES}")
-      endif()
+      list(APPEND NRN_PYTHON_VER_LIST "${PYVER}")
+      list(APPEND NRN_PYTHON_INCLUDE_LIST "${PYTHON_INCLUDE_DIRS}")
+      list(APPEND NRN_PYTHON_LIB_LIST "${PYTHON_LIBRARIES}")
     else()
       # run each python provided by user to determine major and include directory
       message(STATUS "Dynamic Python support")
@@ -95,9 +91,6 @@ if (NRN_ENABLE_PYTHON)
         endif()
       endforeach()
     endif()
-  else()
-    # nothing to do
-    message(STATUS "Python dynamic support disabled")
   endif()
 endif()
 
