@@ -126,44 +126,63 @@ void inithoc() {
   }
 #ifdef NRNMPI
 
-  int flag = 0;
-  int mpi_mes = 0;  // for printing an mpi message only once.
-  char* pmes = 0;
+  int flag = 0;                 // true if MPI_Initialized is called
+  int mpi_mes = 0;              // for printing mpi message only once
+  int libnrnmpi_is_loaded = 1;  // becomes 0 if NEURON_INIT_MPI == 0 with dynamic mpi
+  char* pmes = NULL;            // error message
+  char* env_mpi = getenv("NEURON_INIT_MPI");
 
 #if NRNMPI_DYNAMICLOAD
   nrnmpi_stubs();
-  // if nrnmpi_load succeeds (MPI available), pmes is nil.
-  pmes = nrnmpi_load(1);
-#endif //NRNMPI_DYNAMICLOAD
-
-  // avoid having to include the c++ version of mpi.h
-  if (!pmes) {
-    nrnmpi_wrap_mpi_init(&flag);
+  /**
+   * In case of dynamic mpi build we load MPI unless NEURON_INIT_MPI is explicitly set to 0.
+   * We call nrnmpi_load to load MPI library which returns:
+   *  - nil if loading is successfull
+   *  - error message in case of loading error
+   */
+  if(env_mpi != NULL && strcmp(env_mpi, "0") == 0) {
+    libnrnmpi_is_loaded = 0;
   }
-  // MPI_Initialized(&flag);
-
-  if (flag) {
-    mpi_mes = 1;
-
-    argc = argc_mpi;
-    argv = (char**)argv_mpi;
-  } else if (getenv("NEURON_INIT_MPI")) {
-    // force NEURON to initialize MPI
-    mpi_mes = 2;
+  if (libnrnmpi_is_loaded) {
+    pmes = nrnmpi_load(1);
     if (pmes) {
       printf(
-          "NEURON_INIT_MPI exists in env but NEURON cannot initialize MPI "
-          "because:\n%s\n",
-          pmes);
+        "NEURON_INIT_MPI exists in env but NEURON cannot initialize MPI "
+        "because:\n%s\n",
+        pmes);
       exit(1);
-    } else {
+    }
+  }
+#endif
+
+  /**
+   * In case of non-dynamic mpi build mpi library is already linked. We add -mpi
+   * argument in following scenario:
+   * - if user has not explicitly set NEURON_INIT_MPI to 0 and mpi is already initialized
+   * - if user has explicitly set NEURON_INIT_MPI to 1 to load mpi initialization
+   */
+  if (libnrnmpi_is_loaded) {
+    nrnmpi_wrap_mpi_init(&flag);
+    if (flag) {
+      mpi_mes = 1;
       argc = argc_mpi;
       argv = (char**)argv_mpi;
+    } else if(env_mpi != NULL && strcmp(env_mpi, "1") == 0) {
+      mpi_mes = 2;
+      argc = argc_mpi;
+      argv = (char**)argv_mpi;
+    }else{
+      mpi_mes = 3;
     }
   } else {
+    // no mpi
     mpi_mes = 3;
   }
-  if (pmes && mpi_mes == 2){exit(1);}  // avoid unused variable warning
+
+  // merely avoids unused variable warning
+  if (pmes && mpi_mes == 2){
+      exit(1);
+  }
 
 #endif //NRNMPI
 
@@ -184,7 +203,9 @@ void inithoc() {
   nrn_is_python_extension = (pyver[0]-'0')*10 + (pyver[2] - '0');
   p_nrnpython_finalize = nrnpython_finalize;
 #if NRNMPI
-  nrnmpi_init(1, &argc, &argv);  // may change argc and argv
+  if (libnrnmpi_is_loaded) {
+    nrnmpi_init(1, &argc, &argv);  // may change argc and argv
+  }
 #if 0 && !defined(NRNMPI_DYNAMICLOAD)
 	if (nrnmpi_myid == 0) {
 		switch(mpi_mes) {

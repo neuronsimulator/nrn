@@ -56,7 +56,7 @@ fi
 
 # all the folders involved that have files
 mkdir -p $M/bin
-mkdir -p $M/lib/gcc/$X/$gccver
+mkdir -p $M/lib/gcc/$X/$gccver/include
 mkdir -p $M/$X/lib
 mkdir -p $M/$X/include/sdks
 mkdir -p $M/$X/include/sec_api/sys
@@ -83,7 +83,26 @@ libgcc_s.a
 liblto_plugin-0.dll
 '
 
-copy mingw64/x86_64-w64-mingw32/include '
+# copy all needed include files by processing output of gcc -E
+copyinc() {
+  echo "" > temp.c
+  for i in $* ; do
+    echo "#include <$i>" >> temp.c
+  done
+  echo "int main(int argc, char** argv){return 0;}" >> temp.c
+  gcc -E temp.c  | grep '^#.*include' > temp1
+  sed -n 's,^.*msys64/,,p' temp1 | sed -n 's,".*,,p' > temp2
+  sort temp2 | uniq > temp3
+  sed -n 's,/[^/]*$,,p' temp3 | sort  | uniq > temp4
+  for i in `cat temp4` ; do
+    mkdir -p $N/$i
+  done
+  for i in `cat temp3` ; do
+    cp /$i $N/$i
+  done
+}
+
+copyinc '
 _mingw.h
 _mingw_mac.h
 _mingw_off_t.h
@@ -110,24 +129,9 @@ stdint.h
 stdlib.h
 string.h
 swprintf.inl
+time.h
+unistd.h
 vadefs.h
-'
-
-copy mingw64/x86_64-w64-mingw32/include/sdks '
-_mingw_ddk.h
-_mingw_directx.h
-'
-
-copy mingw64/x86_64-w64-mingw32/include/sec_api '
-stdio_s.h
-stdlib_s.h
-string_s.h
-sys/timeb_s.h
-'
-
-copy mingw64/x86_64-w64-mingw32/include/sys '
-timeb.h
-types.h
 '
 
 copy mingw64/x86_64-w64-mingw32/lib '

@@ -594,7 +594,7 @@ static double save_test(void* v) {
 	BBSaveState* ss = (BBSaveState*)v;
 	usebin_ = 0;
 	if (nrnmpi_myid == 0) { // save global time
-#ifdef WIN32
+#if defined(MINGW)
 		mkdir("bbss_out");
 #else
 		mkdir("bbss_out", 0770);
