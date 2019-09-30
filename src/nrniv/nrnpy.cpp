@@ -361,7 +361,6 @@ static void* load_nrnpython_helper(const char* npylib) {
 #endif // NRNCMAKE
 #endif // DARWIN
 #endif // MINGW
-//printf("load_nrnpython_helper %s\n", name);
 	void* handle = dlopen(name, RTLD_NOW);
 	return handle;
 }
@@ -379,13 +378,13 @@ static int pylib2pyver10(const char* pylib) {
     if (isdigit(*cp)) {
       if (n2 < 0) {
         n2 = digittoint(*cp);
-      } else { 
+      } else {
         n1 = digittoint(*cp);
         return n1*10 + n2;
       }
     }else if (*cp == '.') {
       // skip
-    }else{ // 
+    }else{ //
       // start over
       n2 = -1;
     }
@@ -398,28 +397,26 @@ static void load_nrnpython(int pyver10, const char* pylib) {
 #if (defined(__MINGW32__) || (defined(USE_LIBNRNPYTHON_MAJORMINOR) && USE_LIBNRNPYTHON_MAJORMINOR == 1))
 	char name[256];
 	int pv10 = pyver10;
-//printf("pylib %s\n", pylib?pylib:"null");
 	if (pyver10 < 1 && pylib) {
 		pv10 = pylib2pyver10(pylib);
 	}
 	sprintf(name, "libnrnpython%d", pv10);
-//printf("name %s\n", name);
 	handle = load_nrnpython_helper(name);
 	if (!handle) {
-printf("Could not load %s\n", name);
-printf("pyver10=%d pylib=%s\n", pyver10, pylib ? pylib : "NULL");
-		return;
+        printf("Could not load %s\n", name);
+        printf("pyver10=%d pylib=%s\n", pyver10, pylib ? pylib : "NULL");
+        return;
 	}
 #else
-	handle = load_nrnpython_helper("libnrnpython3");
-	if (!handle) {
-		handle = load_nrnpython_helper("libnrnpython2");
-		if (!handle) {
-printf("Could not load either libnrnpython3 or libnrnpython2\n");
-printf("pyver10=%d pylib=%s\n", pyver10, pylib ? pylib : "NULL");
-			return;
-		}
-	}
+    handle = load_nrnpython_helper("libnrnpython3");
+    if (!handle) {
+        handle = load_nrnpython_helper("libnrnpython2");
+        if (!handle) {
+            printf("Could not load either libnrnpython3 or libnrnpython2\n");
+            printf("pyver10=%d pylib=%s\n", pyver10, pylib ? pylib : "NULL");
+            return;
+        }
+    }
 #endif
 	p_nrnpython_start = (void(*)(int))load_sym(handle, "nrnpython_start");
 	p_nrnpython_real = (void(*)())load_sym(handle, "nrnpython_real");
