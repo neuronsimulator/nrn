@@ -134,6 +134,7 @@ extern int nrnmpi_int_allmax(int);
 extern void sgid_alltoallv(sgid_t*, int*, int*, sgid_t*, int*, int*);
 extern void nrnmpi_int_alltoallv(int*, int*, int*,  int*, int*, int*);
 extern void nrnmpi_dbl_alltoallv(double*, int*, int*,  double*, int*, int*);
+extern void nrnmpi_dbl_alltoallv_sparse(double*, int*, int*,  double*, int*, int*);
 #endif
 }
 
@@ -594,8 +595,16 @@ void mpi_transfer() {
 #if PARANEURON
 	if (nrnmpi_numprocs > 1) {
 		double wt = nrnmpi_wtime();
-		nrnmpi_dbl_alltoallv(outsrc_buf_, outsrccnt_, outsrcdspl_,
-			insrc_buf_, insrccnt_, insrcdspl_);
+                if (nrn_sparse_partrans > 0)
+                  {
+                    nrnmpi_dbl_alltoallv_sparse(outsrc_buf_, outsrccnt_, outsrcdspl_,
+                                                insrc_buf_, insrccnt_, insrcdspl_);
+                  }
+                else
+                  {
+                    nrnmpi_dbl_alltoallv(outsrc_buf_, outsrccnt_, outsrcdspl_,
+                                         insrc_buf_, insrccnt_, insrcdspl_);
+                  }
 		nrnmpi_transfer_wait_ += nrnmpi_wtime() - wt;
 		errno = 0;
 	}
