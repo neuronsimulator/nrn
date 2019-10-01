@@ -36,8 +36,8 @@ class NeuronTestCase(unittest.TestCase):
         b = 1
         assert h.List('A').count() == 0
 
-    @staticmethod
-    def psection():
+    @classmethod
+    def psection(cls):
         """Test neuron.psection(Section)"""
 
         s = h.Section(name='soma')
@@ -71,8 +71,8 @@ class NeuronTestCase(unittest.TestCase):
         v.x[0] = 5
         assert v.x[0] == 5
 
-    @staticmethod
-    def ExtendedSection():
+    @classmethod
+    def ExtendedSection(cls):
         """test prsection (modified print statement)"""
         from neuron.sections import ExtendedSection
         s = ExtendedSection(name="test")
@@ -84,8 +84,8 @@ class NeuronTestCase(unittest.TestCase):
         p.start()
         p.join()
 
-    @staticmethod 
-    def RxDexistence():
+    @classmethod 
+    def RxDexistence(cls):
         """test import rxd and geometry3d if scipy"""
         a = 1
         try:
