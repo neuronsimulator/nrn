@@ -80,11 +80,6 @@ else()
 endif()
 
 # =============================================================================
-# Todo: add description of why this is copied
-# =============================================================================
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-
-# =============================================================================
 # All variables are set, prepare setup.py for python module install
 # =============================================================================
 nrn_configure_file(setup.py src/nrnpython)
@@ -164,6 +159,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
   foreach(pyexe ${NRN_PYTHON_EXE_LIST})
     install(CODE "
       message(STATUS \"Installing neuron module with: ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}\")
+      execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp)
       execute_process(COMMAND ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       )
