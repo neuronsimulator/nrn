@@ -1,24 +1,24 @@
-# Contributing to the NMODL Framework
+# 
 
-We would love for you to contribute to the NMODL Framework and help make it better than it is today. As a
-contributor, here are the guidelines we would like you to follow:
+We encourage contributions to the NEURON simulator from individuals all levels -- students, postdocs, academics, industry, coders, etc.
+Most internal hacks will require knowledge of C/C++. Knowledge of python is also necessary, at least for testing.
+Knowledge of the domain of neural simulation is also helpful but much of the simulation technology is comparable to other simulation fields in biology and beyond which
+feature numerical integration of ordinary differential equations (ODEs), here coupled with event-driven systems.
+
+We have indicated levels of difficulty with [labels][github/labels].
+
+Even if you are not contributing, you may want to suggest a needed improvement, or identify a problem or bug.
+If you are *requesting* a new feature by [submitting an issue](#submit-issue) to this GitHub Repository. 
+If you would like to yourself *implement* a new feature, please submit an issue with a proposal for your work first, to be sure that we can use it.
+
+As a contributor, there are a set of guidelines that will make it easy to accept your pull requests into the master build where it is teed-up for eventual release.
  - [Question or Problem?](#question)
  - [Issues and Bugs](#issue)
  - [Feature Requests](#feature)
  - [Submission Guidelines](#submit)
  - [Development Conventions](#devconv)
 
-## <a name="question"></a> Got a Question?
-
-Please do not hesitate to raise an issue on [github project page][github].
-
-## <a name="issue"></a> Found a Bug?
-
 If you find a bug in the source code, you can help us by [submitting an issue](#submit-issue) to our [GitHub Repository][github]. Even better, you can [submit a Pull Request](#submit-pr) with a fix.
-
-## <a name="feature"></a> Missing a Feature?
-
-You can *request* a new feature by [submitting an issue](#submit-issue) to our GitHub Repository. If you would like to *implement* a new feature, please submit an issue with a proposal for your work first, to be sure that we can use it.
 
 Please consider what kind of change it is:
 
@@ -27,16 +27,16 @@ discussed. This will also allow us to better coordinate our efforts, prevent dup
 and help you to craft the change so that it is successfully accepted into the project.
 * **Small Features** can be crafted and directly [submitted as a Pull Request](#submit-pr).
 
-## <a name="submit"></a> Submission Guidelines
+# <a name="submit"></a> Submission Guidelines
 
-### <a name="submit-issue"></a> Submitting an Issue
+## <a name="submit-issue"></a> Submitting an Issue
 
 Before you submit an issue, please search the issue tracker, maybe an issue for your problem already exists and the
 discussion might inform you of workarounds readily available.
 
 We want to fix all the issues as soon as possible, but before fixing a bug we need to reproduce and confirm it. In order to reproduce bugs we will need as much information as possible, and preferably a sample MOD file or Python example.
 
-### <a name="submit-pr"></a> Submitting a Pull Request (PR)
+## <a name="submit-pr"></a> Submitting a Pull Request (PR)
 
 When you wish to contribute to the code base, please consider the following guidelines:
 
@@ -126,12 +126,12 @@ do not comply with coding conventions of this project. These 2 CMake variables r
 * [pre-commit](https://pre-commit.com/)
 
 clang-format can be installed on Linux thanks
-to [LLVM apt page](http://apt.llvm.org/). On MacOS, there is a
+to (http://apt.llvm.org/). On MacOS, there is a
 [brew recipe](https://gist.github.com/ffeu/0460bb1349fa7e4ab4c459a6192cbb25)
 to install clang-format 7. _cmake-format_ and _pre-commit_ utilities can be installed with *pip*.
 
 
-### Memory Leaks and clang-tidy
+## Memory Leaks and clang-tidy
 
 If you want to test for memory leaks, do :
 
