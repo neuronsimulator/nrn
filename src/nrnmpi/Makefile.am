@@ -21,7 +21,7 @@ $(INC): mkdynam.sh nrnmpidec.h
 
 $(libnrnmpi_la_OBJECTS): $(INC)
 
-all: $(nsrc)/nrnmpi/nrnmpi_dynam.h
+all: nrnmpi_dynam.h
 else
 NEED_RTLD_GLOBAL =
 endif

@@ -188,7 +188,7 @@ else:
 # global list of paths already loaded by load_mechanisms
 nrn_dll_loaded = []
 
-def load_mechanisms(path):
+def load_mechanisms(path, warn_if_already_loaded=True):
     """
     load_mechanisms(path)
 
@@ -204,7 +204,8 @@ def load_mechanisms(path):
     
     global nrn_dll_loaded
     if path in nrn_dll_loaded:
-        print("Mechanisms already loaded from path: %s.  Aborting." % path)
+        if warn_if_already_loaded:
+            print("Mechanisms already loaded from path: %s.  Aborting." % path)
         return True
     
     # in case NEURON is assuming a different architecture to Python,

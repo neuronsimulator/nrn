@@ -42,23 +42,29 @@ def all_in(dist):
 def sort_spheres_last(item):
     return 1 if isinstance(item, Sphere) else 0
 
-def fullmorph(source, dx, soma_step=100):
+def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
     start = time.time()
 
     """Input: object source; arguments to pass to ctng
        Output: all voxels with SA and volume associated, categorized by segment"""
     
-    morphology = constructive_neuronal_geometry(source, dx, soma_step)
+    morphology = constructive_neuronal_geometry(source, dx, soma_step, relevant_pts=relevant_pts)
     join_objects, cones, segment_dict, join_groups, object_pts, soma_objects = morphology
 
     # grid setup
     xs, ys, zs, diams, arcs = [],[],[],[],[]
-    for sec in source:
-    	xs += [sec.x3d(i) for i in range(sec.n3d())]
-    	ys += [sec.y3d(i) for i in range(sec.n3d())]
-    	zs += [sec.z3d(i) for i in range(sec.n3d())]
-    	diams += [sec.diam3d(i) for i in range(sec.n3d())]
-    	arcs += [sec.arc3d(i + 1) - sec.arc3d(i) for i in range(sec.n3d() - 1)]
+    for i, sec in enumerate(source):
+        if relevant_pts:
+            rng = relevant_pts[i]
+        else:
+            rng = range(sec.n3d())
+        
+        xs += [sec.x3d(i) for i in rng]
+        ys += [sec.y3d(i) for i in rng]
+        zs += [sec.z3d(i) for i in rng]
+        diams += [sec.diam3d(i) for i in rng]
+        arcs += [sec.arc3d(i + 1) - sec.arc3d(i) for i in rng[:-1]]
+
     # TODO: include segment boundaries when checking cone lengths
     # warning on minimum size of dx
     check = min(min(diams)/math.sqrt(3), min(arcs)/math.sqrt(3))
@@ -68,7 +74,10 @@ def fullmorph(source, dx, soma_step=100):
     dy = dz = dx   # ever going to change this?
 
     margin = max(diams) + dx
-    grid = {'xlo':min(xs)-margin, 'xhi':max(xs)+margin, 'ylo':min(ys)-margin, 'yhi':max(ys)+margin, 'zlo':min(zs)-margin, 'zhi':max(zs)+margin, 'dx':dx, 'dy':dy, 'dz':dz}
+    if mesh_grid:
+        grid = mesh_grid
+    else:
+        grid = {'xlo':min(xs)-margin, 'xhi':max(xs)+margin, 'ylo':min(ys)-margin, 'yhi':max(ys)+margin, 'zlo':min(zs)-margin, 'zhi':max(zs)+margin, 'dx':dx, 'dy':dy, 'dz':dz}
 
     ##########################################################
     final_seg_dict = {}
