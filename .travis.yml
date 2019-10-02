@@ -1,6 +1,6 @@
 language: cpp
 sudo: false
-dist: trusty
+dist: bionic
 addons:
     apt:
         packages:
@@ -11,7 +11,7 @@ addons:
         - python3-tk
         - python-tk
 virtualenv:
-    system_site_packages: true 
+    system_site_packages: true
 
 compiler:
   - clang
@@ -20,15 +20,18 @@ env:
   - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2)"
     PYTHON="$(which python2)"
     PIP="$(which pip)"
+    PYTHON_VERSION=2.7.15
   - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python3)"
     PYTHON="$(which python3)"
     PIP="$(which pip3)"
+    PYTHON_VERSION=3.7.1
 os:
   - linux
 before_install:
   - echo $LANG
   - echo $LC_ALL
   - $CXX -v
+  - pyenv global $PYTHON_VERSION;
   - export PYTHONPATH=$PYTHONPATH:$(pwd)/install/lib/python/
 install:
   - $PIP install --user pip --upgrade
