@@ -12,6 +12,7 @@ extern "C" {
 #include <../nrnoc/nrn_ansi.h>
 #include <../nrnoc/multicore.h>
 #include <nrnwrap_Python.h>
+#include <nrnpython.h>
 
 static void ode_solve(double, double, double*, double*);
 extern PyTypeObject* hocobject_type;
@@ -356,10 +357,19 @@ void apply_node_flux(int n, long* index, double* scale, PyObject** source, doubl
             else
             {
                 result = PyEval_CallObject(source[i], NULL);
-                if(PyFloat_Check(result) || PyLong_Check(result))
+                if(PyFloat_Check(result))
                 {
-                    states[j] += dt* PyFloat_AsDouble(result) / scale[i];
+                    states[j] += dt * PyFloat_AsDouble(result) / scale[i];
                 }
+                else if(PyLong_Check(result))
+                {
+                    states[j] += dt * (double)PyLong_AsLong(result) / scale[i];
+                }
+                else if(PyInt_Check(result))
+                {
+                    states[j] += dt * (double)PyInt_AsLong(result) / scale[i];
+                }
+
                 else
                 {
                     PyErr_SetString(PyExc_Exception, "node._include_flux callback did not return a number.\n");
@@ -1734,13 +1744,17 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates, doub
 	        }
 	    }
 
-
 	    for(i = 0; i < react->num_ecs_species; i++)
 	    {
 	        if(react->ecs_state[segment][i] != NULL)
 	        {
 	         	ecs_states_for_reaction[i] = *(react->ecs_state[segment][i]);
 	        }
+            else
+            {
+                ecs_states_for_reaction[i] = NAN;
+
+            }
 	    }
         for(k = 0; i < react->num_ecs_species + react->num_ecs_params; i++, k++)
         {
@@ -1748,6 +1762,10 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates, doub
 	        {
 	         	ecs_params_for_reaction[k] = *(react->ecs_state[segment][i]);
 	        }
+            else
+            {
+                ecs_params_for_reaction[k] = NAN;
+            }
         }
         MEM_ZERO(ecs_result,react->num_ecs_species*sizeof(double));
 
