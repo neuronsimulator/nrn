@@ -35,8 +35,7 @@ before_install:
 install:
   - $PIP install --user scipy --upgrade
   - $PIP install --user matplotlib
-  - export PYTHONPATH=$PYTHONPATH:$HOME/.local/lib/python
-  - export PATH=$(pwd)/install/x86_64/bin:$PATH
 script:
   - ./travis_build.sh .
+  - $PYTHON --version
   - $PYTHON share/lib/python/neuron/rxdtests/run_all.py
