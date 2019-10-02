@@ -17,7 +17,7 @@ compiler:
   - clang
   - gcc
 env:
-  - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2) PYTHON_BLD=$(which python2)"
+  - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2)"
     PYTHON="$(which python2)"
     PIP="$(which pip)"
     PYTHON_VERSION=2.7.15
@@ -31,10 +31,12 @@ before_install:
   - echo $LANG
   - echo $LC_ALL
   - $CXX -v
+  - export PYTHONPATH=$PYTHONPATH:$(pwd)/install/lib/python/
   - pyenv global $PYTHON_VERSION;
 install:
   - $PIP install --user scipy --upgrade
   - $PIP install --user matplotlib
+  - export PATH=$(pwd)/install/x86_64/bin:$PATH
 script:
   - ./travis_build.sh .
   - $PYTHON --version

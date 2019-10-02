@@ -239,7 +239,7 @@ AC_CHECK_LIBM
 LIBS="$LIBS $LIBM"
 
 dnl Python that runs on the build machine needed to create hocusr.h
-AC_CHECK_PROGS(PYTHON_BLD, python3 python, python3)
+AC_CHECK_PROGS(PYTHON_BLD, python3 python2 python, python3)
 
 dnl Python for cygwin and mingw has to be done early because later tests may
 dnl have to be done with a CFLAGS="-mno-cygwin" (obsolete after gcc2.3)
