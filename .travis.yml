@@ -32,10 +32,8 @@ before_install:
   - echo $LC_ALL
   - $CXX -v
   - pyenv global $PYTHON_VERSION;
-  - export PYTHONPATH=$PYTHONPATH:$(pwd)/install/lib/python/
 install:
-  - $PIP install --user pip --upgrade
-  - $PIP install --user numpy  --upgrade
+  - $PIP install --user scipy --upgrade
   - $PIP install --user matplotlib
   - export PYTHONPATH=$PYTHONPATH:$HOME/.local/lib/python
   - export PATH=$(pwd)/install/x86_64/bin:$PATH
