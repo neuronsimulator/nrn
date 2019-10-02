@@ -30,40 +30,40 @@ dir(neuron.units)
 h.celsius = 6.3 
 e = 1.60217662e-19
 scale = 1e-14/e
-gnabar =(30/1000) *scale     # molecules/um2 ms mV 
-gnabar_l = (0.0247/1000)/5 *scale
-gkbar = (25/1000) *scale
-gkbar_l = (0.05/1000) *scale
-gclbar_l = (0.1/1000) *scale
+gnabar =30e-3 *scale     # molecules/um2 ms mV 
+gnabar_l = 0.0247 *scale
+gkbar = 25e-3 *scale
+gkbar_l = 0.05e-3 *scale
+gclbar_l = 0.1e-3 *scale
 gl = 0.0003 *scale
 ukcc2 = 0.3 * mM/sec 
 unkcc1 = 0.1 * mM/sec 
 p_max = 0.8 * mM/sec 
 alpha = 5.3
 epsilon = 0.17 * sec*(10**-1)
-g_gliamax = 5 * mM/sec
+g_gliamax = 5.0 * mM/sec
 e_kmax = 0.25 * sec*(10**-1)
-oa_bath = 32/alpha
-o_bath = 32 * mM
+oa_bath = 32.0/alpha
+o_bath = 32.0 * mM
 beta_o = 5
 avo = 6.0221409*(10**23)
 q10 = 3.0**((h.celsius - 6.3)/10.0)
 
 #sodium activation 'm'
-alpha_m = (0.32 * (v + 54))/(1 - exp(-(v + 54)/4))
-beta_m = (0.28 * (v + 27))/(exp((v + 27)/5) - 1)
+alpha_m = (0.32 * (v + 54.0))/(1.0 - exp(-(v + 54.0)/4.0))
+beta_m = (0.28 * (v + 27.0))/(exp((v + 27.0)/5.0) - 1.0)
 mtau = 1.0/(q10 * (alpha_m + beta_m))
 minf = alpha_m/(alpha_m + beta_m)
 
 #sodium inactivation 'h'
-alpha_h = 0.128 * exp(-(v + 50)/18)
-beta_h = 4/(1 + exp(-(v + 27)/5))
+alpha_h = 0.128 * exp(-(v + 50.0)/18.0)
+beta_h = 4.0/(1.0 + exp(-(v + 27.0)/5.0))
 htau = 1.0/(q10 * (alpha_h + beta_h))
 hinf = alpha_h/(alpha_h + beta_h)
 
 #potassium activation 'n'
-alpha_n = (0.032 * (v + 52))/(1 - exp(-(v + 52)/5))
-beta_n = 0.5 * exp(-(v + 57)/40)
+alpha_n = (0.032 * (v + 52.0))/(1.0 - exp(-(v + 52.0)/5.0))
+beta_n = 0.5 * exp(-(v + 57.0)/40.0)
 ntau = 1.0/(q10 * (alpha_n + beta_n))
 ninf = alpha_n/(alpha_n + beta_n)
 
@@ -83,13 +83,13 @@ glia.pt3dadd(-15,0,0,30)
 glia.pt3dadd(15,0,0,30)
 glia.nseg = 11
 
-vi = 2 * pi * (soma.diam/2)**2 * soma.L
-vo = 100*vi/beta_o 
+vi = 2.0 * pi * (soma.diam/2.0)**2 * soma.L
+vo = 100.0*vi/beta_o 
 
-surface_area = 2 * pi * soma.diam/2 * soma.L 
-volume = 2 * pi * (soma.diam/2)**2 * soma.L 
-glia_surface_area = 2 * pi * glia.diam/2 * glia.L 
-glia_volume = 2 * pi * (glia.diam/2)**2 * glia.L 
+surface_area = 2 * pi * soma.diam/2.0 * soma.L 
+volume = 2.0 * pi * (soma.diam/2)**2 * soma.L 
+glia_surface_area = 2.0 * pi * glia.diam/2.0 * glia.L 
+glia_volume = 2.0 * pi * (glia.diam/2.0)**2 * glia.L 
 volume_scale = avo*volume/surface_area * 10**-18
 glia_volume_scale = avo*glia_volume/glia_surface_area * 10**-18
 
@@ -119,7 +119,8 @@ cyt = rxd.Region(soma, name='cyt', nrn_region='i')
 mem = rxd.Region(soma, name='cell_mem', geometry=rxd.membrane())
 gcyt = rxd.Region(glia, name='cyt', nrn_region='i')
 gmem = rxd.Region(glia, name='cell_mem', geometry=rxd.membrane())
-ecs = rxd.Extracellular(-vo**(1/3), -vo**(1/3), -vo**(1/3), vo**(1/3), vo**(1/3), vo**(1/3), dx=vo**(1/3))
+dx = vo**(1.0/3.0)
+ecs = rxd.Extracellular(-2*dx, -2*dx, -2*dx, 2*dx, 2*dx, 2*dx, dx=dx)
 #ecs = rxd.Extracellular(-100, -100, -100, 100, 100, 100, dx=33)
 #SPECIES/PARAMETERS------------------------------------------------------------------------------------------------------------------------
 
@@ -133,7 +134,7 @@ dump = rxd.Parameter([cyt, mem, gcyt, gmem], name='dump')
 ki, ko, nai, nao, cli, clo, gnai, gki = k[cyt], k[ecs], na[cyt], na[ecs], cl[cyt], cl[ecs], glial_na[gcyt], glial_k[gcyt] 
                                                                                #i = in cytosol (cyt) o = in extracellular (ecs)
 #extracellular oxygen concentration
-o2ecs = rxd.Species([ecs, mem, gmem], name='o2ecs', initial=oa_bath)
+o2ecs = rxd.Species([ecs], name='o2ecs', initial=oa_bath)
 
 #STATES-------------------------------------------------------------------------------------------------------------------------
 
@@ -146,17 +147,17 @@ ngate = rxd.State([cyt, mem], name='ngate', initial=0.02284760152971809)
 
 gna = gnabar*mgate**3*hgate
 gk = gkbar*ngate**4
-fko = 1 / (1 + exp(16 - ko))
+fko = 1.0 / (1.0 + exp(16.0 - ko))
 nkcc1 = unkcc1*fko*(log((ki * cli) / (ko * clo)) + log((nai * cli) / (nao * clo)))
 kcc2 = ukcc2 * log((ki * cli) / (ko * clo))
 ena = 26.64 * log(nao/nai) #nerst equation - reversal potentials
 ek = 26.64 * log(ko/ki) #^^^^^
 ecl = 26.64 * log(cli/clo)#^^^
-p = p_max / (1 + exp((20 - oa_bath * alpha)/3))
-pump = (p / (1.0 + exp((25 - nai)/3))) * (1.0 / (1.0 + exp(3.5 - ko)))
-gliapump = (1/3) * (p / (1.0 + exp((25 - gnai) / 3))) * (1.0 / (1.0 + exp(3.5 - ko)))
+p = p_max / (1.0 + exp((20.0 - oa_bath * alpha)/3))
+pump = (p / (1.0 + exp((25.0 - nai)/3))) * (1.0 / (1.0 + exp(3.5 - ko)))
+gliapump = (1.0/3.0) * (p / (1.0 + exp((25.0 - gnai) / 3.0))) * (1.0 / (1.0 + exp(3.5 - ko)))
 g_glia = g_gliamax / (1.0 + exp(-oa_bath*alpha - 2.5)/0.2)
-glia12 = (g_glia / 1.0 + exp((18 - ko)/2.5))
+glia12 = (g_glia / 1.0 + exp((18.0 - ko)/2.5))
 
 #RATES--------------------------------------------------------------------------------------------------------------------------
 
@@ -165,13 +166,13 @@ glia12 = (g_glia / 1.0 + exp((18 - ko)/2.5))
 #n_gate = rxd.Rate(ngate, (ninf - ngate)/ntau)
 
 #dm/dt
-m_gate = rxd.Rate(mgate, (alpha_m * (1 - mgate)) - (beta_m * mgate))
+m_gate = rxd.Rate(mgate, (alpha_m * (1.0 - mgate)) - (beta_m * mgate))
 
 #dh/dt
-h_gate = rxd.Rate(hgate, (alpha_h * (1 - hgate)) - (beta_h * hgate))
+h_gate = rxd.Rate(hgate, (alpha_h * (1.0 - hgate)) - (beta_h * hgate))
 
 #dn/dt
-n_gate = rxd.Rate(ngate, (alpha_n * (1 - ngate)) - (beta_n * ngate))
+n_gate = rxd.Rate(ngate, (alpha_n * (1.0 - ngate)) - (beta_n * ngate))
 
 #d[O2]o/dt
 o2_ecs = rxd.Rate(o2ecs, (epsilon * (oa_bath - o2ecs))) 
