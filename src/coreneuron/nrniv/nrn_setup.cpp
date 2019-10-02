@@ -812,8 +812,8 @@ void nrn_setup(const char* filesdat,
     delete[] file_reader;
 
     model_size();
-    delete [] gidgroups;
-    delete [] imult;
+    delete[] gidgroups;
+    delete[] imult;
 
     if (nrnmpi_myid == 0) {
         printf(" Setup Done   : %.2lf seconds \n", nrn_wtime() - time);
@@ -1011,7 +1011,7 @@ void nrn_cleanup(bool clean_ion_global_map) {
 
     // clean nrnthread_chkpnt
     if (nrnthread_chkpnt) {
-        delete [] nrnthread_chkpnt;
+        delete[] nrnthread_chkpnt;
         nrnthread_chkpnt = nullptr;
     }
 

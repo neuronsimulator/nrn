@@ -9,6 +9,7 @@ MECH_VERSION = 0.0
 MODS_PATH = .
 OUTPUT = @CMAKE_HOST_SYSTEM_PROCESSOR@
 OPTMODS = @CORENRN_OPTMODS@
+OPTMODS_OUTPUTS = @CORENRN_OPTMODS_OUTPUTS@
 DESTDIR =
 
 # Coreneuron dirs
@@ -17,6 +18,9 @@ libdir := @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_LIBDIR@
 incdir := @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_INCLUDEDIR@
 datadir:= @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_DATADIR@/coreneuron
 datadir_mod2c := @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_DATADIR@/mod2c
+
+# Binary of MOD2C/NMODL depending on what was activated
+mod2c_install_bin := @mod2c_install_bin@
 
 # Additional variables set in CMAKE usable here
 # - @CORENRN_COMPILE_DEFS
@@ -41,13 +45,45 @@ CXXCOMPILE = $(CXX) $(CXXFLAGS) @CORENRN_COMPILE_DEFS@ $(INCLUDES)
 CXX_LINK_EXE = $(CXX) $(CXXFLAGS) @CMAKE_EXE_LINKER_FLAGS@
 CXX_LINK_SHARED = $(CXX) $(CXXFLAGS) @CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS@ @CMAKE_SHARED_LIBRARY_CXX_FLAGS@ @CMAKE_SHARED_LINKER_FLAGS@
 
+ISPC = @CMAKE_ISPC_COMPILER@
+ISPC_FLAGS = @CMAKE_ISPC_FLAGS@
+ISPC_COMPILE = $(ISPC) $(ISPC_FLAGS) -I$(incdir) -I@nmodl_INCLUDE@
+
+# Variables used in the "ARTIFICIAL_CELL" detection
+mod_c_srcs_path =
+mod_ispc_srcs_path =
+mod_c_srcs_names =
+mod_ispc_srcs_names =
+define check_file
+	ifeq (@ENABLE_ISPC_TARGET@, ON)
+		ifeq ($(shell grep -q $(2) $(1); echo $$?), 0)
+			mod_c_srcs_path += $(MODC_DIR)/$(notdir $(1))
+			mod_c_srcs_names += $(notdir $(1))
+		else
+			mod_ispc_srcs_path += $(MODC_DIR)/$(notdir $(1))
+			mod_ispc_srcs_names += $(notdir $(1))
+		endif
+	else
+		mod_c_srcs_path += $(MODC_DIR)/$(notdir $(1))
+		mod_c_srcs_names += $(notdir $(1))
+	endif
+endef
+
 # File path config (internal)
 MODC_DIR = $(OUTPUT)/core/mod2c
 OBJS_DIR = $(OUTPUT)/core/build
 mod_files = $(sort $(notdir $(wildcard $(MODS_PATH)/*.mod)))
+mod_paths = $(sort $(wildcard $(MODS_PATH)/*.mod))
 mod_names = $(mod_files:.mod=) $(OPTMODS:.mod=)
-modc_files = $(addprefix $(MODC_DIR)/,$(addsuffix .cpp,$(mod_names)))
-mod_objs   = $(addprefix $(OBJS_DIR)/,$(addsuffix .o,$(mod_names)))
+mod_all_cpp_files = $(addprefix $(MODC_DIR)/,$(addsuffix .cpp,$(mod_names)))
+mod_c_objs = $(addprefix $(OBJS_DIR)/,$(addsuffix .o,$(basename $(mod_c_srcs_names)))) $(addprefix $(OBJS_DIR)/,$(addsuffix .o,$(basename $(filter %.cpp, $(OPTMODS_OUTPUTS)))))
+mod_ispc_objs = $(addprefix $(OBJS_DIR)/,$(addsuffix .obj,$(basename $(mod_ispc_srcs_names)))) $(addprefix $(OBJS_DIR)/,$(addsuffix .obj,$(basename $(filter %.ispc, $(OPTMODS_OUTPUTS)))))
+
+$(foreach ittxtfile, $(mod_paths), $(eval $(call check_file, $(ittxtfile), ARTIFICIAL_CELL)))
+
+mod_c_files = $(patsubst %.mod,%.cpp,$(mod_c_srcs_path))
+mod_ispc_files = $(patsubst %.mod,%.ispc,$(mod_ispc_srcs_path))
+mod_ispc_c_files = $(patsubst %.mod,%.cpp,$(mod_ispc_srcs_path))
 
 kinderiv_h = $(MODC_DIR)/_kinderiv.h
 mod_func_o = $(OBJS_DIR)/_mod_func.o
@@ -80,26 +116,41 @@ $(special): $(coremech_lib)
 	  -L $(OUTPUT) -l$(coremech_libname) $(CORENRNLIB_FLAGS) -Wl,-rpath,'$(DESTDIR_RPATH)' -Wl,-rpath,$(libdir) $(LDFLAGS)
 
 
-$(coremech_lib): $(mod_func_o) $(dimplic_o) $(mod_objs) build_always
+$(coremech_lib): $(mod_func_o) $(dimplic_o) $(mod_c_objs) $(mod_ispc_objs) build_always
 	@printf " => $(C_GREEN)LINKING$(C_RESET) library $(coremech_lib) Mod files: $(mod_files) (+ $(OPTMODS))\n"
 	$(CXX_LINK_SHARED) -I $(incdir) -DADDITIONAL_MECHS $(datadir)/enginemech.cpp -o ${coremech_lib} ${_SONAME} \
-	  $(mod_func_o) $(dimplic_o) $(mod_objs) $(datadir)/libscopmath.a $(CORENRNLIB_FLAGS) -Wl,-rpath,$(libdir) $(LDFLAGS)
+	  $(mod_func_o) $(dimplic_o) $(mod_c_objs) $(mod_ispc_objs) $(datadir)/libscopmath.a $(CORENRNLIB_FLAGS) -Wl,-rpath,$(libdir) $(LDFLAGS)
 
 
-# Generic build cpp->o. Need PIC for shared lib
+# Generic build cpp->.o Need PIC for shared lib
 $(OBJS_DIR)/%.o: $(MODC_DIR)/%.cpp $(kinderiv_h) | $(OBJS_DIR)
 	@printf " -> $(C_GREEN)Compiling$(C_RESET) $<\n"
 	$(CXXCOMPILE) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c $< -o $@
 
+# Generic build ispc->.obj Need PIC for shared lib
+$(OBJS_DIR)/%.obj: $(MODC_DIR)/%.ispc | $(OBJS_DIR)
+	@printf " -> $(C_GREEN)Compiling with ISPC$(C_RESET) $<\n"
+	$(ISPC_COMPILE) @CMAKE_ISPC_COMPILE_OPTIONS_PIC@ $< -o $@
 
-# Build cpp files with mod2c
-$(MODC_DIR)/%.cpp: $(MODS_PATH)/%.mod | $(MODC_DIR)
+# Build ispc files with mod2c/nmodl
+$(mod_ispc_files): $(MODC_DIR)/%.ispc: $(MODS_PATH)/%.mod | $(MODC_DIR)
 	@printf " -> $(C_GREEN)MOD2C$(C_RESET) $<\n"
 	MODLUNIT=$(datadir_mod2c)/nrnunits.lib \
-	  $(bindir)/mod2c_core $< -o $(MODC_DIR)/
+	  $(mod2c_install_bin) $< -o $(MODC_DIR)/ @nmodl_arguments_ispc@
+
+# Static pattern to set up the dependencies for the previous recipe.
+$(mod_ispc_c_files): $(MODC_DIR)/%.cpp: $(MODC_DIR)/%.ispc
+
+# Build cpp files with mod2c/nmodl
+$(mod_c_files): $(MODC_DIR)/%.cpp: $(MODS_PATH)/%.mod | $(MODC_DIR)
+	@printf " -> $(C_GREEN)MOD2C$(C_RESET) $<\n"
+	MODLUNIT=$(datadir_mod2c)/nrnunits.lib \
+	  $(mod2c_install_bin) $< -o $(MODC_DIR)/ @nmodl_arguments_c@
 
 # If .mod doesnt exist attempt from previously built opt mods in shared/
 $(MODC_DIR)/%.cpp: $(datadir_mod2c)/%.cpp | $(MODC_DIR)
+	ln -s $< $@
+$(MODC_DIR)/%.ispc: $(datadir_mod2c)/%.ispc | $(MODC_DIR)
 	ln -s $< $@
 
 
@@ -112,10 +163,10 @@ $(mod_func_c): build_always | $(MODC_DIR)
 
 # Header to avoid function callbacks using function pointers
 # Move all mods to temp and bring back only those required
-$(kinderiv_h): $(modc_files) build_always | $(MODC_DIR)
+$(kinderiv_h): $(mod_all_cpp_files) build_always | $(MODC_DIR)
 	@printf " -> $(C_GREEN)Generating$(C_RESET) $(kinderiv_h)\n"
 	cd $(MODC_DIR) && mkdir -p _tmp &&	mv [^_]*.cpp _tmp/ && \
-	  mv $(addprefix _tmp/,$(notdir $(modc_files))) ./ || true
+	  mv $(addprefix _tmp/,$(notdir $(mod_all_cpp_files))) ./ || true
 	rm -rf $(MODC_DIR)/_tmp
 	cd $(MODC_DIR) && python $(datadir)/kinderiv.py
 

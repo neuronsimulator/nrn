@@ -98,10 +98,10 @@ void local_spikevec_sort(std::vector<double>& isvect,
 void sort_spikes(std::vector<double>& spikevec_time, std::vector<int>& spikevec_gid) {
     double lmin_time = std::numeric_limits<double>::max();
     double lmax_time = std::numeric_limits<double>::min();
-    if(!spikevec_time.empty()) {
+    if (!spikevec_time.empty()) {
         lmin_time = *(std::min_element(spikevec_time.begin(), spikevec_time.end()));
         lmax_time = *(std::max_element(spikevec_time.begin(), spikevec_time.end()));
-    }	
+    }
     double min_time = nrnmpi_dbl_allmin(lmin_time);
     double max_time = nrnmpi_dbl_allmax(lmax_time);
 

@@ -8,7 +8,7 @@ set -e
 APP_NAME=$(basename $0)
 _PARENT="$(dirname $BASH_SOURCE)/.."
 ROOTDIR=$(perl -e "use Cwd 'abs_path'; print abs_path('$_PARENT')")
-MAKE_OPTIONS="MECH_NAME MECH_VERSION OUTPUT INCFLAGS LINKFLAGS MODS_PATH OPTMODS VERBOSE"
+MAKE_OPTIONS="MECH_NAME MECH_VERSION OUTPUT INCFLAGS LINKFLAGS MODS_PATH OPTMODS OPTMODS_OUTPUTS VERBOSE"
 PARALLELISM=4
 
 while getopts "n:v:o:i:l:p:chV" OPT; do
@@ -24,7 +24,8 @@ while getopts "n:v:o:i:l:p:chV" OPT; do
     l)
         params_LINKFLAGS="$OPTARG";;
     c)
-        params_OPTMODS="";;
+        params_OPTMODS=""
+        params_OPTMODS_OUTPUTS="";;
     V)
         params_VERBOSE=1;;
     p)

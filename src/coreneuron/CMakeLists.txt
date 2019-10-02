@@ -113,11 +113,12 @@ macro(mod2c_target)
         unset(mod2c_wrapper_outname_)
     endif()
     list(APPEND MOD2C_${mod2c_KEY}_MODS "${mod2c_modname_}")
-    if(${NMODL_FOUND})
+    if(ENABLE_NMODL AND NMODL_FOUND)
         add_custom_command(OUTPUT "${mod2c_output_}" "${mod2c_wrapper_output_}"
                 DEPENDS ${mod2c_MODFILE} ${MOD2C_BINARY}
                 COMMAND ${CMAKE_COMMAND} -E copy "${mod2c_source_}" "${CMAKE_CURRENT_BINARY_DIR}"
-                COMMAND ${MOD2C} "${mod2c_modname_}" -o "${CMAKE_CURRENT_BINARY_DIR}" host ${nmodl_modearg} ${NMODL_EXTRA_FLAGS}
+                COMMAND ${MOD2C} "${mod2c_modname_}" -o "${CMAKE_CURRENT_BINARY_DIR}" host ${nmodl_modearg}
+                    ${NMODL_EXTRA_FLAGS_LIST}
                 WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
     else()
         add_custom_command(OUTPUT "${mod2c_output_}"
@@ -211,7 +212,7 @@ macro(mod2c_from_file name modlist searchpath)
         message(WARNING "Note: halfgap.mod is found in specified mechanism search directory!")
     else()
         set(GAPMOD "${PROJECT_SOURCE_DIR}/tests/integration/ring_gap/mod/halfgap.mod")
-            mod2c_target(KEY ${name} MODFILE "${GAPMOD}" TARGET ${M2C_TARGET})
+        mod2c_target(KEY ${name} MODFILE "${GAPMOD}" TARGET ${M2C_TARGET})
         list(APPEND MOD_PATHS ${GAPMOD})
         message(STATUS "Adding halfgap.mod mod file for tests!")
     endif()
@@ -403,6 +404,12 @@ set(CORENRN_LINK_LIBS "${CORENRN_LINK_LIBS}" PARENT_SCOPE)
 # Share built-in OPTIONAL MODS also with rest of project
 set(CORENRN_OPTMECH_MODS "${MOD2C_OPTMECH_MODS}" PARENT_SCOPE)
 
+foreach(MOD ${MOD2C_OPTMECH_OUTPUTS})
+    get_filename_component(OPTMECH_NAME ${MOD} NAME)
+    list(APPEND OPTMECH_OUTPUTS_LIST ${OPTMECH_NAME})
+endforeach()
+
+set(CORENRN_OPTMECH_OUTPUTS "${OPTMECH_OUTPUTS_LIST}" PARENT_SCOPE)
 
 # The scopmath lib - should not contain dimplic
 add_library(scopmath STATIC ${coreneuron_all_headers} ${scopmath_c_files})
@@ -443,7 +450,7 @@ install(FILES ${MOD2C_UNITS}
 if(ENABLE_HEADER_INSTALL)
     install(DIRECTORY .
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/coreneuron
-            FILES_MATCHING PATTERN "*.h*" PATTERN "*.ipp")
+            FILES_MATCHING PATTERN "*.h*" PATTERN "*.ipp" PATTERN "*.ispc")
 
     install(FILES ${KINDERIV_PY} ${MOD_FUNC_C_PL} ${DIMPLIC_C} ${ENGINEMECH_C}
             DESTINATION ${CMAKE_INSTALL_DATADIR}/coreneuron)
