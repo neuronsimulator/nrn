@@ -27,11 +27,13 @@ THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "coreneuron/nrnconf.h"
+#include "coreneuron/nrnoc/fast_imem.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnoc/nrnoc_decl.h"
 #include "coreneuron/nrniv/profiler_interface.h"
 
 namespace coreneuron {
+
 void nrn_finitialize(int setv, double v) {
     int i;
     NrnThread* _nt;
@@ -98,6 +100,9 @@ void nrn_finitialize(int setv, double v) {
     }
     for (i = 0; i < nrn_nthread; ++i) {
         setup_tree_matrix_minimal(nrn_threads + i);
+        if (nrn_use_fast_imem) {
+            nrn_calc_fast_imem(nrn_threads + i);
+        }
     }
     for (i = 0; i < nrn_nthread; ++i) {
         nrn_ba(nrn_threads + i, BEFORE_STEP);

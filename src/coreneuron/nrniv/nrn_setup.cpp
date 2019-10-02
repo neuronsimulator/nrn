@@ -34,6 +34,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
+#include "coreneuron/nrnoc/fast_imem.h"
 #include "coreneuron/nrnoc/nrnoc_decl.h"
 #include "coreneuron/nrniv/vrecitem.h"
 #include "coreneuron/nrniv/multisend.h"
@@ -50,6 +51,8 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/utils/reports/nrnsection_mapping.h"
 
 // callbacks into nrn/src/nrniv/nrnbbcore_write.cpp
+#include "coreneuron/nrnoc/fast_imem.h"
+#include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/nrniv/nrn2core_direct.h"
 
 int corenrn_embedded;
@@ -795,6 +798,9 @@ void nrn_setup(const char* filesdat,
     mk_cell_indices();
 #endif
 
+    /// Allocate memory for fast_imem calculation
+    nrn_fast_imem_alloc();
+
     /// Generally, tables depend on a few parameters. And if those parameters change,
     /// then the table needs to be recomputed. This is obviously important in NEURON
     /// since the user can change those parameters at any time. However, there is no
@@ -912,10 +918,13 @@ int nrn_i_layout(int icnt, int cnt, int isz, int sz, int layout) {
     return 0;
 }
 
+// This function is related to nrn_dblpntr2nrncore in Neuron to determine which values should
+// be transferred from CoreNeuron. Types correspond to the value to be transferred based on
+// mech_type enum or non-artificial cell mechanisms.
 // take into account alignment, layout, permutation
-// only voltage or mechanism data index allowed. (mtype 0 means time)
+// only voltage, i_membrane_ or mechanism data index allowed. (mtype 0 means time)
 double* stdindex2ptr(int mtype, int index, NrnThread& nt) {
-    if (mtype == -5) {  // voltage
+    if (mtype == voltage) {  // voltage
         int v0 = nt._actual_v - nt._data;
         int ix = index;  // relative to _actual_v
         nrn_assert((ix >= 0) && (ix < nt.end));
@@ -923,6 +932,14 @@ double* stdindex2ptr(int mtype, int index, NrnThread& nt) {
             node_permute(&ix, 1, nt._permute);
         }
         return nt._data + (v0 + ix);                // relative to nt._data
+    } else if (mtype == i_membrane_) {              // membrane current from fast_imem calculation
+            int i_mem = nt.nrn_fast_imem->nrn_sav_rhs - nt._data;
+            int ix = index;  // relative to nrn_fast_imem->nrn_sav_rhs
+            nrn_assert((ix >= 0) && (ix < nt.end));
+            if (nt._permute) {
+                node_permute(&ix, 1, nt._permute);
+            }
+            return nt._data + (i_mem + ix);         // relative to nt._data
     } else if (mtype > 0 && mtype < n_memb_func) {  //
         Memb_list* ml = nt._ml_list[mtype];
         nrn_assert(ml);
@@ -1150,6 +1167,10 @@ void nrn_cleanup(bool clean_ion_global_map) {
         }
 
         free_memory(nt->_ml_list);
+
+        if (nt->nrn_fast_imem) {
+            fast_imem_free();
+        }
     }
 
 #if NRN_MULTISEND

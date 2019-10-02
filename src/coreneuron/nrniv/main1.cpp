@@ -37,6 +37,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/engine.h"
 #include "coreneuron/utils/randoms/nrnran123.h"
 #include "coreneuron/nrnconf.h"
+#include "coreneuron/nrnoc/fast_imem.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnoc/nrnoc_decl.h"
 #include "coreneuron/nrnmpi/nrnmpi.h"
@@ -126,10 +127,13 @@ char* prepare_args(int& argc, char**& argv, int use_mpi, const char* arg) {
     return first;
 }
 
-int corenrn_embedded_run(int nthread, int have_gaps, int use_mpi, const char* arg) {
+int corenrn_embedded_run(int nthread, int have_gaps, int use_mpi, int use_fast_imem, const char* arg) {
     corenrn_embedded = 1;
     corenrn_embedded_nthread = nthread;
     coreneuron::nrn_have_gaps = have_gaps;
+    if (use_fast_imem) {
+        coreneuron::nrn_use_fast_imem = true;
+    }
 
     set_openmp_threads(nthread);
     int argc = 0;

@@ -28,6 +28,7 @@
 
 #include "coreneuron/nrniv/nrn_assert.h"
 #include "coreneuron/utils/reports/nrnreport.h"
+#include "coreneuron/nrnoc/fast_imem.h"
 #include "coreneuron/nrnoc/mech_mapping.hpp"
 #include <stdio.h>
 #include <stdlib.h>
@@ -90,7 +91,10 @@ std::vector<ReportConfiguration> create_report_configurations(const char* conf_f
         }
         sprintf(report.output_path, "%s/%s", output_dir, report.name);
         if (strcmp(report.type_str, "compartment") == 0) {
-            if (is_soma)
+            if (strcmp(report_on, "i_membrane") == 0) {
+                nrn_use_fast_imem = true;
+                report.type = IMembraneReport;
+            } else if (is_soma)
                 report.type = SomaReport;
             else
                 report.type = CompartmentReport;

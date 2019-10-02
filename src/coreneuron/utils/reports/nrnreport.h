@@ -51,7 +51,7 @@ namespace coreneuron {
 /// name of the variable in mod file used for setting synapse id
 #define SYNAPSE_ID_MOD_NAME "synapseID"
 
-enum ReportType { SomaReport, CompartmentReport, SynapseReport };
+enum ReportType { SomaReport, CompartmentReport, SynapseReport, IMembraneReport };
 
 struct ReportConfiguration {
     char name[MAX_REPORT_NAME_LEN];         // name of the report

@@ -30,6 +30,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnmpi/nrnmpi.h"
+#include "coreneuron/nrnoc/fast_imem.h"
 #include "coreneuron/nrnoc/nrnoc_decl.h"
 #include "coreneuron/nrniv/nrn_acc_manager.h"
 #include "coreneuron/utils/reports/nrnreport.h"
@@ -189,6 +190,9 @@ void update(NrnThread* _nt) {
     if (_nt->tml) {
         assert(_nt->tml->index == CAP);
         nrn_cur_capacitance(_nt, _nt->tml->ml, _nt->tml->index);
+    }
+    if (nrn_use_fast_imem) { 
+        nrn_calc_fast_imem(_nt);
     }
 }
 

@@ -99,7 +99,7 @@ class ReportEvent : public DiscreteEvent {
     }
 };
 
-VarsToReport get_soma_vars_to_report(NrnThread& nt, std::set<int>& target) {
+VarsToReport get_soma_vars_to_report(NrnThread& nt, std::set<int>& target, double* report_variable) {
     VarsToReport vars_to_report;
     NrnThreadMappingInfo* mapinfo = (NrnThreadMappingInfo*)nt.mapping;
 
@@ -123,15 +123,15 @@ VarsToReport get_soma_vars_to_report(NrnThread& nt, std::set<int>& target) {
             /** 1st key is section-id and 1st value is segment of soma */
             int section_id = s->secmap.begin()->first;
             int idx = s->secmap.begin()->second.front();
-            double* v = nt._actual_v + idx;
-            to_report.push_back(VarWithMapping(section_id, v));
+            double* variable = report_variable + idx;
+            to_report.push_back(VarWithMapping(section_id, variable));
             vars_to_report[gid] = to_report;
         }
     }
     return vars_to_report;
 }
 
-VarsToReport get_compartment_vars_to_report(NrnThread& nt, std::set<int>& target) {
+VarsToReport get_compartment_vars_to_report(NrnThread& nt, std::set<int>& target, double* report_variable) {
     VarsToReport vars_to_report;
     NrnThreadMappingInfo* mapinfo = (NrnThreadMappingInfo*)nt.mapping;
     if (!mapinfo) {
@@ -160,8 +160,8 @@ VarsToReport get_compartment_vars_to_report(NrnThread& nt, std::set<int>& target
                     for (size_t k = 0; k < vec.size(); k++) {
                         int idx = vec[k];
                         /** corresponding voltage in coreneuron voltage array */
-                        double* v = nt._actual_v + idx;
-                        to_report.push_back(VarWithMapping(compartment_id, v));
+                        double* variable = report_variable + idx;
+                        to_report.push_back(VarWithMapping(compartment_id, variable));
                     }
                 }
             }
@@ -413,11 +413,15 @@ void register_report(double dt, double tstop, double delay, ReportConfiguration&
         VarsToReport vars_to_report;
         switch (report.type) {
             case SomaReport:
-                vars_to_report = get_soma_vars_to_report(nt, report.target);
+                vars_to_report = get_soma_vars_to_report(nt, report.target, nt._actual_v);
                 register_soma_report(nt, report, vars_to_report);
                 break;
             case CompartmentReport:
-                vars_to_report = get_compartment_vars_to_report(nt, report.target);
+                vars_to_report = get_compartment_vars_to_report(nt, report.target, nt._actual_v);
+                register_compartment_report(nt, report, vars_to_report);
+                break;
+            case IMembraneReport:
+                vars_to_report = get_compartment_vars_to_report(nt, report.target, nt.nrn_fast_imem->nrn_sav_rhs);
                 register_compartment_report(nt, report, vars_to_report);
                 break;
             default:
