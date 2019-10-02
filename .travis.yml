@@ -34,7 +34,7 @@ before_install:
   - export PYTHONPATH=$PYTHONPATH:$(pwd)/install/lib/python/
   - pyenv global $PYTHON_VERSION;
 install:
-  - $PIP install --user scipy matplotlib bokeh --upgrade
+  - $PIP install --user scipy matplotlib bokeh ipython cython --upgrade
   - export PATH=$(pwd)/install/x86_64/bin:$PATH
 script:
   - ./travis_build.sh .
