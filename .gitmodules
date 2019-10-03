@@ -1,0 +1,6 @@
+[submodule "modules/iv"]
+	path = external/iv
+	url = https://github.com/neuronsimulator/iv.git
+[submodule "external/coreneuron"]
+	path = external/coreneuron
+	url = https://github.com/BlueBrain/CoreNeuron.git

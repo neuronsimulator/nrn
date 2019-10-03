@@ -16,7 +16,7 @@
 #define NRNPYTHON_DYNAMICLOAD PY_MAJOR_VERSION
 #endif
 
-#if defined(__MINGW32__) && NRNPYTHON_DYNAMICLOAD > 0
+#if !defined(NRNCMAKE) && defined(__MINGW32__) && NRNPYTHON_DYNAMICLOAD > 0
 // want to end up with a string like "hoc36"
 #define HOCMOD_1(s) HOCMOD_2(s)
 #define HOCMOD_2(s) #s

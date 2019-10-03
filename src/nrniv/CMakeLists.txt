@@ -289,7 +289,7 @@ endif()
 
 if(NRN_ENABLE_INTERVIEWS)
   include_directories(${IV_INCLUDE_DIR})
-  target_link_libraries(nrniv_lib iv_interviews)
+  target_link_libraries(nrniv_lib interviews)
 else()
   include_directories(nrniv_lib ${NRN_IVOS_SRC_DIR} ${PROJECT_BINARY_DIR}/src/ivos)
 endif()

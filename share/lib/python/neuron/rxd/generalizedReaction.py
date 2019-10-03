@@ -1,4 +1,4 @@
-from . import rxd, node, rxdmath
+from . import node, rxdmath
 import numpy
 import weakref
 import itertools
@@ -80,7 +80,8 @@ class GeneralizedReaction(object):
     """an abstract class, parent of Rate, Reaction, MultiCompartmentReaction"""
 
     def __del__(self):
-        rxd._unregister_reaction(self)
+        from .rxd import _unregister_reaction
+        _unregister_reaction(self)
 
     def _setup_membrane_fluxes(self, node_indices, cur_map):
         # TODO: make sure this is redone whenever nseg changes
