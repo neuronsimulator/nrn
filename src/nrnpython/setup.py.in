@@ -13,8 +13,8 @@ import os
 # needs to be transformed to C:\msys64/xyz.
 def get_escaped_path(path):
   if using_cmake:
-    @WIN_MINGW_TRUE@return path.replace(":/", ":\\")
-    @WIN_MINGW_FALSE@return path
+    @USING_CMAKE_TRUE@@WIN_MINGW_TRUE@return path.replace(":/", ":\\")
+    return path
   else:
     return path
 
@@ -23,7 +23,7 @@ extern_defines = "@NRNPYTHON_DEFINES@"
 nrnpython_exec = get_escaped_path("@NRNPYTHON_EXEC@")
 nrnpython_pyver = "@NRNPYTHON_PYVER@"
 nrnpython_pyver10 = "nrnpython"
-use_libnrnpython_majorminor = @USE_LIBNRNPYTHON_MAJORMINOR@
+@USING_CMAKE_TRUE@use_libnrnpython_majorminor = @USE_LIBNRNPYTHON_MAJORMINOR@
 nrn_srcdir = get_escaped_path("@NRN_SRCDIR@")
 build_rx3d = @BUILD_RX3D@
 ivlibdir = get_escaped_path("@IV_LIBDIR@")
@@ -37,8 +37,9 @@ if not destdir:
 instdir = destdir + get_escaped_path("@prefix@")
 if nrn_srcdir[0] != '/' :
   if using_cmake:
-    @WIN_MINGW_TRUE@nrn_srcdir = nrn_srcdir
-    @WIN_MINGW_FALSE@nrn_srcdir = '../../' + nrn_srcdir
+    @USING_CMAKE_TRUE@@WIN_MINGW_TRUE@nrn_srcdir = nrn_srcdir
+    @USING_CMAKE_TRUE@@WIN_MINGW_FALSE@nrn_srcdir = '../../' + nrn_srcdir
+    pass
   else:
     nrn_srcdir = '../../' + nrn_srcdir
 
