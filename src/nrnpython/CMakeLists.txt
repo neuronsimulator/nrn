@@ -106,6 +106,14 @@ if(NRN_ENABLE_MODULE_INSTALL)
     set(NRN_MODULE_INSTALL_OPTIONS "--home ${install_path}" CACHE INTERNAL "" FORCE)
   endif()
 
+  # For DYNAMIC python, inithoc module name convention is different for
+  # autotools version and cmake. So nrnpy_hoc.cpp and inithoc.cpp need
+  # to know whether they are compiled via the cmake or autotools build system.
+  # (note: see also for inithoc.cpp via setup.py)
+  set_property(SOURCE ${CURRENT_SOURCE_DIR}/nrnpy_hoc.cpp
+    APPEND
+    PROPERTY COMPILE_DEFINITIONS NRNCMAKE)
+
   # user has selected dynamic python support (could be multiple versions)
   if(NRN_ENABLE_PYTHON_DYNAMIC)
     set(INCLUDE_DIRS
