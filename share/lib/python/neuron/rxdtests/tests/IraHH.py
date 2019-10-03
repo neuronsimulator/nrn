@@ -10,10 +10,8 @@ from neuron.units import sec, mM, ms
 from neuron.crxd import v
 from neuron.crxd.rxdmath import exp, log
 from math import pi
-from bokeh.io import output_notebook
 from matplotlib import pyplot as plt
 from matplotlib import pyplot
-output_notebook()
 h.load_file('stdrun.hoc')
 
 
