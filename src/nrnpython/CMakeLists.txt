@@ -110,7 +110,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
   # autotools version and cmake. So nrnpy_hoc.cpp and inithoc.cpp need
   # to know whether they are compiled via the cmake or autotools build system.
   # (note: see also for inithoc.cpp via setup.py)
-  set_property(SOURCE ${CURRENT_SOURCE_DIR}/nrnpy_hoc.cpp
+  set_property(SOURCE ${PROJECT_SOURCE_DIR}/src/nrnpython/nrnpy_hoc.cpp
     APPEND
     PROPERTY COMPILE_DEFINITIONS NRNCMAKE)
 
