@@ -133,11 +133,17 @@ class Reaction(GeneralizedReaction):
         if ecs_region:
             self._rate_ecs, self._involved_species_ecs = rxdmath._compile(rate, ecs_region)
         
-        #TODO ask about this -> Grab region from regions species in _dest are defined on. I think if we have a species defined on dest its sources must also be defined on that region
-        self._react_regions = []
-        for sptr in self._sources + self._dests:
-            s = sptr() if isinstance(sptr(), species.Species) else sptr()._species()
-            self._react_regions.extend([reg for reg in s._regions if reg not in self._react_regions])
+        # if a region is specified -- use it
+        if self._regions and self._regions != [None]:
+            self._react_regions = self._regions
+        else:
+        # else find the common regions shared by all sources and  destinations
+            self._react_regions = []
+            regs = []
+            for sptr in self._sources + self._dests:
+                s = sptr() if isinstance(sptr(), species.Species) else sptr()._species()
+                regs.append(set(s._regions))
+            self._react_regions = list(set.intersection(*regs))
         self._rate, self._involved_species = rxdmath._compile(rate, self._react_regions)
 
         #Species are in at most one region
