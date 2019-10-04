@@ -1,0 +1,3 @@
+[submodule "modules/iv"]
+	path = external/iv
+	url = https://github.com/neuronsimulator/iv.git
