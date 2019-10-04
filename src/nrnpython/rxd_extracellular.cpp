@@ -723,7 +723,8 @@ void do_currents(Grid_node* grid, double* output, double dt, int grid_id)
         {
             if(_rxd_induced_currents_grid[i] == grid_id)
             {
-                output[_rxd_induced_currents_ecs_idx[i]] -= dt * (_rxd_induced_currents_ecs[i] * _rxd_induced_currents_scale[i]);
+                if(_rxd_induced_currents_ecs_idx[i] != SPECIES_ABSENT)
+                    output[_rxd_induced_currents_ecs_idx[i]] -= dt * (_rxd_induced_currents_ecs[i] * _rxd_induced_currents_scale[i]);
             }
         }
     }
