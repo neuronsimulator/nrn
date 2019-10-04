@@ -3,12 +3,11 @@
 ## Table of contents
 
 * **[What is this?](#what)**
-* **[Contribute what?](https://github.com/unicef/magicbox/blob/master/.github/CONTRIBUTING.md#contribute-what)**
-* **[Ground rules](https://github.com/unicef/magicbox/blob/master/.github/CONTRIBUTING.md#ground-rules)**
-* **[Getting started](https://github.com/unicef/magicbox/blob/master/.github/CONTRIBUTING.md#getting-started)**
-* **[Report a bug](https://github.com/unicef/magicbox/blob/master/.github/CONTRIBUTING.md#report-a-bug)**
-* **[Code review process](https://github.com/unicef/magicbox/blob/master/.github/CONTRIBUTING.md#code-review-process)**
-* **[Community](https://github.com/unicef/magicbox/blob/master/.github/CONTRIBUTING.md#community)**
+* **[Getting started?](#starting)**
+* **[Ground rules]
+* **[Report a bug]
+* **[Code review process]
+* **[Community]
 
 ## What is this?<a name="what"></a>
 
@@ -16,9 +15,9 @@ We encourage contributions to the NEURON simulator from individuals at all level
 Knowledge of the domain of neural simulation is also helpful but much of the simulation technology is comparable to other simulation fields in biology and beyond --
 numerical integration of ordinary differential equations (ODEs), here coupled with *events* (event-driven).
 
-## How to get started
+## How to get started<a name="starting"></a>
 
-If you want to pick up and try an existing improvement project, you will note that we have indicated levels of difficulty with [labels][github/labels].
+If you want to pick up and try an existing improvement project, you will note that we have indicated levels of difficulty with [labels](labels).
 Most internal hacks will require knowledge of C/C++. Knowledge of python is also necessary for writing accompanying test code.
 
 Even if you are not contributing, you may want to suggest a needed improvement, or identify a problem or bug.
