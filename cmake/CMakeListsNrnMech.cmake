@@ -17,7 +17,7 @@ if(NOT NRN_LINK_LIBS)
 endif()
 
 # Interview might have linked to libnrniv but we don't want to link to special
-list(REMOVE_ITEM NRN_LINK_LIBS "iv_interviews")
+list(REMOVE_ITEM NRN_LINK_LIBS "interviews")
 
 # CMake does some magic to transform sys libs to -l<libname>. We replicate it
 foreach(link_lib ${NRN_LINK_LIBS})
