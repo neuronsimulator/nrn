@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/nrnhines/nrn.svg?branch=master)](https://travis-ci.org/nrnhines/nrn)
+[![Build Status](https://api.travis-ci.org/neuronsimulator/nrn.svg?branch=master)](https://travis-ci.org/neuronsimulator/nrn)
 
 NEURON is a simulator for models of neurons and networks of neuron.
 See http://neuron.yale.edu for installers, source code,
