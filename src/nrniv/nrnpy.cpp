@@ -25,6 +25,7 @@ void nrnpython();
 static void (*p_nrnpython_real)();
 static void (*p_nrnpython_reg_real)();
 char* hoc_back2forward(char* s);
+char* hoc_forward2back(char* s);
 }
 
 // following is undefined or else has the value of sys.api_version
@@ -141,14 +142,17 @@ static void set_nrnpylib() {
     #ifdef MINGW
     linesz += 3*strlen(neuron_home);
     char* line = new char[linesz+1];
-    char* bfnrnhome = strdup(neuron_home);
-    hoc_back2forward(bfnrnhome);
+    char* bnrnhome = strdup(neuron_home);
+    char* fnrnhome = strdup(neuron_home);
+    hoc_forward2back(bnrnhome);
+    hoc_back2forward(fnrnhome);
     sprintf(line, "%s\\mingw\\usr\\bin\\bash %s/bin/nrnpyenv.sh %s --NEURON_HOME=%s",
-      neuron_home, 
-      bfnrnhome,
+      bnrnhome, 
+      fnrnhome,
       (nrnpy_pyexe && strlen(nrnpy_pyexe) > 0) ? nrnpy_pyexe : "",
-      bfnrnhome);
-    free(bfnrnhome);
+      fnrnhome);
+    free(fnrnhome);
+    free(bnrnhome);
     #else
     char* line = new char[linesz+1];
 #if defined(NRNCMAKE)
@@ -164,6 +168,9 @@ static void set_nrnpylib() {
     if (!p) {
       printf("could not popen '%s'\n", line);
     }else{
+      if (!fgets(line, linesz, p)) {
+        printf("failed: %s\n", line);
+      }
       while(fgets(line, linesz, p)) {
         char* cp;
         // must get rid of beginning '"' and trailing '"\n'

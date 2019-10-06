@@ -296,8 +296,8 @@ IFGUI
 	return 1;
   }
   PostThreadMessage(main_threadid, WM_QUIT, 0, 0);
-  return 1;
 ENDGUI
 #endif
+  return 1;
 }
 
