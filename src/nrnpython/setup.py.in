@@ -90,8 +90,16 @@ os.environ["CXX"]=mpicxx_bin
 #distutils.unixccompiler.UnixCCompiler = MPI_UnixCCompiler
 #################################
 
+#include_dirs for hoc module
 include_dirs = [nrn_srcdir+'/src/oc', '../oc', nrn_srcdir+'/src/nrnmpi']
-@MAC_DARWIN_TRUE@include_dirs.append("@CMAKE_OSX_SYSROOT@/usr/include")
+#include dirs for all modules
+
+include_dirs_common = []
+#not needed with clang,clang++ and on my beta catalina does not
+#work anyway with /Library/Developer/CommandLineTools/usr/bin/cc
+#for the ctng module
+#@MAC_DARWIN_TRUE@include_dirs_common.append("@CMAKE_OSX_SYSROOT@/usr/include")
+
 defines = []
 if using_cmake:
     defines.append(("NRNCMAKE", "1"))
@@ -130,7 +138,7 @@ hoc_module = Extension(
         "scopmath", "sparse13", "sundials",
         "@IVHINES@",
       ],
-      include_dirs = include_dirs,
+      include_dirs = include_dirs+include_dirs_common,
       define_macros=defines
     )
 
@@ -148,15 +156,20 @@ if build_rx3d:
     src_path = nrn_srcdir + '/share/lib/python/neuron/rxd/geometry3d/'
     build_path = '../../share/lib/python/neuron/rxd/geometry3d/'
     include_dirs = [nrn_srcdir + '/share/lib/python/neuron/rxd/geometry3d', '.', numpy.get_include()]
+    include_dirs += include_dirs_common
+    extra_compile_args=["-O0"] # minimize compile time
     ext_modules=[hoc_module,
                    Extension("neuron.rxd.geometry3d.graphicsPrimitives",
                              sources=[build_path + "graphicsPrimitives.cpp"],
+                             extra_compile_args = extra_compile_args,
                              include_dirs=include_dirs),
                    Extension("neuron.rxd.geometry3d.ctng",
                              sources=[build_path + "ctng.cpp"],
+                             extra_compile_args = extra_compile_args,
                              include_dirs=include_dirs),
                    Extension("neuron.rxd.geometry3d.surfaces",
                              sources=[build_path + "surfaces.cpp", nrn_srcdir + "/src/nrnpython/rxd_marching_cubes.c", nrn_srcdir + "/src/nrnpython/rxd_llgramarea.c"],
+                             extra_compile_args = extra_compile_args,
                              include_dirs=include_dirs)]
   except:
     pass

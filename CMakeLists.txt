@@ -73,6 +73,7 @@ include(MacroHelper)
 include(RpathHelper)
 include(PlatformHelper)
 include(ExternalProjectHelper)
+include(FindCython)
 
 # =============================================================================
 # Find required packages
@@ -81,6 +82,9 @@ find_package(BISON)
 find_package(FLEX)
 find_package(Threads)
 find_package(readline)
+if (NRN_ENABLE_RX3D)
+  find_package(Cython)
+endif()
 
 # =============================================================================
 # Enable MPI/Python/IV/Pthead if found
@@ -172,6 +176,9 @@ if(NRN_MACOS_BUILD OR NOT READLINE_FOUND)
   add_subdirectory(src/readline)
   set(INTERNAL_READLINE readline)
   unset(Readline_LIBRARY CACHE)
+endif()
+if (NRN_ENABLE_RX3D)
+  add_subdirectory(share/lib/python/neuron/rxd/geometry3d)
 endif()
 
 # =============================================================================
