@@ -4,15 +4,14 @@
 
 * **[Navigation](#nav)**
 * **[Getting oriented](#orient)**
-* **[How to](#how)**
-* **[Ground rules]
-* **[Report a bug]
-* **[Code review process]
-* **[Community]
+* **[Howto](#how)**
+* **[Reporting a bug](#bug)**
+* **[Code review process](#process)**
 
 ## Navigation<a name="nav"></a>
 
 There are several separate repositories that make up the NEURON project and you may contribute to any of these. A single *code board* manages the full set. 
+This *Contributing* document is relevant not only for this repository but also for these other repositories.
 
 Three major repositories are directly included at this github:
 1. **nrn** -- the main NEURON code. When you fork and clone this repository you will find the actual source in subdirectories under *nrn/src*. The subdirectories of primary
@@ -44,15 +43,12 @@ If you want to pick up and try an existing improvement project, you will note th
 Most internal hacks will require knowledge of C/C++. Knowledge of python is also necessary for writing accompanying test code.
 Note that it can be much easier to get started by improving documentation or by adding new tutorials.
 
-Even if you are not ready to contribute code directly, you may want to suggest a needed improvement, or identify a problem or bug.
-For a bug in the source code, please submit an issue.
-
 There are some things that will make it easier to get your pull requests accepted quickly into the master build where it is teed-up for eventual release.
 
 Before you submit an issue, search the issue tracker to see if the problem or something very similar has already been addressed.
 The discussion there might show you some workaround or identify the status of a project.
 
-First, consider what kind of change it is:
+Consider what kind of change you have in mind:
 
 * For a **Major Feature**, first open an issue and make clear whether you are request the feature from the community or offering to provide the feature yourself.
 The *code board* will consider whether this is needed or whether some existing feature does approximately the same thing.
@@ -62,12 +58,7 @@ that it is can be readily integrated.
 
 * **Small Features** can be submitted directly.
 
-We want to address all issues as soon as possible, but before fixing a bug we need to reproduce and confirm it. In order to reproduce bugs we will need as much information as
-possible, along with a *simple, short* Python example (zipped with any associated mod files and a README). 
-This may require considerable work to isolate the presumed bug arising somewhere in the midst of a large simulation.
-Sometimes, this process alone is enough to identify the bug as a function limitation or documentation insufficiency, rather than a code bug per se.
-
-## How to<a name="how"></a>
+## How to do this<a name="how"></a>
 When you're ready to contribute to the code base, please consider the following guidelines:
 
 * Make a [fork](https://guides.github.com/activities/forking/) of this repository. From there you will download your own version of the repository to your machine for
@@ -101,3 +92,31 @@ After your pull request is merged, you can safely delete your branch and pull th
 Development conventions:
 NEURON code is being built according to C/C++, Python best-practices. The easiest way to figure out what this is is to take a look at current code and copy the way things are
 formatted, indented, documented, and commented.
+
+## Reporting a bug<a name="bug"></a>
+
+Have you tested on the current alpha version of NEURON. If not, please clone, compile, install and run with current version (this one).
+
+Please let us know what operating system you were using when you found the bug. If you have access to another operating system, it is helpful if you can find out if the bug
+shows up there as well.
+
+Usually bugs will arise in the context of a simulation which will in many cases be extremely large 
+We want to address all bugs as quickly as possible, but before fixing a bug we need to reproduce and confirm it. In order to reproduce bugs we will need as much information as
+possible, along with a *simple, short* Python example (zipped with any associated mod files and a README). 
+This may require considerable work to isolate the presumed bug arising somewhere in the midst of a large simulation.
+Sometimes, this process alone is enough to identify the bug as a function limitation or documentation insufficiency, rather than a code bug per se.
+
+
+
+1. 
+1. What did you do?
+1. What did you expect to see?
+1. What did you see instead?
+
+
+## Code review process<a name="process"></a>
+
+The code board team at NEURON generally reviews pull requests on a weekly basis. 
+The code board may vary – see an updated list in the [project index](project-index.md).
+If you don't receive any feedback after a couple weeks, please follow up with a new comment.
+
