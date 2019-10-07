@@ -27,6 +27,7 @@ Two repositories included here are largely obsolete and should only be modified 
 favor of Python. The hoc code itself is in the nrn repository and also should not usually be touched.
 
 There are several NEURON-related repositories hosted elsewhere which also encourage contributions. Each of these will have it's own *Contributing* document.
+1. [UserDoc]http:??? -- user documentation
 1. [NMODL](https://github.com/BlueBrain/nmodl) -- improved method for compiling and porting *.mod* files using *abstract syntax trees*
 1. [CoreNEURON](https://github.com/BlueBrain/CoreNeuron) -- an optimized NEURON for running on high performance computers (HPCs)
 1. [NetPyNE](https://github.com/Neurosim-lab/netpyne) -- multiscale modeling tool for developing, simulating and analyzing networks which include complex cells, potentially
@@ -85,7 +86,7 @@ run the test-suite locally on your machine.
 * In GitHub, send a Pull Request to the `master` branch of the upstream repository of the relevant component -- this will run the test-suite before alerting the team.
 * If we suggest changes then:
   * Make the required updates.
-  * Rerun test-suites; Repush; Rereq
+  * Rewrite; Rerun test-suites; Repush; Rereq
 
 After your pull request is merged, you can safely delete your branch and pull the changes from the main (upstream) repository.
 
@@ -98,21 +99,13 @@ formatted, indented, documented, and commented.
 Have you tested on the current alpha version of NEURON. If not, please clone, compile, install and run with current version (this one).
 
 Please let us know what operating system you were using when you found the bug. If you have access to another operating system, it is helpful if you can find out if the bug
-shows up there as well.
+shows up there as well. Please indicate which operating system(s) the bug has been found in.
 
-Usually bugs will arise in the context of a simulation which will in many cases be extremely large 
-We want to address all bugs as quickly as possible, but before fixing a bug we need to reproduce and confirm it. In order to reproduce bugs we will need as much information as
-possible, along with a *simple, short* Python example (zipped with any associated mod files and a README). 
-This may require considerable work to isolate the presumed bug arising somewhere in the midst of a large simulation.
+In order to address a bug quickly, we need to reproduce and confirm it. 
+Usually bugs will arise in the context of a simulation which will in many cases be extremely large. 
+Please provide a *simple, short* example (zipped with any associated mod files and a README). 
+The simplifying process may require considerable work to isolate the bug arising somewhere in the midst of a large simulation.
 Sometimes, this process alone is enough to identify the bug as a function limitation or documentation insufficiency, rather than a code bug per se.
-
-
-
-1. 
-1. What did you do?
-1. What did you expect to see?
-1. What did you see instead?
-
 
 ## Code review process<a name="process"></a>
 
