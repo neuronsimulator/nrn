@@ -3,7 +3,7 @@
 
 set(basenames ctng surfaces graphicsPrimitives)
 
-if (NRN_ENABLE_RX3D)
+if (NRN_ENABLE_RX3D AND NRN_ENABLE_MODULE_INSTALL AND NRN_ENABLE_PYTHON)
   foreach(basename ${basenames})
     set(bname ${CMAKE_CURRENT_BINARY_DIR}/${basename}.cpp)
     set(sname ${CMAKE_CURRENT_SOURCE_DIR}/${basename}.pyx)
