@@ -27,7 +27,6 @@ Two repositories included here are largely obsolete and should only be modified 
 favor of Python. The hoc code itself is in the nrn repository and also should not usually be touched.
 
 There are several NEURON-related repositories hosted elsewhere which also encourage contributions. Each of these will have it's own *Contributing* document.
-1. [UserDoc]http:??? -- user documentation
 1. [NMODL](https://github.com/BlueBrain/nmodl) -- improved method for compiling and porting *.mod* files using *abstract syntax trees*
 1. [CoreNEURON](https://github.com/BlueBrain/CoreNeuron) -- an optimized NEURON for running on high performance computers (HPCs)
 1. [NetPyNE](https://github.com/Neurosim-lab/netpyne) -- multiscale modeling tool for developing, simulating and analyzing networks which include complex cells, potentially
