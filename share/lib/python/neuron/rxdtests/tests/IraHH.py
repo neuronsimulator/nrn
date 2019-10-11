@@ -44,7 +44,7 @@ e_kmax = 0.25 * sec*(10**-1)
 oa_bath = 32.0/alpha
 o_bath = 32.0 * mM
 beta_o = 5
-avo = 6.0221409*(10**23)
+avo = rxd.constants.NA
 q10 = 3.0**((h.celsius - 6.3)/10.0)
 
 #sodium activation 'm'
