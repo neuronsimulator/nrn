@@ -124,6 +124,7 @@ if (ENABLE_NMODL)
     else()
         set(ENV{PYTHONPATH} "${nmodl_PYTHONPATH}:$ENV{PYTHONPATH}")
     endif ()
+    set(NMODL_PYTHONPATH $ENV{PYTHONPATH})
 endif ()
 
 

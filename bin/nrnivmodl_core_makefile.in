@@ -135,6 +135,7 @@ $(OBJS_DIR)/%.obj: $(MODC_DIR)/%.ispc | $(OBJS_DIR)
 # Build ispc files with mod2c/nmodl
 $(mod_ispc_files): $(MODC_DIR)/%.ispc: $(MODS_PATH)/%.mod | $(MODC_DIR)
 	@printf " -> $(C_GREEN)MOD2C$(C_RESET) $<\n"
+	PYTHONPATH=@NMODL_PYTHONPATH@ \
 	MODLUNIT=$(datadir_mod2c)/nrnunits.lib \
 	  $(mod2c_install_bin) $< -o $(MODC_DIR)/ @nmodl_arguments_ispc@
 
@@ -144,6 +145,7 @@ $(mod_ispc_c_files): $(MODC_DIR)/%.cpp: $(MODC_DIR)/%.ispc
 # Build cpp files with mod2c/nmodl
 $(mod_c_files): $(MODC_DIR)/%.cpp: $(MODS_PATH)/%.mod | $(MODC_DIR)
 	@printf " -> $(C_GREEN)MOD2C$(C_RESET) $<\n"
+	PYTHONPATH=@NMODL_PYTHONPATH@ \
 	MODLUNIT=$(datadir_mod2c)/nrnunits.lib \
 	  $(mod2c_install_bin) $< -o $(MODC_DIR)/ @nmodl_arguments_c@
 
