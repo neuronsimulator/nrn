@@ -5,7 +5,7 @@ project(NEURON C CXX)
 # CMake common project settings
 # =============================================================================
 set(PROJECT_VERSION_MAJOR 7)
-set(PROJECT_VERSION_MINOR 7)
+set(PROJECT_VERSION_MINOR 8)
 set(CMAKE_CXX_STANDARD 98)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
