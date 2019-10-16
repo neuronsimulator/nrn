@@ -10,7 +10,7 @@ dnl distribution file names, banner, nrniv --version, and
 dnl nrnversion(5). If the PACKAGE_VERSION changes then also do a
 dnl git tag -a major.minor.micro consistent with that.
 
-AC_INIT([nrn],[7.7])
+AC_INIT([nrn],[7.8])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR(src/memacs/main.c)
 AM_INIT_AUTOMAKE([foreign])
