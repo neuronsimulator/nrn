@@ -155,6 +155,24 @@ if (MINGW)
   find_package(Termcap REQUIRED)
 endif()
 
+# Classically, the install destination of the share folder
+# for mac/linux has been
+# <prefix>/share/nrn
+# but for linux it has been <prefix>. For now we keep this distinction.
+# Also, the classic location for shared libraries has been
+# <prefix>/<arch>/lib and for max/linux we have move this to
+# <inst>/lib
+# But windows has classically expected these shared libraries in
+# <prefix>/bin (reduces the PATH and expected by ctypes in the neuron module.)
+# So for now we keep that distinction as well.
+# Setting these here as setup.py.in needs it
+set(nrn_dest_share_dir ${CMAKE_INSTALL_PREFIX}/share/nrn)
+set(nrn_dest_sharedlibs ${CMAKE_INSTALL_PREFIX}/lib)
+if (MINGW)
+  set(nrn_dest_share_dir ${CMAKE_INSTALL_PREFIX})
+  set(nrn_dest_sharedlibs ${CMAKE_INSTALL_PREFIX}/bin)
+endif()
+
 # =============================================================================
 # Add CMake modules AFTER setting options
 # =============================================================================
@@ -187,21 +205,39 @@ endif()
 # find headers to install
 nrn_find_project_files(NRN_HEADERS_PATHS ${HEADER_FILES_TO_INSTALL})
 
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/lib DESTINATION share/nrn)
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo DESTINATION share/nrn)
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/lib DESTINATION ${nrn_dest_share_dir})
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo DESTINATION ${nrn_dest_share_dir})
 install(FILES
   ${PROJECT_BINARY_DIR}/share/lib/nrnunits.lib
   ${PROJECT_BINARY_DIR}/share/lib/nrn.defaults
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/share/nrn/lib
+  DESTINATION ${nrn_dest_share_dir}/lib
 )
 install(PROGRAMS
   ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/cleanup
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/share/nrn/lib
+  DESTINATION ${nrn_dest_share_dir}/lib
 )
 install(FILES
   ${NRN_HEADERS_PATHS} ${PROJECT_BINARY_DIR}/src/oc/nrnpthread.h
   DESTINATION ${CMAKE_INSTALL_PREFIX}/include
 )
+
+if (MINGW)
+  # nrniv.cpp calls nrnpyenv.sh with absolute path to bash.exe
+  # this is sufficient on the build machine since a full
+  # development environment exists. On the users install machine
+  # using a setup.exe distribution, the setup.ex will contain a
+  # minimal development environment with sufficient mingw programs
+  # to allow nrnpyenv.sh to work. (see nrn/mingw_files/nrnmingwenv.sh)
+  find_file(nrnbash bash.exe DOC "DOS path to bash.exe")
+  message(STATUS "Found bash.exe at ${nrnbash}")
+  if ("${nrnbash}" STREQUAL "nrnbash-NOTFOUND")
+    set(nrnbash "f:/msys64/usr/bin/bash.exe")
+  endif()
+  install(PROGRAMS
+    ${nrnbash}
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/mingw/usr/bin
+  )
+endif()
 
 # =============================================================================
 # Print build status

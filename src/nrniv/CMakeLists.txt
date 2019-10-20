@@ -281,7 +281,7 @@ if(NRN_ENABLE_MPI)
       target_link_libraries(nrnmpi_lib nrniv_lib)
     endif()
     set_property(TARGET nrnmpi_lib PROPERTY OUTPUT_NAME nrnmpi)
-    install(TARGETS nrnmpi_lib DESTINATION lib)
+    install(TARGETS nrnmpi_lib DESTINATION ${nrn_dest_sharedlibs})
   else()
     target_link_libraries(nrniv_lib ${MPI_C_LIBRARIES})
   endif()
@@ -311,5 +311,8 @@ endif()
 # =============================================================================
 # Install binary and library targets
 # =============================================================================
+# classically, the autotools windows version installed dlls in <inst>/bin
+# For now, we keep this distinction as it reduces the PATH and is
+# expected when ctypes looks for dlls
 install(TARGETS nrniv nocmodl modlunit DESTINATION bin)
-install(TARGETS nrniv_lib DESTINATION lib)
+install(TARGETS nrniv_lib DESTINATION ${nrn_dest_sharedlibs})
