@@ -113,10 +113,6 @@ if __name__ == '__main__':
         assert os.path.isdir(use_dir), "Dir {} doesnt exist".format(use_dir)
 
     fnames = sorted(f for f in os.listdir(use_dir) if f.endswith(".cpp"))
-    if not fnames:
-        print("[Kinderiv] Warning: No .cpp's found in given path. Creating dummy file")
-    else:
-        print("[Kinderiv] Using cpp files " + str(fnames))
 
     for fname in fnames:
         with open(os.path.join(use_dir, fname), "r") as f:
@@ -129,5 +125,4 @@ if __name__ == '__main__':
     if os.path.isfile(kf) and filecmp.cmp(kftmp, kf):
         os.remove(kftmp)
     else:
-        print("[Kinderiv] Replacing existing file")
         os.rename(kftmp, kf)

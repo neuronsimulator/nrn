@@ -1,5 +1,3 @@
-# For now just do nothing in here
-
 if(CMAKE_ISPC_COMPILER_FORCED)
   # The compiler configuration was forced by the user.
   # Assume the user has configured all compiler information.
@@ -8,7 +6,6 @@ if(CMAKE_ISPC_COMPILER_FORCED)
 endif()
 
 set(CMAKE_ISPC_COMPILER_WORKS 1 CACHE INTERNAL "")
-
 
 # Remove any cached result from an older CMake version.
 # We now store this in CMakeISPCCompiler.cmake.

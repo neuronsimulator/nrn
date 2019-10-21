@@ -33,6 +33,7 @@ if not bool(tv.eq(tvstd)):
     print("Voltage times are different")
     sys.exit(-1)
 if v.cl().sub(vstd).abs().max() >= 1e-10:
+    print(v.cl().sub(vstd).abs())
     print("Voltage difference greater than or equal to 1e-10")
     sys.exit(-1)
 if i_mem.cl().sub(i_memstd).abs().max() >= 1e-10:

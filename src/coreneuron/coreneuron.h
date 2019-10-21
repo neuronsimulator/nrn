@@ -48,14 +48,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace coreneuron {
 
-#ifdef EXPORT_MECHS_FUNCTIONS
-// from (auto-generated) mod_func_ptrs.c
-extern mod_f_t get_init_function(const char* sym);
-extern mod_f_t get_cur_function(const char* sym);
-extern mod_f_t get_state_function(const char* sym);
-extern mod_f_t get_BA_function(const char* sym, int BA_func_id);
-#endif
-
 // from nrnoc/capac.c
 extern void nrn_init_capacitance(NrnThread*, Memb_list*, int);
 extern void nrn_cur_capacitance(NrnThread* _nt, Memb_list* ml, int type);

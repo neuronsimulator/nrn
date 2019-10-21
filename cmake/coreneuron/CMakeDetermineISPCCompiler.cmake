@@ -1,3 +1,9 @@
+# =============================================================================
+# Copyright (C) 2016-2019 Blue Brain Project
+#
+# See top-level LICENSE file for details.
+# =============================================================================
+
 # Find the compiler
 find_program(
     CMAKE_ISPC_COMPILER

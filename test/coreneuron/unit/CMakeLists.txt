@@ -1,56 +1,36 @@
-# Copyright (c) 2016, Blue Brain Project
-# All rights reserved.
+# =============================================================================
+# Copyright (C) 2016-2019 Blue Brain Project
+#
+# See top-level LICENSE file for details.
+# =============================================================================
 
-# Redistribution and use in source and binary forms, with or without modification,
-# are permitted provided that the following conditions are met:
-# 1. Redistributions of source code must retain the above copyright notice,
-#    this list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright notice,
-#    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution.
-# 3. Neither the name of the copyright holder nor the names of its contributors
-#    may be used to endorse or promote products derived from this software
-#    without specific prior written permission.
-
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
-# THE POSSIBILITY OF SUCH DAMAGE.
-
-
-include(FindSLURM)
 include(TestHelpers)
 
-include_directories(${CMAKE_SOURCE_DIR}/coreneuron ${CMAKE_SOURCE_DIR} ${Boost_INCLUDE_DIRS})
+include_directories(${CORENEURON_PROJECT_SOURCE_DIR} ${Boost_INCLUDE_DIRS})
 
 if(NOT Boost_USE_STATIC_LIBS)
-    add_definitions(-DBOOST_TEST_DYN_LINK=TRUE)
+  add_definitions(-DBOOST_TEST_DYN_LINK=TRUE)
 endif()
 
+set(Boost_NO_BOOST_CMAKE TRUE)
+find_package(Boost 1.41.0 QUIET
+             COMPONENTS filesystem
+                        system
+                        atomic
+                        unit_test_framework)
 
-if(UNIT_TESTS)
+if(Boost_FOUND)
+  if(CORENRN_ENABLE_UNIT_TESTS)
+    include_directories(${Boost_INCLUDE_DIRS})
     add_subdirectory(unit/endian)
     add_subdirectory(unit/sdprintf)
-    add_subdirectory(unit/mechbuild)
-    add_subdirectory(unit/omp)
     add_subdirectory(unit/cmdline_interface)
     add_subdirectory(unit/interleave_info)
     add_subdirectory(unit/alignment)
     add_subdirectory(unit/queueing)
+  endif()
 else()
-    message(STATUS "Unit tests disabled")
+  message(STATUS "Boost not found, unit tests disabled")
 endif()
 
-if(FUNCTIONAL_TESTS)
-    add_subdirectory(integration)
-    add_subdirectory(regression)
-else()
-    message(STATUS "Functional tests disabled")
-endif()
+add_subdirectory(integration)

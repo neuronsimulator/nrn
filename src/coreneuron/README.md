@@ -42,12 +42,12 @@ cmake ..
 make -j
 ```
 
-If you don't have MPI, you can disable MPI dependency using the CMake option `-DENABLE_MPI=OFF`:
+If you don't have MPI, you can disable MPI dependency using the CMake option `-DCORENRN_ENABLE_MPI=OFF`:
 
 ```bash
 export CC=gcc
 export CXX=g++
-cmake .. -DENABLE_MPI=OFF
+cmake .. -DCORENRN_ENABLE_MPI=OFF
 make -j
 ```
 
@@ -59,10 +59,10 @@ make test
 
 ### About MOD files
 
-The workflow for building CoreNEURON is different from that of NEURON, especially considering the use of **nrnivmodl**. Currently we do not provide **nrnivmodl-core** for CoreNEURON. If you have MOD files from a NEURON model, you have to explicitly specify those MOD file directory paths during CoreNEURON build using the `-DADDITIONAL_MECHPATH` option:
+With the latest master branch, the workflow of building CoreNEURON is same as that of NEURON, especially considering the use of **nrnivmodl**. We provide **nrnivmodl-core** for CoreNEURON and you can build **special-core** as:
 
 ```bash
-cmake .. -DADDITIONAL_MECHPATH="path/of/mod/files/directory/"
+/install-path/bin/nrnivmodl-core mod-dir
 ```
 
 
@@ -83,7 +83,6 @@ cmake ..  -DCMAKE_C_FLAGS:STRING="-O2" \
           -DCOMPILE_LIBRARY_TYPE=STATIC \
           -DCUDA_HOST_COMPILER=`which gcc` \
           -DCUDA_PROPAGATE_HOST_FLAGS=OFF \
-          -DENABLE_SELECTIVE_GPU_PROFILING=ON \
           -DENABLE_OPENACC=ON
 ```
 
@@ -98,7 +97,7 @@ Note that the CUDA Toolkit version should be compatible with PGI compiler instal
 You have to run GPU executable with the `--gpu` or `-gpu`. Make sure to enable cell re-ordering mechanism to improve GPU performance using `--cell_permute` option (permutation types : 2 or 1):
 
 ```bash
-mpirun -n 1 ./bin/coreneuron_exec -d ../tests/integration/ring -mpi -e 100 --gpu --cell_permute 2
+mpirun -n 1 ./bin/nrniv-core -d ../tests/integration/ring -mpi -e 100 --gpu --cell_permute 2
 ```
 
 Note that if your model is using Random123 random number generator, you can't use same executable for CPU and GPU runs. We suggest to build separate executable for CPU and GPU simulations. This will be fixed in future releases.
@@ -125,8 +124,8 @@ cmake .. -DCMAKE_CXX_FLAGS="-O3 -g" \
          -DCMAKE_BUILD_TYPE=CUSTOM
 ```
 
-* By default OpenMP threading is enabled. You can disable it with `-DCORENEURON_OPENMP=OFF`
-* By default CoreNEURON uses the SoA (Structure of Array) memory layout for all data structures. You can switch to AoS using `-DENABLE_SOA=OFF`.
+* By default OpenMP threading is enabled. You can disable it with `-DCORENRN_ENABLE_OPENMP=OFF`
+* By default CoreNEURON uses the SoA (Structure of Array) memory layout for all data structures. You can switch to AoS using `-DCORENRN_ENABLE_SOA=OFF`.
 
 
 ## RUNNING SIMULATION:
@@ -135,7 +134,7 @@ Note that the CoreNEURON simulator dependends on NEURON to build the network mod
 
 ```bash
 export OMP_NUM_THREADS=2     #set appropriate value
-mpiexec -np 2 build/apps/coreneuron_exec -e 10 -d /path/to/model/built/by/neuron -mpi
+mpiexec -np 2 build/bin/nrniv-core -e 10 -d /path/to/model/built/by/neuron -mpi
 ```
 
 [This tutorial](https://github.com/nrnhines/ringtest) provide more information for parallel runs and performance comparison.
@@ -143,7 +142,7 @@ mpiexec -np 2 build/apps/coreneuron_exec -e 10 -d /path/to/model/built/by/neuron
 In order to see the command line options, you can use:
 
 ```bash
-/path/to/isntall/directory/coreneuron_exec --help
+/path/to/isntall/directory/nrniv-core --help
 -b, --spikebuf ARG          Spike buffer size. (100000)
 -c, --threading             Parallel threads. The default is serial threads.
 -d, --datpath ARG           Path containing CoreNeuron data files. (.)
@@ -215,7 +214,7 @@ cmake .. -DTEST_MPI_EXEC_BIN="mpirun" \
 You can disable tests using with options:
 
 ```
-cmake .. -DUNIT_TESTS=OFF -DFUNCTIONAL_TESTS=OFF
+cmake .. -CORENRN_ENABLE_UNIT_TESTS=OFF
 ```
 
 ## License

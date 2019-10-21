@@ -1,3 +1,9 @@
+# =============================================================================
+# Copyright (C) 2016-2019 Blue Brain Project
+#
+# See top-level LICENSE file for details.
+# =============================================================================
+
 # This file sets the basic flags for the FOO compiler
 set(CMAKE_INCLUDE_FLAG_ISPC "-I")
 

@@ -1,41 +1,22 @@
-# Copyright (c) 2016, Blue Brain Project
-# All rights reserved.
+# =============================================================================
+# Copyright (C) 2016-2019 Blue Brain Project
+#
+# See top-level LICENSE file for details.
+# =============================================================================
 
-# Redistribution and use in source and binary forms, with or without modification,
-# are permitted provided that the following conditions are met:
-# 1. Redistributions of source code must retain the above copyright notice,
-#    this list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright notice,
-#    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution.
-# 3. Neither the name of the copyright holder nor the names of its contributors
-#    may be used to endorse or promote products derived from this software
-#    without specific prior written permission.
+# coreneuron executable
+include_directories(${CORENEURON_PROJECT_SOURCE_DIR})
+add_executable(nrniv-core "${CMAKE_CURRENT_SOURCE_DIR}/coreneuron.cpp")
+target_link_libraries(nrniv-core
+                      corenrnmech
+                      ${MPI_C_LIBRARIES}
+                      ${MPI_CXX_LIBRARIES}
+                      ${reportinglib_LIBRARY})
+set_target_properties(nrniv-core PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
-# THE POSSIBILITY OF SUCH DAMAGE.
+# main program required for building special-core
+configure_file(coreneuron.cpp ${CMAKE_BINARY_DIR}/share/coreneuron/coreneuron.cpp COPYONLY)
 
-
-include_directories(${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/coreneuron ${CMAKE_CURRENT_SOURCE_DIR} ${PROJECT_BINARY_DIR}/coreneuron)
-
-add_executable(coreneuron_exec "${CMAKE_CURRENT_SOURCE_DIR}/coreneuron.cpp")
-
-target_link_libraries(coreneuron_exec corenrnmech
-                      ${MPI_C_LIBRARIES} ${MPI_CXX_LIBRARIES} ${reportinglib_LIBRARY})
-
-install(TARGETS coreneuron_exec
-        DESTINATION "${CMAKE_INSTALL_BINDIR}")
-
-
-# Install main to recompile for special-core
-install(FILES coreneuron.cpp
-        DESTINATION ${CMAKE_INSTALL_DATADIR}/coreneuron)
+# install targes
+install(TARGETS nrniv-core DESTINATION bin)
+install(FILES coreneuron.cpp DESTINATION share/coreneuron)

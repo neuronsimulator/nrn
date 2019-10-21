@@ -8,10 +8,10 @@ set -e
 APP_NAME=$(basename $0)
 _PARENT="$(dirname $BASH_SOURCE)/.."
 ROOTDIR=$(perl -e "use Cwd 'abs_path'; print abs_path('$_PARENT')")
-MAKE_OPTIONS="MECH_NAME MECH_VERSION OUTPUT INCFLAGS LINKFLAGS MODS_PATH OPTMODS OPTMODS_OUTPUTS VERBOSE"
+MAKE_OPTIONS="MECH_NAME MECH_VERSION OUTPUT INCFLAGS LINKFLAGS MODS_PATH VERBOSE"
 PARALLELISM=4
 
-while getopts "n:v:o:i:l:p:chV" OPT; do
+while getopts "n:v:o:i:l:p:hV" OPT; do
     case "$OPT" in
     n)
         params_MECH_NAME="$OPTARG";;
@@ -23,9 +23,6 @@ while getopts "n:v:o:i:l:p:chV" OPT; do
         params_INCFLAGS="$OPTARG";;
     l)
         params_LINKFLAGS="$OPTARG";;
-    c)
-        params_OPTMODS=""
-        params_OPTMODS_OUTPUTS="";;
     V)
         params_VERBOSE=1;;
     p)
@@ -38,8 +35,6 @@ while getopts "n:v:o:i:l:p:chV" OPT; do
         echo "  -o <output_dir> Set the output dir (default: <arch>-core)"
         echo "  -i <incl_flags> Definitions passed to the compiler, typically '-I dir..'"
         echo "  -l <link_flags> Definitions passed to the linker, typically '-Lx -lylib..'"
-        echo "  -c              Clean: Don't use any ADDITIONAL mod built-into coreneuron."
-        echo "                  By default this only contains halfgap.mod"
         echo "  -V              Verbose: show commands executed by make"
         echo "  -p <n_procs>    Make parallelism. Default: 4"
         exit 0;;
@@ -59,7 +54,7 @@ fi
 # Note: due to bug #712 makefile wont handle mod dir with spaces, so we let it fail here
 params_MODS_PATH=$1
 
-make_params=()
+make_params=("ROOT=${ROOTDIR}")
 
 for param in $MAKE_OPTIONS; do
     var="params_${param}"
@@ -68,17 +63,14 @@ done
 
 # warn if no mod files provided
 ls "${params_MODS_PATH:-.}"/*.mod || echo "Warning: No mods found!"
-(
-    set -x
-    make -j$PARALLELISM -f "${ROOTDIR}/share/coreneuron/nrnivmodl_core_makefile" "${make_params[@]}"
-)
+make -j$PARALLELISM -f "${ROOTDIR}/share/coreneuron/nrnivmodl_core_makefile" "${make_params[@]}"
 
 # Create a little script to call make install (relinks w right RPATH)
 echo "#!/bin/bash
 set -e
 [ \$# -eq 1 ] || { echo 'Required install destination. Syntax: ' \$(basename \$0) '<directory>'; false; }
 set -x
-make -f '${ROOTDIR}/share/coreneuron/nrnivmodl_core_makefile' " $(printf "'%s' " "${make_params[@]}") "DESTDIR=\$1 install
+make -f '${ROOTDIR}/bin/nrnivmodl_core_makefile' " $(printf "'%s' " "${make_params[@]}") "DESTDIR=\$1 install
 " > nrnivmech_install.sh
 chmod 755 nrnivmech_install.sh
 

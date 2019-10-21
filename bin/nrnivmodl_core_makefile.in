@@ -8,19 +8,17 @@ MECH_NAME =
 MECH_VERSION = 0.0
 MODS_PATH = .
 OUTPUT = @CMAKE_HOST_SYSTEM_PROCESSOR@
-OPTMODS = @CORENRN_OPTMODS@
-OPTMODS_OUTPUTS = @CORENRN_OPTMODS_OUTPUTS@
 DESTDIR =
 
 # Coreneuron dirs
-bindir := @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_BINDIR@
-libdir := @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_LIBDIR@
-incdir := @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_INCLUDEDIR@
-datadir:= @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_DATADIR@/coreneuron
-datadir_mod2c := @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_DATADIR@/mod2c
+bindir := $(ROOT)/bin
+libdir := $(ROOT)/lib
+incdir := $(ROOT)/include
+datadir:= $(ROOT)/share/coreneuron
+datadir_mod2c := $(ROOT)/share/mod2c
 
 # Binary of MOD2C/NMODL depending on what was activated
-mod2c_install_bin := @mod2c_install_bin@
+nmodl_binary_path := $(bindir)/@nmodl_binary_name@
 
 # Additional variables set in CMAKE usable here
 # - @CORENRN_COMPILE_DEFS
@@ -55,7 +53,7 @@ mod_ispc_srcs_path =
 mod_c_srcs_names =
 mod_ispc_srcs_names =
 define check_file
-	ifeq (@ENABLE_ISPC_TARGET@, ON)
+	ifeq (@CORENRN_ENABLE_ISPC@, ON)
 		ifeq ($(shell grep -q $(2) $(1); echo $$?), 0)
 			mod_c_srcs_path += $(MODC_DIR)/$(notdir $(1))
 			mod_c_srcs_names += $(notdir $(1))
@@ -74,9 +72,9 @@ MODC_DIR = $(OUTPUT)/core/mod2c
 OBJS_DIR = $(OUTPUT)/core/build
 mod_files = $(sort $(notdir $(wildcard $(MODS_PATH)/*.mod)))
 mod_paths = $(sort $(wildcard $(MODS_PATH)/*.mod))
-mod_names = $(mod_files:.mod=) $(OPTMODS:.mod=)
+mod_names = $(mod_files:.mod=)
 mod_all_cpp_files = $(addprefix $(MODC_DIR)/,$(addsuffix .cpp,$(mod_names)))
-mod_c_objs = $(addprefix $(OBJS_DIR)/,$(addsuffix .o,$(basename $(mod_c_srcs_names)))) $(addprefix $(OBJS_DIR)/,$(addsuffix .o,$(basename $(filter %.cpp, $(OPTMODS_OUTPUTS)))))
+mod_c_objs = $(addprefix $(OBJS_DIR)/,$(addsuffix .o,$(basename $(mod_names)))) $(addprefix $(OBJS_DIR)/,$(addsuffix .o,$(basename $(filter %.cpp, $(OPTMODS_OUTPUTS)))))
 mod_ispc_objs = $(addprefix $(OBJS_DIR)/,$(addsuffix .obj,$(basename $(mod_ispc_srcs_names)))) $(addprefix $(OBJS_DIR)/,$(addsuffix .obj,$(basename $(filter %.ispc, $(OPTMODS_OUTPUTS)))))
 
 $(foreach ittxtfile, $(mod_paths), $(eval $(call check_file, $(ittxtfile), ARTIFICIAL_CELL)))
@@ -117,9 +115,10 @@ $(special): $(coremech_lib)
 
 
 $(coremech_lib): $(mod_func_o) $(dimplic_o) $(mod_c_objs) $(mod_ispc_objs) build_always
-	@printf " => $(C_GREEN)LINKING$(C_RESET) library $(coremech_lib) Mod files: $(mod_files) (+ $(OPTMODS))\n"
+	@printf " => $(C_GREEN)LINKING$(C_RESET) library $(coremech_lib) Mod files: $(mod_files)\n"
 	$(CXX_LINK_SHARED) -I $(incdir) -DADDITIONAL_MECHS $(datadir)/enginemech.cpp -o ${coremech_lib} ${_SONAME} \
-	  $(mod_func_o) $(dimplic_o) $(mod_c_objs) $(mod_ispc_objs) $(datadir)/libscopmath.a $(CORENRNLIB_FLAGS) -Wl,-rpath,$(libdir) $(LDFLAGS)
+	  $(mod_func_o) $(dimplic_o) $(mod_c_objs) $(mod_ispc_objs) $(libdir)/libscopmath.a $(CORENRNLIB_FLAGS) -Wl,-rpath,$(libdir) $(LDFLAGS)
+	(rm -f $(OUTPUT)/.libs/libcorenrnmech.so ; mkdir -p $(OUTPUT)/.libs ; ln -s ../../${coremech_lib} $(OUTPUT)/.libs/libcorenrnmech.so)
 
 
 # Generic build cpp->.o Need PIC for shared lib
@@ -135,9 +134,9 @@ $(OBJS_DIR)/%.obj: $(MODC_DIR)/%.ispc | $(OBJS_DIR)
 # Build ispc files with mod2c/nmodl
 $(mod_ispc_files): $(MODC_DIR)/%.ispc: $(MODS_PATH)/%.mod | $(MODC_DIR)
 	@printf " -> $(C_GREEN)MOD2C$(C_RESET) $<\n"
-	PYTHONPATH=@NMODL_PYTHONPATH@ \
+	PYTHONPATH=@CORENRN_NMODL_PYTHONPATH@ \
 	MODLUNIT=$(datadir_mod2c)/nrnunits.lib \
-	  $(mod2c_install_bin) $< -o $(MODC_DIR)/ @nmodl_arguments_ispc@
+	  $(nmodl_binary_path) $< -o $(MODC_DIR)/ @nmodl_arguments_ispc@
 
 # Static pattern to set up the dependencies for the previous recipe.
 $(mod_ispc_c_files): $(MODC_DIR)/%.cpp: $(MODC_DIR)/%.ispc
@@ -145,9 +144,9 @@ $(mod_ispc_c_files): $(MODC_DIR)/%.cpp: $(MODC_DIR)/%.ispc
 # Build cpp files with mod2c/nmodl
 $(mod_c_files): $(MODC_DIR)/%.cpp: $(MODS_PATH)/%.mod | $(MODC_DIR)
 	@printf " -> $(C_GREEN)MOD2C$(C_RESET) $<\n"
-	PYTHONPATH=@NMODL_PYTHONPATH@ \
+	PYTHONPATH=@CORENRN_NMODL_PYTHONPATH@ \
 	MODLUNIT=$(datadir_mod2c)/nrnunits.lib \
-	  $(mod2c_install_bin) $< -o $(MODC_DIR)/ @nmodl_arguments_c@
+	  $(nmodl_binary_path) $< -o $(MODC_DIR)/ @nmodl_arguments_c@
 
 # If .mod doesnt exist attempt from previously built opt mods in shared/
 $(MODC_DIR)/%.cpp: $(datadir_mod2c)/%.cpp | $(MODC_DIR)
@@ -159,7 +158,7 @@ $(MODC_DIR)/%.ispc: $(datadir_mod2c)/%.ispc | $(MODC_DIR)
 # Mod registration. Compiled by generic rule. Dont overwrite if not changed
 $(mod_func_c): build_always | $(MODC_DIR)
 	@printf " -> $(C_GREEN)Generating$(C_RESET) $(mod_func_c)\n"
-	perl $(datadir)/mod_func.c.pl $(OPTMODS) $(mod_files) > $(mod_func_c).tmp
+	perl $(datadir)/mod_func.c.pl $(mod_files) > $(mod_func_c).tmp
 	diff -q $(mod_func_c).tmp $(mod_func_c) || { echo "Replacing mod_func.c"; mv $(mod_func_c).tmp $(mod_func_c); }
 
 

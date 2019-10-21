@@ -54,18 +54,18 @@ elif [ "${CORENRN_TYPE}" = "GPU-unified" ]; then
         -DAUTO_TEST_WITH_MPIEXEC=OFF \
         $WORKSPACE/
 elif [ "${CORENRN_TYPE}" = "AoS" ] || [ "${CORENRN_TYPE}" = "SoA" ]; then
-    ENABLE_SOA=ON
+    CORENRN_ENABLE_SOA=ON
     ENABLE_OPENMP=ON
     if [ "${CORENRN_TYPE}" = "AoS" ]; then
-        ENABLE_SOA=OFF
+        CORENRN_ENABLE_SOA=OFF
         ENABLE_OPENMP=OFF
     fi
     cmake  \
       -G 'Unix Makefiles'  \
       -DCMAKE_INSTALL_PREFIX=$WORKSPACE/install_${CORENRN_TYPE}/ \
       -DCMAKE_BUILD_TYPE=Debug  \
-      -DENABLE_SOA=$ENABLE_SOA \
-      -DCORENEURON_OPENMP=$ENABLE_OPENMP \
+      -DCORENRN_ENABLE_SOA=$CORENRN_ENABLE_SOA \
+      -DCORENRN_ENABLE_OPENMP=$ENABLE_OPENMP \
       -DTEST_MPI_EXEC_BIN="mpirun" \
       -DTEST_EXEC_PREFIX="mpirun;-n;2" \
       -DAUTO_TEST_WITH_SLURM=OFF \
