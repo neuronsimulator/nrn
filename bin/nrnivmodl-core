@@ -66,11 +66,16 @@ ls "${params_MODS_PATH:-.}"/*.mod || echo "Warning: No mods found!"
 make -j$PARALLELISM -f "${ROOTDIR}/share/coreneuron/nrnivmodl_core_makefile" "${make_params[@]}"
 
 # Create a little script to call make install (relinks w right RPATH)
+# This should allow splitting the build of special-core into two phases:
+# 1. build the binary from the libcoreneuron.so library and the compiled models
+# 2. install into the final destination directory and relinking as necessary
+# TODO: instead of outputting a script we could output an options file which would be read by
+# this script when installing to ensure the same arguments are being used.
 echo "#!/bin/bash
 set -e
 [ \$# -eq 1 ] || { echo 'Required install destination. Syntax: ' \$(basename \$0) '<directory>'; false; }
 set -x
-make -f '${ROOTDIR}/bin/nrnivmodl_core_makefile' " $(printf "'%s' " "${make_params[@]}") "DESTDIR=\$1 install
+make -f '${ROOTDIR}/share/coreneuron/nrnivmodl_core_makefile' " $(printf "'%s' " "${make_params[@]}") "DESTDIR=\$1 install
 " > nrnivmech_install.sh
 chmod 755 nrnivmech_install.sh
 
