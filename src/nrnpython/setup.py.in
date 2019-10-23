@@ -160,6 +160,8 @@ if build_rx3d:
     include_dirs = [nrn_srcdir + '/share/lib/python/neuron/rxd/geometry3d', '.', numpy.get_include()]
     include_dirs += include_dirs_common
     extra_compile_args=["-O0"] # minimize compile time
+    if using_cmake:
+      extra_compile_args=["-O@NRN_RX3D_OPT_LEVEL@"]
     define_macros = []
     if mingw and sys.version_info[0] == 2:
       #Avoid undefined __imp_Py_InitModule4 problem

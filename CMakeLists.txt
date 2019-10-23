@@ -25,7 +25,7 @@ option(NRN_ENABLE_PYTHON "Enable Python interpreter support (default python3 fal
 option(NRN_ENABLE_THREADS "Allow use of Pthreads" ON)
 option(NRN_ENABLE_MPI "Enable MPI support" ON)
 option(NRN_ENABLE_MEMACS "Enable use of memacs" ON)
-option(NRN_ENABLE_RX3D "Enable rx3d support" OFF)
+option(NRN_ENABLE_RX3D "Enable rx3d support" ON)
 
 # =============================================================================
 # Build options (string)
@@ -53,14 +53,18 @@ option(NRN_ENABLE_RX3D "Enable rx3d support" OFF)
 #   - <string>  : semicolon (;) separated list of MPI's bin directories to create a separate
 #                 libnrnmpi_xxx.so interface for each. When nrniv is launched with the -mpi argument,
 #                 the first mpi found will determine which interface is dynamically loaded."
+# Rx3D Cython generated files compiler optimization level. 0 is default.
+
 option(NRN_ENABLE_MODULE_INSTALL "Enable installation of NEURON Python module" ON)
 set(NRN_MODULE_INSTALL_OPTIONS "" CACHE STRING "setup.py options, leave empty for --home <install prefix>")
 
 option(NRN_ENABLE_PYTHON_DYNAMIC "Enable dynamic Python version support" OFF)
-set(NRN_PYTHON_DYNAMIC "" CACHE STRING "semicolon (;) seperated list of python executables to create interface for (default python3)")
+set(NRN_PYTHON_DYNAMIC "" CACHE STRING "semicolon (;) separated list of python executables to create interface for (default python3)")
 
 option(NRN_ENABLE_MPI_DYNAMIC "Enable dynamic MPI library support" OFF)
-set(NRN_MPI_DYNAMIC "" CACHE STRING "semicolon (;) seperated list of MPI bin directories to build against (default to first found mpi)")
+set(NRN_MPI_DYNAMIC "" CACHE STRING "semicolon (;) separated list of MPI bin directories to build against (default to first found mpi)")
+
+set(NRN_RX3D_OPT_LEVEL "0" CACHE STRING "Integer optimization level for cython generated files. Nonzero may compile very slowly.")
 
 # =============================================================================
 # Include cmake modules
@@ -290,7 +294,10 @@ if(cmake_generator_tolower MATCHES "makefile")
     endforeach(val)
   endif()
   endif()
-  message(STATUS "RXD           | ${NRN_ENABLE_RX3D}")
+  message(STATUS "RX3D          | ${NRN_ENABLE_RX3D}")
+  if (${NRN_ENABLE_RX3D})
+    message(STATUS "  OptLevel    | ${NRN_RX3D_OPT_LEVEL}")
+  endif()
   message(STATUS "Shared        | ${NRN_ENABLE_SHARED}")
   message(STATUS "--------------+--------------------------------------------------------------")
   message(STATUS " See documentation : https://www.neuron.yale.edu/neuron/")
