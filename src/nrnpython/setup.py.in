@@ -7,6 +7,8 @@ import os
 
 @USING_CMAKE_TRUE@using_cmake=True
 @USING_CMAKE_FALSE@using_cmake=False
+@WIN_MINGW_TRUE@mingw = 1
+@WIN_MINGW_FALSE@mingw = 0
 
 # TODO temporary workaround for mingw + cmake
 # When running with mingw-cmake, the path of the form C:/msys64/xyz
@@ -158,17 +160,24 @@ if build_rx3d:
     include_dirs = [nrn_srcdir + '/share/lib/python/neuron/rxd/geometry3d', '.', numpy.get_include()]
     include_dirs += include_dirs_common
     extra_compile_args=["-O0"] # minimize compile time
+    define_macros = []
+    if mingw and sys.version_info[0] == 2:
+      #Avoid undefined __imp_Py_InitModule4 problem
+      define_macros.append((MS_WIN64, None))
     ext_modules=[hoc_module,
                    Extension("neuron.rxd.geometry3d.graphicsPrimitives",
                              sources=[build_path + "graphicsPrimitives.cpp"],
                              extra_compile_args = extra_compile_args,
+                             define_macros = define_macros,
                              include_dirs=include_dirs),
                    Extension("neuron.rxd.geometry3d.ctng",
                              sources=[build_path + "ctng.cpp"],
                              extra_compile_args = extra_compile_args,
+                             define_macros = define_macros,
                              include_dirs=include_dirs),
                    Extension("neuron.rxd.geometry3d.surfaces",
                              sources=[build_path + "surfaces.cpp", nrn_srcdir + "/src/nrnpython/rxd_marching_cubes.c", nrn_srcdir + "/src/nrnpython/rxd_llgramarea.c"],
+                             define_macros = define_macros,
                              extra_compile_args = extra_compile_args,
                              include_dirs=include_dirs)]
   except:
