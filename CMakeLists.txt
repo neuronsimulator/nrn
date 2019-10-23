@@ -239,7 +239,7 @@ install(FILES
 )
 
 #for external coreneuron, nrnivmodl-core should be install
-if (NRN_ENABLE_CORENEURON AND ${coreneuron_FOUND})
+if (NRN_ENABLE_CORENEURON AND coreneuron_FOUND)
   install(PROGRAMS
     ${CORENEURON_DIR}/bin/nrnivmodl-core
     DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
@@ -281,8 +281,8 @@ if(cmake_generator_tolower MATCHES "makefile")
   message(STATUS "make install  | Will install NEURON to: ${CMAKE_INSTALL_PREFIX}")
   message(STATUS "              | Change the install location of NEURON using:")
   message(STATUS "              |     cmake <src_path> -DCMAKE_INSTALL_PREFIX=<install_path>")
-  message(STATUS "make doc      | Build the API documentation, requires Sphinx")
-  message(STATUS "make uninstall| Removes files installed by make install")
+  message(STATUS "make doc      | Build the API documentation, requires Sphinx (todo)")
+  message(STATUS "make uninstall| Removes files installed by make install (todo)")
   message(STATUS "--------------+--------------------------------------------------------------")
   message(STATUS " Build option | Status")
   message(STATUS "--------------+--------------------------------------------------------------")

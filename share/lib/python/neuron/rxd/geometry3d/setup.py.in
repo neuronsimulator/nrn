@@ -6,7 +6,7 @@ nrn_srcdir = "@NRN_SRCDIR@"
 @BUILD_MINGW_TRUE@mingw = 1
 @BUILD_MINGW_FALSE@mingw = 0
 instdir = "@prefix@"
-if nrn_srcdir[0] != '/' :
+if nrn_srcdir[0] != '/' and nrn_srcdir[1] != ':':
     # TODO: is this right?
     nrn_srcdir = '../../../../../../' + nrn_srcdir
 
@@ -16,11 +16,13 @@ from distutils.extension import Extension
 def have_vc():
     if not mingw:
         return False
+    import traceback
     try:
         from distutils import spawn
         x = spawn.find_executable("cl")
         x = True if x is not None and "Microsoft" in x else False
     except:
+        traceback.print_exc()
         x = False
     return x
 
@@ -29,10 +31,16 @@ try:
 except:
     setup()
 else:
+    olevel = "@NRN_RX3D_OPT_LEVEL@"
+    olevel = '0'
     use_vc = have_vc()
+    if mingw and sys.version_info[0] == 3:
+      use_vc = True
     if use_vc:
         mpicc_bin = 'cl'
         mpicxx_bin = 'cl'
+        if olevel == '0' and sys.version_info[0] == 3:
+          olevel = 'd'
     else:
         mpicc_bin = "@CC@"
         mpicxx_bin = "@CXX@"
@@ -45,6 +53,8 @@ else:
     if mingw and sys.version_info[0] == 2:
         define_macros=[('MS_WIN64', None)]
 
+    extra_compile_args = ['-O'+olevel] if olevel != "" else []
+
     include_dirs = [nrn_srcdir + '/share/lib/python/neuron/rxd/geometry3d', '.', numpy.get_include()]
 
     srcdir = nrn_srcdir + '/share/lib/python/neuron/rxd/geometry3d/'
@@ -55,14 +65,17 @@ else:
                        Extension("graphicsPrimitives",
                                  sources=["graphicsPrimitives.cpp"],
                                  define_macros=define_macros,
+                                 extra_compile_args=extra_compile_args,
                                  include_dirs=include_dirs),
                        Extension("ctng",
                                  sources=["ctng.cpp"],
                                  define_macros=define_macros,
+                                 extra_compile_args=extra_compile_args,
                                  include_dirs=include_dirs),
                        Extension("surfaces",
                                  sources=["surfaces.cpp", nrn_srcdir + "/src/nrnpython/rxd_marching_cubes.c", nrn_srcdir + "/src/nrnpython/rxd_llgramarea.c"],
                                  define_macros=define_macros,
+                                 extra_compile_args=extra_compile_args,
                                  include_dirs=include_dirs)],
     )
     #    package_dir = {'': instdir + '/share/lib/python/neuron/rxd/geometry3d'}
