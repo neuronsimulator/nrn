@@ -2473,16 +2473,18 @@ static PyObject* py_hocobj_math(const char* op, PyObject* obj1, PyObject* obj2) 
     potentially_valid = true;
     reversed = 1;
   }
-  if (!potentially_valid) {
+  if (!potentially_valid){
     Py_INCREF(Py_NotImplemented);
     return Py_NotImplemented;
   }
-  return PyObject_CallFunction(nrnpy_vec_math, "siOO", op, reversed, obj1, obj2);
+  char buf[8];
+  return PyObject_CallFunction(nrnpy_vec_math, strcpy(buf, "siOO"), op, reversed, obj1, obj2);
 }
 
 static PyObject* py_hocobj_math_unary(const char* op, PyObject* obj) {
   if (pyobj_is_vector(obj)) {
-    return PyObject_CallFunction(nrnpy_vec_math, "siO", op, 2, obj);
+    char buf[8];
+    return PyObject_CallFunction(nrnpy_vec_math, strcpy(buf, "siO"), op, 2, obj);
   }
   Py_INCREF(Py_NotImplemented);
   return Py_NotImplemented;

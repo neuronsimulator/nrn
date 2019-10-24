@@ -12,7 +12,7 @@ set(npy_pyver10 "")
 
 # reset since no " allowed
 set(PACKAGE_VERSION ${PROJECT_VERSION})
-set(NRN_LIBDIR ${CMAKE_INSTALL_PREFIX}/lib)
+set(NRN_LIBDIR ${nrn_dest_sharedlibs})
 
 # set by IV's cmake module
 set(IV_LIBDIR "${IV_INCLUDE_DIR}/../lib")
@@ -106,6 +106,28 @@ if(NRN_ENABLE_MODULE_INSTALL)
     set(NRN_MODULE_INSTALL_OPTIONS "--home ${install_path}" CACHE INTERNAL "" FORCE)
   endif()
 
+  # to tickle setup.py into actually rebuilding if dependencies change,
+  # need to copy inithoc.cpp in from source to binary dir if any module dependent
+  # changes and make a custom target as well.
+  set(bname ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp)
+  set(sname ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp)
+  set(inithoc_hdeps
+    ${CMAKE_CURRENT_SOURCE_DIR}/../oc/nrnmpi.h
+    ${CMAKE_CURRENT_BINARY_DIR}/../oc/nrnmpiuse.h
+    ${CMAKE_CURRENT_BINARY_DIR}/../oc/nrnpthread.h
+    ${CMAKE_CURRENT_BINARY_DIR}/nrnpython_config.h
+  )
+
+  add_custom_command(OUTPUT ${bname}
+    COMMAND cp ${sname} ${bname}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    DEPENDS ${sname} ${CMAKE_CURRENT_BINARY_DIR}/setup.py ${inithoc_hdeps}
+  )
+
+  add_custom_target(hoc_module ALL
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    DEPENDS ${bname})
+
   # For DYNAMIC python, inithoc module name convention is different for
   # autotools version and cmake. So nrnpy_hoc.cpp and inithoc.cpp need
   # to know whether they are compiled via the cmake or autotools build system.
@@ -142,7 +164,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
         target_include_directories(nrnpython${pyver} BEFORE PUBLIC ${pyinc} ${INCLUDE_DIRS})
         target_link_libraries(nrnpython${pyver} nrniv_lib ${pylib} ${Readline_LIBRARY})
         add_dependencies(nrnpython${pyver} nrniv_lib)
-        install(TARGETS nrnpython${pyver} DESTINATION lib)
+        install(TARGETS nrnpython${pyver} DESTINATION ${nrn_dest_sharedlibs})
       endforeach()
     else()
       # build python2 library and install it
@@ -150,7 +172,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
         add_library(nrnpython2 SHARED ${NRN_NRNPYTHON_SRC_FILES})
         target_include_directories(nrnpython2 BEFORE PUBLIC ${NRNPYTHON_INCLUDE2} ${INCLUDE_DIRS})
         add_dependencies(nrnpython2 nrniv_lib)
-        install(TARGETS nrnpython2 DESTINATION lib)
+        install(TARGETS nrnpython2 DESTINATION ${nrn_dest_sharedlibs})
       endif()
 
       # build python3 library and install it
@@ -158,7 +180,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
         add_library(nrnpython3 SHARED ${NRN_NRNPYTHON_SRC_FILES})
         add_dependencies(nrnpython3 nrniv_lib)
         target_include_directories(nrnpython3 BEFORE PUBLIC ${NRNPYTHON_INCLUDE3} ${INCLUDE_DIRS})
-        install(TARGETS nrnpython3 DESTINATION lib)
+        install(TARGETS nrnpython3 DESTINATION ${nrn_dest_shared_libs})
       endif()
     endif()
   endif()
@@ -167,7 +189,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
   foreach(pyexe ${NRN_PYTHON_EXE_LIST})
     install(CODE "
       message(STATUS \"Installing neuron module with: ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}\")
-      execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp)
+      #execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp)
       execute_process(COMMAND ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       )

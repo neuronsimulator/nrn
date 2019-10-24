@@ -121,6 +121,8 @@ macro(nrn_configure_file file dir)
     file(RENAME ${bin_dir}/cmake_${file} ${bin_dir}/${file})
   endif()
   file(REMOVE ${bin_dir}/cmake_${file}.in)
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    ${PROJECT_SOURCE_DIR}/${dir}/${file}.in)
 endmacro()
 
 # =============================================================================

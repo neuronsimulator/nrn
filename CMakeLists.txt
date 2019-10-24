@@ -5,7 +5,7 @@ project(NEURON C CXX)
 # CMake common project settings
 # =============================================================================
 set(PROJECT_VERSION_MAJOR 7)
-set(PROJECT_VERSION_MINOR 7)
+set(PROJECT_VERSION_MINOR 8)
 set(CMAKE_CXX_STANDARD 98)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -25,7 +25,7 @@ option(NRN_ENABLE_PYTHON "Enable Python interpreter support (default python3 fal
 option(NRN_ENABLE_THREADS "Allow use of Pthreads" ON)
 option(NRN_ENABLE_MPI "Enable MPI support" ON)
 option(NRN_ENABLE_MEMACS "Enable use of memacs" ON)
-option(NRN_ENABLE_RX3D "Enable rx3d support" OFF)
+option(NRN_ENABLE_RX3D "Enable rx3d support" ON)
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ON)
 
 # =============================================================================
@@ -54,14 +54,18 @@ option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ON)
 #   - <string>  : semicolon (;) separated list of MPI's bin directories to create a separate
 #                 libnrnmpi_xxx.so interface for each. When nrniv is launched with the -mpi argument,
 #                 the first mpi found will determine which interface is dynamically loaded."
+# Rx3D Cython generated files compiler optimization level. 0 is default.
+
 option(NRN_ENABLE_MODULE_INSTALL "Enable installation of NEURON Python module" ON)
 set(NRN_MODULE_INSTALL_OPTIONS "" CACHE STRING "setup.py options, leave empty for --home <install prefix>")
 
 option(NRN_ENABLE_PYTHON_DYNAMIC "Enable dynamic Python version support" OFF)
-set(NRN_PYTHON_DYNAMIC "" CACHE STRING "semicolon (;) seperated list of python executables to create interface for (default python3)")
+set(NRN_PYTHON_DYNAMIC "" CACHE STRING "semicolon (;) separated list of python executables to create interface for (default python3)")
 
 option(NRN_ENABLE_MPI_DYNAMIC "Enable dynamic MPI library support" OFF)
-set(NRN_MPI_DYNAMIC "" CACHE STRING "semicolon (;) seperated list of MPI bin directories to build against (default to first found mpi)")
+set(NRN_MPI_DYNAMIC "" CACHE STRING "semicolon (;) separated list of MPI bin directories to build against (default to first found mpi)")
+
+set(NRN_RX3D_OPT_LEVEL "0" CACHE STRING "Integer optimization level for cython generated files. Nonzero may compile very slowly.")
 
 # =============================================================================
 # Include cmake modules
@@ -74,6 +78,7 @@ include(MacroHelper)
 include(RpathHelper)
 include(PlatformHelper)
 include(ExternalProjectHelper)
+include(FindCython)
 
 # =============================================================================
 # Find required packages
@@ -82,6 +87,9 @@ find_package(BISON)
 find_package(FLEX)
 find_package(Threads)
 find_package(readline)
+if (NRN_ENABLE_RX3D)
+  find_package(Cython)
+endif()
 
 # =============================================================================
 # Enable MPI/Python/IV/Pthead if found
@@ -164,6 +172,24 @@ if (NRN_ENABLE_CORENEURON)
   endif()
 endif()
 
+# Classically, the install destination of the share folder
+# for mac/linux has been
+# <prefix>/share/nrn
+# but for linux it has been <prefix>. For now we keep this distinction.
+# Also, the classic location for shared libraries has been
+# <prefix>/<arch>/lib and for max/linux we have move this to
+# <inst>/lib
+# But windows has classically expected these shared libraries in
+# <prefix>/bin (reduces the PATH and expected by ctypes in the neuron module.)
+# So for now we keep that distinction as well.
+# Setting these here as setup.py.in needs it
+set(nrn_dest_share_dir ${CMAKE_INSTALL_PREFIX}/share/nrn)
+set(nrn_dest_sharedlibs ${CMAKE_INSTALL_PREFIX}/lib)
+if (MINGW)
+  set(nrn_dest_share_dir ${CMAKE_INSTALL_PREFIX})
+  set(nrn_dest_sharedlibs ${CMAKE_INSTALL_PREFIX}/bin)
+endif()
+
 # =============================================================================
 # Add CMake modules AFTER setting options
 # =============================================================================
@@ -186,6 +212,9 @@ if(NRN_MACOS_BUILD OR NOT READLINE_FOUND)
   set(INTERNAL_READLINE readline)
   unset(Readline_LIBRARY CACHE)
 endif()
+if (NRN_ENABLE_RX3D)
+  add_subdirectory(share/lib/python/neuron/rxd/geometry3d)
+endif()
 
 # =============================================================================
 # Install targets
@@ -193,16 +222,16 @@ endif()
 # find headers to install
 nrn_find_project_files(NRN_HEADERS_PATHS ${HEADER_FILES_TO_INSTALL})
 
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/lib DESTINATION share/nrn)
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo DESTINATION share/nrn)
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/lib DESTINATION ${nrn_dest_share_dir})
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo DESTINATION ${nrn_dest_share_dir})
 install(FILES
   ${PROJECT_BINARY_DIR}/share/lib/nrnunits.lib
   ${PROJECT_BINARY_DIR}/share/lib/nrn.defaults
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/share/nrn/lib
+  DESTINATION ${nrn_dest_share_dir}/lib
 )
 install(PROGRAMS
   ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/cleanup
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/share/nrn/lib
+  DESTINATION ${nrn_dest_share_dir}/lib
 )
 install(FILES
   ${NRN_HEADERS_PATHS} ${PROJECT_BINARY_DIR}/src/oc/nrnpthread.h
@@ -217,6 +246,24 @@ if (NRN_ENABLE_CORENEURON AND ${coreneuron_FOUND})
   install(FILES
     ${CORENEURON_DIR}/bin/nrnivmodl_core_makefile
     DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+endif()
+
+if (MINGW)
+  # nrniv.cpp calls nrnpyenv.sh with absolute path to bash.exe
+  # this is sufficient on the build machine since a full
+  # development environment exists. On the users install machine
+  # using a setup.exe distribution, the setup.ex will contain a
+  # minimal development environment with sufficient mingw programs
+  # to allow nrnpyenv.sh to work. (see nrn/mingw_files/nrnmingwenv.sh)
+  find_file(nrnbash bash.exe DOC "DOS path to bash.exe")
+  message(STATUS "Found bash.exe at ${nrnbash}")
+  if ("${nrnbash}" STREQUAL "nrnbash-NOTFOUND")
+    set(nrnbash "f:/msys64/usr/bin/bash.exe")
+  endif()
+  install(PROGRAMS
+    ${nrnbash}
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/mingw/usr/bin
+  )
 endif()
 
 # =============================================================================
@@ -270,7 +317,10 @@ if(cmake_generator_tolower MATCHES "makefile")
       endforeach(val)
     endif()
   endif()
-  message(STATUS "RXD           | ${NRN_ENABLE_RX3D}")
+  message(STATUS "RX3D          | ${NRN_ENABLE_RX3D}")
+  if (${NRN_ENABLE_RX3D})
+    message(STATUS "  OptLevel    | ${NRN_RX3D_OPT_LEVEL}")
+  endif()
   message(STATUS "Shared        | ${NRN_ENABLE_SHARED}")
   message(STATUS "CoreNEURON    | ${NRN_ENABLE_CORENEURON}")
   if(NRN_ENABLE_CORENEURON)
