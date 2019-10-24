@@ -7,16 +7,15 @@ import os
 
 @USING_CMAKE_TRUE@using_cmake=True
 @USING_CMAKE_FALSE@using_cmake=False
-@WIN_MINGW_TRUE@mingw = 1
-@WIN_MINGW_FALSE@mingw = 0
+@BUILD_MINGW_TRUE@mingw = 1
+@BUILD_MINGW_FALSE@mingw = 0
 
 # TODO temporary workaround for mingw + cmake
 # When running with mingw-cmake, the path of the form C:/msys64/xyz
 # needs to be transformed to C:\msys64/xyz.
 def get_escaped_path(path):
-  if using_cmake:
-    @USING_CMAKE_TRUE@@WIN_MINGW_TRUE@return path.replace(":/", ":\\")
-    return path
+  if using_cmake and mingw:
+    return path.replace(":/", ":\\")
   else:
     return path
 
@@ -38,10 +37,8 @@ if not destdir:
 
 instdir = destdir + get_escaped_path("@prefix@")
 if nrn_srcdir[0] != '/' :
-  if using_cmake:
-    @USING_CMAKE_TRUE@@WIN_MINGW_TRUE@nrn_srcdir = nrn_srcdir
-    @USING_CMAKE_TRUE@@WIN_MINGW_FALSE@nrn_srcdir = '../../' + nrn_srcdir
-    pass
+  if using_cmake and mingw:
+    nrn_srcdir = nrn_srcdir
   else:
     nrn_srcdir = '../../' + nrn_srcdir
 
