@@ -1855,15 +1855,31 @@ static core2nrn_callback_t cnbs[]  = {
 
 extern int nrn_use_fast_imem;
 
+/** check if file with given path exist */
+bool file_exist(const std::string& path) {
+  ifstream f(path.c_str());
+  return f.good();
+}
+
 #if defined(HAVE_DLFCN_H)
 int nrncore_run(const char* arg) {
   corenrn_direct = true;
-  char* corenrn_lib = getenv("CORENEURONLIB");
-  if (!corenrn_lib) {
-    hoc_execerror("nrncore_run needs a CORENEURONLIB environment variable", NULL);
+
+  // first check if coreneuron specific library exist in <arhc>/.libs
+  std::stringstream s_path;
+  s_path << NRNHOSTCPU << "/.libs/libcorenrnmech.so";
+  std::string path = s_path.str();
+  const char* corenrn_lib = path.c_str();
+
+  // otherwise, look for CORENEURONLIB env variable
+  if (!file_exist(corenrn_lib)) {
+    corenrn_lib = getenv("CORENEURONLIB");
+    if (!corenrn_lib) {
+      hoc_execerror("nrncore_run needs a CORENEURONLIB environment variable", NULL);
+    }
   }
   void* handle = dlopen(corenrn_lib, RTLD_NOW|RTLD_GLOBAL);
-  if (!handle) {   
+  if (!handle) {
     fputs(dlerror(), stderr);
     fputs("\n", stderr);
     hoc_execerror("Could not dlopen $CORENEURONLIB: ", corenrn_lib);
@@ -1874,11 +1890,12 @@ int nrncore_run(const char* arg) {
     }
     const char* cnver = (*(const char*(*)())sym)();
     if (strcmp(bbcore_write_version, cnver) != 0) {
-      char buf[200];
-      sprintf(buf, "%s and %s", bbcore_write_version, cnver);
-      hoc_execerror("Incompatible NEURON and CoreNEURON data versions:", buf);
+      s_path.str("");
+      s_path << bbcore_write_version << " and " << cnver;
+      path = s_path.str();
+      hoc_execerror("Incompatible NEURON and CoreNEURON data versions:", path.c_str());
     }
-  }      
+  }
   for (int i=0; cnbs[i].name; ++i) {
     void* sym = dlsym(handle, cnbs[i].name);
     if (!sym) {
