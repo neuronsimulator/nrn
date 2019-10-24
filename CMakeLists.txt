@@ -239,7 +239,7 @@ install(FILES
 )
 
 #for external coreneuron, nrnivmodl-core should be install
-if (NRN_ENABLE_CORENEURON AND ${coreneuron_FOUND})
+if (NRN_ENABLE_CORENEURON AND coreneuron_FOUND)
   install(PROGRAMS
     ${CORENEURON_DIR}/bin/nrnivmodl-core
     DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
