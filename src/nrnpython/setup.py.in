@@ -148,6 +148,16 @@ for scheme in list(INSTALL_SCHEMES.values()):
     scheme['data'] = scheme['purelib']
 
 ext_modules = [hoc_module]
+
+# The rx3d extensions are built using the setup.py.in in
+# nrn/share/lib/python/neuron/rxd/geometry3d which contains Cython pyx files
+# These files on Windows have to be compiled with the msvc compiler to avoid
+# issues with hypot, a #define, and some DL_IMPORT statements. At least for
+# Python3.5, the module must be built with the msvc toolchain to prevent a
+# crash, possibly due to incompatible c runtime libraries. The following
+# section is left here with the idea that someday the entire build on windows
+# may be done with the msvc toolchain.
+
 if build_rx3d:
   try:
     import numpy
@@ -162,7 +172,7 @@ if build_rx3d:
     define_macros = []
     if mingw:
       #Avoid undefined __imp_Py_InitModule4 and hypot problem
-      define_macros.append((MS_WIN64, None))
+      define_macros.append(("MS_WIN64", None))
     ext_modules=[hoc_module,
                    Extension("neuron.rxd.geometry3d.graphicsPrimitives",
                              sources=[build_path + "graphicsPrimitives.cpp"],
