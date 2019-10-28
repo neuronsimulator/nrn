@@ -430,7 +430,7 @@ void CodegenHelperVisitor::visit_suffix(Suffix* node) {
 
 
 void CodegenHelperVisitor::visit_elctrode_current(ElctrodeCurrent* node) {
-    info.electorde_current = true;
+    info.electrode_current = true;
 }
 
 

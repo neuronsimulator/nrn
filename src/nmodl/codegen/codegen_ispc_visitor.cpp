@@ -207,19 +207,26 @@ void CodegenIspcVisitor::print_nrn_cur_matrix_shadow_reduction() {
     auto rhs_op = operator_for_rhs();
     auto d_op = operator_for_d();
     if (info.point_process) {
-        printer->start_block("if (programIndex == 0)");
         printer->add_line("uniform int node_id = node_index[id];");
         printer->add_line("vec_rhs[node_id] {} shadow_rhs[id];"_format(rhs_op));
         printer->add_line("vec_d[node_id] {} shadow_d[id];"_format(d_op));
-        printer->end_block(1);
     }
 }
 
 
 void CodegenIspcVisitor::print_shadow_reduction_block_begin() {
     printer->start_block("for (uniform int id = start; id < end; id++) ");
+    if (info.point_process) {
+        printer->start_block("if (programIndex == 0)");
+    }
 }
 
+void CodegenIspcVisitor::print_shadow_reduction_block_end() {
+    if (info.point_process) {
+        printer->end_block(1);
+    }
+    printer->end_block(1);
+}
 
 void CodegenIspcVisitor::print_rhs_d_shadow_variables() {
     if (info.point_process) {

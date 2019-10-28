@@ -120,6 +120,20 @@ void CodegenAccVisitor::print_nrn_cur_matrix_shadow_update() {
     printer->add_line("vec_d[node_id] {} g;"_format(d_op));
 }
 
+void CodegenAccVisitor::print_fast_imem_calculation() {
+    if (!info.electrode_current) {
+        return;
+    }
+
+    auto rhs_op = operator_for_rhs();
+    auto d_op = operator_for_d();
+    printer->start_block("if (nt->nrn_fast_imem)");
+    print_atomic_reduction_pragma();
+    printer->add_line("nt->nrn_fast_imem->nrn_sav_rhs[node_id] {} rhs;"_format(rhs_op));
+    print_atomic_reduction_pragma();
+    printer->add_line("nt->nrn_fast_imem->nrn_sav_d[node_id] {} g;"_format(d_op));
+    printer->end_block(1);
+}
 
 void CodegenAccVisitor::print_nrn_cur_matrix_shadow_reduction() {
     // do nothing

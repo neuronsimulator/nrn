@@ -97,6 +97,7 @@ class CodegenIspcVisitor: public CodegenCVisitor {
     /// reduction to matrix elements from shadow vectors
     void print_nrn_cur_matrix_shadow_reduction() override;
 
+    /// fast membrane current calculation
 
     /**
      * Print block / loop for statement requiring reduction
@@ -104,6 +105,11 @@ class CodegenIspcVisitor: public CodegenCVisitor {
      */
     void print_shadow_reduction_block_begin() override;
 
+    /**
+     * Print end of block / loop for statement requiring reduction
+     *
+     */
+    void print_shadow_reduction_block_end() override;
 
     /// setup method for setting matrix shadow vectors
     void print_rhs_d_shadow_variables() override;

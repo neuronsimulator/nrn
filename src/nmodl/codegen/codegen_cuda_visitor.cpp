@@ -100,6 +100,22 @@ void CodegenCudaVisitor::print_nrn_cur_matrix_shadow_update() {
     print_atomic_op("vec_d[node_id]", d_op, "g");
 }
 
+void CodegenCudaVisitor::print_fast_imem_calculation() {
+    if (!info.electrode_current) {
+        return;
+    }
+
+    auto rhs_op = operator_for_rhs();
+    auto d_op = operator_for_d();
+    stringutils::remove_character(rhs_op, '=');
+    stringutils::remove_character(d_op, '=');
+    printer->start_block("if (nt->nrn_fast_imem)");
+    print_atomic_reduction_pragma();
+    print_atomic_op("nt->nrn_fast_imem->nrn_sav_rhs[node_id]", rhs_op, "rhs");
+    print_atomic_reduction_pragma();
+    print_atomic_op("nt->nrn_fast_imem->nrn_sav_d[node_id]", d_op, "g");
+    printer->end_block(1);
+}
 
 /*
  * Depending on the backend, print condition/loop for iterating over channels
