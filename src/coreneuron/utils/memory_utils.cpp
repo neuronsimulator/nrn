@@ -74,6 +74,8 @@ double nrn_mallinfo(void) {
         KERN_SUCCESS)
         return (size_t)0L; /* Can't access? */
     return info.resident_size / (1024.0 * 1024.0);
+#elif defined(MINGW)
+    mbs = -1;
 #else
     std::ifstream file;
     file.open("/proc/self/statm");
@@ -87,8 +89,6 @@ double nrn_mallinfo(void) {
         struct mallinfo m;
         m = mallinfo();
         mbs = (m.hblkhd + m.uordblks) / (1024.0 * 1024.0);
-#else
-        mbs = -1;
 #endif
     }
 #endif

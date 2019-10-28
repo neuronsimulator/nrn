@@ -10,6 +10,9 @@ include_directories(utils/randoms
                     ${CMAKE_CURRENT_BINARY_DIR}
                     ${CORENEURON_PROJECT_SOURCE_DIR})
 
+# put libraries (e.g. dll) in bin directory
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
 # =============================================================================
 # gather various source files
 # =============================================================================

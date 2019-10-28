@@ -13,10 +13,10 @@ project(coreneuron)
 set(VERSION_MAJOR "0")
 set(VERSION_MINOR "16")
 set(VERSION_PATCH "0")
-set(VERSION_STRING "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(VERSION_STRING "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 
 # =============================================================================
 # Settings to enable project as submodule
@@ -144,6 +144,9 @@ if(CORENRN_ENABLE_REPORTINGLIB)
   add_definitions("-DENABLE_REPORTING")
 endif()
 
+if(MINGW)
+  add_definitions("-DMINGW")
+endif()
 
 # =============================================================================
 # NMODL specific options
@@ -153,8 +156,8 @@ if(CORENRN_ENABLE_NMODL)
   include_directories(${nmodl_INCLUDE})
 
   # copy to make nrnivmodl-core work from build as well instal directory
-  configure_file(${nmodl_BINARY} ${CMAKE_BINARY_DIR}/bin/nmodl COPYONLY)
-  set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl)
+  set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
+  configure_file(${nmodl_BINARY} ${CORENRN_NMODL_BINARY} COPYONLY)
 
   # path to python interface
   set(ENV{PYTHONPATH} "${nmodl_PYTHONPATH}:$ENV{PYTHONPATH}")
@@ -165,7 +168,7 @@ if(CORENRN_ENABLE_NMODL)
 else()
   # use mod2c if nmodl not enabled
   include(AddMod2cSubmodule)
-  set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/mod2c_core)
+  set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/mod2c_core${CMAKE_EXECUTABLE_SUFFIX})
 endif()
 
 

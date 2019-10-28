@@ -118,7 +118,7 @@ $(coremech_lib): $(mod_func_o) $(dimplic_o) $(mod_c_objs) $(mod_ispc_objs) build
 	@printf " => $(C_GREEN)LINKING$(C_RESET) library $(coremech_lib) Mod files: $(mod_files)\n"
 	$(CXX_LINK_SHARED) -I $(incdir) -DADDITIONAL_MECHS $(datadir)/enginemech.cpp -o ${coremech_lib} ${_SONAME} \
 	  $(mod_func_o) $(dimplic_o) $(mod_c_objs) $(mod_ispc_objs) $(libdir)/libscopmath.a $(CORENRNLIB_FLAGS) -Wl,-rpath,$(libdir) $(LDFLAGS)
-	(rm -f $(OUTPUT)/.libs/libcorenrnmech.so ; mkdir -p $(OUTPUT)/.libs ; ln -s ../../${coremech_lib} $(OUTPUT)/.libs/libcorenrnmech.so)
+	(rm -f $(OUTPUT)/.libs/libcorenrnmech@CMAKE_SHARED_LIBRARY_SUFFIX@ ; mkdir -p $(OUTPUT)/.libs ; ln -s ../../${coremech_lib} $(OUTPUT)/.libs/libcorenrnmech@CMAKE_SHARED_LIBRARY_SUFFIX@)
 
 
 # Generic build cpp->.o Need PIC for shared lib

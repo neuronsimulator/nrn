@@ -32,6 +32,10 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/stat.h>
 #include <errno.h>
 
+#if defined(MINGW)
+    #define mkdir(dir_name, permission) _mkdir(dir_name)
+#endif
+
 /* adapted from : gist@jonathonreinhart/mkdir_p.c */
 int mkdir_p(const char* path) {
     const int path_len = strlen(path);
@@ -50,6 +54,7 @@ int mkdir_p(const char* path) {
         if (*p == '/') {
             /* temporarily truncate to sub-dir */
             *p = '\0';
+
             if (mkdir(dirpath, S_IRWXU) != 0) {
                 if (errno != EEXIST)
                     return -1;
