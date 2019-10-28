@@ -27,6 +27,10 @@ add_library(codegen STATIC ${CODEGEN_SOURCE_FILES})
 
 add_dependencies(codegen lexer util visitor)
 
+# copy to build directory to make usable from build directory
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/fast_math.ispc
+               ${CMAKE_BINARY_DIR}/include/nmodl/fast_math.ispc COPYONLY)
+
 # =============================================================================
 # Install include files
 # =============================================================================

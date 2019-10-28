@@ -15,26 +15,26 @@ set(BISON_GENERATED_SOURCE_FILES
 
 set(AST_SOURCE_FILES ${PROJECT_BINARY_DIR}/src/ast/ast.hpp ${PROJECT_BINARY_DIR}/src/ast/ast.cpp)
 
-set(UNIT_SOURCE_FILES ${PROJECT_SOURCE_DIR}/src/units/units.hpp
-    ${PROJECT_SOURCE_DIR}/src/units/units.cpp)
+set(UNIT_SOURCE_FILES ${NMODL_PROJECT_SOURCE_DIR}/src/units/units.hpp
+    ${NMODL_PROJECT_SOURCE_DIR}/src/units/units.cpp)
 
-set(NMODL_DRIVER_FILES ${PROJECT_SOURCE_DIR}/src/parser/nmodl_driver.hpp
-    ${PROJECT_SOURCE_DIR}/src/parser/nmodl_driver.cpp)
+set(NMODL_DRIVER_FILES ${NMODL_PROJECT_SOURCE_DIR}/src/parser/nmodl_driver.hpp
+    ${NMODL_PROJECT_SOURCE_DIR}/src/parser/nmodl_driver.cpp)
 
 set(DIFFEQ_DRIVER_FILES
-    ${PROJECT_SOURCE_DIR}/src/parser/diffeq_driver.hpp
-    ${PROJECT_SOURCE_DIR}/src/parser/diffeq_driver.cpp
-    ${PROJECT_SOURCE_DIR}/src/parser/diffeq_context.hpp
-    ${PROJECT_SOURCE_DIR}/src/parser/diffeq_context.cpp
-    ${PROJECT_SOURCE_DIR}/src/parser/diffeq_helper.hpp)
+    ${NMODL_PROJECT_SOURCE_DIR}/src/parser/diffeq_driver.hpp
+    ${NMODL_PROJECT_SOURCE_DIR}/src/parser/diffeq_driver.cpp
+    ${NMODL_PROJECT_SOURCE_DIR}/src/parser/diffeq_context.hpp
+    ${NMODL_PROJECT_SOURCE_DIR}/src/parser/diffeq_context.cpp
+    ${NMODL_PROJECT_SOURCE_DIR}/src/parser/diffeq_helper.hpp)
 
-set(C_DRIVER_FILES ${PROJECT_SOURCE_DIR}/src/parser/c11_driver.hpp
-    ${PROJECT_SOURCE_DIR}/src/parser/c11_driver.cpp)
+set(C_DRIVER_FILES ${NMODL_PROJECT_SOURCE_DIR}/src/parser/c11_driver.hpp
+    ${NMODL_PROJECT_SOURCE_DIR}/src/parser/c11_driver.cpp)
 
 set_source_files_properties(${AST_SOURCE_FILES} PROPERTIES GENERATED TRUE)
 
-set(UNIT_DRIVER_FILES ${PROJECT_SOURCE_DIR}/src/parser/unit_driver.hpp
-    ${PROJECT_SOURCE_DIR}/src/parser/unit_driver.cpp)
+set(UNIT_DRIVER_FILES ${NMODL_PROJECT_SOURCE_DIR}/src/parser/unit_driver.hpp
+    ${NMODL_PROJECT_SOURCE_DIR}/src/parser/unit_driver.cpp)
 
 set(LEXER_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/modl.h
@@ -80,8 +80,8 @@ add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/src/parser/nmodl/location.hh
                            ARGS -d
                                 -o
                                 ${PROJECT_BINARY_DIR}/src/parser/nmodl/nmodl_parser.cpp
-                                ${PROJECT_SOURCE_DIR}/src/parser/nmodl.yy
-                   DEPENDS ${PROJECT_SOURCE_DIR}/src/parser/nmodl.yy pyastgen
+                                ${NMODL_PROJECT_SOURCE_DIR}/src/parser/nmodl.yy
+                   DEPENDS ${NMODL_PROJECT_SOURCE_DIR}/src/parser/nmodl.yy pyastgen
                    COMMENT "-- NMODL : GENERATING NMODL_CORE PARSER WITH BISON! --")
 
 # command to generate verbatim parser
@@ -91,8 +91,8 @@ add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/src/parser/verbatim_parser.cpp
                            ARGS -d
                                 -o
                                 ${PROJECT_BINARY_DIR}/src/parser/verbatim_parser.cpp
-                                ${PROJECT_SOURCE_DIR}/src/parser/verbatim.yy
-                   DEPENDS ${PROJECT_SOURCE_DIR}/src/parser/verbatim.yy
+                                ${NMODL_PROJECT_SOURCE_DIR}/src/parser/verbatim.yy
+                   DEPENDS ${NMODL_PROJECT_SOURCE_DIR}/src/parser/verbatim.yy
                    COMMENT "-- NMODL : GENERATING VERBATIM PARSER WITH BISON! --")
 
 # command to generate differential equation parser
@@ -105,11 +105,11 @@ add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/src/parser/diffeq/diffeq_parser.
                            ARGS -d
                                 -o
                                 ${PROJECT_BINARY_DIR}/src/parser/diffeq/diffeq_parser.cpp
-                                ${PROJECT_SOURCE_DIR}/src/parser/diffeq.yy
-                   DEPENDS ${PROJECT_SOURCE_DIR}/src/parser/diffeq.yy
-                           ${PROJECT_SOURCE_DIR}/src/parser/diffeq_context.hpp
-                           ${PROJECT_SOURCE_DIR}/src/parser/diffeq_context.cpp
-                           ${PROJECT_SOURCE_DIR}/src/parser/diffeq_helper.hpp
+                                ${NMODL_PROJECT_SOURCE_DIR}/src/parser/diffeq.yy
+                   DEPENDS ${NMODL_PROJECT_SOURCE_DIR}/src/parser/diffeq.yy
+                           ${NMODL_PROJECT_SOURCE_DIR}/src/parser/diffeq_context.hpp
+                           ${NMODL_PROJECT_SOURCE_DIR}/src/parser/diffeq_context.cpp
+                           ${NMODL_PROJECT_SOURCE_DIR}/src/parser/diffeq_helper.hpp
                    COMMENT "-- NMODL : GENERATING DIFFERENTIAL EQUATION PARSER WITH BISON! --")
 
 # command to generate C (11) parser
@@ -122,8 +122,8 @@ add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/src/parser/c/c11_parser.cpp
                            ARGS -d
                                 -o
                                 ${PROJECT_BINARY_DIR}/src/parser/c/c11_parser.cpp
-                                ${PROJECT_SOURCE_DIR}/src/parser/c11.yy
-                   DEPENDS ${PROJECT_SOURCE_DIR}/src/parser/c11.yy
+                                ${NMODL_PROJECT_SOURCE_DIR}/src/parser/c11.yy
+                   DEPENDS ${NMODL_PROJECT_SOURCE_DIR}/src/parser/c11.yy
                    COMMENT "-- NMODL : GENERATING C (11) PARSER WITH BISON! --")
 
 # command to generate Units parser
@@ -136,8 +136,8 @@ add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/src/parser/unit/unit_parser.cpp
                            ARGS -d
                                 -o
                                 ${PROJECT_BINARY_DIR}/src/parser/unit/unit_parser.cpp
-                                ${PROJECT_SOURCE_DIR}/src/parser/unit.yy
-                   DEPENDS ${PROJECT_SOURCE_DIR}/src/parser/unit.yy
+                                ${NMODL_PROJECT_SOURCE_DIR}/src/parser/unit.yy
+                   DEPENDS ${NMODL_PROJECT_SOURCE_DIR}/src/parser/unit.yy
                    COMMENT "-- NMODL : GENERATING UNIT PARSER WITH BISON! --")
 
 # command to generate nmodl lexer

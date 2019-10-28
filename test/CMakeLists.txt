@@ -1,9 +1,9 @@
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/test)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
 include_directories(${PYBIND11_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS})
-include_directories(${PROJECT_SOURCE_DIR}/ext/catch ${PROJECT_SOURCE_DIR}/test)
-include_directories(${PROJECT_SOURCE_DIR}/src/solver)
-include_directories(${PROJECT_SOURCE_DIR}/ext/eigen)
+include_directories(${NMODL_PROJECT_SOURCE_DIR}/ext/catch ${NMODL_PROJECT_SOURCE_DIR}/test)
+include_directories(${NMODL_PROJECT_SOURCE_DIR}/src/solver)
+include_directories(${NMODL_PROJECT_SOURCE_DIR}/ext/eigen)
 
 # =============================================================================
 # Common input data library
@@ -16,7 +16,7 @@ add_library(test_util
 # =============================================================================
 # Common input data library
 # =============================================================================
-add_library(config STATIC ${PROJECT_BINARY_DIR}/config.cpp)
+add_library(config STATIC ${PROJECT_BINARY_DIR}/src/config/config.cpp)
 
 # =============================================================================
 # Test executables
@@ -82,12 +82,12 @@ foreach(test_name
                          "${test_name}/"
                          PROPERTIES
                          ENVIRONMENT
-                         PYTHONPATH=${CMAKE_BINARY_DIR}:$ENV{PYTHONPATH})
+                         PYTHONPATH=${PROJECT_BINARY_DIR}:$ENV{PYTHONPATH})
   else()
     add_test(NAME ${test_name} COMMAND ${test_name})
     if(${test_name} STREQUAL "testvisitor")
       set_tests_properties(${test_name}
-                           PROPERTIES ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}:$ENV{PYTHONPATH})
+                           PROPERTIES ENVIRONMENT PYTHONPATH=${PROJECT_BINARY_DIR}:$ENV{PYTHONPATH})
     endif()
   endif()
 endforeach()
@@ -96,10 +96,10 @@ endforeach()
 # pybind11 tests
 # =============================================================================
 add_test(NAME Ode
-         COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/ode)
+         COMMAND ${PYTHON_EXECUTABLE} -m pytest ${NMODL_PROJECT_SOURCE_DIR}/test/ode)
 add_test(NAME Pybind
-         COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/pybind)
+         COMMAND ${PYTHON_EXECUTABLE} -m pytest ${NMODL_PROJECT_SOURCE_DIR}/test/pybind)
 foreach(test_name Ode Pybind)
   set_tests_properties(${test_name}
-                       PROPERTIES ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}:$ENV{PYTHONPATH})
+                       PROPERTIES ENVIRONMENT PYTHONPATH=${PROJECT_BINARY_DIR}:$ENV{PYTHONPATH})
 endforeach()
