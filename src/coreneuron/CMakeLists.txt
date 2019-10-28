@@ -182,13 +182,14 @@ set_target_properties(coreneuron corenrnmech scopmath
 # create special-core with halfgap.mod for tests
 # =============================================================================
 add_custom_command(TARGET coreneuron
+                   POST_BUILD
                    COMMAND ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core -i
                            -I${CORENEURON_PROJECT_SOURCE_DIR}
                            ${CORENEURON_PROJECT_SOURCE_DIR}/tests/integration/ring_gap/mod
-                   DEPENDS coreneuron
                    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin
                    BYPRODUCTS ${CMAKE_BINARY_DIR}/bin/${CMAKE_SYSTEM_PROCESSOR}/special-core
                    COMMENT "Running nrnivmodl-core with halfgap.mod")
+add_dependencies(coreneuron scopmath)
 
 # =============================================================================
 # Extract link definitions to be used with nrnivmodl-core
