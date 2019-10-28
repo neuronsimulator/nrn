@@ -33,7 +33,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 
 #if defined(MINGW)
-    #define mkdir(dir_name, permission) _mkdir(dir_name)
+#define mkdir(dir_name, permission) _mkdir(dir_name)
 #endif
 
 /* adapted from : gist@jonathonreinhart/mkdir_p.c */

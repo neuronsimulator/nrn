@@ -8,13 +8,13 @@ set -e
 APP_NAME=$(basename $0)
 _PARENT="$(dirname $BASH_SOURCE)/.."
 ROOTDIR=$(perl -e "use Cwd 'abs_path'; print abs_path('$_PARENT')")
-MAKE_OPTIONS="MECH_NAME MECH_VERSION OUTPUT INCFLAGS LINKFLAGS MODS_PATH VERBOSE"
+MAKE_OPTIONS="NMODL_BINARY MECH_VERSION OUTPUT INCFLAGS LINKFLAGS MODS_PATH VERBOSE"
 PARALLELISM=4
 
 while getopts "n:v:o:i:l:p:hV" OPT; do
     case "$OPT" in
     n)
-        params_MECH_NAME="$OPTARG";;
+        params_NMODL_BINARY="$OPTARG";;
     v)
         params_MECH_VERSION="$OPTARG";;
     o)
@@ -30,7 +30,7 @@ while getopts "n:v:o:i:l:p:hV" OPT; do
     h)
         echo "$APP_NAME [options, ...] [mods_path]"
         echo "Options:"
-        echo "  -n <name>       Optionally add mech name to library, as suffix"
+        echo "  -n <binary>     NMODL code generation compiler path"
         echo "  -v <version>    Set libcorenrnmech version (default: 0.0)"
         echo "  -o <output_dir> Set the output dir (default: <arch>-core)"
         echo "  -i <incl_flags> Definitions passed to the compiler, typically '-I dir..'"

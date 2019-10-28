@@ -14,7 +14,7 @@
 # Using nmodl:
 #
 # ::
-#   set(CORENRN_NMODL_ROOT "" CACHE PATH "Path nmodl source-to-source compiler root")
+#   set(CORENRN_NMODL_DIR "" CACHE PATH "Path to nmodl source-to-source compiler installation")
 #   find_package(nmodl REQUIRED)
 #   include_directories(${nmodl_INCLUDE_DIRS})
 #   target_link_libraries(foo ${nmodl_LIBRARIES})
@@ -29,11 +29,11 @@
 
 
 # UNIX paths are standard, no need to write.
-find_program(nmodl_BINARY NAMES nmodl
-        HINTS "${CORENRN_NMODL_ROOT}/bin" QUIET)
+find_program(nmodl_BINARY NAMES nmodl${CMAKE_EXECUTABLE_SUFFIX}
+        HINTS "${CORENRN_NMODL_DIR}/bin" QUIET)
 
-find_path(nmodl_INCLUDE "nmodl/fast_math.ispc" HINTS "${CORENRN_NMODL_ROOT}/include")
-find_path(nmodl_PYTHONPATH "nmodl/__init__.py" HINTS "${CORENRN_NMODL_ROOT}/lib/python")
+find_path(nmodl_INCLUDE "nmodl/fast_math.ispc" HINTS "${CORENRN_NMODL_DIR}/include")
+find_path(nmodl_PYTHONPATH "nmodl/__init__.py" HINTS "${CORENRN_NMODL_DIR}/lib/python")
 
 # Checks 'REQUIRED', 'QUIET' and versions.
 include(FindPackageHandleStandardArgs)
@@ -41,4 +41,4 @@ include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(nmodl
   FOUND_VAR nmodl_FOUND
   REQUIRED_VARS nmodl_BINARY nmodl_INCLUDE nmodl_PYTHONPATH)
-  
+

@@ -14,7 +14,7 @@
 # Using likwid:
 #
 # ::
-#   set(LIKWID_ROOT "" CACHE PATH "Path likwid performance monitoring and benchmarking suite")
+#   set(LIKWID_DIR "" CACHE PATH "Path likwid performance monitoring and benchmarking suite")
 #   find_package(likwid REQUIRED)
 #   include_directories(${likwid_INCLUDE_DIRS})
 #   target_link_libraries(foo ${likwid_LIBRARIES})
@@ -27,8 +27,8 @@
 #   likwid_INCLUDE   - list of required include directories
 #   likwid_LIBRARIES - list of required library directories
 
-find_path(likwid_INCLUDE_DIRS "likwid.h" HINTS "${LIKWID_ROOT}/include")
-find_library(likwid_LIBRARIES likwid HINTS "${LIKWID_ROOT}/lib")
+find_path(likwid_INCLUDE_DIRS "likwid.h" HINTS "${LIKWID_DIR}/include")
+find_library(likwid_LIBRARIES likwid HINTS "${LIKWID_DIR}/lib")
 
 # Checks 'REQUIRED', 'QUIET' and versions.
 include(FindPackageHandleStandardArgs)

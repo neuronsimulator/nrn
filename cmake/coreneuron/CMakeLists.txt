@@ -63,8 +63,8 @@ option(CORENRN_ENABLE_CUDA_UNIFIED_MEMORY "Enable CUDA unified memory support" O
 option(CORENRN_ENABLE_UNIT_TESTS "Enable unit tests execution" ON)
 option(CORENRN_ENABLE_GPU "Enable GPU support using OpenACC" OFF)
 
-set(CORENRN_NMODL_ROOT "" CACHE PATH "Path nmodl source-to-source compiler root")
-set(LIKWID_ROOT "" CACHE PATH "Path to likwid performance analysis suite")
+set(CORENRN_NMODL_DIR "" CACHE PATH "Path to nmodl source-to-source compiler installation")
+set(LIKWID_DIR "" CACHE PATH "Path to likwid performance analysis suite")
 
 set(CORENRN_FRONTEND_C_COMPILER gcc CACHE FILEPATH "C compiler for building mod2c [frontend]")
 set(CORENRN_FRONTEND_CXX_COMPILER g++ CACHE FILEPATH "C++ compiler for building mod2c [frontend]")
@@ -152,23 +152,25 @@ endif()
 # NMODL specific options
 # =============================================================================
 if(CORENRN_ENABLE_NMODL)
-  find_package(nmodl REQUIRED)
-  include_directories(${nmodl_INCLUDE})
-
-  # copy to make nrnivmodl-core work from build as well instal directory
-  set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
-  configure_file(${nmodl_BINARY} ${CORENRN_NMODL_BINARY} COPYONLY)
-
-  # path to python interface
-  set(ENV{PYTHONPATH} "${nmodl_PYTHONPATH}:$ENV{PYTHONPATH}")
-  set(CORENRN_NMODL_PYTHONPATH $ENV{PYTHONPATH})
-
+  find_package(nmodl)
+  if (nmodl_FOUND)
+    set(CORENRN_NMODL_BINARY ${nmodl_BINARY})
+    set(CORENRN_NMODL_INCLUDE ${nmodl_INCLUDE})
+    # path to python interface
+    set(ENV{PYTHONPATH} "${nmodl_PYTHONPATH}:$ENV{PYTHONPATH}")
+    set(CORENRN_NMODL_PYTHONPATH $ENV{PYTHONPATH})
+  else()
+    include(AddNmodlSubmodule)
+    set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
+    set(CORENRN_NMODL_INCLUDE ${CMAKE_BINARY_DIR}/include)
+  endif()
+  include_directories(${CORENRN_NMODL_INCLUDE})
   set(CORENRN_NMODL_FLAGS "" CACHE STRING "Extra NMODL options such as passes")
   separate_arguments(NMODL_EXTRA_FLAGS_LIST UNIX_COMMAND "${CORENRN_NMODL_FLAGS}")
 else()
-  # use mod2c if nmodl not enabled
   include(AddMod2cSubmodule)
   set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/mod2c_core${CMAKE_EXECUTABLE_SUFFIX})
+  set(CORENRN_NMODL_INCLUDE ${CMAKE_BINARY_DIR}/include)
 endif()
 
 
@@ -230,7 +232,7 @@ if(cmake_generator_tolower MATCHES "makefile")
   message(STATUS "OpenMP              | ${CORENRN_ENABLE_OPENMP}")
   message(STATUS "NMODL               | ${CORENRN_ENABLE_NMODL}")
   if(CORENRN_ENABLE_NMODL)
-    message(STATUS "  PATH              | ${nmodl_BINARY}")
+    message(STATUS "  PATH              | ${CORENRN_NMODL_BINARY}")
     message(STATUS "  ISPC              | ${CORENRN_ENABLE_ISPC}")
   else()
     message(STATUS "MOD2C               | ${MOD2C_PROJ}")

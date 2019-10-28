@@ -4,12 +4,12 @@
 # Mod files are looked up in the cwd, unless MODS_PATH is set
 
 # Mechanisms version are by default 0.0, but should be overriden
-MECH_NAME =
+
 MECH_VERSION = 0.0
 MODS_PATH = .
 OUTPUT = @CMAKE_HOST_SYSTEM_PROCESSOR@
 DESTDIR =
-
+NMODL_BINARY =
 # Coreneuron dirs
 bindir := $(ROOT)/bin
 libdir := $(ROOT)/lib
@@ -18,7 +18,7 @@ datadir:= $(ROOT)/share/coreneuron
 datadir_mod2c := $(ROOT)/share/mod2c
 
 # Binary of MOD2C/NMODL depending on what was activated
-nmodl_binary_path := $(bindir)/@nmodl_binary_name@
+nmodl_binary_path = $(if $(NMODL_BINARY),$(NMODL_BINARY), $(bindir)/@nmodl_binary_name@)
 
 # Additional variables set in CMAKE usable here
 # - @CORENRN_COMPILE_DEFS
@@ -45,7 +45,7 @@ CXX_LINK_SHARED = $(CXX) $(CXXFLAGS) @CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS@ @CM
 
 ISPC = @CMAKE_ISPC_COMPILER@
 ISPC_FLAGS = @CMAKE_ISPC_FLAGS@
-ISPC_COMPILE = $(ISPC) $(ISPC_FLAGS) -I$(incdir) -I@nmodl_INCLUDE@
+ISPC_COMPILE = $(ISPC) $(ISPC_FLAGS) -I$(incdir)
 
 # Variables used in the "ARTIFICIAL_CELL" detection
 mod_c_srcs_path =
@@ -91,8 +91,7 @@ dimplic_c  = $(MODC_DIR)/_dimplic.cpp
 dimplic_o  = $(OBJS_DIR)/_dimplic.o
 
 special  = $(OUTPUT)/special-core
-LIB_SUFFIX_ = $(if $(MECH_NAME),_$(MECH_NAME),)
-coremech_libname = corenrnmech$(LIB_SUFFIX_).$(MECH_VERSION)
+coremech_libname = corenrnmech.$(MECH_VERSION)
 coremech_lib = $(OUTPUT)/lib$(coremech_libname)@CMAKE_SHARED_LIBRARY_SUFFIX@
 
 # If no DESTDIR (we are probably just building) we use $ORIGIN (@loader_path in OSX)

@@ -184,7 +184,8 @@ set_target_properties(coreneuron corenrnmech scopmath
 add_custom_command(TARGET coreneuron
                    POST_BUILD
                    COMMAND ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core -i
-                           -I${CORENEURON_PROJECT_SOURCE_DIR}
+                           "-I${CORENEURON_PROJECT_SOURCE_DIR} -I${CORENRN_NMODL_INCLUDE}"
+                           -n ${CORENRN_NMODL_BINARY}
                            ${CORENEURON_PROJECT_SOURCE_DIR}/tests/integration/ring_gap/mod
                    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin
                    BYPRODUCTS ${CMAKE_BINARY_DIR}/bin/${CMAKE_SYSTEM_PROCESSOR}/special-core
