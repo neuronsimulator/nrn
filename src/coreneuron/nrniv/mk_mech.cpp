@@ -42,7 +42,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/mech/cfile/cabvars.h"
 #include "coreneuron/nrniv/nrn2core_direct.h"
 
-static char banner[] = "Duke, Yale, and the BlueBrain Project -- Copyright 1984-2015";
+static char banner[] = "Duke, Yale, and the BlueBrain Project -- Copyright 1984-2019";
 
 namespace coreneuron {
 int nrn_nobanner_;
