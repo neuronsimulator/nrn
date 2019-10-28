@@ -64,6 +64,8 @@ class CodegenAccVisitor: public CodegenCVisitor {
     /// reduction to matrix elements from shadow vectors
     void print_nrn_cur_matrix_shadow_reduction() override;
 
+    /// fast membrane current calculation
+    void print_fast_imem_calculation() override;
 
     /// setup method for setting matrix shadow vectors
     void print_rhs_d_shadow_variables() override;

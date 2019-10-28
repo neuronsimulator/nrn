@@ -47,6 +47,8 @@ class CodegenCudaVisitor: public CodegenCVisitor {
     /// update to matrix elements with/without shadow vectors
     void print_nrn_cur_matrix_shadow_update() override;
 
+    /// fast membrane current calculation
+    void print_fast_imem_calculation() override;
 
     /// reduction to matrix elements from shadow vectors
     void print_nrn_cur_matrix_shadow_reduction() override;

@@ -160,7 +160,7 @@ struct CodegenInfo {
     bool artificial_cell = false;
 
     /// if electrode current specified
-    bool electorde_current = false;
+    bool electrode_current = false;
 
     /// if thread thread call back routines need to register
     bool thread_callback_register = false;
