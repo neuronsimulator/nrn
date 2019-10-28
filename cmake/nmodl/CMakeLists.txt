@@ -172,8 +172,11 @@ set(MEMORYCHECK_COMMAND_OPTIONS "--trace-children=yes \
                                  --leak-check=full \
                                  --track-origins=yes \
                                  --show-possibly-lost=no")
-include(CTest)
-add_subdirectory(test)
+# do not enable tests if nmodl is used as submodule
+if(NOT NMODL_AS_SUBPROJECT)
+  include(CTest)
+  add_subdirectory(test)
+endif()
 
 # =============================================================================
 # Install unit database, examples and utility scripts from share
