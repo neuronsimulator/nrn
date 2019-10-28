@@ -11,7 +11,7 @@ set(UTIL_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/table_data.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/logger.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/logger.cpp
-    ${CMAKE_BINARY_DIR}/config.cpp)
+    ${PROJECT_BINARY_DIR}/src/config/config.cpp)
 
 # =============================================================================
 # Symbol table library
