@@ -170,7 +170,7 @@ target_link_libraries(coreneuron
 
 target_link_libraries(corenrnmech scopmath coreneuron)
 
-set_target_properties(coreneuron corenrnmech scopmath
+set_target_properties(coreneuron corenrnmech scopmath ${link_cudacoreneuron}
                       PROPERTIES ARCHIVE_OUTPUT_DIRECTORY
                                  ${CMAKE_BINARY_DIR}/lib
                                  LIBRARY_OUTPUT_DIRECTORY

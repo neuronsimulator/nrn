@@ -68,7 +68,7 @@ With the latest master branch, the workflow of building CoreNEURON is same as th
 
 ## Building with GPU support
 
-CoreNEURON has support for GPUs using the OpenACC programming model when enabled with `-DENABLE_OPENACC=ON`. Below are the steps to compile with PGI compiler:
+CoreNEURON has support for GPUs using the OpenACC programming model when enabled with `-DCORENRN_ENABLE_GPU=ON`. Below are the steps to compile with PGI compiler:
 
 ```bash
 module purge
@@ -83,7 +83,7 @@ cmake ..  -DCMAKE_C_FLAGS:STRING="-O2" \
           -DCOMPILE_LIBRARY_TYPE=STATIC \
           -DCUDA_HOST_COMPILER=`which gcc` \
           -DCUDA_PROPAGATE_HOST_FLAGS=OFF \
-          -DENABLE_OPENACC=ON
+          -DCORENRN_ENABLE_GPU=ON
 ```
 
 Note that the CUDA Toolkit version should be compatible with PGI compiler installed on your system. Otherwise you have to add extra C/C++ flags. For example, if we are using CUDA Toolkit 9.0 installation but PGI default target is CUDA 8.0 then we have to add :

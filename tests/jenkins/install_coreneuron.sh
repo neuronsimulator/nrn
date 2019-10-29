@@ -28,9 +28,8 @@ if [ "${CORENRN_TYPE}" = "GPU-non-unified" ]; then
         -DCOMPILE_LIBRARY_TYPE=STATIC  \
         -DCUDA_HOST_COMPILER=`which gcc` \
         -DCUDA_PROPAGATE_HOST_FLAGS=OFF \
-        -DENABLE_SELECTIVE_GPU_PROFILING=ON \
-        -DENABLE_OPENACC=ON \
-        -DENABLE_UNIFIED=OFF \
+        -DCORENRN_ENABLE_GPU=ON \
+        -DCORENRN_ENABLE_CUDA_UNIFIED_MEMORY=OFF \
         -DCMAKE_INSTALL_PREFIX=$WORKSPACE/install_${CORENRN_TYPE}/ \
         -DTEST_MPI_EXEC_BIN="srun;--exclusive;--account=proj16;--partition=interactive;--constraint=volta;--gres=gpu:1;--mem;0;-t;00:05:00" \
         -DTEST_EXEC_PREFIX="srun;-n;6;--exclusive;--account=proj16;--partition=interactive;--constraint=volta;--gres=gpu:1;--mem;0;-t;00:05:00" \
@@ -44,9 +43,8 @@ elif [ "${CORENRN_TYPE}" = "GPU-unified" ]; then
         -DCOMPILE_LIBRARY_TYPE=STATIC  \
         -DCUDA_HOST_COMPILER=`which gcc` \
         -DCUDA_PROPAGATE_HOST_FLAGS=OFF \
-        -DENABLE_SELECTIVE_GPU_PROFILING=ON \
-        -DENABLE_OPENACC=ON \
-        -DENABLE_UNIFIED=ON \
+        -DCORENRN_ENABLE_GPU=ON \
+        -DCORENRN_ENABLE_CUDA_UNIFIED_MEMORY=ON \
         -DCMAKE_INSTALL_PREFIX=$WORKSPACE/install_${CORENRN_TYPE}/ \
         -DTEST_MPI_EXEC_BIN="srun;--exclusive;--account=proj16;--partition=interactive;--constraint=volta;--gres=gpu:1;--mem;0;-t;00:05:00" \
         -DTEST_EXEC_PREFIX="srun;-n;6;--exclusive;--account=proj16;--partition=interactive;--constraint=volta;--gres=gpu:1;--mem;0;-t;00:05:00" \
