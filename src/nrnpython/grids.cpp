@@ -220,9 +220,6 @@ Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors
     
     new_Grid->_ics_alphas = ics_alphas;
     new_Grid->_ics_dcs = dcs;
-    for(int i = 0; i < num_nodes; i++){
-        printf("In Make Grids I am index %d of dcs and I equal %.5f\n", i, new_Grid->_ics_dcs[i]);
-    }
 
     //stores the positive x,y, and z neighbors for each node. [node0_x, node0_y, node0_z, node1_x ...]
     new_Grid->_neighbors = neighbors;
@@ -296,7 +293,6 @@ Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors
     //TODO: Change to allow variable dcs. Setting it this way for now to keep variable step happy 
     new_Grid->ics_adi_dir_z->dc = dcs[0];
     new_Grid->ics_adi_dir_z->d = dx;
-    //printf("dc_x = %f, dc_y %f, dc_z = %f",new_Grid->ics_adi_dir_x->dc,new_Grid->ics_adi_dir_y->dc,new_Grid->ics_adi_dir_z->dc);
     new_Grid->divide_x_work(NUM_THREADS);
     new_Grid->divide_y_work(NUM_THREADS);
     new_Grid->divide_z_work(NUM_THREADS);
@@ -306,9 +302,6 @@ Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors
     new_Grid->node_flux_scale = NULL;
     new_Grid->node_flux_src = NULL;
 
-    for(int i = 0; i < num_nodes; i++){
-        printf("about to return the grid I am index %d of dcs and I equal %.5f\n", i, new_Grid->_ics_dcs[i]);
-    }
     return new_Grid;
 }
 
@@ -1169,7 +1162,6 @@ void ICS_Grid_node::apply_node_flux3D(double dt, double* ydot)
 
 void ICS_Grid_node::do_grid_currents(double dt, int grid_id)
 {
-    printf("%f %f %f\n", this->ics_adi_dir_x->dc, this->ics_adi_dir_y->dc, this->ics_adi_dir_z->dc);
     MEM_ZERO(states_cur,sizeof(double)*_num_nodes);
     if(ics_current_seg_ptrs != NULL){  
         ssize_t i, j, n;
@@ -1198,11 +1190,6 @@ void ICS_Grid_node::volume_setup()
 
 int ICS_Grid_node::dg_adi()
 {
-    printf("%f %f %f\n", this->ics_adi_dir_x->dc, this->ics_adi_dir_y->dc, this->ics_adi_dir_z->dc);
-    printf("about to call dg_adi!\n");
-    for(int i = 0; i < this->_num_nodes; i++){
-        printf("pre dg-adi dc[%d] = %.5f\n", i, this->_ics_dcs[i]);
-    }
     run_threaded_deltas(this, ics_adi_dir_x);
     run_threaded_deltas(this, ics_adi_dir_y);
     run_threaded_deltas(this, ics_adi_dir_z);

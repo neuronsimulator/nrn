@@ -175,11 +175,7 @@ void ics_find_deltas(long start, long stop, long node_start, double* delta, long
             current_state = states[current_index];
             next_state = states[next_index];
             current_alpha = alphas[current_index];
-            next_alpha = alphas[next_index];
-            //printf("dc[current_index] = %.5f\n", dc[current_index]);
-            //if(dc[current_index] != 1){
-            //    printf("First ele I am index %d of dcs and I equal %.5f\n", i, dc[current_index]);
-            //}  
+            next_alpha = alphas[next_index]; 
             delta[current_index] = dc[current_index] * next_alpha * current_alpha * (next_state - current_state) / (next_alpha + current_alpha);
             ordered_index++;
             for(int j = 1; j < line_length - 1; j++)
@@ -192,18 +188,11 @@ void ics_find_deltas(long start, long stop, long node_start, double* delta, long
                 prev_alpha = current_alpha;
                 current_alpha = next_alpha;
                 next_alpha = alphas[next_index];
-                //printf("dc[current_index] = %.5f\n", dc[current_index]);
-                //if(dc[current_index] != 1){
-                //    printf("In Line I am index %d of dcs and I equal %.5f\n", i, dc[current_index]);
-                //}   
                 delta[current_index] = dc[current_index] * ((next_alpha * current_alpha / (next_alpha + current_alpha)) * (next_state - current_state) - 
                                         (prev_alpha * current_alpha / (prev_alpha + current_alpha)) * (current_state - prev_state));
                 ordered_index++;
             }
             //Here next_state is actually current_state and current_state is prev_state
-            //if(dc[next_index] != 1){
-            //    printf("End line I am index %d of dcs and I equal %.5f\n", i, dc[next_index]);
-            //}
             delta[next_index] = dc[next_index] * (next_alpha * current_alpha / (next_alpha + current_alpha) * (current_state - next_state));
         }
         else
@@ -276,10 +265,6 @@ static void* do_ics_deltas(void* dataptr){
     double dt = *dt_ptr;
     //double r = ((ics_adi_dir->dc)*dt)/(ics_adi_dir->d * ics_adi_dir->d);
     double* dc = g->_ics_dcs;
-    //for(int i = 0; i < g->_num_nodes; i++)
-    //{
-    //    printf("dc[%d] = %.10f\n", i, dc[i]);
-    //}
     double* deltas = ics_adi_dir->deltas;
     long* line_defs = ics_adi_dir->ordered_line_defs;
     long* ordered_nodes = ics_adi_dir->ordered_nodes;
