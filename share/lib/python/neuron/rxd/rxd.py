@@ -798,7 +798,8 @@ def _setup_matrices():
                     num_3d_indices_per_1d_seg.append(cnt_neighbors_3d)
                     grid_3d_indices_cnt += cnt_neighbors_3d
                     #TODO: need to make this by node
-                    d = sp._d
+                    d = sp._d[0]
+                    print("d = {}".format(d))
                     area = (numpy.pi * 0.25 * hybrid_diams[index1d] ** 2)
                     areaT = sum([v**(2.0/3.0) for v in vols3d])
                     volumes1d.append(node._volumes[index1d])

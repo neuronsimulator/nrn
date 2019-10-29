@@ -46,7 +46,7 @@ ICS_insert.argtypes = [
     ctypes.c_long,
     numpy.ctypeslib.ndpointer(dtype=int),
     ctypes.c_long,
-    ctypes.c_double,
+    numpy.ctypeslib.ndpointer(dtype=float),
     ctypes.c_double,
     ctypes.c_bool,
     ctypes.c_double,
@@ -542,7 +542,7 @@ class _IntracellularSpecies(_SpeciesMathable):
         self._name = name
         self._charge = charge
         self._dx = region.dx
-        self._d = d
+        self._d = d * numpy.ones(len(self._region._xs))
         self._atolscale = atolscale
         self._nodes_length = len(self._region._xs)
         self._states = h.Vector(self._nodes_length)
