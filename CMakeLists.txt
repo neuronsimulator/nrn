@@ -216,6 +216,23 @@ if (NRN_ENABLE_RX3D)
   add_subdirectory(share/lib/python/neuron/rxd/geometry3d)
 endif()
 
+
+# =============================================================================
+# Update hh.mod for CoreNEURON compatibility
+# =============================================================================
+if (NRN_ENABLE_CORENEURON)
+  add_custom_target(
+    hh_update
+    COMMAND sed "'s/GLOBAL/RANGE/'" ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod > ${CMAKE_BINARY_DIR}/hh.mod.1
+    COMMAND sed "'s/ TABLE/:TABLE/'" ${CMAKE_BINARY_DIR}/hh.mod.1 > ${CMAKE_BINARY_DIR}/hh.mod.2
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/hh.mod.2 ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod
+    COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/hh.mod.1 ${CMAKE_BINARY_DIR}/hh.mod.2
+    COMMENT "Update hh.mod for CoreNEURON compatibility"
+  )
+  add_dependencies(nrniv hh_update)
+endif()
+
+
 # =============================================================================
 # Install targets
 # =============================================================================
@@ -265,6 +282,7 @@ if (MINGW)
     DESTINATION ${CMAKE_INSTALL_PREFIX}/mingw/usr/bin
   )
 endif()
+
 
 # =============================================================================
 # Print build status
