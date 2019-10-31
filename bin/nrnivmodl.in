@@ -174,4 +174,5 @@ fi
 @NRNMECH_DLL_STYLE_TRUE@@MAC_DARWIN_TRUE@if false ; then
 @NRNMECH_DLL_STYLE_TRUE@@MAC_DARWIN_FALSE@if false ; then
 @NRNMECH_DLL_STYLE_FALSE@if false ; then
+  false #for empty if block
 fi
