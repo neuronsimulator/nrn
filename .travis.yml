@@ -10,6 +10,8 @@ addons:
         - python-scipy
         - python3-tk
         - python-tk
+        - libopenmpi-dev
+        - openmpi-bin
 virtualenv:
     system_site_packages: true
 
@@ -17,14 +19,32 @@ compiler:
   - clang
   - gcc
 env:
-  - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2) PYTHON_BLD=$(which python2)"
-    PYTHON="$(which python2)"
-    PIP="$(which pip)"
-    PYTHON_VERSION=2.7.15
-  - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python3)"
-    PYTHON="$(which python3)"
-    PIP="$(which pip3)"
-    PYTHON_VERSION=3.7.1
+  global:
+    - PYTHON="$(which python3)"
+    - PIP="$(which pip3)"
+    - PYTHON_VERSION=3.7.1
+  jobs:
+    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2) PYTHON_BLD=$(which python2)"
+      PYTHON="$(which python2)"
+      PIP="$(which pip)"
+      PYTHON_VERSION=2.7.15
+#    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python3)"
+#      PYTHON="$(which python3)"
+#      PIP="$(which pip3)"
+#      PYTHON_VERSION=3.7.1
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENBALE_MPI=ON"
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENBALE_MPI=OFF"
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENABLE_PYTHON=ON"
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENABLE_PYTHON=OFF"
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENABLE_CORENEURON=ON"
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENABLE_CORENEURON=OFF"
+
 os:
   - linux
 before_install:
@@ -37,6 +57,14 @@ install:
   - $PIP install --user scipy matplotlib bokeh ipython cython --upgrade
   - export PATH=$(pwd)/install/x86_64/bin:$PATH
 script:
-  - ./travis_build.sh .
-  - $PYTHON --version
-  - $PYTHON share/lib/python/neuron/rxdtests/run_all.py
+  - if [[ "$BUILD_MODE" == "cmake" ]]; then
+      mkdir build && cd build;
+      cmake ${CMAKE_OPTION} -DCMAKE_INSTALL_PREFIX=$HOME/nrn ..;
+      $PYTHON --version;
+      cmake --build .;
+      make install;
+    else
+      ./travis_build.sh .;
+      $PYTHON --version;
+      $PYTHON share/lib/python/neuron/rxdtests/run_all.py;
+    fi
