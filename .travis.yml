@@ -10,6 +10,8 @@ addons:
         - python-scipy
         - python3-tk
         - python-tk
+        - libopenmpi-dev
+        - openmpi-bin
 virtualenv:
     system_site_packages: true
 
@@ -17,26 +19,66 @@ compiler:
   - clang
   - gcc
 env:
-  - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2) PYTHON_BLD=$(which python2)"
-    PYTHON="$(which python2)"
-    PIP="$(which pip)"
-    PYTHON_VERSION=2.7.15
-  - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python3)"
-    PYTHON="$(which python3)"
-    PIP="$(which pip3)"
-    PYTHON_VERSION=3.7.1
+  global:
+    - PYTHON="$(which python3)"
+    - PIP="$(which pip3)"
+    - PYTHON_VERSION=3.7.1
+  jobs:
+    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2) PYTHON_BLD=$(which python2)"
+      PYTHON="$(which python2)"
+      PIP="$(which pip)"
+      PYTHON_VERSION=2.7.15
+    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python3)"
+      PYTHON="$(which python3)"
+      PIP="$(which pip3)"
+      PYTHON_VERSION=3.7.1
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENBALE_MPI=ON"
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENBALE_MPI=OFF"
+    - BUILD_MODE=cmake
+      NRN_ENABLE_PYTHON_DYNAMIC=ON
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENABLE_PYTHON=OFF"
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENABLE_CORENEURON=ON"
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENABLE_CORENEURON=OFF"
+
+
 os:
   - linux
 before_install:
   - echo $LANG
   - echo $LC_ALL
   - $CXX -v
-  - export PYTHONPATH=$PYTHONPATH:$(pwd)/install/lib/python/
-  - pyenv global $PYTHON_VERSION;
+  - if [[ "$NRN_ENABLE_PYTHON_DYNAMIC" != "ON" ]]; then
+      export PYTHONPATH=$PYTHONPATH:$(pwd)/install/lib/python/;
+      pyenv global $PYTHON_VERSION;
+    else
+      pyenv global 2.7.15 3.7.1;
+    fi
 install:
-  - $PIP install --user scipy matplotlib bokeh ipython cython --upgrade
-  - export PATH=$(pwd)/install/x86_64/bin:$PATH
+  - if [[ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]]; then
+      $PIP install --user cython;
+    else
+      $PIP install --user scipy matplotlib bokeh ipython cython --upgrade;
+    fi
 script:
-  - ./travis_build.sh .
-  - $PYTHON --version
-  - $PYTHON share/lib/python/neuron/rxdtests/run_all.py
+  - if [[ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]]; then
+      export PATH1=$(pyenv which python2.7);
+      export PATH2=$(pyenv which python3.7);
+      CMAKE_OPTION="-DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_PYTHON_DYNAMIC=${PATH1};${PATH2}";
+    fi
+  - if [[ "$BUILD_MODE" == "cmake" ]]; then
+      mkdir build && cd build;
+      cmake ${CMAKE_OPTION} -DCMAKE_INSTALL_PREFIX=$(pwd)/install ..;
+      cmake --build .;
+      make install;
+      echo -e 'topology()' | "$(pwd)/install/bin/neurondemo" | grep -q soma;
+    else
+      export PATH=$(pwd)/install/x86_64/bin:$PATH;
+      ./travis_build.sh .;
+      $PYTHON --version;
+      $PYTHON share/lib/python/neuron/rxdtests/run_all.py;
+    fi
