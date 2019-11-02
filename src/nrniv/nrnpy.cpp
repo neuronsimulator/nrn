@@ -372,7 +372,7 @@ static void* load_nrnpython_helper(const char* npylib) {
 	return handle;
 }
 
-#if __MINGW32__
+#if !DARWIN
 static int digittoint(char c) {
 	return int(c - '0');
 }
