@@ -39,4 +39,6 @@ install:
 script:
   - ./travis_build.sh .
   - $PYTHON --version
-  - $PYTHON share/lib/python/neuron/rxdtests/run_all.py
+  - $PYTHON -c 'import neuron; neuron.test()'
+  - $PYTHON share/lib/python/neuron/rxdtests/run_all.py #problem with python2.7
+

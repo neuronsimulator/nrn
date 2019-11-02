@@ -472,7 +472,7 @@ static MapNode2PDbl* mk_svibuf() {
 		double* pd = NULL;
 		it = non_vsrc_update_info_.find(sgids_->item(isrc));
 		if (nd->extnode	&& it == non_vsrc_update_info_.end()) {
-			assert(ndvi2pd->find(nd, pd));
+			nrn_assert(ndvi2pd->find(nd, pd));
 			poutsrc_[i] = pd;
 		}
 	}
@@ -553,7 +553,7 @@ hoc_execerror("For multiple threads, the target pointer must reference a range v
 				ttd.sv[j] = non_vsrc_update(nd, it->second.first, it->second.second);
 			}else if (nd->extnode) {
 				double* pd;
-				assert(ndvi2pd->find(nd, pd));
+				nrn_assert(ndvi2pd->find(nd, pd));
 				ttd.sv[j] = pd;
 			}else{
 				ttd.sv[j] = &(NODEV(nd));
@@ -774,7 +774,7 @@ void nrnmpi_setup_transfer() {
 	for (int i=0; i < n; ++i) {
 		sgid_t sgid = send_to_want[i];
 		int x;
-		assert(sgid2srcindex_->find(sgid, x));
+		nrn_assert(sgid2srcindex_->find(sgid, x));
 	}
 #endif
 	// sanity check. all the sgids we receive, we actually need.
@@ -784,7 +784,7 @@ void nrnmpi_setup_transfer() {
 	for (int i=0; i < n; ++i) {
 		sgid_t sgid = recv_from_have[i];
 		int x;
-		assert(seen->find(sgid, x));
+		nrn_assert(seen->find(sgid, x));
 		(*seen)[sgid] = i;
 	}
 
@@ -807,7 +807,7 @@ void nrnmpi_setup_transfer() {
 	for (int i=0; i < outsrc_buf_size_; ++i) {
 		sgid_t sid = send_to_want[i];
 		int srcindex;
-		assert(sgid2srcindex_->find(sid, srcindex));
+		nrn_assert(sgid2srcindex_->find(sid, srcindex));
 		Node* nd = visources_->item(long(srcindex));
 		NonVSrcUpdateInfo::iterator it;
 		it = non_vsrc_update_info_.find(sid);
