@@ -7,9 +7,9 @@ print ("nrn_srcdir |%s|" % nrn_srcdir)
 @BUILD_MINGW_TRUE@mingw = 1
 @BUILD_MINGW_FALSE@mingw = 0
 instdir = "@prefix@"
-#if nrn_srcdir[0] != '/' and nrn_srcdir[1] != ':':
-#    # TODO: is this right?
-#    nrn_srcdir = '../../../../../../' + nrn_srcdir
+if nrn_srcdir[0] != '/':
+    # TODO: is this right?
+    nrn_srcdir = '../../../../../../' + nrn_srcdir
 
 from distutils.core import setup
 from distutils.extension import Extension
