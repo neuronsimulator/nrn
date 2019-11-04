@@ -478,7 +478,7 @@ class Node1D(Node):
 
 
 class Node3D(Node):
-    def __init__(self, index, i, j, k, r, seg, speciesref, data_type=_concentration_node):
+    def __init__(self, index, i, j, k, r, seg, d, speciesref, data_type=_concentration_node):
         """
             Parameters
             ----------
