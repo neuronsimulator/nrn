@@ -3,6 +3,7 @@
 
 import sys
 nrn_srcdir = "@NRN_SRCDIR@"
+print ("nrn_srcdir |%s|" % nrn_srcdir)
 @BUILD_MINGW_TRUE@mingw = 1
 @BUILD_MINGW_FALSE@mingw = 0
 instdir = "@prefix@"
