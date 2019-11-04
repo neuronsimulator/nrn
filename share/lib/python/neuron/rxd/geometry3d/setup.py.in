@@ -3,11 +3,12 @@
 
 import sys
 nrn_srcdir = "@NRN_SRCDIR@"
-print ("nrn_srcdir |%s|" % nrn_srcdir)
 @BUILD_MINGW_TRUE@mingw = 1
 @BUILD_MINGW_FALSE@mingw = 0
 instdir = "@prefix@"
-if nrn_srcdir[0] != '/':
+if nrn_srcdir[0] == '/' or (len(nrn_srcdir) > 2 and nrn_srcdir[1] == ':':
+    pass
+else: # not an absolute path
     # TODO: is this right?
     nrn_srcdir = '../../../../../../' + nrn_srcdir
 
