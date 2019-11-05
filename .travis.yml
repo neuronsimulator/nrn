@@ -80,5 +80,7 @@ script:
       export PATH=$(pwd)/install/x86_64/bin:$PATH;
       ./travis_build.sh .;
       $PYTHON --version;
+      $PYTHON -c 'import neuron; neuron.test()'
       $PYTHON share/lib/python/neuron/rxdtests/run_all.py;
+      #$PYTHON share/lib/python/neuron/rxdtests/run_all.py #problem with python2.7
     fi
