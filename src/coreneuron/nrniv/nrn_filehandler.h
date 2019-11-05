@@ -32,6 +32,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <sys/stat.h>
 #include "coreneuron/utils/endianness.h"
 #include "coreneuron/utils/swap_endian.h"
 #include "coreneuron/nrniv/nrn_assert.h"
@@ -84,6 +85,8 @@ class FileHandler {
     bool fail() const {
         return F.fail();
     }
+
+    bool file_exist(const char* filename) const;
 
     /** nothing more to read */
     bool eof();

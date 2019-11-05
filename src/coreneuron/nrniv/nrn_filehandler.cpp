@@ -36,6 +36,11 @@ FileHandler::FileHandler(const char* filename, bool reorder) {
     stored_chkpnt = 0;
 }
 
+bool FileHandler::file_exist(const char* filename) const {
+    struct stat buffer;
+    return (stat(filename, &buffer) == 0);
+}
+
 void FileHandler::open(const char* filename, bool reorder, std::ios::openmode mode) {
     nrn_assert((mode & (std::ios::in | std::ios::out)));
     reorder_bytes = reorder;
