@@ -30,9 +30,6 @@ if (LINK_AGAINST_PYTHON)
   set(USE_LIBNRNPYTHON_MAJORMINOR 1)
 endif()
 
-message(STATUS "Link against python library : ${LINK_AGAINST_PYTHON}")
-message(STATUS "Use MAJORMINOR version for libnrnpython : ${USE_LIBNRNPYTHON_MAJORMINOR}")
-
 if (NRN_ENABLE_PYTHON)
   if (NRN_ENABLE_PYTHON_DYNAMIC)
     if ("${NRN_PYTHON_DYNAMIC}" STREQUAL "")

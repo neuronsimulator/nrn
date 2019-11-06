@@ -7,6 +7,7 @@ include(CheckFunctionExists)
 include(CheckSymbolExists)
 include(CheckCXXSymbolExists)
 
+set (CMAKE_REQUIRED_QUIET TRUE)
 # =============================================================================
 # Check if directory related to DIR exist by compiling code
 # =============================================================================
@@ -37,7 +38,7 @@ macro(nrn_check_dir_exists HEADER VARIABLE)
     else()
       set(${VARIABLE} 0)
     endif()
-    message(STATUS "nrn_check_dir_existss ${HEADER}: ${RESULT_VAR}")
+    #message(STATUS "nrn_check_dir_existss ${HEADER}: ${RESULT_VAR}")
     file(REMOVE "conftest.c")
   endif()
 endmacro()
@@ -69,7 +70,7 @@ macro(nrn_check_type_exists HEADER TYPE DEFAULT_TYPE VARIABLE)
   if(NOT ${RESULT_VAR})
     set(${VARIABLE} ${DEFAULT_TYPE})
   endif()
-  message(STATUS "nrn_check_type_exists ${VARIABLE}: ${RESULT_VAR}")
+  #message(STATUS "nrn_check_type_exists ${VARIABLE}: ${RESULT_VAR}")
   file(REMOVE "conftest.c")
 endmacro()
 
