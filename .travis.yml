@@ -80,16 +80,21 @@ script:
       cmake ${CMAKE_OPTION} -DCMAKE_INSTALL_PREFIX=$(pwd)/install ..;
       cmake --build . -- -j 2;
       make install;
-      $(pwd)/install/bin/neurondemo -nogui -c 'demo(4)' -c 'run()' -c 'quit()';
-      if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
-        $PYTHON2 -c 'import neuron; neuron.test()';
-        $PYTHON3 -c 'import neuron; neuron.test()';
-      else
-        $PYTHON -c 'import neuron; neuron.test()';
-      fi;
     else
       export PATH=$(pwd)/install/x86_64/bin:$PATH;
       ./travis_build.sh .;
-      $PYTHON --version;
-      $PYTHON -c 'import neuron; neuron.test()';
+    fi
+  - if [ "$BUILD_MODE" == "cmake" ]; then
+      $(pwd)/install/bin/neurondemo -nogui -c 'demo(4)' -c 'run()' -c 'quit()';
+    fi
+  - if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
+      $PYTHON2 --version;
+      $PYTHON2 -c 'import neuron; neuron.test()';
+      $PYTHON3 --version;
+      $PYTHON3 -c 'import neuron; neuron.test()';
+    else
+      if [ "$CMAKE_OPTION" != "-DNRN_ENABLE_PYTHON=OFF" ]; then
+        $PYTHON --version;
+        $PYTHON -c 'import neuron; neuron.test()';
+      fi;
     fi
