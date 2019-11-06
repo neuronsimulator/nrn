@@ -5,8 +5,8 @@
 # =============================================================================
 
 include(ExternalProject)
-include(FindPkgConfig)
 
+find_package(FindPkgConfig QUIET)
 find_path(MOD2C_PROJ NAMES CMakeLists.txt PATHS "${CORENEURON_PROJECT_SOURCE_DIR}/external/mod2c")
 find_package_handle_standard_args(MOD2C REQUIRED_VARS MOD2C_PROJ)
 

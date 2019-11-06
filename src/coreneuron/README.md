@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/BlueBrain/CoreNeuron.svg?branch=master)](https://travis-ci.org/BlueBrain/CoreNeuron)
+
 # CoreNEURON
 > Optimised simulator engine for [NEURON](https://www.neuron.yale.edu/neuron/)
 
