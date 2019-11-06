@@ -24,3 +24,9 @@ foreach(test_name
     add_test(NAME ${test_name} COMMAND ${test_name})
   endif()
 endforeach()
+
+# =============================================================================
+# Add ringtest
+# =============================================================================
+set(RINGTEST_DIR ${PROJECT_SOURCE_DIR}/test/ringtest)
+add_test(NAME ringtest COMMAND ${CMAKE_BINARY_DIR}/bin/nrniv -python ${RINGTEST_DIR}/ringtest.py -tstop 100 WORKING_DIRECTORY ${RINGTEST_DIR})
