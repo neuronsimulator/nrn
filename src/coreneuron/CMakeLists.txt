@@ -56,6 +56,13 @@ else()
   set(NMODL_CODEGEN_TARGET serial)
 endif()
 
+# configure every mod file to configure with mod2c/nmodl
+foreach(MOD ${INBUILT_MOD_FILES})
+  nmodl_to_cpp_target(KEY INBUILT_MOD MODFILE "${INBUILT_MOD_PATH}/${MOD}" TARGET ${NMODL_CODEGEN_TARGET})
+endforeach()
+
+set_source_files_properties(${NMODL_INBUILT_MOD_OUTPUTS} PROPERTIES GENERATED TRUE)
+
 # for ispc generated files, we need add extra compilation flags
 if(CORENRN_ENABLE_ISPC)
   set(NMODL_ISPC_INBUILT_MOD_OUTPUTS ${NMODL_INBUILT_MOD_OUTPUTS})
@@ -64,15 +71,8 @@ if(CORENRN_ENABLE_ISPC)
   set_source_files_properties(${NMODL_ISPC_INBUILT_MOD_OUTPUTS}
                               PROPERTIES
                               COMPILE_FLAGS
-                              "-I${nmodl_INCLUDE}")
+                              "-I${CORENRN_NMODL_INCLUDE} --pic")
 endif()
-
-# configure every mod file to configure with mod2c/nmodl
-foreach(MOD ${INBUILT_MOD_FILES})
-  nmodl_to_cpp_target(KEY INBUILT_MOD MODFILE "${INBUILT_MOD_PATH}/${MOD}" TARGET ${NMODL_CODEGEN_TARGET})
-endforeach()
-
-set_source_files_properties(${NMODL_INBUILT_MOD_OUTPUTS} PROPERTIES GENERATED TRUE)
 
 # =============================================================================
 # coreneuron GPU library

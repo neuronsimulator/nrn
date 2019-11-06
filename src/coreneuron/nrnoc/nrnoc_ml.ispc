@@ -105,6 +105,11 @@ struct NrnThreadBAList {
 
 };
 
+struct NrnFastImem {
+    double* uniform nrn_sav_rhs;
+    double* uniform nrn_sav_d;
+};
+
 struct NrnThread {
     uniform double _t;
     uniform double _dt;
@@ -143,6 +148,7 @@ struct NrnThread {
     double* uniform _actual_diam;
     double* uniform _shadow_rhs;
     double* uniform _shadow_d;
+    NrnFastImem* uniform nrn_fast_imem;
     int* uniform _v_parent_index;
     int* uniform _permute;
     int8* uniform _sp13mat;

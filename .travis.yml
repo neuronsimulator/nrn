@@ -1,0 +1,148 @@
+#=============================================================================
+# Travis CoreNeuron settings
+#=============================================================================
+
+#=============================================================================
+# Environment
+#=============================================================================
+language: cpp
+
+#=============================================================================
+# Build matrix
+#=============================================================================
+matrix:
+  fast_finish: true
+  include:
+    - os: linux
+      dist: xenial
+      env:
+        - cmake_option="-DCORENRN_ENABLE_MPI=ON"
+    - os: linux
+      dist: xenial
+      env:
+        - cmake_option="-DCORENRN_ENABLE_MPI=OFF"
+    - os: linux
+      dist: xenial
+      env:
+        - cmake_option="-DCORENRN_ENABLE_SOA=ON"
+    - os: linux
+      dist: xenial
+      env:
+        - cmake_option="-DCORENRN_ENABLE_SOA=OFF"
+    - os: linux
+      dist: xenial
+      env:
+        - cmake_option="-DCORENRN_ENABLE_NMODL=ON"
+        - PYTHON_VERSION=3.6.7  # for nmodl pip3 install
+        - USE_NMODL=ON
+    - os: osx
+      osx_image: xcode10.2
+      env:
+        - cmake_option="-DCORENRN_ENABLE_MPI=ON"
+    - os: osx
+      osx_image: xcode10.2
+      env:
+        - cmake_option="-DCORENRN_ENABLE_MPI=OFF"
+    - os: osx
+      osx_image: xcode10.2
+      env:
+        - cmake_option="-DCORENRN_ENABLE_SOA=ON"
+    - os: osx
+      osx_image: xcode10.2
+      env:
+        - cmake_option="-DCORENRN_ENABLE_SOA=OFF"
+    - os: osx
+      osx_image: xcode10.2
+      env:
+        - cmake_option="-DCORENRN_ENABLE_NMODL=ON"
+        - USE_NMODL=ON
+    - os: linux
+      dist: xenial
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - bison
+            - flex
+            - g++-9
+            - libboost-all-dev
+            - libopenmpi-dev
+            - openmpi-bin
+      env:
+        - GCC_VERSION=9
+    - os: linux
+      dist: xenial
+      env:
+        - USE_ISPC=ON
+        - PYTHON_VERSION=3.6.7
+
+#=============================================================================
+# Common Packages
+#=============================================================================
+addons:
+  # for Linux builds, we use APT
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - bison
+      - flex
+      - libboost-all-dev
+      - libopenmpi-dev
+      - openmpi-bin
+
+  # for Mac builds, we use Homebrew
+  homebrew:
+    packages:
+      - bison
+      - flex
+      - openmpi
+      - boost
+
+#=============================================================================
+# Set up environments
+#=============================================================================
+before_install:
+  # brew installed flex and bison is not in $PATH
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+        export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH;
+    fi
+  # when python 3.6.7 is required, ex. NMODL in linux
+  - if [ -n "$PYTHON_VERSION" ]; then
+        pyenv global $PYTHON_VERSION;
+    fi
+  # install NMODL dependencies
+  - if [[ "$USE_NMODL" == "ON" || "$USE_ISPC" == "ON" ]]; then
+        pip3 install jinja2 pyyaml pytest sympy;
+    fi
+  - if [ -n "$GCC_VERSION" ]; then
+        export CXX="g++-${GCC_VERSION}" CC="gcc-${GCC_VERSION}";
+        $CXX --version;
+    fi
+  # install ISPC compiler (only for mac or linux build for now)
+  - if [[ "$USE_ISPC" == "ON" ]]; then
+        if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+            url_os="linux";
+        else
+            url_os="macOS";
+        fi;
+        url="https://sourceforge.net/projects/ispcmirror/files/v1.12.0/ispc-v1.12.0-${url_os}.tar.gz";
+        wget -O ispc.tar.gz $url;
+        mkdir ispc && tar -xvzf ispc.tar.gz -C ispc --strip 1;
+    fi
+#=============================================================================
+# Build, test and install
+#=============================================================================
+script:
+  - echo "------- Build, Test and Install -------"
+  - mkdir build && cd build
+  - if [[ "$USE_ISPC" == "ON" ]]; then
+        cmake -DCORENRN_ENABLE_ISPC=ON -DCMAKE_ISPC_COMPILER=../ispc/bin/ispc
+              -DCMAKE_INSTALL_PREFIX=$HOME/CoreNeuron ..;
+    else
+        cmake ${cmake_option} -DCMAKE_INSTALL_PREFIX=$HOME/CoreNeuron ..;
+    fi
+  - cmake --build .
+  - ctest --output-on-failure
+  - make install
