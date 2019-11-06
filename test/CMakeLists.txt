@@ -26,7 +26,13 @@ foreach(test_name
 endforeach()
 
 # =============================================================================
-# Add ringtest
+# Add ringtest (to run python test make install must be run first)
 # =============================================================================
 set(RINGTEST_DIR ${PROJECT_SOURCE_DIR}/test/ringtest)
 add_test(NAME ringtest COMMAND ${CMAKE_BINARY_DIR}/bin/nrniv -python ${RINGTEST_DIR}/ringtest.py -tstop 100 WORKING_DIRECTORY ${RINGTEST_DIR})
+
+# =============================================================================
+# Add small hoc test
+# =============================================================================
+set(HOCTEST_DIR ${PROJECT_SOURCE_DIR}/test/simple_hoc_test)
+add_test(NAME testconnectdend COMMAND ${CMAKE_BINARY_DIR}/bin/nrniv ${HOCTEST_DIR}/connect_dend.hoc WORKING_DIRECTORY ${HOCTEST_DIR})
