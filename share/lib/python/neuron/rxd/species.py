@@ -1245,10 +1245,11 @@ class Species(_SpeciesMathable):
                             s()._offset -= sec._nseg + 1
                 del sec
         # set the remaining species offsets
-        for sr in _all_species:
-            s = sr()
-            if s is not None:
-                s._update_region_indices(True)
+        if initializer.is_initialized():
+            for sr in _all_species:
+                s = sr()
+                if s is not None:
+                    s._update_region_indices(True)
         
     def _ion_register(self):
         charge = self._charge
