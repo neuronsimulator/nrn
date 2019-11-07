@@ -1540,7 +1540,7 @@ void BBSaveState::gids() {
 void BBSaveState::gidobj(int basegid) {
 	int spgid;
 	Object* obj;
-	assert(base2spgid->find(basegid, spgid));
+	nrn_assert(base2spgid->find(basegid, spgid));
 	obj = nrn_gid2obj(spgid);
 	gidobj(spgid, obj);
 }

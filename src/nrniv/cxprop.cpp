@@ -89,15 +89,15 @@ static void read_temp1() {
 	f = fopen(line, "r");
 	if (!f) { return; }
 	force = 1;
-	nrn_assert(fgets(line, 200, f)); assert(sscanf(line, "%d", &maxtype) == 1);
+	nrn_assert(fgets(line, 200, f)); nrn_assert(sscanf(line, "%d", &maxtype) == 1);
 	mk_prop_pools(maxtype);
 	long* ntget1 = new long[maxtype];
 	for (i=0; i < maxtype; ++i) { ntget1[i] = 0; }
 
 	// allocate the pool space
-	nrn_assert(fgets(line, 200, f)); assert(sscanf(line, "%d", &nth) == 1);
+	nrn_assert(fgets(line, 200, f)); nrn_assert(sscanf(line, "%d", &nth) == 1);
 	for (ith=0; ith < nth; ++ith) {
-		nrn_assert(fgets(line, 200, f)); assert(sscanf(line, "%d", &nmech) == 1);
+		nrn_assert(fgets(line, 200, f)); nrn_assert(sscanf(line, "%d", &nmech) == 1);
 		for (imech=0; imech < nmech; ++imech) {
 			nrn_assert(fgets(line, 200, f));
 nrn_assert(sscanf(line, "%d %d %d %d %d", &type, &sz1, &sz2, &ntget, &cnt) == 5);
@@ -158,7 +158,7 @@ nrn_assert(sscanf(line, "%d %d %d %d %d", &type, &sz1, &sz2, &ntget, &cnt) == 5)
 		chain[i] = 0;
 	}
 	for (ith = 0; ith < nth; ++ith) {
-		nrn_assert(fgets(line, 200, f)); assert(sscanf(line, "%d", &cnt) == 1);
+		nrn_assert(fgets(line, 200, f)); nrn_assert(sscanf(line, "%d", &cnt) == 1);
 		for (i=0; i < cnt; ++i) {
 			nrn_assert(fgets(line, 200, f));
 			nrn_assert(sscanf(line, "%d %d %d", &type, &j, &seq));

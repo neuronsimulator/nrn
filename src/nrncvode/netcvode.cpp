@@ -3318,7 +3318,7 @@ Point_process* SelfEvent::index2pp(int type, int oindex) {
 			}
 		}
 	}
-	assert(sepp_->find(type + n_memb_func*oindex, pp));
+	nrn_assert(sepp_->find(type + n_memb_func*oindex, pp));
 	return pp;
 }
 
