@@ -2633,9 +2633,9 @@ void ReducedTree::reorder(int j, int nt, int* mark, int* allbbr, int* allsid) {
 		if (mark[i] == j && allbbr[i] > 2 && allsid[i] < allbbr[i]-3) {
 //printf("i=%d ie=%d ne=%d mark=%d allsid=%d allbbr=%d\n", i, ie, ne, mark[i], allsid[i], allbbr[i]-3);
 			assert(ie < ne);
-			assert(s2rt->find(allsid[i], e1[ie]));
+			nrn_assert(s2rt->find(allsid[i], e1[ie]));
 			sid[e1[ie]]= allsid[i];
-			assert(s2rt->find(allbbr[i]-3, e2[ie]));
+			nrn_assert(s2rt->find(allbbr[i]-3, e2[ie]));
 			sid[e2[ie]] = allbbr[i]-3;
 			++ie;
 		}
@@ -2692,14 +2692,14 @@ void ReducedTree::reorder(int j, int nt, int* mark, int* allbbr, int* allsid) {
 
 void ReducedTree::fillrmap(int sid1, int sid2, double* pd) {
 	int i, j;
-	assert(s2rt->find(sid1, i));
+	nrn_assert(s2rt->find(sid1, i));
 	// type order is RHS, D, A, B
 	if (sid2 < 0) { // RHS
 		j = i;
 	}else if (sid2 == sid1) { // D
 		j = i + n;
 	}else{ // A or B?
-		assert(s2rt->find(sid2, j));
+		nrn_assert(s2rt->find(sid2, j));
 		if (ip[i] == j) { // A
 			j = i + 2*n;
 		}else if (ip[j] == i) { // B
@@ -2720,7 +2720,7 @@ void ReducedTree::fillrmap(int sid1, int sid2, double* pd) {
 
 void ReducedTree::fillsmap(int sid, double* prhs, double* pd) {
 	int i;
-	assert(s2rt->find(sid, i));
+	nrn_assert(s2rt->find(sid, i));
 //printf("%d fillsmap sid=%d i=%d nsmap=%d\n", nrnmpi_myid, sid, i, nsmap);
 	ismap[nsmap] = i;
 	smap[nsmap] = prhs;
