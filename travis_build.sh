@@ -6,7 +6,7 @@
 set -ex
 
 BUILD_DIR=$1; shift
-INSTALL_DIR=$(pwd)/$BUILD_DIR/install
+INSTALL_DIR=$BUILD_DIR
 
 if [[ -z $CONFIG_OPTIONS ]]; then
     CONFIG_OPTIONS="--without-x

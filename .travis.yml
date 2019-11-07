@@ -23,6 +23,7 @@ env:
     - PYTHON="$(which python3)"
     - PIP="$(which pip3)"
     - PYTHON_VERSION=3.7.1
+    - INSTALL_DIR="$HOME/install"
   jobs:
     - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2) PYTHON_BLD=$(which python2)"
       PYTHON="$(which python2)"
@@ -45,29 +46,19 @@ env:
     - BUILD_MODE=cmake
       CMAKE_OPTION="-DNRN_ENABLE_CORENEURON=OFF"
 
-
 os:
   - linux
+
 before_install:
   - echo $LANG
   - echo $LC_ALL
   - $CXX -v
-  - if [ "$BUILD_MODE" == "cmake" ]; then
-      export PYTHONPATH=$PYTHONPATH:$(pwd)/build/install/lib/python/;
-    else
-      export PYTHONPATH=$PYTHONPATH:$(pwd)/install/lib/python/;
-    fi
-  - if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
-      pyenv global 2.7.15 3.7.1;
-    else
-      pyenv global $PYTHON_VERSION;
-    fi
+  - export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python/;
+  - pyenv global 2.7.15 3.7.1;
+
 install:
-  - if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
-      $PIP install --user cython;
-    else
-      $PIP install --user scipy matplotlib bokeh ipython cython --upgrade;
-    fi
+  - $PIP install --user scipy matplotlib bokeh ipython cython --upgrade;
+
 script:
     # $PYTHON share/lib/python/neuron/rxdtests/run_all.py; #problem with python2.7
   - if [ "$BUILD_MODE" == "cmake" ]; then
@@ -77,20 +68,17 @@ script:
         CMAKE_OPTION="-DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_PYTHON_DYNAMIC=${PYTHON2};${PYTHON3}";
       fi;
       mkdir build && cd build;
-      cmake ${CMAKE_OPTION} -DCMAKE_INSTALL_PREFIX=$(pwd)/install ..;
+      cmake $CMAKE_OPTION -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR ..;
       cmake --build . -- -j 2;
       make install;
+      export PATH=$INSTALL_DIR/bin:$PATH;
     else
-      export PATH=$(pwd)/install/x86_64/bin:$PATH;
-      ./travis_build.sh .;
+      export PATH=$INSTALL_DIR/x86_64/bin:$PATH;
+      ./travis_build.sh $INSTALL_DIR;
     fi
-  - if [ "$BUILD_MODE" == "cmake" ]; then
-      $(pwd)/install/bin/neurondemo -nogui -c 'demo(4)' -c 'run()' -c 'quit()';
-    fi
-  - if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
-      $PYTHON2 --version;
+  - neurondemo -nogui -c 'demo(4)' -c 'run()' -c 'quit()';
+    if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
       $PYTHON2 -c 'import neuron; neuron.test()';
-      $PYTHON3 --version;
       $PYTHON3 -c 'import neuron; neuron.test()';
     else
       if [ "$CMAKE_OPTION" != "-DNRN_ENABLE_PYTHON=OFF" ]; then
