@@ -8,7 +8,7 @@ static char nmodl_version_[] =
 "7.7.0";
 
 static char banner[] =
-"Duke, Yale, and the BlueBrain Project -- Copyright 1984-2018\n\
+"Duke, Yale, and the BlueBrain Project -- Copyright 1984-2019\n\
 See http://neuron.yale.edu/neuron/credits\n";
 
 # include	<stdio.h>
