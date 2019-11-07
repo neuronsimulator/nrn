@@ -1397,6 +1397,42 @@ CVode
     .. warning::
         Works only for fixed and global variable time step methods.
         Works only with single thread. 
+        
+    Example of setting and removing, with arguments:
+    
+         .. code::
+         
+             from neuron import h
+
+             def hello1(cort_secs):
+                 print('hello1')
+                 cort_secs.append('corticalcell')
+
+             def hello2(arg):
+                 print('hello2', arg)
+
+             cort_secs = []
+
+             recording_callback = (hello1, cort_secs)
+
+             # declaring a function to run with every fadvance
+             h.CVode().extra_scatter_gather(0, recording_callback)
+             h.finitialize(-65)
+             h.fadvance()
+             h.fadvance()
+
+             # removing the previous function
+             h.CVode().extra_scatter_gather_remove(recording_callback)
+
+             print('---')
+
+             # declaring a new function to run with each fadvance
+             recording_callback = (hello2, cort_secs)
+             h.CVode().extra_scatter_gather(0, recording_callback)
+             h.finitialize(-65)
+             h.fadvance()
+             h.fadvance()
+
 
          
 ----
