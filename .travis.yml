@@ -54,7 +54,11 @@ before_install:
   - echo $LC_ALL
   - $CXX -v
   - export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python/;
-  - pyenv global 2.7.15 3.7.1;
+  - if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
+      pyenv global 2.7.15 3.7.1;
+    else
+      pyenv global $PYTHON_VERSION;
+    fi
 
 install:
   - $PIP install --user scipy matplotlib bokeh ipython cython --upgrade;
