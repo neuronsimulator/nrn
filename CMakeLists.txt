@@ -91,6 +91,15 @@ if (NRN_ENABLE_RX3D)
   find_package(Cython)
 endif()
 
+
+# =============================================================================
+# Setup Doxygen documentation
+# =============================================================================
+find_package(Doxygen)
+# generate Doxyfile with correct source paths
+configure_file(${PROJECT_SOURCE_DIR}/docs/Doxyfile.in
+               ${PROJECT_SOURCE_DIR}/docs/Doxyfile)
+
 # =============================================================================
 # Enable MPI/Python/IV/Pthead if found
 # =============================================================================
