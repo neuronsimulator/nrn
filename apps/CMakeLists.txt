@@ -11,7 +11,8 @@ target_link_libraries(nrniv-core
                       corenrnmech
                       ${MPI_C_LIBRARIES}
                       ${MPI_CXX_LIBRARIES}
-                      ${reportinglib_LIBRARY})
+                      ${reportinglib_LIBRARY}
+                      ${sonatareport_LIBRARY})
 set_target_properties(nrniv-core PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # main program required for building special-core

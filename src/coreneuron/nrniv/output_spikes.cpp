@@ -41,6 +41,9 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnmpi/nrnmpi_impl.h"
 #include "coreneuron/nrnmpi/nrnmpidec.h"
 #include "coreneuron/utils/string_utils.h"
+#ifdef ENABLE_SONATA_REPORTS
+#include "reportinglib/records.h"
+#endif
 
 namespace coreneuron {
 std::vector<double> spikevec_time;
@@ -158,6 +161,9 @@ void output_spikes_parallel(const char* outpath) {
     if (nrnmpi_myid == 0) {
         remove(fname.c_str());
     }
+#ifdef ENABLE_SONATA_REPORTS
+    records_write_spikes(spikevec_time, spikevec_gid);
+#else
     sort_spikes(spikevec_time, spikevec_gid);
     nrnmpi_barrier();
 
@@ -211,7 +217,9 @@ void output_spikes_parallel(const char* outpath) {
 
     MPI_File_close(&fh);
     free(spike_data);
+#endif
 }
+
 #endif
 
 void output_spikes_serial(const char* outpath) {

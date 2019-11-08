@@ -35,7 +35,11 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnoc/mech_mapping.hpp"
 #include "coreneuron/nrnoc/membfunc.h"
 #ifdef ENABLE_REPORTING
+#ifdef ENABLE_SONATA_REPORTS
+#include "reportinglib/records.h"
+#else
 #include "reportinglib/Records.h"
+#endif
 #endif
 #include <iostream>
 #include <vector>

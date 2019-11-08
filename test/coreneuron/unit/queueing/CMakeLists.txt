@@ -11,6 +11,7 @@ target_link_libraries(queuing_test_bin
                       ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
                       ${Boost_SYSTEM_LIBRARY}
                       coreneuron
-                      ${reportinglib_LIBRARY})
+                      ${reportinglib_LIBRARY}
+                      ${sonatareport_LIBRARY})
 
 add_test(NAME queuing_test COMMAND ${TEST_EXEC_PREFIX} ${CMAKE_CURRENT_BINARY_DIR}/queuing_test_bin)

@@ -162,6 +162,7 @@ add_library(corenrnmech
 target_link_libraries(coreneuron
                       ${MPI_CXX_LIBRARIES}
                       ${reportinglib_LIBRARY}
+                      ${sonatareport_LIBRARY}
                       ${link_cudacoreneuron}
                       ${CUDA_LIBRARIES}
                       ${CALIPER_LIB}
