@@ -106,12 +106,12 @@ if(NRN_ENABLE_MODULE_INSTALL)
 
   # check arguments for setup.py install : if user has just provided YES, then use default
   if("${NRN_MODULE_INSTALL_OPTIONS}" STREQUAL "")
-    set(install_path ${CMAKE_INSTALL_PREFIX})
+    set(install_path ${PROJECT_BINARY_DIR})
     # replace windows path of the form C:/msys64 to C:\msys64
     if(MINGW)
       string(REPLACE ":/" ":\\\\" install_path "${install_path}")
     endif()
-    set(NRN_MODULE_INSTALL_OPTIONS "--home ${install_path}" CACHE INTERNAL "" FORCE)
+    set(NRN_MODULE_INSTALL_OPTIONS "--home" "${install_path}" CACHE INTERNAL "" FORCE)
   endif()
 
   # to tickle setup.py into actually rebuilding if dependencies change,
@@ -193,14 +193,28 @@ if(NRN_ENABLE_MODULE_INSTALL)
     endif()
   endif()
 
+  # =============================================================================
+  # Copy necessary files to build directory
+  # =============================================================================
+  add_custom_command(TARGET hoc_module PRE_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E copy_directory
+                    ${PROJECT_SOURCE_DIR}/share/lib ${PROJECT_BINARY_DIR}/share/nrn/lib
+                    COMMAND ${CMAKE_COMMAND} -E copy_directory
+                    ${PROJECT_SOURCE_DIR}/share/demo ${PROJECT_BINARY_DIR}/share/nrn/demo
+                    )
+
   # for each python detected / provided by user, install module at install time
   foreach(pyexe ${NRN_PYTHON_EXE_LIST})
-    install(CODE "
-      message(STATUS \"Installing neuron module with: ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}\")
-      #execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp)
-      execute_process(COMMAND ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-      )
-    ")
+      add_custom_command(TARGET hoc_module
+                  POST_BUILD
+                  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
+                  COMMAND ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}
+                  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                  COMMENT "Building python module with: ${pyexe}"
+                  )
   endforeach(pyexe)
+  add_dependencies(hoc_module nrniv_lib)
+
+  # module is already installed in lib, just copy folder
+  install(DIRECTORY ${PROJECT_BINARY_DIR}/lib/ DESTINATION ${NRN_LIBDIR})
 endif()

@@ -35,7 +35,9 @@ destdir = os.getenv("DESTDIR")
 if not destdir:
   destdir = ""
 
-instdir = destdir + get_escaped_path("@prefix@")
+@USING_CMAKE_FALSE@instdir = destdir + get_escaped_path("@prefix@")
+@USING_CMAKE_TRUE@instdir = destdir + get_escaped_path("@CMAKE_BINARY_DIR@")
+
 if nrn_srcdir[0] != '/' :
   if using_cmake and mingw:
     nrn_srcdir = nrn_srcdir
@@ -103,7 +105,8 @@ defines = []
 if using_cmake:
     defines.append(("NRNCMAKE", "1"))
 
-libdirs = [destdir + get_escaped_path("@NRN_LIBDIR@"),
+@USING_CMAKE_FALSE@libdirs = [destdir + get_escaped_path("@NRN_LIBDIR@"),
+@USING_CMAKE_TRUE@libdirs = [destdir + get_escaped_path("@CMAKE_BINARY_DIR@/lib"),
   ivlibdir
 ]
 epre='-Wl,-R'
