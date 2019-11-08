@@ -4,7 +4,7 @@ PtrVector
 .. class:: PtrVector
 
   Syntax:
-    :samp:`pv = new PtrVector({size})`
+    :samp:`pv = h.PtrVector({size})`
     
    
   Description:
