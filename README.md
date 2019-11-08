@@ -29,20 +29,14 @@ create the automake, autoconf, libtool generated files by:
 
 Particularly useful configure options:
 
-```
-  --prefix=`pwd`
-    Install in place
-  --without-x
-    If the InterViews graphics library is not installed.
-  --with-iv=/where/you/installed/it
-    If iv was not installed in <prefix>/../iv
-  --with-paranrn
-    Parallel models on cluster computers using MPI (openmpi or mpich2)
-  --with-nrnpython
-    Use Python as an alternative interpreter (as well as the native
-    HOC interpreter). This is required to use the Reaction-Diffusion
-    extension.
-```
+
+- `--prefix=/some/path` : Install in in this location of your filesystem
+- `--without-x` : If the InterViews graphics library is not installed.
+- `--with-iv=/where/you/installed/it` : If iv was not installed in <prefix>/../iv
+- `--with-paranrn` : Parallel models on cluster computers using MPI (openmpi or mpich2)
+- `--with-nrnpython` : Use Python as an alternative interpreter (as well as the native HOC interpreter).
+  This is required to use the Reaction-Diffusion extension.
+
 
 For more details see the [INSTALL.md](https://github.com/neuronsimulator/nrn/blob/master/INSTALL.md)
 file.
@@ -67,30 +61,31 @@ Following packages are optional:
 - MPI
 - X11 (or XQuartz on macos)
 
+
 1. Download the NEURON `.tar.gz` or clone from https://github.com/neuronsimulator/nrn
 
-```
-git clone https://github.com/neuronsimulator/nrn
-cd nrn
-```
+  ```
+  git clone https://github.com/neuronsimulator/nrn
+  cd nrn
+  ```
 
 2. Create a build directory
 
-```
-mkdir build
-```
+  ```
+  mkdir build
+  ```
 
 3. Run cmake with the appropriate options
 
-```
-cmake -DNRN_ENABLE_CORENEURON=OFF -DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_IV=ON ..
-```
+  ```
+  cmake -DNRN_ENABLE_CORENEURON=OFF -DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_IV=ON ..
+  ```
 
 4. Build the code
 
-```
-make -j
-```
+  ```
+  make -j
+  ```
 
 For more installation information see:
 http://neuron.yale.edu/neuron/download/getdevel
