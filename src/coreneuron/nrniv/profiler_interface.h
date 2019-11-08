@@ -279,11 +279,12 @@ using InstrumentorImpl = detail::Instrumentor<
 
 namespace Instrumentor {
 struct phase {
-    phase(const char* name) {
-        detail::InstrumentorImpl::phase_begin(name);
+    const char * phase_name;
+    phase(const char* name) : phase_name(name) {
+        detail::InstrumentorImpl::phase_begin(phase_name);
     }
     ~phase() {
-        detail::InstrumentorImpl::phase_end("");
+        detail::InstrumentorImpl::phase_end(phase_name);
     }
 };
 
