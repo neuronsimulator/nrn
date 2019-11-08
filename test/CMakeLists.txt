@@ -36,3 +36,12 @@ add_test(NAME ringtest COMMAND ${CMAKE_BINARY_DIR}/bin/nrniv -python ${RINGTEST_
 # =============================================================================
 set(HOCTEST_DIR ${PROJECT_SOURCE_DIR}/test/simple_hoc_test)
 add_test(NAME testconnectdend COMMAND ${CMAKE_BINARY_DIR}/bin/nrniv ${HOCTEST_DIR}/connect_dend.hoc WORKING_DIRECTORY ${HOCTEST_DIR})
+
+
+# =============================================================================
+# Add pytest
+# =============================================================================
+if(PYTEST_FOUND)
+  add_test(NAME Basic_tests
+           COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/pynrn)
+endif()

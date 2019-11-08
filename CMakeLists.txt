@@ -86,6 +86,7 @@ include(RpathHelper)
 include(PlatformHelper)
 include(ExternalProjectHelper)
 include(FindCython)
+include(FindPythonModule)
 
 # =============================================================================
 # Find required packages
@@ -249,6 +250,7 @@ if (NRN_ENABLE_TESTS)
   list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external/catch2/contrib)
   include(CTest)
   include(Catch)
+  find_python_module(pytest)
   add_subdirectory(test)
 endif()
 
