@@ -62,19 +62,11 @@ ParallelContext
         .. code-block::
             python
 
-            try:
-                from mpi4py import MPI
-            except:
-                # if you launched python and mpi4py is not available
-                # and NEURON_INIT_MPI is not an environment variable
-                from neuron import h
-                h.nrnmpi_init()
-                # actually, it can't hurt to execute h.nrnmpi_init even if
-                # from mpi4py import MPI succeeds as it is a noop if MPI has
-                # already been initialized.
-
-            # importing MPI or h.nrnmpi_init() must come before the first instantiation of ParallelContext()
             from neuron import h
+            
+	    # importing MPI or h.nrnmpi_init() must come before the first instantiation of ParallelContext()
+	    h.nrnmpi_init()
+                        
             pc = h.ParallelContext()
 
             def f(x):
@@ -212,7 +204,7 @@ ParallelContext
         and we take the hit of repeated evaluation of gnabar_hh.
         A run must be quite lengthy to amortize this overhead. 
 
-        To run under MPI, be sure to include the ``from mpi4py import MPI`` and then
+        To run under MPI, be sure to include the ``h.nrnmpi_init()`` and then
         launch your script via, e.g. ``mpiexec -n 4 python myscript.py``. NEURON
         also supports running via the PVM (parallel virtual machine), but the launch
         setup is different. If you do not have mpi4py and you have not exported
@@ -230,10 +222,6 @@ ParallelContext
         .. code-block::
             python
 
-            try:
-                from mpi4py import MPI
-            except:
-                pass
             from neuron import h
             h.nrnmpi_init()
 
@@ -1373,11 +1361,12 @@ Description:
 
 
     Description:
-        Initializes MPI if it has not already been initialized.
+        Initializes MPI if it has not already been initialized; mpi4py can
+	also be used to intialize MPI.
         Only required if:
 
-        launched python and mpi4py does not exist and NEURON_INIT_MPI=1
-        environement varialble has not been exported.
+        launched python and mpi4py not used and NEURON_INIT_MPI=1
+        environment varialble has not been exported.
 
         launched nrniv without -mpi argument.
 
@@ -1525,61 +1514,59 @@ Description:
     Example:
 
         .. code-block::
-          python
+            python
 
-          from neuron import h
-          pc = h.ParallelContext()
-          nhost = pc.nhost()
-          rank = pc.id()
-          
-          #Keep host output from being intermingled.
-          #Not always completely successful.
-          import sys
-          def serialize():
-            for r in range(nhost):
-              pc.barrier()
-              if r == rank:
-                yield r
-                sys.stdout.flush()
-            pc.barrier()
-          
-          data = [(rank, i) for i in range(nhost)]
-          
-          if rank == 0:
-              print('source data')
-              for r in serialize():
-                  print('{} {}'.format(rank, data))
-          
-          data = pc.py_alltoall(data)
-          
-          if rank == 0:
-              print('destination data')
-              for r in serialize():
-                  print('{} {}'.format(rank, data))
-          
-          pc.runworker()
-          pc.done()
-          h.quit()
+            from neuron import h
+            h.nrnmpi_init()
+            pc = h.ParallelContext()
+            nhost = pc.nhost()
+            rank = pc.id()
+
+            #Keep host output from being intermingled.
+            #Not always completely successful.
+            import sys
+            def serialize():
+                for r in range(nhost):
+                    pc.barrier()
+                    if r == rank:
+                        yield r
+                        sys.stdout.flush()
+                pc.barrier()
+
+            data = [(rank, i) for i in range(nhost)]
+
+            if rank == 0:
+                print('source data')
+            for r in serialize():
+                print('{} {}'.format(rank, data))
+
+            data = pc.py_alltoall(data)
+
+            if rank == 0:
+                print('destination data')
+
+            for r in serialize():
+                print('{} {}'.format(rank, data))
+
+            pc.runworker()
+            pc.done()
+            h.quit()
 
         .. code-block::
-          none
+            none
 
-          $ mpiexec -n 4 nrniv -mpi -python test.py
-          numprocs=4
-          NEURON -- VERSION 7.3 (806:ba5e547c21f6) 2013-03-13
-          Duke, Yale, and the BlueBrain Project -- Copyright 1984-2012
-          See http://www.neuron.yale.edu/credits.html
-          
-          source data
-          0 [(0, 0), (0, 1), (0, 2), (0, 3)]
-          1 [(1, 0), (1, 1), (1, 2), (1, 3)]
-          2 [(2, 0), (2, 1), (2, 2), (2, 3)]
-          3 [(3, 0), (3, 1), (3, 2), (3, 3)]
-          destination data
-          0 [(0, 0), (1, 0), (2, 0), (3, 0)]
-          1 [(0, 1), (1, 1), (2, 1), (3, 1)]
-          2 [(0, 2), (1, 2), (2, 2), (3, 2)]
-          3 [(0, 3), (1, 3), (2, 3), (3, 3)]
+            $ mpirun -n 4 python parcon.py 
+            numprocs=4
+            source data
+            0 [(0, 0), (0, 1), (0, 2), (0, 3)]
+            1 [(1, 0), (1, 1), (1, 2), (1, 3)]
+            2 [(2, 0), (2, 1), (2, 2), (2, 3)]
+            3 [(3, 0), (3, 1), (3, 2), (3, 3)]
+            destination data
+            0 [(0, 0), (1, 0), (2, 0), (3, 0)]
+            1 [(0, 1), (1, 1), (2, 1), (3, 1)]
+            2 [(0, 2), (1, 2), (2, 2), (3, 2)]
+            3 [(0, 3), (1, 3), (2, 3), (3, 3)]
 
 
 ----
