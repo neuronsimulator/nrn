@@ -106,12 +106,12 @@ script:
     if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
       $PYTHON2 -c 'import neuron; neuron.test()';
       $PYTHON3 -c 'import neuron; neuron.test()';
-      $PYTHON2 share/lib/python/neuron/rxdtests/run_all.py;
-      $PYTHON3 share/lib/python/neuron/rxdtests/run_all.py;
     else
       if [ "$CMAKE_OPTION" != "-DNRN_ENABLE_PYTHON=OFF" ]; then
         $PYTHON --version;
         $PYTHON -c 'import neuron; neuron.test()';
-        $PYTHON share/lib/python/neuron/rxdtests/run_all.py;
       fi;
-    fi
+    fi;
+    if [ "$BUILD_MODE" != "cmake" ] ; then
+      $PYTHON share/lib/python/neuron/rxdtests/run_all.py;
+    fi;
