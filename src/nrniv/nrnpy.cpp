@@ -12,7 +12,6 @@
 #include "classreg.h"
 #include "nonvintblock.h"
 #include "nrnmpi.h"
-#include <ctype.h> // for pylib2pyver10
 
 extern "C" {
 extern int nrn_nopython;
@@ -372,11 +371,21 @@ static void* load_nrnpython_helper(const char* npylib) {
 	return handle;
 }
 
-#if !DARWIN
-static int digittoint(char c) {
-	return int(c - '0');
+int digit_to_int(char ch) {
+  int d = ch - '0';
+  if ((unsigned) d < 10) {
+    return d;
+  }
+  d = ch - 'a';
+  if ((unsigned) d < 6) {
+    return d + 10;
+  }
+  d = ch - 'A';
+  if ((unsigned) d < 6) {
+    return d + 10;
+  }
+  return -1;
 }
-#endif
 
 static int pylib2pyver10(const char* pylib) {
   // check backwards for N.N or NN // obvious limitations
@@ -384,9 +393,9 @@ static int pylib2pyver10(const char* pylib) {
   for (const char* cp = pylib + strlen(pylib) -1 ; cp > pylib; --cp) {
     if (isdigit(*cp)) {
       if (n2 < 0) {
-        n2 = digittoint(*cp);
+        n2 = digit_to_int(*cp);
       } else {
-        n1 = digittoint(*cp);
+        n1 = digit_to_int(*cp);
         return n1*10 + n2;
       }
     }else if (*cp == '.') {
