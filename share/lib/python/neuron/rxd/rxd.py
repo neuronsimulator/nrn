@@ -455,7 +455,11 @@ def _setup():
 
 def _find_librxdmath():
     import glob
-    base_path = os.path.join(h.neuronhome(), "..", "..", platform.machine(), "lib", "librxdmath")
+    # cmake doesn't create x86_64 directory under install prefix
+    base_path = os.path.join(h.neuronhome(), "..", "..", platform.machine())
+    if not os.path.exists(base_path):
+        base_path = os.path.join(h.neuronhome(), "..", "..")
+    base_path = os.path.join(base_path, "lib", "librxdmath")
     success = False 
     for extension in ['', '.dll', '.so', '.dylib']:
         dll = base_path  + extension

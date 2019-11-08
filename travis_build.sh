@@ -5,8 +5,7 @@
 
 set -ex
 
-BUILD_DIR=$1; shift
-INSTALL_DIR=$(pwd)/$BUILD_DIR/install
+INSTALL_DIR=$1; shift
 
 if [[ -z $CONFIG_OPTIONS ]]; then
     CONFIG_OPTIONS="--without-x
@@ -32,9 +31,14 @@ git_clean() {
 build() {
     ./build.sh
     CONFIGURE=$(readlink -f configure)
-    mkdir -p "$BUILD_DIR"
-    pushd "$BUILD_DIR"
+    mkdir -p build
+    pushd build
     configure "$CONFIGURE"
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      # create workaround setup.cfg for installing python package in mac os
+      echo $'[install]\nprefix='>src/nrnpython/setup.cfg
+      echo $'backend: TkAgg'>$HOME/.matplotlib/matplotlibrc
+    fi
     make install
     popd
 }
