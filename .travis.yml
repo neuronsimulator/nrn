@@ -102,16 +102,14 @@ script:
       ./travis_build.sh $INSTALL_DIR;
     fi
     # basic tests for cmake and autoconf build
-  - neurondemo -nogui -c 'demo(4)' -c 'run()' -c 'quit()';
-    if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
-      $PYTHON2 -c 'import neuron; neuron.test()';
-      $PYTHON3 -c 'import neuron; neuron.test()';
+  - neurondemo -nogui -c 'demo(4)' -c 'run()' -c 'quit()'
+  - if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
+      $PYTHON3 -c 'import neuron; neuron.test()' && $PYTHON2 -c 'import neuron; neuron.test()';
     else
       if [ "$CMAKE_OPTION" != "-DNRN_ENABLE_PYTHON=OFF" ]; then
-        $PYTHON --version;
-        $PYTHON -c 'import neuron; neuron.test()';
+        $PYTHON --version && $PYTHON -c 'import neuron; neuron.test()';
       fi;
     fi;
-    if [ "$BUILD_MODE" != "cmake" ] ; then
+  - if [ "$BUILD_MODE" != "cmake" ] ; then
       $PYTHON share/lib/python/neuron/rxdtests/run_all.py;
     fi;
