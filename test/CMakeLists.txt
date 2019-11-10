@@ -1,13 +1,13 @@
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/test)
 
-include_directories(${PROJECT_SOURCE_DIR}/test)
+include_directories(${PROJECT_SOURCE_DIR}/test ${PROJECT_SOURCE_DIR}/src/nrnoc ${PROJECT_SOURCE_DIR}/src/nrniv ${PROJECT_SOURCE_DIR}/src/oc)
 
 # =============================================================================
 # Test executables
 # =============================================================================
 add_executable(testfactorial unit_test.cpp)
 target_compile_features(testfactorial PUBLIC cxx_std_11)
-target_link_libraries(testfactorial Catch2::Catch2)
+target_link_libraries(testfactorial Catch2::Catch2 nrniv_lib)
 
 # =============================================================================
 # Use catch_discover instead of add_test for granular test report if CMAKE ver is greater than 3.9,
