@@ -175,6 +175,9 @@ if(NRN_ENABLE_MODULE_INSTALL)
         install(TARGETS nrnpython${pyver} DESTINATION ${nrn_dest_sharedlibs})
       endforeach()
     else()
+        message("Includes: ${NRNPYTHON_INCLUDE2} / ${NRNPYTHON_INCLUDE3}")
+
+
       # build python2 library and install it
       if(NRNPYTHON_INCLUDE2)
         add_library(nrnpython2 SHARED ${NRN_NRNPYTHON_SRC_FILES})
@@ -194,13 +197,15 @@ if(NRN_ENABLE_MODULE_INSTALL)
   endif()
 
   # for each python detected / provided by user, install module at install time
+  if(INSTALL_PYTHON)
   foreach(pyexe ${NRN_PYTHON_EXE_LIST})
     install(CODE "
       message(STATUS \"Installing neuron module with: ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}\")
-      #execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp)
+      execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp)
       execute_process(COMMAND ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       )
     ")
   endforeach(pyexe)
+  endif()
 endif()

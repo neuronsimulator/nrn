@@ -88,7 +88,7 @@ find_package(FLEX)
 find_package(Threads QUIET)
 find_package(readline)
 if (NRN_ENABLE_RX3D)
-  find_package(Cython)
+  find_package(Cython REQUIRED)
 endif()
 
 # =============================================================================
