@@ -144,6 +144,28 @@ if(NRN_ENABLE_MODULE_INSTALL)
     APPEND
     PROPERTY COMPILE_DEFINITIONS NRNCMAKE)
 
+  # =============================================================================
+  # Copy necessary files to build directory
+  # =============================================================================
+  add_custom_command(TARGET hoc_module PRE_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E copy_directory
+                    ${PROJECT_SOURCE_DIR}/share/lib ${PROJECT_BINARY_DIR}/share/nrn/lib
+                    COMMAND ${CMAKE_COMMAND} -E copy_directory
+                    ${PROJECT_SOURCE_DIR}/share/demo ${PROJECT_BINARY_DIR}/share/nrn/demo
+                    )
+
+  # for each python detected / provided by user, install module at install time
+  foreach(pyexe ${NRN_PYTHON_EXE_LIST})
+      add_custom_command(TARGET hoc_module
+                  POST_BUILD
+                  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
+                  COMMAND ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}
+                  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                  COMMENT "Building python module with: ${pyexe}"
+                  )
+  endforeach(pyexe)
+  add_dependencies(hoc_module nrniv_lib)
+
   # user has selected dynamic python support (could be multiple versions)
   if(NRN_ENABLE_PYTHON_DYNAMIC)
     set(INCLUDE_DIRS
@@ -172,6 +194,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
         target_include_directories(nrnpython${pyver} BEFORE PUBLIC ${pyinc} ${INCLUDE_DIRS})
         target_link_libraries(nrnpython${pyver} nrniv_lib ${pylib} ${Readline_LIBRARY})
         add_dependencies(nrnpython${pyver} nrniv_lib)
+        add_dependencies(hoc_module nrnpython${pyver})
         install(TARGETS nrnpython${pyver} DESTINATION ${nrn_dest_sharedlibs})
       endforeach()
     else()
@@ -180,6 +203,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
         add_library(nrnpython2 SHARED ${NRN_NRNPYTHON_SRC_FILES})
         target_include_directories(nrnpython2 BEFORE PUBLIC ${NRNPYTHON_INCLUDE2} ${INCLUDE_DIRS})
         add_dependencies(nrnpython2 nrniv_lib)
+        add_dependencies(hoc_module nrnpython2)
         install(TARGETS nrnpython2 DESTINATION ${nrn_dest_sharedlibs})
       endif()
 
@@ -187,33 +211,12 @@ if(NRN_ENABLE_MODULE_INSTALL)
       if(NRNPYTHON_INCLUDE3)
         add_library(nrnpython3 SHARED ${NRN_NRNPYTHON_SRC_FILES})
         add_dependencies(nrnpython3 nrniv_lib)
+        add_dependencies(hoc_module nrnpython3)
         target_include_directories(nrnpython3 BEFORE PUBLIC ${NRNPYTHON_INCLUDE3} ${INCLUDE_DIRS})
         install(TARGETS nrnpython3 DESTINATION ${nrn_dest_sharedlibs})
       endif()
     endif()
   endif()
-
-  # =============================================================================
-  # Copy necessary files to build directory
-  # =============================================================================
-  add_custom_command(TARGET hoc_module PRE_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E copy_directory
-                    ${PROJECT_SOURCE_DIR}/share/lib ${PROJECT_BINARY_DIR}/share/nrn/lib
-                    COMMAND ${CMAKE_COMMAND} -E copy_directory
-                    ${PROJECT_SOURCE_DIR}/share/demo ${PROJECT_BINARY_DIR}/share/nrn/demo
-                    )
-
-  # for each python detected / provided by user, install module at install time
-  foreach(pyexe ${NRN_PYTHON_EXE_LIST})
-      add_custom_command(TARGET hoc_module
-                  POST_BUILD
-                  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
-                  COMMAND ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}
-                  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                  COMMENT "Building python module with: ${pyexe}"
-                  )
-  endforeach(pyexe)
-  add_dependencies(hoc_module nrniv_lib)
 
   # module is already installed in lib, just copy folder
   install(DIRECTORY ${PROJECT_BINARY_DIR}/lib/ DESTINATION ${NRN_LIBDIR})
