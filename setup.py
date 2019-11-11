@@ -6,6 +6,7 @@ from distutils.version import LooseVersion
 from setuptools import Command, Extension
 from setuptools import setup, find_packages
 from setuptools.command.build_ext import build_ext
+from glob import glob
 
 
 # Main source of the version. Dont rename
@@ -31,12 +32,10 @@ class CMakeAugmentedBuilder(build_ext):
         print("CWD: " + os.getcwd())
         for ext in self.extensions:
             if isinstance(ext, CMakeAugmentedExtension):
-                    # and not os.path.isdir(ext._lib_destination):
                 self.run_cmake(ext)
-                ext.include_dirs += [self.build_temp + "/" + inc_dir
+                ext.include_dirs += [os.path.join(self.build_temp, inc_dir)
                                      for inc_dir in ext.include_dirs
                                      if not os.path.isabs(inc_dir)]
-                print(ext.include_dirs)
             build_ext.run(self, *args, **kw)
 
     def run_cmake(self, ext):
@@ -108,14 +107,13 @@ def setup_package():
     docs_require = []  # sphinx, themes, etc
     maybe_docs = docs_require if "docs" in sys.argv else []
     maybe_test_runner = ['pytest-runner'] if "test" in sys.argv else []
-
     neuron_root = "install"
 
     setup(
         name='NEURON',
         version=__version__,
-        package_dir={'neuron': 'src/nrnpython'},
-        packages=['neuron'],
+        package_dir={'': 'share/lib/python'},
+        packages=find_packages('share/lib/python'),
         ext_modules=[
             CMakeAugmentedExtension("neuron.hoc", [
                     "src/nrnpython/inithoc.cpp"
@@ -128,6 +126,10 @@ def setup_package():
                     '-DLINK_AGAINST_PYTHON=OFF'
                 ],
                 library_dirs=[neuron_root + "/lib"],
+                runtime_library_dirs=[
+                    os.path.abspath(neuron_root + "/lib"),
+                    os.path.join(sys.prefix, 'lib')
+                ],
                 extra_link_args = [],
                 libraries = ["nrnpython{}".format(sys.version_info[0]), "nrniv"],
                 include_dirs = [
@@ -138,6 +140,12 @@ def setup_package():
                     "src/nrnmpi",
                 ],
                 define_macros="",
+            ),
+        ],
+        data_files = [
+            ('lib', ['install/lib/libnrniv.so',
+                     'install/lib/libnrnpython3.so',
+                     'install/lib/librxdmath.so']
             ),
         ],
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),

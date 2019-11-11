@@ -1,0 +1,7 @@
+include CMakeLists.txt
+include *.h *.in *.sh
+graft cmake
+graft src
+graft share
+graft bin
+
