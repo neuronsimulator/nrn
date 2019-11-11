@@ -33,7 +33,7 @@ option(NRN_ENABLE_MPI "Enable MPI support" ON)
 option(NRN_ENABLE_MEMACS "Enable use of memacs" ON)
 option(NRN_ENABLE_RX3D "Enable rx3d support" ON)
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ON)
-option(NRN_ENABLE_TESTS "Enable unit tests" ON)
+option(NRN_ENABLE_TESTS "Enable unit tests" OFF)
 
 # =============================================================================
 # Build options (string)

@@ -5,16 +5,16 @@ include_directories(${PROJECT_SOURCE_DIR}/test ${PROJECT_SOURCE_DIR}/src/nrnoc $
 # =============================================================================
 # Test executables
 # =============================================================================
-add_executable(testfactorial unit_test.cpp)
-target_compile_features(testfactorial PUBLIC cxx_std_11)
-target_link_libraries(testfactorial Catch2::Catch2 nrniv_lib)
+add_executable(testneuron unit_test.cpp)
+target_compile_features(testneuron PUBLIC cxx_std_11)
+target_link_libraries(testneuron Catch2::Catch2 nrniv_lib)
 
 # =============================================================================
 # Use catch_discover instead of add_test for granular test report if CMAKE ver is greater than 3.9,
 # else use the normal add_test method
 # =============================================================================
 foreach(test_name
-        testfactorial)
+        testneuron)
 
   if(${CMAKE_VERSION} VERSION_GREATER "3.10")
     catch_discover_tests(${test_name}
