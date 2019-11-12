@@ -17,14 +17,17 @@ class CMakeAugmentedExtension(Extension):
     def __init__(self,
                  name,
                  sources,
-                 lib_destination,
-                 cmake_proj_dir='',
+                 cmake_proj_dir="",
+                 cmake_install_prefix="install",
+                 cmake_ld_path = None,
                  cmake_flags=None,
+                 cmake_collect_dirs=None,
                  **kw):
         Extension.__init__(self, name, sources, **kw)
         self.sourcedir = os.path.abspath(cmake_proj_dir)
         self.cmake_flags = cmake_flags or []
-        self._lib_destination = lib_destination
+        self.cmake_install_prefix = cmake_install_prefix
+        self.cmake_collect_dirs = cmake_collect_dirs or []
 
 
 class CMakeAugmentedBuilder(build_ext):
@@ -33,14 +36,26 @@ class CMakeAugmentedBuilder(build_ext):
         for ext in self.extensions:
             if isinstance(ext, CMakeAugmentedExtension):
                 self.run_cmake(ext)
+                # AAdd the temp include paths
                 ext.include_dirs += [os.path.join(self.build_temp, inc_dir)
                                      for inc_dir in ext.include_dirs
                                      if not os.path.isabs(inc_dir)]
+
+                # Collect project files to be installed
+                data_files = getattr(self.distribution, 'data_files')
+                if data_files is None:
+                    data_files = self.distribution.data_files = []
+                for d in ext.cmake_collect_dirs:
+                    cdir = os.path.join(ext.cmake_install_prefix, d)
+                    cfiles = [os.path.join(cdir, f) for f in os.listdir(cdir)]
+                    data_files.append((d, cfiles))
+
+            print("Done building CMake project. Now building python extension")
             build_ext.run(self, *args, **kw)
 
     def run_cmake(self, ext):
         cmake = self._find_cmake()
-        self.outdir = os.path.abspath(ext._lib_destination)
+        self.outdir = os.path.abspath(ext.cmake_install_prefix)
         print("Building lib to:", self.outdir)
         cmake_args = [
             '-DCMAKE_INSTALL_PREFIX=' + self.outdir,
@@ -108,6 +123,7 @@ def setup_package():
     maybe_docs = docs_require if "docs" in sys.argv else []
     maybe_test_runner = ['pytest-runner'] if "test" in sys.argv else []
     neuron_root = "install"
+    target_rpath = os.path.join(sys.prefix, 'lib')
 
     setup(
         name='NEURON',
@@ -118,19 +134,21 @@ def setup_package():
             CMakeAugmentedExtension("neuron.hoc", [
                     "src/nrnpython/inithoc.cpp"
                 ],
-                lib_destination=neuron_root,
-                cmake_flags=[
+                cmake_install_prefix = neuron_root,
+                cmake_ld_path = "lib",
+                cmake_collect_dirs = ['bin', 'lib', 'include'],
+                cmake_flags = [
                     '-DNRN_ENABLE_CORENEURON=OFF',
                     '-DNRN_ENABLE_INTERVIEWS=OFF',
+                    '-DNRN_ENABLE_RX3D=OFF',
                     '-DNRN_ENABLE_PYTHON_DYNAMIC=ON',
                     '-DLINK_AGAINST_PYTHON=OFF'
                 ],
-                library_dirs=[neuron_root + "/lib"],
-                runtime_library_dirs=[
-                    os.path.abspath(neuron_root + "/lib"),
-                    os.path.join(sys.prefix, 'lib')
-                ],
-                extra_link_args = [],
+                library_dirs = [neuron_root + "/lib"],
+                runtime_library_dirs = ["../../../"],
+                extra_link_args = [
+                    "-Wl,-rpath,{}".format("@loader_path/../../../")
+                ] if sys.platform[:6] == "darwin" else [],
                 libraries = ["nrnpython{}".format(sys.version_info[0]), "nrniv"],
                 include_dirs = [
                     neuron_root + "/include",
@@ -139,13 +157,7 @@ def setup_package():
                     "src/nrnpython",
                     "src/nrnmpi",
                 ],
-                define_macros="",
-            ),
-        ],
-        data_files = [
-            ('lib', ['install/lib/libnrniv.so',
-                     'install/lib/libnrnpython3.so',
-                     'install/lib/librxdmath.so']
+                define_macros = ""
             ),
         ],
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),
