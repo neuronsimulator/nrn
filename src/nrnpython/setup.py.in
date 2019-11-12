@@ -105,11 +105,13 @@ defines = []
 if using_cmake:
     defines.append(("NRNCMAKE", "1"))
 
-@USING_CMAKE_FALSE@libdirs = [destdir + get_escaped_path("@NRN_LIBDIR@"),
-@USING_CMAKE_TRUE@libdirs = [destdir + get_escaped_path("@CMAKE_BINARY_DIR@/lib"),
+libdirs = [
+@USING_CMAKE_TRUE@  destdir + get_escaped_path("@CMAKE_BINARY_DIR@/lib"),
+  destdir + get_escaped_path("@NRN_LIBDIR@"),
   ivlibdir
 ]
 epre='-Wl,-R'
+extra_linker_rpath_args = [epre+dir_path for dir_path in libdirs]
 
 @MAC_DARWIN_FALSE@readline="readline@READLINE_SOSUFFIX@"
 @MAC_DARWIN_TRUE@readline="readline@READLINE_SOSUFFIX@"
@@ -129,7 +131,7 @@ hoc_module = Extension(
     ["inithoc.cpp"],
     library_dirs=libdirs,
     @MAC_DARWIN_TRUE@extra_link_args = extra_link_args,
-    @setup_extra_link_args@ = [ epre+libdirs[0],epre+libdirs[1] ],
+    @setup_extra_link_args@ = extra_linker_rpath_args,
     #extra_objects = [],
     libraries = libs if using_cmake else [
         "nrnpython@npy_pyver10@",
