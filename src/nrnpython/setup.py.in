@@ -106,7 +106,6 @@ if using_cmake:
     defines.append(("NRNCMAKE", "1"))
 
 libdirs = [
-@USING_CMAKE_TRUE@  destdir + get_escaped_path("@CMAKE_BINARY_DIR@/lib"),
   destdir + get_escaped_path("@NRN_LIBDIR@"),
   ivlibdir
 ]
