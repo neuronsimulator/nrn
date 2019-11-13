@@ -9,6 +9,11 @@ cimport cython
 from neuron.rxd.rxdException import RxDException
 import neuron
 
+
+"""
+The ctgn module
+"""
+
 cdef extern from "math.h":
     double sqrt(double)
     double fabs(double)
@@ -42,20 +47,20 @@ cdef tuple closest_pt(pt, list pts, z2):
 cdef double project(double fromx, double fromy, double fromz, double tox, double toy, double toz):
     """scalar projection"""
     return (fromx * tox + fromy * toy + fromz * toz) / (tox ** 2 + toy ** 2 + toz ** 2) ** 0.5
-    
+
 cdef tuple extreme_pts(list pts):
     if len(pts) < 2: raise Exception('extreme points computation failed')
     cdef double max_dist, d
     cdef tuple pt1, pt2, best_p1, best_p2
     max_dist = -1
-    
+
     for pt1, pt2 in itertools.combinations(pts, 2):
         d = linalg.norm(numpy.array(pt1) - numpy.array(pt2))
         if d > max_dist:
             best_p1 = pt1
             best_p2 = pt2
             max_dist = d
-    return best_p1, best_p2 
+    return best_p1, best_p2
 
 # helper function for maintaing the points-cones database
 cdef register(dict pts_cones_db, tuple pt, cone):
@@ -110,7 +115,7 @@ cdef tangent_sphere(cone, int whichend):
 cdef tuple get_infinite_cones(double x0, double y0, double z0, double r0, double x1, double y1, double z1, double r1, double x2, double y2, double z2, double r2):
     cdef double deltar, deltanr
     cdef numpy.ndarray[numpy.float_t, ndim=1] axis, naxis
-    
+
     axis = numpy.array([x2 - x1, y2 - y1, z2 - z1])
     naxis = numpy.array([x1 - x0, y1 - y0, z1 - z0])
     deltar = r2 - r1; deltanr = r1 - r0
@@ -155,7 +160,7 @@ cdef list join_outside(double x0, double y0, double z0, double r0, double x1, do
     #
     sp = Sphere(x1, y1, z1, r1)
     sp.set_clip([Intersection([c0, c1])])
-    
+
     result = [sp]
     # check to see if the clipped sphere covers the ends of the cones
     # if not, do something else :)
@@ -195,12 +200,12 @@ cdef list join_outside(double x0, double y0, double z0, double r0, double x1, do
             Plane(x1, y1, z1, -naxis[0], -naxis[1], -naxis[2])])])
     else:
         raise Exception('unexpected corner_counts?')
-    
+
     return result
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform=False, relevant_pts=None):    
+def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform=False, relevant_pts=None):
     cdef list objects = []
     cdef list soma_objects = []
     cdef dict cone_segment_dict = {}
@@ -216,7 +221,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
     cdef tuple pt
     #cdef numpy.ndarray[numpy.float_t, ndim=1] x, y, z, xs_loop, ys_loop
     cdef int no_parent_count = 0
-    
+
     source_is_import3d = False
     num_contours = None
     # TODO: come up with a better way of checking type
@@ -224,7 +229,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
         source_is_import3d = True
         cell = source
         # probably an Import3D type
-        num_contours = sum(sec.iscontour_ for sec in cell.sections)        
+        num_contours = sum(sec.iscontour_ for sec in cell.sections)
         if num_contours > 1:
             raise Exception('more than one contour is not currently supported')
         if num_contours <= 1:
@@ -236,12 +241,12 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
                 if sec.iscontour_:
                     soma_sec = sec.hname()
                     x, y, z = [sec.raw.getrow(i).to_python() for i in xrange(3)]
-                    
+
                     # compute the center of the contour based on uniformly spaced points around the perimeter
                     center_vec = sec.contourcenter(sec.raw.getrow(0), sec.raw.getrow(1), sec.raw.getrow(2))
                     x0, y0, z0 = [center_vec.x[i] for i in xrange(3)]
                     somax, somay, somaz = x0, y0, z0
-                    
+
                     xshifted = [xx - x0 for xx in x]
                     yshifted = [yy - y0 for yy in y]
                     # this is a hack to pretend everything is on the same z level
@@ -263,13 +268,13 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
                     minor = m.getcol(3 - tobj.min_ind() - tobj.max_ind())
                     #minor.x[2] = 0
                     minor.div(minor.mag())
-                    
+
                     x1 = x0; y1 = y0
                     x2 = x1 + major.x[0]; y2 = y1 + major.x[1]
-                    
+
                     xs_loop = x + [x[0]]
                     ys_loop = y + [y[0]]
-                    
+
                     # locate the extrema of the major axis CTNG:somaextrema
                     # this is defined by the furthest points on it that lie on the minor axis
                     pts = []
@@ -284,13 +289,13 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
                             pts_sources[pt].append((x3, y3))
 
                     major_p1, major_p2 = extreme_pts(pts)
-                    
+
                     extreme1 = pts_sources[major_p1]
                     extreme2 = pts_sources[major_p2]
 
                     major_p1, major_p2 = numpy.array(major_p1), numpy.array(major_p2)
                     del pts_sources
-                    
+
                     if len(extreme1) != 1 or len(extreme2) != 1:
                         raise Exception('multiple most extreme points')
                     extreme1 = extreme1[0]
@@ -299,10 +304,10 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
                     delta_x, delta_y = major_p2 - major_p1
                     delta_x /= n_soma_step
                     delta_y /= n_soma_step
-                    
+
                     f_pts = [extreme1]
                     f_diams = [0]
-                    
+
                     # CTNG:slicesoma
                     for i in xrange(1, n_soma_step):
                         x0, y0 = major_p1[0] + i * delta_x, major_p1[1] + i * delta_y
@@ -317,13 +322,13 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
                         cx, cy = (p1 + p2) / 2.
                         f_pts.append((cx, cy))
                         f_diams.append(linalg.norm(p1 - p2))
-                    
+
                     f_pts.append(extreme2)
                     f_diams.append(0)
-                          
-                    segment_locs = [];            # location along soma for assigning segments 
-                    path_length = 0; 
-                    margin = 1/(sec.nseg()*2)   # half a segment, normalized length          
+
+                    segment_locs = [];            # location along soma for assigning segments
+                    path_length = 0;
+                    margin = 1/(sec.nseg()*2)   # half a segment, normalized length
                     for i in xrange(len(f_pts) - 1):
                         pt1x, pt1y = f_pts[i]
                         pt2x, pt2y = f_pts[i + 1]
@@ -341,14 +346,14 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
                         for seg in sec:
                             if numpy.abs(seg.x - loc) <= margin:
                                 cone_segment_dict[s] = seg      # for now in same seg dict; change this
-                                break;         
+                                break;
                 else:
                     if sec.parentsec is not None:
                         parent_sec_name.append(sec.parentsec.hname())
                     else:
                         parent_sec_name.append(no_parent_count)
                         no_parent_count += 1
-                    branches.append(sec) 
+                    branches.append(sec)
 
     else:
         h.define_shape()
@@ -381,7 +386,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
                 rng = relevant_pts[k]
             else:
                 rng = range(branch.n3d())
-            
+
             arc3d = ([branch.arc3d(i) for i in rng])
             diam3d = ([branch.diam3d(i) for i in rng])
             x3d = ([branch.x3d(i) for i in rng])
@@ -400,7 +405,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
                 hi = (iseg + 1) * dx
 
                 pts = [lo] + [arc for arc in arc3d if lo < arc < hi] + [hi]
-                
+
                 diams = numpy.interp(pts, arc3d, diam3d)
                 xcoords = numpy.interp(pts, arc3d, x3d)
                 ycoords = numpy.interp(pts, arc3d, y3d)
@@ -416,14 +421,14 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
                 d = numpy.append(d, diams[0:end])
 
                 for i in range(len(pts)-1):
-                    #find the cone and assign it to that segment 
+                    #find the cone and assign it to that segment
                     conecoords = (xcoords[i],ycoords[i],zcoords[i],xcoords[i+1],ycoords[i+1],zcoords[i+1])
                     cone_segment_dict[conecoords] = seg
             ##########################################################
 
             """if source_is_import3d:
                 x, y, z = [numpy.array(branch.raw.getrow(i).to_python()) for i in range(3)]
-                d = branch.d.to_python() """   
+                d = branch.d.to_python() """
 
             # make sure that all the ones that connect to the soma do in fact connect
             # do this by connecting to local center axis
@@ -438,7 +443,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
                 x[0], y[0] = cp
                 z[0] = somaz
                 d[0] = d[1]
-                
+
                 '''# cap this with a sphere for smooth joins
                 sphere_cap = Sphere(x[0], y[0], z[0], d[0] * 0.5)
                 # make sure sphere doesn't stick out of wrong side of cylinder
@@ -446,7 +451,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
                 objects.append(sphere_cap)
                 with cython.wraparound(True):
                     soma_objects.append(objects[-1])'''
-            
+
 
             for i in range(len(x) - 1):
                 d0, d1 = d[i : i + 2]
@@ -463,7 +468,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
                         d0 = diam_corrections[(x0, y0, z0)]
                     if (x1, y1, z1) in diam_corrections:
                         d1 = diam_corrections[(x1, y1, z1)]
-                    
+
                     if d0 != d1:
                         all_cones.append(Cone(x0, y0, z0, d0 * 0.5, x1, y1, z1, d1 * 0.5))
                     else:
@@ -473,7 +478,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
                         register(pts_cones_db, (x1, y1, z1), all_cones[-1])
                     register(diam_db, (x0, y0, z0), d0)
                     register(diam_db, (x1, y1, z1), d1)
-        
+
         diam_corrections = {}
         if not nouniform:
             # at join, should always be the size of the biggest branch
@@ -483,7 +488,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
                 vals = diam_db[pt]
                 if max(vals) != min(vals):
                     diam_corrections[pt] = max(vals)
-       
+
 
 
     cdef dict cone_clip_db = {cone: [] for cone in all_cones}
@@ -502,7 +507,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
         right_neighbors = list(pts_cones_db[(x2, y2, z2)])
         left_neighbors.remove(cone)
         right_neighbors.remove(cone)
-        if not left_neighbors: 
+        if not left_neighbors:
             left_neighbors = [None]
         else:
             joingroup.append(cone)
@@ -522,9 +527,9 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
                 pt0 = numpy.array([x0, y0, z0])
                 naxis = (pt1 - pt0) / linalg.norm(pt1 - pt0)
                 # no need to clip if the cones are perfectly aligned
-                
+
                 if all(axis == naxis):
-                    #parallel    
+                    #parallel
                     sp = Sphere(x1, y1, z1, r1)
                     c0, c1 = get_infinite_cones(x0, y0, z0, r0, x1, y1, z1, r1, x2, y2, z2, r2)
 
@@ -600,7 +605,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
                                     obj_pts_dict[objects[-1]] = corner_pts
 
 
-                            
+
                     elif corner_count == 4:
                         sp = Sphere(x1, y1, z1, r1)
                         if sharp_turn:
@@ -631,7 +636,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
 
 #                        join_type = '%d%s' % (corner_count, 's' if sharp_turn else 'm')
 #                        join_counts[join_type] += 1
-        
+
 
 
 
@@ -643,17 +648,17 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
                     x3, y3, z3, r3 = neighbor_right._x1, neighbor_right._y1, neighbor_right._z1, neighbor_right._r1
                 pt3 = numpy.array([x3, y3, z3])
                 naxis = (pt3 - pt2) / linalg.norm(pt3 - pt2)
-                
+
                 # no need to clip if the cones are perfectly aligned
                 if any(axis != naxis):
                     # locate key vectors
                     plane_normal = numpy.cross(axis, naxis)
                     radial_vec = numpy.cross(plane_normal, axis)
                     radial_vec_norm = linalg.norm(radial_vec)
-                    
+
                     # we check again because sometimes there are roundoff errors that this catches
-                    if radial_vec_norm:                
-                    
+                    if radial_vec_norm:
+
                         # is the turn sharp or not
                         sharp_turn = numpy.dot(axis, naxis) < 0
 
@@ -668,7 +673,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
                             # no clipping; already joined
                             pass
                         elif corner_count == 3:
-                            pass                        
+                            pass
 
                         elif corner_count == 4:
                             # CTNG:4outacute (+ 1 more)
@@ -682,22 +687,22 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
                                 clips.append(Union([
                                     Plane(x2, y2, z2, naxis[0], naxis[1], naxis[2]),
                                     neighbor_copy]))
-                            
-            
-            
+
+
+
             if clips:
                 int_clip = Intersection(clips)
                 cone_clip_db[cone].append(int_clip)
 
         if joingroup:
             join_groups.append(joingroup)
-    
+
     for cone in all_cones:
         clip = cone_clip_db[cone]
         if clip:
             cone.set_clip([Union(clip)])
-            
-        
+
+
     #####################################################################
     #
     # add the clipped objects to the list
