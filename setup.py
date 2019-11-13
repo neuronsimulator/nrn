@@ -8,6 +8,13 @@ from setuptools import setup, find_packages
 from setuptools.command.build_ext import build_ext
 from glob import glob
 
+RX3D = True
+
+if RX3D:
+    from Cython.Distutils import Extension as CyExtension
+    from Cython.Distutils import build_ext
+    import numpy
+
 
 # Main source of the version. Dont rename
 __version__ = '7.8'
@@ -49,9 +56,10 @@ class CMakeAugmentedBuilder(build_ext):
                     cdir = os.path.join(ext.cmake_install_prefix, d)
                     cfiles = [os.path.join(cdir, f) for f in os.listdir(cdir)]
                     data_files.append((d, cfiles))
+                print("Done building CMake project. Now building python extension")
 
-            print("Done building CMake project. Now building python extension")
-            build_ext.run(self, *args, **kw)
+        build_ext.run(self, *args, **kw)
+
 
     def run_cmake(self, ext):
         cmake = self._find_cmake()
@@ -64,7 +72,7 @@ class CMakeAugmentedBuilder(build_ext):
 
         cfg = 'Debug' if self.debug else 'Release'
         cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
-        build_args = ['--config', cfg, '--', '-j24']
+        build_args = ['--config', cfg, '--', '-j4']
 
         env = os.environ.copy()
         env['CXXFLAGS'] = "{} -static-libstdc++ -DVERSION_INFO='{}'".format(
@@ -122,44 +130,86 @@ def setup_package():
     docs_require = []  # sphinx, themes, etc
     maybe_docs = docs_require if "docs" in sys.argv else []
     maybe_test_runner = ['pytest-runner'] if "test" in sys.argv else []
+
+    py_packages=[
+        'neuron',
+        'neuron.neuroml',
+        'neuron.tests',
+        'neuron.rxd',
+        'neuron.crxd',
+        'neuron.gui2'
+    ] + ["neuron.rxd.geometry3d"] if RX3D else []
+
     neuron_root = "install"
-    target_rpath = os.path.join(sys.prefix, 'lib')
+
+    extension_common_params = dict(
+        library_dirs = [neuron_root + "/lib"],
+        runtime_library_dirs = ["../../../"],
+        extra_link_args = [
+            "-Wl,-rpath,{}".format("@loader_path/../../../")
+        ] if sys.platform[:6] == "darwin" else [],
+        libraries = ["nrnpython{}".format(sys.version_info[0]), "nrniv"],
+    )
+
+    extensions = [CMakeAugmentedExtension(
+        "neuron.hoc",
+        ["src/nrnpython/inithoc.cpp"],
+        cmake_install_prefix = neuron_root,
+        cmake_ld_path = "lib",
+        cmake_collect_dirs = ['bin', 'lib', 'include'],
+        cmake_flags = [
+            '-DNRN_ENABLE_CORENEURON=OFF',
+            '-DNRN_ENABLE_INTERVIEWS=OFF',
+            '-DNRN_ENABLE_RX3D=OFF',
+            '-DNRN_ENABLE_PYTHON_DYNAMIC=ON',
+            '-DLINK_AGAINST_PYTHON=OFF'
+        ],
+        include_dirs = [
+            neuron_root + "/include",
+            "src",
+            "src/oc",
+            "src/nrnpython",
+            "src/nrnmpi",
+        ],
+        define_macros = "",
+        **extension_common_params
+    )]
+
+    if RX3D:
+        include_dirs = [
+            "share/lib/python/neuron/rxd/geometry3d",
+            numpy.get_include()
+        ]
+        extension_common_params['libraries'].append("rxdmath")
+
+        extensions += [
+            CyExtension("neuron.rxd.geometry3d.graphicsPrimitives", [
+                    "share/lib/python/neuron/rxd/geometry3d/graphicsPrimitives.pyx"
+                ],
+                **extension_common_params
+            ),
+            CyExtension("neuron.rxd.geometry3d.ctng", [
+                    "share/lib/python/neuron/rxd/geometry3d/ctng.pyx"
+                ],
+                include_dirs=include_dirs,
+                **extension_common_params
+            ),
+            CyExtension("neuron.rxd.geometry3d.surfaces", [
+                    "share/lib/python/neuron/rxd/geometry3d/surfaces.pyx",
+                    "src/nrnpython/rxd_marching_cubes.c",
+                    "src/nrnpython/rxd_llgramarea.c"
+                ],
+                include_dirs=include_dirs,
+                **extension_common_params
+            )
+        ]
 
     setup(
         name='NEURON',
         version=__version__,
         package_dir={'': 'share/lib/python'},
-        packages=find_packages('share/lib/python'),
-        ext_modules=[
-            CMakeAugmentedExtension("neuron.hoc", [
-                    "src/nrnpython/inithoc.cpp"
-                ],
-                cmake_install_prefix = neuron_root,
-                cmake_ld_path = "lib",
-                cmake_collect_dirs = ['bin', 'lib', 'include'],
-                cmake_flags = [
-                    '-DNRN_ENABLE_CORENEURON=OFF',
-                    '-DNRN_ENABLE_INTERVIEWS=OFF',
-                    '-DNRN_ENABLE_RX3D=OFF',
-                    '-DNRN_ENABLE_PYTHON_DYNAMIC=ON',
-                    '-DLINK_AGAINST_PYTHON=OFF'
-                ],
-                library_dirs = [neuron_root + "/lib"],
-                runtime_library_dirs = ["../../../"],
-                extra_link_args = [
-                    "-Wl,-rpath,{}".format("@loader_path/../../../")
-                ] if sys.platform[:6] == "darwin" else [],
-                libraries = ["nrnpython{}".format(sys.version_info[0]), "nrniv"],
-                include_dirs = [
-                    neuron_root + "/include",
-                    "src",
-                    "src/oc",
-                    "src/nrnpython",
-                    "src/nrnmpi",
-                ],
-                define_macros = ""
-            ),
-        ],
+        packages=py_packages,
+        ext_modules=extensions,
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),
         include_package_data=True,
         install_requires=['numpy>=1.13.1'],
