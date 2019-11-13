@@ -9,6 +9,7 @@
 sudo: false
 language: cpp
 dist: bionic
+osx_image: xcode10.2
 
 #=============================================================================
 # Common Packages
@@ -26,15 +27,21 @@ addons:
         - openmpi-bin
         - libx11-dev
         - libxcomposite-dev
+    homebrew:
+      packages:
+        - python3-pip
+        - python-pip
+        - python3-scipy
+        - python-scipy
+        - python3-tk
+        - python-tk
+        - openmpi
 virtualenv:
     system_site_packages: true
 
 #=============================================================================
 # Configure build matrix and corresponding environment
 #=============================================================================
-compiler:
-  - clang
-  - gcc
 env:
   global:
     - PYTHON="$(which python3)"
@@ -64,6 +71,7 @@ env:
       CMAKE_OPTION="-DNRN_ENABLE_CORENEURON=OFF"
 os:
   - linux
+  - osx
 
 #=============================================================================
 # Setup environment and Install dependencies
