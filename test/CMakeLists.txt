@@ -9,6 +9,11 @@ add_executable(testneuron unit_test.cpp)
 target_compile_features(testneuron PUBLIC cxx_std_11)
 target_link_libraries(testneuron Catch2::Catch2 nrniv_lib)
 
+set(TEST_ENV PYTHONPATH=${PROJECT_BINARY_DIR}/lib/python:$ENV{PYTHONPATH}
+        NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn
+        LD_LIBRARY_PATH=${PROJECT_BINARY_DIR}/lib:$ENV{LD_LIBRARY_PATH}
+        DYLD_LIBRARY_PATH=${PROJECT_BINARY_DIR}/lib:$ENV{DYLD_LIBRARY_PATH})
+
 # =============================================================================
 # Use catch_discover instead of add_test for granular test report if CMAKE ver is greater than 3.9,
 # else use the normal add_test method
@@ -30,6 +35,8 @@ endforeach()
 # =============================================================================
 set(RINGTEST_DIR ${PROJECT_SOURCE_DIR}/test/ringtest)
 add_test(NAME ringtest COMMAND ${CMAKE_BINARY_DIR}/bin/nrniv -python ${RINGTEST_DIR}/ringtest.py -tstop 100 WORKING_DIRECTORY ${RINGTEST_DIR})
+set_tests_properties(ringtest
+        PROPERTIES ENVIRONMENT "${TEST_ENV}")
 
 # =============================================================================
 # Add small hoc test
@@ -44,4 +51,6 @@ add_test(NAME testconnectdend COMMAND ${CMAKE_BINARY_DIR}/bin/nrniv ${HOCTEST_DI
 if(PYTEST_FOUND)
   add_test(NAME Basic_tests
            COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/pynrn)
+  set_tests_properties(Basic_tests
+          PROPERTIES ENVIRONMENT "${TEST_ENV}")
 endif()
