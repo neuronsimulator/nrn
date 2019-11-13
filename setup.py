@@ -25,7 +25,7 @@ class CMakeAugmentedExtension(Extension):
                  name,
                  sources,
                  cmake_proj_dir="",
-                 cmake_install_prefix="install",
+                 cmake_install_prefix="_install",
                  cmake_ld_path = None,
                  cmake_flags=None,
                  cmake_collect_dirs=None,
@@ -75,9 +75,8 @@ class CMakeAugmentedBuilder(build_ext):
         build_args = ['--config', cfg, '--', '-j4']
 
         env = os.environ.copy()
-        env['CXXFLAGS'] = "{} -static-libstdc++ -DVERSION_INFO='{}'".format(
-            env.get('CXXFLAGS', ''),
-            self.distribution.get_version())
+        env['CXXFLAGS'] = "{} -DVERSION_INFO='{}'".format(env.get('CXXFLAGS', ''),
+                                                          self.distribution.get_version())
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
         try:
@@ -140,14 +139,16 @@ def setup_package():
         'neuron.gui2'
     ] + ["neuron.rxd.geometry3d"] if RX3D else []
 
-    neuron_root = "install"
+    neuron_root = "_install"
 
     extension_common_params = dict(
         library_dirs = [neuron_root + "/lib"],
-        runtime_library_dirs = ["../../../"],
+        runtime_library_dirs = [],  # Neuron libraries get copied
         extra_link_args = [
             "-Wl,-rpath,{}".format("@loader_path/../../../")
-        ] if sys.platform[:6] == "darwin" else [],
+        ] if sys.platform[:6] == "darwin" else [
+            "-Wl,-rpath,{}".format("$ORIGIN/../../../")
+        ]
         libraries = ["nrnpython{}".format(sys.version_info[0]), "nrniv"],
     )
 
