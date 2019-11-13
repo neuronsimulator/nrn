@@ -9,6 +9,7 @@
 sudo: false
 language: cpp
 dist: bionic
+osx_image: xcode10.2
 
 #=============================================================================
 # Common Packages
@@ -26,44 +27,46 @@ addons:
         - openmpi-bin
         - libx11-dev
         - libxcomposite-dev
+    homebrew:
+      packages:
+        - cython
+        - openmpi
+        - xz
 virtualenv:
     system_site_packages: true
 
 #=============================================================================
 # Configure build matrix and corresponding environment
 #=============================================================================
-compiler:
-  - clang
-  - gcc
 env:
   global:
-    - PYTHON="$(which python3)"
-    - PIP="$(which pip3)"
+    - PYTHON="$(pyenv which python3)"
+    - PIP="$(pyenv which pip3)"
     - PYTHON_VERSION=3.7.1
     - INSTALL_DIR="$HOME/install"
   jobs:
-    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2) PYTHON_BLD=$(which python2)"
-      PYTHON="$(which python2)"
-      PIP="$(which pip)"
+    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(pyenv which python2) PYTHON_BLD=$(pyenv which python2)"
+      PYTHON="$(pyenv which python2)"
+      PIP="$(pyenv which pip)"
       PYTHON_VERSION=2.7.15
-    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python3)"
-      PYTHON="$(which python3)"
-      PIP="$(which pip3)"
+    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(pyenv which python3)"
+      PYTHON="$(pyenv which python3)"
+      PIP="$(pyenv which pip3)"
       PYTHON_VERSION=3.7.1
     - BUILD_MODE=cmake
-      CMAKE_OPTION="-DNRN_ENBALE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON"
+      CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=ON"
     - BUILD_MODE=cmake
-      CMAKE_OPTION="-DNRN_ENBALE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF"
+      CMAKE_OPTION="-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON"
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=OFF"
     - BUILD_MODE=cmake
       NRN_ENABLE_PYTHON_DYNAMIC=ON
     - BUILD_MODE=cmake
       CMAKE_OPTION="-DNRN_ENABLE_PYTHON=OFF"
-    - BUILD_MODE=cmake
-      CMAKE_OPTION="-DNRN_ENABLE_CORENEURON=ON"
-    - BUILD_MODE=cmake
-      CMAKE_OPTION="-DNRN_ENABLE_CORENEURON=OFF"
+
 os:
-  - linux
+#  - linux
+  - osx
 
 #=============================================================================
 # Setup environment and Install dependencies
@@ -73,6 +76,14 @@ before_install:
   - echo $LC_ALL
   - $CXX -v
   - export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python/;
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+      ln -s /usr/local/bin/greadlink /usr/local/bin/readlink;
+      if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
+        CPPFLAGS="-I$(brew --prefix zlib)/include" pyenv install 2.7.15 && CPPFLAGS="-I$(brew --prefix zlib)/include" pyenv install 3.7.1;
+      else
+        CPPFLAGS="-I$(brew --prefix zlib)/include" pyenv install $PYTHON_VERSION;
+      fi
+    fi
   - if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
       pyenv global 2.7.15 3.7.1;
     else
@@ -80,11 +91,19 @@ before_install:
     fi
 install:
   - $PIP install --user scipy matplotlib bokeh ipython cython --upgrade;
+  # mac brew installed cython is not in $PATH
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+      export PATH=/usr/local/opt/cython/bin:$PATH;
+      echo $PATH;
+    fi
 
 #=============================================================================
 # Build, install and test
 #=============================================================================
 script:
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+      export CONFIG_OPTIONS="$CONFIG_OPTIONS --with-readline=no";
+    fi
   - if [ "$BUILD_MODE" == "cmake" ]; then
       if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
         export PYTHON2=$(pyenv which python2.7);
@@ -110,6 +129,6 @@ script:
         $PYTHON --version && $PYTHON -c 'import neuron; neuron.test()';
       fi;
     fi;
-  - if [ "$BUILD_MODE" != "cmake" ] ; then
+  - if [ "$BUILD_MODE" != "cmake" &&  "$TRAVIS_OS_NAME" != "osx"]; then
       $PYTHON share/lib/python/neuron/rxdtests/run_all.py;
     fi;

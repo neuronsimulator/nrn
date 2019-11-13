@@ -34,6 +34,10 @@ build() {
     mkdir -p build
     pushd build
     configure "$CONFIGURE"
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      # create workaround setup.cfg for installing python package in mac os
+      echo $'[install]\nprefix='>src/nrnpython/setup.cfg
+    fi
     make install
     popd
 }
