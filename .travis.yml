@@ -98,9 +98,8 @@ script:
              NEURONHOME=`pwd`/share/nrn  PYTHONPATH=`pwd`/lib/python PATH=`pwd`/bin LD_LIBRARY_PATH=`pwd`/lib DYLD_LIBRARY_PATH=`pwd`/lib $PYTHON2 -c "from neuron import h; import neuron; neuron.test()";
              NEURONHOME=`pwd`/share/nrn  PYTHONPATH=`pwd`/lib/python PATH=`pwd`/bin LD_LIBRARY_PATH=`pwd`/lib DYLD_LIBRARY_PATH=`pwd`/lib $PYTHON3 -c "from neuron import h; import neuron; neuron.test()";
       fi;
-      make install;
-      cd ..;
       export PATH=$INSTALL_DIR/bin:$PATH;
+      ctest -VV && make install;
     else
       export PATH=$INSTALL_DIR/x86_64/bin:$PATH;
       ./travis_build.sh $INSTALL_DIR;
