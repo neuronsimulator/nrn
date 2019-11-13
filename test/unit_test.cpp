@@ -8,12 +8,19 @@ extern "C" {
 #include "../src/nrnoc/section.h"
 #include "../src/nrnoc/neuron.h"
 
+extern void nrn_threads_free();
 extern void nrn_threads_create(int, int);
 extern void nrn_threads_free();
 }
 
 /// Needed for compilation
 void modl_reg() { }
+extern int nrn_nthread;
+extern NrnThread* nrn_threads;
+
+extern int nrn_use_fast_imem;
+extern int use_cachevec;
+
 
 TEST_CASE("Test hoc interpreter", "[Neuron][hoc_interpreter]") {
     hoc_init_space();
