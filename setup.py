@@ -54,7 +54,9 @@ class CMakeAugmentedBuilder(build_ext):
                     data_files = self.distribution.data_files = []
                 for d in ext.cmake_collect_dirs:
                     cdir = os.path.join(ext.cmake_install_prefix, d)
-                    cfiles = [os.path.join(cdir, f) for f in os.listdir(cdir)]
+                    cfiles = [os.path.join(cdir, f)
+                              for f in os.listdir(cdir)
+                              if os.path.isfile(f)]
                     data_files.append((d, cfiles))
                 print("Done building CMake project. Now building python extension")
 
@@ -151,7 +153,7 @@ def setup_package():
         ] if sys.platform[:6] == "darwin" else [
             "-Wl,-rpath,{}".format("$ORIGIN/../../../")
         ],
-        libraries = ["nrnpython{}".format(sys.version_info[0]), "nrniv"],
+        libraries = ["nrniv"]  # "nrnpython{}".format(sys.version_info[0]), "nrniv"],
     )
 
     extensions = [CMakeAugmentedExtension(
@@ -159,14 +161,14 @@ def setup_package():
         ["src/nrnpython/inithoc.cpp"],
         cmake_install_prefix = neuron_root,
         cmake_ld_path = "lib",
-        cmake_collect_dirs = ['bin', 'lib', 'include'],
+        cmake_collect_dirs = ['bin', 'lib', 'include', 'share/nrn/lib/hoc', 'share/nrn/lib'],
         cmake_flags = [
             '-DNRN_ENABLE_CORENEURON=OFF',
             '-DNRN_ENABLE_INTERVIEWS=OFF',
             '-DNRN_ENABLE_RX3D=OFF',
-            '-DNRN_ENABLE_PYTHON_DYNAMIC=ON',
+            '-DNRN_ENABLE_PYTHON_DYNAMIC=OFF',
             '-DNRN_ENABLE_MPI=OFF'
-            '-DLINK_AGAINST_PYTHON=OFF',
+            # '-DLINK_AGAINST_PYTHON=OFF',
         ],
         include_dirs = [
             neuron_root + "/include",
