@@ -112,12 +112,11 @@ class CMakeAugmentedBuilder(build_ext):
     def patch_for_pip(self, ext):
         import fileinput
         init_py = "share/lib/python/neuron/__init__.py"
-        with fileinput.FileInput(init_py, inplace=True, backup='.bak') as file:
-            for line in file:
-                if "was_pip_installed = False" in line:
-                    print("was_pip_installed = True")
-                else:
-                    print(line, end='')
+        for line in fileinput.input(init_py, inplace=True):
+            if "was_pip_installed = False" in line:
+                print("was_pip_installed = True")
+            else:
+                sys.stdout.write(line)
 
 
 class Docs(Command):
