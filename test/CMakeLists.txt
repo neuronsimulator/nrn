@@ -35,7 +35,9 @@ endforeach()
 # =============================================================================
 set(RINGTEST_DIR ${PROJECT_SOURCE_DIR}/test/ringtest)
 add_test(NAME ringtest COMMAND ${CMAKE_BINARY_DIR}/bin/nrniv ${RINGTEST_DIR}/ring.hoc
-  WORKING_DIRECTORY ${RINGTEST_DIR})
+         WORKING_DIRECTORY ${RINGTEST_DIR})
+set_tests_properties(ringtest
+        PROPERTIES ENVIRONMENT "${TEST_ENV}")
 
 
 # =============================================================================
