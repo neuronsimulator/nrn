@@ -34,9 +34,9 @@ endforeach()
 # Add ringtest (to run python test make install must be run first)
 # =============================================================================
 set(RINGTEST_DIR ${PROJECT_SOURCE_DIR}/test/ringtest)
-add_test(NAME ringtest COMMAND ${CMAKE_BINARY_DIR}/bin/nrniv -python ${RINGTEST_DIR}/ringtest.py -tstop 100 WORKING_DIRECTORY ${RINGTEST_DIR})
-set_tests_properties(ringtest
-        PROPERTIES ENVIRONMENT "${TEST_ENV}")
+add_test(NAME ringtest COMMAND ${CMAKE_BINARY_DIR}/bin/nrniv ${RINGTEST_DIR}/ring.hoc
+  WORKING_DIRECTORY ${RINGTEST_DIR})
+
 
 # =============================================================================
 # Add small hoc test
