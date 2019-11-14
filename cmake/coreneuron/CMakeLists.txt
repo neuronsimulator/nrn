@@ -70,6 +70,10 @@ set(LIKWID_DIR "" CACHE PATH "Path to likwid performance analysis suite")
 set(CORENRN_FRONTEND_C_COMPILER gcc CACHE FILEPATH "C compiler for building mod2c [frontend]")
 set(CORENRN_FRONTEND_CXX_COMPILER g++ CACHE FILEPATH "C++ compiler for building mod2c [frontend]")
 
+if (CORENEURON_AS_SUBPROJECT)
+  set(CORENRN_ENABLE_UNIT_TESTS OFF)
+endif()
+
 # =============================================================================
 # Include cmake modules after cmake options
 # =============================================================================
@@ -209,8 +213,11 @@ endif()
 # =============================================================================
 add_subdirectory(coreneuron)
 add_subdirectory(apps)
-add_subdirectory(tests)
 add_subdirectory(extra)
+
+if(CORENRN_ENABLE_UNIT_TESTS)
+  add_subdirectory(tests)
+endif()
 
 # =============================================================================
 # Install cmake modules
