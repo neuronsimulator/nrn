@@ -43,9 +43,27 @@ env:
     - PYTHON_VERSION=3.7.1
     - INSTALL_DIR="$HOME/install"
   jobs:
+    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2) PYTHON_BLD=$(which python2)"
+      PYTHON="$(which python2)"
+      PIP="$(which pip)"
+      PYTHON_VERSION=2.7.15
+    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python3)"
+      PYTHON="$(which python3)"
+      PIP="$(which pip3)"
+      PYTHON_VERSION=3.7.1
     - BUILD_MODE=cmake
-      CMAKE_OPTION="-DNRN_ENBALE_MPI=ON -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=OFF"
+      CMAKE_OPTION="-DNRN_ENBALE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON"
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENBALE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF"
+    - BUILD_MODE=cmake
+      NRN_ENABLE_PYTHON_DYNAMIC=ON
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENABLE_PYTHON=OFF"
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENABLE_CORENEURON=ON"
       BUILD_DOCUMENTATION=ON
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENABLE_CORENEURON=OFF"
 os:
   - linux
 
