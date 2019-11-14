@@ -67,7 +67,8 @@ class CMakeAugmentedBuilder(build_ext):
         print("Building lib to:", self.outdir)
         cmake_args = [
             '-DCMAKE_INSTALL_PREFIX=' + self.outdir,
-            '-DPYTHON_EXECUTABLE=' + sys.executable
+            '-DPYTHON_EXECUTABLE=' + sys.executable,
+            '-DNRN_ENABLE_MPI=OFF'
         ] + ext.cmake_flags
 
         cfg = 'Debug' if self.debug else 'Release'
