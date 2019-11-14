@@ -107,7 +107,7 @@ embedded = True if 'hoc' in sys.modules else False
 was_pip_installed = False
 if was_pip_installed:
     os.environ["NEURONHOME"] = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "../../..")
+        os.path.join(os.path.dirname(__file__), "../../../../share/nrn")
     )
 
 try:
