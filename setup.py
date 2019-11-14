@@ -56,7 +56,7 @@ class CMakeAugmentedBuilder(build_ext):
                     cdir = os.path.join(ext.cmake_install_prefix, d)
                     cfiles = [os.path.join(cdir, f)
                               for f in os.listdir(cdir)
-                              if os.path.isfile(f)]
+                              if os.path.isfile(os.path.join(cdir, f))]
                     data_files.append((d, cfiles))
                 print("Done building CMake project. Now building python extension")
 
