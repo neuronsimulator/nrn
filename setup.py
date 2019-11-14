@@ -65,10 +65,11 @@ class CMakeAugmentedBuilder(build_ext):
         cmake = self._find_cmake()
         self.outdir = os.path.abspath(ext.cmake_install_prefix)
         print("Building lib to:", self.outdir)
+
         cmake_args = [
+            # Generic options only. project options shall be passed as ext param
             '-DCMAKE_INSTALL_PREFIX=' + self.outdir,
             '-DPYTHON_EXECUTABLE=' + sys.executable,
-            '-DNRN_ENABLE_MPI=OFF'
         ] + ext.cmake_flags
 
         cfg = 'Debug' if self.debug else 'Release'
@@ -164,7 +165,8 @@ def setup_package():
             '-DNRN_ENABLE_INTERVIEWS=OFF',
             '-DNRN_ENABLE_RX3D=OFF',
             '-DNRN_ENABLE_PYTHON_DYNAMIC=ON',
-            '-DLINK_AGAINST_PYTHON=OFF'
+            '-DNRN_ENABLE_MPI=OFF'
+            '-DLINK_AGAINST_PYTHON=OFF',
         ],
         include_dirs = [
             neuron_root + "/include",
@@ -177,28 +179,25 @@ def setup_package():
         **extension_common_params
     )]
 
-    # cython generated files take too long O3, use O0 for testing
-    compiler_flags = ["-O0"]
-
     if RX3D:
         include_dirs = [
             "share/lib/python/neuron/rxd/geometry3d",
             numpy.get_include()
         ]
         extension_common_params['libraries'].append("rxdmath")
+        # cython generated files take too long O3, use O0 for testing
+        extension_common_params['extra_compile_args'] = ["-O0"]
 
         extensions += [
             CyExtension("neuron.rxd.geometry3d.graphicsPrimitives", [
                     "share/lib/python/neuron/rxd/geometry3d/graphicsPrimitives.pyx"
                 ],
-                extra_compile_args = compiler_flags,
                 **extension_common_params
             ),
             CyExtension("neuron.rxd.geometry3d.ctng", [
                     "share/lib/python/neuron/rxd/geometry3d/ctng.pyx"
                 ],
                 include_dirs=include_dirs,
-                extra_compile_args = compiler_flags,
                 **extension_common_params
             ),
             CyExtension("neuron.rxd.geometry3d.surfaces", [
@@ -207,7 +206,6 @@ def setup_package():
                     "src/nrnpython/rxd_llgramarea.c"
                 ],
                 include_dirs=include_dirs,
-                extra_compile_args = compiler_flags,
                 **extension_common_params
             )
         ]
