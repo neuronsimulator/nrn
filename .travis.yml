@@ -76,8 +76,7 @@ script:
       fi;
       mkdir build && cd build;
       cmake $CMAKE_OPTION -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR ..;
-      cmake --build . -- -j 2;
-      make install;
+      make doxygen;
       cd ..;
       export PATH=$INSTALL_DIR/bin:$PATH;
     else
