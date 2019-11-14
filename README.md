@@ -78,7 +78,7 @@ Following packages are optional:
 3. Run cmake with the appropriate options
 
   ```
-  cmake -DNRN_ENABLE_CORENEURON=OFF -DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_IV=ON ..
+  cmake -DNRN_ENABLE_CORENEURON=OFF -DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=ON ..
   ```
 
 4. Build the code
