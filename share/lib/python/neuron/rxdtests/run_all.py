@@ -33,7 +33,7 @@ def test(files):
 
         
         try:
-            outp = subprocess.check_output(['python%i' % sys.version_info.major, 'do_test.py', os.path.join('tests', f), output_file] )
+            outp = subprocess.check_output([sys.executable, 'do_test.py', os.path.join('tests', f), output_file] )
             sobj = re.search( r'<BAS_RL (\d*) BAS_RL>', outp.decode('utf-8'), re.M)
             rlen =  int(sobj.group(1))
             success = False

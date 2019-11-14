@@ -1,6 +1,18 @@
-language: cpp
+#=============================================================================
+# Travis NMODL settings
+#=============================================================================
+
+#=============================================================================
+# Environment
+#=============================================================================
+# Use new Travis infrastructure (Docker can't sudo yet)
 sudo: false
+language: cpp
 dist: bionic
+
+#=============================================================================
+# Common Packages
+#=============================================================================
 addons:
     apt:
         packages:
@@ -10,35 +22,94 @@ addons:
         - python-scipy
         - python3-tk
         - python-tk
+        - libopenmpi-dev
+        - openmpi-bin
+        - libx11-dev
+        - libxcomposite-dev
 virtualenv:
     system_site_packages: true
 
+#=============================================================================
+# Configure build matrix and corresponding environment
+#=============================================================================
 compiler:
   - clang
   - gcc
 env:
-  - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2) PYTHON_BLD=$(which python2)"
-    PYTHON="$(which python2)"
-    PIP="$(which pip)"
-    PYTHON_VERSION=2.7.15
-  - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python3)"
-    PYTHON="$(which python3)"
-    PIP="$(which pip3)"
-    PYTHON_VERSION=3.7.1
+  global:
+    - PYTHON="$(which python3)"
+    - PIP="$(which pip3)"
+    - PYTHON_VERSION=3.7.1
+    - INSTALL_DIR="$HOME/install"
+  jobs:
+    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2) PYTHON_BLD=$(which python2)"
+      PYTHON="$(which python2)"
+      PIP="$(which pip)"
+      PYTHON_VERSION=2.7.15
+    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python3)"
+      PYTHON="$(which python3)"
+      PIP="$(which pip3)"
+      PYTHON_VERSION=3.7.1
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENBALE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON"
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENBALE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF"
+    - BUILD_MODE=cmake
+      NRN_ENABLE_PYTHON_DYNAMIC=ON
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENABLE_PYTHON=OFF"
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENABLE_CORENEURON=ON"
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENABLE_CORENEURON=OFF"
 os:
   - linux
+
+#=============================================================================
+# Setup environment and Install dependencies
+#=============================================================================
 before_install:
   - echo $LANG
   - echo $LC_ALL
   - $CXX -v
-  - export PYTHONPATH=$PYTHONPATH:$(pwd)/install/lib/python/
-  - pyenv global $PYTHON_VERSION;
+  - export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python/;
+  - if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
+      pyenv global 2.7.15 3.7.1;
+    else
+      pyenv global $PYTHON_VERSION;
+    fi
 install:
-  - $PIP install --user scipy matplotlib bokeh ipython cython --upgrade
-  - export PATH=$(pwd)/install/x86_64/bin:$PATH
-script:
-  - ./travis_build.sh .
-  - $PYTHON --version
-  - $PYTHON -c 'import neuron; neuron.test()'
-  - $PYTHON share/lib/python/neuron/rxdtests/run_all.py #problem with python2.7
+  - $PIP install --user scipy matplotlib bokeh ipython cython --upgrade;
 
+#=============================================================================
+# Build, install and test
+#=============================================================================
+script:
+  - if [ "$BUILD_MODE" == "cmake" ]; then
+      if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
+        export PYTHON2=$(pyenv which python2.7);
+        export PYTHON3=$(pyenv which python3.7);
+        CMAKE_OPTION="-DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_PYTHON_DYNAMIC=${PYTHON2};${PYTHON3}";
+      fi;
+      mkdir build && cd build;
+      cmake $CMAKE_OPTION -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR ..;
+      cmake --build . -- -j 2;
+      make install;
+      cd ..;
+      export PATH=$INSTALL_DIR/bin:$PATH;
+    else
+      export PATH=$INSTALL_DIR/x86_64/bin:$PATH;
+      ./travis_build.sh $INSTALL_DIR;
+    fi
+    # basic tests for cmake and autoconf build
+  - neurondemo -nogui -c 'demo(4)' -c 'run()' -c 'quit()'
+  - if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
+      $PYTHON3 -c 'import neuron; neuron.test()' && $PYTHON2 -c 'import neuron; neuron.test()';
+    else
+      if [ "$CMAKE_OPTION" != "-DNRN_ENABLE_PYTHON=OFF" ]; then
+        $PYTHON --version && $PYTHON -c 'import neuron; neuron.test()';
+      fi;
+    fi;
+  - if [ "$BUILD_MODE" != "cmake" ] ; then
+      $PYTHON share/lib/python/neuron/rxdtests/run_all.py;
+    fi;

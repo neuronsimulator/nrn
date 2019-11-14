@@ -92,6 +92,14 @@ if(MINGW)
 endif()
 
 # =============================================================================
+# Build rxdmath library
+# =============================================================================
+if (NRN_ENABLE_RX3D)
+  add_library(rxdmath SHARED ${CMAKE_CURRENT_SOURCE_DIR}/rxdmath.c)
+  install(TARGETS rxdmath DESTINATION ${nrn_dest_sharedlibs})
+endif()
+
+# =============================================================================
 # If NEURON python module installation is enabled
 # =============================================================================
 if(NRN_ENABLE_MODULE_INSTALL)
