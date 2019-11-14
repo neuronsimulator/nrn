@@ -148,7 +148,7 @@ def setup_package():
             "-Wl,-rpath,{}".format("@loader_path/../../../")
         ] if sys.platform[:6] == "darwin" else [
             "-Wl,-rpath,{}".format("$ORIGIN/../../../")
-        ]
+        ],
         libraries = ["nrnpython{}".format(sys.version_info[0]), "nrniv"],
     )
 
@@ -176,6 +176,9 @@ def setup_package():
         **extension_common_params
     )]
 
+    # cython generated files take too long O3, use O0 for testing
+    compiler_flags = ["-O0"]
+
     if RX3D:
         include_dirs = [
             "share/lib/python/neuron/rxd/geometry3d",
@@ -187,12 +190,14 @@ def setup_package():
             CyExtension("neuron.rxd.geometry3d.graphicsPrimitives", [
                     "share/lib/python/neuron/rxd/geometry3d/graphicsPrimitives.pyx"
                 ],
+                extra_compile_args = compiler_flags,
                 **extension_common_params
             ),
             CyExtension("neuron.rxd.geometry3d.ctng", [
                     "share/lib/python/neuron/rxd/geometry3d/ctng.pyx"
                 ],
                 include_dirs=include_dirs,
+                extra_compile_args = compiler_flags,
                 **extension_common_params
             ),
             CyExtension("neuron.rxd.geometry3d.surfaces", [
@@ -201,6 +206,7 @@ def setup_package():
                     "src/nrnpython/rxd_llgramarea.c"
                 ],
                 include_dirs=include_dirs,
+                extra_compile_args = compiler_flags,
                 **extension_common_params
             )
         ]
