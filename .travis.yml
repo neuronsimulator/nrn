@@ -45,6 +45,7 @@ env:
   jobs:
     - BUILD_MODE=cmake
       CMAKE_OPTION="-DNRN_ENBALE_MPI=ON -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=OFF"
+      BUILD_DOCUMENTATION=ON
 os:
   - linux
 
@@ -92,8 +93,8 @@ deploy:
   skip_cleanup: true
   github_token: $GITHUB_TOKEN
   keep_history: false
-  local_dir: $TRAVIS_BUILD_DIR/build/doc_doxygen/doxygen
+  local_dir: $TRAVIS_BUILD_DIR/build/doc_doxygen
   target_branch: gh-pages
   on:
     branch: doxygen
-    condition: $TRAVIS_OS_NAME = linux
+    condition: $BUILD_DOCUMENTATION = ON && $CC_FOR_BUILD = gcc
