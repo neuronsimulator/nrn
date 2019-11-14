@@ -42,6 +42,7 @@ class CMakeAugmentedBuilder(build_ext):
         print("CWD: " + os.getcwd())
         for ext in self.extensions:
             if isinstance(ext, CMakeAugmentedExtension):
+                self.patch_for_pip(ext)
                 self.run_cmake(ext)
                 # AAdd the temp include paths
                 ext.include_dirs += [os.path.join(self.build_temp, inc_dir)
@@ -107,6 +108,16 @@ class CMakeAugmentedBuilder(build_ext):
                 pass
 
         raise RuntimeError("Project requires CMake >=3.5.0")
+
+    def patch_for_pip(self, ext):
+        import fileinput
+        init_py = "share/lib/python/neuron/__init__.py"
+        with fileinput.FileInput(init_py, inplace=True, backup='.bak') as file:
+            for line in file:
+                if "was_pip_installed = False" in line:
+                    print("was_pip_installed = True")
+                else:
+                    print(line, end='')
 
 
 class Docs(Command):
