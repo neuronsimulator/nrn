@@ -26,6 +26,7 @@ addons:
         - openmpi-bin
         - libx11-dev
         - libxcomposite-dev
+        - doxygen
 virtualenv:
     system_site_packages: true
 
@@ -42,26 +43,8 @@ env:
     - PYTHON_VERSION=3.7.1
     - INSTALL_DIR="$HOME/install"
   jobs:
-    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2) PYTHON_BLD=$(which python2)"
-      PYTHON="$(which python2)"
-      PIP="$(which pip)"
-      PYTHON_VERSION=2.7.15
-    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python3)"
-      PYTHON="$(which python3)"
-      PIP="$(which pip3)"
-      PYTHON_VERSION=3.7.1
     - BUILD_MODE=cmake
-      CMAKE_OPTION="-DNRN_ENBALE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON"
-    - BUILD_MODE=cmake
-      CMAKE_OPTION="-DNRN_ENBALE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF"
-    - BUILD_MODE=cmake
-      NRN_ENABLE_PYTHON_DYNAMIC=ON
-    - BUILD_MODE=cmake
-      CMAKE_OPTION="-DNRN_ENABLE_PYTHON=OFF"
-    - BUILD_MODE=cmake
-      CMAKE_OPTION="-DNRN_ENABLE_CORENEURON=ON"
-    - BUILD_MODE=cmake
-      CMAKE_OPTION="-DNRN_ENABLE_CORENEURON=OFF"
+      CMAKE_OPTION="-DNRN_ENBALE_MPI=ON -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=OFF"
 os:
   - linux
 
@@ -113,3 +96,17 @@ script:
   - if [ "$BUILD_MODE" != "cmake" ] ; then
       $PYTHON share/lib/python/neuron/rxdtests/run_all.py;
     fi;
+
+#=============================================================================
+# Documentation deployment
+#=============================================================================
+deploy:
+  provider: pages
+  skip_cleanup: true
+  github_token: $GITHUB_TOKEN
+  keep_history: false
+  local_dir: $TRAVIS_BUILD_DIR/doc_doxygen/doxygen
+  target_branch: gh-pages
+  on:
+    branch: doxygen
+    condition: $TRAVIS_OS_NAME = linux
