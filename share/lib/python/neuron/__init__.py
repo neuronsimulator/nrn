@@ -104,7 +104,7 @@ import os
 embedded = True if 'hoc' in sys.modules else False
 
 # With pip we need to rewrite the NEURONHOME
-was_pip_installed = False
+was_pip_installed = "site-packages" in __file__
 if was_pip_installed:
     os.environ["NEURONHOME"] = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "../../../../share/nrn")
