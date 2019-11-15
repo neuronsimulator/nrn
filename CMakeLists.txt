@@ -27,6 +27,7 @@ option(NRN_ENABLE_MPI "Enable MPI support" ON)
 option(NRN_ENABLE_MEMACS "Enable use of memacs" ON)
 option(NRN_ENABLE_RX3D "Enable rx3d support" ON)
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ON)
+option(NRN_BUILD_DOC "Build doxygen documentation" OFF)
 
 # =============================================================================
 # Build options (string)
@@ -91,21 +92,23 @@ if (NRN_ENABLE_RX3D)
   find_package(Cython)
 endif()
 
-
 # =============================================================================
 # Setup Doxygen documentation
 # =============================================================================
-find_package(Doxygen)
-if(DOXYGEN_FOUND)
-  # generate Doxyfile with correct source paths
-  configure_file(${PROJECT_SOURCE_DIR}/docs/Doxyfile.in
-                 ${PROJECT_BINARY_DIR}/Doxyfile)
-  add_custom_target(doxygen ALL
-        COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-        COMMENT "Generating API documentation with Doxygen"
-        VERBATIM)
+if(NRN_BUILD_DOC)
+  find_package(Doxygen)
+  if(DOXYGEN_FOUND)
+    # generate Doxyfile with correct source paths
+    configure_file(${PROJECT_SOURCE_DIR}/docs/Doxyfile.in
+                   ${PROJECT_BINARY_DIR}/Doxyfile)
+    add_custom_target(doxygen ALL
+          COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
+          WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+          COMMENT "Generating API documentation with Doxygen"
+          VERBATIM)
+  endif()
 endif()
+
 # =============================================================================
 # Enable MPI/Python/IV/Pthead if found
 # =============================================================================
