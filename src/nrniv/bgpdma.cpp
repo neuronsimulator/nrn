@@ -272,7 +272,7 @@ void BGP_ReceiveBuffer::incoming(int gid, double spiketime) {
 	// on each messager advance
 	unsigned long long tb = DCMFTIMEBASE;
 	PreSyn* ps;
-	assert(gid2in_->find(gid, ps));
+	nrn_assert(gid2in_->find(gid, ps));
 	enq2_find_time_ += (unsigned long)(DCMFTIMEBASE - tb);
 	ps->send(spiketime, net_cvode_instance, nrn_threads);
 	enq2_enqueue_time_ += (unsigned long)(DCMFTIMEBASE - tb);
@@ -320,7 +320,7 @@ void BGP_ReceiveBuffer::enqueue() {
 			continue;
 		}
 #else
-		assert(gid2in_->find(spk->gid, ps));
+		nrn_assert(gid2in_->find(spk->gid, ps));
 #endif
 
 #if TWOPHASE
@@ -364,7 +364,7 @@ void BGP_ReceiveBuffer::enqueue1() {
 	for (int i=0; i < count_; ++i) {
 		NRNMPI_Spike* spk = buffer_[i];
 		PreSyn* ps;
-		assert(gid2in_->find(spk->gid, ps));
+		nrn_assert(gid2in_->find(spk->gid, ps));
 		psbuf_[i] = ps;
 #if TWOPHASE
 		if (use_phase2_ && ps->bgp.dma_send_phase2_) {
@@ -802,7 +802,7 @@ void BGP_DMASend::send(int gid, double t) {
 	// can never be in the gid2in_ table (ie. the assert below would fail).
 	if (send2self_) {
 		PreSyn* ps;
-		assert(gid2in_->find(gid, ps));
+		nrn_assert(gid2in_->find(gid, ps));
 		ps->send(t, net_cvode_instance, nrn_threads);
 	}
 #endif
@@ -1237,7 +1237,7 @@ int ncs_bgp_sending_info( int **sendlist2build )
 int ncs_bgp_target_hosts( int gid, int** targetnodes )
 {
     PreSyn* ps;
-    assert(gid2out_->find(gid, ps));
+    nrn_assert(gid2out_->find(gid, ps));
     if( ps->bgp.dma_send_ ) {
         (*targetnodes) = ps->bgp.dma_send_->ntarget_hosts_? new int[ps->bgp.dma_send_->ntarget_hosts_] : 0;
         return ps->bgp.dma_send_->ntarget_hosts_;

@@ -10,7 +10,7 @@ if test "x${NRNHOME}" = x ; then
 	bindir=@bindir@
 	libdir=@libdir@
 else
-        prefix="$NRNHOME"
+	prefix="$NRNHOME"
 	exec_prefix="${prefix}/${ARCH}"
 	bindir="${prefix}/${ARCH}/bin"
 	libdir="${prefix}/${ARCH}/lib"
@@ -28,18 +28,6 @@ export bindir
 export libdir
 
 MAKEFILEDIR="${bindir}"
-
-PURIFY="USEPURIFY=no"
-if [ "$1" = "-p" ] ; then
-	PURIFY="USEPURIFY=yes"
-	shift
-fi
-
-TRACE="BGTRACE_LIBS="
-if [ "$1" = "-trace" ] ; then
-	TRACE="BGTRACE_LIBS = -L/bgl/hpct_bgl/mp_profiler/lib -lmpitrace.rts -L/bgl/hpct_bgl/binutils-2.14/lib -lbfd -liberty -lhandle_MPID_Win_start_error.rts"
-	shift
-fi
 
 UserINCFLAGS=""
 if [ "$1" = "-incflags" ] ; then
@@ -138,16 +126,11 @@ void modl_reg(){
     fprintf(stderr, "Additional mechanisms from files'$newline'");
 ' >> mod_func.c
 
-if true ; then # the standard order
 for i in $files
-	do
-		echo '    fprintf(stderr," '$i'.mod");' >>mod_func.c
-	done
-else
-	# use "ls -x" to sort alphabetically by lines
-	# use "ls -C" to sort alphabetically by columns
-	ls -C $mfiles | sed 's/\(.*\)/    fprintf(stderr,"\1\\n");/' >> mod_func.c
-fi
+do
+	echo '    fprintf(stderr," '$i'.mod");' >>mod_func.c
+done
+
 echo '    fprintf(stderr, "'$newline'");
   }' >>mod_func.c
 
@@ -163,7 +146,7 @@ if test -n "$cfiles" ; then
 	COBJS=`echo "$cfiles" | sed 's/\.c/.o/g'`
 fi
 
-@NRNMECH_DLL_STYLE_FALSE@make -j 4 -f "${MAKEFILEDIR}/nrniv_makefile" "$PURIFY" "$TRACE" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" special &&
+@NRNMECH_DLL_STYLE_FALSE@make -j 4 -f "${MAKEFILEDIR}/nrniv_makefile" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" special &&
 @NRNMECH_DLL_STYLE_FALSE@  echo "Successfully created $MODSUBDIR/special"
 
 @NRNMECH_DLL_STYLE_TRUE@MODLO=`echo "$MODOBJS" | sed 's/\.o/.lo/g'`
@@ -191,13 +174,5 @@ fi
 @NRNMECH_DLL_STYLE_TRUE@@MAC_DARWIN_TRUE@if false ; then
 @NRNMECH_DLL_STYLE_TRUE@@MAC_DARWIN_FALSE@if false ; then
 @NRNMECH_DLL_STYLE_FALSE@if false ; then
-vv=`sw_vers -productVersion|sed 's/.*\.\(.*\)\..*/\1/'`
-#if test $vv -gt 6 ; then
-if false ; then
-echo "use @executable_path prefix for install_name for dylib absolute paths"
-ff="${mdir}/.libs/libnrnmech.so"
-f=`otool -L "$ff" | sed -n "s,.*$libdir/\(.*dylib\).*,\
--change $libdir/\1 @executable_path/../lib/\1,p"`
-install_name_tool $f "$ff"
-fi
+  false #for empty if block
 fi

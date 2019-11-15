@@ -1,5 +1,5 @@
 from neuron import h, nrn, nrn_dll_sym 
-from . import species, node, section1d, region, generalizedReaction
+from . import species, node, section1d, region, generalizedReaction, constants
 from .nodelist import NodeList
 from .node import _point_indices
 import weakref
@@ -19,7 +19,7 @@ from numpy.ctypeslib import ndpointer
 import re
 import platform
 
-molecules_per_mM_um3 = 602214.129
+molecules_per_mM_um3 = constants.NA / 1e18
 
 # aliases to avoid repeatedly doing multiple hash-table lookups
 _numpy_array = numpy.array
@@ -231,14 +231,6 @@ atexit.register(byeworld)
 
 # Faraday's constant (store to reduce number of lookups)
 FARADAY = h.FARADAY
-
-# converting from mM um^3 to molecules
-# = 6.02214129e23 * 1000. / 1.e18 / 1000
-# = avogadro * (L / m^3) * (m^3 / um^3) * (mM / M)
-# value for avogardro's constant from NIST webpage, accessed 25 April 2012:
-# http://physics.nist.gov/cgi-bin/cuu/Value?na
-_conversion_factor = 602214.129
-
 
 _cvode_object = h.CVode()
 
@@ -452,7 +444,7 @@ def _currents(rhs):
 _last_dt = None
 
 def _setup():
-    initializer._do_init()
+    if not initializer.is_initialized(): initializer._do_init()
     # TODO: this is when I should resetup matrices (structure changed event)
     global _last_dt, _external_solver_initialized
     _last_dt = None
