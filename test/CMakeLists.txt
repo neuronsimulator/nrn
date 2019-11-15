@@ -10,7 +10,7 @@ add_executable(testneuron unit_test.cpp ${TEST_SOURCES})
 target_compile_features(testneuron PUBLIC cxx_std_11)
 target_link_libraries(testneuron Catch2::Catch2 nrniv_lib)
 
-set(TEST_ENV PYTHONPATH=${PROJECT_BINARY_DIR}/lib/python:$ENV{PYTHONPATH}
+set(TEST_ENV PYTHONPATH=${PROJECT_BINARY_DIR}/lib/python:${PROJECT_SOURCE_DIR}/test/rxd:$ENV{PYTHONPATH}
         NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn
         LD_LIBRARY_PATH=${PROJECT_BINARY_DIR}/lib:$ENV{LD_LIBRARY_PATH}
         DYLD_LIBRARY_PATH=${PROJECT_BINARY_DIR}/lib:$ENV{DYLD_LIBRARY_PATH})
@@ -56,5 +56,9 @@ if(PYTEST_FOUND)
   add_test(NAME Basic_tests
            COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/pynrn)
   set_tests_properties(Basic_tests
+          PROPERTIES ENVIRONMENT "${TEST_ENV}")
+  add_test(NAME rxd_tests
+          COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/rxd)
+  set_tests_properties(rxd_tests
           PROPERTIES ENVIRONMENT "${TEST_ENV}")
 endif()

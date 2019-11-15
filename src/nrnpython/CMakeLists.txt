@@ -94,10 +94,8 @@ endif()
 # =============================================================================
 # Build rxdmath library
 # =============================================================================
-if (NRN_ENABLE_RX3D)
-  add_library(rxdmath SHARED ${CMAKE_CURRENT_SOURCE_DIR}/rxdmath.c)
-  install(TARGETS rxdmath DESTINATION ${nrn_dest_sharedlibs})
-endif()
+add_library(rxdmath SHARED ${CMAKE_CURRENT_SOURCE_DIR}/rxdmath.c)
+install(TARGETS rxdmath DESTINATION ${nrn_dest_sharedlibs})
 
 # =============================================================================
 # If NEURON python module installation is enabled
