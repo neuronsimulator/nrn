@@ -40,3 +40,4 @@ script:
   - ./travis_build.sh .
   - $PYTHON --version
   - $PYTHON share/lib/python/neuron/rxdtests/run_all.py
+  - bash .travis_docs.sh
