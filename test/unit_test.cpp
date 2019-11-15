@@ -1,4 +1,4 @@
-#define CATCH_CONFIG_MAIN
+#define CATCH_CONFIG_RUNNER
 
 #include <catch2/catch.hpp>
 
@@ -11,6 +11,11 @@ extern "C" {
 extern void nrn_threads_free();
 extern void nrn_threads_create(int, int);
 extern void nrn_threads_free();
+extern int ivocmain(int, char**, char**);
+
+extern int nrn_main_launch;
+extern int nrn_is_python_extension;
+extern int nrn_nobanner_;
 }
 
 /// Needed for compilation
@@ -21,6 +26,23 @@ extern NrnThread* nrn_threads;
 extern int nrn_use_fast_imem;
 extern int use_cachevec;
 
+int main( int argc, char* argv[] ) {
+    // global setup...
+    nrn_main_launch = 2;
+    int argc_nompi = 1;
+    const char* argv_nompi[] = {"NEURON"};
+    nrn_is_python_extension = 1;
+    nrn_nobanner_ = 1;
+
+    ivocmain(argc_nompi, (char **) &argv_nompi, NULL);
+#undef run
+    int result = Catch::Session().run( argc, argv );
+#define run hoc_run
+    // global clean-up...
+
+    return result;
+}
+
 
 TEST_CASE("Test hoc interpreter", "[Neuron][hoc_interpreter]") {
     hoc_init_space();
@@ -30,35 +52,70 @@ TEST_CASE("Test hoc interpreter", "[Neuron][hoc_interpreter]") {
     REQUIRE( hoc_xpop() == 9.0 );
 }
 
-SCENARIO("Test fast_imem calculation", "[Neuron][fast_imem]") {
-    GIVEN("An NrnThread") {
-        nrn_threads_create(1, 0);
-        for(int it = 0; it < nrn_nthread; ++it) {
-            NrnThread* nt = &nrn_threads[it];
-            nt->end = 1;
-            nt->_actual_rhs = (double*)ecalloc(nt->end, sizeof(double));
-            nt->_actual_d = (double*)ecalloc(nt->end, sizeof(double));
-            nt->_actual_area = (double*)ecalloc(nt->end, sizeof(double));
-            for(int i = 0; i < nt->end; i++) {
-                nt->_actual_rhs[i] = 0.1;
-                nt->_actual_d[i] = 0.1;
-                nt->_actual_area[i] = 0.1;
-            }
-        }
+/*
+TEST_CASE("Test basic neuron setup", "[Neuron][setup]") {
 
-        WHEN("fast_imem and cachevec is enabled") {
+    hoc_oc("print \"hello\"\nprint \"world\"\n");
+
+}
+*/
+
+SCENARIO("Test fast_imem calculation", "[Neuron][fast_imem]") {
+    GIVEN("A section") {
+
+        hoc_oc("create s\n");
+
+        WHEN("fast_imem and cachevec is allocated") {
             nrn_use_fast_imem = true;
             use_cachevec = 1;
+            nrn_fast_imem_alloc();
+            THEN("nrn_fast_imem should not be nullptr") {
+                for(int it = 0; it < nrn_nthread; ++it) {
+                    NrnThread *nt = &nrn_threads[it];
+                    REQUIRE(nt->_nrn_fast_imem != nullptr);
+                }
+            }
         }
 
-        AND_WHEN("fast_mem is allocated") {
-            nrn_fast_imem_alloc();
-            for(int it = 0; it < nrn_nthread; ++it) {
-                NrnThread *nt = &nrn_threads[it];
-                REQUIRE(nt->_nrn_fast_imem != nullptr);
+        WHEN("fast_imem is created") {
+            hoc_oc("objref cvode\n"
+                   "cvode = new CVode()\n"
+                   "cvode.use_fast_imem(1)\n");
+            WHEN("iinitialize and run nrn_calc_fast_imem") {
+                hoc_oc("finitialize(-65)\n");
+                for(NrnThread* nt = nrn_threads; nt < nrn_threads + nrn_nthread; ++nt) {
+                    nrn_calc_fast_imem(nt);
+                }
+                THEN("The current in this section is 0") {
+                    for (NrnThread* nt = nrn_threads; nt < nrn_threads + nrn_nthread; ++nt) {
+                        for (int i = 0; i < nt->end; ++i) {
+                            REQUIRE(nt->_nrn_fast_imem->_nrn_sav_rhs[i] == 0.0);
+                        }
+                    }
+                }
             }
-
-            THEN("calculate fast_imem") {
+            /*
+            WHEN("xxxx and run nrn_calc_fast_imem") {
+                hoc_oc("objref ic\n"
+                       "ic = new IClamp(0.5)\n"
+                       "ic.del = 0\n"
+                       "ic.dur = 1\n"
+                       "ic.amp = 0.1\n"
+                       "finitialize(-65)\n");
+                       //"fadvance()\n");
+                for(NrnThread* nt = nrn_threads; nt < nrn_threads + nrn_nthread; ++nt) {
+                    nrn_calc_fast_imem(nt);
+                }
+                THEN("The current in this section is 0.1") {
+                    for(NrnThread* nt = nrn_threads; nt < nrn_threads + nrn_nthread; ++nt) {
+                        REQUIRE( nt->_nrn_fast_imem->_nrn_sav_rhs[1] == Approx(0.1));
+                    }
+                }
+            }*/
+        }
+hoc_oc("delete_section()");
+/*
+       THEN("calculate fast_imem") {
                 for(int it = 0; it < nrn_nthread; ++it) {
                     NrnThread* nt = &nrn_threads[it];
                     for(int i = 0; i < nt->end; i++) {
@@ -70,34 +127,6 @@ SCENARIO("Test fast_imem calculation", "[Neuron][fast_imem]") {
                 REQUIRE( nrn_threads[0]._nrn_fast_imem->_nrn_sav_rhs[0] == Approx( 0.00011 ) );
             }
 
-            AND_THEN("clear NrnThreads") {
-                nrn_threads_free();
-
-                for (int it = 0; it < nrn_nthread; ++it) {
-                    NrnThread *nt = &nrn_threads[it];
-                    REQUIRE( nt->_ml_list == nullptr );
-                    REQUIRE( nt->tml == nullptr );
-                    for(int i=0; i < BEFORE_AFTER_SIZE; ++i) {
-                        REQUIRE( nt->tbl[i] == nullptr );
-                    }
-                    REQUIRE( nt->_ecell_memb_list == nullptr );
-                    REQUIRE( nt->_ecell_children == nullptr );
-                    REQUIRE( nt->_sp13mat == nullptr );
-                    REQUIRE( nt->_nrn_fast_imem == nullptr );
-                    REQUIRE( nt->_actual_v == nullptr );
-                    REQUIRE( nt->_actual_area == nullptr );
-                    REQUIRE( nt->end == 0 );
-                    REQUIRE( nt->ncell == 0 );
-                    REQUIRE( nt->_vcv == nullptr );
-                }
-
-                free(nrn_threads);
-                nrn_threads = nullptr;
-                nrn_nthread = 0;
-
-                REQUIRE( nrn_threads == nullptr );
-                REQUIRE( nrn_nthread == 0 );
-            }
-        }
+*/
     }
 }
