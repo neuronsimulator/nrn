@@ -40,18 +40,18 @@ virtualenv:
 #=============================================================================
 env:
   global:
-    - PYTHON="$(pyenv which python3)"
-    - PIP="$(pyenv which pip3)"
+    - PYTHON="$(which python3)"
+    - PIP="$(which pip3)"
     - PYTHON_VERSION=3.7.1
     - INSTALL_DIR="$HOME/install"
   jobs:
-    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(pyenv which python2) PYTHON_BLD=$(pyenv which python2)"
-      PYTHON="$(pyenv which python2)"
-      PIP="$(pyenv which pip)"
+    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2) PYTHON_BLD=$(which python2)"
+      PYTHON="$(which python2)"
+      PIP="$(which pip)"
       PYTHON_VERSION=2.7.15
-    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(pyenv which python3)"
-      PYTHON="$(pyenv which python3)"
-      PIP="$(pyenv which pip3)"
+    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python3)"
+      PYTHON="$(which python3)"
+      PIP="$(which pip3)"
       PYTHON_VERSION=3.7.1
     - BUILD_MODE=cmake
       CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=ON"
@@ -76,6 +76,11 @@ before_install:
   - echo $LC_ALL
   - $CXX -v
   - export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python/;
+  # mac brew installed pyenv, cython not in $PATH
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+      export PATH=$HOME/.pyenv/shims:/usr/local/opt/cython/bin:$PATH;
+      echo $PATH;
+    fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       ln -s /usr/local/bin/greadlink /usr/local/bin/readlink;
       if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
@@ -91,11 +96,6 @@ before_install:
     fi
 install:
   - $PIP install --user scipy matplotlib bokeh ipython cython --upgrade;
-  # mac brew installed cython is not in $PATH
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      export PATH=/usr/local/opt/cython/bin:$PATH;
-      echo $PATH;
-    fi
 
 #=============================================================================
 # Build, install and test
@@ -129,6 +129,6 @@ script:
         $PYTHON --version && $PYTHON -c 'import neuron; neuron.test()';
       fi;
     fi;
-  - if [ "$BUILD_MODE" != "cmake" &&  "$TRAVIS_OS_NAME" != "osx"]; then
+  - if [ "$BUILD_MODE" != "cmake" ]; then
       $PYTHON share/lib/python/neuron/rxdtests/run_all.py;
     fi;
