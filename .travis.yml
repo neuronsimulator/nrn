@@ -93,14 +93,10 @@ script:
         export PYTHON3=$(pyenv which python3.7);
         CMAKE_OPTION="-DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_PYTHON_DYNAMIC=${PYTHON2};${PYTHON3}";
       fi;
-      if [ "$BUILD_DOCUMENTATION" = "ON" ]; then
-        CMAKE_OPTION="${CMAKE_OPTION} -DNRN_BUILD_DOC=ON";
-      fi;
       mkdir build && cd build;
       cmake $CMAKE_OPTION -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR ..;
       cmake --build . -- -j 2;
       make install;
-      cd ..;
       export PATH=$INSTALL_DIR/bin:$PATH;
     else
       export PATH=$INSTALL_DIR/x86_64/bin:$PATH;
@@ -113,6 +109,8 @@ script:
 after_success:
   - if [ "$BUILD_DOCUMENTATION" = "ON" && "$CC_FOR_BUILD" = "gcc" ]; then
       echo "------- Prepare Documentation -------";
+      cd $TRAVIS_BUILD_DIR/build;
+      makd doxygen;
       cd $TRAVIS_BUILD_DIR/build/doc_doxygen;
       touch .nojekyll;
       echo "<meta http-equiv=\"refresh\" content=\"0; url=./doxygen/index.html\" />" > index.html;
