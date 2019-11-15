@@ -5,7 +5,8 @@ include_directories(${PROJECT_SOURCE_DIR}/test ${PROJECT_SOURCE_DIR}/src/nrnoc $
 # =============================================================================
 # Test executables
 # =============================================================================
-add_executable(testneuron unit_test.cpp)
+set(TEST_SOURCES oc/hoc_interpreter.cpp)
+add_executable(testneuron unit_test.cpp ${TEST_SOURCES})
 target_compile_features(testneuron PUBLIC cxx_std_11)
 target_link_libraries(testneuron Catch2::Catch2 nrniv_lib)
 
@@ -29,6 +30,7 @@ foreach(test_name
     add_test(NAME ${test_name} COMMAND ${test_name})
   endif()
 endforeach()
+
 
 # =============================================================================
 # Add ringtest (to run python test make install must be run first)

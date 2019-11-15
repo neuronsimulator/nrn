@@ -8,7 +8,6 @@ extern "C" {
 #include "../src/nrnoc/section.h"
 #include "../src/nrnoc/neuron.h"
 
-extern void nrn_threads_free();
 extern void nrn_threads_create(int, int);
 extern void nrn_threads_free();
 extern int ivocmain(int, char**, char**);
@@ -41,15 +40,6 @@ int main( int argc, char* argv[] ) {
     // global clean-up...
 
     return result;
-}
-
-
-TEST_CASE("Test hoc interpreter", "[Neuron][hoc_interpreter]") {
-    hoc_init_space();
-    hoc_pushx(4.0);
-    hoc_pushx(5.0);
-    hoc_add();
-    REQUIRE( hoc_xpop() == 9.0 );
 }
 
 /*
@@ -113,9 +103,9 @@ SCENARIO("Test fast_imem calculation", "[Neuron][fast_imem]") {
                 }
             }*/
         }
-hoc_oc("delete_section()");
-/*
-       THEN("calculate fast_imem") {
+        hoc_oc("delete_section()");
+        /*
+        THEN("calculate fast_imem") {
                 for(int it = 0; it < nrn_nthread; ++it) {
                     NrnThread* nt = &nrn_threads[it];
                     for(int i = 0; i < nt->end; i++) {
@@ -127,6 +117,6 @@ hoc_oc("delete_section()");
                 REQUIRE( nrn_threads[0]._nrn_fast_imem->_nrn_sav_rhs[0] == Approx( 0.00011 ) );
             }
 
-*/
+        */
     }
 }
