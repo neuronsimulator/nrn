@@ -14,16 +14,16 @@ There are several separate repositories that make up the NEURON project and you 
 This *Contributing* document is relevant not only for this repository but also for these other repositories.
 
 Three major repositories are directly included at this github:
-1. **nrn** -- the main NEURON code. When you fork and clone this repository you will find the actual source in subdirectories under *nrn/src*. The subdirectories of primary
-interest will generally be those most recently edited -- *nrniv*, *nrnmpi*, *nrnpython. By contrast some of the subdirectories will rarely if ever need updating.
-1. **progref-py** -- NEURON Python programmer's reference. As mentioned further below, the beginning user can often be of particular help to the community by clarifying
+1. [**nrn**](https://github.com/neuronsimulator/nrn) -- the main NEURON code. When you fork and clone this repository you will find the actual source in subdirectories under *nrn/src*. The subdirectories of primary
+interest will generally be those most recently edited -- *nrniv*, *nrnmpi*, *nrnpython*. By contrast some of the subdirectories will rarely if ever need updating.
+1. [**progref-py**](https://github.com/neuronsimulator/progref-py) -- NEURON Python programmer's reference. As mentioned further below, the beginning user can often be of particular help to the community by clarifying
 documentation and examples which may have seemed clear to the person who wrote it but are lacking details that are needed for a student.
-1. **tutorials** -- here again, the student or beginning user can be of assistance either by improving existing tutorials or by providing new tutorials to illuminate aspects of
+1. [**tutorials**](https://github.com/neuronsimulator/pythontutorial) -- here again, the student or beginning user can be of assistance either by improving existing tutorials or by providing new tutorials to illuminate aspects of
 NEURON that he or she had trouble with.
 
 Two repositories included here are largely obsolete and should only be modified for bug fixes: 
-1. **iv** -- the old Interviews graphical program, now largely deprecated in favor of modern GUIs.
-1. **progref-hoc** -- this is the _programmers reference_ for the hoc language, the 'higher order calculator' of Kernighan (a co-founder of UNIX). _hoc_ is now largely retired in
+1. [**iv**](https://github.com/neuronsimulator/iv) -- the old Interviews graphical program, now largely deprecated in favor of modern GUIs.
+1. [**progref-hoc**](https://github.com/neuronsimulator/progref-hoc) -- this is the _programmers reference_ for the hoc language, the 'higher order calculator' of Kernighan (a co-founder of UNIX). _hoc_ is now largely retired in
 favor of Python. The hoc code itself is in the nrn repository and also should not usually be touched.
 
 There are several NEURON-related repositories hosted elsewhere which also encourage contributions. Each of these will have it's own *Contributing* document.
@@ -39,7 +39,7 @@ We encourage contributions to the NEURON simulator from individuals at all level
 Knowledge of the domain of neural simulation is also helpful but much of the simulation technology is comparable to other simulation fields in biology and beyond --
 numerical integration of ordinary differential equations (ODEs), here coupled with *events* (event-driven).
 
-If you want to pick up and try an existing improvement project, you will note that we have indicated levels of difficulty with [labels](labels).
+If you want to pick up and try an existing improvement project, you will note that we have indicated levels of difficulty with [labels](https://github.com/neuronsimulator/nrn/labels).
 Most internal hacks will require knowledge of C/C++. Knowledge of python is also necessary for writing accompanying test code.
 Note that it can be much easier to get started by improving documentation or by adding new tutorials.
 
@@ -95,7 +95,7 @@ formatted, indented, documented, and commented.
 
 ## Reporting a bug<a name="bug"></a>
 
-Have you tested on the current alpha version of NEURON. If not, please clone, compile, install and run with current version (this one).
+Have you tested on the current alpha version of NEURON? If not, please clone, compile, install and run with current version (this one).
 
 Please let us know what operating system you were using when you found the bug. If you have access to another operating system, it is helpful if you can find out if the bug
 shows up there as well. Please indicate which operating system(s) the bug has been found in.
@@ -109,6 +109,6 @@ Sometimes, this process alone is enough to identify the bug as a function limita
 ## Code review process<a name="process"></a>
 
 The code board team at NEURON generally reviews pull requests on a weekly basis. 
-The code board may vary – see an updated list in the [project index](project-index.md).
+The code board may vary – see an updated list in the [contributors](https://github.com/neuronsimulator/nrn/graphs/contributors).
 If you don't receive any feedback after a couple weeks, please follow up with a new comment.
 
