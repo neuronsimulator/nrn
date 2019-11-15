@@ -50,6 +50,14 @@ typedef struct _nrn_Fast_Imem {
 	double* _nrn_sav_d;
 } _nrn_Fast_Imem;
 
+
+/**
+ * \class NrnThread
+ * \brief Represent main neuron object computed by single thread
+ *
+ * NrnThread represent collection of cells or part of a cell computed
+ * by single thread within NEURON process.
+ */
 typedef struct NrnThread {
 	double _t;
 	double _dt;
@@ -86,6 +94,7 @@ typedef struct NrnThread {
 	Object* userpart; /* the SectionList if this is a user defined partition */
 
 } NrnThread;
+
 
 extern int nrn_nthread;
 extern NrnThread* nrn_threads;
