@@ -13,15 +13,13 @@
 There are several separate repositories that make up the NEURON project and you may contribute to any of these. A single *code board* manages the full set. 
 This *Contributing* document is relevant not only for this repository but also for these other repositories.
 
-Three major repositories are directly included at this github:
+Five major repositories are directly included at this github:
 1. [**nrn**](https://github.com/neuronsimulator/nrn) -- the main NEURON code. When you fork and clone this repository you will find the actual source in subdirectories under *nrn/src*. The subdirectories of primary
 interest will generally be those most recently edited -- *nrniv*, *nrnmpi*, *nrnpython*. By contrast some of the subdirectories will rarely if ever need updating.
 1. [**progref-py**](https://github.com/neuronsimulator/progref-py) -- NEURON Python programmer's reference. As mentioned further below, the beginning user can often be of particular help to the community by clarifying
 documentation and examples which may have seemed clear to the person who wrote it but are lacking details that are needed for a student.
 1. [**tutorials**](https://github.com/neuronsimulator/pythontutorial) -- here again, the student or beginning user can be of assistance either by improving existing tutorials or by providing new tutorials to illuminate aspects of
 NEURON that he or she had trouble with.
-
-Two repositories included here are largely obsolete and should only be modified for bug fixes: 
 1. [**iv**](https://github.com/neuronsimulator/iv) -- the old Interviews graphical program, now largely deprecated in favor of modern GUIs.
 1. [**progref-hoc**](https://github.com/neuronsimulator/progref-hoc) -- this is the _programmers reference_ for the hoc language, the 'higher order calculator' of Kernighan (a co-founder of UNIX). _hoc_ is now largely retired in
 favor of Python. The hoc code itself is in the nrn repository and also should not usually be touched.
