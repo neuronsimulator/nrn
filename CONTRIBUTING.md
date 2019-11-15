@@ -106,7 +106,6 @@ Sometimes, this process alone is enough to identify the bug as a function limita
 
 ## Code review process<a name="process"></a>
 
-The code board team at NEURON generally reviews pull requests on a weekly basis. 
-The code board may vary – see an updated list in the [contributors](https://github.com/neuronsimulator/nrn/graphs/contributors).
+Pull requests are reviewed by the development team.
 If you don't receive any feedback after a couple weeks, please follow up with a new comment.
 
