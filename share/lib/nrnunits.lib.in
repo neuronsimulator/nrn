@@ -68,9 +68,9 @@ c			2.99792458+8 m/sec fuzz
 g			9.80665 m/sec2
 au			1.49597871+11 m fuzz
 @LegacyY@mole			6.022169+23 fuzz
-@LegacyN@mole			6.022140857+23 fuzz
+@LegacyN@mole			6.02214076+23 fuzz
 @LegacyY@e			1.6021917-19 coul fuzz
-@LegacyN@e			1.6021766208-19 coul fuzz
+@LegacyN@e			1.602176634-19 coul fuzz
 energy			c2
 force			g
 mercury			1.33322+5 kg/m2-sec2
@@ -394,7 +394,7 @@ ev			e-volt
 / faraday  from  host: physics.nist.gov
 /          	 path: /PhysRefData/fundconst/html/keywords.html
 @LegacyY@faraday			9.6485309+4 coul
-@LegacyN@faraday			96485.33289 coul
+@LegacyN@faraday			96485.3321233100184 coul
 fathom			6 ft
 fermi			1-15 m
 fifth			4|5 qt
@@ -569,9 +569,9 @@ englishell		45 inch
 scottishell		37.2 inch
 flemishell		27 inch
 @LegacyY@planck			6.626-34 joule-sec
-@LegacyN@planck			6.626070040-34 joule-sec
+@LegacyN@planck			6.62607015-34 joule-sec
 @LegacyY@hbar			1.055-34 joule-sec
-@LegacyN@hbar			1.054571800-34 joule-sec
+@LegacyN@hbar			1.0545718176461565-34 joule-sec
 electronmass		9.1095-31 kg
 protonmass		1.6726-27 kg
 neutronmass		1.6606-27 kg
