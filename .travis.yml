@@ -12,6 +12,13 @@ dist: bionic
 osx_image: xcode10.2
 
 #=============================================================================
+# Git Clone
+#=============================================================================
+# Disable submodule cloning as we want to test selective cloning
+git:
+  submodules: false
+
+#=============================================================================
 # Common Packages
 #=============================================================================
 addons:
@@ -86,7 +93,7 @@ before_install:
       if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
         CPPFLAGS="-I$(brew --prefix zlib)/include" pyenv install 2.7.15 && CPPFLAGS="-I$(brew --prefix zlib)/include" pyenv install 3.7.1;
       else
-        CPPFLAGS="-I$(brew --prefix zlib)/include" pyenv install $PYTHON_VERSION;
+        CPPFLAGS="-I$(brew --prefix zlib)/include" PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install $PYTHON_VERSION;
       fi
     fi
   - if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
@@ -129,6 +136,6 @@ script:
         $PYTHON --version && $PYTHON -c 'import neuron; neuron.test()';
       fi;
     fi;
-  - if [ "$BUILD_MODE" != "cmake" ]; then
+  - if [ "$BUILD_MODE" != "cmake" && "$TRAVIS_OS_NAME" != "osx" ]; then
       $PYTHON share/lib/python/neuron/rxdtests/run_all.py;
     fi;
