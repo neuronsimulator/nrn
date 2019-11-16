@@ -84,10 +84,14 @@ if (NRN_ENABLE_LEGACY_FR)
   set (LegacyFR 1)
   set (LegacyY "")
   set (LegacyN "/")
+  set (LegacyYPy "")
+  set (LegacyNPy "#")
 else()
   set (LegacyFR 0)
   set (LegacyY "/")
   set (LegacyN "")
+  set (LegacyYPy "#")
+  set (LegacyNPy "")
 endif()
 
 if (NRN_ENABLE_MECH_DLL_STYLE)
@@ -247,6 +251,7 @@ nrn_configure_file(njconf.h src/nrnjava)
 nrn_configure_file(nmodlconf.h .)
 nrn_configure_file(nrnunits.lib share/lib)
 nrn_configure_file(nrn.defaults share/lib)
+nrn_configure_file(constants.py share/lib/python/neuron/rxd)
 #TODO temporary workaround for mingw
 file(COPY ${PROJECT_BINARY_DIR}/share/lib/nrnunits.lib DESTINATION ${PROJECT_BINARY_DIR}/lib)
 
@@ -258,4 +263,6 @@ if (NOT NRN_ENABLE_INTERVIEWS)
   nrn_copy_file_without_overwrite("${PROJECT_SOURCE_DIR}/cmake_nrnconf.h.in" "${PROJECT_SOURCE_DIR}/config.h.in")
   nrn_configure_file(config.h .)
 endif()
+
+
 

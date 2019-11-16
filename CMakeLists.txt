@@ -18,7 +18,7 @@ set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 # =============================================================================
 option(NRN_ENABLE_SHARED "Build shared libraries (otherwise static library)" ON)
 option(NRN_ENABLE_INTERVIEWS "Enable GUI with INTERVIEWS" ON)
-option(NRN_ENABLE_LEGACY_FR "Use original faraday, R, etc. instead of 2017 nist constants" ON)
+option(NRN_ENABLE_LEGACY_FR "Use original faraday, R, etc. instead of 2019 nist constants" ON)
 option(NRN_ENABLE_MECH_DLL_STYLE "Dynamically load nrnmech shared library" ON)
 option(NRN_ENABLE_DISCRETE_EVENT_OBSERVER "Enable Observer to be a subclass of DiscreteEvent" ON)
 option(NRN_ENABLE_PYTHON "Enable Python interpreter support (default python3 fallback to python)" ON)
@@ -246,6 +246,11 @@ install(FILES
   ${PROJECT_BINARY_DIR}/share/lib/nrn.defaults
   DESTINATION ${nrn_dest_share_dir}/lib
 )
+install(FILES
+  ${PROJECT_BINARY_DIR}/share/lib/python/neuron/rxd/constants.py
+  DESTINATION ${nrn_dest_share_dir}/lib/python/neuron/rxd
+)
+
 install(PROGRAMS
   ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/cleanup
   DESTINATION ${nrn_dest_share_dir}/lib

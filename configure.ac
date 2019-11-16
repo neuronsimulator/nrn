@@ -576,9 +576,9 @@ fi
 echo "NRNOC_X11 = $NRNOC_X11"
 AC_DEFINE_UNQUOTED(NRNOC_X11,$NRNOC_X11, if nrnoc can use X11)
 
-dnl Use legacy values for FARADAY and R, or 2017 NIST values?
+dnl Use legacy values for FARADAY and R, or 2019 NIST values?
 AC_ARG_ENABLE([LegacyFR],
-	AC_HELP_STRING([--enable-LegacyFR], [Use legacy instead of NIST (as of 2017) values for FARADAY and gas constant R. (default is legacy enabled)]),[
+	AC_HELP_STRING([--enable-LegacyFR], [Use legacy instead of NIST (as of 2019) values for FARADAY and gas constant R. (default is legacy enabled)]),[
 	if test "$enable_LegacyFR" != "yes" ; then
 		enable_LegacyFR="no"
 	fi
@@ -588,14 +588,20 @@ AC_ARG_ENABLE([LegacyFR],
 if test "$enable_LegacyFR" = "yes" ; then
 	LegacyY=""
 	LegacyN="/"
+	LegacyNPy="#"
+	LegacyYPy=""
 	LegacyFR=1
-	AC_DEFINE_UNQUOTED(LegacyFR,1,[1 for legacy, undef for NIST (as of 2017), for FARADAY and R])
+	AC_DEFINE_UNQUOTED(LegacyFR,1,[1 for legacy, undef for NIST (as of 2019), for FARADAY and R])
 else
 	LegacyY="/"
 	LegacyN=""
+	LegacyNPy=""
+	LegacyYPy="#"
 fi
 AC_SUBST(LegacyY)
 AC_SUBST(LegacyN)
+AC_SUBST(LegacyYPy)
+AC_SUBST(LegacyNPy)
 
 dnl This list specifies what files configure actually makes.
 AC_CONFIG_FILES([
@@ -681,7 +687,8 @@ AC_CONFIG_FILES([
 	share/demo/sync/Makefile
 	share/lib/python/neuron/Makefile
 	share/lib/python/neuron/rxd/Makefile
-    share/lib/python/neuron/crxd/Makefile
+	share/lib/python/neuron/crxd/Makefile
+	share/lib/python/neuron/rxd/constants.py
 	])
 fi
 
