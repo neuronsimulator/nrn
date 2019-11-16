@@ -94,7 +94,7 @@ endif()
 # =============================================================================
 # Build rxdmath library
 # =============================================================================
-if (NRN_ENABLE_RX3D)
+if(NRN_ENABLE_RX3D)
   add_library(rxdmath SHARED ${CMAKE_CURRENT_SOURCE_DIR}/rxdmath.c)
   install(TARGETS rxdmath DESTINATION ${nrn_dest_sharedlibs})
 endif()
@@ -109,7 +109,10 @@ if(NRN_ENABLE_MODULE_INSTALL)
     set(install_path ${CMAKE_INSTALL_PREFIX})
     # replace windows path of the form C:/msys64 to C:\msys64
     if(MINGW)
-      string(REPLACE ":/" ":\\\\" install_path "${install_path}")
+      string(REPLACE ":/"
+                     ":\\\\"
+                     install_path
+                     "${install_path}")
     endif()
     set(NRN_MODULE_INSTALL_OPTIONS "--home ${install_path}" CACHE INTERNAL "" FORCE)
   endif()
@@ -120,29 +123,25 @@ if(NRN_ENABLE_MODULE_INSTALL)
   set(bname ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp)
   set(sname ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp)
   set(inithoc_hdeps
-    ${CMAKE_CURRENT_SOURCE_DIR}/../oc/nrnmpi.h
-    ${CMAKE_CURRENT_BINARY_DIR}/../oc/nrnmpiuse.h
-    ${CMAKE_CURRENT_BINARY_DIR}/../oc/nrnpthread.h
-    ${CMAKE_CURRENT_BINARY_DIR}/nrnpython_config.h
-  )
+      ${CMAKE_CURRENT_SOURCE_DIR}/../oc/nrnmpi.h
+      ${CMAKE_CURRENT_BINARY_DIR}/../oc/nrnmpiuse.h
+      ${CMAKE_CURRENT_BINARY_DIR}/../oc/nrnpthread.h
+      ${CMAKE_CURRENT_BINARY_DIR}/nrnpython_config.h)
 
   add_custom_command(OUTPUT ${bname}
-    COMMAND cp ${sname} ${bname}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    DEPENDS ${sname} ${CMAKE_CURRENT_BINARY_DIR}/setup.py ${inithoc_hdeps}
-  )
+                     COMMAND cp ${sname} ${bname}
+                     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                     DEPENDS ${sname} ${CMAKE_CURRENT_BINARY_DIR}/setup.py ${inithoc_hdeps})
 
-  add_custom_target(hoc_module ALL
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    DEPENDS ${bname})
+  add_custom_target(hoc_module ALL WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} DEPENDS ${bname})
 
   # For DYNAMIC python, inithoc module name convention is different for
   # autotools version and cmake. So nrnpy_hoc.cpp and inithoc.cpp need
   # to know whether they are compiled via the cmake or autotools build system.
   # (note: see also for inithoc.cpp via setup.py)
   set_property(SOURCE ${PROJECT_SOURCE_DIR}/src/nrnpython/nrnpy_hoc.cpp
-    APPEND
-    PROPERTY COMPILE_DEFINITIONS NRNCMAKE)
+               APPEND
+               PROPERTY COMPILE_DEFINITIONS NRNCMAKE)
 
   # user has selected dynamic python support (could be multiple versions)
   if(NRN_ENABLE_PYTHON_DYNAMIC)
@@ -161,10 +160,10 @@ if(NRN_ENABLE_MODULE_INSTALL)
         ${PROJECT_BINARY_DIR}/src/oc
         ${IV_INCLUDE_DIR})
 
-    if (LINK_AGAINST_PYTHON)
+    if(LINK_AGAINST_PYTHON)
       list(LENGTH NRN_PYTHON_EXE_LIST _num_pythons)
       math(EXPR num_pythons "${_num_pythons} - 1")
-      foreach (val RANGE ${num_pythons})
+      foreach(val RANGE ${num_pythons})
         list(GET NRN_PYTHON_VER_LIST ${val} pyver)
         list(GET NRN_PYTHON_INCLUDE_LIST ${val} pyinc)
         list(GET NRN_PYTHON_LIB_LIST ${val} pylib)
@@ -195,7 +194,9 @@ if(NRN_ENABLE_MODULE_INSTALL)
 
   # for each python detected / provided by user, install module at install time
   foreach(pyexe ${NRN_PYTHON_EXE_LIST})
-    install(CODE "
+    install(
+      CODE
+      "
       message(STATUS \"Installing neuron module with: ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}\")
       #execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp)
       execute_process(COMMAND ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}

@@ -1,10 +1,9 @@
 # pyx->cpp
 # the cpp files are consumed to make modules in src/nrnpython/setup.py
 
-# No.. Because of problems building modules with MINGW containing
-# Cython generated files,
-# the cpp files are consumed to make modules from here, just as with
-# the autotools strategy, so that these modules can be
+# Because of problems building modules with MINGW containing Cython
+# generated files, the cpp files are consumed to make modules from here,
+# just as with the autotools strategy, so that these modules can be
 # built with the msvc toolchain. Maybe someday the src/nrnpython/setup.py
 # can build all the extension modules for windows.
 
@@ -21,12 +20,12 @@ else()
   set(BUILD_MINGW_FALSE "")
 endif()
 
-
 nrn_configure_file(setup.py share/lib/python/neuron/rxd/geometry3d)
 
 set(basenames ctng surfaces graphicsPrimitives)
 
-if (NRN_ENABLE_RX3D AND NRN_ENABLE_MODULE_INSTALL AND NRN_ENABLE_PYTHON)
+if(NRN_ENABLE_RX3D AND NRN_ENABLE_MODULE_INSTALL AND NRN_ENABLE_PYTHON)
+
 
   # After many failures, now following the autotools Makefile.am details.
   # ie. for MINGW, python3 uses msvc and python2 uses mingw32
@@ -77,7 +76,7 @@ else #mac/linux does not need anything special\n\
   $pyexe setup.py build_ext --inplace\n\
 fi\n\
 ")
-    
+
   # Cython generates *.cpp from *.pyx. Make a list of the cpp files
   # so the rxd_extensions targets can depend on them.
   # These cpp files are given a false dependency on setup.py so that a change
@@ -88,21 +87,17 @@ fi\n\
     set(sname ${CMAKE_CURRENT_SOURCE_DIR}/${basename}.pyx)
 
     add_custom_command(OUTPUT ${bname}
-      COMMAND ${CYTHON_EXECUTABLE} ${basename}.pyx -o ${bname}
-      COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/cy_cpp_filt.sh "${bname}"
-      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      DEPENDS ${sname} ${CMAKE_CURRENT_BINARY_DIR}/setup.py
-    )
+                       COMMAND ${CYTHON_EXECUTABLE} ${basename}.pyx -o ${bname}
+                       COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/cy_cpp_filt.sh "${bname}"
+                       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                       DEPENDS ${sname} ${CMAKE_CURRENT_BINARY_DIR}/setup.py)
 
     list(APPEND rxd_cython_cpp_files ${bname})
 
   endforeach(basename)
 
-  # want the cython custom command to generate only once no matter how
-  # many pythons
-  add_custom_target(rxd_cython_generated
-    DEPENDS ${rxd_cython_cpp_files}
-  )
+  # want the cython custom command to generate only once no matter how many pythons
+  add_custom_target(rxd_cython_generated DEPENDS ${rxd_cython_cpp_files})
 
   # for each python detected / provided by user, build the extensions
   # we do not care about the target names but they must be unique, hence the
@@ -111,20 +106,17 @@ fi\n\
   # is out of date (see the CYTHON executable custom_command)
   list(LENGTH NRN_PYTHON_EXE_LIST _num_pythons)
   math(EXPR num_pythons "${_num_pythons} - 1")
-  foreach (val RANGE ${num_pythons})
+  foreach(val RANGE ${num_pythons})
     list(GET NRN_PYTHON_EXE_LIST ${val} pyexe)
     add_custom_target(rx3dextensions_${val}
-      COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/runpy.sh "${pyexe}"
-      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-      DEPENDS rxd_cython_generated
-    ) 
+                      COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/runpy.sh "${pyexe}"
+                      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                      DEPENDS rxd_cython_generated)
     list(APPEND rx3dextensions rx3dextensions_${val})
   endforeach(val)
 
-  # always out of date but that does not imply any of the rx3dextension
-  #targets are out of date
-  add_custom_target(rx3d ALL
-    DEPENDS ${rx3dextensions}
-  )
+  # always out of date but that does not imply any of the rx3dextension targets
+  # are out of date
+  add_custom_target(rx3d ALL DEPENDS ${rx3dextensions})
 
 endif()
