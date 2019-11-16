@@ -218,16 +218,23 @@ add_subdirectory(bin)
 # =============================================================================
 # CMake format and Clang format
 # =============================================================================
-add_subdirectory(external/coding-conventions/cpp)
+if(NEURON_CMAKE_FORMAT)
+  if(NOT EXISTS external/coding-conventions/cpp)
+    initialize_submodule(external/coding-conventions)
+  endif()
+  add_subdirectory(external/coding-conventions/cpp)
+endif()
 
 if(NRN_ENABLE_PYTHON)
   add_subdirectory(src/nrnpython)
 endif()
+
 if(NRN_MACOS_BUILD OR NOT READLINE_FOUND)
   add_subdirectory(src/readline)
   set(INTERNAL_READLINE readline)
   unset(Readline_LIBRARY CACHE)
 endif()
+
 if(NRN_ENABLE_RX3D)
   add_subdirectory(share/lib/python/neuron/rxd/geometry3d)
 endif()
