@@ -444,7 +444,7 @@ def _currents(rhs):
 _last_dt = None
 
 def _setup():
-    initializer._do_init()
+    if not initializer.is_initialized(): initializer._do_init()
     # TODO: this is when I should resetup matrices (structure changed event)
     global _last_dt, _external_solver_initialized
     _last_dt = None
