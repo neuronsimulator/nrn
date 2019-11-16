@@ -149,9 +149,17 @@ set(NRN_INCLUDE_DIRS
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/sundials/shared)
 
 # generate version information file
+# nrnversion.h does not depend on another file but on the output of
+# git2version_h.sh and nrnversion.h should only be changed if that output
+# is different from the contents of nrnversion.h
+add_custom_target(nrnversion_h
+                   ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh ${PROJECT_SOURCE_DIR} >
+                           nrnversion.h.tmp
+                   COMMAND ${CMAKE_COMMAND} -E copy_if_different nrnversion.h.tmp ${NRN_NRNOC_SRC_DIR}/nrnversion.h
+                   DEPENDS ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh)
+
 add_custom_command(OUTPUT ${NRN_NRNOC_SRC_DIR}/nrnversion.h
-                   COMMAND ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh ${PROJECT_SOURCE_DIR} >
-                           ${NRN_NRNOC_SRC_DIR}/nrnversion.h)
+                   DEPENDS nrnversion_h)
 
 # generate hocusr.h
 add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/src/nrnoc/hocusr.h
