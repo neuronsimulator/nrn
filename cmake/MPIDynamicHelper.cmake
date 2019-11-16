@@ -6,7 +6,7 @@
 # Depending on the MPIs used NRNMPI_INCLUDE_<mpipkg> will be defined.
 
 if(NRN_ENABLE_MPI)
-  if (NRN_ENABLE_MPI_DYNAMIC)
+  if(NRN_ENABLE_MPI_DYNAMIC)
     if("${NRN_MPI_DYNAMIC}" STREQUAL "")
       set(NRNMPI_DYNAMICLOAD 1)
     else()

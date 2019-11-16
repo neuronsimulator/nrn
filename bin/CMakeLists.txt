@@ -11,13 +11,13 @@ set(nrndef_mac "//")
 set(nrndef_mswin "//")
 set(MAC_DARWIN_TRUE "\#")
 set(MAC_DARWIN_FALSE "")
-if (NRN_LINUX_BUILD)
+if(NRN_LINUX_BUILD)
   set(nrndef_unix "")
-elseif (NRN_MACOS_BUILD)
+elseif(NRN_MACOS_BUILD)
   set(nrndef_mac "")
   set(MAC_DARWIN_TRUE "")
   set(MAC_DARWIN_FALSE "\#")
-elseif (NRN_WINDOWS_BUILD)
+elseif(NRN_WINDOWS_BUILD)
   set(nrndef_mswin "")
 endif()
 
@@ -50,7 +50,7 @@ install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/nrngui ${PROJECT_BINARY_DIR}/bin/neur
 
 install(FILES ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/nrnpyenv.sh
-              ${CMAKE_CURRENT_SOURCE_DIR}/sortspike
-              ${CMAKE_CURRENT_SOURCE_DIR}/mkthreadsafe
-              ${CMAKE_CURRENT_SOURCE_DIR}/nrnpyenv.sh
+                 ${CMAKE_CURRENT_SOURCE_DIR}/sortspike
+                 ${CMAKE_CURRENT_SOURCE_DIR}/mkthreadsafe
+                 ${CMAKE_CURRENT_SOURCE_DIR}/nrnpyenv.sh
         DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)

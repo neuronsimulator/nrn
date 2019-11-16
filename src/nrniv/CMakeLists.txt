@@ -19,10 +19,7 @@ bison_target(modlunitparser
              DEFINES_FILE
              ${NRN_MODLUNIT_SRC_DIR}/parse1.h)
 
-set_property(SOURCE ${NRN_MODLUNIT_SRC_FILES}
-             APPEND
-             PROPERTY COMPILE_DEFINITIONS
-                      NRNUNIT=1)
+set_property(SOURCE ${NRN_MODLUNIT_SRC_FILES} APPEND PROPERTY COMPILE_DEFINITIONS NRNUNIT=1)
 
 add_executable(modlunit ${NRN_MODLUNIT_SRC_FILES})
 
@@ -153,13 +150,15 @@ file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/sundials/shared)
 # git2version_h.sh and nrnversion.h should only be changed if that output
 # is different from the contents of nrnversion.h
 add_custom_target(nrnversion_h
-                   ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh ${PROJECT_SOURCE_DIR} >
-                           nrnversion.h.tmp
-                   COMMAND ${CMAKE_COMMAND} -E copy_if_different nrnversion.h.tmp ${NRN_NRNOC_SRC_DIR}/nrnversion.h
-                   DEPENDS ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh)
+                  ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh
+                  ${PROJECT_SOURCE_DIR}
+                  >
+                  nrnversion.h.tmp
+                  COMMAND ${CMAKE_COMMAND} -E copy_if_different nrnversion.h.tmp
+                          ${NRN_NRNOC_SRC_DIR}/nrnversion.h
+                  DEPENDS ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh)
 
-add_custom_command(OUTPUT ${NRN_NRNOC_SRC_DIR}/nrnversion.h
-                   DEPENDS nrnversion_h)
+add_custom_command(OUTPUT ${NRN_NRNOC_SRC_DIR}/nrnversion.h DEPENDS nrnversion_h)
 
 # generate hocusr.h
 add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/src/nrnoc/hocusr.h
@@ -201,9 +200,10 @@ set_property(SOURCE ${PROJECT_SOURCE_DIR}/src/nrniv/nrnpy.cpp
              APPEND
              PROPERTY COMPILE_DEFINITIONS NRNCMAKE)
 
-set_property(SOURCE ${PROJECT_SOURCE_DIR}/src/nrniv/nrnpy.cpp
-             APPEND
-             PROPERTY COMPILE_DEFINITIONS USE_LIBNRNPYTHON_MAJORMINOR=${USE_LIBNRNPYTHON_MAJORMINOR})
+set_property(
+  SOURCE ${PROJECT_SOURCE_DIR}/src/nrniv/nrnpy.cpp
+  APPEND
+  PROPERTY COMPILE_DEFINITIONS USE_LIBNRNPYTHON_MAJORMINOR=${USE_LIBNRNPYTHON_MAJORMINOR})
 
 set_property(SOURCE ${NRN_IVOC_SRC_FILES}
              APPEND
@@ -284,7 +284,7 @@ if(NRN_ENABLE_MPI)
   if(NRN_ENABLE_MPI_DYNAMIC)
     add_library(nrnmpi_lib SHARED ${NRN_NRNMPI_SRC_FILES})
     target_link_libraries(nrnmpi_lib ${MPI_C_LIBRARIES})
-    if (MINGW)
+    if(MINGW)
       add_dependencies(nrnmpi_lib nrniv_lib)
       target_link_libraries(nrnmpi_lib nrniv_lib)
     endif()
@@ -307,12 +307,12 @@ endif()
 # =============================================================================
 add_executable(nrniv ${NRN_BIN_SRC_FILES})
 target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE} ${CMAKE_THREAD_LIBS_INIT})
-if (NOT MINGW)
+if(NOT MINGW)
   target_link_libraries(nrniv ${CMAKE_DL_LIBS})
 endif()
 
 # TODO: unset in top level CMake is not working
-if (NOT NRN_MACOS_BUILD AND ${READLINE_FOUND})
+if(NOT NRN_MACOS_BUILD AND ${READLINE_FOUND})
   target_link_libraries(nrniv ${Readline_LIBRARY})
 endif()
 

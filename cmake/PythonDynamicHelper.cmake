@@ -26,15 +26,15 @@ set(NRN_PYTHON_LIB_LIST "" CACHE INTERNAL "" FORCE)
 # This is here instead of in src/nrnpython/CMakeLists.txt as src/nrniv/CMakeLists
 # needs it for nrniv/nrnpy.cpp
 set(USE_LIBNRNPYTHON_MAJORMINOR 0)
-if (LINK_AGAINST_PYTHON)
+if(LINK_AGAINST_PYTHON)
   set(USE_LIBNRNPYTHON_MAJORMINOR 1)
 endif()
 
-if (NRN_ENABLE_PYTHON)
-  if (NRN_ENABLE_PYTHON_DYNAMIC)
-    if ("${NRN_PYTHON_DYNAMIC}" STREQUAL "")
+if(NRN_ENABLE_PYTHON)
+  if(NRN_ENABLE_PYTHON_DYNAMIC)
+    if("${NRN_PYTHON_DYNAMIC}" STREQUAL "")
       # use the default python already determined
-      if (LINK_AGAINST_PYTHON)
+      if(LINK_AGAINST_PYTHON)
         set(PYVER "${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}")
       else()
         set(PYVER ${PYTHON_VERSION_MAJOR})
@@ -49,25 +49,33 @@ if (NRN_ENABLE_PYTHON)
       message(STATUS "Dynamic Python support")
       foreach(pyexe ${NRN_PYTHON_DYNAMIC})
         message(STATUS "Checking if ${pyexe} is a working python")
-        if (LINK_AGAINST_PYTHON)
-          set (pr_pyver "print('%d.%d' % (sys.version_info[0], sys.version_info[1]))")
+        if(LINK_AGAINST_PYTHON)
+          set(pr_pyver "print('%d.%d' % (sys.version_info[0], sys.version_info[1]))")
         else()
-          set (pr_pyver "print(sys.version_info[0])")
+          set(pr_pyver "print(sys.version_info[0])")
         endif()
-        execute_process(COMMAND ${pyexe} -c "from distutils.sysconfig import get_python_inc as p; print(p()); import sys; ${pr_pyver}; quit()"
+        execute_process(
+          COMMAND
+            ${pyexe} -c
+            "from distutils.sysconfig import get_python_inc as p; print(p()); import sys; ${pr_pyver}; quit()"
           RESULT_VARIABLE result
           OUTPUT_VARIABLE std_output
-          ERROR_VARIABLE  err_output
-          OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
+          ERROR_VARIABLE err_output
+          OUTPUT_STRIP_TRAILING_WHITESPACE)
         if(result EQUAL 0)
-          string(REGEX MATCH [0-9.]*$ PYVER ${std_output})
-          string(REGEX MATCH ^[^\n]* incval ${std_output})
-          if (NOT NRNPYTHON_INCLUDE${PYVER})
-            set (NRNPYTHON_INCLUDE${PYVER} ${incval})
+          string(REGEX MATCH
+                       [0-9.]*$
+                       PYVER
+                       ${std_output})
+          string(REGEX MATCH
+                       ^[^\n]*
+                       incval
+                       ${std_output})
+          if(NOT NRNPYTHON_INCLUDE${PYVER})
+            set(NRNPYTHON_INCLUDE${PYVER} ${incval})
           endif()
-          # Only needed to find include and library paths if LINK_AGAINST_PYTHON but useful
-          # for build report. Unset the variables set by PythonLibsNew so we can start afresh.
+          # Only needed to find include and library paths if LINK_AGAINST_PYTHON but useful for
+          # build report. Unset the variables set by PythonLibsNew so we can start afresh.
           set(PYTHON_EXECUTABLE ${pyexe})
           unset(PYTHON_INCLUDE_DIR CACHE)
           unset(PYTHON_LIBRARY CACHE)
@@ -79,12 +87,17 @@ if (NRN_ENABLE_PYTHON)
 
           find_package(PythonLibsNew ${PYVER} REQUIRED)
           # convert major.minor to majorminor
-          string(REGEX REPLACE [.] "" PYVER ${PYVER})
+          string(REGEX
+                 REPLACE [.]
+                         ""
+                         PYVER
+                         ${PYVER})
           list(APPEND NRN_PYTHON_VER_LIST "${PYVER}")
           list(APPEND NRN_PYTHON_INCLUDE_LIST "${incval}")
           list(APPEND NRN_PYTHON_LIB_LIST "${PYTHON_LIBRARIES}")
         else()
-          message(FATAL_ERROR "Error while checking ${pyexe} : ${result}\n${std_output}\n${err_output}")
+          message(
+            FATAL_ERROR "Error while checking ${pyexe} : ${result}\n${std_output}\n${err_output}")
         endif()
       endforeach()
     endif()
@@ -93,14 +106,17 @@ endif()
 
 # check Python.h exists under provided include directory
 macro(check_python_include python_include major_version)
-  if (${python_include})
-    if (NOT EXISTS "${${python_include}}/Python.h")
-      message(FATAL_ERROR " ${${python_include}}/Python.h does not exist, set proper ${python_include} to include directory")
+  if(${python_include})
+    if(NOT EXISTS "${${python_include}}/Python.h")
+      message(
+        FATAL_ERROR
+          " ${${python_include}}/Python.h does not exist, set proper ${python_include} to include directory"
+        )
     endif()
   endif()
 endmacro()
 
-if (NOT LINK_AGAINST_PYTHON)
+if(NOT LINK_AGAINST_PYTHON)
   # make sure provided python have Python.h header
   check_python_include(NRNPYTHON_INCLUDE2 2)
   check_python_include(NRNPYTHON_INCLUDE3 3)
