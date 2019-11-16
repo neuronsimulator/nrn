@@ -8,6 +8,7 @@ include(CheckSymbolExists)
 include(CheckCXXSymbolExists)
 
 set(CMAKE_REQUIRED_QUIET TRUE)
+
 # =============================================================================
 # Check if directory related to DIR exist by compiling code
 # =============================================================================
@@ -97,6 +98,7 @@ endmacro()
 # =============================================================================
 # Transform CMAKE_CURRENT_SOURCE_DIR/file.in to CMAKE_CURRENT_BINARY_DIR/file
 # =============================================================================
+# ~~~
 # Just as autoconf transforms file.in into file, this macro transforms
 # CMAKE_CURRENT_SOURCE_DIR/file.in into CMAKE_CURRENT_BINARY_DIR/file.
 # This first copies with some replacement the file.in to cmake_file.in
@@ -105,6 +107,7 @@ endmacro()
 # if different copies file_cmk to file. This prevent recompilation of
 # .o files that depend on file. The dir arg is the path relative to
 # PROJECT_SOURCE_DIR and PROJECT_BINARY_DIR.
+# ~~~
 macro(nrn_configure_file file dir)
   set(bin_dir ${PROJECT_BINARY_DIR}/${dir})
   file(MAKE_DIRECTORY ${bin_dir})

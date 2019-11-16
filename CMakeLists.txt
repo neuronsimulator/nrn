@@ -32,7 +32,7 @@ option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ON)
 # =============================================================================
 # Build options (string)
 # =============================================================================
-
+# ~~~
 # NEURON module installation:
 #   - OFF       : do not install
 #   - ON        : install with --home in ${CMAKE_INSTALL_PREFIX}
@@ -56,10 +56,10 @@ option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ON)
 #                 libnrnmpi_xxx.so interface for each. When nrniv is launched with the -mpi argument,
 #                 the first mpi found will determine which interface is dynamically loaded."
 # Rx3D Cython generated files compiler optimization level. 0 is default.
-
+# ~~~
 option(NRN_ENABLE_MODULE_INSTALL "Enable installation of NEURON Python module" ON)
 set(NRN_MODULE_INSTALL_OPTIONS ""
-    CACHE STRING "setup.py options, leave empty for --home <install prefix>")
+    CACHE STRING "setup.py options, leave empty for --home <build dir>")
 
 option(NRN_ENABLE_PYTHON_DYNAMIC "Enable dynamic Python version support" OFF)
 set(
@@ -77,8 +77,7 @@ set(
   )
 
 set(NRN_RX3D_OPT_LEVEL "0"
-    CACHE STRING
-          "Integer optimization level for cython generated files. Nonzero may compile very slowly.")
+    CACHE STRING "Optimization level for Cython generated files (non-zero may compile slowly)")
 
 # =============================================================================
 # Include cmake modules
@@ -101,11 +100,13 @@ find_package(readline)
 if(NRN_ENABLE_RX3D)
   find_package(Cython)
 endif()
+if(MINGW)
+  find_package(Termcap REQUIRED)
+endif()
 
 # =============================================================================
-# Enable MPI/Python/IV/Pthead if found
+# Enable MPI
 # =============================================================================
-# enable mpi if found
 if(NRN_ENABLE_MPI)
   find_package(MPI REQUIRED)
   include_directories(${MPI_INCLUDE_PATH})
@@ -116,28 +117,31 @@ else()
   set(PARANEURON 0)
 endif()
 
-# enable interviews if found
-if(NRN_ENABLE_INTERVIEWS AND NOT NRN_WINDOWS_BUILD)
-  find_package(X11 QUIET)
-  if(NOT X11_FOUND)
-    if(APPLE)
-      message(FATAL_ERROR "You must install XQuartz from https://www.xquartz.org/ to build iv")
-    else()
-      message(
-        FATAL_ERROR
-          "You must install X11 to build iv e.g. 'apt install libx11-dev libxcomposite-dev' on Ubuntu"
-        )
-    endif()
-  endif()
-  include_directories(${X11_INCLUDE_DIR})
-endif()
+# =============================================================================
+# Enable Interviews
+# =============================================================================
 if(NRN_ENABLE_INTERVIEWS)
+  # on windows x11 is not required
+  if(NOT NRN_WINDOWS_BUILD)
+    find_package(X11 QUIET)
+    if(NOT X11_FOUND)
+      if(APPLE)
+        message(FATAL_ERROR "You must install XQuartz from https://www.xquartz.org/ to build iv")
+      else()
+        message(
+          FATAL_ERROR
+            "You must install X11 to build iv e.g. 'apt install libx11-dev libxcomposite-dev' on Ubuntu"
+          )
+      endif()
+    endif()
+    include_directories(${X11_INCLUDE_DIR})
+  endif()
+
   find_package(iv QUIET PATHS ${IV_DIR}/share/cmake ${IV_DIR})
   if(${iv_FOUND})
     message(STATUS "Using external Interviews from ${IV_DIR}")
     get_target_property(IV_INCLUDE_DIR interviews INTERFACE_INCLUDE_DIRECTORIES)
   else()
-    message(STATUS "Building Interviews from submodule")
     add_external_project(iv)
     include_directories(external/iv/src/include)
     set(IV_DIR ${PROJECT_SOURCE_DIR}/external/iv)
@@ -148,7 +152,9 @@ else()
   set(HAVE_IV 0)
 endif()
 
-# enable python support (interpreter needed to make hocusr.h from neuron.h, prefer Python 3)
+# =============================================================================
+# Enable Python support
+# =============================================================================
 find_package(PythonInterp REQUIRED)
 if(NRN_ENABLE_PYTHON)
   find_package(PythonLibsNew ${PYTHON_VERSION_MAJOR} REQUIRED)
@@ -160,7 +166,9 @@ else()
   set(USE_PYTHON 0)
 endif()
 
-# enable threads if found
+# =============================================================================
+# Enable Threads support
+# =============================================================================
 if(NRN_ENABLE_THREADS)
   set(THREADS_PREFER_PTHREAD_FLAG ON)
   find_package(Threads REQUIRED)
@@ -169,12 +177,9 @@ else()
   set(USE_PTHREAD 0)
 endif()
 
-# TODO check if this is optional with ncurses
-if(MINGW)
-  find_package(Termcap REQUIRED)
-endif()
-
-# enable CoreNEURON support
+# =============================================================================
+# Enable CoreNEURON support
+# =============================================================================
 if(NRN_ENABLE_CORENEURON)
   find_package(coreneuron QUIET PATHS ${CORENEURON_DIR}/share/cmake ${CORENEURON_DIR})
   if(${coreneuron_FOUND})
@@ -186,6 +191,18 @@ if(NRN_ENABLE_CORENEURON)
   endif()
 endif()
 
+# =============================================================================
+# Add helpder CMake modules AFTER setting options
+# =============================================================================
+include(NeuronFileLists)
+include(MPIDynamicHelper)
+include(ConfigFileSetting)
+include(PythonDynamicHelper)
+
+# =============================================================================
+# Set install location for libraries (before src/nrniv)
+# =============================================================================
+# ~~~
 # Classically, the install destination of the share folder for mac/linux has
 # been <prefix>/share/nrn but for linux it has been <prefix>. For now we keep
 # this distinction.
@@ -194,36 +211,20 @@ endif()
 # expected these shared libraries in <prefix>/bin (reduces the PATH and expected
 # by ctypes in the neuron module.) So for now we keep that distinction as
 # well. Setting these here as setup.py.in needs it.
-set(nrn_dest_share_dir ${CMAKE_INSTALL_PREFIX}/share/nrn)
-set(nrn_dest_sharedlibs ${CMAKE_INSTALL_PREFIX}/lib)
+# ~~~
 if(MINGW)
-  set(nrn_dest_share_dir ${CMAKE_INSTALL_PREFIX})
-  set(nrn_dest_sharedlibs ${CMAKE_INSTALL_PREFIX}/bin)
+  set(NRN_INSTALL_SHARE_DIR ${CMAKE_INSTALL_PREFIX})
+  set(NRN_INSTALL_SHARE_LIB_DIR ${CMAKE_INSTALL_PREFIX}/bin)
+else()
+  set(NRN_INSTALL_SHARE_DIR ${CMAKE_INSTALL_PREFIX}/share/nrn)
+  set(NRN_INSTALL_SHARE_LIB_DIR ${CMAKE_INSTALL_PREFIX}/lib)
 endif()
 
 # =============================================================================
-# Add CMake modules AFTER setting options
-# =============================================================================
-include(NeuronFileLists)
-include(MPIDynamicHelper)
-include(ConfigFileSetting)
-include(PythonDynamicHelper)
-
-# =============================================================================
-# Project version from git and project directories
+# Add project directories AFTER CMake modules
 # =============================================================================
 add_subdirectory(src/nrniv)
 add_subdirectory(bin)
-
-# =============================================================================
-# CMake format and Clang format
-# =============================================================================
-if(NEURON_CMAKE_FORMAT)
-  if(NOT EXISTS external/coding-conventions/cpp)
-    initialize_submodule(external/coding-conventions)
-  endif()
-  add_subdirectory(external/coding-conventions/cpp)
-endif()
 
 if(NRN_ENABLE_PYTHON)
   add_subdirectory(src/nrnpython)
@@ -237,6 +238,16 @@ endif()
 
 if(NRN_ENABLE_RX3D)
   add_subdirectory(share/lib/python/neuron/rxd/geometry3d)
+endif()
+
+# =============================================================================
+# Add coding-conventions submodule if code formatting enabled
+# =============================================================================
+if(NEURON_CMAKE_FORMAT)
+  if(NOT EXISTS external/coding-conventions/cpp)
+    initialize_submodule(external/coding-conventions)
+  endif()
+  add_subdirectory(external/coding-conventions/cpp)
 endif()
 
 # =============================================================================
@@ -259,42 +270,47 @@ endif()
 # =============================================================================
 # Install targets
 # =============================================================================
-# find headers to install
-nrn_find_project_files(NRN_HEADERS_PATHS ${HEADER_FILES_TO_INSTALL})
-
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/lib DESTINATION ${nrn_dest_share_dir})
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo DESTINATION ${nrn_dest_share_dir})
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/lib DESTINATION ${NRN_INSTALL_SHARE_DIR})
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo DESTINATION ${NRN_INSTALL_SHARE_DIR})
 install(FILES ${PROJECT_BINARY_DIR}/share/lib/nrnunits.lib
               ${PROJECT_BINARY_DIR}/share/lib/nrn.defaults
-        DESTINATION ${nrn_dest_share_dir}/lib)
+        DESTINATION ${NRN_INSTALL_SHARE_DIR}/lib)
 install(FILES ${PROJECT_BINARY_DIR}/share/lib/python/neuron/rxd/constants.py
-        DESTINATION ${nrn_dest_share_dir}/lib/python/neuron/rxd)
-
+        DESTINATION ${NRN_INSTALL_SHARE_DIR}/lib/python/neuron/rxd)
 install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/cleanup
-        DESTINATION ${nrn_dest_share_dir}/lib)
+        DESTINATION ${NRN_INSTALL_SHARE_DIR}/lib)
+
+# find headers to install
+nrn_find_project_files(NRN_HEADERS_PATHS ${HEADER_FILES_TO_INSTALL})
 install(FILES ${NRN_HEADERS_PATHS} ${PROJECT_BINARY_DIR}/src/oc/nrnpthread.h
         DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
 
 # for external coreneuron, nrnivmodl-core should be install
-if(NRN_ENABLE_CORENEURON AND coreneuron_FOUND)
+if(coreneuron_FOUND)
   install(PROGRAMS ${CORENEURON_DIR}/bin/nrnivmodl-core DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
   install(FILES ${CORENEURON_DIR}/bin/nrnivmodl_core_makefile
           DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 endif()
 
+# =============================================================================
+# Copy bash executable for windows
+# =============================================================================
 if(MINGW)
+  # ~~~
   # nrniv.cpp calls nrnpyenv.sh with absolute path to bash.exe
   # this is sufficient on the build machine since a full
   # development environment exists. On the users install machine
   # using a setup.exe distribution, the setup.ex will contain a
   # minimal development environment with sufficient mingw programs
   # to allow nrnpyenv.sh to work. (see nrn/mingw_files/nrnmingwenv.sh)
-  find_file(nrnbash bash.exe DOC "DOS path to bash.exe")
-  message(STATUS "Found bash.exe at ${nrnbash}")
-  if("${nrnbash}" STREQUAL "nrnbash-NOTFOUND")
-    set(nrnbash "f:/msys64/usr/bin/bash.exe")
+  # ~~~
+  find_file(BASH_EXE bash.exe DOC "DOS path to bash.exe")
+  message(STATUS "Found bash.exe at ${BASH_EXE}")
+  if("${BASH_EXE}" STREQUAL "BASH_EXE-NOTFOUND")
+    set(BASH_EXE "f:/msys64/usr/bin/bash.exe")
+    message(WARNING "Can not find bash.exe, trying to use ${BASH_EXE}")
   endif()
-  install(PROGRAMS ${nrnbash} DESTINATION ${CMAKE_INSTALL_PREFIX}/mingw/usr/bin)
+  install(PROGRAMS ${BASH_EXE} DESTINATION ${CMAKE_INSTALL_PREFIX}/mingw/usr/bin)
 endif()
 
 # =============================================================================
@@ -312,11 +328,13 @@ if(cmake_generator_tolower MATCHES "makefile")
   message(STATUS "make install  | Will install NEURON to: ${CMAKE_INSTALL_PREFIX}")
   message(STATUS "              | Change the install location of NEURON using:")
   message(STATUS "              |     cmake <src_path> -DCMAKE_INSTALL_PREFIX=<install_path>")
-  message(STATUS "make doc      | Build the API documentation, requires Sphinx (todo)")
+  message(STATUS "make docs     | Build the API documentation")
   message(STATUS "make uninstall| Removes files installed by make install (todo)")
   message(STATUS "--------------+--------------------------------------------------------------")
   message(STATUS " Build option | Status")
   message(STATUS "--------------+--------------------------------------------------------------")
+  message(STATUS "Shared        | ${NRN_ENABLE_SHARED}")
+  message(STATUS "Legacy FR     | ${NRN_ENABLE_LEGACY_FR}")
   message(STATUS "MPI           | ${NRN_ENABLE_MPI}")
   if(NRN_ENABLE_MPI)
     message(STATUS "  INC         | ${MPI_INCLUDE_PATH}")
@@ -347,7 +365,6 @@ if(cmake_generator_tolower MATCHES "makefile")
   if(${NRN_ENABLE_RX3D})
     message(STATUS "  OptLevel    | ${NRN_RX3D_OPT_LEVEL}")
   endif()
-  message(STATUS "Shared        | ${NRN_ENABLE_SHARED}")
   message(STATUS "Interviews    | ${NRN_ENABLE_INTERVIEWS}")
   if(NRN_ENABLE_INTERVIEWS)
     message(STATUS "  PATH        | ${IV_DIR}")

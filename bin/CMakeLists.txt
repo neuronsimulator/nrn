@@ -28,7 +28,7 @@ set(CMAKE_INSTALL_INCLUDEDIR include)
 set(CMAKE_INSTALL_DATADIR share/nrn)
 
 # =============================================================================
-# Inclode nrnivmodl Makefile generator, adapted from CoreNEURON
+# Include nrnivmodl makefile generator
 # =============================================================================
 include(CMakeListsNrnMech)
 

@@ -1,3 +1,4 @@
+# ~~~~~~
 # Copyright (c) 2014, Matthias Vallentin
 # All rights reserved.
 # 
@@ -66,3 +67,4 @@ mark_as_advanced(
   TERMCAP_LIBRARIES
   TERMCAP_INCLUDE_DIR
   )
+# ~~~~~~

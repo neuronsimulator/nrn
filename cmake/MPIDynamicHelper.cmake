@@ -1,9 +1,12 @@
 # =============================================================================
 # Configure support for dynamic MPI initialization
 # =============================================================================
+# ~~~
 # TODO : verify that NRN_ENABLE_MPI_DYNAMIC is valid and determine an include
 # directory for each MPI package building libnrnmpi_<mpipkg>.so.
 # Depending on the MPIs used NRNMPI_INCLUDE_<mpipkg> will be defined.
+# Currently dynamic MPI support is not implemented.
+# ~~~
 
 if(NRN_ENABLE_MPI)
   if(NRN_ENABLE_MPI_DYNAMIC)
