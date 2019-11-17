@@ -93,6 +93,7 @@ def replace(rmsec, offset, nseg):
             if sec() and sec()._offset > old_offset:
                 sec()._offset -= dur
 
+
 class Section1D(rxdsection.RxDSection):
     def __init__(self, species, sec, diff, r):
         self._species = weakref.ref(species)
@@ -113,7 +114,7 @@ class Section1D(rxdsection.RxDSection):
         if isinstance(other, nrn.Section):
             return self._sec == other
         return id(self) == id(other)
-    
+
     def __rne__(self, other):
         # necessary for Python 2 but not for Python 3
         return not (self == other)
@@ -155,7 +156,7 @@ class Section1D(rxdsection.RxDSection):
         # remove ref to this section -- at exit weakref.ref might be none 
         if weakref and weakref.ref and _rxd_sec_lookup and self._sec in _rxd_sec_lookup:
             sec_list = _rxd_sec_lookup[self._sec]
-            sec_list = list(filter(lambda x: x() is not None or x() == self, sec_list))
+            sec_list = list(filter(lambda x: x() is not None and not x() == self, sec_list))
             if sec_list == []:
                 del _rxd_sec_lookup[self._sec]
 
