@@ -1,14 +1,14 @@
-# modified from CoreNEURON/extra/CMakeLists.txt included by nrn/CMakeLists.txt to define
-# substitutions needed to create nrnmech_makefile that is called by nrnivmodl
+# =============================================================================
+# Prepare nrnivmodl script with correct flags
+# =============================================================================
 
+# extract the COMPILE_DEFINITIONS property from the directory
 get_directory_property(NRN_COMPILE_DEFS COMPILE_DEFINITIONS)
-
 if(NRN_COMPILE_DEFS)
-  set(NRN_COMPILE_DEFS "-D${NRN_COMPILE_DEFS}")
-  string(REPLACE ";"
-                 " -D"
-                 NRN_COMPILE_DEFS
-                 "${NRN_COMPILE_DEFS}")
+  set(NRN_COMPILE_DEFS "")
+  foreach(flag ${NRN_COMPILE_DEFS})
+    set(NRN_COMPILE_DEFS "${NRN_COMPILE_DEFS} -D${flag}")
+  endforeach()
 endif()
 
 # extract link defs to the whole project
@@ -44,7 +44,7 @@ string(REPLACE ";"
                CXX11_STANDARD_COMPILE_OPTION
                "${CMAKE_CXX11_STANDARD_COMPILE_OPTION}")
 
-# Compiler flags depending on BUILD_TYPE shared as BUILD_TYPE_<LANG>_FLAGS
+# Compiler flags depending on cmake build type from BUILD_TYPE_<LANG>_FLAGS
 string(TOUPPER "${CMAKE_BUILD_TYPE}" _BUILD_TYPE)
 set(BUILD_TYPE_C_FLAGS "${CMAKE_C_FLAGS_${_BUILD_TYPE}}")
 set(BUILD_TYPE_CXX_FLAGS "${CMAKE_CXX_FLAGS_${_BUILD_TYPE}}")

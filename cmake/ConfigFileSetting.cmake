@@ -5,8 +5,11 @@ set(PACKAGE_NAME "${PACKAGE}")
 set(PACKAGE_TARNAME "${PACKAGE}")
 set(PACKAGE_BUGREPORT "\"\"")
 set(PACKAGE_URL "\"\"")
-# some of the variables need to be double quoted strings as they are used in the above mentioned
-# template files name for libraries
+
+# ~~~
+# some of the variables need to be double quoted strings as they are
+# used in the above mentioned template files name for libraries
+# ~~~
 nrn_set_string(PACKAGE "nrn")
 nrn_set_string(NRNHOST "${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_NAME}")
 nrn_set_string(NRNHOSTCPU "${CMAKE_SYSTEM_PROCESSOR}")
@@ -43,9 +46,12 @@ set(libdir \${exec_prefix}/lib)
 set(USING_CMAKE_FALSE "#")
 set(USING_CMAKE_TRUE "")
 
-# TODO : these two don't start out as #undef but as #define so need their explicit @...@ replacments
+# ~~~
+# TODO : these two don't start out as #undef but as #define so need their
+# explicit @...@ replacments
 # set(NEURON_BIN_DIR "\"${CMAKE_INSTALL_PREFIX}/${CMAKE_SYSTEM_PROCESSOR}/bin\"")
 # set(NRN_CONFIG_ARGS "\"unknown\"") # ends up as "" since no @...@
+# ~~~
 
 # =============================================================================
 # Platform specific options (get expanded to comments)

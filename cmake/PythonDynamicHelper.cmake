@@ -1,13 +1,13 @@
 # =============================================================================
 # Configure support for dynamic Python to use multiple Python versions
 # =============================================================================
-#
+# ~~~
 # NEURON can be built with python modules that can be usable from multiple
 # versions of Python. Here we check if NRN_ENABLE_PYTHON_DYNAMIC is valid
 # and determine an include directory for version 2 and/or 3 to build
 # libnrnpython<major>.so. Depending on the pythons used, either or both of
 # NRNPYTHON_INCLUDE3 or NRNPYTHON_INCLUDE2 will be defined.
-
+#
 # The above is good for mac and linux. Sadly, for MINGW, a distinct
 # NRNPYTHON_INCLUDE<major><minor> is needed for each python in the
 # NRN_PYTHON_DYNAMIC list. This is because libnrnpython<major><minor>.dll
@@ -15,16 +15,19 @@
 # Thus, at least for MINGW, parallel to the NRN_PYTHON_DYNAMIC list
 # we construct the lists NRN_PYTHON_VER_LIST, NRN_PYTHON_INCLUDE_LIST,
 # and NRN_PYTHON_LIB_LIST
+# ~~~
 
 set(LINK_AGAINST_PYTHON ${MINGW})
 set(NRN_PYTHON_VER_LIST "" CACHE INTERNAL "" FORCE)
 set(NRN_PYTHON_INCLUDE_LIST "" CACHE INTERNAL "" FORCE)
 set(NRN_PYTHON_LIB_LIST "" CACHE INTERNAL "" FORCE)
 
+# ~~~
 # Inform setup.py and nrniv/nrnpy.cpp whether libnrnpython name is libnrnpython<major>
 # or libnrnpython<major><minor> . The latter is required for mingw.
 # This is here instead of in src/nrnpython/CMakeLists.txt as src/nrniv/CMakeLists
 # needs it for nrniv/nrnpy.cpp
+# ~~~
 set(USE_LIBNRNPYTHON_MAJORMINOR 0)
 if(LINK_AGAINST_PYTHON)
   set(USE_LIBNRNPYTHON_MAJORMINOR 1)
