@@ -58,7 +58,7 @@ def test_multicompartment_reactions(neuron_instance):
 
     ip3rg = rxd.Rate(h_gate, (1. / (1 + 1000. * ca[cyt] / (0.3)) - h_gate) / ip3rtau)
 
-    h.finitialize()
+    h.finitialize(-65)
 
     cae_init = (0.0017 - cac_init *fc) / fe
     ca[er].concentration = cae_init
@@ -70,6 +70,5 @@ def test_multicompartment_reactions(neuron_instance):
     h.CVode().re_init()
     h.continuerun(1000)
     max_err = compare_data(data)
-
     assert(max_err < tol)
 

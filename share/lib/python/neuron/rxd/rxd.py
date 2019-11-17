@@ -72,7 +72,8 @@ _set_num_threads.argtypes = [ctypes.c_int]
 _get_num_threads = nrn_dll_sym('get_num_threads')
 _get_num_threads.restype = ctypes.c_int
 
-
+free_conc_ptrs = nrn_dll_sym('free_conc_ptrs')
+free_curr_ptrs = nrn_dll_sym('free_curr_ptrs')
 clear_rates = nrn_dll_sym('clear_rates')
 register_rate = nrn_dll_sym('register_rate')
 register_rate.argtypes = [ 
@@ -299,13 +300,9 @@ def set_solve_type(domain=None, dimension=None, dx=None, nsubseg=None, method=No
 
 def _unregister_reaction(r):
     global _all_reactions
+    react = r() if isinstance(r, weakref.ref) else r
     initializer._init_lock.acquire()
-    for i, r2 in enumerate(_all_reactions):
-        if not r2():
-            del _all_reactions[i]
-        elif r2() == r:
-            del _all_reactions[i]
-            break
+    _all_reactions = list(filter(lambda x: x() is not None and x() != react, _all_reactions))
     initializer._init_lock.release()
 
 def _register_reaction(r):
@@ -655,7 +652,6 @@ def _setup_matrices():
         # TODO: initialization is slow. track down why
         
         _last_dt = None
-        
         for sr in _species_get_all_species():
             s = sr()
             if s is not None:

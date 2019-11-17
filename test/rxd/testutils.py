@@ -21,7 +21,7 @@ def collect_data(h, rxd, data, num_record=10):
     """grabs the membrane potential data, h.t, and the rxd state values"""
     data['record_count'] += 1
     if data['record_count'] > num_record:
-        h.stoprun = 1
+        h.stoprun = True
         return
     all_potentials = [seg.v for seg in itertools.chain.from_iterable(h.allsec())]
     rxd_1d = list(rxd.node._states)
@@ -87,7 +87,9 @@ def compare_data(data):
     while t2[t2_0]<t1[0]:
         t2_0 = t2_0 + 1
     #interpolate and compare
+    print(t1.shape, t2.shape, corr_dat[:,1].T.shape)
+    print(t2_0, t2_n, t2[t2_0:t2_n].shape)
     corr_vals = numpy.array(
-        [numpy.interp(t1, t2[t2_0:t2_n], corr_dat[:,i].T) for i in range(1,rlen)])
+        [numpy.interp(t2[t2_0:t2_n], t1, corr_dat[:,i].T) for i in range(1,rlen)])
     max_err = numpy.amax(abs(corr_vals.T - tst_dat[t2_0:t2_n, 1:]))
     return max_err
