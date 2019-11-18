@@ -123,7 +123,7 @@ after_success:
   - if [ "$BUILD_DOCUMENTATION" = "ON" && "$CC_FOR_BUILD" = "gcc" ]; then
       echo "------- Prepare Documentation -------";
       cd $TRAVIS_BUILD_DIR/build;
-      makd doxygen;
+      make doxygen;
       cd $TRAVIS_BUILD_DIR/build/doc_doxygen;
       touch .nojekyll;
       echo "<meta http-equiv=\"refresh\" content=\"0; url=./doxygen/index.html\" />" > index.html;
