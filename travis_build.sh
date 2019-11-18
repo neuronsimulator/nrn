@@ -37,7 +37,7 @@ build() {
     if [[ "$OSTYPE" == "darwin"* ]]; then
       # create workaround setup.cfg for installing python package in mac os
       echo $'[install]\nprefix='>src/nrnpython/setup.cfg
-      echo $'backend: TkAgg'>$HOME/.matplotlib/matplotlibrc
+#      echo $'backend: TkAgg'>$HOME/.matplotlib/matplotlibrc
     fi
     make install
     popd
