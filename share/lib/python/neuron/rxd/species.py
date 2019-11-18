@@ -1228,8 +1228,8 @@ class Species(_SpeciesMathable):
                     del _defined_species[self.name][r]
             if not any(_defined_species[self.name]):
                 del _defined_species[self.name]
-        _all_defined_species = list(filter(lambda x: x() is not None and not x() == self, _all_defined_species))
-        _all_species = list(filter(lambda x: x() is not None and not x() == self, _all_species))
+        _all_defined_species = list(filter(lambda x: x() is not None and x() is not self, _all_defined_species))
+        _all_species = list(filter(lambda x: x() is not None and x() is not self, _all_species))
         # delete the secs
         if hasattr(self,'_secs') and self._secs:
             # remove the species root
