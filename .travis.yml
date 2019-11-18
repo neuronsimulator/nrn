@@ -28,8 +28,7 @@ addons:
         - libx11-dev
         - libxcomposite-dev
     homebrew:
-      packages:
-        - cython
+        packages:
         - openmpi
         - xz
 virtualenv:
@@ -40,18 +39,13 @@ virtualenv:
 #=============================================================================
 env:
   global:
-    - PYTHON="$(which python3)"
-    - PIP="$(which pip3)"
     - PYTHON_VERSION=3.7.1
     - INSTALL_DIR="$HOME/install"
   jobs:
-    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2) PYTHON_BLD=$(which python2)"
-      PYTHON="$(which python2)"
-      PIP="$(which pip)"
+    - MATRIX_EVAL="CONFIG_OPTIONS=\"--without-x --without-paranrn --with-nrnpython=\$(pyenv which python2.7) PYTHON_BLD=\$(pyenv which python2.7)\""
       PYTHON_VERSION=2.7.15
-    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python3)"
-      PYTHON="$(which python3)"
-      PIP="$(which pip3)"
+    - MATRIX_EVAL="CONFIG_OPTIONS=\"--without-x --without-paranrn --with-nrnpython=\$(pyenv which python3.7)\""
+      PYTHON="$(pyenv which python3.7)"
       PYTHON_VERSION=3.7.1
     - BUILD_MODE=cmake
       CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=ON"
@@ -78,7 +72,7 @@ before_install:
   - export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python/;
   # mac brew installed pyenv, cython not in $PATH
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      export PATH=$HOME/.pyenv/shims:/usr/local/opt/cython/bin:$PATH;
+      export PATH=$HOME/.pyenv/shims:$PATH;
       echo $PATH;
     fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
@@ -86,21 +80,28 @@ before_install:
       if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
         CPPFLAGS="-I$(brew --prefix zlib)/include" pyenv install 2.7.15 && CPPFLAGS="-I$(brew --prefix zlib)/include" pyenv install 3.7.1;
       else
-        CPPFLAGS="-I$(brew --prefix zlib)/include" PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install $PYTHON_VERSION;
+        CPPFLAGS="-I$(brew --prefix zlib)/include" pyenv install $PYTHON_VERSION;
       fi
     fi
   - if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
       pyenv global 2.7.15 3.7.1;
     else
       pyenv global $PYTHON_VERSION;
+      pip --version;
+      export PYTHON=$(pyenv which python$(echo $PYTHON_VERSION | awk -F"." '{print $1"."$2}'));
+      $PYTHON --version;
     fi
 install:
-  - $PIP install --user scipy matplotlib bokeh ipython cython --upgrade;
+  - pip install --user scipy matplotlib bokeh ipython cython --upgrade;
 
 #=============================================================================
 # Build, install and test
 #=============================================================================
 script:
+  - if [[ -n $MATRIX_EVAL ]]; then
+       eval $MATRIX_EVAL;
+       echo $CONFIG_OPTIONS;
+    fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       export CONFIG_OPTIONS="$CONFIG_OPTIONS --with-readline=no";
     fi
@@ -129,6 +130,6 @@ script:
         $PYTHON --version && $PYTHON -c 'import neuron; neuron.test()';
       fi;
     fi;
-  - if [ "$BUILD_MODE" != "cmake" && "$TRAVIS_OS_NAME" != "osx" ]; then
+  - if [[ "$BUILD_MODE" != "cmake" && "$TRAVIS_OS_NAME" != "osx" ]]; then
       $PYTHON share/lib/python/neuron/rxdtests/run_all.py;
     fi;
