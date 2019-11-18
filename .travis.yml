@@ -39,6 +39,7 @@ addons:
         - cython
         - openmpi
         - xz
+        - doxygen
 virtualenv:
     system_site_packages: true
 
@@ -70,9 +71,13 @@ env:
       NRN_ENABLE_PYTHON_DYNAMIC=ON
     - BUILD_MODE=cmake
       CMAKE_OPTION="-DNRN_ENABLE_PYTHON=OFF"
-
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENABLE_CORENEURON=ON"
+      BUILD_DOCUMENTATION=ON
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENABLE_CORENEURON=OFF"
 os:
-#  - linux
+  - linux
   - osx
 
 #=============================================================================
@@ -121,13 +126,13 @@ script:
       cmake $CMAKE_OPTION -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR ..;
       cmake --build . -- -j 2;
       make install;
-      cd ..;
       export PATH=$INSTALL_DIR/bin:$PATH;
     else
       export PATH=$INSTALL_DIR/x86_64/bin:$PATH;
       ./travis_build.sh $INSTALL_DIR;
     fi
-    # basic tests for cmake and autoconf build
+
+  # basic tests for cmake and autoconf build
   - neurondemo -nogui -c 'demo(4)' -c 'run()' -c 'quit()'
   - if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
       $PYTHON3 -c 'import neuron; neuron.test()' && $PYTHON2 -c 'import neuron; neuron.test()';
@@ -139,3 +144,30 @@ script:
   - if [ "$BUILD_MODE" != "cmake" && "$TRAVIS_OS_NAME" != "osx" ]; then
       $PYTHON share/lib/python/neuron/rxdtests/run_all.py;
     fi;
+
+#=============================================================================
+# Prepare Documentation
+#=============================================================================
+after_success:
+  - if [ "$BUILD_DOCUMENTATION" = "ON" ] && [ "$CC_FOR_BUILD" = "gcc" ]; then
+      echo "------- Prepare Documentation -------";
+      cd $TRAVIS_BUILD_DIR/build;
+      make doxygen;
+      cd $TRAVIS_BUILD_DIR/build/doc_doxygen;
+      touch .nojekyll;
+      echo "<meta http-equiv=\"refresh\" content=\"0; url=./doxygen/index.html\" />" > index.html;
+    fi
+
+#=============================================================================
+# Documentation deployment
+#=============================================================================
+deploy:
+  provider: pages
+  skip_cleanup: true
+  github_token: $GITHUB_TOKEN
+  keep_history: false
+  local_dir: $TRAVIS_BUILD_DIR/build/doc_doxygen
+  target_branch: gh-pages
+  on:
+    branch: doxygen
+    condition: $BUILD_DOCUMENTATION = ON && $CC_FOR_BUILD = gcc
