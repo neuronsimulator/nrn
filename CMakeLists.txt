@@ -10,8 +10,14 @@ set(CMAKE_CXX_STANDARD 98)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Empty or one of Debug, Release, RelWithDebInfo")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
+
+# =============================================================================
+# CMake common project settings
+# =============================================================================
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 # =============================================================================
 # Build options (boolean)
@@ -120,7 +126,7 @@ if(DOXYGEN_FOUND)
 endif()
 
 # =============================================================================
-# Enable MPI/Python/IV/Pthead if found
+# Enable MPI
 # =============================================================================
 if(NRN_ENABLE_MPI)
   find_package(MPI REQUIRED)
@@ -229,9 +235,11 @@ include(PythonDynamicHelper)
 # ~~~
 if(MINGW)
   set(NRN_INSTALL_SHARE_DIR ${CMAKE_INSTALL_PREFIX})
+  set(NRN_BUILD_SHARE_DIR ${CMAKE_BINARY_DIR})
   set(NRN_INSTALL_SHARE_LIB_DIR ${CMAKE_INSTALL_PREFIX}/bin)
 else()
   set(NRN_INSTALL_SHARE_DIR ${CMAKE_INSTALL_PREFIX}/share/nrn)
+  set(NRN_BUILD_SHARE_DIR ${CMAKE_BINARY_DIR}/share/nrn)
   set(NRN_INSTALL_SHARE_LIB_DIR ${CMAKE_INSTALL_PREFIX}/lib)
 endif()
 
