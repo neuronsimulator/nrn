@@ -157,7 +157,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
   # =============================================================================
   add_custom_command(TARGET hoc_module PRE_BUILD
                      COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/lib
-                             ${PROJECT_BINARY_DIR}/share/nrn/lib
+                             ${NRN_BUILD_SHARE_DIR}/lib
                      COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/demo
                              ${PROJECT_BINARY_DIR}/share/nrn/demo)
 
