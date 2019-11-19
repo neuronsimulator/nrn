@@ -111,6 +111,21 @@ if(MINGW)
 endif()
 
 # =============================================================================
+# Setup Doxygen documentation
+# =============================================================================
+find_package(Doxygen QUIET)
+if(DOXYGEN_FOUND)
+  # generate Doxyfile with correct source paths
+  configure_file(${PROJECT_SOURCE_DIR}/docs/Doxyfile.in
+                 ${PROJECT_BINARY_DIR}/Doxyfile)
+  add_custom_target(doxygen
+        COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+        COMMENT "Generating API documentation with Doxygen"
+        VERBATIM)
+endif()
+
+# =============================================================================
 # Enable MPI
 # =============================================================================
 if(NRN_ENABLE_MPI)
