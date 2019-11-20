@@ -59,7 +59,7 @@ env:
       CMAKE_OPTION="-DNRN_ENABLE_PYTHON=OFF"
 
 os:
-#  - linux
+  - linux
   - osx
 
 #=============================================================================
@@ -74,6 +74,7 @@ before_install:
       ln -s /usr/local/bin/greadlink /usr/local/bin/readlink;
     fi
 install:
+  - $PIP install --user setuptools;
   - $PIP install --user scipy matplotlib bokeh ipython cython --upgrade;
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       export PATH=$HOME/Library/Python/3.7/bin:$HOME/Library/Python/2.7/bin:$PATH;
@@ -112,7 +113,7 @@ script:
   - if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
       $PYTHON3 -c 'import neuron; neuron.test()' && $PYTHON2 -c 'import neuron; neuron.test()';
     else
-      if [ "$CMAKE_OPTION" != "-DNRN_ENABLE_PYTHON=OFF" ]; then
+      if [[ "$CMAKE_OPTION" != "-DNRN_ENABLE_PYTHON=OFF"* ]]; then
         $PYTHON --version && $PYTHON -c 'import neuron; neuron.test()';
       fi;
     fi;
