@@ -5,8 +5,6 @@
 #=============================================================================
 # Environment
 #=============================================================================
-# Use new Travis infrastructure (Docker can't sudo yet)
-sudo: false
 language: cpp
 dist: bionic
 osx_image: xcode10.2
@@ -17,16 +15,16 @@ osx_image: xcode10.2
 addons:
     apt:
         packages:
+        - libopenmpi-dev
+        - libx11-dev
+        - libxcomposite-dev
+        - openmpi-bin
         - python3-pip
         - python-pip
         - python3-scipy
         - python-scipy
         - python3-tk
         - python-tk
-        - libopenmpi-dev
-        - openmpi-bin
-        - libx11-dev
-        - libxcomposite-dev
     homebrew:
         packages:
         - openmpi
@@ -39,12 +37,12 @@ virtualenv:
 #=============================================================================
 env:
   global:
-    - PYTHON="$(which python3)"
+    - PYTHON="$(which python3.7)"
     - PIP="$(which pip3)"
     - INSTALL_DIR="$HOME/install"
   jobs:
-    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2) PYTHON_BLD=$(which python2)"
-      PYTHON="$(which python2)"
+    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2.7) PYTHON_BLD=$(which python2.7)"
+      PYTHON="$(which python2.7)"
       PIP="$(which pip2)"
     - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$PYTHON"
     - BUILD_MODE=cmake
@@ -76,6 +74,7 @@ before_install:
 install:
   - $PIP install --user setuptools;
   - $PIP install --user scipy matplotlib bokeh ipython cython --upgrade;
+  # add cython location to PATH
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       export PATH=$HOME/Library/Python/3.7/bin:$HOME/Library/Python/2.7/bin:$PATH;
     fi
@@ -89,8 +88,8 @@ script:
     fi
   - if [ "$BUILD_MODE" == "cmake" ]; then
       if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
-        export PYTHON2=$(which python2);
-        export PYTHON3=$(which python3);
+        export PYTHON2=$(which python2.7);
+        export PYTHON3=$(which python3.7);
         export CMAKE_OPTION="-DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_PYTHON_DYNAMIC=${PYTHON2};${PYTHON3}";
       else
         export CMAKE_OPTION="$CMAKE_OPTION -DPYTHON_EXECUTABLE=${PYTHON}";
