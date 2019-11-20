@@ -39,14 +39,14 @@ virtualenv:
 #=============================================================================
 env:
   global:
-    - PYTHON_VERSION=3.7.1
+    - PYTHON="$(which python3)"
+    - PIP="$(which pip3)"
     - INSTALL_DIR="$HOME/install"
   jobs:
-    - MATRIX_EVAL="CONFIG_OPTIONS=\"--without-x --without-paranrn --with-nrnpython=\$(pyenv which python2.7) PYTHON_BLD=\$(pyenv which python2.7)\""
-      PYTHON_VERSION=2.7.15
-    - MATRIX_EVAL="CONFIG_OPTIONS=\"--without-x --without-paranrn --with-nrnpython=\$(pyenv which python3.7)\""
-      PYTHON="$(pyenv which python3.7)"
-      PYTHON_VERSION=3.7.1
+    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2) PYTHON_BLD=$(which python2)"
+      PYTHON="$(which python2)"
+      PIP="$(which pip2)"
+    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$PYTHON"
     - BUILD_MODE=cmake
       CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=ON"
     - BUILD_MODE=cmake
@@ -70,50 +70,36 @@ before_install:
   - echo $LC_ALL
   - $CXX -v
   - export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python/;
-  # mac brew installed pyenv, cython not in $PATH
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      export PATH=$HOME/.pyenv/shims:$PATH;
-      echo $PATH;
-    fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       ln -s /usr/local/bin/greadlink /usr/local/bin/readlink;
-      if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
-        CPPFLAGS="-I$(brew --prefix zlib)/include" pyenv install 2.7.15 && CPPFLAGS="-I$(brew --prefix zlib)/include" pyenv install 3.7.1;
-      else
-        CPPFLAGS="-I$(brew --prefix zlib)/include" pyenv install $PYTHON_VERSION;
-      fi
-    fi
-  - if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
-      pyenv global 2.7.15 3.7.1;
-    else
-      pyenv global $PYTHON_VERSION;
-      pip --version;
-      export PYTHON=$(pyenv which python$(echo $PYTHON_VERSION | awk -F"." '{print $1"."$2}'));
-      $PYTHON --version;
     fi
 install:
-  - pip install --user scipy matplotlib bokeh ipython cython --upgrade;
+  - $PIP install --user scipy matplotlib bokeh ipython cython --upgrade;
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+      export PATH=$HOME/Library/Python/3.7/bin:$HOME/Library/Python/2.7/bin:$PATH;
+    fi
 
 #=============================================================================
 # Build, install and test
 #=============================================================================
 script:
-  - if [[ -n $MATRIX_EVAL ]]; then
-       eval $MATRIX_EVAL;
-       echo $CONFIG_OPTIONS;
-    fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       export CONFIG_OPTIONS="$CONFIG_OPTIONS --with-readline=no";
     fi
   - if [ "$BUILD_MODE" == "cmake" ]; then
       if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
-        export PYTHON2=$(pyenv which python2.7);
-        export PYTHON3=$(pyenv which python3.7);
-        CMAKE_OPTION="-DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_PYTHON_DYNAMIC=${PYTHON2};${PYTHON3}";
+        export PYTHON2=$(which python2);
+        export PYTHON3=$(which python3);
+        export CMAKE_OPTION="-DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_PYTHON_DYNAMIC=${PYTHON2};${PYTHON3}";
+      else
+        export CMAKE_OPTION="$CMAKE_OPTION -DPYTHON_EXECUTABLE=${PYTHON}";
       fi;
       mkdir build && cd build;
       cmake $CMAKE_OPTION -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR ..;
       cmake --build . -- -j 2;
+      if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+        echo $'[install]\nprefix='>src/nrnpython/setup.cfg;
+      fi;
       make install;
       cd ..;
       export PATH=$INSTALL_DIR/bin:$PATH;
