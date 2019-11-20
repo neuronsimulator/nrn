@@ -42,13 +42,6 @@ int main( int argc, char* argv[] ) {
     return result;
 }
 
-/*
-TEST_CASE("Test basic neuron setup", "[Neuron][setup]") {
-
-    hoc_oc("print \"hello\"\nprint \"world\"\n");
-
-}
-*/
 
 SCENARIO("Test fast_imem calculation", "[Neuron][fast_imem]") {
     GIVEN("A section") {
@@ -84,39 +77,8 @@ SCENARIO("Test fast_imem calculation", "[Neuron][fast_imem]") {
                     }
                 }
             }
-            /*
-            WHEN("xxxx and run nrn_calc_fast_imem") {
-                hoc_oc("objref ic\n"
-                       "ic = new IClamp(0.5)\n"
-                       "ic.del = 0\n"
-                       "ic.dur = 1\n"
-                       "ic.amp = 0.1\n"
-                       "finitialize(-65)\n");
-                       //"fadvance()\n");
-                for(NrnThread* nt = nrn_threads; nt < nrn_threads + nrn_nthread; ++nt) {
-                    nrn_calc_fast_imem(nt);
-                }
-                THEN("The current in this section is 0.1") {
-                    for(NrnThread* nt = nrn_threads; nt < nrn_threads + nrn_nthread; ++nt) {
-                        REQUIRE( nt->_nrn_fast_imem->_nrn_sav_rhs[1] == Approx(0.1));
-                    }
-                }
-            }*/
         }
-        hoc_oc("delete_section()");
-        /*
-        THEN("calculate fast_imem") {
-                for(int it = 0; it < nrn_nthread; ++it) {
-                    NrnThread* nt = &nrn_threads[it];
-                    for(int i = 0; i < nt->end; i++) {
-                        nt->_nrn_fast_imem->_nrn_sav_rhs[i] = 0.1;
-                        nt->_nrn_fast_imem->_nrn_sav_d[i] = 0.1;
-                    }
-                    nrn_calc_fast_imem(nt);
-                }
-                REQUIRE( nrn_threads[0]._nrn_fast_imem->_nrn_sav_rhs[0] == Approx( 0.00011 ) );
-            }
 
-        */
+        hoc_oc("delete_section()");
     }
 }

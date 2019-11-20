@@ -45,6 +45,7 @@ add_test(ringtest
          -Dwork_dir=${RINGTEST_DIR}
          -P
          ${PROJECT_SOURCE_DIR}/cmake/RunHOCTest.cmake)
+set_tests_properties(ringtest PROPERTIES ENVIRONMENT "${TEST_ENV}")
 
 # =============================================================================
 # Add small hoc test
@@ -59,6 +60,7 @@ add_test(connect_dend
          -Dwork_dir=${HOCTEST_DIR}
          -P
          ${PROJECT_SOURCE_DIR}/cmake/RunHOCTest.cmake)
+set_tests_properties(connect_dend PROPERTIES ENVIRONMENT "${TEST_ENV}")
 
 # =============================================================================
 # Add pytest
