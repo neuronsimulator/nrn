@@ -116,13 +116,12 @@ endif()
 find_package(Doxygen QUIET)
 if(DOXYGEN_FOUND)
   # generate Doxyfile with correct source paths
-  configure_file(${PROJECT_SOURCE_DIR}/docs/Doxyfile.in
-                 ${PROJECT_BINARY_DIR}/Doxyfile)
+  configure_file(${PROJECT_SOURCE_DIR}/docs/Doxyfile.in ${PROJECT_BINARY_DIR}/Doxyfile)
   add_custom_target(doxygen
-        COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-        COMMENT "Generating API documentation with Doxygen"
-        VERBATIM)
+                    COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
+                    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+                    COMMENT "Generating API documentation with Doxygen"
+                    VERBATIM)
 endif()
 
 # =============================================================================
@@ -298,8 +297,6 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo DESTINATION ${NRN_INSTA
 install(FILES ${PROJECT_BINARY_DIR}/share/lib/nrnunits.lib
               ${PROJECT_BINARY_DIR}/share/lib/nrn.defaults
         DESTINATION ${NRN_INSTALL_SHARE_DIR}/lib)
-install(FILES ${PROJECT_BINARY_DIR}/share/lib/python/neuron/rxd/constants.py
-        DESTINATION ${NRN_INSTALL_SHARE_DIR}/lib/python/neuron/rxd)
 install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/cleanup
         DESTINATION ${NRN_INSTALL_SHARE_DIR}/lib)
 
