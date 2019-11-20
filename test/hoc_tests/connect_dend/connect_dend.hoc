@@ -1,3 +1,5 @@
+load_file("nrngui.hoc")
+
 ndend = 2
 
 create soma, dend[ndend]
@@ -40,4 +42,27 @@ stim.del = 100
 stim.dur = 100
 stim.amp = 0.1
 
-tstop = 300
+tstop = 5
+
+objref rect, recv
+rect = new Vector()
+recv = new Vector()
+
+objref savdata
+savdata = new File()
+savdata.wopen("cell3soma.dat")
+
+recv.record(&soma.v(0.5))
+rect.record(&t)
+
+run()
+
+savdata.printf("t soma.v(0.5)\n")
+
+objref tempmatrix
+tempmatrix = new Matrix()
+tempmatrix.resize(recv.size(),2)
+tempmatrix.setcol(0, rect)
+tempmatrix.setcol(1, recv)
+tempmatrix.fprint(savdata, " %g")
+savdata.close()

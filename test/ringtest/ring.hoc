@@ -106,7 +106,7 @@ spikerecord()
 /////////////////////
 // Simulation control
 /////////////////////
-
+nthread = 2
 {cvode.cache_efficient(1)} // required for nrncore
 {pc.nthread(nthread, 0)} // lowest_level_load stores nthread groups of cells
 
@@ -119,14 +119,21 @@ stdinit()
 // Report simulation results
 ////////////////////////////
 
-proc spikeout() { local i, rank
+proc spikeout() { local i, rank localobj outdat
   pc.barrier()  // wait for all hosts to get to this point
-  if (pc.id==0) printf("\ntime\t cell\n")  // print header once
+  outdat = new File()
+  if (pc.id==0) {
+    outdat.wopen("out.dat")
+    outdat.printf("\ntime\t cell\n")  // print header once
+    outdat.close()
+  }
   for rank=0, pc.nhost-1 {  // host 0 first, then 1, 2, etc.
     if (rank==pc.id) {
+      outdat.aopen("out.dat")
       for i=0, tvec.size-1 {
-        printf("%g\t %d\n", tvec.x[i], idvec.x[i])
+        outdat.printf("%g\t %d\n", tvec.x[i], idvec.x[i])
       }
+      outdat.close()
     }
     pc.barrier()  // wait for all hosts to get to this point
   }

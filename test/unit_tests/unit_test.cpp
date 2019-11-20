@@ -3,10 +3,10 @@
 #include <catch2/catch.hpp>
 
 extern "C" {
-#include "../src/oc/ocfunc.h"
-#include "../src/oc/code.h"
-#include "../src/nrnoc/section.h"
-#include "../src/nrnoc/neuron.h"
+#include <ocfunc.h>
+#include <code.h>
+#include <section.h>
+#include <neuron.h>
 
 extern void nrn_threads_create(int, int);
 extern void nrn_threads_free();

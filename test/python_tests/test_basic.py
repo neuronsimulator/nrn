@@ -6,11 +6,23 @@ import sys
 
 from neuron import h
 
-def test_neuron():
+def test_soma():
+    h('''create soma''')
+
+    assert h.soma is not None
+
+    h.soma.L = 5.6419
+    h.soma.diam = 5.6419
+
+    assert h.soma.L == 5.6419
+    assert h.soma.diam == 5.6419
+
+
+def test_simple_sim():
     h('''create soma''')
     h.load_file("stdrun.hoc")
-    h.soma.L=5.6419
-    h.soma.diam=5.6419
+    h.soma.L = 5.6419
+    h.soma.diam = 5.6419
     h.soma.insert("hh")
     ic = h.IClamp(h.soma(.5))
     ic.delay = .5
@@ -30,8 +42,8 @@ def test_spikes():
 
     h('''create soma''')
     h.load_file("stdrun.hoc")
-    h.soma.L=5.6419
-    h.soma.diam=5.6419
+    h.soma.L = 5.6419
+    h.soma.diam = 5.6419
     h.soma.insert("hh")
     ic = h.IClamp(h.soma(.5))
     ic.delay = .5
