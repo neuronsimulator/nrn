@@ -1,3 +1,4 @@
+# ~~~~~~
 # Code copied from sethhall@github
 #
 # - Try to find readline include dirs and libraries
@@ -47,3 +48,4 @@ mark_as_advanced(
     Readline_INCLUDE_DIR
     Readline_LIBRARY
 )
+# ~~~~~~

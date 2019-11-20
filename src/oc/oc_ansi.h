@@ -1,7 +1,24 @@
 #ifndef oc_ansi_h
 #define oc_ansi_h
 
-/* included by hocdec.h */
+
+/**
+ * \dir
+ * \brief HOC Interpreter
+ *
+ * \file
+ * \brief HOC interpreter function declarations (included by hocdec.h)
+ */
+
+/**
+ * @defgroup HOC HOC Interpreter
+ * @brief All HOC interpreter related implementation details
+ *
+ * @defgroup hoc_functions HOC Functions
+ * @ingroup HOC
+ * @brief All hoc functions used in the NEURON codebase
+ * @{
+ */
 
 #if defined(__cplusplus)
 extern "C" {
@@ -9,7 +26,13 @@ extern "C" {
 
 extern int nrnignore;
 
+/**
+ * \brief Brief explanation of hoc_obj_run
+ *
+ * Detailed explanation of hoc_obj_run goes here.
+ */
 extern int hoc_obj_run(const char*, Object*);
+
 extern int hoc_argtype(int);
 extern int hoc_is_double_arg(int);
 extern int hoc_is_pdouble_arg(int);
@@ -230,3 +253,5 @@ extern int nrn_is_cable(void);
 #endif
 
 #endif
+
+/** @} */  // end of hoc_functions
