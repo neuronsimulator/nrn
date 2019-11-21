@@ -173,12 +173,18 @@ This document describes the construction and manipulation of a stylized topology
         If range variables are not constant then the hoc expressions used to 
         set them should be re-executed. 
          
-        If nseg is decreased then all the new segments are in fact those old segments 
-        that were nearest the centers of the new segments. Unused old segments 
-        are freed (and thus any existing pointers to variables in those freed 
-        segments are invalid). This means that decreasing nseg by an odd factor 
-        preserves the locations of all previous data. However POINT PROCESSES 
-        not located at the centers of the new segments will be discarded. 
+        If nseg is decreased then all the new segments are in fact those old 
+        segments that were nearest the centers of the new segments. Unused old 
+        segments are freed (and thus any existing pointers to variables in those 
+        freed segments are invalid). This means that decreasing nseg by an odd 
+        factor preserves the locations of all previous data.
+
+        POINT PROCESSes are preserved regardless of how nseg is changed.
+        However, any POINT PROCESS that was attached to a location other
+        than 0 or 1 will be moved to the center of the "new segment" that
+        is nearest to the "old segment" to which it was attached.  The same
+        rule applies to child sections that had been attached to locations
+        other than 0 or 1.
          
         The intention is to guarantee that the following sequence 
 
