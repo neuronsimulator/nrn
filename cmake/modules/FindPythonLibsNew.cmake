@@ -1,3 +1,4 @@
+# ~~~~~~
 # =============================================================================
 # Find libraries corresponding to Python interpreter
 # =============================================================================
@@ -208,3 +209,4 @@ find_package_message(PYTHON
     "${PYTHON_EXECUTABLE}${PYTHON_VERSION}")
 
 set(PYTHONLIBS_FOUND TRUE)
+# ~~~~~~

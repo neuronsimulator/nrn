@@ -7,3 +7,6 @@
 [submodule "external/catch2"]
 	path = external/catch2
 	url = https://github.com/catchorg/Catch2.git
+[submodule "external/coding-conventions"]
+	path = external/coding-conventions
+	url = https://github.com/BlueBrain/hpc-coding-conventions.git
