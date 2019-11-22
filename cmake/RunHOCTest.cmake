@@ -19,6 +19,9 @@ execute_process(COMMAND ${CMAKE_COMMAND} -E compare_files ${out_file} ${ref_file
                 WORKING_DIRECTORY ${work_dir}
                 RESULT_VARIABLE status)
 if(status)
+  execute_process(COMMAND sdiff -s ${out_file} ${ref_file}
+                  WORKING_DIRECTORY ${work_dir}
+                  RESULT_VARIABLE status)
   message(FATAL_ERROR "Validating results status: ${status}")
 else()
   file(REMOVE "${work_dir}/${out_file}")

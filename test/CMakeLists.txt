@@ -61,27 +61,20 @@ set_tests_properties(ringtest PROPERTIES ENVIRONMENT "${TEST_ENV}")
 # Add small hoc test
 # =============================================================================
 set(HOCTEST_DIR ${PROJECT_SOURCE_DIR}/test/hoc_tests/connect_dend)
-if(NRN_ENABLE_CORENRN)
-  add_test(connect_dend
-           ${CMAKE_COMMAND}
-           -Dexecutable=${CMAKE_BINARY_DIR}/bin/nrniv
-           -Dexec_arg=connect_dend.hoc
-           -Dout_file=cell3soma.dat
-           -Dref_file=cell3soma.core.dat.ref
-           -Dwork_dir=${HOCTEST_DIR}
-           -P
-           ${PROJECT_SOURCE_DIR}/cmake/RunHOCTest.cmake)
+if (NRN_ENABLE_CORENEURON)
+  set(REF_FILE cell3soma.core.dat.ref)
 else()
-  add_test(connect_dend
-          ${CMAKE_COMMAND}
-          -Dexecutable=${CMAKE_BINARY_DIR}/bin/nrniv
-          -Dexec_arg=connect_dend.hoc
-          -Dout_file=cell3soma.dat
-          -Dref_file=cell3soma.dat.ref
-          -Dwork_dir=${HOCTEST_DIR}
-          -P
-          ${PROJECT_SOURCE_DIR}/cmake/RunHOCTest.cmake)
+  set(REF_FILE cell3soma.dat.ref)
 endif()
+add_test(connect_dend
+        ${CMAKE_COMMAND}
+        -Dexecutable=${CMAKE_BINARY_DIR}/bin/nrniv
+        -Dexec_arg=connect_dend.hoc
+        -Dout_file=cell3soma.dat
+        -Dref_file=${REF_FILE}
+        -Dwork_dir=${HOCTEST_DIR}
+        -P
+        ${PROJECT_SOURCE_DIR}/cmake/RunHOCTest.cmake)
 set_tests_properties(connect_dend PROPERTIES ENVIRONMENT "${TEST_ENV}")
 
 # =============================================================================
