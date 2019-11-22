@@ -13,12 +13,22 @@ add_executable(testneuron unit_tests/unit_test.cpp ${TEST_SOURCES})
 target_compile_features(testneuron PUBLIC cxx_std_11)
 target_link_libraries(testneuron Catch2::Catch2 nrniv_lib)
 
+# =============================================================================
+# Copy necessary hoc files to build directory if they have not been copied yet
+# =============================================================================
+add_custom_command(TARGET testneuron POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${PROJECT_SOURCE_DIR}/share/lib ${PROJECT_BINARY_DIR}/share/nrn/lib
+        )
+
 set(TEST_ENV
-    PYTHONPATH=${PROJECT_BINARY_DIR}/lib/python:${PROJECT_SOURCE_DIR}/test/rxd:$ENV{PYTHONPATH}
     NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn
     LD_LIBRARY_PATH=${PROJECT_BINARY_DIR}/lib:$ENV{LD_LIBRARY_PATH}
     DYLD_LIBRARY_PATH=${PROJECT_BINARY_DIR}/lib:$ENV{DYLD_LIBRARY_PATH})
-
+if(NRN_ENABLE_PYTHON)
+  list(APPEND TEST_ENV
+          PYTHONPATH=${PROJECT_BINARY_DIR}/lib/python:${PROJECT_SOURCE_DIR}/test/rxd:$ENV{PYTHONPATH})
+endif()
 # =============================================================================
 # Use catch_discover instead of add_test for granular test report if CMAKE ver is greater than 3.9,
 # else use the normal add_test method
@@ -51,15 +61,27 @@ set_tests_properties(ringtest PROPERTIES ENVIRONMENT "${TEST_ENV}")
 # Add small hoc test
 # =============================================================================
 set(HOCTEST_DIR ${PROJECT_SOURCE_DIR}/test/hoc_tests/connect_dend)
-add_test(connect_dend
-         ${CMAKE_COMMAND}
-         -Dexecutable=${CMAKE_BINARY_DIR}/bin/nrniv
-         -Dexec_arg=connect_dend.hoc
-         -Dout_file=cell3soma.dat
-         -Dref_file=cell3soma.dat.ref
-         -Dwork_dir=${HOCTEST_DIR}
-         -P
-         ${PROJECT_SOURCE_DIR}/cmake/RunHOCTest.cmake)
+if(NRN_ENABLE_CORENRN)
+  add_test(connect_dend
+           ${CMAKE_COMMAND}
+           -Dexecutable=${CMAKE_BINARY_DIR}/bin/nrniv
+           -Dexec_arg=connect_dend.hoc
+           -Dout_file=cell3soma.dat
+           -Dref_file=cell3soma.core.dat.ref
+           -Dwork_dir=${HOCTEST_DIR}
+           -P
+           ${PROJECT_SOURCE_DIR}/cmake/RunHOCTest.cmake)
+else()
+  add_test(connect_dend
+          ${CMAKE_COMMAND}
+          -Dexecutable=${CMAKE_BINARY_DIR}/bin/nrniv
+          -Dexec_arg=connect_dend.hoc
+          -Dout_file=cell3soma.dat
+          -Dref_file=cell3soma.dat.ref
+          -Dwork_dir=${HOCTEST_DIR}
+          -P
+          ${PROJECT_SOURCE_DIR}/cmake/RunHOCTest.cmake)
+endif()
 set_tests_properties(connect_dend PROPERTIES ENVIRONMENT "${TEST_ENV}")
 
 # =============================================================================
