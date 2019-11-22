@@ -87,8 +87,6 @@ def compare_data(data):
     while t2[t2_0]<t1[0]:
         t2_0 = t2_0 + 1
     #interpolate and compare
-    print(t1.shape, t2.shape, corr_dat[:,1].T.shape)
-    print(t2_0, t2_n, t2[t2_0:t2_n].shape)
     corr_vals = numpy.array(
         [numpy.interp(t2[t2_0:t2_n], t1, corr_dat[:,i].T) for i in range(1,rlen)])
     max_err = numpy.amax(abs(corr_vals.T - tst_dat[t2_0:t2_n, 1:]))

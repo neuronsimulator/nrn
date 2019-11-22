@@ -81,10 +81,20 @@ set_tests_properties(connect_dend PROPERTIES ENVIRONMENT "${TEST_ENV}")
 # Add pytest
 # =============================================================================
 if(PYTEST_FOUND)
-  add_test(NAME py_tests
-           COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/python_tests)
-  set_tests_properties(py_tests PROPERTIES ENVIRONMENT "${TEST_ENV}")
+  add_test(NAME Basic_tests
+          COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/pynrn)
+  set_tests_properties(Basic_tests
+          PROPERTIES ENVIRONMENT "${TEST_ENV}")
+  add_test(NAME build_rxd_tests_mech
+          COMMAND ${CMAKE_BINARY_DIR}/bin/nrnivmodl ./ ./ecs WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test/rxd)
   add_test(NAME rxd_tests
-           COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/rxd)
-  set_tests_properties(rxd_tests PROPERTIES ENVIRONMENT "${TEST_ENV}")
+          COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/rxd)
+  set_tests_properties(rxd_tests
+          PROPERTIES ENVIRONMENT "${TEST_ENV}")
+  if(NRN_ENABLE_MPI)
+    add_test(NAME rxd_mpi_tests
+            COMMAND ${MPIEXEC} -np 1 ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/rxd --mpi)
+    set_tests_properties(rxd_mpi_tests
+            PROPERTIES ENVIRONMENT "${TEST_ENV}")
+  endif()
 endif()
