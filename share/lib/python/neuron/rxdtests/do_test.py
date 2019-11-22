@@ -41,10 +41,10 @@ def do_test(test_to_run, results_location, num_record=10):
         for sp in rxd.species._all_species:
             s = sp()
             if s and hasattr(s, '_intracellular_instances'):
-                for ics in s._intracellular_instances.values():
+                for key, ics in sorted(s._intracellular_instances.items(), key=lambda (reg,ics): reg._id):
                     rxd_3d += list(ics.states)
             if s and hasattr(s, '_extracellular_instances'):
-                for ecs in s._extracellular_instances.values():
+                for ecs in sorted(s._extracellular_instances.values(), key=lambda spe: spe._grid_id):
                     rxd_ecs += list(ecs.states.flatten())
         all_rxd = rxd_1d + rxd_3d + rxd_ecs
         local_data = [h.t] + all_potentials + all_rxd
