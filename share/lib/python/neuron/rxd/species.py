@@ -845,15 +845,14 @@ class _ExtracellularSpecies(_SpeciesMathable):
         # TODO: remove this object from the list of grids, possibly by reinserting all the others
         # NOTE: be careful about doing the right thing at program's end; some globals may no longer exist
         global _extracellular_diffusion_objects
-        if self in _extracellular_diffusion_objects: del _extracellular_diffusion_objects[self]
-        # remove the grid id
         if _extracellular_diffusion_objects:
+            if self in _extracellular_diffusion_objects: del _extracellular_diffusion_objects[self]
+            # remove the grid id
             for sp in _extracellular_diffusion_objects:
                 if hasattr(sp,'_grid_id') and sp._grid_id > self._grid_id:
                     sp._grid_id -= 1
-        if hasattr(self,'_grid_id'): _delete_by_id(self._grid_id)
-    
-        nrn_dll_sym('structure_change_cnt', ctypes.c_int).value += 1
+            if hasattr(self,'_grid_id'): _delete_by_id(self._grid_id)
+            nrn_dll_sym('structure_change_cnt', ctypes.c_int).value += 1
         
     def _finitialize(self):
         # Updated - now it will initialize using NodeExtracellular
