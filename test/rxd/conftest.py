@@ -32,7 +32,7 @@ def neuron_instance(neuron_import):
     gather = lambda: collect_data(h, rxd, data)
     cvode.extra_scatter_gather(0, gather)
     yield (h, rxd, data)
-    rxd.region._all_regions = []    
+    rxd.region._all_regions = []
     rxd.region._region_count = 0
     rxd.region._c_region_lookup = None
     for r in rxd.rxd._all_reactions[:]:
