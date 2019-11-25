@@ -29,17 +29,14 @@ if(NRN_ENABLE_PYTHON)
   list(APPEND TEST_ENV
           PYTHONPATH=${PROJECT_BINARY_DIR}/lib/python:${PROJECT_SOURCE_DIR}/test/rxd:$ENV{PYTHONPATH})
 endif()
+
 # =============================================================================
-# Use catch_discover instead of add_test for granular test report if CMAKE ver is greater than 3.9,
-# else use the normal add_test method
+# Use add_test method and set environment for testneuron (NEURONHOME env
+# variable needs to be set to run testneuron and other tests based on nrniv)
 # =============================================================================
 foreach(test_name testneuron)
-
-  if(${CMAKE_VERSION} VERSION_GREATER "3.10")
-    catch_discover_tests(${test_name} TEST_PREFIX "${test_name}/")
-  else()
-    add_test(NAME ${test_name} COMMAND ${test_name})
-  endif()
+  add_test(NAME ${test_name} COMMAND ${test_name})
+  set_tests_properties(${test_name} PROPERTIES ENVIRONMENT "${TEST_ENV}")
 endforeach()
 
 # =============================================================================
