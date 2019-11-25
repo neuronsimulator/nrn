@@ -98,7 +98,7 @@ ECS_Grid_node *ECS_make_Grid(PyHocObject* my_states, int my_num_states_x,
     if(nrnmpi_use)
     {
         new_Grid->proc_offsets = (int*)malloc(nrnmpi_numprocs*sizeof(int));
-        new_Grid->proc_num_currents = (int*)malloc(nrnmpi_numprocs*sizeof(int));
+        new_Grid->proc_num_currents = (int*)calloc(nrnmpi_numprocs,sizeof(int));
         new_Grid->proc_flux_offsets = (int*)malloc(nrnmpi_numprocs*sizeof(int));
         new_Grid->proc_num_fluxes = (int*)calloc(nrnmpi_numprocs,sizeof(int));
     }
@@ -207,7 +207,7 @@ Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors
         if(nrnmpi_use)
         {
             new_Grid->proc_offsets = (int*)malloc(nrnmpi_numprocs*sizeof(int));
-            new_Grid->proc_num_currents = (int*)malloc(nrnmpi_numprocs*sizeof(int));
+            new_Grid->proc_num_currents = (int*)calloc(nrnmpi_numprocs,sizeof(int));
             new_Grid->proc_num_fluxes = (int*)calloc(nrnmpi_numprocs,sizeof(int));
             new_Grid->proc_flux_offsets = (int*)malloc(nrnmpi_numprocs*sizeof(int));
 

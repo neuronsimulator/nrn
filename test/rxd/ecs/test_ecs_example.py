@@ -1,9 +1,9 @@
 import pytest
 from testutils import tol, compare_data
+from math import pi
 
 @pytest.fixture
 def ecs_example(neuron_instance):
-    from math import pi
     h, rxd, data = neuron_instance
     # create cell1 where `x` will be created and leak out
     cell1 = h.Section('cell1')

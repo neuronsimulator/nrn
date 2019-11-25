@@ -1,5 +1,6 @@
 import pytest
 from testutils import collect_data
+from os import path as osp
 
 def pytest_addoption(parser):
     parser.addoption("--mpi", action="store_true", default=False, help="use MPI")
@@ -12,8 +13,8 @@ def neuron_import(request):
 
     # we may not be not running in the test path so we have to load the mechanisms
     import neuron
-    import os
-    neuron.load_mechanisms(os.path.abspath(os.path.dirname(__file__)))
+    
+    neuron.load_mechanisms(osp.abspath(osp.dirname(__file__)))
     from neuron import h, rxd
     return h, rxd
 
