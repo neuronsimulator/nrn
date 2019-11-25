@@ -2656,11 +2656,13 @@ void CodegenCVisitor::print_mechanism_register() {
             method_name("net_buf_receive")));
     }
     if (info.num_net_receive_parameters != 0) {
-        printer->add_line("pnt_receive[mech_type] = {};"_format(method_name("net_receive")));
-        printer->add_line("pnt_receive_size[mech_type] = num_net_receive_args();");
+        auto net_recv_init_arg = "nullptr";
         if (info.net_receive_initial_node != nullptr) {
-            printer->add_line("pnt_receive_init[mech_type] = net_init;");
+            net_recv_init_arg = "net_init";
         }
+        auto pnt_recline = "set_pnt_receive(mech_type, {}, {}, num_net_receive_args());"_format(
+            method_name("net_receive"), net_recv_init_arg);
+        printer->add_line(pnt_recline);
     }
     if (info.net_event_used || info.net_send_used) {
         printer->add_line("hoc_register_net_send_buffering(mech_type);");
