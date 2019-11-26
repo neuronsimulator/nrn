@@ -1867,7 +1867,13 @@ int nrncore_run(const char* arg) {
 
   // first check if coreneuron specific library exist in <arhc>/.libs
   std::stringstream s_path;
+#if defined(MINGW)
+  s_path << NRNHOSTCPU << "/.libs/libcorenrnmech.dll";
+#elif defined(DARWIN)
+  s_path << NRNHOSTCPU << "/.libs/libcorenrnmech.dylib";
+#else
   s_path << NRNHOSTCPU << "/.libs/libcorenrnmech.so";
+#endif
   std::string path = s_path.str();
   const char* corenrn_lib = path.c_str();
 
