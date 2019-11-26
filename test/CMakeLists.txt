@@ -11,7 +11,10 @@ include_directories(${PROJECT_SOURCE_DIR}/test
 set(TEST_SOURCES unit_tests/oc/hoc_interpreter.cpp)
 add_executable(testneuron unit_tests/unit_test.cpp ${TEST_SOURCES})
 target_compile_features(testneuron PUBLIC cxx_std_11)
-target_link_libraries(testneuron Catch2::Catch2 nrniv_lib)
+target_link_libraries(testneuron Catch2::Catch2 nrniv_lib ${CMAKE_THREAD_LIBS_INIT})
+if(NOT MINGW)
+  target_link_libraries(testneuron ${CMAKE_DL_LIBS})
+endif()
 
 # =============================================================================
 # Copy necessary hoc files to build directory if they have not been copied yet

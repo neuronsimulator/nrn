@@ -27,8 +27,8 @@ extern int use_cachevec;
 int main( int argc, char* argv[] ) {
     // global setup...
     nrn_main_launch = 2;
-    int argc_nompi = 1;
-    const char* argv_nompi[] = {"NEURON"};
+    int argc_nompi = 2;
+    const char* argv_nompi[] = {"NEURON", "-nogui"};
     nrn_nobanner_ = 1;
 
     ivocmain(argc_nompi, (char **) &argv_nompi, NULL, 0);

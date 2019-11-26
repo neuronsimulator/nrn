@@ -769,15 +769,15 @@ ENDGUI
 #if NRN_REALTIME
 	nrn_maintask_init();
 #endif
+       if (start_session) {
 #if HAVE_IV
-	if (start_session) {
-          oc.run(our_argc, our_argv);
-	} else {
-	  return 0;
-	}
+        oc.run(our_argc, our_argv);
 #else
 	hoc_main1(our_argc, our_argv, env);
 #endif
+       } else {
+         return 0;
+       }
 #if HAVE_IV
 	if (session && session->style()->value_is_on("neosim")) {
 		if (p_neosim_main) {
