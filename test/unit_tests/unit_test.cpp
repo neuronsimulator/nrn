@@ -10,10 +10,9 @@ extern "C" {
 
 extern void nrn_threads_create(int, int);
 extern void nrn_threads_free();
-extern int ivocmain(int, char**, char**);
+extern int ivocmain(int, char**, char**, int);
 
 extern int nrn_main_launch;
-extern int nrn_is_python_extension;
 extern int nrn_nobanner_;
 }
 
@@ -30,10 +29,9 @@ int main( int argc, char* argv[] ) {
     nrn_main_launch = 2;
     int argc_nompi = 1;
     const char* argv_nompi[] = {"NEURON"};
-    nrn_is_python_extension = 1;
     nrn_nobanner_ = 1;
 
-    ivocmain(argc_nompi, (char **) &argv_nompi, NULL);
+    ivocmain(argc_nompi, (char **) &argv_nompi, NULL, 0);
 #undef run
     int result = Catch::Session().run( argc, argv );
 #define run hoc_run

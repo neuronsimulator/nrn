@@ -7,7 +7,7 @@
 
 extern "C" {
 	int nrn_isdouble(double*, double, double);
-	int ivocmain(int, const char**, const char**);
+	int ivocmain(int, const char**, const char**, int);
 	extern int nrn_main_launch;
 #if NRNMPI_DYNAMICLOAD
 	extern void nrnmpi_stubs();
@@ -50,7 +50,7 @@ printf("argv[%d]=|%s|\n", i, argv[i]);
 	BGLCheckpointInit((char*)0);
 #endif
 	errno = 0;
-	return ivocmain(argc, (const char**)argv, (const char**)env);
+	return ivocmain(argc, (const char**)argv, (const char**)env, 1);
 }
 
 #if USENCS

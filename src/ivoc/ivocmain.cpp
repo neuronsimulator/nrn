@@ -248,7 +248,7 @@ void mac_open_app(){
 #endif
 
 extern "C" {
-	int ivocmain(int, const char**, const char**);
+	int ivocmain(int, const char**, const char**, int start_session);
 	int (*p_neosim_main)(int, const char**, const char**);
 	extern int nrn_global_argc;
 	extern const char** nrn_global_argv;
@@ -370,7 +370,7 @@ void hoc_nrnmpi_init() {
 
 // see nrnmain.cpp for the real main()
 
-int ivocmain (int argc, const char** argv, const char** env) {
+int ivocmain (int argc, const char** argv, const char** env, int start_session) {
 // third arg should not be used as it might become invalid
 // after putenv or setenv. Instead, if necessary use
 // #include <unistd.h>
@@ -714,8 +714,8 @@ ENDGUI
 #if HAVE_IV
 	if (session && session->style()->value_is_on("units_on_flag")) {
 		units_on_flag_ = 1;
-	};
-	Oc oc(session, our_argv[0], env);
+	}
+        Oc oc(session, our_argv[0], env);
 #if defined(WIN32) && !defined(CYGWIN)
 	if (session->style()->find_attribute("showwinio", str)
       && !session->style()->value_is_on("showwinio")
@@ -770,7 +770,11 @@ ENDGUI
 	nrn_maintask_init();
 #endif
 #if HAVE_IV
-	oc.run(our_argc, our_argv);
+	if (start_session) {
+          oc.run(our_argc, our_argv);
+	} else {
+	  return 0;
+	}
 #else
 	hoc_main1(our_argc, our_argv, env);
 #endif
