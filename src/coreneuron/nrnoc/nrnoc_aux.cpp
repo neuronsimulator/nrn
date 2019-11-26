@@ -31,6 +31,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnmpi/nrnmpidec.h"
+#include "coreneuron/coreneuron.hpp"
 
 namespace coreneuron {
 int stoprun;
@@ -41,7 +42,7 @@ int hoc_errno_count;
 const char* bbcore_write_version = "1.2";
 
 char* pnt_name(Point_process* pnt) {
-    return memb_func[pnt->_type].sym;
+    return corenrn.get_memb_func(pnt->_type).sym;
 }
 
 void nrn_exit(int err) {
@@ -81,7 +82,7 @@ double** makematrix(size_t nrows, size_t ncols) {
 }
 
 void freematrix(double** matrix) {
-    if (matrix != NULL) {
+    if (matrix != nullptr) {
         free(*matrix);
         free(matrix);
     }

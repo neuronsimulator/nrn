@@ -25,9 +25,7 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 */
-
-#ifndef nrnoc_ml_h
-#define nrnoc_ml_h
+#pragma once
 
 #include "coreneuron/nrnconf.h"
 namespace coreneuron {
@@ -73,14 +71,12 @@ struct NetSendBuffer_t {
 };
 
 struct Memb_list {
-#if CACHEVEC != 0
     /* nodeindices contains all nodes this extension is responsible for,
      * ordered according to the matrix. This allows to access the matrix
      * directly via the nrn_actual_* arrays instead of accessing it in the
      * order of insertion and via the node-structure, making it more
      * cache-efficient */
     int* nodeindices;
-#endif /* CACHEVEC */
     int* _permute;
     double* data;
     Datum* pdata;
@@ -92,4 +88,3 @@ struct Memb_list {
     void* instance; /* mechanism instance */
 };
 }  // namespace coreneuron
-#endif

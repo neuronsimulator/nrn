@@ -109,7 +109,7 @@ char* prepare_args(int& argc, char**& argv, int use_mpi, const char* arg) {
     char* token = strtok(first, sep);
     argc = 0;
     while (token) {
-        token = strtok(NULL, sep);
+        token = strtok(nullptr, sep);
         argc++;
     }
     free(first);
@@ -120,7 +120,7 @@ char* prepare_args(int& argc, char**& argv, int use_mpi, const char* arg) {
     token = strtok(first, sep);
     for (int i = 0; token; i++) {
         argv[i] = token;
-        token = strtok(NULL, sep);
+        token = strtok(nullptr, sep);
     }
 
     // return actual data to be freed

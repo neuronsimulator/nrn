@@ -49,7 +49,7 @@ void parse_filter_string(char* filter, ReportConfiguration& config) {
         abort();
     }
     strcpy(config.mech_name, token);
-    token = strtok(NULL, "\n");
+    token = strtok(nullptr, "\n");
     if (!token) {
         std::cerr << "Error : Invalid report variable, should be mch_name.var_name" << std::endl;
         abort();

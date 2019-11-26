@@ -35,11 +35,11 @@ foreach(link_lib ${CORENRN_LINK_LIBS})
   endif()
 endforeach()
 
-# PGI compiler add --c++11;-A option for c++11 flag
+# PGI compiler add --c++14;-A option for c++14 flag
 string(REPLACE ";"
                " "
-               CXX11_STANDARD_COMPILE_OPTION
-               "${CMAKE_CXX11_STANDARD_COMPILE_OPTION}")
+               CXX14_STANDARD_COMPILE_OPTION
+               "${CMAKE_CXX14_STANDARD_COMPILE_OPTION}")
 
 # compiler flags depending on BUILD_TYPE (configured as BUILD_TYPE_<LANG>_FLAGS)
 string(TOUPPER "${CMAKE_BUILD_TYPE}" _BUILD_TYPE)

@@ -126,7 +126,7 @@ typedef sd_ptr_generic<std::free> sd_ptr;
  *
  * @return An sd_ptr encapsulating the provided or allocated buffer.
  *
- * If the buffer pointer is NULL, a new buffer is allocated.
+ * If the buffer pointer is nullptr, a new buffer is allocated.
  * On error, returns a null sd_ptr.
  */
 

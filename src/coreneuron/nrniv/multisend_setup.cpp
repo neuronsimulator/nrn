@@ -297,7 +297,7 @@ void nrn_multisend_setup_targets(int use_phase2, int*& targets_phase1, int*& tar
         ps->multisend_index_ = -1;
     }
 
-    // Only will be not -1 if non-NULL input is a phase 2 sender.
+    // Only will be not -1 if non-nullptr input is a phase 2 sender.
     for (Gid2IPS::iterator gid2in_it = gid2in.begin(); gid2in_it != gid2in.end(); ++gid2in_it) {
         InputPreSyn* ps = gid2in_it->second;
         ps->multisend_phase2_index_ = -1;
@@ -330,7 +330,7 @@ static void fill_multisend_lists(int use_phase2,
     // From the counts can allocate targets_phase1 and targets_phase2
     // Then can iterate again and copy r to proper target locations.
     for (int i = 0; i < sz;) {
-        InputPreSyn* ips = NULL;
+        InputPreSyn* ips = nullptr;
         int gid = r[i++];
         int size = r[i++];
         if (use_phase2) {  // look in gid2in first
@@ -366,7 +366,7 @@ static void fill_multisend_lists(int use_phase2,
 
     // printf("%d sz=%d\n", nrnmpi_myid, sz);
     for (int i = 0; i < sz;) {
-        InputPreSyn* ips = NULL;
+        InputPreSyn* ips = nullptr;
         int gid = r[i++];
         int size = r[i++];
         if (use_phase2) {  // look in gid2in first

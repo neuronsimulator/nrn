@@ -17,6 +17,7 @@ using namespace nrn_partrans;
 HalfGap_Info* nrn_partrans::halfgap_info;
 TransferThreadData* nrn_partrans::transfer_thread_data_;
 
+// TODO: Where should those go?
 // MPI_Alltoallv buffer info
 double* nrn_partrans::insrc_buf_;   // Receive buffer for gap voltages
 double* nrn_partrans::outsrc_buf_;  // Send buffer for gap voltages

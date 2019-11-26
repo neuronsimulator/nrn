@@ -10,24 +10,24 @@ void destroy_interleave_info();
 
 class InterleaveInfo {
   public:
-    InterleaveInfo();
+    InterleaveInfo() = default;
     InterleaveInfo(const InterleaveInfo&);
     InterleaveInfo& operator=(const InterleaveInfo&);
     virtual ~InterleaveInfo();
-    int nwarp;  // used only by interleave2
-    int nstride;
-    int* stridedispl;  // interleave2: nwarp+1
-    int* stride;       // interleave2: stride  length is stridedispl[nwarp]
-    int* firstnode;    // interleave2: rootbegin nwarp+1 displacements
-    int* lastnode;     // interleave2: nodebegin nwarp+1 displacements
-    int* cellsize;     // interleave2: ncycles nwarp
+    int nwarp = 0;  // used only by interleave2
+    int nstride = 0;
+    int* stridedispl = nullptr;  // interleave2: nwarp+1
+    int* stride = nullptr;       // interleave2: stride  length is stridedispl[nwarp]
+    int* firstnode = nullptr;    // interleave2: rootbegin nwarp+1 displacements
+    int* lastnode = nullptr;     // interleave2: nodebegin nwarp+1 displacements
+    int* cellsize = nullptr;     // interleave2: ncycles nwarp
 
     // statistics (nwarp of each)
-    size_t* nnode;
-    size_t* ncycle;
-    size_t* idle;
-    size_t* cache_access;
-    size_t* child_race;
+    size_t* nnode = nullptr;
+    size_t* ncycle = nullptr;
+    size_t* idle = nullptr;
+    size_t* cache_access = nullptr;
+    size_t* child_race = nullptr;
 
   private:
     void swap(InterleaveInfo& info);

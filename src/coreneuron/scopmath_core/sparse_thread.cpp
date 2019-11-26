@@ -316,7 +316,7 @@ static void initeqn(SparseObj* so, unsigned maxeqn) /* reallocate space for matr
         Free(so->rhs);
     if (so->ngetcall)
         free(so->ngetcall);
-    so->elmpool = NULL;
+    so->elmpool = nullptr;
     so->rowst = so->diag = (Elm**)0;
     so->varord = (unsigned*)0;
     so->rowst = (Elm**)myemalloc((maxeqn + 1) * sizeof(Elm*));

@@ -27,15 +27,15 @@ THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <string.h>
-#include <stdlib.h>
+#include <vector>
+
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnoc/membdef.h"
 #include "coreneuron/nrnoc/nrnoc_decl.h"
-#include "coreneuron/nrnmpi/nrnmpi.h"
 #include "coreneuron/nrnoc/mech_mapping.hpp"
-#include "coreneuron/nrnoc/membfunc.h"
-#include <vector>
+#include "coreneuron/nrnoc/membfunc.hpp"
+#include "coreneuron/coreneuron.hpp"
 
 namespace coreneuron {
 int secondorder = 0;
@@ -48,71 +48,36 @@ double t, dt, celsius;
 #endif
 int rev_dt;
 
-int net_buf_receive_cnt_;
-int* net_buf_receive_type_;
-NetBufReceive_t* net_buf_receive_;
 
-int net_buf_send_cnt_;
-int* net_buf_send_type_;
 
-static int memb_func_size_;
-static int pointtype = 1; /* starts at 1 since 0 means not point in pnt_map*/
-int n_memb_func;
-
-Memb_func* memb_func;
-Memb_list* memb_list;
-Point_process** point_process;
-char* pnt_map; /* so prop_free can know its a point mech*/
 typedef void (*Pfrv)();
-BAMech** bamech_;
 
-pnt_receive_t* pnt_receive; /* for synaptic events. */
-pnt_receive_t* pnt_receive_init;
-nrn_watch_check_t* nrn_watch_check;
-short* pnt_receive_size;
-/* values are type numbers of mechanisms which do net_send call */
-int nrn_has_net_event_cnt_;
-int* nrn_has_net_event_;
-int* pnttype2presyn; /* inverse of nrn_has_net_event_ */
-int* nrn_prop_param_size_;
-int* nrn_prop_dparam_size_;
-int* nrn_mech_data_layout_; /* 1 AoS (default), >1 AoSoA, 0 SoA */
-int* nrn_dparam_ptr_start_;
-int* nrn_dparam_ptr_end_;
-short* nrn_is_artificial_;
 
-/* dependency helper filled by calls to hoc_register_dparam_semantics */
-/* used when nrn_mech_depend is called */
-static int ion_write_depend_size_;
-static int** ion_write_depend_;
+
+
+
+
 static void ion_write_depend(int type, int etype);
 
-/* Vector keeping the types (IDs) of different mechanisms of mod files between Neuron and CoreNeuron
- */
-std::vector<int> different_mechanism_type;
 
-bbcore_read_t* nrn_bbcore_read_;
-bbcore_write_t* nrn_bbcore_write_;
 void hoc_reg_bbcore_read(int type, bbcore_read_t f) {
     if (type == -1) {
         return;
     }
-    nrn_bbcore_read_[type] = f;
+    corenrn.get_bbcore_read()[type] = f;
 }
 void hoc_reg_bbcore_write(int type, bbcore_write_t f) {
     if (type == -1) {
         return;
     }
-    nrn_bbcore_write_[type] = f;
+    corenrn.get_bbcore_write()[type] = f;
 }
 
 void add_nrn_has_net_event(int type) {
     if (type == -1) {
         return;
     }
-    ++nrn_has_net_event_cnt_;
-    nrn_has_net_event_ = (int*)erealloc(nrn_has_net_event_, nrn_has_net_event_cnt_ * sizeof(int));
-    nrn_has_net_event_[nrn_has_net_event_cnt_ - 1] = type;
+    corenrn.get_has_net_event().push_back(type);
 }
 
 /* values are type numbers of mechanisms which have FOR_NETCONS statement */
@@ -133,44 +98,41 @@ void add_nrn_fornetcons(int type, int indx) {
     nrn_fornetcon_index_[i] = indx;
 }
 
-/* array is parallel to memb_func. All are 0 except 1 for ARTIFICIAL_CELL */
-short* nrn_artcell_qindex_;
-
 void add_nrn_artcell(int type, int qi) {
-    if (type == -1)
+    if (type == -1) {
         return;
+    }
 
-    nrn_is_artificial_[type] = 1;
-    nrn_artcell_qindex_[type] = qi;
+    corenrn.get_is_artificial()[type] = 1;
+    corenrn.get_artcell_qindex()[type] = qi;
 }
 
-void alloc_mech(int n) {
-    memb_func_size_ = n;
-    n_memb_func = n;
-    memb_func = (Memb_func*)ecalloc(memb_func_size_, sizeof(Memb_func));
-    memb_list = (Memb_list*)ecalloc(memb_func_size_, sizeof(Memb_list));
-    point_process = (Point_process**)ecalloc(memb_func_size_, sizeof(Point_process*));
-    pnt_map = (char*)ecalloc(memb_func_size_, sizeof(char));
-    pnt_receive = (pnt_receive_t*)ecalloc(memb_func_size_, sizeof(pnt_receive_t));
-    pnt_receive_init = (pnt_receive_t*)ecalloc(memb_func_size_, sizeof(pnt_receive_t));
-    pnt_receive_size = (short*)ecalloc(memb_func_size_, sizeof(short));
-    nrn_watch_check = (nrn_watch_check_t*)ecalloc(memb_func_size_, sizeof(nrn_watch_check_t));
-    nrn_is_artificial_ = (short*)ecalloc(memb_func_size_, sizeof(short));
-    nrn_artcell_qindex_ = (short*)ecalloc(memb_func_size_, sizeof(short));
-    nrn_prop_param_size_ = (int*)ecalloc(memb_func_size_, sizeof(int));
-    nrn_prop_dparam_size_ = (int*)ecalloc(memb_func_size_, sizeof(int));
-    nrn_mech_data_layout_ = (int*)ecalloc(memb_func_size_, sizeof(int));
-    {
-        int i;
-        for (i = 0; i < memb_func_size_; ++i) {
-            nrn_mech_data_layout_[i] = 1;
-        }
+void set_pnt_receive(int type,
+    pnt_receive_t pnt_receive,
+    pnt_receive_t pnt_receive_init,
+    short size) {
+    if (type == -1) {
+        return;
     }
-    nrn_dparam_ptr_start_ = (int*)ecalloc(memb_func_size_, sizeof(int));
-    nrn_dparam_ptr_end_ = (int*)ecalloc(memb_func_size_, sizeof(int));
-    nrn_bbcore_read_ = (bbcore_read_t*)ecalloc(memb_func_size_, sizeof(bbcore_read_t));
-    nrn_bbcore_write_ = (bbcore_write_t*)ecalloc(memb_func_size_, sizeof(bbcore_write_t));
-    bamech_ = (BAMech**)ecalloc(BEFORE_AFTER_SIZE, sizeof(BAMech*));
+    corenrn.get_pnt_receive()[type] = pnt_receive;
+    corenrn.get_pnt_receive_init()[type] = pnt_receive_init;
+    corenrn.get_pnt_receive_size()[type] = size;
+}
+
+void alloc_mech(int memb_func_size_) {
+    corenrn.get_memb_funcs().resize(memb_func_size_);
+    corenrn.get_pnt_map().resize(memb_func_size_);
+    corenrn.get_pnt_receive().resize(memb_func_size_);
+    corenrn.get_pnt_receive_init().resize(memb_func_size_);
+    corenrn.get_pnt_receive_size().resize(memb_func_size_);
+    corenrn.get_watch_check().resize(memb_func_size_);
+    corenrn.get_is_artificial().resize(memb_func_size_, false);
+    corenrn.get_artcell_qindex().resize(memb_func_size_);
+    corenrn.get_prop_param_size().resize(memb_func_size_);
+    corenrn.get_prop_dparam_size().resize(memb_func_size_);
+    corenrn.get_mech_data_layout().resize(memb_func_size_, 1);
+    corenrn.get_bbcore_read().resize(memb_func_size_);
+    corenrn.get_bbcore_write().resize(memb_func_size_);
 }
 
 void initnrn() {
@@ -191,6 +153,7 @@ int register_mech(const char** m,
                   mod_f_t initialize,
                   int nrnpointerindex,
                   int vectorized) {
+    auto& memb_func = corenrn.get_memb_funcs();
     int type;              /* 0 unused, 1 for cable section */
     (void)nrnpointerindex; /*unused*/
 
@@ -204,8 +167,6 @@ int register_mech(const char** m,
 #ifdef DEBUG
     printf("register_mech %s %d\n", m[1], type);
 #endif
-    nrn_dparam_ptr_start_[type] = 0; /* fill in later */
-    nrn_dparam_ptr_end_[type] = 0;   /* fill in later */
     if (memb_func[type].sym) {
         assert(strcmp(memb_func[type].sym, m[1]) == 0);
     } else {
@@ -221,14 +182,12 @@ int register_mech(const char** m,
 #if VECTORIZE
     memb_func[type].vectorized = vectorized ? 1 : 0;
     memb_func[type].thread_size_ = vectorized ? (vectorized - 1) : 0;
-    memb_func[type].thread_mem_init_ = NULL;
-    memb_func[type].thread_cleanup_ = NULL;
-    memb_func[type].thread_table_check_ = NULL;
+    memb_func[type].thread_mem_init_ = nullptr;
+    memb_func[type].thread_cleanup_ = nullptr;
+    memb_func[type].thread_table_check_ = nullptr;
     memb_func[type].is_point = 0;
-    memb_func[type].setdata_ = NULL;
+    memb_func[type].setdata_ = nullptr;
     memb_func[type].dparam_semantics = (int*)0;
-    memb_list[type].nodecount = 0;
-    memb_list[type]._thread = (ThreadDatum*)0;
 #endif
     register_all_variables_offsets(type, &m[2]);
     return type;
@@ -249,27 +208,19 @@ void nrn_writes_conc(int type, int unused) {
 }
 
 void _nrn_layout_reg(int type, int layout) {
-    nrn_mech_data_layout_[type] = layout;
+    corenrn.get_mech_data_layout()[type] = layout;
 }
 
 void hoc_register_net_receive_buffering(NetBufReceive_t f, int type) {
-    int i = net_buf_receive_cnt_++;
-    net_buf_receive_type_ =
-        (int*)erealloc(net_buf_receive_type_, net_buf_receive_cnt_ * sizeof(int));
-    net_buf_receive_ = (NetBufReceive_t*)erealloc(net_buf_receive_,
-                                                  net_buf_receive_cnt_ * sizeof(NetBufReceive_t));
-    net_buf_receive_type_[i] = type;
-    net_buf_receive_[i] = f;
+    corenrn.get_net_buf_receive().emplace_back(f, type);
 }
 
 void hoc_register_net_send_buffering(int type) {
-    int i = net_buf_send_cnt_++;
-    net_buf_send_type_ = (int*)erealloc(net_buf_send_type_, net_buf_send_cnt_ * sizeof(int));
-    net_buf_send_type_[i] = type;
+    corenrn.get_net_buf_send_type().push_back(type);
 }
 
 void hoc_register_watch_check(nrn_watch_check_t nwc, int type) {
-    nrn_watch_check[type] = nwc;
+    corenrn.get_watch_check()[type] = nwc;
 }
 
 void hoc_register_prop_size(int type, int psize, int dpsize) {
@@ -277,15 +228,15 @@ void hoc_register_prop_size(int type, int psize, int dpsize) {
     if (type == -1)
         return;
 
-    pold = nrn_prop_param_size_[type];
-    dpold = nrn_prop_dparam_size_[type];
+    pold = corenrn.get_prop_param_size()[type];
+    dpold = corenrn.get_prop_dparam_size()[type];
     if (psize != pold || dpsize != dpold) {
-        different_mechanism_type.push_back(type);
+        corenrn.get_different_mechanism_type().push_back(type);
     }
-    nrn_prop_param_size_[type] = psize;
-    nrn_prop_dparam_size_[type] = dpsize;
+    corenrn.get_prop_param_size()[type] = psize;
+    corenrn.get_prop_dparam_size()[type] = dpsize;
     if (dpsize) {
-        memb_func[type].dparam_semantics = (int*)ecalloc(dpsize, sizeof(int));
+        corenrn.get_memb_func(type).dparam_semantics = (int*)ecalloc(dpsize, sizeof(int));
     }
 }
 void hoc_register_dparam_semantics(int type, int ix, const char* name) {
@@ -297,6 +248,7 @@ void hoc_register_dparam_semantics(int type, int ix, const char* name) {
        -4, -5, -6, -7, -8, -9,
        type, and type+1000 respectively
     */
+    auto& memb_func = corenrn.get_memb_funcs();
     if (strcmp(name, "area") == 0) {
         memb_func[type].dparam_semantics[ix] = -1;
     } else if (strcmp(name, "iontype") == 0) {
@@ -334,24 +286,20 @@ void hoc_register_dparam_semantics(int type, int ix, const char* name) {
 #endif
 }
 
-/* only ion type ion_write_depend_ are non-NULL */
+/* only ion type ion_write_depend_ are non-nullptr */
 /* and those are array of integers with first integer being array size */
 /* and remaining size-1 integers containing the mechanism types that write concentrations to that
  * ion */
 static void ion_write_depend(int type, int etype) {
-    int size, i;
-    if (ion_write_depend_size_ < n_memb_func) {
-        ion_write_depend_ = (int**)erealloc(ion_write_depend_, n_memb_func * sizeof(int*));
-        for (i = ion_write_depend_size_; i < n_memb_func; ++i) {
-            ion_write_depend_[i] = NULL;
-        }
-        ion_write_depend_size_ = n_memb_func;
+    auto& memb_func = corenrn.get_memb_funcs();
+    auto& ion_write_depend_ = corenrn.get_ion_write_dependency();
+    if (ion_write_depend_.size() < memb_func.size()) {
+        ion_write_depend_.resize(memb_func.size());
     }
-    size = 2;
-    if (ion_write_depend_[etype]) {
-        size = ion_write_depend_[etype][0] + 1;
-    }
-    ion_write_depend_[etype] = (int*)erealloc(ion_write_depend_[etype], size * sizeof(int));
+
+    int size = !ion_write_depend_[etype].empty() ? ion_write_depend_[etype][0] + 1: 2;
+
+    ion_write_depend_[etype].resize(size, 0);
     ion_write_depend_[etype][0] = size;
     ion_write_depend_[etype][size - 1] = type;
 }
@@ -381,18 +329,19 @@ static int depend_append(int idep, int* dependencies, int deptype, int type) {
 int nrn_mech_depend(int type, int* dependencies) {
     int i, dpsize, idep, deptype;
     int* ds;
-    dpsize = nrn_prop_dparam_size_[type];
-    ds = memb_func[type].dparam_semantics;
+    dpsize = corenrn.get_prop_dparam_size()[type];
+    ds = corenrn.get_memb_func(type).dparam_semantics;
     idep = 0;
     if (ds)
         for (i = 0; i < dpsize; ++i) {
             if (ds[i] > 0 && ds[i] < 1000) {
                 int idepnew;
-                int* iwd;
                 deptype = ds[i];
                 idepnew = depend_append(idep, dependencies, deptype, type);
-                iwd = ion_write_depend_ ? ion_write_depend_[deptype] : 0;
-                if (idepnew > idep && iwd) {
+                if ((idepnew > idep)
+                    && !corenrn.get_ion_write_dependency().empty()
+                    && !corenrn.get_ion_write_dependency()[deptype].empty()) {
+                    auto& iwd = corenrn.get_ion_write_dependency()[deptype];
                     int size, j;
                     size = iwd[0];
                     for (j = 1; j < size; ++j) {
@@ -406,7 +355,7 @@ int nrn_mech_depend(int type, int* dependencies) {
 }
 
 void register_destructor(Pfri d) {
-    memb_func[n_memb_func - 1].destructor = d;
+    corenrn.get_memb_funcs().back().destructor = d;
 }
 
 int point_reg_helper(Symbol* s2) {
@@ -417,10 +366,10 @@ int point_reg_helper(Symbol* s2) {
     if (type == -1)
         return type;
 
-    pnt_map[type] = pointtype;
-    memb_func[type].is_point = 1;
+    corenrn.get_pnt_map()[type] = corenrn.get_next_pointtype();
+    corenrn.get_memb_func(type).is_point = 1;
 
-    return pointtype++;
+    return corenrn.get_pnt_map()[type];
 }
 
 int point_register_mech(const char** m,
@@ -477,28 +426,28 @@ void hoc_reg_ba(int mt, mod_f_t f, int type) {
             break;
         default:
             printf("before-after processing type %d for %s not implemented\n", type,
-                   memb_func[mt].sym);
+                   corenrn.get_memb_func(mt).sym);
             nrn_exit(1);
     }
     bam = (BAMech*)emalloc(sizeof(BAMech));
     bam->f = f;
     bam->type = mt;
-    bam->next = bamech_[type];
-    bamech_[type] = bam;
+    bam->next = corenrn.get_bamech()[type];
+    corenrn.get_bamech()[type] = bam;
 }
 
 void _nrn_thread_reg0(int i, void (*f)(ThreadDatum*)) {
     if (i == -1)
         return;
 
-    memb_func[i].thread_cleanup_ = f;
+    corenrn.get_memb_func(i).thread_cleanup_ = f;
 }
 
 void _nrn_thread_reg1(int i, void (*f)(ThreadDatum*)) {
     if (i == -1)
         return;
 
-    memb_func[i].thread_mem_init_ = f;
+    corenrn.get_memb_func(i).thread_mem_init_ = f;
 }
 
 void _nrn_thread_table_reg(int i,
@@ -506,13 +455,13 @@ void _nrn_thread_table_reg(int i,
     if (i == -1)
         return;
 
-    memb_func[i].thread_table_check_ = f;
+    corenrn.get_memb_func(i).thread_table_check_ = f;
 }
 
 void _nrn_setdata_reg(int i, void (*call)(double*, Datum*)) {
     if (i == -1)
         return;
 
-    memb_func[i].setdata_ = call;
+    corenrn.get_memb_func(i).setdata_ = call;
 }
 }  // namespace coreneuron

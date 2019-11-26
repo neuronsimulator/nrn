@@ -29,13 +29,14 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include <map>
 #include "coreneuron/nrnconf.h"
-#include "coreneuron/nrnoc/membfunc.h"
+#include "coreneuron/nrnoc/membfunc.hpp"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrniv/netcon.h"
 #include "coreneuron/nrnoc/nrnoc_decl.h"
 #include "coreneuron/utils/sdprintf.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/nrniv/nrn_assert.h"
+#include "coreneuron/coreneuron.hpp"
 
 #define precision 15
 namespace coreneuron {
@@ -69,15 +70,15 @@ static int ml_permute(int i, Memb_list* ml) {
 // Note: cellnodes array is in unpermuted order.
 
 static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE* f) {
-    int is_art = nrn_is_artificial_[type];
+    int is_art = corenrn.get_is_artificial()[type];
     if (is_art)
         return;
 
     int header_printed = 0;
-    int size = nrn_prop_param_size_[type];
-    int psize = nrn_prop_dparam_size_[type];
-    int receives_events = pnt_receive[type] ? 1 : 0;
-    int layout = nrn_mech_data_layout_[type];
+    int size = corenrn.get_prop_param_size()[type];
+    int psize = corenrn.get_prop_dparam_size()[type];
+    int receives_events = corenrn.get_pnt_receive()[type] ? 1 : 0;
+    int layout = corenrn.get_mech_data_layout()[type];
     int cnt = ml->nodecount;
     for (int iorig = 0; iorig < ml->nodecount; ++iorig) {  // original index
         int i = ml_permute(iorig, ml);                     // present index
@@ -86,7 +87,7 @@ static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE
         if (cix >= 0) {
             if (!header_printed) {
                 header_printed = 1;
-                fprintf(f, "type=%d %s size=%d\n", type, memb_func[type].sym, size);
+                fprintf(f, "type=%d %s size=%d\n", type, corenrn.get_memb_func(type).sym, size);
             }
             if (receives_events) {
                 fprintf(f, "%d nri %d\n", cix, pntindex);
@@ -121,7 +122,7 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
         std::map<Point_process*, int>::iterator it = pnt2index.find(pp);
         if (it != pnt2index.end()) {
             nclist[it->second].push_back(nc);
-            map_nc2src[nc] = NULL;
+            map_nc2src[nc] = nullptr;
             ++nc_cnt;
         }
     }
@@ -178,7 +179,7 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
                     Point_process* pnt = ps->pntsrc_;
                     if (srcgid < 0 && pnt) {
                         int type = pnt->_type;
-                        fprintf(f, "%d %s %d %.*g", i, memb_func[type].sym, nc->active_ ? 1 : 0,
+                        fprintf(f, "%d %s %d %.*g", i, corenrn.get_memb_func(type).sym, nc->active_ ? 1 : 0,
                                 precision, nc->delay_);
                     } else if (srcgid < 0 && ps->thvar_index_ > 0) {
                         fprintf(f, "%d %s %d %.*g", i, "v", nc->active_ ? 1 : 0, precision,
@@ -194,7 +195,7 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
             } else {
                 fprintf(f, "%d %d %d %.*g", i, srcgid, nc->active_ ? 1 : 0, precision, nc->delay_);
             }
-            int wcnt = pnt_receive_size[nc->target_->_type];
+            int wcnt = corenrn.get_pnt_receive_size()[nc->target_->_type];
             for (int k = 0; k < wcnt; ++k) {
                 fprintf(f, " %.*g", precision, nt.weights[nc->u.weight_index_ + k]);
             }
@@ -266,7 +267,7 @@ static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
     pnt2index.clear();
     if (inv_permute_) {
         delete inv_permute_;
-        inv_permute_ = NULL;
+        inv_permute_ = nullptr;
     }
 }
 

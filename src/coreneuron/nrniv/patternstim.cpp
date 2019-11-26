@@ -43,6 +43,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnoc/nrnoc_decl.h"
 #include "coreneuron/nrniv/output_spikes.h"
 #include "coreneuron/nrniv/nrn_assert.h"
+#include "coreneuron/coreneuron.hpp"
 
 namespace coreneuron {
 void _pattern_reg(void);
@@ -65,26 +66,26 @@ void nrn_set_extra_thread0_vdata() {
     // limited to PatternStim for now.
     // if called, must be called before nrn_setup and after mk_mech.
     int type = nrn_get_mechtype("PatternStim");
-    if (!memb_func[type].initialize) {
+    if (!corenrn.get_memb_func(type).initialize) {
         // the NEURON mod file version is not vectorized so the param size
         // differs by 1 from the coreneuron version.
-        nrn_prop_param_size_[type] += 1;
+        corenrn.get_prop_param_size()[type] += 1;
         _pattern_reg();
     }
-    nrn_extra_thread0_vdata = nrn_prop_dparam_size_[type];
+    nrn_extra_thread0_vdata = corenrn.get_prop_dparam_size()[type];
 }
 
 // fname is the filename of an output_spikes.h format raster file.
 // todo : add function for memory cleanup (to be called at the end of simulation)
 void nrn_mkPatternStim(const char* fname) {
     int type = nrn_get_mechtype("PatternStim");
-    if (!memb_func[type].sym) {
+    if (!corenrn.get_memb_func(type).sym) {
         printf("nrn_set_extra_thread_vdata must be called (after mk_mech, and before nrn_setup\n");
         assert(0);
     }
 
     // if there is empty thread then return, don't need patternstim
-    if (nrn_threads == NULL || nrn_threads->ncell == 0) {
+    if (nrn_threads == nullptr || nrn_threads->ncell == 0) {
         return;
     }
 
@@ -98,9 +99,9 @@ void nrn_mkPatternStim(const char* fname) {
     NrnThread* nt = nrn_threads + pnt->_tid;
 
     Memb_list* ml = nt->_ml_list[type];
-    int layout = nrn_mech_data_layout_[type];
-    int sz = nrn_prop_param_size_[type];
-    int psz = nrn_prop_dparam_size_[type];
+    int layout = corenrn.get_mech_data_layout()[type];
+    int sz = corenrn.get_prop_param_size()[type];
+    int psz = corenrn.get_prop_dparam_size()[type];
     int _cntml = ml->nodecount;
     int _iml = pnt->_i_instance;
     double* _p = ml->data;
@@ -113,7 +114,7 @@ void nrn_mkPatternStim(const char* fname) {
     } else {
         assert(0);
     }
-    pattern_stim_setup_helper(size, tvec, gidvec, _iml, _cntml, _p, _ppvar, NULL, nt, 0.0);
+    pattern_stim_setup_helper(size, tvec, gidvec, _iml, _cntml, _p, _ppvar, nullptr, nt, 0.0);
 }
 
 // comparator to sort spikes based on time
@@ -174,14 +175,14 @@ Point_process* nrn_artcell_instantiate(const char* mechname) {
 
     // see nrn_setup.cpp:read_phase2 for how it creates NrnThreadMembList instances.
     // create and append to nt.tml
-    assert(nt->_ml_list[type] == NULL);  // FIXME
+    assert(nt->_ml_list[type] == nullptr);  // FIXME
     NrnThreadMembList* tml = (NrnThreadMembList*)emalloc(sizeof(NrnThreadMembList));
     tml->ml = (Memb_list*)emalloc(sizeof(Memb_list));
-    tml->dependencies = NULL;
+    tml->dependencies = nullptr;
     tml->ndependencies = 0;
     nt->_ml_list[type] = tml->ml;
     tml->index = type;
-    tml->next = NULL;
+    tml->next = nullptr;
     if (!nt->tml) {
         nt->tml = tml;
     } else {
@@ -195,19 +196,19 @@ Point_process* nrn_artcell_instantiate(const char* mechname) {
 
     // fill in tml->ml info. The data is not in the cache efficient
     // NrnThread arrays but there should not be many of these instances.
-    int psize = nrn_prop_param_size_[type];
-    int dsize = nrn_prop_dparam_size_[type];
-    // int layout = nrn_mech_data_layout_[type]; // not needed because singleton
+    int psize = corenrn.get_prop_param_size()[type];
+    int dsize = corenrn.get_prop_dparam_size()[type];
+    // int layout = nrn_mech_data_layout[type]; // not needed because singleton
     Memb_list* ml = tml->ml;
     ml->nodecount = 1;
     ml->_nodecount_padded = ml->nodecount;
-    ml->nodeindices = NULL;
+    ml->nodeindices = nullptr;
     ml->data = (double*)ecalloc(ml->nodecount * psize, sizeof(double));
     ml->pdata = (Datum*)ecalloc(ml->nodecount * dsize, sizeof(Datum));
-    ml->_thread = NULL;
-    ml->_net_receive_buffer = NULL;
-    ml->_net_send_buffer = NULL;
-    ml->_permute = NULL;
+    ml->_thread = nullptr;
+    ml->_net_receive_buffer = nullptr;
+    ml->_net_send_buffer = nullptr;
+    ml->_permute = nullptr;
 
     // Here we have a problem with no easy general solution. ml->pdata are
     // integer indexes into the nt->_data nt->_idata and nt->_vdata array

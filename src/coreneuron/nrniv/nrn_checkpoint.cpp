@@ -35,6 +35,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/mech/mod2c_core_thread.h"
 #include "coreneuron/utils/file_utils.h"
 #include "coreneuron/nrniv/node_permute.h"
+#include "coreneuron/coreneuron.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -207,7 +208,7 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
 
     fh << nt.ncell << " n_real_gid\n";
     fh << nt.end << " nnode\n";
-    fh << ((nt._actual_diam == NULL) ? 0 : nt.end) << " ndiam\n";
+    fh << ((nt._actual_diam == nullptr) ? 0 : nt.end) << " ndiam\n";
     int nmech = 0;
     for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
         if (tml->index != patstimtype) {  // skip PatternStim
@@ -233,7 +234,7 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
     fh << nt.n_weight << " nweight\n";
 
     // see comment about parent in node_permute.cpp
-    int* pinv_nt = NULL;
+    int* pinv_nt = nullptr;
     if (nt._permute) {
         int* d = new int[nt.end];
         pinv_nt = inverse_permute(nt._permute, nt.end);
@@ -281,8 +282,9 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
         chkpnt_data_write(fh, nt._actual_diam, nt.end, 1, 0, nt._permute);
     }
 
+    auto& memb_func = corenrn.get_memb_funcs();
     // will need the ml_pinv inverse permutation of ml._permute for ions
-    int** ml_pinv = (int**)ecalloc(n_memb_func, sizeof(int*));
+    int** ml_pinv = (int**)ecalloc(memb_func.size(), sizeof(int*));
 
     for (NrnThreadMembList* current_tml = nt.tml; current_tml; current_tml = current_tml->next) {
         Memb_list* ml = current_tml->ml;
@@ -291,8 +293,12 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
             continue;
         }
         int cnt = ml->nodecount;
-        int sz = nrn_prop_param_size_[type];
-        int layout = nrn_mech_data_layout_[type];
+        auto& nrn_prop_param_size_ = corenrn.get_prop_param_size();
+        auto& nrn_prop_dparam_size_ = corenrn.get_prop_dparam_size();
+        auto& nrn_is_artificial_ = corenrn.get_is_artificial();
+
+            int sz = nrn_prop_param_size_[type];
+        int layout = corenrn.get_mech_data_layout()[type];
         int* semantics = memb_func[type].dparam_semantics;
 
         if (!nrn_is_artificial_[type]) {
@@ -338,7 +344,7 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
                             Memb_list* eml = nt._ml_list[etype];
                             int ecnt = eml->nodecount;
                             int esz = nrn_prop_param_size_[etype];
-                            int elayout = nrn_mech_data_layout_[etype];
+                            int elayout = corenrn.get_mech_data_layout()[etype];
                             // current index into eml->data is a  function
                             // of elayout, eml._permute, ei_instance, ei, and
                             // eml padding.
@@ -380,7 +386,7 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
             // if any assert fails in this loop then we have faulty understanding
             // of the for (int i = 0; i < nt.n_presyn; ++i) loop in nrn_setup.cpp
             assert(ps->thvar_index_ < nt.end);
-            assert(ps->pntsrc_ == NULL);
+            assert(ps->pntsrc_ == nullptr);
             output_threshold[i] = ps->threshold_;
             output_vindex[i] = pinv_nt[ps->thvar_index_];
         } else if (i < nt.ncell) {      // real cell without a presyn
@@ -407,11 +413,10 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
     delete[] pinv_nt;
 
     int synoffset = 0;
-    int* pnt_offset = new int[n_memb_func];
+    std::vector<int> pnt_offset(memb_func.size(), -1);
     for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
         int type = tml->index;
-        pnt_offset[type] = -1;
-        if (pnt_map[type] > 0) {
+        if (corenrn.get_pnt_map()[type] > 0) {
             pnt_offset[type] = synoffset;
             synoffset += tml->ml->nodecount;
         }
@@ -423,7 +428,7 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
     for (int i = 0; i < nnetcon; ++i) {
         NetCon& nc = nt.netcons[i];
         Point_process* pnt = nc.target_;
-        assert(pnt);  // nrn_setup.cpp allows type <=0 which generates NULL target.
+        assert(pnt);  // nrn_setup.cpp allows type <=0 which generates nullptr target.
         pnttype[i] = pnt->_type;
 
 #if 0
@@ -451,7 +456,6 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
         assert(ntc.delay[i] == delay[i]);
     }
 #endif
-    delete[] pnt_offset;
     delete[] pnttype;
     delete[] pntindex;
     delete[] delay;
@@ -459,7 +463,7 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
     // BBCOREPOINTER
     int nbcp = 0;
     for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
-        if (nrn_bbcore_read_[tml->index] && tml->index != patstimtype) {
+        if (corenrn.get_bbcore_read()[tml->index] && tml->index != patstimtype) {
             ++nbcp;
         }
     }
@@ -470,16 +474,16 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
 #endif
     nbcp = 0;
     for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
-        if (nrn_bbcore_read_[tml->index] && tml->index != patstimtype) {
+        if (corenrn.get_bbcore_read()[tml->index] && tml->index != patstimtype) {
             int i = nbcp++;
             int type = tml->index;
-            assert(nrn_bbcore_write_[type]);
+            assert(corenrn.get_bbcore_write()[type]);
             Memb_list* ml = tml->ml;
-            double* d = NULL;
-            Datum* pd = NULL;
-            int layout = nrn_mech_data_layout_[type];
-            int dsz = nrn_prop_param_size_[type];
-            int pdsz = nrn_prop_dparam_size_[type];
+            double* d = nullptr;
+            Datum* pd = nullptr;
+            int layout = corenrn.get_mech_data_layout()[type];
+            int dsz = corenrn.get_prop_param_size()[type];
+            int pdsz = corenrn.get_prop_dparam_size()[type];
             int aln_cntml = nrn_soa_padded_size(ml->nodecount, layout);
             fh << type << "\n";
             int icnt = 0;
@@ -492,7 +496,7 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
                 }
                 d = ml->data + nrn_i_layout(jp, ml->nodecount, 0, dsz, layout);
                 pd = ml->pdata + nrn_i_layout(jp, ml->nodecount, 0, pdsz, layout);
-                (*nrn_bbcore_write_[type])(NULL, NULL, &dcnt, &icnt, 0, aln_cntml, d, pd,
+                (*corenrn.get_bbcore_write()[type])(nullptr, nullptr, &dcnt, &icnt, 0, aln_cntml, d, pd,
                                            ml->_thread, &nt, 0.0);
             }
             fh << icnt << "\n";
@@ -502,8 +506,8 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
             assert(ntc.bcpicnt[i] == icnt);
             assert(ntc.bcpdcnt[i] == dcnt);
 #endif
-            int* iArray = NULL;
-            double* dArray = NULL;
+            int* iArray = nullptr;
+            double* dArray = nullptr;
             if (icnt) {
                 iArray = new int[icnt];
             }
@@ -521,7 +525,7 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
                 d = ml->data + nrn_i_layout(jp, ml->nodecount, 0, dsz, layout);
                 pd = ml->pdata + nrn_i_layout(jp, ml->nodecount, 0, pdsz, layout);
 
-                (*nrn_bbcore_write_[type])(dArray, iArray, &dcnt, &icnt, 0, aln_cntml, d, pd,
+                (*corenrn.get_bbcore_write()[type])(dArray, iArray, &dcnt, &icnt, 0, aln_cntml, d, pd,
                                            ml->_thread, &nt, 0.0);
             }
 
@@ -546,10 +550,10 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
         int ix = -1;
 
         // not as efficient as possible but there should not be too many
-        Memb_list* ml = NULL;
+        Memb_list* ml = nullptr;
         for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
             ml = tml->ml;
-            int nn = nrn_prop_param_size_[tml->index] * ml->nodecount;
+            int nn = corenrn.get_prop_param_size()[tml->index] * ml->nodecount;
             if (nn && pr->pd_ >= ml->data && pr->pd_ < (ml->data + nn)) {
                 mtype = tml->index;
                 ix = (pr->pd_ - ml->data);
@@ -558,12 +562,12 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
         }
         assert(mtype >= 0);
         int icnt, isz;
-        nrn_inverse_i_layout(ix, icnt, ml->nodecount, isz, nrn_prop_param_size_[mtype],
-                             nrn_mech_data_layout_[mtype]);
+        nrn_inverse_i_layout(ix, icnt, ml->nodecount, isz, corenrn.get_prop_param_size()[mtype],
+                             corenrn.get_mech_data_layout()[mtype]);
         if (ml_pinv[mtype]) {
             icnt = ml_pinv[mtype][icnt];
         }
-        ix = nrn_i_layout(icnt, ml->nodecount, isz, nrn_prop_param_size_[mtype], 1 /*AOS_LAYOUT*/);
+        ix = nrn_i_layout(icnt, ml->nodecount, isz, corenrn.get_prop_param_size()[mtype], 1 /*AOS_LAYOUT*/);
 
         fh << vtype << "\n";
         fh << mtype << "\n";
@@ -585,7 +589,7 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
         }
     }
 
-    for (int i = 0; i < n_memb_func; ++i) {
+    for (int i = 0; i < memb_func.size(); ++i) {
         if (ml_pinv[i]) {
             delete[] ml_pinv[i];
         }
@@ -799,7 +803,7 @@ static void write_tqueue(NrnThread& nt, FileHandlerWrap& fh) {
     TQItem* q;
 
     fh << -1 << " TQItems from atomic_dq\n";
-    while ((q = tqe->atomic_dq(1e20)) != NULL) {
+    while ((q = tqe->atomic_dq(1e20)) != nullptr) {
         write_tqueue(q, nt, fh);
     }
     fh << 0 << "\n";
@@ -866,7 +870,7 @@ bool checkpoint_initialize() {
         NrnThread& nt = nrn_threads[i];
         for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
             Memb_list* ml = tml->ml;
-            mod_f_t s = memb_func[tml->index].initialize;
+            mod_f_t s = corenrn.get_memb_func(tml->index).initialize;
             if (s) {
                 (*s)(&nt, ml, tml->index);
             }

@@ -26,11 +26,11 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef multicore_h
-#define multicore_h
+#pragma once
 
 #include "coreneuron/nrnconf.h"
-#include "coreneuron/nrnoc/membfunc.h"
+#include "coreneuron/nrnoc/membfunc.hpp"
+#include "coreneuron/nrniv/memory.h"
 
 namespace coreneuron {
 class NetCon;
@@ -41,9 +41,6 @@ class PreSyn;
    eliminated. Needed only by net_event function. Replaced by
    PreSyn* = nt->presyns + nt->pnt2presyn_ix[pnttype2presyn[pnt->_type]][pnt->_i_instance];
 */
-extern int nrn_has_net_event_cnt_; /* how many net_event sender types are there? */
-extern int* nrn_has_net_event_;    /* the types that send a net_event */
-extern int* pnttype2presyn; /* from the type, which array of pnt2presyn_ix are we talking about. */
 
 struct NrnThreadMembList { /* patterned after CvMembList in cvodeobj.h */
     NrnThreadMembList* next;
@@ -82,68 +79,74 @@ struct PreSynHelper {
     int flag_;
 };
 
-struct NrnThread {
-    double _t;
-    double _dt;
-    double cj;
+struct NrnThread : public MemoryManaged {
+    double _t = 0;
+    double _dt = -1e9;
+    double cj = 0.0;
 
-    NrnThreadMembList* tml;
-    Memb_list** _ml_list;
-    Point_process* pntprocs;  // synapses and artificial cells with and without gid
-    PreSyn* presyns;          // all the output PreSyn with and without gid
-    PreSynHelper* presyns_helper;
-    int** pnt2presyn_ix;  // eliminates Point_process._presyn used only by net_event sender.
-    NetCon* netcons;
-    double* weights;  // size n_weight. NetCon.weight_ points into this array.
+    NrnThreadMembList* tml = nullptr;
+    Memb_list** _ml_list = nullptr;
+    Point_process* pntprocs = nullptr;  // synapses and artificial cells with and without gid
+    PreSyn* presyns = nullptr;          // all the output PreSyn with and without gid
+    PreSynHelper* presyns_helper = nullptr;
+    int** pnt2presyn_ix = nullptr;  // eliminates Point_process._presyn used only by net_event sender.
+    NetCon* netcons = nullptr;
+    double* weights = nullptr;  // size n_weight. NetCon.weight_ points into this array.
 
-    int n_pntproc, n_presyn, n_input_presyn, n_netcon, n_weight;  // only for model_size
+    int n_pntproc = 0;
+    int n_weight = 0;
+    int n_netcon = 0;
+    int n_input_presyn = 0;
+    int n_presyn = 0;  // only for model_size
 
-    int ncell; /* analogous to old rootnodecount */
-    int end;   /* 1 + position of last in v_node array. Now v_node_count. */
-    int id;    /* this is nrn_threads[id] */
-    int _stop_stepping;
-    int n_vecplay; /* number of instances of VecPlayContinuous */
+    int ncell = 0; /* analogous to old rootnodecount */
+    int end = 0;   /* 1 + position of last in v_node array. Now v_node_count. */
+    int id = 0;    /* this is nrn_threads[id] */
+    int _stop_stepping = 0;
+    int n_vecplay = 0; /* number of instances of VecPlayContinuous */
 
-    size_t _ndata, _nidata, _nvdata; /* sizes */
-    double* _data;                   /* all the other double* and Datum to doubles point into here*/
-    int* _idata;                     /* all the Datum to ints index into here */
-    void** _vdata;                   /* all the Datum to pointers index into here */
-    void** _vecplay;                 /* array of instances of VecPlayContinuous */
+    size_t _ndata = 0;
+    size_t _nvdata = 0;
+    size_t _nidata = 0;                            /* sizes */
+    double* _data = nullptr;                   /* all the other double* and Datum to doubles point into here*/
+    int* _idata = nullptr;                     /* all the Datum to ints index into here */
+    void** _vdata = nullptr;                   /* all the Datum to pointers index into here */
+    void** _vecplay = nullptr;                 /* array of instances of VecPlayContinuous */
 
-    double* _actual_rhs;
-    double* _actual_d;
-    double* _actual_a;
-    double* _actual_b;
-    double* _actual_v;
-    double* _actual_area;
-    double* _actual_diam; /* NULL if no mechanism has dparam with diam semantics */
-    double* _shadow_rhs;  /* Not pointer into _data. Avoid race for multiple POINT_PROCESS in same
+    double* _actual_rhs = nullptr;
+    double* _actual_d = nullptr;
+    double* _actual_a = nullptr;
+    double* _actual_b = nullptr;
+    double* _actual_v = nullptr;
+    double* _actual_area = nullptr;
+    double* _actual_diam = nullptr; /* nullptr if no mechanism has dparam with diam semantics */
+    double* _shadow_rhs = nullptr;  /* Not pointer into _data. Avoid race for multiple POINT_PROCESS in same
                              compartment */
-    double* _shadow_d;    /* Not pointer into _data. Avoid race for multiple POINT_PROCESS in same
+    double* _shadow_d = nullptr;    /* Not pointer into _data. Avoid race for multiple POINT_PROCESS in same
                              compartment */
 
     /* Fast membrane current calculation struct */
-    NrnFastImem* nrn_fast_imem;
+    NrnFastImem* nrn_fast_imem = nullptr;
 
-    int* _v_parent_index;
-    int* _permute;
-    char* _sp13mat;              /* handle to general sparse matrix */
-    Memb_list* _ecell_memb_list; /* normally nil */
+    int* _v_parent_index = nullptr;
+    int* _permute = nullptr;
+    char* _sp13mat = nullptr;              /* handle to general sparse matrix */
+    Memb_list* _ecell_memb_list = nullptr; /* normally nullptr */
 
-    double _ctime; /* computation time in seconds (using nrnmpi_wtime) */
+    double _ctime = 0.0; /* computation time in seconds (using nrnmpi_wtime) */
 
     NrnThreadBAList* tbl[BEFORE_AFTER_SIZE]; /* wasteful since almost all empty */
 
-    int shadow_rhs_cnt; /* added to facilitate the NrnThread transfer to GPU */
-    int compute_gpu;    /* define whether to compute with gpus */
-    int stream_id;      /* define where the kernel will be launched on GPU stream */
-    int _net_send_buffer_size;
-    int _net_send_buffer_cnt;
-    int* _net_send_buffer;
+    int shadow_rhs_cnt = 0; /* added to facilitate the NrnThread transfer to GPU */
+    int compute_gpu = 0;    /* define whether to compute with gpus */
+    int stream_id = 0;      /* define where the kernel will be launched on GPU stream */
+    int _net_send_buffer_size = 0;
+    int _net_send_buffer_cnt = 0;
+    int* _net_send_buffer = nullptr;
 
-    int* _watch_types;                   /* NULL or 0 terminated array of integers */
-    void* mapping;                       /* section to segment mapping information */
-    TrajectoryRequests* trajec_requests; /* per time step values returned to NEURON */
+    int* _watch_types = nullptr;                   /* nullptr or 0 terminated array of integers */
+    void* mapping = nullptr;                       /* section to segment mapping information */
+    TrajectoryRequests* trajec_requests = nullptr; /* per time step values returned to NEURON */
 };
 
 extern void nrn_threads_create(int n);
@@ -157,5 +160,3 @@ extern void nrn_threads_free(void);
 extern int _nrn_skip_initmodel;
 
 }  // namespace coreneuron
-
-#endif

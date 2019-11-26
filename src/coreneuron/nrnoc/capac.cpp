@@ -26,7 +26,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "coreneuron/coreneuron.h"
+#include "coreneuron/coreneuron.hpp"
 
 #if defined(_OPENACC)
 #define _PRAGMA_FOR_INIT_ACC_LOOP_ \

@@ -58,8 +58,46 @@ inline void free_memory(void* pointer) {
     cudaFree(pointer);
 }
 
+/**
+ * A base class providing overloaded new and delete operators for CUDA allocation
+ *
+ * Classes that should be allocated on the GPU should inherit from this class. Additionally they
+ * may need to implement a special copy-construtor. This is documented here:
+ * \link: https://devblogs.nvidia.com/unified-memory-in-cuda-6/
+ */
+class MemoryManaged {
+  public:
+  void *operator new(size_t len) {
+    void *ptr;
+    cudaMallocManaged(&ptr, len);
+    cudaDeviceSynchronize();
+    return ptr;
+  }
+
+  void *operator new[](size_t len) {
+    void *ptr;
+    cudaMallocManaged(&ptr, len);
+    cudaDeviceSynchronize();
+    return ptr;
+  }
+
+  void operator delete(void *ptr) {
+    cudaDeviceSynchronize();
+    cudaFree(ptr);
+  }
+
+  void operator delete[](void *ptr) {
+    cudaDeviceSynchronize();
+    cudaFree(ptr);
+  }
+};
+
+
 /// for cpu builds use posix memalign
 #else
+class MemoryManaged {
+    // does nothing by default
+};
 
 #include <stdlib.h>
 

@@ -1,3 +1,4 @@
+#include "coreneuron/coreneuron.hpp"
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnoc/nrnoc_decl.h"
@@ -31,13 +32,13 @@ class SidData {
 namespace coreneuron {
 using namespace coreneuron::nrn_partrans;
 nrn_partrans::TransferThreadData::TransferThreadData() {
-    halfgap_ml = NULL;
+    halfgap_ml = nullptr;
     nsrc = 0;
     ntar = 0;
-    insrc_indices = NULL;
-    v_indices = NULL;
-    outbuf_indices = NULL;
-    v_gather = NULL;
+    insrc_indices = nullptr;
+    v_indices = nullptr;
+    outbuf_indices = nullptr;
+    v_gather = nullptr;
 }
 
 nrn_partrans::TransferThreadData::~TransferThreadData() {
@@ -62,7 +63,7 @@ void nrn_partrans::gap_mpi_setup(int ngroup) {
     // one thread then all processes must have more than one thread
     if (ngroup < nrn_nthread) {
         transfer_thread_data_[ngroup].nsrc = 0;
-        transfer_thread_data_[ngroup].halfgap_ml = NULL;
+        transfer_thread_data_[ngroup].halfgap_ml = nullptr;
     }
 
     // create and fill halfgap_info using first available...
@@ -73,8 +74,8 @@ void nrn_partrans::gap_mpi_setup(int ngroup) {
         if (si.ntar) {
             hgi.ix_vpre = si.ix_vpre;
             hgi.type = si.type;
-            hgi.sz = nrn_prop_param_size_[hgi.type];
-            hgi.layout = nrn_mech_data_layout_[hgi.type];
+            hgi.sz = corenrn.get_prop_param_size()[hgi.type];
+            hgi.layout = corenrn.get_mech_data_layout()[hgi.type];
         }
     }
 

@@ -46,6 +46,8 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 namespace coreneuron {
+
+/// --> Coreneuron as SpikeBuffer class
 std::vector<double> spikevec_time;
 std::vector<int> spikevec_gid;
 
@@ -173,7 +175,7 @@ void output_spikes_parallel(const char* outpath) {
     unsigned num_bytes = (sizeof(char) * num_spikes * SPIKE_RECORD_LEN);
     char* spike_data = (char*)malloc(num_bytes);
 
-    if (spike_data == NULL) {
+    if (spike_data == nullptr) {
         printf("Error while writing spikes due to memory allocation\n");
         return;
     }

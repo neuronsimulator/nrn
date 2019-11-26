@@ -72,7 +72,7 @@ static param_int param_int_args[] = {
      "Number of extra random connections in each thread to other duplicate models (int)."},
     {"--seed -s", -1, 0, 100000000, "Initialization seed for random number generator (int)."},
     {"--report-buffer-size", 4, 1, 128, "Size in MB of the report buffer (int)."},
-    {NULL, 0, 0, 0, NULL}};
+    {nullptr, 0, 0, 0, nullptr}};
 
 static param_dbl param_dbl_args[] = {
     {"--tstop -e", 100.0, 0.0, 1e9, "Stop time (ms). (100)"},
@@ -86,7 +86,7 @@ static param_dbl param_dbl_args[] = {
     {"--forwardskip -k", 0., 0., 1e9, "Forwardskip to TIME"},
     {"--mindelay", 10., 0., 1e9,
      "Maximum integration interval (likely reduced by minimum NetCon delay). (10)"},
-    {NULL, 0., 0., 0., NULL}};
+    {nullptr, 0., 0., 0., nullptr}};
 
 static param_flag param_flag_args[] = {
     {"--help -h",
@@ -98,7 +98,7 @@ static param_flag param_flag_args[] = {
     {"--multisend", "Use Multisend spike exchange instead of Allgather."},
     {"--binqueue", "Use bin queue."},
     {"--skip-mpi-finalize", "Do not call mpi finalize."},
-    {NULL, NULL}};
+    {nullptr, nullptr}};
 
 static param_str param_str_args[] = {
     {"--pattern -p", "", "Apply patternstim using the specified spike file."},
@@ -110,7 +110,7 @@ static param_str param_str_args[] = {
     {"--write-config", "", "Write configuration file filename."},
     {"--read-config", "", "Read configuration file filename."},
     {"--report-conf", "", "reports configuration file"},
-    {NULL, NULL, NULL}};
+    {nullptr, nullptr, nullptr}};
 
 static void graceful_exit(int);
 
@@ -253,11 +253,11 @@ static void nrnopt_add(const char* names,
 }
 
 void nrnopt_add_flag(const char* names, const char* usage) {
-    nrnopt_add(names, usage, NULL, NULL);
+    nrnopt_add(names, usage, nullptr, nullptr);
 }
 
 void nrnopt_add_str(const char* names, const char* usage, const char* dflt) {
-    nrnopt_add(names, usage, dflt, NULL);
+    nrnopt_add(names, usage, dflt, nullptr);
 }
 
 void nrnopt_add_int(const char* names, const char* usage, int dflt, int low, int high) {
@@ -355,7 +355,7 @@ void nrnopt_show() {
 
 void nrnopt_delete() {
     delete opt;
-    opt = NULL;
+    opt = nullptr;
 }
 
 static void graceful_exit(int err) {

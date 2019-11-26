@@ -80,11 +80,11 @@ TQueue<C>::~TQueue() {
 
     if (least_) {
         delete least_;
-        least_ = NULL;
+        least_ = nullptr;
     }
 
     /// Clear the splay tree
-    while ((q = spdeq(&sptree_->root)) != NULL) {
+    while ((q = spdeq(&sptree_->root)) != nullptr) {
         delete q;
     }
     delete sptree_;
@@ -279,7 +279,7 @@ inline void TQueue<spltree>::remove(TQItem* q) {
             if (sptree_->root) {
                 least_ = spdeq(&sptree_->root);
             } else {
-                least_ = NULL;
+                least_ = nullptr;
             }
         } else {
             spdelete(q, sptree_);
@@ -303,7 +303,7 @@ inline void TQueue<pq_que>::remove(TQItem* q) {
                 least_ = pq_que_.top().second;
                 pq_que_.pop();
             } else {
-                least_ = NULL;
+                least_ = nullptr;
             }
         } else {
             q->t_ = -1.;
@@ -326,7 +326,7 @@ inline TQItem* TQueue<spltree>::atomic_dq(double tt) {
         if (sptree_->root) {
             least_ = spdeq(&sptree_->root);
         } else {
-            least_ = NULL;
+            least_ = nullptr;
         }
     }
     MUTUNLOCK
@@ -357,7 +357,7 @@ inline TQItem* TQueue<pq_que>::atomic_dq(double tt) {
             least_ = pq_que_.top().second;
             pq_que_.pop();
         } else {
-            least_ = NULL;
+            least_ = nullptr;
         }
     }
     MUTUNLOCK

@@ -33,7 +33,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/utils/reports/nrnreport.h"
 #include "coreneuron/utils/reports/nrnsection_mapping.h"
 #include "coreneuron/nrnoc/mech_mapping.hpp"
-#include "coreneuron/nrnoc/membfunc.h"
+#include "coreneuron/nrnoc/membfunc.hpp"
 #ifdef ENABLE_REPORTING
 #ifdef ENABLE_SONATA_REPORTS
 #include "reportinglib/records.h"
@@ -119,7 +119,7 @@ VarsToReport get_soma_vars_to_report(NrnThread& nt, std::set<int>& target, doubl
         std::vector<VarWithMapping> to_report;
         if (target.find(gid) != target.end()) {
             CellMapping* m = mapinfo->get_cell_mapping(gid);
-            if (m == NULL) {
+            if (m == nullptr) {
                 std::cout << "[SOMA] Error : mapping information is missing for Soma Report! \n";
                 nrn_abort(1);
             }
@@ -149,7 +149,7 @@ VarsToReport get_compartment_vars_to_report(NrnThread& nt, std::set<int>& target
         int gid = nt.presyns[i].gid_;
         if (target.find(gid) != target.end()) {
             CellMapping* m = mapinfo->get_cell_mapping(gid);
-            if (m == NULL) {
+            if (m == nullptr) {
                 std::cout
                     << "[COMPARTMENTS] Error : Compartment mapping information is missing! \n";
                 nrn_abort(1);
@@ -197,7 +197,7 @@ VarsToReport get_custom_vars_to_report(NrnThread& nt,
 
             /// if there is no variable in mod file then report on every compartment
             /// otherwise check the flag set in mod file
-            if (is_selected == NULL)
+            if (is_selected == nullptr)
                 report_variable = true;
             else
                 report_variable = *is_selected;

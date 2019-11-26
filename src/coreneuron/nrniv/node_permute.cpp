@@ -69,6 +69,7 @@ so pdata_m(k, isz) = inew + data_t
 #include "coreneuron/nrnoc/nrnoc_decl.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/nrniv/nrn_assert.h"
+#include "coreneuron/coreneuron.hpp"
 #include <vector>
 #include <utility>
 #include <algorithm>
@@ -126,19 +127,19 @@ static void invert_permute(int* p, int n) {
 void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
     // assumes AoS to SoA transformation already made since we are using
     // nrn_i_layout to determine indices into both ml->pdata and into target data
-    int psz = nrn_prop_dparam_size_[type];
+    int psz = corenrn.get_prop_dparam_size()[type];
     if (psz == 0) {
         return;
     }
-    if (nrn_is_artificial_[type]) {
+    if (corenrn.get_is_artificial()[type]) {
         return;
     }
-    int* semantics = memb_func[type].dparam_semantics;
+    int* semantics = corenrn.get_memb_func(type).dparam_semantics;
     if (!semantics) {
         return;
     }
     int* pdata = ml->pdata;
-    int layout = nrn_mech_data_layout_[type];
+    int layout = corenrn.get_mech_data_layout()[type];
     int cnt = ml->nodecount;
     // ml padding does not matter (but target padding does matter)
 
@@ -190,11 +191,11 @@ void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
             }
         } else if (s >= 0 && s < 1000) {  // ion
             int etype = s;
-            int elayout = nrn_mech_data_layout_[etype];
+            int elayout = corenrn.get_mech_data_layout()[etype];
             Memb_list* eml = nt._ml_list[etype];
             int edata0 = eml->data - nt._data;
             int ecnt = eml->nodecount;
-            int esz = nrn_prop_param_size_[etype];
+            int esz = corenrn.get_prop_param_size()[etype];
             int* p_target = eml->_permute;
             for (int iml = 0; iml < cnt; ++iml) {
                 int* pd = pdata + nrn_i_layout(iml, cnt, i, psz, layout);
@@ -236,9 +237,9 @@ void permute_data(double* vec, int n, int* p) {
 }
 
 void permute_ml(Memb_list* ml, int type, NrnThread& nt) {
-    int sz = nrn_prop_param_size_[type];
-    int psz = nrn_prop_dparam_size_[type];
-    int layout = nrn_mech_data_layout_[type];
+    int sz = corenrn.get_prop_param_size()[type];
+    int psz = corenrn.get_prop_dparam_size()[type];
+    int layout = corenrn.get_mech_data_layout()[type];
     permute(ml->data, ml->nodecount, sz, layout, ml->_permute);
     permute(ml->pdata, ml->nodecount, psz, layout, ml->_permute);
 
@@ -250,9 +251,9 @@ int nrn_index_permute(int ix, int type, Memb_list* ml) {
     if (!p) {
         return ix;
     }
-    int layout = nrn_mech_data_layout_[type];
+    int layout = corenrn.get_mech_data_layout()[type];
     if (layout == 1) {
-        int sz = nrn_prop_param_size_[type];
+        int sz = corenrn.get_prop_param_size()[type];
         int i_cnt = ix / sz;
         int i_sz = ix % sz;
         return p[i_cnt] * sz + i_sz;

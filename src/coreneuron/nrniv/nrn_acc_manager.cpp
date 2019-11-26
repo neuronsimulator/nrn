@@ -10,6 +10,7 @@
 #include "coreneuron/nrniv/cellorder.h"
 #include "coreneuron/nrniv/cuda_profile.h"
 #include "coreneuron/scopmath_core/newton_struct.h"
+#include "coreneuron/coreneuron.hpp"
 
 #ifdef _OPENACC
 #include <openacc.h>
@@ -71,7 +72,7 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
      */
     NrnThread* d_threads = (NrnThread*)acc_copyin(threads, sizeof(NrnThread) * nthreads);
 
-    if (interleave_info == NULL) {
+    if (interleave_info == nullptr) {
         printf("\n Warning: No permutation data? Required for linear algebra!");
     }
 
@@ -134,7 +135,7 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
 
         /* nt._ml_list is used in NET_RECEIVE block and should have valid membrane list id*/
         Memb_list** d_ml_list =
-            (Memb_list**)acc_copyin(nt->_ml_list, n_memb_func * sizeof(Memb_list*));
+            (Memb_list**)acc_copyin(nt->_ml_list, corenrn.get_memb_funcs().size() * sizeof(Memb_list*));
         acc_memcpy_to_device(&(d_nt->_ml_list), &(d_ml_list), sizeof(Memb_list**));
 
         /* -- copy NrnThreadMembList list ml to device -- */
@@ -149,7 +150,7 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
 
         for (tml = nt->tml; tml; tml = tml->next) {
             /*copy tml to device*/
-            /*QUESTIONS: does tml will point to NULL as in host ? : I assume so!*/
+            /*QUESTIONS: does tml will point to nullptr as in host ? : I assume so!*/
             d_tml = (NrnThreadMembList*)acc_copyin(tml, sizeof(NrnThreadMembList));
 
             /*first tml is pointed by nt */
@@ -173,10 +174,10 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
 
             int type = tml->index;
             int n = tml->ml->nodecount;
-            int szp = nrn_prop_param_size_[type];
-            int szdp = nrn_prop_dparam_size_[type];
-            int is_art = nrn_is_artificial_[type];
-            int layout = nrn_mech_data_layout_[type];
+            int szp = corenrn.get_prop_param_size()[type];
+            int szdp = corenrn.get_prop_dparam_size()[type];
+            int is_art = corenrn.get_is_artificial()[type];
+            int layout = corenrn.get_mech_data_layout()[type];
 
             offset = nrn_soa_padded_size(offset, layout);
 
@@ -197,7 +198,7 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
                 acc_memcpy_to_device(&(d_ml->pdata), &d_pdata, sizeof(int*));
             }
 
-            int ts = memb_func[type].thread_size_;
+            int ts = corenrn.get_memb_funcs()[type].thread_size_;
             if (ts) {
                 ThreadDatum* td =
                     (ThreadDatum*)acc_copyin(tml->ml->_thread, ts * sizeof(ThreadDatum));
@@ -340,7 +341,7 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
                 /* todo: not necessary to setup pointers, just copy it */
                 InterleaveInfo* info = interleave_info + i;
                 InterleaveInfo* d_info = (InterleaveInfo*)acc_copyin(info, sizeof(InterleaveInfo));
-                int* d_ptr = NULL;
+                int* d_ptr = nullptr;
 
                 d_ptr = (int*)acc_copyin(info->stride, sizeof(int) * (info->nstride + 1));
                 acc_memcpy_to_device(&(d_info->stride), &d_ptr, sizeof(int*));
@@ -358,7 +359,7 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
                 /* todo: not necessary to setup pointers, just copy it */
                 InterleaveInfo* info = interleave_info + i;
                 InterleaveInfo* d_info = (InterleaveInfo*)acc_copyin(info, sizeof(InterleaveInfo));
-                int* d_ptr = NULL;
+                int* d_ptr = nullptr;
 
                 d_ptr = (int*)acc_copyin(info->stride, sizeof(int) * info->nstride);
                 acc_memcpy_to_device(&(d_info->stride), &d_ptr, sizeof(int*));
@@ -606,10 +607,10 @@ void update_nrnthreads_on_host(NrnThread* threads, int nthreads) {
 
                 int type = tml->index;
                 int n = ml->nodecount;
-                int szp = nrn_prop_param_size_[type];
-                int szdp = nrn_prop_dparam_size_[type];
-                int is_art = nrn_is_artificial_[type];
-                int layout = nrn_mech_data_layout_[type];
+                int szp = corenrn.get_prop_param_size()[type];
+                int szdp = corenrn.get_prop_dparam_size()[type];
+                int is_art = corenrn.get_is_artificial()[type];
+                int layout = corenrn.get_mech_data_layout()[type];
 
                 int pcnt = nrn_soa_padded_size(n, layout) * szp;
 
@@ -702,10 +703,10 @@ void update_nrnthreads_on_device(NrnThread* threads, int nthreads) {
                 Memb_list* ml = tml->ml;
                 int type = tml->index;
                 int n = ml->nodecount;
-                int szp = nrn_prop_param_size_[type];
-                int szdp = nrn_prop_dparam_size_[type];
-                int is_art = nrn_is_artificial_[type];
-                int layout = nrn_mech_data_layout_[type];
+                int szp = corenrn.get_prop_param_size()[type];
+                int szdp = corenrn.get_prop_dparam_size()[type];
+                int is_art = corenrn.get_is_artificial()[type];
+                int layout = corenrn.get_mech_data_layout()[type];
 
                 int pcnt = nrn_soa_padded_size(n, layout) * szp;
 

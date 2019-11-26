@@ -1,7 +1,9 @@
 #ifndef NRN_SECTION_MAPPING
 #define NRN_SECTION_MAPPING
 
+#include <numeric>
 #include <string>
+#include <utility>
 #include <vector>
 #include <map>
 #include <iostream>
@@ -28,22 +30,21 @@ struct SecMapping {
     /** map of section and associated segments */
     secseg_map_type secmap;
 
-    SecMapping() {
-    }
-    SecMapping(std::string s) : name(s) {
+    SecMapping() = default;
+
+    explicit SecMapping(std::string s) : name(std::move(s)) {
     }
 
     /** @brief return total number of sections in section list */
-    size_t num_sections() {
+    size_t num_sections() const noexcept {
         return secmap.size();
     }
 
     /** @brief return number of segments in section list */
-    size_t num_segments() {
+    size_t num_segments() const {
         size_t count = 0;
-        for (secseg_it_type iterator = secmap.begin(); iterator != secmap.end(); iterator++) {
-            count += iterator->second.size();
-        }
+        std::accumulate(secmap.begin(), secmap.end(), 0,
+            [](int psum, const auto& item) { return psum + item.second.size(); });
         return count;
     }
 
@@ -70,25 +71,19 @@ struct CellMapping {
     }
 
     /** @brief total number of sections in a cell */
-    int num_sections() {
-        int nsec = 0;
-        for (size_t i = 0; i < secmapvec.size(); i++) {
-            nsec += secmapvec[i]->num_sections();
-        }
-        return nsec;
+    int num_sections() const {
+        return std::accumulate(secmapvec.begin(), secmapvec.end(), 0,
+            [](int psum, const auto& secmap) { return psum + secmap->num_sections(); });
     }
 
     /** @brief return number of segments in a cell */
-    int num_segments() {
-        int nseg = 0;
-        for (size_t i = 0; i < secmapvec.size(); i++) {
-            nseg += secmapvec[i]->num_segments();
-        }
-        return nseg;
+    int num_segments() const {
+        return std::accumulate(secmapvec.begin(), secmapvec.end(), 0,
+                               [](int psum, const auto& secmap) { return psum + secmap->num_segments(); });
     }
 
     /** @brief number of section lists */
-    size_t size() {
+    size_t size() const noexcept {
         return secmapvec.size();
     }
 
@@ -98,18 +93,19 @@ struct CellMapping {
     }
 
     /** @brief return section list mapping with given name */
-    SecMapping* get_seclist_mapping(std::string name) {
-        for (size_t i = 0; i < secmapvec.size(); i++) {
-            if (name == secmapvec[i]->name)
-                return secmapvec[i];
+    SecMapping* get_seclist_mapping(const std::string& name) const {
+        for (auto& secmap : secmapvec) {
+            if (name == secmap->name) {
+                return secmap;
+            }
         }
 
         std::cout << "Warning: Section mapping list " << name << " doesn't exist! \n";
-        return NULL;
+        return nullptr;
     }
 
     /** @brief return segment count for specific section list with given name */
-    size_t get_seclist_segment_count(std::string name) {
+    size_t get_seclist_segment_count(const std::string& name) const {
         SecMapping* s = get_seclist_mapping(name);
         size_t count = 0;
         if (s) {
@@ -118,7 +114,7 @@ struct CellMapping {
         return count;
     }
     /** @brief return segment count for specific section list with given name */
-    size_t get_seclist_section_count(std::string name) {
+    size_t get_seclist_section_count(const std::string& name) const {
         SecMapping* s = get_seclist_mapping(name);
         size_t count = 0;
         if (s) {
@@ -144,7 +140,7 @@ struct NrnThreadMappingInfo {
     std::vector<CellMapping*> mappingvec;
 
     /** @brief number of cells */
-    size_t size() {
+    size_t size() const {
         return mappingvec.size();
     }
 
@@ -156,15 +152,15 @@ struct NrnThreadMappingInfo {
     }
 
     /** @brief get cell mapping information for given gid
-     *	if exist otherwise return NULL.
+     *	if exist otherwise return nullptr.
      */
-    CellMapping* get_cell_mapping(int gid) {
-        for (size_t i = 0; i < mappingvec.size(); i++) {
-            if (mappingvec[i]->gid == gid) {
-                return mappingvec[i];
+    CellMapping* get_cell_mapping(int gid) const {
+        for (const auto& mapping  : mappingvec) {
+            if (mapping->gid == gid) {
+                return mapping;
             }
         }
-        return NULL;
+        return nullptr;
     }
 
     /** @brief add mapping information of new cell */

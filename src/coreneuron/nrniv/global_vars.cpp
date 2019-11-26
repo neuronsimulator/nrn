@@ -7,7 +7,7 @@
 #include "coreneuron/utils/randoms/nrnran123.h"
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
-#include "coreneuron/nrnoc/membfunc.h"
+#include "coreneuron/nrnoc/membfunc.hpp"
 #include "coreneuron/nrniv/nrn_assert.h"
 #include "coreneuron/nrniv/nrn2core_direct.h"
 
@@ -45,8 +45,8 @@ void set_globals(const char* path, bool cli_global_seed, int cli_global_seed_val
 
         const char* name;
         int size;
-        double* val = NULL;
-        for (void* p = NULL; (p = (*nrn2core_get_global_dbl_item_)(p, name, size, val)) != NULL;) {
+        double* val = nullptr;
+        for (void* p = nullptr; (p = (*nrn2core_get_global_dbl_item_)(p, name, size, val)) != nullptr;) {
             N2V::iterator it;
             it = n2v->find(name);
             if (it != n2v->end()) {
@@ -73,7 +73,7 @@ void set_globals(const char* path, bool cli_global_seed, int cli_global_seed_val
         if (!f) {
             printf("ignore: could not open %s\n", fname.c_str());
             delete n2v;
-            n2v = NULL;
+            n2v = nullptr;
             return;
         }
 
@@ -86,7 +86,7 @@ void set_globals(const char* path, bool cli_global_seed, int cli_global_seed_val
         check_bbcore_write_version(line);
 
         for (;;) {
-            nrn_assert(fgets(line, 256, f) != NULL);
+            nrn_assert(fgets(line, 256, f) != nullptr);
             N2V::iterator it;
             if (sscanf(line, "%s %lf", name, &val) == 2) {
                 if (strcmp(name, "0") == 0) {
@@ -106,7 +106,7 @@ void set_globals(const char* path, bool cli_global_seed, int cli_global_seed_val
                     nrn_assert(it->second.first == (size_t)n);
                     double* pval = it->second.second;
                     for (int i = 0; i < n; ++i) {
-                        nrn_assert(fgets(line, 256, f) != NULL);
+                        nrn_assert(fgets(line, 256, f) != nullptr);
                         nrn_assert(sscanf(line, "%lf\n", &val) == 1);
                         pval[i] = val;
                     }
@@ -141,7 +141,7 @@ void set_globals(const char* path, bool cli_global_seed, int cli_global_seed_val
 #endif
 
     delete n2v;
-    n2v = NULL;
+    n2v = nullptr;
 }
 
 }  // namespace coreneuron

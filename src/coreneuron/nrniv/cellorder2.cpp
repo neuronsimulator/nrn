@@ -409,7 +409,7 @@ static void question(VVTN& levels) {
     size_t nsame = 0;
     for (size_t j=0; j < levels[i].size(); ++j) {
       TNode* nd = levels[i][j];
-      if (nd->parent == NULL) {
+      if (nd->parent == nullptr) {
         nsame += 1;
       }else if (nd->parent->treenode_order == iplast + 1) {
         nsame += 1;
@@ -492,13 +492,13 @@ void group_order2(VecTNode& nodevec, size_t groupsize, size_t ncell) {
     for (size_t i = 0; i < nodevec.size(); ++i) {
         TNode* nd = nodevec[i];
         nd->level = maxlevel - nd->level;
-        if (nd->parent == NULL) {
+        if (nd->parent == nullptr) {
             nd->level = 0;
         }
     }
 #endif
 
-    // if not NULL use this to define groups (and reset TNode.groupindex)
+    // if not nullptr use this to define groups (and reset TNode.groupindex)
     size_t nwarp = warp_balance(ncell, nodevec);
 
     // work on a cellgroup as a vector of levels. ie only possible race is

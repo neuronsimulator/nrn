@@ -41,14 +41,16 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/nrn_assert.h"
 #include "coreneuron/nrniv/nrn_acc_manager.h"
 #include "coreneuron/nrniv/multisend.h"
-#include "coreneuron/nrnoc/membfunc.h"
+#include "coreneuron/nrnoc/membfunc.hpp"
+#include "coreneuron/coreneuron.hpp"
+#include "netcon.h"
 #ifdef _OPENACC
 #include <openacc.h>
 #endif
 namespace coreneuron {
 #define PP2NT(pp) (nrn_threads + (pp)->_tid)
 #define PP2t(pp) (PP2NT(pp)->_t)
-#define POINT_RECEIVE(type, tar, w, f) (*pnt_receive[type])(tar, w, f)
+//#define POINT_RECEIVE(type, tar, w, f) (*pnt_receive[type])(tar, w, f)
 
 typedef void (*ReceiveFunc)(Point_process*, double*, double);
 
@@ -126,7 +128,7 @@ void artcell_net_send(void** v, int weight_index_, Point_process* pnt, double td
 
 void net_event(Point_process* pnt, double time) {
     NrnThread* nt = PP2NT(pnt);
-    PreSyn* ps = nt->presyns + nt->pnt2presyn_ix[pnttype2presyn[pnt->_type]][pnt->_i_instance];
+    PreSyn* ps = nt->presyns + nt->pnt2presyn_ix[corenrn.get_pnttype2presyn()[pnt->_type]][pnt->_i_instance];
     if (ps) {
         if (time < nt->_t) {
             char buf[100];
@@ -183,7 +185,7 @@ NetCvode::NetCvode(void) {
     eps_ = 100. * DBL_EPSILON;
     print_event_ = 0;
     pcnt_ = 0;
-    p = nil;
+    p = nullptr;
     p_construct(1);
     // eventually these should not have to be thread safe
     // for parallel network simulations hardly any presyns have
@@ -194,7 +196,7 @@ NetCvode::NetCvode(void) {
 
 NetCvode::~NetCvode() {
     if (net_cvode_instance == (NetCvode*)this)
-        net_cvode_instance = nil;
+        net_cvode_instance = nullptr;
 
     p_construct(0);
 }
@@ -209,13 +211,13 @@ void NetCvode::p_construct(int n) {
     if (pcnt_ != n) {
         if (p) {
             delete[] p;
-            p = nil;
+            p = nullptr;
         }
 
         if (n > 0)
             p = new NetCvodeThreadData[n];
         else
-            p = nil;
+            p = nullptr;
 
         pcnt_ = n;
     }
@@ -284,10 +286,10 @@ void NetCvode::init_events() {
             NetCon* d = nt->netcons + inetc;
             if (d->target_) {
                 int type = d->target_->_type;
-                if (pnt_receive_init[type]) {
-                    (*pnt_receive_init[type])(d->target_, d->u.weight_index_, 0);
+                if (corenrn.get_pnt_receive_init()[type]) {
+                    (*corenrn.get_pnt_receive_init()[type])(d->target_, d->u.weight_index_, 0);
                 } else {
-                    int cnt = pnt_receive_size[type];
+                    int cnt = corenrn.get_pnt_receive_size()[type];
                     double* wt = nt->weights + d->u.weight_index_;
                     // not the first
                     for (int j = 1; j < cnt; ++j) {
@@ -323,7 +325,8 @@ bool NetCvode::deliver_event(double til, NrnThread* nt) {
 
 void net_move(void** v, Point_process* pnt, double tt) {
     if (!(*v))
-        hoc_execerror("No event with flag=1 for net_move in ", memb_func[pnt->_type].sym);
+        hoc_execerror("No event with flag=1 for net_move in ",
+                      corenrn.get_memb_func(pnt->_type).sym);
 
     TQItem* q = (TQItem*)(*v);
     // printf("net_move tt=%g %s *v=%p\n", tt, memb_func[pnt->_type].sym, *v);
@@ -369,7 +372,7 @@ DiscreteEvent::~DiscreteEvent() {
 NetCon::NetCon() {
     active_ = false;
     u.weight_index_ = 0;
-    target_ = NULL;
+    target_ = nullptr;
     delay_ = 1.0;
 }
 
@@ -381,7 +384,7 @@ PreSyn::PreSyn() {
     nc_cnt_ = 0;
     flag_ = false;
     thvar_index_ = -1;
-    pntsrc_ = NULL;
+    pntsrc_ = nullptr;
     threshold_ = 10.;
     gid_ = -1;
 #if NRNMPI
@@ -404,7 +407,7 @@ InputPreSyn::InputPreSyn() {
 PreSyn::~PreSyn() {
     //	printf("~PreSyn %p\n", this);
     if (pntsrc_) {
-        pntsrc_ = nil;
+        pntsrc_ = nullptr;
     }
 }
 
@@ -471,7 +474,7 @@ void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
     nt->_t = tt;
 
     // printf("NetCon::deliver t=%g tt=%g %s\n", t, tt, pnt_name(target_));
-    POINT_RECEIVE(typ, target_, u.weight_index_, 0);
+    (*corenrn.get_pnt_receive()[typ])(target_, u.weight_index_, 0);
 #ifdef DEBUG
     if (errno && nrn_errno_check(typ))
         hoc_warning("errno set during NetCon deliver to NET_RECEIVE", (char*)0);
@@ -481,7 +484,7 @@ void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 void NetCon::pr(const char* s, double tt, NetCvode* ns) {
     (void)ns;
     Point_process* pp = target_;
-    printf("%s NetCon target=%s[%d] %.15g\n", s, memb_func[pp->_type].sym, pp->_i_instance, tt);
+    printf("%s NetCon target=%s[%d] %.15g\n", s, corenrn.get_memb_func(pp->_type).sym, pp->_i_instance, tt);
 }
 
 void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
@@ -557,7 +560,7 @@ void SelfEvent::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 }
 
 void SelfEvent::call_net_receive(NetCvode* ns) {
-    POINT_RECEIVE(target_->_type, target_, weight_index_, flag_);
+    (*corenrn.get_pnt_receive()[target_->_type])(target_, weight_index_, flag_);
 
 #ifdef DEBUG
     if (errno && nrn_errno_check(target_->_type))
@@ -708,7 +711,7 @@ void NetCvode::check_thresh(NrnThread* nt) {  // for default method
     if (nt->_watch_types) {
         for (int i = 0; nt->_watch_types[i] != 0; ++i) {
             int type = nt->_watch_types[i];
-            (*nrn_watch_check[type])(nt, nt->_ml_list[type]);
+            (*corenrn.get_watch_check()[type])(nt, nt->_ml_list[type]);
             // may generate net_send events (with 0 (teps) delay)
         }
     }
@@ -725,7 +728,7 @@ void NetCvode::check_thresh(NrnThread* nt) {  // for default method
 // both PreSyn and WatchCondition were subclasses of ConditionEvent. When
 // a WatchCondition fired in the fixed step method, it was placed on the queue
 // with a delivery time of t+teps. WatchCondition::deliver called the NET_RECEIVE
-// block with proper flag ( but NULL weight vector). WatchConditions
+// block with proper flag ( but nullptr weight vector). WatchConditions
 // were created,added/removed,destroyed from a list as necessary.
 // Perhaps the most commonly used WATCH statement is in the context of a
 // ThresholdDetect Point_process which watches voltage and compares to
@@ -806,8 +809,8 @@ tryagain:
     /*before executing on gpu, we have to update the NetReceiveBuffer_t on GPU */
     update_net_receive_buffer(nt);
 
-    for (int i = 0; i < net_buf_receive_cnt_; ++i) {
-        (*net_buf_receive_[i])(nt);
+    for (auto& net_buf_receive : corenrn.get_net_buf_receive()) {
+        (*net_buf_receive.first)(nt);
     }
 }
 }  // namespace coreneuron

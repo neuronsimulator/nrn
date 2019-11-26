@@ -181,7 +181,7 @@ void nrn_scopmath_solve_thread(int n,
     double sum;
 
     /* Perform forward substitution with pivoting */
-    // if (y) { // pgacc bug. NULL on cpu but not on GPU
+    // if (y) { // pgacc bug. nullptr on cpu but not on GPU
     if (0) {
         for (i = 0; i < n; i++) {
             pivot = perm[ix(i)];

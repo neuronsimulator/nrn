@@ -41,6 +41,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/utils/sdprintf.h"
 #include "coreneuron/mech/cfile/cabvars.h"
 #include "coreneuron/nrniv/nrn2core_direct.h"
+#include "coreneuron/coreneuron.hpp"
 
 static char banner[] = "Duke, Yale, and the BlueBrain Project -- Copyright 1984-2019";
 
@@ -152,12 +153,12 @@ static void mk_mech(std::istream& s) {
         printf("%s %d %d %d %d %d %d\n", mname, type, pnttype, is_art, is_ion, dsize, pdsize);
 #endif
         std::string str(mname);
-        memb_func[type].sym = (Symbol*)strdup(mname);
+        corenrn.get_memb_func(type).sym = (Symbol*)strdup(mname);
         mech2type[str] = type;
-        pnt_map[type] = (char)pnttype;
-        nrn_prop_param_size_[type] = dsize;
-        nrn_prop_dparam_size_[type] = pdsize;
-        nrn_is_artificial_[type] = is_art;
+        corenrn.get_pnt_map()[type] = (char)pnttype;
+        corenrn.get_prop_param_size()[type] = dsize;
+        corenrn.get_prop_dparam_size()[type] = pdsize;
+        corenrn.get_is_artificial()[type] = is_art;
         if (is_ion) {
             double charge = 0.;
             nrn_assert(s >> charge);
@@ -203,6 +204,6 @@ const char* nrn_get_mechname(int type) {
             return i->first.c_str();
         }
     }
-    return NULL;
+    return nullptr;
 }
 }  // namespace coreneuron

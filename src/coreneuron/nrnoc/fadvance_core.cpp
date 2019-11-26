@@ -26,7 +26,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "coreneuron/coreneuron.h"
+#include "coreneuron/coreneuron.hpp"
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnmpi/nrnmpi.h"
@@ -82,6 +82,7 @@ void nrn_fixed_step_minimal() { /* not so minimal anymore with gap junctions */
 /* better cache efficiency since a thread can do an entire minimum delay
 integration interval before joining
 */
+/// --> Coreneuron
 static int step_group_n;
 static int step_group_begin;
 static int step_group_end;
@@ -206,8 +207,8 @@ void nonvint(NrnThread* _nt) {
 
     Instrumentor::phase_begin("state-update");
     for (tml = _nt->tml; tml; tml = tml->next)
-        if (memb_func[tml->index].state) {
-            mod_f_t s = memb_func[tml->index].state;
+        if (corenrn.get_memb_func(tml->index).state) {
+            mod_f_t s = corenrn.get_memb_func(tml->index).state;
             std::string ss("state-");
             ss += nrn_get_mechname(tml->index);
             {
@@ -241,7 +242,7 @@ void nrncore2nrn_send_init() {
     // if per time step transfer, need to call nrn_record_init() in NEURON.
     // if storing full trajectories in CoreNEURON, need to initialize
     // vsize for all the trajectory requests.
-    (*nrn2core_trajectory_values_)(-1, 0, NULL, 0.0);
+    (*nrn2core_trajectory_values_)(-1, 0, nullptr, 0.0);
     for (int tid = 0; tid < nrn_nthread; ++tid) {
         NrnThread& nt = nrn_threads[tid];
         if (nt.trajec_requests) {

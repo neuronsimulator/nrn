@@ -27,12 +27,15 @@ THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <stdlib.h>
+#include <vector>
+
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/nrnpthread.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnmpi/nrnmpi.h"
 #include "coreneuron/nrnoc/nrnoc_decl.h"
 #include "coreneuron/nrniv/memory.h"
+#include "coreneuron/coreneuron.hpp"
 /*
 Now that threads have taken over the actual_v, v_node, etc, it might
 be a good time to regularize the method of freeing, allocating, and
@@ -68,77 +71,33 @@ the handling of v_structure_change as long as possible.
 
 namespace coreneuron {
 
+CoreNeuron corenrn;
+
 int nrn_nthread = 0;
-NrnThread* nrn_threads = NULL;
+NrnThread* nrn_threads = nullptr;
 void (*nrn_mk_transfer_thread_data_)();
 
+/// --> CoreNeuron class
 static int table_check_cnt_;
 static ThreadDatum* table_check_;
 
-int nrn_inthread_;
 
 void nrn_threads_create(int n) {
     int i, j;
-    NrnThread* nt;
     if (nrn_nthread != n) {
         /*printf("sizeof(NrnThread)=%d   sizeof(Memb_list)=%d\n", sizeof(NrnThread),
          * sizeof(Memb_list));*/
 
-        nrn_threads = (NrnThread*)0;
+        nrn_threads = nullptr;
         nrn_nthread = n;
         if (n > 0) {
-            nrn_threads = (NrnThread*)emalloc_align(n * sizeof(NrnThread));
-
-            for (i = 0; i < n; ++i) {
-                nt = nrn_threads + i;
-                nt->_t = 0.;
-                nt->_dt = -1e9;
-                nt->id = i;
-                nt->_stop_stepping = 0;
-                nt->n_vecplay = 0;
-                nt->_vecplay = NULL;
-                nt->tml = (NrnThreadMembList*)0;
-                nt->_ml_list = (Memb_list**)0;
-                nt->pntprocs = (Point_process*)0;
-                nt->presyns = (PreSyn*)0;
-                nt->presyns_helper = NULL;
-                nt->pnt2presyn_ix = (int**)0;
-                nt->netcons = (NetCon*)0;
-                nt->weights = (double*)0;
-                nt->n_pntproc = nt->n_presyn = nt->n_netcon = 0;
-                nt->n_weight = 0;
-                nt->_ndata = nt->_nidata = nt->_nvdata = 0;
-                nt->_data = (double*)0;
-                nt->_idata = (int*)0;
-                nt->_vdata = (void**)0;
-                nt->ncell = 0;
-                nt->end = 0;
+            nrn_threads = new NrnThread[n];
+            for (i = 0; i < nrn_nthread; ++i) {
+                NrnThread& nt = nrn_threads[i];
+                nt.id = i;
                 for (j = 0; j < BEFORE_AFTER_SIZE; ++j) {
-                    nt->tbl[j] = (NrnThreadBAList*)0;
+                    nt.tbl[j] = nullptr;
                 }
-                nt->_actual_rhs = 0;
-                nt->_actual_d = 0;
-                nt->_actual_a = 0;
-                nt->_actual_b = 0;
-                nt->_actual_v = 0;
-                nt->_actual_area = 0;
-                nt->_actual_diam = 0;
-                nt->_v_parent_index = 0;
-                nt->_permute = 0;
-                nt->_shadow_rhs = 0;
-                nt->_shadow_d = 0;
-                nt->_ecell_memb_list = 0;
-                nt->_sp13mat = 0;
-                nt->_ctime = 0.0;
-
-                nt->_net_send_buffer_size = 0;
-                nt->_net_send_buffer = (int*)0;
-                nt->_net_send_buffer_cnt = 0;
-                nt->_watch_types = NULL;
-                nt->mapping = NULL;
-                nt->trajec_requests = NULL;
-
-                nt->nrn_fast_imem = nullptr;
             }
         }
         v_structure_change = 1;
@@ -150,30 +109,24 @@ void nrn_threads_create(int n) {
 void nrn_threads_free() {
     if (nrn_nthread) {
         free_memory((void*)nrn_threads);
-        nrn_threads = 0;
+        nrn_threads = nullptr;
         nrn_nthread = 0;
     }
 }
 
 void nrn_mk_table_check() {
-    int i, id, index;
-    int* ix;
     if (table_check_) {
         free((void*)table_check_);
-        table_check_ = (ThreadDatum*)0;
+        table_check_ = nullptr;
     }
-
-    /// Allocate int array of size of mechanism types
-    ix = (int*)emalloc(n_memb_func * sizeof(int));
-    for (i = 0; i < n_memb_func; ++i) {
-        ix[i] = -1;
-    }
+    auto& memb_func = corenrn.get_memb_funcs();
+    // Allocate int array of size of mechanism types
+    std::vector<int> ix(memb_func.size(), -1);
     table_check_cnt_ = 0;
-    for (id = 0; id < nrn_nthread; ++id) {
-        NrnThread* nt = nrn_threads + id;
-        NrnThreadMembList* tml;
-        for (tml = nt->tml; tml; tml = tml->next) {
-            index = tml->index;
+    for (int id = 0; id < nrn_nthread; ++id) {
+        auto& nt = nrn_threads[id];
+        for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
+            int index = tml->index;
             if (memb_func[index].thread_table_check_ && ix[index] == -1) {
                 ix[index] = id;
                 table_check_cnt_ += 2;
@@ -183,29 +136,27 @@ void nrn_mk_table_check() {
     if (table_check_cnt_) {
         table_check_ = (ThreadDatum*)emalloc(table_check_cnt_ * sizeof(ThreadDatum));
     }
-    i = 0;
-    for (id = 0; id < nrn_nthread; ++id) {
-        NrnThread* nt = nrn_threads + id;
+    int i = 0;
+    for (int id = 0; id < nrn_nthread; ++id) {
+        auto& nt = nrn_threads[id];
         NrnThreadMembList* tml;
-        for (tml = nt->tml; tml; tml = tml->next) {
-            index = tml->index;
+        for (tml = nt.tml; tml; tml = tml->next) {
+            int index = tml->index;
             if (memb_func[index].thread_table_check_ && ix[index] == id) {
                 table_check_[i++].i = id;
                 table_check_[i++]._pvoid = (void*)tml;
             }
         }
     }
-    free((void*)ix);
 }
 
 void nrn_thread_table_check() {
-    int i;
-    for (i = 0; i < table_check_cnt_; i += 2) {
-        NrnThread* nt = nrn_threads + table_check_[i].i;
-        NrnThreadMembList* tml = (NrnThreadMembList*)table_check_[i + 1]._pvoid;
+    for (int i = 0; i < table_check_cnt_; i += 2) {
+        auto& nt = nrn_threads[table_check_[i].i];
+        auto tml = static_cast<NrnThreadMembList*>(table_check_[i + 1]._pvoid);
         Memb_list* ml = tml->ml;
-        (*memb_func[tml->index].thread_table_check_)(0, ml->_nodecount_padded, ml->data, ml->pdata,
-                                                     ml->_thread, nt, tml->index);
+        (*corenrn.get_memb_func(tml->index).thread_table_check_)(0, ml->_nodecount_padded, ml->data, ml->pdata,
+                                                     ml->_thread, &nt, tml->index);
     }
 }
 

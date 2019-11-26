@@ -39,15 +39,10 @@ namespace coreneuron {
 
 #define NRNBBCORE 1
 
-#define nil NULL
-#define Sprintf sprintf
-
 typedef int Datum;
-//#define Datum int
 typedef int (*Pfri)();
 typedef char Symbol;
 
-#define CACHEVEC 2
 #define VEC_A(i) (_nt->_actual_a[(i)])
 #define VEC_B(i) (_nt->_actual_b[(i)])
 #define VEC_D(i) (_nt->_actual_d[(i)])

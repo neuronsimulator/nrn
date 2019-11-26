@@ -26,6 +26,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "coreneuron/coreneuron.hpp"
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
 // solver CVode stub to allow cvode as dll for mswindows version.
@@ -59,8 +60,8 @@ void nrn_deliver_events(NrnThread* nt) {
     /*before executing on gpu, we have to update the NetReceiveBuffer_t on GPU */
     update_net_receive_buffer(nt);
 
-    for (int i = 0; i < net_buf_receive_cnt_; ++i) {
-        (*net_buf_receive_[i])(nt);
+    for (auto& net_buf_receive : corenrn.get_net_buf_receive()) {
+        (*net_buf_receive.first)(nt);
     }
 }
 

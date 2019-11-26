@@ -65,7 +65,7 @@ class PlayRecord {
     virtual void deliver(double, NetCvode*) {
     }  // at associated DiscreteEvent
     virtual PlayRecordEvent* event() {
-        return nil;
+        return nullptr;
     }
     virtual void pr();  // print identifying info
     virtual int type() {

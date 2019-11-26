@@ -423,12 +423,12 @@ void nrn_multisend_receive(NrnThread* nt) {
 void nrn_multisend_cleanup() {
     if (targets_phase1_) {
         delete[] targets_phase1_;
-        targets_phase1_ = NULL;
+        targets_phase1_ = nullptr;
     }
 
     if (targets_phase2_) {
         delete[] targets_phase2_;
-        targets_phase2_ = NULL;
+        targets_phase2_ = nullptr;
     }
 
     // cleanup MultisendReceiveBuffer here as well

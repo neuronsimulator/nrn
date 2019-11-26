@@ -248,7 +248,7 @@ static int nrn_need_npe() {
     } else {
         if (npe_) {
             delete[] npe_;
-            npe_ = nil;
+            npe_ = nullptr;
             n_npe_ = 0;
         }
     }

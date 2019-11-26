@@ -219,7 +219,7 @@ static void ToS4(std::string ** strings, int * out, int n) {
 /* ################################################################### */
 static void ToU4(std::string ** strings, unsigned int * out, int n) {
   for(int i=0; i < n; ++i) {
-    out[i] = (unsigned int)strtoul(strings[i]->c_str(), NULL, 0);
+    out[i] = (unsigned int)strtoul(strings[i]->c_str(), nullptr, 0);
   }
 };
 /* ################################################################### */
@@ -401,7 +401,7 @@ static char** CommandLineToArgvA(char* CmdLine, int* _argc) {
     i++;
   }
   _argv[j] = '\0';
-  argv[argc] = NULL;
+  argv[argc] = nullptr;
 
   (*_argc) = argc;
   return argv;

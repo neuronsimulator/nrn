@@ -26,8 +26,9 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef nrn_memb_func_h
-#define nrn_memb_func_h
+#pragma once
+
+#include <vector>
 
 #include "coreneuron/nrnoc/nrnoc_ml.h"
 namespace coreneuron {
@@ -82,27 +83,16 @@ struct BAMech {
     int type;
     struct BAMech* next;
 };
-extern BAMech** bamech_;
 
 extern int nrn_ion_global_map_size;
 extern double** nrn_ion_global_map;
 
-extern Memb_func* memb_func;
-extern int n_memb_func;
 #define NRNPOINTER                                                            \
     4 /* added on to list of mechanism variables.These are                    \
 pointers which connect variables  from other mechanisms via the _ppval array. \
 */
 
 #define _AMBIGUOUS 5
-
-extern int* nrn_prop_param_size_;
-extern int* nrn_prop_dparam_size_;
-extern char* pnt_map;
-extern short* nrn_is_artificial_;
-extern short* pnt_receive_size;
-extern pnt_receive_t* pnt_receive;
-extern pnt_receive_t* pnt_receive_init;
 
 extern int nrn_get_mechtype(const char*);
 extern const char* nrn_get_mechname(int);  // slow. use memb_func[i].sym if posible
@@ -126,17 +116,11 @@ extern int point_register_mech(const char**,
                                int vectorized);
 typedef void (*NetBufReceive_t)(NrnThread*);
 extern void hoc_register_net_receive_buffering(NetBufReceive_t, int);
-extern int net_buf_receive_cnt_;
-extern int* net_buf_receive_type_;
-extern NetBufReceive_t* net_buf_receive_;
 
 extern void hoc_register_net_send_buffering(int);
-extern int net_buf_send_cnt_;
-extern int* net_buf_send_type_;
 
 typedef void (*nrn_watch_check_t)(NrnThread*, Memb_list*);
 extern void hoc_register_watch_check(nrn_watch_check_t, int);
-extern nrn_watch_check_t* nrn_watch_check;
 
 extern void nrn_jacob_capacitance(NrnThread*, Memb_list*, int);
 extern void nrn_writes_conc(int, int);
@@ -163,7 +147,6 @@ struct VoidFunc {
 extern void hoc_register_var(DoubScal*, DoubVec*, VoidFunc*);
 
 extern void _nrn_layout_reg(int, int);
-extern int* nrn_mech_data_layout_;
 extern void _nrn_thread_reg0(int i, void (*f)(ThreadDatum*));
 extern void _nrn_thread_reg1(int i, void (*f)(ThreadDatum*));
 
@@ -178,7 +161,6 @@ typedef void (*bbcore_read_t)(double*,
                               ThreadDatum*,
                               NrnThread*,
                               double);
-extern bbcore_read_t* nrn_bbcore_read_;
 
 typedef void (*bbcore_write_t)(double*,
                                int*,
@@ -191,14 +173,12 @@ typedef void (*bbcore_write_t)(double*,
                                ThreadDatum*,
                                NrnThread*,
                                double);
-extern bbcore_write_t* nrn_bbcore_write_;
 
 extern int nrn_mech_depend(int type, int* dependencies);
 extern int nrn_fornetcon_cnt_;
 extern int* nrn_fornetcon_type_;
 extern int* nrn_fornetcon_index_;
 extern void add_nrn_fornetcons(int, int);
-extern void add_nrn_artcell(int, int);
 extern void add_nrn_has_net_event(int);
 extern void net_event(Point_process*, double);
 extern void net_send(void**, int, Point_process*, double, double);
@@ -206,7 +186,6 @@ extern void net_move(void**, Point_process*, double);
 extern void artcell_net_send(void**, int, Point_process*, double, double);
 extern void artcell_net_move(void**, Point_process*, double);
 extern void nrn2ncs_outputevent(int netcon_output_index, double firetime);
-extern short* nrn_artcell_qindex_;
 extern bool nrn_use_localgid_;
 extern void net_sem_from_gpu(int sendtype, int i_vdata, int, int ith, int ipnt, double, double);
 
@@ -217,5 +196,3 @@ extern void hoc_malchk(void); /* just a stub */
 extern void* hoc_Emalloc(size_t);
 
 }  // namespace coreneuron
-
-#endif /* nrn_memb_func_h */
