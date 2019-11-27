@@ -46,7 +46,7 @@ extern int nrnpy_site_problem;
 
 extern int nrn_is_python_extension;
 extern int nrn_nobanner_;
-extern int ivocmain(int, char**, char**, int);
+extern int ivocmain(int, char**, char**);
 extern int nrn_main_launch;
 
 #ifdef NRNMPI
@@ -228,7 +228,7 @@ void inithoc() {
   }
 #endif // NRNMPI
   nrn_main_launch = 2;
-  ivocmain(argc, argv, env, 1);
+  ivocmain(argc, argv, env);
 //	nrnpy_augment_path();
 #if NRNPYTHON_DYNAMICLOAD
   nrnpy_site_problem = 0;

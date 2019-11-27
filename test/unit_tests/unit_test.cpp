@@ -10,7 +10,7 @@ extern "C" {
 
 extern void nrn_threads_create(int, int);
 extern void nrn_threads_free();
-extern int ivocmain(int, char**, char**, int);
+extern int ivocmain_session(int, char**, char**, int);
 
 extern int nrn_main_launch;
 extern int nrn_nobanner_;
@@ -31,7 +31,7 @@ int main( int argc, char* argv[] ) {
     const char* argv_nompi[] = {"NEURON", "-nogui"};
     nrn_nobanner_ = 1;
 
-    ivocmain(argc_nompi, (char **) &argv_nompi, NULL, 0);
+    ivocmain_session(argc_nompi, (char **) &argv_nompi, NULL, 0);
 #undef run
     int result = Catch::Session().run( argc, argv );
 #define run hoc_run
