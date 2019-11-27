@@ -152,6 +152,55 @@ if(NRN_ENABLE_MODULE_INSTALL)
                APPEND
                PROPERTY COMPILE_DEFINITIONS NRNCMAKE)
 
+  # =============================================================================
+  # Copy necessary files to build directory
+  # =============================================================================
+
+  add_custom_command(TARGET hoc_module PRE_BUILD
+                     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                             ${PROJECT_BINARY_DIR}/share/lib/python/neuron/rxd/constants.py
+                             ${NRN_BUILD_SHARE_DIR}/lib/python/neuron/rxd/constants.py)
+
+  add_custom_command(TARGET hoc_module PRE_BUILD
+                     COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/lib
+                             ${NRN_BUILD_SHARE_DIR}/lib
+                     COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/demo
+                             ${PROJECT_BINARY_DIR}/share/nrn/demo)
+
+  # for each python detected / provided by user, install module at install time
+  foreach(pyexe ${NRN_PYTHON_EXE_LIST})
+    add_custom_command(TARGET hoc_module POST_BUILD
+                       COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                               ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
+                               ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
+                       COMMAND ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}
+                       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                       COMMENT "Building python module with: ${pyexe}")
+  endforeach(pyexe)
+  add_dependencies(hoc_module nrniv_lib)
+
+  # =============================================================================
+  # Copy necessary files to build directory
+  # =============================================================================
+  add_custom_command(TARGET hoc_module PRE_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E copy_directory
+                    ${PROJECT_SOURCE_DIR}/share/lib ${PROJECT_BINARY_DIR}/share/nrn/lib
+                    COMMAND ${CMAKE_COMMAND} -E copy_directory
+                    ${PROJECT_SOURCE_DIR}/share/demo ${PROJECT_BINARY_DIR}/share/nrn/demo
+                    )
+
+  # for each python detected / provided by user, install module at install time
+  foreach(pyexe ${NRN_PYTHON_EXE_LIST})
+      add_custom_command(TARGET hoc_module
+                  POST_BUILD
+                  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
+                  COMMAND ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}
+                  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                  COMMENT "Building python module with: ${pyexe}"
+                  )
+  endforeach(pyexe)
+  add_dependencies(hoc_module nrniv_lib)
+
   # user has selected dynamic python support (could be multiple versions)
   if(NRN_ENABLE_PYTHON_DYNAMIC)
     set(INCLUDE_DIRS

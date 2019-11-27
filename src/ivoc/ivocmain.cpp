@@ -249,7 +249,8 @@ void mac_open_app(){
 
 extern "C" {
 	int ivocmain(int, const char**, const char**);
-	int (*p_neosim_main)(int, const char**, const char**);
+        int ivocmain_session(int, const char**, const char**, int start_session);
+        int (*p_neosim_main)(int, const char**, const char**);
 	extern int nrn_global_argc;
 	extern const char** nrn_global_argv;
 	int always_false;
@@ -368,9 +369,50 @@ void hoc_nrnmpi_init() {
   hoc_pushx(0.0);
 }
 
-// see nrnmain.cpp for the real main()
-
+/**
+ * Main entrypoint function into the HOC interpeter
+ *
+ * This function simply calls ivocmain_session with the \c start_session = 1.
+ *
+ * \note This is part of NEURON's public interface
+ *
+ * \note \c env argument should not be used as it might become invalid
+ *
+ * \param argc argument count as found in C/C++ \c main functions
+ * \param argv argument vector as found in C/C++ \c main functions
+ * \param env environment variable array as optionally found in main functions.
+ * \return 0 on success, otherwise error code.
+ */
 int ivocmain (int argc, const char** argv, const char** env) {
+
+  return ivocmain_session(argc, argv, env, 1);
+
+}
+/**
+ * This used to be ivocmain, the main entrypoint to the HOC interpreter
+ *
+ * ivocmain_session parses command line argument, calls of initialization
+ * functions and drops into an interactive HOC session.
+ * This function is called for example by the "real main" in \c nrnmain.cpp ,
+ * but can be also called from other external user applications that use
+ * NEURON.
+ * Additionally to the original implemenation a new parameter \c start_session
+ * was introduced to control whether an interactive HOC session shoudl be started
+ * or simply NEURON and all data structures be initialized and control returned
+ * to the caller.
+ *
+ * \note \c env argument should not be used as it might become invalid
+ *
+ * \param argc argument count as found in C/C++ \c main functions
+ * \param argv argument vector as found in C/C++ \c main functions
+ * \param env environment variable array as optionally found in main functions.
+ * \param start_session set to 1 for default behavior (drop into interactive HOC session
+ * otherwise set to 0. If set to 1, but compiled with python support this function will
+ * still directly return (since in that mode we don't need an interactive HOC session
+ * either.
+ * \return 0 on success, otherwise error code.
+ */
+int ivocmain_session (int argc, const char** argv, const char** env, int start_session) {
 // third arg should not be used as it might become invalid
 // after putenv or setenv. Instead, if necessary use
 // #include <unistd.h>
@@ -714,8 +756,8 @@ ENDGUI
 #if HAVE_IV
 	if (session && session->style()->value_is_on("units_on_flag")) {
 		units_on_flag_ = 1;
-	};
-	Oc oc(session, our_argv[0], env);
+	}
+        Oc oc(session, our_argv[0], env);
 #if defined(WIN32) && !defined(CYGWIN)
 	if (session->style()->find_attribute("showwinio", str)
       && !session->style()->value_is_on("showwinio")
@@ -769,11 +811,15 @@ ENDGUI
 #if NRN_REALTIME
 	nrn_maintask_init();
 #endif
+       if (start_session) {
 #if HAVE_IV
-	oc.run(our_argc, our_argv);
+        oc.run(our_argc, our_argv);
 #else
 	hoc_main1(our_argc, our_argv, env);
 #endif
+       } else {
+         return 0;
+       }
 #if HAVE_IV
 	if (session && session->style()->value_is_on("neosim")) {
 		if (p_neosim_main) {
