@@ -181,24 +181,45 @@ extern "C" void rxd_set_no_diffusion()
     }
 }
 
+extern "C" void free_curr_ptrs()
+{
+    _curr_count = 0;
+	if(_curr_indices != NULL)
+		free(_curr_indices);
+    _curr_indices = NULL;
+    if(_curr_scales != NULL)
+		free(_curr_scales);
+    _curr_scales = NULL;
+	if(_curr_ptrs != NULL)
+		free(_curr_ptrs);
+    _curr_ptrs = NULL;
+}
+
+extern "C" void free_conc_ptrs()
+{
+	_conc_count = 0;
+	if(_conc_indices != NULL)
+		free(_conc_indices);
+    _conc_indices = NULL;
+	if(_conc_ptrs != NULL)
+		free(_conc_ptrs);
+    _conc_ptrs = NULL;
+}
+
+
 extern "C" void rxd_setup_curr_ptrs(int num_currents, int* curr_index, double* curr_scale,
 						  PyHocObject** curr_ptrs, int conc_count, 
 						  int* conc_index, PyHocObject** conc_ptrs)
 {
+    free_curr_ptrs();
 	/* info for NEURON currents - to update states */
 	_curr_count = num_currents;
-	if(_curr_indices != NULL)
-		free(_curr_indices);
 	_curr_indices = (int*)malloc(sizeof(int)*num_currents);
 	memcpy(_curr_indices,curr_index, sizeof(int)*num_currents); 
 	
-	if(_curr_scales != NULL)
-		free(_curr_scales);
 	_curr_scales = (double*)malloc(sizeof(double)*num_currents);
 	memcpy(_curr_scales, curr_scale, sizeof(double)*num_currents); 
 
-	if(_curr_ptrs != NULL)
-		free(_curr_ptrs);
 	_curr_ptrs = (PyHocObject**)malloc(sizeof(PyHocObject*)*num_currents);
 	memcpy(_curr_ptrs, curr_ptrs, sizeof(PyHocObject*)*num_currents);
 }
@@ -207,18 +228,14 @@ extern "C" void rxd_setup_conc_ptrs(int conc_count, int* conc_index,
                          PyHocObject** conc_ptrs)
 {
 	/* info for NEURON concentration - to transfer to legacy */
+    
+    free_conc_ptrs();
 	_conc_count = conc_count;
-
-	if(_conc_indices != NULL)
-		free(_conc_indices);
 	_conc_indices = (int*)malloc(sizeof(int)*conc_count);
 	memcpy(_conc_indices, conc_index, sizeof(int)*conc_count); 
 	
-	if(_conc_ptrs != NULL)
-		free(_conc_ptrs);
 	_conc_ptrs = (PyHocObject**)malloc(sizeof(PyHocObject*)*conc_count);
 	memcpy(_conc_ptrs, conc_ptrs, sizeof(PyHocObject*)*conc_count);
-    
 }
 
 extern "C" void rxd_include_node_flux3D(int grid_count, int* grid_counts, 

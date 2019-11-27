@@ -103,7 +103,7 @@ script:
         export CMAKE_OPTION="$CMAKE_OPTION -DPYTHON_EXECUTABLE=${PYTHON}";
       fi;
       mkdir build && cd build;
-      cmake $CMAKE_OPTION -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR ..;
+      cmake $CMAKE_OPTION -DNRN_ENABLE_TESTS=ON -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR ..;
       cmake --build . -- -j 2;
       if [ "$TRAVIS_OS_NAME" == "osx" ]; then
         echo $'[install]\nprefix='>src/nrnpython/setup.cfg;
@@ -115,6 +115,7 @@ script:
       fi;
       make install;
       export PATH=$INSTALL_DIR/bin:$PATH;
+      ctest -VV && make install;
     else
       export PATH=$INSTALL_DIR/x86_64/bin:$PATH;
       ./travis_build.sh $INSTALL_DIR;

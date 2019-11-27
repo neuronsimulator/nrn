@@ -34,6 +34,7 @@ option(NRN_ENABLE_MPI "Enable MPI support" ON)
 option(NRN_ENABLE_MEMACS "Enable use of memacs" ON)
 option(NRN_ENABLE_RX3D "Enable rx3d support" ON)
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ON)
+option(NRN_ENABLE_TESTS "Enable unit tests" OFF)
 
 # =============================================================================
 # Build options (string)
@@ -95,6 +96,7 @@ include(RpathHelper)
 include(PlatformHelper)
 include(ExternalProjectHelper)
 include(FindCython)
+include(FindPythonModule)
 
 # =============================================================================
 # Find required packages
@@ -288,6 +290,20 @@ if(NRN_ENABLE_CORENEURON)
                     COMMENT "Update hh.mod for CoreNEURON compatibility")
   add_dependencies(nrniv hh_update)
 endif()
+
+# =============================================================================
+# Add tests if enabled
+# =============================================================================
+if (NRN_ENABLE_TESTS)
+  add_external_project(catch2)
+  set(CATCH_DIR ${PROJECT_SOURCE_DIR}/external/catch2)
+  list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external/catch2/contrib)
+  include(CTest)
+  include(Catch)
+  find_python_module(pytest)
+  add_subdirectory(test)
+endif()
+
 
 # =============================================================================
 # Install targets
