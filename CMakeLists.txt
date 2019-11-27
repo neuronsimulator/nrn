@@ -268,10 +268,13 @@ if(NEURON_CMAKE_FORMAT)
 endif()
 
 # =============================================================================
-# Update hh.mod for CoreNEURON compatibility
+# Update hh.mod for CoreNEURON compatibility and keep hh.mod original file to
+# revert to it if CoreNEURON is disabled
 # =============================================================================
 if(NRN_ENABLE_CORENEURON)
   add_custom_target(hh_update
+                    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod
+                            ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod.orig
                     COMMAND sed "'s/GLOBAL/RANGE/'" ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod >
                             ${CMAKE_BINARY_DIR}/hh.mod.1
                     COMMAND sed "'s/ TABLE/:TABLE/'" ${CMAKE_BINARY_DIR}/hh.mod.1 >
@@ -282,6 +285,21 @@ if(NRN_ENABLE_CORENEURON)
                             ${CMAKE_BINARY_DIR}/hh.mod.2
                     COMMENT "Update hh.mod for CoreNEURON compatibility")
   add_dependencies(nrniv hh_update)
+else()
+  if(EXISTS "${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod.orig")
+    add_custom_target(hh_restore
+            COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod.orig
+            ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod
+            COMMAND -E remove ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod.orig
+            COMMENT "Restore hh.mod for NEURON")
+    add_dependencies(nrniv hh_restore)
+  else()
+    add_custom_target(hh_orig
+            COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod
+                    ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod.orig
+            COMMENT "Copy hh.mod for NEURON")
+    add_dependencies(nrniv hh_orig)
+  endif()
 endif()
 
 # =============================================================================
