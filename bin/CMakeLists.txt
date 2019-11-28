@@ -48,7 +48,8 @@ install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/nrngui ${PROJECT_BINARY_DIR}/bin/neur
                  ${PROJECT_BINARY_DIR}/bin/nrnivmodl
         DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
-install(FILES ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+install(FILES ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/nrnpyenv.sh
                  ${CMAKE_CURRENT_SOURCE_DIR}/sortspike
                  ${CMAKE_CURRENT_SOURCE_DIR}/mkthreadsafe

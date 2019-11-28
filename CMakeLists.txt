@@ -321,8 +321,8 @@ endif()
 # =============================================================================
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/lib DESTINATION ${NRN_INSTALL_SHARE_DIR})
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo DESTINATION ${NRN_INSTALL_SHARE_DIR})
-install(FILES ${PROJECT_BINARY_DIR}/share/lib/nrnunits.lib
-              ${PROJECT_BINARY_DIR}/share/lib/nrn.defaults
+install(FILES ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
+              ${PROJECT_BINARY_DIR}/share/nrn/lib/nrn.defaults
         DESTINATION ${NRN_INSTALL_SHARE_DIR}/lib)
 install(FILES ${PROJECT_BINARY_DIR}/share/lib/python/neuron/rxd/constants.py
         DESTINATION ${NRN_INSTALL_SHARE_DIR}/lib/python/neuron/rxd)
@@ -331,8 +331,10 @@ install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/cleanup
 
 # find headers to install
 nrn_find_project_files(NRN_HEADERS_PATHS ${HEADER_FILES_TO_INSTALL})
-install(FILES ${NRN_HEADERS_PATHS} ${PROJECT_BINARY_DIR}/src/oc/nrnpthread.h
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+file(COPY ${NRN_HEADERS_PATHS} ${PROJECT_BINARY_DIR}/src/oc/nrnpthread.h
+        DESTINATION ${PROJECT_BINARY_DIR}/include)
+install(DIRECTORY ${PROJECT_BINARY_DIR}/include
+        DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 # for external coreneuron, nrnivmodl-core should be install
 if(coreneuron_FOUND)
