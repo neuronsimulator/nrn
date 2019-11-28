@@ -1208,6 +1208,9 @@ class Species(_SpeciesMathable):
         self._register_cptrs()
 
     def __del__(self):
+        if hasattr(self,'deleted'):
+            return
+        self.deleted = True
         if not weakref or not weakref.ref:
             # probably at exit -- not worth tidying up
             return
@@ -1225,8 +1228,8 @@ class Species(_SpeciesMathable):
                     del _defined_species[self.name][r]
             if not any(_defined_species[self.name]):
                 del _defined_species[self.name]
-        _all_defined_species = list(filter(lambda x: x() is not None or x() == self, _all_defined_species))
-        _all_species = list(filter(lambda x: x() is not None or x() == self, _all_species))
+        _all_defined_species = list(filter(lambda x: x() is not None and x() is not self, _all_defined_species))
+        _all_species = list(filter(lambda x: x() is not None and x() is not self, _all_species))
         # delete the secs
         if hasattr(self,'_secs') and self._secs:
             # remove the species root
@@ -1235,7 +1238,7 @@ class Species(_SpeciesMathable):
                 self._secs[0]._nseg += self._num_roots
                 self._secs[0]._offset -= self._num_roots
             self._secs.sort(key=lambda s: s._offset, reverse=True)
-            for sec in self._secs:
+            for sec in self._secs[:]:
                 # node data is removed here in case references to sec remains
                 node._remove(sec._offset, sec._offset + sec._nseg + 1)
                 # shift offset to account for deleted sec

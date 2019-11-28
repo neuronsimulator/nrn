@@ -677,7 +677,7 @@ void nrn_threads_free() {
 			spDestroy(nt->_sp13mat);
 			nt->_sp13mat = 0;
 		}
-		nt->_nrn_fast_imem = NULL;
+		if(nt->_nrn_fast_imem) { fast_imem_free(); }
 		/* following freed by nrn_recalc_node_ptrs */
 		nrn_old_thread_save();
 		nt->_actual_v = 0;		

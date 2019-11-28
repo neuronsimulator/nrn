@@ -1,8 +1,3 @@
-#
-# This makefile has the rules necessary for making the custom version of coreneuron
-# executable called "special-core" from various mod files.
-# Mod files are looked up in the cwd, unless MODS_PATH is set
-
 # Modified to replace the autoconf processed file nrnmech_makefile.in
 
 # Mechanisms version are by default 0.0, but should be overriden
@@ -17,7 +12,7 @@ bindir := @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_BINDIR@
 libdir := @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_LIBDIR@
 incdir := @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_INCLUDEDIR@
 datadir:= @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_DATADIR@/
-datadir_mod2c := @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_DATADIR@/lib
+datadir_lib := @CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_DATADIR@/lib
 
 # Additional variables set in CMAKE usable here
 # - @NRN_COMPILE_DEFS
@@ -30,7 +25,6 @@ _cm =,
 # We rebuild the include dirs since a lot of stuff changes place
 INCLUDES = $(INCFLAGS) -I$(incdir)
 INCLUDES += $(if @MPI_C_INCLUDE_PATH@, -I$(subst ;, -I,@MPI_C_INCLUDE_PATH@),)
-INCLUDES += $(if @reportinglib_INCLUDE_DIR@, -I$(subst ;, -I,@reportinglib_INCLUDE_DIR@),)
 INCLUDES += $(if @CMAKE_OSX_SYSROOT@, -isysroot @CMAKE_OSX_SYSROOT@)
 
 CC = @CMAKE_C_COMPILER@
@@ -96,11 +90,11 @@ $(OBJS_DIR)/%.o: $(MODC_DIR)/%.c | $(OBJS_DIR)
 # Build c files with nocmodl
 $(MODC_DIR)/%.c: $(MODS_PATH)/%.mod | $(MODC_DIR)
 	@printf " -> $(C_GREEN)MOD2C$(C_RESET) $<\n"
-	MODLUNIT=$(datadir_mod2c)/nrnunits.lib \
+	MODLUNIT=$(datadir_lib)/nrnunits.lib \
 	  $(bindir)/nocmodl $<
 
 # If .mod doesnt exist attempt from previously built opt mods in shared/
-$(MODC_DIR)/%.cpp: $(datadir_mod2c)/%.cpp | $(MODC_DIR)
+$(MODC_DIR)/%.cpp: $(datadir_lib)/%.cpp | $(MODC_DIR)
 	ln -s $< $@
 
 install: $(special) $(mech_lib)

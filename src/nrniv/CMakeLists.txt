@@ -2,11 +2,15 @@
 # Build nrniv binary and corresponding library
 # =============================================================================
 
-# The old build (autoconf) built executables in oc, nrnoc, ivoc, nrniv as well as libraries there
-# and in a dozen or so other places. For cmake we are experimenting with a single libnrniv.so that
-# combines many of files in those folders, both for simplicity, and to avoid issues of dependency
-# among the old libraries. Also the oc, nrnoc, and ivoc executables are pretty well useless these
-# days. Other groups can, and should be, factored out
+# ~~~
+# The old build (autoconf) built executables in oc, nrnoc, ivoc, nrniv as
+# well as libraries there and in a dozen or so other places. For cmake we
+# are experimenting with a single libnrniv.so that combines many of files
+# in those folders, both for simplicity, and to avoid issues of dependency
+# among the old libraries.
+# Also the oc, nrnoc, and ivoc executables are pretty well useless these
+# days. Other groups can, and should be, factored out.
+# ~~~
 
 # =============================================================================
 # Build modlunit : Mod file unitx checker
@@ -19,10 +23,7 @@ bison_target(modlunitparser
              DEFINES_FILE
              ${NRN_MODLUNIT_SRC_DIR}/parse1.h)
 
-set_property(SOURCE ${NRN_MODLUNIT_SRC_FILES}
-             APPEND
-             PROPERTY COMPILE_DEFINITIONS
-                      NRNUNIT=1)
+set_property(SOURCE ${NRN_MODLUNIT_SRC_FILES} APPEND PROPERTY COMPILE_DEFINITIONS NRNUNIT=1)
 
 add_executable(modlunit ${NRN_MODLUNIT_SRC_FILES})
 
@@ -144,14 +145,25 @@ set(NRN_INCLUDE_DIRS
 # =============================================================================
 # Helper commands : generate various headers
 # =============================================================================
+# ~~~
+# generate version information file
+# nrnversion.h does not depend on another file but on the output of
+# git2version_h.sh and nrnversion.h should only be changed if that output
+# is different from the contents of nrnversion.h
+# ~~~
+add_custom_target(nrnversion_h
+                  ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh
+                  ${PROJECT_SOURCE_DIR}
+                  >
+                  nrnversion.h.tmp
+                  COMMAND ${CMAKE_COMMAND} -E copy_if_different nrnversion.h.tmp
+                          ${NRN_NRNOC_SRC_DIR}/nrnversion.h
+                  DEPENDS ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh)
+
+add_custom_command(OUTPUT ${NRN_NRNOC_SRC_DIR}/nrnversion.h DEPENDS nrnversion_h)
 
 # avoid error with nvector_serial.c for #include <../../../nrnconf.h>
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/sundials/shared)
-
-# generate version information file
-add_custom_command(OUTPUT ${NRN_NRNOC_SRC_DIR}/nrnversion.h
-                   COMMAND ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh ${PROJECT_SOURCE_DIR} >
-                           ${NRN_NRNOC_SRC_DIR}/nrnversion.h)
 
 # generate hocusr.h
 add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/src/nrnoc/hocusr.h
@@ -193,9 +205,10 @@ set_property(SOURCE ${PROJECT_SOURCE_DIR}/src/nrniv/nrnpy.cpp
              APPEND
              PROPERTY COMPILE_DEFINITIONS NRNCMAKE)
 
-set_property(SOURCE ${PROJECT_SOURCE_DIR}/src/nrniv/nrnpy.cpp
-             APPEND
-             PROPERTY COMPILE_DEFINITIONS USE_LIBNRNPYTHON_MAJORMINOR=${USE_LIBNRNPYTHON_MAJORMINOR})
+set_property(
+  SOURCE ${PROJECT_SOURCE_DIR}/src/nrniv/nrnpy.cpp
+  APPEND
+  PROPERTY COMPILE_DEFINITIONS USE_LIBNRNPYTHON_MAJORMINOR=${USE_LIBNRNPYTHON_MAJORMINOR})
 
 set_property(SOURCE ${NRN_IVOC_SRC_FILES}
              APPEND
@@ -276,12 +289,12 @@ if(NRN_ENABLE_MPI)
   if(NRN_ENABLE_MPI_DYNAMIC)
     add_library(nrnmpi_lib SHARED ${NRN_NRNMPI_SRC_FILES})
     target_link_libraries(nrnmpi_lib ${MPI_C_LIBRARIES})
-    if (MINGW)
+    if(MINGW)
       add_dependencies(nrnmpi_lib nrniv_lib)
       target_link_libraries(nrnmpi_lib nrniv_lib)
     endif()
     set_property(TARGET nrnmpi_lib PROPERTY OUTPUT_NAME nrnmpi)
-    install(TARGETS nrnmpi_lib DESTINATION ${nrn_dest_sharedlibs})
+    install(TARGETS nrnmpi_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
   else()
     target_link_libraries(nrniv_lib ${MPI_C_LIBRARIES})
   endif()
@@ -299,20 +312,22 @@ endif()
 # =============================================================================
 add_executable(nrniv ${NRN_BIN_SRC_FILES})
 target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE} ${CMAKE_THREAD_LIBS_INIT})
-if (NOT MINGW)
+if(NOT MINGW)
   target_link_libraries(nrniv ${CMAKE_DL_LIBS})
 endif()
 
 # TODO: unset in top level CMake is not working
-if (NOT NRN_MACOS_BUILD AND ${READLINE_FOUND})
+if(NOT NRN_MACOS_BUILD AND ${READLINE_FOUND})
   target_link_libraries(nrniv ${Readline_LIBRARY})
 endif()
 
 # =============================================================================
 # Install binary and library targets
 # =============================================================================
+# ~~~
 # classically, the autotools windows version installed dlls in <inst>/bin
 # For now, we keep this distinction as it reduces the PATH and is
 # expected when ctypes looks for dlls
+# ~~~
 install(TARGETS nrniv nocmodl modlunit DESTINATION bin)
-install(TARGETS nrniv_lib DESTINATION ${nrn_dest_sharedlibs})
+install(TARGETS nrniv_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})

@@ -1,0 +1,68 @@
+load_file("nrngui.hoc")
+
+ndend = 2
+
+create soma, dend[ndend]
+access soma
+
+soma {
+  nseg = 1
+  diam = 18.8
+  L = 18.8
+  Ra = 123.0
+  insert hh
+}
+
+dend[0] {
+    nseg = 5
+    diam = 3.18
+    L = 701.9
+    Ra = 123
+    insert pas
+}
+
+dend[1] {
+    nseg = 5
+    diam = 2.0
+    L = 549.1
+    Ra = 123
+    insert pas
+}
+
+// Connect things together
+connect dend[0](0), soma(0)
+connect dend[1](0), soma(1)
+
+// create an electrode in the soma
+
+objectvar stim
+stim = new IClamp(0.5)
+
+stim.del = 100
+stim.dur = 100
+stim.amp = 0.1
+
+tstop = 5
+
+objref rect, recv
+rect = new Vector()
+recv = new Vector()
+
+objref savdata
+savdata = new File()
+savdata.wopen("cell3soma.dat")
+
+recv.record(&soma.v(0.5))
+rect.record(&t)
+
+run()
+
+savdata.printf("t soma.v(0.5)\n")
+
+objref tempmatrix
+tempmatrix = new Matrix()
+tempmatrix.resize(recv.size(),2)
+tempmatrix.setcol(0, rect)
+tempmatrix.setcol(1, recv)
+tempmatrix.fprint(savdata, " %g")
+savdata.close()

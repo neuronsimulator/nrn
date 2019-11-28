@@ -1,3 +1,4 @@
+# ~~~~~~
 # Find the Cython compiler.
 #
 # This code sets the following variables:
@@ -62,3 +63,4 @@ find_package_handle_standard_args( Cython
     )
 
 mark_as_advanced( CYTHON_EXECUTABLE )
+# ~~~~~~
