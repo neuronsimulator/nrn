@@ -109,7 +109,17 @@ endmacro()
 # PROJECT_SOURCE_DIR and PROJECT_BINARY_DIR.
 # ~~~
 macro(nrn_configure_file file dir)
-  set(bin_dir ${PROJECT_BINARY_DIR}/${dir})
+  set(out_dir ${dir})
+  set(extra_args ${ARGN})
+  list(LENGTH extra_args n_extra_args)
+  if (n_extra_args GREATER 0)
+    list(FIND extra_args OUTPUT pos_key_output)
+    MATH(EXPR pos_output "${pos_key_output}+1")
+    if (pos_key_output GREATER -1 AND pos_output LESS n_extra_args)
+      list(GET extra_args ${pos_output} out_dir)
+    endif()
+  endif()
+  set(bin_dir ${PROJECT_BINARY_DIR}/${out_dir})
   file(MAKE_DIRECTORY ${bin_dir})
   execute_process(COMMAND sed "s/\#undef *\\(.*\\)/\#cmakedefine \\1 @\\1@/"
                   INPUT_FILE ${PROJECT_SOURCE_DIR}/${dir}/${file}.in

@@ -12,8 +12,10 @@ if test "x${NRNHOME}" = x ; then
 else
 	prefix="$NRNHOME"
 	exec_prefix="${prefix}/${ARCH}"
-	bindir="${prefix}/${ARCH}/bin"
-	libdir="${prefix}/${ARCH}/lib"
+	@USING_CMAKE_FALSE@bindir="${prefix}/${ARCH}/bin"
+	@USING_CMAKE_FALSE@libdir="${prefix}/${ARCH}/lib"
+	@USING_CMAKE_TRUE@bindir="${prefix}/bin"
+	@USING_CMAKE_TRUE@libdir="${prefix}/lib"
 fi
 
 if test "${NRNHOME_EXEC}" != "" ; then
@@ -146,7 +148,7 @@ if test -n "$cfiles" ; then
 	COBJS=`echo "$cfiles" | sed 's/\.c/.o/g'`
 fi
 
-@NRNMECH_DLL_STYLE_FALSE@make -j 4 -f "${MAKEFILEDIR}/nrniv_makefile" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" special &&
+@NRNMECH_DLL_STYLE_FALSE@make -j 4 -f "${MAKEFILEDIR}/nrniv_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" special &&
 @NRNMECH_DLL_STYLE_FALSE@  echo "Successfully created $MODSUBDIR/special"
 
 @NRNMECH_DLL_STYLE_TRUE@MODLO=`echo "$MODOBJS" | sed 's/\.o/.lo/g'`
@@ -154,8 +156,8 @@ fi
 @NRNMECH_DLL_STYLE_TRUE@if test "${mdir}" = "${prefix}/share/nrn/demo/release/powerpc" ; then
 @NRNMECH_DLL_STYLE_TRUE@  mdir='${NRNHOME}'/share/nrn/demo/release/${MODSUBDIR}
 @NRNMECH_DLL_STYLE_TRUE@fi
-@NRNMECH_DLL_STYLE_TRUE@@USING_CMAKE_FALSE@make -j 4 -f "$MAKEFILEDIR/nrnmech_makefile" "MODOBJFILES=$MODLO" "COBJFILES=$CLO" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" libnrnmech.la &&
-@NRNMECH_DLL_STYLE_TRUE@@USING_CMAKE_TRUE@make -j 4 -f "$MAKEFILEDIR/nrnmech_makefile" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" libnrnmech.la &&
+@NRNMECH_DLL_STYLE_TRUE@@USING_CMAKE_FALSE@make -j 4 -f "$MAKEFILEDIR/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODLO" "COBJFILES=$CLO" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" libnrnmech.la &&
+@NRNMECH_DLL_STYLE_TRUE@@USING_CMAKE_TRUE@make -j 4 -f "$MAKEFILEDIR/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" libnrnmech.la VERBOSE=1 &&
 @NRNMECH_DLL_STYLE_TRUE@  echo '#!/bin/sh
 @NRNMECH_DLL_STYLE_TRUE@if test "x${NRNHOME}" = "x" ; then
 @NRNMECH_DLL_STYLE_TRUE@	NRNHOME='"\"${prefix}\""'
