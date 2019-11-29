@@ -6,6 +6,7 @@ from distutils.version import LooseVersion
 from setuptools import Command, Extension
 from setuptools import setup, find_packages
 from setuptools.command.build_ext import build_ext
+from platform import python_version
 from glob import glob
 
 RX3D = True
@@ -143,7 +144,7 @@ def setup_package():
         'neuron.gui2'
     ] + ["neuron.rxd.geometry3d"] if RX3D else []
 
-    neuron_root = "_install"
+    neuron_root = "_install" + python_version().replace('.', '')
 
     extension_common_params = dict(
         library_dirs = [neuron_root + "/lib"],
