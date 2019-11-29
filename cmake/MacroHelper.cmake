@@ -227,7 +227,8 @@ endmacro()
 # =============================================================================
 macro(nocmodl_mod_to_c modfile_basename)
   add_custom_command(OUTPUT ${modfile_basename}.c
-                     COMMAND nocmodl ${modfile_basename}.mod
+                     COMMAND ${CMAKE_COMMAND} -E env "MODLUNIT=${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
+                             ${PROJECT_BINARY_DIR}/bin/nocmodl ${modfile_basename}.mod
                      COMMAND sed "'s/_reg()/_reg_()/'" ${modfile_basename}.c >
                              ${modfile_basename}.c.tmp
                      COMMAND mv ${modfile_basename}.c.tmp ${modfile_basename}.c

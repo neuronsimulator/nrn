@@ -844,18 +844,15 @@ class _ExtracellularSpecies(_SpeciesMathable):
     def __del__(self):
         # TODO: remove this object from the list of grids, possibly by reinserting all the others
         # NOTE: be careful about doing the right thing at program's end; some globals may no longer exist
-        try:
+        global _extracellular_diffusion_objects
+        if _extracellular_diffusion_objects:
             if self in _extracellular_diffusion_objects: del _extracellular_diffusion_objects[self]
             # remove the grid id
-            if _extracellular_diffusion_objects:
-                for sp in _extracellular_diffusion_objects:
-                    if hasattr(sp,'_grid_id') and sp._grid_id > self._grid_id:
-                        sp._grid_id -= 1
+            for sp in _extracellular_diffusion_objects:
+                if hasattr(sp,'_grid_id') and sp._grid_id > self._grid_id:
+                    sp._grid_id -= 1
             if hasattr(self,'_grid_id'): _delete_by_id(self._grid_id)
-        
             nrn_dll_sym('structure_change_cnt', ctypes.c_int).value += 1
-        except:
-            return
         
     def _finitialize(self):
         # Updated - now it will initialize using NodeExtracellular
@@ -1222,14 +1219,19 @@ class Species(_SpeciesMathable):
             # may not be able to import on exit
             return 
         
-        if self.name in _defined_species:
+        name = self.name if self.name else self._id
+        if name in _defined_species:
             for r in self.regions:
-                if r in _defined_species[self.name]:
-                    del _defined_species[self.name][r]
-            if not any(_defined_species[self.name]):
-                del _defined_species[self.name]
+                if r in _defined_species[name]:
+                    del _defined_species[name][r]
+            if not any(_defined_species[name]):
+                del _defined_species[name]
         _all_defined_species = list(filter(lambda x: x() is not None and x() is not self, _all_defined_species))
         _all_species = list(filter(lambda x: x() is not None and x() is not self, _all_species))
+        if hasattr(self,'_extracellular_instances'):
+            for sp in self._extracellular_instances.values():
+                sp.__del__()
+
         # delete the secs
         if hasattr(self,'_secs') and self._secs:
             # remove the species root
