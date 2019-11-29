@@ -36,6 +36,10 @@ option(NRN_ENABLE_RX3D "Enable rx3d support" ON)
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ON)
 option(NRN_ENABLE_TESTS "Enable unit tests" OFF)
 
+# In case of wheel do not build binaries like nrniv to be compatible
+# with auditwheel repair process
+option(NRN_ENABLE_BINARY "Enable building of neuron binaries" ON)
+
 # =============================================================================
 # Build options (string)
 # =============================================================================
@@ -291,7 +295,7 @@ if(NRN_ENABLE_CORENEURON)
                     COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/hh.mod.1
                             ${CMAKE_BINARY_DIR}/hh.mod.2
                     COMMENT "Update hh.mod for CoreNEURON compatibility")
-  add_dependencies(nrniv hh_update)
+  add_dependencies(nrniv_lib hh_update)
 else()
   if(EXISTS "${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod.orig")
     add_custom_target(hh_restore
@@ -299,13 +303,13 @@ else()
             ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod
             COMMAND -E remove ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod.orig
             COMMENT "Restore hh.mod for NEURON")
-    add_dependencies(nrniv hh_restore)
+    add_dependencies(nrniv_lib hh_restore)
   else()
     add_custom_target(hh_orig
             COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod
                     ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod.orig
             COMMENT "Copy hh.mod for NEURON")
-    add_dependencies(nrniv hh_orig)
+    add_dependencies(nrniv_lib hh_orig)
   endif()
 endif()
 

@@ -281,7 +281,7 @@ set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
 # =============================================================================
 # Link with all libraries
 # =============================================================================
-if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
+if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC AND LINK_AGAINST_PYTHON)
   target_link_libraries(nrniv_lib ${PYTHON_LIBRARIES})
 endif()
 
@@ -310,14 +310,16 @@ endif()
 # =============================================================================
 # Final executable
 # =============================================================================
-add_executable(nrniv ${NRN_BIN_SRC_FILES})
-target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE} ${CMAKE_THREAD_LIBS_INIT})
-if(NOT MINGW)
-  target_link_libraries(nrniv ${CMAKE_DL_LIBS})
+if(NRN_ENABLE_BINARY)
+  add_executable(nrniv ${NRN_BIN_SRC_FILES})
+  target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE} ${CMAKE_THREAD_LIBS_INIT})
+  if(NOT MINGW)
+    target_link_libraries(nrniv ${CMAKE_DL_LIBS})
+  endif()
 endif()
 
 # TODO: unset in top level CMake is not working
-if(NOT NRN_MACOS_BUILD AND ${READLINE_FOUND})
+if(NOT NRN_MACOS_BUILD AND ${READLINE_FOUND} AND NRN_ENABLE_BINARY)
   target_link_libraries(nrniv ${Readline_LIBRARY})
 endif()
 
@@ -329,5 +331,9 @@ endif()
 # For now, we keep this distinction as it reduces the PATH and is
 # expected when ctypes looks for dlls
 # ~~~
-install(TARGETS nrniv nocmodl modlunit DESTINATION bin)
+if(NRN_ENABLE_BINARY)
+  install(TARGETS nrniv DESTINATION bin)
+endif()
+install(TARGETS nocmodl modlunit DESTINATION bin)
+install(TARGETS nocmodl modlunit DESTINATION bin)
 install(TARGETS nrniv_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
