@@ -17,7 +17,7 @@ if RX3D:
 
 
 # Main source of the version. Dont rename
-__version__ = '7.8'
+__version__ = '7.8.11'
 
 
 class CMakeAugmentedExtension(Extension):
@@ -167,8 +167,9 @@ def setup_package():
             '-DNRN_ENABLE_INTERVIEWS=OFF',
             '-DNRN_ENABLE_RX3D=OFF',
             '-DNRN_ENABLE_PYTHON_DYNAMIC=OFF',
-            '-DNRN_ENABLE_MPI=OFF'
-            # '-DLINK_AGAINST_PYTHON=OFF',
+            '-DNRN_ENABLE_MPI=OFF',
+            '-DLINK_AGAINST_PYTHON=OFF',
+            '-DNRN_ENABLE_BINARY=OFF',
         ],
         include_dirs = [
             neuron_root + "/include",
