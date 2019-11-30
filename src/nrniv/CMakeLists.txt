@@ -281,8 +281,13 @@ set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
 # =============================================================================
 # Link with all libraries
 # =============================================================================
-if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC AND LINK_AGAINST_PYTHON)
-  target_link_libraries(nrniv_lib ${PYTHON_LIBRARIES})
+if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
+  # if NRN_ENABLE_BINARY is off that means we are typically building wheel where
+  # we do not want to link to specific python. Note that LINK_AGAINST_PYTHON variable
+  # can be used but currently it's only considered for mingw.
+  if(NRN_ENABLE_BINARY)
+    target_link_libraries(nrniv_lib ${PYTHON_LIBRARIES})
+  endif()
 endif()
 
 if(NRN_ENABLE_MPI)
