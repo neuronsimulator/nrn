@@ -275,8 +275,10 @@ if(NEURON_CMAKE_FORMAT)
 endif()
 
 # =============================================================================
+# ~~~
 # Update hh.mod for CoreNEURON compatibility and keep hh.mod original file to
 # revert to it if CoreNEURON is disabled
+# ~~~
 # =============================================================================
 if(NRN_ENABLE_CORENEURON)
   add_custom_target(hh_update
@@ -295,16 +297,16 @@ if(NRN_ENABLE_CORENEURON)
 else()
   if(EXISTS "${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod.orig")
     add_custom_target(hh_restore
-            COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod.orig
-            ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod
-            COMMAND -E remove ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod.orig
-            COMMENT "Restore hh.mod for NEURON")
+                      COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod.orig
+                              ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod
+                      COMMAND -E remove ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod.orig
+                      COMMENT "Restore hh.mod for NEURON")
     add_dependencies(nrniv hh_restore)
   else()
     add_custom_target(hh_orig
-            COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod
-                    ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod.orig
-            COMMENT "Copy hh.mod for NEURON")
+                      COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod
+                              ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod.orig
+                      COMMENT "Copy hh.mod for NEURON")
     add_dependencies(nrniv hh_orig)
   endif()
 endif()
@@ -312,7 +314,7 @@ endif()
 # =============================================================================
 # Add tests if enabled
 # =============================================================================
-if (NRN_ENABLE_TESTS)
+if(NRN_ENABLE_TESTS)
   add_external_project(catch2)
   set(CATCH_DIR ${PROJECT_SOURCE_DIR}/external/catch2)
   list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external/catch2/contrib)
@@ -321,7 +323,6 @@ if (NRN_ENABLE_TESTS)
   find_python_module(pytest)
   add_subdirectory(test)
 endif()
-
 
 # =============================================================================
 # Install targets
@@ -336,10 +337,12 @@ install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/cleanup
 
 # find headers to install
 nrn_find_project_files(NRN_HEADERS_PATHS ${HEADER_FILES_TO_INSTALL})
-file(COPY ${NRN_HEADERS_PATHS} ${PROJECT_BINARY_DIR}/src/oc/nrnpthread.h
-        DESTINATION ${PROJECT_BINARY_DIR}/include)
-install(DIRECTORY ${PROJECT_BINARY_DIR}/include
-        DESTINATION ${CMAKE_INSTALL_PREFIX})
+file(COPY
+     ${NRN_HEADERS_PATHS}
+     ${PROJECT_BINARY_DIR}/src/oc/nrnpthread.h
+     DESTINATION
+     ${PROJECT_BINARY_DIR}/include)
+install(DIRECTORY ${PROJECT_BINARY_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 # for external coreneuron, nrnivmodl-core should be install
 if(coreneuron_FOUND)

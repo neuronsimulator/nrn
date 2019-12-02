@@ -20,22 +20,23 @@ endif()
 # Copy necessary hoc files to build directory if they have not been copied yet
 # =============================================================================
 add_custom_command(TARGET testneuron POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${PROJECT_SOURCE_DIR}/share/lib ${PROJECT_BINARY_DIR}/share/nrn/lib
-        )
+                   COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/lib
+                           ${PROJECT_BINARY_DIR}/share/nrn/lib)
 
 set(TEST_ENV
     NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn
     LD_LIBRARY_PATH=${PROJECT_BINARY_DIR}/lib:$ENV{LD_LIBRARY_PATH}
     DYLD_LIBRARY_PATH=${PROJECT_BINARY_DIR}/lib:$ENV{DYLD_LIBRARY_PATH})
 if(NRN_ENABLE_PYTHON)
-  list(APPEND TEST_ENV
-          PYTHONPATH=${PROJECT_BINARY_DIR}/lib/python:${PROJECT_SOURCE_DIR}/test/rxd:$ENV{PYTHONPATH})
+  list(
+    APPEND
+      TEST_ENV
+      PYTHONPATH=${PROJECT_BINARY_DIR}/lib/python:${PROJECT_SOURCE_DIR}/test/rxd:$ENV{PYTHONPATH})
 endif()
 
 # =============================================================================
-# Use add_test method and set environment for testneuron (NEURONHOME env
-# variable needs to be set to run testneuron and other tests based on nrniv)
+# Use add_test method and set environment for testneuron (NEURONHOME env variable needs to be set to
+# run testneuron and other tests based on nrniv)
 # =============================================================================
 foreach(test_name testneuron)
   add_test(NAME ${test_name} COMMAND ${test_name})
@@ -61,20 +62,20 @@ set_tests_properties(ringtest PROPERTIES ENVIRONMENT "${TEST_ENV}")
 # Add small hoc test
 # =============================================================================
 set(HOCTEST_DIR ${PROJECT_SOURCE_DIR}/test/hoc_tests/connect_dend)
-if (NRN_ENABLE_CORENEURON)
+if(NRN_ENABLE_CORENEURON)
   set(REF_FILE cell3soma.core.dat.ref)
 else()
   set(REF_FILE cell3soma.dat.ref)
 endif()
 add_test(connect_dend
-        ${CMAKE_COMMAND}
-        -Dexecutable=${CMAKE_BINARY_DIR}/bin/nrniv
-        -Dexec_arg=connect_dend.hoc
-        -Dout_file=cell3soma.dat
-        -Dref_file=${REF_FILE}
-        -Dwork_dir=${HOCTEST_DIR}
-        -P
-        ${PROJECT_SOURCE_DIR}/cmake/RunHOCTest.cmake)
+         ${CMAKE_COMMAND}
+         -Dexecutable=${CMAKE_BINARY_DIR}/bin/nrniv
+         -Dexec_arg=connect_dend.hoc
+         -Dout_file=cell3soma.dat
+         -Dref_file=${REF_FILE}
+         -Dwork_dir=${HOCTEST_DIR}
+         -P
+         ${PROJECT_SOURCE_DIR}/cmake/RunHOCTest.cmake)
 set_tests_properties(connect_dend PROPERTIES ENVIRONMENT "${TEST_ENV}")
 
 # =============================================================================
@@ -82,26 +83,23 @@ set_tests_properties(connect_dend PROPERTIES ENVIRONMENT "${TEST_ENV}")
 # =============================================================================
 if(PYTEST_FOUND)
   add_test(NAME Basic_tests
-          COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/pynrn)
+           COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/pynrn)
   add_custom_target(rxdmod ALL
-          COMMAND $ENV{SHELL} ${CMAKE_BINARY_DIR}/bin/nrnivmodl ./ ./ecs
-          WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test/rxd
-          )
-  set_target_properties(rxdmod
-          PROPERTIES ENVIRONMENT "${TEST_ENV}")
-  set_tests_properties(Basic_tests
-          PROPERTIES ENVIRONMENT "${TEST_ENV}")
+                    COMMAND $ENV{SHELL} ${CMAKE_BINARY_DIR}/bin/nrnivmodl ./ ./ecs
+                    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test/rxd)
+  set_target_properties(rxdmod PROPERTIES ENVIRONMENT "${TEST_ENV}")
+  set_tests_properties(Basic_tests PROPERTIES ENVIRONMENT "${TEST_ENV}")
   add_test(NAME rxd_tests
-          COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/rxd)
-  set_tests_properties(rxd_tests
-          PROPERTIES ENVIRONMENT "${TEST_ENV}")
+           COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/rxd)
+  set_tests_properties(rxd_tests PROPERTIES ENVIRONMENT "${TEST_ENV}")
   if(NRN_ENABLE_MPI)
     find_python_module(mpi4py)
-    if (mpi4py_FOUND)
+    if(mpi4py_FOUND)
       add_test(NAME rxd_mpi_tests
-              COMMAND ${MPIEXEC} -np 1 ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/rxd --mpi)
-      set_tests_properties(rxd_mpi_tests
-              PROPERTIES ENVIRONMENT "${TEST_ENV}")
+               COMMAND ${MPIEXEC} -np 1 ${PYTHON_EXECUTABLE} -m pytest
+                       ${PROJECT_SOURCE_DIR}/test/rxd
+                       --mpi)
+      set_tests_properties(rxd_mpi_tests PROPERTIES ENVIRONMENT "${TEST_ENV}")
     endif()
   endif()
 endif()

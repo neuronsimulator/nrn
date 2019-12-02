@@ -112,10 +112,10 @@ macro(nrn_configure_file file dir)
   set(out_dir ${dir})
   set(extra_args ${ARGN})
   list(LENGTH extra_args n_extra_args)
-  if (n_extra_args GREATER 0)
+  if(n_extra_args GREATER 0)
     list(FIND extra_args OUTPUT pos_key_output)
-    MATH(EXPR pos_output "${pos_key_output}+1")
-    if (pos_key_output GREATER -1 AND pos_output LESS n_extra_args)
+    math(EXPR pos_output "${pos_key_output}+1")
+    if(pos_key_output GREATER -1 AND pos_output LESS n_extra_args)
       list(GET extra_args ${pos_output} out_dir)
     endif()
   endif()
@@ -227,7 +227,8 @@ endmacro()
 # =============================================================================
 macro(nocmodl_mod_to_c modfile_basename)
   add_custom_command(OUTPUT ${modfile_basename}.c
-                     COMMAND ${CMAKE_COMMAND} -E env "MODLUNIT=${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
+                     COMMAND ${CMAKE_COMMAND} -E env
+                             "MODLUNIT=${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
                              ${PROJECT_BINARY_DIR}/bin/nocmodl ${modfile_basename}.mod
                      COMMAND sed "'s/_reg()/_reg_()/'" ${modfile_basename}.c >
                              ${modfile_basename}.c.tmp
