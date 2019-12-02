@@ -35,7 +35,11 @@ destdir = os.getenv("DESTDIR")
 if not destdir:
   destdir = ""
 
-instdir = destdir + get_escaped_path("@prefix@")
+# autoconf install module in install prefix for cmake we install
+# into build directory and then copy to install prefix
+@USING_CMAKE_FALSE@instdir = destdir + get_escaped_path("@prefix@")
+@USING_CMAKE_TRUE@instdir = destdir + get_escaped_path("@CMAKE_BINARY_DIR@")
+
 if nrn_srcdir[0] != '/' :
   if using_cmake and mingw:
     nrn_srcdir = nrn_srcdir
@@ -106,7 +110,15 @@ if using_cmake:
 libdirs = [destdir + get_escaped_path("@NRN_LIBDIR@"),
   ivlibdir
 ]
-epre='-Wl,-R'
+
+# prepare rpath flags for neuron and iv libs directories
+rpath_prefix_flag='-Wl,-R'
+extra_rpath_flags = [rpath_prefix_flag+lib_path for lib_path in libdirs]
+
+# as neuron module will be built during make, add build/lib
+# directory for linking. Note that build/lib shouldn't be
+# added to rpath to avoid issues with dlopen.
+@USING_CMAKE_TRUE@libdirs.append(destdir + get_escaped_path("@CMAKE_BINARY_DIR@/lib"))
 
 @MAC_DARWIN_FALSE@readline="readline@READLINE_SOSUFFIX@"
 @MAC_DARWIN_TRUE@readline="readline@READLINE_SOSUFFIX@"
@@ -126,7 +138,7 @@ hoc_module = Extension(
     ["inithoc.cpp"],
     library_dirs=libdirs,
     @MAC_DARWIN_TRUE@extra_link_args = extra_link_args,
-    @setup_extra_link_args@ = [ epre+libdirs[0],epre+libdirs[1] ],
+    @setup_extra_link_args@ = extra_rpath_flags,
     #extra_objects = [],
     libraries = libs if using_cmake else [
         "nrnpython@npy_pyver10@",

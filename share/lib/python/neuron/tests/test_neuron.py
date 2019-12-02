@@ -84,10 +84,10 @@ class NeuronTestCase(unittest.TestCase):
         p.start()
         p.join()
 
-    @classmethod 
+    @classmethod
     def RxDexistence(cls):
         """test import rxd and geometry3d if scipy"""
-        a = 1
+        error = 0
         try:
             import scipy
         except:
@@ -99,16 +99,17 @@ class NeuronTestCase(unittest.TestCase):
                 print("has_geometry3d is " + str(geometry.has_geometry3d))
             except:
                 print("'from neuron import rxd' failed")
-                a = 0
+                error = 1
             else:
                try:
                    a = basicRxD3D()
                    print("    basicRxD3D() ran with no exception")
                except:
                    print("'basicRxD3D()' failed")
-                   a = 0
-        return a
-        
+                   error = 1
+        assert(error == 0)
+        return 0
+
 
     def testRxDexistence(self):
         from multiprocessing import Process

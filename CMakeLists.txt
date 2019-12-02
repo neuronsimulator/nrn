@@ -10,8 +10,14 @@ set(CMAKE_CXX_STANDARD 98)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Empty or one of Debug, Release, RelWithDebInfo")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
+
+# =============================================================================
+# CMake common project settings
+# =============================================================================
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 # =============================================================================
 # Build options (boolean)
@@ -26,8 +32,8 @@ option(NRN_ENABLE_PYTHON "Enable Python interpreter support (default python3 fal
 option(NRN_ENABLE_THREADS "Allow use of Pthreads" ON)
 option(NRN_ENABLE_MPI "Enable MPI support" ON)
 option(NRN_ENABLE_MEMACS "Enable use of memacs" ON)
-option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ON)
 option(NRN_ENABLE_RX3D "Enable rx3d support" ON)
+option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ON)
 option(NRN_ENABLE_TESTS "Enable unit tests" OFF)
 
 # =============================================================================
@@ -112,17 +118,16 @@ endif()
 find_package(Doxygen QUIET)
 if(DOXYGEN_FOUND)
   # generate Doxyfile with correct source paths
-  configure_file(${PROJECT_SOURCE_DIR}/docs/Doxyfile.in
-                 ${PROJECT_BINARY_DIR}/Doxyfile)
+  configure_file(${PROJECT_SOURCE_DIR}/docs/Doxyfile.in ${PROJECT_BINARY_DIR}/Doxyfile)
   add_custom_target(doxygen
-        COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-        COMMENT "Generating API documentation with Doxygen"
-        VERBATIM)
+                    COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
+                    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+                    COMMENT "Generating API documentation with Doxygen"
+                    VERBATIM)
 endif()
 
 # =============================================================================
-# Enable MPI/Python/IV/Pthead if found
+# Enable MPI
 # =============================================================================
 if(NRN_ENABLE_MPI)
   find_package(MPI REQUIRED)
@@ -231,9 +236,11 @@ include(PythonDynamicHelper)
 # ~~~
 if(MINGW)
   set(NRN_INSTALL_SHARE_DIR ${CMAKE_INSTALL_PREFIX})
+  set(NRN_BUILD_SHARE_DIR ${CMAKE_BINARY_DIR})
   set(NRN_INSTALL_SHARE_LIB_DIR ${CMAKE_INSTALL_PREFIX}/bin)
 else()
   set(NRN_INSTALL_SHARE_DIR ${CMAKE_INSTALL_PREFIX}/share/nrn)
+  set(NRN_BUILD_SHARE_DIR ${CMAKE_BINARY_DIR}/share/nrn)
   set(NRN_INSTALL_SHARE_LIB_DIR ${CMAKE_INSTALL_PREFIX}/lib)
 endif()
 
@@ -324,8 +331,6 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo DESTINATION ${NRN_INSTA
 install(FILES ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
               ${PROJECT_BINARY_DIR}/share/nrn/lib/nrn.defaults
         DESTINATION ${NRN_INSTALL_SHARE_DIR}/lib)
-install(FILES ${PROJECT_BINARY_DIR}/share/lib/python/neuron/rxd/constants.py
-        DESTINATION ${NRN_INSTALL_SHARE_DIR}/lib/python/neuron/rxd)
 install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/cleanup
         DESTINATION ${NRN_INSTALL_SHARE_DIR}/lib)
 

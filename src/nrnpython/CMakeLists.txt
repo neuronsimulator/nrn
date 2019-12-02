@@ -108,7 +108,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
 
   # check arguments for setup.py install : if user has just provided YES, then use default
   if("${NRN_MODULE_INSTALL_OPTIONS}" STREQUAL "")
-    set(install_path ${CMAKE_INSTALL_PREFIX})
+    set(install_path ${PROJECT_BINARY_DIR})
     # replace windows path of the form C:/msys64 to C:\msys64
     if(MINGW)
       string(REPLACE ":/"
@@ -116,7 +116,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
                      install_path
                      "${install_path}")
     endif()
-    set(NRN_MODULE_INSTALL_OPTIONS "--home ${install_path}" CACHE INTERNAL "" FORCE)
+    set(NRN_MODULE_INSTALL_OPTIONS "--home" "${install_path}" CACHE INTERNAL "" FORCE)
   endif()
 
   # ~~~
@@ -229,6 +229,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
         target_include_directories(nrnpython${pyver} BEFORE PUBLIC ${pyinc} ${INCLUDE_DIRS})
         target_link_libraries(nrnpython${pyver} nrniv_lib ${pylib} ${Readline_LIBRARY})
         add_dependencies(nrnpython${pyver} nrniv_lib)
+        add_dependencies(hoc_module nrnpython${pyver})
         install(TARGETS nrnpython${pyver} DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
       endforeach()
     else()
@@ -237,6 +238,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
         add_library(nrnpython2 SHARED ${NRN_NRNPYTHON_SRC_FILES})
         target_include_directories(nrnpython2 BEFORE PUBLIC ${NRNPYTHON_INCLUDE2} ${INCLUDE_DIRS})
         add_dependencies(nrnpython2 nrniv_lib)
+        add_dependencies(hoc_module nrnpython2)
         install(TARGETS nrnpython2 DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
       endif()
 
@@ -244,22 +246,13 @@ if(NRN_ENABLE_MODULE_INSTALL)
       if(NRNPYTHON_INCLUDE3)
         add_library(nrnpython3 SHARED ${NRN_NRNPYTHON_SRC_FILES})
         add_dependencies(nrnpython3 nrniv_lib)
+        add_dependencies(hoc_module nrnpython3)
         target_include_directories(nrnpython3 BEFORE PUBLIC ${NRNPYTHON_INCLUDE3} ${INCLUDE_DIRS})
         install(TARGETS nrnpython3 DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
       endif()
     endif()
   endif()
 
-  # for each python detected / provided by user, install module at install time
-  foreach(pyexe ${NRN_PYTHON_EXE_LIST})
-    install(
-      CODE
-      "
-      message(STATUS \"Installing neuron module with: ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}\")
-      #execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp)
-      execute_process(COMMAND ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-      )
-    ")
-  endforeach(pyexe)
+  # module is already installed in lib, just copy folder
+  install(DIRECTORY ${PROJECT_BINARY_DIR}/lib/ DESTINATION ${NRN_LIBDIR})
 endif()
