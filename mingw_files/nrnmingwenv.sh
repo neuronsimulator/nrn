@@ -87,8 +87,8 @@ liblto_plugin-0.dll
 copyinc() {
   echo "" > temp.c
   for i in $* ; do
-    echo "#include <$i>" >> temp.c
-  done
+    echo "#include <$i>"
+  done >> temp.c
   echo "int main(int argc, char** argv){return 0;}" >> temp.c
   gcc -E temp.c  | grep '^#.*include' > temp1
   sed -n 's,^.*msys64/,,p' temp1 | sed -n 's,".*,,p' > temp2

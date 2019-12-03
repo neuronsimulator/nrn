@@ -5,12 +5,12 @@ set(HEADER_FILES_TO_INSTALL
     cabvars.h
     cspmatrix.h
     cspredef.h
+    hoc.h
+    hoc_membf.h
     hocassrt.h
     hocdec.h
     hocgetsym.h
-    hoc.h
     hoclist.h
-    hoc_membf.h
     hocparse.h
     md1redef.h
     md2redef.h
@@ -28,20 +28,20 @@ set(HEADER_FILES_TO_INSTALL
     nrniv_mf.h
     nrnjava.h
     nrnoc_ml.h
-    scoplib.h
     nrnran123.h
     nrnredef.h
     oc_ansi.h
     ocfunc.h
     ocmisc.h
     options.h
+    scoplib.h
     scoplib_ansi.h
     section.h
     spconfig.h
     spmatrix.h)
 
 # =============================================================================
-# Lists of header populated using check_include_files
+# Lists of headers populated using check_include_files
 # =============================================================================
 set(NRN_HEADERS_INCLUDE_LIST)
 

@@ -22,17 +22,17 @@ git:
 addons:
     apt:
         packages:
-        - python3-pip
-        - python-pip
-        - python3-scipy
-        - python-scipy
-        - python3-tk
-        - python-tk
+        - doxygen
         - libopenmpi-dev
-        - openmpi-bin
         - libx11-dev
         - libxcomposite-dev
-        - doxygen
+        - openmpi-bin
+        - python-pip
+        - python-scipy
+        - python-tk
+        - python3-pip
+        - python3-scipy
+        - python3-tk
     homebrew:
         packages:
         - openmpi

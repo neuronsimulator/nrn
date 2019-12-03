@@ -143,15 +143,15 @@ endif()
 # Enable Interviews
 # =============================================================================
 if(NRN_ENABLE_INTERVIEWS)
-  # on windows x11 is not required
+  # x11 is not required on windows
   if(NOT NRN_WINDOWS_BUILD)
     find_package(X11 QUIET)
     if(NOT X11_FOUND)
       if(APPLE)
-        message(FATAL_ERROR "You must install XQuartz from https://www.xquartz.org/ to build iv")
+        message(SEND_ERROR "You must install XQuartz from https://www.xquartz.org/ to build iv")
       else()
         message(
-          FATAL_ERROR
+          SEND_ERROR
             "You must install X11 to build iv e.g. 'apt install libx11-dev libxcomposite-dev' on Ubuntu"
           )
       endif()
@@ -160,7 +160,7 @@ if(NRN_ENABLE_INTERVIEWS)
   endif()
 
   find_package(iv QUIET PATHS ${IV_DIR}/share/cmake ${IV_DIR})
-  if(${iv_FOUND})
+  if(iv_FOUND)
     message(STATUS "Using external Interviews from ${IV_DIR}")
     get_target_property(IV_INCLUDE_DIR interviews INTERFACE_INCLUDE_DIRECTORIES)
   else()
@@ -204,7 +204,7 @@ endif()
 # =============================================================================
 if(NRN_ENABLE_CORENEURON)
   find_package(coreneuron QUIET PATHS ${CORENEURON_DIR}/share/cmake ${CORENEURON_DIR})
-  if(${coreneuron_FOUND})
+  if(coreneuron_FOUND)
     message(STATUS "Using external CoreNEURON from ${CORENEURON_DIR}")
   else()
     message(STATUS "Building CoreNEURON from submodule")

@@ -30,7 +30,7 @@ create the automake, autoconf, libtool generated files by:
 Particularly useful configure options:
 
 
-- `--prefix=/some/path` : Install in in this location of your filesystem
+- `--prefix=/some/path` : Install in this location of your filesystem.
 - `--without-x` : If the InterViews graphics library is not installed.
 - `--with-iv=/where/you/installed/it` : If iv was not installed in <prefix>/../iv
 - `--with-paranrn` : Parallel models on cluster computers using MPI (openmpi or mpich2)
@@ -43,16 +43,16 @@ file.
 
 ### Building using cmake
 
-NEURON can now also be built and installed using cmake. Currently we are evaluating the two build
-system options but given positive feedback from the community we plan to depricate autotools and
-completely switch to cmake. Therefor we would be grateful for any feedback.
+NEURON can now also be built and installed using CMake. Currently we are evaluating the two build
+system options but given positive feedback from the community we plan to deprecate autotools and
+completely switch to CMake. Therefore we would be grateful for any feedback.
 
-To build with cmake we require following packages to be installed on the system:
+The following packages need to be installed on the system to use CMake:
 
 - bison
 - cmake >=3.3.0
 - flex
-- A C/C++ compiler suite (GCC, Intel Parallel Studio, clang,
+- A C/C++ compiler suite (GCC, Intel Parallel Studio, clang)
 
 Following packages are optional:
 
@@ -65,7 +65,7 @@ Following packages are optional:
 1. Download the NEURON `.tar.gz` or clone from https://github.com/neuronsimulator/nrn
 
   ```
-  git clone https://github.com/neuronsimulator/nrn
+  git clone --recursive https://github.com/neuronsimulator/nrn
   cd nrn
   ```
 
@@ -73,6 +73,7 @@ Following packages are optional:
 
   ```
   mkdir build
+  pushd build
   ```
 
 3. Run cmake with the appropriate options
@@ -88,5 +89,4 @@ Following packages are optional:
   ```
 
 For more installation information see:
-http://neuron.yale.edu/neuron/download/getdevel
-
+https://neuron.yale.edu/neuron/download/getdevel

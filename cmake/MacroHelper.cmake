@@ -10,10 +10,10 @@ include(CheckCXXSymbolExists)
 set(CMAKE_REQUIRED_QUIET TRUE)
 
 # =============================================================================
-# Check if directory related to DIR exist by compiling code
+# Check if directory related to DIR exists by compiling code
 # =============================================================================
 macro(nrn_check_dir_exists HEADER VARIABLE)
-  # code template to check existance of DIR
+  # code template to check existence of DIR
   set(CONFTEST_DIR_TPL "
     #include <sys/types.h>
     #include <@dir_header@>
@@ -44,10 +44,10 @@ macro(nrn_check_dir_exists HEADER VARIABLE)
 endmacro()
 
 # =============================================================================
-# Check if given type exist by compiling code
+# Check if given type exists by compiling code
 # =============================================================================
 macro(nrn_check_type_exists HEADER TYPE DEFAULT_TYPE VARIABLE)
-  # code template to check existance of specific type
+  # code template to check existence of specific type
   set(CONFTEST_TYPE_TPL "
     #include <@header@>
 
@@ -87,7 +87,7 @@ macro(nrn_check_signal_return_type VARIABLE)
     }")
   file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/conftest.c ${CONFTEST_RETSIGTYPE})
   try_compile(RESULT_VAR ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/conftest.c)
-  if(${RESULT_VAR})
+  if(RESULT_VAR)
     set(${VARIABLE} int)
   else()
     set(${VARIABLE} void)
@@ -127,7 +127,7 @@ macro(nrn_configure_file file dir)
   configure_file(${bin_dir}/cmake_${file}.in ${bin_dir}/cmake_${file} @ONLY)
   execute_process(COMMAND cmp -s ${bin_dir}/cmake_${file} ${bin_dir}/${file}
                   RESULT_VARIABLE result)
-  if(${result} EQUAL 0)
+  if(result EQUAL 0)
     file(REMOVE ${bin_dir}/cmake_${file})
   else()
     file(RENAME ${bin_dir}/cmake_${file} ${bin_dir}/${file})

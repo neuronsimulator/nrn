@@ -120,8 +120,8 @@ extern int nrnmpi_myid;
 extern int nrn_nobanner_;
 ' > mod_func.c
 for i in $bfiles ; do
-	echo 'extern void _'$i'_reg(void);' >> mod_func.c
-done
+	echo 'extern void _'$i'_reg(void);'
+done >> mod_func.c
 echo '
 void modl_reg(){
   if (!nrn_nobanner_) if (nrnmpi_myid < 1) {
@@ -130,16 +130,16 @@ void modl_reg(){
 
 for i in $files
 do
-	echo '    fprintf(stderr," '$i'.mod");' >>mod_func.c
-done
+	echo '    fprintf(stderr," '$i'.mod");'
+done >>mod_func.c
 
 echo '    fprintf(stderr, "'$newline'");
   }' >>mod_func.c
 
 for i in $bfiles; do
-	echo '  _'$i'_reg();' >> mod_func.c
+	echo '  _'$i'_reg();'
 	MODOBJS="$MODOBJS $i.o"
-done
+done >> mod_func.c
 
 echo "}" >> mod_func.c
 
