@@ -22,19 +22,20 @@ git:
 addons:
     apt:
         packages:
-        - python3-pip
-        - python-pip
-        - python3-scipy
-        - python-scipy
-        - python3-tk
-        - python-tk
+        - doxygen
         - libopenmpi-dev
-        - openmpi-bin
         - libx11-dev
         - libxcomposite-dev
-        - doxygen
+        - openmpi-bin
+        - python-pip
+        - python-scipy
+        - python-tk
+        - python3-pip
+        - python3-scipy
+        - python3-tk
     homebrew:
         packages:
+        - doxygen
         - openmpi
         - xz
 virtualenv:
@@ -78,7 +79,7 @@ before_install:
   - export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python/;
 install:
   - $PIP install --user setuptools;
-  - $PIP install --user scipy matplotlib bokeh ipython cython --upgrade;
+  - $PIP install --user scipy matplotlib bokeh ipython cython pytest mpi4py --upgrade;
   # add cython location to PATH
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       export CYTHON_LIB=$($PIP show cython | grep Location);
@@ -159,4 +160,4 @@ deploy:
   target_branch: gh-pages
   on:
     branch: cmake
-    condition: $BUILD_DOCUMENTATION = ON && $CC_FOR_BUILD = gcc
+    condition: $BUILD_DOCUMENTATION = ON && $CC_FOR_BUILD = gcc && $TRAVIS_OS_NAME = linux

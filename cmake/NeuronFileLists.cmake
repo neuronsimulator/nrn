@@ -5,12 +5,12 @@ set(HEADER_FILES_TO_INSTALL
     cabvars.h
     cspmatrix.h
     cspredef.h
+    hoc.h
+    hoc_membf.h
     hocassrt.h
     hocdec.h
     hocgetsym.h
-    hoc.h
     hoclist.h
-    hoc_membf.h
     hocparse.h
     md1redef.h
     md2redef.h
@@ -28,20 +28,20 @@ set(HEADER_FILES_TO_INSTALL
     nrniv_mf.h
     nrnjava.h
     nrnoc_ml.h
-    scoplib.h
     nrnran123.h
     nrnredef.h
     oc_ansi.h
     ocfunc.h
     ocmisc.h
     options.h
+    scoplib.h
     scoplib_ansi.h
     section.h
     spconfig.h
     spmatrix.h)
 
 # =============================================================================
-# Lists of header populated using check_include_files
+# Lists of headers populated using check_include_files
 # =============================================================================
 set(NRN_HEADERS_INCLUDE_LIST)
 
@@ -246,37 +246,40 @@ set(NRNIV_FILE_LIST
 # =============================================================================
 # Files in sundials directory
 # =============================================================================
-nrn_create_file_list(SUNDIALS_CVODES
-                     "${PROJECT_SOURCE_DIR}/src/sundials/cvodes"
-                     cvband.c
-                     cvbandpre.c
-                     cvbbdpre.c
-                     cvdense.c
-                     cvdiag.c
-                     cvodea.c
-                     cvodes.c
-                     cvodesio.c
-                     cvspgmr.c)
+nrn_create_file_list(
+  SUNDIALS_CVODES
+  "${PROJECT_SOURCE_DIR}/src/sundials/cvodes"
+  cvband.c
+  cvbandpre.c
+  cvbbdpre.c
+  cvdense.c
+  cvdiag.c
+  cvodea.c
+  cvodes.c
+  cvodesio.c
+  cvspgmr.c)
 
-nrn_create_file_list(SUNDIALS_IDA
-                     "${PROJECT_SOURCE_DIR}/src/sundials/ida"
-                     idaband.c
-                     idabbdpre.c
-                     ida.c
-                     idadense.c
-                     idaic.c
-                     idaio.c
-                     idaspgmr.c)
-nrn_create_file_list(SUNDIALS_SHARED
-                     "${PROJECT_SOURCE_DIR}/src/sundials/shared"
-                     band.c
-                     dense.c
-                     iterative.c
-                     nvector.c
-                     nvector_serial.c
-                     smalldense.c
-                     spgmr.c
-                     sundialsmath.c)
+nrn_create_file_list(
+  SUNDIALS_IDA
+  "${PROJECT_SOURCE_DIR}/src/sundials/ida"
+  idaband.c
+  idabbdpre.c
+  ida.c
+  idadense.c
+  idaic.c
+  idaio.c
+  idaspgmr.c)
+nrn_create_file_list(
+  SUNDIALS_SHARED
+  "${PROJECT_SOURCE_DIR}/src/sundials/shared"
+  band.c
+  dense.c
+  iterative.c
+  nvector.c
+  nvector_serial.c
+  smalldense.c
+  spgmr.c
+  sundialsmath.c)
 set(NRN_SUNDIALS_SRC_FILES ${SUNDIALS_CVODES} ${SUNDIALS_IDA} ${SUNDIALS_SHARED})
 
 # meschach matrix sources

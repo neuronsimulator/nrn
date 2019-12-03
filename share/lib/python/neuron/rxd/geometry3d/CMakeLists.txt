@@ -30,7 +30,9 @@ nrn_configure_file(setup.py share/lib/python/neuron/rxd/geometry3d)
 
 set(basenames ctng surfaces graphicsPrimitives)
 
-if(NRN_ENABLE_RX3D AND NRN_ENABLE_MODULE_INSTALL AND NRN_ENABLE_PYTHON)
+if(NRN_ENABLE_RX3D
+   AND NRN_ENABLE_MODULE_INSTALL
+   AND NRN_ENABLE_PYTHON)
   # ~~~
   # After many failures, now following the autotools Makefile.am details.
   # ie. for MINGW, python3 uses msvc and python2 uses mingw32
@@ -41,7 +43,9 @@ if(NRN_ENABLE_RX3D AND NRN_ENABLE_MODULE_INSTALL AND NRN_ENABLE_PYTHON)
   # ~~~
 
   # Prepare a shell script to transform cython generated cpp files for mingw
-  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/cy_cpp_filt.sh "\
+  file(
+    WRITE ${CMAKE_CURRENT_BINARY_DIR}/cy_cpp_filt.sh
+    "\
 #!bash\n\
 set -ex\n\
 file=$1\n\
@@ -57,7 +61,9 @@ fi\n\
 ")
 
   # Prepare a shell script to run python setup.py
-  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/runpy.sh "\
+  file(
+    WRITE ${CMAKE_CURRENT_BINARY_DIR}/runpy.sh
+    "\
 #!bash\n\
 set -ex\n\
 echo runpy $*\n\
@@ -94,11 +100,12 @@ fi\n\
     set(bname ${CMAKE_CURRENT_BINARY_DIR}/${basename}.cpp)
     set(sname ${CMAKE_CURRENT_SOURCE_DIR}/${basename}.pyx)
 
-    add_custom_command(OUTPUT ${bname}
-                       COMMAND ${CYTHON_EXECUTABLE} ${basename}.pyx -o ${bname}
-                       COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/cy_cpp_filt.sh "${bname}"
-                       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                       DEPENDS ${sname} ${CMAKE_CURRENT_BINARY_DIR}/setup.py)
+    add_custom_command(
+      OUTPUT ${bname}
+      COMMAND ${CYTHON_EXECUTABLE} ${basename}.pyx -o ${bname}
+      COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/cy_cpp_filt.sh "${bname}"
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+      DEPENDS ${sname} ${CMAKE_CURRENT_BINARY_DIR}/setup.py)
 
     list(APPEND rxd_cython_cpp_files ${bname})
 
@@ -118,10 +125,11 @@ fi\n\
   math(EXPR num_pythons "${_num_pythons} - 1")
   foreach(val RANGE ${num_pythons})
     list(GET NRN_PYTHON_EXE_LIST ${val} pyexe)
-    add_custom_target(rx3dextensions_${val}
-                      COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/runpy.sh "${pyexe}"
-                      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                      DEPENDS rxd_cython_generated)
+    add_custom_target(
+      rx3dextensions_${val}
+      COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/runpy.sh "${pyexe}"
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+      DEPENDS rxd_cython_generated)
     list(APPEND rx3dextensions rx3dextensions_${val})
   endforeach(val)
 

@@ -1861,34 +1861,47 @@ bool file_exist(const std::string& path) {
   return f.good();
 }
 
+extern "C" {
+  extern char* neuron_home;
+}
+
 #if defined(HAVE_DLFCN_H)
 int nrncore_run(const char* arg) {
   corenrn_direct = true;
 
+  // name of coreneuron library based on platform
+#if defined(MINGW)
+  std::string corenrn_mechlib_name("libcorenrnmech.dll");
+#elif defined(DARWIN)
+  std::string corenrn_mechlib_name("libcorenrnmech.dylib");
+#else
+  std::string corenrn_mechlib_name("libcorenrnmech.so");
+#endif
+
   // first check if coreneuron specific library exist in <arhc>/.libs
   std::stringstream s_path;
-#if defined(MINGW)
-  s_path << NRNHOSTCPU << "/.libs/libcorenrnmech.dll";
-#elif defined(DARWIN)
-  s_path << NRNHOSTCPU << "/.libs/libcorenrnmech.dylib";
-#else
-  s_path << NRNHOSTCPU << "/.libs/libcorenrnmech.so";
-#endif
+  s_path << NRNHOSTCPU << "/.libs/" << corenrn_mechlib_name;
+
   std::string path = s_path.str();
   const char* corenrn_lib = path.c_str();
 
-  // otherwise, look for CORENEURONLIB env variable
   if (!file_exist(corenrn_lib)) {
+    // otherwise, look for CORENEURONLIB env variable
     corenrn_lib = getenv("CORENEURONLIB");
     if (!corenrn_lib) {
-      hoc_execerror("nrncore_run needs a CORENEURONLIB environment variable", NULL);
+      s_path.str("");
+      // last fallback is minimal library with internal mechanisms
+      s_path << neuron_home << "/../../lib/" << corenrn_mechlib_name;
+      path = s_path.str();
+      corenrn_lib = path.c_str();
     }
   }
+
   void* handle = dlopen(corenrn_lib, RTLD_NOW|RTLD_GLOBAL);
   if (!handle) {
     fputs(dlerror(), stderr);
     fputs("\n", stderr);
-    hoc_execerror("Could not dlopen $CORENEURONLIB: ", corenrn_lib);
+    hoc_execerror("Could not dlopen CoreNEURON mechanism library : ", corenrn_lib);
   }else{
     void* sym = dlsym(handle, "corenrn_version");
     if (!sym) {

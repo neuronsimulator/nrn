@@ -9,7 +9,9 @@ set(PROJECT_VERSION_MINOR 8)
 set(CMAKE_CXX_STANDARD 98)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Empty or one of Debug, Release, RelWithDebInfo")
+set(CMAKE_BUILD_TYPE
+    RelWithDebInfo
+    CACHE STRING "Empty or one of Debug, Release, RelWithDebInfo")
 set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 
 # =============================================================================
@@ -65,25 +67,28 @@ option(NRN_ENABLE_TESTS "Enable unit tests" OFF)
 # Rx3D Cython generated files compiler optimization level. 0 is default.
 # ~~~
 option(NRN_ENABLE_MODULE_INSTALL "Enable installation of NEURON Python module" ON)
-set(NRN_MODULE_INSTALL_OPTIONS ""
+set(NRN_MODULE_INSTALL_OPTIONS
+    ""
     CACHE STRING "setup.py options, leave empty for --home <build dir>")
 
 option(NRN_ENABLE_PYTHON_DYNAMIC "Enable dynamic Python version support" OFF)
-set(
-  NRN_PYTHON_DYNAMIC ""
-  CACHE
-    STRING
-    "semicolon (;) separated list of python executables to create interface for (default python3)")
+set(NRN_PYTHON_DYNAMIC
+    ""
+    CACHE
+      STRING
+      "semicolon (;) separated list of python executables to create interface for (default python3)"
+)
 
 option(NRN_ENABLE_MPI_DYNAMIC "Enable dynamic MPI library support" OFF)
-set(
-  NRN_MPI_DYNAMIC ""
-  CACHE
-    STRING
-    "semicolon (;) separated list of MPI bin directories to build against (default to first found mpi)"
-  )
+set(NRN_MPI_DYNAMIC
+    ""
+    CACHE
+      STRING
+      "semicolon (;) separated list of MPI bin directories to build against (default to first found mpi)"
+)
 
-set(NRN_RX3D_OPT_LEVEL "0"
+set(NRN_RX3D_OPT_LEVEL
+    "0"
     CACHE STRING "Optimization level for Cython generated files (non-zero may compile slowly)")
 
 # =============================================================================
@@ -95,7 +100,6 @@ include(MacroHelper)
 include(RpathHelper)
 include(PlatformHelper)
 include(ExternalProjectHelper)
-include(FindCython)
 include(FindPythonModule)
 
 # =============================================================================
@@ -106,7 +110,11 @@ find_package(FLEX)
 find_package(Threads QUIET)
 find_package(readline)
 if(NRN_ENABLE_RX3D)
-  find_package(Cython)
+  if(NOT NRN_ENABLE_PYTHON)
+    message(SEND_ERROR "NRN_ENABLE_RX3D requires NRN_ENABLE_PYTHON feature.")
+  else()
+    find_package(Cython REQUIRED)
+  endif()
 endif()
 if(MINGW)
   find_package(Termcap REQUIRED)
@@ -119,11 +127,12 @@ find_package(Doxygen QUIET)
 if(DOXYGEN_FOUND)
   # generate Doxyfile with correct source paths
   configure_file(${PROJECT_SOURCE_DIR}/docs/Doxyfile.in ${PROJECT_BINARY_DIR}/Doxyfile)
-  add_custom_target(doxygen
-                    COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
-                    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-                    COMMENT "Generating API documentation with Doxygen"
-                    VERBATIM)
+  add_custom_target(
+    doxygen
+    COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    COMMENT "Generating API documentation with Doxygen"
+    VERBATIM)
 endif()
 
 # =============================================================================
@@ -143,24 +152,24 @@ endif()
 # Enable Interviews
 # =============================================================================
 if(NRN_ENABLE_INTERVIEWS)
-  # on windows x11 is not required
+  # x11 is not required on windows
   if(NOT NRN_WINDOWS_BUILD)
     find_package(X11 QUIET)
     if(NOT X11_FOUND)
       if(APPLE)
-        message(FATAL_ERROR "You must install XQuartz from https://www.xquartz.org/ to build iv")
+        message(SEND_ERROR "You must install XQuartz from https://www.xquartz.org/ to build iv")
       else()
         message(
-          FATAL_ERROR
+          SEND_ERROR
             "You must install X11 to build iv e.g. 'apt install libx11-dev libxcomposite-dev' on Ubuntu"
-          )
+        )
       endif()
     endif()
     include_directories(${X11_INCLUDE_DIR})
   endif()
 
   find_package(iv QUIET PATHS ${IV_DIR}/share/cmake ${IV_DIR})
-  if(${iv_FOUND})
+  if(iv_FOUND)
     message(STATUS "Using external Interviews from ${IV_DIR}")
     get_target_property(IV_INCLUDE_DIR interviews INTERFACE_INCLUDE_DIRECTORIES)
   else()
@@ -204,7 +213,7 @@ endif()
 # =============================================================================
 if(NRN_ENABLE_CORENEURON)
   find_package(coreneuron QUIET PATHS ${CORENEURON_DIR}/share/cmake ${CORENEURON_DIR})
-  if(${coreneuron_FOUND})
+  if(coreneuron_FOUND)
     message(STATUS "Using external CoreNEURON from ${CORENEURON_DIR}")
   else()
     message(STATUS "Building CoreNEURON from submodule")
@@ -276,40 +285,28 @@ endif()
 
 # =============================================================================
 # ~~~
-# Update hh.mod for CoreNEURON compatibility and keep hh.mod original file to
-# revert to it if CoreNEURON is disabled
+# Update hh.mod for CoreNEURON compatibility
+# - Replace GLOBAL variable by RANHE
+# - Comment out TABLE
 # ~~~
 # =============================================================================
 if(NRN_ENABLE_CORENEURON)
-  add_custom_target(hh_update
-                    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod
-                            ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod.orig
-                    COMMAND sed "'s/GLOBAL/RANGE/'" ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod >
-                            ${CMAKE_BINARY_DIR}/hh.mod.1
-                    COMMAND sed "'s/ TABLE/:TABLE/'" ${CMAKE_BINARY_DIR}/hh.mod.1 >
-                            ${CMAKE_BINARY_DIR}/hh.mod.2
-                    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/hh.mod.2
-                            ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod
-                    COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/hh.mod.1
-                            ${CMAKE_BINARY_DIR}/hh.mod.2
-                    COMMENT "Update hh.mod for CoreNEURON compatibility")
-  add_dependencies(nrniv hh_update)
+  set(GLOBAL_VAR_TOGGLE_COMMAND "'s/ GLOBAL minf/ RANGE minf/'")
+  set(TABLE_VAR_TOGGLE_COMMAND "'s/ TABLE minf/ :TABLE minf/'")
 else()
-  if(EXISTS "${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod.orig")
-    add_custom_target(hh_restore
-                      COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod.orig
-                              ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod
-                      COMMAND -E remove ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod.orig
-                      COMMENT "Restore hh.mod for NEURON")
-    add_dependencies(nrniv hh_restore)
-  else()
-    add_custom_target(hh_orig
-                      COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod
-                              ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod.orig
-                      COMMENT "Copy hh.mod for NEURON")
-    add_dependencies(nrniv hh_orig)
-  endif()
+  set(GLOBAL_VAR_TOGGLE_COMMAND "'s/ RANGE minf/ GLOBAL minf/'")
+  set(TABLE_VAR_TOGGLE_COMMAND "'s/ :TABLE minf/ TABLE minf/'")
 endif()
+add_custom_target(
+  hh_update
+  COMMAND sed ${GLOBAL_VAR_TOGGLE_COMMAND} ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod >
+          ${CMAKE_BINARY_DIR}/hh.mod.1
+  COMMAND sed ${TABLE_VAR_TOGGLE_COMMAND} ${CMAKE_BINARY_DIR}/hh.mod.1 > ${CMAKE_BINARY_DIR}/hh.mod.2
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/hh.mod.2
+          ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod
+  COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/hh.mod.1 ${CMAKE_BINARY_DIR}/hh.mod.2
+  COMMENT "Update hh.mod for CoreNEURON compatibility")
+add_dependencies(nrniv hh_update)
 
 # =============================================================================
 # Add tests if enabled
@@ -321,6 +318,9 @@ if(NRN_ENABLE_TESTS)
   include(CTest)
   include(Catch)
   find_python_module(pytest)
+  if(NOT PYTEST_FOUND)
+    message(SEND_ERROR "pytest Python package is required.")
+  endif()
   add_subdirectory(test)
 endif()
 
@@ -337,11 +337,8 @@ install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/cleanup
 
 # find headers to install
 nrn_find_project_files(NRN_HEADERS_PATHS ${HEADER_FILES_TO_INSTALL})
-file(COPY
-     ${NRN_HEADERS_PATHS}
-     ${PROJECT_BINARY_DIR}/src/oc/nrnpthread.h
-     DESTINATION
-     ${PROJECT_BINARY_DIR}/include)
+file(COPY ${NRN_HEADERS_PATHS} ${PROJECT_BINARY_DIR}/src/oc/nrnpthread.h
+     DESTINATION ${PROJECT_BINARY_DIR}/include)
 install(DIRECTORY ${PROJECT_BINARY_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 # for external coreneuron, nrnivmodl-core should be install

@@ -47,14 +47,20 @@ set(BUILD_NRNPYTHON_DYNAMIC_FALSE "#")
 
 if(NRN_ENABLE_PYTHON_DYNAMIC)
   if("${NRN_PYTHON_DYNAMIC}" STREQUAL "")
-    set(NRN_PYTHON_EXE_LIST ${PYTHON_EXECUTABLE} CACHE INTERNAL "" FORCE)
+    set(NRN_PYTHON_EXE_LIST
+        ${PYTHON_EXECUTABLE}
+        CACHE INTERNAL "" FORCE)
   else()
-    set(NRN_PYTHON_EXE_LIST ${NRN_PYTHON_DYNAMIC} CACHE INTERNAL "" FORCE)
+    set(NRN_PYTHON_EXE_LIST
+        ${NRN_PYTHON_DYNAMIC}
+        CACHE INTERNAL "" FORCE)
   endif()
 else()
   set(BUILD_NRNPYTHON_DYNAMIC_TRUE "#")
   set(BUILD_NRNPYTHON_DYNAMIC_FALSE "")
-  set(NRN_PYTHON_EXE_LIST ${PYTHON_EXECUTABLE} CACHE INTERNAL "" FORCE)
+  set(NRN_PYTHON_EXE_LIST
+      ${PYTHON_EXECUTABLE}
+      CACHE INTERNAL "" FORCE)
 endif()
 
 if(NRN_MACOS_BUILD)
@@ -111,12 +117,11 @@ if(NRN_ENABLE_MODULE_INSTALL)
     set(install_path ${PROJECT_BINARY_DIR})
     # replace windows path of the form C:/msys64 to C:\msys64
     if(MINGW)
-      string(REPLACE ":/"
-                     ":\\\\"
-                     install_path
-                     "${install_path}")
+      string(REPLACE ":/" ":\\\\" install_path "${install_path}")
     endif()
-    set(NRN_MODULE_INSTALL_OPTIONS "--home" "${install_path}" CACHE INTERNAL "" FORCE)
+    set(NRN_MODULE_INSTALL_OPTIONS
+        "--home" "${install_path}"
+        CACHE INTERNAL "" FORCE)
   endif()
 
   # ~~~
@@ -127,20 +132,19 @@ if(NRN_ENABLE_MODULE_INSTALL)
   set(binary_dir_filename ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp)
   set(source_dir_filename ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp)
   set(inithoc_hdeps
-      ${CMAKE_CURRENT_SOURCE_DIR}/../oc/nrnmpi.h
-      ${CMAKE_CURRENT_BINARY_DIR}/../oc/nrnmpiuse.h
-      ${CMAKE_CURRENT_BINARY_DIR}/../oc/nrnpthread.h
-      ${CMAKE_CURRENT_BINARY_DIR}/nrnpython_config.h)
+      ${CMAKE_CURRENT_SOURCE_DIR}/../oc/nrnmpi.h ${CMAKE_CURRENT_BINARY_DIR}/../oc/nrnmpiuse.h
+      ${CMAKE_CURRENT_BINARY_DIR}/../oc/nrnpthread.h ${CMAKE_CURRENT_BINARY_DIR}/nrnpython_config.h)
 
-  add_custom_command(OUTPUT ${binary_dir_filename}
-                     COMMAND cp ${source_dir_filename} ${binary_dir_filename}
-                     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                     DEPENDS ${source_dir_filename} ${CMAKE_CURRENT_BINARY_DIR}/setup.py
-                             ${inithoc_hdeps})
+  add_custom_command(
+    OUTPUT ${binary_dir_filename}
+    COMMAND cp ${source_dir_filename} ${binary_dir_filename}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    DEPENDS ${source_dir_filename} ${CMAKE_CURRENT_BINARY_DIR}/setup.py ${inithoc_hdeps})
 
-  add_custom_target(hoc_module ALL
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                    DEPENDS ${binary_dir_filename})
+  add_custom_target(
+    hoc_module ALL
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    DEPENDS ${binary_dir_filename})
 
   # ~~~
   # For DYNAMIC python, inithoc module name convention is different for
@@ -148,55 +152,59 @@ if(NRN_ENABLE_MODULE_INSTALL)
   # to know whether they are compiled via the cmake or autotools build system.
   # (note: see also for inithoc.cpp via setup.py)
   # ~~~
-  set_property(SOURCE ${PROJECT_SOURCE_DIR}/src/nrnpython/nrnpy_hoc.cpp
-               APPEND
-               PROPERTY COMPILE_DEFINITIONS NRNCMAKE)
+  set_property(
+    SOURCE ${PROJECT_SOURCE_DIR}/src/nrnpython/nrnpy_hoc.cpp
+    APPEND
+    PROPERTY COMPILE_DEFINITIONS NRNCMAKE)
 
   # =============================================================================
   # Copy necessary files to build directory
   # =============================================================================
 
-  add_custom_command(TARGET hoc_module PRE_BUILD
-                     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                             ${PROJECT_BINARY_DIR}/share/lib/python/neuron/rxd/constants.py
-                             ${NRN_BUILD_SHARE_DIR}/lib/python/neuron/rxd/constants.py)
+  add_custom_command(
+    TARGET hoc_module PRE_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${PROJECT_BINARY_DIR}/share/lib/python/neuron/rxd/constants.py
+            ${NRN_BUILD_SHARE_DIR}/lib/python/neuron/rxd/constants.py)
 
-  add_custom_command(TARGET hoc_module PRE_BUILD
-                     COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/lib
-                             ${NRN_BUILD_SHARE_DIR}/lib
-                     COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/demo
-                             ${PROJECT_BINARY_DIR}/share/nrn/demo)
+  add_custom_command(
+    TARGET hoc_module PRE_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/lib
+            ${NRN_BUILD_SHARE_DIR}/lib
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/demo
+            ${PROJECT_BINARY_DIR}/share/nrn/demo)
 
   # for each python detected / provided by user, install module at install time
   foreach(pyexe ${NRN_PYTHON_EXE_LIST})
-    add_custom_command(TARGET hoc_module POST_BUILD
-                       COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                               ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
-                               ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
-                       COMMAND ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}
-                       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                       COMMENT "Building python module with: ${pyexe}")
+    add_custom_command(
+      TARGET hoc_module POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
+              ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
+      COMMAND ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+      COMMENT "Building python module with: ${pyexe}")
   endforeach(pyexe)
   add_dependencies(hoc_module nrniv_lib)
 
   # =============================================================================
   # Copy necessary files to build directory
   # =============================================================================
-  add_custom_command(TARGET hoc_module PRE_BUILD
-                     COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/lib
-                             ${PROJECT_BINARY_DIR}/share/nrn/lib
-                     COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/demo
-                             ${PROJECT_BINARY_DIR}/share/nrn/demo)
+  add_custom_command(
+    TARGET hoc_module PRE_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/lib
+            ${PROJECT_BINARY_DIR}/share/nrn/lib
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/demo
+            ${PROJECT_BINARY_DIR}/share/nrn/demo)
 
   # for each python detected / provided by user, install module at install time
   foreach(pyexe ${NRN_PYTHON_EXE_LIST})
-    add_custom_command(TARGET hoc_module POST_BUILD
-                       COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                               ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
-                               ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
-                       COMMAND ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}
-                       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                       COMMENT "Building python module with: ${pyexe}")
+    add_custom_command(
+      TARGET hoc_module POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
+              ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
+      COMMAND ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+      COMMENT "Building python module with: ${pyexe}")
   endforeach(pyexe)
   add_dependencies(hoc_module nrniv_lib)
 
