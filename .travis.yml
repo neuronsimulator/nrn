@@ -35,9 +35,9 @@ addons:
         - python3-tk
     homebrew:
         packages:
+        - doxygen
         - openmpi
         - xz
-        - doxygen
 virtualenv:
     system_site_packages: true
 
