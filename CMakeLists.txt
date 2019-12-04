@@ -308,7 +308,7 @@ else()
       hh_restore
       COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod.orig
               ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod
-      COMMAND -E remove ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod.orig
+      COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod.orig
       COMMENT "Restore hh.mod for NEURON")
     add_dependencies(nrniv hh_restore)
   else()
