@@ -17,13 +17,13 @@
 # =============================================================================
 flex_target(modlunitlexer ${NRN_MODLUNIT_SRC_DIR}/lex.l ${NRN_MODLUNIT_SRC_DIR}/lex.c)
 
-bison_target(modlunitparser
-             ${NRN_MODLUNIT_SRC_DIR}/parse1.y
-             ${NRN_MODLUNIT_SRC_DIR}/parse1.c
-             DEFINES_FILE
-             ${NRN_MODLUNIT_SRC_DIR}/parse1.h)
+bison_target(modlunitparser ${NRN_MODLUNIT_SRC_DIR}/parse1.y ${NRN_MODLUNIT_SRC_DIR}/parse1.c
+             DEFINES_FILE ${NRN_MODLUNIT_SRC_DIR}/parse1.h)
 
-set_property(SOURCE ${NRN_MODLUNIT_SRC_FILES} APPEND PROPERTY COMPILE_DEFINITIONS NRNUNIT=1)
+set_property(
+  SOURCE ${NRN_MODLUNIT_SRC_FILES}
+  APPEND
+  PROPERTY COMPILE_DEFINITIONS NRNUNIT=1)
 
 add_executable(modlunit ${NRN_MODLUNIT_SRC_FILES})
 
@@ -32,25 +32,16 @@ add_executable(modlunit ${NRN_MODLUNIT_SRC_FILES})
 # =============================================================================
 flex_target(nocmodllexer ${NRN_NMODL_SRC_DIR}/lex.l ${NRN_NMODL_SRC_DIR}/lex.c)
 
-bison_target(nocmodlparser
-             ${NRN_NMODL_SRC_DIR}/parse1.y
-             ${NRN_NMODL_SRC_DIR}/parse1.c
-             DEFINES_FILE
+bison_target(nocmodlparser ${NRN_NMODL_SRC_DIR}/parse1.y ${NRN_NMODL_SRC_DIR}/parse1.c DEFINES_FILE
              ${NRN_NMODL_SRC_DIR}/parse1.h)
 
-bison_target(nocmodlparser
-             ${NRN_NMODL_SRC_DIR}/diffeq.y
-             ${NRN_NMODL_SRC_DIR}/diffeq.c
-             DEFINES_FILE
+bison_target(nocmodlparser ${NRN_NMODL_SRC_DIR}/diffeq.y ${NRN_NMODL_SRC_DIR}/diffeq.c DEFINES_FILE
              ${NRN_NMODL_SRC_DIR}/diffeq.h)
 
-set_property(SOURCE ${NRN_NMODL_SRC_FILES}
-             APPEND
-             PROPERTY COMPILE_DEFINITIONS
-                      NMODL=1
-                      NOCMODL=1
-                      CVODE=1
-                      VECTORIZE=1)
+set_property(
+  SOURCE ${NRN_NMODL_SRC_FILES}
+  APPEND
+  PROPERTY COMPILE_DEFINITIONS NMODL=1 NOCMODL=1 CVODE=1 VECTORIZE=1)
 
 add_executable(nocmodl ${NRN_NMODL_SRC_FILES})
 
@@ -67,20 +58,14 @@ set_source_files_properties(${NRN_MODFILE_C} PROPERTIES GENERATED TRUE)
 # =============================================================================
 # Bison parser for HOC interpreter
 # =============================================================================
-bison_target(ocparser
-             ${NRN_OC_SRC_DIR}/parse.y
-             ${NRN_OC_SRC_DIR}/parse.c
-             DEFINES_FILE
+bison_target(ocparser ${NRN_OC_SRC_DIR}/parse.y ${NRN_OC_SRC_DIR}/parse.c DEFINES_FILE
              ${NRN_OC_SRC_DIR}/parse.h)
 
 # =============================================================================
 # Source code lists
 # =============================================================================
-set(NRN_BASE_SRC_FILES
-    ${NRN_IVOC_SRC_FILES}
-    ${NRN_NRNIV_SRC_FILES}
-    ${NRN_NRNOC_SRC_FILES}
-    ${NRN_OC_SRC_FILES})
+set(NRN_BASE_SRC_FILES ${NRN_IVOC_SRC_FILES} ${NRN_NRNIV_SRC_FILES} ${NRN_NRNOC_SRC_FILES}
+                       ${NRN_OC_SRC_FILES})
 
 set(NRN_NRNIV_LIB_SRC_FILES
     ${NRN_BASE_SRC_FILES}
@@ -151,14 +136,10 @@ set(NRN_INCLUDE_DIRS
 # git2version_h.sh and nrnversion.h should only be changed if that output
 # is different from the contents of nrnversion.h
 # ~~~
-add_custom_target(nrnversion_h
-                  ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh
-                  ${PROJECT_SOURCE_DIR}
-                  >
-                  nrnversion.h.tmp
-                  COMMAND ${CMAKE_COMMAND} -E copy_if_different nrnversion.h.tmp
-                          ${NRN_NRNOC_SRC_DIR}/nrnversion.h
-                  DEPENDS ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh)
+add_custom_target(
+  nrnversion_h ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh ${PROJECT_SOURCE_DIR} > nrnversion.h.tmp
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different nrnversion.h.tmp ${NRN_NRNOC_SRC_DIR}/nrnversion.h
+  DEPENDS ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh)
 
 add_custom_command(OUTPUT ${NRN_NRNOC_SRC_DIR}/nrnversion.h DEPENDS nrnversion_h)
 
@@ -166,100 +147,87 @@ add_custom_command(OUTPUT ${NRN_NRNOC_SRC_DIR}/nrnversion.h DEPENDS nrnversion_h
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/sundials/shared)
 
 # generate hocusr.h
-add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/src/nrnoc/hocusr.h
-                   COMMAND ${CMAKE_C_COMPILER} -E -I${NRN_NRNOC_SRC_DIR} -I${NRN_OC_SRC_DIR}
-                           ${NRN_NRNOC_SRC_DIR}/neuron.h > neuron.tmp1
-                   COMMAND sed "/^#/d" neuron.tmp1 > neuron.tmp2
-                   COMMAND python ${NRN_OC_SRC_DIR}/mk_hocusr_h.py < neuron.tmp2 > temp2hoc
-                   COMMAND sed "s/\\\"nrnhoc_topology\\\"/\\\"topology\\\"/" temp2hoc >
-                           ${PROJECT_BINARY_DIR}/src/nrnoc/hocusr.h
-                   DEPENDS ${NRN_NRNOC_SRC_DIR}/neuron.h ${NRN_OC_SRC_DIR}/mk_hocusr_h.py)
+add_custom_command(
+  OUTPUT ${PROJECT_BINARY_DIR}/src/nrnoc/hocusr.h
+  COMMAND
+    ${CMAKE_C_COMPILER} -E -I${NRN_NRNOC_SRC_DIR} -I${NRN_OC_SRC_DIR} ${NRN_NRNOC_SRC_DIR}/neuron.h
+    > neuron.tmp1
+  COMMAND sed "/^#/d" neuron.tmp1 > neuron.tmp2
+  COMMAND python ${NRN_OC_SRC_DIR}/mk_hocusr_h.py < neuron.tmp2 > temp2hoc
+  COMMAND sed "s/\\\"nrnhoc_topology\\\"/\\\"topology\\\"/" temp2hoc >
+          ${PROJECT_BINARY_DIR}/src/nrnoc/hocusr.h
+  DEPENDS ${NRN_NRNOC_SRC_DIR}/neuron.h ${NRN_OC_SRC_DIR}/mk_hocusr_h.py)
 
 # header for dynamic mpi
 if(NRN_ENABLE_MPI_DYNAMIC)
-  add_custom_command(OUTPUT ${NRNMPI_DYNAMIC_INCLUDE_FILE}
-                     COMMAND sh mkdynam.sh
-                     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/nrnmpi
-                     DEPENDS ${PROJECT_SOURCE_DIR}/src/nrnmpi/mkdynam.sh
-                             ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpidec.h)
+  add_custom_command(
+    OUTPUT ${NRNMPI_DYNAMIC_INCLUDE_FILE}
+    COMMAND sh mkdynam.sh
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/nrnmpi
+    DEPENDS ${PROJECT_SOURCE_DIR}/src/nrnmpi/mkdynam.sh
+            ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpidec.h)
 endif()
 
 # =============================================================================
 # Various macro definitions for compiling differen files
 # =============================================================================
 # ~~~
-set_property(SOURCE ${NRN_OC_SRC_FILES}
-             APPEND
-             PROPERTY COMPILE_DEFINITIONS
-                      OOP=1
-                      HOC=1
-                      INTERVIEWS=1)
+set_property(
+  SOURCE ${NRN_OC_SRC_FILES}
+  APPEND
+  PROPERTY COMPILE_DEFINITIONS OOP=1 HOC=1 INTERVIEWS=1)
 
-set_property(SOURCE ${NRN_NRNOC_SRC_DIR}/code.c ${NRN_NRNOC_SRC_DIR}/hoc_init.c
-                    ${NRN_NRNOC_SRC_DIR}/hoc_oop.c
-             APPEND
-             PROPERTY COMPILE_DEFINITIONS CABLE=1)
+set_property(
+  SOURCE ${NRN_NRNOC_SRC_DIR}/code.c ${NRN_NRNOC_SRC_DIR}/hoc_init.c ${NRN_NRNOC_SRC_DIR}/hoc_oop.c
+  APPEND
+  PROPERTY COMPILE_DEFINITIONS CABLE=1)
 
-set_property(SOURCE ${PROJECT_SOURCE_DIR}/src/nrniv/nrnpy.cpp
-                    ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.c
-             APPEND
-             PROPERTY COMPILE_DEFINITIONS NRNCMAKE)
+set_property(
+  SOURCE ${PROJECT_SOURCE_DIR}/src/nrniv/nrnpy.cpp ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.c
+  APPEND
+  PROPERTY COMPILE_DEFINITIONS NRNCMAKE)
 
 set_property(
   SOURCE ${PROJECT_SOURCE_DIR}/src/nrniv/nrnpy.cpp
   APPEND
   PROPERTY COMPILE_DEFINITIONS USE_LIBNRNPYTHON_MAJORMINOR=${USE_LIBNRNPYTHON_MAJORMINOR})
 
-set_property(SOURCE ${NRN_IVOC_SRC_FILES}
-             APPEND
-             PROPERTY COMPILE_DEFINITIONS
-                      USEMATRIX=1
-                      USEGNU=1
-                      USEBBS=1)
+set_property(
+  SOURCE ${NRN_IVOC_SRC_FILES}
+  APPEND
+  PROPERTY COMPILE_DEFINITIONS USEMATRIX=1 USEGNU=1 USEBBS=1)
 
-set_property(SOURCE ${NRN_NRNIV_SRC_FILES}
-             APPEND
-             PROPERTY COMPILE_DEFINITIONS
-                      USEMATRIX=1
-                      USECVODE=1
-                      CABLE=1
-                      USEBBS=1
-                      OOP=1)
+set_property(
+  SOURCE ${NRN_NRNIV_SRC_FILES}
+  APPEND
+  PROPERTY COMPILE_DEFINITIONS USEMATRIX=1 USECVODE=1 CABLE=1 USEBBS=1 OOP=1)
 
-set_property(SOURCE ${NRN_SCOPMATH_SRC_FILES} APPEND PROPERTY COMPILE_DEFINITIONS HOC=1)
+set_property(
+  SOURCE ${NRN_SCOPMATH_SRC_FILES}
+  APPEND
+  PROPERTY COMPILE_DEFINITIONS HOC=1)
 
-set_property(SOURCE ${NRN_SCOPMATH_SRC_FILES}
-             APPEND
-             PROPERTY COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src/scopmath")
+set_property(
+  SOURCE ${NRN_SCOPMATH_SRC_FILES}
+  APPEND
+  PROPERTY COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src/scopmath")
 
-set_source_files_properties(${NRN_NRNOC_SRC_DIR}/code.c
-                            PROPERTIES
-                            OBJECT_DEPENDS
+set_source_files_properties(${NRN_NRNOC_SRC_DIR}/code.c PROPERTIES OBJECT_DEPENDS
                             ${NRN_OC_SRC_DIR}/parse.h)
 
-set_source_files_properties(${NRN_NRNOC_SRC_DIR}/nrnversion.c
-                            PROPERTIES
-                            OBJECT_DEPENDS
+set_source_files_properties(${NRN_NRNOC_SRC_DIR}/nrnversion.c PROPERTIES OBJECT_DEPENDS
                             ${PROJECT_SOURCE_DIR}/src/nrnoc/nrnversion.h)
 
-set_source_files_properties(${NRN_OC_SRC_DIR}/hocusr.c
-                            PROPERTIES
-                            OBJECT_DEPENDS
+set_source_files_properties(${NRN_OC_SRC_DIR}/hocusr.c PROPERTIES OBJECT_DEPENDS
                             ${PROJECT_BINARY_DIR}/src/nrnoc/hocusr.h)
 
 if(NRN_ENABLE_MPI_DYNAMIC)
-  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.c
-                              PROPERTIES
-                              OBJECT_DEPENDS
+  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.c PROPERTIES
+                              OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
+  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi.c PROPERTIES OBJECT_DEPENDS
                               ${NRNMPI_DYNAMIC_INCLUDE_FILE})
-  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi.c
-                              PROPERTIES
-                              OBJECT_DEPENDS
-                              ${NRNMPI_DYNAMIC_INCLUDE_FILE})
-  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/bbsmpipack.c
-                              PROPERTIES
-                              OBJECT_DEPENDS
-                              ${NRNMPI_DYNAMIC_INCLUDE_FILE})
+  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/bbsmpipack.c PROPERTIES
+                              OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
 endif()
 # ~~~
 

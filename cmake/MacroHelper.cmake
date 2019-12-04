@@ -14,7 +14,8 @@ set(CMAKE_REQUIRED_QUIET TRUE)
 # =============================================================================
 macro(nrn_check_dir_exists HEADER VARIABLE)
   # code template to check existence of DIR
-  set(CONFTEST_DIR_TPL "
+  set(CONFTEST_DIR_TPL
+      "
     #include <sys/types.h>
     #include <@dir_header@>
 
@@ -27,10 +28,7 @@ macro(nrn_check_dir_exists HEADER VARIABLE)
   check_include_files(${HEADER} HAVE_HEADER)
   if(${HAVE_HEADER})
     # if header is found, create a code from template
-    string(REPLACE "@dir_header@"
-                   ${HEADER}
-                   CONFTEST_DIR
-                   "${CONFTEST_DIR_TPL}")
+    string(REPLACE "@dir_header@" ${HEADER} CONFTEST_DIR "${CONFTEST_DIR_TPL}")
     file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/conftest.c ${CONFTEST_DIR})
     # try to compile
     try_compile(RESULT_VAR ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/conftest.c)
@@ -48,7 +46,8 @@ endmacro()
 # =============================================================================
 macro(nrn_check_type_exists HEADER TYPE DEFAULT_TYPE VARIABLE)
   # code template to check existence of specific type
-  set(CONFTEST_TYPE_TPL "
+  set(CONFTEST_TYPE_TPL
+      "
     #include <@header@>
 
     int main () {
@@ -56,14 +55,8 @@ macro(nrn_check_type_exists HEADER TYPE DEFAULT_TYPE VARIABLE)
         return 0\;
       return 0\;
     }")
-  string(REPLACE "@header@"
-                 ${HEADER}
-                 CONFTEST_TYPE
-                 "${CONFTEST_TYPE_TPL}")
-  string(REPLACE "@type@"
-                 ${TYPE}
-                 CONFTEST_TYPE
-                 "${CONFTEST_TYPE}")
+  string(REPLACE "@header@" ${HEADER} CONFTEST_TYPE "${CONFTEST_TYPE_TPL}")
+  string(REPLACE "@type@" ${TYPE} CONFTEST_TYPE "${CONFTEST_TYPE}")
   file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/conftest.c ${CONFTEST_TYPE})
 
   try_compile(RESULT_VAR ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/conftest.c)
@@ -78,7 +71,8 @@ endmacro()
 # =============================================================================
 macro(nrn_check_signal_return_type VARIABLE)
   # code template to check signal support
-  set(CONFTEST_RETSIGTYPE "
+  set(CONFTEST_RETSIGTYPE
+      "
     #include <sys/types.h>
     #include <signal.h>
 
@@ -121,21 +115,22 @@ macro(nrn_configure_file file dir)
   endif()
   set(bin_dir ${PROJECT_BINARY_DIR}/${out_dir})
   file(MAKE_DIRECTORY ${bin_dir})
-  execute_process(COMMAND sed "s/\#undef *\\(.*\\)/\#cmakedefine \\1 @\\1@/"
-                  INPUT_FILE ${PROJECT_SOURCE_DIR}/${dir}/${file}.in
-                  OUTPUT_FILE ${bin_dir}/cmake_${file}.in)
+  execute_process(
+    COMMAND sed "s/\#undef *\\(.*\\)/\#cmakedefine \\1 @\\1@/"
+    INPUT_FILE ${PROJECT_SOURCE_DIR}/${dir}/${file}.in
+    OUTPUT_FILE ${bin_dir}/cmake_${file}.in)
   configure_file(${bin_dir}/cmake_${file}.in ${bin_dir}/cmake_${file} @ONLY)
-  execute_process(COMMAND cmp -s ${bin_dir}/cmake_${file} ${bin_dir}/${file}
-                  RESULT_VARIABLE result)
+  execute_process(COMMAND cmp -s ${bin_dir}/cmake_${file} ${bin_dir}/${file} RESULT_VARIABLE result)
   if(result EQUAL 0)
     file(REMOVE ${bin_dir}/cmake_${file})
   else()
     file(RENAME ${bin_dir}/cmake_${file} ${bin_dir}/${file})
   endif()
   file(REMOVE ${bin_dir}/cmake_${file}.in)
-  set_property(DIRECTORY
-               APPEND
-               PROPERTY CMAKE_CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/${dir}/${file}.in)
+  set_property(
+    DIRECTORY
+    APPEND
+    PROPERTY CMAKE_CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/${dir}/${file}.in)
 endmacro()
 
 # =============================================================================
@@ -226,13 +221,12 @@ endmacro()
 # Run nocmodl to convert NMODL to C
 # =============================================================================
 macro(nocmodl_mod_to_c modfile_basename)
-  add_custom_command(OUTPUT ${modfile_basename}.c
-                     COMMAND ${CMAKE_COMMAND} -E env
-                             "MODLUNIT=${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
-                             ${PROJECT_BINARY_DIR}/bin/nocmodl ${modfile_basename}.mod
-                     COMMAND sed "'s/_reg()/_reg_()/'" ${modfile_basename}.c >
-                             ${modfile_basename}.c.tmp
-                     COMMAND mv ${modfile_basename}.c.tmp ${modfile_basename}.c
-                     DEPENDS ${PROJECT_BINARY_DIR}/bin/nocmodl ${modfile_basename}.mod
-                     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src/nrniv)
+  add_custom_command(
+    OUTPUT ${modfile_basename}.c
+    COMMAND ${CMAKE_COMMAND} -E env "MODLUNIT=${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
+            ${PROJECT_BINARY_DIR}/bin/nocmodl ${modfile_basename}.mod
+    COMMAND sed "'s/_reg()/_reg_()/'" ${modfile_basename}.c > ${modfile_basename}.c.tmp
+    COMMAND mv ${modfile_basename}.c.tmp ${modfile_basename}.c
+    DEPENDS ${PROJECT_BINARY_DIR}/bin/nocmodl ${modfile_basename}.mod
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src/nrniv)
 endmacro()

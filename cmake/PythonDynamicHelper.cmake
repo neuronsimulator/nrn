@@ -18,9 +18,15 @@
 # ~~~
 
 set(LINK_AGAINST_PYTHON ${MINGW})
-set(NRN_PYTHON_VER_LIST "" CACHE INTERNAL "" FORCE)
-set(NRN_PYTHON_INCLUDE_LIST "" CACHE INTERNAL "" FORCE)
-set(NRN_PYTHON_LIB_LIST "" CACHE INTERNAL "" FORCE)
+set(NRN_PYTHON_VER_LIST
+    ""
+    CACHE INTERNAL "" FORCE)
+set(NRN_PYTHON_INCLUDE_LIST
+    ""
+    CACHE INTERNAL "" FORCE)
+set(NRN_PYTHON_LIB_LIST
+    ""
+    CACHE INTERNAL "" FORCE)
 
 # ~~~
 # Inform setup.py and nrniv/nrnpy.cpp whether libnrnpython name is libnrnpython<major>
@@ -66,14 +72,8 @@ if(NRN_ENABLE_PYTHON)
           ERROR_VARIABLE err_output
           OUTPUT_STRIP_TRAILING_WHITESPACE)
         if(result EQUAL 0)
-          string(REGEX MATCH
-                       [0-9.]*$
-                       PYVER
-                       ${std_output})
-          string(REGEX MATCH
-                       ^[^\n]*
-                       incval
-                       ${std_output})
+          string(REGEX MATCH [0-9.]*$ PYVER ${std_output})
+          string(REGEX MATCH ^[^ \n]* incval ${std_output})
           if(NOT NRNPYTHON_INCLUDE${PYVER})
             set(NRNPYTHON_INCLUDE${PYVER} ${incval})
           endif()
@@ -90,11 +90,7 @@ if(NRN_ENABLE_PYTHON)
 
           find_package(PythonLibsNew ${PYVER} REQUIRED)
           # convert major.minor to majorminor
-          string(REGEX
-                 REPLACE [.]
-                         ""
-                         PYVER
-                         ${PYVER})
+          string(REGEX REPLACE [.] "" PYVER ${PYVER})
           list(APPEND NRN_PYTHON_VER_LIST "${PYVER}")
           list(APPEND NRN_PYTHON_INCLUDE_LIST "${incval}")
           list(APPEND NRN_PYTHON_LIB_LIST "${PYTHON_LIBRARIES}")
@@ -114,7 +110,7 @@ macro(check_python_include python_include major_version)
       message(
         FATAL_ERROR
           " ${${python_include}}/Python.h does not exist, set proper ${python_include} to include directory"
-        )
+      )
     endif()
   endif()
 endmacro()

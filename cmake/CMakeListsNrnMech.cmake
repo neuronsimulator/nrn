@@ -27,11 +27,7 @@ foreach(link_lib ${NRN_LINK_LIBS})
     string(APPEND NRN_LINK_DEFS " -l${link_lib}")
   elseif("${dir_path}" MATCHES "^(/lib|/lib64|/usr/lib|/usr/lib64)$")
     get_filename_component(libname ${link_lib} NAME_WE)
-    string(REGEX
-           REPLACE "^lib"
-                   ""
-                   libname
-                   ${libname})
+    string(REGEX REPLACE "^lib" "" libname ${libname})
     string(APPEND NRN_LINK_DEFS " -l${libname}")
   else()
     string(APPEND NRN_LINK_DEFS " ${link_lib}")
@@ -39,10 +35,7 @@ foreach(link_lib ${NRN_LINK_LIBS})
 endforeach()
 
 # PGI add --c++11;-A option for c++11 flag
-string(REPLACE ";"
-               " "
-               CXX11_STANDARD_COMPILE_OPTION
-               "${CMAKE_CXX11_STANDARD_COMPILE_OPTION}")
+string(REPLACE ";" " " CXX11_STANDARD_COMPILE_OPTION "${CMAKE_CXX11_STANDARD_COMPILE_OPTION}")
 
 # Compiler flags depending on cmake build type from BUILD_TYPE_<LANG>_FLAGS
 string(TOUPPER "${CMAKE_BUILD_TYPE}" _BUILD_TYPE)

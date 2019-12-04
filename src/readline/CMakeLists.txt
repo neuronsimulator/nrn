@@ -2,10 +2,8 @@
 # NEURON distributed readline library (specifically for OSX)
 # =============================================================================
 set(READLINE_SOURCE_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/funmap.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/history.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/keymaps.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/readline.c)
+    ${CMAKE_CURRENT_SOURCE_DIR}/funmap.c ${CMAKE_CURRENT_SOURCE_DIR}/history.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/keymaps.c ${CMAKE_CURRENT_SOURCE_DIR}/readline.c)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 

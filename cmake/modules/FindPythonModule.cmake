@@ -37,14 +37,15 @@ macro(find_python_module module)
       OUTPUT_VARIABLE _${module}_location
       ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
     if(NOT _${module}_status)
-      set(${module_upper}_LOCATION ${_${module}_location}
+      set(${module_upper}_LOCATION
+          ${_${module}_location}
           CACHE STRING "Location of Python module ${module}")
       # retrieve version
-      execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
-                              "import ${module}; print(${module}.__version__)"
-                      RESULT_VARIABLE _${module}_status
-                      OUTPUT_VARIABLE _${module}_version
-                      ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+      execute_process(
+        COMMAND "${PYTHON_EXECUTABLE}" "-c" "import ${module}; print(${module}.__version__)"
+        RESULT_VARIABLE _${module}_status
+        OUTPUT_VARIABLE _${module}_version
+        ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
 
       set(_${module_upper}_VERSION_MATCH TRUE)
       if(NOT _${module}_status)
@@ -58,12 +59,9 @@ macro(find_python_module module)
       endif()
     endif()
 
-    find_package_handle_standard_args(${module}
-                                      REQUIRED_VARS
-                                      ${module_upper}_LOCATION
-                                      _${module_upper}_VERSION_MATCH
-                                      VERSION_VAR
-                                      ${module_upper}_VERSION_STRING)
+    find_package_handle_standard_args(
+      ${module} REQUIRED_VARS ${module_upper}_LOCATION _${module_upper}_VERSION_MATCH VERSION_VAR
+      ${module_upper}_VERSION_STRING)
     if(NOT ${module}_FIND_OPTIONAL AND NOT _${module_upper}_VERSION_MATCH)
       message(FATAL_ERROR "Missing python module ${module}")
     endif()
