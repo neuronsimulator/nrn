@@ -37,6 +37,7 @@ addons:
         packages:
         - openmpi
         - xz
+        - doxygen
 virtualenv:
     system_site_packages: true
 
@@ -159,4 +160,4 @@ deploy:
   target_branch: gh-pages
   on:
     branch: cmake
-    condition: $BUILD_DOCUMENTATION = ON && $CC_FOR_BUILD = gcc
+    condition: $BUILD_DOCUMENTATION = ON && $CC_FOR_BUILD = gcc && $TRAVIS_OS_NAME = linux
