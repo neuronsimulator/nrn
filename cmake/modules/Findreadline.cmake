@@ -50,4 +50,3 @@ endif(
   AND Ncurses_LIBRARY)
 
 mark_as_advanced(Readline_ROOT_DIR Readline_INCLUDE_DIR Readline_LIBRARY)
-# ~~~

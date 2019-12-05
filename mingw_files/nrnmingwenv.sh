@@ -3,18 +3,18 @@ set -ex
 
 # if arg then assume it is destination, eg, c:/marshalnrn64/nrn
 if test $# = 1 ; then
-  N=$1/mingw
+  N="$1/mingw"
 else
   N='c:/nrn/mingw'
-  rm -r -f $N
+  rm -r -f "$N"
 fi
 
 #basic environment
 
-mkdir -p $N/usr/bin
-mkdir -p $N/etc
-mkdir -p $N/tmp
-mkdir -p $N/usr/share/terminfo/63
+mkdir -p "$N/usr/bin"
+mkdir -p "$N/etc"
+mkdir -p "$N/tmp"
+mkdir -p "$N/usr/share/terminfo/63"
 cp /usr/share/terminfo/63/* $N/usr/share/terminfo/63
 cp $HOME/.inputrc $N/etc/inputrc
 
@@ -35,9 +35,9 @@ done
     cygcheck $i | sed 's/^ *//' >> temp.tmp
   done
   sort temp.tmp | uniq | grep 'msys64' | sed 's,\\,/,g' > temp2.tmp
-  for i in `cat temp2.tmp` ; do
+  for i in $(cat temp2.tmp) ; do
     echo $i
-    cp $i $N/usr/bin
+    cp "$i" "$N/usr/bin"
   done
   rm temp.tmp
   rm temp2.tmp
@@ -55,16 +55,16 @@ if test ! -d "$gccver" ; then
 fi
 
 # all the folders involved that have files
-mkdir -p $M/bin
-mkdir -p $M/lib/gcc/$X/$gccver/include
-mkdir -p $M/$X/lib
-mkdir -p $M/$X/include/sdks
-mkdir -p $M/$X/include/sec_api/sys
-mkdir -p $M/$X/include/sys
+mkdir -p "$M/bin"
+mkdir -p "$M/lib/gcc/$X/$gccver/include"
+mkdir -p "$M/$X/lib"
+mkdir -p "$M/$X/include/sdks"
+mkdir -p "$M/$X/include/sec_api/sys"
+mkdir -p "$M/$X/include/sys"
 
 copy() {
   for i in $2 ; do
-    cp /$1/$i $N/$1/$i
+    cp "/$1/$i" "$N/$1/$i"
   done
 }
 
@@ -94,11 +94,11 @@ copyinc() {
   sed -n 's,^.*msys64/,,p' temp1 | sed -n 's,".*,,p' > temp2
   sort temp2 | uniq > temp3
   sed -n 's,/[^/]*$,,p' temp3 | sort  | uniq > temp4
-  for i in `cat temp4` ; do
-    mkdir -p $N/$i
+  for i in $(cat temp4) ; do
+    mkdir -p "$N/$i"
   done
-  for i in `cat temp3` ; do
-    cp /$i $N/$i
+  for i in $(cat temp3) ; do
+    cp /$i "$N/$i"
   done
 }
 

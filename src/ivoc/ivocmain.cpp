@@ -248,7 +248,7 @@ void mac_open_app(){
 #endif
 
 extern "C" {
-	int ivocmain(int, const char**, const char**);
+        int ivocmain(int, const char**, const char**);
         int ivocmain_session(int, const char**, const char**, int start_session);
         int (*p_neosim_main)(int, const char**, const char**);
 	extern int nrn_global_argc;

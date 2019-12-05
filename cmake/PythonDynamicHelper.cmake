@@ -41,7 +41,7 @@ endif()
 
 if(NRN_ENABLE_PYTHON)
   if(NRN_ENABLE_PYTHON_DYNAMIC)
-    if("${NRN_PYTHON_DYNAMIC}" STREQUAL "")
+    if(NRN_PYTHON_DYNAMIC STREQUAL "")
       # use the default python already determined
       if(LINK_AGAINST_PYTHON)
         set(PYVER "${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}")
@@ -105,7 +105,7 @@ endif()
 
 # check Python.h exists under provided include directory
 macro(check_python_include python_include major_version)
-  if(${python_include})
+  if(python_include)
     if(NOT EXISTS "${${python_include}}/Python.h")
       message(
         FATAL_ERROR
