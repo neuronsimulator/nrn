@@ -1,23 +1,27 @@
+import os.path as osp
+
 import pytest
-from testutils import collect_data
-from os import path as osp
+
+from .testutils import collect_data
+
 
 def pytest_addoption(parser):
     parser.addoption("--mpi", action="store_true", default=False, help="use MPI")
+
 
 @pytest.fixture(scope="session")
 def neuron_import(request):
     # to use NEURON with MPI, mpi4py must be imported first.
     if request.config.getoption("--mpi"):
-        from mpi4py import MPI
+        from mpi4py import MPI  # noqa: F401
 
     # we may not be not running in the test path so we have to load the mechanisms
     import neuron
-    
+
     neuron.load_mechanisms(osp.abspath(osp.dirname(__file__)))
     from neuron import h, rxd
-    return h, rxd
 
+    return h, rxd
 
 
 @pytest.fixture
@@ -27,10 +31,13 @@ def neuron_instance(neuron_import):
     h.load_file('stdrun.hoc')
     cvode = h.CVode()
     cvode.active(False)
-    cvode.atol(1E-3)
+    cvode.atol(1e-3)
     h.dt = 0.025
     h.stoprun = False
-    gather = lambda: collect_data(h, rxd, data)
+
+    def gather():
+        return collect_data(h, rxd, data)
+
     cvode.extra_scatter_gather(0, gather)
     yield (h, rxd, data)
     rxd.region._all_regions = []
@@ -39,7 +46,7 @@ def neuron_instance(neuron_import):
     for r in rxd.rxd._all_reactions[:]:
         if r():
             rxd.rxd._unregister_reaction(r)
-    
+
     for s in rxd.species._all_species:
         if s():
             s().__del__()

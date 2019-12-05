@@ -1,5 +1,4 @@
-import pytest
-from testutils import tol, compare_data
+from .testutils import compare_data, tol
 
 
 def test_pure_diffusion(neuron_instance):
@@ -12,15 +11,16 @@ def test_pure_diffusion(neuron_instance):
     diff_constant = 1
 
     r = rxd.Region([dend])
-    ca = rxd.Species(r, d=diff_constant,
-                     initial=lambda node: 1 if 0.4 < node.x < 0.6 else 0)
+    # ca
+    rxd.Species(r, d=diff_constant, initial=lambda node: 1 if 0.4 < node.x < 0.6 else 0)
 
     h.finitialize(-65)
 
     for t in [25, 50, 75, 100, 125]:
         h.continuerun(t)
     max_err = compare_data(data)
-    assert(max_err < tol)
+    assert max_err < tol
+
 
 def test_pure_diffusion_cvode(neuron_instance):
     h, rxd, data = neuron_instance
@@ -32,7 +32,8 @@ def test_pure_diffusion_cvode(neuron_instance):
     diff_constant = 1
 
     r = rxd.Region(h.allsec())
-    ca = rxd.Species(r, d=diff_constant, initial=lambda node: 1 if 0.4 < node.x < 0.6 else 0)
+    # ca
+    rxd.Species(r, d=diff_constant, initial=lambda node: 1 if 0.4 < node.x < 0.6 else 0)
 
     # enable CVode and set atol
     h.CVode().active(1)
@@ -44,5 +45,4 @@ def test_pure_diffusion_cvode(neuron_instance):
         h.continuerun(t)
 
     max_err = compare_data(data)
-    assert(max_err < tol)
-
+    assert max_err < tol
