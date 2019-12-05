@@ -632,7 +632,6 @@ AC_CONFIG_HEADERS([src/oc/nrnpthread.h])
 AC_CONFIG_HEADERS([src/parallel/bbsconf.h])
 AC_CONFIG_HEADERS([src/nrnjava/njconf.h])
 AC_CONFIG_HEADERS([src/nrncvode/nrnneosm.h])
-AC_CONFIG_HEADERS([src/ivos/ivstream.h])
 AC_CONFIG_HEADERS([src/sundials/sundials_config.h])
 
 AC_CONFIG_FILES([
