@@ -8,4 +8,3 @@ SUBDIRS = InterViews OS
 
 AM_CXXFLAGS = @MINGW_CFLAG@
 
-EXTRA_DIST = ivstrm.h
