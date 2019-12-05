@@ -70,11 +70,13 @@ else
 	# Unset LC_ALL for consistent mod order
 	files=$(unset LC_ALL; ls *.mod)
 fi
+files=`echo "$files" | sed 's/^ *//'`
 
 mfiles=""
 for i in $files ; do
 	mfiles="$mfiles `basename $i`"
 done
+mfiles=`echo "$mfiles" | sed 's/^ *//'`
 
 echo $files
 echo $mfiles
