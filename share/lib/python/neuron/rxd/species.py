@@ -842,17 +842,39 @@ class _ExtracellularSpecies(_SpeciesMathable):
         _defined_species_by_gid.append(self)
 
     def __del__(self):
+        global _extracellular_diffusion_objects, _defined_species_by_gid
         # TODO: remove this object from the list of grids, possibly by reinserting all the others
-        # NOTE: be careful about doing the right thing at program's end; some globals may no longer exist
-        global _extracellular_diffusion_objects
+        # NOTE: be careful about doing the right thing at program's end; some globals may no longer exist     
+        if self in _defined_species_by_gid: _defined_species_by_gid.remove(self)
         if _extracellular_diffusion_objects:
-            if self in _extracellular_diffusion_objects: del _extracellular_diffusion_objects[self]
-            # remove the grid id
-            for sp in _extracellular_diffusion_objects:
-                if hasattr(sp,'_grid_id') and sp._grid_id > self._grid_id:
-                    sp._grid_id -= 1
-            if hasattr(self,'_grid_id'): _delete_by_id(self._grid_id)
-            nrn_dll_sym('structure_change_cnt', ctypes.c_int).value += 1
+            if self in _extracellular_diffusion_objects:
+                del _extracellular_diffusion_objects[self]
+                # remove the grid id
+                for sp in _extracellular_diffusion_objects:
+                    if hasattr(sp,'_grid_id') and sp._grid_id > self._grid_id:
+                        sp._grid_id -= 1
+                if hasattr(self,'_grid_id'): _delete_by_id(self._grid_id)
+                # remove any node.include_flux for the extracellular species.
+                from . import node
+                newflux = {'index': [], 'type': [], 'source': [], 'scale': [], 'region': []}
+                for idx, t, src, sc, rptr in zip(node._node_fluxes['index'], 
+                                                 node._node_fluxes['type'],
+                                                 node._node_fluxes['source'],
+                                                 node._node_fluxes['scale'],
+                                                 node._node_fluxes['region']):
+                    if t != self._grid_id:
+                        if t > self._grid_id:
+                            newflux['type'].append(t)
+                        else:
+                            newflux['type'].append(t-1)
+                        newflux['index'].append(idx)
+                        newflux['type'].append(t)
+                        newflux['source'].append(src)
+                        newflux['scale'].append(sc)
+                        newflux['region'].append(region)
+                node._has_node_fluxes = newflux != node._node_fluxes 
+                node._node_fluxes = newflux
+                nrn_dll_sym('structure_change_cnt', ctypes.c_int).value += 1
         
     def _finitialize(self):
         # Updated - now it will initialize using NodeExtracellular

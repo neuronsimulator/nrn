@@ -33,7 +33,7 @@ if(NRN_ENABLE_PYTHON)
       PYTHONPATH=${PROJECT_BINARY_DIR}/lib/python:${PROJECT_SOURCE_DIR}/test/rxd:$ENV{PYTHONPATH})
 endif()
 
-set(PYTHON_TESTS "")
+set(TESTS "")
 
 # =============================================================================
 # Use add_test method and set environment for testneuron (NEURONHOME env variable needs to be set to
@@ -41,7 +41,7 @@ set(PYTHON_TESTS "")
 # =============================================================================
 foreach(test_name testneuron)
   add_test(NAME ${test_name} COMMAND ${test_name})
-  list(APPEND PYTHON_TESTS ${test_name})
+  list(APPEND TESTS ${test_name})
 endforeach()
 
 # =============================================================================
@@ -58,7 +58,7 @@ add_test(
   -Dwork_dir=${RINGTEST_DIR}
   -P
   ${PROJECT_SOURCE_DIR}/cmake/RunHOCTest.cmake)
-list(APPEND PYTHON_TESTS ringtest)
+list(APPEND TESTS ringtest)
 
 # =============================================================================
 # Add small hoc test
@@ -79,7 +79,7 @@ add_test(
   -Dwork_dir=${HOCTEST_DIR}
   -P
   ${PROJECT_SOURCE_DIR}/cmake/RunHOCTest.cmake)
-list(APPEND PYTHON_TESTS connect_dend)
+list(APPEND TESTS connect_dend)
 
 # =============================================================================
 # Add pytest
@@ -93,7 +93,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test/rxd)
   add_dependencies(rxdmod nrniv)
   add_test(NAME rxd_tests COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/rxd)
-  list(APPEND PYTHON_TESTS basic_tests rxd_tests)
+  list(APPEND TESTS basic_tests rxd_tests)
   if(NRN_ENABLE_MPI)
     find_python_module(mpi4py)
     if(mpi4py_FOUND)
@@ -101,14 +101,14 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         NAME rxd_mpi_tests
         COMMAND
           ${MPIEXEC} -np 1 ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/rxd --mpi)
-      list(APPEND PYTHON_TESTS rxd_mpi_tests)
+      list(APPEND TESTS rxd_mpi_tests)
     endif()
   endif()
 
   if(NRN_ENABLE_CORENEURON)
     add_test(NAME coreneuron_direct COMMAND ${PYTHON_EXECUTABLE} -m pytest
                                             ${PROJECT_SOURCE_DIR}/test/coreneuron)
-    list(APPEND PYTHON_TESTS coreneuron_direct)
+    list(APPEND TESTS coreneuron_direct)
   endif()
-  set_tests_properties(${PYTHON_TESTS} PROPERTIES ENVIRONMENT "${TEST_ENV}")
 endif()
+set_tests_properties(${TESTS} PROPERTIES ENVIRONMENT "${TEST_ENV}")
