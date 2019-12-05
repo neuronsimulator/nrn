@@ -5,6 +5,7 @@
 
 # Mechanisms version are by default 0.0, but should be overriden
 
+MECH_NAME =
 MODS_PATH = .
 OUTPUT = @CMAKE_HOST_SYSTEM_PROCESSOR@
 DESTDIR =
@@ -90,7 +91,7 @@ dimplic_c  = $(MODC_DIR)/_dimplic.cpp
 dimplic_o  = $(OBJS_DIR)/_dimplic.o
 
 special  = $(OUTPUT)/special-core
-coremech_libname = corenrnmech
+coremech_libname = corenrnmech$(if $(MECH_NAME),_$(MECH_NAME),)
 coremech_lib = $(OUTPUT)/lib$(coremech_libname)@CMAKE_SHARED_LIBRARY_SUFFIX@
 
 # If no DESTDIR (we are probably just building) we use $ORIGIN (@loader_path in OSX)

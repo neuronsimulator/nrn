@@ -65,7 +65,7 @@ set(nmodl_binary_name ${nmodl_name})
 # =============================================================================
 
 configure_file(nrnivmodl_core_makefile.in ${CMAKE_BINARY_DIR}/share/coreneuron/nrnivmodl_core_makefile @ONLY)
-configure_file(nrnivmodl-core ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core COPYONLY)
+configure_file(nrnivmodl-core.in ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core @ONLY)
 
 install(FILES ${CMAKE_BINARY_DIR}/share/coreneuron/nrnivmodl_core_makefile DESTINATION share/coreneuron)
 install(PROGRAMS ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core DESTINATION bin)

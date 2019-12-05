@@ -6,10 +6,20 @@ set -e
 module load intel hpe-mpi
 TEST_DIR="$1"
 CORENRN_TYPE="$2"
+
 cd $WORKSPACE/${TEST_DIR}
-rm -rf $WORKSPACE/${TEST_DIR}/${CORENRN_TYPE}
+rm -rf ${CORENRN_TYPE}
+mkdir -p ${CORENRN_TYPE}
+
+pushd ${CORENRN_TYPE}
+
 if [ "${TEST_DIR}" = "ringtest" ]; then
-    $WORKSPACE/install_${CORENRN_TYPE}/bin/nrnivmodl-core -o ${CORENRN_TYPE} mod-ext
+    $WORKSPACE/install_${CORENRN_TYPE}/bin/nrnivmodl-core ../mod-ext
 else
-    $WORKSPACE/install_${CORENRN_TYPE}/bin/nrnivmodl-core -o ${CORENRN_TYPE} mod
+    $WORKSPACE/install_${CORENRN_TYPE}/bin/nrnivmodl-core ../mod
 fi
+
+# rpath $ORIGIN should make it relocatable
+find * -mindepth 1 -maxdepth 1 -type f -exec mv "{}" ./ \;
+
+popd
