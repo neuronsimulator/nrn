@@ -7,6 +7,14 @@ from .testutils import compare_data, tol
 
 @pytest.fixture
 def ecs_example(neuron_instance):
+    """A model where something is created in one cell and diffuses to another.
+
+    This model makes use of parameters, multicompartment reactions, an NMODL
+    and the extracellular space. A substance is created in an organelle in cell1
+    and leaks into the cytosol. It then enters the ECS using an NMODL mechanism,
+    where it diffuses to cell 2 and enters via the same NMODL mechanism.
+    """
+
     h, rxd, data = neuron_instance
     # create cell1 where `x` will be created and leak out
     cell1 = h.Section('cell1')
@@ -85,6 +93,8 @@ def ecs_example(neuron_instance):
 
 
 def test_ecs_example(ecs_example):
+    """Test ecs_example with fixed step methods"""
+
     (h, rxd, data), model = ecs_example
     h.finitialize(-65)
     h.continuerun(1000)
@@ -94,6 +104,8 @@ def test_ecs_example(ecs_example):
 
 
 def test_ecs_example_cvode(ecs_example):
+    """Test ecs_example with variable step methods"""
+
     (h, rxd, data), model = ecs_example
 
     h.CVode().active(True)

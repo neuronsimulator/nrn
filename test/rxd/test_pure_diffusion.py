@@ -2,6 +2,8 @@ from .testutils import compare_data, tol
 
 
 def test_pure_diffusion(neuron_instance):
+    """Test 1D diffusion in a single section"""
+
     h, rxd, data = neuron_instance
     dend = h.Section()
     dend.diam = 2
@@ -23,6 +25,8 @@ def test_pure_diffusion(neuron_instance):
 
 
 def test_pure_diffusion_cvode(neuron_instance):
+    """Test 1D diffusion in a single section with the variable step method."""
+
     h, rxd, data = neuron_instance
     dend = h.Section()
     dend.diam = 2

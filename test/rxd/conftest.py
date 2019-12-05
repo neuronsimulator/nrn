@@ -11,6 +11,8 @@ def pytest_addoption(parser):
 
 @pytest.fixture(scope="session")
 def neuron_import(request):
+    """Provides an instance of neuron h and rxd for tests"""
+
     # to use NEURON with MPI, mpi4py must be imported first.
     if request.config.getoption("--mpi"):
         from mpi4py import MPI  # noqa: F401
@@ -26,6 +28,12 @@ def neuron_import(request):
 
 @pytest.fixture
 def neuron_instance(neuron_import):
+    """Sets/Resets the rxd test environment.
+
+    Provides 'data', a dictionary used to store voltages and rxd node
+    values for comparisons with the 'correct_data'.
+    """
+
     h, rxd = neuron_import
     data = {'record_count': 0, 'data': []}
     h.load_file('stdrun.hoc')

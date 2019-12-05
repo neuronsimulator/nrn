@@ -10,6 +10,8 @@ dt_eps = 1e-20
 
 
 def get_correct_data_for_test():
+    """returns a path to the file with the correct data for a test."""
+
     curframe = inspect.currentframe()
     calframe = inspect.getouterframes(curframe, 3)
     testfunc_name = calframe[2][3]
@@ -21,6 +23,7 @@ def get_correct_data_for_test():
 
 def collect_data(h, rxd, data, num_record=10):
     """grabs the membrane potential data, h.t, and the rxd state values"""
+
     data['record_count'] += 1
     if data['record_count'] > num_record:
         h.stoprun = True
@@ -55,6 +58,8 @@ def collect_data(h, rxd, data, num_record=10):
 
 
 def compare_data(data):
+    """compares the test data with the correct data"""
+
     rlen = data['rlen']
     corr_dat = numpy.fromfile(get_correct_data_for_test()).reshape(-1, rlen)
     tst_dat = numpy.array(data['data']).reshape(-1, rlen)

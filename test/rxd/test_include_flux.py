@@ -2,6 +2,12 @@ from .testutils import compare_data, tol
 
 
 def test_include_flux(neuron_instance):
+    """Test that node.include_flux gives the correct concentrations for 1D.
+    
+    node.include_flux can take either a; integer, Python function or NEURON
+    pointer. All three are tested here for 1D intercellular rxd.
+    """
+
     h, rxd, data = neuron_instance
     sec = h.Section(name="sec")
     sec.L = 10

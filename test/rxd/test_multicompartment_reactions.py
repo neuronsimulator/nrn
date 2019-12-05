@@ -1,9 +1,15 @@
-# Test based on example copied from the RxD tutorial
-# http://www.neuron.yale.edu/neuron/static/docs/rxd/index.html
 from testutils import compare_data, tol
 
-
 def test_multicompartment_reactions(neuron_instance):
+    """A tests of mulicompartment reactions using an intracellular Ca model.
+    
+    Test based on example copied from the RxD tutorial;
+    http://www.neuron.yale.edu/neuron/static/docs/rxd/index.html
+    Where 1D intracellular space is divided into cytsol and endoplasmic
+    reticulum. Calcium is transported between the regions by multicompartment
+    reactions for a leak, SERCA pump and IP3 receptor.
+    """
+
     h, rxd, data = neuron_instance
     sec = h.Section()
     sec.L = 100
