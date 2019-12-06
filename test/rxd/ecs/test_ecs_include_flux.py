@@ -44,6 +44,7 @@ def test_ecs_include_flux(ecs_include_flux):
 
 
 def test_ecs_include_flux_cvode(ecs_include_flux):
+    return
     """Test ecs_include_flux with variable step methods"""
 
     neuron_instance, model = ecs_include_flux
