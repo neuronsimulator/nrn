@@ -1,6 +1,6 @@
 import pytest
 
-from .testutils import compare_data, tol
+from testutils import compare_data, tol
 
 
 @pytest.fixture

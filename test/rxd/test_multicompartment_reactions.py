@@ -1,8 +1,9 @@
 from testutils import compare_data, tol
 
+
 def test_multicompartment_reactions(neuron_instance):
     """A tests of mulicompartment reactions using an intracellular Ca model.
-    
+
     Test based on example copied from the RxD tutorial;
     http://www.neuron.yale.edu/neuron/static/docs/rxd/index.html
     Where 1D intracellular space is divided into cytsol and endoplasmic
@@ -56,24 +57,20 @@ def test_multicompartment_reactions(neuron_instance):
     minf = ip3[cyt] * 1000.0 * ca[cyt] / (ip3[cyt] + kip3) / (1000.0 * ca[cyt] + kact)
     k = gip3r * (minf * h_gate) ** 3
 
-    # ip3r
-    rxd.MultiCompartmentReaction(ca[er], ca[cyt], k, k, membrane=cyt_er_membrane)
+    ip3r = rxd.MultiCompartmentReaction(ca[er], ca[cyt], k, k, membrane=cyt_er_membrane)
 
-    # serca
-    rxd.MultiCompartmentReaction(
+    serca = rxd.MultiCompartmentReaction(
         ca[cyt],
         ca[er],
         gserca / ((kserca / (1000.0 * ca[cyt])) ** 2 + 1),
         membrane=cyt_er_membrane,
         custom_dynamics=True,
     )
-    # leak
-    rxd.MultiCompartmentReaction(
+    leak = rxd.MultiCompartmentReaction(
         ca[er], ca[cyt], gleak, gleak, membrane=cyt_er_membrane
     )
 
-    # ip3rg
-    rxd.Rate(h_gate, (1.0 / (1 + 1000.0 * ca[cyt] / (0.3)) - h_gate) / ip3rtau)
+    ip3rg = rxd.Rate(h_gate, (1.0 / (1 + 1000.0 * ca[cyt] / (0.3)) - h_gate) / ip3rtau)
 
     h.finitialize(-65)
 

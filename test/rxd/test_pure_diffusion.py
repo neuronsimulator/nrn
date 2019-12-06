@@ -13,8 +13,9 @@ def test_pure_diffusion(neuron_instance):
     diff_constant = 1
 
     r = rxd.Region([dend])
-    # ca
-    rxd.Species(r, d=diff_constant, initial=lambda node: 1 if 0.4 < node.x < 0.6 else 0)
+    ca = rxd.Species(
+        r, d=diff_constant, initial=lambda node: 1 if 0.4 < node.x < 0.6 else 0
+    )
 
     h.finitialize(-65)
 
@@ -36,8 +37,9 @@ def test_pure_diffusion_cvode(neuron_instance):
     diff_constant = 1
 
     r = rxd.Region(h.allsec())
-    # ca
-    rxd.Species(r, d=diff_constant, initial=lambda node: 1 if 0.4 < node.x < 0.6 else 0)
+    ca = rxd.Species(
+        r, d=diff_constant, initial=lambda node: 1 if 0.4 < node.x < 0.6 else 0
+    )
 
     # enable CVode and set atol
     h.CVode().active(1)
