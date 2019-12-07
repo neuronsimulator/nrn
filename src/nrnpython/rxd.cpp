@@ -650,7 +650,8 @@ static void ode_solve(double t, double dt, double* p1, double* p2)
         full_b = b;
         full_y = y;
     }
-	nrn_tree_solve(_rxd_a, _rxd_b, _rxd_c, _rxd_d, full_b, _rxd_p, _rxd_euler_nrow, dt);
+    if(diffusion)
+    	nrn_tree_solve(_rxd_a, _rxd_b, _rxd_c, _rxd_d, full_b, _rxd_p, _rxd_euler_nrow, dt);
 
     do_ics_reactions(full_y, full_b, y, b);
    

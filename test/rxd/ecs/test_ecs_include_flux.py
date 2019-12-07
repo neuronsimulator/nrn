@@ -10,6 +10,7 @@ def ecs_include_flux(neuron_instance):
     node.include_flux can take either a; integer, Python function or NEURON
     pointer. All three are tested here for extracellular rxd.
     """
+
     h, rxd, data = neuron_instance
     sec = h.Section(name='dend')
     # the extracellular space
@@ -44,14 +45,11 @@ def test_ecs_include_flux(ecs_include_flux):
 
 
 def test_ecs_include_flux_cvode(ecs_include_flux):
-    return
     """Test ecs_include_flux with variable step methods"""
 
     neuron_instance, model = ecs_include_flux
     h, rxd, data = neuron_instance
-
     h.CVode().active(True)
-
     h.finitialize(1000)
     h.continuerun(10)
 
