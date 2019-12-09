@@ -15,7 +15,7 @@ method instead of the more numerically robust fully implicit/crank-nicholson
 methods) 
  
 Do not confuse sections with segments. Sections are divided into segments 
-of equal length for numerical simulation purposes (see :data:`nseg`). 
+of equal length for numerical simulation purposes (see :data:`Section.nseg`). 
 NEURON uses segments to represent the electrical circuit shown below. 
 
 .. code-block::
