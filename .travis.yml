@@ -141,11 +141,14 @@ script:
 after_success:
   - if [ "$BUILD_DOCUMENTATION" = "ON" ] && [ "$CC_FOR_BUILD" = "gcc" ]; then
       echo "------- Prepare Documentation -------";
-      cd $TRAVIS_BUILD_DIR/build;
+      pushd $TRAVIS_BUILD_DIR/build;
       make doxygen;
-      cd $TRAVIS_BUILD_DIR/build/doc_doxygen;
+      pushd $TRAVIS_BUILD_DIR/build/doc_doxygen;
       touch .nojekyll;
       echo "<meta http-equiv=\"refresh\" content=\"0; url=./doxygen/index.html\" />" > index.html;
+      popd; popd;
+      echo "-------- Build sphinx documentation --------";
+      bash .travis_docs.sh;
     fi
 
 #=============================================================================

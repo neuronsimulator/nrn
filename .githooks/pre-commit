@@ -1,0 +1,3 @@
+[ -f clang-format-diff.py ] || wget https://raw.githubusercontent.com/llvm-mirror/clang/master/tools/clang-format/clang-format-diff.py
+
+git diff --cached --no-color | python clang-format-diff.py -p1 -i
