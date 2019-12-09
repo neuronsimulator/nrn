@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 #include <stdio.h>
+#include <string.h>
 #if defined(__TURBOC__) || defined(__linux__)
 #ifndef NRNOC_X11
 #define NRNOC_X11 0
@@ -12,9 +13,17 @@
 
 #if NRNOC_X11
 
+#if defined(IVX11_DYNAM)
+#include <IV-X11/ivx11_declare.h>
+#include <IV-X11/ivx11_redef.h>
+extern int hoc_usegui;
+#define ifnox_return if(!hoc_usegui) { return; }
+#else
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xos.h>
+#define ifnox_return /**/
+#endif
 
 /* initial position of window */
 #define WX	100
@@ -68,6 +77,7 @@ void x11_fast(int mode)
 }
 
 void x11flush(void) {
+ifnox_return
 	if (fast && nlinept) {
 		x11_draw_vec();
 	}
@@ -78,6 +88,7 @@ static void getscale(void) {
 	int x,y;
 	unsigned int width, height, border_width, depth;
 	Window root;
+ifnox_return
 	XGetGeometry(display, win, &root, &x, &y, & width,
 		&height, &border_width, &depth);
 	xscale = ((double)width)/TEKX;
@@ -90,6 +101,7 @@ void x11_coord(double x, double y) {
 }
 
 void x11_draw_vec(void) {
+ifnox_return
 	if (nlinept > 1) {
 		XDrawLines(display, win, gc, polyline, nlinept, CoordModeOrigin);
 	}
@@ -98,6 +110,7 @@ void x11_draw_vec(void) {
 
 void x11_vector(void)
 {
+ifnox_return
 	if (fast) {
 		if (nlinept == 0) {
 			polyline[0].x = xold;
@@ -119,6 +132,7 @@ void x11_vector(void)
 
 void x11_point(void)
 {
+ifnox_return
 	Plot(xnew, ynew);
 	LAST;
 	if (!fast) {
@@ -127,6 +141,7 @@ void x11_point(void)
 }
 void x11_move(void)
 {
+ifnox_return
 	if (fast) {
 		if (nlinept && (xnew != xold || ynew != yold)) {
 			x11_draw_vec();
@@ -135,6 +150,7 @@ void x11_move(void)
 	LAST;
 }
 void x11_clear(void){
+ifnox_return
 	XClearWindow(display, win);
 	XFlush(display);
 	getscale();
@@ -142,6 +158,7 @@ void x11_clear(void){
 
 void x11_cleararea(void){
 	int w, h, x, y;
+ifnox_return
 	w = xnew-xold;
 	h = ynew-yold;
 	if (w < 0) {
@@ -164,6 +181,7 @@ void x11_cleararea(void){
 
 void x11_put_text(const char* s)
 {
+ifnox_return
 	if(fast && nlinept) {
 		x11_draw_vec();
 	}
@@ -174,6 +192,7 @@ void x11_put_text(const char* s)
 }
 void x11_setcolor(int c)
 {
+ifnox_return
 	if (!x11_init_done) {
 		x11_open_window();
 	}
@@ -196,6 +215,7 @@ void x11_open_window(void)
 	char *display_name = NULL;
 	XSizeHints size_hints;
 	XWindowAttributes attr;
+ifnox_return
 
 	if (x11_init_done) {
 		return;
@@ -258,6 +278,7 @@ char *color_names[Ncolors] = { "black", "white", "yellow",
 static void set_colors(void) {
    int n;
    XColor used, exact;
+ifnox_return
 
    for(n=0; n<Ncolors; n++) {
       if (XAllocNamedColor(display, DefaultColormap(display,0),

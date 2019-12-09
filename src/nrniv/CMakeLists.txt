@@ -244,7 +244,7 @@ endif()
 # All source directories to include
 # =============================================================================
 add_library(nrniv_lib SHARED ${NRN_NRNIV_LIB_SRC_FILES})
-target_link_libraries(nrniv_lib ${X11_LIBRARIES} ${TERMCAP_LIBRARIES} readline)
+target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES} readline)
 set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
 
 # =============================================================================
@@ -277,12 +277,15 @@ else()
 endif()
 
 if (IV_ENABLE_X11_DYNAMIC)
-  # by defining IVX11DYNAM in ivocmain.cpp, the latter can call ivx11_dyload
+  # by defining IVX11_DYNAM in ivocmain.cpp, the latter can call ivx11_dyload
   # and if that fails, set hoc_usegui = 0 which avoids all InterViews calls.
   set_property(SOURCE ${PROJECT_SOURCE_DIR}/src/ivoc/ivocmain.cpp
+                      ${PROJECT_SOURCE_DIR}/src/pwman/xdep.cpp
+                      ${PROJECT_SOURCE_DIR}/src/ivoc/xdep.cpp
+                      ${PROJECT_SOURCE_DIR}/src/oc/x.c
                APPEND
                PROPERTY COMPILE_DEFINITIONS
-                        IVX11DYNAM)
+                        IVX11_DYNAM)
   if (NOT IV_ENABLE_SHARED)
     # When IV_ENABLE_SHARED=ON, libivx11dynam is found in IV_LIB_DIR (the
     # location of libinterviews). When OFF, libivx11dynam needs to be copied
@@ -295,6 +298,8 @@ if (IV_ENABLE_X11_DYNAMIC)
                 ${IV_LIB_DIR}/libivx11dynam${_suffix}
                 ${PROJECT_BINARY_DIR}/lib/libivx11dynam${_suffix})
   endif()
+else()
+  target_link_libraries(nrniv_lib ${X11_LIBRARIES})
 endif()
 
 # =============================================================================

@@ -197,7 +197,7 @@ extern "C" {
 	extern double hoc_default_dll_loaded_;
 	extern int hoc_print_first_instance;
 	int nrnpy_nositeflag;
-#if defined(IVX11DYNAM)
+#if defined(IVX11_DYNAM)
         extern int ivx11_dyload();
 #endif
 }
@@ -471,7 +471,7 @@ int ivocmain_session (int argc, const char** argv, const char** env, int start_s
 
 	nrnmpi_numprocs = nrn_optargint("-bbs_nhost", &argc, argv, nrnmpi_numprocs);
 	hoc_usegui = 1;
-#if defined(IVX11DYNAM)
+#if defined(IVX11_DYNAM)
 	if (ivx11_dyload()) {
 		hoc_usegui = 0;
 	}
