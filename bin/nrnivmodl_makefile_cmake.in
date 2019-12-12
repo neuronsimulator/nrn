@@ -23,7 +23,7 @@ OS_NAME := $(shell uname)
 _cm =,
 
 # We rebuild the include dirs since a lot of stuff changes place
-INCLUDES = $(INCFLAGS) -I$(incdir)
+INCLUDES = -I. -I.. $(INCFLAGS) -I$(incdir)
 INCLUDES += $(if @MPI_C_INCLUDE_PATH@, -I$(subst ;, -I,@MPI_C_INCLUDE_PATH@),)
 INCLUDES += $(if @CMAKE_OSX_SYSROOT@, -isysroot @CMAKE_OSX_SYSROOT@)
 
