@@ -6,6 +6,8 @@ MECH_VERSION = 0.0
 MODS_PATH = .
 OUTPUT = @CMAKE_HOST_SYSTEM_PROCESSOR@
 DESTDIR =
+UserINCFLAGS =
+UserLDFLAGS =
 
 # install dirs
 bindir := ${ROOT}/@CMAKE_INSTALL_BINDIR@
@@ -17,13 +19,13 @@ datadir_lib := ${ROOT}/@CMAKE_INSTALL_DATADIR@/lib
 # Additional variables set in CMAKE usable here
 # - @NRN_COMPILE_DEFS
 # - @NRN_LINK_DEFS
-LDFLAGS = $(LINKFLAGS) @NRN_LINK_DEFS@
+LDFLAGS = $(LINKFLAGS) $(UserLDFLAGS) @NRN_LINK_DEFS@
 NRNLIB_FLAGS = -L$(libdir) -lnrniv
 OS_NAME := $(shell uname)
 _cm =,
 
 # We rebuild the include dirs since a lot of stuff changes place
-INCLUDES = -I. -I.. $(INCFLAGS) -I$(incdir)
+INCLUDES = -I. -I.. $(INCFLAGS) $(UserINCFLAGS) -I$(incdir)
 INCLUDES += $(if @MPI_C_INCLUDE_PATH@, -I$(subst ;, -I,@MPI_C_INCLUDE_PATH@),)
 INCLUDES += $(if @CMAKE_OSX_SYSROOT@, -isysroot @CMAKE_OSX_SYSROOT@)
 
