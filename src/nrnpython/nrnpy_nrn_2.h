@@ -32,7 +32,7 @@ static PyTypeObject nrnpy_SectionType = {
     0,                                        /* tp_clear */
     (richcmpfunc)pysec_richcmp,               /* tp_richcompare */
     0,                                        /* tp_weaklistoffset */
-    (getiterfunc)section_iter,                /* tp_iter */
+    (getiterfunc)seg_of_section_iter,         /* tp_iter */
     0,                                        /* tp_iternext */
     NPySecObj_methods,                        /* tp_methods */
     0,                                        /* tp_members */
@@ -47,12 +47,12 @@ static PyTypeObject nrnpy_SectionType = {
     NPySecObj_new,                            /* tp_new */
 };
 
-static PyTypeObject nrnpy_AllsegIterType = {
+static PyTypeObject nrnpy_AllSegOfSecIterType = {
     PyObject_HEAD_INIT(NULL)0,                /*ob_size*/
-    ccast "nrn.AllsegIter",                   /*tp_name*/
-    sizeof(NPyAllsegIter),                    /*tp_basicsize*/
+    ccast "nrn.AllSegOfSecIter",              /*tp_name*/
+    sizeof(NPyAllSegOfSecIter),               /*tp_basicsize*/
     0,                                        /*tp_itemsize*/
-    (destructor)NPyAllsegIter_dealloc,        /*tp_dealloc*/
+    (destructor)NPyAllSegOfSecIter_dealloc,   /*tp_dealloc*/
     0,                                        /*tp_print*/
     0,                                        /*tp_getattr*/
     0,                                        /*tp_setattr*/
@@ -70,23 +70,23 @@ static PyTypeObject nrnpy_AllsegIterType = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
     ccast
     "Iterate over all Segments of a Section, including x=0 and 1", /* tp_doc */
-    0,                            /* tp_traverse */
-    0,                            /* tp_clear */
-    0,                            /* tp_richcompare */
-    0,                            /* tp_weaklistoffset */
-    (getiterfunc)allseg_iter,     /* tp_iter */
-    (iternextfunc)allseg_next,    /* tp_iternext */
-    0,                            /* tp_methods */
-    0,                            /* tp_members */
-    0,                            /* tp_getset */
-    0,                            /* tp_base */
-    0,                            /* tp_dict */
-    0,                            /* tp_descr_get */
-    0,                            /* tp_descr_set */
-    0,                            /* tp_dictoffset */
-    (initproc)NPyAllsegIter_init, /* tp_init */
-    0,                            /* tp_alloc */
-    NPyAllsegIter_new,            /* tp_new */
+    0,                                        /* tp_traverse */
+    0,                                        /* tp_clear */
+    0,                                        /* tp_richcompare */
+    0,                                        /* tp_weaklistoffset */
+    (getiterfunc)allseg_of_sec_iter,          /* tp_iter */
+    (iternextfunc)allseg_of_sec_next,         /* tp_iternext */
+    0,                                        /* tp_methods */
+    0,                                        /* tp_members */
+    0,                                        /* tp_getset */
+    0,                                        /* tp_base */
+    0,                                        /* tp_dict */
+    0,                                        /* tp_descr_get */
+    0,                                        /* tp_descr_set */
+    0,                                        /* tp_dictoffset */
+    (initproc)NPyAllSegOfSecIter_init,        /* tp_init */
+    0,                                        /* tp_alloc */
+    NPyAllSegOfSecIter_new,                   /* tp_new */
 };
 
 static PyTypeObject nrnpy_SegmentType = {
@@ -115,8 +115,8 @@ static PyTypeObject nrnpy_SegmentType = {
     0,                                        /* tp_clear */
     (richcmpfunc)pyseg_richcmp,               /* tp_richcompare */
     0,                                        /* tp_weaklistoffset */
-    (getiterfunc)segment_iter,                /* tp_iter */
-    (iternextfunc)segment_next,               /* tp_iternext */
+    (getiterfunc)mech_of_segment_iter,        /* tp_iter */
+    0,                                        /* tp_iternext */
     NPySegObj_methods,                        /* tp_methods */
     NPySegObj_members,                        /* tp_members */
     0,                                        /* tp_getset */
@@ -203,7 +203,7 @@ static PyTypeObject nrnpy_MechanismType = {
     0,                                        /* tp_richcompare */
     0,                                        /* tp_weaklistoffset */
     0,                                        /* tp_iter */
-    (iternextfunc)mech_next,                  /* tp_iternext */
+    0,                                        /* tp_iternext */
     NPyMechObj_methods,                       /* tp_methods */
     NPyMechObj_members,                       /* tp_members */
     0,                                        /* tp_getset */
@@ -216,3 +216,87 @@ static PyTypeObject nrnpy_MechanismType = {
     0,                                        /* tp_alloc */
     NPyMechObj_new,                           /* tp_new */
 };
+
+static PyTypeObject nrnpy_SegOfSecIterType = {
+    PyObject_HEAD_INIT(NULL)0,                /*ob_size*/
+    ccast "nrn.SegOfSecIter",                 /*tp_name*/
+    sizeof(NPySegOfSecIter),                 /*tp_basicsize*/
+    0,                                        /*tp_itemsize*/
+    (destructor)NPySegOfSecIter_dealloc,      /*tp_dealloc*/
+    0,                                        /*tp_print*/
+    0,                                        /*tp_getattr*/
+    0,                                        /*tp_setattr*/
+    0,                                        /*tp_compare*/
+    0,                                        /*tp_repr*/
+    0,                                        /*tp_as_number*/
+    0,                                        /*tp_as_sequence*/
+    0,                                        /*tp_as_mapping*/
+    0,                                        /*tp_hash*/
+    0,                                        /*tp_call*/
+    0,                                        /*tp_str*/
+    0,                                        /*tp_getattro*/
+    0,                                        /*tp_setattro*/
+    0,                                        /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
+    ccast "Iterate over nonzero area Segments of a Section (does not include x=0 or 1)", /* tp_doc */
+    0,                                        /* tp_traverse */
+    0,                                        /* tp_clear */
+    0,                                        /* tp_richcompare */
+    0,                                        /* tp_weaklistoffset */
+    (getiterfunc)seg_of_sec_iter,             /* tp_iter */
+    (iternextfunc)seg_of_sec_next,            /* tp_iternext */
+    0,                                        /* tp_methods */
+    0,                                        /* tp_members */
+    0,                                        /* tp_getset */
+    0,                                        /* tp_base */
+    0,                                        /* tp_dict */
+    0,                                        /* tp_descr_get */
+    0,                                        /* tp_descr_set */
+    0,                                        /* tp_dictoffset */
+    (initproc)NPySegOfSecIter_init,           /* tp_init */
+    0,                                        /* tp_alloc */
+    NPySegOfSecIter_new,                      /* tp_new */
+};
+
+static PyTypeObject nrnpy_MechOfSegIterType = {
+    PyObject_HEAD_INIT(NULL)0,                /*ob_size*/
+    ccast "nrn.MechOfSegIter",                /*tp_name*/
+    sizeof(NPyMechOfSegIter),                /*tp_basicsize*/
+    0,                                        /*tp_itemsize*/
+    (destructor)NPyMechOfSegIter_dealloc,     /*tp_dealloc*/
+    0,                                        /*tp_print*/
+    0,                                        /*tp_getattr*/
+    0,                                        /*tp_setattr*/
+    0,                                        /*tp_compare*/
+    0,                                        /*tp_repr*/
+    0,                                        /*tp_as_number*/
+    0,                                        /*tp_as_sequence*/
+    0,                                        /*tp_as_mapping*/
+    0,                                        /*tp_hash*/
+    0,                                        /*tp_call*/
+    0,                                        /*tp_str*/
+    0,                                        /*tp_getattro*/
+    0,                                        /*tp_setattro*/
+    0,                                        /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
+    ccast "Iterate over Mechanisms in a Segment of a Section", /* tp_doc */
+    0,                                        /* tp_traverse */
+    0,                                        /* tp_clear */
+    0,                                        /* tp_richcompare */
+    0,                                        /* tp_weaklistoffset */
+    (getiterfunc)mech_of_seg_iter,            /* tp_iter */
+    (iternextfunc)mech_of_seg_next,           /* tp_iternext */
+    0,                                        /* tp_methods */
+    0,                                        /* tp_members */
+    0,                                        /* tp_getset */
+    0,                                        /* tp_base */
+    0,                                        /* tp_dict */
+    0,                                        /* tp_descr_get */
+    0,                                        /* tp_descr_set */
+    0,                                        /* tp_dictoffset */
+    (initproc)NPyMechOfSegIter_init,          /* tp_init */
+    0,                                        /* tp_alloc */
+    NPyMechOfSegIter_new,                     /* tp_new */
+};
+
+

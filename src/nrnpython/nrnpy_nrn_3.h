@@ -6,7 +6,7 @@ static PyType_Slot nrnpy_SectionType_slots[] = {
     {Py_tp_getattro, (void*)section_getattro},
     {Py_tp_setattro, (void*)section_setattro},
     {Py_tp_richcompare, (void*)pysec_richcmp},
-    {Py_tp_iter, (void*)section_iter},
+    {Py_tp_iter, (void*)seg_of_section_iter},
     {Py_tp_methods, (void*)NPySecObj_methods},
     {Py_tp_init, (void*)NPySecObj_init},
     {Py_tp_new, (void*)NPySecObj_new},
@@ -22,23 +22,39 @@ static PyType_Spec nrnpy_SectionType_spec = {
 };
 
 
-static PyType_Slot nrnpy_AllsegIterType_slots[] = {
-    {Py_tp_dealloc, (void*)NPyAllsegIter_dealloc},
-    {Py_tp_iter, (void*)allseg_iter},
-    {Py_tp_iternext, (void*)allseg_next},
-    {Py_tp_init, (void*)NPyAllsegIter_init},
-    {Py_tp_new, (void*)NPyAllsegIter_new},
+static PyType_Slot nrnpy_AllSegOfSecIterType_slots[] = {
+    {Py_tp_dealloc, (void*)NPyAllSegOfSecIter_dealloc},
+    {Py_tp_iter, (void*)allseg_of_sec_iter},
+    {Py_tp_iternext, (void*)allseg_of_sec_next},
+    {Py_tp_init, (void*)NPyAllSegOfSecIter_init},
+    {Py_tp_new, (void*)NPyAllSegOfSecIter_new},
     {Py_tp_doc, (void*)"Iterate over all Segments of a Section, including x=0 and 1"},
     {0, 0},
 };
-static PyType_Spec nrnpy_AllsegIterType_spec = {
+static PyType_Spec nrnpy_AllSegOfSecIterType_spec = {
     "nrn.AllsegIter",
-    sizeof(NPyAllsegIter),
+    sizeof(NPyAllSegOfSecIter),
     0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    nrnpy_AllsegIterType_slots,
+    nrnpy_AllSegOfSecIterType_slots,
 };
 
+static PyType_Slot nrnpy_SegOfSecIterType_slots[] = {
+    {Py_tp_dealloc, (void*)NPySegOfSecIter_dealloc},
+    {Py_tp_iter, (void*)seg_of_sec_iter},
+    {Py_tp_iternext, (void*)seg_of_sec_next},
+    {Py_tp_init, (void*)NPySegOfSecIter_init},
+    {Py_tp_new, (void*)NPySegOfSecIter_new},
+    {Py_tp_doc, (void*)"Iterate over nonzero area Segments of a Section (does not include x=0 and 1)"},
+    {0, 0},
+};
+static PyType_Spec nrnpy_SegOfSecIterType_spec = {
+    "nrn.SegOfSecIter",
+    sizeof(NPySegOfSecIter),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    nrnpy_SegOfSecIterType_slots,
+};
 
 static PyType_Slot nrnpy_SegmentType_slots[] = {
     {Py_tp_dealloc, (void*)NPySegObj_dealloc},
@@ -47,8 +63,7 @@ static PyType_Slot nrnpy_SegmentType_slots[] = {
     {Py_tp_getattro, (void*)segment_getattro},
     {Py_tp_setattro, (void*)segment_setattro},
     {Py_tp_richcompare, (void*)pyseg_richcmp},
-    {Py_tp_iter, (void*)segment_iter},
-    {Py_tp_iternext, (void*)segment_next},
+    {Py_tp_iter, (void*)mech_of_segment_iter},
     {Py_tp_methods, (void*)NPySegObj_methods},
     {Py_tp_members, (void*)NPySegObj_members},
     {Py_tp_init, (void*)NPySegObj_init},
@@ -64,6 +79,42 @@ static PyType_Spec nrnpy_SegmentType_spec = {
     nrnpy_SegmentType_slots,
 };
 
+static PyType_Slot nrnpy_MechOfSegIterType_slots[] = {
+    {Py_tp_dealloc, (void*)NPyMechOfSegIter_dealloc},
+    {Py_tp_iter, (void*)mech_of_seg_iter},
+    {Py_tp_iternext, (void*)mech_of_seg_next},
+    {Py_tp_init, (void*)NPyMechOfSegIter_init},
+    {Py_tp_new, (void*)NPyMechOfSegIter_new},
+    {Py_tp_doc, (void*)"Iterate over Mechanisms in a Segment of a Section"},
+    {0, 0},
+};
+static PyType_Spec nrnpy_MechOfSegIterType_spec = {
+    "nrn.MechanismIter",
+    sizeof(NPyMechOfSegIter),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    nrnpy_MechOfSegIterType_slots,
+};
+
+static PyType_Slot nrnpy_MechanismType_slots[] = {
+    {Py_tp_dealloc, (void*)NPyMechObj_dealloc},
+    {Py_tp_repr, (void*)pymech_repr},
+    {Py_tp_getattro, (void*)mech_getattro},
+    {Py_tp_setattro, (void*)mech_setattro},
+    {Py_tp_methods, (void*)NPyMechObj_methods},
+    {Py_tp_members, (void*)NPyMechObj_members},
+    {Py_tp_init, (void*)NPyMechObj_init},
+    {Py_tp_new, (void*)NPyMechObj_new},
+    {Py_tp_doc, (void*)"Mechanism objects"},
+    {0, 0},
+};
+static PyType_Spec nrnpy_MechanismType_spec = {
+    "nrn.Mechanism",
+    sizeof(NPyMechObj),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    nrnpy_MechanismType_slots,
+};
 
 static PyType_Slot nrnpy_RangeType_slots[] = {
     {Py_tp_dealloc, (void*)NPyRangeVar_dealloc},
@@ -83,29 +134,6 @@ static PyType_Spec nrnpy_RangeType_spec = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     nrnpy_RangeType_slots,
 };
-
-
-static PyType_Slot nrnpy_MechanismType_slots[] = {
-    {Py_tp_dealloc, (void*)NPyMechObj_dealloc},
-    {Py_tp_repr, (void*)pymech_repr},
-    {Py_tp_getattro, (void*)mech_getattro},
-    {Py_tp_setattro, (void*)mech_setattro},
-    {Py_tp_iternext, (void*)mech_next},
-    {Py_tp_methods, (void*)NPyMechObj_methods},
-    {Py_tp_members, (void*)NPyMechObj_members},
-    {Py_tp_init, (void*)NPyMechObj_init},
-    {Py_tp_new, (void*)NPyMechObj_new},
-    {Py_tp_doc, (void*)"Mechanism objects"},
-    {0, 0},
-};
-static PyType_Spec nrnpy_MechanismType_spec = {
-    "nrn.Mechanism",
-    sizeof(NPyMechObj),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    nrnpy_MechanismType_slots,
-};
-
 
 static struct PyModuleDef nrnmodule = {PyModuleDef_HEAD_INIT, "nrn",
                                        "NEURON interaction with Python", -1,
