@@ -9,9 +9,15 @@ set(PROJECT_VERSION_MINOR 8)
 set(CMAKE_CXX_STANDARD 98)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_BUILD_TYPE
-    RelWithDebInfo
-    CACHE STRING "Empty or one of Debug, Release, RelWithDebInfo")
+set(allowableBuildTypes Debug Release RelWithDebInfo)
+if(NOT CMAKE_BUILD_TYPE) 
+  set(CMAKE_BUILD_TYPE
+      RelWithDebInfo
+      CACHE STRING "Empty or one of ${allowableBuildTypes}" FORCE)
+elseif(NOT CMAKE_BUILD_TYPE IN_LIST allowableBuildTypes)
+  message(FATAL_ERROR "Invalid build type: ${CMAKE_BUILD_TYPE} : Must be one of ${allowableBuildTypes})")
+endif()
+
 set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 
 # =============================================================================
@@ -389,6 +395,7 @@ if(cmake_generator_tolower MATCHES "makefile")
   message(STATUS "--------------+--------------------------------------------------------------")
   message(STATUS " Build option | Status")
   message(STATUS "--------------+--------------------------------------------------------------")
+  message(STATUS "BUILD_TYPE    | ${CMAKE_BUILD_TYPE} (allowed: ${allowableBuildTypes})")
   message(STATUS "Shared        | ${NRN_ENABLE_SHARED}")
   message(STATUS "Legacy FR     | ${NRN_ENABLE_LEGACY_FR}")
   message(STATUS "MPI           | ${NRN_ENABLE_MPI}")
