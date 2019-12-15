@@ -243,7 +243,7 @@ static PyTypeObject nrnpy_SegOfSecIterType = {
     0,                                        /* tp_clear */
     0,                                        /* tp_richcompare */
     0,                                        /* tp_weaklistoffset */
-    (getiterfunc)seg_of_sec_iter,             /* tp_iter */
+    (getiterfunc)PyObject_SelfIter,           /* tp_iter */
     (iternextfunc)seg_of_sec_next,            /* tp_iternext */
     0,                                        /* tp_methods */
     0,                                        /* tp_members */
@@ -253,9 +253,9 @@ static PyTypeObject nrnpy_SegOfSecIterType = {
     0,                                        /* tp_descr_get */
     0,                                        /* tp_descr_set */
     0,                                        /* tp_dictoffset */
-    (initproc)NPySegOfSecIter_init,           /* tp_init */
+    0,                                        /* tp_init */
     0,                                        /* tp_alloc */
-    NPySegOfSecIter_new,                      /* tp_new */
+    0,                                        /* tp_new */
 };
 
 static PyTypeObject nrnpy_MechOfSegIterType = {
@@ -284,7 +284,7 @@ static PyTypeObject nrnpy_MechOfSegIterType = {
     0,                                        /* tp_clear */
     0,                                        /* tp_richcompare */
     0,                                        /* tp_weaklistoffset */
-    (getiterfunc)mech_of_seg_iter,            /* tp_iter */
+    (getiterfunc)PyObject_SelfIter,           /* tp_iter */
     (iternextfunc)mech_of_seg_next,           /* tp_iternext */
     0,                                        /* tp_methods */
     0,                                        /* tp_members */
@@ -294,9 +294,9 @@ static PyTypeObject nrnpy_MechOfSegIterType = {
     0,                                        /* tp_descr_get */
     0,                                        /* tp_descr_set */
     0,                                        /* tp_dictoffset */
-    (initproc)NPyMechOfSegIter_init,          /* tp_init */
+    0,                                        /* tp_init */
     0,                                        /* tp_alloc */
-    NPyMechOfSegIter_new,                     /* tp_new */
+    0,                                        /* tp_new */
 };
 
 
