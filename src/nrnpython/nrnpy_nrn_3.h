@@ -41,10 +41,8 @@ static PyType_Spec nrnpy_AllSegOfSecIterType_spec = {
 
 static PyType_Slot nrnpy_SegOfSecIterType_slots[] = {
     {Py_tp_dealloc, (void*)NPySegOfSecIter_dealloc},
-    {Py_tp_iter, (void*)seg_of_sec_iter},
+    {Py_tp_iter, (void*)PyObject_SelfIter},
     {Py_tp_iternext, (void*)seg_of_sec_next},
-    {Py_tp_init, (void*)NPySegOfSecIter_init},
-    {Py_tp_new, (void*)NPySegOfSecIter_new},
     {Py_tp_doc, (void*)"Iterate over nonzero area Segments of a Section (does not include x=0 and 1)"},
     {0, 0},
 };
@@ -81,10 +79,8 @@ static PyType_Spec nrnpy_SegmentType_spec = {
 
 static PyType_Slot nrnpy_MechOfSegIterType_slots[] = {
     {Py_tp_dealloc, (void*)NPyMechOfSegIter_dealloc},
-    {Py_tp_iter, (void*)mech_of_seg_iter},
+    {Py_tp_iter, (void*)PyObject_SelfIter},
     {Py_tp_iternext, (void*)mech_of_seg_next},
-    {Py_tp_init, (void*)NPyMechOfSegIter_init},
-    {Py_tp_new, (void*)NPyMechOfSegIter_new},
     {Py_tp_doc, (void*)"Iterate over Mechanisms in a Segment of a Section"},
     {0, 0},
 };
