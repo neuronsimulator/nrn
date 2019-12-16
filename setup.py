@@ -1,7 +1,9 @@
 import os
+import shutil
 import re
 import sys
 import subprocess
+from collections import defaultdict
 from distutils.version import LooseVersion
 from setuptools import Command, Extension
 from setuptools import setup, find_packages
@@ -22,43 +24,55 @@ __version__ = '7.8.11'
 
 
 class CMakeAugmentedExtension(Extension):
+    """
+    Defines an Extension to be built with CMake.
+    Notice by default the cmake project is installed to build/cmake_install
+    """
     def __init__(self,
                  name,
                  sources,
                  cmake_proj_dir="",
-                 cmake_install_prefix="_install",
-                 cmake_ld_path = None,
+                 cmake_install_prefix="build/cmake_install",
                  cmake_flags=None,
                  cmake_collect_dirs=None,
                  **kw):
         Extension.__init__(self, name, sources, **kw)
         self.sourcedir = os.path.abspath(cmake_proj_dir)
         self.cmake_flags = cmake_flags or []
-        self.cmake_install_prefix = cmake_install_prefix
+        self.cmake_install_prefix = os.path.abspath(cmake_install_prefix)
         self.cmake_collect_dirs = cmake_collect_dirs or []
 
 
 class CMakeAugmentedBuilder(build_ext):
+    """
+    A builder for CMake extensions.
+    """
     def run(self, *args, **kw):
         print("CWD: " + os.getcwd())
         for ext in self.extensions:
             if isinstance(ext, CMakeAugmentedExtension):
+
                 self.run_cmake(ext)
-                # AAdd the temp include paths
+                # Add the temp include paths
                 ext.include_dirs += [os.path.join(self.build_temp, inc_dir)
                                      for inc_dir in ext.include_dirs
                                      if not os.path.isabs(inc_dir)]
 
                 # Collect project files to be installed
-                data_files = getattr(self.distribution, 'data_files')
-                if data_files is None:
-                    data_files = self.distribution.data_files = []
+                # These go directly into the final package, regardless of setuptools filters
+                rel_package = ext.name.split('.')[:-1]
+                package_data_dir = os.path.join(self.build_lib, *(rel_package + ['.data']))
                 for d in ext.cmake_collect_dirs:
-                    cdir = os.path.join(ext.cmake_install_prefix, d)
-                    cfiles = [os.path.join(cdir, f)
-                              for f in os.listdir(cdir)
-                              if os.path.isfile(os.path.join(cdir, f))]
-                    data_files.append((d, cfiles))
+                    src_dir = os.path.join(ext.cmake_install_prefix, d)
+                    dst_dir = os.path.join(package_data_dir, d)
+                    print("Copying CMAKE output '{}' -> '{}'".format(src_dir, dst_dir))
+                    if not os.path.exists(dst_dir):
+                        os.makedirs(dst_dir)
+                    for f in os.listdir(src_dir):
+                        f = os.path.join(src_dir, f)
+                        if os.path.isfile(f):
+                            shutil.copy(f, dst_dir)
+
                 print("Done building CMake project. Now building python extension")
 
         build_ext.run(self, *args, **kw)
@@ -131,6 +145,10 @@ class Docs(Command):
 
 
 def setup_package():
+    NRN_PY_ROOT = 'share/lib/python'
+    NRN_PY_SCRIPTS = os.path.join(NRN_PY_ROOT, 'scripts')
+    NRN_COLLECT_DIRS = ['bin', 'lib', 'include', 'share/nrn/lib/hoc', 'share/nrn/lib']
+
     docs_require = []  # sphinx, themes, etc
     maybe_docs = docs_require if "docs" in sys.argv else []
     maybe_test_runner = ['pytest-runner'] if "test" in sys.argv else []
@@ -144,15 +162,13 @@ def setup_package():
         'neuron.gui2'
     ] + ["neuron.rxd.geometry3d"] if RX3D else []
 
-    neuron_root = "_install" + python_version().replace('.', '')
+    REL_RPATH = "@loader_path" if sys.platform[:6] == "darwin" else "$ORIGIN"
 
-    extension_common_params = dict(
-        library_dirs = [neuron_root + "/lib"],
-        runtime_library_dirs = [],  # Neuron libraries get copied
+    extension_common_params = defaultdict(list,
+        library_dirs = ["build/cmake_install/lib"],
+        # extension sits in NEURON. We have to rpath to .data/lib
         extra_link_args = [
-            "-Wl,-rpath,{}".format("@loader_path/../../../")
-        ] if sys.platform[:6] == "darwin" else [
-            "-Wl,-rpath,{}".format("$ORIGIN/../../../")
+            "-Wl,-rpath,{}".format(REL_RPATH + "/.data/lib/")
         ],
         libraries = ["nrniv"]  # "nrnpython{}".format(sys.version_info[0]), "nrniv"],
     )
@@ -160,9 +176,7 @@ def setup_package():
     extensions = [CMakeAugmentedExtension(
         "neuron.hoc",
         ["src/nrnpython/inithoc.cpp"],
-        cmake_install_prefix = neuron_root,
-        cmake_ld_path = "lib",
-        cmake_collect_dirs = ['bin', 'lib', 'include', 'share/nrn/lib/hoc', 'share/nrn/lib'],
+        cmake_collect_dirs = NRN_COLLECT_DIRS,
         cmake_flags = [
             '-DNRN_ENABLE_CORENEURON=OFF',
             '-DNRN_ENABLE_INTERVIEWS=OFF',
@@ -173,7 +187,6 @@ def setup_package():
             '-DNRN_ENABLE_BINARY=OFF',
         ],
         include_dirs = [
-            neuron_root + "/include",
             "src",
             "src/oc",
             "src/nrnpython",
@@ -217,11 +230,15 @@ def setup_package():
     setup(
         name='NEURON',
         version=__version__,
-        package_dir={'': 'share/lib/python'},
+        package_dir={'': NRN_PY_ROOT},
         packages=py_packages,
         ext_modules=extensions,
+        scripts=[
+            os.path.join(NRN_PY_SCRIPTS, f)
+            for f in os.listdir(NRN_PY_SCRIPTS)
+            if f[0] != '_'
+        ],
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),
-        include_package_data=True,
         install_requires=['numpy>=1.13.1'],
         tests_require=["flake8", "pytest"],
         setup_requires=maybe_docs + maybe_test_runner,
