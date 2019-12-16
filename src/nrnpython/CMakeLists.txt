@@ -186,6 +186,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       COMMENT "Building python module with: ${pyexe}")
   endforeach(pyexe)
+
   add_dependencies(hoc_module nrniv_lib)
 
   # user has selected dynamic python support (could be multiple versions)
