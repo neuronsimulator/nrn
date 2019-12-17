@@ -104,6 +104,7 @@ endif()
 
 # NRN_ENABLE_MODULE_INSTALL will create a separate nrnpython lib
 if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_MODULE_INSTALL)
+  # Include nrnpython in nrniv - useful for single lib neuron and wheels
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_NRNPYTHON_SRC_FILES})
 endif()
 
@@ -282,12 +283,8 @@ set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
 # =============================================================================
 # Link with all libraries
 # =============================================================================
-if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC AND NRN_PYTHON_LIBRARY_FOUND)
-  # if NRN_ENABLE_BINARY is off that means we are typically building wheel where
-  # we do not want to link to specific python. Note that LINK_AGAINST_PYTHON variable
-  # can be used but currently it's only considered for mingw.
-  message("Linking to ${PYTHON_LIBRARIES}")
-  target_link_libraries(nrniv_lib ${PYTHON_LIBRARIES})
+if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_MODULE_INSTALL AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
+  target_link_libraries(nrniv_lib ${PYTHONLIB_NAME})
 endif()
 
 if(NRN_ENABLE_MPI)
@@ -316,21 +313,24 @@ endif()
 # =============================================================================
 # Final executable
 # =============================================================================
-# Skip if Python libs not found - TODO: make Dynamic
-if(NRN_ENABLE_PYTHON AND NOT NRN_PYTHON_LIBRARY_FOUND)
-  message(WARNING "Not building nrniv because Python libs could not be found")
-  set(NRN_ENABLE_BINARY FALSE)
-else()
-  add_executable(nrniv ${NRN_BIN_SRC_FILES})
-  target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE} ${CMAKE_THREAD_LIBS_INIT})
-  if(NOT MINGW)
-    target_link_libraries(nrniv ${CMAKE_DL_LIBS})
-  endif()
+add_executable(nrniv ${NRN_BIN_SRC_FILES})
+target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE} ${CMAKE_THREAD_LIBS_INIT})
+if(NOT MINGW)
+  target_link_libraries(nrniv ${CMAKE_DL_LIBS})
 endif()
 
 # TODO: unset in top level CMake is not working
 if(NOT NRN_MACOS_BUILD AND ${READLINE_FOUND} AND NRN_ENABLE_BINARY)
   target_link_libraries(nrniv ${Readline_LIBRARY})
+endif()
+
+if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_MODULE_INSTALL AND NRN_ENABLE_PYTHON_DYNAMIC)
+  # Under these circumstances nothing was linked with Python but we cant avoid linking nrniv
+  # otherwise library wont be loaded. The best we can do is to link to a placeholder libpython
+    set(PYTHONLIB_NAME "python${PYTHON_LIBRARY_SUFFIX}")
+    add_library(${PYTHONLIB_NAME} SHARED "../nrnpython/libpython_placeholder.cpp")  # Fakelib
+    message("Linking nrniv to generic ${PYTHONLIB_NAME}")
+    target_link_libraries(nrniv ${PYTHONLIB_NAME} "-Wl,${UNDEFINED_SYMBOLS_IGNORE_FLAG}")
 endif()
 
 # =============================================================================
