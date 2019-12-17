@@ -102,7 +102,8 @@ else()
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_NRNMPI_SRC_FILES})
 endif()
 
-if(NOT NRN_ENABLE_PYTHON_DYNAMIC AND NRN_ENABLE_PYTHON)
+# NRN_ENABLE_MODULE_INSTALL will create a separate nrnpython lib
+if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_MODULE_INSTALL)
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_NRNPYTHON_SRC_FILES})
 endif()
 
@@ -281,13 +282,12 @@ set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
 # =============================================================================
 # Link with all libraries
 # =============================================================================
-if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
+if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC AND NRN_PYTHON_LIBRARY_FOUND)
   # if NRN_ENABLE_BINARY is off that means we are typically building wheel where
   # we do not want to link to specific python. Note that LINK_AGAINST_PYTHON variable
   # can be used but currently it's only considered for mingw.
-  if(NRN_ENABLE_BINARY)
-    target_link_libraries(nrniv_lib ${PYTHON_LIBRARIES})
-  endif()
+  message("Linking to ${PYTHON_LIBRARIES}")
+  target_link_libraries(nrniv_lib ${PYTHON_LIBRARIES})
 endif()
 
 if(NRN_ENABLE_MPI)
@@ -312,10 +312,15 @@ else()
   include_directories(nrniv_lib ${NRN_IVOS_SRC_DIR} ${PROJECT_BINARY_DIR}/src/ivos)
 endif()
 
+
 # =============================================================================
 # Final executable
 # =============================================================================
-if(NRN_ENABLE_BINARY)
+# Skip if Python libs not found - TODO: make Dynamic
+if(NRN_ENABLE_PYTHON AND NOT NRN_PYTHON_LIBRARY_FOUND)
+  message(WARNING "Not building nrniv because Python libs could not be found")
+  set(NRN_ENABLE_BINARY FALSE)
+else()
   add_executable(nrniv ${NRN_BIN_SRC_FILES})
   target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE} ${CMAKE_THREAD_LIBS_INIT})
   if(NOT MINGW)
