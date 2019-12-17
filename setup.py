@@ -182,7 +182,7 @@ def setup_package():
             '-DNRN_ENABLE_INTERVIEWS=OFF',
             '-DNRN_ENABLE_RX3D=OFF',
             '-DNRN_ENABLE_MPI=OFF',
-            '-DNRN_ENABLE_PYTHON_DYNAMIC=OFF',
+            '-DNRN_ENABLE_PYTHON_DYNAMIC=ON',
             '-DNRN_ENABLE_MODULE_INSTALL=OFF',
             '-DLINK_AGAINST_PYTHON=OFF',
         ],
