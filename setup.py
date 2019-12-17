@@ -170,7 +170,7 @@ def setup_package():
         extra_link_args = [
             "-Wl,-rpath,{}".format(REL_RPATH + "/.data/lib/")
         ],
-        libraries = ["nrniv"]  # "nrnpython{}".format(sys.version_info[0]), "nrniv"],
+        libraries = ["nrniv", "nrnpython{}".format(sys.version_info[0]), "nrniv"],
     )
 
     extensions = [CMakeAugmentedExtension(
