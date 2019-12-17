@@ -91,7 +91,7 @@ class CMakeAugmentedBuilder(build_ext):
 
         cfg = 'Debug' if self.debug else 'Release'
         cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
-        build_args = ['--config', cfg, '--', '-j4']
+        build_args = ['--config', cfg, '--', '-j4', 'VERBOSE=1']
 
         env = os.environ.copy()
         env['CXXFLAGS'] = "{} -DVERSION_INFO='{}'".format(env.get('CXXFLAGS', ''),
