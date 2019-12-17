@@ -81,29 +81,85 @@ else()
   set(BUILD_MEMACS_TRUE "#")
 endif()
 
-# =============================================================================
-# All variables are set, prepare setup.py for python module install
-# =============================================================================
-nrn_configure_file(setup.py src/nrnpython)
 
 # =============================================================================
-# Setup MinGW toolchain for setuptools
+# nrnpython libraries
 # =============================================================================
-if(MINGW)
-  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/setup.cfg "[build]\ncompiler=mingw32")
-endif()
-
-# =============================================================================
-# Build rxdmath library
-# =============================================================================
-# Always build as it's small anyway
 add_library(rxdmath SHARED ${CMAKE_CURRENT_SOURCE_DIR}/rxdmath.c)
 install(TARGETS rxdmath DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+
+
+# Created nrnpython
+set(nrnpython_lib_list)
+
+# user has selected dynamic python support (could be multiple versions)
+if(NRN_ENABLE_PYTHON_DYNAMIC)
+  set(INCLUDE_DIRS
+      .
+      ../oc
+      ../nrnoc
+      ../ivoc
+      ../nrniv
+      ../ivos
+      ../gnu
+      ../mesch
+      ../nrnmpi
+      ${PROJECT_BINARY_DIR}/src/nrnpython
+      ${PROJECT_BINARY_DIR}/src/ivos
+      ${PROJECT_BINARY_DIR}/src/oc
+      ${IV_INCLUDE_DIR})
+
+  if(LINK_AGAINST_PYTHON)
+    list(LENGTH NRN_PYTHON_EXE_LIST _num_pythons)
+    math(EXPR num_pythons "${_num_pythons} - 1")
+    foreach(val RANGE ${num_pythons})
+      list(GET NRN_PYTHON_VER_LIST ${val} pyver)
+      list(GET NRN_PYTHON_INCLUDE_LIST ${val} pyinc)
+      list(GET NRN_PYTHON_LIB_LIST ${val} pylib)
+      add_library(nrnpython${pyver} SHARED ${NRN_NRNPYTHON_SRC_FILES})
+      target_include_directories(nrnpython${pyver} BEFORE PUBLIC ${pyinc} ${INCLUDE_DIRS})
+      target_link_libraries(nrnpython${pyver} nrniv_lib ${pylib} ${Readline_LIBRARY})
+      add_dependencies(nrnpython${pyver} nrniv_lib)
+      list(APPEND nrnpython_lib_list nrnpython${pyver})
+      install(TARGETS nrnpython${pyver} DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+    endforeach()
+  else()
+    # build python2 library and install it
+    if(NRNPYTHON_INCLUDE2)
+      add_library(nrnpython2 SHARED ${NRN_NRNPYTHON_SRC_FILES})
+      target_include_directories(nrnpython2 BEFORE PUBLIC ${NRNPYTHON_INCLUDE2} ${INCLUDE_DIRS})
+      add_dependencies(nrnpython2 nrniv_lib)
+      list(APPEND nrnpython_lib_list nrnpython2)
+      install(TARGETS nrnpython2 DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+    endif()
+
+    # build python3 library and install it
+    if(NRNPYTHON_INCLUDE3)
+      add_library(nrnpython3 SHARED ${NRN_NRNPYTHON_SRC_FILES})
+      add_dependencies(nrnpython3 nrniv_lib)
+      list(APPEND nrnpython_lib_list nrnpython3)
+      target_include_directories(nrnpython3 BEFORE PUBLIC ${NRNPYTHON_INCLUDE3} ${INCLUDE_DIRS})
+      install(TARGETS nrnpython3 DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+    endif()
+  endif()
+endif()
+
+# module is already installed in lib, just copy folder
+install(DIRECTORY ${PROJECT_BINARY_DIR}/lib/ DESTINATION ${NRN_LIBDIR})
+
 
 # =============================================================================
 # If NEURON python module installation is enabled
 # =============================================================================
 if(NRN_ENABLE_MODULE_INSTALL)
+
+  # All variables are set, prepare setup.py for python module install
+  nrn_configure_file(setup.py src/nrnpython)
+
+  # Setup MinGW toolchain for setuptools
+  if(MINGW)
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/setup.cfg "[build]\ncompiler=mingw32")
+  endif()
 
   # check arguments for setup.py install : if user has just provided YES, then use default
   if("${NRN_MODULE_INSTALL_OPTIONS}" STREQUAL "")
@@ -157,101 +213,28 @@ if(NRN_ENABLE_MODULE_INSTALL)
 
   add_custom_command(TARGET hoc_module PRE_BUILD
                      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                             ${PROJECT_BINARY_DIR}/share/lib/python/neuron/rxd/constants.py
-                             ${NRN_BUILD_SHARE_DIR}/lib/python/neuron/rxd/constants.py)
+                               ${PROJECT_BINARY_DIR}/share/lib/python/neuron/rxd/constants.py
+                               ${NRN_BUILD_SHARE_DIR}/lib/python/neuron/rxd/constants.py)
 
   add_custom_command(TARGET hoc_module PRE_BUILD
-                     COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/lib
-                             ${NRN_BUILD_SHARE_DIR}/lib
-                     COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/demo
-                             ${PROJECT_BINARY_DIR}/share/nrn/demo)
+                     COMMAND ${CMAKE_COMMAND} -E copy_directory
+                               ${PROJECT_SOURCE_DIR}/share/lib ${NRN_BUILD_SHARE_DIR}/lib
+                     COMMAND ${CMAKE_COMMAND} -E copy_directory
+                               ${PROJECT_SOURCE_DIR}/share/lib ${PROJECT_BINARY_DIR}/share/nrn/lib
+                     COMMAND ${CMAKE_COMMAND} -E copy_directory
+                               ${PROJECT_SOURCE_DIR}/share/demo ${PROJECT_BINARY_DIR}/share/nrn/demo)
 
   # for each python detected / provided by user, install module at install time
   foreach(pyexe ${NRN_PYTHON_EXE_LIST})
     add_custom_command(TARGET hoc_module POST_BUILD
                        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                               ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
-                               ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
+                                 ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
+                                 ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
                        COMMAND ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}
                        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                        COMMENT "Building python module with: ${pyexe}")
   endforeach(pyexe)
-  add_dependencies(hoc_module nrniv_lib)
 
-  # =============================================================================
-  # Copy necessary files to build directory
-  # =============================================================================
-  add_custom_command(TARGET hoc_module PRE_BUILD
-                     COMMAND ${CMAKE_COMMAND} -E copy_directory
-                             ${PROJECT_SOURCE_DIR}/share/lib ${PROJECT_BINARY_DIR}/share/nrn/lib
-                     COMMAND ${CMAKE_COMMAND} -E copy_directory
-                             ${PROJECT_SOURCE_DIR}/share/demo ${PROJECT_BINARY_DIR}/share/nrn/demo)
+  add_dependencies(hoc_module nrniv_lib ${nrnpython_lib_list})
 
-  # for each python detected / provided by user, install module at install time
-  foreach(pyexe ${NRN_PYTHON_EXE_LIST})
-      add_custom_command(TARGET hoc_module POST_BUILD
-                         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                           ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
-                           ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
-                         COMMAND ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}
-                         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                         COMMENT "Building python module with: ${pyexe}")
-  endforeach(pyexe)
-
-  add_dependencies(hoc_module nrniv_lib)
-
-  # user has selected dynamic python support (could be multiple versions)
-  if(NRN_ENABLE_PYTHON_DYNAMIC)
-    set(INCLUDE_DIRS
-        .
-        ../oc
-        ../nrnoc
-        ../ivoc
-        ../nrniv
-        ../ivos
-        ../gnu
-        ../mesch
-        ../nrnmpi
-        ${PROJECT_BINARY_DIR}/src/nrnpython
-        ${PROJECT_BINARY_DIR}/src/ivos
-        ${PROJECT_BINARY_DIR}/src/oc
-        ${IV_INCLUDE_DIR})
-
-    if(LINK_AGAINST_PYTHON)
-      list(LENGTH NRN_PYTHON_EXE_LIST _num_pythons)
-      math(EXPR num_pythons "${_num_pythons} - 1")
-      foreach(val RANGE ${num_pythons})
-        list(GET NRN_PYTHON_VER_LIST ${val} pyver)
-        list(GET NRN_PYTHON_INCLUDE_LIST ${val} pyinc)
-        list(GET NRN_PYTHON_LIB_LIST ${val} pylib)
-        add_library(nrnpython${pyver} SHARED ${NRN_NRNPYTHON_SRC_FILES})
-        target_include_directories(nrnpython${pyver} BEFORE PUBLIC ${pyinc} ${INCLUDE_DIRS})
-        target_link_libraries(nrnpython${pyver} nrniv_lib ${pylib} ${Readline_LIBRARY})
-        add_dependencies(nrnpython${pyver} nrniv_lib)
-        add_dependencies(hoc_module nrnpython${pyver})
-        install(TARGETS nrnpython${pyver} DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
-      endforeach()
-    else()
-      # build python2 library and install it
-      if(NRNPYTHON_INCLUDE2)
-        add_library(nrnpython2 SHARED ${NRN_NRNPYTHON_SRC_FILES})
-        target_include_directories(nrnpython2 BEFORE PUBLIC ${NRNPYTHON_INCLUDE2} ${INCLUDE_DIRS})
-        add_dependencies(nrnpython2 nrniv_lib)
-        add_dependencies(hoc_module nrnpython2)
-        install(TARGETS nrnpython2 DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
-      endif()
-
-      # build python3 library and install it
-      if(NRNPYTHON_INCLUDE3)
-        add_library(nrnpython3 SHARED ${NRN_NRNPYTHON_SRC_FILES})
-        add_dependencies(nrnpython3 nrniv_lib)
-        add_dependencies(hoc_module nrnpython3)
-        target_include_directories(nrnpython3 BEFORE PUBLIC ${NRNPYTHON_INCLUDE3} ${INCLUDE_DIRS})
-        install(TARGETS nrnpython3 DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
-      endif()
-    endif()
-  endif()
-
-  # module is already installed in lib, just copy folder
-  install(DIRECTORY ${PROJECT_BINARY_DIR}/lib/ DESTINATION ${NRN_LIBDIR})
 endif()

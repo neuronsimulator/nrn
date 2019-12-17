@@ -103,7 +103,7 @@ else()
 endif()
 
 # NRN_ENABLE_MODULE_INSTALL will create a separate nrnpython lib
-if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_MODULE_INSTALL)
+if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
   # Include nrnpython in nrniv - useful for single lib neuron and wheels
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_NRNPYTHON_SRC_FILES})
 endif()
@@ -283,7 +283,7 @@ set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
 # =============================================================================
 # Link with all libraries
 # =============================================================================
-if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_MODULE_INSTALL AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
+if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
   target_link_libraries(nrniv_lib ${PYTHONLIB_NAME})
 endif()
 
@@ -325,12 +325,9 @@ if(NOT NRN_MACOS_BUILD AND ${READLINE_FOUND} AND NRN_ENABLE_BINARY)
 endif()
 
 if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_MODULE_INSTALL AND NRN_ENABLE_PYTHON_DYNAMIC)
-  # Under these circumstances nothing was linked with Python but we cant avoid linking nrniv
-  # otherwise library wont be loaded. The best we can do is to link to a placeholder libpython
-    set(PYTHONLIB_NAME "python${PYTHON_LIBRARY_SUFFIX}")
-    add_library(${PYTHONLIB_NAME} SHARED "../nrnpython/libpython_placeholder.cpp")  # Fakelib
-    message("Linking nrniv to generic ${PYTHONLIB_NAME}")
-    target_link_libraries(nrniv ${PYTHONLIB_NAME} "-Wl,${UNDEFINED_SYMBOLS_IGNORE_FLAG}")
+  # Under these circumstances nrniv was not linked at all with Python. Ignore mising symbols
+  message(WARNING "Dynamic Python without Module install is EXPERIMENTAL")
+  # target_link_libraries(nrniv "-Wl,${UNDEFINED_SYMBOLS_IGNORE_FLAG}")
 endif()
 
 # =============================================================================
