@@ -85,7 +85,7 @@ static PyType_Slot nrnpy_MechOfSegIterType_slots[] = {
     {0, 0},
 };
 static PyType_Spec nrnpy_MechOfSegIterType_spec = {
-    "nrn.MechanismIter",
+    "nrn.MechOfSegIter",
     sizeof(NPyMechOfSegIter),
     0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
@@ -97,6 +97,7 @@ static PyType_Slot nrnpy_MechanismType_slots[] = {
     {Py_tp_repr, (void*)pymech_repr},
     {Py_tp_getattro, (void*)mech_getattro},
     {Py_tp_setattro, (void*)mech_setattro},
+    {Py_tp_iter, (void*)var_of_mech_iter},
     {Py_tp_methods, (void*)NPyMechObj_methods},
     {Py_tp_members, (void*)NPyMechObj_members},
     {Py_tp_init, (void*)NPyMechObj_init},
@@ -110,6 +111,21 @@ static PyType_Spec nrnpy_MechanismType_spec = {
     0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     nrnpy_MechanismType_slots,
+};
+
+static PyType_Slot nrnpy_VarOfMechIterType_slots[] = {
+    {Py_tp_dealloc, (void*)NPyVarOfMechIter_dealloc},
+    {Py_tp_iter, (void*)PyObject_SelfIter},
+    {Py_tp_iternext, (void*)var_of_mech_next},
+    {Py_tp_doc, (void*)"Iterate over variables  in a Mechanism"},
+    {0, 0},
+};
+static PyType_Spec nrnpy_VarOfMechIterType_spec = {
+    "nrn.VarOfMechIter",
+    sizeof(NPyVarOfMechIter),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    nrnpy_VarOfMechIterType_slots,
 };
 
 static PyType_Slot nrnpy_RangeType_slots[] = {

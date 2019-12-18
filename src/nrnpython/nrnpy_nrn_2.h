@@ -202,7 +202,7 @@ static PyTypeObject nrnpy_MechanismType = {
     0,                                        /* tp_clear */
     0,                                        /* tp_richcompare */
     0,                                        /* tp_weaklistoffset */
-    0,                                        /* tp_iter */
+    (getiterfunc)var_of_mech_iter,            /* tp_iter */
     0,                                        /* tp_iternext */
     NPyMechObj_methods,                       /* tp_methods */
     NPyMechObj_members,                       /* tp_members */
@@ -220,7 +220,7 @@ static PyTypeObject nrnpy_MechanismType = {
 static PyTypeObject nrnpy_SegOfSecIterType = {
     PyObject_HEAD_INIT(NULL)0,                /*ob_size*/
     ccast "nrn.SegOfSecIter",                 /*tp_name*/
-    sizeof(NPySegOfSecIter),                 /*tp_basicsize*/
+    sizeof(NPySegOfSecIter),                  /*tp_basicsize*/
     0,                                        /*tp_itemsize*/
     (destructor)NPySegOfSecIter_dealloc,      /*tp_dealloc*/
     0,                                        /*tp_print*/
@@ -261,7 +261,7 @@ static PyTypeObject nrnpy_SegOfSecIterType = {
 static PyTypeObject nrnpy_MechOfSegIterType = {
     PyObject_HEAD_INIT(NULL)0,                /*ob_size*/
     ccast "nrn.MechOfSegIter",                /*tp_name*/
-    sizeof(NPyMechOfSegIter),                /*tp_basicsize*/
+    sizeof(NPyMechOfSegIter),                 /*tp_basicsize*/
     0,                                        /*tp_itemsize*/
     (destructor)NPyMechOfSegIter_dealloc,     /*tp_dealloc*/
     0,                                        /*tp_print*/
@@ -286,6 +286,47 @@ static PyTypeObject nrnpy_MechOfSegIterType = {
     0,                                        /* tp_weaklistoffset */
     (getiterfunc)PyObject_SelfIter,           /* tp_iter */
     (iternextfunc)mech_of_seg_next,           /* tp_iternext */
+    0,                                        /* tp_methods */
+    0,                                        /* tp_members */
+    0,                                        /* tp_getset */
+    0,                                        /* tp_base */
+    0,                                        /* tp_dict */
+    0,                                        /* tp_descr_get */
+    0,                                        /* tp_descr_set */
+    0,                                        /* tp_dictoffset */
+    0,                                        /* tp_init */
+    0,                                        /* tp_alloc */
+    0,                                        /* tp_new */
+};
+
+static PyTypeObject nrnpy_VarOfMechIterType = {
+    PyObject_HEAD_INIT(NULL)0,                /*ob_size*/
+    ccast "nrn.VarOfMechIter",                /*tp_name*/
+    sizeof(NPyVarOfMechIter),                 /*tp_basicsize*/
+    0,                                        /*tp_itemsize*/
+    (destructor)NPyVarOfMechIter_dealloc,     /*tp_dealloc*/
+    0,                                        /*tp_print*/
+    0,                                        /*tp_getattr*/
+    0,                                        /*tp_setattr*/
+    0,                                        /*tp_compare*/
+    0,                                        /*tp_repr*/
+    0,                                        /*tp_as_number*/
+    0,                                        /*tp_as_sequence*/
+    0,                                        /*tp_as_mapping*/
+    0,                                        /*tp_hash*/
+    0,                                        /*tp_call*/
+    0,                                        /*tp_str*/
+    0,                                        /*tp_getattro*/
+    0,                                        /*tp_setattro*/
+    0,                                        /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
+    ccast "Iterate over Mechanisms in a Segment of a Section", /* tp_doc */
+    0,                                        /* tp_traverse */
+    0,                                        /* tp_clear */
+    0,                                        /* tp_richcompare */
+    0,                                        /* tp_weaklistoffset */
+    (getiterfunc)PyObject_SelfIter,           /* tp_iter */
+    (iternextfunc)var_of_mech_next,           /* tp_iternext */
     0,                                        /* tp_methods */
     0,                                        /* tp_members */
     0,                                        /* tp_getset */
