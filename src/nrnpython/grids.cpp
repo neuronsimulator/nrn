@@ -252,7 +252,7 @@ Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors
         new_Grid->ics_tasks[k].u_diag = (double*)malloc(sizeof(double) * new_Grid->_line_length_max - 1);
         new_Grid->ics_tasks[k].diag = (double*)malloc(sizeof(double) * new_Grid->_line_length_max);
         new_Grid->ics_tasks[k].l_diag = (double*)malloc(sizeof(double) * new_Grid->_line_length_max - 1);
-    }    
+    }
 
     new_Grid->hybrid = false;
     new_Grid->hybrid_data = (Hybrid_data*)malloc(sizeof(Hybrid_data));
@@ -293,7 +293,7 @@ Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors
     new_Grid->divide_x_work(NUM_THREADS);
     new_Grid->divide_y_work(NUM_THREADS);
     new_Grid->divide_z_work(NUM_THREADS);
-    
+
     new_Grid->node_flux_count = 0;
     new_Grid->node_flux_idx = NULL;
     new_Grid->node_flux_scale = NULL;
@@ -650,15 +650,15 @@ void ECS_Grid_node::apply_node_flux3D(double dt, double* ydot)
     double* sources;
     int i;
     int offset;
-    
+
     if(nrnmpi_use)
     {
         sources = (double*)calloc(node_flux_count,sizeof(double));
         offset = proc_flux_offsets[nrnmpi_myid];
         apply_node_flux(proc_num_fluxes[nrnmpi_myid], NULL, &node_flux_scale[offset], node_flux_src, dt, &sources[offset]);
-        
+
         nrnmpi_dbl_allgatherv_inplace(sources, proc_num_fluxes, proc_flux_offsets);
-        
+
         for(i = 0; i < node_flux_count; i++)
             dest[node_flux_idx[i]] += sources[i];
         free(sources);
@@ -1162,7 +1162,7 @@ void ICS_Grid_node::apply_node_flux3D(double dt, double* ydot)
 void ICS_Grid_node::do_grid_currents(double dt, int grid_id)
 {
     MEM_ZERO(states_cur,sizeof(double)*_num_nodes);
-    if(ics_current_seg_ptrs != NULL){  
+    if(ics_current_seg_ptrs != NULL){
         ssize_t i, j, n;
         int seg_start_index, seg_stop_index;
         int state_index;

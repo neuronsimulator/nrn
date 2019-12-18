@@ -10,3 +10,12 @@
 [submodule "external/coding-conventions"]
 	path = external/coding-conventions
 	url = https://github.com/BlueBrain/hpc-coding-conventions.git
+[submodule "docs/python"]
+	path = docs/python
+	url = https://github.com/neuronsimulator/progref-py.git
+[submodule "docs/hoc"]
+	path = docs/hoc
+	url = https://github.com/neuronsimulator/progref-hoc.git
+[submodule "docs/tutorials"]
+	path = docs/tutorials
+	url = https://github.com/neuronsimulator/pythontutorial.git

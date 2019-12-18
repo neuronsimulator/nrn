@@ -71,6 +71,14 @@ def _remove(start, stop):
     _has_node_fluxes = _node_fluxes['index'] != []
 
 
+    # remove _node_flux
+    for (i,idx) in enumerate(_node_fluxes['index']):
+        if idx in dels:
+            for lst in _node_fluxes.values():
+               del lst[i]
+    
+
+
 def _replace(old_offset, old_nseg, new_offset, new_nseg):
     """ delete old volumes, surface areas and diff values in from global arrays
         move states so that the new segment value is equal to the old segment

@@ -251,7 +251,6 @@ nrn_configure_file(bbsconf.h src/parallel)
 nrn_configure_file(nrnneosm.h src/nrncvode)
 nrn_configure_file(sundials_config.h src/sundials)
 nrn_configure_file(mos2nrn.h src/uxnrnbbs)
-nrn_configure_file(ivstream.h src/ivos)
 nrn_configure_file(njconf.h src/nrnjava)
 nrn_configure_file(nmodlconf.h .)
 nrn_configure_file(nrnunits.lib share/lib OUTPUT share/nrn/lib)
@@ -264,7 +263,6 @@ file(COPY ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib DESTINATION ${PROJECT
 # If Interviews is not provided, configure local files
 # =============================================================================
 if(NOT NRN_ENABLE_INTERVIEWS)
-  nrn_configure_file(ivstream.h src/ivos)
   nrn_copy_file_without_overwrite("${PROJECT_SOURCE_DIR}/cmake_nrnconf.h.in"
                                   "${PROJECT_SOURCE_DIR}/config.h.in")
   nrn_configure_file(config.h .)

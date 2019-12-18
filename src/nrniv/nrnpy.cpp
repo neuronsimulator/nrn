@@ -146,7 +146,7 @@ static void set_nrnpylib() {
     hoc_forward2back(bnrnhome);
     hoc_back2forward(fnrnhome);
     sprintf(line, "%s\\mingw\\usr\\bin\\bash %s/bin/nrnpyenv.sh %s --NEURON_HOME=%s",
-      bnrnhome, 
+      bnrnhome,
       fnrnhome,
       (nrnpy_pyexe && strlen(nrnpy_pyexe) > 0) ? nrnpy_pyexe : "",
       fnrnhome);
