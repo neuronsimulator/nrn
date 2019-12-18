@@ -59,11 +59,17 @@ typedef struct {
 
 typedef struct {
   PyObject_HEAD NPyMechObj* pymech_;
+  Symbol* msym_;
+  int i_;
+} NPyVarOfMechIter;
+
+typedef struct {
+  PyObject_HEAD NPyMechObj* pymech_;
   int index_;
 } NPyRVItr;
 
 typedef struct {
-  PyObject_HEAD NPySegObj* pyseg_;
+  PyObject_HEAD NPyMechObj* pymech_;
   Symbol* sym_;
   int isptr_;
   int attr_from_sec_; // so section.xraxial[0] = e assigns to all segments.
@@ -75,6 +81,7 @@ static PyTypeObject* pseg_of_sec_iter_type;
 static PyTypeObject* psegment_type;
 static PyTypeObject* pmech_of_seg_iter_generic_type;
 static PyTypeObject* pmech_generic_type;
+static PyTypeObject* pvar_of_mech_iter_generic_type;
 static PyTypeObject* range_type;
 
 PyObject* pmech_types;  // Python map for name to Mechanism
@@ -206,7 +213,7 @@ static void NPySegObj_dealloc(NPySegObj* self) {
 
 static void NPyRangeVar_dealloc(NPyRangeVar* self) {
   // printf("NPyRangeVar_dealloc %p\n", self);
-  Py_XDECREF(self->pyseg_);
+  Py_XDECREF(self->pymech_);
   ((PyObject*)self)->ob_type->tp_free((PyObject*)self);
 }
 
@@ -219,6 +226,12 @@ static void NPyMechObj_dealloc(NPyMechObj* self) {
 static void NPyMechOfSegIter_dealloc(NPyMechOfSegIter* self) {
   // printf("NPyMechOfSegIter_dealloc %p %s\n", self, self->ob_type->tp_name);
   Py_XDECREF(self->pyseg_);
+  ((PyObject*)self)->ob_type->tp_free((PyObject*)self);
+}
+
+static void NPyVarOfMechIter_dealloc(NPyVarOfMechIter* self) {
+  // printf("NPyVarOfMechIter_dealloc %p %s\n", self, self->ob_type->tp_name);
+  Py_XDECREF(self->pymech_);
   ((PyObject*)self)->ob_type->tp_free((PyObject*)self);
 }
 
@@ -372,7 +385,7 @@ static PyObject* NPyRangeVar_new(PyTypeObject* type, PyObject* args,
   NPyRangeVar* self;
   self = (NPyRangeVar*)type->tp_alloc(type, 0);
   if (self != NULL) {
-    self->pyseg_ = NULL;
+    self->pymech_ = NULL;
     self->sym_ = NULL;
     self->isptr_ = 0;
     self->attr_from_sec_ = 0;
@@ -997,6 +1010,15 @@ static PyObject* NPyRangeVar_name(NPyRangeVar* self) {
   return result;
 }
 
+static PyObject* NPyRangeVar_mech(NPyRangeVar* self) {
+  PyObject* result = NULL;
+  if (self->pymech_) {
+    result = (PyObject*)self->pymech_;
+    Py_INCREF(result); 
+  }
+  return result;
+}
+
 static PyObject* NPySecObj_connect(NPySecObj* self, PyObject* args) {
   PyObject* p;
   NPySecObj* parent;
@@ -1401,6 +1423,19 @@ static void rv_noexist(Section* sec, const char* n, double x, int err) {
   PyErr_SetString(PyExc_AttributeError, buf);
 }
 
+static NPyRangeVar* rvnew(Symbol* sym, NPySecObj* sec, double x) {
+  NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
+  r->pymech_ = PyObject_New(NPyMechObj, pmech_generic_type);
+  r->pymech_->pyseg_ = PyObject_New(NPySegObj, psegment_type);
+  r->pymech_->pyseg_->pysec_ = sec;
+  Py_INCREF(sec);
+  r->pymech_->pyseg_->x_ = 0.5;
+  r->sym_ = sym;
+  r->isptr_ = 0;
+  r->attr_from_sec_ = 1;
+  return r;
+}
+
 static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
   PyObject* rv;
   Py_INCREF(pyname);
@@ -1422,14 +1457,7 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
   } else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
     Symbol* sym = ((NPyRangeVar*)rv)->sym_;
     if (ISARRAY(sym)) {
-      NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
-      r->pyseg_ = PyObject_New(NPySegObj, psegment_type);
-      r->pyseg_->pysec_ = self;
-      Py_INCREF(self);
-      r->pyseg_->x_ = 0.5;
-      r->sym_ = sym;
-      r->isptr_ = 0;
-      r->attr_from_sec_ = 1;
+      NPyRangeVar* r = rvnew(sym, self, 0.5);
       result = (PyObject*)r;
     } else {
       int err;
@@ -1562,6 +1590,36 @@ static PyObject* mech_of_seg_next(NPyMechOfSegIter* self) {
   return (PyObject*)m;
 }
 
+static PyObject* var_of_mech_iter(NPyMechObj* self) {
+  //printf("var_of_mech_iter\n");
+  NPyVarOfMechIter* vmi = PyObject_New(NPyVarOfMechIter, pvar_of_mech_iter_generic_type);
+  if (!self->prop_) {
+    return NULL;
+  }
+  vmi->pymech_ = self;
+  Py_INCREF(vmi->pymech_);
+  vmi->msym_ = memb_func[self->prop_->type].sym;
+  vmi->i_ = 0;
+  return (PyObject*)vmi;
+}
+
+static PyObject* var_of_mech_next(NPyVarOfMechIter* self) {
+  if (self->i_ >= self->msym_->s_varn) {
+    return NULL;
+  }
+  //printf("var_of_mech_next %d %s\n", self->i_, self->msym_->name);
+  Symbol* sym = self->msym_->u.ppsym[self->i_];
+  self->i_++;
+  NPyRangeVar* r = (NPyRangeVar*)PyObject_New(NPyRangeVar, range_type);
+  Py_INCREF(r);
+  r->pymech_ = self->pymech_;
+  Py_INCREF(r->pymech_);
+  r->sym_ = sym;
+  r->isptr_ = 0;
+  r->attr_from_sec_ = 0;
+  return (PyObject*)r;
+}
+
 static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
   Symbol* sym;
   Py_INCREF(pyname);
@@ -1603,8 +1661,9 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
     sym = ((NPyRangeVar*)rv)->sym_;
     if (ISARRAY(sym)) {
       NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
-      r->pyseg_ = self;
-      Py_INCREF(r->pyseg_);
+      r->pymech_ = PyObject_New(NPyMechObj, pmech_generic_type);
+      r->pymech_->pyseg_ = self;
+      Py_INCREF(r->pymech_->pyseg_);
       r->sym_ = sym;
       r->isptr_ = 0;
       r->attr_from_sec_ = 0;
@@ -1630,8 +1689,9 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
                sym->type == RANGEVAR) {
       if (ISARRAY(sym)) {
         NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
-        r->pyseg_ = self;
-        Py_INCREF(r->pyseg_);
+        r->pymech_ = PyObject_New(NPyMechObj, pmech_generic_type);
+        r->pymech_->pyseg_ = self;
+        Py_INCREF(self);
         r->sym_ = sym;
         r->isptr_ = 1;
         r->attr_from_sec_ = 0;
@@ -1809,8 +1869,9 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
     // printf("mech_getattro sym %s\n", sym->name);
     if (ISARRAY(sym)) {
       NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
-      r->pyseg_ = self->pyseg_;
-      Py_INCREF(r->pyseg_);
+      r->pymech_ = PyObject_New(NPyMechObj, pmech_generic_type);
+      r->pymech_->pyseg_ = self->pyseg_;
+      Py_INCREF(self->pyseg_);
       r->sym_ = sym;
       r->isptr_ = isptr;
       r->attr_from_sec_ = 0;
@@ -1918,9 +1979,12 @@ static PyObject* NPySecObj_call(NPySecObj* self, PyObject* args) {
 
 static Py_ssize_t rv_len(PyObject* self) {
   NPyRangeVar* r = (NPyRangeVar*)self;
-  assert(r->sym_ && r->sym_->arayinfo);
-  assert(r->sym_->arayinfo->nsub == 1);
-  return r->sym_->arayinfo->sub[0];
+  assert(r->sym_);
+  if (r->sym_->arayinfo) {
+    assert(r->sym_->arayinfo->nsub == 1);
+    return r->sym_->arayinfo->sub[0];
+  }
+  return 1; 
 }
 static PyObject* rv_getitem(PyObject* self, Py_ssize_t ix) {
   NPyRangeVar* r = (NPyRangeVar*)self;
@@ -1931,9 +1995,9 @@ static PyObject* rv_getitem(PyObject* self, Py_ssize_t ix) {
   }
   int err;
   double* d =
-      nrnpy_rangepointer(r->pyseg_->pysec_->sec_, r->sym_, r->pyseg_->x_, &err);
+      nrnpy_rangepointer(r->pymech_->pyseg_->pysec_->sec_, r->sym_, r->pymech_->pyseg_->x_, &err);
   if (!d) {
-    rv_noexist(r->pyseg_->pysec_->sec_, r->sym_->name, r->pyseg_->x_, err);
+    rv_noexist(r->pymech_->pyseg_->pysec_->sec_, r->sym_->name, r->pymech_->pyseg_->x_, err);
     return NULL;
   }
   d += ix;
@@ -1952,9 +2016,9 @@ static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
   }
   int err;
   double* d =
-      nrnpy_rangepointer(r->pyseg_->pysec_->sec_, r->sym_, r->pyseg_->x_, &err);
+      nrnpy_rangepointer(r->pymech_->pyseg_->pysec_->sec_, r->sym_, r->pymech_->pyseg_->x_, &err);
   if (!d) {
-    rv_noexist(r->pyseg_->pysec_->sec_, r->sym_->name, r->pyseg_->x_, err);
+    rv_noexist(r->pymech_->pyseg_->pysec_->sec_, r->sym_->name, r->pymech_->pyseg_->x_, err);
     return -1;
   }
   if (r->attr_from_sec_) {
@@ -1966,7 +2030,7 @@ static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
       return -1;
     }
     hoc_pushx(double(ix));
-    nrn_rangeconst(r->pyseg_->pysec_->sec_, r->sym_, &x, 0);
+    nrn_rangeconst(r->pymech_->pyseg_->pysec_->sec_, r->sym_, &x, 0);
   }else{
     d += ix;
     if (!PyArg_Parse(value, "d", d)) {
@@ -2098,7 +2162,9 @@ static PyMethodDef NPyMechObj_methods[] = {
 
 static PyMethodDef NPyRangeVar_methods[] = {
     {"name", (PyCFunction)NPyRangeVar_name, METH_NOARGS,
-     "Range variable array name"},
+     "Range variable name name"},
+    {"mech", (PyCFunction)NPyRangeVar_mech, METH_NOARGS,
+     "Returns nrn.Mechanism of the  RangeVariable instance"},
     {NULL}};
 
 static PyMemberDef NPyMechObj_members[] = {{NULL}};
@@ -2216,18 +2282,24 @@ myPyMODINIT_FUNC nrnpy_nrn(void) {
 #if PY_MAJOR_VERSION >= 3
   pmech_generic_type = (PyTypeObject*)PyType_FromSpec(&nrnpy_MechanismType_spec);
   pmech_of_seg_iter_generic_type = (PyTypeObject*)PyType_FromSpec(&nrnpy_MechOfSegIterType_spec);
+  pvar_of_mech_iter_generic_type = (PyTypeObject*)PyType_FromSpec(&nrnpy_VarOfMechIterType_spec);
 #else
   pmech_generic_type = &nrnpy_MechanismType;
   pmech_of_seg_iter_generic_type = &nrnpy_MechOfSegIterType;
+  pvar_of_mech_iter_generic_type = &nrnpy_VarOfMechIterType;
 #endif
   pmech_generic_type->tp_new = PyType_GenericNew;
   pmech_of_seg_iter_generic_type->tp_new = PyType_GenericNew;
+  pvar_of_mech_iter_generic_type->tp_new = PyType_GenericNew;
   if (PyType_Ready(pmech_generic_type) < 0) goto fail;
   if (PyType_Ready(pmech_of_seg_iter_generic_type) < 0) goto fail;
+  if (PyType_Ready(pvar_of_mech_iter_generic_type) < 0) goto fail;
   Py_INCREF(pmech_generic_type);
   Py_INCREF(pmech_of_seg_iter_generic_type);
+  Py_INCREF(pvar_of_mech_iter_generic_type);
   PyModule_AddObject(m, "Mechanism", (PyObject*)pmech_generic_type);
-  PyModule_AddObject(m, "MechanismIterator", (PyObject*)pmech_of_seg_iter_generic_type);
+  PyModule_AddObject(m, "MechOfSegIterator", (PyObject*)pmech_of_seg_iter_generic_type);
+  PyModule_AddObject(m, "VarOfMechIterator", (PyObject*)pvar_of_mech_iter_generic_type);
   remake_pmech_types();
   nrnpy_reg_mech_p_ = nrnpy_reg_mech;
   nrnpy_ob_is_seg = ob_is_seg;
