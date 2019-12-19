@@ -89,8 +89,8 @@ Complex   pow(const Complex& x, const Complex& p);
 Complex   pow(const Complex& x, double y);
 Complex   sqrt(const Complex& x);
    
-istream&  operator >> (istream& s, Complex& x);
-ostream&  operator << (ostream& s, const Complex& x);
+std::istream&  operator >> (std::istream& s, Complex& x);
+std::ostream&  operator << (std::ostream& s, const Complex& x);
 
 // other functions defined as inlines
 
