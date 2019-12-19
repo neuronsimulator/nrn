@@ -119,7 +119,7 @@ script:
       ctest -VV && make install;
     else
       export PATH=$INSTALL_DIR/x86_64/bin:$PATH;
-      ./travis_build.sh $INSTALL_DIR;
+      ./.travis_build.sh $INSTALL_DIR;
     fi
 
   # basic tests for cmake and autoconf build
