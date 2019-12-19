@@ -1,4 +1,5 @@
 #include <../../nrnconf.h>
+#include "oc2iv.h"
 
 #if HAVE_IV
 #include <IV-Win/MWlib.h>
@@ -27,7 +28,6 @@
 #include "ivoc.h"
 #include "rubband.h"
 #include "symdir.h"
-#include "oc2iv.h"
 #undef max
 #undef min
 #include "graph.h"
@@ -203,18 +203,6 @@ void IOHandler::childStatus(pid_t, int){}
 #endif // MINGW
 
 #ifdef MINGW
-extern "C" {
-int stdin_event_ready();
-}
-int stdin_event_ready() {
-  static DWORD main_threadid = -1;
-  if (main_threadid == -1) {
-	main_threadid = GetCurrentThreadId();
-	return 1;
-  }
-  PostThreadMessage(main_threadid, WM_QUIT, 0, 0);
-  return 1;
-}
 
 #include <nrnmutdec.h>
 extern "C" {
@@ -276,7 +264,14 @@ void nrniv_bind_call() {
 	pthread_mutex_unlock(mut_);
 }
 
-void nrniv_bind_thread() {
+} // end of extern "C"
+
+#endif // MINGW
+
+#endif //HAVE_IV
+
+extern "C" void nrniv_bind_thread() {
+#if HAVE_IV
 IFGUI
         bind_tid_ = int(*hoc_getarg(1));
         //printf("nrniv_bind_thread %d\n", bind_tid_);
@@ -287,11 +282,22 @@ IFGUI
 	pthread_mutex_init(mut_, NULL);
 	w_ = NULL;
 ENDGUI
+#endif
         hoc_pushx(1.);
         hoc_ret();
 }
-} // end of extern "C"
 
-#endif // MINGW
+extern "C" int stdin_event_ready() {
+#if HAVE_IV
+IFGUI
+  static DWORD main_threadid = -1;
+  if (main_threadid == -1) {
+	main_threadid = GetCurrentThreadId();
+	return 1;
+  }
+  PostThreadMessage(main_threadid, WM_QUIT, 0, 0);
+ENDGUI
+#endif
+  return 1;
+}
 
-#endif //HAVE_IV

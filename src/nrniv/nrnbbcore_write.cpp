@@ -1855,18 +1855,53 @@ static core2nrn_callback_t cnbs[]  = {
 
 extern int nrn_use_fast_imem;
 
+/** check if file with given path exist */
+bool file_exist(const std::string& path) {
+  ifstream f(path.c_str());
+  return f.good();
+}
+
+extern "C" {
+  extern char* neuron_home;
+}
+
 #if defined(HAVE_DLFCN_H)
 int nrncore_run(const char* arg) {
   corenrn_direct = true;
-  char* corenrn_lib = getenv("CORENEURONLIB");
-  if (!corenrn_lib) {
-    hoc_execerror("nrncore_run needs a CORENEURONLIB environment variable", NULL);
+
+  // name of coreneuron library based on platform
+#if defined(MINGW)
+  std::string corenrn_mechlib_name("libcorenrnmech.dll");
+#elif defined(DARWIN)
+  std::string corenrn_mechlib_name("libcorenrnmech.dylib");
+#else
+  std::string corenrn_mechlib_name("libcorenrnmech.so");
+#endif
+
+  // first check if coreneuron specific library exist in <arhc>/.libs
+  std::stringstream s_path;
+  s_path << NRNHOSTCPU << "/.libs/" << corenrn_mechlib_name;
+
+  std::string path = s_path.str();
+  const char* corenrn_lib = path.c_str();
+
+  if (!file_exist(corenrn_lib)) {
+    // otherwise, look for CORENEURONLIB env variable
+    corenrn_lib = getenv("CORENEURONLIB");
+    if (!corenrn_lib) {
+      s_path.str("");
+      // last fallback is minimal library with internal mechanisms
+      s_path << neuron_home << "/../../lib/" << corenrn_mechlib_name;
+      path = s_path.str();
+      corenrn_lib = path.c_str();
+    }
   }
+
   void* handle = dlopen(corenrn_lib, RTLD_NOW|RTLD_GLOBAL);
-  if (!handle) {   
+  if (!handle) {
     fputs(dlerror(), stderr);
     fputs("\n", stderr);
-    hoc_execerror("Could not dlopen $CORENEURONLIB: ", corenrn_lib);
+    hoc_execerror("Could not dlopen CoreNEURON mechanism library : ", corenrn_lib);
   }else{
     void* sym = dlsym(handle, "corenrn_version");
     if (!sym) {
@@ -1874,11 +1909,12 @@ int nrncore_run(const char* arg) {
     }
     const char* cnver = (*(const char*(*)())sym)();
     if (strcmp(bbcore_write_version, cnver) != 0) {
-      char buf[200];
-      sprintf(buf, "%s and %s", bbcore_write_version, cnver);
-      hoc_execerror("Incompatible NEURON and CoreNEURON data versions:", buf);
+      s_path.str("");
+      s_path << bbcore_write_version << " and " << cnver;
+      path = s_path.str();
+      hoc_execerror("Incompatible NEURON and CoreNEURON data versions:", path.c_str());
     }
-  }      
+  }
   for (int i=0; cnbs[i].name; ++i) {
     void* sym = dlsym(handle, cnbs[i].name);
     if (!sym) {
