@@ -2,6 +2,6 @@
 #define nrnconfigargs_h
 
 /* define to the args passed to configure */
-#define NRN_CONFIG_ARGS ""
+#define NRN_CONFIG_ARGS "@ac_configure_args@"
 
 #endif

@@ -9,9 +9,15 @@ set(PROJECT_VERSION_MINOR 8)
 set(CMAKE_CXX_STANDARD 98)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_BUILD_TYPE
-    RelWithDebInfo
-    CACHE STRING "Empty or one of Debug, Release, RelWithDebInfo")
+set(allowableBuildTypes Debug Release RelWithDebInfo)
+if(NOT CMAKE_BUILD_TYPE) 
+  set(CMAKE_BUILD_TYPE
+      RelWithDebInfo
+      CACHE STRING "Empty or one of ${allowableBuildTypes}" FORCE)
+elseif(NOT CMAKE_BUILD_TYPE IN_LIST allowableBuildTypes)
+  message(FATAL_ERROR "Invalid build type: ${CMAKE_BUILD_TYPE} : Must be one of ${allowableBuildTypes})")
+endif()
+
 set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 
 # =============================================================================
@@ -22,21 +28,78 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 # =============================================================================
+# Option defaults.
+# =============================================================================
+# This allows h.nrnversion(6) to print only the configuration differences
+# analogously to what happens with an autotools build.
+set(NRN_ENABLE_SHARED_default                   ON)
+set(NRN_ENABLE_INTERVIEWS_default               ON)
+set(NRN_ENABLE_LEGACY_FR_default                ON)
+set(NRN_ENABLE_MECH_DLL_STYLE_default           ON)
+set(NRN_ENABLE_DISCRETE_EVENT_OBSERVER_default  ON)
+set(NRN_ENABLE_PYTHON_default                   ON)
+set(NRN_ENABLE_THREADS_default                  ON)
+set(NRN_ENABLE_MPI_default                      ON)
+set(NRN_ENABLE_MEMACS_default                   ON)
+set(NRN_ENABLE_RX3D_default                     ON)
+set(NRN_ENABLE_CORENEURON_default               ON)
+set(NRN_ENABLE_TESTS_default                   OFF)
+set(NRN_ENABLE_MODULE_INSTALL_default           ON)
+set(NRN_ENABLE_PYTHON_DYNAMIC_default          OFF)
+set(NRN_ENABLE_MPI_DYNAMIC_default             OFF)
+
+set(CMAKE_BUILD_TYPE_default        RelWithDebInfo) # option set earlier
+set(NRN_MODULE_INSTALL_OPTIONS_default          "")
+set(NRN_PYTHON_DYNAMIC_default                  "")
+set(NRN_MPI_DYNAMIC_default                     "")
+set(NRN_RX3D_OPT_LEVEL_default                 "0")
+
+#Some CMAKE variables we would like to see, if they differ from the following.
+set(CMAKE_INSTALL_PREFIX_default      "/usr/local")
+set(CMAKE_C_COMPILER_default                 "gcc")
+set(PYTHON_EXECUTABLE_default                   "")
+set(IV_LIB_default                              "")
+
+set(NRN_OPTION_NAME_LIST
+    NRN_ENABLE_SHARED
+    NRN_ENABLE_INTERVIEWS
+    NRN_ENABLE_LEGACY_FR
+    NRN_ENABLE_MECH_DLL_STYLE
+    NRN_ENABLE_DISCRETE_EVENT_OBSERVER
+    NRN_ENABLE_PYTHON
+    NRN_ENABLE_THREADS
+    NRN_ENABLE_MPI
+    NRN_ENABLE_MEMACS
+    NRN_ENABLE_RX3D
+    NRN_ENABLE_CORENEURON
+    NRN_ENABLE_TESTS
+    NRN_ENABLE_MODULE_INSTALL
+    NRN_ENABLE_PYTHON_DYNAMIC
+    NRN_MODULE_INSTALL_OPTIONS
+    NRN_PYTHON_DYNAMIC
+    NRN_MPI_DYNAMIC
+    NRN_RX3D_OPT_LEVEL
+    CMAKE_BUILD_TYPE
+    CMAKE_INSTALL_PREFIX
+    CMAKE_C_COMPILER
+    PYTHON_EXECUTABLE
+    IV_LIB)
+
+# =============================================================================
 # Build options (boolean)
 # =============================================================================
-option(NRN_ENABLE_SHARED "Build shared libraries (otherwise static library)" ON)
-option(NRN_ENABLE_INTERVIEWS "Enable GUI with INTERVIEWS" ON)
-option(NRN_ENABLE_LEGACY_FR "Use original faraday, R, etc. instead of 2019 nist constants" ON)
-option(NRN_ENABLE_MECH_DLL_STYLE "Dynamically load nrnmech shared library" ON)
-option(NRN_ENABLE_DISCRETE_EVENT_OBSERVER "Enable Observer to be a subclass of DiscreteEvent" ON)
-option(NRN_ENABLE_PYTHON "Enable Python interpreter support (default python3 fallback to python)"
-       ON)
-option(NRN_ENABLE_THREADS "Allow use of Pthreads" ON)
-option(NRN_ENABLE_MPI "Enable MPI support" ON)
-option(NRN_ENABLE_MEMACS "Enable use of memacs" ON)
-option(NRN_ENABLE_RX3D "Enable rx3d support" ON)
-option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ON)
-option(NRN_ENABLE_TESTS "Enable unit tests" OFF)
+option(NRN_ENABLE_SHARED "Build shared libraries (otherwise static library)" ${NRN_ENABLE_SHARED_default})
+option(NRN_ENABLE_INTERVIEWS "Enable GUI with INTERVIEWS" ${NRN_ENABLE_INTERVIEWS_default})
+option(NRN_ENABLE_LEGACY_FR "Use original faraday, R, etc. instead of 2019 nist constants" ${NRN_ENABLE_LEGACY_FR_default})
+option(NRN_ENABLE_MECH_DLL_STYLE "Dynamically load nrnmech shared library" ${NRN_ENABLE_MECH_DLL_STYLE_default})
+option(NRN_ENABLE_DISCRETE_EVENT_OBSERVER "Enable Observer to be a subclass of DiscreteEvent" ${NRN_ENABLE_DISCRETE_EVENT_OBSERVER_default})
+option(NRN_ENABLE_PYTHON "Enable Python interpreter support (default python3 fallback to python)" ${NRN_ENABLE_PYTHON_default})
+option(NRN_ENABLE_THREADS "Allow use of Pthreads" ${NRN_ENABLE_THREADS_default})
+option(NRN_ENABLE_MPI "Enable MPI support" ${NRN_ENABLE_MPI_default})
+option(NRN_ENABLE_MEMACS "Enable use of memacs" ${NRN_ENABLE_EMACS})
+option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_default})
+option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_default})
+option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_default})
 
 # =============================================================================
 # Build options (string)
@@ -66,12 +129,12 @@ option(NRN_ENABLE_TESTS "Enable unit tests" OFF)
 #                 the first mpi found will determine which interface is dynamically loaded."
 # Rx3D Cython generated files compiler optimization level. 0 is default.
 # ~~~
-option(NRN_ENABLE_MODULE_INSTALL "Enable installation of NEURON Python module" ON)
+option(NRN_ENABLE_MODULE_INSTALL "Enable installation of NEURON Python module" ${NRN_ENABLE_MODULE_INSTALL_default})
 set(NRN_MODULE_INSTALL_OPTIONS
     ""
     CACHE STRING "setup.py options, leave empty for --home <build dir>")
 
-option(NRN_ENABLE_PYTHON_DYNAMIC "Enable dynamic Python version support" OFF)
+option(NRN_ENABLE_PYTHON_DYNAMIC "Enable dynamic Python version support" ${NRN_ENABLE_PYTHON_DYNAMIC_default})
 set(NRN_PYTHON_DYNAMIC
     ""
     CACHE
@@ -88,7 +151,7 @@ set(NRN_MPI_DYNAMIC
 )
 
 set(NRN_RX3D_OPT_LEVEL
-    "0"
+    "${NRN_RX3D_OPT_LEVEL_default}"
     CACHE STRING "Optimization level for Cython generated files (non-zero may compile slowly)")
 
 # =============================================================================
@@ -389,6 +452,7 @@ if(cmake_generator_tolower MATCHES "makefile")
   message(STATUS "--------------+--------------------------------------------------------------")
   message(STATUS " Build option | Status")
   message(STATUS "--------------+--------------------------------------------------------------")
+  message(STATUS "BUILD_TYPE    | ${CMAKE_BUILD_TYPE} (allowed: ${allowableBuildTypes})")
   message(STATUS "Shared        | ${NRN_ENABLE_SHARED}")
   message(STATUS "Legacy FR     | ${NRN_ENABLE_LEGACY_FR}")
   message(STATUS "MPI           | ${NRN_ENABLE_MPI}")

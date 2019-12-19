@@ -46,12 +46,18 @@ set(libdir \${exec_prefix}/lib)
 set(USING_CMAKE_FALSE "#")
 set(USING_CMAKE_TRUE "")
 
-# ~~~
-# TODO : these two don't start out as #undef but as #define so need their
-# explicit @...@ replacments
-# set(NEURON_BIN_DIR "\"${CMAKE_INSTALL_PREFIX}/${CMAKE_SYSTEM_PROCESSOR}/bin\"")
-# set(NRN_CONFIG_ARGS "\"unknown\"") # ends up as "" since no @...@
-# ~~~
+# A variable that doesn't start out as #undef but as #define needs an
+# explicit @...@ replacement in the .h.in files.
+# For NRN_CONFIG_ARGS we use the autotools compatible name, ac_configure_args.
+# The value is set to description followed by a string of space
+# separated 'option=value' where value differs from the default value.
+set(ac_configure_args "cmake option default differences:")
+foreach(_name ${NRN_OPTION_NAME_LIST})
+  if (NOT ("${${_name}}" STREQUAL "${${_name}_default}"))
+    #message(STATUS " ${_name}=${${_name}} differs from default=${${_name}_default}")
+    string(APPEND ac_configure_args " '${_name}=${${_name}}'")
+  endif()
+endforeach()
 
 # =============================================================================
 # Platform specific options (get expanded to comments)
