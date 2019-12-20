@@ -52,6 +52,7 @@ set(USING_CMAKE_TRUE "")
 # For NRN_CONFIG_ARGS we use the autotools compatible name, ac_configure_args.
 # The value is set to description followed by a string of space
 # separated 'option=value' where value differs from the default value.
+# ~~~
 set(ac_configure_args "cmake option default differences:")
 foreach(_name ${NRN_OPTION_NAME_LIST})
   if (NOT ("${${_name}}" STREQUAL "${${_name}_default}"))
