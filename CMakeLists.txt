@@ -170,8 +170,8 @@ include(FindPythonModule)
 # =============================================================================
 # Find required packages
 # =============================================================================
-find_package(BISON)
-find_package(FLEX)
+find_package(BISON REQUIRED)
+find_package(FLEX REQUIRED)
 find_package(Threads QUIET)
 find_package(readline)
 if(NRN_ENABLE_RX3D)
