@@ -32,7 +32,7 @@ public:
 	GraphItem(Glyph* g, bool = true, bool pick = true);
 	virtual ~GraphItem();
 	virtual void pick(Canvas*, const Allocation&, int depth, Hit&);
-	virtual void save(ostream&, Coord, Coord);
+	virtual void save(std::ostream&, Coord, Coord);
 	virtual void erase(Scene*, GlyphIndex, int erase_type);
 	bool save() { return save_; }
 	void save(bool s) {save_ = s;}
@@ -115,18 +115,18 @@ public:
 	void change_line_color(GPolyLine*);
 	void update_ptrs();
 
-	virtual void save_phase1(ostream&);
-	virtual void save_phase2(ostream&);
+	virtual void save_phase1(std::ostream&);
+	virtual void save_phase2(std::ostream&);
 	int labeltype() const { return label_fixtype_; }
 	static bool label_chooser(const char*, char*, GLabel*, Coord x = 400., Coord y = 400.);
 
 	virtual void see_range_plot(GraphVector*);
-	static void ascii(ostream*);
-	static ostream* ascii();
+	static void ascii(std::ostream*);
+	static std::ostream* ascii();
 private:
 	void extension_start();
 	void extension_continue();
-	void ascii_save(ostream& o) const;
+	void ascii_save(std::ostream& o) const;
 	void family_value();
 private:
 	Symlist* symlist_;
@@ -157,7 +157,7 @@ private:
 	double* x_pval_;
 
 	GraphVector* rvp_;
-	static ostream* ascii_;
+	static std::ostream* ascii_;
 };
 
 class DataVec :public Resource { // info for single dimension
@@ -213,7 +213,7 @@ public:
 	virtual void draw_specific(Canvas*, const Allocation&, int, int) const;
 	virtual void print(Printer*, const Allocation&) const;
 	virtual void pick(Canvas*, const Allocation&, int depth, Hit&);
-	virtual void save(ostream&);
+	virtual void save(std::ostream&);
 	virtual void pick_vector();
 
 	void plot(Coord x, Coord y);
@@ -257,7 +257,7 @@ public:
 	virtual ~GraphLine();
 
 	virtual void pick(Canvas*, const Allocation&, int depth, Hit&);
-	virtual void save(ostream&);
+	virtual void save(std::ostream&);
 
 	void plot();
 
@@ -296,7 +296,7 @@ public:
 	virtual void request(Requisition&) const;
 	void begin();
 	void add(float, double*);
-	virtual void save(ostream&);
+	virtual void save(std::ostream&);
 	const char* name() const;
 	bool trivial() const;
 
@@ -317,7 +317,7 @@ public:
 	GPolyLineItem(Glyph* g) : GraphItem(g){}
 	virtual ~GPolyLineItem(){};
 	virtual bool is_polyline();
-	virtual void save(ostream& o, Coord, Coord){
+	virtual void save(std::ostream& o, Coord, Coord){
 		((GPolyLine*)body())->save(o);}
 	virtual void erase(Scene* s, GlyphIndex i, int type) {
 		if (type & GraphItem::ERASE_LINE) {
@@ -336,7 +336,7 @@ public:
 	virtual void request(Requisition&) const;
 	virtual void allocate(Canvas*, const Allocation&, Extension&);
 	virtual void draw(Canvas*, const Allocation&) const;
-	virtual void save(ostream&, Coord, Coord);
+	virtual void save(std::ostream&, Coord, Coord);
 	virtual void pick(Canvas*, const Allocation&, int depth, Hit&);
 
 	void text(const char*);
