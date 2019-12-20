@@ -487,6 +487,7 @@ a class. This allows multiple independent instances to be created. For example:
             python
 
             h.xvalue("prompt", (obj_or_module, "varname") [, boolean_deflt, "action" [, boolean_canrun]])
+	    h.xvalue("prompt", ref_var, [, boolean_deflt, "action" [, boolean_canrun]])
             h.xvalue("prompt", "variable", 2)
 
 
@@ -494,10 +495,10 @@ a class. This allows multiple independent instances to be created. For example:
 
         ``h.xvalue("prompt", (obj_or_module, "varname") [, boolean_deflt, "action" [, boolean_canrun]])`` 
             create field editor for variable with the button labeled with "*prompt*". 
-            If *boolean_deflt* == 1 then add a checkbox which is checked when the 
+            If *boolean_deflt* == True (or 1) then add a checkbox which is checked when the 
             value of the field editor is different that when the editor was 
             created. Execute "action" when user enters a new value. If 
-            *boolean_canrun* == 1 then use a default_button widget kit appearance 
+            *boolean_canrun* == True (or 1) then use a default_button widget kit appearance 
             instead	of a push_button widget kit appearance. 
 
 
@@ -624,8 +625,8 @@ a class. This allows multiple independent instances to be created. For example:
         Slider which is attached to the variable var. Whenever the slider 
         is moved, the optional *on_slide* is executed. The default range is 
         0 to 100. Steppers increase or decrease the value by 1/10 of the range. 
-        Resolution is .01 of the range. vert=1 makes a vertical slider and 
-        if there is no *on_slide* may be the 4th arg. slow=1 removes the "repeat 
+        Resolution is .01 of the range. vert=True (or 1) makes a vertical slider and 
+        if there is no *on_slide* may be the 4th arg. slow=True (or 1) removes the "repeat 
         key" functionality from the slider(and arrow steppers) and also 
         prevents recursive calls to the *on_slide*. This is necessary if 
         a slider action is longer than the timeout delay. Otherwise the 
@@ -644,7 +645,6 @@ a class. This allows multiple independent instances to be created. For example:
             val = 42
             val_str = h.ref('Slider value:         ')
             def show_val():
-                global val_str
                 val_str[0] = 'Slider value: %g' % val
 
             h.xpanel('demo')
@@ -653,7 +653,7 @@ a class. This allows multiple independent instances to be created. For example:
             h.xpanel()
             show_val()
 
-        .. image:: ../../images/xslider.png
+        .. image:: ../../images/xslider.png		   
             :align: center 
     
         It is slightly more efficient to use an ``h.ref`` instead of a tuple.
@@ -667,7 +667,6 @@ a class. This allows multiple independent instances to be created. For example:
             val = h.ref(42)
             val_str = h.ref('Slider value:         ')
             def show_val():
-                global val_str
                 val_str[0] = 'Slider value: %g' % val[0]
 
             h.xpanel('demo')
@@ -677,6 +676,50 @@ a class. This allows multiple independent instances to be created. For example:
             show_val()
 
 
+    
+        You can also combine xslider with xvalue to report and modify its value (below example):
+    
+        .. code-block::
+            python
+            
+            from neuron import h, gui
+
+	    class ValuePanel:
+
+		def __init__(self, init_val=42, label='',lower_limit=0,upper_limit=100):
+		    self._val = h.ref(init_val)
+		    h.xpanel('demo')
+		    h.xlabel(label)
+		    h.xvalue('enter value', self._val, True, self._bounds_check)
+		    self.__lower_limit = lower_limit
+		    self.__upper_limit = upper_limit
+		    h.xslider(self._val, self.__lower_limit, self.__upper_limit)
+		    h.xpanel()
+
+		def _bounds_check(self):
+		    self.val = self.val
+
+		@property
+		def val(self):
+		    return self._val[0]
+
+		@val.setter
+		def val(self, new_val):
+		    new_val = max(self.__lower_limit, new_val)
+		    self._val[0] = min(new_val, self.__upper_limit)
+
+	    if __name__=="__main__":
+		hbox=h.HBox()  # Horizontal box
+		hbox.intercept(True)
+		length=ValuePanel(label='length.val')
+		diam=ValuePanel(init_val=2,label='diam.val',lower_limit=0, upper_limit=5)
+		hbox.intercept(False)
+		hbox.map()
+		print('can read/change length.val, diam.val')
+
+
+        .. image:: ../../images/value_panel.png
+	    :align: center
 
 ----
 
