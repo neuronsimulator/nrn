@@ -12,12 +12,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${PROJECT_SOURCE_DIR}/cmake/modules)
-
-set(allowableBuildTypes Debug Release RelWithDebInfo Fast)
-set(CMAKE_BUILD_TYPE_DEFAULT        RelWithDebInfo)
-include(ReleaseDebugAutoFlags) # set CMAKE_BUILD_TYPE and associated flags
-
 # =============================================================================
 # CMake common project settings
 # =============================================================================
@@ -54,6 +48,7 @@ set(NRN_MPI_DYNAMIC_DEFAULT                     "")
 set(NRN_RX3D_OPT_LEVEL_DEFAULT                 "0")
 
 #Some CMAKE variables we would like to see, if they differ from the following.
+set(CMAKE_BUILD_TYPE_DEFAULT        RelWithDebInfo)
 set(CMAKE_INSTALL_PREFIX_DEFAULT      "/usr/local")
 set(CMAKE_C_COMPILER_DEFAULT                 "gcc")
 set(PYTHON_EXECUTABLE_DEFAULT                   "")
@@ -156,12 +151,18 @@ set(NRN_RX3D_OPT_LEVEL
 # =============================================================================
 # Include cmake modules
 # =============================================================================
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${PROJECT_SOURCE_DIR}/cmake/modules)
 include(CompilerHelper)
 include(MacroHelper)
 include(RpathHelper)
 include(PlatformHelper)
 include(ExternalProjectHelper)
 include(FindPythonModule)
+set(allowableBuildTypes Debug Release RelWithDebInfo Fast)
+
+# set CMAKE_BUILD_TYPE and associated flags using allowableBuildTypes and
+# CMAKE_BUILD_TYPE_DEFAULT
+include(ReleaseDebugAutoFlags)
 
 # =============================================================================
 # Find required packages
