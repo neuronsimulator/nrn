@@ -926,8 +926,8 @@ static void write_memb_mech_types_direct(std::ostream& s) {
   // and data, pdata instance sizes. If the mechanism is an eion type,
   // the following line is the charge.
   // Not all Memb_func are necessarily used in the model.
-  s << bbcore_write_version << endl;
-  s << n_memb_func << endl;
+  s << bbcore_write_version << std::endl;
+  s << n_memb_func << std::endl;
   for (int type=2; type < n_memb_func; ++type) {
     const char* w = " ";
     Memb_func& mf = memb_func[type];
@@ -935,10 +935,10 @@ static void write_memb_mech_types_direct(std::ostream& s) {
       << int(pnt_map[type]) << w // the pointtype, 0 means not a POINT_PROCESS
       << nrn_is_artificial_[type] << w
       << nrn_is_ion(type) << w
-      << nrn_prop_param_size_[type] << w << bbcore_dparam_size[type] << endl;
+      << nrn_prop_param_size_[type] << w << bbcore_dparam_size[type] << std::endl;
 
     if (nrn_is_ion(type)) {
-        s << nrn_ion_charge(mf.sym) << endl;
+        s << nrn_ion_charge(mf.sym) << std::endl;
     }
   }
 }
@@ -1857,7 +1857,7 @@ extern int nrn_use_fast_imem;
 
 /** check if file with given path exist */
 bool file_exist(const std::string& path) {
-  ifstream f(path.c_str());
+  std::ifstream f(path.c_str());
   return f.good();
 }
 

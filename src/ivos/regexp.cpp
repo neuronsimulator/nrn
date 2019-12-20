@@ -1210,6 +1210,6 @@ regnext(register char* p) {
 
 static void
 regerror(const char* s) {
-	cerr << "regexp: " << s << "\n";
+	std::cerr << "regexp: " << s << "\n";
 }
 
