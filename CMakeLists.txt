@@ -9,16 +9,14 @@ set(PROJECT_VERSION_MINOR 8)
 set(CMAKE_CXX_STANDARD 98)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(allowableBuildTypes Debug Release RelWithDebInfo)
-if(NOT CMAKE_BUILD_TYPE) 
-  set(CMAKE_BUILD_TYPE
-      RelWithDebInfo
-      CACHE STRING "Empty or one of ${allowableBuildTypes}" FORCE)
-elseif(NOT CMAKE_BUILD_TYPE IN_LIST allowableBuildTypes)
-  message(FATAL_ERROR "Invalid build type: ${CMAKE_BUILD_TYPE} : Must be one of ${allowableBuildTypes})")
-endif()
 
 set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
+
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${PROJECT_SOURCE_DIR}/cmake/modules)
+
+set(allowableBuildTypes Debug Release RelWithDebInfo Fast)
+set(CMAKE_BUILD_TYPE_DEFAULT        RelWithDebInfo)
+include(ReleaseDebugAutoFlags) # set CMAKE_BUILD_TYPE and associated flags
 
 # =============================================================================
 # CMake common project settings
@@ -50,7 +48,6 @@ set(NRN_ENABLE_MODULE_INSTALL_DEFAULT           ON)
 set(NRN_ENABLE_PYTHON_DYNAMIC_DEFAULT          OFF)
 set(NRN_ENABLE_MPI_DYNAMIC_DEFAULT             OFF)
 
-set(CMAKE_BUILD_TYPE_DEFAULT        RelWithDebInfo) # option set earlier
 set(NRN_MODULE_INSTALL_OPTIONS_DEFAULT          "")
 set(NRN_PYTHON_DYNAMIC_DEFAULT                  "")
 set(NRN_MPI_DYNAMIC_DEFAULT                     "")
@@ -159,7 +156,6 @@ set(NRN_RX3D_OPT_LEVEL
 # =============================================================================
 # Include cmake modules
 # =============================================================================
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${PROJECT_SOURCE_DIR}/cmake/modules)
 include(CompilerHelper)
 include(MacroHelper)
 include(RpathHelper)
