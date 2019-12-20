@@ -50,7 +50,7 @@ public:
 	virtual void variable(Symbol*);
 	virtual const char* varname()const;
 	virtual void scale(float min, float max);
-	virtual void save_phase1(ostream&);
+	virtual void save_phase1(std::ostream&);
 
 	virtual void shape_plot();
 
