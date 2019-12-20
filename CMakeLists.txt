@@ -36,10 +36,6 @@ option(NRN_ENABLE_RX3D "Enable rx3d support" ON)
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ON)
 option(NRN_ENABLE_TESTS "Enable unit tests" OFF)
 
-# In case of wheel do not build binaries like nrniv to be compatible
-# with auditwheel repair process
-option(NRN_ENABLE_BINARY "Enable building of neuron binaries" ON)
-
 # =============================================================================
 # Build options (string)
 # =============================================================================
@@ -109,8 +105,8 @@ find_package(BISON)
 find_package(FLEX)
 find_package(Threads QUIET)
 find_package(readline)
-if (NRN_ENABLE_RX3D)
-  find_package(Cython REQUIRED)
+if(NRN_ENABLE_RX3D)
+  find_package(Cython)
 endif()
 if(MINGW)
   find_package(Termcap REQUIRED)
