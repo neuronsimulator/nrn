@@ -32,33 +32,35 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 # =============================================================================
 # This allows h.nrnversion(6) to print only the configuration differences
 # analogously to what happens with an autotools build.
-set(NRN_ENABLE_SHARED_default                   ON)
-set(NRN_ENABLE_INTERVIEWS_default               ON)
-set(NRN_ENABLE_LEGACY_FR_default                ON)
-set(NRN_ENABLE_MECH_DLL_STYLE_default           ON)
-set(NRN_ENABLE_DISCRETE_EVENT_OBSERVER_default  ON)
-set(NRN_ENABLE_PYTHON_default                   ON)
-set(NRN_ENABLE_THREADS_default                  ON)
-set(NRN_ENABLE_MPI_default                      ON)
-set(NRN_ENABLE_MEMACS_default                   ON)
-set(NRN_ENABLE_RX3D_default                     ON)
-set(NRN_ENABLE_CORENEURON_default               ON)
-set(NRN_ENABLE_TESTS_default                   OFF)
-set(NRN_ENABLE_MODULE_INSTALL_default           ON)
-set(NRN_ENABLE_PYTHON_DYNAMIC_default          OFF)
-set(NRN_ENABLE_MPI_DYNAMIC_default             OFF)
+# The <optionname>_DEFAULT values should only be changed in this file
+# and not on the command line.
+set(NRN_ENABLE_SHARED_DEFAULT                   ON)
+set(NRN_ENABLE_INTERVIEWS_DEFAULT               ON)
+set(NRN_ENABLE_LEGACY_FR_DEFAULT                ON)
+set(NRN_ENABLE_MECH_DLL_STYLE_DEFAULT           ON)
+set(NRN_ENABLE_DISCRETE_EVENT_OBSERVER_DEFAULT  ON)
+set(NRN_ENABLE_PYTHON_DEFAULT                   ON)
+set(NRN_ENABLE_THREADS_DEFAULT                  ON)
+set(NRN_ENABLE_MPI_DEFAULT                      ON)
+set(NRN_ENABLE_MEMACS_DEFAULT                   ON)
+set(NRN_ENABLE_RX3D_DEFAULT                     ON)
+set(NRN_ENABLE_CORENEURON_DEFAULT               ON)
+set(NRN_ENABLE_TESTS_DEFAULT                   OFF)
+set(NRN_ENABLE_MODULE_INSTALL_DEFAULT           ON)
+set(NRN_ENABLE_PYTHON_DYNAMIC_DEFAULT          OFF)
+set(NRN_ENABLE_MPI_DYNAMIC_DEFAULT             OFF)
 
-set(CMAKE_BUILD_TYPE_default        RelWithDebInfo) # option set earlier
-set(NRN_MODULE_INSTALL_OPTIONS_default          "")
-set(NRN_PYTHON_DYNAMIC_default                  "")
-set(NRN_MPI_DYNAMIC_default                     "")
-set(NRN_RX3D_OPT_LEVEL_default                 "0")
+set(CMAKE_BUILD_TYPE_DEFAULT        RelWithDebInfo) # option set earlier
+set(NRN_MODULE_INSTALL_OPTIONS_DEFAULT          "")
+set(NRN_PYTHON_DYNAMIC_DEFAULT                  "")
+set(NRN_MPI_DYNAMIC_DEFAULT                     "")
+set(NRN_RX3D_OPT_LEVEL_DEFAULT                 "0")
 
 #Some CMAKE variables we would like to see, if they differ from the following.
-set(CMAKE_INSTALL_PREFIX_default      "/usr/local")
-set(CMAKE_C_COMPILER_default                 "gcc")
-set(PYTHON_EXECUTABLE_default                   "")
-set(IV_LIB_default                              "")
+set(CMAKE_INSTALL_PREFIX_DEFAULT      "/usr/local")
+set(CMAKE_C_COMPILER_DEFAULT                 "gcc")
+set(PYTHON_EXECUTABLE_DEFAULT                   "")
+set(IV_LIB_DEFAULT                              "")
 
 set(NRN_OPTION_NAME_LIST
     NRN_ENABLE_SHARED
@@ -88,18 +90,18 @@ set(NRN_OPTION_NAME_LIST
 # =============================================================================
 # Build options (boolean)
 # =============================================================================
-option(NRN_ENABLE_SHARED "Build shared libraries (otherwise static library)" ${NRN_ENABLE_SHARED_default})
-option(NRN_ENABLE_INTERVIEWS "Enable GUI with INTERVIEWS" ${NRN_ENABLE_INTERVIEWS_default})
-option(NRN_ENABLE_LEGACY_FR "Use original faraday, R, etc. instead of 2019 nist constants" ${NRN_ENABLE_LEGACY_FR_default})
-option(NRN_ENABLE_MECH_DLL_STYLE "Dynamically load nrnmech shared library" ${NRN_ENABLE_MECH_DLL_STYLE_default})
-option(NRN_ENABLE_DISCRETE_EVENT_OBSERVER "Enable Observer to be a subclass of DiscreteEvent" ${NRN_ENABLE_DISCRETE_EVENT_OBSERVER_default})
-option(NRN_ENABLE_PYTHON "Enable Python interpreter support (default python3 fallback to python)" ${NRN_ENABLE_PYTHON_default})
-option(NRN_ENABLE_THREADS "Allow use of Pthreads" ${NRN_ENABLE_THREADS_default})
-option(NRN_ENABLE_MPI "Enable MPI support" ${NRN_ENABLE_MPI_default})
+option(NRN_ENABLE_SHARED "Build shared libraries (otherwise static library)" ${NRN_ENABLE_SHARED_DEFAULT})
+option(NRN_ENABLE_INTERVIEWS "Enable GUI with INTERVIEWS" ${NRN_ENABLE_INTERVIEWS_DEFAULT})
+option(NRN_ENABLE_LEGACY_FR "Use original faraday, R, etc. instead of 2019 nist constants" ${NRN_ENABLE_LEGACY_FR_DEFAULT})
+option(NRN_ENABLE_MECH_DLL_STYLE "Dynamically load nrnmech shared library" ${NRN_ENABLE_MECH_DLL_STYLE_DEFAULT})
+option(NRN_ENABLE_DISCRETE_EVENT_OBSERVER "Enable Observer to be a subclass of DiscreteEvent" ${NRN_ENABLE_DISCRETE_EVENT_OBSERVER_DEFAULT})
+option(NRN_ENABLE_PYTHON "Enable Python interpreter support (default python3 fallback to python)" ${NRN_ENABLE_PYTHON_DEFAULT})
+option(NRN_ENABLE_THREADS "Allow use of Pthreads" ${NRN_ENABLE_THREADS_DEFAULT})
+option(NRN_ENABLE_MPI "Enable MPI support" ${NRN_ENABLE_MPI_DEFAULT})
 option(NRN_ENABLE_MEMACS "Enable use of memacs" ${NRN_ENABLE_EMACS})
-option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_default})
-option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_default})
-option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_default})
+option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_DEFAULT})
+option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_DEFAULT})
+option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_DEFAULT})
 
 # =============================================================================
 # Build options (string)
@@ -129,12 +131,12 @@ option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_default})
 #                 the first mpi found will determine which interface is dynamically loaded."
 # Rx3D Cython generated files compiler optimization level. 0 is default.
 # ~~~
-option(NRN_ENABLE_MODULE_INSTALL "Enable installation of NEURON Python module" ${NRN_ENABLE_MODULE_INSTALL_default})
+option(NRN_ENABLE_MODULE_INSTALL "Enable installation of NEURON Python module" ${NRN_ENABLE_MODULE_INSTALL_DEFAULT})
 set(NRN_MODULE_INSTALL_OPTIONS
     ""
     CACHE STRING "setup.py options, leave empty for --home <build dir>")
 
-option(NRN_ENABLE_PYTHON_DYNAMIC "Enable dynamic Python version support" ${NRN_ENABLE_PYTHON_DYNAMIC_default})
+option(NRN_ENABLE_PYTHON_DYNAMIC "Enable dynamic Python version support" ${NRN_ENABLE_PYTHON_DYNAMIC_DEFAULT})
 set(NRN_PYTHON_DYNAMIC
     ""
     CACHE
@@ -151,7 +153,7 @@ set(NRN_MPI_DYNAMIC
 )
 
 set(NRN_RX3D_OPT_LEVEL
-    "${NRN_RX3D_OPT_LEVEL_default}"
+    "${NRN_RX3D_OPT_LEVEL_DEFAULT}"
     CACHE STRING "Optimization level for Cython generated files (non-zero may compile slowly)")
 
 # =============================================================================
