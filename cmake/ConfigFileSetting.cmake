@@ -46,6 +46,7 @@ set(libdir \${exec_prefix}/lib)
 set(USING_CMAKE_FALSE "#")
 set(USING_CMAKE_TRUE "")
 
+# ~~~
 # A variable that doesn't start out as #undef but as #define needs an
 # explicit @...@ replacement in the .h.in files.
 # For NRN_CONFIG_ARGS we use the autotools compatible name, ac_configure_args.
