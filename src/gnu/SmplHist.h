@@ -50,7 +50,7 @@ public:
 
     double bucketThreshold(int i);
     int inBucket(int i);
-    void printBuckets(ostream&);
+    void printBuckets(std::ostream&);
 
 };
 

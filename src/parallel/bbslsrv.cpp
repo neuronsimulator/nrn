@@ -94,10 +94,10 @@ printf("todo_less_than %d < %d return %d\n", this->id_, w->id_, w1->id_ < w2->id
 	return w1->id_ < w2->id_;
 }
 
-class MessageList : public multimap <const char*, const MessageValue*, ltstr>{};
-class WorkList : public map <int, const WorkItem*, ltint>{};
-class ReadyList : public set<WorkItem*, ltWorkItem>{};
-class ResultList: public multimap<int, const WorkItem*, ltint>{};
+class MessageList : public std::multimap <const char*, const MessageValue*, ltstr>{};
+class WorkList : public std::map <int, const WorkItem*, ltint>{};
+class ReadyList : public std::set<WorkItem*, ltWorkItem>{};
+class ResultList: public std::multimap<int, const WorkItem*, ltint>{};
 #else
 class MessageList {};
 class WorkList {};
@@ -318,7 +318,7 @@ nostl();
 void BBSLocalServer::post(const char* key, MessageValue* val) {
 #if defined(HAVE_STL)
 	MessageList::iterator m = messages_->insert(
-		pair<const char* const, const MessageValue*>(newstr(key),val)
+		std::pair<const char* const, const MessageValue*>(newstr(key),val)
 		);
 	Resource::ref(val);
 #if debug
@@ -336,7 +336,7 @@ void BBSLocalServer::post_todo(int parentid, MessageValue* val) {
 	if (p != work_->end()) {
 		w->parent_ = (WorkItem*)((*p).second);
 	}
-	work_->insert(pair<const int, const WorkItem*>(w->id_, w));
+	work_->insert(std::pair<const int, const WorkItem*>(w->id_, w));
 	todo_->insert(w);
 #if debug
 	printf("srvr_post_todo id=%d pid=%d\n", w->id_, parentid);
@@ -353,7 +353,7 @@ void BBSLocalServer::post_result(int id, MessageValue* val) {
 	val->ref();
 	w->val_->unref();
 	w->val_ = val;
-	results_->insert(pair<const int, const WorkItem*>(w->parent_ ? w->parent_->id_ : 0, w));
+	results_->insert(std::pair<const int, const WorkItem*>(w->parent_ ? w->parent_->id_ : 0, w));
 #if debug
 	printf("srvr_post_done id=%d pid=%d\n", id, w->parent_ ? w->parent_->id_ : 0);
 #endif

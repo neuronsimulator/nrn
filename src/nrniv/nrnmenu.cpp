@@ -849,19 +849,19 @@ void MechanismStandard::out(MechanismStandard* ms){
 	NrnProperty::assign(np_->prop(), ms->np_->prop(), vartype_);
 }
 
-void MechanismStandard::save(const char* obref, ostream* po) {
+void MechanismStandard::save(const char* obref, std::ostream* po) {
 	mschk("save");
-	ostream& o = *po;
+	std::ostream& o = *po;
 	char buf[256];
 	sprintf(buf, "%s = new MechanismStandard(\"%s\")", obref, np_->name());
-	o << buf << endl;
+	o << buf << std::endl;
 	for (Symbol* sym = np_->first_var(); np_->more_var(); sym = np_->next_var()) {
 		if (vartype_ == 0 || np_->var_type(sym) == vartype_) {
 			int i, cnt = hoc_total_array_data(sym, 0);
 			for (i=0; i < cnt; ++i) {
 				sprintf(buf, "%s.set(\"%s\", %g, %d)", obref, sym->name,
 					*np_->prop_pval(sym, i), i);
-				o << buf << endl;
+				o << buf << std::endl;
 			}
 		}
 	}
