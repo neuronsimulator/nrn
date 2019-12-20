@@ -48,10 +48,6 @@ option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_DEFAULT})
 # note that if CoreNEURON is enabled then it is not necessary to enable this option
 option(NRN_ENABLE_MOD_COMPATIBILITY "Enable CoreNEURON compatibility for MOD files" ${NRN_ENABLE_MOD_COMPATIBILITY_DEFAULT})
 
-# In case of wheel do not build binaries like nrniv to be compatible
-# with auditwheel repair process
-option(NRN_ENABLE_BINARY "Enable building of neuron binaries" ON)
-
 # =============================================================================
 # Build options (string)
 # =============================================================================

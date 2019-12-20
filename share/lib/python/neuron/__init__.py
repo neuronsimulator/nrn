@@ -101,16 +101,16 @@ $Id: __init__.py,v 1.1 2008/05/26 11:39:44 hines Exp hines $
 
 import sys
 import os
+
 embedded = True if 'hoc' in sys.modules else False
 
 # With pip we need to rewrite the NEURONHOME
-
-nrn_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../share/nrn"))
+nrn_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".data/share/nrn"))
 if (os.path.isdir(nrn_path)):
   os.environ["NEURONHOME"] = nrn_path
 
 try:
-    import hoc
+  import hoc
 except:
   try:
     #Python3.1 extending needs to look into the module explicitly
@@ -776,9 +776,9 @@ class _PlotShapePlot(_WrapperPlot):
                                   line.set_color(col)
               return lines
       return Axis3DWithNEURON(fig)
+    
 
-
-
+    
     def _do_plot_on_matplotlib_figure(fig):
       import ctypes
       get_plotshape_data = nrn_dll_sym('get_plotshape_data')
