@@ -41,7 +41,7 @@ extern "C" { extern void hoc_execerror(const char*, const char*); }
 
 void default_Complex_error_handler(const char* msg)
 {
-  cerr << "Fatal Complex arithmetic error. " << msg << "\n";
+  std::cerr << "Fatal Complex arithmetic error. " << msg << "\n";
 //  hoc_execerror("Complex arithmetic error.", msg);
 //  exit(1);
 }
@@ -221,14 +221,14 @@ Complex /* const */ pow(const Complex& x, int p)
   }
 }
 
-ostream& operator << (ostream& s, const Complex& x)
+std::ostream& operator << (std::ostream& s, const Complex& x)
 {
   return s << "(" << x.real() << ", " << x.imag() << ")" ;
 }
 #if 1 || defined(__MWERKS__)
 #define _OLD_STREAMS
 #endif
-istream& operator >> (istream& s, Complex& x)
+std::istream& operator >> (std::istream& s, Complex& x)
 {
 #ifdef _OLD_STREAMS
   if (!s.good())
@@ -260,7 +260,7 @@ istream& operator >> (istream& s, Complex& x)
     else
       i = 0;
     if (ch != ')')
-      s.clear(ios::failbit);
+      s.clear(std::ios::failbit);
   }
   else
   {

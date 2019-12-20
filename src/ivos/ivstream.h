@@ -9,6 +9,4 @@
 #define IOS_IN  std::ios::in
 #define IOS_APP  std::ios::app
 
-using namespace std;
-
 #endif // ivstream_h

@@ -89,7 +89,7 @@ SampleHistogram::similarSamples(double d)
 }
 
 void
-SampleHistogram::printBuckets(ostream& s)
+SampleHistogram::printBuckets(std::ostream& s)
 {
     for(int i = 0; i < howManyBuckets; i++) {
 	if (bucketLimit[i] >= HUGE_VAL) {
