@@ -319,15 +319,10 @@ if(NOT MINGW)
 endif()
 
 # TODO: unset in top level CMake is not working
-if(NOT NRN_MACOS_BUILD AND ${READLINE_FOUND} AND NRN_ENABLE_BINARY)
+if(NOT NRN_MACOS_BUILD AND ${READLINE_FOUND})
   target_link_libraries(nrniv ${Readline_LIBRARY})
 endif()
 
-if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_MODULE_INSTALL AND NRN_ENABLE_PYTHON_DYNAMIC)
-  # Under these circumstances nrniv was not linked at all with Python. Ignore mising symbols
-  message(WARNING "Dynamic Python without Module install is EXPERIMENTAL")
-  # target_link_libraries(nrniv "-Wl,${UNDEFINED_SYMBOLS_IGNORE_FLAG}")
-endif()
 
 # =============================================================================
 # Install binary and library targets
@@ -337,11 +332,7 @@ endif()
 # For now, we keep this distinction as it reduces the PATH and is
 # expected when ctypes looks for dlls
 # ~~~
-if(NRN_ENABLE_BINARY)
-  install(TARGETS nrniv DESTINATION bin)
-endif()
-install(TARGETS nocmodl modlunit DESTINATION bin)
-install(TARGETS nocmodl modlunit DESTINATION bin)
+install(TARGETS nrniv nocmodl modlunit DESTINATION bin)
 install(TARGETS nrniv_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 if (LIBIVX11DYNAM_NAME)
   install(FILES ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME} DESTINATION lib)

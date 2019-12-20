@@ -430,7 +430,7 @@ static void load_nrnpython(int pyver10, const char* pylib) {
         if (!handle) {
             printf("Could not load either libnrnpython3 or libnrnpython2\n");
             printf("pyver10=%d pylib=%s\n", pyver10, pylib ? pylib : "NULL");
-            //return;
+            return;
         }
     }
 #endif
