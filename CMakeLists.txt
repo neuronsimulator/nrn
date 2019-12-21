@@ -167,9 +167,9 @@ include(RpathHelper)
 include(PlatformHelper)
 include(ExternalProjectHelper)
 include(FindPythonModule)
-set(allowableBuildTypes Custom Debug Release RelWithDebInfo Fast)
 
 # set CMAKE_BUILD_TYPE and associated flags using allowableBuildTypes and CMAKE_BUILD_TYPE_DEFAULT
+set(allowableBuildTypes Custom Debug Release RelWithDebInfo Fast)
 include(ReleaseDebugAutoFlags)
 
 # =============================================================================
