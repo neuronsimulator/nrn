@@ -12,9 +12,12 @@ from distutils.dir_util import copy_tree
 from platform import python_version
 from glob import glob
 
-RX3D = True
 
-if RX3D:
+if '--disable-rx3d' in sys.argv:
+    RX3D = False
+    sys.argv.remove('--disable-rx3d')
+else:
+    RX3D = True
     from Cython.Distutils import Extension as CyExtension
     from Cython.Distutils import build_ext
     import numpy
@@ -159,6 +162,7 @@ def setup_package():
     NRN_COLLECT_DIRS = ['bin', 'lib', 'include', 'share/nrn/lib/hoc', 'share/nrn/lib']
 
     docs_require = []  # sphinx, themes, etc
+    maybe_rxd_reqs = ['numpy', 'Cython'] if RX3D else []
     maybe_docs = docs_require if "docs" in sys.argv else []
     maybe_test_runner = ['pytest-runner'] if "test" in sys.argv else []
 
@@ -236,6 +240,8 @@ def setup_package():
             )
         ]
 
+    print("RX3D is {}".format("ENABLED" if RX3D else "DISABLED"))
+
     setup(
         name='NEURON',
         version=__version__,
@@ -250,7 +256,7 @@ def setup_package():
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),
         install_requires=['numpy>=1.13.1'],
         tests_require=["flake8", "pytest"],
-        setup_requires=maybe_docs + maybe_test_runner,
+        setup_requires=maybe_docs + maybe_test_runner + maybe_rxd_reqs,
         dependency_links=[]
     )
 
