@@ -119,7 +119,9 @@ fi
 if test "$z" = "Darwin" ; then
   p=`$WHICH $PYTHON`
   d=`dirname $p`
-  l=`ls $d/../lib/libpython*.dylib`
+  # Get the python lib dir in an official way, working with virtualenv
+  PYLIB=$(python -c 'from distutils import sysconfig; print(sysconfig.get_config_var("LIBDIR"))')
+  l="$PYLIB/libpython*.dylib"  # expanded by shell
   if test -f "$l" ; then
     z="$l"
     unset p

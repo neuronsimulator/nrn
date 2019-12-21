@@ -185,11 +185,15 @@ void nrnpython_start(int b) {
       Py_NoSiteFlag = 1;
     }
     // printf("Py_NoSiteFlag = %d\n", Py_NoSiteFlag);
-    if (nrnpy_pyhome) {
+    // Even though nrnpy_pyhome holds the python root, we shall not call
+    // Py_SetPythonHome with it. With virtualenv it is mostly incompatible
+    // Do only if explicitly requested by the environment var
+    char * _p_pyhome = getenv("PYTHONHOME");
+    if (_p_pyhome) { //nrnpy_pyhome) {
 #if PY_MAJOR_VERSION >= 3
-        Py_SetPythonHome(mywstrdup(nrnpy_pyhome));
+        Py_SetPythonHome(mywstrdup(_p_pyhome));
 #else
-        Py_SetPythonHome(nrnpy_pyhome);
+        Py_SetPythonHome(_p_pyhome);
 #endif
     }
     Py_Initialize();
