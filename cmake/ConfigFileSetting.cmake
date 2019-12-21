@@ -55,7 +55,7 @@ set(USING_CMAKE_TRUE "")
 # ~~~
 set(ac_configure_args "cmake option default differences:")
 foreach(_name ${NRN_OPTION_NAME_LIST})
-  if (NOT ("${${_name}}" STREQUAL "${${_name}_DEFAULT}"))
+  if(NOT ("${${_name}}" STREQUAL "${${_name}_DEFAULT}"))
     string(APPEND ac_configure_args " '${_name}=${${_name}}'")
   endif()
 endforeach()

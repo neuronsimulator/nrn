@@ -22,37 +22,39 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 # =============================================================================
 # Option defaults.
 # =============================================================================
+# ~~~
 # This allows h.nrnversion(6) to print only the configuration differences
 # analogously to what happens with an autotools build.
 # The <optionname>_DEFAULT values should only be changed in this file
 # and not on the command line.
-set(NRN_ENABLE_SHARED_DEFAULT                   ON)
-set(NRN_ENABLE_INTERVIEWS_DEFAULT               ON)
-set(NRN_ENABLE_LEGACY_FR_DEFAULT                ON)
-set(NRN_ENABLE_MECH_DLL_STYLE_DEFAULT           ON)
-set(NRN_ENABLE_DISCRETE_EVENT_OBSERVER_DEFAULT  ON)
-set(NRN_ENABLE_PYTHON_DEFAULT                   ON)
-set(NRN_ENABLE_THREADS_DEFAULT                  ON)
-set(NRN_ENABLE_MPI_DEFAULT                      ON)
-set(NRN_ENABLE_MEMACS_DEFAULT                   ON)
-set(NRN_ENABLE_RX3D_DEFAULT                     ON)
-set(NRN_ENABLE_CORENEURON_DEFAULT               ON)
-set(NRN_ENABLE_TESTS_DEFAULT                   OFF)
-set(NRN_ENABLE_MODULE_INSTALL_DEFAULT           ON)
-set(NRN_ENABLE_PYTHON_DYNAMIC_DEFAULT          OFF)
-set(NRN_ENABLE_MPI_DYNAMIC_DEFAULT             OFF)
+# ~~~
+set(NRN_ENABLE_SHARED_DEFAULT ON)
+set(NRN_ENABLE_INTERVIEWS_DEFAULT ON)
+set(NRN_ENABLE_LEGACY_FR_DEFAULT ON)
+set(NRN_ENABLE_MECH_DLL_STYLE_DEFAULT ON)
+set(NRN_ENABLE_DISCRETE_EVENT_OBSERVER_DEFAULT ON)
+set(NRN_ENABLE_PYTHON_DEFAULT ON)
+set(NRN_ENABLE_THREADS_DEFAULT ON)
+set(NRN_ENABLE_MPI_DEFAULT ON)
+set(NRN_ENABLE_MEMACS_DEFAULT ON)
+set(NRN_ENABLE_RX3D_DEFAULT ON)
+set(NRN_ENABLE_CORENEURON_DEFAULT ON)
+set(NRN_ENABLE_TESTS_DEFAULT OFF)
+set(NRN_ENABLE_MODULE_INSTALL_DEFAULT ON)
+set(NRN_ENABLE_PYTHON_DYNAMIC_DEFAULT OFF)
+set(NRN_ENABLE_MPI_DYNAMIC_DEFAULT OFF)
 
-set(NRN_MODULE_INSTALL_OPTIONS_DEFAULT          "")
-set(NRN_PYTHON_DYNAMIC_DEFAULT                  "")
-set(NRN_MPI_DYNAMIC_DEFAULT                     "")
-set(NRN_RX3D_OPT_LEVEL_DEFAULT                 "0")
+set(NRN_MODULE_INSTALL_OPTIONS_DEFAULT "")
+set(NRN_PYTHON_DYNAMIC_DEFAULT "")
+set(NRN_MPI_DYNAMIC_DEFAULT "")
+set(NRN_RX3D_OPT_LEVEL_DEFAULT "0")
 
-#Some CMAKE variables we would like to see, if they differ from the following.
-set(CMAKE_BUILD_TYPE_DEFAULT        RelWithDebInfo)
-set(CMAKE_INSTALL_PREFIX_DEFAULT      "/usr/local")
-set(CMAKE_C_COMPILER_DEFAULT                 "gcc")
-set(PYTHON_EXECUTABLE_DEFAULT                   "")
-set(IV_LIB_DEFAULT                              "")
+# Some CMAKE variables we would like to see, if they differ from the following.
+set(CMAKE_BUILD_TYPE_DEFAULT RelWithDebInfo)
+set(CMAKE_INSTALL_PREFIX_DEFAULT "/usr/local")
+set(CMAKE_C_COMPILER_DEFAULT "gcc")
+set(PYTHON_EXECUTABLE_DEFAULT "")
+set(IV_LIB_DEFAULT "")
 
 set(NRN_OPTION_NAME_LIST
     NRN_ENABLE_SHARED
@@ -82,12 +84,17 @@ set(NRN_OPTION_NAME_LIST
 # =============================================================================
 # Build options (boolean)
 # =============================================================================
-option(NRN_ENABLE_SHARED "Build shared libraries (otherwise static library)" ${NRN_ENABLE_SHARED_DEFAULT})
+option(NRN_ENABLE_SHARED "Build shared libraries (otherwise static library)"
+       ${NRN_ENABLE_SHARED_DEFAULT})
 option(NRN_ENABLE_INTERVIEWS "Enable GUI with INTERVIEWS" ${NRN_ENABLE_INTERVIEWS_DEFAULT})
-option(NRN_ENABLE_LEGACY_FR "Use original faraday, R, etc. instead of 2019 nist constants" ${NRN_ENABLE_LEGACY_FR_DEFAULT})
-option(NRN_ENABLE_MECH_DLL_STYLE "Dynamically load nrnmech shared library" ${NRN_ENABLE_MECH_DLL_STYLE_DEFAULT})
-option(NRN_ENABLE_DISCRETE_EVENT_OBSERVER "Enable Observer to be a subclass of DiscreteEvent" ${NRN_ENABLE_DISCRETE_EVENT_OBSERVER_DEFAULT})
-option(NRN_ENABLE_PYTHON "Enable Python interpreter support (default python3 fallback to python)" ${NRN_ENABLE_PYTHON_DEFAULT})
+option(NRN_ENABLE_LEGACY_FR "Use original faraday, R, etc. instead of 2019 nist constants"
+       ${NRN_ENABLE_LEGACY_FR_DEFAULT})
+option(NRN_ENABLE_MECH_DLL_STYLE "Dynamically load nrnmech shared library"
+       ${NRN_ENABLE_MECH_DLL_STYLE_DEFAULT})
+option(NRN_ENABLE_DISCRETE_EVENT_OBSERVER "Enable Observer to be a subclass of DiscreteEvent"
+       ${NRN_ENABLE_DISCRETE_EVENT_OBSERVER_DEFAULT})
+option(NRN_ENABLE_PYTHON "Enable Python interpreter support (default python3 fallback to python)"
+       ${NRN_ENABLE_PYTHON_DEFAULT})
 option(NRN_ENABLE_THREADS "Allow use of Pthreads" ${NRN_ENABLE_THREADS_DEFAULT})
 option(NRN_ENABLE_MPI "Enable MPI support" ${NRN_ENABLE_MPI_DEFAULT})
 option(NRN_ENABLE_MEMACS "Enable use of memacs" ${NRN_ENABLE_EMACS})
@@ -123,12 +130,14 @@ option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_DEFAULT})
 #                 the first mpi found will determine which interface is dynamically loaded."
 # Rx3D Cython generated files compiler optimization level. 0 is default.
 # ~~~
-option(NRN_ENABLE_MODULE_INSTALL "Enable installation of NEURON Python module" ${NRN_ENABLE_MODULE_INSTALL_DEFAULT})
+option(NRN_ENABLE_MODULE_INSTALL "Enable installation of NEURON Python module"
+       ${NRN_ENABLE_MODULE_INSTALL_DEFAULT})
 set(NRN_MODULE_INSTALL_OPTIONS
     ""
     CACHE STRING "setup.py options, leave empty for --home <build dir>")
 
-option(NRN_ENABLE_PYTHON_DYNAMIC "Enable dynamic Python version support" ${NRN_ENABLE_PYTHON_DYNAMIC_DEFAULT})
+option(NRN_ENABLE_PYTHON_DYNAMIC "Enable dynamic Python version support"
+       ${NRN_ENABLE_PYTHON_DYNAMIC_DEFAULT})
 set(NRN_PYTHON_DYNAMIC
     ""
     CACHE
@@ -160,8 +169,7 @@ include(ExternalProjectHelper)
 include(FindPythonModule)
 set(allowableBuildTypes Debug Release RelWithDebInfo Fast)
 
-# set CMAKE_BUILD_TYPE and associated flags using allowableBuildTypes and
-# CMAKE_BUILD_TYPE_DEFAULT
+# set CMAKE_BUILD_TYPE and associated flags using allowableBuildTypes and CMAKE_BUILD_TYPE_DEFAULT
 include(ReleaseDebugAutoFlags)
 
 # =============================================================================
@@ -363,7 +371,8 @@ add_custom_target(
   hh_update
   COMMAND sed ${GLOBAL_VAR_TOGGLE_COMMAND} ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod >
           ${CMAKE_BINARY_DIR}/hh.mod.1
-  COMMAND sed ${TABLE_VAR_TOGGLE_COMMAND} ${CMAKE_BINARY_DIR}/hh.mod.1 > ${CMAKE_BINARY_DIR}/hh.mod.2
+  COMMAND sed ${TABLE_VAR_TOGGLE_COMMAND} ${CMAKE_BINARY_DIR}/hh.mod.1 >
+          ${CMAKE_BINARY_DIR}/hh.mod.2
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/hh.mod.2
           ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod
   COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/hh.mod.1 ${CMAKE_BINARY_DIR}/hh.mod.2
