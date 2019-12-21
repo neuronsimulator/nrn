@@ -104,12 +104,12 @@ printf("todo_less_than %d < %d return %d\n", this->id_, w->id_, w1->id_ < w2->id
 	return w1->id_ < w2->id_;
 }
 
-class MessageList : public multimap <const char*, bbsmpibuf*, ltstr>{};
-class PendingList : public multimap <const char*, const int, ltstr>{};
-class WorkList : public map <int, const WorkItem*, ltint>{};
-class LookingToDoList : public set <int, ltint>{};
-class ReadyList : public set<const WorkItem*, ltWorkItem>{};
-class ResultList: public multimap<int, const WorkItem*, ltint>{};
+class MessageList : public std::multimap <const char*, bbsmpibuf*, ltstr>{};
+class PendingList : public std::multimap <const char*, const int, ltstr>{};
+class WorkList : public std::map <int, const WorkItem*, ltint>{};
+class LookingToDoList : public std::set <int, ltint>{};
+class ReadyList : public std::set<const WorkItem*, ltWorkItem>{};
+class ResultList: public std::multimap<int, const WorkItem*, ltint>{};
 #else
 class MessageList {};
 class PendingList {};
@@ -201,7 +201,7 @@ void BBSDirectServer::put_pending(const char* key, int cid) {
 printf("put_pending |%s| %d\n", key, cid);
 #endif
 	char* s = newstr(key);
-	pending_->insert(pair<const char* const, const int>(s, cid));
+	pending_->insert(std::pair<const char* const, const int>(s, cid));
 #endif
 }
 
@@ -233,7 +233,7 @@ void BBSDirectServer::post(const char* key, bbsmpibuf* send) {
 		nrnmpi_bbssend(cid, TAKE, send);
 	}else{
 		MessageList::iterator m = messages_->insert(
-		  pair<const char* const, bbsmpibuf*>(newstr(key), send)
+		  std::pair<const char* const, bbsmpibuf*>(newstr(key), send)
 		);
 		nrnmpi_ref(send);
 	}
@@ -257,7 +257,7 @@ printf("BBSDirectServer::post_todo pid=%d cid=%d send=%p\n", pid, cid, send);
 	if (p != work_->end()) {
 		w->parent_ = (WorkItem*)((*p).second);
 	}
-	work_->insert(pair<const int, const WorkItem*>(w->id_, w));
+	work_->insert(std::pair<const int, const WorkItem*>(w->id_, w));
 #if debug
 printf("work insert %d\n", w->id_);
 #endif
@@ -356,7 +356,7 @@ printf("DirectServer::post_result id=%d send=%p\n", id, send);
 	nrnmpi_ref(send);
 	nrnmpi_unref(w->buf_);
 	w->buf_ = send;
-	results_->insert(pair<const int, const WorkItem*>(w->parent_ ? w->parent_->id_ : 0, w));
+	results_->insert(std::pair<const int, const WorkItem*>(w->parent_ ? w->parent_->id_ : 0, w));
 #endif
 }
 
