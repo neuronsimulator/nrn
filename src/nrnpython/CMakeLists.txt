@@ -144,9 +144,10 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
   endif()
 endif()
 
-# module is already installed in lib, just copy folder
-install(DIRECTORY ${PROJECT_BINARY_DIR}/lib/ DESTINATION ${NRN_LIBDIR})
-
+# Install package files that were created in build (e.g. .py.in)
+install(DIRECTORY ${PROJECT_BINARY_DIR}/share/lib/python
+        DESTINATION ${NRN_LIBDIR}
+        FILES_MATCHING PATTERN *.py PATTERN *.so PATTERN *.dylib)
 
 # =============================================================================
 # If NEURON python module installation is enabled
@@ -236,5 +237,8 @@ if(NRN_ENABLE_MODULE_INSTALL)
   endforeach(pyexe)
 
   add_dependencies(hoc_module nrniv_lib ${nrnpython_lib_list})
+
+  # module is already installed in lib, just copy folder
+  install(DIRECTORY ${PROJECT_BINARY_DIR}/lib/ DESTINATION ${NRN_LIBDIR})
 
 endif()
