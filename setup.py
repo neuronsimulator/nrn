@@ -8,6 +8,7 @@ from distutils.version import LooseVersion
 from setuptools import Command, Extension
 from setuptools import setup, find_packages
 from setuptools.command.build_ext import build_ext
+from distutils.dir_util import copy_tree
 from platform import python_version
 from glob import glob
 
@@ -35,12 +36,14 @@ class CMakeAugmentedExtension(Extension):
                  cmake_install_prefix="build/cmake_install",
                  cmake_flags=None,
                  cmake_collect_dirs=None,
+                 cmake_install_python_files='lib/python',
                  **kw):
         Extension.__init__(self, name, sources, **kw)
         self.sourcedir = os.path.abspath(cmake_proj_dir)
         self.cmake_flags = cmake_flags or []
         self.cmake_install_prefix = os.path.abspath(cmake_install_prefix)
         self.cmake_collect_dirs = cmake_collect_dirs or []
+        self.cmake_install_python_files = cmake_install_python_files
 
 
 class CMakeAugmentedBuilder(build_ext):
@@ -53,10 +56,6 @@ class CMakeAugmentedBuilder(build_ext):
             if isinstance(ext, CMakeAugmentedExtension):
 
                 self.run_cmake(ext)
-                # Add the temp include paths
-                ext.include_dirs += [os.path.join(self.build_temp, inc_dir)
-                                     for inc_dir in ext.include_dirs
-                                     if not os.path.isabs(inc_dir)]
 
                 # Collect project files to be installed
                 # These go directly into the final package, regardless of setuptools filters
@@ -73,7 +72,17 @@ class CMakeAugmentedBuilder(build_ext):
                         if os.path.isfile(f):
                             shutil.copy(f, dst_dir)
 
+                if ext.cmake_install_python_files:
+                    copy_tree(os.path.join(ext.cmake_install_prefix,
+                                           ext.cmake_install_python_files),
+                              self.build_lib)
+
                 print("Done building CMake project. Now building python extension")
+
+                # Make the temp include paths in the building the extension
+                ext.include_dirs += [os.path.join(self.build_temp, inc_dir)
+                                     for inc_dir in ext.include_dirs
+                                     if not os.path.isabs(inc_dir)]
 
         build_ext.run(self, *args, **kw)
 
