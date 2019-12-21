@@ -167,7 +167,7 @@ include(RpathHelper)
 include(PlatformHelper)
 include(ExternalProjectHelper)
 include(FindPythonModule)
-set(allowableBuildTypes Debug Release RelWithDebInfo Fast)
+set(allowableBuildTypes Custom Debug Release RelWithDebInfo Fast)
 
 # set CMAKE_BUILD_TYPE and associated flags using allowableBuildTypes and CMAKE_BUILD_TYPE_DEFAULT
 include(ReleaseDebugAutoFlags)
@@ -443,7 +443,15 @@ endif()
 # =============================================================================
 # Print build status
 # =============================================================================
+
+# just for printing the compiler flags in the build status
 string(TOUPPER ${CMAKE_BUILD_TYPE} BUILD_TYPE_UPPER)
+if(BUILD_TYPE_UPPER MATCHES "CUSTOM")
+  set(COMPILER_FLAGS "${CMAKE_CXX_FLAGS}")
+else()
+  set(COMPILER_FLAGS "${CMAKE_CXX_FLAGS_${BUILD_TYPE_UPPER}}")
+endif()
+
 message(STATUS "")
 message(STATUS "Configured NEURON ${PROJECT_VERSION}")
 message(STATUS "")
@@ -462,7 +470,7 @@ if(cmake_generator_tolower MATCHES "makefile")
   message(STATUS " Build option | Status")
   message(STATUS "--------------+--------------------------------------------------------------")
   message(STATUS "BUILD_TYPE    | ${CMAKE_BUILD_TYPE} (allowed: ${allowableBuildTypes})")
-  message(STATUS "COMPILE FLAGS | ${CMAKE_CXX_FLAGS_${BUILD_TYPE_UPPER}}")
+  message(STATUS "COMPILE FLAGS | ${COMPILER_FLAGS}")
   message(STATUS "Shared        | ${NRN_ENABLE_SHARED}")
   message(STATUS "Legacy FR     | ${NRN_ENABLE_LEGACY_FR}")
   message(STATUS "MPI           | ${NRN_ENABLE_MPI}")
