@@ -434,6 +434,7 @@ endif()
 # =============================================================================
 # Print build status
 # =============================================================================
+string(TOUPPER ${CMAKE_BUILD_TYPE} BUILD_TYPE_UPPER)
 message(STATUS "")
 message(STATUS "Configured NEURON ${PROJECT_VERSION}")
 message(STATUS "")
@@ -452,6 +453,7 @@ if(cmake_generator_tolower MATCHES "makefile")
   message(STATUS " Build option | Status")
   message(STATUS "--------------+--------------------------------------------------------------")
   message(STATUS "BUILD_TYPE    | ${CMAKE_BUILD_TYPE} (allowed: ${allowableBuildTypes})")
+  message(STATUS "COMPILE FLAGS | ${CMAKE_CXX_FLAGS_${BUILD_TYPE_UPPER}}")
   message(STATUS "Shared        | ${NRN_ENABLE_SHARED}")
   message(STATUS "Legacy FR     | ${NRN_ENABLE_LEGACY_FR}")
   message(STATUS "MPI           | ${NRN_ENABLE_MPI}")
