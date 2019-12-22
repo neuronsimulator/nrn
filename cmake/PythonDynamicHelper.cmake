@@ -72,8 +72,10 @@ if(NRN_ENABLE_PYTHON)
           ERROR_VARIABLE err_output
           OUTPUT_STRIP_TRAILING_WHITESPACE)
         if(result EQUAL 0)
+          # cmake-format: off
           string(REGEX MATCH [0-9.]*$ PYVER ${std_output})
           string(REGEX MATCH ^[^\n]* incval ${std_output})
+          # cmake-format: on
           if(NOT NRNPYTHON_INCLUDE${PYVER})
             set(NRNPYTHON_INCLUDE${PYVER} ${incval})
           endif()

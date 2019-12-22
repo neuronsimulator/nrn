@@ -9,9 +9,7 @@ set(PROJECT_VERSION_MINOR 8)
 set(CMAKE_CXX_STANDARD 98)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_BUILD_TYPE
-    RelWithDebInfo
-    CACHE STRING "Empty or one of Debug, Release, RelWithDebInfo")
+
 set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 
 # =============================================================================
@@ -22,21 +20,31 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 # =============================================================================
+# Include default build options
+# =============================================================================
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+include(BuildOptionDefaults)
+
+# =============================================================================
 # Build options (boolean)
 # =============================================================================
-option(NRN_ENABLE_SHARED "Build shared libraries (otherwise static library)" ON)
-option(NRN_ENABLE_INTERVIEWS "Enable GUI with INTERVIEWS" ON)
-option(NRN_ENABLE_LEGACY_FR "Use original faraday, R, etc. instead of 2019 nist constants" ON)
-option(NRN_ENABLE_MECH_DLL_STYLE "Dynamically load nrnmech shared library" ON)
-option(NRN_ENABLE_DISCRETE_EVENT_OBSERVER "Enable Observer to be a subclass of DiscreteEvent" ON)
+option(NRN_ENABLE_SHARED "Build shared libraries (otherwise static library)"
+       ${NRN_ENABLE_SHARED_DEFAULT})
+option(NRN_ENABLE_INTERVIEWS "Enable GUI with INTERVIEWS" ${NRN_ENABLE_INTERVIEWS_DEFAULT})
+option(NRN_ENABLE_LEGACY_FR "Use original faraday, R, etc. instead of 2019 nist constants"
+       ${NRN_ENABLE_LEGACY_FR_DEFAULT})
+option(NRN_ENABLE_MECH_DLL_STYLE "Dynamically load nrnmech shared library"
+       ${NRN_ENABLE_MECH_DLL_STYLE_DEFAULT})
+option(NRN_ENABLE_DISCRETE_EVENT_OBSERVER "Enable Observer to be a subclass of DiscreteEvent"
+       ${NRN_ENABLE_DISCRETE_EVENT_OBSERVER_DEFAULT})
 option(NRN_ENABLE_PYTHON "Enable Python interpreter support (default python3 fallback to python)"
-       ON)
-option(NRN_ENABLE_THREADS "Allow use of Pthreads" ON)
-option(NRN_ENABLE_MPI "Enable MPI support" ON)
-option(NRN_ENABLE_MEMACS "Enable use of memacs" ON)
-option(NRN_ENABLE_RX3D "Enable rx3d support" ON)
-option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ON)
-option(NRN_ENABLE_TESTS "Enable unit tests" OFF)
+       ${NRN_ENABLE_PYTHON_DEFAULT})
+option(NRN_ENABLE_THREADS "Allow use of Pthreads" ${NRN_ENABLE_THREADS_DEFAULT})
+option(NRN_ENABLE_MPI "Enable MPI support" ${NRN_ENABLE_MPI_DEFAULT})
+option(NRN_ENABLE_MEMACS "Enable use of memacs" ${NRN_ENABLE_EMACS})
+option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_DEFAULT})
+option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_DEFAULT})
+option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_DEFAULT})
 
 # =============================================================================
 # Build options (string)
@@ -66,12 +74,14 @@ option(NRN_ENABLE_TESTS "Enable unit tests" OFF)
 #                 the first mpi found will determine which interface is dynamically loaded."
 # Rx3D Cython generated files compiler optimization level. 0 is default.
 # ~~~
-option(NRN_ENABLE_MODULE_INSTALL "Enable installation of NEURON Python module" ON)
+option(NRN_ENABLE_MODULE_INSTALL "Enable installation of NEURON Python module"
+       ${NRN_ENABLE_MODULE_INSTALL_DEFAULT})
 set(NRN_MODULE_INSTALL_OPTIONS
     ""
     CACHE STRING "setup.py options, leave empty for --home <build dir>")
 
-option(NRN_ENABLE_PYTHON_DYNAMIC "Enable dynamic Python version support" OFF)
+option(NRN_ENABLE_PYTHON_DYNAMIC "Enable dynamic Python version support"
+       ${NRN_ENABLE_PYTHON_DYNAMIC_DEFAULT})
 set(NRN_PYTHON_DYNAMIC
     ""
     CACHE
@@ -88,19 +98,23 @@ set(NRN_MPI_DYNAMIC
 )
 
 set(NRN_RX3D_OPT_LEVEL
-    "0"
+    "${NRN_RX3D_OPT_LEVEL_DEFAULT}"
     CACHE STRING "Optimization level for Cython generated files (non-zero may compile slowly)")
 
 # =============================================================================
 # Include cmake modules
 # =============================================================================
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${PROJECT_SOURCE_DIR}/cmake/modules)
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
 include(CompilerHelper)
 include(MacroHelper)
 include(RpathHelper)
 include(PlatformHelper)
 include(ExternalProjectHelper)
 include(FindPythonModule)
+
+# set CMAKE_BUILD_TYPE and associated flags using allowableBuildTypes and CMAKE_BUILD_TYPE_DEFAULT
+set(allowableBuildTypes Custom Debug Release RelWithDebInfo Fast)
+include(ReleaseDebugAutoFlags)
 
 # =============================================================================
 # Find required packages
@@ -301,7 +315,8 @@ add_custom_target(
   hh_update
   COMMAND sed ${GLOBAL_VAR_TOGGLE_COMMAND} ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod >
           ${CMAKE_BINARY_DIR}/hh.mod.1
-  COMMAND sed ${TABLE_VAR_TOGGLE_COMMAND} ${CMAKE_BINARY_DIR}/hh.mod.1 > ${CMAKE_BINARY_DIR}/hh.mod.2
+  COMMAND sed ${TABLE_VAR_TOGGLE_COMMAND} ${CMAKE_BINARY_DIR}/hh.mod.1 >
+          ${CMAKE_BINARY_DIR}/hh.mod.2
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/hh.mod.2
           ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod
   COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/hh.mod.1 ${CMAKE_BINARY_DIR}/hh.mod.2
@@ -372,6 +387,15 @@ endif()
 # =============================================================================
 # Print build status
 # =============================================================================
+
+# just for printing the compiler flags in the build status
+string(TOUPPER ${CMAKE_BUILD_TYPE} BUILD_TYPE_UPPER)
+if(BUILD_TYPE_UPPER MATCHES "CUSTOM")
+  set(COMPILER_FLAGS "${CMAKE_CXX_FLAGS}")
+else()
+  set(COMPILER_FLAGS "${CMAKE_CXX_FLAGS_${BUILD_TYPE_UPPER}}")
+endif()
+
 message(STATUS "")
 message(STATUS "Configured NEURON ${PROJECT_VERSION}")
 message(STATUS "")
@@ -389,6 +413,8 @@ if(cmake_generator_tolower MATCHES "makefile")
   message(STATUS "--------------+--------------------------------------------------------------")
   message(STATUS " Build option | Status")
   message(STATUS "--------------+--------------------------------------------------------------")
+  message(STATUS "BUILD_TYPE    | ${CMAKE_BUILD_TYPE} (allowed: ${allowableBuildTypes})")
+  message(STATUS "COMPILE FLAGS | ${COMPILER_FLAGS}")
   message(STATUS "Shared        | ${NRN_ENABLE_SHARED}")
   message(STATUS "Legacy FR     | ${NRN_ENABLE_LEGACY_FR}")
   message(STATUS "MPI           | ${NRN_ENABLE_MPI}")
