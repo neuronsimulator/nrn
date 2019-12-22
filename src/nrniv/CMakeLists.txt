@@ -276,27 +276,24 @@ else()
   include_directories(nrniv_lib ${NRN_IVOS_SRC_DIR} ${PROJECT_BINARY_DIR}/src/ivos)
 endif()
 
-if (IV_ENABLE_X11_DYNAMIC)
-  # by defining IVX11_DYNAM in ivocmain.cpp, the latter can call ivx11_dyload
-  # and if that fails, set hoc_usegui = 0 which avoids all InterViews calls.
-  set_property(SOURCE ${PROJECT_SOURCE_DIR}/src/ivoc/ivocmain.cpp
-                      ${PROJECT_SOURCE_DIR}/src/pwman/xdep.cpp
-                      ${PROJECT_SOURCE_DIR}/src/ivoc/xdep.cpp
-                      ${PROJECT_SOURCE_DIR}/src/oc/x.c
-               APPEND
-               PROPERTY COMPILE_DEFINITIONS
-                        IVX11_DYNAM)
-  if (NOT IV_ENABLE_SHARED)
-    # When IV_ENABLE_SHARED=ON, libivx11dynam is found in IV_LIB_DIR (the
-    # location of libinterviews). When OFF, libivx11dynam needs to be copied
-    # to the location of libnrniv.  The goal is that if libnrniv is loaded,
-    # the system can find libivx11dynam independent of CMAKE_INSTALL_PREFIX.
+if(IV_ENABLE_X11_DYNAMIC)
+  # by defining IVX11_DYNAM in ivocmain.cpp, the latter can call ivx11_dyload and if that fails, set
+  # hoc_usegui = 0 which avoids all InterViews calls.
+  set_property(
+    SOURCE ${PROJECT_SOURCE_DIR}/src/ivoc/ivocmain.cpp ${PROJECT_SOURCE_DIR}/src/pwman/xdep.cpp
+           ${PROJECT_SOURCE_DIR}/src/ivoc/xdep.cpp ${PROJECT_SOURCE_DIR}/src/oc/x.c
+    APPEND
+    PROPERTY COMPILE_DEFINITIONS IVX11_DYNAM)
+  if(NOT IV_ENABLE_SHARED)
+    # When IV_ENABLE_SHARED=ON, libivx11dynam is found in IV_LIB_DIR (the location of
+    # libinterviews). When OFF, libivx11dynam needs to be copied to the location of libnrniv.  The
+    # goal is that if libnrniv is loaded, the system can find libivx11dynam independent of
+    # CMAKE_INSTALL_PREFIX.
     set(_suffix ${CMAKE_SHARED_LIBRARY_SUFFIX})
     add_custom_command(
-        TARGET nrniv_lib POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-                ${IV_LIB_DIR}/libivx11dynam${_suffix}
-                ${PROJECT_BINARY_DIR}/lib/libivx11dynam${_suffix})
+      TARGET nrniv_lib POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy ${IV_LIB_DIR}/libivx11dynam${_suffix}
+              ${PROJECT_BINARY_DIR}/lib/libivx11dynam${_suffix})
   endif()
 else()
   target_link_libraries(nrniv_lib ${X11_LIBRARIES})
