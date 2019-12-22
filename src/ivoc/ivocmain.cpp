@@ -42,6 +42,10 @@ void iv_display_scale(float);
 #include "nrnmpi.h"
 #include "nrnrt.h"
 
+#if defined(IVX11_DYNAM)
+#include <IV-X11/ivx11_dynam.h>
+#endif
+
 #if defined(carbon)
 #undef MAC
 #endif
@@ -197,9 +201,6 @@ extern "C" {
 	extern double hoc_default_dll_loaded_;
 	extern int hoc_print_first_instance;
 	int nrnpy_nositeflag;
-#if defined(IVX11_DYNAM)
-        extern int ivx11_dyload();
-#endif
 }
 
 #if !defined(WIN32) && !MAC && !defined(CYGWIN)
