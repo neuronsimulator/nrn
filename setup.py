@@ -6,16 +6,14 @@ import subprocess
 from collections import defaultdict
 from distutils.version import LooseVersion
 from setuptools import Command, Extension
-from setuptools import setup, find_packages
-from setuptools.command.build_ext import build_ext
+from setuptools import setup
 from distutils.dir_util import copy_tree
-from platform import python_version
-from glob import glob
 
 
 if '--disable-rx3d' in sys.argv:
     RX3D = False
     sys.argv.remove('--disable-rx3d')
+    from setuptools.command.build_ext import build_ext
 else:
     RX3D = True
     from Cython.Distutils import Extension as CyExtension
@@ -29,45 +27,58 @@ __version__ = '7.8.11'
 
 class CMakeAugmentedExtension(Extension):
     """
-    Defines an Extension to be built with CMake.
+    Definition of an extension that depends on a project to be built using CMake
     Notice by default the cmake project is installed to build/cmake_install
     """
     def __init__(self,
                  name,
                  sources,
                  cmake_proj_dir="",
-                 cmake_install_prefix="build/cmake_install",
                  cmake_flags=None,
                  cmake_collect_dirs=None,
                  cmake_install_python_files='lib/python',
                  **kw):
+        """Creates a CMakeAugmentedExtension.
+
+        Args:
+            name: the full name of the extension module (e.g. neuron.hoc)
+            sources: The cpp sources of the extension
+            cmake_proj_dir: The location of the cmake project
+            cmake_flags: A list of options to be passed to cmake
+            cmake_collect_dirs: Upon cmake success, these dirs are copied
+                as package data in a dir '.data'
+            cmake_install_python_files: Path to be scanned for python
+                modules to be added directly to the python package tree
+        """
         Extension.__init__(self, name, sources, **kw)
         self.sourcedir = os.path.abspath(cmake_proj_dir)
         self.cmake_flags = cmake_flags or []
-        self.cmake_install_prefix = os.path.abspath(cmake_install_prefix)
+        self.cmake_install_prefix = os.path.abspath("build/cmake_install")
         self.cmake_collect_dirs = cmake_collect_dirs or []
         self.cmake_install_python_files = cmake_install_python_files
 
 
 class CMakeAugmentedBuilder(build_ext):
+    """Builder which understands CMakeAugmentedExtension
     """
-    A builder for CMake extensions.
-    """
+
     def run(self, *args, **kw):
-        print("CWD: " + os.getcwd())
+        """Execute the extension builder.
+        In case the given extension is a CMakeAugmentedExtension launches
+        the CMake building, sets the extension build environment and collects files.
+        """
         for ext in self.extensions:
             if isinstance(ext, CMakeAugmentedExtension):
-
-                self.run_cmake(ext)
+                self._run_cmake(ext)  # Build cmake project
 
                 # Collect project files to be installed
-                # These go directly into the final package, regardless of setuptools filters
+                # These go directly into final package, regardless of setuptools filters
                 rel_package = ext.name.split('.')[:-1]
-                package_data_dir = os.path.join(self.build_lib, *(rel_package + ['.data']))
+                package_data_d = os.path.join(self.build_lib, *(rel_package + ['.data']))
                 for d in ext.cmake_collect_dirs:
                     src_dir = os.path.join(ext.cmake_install_prefix, d)
-                    dst_dir = os.path.join(package_data_dir, d)
-                    print("Copying CMAKE output '{}' -> '{}'".format(src_dir, dst_dir))
+                    dst_dir = os.path.join(package_data_d, d)
+                    print("-> Copying CMAKE output {} -> {}".format(src_dir, dst_dir))
                     if not os.path.exists(dst_dir):
                         os.makedirs(dst_dir)
                     for f in os.listdir(src_dir):
@@ -80,7 +91,7 @@ class CMakeAugmentedBuilder(build_ext):
                                            ext.cmake_install_python_files),
                               self.build_lib)
 
-                print("Done building CMake project. Now building python extension")
+                print("==> Done building CMake project. Now building python extension\n")
 
                 # Make the temp include paths in the building the extension
                 ext.include_dirs += [os.path.join(self.build_temp, inc_dir)
@@ -89,9 +100,9 @@ class CMakeAugmentedBuilder(build_ext):
 
         build_ext.run(self, *args, **kw)
 
-
-    def run_cmake(self, ext):
+    def _run_cmake(self, ext):
         cmake = self._find_cmake()
+        cfg = 'Debug' if self.debug else 'Release'
         self.outdir = os.path.abspath(ext.cmake_install_prefix)
         print("Building lib to:", self.outdir)
 
@@ -99,10 +110,8 @@ class CMakeAugmentedBuilder(build_ext):
             # Generic options only. project options shall be passed as ext param
             '-DCMAKE_INSTALL_PREFIX=' + self.outdir,
             '-DPYTHON_EXECUTABLE=' + sys.executable,
+            '-DCMAKE_BUILD_TYPE=' + cfg,
         ] + ext.cmake_flags
-
-        cfg = 'Debug' if self.debug else 'Release'
-        cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
         build_args = ['--config', cfg, '--', '-j4']  # , 'VERBOSE=1']
 
         env = os.environ.copy()
@@ -110,13 +119,15 @@ class CMakeAugmentedBuilder(build_ext):
                                                           self.distribution.get_version())
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
+
         try:
-            subprocess.Popen(
-                "echo $CXX", shell=True, stdout=subprocess.PIPE)
+            subprocess.Popen("echo $CXX", shell=True, stdout=subprocess.PIPE)
             subprocess.check_call([cmake, ext.sourcedir] + cmake_args,
                                   cwd=self.build_temp, env=env)
-            subprocess.check_call([cmake, '--build', '.', '--target', 'install'] + build_args,
-                                  cwd=self.build_temp)
+            subprocess.check_call(
+                [cmake, '--build', '.', '--target', 'install'] + build_args,
+                cwd=self.build_temp
+            )
         except subprocess.CalledProcessError as exc:
             print("Status : FAIL", exc.returncode, exc.output)
             raise
@@ -166,7 +177,7 @@ def setup_package():
     maybe_docs = docs_require if "docs" in sys.argv else []
     maybe_test_runner = ['pytest-runner'] if "test" in sys.argv else []
 
-    py_packages=[
+    py_packages = [
         'neuron',
         'neuron.neuroml',
         'neuron.tests',
@@ -178,34 +189,33 @@ def setup_package():
     REL_RPATH = "@loader_path" if sys.platform[:6] == "darwin" else "$ORIGIN"
 
     extension_common_params = defaultdict(list,
-        library_dirs = ["build/cmake_install/lib"],
+        library_dirs=["build/cmake_install/lib"],
         # extension sits in NEURON. We have to rpath to .data/lib
-        extra_link_args = [
+        extra_link_args=[
             "-Wl,-rpath,{}".format(REL_RPATH + "/.data/lib/")
         ],
-        libraries = ["nrniv", "nrnpython{}".format(sys.version_info[0]), "nrniv"],
+        libraries=["nrniv", "nrnpython{}".format(sys.version_info[0]), "nrniv"],
     )
 
     extensions = [CMakeAugmentedExtension(
         "neuron.hoc",
         ["src/nrnpython/inithoc.cpp"],
-        cmake_collect_dirs = NRN_COLLECT_DIRS,
-        cmake_flags = [
+        cmake_collect_dirs=NRN_COLLECT_DIRS,
+        cmake_flags=[
             '-DNRN_ENABLE_CORENEURON=OFF',
             '-DNRN_ENABLE_INTERVIEWS=OFF',
-            '-DNRN_ENABLE_RX3D=OFF',
+            '-DNRN_ENABLE_RX3D=OFF',  # Never build within CMake
             '-DNRN_ENABLE_MPI=OFF',
             '-DNRN_ENABLE_PYTHON_DYNAMIC=ON',
             '-DNRN_ENABLE_MODULE_INSTALL=OFF',
             '-DLINK_AGAINST_PYTHON=OFF',
         ],
-        include_dirs = [
+        include_dirs=[
             "src",
             "src/oc",
             "src/nrnpython",
             "src/nrnmpi",
         ],
-        define_macros = "",
         **extension_common_params
     )]
 
@@ -219,18 +229,21 @@ def setup_package():
         extension_common_params['extra_compile_args'] = ["-O0"]
 
         extensions += [
-            CyExtension("neuron.rxd.geometry3d.graphicsPrimitives", [
+            CyExtension(
+                "neuron.rxd.geometry3d.graphicsPrimitives", [
                     "share/lib/python/neuron/rxd/geometry3d/graphicsPrimitives.pyx"
                 ],
                 **extension_common_params
             ),
-            CyExtension("neuron.rxd.geometry3d.ctng", [
+            CyExtension(
+                "neuron.rxd.geometry3d.ctng", [
                     "share/lib/python/neuron/rxd/geometry3d/ctng.pyx"
                 ],
                 include_dirs=include_dirs,
                 **extension_common_params
             ),
-            CyExtension("neuron.rxd.geometry3d.surfaces", [
+            CyExtension(
+                "neuron.rxd.geometry3d.surfaces", [
                     "share/lib/python/neuron/rxd/geometry3d/surfaces.pyx",
                     "src/nrnpython/rxd_marching_cubes.c",
                     "src/nrnpython/rxd_llgramarea.c"
