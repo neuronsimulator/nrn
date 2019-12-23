@@ -21,6 +21,8 @@ git:
 #=============================================================================
 addons:
     apt:
+        sources:
+        - sourceline: 'ppa:ubuntu-toolchain-r/test'
         packages:
         - doxygen
         - libopenmpi-dev
@@ -33,6 +35,10 @@ addons:
         - python3-pip
         - python3-scipy
         - python3-tk
+        - g++-4.8
+        - g++-6
+        - g++-8
+        - g++-9
     homebrew:
         packages:
         - doxygen
@@ -53,18 +59,25 @@ env:
     - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2) PYTHON_BLD=$(which python2)"
       PYTHON="$(which python2)"
       PIP="$(which pip2)"
+      MATRIX_EVAL="CC=$CC CXX=$CXX"
     - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$PYTHON"
+      MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
     - BUILD_MODE=cmake
       CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=ON"
       BUILD_DOCUMENTATION=ON
+      MATRIX_EVAL="CC=$CC CXX=$CXX"
     - BUILD_MODE=cmake
       CMAKE_OPTION="-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON"
+      MATRIX_EVAL="CC=gcc-4.8 CXX=g++-4.8"
     - BUILD_MODE=cmake
       CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=OFF"
+      MATRIX_EVAL="CC=gcc-6 CXX=g++-6"
     - BUILD_MODE=cmake
       NRN_ENABLE_PYTHON_DYNAMIC=ON
+      MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
     - BUILD_MODE=cmake
       CMAKE_OPTION="-DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF"
+      MATRIX_EVAL="CC=gcc-9 CXX=g++-9"
 os:
   - linux
   - osx
@@ -94,6 +107,9 @@ install:
 script:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       export CONFIG_OPTIONS="$CONFIG_OPTIONS --with-readline=no";
+    fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      eval "${MATRIX_EVAL}";
     fi
   - if [ "$BUILD_MODE" == "cmake" ]; then
       if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
