@@ -59,13 +59,13 @@ env:
     - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2) PYTHON_BLD=$(which python2)"
       PYTHON="$(which python2)"
       PIP="$(which pip2)"
-      MATRIX_EVAL="CC=$CC CXX=$CXX"
+      MATRIX_EVAL="CC=gcc CXX=g++"
     - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$PYTHON"
       MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
     - BUILD_MODE=cmake
       CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=ON"
       BUILD_DOCUMENTATION=ON
-      MATRIX_EVAL="CC=$CC CXX=$CXX"
+      MATRIX_EVAL="CC=gcc CXX=g++"
     - BUILD_MODE=cmake
       CMAKE_OPTION="-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON"
       MATRIX_EVAL="CC=gcc-5 CXX=g++-5"
