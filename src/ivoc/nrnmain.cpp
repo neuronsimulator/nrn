@@ -6,23 +6,23 @@
 #include <errno.h>
 
 extern "C" {
-	int nrn_isdouble(double*, double, double);
-	int ivocmain(int, const char**, const char**);
-	extern int nrn_main_launch;
+int nrn_isdouble(double*, double, double);
+int ivocmain(int, const char**, const char**);
+extern int nrn_main_launch;
 #if NRNMPI_DYNAMICLOAD
-	extern void nrnmpi_stubs();
-	extern char* nrnmpi_load(int is_python);
+extern void nrnmpi_stubs();
+extern char* nrnmpi_load(int is_python);
 #endif
 #if BLUEGENE_CHECKPOINT
-	void BGLCheckpointInit(char* chkptDirPath);
-	// note: get the path from the environment variable BGL_CHKPT_DIR_PATH
-	// otherwise from $HOME/checkpoint, otherwise $HOME
-#endif	
+void BGLCheckpointInit(char* chkptDirPath);
+// note: get the path from the environment variable BGL_CHKPT_DIR_PATH
+// otherwise from $HOME/checkpoint, otherwise $HOME
+#endif
 }
 
 int main(int argc, char** argv, char** env) {
-	nrn_isdouble(0,0,0);
-	nrn_main_launch = 1;
+    nrn_isdouble(0, 0, 0);
+    nrn_main_launch = 1;
 #if 0
 printf("argc=%d\n", argc);
 for (int i=0; i < argc; ++i) {
@@ -31,31 +31,31 @@ printf("argv[%d]=|%s|\n", i, argv[i]);
 #endif
 #if NRNMPI
 #if NRNMPI_DYNAMICLOAD
-	nrnmpi_stubs();
-	for (int i=0; i < argc; ++i) {
-		if (strcmp("-mpi", argv[i]) == 0) {
-			char* pmes;
-			pmes = nrnmpi_load(0);
-			if (pmes) {
-				printf("%s\n", pmes);
-				exit(1);
-			}
-			break;
-		}
-	}
+    nrnmpi_stubs();
+    for (int i = 0; i < argc; ++i) {
+        if (strcmp("-mpi", argv[i]) == 0) {
+            char* pmes;
+            pmes = nrnmpi_load(0);
+            if (pmes) {
+                printf("%s\n", pmes);
+                exit(1);
+            }
+            break;
+        }
+    }
 #endif
-	nrnmpi_init(1, &argc, &argv); // may change argc and argv
-#endif	
+    nrnmpi_init(1, &argc, &argv);  // may change argc and argv
+#endif
 #if BLUEGENE_CHECKPOINT
-	BGLCheckpointInit((char*)0);
+    BGLCheckpointInit((char*) 0);
 #endif
-	errno = 0;
-	return ivocmain(argc, (const char**)argv, (const char**)env);
+    errno = 0;
+    return ivocmain(argc, (const char**) argv, (const char**) env);
 }
 
 #if USENCS
 extern "C" {
-void nrn2ncs_outputevent(int, double){}
+void nrn2ncs_outputevent(int, double) {}
 }
 #endif
 
@@ -63,7 +63,7 @@ void nrn2ncs_outputevent(int, double){}
 // Darwin Kernel Version 8.9.1 on apple i686 (and the newest config.guess
 // thinks it is a i386, but that is a different story)
 // including mpi.h gives some errors like:
-// /Users/hines/mpich2-1.0.5p4/instl/include/mpicxx.h:26:2: error: #error 
+// /Users/hines/mpich2-1.0.5p4/instl/include/mpicxx.h:26:2: error: #error
 // SEEK_SET is #defined but must not be for the C++ binding of MPI"
 
 #if 0 && NRNMPI && DARWIN

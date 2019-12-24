@@ -18,13 +18,13 @@
 #undef _POSIX_C_SOURCE
 #undef _XOPEN_SOURCE
 #if defined(__MINGW32__)
-//at least a problem with g++6.3.0
+// at least a problem with g++6.3.0
 #define _hypot hypot
 #endif
 #include <nrnwrap_Python.h>
 
 #if (PY_MAJOR_VERSION >= 3)
-#define myPyMODINIT_FUNC PyObject *
+#define myPyMODINIT_FUNC PyObject*
 #else
 #define myPyMODINIT_FUNC void
 
@@ -40,11 +40,11 @@
 
 #if (PY_MAJOR_VERSION >= 3)
 #define PyString_FromString PyUnicode_FromString
-#define PyInt_Check PyLong_Check
-#define PyInt_CheckExact PyLong_CheckExact
-#define PyInt_AS_LONG PyLong_AsLong
-#define PyInt_AsLong PyLong_AsLong
-#define PyInt_FromLong PyLong_FromLong
+#define PyInt_Check         PyLong_Check
+#define PyInt_CheckExact    PyLong_CheckExact
+#define PyInt_AS_LONG       PyLong_AsLong
+#define PyInt_AsLong        PyLong_AsLong
+#define PyInt_FromLong      PyLong_FromLong
 #endif
 
 #if defined(__cplusplus)
@@ -55,7 +55,7 @@ extern PyObject* nrnpy_hoc_pop();
 extern int nrnpy_numbercheck(PyObject*);
 
 #if defined(__SIZEOF_POINTER__) && __SIZEOF_POINTER__ > __SIZEOF_LONG__
-#define castptr2long (long)(long long)
+#define castptr2long (long) (long long)
 #else
 #define castptr2long (long)
 #endif
