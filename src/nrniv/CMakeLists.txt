@@ -171,7 +171,6 @@ endif()
 # =============================================================================
 # Various macro definitions for compiling different files
 # =============================================================================
-# ~~~
 set_property(
   SOURCE ${NRN_OC_SRC_FILES}
   APPEND
@@ -229,8 +228,6 @@ if(NRN_ENABLE_MPI_DYNAMIC)
   set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/bbsmpipack.c PROPERTIES
                               OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
 endif()
-
-# ~~~
 
 # =============================================================================
 # All source directories to include
