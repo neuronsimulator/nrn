@@ -108,6 +108,9 @@ script:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       export CONFIG_OPTIONS="$CONFIG_OPTIONS --with-readline=no";
     fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      eval "${MATRIX_EVAL}";
+    fi
   - if [ "$BUILD_MODE" == "cmake" ]; then
       if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
         export PYTHON2=$(which python2);
