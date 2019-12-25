@@ -202,15 +202,20 @@ static bool corenrn_direct;
 static size_t part1();
 static void part2(const char*);
 
-// accessible from ParallelContext.total_bytes()
-size_t nrnbbcore_write() {
-  corenrn_direct = false;
+// prerequisites for a NEURON model to be transferred to CoreNEURON.
+static void model_ready() {
   if (!use_cachevec) {
-    hoc_execerror("nrnbbcore_write requires cvode.cache_efficient(1)", NULL);
+    hoc_execerror("NEURON model for CoreNEURON requires cvode.cache_efficient(1)", NULL);
   }
   if (tree_changed || v_structure_change || diam_changed) {
-    hoc_execerror("nrnbbcore_write requires the model already be initialized (cf finitialize(...))", NULL);
+    hoc_execerror("NEURON model internal structures for CoreNEURON are out of date. (cf finitialize(...))", NULL);
   }
+}
+
+// accessible from ParallelContext.total_bytes()
+size_t nrnbbcore_write() {
+  model_ready();
+  corenrn_direct = false;
   char fname[1024];
   std::string path(".");
   if (ifarg(1)) {
@@ -1867,6 +1872,9 @@ extern "C" {
 
 #if defined(HAVE_DLFCN_H)
 int nrncore_run(const char* arg) {
+  // check that model can be transferred.
+  model_ready();
+
   corenrn_direct = true;
 
   // name of coreneuron library based on platform
