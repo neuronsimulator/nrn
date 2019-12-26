@@ -13,7 +13,7 @@ find_package(Curses REQUIRED QUIET)
 # readline library
 # =============================================================================
 add_library(readline STATIC ${READLINE_SOURCE_FILES})
-target_link_libraries(readline curses)
+target_link_libraries(readline ${CURSES_LIBRARIES})
 set_property(TARGET readline PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 # =============================================================================
