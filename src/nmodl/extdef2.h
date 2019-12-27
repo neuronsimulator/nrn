@@ -1,1 +1,3 @@
-"romberg", "legendre", "deflate",
+"romberg",
+"legendre",
+"deflate",

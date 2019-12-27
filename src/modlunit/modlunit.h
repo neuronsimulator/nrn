@@ -18,7 +18,7 @@ void unit_ldifuslist();
 void consreact_push();
 void ureactadd();
 void freelist();
-void delete ();
+void delete();
 void deltokens();
 void lex_start();
 void lex_units();

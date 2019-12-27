@@ -68,7 +68,7 @@ extern void nrn_cachevec(int);
 extern void nrn_ba(NrnThread*, int);
 extern void nrniv_recalc_ptrs(void);
 extern void nrn_recalc_ptrvector(void);
-extern void nrn_recalc_ptrs(double* (*r)(double*) );
+extern void nrn_recalc_ptrs(double*(*r)(double*));
 extern void nrn_rhs_ext(NrnThread*);
 extern void nrn_setup_ext(NrnThread*);
 extern void nrn_cap_jacob(NrnThread*, Memb_list*);
@@ -81,12 +81,7 @@ extern void nrn_update_ps2nt(void);
 extern void _nrn_free_fornetcon(void**);
 extern void add_nrn_fornetcons(int, int);
 extern void _nrn_free_watch(Datum*, int, int);
-extern void _nrn_watch_activate(Datum*,
-                                double (*)(Point_process*),
-                                int,
-                                Point_process*,
-                                int,
-                                double);
+extern void _nrn_watch_activate(Datum*, double(*)(Point_process*), int, Point_process*, int, double);
 extern void hoc_reg_ba(int, nrn_bamech_t, int);
 extern int nrn_pointing(double*);
 
@@ -101,20 +96,20 @@ extern void synapse_prepare(void);
 
 extern void v_setup_vectors(void);
 extern void section_ref(Section*);
-extern void section_unref(Section*);
+extern void section_unref(Section*);  
 extern const char* secname(Section*);
 extern const char* nrn_sec2pysecname(Section*);
 extern void nrn_pushsec(Section*);
-extern void nrn_popsec(void);
+extern void nrn_popsec(void); 
 extern Section* chk_access(void);
 extern void nrn_rangeconst(Section*, Symbol*, double* value, int op);
 extern Prop* nrn_mechanism(int type, Node*);
 extern int nrn_exists(Symbol*, Node*);
 extern double* nrn_rangepointer(Section*, Symbol*, double x);
-extern double* cable_prop_eval_pointer(Symbol*);  // section on stack will be popped
+extern double* cable_prop_eval_pointer(Symbol*); // section on stack will be popped
 extern char* hoc_section_pathname(Section*);
 extern double nrn_arc_position(Section*, Node*);
-extern double node_dist(Section*, Node*);  // distance of node to parent position
+extern double node_dist(Section*, Node*); // distance of node to parent position
 extern Node* node_exact(Section*, double);
 extern double nrn_section_orientation(Section*);
 extern double nrn_connection_position(Section*);
@@ -125,7 +120,7 @@ extern void nrn_clear_mark(void);
 extern short nrn_increment_mark(Section*);
 extern short nrn_value_mark(Section*);
 extern int is_point_process(Object*);
-extern int nrn_vartype(Symbol*);  // nrnocCONST, DEP, STATE
+extern int nrn_vartype(Symbol*); // nrnocCONST, DEP, STATE
 extern void recalc_diam(void);
 extern double nrn_call_mech_func(Symbol*, int narg, Prop*, int type);
 extern Prop* nrn_mechanism_check(int type, Section* sec, int inode);

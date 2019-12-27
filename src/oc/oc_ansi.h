@@ -48,11 +48,8 @@ extern int ifarg(int);
 extern char** hoc_temp_charptr(void);
 extern void hoc_assign_str(char** pstr, const char* buf);
 extern double chkarg(int, double low, double high);
-extern double hoc_call_func(Symbol*,
-                            int narg); /* push first arg first. Warning: if the function is inside
-                                          an object make sure you know what you are doing.*/
-extern double hoc_call_objfunc(Symbol*, int narg, Object*); /* call a fuction within the context of
-                                                               an object.*/
+extern double hoc_call_func(Symbol*, int narg); /* push first arg first. Warning: if the function is inside an object make sure you know what you are doing.*/
+extern double hoc_call_objfunc(Symbol*, int narg, Object*); /* call a fuction within the context of an object.*/
 extern double hoc_ac_;
 extern double hoc_epsilon;
 extern int nrn_inpython_;
@@ -71,10 +68,10 @@ extern void hoc_pushpx(double*);
 extern void hoc_pushs(Symbol*);
 extern void hoc_pushi(int);
 extern double hoc_xpop(void);
-extern Symbol* hoc_spop(void);
+extern Symbol *hoc_spop(void);
 extern double* hoc_pxpop(void);
 extern Object** hoc_objpop(void);
-extern Object* hoc_pop_object(void);
+extern Object*  hoc_pop_object(void);
 extern char** hoc_strpop(void);
 extern int hoc_ipop(void);
 extern void hoc_nopop(void);
@@ -95,7 +92,7 @@ extern char* hoc_object_pathname(Object*);
 extern const char* expand_env_var(const char*);
 extern void check_obj_type(Object*, const char*);
 extern int is_obj_type(Object*, const char*);
-extern void hoc_obj_ref(Object*);   /* NULL allowed */
+extern void hoc_obj_ref(Object*); /* NULL allowed */
 extern void hoc_obj_unref(Object*); /* NULL allowed */
 extern void hoc_dec_refcount(Object**);
 extern Object** hoc_temp_objvar(Symbol* template_symbol, void* cpp_object);
@@ -152,7 +149,7 @@ class IvocVect;
 extern void vector_append(IvocVect*, double);
 extern int vector_arg_px(int, double**);
 extern int vector_instance_px(void*, double**);
-extern void install_vector_method(const char*, double (*)(void*));
+extern void install_vector_method(const char*, double(*)(void*));
 extern IvocVect* vector_new(int, Object*); /*use this if possible*/
 extern IvocVect* vector_new0();
 extern IvocVect* vector_new1(int);
@@ -193,9 +190,9 @@ extern void hoc_audit_from_xopen1(const char*, const char*);
 extern void hoc_xopen_from_audit(const char* fname);
 extern void hoc_emacs_from_audit(void);
 extern void hoc_audit_from_emacs(const char*, const char*);
-extern int hoc_retrieving_audit(void);
-extern int hoc_retrieve_audit(int id);
-extern int hoc_saveaudit(void);
+extern int hoc_retrieving_audit (void);
+extern int hoc_retrieve_audit (int id);
+extern int hoc_saveaudit (void);
 extern void bbs_done(void);
 extern void hoc_close_plot(void);
 extern void hoc_edit(void);
@@ -243,7 +240,7 @@ extern int nrnpy_pr(const char* fmt, ...);
 extern int Fprintf(FILE*, const char* fmt, ...);
 extern void nrnpy_pass();
 
-#if defined(__cplusplus)
+#if defined (__cplusplus)
 extern void hoc_free_allobjects(cTemplate*, Symlist*, Objectdata*);
 #else
 extern void hoc_free_allobjects(Template*, Symlist*, Objectdata*);

@@ -17,7 +17,8 @@ other in nrnmech.dll.
  ******************************************************************************/
 
 #ifndef LINT
-static char RCSid[] = "random.c,v 1.4 1999/01/04 12:46:49 hines Exp";
+static char RCSid[] =
+    "random.c,v 1.4 1999/01/04 12:46:49 hines Exp" ;
 #endif
 
 #include <math.h>
@@ -54,19 +55,20 @@ static uint32_t value = 1;
  *
  *--------------------------------------------------------------------------- */
 
-double scop_random(void) {
-    extern int use_mcell_ran4_;
-    if (use_mcell_ran4_) {
-        /*perhaps 4 times slower but much higher quality*/
-        return mcell_ran4a(&value);
-    } else {
-        uint32_t a = 2147437301, c = 453816981,
-                 /* m = 2^32 - 1, the largest long int value that can be represented */
-            /*m = 0xFFFFFFFF;*/ /* limited to 32 bit integers*/
-            m = ~0;
-        value = a * value + c;
-        return (fabs((double) value / (double) m));
-    }
+double scop_random(void)
+{
+  extern int use_mcell_ran4_;
+  if (use_mcell_ran4_) {
+	/*perhaps 4 times slower but much higher quality*/
+	return mcell_ran4a(&value);
+  }else{
+    uint32_t a = 2147437301, c = 453816981,
+    /* m = 2^32 - 1, the largest long int value that can be represented */
+    /*m = 0xFFFFFFFF;*/ /* limited to 32 bit integers*/
+    m = ~0;
+    value = a * value + c;
+    return (fabs((double) value / (double) m));
+  }
 }
 
 /*-----------------------------------------------------------------------------
@@ -92,6 +94,8 @@ double scop_random(void) {
  *
  */
 
-void set_seed(double seed) {
-    value = (uint32_t) seed;
+void set_seed(double seed)
+{
+    value = (uint32_t)seed;
 }
+
