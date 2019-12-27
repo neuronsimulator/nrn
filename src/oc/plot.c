@@ -27,7 +27,7 @@
 
 #define FIG 1 /* 12/8/88 add fig style output , replaces hpflag*/
 #define TEK 1
-#define HP  1
+#define HP 1
 /* but not VT125 */
 #define CODRAW 1
 
@@ -86,18 +86,18 @@ static FILE* gdev;  /* system call stdout not directed to here */
 static FILE* hpdev; /* hp, or fig style file */
 static FILE* cdev;  /* console device */
 
-#define SSUN    1
-#define VT      2
-#define SEL     3
+#define SSUN 1
+#define VT 2
+#define SEL 3
 #define TEK4014 4
-#define ADM     5
-#define NX      6
+#define ADM 5
+#define NX 6
 
-#define US  037
-#define GS  035
+#define US 037
+#define GS 035
 #define CAN 030
-#define EM  031
-#define FS  034
+#define EM 031
+#define FS 034
 #define ESC 033
 #define ETX 03
 
@@ -668,7 +668,7 @@ void Fig_plt(int mode, double x, double y) {
 #define SCYD(y) (7.5 * 80. - (y * .8))
 #endif
 #undef TEXT
-#define TEXT  1
+#define TEXT 1
 #define LINE1 2
 #define LINE2 3
     static short state = 0;
@@ -996,7 +996,7 @@ double x, y;
 #undef TEXT
 #undef LINE1
 #undef LINE2
-#define TEXT  1
+#define TEXT 1
 #define LINE1 2
 #define LINE2 3
     static short state = 0;

@@ -40,11 +40,11 @@
 
 #if (PY_MAJOR_VERSION >= 3)
 #define PyString_FromString PyUnicode_FromString
-#define PyInt_Check         PyLong_Check
-#define PyInt_CheckExact    PyLong_CheckExact
-#define PyInt_AS_LONG       PyLong_AsLong
-#define PyInt_AsLong        PyLong_AsLong
-#define PyInt_FromLong      PyLong_FromLong
+#define PyInt_Check PyLong_Check
+#define PyInt_CheckExact PyLong_CheckExact
+#define PyInt_AS_LONG PyLong_AsLong
+#define PyInt_AsLong PyLong_AsLong
+#define PyInt_FromLong PyLong_FromLong
 #endif
 
 #if defined(__cplusplus)

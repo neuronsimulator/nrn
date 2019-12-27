@@ -52,22 +52,22 @@ typedef struct SPTREE {
 
 } SPTREE;
 
-#define spinit      sptq_spinit
-#define spempty     sptq_spempty
-#define spenq       sptq_spenq
-#define spdeq       sptq_spdeq
-#define spenqprior  sptq_spenqprior
-#define splay       sptq_splay
-#define sphead      sptq_sphead
-#define spdelete    sptq_spdelete
-#define spnext      sptq_spnext
-#define spprev      sptq_spprev
+#define spinit sptq_spinit
+#define spempty sptq_spempty
+#define spenq sptq_spenq
+#define spdeq sptq_spdeq
+#define spenqprior sptq_spenqprior
+#define splay sptq_splay
+#define sphead sptq_sphead
+#define spdelete sptq_spdelete
+#define spnext sptq_spnext
+#define spprev sptq_spprev
 #define spenqbefore sptq_spenqbefore
-#define spenqafter  sptq_spenqafter
-#define splookup    sptq_splookup
+#define spenqafter sptq_spenqafter
+#define splookup sptq_splookup
 /*#define spinstall sptq_spinstall*/
-#define sptail  sptq_sptail
-#define spscan  sptq_spscan
+#define sptail sptq_sptail
+#define spscan sptq_spscan
 #define sprscan sptq_sprscan
 #define spfhead sptq_spfhead
 #define spfnext sptq_spfnext

@@ -52,7 +52,7 @@ static MUTDEC
     extern "C" {
     extern double dt, t;
 #define nt_dt nrn_threads->_dt
-#define nt_t  nrn_threads->_t
+#define nt_t nrn_threads->_t
     extern int diam_changed;
     extern int secondorder;
     extern int linmod_extra_eqn_count();

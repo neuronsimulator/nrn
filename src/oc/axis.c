@@ -136,10 +136,10 @@ axis.c,v
 #include <math.h>
 #include "hoc.h"
 #define CLIP 1e9
-#define XS   500.
-#define YS   400.
-#define XO   100.
-#define YO   100.
+#define XS 500.
+#define YS 400.
+#define XO 100.
+#define YO 100.
 #define Ret(a) \
     hoc_ret(); \
     hoc_pushx(a);
@@ -147,16 +147,16 @@ axis.c,v
 /* This makes it easier to save and restore the 8 plot scale parameters*/
 #define NPARAM 10
 static double param[NPARAM] = {XO, YO, XS, YS, -1e9, -1e9, 1e9, 1e9, 0.0, 0.0};
-#define xorg   param[0]
-#define yorg   param[1]
+#define xorg param[0]
+#define yorg param[1]
 #define xscale param[2]
 #define yscale param[3]
-#define xlow   param[4]
-#define ylow   param[5]
-#define xhigh  param[6]
-#define yhigh  param[7]
-#define xsav   param[8]
-#define ysav   param[9]
+#define xlow param[4]
+#define ylow param[5]
+#define xhigh param[6]
+#define yhigh param[7]
+#define xsav param[8]
+#define ysav param[9]
 
 static double XSIZE = XS, YSIZE = YS, XORG = XO, YORG = YO;
 static double xstart = 0., xstop = 1., ystart = 0., ystop = 1.;
@@ -294,7 +294,7 @@ void hoc_ploty(void) {
     Ret(val);
 }
 
-#define WIDTH  10.
+#define WIDTH 10.
 #define HEIGHT 10.
 void hoc_axis(void) {
 #if DOS

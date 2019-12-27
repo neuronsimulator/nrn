@@ -38,7 +38,7 @@ char* hoc_forward2back(char* s);
 #endif
 
 #ifdef MINGW
-#define RTLD_NOW    0
+#define RTLD_NOW 0
 #define RTLD_GLOBAL 0
 #define RTLD_NOLOAD 0
 extern "C" {

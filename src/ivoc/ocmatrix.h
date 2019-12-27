@@ -2,9 +2,9 @@
 #define ocmatrix_h
 
 #ifndef MATRIXH
-#define MAT   void
+#define MAT void
 #define SPMAT void
-#define PERM  void
+#define PERM void
 #endif
 
 #include <vector>
@@ -13,7 +13,7 @@ using std::vector;
 struct Object;
 class IvocVect;
 class OcFullMatrix;
-#define Vect   IvocVect
+#define Vect IvocVect
 #define Matrix OcMatrix
 
 class OcMatrix {

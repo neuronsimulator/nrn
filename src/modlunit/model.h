@@ -83,25 +83,25 @@ extern char* _STR();
 extern Item* _ITM();
 extern Item** _ITMA(); /* array of item pointers */
 extern List* _LST();
-#define SYM(q)  _SYM(q, __FILE__, __LINE__)
-#define STR(q)  _STR(q, __FILE__, __LINE__)
-#define ITM(q)  _ITM(q, __FILE__, __LINE__)
+#define SYM(q) _SYM(q, __FILE__, __LINE__)
+#define STR(q) _STR(q, __FILE__, __LINE__)
+#define ITM(q) _ITM(q, __FILE__, __LINE__)
 #define ITMA(q) _ITMA(q, __FILE__, __LINE__)
-#define LST(q)  _LST(q, __FILE__, __LINE__)
+#define LST(q) _LST(q, __FILE__, __LINE__)
 #else
-#define SYM(q)  ((Symbol*) ((q)->element))
-#define STR(q)  ((char*) ((q)->element))
-#define ITM(q)  ((Item*) ((q)->element))
+#define SYM(q) ((Symbol*) ((q)->element))
+#define STR(q) ((char*) ((q)->element))
+#define ITM(q) ((Item*) ((q)->element))
 #define ITMA(q) ((Item**) ((q)->element))
-#define LST(q)  ((List*) ((q)->element))
+#define LST(q) ((List*) ((q)->element))
 #endif
 
 /* types not defined in parser */
 #define SPECIAL 1
 /* itemtype of 0 is used by list implementation */
-#define SYMBOL    1
-#define ITEM      2
-#define LIST      3
+#define SYMBOL 1
+#define ITEM 2
+#define LIST 3
 #define ITEMARRAY 4
 /*
  * An item type, STRING is also used as an item type
@@ -110,29 +110,29 @@ extern List* _LST();
  */
 
 /* subtypes */
-#define KEYWORD       01L
+#define KEYWORD 01L
 #define modlunitCONST 02L
-#define INDEP         04L
-#define DEP           010L /* also in usage field */
-#define STAT          020L
-#define ARRAY         040L
-#define FUNCT         0100L /* also in usage field */
-#define PROCED        0200L
-#define NEGATIVE      0400L
-#define SEMI          01L /* ";" */
-#define BEGINBLK      02L /* "{" */
-#define ENDBLK        04L /* "}" */
-#define DERF          01000L
-#define LINF          02000L
-#define NLINF         04000L
-#define DISCF         010000L
-#define STEP1         020000L
-#define PARF          040000L
-#define EXTDEF        0100000L
-#define KINF          0200000L
-#define LOCL          0400000L
-#define CNVFAC        01000000L
-#define UFACTOR       02000000L
+#define INDEP 04L
+#define DEP 010L /* also in usage field */
+#define STAT 020L
+#define ARRAY 040L
+#define FUNCT 0100L /* also in usage field */
+#define PROCED 0200L
+#define NEGATIVE 0400L
+#define SEMI 01L     /* ";" */
+#define BEGINBLK 02L /* "{" */
+#define ENDBLK 04L   /* "}" */
+#define DERF 01000L
+#define LINF 02000L
+#define NLINF 04000L
+#define DISCF 010000L
+#define STEP1 020000L
+#define PARF 040000L
+#define EXTDEF 0100000L
+#define KINF 0200000L
+#define LOCL 0400000L
+#define CNVFAC 01000000L
+#define UFACTOR 02000000L
 
 #define EXPLICIT_DECL 01 /* usage field, variable occurs in input file */
 
@@ -205,19 +205,19 @@ extern Symbol *indepsym, /* The model independent variable */
 extern char* clint;
 extern int ilint;
 extern Item* qlint;
-#define Sprintf     clint = sprintf
-#define Fprintf     ilint = fprintf
-#define Fclose      ilint = fclose
-#define Fflush      ilint = fflush
-#define Printf      ilint = printf
-#define Strcpy      clint = strcpy
-#define Strcat      clint = strcat
-#define Insertstr   qlint = insertstr
-#define Insertsym   qlint = insertsym
-#define Linsertsym  qlint = linsertsym
-#define Linsertstr  qlint = linsertstr
-#define Lappendsym  qlint = lappendsym
-#define Lappendstr  qlint = lappendstr
+#define Sprintf clint = sprintf
+#define Fprintf ilint = fprintf
+#define Fclose ilint = fclose
+#define Fflush ilint = fflush
+#define Printf ilint = printf
+#define Strcpy clint = strcpy
+#define Strcat clint = strcat
+#define Insertstr qlint = insertstr
+#define Insertsym qlint = insertsym
+#define Linsertsym qlint = linsertsym
+#define Linsertstr qlint = linsertstr
+#define Lappendsym qlint = lappendsym
+#define Lappendstr qlint = lappendstr
 #define Lappenditem qlint = lappenditem
 #define IGNORE(arg) \
     {               \
@@ -226,22 +226,22 @@ extern Item* qlint;
     }
 #define Free(arg) free((char*) (arg))
 #else
-#define Sprintf     sprintf
-#define Fprintf     fprintf
-#define Fclose      fclose
-#define Fflush      fflush
-#define Printf      printf
-#define Strcpy      strcpy
-#define Strcat      strcat
-#define Insertstr   insertstr
-#define Insertsym   insertsym
-#define Linsertsym  linsertsym
-#define Linsertstr  linsertstr
-#define Lappendsym  lappendsym
-#define Lappendstr  lappendstr
+#define Sprintf sprintf
+#define Fprintf fprintf
+#define Fclose fclose
+#define Fflush fflush
+#define Printf printf
+#define Strcpy strcpy
+#define Strcat strcat
+#define Insertstr insertstr
+#define Insertsym insertsym
+#define Linsertsym linsertsym
+#define Linsertstr linsertstr
+#define Lappendsym lappendsym
+#define Lappendstr lappendstr
 #define Lappenditem lappenditem
 #define IGNORE(arg) arg
-#define Free(arg)   free((void*) (arg))
+#define Free(arg) free((void*) (arg))
 #endif
 
 /* model.h,v

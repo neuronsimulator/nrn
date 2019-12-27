@@ -58,26 +58,26 @@ regexp.c,v
    eliminate \(
 */
 
-#define STAR  01
-#define SUFF  '.'
+#define STAR 01
+#define SUFF '.'
 #define TILDE '~'
 
-#define EREGEXP     24
+#define EREGEXP 24
 #define error(enum) hoc_execerror("search string format error", pattern)
-#define CBRA        1
-#define CCHR        2
-#define CDOT        4
-#define CCL         6
-#define NCCL        8
-#define CDOL        10
-#define CEOF        11
-#define CKET        12
+#define CBRA 1
+#define CCHR 2
+#define CDOT 4
+#define CCL 6
+#define NCCL 8
+#define CDOL 10
+#define CEOF 11
+#define CKET 12
 #if CABLESECTION
 #define INTRANGE 14
 #endif
-#define NBRA  5
+#define NBRA 5
 #define ESIZE 128
-#define eof   '\0'
+#define eof '\0'
 static char expbuf[ESIZE + 4];
 static char* pattern = "";
 static char* loc1;

@@ -21,8 +21,8 @@ Jenkins, R.J. (1996) ISAAC, in Fast Software Encryption, vol. 1039,
 #endif
 
 #define RANDSIZL (4) /* I recommend 8 for crypto, 4 for simulations */
-#define RANDSIZ  (1 << RANDSIZL)
-#define RANDMAX  (2 * RANDSIZ)
+#define RANDSIZ (1 << RANDSIZL)
+#define RANDMAX (2 * RANDSIZ)
 
 typedef unsigned long long ub8;
 #if defined(uint32_t)

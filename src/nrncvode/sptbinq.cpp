@@ -15,12 +15,12 @@ of struct _spblk, we are really using TQItem
 #include <stdarg.h>
 #include <section.h>
 
-#define SPBLK     TQItem
-#define leftlink  left_
+#define SPBLK TQItem
+#define leftlink left_
 #define rightlink right_
-#define uplink    parent_
-#define cnt       cnt_
-#define key       t_
+#define uplink parent_
+#define cnt cnt_
+#define key t_
 #include <sptree.h>
 
 extern "C" {

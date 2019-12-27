@@ -576,7 +576,7 @@ static void oc_pclose(FILE* fp) {
     unlink("hocload.tmp");
 }
 #else
-#define oc_popen  popen
+#define oc_popen popen
 #define oc_pclose pclose
 #endif
 

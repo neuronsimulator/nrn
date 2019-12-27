@@ -39,7 +39,7 @@ double* nrn_rangepointer();
 static int connect_obsec_;
 #endif
 
-#define PUBLIC_TYPE   1
+#define PUBLIC_TYPE 1
 #define EXTERNAL_TYPE 2
 static void call_constructor(Object*, Symbol*, int);
 static void free_objectdata(Objectdata*, Template*);
@@ -1845,7 +1845,7 @@ void hoc_free_allobjects(Template* template, Symlist* sl, Objectdata* data) {
         }
 }
 
-#define objectpath  hoc_objectpath_impl
+#define objectpath hoc_objectpath_impl
 #define pathprepend hoc_path_prepend
 
 void pathprepend(char* path, const char* name, const char* indx) {

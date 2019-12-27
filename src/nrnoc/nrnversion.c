@@ -17,10 +17,10 @@ static char* sarg = 0;
 static char configargs[] = NRN_CONFIG_ARGS;
 
 #if !defined(GIT_BRANCH)
-#define GIT_DATE      "2018-08-24"
-#define GIT_BRANCH    "unknown"
+#define GIT_DATE "2018-08-24"
+#define GIT_BRANCH "unknown"
 #define GIT_CHANGESET "d3ead4a+"
-#define GIT_DESCRIBE  "7.6.2-2-gd3ead4a+"
+#define GIT_DESCRIBE "7.6.2-2-gd3ead4a+"
 #endif
 
 char* nrn_version(int i) {

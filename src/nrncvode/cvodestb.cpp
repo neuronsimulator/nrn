@@ -19,7 +19,7 @@ void nrncvode_set_t(double);
 bool at_time(NrnThread*, double);
 
 extern double dt, t;
-#define nt_t  nrn_threads->_t
+#define nt_t nrn_threads->_t
 #define nt_dt nrn_threads->_dt
 extern void nrn_random_play();
 extern int cvode_active_;

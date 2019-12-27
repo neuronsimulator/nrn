@@ -3,10 +3,10 @@ extern "C" {
 #include <matrix2.h>
 }
 /*borrowed from Meschach Version 1.2b*/
-#define v_get_val(x, i)    ((x)->ve[(i)])
+#define v_get_val(x, i) ((x)->ve[(i)])
 #define m_get_val(A, i, j) ((A)->me[(i)][(j)])
-#define SPECIES_ABSENT     -1
-#define PREFETCH           4
+#define SPECIES_ABSENT -1
+#define PREFETCH 4
 
 typedef void (*fptr)(void);
 

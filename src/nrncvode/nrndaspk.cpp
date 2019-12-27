@@ -19,9 +19,9 @@ extern "C" {
 #include "mymath.h"
 
 // the state of the g - d2/dx2 matrix for voltages
-#define INVALID  0
-#define NO_CAP   1
-#define SETUP    2
+#define INVALID 0
+#define NO_CAP 1
+#define SETUP 2
 #define FACTORED 3
 static int solve_state_;
 
@@ -44,7 +44,7 @@ extern booleantype IDAEwtSet(IDAMem IDA_mem, N_Vector ycur);
 
 // extern double t, dt;
 #define nt_dt nrn_threads->_dt
-#define nt_t  nrn_threads->_t
+#define nt_t nrn_threads->_t
 
 static void daspk_nrn_solve(NrnThread* nt) {
     nrn_solve(nt);

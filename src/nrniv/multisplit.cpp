@@ -61,9 +61,9 @@ static double nrnmpi_wtime() {
 class MultiSplit;
 class MultiSplitControl;
 
-#define A(i)   VEC_A(i)
-#define B(i)   VEC_B(i)
-#define D(i)   VEC_D(i)
+#define A(i) VEC_A(i)
+#define B(i) VEC_B(i)
+#define D(i) VEC_D(i)
 #define RHS(i) VEC_RHS(i)
 #define S1A(i) sid1A[i]
 #define S1B(i) sid1B[i]

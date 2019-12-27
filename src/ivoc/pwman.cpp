@@ -126,21 +126,21 @@ extern bool (*ivoc_snapshot_)(const Event*);
 static bool ivoc_snapshot(const Event*);
 #endif
 
-#define PWM_help_             "help"
-#define PWM_do_print_         "Print PWM"
-#define PWM_ScreenItem_       "ScreenItem PWM"
-#define PWM_PaperItem_        "PaperItem PWM"
-#define PWM_landscape_        "LandPort Other"
-#define PWM_virt_screen_      "VirtualScreen Other"
-#define PWM_printer_control_  "SelectPrinter Other"
-#define PWM_file_control_     "PostScript PrintToFile"
-#define PWM_idraw_control_    "Idraw PrintToFile"
-#define PWM_save_control2_    "SaveAll Session"
-#define PWM_save_control1_    "SaveSelected Session"
+#define PWM_help_ "help"
+#define PWM_do_print_ "Print PWM"
+#define PWM_ScreenItem_ "ScreenItem PWM"
+#define PWM_PaperItem_ "PaperItem PWM"
+#define PWM_landscape_ "LandPort Other"
+#define PWM_virt_screen_ "VirtualScreen Other"
+#define PWM_printer_control_ "SelectPrinter Other"
+#define PWM_file_control_ "PostScript PrintToFile"
+#define PWM_idraw_control_ "Idraw PrintToFile"
+#define PWM_save_control2_ "SaveAll Session"
+#define PWM_save_control1_ "SaveSelected Session"
 #define PWM_retrieve_control_ "Retrieve Session"
-#define PWM_tray_             "Tray Other"
-#define PWM_ascii_            "Ascii PrintToFile"
-#define PWM_quit_             "Quit Other"
+#define PWM_tray_ "Tray Other"
+#define PWM_ascii_ "Ascii PrintToFile"
+#define PWM_quit_ "Quit Other"
 
 #define pwm_impl PrintableWindowManager::current()->pwmi_
 class HocPanel {

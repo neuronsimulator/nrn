@@ -50,10 +50,10 @@ typedef void (*ReceiveFunc)(Point_process*, double*, double);
         for (j = 0; j < p[i].nlcv_; ++j)
 
 #define NVI_SUCCESS 0
-#define PP2NT(pp)   ((NrnThread*) ((pp)->_vnt))
-#define PP2t(pp)    (PP2NT(pp)->_t)
-#define LOCK(m)     /**/
-#define UNLOCK(m)   /**/
+#define PP2NT(pp) ((NrnThread*) ((pp)->_vnt))
+#define PP2t(pp) (PP2NT(pp)->_t)
+#define LOCK(m)   /**/
+#define UNLOCK(m) /**/
 // classical and when DiscreteEvent::deliver is already in the right thread
 // via a future thread instance of NrnNetItem with its own tqe.
 #define POINT_RECEIVE(type, tar, w, f) (*pnt_receive[type])(tar, w, f)
@@ -76,7 +76,7 @@ extern double t, dt;
 extern void nrn_cvfun(double t, double* y, double* ydot);
 extern void nrn_cleanup_presyn(PreSyn*);
 #define nt_dt nrn_threads->_dt
-#define nt_t  nrn_threads->_t
+#define nt_t nrn_threads->_t
 extern void nrn_parent_info(Section*);
 extern Object* nrn_sec2cell(Section*);
 extern int nrn_sec2cell_equals(Section*, Object*);

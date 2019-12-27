@@ -34,6 +34,6 @@ extern void hoc_execerror(const char*, const char*);
 #endif
 #else
 #define _assert(ex) ;
-#define assert(ex)  ;
+#define assert(ex) ;
 #endif
 #endif

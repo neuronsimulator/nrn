@@ -48,17 +48,17 @@ extern Image* gif_image(const char*);
 
 #include "classreg.h"
 #if HAVE_IV
-#define Graph_Crosshair_           "Crosshair Graph"
-#define Graph_Change_label_        "ChangeText Graph"
-#define Graph_keep_lines_toggle_   "KeepLines Graph"
-#define Graph_erase_axis_          "AxisType Graph"
-#define Graph_new_axis_            "NewAxis AxisType Graph"
-#define Graph_view_axis_           "ViewAxis AxisType Graph"
-#define Graph_view_box_            "ViewBox AxisType Graph"
-#define Graph_erase_lines_         "Erase Graph"
-#define Graph_choose_sym_          "PlotWhat Graph"
+#define Graph_Crosshair_ "Crosshair Graph"
+#define Graph_Change_label_ "ChangeText Graph"
+#define Graph_keep_lines_toggle_ "KeepLines Graph"
+#define Graph_erase_axis_ "AxisType Graph"
+#define Graph_new_axis_ "NewAxis AxisType Graph"
+#define Graph_view_axis_ "ViewAxis AxisType Graph"
+#define Graph_view_box_ "ViewBox AxisType Graph"
+#define Graph_erase_lines_ "Erase Graph"
+#define Graph_choose_sym_ "PlotWhat Graph"
 #define Graph_choose_family_label_ "FamilyLabel Graph"
-#define Graph_choose_rvp_          "PlotRange Graph"
+#define Graph_choose_rvp_ "PlotRange Graph"
 
 bool GraphItem::is_polyline() {
     return false;

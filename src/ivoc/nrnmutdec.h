@@ -11,7 +11,7 @@
 #undef near
 #endif
 
-#define MUTDEC         pthread_mutex_t* mut_;
+#define MUTDEC pthread_mutex_t* mut_;
 #define MUTCONSTRUCTED (mut_ != (pthread_mutex_t*) 0)
 #if defined(__cplusplus)
 #define MUTCONSTRUCT(mkmut)              \
@@ -65,8 +65,8 @@
 /*#define MUTLOCK {if (mut_) {printf("lock %lx\n", mut_); pthread_mutex_lock(mut_);}}*/
 /*#define MUTUNLOCK {if (mut_) {printf("unlock %lx\n", mut_); pthread_mutex_unlock(mut_);}}*/
 #else
-#define MUTDEC              /**/
-#define MUTCONSTRUCTED      (0)
+#define MUTDEC /**/
+#define MUTCONSTRUCTED (0)
 #define MUTCONSTRUCT(mkmut) /**/
 #define MUTDESTRUCT         /**/
 #define MUTLOCK             /**/

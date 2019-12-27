@@ -36,7 +36,7 @@
 #endif
 
 #define nrnmpidebugleak 0
-#define debug           0
+#define debug 0
 
 extern MPI_Comm nrn_bbs_comm;
 
@@ -51,9 +51,9 @@ static int nrnmpi_bufcnt_;
  Now I regret not forcing the key to come first at the user level.
 */
 
-#define my_MPI_INT    0
+#define my_MPI_INT 0
 #define my_MPI_DOUBLE 1
-#define my_MPI_CHAR   2
+#define my_MPI_CHAR 2
 #define my_MPI_PACKED 3
 #define my_MPI_PICKLE 4
 

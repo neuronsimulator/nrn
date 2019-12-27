@@ -89,16 +89,16 @@ int tstkchk_actual(int i, int j) {
 #define pushsm(d)            \
     ((stackp++)->sym = (d)); \
     ((stackp++)->i = SYMBOL)
-#define xpopm()       (tstkchk((--stackp)->i, NUMBER), (--stackp)->val)
-#define spopm()       (tstkchk((--stackp)->i, SYMBOL), (--stackp)->sym)
-#define nopopm()      (stackp -= 2)
+#define xpopm() (tstkchk((--stackp)->i, NUMBER), (--stackp)->val)
+#define spopm() (tstkchk((--stackp)->i, SYMBOL), (--stackp)->sym)
+#define nopopm() (stackp -= 2)
 #define tstkchk(i, j) (((i) != (j)) ? tstkchk_actual(i, j) : 0)
 #else
-#define pushxm(d)     pushx(d)
-#define pushsm(d)     pushs(d)
-#define xpopm()       xpop()
-#define spopm()       spop()
-#define nopopm()      nopop()
+#define pushxm(d) pushx(d)
+#define pushsm(d) pushs(d)
+#define xpopm() xpop()
+#define spopm() spop()
+#define nopopm() nopop()
 #define tstkchk(i, j) tstkchk_actual(i, j)
 #endif
 
@@ -149,7 +149,7 @@ since most popping occurs when the stack frame is popped and in this
 case it is faster to check for OBJECTTMP than if the returned Object**
 is from the pool.
 */
-#define DEBUG_GARBAGE  1
+#define DEBUG_GARBAGE 1
 #define TOBJ_POOL_SIZE 50
 static Object** hoc_temp_obj_pool_;
 static int obj_pool_index_;

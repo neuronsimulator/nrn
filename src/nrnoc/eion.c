@@ -45,8 +45,8 @@ int nrn_is_ion(type) int type;
 
 static int ion_global_map_size;
 static double** ion_global_map;
-#define global_conci(type)  ion_global_map[type][0]
-#define global_conco(type)  ion_global_map[type][1]
+#define global_conci(type) ion_global_map[type][0]
+#define global_conco(type) ion_global_map[type][1]
 #define global_charge(type) ion_global_map[type][2]
 
 double nrn_ion_charge(Symbol* sym) {
@@ -241,10 +241,10 @@ at least one model using this ion\n",
 }
 
 #if defined(LegacyFR) && LegacyFR == 1
-#define FARADAY     96485.309
+#define FARADAY 96485.309
 #define gasconstant 8.3134
 #else
-#define FARADAY     96485.33289
+#define FARADAY 96485.33289
 #define gasconstant 8.3144598
 #endif
 
@@ -338,10 +338,10 @@ void ghk(void) {
     hoc_retpushx(val);
 }
 #if VECTORIZE
-#define erev   pd[i][0] /* From Eion */
-#define conci  pd[i][1]
-#define conco  pd[i][2]
-#define cur    pd[i][3]
+#define erev pd[i][0] /* From Eion */
+#define conci pd[i][1]
+#define conco pd[i][2]
+#define cur pd[i][3]
 #define dcurdv pd[i][4]
 
 /*
@@ -638,7 +638,7 @@ void second_order_cur(NrnThread* nt) {
     NrnThreadMembList* tml;
     Memb_list* ml;
     int j, i, i2;
-#define c  3
+#define c 3
 #define dc 4
     if (secondorder == 2) {
         for (tml = nt->tml; tml; tml = tml->next)

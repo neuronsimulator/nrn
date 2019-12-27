@@ -28,13 +28,13 @@
 #include "section.h"
 #include "nrnmutdec.h"
 
-#define ZERO   RCONST(0.0)
-#define HALF   RCONST(0.5)
-#define ONE    RCONST(1.0)
+#define ZERO RCONST(0.0)
+#define HALF RCONST(0.5)
+#define ONE RCONST(1.0)
 #define ONEPT5 RCONST(1.5)
 
 #if 0
-#define mydebug(a)     printf(a)
+#define mydebug(a) printf(a)
 #define mydebug2(a, b) printf(a, b)
 #else
 #define mydebug(a)     /**/
@@ -64,24 +64,24 @@ static realtype retval;
 static long double longdretval;
 #endif
 static booleantype bretval;
-#define xpass    x_ = x;
-#define ypass    y_ = y;
-#define zpass    z_ = z;
-#define wpass    w_ = w;
-#define idpass   id_ = id;
-#define apass    a_ = a;
-#define bpass    b_ = b;
-#define cpass    c_ = c;
-#define xarg(i)  NV_SUBVEC_NT_LD(x_, i)
-#define yarg(i)  NV_SUBVEC_NT_LD(y_, i)
-#define zarg(i)  NV_SUBVEC_NT_LD(z_, i)
-#define warg(i)  NV_SUBVEC_NT_LD(w_, i)
+#define xpass x_ = x;
+#define ypass y_ = y;
+#define zpass z_ = z;
+#define wpass w_ = w;
+#define idpass id_ = id;
+#define apass a_ = a;
+#define bpass b_ = b;
+#define cpass c_ = c;
+#define xarg(i) NV_SUBVEC_NT_LD(x_, i)
+#define yarg(i) NV_SUBVEC_NT_LD(y_, i)
+#define zarg(i) NV_SUBVEC_NT_LD(z_, i)
+#define warg(i) NV_SUBVEC_NT_LD(w_, i)
 #define idarg(i) NV_SUBVEC_NT_LD(id_, i)
-#define aarg     a_
-#define barg     b_
-#define carg     c_
-#define lock     MUTLOCK
-#define unlock   MUTUNLOCK
+#define aarg a_
+#define barg b_
+#define carg c_
+#define lock MUTLOCK
+#define unlock MUTUNLOCK
 #define lockadd(arg) \
     lock;            \
     retval += arg;   \

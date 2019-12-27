@@ -72,18 +72,18 @@ static int allow_busywait_;
         *(t_[arg]++) = t1;            \
     }
 #define BENCHADD(arg) BENCHBEGIN(arg)
-#define WAIT          wait_for_workers_timeit
-#define CPU_MHZ       3192
-#define BSIZE         200000
-#define BS            10
+#define WAIT wait_for_workers_timeit
+#define CPU_MHZ 3192
+#define BSIZE 200000
+#define BS 10
 static unsigned long bcnt_, bcnt1_;
 static unsigned long t1_[BS][BSIZE], *t_[BS];
 #else
 #define BENCHDECLARE    /**/
 #define BENCHBEGIN(arg) /**/
 #define BENCHADD(arg)   /**/
-#define WAIT            wait_for_workers
-#define BS              0
+#define WAIT wait_for_workers
+#define BS 0
 #endif
 
 static void* nulljob(NrnThread* nt) {

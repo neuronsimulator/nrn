@@ -37,15 +37,15 @@
 #include <OS/enter-scope.h>
 
 #if 1 || defined(__STDC__) || defined(__ANSI_CPP__)
-#define __NrnHashEntry(NrnHash)    NrnHash##_Entry
-#define NrnHashEntry(NrnHash)      __NrnHashEntry(NrnHash)
+#define __NrnHashEntry(NrnHash) NrnHash##_Entry
+#define NrnHashEntry(NrnHash) __NrnHashEntry(NrnHash)
 #define __NrnHashIterator(NrnHash) NrnHash##_Iterator
-#define NrnHashIterator(NrnHash)   __NrnHashIterator(NrnHash)
+#define NrnHashIterator(NrnHash) __NrnHashIterator(NrnHash)
 #else
-#define __NrnHashEntry(NrnHash)    NrnHash /**/ _Entry
-#define NrnHashEntry(NrnHash)      __NrnHashEntry(NrnHash)
+#define __NrnHashEntry(NrnHash) NrnHash /**/ _Entry
+#define NrnHashEntry(NrnHash) __NrnHashEntry(NrnHash)
 #define __NrnHashIterator(NrnHash) NrnHash /**/ _Iterator
-#define NrnHashIterator(NrnHash)   __NrnHashIterator(NrnHash)
+#define NrnHashIterator(NrnHash) __NrnHashIterator(NrnHash)
 #endif
 
 #define declareNrnHash(NrnHash, Key, Value)               \

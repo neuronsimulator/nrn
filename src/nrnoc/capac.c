@@ -19,7 +19,7 @@ void capac_reg_(void) {
     hoc_register_prop_size(mechtype, nparm, 0);
 }
 
-#define cm    vdata[i][0]
+#define cm vdata[i][0]
 #define i_cap vdata[i][1]
 
 /*

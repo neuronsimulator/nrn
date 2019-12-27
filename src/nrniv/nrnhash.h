@@ -14,9 +14,9 @@
 #endif
 
 #define __NrnHashEntry(Table) Table##_Entry
-#define NrnHashEntry(Table)   __NrnHashEntry(Table)
-#define __NrnHashLT(Table)    nrnhash_lt_##Table
-#define NrnHashLT(Table)      __NrnHashLT(Table)
+#define NrnHashEntry(Table) __NrnHashEntry(Table)
+#define __NrnHashLT(Table) nrnhash_lt_##Table
+#define NrnHashLT(Table) __NrnHashLT(Table)
 
 // note that more recent STL versions (But not gcc2.95) supply
 // at(long) to get the vector element. My version contains some

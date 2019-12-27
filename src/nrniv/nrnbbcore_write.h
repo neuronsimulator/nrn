@@ -2,7 +2,7 @@
 #define nrnbbcore_write_h
 
 #define DatumIndices nrncore_DatumIndices
-#define CellGroup    nrncore_CellGroup
+#define CellGroup nrncore_CellGroup
 
 #include <vector>
 

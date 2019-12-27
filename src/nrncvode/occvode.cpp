@@ -21,7 +21,7 @@ extern void recalc_diam();
 extern int nrn_errno_check(int);
 // extern double t, dt;
 #define nt_dt nrn_threads->_dt
-#define nt_t  nrn_threads->_t
+#define nt_t nrn_threads->_t
 
 extern void long_difus_solve(int, NrnThread*);
 extern Symlist* hoc_built_in_symlist;
@@ -51,7 +51,7 @@ extern void (*nrn_multisplit_solve_)();
 
 static Symbol* vsym;  // for absolute tolerance
 #define SETUP 1
-#define USED  2
+#define USED 2
 /*
 CVODE expects dy/dt = f(y) and solve (I - gamma*J)*x = b with approx to
 J=df/dy.

@@ -33,9 +33,9 @@ extern "C" {
 #include "hoclist.h"
 
 /*#define DEBUGSOLVE 1*/
-#define xpop      hoc_xpop
-#define pc        hoc_pc
-#define spop      hoc_spop
+#define xpop hoc_xpop
+#define pc hoc_pc
+#define spop hoc_spop
 #define execerror hoc_execerror
 #include "hocdec.h"
 
@@ -104,28 +104,28 @@ typedef struct Info3Val { /* storage to help build matrix efficiently */
 the notify_free_val parameter in node_free in solve.c
 */
 
-#define NODED(n)   (*((n)->_d))
+#define NODED(n) (*((n)->_d))
 #define NODERHS(n) (*((n)->_rhs))
 
 #undef NODEV /* sparc-sun-solaris2.9 */
 
 #if CACHEVEC == 0
-#define NODEA(n)    ((n)->_a)
-#define NODEB(n)    ((n)->_b)
-#define NODEV(n)    ((n)->_v)
+#define NODEA(n) ((n)->_a)
+#define NODEB(n) ((n)->_b)
+#define NODEV(n) ((n)->_v)
 #define NODEAREA(n) ((n)->_area)
 #else /* CACHEVEC */
-#define NODEV(n)    (*((n)->_v))
+#define NODEV(n) (*((n)->_v))
 #define NODEAREA(n) ((n)->_area)
 #define NODERINV(n) ((n)->_rinv)
-#define VEC_A(i)    (_nt->_actual_a[(i)])
-#define VEC_B(i)    (_nt->_actual_b[(i)])
-#define VEC_D(i)    (_nt->_actual_d[(i)])
-#define VEC_RHS(i)  (_nt->_actual_rhs[(i)])
-#define VEC_V(i)    (_nt->_actual_v[(i)])
+#define VEC_A(i) (_nt->_actual_a[(i)])
+#define VEC_B(i) (_nt->_actual_b[(i)])
+#define VEC_D(i) (_nt->_actual_d[(i)])
+#define VEC_RHS(i) (_nt->_actual_rhs[(i)])
+#define VEC_V(i) (_nt->_actual_v[(i)])
 #define VEC_AREA(i) (_nt->_actual_area[(i)])
-#define NODEA(n)    (VEC_A((n)->v_node_index))
-#define NODEB(n)    (VEC_B((n)->v_node_index))
+#define NODEA(n) (VEC_A((n)->v_node_index))
+#define NODEB(n) (VEC_B((n)->v_node_index))
 #endif /* CACHEVEC */
 
 extern int use_sparse13;
@@ -323,8 +323,8 @@ extern int _method3;
 #include <multicore.h>
 
 extern int stoprun;
-#define tstopbit   (1 << 15)
-#define tstopset   stoprun |= tstopbit
+#define tstopbit (1 << 15)
+#define tstopset stoprun |= tstopbit
 #define tstopunset stoprun &= (~tstopbit)
 /* cvode.event(tevent) sets this. Reset at beginning */
 /* of any hoc call for integration and before returning to hoc */

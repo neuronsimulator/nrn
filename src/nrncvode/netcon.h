@@ -36,12 +36,12 @@ class IvocVect;
 class BGP_DMASend;
 class BGP_DMASend_Phase2;
 
-#define DiscreteEventType   0
-#define TstopEventType      1
-#define NetConType          2
-#define SelfEventType       3
-#define PreSynType          4
-#define HocEventType        5
+#define DiscreteEventType 0
+#define TstopEventType 1
+#define NetConType 2
+#define SelfEventType 3
+#define PreSynType 4
+#define HocEventType 5
 #define PlayRecordEventType 6
 // the above will in turn steer to proper PlayRecord type
 #define NetParEventType 7

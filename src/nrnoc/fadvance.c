@@ -88,12 +88,12 @@ extern void nrn_daq_ai();
 extern void nrn_daq_ao();
 #endif
 
-#define NRNCTIME          1
+#define NRNCTIME 1
 #define NONVINT_ODE_COUNT 5
 
 #if NRNCTIME
 #define CTBEGIN double wt = nrnmpi_wtime();
-#define CTADD   nth->_ctime += nrnmpi_wtime() - wt;
+#define CTADD nth->_ctime += nrnmpi_wtime() - wt;
 #else
 #define CTBEGIN /**/
 #define CTADD   /**/
@@ -1149,7 +1149,7 @@ int nrn_nonvint_block_helper(int method, int size, double* pd1, double* pd2, int
 */
 #include "nrniv_mf.h"
 #undef SUCCESS
-#define SUCCESS   0
+#define SUCCESS 0
 #define der_(arg) p[der[arg]]
 #define var_(arg) p[var[arg]]
 /* ARGSUSED */

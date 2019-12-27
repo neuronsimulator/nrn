@@ -35,9 +35,9 @@
 #include "shared/sundialsmath.h"
 #include "shared/sundialstypes.h"
 
-#define ZERO   RCONST(0.0)
-#define HALF   RCONST(0.5)
-#define ONE    RCONST(1.0)
+#define ZERO RCONST(0.0)
+#define HALF RCONST(0.5)
+#define ONE RCONST(1.0)
 #define ONEPT5 RCONST(1.5)
 
 #if USELONGDOUBLE

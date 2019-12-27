@@ -73,14 +73,14 @@ void extracell_reg_(void) {
 /* solving is done with sparse13 */
 
 /* interface between hoc and extcell */
-#define xraxial         pd /* From Eion */
-#define xg              (pd + (nlayer))
-#define xc              (pd + 2 * (nlayer))
+#define xraxial pd /* From Eion */
+#define xg (pd + (nlayer))
+#define xc (pd + 2 * (nlayer))
 #define e_extracellular pd[3 * (nlayer)]
 #if I_MEMBRANE
 #define i_membrane pd[1 + 3 * (nlayer)]
-#define sav_g      pd[2 + 3 * (nlayer)]
-#define sav_rhs    pd[3 + 3 * (nlayer)]
+#define sav_g pd[2 + 3 * (nlayer)]
+#define sav_rhs pd[3 + 3 * (nlayer)]
 #endif
 
 /* based on update() in fadvance.c */

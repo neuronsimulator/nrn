@@ -16,20 +16,20 @@ and Flux_pair structs and their respective functions
         if ((ptr) != NULL) \
             free(ptr);     \
     }
-#define IDX(x, y, z)    ((z) + (y) *g->size_z + (x) *g->size_z * g->size_y)
-#define INDEX(x, y, z)  ((z) + (y) *grid->size_z + (x) *grid->size_z * grid->size_y)
-#define ALPHA(x, y, z)  (g->get_alpha(g->alpha, IDX(x, y, z)))
-#define VOLFRAC(idx)    (g->get_alpha(g->alpha, idx))
-#define TORT(idx)       (g->get_lambda(g->lambda, idx))
+#define IDX(x, y, z) ((z) + (y) *g->size_z + (x) *g->size_z * g->size_y)
+#define INDEX(x, y, z) ((z) + (y) *grid->size_z + (x) *grid->size_z * grid->size_y)
+#define ALPHA(x, y, z) (g->get_alpha(g->alpha, IDX(x, y, z)))
+#define VOLFRAC(idx) (g->get_alpha(g->alpha, idx))
+#define TORT(idx) (g->get_lambda(g->lambda, idx))
 #define LAMBDA(x, y, z) (g->get_lambda(g->lambda, IDX(x, y, z)))
-#define SQ(x)           ((x) * (x))
-#define CU(x)           ((x) * (x) * (x))
-#define TRUE            1
-#define FALSE           0
-#define TORTUOSITY      2
+#define SQ(x) ((x) * (x))
+#define CU(x) ((x) * (x) * (x))
+#define TRUE 1
+#define FALSE 0
+#define TORTUOSITY 2
 #define VOLUME_FRACTION 3
 
-#define NEUMANN   0
+#define NEUMANN 0
 #define DIRICHLET 1
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))

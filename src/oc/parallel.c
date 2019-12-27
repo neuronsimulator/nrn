@@ -2,7 +2,7 @@
 /* /local/src/master/nrn/src/oc/parallel.c,v 1.5 1997/03/13 14:18:17 hines Exp */
 #if MAC
 #define OCSMALL 1
-#define WIN32   1
+#define WIN32 1
 #endif
 
 #if !OCSMALL

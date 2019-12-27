@@ -10,13 +10,13 @@
 
 extern "C" {
 
-#define byte  unsigned char
-#define True  1
+#define byte unsigned char
+#define True 1
 #define False 0
 #define DEBUG 0
-#define Red   pinfo_->r
+#define Red pinfo_->r
 #define Green pinfo_->g
-#define Blue  pinfo_->b
+#define Blue pinfo_->b
 
 typedef struct {
     Raster* raster;
@@ -71,16 +71,16 @@ extern "C" {
  */
 
 
-#define NEXTBYTE      (*dataptr++)
-#define NEXTBYTEa     (dataptr++) /* avoid 'expression result unused' warnings */
-#define EXTENSION     0x21
-#define IMAGESEP      0x2c
-#define TRAILER       0x3b
+#define NEXTBYTE (*dataptr++)
+#define NEXTBYTEa (dataptr++) /* avoid 'expression result unused' warnings */
+#define EXTENSION 0x21
+#define IMAGESEP 0x2c
+#define TRAILER 0x3b
 #define INTERLACEMASK 0x40
-#define COLORMAPMASK  0x80
+#define COLORMAPMASK 0x80
 
-#define ISTR_WARNING        "LoadGif warning:"
-#define ISTR_INFO           "LoadGif info:"
+#define ISTR_WARNING "LoadGif warning:"
+#define ISTR_INFO "LoadGif info:"
 #define SetISTR(a, f, c, d) fprintf(stderr, f, c, d)
 
 

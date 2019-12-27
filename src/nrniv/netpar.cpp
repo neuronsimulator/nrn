@@ -464,7 +464,7 @@ static void calc_actual_mindelay() {
 #include "bgpdma.cpp"
 #else
 #define TBUFSIZE 0
-#define TBUF     /**/
+#define TBUF /**/
 #endif
 
 void nrn_spike_exchange_init() {

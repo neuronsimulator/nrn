@@ -21,15 +21,15 @@
 #define WY 100
 
 /* size of window */
-#define WIDTH  500
+#define WIDTH 500
 #define HEIGHT 390
 #define MARGIN 0
 
 /* size of icon */
-#define IWIDTH  64
+#define IWIDTH 64
 #define IHEIGHT 20
 
-#define Plot(x, y)           XDrawPoint(display, win, gc, (x), (y))
+#define Plot(x, y) XDrawPoint(display, win, gc, (x), (y))
 #define Line(x1, y1, x2, y2) XDrawLine(display, win, gc, (x1), (y1), (x2), (y2))
 #define LAST     \
     xold = xnew; \
@@ -48,7 +48,7 @@ static XEvent report;
 /*static XFontStruct *font;*/
 
 static int D;
-#define Color   (D > 1)
+#define Color (D > 1)
 #define Ncolors 11
 
 static unsigned long colors[Ncolors];

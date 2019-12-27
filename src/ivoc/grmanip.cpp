@@ -18,12 +18,12 @@
 #include "hocmark.h"
 #include "utility.h"
 
-#define LineRubberMarker_event_   "Crosshair Graph"
+#define LineRubberMarker_event_ "Crosshair Graph"
 #define DeleteLabelHandler_event_ "Delete Graph"
 #define ChangeLabelHandler_event_ "ChangeText"
-#define DeleteLineHandler_event_  "Delete Graph"
-#define LinePicker_event_         "Pick Graph"
-#define MoveLabelBand_press_      "MoveText Graph"
+#define DeleteLineHandler_event_ "Delete Graph"
+#define LinePicker_event_ "Pick Graph"
+#define MoveLabelBand_press_ "MoveText Graph"
 
 extern "C" {
 extern double hoc_cross_x_, hoc_cross_y_;

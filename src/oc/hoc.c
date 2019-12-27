@@ -156,7 +156,7 @@ int hoc_usegui;
 #endif
 /* buffers will grow automatically if an input line exceeds the following*/
 #define TMPBUFSIZE 512
-#define CBUFSIZE   512
+#define CBUFSIZE 512
 HocStr* hoc_tmpbuf;
 HocStr* hoc_cbufstr;
 const char* hoc_promptstr;
@@ -278,7 +278,7 @@ int getnb(void) /* get next non-white character */
 /* for now we say comments or strings that span lines on stdin are in error */
 #if 0
 #define INCOMMENT 1;
-#define INSTRING  2;
+#define INSTRING 2;
 static int lexstate = 0;
 #endif
 /* sometimes is... doesn't work with -3. Hence Getc returns null and look

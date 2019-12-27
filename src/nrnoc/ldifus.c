@@ -9,7 +9,7 @@
 #include "nrniv_mf.h"
 #include "parse.h"
 
-#define nt_t  nrn_threads->_t
+#define nt_t nrn_threads->_t
 #define nt_dt nrn_threads->_dt
 
 extern int diam_change_cnt;

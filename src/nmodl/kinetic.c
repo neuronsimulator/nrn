@@ -32,10 +32,10 @@ static int cvode_flag;
 static void cvode_kin_remove();
 static Item *cvode_sbegin, *cvode_send;
 static List* kin_items_;
-#define CVODE_FLAG     if (cvode_flag)
+#define CVODE_FLAG if (cvode_flag)
 #define NOT_CVODE_FLAG if (!cvode_flag)
 #else
-#define CVODE_FLAG     if (0)
+#define CVODE_FLAG if (0)
 #define NOT_CVODE_FLAG if (1)
 #endif
 

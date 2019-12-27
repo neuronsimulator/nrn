@@ -2,7 +2,7 @@
 #ifndef hocdec_h
 #define hocdec_h
 #define INCLUDEHOCH 1
-#define OOP         1
+#define OOP 1
 
 #if defined(__cplusplus)
 extern "C" {
@@ -15,7 +15,7 @@ extern "C" {
 #include <string.h>
 
 #define gargstr hoc_gargstr
-#define getarg  hoc_getarg
+#define getarg hoc_getarg
 
 /* the dec alpha cxx doesn't understand struct foo* inside a struct */
 
@@ -34,8 +34,8 @@ union Objectdata;
 struct Object;
 struct hoc_Item;
 #else
-#define HocStruct  struct
-#define HocUnion   union
+#define HocStruct struct
+#define HocUnion union
 #define HocTypedef typedef
 #endif
 
@@ -91,22 +91,22 @@ typedef struct Symlist {
 
 typedef char* Upoint;
 
-#define NOTUSER      0
-#define USERINT      1 /* For subtype */
-#define USERDOUBLE   2
+#define NOTUSER 0
+#define USERINT 1 /* For subtype */
+#define USERDOUBLE 2
 #define USERPROPERTY 3 /* for newcable non-range variables */
-#define USERFLOAT    4 /* John Miller's NEMO uses floats */
+#define USERFLOAT 4    /* John Miller's NEMO uses floats */
 #if NEMO
 #define NEMONODE 5 /* looks syntactically like vector */
 #define NEMOAREA 6 /* looks like vector */
 #endif
-#define SYMBOL      7  /* for stack type */
-#define OBJECTTMP   8  /* temporary object on stack */
+#define SYMBOL 7       /* for stack type */
+#define OBJECTTMP 8    /* temporary object on stack */
 #define CPLUSOBJECT 16 /* c++ registered class */
-#define JAVAOBJECT  32 /* c++ registered class */
+#define JAVAOBJECT 32  /* c++ registered class */
 /* above two are bits, next must start at 64 */
 #define OBJECTALIAS 1
-#define VARALIAS    2
+#define VARALIAS 2
 
 typedef struct HocSymExtension {
     float* parmlimits; /* some variables have suggested bounds */
@@ -291,11 +291,11 @@ extern Symlist* hoc_top_level_symlist;
 extern Symlist* hoc_built_in_symlist;
 extern Objectdata* hoc_objectdata_save(void);
 extern Objectdata* hoc_objectdata_restore(Objectdata*);
-#define OPVAL(sym)    hoc_objectdata[sym->u.oboff].pval
-#define OPSTR(sym)    hoc_objectdata[sym->u.oboff].ppstr
-#define OPOBJ(sym)    hoc_objectdata[sym->u.oboff].pobj
+#define OPVAL(sym) hoc_objectdata[sym->u.oboff].pval
+#define OPSTR(sym) hoc_objectdata[sym->u.oboff].ppstr
+#define OPOBJ(sym) hoc_objectdata[sym->u.oboff].pobj
 #define OPSECITM(sym) hoc_objectdata[sym->u.oboff].psecitm
-#define OPLIST(sym)   hoc_objectdata[sym->u.oboff].plist
+#define OPLIST(sym) hoc_objectdata[sym->u.oboff].plist
 #define OPARINFO(sym) hoc_objectdata[sym->u.oboff + 1].arayinfo
 
 #if LINT
@@ -318,12 +318,12 @@ extern Objectdata* hoc_objectdata_restore(Objectdata*);
     }
 char* cplint;
 int ilint;
-#define Strcat  cplint = strcat
+#define Strcat cplint = strcat
 #define Strncat cplint = strncat
-#define Strcpy  cplint = strcpy
+#define Strcpy cplint = strcpy
 #define Strncpy cplint = strncpy
 #define Sprintf cplint = sprintf
-#define Printf  ilint = printf
+#define Printf ilint = printf
 #else
 #if defined(__TURBOC__)
 #undef IGNORE
@@ -333,12 +333,12 @@ int ilint;
 #define IGNORE(arg) arg
 #endif
 #define LINTUSE(arg)
-#define Strcat  strcat
+#define Strcat strcat
 #define Strncat strncat
-#define Strcpy  strcpy
+#define Strcpy strcpy
 #define Strncpy strncpy
 #define Sprintf sprintf
-#define Printf  nrnpy_pr
+#define Printf nrnpy_pr
 #endif
 
 /* EINTR handling for LINDA */
@@ -357,7 +357,7 @@ int ilint;
 #define ERRCHK(c1) c1
 #endif
 
-#define IFGUI  if (hoc_usegui) {
+#define IFGUI if (hoc_usegui) {
 #define ENDGUI }
 
 extern int hoc_usegui; /* when 0 does not make interviews calls */

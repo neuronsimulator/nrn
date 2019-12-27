@@ -26,10 +26,10 @@
 #endif
 
 #if NRNLONGSGID
-#define sgid_t         int64_t
+#define sgid_t int64_t
 #define sgid_alltoallv nrnmpi_long_alltoallv
 #else
-#define sgid_t         int
+#define sgid_t int
 #define sgid_alltoallv nrnmpi_int_alltoallv
 #endif
 
@@ -671,9 +671,9 @@ void thread_transfer(NrnThread* _nt) {
 
 // 22-08-2014  For setup of the All2allv pattern, use the rendezvous rank
 // idiom.
-#define HAVEWANT_t         sgid_t
+#define HAVEWANT_t sgid_t
 #define HAVEWANT_alltoallv sgid_alltoallv
-#define HAVEWANT2Int       MapSgid2Int
+#define HAVEWANT2Int MapSgid2Int
 #if PARANEURON
 #include "have2want.cpp"
 #endif

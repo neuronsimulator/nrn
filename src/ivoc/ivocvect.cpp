@@ -2488,7 +2488,7 @@ static double v_eq(void* v1) {
 =============================================================================*/
 
 
-#define SIMPLEX_MAXN  1e+300
+#define SIMPLEX_MAXN 1e+300
 #define SIMPLEX_INORM 1.2
 
 /* 1.2: normal,
@@ -2498,7 +2498,7 @@ static double v_eq(void* v1) {
 
 
 #define SIMPLEX_ALPHA 2.0
-#define SIMPLEX_BETA  1.4
+#define SIMPLEX_BETA 1.4
 #define SIMPLEX_GAMMA 0.7
 #define SIMPLEX_DELTA 0.3
 

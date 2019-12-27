@@ -22,35 +22,36 @@ class Scene;
 class TelltaleGroup;
 class DismissableWindow;
 
-class ScenePicker : public StandardPicker {
-public:
-	ScenePicker(Scene*);
-	virtual ~ScenePicker();
-	
-	MenuItem* add_menu(MenuItem*, Menu* = NULL); // not executable from hoc
+class ScenePicker: public StandardPicker {
+  public:
+    ScenePicker(Scene*);
+    virtual ~ScenePicker();
 
-	MenuItem* add_radio_menu(const char*, Action*, Menu* = NULL);
-	MenuItem* add_radio_menu(const char*, Rubberband*, Action*, int tool=0, Menu* = NULL);
-	MenuItem* add_radio_menu(const char*, OcHandler*, int tool=0, Menu* = NULL);
-	Button* radio_button(const char*, Action*);
-	Button* radio_button(const char*, Rubberband*, Action*, int tool=0);
+    MenuItem* add_menu(MenuItem*, Menu* = NULL);  // not executable from hoc
 
-	MenuItem* add_menu(const char*, Action*, Menu* = NULL);
-	MenuItem* add_menu(const char*, MenuItem*, Menu* = NULL);
+    MenuItem* add_radio_menu(const char*, Action*, Menu* = NULL);
+    MenuItem* add_radio_menu(const char*, Rubberband*, Action*, int tool = 0, Menu* = NULL);
+    MenuItem* add_radio_menu(const char*, OcHandler*, int tool = 0, Menu* = NULL);
+    Button* radio_button(const char*, Action*);
+    Button* radio_button(const char*, Rubberband*, Action*, int tool = 0);
 
-	void remove_item(const char*);	
-	void insert_item(const char*, const char*, MenuItem*);
+    MenuItem* add_menu(const char*, Action*, Menu* = NULL);
+    MenuItem* add_menu(const char*, MenuItem*, Menu* = NULL);
 
-	virtual void pick_menu(Glyph*, int, Hit&);
-	virtual void set_scene_tool(int);
-	TelltaleGroup* telltale_group();
-	virtual const char* select_name();
-	virtual void select_name(const char*);
-	virtual void help();
-	virtual void exec_item(const char*);
-	static DismissableWindow* last_window();
-private:
-	ScenePickerImpl* spi_;
+    void remove_item(const char*);
+    void insert_item(const char*, const char*, MenuItem*);
+
+    virtual void pick_menu(Glyph*, int, Hit&);
+    virtual void set_scene_tool(int);
+    TelltaleGroup* telltale_group();
+    virtual const char* select_name();
+    virtual void select_name(const char*);
+    virtual void help();
+    virtual void exec_item(const char*);
+    static DismissableWindow* last_window();
+
+  private:
+    ScenePickerImpl* spi_;
 };
 
 #endif

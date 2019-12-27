@@ -20,7 +20,7 @@
 // want to end up with a string like "hoc36"
 #define HOCMOD_1(s) HOCMOD_2(s)
 #define HOCMOD_2(s) #s
-#define HOCMOD      "hoc" HOCMOD_1(NRNPYTHON_DYNAMICLOAD)
+#define HOCMOD "hoc" HOCMOD_1(NRNPYTHON_DYNAMICLOAD)
 #else
 // TODO: didn't enable dynamic load and end up with error if below is not a string
 #define HOCMOD "hoc"

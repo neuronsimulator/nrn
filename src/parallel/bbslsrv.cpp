@@ -4,7 +4,7 @@
 #include <string.h>
 #include "bbslsrv.h"
 
-#define INT    1
+#define INT 1
 #define DOUBLE 2
 #define STRING 3
 #define VECTOR 4

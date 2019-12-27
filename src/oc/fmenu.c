@@ -142,7 +142,7 @@ extern TERM emacs_term;
     hoc_ret(); \
     hoc_pushx(a)
 #endif
-#define NUL   0
+#define NUL 0
 #define SPACE '\040'
 #if DOS || G32
 #define BEEP Printf("\007")
@@ -166,7 +166,7 @@ typedef struct Menuitem {
 } Menuitem;
 
 /* menu types */
-#define MENU_VAR    1
+#define MENU_VAR 1
 #define MENU_ACTION 2
 
 /* Summary of menu functions :

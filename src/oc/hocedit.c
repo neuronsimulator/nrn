@@ -81,7 +81,7 @@ extern int emacs_main(int n, char** cpp);
 extern int emacs_refresh(int i, int j);
 extern int emacs_vtinit(void);
 #define IGNORE(arg) arg
-#define Fprintf     fprintf
+#define Fprintf fprintf
 
 extern TERM emacs_term;
 extern BUFFER* emacs_curbp;

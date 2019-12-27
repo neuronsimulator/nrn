@@ -26,7 +26,7 @@ extern double nrn_timeus();
 #if NRNMPI
 #include <mpi.h>
 #define asrt(arg) nrn_assert(arg == MPI_SUCCESS)
-#define USE_HPM   0
+#define USE_HPM 0
 #if USE_HPM
 #include <libhpm.h>
 #endif

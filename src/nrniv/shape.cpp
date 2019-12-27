@@ -38,8 +38,8 @@
 #include "ivoc.h"
 
 #define Shape_Section_ "Section PlotShape"
-#define Shape_Rotate_  "Rotate3D PlotShape"
-#define Shape_Style_   "ShapeStyle PlotShape"
+#define Shape_Rotate_ "Rotate3D PlotShape"
+#define Shape_Style_ "ShapeStyle PlotShape"
 
 extern "C" {
 void nrn_define_shape();

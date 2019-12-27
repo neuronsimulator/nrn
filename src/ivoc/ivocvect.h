@@ -6,7 +6,7 @@
 #include <nrnmutdec.h>
 
 #define ParentVect doubleAVec
-#define Vect       IvocVect
+#define Vect IvocVect
 
 struct Object;
 

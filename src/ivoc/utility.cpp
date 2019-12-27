@@ -18,7 +18,7 @@
 #include <IV-look/dialogs.h>
 #include <OS/string.h>
 
-#define Input  IOS_IN
+#define Input IOS_IN
 #define Output IOS_OUT
 #define Append IOS_APP | IOS_OUT
 

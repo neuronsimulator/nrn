@@ -3,10 +3,10 @@
 #include "units.h"
 #include "parse1.h"
 
-#define IONCUR  0
+#define IONCUR 0
 #define IONEREV 1
-#define IONIN   2
-#define IONOUT  3
+#define IONIN 2
+#define IONOUT 3
 
 static int point_process = 0;
 static List *current, *concen, *potential;

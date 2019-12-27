@@ -30,11 +30,11 @@
 #include "idraw.h"
 
 #define SelectVariable_ "PlotWhat PlotShape"
-#define VariableScale_  "VariableScale PlotShape"
-#define TimePlot_       "TimePlot PlotShape"
-#define SpacePlot_      "SpacePlot PlotShape"
-#define ShapePlot_      "ShapePlot PlotShape"
-#define MoveText_       "MoveText PlotShape"
+#define VariableScale_ "VariableScale PlotShape"
+#define TimePlot_ "TimePlot PlotShape"
+#define SpacePlot_ "SpacePlot PlotShape"
+#define ShapePlot_ "ShapePlot PlotShape"
+#define MoveText_ "MoveText PlotShape"
 
 extern "C" {
 extern Symlist* hoc_built_in_symlist;

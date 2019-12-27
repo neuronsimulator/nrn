@@ -9,16 +9,16 @@
 #include "ocfunc.h"
 #include "hoc.h"
 
-#define EPS         hoc_epsilon
+#define EPS hoc_epsilon
 #define MAXERRCOUNT 5
 int hoc_errno_count;
 
 #if _CRAY
-#define log   logl
+#define log logl
 #define log10 log10l
-#define exp   expl
-#define sqrt  sqrtl
-#define pow   powl
+#define exp expl
+#define sqrt sqrtl
+#define pow powl
 #endif
 
 static double errcheck(double, const char*);

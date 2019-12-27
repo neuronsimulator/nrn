@@ -16,9 +16,9 @@ typedef void (*nrn_ode_synonym_t)(int, double**, Datum**);
 /* eventually replace following with Pvmp */
 typedef void (*nrn_bamech_t)(Node*, double*, Datum*, Datum*, struct NrnThread*);
 
-#define NULL_CUR        (Pfri) 0
-#define NULL_ALLOC      (Pfri) 0
-#define NULL_STATE      (Pfri) 0
+#define NULL_CUR (Pfri) 0
+#define NULL_ALLOC (Pfri) 0
+#define NULL_STATE (Pfri) 0
 #define NULL_INITIALIZE (Pfri) 0
 
 typedef struct Memb_func {
@@ -50,24 +50,24 @@ typedef struct Memb_func {
 } Memb_func;
 
 
-#define IMEMFAST     -2
-#define VINDEX       -1
+#define IMEMFAST -2
+#define VINDEX -1
 #define CABLESECTION 1
-#define MORPHOLOGY   2
-#define CAP          3
+#define MORPHOLOGY 2
+#define CAP 3
 #if EXTRACELLULAR
 #define EXTRACELL 5
 #endif
 
 #define nrnocCONST 1
-#define DEP        2
-#define STATE      3 /*See init.c and cabvars.h for order of nrnocCONST, DEP, and STATE */
+#define DEP 2
+#define STATE 3 /*See init.c and cabvars.h for order of nrnocCONST, DEP, and STATE */
 
-#define BEFORE_INITIAL    0
-#define AFTER_INITIAL     1
+#define BEFORE_INITIAL 0
+#define AFTER_INITIAL 1
 #define BEFORE_BREAKPOINT 2
-#define AFTER_SOLVE       3
-#define BEFORE_STEP       4
+#define AFTER_SOLVE 3
+#define BEFORE_STEP 4
 #define BEFORE_AFTER_SIZE 5 /* 1 more than the previous */
 typedef struct BAMech {
     nrn_bamech_t f;

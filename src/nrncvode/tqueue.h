@@ -34,7 +34,7 @@ declarePool(TQItemPool, TQItem)
 // the received MPI_Allgather buffer is not properly time sorted.
 #undef FAST_LEAST
 // required
-#define FAST_LEAST      1
+#define FAST_LEAST 1
 #define SplayTFifoQueue TQueue
 #define SplayTFifoQItem TQItem
 #include <sptfifoq.h>
@@ -43,7 +43,7 @@ declarePool(TQItemPool, TQItem)
 #if BBTQ == 4
 #undef FAST_LEAST
 // required
-#define FAST_LEAST   1
+#define FAST_LEAST 1
 #define Splay2TQueue TQueue
 #define Splay2TQItem TQItem
 #include <spt2queue.h>
@@ -52,7 +52,7 @@ declarePool(TQItemPool, TQItem)
 #if BBTQ == 5
 #undef FAST_LEAST
 // required
-#define FAST_LEAST     1
+#define FAST_LEAST 1
 #define SplayTBinQueue TQueue
 #define SplayTBinQItem TQItem
 #include <sptbinq.h>

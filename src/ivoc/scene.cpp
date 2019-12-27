@@ -53,9 +53,9 @@
 #include "idraw.h"
 #include "ivoc.h"
 
-#define Scene_Move_Text_   "MoveText Graph"
+#define Scene_Move_Text_ "MoveText Graph"
 #define Scene_ChangeColor_ "ChangeColor Graph"
-#define Scene_Delete_      "Delete Graph"
+#define Scene_Delete_ "Delete Graph"
 
 static const int SceneInfoShowing = 0x01;
 static const int SceneInfoFixed = 0x02;

@@ -35,7 +35,7 @@ maintain a list of xopen statements with the proper rcs version number.
 */
 
 #define AUDIT_SCRIPT_DIR "$NEURONHOME/lib/auditscripts"
-#define AUDIT_DIR        "AUDIT"
+#define AUDIT_DIR "AUDIT"
 
 
 static void hoc_audit_init(void) {
