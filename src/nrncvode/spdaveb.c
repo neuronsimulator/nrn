@@ -19,7 +19,7 @@
  */
 
 
-# include "sptree.h"
+#include "sptree.h"
 
 /* USER SUPPLIED! */
 
@@ -32,10 +32,8 @@
  *
  *	Splays the found node to the root.
  */
-SPBLK *
-splookup( double key, SPTREE* q )
-{
-    register SPBLK * n;
+SPBLK* splookup(double key, SPTREE* q) {
+    register SPBLK* n;
     register int Sct;
     register int c;
 
@@ -43,19 +41,18 @@ splookup( double key, SPTREE* q )
     n = q->root;
     c = ++(q->lkpcmps);
     q->lookups++;
-//    while( n && (Sct = STRCMP( key, n->key ) ) )
-    while( n && (Sct = key!= n->key ) )
-    {
-	c++;
-	n = ( Sct < 0 ) ? n->leftlink : n->rightlink;
+    //    while( n && (Sct = STRCMP( key, n->key ) ) )
+    while (n && (Sct = key != n->key)) {
+        c++;
+        n = (Sct < 0) ? n->leftlink : n->rightlink;
     }
     q->lkpcmps = c;
 
     /* reorganize tree around this node */
-    if( n != NULL )
-	splay( n, q );
+    if (n != NULL)
+        splay(n, q);
 
-    return( n );
+    return (n);
 }
 
 
@@ -101,7 +98,6 @@ register SPTREE *q;
 #endif
 
 
-
 /*----------------
  *
  * spfhead() --	return the "lowest" element in the tree.
@@ -110,20 +106,16 @@ register SPTREE *q;
  *	avoids splaying but just searches for and returns a pointer to
  *	the bottom of the left branch.
  */
-SPBLK *
-spfhead( SPTREE* q )
-{
-    register SPBLK * x;
+SPBLK* spfhead(SPTREE* q) {
+    register SPBLK* x;
 
-    if( NULL != ( x = q->root ) )
-	while( x->leftlink != NULL )
-	    x = x->leftlink;
+    if (NULL != (x = q->root))
+        while (x->leftlink != NULL)
+            x = x->leftlink;
 
-    return( x );
+    return (x);
 
 } /* spfhead */
-
-
 
 
 /*----------------
@@ -132,17 +124,15 @@ spfhead( SPTREE* q )
  *
  *	Fast version does not splay result or intermediate steps.
  */
-SPBLK *
-spftail( SPTREE* q )
-{
-    register SPBLK * x;
+SPBLK* spftail(SPTREE* q) {
+    register SPBLK* x;
 
 
-    if( NULL != ( x = q->root ) )
-	while( x->rightlink != NULL )
-	    x = x->rightlink;
+    if (NULL != (x = q->root))
+        while (x->rightlink != NULL)
+            x = x->rightlink;
 
-    return( x );
+    return (x);
 
 } /* spftail */
 
@@ -154,15 +144,12 @@ spftail( SPTREE* q )
  *	if n is given, start at that node, otherwise start from
  *	the head.
  */
-void
-spscan( void (*f)(const TQItem*, int), SPBLK* n, SPTREE* q )
-{
-    register SPBLK * x;
+void spscan(void (*f)(const TQItem*, int), SPBLK* n, SPTREE* q) {
+    register SPBLK* x;
 
-    for( x = n != NULL ? n : spfhead( q ); x != NULL ; x = spfnext( x ) )
-        (*f)( x, 0);
+    for (x = n != NULL ? n : spfhead(q); x != NULL; x = spfnext(x))
+        (*f)(x, 0);
 }
-
 
 
 /*----------------
@@ -172,15 +159,12 @@ spscan( void (*f)(const TQItem*, int), SPBLK* n, SPTREE* q )
  *	if n is given, start at that node, otherwise start from
  *	the tail.
  */
-void
-sprscan( void (*f)(const TQItem*, int), SPBLK* n, SPTREE* q )
-{
-    register SPBLK *x;
+void sprscan(void (*f)(const TQItem*, int), SPBLK* n, SPTREE* q) {
+    register SPBLK* x;
 
-    for( x = n != NULL ? n : spftail( q ); x != NULL ; x = spfprev( x ) )
-        (*f)( x, 0 );
+    for (x = n != NULL ? n : spftail(q); x != NULL; x = spfprev(x))
+        (*f)(x, 0);
 }
-
 
 
 /*----------------
@@ -190,49 +174,40 @@ sprscan( void (*f)(const TQItem*, int), SPBLK* n, SPTREE* q )
  *	return the successor of n in q, represented as a splay tree.
  *	This is a fast (on average) version that does not splay.
  */
-SPBLK *
-spfnext( SPBLK* n )
-{
-    register SPBLK * next;
-    register SPBLK * x;
+SPBLK* spfnext(SPBLK* n) {
+    register SPBLK* next;
+    register SPBLK* x;
 
     /* a long version, avoids splaying for fast average,
      * poor amortized bound
      */
 
-    if( n == NULL )
-        return( n );
+    if (n == NULL)
+        return (n);
 
     x = n->rightlink;
-    if( x != NULL )
-    {
-        while( x->leftlink != NULL )
-	    x = x->leftlink;
+    if (x != NULL) {
+        while (x->leftlink != NULL)
+            x = x->leftlink;
         next = x;
-    }
-    else	/* x == NULL */
+    } else /* x == NULL */
     {
         x = n->uplink;
         next = NULL;
-        while( x != NULL )
-	{
-            if( x->leftlink == n )
-	    {
+        while (x != NULL) {
+            if (x->leftlink == n) {
                 next = x;
                 x = NULL;
-            }
-	    else
-	    {
+            } else {
                 n = x;
                 x = n->uplink;
             }
         }
     }
 
-    return( next );
+    return (next);
 
 } /* spfnext */
-
 
 
 /*----------------
@@ -242,69 +217,62 @@ spfnext( SPBLK* n )
  *	return the predecessor of n in q, represented as a splay tree.
  *	This is a fast (on average) version that does not splay.
  */
-SPBLK *
-spfprev( SPBLK* n )
-{
-    register SPBLK * prev;
-    register SPBLK * x;
+SPBLK* spfprev(SPBLK* n) {
+    register SPBLK* prev;
+    register SPBLK* x;
 
     /* a long version,
      * avoids splaying for fast average, poor amortized bound
      */
 
-    if( n == NULL )
-        return( n );
+    if (n == NULL)
+        return (n);
 
     x = n->leftlink;
-    if( x != NULL )
-    {
-        while( x->rightlink != NULL )
-	    x = x->rightlink;
+    if (x != NULL) {
+        while (x->rightlink != NULL)
+            x = x->rightlink;
         prev = x;
-    }
-    else
-    {
+    } else {
         x = n->uplink;
         prev = NULL;
-        while( x != NULL )
-	{
-            if( x->rightlink == n )
-	    {
+        while (x != NULL) {
+            if (x->rightlink == n) {
                 prev = x;
                 x = NULL;
-            }
-	    else
-	    {
+            } else {
                 n = x;
                 x = n->uplink;
             }
         }
     }
 
-    return( prev );
+    return (prev);
 
 } /* spfprev */
 
 
-
-const char *
-spstats( SPTREE* q )
-{
-    static char buf[ 128 ];
+const char* spstats(SPTREE* q) {
+    static char buf[128];
     float llen;
     float elen;
     float sloops;
 
-    if( q == NULL )
-	return("");
+    if (q == NULL)
+        return ("");
 
-    llen = q->lookups ? (float)q->lkpcmps / q->lookups : 0;
-    elen = q->enqs ? (float)q->enqcmps/q->enqs : 0;
-    sloops = q->splays ? (float)q->splayloops/q->splays : 0;
+    llen = q->lookups ? (float) q->lkpcmps / q->lookups : 0;
+    elen = q->enqs ? (float) q->enqcmps / q->enqs : 0;
+    sloops = q->splays ? (float) q->splayloops / q->splays : 0;
 
-    sprintf(buf, "f(%d %4.2f) i(%d %4.2f) s(%d %4.2f)",
-	q->lookups, llen, q->enqs, elen, q->splays, sloops );
+    sprintf(buf,
+            "f(%d %4.2f) i(%d %4.2f) s(%d %4.2f)",
+            q->lookups,
+            llen,
+            q->enqs,
+            elen,
+            q->splays,
+            sloops);
 
-    return (const char*)buf;
+    return (const char*) buf;
 }
-

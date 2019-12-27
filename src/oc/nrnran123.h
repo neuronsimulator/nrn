@@ -32,7 +32,7 @@ extern "C" {
 typedef struct nrnran123_State nrnran123_State;
 
 typedef struct nrnran123_array4x32 {
-	uint32_t v[4];
+    uint32_t v[4];
 } nrnran123_array4x32;
 
 /* global index. eg. run number */
@@ -42,7 +42,7 @@ extern uint32_t nrnran123_get_globalindex();
 
 /* minimal data stream */
 extern nrnran123_State* nrnran123_newstream(uint32_t id1, uint32_t id2);
-extern nrnran123_State* nrnran123_newstream3(uint32_t id1, uint32_t id2 , uint32_t id3);
+extern nrnran123_State* nrnran123_newstream3(uint32_t id1, uint32_t id2, uint32_t id3);
 extern void nrnran123_deletestream(nrnran123_State*);
 extern void nrnran123_getseq(nrnran123_State*, uint32_t* seq, char* which);
 extern void nrnran123_setseq(nrnran123_State*, uint32_t seq, char which);
@@ -50,9 +50,9 @@ extern void nrnran123_getids(nrnran123_State*, uint32_t* id1, uint32_t* id2);
 extern void nrnran123_getids3(nrnran123_State*, uint32_t* id1, uint32_t* id2, uint32_t* id3);
 extern uint32_t nrnran123_ipick(nrnran123_State*); /* uniform 0 to 2^32-1 */
 extern double nrnran123_dblpick(nrnran123_State*); /* uniform open interval (0,1)*/
-    /* nrnran123_dblpick minimum value is 2.3283064e-10 and max value is 1-min */
-extern double nrnran123_negexp(nrnran123_State*);  /* mean 1.0 */
-    /* nrnran123_negexp min value is 2.3283064e-10, max is 22.18071 */
+/* nrnran123_dblpick minimum value is 2.3283064e-10 and max value is 1-min */
+extern double nrnran123_negexp(nrnran123_State*); /* mean 1.0 */
+/* nrnran123_negexp min value is 2.3283064e-10, max is 22.18071 */
 extern double nrnran123_normal(nrnran123_State*); /* mean 0.0, std 1.0 */
 
 /* more fundamental (stateless) (though the global index is still used) */
