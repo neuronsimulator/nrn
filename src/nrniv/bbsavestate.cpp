@@ -1202,7 +1202,7 @@ static double binq_time(double tt) {
 static void bbss_early(double td, TQItem* tq) {
     int type = ((DiscreteEvent*) tq->data_)->type();
     //	printf("bbss_early td=%g tq->t=%g t=%g bqt=%g type=%d\n", td, tq->t_, t, binq_time(td),
-    // type);
+    //type);
     // if NetCon, discard. If PreSyn, fanout.
     if (type == NetConType) {
         return;

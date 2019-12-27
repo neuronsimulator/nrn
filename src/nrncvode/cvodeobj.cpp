@@ -1312,7 +1312,7 @@ int Cvode::interpolate(double tout) {
             }
         }
         //		printf("no interpolation for event in the initialization interval t=%15g t_=%15g\n",
-        // nrn_threads->t, t_);
+        //nrn_threads->t, t_);
         return SUCCESS;
     }
     if (MyMath::eq(tout, t_, NetCvode::eps(t_))) {
@@ -1436,7 +1436,7 @@ int Cvode::cvode_interpolate(double tout) {
     }
     (*pf_)(t_, y_, nil, (void*) this);
     //	printf("t_=%g h=%g q=%d y=%g\n", t_, ((CVodeMem)mem_)->cv_h, ((CVodeMem)mem_)->cv_q,
-    // N_VIth(y_,0));
+    //N_VIth(y_,0));
     return SUCCESS;
 }
 

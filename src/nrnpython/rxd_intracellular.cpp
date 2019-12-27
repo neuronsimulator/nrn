@@ -253,8 +253,8 @@ void run_threaded_deltas(ICS_Grid_node* g, ICSAdiDirection* ics_adi_dir) {
         g->ics_tasks[i].line_stop = ics_adi_dir->line_start_stop_indices[(2 * i) + 1];
         g->ics_tasks[i].ordered_start =
             ics_adi_dir->ordered_start_stop_indices[(2 * i)];  // Change what I'm storing in
-                                                               // ordered_start_stop_indices so
-                                                               // index is just i
+                                                               // ordered_start_stop_indices so index
+                                                               // is just i
         g->ics_tasks[i].ics_adi_dir = ics_adi_dir;
     }
     /* launch threads */
@@ -529,8 +529,8 @@ void run_threaded_ics_dg_adi(ICS_Grid_node* g, ICSAdiDirection* ics_adi_dir) {
         g->ics_tasks[i].line_stop = ics_adi_dir->line_start_stop_indices[(2 * i) + 1];
         g->ics_tasks[i].ordered_start =
             ics_adi_dir->ordered_start_stop_indices[(2 * i)];  // Change what I'm storing in
-                                                               // ordered_start_stop_indices so
-                                                               // index is just i
+                                                               // ordered_start_stop_indices so index
+                                                               // is just i
         g->ics_tasks[i].ics_adi_dir = ics_adi_dir;
     }
     /* launch threads */

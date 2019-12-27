@@ -435,7 +435,7 @@ class KSChan {
     int gmaxoffset_;  // gmax is here in the p array, normally 0 but if
                       // there is an Nsingle then it is 1.
     int ppoff_;       // 2 or 3 for point process since area and Point_process* are
-                      // first two elements and there may be a KSSingleNodeData*
+                 // first two elements and there may be a KSSingleNodeData*
     // for hh rate tables
     double vmin_, vmax_, dvinv_, dtsav_;
     int hh_tab_size_;

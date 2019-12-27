@@ -42,6 +42,10 @@ void iv_display_scale(float);
 #include "nrnmpi.h"
 #include "nrnrt.h"
 
+#if defined(IVX11_DYNAM)
+#include <IV-X11/ivx11_dynam.h>
+#endif
+
 #if defined(carbon)
 #undef MAC
 #endif
@@ -464,6 +468,11 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
 
     nrnmpi_numprocs = nrn_optargint("-bbs_nhost", &argc, argv, nrnmpi_numprocs);
     hoc_usegui = 1;
+#if defined(IVX11_DYNAM)
+    if (ivx11_dyload()) {
+        hoc_usegui = 0;
+    }
+#endif
     if (nrn_optarg_on("-nogui", &argc, argv)) {
         hoc_usegui = 0;
         hoc_print_first_instance = 0;

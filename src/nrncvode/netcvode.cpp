@@ -2534,7 +2534,7 @@ void _nrn_watch_activate(Datum* d,
                          int r,
                          double flag) {
     //	printf("_nrn_cond_activate %s flag=%g first return = %g\n", hoc_object_name(pnt->ob), flag,
-    // c(pnt));
+    //c(pnt));
     if (!d->_pvoid) {
         d->_pvoid = (void*) new WatchList();
     }
@@ -4211,17 +4211,16 @@ void NetCvode::fornetcon_prepare() {
             }
         } else {
             FOR_THREADS(nt)
-            for (tml = nt->tml; tml; tml = tml->next)
-                if (tml->index == nrn_fornetcon_type_[i]) {
-                    Memb_list* m = tml->ml;
-                    for (j = 0; j < m->nodecount; ++j) {
-                        ForNetConsInfo* fnc = (ForNetConsInfo*) m->pdata[j][index]._pvoid;
-                        if (fnc->size > 0) {
-                            fnc->argslist = new double*[fnc->size];
-                            fnc->size = 0;
-                        }
+            for (tml = nt->tml; tml; tml = tml->next) if (tml->index == nrn_fornetcon_type_[i]) {
+                Memb_list* m = tml->ml;
+                for (j = 0; j < m->nodecount; ++j) {
+                    ForNetConsInfo* fnc = (ForNetConsInfo*) m->pdata[j][index]._pvoid;
+                    if (fnc->size > 0) {
+                        fnc->argslist = new double*[fnc->size];
+                        fnc->size = 0;
                     }
                 }
+            }
         }
     }
     // fill in argslist and count again
@@ -6063,7 +6062,7 @@ void nrnthread_get_trajectory_requests(int tid,
 }
 
 void nrnthread_trajectory_values(int tid, int n_pr, void** vpr, double tt) {  //, int n_trajec,
-                                                                              // double* values) {
+                                                                              //double* values) {
     if (tid < 0) {
         net_cvode_instance->record_init();
         return;

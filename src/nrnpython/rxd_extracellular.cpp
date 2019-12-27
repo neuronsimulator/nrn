@@ -410,9 +410,9 @@ void* ecs_do_reactions(void* dataptr) {
                             }
                             for (j = 0; j < react->num_species_involved; j++) {
                                 // I think this should be something like
-                                // react->species_states[j][mc3d_indices[i]] += v_get_val(x,j);
-                                // Since the grid has a uniform discretization, the mc3d_indices
-                                // should be the same length. So just need to access the correct
+                                // react->species_states[j][mc3d_indices[i]] += v_get_val(x,j); Since
+                                // the grid has a uniform discretization, the mc3d_indices should be
+                                // the same length. So just need to access the correct
                                 // mc3d_indices[i] maybe do two lines?: index =
                                 // react->species_indices[j][i] react->species_states[j][index] +=
                                 // v_get_val(x,j);
@@ -541,9 +541,9 @@ void* ecs_do_reactions(void* dataptr) {
                             }
                             for (j = 0; j < react->num_species_involved; j++) {
                                 // I think this should be something like
-                                // react->species_states[j][mc3d_indices[i]] += v_get_val(x,j);
-                                // Since the grid has a uniform discretization, the mc3d_indices
-                                // should be the same length. So just need to access the correct
+                                // react->species_states[j][mc3d_indices[i]] += v_get_val(x,j); Since
+                                // the grid has a uniform discretization, the mc3d_indices should be
+                                // the same length. So just need to access the correct
                                 // mc3d_indices[i] maybe do two lines?: index =
                                 // react->species_indices[j][i] react->species_states[j][index] +=
                                 // v_get_val(x,j);

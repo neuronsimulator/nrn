@@ -1674,8 +1674,8 @@ void ShapeSection::fast_draw(Canvas* c, Coord x, Coord y, bool b) const {
                 }
             }
             assert(Math::equal(xend, sec_->pt3d[sec_->npt3d - 1].arc, 1e-6));
-#endif  // FASTIDIOUS
-        ///////////////////////////////////////
+#endif      // FASTIDIOUS
+            ///////////////////////////////////////
         } else {
             for (int iseg = 0; iseg < sec->nnode - 1; ++iseg) {
                 if (colorseg_) {

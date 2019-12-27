@@ -519,7 +519,7 @@ static int in_place_data_realloc() {
                 }
                 // unless we missed something that holds a prop pointer.
                 //			printf("%d extra %s, looked at %d, found %d\n", extra,
-                // memb_func[i].sym->name, looked_at, found);
+                //memb_func[i].sym->name, looked_at, found);
                 assert(extra == found);
             }
 

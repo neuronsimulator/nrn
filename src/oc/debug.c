@@ -55,24 +55,22 @@ void debugzz(Inst* p) /* running copy of calls to execute */
                                                                                 "ARGREFASSIGN\n") prcod(hoc_argref,
                                                                                                         "ARGREF\n") prcod(hoc_stringarg,
                                                                                                                           "STRINGARG\n")
-                                                                                prcod(
-                                                                                    hoc_push_string,
-                                                                                    "push_"
-                                                                                    "string\n") prcod(Break,
-                                                                                                      "Break\n")
+                                                                                prcod(hoc_push_string,
+                                                                                      "push_"
+                                                                                      "string\n") prcod(Break,
+                                                                                                        "Break\n")
                                                                                     prcod(
                                                                                         Continue,
                                                                                         "Continue"
                                                                                         "\n") prcod(Stop,
-                                                                                                    "Stop()\n")
+                                                                                                    "Stop()\n") prcod(assstr,
+                                                                                                                      "assstr\n")
                                                                                         prcod(
-                                                                                            assstr,
-                                                                                            "assstr"
-                                                                                            "\n") prcod(hoc_evalpointer,
-                                                                                                        "evalpo"
-                                                                                                        "inter"
-                                                                                                        "\n") prcod(hoc_newline,
-                                                                                                                    "newline\n")
+                                                                                            hoc_evalpointer,
+                                                                                            "evalpo"
+                                                                                            "inter"
+                                                                                            "\n") prcod(hoc_newline,
+                                                                                                        "newline\n")
                                                                                             prcod(
                                                                                                 hoc_delete_symbol,
                                                                                                 "de"
@@ -86,31 +84,26 @@ void debugzz(Inst* p) /* running copy of calls to execute */
                                                                                                             "cyclic\n")
                                                                                                 prcod(
                                                                                                     hoc_parallel_begin,
-                                                                                                    "pa"
-                                                                                                    "ra"
-                                                                                                    "ll"
-                                                                                                    "el"
-                                                                                                    "_b"
-                                                                                                    "eg"
-                                                                                                    "in"
-                                                                                                    "\n") prcod(hoc_parallel_end,
-                                                                                                                "parallel_end\n")
-
+                                                                                                    "parallel_begin\n")
                                                                                                     prcod(
-                                                                                                        dep_make,
-                                                                                                        "DEPENDENT\n")
+                                                                                                        hoc_parallel_end,
+                                                                                                        "parallel_end\n")
+
                                                                                                         prcod(
-                                                                                                            eqn_name,
-                                                                                                            "EQUATION\n")
+                                                                                                            dep_make,
+                                                                                                            "DEPENDENT\n")
                                                                                                             prcod(
-                                                                                                                eqn_init,
-                                                                                                                "eqn_init()\n")
+                                                                                                                eqn_name,
+                                                                                                                "EQUATION\n")
                                                                                                                 prcod(
-                                                                                                                    eqn_lhs,
-                                                                                                                    "eqn_lhs()\n")
+                                                                                                                    eqn_init,
+                                                                                                                    "eqn_init()\n")
                                                                                                                     prcod(
-                                                                                                                        eqn_rhs,
-                                                                                                                        "eqn_rhs()\n")
+                                                                                                                        eqn_lhs,
+                                                                                                                        "eqn_lhs()\n")
+                                                                                                                        prcod(
+                                                                                                                            eqn_rhs,
+                                                                                                                            "eqn_rhs()\n")
             /*OOP*/
             prcod(hoc_push_current_object, "hoc_push_current_object\n")
                 prcod(hoc_objectvar, "objectvar\n") prcod(hoc_object_component,

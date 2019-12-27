@@ -679,8 +679,8 @@ void Scene::draw(Canvas* canvas, const Allocation& a) const {
                     info.glyph_->draw(canvas, a);
                 }
                 // printf("%d alloc %g %g %g %g\n", index, a.left(), a.bottom(), a.right(),
-                // a.top()); printf("%d exten %g %g %g %g\n", index, b.left(), b.bottom(),
-                // b.right(), b.top());
+                // a.top()); printf("%d exten %g %g %g %g\n", index, b.left(), b.bottom(), b.right(),
+                // b.top());
             }
         }
         ((Scene*) this)->drawing_fixed_item_ = false;
