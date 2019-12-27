@@ -14,6 +14,7 @@
 
 #include <nrnmpi.h>
 #include <mpispike.h>
+#include "nrnmpi_impl.h"
 
 
 #if NRNMPI_DYNAMICLOAD
@@ -60,7 +61,7 @@ void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
 	static int called = 0;
 	if (nrnmpi_under_nrncontrol == 2) {
 		int flag;
-		MPI_Initialized(&flag);
+		guard(MPI_Initialized(&flag));
 		if (flag) { return; }
 		called = 0;
 	}
@@ -112,7 +113,7 @@ for (i=0; i < *pargc; ++i) {
 			return;
 		}
 #endif
-		MPI_Initialized(&flag);
+		guard(MPI_Initialized(&flag));
 		
 		if (!flag) {
 #if (USE_PTHREAD)
@@ -210,9 +211,9 @@ void nrnmpi_terminate() {
 void nrnmpi_abort(int errcode) {
 #if NRNMPI
 	int flag;
-	MPI_Initialized(&flag);
+	guard(MPI_Initialized(&flag));
 	if (flag) {
-		MPI_Abort(MPI_COMM_WORLD, errcode);
+		guard(MPI_Abort(MPI_COMM_WORLD, errcode));
 	}else{
 		abort();
 	}
