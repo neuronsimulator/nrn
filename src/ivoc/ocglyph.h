@@ -16,7 +16,7 @@ public:
 	OcGlyph(Glyph* body=NULL);
 	virtual ~OcGlyph();
 
-	virtual void save(ostream&);
+	virtual void save(std::ostream&);
 	virtual bool has_window();
 	virtual PrintableWindow* window();
 	virtual void window(PrintableWindow*);

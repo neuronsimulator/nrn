@@ -4,9 +4,9 @@
  * @author Michael Hines, Robert McDougal
  *
  * @remark Subclasses of NrnDAE can work with equations of the form
- *         $C \frac{dy}{dt} = f(y)$. LinearModelAddition, defined in linmod.h
- *         and linmod.cpp is an example that supports linear dynamics of the
- *         form $C \frac{dy}{dt} = A y + b$.
+ * \f[$C \frac{dy}{dt} = f(y)$\f]. LinearModelAddition, defined in linmod.h
+ * and linmod.cpp is an example that supports linear dynamics of the
+ * form \f[$C \frac{dy}{dt} = A y + b$\f].
  */
 
 #ifndef nrndae_h
@@ -41,17 +41,17 @@ public:
 	void alloc(int start_index);
 	
 	/**
-	 * Compute the left side portion of $(C - J) \frac{dy}{dt} = f(y)$.
+	 * Compute the left side portion of \f[$(C - J) \frac{dy}{dt} = f(y)$\f].
 	 */
 	void lhs();
 	
     /**
-	 * Compute the right side portion of $(C - J) \frac{dy}{dt} = f(y)$.
+	 * Compute the right side portion of \f[$(C - J) \frac{dy}{dt} = f(y)$\f].
 	 */
 	void rhs();
 	
 	/**
-	 * Compute the residual: $f(y) - C \frac{dy}{dt}$
+	 * Compute the residual: \f[$f(y) - C \frac{dy}{dt}$\f]
 	 *
 	 * @param y             array of state variables
 	 * @param yprime        array of derivatives of state variables
@@ -93,7 +93,7 @@ protected:
     /**
      * Constructor.
      *
-     * @param cmat          the matrix $C$ in $Cy'=f(y)$.
+     * @param cmat          the matrix \f[$C$\f] in \f[$Cy'=f(y)$\f].
      * @param yvec          vector to store the state variables in
      * @param y0            initial conditions
      * @param nnode         number of voltage equations to modify
@@ -102,7 +102,7 @@ protected:
      * @param f_init        function to call during an finitialize
      * @param data          data to pass to f_init
      *
-     * @remark If cmat is NULL, then assumes $C$ is the identity matrix.
+     * @remark If cmat is NULL, then assumes \f[$C$\f] is the identity matrix.
      * @remark If f_init is non-NULL, that takes priority. Otherwise, if
      *         y0 is non-NULL, then initializes to those values. Otherwise
      *         initializes by setting all states to 0.
@@ -152,10 +152,10 @@ private:
 	virtual void alloc_(int size, int start, int nnode, Node** nodes,
 	                    int* elayer);
 	
-	/// the matrix $C$ in $C y' = f(y)$
+	/// the matrix \f[$C$ in $C y' = f(y)$\f]
 	MatrixMap* c_;
 
-    /// identity matrix if constructed with $C$ NULL; else NULL.	
+    /// identity matrix if constructed with \f[$C$\f] NULL; else NULL.	
     Matrix* assumed_identity_;
 
     /// vector of initial conditions

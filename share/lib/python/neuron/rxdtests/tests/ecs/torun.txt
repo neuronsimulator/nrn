@@ -3,3 +3,5 @@ ecs_example.py
 ecs_multi_example_cvode.py
 ecs_multi_example.py
 ecs_before_sections.py
+ecs_include_flux.py
+ecs_include_flux_cvode.py

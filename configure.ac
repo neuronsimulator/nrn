@@ -10,7 +10,7 @@ dnl distribution file names, banner, nrniv --version, and
 dnl nrnversion(5). If the PACKAGE_VERSION changes then also do a
 dnl git tag -a major.minor.micro consistent with that.
 
-AC_INIT([nrn],[7.7])
+AC_INIT([nrn],[7.8])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR(src/memacs/main.c)
 AM_INIT_AUTOMAKE([foreign])
@@ -347,6 +347,7 @@ else
 fi
 AM_CONDITIONAL(NRNMECH_DLL_STYLE, test x${linux_nrnmech} = xyes)
 AM_CONDITIONAL(MAC_DARWIN, test x${macdarwin} = xyes)
+AM_CONDITIONAL(USING_CMAKE, false)
 
 if test x${addlibdl} = xyes ; then
 	LIBS="$LIBS -ldl"
@@ -575,9 +576,9 @@ fi
 echo "NRNOC_X11 = $NRNOC_X11"
 AC_DEFINE_UNQUOTED(NRNOC_X11,$NRNOC_X11, if nrnoc can use X11)
 
-dnl Use legacy values for FARADAY and R, or 2017 NIST values?
+dnl Use legacy values for FARADAY and R, or 2019 NIST values?
 AC_ARG_ENABLE([LegacyFR],
-	AC_HELP_STRING([--enable-LegacyFR], [Use legacy instead of NIST (as of 2017) values for FARADAY and gas constant R. (default is legacy enabled)]),[
+	AC_HELP_STRING([--enable-LegacyFR], [Use legacy instead of NIST (as of 2019) values for FARADAY and gas constant R. (default is legacy enabled)]),[
 	if test "$enable_LegacyFR" != "yes" ; then
 		enable_LegacyFR="no"
 	fi
@@ -587,14 +588,20 @@ AC_ARG_ENABLE([LegacyFR],
 if test "$enable_LegacyFR" = "yes" ; then
 	LegacyY=""
 	LegacyN="/"
+	LegacyNPy="#"
+	LegacyYPy=""
 	LegacyFR=1
-	AC_DEFINE_UNQUOTED(LegacyFR,1,[1 for legacy, undef for NIST (as of 2017), for FARADAY and R])
+	AC_DEFINE_UNQUOTED(LegacyFR,1,[1 for legacy, undef for NIST (as of 2019), for FARADAY and R])
 else
 	LegacyY="/"
 	LegacyN=""
+	LegacyNPy=""
+	LegacyYPy="#"
 fi
 AC_SUBST(LegacyY)
 AC_SUBST(LegacyN)
+AC_SUBST(LegacyYPy)
+AC_SUBST(LegacyNPy)
 
 dnl This list specifies what files configure actually makes.
 AC_CONFIG_FILES([
@@ -632,7 +639,6 @@ AC_CONFIG_HEADERS([src/oc/nrnpthread.h])
 AC_CONFIG_HEADERS([src/parallel/bbsconf.h])
 AC_CONFIG_HEADERS([src/nrnjava/njconf.h])
 AC_CONFIG_HEADERS([src/nrncvode/nrnneosm.h])
-AC_CONFIG_HEADERS([src/ivos/ivstream.h])
 AC_CONFIG_HEADERS([src/sundials/sundials_config.h])
 
 AC_CONFIG_FILES([
@@ -680,7 +686,8 @@ AC_CONFIG_FILES([
 	share/demo/sync/Makefile
 	share/lib/python/neuron/Makefile
 	share/lib/python/neuron/rxd/Makefile
-    share/lib/python/neuron/crxd/Makefile
+	share/lib/python/neuron/crxd/Makefile
+	share/lib/python/neuron/rxd/constants.py
 	])
 fi
 

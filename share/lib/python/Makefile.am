@@ -42,6 +42,7 @@ neuron/tests/_subclass.py \
 neuron/rxd/region.py \
 neuron/rxd/species.py \
 neuron/rxd/rxd.py \
+neuron/rxd/constants.py \
 neuron/rxd/reaction.py \
 neuron/rxd/rxdsection.py \
 neuron/rxd/rxdmath.py \

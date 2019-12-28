@@ -4,7 +4,7 @@ from .rxdException import RxDException
 #if 'neuron.rxd' in sys.modules:
 #    raise RxDException('NEURON CRxD module cannot be used with NEURON RxD module.')
 
-from . import rxd
+from . import rxd, constants
 from .species import Species, Parameter, State
 from .region import Region, Extracellular
 from .rate import Rate

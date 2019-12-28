@@ -176,6 +176,8 @@ int nrnmpi_spike_exchange_compressed() {
 		np = nrnmpi_numprocs;
 		displs = (int*)hoc_Emalloc(np*sizeof(int)); hoc_malchk();
 		displs[0] = 0;
+	}
+	if (!byteovfl) {
 		byteovfl = (int*)hoc_Emalloc(np*sizeof(int)); hoc_malchk();
 	}
 	nrnbbs_context_wait();

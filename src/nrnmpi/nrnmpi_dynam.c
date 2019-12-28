@@ -103,6 +103,14 @@ sprintf(pmes+strlen(pmes), "Is openmpi installed? If not in default location, ne
 	sprintf(pmes, "Try loading openmpi\n");
 	void* handle = load_mpi("libmpi.so", pmes+strlen(pmes));
 	if (handle) {
+#if defined(NRNCMAKE)
+/* with CMAKE the problem of Python launch on LINUX not resolving
+   variables from already loaded shared libraries has returned.
+*/
+if (!dlopen("libnrniv.so", RTLD_NOW | RTLD_NOLOAD | RTLD_GLOBAL)) {
+	fprintf(stderr, "Did not promote libnrniv.so to RTLD_GLOBAL: %s\n", dlerror());
+}
+#endif
 		if (!load_nrnmpi(NRN_LIBDIR"/libnrnmpi.so", pmes+strlen(pmes))){
 			return pmes;
 		}

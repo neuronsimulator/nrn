@@ -1,1 +1,1 @@
-#define NEURON_BIN_DIR "@prefix@/@host_cpu@/bin"
+#define NEURON_BIN_DIR "@exec_prefix@/bin"

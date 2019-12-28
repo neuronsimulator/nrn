@@ -96,6 +96,7 @@ class Rate(GeneralizedReaction):
                 ecs_region = self._species()._extracellular()
             elif isinstance(self._species(),species._ExtracellularSpecies):
                 ecs_region = self._species()._region
+
         #Is the species passed to the constructor defined on the ECS
         if not ecs_region:
             if isinstance(self._species(),species.SpeciesOnRegion):
@@ -108,6 +109,10 @@ class Rate(GeneralizedReaction):
 
         if hasattr(self,'_ecs_regions'):
             self._rate_ecs, self._involved_species_ecs = rxdmath._compile(rate, self._ecs_regions)
+            for sp in self._involved_species_ecs:
+                if ecs_region and isinstance(sp(), species.SpeciesOnRegion):
+                    raise RxDException('Error Rate %r: an extracellular rate can not depend on a SpeciesOnRegion' % self._original_rate)
+
 
     
     def __repr__(self):
@@ -167,23 +172,28 @@ class Rate(GeneralizedReaction):
                 for sptr in self._involved_species:
                     self._indices_dict[sptr()] = []
                 return
-            active_secs = list(set.union(*[set(reg.secs) for reg in actr if hasattr(reg,'secs')]))
+            active_1d_secs = list(set.intersection(*[set(reg._secs1d) for reg in actr if hasattr(reg,'_secs1d')]))
+            active_3d_secs = list(set.intersection(*[set(reg._secs3d) for reg in actr if hasattr(reg,'_secs3d')]))
             active_regions = actr
             #if there are multiple regions on a segment for an involved species the rate is ambiguous
             for sptr in self._involved_species:
                 s = sptr()
-                indices = [list(s.indices(secs={sec})) for sec in active_secs]
-                if not all(rcount == sec.nseg or rcount == 0 for rcount, sec in zip([len(ind) for ind in indices],active_secs)):
+                indices = [list(s.indices(secs={sec})) for sec in active_1d_secs]
+                if not all(rcount == sec.nseg or rcount == 0 for rcount, sec in zip([len(ind) for ind in indices],active_1d_secs)):
                     raise RxDException("Error in rate %r, the species do not share a common region" % self)
                 #remove sections where species is absent 
-                active_secs = {sec for sec, ind in zip(active_secs,indices) if len(ind) == sec.nseg}
-            #Repeated with the trimmed active_secs and store the indices
-            if active_secs:
+                active_1d_secs = {sec for sec, ind in zip(active_1d_secs,indices) if len(ind) == sec.nseg}
+            #Repeated with the trimmed active_1d_secs and store the indices
+            if active_1d_secs:
                 for sptr in self._involved_species:
                     s = sptr()
-                    indices = [list(s.indices(secs={sec})) for sec in active_secs]
+                    indices = [list(s.indices(secs={sec})) for sec in active_1d_secs]
                     self._indices_dict[s] = list(_itertools_chain.from_iterable(indices))
-                    self._indices = [self._species().indices(actr, active_secs)]
+                    self._indices = [self._species().indices(actr, active_1d_secs)]
+            elif active_3d_secs:
+                pass
+                #Account for hybrid stuff as well
+                #print("we have an active 3d sec")
             else:
                 raise RxDException("Error in rate %r, the species do not share a common section" % self)
         else:

@@ -279,6 +279,12 @@ class Extracellular:
 
     def _short_repr(self):
         return 'Extracellular'
+
+    def volume(self, index):
+        """Returns the volume of the voxel at a given index"""
+        if numpy.isscalar(self.alpha):
+            return numpy.prod(self._dx) * self.alpha
+        return numpy.prod(self._dx) * self.alpha[index]
                 
 class Region(object):
     """Declare a conceptual region of the neuron.
@@ -360,15 +366,13 @@ class Region(object):
 
             internal_voxels, surface_voxels, mesh_grid = self._geometry.volumes3d(self._secs3d, dx=dx)
 
-            #self._sa = numpy.array([val[1] for val in surface_voxels.values()] + [0 for val in internal_voxels.values()])
             self._sa = numpy.zeros(len(surface_voxels) + len(internal_voxels))
-            #TODO: When merging in fractional volume branch, change self._vol to also be sorted based on points. See self._sa for reference
-            #self._vol = numpy.array([val[0] for val in surface_voxels.values()] + [val[0] for val in internal_voxels.values()])
-            self._vol = dx ** 3 * numpy.ones(len(surface_voxels) + len(internal_voxels))
+            self._vol = numpy.ones(len(surface_voxels) + len(internal_voxels))
             self._mesh_grid = mesh_grid
-
             self._points = [key for key in surface_voxels.keys()] + [key for key in internal_voxels.keys()]
-            self._points = sorted(self._points, key=lambda pt: pt[0])
+
+            self._points = sorted(self._points)
+
             nodes_by_seg = {}
             surface_nodes_by_seg = {}
             # creates tuples of x, y, and z coordinates where a point is (xs[i], ys[i], zs[i])
@@ -377,7 +381,9 @@ class Region(object):
 
             for i, p in enumerate(self._points):
                 if p in surface_voxels:
-                    seg = surface_voxels[p][2]
+                    vx = surface_voxels[p]
+                    self._vol[i], self._sa[i], seg = vx[0], vx[1], vx[2]
+
                     segs.append(seg)
 
                     surface_nodes_by_seg.setdefault(seg, [])
@@ -388,7 +394,8 @@ class Region(object):
                     self._sa[i] = surface_voxels[p][1]
 
                 else:
-                    seg = internal_voxels[p][1]
+                    vx = internal_voxels[p]
+                    self._vol[i], seg = vx[0], vx[1]
                     segs.append(seg)
 
                     nodes_by_seg.setdefault(seg, [])
@@ -427,27 +434,33 @@ class Region(object):
             nz = z - sec.z3d(n - 2)
         else:
             raise RxDException('should never get here')
+        #dn = (nx**2 + ny**2 + nz**2)**0.5
+        #nx, ny, nz = nx/dn, ny/dn, nz/dn
         # x, y, z = x * x1 + (1 - x) * x0, x * y1 + (1 - x) * y0, x * z1 + (1 - x) * z1
-        r = sec(position).diam * 0.5
+        r = sec(position).diam * 0.5 + self.dx
         plane_of_disc = geometry3d.graphicsPrimitives.Plane(x, y, z, nx, ny, nz)
         potential_coordinates = []
 
-        xs = numpy.arange(self._mesh_grid['xlo'], self._mesh_grid['xhi'] + self._mesh_grid['dx'], self._mesh_grid['dx'])
-        ys = numpy.arange(self._mesh_grid['ylo'], self._mesh_grid['yhi'] + self._mesh_grid['dy'], self._mesh_grid['dy'])
-        zs = numpy.arange(self._mesh_grid['zlo'], self._mesh_grid['zhi'] + self._mesh_grid['dz'], self._mesh_grid['dz'])
-        xlo = self._mesh_grid['xlo']
-        ylo = self._mesh_grid['ylo']
-        zlo = self._mesh_grid['zlo']
-
+        xs = numpy.arange(self._mesh_grid['xlo'] - self._mesh_grid['dx'],
+                          self._mesh_grid['xhi'] + self._mesh_grid['dx'],
+                          self._mesh_grid['dx'])
+        ys = numpy.arange(self._mesh_grid['ylo'] - self._mesh_grid['dy'],
+                          self._mesh_grid['yhi'] + self._mesh_grid['dy'],
+                          self._mesh_grid['dy'])
+        zs = numpy.arange(self._mesh_grid['zlo'] - self._mesh_grid['dz'],
+                          self._mesh_grid['zhi'] + self._mesh_grid['dz'],
+                          self._mesh_grid['dz'])
+        xlo = self._mesh_grid['xlo'] - self._mesh_grid['dx']
+        ylo = self._mesh_grid['ylo'] - self._mesh_grid['dy']
+        zlo = self._mesh_grid['zlo'] - self._mesh_grid['dz']
         # locate the indices of the cube containing the sphere containing the disc
         # TODO: write this more efficiently
-        i_indices = [i for i, a in enumerate(xs) if abs(a - x) < r]
-        j_indices = [i for i, a in enumerate(ys) if abs(a - y) < r]
-        k_indices = [i for i, a in enumerate(zs) if abs(a - z) < r]
+        i_indices = [i for i, a in enumerate(xs) if abs(a - x) <= r]
+        j_indices = [i for i, a in enumerate(ys) if abs(a - y) <= r]
+        k_indices = [i for i, a in enumerate(zs) if abs(a - z) <= r]
         sphere_indices = [(i, j, k)
                           for i, j, k in itertools.product(i_indices, j_indices, k_indices)
-                          if (xs[i] - x) ** 2 + (ys[j] - y) ** 2 + (zs[k] - z) ** 2 < r ** 2]
-        dx2 = self.dx * 0.5
+                          if (xs[i] - x) ** 2 + (ys[j] - y) ** 2 + (zs[k] - z) ** 2 <= r ** 2]
         dx = self.dx
         disc_indices = []
         for i, j, k in sphere_indices:
@@ -455,11 +468,17 @@ class Region(object):
             # TODO: no need to compute all; can stop when some True and some False
 #            on_side1 = [plane_of_disc.distance(x, y, z) >= 0 for x, y, z in itertools.product([a - dx2, a + dx2], [b - dx2, b + dx2], [c - dx2, c + dx2])]
             # NOTE: the expression is structured this way to make sure it tests the exact same corner coordinates for corners shared by multiple voxels and that there are no round-off issues (an earlier attempt had round-off issues that resulted in double-thick discs when the frustum ended exactly on a grid plane)
-            on_side1 = [plane_of_disc.distance(x, y, z) >= 0 for x, y, z in itertools.product([(xlo + (i - 1) * dx) + dx2, (xlo + i * dx) + dx2], [(ylo + (j - 1) * dx) + dx2, (ylo + j * dx) + dx2], [(zlo + (k - 1) * dx) + dx2, (zlo + k * dx) + dx2])]
+            on_side1 = [plane_of_disc.distance(x, y, z) > 0 for x, y, z in
+                       itertools.product([xlo + (i - 0.5) * dx,
+                                          xlo + (i + 0.5) * dx],
+                                         [ylo + (j - 0.5) * dx,
+                                          ylo + (j + 0.5) * dx],
+                                         [zlo + (k - 0.5) * dx,
+                                          zlo + (k + 0.5) * dx])]
             # need both sides to have at least one corner
             if any(on_side1) and not all(on_side1):
                 # if we're here, then we've found a point on the disc.
-                disc_indices.append((i, j, k))
+                disc_indices.append((i - 1, j - 1, k - 1))
         return disc_indices
         
         
@@ -576,4 +595,8 @@ class Region(object):
         if hasattr(self, '_allow_setting'):
             self._secs = value
         else:
-            raise RxDException('Cannot set secs now; model already instantiated')    
+            raise RxDException('Cannot set secs now; model already instantiated')
+    def volume(self, index):
+        """Returns the volume of the voxel at a given index"""
+        return self._vol[index]
+ 

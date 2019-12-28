@@ -136,30 +136,49 @@ class MultiCompartmentReaction(GeneralizedReaction):
             raise RxDException('unrecognized direction; should never happen')
 
         # check for 3D sections
-        src3d = set()
-        dst3d = set()
-        mem3d = set(self._regions[0]._secs3d)
+        self._src3d = set()
+        self._dst3d = set()
+        self._mem3d = set(self._regions[0]._secs3d)
         sources = [s()._region() for s in self._sources if not isinstance(s(),species.SpeciesOnExtracellular)]
         dests = [s()._region() for s in self._dests if not isinstance(s(),species.SpeciesOnExtracellular)]
         for reg in sources:
-            if reg._secs3d: src3d.add(*reg._secs3d)
+            if reg._secs3d: self._src3d.update(reg._secs3d)
         for reg in dests:
-            if reg._secs3d: dst3d.add(*reg._secs3d)
-        if src3d.intersection(dst3d).intersection(mem3d):
-            raise RxDException('Multicompartment reactions in 3D are not yet supported.')
+            if reg._secs3d: self._dst3d.update(reg._secs3d)
+        #if self._src3d.intersection(self._dst3d).intersection(self._mem3d):
+        #    #Find all interacting voxels for each grid. Also build up the 2D array of index maps
+        #    raise RxDException('Multicompartment reactions in 3D are not yet supported.')
+
+        # check there are common 1D section between source and destination
+        mem1d = set(self._regions[0]._secs1d)
+        src1d = set()
+        dst1d = set()
+        for reg in sources:
+            if reg._secs1d: src1d.update(reg._secs1d)
+        for reg in dests:
+            if reg._secs1d: dst1d.update(reg._secs1d)
+        if sources:
+            mem1d = mem1d.intersection(src1d)
+        if dests:
+            mem1d = mem1d.intersection(dst1d)
+        if (src1d or dst1d) and not mem1d:
+            msg = "sources and destinations" if sources and dests else "sources" if sources else "destinations"
+            raise RxDException("Multicompartment reactions the membrane and %s must share common sections. %r" % (msg, self))
+
 
         self._changing_species = list(set(self._sources + self._dests))
         
-        regs = []
-        for sptr in self._changing_species:
-            if isinstance(sptr(), species.Species):
-                raise RxDException('must specify region for all involved species')
-            elif hasattr(sptr(),'_extracellular'):
-                regs.append(sptr()._extracellular()._region)
-            else:
-                regs.append(sptr()._region())
+        
+        mem = self._regions[0]
+        regs = [mem]
+        #for sptr in self._changing_species:
+        #    if isinstance(sptr(), species.Species):
+        #        raise RxDException('must specify region for all involved species')
+        #    elif hasattr(sptr(),'_extracellular'):
+        #        regs.append(sptr()._extracellular()._region)
+        #    else:
+        #        regs.append(sptr()._region())
         self._rate, self._involved_species = rxdmath._compile(rate, regs)
-
 
     @property
     def f_rate(self):
