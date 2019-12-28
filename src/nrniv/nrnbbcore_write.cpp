@@ -101,6 +101,7 @@ correctness has not been validated for cells without gids.
 #include <parse.h>
 #include <nrnmpi.h>
 #include <netcon.h>
+#include <nrndae_c.h>
 #include <algorithm>
 #include <nrnhash_alt.h>
 #include <nrnbbcore_write.h>
@@ -202,15 +203,35 @@ static bool corenrn_direct;
 static size_t part1();
 static void part2(const char*);
 
+// prerequisites for a NEURON model to be transferred to CoreNEURON.
+static void model_ready() {
+  // Do the model type checks first as some of them prevent the success
+  // of cvode.cache_efficient(1) and the error message associated with
+  // !use_cachevec would be misleading. 
+  if (!nrndae_list_is_empty()) {
+    hoc_execerror("CoreNEURON cannot simulate a model that contains extra LinearMechanism or RxD equations", NULL);
+  }
+  if (nrn_threads[0]._ecell_memb_list) {
+    hoc_execerror("CoreNEURON cannot simulate a model that contains the extracellular mechanism", NULL);
+  }
+  if (corenrn_direct) {
+    if (cvode_active_) {
+      hoc_execerror("CoreNEURON can only use fixed step method.", NULL);
+    }
+  }
+
+  if (!use_cachevec) {
+    hoc_execerror("NEURON model for CoreNEURON requires cvode.cache_efficient(1)", NULL);
+  }
+  if (tree_changed || v_structure_change || diam_changed) {
+    hoc_execerror("NEURON model internal structures for CoreNEURON are out of date. Make sure call to finitialize(...) is after cvode.cache_efficient(1))", NULL);
+  }
+}
+
 // accessible from ParallelContext.total_bytes()
 size_t nrnbbcore_write() {
   corenrn_direct = false;
-  if (!use_cachevec) {
-    hoc_execerror("nrnbbcore_write requires cvode.cache_efficient(1)", NULL);
-  }
-  if (tree_changed || v_structure_change || diam_changed) {
-    hoc_execerror("nrnbbcore_write requires the model already be initialized (cf finitialize(...))", NULL);
-  }
+  model_ready();
   char fname[1024];
   std::string path(".");
   if (ifarg(1)) {
@@ -926,8 +947,8 @@ static void write_memb_mech_types_direct(std::ostream& s) {
   // and data, pdata instance sizes. If the mechanism is an eion type,
   // the following line is the charge.
   // Not all Memb_func are necessarily used in the model.
-  s << bbcore_write_version << endl;
-  s << n_memb_func << endl;
+  s << bbcore_write_version << std::endl;
+  s << n_memb_func << std::endl;
   for (int type=2; type < n_memb_func; ++type) {
     const char* w = " ";
     Memb_func& mf = memb_func[type];
@@ -935,10 +956,10 @@ static void write_memb_mech_types_direct(std::ostream& s) {
       << int(pnt_map[type]) << w // the pointtype, 0 means not a POINT_PROCESS
       << nrn_is_artificial_[type] << w
       << nrn_is_ion(type) << w
-      << nrn_prop_param_size_[type] << w << bbcore_dparam_size[type] << endl;
+      << nrn_prop_param_size_[type] << w << bbcore_dparam_size[type] << std::endl;
 
     if (nrn_is_ion(type)) {
-        s << nrn_ion_charge(mf.sym) << endl;
+        s << nrn_ion_charge(mf.sym) << std::endl;
     }
   }
 }
@@ -1857,7 +1878,7 @@ extern int nrn_use_fast_imem;
 
 /** check if file with given path exist */
 bool file_exist(const std::string& path) {
-  ifstream f(path.c_str());
+  std::ifstream f(path.c_str());
   return f.good();
 }
 
@@ -1868,6 +1889,9 @@ extern "C" {
 #if defined(HAVE_DLFCN_H)
 int nrncore_run(const char* arg) {
   corenrn_direct = true;
+
+  // check that model can be transferred.
+  model_ready();
 
   // name of coreneuron library based on platform
 #if defined(MINGW)

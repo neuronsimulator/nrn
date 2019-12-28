@@ -91,6 +91,53 @@ Development conventions:
 NEURON code is being built according to C/C++, Python best-practices. The easiest way to figure out what this is is to take a look at current code and copy the way things are
 formatted, indented, documented, and commented.
 
+### Code Formatting
+
+Currently we have enabled CMake code formatting using [cmake-format](https://github.com/cheshirekow/cmake_format). Before submitting PR, if you have changed any CMake build related code, make sure to run cmake-format as below:
+
+* Make sure to install cmake-format utility with Python version you are using:
+
+```
+pip3.7 install cmake-format==0.6.0 --user
+```
+Now you should have `cmake-format` command available.
+
+* Use `-DNEURON_CMAKE_FORMAT=ON` option of CMake to enable CMake code formatting targets:
+
+```
+cmake .. -DPYTHON_EXECUTABLE=`which python3.7` -DNEURON_CMAKE_FORMAT=ON
+```
+
+With this, new target called **cmake-format** can be used to automatically format all CMake files:
+
+```
+$ make cmake-format
+Scanning dependencies of target cmake-format
+Built target cmake-format
+```
+
+You can now use `git diff` to see how cmake-format has formatted existing CMake files.
+
+Note that if you want to exclude specific code section to be not formatted (e.g. comment blocks), you can use guards:
+
+```
+# ~~~
+# This comment is fenced
+#   and will not be formatted
+# ~~~
+```
+
+Or,
+
+```
+# cmake-format: off
+# This bunny should remain untouched:
+# . 　 ＿　∩
+# cmake-format: on
+```
+
+See [cmake-format](https://github.com/cheshirekow/cmake_format) documentation for details.
+
 ## Reporting a bug<a name="bug"></a>
 
 Have you tested on the current alpha version of NEURON? If not, please clone, compile, install and run with current version (this one).

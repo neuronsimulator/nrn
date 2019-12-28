@@ -1226,7 +1226,7 @@ static bool mycompar(const std::pair<int, int>& a, const std::pair<int, int>& b)
 }
 
 static void sidsort(int* sids, int cnt, int* indices) {
-  std:vector< pair< int, int> > si(cnt); // sids,indices
+  std::vector< std::pair< int, int> > si(cnt); // sids,indices
   for (int i=0; i < cnt; ++i) {
     si[i].first = sids[i];
     si[i].second = indices[i];

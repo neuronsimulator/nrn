@@ -13,7 +13,7 @@
 # ~~~
 
 # =============================================================================
-# Build modlunit : Mod file unitx checker
+# Build modlunit : Mod file units checker
 # =============================================================================
 flex_target(modlunitlexer ${NRN_MODLUNIT_SRC_DIR}/lex.l ${NRN_MODLUNIT_SRC_DIR}/lex.c)
 
@@ -169,9 +169,8 @@ if(NRN_ENABLE_MPI_DYNAMIC)
 endif()
 
 # =============================================================================
-# Various macro definitions for compiling differen files
+# Various macro definitions for compiling different files
 # =============================================================================
-# ~~~
 set_property(
   SOURCE ${NRN_OC_SRC_FILES}
   APPEND
@@ -229,7 +228,6 @@ if(NRN_ENABLE_MPI_DYNAMIC)
   set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/bbsmpipack.c PROPERTIES
                               OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
 endif()
-# ~~~
 
 # =============================================================================
 # All source directories to include
@@ -243,7 +241,7 @@ endif()
 # All source directories to include
 # =============================================================================
 add_library(nrniv_lib SHARED ${NRN_NRNIV_LIB_SRC_FILES})
-target_link_libraries(nrniv_lib ${X11_LIBRARIES} ${TERMCAP_LIBRARIES} readline)
+target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES} readline)
 set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
 
 # =============================================================================
@@ -273,6 +271,29 @@ if(NRN_ENABLE_INTERVIEWS)
   target_link_libraries(nrniv_lib interviews)
 else()
   include_directories(nrniv_lib ${NRN_IVOS_SRC_DIR} ${PROJECT_BINARY_DIR}/src/ivos)
+endif()
+
+if(IV_ENABLE_X11_DYNAMIC)
+  # by defining IVX11_DYNAM in ivocmain.cpp, the latter can call ivx11_dyload and if that fails, set
+  # hoc_usegui = 0 which avoids all InterViews calls.
+  set_property(
+    SOURCE ${PROJECT_SOURCE_DIR}/src/ivoc/ivocmain.cpp ${PROJECT_SOURCE_DIR}/src/pwman/xdep.cpp
+           ${PROJECT_SOURCE_DIR}/src/ivoc/xdep.cpp ${PROJECT_SOURCE_DIR}/src/oc/x.c
+    APPEND
+    PROPERTY COMPILE_DEFINITIONS IVX11_DYNAM)
+  if(NOT IV_ENABLE_SHARED)
+    # When IV_ENABLE_SHARED=ON, libivx11dynam is found in IV_LIB_DIR (the location of
+    # libinterviews). When OFF, libivx11dynam needs to be copied to the location of libnrniv.  The
+    # goal is that if libnrniv is loaded, the system can find libivx11dynam independent of
+    # CMAKE_INSTALL_PREFIX.
+    set(_suffix ${CMAKE_SHARED_LIBRARY_SUFFIX})
+    add_custom_command(
+      TARGET nrniv_lib POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy ${IV_LIB_DIR}/libivx11dynam${_suffix}
+              ${PROJECT_BINARY_DIR}/lib/libivx11dynam${_suffix})
+  endif()
+else()
+  target_link_libraries(nrniv_lib ${X11_LIBRARIES})
 endif()
 
 # =============================================================================
