@@ -7,7 +7,7 @@
 
 extern "C" {
 	int nrn_isdouble(double*, double, double);
-	int ivocmain(int, char**, char**);
+	int ivocmain(int, const char**, const char**);
 	extern int nrn_main_launch;
 #if NRNMPI_DYNAMICLOAD
 	extern void nrnmpi_stubs();
@@ -50,7 +50,7 @@ printf("argv[%d]=|%s|\n", i, argv[i]);
 	BGLCheckpointInit((char*)0);
 #endif
 	errno = 0;
-	return ivocmain(argc, argv, env);
+	return ivocmain(argc, (const char**)argv, (const char**)env);
 }
 
 #if USENCS
@@ -89,8 +89,8 @@ static void work_around() {
 	MPI_Recv(0,0,0,0,0,c,0);
 	MPI_Sendrecv(0,0,0,0,0,0,0,0,0,0,c,0);
 	MPI_Iprobe(0,0,c,0,0);
-	MPI_Address(0,0);
-	MPI_Type_struct(0,0,0,0,0);
+	MPI_Get_address(0,0);
+	MPI_Type_create_struct(0,0,0,0,0);
 	MPI_Type_commit(0);
 	MPI_Allgather(0,0,0,0,0,0,c);
 	MPI_Allgatherv(0,0,0,0,0,0,0,c);

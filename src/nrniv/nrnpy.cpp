@@ -24,11 +24,18 @@ void nrnpython();
 static void (*p_nrnpython_real)();
 static void (*p_nrnpython_reg_real)();
 char* hoc_back2forward(char* s);
+char* hoc_forward2back(char* s);
 }
 
 // following is undefined or else has the value of sys.api_version
 // at time of configure (using the python first in the PATH).
 #if defined(NRNPYTHON_DYNAMICLOAD)
+
+#if defined(NRNCMAKE)
+// CMAKE installs libnrnpythonx.so not in <prefix>/x86_64/lib but <prefix>/lib
+#undef NRNHOSTCPU
+#define NRNHOSTCPU "."
+#endif
 
 #ifdef MINGW
 #define RTLD_NOW 0
@@ -134,23 +141,35 @@ static void set_nrnpylib() {
     #ifdef MINGW
     linesz += 3*strlen(neuron_home);
     char* line = new char[linesz+1];
-    char* bfnrnhome = strdup(neuron_home);
-    hoc_back2forward(bfnrnhome);
+    char* bnrnhome = strdup(neuron_home);
+    char* fnrnhome = strdup(neuron_home);
+    hoc_forward2back(bnrnhome);
+    hoc_back2forward(fnrnhome);
     sprintf(line, "%s\\mingw\\usr\\bin\\bash %s/bin/nrnpyenv.sh %s --NEURON_HOME=%s",
-      neuron_home, 
-      bfnrnhome,
+      bnrnhome,
+      fnrnhome,
       (nrnpy_pyexe && strlen(nrnpy_pyexe) > 0) ? nrnpy_pyexe : "",
-      bfnrnhome);
-    free(bfnrnhome);
+      fnrnhome);
+    free(fnrnhome);
+    free(bnrnhome);
     #else
     char* line = new char[linesz+1];
-    sprintf(line, "bash nrnpyenv.sh %s",
+#if defined(NRNCMAKE)
+    sprintf(line, "bash %s/../../bin/nrnpyenv.sh %s",
+     neuron_home,
+#else
+    sprintf(line, "bash %s/../../%s/bin/nrnpyenv.sh %s",
+     neuron_home, NRNHOSTCPU,
+#endif
       (nrnpy_pyexe && strlen(nrnpy_pyexe) > 0) ? nrnpy_pyexe : "");
    #endif
     FILE* p = popen(line, "r");
     if (!p) {
       printf("could not popen '%s'\n", line);
     }else{
+      if (!fgets(line, linesz, p)) {
+        printf("failed: %s\n", line);
+      }
       while(fgets(line, linesz, p)) {
         char* cp;
         // must get rid of beginning '"' and trailing '"\n'
@@ -333,45 +352,87 @@ static void* load_nrnpython_helper(const char* npylib) {
 	char name[2048];
 #ifdef MINGW
 	sprintf(name, "%s.dll", npylib);
-#else
+#else // !MINGW
 #if DARWIN
+#if defined(NRNCMAKE)
+	sprintf(name, "%s/../../lib/%s.dylib", neuron_home, npylib);
+#else // !NRNCMAKE
 	sprintf(name, "%s/../../%s/lib/%s.dylib", neuron_home, NRNHOSTCPU, npylib);
-#else
+#endif // NRNCMAKE
+#else // !DARWIN
+#if defined(NRNCMAKE)
+	sprintf(name, "%s/../../lib/%s.so", neuron_home, npylib);
+#else // !NRNCMAKE
 	sprintf(name, "%s/../../%s/lib/%s.so", neuron_home, NRNHOSTCPU, npylib);
-#endif
-#endif
+#endif // NRNCMAKE
+#endif // DARWIN
+#endif // MINGW
 	void* handle = dlopen(name, RTLD_NOW);
 	return handle;
 }
 
+int digit_to_int(char ch) {
+  int d = ch - '0';
+  if ((unsigned) d < 10) {
+    return d;
+  }
+  d = ch - 'a';
+  if ((unsigned) d < 6) {
+    return d + 10;
+  }
+  d = ch - 'A';
+  if ((unsigned) d < 6) {
+    return d + 10;
+  }
+  return -1;
+}
+
+static int pylib2pyver10(const char* pylib) {
+  // check backwards for N.N or NN // obvious limitations
+  int n1 = -1; int n2 = -1;
+  for (const char* cp = pylib + strlen(pylib) -1 ; cp > pylib; --cp) {
+    if (isdigit(*cp)) {
+      if (n2 < 0) {
+        n2 = digit_to_int(*cp);
+      } else {
+        n1 = digit_to_int(*cp);
+        return n1*10 + n2;
+      }
+    }else if (*cp == '.') {
+      // skip
+    }else{ //
+      // start over
+      n2 = -1;
+    }
+  }
+  return 0;
+}
+
 static void load_nrnpython(int pyver10, const char* pylib) {
 	void* handle = NULL;
-#if defined(__MINGW32__)
+#if (defined(__MINGW32__) || (defined(USE_LIBNRNPYTHON_MAJORMINOR) && USE_LIBNRNPYTHON_MAJORMINOR == 1))
 	char name[256];
-	if (pyver10 > 1) {
-		sprintf(name, "libnrnpython%d", pyver10);
-	} else if (pylib && strstr(pylib, "ython") != NULL) {
-		char* cp = strstr(pylib, "ython") + 5;
-		sprintf(name, "libnrnpython%c%c", cp[0], cp[1]);
-	} else {
-		sprintf(name, "libnrnpython27");
+	int pv10 = pyver10;
+	if (pyver10 < 1 && pylib) {
+		pv10 = pylib2pyver10(pylib);
 	}
+	sprintf(name, "libnrnpython%d", pv10);
 	handle = load_nrnpython_helper(name);
 	if (!handle) {
-printf("Could not load %s\n", name);
-printf("pyver10=%d pylib=%s\n", pyver10, pylib ? pylib : "NULL");
-		return;
+        printf("Could not load %s\n", name);
+        printf("pyver10=%d pylib=%s\n", pyver10, pylib ? pylib : "NULL");
+        return;
 	}
 #else
-	handle = load_nrnpython_helper("libnrnpython3");
-	if (!handle) {
-		handle = load_nrnpython_helper("libnrnpython2");
-		if (!handle) {
-printf("Could not load either libnrnpython3 or libnrnpython2\n");
-printf("pyver10=%d pylib=%s\n", pyver10, pylib ? pylib : "NULL");
-			return;
-		}
-	}
+    handle = load_nrnpython_helper("libnrnpython3");
+    if (!handle) {
+        handle = load_nrnpython_helper("libnrnpython2");
+        if (!handle) {
+            printf("Could not load either libnrnpython3 or libnrnpython2\n");
+            printf("pyver10=%d pylib=%s\n", pyver10, pylib ? pylib : "NULL");
+            return;
+        }
+    }
 #endif
 	p_nrnpython_start = (void(*)(int))load_sym(handle, "nrnpython_start");
 	p_nrnpython_real = (void(*)())load_sym(handle, "nrnpython_real");

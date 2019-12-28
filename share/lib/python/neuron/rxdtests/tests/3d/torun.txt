@@ -1,3 +1,6 @@
 circadian_rhythm.py
 pure_diffusion_3d_cvode.py
 pure_diffusion_3d.py
+include_flux3d_cvode.py
+include_flux3d.py
+multicompartment_reactions.py

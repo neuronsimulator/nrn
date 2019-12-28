@@ -76,5 +76,9 @@ extern int nrn_dblpntr2nrncore(double*, NrnThread&, int& type, int& etype);
 }
 #endif
 
+// Mechanism type to be used from stdindex2ptr (in CoreNeuron) and nrn_dblpntr2nrncore.
+// Values of the mechanism types should be negative numbers to avoid any conflict with
+// mechanism types of Memb_list(>0) or time(0) passed to CoreNeuron
+enum mech_type {voltage = -1, i_membrane_ = -2};
 
 #endif

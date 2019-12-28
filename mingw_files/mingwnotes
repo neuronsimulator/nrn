@@ -1,13 +1,20 @@
 http://www.symscape.com/configure-msmpi-for-mingw-w64
 
 Installed msmpisdk.msi and MsMpiSetup.exe in c:\ms-mpi  (version 10.0)
+
+# version 10 Lib is already lib
 Change Bin, Lib, Include to bin, lib, include
+
 cp c:/Windows/System32/msmpi.dll c:/ms-mpi/lib/x64
 cp c:/Windows/SysWoW64/msmpi.dll c:/ms-mpi/lib/x86 #optional
+
+#stdint.h now in version 10 so next not needed.
 add #include <stdint.h> in /c/ms-mpi/include/mpi.h
 
 #important. Wasted a day because I did not do this. the symptom is a
 # crash in libnrnmpi.dll
+#I don't know if this is needed anymore or not for version 10 as
+#libmsmpi.a does exist.
 gendef msmpi.dll # creates msmpi.def
 #x86_64-w64-mingw32-dlltool -d msmpi.def -l libmsmpi.a -D msmpi.dll
 dlltool -d msmpi.def -l libmsmpi.a -D msmpi.dll # creates libmsmpi.a

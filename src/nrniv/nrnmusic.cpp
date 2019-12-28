@@ -143,7 +143,7 @@ void NRNMUSIC::EventOutputPort::gid2index(int gid, int gi) {
 		gi_table = new Gi2PreSynTable(1024);
 	}
 	PreSyn* ps2;
-	assert(!gi_table->find(ps2, gi));
+	nrn_assert(!gi_table->find(ps2, gi));
 //printf("gid2index insert %p %d\n", this, gi);
 	gi_table->insert(gi, ps);
 }
@@ -169,7 +169,7 @@ PyObject* NRNMUSIC::EventInputPort::index2target(int gi, PyObject* ptarget) {
 	if (!music_input_ports->find(i, (void*)this)) {
 		music_input_ports->insert((void*)this, i);
 	}
-	//assert (!gi_table->find(ps, gi));
+	//nrn_assert (!gi_table->find(ps, gi));
 	if (!gi_table->find(ps, gi)) {
 	  ps = new PreSyn(NULL, NULL, NULL);
 	  net_cvode_instance->psl_append(ps);

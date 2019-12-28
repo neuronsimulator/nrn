@@ -36,7 +36,8 @@ class NeuronTestCase(unittest.TestCase):
         b = 1
         assert h.List('A').count() == 0
 
-    def psection(self):
+    @classmethod
+    def psection(cls):
         """Test neuron.psection(Section)"""
 
         s = h.Section(name='soma')
@@ -44,7 +45,7 @@ class NeuronTestCase(unittest.TestCase):
 
     def testpsection(self):
         from multiprocessing import Process
-        p = Process(target=self.psection)
+        p = Process(target=NeuronTestCase.psection)
         p.start()
         p.join()
 
@@ -70,7 +71,8 @@ class NeuronTestCase(unittest.TestCase):
         v.x[0] = 5
         assert v.x[0] == 5
 
-    def ExtendedSection(self):
+    @classmethod
+    def ExtendedSection(cls):
         """test prsection (modified print statement)"""
         from neuron.sections import ExtendedSection
         s = ExtendedSection(name="test")
@@ -78,14 +80,14 @@ class NeuronTestCase(unittest.TestCase):
 
     def testExtendedSection(self):
         from multiprocessing import Process
-        p = Process(target=self.ExtendedSection)
+        p = Process(target=NeuronTestCase.ExtendedSection)
         p.start()
         p.join()
 
-    
-    def RxDexistence(self):
+    @classmethod
+    def RxDexistence(cls):
         """test import rxd and geometry3d if scipy"""
-        a = 1
+        error = 0
         try:
             import scipy
         except:
@@ -97,20 +99,21 @@ class NeuronTestCase(unittest.TestCase):
                 print("has_geometry3d is " + str(geometry.has_geometry3d))
             except:
                 print("'from neuron import rxd' failed")
-                a = 0
+                error = 1
             else:
                try:
-                   a = basicRxD3D(h, rxd)
+                   a = basicRxD3D()
                    print("    basicRxD3D() ran with no exception")
                except:
                    print("'basicRxD3D()' failed")
-                   a = 0
-        return a
-        
+                   error = 1
+        assert(error == 0)
+        return 0
+
 
     def testRxDexistence(self):
         from multiprocessing import Process
-        p = Process(target=self.RxDexistence)
+        p = Process(target=NeuronTestCase.RxDexistence)
         p.start()
         p.join()
         assert(p.exitcode == 0)

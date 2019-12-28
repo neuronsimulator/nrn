@@ -37,7 +37,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 void default_SampleStatistic_error_handler(const char* msg)
 {
-  cerr << "Fatal SampleStatistic error. " << msg << "\n";
+  std::cerr << "Fatal SampleStatistic error. " << msg << "\n";
   exit(1);
 }
 

@@ -364,7 +364,8 @@ int getpid() {
 void hoc_Plt() {ret(); pushx(0.);}
 void hoc_Setcolor(){ret(); pushx(0.);}
 void hoc_Lw(){ret(); pushx(0.);}
-void hoc_settext(){ret(); pushx(0.);}
+// TODO : just temporary fix to avoid duplicate symbol error
+//void hoc_settext(){ret(); pushx(0.);}
 //Plot(){ret();pushx(0.);}
 //axis(){ret();pushx(0.);}
 //hoc_fmenu() {ret();pushx(0.);}

@@ -169,6 +169,7 @@ callback to bbss_early when needed.
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include "ocfile.h"
 #include "nrnoc2iv.h"
 #include "classreg.h"
@@ -593,14 +594,21 @@ static double save_test(void* v) {
 	BBSaveState* ss = (BBSaveState*)v;
 	usebin_ = 0;
 	if (nrnmpi_myid == 0) { // save global time
-		BBSS_IO* io = new BBSS_TxtFileOut("out/tmp");
+#if defined(MINGW)
+		mkdir("bbss_out");
+#else
+		mkdir("bbss_out", 0770);
+#endif
+		BBSS_IO* io = new BBSS_TxtFileOut("bbss_out/tmp");
 		io->d(1, nrn_threads->_t);
 		delete io;
 	}
+ 	nrnmpi_barrier();
+
 	int len = ss->counts(&gids, &sizes);
 	for (int i = 0; i < len; ++i) {
 		char fn[200];
-		sprintf(fn, "out/tmp.%d.%d", gids[i], nrnmpi_myid);
+		sprintf(fn, "bbss_out/tmp.%d.%d", gids[i], nrnmpi_myid);
 		BBSS_IO* io = new BBSS_TxtFileOut(fn);
 		ss->f = io;
 		ss->gidobj(gids[i]);
@@ -1532,7 +1540,7 @@ void BBSaveState::gids() {
 void BBSaveState::gidobj(int basegid) {
 	int spgid;
 	Object* obj;
-	assert(base2spgid->find(basegid, spgid));
+	nrn_assert(base2spgid->find(basegid, spgid));
 	obj = nrn_gid2obj(spgid);
 	gidobj(spgid, obj);
 }

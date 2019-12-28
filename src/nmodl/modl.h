@@ -7,6 +7,22 @@
 #endif
 #include <assert.h>
 
+/**
+ * \dir
+ * \brief NMODL NMODL Translator (NOCMODL) Implementation
+ *
+ * \file
+ * \brief NMODL parser global flags / functions
+ */
+
+/**
+ * @defgroup NMODL NMODL Translator
+ * @brief Implementation of NMODL Source-to-Source translator (NOCMODL)
+ *
+ * @{
+ */
+
+
 /*-
   The central data structure throughout modl is the list. Items can be
   inserted before a known item, inserted at the head of a list, or appended
@@ -311,3 +327,5 @@ extern Item    *qlint;
 #define IGNORE(arg)	arg
 #define Free(arg)	free((void *)(arg))
 #endif
+
+/** @} */  // end of hoc_functions

@@ -13,7 +13,7 @@ void work_around() {
 	MPI_Comm c = MPI_COMM_WORLD;
 
 	MPI_Abort(c, 0);
-	MPI_Address(0,0);
+	MPI_Get_address(0,0);
 	MPI_Allgather(0,0,0,0,0,0,c);
 	MPI_Allgatherv(0,0,0,0,0,0,0,c);
 	MPI_Allreduce(0,0,0,0,0,c);
@@ -40,7 +40,7 @@ void work_around() {
 	MPI_Send(0,0,0,0,0,c);
 	MPI_Sendrecv(0,0,0,0,0,0,0,0,0,0,c,0);
 	MPI_Type_commit(0);
-	MPI_Type_struct(0,0,0,0,0);
+	MPI_Type_create_struct(0,0,0,0,0);
 	MPI_Unpack(0, 0, 0, 0, 0, 0, c);
 	MPI_Wait(0, 0);
 	MPI_Wtime();

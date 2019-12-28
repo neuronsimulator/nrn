@@ -10,13 +10,20 @@
 #include "../nrniv/shapeplt.h"
 #include <vector>
 
-#if defined(__MINGW32__) && NRNPYTHON_DYNAMICLOAD > 0
+#if defined(NRNPYTHON_DYNAMICLOAD) && NRNPYTHON_DYNAMICLOAD > 0
+// when compiled with different Python.h, force correct value
+#undef NRNPYTHON_DYNAMICLOAD
+#define NRNPYTHON_DYNAMICLOAD PY_MAJOR_VERSION
+#endif
+
+#if !defined(NRNCMAKE) && defined(__MINGW32__) && NRNPYTHON_DYNAMICLOAD > 0
 // want to end up with a string like "hoc36"
 #define HOCMOD_1(s) HOCMOD_2(s)
 #define HOCMOD_2(s) #s
 #define HOCMOD "hoc" HOCMOD_1(NRNPYTHON_DYNAMICLOAD)
 #else
-#define HOCMOD hoc
+// TODO: didn't enable dynamic load and end up with error if below is not a string
+#define HOCMOD "hoc"
 #endif
 
 extern PyTypeObject* psection_type;
@@ -2466,16 +2473,18 @@ static PyObject* py_hocobj_math(const char* op, PyObject* obj1, PyObject* obj2) 
     potentially_valid = true;
     reversed = 1;
   }
-  if (!potentially_valid) {
+  if (!potentially_valid){
     Py_INCREF(Py_NotImplemented);
     return Py_NotImplemented;
   }
-  return PyObject_CallFunction(nrnpy_vec_math, "siOO", op, reversed, obj1, obj2);
+  char buf[8];
+  return PyObject_CallFunction(nrnpy_vec_math, strcpy(buf, "siOO"), op, reversed, obj1, obj2);
 }
 
 static PyObject* py_hocobj_math_unary(const char* op, PyObject* obj) {
   if (pyobj_is_vector(obj)) {
-    return PyObject_CallFunction(nrnpy_vec_math, "siO", op, 2, obj);
+    char buf[8];
+    return PyObject_CallFunction(nrnpy_vec_math, strcpy(buf, "siO"), op, 2, obj);
   }
   Py_INCREF(Py_NotImplemented);
   return Py_NotImplemented;
@@ -2565,7 +2574,7 @@ static void sectionlist_helper_(void* sl, Object* args) {
     hoc_execerror("argument must be an iterable", "");
   }
 
-  while (item = PyIter_Next(iterator)) {
+  while ((item = PyIter_Next(iterator))) {
     if (!PyObject_TypeCheck(item, psection_type)) {
       hoc_execerror("iterable must contain only Section objects", 0);
     }

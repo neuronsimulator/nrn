@@ -56,7 +56,7 @@ public:
 	virtual void transform3d(Rubberband* rb = NULL);
 	virtual ShapeSection* shape_section(Section*);
 	virtual void name(const char*);
-	virtual void save_phase2(ostream&);
+	virtual void save_phase2(std::ostream&);
 	virtual void help();
 	void force();
 	bool view_all() { return view_all_;}

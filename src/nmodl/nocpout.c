@@ -2670,7 +2670,8 @@ void net_init(qinit, qp2)
 {
 	/* qinit=INITIAL { stmtlist qp2=} */
 	replacstr(qinit, "\nstatic void _net_init(Point_process* _pnt, double* _args, double _lflag)");
-	vectorize_substitute(insertstr(qinit->next->next, ""), "\
+	sprintf(buf, "    _p = _pnt->_prop->param; _ppvar = _pnt->_prop->dparam;\n");
+	vectorize_substitute(insertstr(qinit->next->next, buf), "\
     double* _p = _pnt->_prop->param;\n\
     Datum* _ppvar = _pnt->_prop->dparam;\n\
     Datum* _thread = (Datum*)0;\n\
