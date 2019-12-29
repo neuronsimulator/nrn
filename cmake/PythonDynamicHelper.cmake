@@ -15,9 +15,21 @@
 # Thus, at least for MINGW, parallel to the NRN_PYTHON_DYNAMIC list
 # we construct the lists NRN_PYTHON_VER_LIST, NRN_PYTHON_INCLUDE_LIST,
 # and NRN_PYTHON_LIB_LIST
+#
+# Note that if NRN_ENABLE_ABI3 is ON, then, regardless of the number of
+# python 3 versions in the NRN_PYTHON_VER_LIST, only one hoc-abi3.so
+# module will be built as that is compatible with all python >= 3.2.
+# That is, all python version < 3.2 are built and have module names
+# created by setup.py; for all python versions >=3,2, setup.py is called
+# only once and the resulting module name created by setup.py is renamed
+# to hoc-abi.so (linux/mac). To make these operations more clear, it is
+# useful to make lists parallel to the NRN_PYTHON_EXE_LIST that
+# specify whether pythonx.x should be executed and whether the
+# module should be copied/(renamed?) according to the -abi3 suffix.
 # ~~~
 
 set(LINK_AGAINST_PYTHON ${MINGW})
+set(NRN_PYTHON_EXE_LIST "" CACHE INTERNAL "" FORCE)
 set(NRN_PYTHON_VER_LIST
     ""
     CACHE INTERNAL "" FORCE)
@@ -27,6 +39,8 @@ set(NRN_PYTHON_INCLUDE_LIST
 set(NRN_PYTHON_LIB_LIST
     ""
     CACHE INTERNAL "" FORCE)
+set(NRN_PYTHON_CALL_SETUP_LIST "" CACHE INTERNAL "" FORCE)
+set(NRN_PYTHON_MAKE_ABI3_LIST "" CACHE INTERNAL "" FORCE)
 
 # ~~~
 # Inform setup.py and nrniv/nrnpy.cpp whether libnrnpython name is libnrnpython<major>
@@ -50,9 +64,11 @@ if(NRN_ENABLE_PYTHON)
       endif()
       # NB: we are constructing here a variable name NRNPYTHON_INCLUDE${PYVER}
       set(NRNPYTHON_INCLUDE${PYVER} ${PYTHON_INCLUDE_DIRS})
+      list(APPEND NRN_PYTHON_EXE_LIST ${PYTHON_EXECUTABLE})
       list(APPEND NRN_PYTHON_VER_LIST "${PYVER}")
       list(APPEND NRN_PYTHON_INCLUDE_LIST "${PYTHON_INCLUDE_DIRS}")
       list(APPEND NRN_PYTHON_LIB_LIST "${PYTHON_LIBRARIES}")
+
     else()
       # run each python provided by user to determine major and include directory
       message(STATUS "Dynamic Python support")
@@ -93,6 +109,7 @@ if(NRN_ENABLE_PYTHON)
           find_package(PythonLibsNew ${PYVER} REQUIRED)
           # convert major.minor to majorminor
           string(REGEX REPLACE [.] "" PYVER ${PYVER})
+          list(APPEND NRN_PYTHON_EXE_LIST "${pyexe}")
           list(APPEND NRN_PYTHON_VER_LIST "${PYVER}")
           list(APPEND NRN_PYTHON_INCLUDE_LIST "${incval}")
           list(APPEND NRN_PYTHON_LIB_LIST "${PYTHON_LIBRARIES}")
@@ -101,6 +118,33 @@ if(NRN_ENABLE_PYTHON)
             FATAL_ERROR "Error while checking ${pyexe} : ${result}\n${std_output}\n${err_output}")
         endif()
       endforeach()
+    endif()
+
+    # compute NRN_ENABLE_ABI3 association with NRN_PYTHON_EXE_LIST
+    set(abi3_set 0)
+    foreach(pyver ${NRN_PYTHON_VER_LIST})
+      set(_setup 1)
+      set(_mkabi 0)
+      if (NRN_ENABLE_ABI3 AND pyver GREATER_EQUAL 3)
+        if (NOT abi_set)
+          set(abi_set 1)
+          set(_setup 1)
+          set(_mkabi 1)
+        else()
+          set(_setup 0)
+        endif()
+      else()
+        set(_setup 1)
+      endif()
+      list(APPEND NRN_PYTHON_CALL_SETUP_LIST ${_setup})
+      list(APPEND NRN_PYTHON_MAKE_ABI3_LIST ${_mkabi})
+    endforeach()
+    if (NRN_ENABLE_ABI3)
+      message(STATUS "Relevant NRN_ENABLE_ABI3 info is...")
+      message(STATUS "  NRN_PYTHON_EXE_LIST ${NRN_PYTHON_EXE_LIST}")
+      message(STATUS "  NRN_PYTHON_VER_LIST ${NRN_PYTHON_VER_LIST}")
+      message(STATUS "  NRN_PYTHON_CALL_SETUP_LIST ${NRN_PYTHON_CALL_SETUP_LIST}")
+      message(STATUS "  NRN_PYTHON_MAKE_ABI3_LIST ${NRN_PYTHON_MAKE_ABI3_LIST}")
     endif()
   endif()
 endif()

@@ -7,6 +7,9 @@
 #if defined(__MINGW32__)
 #define _hypot hypot
 #endif
+#if !defined(PY_LIMITED_API)
+#define PY_LIMITED_API
+#endif
 #include <Python.h>
 #include <stdlib.h>
 

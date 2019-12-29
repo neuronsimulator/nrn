@@ -45,22 +45,9 @@ set(BUILD_NRNMPI_DYNAMIC_FALSE "#")
 set(BUILD_NRNPYTHON_DYNAMIC_TRUE "")
 set(BUILD_NRNPYTHON_DYNAMIC_FALSE "#")
 
-if(NRN_ENABLE_PYTHON_DYNAMIC)
-  if("${NRN_PYTHON_DYNAMIC}" STREQUAL "")
-    set(NRN_PYTHON_EXE_LIST
-        ${PYTHON_EXECUTABLE}
-        CACHE INTERNAL "" FORCE)
-  else()
-    set(NRN_PYTHON_EXE_LIST
-        ${NRN_PYTHON_DYNAMIC}
-        CACHE INTERNAL "" FORCE)
-  endif()
-else()
+if(NOT NRN_ENABLE_PYTHON_DYNAMIC)
   set(BUILD_NRNPYTHON_DYNAMIC_TRUE "#")
   set(BUILD_NRNPYTHON_DYNAMIC_FALSE "")
-  set(NRN_PYTHON_EXE_LIST
-      ${PYTHON_EXECUTABLE}
-      CACHE INTERNAL "" FORCE)
 endif()
 
 if(NRN_MACOS_BUILD)
@@ -175,15 +162,29 @@ if(NRN_ENABLE_MODULE_INSTALL)
             ${PROJECT_BINARY_DIR}/share/nrn/demo)
 
   # for each python detected / provided by user, install module at install time
-  foreach(pyexe ${NRN_PYTHON_EXE_LIST})
-    add_custom_command(
-      TARGET hoc_module POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
-              ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
-      COMMAND ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}
-      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-      COMMENT "Building python module with: ${pyexe}")
-  endforeach(pyexe)
+  list(LENGTH NRN_PYTHON_EXE_LIST _num_pythons)
+  math(EXPR num_pythons "${_num_pythons} - 1")
+  foreach(val RANGE ${num_pythons})
+    list(GET NRN_PYTHON_EXE_LIST ${val} pyexe)
+    list(GET NRN_PYTHON_CALL_SETUP_LIST ${val} _call_setup)
+    list(GET NRN_PYTHON_MAKE_ABI3_LIST ${val} _make_abi3)
+    if (_call_setup)
+      set(_abi3_cmd true)
+      if (_make_abi3)
+        # NRN_ENABLE_ABI3=ON and first python3 in NRN_PYTHON_EXE_LIST
+        set(_mdir ${PROJECT_BINARY_DIR}/lib/python/neuron)
+        set(_abi3_cmd cp ${_mdir}/hoc.cpython-3*.so ${_mdir}/hoc.abi3.so)
+      endif()
+      add_custom_command(TARGET hoc_module POST_BUILD
+                         COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                                 ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
+                                 ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
+                         COMMAND ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}
+                         COMMAND ${_abi3_cmd}
+                         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                         COMMENT "Building python module with: ${pyexe}")
+    endif()
+  endforeach(val)
   add_dependencies(hoc_module nrniv_lib)
 
   # =============================================================================
@@ -238,7 +239,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
         add_dependencies(nrnpython${pyver} nrniv_lib)
         add_dependencies(hoc_module nrnpython${pyver})
         install(TARGETS nrnpython${pyver} DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
-      endforeach()
+      endforeach(val)
     else()
       # build python2 library and install it
       if(NRNPYTHON_INCLUDE2)
