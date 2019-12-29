@@ -243,45 +243,6 @@ set(NRNIV_FILE_LIST
     tqueue.cpp
     vrecord.cpp)
 
-# =============================================================================
-# Files in sundials directory
-# =============================================================================
-nrn_create_file_list(
-  SUNDIALS_CVODES
-  "${PROJECT_SOURCE_DIR}/src/sundials/cvodes"
-  cvband.c
-  cvbandpre.c
-  cvbbdpre.c
-  cvdense.c
-  cvdiag.c
-  cvodea.c
-  cvodes.c
-  cvodesio.c
-  cvspgmr.c)
-
-nrn_create_file_list(
-  SUNDIALS_IDA
-  "${PROJECT_SOURCE_DIR}/src/sundials/ida"
-  idaband.c
-  idabbdpre.c
-  ida.c
-  idadense.c
-  idaic.c
-  idaio.c
-  idaspgmr.c)
-nrn_create_file_list(
-  SUNDIALS_SHARED
-  "${PROJECT_SOURCE_DIR}/src/sundials/shared"
-  band.c
-  dense.c
-  iterative.c
-  nvector.c
-  nvector_serial.c
-  smalldense.c
-  spgmr.c
-  sundialsmath.c)
-set(NRN_SUNDIALS_SRC_FILES ${SUNDIALS_CVODES} ${SUNDIALS_IDA} ${SUNDIALS_SHARED})
-
 # meschach matrix sources
 set(MESCH_FILES_LIST
     arnoldi.c
@@ -585,8 +546,6 @@ nrn_create_file_list(NRN_IVOC_SRC_FILES ${NRN_IVOC_SRC_DIR} ${IVOC_FILE_LIST})
 nrn_create_file_list(NRN_NRNIV_SRC_FILES ${NRN_NRNIV_SRC_DIR} ${NRNIV_FILE_LIST})
 nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrniv
                      nvector_nrnparallel_ld.c)
-nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sundials/shared
-                     nvector_parallel.c)
 nrn_create_file_list(NRN_MESCH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mesch ${MESCH_FILES_LIST})
 nrn_create_file_list(NRN_SPARSE13_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse13
                      ${SPARSE13_FILES_LIST})
