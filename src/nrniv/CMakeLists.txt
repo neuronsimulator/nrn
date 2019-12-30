@@ -281,7 +281,9 @@ if(IV_ENABLE_X11_DYNAMIC)
            ${PROJECT_SOURCE_DIR}/src/ivoc/xdep.cpp ${PROJECT_SOURCE_DIR}/src/oc/x.c
     APPEND
     PROPERTY COMPILE_DEFINITIONS IVX11_DYNAM)
-  if(NOT IV_ENABLE_SHARED)
+  if((NOT IV_ENABLE_SHARED) AND IV_LIB_DIR)
+    # IV_LIB_DIR is not set when IV is a submodule and not yet installed
+    # but libivx11dynam is already in its proper place at POST_BUILD.
     # When IV_ENABLE_SHARED=ON, libivx11dynam is found in IV_LIB_DIR (the location of
     # libinterviews). When OFF, libivx11dynam needs to be copied to the location of libnrniv.  The
     # goal is that if libnrniv is loaded, the system can find libivx11dynam independent of
