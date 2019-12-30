@@ -105,7 +105,7 @@ static void check_(int i) {
 	}
 	guard(MPI_Barrier(nrnmpi_comm));
 	if (buf != i) {
-		nrnmpi_abort(0);
+		nrnmpi_abort(nrnmpi_myid*10000 + i*100 + buf);
 	}
 }
 
