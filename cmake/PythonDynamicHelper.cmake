@@ -29,7 +29,9 @@
 # ~~~
 
 set(LINK_AGAINST_PYTHON ${MINGW})
-set(NRN_PYTHON_EXE_LIST "" CACHE INTERNAL "" FORCE)
+set(NRN_PYTHON_EXE_LIST
+    ""
+    CACHE INTERNAL "" FORCE)
 set(NRN_PYTHON_VER_LIST
     ""
     CACHE INTERNAL "" FORCE)
@@ -39,8 +41,12 @@ set(NRN_PYTHON_INCLUDE_LIST
 set(NRN_PYTHON_LIB_LIST
     ""
     CACHE INTERNAL "" FORCE)
-set(NRN_PYTHON_CALL_SETUP_LIST "" CACHE INTERNAL "" FORCE)
-set(NRN_PYTHON_MAKE_ABI3_LIST "" CACHE INTERNAL "" FORCE)
+set(NRN_PYTHON_CALL_SETUP_LIST
+    ""
+    CACHE INTERNAL "" FORCE)
+set(NRN_PYTHON_MAKE_ABI3_LIST
+    ""
+    CACHE INTERNAL "" FORCE)
 
 # ~~~
 # Inform setup.py and nrniv/nrnpy.cpp whether libnrnpython name is libnrnpython<major>
@@ -125,8 +131,8 @@ if(NRN_ENABLE_PYTHON)
     foreach(pyver ${NRN_PYTHON_VER_LIST})
       set(_setup 1)
       set(_mkabi 0)
-      if (NRN_ENABLE_ABI3 AND pyver GREATER_EQUAL 3)
-        if (NOT abi_set)
+      if(NRN_ENABLE_ABI3 AND pyver GREATER_EQUAL 3)
+        if(NOT abi_set)
           set(abi_set 1)
           set(_setup 1)
           set(_mkabi 1)
@@ -139,7 +145,7 @@ if(NRN_ENABLE_PYTHON)
       list(APPEND NRN_PYTHON_CALL_SETUP_LIST ${_setup})
       list(APPEND NRN_PYTHON_MAKE_ABI3_LIST ${_mkabi})
     endforeach()
-    if (NRN_ENABLE_ABI3)
+    if(NRN_ENABLE_ABI3)
       message(STATUS "Relevant NRN_ENABLE_ABI3 info is...")
       message(STATUS "  NRN_PYTHON_EXE_LIST ${NRN_PYTHON_EXE_LIST}")
       message(STATUS "  NRN_PYTHON_VER_LIST ${NRN_PYTHON_VER_LIST}")

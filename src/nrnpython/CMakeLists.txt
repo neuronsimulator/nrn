@@ -168,21 +168,21 @@ if(NRN_ENABLE_MODULE_INSTALL)
     list(GET NRN_PYTHON_EXE_LIST ${val} pyexe)
     list(GET NRN_PYTHON_CALL_SETUP_LIST ${val} _call_setup)
     list(GET NRN_PYTHON_MAKE_ABI3_LIST ${val} _make_abi3)
-    if (_call_setup)
+    if(_call_setup)
       set(_abi3_cmd true)
-      if (_make_abi3)
+      if(_make_abi3)
         # NRN_ENABLE_ABI3=ON and first python3 in NRN_PYTHON_EXE_LIST
         set(_mdir ${PROJECT_BINARY_DIR}/lib/python/neuron)
         set(_abi3_cmd cp ${_mdir}/hoc.cpython-3*.so ${_mdir}/hoc.abi3.so)
       endif()
-      add_custom_command(TARGET hoc_module POST_BUILD
-                         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                                 ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
-                                 ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
-                         COMMAND ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}
-                         COMMAND ${_abi3_cmd}
-                         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                         COMMENT "Building python module with: ${pyexe}")
+      add_custom_command(
+        TARGET hoc_module POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
+                ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
+        COMMAND ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}
+        COMMAND ${_abi3_cmd}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Building python module with: ${pyexe}")
     endif()
   endforeach(val)
   add_dependencies(hoc_module nrniv_lib)
