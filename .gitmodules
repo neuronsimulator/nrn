@@ -19,3 +19,6 @@
 [submodule "docs/tutorials"]
 	path = docs/tutorials
 	url = https://github.com/neuronsimulator/pythontutorial.git
+[submodule "external/sundials"]
+	path = external/sundials
+	url = https://github.com/LLNL/sundials/
