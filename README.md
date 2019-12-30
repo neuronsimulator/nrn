@@ -96,7 +96,6 @@ e.g. a bare-bones install:
 
   ```
   cmake .. \
-   -DNRN_ENABLE_PYTHON=ON \
    -DNRN_ENABLE_CORENEURON=OFF \
    -DNRN_ENABLE_MPI=OFF \
    -DNRN_ENABLE_INTERVIEWS=OFF \
