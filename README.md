@@ -79,7 +79,7 @@ One of the primary advantage of CMake based build system is integration with oth
 1. Clone latest version:
 
   ```
-  git clone --recursive https://github.com/neuronsimulator/nrn
+  git clone https://github.com/neuronsimulator/nrn
   cd nrn
   ```
 
