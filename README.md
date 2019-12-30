@@ -118,7 +118,7 @@ Particularly useful CMake options are (use **ON** to enable and **OFF** to disab
 * **-DNRN\_ENABLE\_CORENEURON=OFF** : Disable CoreNEURON support
 * **-DNRN\_ENABLE\_TESTS=ON** : Enable unit tests
 * **-DPYTHON\_EXECUTABLE=/python/binary/path** : Use provided Python binary to build Python interface
-* **-DCMAKE_INSTALL_PREFIX=...** : Location for installing 
+* **-DCMAKE_INSTALL_PREFIX=/install/dir/path** : Location for installing
 * **-DCORENRN\_ENABLE\_NMODL=ON** : Use [NMODL](https://github.com/BlueBrain/nmodl/) instead of [MOD2C](https://github.com/BlueBrain/mod2c/) for code generation with CoreNEURON
 
 For more installation information see: [https://neuron.yale.edu/neuron/download/getdevel](https://neuron.yale.edu/neuron/download/getdevel).
