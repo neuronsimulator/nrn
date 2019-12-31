@@ -26,6 +26,11 @@
 #include "utility.h"
 #include "oc2iv.h"
 
+extern "C" {
+	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+	extern double (*nrnpy_object_to_double_)(Object*);
+}
+
 bool oc_post_dialog(Dialog* d, Coord x, Coord y) {
 	if (x != 400. || y != 400.) {
 		return d->post_at_aligned(x, y, .5,.5);
@@ -283,6 +288,14 @@ extern "C" {
 
 void hoc_boolean_dialog() {
 	bool b = false;
+    if (nrnpy_gui_helper_) {
+		Object** const result = nrnpy_gui_helper_("boolean_dialog", NULL);
+        if (result) {
+            hoc_ret();
+            hoc_pushx(nrnpy_object_to_double_(*result));
+            return;
+        }
+	}	
 IFGUI
 	if (ifarg(3)) {
 		b = boolean_dialog(gargstr(1), gargstr(2), gargstr(3));
