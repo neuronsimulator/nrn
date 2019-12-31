@@ -39,6 +39,8 @@ extern "C" {
 
 #include "parse.h"
 extern void (*nrnpy_sectionlist_helper_)(void*, Object*);
+extern Object** (*nrnpy_gui_helper_)(const char*, Object*);
+extern double (*nrnpy_object_to_double_)(Object*);
 void lvappendsec_and_ref(void* sl, Section* sec);
 extern Section* nrn_noerr_access();
 extern void hoc_pushs(Symbol*);
@@ -81,6 +83,7 @@ extern IvocVect* (*nrnpy_vec_from_python_p_)(void*);
 extern Object** (*nrnpy_vec_to_python_p_)(void*);
 extern Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
 int nrnpy_set_vec_as_numpy(PyObject* (*p)(int, double*));  // called by ctypes.
+int nrnpy_set_gui_callback(PyObject*);
 extern double** nrnpy_setpointer_helper(PyObject*, PyObject*);
 extern Symbol* ivoc_alias_lookup(const char* name, Object* ob);
 extern int nrn_netcon_weight(void*, double**);
@@ -2160,6 +2163,72 @@ int nrnpy_set_graph_plots(PyObject* rvp_plot0, PyObject* plotshape_plot0) {
   return 0;
 }
 
+static PyObject* gui_callback=NULL;
+int nrnpy_set_gui_callback(PyObject* new_gui_callback) {
+  gui_callback = new_gui_callback;
+  return 0;
+}
+
+static double object_to_double_(Object* obj) {
+  PyObject* const pyobj = nrnpy_ho2po(obj);
+  Py_INCREF(pyobj);
+  const double result = PyFloat_AsDouble(pyobj);
+  Py_DECREF(pyobj);
+  return result;
+}
+
+static Object** gui_helper_(const char* name, Object* obj) {
+  if (gui_callback) {
+    int narg = 1;
+    while (ifarg(narg)) {
+      narg++;
+    }
+    narg--;
+    PyObject* args = PyTuple_New(narg + 2);
+    PyTuple_SetItem(args, 0, PyString_FromString(name));
+    for(int iarg=0; iarg<narg; iarg++) {
+      const int iiarg = iarg + 1;
+      if (hoc_is_object_arg(iiarg)) {
+        PyTuple_SetItem(args, iarg + 2, nrnpy_ho2po(*hoc_objgetarg(iiarg)));
+      } else if (hoc_is_pdouble_arg(iiarg)) {
+        PyHocObject* ptr_nrn = (PyHocObject*)hocobj_new(hocobject_type, 0, 0);
+        ptr_nrn->type_ = PyHoc::HocScalarPtr;
+        ptr_nrn->u.px_ = hoc_pgetarg(iiarg);
+        PyObject* py_ptr = (PyObject*) ptr_nrn;
+        Py_INCREF(py_ptr);
+        PyTuple_SetItem(args, iarg + 2, py_ptr);
+      } else if (hoc_is_str_arg(iiarg)) {
+        /*
+        PyHocObject* ptr_nrn = (PyHocObject*)hocobj_new(hocobject_type, 0, 0);
+        ptr_nrn->type_ = PyHoc::HocRefStr;
+        ptr_nrn->u.s_ = *hoc_pgargstr(iiarg);
+        PyObject* py_ptr = (PyObject*) ptr_nrn;
+        Py_INCREF(py_ptr);
+        PyTuple_SetItem(args, iarg, py_ptr); */
+        PyTuple_SetItem(args, iarg + 2, PyString_FromString(gargstr(iiarg)));
+      } else if (hoc_is_double_arg(iiarg)) {
+        PyTuple_SetItem(args, iarg + 2, PyFloat_FromDouble(*getarg(iiarg)));
+      }
+    }
+    PyObject* my_obj;
+    if (obj) {
+      my_obj = nrnpy_ho2po(obj);
+    } else {
+      my_obj = Py_None;
+      Py_INCREF(Py_None);
+    }
+    PyTuple_SetItem(args, 1, my_obj);
+    PyObject* po = PyObject_CallObject(gui_callback, args);
+    Py_DECREF(args);
+    // TODO: something that allows None (currently nrnpy_po2ho returns NULL if po == Py_None)
+    Object* ho = nrnpy_po2ho(po);
+    Py_DECREF(po);
+    --ho->refcount;
+    return hoc_temp_objptr(ho);
+  }
+  return NULL;
+}
+
 static Object** vec_as_numpy_helper(int size, double* data) {
   if (vec_as_numpy) {
     PyObject* po = (*vec_as_numpy)(size, data);
@@ -2596,6 +2665,8 @@ myPyMODINIT_FUNC nrnpy_hoc() {
   nrnpy_vec_to_python_p_ = nrnpy_vec_to_python;
   nrnpy_vec_as_numpy_helper_ = vec_as_numpy_helper;
   nrnpy_sectionlist_helper_ = sectionlist_helper_;
+  nrnpy_gui_helper_ = gui_helper_;
+  nrnpy_object_to_double_ = object_to_double_;
   PyLockGIL lock;
 
   char endian_character = 0;

@@ -31,6 +31,11 @@ int ivoc_list_count(Object*);
 Object* ivoc_list_item(Object*, int);
 }
 
+
+extern "C" {
+	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+};
+
 extern "C" int hoc_return_type_code;
 void handle_old_focus();
 
@@ -249,31 +254,43 @@ void OcList::remove_all() {
 }
 
 static double l_browser(void* v) {
-#if HAVE_IV
-IFGUI
-	char* s = 0;
-	char* i = 0;
-	char** p = 0;
-	OcList* o = (OcList*)v;
-	if (ifarg(1)) {
-		s = gargstr(1);
+	Object** result = NULL;
+
+	if (nrnpy_gui_helper_) {
+		Object* obj = (Object*) malloc(sizeof(Object));
+		obj->ctemplate = list_class_sym_->u.ctemplate;
+		obj->refcount = 1;
+		obj->index = -1;
+		obj->u.this_pointer = v;
+		result = nrnpy_gui_helper_("List.browser", obj);
 	}
-	if (ifarg(3)) {
-		i = gargstr(3);
-		p = hoc_pgargstr(2);
-		o->create_browser(s, p, i);
-		return 1.;
+	if (!result) {
+		#if HAVE_IV
+		IFGUI
+			char* s = 0;
+			char* i = 0;
+			char** p = 0;
+			OcList* o = (OcList*)v;
+			if (ifarg(1)) {
+				s = gargstr(1);
+			}
+			if (ifarg(3)) {
+				i = gargstr(3);
+				p = hoc_pgargstr(2);
+				o->create_browser(s, p, i);
+				return 1.;
+			}
+			if (ifarg(2)) {
+				if (hoc_is_object_arg(2)) {
+					o->create_browser(s, NULL, *hoc_objgetarg(2));
+					return 1.;
+				}
+				i = gargstr(2);
+			}
+			o->create_browser(s, i);
+		ENDGUI
+		#endif
 	}
-	if (ifarg(2)) {
-		if (hoc_is_object_arg(2)) {
-			o->create_browser(s, NULL, *hoc_objgetarg(2));
-			return 1.;
-		}
-		i = gargstr(2);
-	}
-	o->create_browser(s, i);
-ENDGUI
-#endif
 	return 1.;
 }
 
