@@ -11,7 +11,9 @@ import collections
 
 #function to change extracellular diffusion
 set_diffusion = nrn_dll_sym('set_diffusion')
-set_diffusion.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_double, ctypes.c_double, ctypes.c_double]
+set_diffusion.argtypes = [ctypes.c_int, ctypes.c_int,
+                numpy.ctypeslib.ndpointer(ctypes.c_double),
+                ctypes.c_int]
 set_diffusion.restype = ctypes.c_int
 
 # data storage
@@ -478,7 +480,7 @@ class Node1D(Node):
 
 
 class Node3D(Node):
-    def __init__(self, index, i, j, k, r, seg, d, speciesref, data_type=_concentration_node):
+    def __init__(self, index, i, j, k, r, d, seg, speciesref, data_type=_concentration_node):
         """
             Parameters
             ----------
@@ -616,6 +618,25 @@ class Node3D(Node):
     def species(self):
         """The Species whose concentration is recorded at this Node."""
         return self._speciesref()
+
+    @property
+    def d(self):
+        """Gets the value associated with this Node."""
+        sp = self._speciesref()._intracellular_instances[self._r]
+        if hasattr(sp,'_dgrid'):
+            return sp._dgrid[self._index]
+        return sp._d
+        
+    @d.setter
+    def d(self, v):
+        sp = self._speciesref()._intracellular_instances[self._r]
+        if not hasattr(sp,'_dgrid'):
+            sp._dgrid = numpy.ndarray((3,sp._nodes_length), dtype=float, order='C')
+            sp._dgrid[:] = sp._d.reshape(3,-1)
+            set_diffusion(0, self._grid_id, sp._dgrid, sp._nodes_length)
+        sp._dgrid[:,self._index] = v
+
+
     
     @property
     def value(self):
@@ -692,9 +713,9 @@ class NodeExtracellular(Node):
         from . import rxd
         # TODO: Replace zero with Parallel_grids id (here an in insert call)
         if hasattr(value,'__len__'):
-            set_diffusion(0, self._grid_id, value[0], value[1], value[2])
+            set_diffusion(0, self._grid_id, numpy.array(value, dtype=float),1)
         else:
-            set_diffusion(0, self._grid_id, value, value, value)
+            set_diffusion(0, self._grid_id, numpy.repeat(value, 3), 1)
 
     @property
     def value(self):

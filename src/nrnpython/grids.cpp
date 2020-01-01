@@ -168,141 +168,150 @@ int ECS_insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x,
     return new_Grid->insert(grid_list_index);
 }
 
-Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors, 
+ICS_Grid_node::ICS_Grid_node() {};
+ICS_Grid_node::ICS_Grid_node(PyHocObject* my_states, long num_nodes, long* neighbors, 
                 long* ordered_x_nodes, long* ordered_y_nodes, long* ordered_z_nodes,
                 long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
-                long z_lines_length, double* dcs, double dx, bool is_diffusable, double atolscale, double* ics_alphas) {
+                long z_lines_length, double* dc, double* dcgrid, double dx, bool is_diffusable, double atolscale, double* ics_alphas) {
 
     int k;
-    ICS_Grid_node *new_Grid = new ICS_Grid_node();
-    assert(new_Grid);
+    ics_num_segs = 0;
+    _num_nodes = num_nodes;
+    diffusable = is_diffusable;
+    atolscale = atolscale;
 
-    new_Grid->_num_nodes = num_nodes;
-    new_Grid->diffusable = is_diffusable;
-    new_Grid->atolscale = atolscale;
+    states = my_states->u.px_;
+    states_x = (double*)malloc(sizeof(double)*_num_nodes);
+    states_y = (double*)malloc(sizeof(double)*_num_nodes);
+    states_z = (double*)malloc(sizeof(double)*_num_nodes);
+    states_cur = (double*)malloc(sizeof(double)*_num_nodes);
+    next = NULL;
+    
+    size_x = _num_nodes;
+    size_y = 1;
+    size_z = 1;
 
-    new_Grid->states = my_states->u.px_;
-    new_Grid->states_x = (double*)malloc(sizeof(double)*new_Grid->_num_nodes);
-    new_Grid->states_y = (double*)malloc(sizeof(double)*new_Grid->_num_nodes);
-    new_Grid->states_z = (double*)malloc(sizeof(double)*new_Grid->_num_nodes);
-    new_Grid->states_cur = (double*)malloc(sizeof(double)*new_Grid->_num_nodes);
-    new_Grid->next = NULL;
+    
+    concentration_list = NULL;
+    num_concentrations = 0;
+    current_list = NULL;
+    num_currents = 0;
+    node_flux_count = 0;
 
-    new_Grid->size_x = new_Grid->_num_nodes;
-    new_Grid->size_y = 1;
-    new_Grid->size_z = 1;
-
-    new_Grid->concentration_list = NULL;
-    new_Grid->num_concentrations = 0;
-    new_Grid->current_list = NULL;
-    new_Grid->num_currents = 0;
-
-    new_Grid->ics_surface_nodes_per_seg = NULL;
-    new_Grid->ics_surface_nodes_per_seg_start_indices = NULL;
-    new_Grid->ics_concentration_seg_ptrs = NULL;
-    new_Grid->ics_scale_factors = NULL;
-    new_Grid->ics_current_seg_ptrs = NULL;
+    ics_surface_nodes_per_seg = NULL;
+    ics_surface_nodes_per_seg_start_indices = NULL;
+    ics_concentration_seg_ptrs = NULL;
+    ics_scale_factors = NULL;
+    ics_current_seg_ptrs = NULL;
 
     #if NRNMPI
         if(nrnmpi_use)
         {
-            new_Grid->proc_offsets = (int*)malloc(nrnmpi_numprocs*sizeof(int));
-            new_Grid->proc_num_currents = (int*)malloc(nrnmpi_numprocs*sizeof(int));
-            new_Grid->proc_num_fluxes = (int*)malloc(nrnmpi_numprocs*sizeof(int));
-            new_Grid->proc_flux_offsets = (int*)malloc(nrnmpi_numprocs*sizeof(int));
+            proc_offsets = (int*)malloc(nrnmpi_numprocs*sizeof(int));
+            proc_num_currents = (int*)malloc(nrnmpi_numprocs*sizeof(int));
+            proc_num_fluxes = (int*)malloc(nrnmpi_numprocs*sizeof(int));
+            proc_flux_offsets = (int*)malloc(nrnmpi_numprocs*sizeof(int));
 
         }
     #endif
 
-    new_Grid->num_all_currents = 0;
-    new_Grid->current_dest = NULL;
-    new_Grid->all_currents = NULL;
+    num_all_currents = 0;
+    current_dest = NULL;
+    all_currents = NULL;
     
-    new_Grid->_ics_alphas = ics_alphas;
-    new_Grid->_ics_dcs = dcs;
+    _ics_alphas = ics_alphas;
+    VARIABLE_ECS_VOLUME=ICS_ALPHA; 
 
     //stores the positive x,y, and z neighbors for each node. [node0_x, node0_y, node0_z, node1_x ...]
-    new_Grid->_neighbors = neighbors;
+    _neighbors = neighbors;
     
     /*Line definitions from Python. In pattern of [line_start_node, line_length, ...]
       Array is sorted from longest to shortest line */
-    new_Grid->_sorted_x_lines = x_line_defs;
-    new_Grid->_sorted_y_lines = y_line_defs;
-    new_Grid->_sorted_z_lines = z_line_defs;
+    _sorted_x_lines = x_line_defs;
+    _sorted_y_lines = y_line_defs;
+    _sorted_z_lines = z_line_defs;
 
     //Lengths of _sorted_lines arrays. Used to find thread start and stop indices
-    new_Grid->_x_lines_length = x_lines_length;
-    new_Grid->_y_lines_length = y_lines_length;
-    new_Grid->_z_lines_length = z_lines_length;
+    _x_lines_length = x_lines_length;
+    _y_lines_length = y_lines_length;
+    _z_lines_length = z_lines_length;
 
     //Find the maximum line length for scratchpad memory allocation
     long x_max = x_line_defs[1];
     long y_max = y_line_defs[1];
     long z_max = z_line_defs[1];
     long xy_max = (x_max > y_max) ? x_max : y_max;
-    new_Grid->_line_length_max = (z_max > xy_max) ? z_max : xy_max;
+    _line_length_max = (z_max > xy_max) ? z_max : xy_max;
 
-    new_Grid->ics_tasks = NULL;
-    new_Grid->ics_tasks = (ICSAdiGridData*)malloc(NUM_THREADS*sizeof(ICSAdiGridData));
+    ics_tasks = (ICSAdiGridData*)malloc(NUM_THREADS*sizeof(ICSAdiGridData));
     
-    for(int k=0; k<NUM_THREADS; k++)
+    for(k=0; k<NUM_THREADS; k++)
     {
-        new_Grid->ics_tasks[k].RHS = (double*)malloc(sizeof(double) * (new_Grid->_line_length_max));
-        new_Grid->ics_tasks[k].scratchpad = (double*)malloc(sizeof(double) * (new_Grid->_line_length_max-1));
-        new_Grid->ics_tasks[k].g = new_Grid;
-        new_Grid->ics_tasks[k].u_diag = (double*)malloc(sizeof(double) * new_Grid->_line_length_max - 1);
-        new_Grid->ics_tasks[k].diag = (double*)malloc(sizeof(double) * new_Grid->_line_length_max);
-        new_Grid->ics_tasks[k].l_diag = (double*)malloc(sizeof(double) * new_Grid->_line_length_max - 1);
+        ics_tasks[k].RHS = (double*)malloc(sizeof(double) * (_line_length_max));
+        ics_tasks[k].scratchpad = (double*)malloc(sizeof(double) * (_line_length_max-1));
+        ics_tasks[k].g = this;
+        ics_tasks[k].u_diag = (double*)malloc(sizeof(double) * _line_length_max - 1);
+        ics_tasks[k].diag = (double*)malloc(sizeof(double) * _line_length_max);
+        ics_tasks[k].l_diag = (double*)malloc(sizeof(double) * _line_length_max - 1);
     }    
 
-    new_Grid->hybrid = false;
-    new_Grid->hybrid_data = (Hybrid_data*)malloc(sizeof(Hybrid_data));
+    hybrid = false;
+    hybrid_data = (Hybrid_data*)malloc(sizeof(Hybrid_data));
 
-    new_Grid->ics_adi_dir_x = (ICSAdiDirection*)malloc(sizeof(ICSAdiDirection));
-    new_Grid->ics_adi_dir_x->states_in = new_Grid->states_x;
-    new_Grid->ics_adi_dir_x->states_out = new_Grid->states;
-    new_Grid->ics_adi_dir_x->ordered_start_stop_indices = (long*)malloc(sizeof(long)*NUM_THREADS*2);
-    new_Grid->ics_adi_dir_x->line_start_stop_indices = (long*)malloc(sizeof(long)*NUM_THREADS*2);
-    new_Grid->ics_adi_dir_x->ordered_nodes = (long*)malloc(sizeof(long)*new_Grid->_num_nodes);
-    new_Grid->ics_adi_dir_x->ordered_line_defs = (long*)malloc(sizeof(long)*new_Grid->_x_lines_length);
-    new_Grid->ics_adi_dir_x->deltas = (double*)malloc(sizeof(double)*new_Grid->_num_nodes);
-    //TODO: Change to allow variable dcs. Setting it this way for now to keep variable step happy
-    new_Grid->ics_adi_dir_x->dc = dcs[0];
-    new_Grid->ics_adi_dir_x->d = dx;
+    ics_adi_dir_x = new ICSAdiDirection();
+    ics_adi_dir_x->states_in = states_x;
+    ics_adi_dir_x->states_out = states;
+    ics_adi_dir_x->ordered_start_stop_indices = (long*)malloc(sizeof(long)*NUM_THREADS*2);
+    ics_adi_dir_x->line_start_stop_indices = (long*)malloc(sizeof(long)*NUM_THREADS*2);
+    ics_adi_dir_x->ordered_nodes = (long*)malloc(sizeof(long)*_num_nodes);
+    ics_adi_dir_x->ordered_line_defs = (long*)malloc(sizeof(long)*_x_lines_length);
+    ics_adi_dir_x->deltas = (double*)malloc(sizeof(double)*_num_nodes);
+    ics_adi_dir_x->d = dx;
 
-    new_Grid->ics_adi_dir_y = (ICSAdiDirection*)malloc(sizeof(ICSAdiDirection));
-    new_Grid->ics_adi_dir_y->states_in = new_Grid->states_y;
-    new_Grid->ics_adi_dir_y->states_out = new_Grid->states;
-    new_Grid->ics_adi_dir_y->ordered_start_stop_indices = (long*)malloc(sizeof(long)*NUM_THREADS*2);
-    new_Grid->ics_adi_dir_y->line_start_stop_indices = (long*)malloc(sizeof(long)*NUM_THREADS*2);
-    new_Grid->ics_adi_dir_y->ordered_nodes = (long*)malloc(sizeof(long)*new_Grid->_num_nodes);
-    new_Grid->ics_adi_dir_y->ordered_line_defs = (long*)malloc(sizeof(long)*new_Grid->_y_lines_length);
-    new_Grid->ics_adi_dir_y->deltas = (double*)malloc(sizeof(double)*new_Grid->_num_nodes);
-    //TODO: Change to allow variable dcs. Setting it this way for now to keep variable step happy
-    new_Grid->ics_adi_dir_y->dc = dcs[0];
-    new_Grid->ics_adi_dir_y->d = dx;
+    ics_adi_dir_y = new ICSAdiDirection();
+    ics_adi_dir_y->states_in = states_y;
+    ics_adi_dir_y->states_out = states;
+    ics_adi_dir_y->ordered_start_stop_indices = (long*)malloc(sizeof(long)*NUM_THREADS*2);
+    ics_adi_dir_y->line_start_stop_indices = (long*)malloc(sizeof(long)*NUM_THREADS*2);
+    ics_adi_dir_y->ordered_nodes = (long*)malloc(sizeof(long)*_num_nodes);
+    ics_adi_dir_y->ordered_line_defs = (long*)malloc(sizeof(long)*_y_lines_length);
+    ics_adi_dir_y->deltas = (double*)malloc(sizeof(double)*_num_nodes);
+    ics_adi_dir_y->d = dx;
 
-    new_Grid->ics_adi_dir_z = (ICSAdiDirection*)malloc(sizeof(ICSAdiDirection));
-    new_Grid->ics_adi_dir_z->states_in = new_Grid->states_z;
-    new_Grid->ics_adi_dir_z->states_out = new_Grid->states;
-    new_Grid->ics_adi_dir_z->ordered_start_stop_indices = (long*)malloc(sizeof(long)*NUM_THREADS*2);
-    new_Grid->ics_adi_dir_z->line_start_stop_indices = (long*)malloc(sizeof(long)*NUM_THREADS*2);
-    new_Grid->ics_adi_dir_z->ordered_nodes = (long*)malloc(sizeof(long)*new_Grid->_num_nodes);
-    new_Grid->ics_adi_dir_z->ordered_line_defs = (long*)malloc(sizeof(long)*new_Grid->_z_lines_length);
-    new_Grid->ics_adi_dir_z->deltas = (double*)malloc(sizeof(double)*new_Grid->_num_nodes);
-    //TODO: Change to allow variable dcs. Setting it this way for now to keep variable step happy 
-    new_Grid->ics_adi_dir_z->dc = dcs[0];
-    new_Grid->ics_adi_dir_z->d = dx;
-    new_Grid->divide_x_work(NUM_THREADS);
-    new_Grid->divide_y_work(NUM_THREADS);
-    new_Grid->divide_z_work(NUM_THREADS);
+    ics_adi_dir_z = new ICSAdiDirection();
+    ics_adi_dir_z->states_in = states_z;
+    ics_adi_dir_z->states_out = states;
+    ics_adi_dir_z->ordered_start_stop_indices = (long*)malloc(sizeof(long)*NUM_THREADS*2);
+    ics_adi_dir_z->line_start_stop_indices = (long*)malloc(sizeof(long)*NUM_THREADS*2);
+    ics_adi_dir_z->ordered_nodes = (long*)malloc(sizeof(long)*_num_nodes);
+    ics_adi_dir_z->ordered_line_defs = (long*)malloc(sizeof(long)*_z_lines_length);
+    ics_adi_dir_z->deltas = (double*)malloc(sizeof(double)*_num_nodes);
+    ics_adi_dir_z->d = dx;
     
-    new_Grid->node_flux_count = 0;
-    new_Grid->node_flux_idx = NULL;
-    new_Grid->node_flux_scale = NULL;
-    new_Grid->node_flux_src = NULL;
-
-    return new_Grid;
+    if(dcgrid == NULL)
+    {
+        ics_adi_dir_x->dc = dc[0];
+        ics_adi_dir_y->dc = dc[1];
+        ics_adi_dir_z->dc = dc[2];
+        ics_adi_dir_x->dcgrid = NULL;
+        ics_adi_dir_y->dcgrid = NULL;
+        ics_adi_dir_z->dcgrid = NULL;
+    }
+    else
+    {
+        ics_adi_dir_x->dcgrid = dcgrid;
+        ics_adi_dir_y->dcgrid = &dcgrid[_num_nodes];
+        ics_adi_dir_z->dcgrid = &dcgrid[2*_num_nodes];
+    }
+    volume_setup();
+    divide_x_work(NUM_THREADS);
+    divide_y_work(NUM_THREADS);
+    divide_z_work(NUM_THREADS);
+    
+    node_flux_count = 0;
+    node_flux_idx = NULL;
+    node_flux_scale = NULL;
+    node_flux_src = NULL;
 }
 
 
@@ -314,16 +323,28 @@ int ICS_insert(int grid_list_index, PyHocObject* my_states, long num_nodes, long
                 long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
                 long z_lines_length, double* dcs, double dx, bool is_diffusable, double atolscale, double* ics_alphas) {
 
-    //TODO change ICS_make_Grid into a constructor
-    Grid_node *new_Grid = ICS_make_Grid(my_states, num_nodes, neighbors, ordered_x_nodes,
+    ICS_Grid_node* new_Grid = new ICS_Grid_node(my_states, num_nodes, neighbors, ordered_x_nodes,
             ordered_y_nodes, ordered_z_nodes, x_line_defs, x_lines_length, y_line_defs,
-            y_lines_length, z_line_defs, z_lines_length, dcs, dx, is_diffusable, atolscale, ics_alphas);
+            y_lines_length, z_line_defs, z_lines_length, dcs, NULL, dx, is_diffusable, atolscale, ics_alphas);
+
     return new_Grid->insert(grid_list_index);
 }
 
-/*Set the diffusion coefficients*/
-int set_diffusion(int grid_list_index, int grid_id, double dc_x, double dc_y, double dc_z)
+int ICS_insert_inhom(int grid_list_index, PyHocObject* my_states, long num_nodes, long* neighbors,
+                long* ordered_x_nodes, long* ordered_y_nodes, long* ordered_z_nodes,
+                long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
+                long z_lines_length, double* dcs, double dx, bool is_diffusable, double atolscale, double* ics_alphas) {
+
+    ICS_Grid_node* new_Grid = new ICS_Grid_node(my_states, num_nodes, neighbors, ordered_x_nodes,
+            ordered_y_nodes, ordered_z_nodes, x_line_defs, x_lines_length, y_line_defs,
+            y_lines_length, z_line_defs, z_lines_length, NULL, dcs, dx, is_diffusable, atolscale, ics_alphas);
+    return new_Grid->insert(grid_list_index);
+}
+
+
+int set_diffusion(int grid_list_index, int grid_id, double* dc, int length)
 {
+
     int id = 0;
     Grid_node* node = Parallel_grids[grid_list_index];
     while(id < grid_id)
@@ -333,29 +354,54 @@ int set_diffusion(int grid_list_index, int grid_id, double dc_x, double dc_y, do
         if(node == NULL)
             return -1;
     }
-    if(ICS_Grid_node* ics_node = dynamic_cast<ICS_Grid_node*>(node))
-    {
-        ics_node->ics_adi_dir_x->dc = dc_x;
-        ics_node->ics_adi_dir_y->dc = dc_y;
-        ics_node->ics_adi_dir_z->dc = dc_z;
-    }
-    else if(ECS_Grid_node* ecs_node = dynamic_cast<ECS_Grid_node*>(node))
-    {
-        if(node->get_lambda == &get_lambda_scalar)
-        {
-            ecs_node->dc_x = dc_x/SQ(node->lambda[0]);
-            ecs_node->dc_y = dc_y/SQ(node->lambda[0]);
-            ecs_node->dc_z = dc_z/SQ(node->lambda[0]);
-        }
-        else
-        {
-            ecs_node->dc_x = dc_x;
-            ecs_node->dc_y = dc_y;
-            ecs_node->dc_z = dc_z;
-        }
-    }
+    node->set_diffusion(dc, length);
     return 0;
 }
+
+/*Set the diffusion coefficients*/
+void ICS_Grid_node::set_diffusion(double* dc, int length)
+{
+    if(length == 1)
+    {
+        ics_adi_dir_x->dc = dc[0];
+        ics_adi_dir_y->dc = dc[1];
+        ics_adi_dir_z->dc = dc[2];
+        //NOTE: dcgrid is owned by _IntracellularSpecies in python
+        if(ics_adi_dir_x->dcgrid != NULL)
+        {
+            ics_adi_dir_x->dcgrid = NULL;
+            ics_adi_dir_y->dcgrid = NULL;
+            ics_adi_dir_z->dcgrid = NULL;
+        }
+    }
+    else
+    {
+        assert(length == _num_nodes);
+        ics_adi_dir_x->dcgrid = dc;
+        ics_adi_dir_y->dcgrid = &dc[_num_nodes];
+        ics_adi_dir_z->dcgrid = &dc[2*_num_nodes];
+    }
+    volume_setup();
+}
+
+
+/*Set the diffusion coefficients*/
+void ECS_Grid_node::set_diffusion(double* dc, int length)
+{
+    if(get_lambda == &get_lambda_scalar)
+    {
+        dc_x = dc[0]/SQ(lambda[0]);
+        dc_y = dc[1]/SQ(lambda[0]);
+        dc_z = dc[2]/SQ(lambda[0]);
+    }
+    else
+    {
+        dc_x = dc[0];
+        dc_y = dc[1];
+        dc_z = dc[2];
+    }
+}
+
 
 extern "C" void ics_set_grid_concentrations(int grid_list_index, int index_in_list, int64_t* nodes_per_seg, int64_t* nodes_per_seg_start_indices, PyObject* neuron_pointers) {
     Grid_node* g;
@@ -589,7 +635,7 @@ static double get_lambda_array(double* lambda, int idx)
 int Grid_node::insert(int grid_list_index){
 
     int i = 0;
-
+    Grid_node* grid;
     Grid_node **head = &(Parallel_grids[grid_list_index]);
     Grid_node *save;
 
@@ -1183,9 +1229,18 @@ void ICS_Grid_node::do_grid_currents(double dt, int grid_id)
 
 void ICS_Grid_node::volume_setup()
 {
-    ics_adi_dir_x->ics_dg_adi_dir = ics_dg_adi_x;
-    ics_adi_dir_y->ics_dg_adi_dir = ics_dg_adi_y;
-    ics_adi_dir_z->ics_dg_adi_dir = ics_dg_adi_z;
+    if(ics_adi_dir_x->dcgrid == NULL)
+    {
+        ics_adi_dir_x->ics_dg_adi_dir = ics_dg_adi_x;
+        ics_adi_dir_y->ics_dg_adi_dir = ics_dg_adi_y;
+        ics_adi_dir_z->ics_dg_adi_dir = ics_dg_adi_z;
+    }
+    else
+    {
+        ics_adi_dir_x->ics_dg_adi_dir = ics_dg_adi_x_inhom;
+        ics_adi_dir_y->ics_dg_adi_dir = ics_dg_adi_y_inhom;
+        ics_adi_dir_z->ics_dg_adi_dir = ics_dg_adi_z_inhom;
+    }
 }
 
 int ICS_Grid_node::dg_adi()
@@ -1193,13 +1248,12 @@ int ICS_Grid_node::dg_adi()
     run_threaded_deltas(this, ics_adi_dir_x);
     run_threaded_deltas(this, ics_adi_dir_y);
     run_threaded_deltas(this, ics_adi_dir_z);
-    run_threaded_ics_dg_adi(this, ics_adi_dir_x);
-    run_threaded_ics_dg_adi(this, ics_adi_dir_y);
-    run_threaded_ics_dg_adi(this, ics_adi_dir_z);
-
-    //memcpy(states, ics_adi_dir_z->states_out, sizeof(double)*_num_nodes)*/
+    run_threaded_ics_dg_adi(ics_adi_dir_x);
+    run_threaded_ics_dg_adi(ics_adi_dir_y);
+    run_threaded_ics_dg_adi(ics_adi_dir_z);
     return 0;
 }
+
 
 void ICS_Grid_node::variable_step_diffusion(const double* states, double* ydot)
 {
@@ -1275,7 +1329,6 @@ void ICS_Grid_node::free_Grid(){
     free(current_list);
 	free(alpha);
     free(_ics_alphas);
-    free(_ics_dcs);
 	free(lambda);
     free(bc);
     free(current_dest);

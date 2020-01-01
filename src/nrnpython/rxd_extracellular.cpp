@@ -647,6 +647,12 @@ static void* gather_currents(void* dataptr)
         for(i = start; i < stop; i++)
            val[i] = c[i].scale_factor * (*c[i].source)/grid->alpha[c[i].destination];
     }
+    else if (grid->VARIABLE_ECS_VOLUME == ICS_ALPHA)
+    {
+        //TODO: Check if this is used.
+        for(i = start; i < stop; i++)
+           val[i] = c[i].scale_factor * (*c[i].source)/((ICS_Grid_node*)grid)->_ics_alphas[c[i].destination];
+    }
     else
     {
         for(i = start; i < stop; i++)
@@ -747,7 +753,7 @@ void _fadvance_fixed_step_3D(void) {
         grid->do_grid_currents(dt, id);
         grid->apply_node_flux3D(dt, NULL);
         
-        grid->volume_setup();
+        //grid->volume_setup();
         if(grid->hybrid)
         {
             grid->hybrid_connections();
@@ -795,7 +801,6 @@ void ecs_atolscale(double* y)
     y += states_cvode_offset;
     for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
         grid_size = grid->size_x * grid->size_y * grid->size_z;
-
         for (i = 0; i < grid_size; i++) {
             y[i] *= grid->atolscale;
         }
@@ -1078,7 +1083,6 @@ void ics_ode_solve(double dt,  double* RHS, const double* states)
     /* do the diffusion rates */
     for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
         grid->variable_step_ode_solve(states, RHS, dt);
-
         RHS += grid_size;
         states += grid_size;        
     }

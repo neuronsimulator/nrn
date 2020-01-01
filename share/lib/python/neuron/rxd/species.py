@@ -32,7 +32,9 @@ ECS_insert.argtypes = [ctypes.c_int, ctypes.py_object, ctypes.c_int, ctypes.c_in
 ECS_insert.restype = ctypes.c_int
 
 ICS_insert = nrn_dll_sym('ICS_insert')
-ICS_insert.argtypes = [
+ICS_insert_inhom = nrn_dll_sym('ICS_insert_inhom')
+
+ICS_insert_inhom.argtypes = ICS_insert.argtypes = [
     ctypes.c_int, 
     ctypes.py_object, 
     ctypes.c_long,
@@ -47,17 +49,16 @@ ICS_insert.argtypes = [
     numpy.ctypeslib.ndpointer(dtype=int),
     ctypes.c_long,
     numpy.ctypeslib.ndpointer(dtype=float),
-    ctypes.c_double,
+    ctypes.c_double, 
     ctypes.c_bool,
     ctypes.c_double,
-    numpy.ctypeslib.ndpointer(dtype=float),]
-
-#function to change extracellular diffusion
-set_diffusion = nrn_dll_sym('set_diffusion')
-set_diffusion.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_double, ctypes.c_double, ctypes.c_double]
-set_diffusion.restype = ctypes.c_int
+    numpy.ctypeslib.ndpointer(dtype=float)]
 
 ICS_insert.restype = ctypes.c_int
+ICS_insert_inhom.restype = ctypes.c_int
+
+#function to change extracellular diffusion
+set_diffusion = node.set_diffusion
 
 species_atolscale = nrn_dll_sym('species_atolscale')
 species_atolscale.argtypes = [ctypes.c_int, ctypes.c_double, ctypes.c_int, ctypes.POINTER(ctypes.c_int)]
@@ -542,7 +543,6 @@ class _IntracellularSpecies(_SpeciesMathable):
         self._name = name
         self._charge = charge
         self._dx = region.dx
-        self._d = d * numpy.ones(len(self._region._xs))
         self._atolscale = atolscale
         self._nodes_length = len(self._region._xs)
         self._states = h.Vector(self._nodes_length)
@@ -551,6 +551,11 @@ class _IntracellularSpecies(_SpeciesMathable):
         self.states = self._states.as_numpy()
         self._nodes = nodes
 
+        dc, dgrid = self._parse_diffusion(d)
+        if dc is not None:
+            self._d = dc
+        else:
+            self._dgrid = dgrid
         self._x_line_defs = self.line_defs(self._nodes, 'x', self._nodes_length)
         self._y_line_defs = self.line_defs(self._nodes, 'y', self._nodes_length)
         self._z_line_defs = self.line_defs(self._nodes, 'z', self._nodes_length)
@@ -561,11 +566,19 @@ class _IntracellularSpecies(_SpeciesMathable):
 
         self._alphas = self.create_alphas()
 
-        self._grid_id = ICS_insert(0, self._states._ref_x[0], len(self.states), self.neighbors,
-                                    self._ordered_x_nodes, self._ordered_y_nodes, self._ordered_z_nodes,
-                                    self._x_line_defs, len(self._x_line_defs), self._y_line_defs, 
-                                    len(self._y_line_defs), self._z_line_defs, len(self._z_line_defs),
-                                    self._d, self._dx, is_diffusable, self._atolscale, self._alphas)
+        if hasattr(self,'_dgrid'):
+            self._grid_id = ICS_insert_inhom(0, self._states._ref_x[0], len(self.states), self.neighbors,
+                                             self._ordered_x_nodes, self._ordered_y_nodes, self._ordered_z_nodes,
+                                             self._x_line_defs, len(self._x_line_defs), self._y_line_defs, 
+                                             len(self._y_line_defs), self._z_line_defs, len(self._z_line_defs),
+                                             self._dgrid, self._dx, is_diffusable, self._atolscale, self._alphas)
+        else:
+            self._grid_id = ICS_insert(0, self._states._ref_x[0], len(self.states), self.neighbors,
+                                       self._ordered_x_nodes, self._ordered_y_nodes, self._ordered_z_nodes,
+                                       self._x_line_defs, len(self._x_line_defs), self._y_line_defs, 
+                                       len(self._y_line_defs), self._z_line_defs, len(self._z_line_defs),
+                                       self._d, self._dx, is_diffusable, self._atolscale, self._alphas)
+
   
         self._update_pointers()
         _defined_species_by_gid.append(self)
@@ -735,16 +748,58 @@ class _IntracellularSpecies(_SpeciesMathable):
                 # TODO: vectorize this, don't recompute denominator unless a structure change event happened
                 ptr[0] = sum(nodes[node].concentration * nodes[node].volume for node in all_nodes_in_seg) / sum(nodes[node].volume for node in all_nodes_in_seg)
 
+    def _parse_diffusion(self,d):
+        dc = None
+        dgrid = None
+        if callable(d) or (hasattr(d, '__len__') and callable(d[0])):
+            dgrid = numpy.ndarray((3, self._nodes_length), dtype=float,
+                                  order='C')
+            if hasattr(d, '__len__'):
+                if len(d) == 3:
+                    for dr in range(3):
+                        dgrid[0,:] = [d[0](nd.x3d, nd.y3d, nd.z3d) for nd in self._nodes]
+                        dgrid[1,:] = [d[1](nd.x3d, nd.y3d, nd.z3d) for nd in self._nodes]
+                        dgrid[2,:] = [d[2](nd.x3d, nd.y3d, nd.z3d) for nd in self._nodes]
+                else:
+                    raise RxDException("Intracellular diffusion coefficient must be a scalar, have length 3, or be a function with 3 or 4 arguments")
+            else:
+                from inspect import signature
+                if len(signature(d).parameters) == 3:
+                    dgrid[0,:] = [d(nd.x3d, nd.y3d, nd.z3d) for nd in self._nodes]
+                    dgrid[1,:] = dgrid[0,:]
+                    dgrid[2,:] = dgrid[0,:]
+                elif len(signature(d).parameters) == 4:
+                    for dr in range(3):
+                        dgrid[i,:] = [d(nd.x3d, nd.y3d, nd.z3d, dr) for nd in self._nodes]
+                else:
+                    raise RxDException("Intracellular diffusion coefficient must be a scalar, have length 3, or be a function with 3 or 4 arguments")
+        elif hasattr(d, '__len__'):
+            if len(d) == 3:
+                dc = numpy.array(d)
+            else:
+                raise RxDException("Intracellular diffusion coefficient must be a scalar, have length 3, or be a function with 3 or 4 arguments")
+        else:
+            dc = float(d) * numpy.ones(3)
+        return (dc, dgrid)
+
 
     @property
     def d(self):
+        if hasattr(self,'_dgrid'):
+            return self._dgrid
         return self._d
     
     @d.setter
     def d(self, value):
-        if self._d != value:
-            self._d = value
-            set_diffusion(0, self._grid_id, value, value, value)
+        dc, dgrid = self._parse_diffusion(value)
+        if dc is not None:
+            if hasattr(self, '_dgrid'):  
+                delattr(self, '_dgrid')
+            self._d = dc
+            set_diffusion(0, self._grid_id, dc, 1)
+        else:
+            self._dgrid = dgrid
+            set_diffusion(0, self._grid_id, self._dgrid, self._nodes_length)
 
     #TODO Can we do this better?
     def _index_from_point(self, point):
@@ -1168,12 +1223,10 @@ class Species(_SpeciesMathable):
         self._intracellular_nodes = {}
         if self._regions:
             for r in self._regions:
+                self._intracellular_nodes[r] = []
                 if r._secs3d:
                     xs, ys, zs, segs = r._xs, r._ys, r._zs, r._segs
-                    self._intracellular_nodes_by_region = []
-                    for i, x, y, z, seg in zip(list(range(len(xs))), xs, ys, zs, segs):
-                        self._intracellular_nodes_by_region.append(node.Node3D(i, x, y, z, r, d, seg, selfref))
-                    self._intracellular_nodes[r] = self._intracellular_nodes_by_region
+                    self._intracellular_nodes[r] += [node.Node3D(i, x, y, z, r, self._d, seg, selfref) for i, x, y, z, seg in zip(range(len(xs)), xs, ys, zs, segs)]
                     # the region is now responsible for computing the correct volumes and surface areas
                         # this is done so that multiple species can use the same region without recomputing it
                     self_has_3d = True
