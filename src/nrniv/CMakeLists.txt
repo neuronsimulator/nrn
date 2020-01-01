@@ -74,8 +74,7 @@ set(NRN_NRNIV_LIB_SRC_FILES
     ${NRN_MODFILE_C}
     ${NRN_NRNGNU_SRC_FILES}
     ${NRN_SCOPMATH_SRC_FILES}
-    ${NRN_SPARSE13_SRC_FILES}
-    ${NRN_SUNDIALS_SRC_FILES})
+    ${NRN_SPARSE13_SRC_FILES})
 
 if(NRN_ENABLE_MPI)
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_PARALLEL_SRC_FILES})
@@ -110,8 +109,6 @@ set(NRN_INCLUDE_DIRS
     ${PROJECT_BINARY_DIR}/src/nrnpython
     ${PROJECT_BINARY_DIR}/src/oc
     ${PROJECT_BINARY_DIR}/src/parallel
-    ${PROJECT_BINARY_DIR}/src/sundials
-    ${PROJECT_BINARY_DIR}/src/sundials/shared
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/src/gnu
     ${PROJECT_SOURCE_DIR}/src/memacs
@@ -122,10 +119,7 @@ set(NRN_INCLUDE_DIRS
     ${PROJECT_SOURCE_DIR}/src/parallel
     ${PROJECT_SOURCE_DIR}/src/sparse
     ${PROJECT_SOURCE_DIR}/src/sparse13
-    ${PROJECT_SOURCE_DIR}/src/sundials
-    ${PROJECT_SOURCE_DIR}/src/sundials/cvodes
-    ${PROJECT_SOURCE_DIR}/src/sundials/ida
-    ${PROJECT_SOURCE_DIR}/src/sundials/shared)
+    ${SUNDIALS_INCLUDES})
 
 # =============================================================================
 # Helper commands : generate various headers
@@ -238,10 +232,23 @@ if(NRN_ENABLE_PYTHON)
 endif()
 
 # =============================================================================
-# All source directories to include
+# libnrniv and generic and SUNDIALS dependencies
 # =============================================================================
 add_library(nrniv_lib SHARED ${NRN_NRNIV_LIB_SRC_FILES})
 target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES} readline)
+message(STATUS "SUNDIALS_LIB_DIR ${SUNDIALS_LIB_DIR}")
+target_link_libraries(nrniv_lib
+  ${SUNDIALS_LIB_DIR}/libsundials_ida.a
+  ${SUNDIALS_LIB_DIR}/libsundials_cvode.a
+  ${SUNDIALS_LIB_DIR}/libsundials_nvecserial.a
+  ${SUNDIALS_LIB_DIR}/libsundials_nvecpthreads.a
+)
+if(NRN_ENABLE_THREADS)
+  target_link_libraries(nrniv_lib ${SUNDIALS_LIB_DIR}/libsundials_nvecpthreads.a)
+endif()
+if(NRN_ENABLE_MPI)
+  target_link_libraries(nrniv_lib ${SUNDIALS_LIB_DIR}/libsundials_nvecparallel.a)
+endif()
 set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
 
 # =============================================================================

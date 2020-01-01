@@ -1083,7 +1083,7 @@ int Cvode::cvode_init(double) {
 			return err;
 		}
 	}else{
-        mem_ = (CVodeMem)CVodeCreate(CV_BDF, ncv_->stiff() ? CV_NEWTON : CV_FUNCTIONAL);
+        mem_ = (CVodeMem)CVodeCreate(ncv_->stiff() ? CV_BDF : CV_ADAMS);
 		if (!mem_){
 			hoc_execerror ("CVodeCreate error", 0);
 		}
@@ -1426,7 +1426,7 @@ void Cvode::matmeth() {
         /* (TODO Michael Hines: is there a jacobian for dense matrix
          * in neuron? If yes, add it here instead of NULL */
         flag = CVDlsSetJacFn(mem_, NULL);
-        if (flag == CVDLS_MEM_FAIL)
+        if (flag != CVLS_SUCCESS)
           throw std::runtime_error(
               "ERROR: can't allocate memory for dense jacobian");
         break;

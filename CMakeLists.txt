@@ -237,7 +237,54 @@ if(NRN_ENABLE_CORENEURON)
 endif()
 
 # =============================================================================
-# Add helpder CMake modules AFTER setting options
+# SUNDIALS cvode and ida are required. Clone and build if necessary.
+# =============================================================================
+find_package(sundials QUIET PATHS ${SUNDIALS_DIR}/share/cmake ${SUNDIALS_DIR})
+# SUNDIALS 5.0.0 is not setup as a cmake package so check if SUNDIALS_DIR exists.
+# and, if so, specify the needed lib and include values
+if ((NOT sundials_FOUND) AND SUNDIALS_DIR AND EXISTS "${SUNDIALS_DIR}/include/cvode/cvode.h")
+  set(sundials_FOUND 1)
+  message(STATUS "sundials_FOUND directly from SUNDIALS_DIR=${SUNDIALS_DIR}")
+endif()
+if(sundials_FOUND)
+  # A reasonable external build is
+  # cmake .. -DCMAKE_INSTALL_PREFIX=install -DEXAMPLES_INSTALL=OFF \
+  #   -DBUILD_ARKODE=OFF -DBUILD_CVODES=OFF -DBUILD_IDAS=OFF \
+  #   -DBUILD_KINSOL=OFF -DEXAMPLES_ENABLE_C=OFF -DMPI_ENABLE=ON \
+  #   -DPTHREAD_ENABLE=ON -DSUNDIALS_PRECISION=double \
+  #   -DUSE_GENERIC_MATH=ON -DCMAKE_BUILD_TYPE=RelWitDebInfo \
+  #   -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DBUILD_SHARED_LIBS=OFF
+  # With the above last two args, only .a libraries are built with -fPIC
+  # and libnrniv.so contains all necessary components of SUNDIALS.
+  message(STATUS "Using external SUNDIALS from ${SUNDIALS_DIR}")
+  set(SUNDIALS_LIB_DIR ${SUNDIALS_DIR}/lib)
+  set(SUNDIALS_INCLUDES
+    ${SUNDIALS_DIR}/include
+    ${SUNDIALS_DIR}/include/cvode
+    ${SUNDIALS_DIR}/include/ida
+    ${SUNDIALS_DIR}/include/shared
+    ${SUNDIALS_DIR}/../../src)
+    # this last is unsafe as it depends on building sundials with
+    #  mkdir build
+    #  cmake .. -DCMAKE_INSTALL_PREFIX=install ...
+    #  so that ${SUNDIALS_DIR}/../../src/cvode/cvode_impl.h , etc can be found
+else()
+  message(STATUS "Building SUNDIALS from submodule")
+  add_external_project(sundials)
+  set(SUNDIALS_DIR ${PROJECT_SOURCE_DIR}/external/sundials)
+  set(SUNDIALS_LIB_DIR ${PROJECT_BINARY_DIR}/lib)
+  #sundials_config.h is put in the PROJECT_BINARY_DIR from sundials_config.h.in
+  set(SUNDIALS_INCLUDES
+    ${SUNDIALS_DIR}/include
+    ${SUNDIALS_DIR}/include/cvode
+    ${SUNDIALS_DIR}/include/ida
+    ${SUNDIALS_DIR}/include/shared
+    ${SUNDIALS_DIR}/src
+    ${PROJECT_BINARY_DIR}/external/sundials/include)
+endif()
+
+# =============================================================================
+# Add helper CMake modules AFTER setting options
 # =============================================================================
 include(NeuronFileLists)
 include(MPIDynamicHelper)
