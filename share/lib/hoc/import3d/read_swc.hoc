@@ -30,12 +30,12 @@ proc init() {
 }
 
 func id2index() {
-  return id2index_.x[$1]
+	return id2index_.x[$1]
 }
 func pix2ix() {local pid_
-  pid_ = pid.x[$1]
-  if (pid_ < 0) { return -1 }
-  return id2index_.x[pid_]
+	pid_ = pid.x[$1]
+	if (pid_ < 0) { return -1 }
+	return id2index_.x[pid_]
 }
 
 proc input() {
@@ -87,8 +87,10 @@ proc parse() {local i, n
 		iline.append($1) // for error messages
 		hoc_sf_.left($s2, hoc_sf_.len($s2)-1)
 		lines.append(new String($s2))
-	} else if (hoc_sf_.head($s2, "#", tstr) == 0) { // comment
+	} else if (hoc_sf_.head($s2, "[ \t\n]*#", tstr) == 0) { // comment
 		header.append(new String($s2))
+	} else if (hoc_sf_.len($s2) == hoc_sf_.tail($s2, "[ \t\n]+", tstr)) {
+		// ignore blank lines
 	} else {
 		err = 1
 		printf("error %s line %d: could not parse: %s", file.getname, $1, $s2)
@@ -118,7 +120,7 @@ printf("error %s lines %d and %d: id's %d and %d are not sequential\n", \
 		}
 		id.sub(idoffset)
 		pid.sub(idoffset)
-	}		
+	}
 	ierr = 0
 	for i=0, id.size-1 {
 		if (id.x[i] != i ) {
@@ -143,7 +145,7 @@ proc check_pid() {local i, ierr, needsort   localobj tobj
 printf("error %s line %d: index %d pid=%d is not less than id=%d\n",\
 			file.getname, iline.x[i], i, pid.x[i], id.x[i])
 		}
-	}	
+	}
 	if (needsort) { // sort in id order
 		tobj = id.sortindex()
 		id.sortindex(id, tobj)
@@ -320,18 +322,6 @@ proc mksection() { local i, isec, first   localobj sec
 		sec.pid = sec.parentsec.id
 		sec.parentx = 0
 	}
-}
-
-func same() {
-	if ($2 < 0) return 0
-	if (x.x[$1] == x.x[$2]) {
-		if (y.x[$1] == y.x[$2]) {
-//			if (z.x[$1] == z.x[$2]) {
-				return 1
-//			}
-		}
-	}
-	return 0
 }
 
 proc instantiate() {local i, isec, psec, pp, si, px

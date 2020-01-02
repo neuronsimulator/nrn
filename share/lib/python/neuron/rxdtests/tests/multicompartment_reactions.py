@@ -1,6 +1,6 @@
 #Example copied from the RxD tutorial
 #http://www.neuron.yale.edu/neuron/static/docs/rxd/index.html
-from neuron import crxd as rxd, h, gui
+from neuron import rxd, h, gui
 from matplotlib import pyplot
 import numpy
 pyplot.ion()
@@ -9,7 +9,7 @@ sec.L=100
 sec.diam=1
 sec.nseg=100
 
-h.CVode().active(1)
+h.CVode().active(True)
 h.CVode().atol(1e-4)
 
 
@@ -47,16 +47,12 @@ h_gate = ip3r_gate_state[cyt_er_membrane]
 minf = ip3[cyt] * 1000. * ca[cyt] / (ip3[cyt] + kip3) / (1000. * ca[cyt] + kact)
 k = gip3r * (minf * h_gate) ** 3
 
-ip3r = rxd.MultiCompartmentReaction(ca[er],ca[cyt], k, k, membrane=cyt_er_membrane)
-
 serca = rxd.MultiCompartmentReaction(ca[cyt],ca[er], gserca/((kserca / (1000. * ca[cyt])) ** 2 + 1), membrane=cyt_er_membrane, custom_dynamics=True)
 leak = rxd.MultiCompartmentReaction(ca[er],ca[cyt], gleak, gleak, membrane=cyt_er_membrane)
 
 
 ip3r = rxd.MultiCompartmentReaction(ca[er],ca[cyt], k, k, membrane=cyt_er_membrane)
 ip3rg = rxd.Rate(h_gate, (1. / (1 + 1000. * ca[cyt] / (0.3)) - h_gate) / ip3rtau)
-
-h.finitialize()
 
 cacyt_trace = h.Vector()
 cacyt_trace.record(ca[cyt].nodes(sec)(.5)[0]._ref_concentration)
@@ -70,7 +66,7 @@ ip3_trace.record(ip3.nodes(sec)(.5)[0]._ref_concentration)
 times = h.Vector()
 times.record(h._ref_t)
 
-h.finitialize()
+h.finitialize(-65)
 
 cae_init = (0.0017 - cac_init *fc) / fe
 ca[er].concentration = cae_init

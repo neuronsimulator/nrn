@@ -98,9 +98,9 @@ ECS_Grid_node *ECS_make_Grid(PyHocObject* my_states, int my_num_states_x,
     if(nrnmpi_use)
     {
         new_Grid->proc_offsets = (int*)malloc(nrnmpi_numprocs*sizeof(int));
-        new_Grid->proc_num_currents = (int*)malloc(nrnmpi_numprocs*sizeof(int));
+        new_Grid->proc_num_currents = (int*)calloc(nrnmpi_numprocs,sizeof(int));
         new_Grid->proc_flux_offsets = (int*)malloc(nrnmpi_numprocs*sizeof(int));
-        new_Grid->proc_num_fluxes = (int*)malloc(nrnmpi_numprocs*sizeof(int));
+        new_Grid->proc_num_fluxes = (int*)calloc(nrnmpi_numprocs,sizeof(int));
     }
 #endif
     new_Grid->num_all_currents = 0;
@@ -208,10 +208,9 @@ ICS_Grid_node::ICS_Grid_node(PyHocObject* my_states, long num_nodes, long* neigh
         if(nrnmpi_use)
         {
             proc_offsets = (int*)malloc(nrnmpi_numprocs*sizeof(int));
-            proc_num_currents = (int*)malloc(nrnmpi_numprocs*sizeof(int));
-            proc_num_fluxes = (int*)malloc(nrnmpi_numprocs*sizeof(int));
+            proc_num_currents = (int*)calloc(nrnmpi_numprocs, sizeof(int));
+            proc_num_fluxes = (int*)calloc(nrnmpi_numprocs, sizeof(int));
             proc_flux_offsets = (int*)malloc(nrnmpi_numprocs*sizeof(int));
-
         }
     #endif
 
@@ -698,14 +697,15 @@ void ECS_Grid_node::apply_node_flux3D(double dt, double* ydot)
     double* sources;
     int i;
     int offset;
+
     if(nrnmpi_use)
     {
         sources = (double*)calloc(node_flux_count,sizeof(double));
         offset = proc_flux_offsets[nrnmpi_myid];
         apply_node_flux(proc_num_fluxes[nrnmpi_myid], NULL, &node_flux_scale[offset], node_flux_src, dt, &sources[offset]);
-        
+
         nrnmpi_dbl_allgatherv_inplace(sources, proc_num_fluxes, proc_flux_offsets);
-        
+
         for(i = 0; i < node_flux_count; i++)
             dest[node_flux_idx[i]] += sources[i];
         free(sources);
@@ -1209,7 +1209,7 @@ void ICS_Grid_node::apply_node_flux3D(double dt, double* ydot)
 void ICS_Grid_node::do_grid_currents(double dt, int grid_id)
 {
     MEM_ZERO(states_cur,sizeof(double)*_num_nodes);
-    if(ics_current_seg_ptrs != NULL){  
+    if(ics_current_seg_ptrs != NULL){
         ssize_t i, j, n;
         int seg_start_index, seg_stop_index;
         int state_index;

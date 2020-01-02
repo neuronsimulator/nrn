@@ -325,7 +325,7 @@ static void fill_dma_send_lists(int sz, int* r) {
 		    }
 		}
 		if (!ps) { // phase 1 target list (or whole list if use_phase2 is 0)
-			assert(gid2out_->find(gid, ps));
+			nrn_assert(gid2out_->find(gid, ps));
 			BGP_DMASend* bs =  ps->bgp.dma_send_;
 			bs->ntarget_hosts_phase1_ = size;
 			if (use_phase2_ == 0) {

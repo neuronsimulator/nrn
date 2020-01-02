@@ -1,42 +1,182 @@
+#=============================================================================
+# Travis NEURON settings
+#=============================================================================
+
+#=============================================================================
+# Environment
+#=============================================================================
 language: cpp
-sudo: false
 dist: bionic
+osx_image: xcode10.2
+
+#=============================================================================
+# Git Clone
+#=============================================================================
+# Disable submodule cloning as we want to test selective cloning
+git:
+  submodules: false
+
+#=============================================================================
+# Common Packages
+#=============================================================================
 addons:
     apt:
+        sources:
+        - sourceline: 'ppa:ubuntu-toolchain-r/test'
         packages:
-        - python3-pip
+        - doxygen
+        - libopenmpi-dev
+        - libx11-dev
+        - libxcomposite-dev
+        - openmpi-bin
         - python-pip
-        - python3-scipy
         - python-scipy
-        - python3-tk
         - python-tk
+        - python3-pip
+        - python3-scipy
+        - python3-tk
+        - g++-5
+        - g++-6
+        - g++-8
+        - g++-9
+    homebrew:
+        packages:
+        - doxygen
+        - openmpi
+        - xz
 virtualenv:
     system_site_packages: true
 
-compiler:
-  - clang
-  - gcc
+#=============================================================================
+# Configure build matrix and corresponding environment
+#=============================================================================
 env:
-  - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2) PYTHON_BLD=$(which python2)"
-    PYTHON="$(which python2)"
-    PIP="$(which pip)"
-    PYTHON_VERSION=2.7.15
-  - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python3)"
-    PYTHON="$(which python3)"
-    PIP="$(which pip3)"
-    PYTHON_VERSION=3.7.1
+  global:
+    - PYTHON="$(which python3)"
+    - PIP="$(which pip3)"
+    - INSTALL_DIR="$HOME/install"
+  jobs:
+    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2) PYTHON_BLD=$(which python2)"
+      PYTHON="$(which python2)"
+      PIP="$(which pip2)"
+      MATRIX_EVAL="CC=gcc CXX=g++"
+    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$PYTHON"
+      MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=ON"
+      BUILD_DOCUMENTATION=ON
+      MATRIX_EVAL="CC=gcc CXX=g++"
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON"
+      MATRIX_EVAL="CC=gcc-5 CXX=g++-5"
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=OFF"
+      MATRIX_EVAL="CC=gcc-6 CXX=g++-6"
+    - BUILD_MODE=cmake
+      NRN_ENABLE_PYTHON_DYNAMIC=ON
+      MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF"
+      MATRIX_EVAL="CC=gcc-9 CXX=g++-9"
 os:
   - linux
+  - osx
+
+#=============================================================================
+# Setup environment and Install dependencies
+#=============================================================================
 before_install:
   - echo $LANG
   - echo $LC_ALL
   - $CXX -v
-  - export PYTHONPATH=$PYTHONPATH:$(pwd)/install/lib/python/
-  - pyenv global $PYTHON_VERSION;
+  - export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python/;
 install:
-  - $PIP install --user scipy matplotlib bokeh ipython cython --upgrade
-  - export PATH=$(pwd)/install/x86_64/bin:$PATH
+  - $PIP install --user setuptools;
+  - $PIP install --user scipy matplotlib bokeh ipython cython pytest mpi4py --upgrade;
+  # add cython location to PATH
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+      export CYTHON_LIB=$($PIP show cython | grep Location);
+      export CYTHON_EXE=$(echo $CYTHON_LIB | awk '{print $2}' | awk -F "lib" '{print$1}')"bin";
+      export PATH=$CYTHON_EXE:$PATH;
+      echo $PATH;
+    fi
+
+#=============================================================================
+# Build, install and test
+#=============================================================================
 script:
-  - ./travis_build.sh .
-  - $PYTHON --version
-  - $PYTHON share/lib/python/neuron/rxdtests/run_all.py
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+      export CONFIG_OPTIONS="$CONFIG_OPTIONS --with-readline=no";
+    fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      eval "${MATRIX_EVAL}";
+    fi
+  - if [ "$BUILD_MODE" == "cmake" ]; then
+      if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
+        export PYTHON2=$(which python2);
+        export PYTHON3=$(which python3);
+        export CMAKE_OPTION="-DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_PYTHON_DYNAMIC=${PYTHON2};${PYTHON3}";
+      else
+        export CMAKE_OPTION="$CMAKE_OPTION -DPYTHON_EXECUTABLE=${PYTHON}";
+      fi;
+      mkdir build && cd build;
+      cmake $CMAKE_OPTION -DNRN_ENABLE_TESTS=ON -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR ..;
+      cmake --build . -- -j 2;
+      if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+        echo $'[install]\nprefix='>src/nrnpython/setup.cfg;
+      fi;
+      if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
+             echo "--RUNNING BASIC TESTS--";
+             NEURONHOME=`pwd`/share/nrn  PYTHONPATH=`pwd`/lib/python PATH=`pwd`/bin LD_LIBRARY_PATH=`pwd`/lib DYLD_LIBRARY_PATH=`pwd`/lib $PYTHON2 -c "from neuron import h; import neuron; neuron.test()";
+             NEURONHOME=`pwd`/share/nrn  PYTHONPATH=`pwd`/lib/python PATH=`pwd`/bin LD_LIBRARY_PATH=`pwd`/lib DYLD_LIBRARY_PATH=`pwd`/lib $PYTHON3 -c "from neuron import h; import neuron; neuron.test()";
+      fi;
+      make install;
+      export PATH=$INSTALL_DIR/bin:$PATH;
+      ctest -VV && make install;
+    else
+      export PATH=$INSTALL_DIR/x86_64/bin:$PATH;
+      ./.travis_build.sh $INSTALL_DIR;
+    fi
+
+  # basic tests for cmake and autoconf build
+  - neurondemo -nogui -c 'demo(4)' -c 'run()' -c 'quit()'
+  - if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
+      $PYTHON3 -c 'import neuron; neuron.test()' && $PYTHON2 -c 'import neuron; neuron.test()';
+    else
+      if [[ "$CMAKE_OPTION" != "-DNRN_ENABLE_PYTHON=OFF"* ]]; then
+        $PYTHON --version && $PYTHON -c 'import neuron; neuron.test()';
+      fi;
+    fi;
+  - if [[ "$BUILD_MODE" != "cmake" && "$TRAVIS_OS_NAME" != "osx" ]]; then
+      $PYTHON share/lib/python/neuron/rxdtests/run_all.py;
+    fi;
+
+#=============================================================================
+# Prepare Documentation
+#=============================================================================
+after_success:
+  - if [ "$BUILD_DOCUMENTATION" = "ON" ] && [ "$CC_FOR_BUILD" = "gcc" ]; then
+      echo "------- Prepare Documentation -------";
+      pushd $TRAVIS_BUILD_DIR/build;
+      make doxygen;
+      pushd $TRAVIS_BUILD_DIR/build/doc_doxygen;
+      touch .nojekyll;
+      echo "<meta http-equiv=\"refresh\" content=\"0; url=./doxygen/index.html\" />" > index.html;
+      popd; popd;
+      echo "-------- Build sphinx documentation --------";
+      bash .travis_docs.sh;
+    fi
+
+#=============================================================================
+# Documentation deployment
+#=============================================================================
+deploy:
+  provider: pages
+  skip_cleanup: true
+  github_token: $GITHUB_TOKEN
+  keep_history: false
+  local_dir: $TRAVIS_BUILD_DIR/build/doc_doxygen
+  target_branch: gh-pages
+  on:
+    branch: cmake
+    condition: $BUILD_DOCUMENTATION = ON && $CC_FOR_BUILD = gcc && $TRAVIS_OS_NAME = linux

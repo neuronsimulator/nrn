@@ -181,24 +181,45 @@ extern "C" void rxd_set_no_diffusion()
     }
 }
 
+extern "C" void free_curr_ptrs()
+{
+    _curr_count = 0;
+	if(_curr_indices != NULL)
+		free(_curr_indices);
+    _curr_indices = NULL;
+    if(_curr_scales != NULL)
+		free(_curr_scales);
+    _curr_scales = NULL;
+	if(_curr_ptrs != NULL)
+		free(_curr_ptrs);
+    _curr_ptrs = NULL;
+}
+
+extern "C" void free_conc_ptrs()
+{
+	_conc_count = 0;
+	if(_conc_indices != NULL)
+		free(_conc_indices);
+    _conc_indices = NULL;
+	if(_conc_ptrs != NULL)
+		free(_conc_ptrs);
+    _conc_ptrs = NULL;
+}
+
+
 extern "C" void rxd_setup_curr_ptrs(int num_currents, int* curr_index, double* curr_scale,
 						  PyHocObject** curr_ptrs, int conc_count, 
 						  int* conc_index, PyHocObject** conc_ptrs)
 {
+    free_curr_ptrs();
 	/* info for NEURON currents - to update states */
 	_curr_count = num_currents;
-	if(_curr_indices != NULL)
-		free(_curr_indices);
 	_curr_indices = (int*)malloc(sizeof(int)*num_currents);
 	memcpy(_curr_indices,curr_index, sizeof(int)*num_currents); 
-	
-	if(_curr_scales != NULL)
-		free(_curr_scales);
+
 	_curr_scales = (double*)malloc(sizeof(double)*num_currents);
 	memcpy(_curr_scales, curr_scale, sizeof(double)*num_currents); 
 
-	if(_curr_ptrs != NULL)
-		free(_curr_ptrs);
 	_curr_ptrs = (PyHocObject**)malloc(sizeof(PyHocObject*)*num_currents);
 	memcpy(_curr_ptrs, curr_ptrs, sizeof(PyHocObject*)*num_currents);
 }
@@ -207,28 +228,24 @@ extern "C" void rxd_setup_conc_ptrs(int conc_count, int* conc_index,
                          PyHocObject** conc_ptrs)
 {
 	/* info for NEURON concentration - to transfer to legacy */
-	_conc_count = conc_count;
 
-	if(_conc_indices != NULL)
-		free(_conc_indices);
+    free_conc_ptrs();
+	_conc_count = conc_count;
 	_conc_indices = (int*)malloc(sizeof(int)*conc_count);
 	memcpy(_conc_indices, conc_index, sizeof(int)*conc_count); 
-	
-	if(_conc_ptrs != NULL)
-		free(_conc_ptrs);
+
 	_conc_ptrs = (PyHocObject**)malloc(sizeof(PyHocObject*)*conc_count);
 	memcpy(_conc_ptrs, conc_ptrs, sizeof(PyHocObject*)*conc_count);
-    
 }
 
-extern "C" void rxd_include_node_flux3D(int grid_count, int* grid_counts, 
+extern "C" void rxd_include_node_flux3D(int grid_count, int* grid_counts,
                                         int* grids, long* index, double* scales,
                                         PyObject** sources)
 {
     Grid_node* g;
     int i = 0, j, k, n, grid_id;
     int offset = 0;
-    
+
     for(g = Parallel_grids[0]; g != NULL; g = g->next)
     {
         if(g->node_flux_count > 0)
@@ -250,13 +267,13 @@ extern "C" void rxd_include_node_flux3D(int grid_count, int* grid_counts,
                 n = grid_counts[i++];
             else
                 n = 0;
-            
+
             g->proc_num_fluxes[nrnmpi_myid] = n;
             nrnmpi_int_allgather_inplace(g->proc_num_fluxes, 1);
-            
-            g->proc_flux_offsets[0] = 0; 
+
+            g->proc_flux_offsets[0] = 0;
             for(j = 1; j < nrnmpi_numprocs; j++)
-                g->proc_flux_offsets[j] =  g->proc_flux_offsets[j-1] + 
+                g->proc_flux_offsets[j] =  g->proc_flux_offsets[j-1] +
                                       g->proc_num_fluxes[j-1];
             g->node_flux_count = g->proc_flux_offsets[j-1] + g->proc_num_fluxes[j-1];
             /*Copy array of the indexes and scales -- sources are evaluated at runtime*/
@@ -265,7 +282,7 @@ extern "C" void rxd_include_node_flux3D(int grid_count, int* grid_counts,
                 g->node_flux_idx = (long*)malloc(g->node_flux_count*sizeof(long));
                 g->node_flux_scale = (double*)malloc(g->node_flux_count*sizeof(double));
                 g->node_flux_src = (PyObject**)allocopy(&sources[offset], n*sizeof(PyObject*));
-            } 
+            }
 
             for(j = 0, k = g->proc_flux_offsets[nrnmpi_myid]; j < n; j++, k++)
             {
@@ -302,7 +319,7 @@ extern "C" void rxd_include_node_flux3D(int grid_count, int* grid_counts,
                 g->node_flux_src = (PyObject**)allocopy(&sources[offset], grid_counts[i]*sizeof(PyObject*));
             }
             offset += grid_counts[i++];
-             
+
         }
 #endif
     }
@@ -334,7 +351,7 @@ void apply_node_flux(int n, long* index, double* scale, PyObject** source, doubl
     long i, j;
     PyObject *result;
     PyHocObject *src;
-    
+
     for(i = 0; i < n; i++)
     {
         if(index == NULL)
@@ -383,10 +400,11 @@ void apply_node_flux(int n, long* index, double* scale, PyObject** source, doubl
     }
 }
 
+
 static void apply_node_flux1D(double dt, double *states)
 {
     apply_node_flux(_node_flux_count, _node_flux_idx, _node_flux_scale, _node_flux_src, dt, states);
-} 
+}
 
 extern "C" void rxd_set_euler_matrix(int nrow, int nnonzero, long* nonzero_i,
                           long* nonzero_j, double* nonzero_values,
@@ -633,7 +651,8 @@ static void ode_solve(double t, double dt, double* p1, double* p2)
         full_b = b;
         full_y = y;
     }
-	nrn_tree_solve(_rxd_a, _rxd_b, _rxd_c, _rxd_d, full_b, _rxd_p, _rxd_euler_nrow, dt);
+    if(diffusion)
+    	nrn_tree_solve(_rxd_a, _rxd_b, _rxd_c, _rxd_d, full_b, _rxd_p, _rxd_euler_nrow, dt);
 
     do_ics_reactions(full_y, full_b, y, b);
    
@@ -722,7 +741,7 @@ extern "C" void setup_currents(int num_currents, int num_fluxes,
     _membrane_lookup = (int*)malloc(sizeof(int)*num_states);
      memset(_membrane_lookup, SPECIES_ABSENT, sizeof(int)*num_states);
 
-    _memb_cur_ptrs = (PyHocObject***)malloc(sizeof(PyHocObject**)*num_currents);     
+    _memb_cur_ptrs = (PyHocObject***)malloc(sizeof(PyHocObject**)*num_currents);
     _memb_cur_mapped_ecs = (int***)malloc(sizeof(int*)*num_currents);        
     _memb_cur_mapped = (int***)malloc(sizeof(int**)*num_currents);
     _rxd_induced_currents_grid = (int*)malloc(sizeof(int)*_memb_curr_total);
@@ -1534,7 +1553,7 @@ void _fadvance(void) {
 
     /*reactions*/
     do_ics_reactions(states, NULL, NULL, NULL);
-   
+
     /*node fluxes*/
     apply_node_flux1D(dt, states);
 
@@ -1629,7 +1648,7 @@ void _rhs_variable_step(const double t, const double* p1, double* p2)
     /*reactions*/
     MEM_ZERO(&ydot[num_states - _rxd_num_zvi], sizeof(double)*_ecs_count);
     get_all_reaction_rates(states, rhs, ydot);
-    
+
 
     const double* states3d = orig_states3d;
     double* ydot3d = orig_ydot3d;
@@ -1649,7 +1668,7 @@ void _rhs_variable_step(const double t, const double* p1, double* p2)
 
     /*Add node fluxes to the result*/
     apply_node_flux1D(1.0, rhs);
-    
+
     /* increment states by rhs which is now really deltas */
     if(_rxd_num_zvi > 0)
     {

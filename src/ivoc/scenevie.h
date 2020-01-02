@@ -93,7 +93,7 @@ public:
 	OcViewGlyph(XYView*);
 	virtual ~OcViewGlyph();
 	XYView* view() {return v_;}
-	virtual void save(ostream&);
+	virtual void save(std::ostream&);
 	void viewmenu(Glyph*);
 private:
 	XYView* v_;
@@ -147,7 +147,7 @@ public:
 	virtual void scale_view(Coord xorg, Coord yorg, float dxscale, float dyscale); // in screen coords.
 	virtual XYView*  new_view(Coord x1, Coord y1, Coord x2, Coord y2);
 	void rebind(); // stop the flicker on scale_view and move_view
-	virtual void save(ostream&);
+	virtual void save(std::ostream&);
 	OcViewGlyph* parent() { return parent_;}
 	virtual void printfile(const char*);
 	virtual void zout(Coord& x1, Coord& y1, Coord& x2, Coord& y2)const;
@@ -260,12 +260,12 @@ public:
 	virtual GlyphIndex glyph_index(const Glyph*);
 	bool drawing_fixed_item()const { return drawing_fixed_item_;}
 
-	static void save_all(ostream&);
+	static void save_all(std::ostream&);
 	static long scene_list_index(Scene*);
 	bool mark() {return mark_;}
 	void mark(bool m) {mark_ = m;}
-	virtual void save_phase1(ostream&);
-	virtual void save_phase2(ostream&);
+	virtual void save_phase1(std::ostream&);
+	virtual void save_phase2(std::ostream&);
 	virtual Coord mbs() const;
 	
 	static const Color* default_background();
@@ -276,7 +276,7 @@ public:
 	void hoc_obj_ptr(Object* o) { hoc_obj_ptr_ = o;}
 	bool menu_picked() { return menu_picked_;}
 protected:
-	virtual void save_class(ostream&, const char*);
+	virtual void save_class(std::ostream&, const char*);
 private:
 #if 1
 	friend class XYView;
