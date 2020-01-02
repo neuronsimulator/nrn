@@ -99,7 +99,10 @@ static void make_spikebuf_type() {
 
 static void check_(int i) {
 	int buf = i;
-	guard(MPI_Bcast(&buf, 1, MPI_INT, 0, nrnmpi_comm));
+  if (nrnmpi_myid < 2) {
+    extern double t;
+    printf("%d enter check %d  t=%g\n", nrnmpi_myid, i, t);
+  }	guard(MPI_Bcast(&buf, 1, MPI_INT, 0, nrnmpi_comm));
 	if (buf != i) {
 		printf("%d calls %d but 0 calls %d\n", nrnmpi_myid, i, buf);
 	}
@@ -107,6 +110,9 @@ static void check_(int i) {
 	if (buf != i) {
 		nrnmpi_abort(nrnmpi_myid*10000 + i*100 + buf);
 	}
+  if (nrnmpi_myid < 2) {
+    printf("%d leave check %d\n", nrnmpi_myid, i);
+  }
 }
 
 int nrnmpi_spike_exchange() {
