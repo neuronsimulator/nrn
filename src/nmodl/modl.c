@@ -78,6 +78,7 @@ static char pgm_name[] =	"nmodl";
 extern char *RCS_version;
 extern char *RCS_date;
 static void openfiles();
+static char *translator_extension;
 
 int main(argc, argv)
 	int             argc;
@@ -102,8 +103,7 @@ int main(argc, argv)
 	Fprintf(stderr, "%s   %s   %s\n",
 		pgm_name, RCS_version, RCS_date);
 #endif
-#endif	
-							
+#endif
 	modprefix = prefix_;
 	init();			/* keywords into symbol table, initialize
 				 * lists, etc. */
@@ -127,12 +127,12 @@ int main(argc, argv)
 
 	openfiles(argc, argv);	/* .mrg else .mod,  .var, .c */
 #if NMODL || HMODL
-	Fprintf(stderr, "Translating %s into %s.c\n", finname,
-		modprefix);
+	Fprintf(stderr, "Translating %s into %s.%s\n", finname,
+		modprefix, translator_extension);
 #else
 #if !SIMSYS
-	Fprintf(stderr, "Translating %s into %s.c and %s.var\n", finname,
-		modprefix, modprefix);
+	Fprintf(stderr, "Translating %s into %s.%s and %s.var\n", finname,
+		modprefix, translator_extension, modprefix);
 #endif
 #endif
 	IGNORE(yyparse());
@@ -288,7 +288,15 @@ static void openfiles(argc, argv)
 		diag("Can't create variable file: ", s);
 	}
 #endif
-	Sprintf(s, "%s.c", modprefix);
+    // if last command line argument is 'ext=cpp' then use
+    // .cpp as extension for translated c code otherwise
+    // use .c as extension.
+    if (strcmp(argv[argc-1], "ext=cpp") == 0) {
+        translator_extension = "cpp";
+    } else {
+        translator_extension = "c";
+    }
+	Sprintf(s, "%s.%s", modprefix, translator_extension);
 	if ((fcout = fopen(s, "w")) == (FILE *) 0) {
 		diag("Can't create C file: ", s);
 	}
