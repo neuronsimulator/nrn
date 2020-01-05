@@ -803,9 +803,10 @@ def _setup_matrices():
                     areaT = sum([v**(2.0/3.0) for v in vols3d])
                     volumes1d.append(node._volumes[index1d])
                     for i, vol in zip(neighbors3d, vols3d):
+                        print(i)
                         sp._region._vol[i] = vol
                         ratio = vol**(2.0/3.0) / areaT
-                        rate = ratio * d * area / (vol * (dx + seg_length1d) / 2)
+                        rate = ratio * d[i] * area / (vol * (dx + seg_length1d) / 2)
                         rates.append(rate)
                         volumes3d.append(vol)
                         hybrid_indices3d.append(i)
