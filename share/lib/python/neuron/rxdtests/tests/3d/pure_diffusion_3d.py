@@ -22,7 +22,7 @@ dend.L = 100
 rxd.set_solve_type(dimension=3)
 diff_constant = 1
 h.dt = h.dt * 50
-r = rxd.Region(h.allsec(),dx=0.5)
+r = rxd.Region(h.allsec(),dx=0.75)
 ca = rxd.Species(r, d=diff_constant, initial=lambda node:
                                                  1 if 0.4 < node.x < 0.6 else 0)
 
