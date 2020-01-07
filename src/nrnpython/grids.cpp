@@ -145,6 +145,7 @@ ECS_Grid_node *ECS_make_Grid(PyHocObject* my_states, int my_num_states_x,
     new_Grid->node_flux_idx = NULL;
     new_Grid->node_flux_scale = NULL;
     new_Grid->node_flux_src = NULL;
+    new_Grid->volume_setup();
 
 
     return new_Grid;
@@ -178,7 +179,7 @@ ICS_Grid_node::ICS_Grid_node(PyHocObject* my_states, long num_nodes, long* neigh
     ics_num_segs = 0;
     _num_nodes = num_nodes;
     diffusable = is_diffusable;
-    atolscale = atolscale;
+    this->atolscale = atolscale;
 
     states = my_states->u.px_;
     states_x = (double*)malloc(sizeof(double)*_num_nodes);
@@ -257,7 +258,7 @@ ICS_Grid_node::ICS_Grid_node(PyHocObject* my_states, long num_nodes, long* neigh
     hybrid = false;
     hybrid_data = (Hybrid_data*)malloc(sizeof(Hybrid_data));
 
-    ics_adi_dir_x = new ICSAdiDirection();
+    ics_adi_dir_x = (ICSAdiDirection*)malloc(sizeof(ICSAdiDirection));
     ics_adi_dir_x->states_in = states_x;
     ics_adi_dir_x->states_out = states;
     ics_adi_dir_x->ordered_start_stop_indices = (long*)malloc(sizeof(long)*NUM_THREADS*2);
@@ -267,7 +268,7 @@ ICS_Grid_node::ICS_Grid_node(PyHocObject* my_states, long num_nodes, long* neigh
     ics_adi_dir_x->deltas = (double*)malloc(sizeof(double)*_num_nodes);
     ics_adi_dir_x->d = dx;
 
-    ics_adi_dir_y = new ICSAdiDirection();
+    ics_adi_dir_y = (ICSAdiDirection*)malloc(sizeof(ICSAdiDirection));
     ics_adi_dir_y->states_in = states_y;
     ics_adi_dir_y->states_out = states;
     ics_adi_dir_y->ordered_start_stop_indices = (long*)malloc(sizeof(long)*NUM_THREADS*2);
@@ -277,7 +278,7 @@ ICS_Grid_node::ICS_Grid_node(PyHocObject* my_states, long num_nodes, long* neigh
     ics_adi_dir_y->deltas = (double*)malloc(sizeof(double)*_num_nodes);
     ics_adi_dir_y->d = dx;
 
-    ics_adi_dir_z = new ICSAdiDirection();
+    ics_adi_dir_z = (ICSAdiDirection*)malloc(sizeof(ICSAdiDirection));
     ics_adi_dir_z->states_in = states_z;
     ics_adi_dir_z->states_out = states;
     ics_adi_dir_z->ordered_start_stop_indices = (long*)malloc(sizeof(long)*NUM_THREADS*2);
@@ -417,10 +418,8 @@ extern "C" void ics_set_grid_concentrations(int grid_list_index, int index_in_li
         g = g->next;
     }
 
-    g->ics_surface_nodes_per_seg = (int64_t*)malloc(total_surface_nodes*sizeof(int64_t));
     g->ics_surface_nodes_per_seg = nodes_per_seg;
 
-    g->ics_surface_nodes_per_seg_start_indices = (int64_t*)malloc(n*sizeof(int64_t));
     g->ics_surface_nodes_per_seg_start_indices = nodes_per_seg_start_indices;
 
     g->ics_concentration_seg_ptrs = (double**)malloc(n*sizeof(double*));
@@ -1327,11 +1326,11 @@ void ICS_Grid_node::free_Grid(){
     free(states_cur);
     free(concentration_list);
     free(current_list);
-	free(alpha);
-    free(_ics_alphas);
-	free(lambda);
-    free(bc);
     free(current_dest);
+    
+    free(ics_concentration_seg_ptrs);
+    free(ics_scale_factors);
+    free(ics_current_seg_ptrs);
 #if NRNMPI
     if(nrnmpi_use)
     {
@@ -1342,23 +1341,41 @@ void ICS_Grid_node::free_Grid(){
     }
 #endif
     free(all_currents);
+    free(ics_adi_dir_x->ordered_start_stop_indices);
+    free(ics_adi_dir_x->line_start_stop_indices);
+    free(ics_adi_dir_x->ordered_nodes);
+    free(ics_adi_dir_x->deltas);
     free(ics_adi_dir_x);
+
+    free(ics_adi_dir_y->ordered_start_stop_indices);
+    free(ics_adi_dir_y->line_start_stop_indices);
+    free(ics_adi_dir_y->ordered_nodes);
+    free(ics_adi_dir_y->deltas);
     free(ics_adi_dir_y);
+
+    free(ics_adi_dir_z->ordered_start_stop_indices);
+    free(ics_adi_dir_z->line_start_stop_indices);
+    free(ics_adi_dir_z->ordered_nodes);
+    free(ics_adi_dir_z->deltas);
     free(ics_adi_dir_z);
+
+    free(hybrid_data);
     if(node_flux_count > 0)
     {
         free(node_flux_idx);
         free(node_flux_scale);
         free(node_flux_src);
     }
-
+    
     if(ics_tasks != NULL)
     {   
         for(i=0; i<NUM_THREADS; i++)
         {
             free(ics_tasks[i].scratchpad);
+            free(ics_tasks[i].RHS);
+            free(ics_tasks[i].u_diag);
+            free(ics_tasks[i].l_diag);
         }
     }
     free(ics_tasks);
-    free(this);
 }

@@ -858,8 +858,6 @@ static void variable_step_delta(long start, long stop, long node_start,
 void _ics_rhs_variable_step_helper(ICS_Grid_node* g, double const * const states, double* ydot)
 {
     double rate_x, rate_y, rate_z;
-    //I don't think I need this since I have the ordered indices
-    int num_states = g->_num_nodes;
     //Find rate for each direction
     double dx = g->ics_adi_dir_x->d, dy = g->ics_adi_dir_y->d, dz = g->ics_adi_dir_z->d;
 

@@ -582,7 +582,40 @@ class _IntracellularSpecies(_SpeciesMathable):
   
         self._update_pointers()
         _defined_species_by_gid.append(self)
-    
+
+    def __del__(self):
+        global _intracellular_diffusion_objects, _defined_species_by_gid
+        if self in _defined_species_by_gid: _defined_species_by_gid.remove(self)
+        if _intracellular_diffusion_objects: 
+            if self in _intracellular_diffusion_objects:
+                del _intracellular_diffusion_objects[self]
+                # remove the grid id
+                for sp in _intracellular_diffusion_objects:
+                    if hasattr(sp,'_grid_id') and sp._grid_id > self._grid_id:
+                        sp._grid_id -= 1
+                if hasattr(self,'_grid_id'): _delete_by_id(self._grid_id)
+                # remove any node.include_flux for the extracellular species.
+                from . import node
+                newflux = {'index': [], 'type': [], 'source': [], 'scale': [], 'region': []}
+                for idx, t, src, sc, rptr in zip(node._node_fluxes['index'], 
+                                                 node._node_fluxes['type'],
+                                                 node._node_fluxes['source'],
+                                                 node._node_fluxes['scale'],
+                                                 node._node_fluxes['region']):
+                    if t != self._grid_id:
+                        if t > self._grid_id:
+                            newflux['type'].append(t)
+                        else:
+                            newflux['type'].append(t-1)
+                        newflux['index'].append(idx)
+                        newflux['type'].append(t)
+                        newflux['source'].append(src)
+                        newflux['scale'].append(sc)
+                        newflux['region'].append(region)
+                node._has_node_fluxes = newflux != node._node_fluxes 
+                node._node_fluxes = newflux
+                nrn_dll_sym('structure_change_cnt', ctypes.c_int).value += 1
+ 
     #Line Definitions for each direction
     def line_defs(self, nodes, direction, nodes_length):
         line_defs = []
@@ -1307,6 +1340,10 @@ class Species(_SpeciesMathable):
             for sp in self._extracellular_instances.values():
                 sp.__del__()
 
+        if hasattr(self,'_intracellular_instances'):
+            for sp in self._intracellular_instances.values():
+                sp.__del__()
+
         # delete the secs
         if hasattr(self,'_secs') and self._secs:
             # remove the species root
@@ -1487,13 +1524,14 @@ class Species(_SpeciesMathable):
     def _update_region_indices(self, update_offsets=False):
         # TODO: should this include 3D nodes? currently 1D only. (What faces the user?)
         # update offset in case nseg has changed
-        if hasattr(self,'_secs') and self._secs and update_offsets:
-            self._offset = self._secs[0]._offset - self._num_roots
         self._region_indices = {}
-        for s in self._secs:
-            if s._region not in self._region_indices:
-                self._region_indices[s._region] = []
-            self._region_indices[s._region] += s.indices
+        if hasattr(self,'_secs') and self._secs:
+            if update_offsets:
+                self._offset = self._secs[0]._offset - self._num_roots
+            for s in self._secs:
+                if s._region not in self._region_indices:
+                    self._region_indices[s._region] = []
+                self._region_indices[s._region] += s.indices
         # a list of all indices
         self._region_indices[None] = list(itertools.chain.from_iterable(list(self._region_indices.values())))
     
