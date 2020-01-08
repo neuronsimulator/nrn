@@ -25,6 +25,8 @@ fi
 
 PKG_PROG_PKG_CONFIG([0.22])
 
+UNQUOTED_PACKAGE_VERSION=$PACKAGE_VERSION
+AC_SUBST(UNQUOTED_PACKAGE_VERSION)
 dnl The following line causes us to make a config.h instead of putting all
 dnl the defines into the makefile.
 AC_CONFIG_HEADERS(config.h)

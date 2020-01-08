@@ -7,7 +7,7 @@
 
 ;Configuration
 
-!define Version @PACKAGE_VERSION@
+!define Version "@UNQUOTED_PACKAGE_VERSION@"
 !define binsuffix "@binsuffix@"
 !define marshaldir "@dos_marshal_dir@"
 !define cpu "@host_cpu@"

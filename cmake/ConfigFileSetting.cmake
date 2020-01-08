@@ -5,6 +5,7 @@ set(PACKAGE_NAME "${PACKAGE}")
 set(PACKAGE_TARNAME "${PACKAGE}")
 set(PACKAGE_BUGREPORT "\"\"")
 set(PACKAGE_URL "\"\"")
+set(UNQUOTED_PACKAGE_VERSION "${PROJECT_VERSION}")
 
 # ~~~
 # some of the variables need to be double quoted strings as they are
