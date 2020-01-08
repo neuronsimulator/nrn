@@ -7,7 +7,7 @@
 
 ;Configuration
 
-!define Version "@PACKAGE_VERSION@"
+!define Version @PACKAGE_VERSION@
 !define binsuffix "@binsuffix@"
 !define marshaldir "@dos_marshal_dir@"
 !define cpu "@host_cpu@"
@@ -188,7 +188,7 @@ SectionEnd
 ; optional section
 Section /o "Documentation"
   SetOutPath "$INSTDIR"
-  File /r "${MARSHAL}\html"
+  File /nonfatal /r "${MARSHAL}\html"
   IfFileExists "$INSTDIR\lib\smsinst.dat" +1 next
     CreateShortCut "$SMPROGRAMS\${NEURON}\Documentation.lnk" "$INSTDIR\html\helpfils.html"
 next:

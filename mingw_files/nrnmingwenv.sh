@@ -2,7 +2,7 @@
 set -ex
 
 # if arg then assume it is destination, eg, c:/marshalnrn64/nrn
-if test $# = 1 ; then
+if test $# -ge 1 ; then
   N="$1/mingw"
 else
   N='c:/nrn/mingw'
@@ -29,19 +29,28 @@ for i in $binprog ; do
   cp /usr/bin/$i.exe $N/usr/bin/$i.exe
 done
 
+cp_dlls() {
 (
+  upath=`cygpath "$1"`
+  export PATH="$upath":$PATH
   rm -f temp.tmp
-  for i in $N/usr/bin/*.exe ; do
+  for i in $1/*.exe ; do
     cygcheck $i | sed 's/^ *//' >> temp.tmp
   done
   sort temp.tmp | uniq | grep 'msys64' | sed 's,\\,/,g' > temp2.tmp
   for i in $(cat temp2.tmp) ; do
     echo $i
-    cp "$i" "$N/usr/bin"
+    cp "$i" "$1"
   done
   rm temp.tmp
   rm temp2.tmp
 )
+}
+
+cp_dlls $N/usr/bin
+if test "$2" = "-bin" ; then
+  cp_dlls $1/bin
+fi
 
 # minimal gcc build system for mknrndll
 # this portion of the file started life as

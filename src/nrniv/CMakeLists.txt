@@ -322,3 +322,24 @@ endif()
 # ~~~
 install(TARGETS nrniv nocmodl modlunit DESTINATION bin)
 install(TARGETS nrniv_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+
+# =============================================================================
+# Build a Windows setup.exe distribution.
+# =============================================================================
+if(MINGW AND (CMAKE_INSTALL_PREFIX MATCHES "C:/marshalnrn/nrn"))
+  # Presumes previous 'make install' with -DCMAKE_INSTALL_PREFIX="C:/marshalnrn/nrn"
+  # Note: see hard coded set for dos_marshal_dir in ConfigFileSetting.cmake
+  add_custom_target(
+    setup_exe
+    COMMAND bash ${PROJECT_SOURCE_DIR}/mingw_files/nrnmingwenv.sh ${CMAKE_INSTALL_PREFIX} -bin
+    COMMAND "c:/Program Files (x86)/NSIS/makensisw" ${PROJECT_BINARY_DIR}/src/mswin/nrnsetupmingw.nsi
+    DEPENDS ${PROJECT_SOURCE_DIR}/mingw_files/nrnmingwenv.sh
+    COMMENT "Copy minimal mingw devel files for mknrndll to ${CMAKE_INSTALL_PREFIX}")
+endif()
+if (MINGW)
+  # install mswin specfic
+  set(MSWIN_SRC_DIR ${PROJECT_SOURCE_DIR}/src/mswin)
+  set(MSWIN_LIB_SCRIPTS
+    ${MSWIN_SRC_DIR}/lib/bshstart.sh)
+  install(FILES ${MSWIN_LIB_SCRIPTS} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+endif()

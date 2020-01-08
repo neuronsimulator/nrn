@@ -263,6 +263,12 @@ nrn_configure_file(nmodlconf.h .)
 nrn_configure_file(nrnunits.lib share/lib OUTPUT share/nrn/lib)
 nrn_configure_file(nrn.defaults share/lib OUTPUT share/nrn/lib)
 nrn_configure_file(constants.py share/lib/python/neuron/rxd)
+if (MINGW)
+  set(dos_marshal_dir "c:\\marshalnrn")
+  nrn_configure_file(nrnsetupmingw.nsi src/mswin)
+  nrn_configure_file(AddToPath.nsh src/mswin)
+  nrn_configure_file(EnvVarUpdate.nsh src/mswin)
+endif()
 # TODO temporary workaround for mingw
 file(COPY ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib DESTINATION ${PROJECT_BINARY_DIR}/lib)
 
