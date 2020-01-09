@@ -331,7 +331,7 @@ if(MINGW AND (CMAKE_INSTALL_PREFIX MATCHES "C:/marshalnrn/nrn"))
   # Note: see hard coded set for dos_marshal_dir in ConfigFileSetting.cmake
   add_custom_target(
     setup_exe
-    COMMAND bash ${PROJECT_SOURCE_DIR}/mingw_files/nrnmingwenv.sh ${CMAKE_INSTALL_PREFIX} -bin
+    COMMAND bash ${PROJECT_SOURCE_DIR}/mingw_files/nrnmingwenv.sh ${CMAKE_INSTALL_PREFIX} -cmake
     COMMAND "c:/Program Files (x86)/NSIS/makensisw" ${PROJECT_BINARY_DIR}/src/mswin/nrnsetupmingw.nsi
     DEPENDS ${PROJECT_SOURCE_DIR}/mingw_files/nrnmingwenv.sh
     COMMENT "Copy minimal mingw devel files for mknrndll to ${CMAKE_INSTALL_PREFIX}")

@@ -1,13 +1,40 @@
 #!/bin/sh
+
 set -ex
+
+# Primarily (autotools and cmake) copies minimal developent files
+# to allow nrnivmodl (mknrndll) to build nrnmech.dll .
+# The -cmake second arg option does a few extra things to prepare
+# for making the setup.exe. I.e. remove some inadvertenty installed
+# file that needlessly bloat up the setup.exe, make sure that
+# dlls needed by nrniv.exe, etc, are present, copy some mswin
+# specific scripts, and make sure the neurondemo nrnmech.dll
+# is present.
 
 # if arg then assume it is destination, eg, c:/marshalnrn64/nrn
 if test $# -ge 1 ; then
-  N="$1/mingw"
+  N="$1"
 else
-  N='c:/nrn/mingw'
-  rm -r -f "$N"
+  N='c:/nrn'
+  rm -r -f "$N/mingw"
 fi
+
+if test "$2" = "-cmake" ; then
+  is_cmake=yes
+fi
+
+if test "$is_cmake" = "yes" ; then 
+  # These particular *.dll.a files not needed
+  rm -f tmp.tmp `find $N/bin -name \*.dll.a`
+  rm -f tmp.tmp `find $N/lib -name \*.dll.a`
+  # This is huge. Leave it out.
+  rm -r -f $N/lib/python/neuron/rxdtests/correct_data
+  # Significantly reduces size if compiled with -g
+  strip $N/bin/*.exe `find $N/lib -name \*.dll`
+fi
+
+N=$N/mingw
+
 
 #basic environment
 
@@ -48,7 +75,7 @@ cp_dlls() {
 }
 
 cp_dlls $N/usr/bin
-if test "$2" = "-bin" ; then
+if test "$is_cmake" = "yes" ; then
   cp_dlls $1/bin
 fi
 
