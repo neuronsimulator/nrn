@@ -19,6 +19,8 @@ else
   rm -r -f "$N/mingw"
 fi
 
+NM=$N/mingw
+
 if test "$2" = "-cmake" ; then
   is_cmake=yes
 fi
@@ -33,27 +35,24 @@ if test "$is_cmake" = "yes" ; then
   strip $N/bin/*.exe `find $N/lib -name \*.dll`
 fi
 
-N=$N/mingw
-
-
 #basic environment
 
-mkdir -p "$N/usr/bin"
-mkdir -p "$N/etc"
-mkdir -p "$N/tmp"
-mkdir -p "$N/usr/share/terminfo/63"
-cp /usr/share/terminfo/63/* $N/usr/share/terminfo/63
-cp $HOME/.inputrc $N/etc/inputrc
+mkdir -p "$NM/usr/bin"
+mkdir -p "$NM/etc"
+mkdir -p "$NM/tmp"
+mkdir -p "$NM/usr/share/terminfo/63"
+cp /usr/share/terminfo/63/* $NM/usr/share/terminfo/63
+cp $HOME/.inputrc $NM/etc/inputrc
 
-#cp /msys2.ico $N
-#cp /msys2.ini $N
-#cp /msys2_shell.cmd $N
+#cp /msys2.ico $NM
+#cp /msys2.ini $NM
+#cp /msys2_shell.cmd $NM
 
 binprog="basename bash cat cp dirname echo find grep ls make mintty
   mkdir mv rebase rm sed sh sort unzip which cygpath cygcheck uname"
 for i in $binprog ; do
   echo $i
-  cp /usr/bin/$i.exe $N/usr/bin/$i.exe
+  cp /usr/bin/$i.exe $NM/usr/bin/$i.exe
 done
 
 cp_dlls() {
@@ -74,16 +73,16 @@ cp_dlls() {
 )
 }
 
-cp_dlls $N/usr/bin
+cp_dlls $NM/usr/bin
 if test "$is_cmake" = "yes" ; then
-  cp_dlls $1/bin
+  cp_dlls $N/bin
 fi
 
 # minimal gcc build system for mknrndll
 # this portion of the file started life as
 # $ (cd c:/nrn/mingw ; ls -R mingw64) > nrngcc64.sh
 
-M=$N/mingw64
+M=$NM/mingw64
 X=x86_64-w64-mingw32
 gccver=`gcc --version | sed -n '1s/.* //p'`
 if test ! -d "$gccver" ; then
@@ -100,7 +99,7 @@ mkdir -p "$M/$X/include/sys"
 
 copy() {
   for i in $2 ; do
-    cp "/$1/$i" "$N/$1/$i"
+    cp "/$1/$i" "$NM/$1/$i"
   done
 }
 
@@ -131,10 +130,10 @@ copyinc() {
   sort temp2 | uniq > temp3
   sed -n 's,/[^/]*$,,p' temp3 | sort  | uniq > temp4
   for i in $(cat temp4) ; do
-    mkdir -p "$N/$i"
+    mkdir -p "$NM/$i"
   done
   for i in $(cat temp3) ; do
-    cp /$i "$N/$i"
+    cp /$i "$NM/$i"
   done
 }
 
