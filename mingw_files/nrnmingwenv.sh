@@ -25,10 +25,18 @@ if test "$2" = "-cmake" ; then
   is_cmake=yes
 fi
 
-if test "$is_cmake" = "yes" ; then 
+if test "$is_cmake" = "yes" ; then
+  # Minimal runtime msmpi (assumes installed in c:/ms-mpi)
+  mpiinst=c:/ms-mpi
+  cp $mpiinst/bin/mpiexec.exe $N/bin
+  cp $mpiinst/bin/smpd.exe $N/bin
+  cp $mpiinst/lib/x64/msmpi.dll $N/bin
   # These particular *.dll.a files not needed
   rm -f tmp.tmp `find $N/bin -name \*.dll.a`
   rm -f tmp.tmp `find $N/lib -name \*.dll.a`
+  # Inadvertently installed
+  rm -f tmp.tmp `find $N/lib -name Makefile.am`
+  rm -f tmp.tmp `find $N/lib -name \*.in`
   # This is huge. Leave it out.
   rm -r -f $N/lib/python/neuron/rxdtests/correct_data
   # Significantly reduces size if compiled with -g

@@ -322,6 +322,22 @@ endif()
 # ~~~
 install(TARGETS nrniv nocmodl modlunit DESTINATION bin)
 install(TARGETS nrniv_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+if(MINGW)
+  set(mswindir ${PROJECT_SOURCE_DIR}/src/mswin)
+  add_custom_command(OUTPUT nrnicon.res
+    COMMAND echo "id ICON \"${mswindir}/nrniv10.ico\"" > nrnicon.rc
+    COMMAND windres nrnicon.rc -O coff -o nrnicon.res
+    DEPENDS ${mswindir}/nrniv10.ico)
+  set_source_files_properties(
+    ${mswindir}/extra/neuron.cpp
+    ${mswindir}/extra/mos2nrn.cpp
+    ${mswindir}/extra/nrnbinstr.cpp
+    PROPERTIES COMPILE_DEFINITIONS MINGW)
+  add_executable(neuron ${mswindir}/extra/neuron.cpp nrnicon.res)
+  add_executable(mos2nrn ${mswindir}/extra/mos2nrn.cpp)
+  add_executable(nrnbinstr ${mswindir}/extra/nrnbinstr.cpp)
+  install(TARGETS neuron mos2nrn nrnbinstr DESTINATION bin)
+endif()
 
 # =============================================================================
 # Build a Windows setup.exe distribution.
