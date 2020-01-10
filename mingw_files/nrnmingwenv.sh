@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -ex
 
@@ -23,6 +23,7 @@ NM=$N/mingw
 
 if test "$2" = "-cmake" ; then
   is_cmake=yes
+  srcdir="$3"
 fi
 
 if test "$is_cmake" = "yes" ; then
@@ -41,6 +42,8 @@ if test "$is_cmake" = "yes" ; then
   rm -r -f $N/lib/python/neuron/rxdtests/correct_data
   # Significantly reduces size if compiled with -g
   strip $N/bin/*.exe `find $N/lib -name \*.dll`
+  # til mingw vs linux straightened out replace with old mingw scripts
+  (cd $srcdir/src/mswin/bin ; cp neurondemo nrngui mknrndll $N/bin )
 fi
 
 #basic environment
@@ -192,3 +195,19 @@ libpthread.dll.a
 libshell32.a
 libuser32.a
 '
+
+if test "$is_cmake" = "yes" ; then
+  # nrnmech.dll for neurondemo
+  (
+    nx=`cygpath -U "$N"`
+    export N
+    export MODLUNIT=$N/lib/nrnunits.lib
+    export PATH=$nx/bin:$nx/mingw/usr/bin:$nx/mingw/mingw64/bin:$PATH
+    cd $N/demo/release ; $N/lib/mknrndl2.sh
+    rm *.o *.c
+    if test ! -f nrnmech.dll ; then
+      echo 'could not build nrnmech.dll'
+      exit 1;
+    fi
+  )
+fi
