@@ -5153,7 +5153,7 @@ void ConditionEvent::check(NrnThread* nt, double tt, double teps) {
 	}
 }
 
-ConditionEvent::ConditionEvent() {qthresh_ = NULL;}
+ConditionEvent::ConditionEvent() {qthresh_ = NULL; valold_ = 0.0;}
 ConditionEvent::~ConditionEvent() {}
 
 void ConditionEvent::condition(Cvode* cv) { //logic for high order threshold detection
