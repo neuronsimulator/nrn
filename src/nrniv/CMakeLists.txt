@@ -274,20 +274,24 @@ else()
 endif()
 
 if(IV_ENABLE_X11_DYNAMIC)
-  # by defining IVX11_DYNAM in ivocmain.cpp, the latter can call ivx11_dyload and if that fails, set
-  # hoc_usegui = 0 which avoids all InterViews calls.
+  # ~~~
+  # by defining IVX11_DYNAM in ivocmain.cpp, the latter can call ivx11_dyload and
+  # if that fails, set hoc_usegui = 0 which avoids all InterViews calls.
+  # ~~~
   set_property(
     SOURCE ${PROJECT_SOURCE_DIR}/src/ivoc/ivocmain.cpp ${PROJECT_SOURCE_DIR}/src/pwman/xdep.cpp
            ${PROJECT_SOURCE_DIR}/src/ivoc/xdep.cpp ${PROJECT_SOURCE_DIR}/src/oc/x.c
     APPEND
     PROPERTY COMPILE_DEFINITIONS IVX11_DYNAM)
   if((NOT IV_ENABLE_SHARED) AND IV_LIB_DIR)
-    # IV_LIB_DIR is not set when IV is a submodule and not yet installed
-    # but libivx11dynam is already in its proper place at POST_BUILD.
-    # When IV_ENABLE_SHARED=ON, libivx11dynam is found in IV_LIB_DIR (the location of
-    # libinterviews). When OFF, libivx11dynam needs to be copied to the location of libnrniv.  The
-    # goal is that if libnrniv is loaded, the system can find libivx11dynam independent of
-    # CMAKE_INSTALL_PREFIX.
+    # ~~~
+    # IV_LIB_DIR is not set when IV is a submodule and not yet installed but
+    # libivx11dynam is already in its proper place at POST_BUILD. When
+    # IV_ENABLE_SHARED=ON, libivx11dynam is found in IV_LIB_DIR (the location
+    # of libinterviews). When OFF, libivx11dynam needs to be copied to the
+    # location of libnrniv. The goal is that if libnrniv is loaded, the system
+    # can find libivx11dynam independent of CMAKE_INSTALL_PREFIX.
+    # ~~~
     set(_suffix ${CMAKE_SHARED_LIBRARY_SUFFIX})
     add_custom_command(
       TARGET nrniv_lib POST_BUILD
@@ -324,15 +328,13 @@ install(TARGETS nrniv nocmodl modlunit DESTINATION bin)
 install(TARGETS nrniv_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 if(MINGW)
   set(mswindir ${PROJECT_SOURCE_DIR}/src/mswin)
-  FILE(WRITE ${CMAKE_CURRENT_BINARY_DIR}/nrnicon.rc "id ICON \"${mswindir}/nrniv10.ico\"\n")
-  add_custom_command(OUTPUT nrnicon.res
+  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/nrnicon.rc "id ICON \"${mswindir}/nrniv10.ico\"\n")
+  add_custom_command(
+    OUTPUT nrnicon.res
     COMMAND windres nrnicon.rc -O coff -o nrnicon.res
     DEPENDS ${mswindir}/nrniv10.ico)
-  set_source_files_properties(
-    ${mswindir}/extra/neuron.cpp
-    ${mswindir}/extra/mos2nrn.cpp
-    ${mswindir}/extra/nrnbinstr.cpp
-    PROPERTIES COMPILE_DEFINITIONS MINGW)
+  set_source_files_properties(${mswindir}/extra/neuron.cpp ${mswindir}/extra/mos2nrn.cpp
+                              ${mswindir}/extra/nrnbinstr.cpp PROPERTIES COMPILE_DEFINITIONS MINGW)
   add_executable(neuron ${mswindir}/extra/neuron.cpp nrnicon.res)
   add_executable(mos2nrn ${mswindir}/extra/mos2nrn.cpp)
   add_executable(nrnbinstr ${mswindir}/extra/nrnbinstr.cpp)
@@ -343,17 +345,20 @@ endif()
 # Build a Windows setup.exe distribution.
 # =============================================================================
 if(MINGW AND (CMAKE_INSTALL_PREFIX MATCHES "C:/marshalnrn/nrn"))
+  # ~~~
   # Presumes previous 'make install' with -DCMAKE_INSTALL_PREFIX="C:/marshalnrn/nrn"
   # Note: see hard coded set for dos_marshal_dir in ConfigFileSetting.cmake
+  # ~~~
   set(MAKENSIS_EXE "c:/Program Files (x86)/NSIS/makensisw")
   add_custom_target(
     setup_exe
-    COMMAND bash ${PROJECT_SOURCE_DIR}/mingw_files/nrnmingwenv.sh ${CMAKE_INSTALL_PREFIX} -cmake ${PROJECT_SOURCE_DIR}
+    COMMAND bash ${PROJECT_SOURCE_DIR}/mingw_files/nrnmingwenv.sh ${CMAKE_INSTALL_PREFIX} -cmake
+            ${PROJECT_SOURCE_DIR}
     COMMAND ${MAKENSIS_EXE} ${PROJECT_BINARY_DIR}/src/mswin/nrnsetupmingw.nsi
     DEPENDS ${PROJECT_SOURCE_DIR}/mingw_files/nrnmingwenv.sh
     COMMENT "Copy minimal mingw devel files for mknrndll to ${CMAKE_INSTALL_PREFIX}")
 endif()
-if (MINGW)
+if(MINGW)
   # install mswin specfic. See cmake/NeuronFileLists.cmake for MSWIN... lists.
   install(FILES ${MSWIN_FILES} DESTINATION ${CMAKE_INSTALL_PREFIX})
   install(FILES ${MSWIN_BIN_FILES} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)

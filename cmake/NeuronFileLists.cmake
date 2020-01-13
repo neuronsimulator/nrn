@@ -612,15 +612,12 @@ list(APPEND NRN_NRNOC_SRC_FILES ${PROJECT_BINARY_DIR}/src/nrnoc/hocusr.h)
 # =============================================================================
 if(MINGW)
   set(MSWIN_SRC_DIR ${PROJECT_SOURCE_DIR}/src/mswin)
-  nrn_create_file_list(MSWIN_FILES ${PROJECT_SOURCE_DIR}/src/parallel
-    test0.hoc
-    test0.py)
+  nrn_create_file_list(MSWIN_FILES ${PROJECT_SOURCE_DIR}/src/parallel test0.hoc test0.py)
   list(APPEND MSWIN_FILES ${MSWIN_SRC_DIR}/notes.txt)
-  nrn_create_file_list(MSWIN_BIN_FILES ${MSWIN_SRC_DIR}
-    nrniv.ico
-    nrniv10.ico
-    nmodl2a.ico)
-  nrn_create_file_list(MSWIN_LIB_FILES ${MSWIN_SRC_DIR}/lib
+  nrn_create_file_list(MSWIN_BIN_FILES ${MSWIN_SRC_DIR} nrniv.ico nrniv10.ico nmodl2a.ico)
+  nrn_create_file_list(
+    MSWIN_LIB_FILES
+    ${MSWIN_SRC_DIR}/lib
     bshstart.sh
     neuron2.sh
     mknrndl2.sh
