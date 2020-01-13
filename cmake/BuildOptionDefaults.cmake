@@ -23,7 +23,7 @@ set(NRN_ENABLE_MPI_DYNAMIC_DEFAULT OFF)
 set(NRN_MODULE_INSTALL_OPTIONS_DEFAULT "")
 set(NRN_PYTHON_DYNAMIC_DEFAULT "")
 set(NRN_MPI_DYNAMIC_DEFAULT "")
-set(NRN_RX3D_OPT_LEVEL_DEFAULT "2")
+set(NRN_RX3D_OPT_LEVEL_DEFAULT "0")
 
 # Some CMAKE variables we would like to see, if they differ from the following.
 set(CMAKE_BUILD_TYPE_DEFAULT RelWithDebInfo)
