@@ -9,7 +9,7 @@
 
 !define Version "@UNQUOTED_PACKAGE_VERSION@"
 !define binsuffix "@binsuffix@"
-!define marshaldir "@dos_marshal_dir@"
+!define marshaldir "@WIN_MARSHAL_DIR@"
 !define cpu "@host_cpu@"
 
 ; The name of the installer

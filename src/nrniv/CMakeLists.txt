@@ -324,8 +324,8 @@ install(TARGETS nrniv nocmodl modlunit DESTINATION bin)
 install(TARGETS nrniv_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 if(MINGW)
   set(mswindir ${PROJECT_SOURCE_DIR}/src/mswin)
+  FILE(WRITE ${CMAKE_CURRENT_BINARY_DIR}/nrnicon.rc "id ICON \"${mswindir}/nrniv10.ico\"\n")
   add_custom_command(OUTPUT nrnicon.res
-    COMMAND echo "id ICON \"${mswindir}/nrniv10.ico\"" > nrnicon.rc
     COMMAND windres nrnicon.rc -O coff -o nrnicon.res
     DEPENDS ${mswindir}/nrniv10.ico)
   set_source_files_properties(
@@ -345,31 +345,16 @@ endif()
 if(MINGW AND (CMAKE_INSTALL_PREFIX MATCHES "C:/marshalnrn/nrn"))
   # Presumes previous 'make install' with -DCMAKE_INSTALL_PREFIX="C:/marshalnrn/nrn"
   # Note: see hard coded set for dos_marshal_dir in ConfigFileSetting.cmake
+  set(MAKENSIS_EXE "c:/Program Files (x86)/NSIS/makensisw")
   add_custom_target(
     setup_exe
     COMMAND bash ${PROJECT_SOURCE_DIR}/mingw_files/nrnmingwenv.sh ${CMAKE_INSTALL_PREFIX} -cmake ${PROJECT_SOURCE_DIR}
-    COMMAND "c:/Program Files (x86)/NSIS/makensisw" ${PROJECT_BINARY_DIR}/src/mswin/nrnsetupmingw.nsi
+    COMMAND ${MAKENSIS_EXE} ${PROJECT_BINARY_DIR}/src/mswin/nrnsetupmingw.nsi
     DEPENDS ${PROJECT_SOURCE_DIR}/mingw_files/nrnmingwenv.sh
     COMMENT "Copy minimal mingw devel files for mknrndll to ${CMAKE_INSTALL_PREFIX}")
 endif()
 if (MINGW)
-  # install mswin specfic
-  set(MSWIN_SRC_DIR ${PROJECT_SOURCE_DIR}/src/mswin)
-  set(MSWIN_FILES
-    ${PROJECT_SOURCE_DIR}/src/parallel/test0.hoc
-    ${PROJECT_SOURCE_DIR}/src/parallel/test0.py
-    ${MSWIN_SRC_DIR}/notes.txt)
-  set(MSWIN_BIN_FILES
-    ${MSWIN_SRC_DIR}/nrniv.ico
-    ${MSWIN_SRC_DIR}/nrniv10.ico
-    ${MSWIN_SRC_DIR}/nmodl2a.ico)
-  set(MSWIN_LIB_FILES
-    ${MSWIN_SRC_DIR}/lib/bshstart.sh
-    ${MSWIN_SRC_DIR}/lib/neuron2.sh
-    ${MSWIN_SRC_DIR}/lib/mknrndl2.sh
-    ${MSWIN_SRC_DIR}/lib/mknrndll.sh
-    ${MSWIN_SRC_DIR}/lib/modlunit.sh
-    ${PROJECT_BINARY_DIR}/src/mswin/lib/mknrndll.mak)
+  # install mswin specfic. See cmake/NeuronFileLists.cmake for MSWIN... lists.
   install(FILES ${MSWIN_FILES} DESTINATION ${CMAKE_INSTALL_PREFIX})
   install(FILES ${MSWIN_BIN_FILES} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
   install(FILES ${MSWIN_LIB_FILES} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)

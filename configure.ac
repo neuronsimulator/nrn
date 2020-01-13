@@ -388,12 +388,12 @@ elif test "$MINGW" = "yes" ; then
 		# and nrnsetupmingw.nsi
 		if test "$host_cpu" = x86_64 ; then
 			marshal_dir='c:/marshalnrn64'
-			dos_marshal_dir='c:\marshalnrn64'
+			WIN_MARSHAL_DIR='c:\marshalnrn64'
 			binsuffix=""
 			nrnskip_rebase='#'
 		else
 			marshal_dir='c:/marshalnrn'
-			dos_marshal_dir='c:\marshalnrn'
+			WIN_MARSHAL_DIR='c:\marshalnrn'
 			binsuffix=""
 		fi
 	fi
