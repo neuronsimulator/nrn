@@ -1,0 +1,68 @@
+# =============================================================================
+# Build a Windows setup.exe distribution.
+# =============================================================================
+
+# ~~~
+#  The prerequisite for 'make setup_exe' is 'make install'.
+#  -DCMAKE_INSTALL_PREFIX=/C/marshalnrn/nrn is recommended.
+#  ... because nrnmingwenv.sh checks for the optional existence of
+#  ${CMAKE_INSTALL_PREFIX}/../nrnhtml
+#
+#  A setup.exe is generally built using the configuration
+#  /mingw64/bin/cmake .. -G "Unix Makefiles" \
+#    -DCMAKE_INSTALL_PREFIX=/C/marshalnrn/nrn \
+#    -DIV_DIR=/home/hines/neuron/ivcmake/build/install \
+#    -DPYTHON_EXECUTABLE=/e/python37/python \
+#    -DNRN_ENABLE_PYTHON_DYNAMIC=ON \
+#    -DNRN_PYTHON_DYNAMIC="e:/python27/python;e:/python35/python;e:/python36/python;e:/python37/python" \
+#    -DNRN_ENABLE_MPI_DYNAMIC=ON \
+#    -DCMAKE_PREFIX_PATH="/c/ms-mpi" \
+#    -DNRN_ENABLE_CORENEURON=Off
+#  make -j install
+#  make setup_exe
+# ~~~
+
+if(MINGW)
+  set(mswinsrc ${CMAKE_CURRENT_SOURCE_DIR})
+  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/nrnicon.rc "id ICON \"${mswinsrc}/nrniv10.ico\"\n")
+  add_custom_command(
+    OUTPUT nrnicon.res
+    COMMAND windres nrnicon.rc -O coff -o nrnicon.res
+    DEPENDS ${mswinsrc}/nrniv10.ico)
+  set_source_files_properties(${mswinsrc}/extra/neuron.cpp ${mswinsrc}/extra/mos2nrn.cpp
+                              ${mswinsrc}/extra/nrnbinstr.cpp PROPERTIES COMPILE_DEFINITIONS MINGW)
+  add_executable(neuron ${mswinsrc}/extra/neuron.cpp nrnicon.res)
+  add_executable(mos2nrn ${mswinsrc}/extra/mos2nrn.cpp)
+  add_executable(nrnbinstr ${mswinsrc}/extra/nrnbinstr.cpp)
+
+  # ~~~
+  # Presumes previous 'make install'
+  # Invoke after 'make install' by 'make setup_exe'.
+  # ~~~
+  set(MAKENSIS_EXE "c:/Program Files (x86)/NSIS/makensisw")
+  add_custom_target(
+    setup_exe
+
+    # copy enough mingw tool chain for mknrndll to work
+    COMMAND bash ${PROJECT_SOURCE_DIR}/mingw_files/nrnmingwenv.sh ${CMAKE_INSTALL_PREFIX}
+
+    # ~~~
+    # Copy mpi. Reduce size by removing inadvertently installed files,
+    # some huge test data files, and strip binary executables and libraries.
+    # Create the nrnmech.dll for neurondemo.
+    # ~~~
+    COMMAND bash ${PROJECT_BINARY_DIR}/src/mswin/pre_setup_exe.sh
+
+    # make the setup.exe
+    COMMAND ${MAKENSIS_EXE} ${PROJECT_BINARY_DIR}/src/mswin/nrnsetupmingw.nsi
+
+    DEPENDS ${PROJECT_SOURCE_DIR}/mingw_files/nrnmingwenv.sh
+            ${PROJECT_BINARY_DIR}/src/mswin/pre_setup_exe.sh
+    COMMENT "Copy mknrndll tool chain to ${CMAKE_INSTALL_PREFIX} and build setup.exe ")
+
+  # install mswin specfic. See cmake/NeuronFileLists.cmake for MSWIN... lists.
+  install(FILES ${MSWIN_FILES} DESTINATION ${CMAKE_INSTALL_PREFIX})
+  install(FILES ${MSWIN_BIN_FILES} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+  install(FILES ${MSWIN_LIB_FILES} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+  install(TARGETS neuron mos2nrn nrnbinstr DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+endif()

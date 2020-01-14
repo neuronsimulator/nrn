@@ -9,7 +9,7 @@
 
 !define Version "@UNQUOTED_PACKAGE_VERSION@"
 !define binsuffix "@binsuffix@"
-!define marshaldir "@WIN_MARSHAL_DIR@"
+!define marshalnrndir "@WIN_MARSHAL_NRN_DIR@"
 !define cpu "@host_cpu@"
 
 ; The name of the installer
@@ -36,7 +36,7 @@ var "launch3"
 ; The default directory
 !define NRN "nrn"
 ; where to get the files
-!define MARSHAL "${marshaldir}"
+!define MARSHALNRN "${marshalnrndir}"
 
 ; The default installation directory
 ;InstallDir $PROGRAMFILES\${NRN}
@@ -94,7 +94,7 @@ Section "${NEURON} (required)"
   ; Set output path to the installation directory.
   SetOutPath $INSTDIR
   ; Put file there
-  File /r "${MARSHAL}\nrn${binsuffix}\*.*"
+  File /r "${MARSHALNRN}\${binsuffix}\*.*"
   ; Bizarre but needed for launch of enthought canopy to import neuron
   COPYFILES $INSTDIR\bin\libstdc++-6.dll $INSTDIR\lib\python\neuron
   ; Write the installation path into the registry
@@ -188,12 +188,12 @@ SectionEnd
 ; optional section
 Section /o "Documentation"
   SetOutPath "$INSTDIR"
-  File /nonfatal /r "${MARSHAL}\html"
+  File /nonfatal /r "${MARSHALNRN}\..\nrnhtml"
   IfFileExists "$INSTDIR\lib\smsinst.dat" +1 next
-    CreateShortCut "$SMPROGRAMS\${NEURON}\Documentation.lnk" "$INSTDIR\html\helpfils.html"
+    CreateShortCut "$SMPROGRAMS\${NEURON}\Documentation.lnk" "$INSTDIR\nrnhtml\helpfils.html"
 next:
   IfFileExists "$INSTDIR\lib\deskinst.dat" +1 next2
-    CreateShortCut "$DESKTOP\${NEURON}\Documentation.lnk" "$INSTDIR\html\helpfils.html"
+    CreateShortCut "$DESKTOP\${NEURON}\Documentation.lnk" "$INSTDIR\nrnhtml\helpfils.html"
 next2:
 SectionEnd
 

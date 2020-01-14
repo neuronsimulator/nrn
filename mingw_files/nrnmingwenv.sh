@@ -2,14 +2,8 @@
 
 set -ex
 
-# Primarily (autotools and cmake) copies minimal developent files
+# Copies (autotools and cmake) minimal compiler toolchain
 # to allow nrnivmodl (mknrndll) to build nrnmech.dll .
-# The -cmake second arg option does a few extra things to prepare
-# for making the setup.exe. I.e. remove some inadvertenty installed
-# file that needlessly bloat up the setup.exe, make sure that
-# dlls needed by nrniv.exe, etc, are present, copy some mswin
-# specific scripts, and make sure the neurondemo nrnmech.dll
-# is present.
 
 # if arg then assume it is destination, eg, c:/marshalnrn64/nrn
 if test $# -ge 1 ; then
@@ -20,31 +14,6 @@ else
 fi
 
 NM=$N/mingw
-
-if test "$2" = "-cmake" ; then
-  is_cmake=yes
-  srcdir="$3"
-fi
-
-if test "$is_cmake" = "yes" ; then
-  # Minimal runtime msmpi (assumes installed in c:/ms-mpi)
-  mpiinst=c:/ms-mpi
-  cp $mpiinst/bin/mpiexec.exe $N/bin
-  cp $mpiinst/bin/smpd.exe $N/bin
-  cp $mpiinst/lib/x64/msmpi.dll $N/bin
-  # These particular *.dll.a files not needed
-  rm -f tmp.tmp `find $N/bin -name \*.dll.a`
-  rm -f tmp.tmp `find $N/lib -name \*.dll.a`
-  # Inadvertently installed
-  rm -f tmp.tmp `find $N/lib -name Makefile.am`
-  rm -f tmp.tmp `find $N/lib -name \*.in`
-  # This is huge. Leave it out.
-  rm -r -f $N/lib/python/neuron/rxdtests/correct_data
-  # Significantly reduces size if compiled with -g
-  strip $N/bin/*.exe `find $N/lib -name \*.dll`
-  # til mingw vs linux straightened out replace with old mingw scripts
-  (cd $srcdir/src/mswin/bin ; cp neurondemo nrngui mknrndll $N/bin )
-fi
 
 #basic environment
 
@@ -85,9 +54,6 @@ cp_dlls() {
 }
 
 cp_dlls $NM/usr/bin
-if test "$is_cmake" = "yes" ; then
-  cp_dlls $N/bin
-fi
 
 # minimal gcc build system for mknrndll
 # this portion of the file started life as
@@ -195,19 +161,3 @@ libpthread.dll.a
 libshell32.a
 libuser32.a
 '
-
-if test "$is_cmake" = "yes" ; then
-  # nrnmech.dll for neurondemo
-  (
-    nx=`cygpath -U "$N"`
-    export N
-    export MODLUNIT=$N/lib/nrnunits.lib
-    export PATH=$nx/bin:$nx/mingw/usr/bin:$nx/mingw/mingw64/bin:$PATH
-    cd $N/demo/release ; $N/lib/mknrndl2.sh
-    rm *.o *.c
-    if test ! -f nrnmech.dll ; then
-      echo 'could not build nrnmech.dll'
-      exit 1;
-    fi
-  )
-fi

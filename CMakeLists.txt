@@ -287,6 +287,10 @@ if(NRN_ENABLE_RX3D)
   add_subdirectory(share/lib/python/neuron/rxd/geometry3d)
 endif()
 
+if(MINGW)
+  add_subdirectory(src/mswin)
+endif()
+
 # =============================================================================
 # Add coding-conventions submodule if code formatting enabled
 # =============================================================================
