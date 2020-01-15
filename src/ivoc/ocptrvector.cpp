@@ -14,8 +14,10 @@
 #include "ocptrvector.h"
 #include "objcmd.h"
 #include "ivocvect.h"
-#include "graph.h"
 #include <OS/math.h>
+#if HAVE_IV
+#include "graph.h"
+#endif
 
 extern "C" int hoc_return_type_code;
 static double dummy;
@@ -91,13 +93,18 @@ double OcPtrVector::getval(int i) {
 	return *pd_[i];
 }
 
-static double ptr_label(void* v) {
+static const char* nullstr = "";
+
+static const char** ptr_label(void* v) {
 	char*& s = ((OcPtrVector*)v)->label_;
-	if (s) { free(s); }
         if (ifarg(1)) {
+	  if (s) { free(s); }
 	  s = strdup(gargstr(1));
 	}
-	return 0.;
+	if (s) {
+	  return (const char**)(&((OcPtrVector*)v)->label_);
+	}
+	return &nullstr;
 }
 
 static double resize(void* v) {
@@ -235,8 +242,12 @@ static Member_func members[] = {
 	"gather", gather,
 	"ptr_update_callback", ptr_update_callback,
 	"plot", ptr_plot,
-	"label", ptr_label,
 	0, 0
+};
+
+static Member_ret_str_func retstr_members[] = {
+	"label", ptr_label,
+        0,0
 };
 
 static void* cons(Object*) {
@@ -251,5 +262,5 @@ static void destruct(void* v) {
 }
 
 void OcPtrVector_reg() {
-	class2oc("PtrVector", cons, destruct, members, 0, 0, 0);
+	class2oc("PtrVector", cons, destruct, members, 0, 0, retstr_members);
 }
