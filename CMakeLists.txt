@@ -287,6 +287,10 @@ if(NRN_ENABLE_RX3D)
   add_subdirectory(share/lib/python/neuron/rxd/geometry3d)
 endif()
 
+if(MINGW)
+  add_subdirectory(src/mswin)
+endif()
+
 # =============================================================================
 # Add coding-conventions submodule if code formatting enabled
 # =============================================================================
@@ -311,6 +315,8 @@ else()
   set(GLOBAL_VAR_TOGGLE_COMMAND "'s/ RANGE minf/ GLOBAL minf/'")
   set(TABLE_VAR_TOGGLE_COMMAND "'s/ :TABLE minf/ TABLE minf/'")
 endif()
+separate_arguments(GLOBAL_VAR_TOGGLE_COMMAND UNIX_COMMAND "${GLOBAL_VAR_TOGGLE_COMMAND}")
+separate_arguments(TABLE_VAR_TOGGLE_COMMAND UNIX_COMMAND "${TABLE_VAR_TOGGLE_COMMAND}")
 add_custom_target(
   hh_update
   COMMAND sed ${GLOBAL_VAR_TOGGLE_COMMAND} ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod >
@@ -320,7 +326,8 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/hh.mod.2
           ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod
   COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/hh.mod.1 ${CMAKE_BINARY_DIR}/hh.mod.2
-  COMMENT "Update hh.mod for CoreNEURON compatibility")
+  COMMENT "Update hh.mod for CoreNEURON compatibility"
+  VERBATIM)
 add_dependencies(nrniv hh_update)
 
 # =============================================================================

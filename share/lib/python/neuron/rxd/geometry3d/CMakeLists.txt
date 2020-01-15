@@ -102,7 +102,7 @@ fi\n\
 
     add_custom_command(
       OUTPUT ${bname}
-      COMMAND ${CYTHON_EXECUTABLE} ${basename}.pyx -o ${bname}
+      COMMAND ${CYTHON_EXECUTABLE} -2 ${basename}.pyx -o ${bname}
       COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/cy_cpp_filt.sh "${bname}"
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
       DEPENDS ${sname} ${CMAKE_CURRENT_BINARY_DIR}/setup.py)

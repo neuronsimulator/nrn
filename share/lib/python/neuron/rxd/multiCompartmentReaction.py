@@ -251,17 +251,15 @@ class MultiCompartmentReaction(GeneralizedReaction):
             dest_regions = [d()._region()._nrn_region for d in dests] + ['o' for d in dests_ecs]
 
             if 'i' in source_regions and 'o' not in source_regions and 'i' not in dest_regions:
-                inside = -1 #'source'
+                inside = 1 #'source'
             elif 'o' in source_regions and 'i' not in source_regions and 'o' not in dest_regions:
-                inside = 1 # 'dest'
+                inside = -1 # 'dest'
             elif 'i' in dest_regions and 'o' not in dest_regions and 'i' not in source_regions:
-                inside = 1 # 'dest'
+                inside = -1 # 'dest'
             elif 'o' in dest_regions and 'i' not in dest_regions and 'o' not in source_regions:
-                inside = -1 # 'source'
+                inside = 1 # 'source'
             else:
                 raise RxDException('unable to identify which side of reaction is inside (hope to remove the need for this')
-        if sources_ecs or dests_ecs:
-            inside *= -1
         # dereference the species to get the true species if it's actually a SpeciesOnRegion
         sources = [s()._species() for s in self._sources]
         dests = [d()._species() for d in self._dests]
