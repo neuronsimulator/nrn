@@ -606,3 +606,22 @@ nrn_create_file_list(NRNMPI_DYNAMIC_INCLUDE_FILE ${PROJECT_SOURCE_DIR}/src/nrnmp
                      ${MPI_DYNAMIC_INCLUDE})
 nrn_create_file_list(NRN_IVOS_SRC_FILES ${NRN_IVOS_SRC_DIR} ${IVOS_FILES_LIST})
 list(APPEND NRN_NRNOC_SRC_FILES ${PROJECT_BINARY_DIR}/src/nrnoc/hocusr.h)
+
+# =============================================================================
+# Create mswin install lists needed for setup_exe target
+# =============================================================================
+if(MINGW)
+  set(MSWIN_SRC_DIR ${PROJECT_SOURCE_DIR}/src/mswin)
+  nrn_create_file_list(MSWIN_FILES ${PROJECT_SOURCE_DIR}/src/parallel test0.hoc test0.py)
+  list(APPEND MSWIN_FILES ${MSWIN_SRC_DIR}/notes.txt)
+  nrn_create_file_list(MSWIN_BIN_FILES ${MSWIN_SRC_DIR} nrniv.ico nrniv10.ico nmodl2a.ico)
+  nrn_create_file_list(
+    MSWIN_LIB_FILES
+    ${MSWIN_SRC_DIR}/lib
+    bshstart.sh
+    neuron2.sh
+    mknrndl2.sh
+    mknrndll.sh
+    modlunit.sh)
+  list(APPEND MSWIN_LIB_FILES ${PROJECT_BINARY_DIR}/src/mswin/lib/mknrndll.mak)
+endif()

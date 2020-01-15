@@ -14,7 +14,7 @@ set(npy_pyver10 "")
 
 # reset since no " allowed
 set(PACKAGE_VERSION ${PROJECT_VERSION})
-set(NRN_LIBDIR ${NRN_INSTALL_SHARE_LIB_DIR})
+set(NRN_LIBDIR ${CMAKE_INSTALL_PREFIX}/lib)
 
 # set by IV's cmake module
 set(IV_LIBDIR "${IV_INCLUDE_DIR}/../lib")
