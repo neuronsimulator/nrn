@@ -40,22 +40,23 @@ if(MINGW)
   # Invoke after 'make install' by 'make setup_exe'.
   # ~~~
   set(MAKENSIS_EXE "c:/Program Files (x86)/NSIS/makensisw")
+
+  # ~~~
+  # Target used for building installer
+  # nrnmingwenv.sh:
+  #    - copy enough mingw tool chain for mknrndll to work
+  # pre_setup_exe.sh:
+  #    - Copy mpi. Reduce size by removing inadvertently installed files,
+  #      some huge test data files, and strip binary executables and libraries.
+  #    - Create the nrnmech.dll for neurondemo.
+  # nrnsetupmingw.nsi:
+  #    - make the setup.exe
+  # ~~~
   add_custom_target(
     setup_exe
-
-    # copy enough mingw tool chain for mknrndll to work
     COMMAND bash ${PROJECT_SOURCE_DIR}/mingw_files/nrnmingwenv.sh ${CMAKE_INSTALL_PREFIX}
-
-    # ~~~
-    # Copy mpi. Reduce size by removing inadvertently installed files,
-    # some huge test data files, and strip binary executables and libraries.
-    # Create the nrnmech.dll for neurondemo.
-    # ~~~
     COMMAND bash ${PROJECT_BINARY_DIR}/src/mswin/pre_setup_exe.sh
-
-    # make the setup.exe
     COMMAND ${MAKENSIS_EXE} ${PROJECT_BINARY_DIR}/src/mswin/nrnsetupmingw.nsi
-
     DEPENDS ${PROJECT_SOURCE_DIR}/mingw_files/nrnmingwenv.sh
             ${PROJECT_BINARY_DIR}/src/mswin/pre_setup_exe.sh
     COMMENT "Copy mknrndll tool chain to ${CMAKE_INSTALL_PREFIX} and build setup.exe ")
