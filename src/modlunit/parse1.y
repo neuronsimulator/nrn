@@ -58,7 +58,7 @@ extern int lexcontext;
 }
 
 %token	<qp>	VERBATIM COMMENT TITLE CONSTANT INDEPENDENT ASSIGNED STATE
-%token	<qp>	END_VERBATIM END_COMMENT UNITS BREAKPOINT PARAMETER
+%token	<qp>	END_VERBATIM END_COMMENT UNITS BREAKPOINT PARAMETER INT
 %token	<qp>	INITIAL1 DERIVATIVE SOLVE USING WITH STEPPED DISCRETE
 %token	<qp>	FROM TO BY WHILE IF ELSE START1 STEP SENS SOLVEFOR
 %token	<qp>	PROCEDURE PARTIAL DEL DEL2 DEFINE1 IFERROR
@@ -476,6 +476,7 @@ intexpr: Name
 	| intexpr '-' intexpr
 	| intexpr '*' intexpr
 	| intexpr '/' intexpr
+	| INT '(' expr ')' {lastok = $4;}
 	| error {myerr("Illegal integer expression");}
 	;
 expr:	varname {P3{unit_push($1);}}
