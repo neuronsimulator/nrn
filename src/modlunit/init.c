@@ -41,6 +41,7 @@ static struct {			/* Keywords */
 			"FUNCTION_TABLE", FUNCTION_TABLE,
 	                "PROCEDURE", PROCEDURE,
 	                "PARTIAL", PARTIAL,
+	                "INT", INT,
 			"DEL2", DEL2,
 	                "DEL", DEL,
 	                "LOCAL", LOCAL,
