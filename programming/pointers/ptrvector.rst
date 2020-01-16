@@ -132,3 +132,96 @@ PtrVector
     (see :meth:`CVode.cache_efficient`)  Within the callback, the
     :meth:`PtrVector.resize` method may be called but the PtrVector should
     not be destroyed. The return value is 0.
+
+----
+
+.. method:: PtrVector.plot
+
+    Syntax:
+        ``0 = pv.plot(graphobj)``
+
+        ``0 = pv.plot(graphobj, color, brush)``
+
+        ``0 = pv.plot(graphobj, x_vec)``
+
+        ``0 = pv.plot(graphobj, x_vec, color, brush)``
+
+        ``0 = pv.plot(graphobj, x_increment)``
+
+        ``0 = pv.plot(graphobj, x_increment, color, brush)``
+
+
+    Description:
+        Analogous to :meth:`Vector.plot` but always returns 0 instead of self.
+        Plots the pointer vector elements in a :class:`Graph` object.  The default is to plot the dereferenced
+        elements of the 
+        pointer vector as y values with their indices as x values.  An optional 
+        argument can be used to 
+        specify the x-axis.  Such an argument can be either a 
+        vector, *x_vec*, in which case its values are used for x values, or 
+        a scalar,  *x_increment*, in 
+        which case x is incremented according to this number. 
+         
+        This function plots the 
+        ``pv.getval(i)`` values that are pointed to by the pointer vector at the time of graph flushing or window 
+        resizing. There is currently no corresponding alternative to :meth:`Vector.line` which plots the vector values 
+        that exist at the time of the call to ``plot``.  So the best way to produce multiple line plots is to first
+        :meth:`PtrVector.gather` into a Vector and use
+        ``vec.line()``.
+         
+        Once a pointer vector is plotted, it is only necessary to call ``graphobj.flush()`` 
+        in order to display further changes to the valuses pointed to.  In this way it 
+        is possible to produce rather rapid line animation. 
+         
+        If the vector :meth:`PtrVector.label` is not empty it will be used as the label for 
+        the line on the Graph. 
+         
+        Resizing a pointer vector that has been plotted will remove it from the Graph. 
+         
+        The number of points plotted is the minimum of vec.size and x_vec.size 
+        at the time pv.plot is called. x_vec is assumed to be an unchanging 
+        Vector. 
+         
+
+    Example:
+
+        .. code-block::
+            python
+
+            from neuron import h, gui
+            import time
+            
+            g = h.Graph() 
+            g.size(0,10,-1,1) 
+            vec = h.Vector() 
+            vec.indgen(0,10, .1) 
+            vec.apply("sin")
+
+            pv = h.PtrVector(len(vec))
+            pv.label("PtrVector")
+            for i in range(len(vec)):
+              pv.pset(i, vec._ref_x[i])
+          
+            pv.plot(g, .1) 
+            def do_run():
+                for i in range(len(vec)):
+                    vec.rotate(1)
+                    g.flush()
+                    h.doNotify()
+                    time.sleep(0.01)
+
+            h.xpanel("") 
+            h.xbutton("run", do_run) 
+            h.xpanel() 
+----
+
+.. method:: PtrVector.label
+
+  Syntax:
+    :samp:`{curstr} = pv.label("str")`
+
+    :samp:`{curstr} = pv.label()`
+
+  Description:
+    Set the label to the string arg. Return the current label. When plotting, the label will be displayed.
+    Very similar to functionality of :meth:`Vector.label`.
