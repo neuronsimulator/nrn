@@ -28,11 +28,17 @@ rm -f tmp.tmp `find $N/bin -name \*.dll.a`
 rm -f tmp.tmp `find $N/lib -name \*.dll.a`
 # Inadvertently installed
 rm -f $N/bin/nrnmech_makefile `find $N/lib -name Makefile.am`
-rm -f tmp.tmp `find $N/lib -name \*.in`
+rm -f tmp.tmp `find $N -name \*.in`
+rm -r -f $N/lib/auditscripts
+rm -r -f tmp.tmp `find $N/lib -name __pycache__`
+# remove unneeded files installed if iv is an external module
+rm -f $N/bin/idemo.exe
+rm -f tmp.tmp $N/lib/libinterviews.*
+(cd $N/include ; rm -r -f tmp.tmp Dispatch InterViews IV-2_6 IV-look IV-Mac IV-Win IV-x11 macivdef.h OS TIFF Unidraw)
 # This is huge. Leave it out.
 rm -r -f $N/lib/python/neuron/rxdtests/correct_data
 # Significantly reduces size if compiled with -g
-strip $N/bin/*.exe `find $N/lib -name \*.dll`
+strip $N/bin/*.exe  `find $N/bin -name \*.dll` `find $N/lib -name \*.dll`
 # til mingw vs linux straightened out replace with old mingw scripts
 (cd $srcdir/src/mswin/bin ; cp neurondemo nrngui mknrndll $N/bin )
 cp $N/bin/mknrndll $N/bin/nrnivmodl
