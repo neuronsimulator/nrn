@@ -1215,7 +1215,6 @@ void read_phase2(FileHandler& F, int imult, NrnThread& nt) {
     NrnThreadChkpnt& ntc = nrnthread_chkpnt[nt.id];
     ntc.file_id = gidgroups_w[nt.id];
 #endif
-    NrnThreadMembList* tml;
 
     int n_outputgid, ndiam, nmech, *tml_index, *ml_nodecount;
     if (direct) {
@@ -1273,7 +1272,6 @@ void read_phase2(FileHandler& F, int imult, NrnThread& nt) {
     /// together
     // printf("ncell=%d end=%d nmech=%d\n", nt.ncell, nt.end, nmech);
     // printf("nart=%d\n", nart);
-    NrnThreadMembList* tml_last = nullptr;
     nt._ml_list = (Memb_list**)ecalloc_align(corenrn.get_memb_funcs().size(), sizeof(Memb_list*));
 
 #if CHKPNTDEBUG
@@ -1300,14 +1298,16 @@ void read_phase2(FileHandler& F, int imult, NrnThread& nt) {
     nt.stream_id = omp_get_thread_num();
 #endif
     auto& memb_func = corenrn.get_memb_funcs();
+    NrnThreadMembList* tml_last = nullptr;
     for (int i = 0; i < nmech; ++i) {
-        tml = (NrnThreadMembList*)emalloc_align(sizeof(NrnThreadMembList));
+        auto tml = (NrnThreadMembList*)emalloc_align(sizeof(NrnThreadMembList));
+        tml->next = nullptr;
+        tml->index = tml_index[i];
+
         tml->ml = (Memb_list*)ecalloc_align(1, sizeof(Memb_list));
         tml->ml->_net_receive_buffer = nullptr;
         tml->ml->_net_send_buffer = nullptr;
         tml->ml->_permute = nullptr;
-        tml->next = nullptr;
-        tml->index = tml_index[i];
         if (memb_func[tml->index].alloc == nullptr) {
             hoc_execerror(memb_func[tml->index].sym, "mechanism does not exist");
         }
@@ -1380,7 +1380,7 @@ void read_phase2(FileHandler& F, int imult, NrnThread& nt) {
     // Memb_list.data points into the nt.data array.
     // Also count the number of Point_process
     int npnt = 0;
-    for (tml = nt.tml; tml; tml = tml->next) {
+    for (auto tml = nt.tml; tml; tml = tml->next) {
         Memb_list* ml = tml->ml;
         int type = tml->index;
         int layout = corenrn.get_mech_data_layout()[type];
@@ -1409,7 +1409,7 @@ void read_phase2(FileHandler& F, int imult, NrnThread& nt) {
     nt._actual_v = nt._data + 4 * ne;
     nt._actual_area = nt._data + 5 * ne;
     nt._actual_diam = ndiam ? nt._data + 6 * ne : nullptr;
-    for (tml = nt.tml; tml; tml = tml->next) {
+    for (auto tml = nt.tml; tml; tml = tml->next) {
         Memb_list* ml = tml->ml;
         ml->data = nt._data + (ml->data - (double*)0);
     }
@@ -1444,7 +1444,7 @@ void read_phase2(FileHandler& F, int imult, NrnThread& nt) {
     // Complete spec of Point_process except for the acell presyn_ field.
     int itml = 0;
     int dsz_inst = 0;
-    for (tml = nt.tml, itml = 0; tml; tml = tml->next, ++itml) {
+    for (auto tml = nt.tml; tml; tml = tml->next, ++itml) {
         int type = tml->index;
         Memb_list* ml = tml->ml;
         int is_art = corenrn.get_is_artificial()[type];
@@ -1523,7 +1523,7 @@ void read_phase2(FileHandler& F, int imult, NrnThread& nt) {
     // -9 (diam),
     // or 0-999 (ion variables). Note that pdata has a layout and the
     // type block in nt.data into which it indexes, has a layout.
-    for (tml = nt.tml; tml; tml = tml->next) {
+    for (auto tml = nt.tml; tml; tml = tml->next) {
         int type = tml->index;
         int layout = corenrn.get_mech_data_layout()[type];
         int* pdata = tml->ml->pdata;
@@ -1623,14 +1623,14 @@ for (int i=0; i < nt.end; ++i) {
 #endif
 
         // specify the ml->_permute and sort the nodeindices
-        for (tml = nt.tml; tml; tml = tml->next) {
+        for (auto tml = nt.tml; tml; tml = tml->next) {
             if (tml->ml->nodeindices) {  // not artificial
                 permute_nodeindices(tml->ml, p);
             }
         }
 
         // permute mechanism data, pdata (and values)
-        for (tml = nt.tml; tml; tml = tml->next) {
+        for (auto tml = nt.tml; tml; tml = tml->next) {
             if (tml->ml->nodeindices) {  // not artificial
                 permute_ml(tml->ml, tml->index, nt);
             }
@@ -1660,7 +1660,7 @@ for (int i=0; i < nt.end; ++i) {
     /* temporary array for dependencies */
     int* mech_deps = (int*)ecalloc(memb_func.size(), sizeof(int));
 
-    for (tml = nt.tml; tml; tml = tml->next) {
+    for (auto tml = nt.tml; tml; tml = tml->next) {
         /* initialize to null */
         tml->dependencies = nullptr;
         tml->ndependencies = 0;
@@ -1720,21 +1720,19 @@ for (int i=0; i < nt.end; ++i) {
     /// Fill the BA lists
     std::vector<BAMech*> bamap(memb_func.size());
     for (int i = 0; i < BEFORE_AFTER_SIZE; ++i) {
-        BAMech* bam;
-        NrnThreadBAList *tbl, **ptbl;
         for (int ii = 0; ii < memb_func.size(); ++ii) {
-            bamap[ii] = (BAMech*)0;
+            bamap[ii] = nullptr;
         }
-        for (bam = corenrn.get_bamech()[i]; bam; bam = bam->next) {
+        for (auto bam = corenrn.get_bamech()[i]; bam; bam = bam->next) {
             bamap[bam->type] = bam;
         }
         /* unnecessary but keep in order anyway */
-        ptbl = nt.tbl + i;
-        for (tml = nt.tml; tml; tml = tml->next) {
+        NrnThreadBAList **ptbl = nt.tbl + i;
+        for (auto tml = nt.tml; tml; tml = tml->next) {
             if (bamap[tml->index]) {
                 Memb_list* ml = tml->ml;
-                tbl = (NrnThreadBAList*)emalloc(sizeof(NrnThreadBAList));
-                tbl->next = (NrnThreadBAList*)0;
+                auto tbl = (NrnThreadBAList*)emalloc(sizeof(NrnThreadBAList));
+                tbl->next = nullptr;
                 tbl->bam = bamap[tml->index];
                 tbl->ml = ml;
                 *ptbl = tbl;
@@ -1747,7 +1745,7 @@ for (int i=0; i < nt.end; ++i) {
     // setup a list of types that have WATCH statement
     {
         int sz = 0;  // count the types with WATCH
-        for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
+        for (auto tml = nt.tml; tml; tml = tml->next) {
             if (corenrn.get_watch_check()[tml->index]) {
                 ++sz;
             }
@@ -1755,7 +1753,7 @@ for (int i=0; i < nt.end; ++i) {
         if (sz) {
             nt._watch_types = (int*)ecalloc(sz + 1, sizeof(int));  // nullptr terminated
             sz = 0;
-            for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
+            for (auto tml = nt.tml; tml; tml = tml->next) {
                 if (corenrn.get_watch_check()[tml->index]) {
                     nt._watch_types[sz++] = tml->index;
                 }
@@ -1874,14 +1872,12 @@ for (int i=0; i < nt.end; ++i) {
         if (type > 0) {
             int index = pnt_offset[type] + pntindex[i];  /// Potentially uninitialized pnt_offset[],
                                                          /// check for previous assignments
-            Point_process* pnt = nt.pntprocs + index;
             NetCon& nc = nt.netcons[i];
-            nc.target_ = pnt;
+            nc.target_ = nt.pntprocs + index;
             nc.active_ = true;
         }
     }
 
-    int extracon_target_type = -1;
     int extracon_target_nweight = 0;
     if (nrn_setup_extracon > 0) {
         // Fill in the extracon target_ and active_.
@@ -1891,7 +1887,7 @@ for (int i=0; i < nt.end; ++i) {
         // Edge case: if there is no such synapse, let the target_ be nullptr
         //   and the netcon be inactive.
         // Same pattern as algorithm for extracon netcon_srcgid above in phase1.
-        extracon_target_type = nrn_get_mechtype("ProbAMPANMDA_EMS");
+        int extracon_target_type = nrn_get_mechtype("ProbAMPANMDA_EMS");
         assert(extracon_target_type > 0);
         extracon_target_nweight = corenrn.get_pnt_receive_size()[extracon_target_type];
         int j = 0;
@@ -1972,7 +1968,7 @@ for (int i=0; i < nt.end; ++i) {
     ntc.bcpdcnt = new int[npnt];
     ntc.bcptype = new int[npnt];
 #endif
-    for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
+    for (auto tml = nt.tml; tml; tml = tml->next) {
         int type = tml->index;
         if (!corenrn.get_bbcore_read()[type]) {
             continue;
@@ -2121,13 +2117,9 @@ for (int i=0; i < nt.end; ++i) {
             // begin with a size of 5% of the number of instances
             nrb->_size = ml->nodecount;
             // or at least 8
-            if (nrb->_size < 8) {
-                nrb->_size = 8;
-            }
+            nrb->_size = std::max(8, nrb->_size);
             // but not more than nodecount
-            if (nrb->_size > ml->nodecount) {
-                nrb->_size = ml->nodecount;
-            }
+            nrb->_size = std::min(ml->nodecount, nrb->_size);
 
             nrb->_pnt_index = (int*)ecalloc_align(nrb->_size, sizeof(int));
             nrb->_displ = (int*)ecalloc_align(nrb->_size + 1, sizeof(int));
