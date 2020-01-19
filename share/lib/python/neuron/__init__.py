@@ -428,9 +428,9 @@ def nrn_dll_sym_nt(name, type):
     global nt_dlls
     import ctypes
     import os
-    if len(nt_dlls) is 0:
+    if len(nt_dlls) == 0:
       b = 'bin'
-      if h.nrnversion(8).find('i686') is 0:
+      if h.nrnversion(8).find('i686') == 0:
         b = 'bin'
       path = os.path.join(h.neuronhome().replace('/','\\'), b)
       p = sys.version_info[0]*10 + sys.version_info[1]

@@ -21,6 +21,7 @@ public:
 	int size_;
 	double** pd_;
 	HocCommand* update_cmd_;
+	char* label_;
 };
 
 #endif

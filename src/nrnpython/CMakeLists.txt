@@ -14,7 +14,7 @@ set(npy_pyver10 "")
 
 # reset since no " allowed
 set(PACKAGE_VERSION ${PROJECT_VERSION})
-set(NRN_LIBDIR ${NRN_INSTALL_SHARE_LIB_DIR})
+set(NRN_LIBDIR ${CMAKE_INSTALL_PREFIX}/lib)
 
 # set by IV's cmake module
 set(IV_LIBDIR "${IV_INCLUDE_DIR}/../lib")
@@ -147,7 +147,6 @@ if(NRN_ENABLE_MODULE_INSTALL)
   # =============================================================================
   # Copy necessary files to build directory
   # =============================================================================
-
   add_custom_command(
     TARGET hoc_module PRE_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -161,6 +160,9 @@ if(NRN_ENABLE_MODULE_INSTALL)
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/demo
             ${PROJECT_BINARY_DIR}/share/nrn/demo)
 
+  # =============================================================================
+  # Install python module
+  # =============================================================================
   # for each python detected / provided by user, install module at install time
   list(LENGTH NRN_PYTHON_EXE_LIST _num_pythons)
   math(EXPR num_pythons "${_num_pythons} - 1")
@@ -185,28 +187,6 @@ if(NRN_ENABLE_MODULE_INSTALL)
         COMMENT "Building python module with: ${pyexe}")
     endif()
   endforeach(val)
-  add_dependencies(hoc_module nrniv_lib)
-
-  # =============================================================================
-  # Copy necessary files to build directory
-  # =============================================================================
-  add_custom_command(
-    TARGET hoc_module PRE_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/lib
-            ${PROJECT_BINARY_DIR}/share/nrn/lib
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/demo
-            ${PROJECT_BINARY_DIR}/share/nrn/demo)
-
-  # for each python detected / provided by user, install module at install time
-  foreach(pyexe ${NRN_PYTHON_EXE_LIST})
-    add_custom_command(
-      TARGET hoc_module POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
-              ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
-      COMMAND ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}
-      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-      COMMENT "Building python module with: ${pyexe}")
-  endforeach(pyexe)
   add_dependencies(hoc_module nrniv_lib)
 
   # user has selected dynamic python support (could be multiple versions)
