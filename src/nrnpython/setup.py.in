@@ -171,7 +171,7 @@ ext_modules = [hoc_module]
 # may be done with the msvc toolchain. Note, although the extensions are not
 # built here, the python files are copied because of the call to setup here.
 
-if False and build_rx3d:
+if not using_cmake and build_rx3d:
   try:
     import numpy
     # TODO: do we need to use os.path.join?
