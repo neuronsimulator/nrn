@@ -77,8 +77,8 @@ option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_DEFAULT})
 option(NRN_ENABLE_MODULE_INSTALL "Enable installation of NEURON Python module"
        ${NRN_ENABLE_MODULE_INSTALL_DEFAULT})
 set(NRN_MODULE_INSTALL_OPTIONS
-    ""
-    CACHE STRING "setup.py options, leave empty for --home <build dir>")
+    "${NRN_MODULE_INSTALL_OPTIONS_DEFAULT}"
+    CACHE STRING "setup.py options, everything after setup.py install")
 
 option(NRN_ENABLE_PYTHON_DYNAMIC "Enable dynamic Python version support"
        ${NRN_ENABLE_PYTHON_DYNAMIC_DEFAULT})
