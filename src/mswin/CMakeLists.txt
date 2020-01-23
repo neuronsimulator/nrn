@@ -39,7 +39,7 @@ if(MINGW)
   # Presumes previous 'make install'
   # Invoke after 'make install' by 'make setup_exe'.
   # ~~~
-  set(MAKENSIS_EXE "c:/Program Files (x86)/NSIS/makensisw")
+  set(MAKENSIS_EXE "c:/Program Files (x86)/NSIS/makensis")
 
   # ~~~
   # Target used for building installer
