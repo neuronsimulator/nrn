@@ -112,16 +112,11 @@ endif()
 # =============================================================================
 if(NRN_ENABLE_MODULE_INSTALL)
 
-  # check arguments for setup.py install : if user has just provided YES, then use default
-  if("${NRN_MODULE_INSTALL_OPTIONS}" STREQUAL "")
-    set(NRN_PYTHON_INSTALL_IN_DEFAULT TRUE)
-    set(install_path ${CMAKE_INSTALL_PREFIX})
-    # replace windows path of the form C:/msys64 to C:\msys64
-    if(MINGW)
-      string(REPLACE ":/" ":\\\\" install_path "${install_path}")
-    endif()
+  # replace windows path of the form C:/msys64 to C:\msys64
+  if(MINGW)
+    string(REPLACE ":/" ":\\\\" module_install_opts "${NRN_MODULE_INSTALL_OPTIONS}")
     set(NRN_MODULE_INSTALL_OPTIONS
-        "--home=${install_path}"
+        "${module_install_opts}"
         CACHE INTERNAL "" FORCE)
   endif()
 
@@ -246,21 +241,23 @@ if(NRN_ENABLE_MODULE_INSTALL)
     endif()
   endif()
 
-  # module was built in NRN_PYTHON_BUILD_LIB, just copy folder if default module
-  if(FALSE AND NRN_PYTHON_INSTALL_IN_DEFAULT)
-    install(DIRECTORY ${NRN_PYTHON_BUILD_LIB}/ DESTINATION ${NRN_LIBDIR}/python)
-  else()
-    list(GET NRN_PYTHON_EXE_LIST 0 pyexe)
-    file(
-      WRITE ${CMAKE_CURRENT_BINARY_DIR}/neuron_module_install.sh
-      "\
+  #~~~
+  # neuron module (possibly with multiple extension versions) was built
+  # in NRN_PYTHON_BUILD_LIB. Not a problem if install overwrites multiple
+  # times to same install folder or if each install ends up in different
+  # place.
+  #~~~
+  file(
+    WRITE ${CMAKE_CURRENT_BINARY_DIR}/neuron_module_install.sh
+    "\
 #!bash\n\
 echo 'Installing python module using:'\n\
 set -ex\n\
 cd ${CMAKE_CURRENT_BINARY_DIR}\n\
-${pyexe} setup.py --quiet build --build-lib=${NRN_PYTHON_BUILD_LIB} install ${NRN_MODULE_INSTALL_OPTIONS}\n\
+$1 setup.py --quiet build --build-lib=${NRN_PYTHON_BUILD_LIB} install ${NRN_MODULE_INSTALL_OPTIONS}\n\
 ")
+  foreach(pyexe ${NRN_PYTHON_EXE_LIST})
     install(
-      CODE "execute_process(COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/neuron_module_install.sh)")
-  endif()
+      CODE "execute_process(COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/neuron_module_install.sh ${pyexe})")
+  endforeach(pyexe)
 endif()
