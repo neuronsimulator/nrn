@@ -428,21 +428,24 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
     for (int i = 0; i < nnetcon; ++i) {
         NetCon& nc = nt.netcons[i];
         Point_process* pnt = nc.target_;
-        assert(pnt);  // nrn_setup.cpp allows type <=0 which generates nullptr target.
-        pnttype[i] = pnt->_type;
+        if (pnt == nullptr) {
+            // nrn_setup.cpp allows type <=0 which generates nullptr target.
+            pnttype[i] = 0;
+            pntindex[i] = -1;
+        } else {
+            pnttype[i] = pnt->_type;
 
-#if 0
-        // todo: this seems most natural, but does not work. Perhaps should look
-        // into how pntindex determined in nrnbbcore_write.cpp and change there.
-        int ix = pnt->_i_instance;
-        if (ml_pinv[pnt->_type]) {
-            ix = ml_pinv[pnt->_type][ix];
+            // todo: this seems most natural, but does not work. Perhaps should look
+            // into how pntindex determined in nrnbbcore_write.cpp and change there.
+            // int ix = pnt->_i_instance;
+            // if (ml_pinv[pnt->_type]) {
+            //     ix = ml_pinv[pnt->_type][ix];
+            // }
+
+            // follow the inverse of nrn_setup.cpp using pnt_offset computed above.
+            int ix = (pnt - nt.pntprocs) - pnt_offset[pnt->_type];
+            pntindex[i] = ix;
         }
-#else
-        // follow the inverse of nrn_setup.cpp using pnt_offset computed above.
-        int ix = (pnt - nt.pntprocs) - pnt_offset[pnt->_type];
-#endif
-        pntindex[i] = ix;
         delay[i] = nc.delay_;
     }
     fh.write_array<int>(pnttype, nnetcon);
