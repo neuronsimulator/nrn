@@ -8,14 +8,7 @@ set(NMODL_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
 # Add executables
 # =============================================================================
 add_executable(nmodl ${NMODL_SOURCE_FILES})
-target_link_libraries(
-  nmodl
-  printer
-  codegen
-  visitor
-  symtab
-  util
-  lexer)
+target_link_libraries(nmodl printer codegen visitor symtab util lexer)
 
 # =============================================================================
 # Install executable
