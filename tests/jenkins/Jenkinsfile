@@ -3,7 +3,7 @@ pipeline {
         label 'bb5'
     }
     parameters {
-        string(name: 'CORENEURON_BRANCH', defaultValue: '',
+        string(name: 'sha1', defaultValue: 'master',
                description: 'What branch of CoreNeuron to test.')
         string(name: 'SPACK_BRANCH', defaultValue: 'develop',
                description: 'Which branch of spack to use.')
