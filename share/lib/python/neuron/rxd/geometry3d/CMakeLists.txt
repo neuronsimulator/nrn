@@ -38,7 +38,7 @@ if(NRN_ENABLE_RX3D
   # ie. for MINGW, python3 uses msvc and python2 uses mingw32
   # The latter needs changes to the cpp files and to rerun gcc build of
   # the dll. The following shell script carries out the craziness when
-  # ${pyexe} setup.py build_ext --inplace
+  # ${pyexe} setup.py build_ext --build-lib=${NRN_PYTHON_BUILD_LIB}
   # may not be enough
   # ~~~
 
@@ -75,9 +75,9 @@ if test x$mingw = x1 ; then\n\
   echo pyver=$pyver\n\
   if test x$pyver = x3 ; then # python3.x builds with msvc\n\
     . ${PROJECT_SOURCE_DIR}/mingw_files/vcenv.sh\n\
-    $pyexe setup.py build_ext --inplace\n\
+    $pyexe setup.py build_ext --build-lib=${NRN_PYTHON_BUILD_LIB}\n\
   else # python2.7 builds with gcc\n\
-    $pyexe setup.py build_ext -c mingw32 -D MS_WIN64 --inplace > temp27\n\
+    $pyexe setup.py build_ext -c mingw32 -D MS_WIN64 --build-lib=${NRN_PYTHON_BUILD_LIB} > temp27\n\
     # the gcc commands containing -shared need to be rerun with \\ as / and get rid of -lmsvcr90\n\
     if grep '\\-shared.*\\-lmsvcr90' temp27 ; then\n\
       grep '\\-shared' temp27 | sed 's,\\\\,/,g' | sed 's,\\-lmsvcr90,,' > temp27x\n\
@@ -85,7 +85,7 @@ if test x$mingw = x1 ; then\n\
     fi\n\
   fi\n\
 else #mac/linux does not need anything special\n\
-  $pyexe setup.py build_ext --inplace\n\
+  $pyexe setup.py build_ext --build-lib=${NRN_PYTHON_BUILD_LIB}\n\
 fi\n\
 ")
 
@@ -102,7 +102,7 @@ fi\n\
 
     add_custom_command(
       OUTPUT ${bname}
-      COMMAND ${CYTHON_EXECUTABLE} ${basename}.pyx -o ${bname}
+      COMMAND ${CYTHON_EXECUTABLE} -2 ${basename}.pyx -o ${bname}
       COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/cy_cpp_filt.sh "${bname}"
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
       DEPENDS ${sname} ${CMAKE_CURRENT_BINARY_DIR}/setup.py)

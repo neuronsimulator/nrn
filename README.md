@@ -90,32 +90,35 @@ One of the primary advantage of CMake based build system is integration with oth
   pushd build
   ```
 
-3. Run cmake with the appropriate options:
+3. Run cmake with the appropriate options (see below for list of common options). \
+A full list of options can be found in *nrn/CMakeLists.txt* . Defaults are shown in *nrn/cmake/BuildOptionDefaults.cmake*), \
+e.g. a bare-bones install:
 
   ```
-  cmake \
-   -DNRN_ENABLE_PYTHON=ON \
+  cmake .. \
    -DNRN_ENABLE_CORENEURON=OFF \
    -DNRN_ENABLE_MPI=OFF \
    -DNRN_ENABLE_INTERVIEWS=OFF \
-   ..
+   -DNRN_ENABLE_RX3D=OFF
   ```
 
 4. Build the code:
 
   ```
   make -j
+  make install
   ```
 
 Particularly useful CMake options are (use **ON** to enable and **OFF** to disable feature):
 
-* **-DNRN\_ENABLE\_INTERVIEWS=ON** : Build Interviews to enable GUI support
-* **-DNRN\_ENABLE\_PYTHON=ON** : Enable Python support
-* **-DNRN\_ENABLE\_MPI=ON** : Enable MPI support for parallelization
-* **-DNRN\_ENABLE\_RX3D=ON** : Enable rx3d support
-* **-DNRN\_ENABLE\_CORENEURON=ON** : Enable CoreNEURON support
+* **-DNRN\_ENABLE\_INTERVIEWS=OFF** : Disable Interviews (native GUI support)
+* **-DNRN\_ENABLE\_PYTHON=OFF** : Disable Python support
+* **-DNRN\_ENABLE\_MPI=OFF** : Disable MPI support for parallelization
+* **-DNRN\_ENABLE\_RX3D=OFF** : Disable rx3d support
+* **-DNRN\_ENABLE\_CORENEURON=OFF** : Disable CoreNEURON support
 * **-DNRN\_ENABLE\_TESTS=ON** : Enable unit tests
 * **-DPYTHON\_EXECUTABLE=/python/binary/path** : Use provided Python binary to build Python interface
+* **-DCMAKE_INSTALL_PREFIX=/install/dir/path** : Location for installing
 * **-DCORENRN\_ENABLE\_NMODL=ON** : Use [NMODL](https://github.com/BlueBrain/nmodl/) instead of [MOD2C](https://github.com/BlueBrain/mod2c/) for code generation with CoreNEURON
 
 For more installation information see: [https://neuron.yale.edu/neuron/download/getdevel](https://neuron.yale.edu/neuron/download/getdevel).

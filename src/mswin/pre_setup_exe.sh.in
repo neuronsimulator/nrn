@@ -1,0 +1,78 @@
+#!/bin/bash
+
+set -ex
+
+# A few extra things to prepare for making the setup.exe.
+# I.e. remove some inadvertenty installed files that needlessly
+# bloat up the setup.exe.  Make sure that dlls needed by
+# nrniv.exe, etc, are present, and stript to save space.
+# copy some mswin specific scripts, and make sure the neurondemo
+# nrnmech.dll is present.
+
+
+N="@CMAKE_INSTALL_PREFIX@" # typically c:/marshalnrn/nrn
+
+NM=$N/mingw
+
+srcdir="@PROJECT_SOURCE_DIR@"
+
+# Minimal runtime msmpi
+if test "@MPI_FOUND@" = "TRUE" ; then
+  mpiinst=@MPI_INCLUDE_PATH@/..
+  cp $mpiinst/bin/mpiexec.exe $N/bin
+  cp $mpiinst/bin/smpd.exe $N/bin
+  cp $mpiinst/lib/x64/msmpi.dll $N/bin
+fi
+# These particular *.dll.a files not needed
+rm -f tmp.tmp `find $N/bin -name \*.dll.a`
+rm -f tmp.tmp `find $N/lib -name \*.dll.a`
+# Inadvertently installed
+rm -f $N/bin/nrnmech_makefile `find $N/lib -name Makefile.am`
+rm -f tmp.tmp `find $N -name \*.in`
+rm -r -f $N/lib/auditscripts
+rm -r -f tmp.tmp `find $N/lib -name __pycache__`
+# remove unneeded files installed if iv is an external module
+rm -f $N/bin/idemo.exe
+rm -f tmp.tmp $N/lib/libinterviews.*
+(cd $N/include ; rm -r -f tmp.tmp Dispatch InterViews IV-2_6 IV-look IV-Mac IV-Win IV-x11 macivdef.h OS TIFF Unidraw)
+# This is huge. Leave it out.
+rm -r -f $N/lib/python/neuron/rxdtests/correct_data
+# Significantly reduces size if compiled with -g
+strip $N/bin/*.exe  `find $N/bin -name \*.dll` `find $N/lib -name \*.dll`
+# til mingw vs linux straightened out replace with old mingw scripts
+(cd $srcdir/src/mswin/bin ; cp neurondemo nrngui mknrndll $N/bin )
+cp $N/bin/mknrndll $N/bin/nrnivmodl
+
+cp_dlls() {
+(
+  upath=`cygpath "$1"`
+  export PATH="$upath":$PATH
+  rm -f temp.tmp
+  for i in $1/*.exe ; do
+    cygcheck $i | sed 's/^ *//' >> temp.tmp
+  done
+  sort temp.tmp | uniq | grep 'msys64' | sed 's,\\,/,g' > temp2.tmp
+  for i in $(cat temp2.tmp) ; do
+    echo $i
+    cp "$i" "$1"
+  done
+  rm temp.tmp
+  rm temp2.tmp
+)
+}
+
+cp_dlls $N/bin
+
+# nrnmech.dll for neurondemo
+(
+  nx=`cygpath -U "$N"`
+  export N
+  export MODLUNIT=$N/lib/nrnunits.lib
+  export PATH=$nx/bin:$nx/mingw/usr/bin:$nx/mingw/mingw64/bin:$PATH
+  cd $N/demo/release ; $N/lib/mknrndl2.sh
+  rm *.o *.c
+  if test ! -f nrnmech.dll ; then
+    echo 'could not build nrnmech.dll'
+    exit 1;
+  fi
+)

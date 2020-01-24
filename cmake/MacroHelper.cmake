@@ -90,11 +90,11 @@ macro(nrn_check_signal_return_type VARIABLE)
 endmacro()
 
 # =============================================================================
-# Transform CMAKE_CURRENT_SOURCE_DIR/file.in to CMAKE_CURRENT_BINARY_DIR/file
+# Transform PROJECT_SOURCE_DIR/dir/file.in to PROJECT_BINARY_DIR/dir/file
 # =============================================================================
 # ~~~
 # Just as autoconf transforms file.in into file, this macro transforms
-# CMAKE_CURRENT_SOURCE_DIR/file.in into CMAKE_CURRENT_BINARY_DIR/file.
+# PROJECT_SOURCE_DIR/dir/file.in into PROJECT_BINARY_DIR/dir/file.
 # This first copies with some replacement the file.in to cmake_file.in
 # so that the normal cmake configure_file command works to make a proper
 # cmake_file. Then that is compared to a possibly existing file and
@@ -176,10 +176,17 @@ macro(nrn_create_file_list list_name prefix)
 endmacro()
 
 # =============================================================================
-# Copy file from source to destination in clobber mode (i.e. no overwrite)
+# Copy file from source to destination in noclobber mode (i.e. no overwrite)
 # =============================================================================
 macro(nrn_copy_file_without_overwrite source destination)
   execute_process(COMMAND cp -n ${source} ${destination})
+endmacro()
+
+# =============================================================================
+# Copy file from source to destination only if different
+# =============================================================================
+macro(nrn_copy_file_if_different source destination)
+  configure_file(${source} ${destination} COPYONLY)
 endmacro()
 
 # =============================================================================
@@ -187,6 +194,15 @@ endmacro()
 # =============================================================================
 macro(nrn_set_string variable value)
   set(${variable} \"${value}\")
+endmacro()
+
+# =============================================================================
+# Set var to to dos path format
+# =============================================================================
+macro(dospath path var)
+  # file(TO_NATIVE_PATH does not convert / to \ for us in msys2.
+  string(REPLACE "/" "\\" var1 "${path}")
+  set(${var} ${var1})
 endmacro()
 
 # =============================================================================

@@ -104,7 +104,8 @@ proc recent_working_dirs() {local i
 
 proc exec() {localobj s1, s2
 	chdir(path)
-    if (sf_.substr(nrnversion(8), "mingw") > 0) {
+    // version string could be windows or sometimes Windows, just look for substring
+    if (sf_.substr(nrnversion(8), "mingw") > 0 || sf_.substr(nrnversion(8), "indows") > 0) {
 	s1 = new String()
 	s2 = new String()
 	sscanf(neuronhome(), "%[^:]:%s", s1.s, s2.s)
@@ -122,4 +123,3 @@ proc exec() {localobj s1, s2
 }
 
 doit()
-

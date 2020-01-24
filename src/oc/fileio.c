@@ -675,7 +675,7 @@ static int hoc_Load_file(int always, const char* name) {
 	char expname[hoc_load_file_size_];
 	const char *base;
 	char path[hoc_load_file_size_], old[hoc_load_file_size_];
-	char fname[hoc_load_file_size_], cmd[hoc_load_file_size_];
+	char fname[hoc_load_file_size_], cmd[hoc_load_file_size_+50];
 #if USE_NRNFILEWRAP
 	int f;	
 #else
@@ -798,8 +798,8 @@ static int hoc_Load_file(int always, const char* name) {
 	/* xopen the file */
 	if (b) {
 /*printf("load_file xopen %s\n", base);*/
-		assert(strlen(base) + 50 < hoc_load_file_size_);
-		sprintf(cmd, "hoc_ac_ = execute1(\"{xopen(\\\"%s\\\")}\")\n", base);
+		nrn_assert(strlen(base) < hoc_load_file_size_);
+		snprintf(cmd, hoc_load_file_size_+50, "hoc_ac_ = execute1(\"{xopen(\\\"%s\\\")}\")\n", base);
 		b = hoc_oc(cmd);
 		b = (int)hoc_ac_;
 	}

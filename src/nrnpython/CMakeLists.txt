@@ -14,7 +14,7 @@ set(npy_pyver10 "")
 
 # reset since no " allowed
 set(PACKAGE_VERSION ${PROJECT_VERSION})
-set(NRN_LIBDIR ${NRN_INSTALL_SHARE_LIB_DIR})
+set(NRN_LIBDIR ${CMAKE_INSTALL_PREFIX}/lib)
 
 # set by IV's cmake module
 set(IV_LIBDIR "${IV_INCLUDE_DIR}/../lib")
@@ -112,17 +112,18 @@ endif()
 # =============================================================================
 if(NRN_ENABLE_MODULE_INSTALL)
 
-  # check arguments for setup.py install : if user has just provided YES, then use default
-  if("${NRN_MODULE_INSTALL_OPTIONS}" STREQUAL "")
-    set(install_path ${PROJECT_BINARY_DIR})
-    # replace windows path of the form C:/msys64 to C:\msys64
-    if(MINGW)
-      string(REPLACE ":/" ":\\\\" install_path "${install_path}")
-    endif()
+  # replace windows path of the form C:/msys64 to C:\msys64
+  if(MINGW)
+    string(REPLACE ":/" ":\\\\" module_install_opts "${NRN_MODULE_INSTALL_OPTIONS}")
     set(NRN_MODULE_INSTALL_OPTIONS
-        "--home" "${install_path}"
+        "${module_install_opts}"
         CACHE INTERNAL "" FORCE)
   endif()
+
+  # Here and for the neuron/rxd/geometry3d extensions, we build the neuron module in lib/python
+  set(NRN_PYTHON_BUILD_LIB
+      ${PROJECT_BINARY_DIR}/lib/python
+      CACHE INTERNAL "" FORCE)
 
   # ~~~
   # To tickle setup.py into actually rebuilding if dependencies change,
@@ -160,7 +161,6 @@ if(NRN_ENABLE_MODULE_INSTALL)
   # =============================================================================
   # Copy necessary files to build directory
   # =============================================================================
-
   add_custom_command(
     TARGET hoc_module PRE_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -174,35 +174,16 @@ if(NRN_ENABLE_MODULE_INSTALL)
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/demo
             ${PROJECT_BINARY_DIR}/share/nrn/demo)
 
+  # =============================================================================
+  # Build python module
+  # =============================================================================
   # for each python detected / provided by user, install module at install time
   foreach(pyexe ${NRN_PYTHON_EXE_LIST})
     add_custom_command(
       TARGET hoc_module POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
               ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
-      COMMAND ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}
-      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-      COMMENT "Building python module with: ${pyexe}")
-  endforeach(pyexe)
-  add_dependencies(hoc_module nrniv_lib)
-
-  # =============================================================================
-  # Copy necessary files to build directory
-  # =============================================================================
-  add_custom_command(
-    TARGET hoc_module PRE_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/lib
-            ${PROJECT_BINARY_DIR}/share/nrn/lib
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/demo
-            ${PROJECT_BINARY_DIR}/share/nrn/demo)
-
-  # for each python detected / provided by user, install module at install time
-  foreach(pyexe ${NRN_PYTHON_EXE_LIST})
-    add_custom_command(
-      TARGET hoc_module POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
-              ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
-      COMMAND ${pyexe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}
+      COMMAND ${pyexe} setup.py --quiet build --build-lib=${NRN_PYTHON_BUILD_LIB}
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       COMMENT "Building python module with: ${pyexe}")
   endforeach(pyexe)
@@ -260,6 +241,23 @@ if(NRN_ENABLE_MODULE_INSTALL)
     endif()
   endif()
 
-  # module is already installed in lib, just copy folder
-  install(DIRECTORY ${PROJECT_BINARY_DIR}/lib/ DESTINATION ${NRN_LIBDIR})
+  #~~~
+  # neuron module (possibly with multiple extension versions) was built
+  # in NRN_PYTHON_BUILD_LIB. Not a problem if install overwrites multiple
+  # times to same install folder or if each install ends up in different
+  # place.
+  #~~~
+  file(
+    WRITE ${CMAKE_CURRENT_BINARY_DIR}/neuron_module_install.sh
+    "\
+#!bash\n\
+echo 'Installing python module using:'\n\
+set -ex\n\
+cd ${CMAKE_CURRENT_BINARY_DIR}\n\
+$1 setup.py --quiet build --build-lib=${NRN_PYTHON_BUILD_LIB} install ${NRN_MODULE_INSTALL_OPTIONS}\n\
+")
+  foreach(pyexe ${NRN_PYTHON_EXE_LIST})
+    install(
+      CODE "execute_process(COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/neuron_module_install.sh ${pyexe})")
+  endforeach(pyexe)
 endif()
