@@ -11,6 +11,7 @@ ROOTDIR=$(perl -e "use Cwd 'abs_path'; print abs_path('$_PARENT')")
 MAKE_OPTIONS="MECH_NAME NMODL_BINARY DESTDIR INCFLAGS LINKFLAGS MODS_PATH VERBOSE"
 PARALLELISM=4
 SAVE_FILE="@CMAKE_HOST_SYSTEM_PROCESSOR@/nrnivmodl_options.txt"
+params_MODS_PATH="."
 
 while getopts "n:m:v:d:i:l:p:hV" OPT; do
     case "$OPT" in
@@ -62,9 +63,19 @@ if [ -f "$SAVE_FILE" ]; then
 fi
 
 # If defined mods dir be in $1
-# Note: due to bug #712 makefile wont handle mod dir with spaces, so we let it fail here
-params_MODS_PATH=$1
+if [ $# -eq 1 ]; then
+    # Note: due to bug #712 makefile wont handle mod dir with spaces, so we let it fail here
+    params_MODS_PATH=$1
+fi
+if [ -d $params_MODS_PATH ]; then
+    # warn if no mod files provided
+    ls $params_MODS_PATH/*.mod || echo "WARNING: No mods found!"
+else
+    echo "FATAL: Invalid mods directory: '$params_MODS_PATH'"
+    exit 1
+fi
 
+# Output options & populate make_params
 mkdir -p "$(dirname "$SAVE_FILE")"
 echo "# nrnivmodl-core options. Mods location: $params_MODS_PATH" > $SAVE_FILE
 
@@ -78,13 +89,11 @@ for param in $MAKE_OPTIONS; do
     fi
 done >> "$SAVE_FILE"
 
-# If -I (install) provided, call "make install"
+# If -d (deploy) provided, call "make install"
 if [ "$params_DESTDIR" ]; then
     make_params+=("install")
 fi
 
-# warn if no mod files provided
-ls "${params_MODS_PATH:-.}"/*.mod || echo "WARNING: No mods found!"
 make -j$PARALLELISM -f "${ROOTDIR}/share/coreneuron/nrnivmodl_core_makefile" "${make_params[@]}"
 
 echo "mods built successfully."
