@@ -41,7 +41,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <boost/test/test_case_template.hpp>
 #include <boost/mpl/list.hpp>
 
-#include "coreneuron/utils/endianness.h"
+#include "coreneuron/utils/endianness.hpp"
 
 BOOST_AUTO_TEST_CASE(confirm_big_or_little) {
     BOOST_CHECK(endian::little_endian!=endian::big_endian);

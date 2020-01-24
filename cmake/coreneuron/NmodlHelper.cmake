@@ -89,12 +89,18 @@ macro(nmodl_to_cpp_target)
 
   list(APPEND NMODL_${mod2c_KEY}_MODS "${mod2c_modname_}")
   if(CORENRN_ENABLE_NMODL AND NMODL_FOUND)
+    string(FIND "${NMODL_EXTRA_FLAGS_LIST}" "passes" pos)
+    if(pos EQUAL -1)
+      set(NMODL_FLAGS "passes;--inline;${NMODL_EXTRA_FLAGS_LIST}")
+    else()
+      string(REPLACE "passes" "passes;--inline" NMODL_FLAGS "${NMODL_EXTRA_FLAGS_LIST}")
+    endif()
     add_custom_command(OUTPUT ${mod2c_output_} ${mod2c_wrapper_output_}
                        DEPENDS ${mod2c_MODFILE} ${CORENRN_NMODL_BINARY}
                        COMMAND ${CMAKE_COMMAND} -E copy "${mod2c_source_}"
                                "${CMAKE_CURRENT_BINARY_DIR}"
                        COMMAND ${CORENRN_NMODL_COMMAND} "${mod2c_modname_}" -o "${CMAKE_CURRENT_BINARY_DIR}"
-                               host ${nmodl_modearg} passes --inline ${NMODL_EXTRA_FLAGS_LIST}
+                               host ${nmodl_modearg} ${NMODL_FLAGS}
                        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
   else()
     add_custom_command(OUTPUT ${mod2c_output_}

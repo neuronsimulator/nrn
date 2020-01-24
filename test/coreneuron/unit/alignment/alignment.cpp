@@ -37,7 +37,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <boost/test/test_case_template.hpp>
 #include <boost/mpl/list.hpp>
 
-#include "coreneuron/nrniv/memory.h"
+#include "coreneuron/utils/memory.h"
 
 template<class T, int n=1>
 struct data{

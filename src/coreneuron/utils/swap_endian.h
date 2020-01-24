@@ -33,8 +33,8 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <iterator>
 #include <cstring>
 #include <cstddef>
-#include <stdint.h>
-#include <stdlib.h>
+#include <cstdint>
+#include <cstdlib>
 
 #ifdef SWAP_ENDIAN_ASSERT
 #include <cassert>
@@ -45,7 +45,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 /* required for correct choice of PPC assembly */
-#include "coreneuron/utils/endianness.h"
+#include "coreneuron/utils/endianness.hpp"
 
 #if !defined(SWAP_ENDIAN_MAX_UNROLL)
 #define SWAP_ENDIAN_MAX_UNROLL 8

@@ -13,7 +13,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <unistd.h>
-#include "progressbar.h"
+#include "coreneuron/utils/progressbar/progressbar.h"
 
 ///  How wide we assume the screen is if termcap fails.
 enum { DEFAULT_SCREEN_WIDTH = 80 };

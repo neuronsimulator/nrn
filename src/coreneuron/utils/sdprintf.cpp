@@ -32,7 +32,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
  * @brief sdprintf() and vsdprintf() implementation.
  */
 
-#include "sdprintf.h"
+#include "coreneuron/utils/sdprintf.h"
 
 sd_ptr sdprintf(char* buf, size_t sz, const char* fmt, ...) {
     va_list ap;

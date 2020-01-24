@@ -215,7 +215,6 @@ endif()
 # Add main directories
 # =============================================================================
 add_subdirectory(coreneuron)
-add_subdirectory(apps)
 add_subdirectory(extra)
 
 if(CORENRN_ENABLE_UNIT_TESTS)
