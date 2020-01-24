@@ -19,14 +19,15 @@ function(add_command NAME)
       set(_args "${_args} ${_arg}")
     endif()
   endforeach()
-  set(script
-      "${script}${NAME}(${_args})\n"
-      PARENT_SCOPE)
+  set(script "${script}${NAME}(${_args})\n" PARENT_SCOPE)
 endfunction()
 
 macro(_add_catch_test_labels LINE)
   # convert to list of tags
-  string(REPLACE "][" "]\\;[" tags ${line})
+  string(REPLACE "]["
+                 "]\\;["
+                 tags
+                 ${line})
 
   add_command(set_tests_properties "${prefix}${test}${suffix}" PROPERTIES LABELS "${tags}")
 endmacro()
@@ -34,13 +35,24 @@ endmacro()
 macro(_add_catch_test LINE)
   set(test ${line})
   # use escape commas to handle properly test cases with commans inside the name
-  string(REPLACE "," "\\," test_name ${test})
+  string(REPLACE ","
+                 "\\,"
+                 test_name
+                 ${test})
   # ...and add to script
-  add_command(add_test "${prefix}${test}${suffix}" ${TEST_EXECUTOR} "${TEST_EXECUTABLE}"
-              "${test_name}" ${extra_args})
+  add_command(add_test
+              "${prefix}${test}${suffix}"
+              ${TEST_EXECUTOR}
+              "${TEST_EXECUTABLE}"
+              "${test_name}"
+              ${extra_args})
 
-  add_command(set_tests_properties "${prefix}${test}${suffix}" PROPERTIES WORKING_DIRECTORY
-              "${TEST_WORKING_DIR}" ${properties})
+  add_command(set_tests_properties
+              "${prefix}${test}${suffix}"
+              PROPERTIES
+              WORKING_DIRECTORY
+              "${TEST_WORKING_DIR}"
+              ${properties})
   list(APPEND tests "${prefix}${test}${suffix}")
 endmacro()
 
@@ -48,10 +60,9 @@ endmacro()
 if(NOT EXISTS "${TEST_EXECUTABLE}")
   message(FATAL_ERROR "Specified test executable '${TEST_EXECUTABLE}' does not exist")
 endif()
-execute_process(
-  COMMAND ${TEST_EXECUTOR} "${TEST_EXECUTABLE}" ${spec} --list-tests
-  OUTPUT_VARIABLE output
-  RESULT_VARIABLE result)
+execute_process(COMMAND ${TEST_EXECUTOR} "${TEST_EXECUTABLE}" ${spec} --list-tests
+                OUTPUT_VARIABLE output
+                RESULT_VARIABLE result)
 # Catch --list-test-names-only reports the number of tests, so 0 is... surprising
 if(${result} EQUAL 0)
   message(WARNING "Test executable '${TEST_EXECUTABLE}' contains no tests!\n")
@@ -60,7 +71,10 @@ elseif(${result} LESS 0)
                       "  Result: ${result}\n" "  Output: ${output}\n")
 endif()
 
-string(REPLACE "\n" ";" output "${output}")
+string(REPLACE "\n"
+               ";"
+               output
+               "${output}")
 set(test)
 set(tags_regex "(\\[([^\\[]*)\\])+$")
 
@@ -69,7 +83,11 @@ foreach(line ${output})
   # lines without leading whitespaces are catch output not tests
   if(${line} MATCHES "^[ \t]+")
     # strip leading spaces and tabs
-    string(REGEX REPLACE "^[ \t]+" "" line ${line})
+    string(REGEX
+           REPLACE "^[ \t]+"
+                   ""
+                   line
+                   ${line})
 
     if(${line} MATCHES "${tags_regex}")
       _add_catch_test_labels(${line})

@@ -6,21 +6,23 @@ find_package(Git)
 if(GIT_FOUND)
 
   # get last commit sha1
-  execute_process(
-    COMMAND ${GIT_EXECUTABLE} log -1 --format=%h
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    OUTPUT_VARIABLE GIT_REVISION_SHA1
-    ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+  execute_process(COMMAND ${GIT_EXECUTABLE} log -1 --format=%h
+                  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+                  OUTPUT_VARIABLE GIT_REVISION_SHA1
+                  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
 
   # get last commit date
-  execute_process(
-    COMMAND ${GIT_EXECUTABLE} log -1 --format=%ad --date=format:"%d-%m-%Y %H:%M"
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    OUTPUT_VARIABLE GIT_REVISION_DATE
-    ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+  execute_process(COMMAND ${GIT_EXECUTABLE} log -1 --format=%ad --date=format:"%d-%m-%Y %H:%M"
+                  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+                  OUTPUT_VARIABLE GIT_REVISION_DATE
+                  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
 
   # remove extra double quotes
-  string(REGEX REPLACE "\"" "" GIT_REVISION_DATE "${GIT_REVISION_DATE}")
+  string(REGEX
+         REPLACE "\""
+                 ""
+                 GIT_REVISION_DATE
+                 "${GIT_REVISION_DATE}")
   set(GIT_REVISION "${GIT_REVISION_SHA1} ${GIT_REVISION_DATE}")
 
 else()

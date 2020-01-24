@@ -47,34 +47,33 @@ find_package(BISON 3.0 REQUIRED)
 # =============================================================================
 # HPC Coding Conventions
 # =============================================================================
-set(NMODL_ClangFormat_EXCLUDES_RE
-    ".*/ext/.*$$"
-    CACHE STRING "list of regular expressions to exclude C/C++ files from formatting" FORCE)
-set(NMODL_CMakeFormat_EXCLUDES_RE
-    ".*/ext/.*$$"
-    CACHE STRING "list of regular expressions to exclude CMake files from formatting" FORCE)
-set(NMODL_ClangFormat_DEPENDENCIES
-    pyastgen parser-gen
-    CACHE STRING "list of CMake targets to build before formatting C++ code" FORCE)
+set(NMODL_ClangFormat_EXCLUDES_RE ".*/ext/.*$$"
+    CACHE STRING "list of regular expressions to exclude C/C++ files from formatting"
+    FORCE)
+set(NMODL_CMakeFormat_EXCLUDES_RE ".*/ext/.*$$"
+    CACHE STRING "list of regular expressions to exclude CMake files from formatting"
+    FORCE)
+set(NMODL_ClangFormat_DEPENDENCIES pyastgen parser-gen
+    CACHE STRING "list of CMake targets to build before formatting C++ code"
+    FORCE)
 add_subdirectory(cmake/hpc-coding-conventions/cpp)
 
 # =============================================================================
 # Format & execute ipynb notebooks in place (pip install nbconvert clean-ipynb)
 # =============================================================================
-add_custom_target(
-  nb-format
-  jupyter
-  nbconvert
-  --to
-  notebook
-  --execute
-  --inplace
-  --ExecutePreprocessor.timeout=360
-  "${CMAKE_SOURCE_DIR}/docs/notebooks/*.ipynb"
-  &&
-  clean_ipynb
-  --keep-output
-  "${CMAKE_SOURCE_DIR}/docs/notebooks/*.ipynb")
+add_custom_target(nb-format
+                  jupyter
+                  nbconvert
+                  --to
+                  notebook
+                  --execute
+                  --inplace
+                  --ExecutePreprocessor.timeout=360
+                  "${CMAKE_SOURCE_DIR}/docs/notebooks/*.ipynb"
+                  &&
+                  clean_ipynb
+                  --keep-output
+                  "${CMAKE_SOURCE_DIR}/docs/notebooks/*.ipynb")
 
 # =============================================================================
 # Include cmake modules
@@ -100,8 +99,10 @@ find_python_module(sympy 1.2 REQUIRED)
 find_python_module(textwrap 0.9 REQUIRED)
 find_python_module(yaml 3.12 REQUIRED)
 
-include_directories(${NMODL_PROJECT_SOURCE_DIR} ${NMODL_PROJECT_SOURCE_DIR}/src
-                    ${PROJECT_BINARY_DIR}/src ${NMODL_PROJECT_SOURCE_DIR}/ext)
+include_directories(${NMODL_PROJECT_SOURCE_DIR}
+                    ${NMODL_PROJECT_SOURCE_DIR}/src
+                    ${PROJECT_BINARY_DIR}/src
+                    ${NMODL_PROJECT_SOURCE_DIR}/ext)
 
 # =============================================================================
 # Include pybind11
@@ -167,8 +168,7 @@ add_subdirectory(src/solver)
 # Memory checker options and add tests
 # =============================================================================
 find_program(MEMORYCHECK_COMMAND valgrind)
-set(MEMORYCHECK_COMMAND_OPTIONS
-    "--trace-children=yes \
+set(MEMORYCHECK_COMMAND_OPTIONS "--trace-children=yes \
                                  --leak-check=full \
                                  --track-origins=yes \
                                  --show-possibly-lost=no")
