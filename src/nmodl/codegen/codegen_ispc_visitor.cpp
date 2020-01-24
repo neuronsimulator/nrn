@@ -143,7 +143,7 @@ std::string CodegenIspcVisitor::net_receive_buffering_declaration() {
 
 void CodegenIspcVisitor::print_backend_includes() {
     printer->add_line("#include \"nmodl/fast_math.ispc\"");
-    printer->add_line("#include \"coreneuron/nrnoc/nrnoc_ml.ispc\"");
+    printer->add_line("#include \"coreneuron/mechanism/nrnoc_ml.ispc\"");
     printer->add_newline();
     printer->add_newline();
 }

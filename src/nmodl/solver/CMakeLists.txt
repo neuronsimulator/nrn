@@ -10,7 +10,8 @@ set(SOLVER_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/newton/newton.hpp)
 # =============================================================================
 # Install headers
 # =============================================================================
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/newton
-        DESTINATION include
-        FILES_MATCHING
-        PATTERN "*.h*")
+install(
+  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/newton
+  DESTINATION include
+  FILES_MATCHING
+  PATTERN "*.h*")

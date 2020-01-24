@@ -2,13 +2,11 @@
 # Visitor sources
 # =============================================================================
 set(SYMTAB_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/symbol.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/symbol_properties.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/symbol.cpp ${CMAKE_CURRENT_SOURCE_DIR}/symbol_properties.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/symbol_table.cpp)
 
 set(SYMTAB_HEADERS
-    ${CMAKE_CURRENT_SOURCE_DIR}/symbol.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/symbol_properties.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/symbol.hpp ${CMAKE_CURRENT_SOURCE_DIR}/symbol_properties.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/symbol_table.hpp)
 
 # =============================================================================
