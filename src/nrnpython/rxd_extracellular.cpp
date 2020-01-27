@@ -928,16 +928,24 @@ void _rhs_variable_step_helper(Grid_node* g, double const * const states, double
                     k++, index++, prev_i++, next_i++, prev_j++, next_j++) {
 				    div_z = (k==0||k==stop_k)?2.:1.;
 
-                    ydot[index] += rate_x * (states[prev_i] -  
-                        2.0 * states[index] + states[next_i])/div_x;
-    
-                    ydot[index] += rate_y * (states[prev_j] - 
-                        2.0 * states[index] + states[next_j])/div_y;
-
-                    ydot[index] += rate_z * (states[prev_k] - 
-                        2.0 * states[index] + states[next_k])/div_z;
+                    if(stop_i > 0)
+                    {
+                        ydot[index] += rate_x * (states[prev_i] -  
+                            2.0 * states[index] + states[next_i])/div_x;
+                    }
+                    if(stop_j > 0)
+                    {
+                        ydot[index] += rate_y * (states[prev_j] - 
+                            2.0 * states[index] + states[next_j])/div_y;
+                    }
+                    if(stop_k > 0)
+                    {
+                        ydot[index] += rate_z * (states[prev_k] - 
+                            2.0 * states[index] + states[next_k])/div_z;
+                    }
                     next_k = (k==stop_k-1)?index:index+2;
                     prev_k = index;
+
 
                 }
                 prev_j = index - num_states_z;
@@ -1205,13 +1213,32 @@ static void ecs_dg_adi_x(ECS_Grid_node* g, const double dt, const int y, const i
         for(x=0; x<g->size_x; x++)
             RHS[x] = g->bc->value;
         return;
-    }    
-    yp = (y==g->size_y-1)?y-1:y+1;
-    ym = (y==0)?y+1:y-1;
-    zp = (z==g->size_z-1)?z-1:z+1;
-    zm = (z==0)?z+1:z-1;
-    div_y = (y==0||y==g->size_y-1)?2.:1.;
-	div_z = (z==0||z==g->size_z-1)?2.:1.;
+    }
+    
+    if(g->size_y > 1)
+    {
+        yp = (y==g->size_y-1)?y-1:y+1;
+        ym = (y==0)?y+1:y-1;
+        div_y = (y==0||y==g->size_y-1)?2.:1.;
+    }
+    else
+    {
+        yp = 0;
+        ym = 0;
+        div_y = 1;
+    }
+    if(g->size_z > 1)
+    { 
+        zp = (z==g->size_z-1)?z-1:z+1;
+        zm = (z==0)?z+1:z-1;
+        div_z = (z==0||z==g->size_z-1)?2.:1.;
+    }
+    else
+    {
+        zp = 0;
+        zm = 0;
+        div_z = 1;
+    }
 
     if(g->bc->type == NEUMANN)
     {
@@ -1221,10 +1248,33 @@ static void ecs_dg_adi_x(ECS_Grid_node* g, const double dt, const int y, const i
            + (g->dc_y/SQ(g->dy))*(g->states[IDX(0,yp,z)] - 2.*g->states[IDX(0,y,z)] + g->states[IDX(0,ym,z)])/div_y
            + (g->dc_z/SQ(g->dz))*(g->states[IDX(0,y,zp)] - 2.*g->states[IDX(0,y,z)] + g->states[IDX(0,y,zm)])/div_z) + g->states_cur[IDX(0,y,z)];
         x = g->size_x-1;
-        RHS[x] = g->states[IDX(x,y,z)] 
-           + dt*((g->dc_x/SQ(g->dx))*(g->states[IDX(x-1,y,z)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x-1,y,z)])/4.0
-           + (g->dc_y/SQ(g->dy))*(g->states[IDX(x,yp,z)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x,ym,z)])/div_y
-           + (g->dc_z/SQ(g->dz))*(g->states[IDX(x,y,zp)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x,y,zm)])/div_z) + g->states_cur[IDX(x,y,z)];
+        RHS[0] = 0;
+        RHS[x] = 0;
+        if(g->size_y > 1)
+        {
+            RHS[0] += (g->dc_y/SQ(g->dy))*(g->states[IDX(0,yp,z)] - 2.*g->states[IDX(0,y,z)] + g->states[IDX(0,ym,z)])/div_y;
+            RHS[x] += (g->dc_y/SQ(g->dy))*(g->states[IDX(x,yp,z)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x,ym,z)])/div_y;
+        }
+        if(g->size_z > 1)
+        {
+            RHS[0] += (g->dc_z/SQ(g->dz))*(g->states[IDX(0,y,zp)] - 2.*g->states[IDX(0,y,z)] + g->states[IDX(0,y,zm)])/div_z;
+            RHS[x] += (g->dc_z/SQ(g->dz))*(g->states[IDX(x,y,zp)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x,y,zm)])/div_z;
+        }
+        if(g->size_x > 1)
+        {
+            RHS[0] += (g->dc_x/SQ(g->dx))*(g->states[IDX(1,y,z)] - 2.*g->states[IDX(0,y,z)] + g->states[IDX(1,y,z)])/4.0;
+            RHS[x] += (g->dc_x/SQ(g->dx))*(g->states[IDX(x-1,y,z)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x-1,y,z)])/4.0;
+            RHS[0] *= dt;
+            RHS[x] *= dt;
+            RHS[0] += g->states[IDX(0,y,z)] + g->states_cur[IDX(0,y,z)];
+            RHS[x] += g->states[IDX(x,y,z)] + g->states_cur[IDX(x,y,z)];
+
+        }
+        else
+        {
+            RHS[0] *= dt/2.0;   /*halved because we added everything twice*/
+            RHS[0] += g->states[IDX(0,y,z)] + g->states_cur[IDX(0,y,z)];
+        }
     }
     else
     {
@@ -1242,10 +1292,13 @@ static void ecs_dg_adi_x(ECS_Grid_node* g, const double dt, const int y, const i
                    + (g->dc_z/SQ(g->dz))*(g->states[IDX(x,y,zp)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x,y,zm)])/div_z) + g->states_cur[IDX(x,y,z)];
 
     }
-    if(g->bc->type == NEUMANN)
-        solve_dd_clhs_tridiag(g->size_x, -r/2.0, 1.0+r, -r/2.0, 1.0+r/2.0, -r/2.0, -r/2.0, 1.0+r/2.0, RHS, scratch);
-    else
-        solve_dd_clhs_tridiag(g->size_x, -r/2.0, 1.0+r, -r/2.0, 1.0, 0, 0, 1.0, RHS, scratch);
+    if(g->size_x > 1)
+    {
+        if(g->bc->type == NEUMANN)
+            solve_dd_clhs_tridiag(g->size_x, -r/2.0, 1.0+r, -r/2.0, 1.0+r/2.0, -r/2.0, -r/2.0, 1.0+r/2.0, RHS, scratch);
+        else
+            solve_dd_clhs_tridiag(g->size_x, -r/2.0, 1.0+r, -r/2.0, 1.0, 0, 0, 1.0, RHS, scratch);
+    }
 }
 
 
@@ -1269,7 +1322,14 @@ static void ecs_dg_adi_y(ECS_Grid_node* g, double const dt, int const x, int con
             RHS[y] = g->bc->value;
         return;
     }
-
+    if(g->size_y == 1)
+    {
+        if(g->bc->type == NEUMANN)
+            RHS[0] = state[x + z*g->size_x];
+        else
+            RHS[0] = g->bc->value;
+        return;
+    }
     if(g->bc->type == NEUMANN)
     {
         /*zero flux boundary condition*/
@@ -1318,6 +1378,15 @@ static void ecs_dg_adi_z(ECS_Grid_node* g, double const dt, int const x, int con
             RHS[z] = g->bc->value;
         return;
     }
+    
+    if(g->size_z == 1)
+    {
+        if(g->bc->type == NEUMANN)
+            RHS[0] = state[y + g->size_y*x];
+        else
+            RHS[0] = g->bc->value;
+        return;
+    }
 
     if(g->bc->type == NEUMANN)
     { 
@@ -1327,7 +1396,6 @@ static void ecs_dg_adi_z(ECS_Grid_node* g, double const dt, int const x, int con
         z = g->size_z-1;
         RHS[z] =  state[y + g->size_y*(x*g->size_z + z)]
                 - (g->dc_z*dt/SQ(g->dz))*(g->states[IDX(x,y,z-1)] - 2.0*g->states[IDX(x,y,z)] + g->states[IDX(x,y,z-1)])/4.0;
-
     }
     else
     {

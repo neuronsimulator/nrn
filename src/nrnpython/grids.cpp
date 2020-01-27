@@ -759,8 +759,6 @@ void ECS_Grid_node::free_Grid(){
     free(states_cur);
     free(concentration_list);
     free(current_list);
-	free(alpha);
-	free(lambda);
     free(bc);
     free(current_dest);
 #if NRNMPI
