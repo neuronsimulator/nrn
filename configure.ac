@@ -25,6 +25,8 @@ fi
 
 PKG_PROG_PKG_CONFIG([0.22])
 
+UNQUOTED_PACKAGE_VERSION=$PACKAGE_VERSION
+AC_SUBST(UNQUOTED_PACKAGE_VERSION)
 dnl The following line causes us to make a config.h instead of putting all
 dnl the defines into the makefile.
 AC_CONFIG_HEADERS(config.h)
@@ -386,12 +388,12 @@ elif test "$MINGW" = "yes" ; then
 		# and nrnsetupmingw.nsi
 		if test "$host_cpu" = x86_64 ; then
 			marshal_dir='c:/marshalnrn64'
-			dos_marshal_dir='c:\marshalnrn64'
+			WIN_MARSHAL_NRN_DIR='c:\marshalnrn64\nrn'
 			binsuffix=""
 			nrnskip_rebase='#'
 		else
 			marshal_dir='c:/marshalnrn'
-			dos_marshal_dir='c:\marshalnrn'
+			WIN_MARSHAL_NRN_DIR='c:\marshalnrn\nrn'
 			binsuffix=""
 		fi
 	fi

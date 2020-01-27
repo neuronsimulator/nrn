@@ -4,7 +4,7 @@ if false ; then
   PATH=$N/bin
   cyg=yes
 else
-  N=`cygpath -U $N`
+  N=`$N/mingw/usr/bin/cygpath -U $N`
   if test -d $N/mingw ; then
     PATH=$N/mingw/usr/bin:$N/mingw/mingw64/bin:$PATH
   fi

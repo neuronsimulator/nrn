@@ -197,6 +197,15 @@ macro(nrn_set_string variable value)
 endmacro()
 
 # =============================================================================
+# Set var to to dos path format
+# =============================================================================
+macro(dospath path var)
+  # file(TO_NATIVE_PATH does not convert / to \ for us in msys2.
+  string(REPLACE "/" "\\" var1 "${path}")
+  set(${var} ${var1})
+endmacro()
+
+# =============================================================================
 # Given list of file names, find their path in project source tree
 # =============================================================================
 macro(nrn_find_project_files list_name)

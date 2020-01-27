@@ -1,53 +1,65 @@
-#!/bin/sh
+#!/bin/bash
+
 set -ex
 
+# Copies (autotools and cmake) minimal compiler toolchain
+# to allow nrnivmodl (mknrndll) to build nrnmech.dll .
+
 # if arg then assume it is destination, eg, c:/marshalnrn64/nrn
-if test $# = 1 ; then
-  N="$1/mingw"
+if test $# -ge 1 ; then
+  N="$1"
 else
-  N='c:/nrn/mingw'
-  rm -r -f "$N"
+  N='c:/nrn'
+  rm -r -f "$N/mingw"
 fi
+
+NM=$N/mingw
 
 #basic environment
 
-mkdir -p "$N/usr/bin"
-mkdir -p "$N/etc"
-mkdir -p "$N/tmp"
-mkdir -p "$N/usr/share/terminfo/63"
-cp /usr/share/terminfo/63/* $N/usr/share/terminfo/63
-cp $HOME/.inputrc $N/etc/inputrc
+mkdir -p "$NM/usr/bin"
+mkdir -p "$NM/etc"
+mkdir -p "$NM/tmp"
+mkdir -p "$NM/usr/share/terminfo/63"
+cp /usr/share/terminfo/63/* $NM/usr/share/terminfo/63
+cp $HOME/.inputrc $NM/etc/inputrc
 
-#cp /msys2.ico $N
-#cp /msys2.ini $N
-#cp /msys2_shell.cmd $N
+#cp /msys2.ico $NM
+#cp /msys2.ini $NM
+#cp /msys2_shell.cmd $NM
 
 binprog="basename bash cat cp dirname echo find grep ls make mintty
   mkdir mv rebase rm sed sh sort unzip which cygpath cygcheck uname"
 for i in $binprog ; do
   echo $i
-  cp /usr/bin/$i.exe $N/usr/bin/$i.exe
+  cp /usr/bin/$i.exe $NM/usr/bin/$i.exe
 done
 
+cp_dlls() {
 (
+  upath=`cygpath "$1"`
+  export PATH="$upath":$PATH
   rm -f temp.tmp
-  for i in $N/usr/bin/*.exe ; do
+  for i in $1/*.exe ; do
     cygcheck $i | sed 's/^ *//' >> temp.tmp
   done
   sort temp.tmp | uniq | grep 'msys64' | sed 's,\\,/,g' > temp2.tmp
   for i in $(cat temp2.tmp) ; do
     echo $i
-    cp "$i" "$N/usr/bin"
+    cp "$i" "$1"
   done
   rm temp.tmp
   rm temp2.tmp
 )
+}
+
+cp_dlls $NM/usr/bin
 
 # minimal gcc build system for mknrndll
 # this portion of the file started life as
 # $ (cd c:/nrn/mingw ; ls -R mingw64) > nrngcc64.sh
 
-M=$N/mingw64
+M=$NM/mingw64
 X=x86_64-w64-mingw32
 gccver=`gcc --version | sed -n '1s/.* //p'`
 if test ! -d "$gccver" ; then
@@ -64,7 +76,7 @@ mkdir -p "$M/$X/include/sys"
 
 copy() {
   for i in $2 ; do
-    cp "/$1/$i" "$N/$1/$i"
+    cp "/$1/$i" "$NM/$1/$i"
   done
 }
 
@@ -95,10 +107,10 @@ copyinc() {
   sort temp2 | uniq > temp3
   sed -n 's,/[^/]*$,,p' temp3 | sort  | uniq > temp4
   for i in $(cat temp4) ; do
-    mkdir -p "$N/$i"
+    mkdir -p "$NM/$i"
   done
   for i in $(cat temp3) ; do
-    cp /$i "$N/$i"
+    cp /$i "$NM/$i"
   done
 }
 
