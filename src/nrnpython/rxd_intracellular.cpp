@@ -373,7 +373,6 @@ void ics_dg_adi_x_inhom(ICS_Grid_node* g, int line_start, int line_stop, int nod
 }
 
 void ics_dg_adi_y_inhom(ICS_Grid_node* g, int line_start, int line_stop, int node_start, double r, double* states, double* RHS, double* scratchpad, double* u_diag, double* diag, double* l_diag){
-    return;
     double* delta = g->ics_adi_dir_y->deltas;
     long* lines = g->ics_adi_dir_y->ordered_line_defs;
     double* alphas = g->_ics_alphas;
@@ -438,7 +437,6 @@ void ics_dg_adi_y_inhom(ICS_Grid_node* g, int line_start, int line_stop, int nod
 
 }
 void ics_dg_adi_z_inhom(ICS_Grid_node* g, int line_start, int line_stop, int node_start, double r, double* states, double* RHS, double* scratchpad, double* u_diag, double* diag, double* l_diag){
-    return;
     double* delta = g->ics_adi_dir_z->deltas;
     long* lines = g->ics_adi_dir_z->ordered_line_defs;
     long* ordered_z_nodes = g->ics_adi_dir_z->ordered_nodes;
