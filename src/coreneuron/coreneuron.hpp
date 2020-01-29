@@ -75,10 +75,6 @@ using DependencyTable = std::vector<std::vector<int>>;
  */
 class CoreNeuron {
 
-
-    /// Local to coreneuron, used to keep track of point process IDs
-    int pointtype = 1; /* starts at 1 since 0 means not point in pnt_map*/
-
     /**
      * map if mech is a point process
      * In the future only a field of Mechanism class
@@ -235,15 +231,6 @@ class CoreNeuron {
 
     auto& get_bbcore_write() {
         return nrn_bbcore_write;
-    }
-
-
-    /**
-     * Generate point process IDs for pnt_map starting at 1 (since 0 means no point process)
-     * \return the next available point process ID
-     */
-    int get_next_pointtype() {
-        return pointtype++;
     }
 
 };
