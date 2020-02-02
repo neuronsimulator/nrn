@@ -21,7 +21,7 @@
 								<key>GID</key>
 								<integer>80</integer>
 								<key>PATH</key>
-								<string>/Applications/NEURON-@PACKAGE_VERSION@</string>
+								<string>/Applications/NEURON-@UNQUOTED_PACKAGE_VERSION@</string>
 								<key>PATH_TYPE</key>
 								<integer>0</integer>
 								<key>PERMISSIONS</key>
@@ -453,7 +453,7 @@
 			<key>CONCLUSION_ACTION</key>
 			<integer>0</integer>
 			<key>IDENTIFIER</key>
-			<string>edu.yale.neuron.pkg.NEURON-@PACKAGE_VERSION@</string>
+			<string>edu.yale.neuron.pkg.NEURON-@UNQUOTED_PACKAGE_VERSION@</string>
 			<key>OVERWRITE_PERMISSIONS</key>
 			<false/>
 			<key>VERSION</key>
@@ -654,7 +654,7 @@
 				</dict>
 			</array>
 			<key>NAME</key>
-			<string>NEURON-@PACKAGE_VERSION@</string>
+			<string>NEURON-@UNQUOTED_PACKAGE_VERSION@</string>
 		</dict>
 	</dict>
 	<key>TYPE</key>
