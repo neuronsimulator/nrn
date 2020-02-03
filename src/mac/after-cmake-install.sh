@@ -73,6 +73,9 @@ if test "$carbon" = "yes" ; then
 	strip -x nrniv.app/Contents/MacOS/nrniv
 fi
 
+# rxdtests/correct_data size is 46M compared to total 78M
+rm -r -f ${N}/share/nrn/lib/python/neuron/rxdtests/correct_data
+
 # force rebuild of the neurondemo and clean it up
 DEMO="${N}/share/nrn/demo"
 rm -f -r ${DEMO}/neuron ${DEMO}/release/${CPU}
