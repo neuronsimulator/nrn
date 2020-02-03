@@ -399,7 +399,7 @@ elif test "$MINGW" = "yes" ; then
 	fi
 	AC_MSG_NOTICE(['make mswin' will marshal for building the installer in the marshal_dir = $marshal_dir])
 	AC_SUBST(marshal_dir)
-	AC_SUBST(dos_marshal_dir)
+	AC_SUBST(WIN_MARSHAL_NRN_DIR)
 	AC_SUBST(binsuffix)
 elif test "$enable_carbon" = "yes" ; then
 	no_x=yes
