@@ -1008,7 +1008,7 @@ static void variable_step_y(ICS_Grid_node* g, int line_start, int line_stop, int
         for(int j = 0; j < N; j++)
         {
             current_index = ordered_y_nodes[ordered_index];
-            RHS[j] = states[current_index] - dt * delta[current_index] / (alphas[current_index] * SQ(dy));
+            RHS[j] = states[current_index] - dt * dcs[current_index] * delta[current_index] / (alphas[current_index] * SQ(dy));
             ordered_index++;
         }
 
@@ -1073,7 +1073,7 @@ static void variable_step_z(ICS_Grid_node* g, int line_start, int line_stop, int
         for(int j = 0; j < N; j++)
         {
             current_index = ordered_z_nodes[ordered_index];
-            RHS[j] = states[current_index] - dt * delta[current_index] / (SQ(dz) * alphas[current_index]);
+            RHS[j] = states[current_index] - dt * dcs[current_index] * delta[current_index] / (alphas[current_index] * SQ(dz));
             ordered_index++;
         }
 
