@@ -71,6 +71,26 @@ class NeuronTestCase(unittest.TestCase):
         v.x[0] = 5
         assert v.x[0] == 5
 
+    def testIterators(self):
+        """Test section, segment, mechanism, rangevar iterators."""
+        # setup model
+        sections = [h.Section(name='s%d'%i) for i in range(3)]
+        iclamps = [h.IClamp(sec(.5)) for sec in sections]
+        for i, sec in enumerate(sections):
+            sec.nseg = 3
+            sec.insert('pas')
+            sec.insert('hh')
+        #iterate
+        import hashlib
+        sha = hashlib.sha256()
+        for sec in h.allsec():
+            for seg in sec:
+                for mech in seg:
+                    for var in mech:
+                        sha.update(("%s(%g).%s.%s=%g" % (sec.name(), seg.x, mech.name(), var.name(), var[0])).encode('utf-8'))
+        d = sha.hexdigest()
+        assert d == 'ac49344c054bc9e56e165fa75423d8bcb7cce96c4527f259362b527ee05103d8'
+
     @classmethod
     def ExtendedSection(cls):
         """test prsection (modified print statement)"""
