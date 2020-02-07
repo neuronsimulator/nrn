@@ -10,6 +10,12 @@ pipeline {
         string(name: 'NEURON_BRANCH', defaultValue: '',
                description: 'Which branch of neuron to use. For master branch (neuron@develop) leave this parameter blank.')
     }
+
+    environment {
+        HOME = "${WORKSPACE}"
+        JENKINS_DIR = "${WORKSPACE}/tests/jenkins"
+    }
+
     stages {
 
         stage('install Spack'){
@@ -327,9 +333,7 @@ pipeline {
     }
     post {
         always {
-            dir("${WORKSPACE}") {
-                deleteDir()
-            }
+            cleanWs()
         }
     }
 }

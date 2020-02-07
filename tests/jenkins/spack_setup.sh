@@ -7,23 +7,6 @@ echo "
 Preparing spack environment...
 ====================================================================="
 
-export SPACK_INSTALL_PREFIX="${SPACK_INSTALL_PREFIX:-${WORKSPACE}/INSTALL_HOME}"
-export SOFTS_DIR_PATH=$SPACK_INSTALL_PREFIX  # Deprecated, but might still be reqd
-
-BUILD_HOME="${WORKSPACE}/BUILD_HOME"
-export SPACK_ROOT="${BUILD_HOME}/spack"
-
-# ENV SETUP
-
-# TODO: /usr/bin was added as a quickfix due to git dependencies probs
-export PATH=$SPACK_ROOT/bin/spack:/usr/bin:$PATH
-
-# MODULES
-# Use spack only modules. Last one is added by changing MODULEPATH since it might not exist yet
-module purge
-unset MODULEPATH
-source /gpfs/bbp.cscs.ch/apps/hpc/jenkins/config/modules.sh
-export MODULEPATH=$SPACK_INSTALL_PREFIX/modules/tcl/$(spack arch):$MODULEPATH
 
 ############################# CLONE/SETUP REPOSITORY #############################
 
@@ -43,6 +26,7 @@ install_spack() (
 
 )
 
+source ${JENKINS_DIR:-.}/_env_setup.sh
 
 install_spack
 

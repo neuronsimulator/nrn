@@ -1,9 +1,10 @@
 #!/usr/bin/bash
 
-set -xe
+set -e
+source ${JENKINS_DIR:-.}/_env_setup.sh
+module load intel
 
-. /gpfs/bbp.cscs.ch/apps/hpc/jenkins/config/modules.sh
-module load intel hpe-mpi
+set -x
 TEST_DIR="$1"
 CORENRN_TYPE="$2"
 

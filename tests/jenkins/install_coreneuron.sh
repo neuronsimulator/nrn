@@ -2,7 +2,7 @@
 
 set -e
 
-. /gpfs/bbp.cscs.ch/apps/hpc/jenkins/config/modules.sh
+source ${JENKINS_DIR:-.}/_env_setup.sh
 
 CORENRN_TYPE="$1"
 

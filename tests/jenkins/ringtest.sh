@@ -1,14 +1,11 @@
 #!/usr/bin/bash
 
 set -e
+source ${JENKINS_DIR:-.}/_env_setup.sh
 
-module load hpe-mpi
-export MPI_UNBUFFERED_STDIO=1
+set -x
 CORENRN_TYPE="$1"
-
-if [ "${CORENRN_TYPE}" = "GPU-non-unified" ]  || [ "${CORENRN_TYPE}" = "GPU-unified" ]; then
-    unset $(env|awk -F= '/^(PMI|SLURM)_/ {if ($1 != "SLURM_ACCOUNT") print $1}')
-fi
+export MPI_UNBUFFERED_STDIO=1
 
 cd $WORKSPACE/build_${CORENRN_TYPE}
 echo "Testing ${CORENRN_TYPE}"

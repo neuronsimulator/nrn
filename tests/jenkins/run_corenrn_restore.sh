@@ -1,9 +1,9 @@
 #!/usr/bin/bash
 
 set -e
+source ${JENKINS_DIR:-.}/_env_setup.sh
 
-module load hpe-mpi
-
+set -x
 CORENRN_TYPE="$1"
 MPI_RANKS="$2"
 

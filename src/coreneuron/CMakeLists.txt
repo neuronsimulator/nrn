@@ -190,8 +190,6 @@ set_target_properties(coreneuron corenrnmech scopmath ${link_cudacoreneuron}
 add_custom_command(TARGET coreneuron
                    POST_BUILD
                    COMMAND ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core
-                           -i "-I${CORENEURON_PROJECT_SOURCE_DIR} -I${CORENRN_NMODL_INCLUDE}"
-                           -m "${CORENRN_NMODL_BINARY}"
                            ${CORENEURON_PROJECT_SOURCE_DIR}/tests/integration/ring_gap/mod
                    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin
                    BYPRODUCTS ${CMAKE_BINARY_DIR}/bin/${CMAKE_SYSTEM_PROCESSOR}/special-core
@@ -224,19 +222,28 @@ set(CORENRN_LINK_LIBS "${CORENRN_LINK_LIBS}" PARENT_SCOPE)
 # =============================================================================
 # Copy files for nrnivmodl-core workflow during build time
 # =============================================================================
-configure_file(${MODFUNC_PERL_SCRIPT} ${CMAKE_BINARY_DIR}/share/coreneuron/mod_func.c.pl @ONLY)
-configure_file(${KINDERIV_PYTHON_SCRIPT} ${CMAKE_BINARY_DIR}/share/coreneuron/kinderiv.py)
-configure_file(${DIMPLIC_CODE_FILE} ${CMAKE_BINARY_DIR}/share/coreneuron/dimplic.cpp)
-configure_file(${ENGINEMECH_CODE_FILE} ${CMAKE_BINARY_DIR}/share/coreneuron/enginemech.cpp)
 
-configure_file("engine.h" ${CMAKE_BINARY_DIR}/include/coreneuron/engine.h)
-configure_file("enginemech.h" ${CMAKE_BINARY_DIR}/include/coreneuron/enginemech.h)
+configure_file(${MODFUNC_PERL_SCRIPT} ${CMAKE_BINARY_DIR}/share/coreneuron/mod_func.c.pl COPYONLY)
+configure_file(${KINDERIV_PYTHON_SCRIPT} ${CMAKE_BINARY_DIR}/share/coreneuron/kinderiv.py COPYONLY)
+configure_file(${DIMPLIC_CODE_FILE} ${CMAKE_BINARY_DIR}/share/coreneuron/dimplic.cpp COPYONLY)
+configure_file(${ENGINEMECH_CODE_FILE} ${CMAKE_BINARY_DIR}/share/coreneuron/enginemech.cpp COPYONLY)
+
+# Make headers avail to build tree
+file(GLOB_RECURSE main_headers RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" *.h *.hpp *.ispc)
+foreach(header ${main_headers})
+  configure_file("${header}" "${CMAKE_BINARY_DIR}/include/coreneuron/${header}" COPYONLY)
+endforeach()
 configure_file("utils/profile/profiler_interface.h"
-               ${CMAKE_BINARY_DIR}/include/coreneuron/nrniv/profiler_interface.h)
-configure_file("mechanism/nrnoc_ml.ispc" ${CMAKE_BINARY_DIR}/include/coreneuron/mechanism/nrnoc_ml.ispc)
+               ${CMAKE_BINARY_DIR}/include/coreneuron/nrniv/profiler_interface.h COPYONLY)
 
-# TODO : this doesn't get re-copied if source changes
-file(COPY "utils/randoms" DESTINATION ${CMAKE_BINARY_DIR}/include/coreneuron/utils)
+if(NOT CORENRN_ENABLE_NMODL)
+  # MOD2C puts UNITS_FILE in share, but we need to see it in share/mod2c
+  # We create a link since we know neither the source location nor when its copied
+  FILE(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/share/mod2c/")
+  ADD_CUSTOM_TARGET(link_units ALL
+    COMMAND ${CMAKE_COMMAND} -E create_symlink
+      "${NMODL_UNITS_FILE}" "${CMAKE_BINARY_DIR}/share/mod2c/nrnunits.lib")
+endif()
 
 # main program required for building special-core
 file(COPY apps/coreneuron.cpp DESTINATION ${CMAKE_BINARY_DIR}/share/coreneuron)

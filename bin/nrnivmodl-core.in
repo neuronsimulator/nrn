@@ -13,6 +13,16 @@ PARALLELISM=4
 SAVE_FILE="@CMAKE_HOST_SYSTEM_PROCESSOR@/nrnivmodl_options.txt"
 params_MODS_PATH="."
 
+# To support build + install later we save/restore options
+# Attempt to load previous definitions
+if [ -f "$SAVE_FILE" ]; then
+    echo "[INFO] Loading definitions from previous nrnivmodl-core execution"
+    while read line; do
+        echo " + $line" && eval "$line"
+    done < "$SAVE_FILE"
+fi
+
+# Parse args (overriding)
 while getopts "n:m:v:d:i:l:p:hV" OPT; do
     case "$OPT" in
     n)
@@ -49,18 +59,10 @@ done
 shift $(($OPTIND - 1))
 
 if [ $# -gt 1 ]; then
-    echo "Error: $APP_NAME expects at most one mod dir. See syntax: '$APP_NAME -h' "
+    echo "[ERROR] $APP_NAME expects at most one mod dir. See syntax: '$APP_NAME -h' "
     exit 1
 fi
 
-# To support build + install later we save/restore options
-# Attempt to load previous definitions
-if [ -f "$SAVE_FILE" ]; then
-    while read line; do
-        echo "$line"
-        eval "$line"
-    done < "$SAVE_FILE"
-fi
 
 # If defined mods dir be in $1
 if [ $# -eq 1 ]; then
@@ -79,6 +81,8 @@ fi
 mkdir -p "$(dirname "$SAVE_FILE")"
 echo "# nrnivmodl-core options. Mods location: $params_MODS_PATH" > $SAVE_FILE
 
+
+# Build params to make command (and save them to file)
 make_params=("ROOT=${ROOTDIR}")
 
 for param in $MAKE_OPTIONS; do
@@ -94,6 +98,7 @@ if [ "$params_DESTDIR" ]; then
     make_params+=("install")
 fi
 
+echo "[INFO] Running make with params: ${make_params[@]}"
 make -j$PARALLELISM -f "${ROOTDIR}/share/coreneuron/nrnivmodl_core_makefile" "${make_params[@]}"
 
-echo "mods built successfully."
+echo "[INFO] mods built successfully."
