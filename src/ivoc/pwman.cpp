@@ -561,7 +561,11 @@ ENDGUI
 }
 #if defined(MINGW)
 static void pwman_iconify1(void* v) {
+#if HAVE_IV
+IFGUI
 	((PrintableWindow*)v)->dismiss();
+ENDGUI
+#endif
 }
 #endif
 
@@ -711,7 +715,11 @@ ENDGUI
 #if defined(MINGW)
 static double scale_;
 static void pwman_scale1(void*) {
+#if HAVE_IV
+IFGUI
 	iv_display_scale(scale_);
+ENDGUI
+#endif
 }
 #endif
 

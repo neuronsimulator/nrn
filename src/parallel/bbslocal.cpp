@@ -22,7 +22,7 @@ struct ltint {
 	}
 };
 
-class KeepArgs : public map<int, const MessageValue*, ltint>{};
+class KeepArgs : public std::map<int, const MessageValue*, ltint>{};
 
 #endif
 
@@ -193,7 +193,7 @@ void BBSLocal::save_args(int userid) {
 	server_->post_todo(working_id_, posting_);
 #if defined(HAVE_STL)
 	keepargs_->insert(
-		pair<const int, const MessageValue*>(userid, posting_)
+		std::pair<const int, const MessageValue*>(userid, posting_)
 	);
 #endif
 	posting_ = nil;

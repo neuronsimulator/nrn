@@ -33,7 +33,7 @@ struct NrnHashLT(Table) { \
 \
 class NrnHashEntry(Table) : public std::map <Key, Value, NrnHashLT(Table)>{}; \
 \
-class Table : public vector<NrnHashEntry(Table)> { \
+class Table : public std::vector<NrnHashEntry(Table)> { \
 public: \
 	Table(long size); \
 	virtual ~Table(); \

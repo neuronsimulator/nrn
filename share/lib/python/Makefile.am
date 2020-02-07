@@ -42,6 +42,7 @@ neuron/tests/_subclass.py \
 neuron/rxd/region.py \
 neuron/rxd/species.py \
 neuron/rxd/rxd.py \
+neuron/rxd/constants.py \
 neuron/rxd/reaction.py \
 neuron/rxd/rxdsection.py \
 neuron/rxd/rxdmath.py \
@@ -61,7 +62,16 @@ neuron/rxd/rangevar.py \
 neuron/rxd/dimension3.py \
 neuron/rxd/initializer.py \
 neuron/rxd/export.py \
-neuron/rxd/geometry3d/*.* \
+neuron/rxd/geometry3d/FullJoinMorph.py \
+neuron/rxd/geometry3d/GeneralizedVoxelization.py \
+neuron/rxd/geometry3d/__init__.py \
+neuron/rxd/geometry3d/scalarField.py \
+neuron/rxd/geometry3d/simplevolume_helper.py \
+neuron/rxd/geometry3d/surface_a.py \
+neuron/rxd/geometry3d/surface.py \
+neuron/rxd/geometry3d/triangularMesh.py \
+neuron/rxd/geometry3d/voxelize2.py \
+neuron/rxd/geometry3d/voxelize.py \
 \
 neuron/crxd/__init__.py \
 \

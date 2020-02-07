@@ -461,10 +461,8 @@ void nrn_spike_exchange_init() {
     return;
 #endif
 //printf("nrn_spike_exchange_init\n");
-#if NRNMPI
-	if (nrnmpi_use) { active_ = 1; } // in case set_mindelay has not yet been called
-#endif
 	if (!nrn_need_npe()) { return; }
+//	if (!active_ && !nrn_use_selfqueue_) { return; }
 	alloc_space();
 //printf("nrnmpi_use=%d active=%d\n", nrnmpi_use, active_);
 	calc_actual_mindelay();	
@@ -1088,7 +1086,7 @@ void BBS::cell() {
 
 void BBS::outputcell(int gid) {
 	PreSyn* ps;
-	assert(gid2out_->find(gid, ps));
+	nrn_assert(gid2out_->find(gid, ps));
 	assert(ps);
 	ps->output_index_ = gid;
 	ps->gid_ = gid;
@@ -1097,7 +1095,7 @@ void BBS::outputcell(int gid) {
 void BBS::spike_record(int gid, IvocVect* spikevec, IvocVect* gidvec) {
 	PreSyn* ps;
     if (gid >= 0) {
-	assert(gid2out_->find(gid, ps));
+	nrn_assert(gid2out_->find(gid, ps));
 	assert(ps);
 	ps->record(spikevec, gidvec, gid);
     }else{ // record all output spikes
@@ -1115,7 +1113,7 @@ void BBS::spike_record(IvocVect* gids, IvocVect* spikevec, IvocVect* gidvec) {
 	for (int i = 0; i < sz; ++i) {
 		PreSyn* ps;
 		int gid = int(pd[i]);
-		assert(gid2out_->find(gid, ps));
+		nrn_assert(gid2out_->find(gid, ps));
 		assert(ps);
 		ps->record(spikevec, gidvec, gid);
 	}
@@ -1125,7 +1123,7 @@ static Object* gid2obj_(int gid) {
 	Object* cell = 0;
 //printf("%d gid2obj gid=%d\n", nrnmpi_myid, gid);
 	PreSyn* ps;
-	assert(gid2out_->find(gid, ps));
+	nrn_assert(gid2out_->find(gid, ps));
 //printf(" found\n");
 	assert(ps);
 	cell = ps->ssrc_ ? nrn_sec2cell(ps->ssrc_) : ps->osrc_;
@@ -1141,7 +1139,7 @@ Object** BBS::gid2cell(int gid) {
 	Object* cell = 0;
 //printf("%d gid2obj gid=%d\n", nrnmpi_myid, gid);
 	PreSyn* ps;
-	assert(gid2out_->find(gid, ps));
+	nrn_assert(gid2out_->find(gid, ps));
 //printf(" found\n");
 	assert(ps);
 	if (ps->ssrc_) {
@@ -1492,7 +1490,7 @@ Object* nrn_gid2obj(int gid) {
 
 PreSyn* nrn_gid2presyn(int gid) { // output PreSyn
 	PreSyn* ps;
-	assert(gid2out_->find(gid, ps));
+	nrn_assert(gid2out_->find(gid, ps));
 	return ps;
 }
 

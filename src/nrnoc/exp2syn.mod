@@ -1,6 +1,6 @@
 COMMENT
 Two state kinetic scheme synapse described by rise time tau1,
-and decay time constant tau2. The normalized peak condunductance is 1.
+and decay time constant tau2. The normalized peak conductance is 1.
 Decay time MUST be greater than rise time.
 
 The solution of A->G->bath with rate constants 1/tau1 and 1/tau2 is

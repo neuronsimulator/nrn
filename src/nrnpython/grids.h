@@ -161,7 +161,7 @@ class Grid_node {
     int ics_num_segs;
 
     int insert(int grid_list_index);
-    int node_flux_count = 0;
+    int node_flux_count;
     long * node_flux_idx;
     double * node_flux_scale;
     PyObject ** node_flux_src;

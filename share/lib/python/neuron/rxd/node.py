@@ -1,6 +1,6 @@
 import neuron
 from neuron import h, nrn, hoc, nrn_dll_sym
-from . import region
+from . import region, constants
 from . import rxdsection
 import numpy
 import weakref
@@ -28,6 +28,8 @@ _point_indices = {}
 _concentration_node = 0
 _molecule_node = 1
 
+molecules_per_mM_um3 = constants.NA / 1e18
+
 def _get_data():
     return (_volumes, _surface_area, _diffs)
 
@@ -39,6 +41,7 @@ def _allocate(num):
     
     Note: no guarantee is made of preserving previous _ref
     """
+    global _volumes, _surface_area, _diffs, _states
     start_index = len(_volumes)
     total = start_index + num
     _volumes.resize(total, refcheck=False)
@@ -50,12 +53,23 @@ def _allocate(num):
 def _remove(start, stop):
     """ delete old volumes, surface areas and diff values in from global arrays
     """
-    global _volumes, _surface_area, _diffs, _states
+    global _volumes, _surface_area, _diffs, _states, _node_fluxes, _has_node_fluxes
     #Remove entries that have to be recalculated
-    _volumes = numpy.delete(_volumes,list(range(start,stop)))
-    _surface_area = numpy.delete(_surface_area,list(range(start,stop)))
-    _diffs = numpy.delete(_diffs,list(range(start,stop)))
-    _states = numpy.delete(_states,list(range(start,stop)))
+    dels = list(range(start,stop))
+    _volumes = numpy.delete(_volumes, dels)
+    _surface_area = numpy.delete(_surface_area, dels)
+    _diffs = numpy.delete(_diffs, dels)
+    _states = numpy.delete(_states, dels)
+
+    # remove _node_flux
+    newflux =  {'index': [], 'type': [], 'source': [], 'scale': [], 'region': []} 
+    for (i,idx) in enumerate(_node_fluxes['index']):
+        if idx not in dels:
+            for key in _node_fluxes:
+                newflux[key].append(_node_fluxes[key][i])
+    _node_fluxes = newflux
+    _has_node_fluxes = _node_fluxes['index'] != []
+
 
     # remove _node_flux
     for (i,idx) in enumerate(_node_fluxes['index']):
@@ -259,7 +273,7 @@ class Node(object):
         # once this is done, we need to divide by volume to get mM
         # TODO: is division still slower than multiplication? Switch to mult.
         if units == 'molecule/ms':
-            scale = 602214.129
+            scale = molecules_per_mM_um3
         elif units == 'mol/ms':
             # You have: mol
             # You want: (millimol/L) * um^3

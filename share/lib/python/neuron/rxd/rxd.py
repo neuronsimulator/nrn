@@ -1,5 +1,5 @@
 from neuron import h, nrn, nrn_dll_sym 
-from . import species, node, section1d, region, generalizedReaction
+from . import species, node, section1d, region, generalizedReaction, constants
 from .nodelist import NodeList
 from .node import _point_indices
 import weakref
@@ -19,7 +19,7 @@ from numpy.ctypeslib import ndpointer
 import re
 import platform
 
-molecules_per_mM_um3 = 602214.129
+molecules_per_mM_um3 = constants.NA / 1e18
 
 # aliases to avoid repeatedly doing multiple hash-table lookups
 _numpy_array = numpy.array
@@ -72,7 +72,8 @@ _set_num_threads.argtypes = [ctypes.c_int]
 _get_num_threads = nrn_dll_sym('get_num_threads')
 _get_num_threads.restype = ctypes.c_int
 
-
+free_conc_ptrs = nrn_dll_sym('free_conc_ptrs')
+free_curr_ptrs = nrn_dll_sym('free_curr_ptrs')
 clear_rates = nrn_dll_sym('clear_rates')
 register_rate = nrn_dll_sym('register_rate')
 register_rate.argtypes = [ 
@@ -232,14 +233,6 @@ atexit.register(byeworld)
 # Faraday's constant (store to reduce number of lookups)
 FARADAY = h.FARADAY
 
-# converting from mM um^3 to molecules
-# = 6.02214129e23 * 1000. / 1.e18 / 1000
-# = avogadro * (L / m^3) * (m^3 / um^3) * (mM / M)
-# value for avogardro's constant from NIST webpage, accessed 25 April 2012:
-# http://physics.nist.gov/cgi-bin/cuu/Value?na
-_conversion_factor = 602214.129
-
-
 _cvode_object = h.CVode()
 
 last_diam_change_cnt = None
@@ -307,13 +300,9 @@ def set_solve_type(domain=None, dimension=None, dx=None, nsubseg=None, method=No
 
 def _unregister_reaction(r):
     global _all_reactions
+    react = r() if isinstance(r, weakref.ref) else r
     initializer._init_lock.acquire()
-    for i, r2 in enumerate(_all_reactions):
-        if not r2():
-            del _all_reactions[i]
-        elif r2() == r:
-            del _all_reactions[i]
-            break
+    _all_reactions = list(filter(lambda x: x() is not None and x() != react, _all_reactions))
     initializer._init_lock.release()
 
 def _register_reaction(r):
@@ -452,7 +441,7 @@ def _currents(rhs):
 _last_dt = None
 
 def _setup():
-    initializer._do_init()
+    if not initializer.is_initialized(): initializer._do_init()
     # TODO: this is when I should resetup matrices (structure changed event)
     global _last_dt, _external_solver_initialized
     _last_dt = None
@@ -463,7 +452,11 @@ def _setup():
 
 def _find_librxdmath():
     import glob
-    base_path = os.path.join(h.neuronhome(), "..", "..", platform.machine(), "lib", "librxdmath")
+    # cmake doesn't create x86_64 directory under install prefix
+    base_path = os.path.join(h.neuronhome(), "..", "..", platform.machine())
+    if not os.path.exists(base_path):
+        base_path = os.path.join(h.neuronhome(), "..", "..")
+    base_path = os.path.join(base_path, "lib", "librxdmath")
     success = False 
     for extension in ['', '.dll', '.so', '.dylib']:
         dll = base_path  + extension
@@ -659,7 +652,6 @@ def _setup_matrices():
         # TODO: initialization is slow. track down why
         
         _last_dt = None
-        
         for sr in _species_get_all_species():
             s = sr()
             if s is not None:

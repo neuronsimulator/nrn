@@ -290,9 +290,6 @@ if test -d "$hparent/html" ; then
 	unzip -d $marshal_dir html.zip
 	rm -f html.zip
 fi
-else #nsis requires something
-mkdir $marshal_dir/html
-touch $marshal_dir/html/empty
 fi # end of html marshaling
 
 set +v

@@ -28,6 +28,7 @@ NEURON {
         USEION k READ ek WRITE ik REPRESENTS CHEBI:29103
         NONSPECIFIC_CURRENT il
         RANGE gnabar, gkbar, gl, el, gna, gk
+        : `GLOBAL minf` will be replaced with `RANGE minf` if CoreNEURON enabled
         GLOBAL minf, hinf, ninf, mtau, htau, ntau
 	THREADSAFE : assigned GLOBALs will be per thread
 }
@@ -91,6 +92,7 @@ DERIVATIVE states {
 PROCEDURE rates(v(mV)) {  :Computes rate and other constants at current v.
                       :Call once from HOC to initialize inf at resting v.
         LOCAL  alpha, beta, sum, q10
+        : `TABLE minf` will be replaced with `:TABLE minf` if CoreNEURON enabled)
         TABLE minf, mtau, hinf, htau, ninf, ntau DEPEND celsius FROM -100 TO 100 WITH 200
 
 UNITSOFF

@@ -23,7 +23,7 @@ PYTHONBLD="@PYTHON_BLD@" # The python used for
 PYTHONCFG="@PYTHON@" # The Python from --with_nrnpython or --pyexe
 host_cpu="@host_cpu@"
 host_os="@host_os@"
-NRNPYTHON_DYNAMIC=no
+NRN_ENABLE_PYTHON_DYNAMIC=OFF
 nrnPYTHONPATH="$prefix/lib/python"
 
 diagnose() {
@@ -40,7 +40,7 @@ diagnose() {
   echo "PYTHON=$PYTHON"
   echo "host_cpu=$host_cpu"
   echo "host_os=$host_os"
-  echo "NRNPYTHON_DYNAMIC=$NRNPYTHON_DYNAMIC"
+  echo "NRN_ENABLE_PYTHON_DYNAMIC=$NRN_ENABLE_PYTHON_DYNAMIC"
   echo "origPYTHONPATH=$origPYTHONPATH"
   echo "origPYTHONHOME=$origPYTHONHOME"
   echo "origNRN_PYLIB=$origNRN_PYLIB"
@@ -95,7 +95,7 @@ unset PYTHONPATH # pristine, just going to check for runability
 
 PYTHON=""
 if test "@BUILD_NRNPYTHON_DYNAMIC_FALSE@" = "#" ; then
-  NRNPYTHON_DYNAMIC=yes
+  NRN_ENABLE_PYTHON_DYNAMIC=ON
   if $PYTHONCFG -c 'quit()' > /dev/null 2>& 1 ; then
     PYTHON="$PYTHONCFG" #last one built
   else # python for last one built is not on this machine

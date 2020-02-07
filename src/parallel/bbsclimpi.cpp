@@ -37,7 +37,7 @@ struct ltint {
 	}
 };
 
-class KeepArgs : public map<int, bbsmpibuf*, ltint>{};
+class KeepArgs : public std::map<int, bbsmpibuf*, ltint>{};
 
 #endif
 
@@ -274,7 +274,7 @@ void BBSClient::save_args(int userid) {
 #if defined(HAVE_STL)
 	nrnmpi_ref(sendbuf_);
 	keepargs_->insert(
-		pair<const int, bbsmpibuf* >(userid, sendbuf_)
+		std::pair<const int, bbsmpibuf* >(userid, sendbuf_)
 	);
 	
 #endif
