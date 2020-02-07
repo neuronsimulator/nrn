@@ -17,6 +17,16 @@ double *h_dt_ptr;
 double *h_t_ptr;
 Grid_node *Parallel_grids[100] = {NULL};
 
+/* globals used by ECS do_currents */
+extern TaskQueue* AllTasks;
+/*Current from multicompartment reations*/
+extern unsigned char _membrane_flux;
+extern int _memb_curr_total;
+extern int* _rxd_induced_currents_grid;
+extern int* _rxd_induced_currents_ecs_idx;
+extern double* _rxd_induced_currents_ecs;
+extern double* _rxd_induced_currents_scale;
+
 // Set dt, t pointers
 extern "C" void make_time_ptr(PyHocObject* my_dt_ptr, PyHocObject* my_t_ptr) {
     dt_ptr = my_dt_ptr -> u.px_;
@@ -679,10 +689,105 @@ void ECS_Grid_node::set_num_threads(const int n)
     }
 }
 
-void ECS_Grid_node::do_grid_currents(double dt, int grid_id)
+static void* gather_currents(void* dataptr)
 {
-    //TODO: Avoid this call and put the code from do_currents in this method
-    do_currents(this, states_cur, dt, grid_id);
+    CurrentData* d =  (CurrentData*)dataptr;
+    Grid_node *grid = d->g;
+    double *val = d->val;
+    int i, start = d->onset, stop = d->offset;
+    Current_Triple* c = grid->current_list;
+    if(grid->VARIABLE_ECS_VOLUME == VOLUME_FRACTION) 
+    {
+        for(i = start; i < stop; i++)
+           val[i] = c[i].scale_factor * (*c[i].source)/grid->alpha[c[i].destination];
+    }
+    else if (grid->VARIABLE_ECS_VOLUME == ICS_ALPHA)
+    {
+        //TODO: Check if this is used.
+        for(i = start; i < stop; i++)
+           val[i] = c[i].scale_factor * (*c[i].source)/((ICS_Grid_node*)grid)->_ics_alphas[c[i].destination];
+    }
+    else
+    {
+        for(i = start; i < stop; i++)
+            val[i] = c[i].scale_factor * (*c[i].source)/grid->alpha[0];
+    }
+    return NULL;
+}
+
+/*
+ * do_current - process the current for a given grid
+ * Grid_node* grid - the grid used
+ * double* output - for fixed step this is the states for variable ydot
+ * double dt - for fixed step the step size, for variable step 1
+ */
+void ECS_Grid_node::do_grid_currents(double* output, double dt, int grid_id)
+{
+    ssize_t m, n, i;
+    Current_Triple* c;
+    /*Currents to broadcast via MPI*/
+    /*TODO: Handle multiple grids with one pass*/
+    /*Maybe TODO: Should check #currents << #voxels and not the other way round*/
+    double* val;
+    //MEM_ZERO(output,sizeof(double)*grid->size_x*grid->size_y*grid->size_z);
+    /* currents, via explicit Euler */
+    n = num_all_currents;
+    m = num_currents;
+    CurrentData* tasks = (CurrentData*)malloc(NUM_THREADS*sizeof(CurrentData));
+#if NRNMPI    
+    val = all_currents + (nrnmpi_use?proc_offsets[nrnmpi_myid]:0);
+#else
+    val = all_currents;
+#endif
+    int tasks_per_thread = (m + NUM_THREADS - 1)/NUM_THREADS;
+
+    for(i = 0; i < NUM_THREADS; i++)
+    {
+        tasks[i].g = this;
+        tasks[i].onset = i * tasks_per_thread;
+        tasks[i].offset = MIN((i+1)*tasks_per_thread,m);
+        tasks[i].val = val;
+    }
+    for (i = 0; i < NUM_THREADS-1; i++) 
+    {
+        TaskQueue_add_task(AllTasks, &gather_currents, &tasks[i], NULL);
+    }
+    /* run one task in the main thread */
+    gather_currents(&tasks[NUM_THREADS - 1]);
+
+    /* wait for them to finish */
+    TaskQueue_sync(AllTasks);
+    free(tasks);
+#if NRNMPI
+    if(nrnmpi_use)
+    {
+        nrnmpi_dbl_allgatherv_inplace(all_currents, proc_num_currents, proc_offsets);
+        for(i = 0; i < n; i++)
+            output[current_dest[i]] += dt * all_currents[i];
+    }
+    else
+    {
+        for(i = 0; i < n; i++)
+        {
+            output[current_list[i].destination] += dt * all_currents[i];
+        }
+    }
+#else
+    for(i = 0; i < n; i++)
+        output[current_list[i].destination] +=  dt * all_currents[i];
+#endif
+    /*Remove the contribution from membrane currents*/
+    if(_membrane_flux)
+    {
+        for(i = 0; i < _memb_curr_total; i++)
+        {
+            if(_rxd_induced_currents_grid[i] == grid_id)
+            {
+                if(_rxd_induced_currents_ecs_idx[i] != SPECIES_ABSENT)
+                    output[_rxd_induced_currents_ecs_idx[i]] -= dt * (_rxd_induced_currents_ecs[i] * _rxd_induced_currents_scale[i]);
+            }
+        }
+    }
 }
 
 void ECS_Grid_node::apply_node_flux3D(double dt, double* ydot)
@@ -1205,7 +1310,7 @@ void ICS_Grid_node::apply_node_flux3D(double dt, double* ydot)
     apply_node_flux(node_flux_count, node_flux_idx, node_flux_scale, node_flux_src, dt, dest);
 }
 
-void ICS_Grid_node::do_grid_currents(double dt, int grid_id)
+void ICS_Grid_node::do_grid_currents(double* output, double dt, int grid_id)
 {
     MEM_ZERO(states_cur,sizeof(double)*_num_nodes);
     if(ics_current_seg_ptrs != NULL){
@@ -1220,7 +1325,7 @@ void ICS_Grid_node::do_grid_currents(double dt, int grid_id)
             seg_cur = *ics_current_seg_ptrs[i];
             for(j = seg_start_index; j < seg_stop_index; j++){
                 state_index = ics_surface_nodes_per_seg[j];
-                states_cur[state_index] += seg_cur * ics_scale_factors[state_index] * dt;
+                output[state_index] += seg_cur * ics_scale_factors[state_index] * dt;
             }
         }        
     }
@@ -1327,10 +1432,6 @@ void ICS_Grid_node::free_Grid(){
     free(concentration_list);
     free(current_list);
     free(current_dest);
-    
-    free(ics_concentration_seg_ptrs);
-    free(ics_scale_factors);
-    free(ics_current_seg_ptrs);
 #if NRNMPI
     if(nrnmpi_use)
     {

@@ -727,7 +727,7 @@ class NodeExtracellular(Node):
         if hasattr(value,'__len__'):
             set_diffusion(0, self._grid_id, numpy.array(value, dtype=float),1)
         else:
-            set_diffusion(0, self._grid_id, numpy.repeat(value, 3), 1)
+            set_diffusion(0, self._grid_id, numpy.repeat(float(value), 3), 1)
 
     @property
     def value(self):

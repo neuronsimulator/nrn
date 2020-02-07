@@ -721,7 +721,10 @@ class _IntracellularSpecies(_SpeciesMathable):
                     scale_factor = tenthousand_over_charge_faraday / (numpy.prod(my_dx))              
                     self._current_neuron_pointers = [seg.__getattribute__(ion_curr) for seg in self._seg_to_surface_nodes.keys()]
                     #These are in the same order as self._surface_nodes_per_seg so self._surface_nodes_per_seg_start_indices will work for this list as well
-                    scale_factors = [sign * node.surface_area * scale_factor for node in self._nodes]
+                    geom_area = [sum(self._region.geometry.surface_areas1d(sec)) for sec in self._region._secs3d]
+                    node_area = [node.surface_area for node in self._nodes]
+                    scale = sum(node_area)/geom_area
+                    scale_factors = [sign * area * scale * scale_factor for area in node_area]
                     self._scale_factors = numpy.asarray(scale_factors, dtype=numpy.float_)
                     _ics_set_grid_currents(grid_list_start, self._grid_id, self._surface_nodes_per_seg, self._surface_nodes_per_seg_start_indices, self._current_neuron_pointers, self._scale_factors)
 
@@ -1183,7 +1186,20 @@ class Species(_SpeciesMathable):
 
         self._allow_setting = True
         self.regions = regions
-        self.d = d
+        # Check for anisotropic/inhomogeneous 3D diffusion with 1D sections
+        if hasattr(d,'__len__') or callable(d):
+            if hasattr(d,'__len__') and all([di == d[0] for di in d]) and not callable(d[0]):
+                self._d = d[0]
+            else:
+                from .rxd import _dimensions
+                reglist = regions if hasattr(regions,'__len__') else [regions]
+                dims = [_dimensions[sec] for reg in reglist for sec in reg.secs]
+                if not all([dim == dims[0] for dim in dims]):
+                    raise RxDException('Hybrid 1D/3D diffusion does not currently support anisotropy or inhomogeneous grids. For separate 1D and 3D diffusion please create separate regions and species for 3D and 1D sections') 
+                else:
+                    self._d = d
+        else:
+            self._d = d 
         self.name = name
         self.charge = charge
         self.initial = initial

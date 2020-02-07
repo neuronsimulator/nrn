@@ -10,7 +10,7 @@ def ics_pure_diffusion_anisotropic(neuron_instance):
 
     def make_test(diff_constant):
         h, rxd, data = neuron_instance
-        dend = h.Section()
+        dend = h.Section(name='dend')
         dend.nseg = 11
         dend.pt3dclear()
         dend.pt3dadd(-5,0,0,5)
