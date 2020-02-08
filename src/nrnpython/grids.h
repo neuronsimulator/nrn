@@ -132,6 +132,7 @@ class Grid_node {
     Concentration_Pair* concentration_list;
     Current_Triple* current_list;
     ssize_t num_concentrations, num_currents;
+
     /*used for MPI implementation*/
     int num_all_currents;
     int* proc_offsets;
@@ -168,7 +169,7 @@ class Grid_node {
 
     virtual void set_diffusion(double*, int) = 0;
     virtual void set_num_threads(const int n) = 0;
-    virtual void do_grid_currents(double dt, int id) = 0;
+    virtual void do_grid_currents(double*, double dt, int id) = 0;
     virtual void apply_node_flux3D(double dt, double* states) = 0;
     virtual void volume_setup() = 0;
     virtual int dg_adi() = 0;
@@ -189,7 +190,7 @@ class ECS_Grid_node : public Grid_node{
         struct ECSAdiDirection* ecs_adi_dir_z;
 
         void set_num_threads(const int n);
-        void do_grid_currents(double dt, int id);
+        void do_grid_currents(double *, double dt, int id);
         void apply_node_flux3D(double dt, double* states);
         void volume_setup();
         int dg_adi();
@@ -260,7 +261,7 @@ class ICS_Grid_node : public Grid_node{
         void divide_y_work(const int nthreads);
         void divide_z_work(const int nthreads);
         void set_num_threads(const int n);
-        void do_grid_currents(double dt, int id);
+        void do_grid_currents(double*, double dt, int id);
         void apply_node_flux3D(double dt, double* states); 
         void volume_setup();
         int dg_adi();

@@ -33,8 +33,6 @@ for t in [25, 50, 75, 100, 125]:
     h.continuerun(t)
     pyplot.plot([nd.x for nd in ca.nodes], numpy.array(ca.nodes.concentration), '.')
 
-h.fadvance()
-
 final_amount = (numpy.array(ca.nodes.concentration) * numpy.array(ca.nodes.volume)).sum()
 
 print("initial {}\tfinal {}\tdiff {}".format(initial_amount, final_amount, initial_amount - final_amount))

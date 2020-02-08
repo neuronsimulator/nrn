@@ -721,7 +721,10 @@ class _IntracellularSpecies(_SpeciesMathable):
                     scale_factor = tenthousand_over_charge_faraday / (numpy.prod(my_dx))              
                     self._current_neuron_pointers = [seg.__getattribute__(ion_curr) for seg in self._seg_to_surface_nodes.keys()]
                     #These are in the same order as self._surface_nodes_per_seg so self._surface_nodes_per_seg_start_indices will work for this list as well
-                    scale_factors = [sign * node.surface_area * scale_factor for node in self._nodes]
+                    geom_area = [sum(self._region.geometry.surface_areas1d(sec)) for sec in self._region._secs3d]
+                    node_area = [node.surface_area for node in self._nodes]
+                    scale = sum(node_area)/geom_area
+                    scale_factors = [sign * area * scale * scale_factor for area in node_area]
                     self._scale_factors = numpy.asarray(scale_factors, dtype=numpy.float_)
                     _ics_set_grid_currents(grid_list_start, self._grid_id, self._surface_nodes_per_seg, self._surface_nodes_per_seg_start_indices, self._current_neuron_pointers, self._scale_factors)
 
@@ -781,38 +784,71 @@ class _IntracellularSpecies(_SpeciesMathable):
                 # TODO: vectorize this, don't recompute denominator unless a structure change event happened
                 ptr[0] = sum(nodes[node].concentration * nodes[node].volume for node in all_nodes_in_seg) / sum(nodes[node].volume for node in all_nodes_in_seg)
 
-    def _parse_diffusion(self,d):
+    def _parse_diffusion(self, d):
+        def get_signature(fun):
+            import sys
+            import inspect
+            if sys.version_info.major > 2:
+                sig = inspect.signature(fun)
+                for param in sig.parameters.values():
+                    if (param.kind == param.VAR_POSITIONAL or
+                        param.kind == param.VAR_KEYWORD):
+                        raise RxDException("Intracellular diffusion coefficient function may not include *args or *kwargs")
+                return(len(sig.parameters))
+            else:
+                sig = inspect.getargspec(fun)
+                if sig.args != None or sig.keywords != None:
+                    raise RxDException("Intracellular diffusion coefficient function may not include *args or *kwargs")
+                return len(sig.args)
         dc = None
         dgrid = None
         if callable(d) or (hasattr(d, '__len__') and callable(d[0])):
-            dgrid = numpy.ndarray((3, self._nodes_length), dtype=float,
+            dgrid = numpy.ndarray((3, self._nodes_length), dtype=numpy.float64,
                                   order='C')
+            from inspect import signature
             if hasattr(d, '__len__'):
                 if len(d) == 3:
                     for dr in range(3):
-                        dgrid[0,:] = [d[0](nd.x3d, nd.y3d, nd.z3d) for nd in self._nodes]
-                        dgrid[1,:] = [d[1](nd.x3d, nd.y3d, nd.z3d) for nd in self._nodes]
-                        dgrid[2,:] = [d[2](nd.x3d, nd.y3d, nd.z3d) for nd in self._nodes]
+                        sig = get_signature(d[dr])
+                        if sig == 3:
+                            dgrid[dr,:] = [d[dr](nd.x3d, nd.y3d, nd.z3d) for nd in self._nodes]
+                        elif sig == 1:
+                            dgrid[dr,:] = [d[dr](nd) for nd in self._nodes]
                 else:
-                    raise RxDException("Intracellular diffusion coefficient must be a scalar, have length 3, or be a function with 3 or 4 arguments")
+                    raise RxDException("Intracellular diffusion coefficient may be a scalar or a tuple of length 3 for anisotropic diffusion, it can also be a function for inhomogeneous diffusion (or tuple of 3 functions) with arguments x, y, z location or node with optional argument for direction")
             else:
-                from inspect import signature
-                if len(signature(d).parameters) == 3:
+                sig = get_signature(d)
+                if sig == 4:
+                    # x,y,z and direction
+                    for dr in range(3):
+                        dgrid[i,:] = [d(nd.x3d, nd.y3d, nd.z3d, dr) for nd in self._nodes]
+                
+                elif sig == 3:
+                    # x,y,z - isotropic 
+                    dg = [d(nd.x3d, nd.y3d, nd.z3d) for nd in self._nodes]
                     dgrid[0,:] = [d(nd.x3d, nd.y3d, nd.z3d) for nd in self._nodes]
                     dgrid[1,:] = dgrid[0,:]
                     dgrid[2,:] = dgrid[0,:]
-                elif len(signature(d).parameters) == 4:
+                elif sig == 2:
+                    # node and direction
                     for dr in range(3):
-                        dgrid[i,:] = [d(nd.x3d, nd.y3d, nd.z3d, dr) for nd in self._nodes]
+                        dgrid[dr,:] = [d(nd, dr) for nd in self._nodes]
+                elif sig == 1:
+                    # node - isotropic
+                    dgrid[0,:] = [d(nd) for nd in self._nodes]
+                    dgrid[1,:] = dgrid[0,:]
+                    dgrid[2,:] = dgrid[0,:]
                 else:
-                    raise RxDException("Intracellular diffusion coefficient must be a scalar, have length 3, or be a function with 3 or 4 arguments")
+                    raise RxDException("Intracellular diffusion coefficient may be a scalar or a tuple of length 3 for anisotropic diffusion, it can also be a function for inhomogeneous diffusion (or tuple of 3 functions) with arguments x, y, z location or node with optional argument for direction")
         elif hasattr(d, '__len__'):
             if len(d) == 3:
-                dc = numpy.array(d)
+                dc = numpy.array(d, dtype=numpy.float64)
+            elif len(d) == 1:
+                dc = numpy.array(d[0] * numpy.ones(3), dtype=numpy.float64)
             else:
-                raise RxDException("Intracellular diffusion coefficient must be a scalar, have length 3, or be a function with 3 or 4 arguments")
+                raise RxDException("Intracellular diffusion coefficient may be a scalar or a tuple of length 3 for anisotropic diffusion, it can also be a function for inhomogeneous diffusion (or tuple of 3 functions) with arguments x, y, z location or node with optional argument for direction")
         else:
-            dc = float(d) * numpy.ones(3)
+            dc = numpy.array(d * numpy.ones(3), dtype=numpy.float64)
         return (dc, dgrid)
 
 
@@ -1150,7 +1186,20 @@ class Species(_SpeciesMathable):
 
         self._allow_setting = True
         self.regions = regions
-        self.d = d
+        # Check for anisotropic/inhomogeneous 3D diffusion with 1D sections
+        if hasattr(d,'__len__') or callable(d):
+            if hasattr(d,'__len__') and all([di == d[0] for di in d]) and not callable(d[0]):
+                self._d = d[0]
+            else:
+                from .rxd import _dimensions
+                reglist = regions if hasattr(regions,'__len__') else [regions]
+                dims = [_dimensions[sec] for reg in reglist for sec in reg.secs]
+                if not all([dim == dims[0] for dim in dims]):
+                    raise RxDException('Hybrid 1D/3D diffusion does not currently support anisotropy or inhomogeneous grids. For separate 1D and 3D diffusion please create separate regions and species for 3D and 1D sections') 
+                else:
+                    self._d = d
+        else:
+            self._d = d 
         self.name = name
         self.charge = charge
         self.initial = initial

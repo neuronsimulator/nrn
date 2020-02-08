@@ -8,7 +8,7 @@ def ics_pure_diffusion(neuron_instance):
     """A model using intracellular diffusion in a single section in 3D"""
 
     h, rxd, data = neuron_instance
-    dend = h.Section()
+    dend = h.Section(name='dend')
     dend.diam = 2
     dend.nseg = 101
     dend.L = 100
@@ -43,7 +43,12 @@ def test_pure_diffusion_3d_cvode(ics_pure_diffusion):
     h, rxd, data = neuron_instance
     dend, r, ca = model
     h.CVode().active(True)
+    vec = h.Vector()
+    h.CVode().states(vec)
+    print(vec.size())
     h.finitialize(-65)
+    print(vec.size(), vec.min(), vec.max(), vec.mean())
+    print(list(ca._intracellular_instances.values())[0]._grid_id)
     loss = -(numpy.array(ca.nodes.concentration) * numpy.array(ca.nodes.volume)).sum()
     h.continuerun(125)
     loss += (numpy.array(ca.nodes.concentration) * numpy.array(ca.nodes.volume)).sum()
