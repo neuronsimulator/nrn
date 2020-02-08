@@ -14,7 +14,7 @@ def ics_example(neuron_instance):
     h, rxd, data = neuron_instance
     rxd.set_solve_type(dimension=3)
     # create cell1 where `x` will be created and leak out
-    cell1 = h.Section('cell1')
+    cell1 = h.Section(name='cell1')
     cell1.pt3dclear()
     cell1.pt3dadd(-20, 0, 0, 10)
     cell1.pt3dadd(-10, 0, 0, 10)
