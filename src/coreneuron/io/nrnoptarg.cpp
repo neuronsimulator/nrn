@@ -278,8 +278,7 @@ void nrnopt_add_dbl(const char* names, const char* usage, double dflt, double lo
 }
 
 bool nrnopt_get_flag(const char* name) {
-    bool flag = opt->isSet(name) ? true : false;
-    return flag;
+    return opt->isSet(name) ? true : false;
 }
 
 std::string nrnopt_get_str(const char* name) {

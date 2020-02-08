@@ -157,7 +157,7 @@ inline void* emalloc_align(size_t size, size_t alignment = NRN_SOA_BYTE_ALIGN) {
 inline void* ecalloc_align(size_t n, size_t size, size_t alignment = NRN_SOA_BYTE_ALIGN) {
     void* p;
     if (n == 0) {
-        return (void*)0;
+        return nullptr;
     }
     calloc_memory(p, n * size, alignment);
     nrn_assert(is_aligned(p, alignment));

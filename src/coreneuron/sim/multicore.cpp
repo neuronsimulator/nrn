@@ -83,7 +83,6 @@ static ThreadDatum* table_check_;
 
 
 void nrn_threads_create(int n) {
-    int i, j;
     if (nrn_nthread != n) {
         /*printf("sizeof(NrnThread)=%d   sizeof(Memb_list)=%d\n", sizeof(NrnThread),
          * sizeof(Memb_list));*/
@@ -92,10 +91,10 @@ void nrn_threads_create(int n) {
         nrn_nthread = n;
         if (n > 0) {
             nrn_threads = new NrnThread[n];
-            for (i = 0; i < nrn_nthread; ++i) {
+            for (int i = 0; i < nrn_nthread; ++i) {
                 NrnThread& nt = nrn_threads[i];
                 nt.id = i;
-                for (j = 0; j < BEFORE_AFTER_SIZE; ++j) {
+                for (int j = 0; j < BEFORE_AFTER_SIZE; ++j) {
                     nt.tbl[j] = nullptr;
                 }
             }
@@ -108,7 +107,7 @@ void nrn_threads_create(int n) {
 
 void nrn_threads_free() {
     if (nrn_nthread) {
-        free_memory((void*)nrn_threads);
+        delete[] nrn_threads;
         nrn_threads = nullptr;
         nrn_nthread = 0;
     }
@@ -125,7 +124,7 @@ void nrn_mk_table_check() {
     table_check_cnt_ = 0;
     for (int id = 0; id < nrn_nthread; ++id) {
         auto& nt = nrn_threads[id];
-        for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
+        for (auto tml = nt.tml; tml; tml = tml->next) {
             int index = tml->index;
             if (memb_func[index].thread_table_check_ && ix[index] == -1) {
                 ix[index] = id;
@@ -139,8 +138,7 @@ void nrn_mk_table_check() {
     int i = 0;
     for (int id = 0; id < nrn_nthread; ++id) {
         auto& nt = nrn_threads[id];
-        NrnThreadMembList* tml;
-        for (tml = nt.tml; tml; tml = tml->next) {
+        for (auto tml = nt.tml; tml; tml = tml->next) {
             int index = tml->index;
             if (memb_func[index].thread_table_check_ && ix[index] == id) {
                 table_check_[i++].i = id;

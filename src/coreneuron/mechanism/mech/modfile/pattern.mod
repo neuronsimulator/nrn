@@ -49,8 +49,8 @@ Info* mkinfo(_threadargsproto_) {
 	INFOCAST;
 	Info* info = (Info*)hoc_Emalloc(sizeof(Info)); hoc_malchk();
 	info->size = 0;
-	info->tvec = (double*)0;
-	info->gidvec = (int*)0;
+	info->tvec = nullptr;
+	info->gidvec = nullptr;
 	info->index = 0;
 	return info;
 }

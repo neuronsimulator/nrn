@@ -101,8 +101,7 @@ void mk_mech(const char* datpath) {
     fs.close();
 
     fname = sdprintf(fnamebuf, sizeof(fnamebuf), "%s/%s", datpath, "byteswap1.dat");
-    FILE* f;
-    f = fopen(fname, "r");
+    FILE* f = fopen(fname, "r");
     if (!f) {
         fprintf(stderr, "Error: couldn't find byteswap1.dat file in the dataset directory \n");
     }
@@ -123,8 +122,8 @@ void mk_mech(const char* datpath) {
 
 // we are embedded in NEURON, get info as stringstream from nrnbbcore_write.cpp
 static void mk_mech() {
-    static bool done = false;
-    if (done) {
+    static bool already_called = false;
+    if (already_called) {
         return;
     }
     nrn_need_byteswap = 0;
@@ -132,7 +131,7 @@ static void mk_mech() {
     nrn_assert(nrn2core_mkmech_info_);
     (*nrn2core_mkmech_info_)(ss);
     mk_mech(ss);
-    done = true;
+    already_called = true;
 }
 
 static void mk_mech(std::istream& s) {
@@ -195,8 +194,7 @@ static void mk_mech(std::istream& s) {
 /// Get mechanism type by the mechanism name
 int nrn_get_mechtype(const char* name) {
     std::string str(name);
-    std::map<std::string, int>::const_iterator mapit;
-    mapit = mech2type.find(str);
+    std::map<std::string, int>::const_iterator mapit = mech2type.find(str);
     if (mapit == mech2type.end())
         return -1;  // Could not find the mechanism
     return mapit->second;

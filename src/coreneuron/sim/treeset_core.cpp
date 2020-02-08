@@ -40,14 +40,9 @@ sparse matrix, multisplit, or legacy features.
 */
 
 static void nrn_rhs(NrnThread* _nt) {
-    int i, i1, i2, i3;
-    NrnThreadMembList* tml;
-#if defined(_OPENACC)
-    int stream_id = _nt->stream_id;
-#endif
-    i1 = 0;
-    i2 = i1 + _nt->ncell;
-    i3 = _nt->end;
+    int i1 = 0;
+    int i2 = i1 + _nt->ncell;
+    int i3 = _nt->end;
 
     double* vec_rhs = &(VEC_RHS(0));
     double* vec_d = &(VEC_D(0));
@@ -59,15 +54,15 @@ static void nrn_rhs(NrnThread* _nt) {
 // clang-format off
     #pragma acc parallel loop present(          \
         vec_rhs[0:i3], vec_d[0:i3])             \
-        if (_nt->compute_gpu) async(stream_id)
+        if (_nt->compute_gpu) async(_nt->stream_id)
     // clang-format on
-    for (i = i1; i < i3; ++i) {
+    for (int i = i1; i < i3; ++i) {
         vec_rhs[i] = 0.;
         vec_d[i] = 0.;
     }
 
     if (_nt->nrn_fast_imem) {
-        for (i = i1; i < i3; ++i) {
+        for (int i = i1; i < i3; ++i) {
             _nt->nrn_fast_imem->nrn_sav_rhs[i] = 0.;
             _nt->nrn_fast_imem->nrn_sav_d[i] = 0.;
         }
@@ -75,7 +70,7 @@ static void nrn_rhs(NrnThread* _nt) {
 
     nrn_ba(_nt, BEFORE_BREAKPOINT);
     /* note that CAP has no current */
-    for (tml = _nt->tml; tml; tml = tml->next)
+    for (auto tml = _nt->tml; tml; tml = tml->next)
         if (corenrn.get_memb_func(tml->index).current) {
             mod_f_t s = corenrn.get_memb_func(tml->index).current;
             std::string ss("cur-");
@@ -94,7 +89,7 @@ static void nrn_rhs(NrnThread* _nt) {
            so here we transform so it only has membrane current contribution
         */
         double* p = _nt->nrn_fast_imem->nrn_sav_rhs;
-        for (i = i1; i < i3; ++i) {
+        for (int i = i1; i < i3; ++i) {
             p[i] -= vec_rhs[i];
         }
     }
@@ -108,8 +103,8 @@ The extracellular mechanism contribution is already done.
         vec_rhs[0:i3], vec_d[0:i3],             \
         vec_a[0:i3], vec_b[0:i3],               \
         vec_v[0:i3], parent_index[0:i3])        \
-        if (_nt->compute_gpu) async(stream_id)
-    for (i = i2; i < i3; ++i) {
+        if (_nt->compute_gpu) async(_nt->stream_id)
+    for (int i = i2; i < i3; ++i) {
         double dv = vec_v[parent_index[i]] - vec_v[i];
         /* our connection coefficients are negative so */
         #pragma acc atomic update
@@ -129,18 +124,12 @@ This is a common operation for fixed step, cvode, and daspk methods
 */
 
 static void nrn_lhs(NrnThread* _nt) {
-    int i, i1, i2, i3;
-    NrnThreadMembList* tml;
-#if defined(_OPENACC)
-    int stream_id = _nt->stream_id;
-#endif
-
-    i1 = 0;
-    i2 = i1 + _nt->ncell;
-    i3 = _nt->end;
+    int i1 = 0;
+    int i2 = i1 + _nt->ncell;
+    int i3 = _nt->end;
 
     /* note that CAP has no jacob */
-    for (tml = _nt->tml; tml; tml = tml->next)
+    for (auto tml = _nt->tml; tml; tml = tml->next)
         if (corenrn.get_memb_func(tml->index).jacob) {
             mod_f_t s = corenrn.get_memb_func(tml->index).jacob;
             std::string ss("cur-");
@@ -172,7 +161,7 @@ static void nrn_lhs(NrnThread* _nt) {
            so here we transform so it only has membrane current contribution
         */
         double* p = _nt->nrn_fast_imem->nrn_sav_d;
-        for (i = i1; i < i3; ++i) {
+        for (int i = i1; i < i3; ++i) {
             p[i] += vec_d[i];
         }
     }
@@ -182,8 +171,8 @@ static void nrn_lhs(NrnThread* _nt) {
     #pragma acc parallel loop present(          \
         vec_d[0:i3], vec_a[0:i3],               \
         vec_b[0:i3], parent_index[0:i3])        \
-        if (_nt->compute_gpu) async(stream_id)
-    for (i = i2; i < i3; ++i) {
+        if (_nt->compute_gpu) async(_nt->stream_id)
+    for (int i = i2; i < i3; ++i) {
         #pragma acc atomic update
         vec_d[i] -= vec_b[i];
         #pragma acc atomic update
@@ -198,6 +187,6 @@ void* setup_tree_matrix_minimal(NrnThread* _nt) {
     nrn_lhs(_nt);
     // update_matrix_from_gpu(_nt);
 
-    return (void*)0;
+    return nullptr;
 }
 }  // namespace coreneuron

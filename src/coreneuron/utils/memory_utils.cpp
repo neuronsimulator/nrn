@@ -77,8 +77,7 @@ double nrn_mallinfo(void) {
 #elif defined(MINGW)
     mbs = -1;
 #else
-    std::ifstream file;
-    file.open("/proc/self/statm");
+    std::ifstream file("/proc/self/statm");
     if (file.is_open()) {
         unsigned long long int data_size;
         file >> data_size >> data_size;
@@ -86,8 +85,7 @@ double nrn_mallinfo(void) {
         mbs = (data_size * sysconf(_SC_PAGESIZE)) / (1024.0 * 1024.0);
     } else {
 #if defined HAVE_MALLOC_H
-        struct mallinfo m;
-        m = mallinfo();
+        struct mallinfo m = mallinfo();
         mbs = (m.hblkhd + m.uordblks) / (1024.0 * 1024.0);
 #endif
     }
@@ -96,10 +94,10 @@ double nrn_mallinfo(void) {
 }
 
 void report_mem_usage(const char* message, bool all_ranks) {
-    double cur_mem, mem_max, mem_min, mem_avg;  // min, max, avg memory
+    double mem_max, mem_min, mem_avg;  // min, max, avg memory
 
     // current memory usage on this rank
-    cur_mem = nrn_mallinfo();
+    double cur_mem = nrn_mallinfo();
 
 /* @todo: avoid three all reduce class */
 #if NRNMPI

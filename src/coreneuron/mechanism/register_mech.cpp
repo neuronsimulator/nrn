@@ -86,12 +86,10 @@ int* nrn_fornetcon_type_;  /* what are the type numbers */
 int* nrn_fornetcon_index_; /* what is the index into the ppvar array */
 
 void add_nrn_fornetcons(int type, int indx) {
-    int i;
-
     if (type == -1)
         return;
 
-    i = nrn_fornetcon_cnt_++;
+    int i = nrn_fornetcon_cnt_++;
     nrn_fornetcon_type_ = (int*)erealloc(nrn_fornetcon_type_, (i + 1) * sizeof(int));
     nrn_fornetcon_index_ = (int*)erealloc(nrn_fornetcon_index_, (i + 1) * sizeof(int));
     nrn_fornetcon_type_[i] = type;
@@ -151,13 +149,11 @@ int register_mech(const char** m,
                   mod_f_t jacob,
                   mod_f_t stat,
                   mod_f_t initialize,
-                  int nrnpointerindex,
+                  int /* nrnpointerindex */,
                   int vectorized) {
     auto& memb_func = corenrn.get_memb_funcs();
-    int type;              /* 0 unused, 1 for cable section */
-    (void)nrnpointerindex; /*unused*/
 
-    type = nrn_get_mechtype(m[1]);
+    int type = nrn_get_mechtype(m[1]);
 
     // No mechanism in the .dat files
     if (type == -1)
@@ -187,15 +183,14 @@ int register_mech(const char** m,
     memb_func[type].thread_table_check_ = nullptr;
     memb_func[type].is_point = 0;
     memb_func[type].setdata_ = nullptr;
-    memb_func[type].dparam_semantics = (int*)0;
+    memb_func[type].dparam_semantics = nullptr;
 #endif
     register_all_variables_offsets(type, &m[2]);
     return type;
 }
 
-void nrn_writes_conc(int type, int unused) {
+void nrn_writes_conc(int type, int /* unused */) {
     static int lastion = EXTRACELL + 1;
-    (void)unused; /* unused */
     if (type == -1)
         return;
 
@@ -224,12 +219,11 @@ void hoc_register_watch_check(nrn_watch_check_t nwc, int type) {
 }
 
 void hoc_register_prop_size(int type, int psize, int dpsize) {
-    int pold, dpold;
     if (type == -1)
         return;
 
-    pold = corenrn.get_prop_param_size()[type];
-    dpold = corenrn.get_prop_dparam_size()[type];
+    int pold = corenrn.get_prop_param_size()[type];
+    int dpold = corenrn.get_prop_dparam_size()[type];
     if (psize != pold || dpsize != dpold) {
         corenrn.get_different_mechanism_type().push_back(type);
     }
@@ -268,12 +262,8 @@ void hoc_register_dparam_semantics(int type, int ix, const char* name) {
     } else if (strcmp(name, "diam") == 0) {
         memb_func[type].dparam_semantics[ix] = -9;
     } else {
-        int etype;
-        int i = 0;
-        if (name[0] == '#') {
-            i = 1;
-        }
-        etype = nrn_get_mechtype(name + i);
+        int i = name[0] == '#' ? 1 : 0;
+        int etype = nrn_get_mechtype(name + i);
         memb_func[type].dparam_semantics[ix] = etype + i * 1000;
         /* note that if style is needed (i==1), then we are writing a concentration */
         if (i) {
@@ -306,14 +296,13 @@ static void ion_write_depend(int type, int etype) {
 
 static int depend_append(int idep, int* dependencies, int deptype, int type) {
     /* append only if not already in dependencies and != type*/
-    int add, i;
-    add = 1;
+    bool add = true;
     if (deptype == type) {
         return idep;
     }
-    for (i = 0; i < idep; ++i) {
+    for (int i = 0; i < idep; ++i) {
         if (deptype == dependencies[i]) {
-            add = 0;
+            add = false;
             break;
         }
     }
@@ -327,24 +316,20 @@ static int depend_append(int idep, int* dependencies, int deptype, int type) {
 /* dependencies must be an array that is large enough to hold that array */
 /* number of dependencies is returned */
 int nrn_mech_depend(int type, int* dependencies) {
-    int i, dpsize, idep, deptype;
-    int* ds;
-    dpsize = corenrn.get_prop_dparam_size()[type];
-    ds = corenrn.get_memb_func(type).dparam_semantics;
-    idep = 0;
+    int dpsize = corenrn.get_prop_dparam_size()[type];
+    int* ds = corenrn.get_memb_func(type).dparam_semantics;
+    int idep = 0;
     if (ds)
-        for (i = 0; i < dpsize; ++i) {
+        for (int i = 0; i < dpsize; ++i) {
             if (ds[i] > 0 && ds[i] < 1000) {
-                int idepnew;
-                deptype = ds[i];
-                idepnew = depend_append(idep, dependencies, deptype, type);
+                int deptype = ds[i];
+                int idepnew = depend_append(idep, dependencies, deptype, type);
                 if ((idepnew > idep)
                     && !corenrn.get_ion_write_dependency().empty()
                     && !corenrn.get_ion_write_dependency()[deptype].empty()) {
                     auto& iwd = corenrn.get_ion_write_dependency()[deptype];
-                    int size, j;
-                    size = iwd[0];
-                    for (j = 1; j < size; ++j) {
+                    int size = iwd[0];
+                    for (int j = 1; j < size; ++j) {
                         idepnew = depend_append(idepnew, dependencies, iwd[j], type);
                     }
                 }
@@ -358,10 +343,9 @@ void register_destructor(Pfri d) {
     corenrn.get_memb_funcs().back().destructor = d;
 }
 
-int point_reg_helper(Symbol* s2) {
+int point_reg_helper(const Symbol* s2) {
     static int next_pointtype = 1; /* starts at 1 since 0 means not point in pnt_map */
-    int type;
-    type = nrn_get_mechtype(s2);
+    int type = nrn_get_mechtype(s2);
 
     // No mechanism in the .dat files
     if (type == -1)
@@ -383,10 +367,9 @@ int point_register_mech(const char** m,
                         void* (*constructor)(),
                         void (*destructor)(),
                         int vectorized) {
-    Symbol* s;
     (void)constructor;
     (void)destructor; /* unused */
-    s = (char*)m[1];
+    const Symbol* s = m[1];
     register_mech(m, alloc, cur, jacob, stat, initialize, nrnpointerindex, vectorized);
     return point_reg_helper(s);
 }
@@ -396,8 +379,7 @@ void _modl_cleanup() {
 
 int state_discon_allowed_;
 int state_discon_flag_ = 0;
-void state_discontinuity(int i, double* pd, double d) {
-    (void)i; /* unused */
+void state_discontinuity(int /* i */, double* pd, double d) {
     if (state_discon_allowed_ && state_discon_flag_ == 0) {
         *pd = d;
         /*printf("state_discontinuity t=%g pd=%lx d=%g\n", t, (long)pd, d);*/
@@ -405,7 +387,6 @@ void state_discontinuity(int i, double* pd, double d) {
 }
 
 void hoc_reg_ba(int mt, mod_f_t f, int type) {
-    BAMech* bam;
     if (type == -1)
         return;
 
@@ -430,7 +411,7 @@ void hoc_reg_ba(int mt, mod_f_t f, int type) {
                    corenrn.get_memb_func(mt).sym);
             nrn_exit(1);
     }
-    bam = (BAMech*)emalloc(sizeof(BAMech));
+    auto bam = (BAMech*)emalloc(sizeof(BAMech));
     bam->f = f;
     bam->type = mt;
     bam->next = corenrn.get_bamech()[type];

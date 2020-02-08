@@ -51,7 +51,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
         if (mut_) {                 \
             omp_destroy_lock(mut_); \
             delete mut_;            \
-            mut_ = (omp_lock_t*)0;  \
+            mut_ = nullptr;         \
         }                           \
     }
 #else
@@ -69,7 +69,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
         if (mut_) {                 \
             omp_destroy_lock(mut_); \
             free((char*)mut_);      \
-            mut_ = (omp_lock_t*)0;  \
+            mut_ = nullptr;         \
         }                           \
     }
 #endif

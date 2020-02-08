@@ -63,7 +63,7 @@ struct VarWithMapping {
 };
 
 // mapping the set of variables pointers to report to its gid
-typedef std::map<int, std::vector<VarWithMapping> > VarsToReport;
+using VarsToReport = std::map<int, std::vector<VarWithMapping>>;
 
 class ReportEvent : public DiscreteEvent {
   private:
@@ -156,7 +156,7 @@ VarsToReport get_compartment_vars_to_report(NrnThread& nt, std::set<int>& target
             }
             std::vector<VarWithMapping> to_report;
             to_report.reserve(m->size());
-            for (int j = 0; j < m->size(); j++) {
+            for (unsigned j = 0; j < m->size(); j++) {
                 SecMapping* s = m->secmapvec[j];
                 for (secseg_it_type iterator = s->secmap.begin(); iterator != s->secmap.end();
                      iterator++) {
@@ -227,11 +227,10 @@ void register_soma_report(NrnThread& nt,
     int mapping[] = {0};
     // first row, from 2nd value (skip gid)
     int extra[] = {1, 0, 0, 0, 0};
-    VarsToReport::iterator it;
 
-    for (it = vars_to_report.begin(); it != vars_to_report.end(); ++it) {
-        int gid = it->first;
-        std::vector<VarWithMapping>& vars = it->second;
+    for (auto& vars_report: vars_to_report) {
+        int gid = vars_report.first;
+        std::vector<VarWithMapping>& vars = vars_report.second;
         if (!vars.size())
             continue;
         NrnThreadMappingInfo* mapinfo = (NrnThreadMappingInfo*)nt.mapping;
@@ -249,10 +248,10 @@ void register_soma_report(NrnThread& nt,
         records_set_report_max_buffer_size_hint((char*)config.output_path, config.buffer_size);
         /** add extra mapping */
         records_extra_mapping(config.output_path, gid, 5, extra);
-        for (int var_idx = 0; var_idx < vars.size(); ++var_idx) {
+        for (const auto& var: vars) {
             /** 1st key is section-id and 1st value is segment of soma */
-            mapping[0] = vars[var_idx].id;
-            records_add_var_with_mapping(config.output_path, gid, vars[var_idx].var_value,
+            mapping[0] = var.id;
+            records_add_var_with_mapping(config.output_path, gid, var.var_value,
                                          sizemapping, mapping);
         }
     }
@@ -266,10 +265,9 @@ void register_compartment_report(NrnThread& nt,
     int mapping[] = {0};
     int extra[] = {1, 0, 0, 0, 1};
 
-    VarsToReport::iterator it;
-    for (it = vars_to_report.begin(); it != vars_to_report.end(); ++it) {
-        int gid = it->first;
-        std::vector<VarWithMapping>& vars = it->second;
+    for (auto& vars_report: vars_to_report) {
+        int gid = vars_report.first;
+        std::vector<VarWithMapping>& vars = vars_report.second;
         if (!vars.size())
             continue;
         NrnThreadMappingInfo* mapinfo = (NrnThreadMappingInfo*)nt.mapping;
@@ -286,9 +284,9 @@ void register_compartment_report(NrnThread& nt,
         records_set_report_max_buffer_size_hint((char*)config.output_path, config.buffer_size);
         /** add extra mapping */
         records_extra_mapping(config.output_path, gid, 5, extra);
-        for (int var_idx = 0; var_idx < vars.size(); ++var_idx) {
-            mapping[0] = vars[var_idx].id;
-            records_add_var_with_mapping(config.output_path, gid, vars[var_idx].var_value,
+        for (const auto& var: vars) {
+            mapping[0] = var.id;
+            records_add_var_with_mapping(config.output_path, gid, var.var_value,
                                          sizemapping, mapping);
         }
     }
@@ -301,13 +299,11 @@ void register_custom_report(NrnThread& nt,
     int extramapping = 5;
     int mapping[] = {0};
     int extra[] = {1, 0, 0, 0, 1};
-    int segment_count = 0;
     int section_count = 0;
 
-    VarsToReport::iterator it;
-    for (it = vars_to_report.begin(); it != vars_to_report.end(); ++it) {
-        int gid = it->first;
-        std::vector<VarWithMapping>& vars = it->second;
+    for (auto& vars_report: vars_to_report) {
+        int gid = vars_report.first;
+        std::vector<VarWithMapping>& vars = vars_report.second;
         if (!vars.size())
             continue;
         NrnThreadMappingInfo* mapinfo = (NrnThreadMappingInfo*)nt.mapping;
@@ -324,9 +320,9 @@ void register_custom_report(NrnThread& nt,
         records_set_report_max_buffer_size_hint((char*)config.output_path, config.buffer_size);
         /** add extra mapping : @todo api changes in reportinglib*/
         records_extra_mapping((char*)config.output_path, gid, 5, extra);
-        for (int var_idx = 0; var_idx < vars.size(); ++var_idx) {
-            mapping[0] = vars[var_idx].id;
-            records_add_var_with_mapping(config.output_path, gid, vars[var_idx].var_value,
+        for (const auto& var: vars) {
+            mapping[0] = var.id;
+            records_add_var_with_mapping(config.output_path, gid, var.var_value,
                                          sizemapping, mapping);
         }
     }
@@ -360,9 +356,6 @@ std::vector<int> map_gids(NrnThread& nt) {
 }
 #endif  // ENABLE_REPORTING
 
-// Size in MB of the report buffer
-static int size_report_buffer = 4;
-
 void nrn_flush_reports(double t) {
 #ifdef ENABLE_REPORTING
     // flush before buffer is full
@@ -389,9 +382,8 @@ void setup_report_engine(double dt_report, double mindelay) {
 
 // Size in MB of the report buffers
 void set_report_buffer_size(int n) {
-    size_report_buffer = n;
 #ifdef ENABLE_REPORTING
-    records_set_max_buffer_size_hint(size_report_buffer);
+    records_set_max_buffer_size_hint(n);
 #endif
 }
 
@@ -449,8 +441,8 @@ void register_report(double dt, double tstop, double delay, ReportConfiguration&
 void finalize_report() {
 #ifdef ENABLE_REPORTING
     records_flush(nrn_threads[0]._t);
-    for (int i = 0; i < reports.size(); i++) {
-        delete reports[i];
+    for (auto report: reports) {
+        delete report;
     }
     reports.clear();
 #endif

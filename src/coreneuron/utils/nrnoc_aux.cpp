@@ -73,11 +73,9 @@ void freevector(double* p) {
 }
 
 double** makematrix(size_t nrows, size_t ncols) {
-    size_t i;
-    double** matrix;
-    matrix = (double**)emalloc(nrows * sizeof(double*));
+    double** matrix = (double**)emalloc(nrows * sizeof(double*));
     *matrix = (double*)emalloc(nrows * ncols * sizeof(double));
-    for (i = 1; i < nrows; i++)
+    for (size_t i = 1; i < nrows; i++)
         matrix[i] = matrix[i - 1] + ncols;
     return (matrix);
 }
@@ -90,8 +88,7 @@ void freematrix(double** matrix) {
 }
 
 void* emalloc(size_t size) {
-    void* memptr;
-    memptr = malloc(size);
+    void* memptr = malloc(size);
     assert(memptr);
     return memptr;
 }
@@ -104,21 +101,19 @@ void hoc_malchk(void) {
 }
 
 void* ecalloc(size_t n, size_t size) {
-    void* p;
     if (n == 0) {
-        return (void*)0;
+        return nullptr;
     }
-    p = calloc(n, size);
+    void* p = calloc(n, size);
     assert(p);
     return p;
 }
 
 void* erealloc(void* ptr, size_t size) {
-    void* p;
     if (!ptr) {
         return emalloc(size);
     }
-    p = realloc(ptr, size);
+    void* p = realloc(ptr, size);
     assert(p);
     return p;
 }

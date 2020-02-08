@@ -48,9 +48,8 @@ int mkdir_p(const char* path) {
     strcpy(dirpath, path);
     errno = 0;
 
-    char* p;
     /* iterate from outer upto inner dir */
-    for (p = dirpath + 1; *p; p++) {
+    for (char* p = dirpath + 1; *p; p++) {
         if (*p == '/') {
             /* temporarily truncate to sub-dir */
             *p = '\0';

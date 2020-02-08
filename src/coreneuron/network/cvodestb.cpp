@@ -42,7 +42,6 @@ namespace coreneuron {
 // check thresholds and deliver all (including binqueue) events
 // up to t+dt/2
 void deliver_net_events(NrnThread* nt) {
-    (void)nt;
     if (net_cvode_instance) {
         net_cvode_instance->check_thresh(nt);
         net_cvode_instance->deliver_net_events(nt);
@@ -83,7 +82,7 @@ void init_net_events() {
         double* weights = nt->weights;
         int n_weight = nt->n_weight;
         if (n_weight) {
-// clang-format off
+            // clang-format off
             #pragma acc update device(weights[0 : n_weight]) if (nt->compute_gpu)
             // clang-format on
         }

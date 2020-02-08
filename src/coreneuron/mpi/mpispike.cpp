@@ -39,6 +39,8 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #if NRNMPI
 #include <mpi.h>
 
+#include <cstring>
+
 namespace coreneuron {
 static int np;
 static int* displs;
@@ -115,7 +117,7 @@ void wait_before_spike_exchange() {
 }
 
 int nrnmpi_spike_exchange() {
-    int i, n;
+    int n;
     Instrumentor::phase_begin("spike-exchange");
 
     {
@@ -124,9 +126,6 @@ int nrnmpi_spike_exchange() {
     }
 
     Instrumentor::phase_begin("communication");
-#if nrn_spikebuf_size > 0
-    int n1, novfl;
-#endif
     if (!displs) {
         np = nrnmpi_numprocs;
         displs = (int*)emalloc(np * sizeof(int));
@@ -138,7 +137,7 @@ int nrnmpi_spike_exchange() {
 #if nrn_spikebuf_size == 0
     MPI_Allgather(&nout_, 1, MPI_INT, nin_, 1, MPI_INT, nrnmpi_comm);
     n = nin_[0];
-    for (i = 1; i < np; ++i) {
+    for (int i = 1; i < np; ++i) {
         displs[i] = n;
         n += nin_[i];
     }
@@ -153,7 +152,7 @@ int nrnmpi_spike_exchange() {
     }
 #else
     MPI_Allgather(spbufout_, 1, spikebuf_type, spbufin_, 1, spikebuf_type, nrnmpi_comm);
-    novfl = 0;
+    int novfl = 0;
     n = spbufin_[0].nspike;
     if (n > nrn_spikebuf_size) {
         nin_[0] = n - nrn_spikebuf_size;
@@ -161,9 +160,9 @@ int nrnmpi_spike_exchange() {
     } else {
         nin_[0] = 0;
     }
-    for (i = 1; i < np; ++i) {
+    for (int i = 1; i < np; ++i) {
         displs[i] = novfl;
-        n1 = spbufin_[i].nspike;
+        int n1 = spbufin_[i].nspike;
         n += n1;
         if (n1 > nrn_spikebuf_size) {
             nin_[i] = n1 - nrn_spikebuf_size;
@@ -179,7 +178,7 @@ int nrnmpi_spike_exchange() {
             spikein_ = (NRNMPI_Spike*)hoc_Emalloc(icapacity_ * sizeof(NRNMPI_Spike));
             hoc_malchk();
         }
-        n1 = (nout_ > nrn_spikebuf_size) ? nout_ - nrn_spikebuf_size : 0;
+        int n1 = (nout_ > nrn_spikebuf_size) ? nout_ - nrn_spikebuf_size : 0;
         MPI_Allgatherv(spikeout_, n1, spike_type, spikein_, nin_, displs, spike_type, nrnmpi_comm);
     }
     ovfl_ = novfl;
@@ -208,7 +207,6 @@ The allgather sends the first part of the buf and the allgatherv buffer
 sends any overflow.
 */
 int nrnmpi_spike_exchange_compressed() {
-    int i, novfl, n, ntot, idx, bs, bstot; /* n is #spikes, bs is #byte overflow */
     if (!displs) {
         np = nrnmpi_numprocs;
         displs = (int*)emalloc(np * sizeof(int));
@@ -218,18 +216,18 @@ int nrnmpi_spike_exchange_compressed() {
 
     MPI_Allgather(spfixout_, ag_send_size_, MPI_BYTE, spfixin_, ag_send_size_, MPI_BYTE,
                   nrnmpi_comm);
-    novfl = 0;
-    ntot = 0;
-    bstot = 0;
-    for (i = 0; i < np; ++i) {
+    int novfl = 0;
+    int ntot = 0;
+    int bstot = 0;
+    for (int i = 0; i < np; ++i) {
         displs[i] = bstot;
-        idx = i * ag_send_size_;
-        n = spfixin_[idx++] * 256;
+        int idx = i * ag_send_size_;
+        int n = spfixin_[idx++] * 256;
         n += spfixin_[idx++];
         ntot += n;
         nin_[i] = n;
         if (n > ag_send_nspike_) {
-            bs = 2 + n * (1 + localgid_size_) - ag_send_size_;
+            int bs = 2 + n * (1 + localgid_size_) - ag_send_size_;
             byteovfl[i] = bs;
             bstot += bs;
             novfl += n - ag_send_nspike_;
@@ -244,7 +242,7 @@ int nrnmpi_spike_exchange_compressed() {
             spfixin_ovfl_ = (unsigned char*)emalloc(ovfl_capacity_ * (1 + localgid_size_) *
                                                     sizeof(unsigned char));
         }
-        bs = byteovfl[nrnmpi_myid];
+        int bs = byteovfl[nrnmpi_myid];
         /*
         note that the spfixout_ buffer is one since the overflow
         is contiguous to the first part. But the spfixin_ovfl_ is
@@ -368,7 +366,7 @@ double nrnmpi_dbl_allmax(double x) {
 }
 
 static void pgvts_op(double* in, double* inout, int* len, MPI_Datatype* dptr) {
-    int i, r = 0;
+    int r = 0;
     if (*dptr != MPI_DOUBLE)
         printf("ERROR in mpispike.c! *dptr should be MPI_DOUBLE.");
     if (*len != 4)
@@ -396,22 +394,20 @@ static void pgvts_op(double* in, double* inout, int* len, MPI_Datatype* dptr) {
         }
     }
     if (r) {
-        for (i = 0; i < 4; ++i) {
+        for (int i = 0; i < 4; ++i) {
             inout[i] = in[i];
         }
     }
 }
 
 int nrnmpi_pgvts_least(double* tt, int* op, int* init) {
-    int i;
     double ibuf[4], obuf[4];
     ibuf[0] = *tt;
     ibuf[1] = (double)(*op);
     ibuf[2] = (double)(*init);
     ibuf[3] = (double)nrnmpi_myid;
-    for (i = 0; i < 4; ++i) {
-        obuf[i] = ibuf[i];
-    }
+    std::memcpy(obuf, ibuf, 4 * sizeof(double));
+
     MPI_Allreduce(ibuf, obuf, 4, MPI_DOUBLE, mpi_pgvts_op, nrnmpi_comm);
     assert(obuf[0] <= *tt);
     if (obuf[0] == *tt) {
@@ -492,13 +488,10 @@ long nrnmpi_long_allreduce(long x, int type) {
 }
 
 void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type) {
-    int i;
     MPI_Op tt;
     assert(src != dest);
     if (nrnmpi_numprocs < 2) {
-        for (i = 0; i < cnt; ++i) {
-            dest[i] = src[i];
-        }
+        std::memcpy(dest, src, cnt * sizeof(double));
         return;
     }
     if (type == 1) {
@@ -513,13 +506,10 @@ void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type) {
 }
 
 void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int type) {
-    int i;
     MPI_Op tt;
     assert(src != dest);
     if (nrnmpi_numprocs < 2) {
-        for (i = 0; i < cnt; ++i) {
-            dest[i] = src[i];
-        }
+        std::memcpy(dest, src, cnt * sizeof(long));
         return;
     }
     if (type == 1) {
@@ -548,10 +538,8 @@ void nrnmpi_multisend_comm() {
 }
 
 void nrnmpi_multisend(NRNMPI_Spike* spk, int n, int* hosts) {
-    int i;
     MPI_Request r;
-    MPI_Status status;
-    for (i = 0; i < n; ++i) {
+    for (int i = 0; i < n; ++i) {
         MPI_Isend(spk, 1, spike_type, hosts[i], 1, multisend_comm, &r);
         MPI_Request_free(&r);
     }

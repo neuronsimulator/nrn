@@ -175,7 +175,7 @@ VERBATIM
 	if (ifarg(1)) {
 		*pv = nrn_random_arg(1);
 	}else{
-		*pv = (void*)0;
+		*pv = nullptr;
 	}
  }
 #endif
@@ -195,7 +195,7 @@ VERBATIM
 	_ran_compat = 2;
 	if (*pv) {
 		nrnran123_deletestream(*pv);
-		*pv = (nrnran123_State*)0;
+		*pv = nullptr;
 	}
 	if (ifarg(3)) {
 		*pv = nrnran123_newstream3((uint32_t)*getarg(1), (uint32_t)*getarg(2), (uint32_t)*getarg(3));

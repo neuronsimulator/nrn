@@ -268,6 +268,8 @@ static void warp_balance(int ith, InterleaveInfo& ii) {
         printf("  %s=%ld (%ld:%ld)", cp[i], smm[i][0], smm[i][1], smm[i][2]);
     }
     printf("\n");
+#else
+    (void)bal; // Remove warning about unused
 #endif
 }
 
@@ -349,10 +351,8 @@ static int** cell_indices_debug(NrnThread& nt, InterleaveInfo& ii) {
     for (int i = 0; i < ncell; ++i) {
         nrn_assert(parents[i] == -1);
     }
-    int* sz;
-    int* cell;
-    sz = new int[ncell];
-    cell = new int[nnode];
+    int* sz = new int[ncell];
+    int* cell = new int[nnode];
     for (int i = 0; i < ncell; ++i) {
         sz[i] = 0;
         cell[i] = i;
@@ -444,11 +444,9 @@ static void triang_interleaved(NrnThread* nt,
 static void bksub_interleaved(NrnThread* nt,
                               int icell,
                               int icellsize,
-                              int nstride,
+                              int /* nstride */,
                               int* stride,
                               int* firstnode) {
-    if (nstride) {
-    }  // otherwise unused
     int i = firstnode[icell];
     GPU_RHS(icell) /= GPU_D(icell);  // the root
     for (int istride = 0; istride < icellsize; ++istride) {
@@ -657,7 +655,7 @@ void solve_interleaved1(int ith) {
         bksub_interleaved(nt, icell, icellsize, nstride, stride, firstnode);
     }
 #ifdef _OPENACC
-#pragma acc wait(nt->stream_id)
+#pragma acc wait(stream_id)
 #endif
 #endif
 }

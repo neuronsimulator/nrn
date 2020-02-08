@@ -61,11 +61,11 @@ extern void nrnmpi_checkbufleak();
 static int nrnmpi_under_nrncontrol_;
 
 void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
-    int i, b, flag;
     nrnmpi_use = 1;
     nrnmpi_under_nrncontrol_ = nrnmpi_under_nrncontrol;
     if (nrnmpi_under_nrncontrol_) {
 #if !ALWAYS_CALL_MPI_INIT
+        bool b = false;
         /* this is not good. depends on mpirun adding at least one
            arg that starts with -p4 but that probably is dependent
            on mpich and the use of the ch_p4 device. We are trying to
@@ -73,19 +73,18 @@ void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
            directory and so when not invoked under mpirun we would like to
            NOT call MPI_Init.
         */
-        b = 0;
-        for (i = 0; i < *pargc; ++i) {
+        for (int i = 0; i < *pargc; ++i) {
             if (strncmp("-p4", (*pargv)[i], 3) == 0) {
-                b = 1;
+                b = true;
                 break;
             }
             if (strcmp("-mpi", (*pargv)[i]) == 0) {
-                b = 1;
+                b = true;
                 break;
             }
         }
         if (nrnmusic) {
-            b = 1;
+            b = true;
         }
         if (!b) {
             nrnmpi_use = 0;
@@ -93,6 +92,7 @@ void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
             return;
         }
 #endif
+        int flag = 0;
         MPI_Initialized(&flag);
 
         if (!flag) {

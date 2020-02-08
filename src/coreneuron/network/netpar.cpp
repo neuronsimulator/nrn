@@ -89,7 +89,7 @@ static void nrn_spike_exchange_compressed(NrnThread*);
 
 #endif  // NRNMPI
 
-static int active_;
+static bool active_ = false;
 static double usable_mindelay_;
 static double mindelay_;  // the one actually used. Some of our optional algorithms
 static double last_maxstep_arg_;
@@ -236,12 +236,12 @@ void nrn2ncs_outputevent(int gid, double firetime) {
 #endif  // NRNMPI
 
 static int nrn_need_npe() {
-    int b = 0;
+    bool b = false;
     if (active_) {
-        b = 1;
+        b = true;
     }
     if (nrn_nthread > 1) {
-        b = 1;
+        b = true;
     }
     if (b) {
         if (last_maxstep_arg_ == 0) {
@@ -254,7 +254,7 @@ static int nrn_need_npe() {
             n_npe_ = 0;
         }
     }
-    return b;
+    return b ? 1 : 0;
 }
 
 #define TBUFSIZE 0
@@ -266,7 +266,6 @@ void nrn_spike_exchange_init() {
     }
     alloc_mpi_space();
     // printf("nrnmpi_use=%d active=%d\n", nrnmpi_use, active_);
-    std::map<int, InputPreSyn*>::iterator gid2in_it;
     usable_mindelay_ = mindelay_;
 #if NRN_MULTISEND
     if (use_multisend_ && n_multisend_interval == 2) {
@@ -356,9 +355,7 @@ void nrn_spike_exchange(NrnThread* nt) {
 #if TBUFSIZE
     nrnmpi_barrier();
 #endif
-    double wt;
-    int i, n;
-    std::map<int, InputPreSyn*>::iterator gid2in_it;
+
 #if NRNSTAT
     nsend_ += nout_;
     if (nsendmax_ < nout_) {
@@ -368,9 +365,9 @@ void nrn_spike_exchange(NrnThread* nt) {
 #if nrn_spikebuf_size > 0
     spbufout_->nspike = nout_;
 #endif
-    wt = nrn_wtime();
+    double wt = nrn_wtime();
 
-    n = nrnmpi_spike_exchange();
+    int n = nrnmpi_spike_exchange();
 
     wt_ = nrn_wtime() - wt;
     wt = nrn_wtime();
@@ -397,7 +394,7 @@ void nrn_spike_exchange(NrnThread* nt) {
     if (max_histogram_) {
         int mx = 0;
         if (n > 0) {
-            for (i = nrnmpi_numprocs - 1; i >= 0; --i) {
+            for (int i = nrnmpi_numprocs - 1; i >= 0; --i) {
 #if nrn_spikebuf_size == 0
                 if (mx < nin_[i]) {
                     mx = nin_[i];
@@ -415,14 +412,13 @@ void nrn_spike_exchange(NrnThread* nt) {
     }
 #endif  // NRNSTAT
 #if nrn_spikebuf_size > 0
-    for (i = 0; i < nrnmpi_numprocs; ++i) {
-        int j;
+    for (int i = 0; i < nrnmpi_numprocs; ++i) {
         int nn = spbufin_[i].nspike;
         if (nn > nrn_spikebuf_size) {
             nn = nrn_spikebuf_size;
         }
-        for (j = 0; j < nn; ++j) {
-            gid2in_it = gid2in.find(spbufin_[i].gid[j]);
+        for (int j = 0; j < nn; ++j) {
+            auto gid2in_it = gid2in.find(spbufin_[i].gid[j]);
             if (gid2in_it != gid2in.end()) {
                 InputPreSyn* ps = gid2in_it->second;
                 ps->send(spbufin_[i].spiketime[j], net_cvode_instance, nt);
@@ -434,8 +430,8 @@ void nrn_spike_exchange(NrnThread* nt) {
     }
     n = ovfl_;
 #endif  // nrn_spikebuf_size > 0
-    for (i = 0; i < n; ++i) {
-        gid2in_it = gid2in.find(spikein_[i].gid);
+    for (int i = 0; i < n; ++i) {
+        auto gid2in_it = gid2in.find(spikein_[i].gid);
         if (gid2in_it != gid2in.end()) {
             InputPreSyn* ps = gid2in_it->second;
             ps->send(spikein_[i].spiketime, net_cvode_instance, nt);
@@ -454,9 +450,7 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
 #if TBUFSIZE
     nrnmpi_barrier();
 #endif
-    double wt;
-    int i, n, idx;
-    std::map<int, InputPreSyn*>::iterator gid2in_it;
+
 #if NRNSTAT
     nsend_ += nout_;
     if (nsendmax_ < nout_) {
@@ -467,8 +461,8 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
     spfixout_[1] = (unsigned char)(nout_ & 0xff);
     spfixout_[0] = (unsigned char)(nout_ >> 8);
 
-    wt = nrn_wtime();
-    n = nrnmpi_spike_exchange_compressed();
+    double wt = nrn_wtime();
+    int n = nrnmpi_spike_exchange_compressed();
     wt_ = nrn_wtime() - wt;
     wt = nrn_wtime();
 #if TBUFSIZE
@@ -495,7 +489,7 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
     if (max_histogram_) {
         int mx = 0;
         if (n > 0) {
-            for (i = nrnmpi_numprocs - 1; i >= 0; --i) {
+            for (int i = nrnmpi_numprocs - 1; i >= 0; --i) {
                 if (mx < nin_[i]) {
                     mx = nin_[i];
                 }
@@ -508,7 +502,7 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
 #endif  // NRNSTAT
     if (nrn_use_localgid_) {
         int idxov = 0;
-        for (i = 0; i < nrnmpi_numprocs; ++i) {
+        for (int i = 0; i < nrnmpi_numprocs; ++i) {
             int j, nnn;
             int nn = nin_[i];
             if (nn) {
@@ -524,13 +518,13 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
                 } else {
                     nnn = nn;
                 }
-                idx = 2 + i * ag_send_size_;
+                int idx = 2 + i * ag_send_size_;
                 for (j = 0; j < nnn; ++j) {
                     // order is (firetime,gid) pairs.
                     double firetime = spfixin_[idx++] * dt + t_exchange_;
                     int lgid = (int)spfixin_[idx];
                     idx += localgid_size_;
-                    gid2in_it = gps.find(lgid);
+                    auto gid2in_it = gps.find(lgid);
                     if (gid2in_it != gps.end()) {
                         InputPreSyn* ps = gid2in_it->second;
                         ps->send(firetime + 1e-10, net_cvode_instance, nt);
@@ -543,7 +537,7 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
                     double firetime = spfixin_ovfl_[idxov++] * dt + t_exchange_;
                     int lgid = (int)spfixin_ovfl_[idxov];
                     idxov += localgid_size_;
-                    gid2in_it = gps.find(lgid);
+                    auto gid2in_it = gps.find(lgid);
                     if (gid2in_it != gps.end()) {
                         InputPreSyn* ps = gid2in_it->second;
                         ps->send(firetime + 1e-10, net_cvode_instance, nt);
@@ -555,19 +549,18 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
             }
         }
     } else {
-        for (i = 0; i < nrnmpi_numprocs; ++i) {
-            int j;
+        for (int i = 0; i < nrnmpi_numprocs; ++i) {
             int nn = nin_[i];
             if (nn > ag_send_nspike_) {
                 nn = ag_send_nspike_;
             }
-            idx = 2 + i * ag_send_size_;
-            for (j = 0; j < nn; ++j) {
+            int idx = 2 + i * ag_send_size_;
+            for (int j = 0; j < nn; ++j) {
                 // order is (firetime,gid) pairs.
                 double firetime = spfixin_[idx++] * dt + t_exchange_;
                 int gid = spupk(spfixin_ + idx);
                 idx += localgid_size_;
-                gid2in_it = gid2in.find(gid);
+                auto gid2in_it = gid2in.find(gid);
                 if (gid2in_it != gid2in.end()) {
                     InputPreSyn* ps = gid2in_it->second;
                     ps->send(firetime + 1e-10, net_cvode_instance, nt);
@@ -578,12 +571,12 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
             }
         }
         n = ovfl_;
-        idx = 0;
-        for (i = 0; i < n; ++i) {
+        int idx = 0;
+        for (int i = 0; i < n; ++i) {
             double firetime = spfixin_ovfl_[idx++] * dt + t_exchange_;
             int gid = spupk(spfixin_ovfl_ + idx);
             idx += localgid_size_;
-            gid2in_it = gid2in.find(gid);
+            auto gid2in_it = gid2in.find(gid);
             if (gid2in_it != gid2in.end()) {
                 InputPreSyn* ps = gid2in_it->second;
                 ps->send(firetime + 1e-10, net_cvode_instance, nt);
@@ -598,15 +591,11 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
 }
 
 static void mk_localgid_rep() {
-    int i, k;
-
     // how many gids are there on this machine
     // and can they be compressed into one byte
     int ngid = 0;
-    std::map<int, PreSyn*>::iterator gid2out_it;
-    std::map<int, InputPreSyn*>::iterator gid2in_it;
-    for (gid2out_it = gid2out.begin(); gid2out_it != gid2out.end(); ++gid2out_it) {
-        if (gid2out_it->second->output_index_ >= 0) {
+    for (const auto& gid2out_elem: gid2out) {
+        if (gid2out_elem.second->output_index_ >= 0) {
             ++ngid;
         }
     }
@@ -627,10 +616,10 @@ static void mk_localgid_rep() {
     ++sbuf;
     ngid = 0;
     // define the local gid and fill with the gids on this machine
-    for (gid2out_it = gid2out.begin(); gid2out_it != gid2out.end(); ++gid2out_it) {
-        if (gid2out_it->second->output_index_ >= 0) {
-            gid2out_it->second->localgid_ = (unsigned char)ngid;
-            sbuf[ngid] = gid2out_it->second->output_index_;
+    for (const auto& gid2out_elem: gid2out) {
+        if (gid2out_elem.second->output_index_ >= 0) {
+            gid2out_elem.second->localgid_ = (unsigned char)ngid;
+            sbuf[ngid] = gid2out_elem.second->output_index_;
             ++ngid;
         }
     }
@@ -648,12 +637,12 @@ static void mk_localgid_rep() {
     localmaps.resize(nrnmpi_numprocs);
 
     // fill in the maps
-    for (i = 0; i < nrnmpi_numprocs; ++i)
+    for (int i = 0; i < nrnmpi_numprocs; ++i)
         if (i != nrnmpi_myid) {
             sbuf = rbuf + i * (ngidmax + 1);
             ngid = *(sbuf++);
-            for (k = 0; k < ngid; ++k) {
-                gid2in_it = gid2in.find(int(sbuf[k]));
+            for (int k = 0; k < ngid; ++k) {
+                auto gid2in_it = gid2in.find(int(sbuf[k]));
                 if (gid2in_it != gid2in.end()) {
                     localmaps[i][k] = gid2in_it->second;
                 }
@@ -679,8 +668,7 @@ static void mk_localgid_rep() {
 // high so that they do not themselves generate spikes.
 // Can only be called by thread 0 because of the ps->send.
 void nrn_fake_fire(int gid, double spiketime, int fake_out) {
-    std::map<int, InputPreSyn*>::iterator gid2in_it;
-    gid2in_it = gid2in.find(gid);
+    auto gid2in_it = gid2in.find(gid);
     if (gid2in_it != gid2in.end()) {
         InputPreSyn* psi = gid2in_it->second;
         assert(psi);
@@ -706,8 +694,7 @@ void nrn_fake_fire(int gid, double spiketime, int fake_out) {
 
 static int timeout_ = 0;
 int nrn_set_timeout(int timeout) {
-    int tt;
-    tt = timeout_;
+    int tt = timeout_;
     timeout_ = timeout;
     return tt;
 }
@@ -716,10 +703,9 @@ void BBS_netpar_solve(double tstop) {
     double time = nrn_wtime();
 
 #if NRNMPI
-    double mt, md;
     tstopunset;
-    mt = dt;
-    md = mindelay_ - 1e-10;
+    double mt = dt;
+    double md = mindelay_ - 1e-10;
     if (md < mt) {
         if (nrnmpi_myid == 0) {
             hoc_execerror("mindelay is 0", "(or less than dt for fixed step method)");
@@ -771,18 +757,18 @@ double set_mindelay(double maxdelay) {
         NrnThread& nt = nrn_threads[ith];
         for (int i = 0; i < nt.n_netcon; ++i) {
             NetCon* nc = nt.netcons + i;
-            int chk = 0;  // ignore nc.delay_
+            bool chk = false;  // ignore nc.delay_
             int gid = netcon_srcgid[ith][i];
             PreSyn* ps;
             InputPreSyn* psi;
             netpar_tid_gid2ps(ith, gid, &ps, &psi);
             if (psi) {
-                chk = 1;
+                chk = true;
             } else if (all) {
-                chk = 1;
+                chk = true;
                 // but ignore if src in same thread as NetCon
                 if (ps && presynmap[ps] == &nt) {
-                    chk = 0;
+                    chk = false;
                 }
             }
             if (chk && nc->delay_ < mindelay) {
@@ -793,7 +779,7 @@ double set_mindelay(double maxdelay) {
 
 #if NRNMPI
     if (nrnmpi_use) {
-        active_ = 1;
+        active_ = true;
     }
     if (use_compress_) {
         if (mindelay / dt > 255) {

@@ -69,16 +69,16 @@ int nrn_newton_thread(NewtonSpace* ns,
                       NEWTFUN pfunc,
                       double* value,
                       _threadargsproto_) {
-    int i, count = 0, error = 0, *perm;
-    double **jacobian, *delta_x, change = 1.0, max_dev, temp;
+    int count = 0, error = 0;
+    double change = 1.0, max_dev, temp;
     int done = 0;
     /*
      * Create arrays for Jacobian, variable increments, function values, and
      * permutation vector
      */
-    delta_x = ns->delta_x;
-    jacobian = ns->jacobian;
-    perm = ns->perm;
+    double* delta_x = ns->delta_x;
+    double** jacobian = ns->jacobian;
+    int* perm = ns->perm;
     /* Iteration loop */
     while (!done) {
         if (count++ >= MAXITERS) {
@@ -92,7 +92,7 @@ int nrn_newton_thread(NewtonSpace* ns,
              */
 
             nrn_buildjacobian_thread(ns, n, s, pfunc, value, jacobian, _threadargs_);
-            for (i = 0; i < n; i++)
+            for (int i = 0; i < n; i++)
                 value[ix(i)] = -value[ix(i)]; /* Required correction to
                                                * function values */
             error = nrn_crout_thread(ns, n, jacobian, perm, _threadargs_);
@@ -108,13 +108,13 @@ int nrn_newton_thread(NewtonSpace* ns,
 
             change = 0.0;
             if (s) {
-                for (i = 0; i < n; i++) {
+                for (int i = 0; i < n; i++) {
                     if (fabs(s_(i)) > ZERO && (temp = fabs(delta_x[ix(i)] / (s_(i)))) > change)
                         change = temp;
                     s_(i) += delta_x[ix(i)];
                 }
             } else {
-                for (i = 0; i < n; i++) {
+                for (int i = 0; i < n; i++) {
                     if (fabs(s_(i)) > ZERO && (temp = fabs(delta_x[ix(i)] / (s_(i)))) > change)
                         change = temp;
                     s_(i) += delta_x[ix(i)];
@@ -122,7 +122,7 @@ int nrn_newton_thread(NewtonSpace* ns,
             }
             newtfun(pfunc); /* Evaluate function values with new solution */
             max_dev = 0.0;
-            for (i = 0; i < n; i++) {
+            for (int i = 0; i < n; i++) {
                 value[ix(i)] = -value[ix(i)]; /* Required correction to function
                                                * values */
                 if ((temp = fabs(value[ix(i)])) > max_dev)
@@ -191,23 +191,20 @@ void nrn_buildjacobian_thread(NewtonSpace* ns,
                               double** jacobian,
                               _threadargsproto_) {
 #define x_(arg) _p[(arg)*_STRIDE]
-    int i, j;
-    double increment, *high_value, *low_value;
-
-    high_value = ns->high_value;
-    low_value = ns->low_value;
+    double* high_value = ns->high_value;
+    double* low_value = ns->low_value;
 
     /* Compute partial derivatives by central finite differences */
 
-    for (j = 0; j < n; j++) {
-        increment = max(fabs(0.02 * (x_(index[j]))), STEP);
+    for (int j = 0; j < n; j++) {
+        double increment = max(fabs(0.02 * (x_(index[j]))), STEP);
         x_(index[j]) += increment;
         newtfun(pfunc);
-        for (i = 0; i < n; i++)
+        for (int i = 0; i < n; i++)
             high_value[ix(i)] = value[ix(i)];
         x_(index[j]) -= 2.0 * increment;
         newtfun(pfunc);
-        for (i = 0; i < n; i++) {
+        for (int i = 0; i < n; i++) {
             low_value[ix(i)] = value[ix(i)];
 
             /* Insert partials into jth column of Jacobian matrix */

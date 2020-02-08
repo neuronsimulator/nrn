@@ -316,7 +316,7 @@ inline void TQueue<pq_que>::remove(TQItem* q) {
 /// Splay tree priority queue implementation
 template <>
 inline TQItem* TQueue<spltree>::atomic_dq(double tt) {
-    TQItem* q = 0;
+    TQItem* q = nullptr;
     MUTLOCK
     if (least_ && least_->t_ <= tt) {
         q = least_;
@@ -337,7 +337,7 @@ inline TQItem* TQueue<spltree>::atomic_dq(double tt) {
 /// STL priority queue implementation
 template <>
 inline TQItem* TQueue<pq_que>::atomic_dq(double tt) {
-    TQItem* q = 0;
+    TQItem* q = nullptr;
     MUTLOCK
     if (least_ && least_->t_ <= tt) {
         q = least_;

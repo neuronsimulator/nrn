@@ -160,6 +160,33 @@ size_t read_raster_file(const char* fname, double** tvec, int** gidvec) {
     return spikes.size();
 }
 
+// see nrn_setup.cpp:read_phase2 for how it creates NrnThreadMembList instances.
+static NrnThreadMembList* alloc_nrn_thread_memb(int type) {
+    NrnThreadMembList* tml = (NrnThreadMembList*)emalloc(sizeof(NrnThreadMembList));
+    tml->dependencies = nullptr;
+    tml->ndependencies = 0;
+    tml->index = type;
+    tml->next = nullptr;
+
+    // fill in tml->ml info. The data is not in the cache efficient
+    // NrnThread arrays but there should not be many of these instances.
+    int psize = corenrn.get_prop_param_size()[type];
+    int dsize = corenrn.get_prop_dparam_size()[type];
+
+    tml->ml = (Memb_list*)emalloc(sizeof(Memb_list));
+    tml->ml->nodecount = 1;
+    tml->ml->_nodecount_padded = tml->ml->nodecount;
+    tml->ml->nodeindices = nullptr;
+    tml->ml->data = (double*)ecalloc(tml->ml->nodecount * psize, sizeof(double));
+    tml->ml->pdata = (Datum*)ecalloc(tml->ml->nodecount * dsize, sizeof(Datum));
+    tml->ml->_thread = nullptr;
+    tml->ml->_net_receive_buffer = nullptr;
+    tml->ml->_net_send_buffer = nullptr;
+    tml->ml->_permute = nullptr;
+
+    return tml;
+}
+
 // Opportunistically implemented to create a single PatternStim.
 // So only does enough to get that functionally incorporated into the model
 // and other types may require additional work. In particular, we
@@ -173,16 +200,12 @@ Point_process* nrn_artcell_instantiate(const char* mechname) {
 
     // printf("nrn_artcell_instantiate %s type=%d\n", mechname, type);
 
-    // see nrn_setup.cpp:read_phase2 for how it creates NrnThreadMembList instances.
     // create and append to nt.tml
+    auto tml = alloc_nrn_thread_memb(type);
+
     assert(nt->_ml_list[type] == nullptr);  // FIXME
-    NrnThreadMembList* tml = (NrnThreadMembList*)emalloc(sizeof(NrnThreadMembList));
-    tml->ml = (Memb_list*)emalloc(sizeof(Memb_list));
-    tml->dependencies = nullptr;
-    tml->ndependencies = 0;
     nt->_ml_list[type] = tml->ml;
-    tml->index = type;
-    tml->next = nullptr;
+
     if (!nt->tml) {
         nt->tml = tml;
     } else {
@@ -193,22 +216,6 @@ Point_process* nrn_artcell_instantiate(const char* mechname) {
             }
         }
     }
-
-    // fill in tml->ml info. The data is not in the cache efficient
-    // NrnThread arrays but there should not be many of these instances.
-    int psize = corenrn.get_prop_param_size()[type];
-    int dsize = corenrn.get_prop_dparam_size()[type];
-    // int layout = nrn_mech_data_layout[type]; // not needed because singleton
-    Memb_list* ml = tml->ml;
-    ml->nodecount = 1;
-    ml->_nodecount_padded = ml->nodecount;
-    ml->nodeindices = nullptr;
-    ml->data = (double*)ecalloc(ml->nodecount * psize, sizeof(double));
-    ml->pdata = (Datum*)ecalloc(ml->nodecount * dsize, sizeof(Datum));
-    ml->_thread = nullptr;
-    ml->_net_receive_buffer = nullptr;
-    ml->_net_send_buffer = nullptr;
-    ml->_permute = nullptr;
 
     // Here we have a problem with no easy general solution. ml->pdata are
     // integer indexes into the nt->_data nt->_idata and nt->_vdata array
@@ -243,9 +250,10 @@ Point_process* nrn_artcell_instantiate(const char* mechname) {
     pnt->_tid = nt->id;
     pnt->_i_instance = 0;
     // as though all dparam index into _vdata
+    int dsize = corenrn.get_prop_dparam_size()[type];
     assert(dsize <= nrn_extra_thread0_vdata);
     for (int i = 0; i < dsize; ++i) {
-        ml->pdata[i] = nt->_nvdata + i;
+        tml->ml->pdata[i] = nt->_nvdata + i;
     }
     nt->_vdata[nt->_nvdata + 1] = (void*)pnt;
 

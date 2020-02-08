@@ -24,6 +24,8 @@ install_spack() (
     mkdir -p $SPACK_ROOT/etc/spack/defaults/linux
     cp /gpfs/bbp.cscs.ch/apps/hpc/jenkins/config/*.yaml $SPACK_ROOT/etc/spack/
 
+    # Remove configs from $HOME/.spack
+    rm -rf $HOME/.spack
 )
 
 source ${JENKINS_DIR:-.}/_env_setup.sh

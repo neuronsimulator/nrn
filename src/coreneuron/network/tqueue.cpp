@@ -80,19 +80,17 @@ BinQ::~BinQ() {
 
 void BinQ::resize(int size) {
     // printf("BinQ::resize from %d to %d\n", nbin_, size);
-    int i, j;
-    TQItem* q;
     assert(size >= nbin_);
     TQItem** bins = new TQItem*[size];
-    for (i = nbin_; i < size; ++i) {
+    for (int i = nbin_; i < size; ++i) {
         bins[i] = 0;
     }
-    for (i = 0, j = qpt_; i < nbin_; ++i, ++j) {
+    for (int i = 0, j = qpt_; i < nbin_; ++i, ++j) {
         if (j >= nbin_) {
             j = 0;
         }
         bins[i] = bins_[j];
-        for (q = bins[i]; q; q = q->left_) {
+        for (auto q = bins[i]; q; q = q->left_) {
             q->cnt_ = i;
         }
     }
@@ -122,8 +120,7 @@ void BinQ::enqueue(double td, TQItem* q) {
 #endif
 }
 TQItem* BinQ::dequeue() {
-    TQItem* q = nullptr;
-    q = bins_[qpt_];
+    TQItem* q = bins_[qpt_];
     if (q) {
         bins_[qpt_] = q->left_;
 #if COLLECT_TQueue_STATISTICS
@@ -154,13 +151,12 @@ TQItem* BinQ::next(TQItem* q) {
 }
 
 void BinQ::remove(TQItem* q) {
-    TQItem *q1, *q2;
-    q1 = bins_[q->cnt_];
+    TQItem* q1 = bins_[q->cnt_];
     if (q1 == q) {
         bins_[q->cnt_] = q->left_;
         return;
     }
-    for (q2 = q1->left_; q2; q1 = q2, q2 = q2->left_) {
+    for (TQItem* q2 = q1->left_; q2; q1 = q2, q2 = q2->left_) {
         if (q2 == q) {
             q1->left_ = q->left_;
             return;
@@ -245,9 +241,6 @@ SPBLK* spenq(SPBLK* n, SPTREE* q) {
     SPBLK* temp;
 
     double key;
-#if STRCMP_DEF
-    int Sct; /* Strcmp value */
-#endif
 
     n->uplink = nullptr;
     next = q->root;

@@ -1,3 +1,6 @@
+/***
+  THIS FILE IS AUTO GENERATED DONT MODIFY IT.
+ ***/
 /*
 Copyright (c) 2016, Blue Brain Project
 All rights reserved.

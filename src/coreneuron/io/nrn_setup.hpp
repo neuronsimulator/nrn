@@ -119,7 +119,6 @@ inline void* phase_wrapper_w(NrnThread* nt) {
     bool no_open = do_not_open;
     int i = nt->id;
     char fnamebuf[1000];
-    char check_fnamebuf[1000] = "";
     if (i < ngroup_w) {
         if (!no_open) {
             const char* data_dir = path_w;

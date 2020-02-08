@@ -43,12 +43,6 @@ extern bool nrn_use_fast_imem;
  */
 void fast_imem_free();
 
-/* Allocate memory for the rhs and d arrays needed for the fast
- * current membrane calculation.
- * Found in src/nrnoc/multicore.c in NEURON.
- */
-static void fast_imem_alloc();
-
 /* fast_imem_alloc() wrapper.
  * Found in src/nrnoc/multicore.c in NEURON.
  */

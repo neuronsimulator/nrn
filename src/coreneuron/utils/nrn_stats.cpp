@@ -93,8 +93,6 @@ void report_cell_stats(void) {
         thread_vec_event_times[type].resize(nrn_nthread);
     }
 
-    std::map<double, long>::const_iterator mapit;
-
     /// Get the total number of enqueued events and enqueued with spike events
     /// time_map_events - maps from TQueue class in sptbinq.h, - a collector of events statistics
     for (int ith = 0; ith < nrn_nthread; ++ith) {
@@ -102,7 +100,7 @@ void report_cell_stats(void) {
             thread_vec_event_times[type][ith] +=
                 (long)net_cvode_instance->p[ith].tqe_->time_map_events[type].size();
             thread_vec_max_num_events[type][ith].second = 0;
-            mapit = net_cvode_instance->p[ith].tqe_->time_map_events[type].begin();
+            auto mapit = net_cvode_instance->p[ith].tqe_->time_map_events[type].begin();
             for (; mapit != net_cvode_instance->p[ith].tqe_->time_map_events[type].end(); ++mapit) {
                 thread_vec_events[type][ith] += mapit->second;
                 if (mapit->second > thread_vec_max_num_events[type][ith].second) {

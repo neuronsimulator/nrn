@@ -37,9 +37,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
 namespace coreneuron {
 
 void nrn_finitialize(int setv, double v) {
-    int i;
-    NrnThread* _nt;
-
     Instrumentor::phase_begin("finitialize");
     t = 0.;
     dt2thread(-1.);
@@ -49,18 +46,18 @@ void nrn_finitialize(int setv, double v) {
 #if VECTORIZE
     nrn_play_init(); /* Vector.play */
                      /// Play events should be executed before initializing events
-    for (i = 0; i < nrn_nthread; ++i) {
+    for (int i = 0; i < nrn_nthread; ++i) {
         nrn_deliver_events(nrn_threads + i); /* The play events at t=0 */
     }
     if (setv) {
-        for (_nt = nrn_threads; _nt < nrn_threads + nrn_nthread; ++_nt) {
+        for (auto _nt = nrn_threads; _nt < nrn_threads + nrn_nthread; ++_nt) {
             double* vec_v = &(VEC_V(0));
 // clang-format off
             #pragma acc parallel loop present(      \
                 _nt[0:1], vec_v[0:_nt->end])        \
                 if (_nt->compute_gpu)
             // clang-format on
-            for (i = 0; i < _nt->end; ++i) {
+            for (int i = 0; i < _nt->end; ++i) {
                 vec_v[i] = v;
             }
         }
@@ -68,12 +65,12 @@ void nrn_finitialize(int setv, double v) {
 
     if (nrn_have_gaps) {
         nrnmpi_v_transfer();
-        for (i = 0; i < nrn_nthread; ++i) {
+        for (int i = 0; i < nrn_nthread; ++i) {
             nrnthread_v_transfer(nrn_threads + i);
         }
     }
 
-    for (i = 0; i < nrn_nthread; ++i) {
+    for (int i = 0; i < nrn_nthread; ++i) {
         nrn_ba(nrn_threads + i, BEFORE_INITIAL);
     }
     /* the INITIAL blocks are ordered so that mechanisms that write
@@ -81,10 +78,9 @@ void nrn_finitialize(int setv, double v) {
        concentrations.
     */
     /* the memblist list in NrnThread is already so ordered */
-    for (i = 0; i < nrn_nthread; ++i) {
+    for (int i = 0; i < nrn_nthread; ++i) {
         NrnThread* nt = nrn_threads + i;
-        NrnThreadMembList* tml;
-        for (tml = nt->tml; tml; tml = tml->next) {
+        for (auto tml = nt->tml; tml; tml = tml->next) {
             mod_f_t s = corenrn.get_memb_func(tml->index).initialize;
             if (s) {
                 (*s)(nt, tml->ml, tml->index);
@@ -94,29 +90,29 @@ void nrn_finitialize(int setv, double v) {
 #endif
 
     init_net_events();
-    for (i = 0; i < nrn_nthread; ++i) {
+    for (int i = 0; i < nrn_nthread; ++i) {
         nrn_ba(nrn_threads + i, AFTER_INITIAL);
     }
-    for (i = 0; i < nrn_nthread; ++i) {
+    for (int i = 0; i < nrn_nthread; ++i) {
         nrn_deliver_events(nrn_threads + i); /* The INITIAL sent events at t=0 */
     }
-    for (i = 0; i < nrn_nthread; ++i) {
+    for (int i = 0; i < nrn_nthread; ++i) {
         setup_tree_matrix_minimal(nrn_threads + i);
         if (nrn_use_fast_imem) {
             nrn_calc_fast_imem(nrn_threads + i);
         }
     }
-    for (i = 0; i < nrn_nthread; ++i) {
+    for (int i = 0; i < nrn_nthread; ++i) {
         nrn_ba(nrn_threads + i, BEFORE_STEP);
     }
-    for (i = 0; i < nrn_nthread; ++i) {
+    for (int i = 0; i < nrn_nthread; ++i) {
         nrn_deliver_events(nrn_threads + i); /* The record events at t=0 */
     }
 #if NRNMPI
     nrn_spike_exchange(nrn_threads);
 #endif
     nrncore2nrn_send_init();
-    for (i = 0; i < nrn_nthread; ++i) {
+    for (int i = 0; i < nrn_nthread; ++i) {
         nrncore2nrn_send_values(nrn_threads + i);
     }
     Instrumentor::phase_end("finitialize");

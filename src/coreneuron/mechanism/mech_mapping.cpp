@@ -51,7 +51,6 @@ void register_all_variables_offsets(int mech_id, SerializedNames variable_names)
     int idx = 0;
     int nb_parsed_variables = 0;
     int current_categorie = 1;
-    int offset = -1;
     while (current_categorie < NB_MECH_VAR_CATEGORIES) {
         if (variable_names[idx]) {
             set_an_offset(mech_id, variable_names[idx], nb_parsed_variables);

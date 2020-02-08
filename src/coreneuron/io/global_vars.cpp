@@ -46,8 +46,7 @@ void set_globals(const char* path, bool cli_global_seed, int cli_global_seed_val
         int size;
         double* val = nullptr;
         for (void* p = nullptr; (p = (*nrn2core_get_global_dbl_item_)(p, name, size, val)) != nullptr;) {
-            N2V::iterator it;
-            it = n2v->find(name);
+            N2V::iterator it = n2v->find(name);
             if (it != n2v->end()) {
                 if (size == 0) {
                     nrn_assert(it->second.first == 0);
@@ -66,7 +65,6 @@ void set_globals(const char* path, bool cli_global_seed, int cli_global_seed_val
         nrnran123_set_globalindex((*nrn2core_get_global_int_item_)("Random123_global_index"));
 
     } else {  // get the info from the globals.dat file
-
         string fname = string(path) + string("/globals.dat");
         FILE* f = fopen(fname.c_str(), "r");
         if (!f) {
@@ -77,14 +75,14 @@ void set_globals(const char* path, bool cli_global_seed, int cli_global_seed_val
         }
 
         char line[256];
-        char name[256];
-        double val;
-        int n;
 
         nrn_assert(fscanf(f, "%s\n", line) == 1);
         check_bbcore_write_version(line);
 
         for (;;) {
+            char name[256];
+            double val;
+            int n;
             nrn_assert(fgets(line, 256, f) != nullptr);
             N2V::iterator it;
             if (sscanf(line, "%s %lf", name, &val) == 2) {
@@ -116,6 +114,8 @@ void set_globals(const char* path, bool cli_global_seed, int cli_global_seed_val
         }
 
         while (fgets(line, 256, f)) {
+            char name[256];
+            int n;
             if (sscanf(line, "%s %d", name, &n) == 2) {
                 if (strcmp(name, "secondorder") == 0) {
                     secondorder = n;

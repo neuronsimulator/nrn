@@ -39,7 +39,7 @@ extern NrnThread *nrn_threads;
 bool nrn_use_fast_imem;
 
 void fast_imem_free() {
-    for (NrnThread* nt = nrn_threads; nt < nrn_threads + nrn_nthread; ++nt) {
+    for (auto nt = nrn_threads; nt < nrn_threads + nrn_nthread; ++nt) {
         if (nt->nrn_fast_imem) {
             free(nt->nrn_fast_imem->nrn_sav_rhs);
             free(nt->nrn_fast_imem->nrn_sav_d);
@@ -52,7 +52,7 @@ void fast_imem_free() {
 void nrn_fast_imem_alloc() {
     if (nrn_use_fast_imem) {
         fast_imem_free();
-        for (NrnThread* nt = nrn_threads; nt < nrn_threads + nrn_nthread; ++nt) {
+        for (auto nt = nrn_threads; nt < nrn_threads + nrn_nthread; ++nt) {
             int n = nt->end;
             nt->nrn_fast_imem = (NrnFastImem*)ecalloc(1, sizeof(NrnFastImem));
             nt->nrn_fast_imem->nrn_sav_rhs = (double*)emalloc_align(n * sizeof(double));

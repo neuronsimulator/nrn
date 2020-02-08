@@ -87,7 +87,7 @@ class Multisend_ReceiveBuffer {
     int size_;
     int count_;
     int maxcount_;
-    int busy_;
+    bool busy_ = false;
     int nsend_, nrecv_;  // for checking conservation
     int nsend_cell_;     // cells that spiked this interval.
     NRNMPI_Spike** buffer_;
@@ -153,7 +153,7 @@ static void multisend_send_phase2(InputPreSyn* ps, int gid, double t) {
 }
 
 Multisend_ReceiveBuffer::Multisend_ReceiveBuffer() {
-    busy_ = 0;
+    busy_ = false;
     count_ = 0;
     size_ = MULTISEND_RECEIVEBUFFER_SIZE;
     buffer_ = new NRNMPI_Spike*[size_];
@@ -165,7 +165,7 @@ Multisend_ReceiveBuffer::Multisend_ReceiveBuffer() {
     phase2_head_ = phase2_tail_ = 0;
 }
 Multisend_ReceiveBuffer::~Multisend_ReceiveBuffer() {
-    assert(busy_ == 0);
+    assert(!busy_);
     for (int i = 0; i < count_; ++i) {
         delete buffer_[i];
     }
@@ -176,7 +176,8 @@ Multisend_ReceiveBuffer::~Multisend_ReceiveBuffer() {
 }
 void Multisend_ReceiveBuffer::init(int index) {
     index_ = index;
-    nsend_cell_ = nsend_ = nrecv_ = busy_ = maxcount_ = 0;
+    nsend_cell_ = nsend_ = nrecv_ = maxcount_ = 0;
+    busy_ = false;
     for (int i = 0; i < count_; ++i) {
         delete buffer_[i];
     }
@@ -187,8 +188,8 @@ void Multisend_ReceiveBuffer::init(int index) {
 }
 void Multisend_ReceiveBuffer::incoming(int gid, double spiketime) {
     // printf("%d %p.incoming %g %g %d\n", nrnmpi_myid, this, t, spk->spiketime, spk->gid);
-    assert(busy_ == 0);
-    busy_ = 1;
+    assert(!busy_);
+    busy_ = true;
 
     if (count_ >= size_) {
         size_ *= 2;
@@ -212,13 +213,13 @@ void Multisend_ReceiveBuffer::incoming(int gid, double spiketime) {
     }
 
     ++nrecv_;
-    busy_ = 0;
+    busy_ = false;
 }
 void Multisend_ReceiveBuffer::enqueue() {
     // printf("%d %p.enqueue count=%d t=%g nrecv=%d nsend=%d\n", nrnmpi_myid, this, t, count_,
     // nrecv_, nsend_);
-    assert(busy_ == 0);
-    busy_ = 1;
+    assert(!busy_);
+    busy_ = true;
 
     for (int i = 0; i < count_; ++i) {
         NRNMPI_Spike* spk = buffer_[i];
@@ -248,15 +249,15 @@ void Multisend_ReceiveBuffer::enqueue() {
     nsend_ = 0;
     nsend_cell_ = 0;
 #endif
-    busy_ = 0;
+    busy_ = false;
     phase2send();
 }
 
 void Multisend_ReceiveBuffer::enqueue1() {
     // printf("%d %lx.enqueue count=%d t=%g nrecv=%d nsend=%d\n", nrnmpi_myid, (long)this, t,
     // count_, nrecv_, nsend_);
-    assert(busy_ == 0);
-    busy_ = 1;
+    assert(!busy_);
+    busy_ = true;
     for (int i = 0; i < count_; ++i) {
         NRNMPI_Spike* spk = buffer_[i];
         InputPreSyn* ps;
@@ -275,15 +276,15 @@ void Multisend_ReceiveBuffer::enqueue1() {
             pb.gid = spk->gid;
         }
     }
-    busy_ = 0;
+    busy_ = false;
     phase2send();
 }
 
 void Multisend_ReceiveBuffer::enqueue2() {
     // printf("%d %lx.enqueue count=%d t=%g nrecv=%d nsend=%d\n", nrnmpi_myid, (long)this, t,
     // count_, nrecv_, nsend_);
-    assert(busy_ == 0);
-    busy_ = 1;
+    assert(!busy_);
+    busy_ = false;
     for (int i = 0; i < count_; ++i) {
         NRNMPI_Spike* spk = buffer_[i];
         InputPreSyn* ps = psbuf_[i];
@@ -294,7 +295,7 @@ void Multisend_ReceiveBuffer::enqueue2() {
     nrecv_ = 0;
     nsend_ = 0;
     nsend_cell_ = 0;
-    busy_ = 0;
+    busy_ = false;
 }
 
 void Multisend_ReceiveBuffer::phase2send() {

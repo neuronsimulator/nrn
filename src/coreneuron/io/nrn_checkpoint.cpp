@@ -162,7 +162,6 @@ void write_checkpoint(NrnThread* nt, int nb_threads, const char* dir, bool swap_
 #if NRNMPI
     nrnmpi_barrier();
 #endif
-    int i;
     swap_bytes = swap_bytes_order;
 
     /**
@@ -170,7 +169,7 @@ void write_checkpoint(NrnThread* nt, int nb_threads, const char* dir, bool swap_
      *  #pragma omp parallel for private(i) shared(nt, nb_threads) schedule(runtime)
      */
     FileHandlerWrap f;
-    for (i = 0; i < nb_threads; i++) {
+    for (int i = 0; i < nb_threads; i++) {
         if (nt[i].ncell || nt[i].tml) {
             write_phase2(nt[i], f);
         }
@@ -298,7 +297,7 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
         auto& nrn_prop_dparam_size_ = corenrn.get_prop_dparam_size();
         auto& nrn_is_artificial_ = corenrn.get_is_artificial();
 
-            int sz = nrn_prop_param_size_[type];
+        int sz = nrn_prop_param_size_[type];
         int layout = corenrn.get_mech_data_layout()[type];
         int* semantics = memb_func[type].dparam_semantics;
 
@@ -593,7 +592,7 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
         }
     }
 
-    for (int i = 0; i < memb_func.size(); ++i) {
+    for (size_t i = 0; i < memb_func.size(); ++i) {
         if (ml_pinv[i]) {
             delete[] ml_pinv[i];
         }
