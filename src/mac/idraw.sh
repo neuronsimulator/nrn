@@ -9,3 +9,10 @@ if test "${NRNHOME_EXEC}" != "" ; then
 fi
 cd
 "${IDRAW}" "$@"
+
+err=$?
+if test "$err" != 0 ; then
+  echo "$IDRAW exited with $err"
+  echo "Press return key to exit"
+  read a
+fi

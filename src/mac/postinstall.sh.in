@@ -134,7 +134,7 @@ if true ; then # notice that Command Line Tools and XQuartz also need to be inst
 osascript -e 'tell app "Installer" to display dialog "NEURON @UNQUOTED_PACKAGE_VERSION@ was successfully installed, but ...
 Mod files cannot be linked into NEURON unless
 Command Line Tools is installed,
-and NEURON cannot launch unless XQuartz is installed.
+and NEURON cannot use its classic X11 GUI unless XQuartz is installed.
 If either or both are not installed, you will be asked
 if you wish to install them. You may wish to install
 XQuartz last as it requires logging out at the end.
