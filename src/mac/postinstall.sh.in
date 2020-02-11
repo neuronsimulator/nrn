@@ -2,7 +2,14 @@
 
 echo "" > /tmp/temp.tmp
 
-idir=/Applications/NEURON-@PACKAGE_VERSION@/nrn
+idir=/Applications/NEURON-@UNQUOTED_PACKAGE_VERSION@/nrn
+
+#autotools has x86_64/bin but cmake has bin
+if test -d $idir/x86_64/bin ; then
+  ibin=${idir}/x86_64/bin
+else
+  ibin=$idir/bin
+fi
 
 #for testing on linux
 #idir=$HOME/neuron/nrnmpi
@@ -75,11 +82,11 @@ if test "$addpath" = "yes" ; then
     echo '#!bin/bash' > "$bp"
   fi
   for i in $blike ; do
-    echo "export PATH=\"$idir/x86_64/bin\":\$PATH #added by NEURON installer" >> "$i"
+    echo "export PATH=\"$ibin\":\$PATH #added by NEURON installer" >> "$i"
     chown $USER "$i"
   done
   for i in $clike != "" ; do
-    echo "set path = (\"$idir/x86_64/bin\" \$path) #added by NEURON installer" >> "$i"
+    echo "set path = (\"$ibin\" \$path) #added by NEURON installer" >> "$i"
     chown $USER "$i"
   done
 fi
@@ -109,7 +116,7 @@ Modify PYTHONPATH in $HOME/'$b' to allow a launch of Python to import neuron.
     done
    if false ; then # no longer add NRN_PYLIB and PYTHONHOME
     tmpfile=/tmp/$$.tmp
-    (source $bp ; echo "srcpath $PATH" >> /tmp/temp.tmp ; $idir/x86_64/bin/nrnpyenv.sh |sed -n 's/\(^export.*\)/\1 #added by NEURON installer/p' | sed '/PYTHONPATH/d' > $tmpfile)
+    (source $bp ; echo "srcpath $PATH" >> /tmp/temp.tmp ; $ibin/nrnpyenv.sh |sed -n 's/\(^export.*\)/\1 #added by NEURON installer/p' | sed '/PYTHONPATH/d' > $tmpfile)
     for i in $blike ; do
       cat $tmpfile >> "$i"
       chown $USER "$i"
@@ -124,10 +131,10 @@ Modify PYTHONPATH in $HOME/'$b' to allow a launch of Python to import neuron.
 fi
 
 if true ; then # notice that Command Line Tools and XQuartz also need to be installed.
-osascript -e 'tell app "Installer" to display dialog "NEURON @PACKAGE_VERSION@ was successfully installed, but ...
+osascript -e 'tell app "Installer" to display dialog "NEURON @UNQUOTED_PACKAGE_VERSION@ was successfully installed, but ...
 Mod files cannot be linked into NEURON unless
 Command Line Tools is installed,
-and NEURON cannot launch unless XQuartz is installed.
+and NEURON cannot use its classic X11 GUI unless XQuartz is installed.
 If either or both are not installed, you will be asked
 if you wish to install them. You may wish to install
 XQuartz last as it requires logging out at the end.

@@ -31,18 +31,25 @@ done
 for i in `find . -name \*.dylib` ; do
   change $i
 done
-cd $cpu/bin
+
+if test -d $cpu/bin ; then
+  cd $cpu/bin
+else
+  cd bin
+fi
 for i in * ; do
   change $i
 done
 
 cd $prefix
-cd ../iv/$cpu
-cd bin
-for i in * ; do
-  change $i
-done
-cd ../lib
-for i in * ; do
-  change $i
-done
+if test -d ../iv ; then
+  cd ../iv/$cpu
+  cd bin
+  for i in * ; do
+    change $i
+  done
+  cd ../lib
+  for i in * ; do
+    change $i
+  done
+fi
