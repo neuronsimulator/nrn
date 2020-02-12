@@ -161,6 +161,7 @@ enum ObjectType {
   HocScalarPtr = 8,
   HocArrayIncomplete =
       9,  // incomplete pointer to a hoc array (similar to HocArray)
+  HocRefPStr = 10,
 };
 }  // namespace PyHoc
 
@@ -169,6 +170,7 @@ typedef struct {
   union {
     double x_;
     char* s_;
+    char** pstr_;
     Object* ho_;
     double* px_;
   } u;
@@ -181,6 +183,7 @@ typedef struct {
 
 static PyObject* rvp_plot = NULL;
 static PyObject* plotshape_plot = NULL;
+static PyObject* cpp2refstr(char** cpp);
 
 PyTypeObject* hocobject_type;
 static PyObject* hocobj_call(PyHocObject* self, PyObject* args,
@@ -220,6 +223,9 @@ static void hocobj_dealloc(PyHocObject* self) {
   }
   if (self->indices_) {
     delete[] self->indices_;
+  }
+  if (self->type_ == PyHoc::HocRefPStr && self->u.pstr_) {
+    // nothing deleted
   }
   ((PyObject*)self)->ob_type->tp_free((PyObject*)self);
 }
@@ -325,6 +331,8 @@ static PyObject* hocobj_name(PyObject* pself, PyObject* args) {
     sprintf(cp, "<hoc ref value %g>", self->u.x_);
   } else if (self->type_ == PyHoc::HocRefStr) {
     sprintf(cp, "<hoc ref value \"%s\">", self->u.s_);
+  } else if (self->type_ == PyHoc::HocRefPStr) {
+    sprintf(cp, "<hoc ref value \"%s\">", *self->u.pstr_);
   } else if (self->type_ == PyHoc::HocRefObj) {
     sprintf(cp, "<hoc ref value \"%s\">", hoc_object_name(self->u.ho_));
   } else if (self->type_ == PyHoc::HocForallSectionIterator) {
@@ -378,6 +386,8 @@ static int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
         hoc_pushobj(&pho->u.ho_);
       } else if (tp == PyHoc::HocScalarPtr) {
         hoc_pushpx(pho->u.px_);
+      } else if (tp == PyHoc::HocRefPStr) {
+        hoc_pushstr(pho->u.pstr_);
       } else {
         // make a hoc python object and push that
         Object* ob = NULL;
@@ -1638,6 +1648,8 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
       result = Py_BuildValue("d", po->u.x_);
     } else if (po->type_ == PyHoc::HocRefStr) {
       result = Py_BuildValue("s", po->u.s_);
+    } else if (po->type_ == PyHoc::HocRefPStr) {
+      result = Py_BuildValue("s", *po->u.pstr_);
     } else {
       result = nrnpy_ho2po(po->u.ho_);
     }
@@ -1768,6 +1780,10 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
       char* ts;
       PyArg_Parse(arg, "s", &ts);
       hoc_assign_str(&po->u.s_, ts);
+    } else if (po->type_ == PyHoc::HocRefPStr) {
+      char* ts;
+      PyArg_Parse(arg, "s", &ts);
+      hoc_assign_str(po->u.pstr_, ts);
     } else {
       PyObject* tp;
       PyArg_Parse(arg, "O", &tp);
@@ -1871,6 +1887,27 @@ static PyObject* mkref(PyObject* self, PyObject* args) {
   return NULL;
 }
 
+static PyObject* cpp2refstr(char** cpp) {
+  // If cpp is from a hoc_temp_charptr (see src/oc/code.c) then create a
+  // HocRefStr and copy *cpp. Otherwise, assume it is from a hoc strdef
+  // or a HocRefStr which is persistent over the life time of this returned
+  // PyObject so that it is safe to create a HocRefPStr such that
+  // u.pstr_ = cpp and it is not needed
+  // for the HocRefPStr destructor to delete either u.pstr_ or *u.pstr_.
+  
+  assert(cpp && *cpp); // not really sure about the *cpp
+  PyHocObject* result = (PyHocObject*)hocobj_new(hocobject_type, 0, 0);
+  if (hoc_is_temp_charptr(cpp)) { // return HocRefStr HocObject.
+    result->type_ = PyHoc::HocRefStr;
+    result->u.s_ = 0;
+    hoc_assign_str(&result->u.s_, *cpp);    
+  }else{
+    result->type_ = PyHoc::HocRefPStr;
+    result->u.pstr_ = cpp;
+  }
+  return (PyObject*)result;
+}
+
 static PyObject* setpointer(PyObject* self, PyObject* args) {
   PyObject* ref, *name, *pp, * result = NULL;
   if (PyArg_ParseTuple(args, "O!OO", hocobject_type, &ref, &name, &pp) == 1) {
@@ -1971,6 +2008,7 @@ static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
         case PyHoc::HocRefNum:
         case PyHoc::HocRefStr:
         case PyHoc::HocRefObj:
+        case PyHoc::HocRefPStr:
           /* only same objects can point to same h.ref */
           self_ptr = (void*) self;
           break;
