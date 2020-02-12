@@ -108,11 +108,36 @@ void finalize_progress_bar() {
     }
 }
 
-void nrn_fixed_step_group_minimal(int n) {
-    static int step = 0;
+void nrn_fixed_single_steps_minimal(int total_sim_steps, double tstop) {
+    const int progressbar_update_interval = 5;
+    static int current_steps = 0;
+    initialize_progress_bar(total_sim_steps);
+#if NRNMPI
+    double updated_tstop = tstop - dt;
+    nrn_assert(nrn_threads->_t <= tstop);
+    // It may very well be the case that we do not advance at all
+    while (nrn_threads->_t <= updated_tstop) {
+#else
+    double updated_tstop = tstop - .5 * dt;
+    while (nrn_threads->_t < updated_tstop) {
+#endif
+        nrn_fixed_step_minimal();
+        if (stoprun) {
+            break;
+        }
+        current_steps++;
+        if (!(current_steps % progressbar_update_interval)) {
+            update_progress_bar(current_steps, nrn_threads[0]._t);
+        }
+    }
+    finalize_progress_bar();
+}
+
+void nrn_fixed_step_group_minimal(int total_sim_steps) {
+    static int current_steps = 0;
     dt2thread(dt);
     nrn_thread_table_check();
-    step_group_n = n;
+    step_group_n = total_sim_steps;
     step_group_begin = 0;
     step_group_end = 0;
     initialize_progress_bar(step_group_n);
@@ -129,7 +154,7 @@ void nrn_fixed_step_group_minimal(int n) {
         if (stoprun) {
             break;
         }
-        step++;
+        current_steps++;
         step_group_begin = step_group_end;
         update_progress_bar(step_group_end, nrn_threads[0]._t);
     }

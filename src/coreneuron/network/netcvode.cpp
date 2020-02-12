@@ -576,26 +576,12 @@ void SelfEvent::pr(const char* s, double tt, NetCvode*) {
 }
 
 void ncs2nrn_integrate(double tstop) {
-    double ts;
-    int n = (int)((tstop - nrn_threads->_t) / dt + 1e-9);
+    int total_sim_steps = static_cast<int>((tstop - nrn_threads->_t) / dt + 1e-9);
 
-    if (n > 3 && !nrn_have_gaps) {
-        nrn_fixed_step_group_minimal(n);
+    if (total_sim_steps > 3 && !nrn_have_gaps) {
+        nrn_fixed_step_group_minimal(total_sim_steps);
     } else {
-#if NRNMPI
-        ts = tstop - dt;
-        nrn_assert(nrn_threads->_t <= tstop);
-        // It may very well be the case that we do not advance at all
-        while (nrn_threads->_t <= ts) {
-#else
-        ts = tstop - .5 * dt;
-        while (nrn_threads->_t < ts) {
-#endif
-            nrn_fixed_step_minimal();
-
-            if (stoprun)
-                break;
-        }
+        nrn_fixed_single_steps_minimal(total_sim_steps, tstop);
     }
 
     // handle all the pending flag=1 self events
