@@ -97,9 +97,9 @@ ECS_Grid_node *ECS_make_Grid(PyHocObject* my_states, int my_num_states_x,
 #if NRNMPI
     if(nrnmpi_use)
     {
-        new_Grid->proc_offsets = (int*)malloc(nrnmpi_numprocs*sizeof(int));
+        new_Grid->proc_offsets = (int*)calloc(nrnmpi_numprocs,sizeof(int));
         new_Grid->proc_num_currents = (int*)calloc(nrnmpi_numprocs,sizeof(int));
-        new_Grid->proc_flux_offsets = (int*)malloc(nrnmpi_numprocs*sizeof(int));
+        new_Grid->proc_flux_offsets = (int*)calloc(nrnmpi_numprocs,sizeof(int));
         new_Grid->proc_num_fluxes = (int*)calloc(nrnmpi_numprocs,sizeof(int));
     }
 #endif
@@ -527,7 +527,7 @@ int remove(Grid_node **head, Grid_node *find) {
     if(*head == find) {
         Grid_node *temp = *head;
         *head = (*head)->next;
-        temp->free_Grid();
+        delete temp; 
         return 1;
     }
     Grid_node *temp = *head;
@@ -537,7 +537,7 @@ int remove(Grid_node **head, Grid_node *find) {
     if(!temp) return 0;
     Grid_node *delete_me = temp->next;
     temp->next = delete_me->next;
-    delete_me->free_Grid();
+    delete delete_me;
     return 1;
 }
 
@@ -561,7 +561,7 @@ void empty_list(int list_index) {
     while(*head != NULL) {
         Grid_node *old_head = *head;
         *head = (*head)->next;
-        old_head->free_Grid();
+        delete old_head;
     }
 }
 
@@ -752,7 +752,7 @@ void ECS_Grid_node::variable_step_ode_solve(const double* states, double* RHS, d
 }
 
 // Free a single Grid_node
-void ECS_Grid_node::free_Grid(){
+ECS_Grid_node::~ECS_Grid_node(){
     int i;
     free(states_x);
     free(states_y);
@@ -1262,7 +1262,7 @@ void ICS_Grid_node::scatter_grid_concentrations()
 }
 
 // Free a single Grid_node
-void ICS_Grid_node::free_Grid(){
+ICS_Grid_node::~ICS_Grid_node(){
     int i;
     free(states_x);
     free(states_y);

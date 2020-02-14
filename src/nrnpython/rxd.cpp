@@ -1178,18 +1178,21 @@ extern "C" void clear_rates()
 extern "C" void species_atolscale(int id, double scale, int len, int* idx)
 {
     SpeciesIndexList* list;
+    SpeciesIndexList* prev;
     if(species_indices != NULL)
     {
-        for(list = species_indices; list->next != NULL; list = list->next)
+        for(list = species_indices, prev = NULL;
+            list != NULL; list = list->next)
         {
             if(list->id == id)
             {
                 list->atolscale = scale;
                 return;
             }
+            prev = list;
         }
-        list->next = (SpeciesIndexList*)malloc(sizeof(SpeciesIndexList));
-        list = list->next;
+        prev->next = (SpeciesIndexList*)malloc(sizeof(SpeciesIndexList));
+        list = prev->next;
     }
     else
     {
@@ -1213,6 +1216,26 @@ static void free_SpeciesIndexList()
         free(list->indices);
         species_indices = list->next;
         free(list);
+    }
+}
+
+extern "C" void remove_species_atolscale(int id)
+{
+    SpeciesIndexList* list;
+    SpeciesIndexList* prev;
+    for(list = species_indices, prev = NULL; 
+        list != NULL; prev = list, list = list->next)
+    {
+        if(list->id == id)
+        {
+            if(prev == NULL)
+                species_indices = list->next;
+            else
+                prev->next = list->next;
+            free(list->indices);
+            free(list);
+            break;
+        }
     }
 }
 
