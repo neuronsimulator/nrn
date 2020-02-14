@@ -327,9 +327,9 @@ static PyObject* hocobj_name(PyObject* pself, PyObject* args) {
   } else if (self->type_ == PyHoc::HocRefNum) {
     sprintf(cp, "<hoc ref value %g>", self->u.x_);
   } else if (self->type_ == PyHoc::HocRefStr) {
-    sprintf(cp, "<hoc ref value \"%s\">", self->u.s_);
+    sprintf(cp, "<hoc ref str \"%s\">", self->u.s_);
   } else if (self->type_ == PyHoc::HocRefPStr) {
-    sprintf(cp, "<hoc ref value \"%s\">", *self->u.pstr_);
+    sprintf(cp, "<hoc ref pstr \"%s\">", *self->u.pstr_);
   } else if (self->type_ == PyHoc::HocRefObj) {
     sprintf(cp, "<hoc ref value \"%s\">", hoc_object_name(self->u.ho_));
   } else if (self->type_ == PyHoc::HocForallSectionIterator) {
@@ -1001,15 +1001,31 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
       if (!sym) {
         return PyObject_GenericGetAttr((PyObject*)subself, pyname);
       }
-      if (sym->type != VAR && sym->type != RANGEVAR && sym->type != VARALIAS) {
+      if (sym->type == STRING) {
+        Objectdata* od = hoc_objectdata_save();
+        if (self->type_ == PyHoc::HocTopLevelInterpreter) {
+          hoc_objectdata = hoc_top_level_data;
+        }else if (self->type_ == PyHoc::HocObject && !self->ho_->ctemplate->constructor) {
+          hoc_objectdata = self->ho_->u.dataspace;
+        }else{
+          hoc_objectdata = hoc_objectdata_restore(od);
+          assert(0);
+          return NULL;
+        }
+        char** cpp = OPSTR(sym);
+        hoc_objectdata = hoc_objectdata_restore(od);
+        result = cpp2refstr(cpp);
+        return result;
+      }else if (sym->type != VAR && sym->type != RANGEVAR && sym->type != VARALIAS) {
         char buf[200];
         sprintf(buf,
-                "Hoc pointer error, %s is not a hoc variable or range variable",
+                "Hoc pointer error, %s is not a hoc variable or range variable or strdef",
                 sym->name);
         PyErr_SetString(PyExc_TypeError, buf);
         return NULL;
+      }else{
+        isptr = 1;
       }
-      isptr = 1;
     } else if (is_obj_type(self->ho_, "Vector") &&
                strcmp(n, "__array_interface__") == 0) {
       // return __array_interface__
