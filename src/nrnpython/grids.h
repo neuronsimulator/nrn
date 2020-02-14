@@ -176,12 +176,12 @@ class Grid_node {
     virtual void scatter_grid_concentrations() = 0;
     virtual void hybrid_connections() = 0;
     virtual void variable_step_hybrid_connections(const double* cvode_states_3d, double* const ydot_3d, const double* cvode_states_1d, double *const  ydot_1d) = 0;
-    virtual void free_Grid() = 0;
 };
 
 class ECS_Grid_node : public Grid_node{
     public:
         //Data for DG-ADI
+        ~ECS_Grid_node();
         struct ECSAdiGridData* ecs_tasks;
         struct ECSAdiDirection* ecs_adi_dir_x;
         struct ECSAdiDirection* ecs_adi_dir_y;
@@ -197,7 +197,6 @@ class ECS_Grid_node : public Grid_node{
         void variable_step_hybrid_connections(const double* cvode_states_3d, double* const ydot_3d, const double* cvode_states_1d, double *const  ydot_1d);
         void scatter_grid_concentrations();
         void hybrid_connections();
-        void free_Grid();
 };
 
 typedef struct ECSAdiDirection{
@@ -218,6 +217,7 @@ typedef struct ECSAdiGridData{
 
 class ICS_Grid_node : public Grid_node{
     public:
+        ~ICS_Grid_node();
         //fractional volumes
         double* _ics_alphas;
         //stores the positive x,y, and z neighbors for each node. [node0_x, node0_y, node0_z, node1_x ...]
@@ -262,7 +262,6 @@ class ICS_Grid_node : public Grid_node{
         void hybrid_connections();
         void variable_step_hybrid_connections(const double* cvode_states_3d, double* const ydot_3d, const double* cvode_states_1d, double *const  ydot_1d);
         void scatter_grid_concentrations();
-        void free_Grid();
 };
 
 typedef struct ICSAdiDirection{
