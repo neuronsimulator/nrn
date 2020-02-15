@@ -40,5 +40,7 @@ mkapp mknrndll
 mkapp modlunit
 mkapp neurondemo
 mkapp mos2nrn
-mkapp idraw
-
+if test -f "${bindir}/idraw" ; then
+  # idraw will not exist here if no InterViews or not external submodule
+  mkapp idraw
+fi
