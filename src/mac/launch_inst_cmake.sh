@@ -8,7 +8,7 @@ if test "$1" = "" ; then
 	exit
 else
 	cpu=$1
-	IDIR="$2/.."
+	IDIR="$2"
 	srcdir="$3"
 	objdir=`pwd`
 fi

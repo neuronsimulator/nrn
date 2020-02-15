@@ -1,16 +1,27 @@
 #!/bin/bash
 set -ex
 # distribution built with
-#sh bldnrnmacpkgcmake.sh python2.7 python3.6 python3.7 python3.8
+# bash bldnrnmacpkgcmake.sh python2.7 python3.6 python3.7 python3.8
+# without args, default is the 4 pythons above.
+
+args="$*"
+if test "$args" = "" ; then
+  args="python2.7 python3.6 python3.7 python3.8"
+fi
 
 #10.7 possible if one builds with pythons that are consistent with that.
 export MACOSX_DEPLOYMENT_TARGET=10.9
 
-INST=/Applications/NEURON-7.8
-export PATH=$INST/nrn/bin:$PATH
 
 SRC=$HOME/neuron/nrncmake
 BLD=$SRC/build
+NSRC="$SRC"
+export NSRC
+NVER="`sh $NSRC/nrnversion.sh 3`"
+NEURON_NVER=NEURON-${NVER}
+
+INST=/Applications/${NEURON_NVER}
+export PATH=$INST/bin:$PATH
 
 rm -r -f $INST
 cd $SRC
@@ -26,7 +37,7 @@ for i in $* ; do
   pythons="${pythons}${i};"
 done
 
-cmake .. -DCMAKE_INSTALL_PREFIX=$INST/nrn \
+cmake .. -DCMAKE_INSTALL_PREFIX=$INST \
   -DNRN_ENABLE_MPI_DYNAMIC=ON \
   -DPYTHON_EXECUTABLE=`which python3.7` -DNRN_ENABLE_PYTHON_DYNAMIC=ON \
   -DNRN_PYTHON_DYNAMIC="$pythons" \
@@ -40,19 +51,18 @@ chk () {
   # Can launch python and import neuron
   # only needs PYTHONPATH
   (
-    export PYTHONPATH=$INST/nrn/lib/python
+    export PYTHONPATH=$INST/lib/python
     $1 -c 'from neuron import test; test()'
     $1 -c 'from neuron.tests import test_rxd; test_rxd.test(); quit()'
   )
   return # need to work out the multiprocessing problem
   # Launching nrniv does not need NRN_PYLIB and PYTHONHOME
   (
-    $INST/nrn/bin/nrniv -python -pyexe $1 -c 'import neuron ; neuron.test() ; quit()'
-    $INST/nrn/bin/nrniv -python -pyexe $1 -c 'from neuron.tests import test_rxd; test_rxd.test(); quit()'
+    $INST/bin/nrniv -python -pyexe $1 -c 'import neuron ; neuron.test() ; quit()'
+    $INST/bin/nrniv -python -pyexe $1 -c 'from neuron.tests import test_rxd; test_rxd.test(); quit()'
   )
 }
 
-make after-install
 #/Applications/Packages.app from
 # http://s.sudre.free.fr/Software/Packages/about.html
 # For mac to do a productsign, need my developerID_installer.cer
@@ -68,11 +78,9 @@ done
 #make alphadist
 
 ALPHADIR='hines@neuron.yale.edu:/home/htdocs/ftp/neuron/versions/alpha'
-export NSRC="$SRC"
 describe="`sh $NSRC/nrnversion.sh describe`"
-NVER="`sh $NSRC/nrnversion.sh 3`"
 a=${ALPHADIR}/nrn-${describe}-osx-${PYVS}.pkg
-b=./src/mac/build/NEURON-${NVER}.pkg
+b=./src/mac/build/${NEURON_NVER}.pkg
 echo "scp $b $a"
 scp $b $a
 
