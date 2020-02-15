@@ -31,7 +31,7 @@ cd $BLD
 
 PYVS="py"
 pythons=""
-for i in $* ; do
+for i in $args ; do
   PYVER=`$i -c 'from sys import version_info as v ; print (str(v.major) + str(v.minor)); quit()'`
   PYVS=${PYVS}-${PYVER}
   pythons="${pythons}${i};"
