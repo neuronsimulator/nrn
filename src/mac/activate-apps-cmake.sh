@@ -22,35 +22,29 @@ if test "$2" = "" ; then
 fi
 
 CPU=$1
-prefix=$2
-srcdir=$3
+NRN_INSTALL=$2
+NRN_SRC=$3
 ivlibdir=$4
 export CPU
+export NRN_SRC
+NRN_VERSION="`sh $NRN_SRC/nrnversion.sh`"
 
 # Equivalent to install from the Makefile.am
 S="modlunit.sh mknrndll.sh nrngui.sh neurondemo.sh mos2nrn.sh"
-cp $srcdir/src/mac/macnrn.term $prefix/bin/macnrn.term
+cp $NRN_SRC/src/mac/macnrn.term $NRN_INSTALL/bin/macnrn.term
 for i in $S ; do
-  sed "s/^CPU.*/CPU=\"$CPU)\"/" < $srcdir/src/mac/$i > temp
-  mv temp $prefix/bin/$i
-  chmod 755 $prefix/bin/$i
+  cp $NRN_SRC/src/mac/$i $NRN_INSTALL/bin/$i
+  chmod 755 $NRN_INSTALL/bin/$i
 done
-sed "s,\.\./iv/x86_64/,," < $srcdir/src/mac/idraw.sh > $prefix/bin/idraw.sh
-chmod 755 $prefix/bin/idraw.sh
-sh $srcdir/src/mac/launch_inst_cmake.sh "." "$prefix" "$srcdir/src/mac"
+sed "s,\.\./iv/x86_64/,," < $NRN_SRC/src/mac/idraw.sh > $NRN_INSTALL/bin/idraw.sh
+chmod 755 $NRN_INSTALL/bin/idraw.sh
 
-NSRC="$3"
-export NSRC
-NVER="`sh $srcdir/nrnversion.sh`"
-NDIR="$prefix"
-export NDIR
-N="$prefix"
-IV=`echo "$prefix"|sed 's/nrn$/iv/'` # Does not exist if iv is a submodule
+sh $NRN_SRC/src/mac/launch_inst_cmake.sh "$NRN_INSTALL" "$NRN_SRC"
 
 # activate macnrn.term and the app bundles
-# process prefix into a list that walks the path
+# process NRN_INSTALL into a list that walks the path
 # escaped " needed in case of spaces
-a="$prefix"
+a="$NRN_INSTALL"
 lst="\"`basename \"$a\"`\""
 a="`dirname \"$a\"`"
 while test "$a" != "/" ; do
@@ -68,8 +62,8 @@ osascript -e 'tell application "Finder"'\
  -e 'end tell'
 
 # force rebuild of the neurondemo
-DEMO="${N}/share/nrn/demo"
+DEMO="${NRN_INSTALL}/share/nrn/demo"
 rm -f -r ${DEMO}/neuron ${DEMO}/release/${CPU}
-$prefix/bin/neurondemo << here
+$NRN_INSTALL/bin/neurondemo << here
 quit()
 here
