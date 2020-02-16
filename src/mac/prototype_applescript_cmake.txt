@@ -30,7 +30,7 @@ on mylaunch(farg)
 		set thefile to open for access (fname as POSIX file) with write permission
 		set eof of thefile to 0
 		write "#!/bin/sh" & nl to thefile
-		write "NRNHOME=\"" & neuronhome & "nrn\"" & nl to thefile
+		write "NRNHOME=\"" & neuronhome & "\"" & nl to thefile
 		write "NEURONHOME=\"${NRNHOME}/share/nrn\"" & nl to thefile
 		write "PATH=\"${NRNHOME}/bin:${PATH}\"" & nl to thefile
 		write "export NRNHOME" & nl to thefile
@@ -42,7 +42,7 @@ on mylaunch(farg)
 		write (mycmd as string) & nl to thefile
 		close access thefile
 		
-		set termfile to appdir & "nrn:bin:" & "macnrn.term"
+		set termfile to appdir & "bin:" & "macnrn.term"
 		open file termfile
 		
 	end tell

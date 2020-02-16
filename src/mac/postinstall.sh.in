@@ -1,8 +1,12 @@
 #!/bin/bash
-
+#executed by package installer
 echo "" > /tmp/temp.tmp
 
-idir=/Applications/NEURON-@UNQUOTED_PACKAGE_VERSION@/nrn
+idir=/Applications/NEURON-@UNQUOTED_PACKAGE_VERSION@
+#autotools has nrn
+if test -d $idir/nrn ; then
+  idir=${idir}/nrn
+fi
 
 #autotools has x86_64/bin but cmake has bin
 if test -d $idir/x86_64/bin ; then

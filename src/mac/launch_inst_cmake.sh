@@ -4,16 +4,13 @@
 # hoc files.
 
 if test "$1" = "" ; then
-	echo "launch_inst needs 3 arguments"
+	echo "launch_inst_cmake.sh needs 2 arguments"
 	exit
 else
-	cpu=$1
-	IDIR="$2/.."
-	srcdir="$3"
+	NRN_INSTALL="$1"
+	NRN_SRC="$2"
 	objdir=`pwd`
 fi
-
-bindir="$2/bin"
 
 # Note: .icns files are created by putting something on the screen, e.g
 # with neurondemo or with idraw, and using
@@ -28,17 +25,19 @@ bindir="$2/bin"
 
 mkapp() {
 	name=$1
-	app_path=${IDIR}/${name}.app
+	app_path=${NRN_INSTALL}/${name}.app
 	rm -f -r ${app_path}
 	osacompile -o ${app_path} prototype_applescript_cmake.txt
 	cp ${name}.icns ${app_path}/Contents/Resources/droplet.icns
 }
 
-cd ${srcdir}
+cd ${NRN_SRC}/src/mac
 mkapp nrngui
 mkapp mknrndll
 mkapp modlunit
 mkapp neurondemo
 mkapp mos2nrn
-mkapp idraw
-
+if test -f "${NRN_INSTALL}/bin/idraw" ; then
+  # idraw will not exist here if no InterViews or not external submodule
+  mkapp idraw
+fi
