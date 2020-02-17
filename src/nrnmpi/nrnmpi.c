@@ -52,21 +52,13 @@ extern void nrnmpi_checkbufleak();
 #endif
 
 static int nrnmpi_under_nrncontrol_;
+static int nrnmpi_is_setup_;
 #endif
 
 void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
 #if NRNMPI
 	int i, b, flag;
-	static int called = 0;
-	if (nrnmpi_under_nrncontrol == 2) {
-		int flag;
-		MPI_Initialized(&flag);
-		if (flag) { return; }
-		called = 0;
-	}
-	if (called) { return; }
-	called = 1;
-	nrnmpi_use = 1;
+	if (nrnmpi_use) { return; }
 	nrnmpi_under_nrncontrol_ = nrnmpi_under_nrncontrol;
 	if( nrnmpi_under_nrncontrol_ ) {
 #if 0
@@ -79,7 +71,7 @@ for (i=0; i < *pargc; ++i) {
 #endif
 
 #if NRN_MUSIC
-	nrnmusic_init(pargc, pargv); /* see src/nrniv/nrnmusic.cpp */
+		nrnmusic_init(pargc, pargv); /* see src/nrniv/nrnmusic.cpp */
 #endif
 
 #if !ALWAYS_CALL_MPI_INIT
@@ -107,13 +99,13 @@ for (i=0; i < *pargc; ++i) {
 		}
 		if (nrnmusic) { b = 1; }
 		if (!b) {
-			nrnmpi_use = 0;
 			nrnmpi_under_nrncontrol_ = 0;
 			return;
 		}
 #endif
 		MPI_Initialized(&flag);
 		
+		/* only call MPI_Init if not already initialized */
 		if (!flag) {
 #if (USE_PTHREAD)
 			int required = MPI_THREAD_SERIALIZED;
@@ -149,6 +141,8 @@ for (i=0; i < *pargc; ++i) {
 	nrnmpi_numprocs = nrnmpi_numprocs_bbs = nrnmpi_numprocs_world;
 	nrnmpi_myid = nrnmpi_myid_bbs = nrnmpi_myid_world;
 	nrnmpi_spike_initialize();
+	nrnmpi_use = 1;
+
 	/*begin instrumentation*/
 #if USE_HPM
 	hpmInit( nrnmpi_myid_world, "mpineuron" );
@@ -168,9 +162,6 @@ for (i=0; i < *pargc; ++i) {
 #endif
 
 #endif /* NRNMPI */
-
-
-
 }
 
 double nrnmpi_wtime() {
