@@ -1571,6 +1571,7 @@ static PyObject* iternext_sl(PyHocObject* po, hoc_Item* ql) {
     for (;;) {  // have to watch out for deleted sections.
       hoc_Item* q1 = q->next;
       Section* sec = q->element.sec;
+      if (sec == NULL) return NULL;
       if (!sec->prop) {  // delete from list and go on
         // to the next. If no more return NULL
         hoc_l_delete(q);
