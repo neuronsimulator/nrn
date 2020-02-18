@@ -31,7 +31,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/sim/multicore.hpp"
-#include "coreneuron/mpi/nrnmpi.h"
 #include "coreneuron/utils/memory.h"
 #include "coreneuron/coreneuron.hpp"
 #include "coreneuron/utils/nrnoc_aux.hpp"
@@ -156,23 +155,5 @@ void nrn_thread_table_check() {
         (*corenrn.get_memb_func(tml->index).thread_table_check_)(0, ml->_nodecount_padded, ml->data, ml->pdata,
                                                      ml->_thread, &nt, tml->index);
     }
-}
-
-void nrn_multithread_job(void* (*job)(NrnThread*)) {
-    int i;
-#if defined(_OPENMP)
-// clang-format off
-    #pragma omp parallel for private(i) shared(nrn_threads, job, nrn_nthread, \
-                                           nrnmpi_myid) schedule(static, 1)
-    for (i = 0; i < nrn_nthread; ++i) {
-        (*job)(nrn_threads + i);
-    }
-// clang-format on
-#else
-    for (i = 1; i < nrn_nthread; ++i) {
-        (*job)(nrn_threads + i);
-    }
-    (*job)(nrn_threads);
-#endif
 }
 }  // namespace coreneuron

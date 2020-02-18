@@ -31,6 +31,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/mechanism/membfunc.hpp"
 #include "coreneuron/utils/memory.h"
+#include "coreneuron/mpi/nrnmpi.h"
 
 namespace coreneuron {
 class NetCon;
@@ -154,7 +155,18 @@ struct NrnThread : public MemoryManaged {
 extern void nrn_threads_create(int n);
 extern int nrn_nthread;
 extern NrnThread* nrn_threads;
-extern void nrn_multithread_job(void* (*)(NrnThread*));
+template<typename F, typename... Args>
+void nrn_multithread_job(F&& job, Args&&... args) {
+    int i;
+// clang-format off
+    #pragma omp parallel for private(i) shared(nrn_threads, job, nrn_nthread, \
+                                           nrnmpi_myid) schedule(static, 1)
+    for (i = 0; i < nrn_nthread; ++i) {
+        job(nrn_threads + i, std::forward<Args>(args)...);
+    }
+// clang-format on
+}
+
 extern void nrn_thread_table_check(void);
 
 extern void nrn_threads_free(void);
