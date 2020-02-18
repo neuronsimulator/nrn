@@ -145,9 +145,14 @@ void inithoc() {
   }
   if (libnrnmpi_is_loaded) {
     pmes = nrnmpi_load(1);
-    if (pmes) {
+    if (pmes && env_mpi == NULL) {
+      // common case on MAC distribution is no NEURON_INIT_MPI and
+      // no MPI installed (so nrnmpi_load fails)
+      libnrnmpi_is_loaded = 0;
+    }
+    if (pmes && libnrnmpi_is_loaded) {
       printf(
-        "NEURON_INIT_MPI exists in env but NEURON cannot initialize MPI "
+        "NEURON_INIT_MPI nonzero in env but NEURON cannot initialize MPI "
         "because:\n%s\n",
         pmes);
       exit(1);
