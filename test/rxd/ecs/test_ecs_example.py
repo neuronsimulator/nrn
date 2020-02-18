@@ -17,7 +17,7 @@ def ecs_example(neuron_instance):
 
     h, rxd, data = neuron_instance
     # create cell1 where `x` will be created and leak out
-    cell1 = h.Section('cell1')
+    cell1 = h.Section(name='cell1')
     cell1.pt3dclear()
     cell1.pt3dadd(-20, 0, 0, 10)
     cell1.pt3dadd(-10, 0, 0, 10)
@@ -25,7 +25,7 @@ def ecs_example(neuron_instance):
     cell1.insert('pump')
 
     # create cell2 where `x` will be pumped in and accumulate
-    cell2 = h.Section('cell2')
+    cell2 = h.Section(name='cell2')
     cell2.pt3dclear()
     cell2.pt3dadd(10, 0, 0, 10)
     cell2.pt3dadd(20, 0, 0, 10)

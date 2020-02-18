@@ -583,7 +583,12 @@ class _IntracellularSpecies(_SpeciesMathable):
         self._update_pointers()
         _defined_species_by_gid.append(self)
 
-    def __del__(self):
+    def _isalive(self):
+        if self not in _intracellular_diffusion_objects:
+            raise RxDException("The intracellular species has been deleted.")
+
+
+    def _delete(self):
         global _intracellular_diffusion_objects, _defined_species_by_gid
         if self in _defined_species_by_gid: _defined_species_by_gid.remove(self)
         if _intracellular_diffusion_objects: 
@@ -618,6 +623,7 @@ class _IntracellularSpecies(_SpeciesMathable):
  
     #Line Definitions for each direction
     def line_defs(self, nodes, direction, nodes_length):
+        self._isalive()
         line_defs = []
         
         indices = set(range(0, nodes_length))
@@ -645,6 +651,7 @@ class _IntracellularSpecies(_SpeciesMathable):
         return line_defs       
 
     def ordered_nodes(self, p_line_defs, direction, neighbors):
+        self._isalive()
         offset_from_dir = {'x': 0, 'y': 1, 'z': 2}
         offset = offset_from_dir[direction]
         ordered_nodes = []
@@ -658,6 +665,7 @@ class _IntracellularSpecies(_SpeciesMathable):
         return numpy.asarray(ordered_nodes) 
         
     def create_neighbors_array(self, nodes, nodes_length):
+        self._isalive()
         my_array = numpy.zeros((nodes_length, 3), dtype=int)
         for n in nodes:    
             for i, ele in enumerate(n.neighbors[::2]):
@@ -665,10 +673,12 @@ class _IntracellularSpecies(_SpeciesMathable):
         return my_array
     
     def create_alphas(self):
+        self._isalive()
         alphas = [vol/self._dx**3 for vol in self._region._vol]
         return numpy.asarray(alphas, dtype=numpy.float)
 
     def _import_concentration(self):
+        self._isalive()
         ion = '_ref_' + self._name + self._region._nrn_region
         for seg, nodes in self._region._nodes_by_seg.items():
             segptr = seg.__getattribute__(ion)
@@ -679,6 +689,7 @@ class _IntracellularSpecies(_SpeciesMathable):
     def _finitialize(self):
         # Updated - now it will initialize using Node3D
         # TODO: support more complicated initializations than just constants
+        self._isalive()
         if self._initial is None:
             if self._region._nrn_region:
                 self._import_concentration()
@@ -686,6 +697,7 @@ class _IntracellularSpecies(_SpeciesMathable):
                 self.states[:] = 0
 
     def _update_pointers(self):
+        self._isalive()
         if options.concentration_nodes_3d == "surface":
             self._seg_to_surface_nodes = self._region._surface_nodes_by_seg
         elif options.concentration_nodes_3d == "all":
@@ -730,6 +742,7 @@ class _IntracellularSpecies(_SpeciesMathable):
 
 
     def _semi_compile(self, region, instruction):
+        self._isalive()
         if instruction == 'do_3d':
             if self._species:
                 sp = _defined_species[self._species][self._region]()
@@ -744,6 +757,7 @@ class _IntracellularSpecies(_SpeciesMathable):
                 return 'species_3d[%d]' % (self._grid_id)
 
     def _register_cptrs(self):
+        self._isalive()
         self._seg_order = []
         self._concentration_ptrs = []
         if self._nodes and self._species is not None:
@@ -755,6 +769,7 @@ class _IntracellularSpecies(_SpeciesMathable):
                     self._concentration_ptrs.append(seg.__getattribute__(ion))
 
     def _import_concentration(self, init=True):
+        self._isalive()
         nodes = self._nodes
         if nodes:
             # TODO: replace this with a pointer vec for speed
@@ -770,6 +785,7 @@ class _IntracellularSpecies(_SpeciesMathable):
                     nodes[node].concentration = value
 
     def _transfer_to_legacy(self):
+        self._isalive()
         nodes = self._nodes
         if self._nodes and self._region.nrn_region is not None:
             if self._region.nrn_region != "i":
@@ -785,6 +801,7 @@ class _IntracellularSpecies(_SpeciesMathable):
                 ptr[0] = sum(nodes[node].concentration * nodes[node].volume for node in all_nodes_in_seg) / sum(nodes[node].volume for node in all_nodes_in_seg)
 
     def _parse_diffusion(self, d):
+        self._isalive()
         def get_signature(fun):
             import sys
             import inspect
@@ -805,7 +822,6 @@ class _IntracellularSpecies(_SpeciesMathable):
         if callable(d) or (hasattr(d, '__len__') and callable(d[0])):
             dgrid = numpy.ndarray((3, self._nodes_length), dtype=numpy.float64,
                                   order='C')
-            from inspect import signature
             if hasattr(d, '__len__'):
                 if len(d) == 3:
                     for dr in range(3):
@@ -854,12 +870,14 @@ class _IntracellularSpecies(_SpeciesMathable):
 
     @property
     def d(self):
+        self._isalive()
         if hasattr(self,'_dgrid'):
             return self._dgrid
         return self._d
     
     @d.setter
     def d(self, value):
+        self._isalive()
         dc, dgrid = self._parse_diffusion(value)
         if dc is not None:
             if hasattr(self, '_dgrid'):  
@@ -872,12 +890,14 @@ class _IntracellularSpecies(_SpeciesMathable):
 
     #TODO Can we do this better?
     def _index_from_point(self, point):
+        self._isalive()
         for i, n in enumerate(self._nodes):
             if point == (n._i, n._j, n._k):
                 return i
     
     #TODO Can I do this better?
     def _mc3d_indices_start(self, r):
+        self._isalive()
         indices = []
         for sec in r._secs3d:
             for seg in sec:
@@ -965,7 +985,11 @@ class _ExtracellularSpecies(_SpeciesMathable):
 
         _defined_species_by_gid.append(self)
 
-    def __del__(self):
+    def _isalive(self):
+        if self not in _extracellular_diffusion_objects:
+            raise RxDException("The extracellular species has been deleted.")
+
+    def _delete(self):
         global _extracellular_diffusion_objects, _defined_species_by_gid
         # TODO: remove this object from the list of grids, possibly by reinserting all the others
         # NOTE: be careful about doing the right thing at program's end; some globals may no longer exist     
@@ -1001,6 +1025,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
                 nrn_dll_sym('structure_change_cnt', ctypes.c_int).value += 1
         
     def _finitialize(self):
+        self._isalive()
         # Updated - now it will initialize using NodeExtracellular
         if self._initial is None:
             if hasattr(h,'%so0_%s_ion' % (self._species, self._species)):
@@ -1018,6 +1043,8 @@ class _ExtracellularSpecies(_SpeciesMathable):
 
     def _ion_register(self):
         """modified from neuron.rxd.species.Species._ion_register"""
+
+        self._isalive()
         if self._species is not None:
             ion_type = h.ion_register(self._species, self._charge)
             if ion_type == -1:
@@ -1038,10 +1065,13 @@ class _ExtracellularSpecies(_SpeciesMathable):
                 h.ion_style(self._species + '_ion', 3, 2, 1, 1, 1, sec=s)
 
     def _nodes_by_location(self, i, j, k):
+        self._isalive()
         return (i * self._ny + j) * self._nz + k
 
     def index_from_xyz(self, x, y, z):
         """Given an (x, y, z) point, return the index into the _species vector containing it or None if not in the domain"""
+
+        self._isalive()
         if x < self._xlo or x > self._xhi or y < self._ylo or y > self._yhi or z < self._zlo or z > self._zhi:
             return None
         # if we make it here, then we are inside the domain
@@ -1051,6 +1081,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
         return self._nodes_by_location(i, j, k)
 
     def ijk_from_index(self, index):
+        self._isalive()
         nynz = self._ny * self._nz
         i = int(index / nynz)
         jk = index - nynz * i
@@ -1061,6 +1092,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
         return i, j, k
 
     def xyz_from_index(self, index):
+        self._isalive()
         i, j, k = ijk_from_index(self, index)
         return self._xlo + i * self._dx[0], self._ylo + j * self._dx[1], self._zlo + k * self._dx[2]
 
@@ -1070,13 +1102,16 @@ class _ExtracellularSpecies(_SpeciesMathable):
         Note: the current version keeps all the sections alive (i.e. they will never be garbage collected)
         TODO: fix this
         """
+
+        self._isalive()
         result = {} 
         for sec in h.allsec():
             result[sec] = [self.index_from_xyz(*_xyz(seg)) for seg in sec]
         return result
 
     def _update_pointers(self):
-        # TODO: call this anytime the _grid_id changes and anytime the structure_change_count changes
+        # TODO: call this anytime the _grid_id changes and anytime the structure_change_count change
+        self._isalive()
         if self._species is None or self._charge == 0:
             return
         self._seg_indices = self._locate_segments()
@@ -1109,6 +1144,8 @@ class _ExtracellularSpecies(_SpeciesMathable):
             _set_grid_currents(grid_list, self._grid_id, grid_indices, neuron_pointers, scale_factors)
     
     def _semi_compile(self, reg, instruction):
+
+        self._isalive()
         if self._species:
             sp = _defined_species[self._species][self._region]()
         else:
@@ -1123,10 +1160,13 @@ class _ExtracellularSpecies(_SpeciesMathable):
 
     @property
     def d(self):
+
+        self._isalive()
         return self._d
     
     @d.setter
     def d(self, value):
+        self._isalive()
         if self._d != value:
             self._d = value
             if hasattr(value,'__len__'):
@@ -1387,11 +1427,11 @@ class Species(_SpeciesMathable):
         _all_species = list(filter(lambda x: x() is not None and x() is not self, _all_species))
         if hasattr(self,'_extracellular_instances'):
             for sp in self._extracellular_instances.values():
-                sp.__del__()
+                sp._delete()
 
         if hasattr(self,'_intracellular_instances'):
             for sp in self._intracellular_instances.values():
-                sp.__del__()
+                sp._delete()
 
         # delete the secs
         if hasattr(self,'_secs') and self._secs:
