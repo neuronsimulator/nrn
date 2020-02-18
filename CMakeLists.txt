@@ -287,6 +287,10 @@ if(NRN_ENABLE_RX3D)
   add_subdirectory(share/lib/python/neuron/rxd/geometry3d)
 endif()
 
+if(NRN_MACOS_BUILD)
+  add_subdirectory(src/mac)
+endif()
+
 if(MINGW)
   add_subdirectory(src/mswin)
 endif()

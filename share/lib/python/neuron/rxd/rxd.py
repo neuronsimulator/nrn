@@ -1054,10 +1054,10 @@ def _compile_reactions():
     #Find sets of sections that contain the same regions
     from .region import _c_region
     matched_regions = [] # the different combinations of regions that arise in different sections
-    for nrnsec in list(section1d._rxd_sec_lookup.keys()):
+    for nrnsec in section1d._rxd_sec_lookup:
         set_of_regions = set() # a set of the regions that occur in a given section
         for sec in section1d._rxd_sec_lookup[nrnsec]:
-            if sec(): set_of_regions.add(sec()._region)
+            if sec: set_of_regions.add(sec._region)
         if set_of_regions not in matched_regions:
             matched_regions.append(set_of_regions)
     region._c_region_lookup = dict()

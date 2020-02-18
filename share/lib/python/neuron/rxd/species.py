@@ -63,6 +63,9 @@ set_diffusion = node.set_diffusion
 species_atolscale = nrn_dll_sym('species_atolscale')
 species_atolscale.argtypes = [ctypes.c_int, ctypes.c_double, ctypes.c_int, ctypes.POINTER(ctypes.c_int)]
 
+remove_species_atolscale = nrn_dll_sym('remove_species_atolscale')
+remove_species_atolscale.argtypes = [ctypes.c_int]
+
 _set_grid_concentrations = nrn_dll_sym('set_grid_concentrations')
 _set_grid_concentrations.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.py_object, ctypes.py_object]
 
@@ -1405,9 +1408,7 @@ class Species(_SpeciesMathable):
         if hasattr(self,'deleted'):
             return
         self.deleted = True
-        if not weakref or not weakref.ref:
-            # probably at exit -- not worth tidying up
-            return
+        remove_species_atolscale(self._id)
         
         global _all_species, _defined_species, _all_defined_species
         try:
@@ -1415,7 +1416,6 @@ class Species(_SpeciesMathable):
         except:
             # may not be able to import on exit
             return 
-        
         name = self.name if self.name else self._id
         if name in _defined_species:
             for r in self.regions:
@@ -1437,19 +1437,12 @@ class Species(_SpeciesMathable):
         if hasattr(self,'_secs') and self._secs:
             # remove the species root
             # TODO: will this work with post initialization morphology changes
-            if self._has_adjusted_offsets:
-                self._secs[0]._nseg += self._num_roots
-                self._secs[0]._offset -= self._num_roots
             self._secs.sort(key=lambda s: s._offset, reverse=True)
             for sec in self._secs[:]:
-                # node data is removed here in case references to sec remains
-                node._remove(sec._offset, sec._offset + sec._nseg + 1)
-                # shift offset to account for deleted sec
-                for secs in section1d._rxd_sec_lookup.values():
-                    for s in secs:
-                        if s() and s()._offset > sec._offset:
-                            s()._offset -= sec._nseg + 1
-                del sec
+                sec._delete()
+            self._secs = []
+            
+
         # set the remaining species offsets
         if initializer.is_initialized():
             for sr in _all_species:
@@ -1753,6 +1746,9 @@ class Species(_SpeciesMathable):
             node._allocate(self._num_roots)
             for sec in self._secs:
                 sec._offset += root_id
+            # used for section1d.__del__
+            if self._secs != []:
+                self._secs[0]._num_roots = self._num_roots
             self._has_adjusted_offsets = True
     
     
