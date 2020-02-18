@@ -84,6 +84,11 @@ include(OpenAccHelper)
 include(ClangFormatHelper)
 
 # =============================================================================
+# ISPC should compile with --pic by default
+# =============================================================================
+set(CMAKE_ISPC_FLAGS "--pic ${CMAKE_ISPC_FLAGS}")
+
+# =============================================================================
 # Common build options
 # =============================================================================
 # build mod files for coreneuron
