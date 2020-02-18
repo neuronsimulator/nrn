@@ -24,6 +24,7 @@ and Flux_pair structs and their respective functions
 #define FALSE				0
 #define TORTUOSITY			2
 #define VOLUME_FRACTION 	3
+#define ICS_ALPHA        	4
 
 #define NEUMANN             0
 #define DIRICHLET           1
@@ -131,7 +132,7 @@ class Grid_node {
     Concentration_Pair* concentration_list;
     Current_Triple* current_list;
     ssize_t num_concentrations, num_currents;
-    
+
     /*used for MPI implementation*/
     int num_all_currents;
     int* proc_offsets;
@@ -166,8 +167,9 @@ class Grid_node {
     double * node_flux_scale;
     PyObject ** node_flux_src;
 
+    virtual void set_diffusion(double*, int) = 0;
     virtual void set_num_threads(const int n) = 0;
-    virtual void do_grid_currents(double dt, int id) = 0;
+    virtual void do_grid_currents(double*, double dt, int id) = 0;
     virtual void apply_node_flux3D(double dt, double* states) = 0;
     virtual void volume_setup() = 0;
     virtual int dg_adi() = 0;
@@ -188,7 +190,7 @@ class ECS_Grid_node : public Grid_node{
         struct ECSAdiDirection* ecs_adi_dir_z;
 
         void set_num_threads(const int n);
-        void do_grid_currents(double dt, int id);
+        void do_grid_currents(double *, double dt, int id);
         void apply_node_flux3D(double dt, double* states);
         void volume_setup();
         int dg_adi();
@@ -197,6 +199,7 @@ class ECS_Grid_node : public Grid_node{
         void variable_step_hybrid_connections(const double* cvode_states_3d, double* const ydot_3d, const double* cvode_states_1d, double *const  ydot_1d);
         void scatter_grid_concentrations();
         void hybrid_connections();
+        void set_diffusion(double*, int);
 };
 
 typedef struct ECSAdiDirection{
@@ -217,6 +220,7 @@ typedef struct ECSAdiGridData{
 
 class ICS_Grid_node : public Grid_node{
     public:
+        ICS_Grid_node();
         ~ICS_Grid_node();
         //fractional volumes
         double* _ics_alphas;
@@ -248,12 +252,15 @@ class ICS_Grid_node : public Grid_node{
         struct ICSAdiDirection* ics_adi_dir_x;
         struct ICSAdiDirection* ics_adi_dir_y;
         struct ICSAdiDirection* ics_adi_dir_z;
-        
+       
+        ICS_Grid_node(PyHocObject*, long, long*, long*, long*,
+                           long*, long*, long, long*, long, long*, long,
+                           double*, double*, double, bool, double, double*); 
         void divide_x_work(const int nthreads);
         void divide_y_work(const int nthreads);
         void divide_z_work(const int nthreads);
         void set_num_threads(const int n);
-        void do_grid_currents(double dt, int id);
+        void do_grid_currents(double*, double dt, int id);
         void apply_node_flux3D(double dt, double* states); 
         void volume_setup();
         int dg_adi();
@@ -262,6 +269,8 @@ class ICS_Grid_node : public Grid_node{
         void hybrid_connections();
         void variable_step_hybrid_connections(const double* cvode_states_3d, double* const ydot_3d, const double* cvode_states_1d, double *const  ydot_1d);
         void scatter_grid_concentrations();
+        void run_threaded_ics_dg_adi(struct ICSAdiDirection*);
+        void set_diffusion(double*, int);
 };
 
 typedef struct ICSAdiDirection{
@@ -274,8 +283,10 @@ typedef struct ICSAdiDirection{
     long* ordered_start_stop_indices; 
     long* line_start_stop_indices;
     double dc;
+    double* dcgrid;
     double d;
 }ICSAdiDirection;
+
 
 typedef struct ICSAdiGridData{
     //Start and stop node indices for lines
@@ -338,18 +349,23 @@ extern "C" int ECS_insert(int grid_list_index, PyHocObject* my_states, int my_nu
 Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors, 
                 long* ordered_x_nodes, long* ordered_y_nodes, long* ordered_z_nodes,
                 long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
-                long z_lines_length, double d, double dx, bool is_diffusable, double atolscale, double* ics_alphas);
+                long z_lines_length, double* dcs, double dx, bool is_diffusable, double atolscale, double* ics_alphas);
 
 // Insert an  ICS_Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
 extern "C" int ICS_insert(int grid_list_index, PyHocObject* my_states, long num_nodes, long* neighbors,
                 long* ordered_x_nodes, long* ordered_y_nodes, long* ordered_z_nodes,
                 long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
-                long z_lines_length, double d, double dx, bool is_diffusable, double atolscale, double* ics_alphas);
+                long z_lines_length, double* dcs, double dx, bool is_diffusable, double atolscale, double* ics_alphas);
+
+extern "C" int ICS_insert_inhom(int grid_list_index, PyHocObject* my_states, long num_nodes, long* neighbors,
+                long* ordered_x_nodes, long* ordered_y_nodes, long* ordered_z_nodes,
+                long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
+                long z_lines_length, double* dcs, double dx, bool is_diffusable, double atolscale, double* ics_alphas);
 
 
 
 // Set the diffusion coefficients for a given grid_id 
-extern "C" int set_diffusion(int grid_list_index, int grid_id, double dc_x, double dc_y, double dc_z);
+extern "C" int set_diffusion(int, int, double*,  int);
 
 // Delete a specific Grid_node "find" from the list "head"
 int remove(Grid_node **head, Grid_node *find);

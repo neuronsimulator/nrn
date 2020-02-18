@@ -635,101 +635,6 @@ static void run_threaded_reactions(ReactGridData* tasks)
     TaskQueue_sync(AllTasks);
 }
 
-static void* gather_currents(void* dataptr)
-{
-    CurrentData* d =  (CurrentData*)dataptr;
-    Grid_node *grid = d->g;
-    double *val = d->val;
-    int i, start = d->onset, stop = d->offset;
-    Current_Triple* c = grid->current_list;
-    if(grid->VARIABLE_ECS_VOLUME == VOLUME_FRACTION) 
-    {
-        for(i = start; i < stop; i++)
-           val[i] = c[i].scale_factor * (*c[i].source)/grid->alpha[c[i].destination];
-    }
-    else
-    {
-        for(i = start; i < stop; i++)
-            val[i] = c[i].scale_factor * (*c[i].source)/grid->alpha[0];
-    }
-    return NULL;
-}
-
-/*
- * do_current - process the current for a given grid
- * Grid_node* grid - the grid used
- * double* output - for fixed step this is the states for variable ydot
- * double dt - for fixed step the step size, for variable step 1
- */
-void do_currents(Grid_node* grid, double* output, double dt, int grid_id)
-{
-    ssize_t m, n, i;
-    Current_Triple* c;
-    /*Currents to broadcast via MPI*/
-    /*TODO: Handle multiple grids with one pass*/
-    /*Maybe TODO: Should check #currents << #voxels and not the other way round*/
-    double* val;
-    //MEM_ZERO(output,sizeof(double)*grid->size_x*grid->size_y*grid->size_z);
-    /* currents, via explicit Euler */
-    n = grid->num_all_currents;
-    m = grid->num_currents;
-    CurrentData* tasks = (CurrentData*)malloc(NUM_THREADS*sizeof(CurrentData));
-#if NRNMPI    
-    val = grid->all_currents + (nrnmpi_use?grid->proc_offsets[nrnmpi_myid]:0);
-#else
-    val = grid->all_currents;
-#endif
-    int tasks_per_thread = (m + NUM_THREADS - 1)/NUM_THREADS;
-
-    for(i = 0; i < NUM_THREADS; i++)
-    {
-        tasks[i].g = grid;
-        tasks[i].onset = i * tasks_per_thread;
-        tasks[i].offset = MIN((i+1)*tasks_per_thread,m);
-        tasks[i].val = val;
-    }
-    for (i = 0; i < NUM_THREADS-1; i++) 
-    {
-        TaskQueue_add_task(AllTasks, &gather_currents, &tasks[i], NULL);
-    }
-    /* run one task in the main thread */
-    gather_currents(&tasks[NUM_THREADS - 1]);
-
-    /* wait for them to finish */
-    TaskQueue_sync(AllTasks);
-    free(tasks);
-#if NRNMPI
-    if(nrnmpi_use)
-    {
-        nrnmpi_dbl_allgatherv_inplace(grid->all_currents, grid->proc_num_currents, grid->proc_offsets);
-        for(i = 0; i < n; i++)
-            output[grid->current_dest[i]] += dt * grid->all_currents[i];
-    }
-    else
-    {
-        for(i = 0; i < n; i++)
-        {
-            output[grid->current_list[i].destination] += dt * grid->all_currents[i];
-        }
-    }
-#else
-    for(i = 0; i < n; i++)
-        output[grid->current_list[i].destination] +=  dt * grid->all_currents[i];
-#endif
-    /*Remove the contribution from membrane currents*/
-    if(_membrane_flux)
-    {
-        for(i = 0; i < _memb_curr_total; i++)
-        {
-            if(_rxd_induced_currents_grid[i] == grid_id)
-            {
-                if(_rxd_induced_currents_ecs_idx[i] != SPECIES_ABSENT)
-                    output[_rxd_induced_currents_ecs_idx[i]] -= dt * (_rxd_induced_currents_ecs[i] * _rxd_induced_currents_scale[i]);
-            }
-        }
-    }
-}
-
 void _fadvance_fixed_step_3D(void) {
     Grid_node* grid;
     double dt = (*dt_ptr);
@@ -744,10 +649,10 @@ void _fadvance_fixed_step_3D(void) {
 
     for (id = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, id++) {
         MEM_ZERO(grid->states_cur,sizeof(double)*grid->size_x*grid->size_y*grid->size_z);
-        grid->do_grid_currents(dt, id);
+        grid->do_grid_currents(grid->states_cur, dt, id);
         grid->apply_node_flux3D(dt, NULL);
         
-        grid->volume_setup();
+        //grid->volume_setup();
         if(grid->hybrid)
         {
             grid->hybrid_connections();
@@ -795,7 +700,6 @@ void ecs_atolscale(double* y)
     y += states_cvode_offset;
     for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
         grid_size = grid->size_x * grid->size_y * grid->size_z;
-
         for (i = 0; i < grid_size; i++) {
             y[i] *= grid->atolscale;
         }
@@ -875,7 +779,7 @@ void _rhs_variable_step_ecs(const double t, const double* states, double* ydot, 
     /* process currents */
     for (i = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, i++)
     {
-        do_currents(grid, ydot, 1.0, i);
+        grid->do_grid_currents(ydot, 1.0, i);
 
         /*Add node fluxes to the result*/
         grid->apply_node_flux3D(1.0, ydot);
@@ -1086,7 +990,6 @@ void ics_ode_solve(double dt,  double* RHS, const double* states)
     /* do the diffusion rates */
     for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
         grid->variable_step_ode_solve(states, RHS, dt);
-
         RHS += grid_size;
         states += grid_size;        
     }

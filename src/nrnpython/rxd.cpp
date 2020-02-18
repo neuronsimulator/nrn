@@ -880,7 +880,7 @@ extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, i
             return _ecs_count + num_states - _rxd_num_zvi;
         case 6:
             /* ode_reinit(y) */
-            _ode_reinit(p1); //Invalid read of size 8 
+            _ode_reinit(p1); 
             _ecs_ode_reinit(p1);
             break;
         case 7:
