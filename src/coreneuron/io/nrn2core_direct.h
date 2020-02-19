@@ -7,7 +7,7 @@ extern "C" {
 // The callbacks into nrn/src/nrniv/nrnbbcore_write.cpp to get
 // data directly instead of via files.
 
-extern int corenrn_embedded;
+extern bool corenrn_embedded;
 extern int corenrn_embedded_nthread;
 
 extern void (*nrn2core_group_ids_)(int*);

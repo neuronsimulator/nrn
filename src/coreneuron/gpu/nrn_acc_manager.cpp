@@ -329,7 +329,7 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
         }
 
         if (nt->_permute) {
-            if (use_interleave_permute == 1) {
+            if (interleave_permute_type == 1) {
                 /* todo: not necessary to setup pointers, just copy it */
                 InterleaveInfo* info = interleave_info + i;
                 InterleaveInfo* d_info = (InterleaveInfo*)acc_copyin(info, sizeof(InterleaveInfo));
@@ -347,7 +347,7 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
                 d_ptr = (int*)acc_copyin(info->cellsize, sizeof(int) * nt->ncell);
                 acc_memcpy_to_device(&(d_info->cellsize), &d_ptr, sizeof(int*));
 
-            } else if (use_interleave_permute == 2) {
+            } else if (interleave_permute_type == 2) {
                 /* todo: not necessary to setup pointers, just copy it */
                 InterleaveInfo* info = interleave_info + i;
                 InterleaveInfo* d_info = (InterleaveInfo*)acc_copyin(info, sizeof(InterleaveInfo));

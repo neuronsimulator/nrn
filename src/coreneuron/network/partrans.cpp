@@ -9,7 +9,7 @@
 // assert that every HalfGap instance in the thread have been a
 // ParallelContext.target(&HalfGap.vpre, sid)
 namespace coreneuron {
-int nrn_have_gaps;
+bool nrn_have_gaps;
 
 using namespace nrn_partrans;
 

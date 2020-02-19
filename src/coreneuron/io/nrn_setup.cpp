@@ -56,7 +56,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 
 /// --> Coreneuron
-int corenrn_embedded;
+bool corenrn_embedded;
 int corenrn_embedded_nthread;
 
 void (*nrn2core_group_ids_)(int*);
@@ -291,14 +291,14 @@ static void store_phase_args(int ngroup,
                              FileHandler* file_reader,
                              const char* path,
                              const char* restore_path,
-                             int byte_swap) {
+                             bool byte_swap) {
     ngroup_w = ngroup;
     gidgroups_w = gidgroups;
     imult_w = imult;
     file_reader_w = file_reader;
     path_w = path;
     restore_path_w = restore_path;
-    byte_swap_w = (bool)byte_swap;
+    byte_swap_w = byte_swap;
 }
 
 /* read files.dat file and distribute cellgroups to all mpi ranks */
@@ -333,7 +333,7 @@ void nrn_read_filesdat(int& ngrp, int*& grp, int multiple, int*& imult, const ch
     // being backward compatible
     if (iNumFiles == -1) {
         nrn_assert(fscanf(fp, "%d\n", &iNumFiles) == 1);
-        nrn_have_gaps = 1;
+        nrn_have_gaps = true;
         if (nrnmpi_myid == 0) {
             printf("Model uses gap junctions\n");
         }
@@ -672,7 +672,7 @@ void nrn_setup_cleanup() {
 
 void nrn_setup(const char* filesdat,
                bool is_mapping_needed,
-               int byte_swap,
+               bool byte_swap,
                bool run_setup_cleanup,
                const char* datpath,
                const char* restore_path,
@@ -1189,7 +1189,7 @@ void delete_trajectory_requests(NrnThread& nt) {
 }
 
 void read_phase2(FileHandler& F, int imult, NrnThread& nt) {
-    bool direct = corenrn_embedded ? true : false;
+    bool direct = corenrn_embedded;
     if (!direct) {
         assert(!F.fail());  // actually should assert that it is open
     }
@@ -1497,7 +1497,7 @@ void read_phase2(FileHandler& F, int imult, NrnThread& nt) {
         }
     }
 
-    if (nrn_have_gaps == 1) {
+    if (nrn_have_gaps) {
         nrn_partrans::gap_thread_setup(nt);
     }
 
@@ -1581,7 +1581,7 @@ void read_phase2(FileHandler& F, int imult, NrnThread& nt) {
        vectors will be read and will need to be permuted as well in subsequent
        sections of this function.
     */
-    if (use_interleave_permute) {
+    if (interleave_permute_type) {
         nt._permute = interleave_order(nt.id, nt.ncell, nt.end, nt._v_parent_index);
     }
     if (nt._permute) {
@@ -1628,7 +1628,7 @@ for (int i=0; i < nt.end; ++i) {
         }
     }
 
-    if (nrn_have_gaps == 1 && use_interleave_permute) {
+    if (nrn_have_gaps && interleave_permute_type) {
         nrn_partrans::gap_indices_permute(nt);
     }
 

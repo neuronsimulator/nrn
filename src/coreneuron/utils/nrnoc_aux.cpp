@@ -35,7 +35,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/utils/nrnoc_aux.hpp"
 
 namespace coreneuron {
-int stoprun;
+bool stoprun;
 int v_structure_change;
 int diam_changed;
 #define MAXERRCOUNT 5

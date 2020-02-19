@@ -55,7 +55,7 @@ typedef void (*ReceiveFunc)(Point_process*, double*, double);
 
 double NetCvode::eps_;
 NetCvode* net_cvode_instance;
-int cvode_active_;
+bool cvode_active_;
 
 /// Flag to use the bin queue
 bool nrn_use_bin_queue_ = 0;

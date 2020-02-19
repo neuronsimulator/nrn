@@ -61,7 +61,7 @@ extern void nrnmpi_checkbufleak();
 static int nrnmpi_under_nrncontrol_;
 
 void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
-    nrnmpi_use = 1;
+    nrnmpi_use = true;
     nrnmpi_under_nrncontrol_ = nrnmpi_under_nrncontrol;
     if (nrnmpi_under_nrncontrol_) {
 #if !ALWAYS_CALL_MPI_INIT
@@ -87,7 +87,7 @@ void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
             b = true;
         }
         if (!b) {
-            nrnmpi_use = 0;
+            nrnmpi_use = false;
             nrnmpi_under_nrncontrol_ = 0;
             return;
         }
@@ -153,7 +153,7 @@ void nrnmpi_terminate() {
         if (nrnmpi_under_nrncontrol_) {
             MPI_Finalize();
         }
-        nrnmpi_use = 0;
+        nrnmpi_use = false;
 #if nrnmpidebugleak
         nrnmpi_checkbufleak();
 #endif

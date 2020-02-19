@@ -27,7 +27,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 namespace coreneuron {
-int nrnmpi_use;
+bool nrnmpi_use;
 int nrnmpi_numprocs = 1; /* size */
 int nrnmpi_myid = 0;     /* rank */
 int nrnmpi_numprocs_world = 1;

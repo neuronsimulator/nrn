@@ -30,7 +30,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/permute/cellorder.hpp"
 #include "coreneuron/sim/multicore.hpp"
 namespace coreneuron {
-int use_solve_interleave;
+bool use_solve_interleave;
 
 static void triang(NrnThread*), bksub(NrnThread*);
 

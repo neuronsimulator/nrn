@@ -40,7 +40,7 @@ namespace coreneuron {
 /// mechanism types of Memb_list(>0) or time(0) passed from Neuron
 enum mech_type {voltage = -1, i_membrane_ = -2};
 
-extern int cvode_active_;
+extern bool cvode_active_;
 /// Vector of maps for negative presyns
 extern std::vector<std::map<int, PreSyn*> > neg_gid2out;
 /// Maps for ouput and input presyns
@@ -58,7 +58,7 @@ extern void mk_netcvode(void);
 extern void nrn_p_construct(void);
 extern void nrn_setup(const char* filesdat,
                       bool is_mapping_needed,
-                      int byte_swap,
+                      bool byte_swap,
                       bool run_setup_cleanup = true,
                       const char* datapath = "",
                       const char* restore_path = "",
@@ -75,7 +75,7 @@ extern void nrn_set_extra_thread0_vdata(void);
 extern Point_process* nrn_artcell_instantiate(const char* mechname);
 extern int nrnmpi_spike_compress(int nspike, bool gidcompress, int xchng);
 extern bool nrn_use_bin_queue_;
-extern int nrn_need_byteswap;
+extern bool nrn_need_byteswap;
 
 extern void nrn_outputevent(unsigned char, double);
 extern void ncs2nrn_integrate(double tstop);
@@ -90,7 +90,7 @@ extern double set_mindelay(double maxdelay);
 
 extern int nrn_soa_padded_size(int cnt, int layout);
 
-extern int use_interleave_permute;
+extern int interleave_permute_type;
 extern int cellorder_nwarp;
 }  // namespace coreneuron
 #endif

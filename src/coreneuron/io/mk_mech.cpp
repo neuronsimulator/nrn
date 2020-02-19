@@ -51,16 +51,16 @@ int nrn_nobanner_;
 // NB: this should go away
 extern const char* nrn_version(int);
 
-int nrn_need_byteswap;
+bool nrn_need_byteswap;
 // following copied (except for nrn_need_byteswap line) from NEURON ivocvect.cpp
 #define BYTEHEADER   \
     uint32_t _II__;  \
     char* _IN__;     \
     char _OUT__[16]; \
-    int BYTESWAP_FLAG = 0;
+    bool BYTESWAP_FLAG = false;
 #define BYTESWAP(_X__, _TYPE__)                                 \
     BYTESWAP_FLAG = nrn_need_byteswap;                          \
-    if (BYTESWAP_FLAG == 1) {                                   \
+    if (BYTESWAP_FLAG) {                                        \
         _IN__ = (char*)&(_X__);                                 \
         for (_II__ = 0; _II__ < sizeof(_TYPE__); _II__++) {     \
             _OUT__[_II__] = _IN__[sizeof(_TYPE__) - _II__ - 1]; \
@@ -111,10 +111,10 @@ void mk_mech(const char* datpath) {
         // binary info in files needs to be byteswapped.
         int32_t x;
         nrn_assert(fread(&x, sizeof(int32_t), 1, f) == 1);
-        nrn_need_byteswap = 0;
+        nrn_need_byteswap = false;
         if (x != 1) {
             BYTEHEADER;
-            nrn_need_byteswap = 1;
+            nrn_need_byteswap = true;
             BYTESWAP(x, int32_t);
             nrn_assert(x == 1);
         }
@@ -128,7 +128,7 @@ static void mk_mech() {
     if (already_called) {
         return;
     }
-    nrn_need_byteswap = 0;
+    nrn_need_byteswap = false;
     std::stringstream ss;
     nrn_assert(nrn2core_mkmech_info_);
     (*nrn2core_mkmech_info_)(ss);

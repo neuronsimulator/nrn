@@ -56,7 +56,7 @@ extern double celsius;
 extern double t, dt;
 extern int rev_dt;
 extern int secondorder;
-extern int stoprun;
+extern bool stoprun;
 extern const char* bbcore_write_version;
 #define tstopbit (1 << 15)
 #define tstopset stoprun |= tstopbit

@@ -56,7 +56,7 @@ typedef struct {
     double spiketime;
 } NRNMPI_Spike;
 
-extern int nrnmpi_use; /* NEURON does MPI init and terminate?*/
+extern bool nrnmpi_use; /* NEURON does MPI init and terminate?*/
 
 }  // namespace coreneuron
 #include "coreneuron/mpi/nrnmpidec.h"

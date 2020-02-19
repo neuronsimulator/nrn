@@ -288,7 +288,7 @@ to not use any PreSyn information.
 static int setup_target_lists(int, int**);
 static void fill_multisend_lists(int, int, int*, int*&, int*&);
 
-void nrn_multisend_setup_targets(int use_phase2, int*& targets_phase1, int*& targets_phase2) {
+void nrn_multisend_setup_targets(bool use_phase2, int*& targets_phase1, int*& targets_phase2) {
     int* r;
     int sz = setup_target_lists(use_phase2, &r);
 

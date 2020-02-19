@@ -15,7 +15,7 @@
 #include <openacc.h>
 #endif
 namespace coreneuron {
-int use_interleave_permute;
+int interleave_permute_type;
 InterleaveInfo* interleave_info;  // nrn_nthread array
 
 
@@ -299,7 +299,7 @@ int* interleave_order(int ith, int ncell, int nnode, int* parent) {
         ii.firstnode = firstnode;
         ii.lastnode = lastnode;
         ii.cellsize = cellsize;
-        if (0 && ith == 0 && use_interleave_permute == 1) {
+        if (0 && ith == 0 && interleave_permute_type == 1) {
             printf("ith=%d nstride=%d ncell=%d nnode=%d\n", ith, nstride, ncell, nnode);
             for (int i = 0; i < ncell; ++i) {
                 printf("icell=%d cellsize=%d first=%d last=%d\n", i, cellsize[i], firstnode[i],
@@ -324,10 +324,10 @@ int* interleave_order(int ith, int ncell, int nnode, int* parent) {
             ii.cache_access = new size_t[nwarp];
             ii.child_race = new size_t[nwarp];
             for (int i = 0; i < nwarp; ++i) {
-                if (use_interleave_permute == 1) {
+                if (interleave_permute_type == 1) {
                     print_quality1(i, interleave_info[ith], ncell, p);
                 }
-                if (use_interleave_permute == 2) {
+                if (interleave_permute_type == 2) {
                     print_quality2(i, interleave_info[ith], p);
                 }
             }
@@ -661,7 +661,7 @@ void solve_interleaved1(int ith) {
 }
 
 void solve_interleaved(int ith) {
-    if (use_interleave_permute != 1) {
+    if (interleave_permute_type != 1) {
         solve_interleaved2(ith);
     } else {
         solve_interleaved1(ith);

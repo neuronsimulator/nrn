@@ -37,7 +37,7 @@ namespace coreneuron {
 class NetCon;
 class PreSyn;
 
-extern int use_solve_interleave;
+extern bool use_solve_interleave;
 
 /*
    Point_process._presyn, used only if its NET_RECEIVE sends a net_event, is
@@ -171,7 +171,7 @@ extern void nrn_thread_table_check(void);
 
 extern void nrn_threads_free(void);
 
-extern int _nrn_skip_initmodel;
+extern bool _nrn_skip_initmodel;
 
 
 extern void dt2thread(double);

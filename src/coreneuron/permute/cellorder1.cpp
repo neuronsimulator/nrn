@@ -8,7 +8,7 @@
 #include "coreneuron/permute/cellorder.hpp"
 #include "coreneuron/network/tnode.hpp"
 
-// just for use_interleave_permute
+// just for interleave_permute_type
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/utils/memory.h"
 
@@ -366,7 +366,7 @@ int* node_order(int ncell,
     level_from_root(nodevec);
 
     // nodevec[ncell:nnode] cells are interleaved in nodevec[0:ncell] cell order
-    if (use_interleave_permute == 1) {
+    if (interleave_permute_type == 1) {
         node_interleave_order(ncell, nodevec);
     } else {
         group_order2(nodevec, groupsize, ncell);
@@ -392,7 +392,7 @@ int* node_order(int ncell,
     }
 
     // administrative statistics for gauss elimination
-    if (use_interleave_permute == 1) {
+    if (interleave_permute_type == 1) {
         admin1(ncell, nodevec, nwarp, nstride, stride, firstnode, lastnode, cellsize);
     } else {
         //  admin2(ncell, nodevec, nwarp, nstride, stridedispl, stride, rootbegin, nodebegin,

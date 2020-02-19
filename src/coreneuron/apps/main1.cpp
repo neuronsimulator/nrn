@@ -127,10 +127,10 @@ char* prepare_args(int& argc, char**& argv, int use_mpi, const char* arg) {
 }
 
 int corenrn_embedded_run(int nthread, int have_gaps, int use_mpi, int use_fast_imem, const char* arg) {
-    corenrn_embedded = 1;
+    corenrn_embedded = true;
     corenrn_embedded_nthread = nthread;
-    coreneuron::nrn_have_gaps = have_gaps;
-    if (use_fast_imem) {
+    coreneuron::nrn_have_gaps = have_gaps != 0;
+    if (use_fast_imem != 0) {
         coreneuron::nrn_use_fast_imem = true;
     }
 
@@ -143,7 +143,7 @@ int corenrn_embedded_run(int nthread, int have_gaps, int use_mpi, int use_fast_i
     free(new_arg);
     delete[] argv;
 
-    return corenrn_embedded;
+    return corenrn_embedded ? 1 : 0;
 }
 }
 
@@ -249,23 +249,23 @@ void nrn_init_and_load_data(int argc,
     report_mem_usage("Before nrn_setup");
 
     // set if need to interleave cells
-    use_interleave_permute = corenrn_param.cell_interleave_permute;
+    interleave_permute_type = corenrn_param.cell_interleave_permute;
     cellorder_nwarp = corenrn_param.nwarp;
     use_solve_interleave = corenrn_param.cell_interleave_permute;
 
 #if LAYOUT == 1
     // permuting not allowed for AoS
-    use_interleave_permute = 0;
-    use_solve_interleave = 0;
+    interleave_permute_type = 0;
+    use_solve_interleave = false;
 #endif
 
-    if (corenrn_param.gpu && use_interleave_permute == 0) {
+    if (corenrn_param.gpu && interleave_permute_type == 0) {
         if (nrnmpi_myid == 0) {
             printf(
                 " WARNING : GPU execution requires --cell-permute type 1 or 2. Setting it to 1.\n");
         }
-        use_interleave_permute = 1;
-        use_solve_interleave = 1;
+        interleave_permute_type = 1;
+        use_solve_interleave = true;
     }
 
     // pass by flag so existing tests do not need a changed nrn_setup prototype.

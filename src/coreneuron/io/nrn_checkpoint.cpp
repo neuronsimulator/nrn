@@ -45,7 +45,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace coreneuron {
 bool nrn_checkpoint_arg_exists;
-int _nrn_skip_initmodel;
+bool _nrn_skip_initmodel;
 }  // namespace coreneuron
 #define UseFileHandlerWrap 0
 
@@ -868,7 +868,7 @@ bool checkpoint_initialize() {
 
     // in case some nrn_init allocate data we need to do that but do not
     // want to call initmodel.
-    _nrn_skip_initmodel = 1;
+    _nrn_skip_initmodel = true;
     for (int i = 0; i < nrn_nthread; ++i) {  // should be parallel
         NrnThread& nt = nrn_threads[i];
         for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
@@ -879,7 +879,7 @@ bool checkpoint_initialize() {
             }
         }
     }
-    _nrn_skip_initmodel = 0;
+    _nrn_skip_initmodel = false;
 
     // if PatternStim exists, needs initialization
     for (NrnThreadMembList* tml = nrn_threads[0].tml; tml; tml = tml->next) {
