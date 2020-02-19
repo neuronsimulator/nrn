@@ -33,7 +33,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/sim/multicore.hpp"
 #include "coreneuron/io/nrn_setup.hpp"
 #include "coreneuron/network/netcon.hpp"
-#include "coreneuron/utils/sdprintf.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/utils/nrn_assert.h"
 #include "coreneuron/coreneuron.hpp"
@@ -281,8 +280,8 @@ int prcellstate(int gid, const char* suffix) {
             if (ps.output_index_ == gid) {
                 // found it so create a <gid>_<suffix>.corenrn file
                 char buf[200];
-                sd_ptr filename = sdprintf(buf, sizeof(buf), "%d_%s.corenrn", gid, suffix);
-                FILE* f = fopen(filename, "w");
+                std::string filename = std::to_string(gid) + "_" + suffix + ".corenrn";
+                FILE* f = fopen(filename.c_str(), "w");
                 assert(f);
                 fprintf(f, "gid = %d\n", gid);
                 fprintf(f, "t = %.*g\n", precision, nt._t);

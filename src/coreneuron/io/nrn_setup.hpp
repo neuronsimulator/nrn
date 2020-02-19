@@ -32,7 +32,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include "coreneuron/sim/multicore.hpp"
 #include "coreneuron/io/nrn_filehandler.hpp"
-#include "coreneuron/utils/sdprintf.h"
 
 namespace coreneuron {
 static bool do_not_open;
@@ -129,17 +128,15 @@ inline void* phase_wrapper_w(NrnThread* nt) {
                 data_dir = restore_path_w;
             }
 
-            sd_ptr fname = sdprintf(fnamebuf, sizeof(fnamebuf),
-                                    std::string("%s/%d_" + getPhaseName<P>() + ".dat").c_str(),
-                                    data_dir, gidgroups_w[i]);
+            std::string fname = std::string(data_dir) + "/" + std::to_string(gidgroups_w[i]) + "_" + getPhaseName<P>() + ".dat";
 
             // Avoid trying to open the gid_gap.dat file if it doesn't exist when there are no
             // gap junctions in this gid
-            if (P == gap && !file_reader_w[i].file_exist(fname)) {
+            if (P == gap && !file_reader_w[i].file_exist(fname.c_str())) {
                 file_reader_w[i].close();
             } else {
                 // if no file failed to open or not opened at all
-                file_reader_w[i].open(fname, byte_swap_w);
+                file_reader_w[i].open(fname.c_str(), byte_swap_w);
             }
         }
         read_phase_aux<P>(file_reader_w[i], imult_w[i], *nt);

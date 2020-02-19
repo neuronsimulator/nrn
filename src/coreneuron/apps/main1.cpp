@@ -50,7 +50,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/io/nrnoptarg.hpp"
 #include "coreneuron/io/prcellstate.hpp"
 #include "coreneuron/utils/nrnmutdec.h"
-#include "coreneuron/utils/sdprintf.h"
 #include "coreneuron/utils/nrn_stats.h"
 #include "coreneuron/io/nrnreport.hpp"
 #include "coreneuron/gpu/nrn_acc_manager.hpp"
