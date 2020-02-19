@@ -13,6 +13,7 @@ target_link_libraries(cmd_interface_test_bin
                       coreneuron
                       ${reportinglib_LIBRARY}
                       ${sonatareport_LIBRARY})
+target_include_directories(cmd_interface_test_bin SYSTEM PRIVATE ${CORENEURON_PROJECT_SOURCE_DIR}/external/CLI11/include)
 
 add_test(NAME cmd_interface_test
          COMMAND ${TEST_EXEC_PREFIX} ${CMAKE_CURRENT_BINARY_DIR}/cmd_interface_test_bin)

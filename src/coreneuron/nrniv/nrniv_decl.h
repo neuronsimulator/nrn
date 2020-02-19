@@ -33,7 +33,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <map>
 #include "coreneuron/network/netcon.hpp"
 #include "coreneuron/utils/endianness.hpp"
-#include "coreneuron/io/nrnoptarg.hpp"
 namespace coreneuron {
 
 /// Mechanism type to be used from stdindex2ptr and nrn_dblpntr2nrncore (in Neuron)
@@ -60,7 +59,10 @@ extern void nrn_p_construct(void);
 extern void nrn_setup(const char* filesdat,
                       bool is_mapping_needed,
                       int byte_swap,
-                      bool run_setup_cleanup = true);
+                      bool run_setup_cleanup = true,
+                      const char* datapath = "",
+                      const char* restore_path = "",
+                      double* mindelay = nullptr);
 extern double* stdindex2ptr(int mtype, int index, NrnThread&);
 extern void delete_trajectory_requests(NrnThread&);
 extern int nrn_setup_multiple;

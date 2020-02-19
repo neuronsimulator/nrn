@@ -183,7 +183,6 @@ void update(NrnThread* _nt) {
     double* vec_v = &(VEC_V(0));
     double* vec_rhs = &(VEC_RHS(0));
     int i2 = _nt->end;
-
 #if defined(_OPENACC)
     int stream_id = _nt->stream_id;
 #endif

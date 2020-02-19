@@ -43,7 +43,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/utils/memory.h"
 #include "coreneuron/io/nrn_setup.hpp"
 #include "coreneuron/network/partrans.hpp"
-#include "coreneuron/io/nrnoptarg.hpp"
 #include "coreneuron/io/nrn_checkpoint.hpp"
 #include "coreneuron/permute/node_permute.h"
 #include "coreneuron/permute/cellorder.hpp"
@@ -674,7 +673,10 @@ void nrn_setup_cleanup() {
 void nrn_setup(const char* filesdat,
                bool is_mapping_needed,
                int byte_swap,
-               bool run_setup_cleanup) {
+               bool run_setup_cleanup,
+               const char* datpath,
+               const char* restore_path,
+               double* mindelay) {
     /// Number of local cell groups
     int ngroup = 0;
 
@@ -735,17 +737,9 @@ void nrn_setup(const char* filesdat,
 
     FileHandler* file_reader = new FileHandler[ngroup];
 
-    std::string datapath = nrnopt_get_str("--datpath");
-    std::string restore_path = nrnopt_get_str("--restore");
-
-    // if not restoring then phase2 files will be read from dataset directory
-    if (!restore_path.length()) {
-        restore_path = datapath;
-    }
-
     /* nrn_multithread_job supports serial, pthread, and openmp. */
-    store_phase_args(ngroup, gidgroups, imult, file_reader, datapath.c_str(), restore_path.c_str(),
-                     byte_swap);
+    store_phase_args(ngroup, gidgroups, imult, file_reader, datpath,
+            strlen(restore_path) != 0 ? restore_path : datpath, byte_swap);
 
     // gap junctions
     if (nrn_have_gaps) {
@@ -785,8 +779,7 @@ void nrn_setup(const char* filesdat,
     if (is_mapping_needed)
         coreneuron::phase_wrapper<(coreneuron::phase)3>();
 
-    double mindelay = set_mindelay(nrnopt_get_dbl("--mindelay"));
-    nrnopt_modify_dbl("--mindelay", mindelay);
+    *mindelay = set_mindelay(*mindelay);
 
     if (run_setup_cleanup)  // if run_setup_cleanup==false, user must call nrn_setup_cleanup() later
         nrn_setup_cleanup();
@@ -1008,9 +1001,6 @@ void nrn_cleanup(bool clean_ion_global_map) {
         delete[] nrnthread_chkpnt;
         nrnthread_chkpnt = nullptr;
     }
-
-    // clean ezOpt parser allocated memory (if any)
-    nrnopt_delete();
 
     // clean ions global maps
     if (clean_ion_global_map) {

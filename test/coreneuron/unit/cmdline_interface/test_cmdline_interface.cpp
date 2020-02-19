@@ -30,25 +30,18 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #define BOOST_TEST_MAIN
 
 #include <boost/test/unit_test.hpp>
-#include "coreneuron/io/nrnoptarg.hpp"
-#include <float.h>
+#include <cfloat>
+#include "coreneuron/apps/corenrn_parameters.hpp"
+
 using namespace coreneuron;
+
 BOOST_AUTO_TEST_CASE(cmdline_interface) {
 
     const char* argv[] = {
 
         "nrniv-core",
 
-        "--spikebuf",
-        "100",
-
-        "--threading",
-
-        "--datpath",
-        "/this/is/the/data/path",
-
-        "--checkpoint",
-        "/this/is/the/chkp/path",
+        "--mpi",
 
         "--dt",
         "0.02",
@@ -56,53 +49,21 @@ BOOST_AUTO_TEST_CASE(cmdline_interface) {
         "--tstop",
         "0.1",
 
-        "--filesdat",
-        "/this/is/the/file/path",
-
-        "--prcellgid",
-        "12",
-
         "--gpu",
-
-        "--dt_io",
-        "0.2",
-
-        "--forwardskip",
-        "0.02",
-
-        "--celsius",
-        "25.12",
-
-        "-mpi",
-
-        "--outpath",
-        "/this/is/the/output/path",
-
-        "--pattern",
-        "filespike.dat",
-
-        "--report-conf",
-        "report.conf",
 
         "--cell-permute",
         "2",
 
-        "--voltage",
-        "-32",
-
         "--nwarp",
         "8",
 
-        "--extracon",
-        "1000",
+        "-d",
+        "./",
 
-        "--multiple",
-        "3",
+        "--voltage",
+        "-32",
 
-        "--binqueue",
-
-        "--mindelay",
-        "0.1",
+        "--threading",
 
         "--ms-phases",
         "1",
@@ -110,90 +71,98 @@ BOOST_AUTO_TEST_CASE(cmdline_interface) {
         "--ms-subintervals",
         "2",
 
+        "--multisend",
+
         "--spkcompress",
         "32",
 
-        "--multisend"};
+        "--binqueue",
+
+        "--spikebuf",
+        "100",
+
+        "--prcellgid",
+        "12",
+
+        "--forwardskip",
+        "0.02",
+
+        "--celsius",
+        "25.12",
+
+        "--extracon",
+        "1000",
+
+        "--multiple",
+        "3",
+
+        "--mindelay",
+        "0.1",
+
+        "--dt_io",
+        "0.2"
+        };
 
     int argc = 0;
 
-    for (; strcmp(argv[argc], "--multisend"); argc++)
-        ;
+    for (; strcmp(argv[argc], "0.2"); argc++);
 
     argc++;
-
-    nrnopt_parse(argc, argv);
     
-    BOOST_CHECK(nrnopt_get_int("--seed") == -1);            // testing default value 
+    corenrn_parameters corenrn_param_test;
+
+    corenrn_param_test.parse(argc, const_cast<char**>(argv)); //discarding const as CLI11 interface is not const
     
-    BOOST_CHECK(nrnopt_get_int("--spikebuf") == 100);
+    BOOST_CHECK(corenrn_param_test.seed == -1);            // testing default value
 
-    BOOST_CHECK(nrnopt_get_flag("--threading") == true);
+    BOOST_CHECK(corenrn_param_test.spikebuf == 100);
 
-    BOOST_CHECK(!strcmp(nrnopt_get_str("--datpath").c_str(), "/this/is/the/data/path"));
+    BOOST_CHECK(corenrn_param_test.threading == true);
 
-    BOOST_CHECK(!strcmp(nrnopt_get_str("--checkpoint").c_str(), "/this/is/the/chkp/path"));
+    BOOST_CHECK(corenrn_param_test.dt == 0.02);
 
-    BOOST_CHECK(nrnopt_get_dbl("--dt") == 0.02);
+    BOOST_CHECK(corenrn_param_test.tstop == 0.1);
 
-    BOOST_CHECK(nrnopt_get_dbl("--tstop") == 0.1);
+    BOOST_CHECK(corenrn_param_test.prcellgid == 12);
 
-    BOOST_CHECK(!strcmp(nrnopt_get_str("--filesdat").c_str(), "/this/is/the/file/path"));
+    BOOST_CHECK(corenrn_param_test.gpu == true);
 
-    BOOST_CHECK(nrnopt_get_int("--prcellgid") == 12);
+    BOOST_CHECK(corenrn_param_test.dt_io == 0.2);
 
-    BOOST_CHECK(nrnopt_get_flag("--gpu") == true);
+    BOOST_CHECK(corenrn_param_test.forwardskip == 0.02);
 
-    BOOST_CHECK(nrnopt_get_dbl("--dt_io") == 0.2);
+    BOOST_CHECK(corenrn_param_test.celsius == 25.12);
 
-    BOOST_CHECK(nrnopt_get_dbl("--forwardskip") == 0.02);
+    BOOST_CHECK(corenrn_param_test.mpi_enable == true);
 
-    BOOST_CHECK(nrnopt_get_dbl("--celsius") == 25.12);
+    BOOST_CHECK(corenrn_param_test.cell_interleave_permute == 2);
 
-    BOOST_CHECK(nrnopt_get_flag("-mpi") == true);
+    BOOST_CHECK(corenrn_param_test.voltage == -32);
 
-    BOOST_CHECK(!strcmp(nrnopt_get_str("--outpath").c_str(), "/this/is/the/output/path"));
+    BOOST_CHECK(corenrn_param_test.nwarp == 8);
 
-    BOOST_CHECK(!strcmp(nrnopt_get_str("--pattern").c_str(), "filespike.dat"));
+    BOOST_CHECK(corenrn_param_test.extracon == 1000);
 
-    BOOST_CHECK(!strcmp(nrnopt_get_str("--report-conf").c_str(), "report.conf"));
+    BOOST_CHECK(corenrn_param_test.multiple == 3);
 
-    BOOST_CHECK(nrnopt_get_int("--cell-permute") == 2);
+    BOOST_CHECK(corenrn_param_test.multisend == true);
 
-    BOOST_CHECK(nrnopt_get_dbl("--voltage") == -32);
+    BOOST_CHECK(corenrn_param_test.mindelay == 0.1);
 
-    BOOST_CHECK(nrnopt_get_int("--nwarp") == 8);
+    BOOST_CHECK(corenrn_param_test.ms_phases == 1);
 
-    BOOST_CHECK(nrnopt_get_int("--extracon") == 1000);
+    BOOST_CHECK(corenrn_param_test.ms_subint == 2);
 
-    BOOST_CHECK(nrnopt_get_int("--multiple") == 3);
+    BOOST_CHECK(corenrn_param_test.spkcompress == 32);
 
-    BOOST_CHECK(nrnopt_get_flag("--binqueue") == true);
-
-    BOOST_CHECK(nrnopt_get_dbl("--mindelay") == 0.1);
-
-    BOOST_CHECK(nrnopt_get_int("--ms-phases") == 1);
-
-    BOOST_CHECK(nrnopt_get_int("--ms-subintervals") == 2);
-
-    BOOST_CHECK(nrnopt_get_int("--spkcompress") == 32);
-
-    BOOST_CHECK(nrnopt_get_flag("--multisend") == true);
-
-
-    // check if nrnopt_modify_dbl works properly
-    nrnopt_modify_dbl("--dt", 18.1);
-    BOOST_CHECK(nrnopt_get_dbl("--dt") == 18.1);
+    BOOST_CHECK(corenrn_param_test.multisend == true);
 
     // check if default flags are false
     const char* argv_empty[] = {"nrniv-core"};
     argc = 1;
 
-    nrnopt_parse(argc, argv_empty);
+    corenrn_param_test.dt = 18.1;
+    
+    BOOST_CHECK(corenrn_param_test.dt == 18.1);
 
-    BOOST_CHECK(nrnopt_get_flag("--threading") == false);
-    BOOST_CHECK(nrnopt_get_flag("--gpu") == false);
-    BOOST_CHECK(nrnopt_get_flag("-mpi") == false);
-    BOOST_CHECK(nrnopt_get_flag("--binqueue") == false);
-    BOOST_CHECK(nrnopt_get_flag("--multisend") == false);
 }

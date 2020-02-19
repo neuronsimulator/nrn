@@ -1,7 +1,6 @@
 /// Corenrnmech is a wrapper lib providing a single solve_core function
 /// which initializes the solver, loads the external mechanisms and launches the simulation
 
-#include <coreneuron/enginemech.h>
 #include <coreneuron/engine.h>
 
 #ifdef ADDITIONAL_MECHS

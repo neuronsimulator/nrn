@@ -5,18 +5,19 @@
 # =============================================================================
 
 cmake_minimum_required(VERSION 3.7 FATAL_ERROR)
-project(coreneuron)
+project(coreneuron VERSION 0.18.0)
+
+# It is a bad idea having floating point versions, since macros cant handle them
+# We therefore, have version as an int, which is pretty much standard
+math(EXPR CORENEURON_VERSION_COMBINED
+  "${coreneuron_VERSION_MAJOR} * 100 + ${coreneuron_VERSION_MINOR}")
 
 # =============================================================================
 # CMake common project settings
 # =============================================================================
-set(VERSION_MAJOR "0")
-set(VERSION_MINOR "16")
-set(VERSION_PATCH "0")
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(VERSION_STRING "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 set(CMAKE_BUILD_TYPE
         RelWithDebInfo
         CACHE STRING "Empty or one of Debug, Release, RelWithDebInfo")
@@ -46,6 +47,8 @@ include(ReleaseDebugAutoFlags)
 include(CrayPortability)
 include(SetRpath)
 include(CTest)
+include(AddCLI11Submodule)
+add_subdirectory(${CORENEURON_PROJECT_SOURCE_DIR}/external/CLI11)
 
 # =============================================================================
 # Build options

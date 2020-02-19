@@ -7,8 +7,8 @@
 # commonly included directories
 include_directories(utils/randoms
                     ${MPI_INCLUDE_PATH}
-                    ${CMAKE_CURRENT_BINARY_DIR}
-                    ${CORENEURON_PROJECT_SOURCE_DIR})
+                    ${CMAKE_BINARY_DIR}/coreneuron
+                    ${CMAKE_BINARY_DIR}/include)
 
 # put libraries (e.g. dll) in bin directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -20,6 +20,7 @@ file(GLOB_RECURSE CORENEURON_HEADER_FILES "*.h*")
 file(GLOB_RECURSE CORENEURON_TEMPLATE_FILES "*.ipp")
 file(GLOB CORENEURON_CODE_FILES
                   "apps/main1.cpp"
+                  "apps/corenrn_parameters.cpp"
                   "gpu/*.cpp"
                   "io/*.cpp"
                   "mechanism/*.cpp"
@@ -173,6 +174,7 @@ target_link_libraries(coreneuron
                       ${CALIPER_LIB}
                       ${CALIPER_MPI_LIB}
                       ${likwid_LIBRARIES})
+target_include_directories(coreneuron SYSTEM PRIVATE ${CORENEURON_PROJECT_SOURCE_DIR}/external/CLI11/include)
 
 target_link_libraries(corenrnmech scopmath coreneuron)
 
@@ -229,6 +231,8 @@ configure_file(${DIMPLIC_CODE_FILE} ${CMAKE_BINARY_DIR}/share/coreneuron/dimplic
 configure_file(${ENGINEMECH_CODE_FILE} ${CMAKE_BINARY_DIR}/share/coreneuron/enginemech.cpp COPYONLY)
 
 # Make headers avail to build tree
+configure_file(engine.h.in ${CMAKE_BINARY_DIR}/include/coreneuron/engine.h @ONLY)
+
 file(GLOB_RECURSE main_headers RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" *.h *.hpp *.ispc)
 foreach(header ${main_headers})
   configure_file("${header}" "${CMAKE_BINARY_DIR}/include/coreneuron/${header}" COPYONLY)
@@ -265,8 +269,8 @@ install(TARGETS coreneuron corenrnmech ${link_cudacoreneuron}
 install(TARGETS scopmath EXPORT coreneuron DESTINATION lib)
 
 # headers and some standalone code files for nrnivmodl-core
-install(DIRECTORY .
-        DESTINATION include/coreneuron
+install(DIRECTORY ${CMAKE_BINARY_DIR}/include/coreneuron
+        DESTINATION include/
         FILES_MATCHING
         PATTERN "*.h*"
         PATTERN "*.ipp"

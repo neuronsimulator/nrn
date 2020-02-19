@@ -47,7 +47,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/io/output_spikes.hpp"
 #include "coreneuron/io/nrn_checkpoint.hpp"
 #include "coreneuron/utils/memory_utils.h"
-#include "coreneuron/io/nrnoptarg.hpp"
+#include "coreneuron/apps/corenrn_parameters.hpp"
 #include "coreneuron/io/prcellstate.hpp"
 #include "coreneuron/utils/nrnmutdec.h"
 #include "coreneuron/utils/nrn_stats.h"
@@ -97,7 +97,7 @@ char* prepare_args(int& argc, char**& argv, int use_mpi, const char* arg) {
     args.insert(0, " coreneuron ");
     args.append(" --skip-mpi-finalize ");
     if (use_mpi) {
-        args.append(" -mpi ");
+        args.append(" --mpi ");
     }
 
     // we can't modify string with strtok, make copy
@@ -187,10 +187,10 @@ void nrn_init_and_load_data(int argc,
 
     // set global variables
     // precedence is: set by user, globals.dat, 34.0
-    celsius = nrnopt_get_dbl("--celsius");
+    celsius = corenrn_param.celsius;
 
 #if _OPENACC
-    if (!nrnopt_get_flag("--gpu") && nrnopt_get_int("--cell-permute") == 2) {
+    if (!corenrn_param.gpu && corenrn_param.cell_interleave_permute == 2) {
         fprintf(
             stderr,
             "compiled with _OPENACC does not allow the combination of --cell-permute=2 and missing --gpu\n");
@@ -200,37 +200,39 @@ void nrn_init_and_load_data(int argc,
 
 // if multi-threading enabled, make sure mpi library supports it
 #if NRNMPI
-    if (nrnopt_get_flag("--threading")) {
+    if (corenrn_param.threading) {
         nrnmpi_check_threading_support();
     }
 #endif
 
     // full path of files.dat file
-    std::string filesdat(nrnopt_get_str("--datpath") + "/" + nrnopt_get_str("--filesdat"));
+    std::string filesdat(corenrn_param.datpath + "/" + corenrn_param.filesdat);
 
     // read the global variable names and set their values from globals.dat
-    set_globals(nrnopt_get_str("--datpath").c_str(), nrnopt_get_flag("--seed"),
-                nrnopt_get_int("--seed"));
+    set_globals(corenrn_param.datpath.c_str(), (corenrn_param.seed==0),
+                corenrn_param.seed);
 
     // set global variables for start time, timestep and temperature
-    std::string restore_path = nrnopt_get_str("--restore");
+    std::string restore_path = corenrn_param.restorepath;
     t = restore_time(restore_path.c_str());
 
-    if (nrnopt_get_dbl("--dt") != -1000.) {  // command line arg highest precedence
-        dt = nrnopt_get_dbl("--dt");
+    if (corenrn_param.dt != -1000.) {  // command line arg highest precedence
+        dt = corenrn_param.dt;
     } else if (dt == -1000.) {  // not on command line and no dt in globals.dat
         dt = 0.025;             // lowest precedence
     }
-    nrnopt_modify_dbl("--dt", dt);
+
+    corenrn_param.dt = dt;
 
     rev_dt = (int)(1. / dt);
 
-    if (nrnopt_get_dbl("--celsius") != -1000.) {  // command line arg highest precedence
-        celsius = nrnopt_get_dbl("--celsius");
+    if (corenrn_param.celsius != -1000.) {  // command line arg highest precedence
+        celsius = corenrn_param.celsius;
     } else if (celsius == -1000.) {  // not on command line and no celsius in globals.dat
         celsius = 34.0;              // lowest precedence
     }
-    nrnopt_modify_dbl("--celsius", celsius);
+
+    corenrn_param.celsius = celsius;
 
 #ifdef ISPC_INTEROP
     ispc_celsius = celsius;
@@ -239,16 +241,17 @@ void nrn_init_and_load_data(int argc,
     mk_netcvode();
 
     // One part done before call to nrn_setup. Other part after.
-    if (nrnopt_get_flag("--pattern")) {
+
+    if (!corenrn_param.patternstim.empty()) {
         nrn_set_extra_thread0_vdata();
     }
 
     report_mem_usage("Before nrn_setup");
 
     // set if need to interleave cells
-    use_interleave_permute = nrnopt_get_int("--cell-permute");
-    cellorder_nwarp = nrnopt_get_int("--nwarp");
-    use_solve_interleave = nrnopt_get_int("--cell-permute");
+    use_interleave_permute = corenrn_param.cell_interleave_permute;
+    cellorder_nwarp = corenrn_param.nwarp;
+    use_solve_interleave = corenrn_param.cell_interleave_permute;
 
 #if LAYOUT == 1
     // permuting not allowed for AoS
@@ -256,7 +259,7 @@ void nrn_init_and_load_data(int argc,
     use_solve_interleave = 0;
 #endif
 
-    if (nrnopt_get_flag("--gpu") && use_interleave_permute == 0) {
+    if (corenrn_param.gpu && use_interleave_permute == 0) {
         if (nrnmpi_myid == 0) {
             printf(
                 " WARNING : GPU execution requires --cell-permute type 1 or 2. Setting it to 1.\n");
@@ -266,43 +269,44 @@ void nrn_init_and_load_data(int argc,
     }
 
     // pass by flag so existing tests do not need a changed nrn_setup prototype.
-    nrn_setup_multiple = nrnopt_get_int("--multiple");
-    nrn_setup_extracon = nrnopt_get_int("--extracon");
+    nrn_setup_multiple = corenrn_param.multiple;
+    nrn_setup_extracon = corenrn_param.extracon;
     // multisend options
-    use_multisend_ = nrnopt_get_flag("--multisend") ? 1 : 0;
-    n_multisend_interval = nrnopt_get_int("--ms-subintervals");
-    use_phase2_ = (nrnopt_get_int("--ms-phases") == 2) ? 1 : 0;
+    use_multisend_ = corenrn_param.multisend ? 1 : 0;
+    n_multisend_interval = corenrn_param.ms_subint;
+    use_phase2_ = (corenrn_param.ms_phases == 2) ? 1 : 0;
 
     // reading *.dat files and setting up the data structures, setting mindelay
-    nrn_setup(filesdat.c_str(), is_mapping_needed, nrn_need_byteswap, run_setup_cleanup);
+    nrn_setup(filesdat.c_str(), is_mapping_needed, nrn_need_byteswap, run_setup_cleanup,
+              corenrn_param.datpath.c_str(), restore_path.c_str(), &corenrn_param.mindelay);
 
     // Allgather spike compression and  bin queuing.
-    nrn_use_bin_queue_ = nrnopt_get_flag("--binqueue");
-    int spkcompress = nrnopt_get_int("--spkcompress");
+    nrn_use_bin_queue_ = corenrn_param.binqueue;
+    int spkcompress = corenrn_param.spkcompress;
     nrnmpi_spike_compress(spkcompress, (spkcompress ? true : false), use_multisend_);
 
     report_mem_usage("After nrn_setup ");
 
     // Invoke PatternStim
-    if (nrnopt_get_flag("--pattern")) {
-        nrn_mkPatternStim(nrnopt_get_str("--pattern").c_str());
+    if (!corenrn_param.patternstim.empty()) {
+        nrn_mkPatternStim(corenrn_param.patternstim.c_str());
     }
 
     /// Setting the timeout
     nrn_set_timeout(200.);
 
     // show all configuration parameters for current run
-    nrnopt_show();
     if (nrnmpi_myid == 0) {
+        std::cout << corenrn_param << std::endl;
         std::cout << " Start time (t) = " << t << std::endl << std::endl;
     }
 
     // allocate buffer for mpi communication
-    mk_spikevec_buffer(nrnopt_get_int("--spikebuf"));
+    mk_spikevec_buffer(corenrn_param.spikebuf);
 
     report_mem_usage("After mk_spikevec_buffer");
 
-    if (nrnopt_get_flag("-gpu")) {
+    if (corenrn_param.gpu) {
         setup_nrnthreads_on_device(nrn_threads, nrn_nthread);
     }
 
@@ -311,7 +315,7 @@ void nrn_init_and_load_data(int argc,
     }
 
     // call prcellstate for prcellgid
-    call_prcellstate_for_prcellgid(nrnopt_get_int("--prcellgid"), nrnopt_get_flag("-gpu"), 1);
+    call_prcellstate_for_prcellgid(corenrn_param.prcellgid, corenrn_param.gpu, 1);
 }
 
 void call_prcellstate_for_prcellgid(int prcellgid, int compute_gpu, int is_init) {
@@ -429,15 +433,29 @@ static void trajectory_return() {
 
 using namespace coreneuron;
 
+
 extern "C" void mk_mech_init(int argc, char** argv) {
 #if NRNMPI
     nrnmpi_init(1, &argc, &argv);
 #endif
     // read command line parameters and parameter config files
-    nrnopt_parse(argc, (const char**)argv);
+
+    try {
+        corenrn_param.parse(argc, argv);
+    }
+    catch (...) {
+        nrn_abort(1);
+    }
+
+    if (!corenrn_param.writeParametersFilepath.empty()) {
+        std::ofstream out(corenrn_param.writeParametersFilepath, std::ios::trunc);
+        out << corenrn_param.app.config_to_str(false, false);
+        out.close();
+    }
 
     // reads mechanism information from bbcore_mech.dat
-    mk_mech(nrnopt_get_str("--datpath").c_str());
+
+    mk_mech((corenrn_param.datpath).c_str());
 }
 
 extern "C" int run_solve_core(int argc, char** argv) {
@@ -448,13 +466,18 @@ extern "C" int run_solve_core(int argc, char** argv) {
 
     report_mem_usage("After mk_mech");
 
-    if (nrnopt_get_str("--report-conf").size()) {
-        if (nrnopt_get_int("--multiple") > 1) {
+    // Create outpath if it does not exist
+    if (nrnmpi_myid == 0) {
+        mkdir_p(corenrn_param.outpath.c_str());
+    }
+
+    if (!corenrn_param.reportfilepath.empty()) {
+        if (corenrn_param.multiple > 1) {
             if (nrnmpi_myid == 0)
                 printf("\n WARNING! : Can't enable reports with model duplications feature! \n");
         } else {
-            configs = create_report_configurations(nrnopt_get_str("--report-conf").c_str(),
-                                                   nrnopt_get_str("--outpath").c_str());
+            configs = create_report_configurations(corenrn_param.reportfilepath.c_str(),
+                                                   corenrn_param.outpath.c_str());
             reports_needs_finalize = configs.size();
         }
     }
@@ -465,11 +488,14 @@ extern "C" int run_solve_core(int argc, char** argv) {
         nrn_init_and_load_data(argc, argv, !configs.empty());
     }
 
-    std::string checkpoint_path = nrnopt_get_str("--checkpoint");
-    if (strlen(checkpoint_path.c_str())) {
-        nrn_checkpoint_arg_exists = true;
+    nrn_checkpoint_arg_exists = !corenrn_param.checkpointpath.empty();
+    if (nrn_checkpoint_arg_exists) {
+        if (nrnmpi_myid == 0) {
+            mkdir_p(corenrn_param.checkpointpath.c_str());
+        }
     }
-    std::string output_dir = nrnopt_get_str("--outpath");
+
+    std::string output_dir = corenrn_param.outpath;
 
     if (nrnmpi_myid == 0) {
         mkdir_p(output_dir.c_str());
@@ -477,17 +503,17 @@ extern "C" int run_solve_core(int argc, char** argv) {
 #if NRNMPI
     nrnmpi_barrier();
 #endif
-    bool compute_gpu = nrnopt_get_flag("-gpu");
-    bool skip_mpi_finalize = nrnopt_get_flag("--skip-mpi-finalize");
+    bool compute_gpu = corenrn_param.gpu;
+    bool skip_mpi_finalize = corenrn_param.skip_mpi_finalize;
 
 // clang-format off
     #pragma acc data copyin(celsius, secondorder) if (compute_gpu)
     // clang-format on
     {
-        double v = nrnopt_get_dbl("--voltage");
-        double dt = nrnopt_get_dbl("--dt");
-        double delay = nrnopt_get_dbl("--mindelay");
-        double tstop = nrnopt_get_dbl("--tstop");
+        double v = corenrn_param.voltage;
+        double dt = corenrn_param.dt;
+        double delay = corenrn_param.mindelay;
+        double tstop = corenrn_param.tstop;
 
         if (tstop < t && nrnmpi_myid == 0) {
             printf("Error: Stop time (%lf) < Start time (%lf), restoring from checkpoint? \n",
@@ -515,7 +541,6 @@ extern "C" int run_solve_core(int argc, char** argv) {
 
         // register all reports into reportinglib
         double min_report_dt = INT_MAX;
-        int report_buffer_size = nrnopt_get_int("--report-buffer-size");
         for (size_t i = 0; i < configs.size(); i++) {
             register_report(dt, tstop, delay, configs[i]);
             if (configs[i].report_dt < min_report_dt) {
@@ -524,35 +549,37 @@ extern "C" int run_solve_core(int argc, char** argv) {
         }
         // Set the buffer size if is not the default value. Otherwise use report.conf on
         // register_report
-        if (!nrnopt_is_default_value("--report-buffer-size")) {
-            set_report_buffer_size(report_buffer_size);
+        if (corenrn_param.report_buff_size != corenrn_param.report_buff_size_default) {
+            set_report_buffer_size(corenrn_param.report_buff_size);
         }
         setup_report_engine(min_report_dt, delay);
         configs.clear();
 
         // call prcellstate for prcellgid
-        call_prcellstate_for_prcellgid(nrnopt_get_int("--prcellgid"), compute_gpu, 0);
+        call_prcellstate_for_prcellgid(corenrn_param.prcellgid, compute_gpu, 0);
 
         // handle forwardskip
-        if (nrnopt_get_dbl("--forwardskip") > 0.0) {
-            handle_forward_skip(nrnopt_get_dbl("--forwardskip"), nrnopt_get_int("--prcellgid"));
+        if (corenrn_param.forwardskip > 0.0) {
+            handle_forward_skip(corenrn_param.forwardskip, corenrn_param.prcellgid);
         }
 
         /// Solver execution
         Instrumentor::start_profile();
         Instrumentor::phase_begin("simulation");
-        BBS_netpar_solve(nrnopt_get_dbl("--tstop"));
+        BBS_netpar_solve(corenrn_param.tstop);
         Instrumentor::phase_end("simulation");
         Instrumentor::stop_profile();
+
         // direct mode and full trajectory gathering on CoreNEURON, send back.
         if (corenrn_embedded) {
             trajectory_return();
         }
+
         // Report global cell statistics
         report_cell_stats();
 
         // prcellstate after end of solver
-        call_prcellstate_for_prcellgid(nrnopt_get_int("--prcellgid"), compute_gpu, 0);
+        call_prcellstate_for_prcellgid(corenrn_param.prcellgid, compute_gpu, 0);
     }
 
     // write spike information to outpath
@@ -563,7 +590,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
 
     {
         Instrumentor::phase p("checkpoint");
-        write_checkpoint(nrn_threads, nrn_nthread, checkpoint_path.c_str(), nrn_need_byteswap);
+        write_checkpoint(nrn_threads, nrn_nthread, corenrn_param.checkpointpath.c_str(), nrn_need_byteswap);
     }
 
     // must be done after checkpoint (to avoid deleting events)

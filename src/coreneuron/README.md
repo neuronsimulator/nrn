@@ -99,7 +99,7 @@ Note that the CUDA Toolkit version should be compatible with PGI compiler instal
 You have to run GPU executable with the `--gpu` or `-gpu`. Make sure to enable cell re-ordering mechanism to improve GPU performance using `--cell_permute` option (permutation types : 2 or 1):
 
 ```bash
-mpirun -n 1 ./bin/nrniv-core -d ../tests/integration/ring -mpi -e 100 --gpu --cell_permute 2
+mpirun -n 1 ./bin/nrniv-core --mpi --gpu --tstop 100 --datpath ../tests/integration/ring --cell-permute 2
 ```
 
 Note that if your model is using Random123 random number generator, you can't use same executable for CPU and GPU runs. We suggest to build separate executable for CPU and GPU simulations. This will be fixed in future releases.
@@ -132,65 +132,26 @@ cmake .. -DCMAKE_CXX_FLAGS="-O3 -g" \
 
 ## RUNNING SIMULATION:
 
-Note that the CoreNEURON simulator dependends on NEURON to build the network model: see [NEURON](https://www.neuron.yale.edu/neuron/) documentation for more information. Once you build the model using NEURON, you can launch CoreNEURON on the same or different machine by:
+Note that the CoreNEURON simulator depends on NEURON to build the network model: see [NEURON](https://www.neuron.yale.edu/neuron/) documentation for more information. Once you build the model using NEURON, you can launch CoreNEURON on the same or different machine by:
 
 ```bash
 export OMP_NUM_THREADS=2     #set appropriate value
-mpiexec -np 2 build/bin/nrniv-core -e 10 -d /path/to/model/built/by/neuron -mpi
+mpiexec -np 2 build/bin/nrniv-core --tstop 10 --datpath /path/to/model/built/by/neuron --mpi
 ```
 
 [This tutorial](https://github.com/nrnhines/ringtest) provide more information for parallel runs and performance comparison.
 
-In order to see the command line options, you can use:
+### Command Line Interface
 
-```bash
-/path/to/isntall/directory/nrniv-core --help
--b, --spikebuf ARG          Spike buffer size. (100000)
--c, --threading             Parallel threads. The default is serial threads.
--d, --datpath ARG           Path containing CoreNeuron data files. (.)
--dt, --dt ARG               Fixed time step. The default value is set by
-                            defaults.dat or is 0.025.
--e, --tstop ARG             Stop time (ms). (100)
--f, --filesdat ARG          Name for the distribution file. (files.dat)
--g, --prcellgid ARG         Output prcellstate information for the gid NUMBER.
--gpu, --gpu                 Enable use of GPUs. The default implies cpu only
-                            run.
--h, --help                  Print a usage message briefly summarizing these
-                            command-line options, then exit.
--k, --forwardskip ARG       Forwardskip to TIME
--l, --celsius ARG           Temperature in degC. The default value is set in
-                            defaults.dat or else is 34.0.
--mpi                        Enable MPI. In order to initialize MPI environment
-                            this argument must be specified.
--o, --outpath ARG           Path to place output data files. (.)
--p, --pattern ARG           Apply patternstim using the specified spike file.
--R, --cell-permute ARG      Cell permutation, 0 No; 1 optimise node adjacency; 2
-                            optimize parent adjacency. (1)
--s, --seed ARG              Initialization seed for random number generator
-                            (int).
--v, --voltage ARG           Initial voltage used for nrn_finitialize(1, v_init).
-                            If 1000, then nrn_finitialize(0,...). (-65.)
--W, --nwarp ARG             Number of warps to balance. (0)
--x, --extracon ARG          Number of extra random connections in each thread to
-                            other duplicate models (int).
---binqueue                  Use bin queue.
---checkpoint ARG            Enable checkpoint and specify directory to store
-                            related files.
---mindelay ARG              Maximum integration interval (likely reduced by
-                            minimum NetCon delay). (10)
---ms-phases ARG             Number of multisend phases, 1 or 2. (2)
---ms-subintervals ARG       Number of multisend subintervals, 1 or 2. (2)
---multisend                 Use Multisend spike exchange instead of Allgather.
---read-config ARG           Read configuration file filename.
---restore ARG               Restore simulation from provided checkpoint
-                            directory.
---show                      Print args.
---skip-mpi-finalize         Do not call mpi finalize.
---spkcompress ARG           Spike compression. Up to ARG are exchanged during
-                            MPI_Allgather. (0)
---write-config ARG          Write configuration file filename.
-```
+:warning: :warning: :warning: **In a recent update the command line interface was updated, so please update your scripts accordingly!**
 
+Some details on the new interface:
+
+The new command line interface is based on CLI11. You can find more details by running `coreneuron_exec --help`.
+
+Multiple characters options with single dash (`-gpu`, `-mpi`, `-dt`) are **not** supported anymore. All those options now require a double dash (`--gpu`, `--mpi`, `--dt`), but single characters options still support a single dash (e.g. `-g`).
+
+The format of the configuration options file has changed, regenerate them if there is any problem.
 
 ## Results
 

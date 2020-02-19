@@ -9,9 +9,9 @@ MPI_RANKS="$2"
 
 cd $WORKSPACE/ringtest
 
-mpirun -n ${MPI_RANKS} ./${CORENRN_TYPE}/special-core -mpi -e 10 -d coredat --checkpoint part0 --outpath part0
-mpirun -n ${MPI_RANKS} ./${CORENRN_TYPE}/special-core -mpi -e 40 -d coredat --checkpoint part1 --restore part0 --outpath part1
-mpirun -n ${MPI_RANKS} ./${CORENRN_TYPE}/special-core -mpi -e 100 -d coredat  --checkpoint part2 --restore part1 --outpath part2
+mpirun -n ${MPI_RANKS} ./${CORENRN_TYPE}/special-core --mpi -e 10 -d coredat --checkpoint part0 --outpath part0
+mpirun -n ${MPI_RANKS} ./${CORENRN_TYPE}/special-core --mpi -e 40 -d coredat --checkpoint part1 --restore part0 --outpath part1
+mpirun -n ${MPI_RANKS} ./${CORENRN_TYPE}/special-core --mpi -e 100 -d coredat  --checkpoint part2 --restore part1 --outpath part2
 
 cat part0/out.dat > ringtest/cnrn.dat
 cat part1/out.dat >> ringtest/cnrn.dat

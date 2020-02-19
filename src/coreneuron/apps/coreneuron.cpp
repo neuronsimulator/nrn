@@ -26,7 +26,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <coreneuron/enginemech.h>
+#include <coreneuron/engine.h>
 #include "coreneuron/utils/profile/profiler_interface.h"
 
 int main(int argc, char** argv) {
