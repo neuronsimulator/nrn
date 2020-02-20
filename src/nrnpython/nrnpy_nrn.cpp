@@ -771,7 +771,6 @@ NPySecObj* newpysechelp(Section* sec) {
   if (!sec || !sec->prop) {
     return NULL;
   }
-  section_ref(sec);
   NPySecObj* pysec = NULL;
   if (sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
     pysec = (NPySecObj*)sec->prop->dparam[PROP_PY_INDEX]._pvoid;
@@ -780,6 +779,7 @@ NPySecObj* newpysechelp(Section* sec) {
   } else {
     pysec = (NPySecObj*)psection_type->tp_alloc(psection_type, 0);
     pysec->sec_ = sec;
+    section_ref(sec);
     pysec->name_ = 0;
     pysec->cell_ = 0;
   }
