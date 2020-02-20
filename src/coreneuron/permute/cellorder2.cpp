@@ -21,13 +21,6 @@ typedef vector<VVTN> VVVTN;  // groups
 
 // verify level in groups of nident identical nodes
 void chklevel(VTN& level, size_t nident = 8) {
-#if 0
-  nrn_assert(level.size() % nident == 0);
-  for (size_t i = 0; i <  level.size(); ++i) {
-    size_t j = nident*int(i/nident);
-    nrn_assert(level[i]->hash == level[j]->hash);
-  }
-#endif
 }
 
 // first child before second child, etc
@@ -64,18 +57,6 @@ static bool sortlevel_cmp(TNode* a, TNode* b) {
 
 static void sortlevel(VTN& level) {
     std::sort(level.begin(), level.end(), sortlevel_cmp);
-
-#if 0
-printf("after sortlevel\n");
-for (size_t i = 0; i < level.size(); ++i) {
-TNode* nd = level[i];
-printf("ilev=%ld i=%ld plev=%ld pi=%ld phash=%ld ord=%ld hash=%ld\n",
-nd->level, i, nd->parent?nd->parent->level:0,
-nd->parent?nd->parent->treenode_order:0, nd->parent?nd->parent->hash:0,
-nd->treenode_order, nd->hash);
-}
-chklevel(level);
-#endif
 
     for (size_t i = 0; i < level.size(); ++i) {
         level[i]->treenode_order = i;
@@ -212,7 +193,7 @@ static size_t need2move(TNode* nd) {
     return warpsize - ((nd->nodevec_index % warpsize) + d);
 }
 
-#if 0
+#if DEBUG
 static void how_many_warpsize_groups_have_only_leaves(VTN& nodes) {
   size_t n = 0;
   for (size_t i = 0; i < nodes.size(); i += warpsize) {
@@ -276,9 +257,6 @@ static void checkrace(TNode* nd, VTN& nodes) {
             //      printf("checkrace %ld\n", i);
             res = false;
         }
-    }
-    if (0 && res) {
-        printf("checkrace no race from nd onward\n");
     }
 }
 
@@ -391,39 +369,10 @@ static void question2(VVTN& levels) {
             i = nd->nodevec_index;
         }
     }
-    if (0) {
-        pr_race_situation(nodes);
-    }
     // copy nodes indices to treenode_order
     for (size_t i = 0; i < nodes.size(); ++i) {
         nodes[i]->treenode_order = i;
     }
-}
-
-// size of groups with contiguous parents for each level
-static void question(VVTN& levels) {
-#if 0
-  for (size_t i = 0; i < levels.size(); ++i) {
-    printf("%3ld %5ld", i, levels[i].size());
-    size_t iplast = 100000000;
-    size_t nsame = 0;
-    for (size_t j=0; j < levels[i].size(); ++j) {
-      TNode* nd = levels[i][j];
-      if (nd->parent == nullptr) {
-        nsame += 1;
-      }else if (nd->parent->treenode_order == iplast + 1) {
-        nsame += 1;
-        iplast = nd->parent->treenode_order;
-      }else{
-        if (nsame) { printf(" %3ld", nsame); }
-        nsame = 1;
-        iplast = nd->parent->treenode_order;
-      }
-    }
-    if (nsame) { printf(" %3ld", nsame); }
-    printf("\n");
-  }
-#endif
 }
 
 static void analyze(VVTN& levels) {
@@ -452,7 +401,7 @@ static void analyze(VVTN& levels) {
 }
 
 void prgroupsize(VVVTN& groups) {
-#if 0
+#if DEBUG
   for (size_t i=0; i < groups[0].size(); ++i) {
     printf("%5ld\n", i);
     for (size_t j=0; j < groups.size(); ++j) {
@@ -483,20 +432,7 @@ static void set_nodeindex(VecTNode& nodevec) {
 }
 
 void group_order2(VecTNode& nodevec, size_t groupsize, size_t ncell) {
-#if 1
     size_t maxlevel = level_from_root(nodevec);
-#else
-    size_t maxlevel = level_from_leaf(nodevec);
-    // reverse the level numbering so leaves are at maxlevel.
-    // also make all roots have level 0
-    for (size_t i = 0; i < nodevec.size(); ++i) {
-        TNode* nd = nodevec[i];
-        nd->level = maxlevel - nd->level;
-        if (nd->parent == nullptr) {
-            nd->level = 0;
-        }
-    }
-#endif
 
     // if not nullptr use this to define groups (and reset TNode.groupindex)
     size_t nwarp = warp_balance(ncell, nodevec);
@@ -522,9 +458,6 @@ void group_order2(VecTNode& nodevec, size_t groupsize, size_t ncell) {
         analyze(groups[i]);
         question2(groups[i]);
     }
-
-    question(groups[0]);
-    //  question2(groups[0]);
 
     // final nodevec order according to group_index and treenode_order
     std::sort(nodevec.begin() + ncell, nodevec.end(), final_nodevec_cmp);

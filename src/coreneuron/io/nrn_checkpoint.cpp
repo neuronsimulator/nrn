@@ -186,10 +186,8 @@ void write_checkpoint(NrnThread* nt, int nb_threads, const char* dir, bool swap_
 static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
     std::ostringstream filename;
 
-#if 1 || CHKPNTDEBUG
     NrnThreadChkpnt& ntc = nrnthread_chkpnt[nt.id];
     filename << output_dir << "/" << ntc.file_id << "_2.dat";
-#endif
 
     fh.open(filename.str().c_str(), swap_bytes, std::ios::out);
     fh.checkpoint(2);

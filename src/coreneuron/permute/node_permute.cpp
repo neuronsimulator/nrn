@@ -264,7 +264,7 @@ int nrn_index_permute(int ix, int type, Memb_list* ml) {
     }
 }
 
-#if 0
+#if DEBUG
 static void pr(const char* s, int* x, int n) {
   printf("%s:", s);
   for (int i=0; i < n; ++i) {

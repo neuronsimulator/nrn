@@ -702,9 +702,7 @@ void nrn_setup(const char* filesdat,
     // Note that rank with 0 dataset/cellgroup works fine
     nrn_threads_create(ngroup <= 1 ? 2 : ngroup);
 
-#if 1 || CHKPNTDEBUG  // only required for NrnThreadChkpnt.file_id
     nrnthread_chkpnt = new NrnThreadChkpnt[nrn_nthread];
-#endif
 
     if (nrn_nthread > 1) {
         // NetCvode construction assumed one thread. Need nrn_nthread instances
@@ -849,9 +847,9 @@ void read_phasegap(FileHandler& F, int imult, NrnThread& nt) {
 
     F.checkpoint(chkpntsave);
 
-#if 0
+#if DEBUG
   printf("%d read_phasegap tid=%d type=%d %s ix_vpre=%d nsrc=%d ntar=%d\n",
-    nrnmpi_myid, nt.id, si.type, memb_func[si.type].sym, si.ix_vpre,
+    nrnmpi_myid, nt.id, si.type, corenrn.get_memb_func(si.type).sym, si.ix_vpre,
     si.nsrc, si.ntar);
   for (int i=0; i < si.nsrc; ++i) {
     printf("sid_src %d %d\n", si.sid_src[i], si.v_indices[i]);
@@ -1194,10 +1192,8 @@ void read_phase2(FileHandler& F, int imult, NrnThread& nt) {
         assert(!F.fail());  // actually should assert that it is open
     }
     nrn_assert(imult >= 0);  // avoid imult unused warning
-#if 1 || CHKPNTDEBUG
     NrnThreadChkpnt& ntc = nrnthread_chkpnt[nt.id];
     ntc.file_id = gidgroups_w[nt.id];
-#endif
 
     int n_outputgid, ndiam, nmech, *tml_index, *ml_nodecount;
     if (direct) {
@@ -1598,7 +1594,7 @@ void read_phase2(FileHandler& F, int imult, NrnThread& nt) {
         permute_ptr(nt._v_parent_index, nt.end, p);
         node_permute(nt._v_parent_index, nt.end, p);
 
-#if 0
+#if DEBUG
 for (int i=0; i < nt.end; ++i) {
   printf("parent[%d] = %d\n", i, nt._v_parent_index[i]);
 }
@@ -2190,9 +2186,9 @@ static size_t memb_list_size(NrnThreadMembList* tml) {
     nbyte += corenrn.get_prop_dparam_size()[tml->index] * tml->ml->nodecount * sizeof(Datum);
 #ifdef DEBUG
     int i = tml->index;
-    printf("%s %d psize=%d ppsize=%d cnt=%d nbyte=%ld\n", memb_func[i].sym, i,
-           crnrn.get_prop_param_size()[i],
-           crnrn.get_prop_dparam_size()[i], tml->ml->nodecount, nbyte);
+    printf("%s %d psize=%d ppsize=%d cnt=%d nbyte=%ld\n", corenrn.get_memb_func(i).sym, i,
+           corenrn.get_prop_param_size()[i],
+           corenrn.get_prop_dparam_size()[i], tml->ml->nodecount, nbyte);
 #endif
     return nbyte;
 }
@@ -2217,7 +2213,7 @@ size_t input_presyn_size(void) {
     size_t nbyte =
         sizeof(gid2in) + sizeof(int) * gid2in.size() + sizeof(InputPreSyn*) * gid2in.size();
 #ifdef DEBUG
-    printf(" gid2in table bytes=~%ld size=%d\n", nbyte, gid2in->size());
+    printf(" gid2in table bytes=~%ld size=%d\n", nbyte, gid2in.size());
 #endif
     return nbyte;
 }

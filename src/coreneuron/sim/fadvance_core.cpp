@@ -38,6 +38,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/network/netcvode.hpp"
 #include "coreneuron/network/netpar.hpp"
 #include "coreneuron/network/partrans.hpp"
+#include "coreneuron/utils/nrnoc_aux.hpp"
 #include "coreneuron/utils/progressbar/progressbar.h"
 #include "coreneuron/utils/profile/profiler_interface.h"
 #include "coreneuron/io/nrn2core_direct.h"
@@ -238,7 +239,7 @@ void nonvint(NrnThread* _nt) {
             }
 #ifdef DEBUG
             if (errno) {
-                hoc_warning("errno set during calculation of states", (char*)0);
+                hoc_warning("errno set during calculation of states", nullptr);
             }
 #endif
         }

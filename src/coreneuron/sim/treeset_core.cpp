@@ -32,6 +32,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/sim/multicore.hpp"
 #include "coreneuron/utils/profile/profiler_interface.h"
 #include "coreneuron/coreneuron.hpp"
+#include "coreneuron/utils/nrnoc_aux.hpp"
 
 namespace coreneuron {
 /*
@@ -79,7 +80,7 @@ static void nrn_rhs(NrnThread* _nt) {
             (*s)(_nt, tml->ml, tml->index);
 #ifdef DEBUG
             if (errno) {
-                hoc_warning("errno set during calculation of currents", (char*)0);
+                hoc_warning("errno set during calculation of currents", nullptr);
             }
 #endif
         }

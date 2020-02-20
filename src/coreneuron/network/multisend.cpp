@@ -368,18 +368,10 @@ void nrn_multisend_receive(NrnThread* nt) {
     int ncons = 0;
     int& s = multisend_receive_buffer[current_rbuf]->nsend_;
     int& r = multisend_receive_buffer[current_rbuf]->nrecv_;
-#if 0 && ENQUEUE == 2
-    unsigned long tfind, tsend;
-#endif
 //	w1 = nrn_wtime();
 #if NRN_MULTISEND & 1
     if (use_multisend_) {
         nrn_multisend_advance();
-#if 0 && ENQUEUE == 2
-    // want the overlap with computation, not conserve
-    tfind = enq2_find_time_;
-    tsend = enq2_enqueue_time_ - enq2_find_time_;
-#endif
         nrnmpi_barrier();
         nrn_multisend_advance();
         // with two phase we expect conservation to hold and ncons should

@@ -104,11 +104,6 @@ static void print_quality2(int iwarp, InterleaveInfo& ii, int* p) {
     int* stride = ii.stride + ii.stridedispl[iwarp];
     int ncycle = ii.cellsize[iwarp];
 
-#if 0
-  int nodeend = ii.lastnode[iwarp+1];
-  int nnode = ii.lastnode[ii.nwarp];
-#endif
-
     int inode = nodebegin;
 
     size_t nn = 0;  // number of nodes in warp. '.'
@@ -406,7 +401,6 @@ void mk_cell_indices() {
 }
 #endif  // INTERLEAVE_DEBUG
 
-#if 1
 #define GPU_V(i) nt->_actual_v[i]
 #define GPU_A(i) nt->_actual_a[i]
 #define GPU_B(i) nt->_actual_b[i]
@@ -571,11 +565,6 @@ void solve_interleaved2(int ith) {
 #endif
 
     int ncore = nwarp * warpsize;
-#if 0 && defined(ENABLE_CUDA_INTERFACE)  // not implemented
-    NrnThread* d_nt = (NrnThread*) acc_deviceptr(nt);
-    InterleaveInfo* d_info = (InterleaveInfo*) acc_deviceptr(interleave_info+ith);
-    solve_interleaved2_launcher(d_nt, d_info);
-#else
 #ifdef _OPENACC
 // clang-format off
     #pragma acc parallel loop present(                  \
@@ -608,7 +597,6 @@ void solve_interleaved2(int ith) {
     }
 #ifdef _OPENACC
 #pragma acc wait(nt->stream_id)
-#endif
 #endif
     if (foo == 1) {
         return;
@@ -668,4 +656,3 @@ void solve_interleaved(int ith) {
     }
 }
 }  // namespace coreneuron
-#endif

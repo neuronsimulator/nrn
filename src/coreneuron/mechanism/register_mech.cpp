@@ -194,8 +194,8 @@ void nrn_writes_conc(int type, int /* unused */) {
     if (type == -1)
         return;
 
-#if 0
-	printf("%s reordered from %d to %d\n", memb_func[type].sym->name, type, lastion);
+#if DEBUG
+	printf("%s reordered from %d to %d\n", corenrn.get_memb_func(type).sym, type, lastion);
 #endif
     if (nrn_is_ion(type)) {
         ++lastion;
@@ -270,7 +270,7 @@ void hoc_register_dparam_semantics(int type, int ix, const char* name) {
             ion_write_depend(type, etype);
         }
     }
-#if 0
+#if DEBUG
 	printf("dparam semantics %s ix=%d %s %d\n", memb_func[type].sym,
 	  ix, name, memb_func[type].dparam_semantics[ix]);
 #endif

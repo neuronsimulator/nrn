@@ -133,7 +133,7 @@ void set_globals(const char* path, bool cli_global_seed, int cli_global_seed_val
         }
     }
 
-#if 0
+#if DEBUG
   for (N2V::iterator i = n2v->begin(); i != n2v->end(); ++i) {
     printf("%s %ld %p\n", i->first.c_str(), i->second.first, i->second.second);
   }

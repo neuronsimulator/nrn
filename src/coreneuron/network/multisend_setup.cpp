@@ -21,7 +21,7 @@ namespace coreneuron {
 typedef std::map<int, InputPreSyn*> Gid2IPS;
 typedef std::map<int, PreSyn*> Gid2PS;
 
-#if 0
+#if DEBUG
 template <typename T>
 static void celldebug(const char* p, T& map) {
     FILE* f;
@@ -72,7 +72,7 @@ static void alltoalldebug(const char*, int*, int*, int*, int*, int*, int*) {
 }
 #endif
 
-#if 0
+#if DEBUG
 void phase1debug(int* targets_phase1) {
     FILE* f;
     char fname[100];

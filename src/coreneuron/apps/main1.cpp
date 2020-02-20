@@ -147,15 +147,6 @@ int corenrn_embedded_run(int nthread, int have_gaps, int use_mpi, int use_fast_i
 }
 }
 
-#if 0
-#include <fenv.h>
-#define NRN_FEEXCEPT (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)
-int nrn_feenableexcept() {
-  int result = -1;
-  result = feenableexcept(NRN_FEEXCEPT);
-  return result;
-}
-#endif
 namespace coreneuron {
 void call_prcellstate_for_prcellgid(int prcellgid, int compute_gpu, int is_init);
 

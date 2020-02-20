@@ -25,16 +25,6 @@ namespace coreneuron {
     int _iml, int _cntml_padded, double *_p, Datum *_ppvar, ThreadDatum *_thread, NrnThread *_nt, \
         double _v
 
-#if 0
-
-typedef int (*DIFUN)(_threadargsproto_);
-typedef int (*NEWTFUN)(_threadargsproto_);
-typedef int (*SPFUN)(struct SparseObj*, double*, _threadargsproto_);
-#define difun(arg) (*arg)(_threadargs_);
-#define newtfun(arg) (*arg)(_threadargs_);
-
-#else
-
 /**
  * \todo: typedefs like DIFUN can be removed
  * \todo: macros for difun, newtfun, eulerfun are not necessary
@@ -54,8 +44,6 @@ extern int nrn_newton_steer(int, _threadargsproto_);
 #pragma acc routine seq
 extern int nrn_euler_steer(int, _threadargsproto_);
 #define eulerfun(arg) nrn_euler_steer(arg, _threadargs_);
-
-#endif
 
 typedef struct Elm {
     unsigned row;        /* Row location */

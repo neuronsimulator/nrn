@@ -144,7 +144,7 @@ void nrn_partrans::gap_mpi_setup(int ngroup) {
         assert(tar2data.find(sgid) != tar2data.end());
     }
 
-#if 0
+#if DEBUG
   printf("%d mpi outsrccnt_, outsrcdspl_, insrccnt, insrcdspl_\n", nrnmpi_myid);
   for (int i = 0; i < nrnmpi_numprocs; ++i) {
     printf("%d : %d %d %d %d\n", nrnmpi_myid, outsrccnt_[i], outsrcdspl_[i],
@@ -210,7 +210,7 @@ void nrn_partrans::gap_mpi_setup(int ngroup) {
         }
     }
 
-#if 0
+#if DEBUG
   // things look ok so far?
   for (int tid=0; tid < ngroup; ++tid) {
     nrn_partrans::SetupInfo& si = setup_info_[tid];
@@ -253,15 +253,6 @@ void nrn_partrans::gap_thread_setup(NrnThread& nt) {
     } else {
         ttd.halfgap_ml = nullptr;
     }
-#if 0
-  int ntar = ttd.halfgap_ml->nodecount;
-  assert(ntar == ttd.ntar);
-  int sz =halfgap_info->sz;
-
-  for (int i=0; i < ntar; ++i) {
-    ttd.insrc_indices[i] += sz;
-  }
-#endif
 }
 
 void nrn_partrans::gap_indices_permute(NrnThread& nt) {

@@ -73,13 +73,8 @@ static char RCSid[] = "sparse.c,v 1.7 1998/03/12 13:17:17 hines Exp";
 #else
 #define Free(arg) myfree((char*)arg)
 #endif
-#if 0
-extern void nrn_malloc_lock();
-extern void nrn_malloc_unlock();
-#else
 #define nrn_malloc_lock()   /**/
 #define nrn_malloc_unlock() /**/
-#endif
 
 #include <assert.h>
 #include <math.h>
@@ -176,11 +171,9 @@ int sparse_thread(SparseObj* so,
         }
         for (err = 0., i = 1; i <= n; i++) { /* why oh why did I write it from 1 */
             s_(i - 1) += so->rhs[ix(i)];
-#if 1 /* stability of nonlinear kinetic schemes sometimes requires this */
             if (!linflag && s_(i - 1) < 0.) {
                 s_(i - 1) = 0.;
             }
-#endif
             err += fabs(so->rhs[ix(i)]);
         }
         if (j > MAXSTEPS) {
@@ -556,11 +549,11 @@ static void get_next_pivot(SparseObj* so, unsigned i) {
         reduce_order(so, el->row);
     }
 
-#if 0
-{int j; Item *or;
+#if DEBUG
+{int j; Item *_or;
 	printf("%d  ", i);
-	for (or = so->orderlist->next, j=0; j<5 && or != so->orderlist; j++, or=or->next) {
-		printf("(%d, %d)  ", or->elm->row, or->norder);
+	for (_or = so->orderlist->next, j=0; j<5 && _or != so->orderlist; j++, _or=_or->next) {
+		printf("(%d, %d)  ", _or->elm->row, _or->norder);
 	}
 	printf("\n");
 }

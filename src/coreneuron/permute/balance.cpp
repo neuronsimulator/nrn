@@ -64,13 +64,6 @@ size_t warp_balance(size_t ncell, VecTNode& nodevec) {
         }
     }
 
-#if 0
-  size_t ncore = nwarp * warpsize;
-  size_t cells_per_type = ncell/(typedispl.size() - 1);
-  size_t ideal_ncycle = total_compart/ncore;
-  size_t avg_cells_per_warp = total_compart/(ncell*nwarp);
-#endif
-
     size_t ideal_compart_per_warp = total_compart / nwarp;
 
     size_t min_cells_per_warp = 0;
