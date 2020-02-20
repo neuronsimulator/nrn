@@ -126,10 +126,13 @@ static void ecs_dg_adi_vol_x(ECS_Grid_node* g, const double dt, const int y, con
         else
         {   
             x = 0;
-	        RHS[0] = g->states[IDX(0,y,z)] + (dt/ALPHA(0,y,z))*
-				    ((Fxy(yp,ypd,y) - Fxy(y,ymd,ym))/div_y 
-				+ 	 (Fxz(zp,zpd,z) - Fxz(z,zmd,zm))/div_z)
-                + dt*g->states_cur[IDX(0,y,z)];
+	        RHS[0] = 0;
+            if(g->size_y > 1)
+                RHS[0] += (Fxy(yp,ypd,y) - Fxy(y,ymd,ym))/div_y;
+            if(g->size_z > 1)
+                RHS[0] += (Fxz(zp,zpd,z) - Fxz(z,zmd,zm))/div_z;
+            RHS[0] *= (dt/ALPHA(0,y,z));
+            RHS[0] += g->states[IDX(0,y,z)] + g->states_cur[IDX(0,y,z)];
         }
         return;
     }
@@ -167,14 +170,14 @@ static void ecs_dg_adi_vol_x(ECS_Grid_node* g, const double dt, const int y, con
 					((Fxx(x+1,x)/SQ(g->dx)) 
 				+    (Fxy(yp,ypd,y) - Fxy(y,ymd,ym))/div_y 
 				+ 	 (Fxz(zp,zpd,z) - Fxz(z,zmd,zm))/div_z)
-                + dt*g->states_cur[IDX(x,y,z)];
+                + g->states_cur[IDX(x,y,z)];
 
         x = g->size_x-1;
         RHS[x]  = g->states[IDX(x,y,z)] + (dt/ALPHA(x,y,z))*
 				((Fxx(x-1,x))/SQ(g->dx) 
 			+    (Fxy(yp,ypd,y) - Fxy(y,ymd,ym))/div_y 
 			+ 	 (Fxz(zp,zpd,z) - Fxz(z,zmd,zm))/div_z)
-            + dt*g->states_cur[IDX(x,y,z)];
+            + g->states_cur[IDX(x,y,z)];
     }
     else
     {
@@ -197,7 +200,7 @@ static void ecs_dg_adi_vol_x(ECS_Grid_node* g, const double dt, const int y, con
 				((Fxx(x+1,x) - Fxx(x,x-1))/SQ(g->dx) 
 			+    (Fxy(yp,ypd,y) - Fxy(y,ymd,ym))/div_y 
 			+ 	 (Fxz(zp,zpd,z) - Fxz(z,zmd,zm))/div_z)
-            + dt*g->states_cur[IDX(x,y,z)];
+            + g->states_cur[IDX(x,y,z)];
 	}
 	
 	solve_dd_tridiag(g->size_x, l_diag, diag, u_diag, RHS, scratch);
@@ -475,9 +478,13 @@ static void ecs_dg_adi_tort_x(ECS_Grid_node* g, const double dt, const int y, co
         }
         else
         {
-            RHS[0] = g->states[IDX(0,y,z)] + dt*(g->states_cur[IDX(0,y,z)]
-                 + (DcY(0,ypd,z)*g->states[IDX(0,yp,z)] - (DcY(0,ypd,z)+DcY(0,ymd,z))*g->states[IDX(0,y,z)] + DcY(0,ymd,z)*g->states[IDX(0,ym,z)])/(div_y*SQ(g->dy))
-                 + (DcZ(0,y,zpd)*g->states[IDX(0,y,zp)] - (DcZ(0,y,zpd)+DcZ(0,y,zmd))*g->states[IDX(0,y,z)] + DcZ(0,y,zmd)*g->states[IDX(0,y,zm)])/(div_z*SQ(g->dz)));
+            RHS[0] = 0;
+            if(g->size_y > 1)
+                RHS[0] += (DcY(0,ypd,z)*g->states[IDX(0,yp,z)] - (DcY(0,ypd,z)+DcY(0,ymd,z))*g->states[IDX(0,y,z)] + DcY(0,ymd,z)*g->states[IDX(0,ym,z)])/(div_y*SQ(g->dy));
+            if(g->size_z > 1)
+                RHS[0] += (DcZ(0,y,zpd)*g->states[IDX(0,y,zp)] - (DcZ(0,y,zpd)+DcZ(0,y,zmd))*g->states[IDX(0,y,z)] + DcZ(0,y,zmd)*g->states[IDX(0,y,zm)])/(div_z*SQ(g->dz));
+            RHS[0] *= dt;
+            RHS[0] += g->states[IDX(0,y,z)] + g->states_cur[IDX(0,y,z)];
         }
         return;
     }
@@ -506,13 +513,13 @@ static void ecs_dg_adi_tort_x(ECS_Grid_node* g, const double dt, const int y, co
 			    + dt*((DcX(1,y,z)*g->states[IDX(1,y,z)] - DcX(1,y,z)*g->states[IDX(0,y,z)])/(2.*SQ(g->dx))
 			    +	  (DcY(0,ypd,z)*g->states[IDX(0,yp,z)] - (DcY(0,ypd,z)+DcY(0,ymd,z))*g->states[IDX(0,y,z)] + DcY(0,ymd,z)*g->states[IDX(0,ym,z)])/(div_y*SQ(g->dy))
 			    +	  (DcZ(0,y,zpd)*g->states[IDX(0,y,zp)] - (DcZ(0,y,zpd)+DcZ(0,y,zmd))*g->states[IDX(0,y,z)] + DcZ(0,y,zmd)*g->states[IDX(0,y,zm)])/(div_z*SQ(g->dz)))
-                + dt*g->states_cur[IDX(0,y,z)];
+                + g->states_cur[IDX(0,y,z)];
         x = g->size_x-1;
         RHS[x] =  g->states[IDX(x,y,z)]
 				+ dt*((DcX(x,y,z)*g->states[IDX(x-1,y,z)] - DcX(x,y,z)*g->states[IDX(x,y,z)])/(2.*SQ(g->dx))
 				+	  (DcY(x,ypd,z)*g->states[IDX(x,yp,z)] - (DcY(x,ypd,z)+DcY(x,ymd,z))*g->states[IDX(x,y,z)] + DcY(x,ymd,z)*g->states[IDX(x,ym,z)])/(div_y*SQ(g->dy))
 				+	  (DcZ(x,y,zpd)*g->states[IDX(x,y,zp)] - (DcZ(x,y,zpd)+DcZ(x,y,zmd))*g->states[IDX(x,y,z)] + DcZ(x,y,zmd)*g->states[IDX(x,y,zm)])/(div_z*SQ(g->dz)))
-                + dt*g->states_cur[IDX(x,y,z)];
+                + g->states_cur[IDX(x,y,z)];
 
     }
     else
@@ -532,9 +539,10 @@ static void ecs_dg_adi_tort_x(ECS_Grid_node* g, const double dt, const int y, co
         __builtin_prefetch(&(g->states[IDX(x+PREFETCH,ym,z)]), 0, 0);
         
 		RHS[x] =  g->states[IDX(x,y,z)]
-			+ dt*((DcX(x+1,y,z)*g->states[IDX(x+1,y,z)] - (DcX(x+1,y,z)+DcX(x,y,z))*g->states[IDX(x,y,z)] + DcX(x,y,z)*g->states[IDX(x-1,y,z)])/(2.*SQ(g->dx))  + g->states_cur[IDX(x,y,z)]
+			+ dt*((DcX(x+1,y,z)*g->states[IDX(x+1,y,z)] - (DcX(x+1,y,z)+DcX(x,y,z))*g->states[IDX(x,y,z)] + DcX(x,y,z)*g->states[IDX(x-1,y,z)])/(2.*SQ(g->dx))
             + (DcY(x,ypd,z)*g->states[IDX(x,yp,z)] - (DcY(x,ypd,z)+DcY(x,ymd,z))*g->states[IDX(x,y,z)] + DcY(x,ymd,z)*g->states[IDX(x,ym,z)])/(div_y*SQ(g->dy))
-            + (DcZ(x,y,zpd)*g->states[IDX(x,y,zp)] - (DcZ(x,y,zpd)+DcZ(x,y,zmd))*g->states[IDX(x,y,z)] + DcZ(x,y,zmd)*g->states[IDX(x,y,zm)])/(div_z*SQ(g->dz)));
+            + (DcZ(x,y,zpd)*g->states[IDX(x,y,zp)] - (DcZ(x,y,zpd)+DcZ(x,y,zmd))*g->states[IDX(x,y,z)] + DcZ(x,y,zmd)*g->states[IDX(x,y,zm)])/(div_z*SQ(g->dz)))
+            + g->states_cur[IDX(x,y,z)];
 	}
 	
 	solve_dd_tridiag(g->size_x, l_diag, diag, u_diag, RHS, scratch);
@@ -777,18 +785,26 @@ void _rhs_variable_step_helper_tort(Grid_node* g, double const * const states, d
 				    div_z = (k==0||k==stop_k)?2.:1.;
 				    zpd = (k==stop_k)?k:k+1;
 				    zmd = (k==0)?1:k;
-
-                    ydot[index] += rate_x * (DcX(xmd,j,k)*states[prev_i] -  
-                        (DcX(xmd,j,k)+DcX(xpd,j,k)) * states[index] + 
-					    DcX(xpd,j,k)*states[next_i])/div_x;
-
-                    ydot[index] += rate_y * (DcY(i,ymd,k)*states[prev_j] - 
-                        (DcY(i,ymd,k)+DcY(i,ypd,k)) * states[index] +
-					    DcY(i,ypd,k)*states[next_j])/div_y;
-
-                    ydot[index] += rate_z * (DcZ(i,j,zmd)*states[prev_k] - 
-                        (DcZ(i,j,zmd)+DcZ(i,j,zpd)) * states[index] + 
-					    DcZ(i,j,zpd)*states[next_k])/div_z;
+                    
+                    if(stop_i > 0)
+                    {
+                        ydot[index] += rate_x * (DcX(xmd,j,k)*states[prev_i] -  
+                            (DcX(xmd,j,k)+DcX(xpd,j,k)) * states[index] + 
+    					    DcX(xpd,j,k)*states[next_i])/div_x;
+                    }
+                    if(stop_j > 0)
+                    {
+                        ydot[index] += rate_y * (DcY(i,ymd,k)*states[prev_j] - 
+                            (DcY(i,ymd,k)+DcY(i,ypd,k)) * states[index] +
+					        DcY(i,ypd,k)*states[next_j])/div_y;
+                    }
+                    
+                    if(stop_k > 0)
+                    {
+                        ydot[index] += rate_z * (DcZ(i,j,zmd)*states[prev_k] - 
+                            (DcZ(i,j,zmd)+DcZ(i,j,zpd)) * states[index] + 
+    					    DcZ(i,j,zpd)*states[next_k])/div_z;
+                    }
 
                     next_k = (k==stop_k-1)?index:index+2;
                     prev_k = index;
@@ -882,16 +898,25 @@ void _rhs_variable_step_helper_vol(Grid_node* g, double const * const states, do
 				    zmd = (k==0)?1:k;
 				
 				    /*x-direction*/
-                    ydot[index] += rate_x * (FLUX(next_i,index)/LAMBDA(xpd,j,k) + 
-				    	FLUX(prev_i,index)/LAMBDA(xmd,j,k))/(VOLFRAC(index)*div_x);
+                    if(stop_i > 0)
+                    {
+                        ydot[index] += rate_x * (FLUX(next_i,index)/LAMBDA(xpd,j,k) + 
+				    	    FLUX(prev_i,index)/LAMBDA(xmd,j,k))/(VOLFRAC(index)*div_x);
+                    }
 
 				    /*y-direction*/
-				    ydot[index] += rate_y * (FLUX(next_j,index)/LAMBDA(i,ypd,k) +
-                    FLUX(prev_j,index)/LAMBDA(i,ymd,k))/(VOLFRAC(index)*div_y);
+                    if(stop_j > 0)
+                    {
+				        ydot[index] += rate_y * (FLUX(next_j,index)/LAMBDA(i,ypd,k) +
+                            FLUX(prev_j,index)/LAMBDA(i,ymd,k))/(VOLFRAC(index)*div_y);
+                    }
 
 				    /*z-direction*/
-				    ydot[index] += rate_z * (FLUX(next_k,index)/LAMBDA(i,j,zpd) + 
-				    	FLUX(prev_k,index)/LAMBDA(i,j,zmd))/(VOLFRAC(index)*div_z);
+                    if(stop_k > 0)
+                    {
+				        ydot[index] += rate_z * (FLUX(next_k,index)/LAMBDA(i,j,zpd) + 
+				    	    FLUX(prev_k,index)/LAMBDA(i,j,zmd))/(VOLFRAC(index)*div_z);
+                    }
 
                     next_k = (k==stop_k-1)?index:index+2;
                     prev_k = index;
