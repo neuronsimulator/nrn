@@ -32,6 +32,8 @@ file(GLOB_RECURSE CORENEURON_UTILS_FILES "utils/*.c*")
 list(APPEND CORENEURON_CODE_FILES ${CORENEURON_UTILS_FILES})
 file(GLOB_RECURSE CORENEURON_CUDA_FILES "*.cu")
 file(GLOB SCOPMATH_CODE_FILES "sim/scopmath/*.cpp")
+file(COPY ${CORENEURON_PROJECT_SOURCE_DIR}/external/Random123/include/Random123
+     DESTINATION ${CMAKE_BINARY_DIR}/include)
 
 set(DIMPLIC_CODE_FILE "mechanism/mech/dimplic.cpp")
 set(ENGINEMECH_CODE_FILE "mechanism/mech/enginemech.cpp")
@@ -174,6 +176,8 @@ target_link_libraries(coreneuron
                       ${CALIPER_LIB}
                       ${CALIPER_MPI_LIB}
                       ${likwid_LIBRARIES})
+target_include_directories(coreneuron SYSTEM PRIVATE
+        ${CORENEURON_PROJECT_SOURCE_DIR}/external/Random123/include)
 target_include_directories(coreneuron SYSTEM PRIVATE ${CORENEURON_PROJECT_SOURCE_DIR}/external/CLI11/include)
 
 target_link_libraries(corenrnmech scopmath coreneuron)
@@ -291,3 +295,7 @@ endif()
 # install nrniv-core app
 install(TARGETS nrniv-core DESTINATION bin)
 install(FILES apps/coreneuron.cpp DESTINATION share/coreneuron)
+
+# install Random123
+install(DIRECTORY ${CMAKE_BINARY_DIR}/include/Random123
+        DESTINATION include)

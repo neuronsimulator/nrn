@@ -30,7 +30,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <math.h>
 #include "coreneuron/utils/randoms/nrnran123.h"
 #include "coreneuron/nrnconf.h"
-#include "coreneuron/utils/randoms/Random123/philox.h"
 #include "coreneuron/utils/nrnmutdec.h"
 #include "coreneuron/utils/nrnoc_aux.hpp"
 

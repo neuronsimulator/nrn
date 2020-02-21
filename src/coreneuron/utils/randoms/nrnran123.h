@@ -56,7 +56,7 @@ http://www.deshawresearch.com/resources_random123.html
 #define R123_USE_GNU_UINT128 1
 #endif
 
-#include "Random123/philox.h"
+#include <Random123/philox.h>
 #include <inttypes.h>
 
 #ifdef __CUDACC__
