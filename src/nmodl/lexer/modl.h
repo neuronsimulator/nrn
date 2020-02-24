@@ -20,7 +20,7 @@
  */
 
 /// bit masks for block types where integration method are used
-#define DERF 01000
-#define KINF 02000
-#define LINF 0200000
+#define DERF  01000
+#define KINF  02000
+#define LINF  0200000
 #define NLINF 04000

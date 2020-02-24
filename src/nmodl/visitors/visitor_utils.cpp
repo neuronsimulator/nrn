@@ -150,7 +150,7 @@ std::set<std::string> get_global_vars(Program* node) {
 
 
 bool calls_function(ast::Ast* node, const std::string& name) {
-    auto lv = AstLookupVisitor(ast::AstNodeType::FUNCTION_CALL);
+    AstLookupVisitor lv(ast::AstNodeType::FUNCTION_CALL);
     for (const auto& f: lv.lookup(node)) {
         if (std::dynamic_pointer_cast<ast::FunctionCall>(f)->get_node_name() == name) {
             return true;

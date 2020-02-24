@@ -44,7 +44,7 @@ void SympySolverVisitor::init_block_data(ast::Node* node) {
             vars.insert(var_name);
         }
     }
-    auto lv = AstLookupVisitor(ast::AstNodeType::FUNCTION_CALL);
+    AstLookupVisitor lv(ast::AstNodeType::FUNCTION_CALL);
     for (const auto& call: lv.lookup(node->get_statement_block().get())) {
         function_calls.insert(call->get_node_name());
     }

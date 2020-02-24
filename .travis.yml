@@ -51,6 +51,7 @@ addons:
       - boost
       - cmake
       - python@3
+      update: true
 
 #=============================================================================
 # Install dependencies / setup Spack
