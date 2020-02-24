@@ -56,9 +56,9 @@ void CodegenIspcVisitor::visit_var_name(ast::VarName* node) {
     if (!codegen) {
         return;
     }
-    auto celsius_rename = RenameVisitor("celsius", "ispc_celsius");
+    RenameVisitor celsius_rename("celsius", "ispc_celsius");
     node->accept(celsius_rename);
-    auto pi_rename = RenameVisitor("PI", "ISPC_PI");
+    RenameVisitor pi_rename("PI", "ISPC_PI");
     node->accept(pi_rename);
     CodegenCVisitor::visit_var_name(node);
 }
@@ -641,7 +641,7 @@ void CodegenIspcVisitor::print_backend_compute_routine_decl() {
 }
 
 void CodegenIspcVisitor::determine_target() {
-    auto node_lv = AstLookupVisitor(incompatible_node_types);
+    AstLookupVisitor node_lv(incompatible_node_types);
 
     if (info.initial_node) {
         emit_fallback[BlockType::Initial] =
@@ -679,7 +679,7 @@ void CodegenIspcVisitor::move_procs_to_wrapper() {
     auto nameset = std::set<std::string>();
 
     auto populate_nameset = [&nameset](ast::Block* block) {
-        auto name_lv = AstLookupVisitor(ast::AstNodeType::NAME);
+        AstLookupVisitor name_lv(ast::AstNodeType::NAME);
         if (block) {
             auto names = name_lv.lookup(block);
             for (const auto& name: names) {
@@ -691,7 +691,7 @@ void CodegenIspcVisitor::move_procs_to_wrapper() {
     populate_nameset(info.nrn_state_block);
     populate_nameset(info.breakpoint_node);
 
-    auto node_lv = AstLookupVisitor(incompatible_node_types);
+    AstLookupVisitor node_lv(incompatible_node_types);
     auto target_procedures = std::vector<ast::ProcedureBlock*>();
     for (auto it = info.procedures.begin(); it != info.procedures.end(); it++) {
         auto procname = (*it)->get_name()->get_node_name();
