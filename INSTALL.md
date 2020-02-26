@@ -1,4 +1,4 @@
-Brief instructions:
+Brief instructions:a
 
 First, install the interviews distribution that comes from the same
 place as you got the neuron distribution (see the INSTALL file there for
