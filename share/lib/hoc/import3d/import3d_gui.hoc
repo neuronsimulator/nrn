@@ -11,6 +11,7 @@ objref file, nil, problist, types, editbox
 objref spine_displ, spine_raw, spine_xyz
 public spine_displ, spine_raw, spine_xyz, sel_spine_ipt, sel_spine_index
 strdef tstr, tstr1, typelabel_, filename
+objref commands
 
 proc init() {
 	if (numarg() == 2) if ($2 == 0) {
@@ -1003,8 +1004,13 @@ func set_nameindex() {local i, min  localobj sec
 	return min
 }
 
+/*!
+ * @param $o1 Cell object (can be nil)
+ * @param $o2 (optional) List object where to store the hoc execute commands 
+ */
 proc instantiate() {local i, j, min, haspy, ispycontext  localobj sec, xx, yy, zz, dd, pyobj, allpyobjs
 	chk_valid()
+	commands = new List()
 	haspy = nrnpython("import neuron")
 	ispycontext = 0
 	if (haspy) {
@@ -1022,7 +1028,7 @@ proc instantiate() {local i, j, min, haspy, ispycontext  localobj sec, xx, yy, z
 		if (types.x[i] > 0) {
 		    if (!ispycontext) {
 			    sprint(tstr1, "~create %s[%d]\n", tstr, types.x[i])
-			    execute(tstr1, $o1)
+			    commands.append(new String(tstr1))
 		    } else {
 		        pyobj.neuron._create_sections_in_obj($o1, tstr, types.x[i])
 		        $o1.all.extend(pyobj.getattr($o1, tstr))
@@ -1030,7 +1036,7 @@ proc instantiate() {local i, j, min, haspy, ispycontext  localobj sec, xx, yy, z
 		}
 		if ($o1 != nil && !ispycontext) { mksubset($o1, i+min, tstr) }
 	}
-	if ($o1 != nil && !ispycontext) {execute("forall all.append", $o1) }
+	if ($o1 != nil && !ispycontext) {commands.append(new String("forall all.append"))}
 	// connect
 	for i = 0, swc.sections.count-1 {
 		sec = swc.sections.object(i)
@@ -1039,14 +1045,14 @@ proc instantiate() {local i, j, min, haspy, ispycontext  localobj sec, xx, yy, z
 		if (i == 0 && !ispycontext) {
 			sprint(tstr1, "access %s", tstr)
 			if ($o1 == nil) {
-				execute(tstr1, $o1)
+				commands.append(new String(tstr1))
 			}
 		}
 		if (sec.parentsec != nil) {
 			name(sec.parentsec, tstr1)
 			if (!ispycontext) {
 			    sprint(tstr1, "%s connect %s(0), %g", tstr1, tstr, sec.parentx)
-			    execute(tstr1, $o1)
+			    commands.append(new String(tstr1))
 		    } else {
 		        pyobj.neuron._connect_sections_in_obj($o1, tstr, 0, tstr1, sec.parentx)
 		    }
@@ -1057,7 +1063,7 @@ proc instantiate() {local i, j, min, haspy, ispycontext  localobj sec, xx, yy, z
 		        pyobj.neuron._pt3dstyle_in_obj($o1, tstr, sec.raw.x[0][0], sec.raw.x[1][0], sec.raw.x[2][0])
 		    } else {
 			    sprint(tstr1, "%s { pt3dstyle(1, %.8g, %.8g, %.8g) }", tstr, sec.raw.x[0][0], sec.raw.x[1][0], sec.raw.x[2][0])
-			    execute(tstr1, $o1)
+			    commands.append(new String(tstr1))
             }
 		}
 		j = sec.first
@@ -1080,10 +1086,19 @@ proc instantiate() {local i, j, min, haspy, ispycontext  localobj sec, xx, yy, z
 		    } else {
 			    sprint(tstr1, "%s { pt3dadd(%.8g, %.8g, %.8g, %.8g) }",\
 			      tstr,xx.x[j], yy.x[j], zz.x[j], dd.x[j])
-			    execute(tstr1, $o1)
+			    commands.append(new String(tstr1))
             }
 		}
 	}
+
+	for i = 0, commands.count -1 {
+			execute(commands.o(i).s, $o1)
+	}
+
+	if(numarg() >= 2) {
+		$o2 = commands
+	}
+
 }
 
 proc chk_valid() {local i, x, replot  localobj sec
@@ -1139,7 +1154,7 @@ proc mksubset() {
 		sprint(tstr1, "dendritic_%d", $2)
 	}
 	sprint(tstr1, "forsec \"%s\" %s.append", $s3, tstr1)
-	execute(tstr1, $o1)	
+	commands.append(new String(tstr1))
 }
 
 proc contour2centroid() {local i, j, imax, imin, ok  localobj mean, pts, d, max, min, tobj, rad, rad2, side2, pt, major, m, minor
