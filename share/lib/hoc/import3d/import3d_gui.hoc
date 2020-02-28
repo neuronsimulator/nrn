@@ -1103,7 +1103,6 @@ proc instantiate() {local i, j, min, haspy, ispycontext, keepCommands  localobj 
 	}
 
 	if(!keepCommands) { commands.remove_all() }
-	execute("{forall psection()}")	
 }
 
 proc chk_valid() {local i, x, replot  localobj sec
