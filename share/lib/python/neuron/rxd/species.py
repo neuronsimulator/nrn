@@ -255,6 +255,18 @@ class SpeciesOnExtracellular(_SpeciesMathable):
 
     def __str__(self):
         return '%s[%s]' % (self._species()._short_repr(), self._extracellular()._region._short_repr())
+    
+    @property
+    def concentration(self):
+        """An iterable of the current concentrations."""
+        return self.nodes.concentration
+    
+    @concentration.setter
+    def concentration(self, value):
+        """Sets all Node objects in the restriction to the specified concentration value.
+        
+        This is equivalent to s.nodes.concentration = value"""
+        self.nodes.concentration = value
 
     @property
     def states3d(self):
