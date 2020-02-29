@@ -1,5 +1,5 @@
 import os.path as osp
-
+import numpy
 import pytest
 
 from .testutils import collect_data
@@ -70,5 +70,8 @@ def neuron_instance(neuron_import):
         sref = h.SectionRef(sec=sec)
         sref.rename('delete')
         h.delete_section(sec=sec)
-
+    rxd.species._has_1d = False
+    rxd.species._has_3d = False
+    rxd.rxd._zero_volume_indices = numpy.ndarray(0, dtype=numpy.int_)
+    rxd.set_solve_type(dimension=1)
     cvode.extra_scatter_gather_remove(gather)

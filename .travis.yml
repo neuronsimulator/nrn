@@ -44,6 +44,8 @@ addons:
         - doxygen
         - openmpi
         - xz
+        update: true  # TODO remove once this gets fixed:  https://travis-ci.community/t/macos-build-fails-because-of-homebrew-bundle-unknown-command/7296
+
 virtualenv:
     system_site_packages: true
 

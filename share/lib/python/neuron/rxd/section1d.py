@@ -13,6 +13,7 @@ _c_ptr_vector_storage_nrn = None
 _c_ptr_vector_storage = None
 _last_c_ptr_length = None
 _rxd_sec_lookup = dict()
+_keep_alive = []
 
 def _donothing(): pass
 
@@ -90,8 +91,8 @@ def replace(rmsec, offset, nseg):
 
     for secs in _rxd_sec_lookup.values():
         for sec in secs:
-            if sec() and sec()._offset > old_offset:
-                sec()._offset -= dur
+            if sec and sec._offset > old_offset:
+                sec._offset -= dur
 
 
 class Section1D(rxdsection.RxDSection):
@@ -105,10 +106,10 @@ class Section1D(rxdsection.RxDSection):
         self._region = r
         # NOTE: you must do _init_diffusion_rates after assigning parents
         global _rxd_sec_lookup
-        if sec in list(_rxd_sec_lookup.keys()):
-            _rxd_sec_lookup[sec].append(weakref.ref(self))
+        if sec in _rxd_sec_lookup:
+            _rxd_sec_lookup[sec].append(self)
         else:
-            _rxd_sec_lookup[sec] = [weakref.ref(self)]
+            _rxd_sec_lookup[sec] = [self]
 
     def __req__(self, other):
         if isinstance(other, nrn.Section):
@@ -149,16 +150,40 @@ class Section1D(rxdsection.RxDSection):
             self._init_diffusion_rates()
         return nseg_changed
 
-    def __del__(self):
+    def _delete(self):
         # memory in node global variables is handled by the species
         global _rxd_sec_lookup
         
         # remove ref to this section -- at exit weakref.ref might be none 
-        if weakref and weakref.ref and _rxd_sec_lookup and self._sec in _rxd_sec_lookup:
+        if self._sec in _rxd_sec_lookup:
             sec_list = _rxd_sec_lookup[self._sec]
-            sec_list = list(filter(lambda x: x() is not None and not x() == self, sec_list))
+            sec_list = list(filter(lambda x: not x == self, sec_list))
             if sec_list == []:
                 del _rxd_sec_lookup[self._sec]
+            else:
+                _rxd_sec_lookup[self._sec] = sec_list
+
+            # check if memory has already been free'd
+            if self._nseg < 0:
+                return
+
+            # node data is removed here in case references to sec remains
+            if hasattr(self, "_num_roots"):
+                self._nseg += self._num_roots
+                self._offset -= self._num_roots
+            node._remove(self._offset, self._offset + self._nseg + 1)
+
+            # shift offset to account for deleted sec
+            for secs in _rxd_sec_lookup.values():
+                for s in secs:
+                    if s._offset > self._offset:
+                        s._offset -= self._nseg + 1
+
+            # mark memory as free'd
+            self._nseg = -1
+
+    def __del__(self):
+        self._delete()
 
 
     @property
