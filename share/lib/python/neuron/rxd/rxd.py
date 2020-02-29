@@ -18,7 +18,7 @@ import itertools
 from numpy.ctypeslib import ndpointer
 import re
 import platform
-
+from warnings import warn
 molecules_per_mM_um3 = constants.NA / 1e18
 
 # aliases to avoid repeatedly doing multiple hash-table lookups
@@ -1250,17 +1250,26 @@ def _compile_reactions():
                     species_id = creg._species_ids[s._id]
                     for reg in creg._react_regions[rptr]:
                         if reg() in r._rate:
-                            region_id = creg._region_ids[reg()._id]
-                            rate_str = localize_index(creg, r._rate[reg()][0])
+                            try:
+                                region_id = creg._region_ids[reg()._id]
+                                rate_str = localize_index(creg, r._rate[reg()][0])
+                            except KeyError:
+                                warn("Species not on the region specified, %r will be ignored.\n" % r)
+                                continue
                             operator = '+=' if species_ids_used[species_id][region_id] else '='
                             fxn_string += "\n\trhs[%d][%d] %s %s;" % (species_id, region_id, operator, rate_str)
                             species_ids_used[species_id][region_id] = True
                 elif isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
                     #Lookup the region_id for the reaction
-                    for reg in r._rate:
-                        rate_str = localize_index(creg, r._rate[reg][0])
-                        fxn_string += "\n\trate = %s;" % rate_str
-                        break
+                    try:
+                        for reg in r._rate:
+                            rate_str = localize_index(creg, r._rate[reg][0])
+                            fxn_string += "\n\trate = %s;" % rate_str
+                            break
+                    except KeyError:
+                        warn("Species not on the region specified, %r will be ignored.\n" % r)
+                        continue
+
                     for i, sptr in enumerate(r._sources + r._dests):
                         s = sptr()
                         if isinstance(s, species.SpeciesOnExtracellular):
@@ -1284,9 +1293,12 @@ def _compile_reactions():
                     mc_mult_list.extend(r._mult.flatten())
                 else:
                     for reg in creg._react_regions[rptr]:
-                        region_id = creg._region_ids[reg()._id]
-                        rate_str = localize_index(creg, r._rate[reg()][0])
-
+                        try:
+                            region_id = creg._region_ids[reg()._id]
+                            rate_str = localize_index(creg, r._rate[reg()][0])
+                        except KeyError:
+                            warn("Species not on the region specified, %r will be ignored.\n" % r)
+                            continue
                         fxn_string += "\n\trate = %s;" % rate_str
                         summed_mults = collections.defaultdict(lambda: 0)
                         for (mult, sp) in zip(r._mult, r._sources + r._dests):
