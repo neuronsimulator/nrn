@@ -40,6 +40,7 @@ extern "C" {
 #include "parse.h"
 extern void (*nrnpy_sectionlist_helper_)(void*, Object*);
 extern Object** (*nrnpy_gui_helper_)(const char*, Object*);
+extern Object** (*nrnpy_gui_helper3_)(const char*, Object*, int);
 extern double (*nrnpy_object_to_double_)(Object*);
 void lvappendsec_and_ref(void* sl, Section* sec);
 extern Section* nrn_noerr_access();
@@ -2231,7 +2232,7 @@ static double object_to_double_(Object* obj) {
   return result;
 }
 
-static Object** gui_helper_(const char* name, Object* obj) {
+static Object** gui_helper_3_(const char* name, Object* obj, int handle_strptr) {
   if (gui_callback) {
     int narg = 1;
     while (ifarg(narg)) {
@@ -2252,14 +2253,19 @@ static Object** gui_helper_(const char* name, Object* obj) {
         Py_INCREF(py_ptr);
         PyTuple_SetItem(args, iarg + 2, py_ptr);
       } else if (hoc_is_str_arg(iiarg)) {
-        /*
-        PyHocObject* ptr_nrn = (PyHocObject*)hocobj_new(hocobject_type, 0, 0);
+          if (handle_strptr > 0) {
+            char** str_arg = hoc_pgargstr(iiarg);
+            PyObject* py_ptr = cpp2refstr(str_arg);
+            Py_INCREF(py_ptr);
+            PyTuple_SetItem(args, iarg + 2, py_ptr);
+          } else {
+            PyTuple_SetItem(args, iarg + 2, PyString_FromString(gargstr(iiarg))); }
+        /*PyHocObject* ptr_nrn = (PyHocObject*)hocobj_new(hocobject_type, 0, 0);
         ptr_nrn->type_ = PyHoc::HocRefStr;
         ptr_nrn->u.s_ = *hoc_pgargstr(iiarg);
         PyObject* py_ptr = (PyObject*) ptr_nrn;
         Py_INCREF(py_ptr);
         PyTuple_SetItem(args, iarg, py_ptr); */
-        PyTuple_SetItem(args, iarg + 2, PyString_FromString(gargstr(iiarg)));
       } else if (hoc_is_double_arg(iiarg)) {
         PyTuple_SetItem(args, iarg + 2, PyFloat_FromDouble(*getarg(iiarg)));
       }
@@ -2281,6 +2287,10 @@ static Object** gui_helper_(const char* name, Object* obj) {
     return hoc_temp_objptr(ho);
   }
   return NULL;
+}
+
+static Object** gui_helper_(const char* name, Object* obj) {
+  return gui_helper_3_(name, obj, 0);
 }
 
 static Object** vec_as_numpy_helper(int size, double* data) {
@@ -2720,6 +2730,8 @@ myPyMODINIT_FUNC nrnpy_hoc() {
   nrnpy_vec_as_numpy_helper_ = vec_as_numpy_helper;
   nrnpy_sectionlist_helper_ = sectionlist_helper_;
   nrnpy_gui_helper_ = gui_helper_;
+  nrnpy_gui_helper3_ = gui_helper_3_;
+
   nrnpy_object_to_double_ = object_to_double_;
   PyLockGIL lock;
 
