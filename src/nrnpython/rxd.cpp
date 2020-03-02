@@ -1240,6 +1240,7 @@ extern "C" void remove_species_atolscale(int id)
 }
 
 extern "C" void setup_solver(double* my_states, int my_num_states, long* zvi, int num_zvi, PyHocObject* h_t_ref, PyHocObject* h_dt_ref) {
+    free_currents();
     states = my_states;
     num_states = my_num_states;
     _rxd_num_zvi = num_zvi;
