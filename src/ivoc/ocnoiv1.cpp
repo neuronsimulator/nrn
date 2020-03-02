@@ -11,6 +11,7 @@ extern void hoc_ret();
 extern void hoc_pushx(double);
 extern void nrn_shape_update();
 extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+extern Object** (*nrnpy_gui_helper3_)(const char* name, Object* obj, int handle_strptr);
 extern double (*nrnpy_object_to_double_)(Object*);
 
 void ivoc_help(const char*){}
@@ -96,8 +97,8 @@ void hoc_xfixedvalue() {
     hoc_pushx(0.);
 }
 void hoc_xvarlabel() {
-    if (nrnpy_gui_helper_) {
-		nrnpy_gui_helper_("xvarlabel", NULL);
+    if (nrnpy_gui_helper3_) {
+		nrnpy_gui_helper3_("xvarlabel", NULL, 1);
 	}
     hoc_ret();
     hoc_pushx(0.);

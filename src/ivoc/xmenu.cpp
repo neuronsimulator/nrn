@@ -12,6 +12,8 @@ int (*nrnpy_guigetstr)(Object*, char**);
 extern "C" {
 	Object** (*nrnpy_gui_helper_)(const char* name, Object* obj) = NULL;
 	double (*nrnpy_object_to_double_)(Object*) = NULL;
+	Object** (*nrnpy_gui_helper3_)(const char* name, Object* obj, int handle_strptr) = NULL;
+
 };
 #if HAVE_IV // to end of file except for a few small fragments.
 
@@ -526,8 +528,8 @@ void hoc_xlabel() {
 void hoc_xvarlabel() {
 	Object** result = NULL;
 
-	if (nrnpy_gui_helper_) {
-		result = nrnpy_gui_helper_("xvarlabel", NULL);
+	if (nrnpy_gui_helper3_) {
+		result = nrnpy_gui_helper3_("xvarlabel", NULL, 1);
 	}
 	if (!result) {
 		IFGUI
