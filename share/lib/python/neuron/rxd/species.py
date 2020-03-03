@@ -1310,15 +1310,25 @@ class Species(_SpeciesMathable):
             if not isinstance(name, str):
                 raise RxDException('Species name must be a string')
             if name in _defined_species:
-                spsecs = []
+                spsecs_i = []
+                spsecs_o = []
                 for r in regions:
                     if r in _defined_species[name]:
                         raise RxDException('Species "%s" previously defined on region: %r' % (name, r))
-                    if hasattr(r,'_secs'): spsecs += r._secs
-                spsecs = set(spsecs)
+                    if hasattr(r,'_secs'):
+                        if r.nrn_region == 'i':
+                            spsecs_i += r._secs
+                        elif r.nrn_region == 'o':
+                            spsecs_o += r._secs
+                spsecs_i = set(spsecs_i)
+                spsecs_o = set(spsecs_o)
                 for r in  _defined_species[name]:
-                    if hasattr(r,'_secs') and any(spsecs.intersection(r._secs)):
-                        raise RxDException('Species "%s" previously defined on a region %r that overlaps with regions: %r' % (name, r, self._regions))
+                    if hasattr(r,'_secs') and r.nrn_region:
+                        if (r.nrn_region == 'i' and 
+                            any(spsecs_i.intersection(r._secs))
+                            or (r.nrn_region == 'o' and 
+                                any(spsecs_o.intersection(r._secs)))):
+                            raise RxDException('Species "%s" previously defined on a region %r that overlaps with regions: %r' % (name, r, self._regions))
         else:
             name = _species_count
         self._id = _species_count

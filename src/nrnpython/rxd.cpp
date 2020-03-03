@@ -1744,7 +1744,7 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates, doub
     {
         flux = (double**)malloc(react->icsN*sizeof(double*));
         for(i = 0; i < react->icsN; i++)
-            flux[i] = (double*)malloc(react->num_regions*sizeof(double));
+            flux[i] = (double*)calloc(react->num_regions, sizeof(double));
     }
     
     for(i = 0; i < react->num_species; i++)
