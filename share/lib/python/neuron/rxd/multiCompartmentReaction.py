@@ -280,7 +280,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
                     #Check for extracellular regions
                     if charge != 0:
                         name = '_ref_i%s' % (spname)
-                        local_ptrs.append(seg.__getattribute__(name))
+                        local_ptrs.append(getattr(seg, name))
                         uberlocal_map = [None, None]
                         uberlocal_map_ecs = [None, None]
                         if spname + 'i' in cur_map and cur_map[spname + 'i']:

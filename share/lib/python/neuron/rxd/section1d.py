@@ -209,7 +209,7 @@ class Section1D(rxdsection.RxDSection):
             for i in range(self.nseg):
                 seg = self._sec((i + 0.5) / self.nseg)
                 cur_map[self.species.name + self.nrn_region][seg] = len(ptrs)
-                ptrs.append(seg.__getattribute__(ion_curr))
+                ptrs.append(getattr(seg, ion_curr))
             #ptrs.extend([self._sec((i + 0.5) / self.nseg).__getattribute__(ion_curr) for i in range(self.nseg)])
 
     @property
@@ -230,7 +230,7 @@ class Section1D(rxdsection.RxDSection):
             nseg = self.nseg
             for i in range(nseg):
                 x = (i + 0.5) / nseg
-                _all_cptrs.append(self._sec(x).__getattribute__(ion))
+                _all_cptrs.append(getattr(self._sec(x), ion))
                 _all_cindices.append(self._offset + i)
             self._concentration_ptrs = _all_cptrs[-nseg :]
         else:

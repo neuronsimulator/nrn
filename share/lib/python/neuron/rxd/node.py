@@ -306,7 +306,7 @@ class Node(object):
         elif len(args) == 2:
             flux_type = 1
             try:
-                source = args[0].__getattribute__('_ref_' + args[1])
+                source = getattr(args[0], '_ref_' + args[1])
             except:
                 raise RxDException('Invalid two parameter form')
             

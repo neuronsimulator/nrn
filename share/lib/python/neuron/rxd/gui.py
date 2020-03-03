@@ -113,7 +113,7 @@ def get_sectionlists():
     for item in dir(h):
         if item == 'nseg': continue
         try:
-            name = h.__getattribute__(item).hname()
+            name = getattr(h, item).hname()
         except:
             continue
         if name[:12] != 'SectionList[': continue
@@ -1460,7 +1460,7 @@ class _ReactionPane(object):
     
     def _update_active_reactions(self):
         for i, name in enumerate(self.reaction_names):
-            all_reactions[name]['active'] = True if self.__getattribute__('include_list%d' % i) else False
+            all_reactions[name]['active'] = True if getattr(self, 'include_list%d' % i) else False
         
     @property
     def is_mapped(self):
