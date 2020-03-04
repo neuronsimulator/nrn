@@ -696,7 +696,7 @@ class _IntracellularSpecies(_SpeciesMathable):
         self._isalive()
         ion = '_ref_' + self._name + self._region._nrn_region
         for seg, nodes in self._region._nodes_by_seg.items():
-            segptr = seg.__getattribute__(ion)
+            segptr = getattr(seg, ion)
             value = segptr[0]
             for node in nodes:
                 self._nodes[node].concentration = value
@@ -724,7 +724,7 @@ class _IntracellularSpecies(_SpeciesMathable):
             nrn_region = self._region._nrn_region
             if nrn_region:         
                 ion_conc = '_ref_' + self._name + nrn_region
-                self._concentration_neuron_pointers = [seg.__getattribute__(ion_conc) for seg in self._seg_to_surface_nodes.keys()]
+                self._concentration_neuron_pointers = [getattr(seg, ion_conc) for seg in self._seg_to_surface_nodes.keys()]
                 self._surface_nodes_per_seg = [nodes for nodes in self._seg_to_surface_nodes.values()]
                 self._surface_nodes_per_seg_start_indices = [len(nodes) for nodes in self._surface_nodes_per_seg]
                 
@@ -746,7 +746,7 @@ class _IntracellularSpecies(_SpeciesMathable):
                     if not isinstance(my_dx, tuple):
                         my_dx = (my_dx, my_dx, my_dx)
                     scale_factor = tenthousand_over_charge_faraday / (numpy.prod(my_dx))              
-                    self._current_neuron_pointers = [seg.__getattribute__(ion_curr) for seg in self._seg_to_surface_nodes.keys()]
+                    self._current_neuron_pointers = [getattr(seg, ion_curr) for seg in self._seg_to_surface_nodes.keys()]
                     #These are in the same order as self._surface_nodes_per_seg so self._surface_nodes_per_seg_start_indices will work for this list as well
                     geom_area = [sum(self._region.geometry.surface_areas1d(sec)) for sec in self._region._secs3d]
                     node_area = [node.surface_area for node in self._nodes]
@@ -781,7 +781,7 @@ class _IntracellularSpecies(_SpeciesMathable):
                 ion = '_ref_' + self._species + nrn_region
                 self._seg_order = list(self._region._nodes_by_seg.keys())
                 for seg in self._seg_order:
-                    self._concentration_ptrs.append(seg.__getattribute__(ion))
+                    self._concentration_ptrs.append(getattr(seg, ion))
 
     def _import_concentration(self, init=True):
         self._isalive()
@@ -1070,7 +1070,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
                 try:
                     for i in ion_forms:
                     # this throws an exception if one of the ion forms is missing
-                        temp = s.__getattribute__(i)
+                        temp = getattr(s, i)
                 except:
                     s.insert(self._species + '_ion')
                 # set to recalculate reversal potential automatically
@@ -1140,7 +1140,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
             for seg, i in zip(sec, indices):
                 if i is not None:
                     grid_indices.append(i)
-                    neuron_pointers.append(seg.__getattribute__(stateo))
+                    neuron_pointers.append(getattr(seg, stateo))
         _set_grid_concentrations(grid_list, self._grid_id, grid_indices, neuron_pointers)
         if isinstance(_defined_species[self._species][self._region](), Parameter):
             _set_grid_currents(grid_list, self._grid_id, [], [], [])
@@ -1153,7 +1153,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
             for sec, indices in self._seg_indices.items():
                 for seg, surface_area, i in zip(sec, _surface_areas1d(sec), indices):
                     if i is not None:
-                        neuron_pointers.append(seg.__getattribute__(ispecies))
+                        neuron_pointers.append(getattr(seg, ispecies))
                         scale_factors.append(float(scale_factor * surface_area))
             #TODO: MultiCompartment reactions ?
             _set_grid_currents(grid_list, self._grid_id, grid_indices, neuron_pointers, scale_factors)
@@ -1310,15 +1310,25 @@ class Species(_SpeciesMathable):
             if not isinstance(name, str):
                 raise RxDException('Species name must be a string')
             if name in _defined_species:
-                spsecs = []
+                spsecs_i = []
+                spsecs_o = []
                 for r in regions:
                     if r in _defined_species[name]:
                         raise RxDException('Species "%s" previously defined on region: %r' % (name, r))
-                    if hasattr(r,'_secs'): spsecs += r._secs
-                spsecs = set(spsecs)
+                    if hasattr(r,'_secs'):
+                        if r.nrn_region == 'i':
+                            spsecs_i += r._secs
+                        elif r.nrn_region == 'o':
+                            spsecs_o += r._secs
+                spsecs_i = set(spsecs_i)
+                spsecs_o = set(spsecs_o)
                 for r in  _defined_species[name]:
-                    if hasattr(r,'_secs') and any(spsecs.intersection(r._secs)):
-                        raise RxDException('Species "%s" previously defined on a region %r that overlaps with regions: %r' % (name, r, self._regions))
+                    if hasattr(r,'_secs') and r.nrn_region:
+                        if (r.nrn_region == 'i' and 
+                            any(spsecs_i.intersection(r._secs))
+                            or (r.nrn_region == 'o' and 
+                                any(spsecs_o.intersection(r._secs)))):
+                            raise RxDException('Species "%s" previously defined on a region %r that overlaps with regions: %r' % (name, r, self._regions))
         else:
             name = _species_count
         self._id = _species_count
@@ -1477,7 +1487,7 @@ class Species(_SpeciesMathable):
                             ion_forms = [self._name + 'i', self._name + 'o', 'i' + self._name, 'e' + self._name]
                             for i in ion_forms:
                                 # this throws an exception if one of the ion forms is missing
-                                temp = s.__getattribute__(self._name + 'i')
+                                temp = getattr(s, self._name + 'i')
                         except:
                             s.insert(self._name + '_ion')
                         # set to recalculate reversal potential automatically
@@ -1575,7 +1585,7 @@ class Species(_SpeciesMathable):
                     current_region_segs = list(r._nodes_by_seg.keys())
                     self._seg_order += current_region_segs
                     for seg in current_region_segs:
-                        self._concentration_ptrs.append(seg.__getattribute__(ion))    
+                        self._concentration_ptrs.append(getattr(seg, ion))    
 
     @property
     def charge(self):
@@ -1730,7 +1740,7 @@ class Species(_SpeciesMathable):
                         if volumes[i + offset] == 0:
                             print(('0 volume at position %d; surface area there: %g' % (i + offset, surface_area[i + offset])))
                         scales.append(sign * tenthousand_over_charge_faraday * surface_area[i + offset] / volumes[i + offset])
-                        ptrs.append(seg.__getattribute__(ion_curr))
+                        ptrs.append(getattr(seg, ion_curr))
 
     
     def _has_region_section(self, region, sec):
