@@ -10,3 +10,9 @@
 [submodule "ext/eigen"]
 	path = ext/eigen
 	url = https://github.com/eigenteam/eigen-git-mirror.git
+[submodule "ext/spdlog"]
+	path = ext/spdlog
+	url = https://github.com/gabime/spdlog.git
+[submodule "ext/fmt"]
+	path = ext/fmt
+	url = https://github.com/fmtlib/fmt.git

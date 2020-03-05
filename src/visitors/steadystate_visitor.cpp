@@ -7,7 +7,6 @@
 
 #include <iostream>
 
-#include "fmt/format.h"
 
 #include "codegen/codegen_naming.hpp"
 #include "symtab/symbol.hpp"

@@ -5,8 +5,9 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
-#include "symtab/symbol.hpp"
 #include "fmt/format.h"
+
+#include "symtab/symbol.hpp"
 
 
 using namespace fmt::literals;

@@ -199,6 +199,7 @@ add_executable(nmodl_lexer main_nmodl.cpp)
 add_executable(c_lexer main_c.cpp)
 add_executable(units_lexer main_units.cpp)
 
+target_link_libraries(lexer fmt::fmt)
 target_link_libraries(nmodl_lexer lexer util)
 target_link_libraries(c_lexer lexer util)
 target_link_libraries(units_lexer lexer util)

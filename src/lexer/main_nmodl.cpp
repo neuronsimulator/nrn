@@ -9,7 +9,6 @@
 #include <streambuf>
 
 #include "CLI/CLI.hpp"
-#include "fmt/format.h"
 
 #include "ast/ast.hpp"
 #include "config/config.h"
