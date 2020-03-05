@@ -7,6 +7,23 @@
 extern "C" {
 #include "hocdec.h"
 
+#define DEF_REDIRECT_VOID(function, name, obj) void function() {\
+    if (nrnpy_gui_helper_) {\
+		nrnpy_gui_helper_(name, obj);\
+	}\
+    hoc_ret();\
+    hoc_pushx(0.);\
+}
+
+#define DEF_REDIRECT_VOID_STRREF(function, name, obj) void function() {\
+    if (nrnpy_gui_helper3_) {\
+		nrnpy_gui_helper3_(name, obj, 1);\
+	}\
+    hoc_ret();\
+    hoc_pushx(0.);\
+}
+
+
 extern void hoc_ret();
 extern void hoc_pushx(double);
 extern void nrn_shape_update();
@@ -33,13 +50,15 @@ void hoc_xpvalue() {
     hoc_ret();
     hoc_pushx(0.);
 }
-void hoc_xlabel() {
+/*void hoc_xlabel() {
     if (nrnpy_gui_helper_) {
 		nrnpy_gui_helper_("xlabel", NULL);
 	}
     hoc_ret();
     hoc_pushx(0.);
-}
+}*/
+DEF_REDIRECT_VOID(hox_xlabel, "xlabel", NULL)
+
 void hoc_xbutton() {
     if (nrnpy_gui_helper_) {
 		nrnpy_gui_helper_("xbutton", NULL);
@@ -96,13 +115,15 @@ void hoc_xfixedvalue() {
     hoc_ret();
     hoc_pushx(0.);
 }
-void hoc_xvarlabel() {
+/*void hoc_xvarlabel() {
     if (nrnpy_gui_helper3_) {
 		nrnpy_gui_helper3_("xvarlabel", NULL, 1);
 	}
     hoc_ret();
     hoc_pushx(0.);
-}
+}*/
+DEF_REDIRECT_VOID_STRREF(hox_xvarlabel, "xvarlabel", NULL)
+
 void hoc_xslider() {
     if (nrnpy_gui_helper_) {
 		nrnpy_gui_helper_("xslider", NULL);
