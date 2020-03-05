@@ -22,6 +22,26 @@
 #include "oc2iv.h"
 #include "classreg.h"
 
+#define TRY_REDIRECT_OBJ(name, obj) {\
+    Object** result;\
+    if (nrnpy_gui_helper_) {\
+        result = nrnpy_gui_helper_(name, obj);\
+        if (result) {\
+            return (void*) *result;\
+        }\
+    }\
+}
+
+#define TRY_REDIRECT_DOUBLE(name, obj) {\
+    Object** result;\
+    if (nrnpy_gui_helper_) {\
+        result = nrnpy_gui_helper_(name, obj);\
+        if (result) {\
+            return nrnpy_object_to_double_(*result);\
+        }\
+    }\
+}
+
 extern "C" int hoc_return_type_code;
 
 extern "C" {
@@ -116,13 +136,7 @@ void BoxDismiss::execute() {
 }
 #endif /* HAVE_IV */ 
 static void* vcons(Object*) {
-	Object** result;
-	if (nrnpy_gui_helper_) {
-		result = nrnpy_gui_helper_("VBox", NULL);
-		if (result) {
-			return (void*) *result;
-		}
-	}	
+	TRY_REDIRECT_OBJ("VBox", NULL)	
 #if HAVE_IV
 	OcBox* b = NULL;
         int frame = OcBox::INSET;
@@ -138,13 +152,7 @@ static void* vcons(Object*) {
 }
 	
 static void* hcons(Object*) {
-	Object** result;
-	if (nrnpy_gui_helper_) {
-		result = nrnpy_gui_helper_("HBox", NULL);
-		if (result) {
-			return (void*) *result;
-		}
-	}
+	TRY_REDIRECT_OBJ("HBox", NULL)
 #if HAVE_IV
 	OcBox* b = NULL;
         int frame = OcBox::INSET;
@@ -178,13 +186,7 @@ ENDGUI
 }
 
 static double intercept(void* v) {
-	Object** result;
-	if (nrnpy_gui_helper_) {
-		result = nrnpy_gui_helper_("Box.intercept", (Object*) v);
-		if (result) {
-			return 1;
-		}
-	}
+	TRY_REDIRECT_DOUBLE("Box.intercept", (Object*) v)
 #if HAVE_IV
 	bool b = int(chkarg(1, 0., 1.));
 IFGUI
