@@ -142,9 +142,12 @@ if using_cmake:
   extra_link_args.append("-Wl,-rpath,@loader_path/../../")
   extra_link_args.append("-Wl,-rpath,%s" % ivlibdir)
 
+extra_compile_args = []
+
 if using_pgi:
   extra_link_args.append(pgi_compiler_flags)
   extra_rpath_flags.append(pgi_compiler_flags)
+  extra_compile_args.append(pgi_compiler_flags)
 
 hoc_module = Extension(
     "neuron.hoc",
@@ -153,7 +156,7 @@ hoc_module = Extension(
     @MAC_DARWIN_TRUE@extra_link_args = extra_link_args,
     @setup_extra_link_args@ = extra_rpath_flags,
     #extra_objects = [],
-    extra_compile_args = [pgi_compiler_flags],
+    extra_compile_args = extra_compile_args,
     libraries = libs if using_cmake else [
         "nrnpython@npy_pyver10@",
         "nrnoc", "oc", "nrniv", "ivoc",
