@@ -8,7 +8,6 @@
 #include <fstream>
 
 #include "CLI/CLI.hpp"
-#include "fmt/format.h"
 
 #include "config/config.h"
 #include "lexer/unit_lexer.hpp"

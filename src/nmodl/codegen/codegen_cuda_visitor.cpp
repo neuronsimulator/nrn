@@ -5,8 +5,6 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
-#include <fmt/format.h>
-
 #include "codegen/codegen_cuda_visitor.hpp"
 #include "symtab/symbol_table.hpp"
 #include "utils/string_utils.hpp"

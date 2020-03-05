@@ -13,7 +13,6 @@ project(NMODL CXX)
 # =============================================================================
 set(PROJECT_VERSION_MAJOR 0)
 set(PROJECT_VERSION_MINOR 2)
-set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -102,13 +101,22 @@ find_python_module(yaml 3.12 REQUIRED)
 include_directories(${NMODL_PROJECT_SOURCE_DIR}
                     ${NMODL_PROJECT_SOURCE_DIR}/src
                     ${PROJECT_BINARY_DIR}/src
-                    ${NMODL_PROJECT_SOURCE_DIR}/ext)
+                    ${NMODL_PROJECT_SOURCE_DIR}/ext
+                    ${NMODL_PROJECT_SOURCE_DIR}/ext/fmt/include
+                    ${NMODL_PROJECT_SOURCE_DIR}/ext/spdlog/include)
 
 # =============================================================================
 # Include pybind11
 # =============================================================================
 message(STATUS "INCLUDING PYBIND11")
 add_subdirectory(ext/pybind11)
+
+# =============================================================================
+# Include fmt library
+# =============================================================================
+message(STATUS "INCLUDING FMT")
+add_subdirectory(ext/fmt EXCLUDE_FROM_ALL)
+set_property(TARGET fmt PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 # =============================================================================
 # Include path from external libraries

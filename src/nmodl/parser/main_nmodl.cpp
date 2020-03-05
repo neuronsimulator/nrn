@@ -7,7 +7,6 @@
 
 
 #include "CLI/CLI.hpp"
-#include "fmt/format.h"
 
 #include "config/config.h"
 #include "parser/nmodl_driver.hpp"

@@ -7,7 +7,6 @@
 
 #include <iostream>
 
-#include "fmt/format.h"
 #include "kinetic_block_visitor.hpp"
 #include "symtab/symbol.hpp"
 #include "utils/logger.hpp"

@@ -8,7 +8,6 @@
 #include <sstream>
 
 #include "CLI/CLI.hpp"
-#include "fmt/format.h"
 #include "pybind11/embed.h"
 
 #include "config/config.h"

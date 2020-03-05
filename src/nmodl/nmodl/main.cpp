@@ -10,7 +10,6 @@
 #include <vector>
 
 #include "CLI/CLI.hpp"
-#include "fmt/format.h"
 #include "pybind11/embed.h"
 
 #include "ast/ast_decl.hpp"

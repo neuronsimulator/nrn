@@ -9,7 +9,6 @@
 #include <sstream>
 
 #include "CLI/CLI.hpp"
-#include "fmt/format.h"
 
 #include "config/config.h"
 #include "lexer/c11_lexer.hpp"

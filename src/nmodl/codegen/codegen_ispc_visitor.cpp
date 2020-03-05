@@ -6,7 +6,6 @@
  *************************************************************************/
 
 #include <cmath>
-#include <fmt/format.h>
 #include <src/visitors/rename_visitor.hpp>
 
 #include "codegen/codegen_ispc_visitor.hpp"
