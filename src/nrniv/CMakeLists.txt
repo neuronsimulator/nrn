@@ -241,7 +241,7 @@ endif()
 # All source directories to include
 # =============================================================================
 add_library(nrniv_lib SHARED ${NRN_NRNIV_LIB_SRC_FILES})
-if(Readline_FOUND)
+if(NOT NRN_MACOS_BUILD AND ${READLINE_FOUND})
   target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES} ${Readline_LIBRARY})
 else()
   target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES} readline)
