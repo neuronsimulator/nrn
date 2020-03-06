@@ -7,6 +7,7 @@
 # commonly included directories
 include_directories(utils/randoms
                     ${MPI_INCLUDE_PATH}
+                    ${PROJECT_BINARY_DIR}/coreneuron
                     ${CMAKE_BINARY_DIR}/coreneuron
                     ${CMAKE_BINARY_DIR}/include)
 
