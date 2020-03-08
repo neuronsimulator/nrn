@@ -99,14 +99,18 @@ addons:
       - flex
       - openmpi
       - boost
+    update: true
 
 #=============================================================================
 # Set up environments
 #=============================================================================
 before_install:
   # brew installed flex and bison is not in $PATH
+  # unlink python2 and use python3 as it's required for nmodl
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
         export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH;
+        brew unlink python@2;
+        brew link --overwrite python;
     fi
   # when python 3.6.7 is required, ex. NMODL in linux
   - if [ -n "$PYTHON_VERSION" ]; then
