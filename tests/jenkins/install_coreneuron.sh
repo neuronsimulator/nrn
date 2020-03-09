@@ -23,11 +23,6 @@ cd $WORKSPACE/build_${CORENRN_TYPE}
 echo "${CORENRN_TYPE} build"
 if [ "${CORENRN_TYPE}" = "GPU-non-unified" ]; then
     cmake \
-        -DCMAKE_C_FLAGS:STRING="-O2" \
-        -DCMAKE_CXX_FLAGS:STRING="-O2 -D_GLIBCXX_USE_CXX11_ABI=0 -DR123_USE_SSE=0" \
-        -DCOMPILE_LIBRARY_TYPE=STATIC  \
-        -DCUDA_HOST_COMPILER=`which gcc` \
-        -DCUDA_PROPAGATE_HOST_FLAGS=OFF \
         -DCORENRN_ENABLE_GPU=ON \
         -DCORENRN_ENABLE_CUDA_UNIFIED_MEMORY=OFF \
         -DCMAKE_INSTALL_PREFIX=$WORKSPACE/install_${CORENRN_TYPE}/ \
@@ -38,11 +33,6 @@ if [ "${CORENRN_TYPE}" = "GPU-non-unified" ]; then
         $WORKSPACE/
 elif [ "${CORENRN_TYPE}" = "GPU-unified" ]; then
     cmake \
-        -DCMAKE_C_FLAGS:STRING="-O2" \
-        -DCMAKE_CXX_FLAGS:STRING="-O2 -D_GLIBCXX_USE_CXX11_ABI=0 -DR123_USE_SSE=0" \
-        -DCOMPILE_LIBRARY_TYPE=STATIC  \
-        -DCUDA_HOST_COMPILER=`which gcc` \
-        -DCUDA_PROPAGATE_HOST_FLAGS=OFF \
         -DCORENRN_ENABLE_GPU=ON \
         -DCORENRN_ENABLE_CUDA_UNIFIED_MEMORY=ON \
         -DCMAKE_INSTALL_PREFIX=$WORKSPACE/install_${CORENRN_TYPE}/ \

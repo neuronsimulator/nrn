@@ -80,12 +80,7 @@ module load pgi/18.4 cuda/9.0.176 cmake intel-mpi # change pgi, cuda and mpi mod
 export CC=mpicc
 export CXX=mpicxx
 
-cmake ..  -DCMAKE_C_FLAGS:STRING="-O2" \
-          -DCMAKE_CXX_FLAGS:STRING="-O2" \
-          -DCOMPILE_LIBRARY_TYPE=STATIC \
-          -DCUDA_HOST_COMPILER=`which gcc` \
-          -DCUDA_PROPAGATE_HOST_FLAGS=OFF \
-          -DCORENRN_ENABLE_GPU=ON
+cmake .. -DCORENRN_ENABLE_GPU=ON
 ```
 
 Note that the CUDA Toolkit version should be compatible with PGI compiler installed on your system. Otherwise you have to add extra C/C++ flags. For example, if we are using CUDA Toolkit 9.0 installation but PGI default target is CUDA 8.0 then we have to add :

@@ -40,7 +40,7 @@ INCLUDES += $(if @reportinglib_INCLUDE_DIR@, -I$(subst ;, -I,@reportinglib_INCLU
 CC = @CMAKE_C_COMPILER@
 CXX = @CMAKE_CXX_COMPILER@
 CFLAGS = @BUILD_TYPE_C_FLAGS@ @CMAKE_C_FLAGS@
-CXXFLAGS = @BUILD_TYPE_CXX_FLAGS@ @CMAKE_CXX_FLAGS@ @CXX14_STANDARD_COMPILE_OPTION@
+CXXFLAGS = @BUILD_TYPE_CXX_FLAGS@ @CMAKE_CXX_FLAGS@ @CXX14_STANDARD_COMPILE_OPTION@ @PGI_INLINE_FLAGS@
 
 COMPILE = $(CC) $(CFLAGS) @CORENRN_COMPILE_DEFS@ $(INCLUDES)
 CXXCOMPILE = $(CXX) $(CXXFLAGS) @CORENRN_COMPILE_DEFS@ $(INCLUDES)
@@ -96,7 +96,12 @@ dimplic_o  = $(OBJS_DIR)/_dimplic.o
 
 special  = $(OUTPUT)/special-core
 coremech_libname = corenrnmech$(if $(MECH_NAME),_$(MECH_NAME),)
-coremech_lib = $(OUTPUT)/lib$(coremech_libname)@CMAKE_SHARED_LIBRARY_SUFFIX@
+ifeq (@COMPILE_LIBRARY_TYPE@, STATIC)
+    library_suffix = @CMAKE_STATIC_LIBRARY_SUFFIX@
+else
+    library_suffix = @CMAKE_SHARED_LIBRARY_SUFFIX@
+endif
+coremech_lib = $(OUTPUT)/lib$(coremech_libname)$(library_suffix)
 
 # If no DESTDIR (we are probably just building) we use $ORIGIN (@loader_path in OSX)
 _ORIGIN := $(if $(filter Darwin,$(OS_NAME)),@loader_path,$$ORIGIN)
@@ -105,7 +110,6 @@ DESTDIR_RPATH = $(if $(DESTDIR),$(DESTDIR)/lib,$(_ORIGIN))
 
 C_RESET := \033[0m
 C_GREEN := \033[32m
-
 
 # ======== MAIN BUILD RULES ============
 
@@ -119,9 +123,15 @@ $(special): $(coremech_lib)
 
 $(coremech_lib): $(mod_func_o) $(dimplic_o) $(mod_c_objs) $(mod_ispc_objs) build_always
 	@printf " => $(C_GREEN)LINKING$(C_RESET) library $(coremech_lib) Mod files: $(mod_files)\n"
-	$(CXX_LINK_SHARED) $(INCFLAGS) -I $(incdir) -DADDITIONAL_MECHS $(datadir)/enginemech.cpp -o ${coremech_lib} ${_SONAME} \
-	  $(mod_func_o) $(dimplic_o) $(mod_c_objs) $(mod_ispc_objs) $(libdir)/libscopmath.a $(CORENRNLIB_FLAGS) -Wl,-rpath,$(libdir) $(LDFLAGS)
-	(rm -f $(OUTPUT)/.libs/libcorenrnmech@CMAKE_SHARED_LIBRARY_SUFFIX@ ; mkdir -p $(OUTPUT)/.libs ; ln -s ../../${coremech_lib} $(OUTPUT)/.libs/libcorenrnmech@CMAKE_SHARED_LIBRARY_SUFFIX@)
+	@rm -f ${coremech_lib}
+	$(CXXCOMPILE) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c -DADDITIONAL_MECHS $(datadir)/enginemech.cpp
+	@if [ "@COMPILE_LIBRARY_TYPE@" = "SHARED" ]; then\
+		$(CXX_LINK_SHARED) $(INCFLAGS) -I $(incdir) enginemech.o -o ${coremech_lib} ${_SONAME} \
+			$(mod_func_o) $(dimplic_o) $(mod_c_objs) $(mod_ispc_objs) $(libdir)/libscopmath.a $(CORENRNLIB_FLAGS) -Wl,-rpath,$(libdir) $(LDFLAGS);\
+	else\
+		ar cq ${coremech_lib} enginemech.o $(mod_func_o) $(dimplic_o) $(mod_c_objs) $(mod_ispc_objs);\
+	fi
+	(rm -f $(OUTPUT)/.libs/libcorenrnmech$(library_suffix) ; mkdir -p $(OUTPUT)/.libs ; ln -s ../../${coremech_lib} $(OUTPUT)/.libs/libcorenrnmech$(library_suffix))
 
 
 # Generic build cpp->.o Need PIC for shared lib
