@@ -46,6 +46,8 @@ extern int nrnmpi_myid_bbs;       /* rank in nrn_bbs_comm of rank 0 of a subworl
 extern void nrn_abort(int errcode);
 extern void nrn_fatal_error(const char* msg);
 extern double nrn_wtime(void);
+extern int nrnmpi_local_rank();
+extern int nrnmpi_local_size();
 }  // namespace coreneuron
 
 #if defined(NRNMPI)

@@ -11,6 +11,7 @@
 #include "coreneuron/sim/scopmath/newton_struct.h"
 #include "coreneuron/coreneuron.hpp"
 #include "coreneuron/utils/nrnoc_aux.hpp"
+#include "coreneuron/mpi/nrnmpi.h"
 
 #ifdef _OPENACC
 #include <openacc.h>
@@ -946,14 +947,27 @@ void nrn_ion_global_map_copyto_device() {
 }
 
 void init_gpu(int nthreads, NrnThread* threads) {
-    if (nthreads <= 0) {
-        printf("\n Warning: No threads to copy on GPU! ");
-        return;
+    // choose nvidia GPU by default
+    acc_device_t device_type = acc_device_nvidia;
+
+    // check how many gpu devices available
+    int num_devices = acc_get_num_devices(device_type);
+
+    // if no gpu found, can't run on GPU
+    if (num_devices == 0) {
+        nrn_fatal_error("\n ERROR : Enabled GPU execution but couldn't find NVIDIA GPU! \n");
     }
 
-    /** @todo: currently only checking nvidia gpu */
-    if (acc_get_num_devices(acc_device_nvidia) == 0) {
-        printf("\n WARNING: Enabled GPU execution but couldn't find NVIDIA GPU! \n");
+    // get local rank within a node and assign specific gpu gpu for this node.
+    // multiple threads within the node will use same device.
+    int local_rank = nrnmpi_local_rank();
+    int local_size = nrnmpi_local_size();
+
+    int device_num = local_rank % num_devices;
+    acc_set_device_num(device_num, device_type);
+
+    if (nrnmpi_myid == 0) {
+        std::cout << " Info : " << num_devices << " GPUs shared by " << local_size << " ranks per node\n";
     }
 
     for (int i = 0; i < nthreads; i++) {
