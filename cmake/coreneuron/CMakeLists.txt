@@ -192,6 +192,7 @@ if(CORENRN_ENABLE_NMODL)
     set(CORENRN_NMODL_INCLUDE ${CMAKE_BINARY_DIR}/include)
   endif()
   include_directories(${CORENRN_NMODL_INCLUDE})
+  # set correct arguments for nmodl for cpu/gpu target
   if(CORENRN_ENABLE_GPU)
     set(CORENRN_NMODL_FLAGS "acc --oacc" CACHE STRING "Extra NMODL options such as passes")
   else()

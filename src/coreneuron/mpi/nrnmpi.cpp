@@ -242,10 +242,10 @@ int nrnmpi_local_rank() {
 }
 
 /**
- * Return number of ranks launched on single shared memory node
+ * Return number of ranks running on single shared memory node
  *
  * We use MPI 3 MPI_Comm_split_type function and MPI_COMM_TYPE_SHARED key to
- * determine number of mpi ranks within a shared memory node..
+ * determine number of mpi ranks within a shared memory node.
  */
 int nrnmpi_local_size() {
     int local_size = 1;
