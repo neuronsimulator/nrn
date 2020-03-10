@@ -46,9 +46,10 @@ addons:
   # for Mac builds, we use Homebrew
   homebrew:
     packages:
-      - flex
+      - bison
       - boost
       - cmake
+      - flex
       - python@3
     update: true
 
@@ -56,15 +57,12 @@ addons:
 # Install dependencies / setup Spack
 #=============================================================================
 before_install:
-  # default bison in homebrew is now 3.5 but nmodl currently does not build with bison 3.5
   # brew installed flex and bison is not in $PATH
   # unlink python2 and use python3 as it's required for nmodl
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
         export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH;
         brew unlink python@2;
         brew link --overwrite python;
-        curl -L "https://homebrew.bintray.com/bottles/bison-3.4.2.mojave.bottle.tar.gz" -o bison-3.4.2.mojave.bottle.tar.gz;
-        brew install file://$(pwd)/bison-3.4.2.mojave.bottle.tar.gz;
     else
         pyenv global $PYTHON_VERSION;
         ls /usr/bin/;

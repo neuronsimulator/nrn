@@ -25,7 +25,7 @@
 
 using namespace fmt::literals;
 using namespace nmodl;
-
+using Token = parser::CParser::token;
 
 void scan_c_code(std::istream& in) {
     nmodl::parser::CDriver driver;
@@ -34,8 +34,8 @@ void scan_c_code(std::istream& in) {
     /// parse C file and print token until EOF
     while (true) {
         auto sym = scanner.next_token();
-        auto token = sym.token();
-        if (token == nmodl::parser::CParser::token::END) {
+        auto token_type = sym.type_get();
+        if (token_type == parser::CParser::by_type(Token::END).type_get()) {
             break;
         }
         std::cout << sym.value.as<std::string>() << std::endl;

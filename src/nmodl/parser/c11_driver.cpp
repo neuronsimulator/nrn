@@ -69,8 +69,8 @@ void CDriver::scan_string(std::string& text) {
     this->parser = &parser;
     while (true) {
         auto sym = lexer->next_token();
-        auto token = sym.token();
-        if (token == CParser::token::END) {
+        auto token_type = sym.type_get();
+        if (token_type == CParser::by_type(CParser::token::END).type_get()) {
             break;
         }
     }

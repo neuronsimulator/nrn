@@ -22,6 +22,7 @@
 
 using namespace fmt::literals;
 using namespace nmodl;
+using Token = parser::UnitParser::token;
 
 int main(int argc, const char* argv[]) {
     CLI::App app{"Unit-Lexer : Standalone Lexer for Units({})"_format(Version::to_string())};
@@ -42,8 +43,8 @@ int main(int argc, const char* argv[]) {
         /// parse Units file and print token until EOF
         while (true) {
             auto sym = scanner.next_token();
-            auto token = sym.token();
-            if (token == nmodl::parser::UnitParser::token::END) {
+            auto token_type = sym.type_get();
+            if (token_type == parser::UnitParser::by_type(Token::END).type_get()) {
                 break;
             }
             std::cout << sym.value.as<std::string>() << std::endl;
