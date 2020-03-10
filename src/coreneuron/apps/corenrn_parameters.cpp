@@ -124,8 +124,8 @@ void corenrn_parameters::parse (int argc, char** argv) {
 std::ostream& operator<<(std::ostream& os, const corenrn_parameters& corenrn_param){
 
     os  << "GENERAL PARAMETERS" << std::endl
-        << "--mpi=" << (corenrn_param.gpu ? "true" : "false") <<  std::endl
-        << "--gpu=" << (corenrn_param.mpi_enable ? "true" : "false") <<  std::endl
+        << "--mpi=" << (corenrn_param.mpi_enable ? "true" : "false") <<  std::endl
+        << "--gpu=" << (corenrn_param.gpu ? "true" : "false") <<  std::endl
         << "--dt=" << corenrn_param.dt <<  std::endl
         << "--tstop=" << corenrn_param.tstop << std::endl
         << std::endl
