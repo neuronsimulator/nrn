@@ -64,8 +64,8 @@ void UnitDriver::scan_string(std::string& text) {
     this->parser = &parser;
     while (true) {
         auto sym = lexer->next_token();
-        auto token = sym.token();
-        if (token == UnitParser::token::END) {
+        auto token_type = sym.type_get();
+        if (token_type == UnitParser::by_type(UnitParser::token::END).type_get()) {
             break;
         }
     }

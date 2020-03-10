@@ -20,7 +20,7 @@
 %}
 
 /** print out verbose error instead of just message 'syntax error' */
-%error-verbose
+%define parse.error verbose
 
 /** make a reentrant parser */
 %pure-parser

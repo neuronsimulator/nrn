@@ -22,50 +22,51 @@ using Token = UnitParser::token;
 using TokenType = UnitParser::token_type;
 using SymbolType = UnitParser::symbol_type;
 
-/// just retrieve token type from lexer
-TokenType token_type(const std::string& name) {
+/// retrieve token type from lexer and check if it's of given type
+bool check_token_type(const std::string& name, TokenType type) {
     std::istringstream ss(name);
     std::istream& in = ss;
 
     UnitDriver driver;
     UnitLexer scanner(driver, &in);
-    return scanner.next_token().token();
+    auto symbol = scanner.next_token();
+    return symbol.type_get() == UnitParser::by_type(type).type_get();
 }
 
 TEST_CASE("Unit Lexer tests for valid tokens", "[lexer][unit]") {
     SECTION("Tests for comments") {
-        REQUIRE(token_type("/ comment") == Token::COMMENT);
-        REQUIRE(token_type("/comment") == Token::COMMENT);
+        REQUIRE(check_token_type("/ comment", Token::COMMENT));
+        REQUIRE(check_token_type("/comment", Token::COMMENT));
     }
 
     SECTION("Tests for doubles") {
-        REQUIRE(token_type("27.52") == Token::DOUBLE);
-        REQUIRE(token_type("1.01325+5") == Token::DOUBLE);
-        REQUIRE(token_type("1") == Token::DOUBLE);
-        REQUIRE(token_type("-1.324e+10") == Token::DOUBLE);
-        REQUIRE(token_type("1-1") == Token::DOUBLE);
-        REQUIRE(token_type("1|100") == Token::FRACTION);
-        REQUIRE(token_type(".03") == Token::DOUBLE);
-        REQUIRE(token_type("12345e-2") == Token::DOUBLE);
-        REQUIRE(token_type("1|8.988e9") == Token::FRACTION);
+        REQUIRE(check_token_type("27.52", Token::DOUBLE));
+        REQUIRE(check_token_type("1.01325+5", Token::DOUBLE));
+        REQUIRE(check_token_type("1", Token::DOUBLE));
+        REQUIRE(check_token_type("-1.324e+10", Token::DOUBLE));
+        REQUIRE(check_token_type("1-1", Token::DOUBLE));
+        REQUIRE(check_token_type("1|100", Token::FRACTION));
+        REQUIRE(check_token_type(".03", Token::DOUBLE));
+        REQUIRE(check_token_type("12345e-2", Token::DOUBLE));
+        REQUIRE(check_token_type("1|8.988e9", Token::FRACTION));
     }
 
     SECTION("Tests for units") {
-        REQUIRE(token_type("*a*") == Token::BASE_UNIT);
-        REQUIRE(token_type("*k*") == Token::INVALID_BASE_UNIT);
-        REQUIRE(token_type("planck") == Token::NEW_UNIT);
-        REQUIRE(token_type("mse-1") == Token::NEW_UNIT);
-        REQUIRE(token_type("mA/cm2") == Token::NEW_UNIT);
-        REQUIRE(token_type(" m2") == Token::UNIT_POWER);
-        REQUIRE(token_type(" m") == Token::UNIT);
-        REQUIRE(token_type(" m_2") == Token::UNIT);
-        REQUIRE(token_type(" m_unit2") == Token::UNIT);
-        REQUIRE(token_type("yotta-") == Token::PREFIX);
+        REQUIRE(check_token_type("*a*", Token::BASE_UNIT));
+        REQUIRE(check_token_type("*k*", Token::INVALID_BASE_UNIT));
+        REQUIRE(check_token_type("planck", Token::NEW_UNIT));
+        REQUIRE(check_token_type("mse-1", Token::NEW_UNIT));
+        REQUIRE(check_token_type("mA/cm2", Token::NEW_UNIT));
+        REQUIRE(check_token_type(" m2", Token::UNIT_POWER));
+        REQUIRE(check_token_type(" m", Token::UNIT));
+        REQUIRE(check_token_type(" m_2", Token::UNIT));
+        REQUIRE(check_token_type(" m_unit2", Token::UNIT));
+        REQUIRE(check_token_type("yotta-", Token::PREFIX));
     }
 
     SECTION("Tests for special characters") {
-        REQUIRE(token_type("-") == Token::UNIT_PROD);
-        REQUIRE(token_type(" / ") == Token::DIVISION);
-        REQUIRE(token_type("\n") == Token::NEWLINE);
+        REQUIRE(check_token_type("-", Token::UNIT_PROD));
+        REQUIRE(check_token_type(" / ", Token::DIVISION));
+        REQUIRE(check_token_type("\n", Token::NEWLINE));
     }
 }

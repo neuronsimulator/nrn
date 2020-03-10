@@ -77,8 +77,8 @@ std::string DiffEqContext::get_expr_for_nonlinear() {
     /// scan entire expression
     while (true) {
         auto sym = scanner.next_token();
-        auto token = sym.token();
-        if (token == DiffeqParser::token::END) {
+        auto token_type = sym.type_get();
+        if (token_type == DiffeqParser::by_type(DiffeqParser::token::END).type_get()) {
             break;
         }
         /// extract value of the token and check if it is a token

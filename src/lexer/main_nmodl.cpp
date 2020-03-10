@@ -45,73 +45,64 @@ void tokenize(const std::string& mod_text) {
     /// lexer instance with stream to read-in tokens
     NmodlLexer scanner(driver, &in);
 
+    auto get_token_type = [](TokenType token) {
+        return parser::NmodlParser::by_type(token).type_get();
+    };
+
     /// parse nmodl text and print token until EOF
     while (true) {
         SymbolType sym = scanner.next_token();
-        TokenType token = sym.token();
+        auto token_type = sym.type_get();
 
-        if (token == Token::END) {
+        if (token_type == get_token_type(Token::END)) {
             break;
         }
 
-        /** Lexer returns different ast types base on token type. We
+        /**
+         * Lexer returns different ast types base on token type. We
          * retrieve token object from each instance and print it.
-         * Note that value is of ast type i.e. ast::Name* etc. */
-        switch (token) {
+         * Note that value is of ast type i.e. ast::Name* etc.
+         */
         /// token with name ast class
-        case Token::NAME:
-        case Token::METHOD:
-        case Token::SUFFIX:
-        case Token::VALENCE:
-        case Token::DEL:
-        case Token::DEL2: {
+        if (token_type == get_token_type(Token::NAME) ||
+            token_type == get_token_type(Token::METHOD) ||
+            token_type == get_token_type(Token::SUFFIX) ||
+            token_type == get_token_type(Token::VALENCE) ||
+            token_type == get_token_type(Token::DEL) || token_type == get_token_type(Token::DEL2)) {
             auto value = sym.value.as<ast::Name>();
             std::cout << *(value.get_token()) << std::endl;
-            break;
         }
-
         /// token with prime ast class
-        case Token::PRIME: {
+        else if (token_type == get_token_type(Token::PRIME)) {
             auto value = sym.value.as<ast::PrimeName>();
             std::cout << *(value.get_token()) << std::endl;
-            break;
         }
-
         /// token with integer ast class
-        case Token::INTEGER: {
+        else if (token_type == get_token_type(Token::INTEGER)) {
             auto value = sym.value.as<ast::Integer>();
             std::cout << *(value.get_token()) << std::endl;
-            break;
         }
-
         /// token with double/float ast class
-        case Token::REAL: {
+        else if (token_type == get_token_type(Token::REAL)) {
             auto value = sym.value.as<ast::Double>();
             std::cout << *(value.get_token()) << std::endl;
-            break;
         }
-
         /// token with string ast class
-        case Token::STRING: {
+        else if (token_type == get_token_type(Token::STRING)) {
             auto value = sym.value.as<ast::String>();
             std::cout << *(value.get_token()) << std::endl;
-            break;
         }
-
         /// token with string data type
-        case Token::VERBATIM:
-        case Token::BLOCK_COMMENT:
-        case Token::LINE_PART: {
+        else if (token_type == get_token_type(Token::VERBATIM) ||
+                 token_type == get_token_type(Token::BLOCK_COMMENT) ||
+                 token_type == get_token_type(Token::LINE_PART)) {
             auto str = sym.value.as<std::string>();
             std::cout << str << std::endl;
-            break;
         }
-
         /// all remaining tokens has ModToken* as a vaue
-        default: {
+        else {
             auto token = sym.value.as<ModToken>();
             std::cout << token << std::endl;
-        }
         }
     }
 }
