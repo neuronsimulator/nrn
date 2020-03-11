@@ -46,3 +46,4 @@ class AstVisitor : public Visitor {
 
 }  // namespace visitor
 }  // namespace nmodl
+

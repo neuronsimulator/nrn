@@ -3966,7 +3966,7 @@ void CodegenCVisitor::print_nrn_cur_conductance_kernel(BreakpointBlock* node) {
         if (!conductance.ion.empty()) {
             auto lhs = "ion_di" + conductance.ion + "dv";
             auto rhs = get_variable_name(conductance.variable);
-            auto statement = ShadowUseStatement{lhs, "+=", rhs};
+            ShadowUseStatement statement{lhs, "+=", rhs};
             auto text = process_shadow_update_statement(statement, BlockType::Equation);
             printer->add_line(text);
         }
@@ -3995,7 +3995,7 @@ void CodegenCVisitor::print_nrn_cur_non_conductance_kernel() {
                     auto area = get_variable_name(naming::NODE_AREA_VARIABLE);
                     rhs += "*1.e2/{}"_format(area);
                 }
-                auto statement = ShadowUseStatement{lhs, "+=", rhs};
+                ShadowUseStatement statement{lhs, "+=", rhs};
                 auto text = process_shadow_update_statement(statement, BlockType::Equation);
                 printer->add_line(text);
             }

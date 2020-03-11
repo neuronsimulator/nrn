@@ -60,3 +60,4 @@ using {{ node.class_name }}Vector = std::vector<std::shared_ptr<{{ node.class_na
 
 }  // namespace ast
 }  // namespace nmodl
+

@@ -12,7 +12,7 @@
 	url = https://github.com/eigenteam/eigen-git-mirror.git
 [submodule "ext/spdlog"]
 	path = ext/spdlog
-	url = https://github.com/gabime/spdlog.git
+	url = https://github.com/BlueBrain/spdlog.git
 [submodule "ext/fmt"]
 	path = ext/fmt
 	url = https://github.com/fmtlib/fmt.git

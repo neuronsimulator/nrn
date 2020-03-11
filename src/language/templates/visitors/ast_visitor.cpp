@@ -22,3 +22,4 @@ void AstVisitor::visit_{{ node.class_name|snake_case }}({{ node.class_name }}* n
 
 }  // namespace visitor
 }  // namespace nmodl
+

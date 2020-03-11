@@ -49,3 +49,4 @@ std::vector<std::shared_ptr<ast::Ast>> AstLookupVisitor::lookup(Ast* node) {
 
 }  // namespace visitor
 }  // namespace nmodl
+

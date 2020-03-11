@@ -98,6 +98,16 @@ find_python_module(sympy 1.2 REQUIRED)
 find_python_module(textwrap 0.9 REQUIRED)
 find_python_module(yaml 3.12 REQUIRED)
 
+# =============================================================================
+# Compiler specific flags for external submodules
+# =============================================================================
+if(NMODL_PGI_COMPILER)
+  # PGI with llvm code generation doesn't have necessary assembly intrinsic headers
+  add_compile_definitions(EIGEN_DONT_VECTORIZE=1)
+  # nlohmann/json doesn't check for PGI compiler
+  add_compile_definitions(JSON_SKIP_UNSUPPORTED_COMPILER_CHECK=1)
+endif()
+
 include_directories(${NMODL_PROJECT_SOURCE_DIR}
                     ${NMODL_PROJECT_SOURCE_DIR}/src
                     ${PROJECT_BINARY_DIR}/src

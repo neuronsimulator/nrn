@@ -71,3 +71,4 @@ class AstLookupVisitor: public Visitor {
 
 }  // namespace visitor
 }  // namespace nmodl
+

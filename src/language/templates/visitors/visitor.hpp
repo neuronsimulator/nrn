@@ -46,3 +46,4 @@ class Visitor {
 }  // namespace nmodl
 
 /** @} */  // end of visitor_classes
+
