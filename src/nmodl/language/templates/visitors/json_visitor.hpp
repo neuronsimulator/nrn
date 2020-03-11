@@ -75,3 +75,4 @@ class JSONVisitor: public AstVisitor {
 
 }  // namespace visitor
 }  // namespace nmodl
+

@@ -40,3 +40,4 @@ void SymtabVisitor::visit_{{ typename }}({{ node.class_name }}* node) {
 
 }  // namespace visitor
 }  // namespace nmodl
+

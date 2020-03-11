@@ -53,3 +53,4 @@ class VerbatimDriver {
 
 
 int Verbatim_parse(nmodl::parser::VerbatimDriver*);
+

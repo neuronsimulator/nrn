@@ -56,3 +56,4 @@ public:
     void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}* node) override;
     {% endfor %}
 };
+

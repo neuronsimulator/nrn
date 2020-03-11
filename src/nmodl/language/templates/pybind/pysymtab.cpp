@@ -254,3 +254,4 @@ void init_symtab_module(py::module& m) {
 }
 
 #pragma clang diagnostic pop
+

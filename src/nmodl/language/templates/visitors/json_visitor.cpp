@@ -48,3 +48,4 @@ void JSONVisitor::visit_{{ node.class_name|snake_case }}({{ node.class_name }}* 
 
 }  // namespace visitor
 }  // namespace nmodl
+
