@@ -232,6 +232,29 @@ void inithoc() {
     free(pmes);
   }
 #endif // NRNMPI
+
+  char* env_nframe = getenv("NEURON_NFRAME");
+  if(env_nframe != NULL ) {
+    char *endptr;
+    const int nframe_env_value = strtol(env_nframe, &endptr, 10);
+    if (*endptr == '\0') {
+      if(nframe_env_value > 0) {
+        argc += 3;
+        argv[argc - 2] = new char[strlen("-NFRAME") + 1];
+        strcpy(argv[argc - 2], "-NFRAME");
+        argv[argc - 1] = new char[strlen(env_nframe) + 1];
+        strcpy(argv[argc - 1], env_nframe);
+      }else{
+         printf(
+          "NEURON_NFRAME env value must be positive\n");
+      }
+    }else{
+      printf(
+          "NEURON_NFRAME env value is invalid!\n");
+    }
+
+  }
+
   nrn_main_launch = 2;
   ivocmain(argc, argv, env);
 //	nrnpy_augment_path();
