@@ -90,47 +90,49 @@ macro(nrn_check_signal_return_type VARIABLE)
 endmacro()
 
 # =============================================================================
-# Transform PROJECT_SOURCE_DIR/dir/file.in to PROJECT_BINARY_DIR/dir/file
+# Transform PROJECT_SOURCE_DIR/sdir/sfile.in to PROJECT_BINARY_DIR/bdir/bfile
 # =============================================================================
 # ~~~
-# Just as autoconf transforms file.in into file, this macro transforms
-# PROJECT_SOURCE_DIR/dir/file.in into PROJECT_BINARY_DIR/dir/file.
-# This first copies with some replacement the file.in to cmake_file.in
+# Just as autoconf transforms file.in into file, this 4 arg macro transforms
+# PROJECT_SOURCE_DIR/sdir/sfile.in into PROJECT_BINARY_DIR/bdir/bfile . The
+# shorter two arg form transforms PROJECT_SOURCE_DIR/dir/file.in into
+# PROJECT_BINARY_DIR/dir/file
+# This first copies with some replacement the sfile.in to _cmake_tmp_bfile.in
 # so that the normal cmake configure_file command works to make a proper
-# cmake_file. Then that is compared to a possibly existing file and
-# if different copies file_cmk to file. This prevent recompilation of
-# .o files that depend on file. The dir arg is the path relative to
-# PROJECT_SOURCE_DIR and PROJECT_BINARY_DIR.
+# cmake_file. Then that is compared to a possibly existing bfile and,
+# if different, copies _cmake_tmp_bfile to bfile. This prevents recompilation of
+# .o files that depend on unchanged bfile. The sdir arg is the path relative to
+# PROJECT_SOURCE_DIR, the bdir arg is the path relative to PROJECT_BINARY_DIR.
+# Lastly, in case there is an autotools version of bfile left over
+# from a previous autotools build, PROJECT_SRC_DIR/sdir/bfile is removed.
+# Note that everytime cmake is run, the bfile is compared to a newly created
+# _cmake_tmp_bfile consistent with the current cmake args.
 # ~~~
-macro(nrn_configure_file file dir)
-  set(out_dir ${dir})
-  set(extra_args ${ARGN})
-  list(LENGTH extra_args n_extra_args)
-  if(n_extra_args GREATER 0)
-    list(FIND extra_args OUTPUT pos_key_output)
-    math(EXPR pos_output "${pos_key_output}+1")
-    if(pos_key_output GREATER -1 AND pos_output LESS n_extra_args)
-      list(GET extra_args ${pos_output} out_dir)
-    endif()
-  endif()
-  set(bin_dir ${PROJECT_BINARY_DIR}/${out_dir})
+macro(nrn_configure_file4 bfile bdir sfile sdir)
+  set(infile ${PROJECT_SOURCE_DIR}/${sdir}/${sfile}.in)
+  set(bin_dir ${PROJECT_BINARY_DIR}/${bdir})
   file(MAKE_DIRECTORY ${bin_dir})
   execute_process(
     COMMAND sed "s/\#undef *\\(.*\\)/\#cmakedefine \\1 @\\1@/"
-    INPUT_FILE ${PROJECT_SOURCE_DIR}/${dir}/${file}.in
-    OUTPUT_FILE ${bin_dir}/cmake_${file}.in)
-  configure_file(${bin_dir}/cmake_${file}.in ${bin_dir}/cmake_${file} @ONLY)
-  execute_process(COMMAND cmp -s ${bin_dir}/cmake_${file} ${bin_dir}/${file} RESULT_VARIABLE result)
+    INPUT_FILE ${infile}
+    OUTPUT_FILE ${bin_dir}/_cmake_tmp_${bfile}.in)
+  configure_file(${bin_dir}/_cmake_tmp_${bfile}.in ${bin_dir}/_cmake_tmp_${bfile} @ONLY)
+  execute_process(COMMAND cmp -s ${bin_dir}/_cmake_tmp_${bfile} ${bin_dir}/${bfile} RESULT_VARIABLE result)
   if(result EQUAL 0)
-    file(REMOVE ${bin_dir}/cmake_${file})
+    file(REMOVE ${bin_dir}/_cmake_tmp_${bfile})
   else()
-    file(RENAME ${bin_dir}/cmake_${file} ${bin_dir}/${file})
+    file(RENAME ${bin_dir}/_cmake_tmp_${bfile} ${bin_dir}/${bfile})
   endif()
-  file(REMOVE ${bin_dir}/cmake_${file}.in)
+  file(REMOVE ${bin_dir}/_cmake_tmp_${bfile}.in)
   set_property(
     DIRECTORY
     APPEND
-    PROPERTY CMAKE_CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/${dir}/${file}.in)
+    PROPERTY CMAKE_CONFIGURE_DEPENDS ${infile})
+  file(REMOVE "${PROJECT_SOURCE_DIR}/${sdir}/${bfile}")
+endmacro()
+
+macro(nrn_configure_file file dir)
+  nrn_configure_file4(${file} ${dir} ${file} ${dir})
 endmacro()
 
 # =============================================================================
