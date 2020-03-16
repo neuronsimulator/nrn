@@ -149,9 +149,7 @@ class _c_region:
             for sec in self._overlap:
                 for seg in sec:
                     (x,y,z) = species._xyz(seg)
-                    #TODO: Returns none, causing an error.
-                    node_idx = s().index_from_xyz(x,y,z)
-                    self.ecs_location_index[sid][seg_idx] = node_idx if node_idx else -1
+                    self.ecs_location_index[sid][seg_idx] = s().index_from_xyz(x,y,z)
                     seg_idx+=1
         self.ecs_location_index = self.ecs_location_index.transpose()
 
