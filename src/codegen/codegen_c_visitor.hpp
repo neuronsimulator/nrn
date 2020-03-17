@@ -22,7 +22,7 @@
 #include <string>
 #include <utility>
 
-#include "fmt/format.h"
+#include <fmt/format.h>
 
 #include "codegen/codegen_info.hpp"
 #include "codegen/codegen_naming.hpp"
