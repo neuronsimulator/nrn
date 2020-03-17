@@ -96,6 +96,7 @@ e.g. a bare-bones install:
 
   ```
   cmake .. \
+   -DNRN_ENABLE_INTERVIEWS=OFF \
    -DNRN_ENABLE_MPI=OFF \
    -DNRN_ENABLE_RX3D=OFF
   ```
@@ -109,7 +110,7 @@ e.g. a bare-bones install:
 
 Particularly useful CMake options are (use **ON** to enable and **OFF** to disable feature):
 
-* **-DNRN\_ENABLE\_INTERVIEWS=ON** : Enable Interviews (native GUI support)
+* **-DNRN\_ENABLE\_INTERVIEWS=OFF** : Disable Interviews (native GUI support)
 * **-DNRN\_ENABLE\_PYTHON=OFF** : Disable Python support
 * **-DNRN\_ENABLE\_MPI=OFF** : Disable MPI support for parallelization
 * **-DNRN\_ENABLE\_RX3D=OFF** : Disable rx3d support
