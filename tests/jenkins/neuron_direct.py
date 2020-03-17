@@ -10,6 +10,9 @@ ic.delay = .5
 ic.dur = 0.1
 ic.amp = 0.3
 
+# for testing external mod file
+h.soma.insert("CaDynamics_E2")
+
 h.cvode.use_fast_imem(1)
 h.cvode.cache_efficient(1)
 

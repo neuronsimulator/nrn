@@ -1,21 +1,107 @@
-/// Corenrnmech is a wrapper lib providing a single solve_core function
-/// which initializes the solver, loads the external mechanisms and launches the simulation
+/**
+ * \file
+ * \brief Provides interface function for CoreNEURON mechanism library and NEURON
+ *
+ * libcorenrnmech is a interface library provided to building standalone executable
+ * special-core. Also, it is used by NEURON to run CoreNEURON via dlopen to execute
+ * models via in-memory transfer.
+ */
 
+#include <cstdlib>
 #include <coreneuron/engine.h>
 
-#ifdef ADDITIONAL_MECHS
 namespace coreneuron {
+
+/** Mechanism registration function
+ *
+ * If external mechanisms present then use modl_reg function generated
+ * in mod_func.cpp otherwise use empty one.
+ */
+#ifdef ADDITIONAL_MECHS
 extern void modl_reg();
+#else
+void modl_reg() {
 }
 #endif
 
+/// variables defined in coreneuron library
+extern bool nrn_have_gaps;
+extern bool nrn_use_fast_imem;
+
+}  // namespace coreneuron
+
+/** Initialize mechanisms and run simulation using CoreNEURON
+ *
+ * This is mainly used to build nrniv-core executable
+ */
 int solve_core(int argc, char** argv) {
     mk_mech_init(argc, argv);
-
-#ifdef ADDITIONAL_MECHS
-    /// Initializing additional Neurodamus mechanisms (in mod_func.c, built by mech/mod_func.c.pl)
     coreneuron::modl_reg();
-#endif
-
     return run_solve_core(argc, argv);
+}
+
+extern "C" {
+
+/// global variables from coreneuron library
+extern bool corenrn_embedded;
+extern int corenrn_embedded_nthread;
+
+/// parse arguments from neuron and prepare new one for coreneuron
+char* prepare_args(int& argc, char**& argv, int use_mpi, const char* nrn_arg);
+
+/// initialize standard mechanisms from coreneuron
+void mk_mech_init(int argc, char** argv);
+
+/// set openmp threads equal to neuron's pthread
+void set_openmp_threads(int nthread);
+
+/** Run CoreNEURON in embedded mode with NEURON
+ *
+ * @param nthread Number of Pthreads on NEURON side
+ * @param have_gaps True if gap junctions are used
+ * @param use_mpi True if MPI is used on NEURON side
+ * @param use_fast_imem True if fast imembrance calculation enabled
+ * @param nrn_arg Command line arguments passed by NEURON
+ * @return 1 if embedded mode is used otherwise 0
+ * \todo Change return type semantics
+ */
+int corenrn_embedded_run(int nthread,
+                         int have_gaps,
+                         int use_mpi,
+                         int use_fast_imem,
+                         const char* nrn_arg) {
+    // set coreneuron's internal variable based on neuron arguments
+    corenrn_embedded = true;
+    corenrn_embedded_nthread = nthread;
+    coreneuron::nrn_have_gaps = have_gaps != 0;
+
+    if (use_fast_imem != 0) {
+        coreneuron::nrn_use_fast_imem = true;
+    }
+
+    // set number of openmp threads
+    set_openmp_threads(nthread);
+
+    // pre-process argumnets from neuron and prepare new for coreneuron
+    int argc;
+    char** argv;
+    char* new_arg = prepare_args(argc, argv, use_mpi, nrn_arg);
+
+    // initialize internal arguments
+    mk_mech_init(argc, argv);
+
+    // initialize extra arguments built into special-core
+    coreneuron::modl_reg();
+
+    // run simulation
+    run_solve_core(argc, argv);
+
+    // free temporary string created from prepare_args
+    free(new_arg);
+
+    // delete array for argv
+    delete[] argv;
+
+    return corenrn_embedded ? 1 : 0;
+}
 }

@@ -23,7 +23,7 @@ install_spack() (
     # Use BBP configs
     mkdir -p $SPACK_ROOT/etc/spack/defaults/linux
     cp /gpfs/bbp.cscs.ch/apps/hpc/jenkins/config/*.yaml $SPACK_ROOT/etc/spack/
-
+    sed -i -e  's/neuron+mpi~debug%intel/neuron+mpi/g' $SPACK_ROOT/etc/spack/modules.yaml
     # Remove configs from $HOME/.spack
     rm -rf $HOME/.spack
 )
