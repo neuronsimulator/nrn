@@ -38,7 +38,7 @@ add_dependencies(_nmodl pyastgen)
 add_dependencies(_nmodl lexer_obj)
 add_dependencies(_nmodl util_obj)
 
-target_link_libraries(_nmodl PRIVATE fmt::fmt)
+target_link_libraries(_nmodl PRIVATE fmt::fmt-header-only)
 
 add_custom_target(copy_python_files ALL DEPENDS ${NMODL_PYTHON_FILES_OUT})
 add_custom_command(OUTPUT ${NMODL_PYTHON_FILES_OUT}

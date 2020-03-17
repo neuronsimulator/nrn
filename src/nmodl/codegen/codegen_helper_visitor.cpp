@@ -9,7 +9,7 @@
 #include <cmath>
 #include <set>
 
-#include "fmt/format.h"
+#include <fmt/format.h>
 
 #include "codegen/codegen_helper_visitor.hpp"
 #include "codegen/codegen_naming.hpp"
