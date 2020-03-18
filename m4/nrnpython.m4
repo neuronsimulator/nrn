@@ -42,7 +42,7 @@ Examine config.log to see error details. Something wrong with
 	PYLIB=$PYLIB
 or
 	PYLIBDIR=$PYLIBDIR
-or	
+or
 	PYLIBLINK=$PYLIBLINK
 or
 	PYINCDIR=$PYINCDIR
@@ -212,6 +212,12 @@ explicitly specify PYINCDIR])
 				PYLIBDIR="$gcfLIBDIR"
 				PYLIBLINK="-L$PYLIBDIR -l$PYLIB $gcfLIBS $gcfMODLIBS"
 				PYLIB="$PYLIBLINK -R$PYLIBDIR"
+			fi
+			dnl add LDFLAGS for python version >= 3.7
+			if [[ $(bc <<< "$PYVER >= 3.7") -eq 1 ]] ; then
+				AC_NRN_PYCONF(EXTRALDFLAGS, get_config_var('LDFLAGS'),"",$ac_nrn_python)
+				PYLIBLINK="$EXTRALDFLAGS $PYLIBLINK"
+				PYLIB="$EXTRALDFLAGS $PYLIB"
 			fi
 		fi
 
