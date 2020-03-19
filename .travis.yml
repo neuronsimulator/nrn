@@ -100,7 +100,7 @@ install:
       export CYTHON_LIB=$($PIP show cython | grep Location);
       export CYTHON_EXE=$(echo $CYTHON_LIB | awk '{print $2}' | awk -F "lib" '{print$1}')"bin";
       export PATH=$CYTHON_EXE:$PATH;
-      echo $PATH;
+      brew link --overwrite python;
     fi
 
 #=============================================================================
