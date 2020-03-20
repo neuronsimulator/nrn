@@ -57,7 +57,9 @@ include(NmodlHelper)
 # =============================================================================
 # Command for MOD to CPP conversion
 # =============================================================================
-set(CORENRN_NMODL_COMMAND env "MODLUNIT=${NMODL_UNITS_FILE}" "PYTHONPATH=$ENV{PYTHONPATH}" ${CORENRN_NMODL_BINARY})
+set(CORENRN_NMODL_COMMAND env "MODLUNIT=${NMODL_UNITS_FILE}"
+                              "PYTHONPATH=$ENV{PYTHONPATH}:${CMAKE_BINARY_DIR}/lib/python"
+                              ${CORENRN_NMODL_BINARY})
 
 if(${CORENRN_ENABLE_ISPC})
   set(NMODL_CODEGEN_TARGET ispc)
@@ -297,6 +299,6 @@ endif()
 install(TARGETS nrniv-core DESTINATION bin)
 install(FILES apps/coreneuron.cpp DESTINATION share/coreneuron)
 
-# install Random123
-install(DIRECTORY ${CMAKE_BINARY_DIR}/include/Random123
+# install random123 and nmodl headers
+install(DIRECTORY ${CMAKE_BINARY_DIR}/include/
         DESTINATION include)

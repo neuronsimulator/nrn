@@ -49,7 +49,7 @@ message(STATUS "CXX Compile flags from BUILD_TYPE (${_BUILD_TYPE}): ${BUILD_TYPE
 
 # nmodl options
 if(CORENRN_ENABLE_NMODL)
-  set(nmodl_arguments_c "host --c ${CORENRN_NMODL_FLAGS}")
+  set(nmodl_arguments_c "host --c passes --inline ${CORENRN_NMODL_FLAGS}")
   set(nmodl_arguments_ispc "host --ispc passes --inline ${CORENRN_NMODL_FLAGS}")
 else()
   set(nmodl_arguments_c "")

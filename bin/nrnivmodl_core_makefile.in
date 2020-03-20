@@ -51,6 +51,11 @@ ISPC = @CMAKE_ISPC_COMPILER@
 ISPC_FLAGS = @CMAKE_ISPC_FLAGS@
 ISPC_COMPILE = $(ISPC) $(ISPC_FLAGS) -I$(incdir)
 
+ifeq (@nmodl_FOUND@, TRUE)
+INCLUDES += -I@CORENRN_NMODL_INCLUDE@
+ISPC_COMPILE += -I@CORENRN_NMODL_INCLUDE@
+endif
+
 # Variables used in the "ARTIFICIAL_CELL" detection
 mod_c_srcs_path =
 mod_ispc_srcs_path =
@@ -147,7 +152,7 @@ $(OBJS_DIR)/%.obj: $(MODC_DIR)/%.ispc | $(OBJS_DIR)
 # Build ispc files with mod2c/nmodl
 $(mod_ispc_files): $(MODC_DIR)/%.ispc: $(MODS_PATH)/%.mod | $(MODC_DIR)
 	@printf " -> $(C_GREEN)MOD2C$(C_RESET) $<\n"
-	PYTHONPATH=@CORENRN_NMODL_PYTHONPATH@ \
+	PYTHONPATH=@CORENRN_NMODL_PYTHONPATH@:${libdir}/python \
 	MODLUNIT=$(datadir_mod2c)/nrnunits.lib \
 	  $(nmodl_binary_path) $< -o $(MODC_DIR)/ @nmodl_arguments_ispc@
 
@@ -157,7 +162,7 @@ $(mod_ispc_c_files): $(MODC_DIR)/%.cpp: $(MODC_DIR)/%.ispc
 # Build cpp files with mod2c/nmodl
 $(mod_c_files): $(MODC_DIR)/%.cpp: $(MODS_PATH)/%.mod | $(MODC_DIR)
 	@printf " -> $(C_GREEN)MOD2C$(C_RESET) $<\n"
-	PYTHONPATH=@CORENRN_NMODL_PYTHONPATH@ \
+	PYTHONPATH=@CORENRN_NMODL_PYTHONPATH@:${libdir}/python \
 	MODLUNIT=$(datadir_mod2c)/nrnunits.lib \
 	  $(nmodl_binary_path) $< -o $(MODC_DIR)/ @nmodl_arguments_c@
 
