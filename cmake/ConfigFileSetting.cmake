@@ -261,8 +261,8 @@ nrn_configure_file(sundials_config.h src/sundials)
 nrn_configure_file(mos2nrn.h src/uxnrnbbs)
 nrn_configure_file(njconf.h src/nrnjava)
 nrn_configure_file(nmodlconf.h .)
-nrn_configure_file(nrnunits.lib share/lib OUTPUT share/nrn/lib)
-nrn_configure_file(nrn.defaults share/lib OUTPUT share/nrn/lib)
+nrn_configure_file4(nrnunits.lib share/nrn/lib nrnunits.lib share/lib)
+nrn_configure_file4(nrn.defaults share/nrn/lib nrn.defaults share/lib)
 nrn_configure_file(constants.py share/lib/python/neuron/rxd)
 if(NRN_MACOS_BUILD)
   set(abs_top_builddir ${PROJECT_BINARY_DIR})
@@ -289,7 +289,8 @@ file(COPY ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib DESTINATION ${PROJECT
 # If Interviews is not provided, configure local files
 # =============================================================================
 if(NOT NRN_ENABLE_INTERVIEWS)
-  nrn_copy_file_if_different("${PROJECT_SOURCE_DIR}/cmake_nrnconf.h.in"
-                             "${PROJECT_SOURCE_DIR}/config.h.in")
-  nrn_configure_file(config.h .)
+  nrn_configure_file4(config.h . cmake_nrnconf.h .)
+else()
+  file(REMOVE "${PROJECT_BINARY_DIR}/config.h")
+  file(REMOVE "${PROJECT_SOURCE_DIR}/config.h") # in case left over by autotools
 endif()

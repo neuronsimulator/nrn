@@ -96,9 +96,8 @@ e.g. a bare-bones install:
 
   ```
   cmake .. \
-   -DNRN_ENABLE_CORENEURON=OFF \
-   -DNRN_ENABLE_MPI=OFF \
    -DNRN_ENABLE_INTERVIEWS=OFF \
+   -DNRN_ENABLE_MPI=OFF \
    -DNRN_ENABLE_RX3D=OFF
   ```
 
@@ -115,7 +114,7 @@ Particularly useful CMake options are (use **ON** to enable and **OFF** to disab
 * **-DNRN\_ENABLE\_PYTHON=OFF** : Disable Python support
 * **-DNRN\_ENABLE\_MPI=OFF** : Disable MPI support for parallelization
 * **-DNRN\_ENABLE\_RX3D=OFF** : Disable rx3d support
-* **-DNRN\_ENABLE\_CORENEURON=OFF** : Disable CoreNEURON support
+* **-DNRN\_ENABLE\_CORENEURON=ON** : Enable CoreNEURON support
 * **-DNRN\_ENABLE\_TESTS=ON** : Enable unit tests
 * **-DPYTHON\_EXECUTABLE=/python/binary/path** : Use provided Python binary to build Python interface
 * **-DCMAKE_INSTALL_PREFIX=/install/dir/path** : Location for installing

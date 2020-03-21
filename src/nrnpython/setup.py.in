@@ -7,6 +7,8 @@ import os
 
 @USING_CMAKE_TRUE@using_cmake=True
 @USING_CMAKE_FALSE@using_cmake=False
+@USING_PGI_COMPILER_TRUE@using_pgi=True
+@USING_PGI_COMPILER_FALSE@using_pgi=False
 @BUILD_MINGW_TRUE@mingw = 1
 @BUILD_MINGW_FALSE@mingw = 0
 
@@ -69,7 +71,11 @@ ldefs = extern_defines.split('-D')
 mpicc_bin = get_escaped_path("@CC@")
 mpicxx_bin = get_escaped_path("@CXX@")
 import os
-os.environ["CC"]=mpicc_bin
+if using_pgi:
+  os.environ["CC"]=mpicxx_bin
+else:
+  os.environ["CC"]=mpicc_bin
+
 os.environ["CXX"]=mpicxx_bin
 
 # apparently we do not need the following
@@ -98,6 +104,7 @@ include_dirs = [nrn_srcdir+'/src/oc', '../oc', nrn_srcdir+'/src/nrnmpi']
 #include dirs for all modules
 
 include_dirs_common = []
+
 #not needed with clang,clang++ and on my beta catalina does not
 #work anyway with /Library/Developer/CommandLineTools/usr/bin/cc
 #for the ctng module
@@ -123,6 +130,8 @@ extra_rpath_flags = [rpath_prefix_flag+lib_path for lib_path in libdirs]
 @MAC_DARWIN_FALSE@readline="readline@READLINE_SOSUFFIX@"
 @MAC_DARWIN_TRUE@readline="readline@READLINE_SOSUFFIX@"
 
+pgi_compiler_flags = "-noswitcherror"
+
 extra_link_args = []
 if using_cmake:
   libs = [@BUILD_NRNPYTHON_DYNAMIC_TRUE@nrnpython_pyver10,
@@ -133,6 +142,13 @@ if using_cmake:
   extra_link_args.append("-Wl,-rpath,@loader_path/../../")
   extra_link_args.append("-Wl,-rpath,%s" % ivlibdir)
 
+extra_compile_args = []
+
+if using_pgi:
+  extra_link_args.append(pgi_compiler_flags)
+  extra_rpath_flags.append(pgi_compiler_flags)
+  extra_compile_args.append(pgi_compiler_flags)
+
 hoc_module = Extension(
     "neuron.hoc",
     ["inithoc.cpp"],
@@ -140,6 +156,7 @@ hoc_module = Extension(
     @MAC_DARWIN_TRUE@extra_link_args = extra_link_args,
     @setup_extra_link_args@ = extra_rpath_flags,
     #extra_objects = [],
+    extra_compile_args = extra_compile_args,
     libraries = libs if using_cmake else [
         "nrnpython@npy_pyver10@",
         "nrnoc", "oc", "nrniv", "ivoc",
@@ -182,6 +199,8 @@ if not using_cmake and build_rx3d:
     extra_compile_args=["-O0"] # minimize compile time
     if using_cmake:
       extra_compile_args=["-O@NRN_RX3D_OPT_LEVEL@"]
+    if using_pgi:
+      extra_compile_args.append(pgi_compiler_flags)
     define_macros = []
     if mingw:
       #Avoid undefined __imp_Py_InitModule4 and hypot problem

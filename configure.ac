@@ -154,6 +154,9 @@ fi
 dnl Use to be only when configured with mpi. Now always since it is so useful.
 NRN_DEFINE_UNQUOTED(DLL_DEFAULT_FNAME,"$host_cpu/.libs/libnrnmech.so",[Define if want a automatic dll load])
 
+dnl Some things are specific to the PGI compiler
+AM_CONDITIONAL(USING_PGI_COMPILER, $CC --version | grep -q pgcc)
+
 dnl there are some os dependent properties in nrn.defaults.
 nrndef_unix="//"
 nrndef_mac="//"
