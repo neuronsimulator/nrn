@@ -67,6 +67,10 @@ static double s_unname(void* v) {
 	hoc_Item** pitm;
 	Section* sec;
 	sec = (Section*)v;
+	/* Python Sections cannot be unnamed, return 0.0 */
+	if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
+		return 0.0;
+	}
 	pitm = sec2pitm(sec);
 	*pitm = (hoc_Item*)0;
 	sec->prop->dparam[0].sym = (Symbol*)0;
@@ -91,6 +95,10 @@ static double s_rename(void* v) {
 	sec = (Section*)v;
 	if (!sec->prop) {
 		Printf("SectionRef[???].sec is a deleted section\n");
+		return 0.;
+	}
+	/* Python Sections cannot be renamed, return 0.0 */
+	if (sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
 		return 0.;
 	}
 	qsec = sec->prop->dparam[8].itm;
@@ -204,7 +212,7 @@ static double s_rename(void* v) {
 	}
 #endif
 	hoc_objectdata = obdsav;
-	return 1;
+	return 1.0;
 }
 
 int nrn_secref_nchild(Section* sec) {
