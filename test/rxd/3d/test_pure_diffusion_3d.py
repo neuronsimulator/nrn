@@ -65,7 +65,7 @@ def test_pure_diffusion_3d_inhom(ics_pure_diffusion):
     dend, r, ca = model
     h.dt *= 50
     for nd in ca.nodes:
-        if nd.x > 0.5:
+        if nd.x >= 0.5:
             nd.d = 0
     h.finitialize(-65)
     loss = -(numpy.array(ca.nodes.concentration) * numpy.array(ca.nodes.volume)).sum()
@@ -85,7 +85,7 @@ def test_pure_diffusion_3d_inhom_cvode(ics_pure_diffusion):
     dend, r, ca = model
     h.CVode().active(True)
     for nd in ca.nodes:
-        if nd.x > 0.5:
+        if nd.x >= 0.5:
             nd.d = 0
     h.finitialize(-65)
     loss = -(numpy.array(ca.nodes.concentration) * numpy.array(ca.nodes.volume)).sum()
