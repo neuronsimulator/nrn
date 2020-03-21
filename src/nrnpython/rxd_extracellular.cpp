@@ -1175,9 +1175,11 @@ static void ecs_dg_adi_x(ECS_Grid_node* g, const double dt, const int y, const i
     }
     for(x=1; x<g->size_x-1; x++)
     {
+#ifndef __PGI
         __builtin_prefetch(&(g->states[IDX(x+PREFETCH,y,z)]), 0, 1);
         __builtin_prefetch(&(g->states[IDX(x+PREFETCH,yp,z)]), 0, 0);
         __builtin_prefetch(&(g->states[IDX(x+PREFETCH,ym,z)]), 0, 0);
+#endif		
         RHS[x] =  g->states[IDX(x,y,z)] 
                + dt*((g->dc_x/SQ(g->dx))*(g->states[IDX(x+1,y,z)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x-1,y,z)])/2.
                    + (g->dc_y/SQ(g->dy))*(g->states[IDX(x,yp,z)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x,ym,z)])/div_y
@@ -1238,8 +1240,10 @@ static void ecs_dg_adi_y(ECS_Grid_node* g, double const dt, int const x, int con
     }
     for(y=1; y<g->size_y-1; y++)
     {
+#ifndef __PGI
         __builtin_prefetch(&state[x + (z + (y+PREFETCH)*g->size_z)*g->size_x], 0, 0);
         __builtin_prefetch(&(g->states[IDX(x,y+PREFETCH,z)]), 0, 1);
+#endif
         RHS[y] =  state[x + (z + y*g->size_z)*g->size_x]
             - (g->dc_y*dt/SQ(g->dy))*(g->states[IDX(x,y+1,z)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x,y-1,z)])/2.0;
     }
