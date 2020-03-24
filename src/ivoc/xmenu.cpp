@@ -173,95 +173,79 @@ void hoc_notify_value() {
 }
 
 void hoc_xpanel() {
-	Object** result = NULL;
-
-	if (nrnpy_gui_helper_) {
-		result = nrnpy_gui_helper_("xpanel", NULL);
-	}
-	if (!result) {
-		IFGUI
-			if (ifarg(1) && hoc_is_str_arg(1)) { // begin spec
-				bool h = false;
-				if (ifarg(2)) {
-					h = (int)chkarg(2, 0, 1) ? true : false;
-				}
-						hoc_ivpanel(gargstr(1), h);
-			}else{ // map
-				int scroll = -1; // leave up to panel_scroll attribute
-				if (ifarg(2)) {
-					if (ifarg(3)) { scroll = (int)chkarg(3, -1, 1); }
-					hoc_ivpanelPlace((Coord)*getarg(1),(Coord) *getarg(2), scroll);
-				}else{
-					if (ifarg(1)) { scroll = (int)chkarg(1, -1, 1); }
-					hoc_ivpanelmap(scroll);
-				}
+	TRY_GUI_REDIRECT_DOUBLE("xpanel", NULL);
+	IFGUI
+		if (ifarg(1) && hoc_is_str_arg(1)) { // begin spec
+			bool h = false;
+			if (ifarg(2)) {
+				h = (int)chkarg(2, 0, 1) ? true : false;
 			}
-		ENDGUI
-	}
+					hoc_ivpanel(gargstr(1), h);
+		}else{ // map
+			int scroll = -1; // leave up to panel_scroll attribute
+			if (ifarg(2)) {
+				if (ifarg(3)) { scroll = (int)chkarg(3, -1, 1); }
+				hoc_ivpanelPlace((Coord)*getarg(1),(Coord) *getarg(2), scroll);
+			}else{
+				if (ifarg(1)) { scroll = (int)chkarg(1, -1, 1); }
+				hoc_ivpanelmap(scroll);
+			}
+		}
+	ENDGUI
+
 	hoc_ret();
 	hoc_pushx(0.);
 }
         
 void hoc_xmenu() {
-	Object** result = NULL;
-
-	if (nrnpy_gui_helper_) {
-		result = nrnpy_gui_helper_("xmenu", NULL);
-	}
-	if (!result) {
-		IFGUI
-			bool add2menubar = false;
-			char* mk = NULL;
-			Object* pyact = NULL;
-			int i = 2;
+	TRY_GUI_REDIRECT_DOUBLE("xmenu", NULL);
+	IFGUI
+		bool add2menubar = false;
+		char* mk = NULL;
+		Object* pyact = NULL;
+		int i = 2;
+		if (ifarg(i)) {
+			if (hoc_is_str_arg(i)) {
+				mk = gargstr(i);
+				++i;
+			}else if (hoc_is_object_arg(i)) {
+				pyact = *hoc_objgetarg(i);
+				++i;
+			}
 			if (ifarg(i)) {
-				if (hoc_is_str_arg(i)) {
-					mk = gargstr(i);
-					++i;
-				}else if (hoc_is_object_arg(i)) {
-					pyact = *hoc_objgetarg(i);
-					++i;
-				}
-				if (ifarg(i)) {
-					add2menubar = int(chkarg(i, 0,1));
-				}
+				add2menubar = int(chkarg(i, 0,1));
 			}
-			if (ifarg(1)) {
-				if (mk || pyact) {
-					hoc_ivvarmenu(gargstr(1), mk, add2menubar, pyact);
-				}else{
-					hoc_ivmenu(gargstr(1), add2menubar);
-				}
+		}
+		if (ifarg(1)) {
+			if (mk || pyact) {
+				hoc_ivvarmenu(gargstr(1), mk, add2menubar, pyact);
 			}else{
-				hoc_ivmenu((char *)0);
+				hoc_ivmenu(gargstr(1), add2menubar);
 			}
-		ENDGUI
-	}
+		}else{
+			hoc_ivmenu((char *)0);
+		}
+	ENDGUI
 	hoc_ret();
     hoc_pushx(0.);
 }
 
 void hoc_xbutton() {
-	Object** result = NULL;
+	TRY_GUI_REDIRECT_DOUBLE("xbutton", NULL);
 
-	if (nrnpy_gui_helper_) {
-		result = nrnpy_gui_helper_("xbutton", NULL);
-	}
-	if (!result) {	
-		IFGUI
-			char *s1;
-			s1 = gargstr(1);
-			if (ifarg(2)) {
-			if (hoc_is_object_arg(2)) {
-				hoc_ivbutton(s1, NULL, *hoc_objgetarg(2));
-			}else{
-					hoc_ivbutton(s1, gargstr(2));
-			}
-			}else{
-				hoc_ivbutton(s1, s1);
-			}
-		ENDGUI
-	}
+	IFGUI
+		char *s1;
+		s1 = gargstr(1);
+		if (ifarg(2)) {
+		if (hoc_is_object_arg(2)) {
+			hoc_ivbutton(s1, NULL, *hoc_objgetarg(2));
+		}else{
+				hoc_ivbutton(s1, gargstr(2));
+		}
+		}else{
+			hoc_ivbutton(s1, s1);
+		}
+	ENDGUI
 	hoc_ret();
 	hoc_pushx(0.);
 }
@@ -273,28 +257,22 @@ xstatebutton("prompt",&var [,"action"])
 */
 
 void hoc_xstatebutton() {
-	Object** result = NULL;
+	TRY_GUI_REDIRECT_DOUBLE("xstatemenu", NULL);
+	IFGUI
+		char *s1, *s2 = (char *)0;
+		
+		s1 = gargstr(1);
 
-	if (nrnpy_gui_helper_) {
-		result = nrnpy_gui_helper_("xstatebutton", NULL);
-	}
-	if (!result) {
-		IFGUI
-			char *s1, *s2 = (char *)0;
-			
-			s1 = gargstr(1);
-
-			if (hoc_is_object_arg(2)) {
-				hoc_ivstatebutton(NULL, s1, NULL, HocStateButton::PALETTE,
-					*hoc_objgetarg(2), ifarg(3) ? *hoc_objgetarg(3):NULL);
-			}else{
-					if (ifarg(3)) {
-							s2 = gargstr(3);
-					}
-					hoc_ivstatebutton(hoc_pgetarg(2), s1, s2, HocStateButton::PALETTE);
-			}
-		ENDGUI
-	}
+		if (hoc_is_object_arg(2)) {
+			hoc_ivstatebutton(NULL, s1, NULL, HocStateButton::PALETTE,
+				*hoc_objgetarg(2), ifarg(3) ? *hoc_objgetarg(3):NULL);
+		}else{
+				if (ifarg(3)) {
+						s2 = gargstr(3);
+				}
+				hoc_ivstatebutton(hoc_pgetarg(2), s1, s2, HocStateButton::PALETTE);
+		}
+	ENDGUI
 	hoc_ret();
 	hoc_pushx(0.);
 }
@@ -307,64 +285,53 @@ xcheckbox("prompt",&var [,"action"])
 */
 
 void hoc_xcheckbox() {
-	Object** result = NULL;
+	TRY_GUI_REDIRECT_DOUBLE("xcheckbox", NULL);
+	IFGUI
 
-	if (nrnpy_gui_helper_) {
-		result = nrnpy_gui_helper_("xcheckbox", NULL);
+		char *s1, *s2 = (char *)0;
+
+		s1 = gargstr(1);
+
+	if (hoc_is_object_arg(2)) {
+		hoc_ivstatebutton(NULL, s1, NULL, HocStateButton::CHECKBOX,
+			*hoc_objgetarg(2), ifarg(3) ? *hoc_objgetarg(3) : 0);
+	}else{
+			if (ifarg(3)) {
+					s2 = gargstr(3);
+			}
+			hoc_ivstatebutton(hoc_pgetarg(2),s1, s2, HocStateButton::CHECKBOX);
 	}
-	if (!result) {	
-		IFGUI
-
-			char *s1, *s2 = (char *)0;
-
-			s1 = gargstr(1);
-
-		if (hoc_is_object_arg(2)) {
-			hoc_ivstatebutton(NULL, s1, NULL, HocStateButton::CHECKBOX,
-				*hoc_objgetarg(2), ifarg(3) ? *hoc_objgetarg(3) : 0);
-		}else{
-				if (ifarg(3)) {
-						s2 = gargstr(3);
-				}
-				hoc_ivstatebutton(hoc_pgetarg(2),s1, s2, HocStateButton::CHECKBOX);
-		}
-		ENDGUI
-	}
+	ENDGUI
 	hoc_ret();
 	hoc_pushx(0.);
 }
 
 void hoc_xradiobutton() {
-	Object** result = NULL;
+	TRY_GUI_REDIRECT_DOUBLE("xradiobutton", NULL);
 
-	if (nrnpy_gui_helper_) {
-		result = nrnpy_gui_helper_("xradiobutton", NULL);
-	}
-	if (!result) {
-		IFGUI
-			char *s1, *s2 = (char *)0;
-			Object* po = NULL;
-			bool activate = false;
-			s1 = gargstr(1);
-			if (ifarg(2)) {
-				if (hoc_is_object_arg(2)) {
-					po = *hoc_objgetarg(2);
-				}else{
-					s2 = gargstr(2);
-				}
-				if (ifarg(3)) {
-					activate = (chkarg(3, 0, 1) != 0.);
-				}
+	IFGUI
+		char *s1, *s2 = (char *)0;
+		Object* po = NULL;
+		bool activate = false;
+		s1 = gargstr(1);
+		if (ifarg(2)) {
+			if (hoc_is_object_arg(2)) {
+				po = *hoc_objgetarg(2);
 			}else{
-				s2 = s1;
+				s2 = gargstr(2);
 			}
-			if (po) {
-					hoc_ivradiobutton(s1, NULL, activate, po);
-			}else{
-					hoc_ivradiobutton(s1, s2, activate);
+			if (ifarg(3)) {
+				activate = (chkarg(3, 0, 1) != 0.);
 			}
-		ENDGUI
-	}
+		}else{
+			s2 = s1;
+		}
+		if (po) {
+				hoc_ivradiobutton(s1, NULL, activate, po);
+		}else{
+				hoc_ivradiobutton(s1, s2, activate);
+		}
+	ENDGUI
 	hoc_ret();
 	hoc_pushx(0.);
 }
@@ -419,32 +386,27 @@ ENDGUI
 }
 
 void hoc_xfixedvalue() {
-	Object** result = NULL;
+	TRY_GUI_REDIRECT_DOUBLE("xfixedvalue", NULL);
 
-	if (nrnpy_gui_helper_) {
-		result = nrnpy_gui_helper_("xfixedvalue", NULL);
-	}
-	if (!result) {
-		IFGUI //prompt, variable, deflt,action,canrun,usepointer
-			char *s1, *s2;
-			s1 = gargstr(1);
-			if (ifarg(2)) {
-					s2 = gargstr(2);
-			}else{
-					s2 = s1;
-			}
-			bool deflt = false;
-			if (ifarg(3) && *getarg(3)) {
-				deflt=true;
-			}
-			bool usepointer = false;
-			if (ifarg(4) && *getarg(4)) {
-				usepointer = true;
-			}
-			hoc_ivfixedvalue(s1, s2, deflt, usepointer);
-					
-		ENDGUI
-	}
+	IFGUI //prompt, variable, deflt,action,canrun,usepointer
+		char *s1, *s2;
+		s1 = gargstr(1);
+		if (ifarg(2)) {
+				s2 = gargstr(2);
+		}else{
+				s2 = s1;
+		}
+		bool deflt = false;
+		if (ifarg(3) && *getarg(3)) {
+			deflt=true;
+		}
+		bool usepointer = false;
+		if (ifarg(4) && *getarg(4)) {
+			usepointer = true;
+		}
+		hoc_ivfixedvalue(s1, s2, deflt, usepointer);
+				
+	ENDGUI
 	hoc_ret();
 	hoc_pushx(0.);
 }
@@ -483,114 +445,85 @@ ENDGUI
 }
 
 void hoc_xvalue() {
-	Object** result = NULL;
+	TRY_GUI_REDIRECT_DOUBLE("xvalue", NULL);
 
-	if (nrnpy_gui_helper_) {
-		result = nrnpy_gui_helper_("xvalue", NULL);
-	}
-	if (!result) {	
-		hoc_xvalue_helper();
-	}
+	hoc_xvalue_helper();
 	hoc_ret();
 	hoc_pushx(0.);
 }
 
 void hoc_xpvalue() {
-	Object** result = NULL;
-
-	if (nrnpy_gui_helper_) {
-		result = nrnpy_gui_helper_("xpvalue", NULL);
-	}
-	if (!result) {
-		hoc_xpvalue_helper();
-	}
+	TRY_GUI_REDIRECT_DOUBLE("xpvalue", NULL);
+	hoc_xpvalue_helper();
 	hoc_ret();
 	hoc_pushx(0.);
 }
 
 void hoc_xlabel() {
-	Object** result = NULL;
-
-	if (nrnpy_gui_helper_) {
-		result = nrnpy_gui_helper_("xlabel", NULL);
-	}
-	if (!result) {
-		IFGUI
-			char* s1;
-			s1 = gargstr(1);
-			hoc_ivlabel(s1);
-		ENDGUI
-	}
+	TRY_GUI_REDIRECT_DOUBLE("xlabel", NULL);
+	IFGUI
+		char* s1;
+		s1 = gargstr(1);
+		hoc_ivlabel(s1);
+	ENDGUI
 	hoc_ret();
 	hoc_pushx(0.);
 }
 
 void hoc_xvarlabel() {
-	Object** result = NULL;
-
-	if (nrnpy_gui_helper3_) {
-		result = nrnpy_gui_helper3_("xvarlabel", NULL, 1);
-	}
-	if (!result) {
-		IFGUI
-			if (hoc_is_object_arg(1)) {
-				hoc_ivvarlabel(NULL, *hoc_objgetarg(1));
-			}else{
-				hoc_ivvarlabel(hoc_pgargstr(1));
-			}
-		ENDGUI
-	}
+	TRY_GUI_REDIRECT_DOUBLE_SEND_STRREF("xvarlabel", NULL);
+	IFGUI
+		if (hoc_is_object_arg(1)) {
+			hoc_ivvarlabel(NULL, *hoc_objgetarg(1));
+		}else{
+			hoc_ivvarlabel(hoc_pgargstr(1));
+		}
+	ENDGUI
 	hoc_ret();
 	hoc_pushx(0.);
 }
 
 // ZFM modified to add vertical vs. horizontal
 void hoc_xslider() {
-	Object** result = NULL;
-
-	if (nrnpy_gui_helper_) {
-		result = nrnpy_gui_helper_("xslider", NULL);
-	}
-	if (!result) {
-		IFGUI
-			float low=0, high=100;
-			float resolution=1;
-			int nsteps = 10;
-			char* send = NULL;
-			Object* pysend = NULL;
-			double* pval = NULL;
-			Object* pyvar = NULL;
-			bool vert = 0;
-			if (ifarg(3)) {
-				low = *getarg(2);
-				high = *getarg(3);
-				resolution = (high - low)/100.;
+	TRY_GUI_REDIRECT_DOUBLE("xslider", NULL);
+	IFGUI
+		float low=0, high=100;
+		float resolution=1;
+		int nsteps = 10;
+		char* send = NULL;
+		Object* pysend = NULL;
+		double* pval = NULL;
+		Object* pyvar = NULL;
+		bool vert = 0;
+		if (ifarg(3)) {
+			low = *getarg(2);
+			high = *getarg(3);
+			resolution = (high - low)/100.;
+		}
+		int iarg = 4;
+		if (ifarg(iarg)) {
+			if (hoc_is_str_arg(iarg)) {
+				send = gargstr(4);
+				++iarg;
+			}else if (hoc_is_object_arg(iarg)) {
+				pysend = *hoc_objgetarg(iarg);
+				++iarg;
 			}
-			int iarg = 4;
-			if (ifarg(iarg)) {
-				if (hoc_is_str_arg(iarg)) {
-					send = gargstr(4);
-					++iarg;
-				}else if (hoc_is_object_arg(iarg)) {
-					pysend = *hoc_objgetarg(iarg);
-					++iarg;
-				}
+		}
+		if (ifarg(iarg)) {
+				vert = int(chkarg(iarg,0,1));
 			}
-			if (ifarg(iarg)) {
-					vert = int(chkarg(iarg,0,1));
-				}
-			bool slow = false;
-			if (ifarg(++iarg)) {
-				slow = int(chkarg(iarg, 0, 1));
-			}
-			if (hoc_is_object_arg(1)) {
-				pyvar = *hoc_objgetarg(1);
-			}else{
-				pval = hoc_pgetarg(1);
-			}
-			hoc_ivslider(pval, low, high, resolution, nsteps, send, vert, slow, pyvar, pysend);
-		ENDGUI
-	}
+		bool slow = false;
+		if (ifarg(++iarg)) {
+			slow = int(chkarg(iarg, 0, 1));
+		}
+		if (hoc_is_object_arg(1)) {
+			pyvar = *hoc_objgetarg(1);
+		}else{
+			pval = hoc_pgetarg(1);
+		}
+		hoc_ivslider(pval, low, high, resolution, nsteps, send, vert, slow, pyvar, pysend);
+	ENDGUI
 	hoc_ret();
 	hoc_pushx(0.);
 }
