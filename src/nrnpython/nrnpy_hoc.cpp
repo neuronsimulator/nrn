@@ -162,7 +162,8 @@ enum ObjectType {
 };
 enum IteratorState {
   Begin,
-  Next,
+  NextNotLast,
+  Last
 };
 }  // namespace PyHoc
 
@@ -1578,23 +1579,10 @@ static PyObject* hocobj_iter(PyObject* self) {
   return NULL;
 }
 
-static PyObject* iternext_sl(PyHocObject* po, hoc_Item* ql) {
-  // When IteratorState is Next, pop the current section.
-  // When IteratorState is Begin, set po->iteritem to ql and
-  // IteratorState to Next.
-  // Then find the next valid section after po->iteritem and make
-  // that po->iteritem. NULL and return NULL if there isn't any.
-  // Otherwise, ref and push that section and return the section.
-
-  hoc_Item* current = (hoc_Item*)po->iteritem_;
-  if (current == NULL) { // already at end
-    return NULL;
-  }
-
-  // next valid section
-  hoc_Item* next;
+static hoc_Item* next_valid_secitem(hoc_Item* q, hoc_Item* ql) {
   hoc_Item* nextnext;
-  for (next = current->next; next != ql; next = nextnext) {
+  hoc_Item* next;
+  for ( next = q->next; next != ql; next = nextnext) {
     nextnext = next->next;
     Section* sec = next->element.sec;
     if (sec->prop) { // valid
@@ -1603,21 +1591,86 @@ static PyObject* iternext_sl(PyHocObject* po, hoc_Item* ql) {
     hoc_l_delete(next);
     section_unref(sec);
   }
+  return next;
+}
 
-  if (po->u.its_ = PyHoc::Begin) {
-    po->u.its_ = PyHoc::Next;
-  }else{ // pop previous iteration
-    nrn_popsec();
-  }
+static PyObject* iternext_sl(PyHocObject* po, hoc_Item* ql) {
+  // Primarily the Section is pushed and the currently accessed python
+  // Section is returned during sequential iteration over the list ql.
+  // On re-entry here, the previous Section is popped.
+  // The complexity is due to the possibility that the returned nrn_Section
+  // may be deleted with h.delete_section(sec=nrn_Section). This would
+  // invalidate the po->iteritem_ (point to freed memory) if it were
+  // the iteritem of the current Section. Thus we choose to store
+  // the next iteritem pointer in the list. Although not 100% safe, since
+  // the user body of the iterator is allowed to delete_section an arbitary
+  // subset of sections, the obvious work around, making a copy of ql,
+  // is considered not worth it.
 
-  if (next == ql) { // at end
-    po->iteritem_ = NULL;
+  // In this implementation, the first call to internext_sl starts out
+  // in state PyHoc::Begin with po->iteritem_ == ql. If there is no valid
+  // item, it sets po->iteritem_ = NULL and returns NULL. If there is
+  // a valid item, it moves to state PyHoc::Last or PyHoc::NextNotLast
+  // depending on whether there is a valid secitem following the current
+  // item. The current section is pushed and currently accessed python
+  // section is returned.
+
+  // Thereafter, re-entry with po->iteritem_ == NULL, immediately
+  // returns NULL.
+
+  // Re-entry in state PyHoc::NextNotLast, pops the previously pushed Section,
+  // sets sec to the current Section from po->iteritem_, and
+  // sets po->iteritem_ to the next_valid_section. If there is no next_valid
+  // section, then move to state PyHoc::Last.
+  // Push the current section and return currently accessed python Section.
+
+  // Re-entry in state PyHoc::Last just pops the current section, sets
+  // po->iteritem_ = NULL, and returns NULL.
+
+  if (po->iteritem_ == NULL) {
     return NULL;
   }
 
-  nrn_pushsec(next->element.sec);
-  po->iteritem_ = next;
-  return nrnpy_cas(NULL, NULL);
+  if (po->u.its_ == PyHoc::Begin) {
+    assert(po->iteritem_ == ql);
+    hoc_Item* curitem = next_valid_secitem((hoc_Item*)(po->iteritem_), ql);
+    if (curitem != ql) { // typical case, a valid current item
+      Section* sec = curitem->element.sec;
+      assert(sec->prop);
+      // sec could be delete_section before return to internext.sl
+      // which would invalidate curitem.
+      // Not perfectly safe but leave po->iteritem_ as next valid
+      // secitem after curitem.
+      po->iteritem_ = next_valid_secitem(curitem, ql);
+      if (po->iteritem_ == ql) {
+        po->u.its_ = PyHoc::Last;
+      }else{
+        po->u.its_ = PyHoc::NextNotLast;
+      }
+      nrn_pushsec(sec);
+      return nrnpy_cas(NULL, NULL);
+    }else{ // no valid current item so stop
+      po->iteritem_ = NULL;
+      return NULL;
+    }
+
+  } else if (po->u.its_ == PyHoc::NextNotLast) {
+    nrn_popsec(); // pop the previous iteration.
+    // it would be a bug if po->iteritem_ (now the curitem) has been delete_section
+    Section* sec = ((hoc_Item*)(po->iteritem_))->element.sec;
+    assert(sec->prop);
+    po->iteritem_ = next_valid_secitem((hoc_Item*)(po->iteritem_), ql);
+    if (po->iteritem_ == ql) {
+      po->u.its_ = PyHoc::Last;
+    }
+    nrn_pushsec(sec);
+    return nrnpy_cas(NULL, NULL);
+
+  } else if (po->u.its_ == PyHoc::Last) {
+    nrn_popsec();
+    po->iteritem_ = NULL;
+    return NULL;
+  }
 }
 
 static PyObject* hocobj_iternext(PyObject* self) {
