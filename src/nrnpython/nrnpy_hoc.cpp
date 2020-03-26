@@ -2750,7 +2750,7 @@ myPyMODINIT_FUNC nrnpy_hoc() {
 #if PY_MAJOR_VERSION >= 3
   err = PyDict_SetItemString(modules, "hoc", m);
   assert(err == 0);
-  Py_DECREF(m);
+//  Py_DECREF(m);
   return m;
 fail:
   return NULL;
