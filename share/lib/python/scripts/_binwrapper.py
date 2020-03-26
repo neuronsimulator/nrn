@@ -12,6 +12,7 @@ import sys
 def _launch_command(exe_name):
     NRN_PREFIX = os.path.join(site.getsitepackages()[0], 'neuron', '.data')
     os.environ["NEURONHOME"] = os.path.join(NRN_PREFIX, 'share/nrn')
+    os.environ["NRNHOME"] = NRN_PREFIX
     exe_path = os.path.join(NRN_PREFIX, 'bin', exe_name)
     return sp.call([exe_path] + sys.argv[1:])
 
