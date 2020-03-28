@@ -24,7 +24,6 @@ set(CODEGEN_SOURCE_FILES
 # Codegen library and executable
 # =============================================================================
 add_library(codegen STATIC ${CODEGEN_SOURCE_FILES})
-target_link_libraries(codegen fmt::fmt-header-only)
 
 add_dependencies(codegen lexer util visitor)
 
