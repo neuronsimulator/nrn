@@ -61,6 +61,7 @@ ENDGUI
 }
 
 static Object** g_new_path(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.path", v);
 	GrGlyph* g = (GrGlyph*)v;
 #if HAVE_IV
 IFGUI
@@ -71,6 +72,7 @@ ENDGUI
 }
 
 static Object** g_move_to(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.m", v);
 	GrGlyph* g = (GrGlyph*)v;
 #if HAVE_IV
 IFGUI
@@ -81,6 +83,7 @@ ENDGUI
 }
 
 static Object** g_line_to(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.l", v);
 	GrGlyph* g = (GrGlyph*)v;
 #if HAVE_IV
 IFGUI
@@ -91,6 +94,7 @@ ENDGUI
 }
 
 static Object** g_control_point(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.cpt", v);
 	GrGlyph* g = (GrGlyph*)v;
 #if HAVE_IV
 IFGUI
@@ -101,6 +105,7 @@ ENDGUI
 }
 
 static Object** g_curve_to(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.curve", v);
 	GrGlyph* g = (GrGlyph*)v;
 #if HAVE_IV
 IFGUI
@@ -111,6 +116,7 @@ ENDGUI
 }
 
 static Object** g_stroke(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.s", v);
 	GrGlyph* g = (GrGlyph*)v;
 #if HAVE_IV
 IFGUI
@@ -123,6 +129,7 @@ ENDGUI
 }
 
 static Object** g_close_path(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.close", v);
 	GrGlyph* g = (GrGlyph*)v;
 #if HAVE_IV
 IFGUI
@@ -133,6 +140,7 @@ ENDGUI
 }
 
 static Object** g_fill(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.fill", v);
 	GrGlyph* g = (GrGlyph*)v;
 #if HAVE_IV
 IFGUI
@@ -144,6 +152,7 @@ ENDGUI
 }
 
 static Object** g_erase(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.erase", v);
 	GrGlyph* g = (GrGlyph*)v;
 #if HAVE_IV
 IFGUI
@@ -154,6 +163,7 @@ ENDGUI
 }
 
 static Object** g_circle(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.circle", v);
 	GrGlyph* g = (GrGlyph*)v;
 #if HAVE_IV
 IFGUI
@@ -164,6 +174,7 @@ ENDGUI
 }
 
 static Object** g_gif(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.gif", v);
 	GrGlyph* g = (GrGlyph*)v;
 #if HAVE_IV
 IFGUI
@@ -195,12 +206,14 @@ Member_ret_obj_func objmembers[] = {
 };
 
 static void* cons(Object* o) {
+	TRY_GUI_REDIRECT_OBJ("Glyph", NULL);
 	GrGlyph* g = new GrGlyph(o);
 	g->ref();
 	return g;
 }
 
 static void destruct(void* v) {
+	TRY_GUI_REDIRECT_NO_RETURN("~Glyph", v);
 	GrGlyph* g = (GrGlyph*)v;
 	g->unref();
 }

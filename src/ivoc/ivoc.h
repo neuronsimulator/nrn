@@ -52,6 +52,16 @@ extern int nrn_err_dialog_active_;
     }\
 }
 
+#define TRY_GUI_REDIRECT_ACTUAL_OBJ(name, obj) {\
+    Object** ngh_result;\
+    if (nrnpy_gui_helper_) {\
+        ngh_result = nrnpy_gui_helper_(name, (Object*) obj);\
+        if (ngh_result) {\
+            return ngh_result;\
+        }\
+    }\
+}
+
 #define TRY_GUI_REDIRECT_DOUBLE_SEND_STRREF(name, obj) {\
     Object** ngh_result;\
     if (nrnpy_gui_helper_) {\
