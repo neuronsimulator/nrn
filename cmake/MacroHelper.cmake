@@ -248,3 +248,14 @@ macro(nocmodl_mod_to_c modfile_basename)
     DEPENDS ${PROJECT_BINARY_DIR}/bin/nocmodl ${modfile_basename}.mod
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src/nrniv)
 endmacro()
+
+# =============================================================================
+# Create symbolic links
+# =============================================================================
+macro(nrn_install_dir_symlink source_dir symlink_dir)
+    # make sure to have directory path exist upto parent dir
+    get_filename_component(parent_symlink_dir ${symlink_dir} DIRECTORY)
+    install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${parent_symlink_dir})")
+    # create symbolic link
+    install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${source_dir} ${symlink_dir})")
+endmacro(nrn_install_dir_symlink)
