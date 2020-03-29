@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "classreg.h"
 #include "oc2iv.h"
+#include "ivoc.h"
 #if HAVE_IV
 #include <InterViews/printer.h>
 #include <InterViews/image.h>
@@ -22,7 +23,13 @@ private:
 };
 #endif // HAVE_IV
 
+extern "C" {
+	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+	extern double (*nrnpy_object_to_double_)(Object*);
+}
+
 double gr_addglyph(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.addglyph", v);
 #if HAVE_IV
 IFGUI
 	Graph* g = (Graph*)v;
