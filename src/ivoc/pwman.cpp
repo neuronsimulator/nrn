@@ -25,6 +25,8 @@ extern "C" int hoc_return_type_code;
 #include <stdlib.h>
 #include "classreg.h"
 #include "oc2iv.h"
+#include "ivoc.h"
+
 #if HAVE_IV
 #include "utility.h"
 
@@ -186,10 +188,12 @@ private:
 };
 
 extern "C" {
-extern double (*p_java2nrn_dmeth)(Object* ho, Symbol* method);
-extern char** (*p_java2nrn_smeth)(Object* ho, Symbol* method);
-const char* (*p_java2nrn_classname)(Object* ho);
-bool (*p_java2nrn_identity)(Object* o1, Object* o2);
+	extern double (*p_java2nrn_dmeth)(Object* ho, Symbol* method);
+	extern char** (*p_java2nrn_smeth)(Object* ho, Symbol* method);
+	const char* (*p_java2nrn_classname)(Object* ho);
+	bool (*p_java2nrn_identity)(Object* o1, Object* o2);
+	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+	extern double (*nrnpy_object_to_double_)(Object*);
 }
 
 //just enough info to get a java window represented in the PWM.
@@ -1410,6 +1414,7 @@ PrintableWindowManager::~PrintableWindowManager() {
 
 extern "C" {
 void hoc_pwman_place() {
+	TRY_GUI_REDIRECT_DOUBLE("pwman_place", NULL);
 #if HAVE_IV
 IFGUI
 	int x, y;
@@ -1424,6 +1429,7 @@ ENDGUI
 }
 
 void hoc_save_session() {
+	TRY_GUI_REDIRECT_DOUBLE("save_session", NULL);
 #if HAVE_IV
 IFGUI
 	if (pwm_impl) {
@@ -1442,6 +1448,7 @@ const char* pwm_session_filename() {
 }
 
 void hoc_print_session() {
+	TRY_GUI_REDIRECT_DOUBLE("print_session", NULL);
 #if HAVE_IV
 IFGUI
 	if (pwm_impl) {
