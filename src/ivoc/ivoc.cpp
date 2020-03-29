@@ -205,7 +205,9 @@ bool setAcceptInputCallback(bool b) {
 }
 }
 
-void ivoc_style() { IFGUI
+void ivoc_style() { 
+	TRY_GUI_REDIRECT_DOUBLE("ivoc_style", NULL);
+	IFGUI
 	if (Session::instance()) {
 		Style* s = Session::instance()->style();
 		s->remove_attribute(gargstr(1));
