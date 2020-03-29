@@ -56,6 +56,8 @@
 #include "oc2iv.h"
 #include "parse.h"
 #endif /* HAVE_IV */
+#include "ivoc.h"
+
 #include "classreg.h"
 #if HAVE_IV
 
