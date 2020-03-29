@@ -13,8 +13,8 @@ extern "C" {
 	Object** (*nrnpy_gui_helper_)(const char* name, Object* obj) = NULL;
 	double (*nrnpy_object_to_double_)(Object*) = NULL;
 	Object** (*nrnpy_gui_helper3_)(const char* name, Object* obj, int handle_strptr) = NULL;
-
 };
+
 #if HAVE_IV // to end of file except for a few small fragments.
 
 #include <stdio.h>
