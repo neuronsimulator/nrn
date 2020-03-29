@@ -1,41 +1,6 @@
 #ifndef xmenu_h
 #define xmenu_h
 
-
-#define TRY_GUI_REDIRECT_OBJ(name, obj) {\
-    Object** ngh_result;\
-    if (nrnpy_gui_helper_) {\
-        ngh_result = nrnpy_gui_helper_(name, obj);\
-        if (ngh_result) {\
-            return (void*) *ngh_result;\
-        }\
-    }\
-}
-
-#define TRY_GUI_REDIRECT_DOUBLE(name, obj) {\
-    Object** ngh_result;\
-    if (nrnpy_gui_helper_) {\
-        ngh_result = nrnpy_gui_helper_(name, obj);\
-        if (ngh_result) {\
-			hoc_ret();\
-			hoc_pushx(nrnpy_object_to_double_(*ngh_result));\
-            return;\
-        }\
-    }\
-}
-
-#define TRY_GUI_REDIRECT_DOUBLE_SEND_STRREF(name, obj) {\
-    Object** ngh_result;\
-    if (nrnpy_gui_helper_) {\
-        ngh_result = nrnpy_gui_helper3_(name, obj, 1);\
-        if (ngh_result) {\
-			hoc_ret();\
-			hoc_pushx(nrnpy_object_to_double_(*ngh_result));\
-            return;\
-        }\
-    }\
-}
-
 #include <InterViews/window.h>
 #include <InterViews/box.h>
 #include <InterViews/event.h>
