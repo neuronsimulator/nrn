@@ -1,3 +1,6 @@
+#ifndef guiredirect_h
+#define gui_redirect_h
+
 #define TRY_GUI_REDIRECT_OBJ(name, obj) {\
     Object** ngh_result;\
     if (nrnpy_gui_helper_) {\
@@ -61,3 +64,5 @@
         }\
     }\
 }
+
+#endif
