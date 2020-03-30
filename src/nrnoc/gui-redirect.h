@@ -20,7 +20,7 @@
 		obj->index = -1;\
 		obj->u.this_pointer = v;\
 		guiredirect_result = nrnpy_gui_helper_(name, obj);\
-        free(obj); \
+        /*free(obj);*/ \
         if (guiredirect_result) { \
             return(nrnpy_object_to_double_(*guiredirect_result)); \
         } \
@@ -36,7 +36,7 @@
 		obj->index = -1;\
 		obj->u.this_pointer = v;\
 		guiredirect_result = nrnpy_gui_helper_(name, obj);\
-        free(obj); \
+        /*free(obj);*/ \
         if (guiredirect_result) { \
             return(guiredirect_result); \
         } \
