@@ -163,9 +163,10 @@ void hoc_string_dialog() {
     hoc_pushx(0.);
 }
 void hoc_checkpoint() {
-    if (nrnpy_gui_helper_) {
+    // not redirecting checkpoint because not a GUI function
+    /*if (nrnpy_gui_helper_) {
 		nrnpy_gui_helper_("checkpoint", NULL);
-	}
+	} */
     hoc_ret();
     hoc_pushx(0.);
 }
