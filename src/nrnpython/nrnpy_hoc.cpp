@@ -2244,7 +2244,8 @@ static Object** gui_helper_3_(const char* name, Object* obj, int handle_strptr) 
     for(int iarg=0; iarg<narg; iarg++) {
       const int iiarg = iarg + 1;
       if (hoc_is_object_arg(iiarg)) {
-        PyTuple_SetItem(args, iarg + 3, nrnpy_ho2po(*hoc_objgetarg(iiarg)));
+        PyObject* active_obj = nrnpy_ho2po(*hoc_objgetarg(iiarg));
+        PyTuple_SetItem(args, iarg + 3, active_obj);
       } else if (hoc_is_pdouble_arg(iiarg)) {
         PyHocObject* ptr_nrn = (PyHocObject*)hocobj_new(hocobject_type, 0, 0);
         ptr_nrn->type_ = PyHoc::HocScalarPtr;
@@ -2275,16 +2276,17 @@ static Object** gui_helper_3_(const char* name, Object* obj, int handle_strptr) 
       my_obj = nrnpy_ho2po(obj);
     } else {
       my_obj = Py_None;
-      Py_INCREF(Py_None);
     }
+    Py_INCREF(my_obj);
+    //printf("my_obj->ob_refcnt: %ld\n", my_obj->ob_refcnt);
     PyTuple_SetItem(args, 1, my_obj);
     PyObject* my_obj2;
     if (hoc_thisobject) {
       my_obj2 = nrnpy_ho2po(hoc_thisobject);
     } else {
       my_obj2 = Py_None;
-      Py_INCREF(Py_None);
     }
+    Py_INCREF(my_obj2);
     PyTuple_SetItem(args, 2, my_obj2);
     PyObject* po = PyObject_CallObject(gui_callback, args);
     Py_DECREF(args);
@@ -2293,7 +2295,9 @@ static Object** gui_helper_3_(const char* name, Object* obj, int handle_strptr) 
     // TODO: something that allows None (currently nrnpy_po2ho returns NULL if po == Py_None)
     Object* ho = nrnpy_po2ho(po);
     Py_DECREF(po);
-    --ho->refcount;
+    if (ho) {
+      --ho->refcount;
+    }
     return hoc_temp_objptr(ho);
   }
   return NULL;
