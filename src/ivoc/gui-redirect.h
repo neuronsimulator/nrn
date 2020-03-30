@@ -1,4 +1,4 @@
-#ifndef guiredirect_h
+#ifndef gui_redirect_h
 #define gui_redirect_h
 
 #define TRY_GUI_REDIRECT_OBJ(name, obj) {\
