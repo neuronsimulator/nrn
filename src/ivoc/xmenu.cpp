@@ -3075,6 +3075,7 @@ void HocStateMenuItem::write(ostream& o) {
 
 #endif //HAVE_IV
 static void* vfe_cons(Object*) {
+	TRY_GUI_REDIRECT_OBJ("ValueFieldEditor", NULL);
 #if HAVE_IV
 IFGUI
 	if (!ifarg(2) || hoc_is_str_arg(2)) {
@@ -3090,6 +3091,7 @@ ENDGUI
 	return 0;
 }
 static void vfe_destruct(void* v) {
+	TRY_GUI_REDIRECT_NO_RETURN("~ValueFieldEditor", v);
 #if HAVE_IV
 IFGUI
 	HocValEditor* fe = (HocValEditor*)v;
@@ -3098,6 +3100,7 @@ ENDGUI
 #endif
 }
 static double vfe_default(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("ValueFieldEditor.default", v);
 	double x = 0.;
 #if HAVE_IV
 IFGUI
