@@ -22,25 +22,7 @@
 #include "oc2iv.h"
 #include "classreg.h"
 
-#define TRY_REDIRECT_OBJ(name, obj) {\
-    Object** result;\
-    if (nrnpy_gui_helper_) {\
-        result = nrnpy_gui_helper_(name, obj);\
-        if (result) {\
-            return (void*) *result;\
-        }\
-    }\
-}
-
-#define TRY_REDIRECT_DOUBLE(name, obj) {\
-    Object** result;\
-    if (nrnpy_gui_helper_) {\
-        result = nrnpy_gui_helper_(name, obj);\
-        if (result) {\
-            return nrnpy_object_to_double_(*result);\
-        }\
-    }\
-}
+#include "gui-redirect.h"
 
 extern "C" int hoc_return_type_code;
 
@@ -136,7 +118,7 @@ void BoxDismiss::execute() {
 }
 #endif /* HAVE_IV */ 
 static void* vcons(Object*) {
-	TRY_REDIRECT_OBJ("VBox", NULL)	
+	TRY_GUI_REDIRECT_OBJ("VBox", NULL);	
 #if HAVE_IV
 	OcBox* b = NULL;
         int frame = OcBox::INSET;
@@ -152,7 +134,7 @@ static void* vcons(Object*) {
 }
 	
 static void* hcons(Object*) {
-	TRY_REDIRECT_OBJ("HBox", NULL)
+	TRY_GUI_REDIRECT_OBJ("HBox", NULL);
 #if HAVE_IV
 	OcBox* b = NULL;
         int frame = OcBox::INSET;
@@ -167,13 +149,7 @@ static void* hcons(Object*) {
 	
 static void destruct(void* v) {
 	// TODO: this doesn't seem to get called; why?
-	Object** result;
-	if (nrnpy_gui_helper_) {
-		result = nrnpy_gui_helper_("~Box", (Object*) v);
-		if (result) {
-			return;
-		}
-	}	
+	TRY_GUI_REDIRECT_NO_RETURN("~Box", v);
 #if HAVE_IV
 	OcBox* b = (OcBox*)v;
 IFGUI
@@ -186,7 +162,7 @@ ENDGUI
 }
 
 static double intercept(void* v) {
-	TRY_REDIRECT_DOUBLE("Box.intercept", (Object*) v)
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.intercept", v);
 #if HAVE_IV
 	bool b = int(chkarg(1, 0., 1.));
 IFGUI
@@ -199,13 +175,7 @@ ENDGUI
 }
 
 static double ses_pri(void* v) {
-	Object** result;
-	if (nrnpy_gui_helper_) {
-		result = nrnpy_gui_helper_("Box.priority", (Object*) v);
-		if (result) {
-			return 0;
-		}
-	}	
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.priority", v);
 #if HAVE_IV
 	int p = int(chkarg(1, -1000, 10000));
 IFGUI
@@ -218,13 +188,7 @@ ENDGUI
 }
 
 static double map(void* v) {
-	Object** result;
-	if (nrnpy_gui_helper_) {
-		result = nrnpy_gui_helper_("Box.map", (Object*) v);
-		if (result) {
-			return 1;
-		}
-	}
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.map", v);
 #if HAVE_IV
 IFGUI
 	OcBox* b = (OcBox*)v;
@@ -254,13 +218,7 @@ ENDGUI
 }
 
 static double dialog(void* v) {
-	Object** result;
-	if (nrnpy_gui_helper_) {
-		result = nrnpy_gui_helper_("Box.dialog", (Object*) v);
-		if (result) {
-			return 1;
-		}
-	}
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.dialog", v);
 #if HAVE_IV
 	bool r = false;
 IFGUI
@@ -283,13 +241,7 @@ ENDGUI
 }
 
 static double unmap(void* v) {
-	Object** result;
-	if (nrnpy_gui_helper_) {
-		result = nrnpy_gui_helper_("Box.unmap", (Object*) v);
-		if (result) {
-			return 1;
-		}
-	}	
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.unmap", v);
 #if HAVE_IV
 IFGUI
 	OcBox* b = (OcBox*)v;
@@ -317,13 +269,7 @@ ENDGUI
 
 static double ismapped(void* v) {
 	hoc_return_type_code = 2;
-	Object** result;
-	if (nrnpy_gui_helper_) {
-		result = nrnpy_gui_helper_("Box.ismapped", (Object*) v);
-		if (result) {
-			return nrnpy_object_to_double_(*result);
-		}
-	}	
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.ismapped", v);
 #if HAVE_IV
 	bool b = false;
 IFGUI
@@ -336,13 +282,7 @@ ENDGUI
 }
 
 static double adjuster(void* v) {
-	Object** result;
-	if (nrnpy_gui_helper_) {
-		result = nrnpy_gui_helper_("Box.adjuster", (Object*) v);
-		if (result) {
-			return 0;
-		}
-	}	
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.adjuster", v);
 #if HAVE_IV
 IFGUI
 	((OcBox*)v)->adjuster(chkarg(1, -1., 1e5));
@@ -352,13 +292,7 @@ ENDGUI
 }
 
 static double adjust(void* v) {
-	Object** result;
-	if (nrnpy_gui_helper_) {
-		result = nrnpy_gui_helper_("Box.adjust", (Object*) v);
-		if (result) {
-			return 0;
-		}
-	}		
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.adjust", v);
 #if HAVE_IV
 IFGUI
 	int index = 0;
@@ -372,13 +306,7 @@ ENDGUI
 }
 
 static double full_request(void* v) {
-	Object** result;
-	if (nrnpy_gui_helper_) {
-		result = nrnpy_gui_helper_("Box.full_request", (Object*) v);
-		if (result) {
-			return 0;
-		}
-	}		
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.full_request", v);
 #if HAVE_IV
 IFGUI
 	OcBox* b = (OcBox*)v;
@@ -393,13 +321,7 @@ ENDGUI
 }
 
 static double b_size(void* v) {
-	Object** result;
-	if (nrnpy_gui_helper_) {
-		result = nrnpy_gui_helper_("Box.size", (Object*) v);
-		if (result) {
-			return 0;
-		}
-	}		
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.size", v);
 #if HAVE_IV
 IFGUI
 	double* p = hoc_pgetarg(1); // array for at least 4 numbers
@@ -418,13 +340,7 @@ ENDGUI
 extern "C" {const char* pwm_session_filename();}
 
 static double save(void* v) {
-	Object** result;
-	if (nrnpy_gui_helper_) {
-		result = nrnpy_gui_helper_("Box.save", (Object*) v);
-		if (result) {
-			return 1;
-		}
-	}		
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.save", v);
 #if HAVE_IV
 IFGUI
 	OcBox* b = (OcBox*)v;
@@ -461,13 +377,7 @@ ENDGUI
 	is dismissed.
 */
 static double ref(void* v) {
-	Object** result;
-	if (nrnpy_gui_helper_) {
-		result = nrnpy_gui_helper_("Box.ref", (Object*) v);
-		if (result) {
-			return 0;
-		}
-	}		
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.ref", v);
 #if HAVE_IV
 	OcBox* b = (OcBox*)v;
 	b->keep_ref(*hoc_objgetarg(1));
@@ -484,13 +394,7 @@ static double ref(void* v) {
 	execute the action when the vbox is dismissed from the screen.
 */
 static double dismiss_action(void* v) {
-	Object** result;
-	if (nrnpy_gui_helper_) {
-		result = nrnpy_gui_helper_("Box.dismiss_action", (Object*) v);
-		if (result) {
-			return 0;
-		}
-	}	
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.dismiss_action", v);
 #if HAVE_IV
 IFGUI
 	OcBox* b = (OcBox*)v;
