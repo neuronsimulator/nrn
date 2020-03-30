@@ -1,4 +1,5 @@
 #include <../../nrnconf.h>
+#include "gui-redirect.h"
 
 extern char* ivoc_get_temp_file();
 extern "C" int hoc_return_type_code;
@@ -20,12 +21,12 @@ extern "C" int hoc_return_type_code;
 
 #include <ivstream.h>
 #include <string.h>
+#include "ivoc.h"
 #endif // HAVE_IV
 #include <stdio.h>
 #include <stdlib.h>
 #include "classreg.h"
 #include "oc2iv.h"
-#include "ivoc.h"
 
 #if HAVE_IV
 #include "utility.h"
@@ -192,8 +193,6 @@ extern "C" {
 	extern char** (*p_java2nrn_smeth)(Object* ho, Symbol* method);
 	const char* (*p_java2nrn_classname)(Object* ho);
 	bool (*p_java2nrn_identity)(Object* o1, Object* o2);
-	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-	extern double (*nrnpy_object_to_double_)(Object*);
 }
 
 //just enough info to get a java window represented in the PWM.
@@ -462,6 +461,11 @@ void PWMDismiss::execute() {
 extern "C" {char* hoc_back2forward(char*);}
 #endif
 #endif //HAVE_IV
+
+extern "C" {
+	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+	extern double (*nrnpy_object_to_double_)(Object*);
+}
 
 static void* pwman_cons(Object*) {
 	TRY_GUI_REDIRECT_OBJ("PWManager", NULL);

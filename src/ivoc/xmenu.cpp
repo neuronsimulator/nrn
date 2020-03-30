@@ -9,6 +9,9 @@ double (*nrnpy_guigetval)(Object*);
 void (*nrnpy_guisetval)(Object*, double);
 int (*nrnpy_guigetstr)(Object*, char**);
 }
+
+#include "gui-redirect.h"
+
 extern "C" {
 	Object** (*nrnpy_gui_helper_)(const char* name, Object* obj) = NULL;
 	double (*nrnpy_object_to_double_)(Object*) = NULL;

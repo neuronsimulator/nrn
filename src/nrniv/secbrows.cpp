@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 #include "classreg.h"
+#include "gui-redirect.h"
 
 #if HAVE_IV
 

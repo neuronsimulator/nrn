@@ -55,11 +55,11 @@
 
 #include "oc2iv.h"
 #include "parse.h"
-#endif /* HAVE_IV */
 #include "ivoc.h"
+#endif /* HAVE_IV */
 
 #include "classreg.h"
-
+#include "gui-redirect.h"
 extern "C" {
 	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
 	extern double (*nrnpy_object_to_double_)(Object*);
