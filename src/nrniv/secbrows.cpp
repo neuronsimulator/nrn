@@ -17,11 +17,14 @@
 #include "nrnoc2iv.h"
 extern "C" {
 #include "membfunc.h"
-void (*nrnpy_call_python_with_section)(Object*, Section*) = NULL;
+	void (*nrnpy_call_python_with_section)(Object*, Section*) = NULL;
+	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+	extern double (*nrnpy_object_to_double_)(Object*);
 }
 
 //-----------------------------------------
 static double sb_select(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("SectionBrowser.select", v);
 #if HAVE_IV
 IFGUI
 	Section* sec = chk_access();
@@ -31,6 +34,7 @@ ENDGUI
 	return 1.;
 }
 static double sb_select_action(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("SectionBrowser.select_action", v);
 #if HAVE_IV
 IFGUI
 	char* str_action = NULL;
@@ -47,6 +51,7 @@ ENDGUI
 	return 1.;
 }
 static double sb_accept_action(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("SectionBrowser.accept_action", v);
 #if HAVE_IV
 IFGUI
 	char* str_action = NULL;
@@ -69,6 +74,7 @@ static Member_func sb_members[] = {
 	0, 0
 };
 static void* sb_cons(Object*) {
+	TRY_GUI_REDIRECT_OBJ("SectionBrowser", NULL);
 	Object* ob;
 #if HAVE_IV
 	OcSectionBrowser* b = NULL;
@@ -89,6 +95,7 @@ ENDGUI
 #endif
 }
 static void sb_destruct(void* v) {
+	TRY_GUI_REDIRECT_NO_RETURN("~SectionBrowser", v);
 #if HAVE_IV
 	Resource::unref((OcSectionBrowser*)v);
 #endif
