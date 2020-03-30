@@ -742,7 +742,7 @@ ENDGUI
 }
 #endif
 
-static double pwman_scale(void*) {
+static double pwman_scale(void* v) {
 	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.scale", v);
 	double scale = chkarg(1, .01, 100);
 #if HAVE_IV
@@ -762,7 +762,7 @@ ENDGUI
 	return scale;
 }
 
-static double pwman_window_place(void*){
+static double pwman_window_place(void* v){
 	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.window_place", v);
 #if HAVE_IV
 IFGUI
@@ -780,7 +780,7 @@ ENDGUI
 	return 1.;
 }
 
-static double pwman_paper_place(void*){
+static double pwman_paper_place(void* v){
 	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.paper_place", v);
 #if HAVE_IV
 IFGUI
@@ -805,7 +805,7 @@ ENDGUI
 	return 1.;
 }
 
-static double pwman_printfile(void*){
+static double pwman_printfile(void* v){
 	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.printfile", v);
 #if HAVE_IV
 IFGUI
@@ -834,7 +834,7 @@ ENDGUI
 	return 1.;
 }
 
-static double pwman_landscape(void*){
+static double pwman_landscape(void* v){
 	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.landscape", v);
 #if HAVE_IV
 IFGUI
@@ -845,7 +845,7 @@ ENDGUI
 	return 1.;
 }
 
-static double pwman_deco(void*){
+static double pwman_deco(void* v){
 	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.deco", v);
 #if HAVE_IV
 IFGUI
