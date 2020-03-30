@@ -14,6 +14,12 @@ extern "C" int hoc_return_type_code;
 #include "classreg.h"
 #include "oc2iv.h"
 #include "apwindow.h"
+#include "ivoc.h"
+
+extern "C" {
+	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+	extern double (*nrnpy_object_to_double_)(Object*);
+}
 
 class OcText : public Text {
 public:
@@ -31,6 +37,7 @@ public:
 };
 
 static double map(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("TextEditor.map", v);
 	OcMLineEditor* e = (OcMLineEditor*)v;
 	PrintableWindow* w;
 	if (ifarg(3)) {  
@@ -48,6 +55,7 @@ static double map(void* v) {
 }
 
 static double readonly(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("TextEditor.readonly", v);
 	OcMLineEditor* e = (OcMLineEditor*)v;
 	hoc_return_type_code = 2; // boolean
 	if (ifarg(1)) {
@@ -57,6 +65,7 @@ static double readonly(void* v) {
 }
 
 static const char** v_text(void* v) {
+	// TODO: figure out how to handle string methods
 	OcMLineEditor* e = (OcMLineEditor*)v;
 	TextBuffer* tb = e->txt_->editBuffer();
 	if (ifarg(1)) {
@@ -82,6 +91,8 @@ static Member_ret_str_func retstr_members[] = {
 };
 
 static void* cons(Object*) {
+	TRY_GUI_REDIRECT_OBJ("TextEditor", NULL);
+
 	const char* buf = "";
 	unsigned row = 5;
 	unsigned col = 30;
@@ -98,6 +109,7 @@ static void* cons(Object*) {
 }
 
 static void destruct(void* v) {
+	TRY_GUI_REDIRECT_NO_RETURN("~TextEditor", v);
 	OcMLineEditor* e = (OcMLineEditor*)v;
 	if (e->has_window()) {
 		e->window()->dismiss();
