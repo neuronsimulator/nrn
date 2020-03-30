@@ -4,15 +4,20 @@
 #include "section.h"
 #include "nrnmpiuse.h"
 #include "nrndae_c.h"
+#include "gui-redirect.h"
+
+extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+extern double (*nrnpy_object_to_double_)(Object*);
+
 #define hoc_retpushx hoc_retpushx
 
 /* stubs for nrnoc. The actual functions are for interviews menus */
-void nrnallsectionmenu(){hoc_retpushx(0);}
-void nrnallpointmenu(){hoc_retpushx(0);}
-void nrnsecmenu(){hoc_retpushx(0);}
-void nrnglobalmechmenu(){hoc_retpushx(0);}
+void nrnallsectionmenu(){TRY_GUI_REDIRECT_DOUBLE("nrnallsectionmenu", NULL); hoc_retpushx(0);}
+void nrnallpointmenu(){TRY_GUI_REDIRECT_DOUBLE("nrnallpointmenu", NULL); hoc_retpushx(0);}
+void nrnsecmenu(){TRY_GUI_REDIRECT_DOUBLE("nrnsecmenu", NULL); hoc_retpushx(0);}
+void nrnglobalmechmenu(){TRY_GUI_REDIRECT_DOUBLE("nrnglobalmechmenu", NULL); hoc_retpushx(0);}
 void nrnmechmenu(){hoc_retpushx(0);}
-void nrnpointmenu(){hoc_retpushx(0);}
+void nrnpointmenu(){TRY_GUI_REDIRECT_DOUBLE("nrnpointmenu", NULL); hoc_retpushx(0);}
 void make_mechanism(){hoc_retpushx(0);}
 void make_pointprocess(){hoc_retpushx(0);}
 void nrnpython() {hoc_retpushx(0);}
