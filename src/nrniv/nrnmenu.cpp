@@ -13,6 +13,12 @@
 #include "nrnoc2iv.h"
 #include "nrnmenu.h"
 #include "classreg.h"
+#include "gui-redirect.h"
+extern "C" {
+	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+	extern double (*nrnpy_object_to_double_)(Object*);
+}
+
 
 typedef void (*ReceiveFunc)(Point_process*, double*, double);
 extern "C" int hoc_return_type_code;
@@ -52,6 +58,8 @@ static void point_menu(Object*, int);
 #endif
 
 void nrnallsectionmenu() {
+	TRY_GUI_REDIRECT_DOUBLE("nrnallsectionmenu", NULL);
+
 #if HAVE_IV
 IFGUI
 	SectionBrowser::make_section_browser();
@@ -62,6 +70,7 @@ ENDGUI
 }
 
 void nrnsecmenu() {
+	TRY_GUI_REDIRECT_DOUBLE("nrnsecmenu", NULL);
 #if HAVE_IV
 IFGUI
 	double x;
@@ -97,6 +106,7 @@ static bool has_globals(const char* name) {
 }
 
 void nrnglobalmechmenu() {
+	TRY_GUI_REDIRECT_DOUBLE("nrnglobalmechmenu", NULL); 
 #if HAVE_IV
 IFGUI
 	Symbol *sp;
@@ -330,6 +340,7 @@ hoc_ivpvalue(vsym->name, hoc_val_pointer(buf), deflt, vsym->extra);
 #endif
 
 void nrnallpointmenu() {
+	TRY_GUI_REDIRECT_DOUBLE("nrnallpointmenu", NULL); 
 #if HAVE_IV
 IFGUI
 	int i;
@@ -397,6 +408,7 @@ ENDGUI
 
 void nrnpointmenu()
 {
+	TRY_GUI_REDIRECT_DOUBLE("nrnpointmenu", NULL); 
 #if HAVE_IV
 IFGUI
 	Object* ob;
