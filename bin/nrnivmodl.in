@@ -162,10 +162,15 @@ fi
 @NRNMECH_DLL_STYLE_TRUE@@USING_CMAKE_TRUE@make -j 4 -f "$MAKEFILEDIR/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" libnrnmech.la VERBOSE=1
 @NRNMECH_DLL_STYLE_TRUE@  echo '#!/bin/sh
 @NRNMECH_DLL_STYLE_TRUE@if test "x${NRNHOME}" = "x" ; then
-@NRNMECH_DLL_STYLE_TRUE@	NRNHOME='"\"${prefix}\""'
-@NRNMECH_DLL_STYLE_TRUE@fi'> special &&
-@NRNMECH_DLL_STYLE_TRUE@  echo 'if test "x${NRNBIN}" = "x" ; then
-@NRNMECH_DLL_STYLE_TRUE@	NRNBIN='"\"${bindir}/\""'
+@NRNMECH_DLL_STYLE_TRUE@    NRNHOME='"\"${prefix}\""'
+@NRNMECH_DLL_STYLE_TRUE@fi' > special
+@NRNMECH_DLL_STYLE_TRUE@if test "${NEURONHOME}"; then
+@NRNMECH_DLL_STYLE_TRUE@  echo 'if test "x${NEURONHOME}" = "x"; then
+@NRNMECH_DLL_STYLE_TRUE@    export NEURONHOME='"\"${NEURONHOME}\""'
+@NRNMECH_DLL_STYLE_TRUE@fi' >> special
+@NRNMECH_DLL_STYLE_TRUE@fi
+@NRNMECH_DLL_STYLE_TRUE@echo 'if test "x${NRNBIN}" = "x" ; then
+@NRNMECH_DLL_STYLE_TRUE@    NRNBIN='"\"${bindir}/\""'
 @NRNMECH_DLL_STYLE_TRUE@fi'>> special &&
 @NRNMECH_DLL_STYLE_TRUE@echo 'if test "@enable_carbon@" = "yes" ; then
 @NRNMECH_DLL_STYLE_TRUE@	NRNIV="${NRNBIN}nrniv.app/Contents/MacOS/nrniv"
