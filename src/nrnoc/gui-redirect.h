@@ -11,6 +11,38 @@
     }\
 }
 
+#define TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE(name, sym, v) {\
+	Object** guiredirect_result = NULL; \
+	if (nrnpy_gui_helper_) {\
+		Object* obj = (Object*) malloc(sizeof(Object));\
+		obj->ctemplate = sym->u.ctemplate;\
+		obj->refcount = 1;\
+		obj->index = -1;\
+		obj->u.this_pointer = v;\
+		guiredirect_result = nrnpy_gui_helper_("List.browser", obj);\
+        free(obj); \
+        if (guiredirect_result) { \
+            return(nrnpy_object_to_double_(*guiredirect_result)); \
+        } \
+	}\
+}
+
+#define TRY_GUI_REDIRECT_METHOD_ACTUAL_OBJ(name, sym, v) {\
+	Object** guiredirect_result = NULL; \
+	if (nrnpy_gui_helper_) {\
+		Object* obj = (Object*) malloc(sizeof(Object));\
+		obj->ctemplate = sym->u.ctemplate;\
+		obj->refcount = 1;\
+		obj->index = -1;\
+		obj->u.this_pointer = v;\
+		guiredirect_result = nrnpy_gui_helper_("List.browser", obj);\
+        free(obj); \
+        if (guiredirect_result) { \
+            return(guiredirect_result); \
+        } \
+	}\
+}
+
 #define TRY_GUI_REDIRECT_NO_RETURN(name, obj) {\
     Object** ngh_result;\
     if (nrnpy_gui_helper_) {\

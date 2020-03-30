@@ -45,6 +45,13 @@ extern "C" {extern void exit(int status);};
 #include "graph.h"
 #endif
 
+#include "gui-redirect.h"
+
+extern "C" {
+	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+	extern double (*nrnpy_object_to_double_)(Object*);
+}
+
 #ifndef PI
 #ifndef M_PI
 	#define M_PI 3.14159265358979323846
@@ -883,6 +890,7 @@ static Object** v_play(void* v) {
 
 /*ARGSUSED*/
 static Object** v_plot(void* v) {
+	TRY_GUI_REDIRECT_METHOD_ACTUAL_OBJ("Vector.plot", svec_, v);
         Vect* vp = (Vect*)v;
 #if HAVE_IV
 IFGUI
@@ -938,6 +946,7 @@ ENDGUI
 }
 
 static Object** v_ploterr(void* v) {
+	TRY_GUI_REDIRECT_METHOD_ACTUAL_OBJ("Vector.ploterr", svec_, v);
         Vect* vp = (Vect*)v;
 #if HAVE_IV
 IFGUI
@@ -979,6 +988,7 @@ ENDGUI
 }
 
 static Object** v_line(void* v) {
+	TRY_GUI_REDIRECT_METHOD_ACTUAL_OBJ("Vector.line", svec_, v);
         Vect* vp = (Vect*)v;
 #if HAVE_IV
 IFGUI
@@ -1028,6 +1038,7 @@ ENDGUI
 
 
 static Object** v_mark(void* v) {
+	TRY_GUI_REDIRECT_METHOD_ACTUAL_OBJ("Vector.mark", svec_, v);
         Vect* vp = (Vect*)v;
 #if HAVE_IV
 IFGUI
