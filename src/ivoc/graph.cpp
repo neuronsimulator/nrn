@@ -47,6 +47,13 @@ extern Image* gif_image(const char*);
 #endif  /* HAVE_IV */
 
 #include "classreg.h"
+#include "gui-redirect.h"
+
+extern "C" {
+	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+	extern double (*nrnpy_object_to_double_)(Object*);
+}
+
 #if HAVE_IV  
 #define Graph_Crosshair_		"Crosshair Graph"
 #define Graph_Change_label_		"ChangeText Graph"
@@ -64,10 +71,6 @@ bool GraphItem::is_polyline() { return false; }
 bool GPolyLineItem::is_polyline() { return true; }
 bool GraphItem::is_mark() { return false; }
 
-extern "C" {
-	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-	extern double (*nrnpy_object_to_double_)(Object*);
-}
 
 /*static*/ class GraphLabelItem : public GraphItem {
 public:

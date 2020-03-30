@@ -41,6 +41,7 @@ void iv_display_scale(float);
 #include "oc2iv.h"
 #include "nrnmpi.h"
 #include "nrnrt.h"
+#include "gui-redirect.h"
 
 #if defined(IVX11_DYNAM)
 #include <IV-X11/ivx11_dynam.h>

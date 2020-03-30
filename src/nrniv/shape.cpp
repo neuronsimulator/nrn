@@ -1,5 +1,7 @@
 #include <../../nrnconf.h>
 #include "classreg.h"
+#include "gui-redirect.h"
+
 #if HAVE_IV // to end of file
 
 #define BEVELJOIN 1
@@ -51,8 +53,6 @@ extern "C" {
 	extern Point_process* ob2pntproc_0(Object*);
 	extern double* nrn_recalc_ptr(double*);
 	extern Object* (*nrnpy_seg_from_sec_x)(Section*, double);
-	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-	extern double (*nrnpy_object_to_double_)(Object*);
 }
 
 #if BEVELJOIN
@@ -167,7 +167,12 @@ bool OcShapeHandler::event(Event&) {
 	return true;
 }
 #endif //HAVE_IV
-		
+
+extern "C" {
+	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+	extern double (*nrnpy_object_to_double_)(Object*);
+}
+
 // Shape class registration for oc
 static double sh_view(void* v) {
 	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Shape.view", v);
