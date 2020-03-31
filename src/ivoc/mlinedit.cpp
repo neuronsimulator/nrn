@@ -19,6 +19,7 @@ extern "C" int hoc_return_type_code;
 extern "C" {
 	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
 	extern double (*nrnpy_object_to_double_)(Object*);
+	extern char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strptr);
 }
 
 class OcText : public Text {
@@ -65,7 +66,7 @@ static double readonly(void* v) {
 }
 
 static const char** v_text(void* v) {
-	// TODO: figure out how to handle string methods
+	TRY_GUI_REDIRECT_ACTUAL_STR("TextEditor.text", v);
 	OcMLineEditor* e = (OcMLineEditor*)v;
 	TextBuffer* tb = e->txt_->editBuffer();
 	if (ifarg(1)) {

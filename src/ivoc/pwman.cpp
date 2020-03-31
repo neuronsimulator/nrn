@@ -465,6 +465,7 @@ extern "C" {char* hoc_back2forward(char*);}
 extern "C" {
 	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
 	extern double (*nrnpy_object_to_double_)(Object*);
+	extern char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strptr);
 }
 
 static void* pwman_cons(Object*) {
@@ -543,6 +544,7 @@ ENDGUI
 	return 0.;
 }
 static const char** pwman_name(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_STR("PWManager.name", v);
 #if HAVE_IV
 IFGUI
 	PWMImpl* p = PrintableWindowManager::current()->pwmi_;
