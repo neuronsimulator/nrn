@@ -160,10 +160,16 @@ enum ObjectType {
   HocRefStr = 5,
   HocRefObj = 6,
   HocForallSectionIterator = 7,
-  HocScalarPtr = 8,
+  HocSectionListIterator = 8,
+  HocScalarPtr = 9,
   HocArrayIncomplete =
-      9,  // incomplete pointer to a hoc array (similar to HocArray)
-  HocRefPStr = 10,
+      10,  // incomplete pointer to a hoc array (similar to HocArray)
+  HocRefPStr = 11,
+};
+enum IteratorState {
+  Begin,
+  NextNotLast,
+  Last
 };
 }  // namespace PyHoc
 
@@ -175,6 +181,7 @@ typedef struct {
     char** pstr_;
     Object* ho_;
     double* px_;
+    PyHoc::IteratorState its_;
   } u;
   Symbol* sym_;     // for functions and arrays
   void* iteritem_;  // enough info to carry out Iterator protocol
@@ -338,7 +345,9 @@ static PyObject* hocobj_name(PyObject* pself, PyObject* args) {
   } else if (self->type_ == PyHoc::HocRefObj) {
     sprintf(cp, "<hoc ref value \"%s\">", hoc_object_name(self->u.ho_));
   } else if (self->type_ == PyHoc::HocForallSectionIterator) {
-    sprintf(cp, "<all section iterator>");
+    sprintf(cp, "<all section iterator next>");
+  } else if (self->type_ == PyHoc::HocSectionListIterator) {
+    sprintf(cp, "<SectionList iterator>");
   } else if (self->type_ == PyHoc::HocScalarPtr) {
     sprintf(cp, "<pointer to hoc scalar %g>",
             self->u.px_ ? *self->u.px_ : -1e100);
@@ -1530,7 +1539,10 @@ static Py_ssize_t hocobj_len(PyObject* self) {
   } else if (po->sym_ && po->sym_->type == TEMPLATE) {
     return po->sym_->u.ctemplate->count;
   } else if (po->type_ == PyHoc::HocForallSectionIterator) {
-    PyErr_SetString(PyExc_TypeError, "hoc.allsec() has no len()");
+    PyErr_SetString(PyExc_TypeError, "hoc all section iterator() has no len()");
+    return -1;
+  } else if (po->type_ == PyHoc::HocSectionListIterator) {
+    PyErr_SetString(PyExc_TypeError, "hoc SectionList iterator() has no len()");
     return -1;
   }
   PyErr_SetString(PyExc_TypeError, "Most HocObject have no len()");
@@ -1560,6 +1572,7 @@ PyObject* nrnpy_forall(PyObject* self, PyObject* args) {
   PyObject* po = hocobj_new(hocobject_type, 0, 0);
   PyHocObject* pho = (PyHocObject*)po;
   pho->type_ = PyHoc::HocForallSectionIterator;
+  pho->u.its_ = PyHoc::Begin;
   pho->iteritem_ = section_list;
   return po;
 }
@@ -1575,11 +1588,15 @@ static PyObject* hocobj_iter(PyObject* self) {
     } else if (po->ho_->ctemplate == hoc_sectionlist_template_) {
       // need a clone of self so nested loops do not share iteritem_
       PyObject* po2 = nrnpy_ho2po(po->ho_);
-      ((PyHocObject*)po2)->iteritem_ = ((hoc_Item*)po->ho_->u.this_pointer)->next;
+      PyHocObject* pho2 = (PyHocObject*)po2;
+      pho2->type_ = PyHoc::HocSectionListIterator;
+      pho2->u.its_ = PyHoc::Begin;
+      pho2->iteritem_ = ((hoc_Item*)po->ho_->u.this_pointer);
       return po2;
     }
   } else if (po->type_ == PyHoc::HocForallSectionIterator) {
-    po->iteritem_ = section_list->next;
+    po->iteritem_ = section_list;
+    po->u.its_ = PyHoc::Begin;
     Py_INCREF(self);
     return self;
   } else if (po->type_ == PyHoc::HocArray) {
@@ -1593,35 +1610,96 @@ static PyObject* hocobj_iter(PyObject* self) {
   return NULL;
 }
 
-static PyObject* iternext_sl(PyHocObject* po, hoc_Item* ql) {
-  hoc_Item* q = (hoc_Item*)po->iteritem_;
-  if (q != ql) {
-    if (q->prev != ql) {
-      nrn_popsec();
-    }
-    for (;;) {  // have to watch out for deleted sections.
-      hoc_Item* q1 = q->next;
-      Section* sec = q->element.sec;
-      if (!sec->prop) {  // delete from list and go on
-        // to the next. If no more return NULL
-        hoc_l_delete(q);
-        section_unref(sec);
-        q = q1;
-        if (q != ql) {
-          continue;
-        } else {
-          return NULL;
-        }
-      }
-      nrn_pushsec(sec);
-      po->iteritem_ = q1;
+static hoc_Item* next_valid_secitem(hoc_Item* q, hoc_Item* ql) {
+  hoc_Item* nextnext;
+  hoc_Item* next;
+  for ( next = q->next; next != ql; next = nextnext) {
+    nextnext = next->next;
+    Section* sec = next->element.sec;
+    if (sec->prop) { // valid
       break;
     }
-    return nrnpy_cas(NULL, NULL);
-  } else {
-    if (q->prev != ql) {
-      nrn_popsec();
+    hoc_l_delete(next);
+    section_unref(sec);
+  }
+  return next;
+}
+
+static PyObject* iternext_sl(PyHocObject* po, hoc_Item* ql) {
+  // Primarily the Section is pushed and the currently accessed python
+  // Section is returned during sequential iteration over the list ql.
+  // On re-entry here, the previous Section is popped.
+  // The complexity is due to the possibility that the returned nrn_Section
+  // may be deleted with h.delete_section(sec=nrn_Section). This would
+  // invalidate the po->iteritem_ (point to freed memory) if it were
+  // the iteritem of the current Section. Thus we choose to store
+  // the next iteritem pointer in the list. Although not 100% safe, since
+  // the user body of the iterator is allowed to delete_section an arbitary
+  // subset of sections, the obvious work around, making a copy of ql,
+  // is considered not worth it.
+
+  // In this implementation, the first call to internext_sl starts out
+  // in state PyHoc::Begin with po->iteritem_ == ql. If there is no valid
+  // item, it sets po->iteritem_ = NULL and returns NULL. If there is
+  // a valid item, it moves to state PyHoc::Last or PyHoc::NextNotLast
+  // depending on whether there is a valid secitem following the current
+  // item. The current section is pushed and currently accessed python
+  // section is returned.
+
+  // Thereafter, re-entry with po->iteritem_ == NULL, immediately
+  // returns NULL.
+
+  // Re-entry in state PyHoc::NextNotLast, pops the previously pushed Section,
+  // sets sec to the current Section from po->iteritem_, and
+  // sets po->iteritem_ to the next_valid_section. If there is no next_valid
+  // section, then move to state PyHoc::Last.
+  // Push the current section and return currently accessed python Section.
+
+  // Re-entry in state PyHoc::Last just pops the current section, sets
+  // po->iteritem_ = NULL, and returns NULL.
+
+  if (po->iteritem_ == NULL) {
+    return NULL;
+  }
+
+  if (po->u.its_ == PyHoc::Begin) {
+    assert(po->iteritem_ == ql);
+    hoc_Item* curitem = next_valid_secitem((hoc_Item*)(po->iteritem_), ql);
+    if (curitem != ql) { // typical case, a valid current item
+      Section* sec = curitem->element.sec;
+      assert(sec->prop);
+      // sec could be delete_section before return to internext.sl
+      // which would invalidate curitem.
+      // Not perfectly safe but leave po->iteritem_ as next valid
+      // secitem after curitem.
+      po->iteritem_ = next_valid_secitem(curitem, ql);
+      if (po->iteritem_ == ql) {
+        po->u.its_ = PyHoc::Last;
+      }else{
+        po->u.its_ = PyHoc::NextNotLast;
+      }
+      nrn_pushsec(sec);
+      return nrnpy_cas(NULL, NULL);
+    }else{ // no valid current item so stop
+      po->iteritem_ = NULL;
+      return NULL;
     }
+
+  } else if (po->u.its_ == PyHoc::NextNotLast) {
+    nrn_popsec(); // pop the previous iteration.
+    // it would be a bug if po->iteritem_ (now the curitem) has been delete_section
+    Section* sec = ((hoc_Item*)(po->iteritem_))->element.sec;
+    assert(sec->prop);
+    po->iteritem_ = next_valid_secitem((hoc_Item*)(po->iteritem_), ql);
+    if (po->iteritem_ == ql) {
+      po->u.its_ = PyHoc::Last;
+    }
+    nrn_pushsec(sec);
+    return nrnpy_cas(NULL, NULL);
+
+  } else if (po->u.its_ == PyHoc::Last) {
+    nrn_popsec();
+    po->iteritem_ = NULL;
     return NULL;
   }
 }
@@ -1629,12 +1707,11 @@ static PyObject* iternext_sl(PyHocObject* po, hoc_Item* ql) {
 static PyObject* hocobj_iternext(PyObject* self) {
   // printf("hocobj_iternext %p\n", self);
   PyHocObject* po = (PyHocObject*)self;
-  if (po->type_ == PyHoc::HocObject) {
+  if (po->type_ == PyHoc::HocSectionListIterator) {
     hoc_Item* ql = (hoc_Item*)po->ho_->u.this_pointer;
     return iternext_sl(po, ql);
   } else if (po->type_ == PyHoc::HocForallSectionIterator) {
-    hoc_Item* ql = section_list;
-    return iternext_sl(po, ql);
+    return iternext_sl(po, section_list);
   } else if (po->sym_->type == TEMPLATE) {
     hoc_Item* q = (hoc_Item*)po->iteritem_;
     if (q != po->sym_->u.ctemplate->olist) {
@@ -2839,7 +2916,7 @@ myPyMODINIT_FUNC nrnpy_hoc() {
 #if PY_MAJOR_VERSION >= 3
   err = PyDict_SetItemString(modules, "hoc", m);
   assert(err == 0);
-  Py_DECREF(m);
+//  Py_DECREF(m);
   return m;
 fail:
   return NULL;

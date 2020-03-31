@@ -240,37 +240,24 @@ class MultiCompartmentReaction(GeneralizedReaction):
         #self._memb_scales = volume * molecules_per_mM_um3 / areas
         
         
-        if self._membrane_flux:
-            # TODO: don't assume/require always inside/outside on one side...
-            #       if no nrn_region specified, then (make so that) no contribution
-            #       to membrane flux
-            sources_ecs = [r for r in self._sources if isinstance(r(),species.SpeciesOnExtracellular)]
-            dests_ecs = [r for r in self._dests if isinstance(r(),species.SpeciesOnExtracellular)]
+        if not self._membrane_flux:
+            return
+        # TODO: don't assume/require always inside/outside on one side...
+        #       if no nrn_region specified, then (make so that) no contribution
+        #       to membrane flux
+        sources_ecs = [r for r in self._sources if isinstance(r(),species.SpeciesOnExtracellular)]
+        dests_ecs = [r for r in self._dests if isinstance(r(),species.SpeciesOnExtracellular)]
 
-            source_regions = [s()._region()._nrn_region for s in sources] + ['o' for s in sources_ecs]
-            dest_regions = [d()._region()._nrn_region for d in dests] + ['o' for d in dests_ecs]
-
-            if 'i' in source_regions and 'o' not in source_regions and 'i' not in dest_regions:
-                inside = 1 #'source'
-            elif 'o' in source_regions and 'i' not in source_regions and 'o' not in dest_regions:
-                inside = -1 # 'dest'
-            elif 'i' in dest_regions and 'o' not in dest_regions and 'i' not in source_regions:
-                inside = -1 # 'dest'
-            elif 'o' in dest_regions and 'i' not in dest_regions and 'o' not in source_regions:
-                inside = 1 # 'source'
-            else:
-                raise RxDException('unable to identify which side of reaction is inside (hope to remove the need for this')
+        source_regions = [s()._region()._nrn_region for s in sources] + ['o' for s in sources_ecs]
+        dest_regions = [d()._region()._nrn_region for d in dests] + ['o' for d in dests_ecs]
         # dereference the species to get the true species if it's actually a SpeciesOnRegion
         sources = [s()._species() for s in self._sources]
         dests = [d()._species() for d in self._dests]
-        #if self._membrane_flux:
-        #    if any(s in dests for s in sources) or any(d in sources for d in dests):
-        #        # TODO: remove this limitation
-        #        raise RxDException('current fluxes do not yet support same species on both sides of reaction')
         
         # TODO: make so don't need multiplicity (just do in one pass)
-        # TODO: this needs changed when I switch to allowing multiple sides on the left/right (e.g. simplified Na/K exchanger)
-        self._cur_charges = tuple([inside * s.charge for s in sources if s.name is not None] + [inside * s.charge for s in dests if s.name is not None])
+        smap = {'i':1, None:0, 'o':-1}
+        self._cur_charges = tuple([smap[r] * s.charge for s,r in zip(sources, source_regions) if s.name is not None]
+                                + [-1 * smap[r] * s.charge for s,r in zip(dests, dest_regions) if s.name is not None])
         self._net_charges = sum(self._cur_charges)
         self._cur_ptrs = []
         self._cur_mapped = []
@@ -283,29 +270,30 @@ class MultiCompartmentReaction(GeneralizedReaction):
                 for r in s.regions:
                     if isinstance(s[r],species.SpeciesOnExtracellular):
                         ecs_grids[s.name] = s[r]._extracellular()
-                if s.name not in all_grids: all_grids.append(s.name)
+                if s.name not in all_grids: all_grids.append((s.name,s.charge))
         for sec in active_secs:
             for seg in sec:
                 local_ptrs = []
                 local_mapped = []
                 local_mapped_ecs = []
-                for spname in all_grids:
+                for spname, charge in all_grids:
                     #Check for extracellular regions
-                    name = '_ref_i%s' % (spname)
-                    local_ptrs.append(seg.__getattribute__(name))
-                    uberlocal_map = [None, None]
-                    uberlocal_map_ecs = [None, None]
-                    if spname + 'i' in cur_map and cur_map[spname + 'i']:
-                        uberlocal_map[0] = cur_map[spname + 'i'][seg]
-                    if spname + 'o' in cur_map:
-                        #Original rxd extracellular region
-                        if seg in cur_map[spname + 'o']:
-                            uberlocal_map[1] = cur_map[spname + 'o'][seg]
-                        elif spname in ecs_grids:   #Extracellular space
-                            uberlocal_map_ecs[0] = ecs_grids[spname]._grid_id      #TODO: Just pass the grid_id once per species
-                            uberlocal_map_ecs[1] = ecs_grids[spname].index_from_xyz(*species._xyz(seg))
-                    local_mapped.append(uberlocal_map)
-                    local_mapped_ecs.append(uberlocal_map_ecs)
+                    if charge != 0:
+                        name = '_ref_i%s' % (spname)
+                        local_ptrs.append(getattr(seg, name))
+                        uberlocal_map = [None, None]
+                        uberlocal_map_ecs = [None, None]
+                        if spname + 'i' in cur_map and cur_map[spname + 'i']:
+                            uberlocal_map[0] = cur_map[spname + 'i'][seg]
+                        if spname + 'o' in cur_map:
+                            #Original rxd extracellular region
+                            if seg in cur_map[spname + 'o']:
+                                uberlocal_map[1] = cur_map[spname + 'o'][seg]
+                            elif spname in ecs_grids:   #Extracellular space
+                                uberlocal_map_ecs[0] = ecs_grids[spname]._grid_id      #TODO: Just pass the grid_id once per species
+                                uberlocal_map_ecs[1] = ecs_grids[spname].index_from_xyz(*species._xyz(seg))
+                        local_mapped.append(uberlocal_map)
+                        local_mapped_ecs.append(uberlocal_map_ecs)
                 self._cur_ptrs.append(tuple(local_ptrs))
                 self._cur_mapped.append(tuple(local_mapped))
                 self._cur_mapped_ecs.append(local_mapped_ecs)

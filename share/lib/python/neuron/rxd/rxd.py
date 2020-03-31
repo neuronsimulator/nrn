@@ -18,7 +18,7 @@ import itertools
 from numpy.ctypeslib import ndpointer
 import re
 import platform
-
+from warnings import warn
 molecules_per_mM_um3 = constants.NA / 1e18
 
 # aliases to avoid repeatedly doing multiple hash-table lookups
@@ -214,6 +214,7 @@ def byeworld():
     # do not call __del__ that rearrange memory for states
     species.Species.__del__ = lambda x: None
     species._ExtracellularSpecies.__del__ = lambda x: None
+    species._IntracellularSpecies.__del__ = lambda x: None
     section1d.Section1D.__del__ = lambda x: None
     generalizedReaction.GeneralizedReaction.__del__ = lambda x: None
 
@@ -714,6 +715,7 @@ def _setup_matrices():
     if species._has_1d and species._has_3d:
         hybrid_neighbors = collections.defaultdict(lambda: [])
         hybrid_diams = {}
+        grid_id_dc = {}
         hybrid_index1d_grid_ids = {}
         grid_id_species = {}
         index1d_sec1d = {}
@@ -728,6 +730,7 @@ def _setup_matrices():
                         if r in s._intracellular_instances:
                             grid_id = s._intracellular_instances[r]._grid_id
                             grid_id_species.setdefault(grid_id, s._intracellular_instances[r])
+                            grid_id_dc[grid_id] = s.d
                             dxs.add(r._dx)
                             for sec in r._secs3d:
                                 parent_seg = sec.trueparentseg()
@@ -783,6 +786,8 @@ def _setup_matrices():
         hybrid_grid_ids = sorted(grid_id_indices1d.keys())
         for grid_id in hybrid_grid_ids:
             sp = grid_id_species[grid_id]
+            # TODO: use 3D anisotropic diffusion coefficients
+            dc = grid_id_dc[grid_id]
             grids_dx.append(sp._dx**3)
             num_1d_indices_per_grid.append(len(grid_id_indices1d[grid_id]))
             grid_3d_indices_cnt = 0
@@ -797,18 +802,17 @@ def _setup_matrices():
                     cnt_neighbors_3d = len(neighbors3d) 
                     num_3d_indices_per_1d_seg.append(cnt_neighbors_3d)
                     grid_3d_indices_cnt += cnt_neighbors_3d
-                    #TODO: need to make this by node
-                    d = sp._d
                     area = (numpy.pi * 0.25 * hybrid_diams[index1d] ** 2)
                     areaT = sum([v**(2.0/3.0) for v in vols3d])
                     volumes1d.append(node._volumes[index1d])
                     for i, vol in zip(neighbors3d, vols3d):
                         sp._region._vol[i] = vol
                         ratio = vol**(2.0/3.0) / areaT
-                        rate = ratio * d * area / (vol * (dx + seg_length1d) / 2)
+                        rate = ratio * dc * area / (vol * (dx + seg_length1d) / 2)
                         rates.append(rate)
                         volumes3d.append(vol)
                         hybrid_indices3d.append(i)
+                    
 
             num_3d_indices_per_grid.append(grid_3d_indices_cnt)
 
@@ -1050,10 +1054,10 @@ def _compile_reactions():
     #Find sets of sections that contain the same regions
     from .region import _c_region
     matched_regions = [] # the different combinations of regions that arise in different sections
-    for nrnsec in list(section1d._rxd_sec_lookup.keys()):
+    for nrnsec in section1d._rxd_sec_lookup:
         set_of_regions = set() # a set of the regions that occur in a given section
         for sec in section1d._rxd_sec_lookup[nrnsec]:
-            if sec(): set_of_regions.add(sec()._region)
+            if sec: set_of_regions.add(sec._region)
         if set_of_regions not in matched_regions:
             matched_regions.append(set_of_regions)
     region._c_region_lookup = dict()
@@ -1246,17 +1250,26 @@ def _compile_reactions():
                     species_id = creg._species_ids[s._id]
                     for reg in creg._react_regions[rptr]:
                         if reg() in r._rate:
-                            region_id = creg._region_ids[reg()._id]
-                            rate_str = localize_index(creg, r._rate[reg()][0])
+                            try:
+                                region_id = creg._region_ids[reg()._id]
+                                rate_str = localize_index(creg, r._rate[reg()][0])
+                            except KeyError:
+                                warn("Species not on the region specified, %r will be ignored.\n" % r)
+                                continue
                             operator = '+=' if species_ids_used[species_id][region_id] else '='
                             fxn_string += "\n\trhs[%d][%d] %s %s;" % (species_id, region_id, operator, rate_str)
                             species_ids_used[species_id][region_id] = True
                 elif isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
                     #Lookup the region_id for the reaction
-                    for reg in r._rate:
-                        rate_str = localize_index(creg, r._rate[reg][0])
-                        fxn_string += "\n\trate = %s;" % rate_str
-                        break
+                    try:
+                        for reg in r._rate:
+                            rate_str = localize_index(creg, r._rate[reg][0])
+                            fxn_string += "\n\trate = %s;" % rate_str
+                            break
+                    except KeyError:
+                        warn("Species not on the region specified, %r will be ignored.\n" % r)
+                        continue
+
                     for i, sptr in enumerate(r._sources + r._dests):
                         s = sptr()
                         if isinstance(s, species.SpeciesOnExtracellular):
@@ -1280,9 +1293,12 @@ def _compile_reactions():
                     mc_mult_list.extend(r._mult.flatten())
                 else:
                     for reg in creg._react_regions[rptr]:
-                        region_id = creg._region_ids[reg()._id]
-                        rate_str = localize_index(creg, r._rate[reg()][0])
-
+                        try:
+                            region_id = creg._region_ids[reg()._id]
+                            rate_str = localize_index(creg, r._rate[reg()][0])
+                        except KeyError:
+                            warn("Species not on the region specified, %r will be ignored.\n" % r)
+                            continue
                         fxn_string += "\n\trate = %s;" % rate_str
                         summed_mults = collections.defaultdict(lambda: 0)
                         for (mult, sp) in zip(r._mult, r._sources + r._dests):

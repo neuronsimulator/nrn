@@ -241,7 +241,11 @@ endif()
 # All source directories to include
 # =============================================================================
 add_library(nrniv_lib SHARED ${NRN_NRNIV_LIB_SRC_FILES})
-target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES} readline)
+if(NOT NRN_MACOS_BUILD AND ${READLINE_FOUND})
+  target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES} ${Readline_LIBRARY})
+else()
+  target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES} readline)
+endif()
 set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
 
 # =============================================================================
@@ -293,10 +297,11 @@ if(IV_ENABLE_X11_DYNAMIC)
     # can find libivx11dynam independent of CMAKE_INSTALL_PREFIX.
     # ~~~
     set(_suffix ${CMAKE_SHARED_LIBRARY_SUFFIX})
+    set(LIBIVX11DYNAM_NAME libivx11dynam${_suffix})
     add_custom_command(
       TARGET nrniv_lib POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy ${IV_LIB_DIR}/libivx11dynam${_suffix}
-              ${PROJECT_BINARY_DIR}/lib/libivx11dynam${_suffix})
+      COMMAND ${CMAKE_COMMAND} -E copy ${IV_LIB_DIR}/${LIBIVX11DYNAM_NAME}
+              ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME})
   endif()
 else()
   target_link_libraries(nrniv_lib ${X11_LIBRARIES})
@@ -326,3 +331,6 @@ endif()
 # ~~~
 install(TARGETS nrniv nocmodl modlunit DESTINATION bin)
 install(TARGETS nrniv_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+if (LIBIVX11DYNAM_NAME)
+  install(FILES ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME} DESTINATION lib)
+endif()

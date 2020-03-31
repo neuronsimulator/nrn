@@ -91,7 +91,7 @@ $(OBJS_DIR)/%.o: $(MODC_DIR)/%.c | $(OBJS_DIR)
 
 # Build c files with nocmodl
 $(MODC_DIR)/%.c: $(MODS_PATH)/%.mod | $(MODC_DIR)
-	@printf " -> $(C_GREEN)MOD2C$(C_RESET) $<\n"
+	@printf " -> $(C_GREEN)NMODL$(C_RESET) $<\n"
 	MODLUNIT=$(datadir_lib)/nrnunits.lib \
 	  $(bindir)/nocmodl $<
 
