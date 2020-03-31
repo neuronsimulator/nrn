@@ -41,6 +41,7 @@ extern "C" {
 extern void (*nrnpy_sectionlist_helper_)(void*, Object*);
 extern Object** (*nrnpy_gui_helper_)(const char*, Object*);
 extern Object** (*nrnpy_gui_helper3_)(const char*, Object*, int);
+extern char** (*nrnpy_gui_helper3_str_)(const char*, Object*, int);
 extern double (*nrnpy_object_to_double_)(Object*);
 void lvappendsec_and_ref(void* sl, Section* sec);
 extern Section* nrn_noerr_access();
@@ -2309,66 +2310,65 @@ static double object_to_double_(Object* obj) {
   return result;
 }
 
+static PyObject* gui_helper_3_helper_(const char* name, Object* obj, int handle_strptr) {
+  int narg = 1;
+  while (ifarg(narg)) {
+    narg++;
+  }
+  narg--;
+  PyObject* args = PyTuple_New(narg + 3);
+  PyTuple_SetItem(args, 0, PyString_FromString(name));
+  for(int iarg=0; iarg<narg; iarg++) {
+    const int iiarg = iarg + 1;
+    if (hoc_is_object_arg(iiarg)) {
+      PyObject* active_obj = nrnpy_ho2po(*hoc_objgetarg(iiarg));
+      PyTuple_SetItem(args, iarg + 3, active_obj);
+    } else if (hoc_is_pdouble_arg(iiarg)) {
+      PyHocObject* ptr_nrn = (PyHocObject*)hocobj_new(hocobject_type, 0, 0);
+      ptr_nrn->type_ = PyHoc::HocScalarPtr;
+      ptr_nrn->u.px_ = hoc_pgetarg(iiarg);
+      PyObject* py_ptr = (PyObject*) ptr_nrn;
+      Py_INCREF(py_ptr);
+      PyTuple_SetItem(args, iarg + 3, py_ptr);
+    } else if (hoc_is_str_arg(iiarg)) {
+        if (handle_strptr > 0) {
+          char** str_arg = hoc_pgargstr(iiarg);
+          PyObject* py_ptr = cpp2refstr(str_arg);
+          Py_INCREF(py_ptr);
+          PyTuple_SetItem(args, iarg + 3, py_ptr);
+        } else {
+          PyTuple_SetItem(args, iarg + 3, PyString_FromString(gargstr(iiarg))); }
+    } else if (hoc_is_double_arg(iiarg)) {
+      PyTuple_SetItem(args, iarg + 3, PyFloat_FromDouble(*getarg(iiarg)));
+    }
+  }
+  PyObject* my_obj;
+  if (obj) {
+    my_obj = nrnpy_ho2po(obj);
+  } else {
+    my_obj = Py_None;
+  }
+  Py_INCREF(my_obj);
+  //printf("my_obj->ob_refcnt: %ld\n", my_obj->ob_refcnt);
+  PyTuple_SetItem(args, 1, my_obj);
+  PyObject* my_obj2;
+  if (hoc_thisobject) {
+    my_obj2 = nrnpy_ho2po(hoc_thisobject);
+  } else {
+    my_obj2 = Py_None;
+  }
+  Py_INCREF(my_obj2);
+  PyTuple_SetItem(args, 2, my_obj2);
+  PyObject* po = PyObject_CallObject(gui_callback, args);
+  Py_DECREF(args);
+  Py_DECREF(my_obj);
+  Py_DECREF(my_obj2);
+  return po;
+}
+
 static Object** gui_helper_3_(const char* name, Object* obj, int handle_strptr) {
   if (gui_callback) {
-    int narg = 1;
-    while (ifarg(narg)) {
-      narg++;
-    }
-    narg--;
-    PyObject* args = PyTuple_New(narg + 3);
-    PyTuple_SetItem(args, 0, PyString_FromString(name));
-    for(int iarg=0; iarg<narg; iarg++) {
-      const int iiarg = iarg + 1;
-      if (hoc_is_object_arg(iiarg)) {
-        PyObject* active_obj = nrnpy_ho2po(*hoc_objgetarg(iiarg));
-        PyTuple_SetItem(args, iarg + 3, active_obj);
-      } else if (hoc_is_pdouble_arg(iiarg)) {
-        PyHocObject* ptr_nrn = (PyHocObject*)hocobj_new(hocobject_type, 0, 0);
-        ptr_nrn->type_ = PyHoc::HocScalarPtr;
-        ptr_nrn->u.px_ = hoc_pgetarg(iiarg);
-        PyObject* py_ptr = (PyObject*) ptr_nrn;
-        Py_INCREF(py_ptr);
-        PyTuple_SetItem(args, iarg + 3, py_ptr);
-      } else if (hoc_is_str_arg(iiarg)) {
-          if (handle_strptr > 0) {
-            char** str_arg = hoc_pgargstr(iiarg);
-            PyObject* py_ptr = cpp2refstr(str_arg);
-            Py_INCREF(py_ptr);
-            PyTuple_SetItem(args, iarg + 3, py_ptr);
-          } else {
-            PyTuple_SetItem(args, iarg + 3, PyString_FromString(gargstr(iiarg))); }
-        /*PyHocObject* ptr_nrn = (PyHocObject*)hocobj_new(hocobject_type, 0, 0);
-        ptr_nrn->type_ = PyHoc::HocRefStr;
-        ptr_nrn->u.s_ = *hoc_pgargstr(iiarg);
-        PyObject* py_ptr = (PyObject*) ptr_nrn;
-        Py_INCREF(py_ptr);
-        PyTuple_SetItem(args, iarg, py_ptr); */
-      } else if (hoc_is_double_arg(iiarg)) {
-        PyTuple_SetItem(args, iarg + 3, PyFloat_FromDouble(*getarg(iiarg)));
-      }
-    }
-    PyObject* my_obj;
-    if (obj) {
-      my_obj = nrnpy_ho2po(obj);
-    } else {
-      my_obj = Py_None;
-    }
-    Py_INCREF(my_obj);
-    //printf("my_obj->ob_refcnt: %ld\n", my_obj->ob_refcnt);
-    PyTuple_SetItem(args, 1, my_obj);
-    PyObject* my_obj2;
-    if (hoc_thisobject) {
-      my_obj2 = nrnpy_ho2po(hoc_thisobject);
-    } else {
-      my_obj2 = Py_None;
-    }
-    Py_INCREF(my_obj2);
-    PyTuple_SetItem(args, 2, my_obj2);
-    PyObject* po = PyObject_CallObject(gui_callback, args);
-    Py_DECREF(args);
-    Py_DECREF(my_obj);
-    Py_DECREF(my_obj2);
+    PyObject* po = gui_helper_3_helper_(name, obj, handle_strptr);
     // TODO: something that allows None (currently nrnpy_po2ho returns NULL if po == Py_None)
     Object* ho = nrnpy_po2ho(po);
     Py_DECREF(po);
@@ -2379,6 +2379,20 @@ static Object** gui_helper_3_(const char* name, Object* obj, int handle_strptr) 
   }
   return NULL;
 }
+
+static char** gui_helper_3_str_(const char* name, Object* obj, int handle_strptr) {
+  if (gui_callback) {
+    PyObject* po = gui_helper_3_helper_(name, obj, handle_strptr);
+    char** ts = hoc_temp_charptr();
+    Py2NRNString str(po, true);
+    *ts = str.c_str();
+    // TODO: is there a memory leak here? do I need to: s2free.push_back(*ts);    
+    Py_DECREF(po);
+    return ts;
+  }
+  return NULL;
+}
+
 
 static Object** gui_helper_(const char* name, Object* obj) {
   return gui_helper_3_(name, obj, 0);
@@ -2822,6 +2836,7 @@ myPyMODINIT_FUNC nrnpy_hoc() {
   nrnpy_sectionlist_helper_ = sectionlist_helper_;
   nrnpy_gui_helper_ = gui_helper_;
   nrnpy_gui_helper3_ = gui_helper_3_;
+  nrnpy_gui_helper3_str_ = gui_helper_3_str_;
 
   nrnpy_object_to_double_ = object_to_double_;
   PyLockGIL lock;

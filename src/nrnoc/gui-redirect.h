@@ -75,6 +75,16 @@
     }\
 }
 
+#define TRY_GUI_REDIRECT_ACTUAL_STR(name, obj) {\
+    char** ngh_result;\
+    if (nrnpy_gui_helper_) {\
+        ngh_result = nrnpy_gui_helper3_str_(name, (Object*) obj, 0);\
+        if (ngh_result) {\
+			return((const char**) ngh_result);\
+        }\
+    }\
+}
+
 #define TRY_GUI_REDIRECT_ACTUAL_OBJ(name, obj) {\
     Object** ngh_result;\
     if (nrnpy_gui_helper_) {\
