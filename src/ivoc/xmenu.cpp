@@ -261,7 +261,7 @@ xstatebutton("prompt",&var [,"action"])
 */
 
 void hoc_xstatebutton() {
-	TRY_GUI_REDIRECT_DOUBLE("xstatemenu", NULL);
+	TRY_GUI_REDIRECT_DOUBLE("xstatebutton", NULL);
 	IFGUI
 		char *s1, *s2 = (char *)0;
 		
