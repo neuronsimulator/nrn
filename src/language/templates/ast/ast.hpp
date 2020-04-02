@@ -32,10 +32,7 @@
     {% if node.is_abstract %} virtual {% endif %}
 {% endmacro %}
 
-{# add override qualifier if node is not an abstract class #}
-{% macro override(node) %}
-    {% if not node.is_abstract %} override {% endif %}
-{% endmacro %}
+
 
 
 namespace nmodl {
@@ -202,7 +199,7 @@ namespace ast {
          *
          * @return pointer to token if exist otherwise nullptr
          */
-        {{ virtual(node) }}ModToken* get_token(){{ override(node) }} {
+        {{ virtual(node) }}ModToken* get_token() override {
             return token.get();
         }
         {% endif %}
@@ -258,7 +255,7 @@ namespace ast {
          *
          * \sa Ast::get_node_type_name Ast::get_node_name
          */
-        {{ virtual(node) }}void set_name(std::string name){{ override(node) }} {
+        {{ virtual(node) }}void set_name(std::string name) override {
             value->set(name);
         }
         {% endif %}
@@ -392,4 +389,3 @@ namespace ast {
 
 }  // namespace ast
 }  // namespace nmodl
-
