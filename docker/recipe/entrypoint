@@ -14,7 +14,7 @@ if [ "x$GROUP_ID" = x -o "x$USER_ID" = x ] ;then
 fi
 
 # Create fake user
-CUR_GROUP=`grep ":${GROUP_ID}:" /etc/group | cut -d: -f1`
+CUR_GROUP=$(grep ":${GROUP_ID}:" /etc/group | cut -d: -f1)
 if [ "x$CUR_GROUP" != x ] ;then
     groupmod --new-name dummy "$CUR_GROUP"
 else

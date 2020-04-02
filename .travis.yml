@@ -86,7 +86,7 @@ install:
 script:
   - echo "------- Build, Test and Install -------"
   - mkdir build && cd build
-  - cmake .. -DPYTHON_EXECUTABLE=`which python3` -DCMAKE_INSTALL_PREFIX=$HOME/nmodl
+  - cmake .. -DPYTHON_EXECUTABLE=$(which python3) -DCMAKE_INSTALL_PREFIX=$HOME/nmodl
   - make -j 2
   - make test
   - make install
