@@ -511,6 +511,13 @@ def nrn_dll(printpath=False):
         raise Exception('unable to connect to the NEURON library')
     return the_dll
 
+def _modelview_mechanism_docstrings(dmech, tree):
+  if dmech.name not in ('Ra', 'capacitance'):
+    docs = getattr(h, dmech.name).__doc__
+    if docs.strip():
+      for line in docs.split("\n"):
+        tree.append(line, dmech.location, 0)
+
 # TODO: put this someplace else
 #       can't be in rxd because that would break things if no scipy
 _sec_db = {}
