@@ -547,7 +547,7 @@ General
         be triggered by an input event. i.e serve as the target of a NetCon. 
         If the stimulator is in the on=0 state and receives a positive weight 
         event, then the stimulator changes to the on=1 state and goes through 
-        its burst sequence before changing to the on=0 state. During 
+        its sequence of 'nspike' spikes before changing to the on=0 state. During 
         that time it ignores any positive weight events. If, in the on=1 state, 
         the stimulator receives a negative weight event, the stimulator will 
         change to the off state. In the off state, it will ignore negative weight 
@@ -573,6 +573,58 @@ General
          
         See `<nrn src dir>/src/nrnoc/netstim.mod <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/netstim.mod>`_
 
+    Example:
+
+        .. code-block::
+            python
+
+            from neuron import h, gui
+            
+            ns = h.NetStim()
+            ns.interval = 2
+            ns.number = 5
+            ns.start = -1 # NetStim starts in OFF state.
+            
+            #print spike times coming from ns
+            def pr():
+              print (h.t)
+            ncout = h.NetCon(ns, None)
+            ncout.record(pr)
+            
+            #another NetStim to cause ns to burst every 20 ms, 3 times, starting at 30ms
+            ns2 = h.NetStim()
+            ns2.interval = 20
+            ns2.number = 3
+            ns2.start=30
+            nctrig = h.NetCon(ns2, ns)
+            nctrig.delay = .1
+            nctrig.weight[0] = 1
+            
+            h.tstop=500
+            h.cvode_active(1)
+            h.run()
+            
+    Output:
+        .. code-block::
+            none
+            
+            30.1
+            32.1
+            34.1
+            36.1
+            38.1
+            50.1
+            52.1
+            54.1
+            56.1
+            58.1
+            70.1
+            72.1
+            74.1
+            76.1
+            78.1
+
+            
     .. warning::
         Prior to version 5.2.1 an attempt was made to 
         make the mean start time (noise > 0) 
@@ -582,7 +634,6 @@ General
         obey negexp statistics. For this reason, beginning with version 5.2.1 
         the semantics of start are the time of the most likely first spike and the 
         mean start time is start + noise*interval. 
-
          
 
 ----
