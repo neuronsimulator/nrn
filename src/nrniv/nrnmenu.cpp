@@ -507,7 +507,10 @@ static void point_menu(Object* ob, int make_label) {
 
 //-----------------------
 // MechanismStandard
+static Symbol* ms_class_sym_;
+
 static double ms_panel(void* v) {
+	TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE("MechanismStandard.panel", ms_class_sym_, v);
 #if HAVE_IV
 IFGUI
 	char* label = NULL;
@@ -664,6 +667,7 @@ static Member_func ms_members[] = {
 
 void MechanismStandard_reg() {
 	class2oc("MechanismStandard", ms_cons, ms_destruct, ms_members, NULL, NULL, NULL);
+	ms_class_sym_ = hoc_lookup("MechanismStandard");
 }
 
 MechanismStandard::MechanismStandard(const char* name, int vartype) {
@@ -952,6 +956,7 @@ help action
 mt.action("command")
 The action to be executed when a submenu item is selected.
 */
+static Symbol* mt_class_sym_;
 
 static double mt_select(void* v) {
 	MechanismType* mt = (MechanismType*)v;
@@ -995,6 +1000,7 @@ static double mt_count(void* v) {
 	return double(mt->count());
 }
 static double mt_menu(void* v) {
+	TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE("MechanismType.menu", mt_class_sym_, v);
 #if HAVE_IV
 IFGUI
 	MechanismType* mt = (MechanismType*)v;
@@ -1108,6 +1114,7 @@ static Member_ret_str_func mt_retstr_func[] = {
 void MechanismType_reg() {
 	class2oc("MechanismType", mt_cons, mt_destruct, mt_members,
 		NULL, mt_retobj_members, mt_retstr_func);
+	mt_class_sym_ = hoc_lookup("MechanismType");
 }
 
 /* static */ class MechTypeImpl {
