@@ -12,6 +12,7 @@
 #include "utils/logger.hpp"
 #include "utils/string_utils.hpp"
 #include "visitor_utils.hpp"
+#include "visitors/lookup_visitor.hpp"
 
 
 namespace nmodl {
@@ -101,6 +102,7 @@ std::shared_ptr<ast::Expression> create_expr(const std::string& str_expr) {
 }
 
 void KineticBlockVisitor::visit_conserve(ast::Conserve* node) {
+    ++conserve_statement_count;
     // rewrite CONSERVE statement in form x = ...
     // where x was the last state var on LHS, and whose ODE should later be replaced with this
     // equation note: CONSERVE statement "implicitly takes into account COMPARTMENT factors on LHS"
@@ -124,16 +126,20 @@ void KineticBlockVisitor::visit_conserve(ast::Conserve* node) {
                                 ")";
     }
 
-    auto lhs = create_expr(conserve_equation_statevar);
-    // set react (lhs) of CONSERVE to the state variable whose ODE should be replaced
-    node->set_react(std::move(lhs));
-    // set expr (rhs) of CONSERVE to the equation that should replace the ODE
-    auto rhs = create_expr(conserve_equation_str);
-    // note: this is still a valid (and equivalent) CONSERVE statement.
+    // note: The following 4 lines result in a still valid (and equivalent) CONSERVE statement.
     // later this block will become a DERIVATIVE block where it is no longer valid
-    // to have a CONSERVE statement, but it is parsed without issues, and
+    // to have a CONSERVE statement. Parsing the equivalent nmodl in between the
+    // kinetic visitor and the sympysolvervisitor in presence of a conserve statement
+    // should result in an error since we do not want to add new functionalities to the language.
     // the SympySolver will use to it replace the ODE (to replicate what neuron does)
-    node->set_expr(std::move(rhs));
+    auto statement = create_statement("CONSERVE " + conserve_equation_statevar + " = " +
+                                      conserve_equation_str);
+    auto expr = std::dynamic_pointer_cast<ast::Conserve>(statement);
+    // set react (lhs) of CONSERVE to the state variable whose ODE should be replaced
+    node->set_react(std::move(expr->get_react()));
+    // set expr (rhs) of CONSERVE to the equation that should replace the ODE
+    node->set_expr(std::move(expr->get_expr()));
+
     logger->debug("KineticBlockVisitor :: --> {}", to_nmodl(node));
 }
 
@@ -361,7 +367,7 @@ void KineticBlockVisitor::visit_kinetic_block(ast::KineticBlock* node) {
     additive_terms = std::vector<std::string>(state_var_count);
     i_statement = 0;
 
-    // construct stoichiometric matrices and fluxes
+    // construct stochiometric matrices and fluxes
     node->visit_children(*this);
 
     // number of reaction statements
@@ -424,6 +430,7 @@ void KineticBlockVisitor::visit_kinetic_block(ast::KineticBlock* node) {
 }
 
 void KineticBlockVisitor::visit_program(ast::Program* node) {
+    conserve_statement_count = 0;
     statements_to_remove.clear();
     current_statement_block = nullptr;
 
@@ -459,8 +466,11 @@ void KineticBlockVisitor::visit_program(ast::Program* node) {
         }
     }
 
+    auto kineticBlockNodes = AstLookupVisitor().lookup(node, ast::AstNodeType::KINETIC_BLOCK);
     // replace reaction statements within each kinetic block with equivalent ODEs
-    node->visit_children(*this);
+    for (const auto& ii: kineticBlockNodes) {
+        ii->accept(*this);
+    }
 
     // change KINETIC blocks -> DERIVATIVE blocks
     auto blocks = node->get_blocks();
