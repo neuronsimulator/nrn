@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 A generic wrapper to access nrn binaries from a python installation
-Plese create a softlink with the binary name to be called.
+Please create a softlink with the binary name to be called.
 """
 import os
 import site
@@ -23,6 +23,7 @@ def _launch_command(exe_name):
     NRN_PREFIX = os.path.join(site.getsitepackages()[0], 'neuron', '.data')
     os.environ["NEURONHOME"] = os.path.join(NRN_PREFIX, 'share/nrn')
     os.environ["NRNHOME"] = NRN_PREFIX
+    os.environ["NRNBIN"] = os.path.dirname(__file__)
     exe_path = os.path.join(NRN_PREFIX, 'bin', exe_name)
     _set_default_compiler()
 
