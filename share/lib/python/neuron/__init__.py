@@ -927,8 +927,40 @@ try:
   def _plotshape_plot(ps):
     return _PlotShapePlot(ps)
   
+  _mech_classes = {}
+
   def _get_mech_object(name):
-    return DensityMechanism(name)
+    if name in _mech_classes:
+      my_class = _mech_classes[name]
+    else:
+      code = DensityMechanism(name).code
+      # docstring is the title and a leading comment, if any
+      inside_comment = False
+      title = ''
+      comment = []
+      for line in code.split('\n'):
+        line_s = line.strip()
+        lower = line_s.lower()
+        if inside_comment:
+          if lower.startswith('endcomment'):
+            break
+          comment.append(line)
+        elif lower.startswith('title '):
+          title = line_s[6:]
+        elif lower.startswith('comment'):
+          inside_comment = True
+        elif line_s:
+          break
+
+      docstring = title + '\n\n'
+
+      docstring += '\n'.join(comment)
+      docstring = docstring.strip()
+
+      clsdict = {'__doc__': docstring, 'title': title}
+      my_class = type(name, (DensityMechanism,), clsdict)
+      _mech_classes[name] = my_class
+    return my_class(name)
 
 
   set_toplevel_callbacks = nrn_dll_sym('nrnpy_set_toplevel_callbacks')
