@@ -185,6 +185,7 @@ typedef struct {
 
 static PyObject* rvp_plot = NULL;
 static PyObject* plotshape_plot = NULL;
+static PyObject* get_mech_object_ = NULL;
 
 PyTypeObject* hocobject_type;
 static PyObject* hocobj_call(PyHocObject* self, PyObject* args,
@@ -1235,7 +1236,8 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
     default:  // otherwise
     {
       if (PyDict_GetItemString(pmech_types, n)) {
-        PyErr_Format(PyExc_TypeError, "Cannot access %s directly; it is a mechanism that may be inserted into a section.", n);
+        result = PyObject_CallFunction(get_mech_object_, "s", n);
+        break;
       } else if (PyDict_GetItemString(rangevars_, n)) {
         PyErr_Format(PyExc_TypeError, "Cannot access %s directly; it is a range variable and may be accessed via a section or segment.", n);
       } else {
@@ -2231,9 +2233,10 @@ int nrnpy_set_vec_as_numpy(PyObject* (*p)(int, double*)) {
   return 0;
 }
 
-int nrnpy_set_graph_plots(PyObject* rvp_plot0, PyObject* plotshape_plot0) {
+int nrnpy_set_toplevel_callbacks(PyObject* rvp_plot0, PyObject* plotshape_plot0, PyObject* get_mech_object_0) {
   rvp_plot = rvp_plot0;
   plotshape_plot = plotshape_plot0;
+  get_mech_object_ = get_mech_object_0;
   return 0;
 }
 

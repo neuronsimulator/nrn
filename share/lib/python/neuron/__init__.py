@@ -803,6 +803,122 @@ class _PlotShapePlot(_WrapperPlot):
     else:
       raise NotImplementedError
 
+def _nmodl():
+  try:
+    import nmodl.dsl as nmodl
+    return nmodl
+  except ModuleNotFoundError:
+    raise Exception("Missing nmodl module; install from https://github.com/bluebrain/nmodl")
+
+class DensityMechanism:
+  def __init__(self, name):
+    """Initialize the DensityMechanism.
+
+    Takes the name of a range mechanism; call via e.g. neuron.DensityMechanism('hh')
+    """
+    self.__name = name
+    self.__mt = h.MechanismType(0)
+    self.__mt.select(-1)
+    self.__mt.select(name)
+    if self.__mt.selected() == -1:
+      raise Exception("No DensityMechanism: " + name)
+    self.__has_nmodl = False
+    self.__ast = None
+    self.__ions = None
+    try:
+      import nmodl
+      self.__has_nmodl = True
+    except ModuleNotFoundError:
+      pass
+    
+  def __repr__(self):
+    return 'neuron.DensityMechanism(%r)' % self.__name
+  
+  def __dir__(self):
+    my_dir = ['code', 'file', 'insert', 'uninsert', '__repr__', '__str__']
+    if self.__has_nmodl:
+      my_dir += ['ast', 'ions', 'ontology_ids']
+    return sorted(my_dir)
+  
+  @property
+  def ast(self):
+    """Abstract Syntax Tree representation.
+
+    Requires the nmodl module, available from: https://github.com/bluebrain/nmodl
+
+    The model is parsed on first access, and the results are cached for quick reaccess
+    using the same neuron.DensityMechanism instance.
+    """
+    if self.__ast is None:
+      nmodl = _nmodl()
+      driver = nmodl.NmodlDriver()
+      self.__ast = driver.parse_string(self.code)
+    return self.__ast
+    
+  @property
+  def code(self):
+    """source code"""
+    return self.__mt.code()
+  
+  @property
+  def file(self):
+    """source file path"""
+    return self.__mt.file()
+  
+  def insert(self, secs):
+    """insert this mechanism into a section or iterable of sections"""
+    if isinstance(secs, nrn.Section):
+      secs = [secs]
+    for sec in secs:
+      sec.insert(self.__name)
+
+  def uninsert(self, secs):
+    """uninsert (remove) this mechanism from a section or iterable of sections"""
+    if isinstance(secs, nrn.Section):
+      secs = [secs]
+    for sec in secs:
+      sec.uninsert(self.__name)
+  
+  @property
+  def ions(self):
+    """Dictionary of the ions involved in this mechanism"""
+    if self.__ions is None:
+      nmodl = _nmodl()
+      lookup_visitor = nmodl.visitor.AstLookupVisitor()
+      ions = lookup_visitor.lookup(self.ast, nmodl.ast.AstNodeType.USEION)
+      result = {}
+      for ion in ions:
+        name = nmodl.to_nmodl(ion.name)
+        read = [nmodl.to_nmodl(item) for item in ion.readlist]
+        write = [nmodl.to_nmodl(item) for item in ion.writelist]
+        if ion.valence:
+          valence = int(nmodl.to_nmodl(ion.valence.value))
+        else:
+          valence = None
+        ontology_id = None
+        try:
+          ontology_id = ion.ontology_id
+        except:
+          # older versions of the NMODL library didn't support .ontology_id
+          pass
+        result[name] = {'read': read, 'write': write, 'charge': valence, 'ontology_id': ontology_id}
+      self.__ions = result
+    # return a copy
+    return dict(self.__ions)
+  
+  @property
+  def ontology_ids(self):
+    nmodl = _nmodl()
+    lookup_visitor = nmodl.visitor.AstLookupVisitor()
+
+    try:
+      onts = lookup_visitor.lookup(self.ast, nmodl.ast.AstNodeType.ONTOLOGY_STATEMENT)
+    except AttributeError:
+      raise Exception("nmodl module out of date; missing support for ontology declarations")
+    
+    return [nmodl.to_nmodl(ont.ontology_id) for ont in onts]
+
+
 try:
   import ctypes
   def _rvp_plot(rvp):
@@ -810,12 +926,16 @@ try:
 
   def _plotshape_plot(ps):
     return _PlotShapePlot(ps)
+  
+  def _get_mech_object(name):
+    return DensityMechanism(name)
 
 
-  set_graph_plots = nrn_dll_sym('nrnpy_set_graph_plots')
+  set_toplevel_callbacks = nrn_dll_sym('nrnpy_set_toplevel_callbacks')
   _rvp_plot_callback = ctypes.py_object(_rvp_plot)
   _plotshape_plot_callback = ctypes.py_object(_plotshape_plot)
-  set_graph_plots(_rvp_plot_callback, _plotshape_plot_callback)
+  _get_mech_object_callback = ctypes.py_object(_get_mech_object)
+  set_toplevel_callbacks(_rvp_plot_callback, _plotshape_plot_callback, _get_mech_object_callback)
 except:
   pass
 
