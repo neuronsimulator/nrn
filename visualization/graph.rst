@@ -88,15 +88,6 @@ Graph
 
 
 
-.. method:: Graph.axis
-
-        see :func:`yaxis` 
-
-
-----
-
-
-
 .. method:: Graph.xaxis
 
 
