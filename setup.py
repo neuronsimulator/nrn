@@ -279,5 +279,14 @@ def setup_package():
     )
 
 
+def mac_osx_setenv():
+    os.environ['SDKROOT'] = subprocess.check_output(
+        ['xcrun', '--sdk', 'macosx', '--show-sdk-path']
+    ).decode().strip()
+    os.environ['MACOSX_DEPLOYMENT_TARGET'] = "10.9"
+
+
 if __name__ == "__main__":
+    if sys.platform[:6] == "darwin":
+        mac_osx_setenv()
     setup_package()
