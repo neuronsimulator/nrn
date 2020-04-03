@@ -34,6 +34,11 @@ export libdir
 
 MAKEFILEDIR="${bindir}"
 
+if which xcrun; then
+    export SDKROOT=`xcrun --sdk macosx --show-sdk-path`
+    export MACOSX_DEPLOYMENT_TARGET="10.9"
+fi
+
 UserINCFLAGS=""
 if [ "$1" = "-incflags" ] ; then
       UserINCFLAGS="$2"
