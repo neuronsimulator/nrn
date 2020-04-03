@@ -36,7 +36,7 @@ MAKEFILEDIR="${bindir}"
 
 if which xcrun; then
     export SDKROOT=`xcrun --sdk macosx --show-sdk-path`
-    export MACOSX_DEPLOYMENT_TARGET="10.9"
+    @USING_CMAKE_TRUE@export MACOSX_DEPLOYMENT_TARGET="@CMAKE_OSX_DEPLOYMENT_TARGET@"
 fi
 
 UserINCFLAGS=""
