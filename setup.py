@@ -16,6 +16,7 @@ import sysconfig
 from distutils.version import LooseVersion
 
 from distutils.cmd import Command
+from distutils.dir_util import copy_tree
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
 from setuptools.command.test import test
@@ -113,6 +114,9 @@ class CMakeBuild(build_ext):
         subprocess.check_call(
             ["cmake", "--build", "."] + build_args, cwd=self.build_temp
         )
+
+        # copy nmodl module with shared library to extension directory
+        copy_tree(os.path.join(self.build_temp, 'nmodl'), extdir)
 
 class NMODLTest(test):
     """Custom disutils command that acts like as a replacement
