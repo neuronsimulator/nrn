@@ -254,7 +254,7 @@ set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
 # Link with all libraries
 # =============================================================================
 if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
-  target_link_libraries(nrniv_lib ${PYTHONLIB_NAME})
+  target_link_libraries(nrniv_lib ${PYTHON_LIBRARIES})
 endif()
 
 if(NRN_ENABLE_MPI)
