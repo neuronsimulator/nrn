@@ -1611,7 +1611,6 @@ static PyObject* var_of_mech_next(NPyVarOfMechIter* self) {
   Symbol* sym = self->msym_->u.ppsym[self->i_];
   self->i_++;
   NPyRangeVar* r = (NPyRangeVar*)PyObject_New(NPyRangeVar, range_type);
-  Py_INCREF(r);
   r->pymech_ = self->pymech_;
   Py_INCREF(r->pymech_);
   r->sym_ = sym;
