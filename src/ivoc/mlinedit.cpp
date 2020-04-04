@@ -2,8 +2,6 @@
 
 extern "C" int hoc_return_type_code;
 
-#if HAVE_IV // to end of file
-
 #include <stdio.h>
 #include <InterViews/iv3text.h>
 #include <InterViews/layout.h>
@@ -39,6 +37,8 @@ public:
 
 static double map(void* v) {
 	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("TextEditor.map", v);
+#if HAVE_IV
+IFGUI
 	OcMLineEditor* e = (OcMLineEditor*)v;
 	PrintableWindow* w;
 	if (ifarg(3)) {  
@@ -52,21 +52,33 @@ static double map(void* v) {
 		w->name(name);
 	}
 	w->map();
+ENDGUI
 	return 0.;
+#else
+	return 0.;
+#endif
 }
 
 static double readonly(void* v) {
 	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("TextEditor.readonly", v);
+#if HAVE_IV
+IFGUI
 	OcMLineEditor* e = (OcMLineEditor*)v;
 	hoc_return_type_code = 2; // boolean
 	if (ifarg(1)) {
 		e->txt_->readOnly(int(chkarg(1, 0, 1)));
 	}
+ENDGUI
 	return double(e->txt_->readOnly());
+#else
+	return 0.;
+#endif
 }
 
 static const char** v_text(void* v) {
 	TRY_GUI_REDIRECT_ACTUAL_STR("TextEditor.text", v);
+#if HAVE_IV
+IFGUI
 	OcMLineEditor* e = (OcMLineEditor*)v;
 	TextBuffer* tb = e->txt_->editBuffer();
 	if (ifarg(1)) {
@@ -77,6 +89,9 @@ static const char** v_text(void* v) {
 	char** p = hoc_temp_charptr();
 	*p = (char*)tb->Text();
 	return (const char**)p;
+ENDGUI
+#endif
+	return 0;
 }
 
 
@@ -93,7 +108,8 @@ static Member_ret_str_func retstr_members[] = {
 
 static void* cons(Object*) {
 	TRY_GUI_REDIRECT_OBJ("TextEditor", NULL);
-
+#if HAVE_IV
+IFGUI
 	const char* buf = "";
 	unsigned row = 5;
 	unsigned col = 30;
@@ -106,16 +122,24 @@ static void* cons(Object*) {
 	}
 	OcMLineEditor* e = new OcMLineEditor(row, col, buf);
 	e->ref();
+ENDGUI
 	return (void*)e;
+#else 
+	return (void*)0;
+#endif /* HAVE_IV  */
 }
 
 static void destruct(void* v) {
 	TRY_GUI_REDIRECT_NO_RETURN("~TextEditor", v);
+#if HAVE_IV
+IFGUI
 	OcMLineEditor* e = (OcMLineEditor*)v;
 	if (e->has_window()) {
 		e->window()->dismiss();
 	}
 	e->unref();
+ENDGUI
+#endif /* HAVE_IV */
 }
 
 void TextEditor_reg() {
