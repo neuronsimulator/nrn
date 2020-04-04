@@ -20,9 +20,6 @@ int hoc_readcheckpoint(char*){ return 0; }
 
 void hoc_notify_iv() {
     nrn_shape_update();
-    if (nrnpy_gui_helper_) {
-		nrnpy_gui_helper_("doNotify", NULL);
-	}
     hoc_ret();
     hoc_pushx(0.);
 }

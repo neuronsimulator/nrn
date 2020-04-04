@@ -41,7 +41,6 @@ void iv_display_scale(float);
 #include "oc2iv.h"
 #include "nrnmpi.h"
 #include "nrnrt.h"
-#include "gui-redirect.h"
 
 #if defined(IVX11_DYNAM)
 #include <IV-X11/ivx11_dynam.h>
@@ -157,8 +156,6 @@ static OptionDesc options[] = {
 #endif // HAVE_IV
 
 extern "C" {
-	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-	extern double (*nrnpy_object_to_double_)(Object*);
 	extern int hoc_obj_run(const char*, Object*);
 	extern int nrn_istty_;
 	extern char* nrn_version(int);
@@ -870,7 +867,6 @@ extern double *getarg(int i);
 extern int ifarg(int);
 
 void hoc_single_event_run() {
-	TRY_GUI_REDIRECT_DOUBLE("doEvents", NULL);
 #if HAVE_IV
 IFGUI
 	void single_event_run();

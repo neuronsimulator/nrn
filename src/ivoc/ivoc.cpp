@@ -462,8 +462,6 @@ extern void nrniv_bind_call(void);
 #endif
 
 void hoc_notify_iv() {
-	TRY_GUI_REDIRECT_DOUBLE("doNotify", NULL);
-
 	IFGUI
 #ifdef MINGW
 	if (!nrn_is_gui_thread()) {

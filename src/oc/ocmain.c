@@ -7,24 +7,10 @@
 
 int hoc_nstack, hoc_nframe;
 extern const char* neuron_home;
-extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj) = NULL;
-extern double (*nrnpy_object_to_double_)(Object*) = NULL;
 
 #if MAC
 char hoc_console_buffer[256];
 #endif
-
-#define TRY_GUI_REDIRECT_DOUBLE(name, obj) {\
-    Object** ngh_result;\
-    if (nrnpy_gui_helper_) {\
-        ngh_result = nrnpy_gui_helper_(name, obj);\
-        if (ngh_result) {\
-			hoc_ret();\
-			hoc_pushx(nrnpy_object_to_double_(*ngh_result));\
-            return;\
-        }\
-    }\
-}
 
 #if defined(WIN32)
 void* cvode_pmem;
@@ -97,7 +83,6 @@ our_argv[0] = "Neuron";
 
 
 void hoc_single_event_run() { /* for interviews, ivoc make use of own main */
-	TRY_GUI_REDIRECT_DOUBLE("doEvents", NULL);
 #if LINDA
 	extern int hoc_retreat_flag;
 	if (hoc_retreat_flag) {
