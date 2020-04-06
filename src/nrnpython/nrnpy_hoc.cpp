@@ -2317,11 +2317,15 @@ static PyObject* gui_helper_3_helper_(const char* name, Object* obj, int handle_
   }
   narg--;
   PyObject* args = PyTuple_New(narg + 3);
-  PyTuple_SetItem(args, 0, PyString_FromString(name));
+  PyObject* pyname = PyString_FromString(name);
+  //printf("11 pyname->ob_refcount: %ld\n", pyname->ob_refcnt);
+  PyTuple_SetItem(args, 0, pyname);
   for(int iarg=0; iarg<narg; iarg++) {
     const int iiarg = iarg + 1;
     if (hoc_is_object_arg(iiarg)) {
       PyObject* active_obj = nrnpy_ho2po(*hoc_objgetarg(iiarg));
+      //printf("12 active_obj->ob_refcount: %ld\n", active_obj->ob_refcnt);
+
       PyTuple_SetItem(args, iarg + 3, active_obj);
     } else if (hoc_is_pdouble_arg(iiarg)) {
       PyHocObject* ptr_nrn = (PyHocObject*)hocobj_new(hocobject_type, 0, 0);
@@ -2329,6 +2333,7 @@ static PyObject* gui_helper_3_helper_(const char* name, Object* obj, int handle_
       ptr_nrn->u.px_ = hoc_pgetarg(iiarg);
       PyObject* py_ptr = (PyObject*) ptr_nrn;
       Py_INCREF(py_ptr);
+      //printf("13 py_ptr->ob_refcount: %ld\n", py_ptr->ob_refcnt);
       PyTuple_SetItem(args, iarg + 3, py_ptr);
     } else if (hoc_is_str_arg(iiarg)) {
         if (handle_strptr > 0) {
@@ -2336,33 +2341,43 @@ static PyObject* gui_helper_3_helper_(const char* name, Object* obj, int handle_
           PyObject* py_ptr = cpp2refstr(str_arg);
           Py_INCREF(py_ptr);
           PyTuple_SetItem(args, iarg + 3, py_ptr);
+          //printf("14 py_ptr->ob_refcount: %ld\n", py_ptr->ob_refcnt);
         } else {
-          PyTuple_SetItem(args, iarg + 3, PyString_FromString(gargstr(iiarg))); }
+          PyObject* py_str = PyString_FromString(gargstr(iiarg));
+          //printf("15 py_str->ob_refcount: %ld\n", py_str->ob_refcnt);
+          PyTuple_SetItem(args, iarg + 3, py_str); }
     } else if (hoc_is_double_arg(iiarg)) {
-      PyTuple_SetItem(args, iarg + 3, PyFloat_FromDouble(*getarg(iiarg)));
+      PyObject* py_double = PyFloat_FromDouble(*getarg(iiarg));
+      PyTuple_SetItem(args, iarg + 3, py_double);
     }
   }
   PyObject* my_obj;
   if (obj) {
+    // there's a problem with this: if obj is intrinisically a PyObject, then this is increasing it's refcount and that's
     my_obj = nrnpy_ho2po(obj);
   } else {
     my_obj = Py_None;
+    Py_INCREF(Py_None);
   }
-  Py_INCREF(my_obj);
-  //printf("my_obj->ob_refcnt: %ld\n", my_obj->ob_refcnt);
-  PyTuple_SetItem(args, 1, my_obj);
+  //printf("1 my_obj->ob_refcnt: %ld\n", my_obj->ob_refcnt);
+  PyTuple_SetItem(args, 1, my_obj); // steals a reference
+  //printf("2 my_obj->ob_refcnt: %ld\n", my_obj->ob_refcnt);
   PyObject* my_obj2;
   if (hoc_thisobject) {
-    my_obj2 = nrnpy_ho2po(hoc_thisobject);
+    my_obj2 = nrnpy_ho2po(hoc_thisobject); // in the case of a HOC object, such as happens with List.browser, the ref count will be 1
   } else {
     my_obj2 = Py_None;
+    Py_INCREF(Py_None);
   }
-  Py_INCREF(my_obj2);
-  PyTuple_SetItem(args, 2, my_obj2);
+  //printf("8 args->ob_refcnt: %ld\n", args->ob_refcnt);
+
+  PyTuple_SetItem(args, 2, my_obj2); // steals a reference to my_obj2
   PyObject* po = PyObject_CallObject(gui_callback, args);
-  Py_DECREF(args);
-  Py_DECREF(my_obj);
-  Py_DECREF(my_obj2);
+  //printf("9 args->ob_refcnt: %ld\n", args->ob_refcnt);
+  //printf("5 po->ob_refcnt: %ld\n", po->ob_refcnt);
+  //printf("3 my_obj->ob_refcnt: %ld\n", my_obj->ob_refcnt);
+  Py_DECREF(args); // Note: this decreases the ref count of my_obj and my_obj2
+  //printf("4 my_obj->ob_refcnt: %ld\n", my_obj->ob_refcnt);
   return po;
 }
 
@@ -2371,7 +2386,10 @@ static Object** gui_helper_3_(const char* name, Object* obj, int handle_strptr) 
     PyObject* po = gui_helper_3_helper_(name, obj, handle_strptr);
     // TODO: something that allows None (currently nrnpy_po2ho returns NULL if po == Py_None)
     Object* ho = nrnpy_po2ho(po);
+    //printf("6 po->ob_refcnt: %ld\n", po->ob_refcnt);
     Py_DECREF(po);
+    //printf("7 po->ob_refcnt: %ld\n", po->ob_refcnt);
+
     if (ho) {
       --ho->refcount;
     }
