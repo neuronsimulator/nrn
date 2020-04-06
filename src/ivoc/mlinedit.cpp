@@ -68,11 +68,10 @@ IFGUI
 	if (ifarg(1)) {
 		e->txt_->readOnly(int(chkarg(1, 0, 1)));
 	}
-ENDGUI
 	return double(e->txt_->readOnly());
-#else
-	return 0.;
+ENDGUI
 #endif
+	return 0.;
 }
 
 static const char** v_text(void* v) {
@@ -122,8 +121,8 @@ IFGUI
 	}
 	OcMLineEditor* e = new OcMLineEditor(row, col, buf);
 	e->ref();
-ENDGUI
 	return (void*)e;
+ENDGUI
 #else 
 	return (void*)0;
 #endif /* HAVE_IV  */
@@ -178,6 +177,4 @@ void OcText::keystroke(const Event& e){
   }
 	Text::keystroke(e);
 }
-
-#endif
 
