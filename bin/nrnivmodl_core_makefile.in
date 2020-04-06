@@ -29,6 +29,7 @@ endif
 # - @CORENRN_LINK_DEFS
 LDFLAGS = $(LINKFLAGS) @CORENRN_LINK_DEFS@
 CORENRNLIB_FLAGS = -L$(libdir) -lcoreneuron
+CORENRNLIB_FLAGS += $(if @reportinglib_LIB_DIR@, -W$(subst ;, -W,l,-rpath,@reportinglib_LIB_DIR@),)
 OS_NAME := $(shell uname)
 _cm =,
 
