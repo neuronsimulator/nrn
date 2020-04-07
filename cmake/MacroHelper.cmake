@@ -107,8 +107,9 @@ endmacro()
 # from a previous autotools build, PROJECT_SRC_DIR/sdir/bfile is removed.
 # Note that everytime cmake is run, the bfile is compared to a newly created
 # _cmake_tmp_bfile consistent with the current cmake args.
+# Note that the sfile arg does NOT contain the .in suffix.
 # ~~~
-macro(nrn_configure_file4 bfile bdir sfile sdir)
+macro(nrn_configure_dest_src bfile bdir sfile sdir)
   set(infile ${PROJECT_SOURCE_DIR}/${sdir}/${sfile}.in)
   set(bin_dir ${PROJECT_BINARY_DIR}/${bdir})
   file(MAKE_DIRECTORY ${bin_dir})
@@ -132,7 +133,7 @@ macro(nrn_configure_file4 bfile bdir sfile sdir)
 endmacro()
 
 macro(nrn_configure_file file dir)
-  nrn_configure_file4(${file} ${dir} ${file} ${dir})
+  nrn_configure_dest_src(${file} ${dir} ${file} ${dir})
 endmacro()
 
 # =============================================================================
