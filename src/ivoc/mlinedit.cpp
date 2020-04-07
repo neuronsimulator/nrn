@@ -3,16 +3,24 @@
 extern "C" int hoc_return_type_code;
 
 #include <stdio.h>
+
+#if HAVE_IV
 #include <InterViews/iv3text.h>
 #include <InterViews/layout.h>
 #include <InterViews/background.h>
 #include <InterViews/event.h>
 #include <IV-look/kit.h>
 #include "ocglyph.h"
+#endif
+
 #include "classreg.h"
+#if HAVE_IV
 #include "oc2iv.h"
 #include "apwindow.h"
 #include "ivoc.h"
+#endif
+
+#include "gui-redirect.h"
 
 extern "C" {
 	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
@@ -20,6 +28,7 @@ extern "C" {
 	extern char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strptr);
 }
 
+#if HAVE_IV
 class OcText : public Text {
 public:
 	OcText(unsigned rows = 24, unsigned cols = 80, TextBuffer* buf = NULL);
@@ -34,6 +43,7 @@ public:
 public:
 	OcText* txt_;
 };
+#endif
 
 static double map(void* v) {
 	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("TextEditor.map", v);
@@ -145,6 +155,7 @@ void TextEditor_reg() {
 	class2oc("TextEditor", cons, destruct, members, NULL, NULL, retstr_members);
 }
 
+#if HAVE_IV
 OcMLineEditor::OcMLineEditor(unsigned row, unsigned col, const char* buf) {
 	txt_ = new OcText(row, col, new TextBuffer(buf,strlen(buf),1000));
 	txt_->ref();
@@ -178,3 +189,4 @@ void OcText::keystroke(const Event& e){
 	Text::keystroke(e);
 }
 
+#endif
