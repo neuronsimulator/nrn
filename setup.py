@@ -274,7 +274,7 @@ def setup_package():
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),
         install_requires=['numpy>=1.13.1'],
         tests_require=["flake8", "pytest"],
-        setup_requires=maybe_docs + maybe_test_runner + maybe_rxd_reqs,
+        setup_requires=["wheel"] + maybe_docs + maybe_test_runner + maybe_rxd_reqs,
         dependency_links=[]
     )
 
@@ -283,7 +283,19 @@ def mac_osx_setenv():
     os.environ['SDKROOT'] = subprocess.check_output(
         ['xcrun', '--sdk', 'macosx', '--show-sdk-path']
     ).decode().strip()
-    os.environ['MACOSX_DEPLOYMENT_TARGET'] = "10.9"
+    # Match Python OSX framework
+    from wheel import pep425tags
+    py_osx_framework = pep425tags.extract_macosx_min_system_version(sys.executable)
+
+    if py_osx_framework[1] > 9:
+        print("[ WARNING ] You are building a wheel with a Python distribution compiled "
+              "for a recent MACOS version (from brew?). Your wheel won't be portable.\n"
+              "            Consider using an official Python build from python.org")
+        input("Press Enter to continue. Ctrl-C to abort")
+
+    macos_target = "%d.%d" % tuple(py_osx_framework[:2])
+    print("Setting MACOSX_DEPLOYMENT_TARGET to", macos_target)
+    os.environ['MACOSX_DEPLOYMENT_TARGET'] = macos_target
 
 
 if __name__ == "__main__":
