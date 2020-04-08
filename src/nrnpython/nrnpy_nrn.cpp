@@ -1074,6 +1074,7 @@ static PyObject* NPySecObj_insert(NPySecObj* self, PyObject* args) {
       tpyobj2 = PyObject_CallMethod(tpyobj, "insert", "O", (PyObject*) self);
       Py_DECREF(tpyobj);
       if (tpyobj2 == NULL) {
+        Py_DECREF((PyObject*) self);
         PyErr_Clear();
         PyErr_SetString(PyExc_TypeError, "insert argument must be either a string or an object with an insert method");
         return NULL;
