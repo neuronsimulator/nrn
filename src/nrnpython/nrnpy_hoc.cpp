@@ -61,6 +61,7 @@ extern int hoc_stack_type();
 extern void hoc_call();
 extern Objectdata* hoc_top_level_data;
 extern void hoc_tobj_unref(Object**);
+extern void hoc_unref_defer();
 extern void sec_access_push();
 extern PyObject* nrnpy_pushsec(PyObject*);
 extern bool hoc_valid_stmt(const char*, Object*);
@@ -756,6 +757,7 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args,
     } else {
       result = (PyObject*)fcall((void*)self, (void*)args);
     }
+    hoc_unref_defer();
   } else {
     PyErr_SetString(PyExc_TypeError, "object is not callable");
     curargs_ = prevargs_;
