@@ -9,17 +9,19 @@ from setuptools import Command, Extension
 from setuptools import setup
 from distutils.dir_util import copy_tree
 
-
 if '--disable-rx3d' in sys.argv:
     RX3D = False
     sys.argv.remove('--disable-rx3d')
     from setuptools.command.build_ext import build_ext
 else:
     RX3D = True
-    from Cython.Distutils import Extension as CyExtension
-    from Cython.Distutils import build_ext
-    import numpy
-
+    try:
+        from Cython.Distutils import Extension as CyExtension
+        from Cython.Distutils import build_ext
+        import numpy
+    except ImportError:
+        print("ERROR: RX3D wheel requires Cython and numpy. Please install beforehand")
+        sys.exit(1)
 
 # Main source of the version. Dont rename
 __version__ = '7.8.11'
@@ -280,13 +282,23 @@ def setup_package():
 
 
 def mac_osx_setenv():
-    os.environ['SDKROOT'] = subprocess.check_output(
-        ['xcrun', '--sdk', 'macosx', '--show-sdk-path']
-    ).decode().strip()
-    # Match Python OSX framework
+    """Set MacOS environment to build high-compat wheels"""
+    # Because we need "wheel" before calling setup() we shall bring it ourselves
+    try:
+        import wheel
+    except ImportError:
+        from setuptools.dist import Distribution
+        Distribution().fetch_build_eggs(["wheel"])
+    import wheel
     from wheel import pep425tags
-    py_osx_framework = pep425tags.extract_macosx_min_system_version(sys.executable)
 
+    sdk_root = subprocess.check_output(['xcrun', '--sdk', 'macosx', '--show-sdk-path']
+                                       ).decode().strip()
+    print("Setting SDKROOT to", sdk_root)
+    os.environ['SDKROOT'] = sdk_root
+
+    # Match Python OSX framework
+    py_osx_framework = pep425tags.extract_macosx_min_system_version(sys.executable)
     if py_osx_framework[1] > 9:
         print("[ WARNING ] You are building a wheel with a Python distribution compiled "
               "for a recent MACOS version (from brew?). Your wheel won't be portable.\n"
