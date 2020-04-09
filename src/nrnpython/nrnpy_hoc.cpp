@@ -2360,7 +2360,7 @@ static PyObject* gui_helper_3_helper_(const char* name, Object* obj, int handle_
   }
   PyTuple_SetItem(args, 1, my_obj); // steals a reference
   PyObject* my_obj2;
-  if (hoc_thisobject) {
+  if (hoc_thisobject && name[0] != '~') {
     my_obj2 = nrnpy_ho2po(hoc_thisobject); // in the case of a HOC object, such as happens with List.browser, the ref count will be 1
   } else {
     my_obj2 = Py_None;
