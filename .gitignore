@@ -1,9 +1,11 @@
 *build*
+spconfig.*
 *~
 .DS_Store
 *.pyc
 *.swp
 .idea
+docs/Doxyfile
 
 # HPC coding conventions
 .clang-format

@@ -5,6 +5,10 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
+///
+/// THIS FILE IS GENERATED AT BUILD TIME AND SHALL NOT BE EDITED.
+///
+
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/nmodl_visitor_helper.ipp"
 

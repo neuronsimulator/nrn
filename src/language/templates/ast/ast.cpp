@@ -5,6 +5,10 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
+///
+/// THIS FILE IS GENERATED AT BUILD TIME AND SHALL NOT BE EDITED.
+///
+
 #include "ast/ast.hpp"
 #include "symtab/symbol_table.hpp"
 
@@ -15,6 +19,64 @@
 
 namespace nmodl {
 namespace ast {
+
+///
+///  Ast member function definition
+///
+
+Ast *Ast::clone() const { throw std::logic_error("clone not implemented"); }
+
+std::string Ast::get_node_name() const {
+  throw std::logic_error("get_node_name() not implemented");
+}
+
+const std::shared_ptr<StatementBlock>& Ast::get_statement_block() const {
+  throw std::runtime_error("get_statement_block not implemented");
+}
+
+const ModToken *Ast::get_token() const { return nullptr; }
+
+symtab::SymbolTable *Ast::get_symbol_table() {
+  throw std::runtime_error("get_symbol_table not implemented");
+}
+
+void Ast::set_symbol_table(symtab::SymbolTable * /*symtab*/) {
+  throw std::runtime_error("set_symbol_table not implemented");
+}
+
+void Ast::set_name(const std::string & /*name*/) {
+  throw std::runtime_error("set_name not implemented");
+}
+
+void Ast::negate() { throw std::runtime_error("negate not implemented"); }
+
+std::shared_ptr<Ast> Ast::get_shared_ptr() {
+  return std::static_pointer_cast<Ast>(shared_from_this());
+}
+
+std::shared_ptr<const Ast> Ast::get_shared_ptr() const {
+  return std::static_pointer_cast<const Ast>(shared_from_this());
+}
+
+bool Ast::is_ast() const noexcept { return true; }
+
+{% for node in nodes %}
+bool Ast::is_{{ node.class_name | snake_case }} () const noexcept { return false; }
+
+{% endfor %}
+
+Ast* Ast::get_parent() const {
+    return parent;
+}
+
+void Ast::set_parent(Ast* p) {
+    parent = p;
+}
+
+void Ast::set_parent_in_children() {
+    throw std::runtime_error("set_parent_in_children not implemented");
+}
+
 
     {% for node in nodes %}
 

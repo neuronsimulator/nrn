@@ -5,6 +5,10 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
+///
+/// THIS FILE IS GENERATED AT BUILD TIME AND SHALL NOT BE EDITED.
+///
+
 #pragma once
 
 #include <pybind11/pybind11.h>
@@ -63,7 +67,7 @@ struct PyAst: public Ast {
         PYBIND11_OVERLOAD(Ast*, Ast, clone, );
     }
 
-    AstNodeType get_node_type() override {
+    AstNodeType get_node_type() const override {
         PYBIND11_OVERLOAD_PURE(AstNodeType,    // Return type
                                Ast,            // Parent class
                                get_node_type,  // Name of function in C++ (must match Python name)
@@ -71,15 +75,15 @@ struct PyAst: public Ast {
         );
     }
 
-    std::string get_node_type_name() override {
+    std::string get_node_type_name() const override {
         PYBIND11_OVERLOAD_PURE(std::string, Ast, get_node_type_name, );
     }
 
-    std::string get_node_name() override {
+    std::string get_node_name() const override {
         PYBIND11_OVERLOAD(std::string, Ast, get_node_name, );
     }
 
-    std::string get_nmodl_name() override {
+    std::string get_nmodl_name() const override {
         PYBIND11_OVERLOAD(std::string, Ast, get_nmodl_name, );
     }
 
@@ -87,8 +91,8 @@ struct PyAst: public Ast {
         PYBIND11_OVERLOAD(std::shared_ptr<Ast>, Ast, get_shared_ptr, );
     }
 
-    ModToken* get_token() override {
-        PYBIND11_OVERLOAD(ModToken*, Ast, get_token, );
+    const ModToken* get_token() const override {
+        PYBIND11_OVERLOAD(const ModToken*, Ast, get_token, );
     }
 
     symtab::SymbolTable* get_symbol_table() override {
@@ -103,7 +107,7 @@ struct PyAst: public Ast {
         PYBIND11_OVERLOAD(void, Ast, set_symbol_table, newsymtab);
     }
 
-    void set_name(std::string name) override {
+    void set_name(const std::string& name) override {
         PYBIND11_OVERLOAD(void, Ast, set_name, name);
     }
 
@@ -111,13 +115,13 @@ struct PyAst: public Ast {
         PYBIND11_OVERLOAD(void, Ast, negate, );
     }
 
-    bool is_ast() override {
+    bool is_ast() const noexcept override {
         PYBIND11_OVERLOAD(bool, Ast, is_ast, );
     }
 
     {% for node in nodes %}
 
-    bool is_{{node.class_name | snake_case}}() override {
+    bool is_{{node.class_name | snake_case}}() const noexcept override {
         PYBIND11_OVERLOAD(bool, Ast, is_{{node.class_name | snake_case}}, );
     }
 

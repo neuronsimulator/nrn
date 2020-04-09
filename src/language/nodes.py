@@ -218,7 +218,7 @@ class ChildNode(BaseNode):
             if self.optional:
                 set_parent = f"""
                         if (n) {{
-                            n->set_parent(this);                                
+                            n->set_parent(this);
                         }}
                         """
             method = f"""
@@ -237,7 +237,6 @@ class ChildNode(BaseNode):
                           */
                          void emplace_back_{to_snake_case(self.class_name)}(std::shared_ptr<{self.class_name}> n) {{
                             {self.varname}.emplace_back(n);
-                             
                              // set parents
                              {set_parent}
                          }}
@@ -260,7 +259,7 @@ class ChildNode(BaseNode):
                           */
                          {self.class_name}Vector::const_iterator insert_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator position, const std::shared_ptr<{self.class_name}>& n) {{
                              {set_parent}
-            
+
                             return {self.varname}.insert(position, n);
                          }}
                          /**
@@ -274,7 +273,7 @@ class ChildNode(BaseNode):
                                  //set parents
                                  {set_parent}
                               }}
-            
+
                             {self.varname}.insert(position, first, last);
                          }}
 
@@ -284,7 +283,7 @@ class ChildNode(BaseNode):
                          void reset_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator position, {self.class_name}* n) {{
                              //set parents
                              {set_parent}
-                            
+
                             {self.varname}[position - {self.varname}.begin()].reset(n);
                          }}
 
@@ -294,7 +293,7 @@ class ChildNode(BaseNode):
                          void reset_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator position, std::shared_ptr<{self.class_name}> n) {{
                              //set parents
                              {set_parent}
-                            
+
                             {self.varname}[position - {self.varname}.begin()] = n;
                          }}
                     """
@@ -318,7 +317,7 @@ class ChildNode(BaseNode):
                           *
                           * \\sa Ast::get_node_type_name
                           */
-                         virtual std::string get_node_name() override {{
+                         virtual std::string get_node_name() const override {{
                              return {self.varname}->{method_name}();
                          }}"""
             s = textwrap.dedent(method)
