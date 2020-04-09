@@ -48,9 +48,9 @@ struct TableData {
     /// alignment for every column of data rows
     std::vector<stringutils::text_alignment> alignments;
 
-    void print(int indent = 0);
+    void print(int indent = 0) const;
 
-    void print(std::stringstream& stream, int indent = 0);
+    void print(std::ostream& stream, int indent = 0) const;
 };
 
 /** @} */  // end of utils

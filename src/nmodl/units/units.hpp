@@ -101,7 +101,7 @@ class Unit {
         : unit_name(std::move(name)) {}
 
     /// Constructor that instantiates a Unit with its factor, dimensions and name
-    Unit(const double factor, std::array<int, MAX_DIMS> dimensions, std::string name)
+    Unit(const double factor, const std::array<int, MAX_DIMS>& dimensions, std::string name)
         : unit_factor(factor)
         , unit_dimensions(dimensions)
         , unit_name(std::move(name)) {}
@@ -109,37 +109,37 @@ class Unit {
     /// \}
 
     /// Add unit name to the Unit
-    void add_unit(std::string name);
+    void add_unit(const std::string& name);
 
     /// If the Unit is a base unit the dimensions of the Unit should be calculated
     /// based on the name of the base unit (ex. m   \*a\* => m has dimension 0)
-    void add_base_unit(std::string name);
+    void add_base_unit(const std::string& name);
 
     /// Takes as argument a double as string, parses it as double and stores it to
     /// the Unit factor
-    void add_nominator_double(std::string double_string);
+    void add_nominator_double(const std::string& double_string);
 
     /// Add the dimensions of a nominator of the unit to the dimensions of the Unit
-    void add_nominator_dims(std::array<int, MAX_DIMS> dimensions);
+    void add_nominator_dims(const std::array<int, MAX_DIMS>& dimensions);
 
     /// Subtract the dimensions of a nominator of the unit to the dimensions of the Unit
-    void add_denominator_dims(std::array<int, MAX_DIMS> dimensions);
+    void add_denominator_dims(const std::array<int, MAX_DIMS>& dimensions);
 
     /// Add a unit to the vector of nominator strings of the Unit, so it can be processed
     /// later
-    void add_nominator_unit(std::string nom);
+    void add_nominator_unit(const std::string& nom);
 
     /// Add a vector of units to the vector of nominator strings of the Unit, so they can
     /// be processed later
-    void add_nominator_unit(std::shared_ptr<std::vector<std::string>> nom);
+    void add_nominator_unit(const std::shared_ptr<std::vector<std::string>>& nom);
 
     /// Add a unit to the vector of denominator strings of the Unit, so it can be processed
     /// later
-    void add_denominator_unit(std::string denom);
+    void add_denominator_unit(const std::string& denom);
 
     /// Add a vector of units to the vector of denominator strings of the Unit, so they can
     /// be processed later
-    void add_denominator_unit(std::shared_ptr<std::vector<std::string>> denom);
+    void add_denominator_unit(const std::shared_ptr<std::vector<std::string>>& denom);
 
     /// Multiply Unit's factor with a double factor
     void mul_factor(double double_factor);
@@ -157,12 +157,12 @@ class Unit {
     }
 
     /// Getter for the vector of denominators of the Unit
-    std::vector<std::string> get_denominator_unit() const {
+    const std::vector<std::string>& get_denominator_unit() const noexcept {
         return denominator;
     }
 
     /// Getter for the name of the Unit
-    std::string get_name() const {
+    const std::string& get_name() const noexcept {
         return unit_name;
     }
 
@@ -172,7 +172,7 @@ class Unit {
     }
 
     /// Getter for the array of Unit's dimensions
-    std::array<int, MAX_DIMS> get_dimensions() const {
+    const std::array<int, MAX_DIMS>& get_dimensions() const noexcept {
         return unit_dimensions;
     }
 };
@@ -202,17 +202,17 @@ class Prefix {
     Prefix() = default;
 
     /// Constructor that instantiates a Prefix with its name and factor
-    Prefix(std::string name, std::string factor);
+    Prefix(std::string name, const std::string& factor);
 
     /// \}
 
     /// Getter for the name of the Prefix
-    std::string get_name() const {
+    const std::string& get_name() const noexcept {
         return prefix_name;
     }
 
     /// Getter for the factor of the Prefix
-    double get_factor() const {
+    double get_factor() const noexcept {
         return prefix_factor;
     }
 };
@@ -256,43 +256,44 @@ class UnitTable {
 
     /// Calculate unit's dimensions based on its nominator unit named nominator_name which is
     /// stored in the UnitTable's table
-    void calc_nominator_dims(std::shared_ptr<Unit> unit, std::string nominator_name);
+    void calc_nominator_dims(const std::shared_ptr<Unit>& unit, std::string nominator_name);
 
     /// Calculate unit's dimensions based on its denominator unit named denominator_name which is
     /// stored in the UnitTable's table
-    void calc_denominator_dims(std::shared_ptr<Unit> unit, std::string denominator_name);
+    void calc_denominator_dims(const std::shared_ptr<Unit>& unit, std::string denominator_name);
 
     /// Insert a unit to the UnitTable table and calculate its dimensions and factor based on the
     /// previously stored units in the UnitTable
     /// The unit can be a normal unit or unit based on just a base unit. In the latter case, the
     /// base unit is also added to the base_units_name array of UnitTable
-    void insert(std::shared_ptr<Unit> unit);
+    void insert(const std::shared_ptr<Unit>& unit);
 
     /// Insert a prefix to the prefixes of the UnitTable
-    void insert_prefix(std::shared_ptr<Prefix> prfx);
+    void insert_prefix(const std::shared_ptr<Prefix>& prfx);
 
     /// Get the unit_name of the UnitTable's table
-    std::shared_ptr<Unit> get_unit(const std::string& unit_name) {
-        return table[unit_name];
+    /// \throw std::out_of_range if \a unit_name is not found
+    const std::shared_ptr<Unit>& get_unit(const std::string& unit_name) const {
+        return table.at(unit_name);
     }
 
     /// Print the details of the units that are stored in the UnitTable
     void print_units() const;
 
     /// Print the details of the units that are stored in the UnitTable
-    /// to the stringstream units_details in ascending order to be printed
+    /// to the output stream units_details in ascending order to be printed
     /// in tests in specific order
-    void print_units_sorted(std::stringstream& units_details);
+    void print_units_sorted(std::ostream& units_details) const;
 
     /// Print the base units that are stored in the UnitTable
     void print_base_units() const;
 
     /// Print the base units that are stored in the UnitTable to the
-    /// stringstream base_units_details
-    void print_base_units(std::stringstream& base_units_details);
+    /// output stream base_units_details
+    void print_base_units(std::ostream& base_units_details) const;
 
     /// Get base unit name based on the ID number of the dimension
-    std::string get_base_unit_name(int id) {
+    const std::string& get_base_unit_name(int id) const noexcept {
         return base_units_names[id];
     }
 };

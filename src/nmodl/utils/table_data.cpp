@@ -11,7 +11,6 @@
 #include "utils/string_utils.hpp"
 #include "utils/table_data.hpp"
 
-
 namespace nmodl {
 namespace utils {
 
@@ -29,7 +28,7 @@ namespace utils {
  *   ----------------------------------------------------------------------------------------
  */
 
-void TableData::print(std::stringstream& stream, int indent) {
+void TableData::print(std::ostream& stream, int indent) const {
     const int PADDING = 1;
 
     /// not necessary to print empty table
@@ -43,9 +42,11 @@ void TableData::print(std::stringstream& stream, int indent) {
     auto ncolumns = headers.size();
     std::vector<unsigned> col_width(ncolumns);
 
-    /// alignment is optional, so fill remaining withh right alignment
+    /// alignment is optional, so fill remaining with right alignment
+    auto all_alignments = alignments;
+    all_alignments.reserve(ncolumns);
     for (unsigned i = alignments.size(); i < ncolumns; i++) {
-        alignments.push_back(stringutils::text_alignment::center);
+        all_alignments.push_back(stringutils::text_alignment::center);
     }
 
     /// calculate space required for each column
@@ -90,32 +91,31 @@ void TableData::print(std::stringstream& stream, int indent) {
 
     /// title row
     if (!title.empty()) {
-        title = stringutils::align_text(title, row_width - 3, stringutils::text_alignment::center);
-        stream << "\n" << gutter << separator_line;
-        stream << "\n" << gutter << "|" << title << "|";
+        auto fmt_title =
+            stringutils::align_text(title, row_width - 3, stringutils::text_alignment::center);
+        stream << '\n' << gutter << separator_line;
+        stream << '\n' << gutter << '|' << fmt_title << '|';
     }
 
     /// header row
-    stream << "\n" << gutter << separator_line;
-    stream << "\n" << gutter << header.str();
-    stream << "\n" << gutter << separator_line;
+    stream << '\n' << gutter << separator_line;
+    stream << '\n' << gutter << header.str();
+    stream << '\n' << gutter << separator_line;
 
     /// data rows
     for (const auto& row: rows) {
-        stream << "\n" << gutter << "| ";
+        stream << '\n' << gutter << "| ";
         for (unsigned i = 0; i < row.size(); i++) {
-            stream << stringutils::align_text(row[i], col_width[i], alignments[i]) << " | ";
+            stream << stringutils::align_text(row[i], col_width[i], all_alignments[i]) << " | ";
         }
     }
 
     /// bottom separator line
-    stream << "\n" << gutter << separator_line << "\n";
+    stream << '\n' << gutter << separator_line << '\n';
 }
 
-void TableData::print(int indent) {
-    std::stringstream ss;
-    print(ss, indent);
-    std::cout << ss.str();
+void TableData::print(int indent) const {
+    print(std::cout, indent);
 }
 
 }  // namespace utils

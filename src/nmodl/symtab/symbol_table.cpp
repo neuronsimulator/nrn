@@ -91,7 +91,7 @@ void SymbolTable::insert_table(const std::string& name, std::shared_ptr<SymbolTa
 /// return all symbol having any of the provided properties
 std::vector<std::shared_ptr<Symbol>> SymbolTable::get_variables_with_properties(
     NmodlType properties,
-    bool all) {
+    bool all) const {
     std::vector<std::shared_ptr<Symbol>> variables;
     for (auto& symbol: table.symbols) {
         if (all) {
@@ -121,7 +121,7 @@ std::vector<std::shared_ptr<Symbol>> SymbolTable::get_variables(NmodlType with, 
 
 
 std::vector<std::shared_ptr<Symbol>> SymbolTable::get_variables_with_status(Status status,
-                                                                            bool all) {
+                                                                            bool all) const {
     std::vector<std::shared_ptr<Symbol>> variables;
     for (auto& symbol: table.symbols) {
         if (all) {
@@ -442,7 +442,7 @@ void ModelSymbolTable::set_mode(bool update_mode) {
 //=============================================================================
 
 
-void SymbolTable::Table::print(std::stringstream& stream, std::string title, int indent) {
+void SymbolTable::Table::print(std::ostream& stream, std::string title, int indent) const {
     using stringutils::text_alignment;
     using utils::TableData;
     if (!symbols.empty()) {

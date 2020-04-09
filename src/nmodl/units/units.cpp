@@ -26,7 +26,7 @@
 namespace nmodl {
 namespace units {
 
-Prefix::Prefix(std::string name, std::string factor) {
+Prefix::Prefix(std::string name, const std::string& factor) {
     if (name.back() == '-') {
         name.pop_back();
     }
@@ -34,11 +34,11 @@ Prefix::Prefix(std::string name, std::string factor) {
     prefix_factor = std::stod(factor);
 }
 
-void Unit::add_unit(std::string name) {
+void Unit::add_unit(const std::string& name) {
     unit_name = name;
 }
 
-void Unit::add_base_unit(std::string name) {
+void Unit::add_base_unit(const std::string& name) {
     // name = "*[a-j]*" which is a base unit
     const auto dim_name = name[1];
     const int dim_no = dim_name - 'a';
@@ -46,11 +46,11 @@ void Unit::add_base_unit(std::string name) {
     add_nominator_unit(name);
 }
 
-void Unit::add_nominator_double(std::string double_string) {
+void Unit::add_nominator_double(const std::string& double_string) {
     unit_factor = parse_double(double_string);
 }
 
-void Unit::add_nominator_dims(std::array<int, MAX_DIMS> dimensions) {
+void Unit::add_nominator_dims(const std::array<int, MAX_DIMS>& dimensions) {
     std::transform(unit_dimensions.begin(),
                    unit_dimensions.end(),
                    dimensions.begin(),
@@ -58,7 +58,7 @@ void Unit::add_nominator_dims(std::array<int, MAX_DIMS> dimensions) {
                    std::plus<int>());
 }
 
-void Unit::add_denominator_dims(std::array<int, MAX_DIMS> dimensions) {
+void Unit::add_denominator_dims(const std::array<int, MAX_DIMS>& dimensions) {
     std::transform(unit_dimensions.begin(),
                    unit_dimensions.end(),
                    dimensions.begin(),
@@ -66,19 +66,19 @@ void Unit::add_denominator_dims(std::array<int, MAX_DIMS> dimensions) {
                    std::minus<int>());
 }
 
-void Unit::add_nominator_unit(std::string nom) {
+void Unit::add_nominator_unit(const std::string& nom) {
     nominator.push_back(nom);
 }
 
-void Unit::add_nominator_unit(const std::shared_ptr<std::vector<std::string>> nom) {
+void Unit::add_nominator_unit(const std::shared_ptr<std::vector<std::string>>& nom) {
     nominator.insert(nominator.end(), nom->begin(), nom->end());
 }
 
-void Unit::add_denominator_unit(std::string denom) {
+void Unit::add_denominator_unit(const std::string& denom) {
     denominator.push_back(denom);
 }
 
-void Unit::add_denominator_unit(const std::shared_ptr<std::vector<std::string>> denom) {
+void Unit::add_denominator_unit(const std::shared_ptr<std::vector<std::string>>& denom) {
     denominator.insert(denominator.end(), denom->begin(), denom->end());
 }
 
@@ -138,7 +138,7 @@ double Unit::parse_double(std::string double_string) {
     return static_cast<double>(d_number * powl(10.0, d_magnitude) * sign);
 }
 
-void UnitTable::calc_nominator_dims(std::shared_ptr<Unit> unit, std::string nominator_name) {
+void UnitTable::calc_nominator_dims(const std::shared_ptr<Unit>& unit, std::string nominator_name) {
     double nominator_prefix_factor = 1.0;
     int nominator_power = 1;
 
@@ -211,7 +211,8 @@ void UnitTable::calc_nominator_dims(std::shared_ptr<Unit> unit, std::string nomi
     }
 }
 
-void UnitTable::calc_denominator_dims(std::shared_ptr<Unit> unit, std::string denominator_name) {
+void UnitTable::calc_denominator_dims(const std::shared_ptr<Unit>& unit,
+                                      std::string denominator_name) {
     double denominator_prefix_factor = 1.0;
     int denominator_power = 1;
 
@@ -283,7 +284,7 @@ void UnitTable::calc_denominator_dims(std::shared_ptr<Unit> unit, std::string de
     }
 }
 
-void UnitTable::insert(std::shared_ptr<Unit> unit) {
+void UnitTable::insert(const std::shared_ptr<Unit>& unit) {
     // check if the unit is a base unit and
     // then add it to the base units vector
     auto unit_nominator = unit->get_nominator_unit();
@@ -321,63 +322,63 @@ void UnitTable::insert(std::shared_ptr<Unit> unit) {
     }
 }
 
-void UnitTable::insert_prefix(std::shared_ptr<Prefix> prfx) {
+void UnitTable::insert_prefix(const std::shared_ptr<Prefix>& prfx) {
     prefixes.insert({prfx->get_name(), prfx->get_factor()});
 }
 
 void UnitTable::print_units() const {
     for (const auto& it: table) {
-        std::cout << std::fixed << std::setprecision(8) << it.first << " "
-                  << it.second->get_factor() << ":";
+        std::cout << std::fixed << std::setprecision(8) << it.first << ' '
+                  << it.second->get_factor() << ':';
         for (const auto& dims: it.second->get_dimensions()) {
-            std::cout << " " << dims;
+            std::cout << ' ' << dims;
         }
-        std::cout << "\n";
+        std::cout << '\n';
     }
 }
 
 void UnitTable::print_base_units() const {
     int first_print = 1;
     for (const auto& it: base_units_names) {
-        if (it != "") {
+        if (!it.empty()) {
             if (first_print) {
                 first_print = 0;
                 std::cout << it;
             } else {
-                std::cout << " " << it;
+                std::cout << ' ' << it;
             }
         }
     }
-    std::cout << "\n";
+    std::cout << '\n';
 }
 
-void UnitTable::print_units_sorted(std::stringstream& units_details) {
+void UnitTable::print_units_sorted(std::ostream& units_details) const {
     std::vector<std::pair<std::string, std::shared_ptr<Unit>>> sorted_elements(table.begin(),
                                                                                table.end());
     std::sort(sorted_elements.begin(), sorted_elements.end());
     for (const auto& it: sorted_elements) {
-        units_details << std::fixed << std::setprecision(8) << it.first << " "
-                      << it.second->get_factor() << ":";
+        units_details << std::fixed << std::setprecision(8) << it.first << ' '
+                      << it.second->get_factor() << ':';
         for (const auto& dims: it.second->get_dimensions()) {
-            units_details << " " << dims;
+            units_details << ' ' << dims;
         }
-        units_details << "\n";
+        units_details << '\n';
     }
 }
 
-void UnitTable::print_base_units(std::stringstream& base_units_details) {
+void UnitTable::print_base_units(std::ostream& base_units_details) const {
     int first_print = 1;
     for (const auto& it: base_units_names) {
-        if (it != "") {
+        if (!it.empty()) {
             if (first_print) {
                 first_print = 0;
                 base_units_details << it;
             } else {
-                base_units_details << " " << it;
+                base_units_details << ' ' << it;
             }
         }
     }
-    base_units_details << "\n";
+    base_units_details << '\n';
 }
 
 }  // namespace units
