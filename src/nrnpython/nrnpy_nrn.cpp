@@ -1064,7 +1064,26 @@ static PyObject* NPySecObj_connect(NPySecObj* self, PyObject* args) {
 
 static PyObject* NPySecObj_insert(NPySecObj* self, PyObject* args) {
   char* tname;
+  PyObject *tpyobj, *tpyobj2;
   if (!PyArg_ParseTuple(args, "s", &tname)) {
+    PyErr_Clear();
+    // if called with an object that has an insert method, use that
+    if (PyArg_ParseTuple(args, "O", &tpyobj)) {
+      Py_INCREF(tpyobj);
+      Py_INCREF((PyObject*) self);
+      tpyobj2 = PyObject_CallMethod(tpyobj, "insert", "O", (PyObject*) self);
+      Py_DECREF(tpyobj);
+      if (tpyobj2 == NULL) {
+        Py_DECREF((PyObject*) self);
+        PyErr_Clear();
+        PyErr_SetString(PyExc_TypeError, "insert argument must be either a string or an object with an insert method");
+        return NULL;
+      }
+      Py_DECREF(tpyobj2);
+      return (PyObject*) self;
+    }
+    PyErr_Clear();
+    PyErr_SetString(PyExc_TypeError, "insert takes a single positional argument");
     return NULL;
   }
   PyObject* otype = PyDict_GetItemString(pmech_types, tname);
