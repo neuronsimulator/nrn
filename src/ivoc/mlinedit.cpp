@@ -2,19 +2,33 @@
 
 extern "C" int hoc_return_type_code;
 
-#if HAVE_IV // to end of file
-
 #include <stdio.h>
+
+#if HAVE_IV
 #include <InterViews/iv3text.h>
 #include <InterViews/layout.h>
 #include <InterViews/background.h>
 #include <InterViews/event.h>
 #include <IV-look/kit.h>
 #include "ocglyph.h"
+#endif
+
 #include "classreg.h"
+#if HAVE_IV
 #include "oc2iv.h"
 #include "apwindow.h"
+#include "ivoc.h"
+#endif
 
+#include "gui-redirect.h"
+
+extern "C" {
+	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+	extern double (*nrnpy_object_to_double_)(Object*);
+	extern char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strptr);
+}
+
+#if HAVE_IV
 class OcText : public Text {
 public:
 	OcText(unsigned rows = 24, unsigned cols = 80, TextBuffer* buf = NULL);
@@ -29,8 +43,12 @@ public:
 public:
 	OcText* txt_;
 };
+#endif
 
 static double map(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("TextEditor.map", v);
+#if HAVE_IV
+IFGUI
 	OcMLineEditor* e = (OcMLineEditor*)v;
 	PrintableWindow* w;
 	if (ifarg(3)) {  
@@ -44,19 +62,32 @@ static double map(void* v) {
 		w->name(name);
 	}
 	w->map();
+ENDGUI
 	return 0.;
+#else
+	return 0.;
+#endif
 }
 
 static double readonly(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("TextEditor.readonly", v);
+#if HAVE_IV
+IFGUI
 	OcMLineEditor* e = (OcMLineEditor*)v;
 	hoc_return_type_code = 2; // boolean
 	if (ifarg(1)) {
 		e->txt_->readOnly(int(chkarg(1, 0, 1)));
 	}
 	return double(e->txt_->readOnly());
+ENDGUI
+#endif
+	return 0.;
 }
 
 static const char** v_text(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_STR("TextEditor.text", v);
+#if HAVE_IV
+IFGUI
 	OcMLineEditor* e = (OcMLineEditor*)v;
 	TextBuffer* tb = e->txt_->editBuffer();
 	if (ifarg(1)) {
@@ -67,6 +98,9 @@ static const char** v_text(void* v) {
 	char** p = hoc_temp_charptr();
 	*p = (char*)tb->Text();
 	return (const char**)p;
+ENDGUI
+#endif
+	return 0;
 }
 
 
@@ -82,6 +116,9 @@ static Member_ret_str_func retstr_members[] = {
 };
 
 static void* cons(Object*) {
+	TRY_GUI_REDIRECT_OBJ("TextEditor", NULL);
+#if HAVE_IV
+IFGUI
 	const char* buf = "";
 	unsigned row = 5;
 	unsigned col = 30;
@@ -95,20 +132,30 @@ static void* cons(Object*) {
 	OcMLineEditor* e = new OcMLineEditor(row, col, buf);
 	e->ref();
 	return (void*)e;
+ENDGUI
+#else 
+	return (void*)0;
+#endif /* HAVE_IV  */
 }
 
 static void destruct(void* v) {
+	TRY_GUI_REDIRECT_NO_RETURN("~TextEditor", v);
+#if HAVE_IV
+IFGUI
 	OcMLineEditor* e = (OcMLineEditor*)v;
 	if (e->has_window()) {
 		e->window()->dismiss();
 	}
 	e->unref();
+ENDGUI
+#endif /* HAVE_IV */
 }
 
 void TextEditor_reg() {
 	class2oc("TextEditor", cons, destruct, members, NULL, NULL, retstr_members);
 }
 
+#if HAVE_IV
 OcMLineEditor::OcMLineEditor(unsigned row, unsigned col, const char* buf) {
 	txt_ = new OcText(row, col, new TextBuffer(buf,strlen(buf),1000));
 	txt_->ref();
@@ -143,4 +190,3 @@ void OcText::keystroke(const Event& e){
 }
 
 #endif
-

@@ -543,11 +543,19 @@ int hoc_xopen_run(Symbol* sp, const char* str) { /*recursively parse and execute
 	return n;
 }
 
-static char* stmp[128];
+#define HOC_TEMP_CHARPTR_SIZE 128
+static char* stmp[HOC_TEMP_CHARPTR_SIZE];
 static int istmp = 0;
 char** hoc_temp_charptr(void) {
-	istmp = (istmp+1)%128;
+	istmp = (istmp+1)%HOC_TEMP_CHARPTR_SIZE;
 	return stmp+istmp;
+}
+
+int hoc_is_temp_charptr(char** cpp) {
+	if (cpp >= stmp && cpp < stmp + HOC_TEMP_CHARPTR_SIZE) {
+		return 1;
+	}
+	return 0;
 }
 
 int hoc_stack_type(void) {

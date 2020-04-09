@@ -1,5 +1,7 @@
 #include <../../nrnconf.h>
 #include "classreg.h"
+#include "gui-redirect.h"
+
 #if HAVE_IV
 
 #include <InterViews/handler.h>
@@ -37,12 +39,18 @@
 #define MoveText_		"MoveText PlotShape"
 
 extern "C" {
-extern Symlist* hoc_built_in_symlist;
+	extern Symlist* hoc_built_in_symlist;
 }	
 #endif // HAVE_IV
 
+extern "C" {
+	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+	extern double (*nrnpy_object_to_double_)(Object*);
+}	
+
 // PlotShape class registration for oc
 static double sh_flush(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.flush", v);
 #if HAVE_IV
 IFGUI
 	((ShapePlot*)v)->flush();
@@ -52,6 +60,7 @@ ENDGUI
 }
 
 static double fast_flush(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.fast_flush", v);
 #if HAVE_IV
 IFGUI
 	((ShapePlot*)v)->fast_flush();
@@ -60,11 +69,13 @@ ENDGUI
 	return 1.;
 }
 
-static double sh_begin(void*) {// a noop. Exists only because graphs and
+static double sh_begin(void* v) {// a noop. Exists only because graphs and
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.begin", v);
 	return 1.;		// shapes are often in same list
 }
 
 static double sh_scale(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.scale", v);
 #if HAVE_IV
 IFGUI
 	((ShapePlot*)v)->scale(float(*getarg(1)), float(*getarg(2)));
@@ -78,6 +89,7 @@ ENDGUI
 }
 
 static double sh_view(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.view", v);
 #if HAVE_IV
 IFGUI
 	ShapePlot* sh = (ShapePlot*)v;
@@ -94,6 +106,7 @@ ENDGUI
 }
 
 static double sh_variable(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.variable", v);
 	Symbol* s;
 	s = hoc_table_lookup(gargstr(1), hoc_built_in_symlist);
 	if (s) {
@@ -111,6 +124,7 @@ ENDGUI
 }
 
 static double sh_view_count(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.view_count", v);
 	int n = 0;
 #if HAVE_IV
 IFGUI
@@ -121,6 +135,7 @@ ENDGUI
 }
 
 static double sh_save_name(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.save_name", v);
 #if HAVE_IV
 IFGUI
 	((ShapeScene*)v)->name(gargstr(1));
@@ -130,6 +145,7 @@ ENDGUI
 }
 
 static double sh_unmap(void*v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.unmap", v);
 #if HAVE_IV
 IFGUI
 	ShapeScene* s = (ShapeScene*)v;
@@ -140,6 +156,7 @@ ENDGUI
 }
 
 static double sh_printfile(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.printfile", v);
 #if HAVE_IV
 IFGUI
 	ShapeScene* s = (ShapeScene*)v;
@@ -150,6 +167,7 @@ ENDGUI
 }
 
 static double sh_show(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.show", v);
 #if HAVE_IV
 IFGUI
 	ShapeScene* s = (ShapeScene*)v;
@@ -162,6 +180,7 @@ ENDGUI
 extern double ivoc_gr_menu_action(void* v);
 
 static double s_colormap(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.colormap", v);
 #if HAVE_IV
 IFGUI
 	ShapePlot* s = (ShapePlot*)v;
@@ -184,6 +203,7 @@ ENDGUI
 }
 
 static double sh_hinton(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.hinton", v);
 #if HAVE_IV
 IFGUI
 	ShapeScene* ss = (ShapeScene*)v;
@@ -202,6 +222,7 @@ ENDGUI
 }
 
 static double exec_menu(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.exec_menu", v);
 #if HAVE_IV
 IFGUI
 	((Scene*)v)->picker()->exec_item(gargstr(1));
@@ -273,6 +294,7 @@ static Member_ret_obj_func retobj_members[] = {
 };
 
 static void* sh_cons(Object* ho) {
+	TRY_GUI_REDIRECT_OBJ("PlotShape", NULL);
 	int i=1;
 	int iarg=1;
 	SectionList* sl = NULL;
@@ -316,6 +338,7 @@ ENDGUI
 }
 
 static void sh_destruct(void* v) {
+	TRY_GUI_REDIRECT_NO_RETURN("~PlotShape", v);
 #if HAVE_IV
 IFGUI
 	((ShapeScene*)v)->dismiss();

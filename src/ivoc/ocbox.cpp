@@ -22,7 +22,14 @@
 #include "oc2iv.h"
 #include "classreg.h"
 
+#include "gui-redirect.h"
+
 extern "C" int hoc_return_type_code;
+
+extern "C" {
+	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+	extern double (*nrnpy_object_to_double_)(Object*);
+};
 
 #if HAVE_IV
 
@@ -111,6 +118,7 @@ void BoxDismiss::execute() {
 }
 #endif /* HAVE_IV */ 
 static void* vcons(Object*) {
+	TRY_GUI_REDIRECT_OBJ("VBox", NULL);	
 #if HAVE_IV
 	OcBox* b = NULL;
         int frame = OcBox::INSET;
@@ -126,6 +134,7 @@ static void* vcons(Object*) {
 }
 	
 static void* hcons(Object*) {
+	TRY_GUI_REDIRECT_OBJ("HBox", NULL);
 #if HAVE_IV
 	OcBox* b = NULL;
         int frame = OcBox::INSET;
@@ -139,6 +148,8 @@ static void* hcons(Object*) {
 }
 	
 static void destruct(void* v) {
+	// TODO: this doesn't seem to get called; why?
+	TRY_GUI_REDIRECT_NO_RETURN("~Box", v);
 #if HAVE_IV
 	OcBox* b = (OcBox*)v;
 IFGUI
@@ -151,6 +162,7 @@ ENDGUI
 }
 
 static double intercept(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.intercept", v);
 #if HAVE_IV
 	bool b = int(chkarg(1, 0., 1.));
 IFGUI
@@ -163,6 +175,7 @@ ENDGUI
 }
 
 static double ses_pri(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.priority", v);
 #if HAVE_IV
 	int p = int(chkarg(1, -1000, 10000));
 IFGUI
@@ -175,6 +188,7 @@ ENDGUI
 }
 
 static double map(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.map", v);
 #if HAVE_IV
 IFGUI
 	OcBox* b = (OcBox*)v;
@@ -204,6 +218,7 @@ ENDGUI
 }
 
 static double dialog(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.dialog", v);
 #if HAVE_IV
 	bool r = false;
 IFGUI
@@ -226,6 +241,7 @@ ENDGUI
 }
 
 static double unmap(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.unmap", v);
 #if HAVE_IV
 IFGUI
 	OcBox* b = (OcBox*)v;
@@ -253,6 +269,7 @@ ENDGUI
 
 static double ismapped(void* v) {
 	hoc_return_type_code = 2;
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.ismapped", v);
 #if HAVE_IV
 	bool b = false;
 IFGUI
@@ -265,6 +282,7 @@ ENDGUI
 }
 
 static double adjuster(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.adjuster", v);
 #if HAVE_IV
 IFGUI
 	((OcBox*)v)->adjuster(chkarg(1, -1., 1e5));
@@ -274,6 +292,7 @@ ENDGUI
 }
 
 static double adjust(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.adjust", v);
 #if HAVE_IV
 IFGUI
 	int index = 0;
@@ -287,6 +306,7 @@ ENDGUI
 }
 
 static double full_request(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.full_request", v);
 #if HAVE_IV
 IFGUI
 	OcBox* b = (OcBox*)v;
@@ -301,6 +321,7 @@ ENDGUI
 }
 
 static double b_size(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.size", v);
 #if HAVE_IV
 IFGUI
 	double* p = hoc_pgetarg(1); // array for at least 4 numbers
@@ -319,6 +340,7 @@ ENDGUI
 extern "C" {const char* pwm_session_filename();}
 
 static double save(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.save", v);
 #if HAVE_IV
 IFGUI
 	OcBox* b = (OcBox*)v;
@@ -355,6 +377,7 @@ ENDGUI
 	is dismissed.
 */
 static double ref(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.ref", v);
 #if HAVE_IV
 	OcBox* b = (OcBox*)v;
 	b->keep_ref(*hoc_objgetarg(1));
@@ -371,6 +394,7 @@ static double ref(void* v) {
 	execute the action when the vbox is dismissed from the screen.
 */
 static double dismiss_action(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.dismiss_action", v);
 #if HAVE_IV
 IFGUI
 	OcBox* b = (OcBox*)v;

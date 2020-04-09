@@ -1072,3 +1072,13 @@ try:
 except:
   print("Failed to setup nrn.Section.psection")
 pass
+
+import atexit as _atexit
+@_atexit.register
+def clear_gui_callback():
+  try:
+    nrnpy_set_gui_callback = nrn_dll_sym('nrnpy_set_gui_callback')
+    nrnpy_set_gui_callback(None)
+  except:
+    pass
+

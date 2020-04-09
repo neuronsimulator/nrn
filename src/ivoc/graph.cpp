@@ -47,6 +47,13 @@ extern Image* gif_image(const char*);
 #endif  /* HAVE_IV */
 
 #include "classreg.h"
+#include "gui-redirect.h"
+
+extern "C" {
+	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+	extern double (*nrnpy_object_to_double_)(Object*);
+}
+
 #if HAVE_IV  
 #define Graph_Crosshair_		"Crosshair Graph"
 #define Graph_Change_label_		"ChangeText Graph"
@@ -63,6 +70,7 @@ extern Image* gif_image(const char*);
 bool GraphItem::is_polyline() { return false; }
 bool GPolyLineItem::is_polyline() { return true; }
 bool GraphItem::is_mark() { return false; }
+
 
 /*static*/ class GraphLabelItem : public GraphItem {
 public:
@@ -230,6 +238,7 @@ ENDGUI
 #endif  /* HAVE_IV */
 
 static double gr_xaxis(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.xaxis", v);
 #if HAVE_IV
 	gr_axis((Graph*)v, Dimension_X);
 	return 1.;
@@ -238,6 +247,7 @@ static double gr_xaxis(void* v) {
 #endif /* HAVE_IV  */
 }
 static double gr_yaxis(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.yaxis", v);
 #if HAVE_IV
 	gr_axis((Graph*)v, Dimension_Y);
 	return 1.;
@@ -246,6 +256,7 @@ static double gr_yaxis(void* v) {
 #endif /* HAVE_IV  */
 }
 static double gr_save_name(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.save_name", v);
 #if HAVE_IV
 IFGUI
 	Graph* g = (Graph*)v;
@@ -281,6 +292,7 @@ static void move_label(Graph* g, const GLabel* lab, int ioff = 0) {
 #endif /* HAVE_IV  */
 
 static double gr_family(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.family", v);
 #if HAVE_IV
 IFGUI
 	if (hoc_is_str_arg(1)) {
@@ -296,6 +308,7 @@ ENDGUI
 }
 
 double ivoc_gr_menu_action(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.menu_action", v);
 #if HAVE_IV
 IFGUI
 	HocCommand* hc;
@@ -313,6 +326,7 @@ ENDGUI
 }
 
 double ivoc_gr_menu_tool(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.menu_tool", v);
 #if HAVE_IV
 IFGUI
     if (hoc_is_object_arg(2)) { // python style
@@ -330,6 +344,7 @@ ENDGUI
 }
 
 double ivoc_view_info(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.view_info", v);
 #if HAVE_IV
 IFGUI
 	int i;
@@ -412,6 +427,7 @@ ENDGUI
 }
 
 double ivoc_view_size(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.view_size", v);
 #if HAVE_IV
 IFGUI
 	int i;
@@ -426,6 +442,7 @@ ENDGUI
 }
 
 double gr_line_info(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.line_info", v);
 #if HAVE_IV
 IFGUI
 	Graph* g = (Graph*)v;
@@ -523,6 +540,7 @@ ENDGUI
 }
 #endif  /* HAVE_IV */
 static double gr_addvar(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.addvar", v);
 #if HAVE_IV
 	gr_add(v, 1);
 	return 1.;
@@ -531,6 +549,7 @@ static double gr_addvar(void* v) {
 #endif /* HAVE_IV  */
 }
 static double gr_addexpr(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.addexpr", v);
 #if HAVE_IV
 	gr_add(v, 0);
 	return 1.;
@@ -539,6 +558,7 @@ static double gr_addexpr(void* v) {
 #endif /* HAVE_IV  */
 }
 static double gr_addobject(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.addobject", v);
 #if HAVE_IV
 IFGUI
 	Graph* g = (Graph*)v;
@@ -569,6 +589,7 @@ ENDGUI
 }
 
 static double gr_vector(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.vector", v);
 #if HAVE_IV
 IFGUI
 	Graph* g = (Graph*)v;
@@ -597,6 +618,7 @@ ENDGUI
 }
 
 static double gr_xexpr(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.xexpr", v);
 #if HAVE_IV
 IFGUI
 	Graph* g = (Graph*)v;
@@ -613,6 +635,7 @@ ENDGUI
 }
 
 static double gr_begin(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.begin", v);
 #if HAVE_IV
 IFGUI
 	((Graph*)v)->begin();
@@ -624,6 +647,7 @@ ENDGUI
 }
 
 static double gr_plot(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.plot", v);
 #if HAVE_IV
 IFGUI
 	((Graph*)v)->plot(*getarg(1));
@@ -635,6 +659,7 @@ ENDGUI
 }
 
 static double gr_simgraph(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.simgraph", v);
 #if HAVE_IV
 IFGUI
 	((Graph*)v)->simgraph();
@@ -646,6 +671,7 @@ ENDGUI
 }
 
 double ivoc_gr_begin_line(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.beginline", v);
 #if HAVE_IV
 IFGUI
 	Graph* g = (Graph*)v;
@@ -668,6 +694,7 @@ ENDGUI
 #endif /* HAVE_IV  */
 }
 double ivoc_gr_line(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.line", v);
 #if HAVE_IV
 IFGUI
 	((Graph*)v)->line(*getarg(1), *getarg(2));
@@ -678,6 +705,8 @@ ENDGUI
 #endif /* HAVE_IV  */
 }
 static double gr_flush(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.flush", v);
+
 #if HAVE_IV
 IFGUI
 	((Graph*)v)->flush();
@@ -688,6 +717,8 @@ ENDGUI
 #endif /* HAVE_IV  */
 }
 static double gr_fast_flush(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.fast_flush", v);
+
 #if HAVE_IV
 IFGUI
 	((Graph*)v)->fast_flush();
@@ -698,6 +729,7 @@ ENDGUI
 #endif /* HAVE_IV  */
 }
 double ivoc_gr_erase(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.erase", v);
 #if HAVE_IV
 IFGUI
 	((Graph*)v)->erase_lines();
@@ -709,6 +741,7 @@ ENDGUI
 }
 
 double ivoc_erase_all(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.erase_all", v);
 #if HAVE_IV
 IFGUI
 	((Graph*)v)->erase_all();
@@ -720,6 +753,7 @@ ENDGUI
 }
 
 double ivoc_gr_gif(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.gif", v);
 #if HAVE_IV
 IFGUI
 	Graph* g = (Graph*)v;
@@ -755,6 +789,7 @@ ENDGUI
 }
 
 double ivoc_gr_size(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.size", v);
 #if HAVE_IV
 IFGUI
 	Coord x1, y1, x2, y2;
@@ -807,6 +842,7 @@ ENDGUI
 }
 
 double ivoc_gr_label(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.label", v);
 #if HAVE_IV
 IFGUI
 	Graph* g = (Graph*)v;
@@ -830,6 +866,7 @@ ENDGUI
 #endif /* HAVE_IV  */
 }
 static double gr_fixed(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.fixed", v);
 #if HAVE_IV
 IFGUI
 	float scale = 1;
@@ -844,6 +881,7 @@ ENDGUI
 #endif /* HAVE_IV  */
 }
 static double gr_vfixed(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.vfixed", v);
 #if HAVE_IV
 IFGUI
 	float scale = 1;
@@ -858,6 +896,7 @@ ENDGUI
 #endif /* HAVE_IV  */
 }
 static double gr_relative(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.relative", v);
 #if HAVE_IV
 IFGUI
 	float scale = 1.;
@@ -872,6 +911,7 @@ ENDGUI
 #endif /* HAVE_IV  */
 }
 static double gr_align(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.align", v);
 #if HAVE_IV
 IFGUI
 	float x=0,y=0;
@@ -889,6 +929,7 @@ ENDGUI
 #endif /* HAVE_IV  */
 }
 static double gr_color(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.color", v);
 #if HAVE_IV
 IFGUI
 	int i=1;
@@ -907,6 +948,7 @@ ENDGUI
 #endif /* HAVE_IV  */
 }
 static double gr_brush(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.brush", v);
 #if HAVE_IV
 IFGUI
 	int i=0;
@@ -927,6 +969,7 @@ ENDGUI
 }
 
 static double gr_view(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.view", v);
 #if HAVE_IV
 IFGUI
 	Graph* g = (Graph*)v;
@@ -960,6 +1003,7 @@ ENDGUI
 }
 
 double ivoc_gr_mark(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.mark", v);
 #if HAVE_IV
 IFGUI
 	Graph* g = (Graph*)v;
@@ -993,6 +1037,7 @@ ENDGUI
 
 static double gr_view_count(void* v) {
 	hoc_return_type_code = 1; // integer
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.view_count", v);
 #if HAVE_IV
 	int n = 0;
 IFGUI
@@ -1005,6 +1050,7 @@ ENDGUI
 }
 
 static double gr_unmap(void*v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.unmap", v);
 #if HAVE_IV
 IFGUI
 	Graph* g = (Graph*)v;
@@ -1017,6 +1063,7 @@ ENDGUI
 }
 
 static double gr_set_cross_action(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.crosshair_action", v);
 #if HAVE_IV
 IFGUI
 	Graph* g = (Graph*)v;
@@ -1037,6 +1084,7 @@ ENDGUI
 }
 
 static double gr_printfile(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.printfile", v);
 #if HAVE_IV
 IFGUI
 	Graph* g =  (Graph*)v;
@@ -1049,6 +1097,7 @@ ENDGUI
 }
 
 static double exec_menu(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.exec_menu", v);
 #if HAVE_IV
 IFGUI
 	((Scene*)v)->picker()->exec_item(gargstr(1));
@@ -1058,6 +1107,7 @@ ENDGUI
 }
 
 double ivoc_gr_menu_remove(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.menu_remove", v);
 #if HAVE_IV
 IFGUI
 	((Scene*)v)->picker()->remove_item(gargstr(1));
@@ -1120,6 +1170,7 @@ static Member_func gr_members[] = {
 };
 
 static void* gr_cons(Object* ho) {
+	TRY_GUI_REDIRECT_OBJ("Graph", NULL);
 #if HAVE_IV
 	Graph* g = NULL;
 IFGUI
@@ -1137,6 +1188,7 @@ ENDGUI
 #endif /* HAVE_IV  */
 }
 static void gr_destruct(void* v) {
+	TRY_GUI_REDIRECT_NO_RETURN("~Graph", v);
 #if HAVE_IV
 IFGUI
 	Graph* g = (Graph*)v;
