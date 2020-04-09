@@ -1,5 +1,4 @@
-set -x
-set -e
+set -xe
 
 ## python3.5 on OSX required following
 # curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
