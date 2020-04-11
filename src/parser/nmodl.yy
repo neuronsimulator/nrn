@@ -443,22 +443,22 @@ all             :   {
                     }
                 |   all model
                     {
-                        $1->addNode($2);
+                        $1->emplace_back_node($2);
                         $$ = $1;
                     }
                 |   all local_statement
                     {
-                        $1->addNode($2);
+                        $1->emplace_back_node($2);
                         $$ = $1;
                     }
                 |   all define
                     {
-                        $1->addNode($2);
+                        $1->emplace_back_node($2);
                         $$ = $1;
                     }
                 |   all declare
                     {
-                        $1->addNode($2);
+                        $1->emplace_back_node($2);
                         $$ = $1;
                     }
                 |   all MODEL_LEVEL INTEGER_PTR declare
@@ -470,38 +470,38 @@ all             :   {
                     }
                 |   all procedure
                     {
-                        $1->addNode($2);
+                        $1->emplace_back_node($2);
                         $$ = $1;
                     }
                 |   all VERBATIM
                     {
                         auto text = parse_with_verbatim_parser($2);
                         auto statement = new ast::Verbatim(new ast::String(text));
-                        $1->addNode(statement);
+                        $1->emplace_back_node(statement);
                         $$ = $1;
                     }
                 |   all BLOCK_COMMENT
                     {
                         auto text = parse_with_verbatim_parser($2);
                         auto statement = new ast::BlockComment(new ast::String(text));
-                        $1->addNode(statement);
+                        $1->emplace_back_node(statement);
                         $$ = $1;
                     }
                 |   all LINE_COMMENT
                     {
                         auto statement = new ast::LineComment(new ast::String($2));
-                        $1->addNode(statement);
+                        $1->emplace_back_node(statement);
                         $$ = $1;
                     }
                 |   all unit_state
                     {
-                        $1->addNode($2);
+                        $1->emplace_back_node($2);
                         $$ = $1;
                     }
                 |   all INCLUDE1 STRING_PTR
                     {
                         auto statement = new ast::Include($3);
-                        $1->addNode(statement);
+                        $1->emplace_back_node(statement);
                         $$ = $1;
                     }
                 ;
@@ -1838,11 +1838,11 @@ before_after_block : BREAKPOINT statement_list "}"
 watch_statement :   WATCH watch
                     {
                         $$ = new ast::WatchStatement(ast::WatchVector());
-                        $$->addWatch($2);
+                        $$->emplace_back_watch($2);
                     }
                 |   watch_statement "," watch
                     {
-                        $1->addWatch($3); $$ = $1;
+                        $1->emplace_back_watch($3); $$ = $1;
                     }
                 |   WATCH error
                     {

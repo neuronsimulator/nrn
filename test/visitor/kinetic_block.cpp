@@ -9,6 +9,7 @@
 
 #include "parser/nmodl_driver.hpp"
 #include "test/utils/test_utils.hpp"
+#include "visitors/checkparent_visitor.hpp"
 #include "visitors/constant_folder_visitor.hpp"
 #include "visitors/kinetic_block_visitor.hpp"
 #include "visitors/lookup_visitor.hpp"
@@ -17,6 +18,7 @@
 
 using namespace nmodl;
 using namespace visitor;
+using namespace test;
 using namespace test_utils;
 
 using ast::AstNodeType;
@@ -51,6 +53,10 @@ std::vector<std::string> run_kinetic_block_visitor(const std::string& text) {
     for (const auto& r: res) {
         results.push_back(to_nmodl(r.get()));
     }
+
+
+    // check that, after visitor rearrangement, parents are still up-to-date
+    CheckParentVisitor().visit_program(ast.get());
 
     return results;
 }

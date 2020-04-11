@@ -46,7 +46,7 @@ void LocalVarRenameVisitor::visit_statement_block(ast::StatementBlock* node) {
         parent_symtab = symtab->get_parent_table();
     }
 
-    auto variables = get_local_variables(node);
+    auto variables = get_local_list_statement(node);
 
     /// global blocks do not change (do no have parent symbol table)
     /// if no variables in the block then there is nothing to do
@@ -56,7 +56,7 @@ void LocalVarRenameVisitor::visit_statement_block(ast::StatementBlock* node) {
 
     RenameVisitor rename_visitor;
 
-    for (const auto& var: *variables) {
+    for (const auto& var: variables->get_variables()) {
         std::string name = var->get_node_name();
         auto s = parent_symtab->lookup_in_scope(name);
         /// if symbol is a variable name (avoid renaming use of units like mV)

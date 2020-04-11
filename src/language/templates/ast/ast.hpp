@@ -73,7 +73,6 @@ namespace ast {
         {% endif %}
         {% endfor %}
 
-
         /// \name Ctor & dtor
         /// \{
 
@@ -97,7 +96,7 @@ namespace ast {
         /// \{
 
         {% if node.is_base_block_node %}
-        virtual ArgumentVector get_parameters() {
+        virtual const ArgumentVector& get_parameters() const {
             throw std::runtime_error("get_parameters not implemented");
         }
         {% endif %}
@@ -128,7 +127,7 @@ namespace ast {
          *
          * @return pointer to the clone/copy of the current node
          */
-        {{ virtual(node) }} {{ node.class_name }}* clone() override {
+        {{ virtual(node) }} {{ node.class_name }}* clone() const override {
             return new {{ node.class_name }}(*this);
         }
 
@@ -237,6 +236,8 @@ namespace ast {
         {{ child.get_node_name_method() }}
 
         {{ child.get_getter_method(node.class_name) }}
+
+
         {% endfor %}
 
         /// \}
@@ -295,7 +296,7 @@ namespace ast {
 
         {# doxygen for these methods is handled by nodes.py #}
         {% for child in node.children %}
-        {{ child.get_setter_method(node.class_name) }}
+        {{ child.get_setter_method_declaration(node.class_name) }}
         {% endfor %}
 
         /// \}
@@ -362,7 +363,7 @@ namespace ast {
                  * string representation when they are converted from AST back to
                  * NMODL. This method is used to return corresponding string representation.
                  */
-                std::string eval() { return {{
+                std::string eval() const { return {{
                     node.get_data_type_name() }}Names[value];
                 }
             {# but if basic data type then eval return their value #}
@@ -376,10 +377,19 @@ namespace ast {
                  *
                  * \sa {{ node.class_name }}::set
                  */
-                {{ node.get_data_type_name() }} eval() {
+                {{ node.get_data_type_name() }} eval() const {
                     return value;
                 }
             {% endif %}
+        {% endif %}
+
+        {% if node.children %}
+            /**
+             * \brief Set parents in children
+             *
+             * Usually called in constructors
+             */
+            virtual void set_parent_in_children() override;
         {% endif %}
     };
 

@@ -34,29 +34,38 @@ std::string get_new_name(const std::string& name,
     return (name + "_" + suffix + "_" + std::to_string(counter));
 }
 
-LocalVarVector* get_local_variables(const StatementBlock* node) {
-    for (const auto& statement: node->statements) {
+std::shared_ptr<ast::LocalListStatement> get_local_list_statement(const StatementBlock* node) {
+    const auto& statements = node->get_statements();
+    for (const auto& statement: statements) {
         if (statement->is_local_list_statement()) {
-            auto local_statement = std::static_pointer_cast<LocalListStatement>(statement);
-            return &(local_statement->variables);
+            return std::static_pointer_cast<LocalListStatement>(statement);
         }
     }
     return nullptr;
 }
 
 void add_local_statement(StatementBlock* node) {
-    auto variables = get_local_variables(node);
+    auto variables = get_local_list_statement(node);
+    const auto& statements = node->get_statements();
     if (variables == nullptr) {
         auto statement = std::make_shared<LocalListStatement>(LocalVarVector());
-        node->statements.insert(node->statements.begin(), statement);
+        node->insert_statement(statements.begin(), statement);
     }
 }
 
 LocalVar* add_local_variable(StatementBlock* node, Identifier* varname) {
     add_local_statement(node);
-    auto local_variables = get_local_variables(node);
+
+    const ast::StatementVector& statements = node->get_statements();
+
+    auto local_list_statement = get_local_list_statement(node);
+    /// each block should already have local statement
+    if (local_list_statement == nullptr) {
+        throw std::logic_error("no local statement");
+    }
     auto var = std::make_shared<LocalVar>(varname);
-    local_variables->push_back(var);
+    local_list_statement->emplace_back_local_var(var);
+
     return var.get();
 }
 
@@ -84,7 +93,7 @@ std::shared_ptr<Statement> create_statement(const std::string& code_statement) {
     nmodl::parser::NmodlDriver driver;
     auto nmodl_text = "PROCEDURE dummy() { " + code_statement + " }";
     auto ast = driver.parse_string(nmodl_text);
-    auto procedure = std::dynamic_pointer_cast<ProcedureBlock>(ast->blocks[0]);
+    auto procedure = std::dynamic_pointer_cast<ProcedureBlock>(ast->get_blocks().front());
     auto statement = std::shared_ptr<Statement>(
         procedure->get_statement_block()->get_statements()[0]->clone());
     return statement;
@@ -106,7 +115,7 @@ std::shared_ptr<StatementBlock> create_statement_block(
     }
     nmodl_text += "}";
     auto ast = driver.parse_string(nmodl_text);
-    auto procedure = std::dynamic_pointer_cast<ProcedureBlock>(ast->blocks[0]);
+    auto procedure = std::dynamic_pointer_cast<ProcedureBlock>(ast->get_blocks().front());
     auto statement_block = std::shared_ptr<StatementBlock>(
         procedure->get_statement_block()->clone());
     return statement_block;
@@ -115,13 +124,23 @@ std::shared_ptr<StatementBlock> create_statement_block(
 
 void remove_statements_from_block(ast::StatementBlock* block,
                                   const std::set<ast::Node*> statements) {
-    auto& statement_vec = block->statements;
-    statement_vec.erase(std::remove_if(statement_vec.begin(),
-                                       statement_vec.end(),
-                                       [&statements](std::shared_ptr<ast::Statement>& s) {
-                                           return statements.find(s.get()) != statements.end();
-                                       }),
-                        statement_vec.end());
+    const auto& statement_vec = block->get_statements();
+
+    // loosely following the cpp reference of remove_if
+
+    auto first = statement_vec.begin();
+    auto last = statement_vec.end();
+    auto result = first;
+
+    while (first != last) {
+        if (statements.find(first->get()) == statements.end()) {
+            block->reset_statement(result, *first);
+            ++result;
+        }
+        ++first;
+    }
+
+    block->erase_statement(result, last);
 }
 
 

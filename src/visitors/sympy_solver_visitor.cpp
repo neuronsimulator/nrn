@@ -81,8 +81,8 @@ void SympySolverVisitor::check_expr_statements_in_same_block() {
     block_with_expression_statements = current_statement_block;
 }
 
-ast::StatementVector::iterator SympySolverVisitor::get_solution_location_iterator(
-    ast::StatementVector& statements) {
+ast::StatementVector::const_iterator SympySolverVisitor::get_solution_location_iterator(
+    const ast::StatementVector& statements) {
     // find out where to insert solutions in statement block
     // returns iterator pointing to the first element after the last (non)linear eq
     // so if there are no such elements, it returns statements.end()
@@ -187,12 +187,12 @@ void SympySolverVisitor::construct_eigen_solver_block(
     solutions_filtered = filter_string_vector(solutions_filtered, "F[", unique_F + "[");
 
     // find out where to insert solution in statement block
-    auto& statements = block_with_expression_statements->statements;
+    const auto& statements = block_with_expression_statements->get_statements();
     auto it = get_solution_location_iterator(statements);
     // insert pre-solve statements below last linear eq in block
     for (const auto& statement: pre_solve_statements) {
         logger->debug("SympySolverVisitor :: -> adding statement: {}", statement);
-        it = statements.insert(it, create_statement(statement));
+        it = block_with_expression_statements->insert_statement(it, create_statement(statement));
         ++it;
     }
     // make Eigen vector <-> state var assignments
@@ -213,7 +213,8 @@ void SympySolverVisitor::construct_eigen_solver_block(
     // statements after last diff/linear/non-linear eq statement go into finalize_block
     ast::StatementVector finalize_statements{it, statements.end()};
     // remove them from the statement block
-    statements.erase(it, statements.end());
+
+    block_with_expression_statements->erase_statement(it, statements.end());
     // also remove diff/linear/non-linear eq statements from the statement block
     remove_statements_from_block(block_with_expression_statements, expression_statements);
     // move any local variable declarations into variable_block
@@ -307,7 +308,7 @@ void SympySolverVisitor::solve_linear_system(const std::vector<std::string>& pre
         return;
     }
     // find out where to insert solutions in statement block
-    auto& statements = block_with_expression_statements->statements;
+    const auto& statements = block_with_expression_statements->get_statements();
     auto it = get_solution_location_iterator(statements);
     if (small_system) {
         // for small number of state vars, linear solver
@@ -324,13 +325,14 @@ void SympySolverVisitor::solve_linear_system(const std::vector<std::string>& pre
         // insert pre-solve statements below last linear eq in block
         for (const auto& statement: pre_solve_statements) {
             logger->debug("SympySolverVisitor :: -> adding statement: {}", statement);
-            it = statements.insert(it, create_statement(statement));
+            it = block_with_expression_statements->insert_statement(it,
+                                                                    create_statement(statement));
             ++it;
         }
         // then insert new solution statements
         for (const auto& sol: solutions) {
             logger->debug("SympySolverVisitor :: -> adding statement: {}", sol);
-            it = statements.insert(it, create_statement(sol));
+            it = block_with_expression_statements->insert_statement(it, create_statement(sol));
             ++it;
         }
         /// remove original lineq statements from the block
@@ -401,8 +403,8 @@ void SympySolverVisitor::visit_var_name(ast::VarName* node) {
 }
 
 void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
-    auto& lhs = node->get_expression()->lhs;
-    auto& rhs = node->get_expression()->rhs;
+    const auto& lhs = node->get_expression()->get_lhs();
+    const auto& rhs = node->get_expression()->get_rhs();
 
     if (!lhs->is_var_name()) {
         logger->warn("SympySolverVisitor :: LHS of differential equation is not a VariableName");

@@ -17,7 +17,7 @@ using namespace ast;
 bool InlineVisitor::can_inline_block(StatementBlock* block) {
     bool to_inline = true;
     const auto& statements = block->get_statements();
-    for (auto statement: statements) {
+    for (const auto& statement: statements) {
         /// inlining is disabled if function/procedure contains table or lag statement
         if (statement->is_table_statement() || statement->is_lag_statement()) {
             to_inline = false;
@@ -26,7 +26,7 @@ bool InlineVisitor::can_inline_block(StatementBlock* block) {
         // verbatim blocks with return statement are not safe to inline
         // especially for net_receive block
         if (statement->is_verbatim()) {
-            auto node = static_cast<Verbatim*>(statement.get());
+            const auto node = static_cast<const Verbatim*>(statement.get());
             auto text = node->get_statement()->eval();
             parser::CDriver driver;
             driver.scan_string(text);
@@ -44,7 +44,7 @@ void InlineVisitor::add_return_variable(StatementBlock* block, std::string& varn
     auto rhs = new Integer(0, nullptr);
     auto expression = new BinaryExpression(lhs, BinaryOperator(BOP_ASSIGN), rhs);
     auto statement = std::make_shared<ExpressionStatement>(expression);
-    block->statements.push_back(statement);
+    block->emplace_back_statement(statement);
 }
 
 /** We can replace statement if the entire statement itself is a function call.
@@ -81,7 +81,7 @@ void InlineVisitor::inline_arguments(StatementBlock* inlined_block,
     }
 
     size_t counter = 0;
-    auto& statements = inlined_block->statements;
+    const auto& statements = inlined_block->get_statements();
 
     for (const auto& argument: callee_parameters) {
         auto name = argument->get_name()->clone();
@@ -102,7 +102,7 @@ void InlineVisitor::inline_arguments(StatementBlock* inlined_block,
         /// create assignment statement and insert after the local variables
         auto expression = new BinaryExpression(lhs, BinaryOperator(ast::BOP_ASSIGN), rhs);
         auto statement = std::make_shared<ExpressionStatement>(expression);
-        statements.insert(statements.begin() + counter + 1, statement);
+        inlined_block->insert_statement(statements.begin() + counter + 1, statement);
         counter++;
     }
 }
@@ -145,12 +145,13 @@ bool InlineVisitor::inline_function_call(ast::Block* callee,
         ModToken tok;
         name->set_token(tok);
 
-        auto local_variables = get_local_variables(caller);
+        const ast::StatementVector& statements = caller->get_statements();
+        auto local_list_statement = get_local_list_statement(caller);
         /// each block should already have local statement
-        if (local_variables == nullptr) {
+        if (local_list_statement == nullptr) {
             throw std::logic_error("got local statement as nullptr");
         }
-        local_variables->push_back(std::make_shared<ast::LocalVar>(name));
+        local_list_statement->emplace_back_local_var(std::make_shared<ast::LocalVar>(name));
     }
 
     /// get a copy of function/procedure body
@@ -239,26 +240,27 @@ void InlineVisitor::visit_statement_block(StatementBlock* node) {
      */
     add_local_statement(node);
 
-    auto& statements = node->statements;
+    const auto& statements = node->get_statements();
 
-    for (auto& statement: statements) {
+    for (const auto& statement: statements) {
         caller_statement = statement;
         statement_stack.push(statement);
         caller_statement->visit_children(*this);
         statement_stack.pop();
     }
 
-    /// if nothing was added into local statement, remove it
-    LocalVarVector* local_variables = get_local_variables(node);
-    if (local_variables->empty()) {
-        statements.erase(statements.begin());
+    /// each block should already have local statement
+    auto local_list_statement = get_local_list_statement(node);
+    if (local_list_statement->get_variables().empty()) {
+        node->erase_statement(statements.begin());
     }
 
     /// check if any statement is candidate for replacement due to inlining
     /// this is typicall case of procedure calls
-    for (auto& statement: statements) {
+    for (auto it = statements.begin(); it < statements.end(); ++it) {
+        const auto& statement = *it;
         if (replaced_statements.find(statement) != replaced_statements.end()) {
-            statement.reset(replaced_statements[statement]);
+            node->reset_statement(it, replaced_statements[statement]);
         }
     }
 
@@ -266,7 +268,7 @@ void InlineVisitor::visit_statement_block(StatementBlock* node) {
     for (auto& element: inlined_statements) {
         auto it = std::find(statements.begin(), statements.end(), element.first);
         if (it != statements.end()) {
-            statements.insert(it, element.second.begin(), element.second.end());
+            node->insert_statement(it, element.second.begin(), element.second.end());
             element.second.clear();
         }
     }

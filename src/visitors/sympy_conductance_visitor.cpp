@@ -140,9 +140,9 @@ void SympyConductanceVisitor::visit_binary_expression(ast::BinaryExpression* nod
         return;
     }
     // only want binary expressions of form x = ...
-    if (node->lhs->is_var_name() && (node->op.get_value() == BinaryOp::BOP_ASSIGN)) {
+    if (node->get_lhs()->is_var_name() && (node->get_op().get_value() == BinaryOp::BOP_ASSIGN)) {
         auto lhs_str =
-            std::dynamic_pointer_cast<ast::VarName>(node->lhs)->get_name()->get_node_name();
+            std::dynamic_pointer_cast<ast::VarName>(node->get_lhs())->get_name()->get_node_name();
         binary_expr_index[lhs_str] = ordered_binary_exprs.size();
         ordered_binary_exprs.push_back(to_nmodl_for_sympy(node));
         ordered_binary_exprs_lhs.push_back(lhs_str);

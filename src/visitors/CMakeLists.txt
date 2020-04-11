@@ -52,7 +52,9 @@ set(VISITOR_GENERATED_SOURCES
     ${PROJECT_BINARY_DIR}/src/visitors/nmodl_visitor.cpp
     ${PROJECT_BINARY_DIR}/src/visitors/nmodl_visitor.hpp
     ${PROJECT_BINARY_DIR}/src/visitors/symtab_visitor.cpp
-    ${PROJECT_BINARY_DIR}/src/visitors/symtab_visitor.hpp)
+    ${PROJECT_BINARY_DIR}/src/visitors/symtab_visitor.hpp
+    ${PROJECT_BINARY_DIR}/src/visitors/checkparent_visitor.cpp
+    ${PROJECT_BINARY_DIR}/src/visitors/checkparent_visitor.hpp)
 
 set_source_files_properties(${VISITOR_GENERATED_SOURCES} PROPERTIES GENERATED TRUE)
 

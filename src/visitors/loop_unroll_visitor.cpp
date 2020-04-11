@@ -122,8 +122,8 @@ static std::shared_ptr<ast::ExpressionStatement> unroll_for_loop(
         auto new_block = node->get_statement_block()->clone();
         IndexRemover(index_var, i).visit_statement_block(new_block);
         statements.insert(statements.end(),
-                          new_block->statements.begin(),
-                          new_block->statements.end());
+                          new_block->get_statements().begin(),
+                          new_block->get_statements().end());
         delete new_block;
     }
 
@@ -139,7 +139,9 @@ static std::shared_ptr<ast::ExpressionStatement> unroll_for_loop(
 void LoopUnrollVisitor::visit_statement_block(ast::StatementBlock* node) {
     node->visit_children(*this);
 
-    for (auto iter = node->statements.begin(); iter != node->statements.end(); iter++) {
+    const auto& statements = node->get_statements();
+
+    for (auto iter = statements.begin(); iter != statements.end(); ++iter) {
         if ((*iter)->is_from_statement()) {
             auto statement = std::dynamic_pointer_cast<ast::FromStatement>((*iter));
 
@@ -154,7 +156,8 @@ void LoopUnrollVisitor::visit_statement_block(ast::StatementBlock* node) {
             /// unroll loop, replace current statement on successfull unroll
             auto new_statement = unroll_for_loop(statement);
             if (new_statement != nullptr) {
-                (*iter) = new_statement;
+                node->reset_statement(iter, new_statement);
+
                 std::string before = to_nmodl(statement.get());
                 std::string after = to_nmodl(new_statement.get());
                 logger->debug("LoopUnrollVisitor : \n {} \n unrolled to \n {}", before, after);
