@@ -9,6 +9,7 @@
 
 #include "parser/nmodl_driver.hpp"
 #include "test/utils/test_utils.hpp"
+#include "visitors/checkparent_visitor.hpp"
 #include "visitors/defuse_analyze_visitor.hpp"
 #include "visitors/inline_visitor.hpp"
 #include "visitors/lookup_visitor.hpp"
@@ -17,6 +18,7 @@
 
 using namespace nmodl;
 using namespace visitor;
+using namespace test;
 using namespace test_utils;
 
 using ast::AstNodeType;
@@ -42,6 +44,10 @@ std::vector<DUChain> run_defuse_visitor(const std::string& text, const std::stri
         auto node = block.get();
         chains.push_back(v.analyze(node, variable));
     }
+
+    // check that, after visitor rearrangement, parents are still up-to-date
+    CheckParentVisitor().visit_program(ast.get());
+
     return chains;
 }
 

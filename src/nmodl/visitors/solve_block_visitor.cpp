@@ -82,7 +82,7 @@ void SolveBlockVisitor::visit_program(ast::Program* node) {
     /// add new node NrnState with solve blocks from breakpoint block
     if (!nrn_state_solve_statements.empty()) {
         auto nrn_state = new ast::NrnStateBlock(nrn_state_solve_statements);
-        node->addNode(nrn_state);
+        node->emplace_back_node(nrn_state);
     }
 }
 

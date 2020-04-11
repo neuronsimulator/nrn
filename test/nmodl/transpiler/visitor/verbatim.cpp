@@ -8,11 +8,12 @@
 #include "catch/catch.hpp"
 
 #include "parser/nmodl_driver.hpp"
+#include "visitors/checkparent_visitor.hpp"
 #include "visitors/verbatim_visitor.hpp"
 
 using namespace nmodl;
 using namespace visitor;
-
+using namespace test;
 using nmodl::parser::NmodlDriver;
 
 
@@ -26,6 +27,10 @@ std::vector<std::string> run_verbatim_visitor(const std::string& text) {
 
     VerbatimVisitor v;
     v.visit_program(ast.get());
+
+    // check that, after visitor rearrangement, parents are still up-to-date
+    CheckParentVisitor().visit_program(ast.get());
+
     return v.verbatim_blocks();
 }
 

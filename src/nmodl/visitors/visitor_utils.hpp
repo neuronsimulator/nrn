@@ -29,7 +29,7 @@ std::string get_new_name(const std::string& name,
 
 
 /// Return pointer to local statement in the given block, otherwise nullptr
-ast::LocalVarVector* get_local_variables(const ast::StatementBlock* node);
+std::shared_ptr<ast::LocalListStatement> get_local_list_statement(const ast::StatementBlock* node);
 
 
 /// Add empty local statement to given block if already doesn't exist

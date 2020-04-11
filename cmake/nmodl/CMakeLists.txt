@@ -167,7 +167,9 @@ set(AUTO_GENERATED_FILES
     ${PROJECT_BINARY_DIR}/src/visitors/symtab_visitor.hpp
     ${PROJECT_BINARY_DIR}/src/visitors/symtab_visitor.cpp
     ${PROJECT_BINARY_DIR}/src/visitors/nmodl_visitor.hpp
-    ${PROJECT_BINARY_DIR}/src/visitors/nmodl_visitor.cpp)
+    ${PROJECT_BINARY_DIR}/src/visitors/nmodl_visitor.cpp
+    ${PROJECT_BINARY_DIR}/src/visitors/checkparent_visitor.cpp
+    ${PROJECT_BINARY_DIR}/src/visitors/checkparent_visitor.hpp)
 
 add_subdirectory(src/codegen)
 add_subdirectory(src/language)

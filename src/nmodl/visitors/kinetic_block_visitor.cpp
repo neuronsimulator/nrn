@@ -422,7 +422,7 @@ void KineticBlockVisitor::visit_kinetic_block(ast::KineticBlock* node) {
     // add new statements
     for (const auto& ode: odes) {
         logger->debug("KineticBlockVisitor :: -> adding statement: {}", ode);
-        kinetic_statement_block->addStatement(create_statement(ode));
+        kinetic_statement_block->emplace_back_statement(create_statement(ode));
     }
 
     // store pointer to kinetic block

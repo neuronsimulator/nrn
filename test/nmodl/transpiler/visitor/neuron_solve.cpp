@@ -9,12 +9,15 @@
 
 #include "parser/nmodl_driver.hpp"
 #include "test/utils/test_utils.hpp"
+#include "visitors/checkparent_visitor.hpp"
 #include "visitors/neuron_solve_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
 
+
 using namespace nmodl;
 using namespace visitor;
+using namespace test;
 using namespace test_utils;
 
 using nmodl::parser::NmodlDriver;
@@ -32,6 +35,10 @@ std::string run_cnexp_solve_visitor(const std::string& text) {
     NeuronSolveVisitor().visit_program(ast.get());
     std::stringstream stream;
     NmodlPrintVisitor(stream).visit_program(ast.get());
+
+    // check that, after visitor rearrangement, parents are still up-to-date
+    CheckParentVisitor().visit_program(ast.get());
+
     return stream.str();
 }
 

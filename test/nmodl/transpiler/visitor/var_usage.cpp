@@ -40,7 +40,7 @@ SCENARIO("Searching for variable name using VarUsageVisitor", "[visitor][var_usa
         )";
 
         auto ast = to_ast(nmodl_text);
-        auto node = ast->blocks[0];
+        auto node = ast->get_blocks().front();
 
         WHEN("Looking for existing variable") {
             THEN("Can find variables") {
@@ -75,7 +75,7 @@ SCENARIO("Searching for variable name using VarUsageVisitor", "[visitor][var_usa
         )";
 
         auto ast = to_ast(nmodl_text);
-        auto node = ast->blocks[0];
+        auto node = ast->get_blocks().front();
 
         WHEN("Looking for existing variable in outer block") {
             THEN("Can find variables") {

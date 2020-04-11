@@ -119,7 +119,7 @@ void SteadystateVisitor::visit_program(ast::Program* node) {
             if (solve_block->get_steadystate()) {
                 auto ss_block = create_steadystate_block(solve_block, deriv_blocks);
                 if (ss_block != nullptr) {
-                    node->addNode(ss_block);
+                    node->emplace_back_node(ss_block);
                 }
             }
         }

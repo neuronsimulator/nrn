@@ -16,10 +16,12 @@
 //#include "visitors/nmodl_visitor.hpp"
 #include "visitors/steadystate_visitor.hpp"
 //#include "visitors/sympy_solver_visitor.hpp"
+#include "visitors/checkparent_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
 
 using namespace nmodl;
 using namespace visitor;
+using namespace test;
 using namespace test_utils;
 
 using ast::AstNodeType;
@@ -61,6 +63,10 @@ std::vector<std::string> run_steadystate_visitor(
     for (const auto& r: res) {
         results.push_back(to_nmodl(r.get()));
     }
+
+    // check that, after visitor rearrangement, parents are still up-to-date
+    CheckParentVisitor().visit_program(ast.get());
+
     return results;
 }
 

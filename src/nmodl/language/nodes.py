@@ -214,19 +214,88 @@ class ChildNode(BaseNode):
     def get_add_methods(self):
         s = ''
         if self.add_method:
+            set_parent = "n->set_parent(this); "
+            if self.optional:
+                set_parent = f"""
+                        if (n) {{
+                            n->set_parent(this);                                
+                        }}
+                        """
             method = f"""
                          /**
                           * \\brief Add member to {self.varname} by raw pointer
                           */
-                         void add{self.class_name}({self.class_name} *n) {{
-                             {self.varname}.emplace_back(n);
+                         void emplace_back_{to_snake_case(self.class_name)}({self.class_name} *n) {{
+                            {self.varname}.emplace_back(n);
+
+                             // set parents
+                             {set_parent}
                          }}
 
                          /**
                           * \\brief Add member to {self.varname} by shared_ptr
                           */
-                         void add{self.class_name}(std::shared_ptr<{self.class_name}> n) {{
-                             {self.varname}.push_back(n);
+                         void emplace_back_{to_snake_case(self.class_name)}(std::shared_ptr<{self.class_name}> n) {{
+                            {self.varname}.emplace_back(n);
+                             
+                             // set parents
+                             {set_parent}
+                         }}
+
+                         /**
+                          * \\brief Erase member to {self.varname}
+                          */
+                         {self.class_name}Vector::const_iterator erase_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator first) {{
+                            return {self.varname}.erase(first);
+                         }}
+                         /**
+                          * \\brief Erase members to {self.varname}
+                          */
+                         {self.class_name}Vector::const_iterator erase_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator first, {self.class_name}Vector::const_iterator last) {{
+                            return {self.varname}.erase(first, last);
+                         }}
+
+                         /**
+                          * \\brief Insert member to {self.varname}
+                          */
+                         {self.class_name}Vector::const_iterator insert_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator position, const std::shared_ptr<{self.class_name}>& n) {{
+                             {set_parent}
+            
+                            return {self.varname}.insert(position, n);
+                         }}
+                         /**
+                          * \\brief Insert members to {self.varname}
+                          */
+                         template <class InputIterator>
+                         void insert_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator position, InputIterator first, InputIterator last) {{
+
+                             for (auto it = first; it != last; ++it) {{
+                                 auto& n = *it;
+                                 //set parents
+                                 {set_parent}
+                              }}
+            
+                            {self.varname}.insert(position, first, last);
+                         }}
+
+                         /**
+                          * \\brief Reset member to {self.varname}
+                          */
+                         void reset_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator position, {self.class_name}* n) {{
+                             //set parents
+                             {set_parent}
+                            
+                            {self.varname}[position - {self.varname}.begin()].reset(n);
+                         }}
+
+                         /**
+                          * \\brief Reset member to {self.varname}
+                          */
+                         void reset_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator position, std::shared_ptr<{self.class_name}> n) {{
+                             //set parents
+                             {set_parent}
+                            
+                            {self.varname}[position - {self.varname}.begin()] = n;
                          }}
                     """
             s = textwrap.dedent(method)
@@ -261,13 +330,17 @@ class ChildNode(BaseNode):
         return_type = self.member_typename
         return f"""
                    /**
-                    * \\brief Getter for member variable \\ref {class_name}.{self.varname}
+                    * \\brief Getter (const ref) for member variable \\ref {class_name}.{self.varname}
                     */
-                   {return_type} {getter_method}(){getter_override}{{
+                   const {return_type}& {getter_method}() const {getter_override} {{
                        return {self.varname};
-                   }}"""
+                   }}
+                """
 
-    def get_setter_method(self, class_name):
+
+
+
+    def get_setter_method_declaration(self, class_name):
         setter_method = "set_" + to_snake_case(self.varname)
         setter_type = self.member_typename
         reference = "" if self.is_base_type_node else "&&"
@@ -276,26 +349,86 @@ class ChildNode(BaseNode):
                        /**
                         * \\brief Setter for member variable \\ref {class_name}.{self.varname}
                         */
-                       void {setter_method}({setter_type} {self.varname}) {{
-                           this->{self.varname} = {self.varname};
-                       }}
+                       void {setter_method}({setter_type} {self.varname});
                     """
         else:
             return f"""
                        /**
                         * \\brief Setter for member variable \\ref {class_name}.{self.varname} (rvalue reference)
                         */
-                       void {setter_method}({setter_type}&& {self.varname}) {{
-                           this->{self.varname} = {self.varname};
-                       }}
-                       
+                       void {setter_method}({setter_type}&& {self.varname});
+
                        /**
                         * \\brief Setter for member variable \\ref {class_name}.{self.varname}
                         */
-                       void {setter_method}(const {setter_type}& {self.varname}) {{
+                       void {setter_method}(const {setter_type}& {self.varname});
+                    """
+
+
+
+    def get_setter_method_definition(self, class_name):
+        setter_method = "set_" + to_snake_case(self.varname)
+        setter_type = self.member_typename
+        reference = "" if self.is_base_type_node else "&&"
+
+
+        if self.is_base_type_node:
+            return f"""
+                       void {class_name}::{setter_method}({setter_type} {self.varname}) {{
+                           // why don't we use a coding convention instead of this workaround for
+                           // variable shadowing?
                            this->{self.varname} = {self.varname};
                        }}
                     """
+        elif self.is_vector:
+            return f"""
+                       void {class_name}::{setter_method}({setter_type}&& {self.varname}) {{
+                           this->{self.varname} = {self.varname};
+                           // set parents
+                           for (auto& ii : {self.varname}) {{
+                                   ii->set_parent(this);
+                            }}
+                       }}
+
+                       void {class_name}::{setter_method}(const {setter_type}& {self.varname}) {{
+                           this->{self.varname} = {self.varname};
+                           // set parents
+                           for (auto& ii : {self.varname}) {{
+                                   ii->set_parent(this);
+                            }}
+                       }}
+                    """
+        elif self.is_pointer_node or self.optional:
+            return f"""
+                       void {class_name}::{setter_method}({setter_type}&& {self.varname}) {{
+                           this->{self.varname} = {self.varname};
+                           // set parents
+                           if ({self.varname}) {{
+                               {self.varname}->set_parent(this);
+                           }}
+                       }}
+
+                       void {class_name}::{setter_method}(const {setter_type}& {self.varname}) {{
+                           this->{self.varname} = {self.varname};
+                           // set parents
+                           if ({self.varname}) {{
+                               {self.varname}->set_parent(this);
+                           }}
+                       }}
+                    """
+        else:
+            return f"""
+                       void {class_name}::{setter_method}({setter_type}&& {self.varname}) {{
+                           this->{self.varname} = {self.varname};
+                       }}
+
+                       void {class_name}::{setter_method}(const {setter_type}& {self.varname}) {{
+                           this->{self.varname} = {self.varname};
+                       }}
+                    """
+
+
+
 
     def __repr__(self):
         return "ChildNode(class_name='{}', nmodl_name='{}')".format(
@@ -400,7 +533,7 @@ class Node(BaseNode):
         initlist = [f'{c.varname}({c.varname})' for c in self.children]
 
         s = f"""{self.class_name}::{self.class_name}({', '.join(args)})
-                : {', '.join(initlist)} {{}}
+                : {', '.join(initlist)} {{ set_parent_in_children(); }}
         """
         return textwrap.dedent(s)
 
@@ -413,7 +546,7 @@ class Node(BaseNode):
         initlist = [f'{c.varname}({c.varname})' for c in self.children]
 
         s = f"""{self.class_name}::{self.class_name}({', '.join(args)})
-                : {', '.join(initlist)} {{}}
+                : {', '.join(initlist)} {{ set_parent_in_children(); }}
         """
         return textwrap.dedent(s)
 

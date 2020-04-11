@@ -59,7 +59,7 @@ struct PyAst: public Ast {
     }
 
 
-    Ast* clone() override {
+    Ast* clone() const override {
         PYBIND11_OVERLOAD(Ast*, Ast, clone, );
     }
 
@@ -95,8 +95,8 @@ struct PyAst: public Ast {
         PYBIND11_OVERLOAD(symtab::SymbolTable*, Ast, get_symbol_table, );
     }
 
-    std::shared_ptr<StatementBlock> get_statement_block() override {
-        PYBIND11_OVERLOAD(std::shared_ptr<StatementBlock>, Ast, get_statement_block, );
+    const std::shared_ptr<StatementBlock>& get_statement_block() const override {
+        PYBIND11_OVERLOAD(const std::shared_ptr<StatementBlock>&, Ast, get_statement_block, );
     }
 
     void set_symbol_table(symtab::SymbolTable* newsymtab) override {

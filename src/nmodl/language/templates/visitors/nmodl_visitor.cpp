@@ -63,13 +63,17 @@ using namespace ast;
         auto symbol = std::string(order, '\'');
         printer->add_element(symbol);
     {% elif node.class_name == node_info.BINARY_EXPRESSION_NODE and child.varname == node_info.BINARY_OPERATOR_NAME %}
-        std::string op = node->op.eval();
+        std::string op = node->get_op().eval();
         if(op == "=" || op == "&&" || op == "||" || op == "==")
             op = " " + op + " ";
         printer->add_element(op);
     {% else %}
         {% call guard(child.prefix, child.suffix) %}
-        node->get_{{ child.varname }}(){{ "->" if child.is_pointer_node else "." }}accept(*this);
+    {% if child.is_pointer_node %}
+        node->get_{{ child.varname }}()->accept(*this);
+    {% else %}
+        {{ child.class_name }}(node->get_{{ child.varname }}()).accept(*this);
+    {%- endif %}
         {% endcall %}
     {%- endif %}
 {%- endmacro -%}

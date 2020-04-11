@@ -60,7 +60,7 @@ namespace test_utils {
  * provided with the expected nmodl.
  */
 
-std::map<std::string, NmodlTestCase> nmdol_invalid_constructs{
+std::map<std::string, NmodlTestCase> nmodl_invalid_constructs{
     // clang-format off
     {
         "title_1",
