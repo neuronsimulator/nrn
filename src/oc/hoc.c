@@ -36,6 +36,8 @@ void (*p_nrnpython_finalize)();
 int nrn_inpython_;
 int (*p_nrnpy_pyrun)(const char* fname);
 
+#define use_rl_getc_function
+
 #if carbon || defined(MINGW)
 #include <pthread.h>
 extern int stdin_event_ready();
@@ -1646,12 +1648,35 @@ static int getc_hook(void) {
 	return i;
 }
 #else /* not carbon and not MINGW */
+
+#if defined(use_rl_getc_function)
+/* e.g. mac libedit.3.dylib missing rl_event_hook */
+
+extern int iv_dialog_is_running;
+extern int (*rl_getc_function)(void);
+static int getc_hook(void) {
+	int r;
+	unsigned char c;
+	run_til_stdin();
+	if ((r = read(0, &c, sizeof(c))) <= 0) {
+printf("getc_hook returning %d\n", r);
+		return r;
+	}else{
+		return (int)c;
+	}
+}
+
+#else /* not use_rl_getc_function */
+
 extern int (*rl_event_hook)(void);
 static int event_hook(void) {
 	int i;
 	i = run_til_stdin();
 	return i;
 }
+
+#endif /* not use_rl_getc_function */
+
 #endif /* not carbon and not MINGW */
 #endif /* not carbon */
 #endif /* READLINE */
@@ -1789,12 +1814,21 @@ IFGUI
 			}
 ENDGUI
 #else /* not MINGW */
+#if defined(use_rl_getc_function)
+			if (hoc_interviews && !hoc_in_yyparse) {
+				rl_getc_function = getc_hook;
+				hoc_notify_value();
+			}else{
+				rl_getc_function = NULL;
+			}
+#else /* not use_rl_getc_function */
 			if (hoc_interviews && !hoc_in_yyparse) {
 				rl_event_hook = event_hook;
 				hoc_notify_value();
 			}else{
 				rl_event_hook = NULL;
 			}
+#endif /* not use_rl_getc_function */
 #endif /* not MINGW */
 #endif /* INTERVIEWS */
 			if ((line = readline(hoc_promptstr)) == (char *)0) {
