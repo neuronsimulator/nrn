@@ -36,7 +36,7 @@ void (*p_nrnpython_finalize)();
 int nrn_inpython_;
 int (*p_nrnpy_pyrun)(const char* fname);
 
-#define use_rl_getc_function
+//#define use_rl_getc_function
 
 #if carbon || defined(MINGW)
 #include <pthread.h>
