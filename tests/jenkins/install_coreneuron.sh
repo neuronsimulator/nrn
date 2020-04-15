@@ -4,8 +4,6 @@ set -e
 
 source ${JENKINS_DIR:-.}/_env_setup.sh
 
-# Install reportinglib with spack to run reportinglib tests
-spack install reportinglib%intel
 reportinglib_dir=$(spack cd -i reportinglib%intel && pwd)
 
 CORENRN_TYPE="$1"

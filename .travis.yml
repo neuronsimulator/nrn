@@ -126,12 +126,15 @@ before_install:
     fi
   # install ISPC compiler (only for mac or linux build for now)
   - if [[ "$USE_ISPC" == "ON" ]]; then
+        ispc_version="v1.12.0";
         if [ "$TRAVIS_OS_NAME" == "linux" ]; then
             url_os="linux";
+            ispc_version_suffix="b";
         else
             url_os="macOS";
+            ispc_version_suffix="";
         fi;
-        url="https://sourceforge.net/projects/ispcmirror/files/v1.12.0/ispc-v1.12.0-${url_os}.tar.gz";
+        url="https://github.com/ispc/ispc/releases/download/${ispc_version}/ispc-${ispc_version}${ispc_version_suffix}-${url_os}.tar.gz";
         wget -O ispc.tar.gz $url;
         mkdir ispc && tar -xvzf ispc.tar.gz -C ispc --strip 1;
     fi

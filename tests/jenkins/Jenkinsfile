@@ -24,56 +24,71 @@ pipeline {
             }
         }
 
-        stage('spack install neuron+debug@develop'){
+        stage('Spack installations'){
             steps {
-                sh 'sh tests/jenkins/install_neuron.sh'
+                sh 'sh tests/jenkins/install_neuron_reportinglib.sh'
             }
         }
 
-        stage('build corenrn AoS'){
-            steps {
-                sh 'sh tests/jenkins/install_coreneuron.sh AoS'
-            }
-        }
-
-        stage('build corenrn SoA'){
-            steps {
-                sh 'sh tests/jenkins/install_coreneuron.sh SoA'
-            }
-        }
-
-        stage('build corenrn GPU-non-unified'){
-            steps {
-                sh 'sh tests/jenkins/install_coreneuron.sh GPU-non-unified'
-            }
-        }
-
-        stage('build corenrn GPU-unified'){
-            steps {
-                sh 'sh tests/jenkins/install_coreneuron.sh GPU-unified'
-            }
-        }
-
-        stage('unit and ring tests'){
+        stage('build CoreNeuron'){
             parallel{
                 stage('AoS'){
-                    steps{
-                        sh 'sh tests/jenkins/ringtest.sh AoS'
+                    stages{
+                        stage('build'){
+                            steps{
+                                sh 'sh tests/jenkins/install_coreneuron.sh AoS'
+                            }
+                        }
+                        stage('unit & ring tests'){
+                            steps{
+                                sh 'sh tests/jenkins/ringtest.sh AoS'
+                            }
+                        }
                     }
                 }
+
                 stage('SoA'){
-                    steps{
-                        sh 'sh tests/jenkins/ringtest.sh SoA'
+                    stages{
+                        stage('build'){
+                            steps {
+                                sh 'sh tests/jenkins/install_coreneuron.sh SoA'
+                            }
+                        }
+                        stage('unit & ring tests'){
+                            steps{
+                                sh 'sh tests/jenkins/ringtest.sh SoA'
+                            }
+                        }
                     }
                 }
+
                 stage('GPU-non-unified'){
-                    steps{
-                        sh 'sh tests/jenkins/ringtest.sh GPU-non-unified'
+                    stages{
+                        stage('build'){
+                            steps {
+                                sh 'sh tests/jenkins/install_coreneuron.sh GPU-non-unified'
+                            }
+                        }
+                        stage('unit & ring tests'){
+                            steps{
+                                sh 'sh tests/jenkins/ringtest.sh GPU-non-unified'
+                            }
+                        }
                     }
                 }
+
                 stage('GPU-unified'){
-                    steps{
-                        sh 'sh tests/jenkins/ringtest.sh GPU-unified'
+                    stages{
+                        stage('build'){
+                            steps {
+                                sh 'sh tests/jenkins/install_coreneuron.sh GPU-unified'
+                            }
+                        }
+                        stage('unit & ring tests'){
+                            steps{
+                                sh 'sh tests/jenkins/ringtest.sh GPU-unified'
+                            }
+                        }
                     }
                 }
             }
@@ -94,13 +109,28 @@ pipeline {
             }
         }
 
-        stage('checkout testcorenrn and ringtest'){
-            steps{
-                dir('testcorenrn'){
-                    git url: 'https://github.com/pramodk/testcorenrn.git'
+        stage('checkout tests'){
+            parallel{
+                stage('testcorenrn'){
+                    steps{
+                        dir('testcorenrn'){
+                            git url: 'https://github.com/pramodk/testcorenrn.git'
+                        }
+                    }
                 }
-                dir('ringtest'){
-                    git url: 'https://github.com/nrnhines/ringtest.git'
+                stage('ringtest'){
+                    steps{
+                        dir('ringtest'){
+                            git url: 'https://github.com/nrnhines/ringtest.git'
+                        }
+                    }
+                }
+                stage('tqperf'){
+                    steps{
+                        dir('tqperf'){
+                            git url: 'https://github.com/nrnhines/tqperf.git'
+                        }
+                    }
                 }
             }
         }
@@ -115,6 +145,11 @@ pipeline {
                 stage('nrnivmodl ringtest'){
                     steps{
                         sh 'sh tests/jenkins/nrnivmodl.sh ringtest'
+                    }
+                }
+                stage('nrnivmodl tqperf'){
+                    steps{
+                        sh 'sh tests/jenkins/nrnivmodl.sh tqperf'
                     }
                 }
                 stage('nrnivmodl-core testcorenrn AoS'){
@@ -135,6 +170,16 @@ pipeline {
                 stage('nrnivmodl-core ringtest SoA'){
                     steps{
                         sh 'sh tests/jenkins/nrnivmodl-core.sh ringtest SoA'
+                    }
+                }
+                stage('nrnivmodl-core tqperf AoS'){
+                    steps{
+                        sh 'sh tests/jenkins/nrnivmodl-core.sh tqperf AoS'
+                    }
+                }
+                stage('nrnivmodl-core tqperf SoA'){
+                    steps{
+                        sh 'sh tests/jenkins/nrnivmodl-core.sh tqperf SoA'
                     }
                 }
             }
@@ -324,6 +369,25 @@ pipeline {
                         stage('corenrn restore SoA'){
                             steps{
                                 sh 'sh tests/jenkins/run_corenrn_restore.sh SoA 6'
+                            }
+                        }
+                    }
+                }
+                stage('tqperf'){
+                    stages{
+                        stage('neuron'){
+                            steps{
+                                sh 'sh tests/jenkins/run_neuron.sh tqperf tqperf 6'
+                            }
+                        }
+                        stage('corenrn AoS'){
+                            steps{
+                                sh 'sh tests/jenkins/run_corenrn.sh tqperf AoS tqperf 6'
+                            }
+                        }
+                        stage('corenrn SoA'){
+                            steps{
+                                sh 'sh tests/jenkins/run_corenrn.sh tqperf SoA tqperf 6'
                             }
                         }
                     }

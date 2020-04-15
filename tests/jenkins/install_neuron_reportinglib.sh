@@ -19,9 +19,14 @@ patch_neuron() (
 )
 
 set -e
+set -x
 source ${JENKINS_DIR:-.}/_env_setup.sh
+
+# Install reportinglib with spack to run reportinglib tests
+spack install reportinglib%intel
 
 patch_neuron
 spack install neuron+debug@develop
 source $SPACK_ROOT/share/spack/setup-env.sh
-module av neuron
+module av neuron reportinglib
+
