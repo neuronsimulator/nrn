@@ -9,7 +9,7 @@ set -xe
 
 build_wheel() {
   local py_bin="$1"
-  local py_ver=$("$py_bin" -c "import sys; print('%d%d' % tuple(sys.version_info)[:2])"
+  local py_ver=$("$py_bin" -c "import sys; print('%d%d' % tuple(sys.version_info)[:2])")
   local venv_dir="venv$py_ver"
 
   if [ "$py_ver" = "34" ]; then

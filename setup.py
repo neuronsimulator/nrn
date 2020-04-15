@@ -289,7 +289,6 @@ def mac_osx_setenv():
     except ImportError:
         from setuptools.dist import Distribution
         Distribution().fetch_build_eggs(["wheel"])
-    import wheel
     from wheel import pep425tags
 
     sdk_root = subprocess.check_output(['xcrun', '--sdk', 'macosx', '--show-sdk-path']
