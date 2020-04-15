@@ -298,6 +298,8 @@ def mac_osx_setenv():
 
     # Match Python OSX framework
     py_osx_framework = pep425tags.extract_macosx_min_system_version(sys.executable)
+    if py_osx_framework is None:
+        py_osx_framework=[10, 9]
     if py_osx_framework[1] > 9:
         print("[ WARNING ] You are building a wheel with a Python distribution compiled "
               "for a recent MACOS version (from brew?). Your wheel won't be portable.\n"
