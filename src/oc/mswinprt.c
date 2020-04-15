@@ -15,6 +15,10 @@
 #include "hoc.h"
 #include "../mswin/extra/d2upath.c"
 
+#include "gui-redirect.h"
+extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+extern double (*nrnpy_object_to_double_)(Object*);
+
 extern char* neuron_home;
 extern char* neuron_home_dos;
 extern void hoc_quit();
@@ -361,8 +365,8 @@ int getpid() {
 //hoc_regraph(){ret();pushx(0.);}
 //hoc_plotx(){ret();pushx(0.);}
 //hoc_ploty(){ret();pushx(0.);}
-void hoc_Plt() {ret(); pushx(0.);}
-void hoc_Setcolor(){ret(); pushx(0.);}
+void hoc_Plt() {TRY_GUI_REDIRECT_DOUBLE("plt", NULL); ret(); pushx(0.);}
+void hoc_Setcolor(){TRY_GUI_REDIRECT_DOUBLE("setcolor", NULL); ret(); pushx(0.);}
 void hoc_Lw(){ret(); pushx(0.);}
 // TODO : just temporary fix to avoid duplicate symbol error
 //void hoc_settext(){ret(); pushx(0.);}

@@ -4,6 +4,9 @@
    added plots in fig format
    */
 #include "hoc.h"
+#include "gui-redirect.h"
+extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+extern double (*nrnpy_object_to_double_)(Object*);
 
 extern void Fig_file(const char*, int);
 
@@ -11,6 +14,7 @@ extern void Fig_file(const char*, int);
 
 void Plt(void)
 {
+	TRY_GUI_REDIRECT_DOUBLE("plt", NULL);
 	int mode;
 	double x, y;
 #ifndef WIN32
@@ -36,6 +40,7 @@ void Plt(void)
 
 void Setcolor(void)
 {
+	TRY_GUI_REDIRECT_DOUBLE("setcolor", NULL);
 	double i;
 	i = set_color((int)*getarg(1));
 	ret();

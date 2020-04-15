@@ -46,6 +46,7 @@ extern Object** hoc_objgetarg(int);
 extern Object* hoc_name2obj(const char* name, int index);
 extern int ifarg(int);
 extern char** hoc_temp_charptr(void);
+extern int hoc_is_temp_charptr(char** cpp);
 extern void hoc_assign_str(char** pstr, const char* buf);
 extern double chkarg(int, double low, double high);
 extern double hoc_call_func(Symbol*, int narg); /* push first arg first. Warning: if the function is inside an object make sure you know what you are doing.*/

@@ -702,8 +702,10 @@ CellGroup* mk_cellgroups() {
   if (corenrn_direct == false) for (int i=0; i < nrn_nthread; ++i) {
     if (cgs[i].n_real_output && cgs[i].output_gid[0] >= 0) {
       cgs[i].group_id = cgs[i].output_gid[0];
+    }else if (cgs[i].group_id >= 0) {
+      // set above to first artificial cell with a ps->output_index >= 0
     }else{
-      hoc_execerror("A thread has no real cells or the first cell has no gid", NULL);
+      hoc_execerror("A thread has no real cell or ARTIFICIAL_CELL with a gid", NULL);
     }
   }
 

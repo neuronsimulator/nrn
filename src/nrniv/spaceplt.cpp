@@ -23,6 +23,7 @@ extern int nrn_multisplit_active_;
 extern int hoc_execerror_messages;
 extern int node_index(Section*, double);
 extern int structure_change_cnt, nrn_shape_changed_;
+extern int hoc_return_type_code;
 };
 
 class SecPos {
@@ -127,7 +128,10 @@ public:
 	float right();
 	void list(Object*);
 	void compute();
+	int get_color(void);
+	void set_color(int);
 private:
+	int color_ = 1;
 	void set_x();
 	void fill_pointers();
 private:
@@ -185,12 +189,13 @@ static double s_list(void* v) {
 }
 
 static double s_color(void* v) {
-#if HAVE_IV
-IFGUI
-	((RangeVarPlot*)v)->color(colors->color((int)chkarg(1,0,100)));
-ENDGUI
-#endif
-	return 0.;
+	RangeVarPlot* me = (RangeVarPlot*) v;
+	hoc_return_type_code = 1; // integer
+	int old_color = me -> get_color();
+	if (ifarg(1)) {
+		me -> set_color((int)chkarg(1,0,100));
+	}
+	return old_color;
 }
 
 static double to_vector(void* v) {
@@ -339,6 +344,22 @@ RangeVarPlot::~RangeVarPlot() {
 	oc.notify_detach(this);
 #endif
 }
+
+int RangeVarPlot::get_color(void) {
+	return color_;
+}
+
+
+void RangeVarPlot::set_color(int new_color) {
+	color_ = new_color;
+#if HAVE_IV
+IFGUI
+	color(colors->color(color_));
+ENDGUI
+#endif
+}
+
+
 
 #if HAVE_IV
 void RangeVarPlot::update(Observable* o) {

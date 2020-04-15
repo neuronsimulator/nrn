@@ -39,6 +39,10 @@ extern "C" {
 
 #include "parse.h"
 extern void (*nrnpy_sectionlist_helper_)(void*, Object*);
+extern Object** (*nrnpy_gui_helper_)(const char*, Object*);
+extern Object** (*nrnpy_gui_helper3_)(const char*, Object*, int);
+extern char** (*nrnpy_gui_helper3_str_)(const char*, Object*, int);
+extern double (*nrnpy_object_to_double_)(Object*);
 void lvappendsec_and_ref(void* sl, Section* sec);
 extern Section* nrn_noerr_access();
 extern void hoc_pushs(Symbol*);
@@ -82,6 +86,7 @@ extern IvocVect* (*nrnpy_vec_from_python_p_)(void*);
 extern Object** (*nrnpy_vec_to_python_p_)(void*);
 extern Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
 int nrnpy_set_vec_as_numpy(PyObject* (*p)(int, double*));  // called by ctypes.
+int nrnpy_set_gui_callback(PyObject*);
 extern double** nrnpy_setpointer_helper(PyObject*, PyObject*);
 extern Symbol* ivoc_alias_lookup(const char* name, Object* ob);
 extern int nrn_netcon_weight(void*, double**);
@@ -160,6 +165,7 @@ enum ObjectType {
   HocScalarPtr = 9,
   HocArrayIncomplete =
       10,  // incomplete pointer to a hoc array (similar to HocArray)
+  HocRefPStr = 11,
 };
 enum IteratorState {
   Begin,
@@ -173,6 +179,7 @@ typedef struct {
   union {
     double x_;
     char* s_;
+    char** pstr_;
     Object* ho_;
     double* px_;
     PyHoc::IteratorState its_;
@@ -186,6 +193,8 @@ typedef struct {
 
 static PyObject* rvp_plot = NULL;
 static PyObject* plotshape_plot = NULL;
+static PyObject* cpp2refstr(char** cpp);
+static PyObject* get_mech_object_ = NULL;
 
 PyTypeObject* hocobject_type;
 static PyObject* hocobj_call(PyHocObject* self, PyObject* args,
@@ -225,6 +234,9 @@ static void hocobj_dealloc(PyHocObject* self) {
   }
   if (self->indices_) {
     delete[] self->indices_;
+  }
+  if (self->type_ == PyHoc::HocRefPStr && self->u.pstr_) {
+    // nothing deleted
   }
   ((PyObject*)self)->ob_type->tp_free((PyObject*)self);
 }
@@ -329,7 +341,9 @@ static PyObject* hocobj_name(PyObject* pself, PyObject* args) {
   } else if (self->type_ == PyHoc::HocRefNum) {
     sprintf(cp, "<hoc ref value %g>", self->u.x_);
   } else if (self->type_ == PyHoc::HocRefStr) {
-    sprintf(cp, "<hoc ref value \"%s\">", self->u.s_);
+    sprintf(cp, "<hoc ref str \"%s\">", self->u.s_);
+  } else if (self->type_ == PyHoc::HocRefPStr) {
+    sprintf(cp, "<hoc ref pstr \"%s\">", *self->u.pstr_);
   } else if (self->type_ == PyHoc::HocRefObj) {
     sprintf(cp, "<hoc ref value \"%s\">", hoc_object_name(self->u.ho_));
   } else if (self->type_ == PyHoc::HocForallSectionIterator) {
@@ -385,6 +399,8 @@ static int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
         hoc_pushobj(&pho->u.ho_);
       } else if (tp == PyHoc::HocScalarPtr) {
         hoc_pushpx(pho->u.px_);
+      } else if (tp == PyHoc::HocRefPStr) {
+        hoc_pushstr(pho->u.pstr_);
       } else {
         // make a hoc python object and push that
         Object* ob = NULL;
@@ -1002,15 +1018,31 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
       if (!sym) {
         return PyObject_GenericGetAttr((PyObject*)subself, pyname);
       }
-      if (sym->type != VAR && sym->type != RANGEVAR && sym->type != VARALIAS) {
+      if (sym->type == STRING) {
+        Objectdata* od = hoc_objectdata_save();
+        if (self->type_ == PyHoc::HocTopLevelInterpreter) {
+          hoc_objectdata = hoc_top_level_data;
+        }else if (self->type_ == PyHoc::HocObject && !self->ho_->ctemplate->constructor) {
+          hoc_objectdata = self->ho_->u.dataspace;
+        }else{
+          hoc_objectdata = hoc_objectdata_restore(od);
+          assert(0);
+          return NULL;
+        }
+        char** cpp = OPSTR(sym);
+        hoc_objectdata = hoc_objectdata_restore(od);
+        result = cpp2refstr(cpp);
+        return result;
+      }else if (sym->type != VAR && sym->type != RANGEVAR && sym->type != VARALIAS) {
         char buf[200];
         sprintf(buf,
-                "Hoc pointer error, %s is not a hoc variable or range variable",
+                "Hoc pointer error, %s is not a hoc variable or range variable or strdef",
                 sym->name);
         PyErr_SetString(PyExc_TypeError, buf);
         return NULL;
+      }else{
+        isptr = 1;
       }
-      isptr = 1;
     } else if (is_obj_type(self->ho_, "Vector") &&
                strcmp(n, "__array_interface__") == 0) {
       // return __array_interface__
@@ -1237,7 +1269,8 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
     default:  // otherwise
     {
       if (PyDict_GetItemString(pmech_types, n)) {
-        PyErr_Format(PyExc_TypeError, "Cannot access %s directly; it is a mechanism that may be inserted into a section.", n);
+        result = PyObject_CallFunction(get_mech_object_, "s", n);
+        break;
       } else if (PyDict_GetItemString(rangevars_, n)) {
         PyErr_Format(PyExc_TypeError, "Cannot access %s directly; it is a range variable and may be accessed via a section or segment.", n);
       } else {
@@ -1714,6 +1747,8 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
       result = Py_BuildValue("d", po->u.x_);
     } else if (po->type_ == PyHoc::HocRefStr) {
       result = Py_BuildValue("s", po->u.s_);
+    } else if (po->type_ == PyHoc::HocRefPStr) {
+      result = Py_BuildValue("s", *po->u.pstr_);
     } else {
       result = nrnpy_ho2po(po->u.ho_);
     }
@@ -1844,6 +1879,10 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
       char* ts;
       PyArg_Parse(arg, "s", &ts);
       hoc_assign_str(&po->u.s_, ts);
+    } else if (po->type_ == PyHoc::HocRefPStr) {
+      char* ts;
+      PyArg_Parse(arg, "s", &ts);
+      hoc_assign_str(po->u.pstr_, ts);
     } else {
       PyObject* tp;
       PyArg_Parse(arg, "O", &tp);
@@ -1947,6 +1986,27 @@ static PyObject* mkref(PyObject* self, PyObject* args) {
   return NULL;
 }
 
+static PyObject* cpp2refstr(char** cpp) {
+  // If cpp is from a hoc_temp_charptr (see src/oc/code.c) then create a
+  // HocRefStr and copy *cpp. Otherwise, assume it is from a hoc strdef
+  // or a HocRefStr which is persistent over the life time of this returned
+  // PyObject so that it is safe to create a HocRefPStr such that
+  // u.pstr_ = cpp and it is not needed
+  // for the HocRefPStr destructor to delete either u.pstr_ or *u.pstr_.
+  
+  assert(cpp && *cpp); // not really sure about the *cpp
+  PyHocObject* result = (PyHocObject*)hocobj_new(hocobject_type, 0, 0);
+  if (hoc_is_temp_charptr(cpp)) { // return HocRefStr HocObject.
+    result->type_ = PyHoc::HocRefStr;
+    result->u.s_ = 0;
+    hoc_assign_str(&result->u.s_, *cpp);    
+  }else{
+    result->type_ = PyHoc::HocRefPStr;
+    result->u.pstr_ = cpp;
+  }
+  return (PyObject*)result;
+}
+
 static PyObject* setpointer(PyObject* self, PyObject* args) {
   PyObject* ref, *name, *pp, * result = NULL;
   if (PyArg_ParseTuple(args, "O!OO", hocobject_type, &ref, &name, &pp) == 1) {
@@ -2047,6 +2107,7 @@ static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
         case PyHoc::HocRefNum:
         case PyHoc::HocRefStr:
         case PyHoc::HocRefObj:
+        case PyHoc::HocRefPStr:
           /* only same objects can point to same h.ref */
           self_ptr = (void*) self;
           break;
@@ -2233,10 +2294,121 @@ int nrnpy_set_vec_as_numpy(PyObject* (*p)(int, double*)) {
   return 0;
 }
 
-int nrnpy_set_graph_plots(PyObject* rvp_plot0, PyObject* plotshape_plot0) {
+int nrnpy_set_toplevel_callbacks(PyObject* rvp_plot0, PyObject* plotshape_plot0, PyObject* get_mech_object_0) {
   rvp_plot = rvp_plot0;
   plotshape_plot = plotshape_plot0;
+  get_mech_object_ = get_mech_object_0;
   return 0;
+}
+
+static PyObject* gui_callback=NULL;
+int nrnpy_set_gui_callback(PyObject* new_gui_callback) {
+  gui_callback = new_gui_callback;
+  return 0;
+}
+
+static double object_to_double_(Object* obj) {
+  PyObject* const pyobj = nrnpy_ho2po(obj);
+  Py_INCREF(pyobj);
+  const double result = PyFloat_AsDouble(pyobj);
+  Py_DECREF(pyobj);
+  return result;
+}
+
+static PyObject* gui_helper_3_helper_(const char* name, Object* obj, int handle_strptr) {
+  int narg = 1;
+  while (ifarg(narg)) {
+    narg++;
+  }
+  narg--;
+  PyObject* args = PyTuple_New(narg + 3);
+  PyObject* pyname = PyString_FromString(name);
+  PyTuple_SetItem(args, 0, pyname);
+  for(int iarg=0; iarg<narg; iarg++) {
+    const int iiarg = iarg + 1;
+    if (hoc_is_object_arg(iiarg)) {
+      PyObject* active_obj = nrnpy_ho2po(*hoc_objgetarg(iiarg));
+      PyTuple_SetItem(args, iarg + 3, active_obj);
+    } else if (hoc_is_pdouble_arg(iiarg)) {
+      PyHocObject* ptr_nrn = (PyHocObject*)hocobj_new(hocobject_type, 0, 0);
+      ptr_nrn->type_ = PyHoc::HocScalarPtr;
+      ptr_nrn->u.px_ = hoc_pgetarg(iiarg);
+      PyObject* py_ptr = (PyObject*) ptr_nrn;
+      Py_INCREF(py_ptr);
+      PyTuple_SetItem(args, iarg + 3, py_ptr);
+    } else if (hoc_is_str_arg(iiarg)) {
+        if (handle_strptr > 0) {
+          char** str_arg = hoc_pgargstr(iiarg);
+          PyObject* py_ptr = cpp2refstr(str_arg);
+          Py_INCREF(py_ptr);
+          PyTuple_SetItem(args, iarg + 3, py_ptr);
+        } else {
+          PyObject* py_str = PyString_FromString(gargstr(iiarg));
+          PyTuple_SetItem(args, iarg + 3, py_str); }
+    } else if (hoc_is_double_arg(iiarg)) {
+      PyObject* py_double = PyFloat_FromDouble(*getarg(iiarg));
+      PyTuple_SetItem(args, iarg + 3, py_double);
+    }
+  }
+  PyObject* my_obj;
+  if (obj) {
+    // there's a problem with this: if obj is intrinisically a PyObject, then this is increasing it's refcount and that's
+    my_obj = nrnpy_ho2po(obj);
+  } else {
+    my_obj = Py_None;
+    Py_INCREF(Py_None);
+  }
+  PyTuple_SetItem(args, 1, my_obj); // steals a reference
+  PyObject* my_obj2;
+  if (hoc_thisobject && name[0] != '~') {
+    my_obj2 = nrnpy_ho2po(hoc_thisobject); // in the case of a HOC object, such as happens with List.browser, the ref count will be 1
+  } else {
+    my_obj2 = Py_None;
+    Py_INCREF(Py_None);
+  }
+
+  PyTuple_SetItem(args, 2, my_obj2); // steals a reference to my_obj2
+  PyObject* po = PyObject_CallObject(gui_callback, args);
+  if (PyErr_Occurred()) {
+    // if there was an error, display it and return 0. 
+    // It's not a great solution, but it beats segfaulting
+    PyErr_Print();
+    po = PyLong_FromLong(0);
+  }
+  Py_DECREF(args); // Note: this decreases the ref count of my_obj and my_obj2
+  return po;
+}
+
+static Object** gui_helper_3_(const char* name, Object* obj, int handle_strptr) {
+  if (gui_callback) {
+    PyObject* po = gui_helper_3_helper_(name, obj, handle_strptr);
+    // TODO: something that allows None (currently nrnpy_po2ho returns NULL if po == Py_None)
+    Object* ho = nrnpy_po2ho(po);
+    Py_DECREF(po);
+    if (ho) {
+      --ho->refcount;
+    }
+    return hoc_temp_objptr(ho);
+  }
+  return NULL;
+}
+
+static char** gui_helper_3_str_(const char* name, Object* obj, int handle_strptr) {
+  if (gui_callback) {
+    PyObject* po = gui_helper_3_helper_(name, obj, handle_strptr);
+    char** ts = hoc_temp_charptr();
+    Py2NRNString str(po, true);
+    *ts = str.c_str();
+    // TODO: is there a memory leak here? do I need to: s2free.push_back(*ts);    
+    Py_DECREF(po);
+    return ts;
+  }
+  return NULL;
+}
+
+
+static Object** gui_helper_(const char* name, Object* obj) {
+  return gui_helper_3_(name, obj, 0);
 }
 
 static Object** vec_as_numpy_helper(int size, double* data) {
@@ -2675,6 +2847,11 @@ myPyMODINIT_FUNC nrnpy_hoc() {
   nrnpy_vec_to_python_p_ = nrnpy_vec_to_python;
   nrnpy_vec_as_numpy_helper_ = vec_as_numpy_helper;
   nrnpy_sectionlist_helper_ = sectionlist_helper_;
+  nrnpy_gui_helper_ = gui_helper_;
+  nrnpy_gui_helper3_ = gui_helper_3_;
+  nrnpy_gui_helper3_str_ = gui_helper_3_str_;
+
+  nrnpy_object_to_double_ = object_to_double_;
   PyLockGIL lock;
 
   char endian_character = 0;

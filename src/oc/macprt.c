@@ -6,6 +6,10 @@
 #include <errno.h>
 #include "hoc.h"
 
+#include "gui-redirect.h"
+extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+extern double (*nrnpy_object_to_double_)(Object*);
+
 extern void debugfile(const char*, ...);
 extern int oc_print_from_dll(char*);
 extern void single_event_run();
@@ -118,17 +122,17 @@ int getpid() {
 }
 */
 hoc_close_plot(){}
-hoc_Graphmode(){ret();pushx(0.);}
-hoc_Graph(){ret();pushx(0.);}
-hoc_regraph(){ret();pushx(0.);}
-hoc_plotx(){ret();pushx(0.);}
-hoc_ploty(){ret();pushx(0.);}
-hoc_Plt() {ret(); pushx(0.);}
-hoc_Setcolor(){ret(); pushx(0.);}
+hoc_Graphmode(){TRY_GUI_REDIRECT_DOUBLE("graphmode", NULL);ret();pushx(0.);}
+hoc_Graph(){TRY_GUI_REDIRECT_DOUBLE("graph", NULL); ret();pushx(0.);}
+hoc_regraph(){TRY_GUI_REDIRECT_DOUBLE("regraph", NULL); ret();pushx(0.);}
+hoc_plotx(){TRY_GUI_REDIRECT_DOUBLE("plotx", NULL); ret();pushx(0.);}
+hoc_ploty(){TRY_GUI_REDIRECT_DOUBLE("ploty", NULL); ret();pushx(0.);}
+hoc_Plt() {TRY_GUI_REDIRECT_DOUBLE("plt", NULL); ret(); pushx(0.);}
+hoc_Setcolor(){TRY_GUI_REDIRECT_DOUBLE("setcolor", NULL); ret(); pushx(0.);}
 hoc_Lw(){ret(); pushx(0.);}
-hoc_settext(){ret(); pushx(0.);}
-hoc_Plot(){ret();pushx(0.);}
-hoc_axis(){ret();pushx(0.);}
+hoc_settext(){TRY_GUI_REDIRECT_DOUBLE("settext", NULL);ret(); pushx(0.);}
+hoc_Plot(){TRY_GUI_REDIRECT_DOUBLE("plot", NULL); ret();pushx(0.);}
+hoc_axis(){TRY_GUI_REDIRECT_DOUBLE("axis", NULL); ret();pushx(0.);}
 hoc_fmenu() {ret();pushx(0.);}
 
 //int gethostname() {printf("no gethostname\n");}

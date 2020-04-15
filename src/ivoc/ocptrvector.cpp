@@ -18,9 +18,16 @@
 #if HAVE_IV
 #include "graph.h"
 #endif
+#include "gui-redirect.h"
+extern "C" {
+	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+	extern double (*nrnpy_object_to_double_)(Object*);
+}
 
 extern "C" int hoc_return_type_code;
 static double dummy;
+
+static Symbol* pv_class_sym_;
 
 OcPtrVector::OcPtrVector(int sz) {
 	label_ = NULL;
@@ -176,6 +183,7 @@ static int narg() {
 }
 
 static double ptr_plot(void* v) {
+	TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE("PtrVector.plot", pv_class_sym_, v);
 	OcPtrVector* opv = (OcPtrVector*)v;
 #if HAVE_IV
 IFGUI
@@ -263,4 +271,5 @@ static void destruct(void* v) {
 
 void OcPtrVector_reg() {
 	class2oc("PtrVector", cons, destruct, members, 0, 0, retstr_members);
+	pv_class_sym_ = hoc_lookup("PtrVector");
 }

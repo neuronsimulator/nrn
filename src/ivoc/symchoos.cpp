@@ -55,8 +55,16 @@
 
 #include "oc2iv.h"
 #include "parse.h"
+#include "ivoc.h"
 #endif /* HAVE_IV */
+
 #include "classreg.h"
+#include "gui-redirect.h"
+extern "C" {
+	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+	extern double (*nrnpy_object_to_double_)(Object*);
+}
+
 #if HAVE_IV
 
 class SymChooserImpl {
@@ -137,6 +145,7 @@ void SymBrowserAccept::execute(){
 #endif /* HAVE_IV */
 
 static void* scons(Object*) {
+	TRY_GUI_REDIRECT_OBJ("SymChooser", NULL);
 #if HAVE_IV
 	SymChooser* sc = NULL;
 IFGUI
@@ -164,12 +173,14 @@ ENDGUI
 #endif /* HAVE_IV */
 }
 static void sdestruct(void* v) {
+	TRY_GUI_REDIRECT_NO_RETURN("~SymChooser", v);
 #if HAVE_IV
 	SymChooser* sc = (SymChooser*)v;
 	Resource::unref(sc);
 #endif /* HAVE_IV */
 }
 static double srun(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("SymChooser.run", v);
 #if HAVE_IV
 	bool b = false;
 IFGUI
@@ -183,6 +194,7 @@ ENDGUI
 #endif /* HAVE_IV */
 }
 static double text(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("SymChooser.text", v);
 #if HAVE_IV
 IFGUI
 	SymChooser* sc = (SymChooser*)v;
