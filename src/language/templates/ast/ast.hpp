@@ -348,14 +348,6 @@ struct Ast: public std::enable_shared_from_this<Ast> {
    * \ref Check Ast::parent for more information
    */
   virtual void set_parent(Ast* p);
-
-  /**
-   *\brief Set this object as parent for all the children
-   *
-   * This should be called in every object (with children) constructor
-   * to set the parents.
-   */
-  virtual void set_parent_in_children();
 };
 
 /** @} */  // end of ast_class
@@ -714,12 +706,15 @@ struct Ast: public std::enable_shared_from_this<Ast> {
         {% endif %}
 
         {% if node.children %}
+      private:
             /**
-             * \brief Set parents in children
+             *\brief Set this object as parent for all the children
              *
-             * Usually called in constructors
+             * This should be called in every object (with children) constructor
+             * to set parents. Since it is called only in the constructors it
+             * should not be virtual to avoid ambiguities (issue #295).
              */
-            virtual void set_parent_in_children() override;
+            void set_parent_in_children();
         {% endif %}
     };
 

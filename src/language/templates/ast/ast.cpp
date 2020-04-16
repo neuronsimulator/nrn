@@ -73,10 +73,6 @@ void Ast::set_parent(Ast* p) {
     parent = p;
 }
 
-void Ast::set_parent_in_children() {
-    throw std::runtime_error("set_parent_in_children not implemented");
-}
-
 
     {% for node in nodes %}
 
