@@ -205,7 +205,8 @@ def setup_package():
             '-DNRN_ENABLE_INTERVIEWS=ON',
             '-DIV_ENABLE_X11_DYNAMIC=ON',
             '-DNRN_ENABLE_RX3D=OFF',  # Never build within CMake
-            '-DNRN_ENABLE_MPI=OFF',
+            '-DNRN_ENABLE_MPI=ON',
+            '-DNRN_ENABLE_MPI_DYNAMIC=ON',
             '-DNRN_ENABLE_PYTHON_DYNAMIC=ON',
             '-DNRN_ENABLE_MODULE_INSTALL=OFF',
             '-DNRN_USE_REL_RPATH=ON',
