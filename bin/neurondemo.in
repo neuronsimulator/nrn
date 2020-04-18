@@ -24,7 +24,8 @@ fi
 
 export NRNDEMO
 
-if [ ! -f "${NRNDEMO}neuron" ] ; then
+# check if symlink exist
+if [ ! -L "${NRNDEMO}neuron" ] ; then
 	(cd "${NRNDEMO}release" ; "${NRNBIN}nrnivmodl" ; cd .. ; rm -f neuron ; ln -s release/${MODSUBDIR}/special neuron)
 fi
 
