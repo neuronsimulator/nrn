@@ -172,7 +172,7 @@ class Docs(Command):
 def setup_package():
     NRN_PY_ROOT = 'share/lib/python'
     NRN_PY_SCRIPTS = os.path.join(NRN_PY_ROOT, 'scripts')
-    NRN_COLLECT_DIRS = ['bin', 'lib', 'include', 'share/nrn/lib/hoc', 'share/nrn/lib']
+    NRN_COLLECT_DIRS = ['bin', 'lib', 'include', 'share/nrn/lib/hoc', 'share/nrn/lib', 'share/nrn/demo']
 
     docs_require = []  # sphinx, themes, etc
     maybe_rxd_reqs = ['numpy', 'Cython'] if RX3D else []
@@ -201,7 +201,8 @@ def setup_package():
         cmake_collect_dirs=NRN_COLLECT_DIRS,
         cmake_flags=[
             '-DNRN_ENABLE_CORENEURON=OFF',
-            '-DNRN_ENABLE_INTERVIEWS=OFF',
+            '-DNRN_ENABLE_INTERVIEWS=ON',
+            '-DIV_ENABLE_X11_DYNAMIC=ON',
             '-DNRN_ENABLE_RX3D=OFF',  # Never build within CMake
             '-DNRN_ENABLE_MPI=OFF',
             '-DNRN_ENABLE_PYTHON_DYNAMIC=ON',

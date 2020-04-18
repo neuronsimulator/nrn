@@ -8,8 +8,9 @@ if test "x${NRNHOME}" = x ; then
 	exec_prefix=@exec_prefix@
 	NRNBIN=@bindir@/
 else
-        prefix="$NRNHOME"
-	exec_prefix="${prefix}/${ARCH}"
+    prefix="$NRNHOME"
+    @USING_CMAKE_FALSE@exec_prefix="${prefix}/${ARCH}"
+    @USING_CMAKE_TRUE@exec_prefix="${prefix}"
 	NRNBIN="${exec_prefix}/bin/"
 fi
 

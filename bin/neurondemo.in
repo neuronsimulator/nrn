@@ -10,8 +10,9 @@ if test "x${NRNHOME}" = x ; then
 	NRNBIN=@bindir@/
 	NRNDEMO=@prefix@/share/@PACKAGE@/demo/
 else
-        prefix="$NRNHOME"
-	exec_prefix="${prefix}/${ARCH}"
+    prefix="$NRNHOME"
+    @USING_CMAKE_FALSE@exec_prefix="${prefix}/${ARCH}"
+    @USING_CMAKE_TRUE@exec_prefix="${prefix}"
 	NRNBIN="${exec_prefix}/bin/"
 	NRNDEMO="${prefix}/share/@PACKAGE@/demo/"
 fi
