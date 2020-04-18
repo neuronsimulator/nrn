@@ -172,7 +172,8 @@ class Docs(Command):
 def setup_package():
     NRN_PY_ROOT = 'share/lib/python'
     NRN_PY_SCRIPTS = os.path.join(NRN_PY_ROOT, 'scripts')
-    NRN_COLLECT_DIRS = ['bin', 'lib', 'include', 'share/nrn/lib/hoc', 'share/nrn/lib', 'share/nrn/demo']
+    NRN_COLLECT_DIRS = ['bin', 'lib', 'include', 'share/nrn/lib/hoc', 'share/nrn/lib',
+                        'share/nrn/demo', 'share/nrn/demo/release']
 
     docs_require = []  # sphinx, themes, etc
     maybe_rxd_reqs = ['numpy', 'Cython'] if RX3D else []
