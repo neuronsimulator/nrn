@@ -19,7 +19,7 @@ build_wheel() {
 
   "$py_bin" -m venv "$venv_dir"
   . "$venv_dir/bin/activate"
-  pip install -U setuptools pip wheel
+  pip install -U setuptools pip wheel==0.34.1
   pip install git+https://github.com/ferdonline/auditwheel@fix/rpath_append
 
   pushd nrn
@@ -30,6 +30,9 @@ build_wheel() {
   popd
   deactivate
 }
+
+yum install -y flex libXcomposite-devel.x86_64
+export PATH=/opt/openmpi/bin:$PATH
 
 for py_bin in /opt/python/cp3*/bin/python; do
   build_wheel "$py_bin"
