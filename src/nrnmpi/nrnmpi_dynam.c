@@ -111,9 +111,16 @@ if (!dlopen("libnrniv.so", RTLD_NOW | RTLD_NOLOAD | RTLD_GLOBAL)) {
 	fprintf(stderr, "Did not promote libnrniv.so to RTLD_GLOBAL: %s\n", dlerror());
 }
 #endif
+#if defined(NRNCMAKE)
+        // with cmake RPATH is correctly set so dlopen will be successfull
+        if (!load_nrnmpi("libnrnmpi.so", pmes+strlen(pmes))){
+            return pmes;
+        }
+#else
 		if (!load_nrnmpi(NRN_LIBDIR"/libnrnmpi.so", pmes+strlen(pmes))){
 			return pmes;
 		}
+#endif
 	}else{
 		sprintf(pmes+strlen(pmes), "Try loading mpich2\n");
 		handle = load_mpi("libmpl.so", pmes+strlen(pmes));
