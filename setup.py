@@ -211,6 +211,8 @@ def setup_package():
             '-DNRN_ENABLE_MODULE_INSTALL=OFF',
             '-DNRN_USE_REL_RPATH=ON',
             '-DLINK_AGAINST_PYTHON=OFF',
+            '-DLINK_AGAINST_MPI=OFF',
+            '-DCMAKE_PREFIX_PATH=/opt/ncurses', #TODO : fix this custom path (Fernando)
         ],
         include_dirs=[
             "src",
@@ -277,7 +279,7 @@ def setup_package():
             if f[0] != '_'
         ],
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),
-        install_requires=['numpy>=1.13.1'],
+        install_requires=['numpy>=1.9.3'],
         tests_require=["flake8", "pytest"],
         setup_requires=["wheel"] + maybe_docs + maybe_test_runner + maybe_rxd_reqs,
         dependency_links=[]

@@ -8,6 +8,10 @@
 # Currently dynamic MPI support is not implemented.
 # ~~~
 
+# link with MPI except when building wheel to avoid auditwheel
+# to package mpi libraries. This is used with NRN_ENABLE_MPI_DYNAMIC.
+SET(LINK_AGAINST_MPI ON CACHE BOOL "Link with MPI libraries")
+
 if(NRN_ENABLE_MPI)
   if(NRN_ENABLE_MPI_DYNAMIC)
     if("${NRN_MPI_DYNAMIC}" STREQUAL "")
