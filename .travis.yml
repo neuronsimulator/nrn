@@ -166,7 +166,6 @@ after_success:
       popd; popd;
       echo "-------- Build sphinx documentation --------";
       cd $TRAVIS_BUILD_DIR;
-      pwd;
       bash .travis_docs.sh;
     fi
 
@@ -181,5 +180,5 @@ deploy:
   local_dir: $TRAVIS_BUILD_DIR/build/doc_doxygen
   target_branch: gh-pages
   on:
-    branch: fix/deploy_docs
+    branch: master
     condition: $BUILD_DOCUMENTATION = ON && $CC_FOR_BUILD = gcc && $TRAVIS_OS_NAME = linux
