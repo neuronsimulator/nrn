@@ -63,6 +63,13 @@ class CMakeAugmentedExtension(Extension):
 class CMakeAugmentedBuilder(build_ext):
     """Builder which understands CMakeAugmentedExtension
     """
+    user_options = build_ext.user_options + [
+        ("cmake-prefix=", None, "value for CMAKE_PREFIX_PATH")
+    ]
+
+    def initialize_options(self):
+        build_ext.initialize_options(self)
+        self.cmake_prefix = None
 
     def run(self, *args, **kw):
         """Execute the extension builder.
@@ -114,6 +121,10 @@ class CMakeAugmentedBuilder(build_ext):
             '-DPYTHON_EXECUTABLE=' + sys.executable,
             '-DCMAKE_BUILD_TYPE=' + cfg,
         ] + ext.cmake_flags
+
+        if self.cmake_prefix:
+            cmake_args.append("-DCMAKE_PREFIX_PATH=" + self.cmake_prefix)
+
         build_args = ['--config', cfg, '--', '-j4']  # , 'VERBOSE=1']
 
         env = os.environ.copy()
@@ -212,7 +223,6 @@ def setup_package():
             '-DNRN_USE_REL_RPATH=ON',
             '-DLINK_AGAINST_PYTHON=OFF',
             '-DLINK_AGAINST_MPI=OFF',
-            '-DCMAKE_PREFIX_PATH=/opt/ncurses', #TODO : fix this custom path (Fernando)
         ],
         include_dirs=[
             "src",
@@ -234,9 +244,8 @@ def setup_package():
         ]
         rxd_params = extension_common_params.copy()
         rxd_params['libraries'].append("rxdmath")
-        # cython generated files take too long O3, use O0 for testing
         rxd_params.update(dict(
-            extra_compile_args=["-O0"],
+            extra_compile_args=["-O0"],  # cython files take too long to compile with O3
             extra_link_args=["-Wl,-rpath,{}".format(REL_RPATH + "/../../.data/lib/")]
         ))
 
