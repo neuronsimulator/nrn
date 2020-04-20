@@ -160,8 +160,8 @@ script:
       nrnivmodl .;
       ./x86_64/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()";
       ./x86_64/special -c "print \"hello\"";
-      mpirun -n 2 python src/parallel/test0.py -mpi;
-      mpirun -n 2 nrniv -python src/parallel/test0.py -mpi;
+      mpirun -n 2 python $TRAVIS_BUILD_DIR/src/parallel/test0.py -mpi;
+      mpirun -n 2 nrniv -python $TRAVIS_BUILD_DIR/src/parallel/test0.py -mpi;
     fi;
   - if [[ "$BUILD_MODE" != "cmake" && "$TRAVIS_OS_NAME" != "osx" ]]; then
       $PYTHON share/lib/python/neuron/rxdtests/run_all.py;
