@@ -75,6 +75,7 @@ env:
       MATRIX_EVAL="CC=gcc-6 CXX=g++-6"
     - BUILD_MODE=cmake
       NRN_ENABLE_PYTHON_DYNAMIC=ON
+      NRN_ENABLE_MPI_DYNAMIC=ON
       MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
     - BUILD_MODE=cmake
       CMAKE_OPTION="-DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_CORENEURON=ON"
@@ -120,6 +121,9 @@ script:
       else
         export CMAKE_OPTION="$CMAKE_OPTION -DPYTHON_EXECUTABLE=${PYTHON} -DNRN_ENABLE_CORENEURON=ON";
       fi;
+      if [ "$NRN_ENABLE_MPI_DYNAMIC" == "ON" ]; then
+        export CMAKE_OPTION="$CMAKE_OPTION -DNRN_ENABLE_MPI_DYNAMIC=ON"
+      fi;
       mkdir build && cd build;
       cmake $CMAKE_OPTION -DNRN_ENABLE_TESTS=ON -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR ..;
       cmake --build . -- -j 2;
@@ -147,6 +151,11 @@ script:
       if [[ "$CMAKE_OPTION" != "-DNRN_ENABLE_PYTHON=OFF"* ]]; then
         $PYTHON --version && $PYTHON -c 'import neuron; neuron.test()';
       fi;
+    fi;
+  - if [ "$NRN_ENABLE_MPI_DYNAMIC" == "ON" ]; then
+      pushd $TRAVIS_BUILD_DIR/test/travis;
+      sh test_mpi_dynamic.sh;
+      popd;
     fi;
   - if [[ "$BUILD_MODE" != "cmake" && "$TRAVIS_OS_NAME" != "osx" ]]; then
       $PYTHON share/lib/python/neuron/rxdtests/run_all.py;
