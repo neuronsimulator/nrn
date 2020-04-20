@@ -170,7 +170,7 @@ after_success:
       echo "<meta http-equiv=\"refresh\" content=\"0; url=./doxygen/index.html\" />" > index.html;
       popd; popd;
       echo "-------- Build sphinx documentation --------";
-      pwd
+      pwd;
       bash .travis_docs.sh;
     fi
 
