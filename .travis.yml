@@ -153,9 +153,15 @@ script:
       fi;
     fi;
   - if [ "$NRN_ENABLE_MPI_DYNAMIC" == "ON" ]; then
-      pushd $TRAVIS_BUILD_DIR/test/travis;
-      sh test_mpi_dynamic.sh;
-      popd;
+      neurondemo -c 'demo(4)' -c 'run()' -c 'quit()';
+      python -c "import neuron; neuron.test(); neuron.test_rxd()";
+      nrniv -c "print \"hello\"";
+      rm -rf x86_64;
+      nrnivmodl .;
+      ./x86_64/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()";
+      ./x86_64/special -c "print \"hello\"";
+      mpirun -n 2 python src/parallel/test0.py -mpi;
+      mpirun -n 2 nrniv -python src/parallel/test0.py -mpi;
     fi;
   - if [[ "$BUILD_MODE" != "cmake" && "$TRAVIS_OS_NAME" != "osx" ]]; then
       $PYTHON share/lib/python/neuron/rxdtests/run_all.py;
