@@ -19,16 +19,16 @@ def _set_default_compiler():
     os.environ.setdefault("CXX", ccompiler.compiler_cxx[0])
 
 
-def _launch_command(exe_name):
+def _config_exe(exe_name):
+    """Sets the environment to run the real executable (returned)"""
     NRN_PREFIX = os.path.join(site.getsitepackages()[0], 'neuron', '.data')
     os.environ["NEURONHOME"] = os.path.join(NRN_PREFIX, 'share/nrn')
     os.environ["NRNHOME"] = NRN_PREFIX
     os.environ["NRNBIN"] = os.path.dirname(__file__)
-    exe_path = os.path.join(NRN_PREFIX, 'bin', exe_name)
     _set_default_compiler()
-
-    return sp.call([exe_path] + sys.argv[1:])
+    return os.path.join(NRN_PREFIX, 'bin', exe_name)
 
 
 if __name__ == '__main__':
-    sys.exit(_launch_command(os.path.basename(sys.argv[0])))
+    exe = _config_exe(os.path.basename(sys.argv[0]))
+    os.execv(exe, sys.argv)
