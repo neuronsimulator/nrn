@@ -75,6 +75,7 @@ env:
       MATRIX_EVAL="CC=gcc-6 CXX=g++-6"
     - BUILD_MODE=cmake
       NRN_ENABLE_PYTHON_DYNAMIC=ON
+      NRN_ENABLE_MPI_DYNAMIC=ON
       MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
     - BUILD_MODE=cmake
       CMAKE_OPTION="-DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_CORENEURON=ON"
@@ -142,11 +143,15 @@ script:
   # basic tests for cmake and autoconf build
   - neurondemo -nogui -c 'demo(4)' -c 'run()' -c 'quit()'
   - if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
+
       $PYTHON3 -c 'import neuron; neuron.test()' && $PYTHON2 -c 'import neuron; neuron.test()';
     else
       if [[ "$CMAKE_OPTION" != "-DNRN_ENABLE_PYTHON=OFF"* ]]; then
         $PYTHON --version && $PYTHON -c 'import neuron; neuron.test()';
       fi;
+    fi;
+  - if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
+      NRN_INI$PYTHON3 -c 'import neuron'
     fi;
   - if [[ "$BUILD_MODE" != "cmake" && "$TRAVIS_OS_NAME" != "osx" ]]; then
       $PYTHON share/lib/python/neuron/rxdtests/run_all.py;
@@ -165,6 +170,7 @@ after_success:
       echo "<meta http-equiv=\"refresh\" content=\"0; url=./doxygen/index.html\" />" > index.html;
       popd; popd;
       echo "-------- Build sphinx documentation --------";
+      pwd
       bash .travis_docs.sh;
     fi
 
@@ -179,5 +185,5 @@ deploy:
   local_dir: $TRAVIS_BUILD_DIR/build/doc_doxygen
   target_branch: gh-pages
   on:
-    branch: cmake
+    branch: fix/deploy_docs
     condition: $BUILD_DOCUMENTATION = ON && $CC_FOR_BUILD = gcc && $TRAVIS_OS_NAME = linux
