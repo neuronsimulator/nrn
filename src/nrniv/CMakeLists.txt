@@ -269,6 +269,7 @@ if(NRN_ENABLE_MPI)
       # Note that we do not link here to libmpi. That is dlopen first.
       if(MINGW) # type msmpi only
         add_dependencies(${libname}_lib nrniv_lib)
+        target_link_libraries(${libname}_lib ${MPI_C_LIBRARIES})
         target_link_libraries(${libname}_lib nrniv_lib)
       endif()
       set_property(TARGET ${libname}_lib PROPERTY OUTPUT_NAME ${libname})
