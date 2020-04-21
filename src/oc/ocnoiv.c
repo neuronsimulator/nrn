@@ -53,6 +53,10 @@ void hoc_execute1(void) { /* the ivoc version returns safely even if execerror *
 	hoc_exec_cmd();
 }
 
+#if DARWIN || defined(__linux__)
+const char* path_prefix_to_libnrniv() { return NULL; }
+#endif
+
 #if !defined(SOME_IV)
 /*ARGSUSED*/
 int ivoc_list_look(Object* ob, Object* oblook, char* path, int depth)
