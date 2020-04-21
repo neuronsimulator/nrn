@@ -1,6 +1,7 @@
 #!/usr/bin/bash
 
 set -e
+set -x
 
 source ${JENKINS_DIR:-.}/_env_setup.sh
 
