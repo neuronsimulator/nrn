@@ -87,7 +87,7 @@ char* nrnmpi_load(int is_python) {
 #if defined(NRNCMAKE)
 	if (handle) {
 		/* loaded but is it openmpi or mpich */
-		if (dlsym(handle, "ompi_mpi_init") { /* it is openmpi */
+		if (dlsym(handle, "ompi_mpi_init")) { /* it is openmpi */
 		/* see man dyld */
 			if (!load_nrnmpi("@loader_path/libnrnmpi_ompi.dylib", pmes+strlen(pmes))) {
 				return pmes;
