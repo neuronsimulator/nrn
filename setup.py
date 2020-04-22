@@ -70,12 +70,14 @@ class CMakeAugmentedBuilder(build_ext):
     """Builder which understands CMakeAugmentedExtension
     """
     user_options = build_ext.user_options + [
-        ("cmake-prefix=", None, "value for CMAKE_PREFIX_PATH")
+        ("cmake-prefix=", None, "value for CMAKE_PREFIX_PATH"),
+        ("mpi-dynamic=", None, "value for NRN_MPI_DYNAMIC")
     ]
 
     def initialize_options(self):
         build_ext.initialize_options(self)
         self.cmake_prefix = None
+        self.mpi_dynamic = None
 
     def run(self, *args, **kw):
         """Execute the extension builder.
@@ -136,6 +138,9 @@ class CMakeAugmentedBuilder(build_ext):
 
         if self.cmake_prefix:
             cmake_args.append("-DCMAKE_PREFIX_PATH=" + self.cmake_prefix)
+
+        if self.mpi_dynamic:
+            cmake_args.append("-DNRN_MPI_DYNAMIC=" + self.mpi_dynamic)
 
         build_args = ['--config', cfg, '--', '-j4']  # , 'VERBOSE=1']
 
@@ -229,8 +234,6 @@ def setup_package():
             '-DNRN_ENABLE_RX3D=OFF',  # Never build within CMake
             '-DNRN_ENABLE_MPI=ON',
             '-DNRN_ENABLE_MPI_DYNAMIC=ON',
-            '-DNRN_MPI_DYNAMIC=/usr/local/opt/openmpi/bin;/usr/local/opt/mpich/bin',
-            #'-DNRN_MPI_DYNAMIC=/opt/openmpi/bin;/opt/mpich/bin',
             '-DNRN_ENABLE_PYTHON_DYNAMIC=ON',
             '-DNRN_ENABLE_MODULE_INSTALL=OFF',
             '-DNRN_USE_REL_RPATH=ON',
