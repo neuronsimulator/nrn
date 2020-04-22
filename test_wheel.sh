@@ -1,5 +1,5 @@
 # A simple set of tests checking if a wheel is working correctly
-set -xe
+set -e
 
 if [ "$#" -ne 2 ]; then
     echo "Error : use ./test_wheel.bash python_exe python_wheel"
@@ -15,11 +15,19 @@ $python_exe -m venv $venv_name
 . $venv_name/bin/activate
 
 # Install Neuron from wheel
+if [[ "$OSTYPE" == "darwin"* ]] && [[ "$(python -V)" =~ "Python 3.5" ]]; then
+  echo "Updating pip for OSX with Python 3.5"
+  curl https://bootstrap.pypa.io/get-pip.py | python
+fi
+
+pip install numpy
 pip install $python_wheel
+#pip install -i https://test.pypi.org/simple/ NEURON==7.8.11.2
 
 # Run tests
-bash test/test_neuron.sh $python_exe
+./test/test_neuron.sh $python_exe
 
 # cleanup
 deactivate
 rm -rf $venv_name
+echo "Removed $venv_name"

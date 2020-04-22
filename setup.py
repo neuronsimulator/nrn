@@ -13,7 +13,7 @@ from setuptools import setup
 
 
 # Main source of the version. Dont rename
-__version__ = '7.8.11'
+__version__ = '7.8.11.2'
 
 
 # RX3D must be checked for very early as it changes imports
@@ -229,11 +229,12 @@ def setup_package():
             '-DNRN_ENABLE_RX3D=OFF',  # Never build within CMake
             '-DNRN_ENABLE_MPI=ON',
             '-DNRN_ENABLE_MPI_DYNAMIC=ON',
+            '-DNRN_MPI_DYNAMIC=/usr/local/opt/openmpi/bin;/usr/local/opt/mpich/bin',
+            #'-DNRN_MPI_DYNAMIC=/opt/openmpi/bin;/opt/mpich/bin',
             '-DNRN_ENABLE_PYTHON_DYNAMIC=ON',
             '-DNRN_ENABLE_MODULE_INSTALL=OFF',
             '-DNRN_USE_REL_RPATH=ON',
             '-DLINK_AGAINST_PYTHON=OFF',
-            '-DLINK_AGAINST_MPI=OFF',
         ],
         include_dirs=[
             "src",
