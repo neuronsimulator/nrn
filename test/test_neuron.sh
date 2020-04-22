@@ -30,12 +30,28 @@ neurondemo -c 'demo(4)' -c 'run()' -c 'quit()'
 # Test 7: multi-mpi test
 echo "Testing MPI"
 
-brew unlink openmpi
-brew link mpich
-/usr/local/opt/mpich/bin/mpirun -n 2 nrniv -python ./src/parallel/test0.py -mpi
-/usr/local/opt/mpich/bin/mpirun -n 2 nrniv ./src/parallel/test0.hoc -mpi
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  brew unlink openmpi
+  brew link mpich
+  echo "Testing MPICH"
+  /usr/local/opt/mpich/bin/mpirun -n 2 nrniv -python ./src/parallel/test0.py -mpi
+  /usr/local/opt/mpich/bin/mpirun -n 2 nrniv ./src/parallel/test0.hoc -mpi
 
-brew unlink mpich
-brew link openmpi
-/usr/local/opt/openmpi/bin/mpirun -n 2 nrniv -python ./src/parallel/test0.py -mpi
-/usr/local/opt/openmpi/bin/mpirun -n 2 nrniv ./src/parallel/test0.hoc -mpi
+  brew unlink mpich
+  brew link openmpi
+  echo "Testing OpenMPI"
+  /usr/local/opt/openmpi/bin/mpirun -n 2 nrniv -python ./src/parallel/test0.py -mpi
+  /usr/local/opt/openmpi/bin/mpirun -n 2 nrniv ./src/parallel/test0.hoc -mpi
+else
+  echo "Testing MPICH"
+  export PATH=/opt/mpich/bin:$PATH
+  export LD_LIBRARY_PATH=/opt/mpich/lib:$LD_LIBRARY_PATH
+  mpirun -n 2 nrniv -python ./src/parallel/test0.py -mpi
+  mpirun -n 2 nrniv ./src/parallel/test0.hoc -mpi
+
+  echo "Testing OpenMPI"
+  export PATH=/opt/openmpi/bin:$PATH
+  export LD_LIBRARY_PATH=/opt/openmpi/lib:$LD_LIBRARY_PATH
+  mpirun -n 2 nrniv -python ./src/parallel/test0.py -mpi
+  mpirun -n 2 nrniv ./src/parallel/test0.hoc -mpi
+fi

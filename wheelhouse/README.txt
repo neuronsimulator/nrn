@@ -1,43 +1,43 @@
 Building Python Wheels
 ======================
 
-For the highest compatibility, Neuron wheels are built in a
-manylinux1 image. Since the generic docker image is very basic (centos5)
-a new image, which brings updated libssl, cmake3 (3.12), etc was 
-prepared and made available at 
-docker.io/ferdonline/manylinux1_steroids_x86_64
+For the highest compatibility, NEURON wheels are built in a
+manylinux1 image. Since the generic docker image is very basic
+(centos5) a new image, which brings updated libssl, cmake3 (3.12),
+ncurses, openmpi and mpich was prepared and made available at
+docker.io/pkumbhar/neuron_wheel
 
 Steps:
 
 1. Pull and start the docker image
    -------------------------------
-Non-image devel files can go into its separate volume, so that changes
-are preserved across runs. e.g.
-$ docker run -v nrn_dev:/root/dev/neuron -it ferdonline/manylinux1_steroids_x86_64 bash
+We mount local neuron repository inside docker as a volume to preserve
+any code changed. We can use -v option to mount the local folder as:
 
-where nrn_dev is a simple docker volume created with `docker volume create nrn_dev``
+$ docker run -v /home/user/nrn:/root/nrn -it docker.io/pkumbhar/neuron_wheel bash
 
+where `/home/user/nrn` is a neuron repository on host machine and we mount
+that inside docker at location /root/nrn.
 
-2. Install system requirements (flex)
-   ----------------------------------
-yum install -Y flex
+TODO : Add instructions for OS X.
+  - Note that for OS X there is no docker image but on a system where all
+    dependencies exist, you have to just launch build_wheels.osx.bash.
 
-
-3. Clone neuron
-   ------------
-For the moment clone the python_wheel branch. Save time/space with `--depth=N`
-
-$ cd dev/neuron
-$ git clone https://github.com/neuronsimulator/nrn.git -b python_wheel --depth=2
-
-
-4. Launch the wheel building
+2. Launch the wheel building
    -------------------------
 
-There is a build script (to be launched from the outer dir)
-It will loop over the pythons >=3.5 in /opt/python, build and audit
-the generated wheels. Results are placed in this directory
+Once we are inside docker container, we can start building wheels.
+There is a build script which loop over the pythons >=3.5 in /opt/python,
+build and audit the generated wheels. Results are placed in this wheelhouse
+directory:
 
-$ ln -s nrn/build_wheels.bash
-$ bash build_wheels.bash
+$ cd /root
+$ bash nrn/build_wheels.linux.bash
 
+
+3. Uplaod wheels
+   -------------------------
+
+As we haven't setup proper policy yet, do not do this step.
+Note that wheels are built with root user. You might want to
+change owner and group with chown.

@@ -25,14 +25,11 @@ build_wheel() {
   pushd nrn
   rm -rf dist build
   pip install -i https://nero-mirror.stanford.edu/pypi/web/simple -r build_requirements.txt
-  python setup.py build_ext --cmake-prefix=/opt/ncurses bdist_wheel
+  python setup.py build_ext --cmake-prefix=/opt/ncurses --mpi-dynamic="/opt/openmpi/bin;/opt/mpich/bin" bdist_wheel
   auditwheel repair dist/*.whl
   popd
   deactivate
 }
-
-yum install -y flex libXcomposite-devel.x86_64
-export PATH=/opt/openmpi/bin:$PATH
 
 for py_bin in /opt/python/cp3*/bin/python; do
   build_wheel "$py_bin"

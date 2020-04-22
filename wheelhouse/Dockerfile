@@ -24,7 +24,7 @@ RUN curl -L -o cmake-3.12.3.tar.gz https://github.com/Kitware/CMake/releases/dow
     && tar -xvzf cmake-3.12.3.tar.gz \
     && cd cmake-3.12.3 \
     && ./bootstrap -- -DCMAKE_INSTALL_PREFIX=/opt/cmake \
-    && make install
+    && make -j install
 
 RUN wget http://ftpmirror.gnu.org/ncurses/ncurses-5.9.tar.gz \
     && tar -xvzf ncurses-5.9.tar.gz \
@@ -44,5 +44,12 @@ RUN curl -L -o openmpi-4.0.3.tar.gz  https://download.open-mpi.org/release/open-
     && ./configure --prefix=/opt/openmpi \
     && make -j install
 
-RUN git config --global http.sslVerify false && git config --global http.postBuffer 1048576000
-RUN git clone https://github.com/neuronsimulator/nrn.git -b python_wheel /root/nrn
+ENV PATH /opt/openmpi/bin:/opt/cmake/bin:$PATH
+
+RUN yum -y install libX11-devel.x86_64 libXcomposite-devel.x86_64 vim-enhanced.x86_64
+
+# Copy Dockerfile for reference
+COPY Dockerfile .
+
+# build wheels from there
+WORKDIR /root
