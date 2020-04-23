@@ -47,6 +47,7 @@ RUN curl -L -o openmpi-4.0.3.tar.gz  https://download.open-mpi.org/release/open-
 ENV PATH /opt/openmpi/bin:/opt/cmake/bin:$PATH
 
 RUN yum -y install libX11-devel.x86_64 libXcomposite-devel.x86_64 vim-enhanced.x86_64
+RUN yum -y remove ncurses-devel.x86_64
 
 # Copy Dockerfile for reference
 COPY Dockerfile .
