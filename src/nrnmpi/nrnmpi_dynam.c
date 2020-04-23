@@ -128,8 +128,18 @@ sprintf(pmes+strlen(pmes), "Is openmpi installed? If not in default location, ne
 		return pmes;
 	}
 #else /*not MINGW so must be __linux__*/
+
+	/**
+	 * libmpi.so is not standard but used by most of the implemenntation
+	 * (mpich, openmpi, intel-mpi, parastation-mpi, hpe-mpt) but not cray-mpich.
+	 * we first load libmpi and then libmpich.so as a fallaback for cray system.
+	 */
 	sprintf(pmes, "Try loading libmpi\n");
 	handle = load_mpi("libmpi.so", pmes+strlen(pmes));
+	if (!handle) {
+	    sprintf(pmes, "Try loading libmpi and libmpich\n");
+	    handle = load_mpi("libmpich.so", pmes+strlen(pmes));
+	}
 
 #if defined(NRNCMAKE)
 	if (handle) {
@@ -148,6 +158,8 @@ sprintf(pmes+strlen(pmes), "Is openmpi installed? If not in default location, ne
 		/* loaded but is it openmpi or mpich */
 		if (dlsym(handle, "ompi_mpi_init")) { /* it is openmpi */
 			sprintf(lname, "%slibnrnmpi_ompi.so", prefix);
+		}else if (dlsym(handle, "MPI_SGI_init")) { /* it is sgi-mpt */
+			sprintf(lname, "%slibnrnmpi_mpt.so", prefix);
 		}else{ /* must be mpich. Could check for MPID_nem_mpich_init...*/
 			sprintf(lname, "%slibnrnmpi_mpich.so", prefix);
 		}
@@ -190,7 +202,7 @@ if (!dlopen("libnrniv.so", RTLD_NOW | RTLD_NOLOAD | RTLD_GLOBAL)) {
 #endif /*not MINGW*/
 #endif /* not DARWIN */
 	if (!handle) {
-		sprintf(pmes+strlen(pmes), "could not dynamically load libmpi.so or libmpich2.so\n");
+		sprintf(pmes+strlen(pmes), "could not dynamically load libmpi.so or libmpich.so\n");
 		return pmes;
 	}	
 	free(pmes);

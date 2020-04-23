@@ -14,12 +14,10 @@ set(NRN_MPI_INCLUDE_LIST "" CACHE INTERNAL "" FORCE)
 set(NRN_MPI_LIBNAME_LIST "" CACHE INTERNAL "" FORCE)
 set(NRN_MPI_TYPE_LIST "" CACHE INTERNAL "" FORCE)
 
-
 if(NRN_ENABLE_MPI)
   if(NRN_ENABLE_MPI_DYNAMIC)
 
     set(NRNMPI_DYNAMICLOAD 1)
-
     # compute the NRN_MPI_INCLUDE_LIST
     if("${NRN_MPI_DYNAMIC}" STREQUAL "") # use the MPI already found
       string(REGEX REPLACE "/$" "" foo "${MPI_C_HEADER_DIR}")
@@ -50,12 +48,17 @@ if(NRN_ENABLE_MPI)
         if (result EQUAL 0)
           set(type "mpich")
         else()
-          execute_process(COMMAND grep -q "define MSMPI_VER " ${idir}/mpi.h RESULT_VARIABLE result)
+          execute_process(COMMAND grep -q "define MPT_VERSION " ${idir}/mpi.h RESULT_VARIABLE result)
           if (result EQUAL 0)
-            set(type "msmpi")
+            set(type "mpt")
           else()
-            # Perhaps rather set the type to "unknown" and check for no duplicates?
-            message(FATAL_ERROR "${idir}/mpi.h does not seem to be either openmpi, mpich, or msmpi")
+            execute_process(COMMAND grep -q "define MSMPI_VER " ${idir}/mpi.h RESULT_VARIABLE result)
+            if (result EQUAL 0)
+              set(type "msmpi")
+            else()
+              # Perhaps rather set the type to "unknown" and check for no duplicates?
+              message(FATAL_ERROR "${idir}/mpi.h does not seem to be either openmpi, mpich, mpt or msmpi")
+            endif()
           endif()
         endif()
       endif()
