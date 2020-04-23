@@ -92,20 +92,20 @@ class SympyConductanceVisitor: public AstVisitor {
     /// non specific currents
     std::vector<std::shared_ptr<ast::Ast>> nonspecific_nodes;
 
-    std::vector<std::string> generate_statement_strings(ast::BreakpointBlock* node);
+    std::vector<std::string> generate_statement_strings(ast::BreakpointBlock& node);
     void lookup_useion_statements();
     void lookup_nonspecific_statements();
 
-    static std::string to_nmodl_for_sympy(ast::Ast* node) {
+    static std::string to_nmodl_for_sympy(ast::Ast& node) {
         return to_nmodl(node, {ast::AstNodeType::UNIT, ast::AstNodeType::UNIT_DEF});
     }
 
   public:
     SympyConductanceVisitor() = default;
-    void visit_binary_expression(ast::BinaryExpression* node) override;
-    void visit_breakpoint_block(ast::BreakpointBlock* node) override;
-    void visit_conductance_hint(ast::ConductanceHint* node) override;
-    void visit_program(ast::Program* node) override;
+    void visit_binary_expression(ast::BinaryExpression& node) override;
+    void visit_breakpoint_block(ast::BreakpointBlock& node) override;
+    void visit_conductance_hint(ast::ConductanceHint& node) override;
+    void visit_program(ast::Program& node) override;
 };
 
 /** @} */  // end of visitor_classes

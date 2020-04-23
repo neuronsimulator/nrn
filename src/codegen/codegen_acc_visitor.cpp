@@ -66,12 +66,12 @@ void CodegenAccVisitor::print_backend_includes() {
 }
 
 
-std::string CodegenAccVisitor::backend_name() {
+std::string CodegenAccVisitor::backend_name() const {
     return "C-OpenAcc (api-compatibility)";
 }
 
 
-void CodegenAccVisitor::print_memory_allocation_routine() {
+void CodegenAccVisitor::print_memory_allocation_routine() const {
     printer->add_newline(2);
     auto args = "size_t num, size_t size, size_t alignment = 16";
     printer->add_line("static inline void* mem_alloc({}) {}"_format(args, "{"));
@@ -174,7 +174,8 @@ void CodegenAccVisitor::print_global_variable_device_update_annotation() {
     }
 }
 
-std::string CodegenAccVisitor::get_variable_device_pointer(std::string variable, std::string type) {
+std::string CodegenAccVisitor::get_variable_device_pointer(const std::string& variable,
+                                                           const std::string& type) const {
     if (info.artificial_cell) {
         return variable;
     }

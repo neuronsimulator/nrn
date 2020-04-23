@@ -61,7 +61,7 @@ class NmodlPrintVisitor: public Visitor {
 
     // clang-format off
     {% for node in nodes %}
-    virtual void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}* node) override;
+    virtual void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}& node) override;
     {% endfor %}
     // clang-format on
 

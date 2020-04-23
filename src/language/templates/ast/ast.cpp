@@ -36,7 +36,7 @@ const std::shared_ptr<StatementBlock>& Ast::get_statement_block() const {
 
 const ModToken *Ast::get_token() const { return nullptr; }
 
-symtab::SymbolTable *Ast::get_symbol_table() {
+symtab::SymbolTable *Ast::get_symbol_table() const {
   throw std::runtime_error("get_symbol_table not implemented");
 }
 

@@ -16,13 +16,13 @@ namespace visitor {
 using symtab::SymbolTable;
 
 /// rename name conflicting variables in the statement block and it's all children
-void LocalVarRenameVisitor::visit_statement_block(ast::StatementBlock* node) {
+void LocalVarRenameVisitor::visit_statement_block(ast::StatementBlock& node) {
     /// nothing to do
-    if (node->get_statements().empty()) {
+    if (node.get_statements().empty()) {
         return;
     }
 
-    auto current_symtab = node->get_symbol_table();
+    auto current_symtab = node.get_symbol_table();
     if (current_symtab != nullptr) {
         symtab = current_symtab;
     }
@@ -33,7 +33,7 @@ void LocalVarRenameVisitor::visit_statement_block(ast::StatementBlock* node) {
     symtab_stack.push(symtab);
 
     // first need to process all children : perform recursively from innermost block
-    for (const auto& item: node->get_statements()) {
+    for (const auto& item: node.get_statements()) {
         item->visit_children(*this);
     }
 

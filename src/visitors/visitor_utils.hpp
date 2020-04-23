@@ -29,17 +29,17 @@ std::string get_new_name(const std::string& name,
 
 
 /// Return pointer to local statement in the given block, otherwise nullptr
-std::shared_ptr<ast::LocalListStatement> get_local_list_statement(const ast::StatementBlock* node);
+std::shared_ptr<ast::LocalListStatement> get_local_list_statement(const ast::StatementBlock& node);
 
 
 /// Add empty local statement to given block if already doesn't exist
-void add_local_statement(ast::StatementBlock* node);
+void add_local_statement(ast::StatementBlock& node);
 
 
 /// Add new local variable to the block
-ast::LocalVar* add_local_variable(ast::StatementBlock* node, const std::string& varname);
-ast::LocalVar* add_local_variable(ast::StatementBlock* node, ast::Identifier* varname);
-ast::LocalVar* add_local_variable(ast::StatementBlock* node, const std::string& varname, int dim);
+ast::LocalVar* add_local_variable(ast::StatementBlock& node, const std::string& varname);
+ast::LocalVar* add_local_variable(ast::StatementBlock& node, ast::Identifier* varname);
+ast::LocalVar* add_local_variable(ast::StatementBlock& node, const std::string& varname, int dim);
 
 
 /// Create ast statement node from given code in string format
@@ -52,26 +52,33 @@ std::shared_ptr<ast::StatementBlock> create_statement_block(
 
 
 ///  Remove statements from given statement block if they exist
-void remove_statements_from_block(ast::StatementBlock* block,
-                                  const std::set<ast::Node*> statements);
+void remove_statements_from_block(ast::StatementBlock& block,
+                                  const std::set<ast::Node*>& statements);
 
 
 /// Return set of strings with the names of all global variables
-std::set<std::string> get_global_vars(ast::Program* node);
+std::set<std::string> get_global_vars(const ast::Program& node);
 
 
 /// Checks whether block contains a call to a perticular function
-bool calls_function(ast::Ast* node, const std::string& name);
+bool calls_function(ast::Ast& node, const std::string& name);
 
 }  // namespace visitor
 
 
 /// Given AST node, return the NMODL string representation
-std::string to_nmodl(ast::Ast* node, const std::set<ast::AstNodeType>& exclude_types = {});
+std::string to_nmodl(ast::Ast& node, const std::set<ast::AstNodeType>& exclude_types = {});
 
+/// Given a shared pointer to an AST node, return the NMODL string representation
+template <typename T>
+typename std::enable_if<std::is_base_of<ast::Ast, T>::value, std::string>::type to_nmodl(
+    const std::shared_ptr<T>& node,
+    const std::set<ast::AstNodeType>& exclude_types = {}) {
+    return to_nmodl(*node, exclude_types);
+}
 
 /// Given AST node, return the JSON string representation
-std::string to_json(ast::Ast* node,
+std::string to_json(ast::Ast& node,
                     bool compact = false,
                     bool expand = false,
                     bool add_nmodl = false);

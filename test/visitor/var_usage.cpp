@@ -18,8 +18,9 @@ using namespace visitor;
 // Variable usage visitor tests
 //=============================================================================
 
-bool run_var_usage_visitor(std::shared_ptr<ast::Node> node, const std::string& variable) {
-    return VarUsageVisitor().variable_used(node.get(), variable);
+static bool run_var_usage_visitor(const std::shared_ptr<ast::Node>& node,
+                                  const std::string& variable) {
+    return VarUsageVisitor().variable_used(*node, variable);
 }
 
 SCENARIO("Searching for variable name using VarUsageVisitor", "[visitor][var_usage]") {

@@ -29,15 +29,15 @@ using nmodl::parser::NmodlDriver;
 
 std::string run_solve_block_visitor(const std::string& text) {
     NmodlDriver driver;
-    auto ast = driver.parse_string(text);
-    SymtabVisitor().visit_program(ast.get());
-    NeuronSolveVisitor().visit_program(ast.get());
-    SolveBlockVisitor().visit_program(ast.get());
+    const auto& ast = driver.parse_string(text);
+    SymtabVisitor().visit_program(*ast);
+    NeuronSolveVisitor().visit_program(*ast);
+    SolveBlockVisitor().visit_program(*ast);
     std::stringstream stream;
-    NmodlPrintVisitor(stream).visit_program(ast.get());
+    NmodlPrintVisitor(stream).visit_program(*ast);
 
     // check that, after visitor rearrangement, parents are still up-to-date
-    CheckParentVisitor().visit_program(ast.get());
+    CheckParentVisitor().visit_program(*ast);
 
     return stream.str();
 }

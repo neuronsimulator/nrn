@@ -34,8 +34,8 @@ std::string get_new_name(const std::string& name,
     return (name + "_" + suffix + "_" + std::to_string(counter));
 }
 
-std::shared_ptr<ast::LocalListStatement> get_local_list_statement(const StatementBlock* node) {
-    const auto& statements = node->get_statements();
+std::shared_ptr<ast::LocalListStatement> get_local_list_statement(const StatementBlock& node) {
+    const auto& statements = node.get_statements();
     for (const auto& statement: statements) {
         if (statement->is_local_list_statement()) {
             return std::static_pointer_cast<LocalListStatement>(statement);
@@ -44,19 +44,19 @@ std::shared_ptr<ast::LocalListStatement> get_local_list_statement(const Statemen
     return nullptr;
 }
 
-void add_local_statement(StatementBlock* node) {
+void add_local_statement(StatementBlock& node) {
     auto variables = get_local_list_statement(node);
-    const auto& statements = node->get_statements();
+    const auto& statements = node.get_statements();
     if (variables == nullptr) {
         auto statement = std::make_shared<LocalListStatement>(LocalVarVector());
-        node->insert_statement(statements.begin(), statement);
+        node.insert_statement(statements.begin(), statement);
     }
 }
 
-LocalVar* add_local_variable(StatementBlock* node, Identifier* varname) {
+LocalVar* add_local_variable(StatementBlock& node, Identifier* varname) {
     add_local_statement(node);
 
-    const ast::StatementVector& statements = node->get_statements();
+    const ast::StatementVector& statements = node.get_statements();
 
     auto local_list_statement = get_local_list_statement(node);
     /// each block should already have local statement
@@ -69,12 +69,12 @@ LocalVar* add_local_variable(StatementBlock* node, Identifier* varname) {
     return var.get();
 }
 
-LocalVar* add_local_variable(StatementBlock* node, const std::string& varname) {
+LocalVar* add_local_variable(StatementBlock& node, const std::string& varname) {
     auto name = new Name(new String(varname));
     return add_local_variable(node, name);
 }
 
-LocalVar* add_local_variable(StatementBlock* node, const std::string& varname, int dim) {
+LocalVar* add_local_variable(StatementBlock& node, const std::string& varname, int dim) {
     auto name = new IndexedName(new Name(new String(varname)), new Integer(dim, nullptr));
     return add_local_variable(node, name);
 }
@@ -122,9 +122,9 @@ std::shared_ptr<StatementBlock> create_statement_block(
 }
 
 
-void remove_statements_from_block(ast::StatementBlock* block,
-                                  const std::set<ast::Node*> statements) {
-    const auto& statement_vec = block->get_statements();
+void remove_statements_from_block(ast::StatementBlock& block,
+                                  const std::set<ast::Node*>& statements) {
+    const auto& statement_vec = block.get_statements();
 
     // loosely following the cpp reference of remove_if
 
@@ -134,19 +134,19 @@ void remove_statements_from_block(ast::StatementBlock* block,
 
     while (first != last) {
         if (statements.find(first->get()) == statements.end()) {
-            block->reset_statement(result, *first);
+            block.reset_statement(result, *first);
             ++result;
         }
         ++first;
     }
 
-    block->erase_statement(result, last);
+    block.erase_statement(result, last);
 }
 
 
-std::set<std::string> get_global_vars(Program* node) {
+std::set<std::string> get_global_vars(const Program& node) {
     std::set<std::string> vars;
-    if (auto* symtab = node->get_symbol_table()) {
+    if (auto* symtab = node.get_symbol_table()) {
         // NB: local_var included here as locals can be declared at global scope
         NmodlType property = NmodlType::global_var | NmodlType::local_var | NmodlType::range_var |
                              NmodlType::param_assign | NmodlType::extern_var |
@@ -168,7 +168,7 @@ std::set<std::string> get_global_vars(Program* node) {
 }
 
 
-bool calls_function(ast::Ast* node, const std::string& name) {
+bool calls_function(ast::Ast& node, const std::string& name) {
     AstLookupVisitor lv(ast::AstNodeType::FUNCTION_CALL);
     for (const auto& f: lv.lookup(node)) {
         if (std::dynamic_pointer_cast<ast::FunctionCall>(f)->get_node_name() == name) {
@@ -181,21 +181,21 @@ bool calls_function(ast::Ast* node, const std::string& name) {
 }  // namespace visitor
 
 
-std::string to_nmodl(ast::Ast* node, const std::set<ast::AstNodeType>& exclude_types) {
+std::string to_nmodl(ast::Ast& node, const std::set<ast::AstNodeType>& exclude_types) {
     std::stringstream stream;
     visitor::NmodlPrintVisitor v(stream, exclude_types);
-    node->accept(v);
+    node.accept(v);
     return stream.str();
 }
 
 
-std::string to_json(ast::Ast* node, bool compact, bool expand, bool add_nmodl) {
+std::string to_json(ast::Ast& node, bool compact, bool expand, bool add_nmodl) {
     std::stringstream stream;
     visitor::JSONVisitor v(stream);
     v.compact_json(compact);
     v.add_nmodl(add_nmodl);
     v.expand_keys(expand);
-    node->accept(v);
+    node.accept(v);
     v.flush();
     return stream.str();
 }

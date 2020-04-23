@@ -30,7 +30,7 @@ namespace codegen {
 class CodegenAccVisitor: public CodegenCVisitor {
   protected:
     /// name of the code generation backend
-    std::string backend_name() override;
+    std::string backend_name() const override;
 
 
     /// common includes : standard c/c++, coreneuron and backend specific
@@ -46,7 +46,7 @@ class CodegenAccVisitor: public CodegenCVisitor {
 
 
     /// memory allocation routine
-    void print_memory_allocation_routine() override;
+    void print_memory_allocation_routine() const override;
 
 
     /// annotations like "acc enter data present(...)" for main kernel
@@ -81,20 +81,21 @@ class CodegenAccVisitor: public CodegenCVisitor {
     /// update global variable from host to the device
     void print_global_variable_device_update_annotation() override;
 
-    std::string get_variable_device_pointer(std::string variable, std::string type) override;
+    std::string get_variable_device_pointer(const std::string& variable,
+                                            const std::string& type) const override;
 
 
   public:
-    CodegenAccVisitor(std::string mod_file,
-                      std::string output_dir,
+    CodegenAccVisitor(const std::string& mod_file,
+                      const std::string& output_dir,
                       LayoutType layout,
-                      std::string float_type)
+                      const std::string& float_type)
         : CodegenCVisitor(mod_file, output_dir, layout, float_type) {}
 
-    CodegenAccVisitor(std::string mod_file,
-                      std::stringstream& stream,
+    CodegenAccVisitor(const std::string& mod_file,
+                      std::ostream& stream,
                       LayoutType layout,
-                      std::string float_type)
+                      const std::string& float_type)
         : CodegenCVisitor(mod_file, stream, layout, float_type) {}
 };
 

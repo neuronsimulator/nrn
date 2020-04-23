@@ -23,8 +23,8 @@ namespace codegen {
 using visitor::AstLookupVisitor;
 
 std::string CodegenCompatibilityVisitor::return_error_if_solve_method_is_unhandled(
-    ast::Ast* node,
-    std::shared_ptr<ast::Ast>& ast_node) {
+    ast::Ast& node,
+    const std::shared_ptr<ast::Ast>& ast_node) {
     auto solve_block_ast_node = std::dynamic_pointer_cast<ast::SolveBlock>(ast_node);
     std::stringstream unhandled_method_error_message;
     auto method = solve_block_ast_node->get_method();
@@ -41,11 +41,11 @@ std::string CodegenCompatibilityVisitor::return_error_if_solve_method_is_unhandl
 }
 
 std::string CodegenCompatibilityVisitor::return_error_global_var(
-    ast::Ast* node,
-    std::shared_ptr<ast::Ast>& ast_node) {
+    ast::Ast& node,
+    const std::shared_ptr<ast::Ast>& ast_node) {
     auto global_var = std::dynamic_pointer_cast<ast::GlobalVar>(ast_node);
     std::stringstream error_message_global_var;
-    if (node->get_symbol_table()->lookup(global_var->get_node_name())->get_write_count() > 0) {
+    if (node.get_symbol_table()->lookup(global_var->get_node_name())->get_write_count() > 0) {
         error_message_global_var
             << "\"{}\" variable found at [{}] should be defined as a RANGE variable instead of GLOBAL to enable backend transformations\n"_format(
                    global_var->get_node_name(), global_var->get_token()->position());
@@ -53,16 +53,17 @@ std::string CodegenCompatibilityVisitor::return_error_global_var(
     return error_message_global_var.str();
 }
 
-std::string CodegenCompatibilityVisitor::return_error_pointer(ast::Ast* node,
-                                                              std::shared_ptr<ast::Ast>& ast_node) {
+std::string CodegenCompatibilityVisitor::return_error_pointer(
+    ast::Ast& node,
+    const std::shared_ptr<ast::Ast>& ast_node) {
     auto pointer_var = std::dynamic_pointer_cast<ast::PointerVar>(ast_node);
     return "\"{}\" POINTER found at [{}] should be defined as BBCOREPOINTER to use it in CoreNeuron\n"_format(
         pointer_var->get_node_name(), pointer_var->get_token()->position());
 }
 
 std::string CodegenCompatibilityVisitor::return_error_if_no_bbcore_read_write(
-    ast::Ast* node,
-    std::shared_ptr<ast::Ast>& ast_node) {
+    ast::Ast& node,
+    const std::shared_ptr<ast::Ast>& ast_node) {
     std::stringstream error_message_no_bbcore_read_write;
     auto verbatim_nodes = AstLookupVisitor().lookup(node, AstNodeType::VERBATIM);
     auto found_bbcore_read = false;
@@ -106,7 +107,7 @@ std::string CodegenCompatibilityVisitor::return_error_if_no_bbcore_read_write(
  * some kind of incompatibility return false.
  */
 
-bool CodegenCompatibilityVisitor::find_unhandled_ast_nodes(Ast* node) {
+bool CodegenCompatibilityVisitor::find_unhandled_ast_nodes(Ast& node) {
     std::vector<ast::AstNodeType> unhandled_ast_types;
     for (auto kv: unhandled_ast_types_func) {
         unhandled_ast_types.push_back(kv.first);

@@ -13,10 +13,10 @@ namespace nmodl {
 namespace visitor {
 
 /// rename matching variable
-void RenameVisitor::visit_name(ast::Name* node) {
-    std::string name = node->get_node_name();
+void RenameVisitor::visit_name(ast::Name& node) {
+    const auto& name = node.get_node_name();
     if (name == var_name) {
-        auto value = node->get_value();
+        auto& value = node.get_value();
         value->set(new_var_name);
     }
 }
@@ -26,19 +26,19 @@ void RenameVisitor::visit_name(ast::Name* node) {
  * macro. In practice this won't be an issue as we order is set
  * by parser. To be safe we are only renaming prime variable.
  */
-void RenameVisitor::visit_prime_name(ast::PrimeName* node) {
-    node->visit_children(*this);
+void RenameVisitor::visit_prime_name(ast::PrimeName& node) {
+    node.visit_children(*this);
 }
 
 /**
  * Parse verbatim blocks and rename variable if it is used.
  */
-void RenameVisitor::visit_verbatim(ast::Verbatim* node) {
+void RenameVisitor::visit_verbatim(ast::Verbatim& node) {
     if (!rename_verbatim) {
         return;
     }
 
-    auto statement = node->get_statement();
+    const auto& statement = node.get_statement();
     auto text = statement->eval();
     parser::CDriver driver;
 

@@ -19,35 +19,35 @@ namespace visitor {
 using namespace ast;
 
 {% for node in nodes %}
-void AstLookupVisitor::visit_{{ node.class_name|snake_case }}({{ node.class_name }}* node) {
-    auto type = node->get_node_type();
-    if(std::find(types.begin(), types.end(), type) != types.end()) {
-        nodes.push_back(node->get_shared_ptr());
+void AstLookupVisitor::visit_{{ node.class_name|snake_case }}({{ node.class_name }}& node) {
+    const auto type = node.get_node_type();
+    if (std::find(types.begin(), types.end(), type) != types.end()) {
+        nodes.push_back(node.get_shared_ptr());
     }
-    node->visit_children(*this);
+    node.visit_children(*this);
 }
 
 {% endfor %}
 
 
-std::vector<std::shared_ptr<ast::Ast>> AstLookupVisitor::lookup(Ast* node, std::vector<AstNodeType>& _types) {
+std::vector<std::shared_ptr<ast::Ast>> AstLookupVisitor::lookup(Ast& node, const std::vector<AstNodeType>& _types) {
     nodes.clear();
     types = _types;
-    node->accept(*this);
+    node.accept(*this);
     return nodes;
 }
 
-std::vector<std::shared_ptr<ast::Ast>> AstLookupVisitor::lookup(Ast* node, AstNodeType type) {
+std::vector<std::shared_ptr<ast::Ast>> AstLookupVisitor::lookup(Ast& node, AstNodeType type) {
     nodes.clear();
     types.clear();
     types.push_back(type);
-    node->accept(*this);
+    node.accept(*this);
     return nodes;
 }
 
-std::vector<std::shared_ptr<ast::Ast>> AstLookupVisitor::lookup(Ast* node) {
+std::vector<std::shared_ptr<ast::Ast>> AstLookupVisitor::lookup(Ast& node) {
     nodes.clear();
-    node->accept(*this);
+    node.accept(*this);
     return nodes;
 }
 

@@ -17,7 +17,7 @@ using symtab::Symbol;
 using symtab::syminfo::NmodlType;
 
 bool LocalizeVisitor::node_for_def_use_analysis(ast::Node* node) {
-    auto type = node->get_node_type();
+    const auto& type = node->get_node_type();
 
     /**
      * Blocks where we should compute def-use chains. We are excluding
@@ -99,21 +99,21 @@ std::vector<std::string> LocalizeVisitor::variables_to_optimize() {
     return result;
 }
 
-void LocalizeVisitor::visit_program(ast::Program* node) {
+void LocalizeVisitor::visit_program(ast::Program& node) {
     /// symtab visitor pass need to be run before
-    program_symtab = node->get_symbol_table();
+    program_symtab = node.get_symbol_table();
     if (program_symtab == nullptr) {
         logger->warn("LocalizeVisitor :: symbol table is not setup, returning");
         return;
     }
 
-    auto variables = variables_to_optimize();
+    const auto& variables = variables_to_optimize();
     for (const auto& varname: variables) {
-        const auto& blocks = node->get_blocks();
+        const auto& blocks = node.get_blocks();
         std::map<DUState, std::vector<std::shared_ptr<ast::Node>>> block_usage;
 
         /// compute def use chains
-        for (auto block: blocks) {
+        for (const auto& block: blocks) {
             if (node_for_def_use_analysis(block.get())) {
                 DefUseAnalyzeVisitor v(program_symtab, ignore_verbatim);
                 auto usages = v.analyze(block.get(), varname);
@@ -138,11 +138,11 @@ void LocalizeVisitor::visit_program(ast::Program* node) {
                     auto symbol = program_symtab->lookup(varname);
 
                     if (symbol->is_array()) {
-                        variable = add_local_variable(statement_block.get(),
+                        variable = add_local_variable(*statement_block.get(),
                                                       varname,
                                                       symbol->get_length());
                     } else {
-                        variable = add_local_variable(statement_block.get(), varname);
+                        variable = add_local_variable(*statement_block.get(), varname);
                     }
 
                     /// mark variable as localized in global symbol table

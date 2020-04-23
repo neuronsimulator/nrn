@@ -71,11 +71,11 @@ class CodegenIspcVisitor: public CodegenCVisitor {
 
 
     /// name of the code generation backend
-    std::string backend_name() override;
+    std::string backend_name() const override;
 
 
     /// return name of main compute kernels
-    std::string compute_method_name(BlockType type) override;
+    std::string compute_method_name(BlockType type) const override;
 
 
     std::string net_receive_buffering_declaration() override;
@@ -119,7 +119,7 @@ class CodegenIspcVisitor: public CodegenCVisitor {
     bool nrn_cur_reduction_loop_required() override;
 
 
-    ParamVector get_global_function_parms(std::string arg_qualifier);
+    ParamVector get_global_function_parms(const std::string& arg_qualifier);
 
 
     void print_global_function_common_code(BlockType type) override;
@@ -158,14 +158,14 @@ class CodegenIspcVisitor: public CodegenCVisitor {
 
 
     /// nmodl procedure definition
-    void print_procedure(ast::ProcedureBlock* node) override;
+    void print_procedure(ast::ProcedureBlock& node) override;
 
 
     void print_backend_compute_routine_decl();
 
 
     /// print wrapper function that calls ispc kernel
-    void print_wrapper_routine(std::string wraper_function, BlockType type);
+    void print_wrapper_routine(const std::string& wrapper_function, BlockType type);
 
 
     /// wrapper/caller routines for nrn_state and nrn_cur
@@ -215,24 +215,24 @@ class CodegenIspcVisitor: public CodegenCVisitor {
     void print_codegen_wrapper_routines();
 
   public:
-    CodegenIspcVisitor(std::string mod_file,
-                       std::string output_dir,
+    CodegenIspcVisitor(const std::string& mod_file,
+                       const std::string& output_dir,
                        LayoutType layout,
-                       std::string float_type)
+                       const std::string& float_type)
         : CodegenCVisitor(mod_file, output_dir, layout, float_type, ".ispc", ".cpp")
         , fallback_codegen(mod_file, layout, float_type, wrapper_printer) {}
 
 
-    CodegenIspcVisitor(std::string mod_file,
-                       std::stringstream& stream,
+    CodegenIspcVisitor(const std::string& mod_file,
+                       std::ostream& stream,
                        LayoutType layout,
-                       std::string float_type)
+                       const std::string& float_type)
         : CodegenCVisitor(mod_file, stream, layout, float_type)
         , fallback_codegen(mod_file, layout, float_type, wrapper_printer) {}
 
-    void visit_function_call(ast::FunctionCall* node) override;
-    void visit_var_name(ast::VarName* node) override;
-    void visit_program(ast::Program* node) override;
+    void visit_function_call(ast::FunctionCall& node) override;
+    void visit_var_name(ast::VarName& node) override;
+    void visit_program(ast::Program& node) override;
 };
 
 /** @} */  // end of codegen_backends

@@ -176,24 +176,24 @@ class InlineVisitor: public AstVisitor {
                               ast::StatementBlock* caller);
 
     /// add assignement statements into given statement block to inline arguments
-    void inline_arguments(ast::StatementBlock* inlined_block,
+    void inline_arguments(ast::StatementBlock& inlined_block,
                           const ast::ArgumentVector& callee_parameters,
                           const ast::ExpressionVector& caller_expressions);
 
     /// add assignment statement at end of block (to use as a return statement
     /// in case of procedure blocks)
-    void add_return_variable(ast::StatementBlock* block, std::string& varname);
+    void add_return_variable(ast::StatementBlock& block, std::string& varname);
 
   public:
     InlineVisitor() = default;
 
-    virtual void visit_function_call(ast::FunctionCall* node) override;
+    void visit_function_call(ast::FunctionCall& node) override;
 
-    virtual void visit_statement_block(ast::StatementBlock* node) override;
+    void visit_statement_block(ast::StatementBlock& node) override;
 
-    virtual void visit_wrapped_expression(ast::WrappedExpression* node) override;
+    void visit_wrapped_expression(ast::WrappedExpression& node) override;
 
-    virtual void visit_program(ast::Program* node) override;
+    void visit_program(ast::Program& node) override;
 };
 
 /** @} */  // end of visitor_classes

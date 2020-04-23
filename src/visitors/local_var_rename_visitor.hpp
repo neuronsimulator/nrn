@@ -73,7 +73,7 @@ class LocalVarRenameVisitor: public AstVisitor {
 
   public:
     LocalVarRenameVisitor() = default;
-    virtual void visit_statement_block(ast::StatementBlock* node) override;
+    virtual void visit_statement_block(ast::StatementBlock& node) override;
 };
 
 /** @} */  // end of visitor_classes

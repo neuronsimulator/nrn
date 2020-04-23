@@ -248,7 +248,7 @@ struct Ast: public std::enable_shared_from_this<Ast> {
    *
    * \sa nmodl::symtab::SymbolTable nmodl::visitor::SymtabVisitor
    */
-  virtual symtab::SymbolTable* get_symbol_table();
+  virtual symtab::SymbolTable* get_symbol_table() const;
 
   /**
    * \brief Return associated statement block for the AST node
@@ -536,7 +536,7 @@ struct Ast: public std::enable_shared_from_this<Ast> {
          *
          * \sa nmodl::symtab::SymbolTable nmodl::visitor::SymtabVisitor
          */
-        symtab::SymbolTable* get_symbol_table() override {
+        symtab::SymbolTable* get_symbol_table() const override {
             return symtab;
         }
 
@@ -651,7 +651,7 @@ struct Ast: public std::enable_shared_from_this<Ast> {
          * \sa Ast::accept for example.
          */
         {{ virtual(node) }} void accept(visitor::Visitor& v) override {
-            v.visit_{{ node.class_name | snake_case }}(this);
+            v.visit_{{ node.class_name | snake_case }}(*this);
         }
 
         /// \}

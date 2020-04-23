@@ -30,7 +30,7 @@ namespace codegen {
 class CodegenOmpVisitor: public CodegenCVisitor {
   protected:
     /// name of the code generation backend
-    std::string backend_name() override;
+    std::string backend_name() const override;
 
 
     /// common includes : standard c/c++, coreneuron and backend specific

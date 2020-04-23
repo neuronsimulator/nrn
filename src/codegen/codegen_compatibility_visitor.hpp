@@ -41,8 +41,9 @@ using namespace ast;
 class CodegenCompatibilityVisitor: public visitor::AstVisitor {
     /// Typedef for defining FunctionPointer that points to the
     /// function needed to be called for every kind of error
-    typedef std::string (CodegenCompatibilityVisitor::*FunctionPointer)(ast::Ast* node,
-                                                                        std::shared_ptr<ast::Ast>&);
+    typedef std::string (CodegenCompatibilityVisitor::*FunctionPointer)(
+        ast::Ast& node,
+        const std::shared_ptr<ast::Ast>&);
 
     /// Unordered_map to find the function needed to be called in
     /// for every ast::AstNodeType that is unsupported
@@ -100,7 +101,7 @@ class CodegenCompatibilityVisitor: public visitor::AstVisitor {
     ///
     /// \param node Ast
     /// \return bool if there are unhandled nodes or not
-    bool find_unhandled_ast_nodes(Ast* node);
+    bool find_unhandled_ast_nodes(Ast& node);
 
     /// Takes as parameter an std::shared_ptr<ast::Ast>,
     /// searches if the method used for solving is supported
@@ -109,8 +110,9 @@ class CodegenCompatibilityVisitor: public visitor::AstVisitor {
     /// \param node Not used by the function
     /// \param ast_node Ast node which is checked
     /// \return std::string error
-    std::string return_error_if_solve_method_is_unhandled(ast::Ast* node,
-                                                          std::shared_ptr<ast::Ast>& ast_node);
+    std::string return_error_if_solve_method_is_unhandled(
+        ast::Ast& node,
+        const std::shared_ptr<ast::Ast>& ast_node);
 
     /// Takes as parameter an std::shared_ptr<ast::Ast> node
     /// and returns a relative error with the name, the type
@@ -121,7 +123,7 @@ class CodegenCompatibilityVisitor: public visitor::AstVisitor {
     /// \param ast_node Ast node which is checked
     /// \return std::string error
     template <typename T>
-    std::string return_error_with_name(ast::Ast* node, std::shared_ptr<ast::Ast>& ast_node) {
+    std::string return_error_with_name(ast::Ast& node, const std::shared_ptr<ast::Ast>& ast_node) {
         auto real_type_block = std::dynamic_pointer_cast<T>(ast_node);
         return "\"{}\" {}construct found at [{}] is not handled\n"_format(
             ast_node->get_node_name(),
@@ -138,7 +140,8 @@ class CodegenCompatibilityVisitor: public visitor::AstVisitor {
     /// \param ast_node Ast node which is checked
     /// \return std::string error
     template <typename T>
-    std::string return_error_without_name(ast::Ast* node, std::shared_ptr<ast::Ast>& ast_node) {
+    std::string return_error_without_name(ast::Ast& node,
+                                          const std::shared_ptr<ast::Ast>& ast_node) {
         auto real_type_block = std::dynamic_pointer_cast<T>(ast_node);
         return "{}construct found at [{}] is not handled\n"_format(
             real_type_block->get_nmodl_name(), real_type_block->get_token()->position());
@@ -152,7 +155,7 @@ class CodegenCompatibilityVisitor: public visitor::AstVisitor {
     /// \param node Ast
     /// \param ast_node Ast node which is checked
     /// \return std::string error
-    std::string return_error_global_var(ast::Ast* node, std::shared_ptr<ast::Ast>& ast_node);
+    std::string return_error_global_var(ast::Ast& node, const std::shared_ptr<ast::Ast>& ast_node);
 
     /// Takes as parameter an std::shared_ptr<ast::Ast> node
     /// and returns a relative error with the name and the
@@ -162,7 +165,7 @@ class CodegenCompatibilityVisitor: public visitor::AstVisitor {
     /// \param node Not used by the function
     /// \param ast_node Ast node which is checked
     /// \return std::string error
-    std::string return_error_pointer(ast::Ast* node, std::shared_ptr<ast::Ast>& ast_node);
+    std::string return_error_pointer(ast::Ast& node, const std::shared_ptr<ast::Ast>& ast_node);
 
     /// Takes as parameter the ast::Ast and checks if the
     /// functions "bbcore_read" and "bbcore_write" are defined
@@ -173,8 +176,8 @@ class CodegenCompatibilityVisitor: public visitor::AstVisitor {
     /// \param node Ast
     /// \param ast_node Not used by the function
     /// \return std::string error
-    std::string return_error_if_no_bbcore_read_write(ast::Ast* node,
-                                                     std::shared_ptr<ast::Ast>& ast_node);
+    std::string return_error_if_no_bbcore_read_write(ast::Ast& node,
+                                                     const std::shared_ptr<ast::Ast>& ast_node);
 };
 
 /** @} */  // end of codegen_backends

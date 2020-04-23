@@ -67,9 +67,9 @@ class RenameVisitor: public AstVisitor {
         rename_verbatim = state;
     }
 
-    virtual void visit_name(ast::Name* node) override;
-    virtual void visit_prime_name(ast::PrimeName* node) override;
-    virtual void visit_verbatim(ast::Verbatim* node) override;
+    void visit_name(ast::Name& node) override;
+    void visit_prime_name(ast::PrimeName& node) override;
+    void visit_verbatim(ast::Verbatim& node) override;
 };
 
 /** @} */  // end of visitor_classes

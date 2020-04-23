@@ -106,7 +106,7 @@ class LocalizeVisitor: public AstVisitor {
     explicit LocalizeVisitor(bool ignore_verbatim)
         : ignore_verbatim(ignore_verbatim) {}
 
-    virtual void visit_program(ast::Program* node) override;
+    virtual void visit_program(ast::Program& node) override;
 };
 
 /** @} */  // end of visitor_classes

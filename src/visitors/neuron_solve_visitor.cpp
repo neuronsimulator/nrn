@@ -19,38 +19,38 @@
 namespace nmodl {
 namespace visitor {
 
-void NeuronSolveVisitor::visit_solve_block(ast::SolveBlock* node) {
-    auto name = node->get_block_name()->get_node_name();
-    auto method = node->get_method();
+void NeuronSolveVisitor::visit_solve_block(ast::SolveBlock& node) {
+    auto name = node.get_block_name()->get_node_name();
+    const auto& method = node.get_method();
     solve_method = method ? method->get_value()->eval() : "";
     solve_blocks[name] = solve_method;
 }
 
 
-void NeuronSolveVisitor::visit_derivative_block(ast::DerivativeBlock* node) {
-    derivative_block_name = node->get_name()->get_node_name();
+void NeuronSolveVisitor::visit_derivative_block(ast::DerivativeBlock& node) {
+    derivative_block_name = node.get_name()->get_node_name();
     derivative_block = true;
-    node->visit_children(*this);
+    node.visit_children(*this);
     derivative_block = false;
 }
 
 
-void NeuronSolveVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
+void NeuronSolveVisitor::visit_diff_eq_expression(ast::DiffEqExpression& node) {
     differential_equation = true;
-    node->visit_children(*this);
+    node.visit_children(*this);
     differential_equation = false;
 }
 
 
-void NeuronSolveVisitor::visit_binary_expression(ast::BinaryExpression* node) {
-    const auto& lhs = node->get_lhs();
+void NeuronSolveVisitor::visit_binary_expression(ast::BinaryExpression& node) {
+    const auto& lhs = node.get_lhs();
 
     /// we have to only solve odes under derivative block where lhs is variable
     if (!derivative_block || !differential_equation || !lhs->is_var_name()) {
         return;
     }
 
-    auto solve_method = solve_blocks[derivative_block_name];
+    const auto& solve_method = solve_blocks[derivative_block_name];
     auto name = std::dynamic_pointer_cast<ast::VarName>(lhs)->get_name();
 
     if (name->is_prime_name()) {
@@ -66,8 +66,8 @@ void NeuronSolveVisitor::visit_binary_expression(ast::BinaryExpression* node) {
                     statement);
                 const auto bin_expr = std::dynamic_pointer_cast<const ast::BinaryExpression>(
                     expr_statement->get_expression());
-                node->set_lhs(std::shared_ptr<ast::Expression>(bin_expr->get_lhs()->clone()));
-                node->set_rhs(std::shared_ptr<ast::Expression>(bin_expr->get_rhs()->clone()));
+                node.set_lhs(std::shared_ptr<ast::Expression>(bin_expr->get_lhs()->clone()));
+                node.set_rhs(std::shared_ptr<ast::Expression>(bin_expr->get_rhs()->clone()));
             } else {
                 logger->warn("NeuronSolveVisitor :: cnexp solver not possible for {}",
                              to_nmodl(node));
@@ -78,11 +78,11 @@ void NeuronSolveVisitor::visit_binary_expression(ast::BinaryExpression* node) {
             auto expr_statement = std::dynamic_pointer_cast<ast::ExpressionStatement>(statement);
             const auto bin_expr = std::dynamic_pointer_cast<const ast::BinaryExpression>(
                 expr_statement->get_expression());
-            node->set_lhs(std::shared_ptr<ast::Expression>(bin_expr->get_lhs()->clone()));
-            node->set_rhs(std::shared_ptr<ast::Expression>(bin_expr->get_rhs()->clone()));
+            node.set_lhs(std::shared_ptr<ast::Expression>(bin_expr->get_lhs()->clone()));
+            node.set_rhs(std::shared_ptr<ast::Expression>(bin_expr->get_rhs()->clone()));
         } else if (solve_method == codegen::naming::DERIVIMPLICIT_METHOD) {
             auto varname = "D" + name->get_node_name();
-            node->set_lhs(std::make_shared<ast::Name>(new ast::String(varname)));
+            node.set_lhs(std::make_shared<ast::Name>(new ast::String(varname)));
             if (program_symtab->lookup(varname) == nullptr) {
                 auto symbol = std::make_shared<symtab::Symbol>(varname, ModToken());
                 symbol->set_original_name(name->get_node_name());
@@ -95,9 +95,9 @@ void NeuronSolveVisitor::visit_binary_expression(ast::BinaryExpression* node) {
     }
 }
 
-void NeuronSolveVisitor::visit_program(ast::Program* node) {
-    program_symtab = node->get_symbol_table();
-    node->visit_children(*this);
+void NeuronSolveVisitor::visit_program(ast::Program& node) {
+    program_symtab = node.get_symbol_table();
+    node.visit_children(*this);
 }
 
 }  // namespace visitor

@@ -42,7 +42,7 @@ class Visitor {
 
         {% for node in nodes %}
         /// visit node of type ast::{{ node.class_name }}
-        virtual void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}* node) = 0;
+        virtual void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}& node) = 0;
         {% endfor %}
 };
 

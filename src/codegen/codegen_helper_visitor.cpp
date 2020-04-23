@@ -48,7 +48,7 @@ using symtab::syminfo::Status;
  * Note that variables in double array do not need this transformation
  * and it seems like they should just follow definition order.
  */
-void CodegenHelperVisitor::sort_with_mod2c_symbol_order(std::vector<SymbolType>& symbols) {
+void CodegenHelperVisitor::sort_with_mod2c_symbol_order(std::vector<SymbolType>& symbols) const {
     /// first sort by global id to get in reverse order
     std::sort(symbols.begin(),
               symbols.end(),
@@ -81,7 +81,7 @@ void CodegenHelperVisitor::find_ion_variables() {
      * For example, eca belongs to ca ion, nai belongs to na ion.
      * We just check if we exclude first/last char, if that is ion name.
      */
-    auto ion_variable = [](std::string var, std::string ion) -> bool {
+    auto ion_variable = [](const std::string& var, const std::string& ion) -> bool {
         auto len = var.size() - 1;
         return (var.substr(1, len) == ion || var.substr(0, len) == ion);
     };
@@ -417,8 +417,8 @@ void CodegenHelperVisitor::find_table_variables() {
 }
 
 
-void CodegenHelperVisitor::visit_suffix(Suffix* node) {
-    auto type = node->get_type()->get_node_name();
+void CodegenHelperVisitor::visit_suffix(Suffix& node) {
+    const auto& type = node.get_type()->get_node_name();
     if (type == naming::POINT_PROCESS) {
         info.point_process = true;
     }
@@ -426,90 +426,90 @@ void CodegenHelperVisitor::visit_suffix(Suffix* node) {
         info.artificial_cell = true;
         info.point_process = true;
     }
-    info.mod_suffix = node->get_node_name();
+    info.mod_suffix = node.get_node_name();
 }
 
 
-void CodegenHelperVisitor::visit_elctrode_current(ElctrodeCurrent* node) {
+void CodegenHelperVisitor::visit_elctrode_current(ElctrodeCurrent& node) {
     info.electrode_current = true;
 }
 
 
-void CodegenHelperVisitor::visit_initial_block(InitialBlock* node) {
+void CodegenHelperVisitor::visit_initial_block(InitialBlock& node) {
     if (under_net_receive_block) {
-        info.net_receive_initial_node = node;
+        info.net_receive_initial_node = &node;
     } else {
-        info.initial_node = node;
+        info.initial_node = &node;
     }
-    node->visit_children(*this);
+    node.visit_children(*this);
 }
 
 
-void CodegenHelperVisitor::visit_net_receive_block(NetReceiveBlock* node) {
+void CodegenHelperVisitor::visit_net_receive_block(NetReceiveBlock& node) {
     under_net_receive_block = true;
-    info.net_receive_node = node;
-    info.num_net_receive_parameters = node->get_parameters().size();
-    node->visit_children(*this);
+    info.net_receive_node = &node;
+    info.num_net_receive_parameters = node.get_parameters().size();
+    node.visit_children(*this);
     under_net_receive_block = false;
 }
 
 
-void CodegenHelperVisitor::visit_derivative_block(DerivativeBlock* node) {
+void CodegenHelperVisitor::visit_derivative_block(DerivativeBlock& node) {
     under_derivative_block = true;
-    node->visit_children(*this);
+    node.visit_children(*this);
     under_derivative_block = false;
 }
 
-void CodegenHelperVisitor::visit_derivimplicit_callback(ast::DerivimplicitCallback* node) {
+void CodegenHelperVisitor::visit_derivimplicit_callback(ast::DerivimplicitCallback& node) {
     info.derivimplicit_used = true;
-    info.derivimplicit_callbacks.push_back(node);
+    info.derivimplicit_callbacks.push_back(&node);
 }
 
 
-void CodegenHelperVisitor::visit_breakpoint_block(BreakpointBlock* node) {
+void CodegenHelperVisitor::visit_breakpoint_block(BreakpointBlock& node) {
     under_breakpoint_block = true;
-    info.breakpoint_node = node;
-    node->visit_children(*this);
+    info.breakpoint_node = &node;
+    node.visit_children(*this);
     under_breakpoint_block = false;
 }
 
 
-void CodegenHelperVisitor::visit_nrn_state_block(ast::NrnStateBlock* node) {
-    info.nrn_state_block = node;
-    node->visit_children(*this);
+void CodegenHelperVisitor::visit_nrn_state_block(ast::NrnStateBlock& node) {
+    info.nrn_state_block = &node;
+    node.visit_children(*this);
 }
 
 
-void CodegenHelperVisitor::visit_procedure_block(ast::ProcedureBlock* node) {
-    info.procedures.push_back(node);
-    node->visit_children(*this);
+void CodegenHelperVisitor::visit_procedure_block(ast::ProcedureBlock& node) {
+    info.procedures.push_back(&node);
+    node.visit_children(*this);
     if (table_statement_used) {
         table_statement_used = false;
-        info.functions_with_table.push_back(node);
+        info.functions_with_table.push_back(&node);
     }
 }
 
 
-void CodegenHelperVisitor::visit_function_block(ast::FunctionBlock* node) {
-    info.functions.push_back(node);
-    node->visit_children(*this);
+void CodegenHelperVisitor::visit_function_block(ast::FunctionBlock& node) {
+    info.functions.push_back(&node);
+    node.visit_children(*this);
     if (table_statement_used) {
         table_statement_used = false;
-        info.functions_with_table.push_back(node);
+        info.functions_with_table.push_back(&node);
     }
 }
 
 
-void CodegenHelperVisitor::visit_eigen_newton_solver_block(ast::EigenNewtonSolverBlock* node) {
+void CodegenHelperVisitor::visit_eigen_newton_solver_block(ast::EigenNewtonSolverBlock& node) {
     info.eigen_newton_solver_exist = true;
 }
 
-void CodegenHelperVisitor::visit_eigen_linear_solver_block(ast::EigenLinearSolverBlock* node) {
+void CodegenHelperVisitor::visit_eigen_linear_solver_block(ast::EigenLinearSolverBlock& node) {
     info.eigen_linear_solver_exist = true;
 }
 
-void CodegenHelperVisitor::visit_function_call(FunctionCall* node) {
-    auto name = node->get_node_name();
+void CodegenHelperVisitor::visit_function_call(FunctionCall& node) {
+    auto name = node.get_node_name();
     if (name == naming::NET_SEND_METHOD) {
         info.net_send_used = true;
     }
@@ -519,9 +519,9 @@ void CodegenHelperVisitor::visit_function_call(FunctionCall* node) {
 }
 
 
-void CodegenHelperVisitor::visit_conductance_hint(ConductanceHint* node) {
-    auto ion = node->get_ion();
-    auto variable = node->get_conductance();
+void CodegenHelperVisitor::visit_conductance_hint(ConductanceHint& node) {
+    const auto& ion = node.get_ion();
+    const auto& variable = node.get_conductance();
     std::string ion_name;
     if (ion) {
         ion_name = ion->get_node_name();
@@ -545,8 +545,8 @@ void CodegenHelperVisitor::visit_conductance_hint(ConductanceHint* node) {
  * is because prime_variables_by_order should contain state variable name and
  * not the one replaced by solver pass.
  */
-void CodegenHelperVisitor::visit_statement_block(ast::StatementBlock* node) {
-    auto statements = node->get_statements();
+void CodegenHelperVisitor::visit_statement_block(ast::StatementBlock& node) {
+    const auto& statements = node.get_statements();
     for (auto& statement: statements) {
         statement->accept(*this);
         if (under_derivative_block && assign_lhs &&
@@ -569,57 +569,57 @@ void CodegenHelperVisitor::visit_statement_block(ast::StatementBlock* node) {
     }
 }
 
-void CodegenHelperVisitor::visit_factor_def(ast::FactorDef* node) {
-    info.factor_definitions.push_back(node);
+void CodegenHelperVisitor::visit_factor_def(ast::FactorDef& node) {
+    info.factor_definitions.push_back(&node);
 }
 
 
-void CodegenHelperVisitor::visit_binary_expression(BinaryExpression* node) {
-    if (node->get_op().eval() == "=") {
-        assign_lhs = node->get_lhs();
+void CodegenHelperVisitor::visit_binary_expression(BinaryExpression& node) {
+    if (node.get_op().eval() == "=") {
+        assign_lhs = node.get_lhs();
     }
-    node->get_lhs()->accept(*this);
-    node->get_rhs()->accept(*this);
+    node.get_lhs()->accept(*this);
+    node.get_rhs()->accept(*this);
 }
 
 
-void CodegenHelperVisitor::visit_bbcore_pointer(BbcorePointer* node) {
+void CodegenHelperVisitor::visit_bbcore_pointer(BbcorePointer& node) {
     info.bbcore_pointer_used = true;
 }
 
 
-void CodegenHelperVisitor::visit_watch(ast::Watch* node) {
+void CodegenHelperVisitor::visit_watch(ast::Watch& node) {
     info.watch_count++;
 }
 
 
-void CodegenHelperVisitor::visit_watch_statement(ast::WatchStatement* node) {
-    info.watch_statements.push_back(node);
-    node->visit_children(*this);
+void CodegenHelperVisitor::visit_watch_statement(ast::WatchStatement& node) {
+    info.watch_statements.push_back(&node);
+    node.visit_children(*this);
 }
 
 
-void CodegenHelperVisitor::visit_for_netcon(ast::ForNetcon* node) {
+void CodegenHelperVisitor::visit_for_netcon(ast::ForNetcon& node) {
     info.for_netcon_used = true;
 }
 
 
-void CodegenHelperVisitor::visit_table_statement(ast::TableStatement* node) {
+void CodegenHelperVisitor::visit_table_statement(ast::TableStatement& node) {
     info.table_count++;
     table_statement_used = true;
 }
 
 
-void CodegenHelperVisitor::visit_program(ast::Program* node) {
-    psymtab = node->get_symbol_table();
-    auto blocks = node->get_blocks();
+void CodegenHelperVisitor::visit_program(ast::Program& node) {
+    psymtab = node.get_symbol_table();
+    auto blocks = node.get_blocks();
     for (auto& block: blocks) {
         info.top_blocks.push_back(block.get());
         if (block->is_verbatim()) {
             info.top_verbatim_blocks.push_back(block.get());
         }
     }
-    node->visit_children(*this);
+    node.visit_children(*this);
     find_range_variables();
     find_non_range_variables();
     find_ion_variables();
@@ -627,24 +627,24 @@ void CodegenHelperVisitor::visit_program(ast::Program* node) {
 }
 
 
-codegen::CodegenInfo CodegenHelperVisitor::analyze(ast::Program* node) {
-    node->accept(*this);
+codegen::CodegenInfo CodegenHelperVisitor::analyze(ast::Program& node) {
+    node.accept(*this);
     return info;
 }
 
-void CodegenHelperVisitor::visit_linear_block(ast::LinearBlock* node) {
+void CodegenHelperVisitor::visit_linear_block(ast::LinearBlock& node) {
     info.vectorize = false;
 }
 
-void CodegenHelperVisitor::visit_non_linear_block(ast::NonLinearBlock* node) {
+void CodegenHelperVisitor::visit_non_linear_block(ast::NonLinearBlock& node) {
     info.vectorize = false;
 }
 
-void CodegenHelperVisitor::visit_discrete_block(ast::DiscreteBlock* node) {
+void CodegenHelperVisitor::visit_discrete_block(ast::DiscreteBlock& node) {
     info.vectorize = false;
 }
 
-void CodegenHelperVisitor::visit_partial_block(ast::PartialBlock* node) {
+void CodegenHelperVisitor::visit_partial_block(ast::PartialBlock& node) {
     info.vectorize = false;
 }
 

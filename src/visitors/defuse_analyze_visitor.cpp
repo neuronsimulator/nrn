@@ -192,24 +192,24 @@ void DefUseAnalyzeVisitor::visit_unsupported_node(ast::Node* node) {
  *  there is no inlining happened. In this case we mark the call as
  *  unsupported.
  */
-void DefUseAnalyzeVisitor::visit_function_call(ast::FunctionCall* node) {
-    std::string function_name = node->get_node_name();
-    auto symbol = global_symtab->lookup_in_scope(function_name);
+void DefUseAnalyzeVisitor::visit_function_call(ast::FunctionCall& node) {
+    const auto& function_name = node.get_node_name();
+    const auto& symbol = global_symtab->lookup_in_scope(function_name);
     if (symbol == nullptr || symbol->is_external_variable()) {
-        node->visit_children(*this);
+        node.visit_children(*this);
     } else {
-        visit_unsupported_node(node);
+        visit_unsupported_node(&node);
     }
 }
 
-void DefUseAnalyzeVisitor::visit_statement_block(ast::StatementBlock* node) {
-    auto symtab = node->get_symbol_table();
+void DefUseAnalyzeVisitor::visit_statement_block(ast::StatementBlock& node) {
+    const auto& symtab = node.get_symbol_table();
     if (symtab != nullptr) {
         current_symtab = symtab;
     }
 
     symtab_stack.push(current_symtab);
-    node->visit_children(*this);
+    node.visit_children(*this);
     symtab_stack.pop();
     current_symtab = symtab_stack.top();
 }
@@ -217,16 +217,16 @@ void DefUseAnalyzeVisitor::visit_statement_block(ast::StatementBlock* node) {
 /** Nmodl grammar doesn't allow assignment operator on rhs (e.g. a = b + (b=c)
  *  and hence not necessary to keep track of assignment operator using stack.
  */
-void DefUseAnalyzeVisitor::visit_binary_expression(ast::BinaryExpression* node) {
-    node->get_rhs()->visit_children(*this);
-    if (node->get_op().get_value() == ast::BOP_ASSIGN) {
+void DefUseAnalyzeVisitor::visit_binary_expression(ast::BinaryExpression& node) {
+    node.get_rhs()->visit_children(*this);
+    if (node.get_op().get_value() == ast::BOP_ASSIGN) {
         visiting_lhs = true;
     }
-    node->get_lhs()->visit_children(*this);
+    node.get_lhs()->visit_children(*this);
     visiting_lhs = false;
 }
 
-void DefUseAnalyzeVisitor::visit_if_statement(ast::IfStatement* node) {
+void DefUseAnalyzeVisitor::visit_if_statement(ast::IfStatement& node) {
     /// store previous chain
     auto previous_chain = current_chain;
 
@@ -237,21 +237,21 @@ void DefUseAnalyzeVisitor::visit_if_statement(ast::IfStatement* node) {
     /// visiting if sub-block
     auto last_chain = current_chain;
     start_new_chain(DUState::IF);
-    node->get_condition()->accept(*this);
-    auto block = node->get_statement_block();
+    node.get_condition()->accept(*this);
+    const auto& block = node.get_statement_block();
     if (block) {
         block->accept(*this);
     }
     current_chain = last_chain;
 
     /// visiting else if sub-blocks
-    for (const auto& item: node->get_elseifs()) {
+    for (const auto& item: node.get_elseifs()) {
         visit_with_new_chain(item.get(), DUState::ELSEIF);
     }
 
     /// visiting else sub-block
-    if (node->get_elses()) {
-        visit_with_new_chain(node->get_elses().get(), DUState::ELSE);
+    if (node.get_elses()) {
+        visit_with_new_chain(node.get_elses().get(), DUState::ELSE);
     }
 
     /// restore to previous chain
@@ -264,7 +264,7 @@ void DefUseAnalyzeVisitor::visit_if_statement(ast::IfStatement* node) {
  * \todo One simple way would be to look for p_name in the string
  *        of verbatim block to find the variable usage.
  */
-void DefUseAnalyzeVisitor::visit_verbatim(ast::Verbatim* node) {
+void DefUseAnalyzeVisitor::visit_verbatim(ast::Verbatim& node) {
     if (!ignore_verbatim) {
         current_chain->push_back(DUInstance(DUState::U));
     }

@@ -354,31 +354,31 @@ struct CodegenInfo {
     bool eigen_linear_solver_exist = false;
 
     /// if any ion has write variable
-    bool ion_has_write_variable();
+    bool ion_has_write_variable() const;
 
     /// if given variable is ion write variable
-    bool is_ion_write_variable(const std::string& name);
+    bool is_ion_write_variable(const std::string& name) const;
 
     /// if given variable is ion read variable
-    bool is_ion_read_variable(const std::string& name);
+    bool is_ion_read_variable(const std::string& name) const;
 
     /// if either read or write variable
-    bool is_ion_variable(const std::string& name);
+    bool is_ion_variable(const std::string& name) const;
 
     /// if given variable is a current
-    bool is_current(const std::string& name);
+    bool is_current(const std::string& name) const;
 
     /// if watch statements are used
-    bool is_watch_used() const {
+    bool is_watch_used() const noexcept {
         return watch_count > 0;
     }
 
-    bool emit_table_thread() const {
+    bool emit_table_thread() const noexcept {
         return (table_count > 0 && vectorize == true);
     }
 
     /// if legacy derivimplicit solver from coreneuron to be used
-    bool derivimplicit_coreneuron_solver();
+    bool derivimplicit_coreneuron_solver() const;
 
     bool function_uses_table(std::string& name) const;
 

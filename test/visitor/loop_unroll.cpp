@@ -30,17 +30,17 @@ using nmodl::parser::NmodlDriver;
 
 std::string run_loop_unroll_visitor(const std::string& text) {
     NmodlDriver driver;
-    auto ast = driver.parse_string(text);
+    const auto& ast = driver.parse_string(text);
 
-    SymtabVisitor().visit_program(ast.get());
-    ConstantFolderVisitor().visit_program(ast.get());
-    LoopUnrollVisitor().visit_program(ast.get());
-    ConstantFolderVisitor().visit_program(ast.get());
+    SymtabVisitor().visit_program(*ast);
+    ConstantFolderVisitor().visit_program(*ast);
+    LoopUnrollVisitor().visit_program(*ast);
+    ConstantFolderVisitor().visit_program(*ast);
 
     // check that, after visitor rearrangement, parents are still up-to-date
-    CheckParentVisitor().visit_program(ast.get());
+    CheckParentVisitor().visit_program(*ast);
 
-    return to_nmodl(ast.get(), {AstNodeType::DEFINE});
+    return to_nmodl(ast, {AstNodeType::DEFINE});
 }
 
 SCENARIO("Perform loop unrolling of FROM construct", "[visitor][unroll]") {

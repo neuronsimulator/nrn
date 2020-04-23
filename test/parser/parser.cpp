@@ -210,10 +210,9 @@ void parse_neuron_block_string(const std::string& name, nmodl::ModToken& value) 
     nmodl::parser::NmodlDriver driver;
     driver.parse_string(name);
 
-    auto ast_program = driver.get_ast();
-    std::vector<std::shared_ptr<nmodl::ast::Ast>> neuron_blocks =
-        AstLookupVisitor().lookup(ast_program->get_shared_ptr().get(),
-                                  nmodl::ast::AstNodeType::NEURON_BLOCK);
+    const auto& ast_program = driver.get_ast();
+    const auto& neuron_blocks = AstLookupVisitor().lookup(*ast_program->get_shared_ptr(),
+                                                          nmodl::ast::AstNodeType::NEURON_BLOCK);
     value = *(neuron_blocks[0]->get_token());
 }
 

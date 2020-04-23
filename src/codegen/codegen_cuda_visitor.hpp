@@ -27,17 +27,19 @@ namespace codegen {
  * \brief %Visitor for printing CUDA backend
  */
 class CodegenCudaVisitor: public CodegenCVisitor {
-    void print_atomic_op(const std::string& lhs, const std::string& op, const std::string& rhs);
+    void print_atomic_op(const std::string& lhs,
+                         const std::string& op,
+                         const std::string& rhs) const;
 
   protected:
     /// name of the code generation backend
-    std::string backend_name() override;
+    std::string backend_name() const override;
 
     /// if variable is qualified as constant
-    bool is_constant_variable(std::string name) override;
+    bool is_constant_variable(const std::string& name) const override;
 
     /// return name of main compute kernels
-    std::string compute_method_name(BlockType type) override;
+    std::string compute_method_name(BlockType type) const override;
 
 
     /// common includes : standard c/c++, coreneuron and backend specific
@@ -91,7 +93,7 @@ class CodegenCudaVisitor: public CodegenCVisitor {
 
 
     /// print wrapper function that calls cuda kernel
-    void print_wrapper_routine(std::string wraper_function, BlockType type);
+    void print_wrapper_routine(std::string wrapper_function, BlockType type);
 
 
     /// wrapper/caller routines for nrn_state and nrn_cur
@@ -102,16 +104,16 @@ class CodegenCudaVisitor: public CodegenCVisitor {
     void print_codegen_routines() override;
 
   public:
-    CodegenCudaVisitor(std::string mod_file,
-                       std::string output_dir,
+    CodegenCudaVisitor(const std::string& mod_file,
+                       const std::string& output_dir,
                        LayoutType layout,
-                       std::string float_type)
+                       const std::string& float_type)
         : CodegenCVisitor(mod_file, output_dir, layout, float_type, ".cu") {}
 
-    CodegenCudaVisitor(std::string mod_file,
-                       std::stringstream& stream,
+    CodegenCudaVisitor(const std::string& mod_file,
+                       std::ostream& stream,
                        LayoutType layout,
-                       std::string float_type)
+                       const std::string& float_type)
         : CodegenCVisitor(mod_file, stream, layout, float_type) {}
 };
 

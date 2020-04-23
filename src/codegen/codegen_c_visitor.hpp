@@ -18,7 +18,7 @@
 #include <algorithm>
 #include <cmath>
 #include <ctime>
-#include <sstream>
+#include <ostream>
 #include <string>
 #include <utility>
 
@@ -117,7 +117,7 @@ struct IndexVariableInfo {
     /// if the variable is qualified as constant (this is property of IndexVariable)
     bool is_constant = false;
 
-    IndexVariableInfo(std::shared_ptr<symtab::Symbol> symbol,
+    IndexVariableInfo(const std::shared_ptr<symtab::Symbol>& symbol,
                       bool is_vdata = false,
                       bool is_index = false,
                       bool is_integer = false)
@@ -296,7 +296,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * Return Nmodl language version
      * \return A version
      */
-    std::string nmodl_version() {
+    std::string nmodl_version() const noexcept {
         return codegen::naming::NMODL_VERSION;
     }
 
@@ -306,7 +306,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param text The string to be quoted
      * \return     The same string with double-quotes pre- and postfixed
      */
-    std::string add_escape_quote(const std::string& text) {
+    std::string add_escape_quote(const std::string& text) const {
         return "\"" + text + "\"";
     }
 
@@ -314,7 +314,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
     /**
      * Operator for rhs vector update (matrix update)
      */
-    std::string operator_for_rhs() {
+    std::string operator_for_rhs() const noexcept {
         return info.electrode_current ? "+=" : "-=";
     }
 
@@ -322,7 +322,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
     /**
      * Operator for diagonal vector update (matrix update)
      */
-    std::string operator_for_d() {
+    std::string operator_for_d() const noexcept {
         return info.electrode_current ? "-=" : "+=";
     }
 
@@ -330,7 +330,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
     /**
      * Data type for the local variables
      */
-    std::string local_var_type() {
+    std::string local_var_type() const noexcept {
         return codegen::naming::DEFAULT_LOCAL_VAR_TYPE;
     }
 
@@ -338,7 +338,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
     /**
      * Default data type for floating point elements
      */
-    std::string default_float_data_type() {
+    std::string default_float_data_type() const noexcept {
         return codegen::naming::DEFAULT_FLOAT_TYPE;
     }
 
@@ -346,7 +346,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
     /**
      * Data type for floating point elements specified on command line
      */
-    std::string float_data_type() {
+    const std::string& float_data_type() const noexcept {
         return float_type;
     }
 
@@ -354,7 +354,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
     /**
      * Default data type for integer (offset) elements
      */
-    std::string default_int_data_type() {
+    std::string default_int_data_type() const noexcept {
         return codegen::naming::DEFAULT_INTEGER_TYPE;
     }
 
@@ -364,7 +364,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param name The function name to check
      * \return     \c true if the function is net_send
      */
-    bool is_net_send(const std::string& name) {
+    bool is_net_send(const std::string& name) const noexcept {
         return name == codegen::naming::NET_SEND_METHOD;
     }
 
@@ -373,7 +373,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param name The function name to check
      * \return     \c true if the function is net_move
      */
-    bool is_net_move(const std::string& name) {
+    bool is_net_move(const std::string& name) const noexcept {
         return name == codegen::naming::NET_MOVE_METHOD;
     }
 
@@ -382,7 +382,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param name The function name to check
      * \return     \c true if the function is net_event
      */
-    bool is_net_event(const std::string& name) {
+    bool is_net_event(const std::string& name) const noexcept {
         return name == codegen::naming::NET_EVENT_METHOD;
     }
 
@@ -390,7 +390,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
     /**
      * Name of structure that wraps range variables
      */
-    std::string instance_struct() {
+    std::string instance_struct() const {
         return "{}_Instance"_format(info.mod_suffix);
     }
 
@@ -398,7 +398,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
     /**
      * Name of structure that wraps range variables
      */
-    std::string global_struct() {
+    std::string global_struct() const {
         return "{}_Store"_format(info.mod_suffix);
     }
 
@@ -408,9 +408,8 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param name The name of the function or procedure
      * \return     The name of the function or procedure postfixed with the model name
      */
-    std::string method_name(const std::string& name) {
-        auto suffix = info.mod_suffix;
-        return name + "_" + suffix;
+    std::string method_name(const std::string& name) const {
+        return name + "_" + info.mod_suffix;
     }
 
 
@@ -419,7 +418,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param name The name of the variable
      * \return     The name of the variable prefixed with \c shadow_
      */
-    std::string shadow_varname(const std::string& name) {
+    std::string shadow_varname(const std::string& name) const {
         return "shadow_" + name;
     }
 
@@ -429,7 +428,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param name The name of the symbol
      * \return     A symbol based on the given name
      */
-    SymbolType make_symbol(std::string name) {
+    SymbolType make_symbol(const std::string& name) const {
         return std::make_shared<symtab::Symbol>(name, ModToken());
     }
 
@@ -439,56 +438,56 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param name The variable name
      * \return     \c true if the variable is a state variable
      */
-    bool state_variable(std::string name);
+    bool state_variable(const std::string& name) const;
 
 
     /**
      * Check if net receive/send buffering kernels required
      */
-    bool net_receive_buffering_required();
+    bool net_receive_buffering_required() const noexcept;
 
 
     /**
      * Check if nrn_state function is required
      */
-    bool nrn_state_required();
+    bool nrn_state_required() const noexcept;
 
 
     /**
      * Check if nrn_cur function is required
      */
-    bool nrn_cur_required();
+    bool nrn_cur_required() const noexcept;
 
 
     /**
      * Check if net_receive function is required
      */
-    bool net_receive_required();
+    bool net_receive_required() const noexcept;
 
 
     /**
      * Check if net_send_buffer is required
      */
-    bool net_send_buffer_required();
+    bool net_send_buffer_required() const noexcept;
 
 
     /**
      * Check if setup_range_variable function is required
      * \return
      */
-    bool range_variable_setup_required();
+    bool range_variable_setup_required() const noexcept;
 
 
     /**
      * Check if net_receive node exist
      */
-    bool net_receive_exist();
+    bool net_receive_exist() const noexcept;
 
 
     /**
      * Check if breakpoint node exist
      */
-    bool breakpoint_exist();
+    bool breakpoint_exist() const noexcept;
 
 
     /**
@@ -496,7 +495,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param name The name of the method to check
      * \return     \c true if the method is defined
      */
-    bool defined_method(const std::string& name);
+    bool defined_method(const std::string& name) const;
 
 
     /**
@@ -504,7 +503,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param node The AST Statement node to check
      * \return     \c true if this Statement is to be skipped
      */
-    bool statement_to_skip(ast::Statement* node);
+    bool statement_to_skip(const ast::Statement& node) const;
 
 
     /**
@@ -512,13 +511,13 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param node The AST Statement node to check
      * \return     \c true if this Statement requires a semicolon
      */
-    bool need_semicolon(ast::Statement* node);
+    bool need_semicolon(ast::Statement* node) const;
 
 
     /**
      * Determine the number of threads to allocate
      */
-    int num_thread_objects() {
+    int num_thread_objects() const noexcept {
         return info.vectorize ? (info.thread_data_index + 1) : 0;
     }
 
@@ -526,13 +525,13 @@ class CodegenCVisitor: public visitor::AstVisitor {
     /**
      * Number of float variables in the model
      */
-    int float_variables_size();
+    int float_variables_size() const;
 
 
     /**
      * Number of integer variables in the model
      */
-    int int_variables_size();
+    int int_variables_size() const;
 
 
     /**
@@ -540,7 +539,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param name The name of a float variable
      * \return     The position index in the data array
      */
-    int position_of_float_var(const std::string& name);
+    int position_of_float_var(const std::string& name) const;
 
 
     /**
@@ -548,7 +547,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param name The name of an int variable
      * \return     The position index in the data array
      */
-    int position_of_int_var(const std::string& name);
+    int position_of_int_var(const std::string& name) const;
 
 
     /**
@@ -556,13 +555,13 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param name The ion variable name
      * \return     The updated name of the variable has been optimized (e.g. \c ena --> \c ion_ena)
      */
-    std::string update_if_ion_variable_name(const std::string& name);
+    std::string update_if_ion_variable_name(const std::string& name) const;
 
 
     /**
      * Name of the code generation backend
      */
-    virtual std::string backend_name();
+    virtual std::string backend_name() const;
 
 
     /**
@@ -593,7 +592,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \return             The backend code string representing the access to the given variable
      * symbol
      */
-    std::string float_variable_name(SymbolType& symbol, bool use_instance);
+    std::string float_variable_name(const SymbolType& symbol, bool use_instance) const;
 
 
     /**
@@ -609,9 +608,9 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \return             The backend code string representing the access to the given variable
      * symbol
      */
-    std::string int_variable_name(IndexVariableInfo& symbol,
+    std::string int_variable_name(const IndexVariableInfo& symbol,
                                   const std::string& name,
-                                  bool use_instance);
+                                  bool use_instance) const;
 
 
     /**
@@ -619,7 +618,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param symbol The symbol of a variable for which we want to obtain its name
      * \return       The C string representing the access to the global variable
      */
-    std::string global_variable_name(SymbolType& symbol);
+    std::string global_variable_name(const SymbolType& symbol) const;
 
 
     /**
@@ -627,7 +626,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param symbol The symbol of a variable for which we want to obtain its name
      * \return       The C string representing the access to the shadow variable
      */
-    std::string ion_shadow_variable_name(SymbolType& symbol);
+    std::string ion_shadow_variable_name(const SymbolType& symbol) const;
 
 
     /**
@@ -638,7 +637,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \return             The C string representing the access to the variable in the neuron thread
      * structure
      */
-    std::string get_variable_name(const std::string& name, bool use_instance = true);
+    std::string get_variable_name(const std::string& name, bool use_instance = true) const;
 
 
     /**
@@ -647,7 +646,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param current The variable name for the current used in the model
      * \return        The name for the current to be printed in C
      */
-    std::string breakpoint_current(std::string current);
+    std::string breakpoint_current(std::string current) const;
 
 
     /**
@@ -715,7 +714,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param open_brace  Print an opening brace if \c false
      * \param close_brace Print a closing brace if \c true
      */
-    void print_statement_block(ast::StatementBlock* node,
+    void print_statement_block(ast::StatementBlock& node,
                                bool open_brace = true,
                                bool close_brace = true);
 
@@ -724,7 +723,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * Check if a structure for ion variables is required
      * \return \c true if a structure fot ion variables must be generated
      */
-    bool ion_variable_struct_required();
+    bool ion_variable_struct_required() const;
 
 
     /**
@@ -781,7 +780,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param name The ion variable name
      * \return     The ion read variable name
      */
-    std::pair<std::string, std::string> read_ion_variable_name(std::string name);
+    std::pair<std::string, std::string> read_ion_variable_name(const std::string& name) const;
 
 
     /**
@@ -789,7 +788,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param name The ion variable name
      * \return     The ion write variable name
      */
-    std::pair<std::string, std::string> write_ion_variable_name(std::string name);
+    std::pair<std::string, std::string> write_ion_variable_name(const std::string& name) const;
 
 
     /**
@@ -822,7 +821,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * Arguments for external functions called from generated code
      * \return A string representing the arguments passed to an external function
      */
-    std::string external_method_arguments();
+    std::string external_method_arguments() const;
 
 
     /**
@@ -834,13 +833,13 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param table
      * \return      A string representing the parameters of the function
      */
-    std::string external_method_parameters(bool table = false);
+    std::string external_method_parameters(bool table = false) const;
 
 
     /**
      * Arguments for register_mech or point_register_mech function
      */
-    std::string register_mechanism_arguments();
+    std::string register_mechanism_arguments() const;
 
 
     /**
@@ -867,7 +866,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * Return the name of main compute kernels
      * \param type A block type
      */
-    virtual std::string compute_method_name(BlockType type);
+    virtual std::string compute_method_name(BlockType type) const;
 
 
     /**
@@ -953,7 +952,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
     /**
      * Print memory allocation routine
      */
-    virtual void print_memory_allocation_routine();
+    virtual void print_memory_allocation_routine() const;
 
 
     /**
@@ -1000,7 +999,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
     /**
      * Check if ion variable are copies avoided
      */
-    bool optimize_ion_variable_copies();
+    bool optimize_ion_variable_copies() const;
 
 
     /**
@@ -1014,7 +1013,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param name The name of variable
      * \return \c true if it is constant
      */
-    virtual bool is_constant_variable(std::string name);
+    virtual bool is_constant_variable(const std::string& name) const;
 
 
     /**
@@ -1189,28 +1188,28 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * Print call to internal or external function
      * \param node The AST node representing a function call
      */
-    void print_function_call(ast::FunctionCall* node);
+    void print_function_call(ast::FunctionCall& node);
 
 
     /**
      * Print call to \c net\_send
      * \param node The AST node representing the function call
      */
-    void print_net_send_call(ast::FunctionCall* node);
+    void print_net_send_call(ast::FunctionCall& node);
 
 
     /**
      * Print call to net\_move
      * \param node The AST node representing the function call
      */
-    void print_net_move_call(ast::FunctionCall* node);
+    void print_net_move_call(ast::FunctionCall& node);
 
 
     /**
      * Print call to net\_event
      * \param node The AST node representing the function call
      */
-    void print_net_event_call(ast::FunctionCall* node);
+    void print_net_event_call(ast::FunctionCall& node);
 
 
     /**
@@ -1306,7 +1305,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param node the AST node representing the function or procedure in NMODL
      * \param name the name of the function or procedure
      */
-    void print_function_or_procedure(ast::Block* node, std::string& name);
+    void print_function_or_procedure(ast::Block& node, const std::string& name);
 
 
     /**
@@ -1354,7 +1353,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param need_mech_inst \c true if a local \c inst variable needs to be defined in generated
      * code
      */
-    void print_net_receive_common_code(ast::Block* node, bool need_mech_inst = true);
+    void print_net_receive_common_code(ast::Block& node, bool need_mech_inst = true);
 
 
     /**
@@ -1456,7 +1455,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * Print main body of nrn_cur function
      * \param node the AST node representing the NMODL breakpoint block
      */
-    void print_nrn_cur_kernel(ast::BreakpointBlock* node);
+    void print_nrn_cur_kernel(ast::BreakpointBlock& node);
 
 
     /**
@@ -1467,7 +1466,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      *
      * \param node the AST node representing the NMODL breakpoint block
      */
-    void print_nrn_cur_conductance_kernel(ast::BreakpointBlock* node);
+    void print_nrn_cur_conductance_kernel(ast::BreakpointBlock& node);
 
 
     /**
@@ -1485,7 +1484,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \note nrn_cur_kernel will have two calls to nrn_current if no conductance keywords specified
      * \param node the AST node representing the NMODL breakpoint block
      */
-    void print_nrn_current(ast::BreakpointBlock* node);
+    void print_nrn_current(ast::BreakpointBlock& node);
 
 
     /**
@@ -1588,15 +1587,16 @@ class CodegenCVisitor: public visitor::AstVisitor {
     /**
      * Get device variable pointer for corresponding host variable
      */
-    virtual std::string get_variable_device_pointer(std::string variable, std::string type);
+    virtual std::string get_variable_device_pointer(const std::string& variable,
+                                                    const std::string& type) const;
 
 
-    CodegenCVisitor(std::string mod_filename,
-                    std::string output_dir,
+    CodegenCVisitor(const std::string& mod_filename,
+                    const std::string& output_dir,
                     LayoutType layout,
-                    std::string float_type,
-                    std::string extension,
-                    std::string wrapper_ext)
+                    const std::string& float_type,
+                    const std::string& extension,
+                    const std::string& wrapper_ext)
         : target_printer(new CodePrinter(output_dir + "/" + mod_filename + extension))
         , wrapper_printer(new CodePrinter(output_dir + "/" + mod_filename + wrapper_ext))
         , printer(target_printer)
@@ -1624,11 +1624,11 @@ class CodegenCVisitor: public visitor::AstVisitor {
      *                     as-is in the target code. This defaults to \c double.
      * \param extension    The file extension to use. This defaults to \c .cpp .
      */
-    CodegenCVisitor(std::string mod_filename,
-                    std::string output_dir,
+    CodegenCVisitor(const std::string& mod_filename,
+                    const std::string& output_dir,
                     LayoutType layout,
-                    std::string float_type,
-                    std::string extension = ".cpp")
+                    const std::string& float_type,
+                    const std::string& extension = ".cpp")
         : target_printer(new CodePrinter(output_dir + "/" + mod_filename + extension))
         , printer(target_printer)
         , mod_filename(mod_filename)
@@ -1639,7 +1639,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \copybrief CodegenCVisitor(std::string, std::string, LayoutType, std::string, std::string)
      *
      * This constructor instantiates an NMODL C code generator and allows writing generated code
-     * into a \c std::stringstream.
+     * into an output stream.
      *
      * \note No code generation is performed at this stage. Since the code
      * generator classes are all based on \c AstVisitor the AST must be visited using e.g. \c
@@ -1647,15 +1647,15 @@ class CodegenCVisitor: public visitor::AstVisitor {
      *
      * \param mod_filename The name of the model for which code should be generated.
      *                     It is used for constructing an output filename.
-     * \param stream       The \c std::stringstream onto which to write the generated code
+     * \param stream       The output stream onto which to write the generated code
      * \param layout       The memory layout to be used for data structure generation.
      * \param float_type   The float type to use in the generated code. The string will be used
      *                     as-is in the target code. This defaults to \c double.
      */
-    CodegenCVisitor(std::string mod_filename,
-                    std::stringstream& stream,
+    CodegenCVisitor(const std::string& mod_filename,
+                    std::ostream& stream,
                     LayoutType layout,
-                    std::string float_type)
+                    const std::string& float_type)
         : target_printer(new CodePrinter(stream))
         , printer(target_printer)
         , mod_filename(mod_filename)
@@ -1743,28 +1743,28 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * Print \c check\_function() for functions or procedure using table
      * \param node The AST node representing a function or procedure block
      */
-    void print_table_check_function(ast::Block* node);
+    void print_table_check_function(ast::Block& node);
 
 
     /**
      * Print replacement function for function or procedure using table
      * \param node The AST node representing a function or procedure block
      */
-    void print_table_replacement_function(ast::Block* node);
+    void print_table_replacement_function(ast::Block& node);
 
 
     /**
      * Print NMODL function in target backend code
      * \param node
      */
-    void print_function(ast::FunctionBlock* node);
+    void print_function(ast::FunctionBlock& node);
 
 
     /**
      * Print NMODL procedure in target backend code
      * \param node
      */
-    virtual void print_procedure(ast::ProcedureBlock* node);
+    virtual void print_procedure(ast::ProcedureBlock& node);
 
 
     /** Setup the target backend code generator
@@ -1772,7 +1772,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * Typically called from within \c visit\_program but may be called from
      * specialized targets to setup this Code generator as fallback.
      */
-    void setup(ast::Program* node);
+    void setup(ast::Program& node);
 
 
     /**
@@ -1787,37 +1787,37 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * @param original_name Original name of variable to change
      * @return std::string Unique name produced as <original_name>_<random_string>
      */
-    std::string find_var_unique_name(const std::string& original_name);
+    std::string find_var_unique_name(const std::string& original_name) const;
 
-    virtual void visit_binary_expression(ast::BinaryExpression* node) override;
-    virtual void visit_binary_operator(ast::BinaryOperator* node) override;
-    virtual void visit_boolean(ast::Boolean* node) override;
-    virtual void visit_double(ast::Double* node) override;
-    virtual void visit_else_if_statement(ast::ElseIfStatement* node) override;
-    virtual void visit_else_statement(ast::ElseStatement* node) override;
-    virtual void visit_float(ast::Float* node) override;
-    virtual void visit_from_statement(ast::FromStatement* node) override;
-    virtual void visit_function_call(ast::FunctionCall* node) override;
-    virtual void visit_eigen_newton_solver_block(ast::EigenNewtonSolverBlock* node) override;
-    virtual void visit_eigen_linear_solver_block(ast::EigenLinearSolverBlock* node) override;
-    virtual void visit_if_statement(ast::IfStatement* node) override;
-    virtual void visit_indexed_name(ast::IndexedName* node) override;
-    virtual void visit_integer(ast::Integer* node) override;
-    virtual void visit_local_list_statement(ast::LocalListStatement* node) override;
-    virtual void visit_name(ast::Name* node) override;
-    virtual void visit_paren_expression(ast::ParenExpression* node) override;
-    virtual void visit_prime_name(ast::PrimeName* node) override;
-    virtual void visit_program(ast::Program* node) override;
-    virtual void visit_statement_block(ast::StatementBlock* node) override;
-    virtual void visit_string(ast::String* node) override;
-    virtual void visit_solution_expression(ast::SolutionExpression* node) override;
-    virtual void visit_unary_operator(ast::UnaryOperator* node) override;
-    virtual void visit_unit(ast::Unit* node) override;
-    virtual void visit_var_name(ast::VarName* node) override;
-    virtual void visit_verbatim(ast::Verbatim* node) override;
-    virtual void visit_watch_statement(ast::WatchStatement* node) override;
-    virtual void visit_while_statement(ast::WhileStatement* node) override;
-    virtual void visit_derivimplicit_callback(ast::DerivimplicitCallback* node) override;
+    void visit_binary_expression(ast::BinaryExpression& node) override;
+    void visit_binary_operator(ast::BinaryOperator& node) override;
+    void visit_boolean(ast::Boolean& node) override;
+    void visit_double(ast::Double& node) override;
+    void visit_else_if_statement(ast::ElseIfStatement& node) override;
+    void visit_else_statement(ast::ElseStatement& node) override;
+    void visit_float(ast::Float& node) override;
+    void visit_from_statement(ast::FromStatement& node) override;
+    void visit_function_call(ast::FunctionCall& node) override;
+    void visit_eigen_newton_solver_block(ast::EigenNewtonSolverBlock& node) override;
+    void visit_eigen_linear_solver_block(ast::EigenLinearSolverBlock& node) override;
+    void visit_if_statement(ast::IfStatement& node) override;
+    void visit_indexed_name(ast::IndexedName& node) override;
+    void visit_integer(ast::Integer& node) override;
+    void visit_local_list_statement(ast::LocalListStatement& node) override;
+    void visit_name(ast::Name& node) override;
+    void visit_paren_expression(ast::ParenExpression& node) override;
+    void visit_prime_name(ast::PrimeName& node) override;
+    void visit_program(ast::Program& node) override;
+    void visit_statement_block(ast::StatementBlock& node) override;
+    void visit_string(ast::String& node) override;
+    void visit_solution_expression(ast::SolutionExpression& node) override;
+    void visit_unary_operator(ast::UnaryOperator& node) override;
+    void visit_unit(ast::Unit& node) override;
+    void visit_var_name(ast::VarName& node) override;
+    void visit_verbatim(ast::Verbatim& node) override;
+    void visit_watch_statement(ast::WatchStatement& node) override;
+    void visit_while_statement(ast::WhileStatement& node) override;
+    void visit_derivimplicit_callback(ast::DerivimplicitCallback& node) override;
 };
 
 
@@ -1868,14 +1868,14 @@ void CodegenCVisitor::print_function_declaration(const T& node, const std::strin
 
     // internal and user provided arguments
     auto internal_params = internal_method_parameters();
-    auto params = node->get_parameters();
+    const auto& params = node.get_parameters();
     for (const auto& param: params) {
         internal_params.emplace_back("", type, "", param.get()->get_node_name());
     }
 
     // procedures have "int" return type by default
     std::string return_type = "int";
-    if (node->is_function_block()) {
+    if (node.is_function_block()) {
         return_type = default_float_data_type();
     }
 
