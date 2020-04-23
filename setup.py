@@ -13,7 +13,7 @@ from setuptools import setup
 
 
 # Main source of the version. Dont rename
-__version__ = '7.8.11.3'
+__version__ = '7.8.11.4'
 
 
 # RX3D must be checked for very early as it changes imports
