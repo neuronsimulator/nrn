@@ -25,7 +25,7 @@ using symtab::syminfo::NmodlType;
  * backend can mark the parameter as constant even if they have
  * write count > 0 (typically due to initial block).
  */
-bool CodegenCudaVisitor::is_constant_variable(std::string name) {
+bool CodegenCudaVisitor::is_constant_variable(const std::string& name) const {
     auto symbol = program_symtab->lookup_in_scope(name);
     bool is_constant = false;
     if (symbol != nullptr) {
@@ -40,7 +40,7 @@ bool CodegenCudaVisitor::is_constant_variable(std::string name) {
 }
 
 
-std::string CodegenCudaVisitor::compute_method_name(BlockType type) {
+std::string CodegenCudaVisitor::compute_method_name(BlockType type) const {
     if (type == BlockType::Initial) {
         return method_name("nrn_init");
     }
@@ -56,7 +56,7 @@ std::string CodegenCudaVisitor::compute_method_name(BlockType type) {
 
 void CodegenCudaVisitor::print_atomic_op(const std::string& lhs,
                                          const std::string& op,
-                                         const std::string& rhs) {
+                                         const std::string& rhs) const {
     std::string function;
     if (op == "+") {
         function = "atomicAdd";
@@ -74,7 +74,7 @@ void CodegenCudaVisitor::print_backend_includes() {
 }
 
 
-std::string CodegenCudaVisitor::backend_name() {
+std::string CodegenCudaVisitor::backend_name() const {
     return "C-CUDA (api-compatibility)";
 }
 
@@ -165,11 +165,11 @@ void CodegenCudaVisitor::print_compute_functions() {
     print_function_prototypes();
 
     for (const auto& procedure: info.procedures) {
-        print_procedure(procedure);
+        print_procedure(*procedure);
     }
 
     for (const auto& function: info.functions) {
-        print_function(function);
+        print_function(*function);
     }
 
     print_net_send_buffering();
@@ -180,13 +180,13 @@ void CodegenCudaVisitor::print_compute_functions() {
 }
 
 
-void CodegenCudaVisitor::print_wrapper_routine(std::string wraper_function, BlockType type) {
-    auto args = "NrnThread* nt, Memb_list* ml, int type";
-    wraper_function = method_name(wraper_function);
+void CodegenCudaVisitor::print_wrapper_routine(std::string wrapper_function, BlockType type) {
+    static const auto args = "NrnThread* nt, Memb_list* ml, int type";
+    wrapper_function = method_name(wrapper_function);
     auto compute_function = compute_method_name(type);
 
     printer->add_newline(2);
-    printer->start_block("void {}({})"_format(wraper_function, args));
+    printer->start_block("void {}({})"_format(wrapper_function, args));
     printer->add_line("int nodecount = ml->nodecount;");
     printer->add_line("int nthread = 256;");
     printer->add_line("int nblock = (nodecount+nthread-1)/nthread;");

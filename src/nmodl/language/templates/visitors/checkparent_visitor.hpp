@@ -80,7 +80,7 @@ class CheckParentVisitor : public AstVisitor {
         /**
         * \brief Go through the tree while checking the parents
         */
-        void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}* node) override;
+        void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}& node) override;
         {% endfor %}
 };
 

@@ -23,13 +23,13 @@ using nmodl::parser::NmodlDriver;
 
 std::vector<std::string> run_verbatim_visitor(const std::string& text) {
     NmodlDriver driver;
-    auto ast = driver.parse_string(text);
+    const auto& ast = driver.parse_string(text);
 
     VerbatimVisitor v;
-    v.visit_program(ast.get());
+    v.visit_program(*ast);
 
     // check that, after visitor rearrangement, parents are still up-to-date
-    CheckParentVisitor().visit_program(ast.get());
+    CheckParentVisitor().visit_program(*ast);
 
     return v.verbatim_blocks();
 }

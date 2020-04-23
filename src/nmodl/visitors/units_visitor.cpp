@@ -20,9 +20,9 @@
 namespace nmodl {
 namespace visitor {
 
-void UnitsVisitor::visit_program(ast::Program* node) {
+void UnitsVisitor::visit_program(ast::Program& node) {
     units_driver.parse_file(units_dir);
-    node->visit_children(*this);
+    node.visit_children(*this);
 }
 
 /**
@@ -36,17 +36,17 @@ void UnitsVisitor::visit_program(ast::Program* node) {
  * unit parser which was used for parsing the \c nrnunits.lib file.
  * On \c nrnunits.lib constant "1" is defined as "fuzz", so it must be converted.
  */
-void UnitsVisitor::visit_unit_def(ast::UnitDef* node) {
+void UnitsVisitor::visit_unit_def(ast::UnitDef& node) {
     std::stringstream ss;
     /*
      * In nrnunits.lib file "1" is defined as "fuzz", so there
      * must be a conversion to be able to parse "1" as unit
      */
-    if (node->get_unit2()->get_node_name() == "1") {
-        ss << node->get_unit1()->get_node_name() << "\t";
+    if (node.get_unit2()->get_node_name() == "1") {
+        ss << node.get_unit1()->get_node_name() << '\t';
         ss << UNIT_FUZZ;
     } else {
-        ss << node->get_unit1()->get_node_name() << "\t" << node->get_unit2()->get_node_name();
+        ss << node.get_unit1()->get_node_name() << '\t' << node.get_unit2()->get_node_name();
     }
 
     // Parse the generated string for the defined unit using the units::UnitParser
@@ -81,20 +81,20 @@ void UnitsVisitor::visit_unit_def(ast::UnitDef* node) {
  * unit parser used for parsing the \c nrnunits.lib file, which takes
  * care of all the units calculations.
  */
-void UnitsVisitor::visit_factor_def(ast::FactorDef* node) {
+void UnitsVisitor::visit_factor_def(ast::FactorDef& node) {
     std::stringstream ss;
-    auto node_has_value_defined_in_modfile = node->get_value() != nullptr;
+    auto node_has_value_defined_in_modfile = node.get_value() != nullptr;
     if (node_has_value_defined_in_modfile) {
         /*
          * In nrnunits.lib file "1" is defined as "fuzz", so
          * there must be a conversion to be able to parse "1" as unit
          */
-        if (node->get_unit1()->get_node_name() == "1") {
-            ss << node->get_node_name() << "\t" << node->get_value()->eval() << " ";
+        if (node.get_unit1()->get_node_name() == "1") {
+            ss << node.get_node_name() << "\t" << node.get_value()->eval() << " ";
             ss << UNIT_FUZZ;
         } else {
-            ss << node->get_node_name() << "\t" << node->get_value()->eval() << " ";
-            ss << node->get_unit1()->get_node_name();
+            ss << node.get_node_name() << "\t" << node.get_value()->eval() << " ";
+            ss << node.get_unit1()->get_node_name();
         }
         // Parse the generated string for the defined unit using the units::UnitParser
         units_driver.parse_string(ss.str());
@@ -105,31 +105,31 @@ void UnitsVisitor::visit_factor_def(ast::FactorDef* node) {
          * In nrnunits.lib file "1" is defined as "fuzz", so
          * there must be a conversion to be able to parse "1" as unit
          */
-        if (node->get_unit1()->get_node_name() == "1") {
+        if (node.get_unit1()->get_node_name() == "1") {
             unit1_name = UNIT_FUZZ;
         } else {
-            unit1_name = node->get_unit1()->get_node_name();
+            unit1_name = node.get_unit1()->get_node_name();
         }
-        if (node->get_unit2()->get_node_name() == "1") {
+        if (node.get_unit2()->get_node_name() == "1") {
             unit2_name = UNIT_FUZZ;
         } else {
-            unit2_name = node->get_unit2()->get_node_name();
+            unit2_name = node.get_unit2()->get_node_name();
         }
         /*
-         * Create dummy unit "node->get_node_name()_unit1" and parse
+         * Create dummy unit "node.get_node_name()_unit1" and parse
          * it to calculate its factor
          */
-        ss_unit1 << node->get_node_name() << "_unit1\t" << unit1_name;
+        ss_unit1 << node.get_node_name() << "_unit1\t" << unit1_name;
         units_driver.parse_string(ss_unit1.str());
         /*
-         * Create dummy unit "node->get_node_name()_unit2" and parse
+         * Create dummy unit "node.get_node_name()_unit2" and parse
          * it to calculate its factor
          */
-        ss_unit2 << node->get_node_name() << "_unit2\t" << unit2_name;
+        ss_unit2 << node.get_node_name() << "_unit2\t" << unit2_name;
         units_driver.parse_string(ss_unit2.str());
 
         // Parse the generated string for the defined unit using the units::UnitParser
-        ss << node->get_node_name() << "\t" << unit1_name;
+        ss << node.get_node_name() << "\t" << unit1_name;
         units_driver.parse_string(ss.str());
 
         /**
@@ -145,12 +145,12 @@ void UnitsVisitor::visit_factor_def(ast::FactorDef* node) {
          * units::UnitTable the factor of `FARADAY` will be `96485.30900000`
          */
 
-        auto node_unit_name = node->get_node_name();
+        auto node_unit_name = node.get_node_name();
         auto unit1_factor = units_driver.table->get_unit(node_unit_name + "_unit1")->get_factor();
         auto unit2_factor = units_driver.table->get_unit(node_unit_name + "_unit2")->get_factor();
         auto unit_factor = unit1_factor / unit2_factor;
         auto double_value_ptr = std::make_shared<ast::Double>(ast::Double(unit_factor));
-        node->set_value(std::move(double_value_ptr));
+        node.set_value(std::move(double_value_ptr));
     }
 }
 

@@ -139,15 +139,15 @@ class KineticBlockVisitor: public AstVisitor {
         return conserve_statement_count;
     }
 
-    void visit_wrapped_expression(ast::WrappedExpression* node) override;
-    void visit_reaction_operator(ast::ReactionOperator* node) override;
-    void visit_react_var_name(ast::ReactVarName* node) override;
-    void visit_reaction_statement(ast::ReactionStatement* node) override;
-    void visit_conserve(ast::Conserve* node) override;
-    void visit_compartment(ast::Compartment* node) override;
-    void visit_statement_block(ast::StatementBlock* node) override;
-    void visit_kinetic_block(ast::KineticBlock* node) override;
-    void visit_program(ast::Program* node) override;
+    void visit_wrapped_expression(ast::WrappedExpression& node) override;
+    void visit_reaction_operator(ast::ReactionOperator& node) override;
+    void visit_react_var_name(ast::ReactVarName& node) override;
+    void visit_reaction_statement(ast::ReactionStatement& node) override;
+    void visit_conserve(ast::Conserve& node) override;
+    void visit_compartment(ast::Compartment& node) override;
+    void visit_statement_block(ast::StatementBlock& node) override;
+    void visit_kinetic_block(ast::KineticBlock& node) override;
+    void visit_program(ast::Program& node) override;
 };
 
 /** @} */  // end of visitor_classes

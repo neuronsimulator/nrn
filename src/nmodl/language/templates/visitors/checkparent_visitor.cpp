@@ -33,8 +33,8 @@ int CheckParentVisitor::check_ast(Ast* node) {
 void CheckParentVisitor::check_parent(ast::Ast* node) const {
     if (!parent) {
         if (is_root_with_null_parent && node->get_parent()) {
-            std::string node_type = (node == nullptr) ? "nullptr" : node->get_node_type_name();
-            throw std::runtime_error("root->parent: {} is set when it should be nullptr"_format(node_type));
+            const auto& parent_type = parent->get_node_type_name();
+            throw std::runtime_error("root->parent: {} is set when it should be nullptr"_format(parent_type));
         }
     } else {
         if (parent != node->get_parent()) {
@@ -47,16 +47,16 @@ void CheckParentVisitor::check_parent(ast::Ast* node) const {
 
 
 {% for node in nodes %}
-void CheckParentVisitor::visit_{{ node.class_name|snake_case }}({{ node.class_name }}* node) {
+void CheckParentVisitor::visit_{{ node.class_name|snake_case }}({{ node.class_name }}& node) {
 
     // Set this node as parent. and go down the tree
-    parent = node;
+    parent = &node;
 
     // visit its children
-    node->visit_children(*this);
+    node.visit_children(*this);
 
     // I am done with these children, I go up the tree. The parent of this node is the parent
-    parent = node->get_parent();
+    parent = node.get_parent();
 }
 
 {% endfor %}

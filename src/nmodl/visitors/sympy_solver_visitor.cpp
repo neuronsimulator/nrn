@@ -45,7 +45,7 @@ void SympySolverVisitor::init_block_data(ast::Node* node) {
         }
     }
     AstLookupVisitor lv(ast::AstNodeType::FUNCTION_CALL);
-    for (const auto& call: lv.lookup(node->get_statement_block().get())) {
+    for (const auto& call: lv.lookup(*node->get_statement_block())) {
         function_calls.insert(call->get_node_name());
     }
 }
@@ -59,13 +59,13 @@ void SympySolverVisitor::init_state_vars_vector() {
     }
 }
 
-void SympySolverVisitor::replace_diffeq_expression(ast::DiffEqExpression* expr,
+void SympySolverVisitor::replace_diffeq_expression(ast::DiffEqExpression& expr,
                                                    const std::string& new_expr) {
     auto new_statement = create_statement(new_expr);
     auto new_expr_statement = std::dynamic_pointer_cast<ast::ExpressionStatement>(new_statement);
     auto new_bin_expr = std::dynamic_pointer_cast<ast::BinaryExpression>(
         new_expr_statement->get_expression());
-    expr->set_expression(std::move(new_bin_expr));
+    expr.set_expression(std::move(new_bin_expr));
 }
 
 void SympySolverVisitor::check_expr_statements_in_same_block() {
@@ -92,14 +92,14 @@ ast::StatementVector::const_iterator SympySolverVisitor::get_solution_location_i
                (std::dynamic_pointer_cast<ast::ExpressionStatement>(*it).get() !=
                 last_expression_statement)) {
             logger->debug("SympySolverVisitor :: {} != {}",
-                          to_nmodl((*it).get()),
-                          to_nmodl(last_expression_statement));
+                          to_nmodl(*it),
+                          to_nmodl(*last_expression_statement));
             ++it;
         }
         if (it != statements.end()) {
             logger->debug("SympySolverVisitor :: {} == {}",
-                          to_nmodl(std::dynamic_pointer_cast<ast::ExpressionStatement>(*it).get()),
-                          to_nmodl(last_expression_statement));
+                          to_nmodl(std::dynamic_pointer_cast<ast::ExpressionStatement>(*it)),
+                          to_nmodl(*last_expression_statement));
             ++it;
         }
     }
@@ -216,7 +216,7 @@ void SympySolverVisitor::construct_eigen_solver_block(
 
     block_with_expression_statements->erase_statement(it, statements.end());
     // also remove diff/linear/non-linear eq statements from the statement block
-    remove_statements_from_block(block_with_expression_statements, expression_statements);
+    remove_statements_from_block(*block_with_expression_statements, expression_statements);
     // move any local variable declarations into variable_block
     ast::StatementVector variable_statements;
     // remaining statements in block should go into initialize_block
@@ -319,7 +319,7 @@ void SympySolverVisitor::solve_linear_system(const std::vector<std::string>& pre
             for (const auto& new_local_var: new_local_vars) {
                 logger->debug("SympySolverVisitor :: -> declaring new local variable: {}",
                               new_local_var);
-                add_local_variable(block_with_expression_statements, new_local_var);
+                add_local_variable(*block_with_expression_statements, new_local_var);
             }
         }
         // insert pre-solve statements below last linear eq in block
@@ -336,7 +336,7 @@ void SympySolverVisitor::solve_linear_system(const std::vector<std::string>& pre
             ++it;
         }
         /// remove original lineq statements from the block
-        remove_statements_from_block(block_with_expression_statements, expression_statements);
+        remove_statements_from_block(*block_with_expression_statements, expression_statements);
     } else {
         // otherwise it returns a linear matrix system to solve
         logger->debug("SympySolverVisitor :: Constructing linear newton solve block");
@@ -382,11 +382,11 @@ void SympySolverVisitor::solve_non_linear_system(
     construct_eigen_solver_block(pre_solve_statements, solutions, false);
 }
 
-void SympySolverVisitor::visit_var_name(ast::VarName* node) {
+void SympySolverVisitor::visit_var_name(ast::VarName& node) {
     if (collect_state_vars) {
-        std::string var_name = node->get_node_name();
-        if (node->get_name()->is_indexed_name()) {
-            auto index_name = std::dynamic_pointer_cast<ast::IndexedName>(node->get_name());
+        std::string var_name = node.get_node_name();
+        if (node.get_name()->is_indexed_name()) {
+            auto index_name = std::dynamic_pointer_cast<ast::IndexedName>(node.get_name());
             var_name +=
                 "[" +
                 std::to_string(
@@ -402,9 +402,9 @@ void SympySolverVisitor::visit_var_name(ast::VarName* node) {
     }
 }
 
-void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
-    const auto& lhs = node->get_expression()->get_lhs();
-    const auto& rhs = node->get_expression()->get_rhs();
+void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression& node) {
+    const auto& lhs = node.get_expression()->get_lhs();
+    const auto& rhs = node.get_expression()->get_rhs();
 
     if (!lhs->is_var_name()) {
         logger->warn("SympySolverVisitor :: LHS of differential equation is not a VariableName");
@@ -500,41 +500,41 @@ void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression* node) {
     }
 }
 
-void SympySolverVisitor::visit_conserve(ast::Conserve* node) {
+void SympySolverVisitor::visit_conserve(ast::Conserve& node) {
     // Replace ODE for state variable on LHS of CONSERVE statement with
     // algebraic expression on RHS (see p244 of NEURON book)
     logger->debug("SympySolverVisitor :: CONSERVE statement: {}", to_nmodl(node));
-    expression_statements.insert(node);
+    expression_statements.insert(&node);
     std::string conserve_equation_statevar;
-    if (node->get_react()->is_react_var_name()) {
-        conserve_equation_statevar = node->get_react()->get_node_name();
+    if (node.get_react()->is_react_var_name()) {
+        conserve_equation_statevar = node.get_react()->get_node_name();
     }
     if (std::find(all_state_vars.cbegin(), all_state_vars.cend(), conserve_equation_statevar) ==
         all_state_vars.cend()) {
         logger->error(
             "SympySolverVisitor :: Invalid CONSERVE statement for DERIVATIVE block, LHS should be "
             "a state variable, instead found: {}. Ignoring CONSERVE statement",
-            to_nmodl(node->get_react().get()));
+            to_nmodl(node.get_react()));
         return;
     }
-    auto conserve_equation_str = to_nmodl_for_sympy(node->get_expr().get());
+    auto conserve_equation_str = to_nmodl_for_sympy(*node.get_expr());
     logger->debug("SympySolverVisitor :: --> replace ODE for state var {} with equation {}",
                   conserve_equation_statevar,
                   conserve_equation_str);
     conserve_equation[conserve_equation_statevar] = conserve_equation_str;
 }
 
-void SympySolverVisitor::visit_derivative_block(ast::DerivativeBlock* node) {
+void SympySolverVisitor::visit_derivative_block(ast::DerivativeBlock& node) {
     /// clear information from previous block, get global vars + block local vars
-    init_block_data(node);
+    init_block_data(&node);
 
     // get user specified solve method for this block
-    solve_method = derivative_block_solve_method[node->get_node_name()];
+    solve_method = derivative_block_solve_method[node.get_node_name()];
 
     // visit each differential equation:
     //  - for CNEXP or EULER, each equation is independent & is replaced with its solution
     //  - otherwise, each equation is added to eq_system
-    node->visit_children(*this);
+    node.visit_children(*this);
 
     if (eq_system_is_valid && !eq_system.empty()) {
         // solve system of ODEs in eq_system
@@ -568,7 +568,7 @@ void SympySolverVisitor::visit_derivative_block(ast::DerivativeBlock* node) {
                                                             // check name is unique
                 // declare old_x
                 logger->debug("SympySolverVisitor :: -> declaring new local variable: {}", old_x);
-                add_local_variable(block_with_expression_statements, old_x);
+                add_local_variable(*block_with_expression_statements, old_x);
                 // assign old_x = x
                 pre_solve_statements.push_back(old_x + " = " + x + x_array_index);
                 // replace ODE with Euler equation
@@ -588,77 +588,77 @@ void SympySolverVisitor::visit_derivative_block(ast::DerivativeBlock* node) {
     }
 }
 
-void SympySolverVisitor::visit_lin_equation(ast::LinEquation* node) {
+void SympySolverVisitor::visit_lin_equation(ast::LinEquation& node) {
     check_expr_statements_in_same_block();
-    std::string lin_eq = to_nmodl_for_sympy(node->get_left_linxpression().get());
+    std::string lin_eq = to_nmodl_for_sympy(*node.get_left_linxpression());
     lin_eq += " = ";
-    lin_eq += to_nmodl_for_sympy(node->get_linxpression().get());
+    lin_eq += to_nmodl_for_sympy(*node.get_linxpression());
     eq_system.push_back(lin_eq);
     expression_statements.insert(current_expression_statement);
     last_expression_statement = current_expression_statement;
     logger->debug("SympySolverVisitor :: adding linear eq: {}", lin_eq);
     collect_state_vars = true;
-    node->visit_children(*this);
+    node.visit_children(*this);
     collect_state_vars = false;
 }
 
-void SympySolverVisitor::visit_linear_block(ast::LinearBlock* node) {
-    logger->debug("SympySolverVisitor :: found LINEAR block: {}", node->get_node_name());
+void SympySolverVisitor::visit_linear_block(ast::LinearBlock& node) {
+    logger->debug("SympySolverVisitor :: found LINEAR block: {}", node.get_node_name());
 
     /// clear information from previous block, get global vars + block local vars
-    init_block_data(node);
+    init_block_data(&node);
 
     // collect linear equations
-    node->visit_children(*this);
+    node.visit_children(*this);
 
     if (eq_system_is_valid && !eq_system.empty()) {
         solve_linear_system();
     }
 }
 
-void SympySolverVisitor::visit_non_lin_equation(ast::NonLinEquation* node) {
+void SympySolverVisitor::visit_non_lin_equation(ast::NonLinEquation& node) {
     check_expr_statements_in_same_block();
-    std::string non_lin_eq = to_nmodl_for_sympy(node->get_lhs().get());
+    std::string non_lin_eq = to_nmodl_for_sympy(*node.get_lhs());
     non_lin_eq += " = ";
-    non_lin_eq += to_nmodl_for_sympy(node->get_rhs().get());
+    non_lin_eq += to_nmodl_for_sympy(*node.get_rhs());
     eq_system.push_back(non_lin_eq);
     expression_statements.insert(current_expression_statement);
     last_expression_statement = current_expression_statement;
     logger->debug("SympySolverVisitor :: adding non-linear eq: {}", non_lin_eq);
     collect_state_vars = true;
-    node->visit_children(*this);
+    node.visit_children(*this);
     collect_state_vars = false;
 }
 
-void SympySolverVisitor::visit_non_linear_block(ast::NonLinearBlock* node) {
-    logger->debug("SympySolverVisitor :: found NONLINEAR block: {}", node->get_node_name());
+void SympySolverVisitor::visit_non_linear_block(ast::NonLinearBlock& node) {
+    logger->debug("SympySolverVisitor :: found NONLINEAR block: {}", node.get_node_name());
 
     /// clear information from previous block, get global vars + block local vars
-    init_block_data(node);
+    init_block_data(&node);
 
     // collect non-linear equations
-    node->visit_children(*this);
+    node.visit_children(*this);
 
     if (eq_system_is_valid && !eq_system.empty()) {
         solve_non_linear_system();
     }
 }
 
-void SympySolverVisitor::visit_expression_statement(ast::ExpressionStatement* node) {
+void SympySolverVisitor::visit_expression_statement(ast::ExpressionStatement& node) {
     auto prev_expression_statement = current_expression_statement;
-    current_expression_statement = node;
-    node->visit_children(*this);
+    current_expression_statement = &node;
+    node.visit_children(*this);
     current_expression_statement = prev_expression_statement;
 }
 
-void SympySolverVisitor::visit_statement_block(ast::StatementBlock* node) {
+void SympySolverVisitor::visit_statement_block(ast::StatementBlock& node) {
     auto prev_statement_block = current_statement_block;
-    current_statement_block = node;
-    node->visit_children(*this);
+    current_statement_block = &node;
+    node.visit_children(*this);
     current_statement_block = prev_statement_block;
 }
 
-void SympySolverVisitor::visit_program(ast::Program* node) {
+void SympySolverVisitor::visit_program(ast::Program& node) {
     derivative_block_solve_method.clear();
 
     global_vars = get_global_vars(node);
@@ -683,7 +683,7 @@ void SympySolverVisitor::visit_program(ast::Program* node) {
 
     // get set of all state vars
     all_state_vars.clear();
-    if (auto symtab = node->get_symbol_table()) {
+    if (auto symtab = node.get_symbol_table()) {
         auto statevars = symtab->get_variables_with_properties(NmodlType::state_var);
         for (const auto& v: statevars) {
             std::string var_name = v->get_name();
@@ -698,7 +698,7 @@ void SympySolverVisitor::visit_program(ast::Program* node) {
         }
     }
 
-    node->visit_children(*this);
+    node.visit_children(*this);
 }
 
 }  // namespace visitor

@@ -39,34 +39,34 @@ std::vector<std::string> run_sympy_solver_visitor(
 
     // construct AST from text
     NmodlDriver driver;
-    auto ast = driver.parse_string(text);
+    const auto& ast = driver.parse_string(text);
 
     // construct symbol table from AST
-    SymtabVisitor().visit_program(ast.get());
+    SymtabVisitor().visit_program(*ast);
 
     // unroll loops and fold constants
-    ConstantFolderVisitor().visit_program(ast.get());
-    LoopUnrollVisitor().visit_program(ast.get());
-    ConstantFolderVisitor().visit_program(ast.get());
-    SymtabVisitor().visit_program(ast.get());
+    ConstantFolderVisitor().visit_program(*ast);
+    LoopUnrollVisitor().visit_program(*ast);
+    ConstantFolderVisitor().visit_program(*ast);
+    SymtabVisitor().visit_program(*ast);
 
     // run SympySolver on AST
-    SympySolverVisitor(pade, cse).visit_program(ast.get());
+    SympySolverVisitor(pade, cse).visit_program(*ast);
 
     // check that, after visitor rearrangement, parents are still up-to-date
-    CheckParentVisitor().visit_program(ast.get());
+    CheckParentVisitor().visit_program(*ast);
 
     // run lookup visitor to extract results from AST
     AstLookupVisitor v_lookup;
-    auto res = v_lookup.lookup(ast.get(), ret_nodetype);
+    auto res = v_lookup.lookup(*ast, ret_nodetype);
     for (const auto& r: res) {
-        results.push_back(to_nmodl(r.get()));
+        results.push_back(to_nmodl(r));
     }
 
     return results;
 }
 
-void run_sympy_visitor_passes(ast::Program* node) {
+void run_sympy_visitor_passes(ast::Program& node) {
     // construct symbol table from AST
     SymtabVisitor v_symtab;
     v_symtab.visit_program(node);
@@ -83,7 +83,7 @@ void run_sympy_visitor_passes(ast::Program* node) {
     v_sympy2.visit_program(node);
 }
 
-std::string ast_to_string(ast::Program* node) {
+std::string ast_to_string(ast::Program& node) {
     std::stringstream stream;
     NmodlPrintVisitor(stream).visit_program(node);
     return stream.str();
@@ -323,16 +323,16 @@ SCENARIO("Solve ODEs with cnexp or euler method using SympySolverVisitor",
         auto ast = driver.parse_string(nmodl_text);
 
         // construct symbol table from AST
-        SymtabVisitor().visit_program(ast.get());
+        SymtabVisitor().visit_program(*ast);
 
         // run SympySolver on AST
-        SympySolverVisitor().visit_program(ast.get());
+        SympySolverVisitor().visit_program(*ast);
 
-        std::string AST_string = ast_to_string(ast.get());
+        std::string AST_string = ast_to_string(*ast);
 
         THEN("More SympySolver passes do nothing to the AST and don't throw") {
-            REQUIRE_NOTHROW(run_sympy_visitor_passes(ast.get()));
-            REQUIRE(AST_string == ast_to_string(ast.get()));
+            REQUIRE_NOTHROW(run_sympy_visitor_passes(*ast));
+            REQUIRE(AST_string == ast_to_string(*ast));
         }
     }
 }

@@ -23,11 +23,11 @@ PerfVisitor::PerfVisitor(const std::string& filename)
     : printer(new JSONPrinter(filename)) {}
 
 /// count math operations from all binary expressions
-void PerfVisitor::visit_binary_expression(ast::BinaryExpression* node) {
+void PerfVisitor::visit_binary_expression(ast::BinaryExpression& node) {
     bool assign_op = false;
 
     if (start_measurement) {
-        auto value = node->get_op().get_value();
+        auto value = node.get_op().get_value();
         switch (value) {
         case ast::BOP_ADDITION:
             current_block_perf.n_add++;
@@ -97,12 +97,12 @@ void PerfVisitor::visit_binary_expression(ast::BinaryExpression* node) {
         visiting_lhs_expression = true;
     }
 
-    node->get_lhs()->accept(*this);
+    node.get_lhs()->accept(*this);
 
     /// lhs is done (rhs is read only)
     visiting_lhs_expression = false;
 
-    node->get_rhs()->accept(*this);
+    node.get_rhs()->accept(*this);
 }
 
 /// add performance stats to json printer
@@ -164,11 +164,11 @@ void PerfVisitor::measure_performance(ast::Ast* node) {
 }
 
 /// count function calls and "most useful" or "commonly used" math functions
-void PerfVisitor::visit_function_call(ast::FunctionCall* node) {
+void PerfVisitor::visit_function_call(ast::FunctionCall& node) {
     under_function_call = true;
 
     if (start_measurement) {
-        auto name = node->get_node_name();
+        auto name = node.get_node_name();
         if (name == "exp") {
             current_block_perf.n_exp++;
         } else if (name == "log") {
@@ -176,7 +176,7 @@ void PerfVisitor::visit_function_call(ast::FunctionCall* node) {
         } else if (name == "pow") {
             current_block_perf.n_pow++;
         }
-        node->visit_children(*this);
+        node.visit_children(*this);
 
         auto symbol = current_symtab->lookup_in_scope(name);
         auto method_property = NmodlType::procedure_block | NmodlType::function_block;
@@ -191,28 +191,28 @@ void PerfVisitor::visit_function_call(ast::FunctionCall* node) {
 }
 
 /// every variable used is of type name, update counters
-void PerfVisitor::visit_name(ast::Name* node) {
-    update_memory_ops(node->get_node_name());
-    node->visit_children(*this);
+void PerfVisitor::visit_name(ast::Name& node) {
+    update_memory_ops(node.get_node_name());
+    node.visit_children(*this);
 }
 
 /// prime name derived from identifier and hence need to be handled here
-void PerfVisitor::visit_prime_name(ast::PrimeName* node) {
-    update_memory_ops(node->get_node_name());
-    node->visit_children(*this);
+void PerfVisitor::visit_prime_name(ast::PrimeName& node) {
+    update_memory_ops(node.get_node_name());
+    node.visit_children(*this);
 }
 
-void PerfVisitor::visit_if_statement(ast::IfStatement* node) {
+void PerfVisitor::visit_if_statement(ast::IfStatement& node) {
     if (start_measurement) {
         current_block_perf.n_if++;
-        node->visit_children(*this);
+        node.visit_children(*this);
     }
 }
 
-void PerfVisitor::visit_else_if_statement(ast::ElseIfStatement* node) {
+void PerfVisitor::visit_else_if_statement(ast::ElseIfStatement& node) {
     if (start_measurement) {
         current_block_perf.n_elif++;
-        node->visit_children(*this);
+        node.visit_children(*this);
     }
 }
 
@@ -313,12 +313,12 @@ void PerfVisitor::print_memory_usage() {
     }
 }
 
-void PerfVisitor::visit_program(ast::Program* node) {
+void PerfVisitor::visit_program(ast::Program& node) {
     if (printer) {
         printer->push_block("BlockPerf");
     }
 
-    node->visit_children(*this);
+    node.visit_children(*this);
     std::string title = "Total Performance Statistics";
     total_perf.title = title;
     total_perf.print(stream);
@@ -330,7 +330,7 @@ void PerfVisitor::visit_program(ast::Program* node) {
         printer->pop_block();
     }
 
-    current_symtab = node->get_symbol_table();
+    current_symtab = node.get_symbol_table();
     count_variables();
     print_memory_usage();
 }
@@ -339,21 +339,21 @@ void PerfVisitor::visit_program(ast::Program* node) {
  * blocks like net receive has nested initial blocks. Hence need
  * to maintain separate stack.
  */
-void PerfVisitor::visit_statement_block(ast::StatementBlock* node) {
+void PerfVisitor::visit_statement_block(ast::StatementBlock& node) {
     /// starting new block, store current state
     blocks_perf.push(current_block_perf);
 
-    current_symtab = node->get_symbol_table();
+    current_symtab = node.get_symbol_table();
 
     if (current_symtab == nullptr) {
         throw std::runtime_error("Perfvisitor : symbol table not setup for " +
-                                 node->get_node_type_name());
+                                 node.get_node_type_name());
     }
 
     /// new block perf starts from zero
     current_block_perf = PerfStat();
 
-    node->visit_children(*this);
+    node.visit_children(*this);
 
     /// add performance of all visited children
     total_perf = total_perf + current_block_perf;
@@ -369,15 +369,15 @@ void PerfVisitor::visit_statement_block(ast::StatementBlock* node) {
 /// and hence could/should not be skipped completely
 /// we can't ignore the block because it could have associated
 /// statement block (in theory)
-void PerfVisitor::visit_solve_block(ast::SolveBlock* node) {
+void PerfVisitor::visit_solve_block(ast::SolveBlock& node) {
     under_solve_block = true;
-    node->visit_children(*this);
+    node.visit_children(*this);
     under_solve_block = false;
 }
 
-void PerfVisitor::visit_unary_expression(ast::UnaryExpression* node) {
+void PerfVisitor::visit_unary_expression(ast::UnaryExpression& node) {
     if (start_measurement) {
-        auto value = node->get_op().get_value();
+        auto value = node.get_op().get_value();
         switch (value) {
         case ast::UOP_NEGATION:
             current_block_perf.n_neg++;
@@ -391,7 +391,7 @@ void PerfVisitor::visit_unary_expression(ast::UnaryExpression* node) {
             throw std::logic_error("Unary operator not handled in perf visitor");
         }
     }
-    node->visit_children(*this);
+    node.visit_children(*this);
 }
 
 /** Certain statements / symbols needs extra check while measuring

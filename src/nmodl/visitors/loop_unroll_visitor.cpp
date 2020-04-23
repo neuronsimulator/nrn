@@ -40,11 +40,12 @@ class IndexRemover: public AstVisitor {
 
   public:
     IndexRemover(std::string index, int value)
-        : index(index)
+        : index(std::move(index))
         , value(value) {}
 
     /// if expression we are visiting is `Name` then return new `Integer` node
-    std::shared_ptr<ast::Expression> replace_for_name(const std::shared_ptr<ast::Expression> node) {
+    std::shared_ptr<ast::Expression> replace_for_name(
+        const std::shared_ptr<ast::Expression>& node) {
         if (node->is_name()) {
             auto name = std::dynamic_pointer_cast<ast::Name>(node);
             if (name->get_node_name() == index) {
@@ -54,24 +55,24 @@ class IndexRemover: public AstVisitor {
         return node;
     }
 
-    virtual void visit_binary_expression(ast::BinaryExpression* node) override {
-        node->visit_children(*this);
+    void visit_binary_expression(ast::BinaryExpression& node) override {
+        node.visit_children(*this);
         if (under_indexed_name) {
             /// first recursively replaces childrens
             /// replace lhs & rhs if they have matching index variable
-            auto lhs = replace_for_name(node->get_lhs());
-            auto rhs = replace_for_name(node->get_rhs());
-            node->set_lhs(std::move(lhs));
-            node->set_rhs(std::move(rhs));
+            auto lhs = replace_for_name(node.get_lhs());
+            auto rhs = replace_for_name(node.get_rhs());
+            node.set_lhs(std::move(lhs));
+            node.set_rhs(std::move(rhs));
         }
     }
 
-    virtual void visit_indexed_name(ast::IndexedName* node) override {
+    virtual void visit_indexed_name(ast::IndexedName& node) override {
         under_indexed_name = true;
-        node->visit_children(*this);
+        node.visit_children(*this);
         /// once all children are replaced, do the same for index
-        auto length = replace_for_name(node->get_length());
-        node->set_length(std::move(length));
+        auto length = replace_for_name(node.get_length());
+        node.set_length(std::move(length));
         under_indexed_name = false;
     }
 };
@@ -94,7 +95,7 @@ static std::shared_ptr<ast::Expression> unwrap(const std::shared_ptr<ast::Expres
  * @return expression statement represeing unrolled loop if successfull otherwise nullptr
  */
 static std::shared_ptr<ast::ExpressionStatement> unroll_for_loop(
-    const std::shared_ptr<ast::FromStatement> node) {
+    const std::shared_ptr<ast::FromStatement>& node) {
     /// loop can be in the form of `FROM i=(0) TO (10)`
     /// so first unwrap all elements of the loop
     const auto from = unwrap(node->get_from());
@@ -120,7 +121,7 @@ static std::shared_ptr<ast::ExpressionStatement> unroll_for_loop(
     for (int i = start; i <= end; i += step) {
         /// duplicate loop body and copy all statements to new vector
         auto new_block = node->get_statement_block()->clone();
-        IndexRemover(index_var, i).visit_statement_block(new_block);
+        IndexRemover(index_var, i).visit_statement_block(*new_block);
         statements.insert(statements.end(),
                           new_block->get_statements().begin(),
                           new_block->get_statements().end());
@@ -136,17 +137,17 @@ static std::shared_ptr<ast::ExpressionStatement> unroll_for_loop(
 /**
  * Parse verbatim blocks and rename variable if it is used.
  */
-void LoopUnrollVisitor::visit_statement_block(ast::StatementBlock* node) {
-    node->visit_children(*this);
+void LoopUnrollVisitor::visit_statement_block(ast::StatementBlock& node) {
+    node.visit_children(*this);
 
-    const auto& statements = node->get_statements();
+    const auto& statements = node.get_statements();
 
     for (auto iter = statements.begin(); iter != statements.end(); ++iter) {
         if ((*iter)->is_from_statement()) {
             auto statement = std::dynamic_pointer_cast<ast::FromStatement>((*iter));
 
             /// check if any verbatim block exists
-            auto verbatim_blocks = AstLookupVisitor().lookup(statement.get(),
+            auto verbatim_blocks = AstLookupVisitor().lookup(*statement,
                                                              ast::AstNodeType::VERBATIM);
             if (!verbatim_blocks.empty()) {
                 logger->debug("LoopUnrollVisitor : can not unroll because of verbatim block");
@@ -156,10 +157,10 @@ void LoopUnrollVisitor::visit_statement_block(ast::StatementBlock* node) {
             /// unroll loop, replace current statement on successfull unroll
             auto new_statement = unroll_for_loop(statement);
             if (new_statement != nullptr) {
-                node->reset_statement(iter, new_statement);
+                node.reset_statement(iter, new_statement);
 
-                std::string before = to_nmodl(statement.get());
-                std::string after = to_nmodl(new_statement.get());
+                const auto& before = to_nmodl(statement);
+                const auto& after = to_nmodl(new_statement);
                 logger->debug("LoopUnrollVisitor : \n {} \n unrolled to \n {}", before, after);
             }
         }

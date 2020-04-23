@@ -26,7 +26,7 @@ std::string run_json_visitor(const std::string& text, bool compact = false) {
     NmodlDriver driver;
     auto ast = driver.parse_string(text);
 
-    return to_json(ast.get(), compact);
+    return to_json(*ast, compact);
 }
 
 TEST_CASE("Convert NMODL to AST to JSON form using JSONVisitor", "[visitor][json]") {

@@ -497,7 +497,7 @@ std::string SymbolTable::title() const {
 }
 
 
-void SymbolTable::print(std::stringstream& ss, int level) {
+void SymbolTable::print(std::ostream& ss, int level) const {
     table.print(ss, title(), level);
 
     /// when current symbol table is empty, the children

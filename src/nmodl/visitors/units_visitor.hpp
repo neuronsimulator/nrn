@@ -69,19 +69,19 @@ class UnitsVisitor: public AstVisitor {
 
     /// Function to visit all the ast::UnitDef nodes and parse the units defined as
     /// ast::UnitDef in the UNITS block of mod files
-    void visit_unit_def(ast::UnitDef* node) override;
+    void visit_unit_def(ast::UnitDef& node) override;
 
     /// Function to visit all the ast::FactorDef nodes and parse the units defined
     /// as ast::FactorDef in the UNITS block of mod files
-    void visit_factor_def(ast::FactorDef* node) override;
+    void visit_factor_def(ast::FactorDef& node) override;
 
     /// Override visit_program function to parse the \c nrnunits.lib unit file
     /// before starting visiting the AST to parse the units defined in mod files
-    void visit_program(ast::Program* node) override;
+    void visit_program(ast::Program& node) override;
 
     /// Get the parser::UnitDriver to be able to use it outside the visitor::UnitsVisitor
     /// scope keeping the same units::UnitTable
-    parser::UnitDriver get_unit_driver() {
+    parser::UnitDriver get_unit_driver() const noexcept {
         return units_driver;
     }
 };

@@ -264,7 +264,7 @@ int main(int argc, const char* argv[]) {
     }
 
     /// write ast to nmodl
-    auto ast_to_nmodl = [nmodl_ast](ast::Program* ast, const std::string& filepath) {
+    const auto ast_to_nmodl = [nmodl_ast](ast::Program& ast, const std::string& filepath) {
         if (nmodl_ast) {
             NmodlPrintVisitor(filepath).visit_program(ast);
             logger->info("AST to NMODL transformation written to {}", filepath);
@@ -274,10 +274,10 @@ int main(int argc, const char* argv[]) {
     for (const auto& file: mod_files) {
         logger->info("Processing {}", file);
 
-        auto modfile = utils::remove_extension(utils::base_name(file));
+        const auto modfile = utils::remove_extension(utils::base_name(file));
 
         /// create file path for nmodl file
-        auto filepath = [scratch_dir, modfile](std::string suffix) {
+        auto filepath = [scratch_dir, modfile](const std::string& suffix) {
             static int count = 0;
             return "{}/{}.{}.{}.mod"_format(scratch_dir, modfile, std::to_string(count++), suffix);
         };
@@ -286,67 +286,64 @@ int main(int argc, const char* argv[]) {
         NmodlDriver driver;
 
         /// parse mod file and construct ast
-        auto ast = driver.parse_file(file);
+        const auto& ast = driver.parse_file(file);
 
         /// whether to update existing symbol table or create new
         /// one whenever we run symtab visitor.
         bool update_symtab = false;
 
         /// just visit the ast
-        AstVisitor().visit_program(ast.get());
+        AstVisitor().visit_program(*ast);
 
         /// construct symbol table
         {
             logger->info("Running symtab visitor");
-            SymtabVisitor(update_symtab).visit_program(ast.get());
+            SymtabVisitor(update_symtab).visit_program(*ast);
         }
 
         {
             // Compatibility Checking
             logger->info("Running code compatibility checker");
             // run perfvisitor to update read/wrie counts
-            PerfVisitor().visit_program(ast.get());
+            PerfVisitor().visit_program(*ast);
             // If there is an incompatible construct and code generation is not forced exit NMODL
-            if (CodegenCompatibilityVisitor().find_unhandled_ast_nodes(ast.get()) &&
-                !force_codegen) {
+            if (CodegenCompatibilityVisitor().find_unhandled_ast_nodes(*ast) && !force_codegen) {
                 return 1;
             }
         }
 
         if (show_symtab) {
             logger->info("Printing symbol table");
-            std::stringstream stream;
             auto symtab = ast->get_model_symbol_table();
-            symtab->print(stream);
-            std::cout << stream.str();
+            symtab->print(std::cout);
         }
 
-        ast_to_nmodl(ast.get(), filepath("ast"));
+        ast_to_nmodl(*ast, filepath("ast"));
 
         if (json_ast) {
             logger->info("Writing AST into {}", file);
             auto file = scratch_dir + "/" + modfile + ".ast.json";
-            JSONVisitor(file).visit_program(ast.get());
+            JSONVisitor(file).visit_program(*ast);
         }
 
         if (verbatim_rename) {
             logger->info("Running verbatim rename visitor");
-            VerbatimVarRenameVisitor().visit_program(ast.get());
-            ast_to_nmodl(ast.get(), filepath("verbatim_rename"));
+            VerbatimVarRenameVisitor().visit_program(*ast);
+            ast_to_nmodl(*ast, filepath("verbatim_rename"));
         }
 
         if (nmodl_const_folding) {
             logger->info("Running nmodl constant folding visitor");
-            ConstantFolderVisitor().visit_program(ast.get());
-            ast_to_nmodl(ast.get(), filepath("constfold"));
+            ConstantFolderVisitor().visit_program(*ast);
+            ast_to_nmodl(*ast, filepath("constfold"));
         }
 
         if (nmodl_unroll) {
             logger->info("Running nmodl loop unroll visitor");
-            LoopUnrollVisitor().visit_program(ast.get());
-            ConstantFolderVisitor().visit_program(ast.get());
-            ast_to_nmodl(ast.get(), filepath("unroll"));
-            SymtabVisitor(update_symtab).visit_program(ast.get());
+            LoopUnrollVisitor().visit_program(*ast);
+            ConstantFolderVisitor().visit_program(*ast);
+            ast_to_nmodl(*ast, filepath("unroll"));
+            SymtabVisitor(update_symtab).visit_program(*ast);
         }
 
         /// note that we can not symtab visitor in update mode as we
@@ -355,10 +352,10 @@ int main(int argc, const char* argv[]) {
         {
             logger->info("Running KINETIC block visitor");
             auto kineticBlockVisitor = KineticBlockVisitor();
-            kineticBlockVisitor.visit_program(ast.get());
-            SymtabVisitor(update_symtab).visit_program(ast.get());
+            kineticBlockVisitor.visit_program(*ast);
+            SymtabVisitor(update_symtab).visit_program(*ast);
             const auto filename = filepath("kinetic");
-            ast_to_nmodl(ast.get(), filename);
+            ast_to_nmodl(*ast, filename);
             if (nmodl_ast && kineticBlockVisitor.get_conserve_statement_count()) {
                 logger->warn(
                     "{} presents non-standard CONSERVE statements in DERIVATIVE blocks. Use it only for debugging/developing"_format(
@@ -368,15 +365,15 @@ int main(int argc, const char* argv[]) {
 
         {
             logger->info("Running STEADYSTATE visitor");
-            SteadystateVisitor().visit_program(ast.get());
-            SymtabVisitor(update_symtab).visit_program(ast.get());
-            ast_to_nmodl(ast.get(), filepath("steadystate"));
+            SteadystateVisitor().visit_program(*ast);
+            SymtabVisitor(update_symtab).visit_program(*ast);
+            ast_to_nmodl(*ast, filepath("steadystate"));
         }
 
         /// Parsing units fron "nrnunits.lib" and mod files
         {
             logger->info("Parsing Units");
-            UnitsVisitor(units_dir).visit_program(ast.get());
+            UnitsVisitor(units_dir).visit_program(*ast);
         }
 
         /// once we start modifying (especially removing) older constructs
@@ -386,62 +383,62 @@ int main(int argc, const char* argv[]) {
 
         if (nmodl_inline) {
             logger->info("Running nmodl inline visitor");
-            InlineVisitor().visit_program(ast.get());
-            ast_to_nmodl(ast.get(), filepath("inline"));
+            InlineVisitor().visit_program(*ast);
+            ast_to_nmodl(*ast, filepath("inline"));
         }
 
         if (local_rename) {
             logger->info("Running local variable rename visitor");
-            LocalVarRenameVisitor().visit_program(ast.get());
-            SymtabVisitor(update_symtab).visit_program(ast.get());
-            ast_to_nmodl(ast.get(), filepath("local_rename"));
+            LocalVarRenameVisitor().visit_program(*ast);
+            SymtabVisitor(update_symtab).visit_program(*ast);
+            ast_to_nmodl(*ast, filepath("local_rename"));
         }
 
         if (nmodl_localize) {
             // localize pass must follow rename pass to avoid conflict
             logger->info("Running localize visitor");
-            LocalizeVisitor(localize_verbatim).visit_program(ast.get());
-            LocalVarRenameVisitor().visit_program(ast.get());
-            SymtabVisitor(update_symtab).visit_program(ast.get());
-            ast_to_nmodl(ast.get(), filepath("localize"));
+            LocalizeVisitor(localize_verbatim).visit_program(*ast);
+            LocalVarRenameVisitor().visit_program(*ast);
+            SymtabVisitor(update_symtab).visit_program(*ast);
+            ast_to_nmodl(*ast, filepath("localize"));
         }
 
         if (sympy_conductance) {
             logger->info("Running sympy conductance visitor");
-            SympyConductanceVisitor().visit_program(ast.get());
-            SymtabVisitor(update_symtab).visit_program(ast.get());
-            ast_to_nmodl(ast.get(), filepath("sympy_conductance"));
+            SympyConductanceVisitor().visit_program(*ast);
+            SymtabVisitor(update_symtab).visit_program(*ast);
+            ast_to_nmodl(*ast, filepath("sympy_conductance"));
         }
 
         if (sympy_analytic) {
             logger->info("Running sympy solve visitor");
-            SympySolverVisitor(sympy_pade, sympy_cse).visit_program(ast.get());
-            SymtabVisitor(update_symtab).visit_program(ast.get());
-            ast_to_nmodl(ast.get(), filepath("sympy_solve"));
+            SympySolverVisitor(sympy_pade, sympy_cse).visit_program(*ast);
+            SymtabVisitor(update_symtab).visit_program(*ast);
+            ast_to_nmodl(*ast, filepath("sympy_solve"));
         }
 
         {
             logger->info("Running cnexp visitor");
-            NeuronSolveVisitor().visit_program(ast.get());
-            ast_to_nmodl(ast.get(), filepath("cnexp"));
+            NeuronSolveVisitor().visit_program(*ast);
+            ast_to_nmodl(*ast, filepath("cnexp"));
         }
 
         {
-            SolveBlockVisitor().visit_program(ast.get());
-            SymtabVisitor(update_symtab).visit_program(ast.get());
-            ast_to_nmodl(ast.get(), filepath("solveblock"));
+            SolveBlockVisitor().visit_program(*ast);
+            SymtabVisitor(update_symtab).visit_program(*ast);
+            ast_to_nmodl(*ast, filepath("solveblock"));
         }
 
         if (json_perfstat) {
             auto file = scratch_dir + "/" + modfile + ".perf.json";
             logger->info("Writing performance statistics to {}", file);
-            PerfVisitor(file).visit_program(ast.get());
+            PerfVisitor(file).visit_program(*ast);
         }
 
         {
             // make sure to run perf visitor because code generator
             // looks for read/write counts const/non-const declaration
-            PerfVisitor().visit_program(ast.get());
+            PerfVisitor().visit_program(*ast);
         }
 
         {
@@ -451,31 +448,31 @@ int main(int argc, const char* argv[]) {
             if (ispc_backend) {
                 logger->info("Running ISPC backend code generator");
                 CodegenIspcVisitor visitor(modfile, output_dir, mem_layout, data_type);
-                visitor.visit_program(ast.get());
+                visitor.visit_program(*ast);
             }
 
             else if (oacc_backend) {
                 logger->info("Running OpenACC backend code generator");
                 CodegenAccVisitor visitor(modfile, output_dir, mem_layout, data_type);
-                visitor.visit_program(ast.get());
+                visitor.visit_program(*ast);
             }
 
             else if (omp_backend) {
                 logger->info("Running OpenMP backend code generator");
                 CodegenOmpVisitor visitor(modfile, output_dir, mem_layout, data_type);
-                visitor.visit_program(ast.get());
+                visitor.visit_program(*ast);
             }
 
             else if (c_backend) {
                 logger->info("Running C backend code generator");
                 CodegenCVisitor visitor(modfile, output_dir, mem_layout, data_type);
-                visitor.visit_program(ast.get());
+                visitor.visit_program(*ast);
             }
 
             if (cuda_backend) {
                 logger->info("Running CUDA backend code generator");
                 CodegenCudaVisitor visitor(modfile, output_dir, mem_layout, data_type);
-                visitor.visit_program(ast.get());
+                visitor.visit_program(*ast);
             }
         }
     }

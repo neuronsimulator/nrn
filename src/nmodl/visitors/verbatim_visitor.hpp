@@ -46,13 +46,13 @@ class VerbatimVisitor: public AstVisitor {
   public:
     VerbatimVisitor() = default;
 
-    VerbatimVisitor(bool flag) {
+    explicit VerbatimVisitor(bool flag) {
         verbose = flag;
     }
 
-    void visit_verbatim(ast::Verbatim* node) override;
+    void visit_verbatim(ast::Verbatim& node) override;
 
-    std::vector<std::string> verbatim_blocks() {
+    const std::vector<std::string>& verbatim_blocks() const noexcept {
         return blocks;
     }
 };

@@ -42,9 +42,9 @@ class VarUsageVisitor: public AstVisitor {
   public:
     VarUsageVisitor() = default;
 
-    bool variable_used(ast::Node* node, std::string name);
+    bool variable_used(ast::Node& node, std::string name);
 
-    virtual void visit_name(ast::Name* node) override;
+    void visit_name(ast::Name& node) override;
 };
 
 /** @} */  // end of visitor_classes

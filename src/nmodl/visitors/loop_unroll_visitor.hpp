@@ -62,7 +62,7 @@ class LoopUnrollVisitor: public AstVisitor {
   public:
     LoopUnrollVisitor() = default;
 
-    virtual void visit_statement_block(ast::StatementBlock* node) override;
+    void visit_statement_block(ast::StatementBlock& node) override;
 };
 
 /** @} */  // end of visitor_classes

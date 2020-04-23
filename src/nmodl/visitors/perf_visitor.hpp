@@ -155,153 +155,153 @@ class PerfVisitor: public AstVisitor {
         printer->compact_json(flag);
     }
 
-    utils::PerfStat get_total_perfstat() {
+    utils::PerfStat get_total_perfstat() const noexcept {
         return total_perf;
     }
 
-    int get_instance_variable_count() {
+    int get_instance_variable_count() const noexcept {
         return num_instance_variables;
     }
 
-    int get_const_instance_variable_count() {
+    int get_const_instance_variable_count() const noexcept {
         return num_constant_instance_variables;
     }
 
-    int get_const_global_variable_count() {
+    int get_const_global_variable_count() const noexcept {
         return num_constant_global_variables;
     }
 
-    int get_global_variable_count() {
+    int get_global_variable_count() const noexcept {
         return num_global_variables;
     }
 
-    int get_state_variable_count() {
+    int get_state_variable_count() const noexcept {
         return num_state_variables;
     }
 
-    void visit_binary_expression(ast::BinaryExpression* node) override;
+    void visit_binary_expression(ast::BinaryExpression& node) override;
 
-    void visit_function_call(ast::FunctionCall* node) override;
+    void visit_function_call(ast::FunctionCall& node) override;
 
-    void visit_name(ast::Name* node) override;
+    void visit_name(ast::Name& node) override;
 
-    void visit_prime_name(ast::PrimeName* node) override;
+    void visit_prime_name(ast::PrimeName& node) override;
 
-    void visit_solve_block(ast::SolveBlock* node) override;
+    void visit_solve_block(ast::SolveBlock& node) override;
 
-    void visit_statement_block(ast::StatementBlock* node) override;
+    void visit_statement_block(ast::StatementBlock& node) override;
 
-    void visit_unary_expression(ast::UnaryExpression* node) override;
+    void visit_unary_expression(ast::UnaryExpression& node) override;
 
-    void visit_if_statement(ast::IfStatement* node) override;
+    void visit_if_statement(ast::IfStatement& node) override;
 
-    void visit_else_if_statement(ast::ElseIfStatement* node) override;
+    void visit_else_if_statement(ast::ElseIfStatement& node) override;
 
-    void visit_program(ast::Program* node) override;
+    void visit_program(ast::Program& node) override;
 
-    void visit_plot_block(ast::PlotBlock* node) override {
-        measure_performance(node);
+    void visit_plot_block(ast::PlotBlock& node) override {
+        measure_performance(&node);
     }
 
     /// skip initial block under net_receive block
-    void visit_initial_block(ast::InitialBlock* node) override {
+    void visit_initial_block(ast::InitialBlock& node) override {
         if (!under_net_receive_block) {
-            measure_performance(node);
+            measure_performance(&node);
         }
     }
 
-    void visit_constructor_block(ast::ConstructorBlock* node) override {
-        measure_performance(node);
+    void visit_constructor_block(ast::ConstructorBlock& node) override {
+        measure_performance(&node);
     }
 
-    void visit_destructor_block(ast::DestructorBlock* node) override {
-        measure_performance(node);
+    void visit_destructor_block(ast::DestructorBlock& node) override {
+        measure_performance(&node);
     }
 
-    void visit_derivative_block(ast::DerivativeBlock* node) override {
-        measure_performance(node);
+    void visit_derivative_block(ast::DerivativeBlock& node) override {
+        measure_performance(&node);
     }
 
-    void visit_linear_block(ast::LinearBlock* node) override {
-        measure_performance(node);
+    void visit_linear_block(ast::LinearBlock& node) override {
+        measure_performance(&node);
     }
 
-    void visit_non_linear_block(ast::NonLinearBlock* node) override {
-        measure_performance(node);
+    void visit_non_linear_block(ast::NonLinearBlock& node) override {
+        measure_performance(&node);
     }
 
-    void visit_discrete_block(ast::DiscreteBlock* node) override {
-        measure_performance(node);
+    void visit_discrete_block(ast::DiscreteBlock& node) override {
+        measure_performance(&node);
     }
 
-    void visit_partial_block(ast::PartialBlock* node) override {
-        measure_performance(node);
+    void visit_partial_block(ast::PartialBlock& node) override {
+        measure_performance(&node);
     }
 
-    void visit_function_table_block(ast::FunctionTableBlock* node) override {
-        measure_performance(node);
+    void visit_function_table_block(ast::FunctionTableBlock& node) override {
+        measure_performance(&node);
     }
 
-    void visit_function_block(ast::FunctionBlock* node) override {
-        measure_performance(node);
+    void visit_function_block(ast::FunctionBlock& node) override {
+        measure_performance(&node);
     }
 
-    void visit_procedure_block(ast::ProcedureBlock* node) override {
-        measure_performance(node);
+    void visit_procedure_block(ast::ProcedureBlock& node) override {
+        measure_performance(&node);
     }
 
-    void visit_net_receive_block(ast::NetReceiveBlock* node) override {
+    void visit_net_receive_block(ast::NetReceiveBlock& node) override {
         under_net_receive_block = true;
-        measure_performance(node);
+        measure_performance(&node);
         under_net_receive_block = false;
     }
 
-    void visit_breakpoint_block(ast::BreakpointBlock* node) override {
-        measure_performance(node);
+    void visit_breakpoint_block(ast::BreakpointBlock& node) override {
+        measure_performance(&node);
     }
 
-    void visit_terminal_block(ast::TerminalBlock* node) override {
-        measure_performance(node);
+    void visit_terminal_block(ast::TerminalBlock& node) override {
+        measure_performance(&node);
     }
 
-    void visit_before_block(ast::BeforeBlock* node) override {
-        measure_performance(node);
+    void visit_before_block(ast::BeforeBlock& node) override {
+        measure_performance(&node);
     }
 
-    void visit_after_block(ast::AfterBlock* node) override {
-        measure_performance(node);
+    void visit_after_block(ast::AfterBlock& node) override {
+        measure_performance(&node);
     }
 
-    void visit_ba_block(ast::BABlock* node) override {
-        measure_performance(node);
+    void visit_ba_block(ast::BABlock& node) override {
+        measure_performance(&node);
     }
 
-    void visit_for_netcon(ast::ForNetcon* node) override {
-        measure_performance(node);
+    void visit_for_netcon(ast::ForNetcon& node) override {
+        measure_performance(&node);
     }
 
-    void visit_kinetic_block(ast::KineticBlock* node) override {
-        measure_performance(node);
+    void visit_kinetic_block(ast::KineticBlock& node) override {
+        measure_performance(&node);
     }
 
-    void visit_match_block(ast::MatchBlock* node) override {
-        measure_performance(node);
+    void visit_match_block(ast::MatchBlock& node) override {
+        measure_performance(&node);
     }
 
     /// certain constructs needs to be excluded from usage counting
     /// and hence need to provide empty implementations
 
-    void visit_conductance_hint(ast::ConductanceHint* /*node*/) override {}
+    void visit_conductance_hint(ast::ConductanceHint& /*node*/) override {}
 
-    void visit_local_list_statement(ast::LocalListStatement* /*node*/) override {}
+    void visit_local_list_statement(ast::LocalListStatement& /*node*/) override {}
 
-    void visit_suffix(ast::Suffix* /*node*/) override {}
+    void visit_suffix(ast::Suffix& /*node*/) override {}
 
-    void visit_useion(ast::Useion* /*node*/) override {}
+    void visit_useion(ast::Useion& /*node*/) override {}
 
-    void visit_valence(ast::Valence* /*node*/) override {}
+    void visit_valence(ast::Valence& /*node*/) override {}
 
-    void print(std::stringstream& ss) {
+    void print(std::ostream& ss) {
         ss << stream.str();
     }
 };

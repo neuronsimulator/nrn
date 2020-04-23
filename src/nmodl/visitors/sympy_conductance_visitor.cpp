@@ -39,16 +39,16 @@ using symtab::syminfo::NmodlType;
  * @param node Ast node for breakpoint block
  * @return true if it is safe to insert conductance statements otherwise false
  */
-static bool conductance_statement_possible(ast::BreakpointBlock* node) {
+static bool conductance_statement_possible(ast::BreakpointBlock& node) {
     AstLookupVisitor v({AstNodeType::IF_STATEMENT, AstNodeType::VERBATIM});
-    node->accept(v);
+    node.accept(v);
     return v.get_nodes().empty();
 }
 
 
 // Generate statement strings to be added to BREAKPOINT section
 std::vector<std::string> SympyConductanceVisitor::generate_statement_strings(
-    ast::BreakpointBlock* node) {
+    ast::BreakpointBlock& node) {
     std::vector<std::string> statements;
 
     // instead of passing all variables in the symbol table find out variables
@@ -114,7 +114,7 @@ std::vector<std::string> SympyConductanceVisitor::generate_statement_strings(
                     }
                     g_var = get_new_name("g", i_name_str, var_map);
                     // declare it
-                    add_local_variable(node->get_statement_block().get(), g_var);
+                    add_local_variable(*node.get_statement_block(), g_var);
                     // asign dIdV to it
                     std::string statement_str = g_var;
                     statement_str.append(" = ").append(dIdV);
@@ -134,15 +134,15 @@ std::vector<std::string> SympyConductanceVisitor::generate_statement_strings(
     return statements;
 }
 
-void SympyConductanceVisitor::visit_binary_expression(ast::BinaryExpression* node) {
+void SympyConductanceVisitor::visit_binary_expression(ast::BinaryExpression& node) {
     // only want binary expressions from breakpoint block
     if (!under_breakpoint_block) {
         return;
     }
     // only want binary expressions of form x = ...
-    if (node->get_lhs()->is_var_name() && (node->get_op().get_value() == BinaryOp::BOP_ASSIGN)) {
+    if (node.get_lhs()->is_var_name() && (node.get_op().get_value() == BinaryOp::BOP_ASSIGN)) {
         auto lhs_str =
-            std::dynamic_pointer_cast<ast::VarName>(node->get_lhs())->get_name()->get_node_name();
+            std::dynamic_pointer_cast<ast::VarName>(node.get_lhs())->get_name()->get_node_name();
         binary_expr_index[lhs_str] = ordered_binary_exprs.size();
         ordered_binary_exprs.push_back(to_nmodl_for_sympy(node));
         ordered_binary_exprs_lhs.push_back(lhs_str);
@@ -169,9 +169,9 @@ void SympyConductanceVisitor::lookup_nonspecific_statements() {
 void SympyConductanceVisitor::lookup_useion_statements() {
     // add USEION statements to i_name map between write vars and names
     for (const auto& useion_ast: use_ion_nodes) {
-        auto ion = std::dynamic_pointer_cast<ast::Useion>(useion_ast).get();
-        std::string ion_name = ion->get_node_name();
-        logger->debug("SympyConductance :: Found USEION statement {}", to_nmodl_for_sympy(ion));
+        const auto& ion = std::dynamic_pointer_cast<ast::Useion>(useion_ast);
+        const std::string& ion_name = ion->get_node_name();
+        logger->debug("SympyConductance :: Found USEION statement {}", to_nmodl_for_sympy(*ion));
         if (i_ignore.find(ion_name) != i_ignore.end()) {
             logger->debug("SympyConductance :: -> Ignoring ion current name: {}", ion_name);
         } else {
@@ -187,12 +187,12 @@ void SympyConductanceVisitor::lookup_useion_statements() {
     }
 }
 
-void SympyConductanceVisitor::visit_conductance_hint(ast::ConductanceHint* node) {
+void SympyConductanceVisitor::visit_conductance_hint(ast::ConductanceHint& node) {
     // find existing CONDUCTANCE statements - do not want to alter them
     // so keep a set of ion names i_ignore that we should ignore later
     logger->debug("SympyConductance :: Found existing CONDUCTANCE statement: {}",
                   to_nmodl_for_sympy(node));
-    if (auto ion = node->get_ion()) {
+    if (const auto& ion = node.get_ion()) {
         logger->debug("SympyConductance :: -> Ignoring ion current name: {}", ion->get_node_name());
         i_ignore.insert(ion->get_node_name());
     } else {
@@ -201,7 +201,7 @@ void SympyConductanceVisitor::visit_conductance_hint(ast::ConductanceHint* node)
     }
 };
 
-void SympyConductanceVisitor::visit_breakpoint_block(ast::BreakpointBlock* node) {
+void SympyConductanceVisitor::visit_breakpoint_block(ast::BreakpointBlock& node) {
     // return if it's not safe to insert conductance statements
     if (!conductance_statement_possible(node)) {
         logger->warn("SympyConductance :: Unsafe to insert CONDUCTANCE statement");
@@ -209,14 +209,14 @@ void SympyConductanceVisitor::visit_breakpoint_block(ast::BreakpointBlock* node)
     }
 
     // add any breakpoint local variables to vars
-    if (auto* symtab = node->get_statement_block()->get_symbol_table()) {
+    if (auto* symtab = node.get_statement_block()->get_symbol_table()) {
         for (const auto& localvar: symtab->get_variables_with_properties(NmodlType::local_var)) {
             all_vars.insert(localvar->get_name());
         }
     }
     // visit BREAKPOINT block statements
     under_breakpoint_block = true;
-    node->visit_children(*this);
+    node.visit_children(*this);
     under_breakpoint_block = false;
 
     // lookup USEION and NONSPECIFIC statements from NEURON block
@@ -227,7 +227,7 @@ void SympyConductanceVisitor::visit_breakpoint_block(ast::BreakpointBlock* node)
     auto new_statements = generate_statement_strings(node);
     if (!new_statements.empty()) {
         // get a copy of existing BREAKPOINT statements
-        auto brkpnt_statements = node->get_statement_block()->get_statements();
+        auto brkpnt_statements = node.get_statement_block()->get_statements();
         // insert new CONDUCTANCE statements at top of BREAKPOINT
         // or just below LOCAL statement if it exists
         auto insertion_point = brkpnt_statements.begin();
@@ -239,17 +239,17 @@ void SympyConductanceVisitor::visit_breakpoint_block(ast::BreakpointBlock* node)
                                                        create_statement(statement_str));
         }
         // replace old set of BREAKPOINT statements in AST with new one
-        node->get_statement_block()->set_statements(std::move(brkpnt_statements));
+        node.get_statement_block()->set_statements(std::move(brkpnt_statements));
     }
 }
 
-void SympyConductanceVisitor::visit_program(ast::Program* node) {
+void SympyConductanceVisitor::visit_program(ast::Program& node) {
     all_vars = get_global_vars(node);
     AstLookupVisitor ast_lookup_visitor;
     use_ion_nodes = ast_lookup_visitor.lookup(node, AstNodeType::USEION);
     nonspecific_nodes = ast_lookup_visitor.lookup(node, AstNodeType::NONSPECIFIC);
 
-    node->visit_children(*this);
+    node.visit_children(*this);
 }
 
 }  // namespace visitor

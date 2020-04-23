@@ -92,20 +92,20 @@ int main(int argc, const char* argv[]) {
     for (const auto& filename: files) {
         logger->info("Processing {}", filename);
 
-        std::string mod_file = utils::remove_extension(utils::base_name(filename));
+        const std::string mod_file(utils::remove_extension(utils::base_name(filename)));
 
         /// driver object that creates lexer and parser
         parser::NmodlDriver driver;
 
         /// shared_ptr to ast constructed from parsing nmodl file
-        auto ast = driver.parse_file(filename);
+        const auto& ast = driver.parse_file(filename);
 
         /// run all visitors and generate mod file after each run
         for (const auto& visitor: visitors) {
             logger->info("Running {}", visitor.description);
-            visitor.v->visit_program(ast.get());
-            std::string file = mod_file + "." + visitor.id + ".mod";
-            NmodlPrintVisitor(file).visit_program(ast.get());
+            visitor.v->visit_program(*ast);
+            const std::string file = mod_file + "." + visitor.id + ".mod";
+            NmodlPrintVisitor(file).visit_program(*ast);
             logger->info("NMODL visitor generated {}", file);
         }
     }

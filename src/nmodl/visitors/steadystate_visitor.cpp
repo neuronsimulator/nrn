@@ -24,7 +24,7 @@ using namespace fmt::literals;
 using symtab::syminfo::NmodlType;
 
 std::shared_ptr<ast::DerivativeBlock> SteadystateVisitor::create_steadystate_block(
-    std::shared_ptr<ast::SolveBlock> solve_block,
+    const std::shared_ptr<ast::SolveBlock>& solve_block,
     const std::vector<std::shared_ptr<ast::Ast>>& deriv_blocks) {
     // new block to be returned
     std::shared_ptr<ast::DerivativeBlock> ss_block;
@@ -76,7 +76,7 @@ std::shared_ptr<ast::DerivativeBlock> SteadystateVisitor::create_steadystate_blo
         auto statement_block = ss_block->get_statement_block();
         // declare tmp variable to save dt value (this will go into the LOCAL statement at the top
         // of the statement block)
-        add_local_variable(statement_block.get(), dt_tmp_var_name);
+        add_local_variable(*statement_block.get(), dt_tmp_var_name);
         // get a copy of existing statements
         auto statements = statement_block->get_statements();
         // insert dt_save and dt_assign statements just below first LOCAL statement
@@ -96,7 +96,7 @@ std::shared_ptr<ast::DerivativeBlock> SteadystateVisitor::create_steadystate_blo
         // set name to point to new DERIVATIVE block
         solve_block->set_block_name(std::move(ss_name_clone));
         // change from STEADYSTATE to METHOD
-        solve_block->set_method(std::move(solve_block->get_steadystate()));
+        solve_block->set_method(solve_block->get_steadystate());
         solve_block->set_steadystate(nullptr);
     } else {
         logger->warn("SteadystateVisitor :: Could not find derivative block {} for STEADYSTATE",
@@ -106,7 +106,7 @@ std::shared_ptr<ast::DerivativeBlock> SteadystateVisitor::create_steadystate_blo
     return ss_block;
 }
 
-void SteadystateVisitor::visit_program(ast::Program* node) {
+void SteadystateVisitor::visit_program(ast::Program& node) {
     // get DERIVATIVE blocks
     const auto& deriv_blocks = AstLookupVisitor().lookup(node, ast::AstNodeType::DERIVATIVE_BLOCK);
 
@@ -119,7 +119,7 @@ void SteadystateVisitor::visit_program(ast::Program* node) {
             if (solve_block->get_steadystate()) {
                 auto ss_block = create_steadystate_block(solve_block, deriv_blocks);
                 if (ss_block != nullptr) {
-                    node->emplace_back_node(ss_block);
+                    node.emplace_back_node(ss_block);
                 }
             }
         }

@@ -28,18 +28,19 @@ using nmodl::parser::NmodlDriver;
 // Variable rename tests
 //=============================================================================
 
-std::string run_var_rename_visitor(const std::string& text,
-                                   std::vector<std::pair<std::string, std::string>> variables) {
+static std::string run_var_rename_visitor(
+    const std::string& text,
+    const std::vector<std::pair<std::string, std::string>>& variables) {
     NmodlDriver driver;
-    auto ast = driver.parse_string(text);
+    const auto& ast = driver.parse_string(text);
     for (const auto& variable: variables) {
-        RenameVisitor(variable.first, variable.second).visit_program(ast.get());
+        RenameVisitor(variable.first, variable.second).visit_program(*ast);
     }
     std::stringstream stream;
-    NmodlPrintVisitor(stream).visit_program(ast.get());
+    NmodlPrintVisitor(stream).visit_program(*ast);
 
     // check that, after visitor rearrangement, parents are still up-to-date
-    CheckParentVisitor().visit_program(ast.get());
+    CheckParentVisitor().visit_program(*ast);
 
     return stream.str();
 }
@@ -136,14 +137,14 @@ SCENARIO("Renaming any variable in mod file with RenameVisitor", "[visitor][rena
 
 std::string run_local_var_rename_visitor(const std::string& text) {
     NmodlDriver driver;
-    auto ast = driver.parse_string(text);
+    const auto& ast = driver.parse_string(text);
 
-    SymtabVisitor().visit_program(ast.get());
+    SymtabVisitor().visit_program(*ast);
 
-    VerbatimVarRenameVisitor().visit_program(ast.get());
-    LocalVarRenameVisitor().visit_program(ast.get());
+    VerbatimVarRenameVisitor().visit_program(*ast);
+    LocalVarRenameVisitor().visit_program(*ast);
     std::stringstream stream;
-    NmodlPrintVisitor(stream).visit_program(ast.get());
+    NmodlPrintVisitor(stream).visit_program(*ast);
     return stream.str();
 }
 

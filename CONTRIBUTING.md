@@ -126,10 +126,21 @@ do not comply with coding conventions of this project. These 2 CMake variables r
 * [pre-commit](https://pre-commit.com/)
 
 clang-format can be installed on Linux thanks
-to [LLVM apt page](http://apt.llvm.org/). On MacOS, there is a
-[brew recipe](https://gist.github.com/ffeu/0460bb1349fa7e4ab4c459a6192cbb25)
-to install clang-format 7. _cmake-format_ and _pre-commit_ utilities can be installed with *pip*.
+to [LLVM apt page](http://apt.llvm.org/). On MacOS, you can simply install llvm with brew:
+`brew install llvm`.
+_cmake-format_ and _pre-commit_ utilities can be installed with *pip*.
 
+### Validate the Python package
+
+You may run the Python test-suites if your contribution has an impact
+on the Python API:
+
+1. setup a sandbox environment with either _virtualenv_,
+  _pyenv_, or _pipenv_. For instance with _virtualenv_:
+  `python -m venv .venv && source .venv/bin/activate`
+1. build the Python package with the command: `python setup.py build`
+1. install _pytest_ Python package: `pip install pytest`
+1. execute the unit-tests: `pytest`
 
 ### Memory Leaks and clang-tidy
 

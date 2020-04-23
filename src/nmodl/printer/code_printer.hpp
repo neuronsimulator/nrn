@@ -49,7 +49,7 @@ class CodePrinter {
     CodePrinter()
         : result(new std::ostream(std::cout.rdbuf())) {}
 
-    CodePrinter(std::stringstream& stream)
+    CodePrinter(std::ostream& stream)
         : result(new std::ostream(stream.rdbuf())) {}
 
     CodePrinter(const std::string& filename);

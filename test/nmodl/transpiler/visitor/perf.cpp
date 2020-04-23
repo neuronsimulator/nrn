@@ -82,11 +82,11 @@ SCENARIO("Symbol table generation with Perf stat visitor", "[visitor][performanc
         )";
 
         NmodlDriver driver;
-        auto ast = driver.parse_string(nmodl_text);
+        const auto& ast = driver.parse_string(nmodl_text);
 
         WHEN("Symbol table generator pass runs") {
             SymtabVisitor v;
-            v.visit_program(ast.get());
+            v.visit_program(*ast);
             auto symtab = ast->get_model_symbol_table();
 
             THEN("Can lookup for defined variables") {
@@ -111,7 +111,7 @@ SCENARIO("Symbol table generation with Perf stat visitor", "[visitor][performanc
 
             WHEN("Perf visitor pass runs after symtab visitor") {
                 PerfVisitor v;
-                v.visit_program(ast.get());
+                v.visit_program(*ast);
 
                 auto result = v.get_total_perfstat();
                 auto num_instance_var = v.get_instance_variable_count();
@@ -151,7 +151,7 @@ SCENARIO("Symbol table generation with Perf stat visitor", "[visitor][performanc
         WHEN("Perf visitor pass runs before symtab visitor") {
             PerfVisitor v;
             THEN("exception is thrown") {
-                REQUIRE_THROWS_WITH(v.visit_program(ast.get()), Catch::Contains("table not setup"));
+                REQUIRE_THROWS_WITH(v.visit_program(*ast), Catch::Contains("table not setup"));
             }
         }
     }

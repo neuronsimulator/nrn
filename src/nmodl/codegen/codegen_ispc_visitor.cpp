@@ -33,15 +33,15 @@ using visitor::RenameVisitor;
 /*
  * Rename math functions for ISPC backend
  */
-void CodegenIspcVisitor::visit_function_call(ast::FunctionCall* node) {
+void CodegenIspcVisitor::visit_function_call(ast::FunctionCall& node) {
     if (!codegen) {
         return;
     }
-    if (node->get_node_name() == "printf") {
+    if (node.get_node_name() == "printf") {
         logger->warn("Not emitted in ispc: {}"_format(to_nmodl(node)));
         return;
     }
-    auto fname = node->get_name().get();
+    auto& fname = *node.get_name();
     RenameVisitor("fabs", "abs").visit_name(fname);
     RenameVisitor("exp", "vexp").visit_name(fname);
     CodegenCVisitor::visit_function_call(node);
@@ -51,14 +51,14 @@ void CodegenIspcVisitor::visit_function_call(ast::FunctionCall* node) {
 /*
  * Rename special global variables
  */
-void CodegenIspcVisitor::visit_var_name(ast::VarName* node) {
+void CodegenIspcVisitor::visit_var_name(ast::VarName& node) {
     if (!codegen) {
         return;
     }
     RenameVisitor celsius_rename("celsius", "ispc_celsius");
-    node->accept(celsius_rename);
+    node.accept(celsius_rename);
     RenameVisitor pi_rename("PI", "ISPC_PI");
-    node->accept(pi_rename);
+    node.accept(pi_rename);
     CodegenCVisitor::visit_var_name(node);
 }
 
@@ -109,7 +109,7 @@ std::string CodegenIspcVisitor::float_to_string(float value) {
 }
 
 
-std::string CodegenIspcVisitor::compute_method_name(BlockType type) {
+std::string CodegenIspcVisitor::compute_method_name(BlockType type) const {
     if (type == BlockType::Initial) {
         return method_name(naming::NRN_INIT_METHOD);
     }
@@ -148,7 +148,7 @@ void CodegenIspcVisitor::print_backend_includes() {
 }
 
 
-std::string CodegenIspcVisitor::backend_name() {
+std::string CodegenIspcVisitor::backend_name() const {
     return "ispc (api-compatibility)";
 }
 
@@ -279,7 +279,7 @@ void CodegenIspcVisitor::print_backend_namespace_stop() {
 
 
 CodegenIspcVisitor::ParamVector CodegenIspcVisitor::get_global_function_parms(
-    std::string arg_qualifier) {
+    const std::string& arg_qualifier) {
     auto params = ParamVector();
     params.emplace_back(param_type_qualifier(),
                         "{}*"_format(instance_struct()),
@@ -292,9 +292,9 @@ CodegenIspcVisitor::ParamVector CodegenIspcVisitor::get_global_function_parms(
 }
 
 
-void CodegenIspcVisitor::print_procedure(ast::ProcedureBlock* node) {
+void CodegenIspcVisitor::print_procedure(ast::ProcedureBlock& node) {
     codegen = true;
-    auto name = node->get_node_name();
+    const auto& name = node.get_node_name();
     print_function_or_procedure(node, name);
     codegen = false;
 }
@@ -332,14 +332,14 @@ void CodegenIspcVisitor::print_compute_functions() {
         if (!program_symtab->lookup(function->get_node_name())
                  .get()
                  ->has_all_status(Status::inlined)) {
-            print_function(function);
+            print_function(*function);
         }
     }
     for (const auto& procedure: info.procedures) {
         if (!program_symtab->lookup(procedure->get_node_name())
                  .get()
                  ->has_all_status(Status::inlined)) {
-            print_procedure(procedure);
+            print_procedure(*procedure);
         }
     }
     if (!emit_fallback[BlockType::NetReceive]) {
@@ -580,13 +580,14 @@ void CodegenIspcVisitor::print_wrapper_headers_include() {
 }
 
 
-void CodegenIspcVisitor::print_wrapper_routine(std::string wraper_function, BlockType type) {
-    auto args = "NrnThread* nt, Memb_list* ml, int type";
-    wraper_function = method_name(wraper_function);
+void CodegenIspcVisitor::print_wrapper_routine(const std::string& wrapper_function,
+                                               BlockType type) {
+    static const auto args = "NrnThread* nt, Memb_list* ml, int type";
+    const auto function_name = method_name(wrapper_function);
     auto compute_function = compute_method_name(type);
 
     printer->add_newline(2);
-    printer->start_block("void {}({})"_format(wraper_function, args));
+    printer->start_block("void {}({})"_format(function_name, args));
     printer->add_line("int nodecount = ml->nodecount;");
     // clang-format off
     printer->add_line("{0}* {1}inst = ({0}*) ml->instance;"_format(instance_struct(), ptr_type_qualifier()));
@@ -644,22 +645,22 @@ void CodegenIspcVisitor::determine_target() {
 
     if (info.initial_node) {
         emit_fallback[BlockType::Initial] =
-            !node_lv.lookup(info.initial_node).empty() ||
-            visitor::calls_function(info.initial_node, "net_send") || info.require_wrote_conc;
+            !node_lv.lookup(*info.initial_node).empty() ||
+            visitor::calls_function(*info.initial_node, "net_send") || info.require_wrote_conc;
     } else {
         emit_fallback[BlockType::Initial] = info.net_receive_initial_node ||
                                             info.require_wrote_conc;
     }
 
     if (info.net_receive_node) {
-        emit_fallback[BlockType::NetReceive] = !node_lv.lookup(info.net_receive_node).empty() ||
-                                               visitor::calls_function(info.net_receive_node,
+        emit_fallback[BlockType::NetReceive] = !node_lv.lookup(*info.net_receive_node).empty() ||
+                                               visitor::calls_function(*info.net_receive_node,
                                                                        "net_send");
     }
 
     if (nrn_cur_required()) {
         if (info.breakpoint_node) {
-            emit_fallback[BlockType::Equation] = !node_lv.lookup(info.breakpoint_node).empty();
+            emit_fallback[BlockType::Equation] = !node_lv.lookup(*info.breakpoint_node).empty();
         } else {
             emit_fallback[BlockType::Equation] = false;
         }
@@ -667,7 +668,7 @@ void CodegenIspcVisitor::determine_target() {
 
     if (nrn_state_required()) {
         if (info.nrn_state_block) {
-            emit_fallback[BlockType::State] = !node_lv.lookup(info.nrn_state_block).empty();
+            emit_fallback[BlockType::State] = !node_lv.lookup(*info.nrn_state_block).empty();
         } else {
             emit_fallback[BlockType::State] = false;
         }
@@ -680,7 +681,7 @@ void CodegenIspcVisitor::move_procs_to_wrapper() {
     auto populate_nameset = [&nameset](ast::Block* block) {
         AstLookupVisitor name_lv(ast::AstNodeType::NAME);
         if (block) {
-            auto names = name_lv.lookup(block);
+            const auto& names = name_lv.lookup(*block);
             for (const auto& name: names) {
                 nameset.insert(name->get_node_name());
             }
@@ -692,22 +693,22 @@ void CodegenIspcVisitor::move_procs_to_wrapper() {
 
     AstLookupVisitor node_lv(incompatible_node_types);
     auto target_procedures = std::vector<ast::ProcedureBlock*>();
-    for (auto it = info.procedures.begin(); it != info.procedures.end(); it++) {
-        auto procname = (*it)->get_name()->get_node_name();
-        if (nameset.find(procname) == nameset.end() || !node_lv.lookup(*it).empty()) {
-            wrapper_procedures.push_back(*it);
+    for (const auto& procedure: info.procedures) {
+        const auto& name = procedure->get_name()->get_node_name();
+        if (nameset.find(name) == nameset.end() || !node_lv.lookup(*procedure).empty()) {
+            wrapper_procedures.push_back(procedure);
         } else {
-            target_procedures.push_back(*it);
+            target_procedures.push_back(procedure);
         }
     }
     info.procedures = target_procedures;
     auto target_functions = std::vector<ast::FunctionBlock*>();
-    for (auto it = info.functions.begin(); it != info.functions.end(); it++) {
-        auto procname = (*it)->get_name()->get_node_name();
-        if (nameset.find(procname) == nameset.end() || !node_lv.lookup(*it).empty()) {
-            wrapper_functions.push_back(*it);
+    for (const auto& function: info.functions) {
+        const auto& name = function->get_name()->get_node_name();
+        if (nameset.find(name) == nameset.end() || !node_lv.lookup(*function).empty()) {
+            wrapper_functions.push_back(function);
         } else {
-            target_functions.push_back(*it);
+            target_functions.push_back(function);
         }
     }
     info.functions = target_functions;
@@ -741,7 +742,7 @@ void CodegenIspcVisitor::codegen_wrapper_routines() {
 }
 
 
-void CodegenIspcVisitor::visit_program(ast::Program* node) {
+void CodegenIspcVisitor::visit_program(ast::Program& node) {
     fallback_codegen.setup(node);
     CodegenCVisitor::visit_program(node);
 }
@@ -791,17 +792,13 @@ void CodegenIspcVisitor::print_codegen_wrapper_routines() {
 
 
     for (const auto& function: wrapper_functions) {
-        if (!program_symtab->lookup(function->get_node_name())
-                 .get()
-                 ->has_all_status(Status::inlined)) {
-            fallback_codegen.print_function(function);
+        if (!program_symtab->lookup(function->get_node_name())->has_all_status(Status::inlined)) {
+            fallback_codegen.print_function(*function);
         }
     }
     for (const auto& procedure: wrapper_procedures) {
-        if (!program_symtab->lookup(procedure->get_node_name())
-                 .get()
-                 ->has_all_status(Status::inlined)) {
-            fallback_codegen.print_procedure(procedure);
+        if (!program_symtab->lookup(procedure->get_node_name())->has_all_status(Status::inlined)) {
+            fallback_codegen.print_procedure(*procedure);
         }
     }
 

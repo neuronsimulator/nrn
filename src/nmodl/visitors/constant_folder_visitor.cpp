@@ -15,7 +15,7 @@ namespace visitor {
 
 /// check if given expression is a number
 /// note that the DEFINE node is already expanded to integer
-static bool is_number(const std::shared_ptr<ast::Expression>& node) {
+static inline bool is_number(const std::shared_ptr<ast::Expression>& node) {
     return node->is_integer() || node->is_double() || node->is_float();
 }
 
@@ -24,18 +24,16 @@ static bool is_number(const std::shared_ptr<ast::Expression>& node) {
 static double get_value(const std::shared_ptr<ast::Expression>& node) {
     if (node->is_integer()) {
         return std::dynamic_pointer_cast<ast::Integer>(node)->eval();
-    }
-    if (node->is_float()) {
+    } else if (node->is_float()) {
         return std::dynamic_pointer_cast<ast::Float>(node)->eval();
-    }
-    if (node->is_double()) {
+    } else if (node->is_double()) {
         return std::dynamic_pointer_cast<ast::Double>(node)->eval();
     }
     throw std::runtime_error("Invalid type passed to is_number()");
 }
 
 /// operators that currently implemented
-static bool supported_operator(ast::BinaryOp op) {
+static inline bool supported_operator(ast::BinaryOp op) {
     return op == ast::BOP_ADDITION || op == ast::BOP_SUBTRACTION || op == ast::BOP_MULTIPLICATION ||
            op == ast::BOP_DIVISION;
 }
@@ -75,12 +73,12 @@ static double compute(double lhs, ast::BinaryOp op, double rhs) {
  *
  *  parenthesis_exp => binary_expression => ...
  */
-void ConstantFolderVisitor::visit_paren_expression(ast::ParenExpression* node) {
-    node->visit_children(*this);
-    auto expr = node->get_expression();
+void ConstantFolderVisitor::visit_paren_expression(ast::ParenExpression& node) {
+    node.visit_children(*this);
+    auto expr = node.get_expression();
     if (expr->is_wrapped_expression()) {
         auto e = std::dynamic_pointer_cast<ast::WrappedExpression>(expr);
-        node->set_expression(e->get_expression());
+        node.set_expression(e->get_expression());
     }
 }
 
@@ -104,11 +102,12 @@ void ConstantFolderVisitor::visit_paren_expression(ast::ParenExpression* node) {
  *
  * }
  */
-void ConstantFolderVisitor::visit_wrapped_expression(ast::WrappedExpression* node) {
-    node->visit_children(*this);
+void ConstantFolderVisitor::visit_wrapped_expression(ast::WrappedExpression& node) {
+    node.visit_children(*this);
+    node.visit_children(*this);
 
     /// first expression which is wrapped
-    auto expr = node->get_expression();
+    auto expr = node.get_expression();
 
     /// if wrapped expression is parentheses
     bool is_parentheses = false;
@@ -127,7 +126,7 @@ void ConstantFolderVisitor::visit_wrapped_expression(ast::WrappedExpression* nod
         /// wrapped expression might be parenthesis expression like (2)
         /// which we can simplify to 2 to help next evaluations
         if (is_parentheses) {
-            node->set_expression(std::move(expr));
+            node.set_expression(std::move(expr));
         }
         return;
     }
@@ -158,21 +157,21 @@ void ConstantFolderVisitor::visit_wrapped_expression(ast::WrappedExpression* nod
         return;
     }
 
-    std::string nmodl_before = to_nmodl(binary_expr.get());
+    std::string nmodl_before = to_nmodl(binary_expr);
 
     /// compute the value of expression
     auto value = compute(get_value(lhs), op, get_value(rhs));
 
     /// if both operands are not integers or floats, result is double
     if (lhs->is_integer() && rhs->is_integer()) {
-        node->set_expression(std::make_shared<ast::Integer>(int(value), nullptr));
+        node.set_expression(std::make_shared<ast::Integer>(int(value), nullptr));
     } else if (lhs->is_double() || rhs->is_double()) {
-        node->set_expression(std::make_shared<ast::Double>(value));
+        node.set_expression(std::make_shared<ast::Double>(value));
     } else {
-        node->set_expression(std::make_shared<ast::Float>(value));
+        node.set_expression(std::make_shared<ast::Float>(value));
     }
 
-    std::string nmodl_after = to_nmodl(node->get_expression().get());
+    std::string nmodl_after = to_nmodl(node.get_expression());
     logger->debug("ConstantFolderVisitor : expression {} folded to {}", nmodl_before, nmodl_after);
 }
 

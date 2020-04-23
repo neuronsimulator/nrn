@@ -192,7 +192,7 @@ class SymbolTable {
     /// insert new symbol table as one of the children block
     void insert_table(const std::string& name, std::shared_ptr<SymbolTable> table);
 
-    void print(std::stringstream& ss, int level);
+    void print(std::ostream& ss, int level) const;
 
     std::string title() const;
 
@@ -270,8 +270,8 @@ class ModelSymbolTable {
     void set_mode(bool update_mode);
 
     /// pretty print
-    void print(std::stringstream& ss) {
-        symtab->print(ss, 0);
+    void print(std::ostream& ostr) const {
+        symtab->print(ostr, 0);
     }
 };
 

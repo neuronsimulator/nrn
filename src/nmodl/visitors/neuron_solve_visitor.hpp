@@ -61,11 +61,11 @@ class NeuronSolveVisitor: public AstVisitor {
   public:
     NeuronSolveVisitor() = default;
 
-    void visit_solve_block(ast::SolveBlock* node) override;
-    void visit_diff_eq_expression(ast::DiffEqExpression* node) override;
-    void visit_derivative_block(ast::DerivativeBlock* node) override;
-    void visit_binary_expression(ast::BinaryExpression* node) override;
-    void visit_program(ast::Program* node) override;
+    void visit_solve_block(ast::SolveBlock& node) override;
+    void visit_diff_eq_expression(ast::DiffEqExpression& node) override;
+    void visit_derivative_block(ast::DerivativeBlock& node) override;
+    void visit_binary_expression(ast::BinaryExpression& node) override;
+    void visit_program(ast::Program& node) override;
 };
 
 /** @} */  // end of visitor_classes

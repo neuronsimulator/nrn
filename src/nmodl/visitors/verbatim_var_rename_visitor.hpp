@@ -58,13 +58,13 @@ class VerbatimVarRenameVisitor: public AstVisitor {
     /// prefix used for range variables
     const std::string RANGE_PREFIX = "_p_";
 
-    std::string rename_variable(std::string);
+    std::string rename_variable(const std::string& name);
 
   public:
     VerbatimVarRenameVisitor() = default;
 
-    virtual void visit_verbatim(ast::Verbatim* node) override;
-    virtual void visit_statement_block(ast::StatementBlock* node) override;
+    void visit_verbatim(ast::Verbatim& node) override;
+    void visit_statement_block(ast::StatementBlock& node) override;
 };
 
 /** @} */  // end of visitor_classes

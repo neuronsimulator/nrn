@@ -224,7 +224,7 @@ void SymtabVisitor::setup_symbol_table_for_scoped_block(ast::Node* node, const s
  *
  * @todo we assume table statement follows variable declaration
  */
-void SymtabVisitor::visit_table_statement(ast::TableStatement* node) {
+void SymtabVisitor::visit_table_statement(ast::TableStatement& node) {
     auto update_symbol = [this](const ast::NameVector& variables, NmodlType property, int num_values) {
         for (auto& var : variables) {
             auto name = var->get_node_name();
@@ -235,9 +235,9 @@ void SymtabVisitor::visit_table_statement(ast::TableStatement* node) {
             }
         }
     };
-    int num_values = node->get_with()->eval() + 1;
-    update_symbol(node->get_table_vars(), NmodlType::table_statement_var, num_values);
-    update_symbol(node->get_depend_vars(), NmodlType::table_assigned_var, num_values);
+    int num_values = node.get_with()->eval() + 1;
+    update_symbol(node.get_table_vars(), NmodlType::table_statement_var, num_values);
+    update_symbol(node.get_depend_vars(), NmodlType::table_assigned_var, num_values);
 }
 
 }  // namespace visitor

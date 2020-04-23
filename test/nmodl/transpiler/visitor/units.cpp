@@ -32,13 +32,13 @@ using nmodl::parser::NmodlDriver;
 std::string run_units_visitor(const std::string& text) {
     NmodlDriver driver;
     driver.parse_string(text);
-    auto ast = driver.get_ast();
+    const auto& ast = driver.get_ast();
 
     // Parse nrnunits.lib file and the UNITS block of the mod file
-    std::string units_lib_path(NrnUnitsLib::get_path());
+    const std::string units_lib_path(NrnUnitsLib::get_path());
     UnitsVisitor units_visitor = UnitsVisitor(units_lib_path);
 
-    units_visitor.visit_program(ast.get());
+    units_visitor.visit_program(*ast);
 
     // Keep the UnitTable created from parsing unit file and UNITS
     // block of the mod file
@@ -50,14 +50,14 @@ std::string run_units_visitor(const std::string& text) {
     // Visit AST to find all the ast::UnitDef nodes to print their
     // unit names, factors and dimensions as they are calculated in
     // the units::UnitTable
-    auto unit_defs = AstLookupVisitor().lookup(ast.get(), ast::AstNodeType::UNIT_DEF);
+    auto unit_defs = AstLookupVisitor().lookup(*ast, ast::AstNodeType::UNIT_DEF);
 
     for (const auto& unit_def: unit_defs) {
         auto unit_name = unit_def->get_node_name();
         unit_name.erase(remove_if(unit_name.begin(), unit_name.end(), isspace), unit_name.end());
         auto unit = units_driver.table->get_unit(unit_name);
-        ss << std::fixed << std::setprecision(8) << unit->get_name() << " ";
-        ss << unit->get_factor() << ":";
+        ss << std::fixed << std::setprecision(8) << unit->get_name() << ' ';
+        ss << unit->get_factor() << ':';
         // Dimensions of the unit are printed to check that the units are successfully
         // parsed to the units::UnitTable
         int dimension_id = 0;
@@ -65,7 +65,7 @@ std::string run_units_visitor(const std::string& text) {
         for (const auto& dimension: unit->get_dimensions()) {
             if (dimension != 0) {
                 constant = false;
-                ss << " " << units_driver.table->get_base_unit_name(dimension_id);
+                ss << ' ' << units_driver.table->get_base_unit_name(dimension_id);
                 ss << dimension;
             }
             dimension_id++;
@@ -73,18 +73,18 @@ std::string run_units_visitor(const std::string& text) {
         if (constant) {
             ss << " constant";
         }
-        ss << "\n";
+        ss << '\n';
     }
 
     // Visit AST to find all the ast::FactorDef nodes to print their
     // unit names, factors and dimensions as they are calculated to
     // be printed to the produced .cpp file
-    auto factor_defs = AstLookupVisitor().lookup(ast.get(), ast::AstNodeType::FACTOR_DEF);
+    auto factor_defs = AstLookupVisitor().lookup(*ast, ast::AstNodeType::FACTOR_DEF);
     for (const auto& factor_def: factor_defs) {
         auto unit = units_driver.table->get_unit(factor_def->get_node_name());
-        ss << std::fixed << std::setprecision(8) << unit->get_name() << " ";
+        ss << std::fixed << std::setprecision(8) << unit->get_name() << ' ';
         auto factor_def_class = dynamic_cast<nmodl::ast::FactorDef*>(factor_def.get());
-        ss << factor_def_class->get_value()->eval() << ":";
+        ss << factor_def_class->get_value()->eval() << ':';
         // Dimensions of the unit are printed to check that the units are successfully
         // parsed to the units::UnitTable
         int dimension_id = 0;
@@ -100,11 +100,11 @@ std::string run_units_visitor(const std::string& text) {
         if (constant) {
             ss << " constant";
         }
-        ss << "\n";
+        ss << '\n';
     }
 
     // check that, after visitor rearrangement, parents are still up-to-date
-    CheckParentVisitor().visit_program(ast.get());
+    CheckParentVisitor().visit_program(*ast);
 
     return ss.str();
 }
@@ -112,7 +112,7 @@ std::string run_units_visitor(const std::string& text) {
 
 SCENARIO("Parse UNITS block of mod files using Units Visitor", "[visitor][units]") {
     GIVEN("UNITS block with different cases of units definitions") {
-        std::string nmodl_text = R"(
+        static const std::string nmodl_text = R"(
             UNITS {
                 (nA)    = (nanoamp)
                 (mA)    = (milliamp)
@@ -154,7 +154,7 @@ SCENARIO("Parse UNITS block of mod files using Units Visitor", "[visitor][units]
             }
         )";
 
-        std::string output_nmodl = R"(
+        static const std::string output_nmodl = R"(
         nA 0.00000000: sec-1 coul1
         mA 0.00100000: sec-1 coul1
         mV 0.00100000: m2 kg1 sec-2 coul-1
@@ -195,7 +195,7 @@ SCENARIO("Parse UNITS block of mod files using Units Visitor", "[visitor][units]
         )";
 
         THEN("Print the units that were added") {
-            std::string input = reindent_text(nmodl_text);
+            const std::string input(reindent_text(nmodl_text));
             auto expected_result = reindent_text(output_nmodl);
             auto result = run_units_visitor(input);
             auto reindented_result = reindent_text(result);

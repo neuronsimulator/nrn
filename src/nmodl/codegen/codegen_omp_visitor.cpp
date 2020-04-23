@@ -87,7 +87,7 @@ void CodegenOmpVisitor::print_backend_includes() {
 }
 
 
-std::string CodegenOmpVisitor::backend_name() {
+std::string CodegenOmpVisitor::backend_name() const {
     return "C-OpenMP (api-compatibility)";
 }
 

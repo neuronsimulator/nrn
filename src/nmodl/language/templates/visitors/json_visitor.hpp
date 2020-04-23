@@ -70,7 +70,7 @@ class JSONVisitor: public AstVisitor {
 
     // clang-format off
     {% for node in nodes %}
-    void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}* node) override;
+    void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}& node) override;
     {% endfor %}
     // clang-format on
 };

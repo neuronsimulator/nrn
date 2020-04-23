@@ -26,8 +26,8 @@ using symtab::syminfo::NmodlType;
 // Ast lookup visitor tests
 //=============================================================================
 
-std::vector<std::shared_ptr<ast::Ast>> run_lookup_visitor(ast::Program* node,
-                                                          std::vector<AstNodeType>& types) {
+std::vector<std::shared_ptr<ast::Ast>> run_lookup_visitor(ast::Program& node,
+                                                          const std::vector<AstNodeType>& types) {
     return AstLookupVisitor().lookup(node, types);
 }
 
@@ -57,10 +57,10 @@ SCENARIO("Searching for ast nodes using AstLookupVisitor", "[visitor][lookup]") 
         WHEN("Looking for existing nodes") {
             THEN("Can find RANGE variables") {
                 std::vector<AstNodeType> types{AstNodeType::RANGE_VAR};
-                auto result = run_lookup_visitor(ast.get(), types);
+                auto result = run_lookup_visitor(*ast, types);
                 REQUIRE(result.size() == 2);
-                REQUIRE(to_nmodl(result[0].get()) == "tau");
-                REQUIRE(to_nmodl(result[1].get()) == "h");
+                REQUIRE(to_nmodl(result[0]) == "tau");
+                REQUIRE(to_nmodl(result[1]) == "h");
             }
 
             THEN("Can find NEURON block") {
@@ -73,7 +73,7 @@ SCENARIO("Searching for ast nodes using AstLookupVisitor", "[visitor][lookup]") 
                     NEURON {
                         RANGE tau, h
                     })";
-                auto result = reindent_text(to_nmodl(nodes[0].get()));
+                auto result = reindent_text(to_nmodl(nodes[0]));
                 auto expected = reindent_text(neuron_block);
                 REQUIRE(result == expected);
             }
@@ -81,7 +81,7 @@ SCENARIO("Searching for ast nodes using AstLookupVisitor", "[visitor][lookup]") 
             THEN("Can find Binary Expressions and function call") {
                 std::vector<AstNodeType> types{AstNodeType::BINARY_EXPRESSION,
                                                AstNodeType::FUNCTION_CALL};
-                auto result = run_lookup_visitor(ast.get(), types);
+                auto result = run_lookup_visitor(*ast, types);
                 REQUIRE(result.size() == 4);
             }
         }
@@ -89,8 +89,8 @@ SCENARIO("Searching for ast nodes using AstLookupVisitor", "[visitor][lookup]") 
         WHEN("Looking for missing nodes") {
             THEN("Can not find BREAKPOINT block") {
                 std::vector<AstNodeType> types{AstNodeType::BREAKPOINT_BLOCK};
-                auto result = run_lookup_visitor(ast.get(), types);
-                REQUIRE(result.size() == 0);
+                auto result = run_lookup_visitor(*ast, types);
+                REQUIRE(result.empty());
             }
         }
     }

@@ -95,7 +95,7 @@ struct PyAst: public Ast {
         PYBIND11_OVERLOAD(const ModToken*, Ast, get_token, );
     }
 
-    symtab::SymbolTable* get_symbol_table() override {
+    symtab::SymbolTable* get_symbol_table() const override {
         PYBIND11_OVERLOAD(symtab::SymbolTable*, Ast, get_symbol_table, );
     }
 
