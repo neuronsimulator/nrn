@@ -6,11 +6,10 @@
 # directory for each MPI package building libnrnmpi_<mpipkg>.so.
 # Depending on the MPIs used NRNMPI_INCLUDE_<mpipkg> will be defined.
 # A number of other lists needed to construct libnrnmpi_<mpipkg>.so
-# are also constructe. The lists are all parallel in the sense that
+# are also constructed. The lists are all parallel in the sense that
 # corresponding elements are related to the same mpi installation.
 # ~~~
 
-set(NRN_MPI_BIN_LIST "" CACHE INTERNAL "" FORCE)
 set(NRN_MPI_INCLUDE_LIST "" CACHE INTERNAL "" FORCE)
 set(NRN_MPI_LIBNAME_LIST "" CACHE INTERNAL "" FORCE)
 set(NRN_MPI_TYPE_LIST "" CACHE INTERNAL "" FORCE)
@@ -21,17 +20,16 @@ if(NRN_ENABLE_MPI)
 
     set(NRNMPI_DYNAMICLOAD 1)
 
-    # compute the NRN_MPI_INCLUDE_LIST and NRN_MPI_BIN_LIST
+    # compute the NRN_MPI_INCLUDE_LIST
     if("${NRN_MPI_DYNAMIC}" STREQUAL "") # use the MPI already found
-      list(APPEND NRN_MPI_INCLUDE_LIST "${MPI_C_HEADER_DIR}")
-      string(REGEX REPLACE "/[^/]*$" "/bin" foo "${MPI_C_HEADER_DIR}")
-      list(APPEND NRN_MPI_BIN_LIST "${foo}")
-    else() # find the mpi's in the ';' separated list of mpi bin folders.
-      foreach(bdir ${NRN_MPI_DYNAMIC})
-        list(APPEND NRN_MPI_BIN_LIST "${bdir}")
-        string(REGEX REPLACE "/[^/]*$" "/include" foo "${bdir}")
+      string(REGEX REPLACE "/$" "" foo "${MPI_C_HEADER_DIR}")
+      list(APPEND NRN_MPI_INCLUDE_LIST "${foo}")
+    else() # find the mpi's in the ';' separated list of mpi include folders.
+      foreach(incdir ${NRN_MPI_DYNAMIC})
+        # remove trailing '/' if it has one
+        string(REGEX REPLACE "/$" "" foo "${incdir}")
         list(APPEND NRN_MPI_INCLUDE_LIST "${foo}")
-      endforeach(bdir)
+      endforeach(incdir)
     endif()
 
     # compute the NRN_MPI_TYPE_LIST and NRN_MPI_LIBNAME_LIST
