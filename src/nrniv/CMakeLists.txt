@@ -262,7 +262,6 @@ if(NRN_ENABLE_MPI)
     list(LENGTH NRN_MPI_LIBNAME_LIST _num_mpi)
     math(EXPR num_mpi "${_num_mpi} - 1")
     foreach(val RANGE ${num_mpi})
-      list(GET NRN_MPI_BIN_LIST ${val} bin)
       list(GET NRN_MPI_INCLUDE_LIST ${val} include)
       list(GET NRN_MPI_LIBNAME_LIST ${val} libname)
 

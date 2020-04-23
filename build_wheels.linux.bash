@@ -25,7 +25,7 @@ build_wheel() {
   pushd nrn
   rm -rf dist build
   pip install -i https://nero-mirror.stanford.edu/pypi/web/simple -r build_requirements.txt
-  python setup.py build_ext --cmake-prefix=/opt/ncurses --mpi-dynamic="/opt/openmpi/bin;/opt/mpich/bin;/opt/mpt/bin" bdist_wheel
+  python setup.py build_ext --cmake-prefix=/opt/ncurses --mpi-dynamic="/opt/openmpi/include;/opt/mpich/include;/opt/mpt/include" bdist_wheel
   auditwheel repair dist/*.whl
   popd
   deactivate
