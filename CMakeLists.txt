@@ -96,7 +96,7 @@ set(NRN_MPI_DYNAMIC
     ""
     CACHE
       STRING
-      "semicolon (;) separated list of MPI bin directories to build against (default to first found mpi)"
+      "semicolon (;) separated list of MPI include directories to build against (default to first found mpi)"
 )
 
 set(NRN_RX3D_OPT_LEVEL
@@ -156,7 +156,6 @@ endif()
 # =============================================================================
 if(NRN_ENABLE_MPI)
   find_package(MPI REQUIRED)
-  include_directories(${MPI_INCLUDE_PATH})
   set(NRNMPI 1)
   set(PARANEURON 1)
 else()
@@ -446,6 +445,17 @@ if(cmake_generator_tolower MATCHES "makefile")
   if(NRN_ENABLE_MPI)
     message(STATUS "  INC         | ${MPI_INCLUDE_PATH}")
     message(STATUS "  LIB         | ${MPI_LIBRARY}")
+    message(STATUS "  DYNAMIC     | ${NRN_ENABLE_MPI_DYNAMIC}")
+    if(NRN_ENABLE_MPI_DYNAMIC)
+      list(LENGTH NRN_MPI_LIBNAME_LIST _num_mpi)
+      math(EXPR num_mpi "${_num_mpi} - 1")
+      foreach(val RANGE ${num_mpi})
+        list(GET NRN_MPI_INCLUDE_LIST ${val} include)
+        list(GET NRN_MPI_LIBNAME_LIST ${val} libname)
+        message(STATUS "    LIBNAME   | ${libname}")
+        message(STATUS "    INC       | ${include}")
+      endforeach(val)
+    endif()
   endif()
   message(STATUS "Python        | ${NRN_ENABLE_PYTHON}")
   if(NRN_ENABLE_PYTHON)
