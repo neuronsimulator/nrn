@@ -1,13 +1,18 @@
 # A simple set of tests checking if a wheel is working correctly
 set -e
 
+if [ ! -f setup.py ]; then
+    echo "Error: test/test_neuron.sh not found. Please launch $0 from the root dir"
+    exit 1
+fi
+
 if [ "$#" -ne 2 ]; then
-    echo "Error : use ./test_wheel.bash python_exe python_wheel"
+    echo "Usage: $(basename $0) python_exe python_wheel"
     exit 1
 fi
 
 python_exe=$1
-python_wheel=$2
+python_wheel="$2"
 
 # setup python virtual environment
 venv_name="my_venv_${python_exe}"
@@ -22,10 +27,9 @@ fi
 
 pip install numpy
 pip install $python_wheel
-#pip install -i https://test.pypi.org/simple/ NEURON==7.8.11.2
 
 # Run tests
-./test/test_neuron.sh $python_exe
+test/test_neuron.sh $python_exe
 
 # cleanup
 deactivate

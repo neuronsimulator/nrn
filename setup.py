@@ -71,13 +71,13 @@ class CMakeAugmentedBuilder(build_ext):
     """
     user_options = build_ext.user_options + [
         ("cmake-prefix=", None, "value for CMAKE_PREFIX_PATH"),
-        ("mpi-dynamic=", None, "value for NRN_MPI_DYNAMIC")
+        ("cmake-defs=", None, "Additional CMake definitions, comma split")
     ]
 
     def initialize_options(self):
         build_ext.initialize_options(self)
         self.cmake_prefix = None
-        self.mpi_dynamic = None
+        self.cmake_defs = ""
 
     def run(self, *args, **kw):
         """Execute the extension builder.
@@ -134,13 +134,10 @@ class CMakeAugmentedBuilder(build_ext):
             '-DCMAKE_INSTALL_PREFIX=' + self.outdir,
             '-DPYTHON_EXECUTABLE=' + sys.executable,
             '-DCMAKE_BUILD_TYPE=' + cfg,
-        ] + ext.cmake_flags
+        ] + ext.cmake_flags + ["-D" + opt for opt in self.cmake_defs.split(",")]
 
         if self.cmake_prefix:
             cmake_args.append("-DCMAKE_PREFIX_PATH=" + self.cmake_prefix)
-
-        if self.mpi_dynamic:
-            cmake_args.append("-DNRN_MPI_DYNAMIC=" + self.mpi_dynamic)
 
         build_args = ['--config', cfg, '--', '-j4']  # , 'VERBOSE=1']
 
@@ -152,6 +149,7 @@ class CMakeAugmentedBuilder(build_ext):
 
         try:
             subprocess.Popen("echo $CXX", shell=True, stdout=subprocess.PIPE)
+            log.info("[CMAKE] cmd: %s", " ".join([cmake, ext.sourcedir] + cmake_args))
             subprocess.check_call([cmake, ext.sourcedir] + cmake_args,
                                   cwd=self.build_temp, env=env)
             subprocess.check_call(

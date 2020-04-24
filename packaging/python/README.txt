@@ -23,6 +23,7 @@ TODO : Add instructions for OS X.
   - Note that for OS X there is no docker image but on a system where all
     dependencies exist, you have to just launch build_wheels.osx.bash.
 
+
 2. Launch the wheel building
    -------------------------
 
@@ -35,7 +36,7 @@ $ cd /root
 $ bash nrn/build_wheels.linux.bash
 
 
-3. Uplaod wheels
+3. Upload wheels
    -------------------------
 
 As we haven't setup proper policy yet, do not do this step.
