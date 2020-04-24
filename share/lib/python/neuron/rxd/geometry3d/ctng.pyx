@@ -11,7 +11,7 @@ import neuron
 
 
 """
-The ctgn module
+The ctng module
 """
 
 cdef extern from "math.h":

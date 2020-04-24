@@ -87,15 +87,14 @@ else()
   set(BUILD_MEMACS_TRUE "#")
 endif()
 
-
-# =============================================================================
-# nrnpython libraries
-# =============================================================================
+# rxdmath libraries (always build)
 add_library(rxdmath SHARED ${CMAKE_CURRENT_SOURCE_DIR}/rxdmath.c)
 install(TARGETS rxdmath DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 
+# =============================================================================
+# nrnpython libraries (one lib per python)
+# =============================================================================
 
-# Created nrnpython
 set(nrnpython_lib_list)
 
 # user has selected dynamic python support (could be multiple versions)
@@ -154,6 +153,7 @@ endif()
 install(DIRECTORY ${PROJECT_BINARY_DIR}/share/lib/python
         DESTINATION ${NRN_LIBDIR}
         FILES_MATCHING PATTERN *.py PATTERN *.so PATTERN *.dylib)
+
 
 # =============================================================================
 # If NEURON python module installation is enabled

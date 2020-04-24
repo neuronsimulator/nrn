@@ -12,8 +12,13 @@ from setuptools import Command, Extension
 from setuptools import setup
 
 
-# Main source of the version. Dont rename
-__version__ = '7.8.11.4'
+# Main source of the version. Dont rename, used by Cmake
+try:
+    __version__ = subprocess.run(['git', 'describe', '--tags'],
+                                 stdout=subprocess.PIPE).stdout.strip().decode()
+    if '-' in __version__: __version__ = __version__[:-9]
+except Exception as e:
+    raise RuntimeError("Could not get version from Git repo") from e
 
 
 # RX3D must be checked for very early as it changes imports
@@ -156,7 +161,7 @@ class CMakeAugmentedBuilder(build_ext):
                                   cwd=self.build_temp, env=env)
             subprocess.check_call(
                 [cmake, '--build', '.', '--target', 'install'] + build_args,
-                cwd=self.build_temp
+                cwd=self.build_temp, env=env
             )
         except subprocess.CalledProcessError as exc:
             log.error("Status : FAIL. Log:\n%s", exc.output)

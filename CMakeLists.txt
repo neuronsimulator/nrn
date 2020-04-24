@@ -48,6 +48,7 @@ option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_DEFAULT})
 # note that if CoreNEURON is enabled then it is not necessary to enable this option
 option(NRN_ENABLE_MOD_COMPATIBILITY "Enable CoreNEURON compatibility for MOD files" ${NRN_ENABLE_MOD_COMPATIBILITY_DEFAULT})
 option(NRN_USE_REL_RPATH "Use relative RPATH in binaries. for relocatable installs/Python" FALSE)
+mark_as_advanced(NRN_USE_REL_RPATH)
 
 # =============================================================================
 # Build options (string)
