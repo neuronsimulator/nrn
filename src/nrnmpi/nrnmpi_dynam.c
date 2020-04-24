@@ -170,7 +170,7 @@ sprintf(pmes+strlen(pmes), "Is openmpi installed? If not in default location, ne
 		free(lname);
 	}else{
 		ismes = 1;
-sprintf(pmes+strlen(pmes), "Is openmpi or mpich installed? If not in default location, need a LD_LIBRARY_PATH.\n");
+sprintf(pmes+strlen(pmes), "Is openmpi, mpich, intel-mpi, sgi-mpt etc. installed? If not in default location, need a LD_LIBRARY_PATH.\n");
 	}
 #else /* autotools */
 	if (handle)
