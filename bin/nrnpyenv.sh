@@ -263,7 +263,7 @@ def nrnpylib_darwin_helper():
 def nrnpylib_darwin():
   import os
   nrn_pylib = os.getenv("PYLIB_DARWIN")
-  if nrn_pylib is not "":
+  if nrn_pylib != "":
     print ("# nrn_pylib from PYLIB_DARWIN %s"%nrn_pylib)
     return nrn_pylib
   return nrnpylib_darwin_helper()
