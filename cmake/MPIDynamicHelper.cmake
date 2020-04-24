@@ -38,7 +38,7 @@ if(NRN_ENABLE_MPI)
       endif()
 
       # ~~~
-      # Only know about openmpi, mpich, and ms-mpi.
+      # Know about openmpi, mpich, ms-mpi, and a few others.
       # ~~~
       execute_process(COMMAND grep -q "define OPEN_MPI  *1" ${idir}/mpi.h RESULT_VARIABLE result)
       if (result EQUAL 0)
