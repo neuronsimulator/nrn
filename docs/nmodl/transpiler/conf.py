@@ -17,10 +17,16 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+
+
+
 import os
 import subprocess
 import sys
 import textwrap
+
+# The project needs to be built before documentation in the usual build folder
+sys.path.insert(0, os.path.abspath('../build/lib/python'))
 
 import nmodl  # isort:skip
 

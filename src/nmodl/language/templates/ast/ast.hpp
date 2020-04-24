@@ -333,7 +333,7 @@ struct Ast: public std::enable_shared_from_this<Ast> {
    * returning a raw pointer may create less problems that the
    * shared_from_this from the parent.
    *
-   * \ref Check Ast::parent for more information
+   * Check \ref Ast::parent for more information
    */
   virtual Ast* get_parent() const;
 
@@ -345,7 +345,7 @@ struct Ast: public std::enable_shared_from_this<Ast> {
    * we set children parents directly in the parent constructor using
    * set_parent_in_children()
    *
-   * \ref Check Ast::parent for more information
+   *  Check \ref Ast::parent for more information
    */
   virtual void set_parent(Ast* p);
 };

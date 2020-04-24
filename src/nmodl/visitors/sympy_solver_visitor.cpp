@@ -159,7 +159,7 @@ std::string SympySolverVisitor::suffix_random_string(const std::string& original
     auto singleton_random_string_class = nmodl::utils::SingletonRandomString<4>::instance();
     // Check if there is a variable defined in the mod file as original_string and if yes
     // try to use a different string for the matrices created by sympy in the form
-    // <original_string>_<random_string>
+    // "original_string"_"random_string"
     while (vars.find(new_string) != vars.end()) {
         random_string = singleton_random_string_class->reset_random_string(original_string);
         new_string = original_string;

@@ -1785,7 +1785,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * Find unique variable name defined in nmodl::utils::SingletonRandomString by the
      * nmodl::visitor::SympySolverVisitor
      * @param original_name Original name of variable to change
-     * @return std::string Unique name produced as <original_name>_<random_string>
+     * @return std::string Unique name produced as [original_name]_[random_string]
      */
     std::string find_var_unique_name(const std::string& original_name) const;
 
