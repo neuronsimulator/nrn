@@ -17,7 +17,7 @@
  * \brief Auto generated visitors
  *
  * \file
- * \brief \copybrief nmodl::visitor::CheckParentVisitor
+ * \brief \copybrief nmodl::visitor::test::CheckParentVisitor
  */
 
 #include "visitors/ast_visitor.hpp"

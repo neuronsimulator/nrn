@@ -100,7 +100,7 @@ class CMakeBuild(build_ext):
             build_args += ["--", "/m"]
         else:
             cmake_args += ["-DCMAKE_BUILD_TYPE=" + cfg]
-            build_args += ["--", "-j{}".format(max(1, os.cpu_count() - 1))]
+            build_args += ["--", "-j{}".format(max(1, os.cpu_count() - 3))]
 
         env = os.environ.copy()
         env["CXXFLAGS"] = '{} -DVERSION_INFO=\\"{}\\"'.format(
@@ -147,7 +147,7 @@ class NMODLTest(test):
         )
 
 
-install_requirements = ["jinja2>=2.9", "PyYAML>=3.13", "sympy>=1.3"]
+install_requirements = ["jinja2>=2.9.3", "PyYAML>=3.13", "sympy>=1.3"]
 
 setup(
     name="NMODL",
@@ -167,7 +167,7 @@ setup(
         buildhtml=get_sphinx_command,
     ),
     zip_safe=False,
-    setup_requires=["nbsphinx>=0.3.2", "m2r", "sphinx-rtd-theme", "sphinx>=2.0"]
+    setup_requires=["nbsphinx>=0.3.2", "mistune<2.0", "m2r", "sphinx-rtd-theme", "sphinx>=2.0", "sphinx<3.0"]
     + install_requirements,
     install_requires=install_requirements,
     tests_require=["pytest>=3.7.2"],
