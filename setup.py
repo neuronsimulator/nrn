@@ -14,9 +14,9 @@ from setuptools import setup
 
 # Main source of the version. Dont rename, used by Cmake
 try:
-    __version__ = subprocess.run(['git', 'describe', '--tags'],
-                                 stdout=subprocess.PIPE).stdout.strip().decode()
-    if '-' in __version__: __version__ = __version__[:-9]
+    v = subprocess.run(['git', 'describe', '--tags'],
+                       stdout=subprocess.PIPE).stdout.strip().decode()
+    __version__ = v[:v.rfind("-")].replace('-', '.') if "-" in v else v
 except Exception as e:
     raise RuntimeError("Could not get version from Git repo") from e
 
