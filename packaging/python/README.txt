@@ -19,9 +19,9 @@ $ docker run -v /home/user/nrn:/root/nrn -it docker.io/pkumbhar/neuron_wheel bas
 where `/home/user/nrn` is a neuron repository on host machine and we mount
 that inside docker at location /root/nrn.
 
-TODO : Add instructions for OS X.
-  - Note that for OS X there is no docker image but on a system where all
-    dependencies exist, you have to just launch build_wheels.osx.bash.
+**NOTE**
+  - For OS X there is no docker image but on a system where all
+    dependencies exist, you have to just launch `build_wheels.bash osx`
 
 
 2. Launch the wheel building
@@ -33,7 +33,7 @@ build and audit the generated wheels. Results are placed in this wheelhouse
 directory:
 
 $ cd /root
-$ bash nrn/build_wheels.linux.bash
+$ bash nrn/build_wheels.bash linux
 
 
 3. Upload wheels
