@@ -1,15 +1,23 @@
 # A script to loop over the available pythons installed
-# on OSX and build wheels
+# on Linux/OSX and build wheels
+#
 # Note: It should be involed from nrn directory
+#
 # PREREQUESITES:
 #  - cmake (>=3.5)
 #  - flex
-#  - todo
+#  - bison
+#  - python >= 3.5
+#  - cython
+#  - MPI
+#  - X11
+#  - C/C++ compiler
+#  - ncurses
 
 set -e
 
 if [ ! -f setup.py ]; then
-    echo "Error: setup.py not found. Please launch $0 from the root dir"
+    echo "Error: setup.py not found. Please launch $0 from the nrn root dir"
     exit 1
 fi
 

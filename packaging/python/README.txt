@@ -1,44 +1,39 @@
-Building Python Wheels
-======================
 
-For the highest compatibility, NEURON wheels are built in a
-manylinux1 image. Since the generic docker image is very basic
-(centos5) a new image, which brings updated libssl, cmake3 (3.12),
-ncurses, openmpi and mpich was prepared and made available at
-docker.io/pkumbhar/neuron_wheel
+### Building Python Wheels
 
-Steps:
+For the highest compatibility, NEURON wheels are built in a manylinux1 image. Since the generic docker image is very basic (centos5) a new image, which brings updated libssl, cmake3 (3.12), ncurses, openmpi and mpich was prepared and made available at https://hub.docker.com/u/neuronsimulator.
 
-1. Pull and start the docker image
-   -------------------------------
-We mount local neuron repository inside docker as a volume to preserve
-any code changed. We can use -v option to mount the local folder as:
+#### Pull and start the docker image
 
-$ docker run -v /home/user/nrn:/root/nrn -it docker.io/pkumbhar/neuron_wheel bash
+We mount local neuron repository inside docker as a volume to preserve any code changed. We can use -v option to mount the local folder as:
 
-where `/home/user/nrn` is a neuron repository on host machine and we mount
-that inside docker at location /root/nrn.
+```
+$ docker run -v /home/user/nrn:/root/nrn -v /home/user/mpt:/opt/mpt -it neuronsimulator/neuron_wheel bash
+```
 
-**NOTE**
-  - For OS X there is no docker image but on a system where all
-    dependencies exist, you have to just launch `build_wheels.bash osx`
+where `/home/user/nrn` is a neuron repository on the host machine and `/home/user/mpt` is a directory containing MPT MPI headers. We mount those directories inside docker at location `/root/nrn` and `/opt/mpt` inside the container.
 
+Note that for OS X there is no docker image but on a system where all dependencies exist, you have to perform next building step.
 
-2. Launch the wheel building
-   -------------------------
+#### Launch the wheel building
+Once we are inside docker container, we can start building wheels. There is a build script which loop over the pythons `>=3.5` in `/opt/python`, build and audit the generated wheels. Results are placed in this wheelhouse directory.
 
-Once we are inside docker container, we can start building wheels.
-There is a build script which loop over the pythons >=3.5 in /opt/python,
-build and audit the generated wheels. Results are placed in this wheelhouse
-directory:
-
+```
 $ cd /root
-$ bash nrn/build_wheels.bash linux
+$ bash nrn/packaging/python/build_wheels.bash linux
+```
 
+For OSX on a system with the all dependencies you have to do:
 
-3. Upload wheels
-   -------------------------
+```
+bash nrn/packaging/python/build_wheels.bash osx
+```
 
-As we haven't setup proper policy yet, do not do this step.
-Note that wheels are built with root user. You might want to
-change owner and group with chown.
+#### Upload wheels
+
+As we haven't setup proper policy yet, do not do this step. For testing purpose you can upload the wheels on [test.pypi.org/project/NEURON](https://test.pypi.org/project/NEURON/) as:
+
+```
+pip3 install twine
+python3 -m twine upload --repository-url https://test.pypi.org/legacy/ nrn/wheelhouse/NEURON-*
+```
