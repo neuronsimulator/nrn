@@ -21,6 +21,7 @@ setup_venv() {
 
     if [ "$py_ver" -lt 35 ]; then
         echo "[SKIP] Python $py_ver no longer supported"
+        skip=1
         return 0
     fi
 
@@ -37,15 +38,21 @@ setup_venv() {
 
 build_wheel_linux() {
     echo "[BUILD WHEEL] Building with interpreter $1"
+    local skip=
     setup_venv "$1"
+    (( $skip )) && return 0
 
     echo " - Installing build requirements"
     pip install git+https://github.com/ferdonline/auditwheel@fix/rpath_append
-    pip install -i https://nero-mirror.stanford.edu/pypi/web/simple -r build_requirements.txt
+    pip install -i https://nero-mirror.stanford.edu/pypi/web/simple -r packaging/python/build_requirements.txt
 
     echo " - Building..."
     rm -rf dist build
-    python setup.py build_ext --cmake-prefix=/opt/ncurses --cmake-defs="NRN_MPI_DYNAMIC=/opt/openmpi/include;/opt/mpich/include;/opt/mpt/include" bdist_wheel
+    if [ "$2" == "--bare" ]; then
+        python setup.py bdist_wheel
+    else
+        python setup.py build_ext --cmake-prefix=/opt/ncurses --cmake-defs="NRN_MPI_DYNAMIC=/opt/openmpi/include;/opt/mpich/include;/opt/mpt/include" bdist_wheel
+    fi
 
     echo " - Repairing..."
     auditwheel repair dist/*.whl
@@ -56,14 +63,20 @@ build_wheel_linux() {
 
 build_wheel_osx() {
     echo "[BUILD WHEEL] Building with interpreter $1"
+    local skip=
     setup_venv "$1"
+    (( $skip )) && return 0
 
     echo " - Installing build requirements"
     pip install -U delocate -r packaging/python/build_requirements.txt
 
     echo " - Building..."
     rm -rf dist build
-    python setup.py build_ext --cmake-defs="NRN_MPI_DYNAMIC=/usr/local/opt/openmpi/include;/usr/local/opt/mpich/include" bdist_wheel
+    if [ "$2" == "--bare" ]; then
+        python setup.py bdist_wheel
+    else
+        python setup.py build_ext --cmake-defs="NRN_MPI_DYNAMIC=/usr/local/opt/openmpi/include;/usr/local/opt/mpich/include" bdist_wheel
+    fi
 
     echo " - Repairing..."
     delocate-wheel -w wheelhouse -v dist/*.whl  # we started clean, there's a single wheel
@@ -78,18 +91,18 @@ case "$1" in
 
   linux)
     for py_bin in /opt/python/cp3*/bin/python; do
-        build_wheel "$py_bin"
+        build_wheel_linux "$py_bin" "$2"
     done
     ;;
 
   osx)
     for py_bin in /Library/Frameworks/Python.framework/Versions/3*/bin/python3; do
-        build_wheel_osx "$py_bin"
+        build_wheel_osx "$py_bin" "$2"
     done
     ;;
 
   *)
-    echo "Usage: $(basename $0) < linux | osx >"
+    echo "Usage: $(basename $0) < linux | osx > [--bare]"
     exit 1
     ;;
 

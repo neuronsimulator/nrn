@@ -77,7 +77,7 @@ class CMakeAugmentedBuilder(build_ext):
     def initialize_options(self):
         build_ext.initialize_options(self)
         self.cmake_prefix = None
-        self.cmake_defs = ""
+        self.cmake_defs = None
 
     def run(self, *args, **kw):
         """Execute the extension builder.
@@ -134,10 +134,12 @@ class CMakeAugmentedBuilder(build_ext):
             '-DCMAKE_INSTALL_PREFIX=' + self.outdir,
             '-DPYTHON_EXECUTABLE=' + sys.executable,
             '-DCMAKE_BUILD_TYPE=' + cfg,
-        ] + ext.cmake_flags + ["-D" + opt for opt in self.cmake_defs.split(",")]
+        ] + ext.cmake_flags
 
         if self.cmake_prefix:
             cmake_args.append("-DCMAKE_PREFIX_PATH=" + self.cmake_prefix)
+        if self.cmake_defs:
+            cmake_args += ["-D" + opt for opt in self.cmake_defs.split(",")]
 
         build_args = ['--config', cfg, '--', '-j4']  # , 'VERBOSE=1']
 
