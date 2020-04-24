@@ -36,7 +36,9 @@ void (*p_nrnpython_finalize)();
 int nrn_inpython_;
 int (*p_nrnpy_pyrun)(const char* fname);
 
-//#define use_rl_getc_function
+#if 0 /* defined by cmake if rl_event_hook is not available */
+#define use_rl_getc_function
+#endif
 
 #if carbon || defined(MINGW)
 #include <pthread.h>
@@ -1657,13 +1659,26 @@ extern int (*rl_getc_function)(void);
 static int getc_hook(void) {
 	int r;
 	unsigned char c;
+    while(1) {
 	run_til_stdin();
-	if ((r = read(0, &c, sizeof(c))) <= 0) {
-printf("getc_hook returning %d\n", r);
-		return r;
-	}else{
+	if ((r = read(0, &c, sizeof(c))) == sizeof(c)) {
 		return (int)c;
+	}else{
+		/* this seems consistent with the internal readline and the
+		   current master version 8.0. That is, rl_getc in the
+		   internal readline gets the return value of read and only
+		   cares about r == 1, loops if errno == EINTR, and returns
+		   EOF otherwise. (Note: internal readline does not have
+		   rl_getc_function.). Version 8.0 rl_getc is complex but in
+		   terms of read, it returns c if r == 1, returns EOF if
+		   r == 0, loops if errno == EINTR, and generally returns EOF
+		   if some other error occurred.
+		 */
+		if (errno != EINTR) {
+			return EOF;
+		}
 	}
+    }
 }
 
 #else /* not use_rl_getc_function */
