@@ -3,6 +3,20 @@
 
 For the highest compatibility, NEURON wheels are built in a manylinux1 image. Since the generic docker image is very basic (centos5) a new image, which brings updated libssl, cmake3 (3.12), ncurses, openmpi and mpich was prepared and made available at https://hub.docker.com/u/neuronsimulator.
 
+#### Setting up Docker
+
+[Docker](https://en.wikipedia.org/wiki/Docker_(software)) is required for building Linux wheels. You can instructions to
+setup Docker on Linux [here](https://docs.docker.com/engine/install/ubuntu/) and on OS X
+[here](https://docs.docker.com/docker-for-mac/install/). On Ubuntu system we typically do:
+
+```
+sudo apt install docker.io
+sudo groupadd docker
+sudo usermod -aG docker $USER
+```
+
+Logout and log back in to have docker service properly configured.
+
 #### Pull and start the docker image
 
 We mount local neuron repository inside docker as a volume to preserve any code changed. We can use -v option to mount the local folder as:

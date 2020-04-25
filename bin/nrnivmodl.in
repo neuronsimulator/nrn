@@ -19,6 +19,7 @@ else
 fi
 
 if test "${NRNHOME_EXEC}" != "" ; then
+	exec_prefix="${NRNHOME_EXEC}"
 	bindir="${exec_prefix}/bin"
 	libdir="${exec_prefix}/lib"
 fi
