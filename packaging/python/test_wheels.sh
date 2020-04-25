@@ -82,9 +82,10 @@ test_wheel () {
 # proviided parameters
 python_exe=$1
 python_wheel="$2"
+python_ver=$("$python_exe" -c "import sys; print('%d%d' % tuple(sys.version_info)[:2])")
 
 # setup python virtual environment
-venv_name="test_venv_${python_exe}"
+venv_name="nrn_test_venv_${python_ver}"
 $python_exe -m venv $venv_name
 . $venv_name/bin/activate
 

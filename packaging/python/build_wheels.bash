@@ -25,7 +25,7 @@ fi
 setup_venv() {
     local py_bin="$1"
     local py_ver=$("$py_bin" -c "import sys; print('%d%d' % tuple(sys.version_info)[:2])")
-    local venv_dir="venv$py_ver"
+    local venv_dir="nrn_build_venv$py_ver"
 
     if [ "$py_ver" -lt 35 ]; then
         echo "[SKIP] Python $py_ver no longer supported"
