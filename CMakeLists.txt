@@ -271,17 +271,28 @@ endif()
 # =============================================================================
 # Add project directories AFTER CMake modules
 # =============================================================================
+
+if(READLINE_FOUND)
+  # MAC libedit.3.dylib does not have rl_event_hook
+  # Readline_LIBRARY may be a binary lib or (on the MAC) a tbd file that
+  # points to the library and mentions all its definitions.
+  # this part has to be prior to adding the nrniv subdirectory.
+  execute_process(COMMAND grep -q rl_event_hook ${Readline_LIBRARY} RESULT_VARIABLE result)
+  if(NOT result EQUAL 0)
+    # define for src/oc/hoc.c
+    set(DEF_RL_GETC_FUNCTION use_rl_getc_function)
+  endif()
+else()
+  add_subdirectory(src/readline)
+  set(INTERNAL_READLINE readline)
+  unset(Readline_LIBRARY CACHE)
+endif()
+
 add_subdirectory(src/nrniv)
 add_subdirectory(bin)
 
 if(NRN_ENABLE_PYTHON)
   add_subdirectory(src/nrnpython)
-endif()
-
-if(NRN_MACOS_BUILD OR NOT READLINE_FOUND)
-  add_subdirectory(src/readline)
-  set(INTERNAL_READLINE readline)
-  unset(Readline_LIBRARY CACHE)
 endif()
 
 if(NRN_ENABLE_RX3D)
