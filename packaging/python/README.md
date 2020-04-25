@@ -22,10 +22,14 @@ Logout and log back in to have docker service properly configured.
 We mount local neuron repository inside docker as a volume to preserve any code changed. We can use -v option to mount the local folder as:
 
 ```
-$ docker run -v /home/user/nrn:/root/nrn -v /home/user/mpt:/opt/mpt -it neuronsimulator/neuron_wheel bash
+$ docker run -v /home/user/nrn:/root/nrn -v /home/user/mpt-headers/2.21:/opt/mpt -it neuronsimulator/neuron_wheel bash
 ```
 
-where `/home/user/nrn` is a neuron repository on the host machine and `/home/user/mpt` is a directory containing MPT MPI headers. We mount those directories inside docker at location `/root/nrn` and `/opt/mpt` inside the container.
+where `/home/user/nrn` is a neuron repository on the host machine and `/home/user/mpt` is a directory containing MPT MPI headers. We mount those directories inside docker at location `/root/nrn` and `/opt/mpt` inside the container. The MPT hearders in the separate repository as it's not open source library. You can download the headers as:
+
+```
+git clone ssh://bbpcode.epfl.ch/user/kumbhar/mpt-headers
+```
 
 Note that for OS X there is no docker image but on a system where all dependencies exist, you have to perform next building step.
 
@@ -33,14 +37,24 @@ Note that for OS X there is no docker image but on a system where all dependenci
 Once we are inside docker container, we can start building wheels. There is a build script which loop over the pythons `>=3.5` in `/opt/python`, build and audit the generated wheels. Results are placed in this wheelhouse directory.
 
 ```
-$ cd /root
-$ bash nrn/packaging/python/build_wheels.bash linux
+$ cd /root/nrn
+$ bash packaging/python/build_wheels.bash linux
 ```
 
-For OSX on a system with the all dependencies you have to do:
+For OSX on a system with the all dependencies you have to clone NEURON repository and have to do:
 
 ```
-bash nrn/packaging/python/build_wheels.bash osx
+cd nrn
+bash packaging/python/build_wheels.bash osx
+```
+
+#### Testing wheels
+
+To test the generated wheels, you can do:
+
+```
+# first arg as python exe and second arg as a corresponding wheel
+bash packaging/python/test_wheels.sh python3.8 wheelhouse/NEURON-7.8.0.236-cp38-cp38-macosx_10_9_x86_64.whl
 ```
 
 #### Upload wheels
