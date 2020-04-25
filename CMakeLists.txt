@@ -282,7 +282,6 @@ if(READLINE_FOUND)
     # define for src/oc/hoc.c
     set(DEF_RL_GETC_FUNCTION use_rl_getc_function)
   endif()
-  message(STATUS "READLINE_FOUND and DEF_RL_GETC_FUNCTION=${DEF_RL_GETC_FUNCTION}")
 else()
   add_subdirectory(src/readline)
   set(INTERNAL_READLINE readline)

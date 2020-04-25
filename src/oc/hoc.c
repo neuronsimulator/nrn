@@ -36,10 +36,6 @@ void (*p_nrnpython_finalize)();
 int nrn_inpython_;
 int (*p_nrnpy_pyrun)(const char* fname);
 
-#if 0 /* defined by cmake if rl_event_hook is not available */
-#define use_rl_getc_function
-#endif
-
 #if carbon || defined(MINGW)
 #include <pthread.h>
 extern int stdin_event_ready();
