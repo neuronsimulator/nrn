@@ -213,6 +213,13 @@ set_property(
   APPEND
   PROPERTY COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src/scopmath")
 
+if(DEF_RL_GETC_FUNCTION)
+  set_property(
+    SOURCE ${NRN_OC_SRC_DIR}/hoc.c
+    APPEND
+    PROPERTY COMPILE_DEFINITIONS ${DEF_RL_GETC_FUNCTION})
+endif()
+
 set_source_files_properties(${NRN_NRNOC_SRC_DIR}/code.c PROPERTIES OBJECT_DEPENDS
                             ${NRN_OC_SRC_DIR}/parse.h)
 
@@ -243,7 +250,7 @@ endif()
 # All source directories to include
 # =============================================================================
 add_library(nrniv_lib SHARED ${NRN_NRNIV_LIB_SRC_FILES})
-if(NOT NRN_MACOS_BUILD AND ${READLINE_FOUND})
+if(READLINE_FOUND)
   target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES} ${Readline_LIBRARY})
 else()
   target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES} readline)

@@ -36,6 +36,10 @@ void (*p_nrnpython_finalize)();
 int nrn_inpython_;
 int (*p_nrnpy_pyrun)(const char* fname);
 
+#if 0 /* defined by cmake if rl_event_hook is not available */
+#define use_rl_getc_function
+#endif
+
 #if carbon || defined(MINGW)
 #include <pthread.h>
 extern int stdin_event_ready();
@@ -1646,12 +1650,48 @@ static int getc_hook(void) {
 	return i;
 }
 #else /* not carbon and not MINGW */
+
+#if defined(use_rl_getc_function)
+/* e.g. mac libedit.3.dylib missing rl_event_hook */
+
+extern int iv_dialog_is_running;
+extern int (*rl_getc_function)(void);
+static int getc_hook(void) {
+	int r;
+	unsigned char c;
+    while(1) {
+	run_til_stdin();
+	if ((r = read(0, &c, sizeof(c))) == sizeof(c)) {
+		return (int)c;
+	}else{
+		/* this seems consistent with the internal readline and the
+		   current master version 8.0. That is, rl_getc in the
+		   internal readline gets the return value of read and only
+		   cares about r == 1, loops if errno == EINTR, and returns
+		   EOF otherwise. (Note: internal readline does not have
+		   rl_getc_function.). Version 8.0 rl_getc is complex but in
+		   terms of read, it returns c if r == 1, returns EOF if
+		   r == 0, loops if errno == EINTR, and generally returns EOF
+		   if some other error occurred.
+		 */
+		if (errno != EINTR) {
+			return EOF;
+		}
+	}
+    }
+}
+
+#else /* not use_rl_getc_function */
+
 extern int (*rl_event_hook)(void);
 static int event_hook(void) {
 	int i;
 	i = run_til_stdin();
 	return i;
 }
+
+#endif /* not use_rl_getc_function */
+
 #endif /* not carbon and not MINGW */
 #endif /* not carbon */
 #endif /* READLINE */
@@ -1789,12 +1829,21 @@ IFGUI
 			}
 ENDGUI
 #else /* not MINGW */
+#if defined(use_rl_getc_function)
+			if (hoc_interviews && !hoc_in_yyparse) {
+				rl_getc_function = getc_hook;
+				hoc_notify_value();
+			}else{
+				rl_getc_function = NULL;
+			}
+#else /* not use_rl_getc_function */
 			if (hoc_interviews && !hoc_in_yyparse) {
 				rl_event_hook = event_hook;
 				hoc_notify_value();
 			}else{
 				rl_event_hook = NULL;
 			}
+#endif /* not use_rl_getc_function */
 #endif /* not MINGW */
 #endif /* INTERVIEWS */
 			if ((line = readline(hoc_promptstr)) == (char *)0) {
