@@ -109,6 +109,17 @@ nrn_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".data/share/
 if (os.path.isdir(nrn_path)):
   os.environ["NEURONHOME"] = nrn_path
 
+# On OSX, dlopen might fail if not using full library path
+try:
+  from sys import platform
+  if platform == "darwin":
+    from ctypes.util import find_library
+    mpi_library_path = find_library('mpi')
+    if mpi_library_path and 'MPI_LIB_NRN_PATH' not in os.environ:
+      os.environ["MPI_LIB_NRN_PATH"] = mpi_library_path
+except:
+  pass
+
 try:
   import hoc
 except:
@@ -783,9 +794,9 @@ class _PlotShapePlot(_WrapperPlot):
                                   line.set_color(col)
               return lines
       return Axis3DWithNEURON(fig)
-    
 
-    
+
+
     def _do_plot_on_matplotlib_figure(fig):
       import ctypes
       get_plotshape_data = nrn_dll_sym('get_plotshape_data')
@@ -844,16 +855,16 @@ class DensityMechanism:
       self.__has_nmodl = True
     except ModuleNotFoundError:
       pass
-    
+
   def __repr__(self):
     return 'neuron.DensityMechanism(%r)' % self.__name
-  
+
   def __dir__(self):
     my_dir = ['code', 'file', 'insert', 'uninsert', '__repr__', '__str__']
     if self.__has_nmodl:
       my_dir += ['ast', 'ions', 'ontology_ids']
     return sorted(my_dir)
-  
+
   @property
   def ast(self):
     """Abstract Syntax Tree representation.
@@ -868,17 +879,17 @@ class DensityMechanism:
       driver = nmodl.NmodlDriver()
       self.__ast = driver.parse_string(self.code)
     return self.__ast
-    
+
   @property
   def code(self):
     """source code"""
     return self.__mt.code()
-  
+
   @property
   def file(self):
     """source file path"""
     return self.__mt.file()
-  
+
   def insert(self, secs):
     """insert this mechanism into a section or iterable of sections"""
     if isinstance(secs, nrn.Section):
@@ -892,7 +903,7 @@ class DensityMechanism:
       secs = [secs]
     for sec in secs:
       sec.uninsert(self.__name)
-  
+
   @property
   def ions(self):
     """Dictionary of the ions involved in this mechanism"""
@@ -919,7 +930,7 @@ class DensityMechanism:
       self.__ions = result
     # return a copy
     return dict(self.__ions)
-  
+
   @property
   def ontology_ids(self):
     nmodl = _nmodl()
@@ -929,7 +940,7 @@ class DensityMechanism:
       onts = lookup_visitor.lookup(self.ast, nmodl.ast.AstNodeType.ONTOLOGY_STATEMENT)
     except AttributeError:
       raise Exception("nmodl module out of date; missing support for ontology declarations")
-    
+
     return [nmodl.to_nmodl(ont.ontology_id) for ont in onts]
 
 
@@ -940,7 +951,7 @@ try:
 
   def _plotshape_plot(ps):
     return _PlotShapePlot(ps)
-  
+
   _mech_classes = {}
 
   def _get_mech_object(name):
