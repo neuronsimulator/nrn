@@ -11,11 +11,37 @@ if [ "$#" -ne 2 ]; then
     exit 1
 fi
 
-test_wheel () {
-    python_exe=${1}
+# cli parameters
+python_exe=$1
+python_wheel=$2
 
-    echo "PYTHON VERSION `python --version`"
+python_ver=$("$python_exe" -c "import sys; print('%d%d' % tuple(sys.version_info)[:2])")
 
+
+run_mpi_test () {
+  mpi_launcher=${1}
+  mpi_name=${2}
+  mpi_module=${3}
+
+  echo "======= Testing $mpi_name ========"
+  if [ -n "$mpi_module" ]; then
+     echo "Loading module $mpi_module"
+     module load $mpi_module
+  fi
+
+  $mpi_launcher -n 2 $python_exe src/parallel/test0.py -mpi
+  $mpi_launcher -n 2 nrniv -python src/parallel/test0.py -mpi
+  $mpi_launcher -n 2 nrniv src/parallel/test0.hoc -mpi
+
+  if [ -n "$mpi_module" ]; then
+     echo "Unloading module $mpi_module"
+     module unload $mpi_module
+  fi
+  echo -e "----------------------\n\n"
+}
+
+
+run_serial_test () {
 	# sample mod file for nrnivmodl check
     mkdir -p tmp_mod
     cp share/examples/nrniv/nmodl/gap.mod tmp_mod/
@@ -38,51 +64,48 @@ test_wheel () {
 
     # Test 6: run demo
     neurondemo -c 'demo(4)' -c 'run()' -c 'quit()'
+}
 
-    # Test 7: multi-mpi test
-    echo "Testing MPI"
 
+test_wheel () {
+    echo "=========== RUNNING SERIAL TESTS (`python --version`) ============"
+    run_serial_test
+
+    echo "=========== RUNNING MPI TESTS ============"
     # TODO : we are using custom paths for MPI. We will change
-    # this when we use travis CI.
+
+    # this is for MacOS system
     if [[ "$OSTYPE" == "darwin"* ]]; then
       # assume both MPIs are installed via brew.
       brew unlink openmpi
       brew link mpich
-      echo "Testing MPICH"
-      /usr/local/opt/mpich/bin/mpirun -n 2 python src/parallel/test0.py -mpi
-      /usr/local/opt/mpich/bin/mpirun -n 2 nrniv -python src/parallel/test0.py -mpi
-      /usr/local/opt/mpich/bin/mpirun -n 2 nrniv src/parallel/test0.hoc -mpi
+      run_mpi_test "/usr/local/opt/mpich/bin/mpirun" "MPICH" ""
 
       brew unlink mpich
       brew link openmpi
-      echo "Testing OpenMPI"
-      /usr/local/opt/openmpi/bin/mpirun -n 2 python src/parallel/test0.py -mpi
-      /usr/local/opt/openmpi/bin/mpirun -n 2 nrniv -python src/parallel/test0.py -mpi
-      /usr/local/opt/openmpi/bin/mpirun -n 2 nrniv src/parallel/test0.hoc -mpi
+      run_mpi_test "/usr/local/opt/mpich/bin/mpirun" "OpenMPI" ""
+
+    # BB5 with multiple MPI libraries
+    elif [[ $(hostname -f) = *r*bbp.epfl.ch* ]]; then
+      run_mpi_test "srun" "HPE-MPT" "hpe-mpi"
+      run_mpi_test "mpirun" "Intel MPI" "intel-mpi"
+      run_mpi_test "srun" "MVAPICH2" "mvapich2/2.3"
+      run_mpi_test "mpirun" "OpenMPI" "openmpi/4.0.0"
+
+    # linux desktop or docker container used for wheel
     else
-      echo "Testing MPICH"
       export PATH=/opt/mpich/bin:$PATH
       export LD_LIBRARY_PATH=/opt/mpich/lib:$LD_LIBRARY_PATH
-      mpirun -n 2 python src/parallel/test0.py -mpi
-      mpirun -n 2 nrniv -python src/parallel/test0.py -mpi
-      mpirun -n 2 nrniv src/parallel/test0.hoc -mpi
+      run_mpi_test "mpirun" "MPICH" ""
 
-      echo "Testing OpenMPI"
       export PATH=/opt/openmpi/bin:$PATH
       export LD_LIBRARY_PATH=/opt/openmpi/lib:$LD_LIBRARY_PATH
-      mpirun -n 2 python src/parallel/test0.py -mpi
-      mpirun -n 2 nrniv -python src/parallel/test0.py -mpi
-      mpirun -n 2 nrniv src/parallel/test0.hoc -mpi
+      run_mpi_test "mpirun" "OpenMPI" ""
     fi
 
     #clean-up
     rm -rf tmp_mod x86_64
 }
-
-# proviided parameters
-python_exe=$1
-python_wheel="$2"
-python_ver=$("$python_exe" -c "import sys; print('%d%d' % tuple(sys.version_info)[:2])")
 
 # setup python virtual environment
 venv_name="nrn_test_venv_${python_ver}"
@@ -103,6 +126,6 @@ pip install $python_wheel
 test_wheel $python_exe
 
 # cleanup
-#deactivate
+deactivate
 #rm -rf $venv_name
 echo "Removed $venv_name"

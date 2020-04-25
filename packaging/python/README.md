@@ -60,6 +60,13 @@ bash packaging/python/test_wheels.sh python3.8 wheelhouse/NEURON-7.8.0.236-cp38-
 bash packaging/python/test_wheels.sh python3.8 "-i https://test.pypi.org/simple/ NEURON==7.8.11.2"
 ```
 
+On BB5, we test wheels as:
+
+```
+salloc -A proj16  -N 1 --ntasks-per-node=4 -C "cpu" --time=1:00:00 -p interactive
+module load unstable python/3.7.4
+bash packaging/python/test_wheels.sh python3.7 wheelhouse/NEURON-7.8.0.236-cp37-cp37m-manylinux1_x86_64.whl
+```
 
 #### Upload wheels
 
