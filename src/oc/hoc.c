@@ -1657,9 +1657,9 @@ static int getc_hook(void) {
 extern int iv_dialog_is_running;
 extern int (*rl_getc_function)(void);
 static int getc_hook(void) {
-	int r;
-	unsigned char c;
     while(1) {
+    	int r;
+    	unsigned char c;
 	run_til_stdin();
 	if ((r = read(0, &c, sizeof(c))) == sizeof(c)) {
 		return (int)c;
