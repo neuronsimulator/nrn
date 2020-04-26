@@ -96,7 +96,7 @@ set(NRN_MPI_DYNAMIC
     ""
     CACHE
       STRING
-      "semicolon (;) separated list of MPI bin directories to build against (default to first found mpi)"
+      "semicolon (;) separated list of MPI include directories to build against (default to first found mpi)"
 )
 
 set(NRN_RX3D_OPT_LEVEL
@@ -156,7 +156,6 @@ endif()
 # =============================================================================
 if(NRN_ENABLE_MPI)
   find_package(MPI REQUIRED)
-  include_directories(${MPI_INCLUDE_PATH})
   set(NRNMPI 1)
   set(PARANEURON 1)
 else()
@@ -272,17 +271,28 @@ endif()
 # =============================================================================
 # Add project directories AFTER CMake modules
 # =============================================================================
+
+if(READLINE_FOUND)
+  # MAC libedit.3.dylib does not have rl_event_hook
+  # Readline_LIBRARY may be a binary lib or (on the MAC) a tbd file that
+  # points to the library and mentions all its definitions.
+  # this part has to be prior to adding the nrniv subdirectory.
+  execute_process(COMMAND grep -q rl_event_hook ${Readline_LIBRARY} RESULT_VARIABLE result)
+  if(NOT result EQUAL 0)
+    # define for src/oc/hoc.c
+    set(DEF_RL_GETC_FUNCTION use_rl_getc_function)
+  endif()
+else()
+  add_subdirectory(src/readline)
+  set(INTERNAL_READLINE readline)
+  unset(Readline_LIBRARY CACHE)
+endif()
+
 add_subdirectory(src/nrniv)
 add_subdirectory(bin)
 
 if(NRN_ENABLE_PYTHON)
   add_subdirectory(src/nrnpython)
-endif()
-
-if(NRN_MACOS_BUILD OR NOT READLINE_FOUND)
-  add_subdirectory(src/readline)
-  set(INTERNAL_READLINE readline)
-  unset(Readline_LIBRARY CACHE)
 endif()
 
 if(NRN_ENABLE_RX3D)
@@ -434,6 +444,17 @@ if(cmake_generator_tolower MATCHES "makefile")
   if(NRN_ENABLE_MPI)
     message(STATUS "  INC         | ${MPI_INCLUDE_PATH}")
     message(STATUS "  LIB         | ${MPI_LIBRARY}")
+    message(STATUS "  DYNAMIC     | ${NRN_ENABLE_MPI_DYNAMIC}")
+    if(NRN_ENABLE_MPI_DYNAMIC)
+      list(LENGTH NRN_MPI_LIBNAME_LIST _num_mpi)
+      math(EXPR num_mpi "${_num_mpi} - 1")
+      foreach(val RANGE ${num_mpi})
+        list(GET NRN_MPI_INCLUDE_LIST ${val} include)
+        list(GET NRN_MPI_LIBNAME_LIST ${val} libname)
+        message(STATUS "    LIBNAME   | ${libname}")
+        message(STATUS "    INC       | ${include}")
+      endforeach(val)
+    endif()
   endif()
   message(STATUS "Python        | ${NRN_ENABLE_PYTHON}")
   if(NRN_ENABLE_PYTHON)

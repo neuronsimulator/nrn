@@ -153,7 +153,7 @@ add_custom_command(
     ${CMAKE_C_COMPILER} -E -I${NRN_NRNOC_SRC_DIR} -I${NRN_OC_SRC_DIR} ${NRN_NRNOC_SRC_DIR}/neuron.h
     > neuron.tmp1
   COMMAND sed "/^#/d" neuron.tmp1 > neuron.tmp2
-  COMMAND python ${NRN_OC_SRC_DIR}/mk_hocusr_h.py < neuron.tmp2 > temp2hoc
+  COMMAND ${PYTHON_EXECUTABLE} ${NRN_OC_SRC_DIR}/mk_hocusr_h.py < neuron.tmp2 > temp2hoc
   COMMAND sed "s/\\\"nrnhoc_topology\\\"/\\\"topology\\\"/" temp2hoc >
           ${PROJECT_BINARY_DIR}/src/nrnoc/hocusr.h
   DEPENDS ${NRN_NRNOC_SRC_DIR}/neuron.h ${NRN_OC_SRC_DIR}/mk_hocusr_h.py)
@@ -211,6 +211,13 @@ set_property(
   APPEND
   PROPERTY COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src/scopmath")
 
+if(DEF_RL_GETC_FUNCTION)
+  set_property(
+    SOURCE ${NRN_OC_SRC_DIR}/hoc.c
+    APPEND
+    PROPERTY COMPILE_DEFINITIONS ${DEF_RL_GETC_FUNCTION})
+endif()
+
 set_source_files_properties(${NRN_NRNOC_SRC_DIR}/code.c PROPERTIES OBJECT_DEPENDS
                             ${NRN_OC_SRC_DIR}/parse.h)
 
@@ -241,7 +248,7 @@ endif()
 # All source directories to include
 # =============================================================================
 add_library(nrniv_lib SHARED ${NRN_NRNIV_LIB_SRC_FILES})
-if(NOT NRN_MACOS_BUILD AND ${READLINE_FOUND})
+if(READLINE_FOUND)
   target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES} ${Readline_LIBRARY})
 else()
   target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES} readline)
@@ -257,16 +264,26 @@ endif()
 
 if(NRN_ENABLE_MPI)
   if(NRN_ENABLE_MPI_DYNAMIC)
-    add_library(nrnmpi_lib SHARED ${NRN_NRNMPI_SRC_FILES})
-    target_link_libraries(nrnmpi_lib ${MPI_C_LIBRARIES})
-    if(MINGW)
-      add_dependencies(nrnmpi_lib nrniv_lib)
-      target_link_libraries(nrnmpi_lib nrniv_lib)
-    endif()
-    set_property(TARGET nrnmpi_lib PROPERTY OUTPUT_NAME nrnmpi)
-    install(TARGETS nrnmpi_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+    list(LENGTH NRN_MPI_LIBNAME_LIST _num_mpi)
+    math(EXPR num_mpi "${_num_mpi} - 1")
+    foreach(val RANGE ${num_mpi})
+      list(GET NRN_MPI_INCLUDE_LIST ${val} include)
+      list(GET NRN_MPI_LIBNAME_LIST ${val} libname)
+
+      add_library(${libname}_lib SHARED ${NRN_NRNMPI_SRC_FILES})
+      target_include_directories(${libname}_lib PUBLIC ${include})
+      # Note that we do not link here to libmpi. That is dlopen first.
+      if(MINGW) # type msmpi only
+        add_dependencies(${libname}_lib nrniv_lib)
+        target_link_libraries(${libname}_lib ${MPI_C_LIBRARIES})
+        target_link_libraries(${libname}_lib nrniv_lib)
+      endif()
+      set_property(TARGET ${libname}_lib PROPERTY OUTPUT_NAME ${libname})
+      install(TARGETS ${libname}_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+    endforeach(val)
   else()
     target_link_libraries(nrniv_lib ${MPI_C_LIBRARIES})
+    target_include_directories(nrniv_lib PUBLIC ${MPI_INCLUDE_PATH})
   endif()
 endif()
 
