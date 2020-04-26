@@ -77,9 +77,9 @@ run_parallel_test() {
     # Travis Linux
     elif [ "$TRAVIS_OS_NAME" == "linux" ]; then
       sudo update-alternatives --set mpi /usr/include/mpich
-      run_mpi_test "mpirun" "MPICH" ""
+      run_mpi_test "mpirun.mpich" "MPICH" ""
       sudo update-alternatives --set mpi /usr/lib/x86_64-linux-gnu/openmpi/include
-      run_mpi_test "mpirun" "OpenMPI" ""
+      run_mpi_test "mpirun.openmpi" "OpenMPI" ""
 
     # BB5 with multiple MPI libraries
     elif [[ $(hostname -f) = *r*bbp.epfl.ch* ]]; then
