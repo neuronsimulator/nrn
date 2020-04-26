@@ -87,7 +87,9 @@ else()
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_NRNMPI_SRC_FILES})
 endif()
 
-if(NOT NRN_ENABLE_PYTHON_DYNAMIC AND NRN_ENABLE_PYTHON)
+# NRN_ENABLE_MODULE_INSTALL will create a separate nrnpython lib
+if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
+  # Include nrnpython in nrniv - useful for single lib neuron and wheels
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_NRNPYTHON_SRC_FILES})
 endif()
 
@@ -337,6 +339,7 @@ endif()
 if(NOT NRN_MACOS_BUILD AND ${READLINE_FOUND})
   target_link_libraries(nrniv ${Readline_LIBRARY})
 endif()
+
 
 # =============================================================================
 # Install binary and library targets

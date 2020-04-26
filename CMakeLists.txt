@@ -47,6 +47,8 @@ option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON
 option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_DEFAULT})
 # note that if CoreNEURON is enabled then it is not necessary to enable this option
 option(NRN_ENABLE_MOD_COMPATIBILITY "Enable CoreNEURON compatibility for MOD files" ${NRN_ENABLE_MOD_COMPATIBILITY_DEFAULT})
+option(NRN_USE_REL_RPATH "Use relative RPATH in binaries. for relocatable installs/Python" FALSE)
+mark_as_advanced(NRN_USE_REL_RPATH)
 
 # =============================================================================
 # Build options (string)
@@ -344,7 +346,7 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/hh.mod.1 ${CMAKE_BINARY_DIR}/hh.mod.2
   COMMENT "Update hh.mod for CoreNEURON compatibility"
   VERBATIM)
-add_dependencies(nrniv hh_update)
+add_dependencies(nrniv_lib hh_update)
 
 # =============================================================================
 # Add tests if enabled
@@ -365,7 +367,9 @@ endif()
 # =============================================================================
 # Install targets
 # =============================================================================
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/lib DESTINATION ${NRN_INSTALL_SHARE_DIR})
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/lib
+        DESTINATION ${NRN_INSTALL_SHARE_DIR}
+        PATTERN "python" EXCLUDE)
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo DESTINATION ${NRN_INSTALL_SHARE_DIR})
 install(FILES ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
               ${PROJECT_BINARY_DIR}/share/nrn/lib/nrn.defaults
@@ -449,8 +453,8 @@ if(cmake_generator_tolower MATCHES "makefile")
       list(LENGTH NRN_MPI_LIBNAME_LIST _num_mpi)
       math(EXPR num_mpi "${_num_mpi} - 1")
       foreach(val RANGE ${num_mpi})
-        list(GET NRN_MPI_INCLUDE_LIST ${val} include)
         list(GET NRN_MPI_LIBNAME_LIST ${val} libname)
+        list(GET NRN_MPI_INCLUDE_LIST ${val} include)
         message(STATUS "    LIBNAME   | ${libname}")
         message(STATUS "    INC       | ${include}")
       endforeach(val)
@@ -461,6 +465,7 @@ if(cmake_generator_tolower MATCHES "makefile")
     message(STATUS "  EXE         | ${NRN_DEFAULT_PYTHON_EXECUTABLE}")
     message(STATUS "  INC         | ${NRN_DEFAULT_PYTHON_INCLUDE_DIRS}")
     message(STATUS "  LIB         | ${NRN_DEFAULT_PYTHON_LIBRARIES}")
+    message(STATUS "  MODULE      | ${NRN_ENABLE_MODULE_INSTALL}")
     message(STATUS "  DYNAMIC     | ${NRN_ENABLE_PYTHON_DYNAMIC}")
     if(NRN_ENABLE_PYTHON_DYNAMIC)
       list(LENGTH NRN_PYTHON_EXE_LIST _num_pythons)
@@ -473,7 +478,7 @@ if(cmake_generator_tolower MATCHES "makefile")
         message(STATUS "    EXE       | ${exe}")
         message(STATUS "    INC       | ${include}")
         message(STATUS "    LIB       | ${lib}")
-        message(STATUS "    MODULE    | ${exe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}")
+        message(STATUS "    INSTALL C | ${exe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}")
       endforeach(val)
     endif()
   endif()

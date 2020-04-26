@@ -2,6 +2,7 @@
 .cmake-format.yaml
 nmodlconf.h.in
 nrnconf.h.in
+build
 
 # These files are generated at build time
 # It would be a good idea to create them in the

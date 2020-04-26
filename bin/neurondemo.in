@@ -10,8 +10,9 @@ if test "x${NRNHOME}" = x ; then
 	NRNBIN=@bindir@/
 	NRNDEMO=@prefix@/share/@PACKAGE@/demo/
 else
-        prefix="$NRNHOME"
-	exec_prefix="${prefix}/${ARCH}"
+    prefix="$NRNHOME"
+    @USING_CMAKE_FALSE@exec_prefix="${prefix}/${ARCH}"
+    @USING_CMAKE_TRUE@exec_prefix="${prefix}"
 	NRNBIN="${exec_prefix}/bin/"
 	NRNDEMO="${prefix}/share/@PACKAGE@/demo/"
 fi
@@ -23,7 +24,8 @@ fi
 
 export NRNDEMO
 
-if [ ! -f "${NRNDEMO}neuron" ] ; then
+# TODO : see https://github.com/neuronsimulator/nrn/issues/494
+if [ ! -L "${NRNDEMO}neuron" ] ; then
 	(cd "${NRNDEMO}release" ; "${NRNBIN}nrnivmodl" ; cd .. ; rm -f neuron ; ln -s release/${MODSUBDIR}/special neuron)
 fi
 

@@ -36,6 +36,10 @@ void (*p_nrnpython_finalize)();
 int nrn_inpython_;
 int (*p_nrnpy_pyrun)(const char* fname);
 
+#if 0 /* defined by cmake if rl_event_hook is not available */
+#define use_rl_getc_function
+#endif
+
 #if carbon || defined(MINGW)
 #include <pthread.h>
 extern int stdin_event_ready();
@@ -1655,7 +1659,7 @@ extern int (*rl_getc_function)(void);
 static int getc_hook(void) {
     while(1) {
     	int r;
-	unsigned char c;
+    	unsigned char c;
 	run_til_stdin();
 	if ((r = read(0, &c, sizeof(c))) == sizeof(c)) {
 		return (int)c;
