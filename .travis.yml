@@ -13,8 +13,10 @@ osx_image: xcode11.3
 # Git Clone
 #=============================================================================
 # Disable submodule cloning as we want to test selective cloning
+# Disable depth to allow wheel to get correct version number with tag
 git:
   submodules: false
+  depth: false
 
 #=============================================================================
 # Common Packages
