@@ -161,7 +161,7 @@ script:
     fi;
 
   # basic test for cmake when python is not disabled
-  - if [ "$BUILD_MODE" == "cmake" && "$CMAKE_OPTION" != *"NRN_ENABLE_PYTHON=OFF"* ]; then
+  - if [[ "$BUILD_MODE" == "cmake" && "$CMAKE_OPTION" != *"NRN_ENABLE_PYTHON=OFF"* ]]; then
         $PYTHON --version && $PYTHON -c 'import neuron; neuron.test()';
     fi;
 
@@ -171,12 +171,12 @@ script:
     fi;
 
   # with cmake dynamic check python2 and python3 together
-  - if [ "$BUILD_MODE" == "cmake" && "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
+  - if [[ "$BUILD_MODE" == "cmake" && "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]]; then
       $PYTHON3 -c 'import neuron; neuron.test()' && $PYTHON2 -c 'import neuron; neuron.test()';
     fi;
 
   # with autotools run rxd tests manually
-  - if [ "$BUILD_MODE" == "autotools" && "$TRAVIS_OS_NAME" != "osx" ]; then
+  - if [[ "$BUILD_MODE" == "autotools" && "$TRAVIS_OS_NAME" != "osx" ]]; then
       $PYTHON share/lib/python/neuron/rxdtests/run_all.py;
     fi;
 
@@ -190,7 +190,7 @@ script:
 # Prepare Documentation
 #=============================================================================
 after_success:
-  - if [ "$BUILD_DOCUMENTATION" = "ON" ] && [ "$CC_FOR_BUILD" = "gcc" ]; then
+  - if [[ "$BUILD_DOCUMENTATION" = "ON" ] && [ "$CC_FOR_BUILD" = "gcc" ]]; then
       echo "------- Prepare Documentation -------";
       pushd $TRAVIS_BUILD_DIR/build;
       make doxygen;
