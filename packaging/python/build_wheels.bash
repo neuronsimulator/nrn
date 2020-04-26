@@ -14,7 +14,7 @@
 #  - C/C++ compiler
 #  - ncurses
 
-set -e
+set -xe
 
 if [ ! -f setup.py ]; then
     echo "Error: setup.py not found. Please launch $0 from the nrn root dir"
@@ -107,6 +107,15 @@ case "$1" in
     for py_bin in /Library/Frameworks/Python.framework/Versions/3*/bin/python3; do
         build_wheel_osx "$py_bin" "$2"
     done
+    ;;
+
+  travis)
+    if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+        build_wheel_osx "$2" "$3"
+    else
+        build_wheel_linux "$2" "$3"
+    fi
+    ls wheelhouse/
     ;;
 
   *)

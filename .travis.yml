@@ -57,28 +57,31 @@ env:
     - PIP="$(which pip3)"
     - INSTALL_DIR="$HOME/install"
   jobs:
-    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2) PYTHON_BLD=$(which python2)"
-      PYTHON="$(which python2)"
-      PIP="$(which pip2)"
-      MATRIX_EVAL="CC=gcc CXX=g++"
-    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$PYTHON"
-      MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
-    - BUILD_MODE=cmake
-      CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=ON"
-      BUILD_DOCUMENTATION=ON
-      MATRIX_EVAL="CC=gcc CXX=g++"
-    - BUILD_MODE=cmake
-      CMAKE_OPTION="-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON"
-      MATRIX_EVAL="CC=gcc-5 CXX=g++-5"
-    - BUILD_MODE=cmake
-      CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=OFF"
-      MATRIX_EVAL="CC=gcc-6 CXX=g++-6"
-    - BUILD_MODE=cmake
+    #- CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2) PYTHON_BLD=$(which python2)"
+    #  PYTHON="$(which python2)"
+    #  PIP="$(which pip2)"
+    #  MATRIX_EVAL="CC=gcc CXX=g++"
+    #- CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$PYTHON"
+    #  MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
+    #- BUILD_MODE=cmake
+    #  CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=ON"
+    #  BUILD_DOCUMENTATION=ON
+    #  MATRIX_EVAL="CC=gcc CXX=g++"
+    #- BUILD_MODE=cmake
+    #  CMAKE_OPTION="-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON"
+    #  MATRIX_EVAL="CC=gcc-5 CXX=g++-5"
+    #- BUILD_MODE=cmake
+    #  CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=OFF"
+    #  MATRIX_EVAL="CC=gcc-6 CXX=g++-6"
+    #- BUILD_MODE=cmake
+    #  NRN_ENABLE_PYTHON_DYNAMIC=ON
+    #  MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
+    #- BUILD_MODE=cmake
+    #  CMAKE_OPTION="-DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_CORENEURON=ON"
+    #  MATRIX_EVAL="CC=gcc-9 CXX=g++-9"
+    - BUILD_MODE=wheel
       NRN_ENABLE_PYTHON_DYNAMIC=ON
       MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
-    - BUILD_MODE=cmake
-      CMAKE_OPTION="-DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_CORENEURON=ON"
-      MATRIX_EVAL="CC=gcc-9 CXX=g++-9"
 os:
   - linux
   - osx
@@ -134,6 +137,9 @@ script:
       make install;
       export PATH=$INSTALL_DIR/bin:$PATH;
       ctest -VV && make install;
+    elif [ "$BUILD_MODE" == "wheel" ]; then
+      ./packaging/python/build_wheels.bash travis $(which python3);
+      $PIP install --user wheelhouse/*;
     else
       export PATH=$INSTALL_DIR/x86_64/bin:$PATH;
       ./.travis_build.sh $INSTALL_DIR;
