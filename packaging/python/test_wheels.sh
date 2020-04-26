@@ -1,5 +1,5 @@
 # A simple set of tests checking if a wheel is working correctly
-set -xe
+set -e
 
 if [ ! -f setup.py ]; then
     echo "Error: Please launch $0 from the root dir"
@@ -76,8 +76,9 @@ run_parallel_test() {
 
     # Travis Linux
     elif [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      export PATH=/usr/lib/x86_64-linux-gnu/openmpi/bin:$PATH
-      export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/openmpi/lib:$LD_LIBRARY_PATH
+      update-alternatives --set mpi /usr/include/mpich
+      run_mpi_test "mpirun" "MPICH" ""
+      update-alternatives --set mpi /usr/lib/x86_64-linux-gnu/openmpi/include
       run_mpi_test "mpirun" "OpenMPI" ""
 
     # BB5 with multiple MPI libraries

@@ -24,7 +24,7 @@ fi
 
 export NRNDEMO
 
-# check if symlink exist
+# TODO : see https://github.com/neuronsimulator/nrn/issues/494
 if [ ! -L "${NRNDEMO}neuron" ] ; then
 	(cd "${NRNDEMO}release" ; "${NRNBIN}nrnivmodl" ; cd .. ; rm -f neuron ; ln -s release/${MODSUBDIR}/special neuron)
 fi

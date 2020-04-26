@@ -28,9 +28,9 @@ addons:
         packages:
         - doxygen
         - libopenmpi-dev
+        - libmpich-dev
         - libx11-dev
         - libxcomposite-dev
-        - openmpi-bin
         - patchelf
         - python-pip
         - python-scipy

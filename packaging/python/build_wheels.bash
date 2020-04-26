@@ -14,7 +14,7 @@
 #  - C/C++ compiler
 #  - ncurses
 
-set -xe
+set -e
 
 if [ ! -f setup.py ]; then
     echo "Error: setup.py not found. Please launch $0 from the nrn root dir"
@@ -120,7 +120,7 @@ case "$1" in
         MPI_INCLUDE_HEADERS="/usr/local/opt/openmpi/include;/usr/local/opt/mpich/include"
         build_wheel_osx $(which python3) "$2" "$MPI_INCLUDE_HEADERS"
     else
-        MPI_INCLUDE_HEADERS="/usr/lib/x86_64-linux-gnu/openmpi/include"
+        MPI_INCLUDE_HEADERS="/usr/lib/x86_64-linux-gnu/openmpi/include;/usr/include/mpich"
         build_wheel_linux $(which python3) "$2" "$MPI_INCLUDE_HEADERS"
     fi
     ls wheelhouse/
