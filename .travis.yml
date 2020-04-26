@@ -6,8 +6,8 @@
 # Environment
 #=============================================================================
 language: cpp
-dist: bionic
 osx_image: xcode11.3
+dist: bionic
 
 #=============================================================================
 # Git Clone
@@ -153,13 +153,18 @@ script:
       ./.travis_build.sh $INSTALL_DIR;
     fi
 
-  # basic tests for cmake and autoconf build
-  - if [[ "$BUILD_MODE" != "setuptools" ]]; then
+  # basic tests for autoconf
+  - if [ "$BUILD_MODE" == "autotools" ]; then
+        $PYTHON --version && $PYTHON -c 'import neuron; neuron.test()';
+    fi;
+
+  # basic test for cmake when python is not disabled
+  - if [ "$BUILD_MODE" == "cmake" && "$CMAKE_OPTION" != *"NRN_ENABLE_PYTHON=OFF"* ]; then
         $PYTHON --version && $PYTHON -c 'import neuron; neuron.test()';
     fi;
 
   # test neurondemo with cmake and autoconf
-  - if [[ "$BUILD_MODE" != "setuptools" ]]; then
+  - if [ "$BUILD_MODE" != "setuptools" ]; then
       neurondemo -nogui -c 'demo(4)' -c 'run()' -c 'quit()';
     fi;
 
@@ -169,7 +174,7 @@ script:
     fi;
 
   # with autotools run rxd tests manually
-  - if [[ "$BUILD_MODE" == "autotools" && "$TRAVIS_OS_NAME" != "osx" ]]; then
+  - if [ "$BUILD_MODE" == "autotools" && "$TRAVIS_OS_NAME" != "osx" ]; then
       $PYTHON share/lib/python/neuron/rxdtests/run_all.py;
     fi;
 
