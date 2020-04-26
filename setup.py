@@ -335,10 +335,9 @@ def mac_osx_setenv():
     if py_osx_framework is None:
         py_osx_framework=[10, 9]
     if py_osx_framework[1] > 9:
-        log.warning("[ WARNING ] You are building a wheel with a Python built "
+        log.warn("[ WARNING ] You are building a wheel with a Python built "
               "for a recent MACOS version (from brew?). Your wheel won't be portable.\n"
               "          Consider using an official Python build from python.org")
-        input("Press Enter to continue. Ctrl-C to abort")
 
     macos_target = "%d.%d" % tuple(py_osx_framework[:2])
     log.info("Setting MACOSX_DEPLOYMENT_TARGET=%s", macos_target)

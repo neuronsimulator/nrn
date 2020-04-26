@@ -21,7 +21,6 @@ if [ ! -f setup.py ]; then
     exit 1
 fi
 
-
 setup_venv() {
     local py_bin="$1"
     local py_ver=$("$py_bin" -c "import sys; print('%d%d' % tuple(sys.version_info)[:2])")
@@ -59,11 +58,16 @@ build_wheel_linux() {
     if [ "$2" == "--bare" ]; then
         python setup.py bdist_wheel
     else
-        python setup.py build_ext --cmake-prefix=/opt/ncurses --cmake-defs="NRN_MPI_DYNAMIC=/opt/openmpi/include;/opt/mpich/include;/opt/mpt/include" bdist_wheel
+        python setup.py build_ext --cmake-prefix=/opt/ncurses --cmake-defs="NRN_MPI_DYNAMIC=$3" bdist_wheel
     fi
 
-    echo " - Repairing..."
-    auditwheel repair dist/*.whl
+    if [ "$TRAVIS" = true ] ; then
+        echo " - Skipping repair on Travis..."
+        mkdir wheelhouse && cp dist/*.whl wheelhouse/
+    else
+        echo " - Repairing..."
+        auditwheel repair dist/*.whl
+    fi
 
     deactivate
 }
@@ -83,7 +87,7 @@ build_wheel_osx() {
     if [ "$2" == "--bare" ]; then
         python setup.py bdist_wheel
     else
-        python setup.py build_ext --cmake-defs="NRN_MPI_DYNAMIC=/usr/local/opt/openmpi/include;/usr/local/opt/mpich/include" bdist_wheel
+        python setup.py build_ext --cmake-defs="NRN_MPI_DYNAMIC=$3" bdist_wheel
     fi
 
     echo " - Repairing..."
@@ -98,22 +102,26 @@ build_wheel_osx() {
 case "$1" in
 
   linux)
+    MPI_INCLUDE_HEADERS="/opt/openmpi/include;/opt/mpich/include;/opt/mpt/include"
     for py_bin in /opt/python/cp3*/bin/python; do
-        build_wheel_linux "$py_bin" "$2"
+        build_wheel_linux "$py_bin" "$2" "$MPI_INCLUDE_HEADERS"
     done
     ;;
 
   osx)
+    MPI_INCLUDE_HEADERS="/usr/local/opt/openmpi/include;/usr/local/opt/mpich/include"
     for py_bin in /Library/Frameworks/Python.framework/Versions/3*/bin/python3; do
-        build_wheel_osx "$py_bin" "$2"
+        build_wheel_osx "$py_bin" "$2" "$MPI_INCLUDE_HEADERS"
     done
     ;;
 
   travis)
     if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-        build_wheel_osx "$2" "$3"
+        MPI_INCLUDE_HEADERS="/usr/local/opt/openmpi/include;/usr/local/opt/mpich/include"
+        build_wheel_osx $(which python3) "$2" "$MPI_INCLUDE_HEADERS"
     else
-        build_wheel_linux "$2" "$3"
+        MPI_INCLUDE_HEADERS="/usr/lib/x86_64-linux-gnu/openmpi/include"
+        build_wheel_linux $(which python3) "$2" "$MPI_INCLUDE_HEADERS"
     fi
     ls wheelhouse/
     ;;

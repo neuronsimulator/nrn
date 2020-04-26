@@ -1,5 +1,5 @@
 # A simple set of tests checking if a wheel is working correctly
-set -e
+set -xe
 
 if [ ! -f setup.py ]; then
     echo "Error: Please launch $0 from the root dir"
@@ -29,7 +29,7 @@ run_mpi_test () {
      module load $mpi_module
   fi
 
-  $mpi_launcher -n 2 $python_exe src/parallel/test0.py -mpi
+  $mpi_launcher -n 2 python src/parallel/test0.py -mpi
   $mpi_launcher -n 2 nrniv -python src/parallel/test0.py -mpi
   $mpi_launcher -n 2 nrniv src/parallel/test0.hoc -mpi
 
@@ -42,12 +42,8 @@ run_mpi_test () {
 
 
 run_serial_test () {
-	# sample mod file for nrnivmodl check
-    mkdir -p tmp_mod
-    cp share/examples/nrniv/nmodl/gap.mod tmp_mod/
-
     # Test 1: run base tests for within python
-    $python_exe -c "import neuron; neuron.test(); neuron.test_rxd()"
+    python -c "import neuron; neuron.test(); neuron.test_rxd()"
 
     # Test 2: execute nrniv
     nrniv -c "print \"hello\""
@@ -66,14 +62,7 @@ run_serial_test () {
     neurondemo -c 'demo(4)' -c 'run()' -c 'quit()'
 }
 
-
-test_wheel () {
-    echo "=========== RUNNING SERIAL TESTS (`python --version`) ============"
-    run_serial_test
-
-    echo "=========== RUNNING MPI TESTS ============"
-    # TODO : we are using custom paths for MPI. We will change
-
+run_parallel_test() {
     # this is for MacOS system
     if [[ "$OSTYPE" == "darwin"* ]]; then
       # assume both MPIs are installed via brew.
@@ -83,7 +72,13 @@ test_wheel () {
 
       brew unlink mpich
       brew link openmpi
-      run_mpi_test "/usr/local/opt/mpich/bin/mpirun" "OpenMPI" ""
+      run_mpi_test "/usr/local/opt/open-mpi/bin/mpirun" "OpenMPI" ""
+
+    # Travis Linux
+    elif [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      export PATH=/usr/lib/x86_64-linux-gnu/openmpi/bin:$PATH
+      export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/openmpi/lib:$LD_LIBRARY_PATH
+      run_mpi_test "mpirun" "OpenMPI" ""
 
     # BB5 with multiple MPI libraries
     elif [[ $(hostname -f) = *r*bbp.epfl.ch* ]]; then
@@ -102,6 +97,19 @@ test_wheel () {
       export LD_LIBRARY_PATH=/opt/openmpi/lib:$LD_LIBRARY_PATH
       run_mpi_test "mpirun" "OpenMPI" ""
     fi
+}
+
+test_wheel () {
+    # sample mod file for nrnivmodl check
+    mkdir -p tmp_mod
+    cp share/examples/nrniv/nmodl/gap.mod tmp_mod/
+
+    echo "Using `which python` : `python --version`"
+    echo "=========== SERIAL TESTS ==========="
+    run_serial_test
+
+    echo "=========== MPI TESTS ============"
+    run_parallel_test
 
     #clean-up
     rm -rf tmp_mod x86_64
@@ -121,9 +129,10 @@ fi
 # install neuron and neuron
 pip install numpy
 pip install $python_wheel
+pip show neuron
 
 # run tests
-test_wheel $python_exe
+test_wheel $(which python)
 
 # cleanup
 deactivate
