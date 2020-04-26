@@ -29,9 +29,9 @@ run_mpi_test () {
      module load $mpi_module
   fi
 
-  $mpi_launcher -n 2 python src/parallel/test0.py -mpi
-  $mpi_launcher -n 2 nrniv -python src/parallel/test0.py -mpi
-  $mpi_launcher -n 2 nrniv src/parallel/test0.hoc -mpi
+  $mpi_launcher -n 2 python src/parallel/test0.py -mpi --expected-hosts 2
+  $mpi_launcher -n 2 nrniv -python src/parallel/test0.py -mpi --expected-hosts 2
+  $mpi_launcher -n 2 nrniv src/parallel/test0.hoc -mpi --expected-hosts 2
 
   if [ -n "$mpi_module" ]; then
      echo "Unloading module $mpi_module"
