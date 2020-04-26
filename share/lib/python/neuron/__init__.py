@@ -165,7 +165,7 @@ def test(exitOnError=True):
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(neuron.tests.suite()).wasSuccessful()
     if exitOnError and result is False:
-        exit(1)
+        sys.exit(1)
     return result
 
 def test_rxd(exitOnError=True):
@@ -176,7 +176,7 @@ def test_rxd(exitOnError=True):
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(neuron.tests.test_rxd.suite()).wasSuccessful()
     if exitOnError and result is False:
-        exit(1)
+        sys.exit(1)
     return result
 
 
