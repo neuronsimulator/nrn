@@ -190,7 +190,7 @@ sprintf(pmes+strlen(pmes), "Is openmpi installed? If not in default location, ne
 sprintf(pmes+strlen(pmes), "Is openmpi, mpich, intel-mpi, sgi-mpt etc. installed? If not in default location, need a LD_LIBRARY_PATH.\n");
 	}
 #else /* autotools */
-	if (handle)
+	if (handle){
 		if (!load_nrnmpi(NRN_LIBDIR"/libnrnmpi.so", pmes+strlen(pmes))){
 			return pmes;
 		}
