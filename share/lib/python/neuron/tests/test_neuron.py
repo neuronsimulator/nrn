@@ -83,12 +83,17 @@ class NeuronTestCase(unittest.TestCase):
         #iterate
         import hashlib
         sha = hashlib.sha256()
+        text = ''
         for sec in h.allsec():
             for seg in sec:
                 for mech in seg:
                     for var in mech:
-                        sha.update(("%s(%g).%s.%s=%g" % (sec.name(), seg.x, mech.name(), var.name(), var[0])).encode('utf-8'))
+                        txt="%s(%g).%s.%s=%g" % (sec.name(), seg.x, mech.name(), var.name(), var[0])
+                        text += txt + '\n'
+                        sha.update(txt.encode('utf-8'))
         d = sha.hexdigest()
+        # temporary print for debugging
+        print('\n' + text)
         assert d == 'ac49344c054bc9e56e165fa75423d8bcb7cce96c4527f259362b527ee05103d8'
 
     @classmethod
