@@ -136,9 +136,9 @@ if [[ "$OSTYPE" == "darwin"* ]] && [[ "$python_ver" == "35" ]]; then
 fi
 
 # install neuron and neuron
-pip install numpy
-pip install $python_wheel
-pip show neuron
+$python_exe -m pip install numpy
+$python_exe -m pip install $python_wheel
+$python_exe -m pip show neuron
 
 # run tests
 test_wheel $(which python)
