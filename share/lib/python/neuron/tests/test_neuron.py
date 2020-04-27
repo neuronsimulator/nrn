@@ -93,8 +93,13 @@ class NeuronTestCase(unittest.TestCase):
                         sha.update(txt.encode('utf-8'))
         d = sha.hexdigest()
         # temporary print for debugging
-        print('\n' + text)
-        assert d == 'ac49344c054bc9e56e165fa75423d8bcb7cce96c4527f259362b527ee05103d8'
+        #print('\n' + text)
+        #print(d)
+        d1 = 'ac49344c054bc9e56e165fa75423d8bcb7cce96c4527f259362b527ee05103d8'
+        # in case NRN_ENABLE_MOD_COMPATIBILITY=ON
+        # (set by -DNRN_ENABLE_CORENEURON=ON)
+        d2 = '44366906aa94a50644bc734eb23afcc25d1206c0431c4e7908698eeb2597c385'
+        assert d == d1 or d == d2
 
     @classmethod
     def ExtendedSection(cls):
