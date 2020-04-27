@@ -120,13 +120,13 @@ test_wheel () {
 # creat python virtual environment and use `python` as binary name
 # because it will be correct one from venv.
 if [[ "$use_venv" != "false"* ]]; then
-  echo "Creating virtual environment"
+  echo " == Creating virtual environment == "
   venv_name="nrn_test_venv_${python_ver}"
   $python_exe -m venv $venv_name
   . $venv_name/bin/activate
   python_exe=`which python`
 else
-  echo "Installing globally"
+  echo " == Using global install == "
 fi
 
 # on osx we need to install pip from source
