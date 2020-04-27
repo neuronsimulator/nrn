@@ -175,21 +175,27 @@ except:
 
 # Global test-suite function
 
-def test():
+def test(exitOnError=True):
     """ Runs a global battery of unit tests on the neuron module."""
     import neuron.tests
     import unittest
 
     runner = unittest.TextTestRunner(verbosity=2)
-    runner.run(neuron.tests.suite())
+    result = runner.run(neuron.tests.suite()).wasSuccessful()
+    if exitOnError and result is False:
+        sys.exit(1)
+    return result
 
-def test_rxd():
+def test_rxd(exitOnError=True):
     """ Runs a tests on the rxd and crxd modules."""
     import neuron.tests
     import unittest
 
     runner = unittest.TextTestRunner(verbosity=2)
-    runner.run(neuron.tests.test_rxd.suite())
+    result = runner.run(neuron.tests.test_rxd.suite()).wasSuccessful()
+    if exitOnError and result is False:
+        sys.exit(1)
+    return result
 
 
 # ------------------------------------------------------------------------------
