@@ -6,14 +6,15 @@ if [ ! -f setup.py ]; then
     exit 1
 fi
 
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $(basename $0) python_exe python_wheel"
+if [ "$#" -lt 2 ]; then
+    echo "Usage: $(basename $0) python_exe python_wheel [use_virtual_env]"
     exit 1
 fi
 
 # cli parameters
 python_exe=$1
 python_wheel=$2
+use_venv=$3 #if $3 is not "false" then use virtual environment
 
 python_ver=$("$python_exe" -c "import sys; print('%d%d' % tuple(sys.version_info)[:2])")
 
@@ -29,7 +30,7 @@ run_mpi_test () {
      module load $mpi_module
   fi
 
-  $mpi_launcher -n 2 python src/parallel/test0.py -mpi --expected-hosts 2
+  $mpi_launcher -n 2 $python_exe src/parallel/test0.py -mpi --expected-hosts 2
   $mpi_launcher -n 2 nrniv -python src/parallel/test0.py -mpi --expected-hosts 2
   $mpi_launcher -n 2 nrniv src/parallel/test0.hoc -mpi --expected-hosts 2
 
@@ -43,7 +44,7 @@ run_mpi_test () {
 
 run_serial_test () {
     # Test 1: run base tests for within python
-    python -c "import neuron; neuron.test(); neuron.test_rxd()"
+    $python_exe -c "import neuron; neuron.test(); neuron.test_rxd()"
 
     # Test 2: execute nrniv
     nrniv -c "print \"hello\""
@@ -105,7 +106,7 @@ test_wheel () {
     mkdir -p tmp_mod
     cp share/examples/nrniv/nmodl/gap.mod tmp_mod/
 
-    echo "Using `which python` : `python --version`"
+    echo "Using `which $python_exe` : `$python_exe --version`"
     echo "=========== SERIAL TESTS ==========="
     run_serial_test
 
@@ -116,26 +117,36 @@ test_wheel () {
     rm -rf tmp_mod x86_64
 }
 
-# setup python virtual environment
-venv_name="nrn_test_venv_${python_ver}"
-$python_exe -m venv $venv_name
-. $venv_name/bin/activate
+# creat python virtual environment and use `python` as binary name
+# because it will be correct one from venv.
+if [[ "$use_venv" != "false" ]]; then
+  echo " == Creating virtual environment == "
+  venv_name="nrn_test_venv_${python_ver}"
+  $python_exe -m venv $venv_name
+  . $venv_name/bin/activate
+  python_exe=`which python`
+else
+  echo " == Using global install == "
+fi
 
 # on osx we need to install pip from source
-if [[ "$OSTYPE" == "darwin"* ]] && [[ "$(python -V)" =~ "Python 3.5" ]]; then
+if [[ "$OSTYPE" == "darwin"* ]] && [[ "$python_ver" == "35" ]]; then
   echo "Updating pip for OSX with Python 3.5"
   curl https://bootstrap.pypa.io/get-pip.py | python
 fi
 
 # install neuron and neuron
-pip install numpy
-pip install $python_wheel
-pip show neuron
+$python_exe -m pip install numpy
+$python_exe -m pip install $python_wheel
+$python_exe -m pip show neuron
 
 # run tests
 test_wheel $(which python)
 
 # cleanup
-deactivate
+if [[ "$use_venv" != "false" ]]; then
+  deactivate
+fi
+
 #rm -rf $venv_name
 echo "Removed $venv_name"
