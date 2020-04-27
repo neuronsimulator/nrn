@@ -119,7 +119,7 @@ test_wheel () {
 
 # creat python virtual environment and use `python` as binary name
 # because it will be correct one from venv.
-if [[ "$use_venv" != "false"* ]]; then
+if [[ "$use_venv" != "false" ]]; then
   echo " == Creating virtual environment == "
   venv_name="nrn_test_venv_${python_ver}"
   $python_exe -m venv $venv_name
@@ -144,7 +144,7 @@ $python_exe -m pip show neuron
 test_wheel $(which python)
 
 # cleanup
-if [[ "$use_venv" != "false"* ]]; then
+if [[ "$use_venv" != "false" ]]; then
   deactivate
 fi
 
