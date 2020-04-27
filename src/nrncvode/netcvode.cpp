@@ -6154,7 +6154,7 @@ void VecRecordDt::install(Cvode* cv) {
 
 void VecRecordDt::record_init() {
 	y_->resize(0);
-	e_->send(0., net_cvode_instance, nrn_threads);
+	e_->send(nrn_threads->_t, net_cvode_instance, nrn_threads);
 }
 
 void VecRecordDt::frecord_init(TQItem* q) {
