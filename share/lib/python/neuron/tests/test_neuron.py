@@ -83,18 +83,13 @@ class NeuronTestCase(unittest.TestCase):
         #iterate
         import hashlib
         sha = hashlib.sha256()
-        text = ''
         for sec in h.allsec():
             for seg in sec:
                 for mech in seg:
                     for var in mech:
                         txt="%s(%g).%s.%s=%g" % (sec.name(), seg.x, mech.name(), var.name(), var[0])
-                        text += txt + '\n'
                         sha.update(txt.encode('utf-8'))
         d = sha.hexdigest()
-        # temporary print for debugging
-        #print('\n' + text)
-        #print(d)
         d1 = 'ac49344c054bc9e56e165fa75423d8bcb7cce96c4527f259362b527ee05103d8'
         # in case NRN_ENABLE_MOD_COMPATIBILITY=ON
         # (set by -DNRN_ENABLE_CORENEURON=ON)
