@@ -72,7 +72,7 @@ env:
       PIP="$(which pip2)"
       MATRIX_EVAL="CC=gcc CXX=g++"
     - BUILD_MODE=autotools
-      CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$PYTHON"
+      CONFIG_OPTIONS="--without-x --with-paranrn=dynamic --with-nrnpython=$PYTHON"
       MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
     - BUILD_MODE=cmake
       CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=ON"
