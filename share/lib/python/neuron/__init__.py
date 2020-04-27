@@ -46,7 +46,7 @@ neuron.h
    >>> h('myobj = new Vector(10)')
 
    All Hoc defined variables are accessible by attribute access to h.
-   
+
    Example:
 
    >>> print h.myobj.x[9]
@@ -59,11 +59,11 @@ neuron.h
    More help is available for the respective class by looking in the object docstring:
 
    >>> help(h.Vector)
-   
+
 
 
 neuron.gui
-   
+
    Import this package if you are using NEURON as an extension to Python,
    and you would like to use the NEURON GUI.
 
@@ -100,10 +100,28 @@ $Id: __init__.py,v 1.1 2008/05/26 11:39:44 hines Exp hines $
 #  pass
 
 import sys
+import os
+
 embedded = True if 'hoc' in sys.modules else False
 
+# With pip we need to rewrite the NEURONHOME
+nrn_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".data/share/nrn"))
+if (os.path.isdir(nrn_path)):
+  os.environ["NEURONHOME"] = nrn_path
+
+# On OSX, dlopen might fail if not using full library path
 try:
-    import hoc
+  from sys import platform
+  if platform == "darwin":
+    from ctypes.util import find_library
+    mpi_library_path = find_library('mpi')
+    if mpi_library_path and 'MPI_LIB_NRN_PATH' not in os.environ:
+      os.environ["MPI_LIB_NRN_PATH"] = mpi_library_path
+except:
+  pass
+
+try:
+  import hoc
 except:
   try:
     #Python3.1 extending needs to look into the module explicitly
@@ -207,13 +225,13 @@ def load_mechanisms(path, warn_if_already_loaded=True):
     was created"""
 
     import platform
-    
+
     global nrn_dll_loaded
     if path in nrn_dll_loaded:
         if warn_if_already_loaded:
             print("Mechanisms already loaded from path: %s.  Aborting." % path)
         return True
-    
+
     # in case NEURON is assuming a different architecture to Python,
     # we try multiple possibilities
 
@@ -246,7 +264,7 @@ if 'NRN_NMODL_PATH' in os.environ:
         load_mechanisms(x)
         #print "\n"
     print("Done.\n")
-    
+
 
 
 # ------------------------------------------------------------------------------
@@ -266,7 +284,7 @@ class Wrapper(object):
                 return self.__getattribute__(name)
             except AttributeError:
                 return self.hoc_obj.__getattribute__(name)
-        
+
     def __setattr__(self, name, value):
         try:
             self.hoc_obj.__setattr__(name, value)
@@ -334,7 +352,7 @@ def psection(section):
 
     Print info about section in a hoc format which is executable.
     (length, parent, diameter, membrane information)
-    
+
     Use section.psection() instead to get a data structure that
     contains the same information and more.
 
@@ -355,14 +373,14 @@ def init():
     to initialize to; via e.g. h.finitialize(-65)
 
     https://www.neuron.yale.edu/neuron/static/py_doc/simctrl/programmatic.html?#finitialize
-    
+
     """
     h.finitialize()
-    
+
 def run(tstop):
     """
     function run(tstop)
-    
+
     Run the simulation (advance the solver) until tstop [ms]
 
     """
@@ -376,20 +394,20 @@ _double_ptr = None
 _double_size = None
 def numpy_element_ref(numpy_array, index):
     """Return a HOC reference into a numpy array.
-    
+
     Parameters
     ----------
     numpy_array : :class:`numpy.ndarray`
         the numpy array
     index : int
         the index into the numpy array
-    
+
     .. warning::
-    
+
         No bounds checking.
-    
+
     .. warning::
-    
+
         Assumes a contiguous array of doubles. In particular, be careful when
         using slices. If the array is multi-dimensional,
         the user must figure out the integer index to the desired element.
@@ -398,7 +416,7 @@ def numpy_element_ref(numpy_array, index):
     import ctypes
     if _nrn_hocobj_ptr is None:
         _nrn_hocobj_ptr = nrn_dll_sym('nrn_hocobj_ptr')
-        _nrn_hocobj_ptr.restype = ctypes.py_object    
+        _nrn_hocobj_ptr.restype = ctypes.py_object
         _double_ptr = ctypes.POINTER(ctypes.c_double)
         _double_size = ctypes.sizeof(ctypes.c_double)
     void_p = ctypes.cast(numpy_array.ctypes.data_as(_double_ptr), ctypes.c_voidp).value + index * _double_size
@@ -406,7 +424,7 @@ def numpy_element_ref(numpy_array, index):
 
 def nrn_dll_sym(name, type=None):
     """return the specified object from the NEURON dlls.
-    
+
     Parameters
     ----------
     name : string
@@ -460,9 +478,9 @@ def nrn_dll_sym_nt(name, type):
 
 def nrn_dll(printpath=False):
     """Return a ctypes object corresponding to the NEURON library.
-    
+
     .. warning::
-    
+
         This provides access to the C-language internals of NEURON and should
         be used with care.
     """
@@ -475,7 +493,7 @@ def nrn_dll(printpath=False):
         #extended? if there is a __file__, then use that
         if printpath: print ("hoc.__file__ %s" % _original_hoc_file)
         the_dll = ctypes.cdll[_original_hoc_file]
-        return the_dll        
+        return the_dll
     except:
         pass
 
@@ -530,7 +548,7 @@ _sec_db = {}
 def _declare_contour(secobj, secname):
     j = secobj.first
     center_vec = secobj.contourcenter(secobj.raw.getrow(0), secobj.raw.getrow(1), secobj.raw.getrow(2))
-    x0, y0, z0 = [center_vec.x[i] for i in range(3)]    
+    x0, y0, z0 = [center_vec.x[i] for i in range(3)]
     # (is_stack, x, y, z, xcenter, ycenter, zcenter)
     _sec_db[secname] = (True if secobj.contour_list else False, secobj.raw.getrow(0).c(j), secobj.raw.getrow(1).c(j), secobj.raw.getrow(2).c(j), x0, y0, z0)
 
@@ -647,8 +665,8 @@ class _RangeVarPlot(_WrapperPlot):
     b.show(bg)
 
     pyplot.show()"""
-    
-  def __call__(self, graph, *args, **kwargs):      
+
+  def __call__(self, graph, *args, **kwargs):
       yvec = h.Vector()
       xvec = h.Vector()
       self._data.to_vector(yvec, xvec)
@@ -703,7 +721,7 @@ class _PlotShapePlot(_WrapperPlot):
 
           def mark(self, segment, marker='or', **kwargs):
               """plot a marker on a segment
-              
+
               Args:
                   segment = the segment to mark
                   marker = matplotlib marker
@@ -741,13 +759,13 @@ class _PlotShapePlot(_WrapperPlot):
               # Adapted from
               # https://github.com/ahwillia/PyNeuron-Toolbox/blob/master/PyNeuronToolbox/morphology.py
               # Accessed 2019-04-11, which had an MIT license
-              
-              # Default is to plot all sections. 
+
+              # Default is to plot all sections.
               if sections is None:
                   sections = list(h.allsec())
 
               h.define_shape()
-              
+
               # default color is black
               kwargs.setdefault('color', 'black')
 
@@ -782,9 +800,9 @@ class _PlotShapePlot(_WrapperPlot):
                                   line.set_color(col)
               return lines
       return Axis3DWithNEURON(fig)
-    
 
-    
+
+
     def _do_plot_on_matplotlib_figure(fig):
       import ctypes
       get_plotshape_data = nrn_dll_sym('get_plotshape_data')
@@ -795,7 +813,7 @@ class _PlotShapePlot(_WrapperPlot):
       _lines = result._do_plot(lo, hi, secs, variable, *args, **kwargs)
       result._mouseover_text = ''
       def _onpick(event):
-        if event.artist in _lines: 
+        if event.artist in _lines:
           result._mouseover_text = _lines[event.artist]
         else:
           result._mouseover_text = ''
@@ -806,7 +824,7 @@ class _PlotShapePlot(_WrapperPlot):
         return result._mouseover_text
       result.format_coord = format_coord
       return result
-    
+
 
     if hasattr(graph, '__name__') and graph.__name__ == 'matplotlib.pyplot':
       fig = graph.figure()
@@ -843,16 +861,16 @@ class DensityMechanism:
       self.__has_nmodl = True
     except ModuleNotFoundError:
       pass
-    
+
   def __repr__(self):
     return 'neuron.DensityMechanism(%r)' % self.__name
-  
+
   def __dir__(self):
     my_dir = ['code', 'file', 'insert', 'uninsert', '__repr__', '__str__']
     if self.__has_nmodl:
       my_dir += ['ast', 'ions', 'ontology_ids']
     return sorted(my_dir)
-  
+
   @property
   def ast(self):
     """Abstract Syntax Tree representation.
@@ -867,17 +885,17 @@ class DensityMechanism:
       driver = nmodl.NmodlDriver()
       self.__ast = driver.parse_string(self.code)
     return self.__ast
-    
+
   @property
   def code(self):
     """source code"""
     return self.__mt.code()
-  
+
   @property
   def file(self):
     """source file path"""
     return self.__mt.file()
-  
+
   def insert(self, secs):
     """insert this mechanism into a section or iterable of sections"""
     if isinstance(secs, nrn.Section):
@@ -891,7 +909,7 @@ class DensityMechanism:
       secs = [secs]
     for sec in secs:
       sec.uninsert(self.__name)
-  
+
   @property
   def ions(self):
     """Dictionary of the ions involved in this mechanism"""
@@ -918,7 +936,7 @@ class DensityMechanism:
       self.__ions = result
     # return a copy
     return dict(self.__ions)
-  
+
   @property
   def ontology_ids(self):
     nmodl = _nmodl()
@@ -928,7 +946,7 @@ class DensityMechanism:
       onts = lookup_visitor.lookup(self.ast, nmodl.ast.AstNodeType.ONTOLOGY_STATEMENT)
     except AttributeError:
       raise Exception("nmodl module out of date; missing support for ontology declarations")
-    
+
     return [nmodl.to_nmodl(ont.ontology_id) for ont in onts]
 
 
@@ -939,7 +957,7 @@ try:
 
   def _plotshape_plot(ps):
     return _PlotShapePlot(ps)
-  
+
   _mech_classes = {}
 
   def _get_mech_object(name):
@@ -987,7 +1005,7 @@ except:
 def _has_scipy():
     """
     to check for scipy:
-    
+
     has_scipy = 0
     objref p
     if (nrnpython("import neuron")) {
@@ -1000,8 +1018,8 @@ def _has_scipy():
     except:
         return 0
     return 1
-        
-        
+
+
 def _pkl(arg):
   #print 'neuron._pkl arg is ', arg
   return h.Vector(0)

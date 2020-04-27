@@ -84,6 +84,20 @@ char* nrnmpi_load(int is_python) {
 #if DARWIN
 	sprintf(pmes, "Try loading libmpi\n");
 	handle = load_mpi("libmpi.dylib", pmes+strlen(pmes));
+    /**
+     * If libmpi.dylib is not in the standard location and dlopen fails
+     * then try to use user provided or ctypes.find_library() provided
+     * mpi library path.
+     */
+    if(!handle) {
+        const char* mpi_lib_path = getenv("MPI_LIB_NRN_PATH");
+        if (mpi_lib_path) {
+            handle = load_mpi(mpi_lib_path, pmes+strlen(pmes));
+            if (!handle) {
+                sprintf(pmes, "Can not load libmpi.dylib and %s", mpi_lib_path);
+            }
+        }
+    }
 #if defined(NRNCMAKE)
 	if (handle) {
 		/* loaded but is it openmpi or mpich */
@@ -99,7 +113,10 @@ char* nrnmpi_load(int is_python) {
 		}
 	}else{
 		ismes = 1;
-sprintf(pmes+strlen(pmes), "Is openmpi or mpich installed? If not in default location, need a LD_LIBRARY_PATH.\n");
+sprintf(pmes+strlen(pmes), "Is openmpi or mpich installed? If not in default location, "
+                           "need a LD_LIBRARY_PATH on Linux or DYLD_LIBRARY_PATH on Mac OS. "
+                           "On Mac OS, full path to a MPI library can be provided via "
+                           "environmental variable MPI_LIB_NRN_PATH\n");
 	}
 #else /* autotools has only a libnrnmpi that is likely only for openmpi */
 	if (handle) {
@@ -173,7 +190,7 @@ sprintf(pmes+strlen(pmes), "Is openmpi installed? If not in default location, ne
 sprintf(pmes+strlen(pmes), "Is openmpi, mpich, intel-mpi, sgi-mpt etc. installed? If not in default location, need a LD_LIBRARY_PATH.\n");
 	}
 #else /* autotools */
-	if (handle)
+	if (handle){
 		if (!load_nrnmpi(NRN_LIBDIR"/libnrnmpi.so", pmes+strlen(pmes))){
 			return pmes;
 		}

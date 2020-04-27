@@ -6,15 +6,17 @@
 # Environment
 #=============================================================================
 language: cpp
-dist: bionic
 osx_image: xcode11.3
+dist: bionic
 
 #=============================================================================
 # Git Clone
 #=============================================================================
 # Disable submodule cloning as we want to test selective cloning
+# Disable depth to allow wheel to get correct version number with tag
 git:
   submodules: false
+  depth: false
 
 #=============================================================================
 # Common Packages
@@ -26,15 +28,19 @@ addons:
         packages:
         - doxygen
         - libopenmpi-dev
+        - libmpich-dev
         - libx11-dev
         - libxcomposite-dev
+        - mpich
         - openmpi-bin
+        - patchelf
         - python-pip
         - python-scipy
         - python-tk
         - python3-pip
         - python3-scipy
         - python3-tk
+        - python3-venv
         - g++-5
         - g++-6
         - g++-8
@@ -42,6 +48,7 @@ addons:
     homebrew:
         packages:
         - doxygen
+        - mpich
         - openmpi
         - xz
 
@@ -57,11 +64,15 @@ env:
     - PIP="$(which pip3)"
     - INSTALL_DIR="$HOME/install"
   jobs:
-    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2) PYTHON_BLD=$(which python2)"
+    - BUILD_MODE=setuptools
+      MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
+    - BUILD_MODE=autotools
+      CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2) PYTHON_BLD=$(which python2)"
       PYTHON="$(which python2)"
       PIP="$(which pip2)"
       MATRIX_EVAL="CC=gcc CXX=g++"
-    - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$PYTHON"
+    - BUILD_MODE=autotools
+      CONFIG_OPTIONS="--without-x --with-paranrn=dynamic --with-nrnpython=$PYTHON"
       MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
     - BUILD_MODE=cmake
       CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=ON"
@@ -74,11 +85,11 @@ env:
       CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=OFF"
       MATRIX_EVAL="CC=gcc-6 CXX=g++-6"
     - BUILD_MODE=cmake
-      NRN_ENABLE_PYTHON_DYNAMIC=ON
-      MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
-    - BUILD_MODE=cmake
       CMAKE_OPTION="-DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_CORENEURON=ON"
       MATRIX_EVAL="CC=gcc-9 CXX=g++-9"
+    - BUILD_MODE=cmake
+      NRN_ENABLE_PYTHON_DYNAMIC=ON
+      MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
 os:
   - linux
   - osx
@@ -91,8 +102,9 @@ before_install:
   - echo $LC_ALL
   - $CXX -v
   - export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python/;
+
 install:
-  - $PIP install --user setuptools;
+  - $PIP install --user wheel setuptools;
   - $PIP install --user scipy matplotlib bokeh ipython cython pytest mpi4py --upgrade;
   # add cython location to PATH
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
@@ -106,12 +118,14 @@ install:
 # Build, install and test
 #=============================================================================
 script:
+  # OS X without readline
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       export CONFIG_OPTIONS="$CONFIG_OPTIONS --with-readline=no";
     fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       eval "${MATRIX_EVAL}";
     fi
+  # different builds with CMake
   - if [ "$BUILD_MODE" == "cmake" ]; then
       if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
         export PYTHON2=$(which python2);
@@ -127,36 +141,56 @@ script:
         echo $'[install]\nprefix='>src/nrnpython/setup.cfg;
       fi;
       if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
-             echo "--RUNNING BASIC TESTS--";
+             echo "--RUNNING BASIC TESTS FROM BUILD DIR--";
              NEURONHOME=`pwd`/share/nrn  PYTHONPATH=`pwd`/lib/python PATH=`pwd`/bin LD_LIBRARY_PATH=`pwd`/lib DYLD_LIBRARY_PATH=`pwd`/lib $PYTHON2 -c "from neuron import h; import neuron; neuron.test()";
              NEURONHOME=`pwd`/share/nrn  PYTHONPATH=`pwd`/lib/python PATH=`pwd`/bin LD_LIBRARY_PATH=`pwd`/lib DYLD_LIBRARY_PATH=`pwd`/lib $PYTHON3 -c "from neuron import h; import neuron; neuron.test()";
       fi;
       make install;
       export PATH=$INSTALL_DIR/bin:$PATH;
       ctest -VV && make install;
-    else
+    elif [ "$BUILD_MODE" == "setuptools" ]; then
+      ./packaging/python/build_wheels.bash travis;
+    elif [ "$BUILD_MODE" == "autotools" ]; then
       export PATH=$INSTALL_DIR/x86_64/bin:$PATH;
       ./.travis_build.sh $INSTALL_DIR;
     fi
 
-  # basic tests for cmake and autoconf build
-  - neurondemo -nogui -c 'demo(4)' -c 'run()' -c 'quit()'
-  - if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
-      $PYTHON3 -c 'import neuron; neuron.test()' && $PYTHON2 -c 'import neuron; neuron.test()';
-    else
-      if [[ "$CMAKE_OPTION" != "-DNRN_ENABLE_PYTHON=OFF"* ]]; then
+  # basic tests for autoconf
+  - if [ "$BUILD_MODE" == "autotools" ]; then
         $PYTHON --version && $PYTHON -c 'import neuron; neuron.test()';
-      fi;
     fi;
-  - if [[ "$BUILD_MODE" != "cmake" && "$TRAVIS_OS_NAME" != "osx" ]]; then
+
+  # basic test for cmake when python is not disabled
+  - if [[ "$BUILD_MODE" == "cmake" && "$CMAKE_OPTION" != *"NRN_ENABLE_PYTHON=OFF"* ]]; then
+        $PYTHON --version && $PYTHON -c 'import neuron; neuron.test()';
+    fi;
+
+  # test neurondemo with cmake and autoconf
+  - if [ "$BUILD_MODE" != "setuptools" ]; then
+      neurondemo -nogui -c 'demo(4)' -c 'run()' -c 'quit()';
+    fi;
+
+  # with cmake dynamic check python2 and python3 together
+  - if [[ "$BUILD_MODE" == "cmake" && "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]]; then
+      $PYTHON3 -c 'import neuron; neuron.test()' && $PYTHON2 -c 'import neuron; neuron.test()';
+    fi;
+
+  # with autotools run rxd tests manually
+  - if [[ "$BUILD_MODE" == "autotools" && "$TRAVIS_OS_NAME" != "osx" ]]; then
       $PYTHON share/lib/python/neuron/rxdtests/run_all.py;
+    fi;
+
+  # with setuptools / pip, use wheel testing script
+  - if [ "$BUILD_MODE" == "setuptools" ]; then
+      neuron_wheel=`ls wheelhouse/NEURON-* | head -n 1`;
+      ./packaging/python/test_wheels.sh $PYTHON $neuron_wheel;
     fi;
 
 #=============================================================================
 # Prepare Documentation
 #=============================================================================
 after_success:
-  - if [ "$BUILD_DOCUMENTATION" = "ON" ] && [ "$CC_FOR_BUILD" = "gcc" ]; then
+  - if [[ "$BUILD_DOCUMENTATION" = "ON" ] && [ "$CC_FOR_BUILD" = "gcc" ]]; then
       echo "------- Prepare Documentation -------";
       pushd $TRAVIS_BUILD_DIR/build;
       make doxygen;
