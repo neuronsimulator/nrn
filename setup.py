@@ -11,6 +11,10 @@ from distutils.version import LooseVersion
 from setuptools import Command, Extension
 from setuptools import setup
 
+if os.name != "posix":
+    raise Exception("Python NEURON distributions are currently only available "
+                    "for Mac and Linux systems (POSIX)")
+
 
 # Main source of the version. Dont rename, used by Cmake
 try:
