@@ -20,6 +20,7 @@ def _set_default_compiler():
 
 def _config_exe(exe_name):
     """Sets the environment to run the real executable (returned)"""
+    assert "neuron" in working_set.by_key, "Neuron package not found! Verify PYTHONPATH"
     NRN_PREFIX = os.path.join(working_set.by_key['neuron'].location, 'neuron', '.data')
     os.environ["NEURONHOME"] = os.path.join(NRN_PREFIX, 'share/nrn')
     os.environ["NRNHOME"] = NRN_PREFIX
