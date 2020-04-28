@@ -1693,6 +1693,22 @@ static PyObject* iternext_sl(PyHocObject* po, hoc_Item* ql) {
     nrn_popsec(); // pop the previous iteration.
     // it would be a bug if po->iteritem_ (now the curitem) has been delete_section
     Section* sec = ((hoc_Item*)(po->iteritem_))->element.sec;
+    if (!sec->prop) {
+      // Handle an edge case where sec is a Python
+      // Section and happens to have had as its only reference the
+      // iteration variable on the previous iteration.
+      // i.e. when sec is returned from the previous iteration, it will
+      // be referenced by the iteration variable and the previous reference
+      // will go to 0, thus invalidating po->iteritem_->element.sec->prop
+      po->iteritem_ = next_valid_secitem((hoc_Item*)(po->iteritem_), ql);
+      if (po->iteritem_ == ql) {
+        po->u.its_ == PyHoc::Last;
+        po->iteritem_ = NULL;
+        return NULL;
+      }else{
+        sec = ((hoc_Item*)(po->iteritem_))->element.sec;
+      }
+    }
     assert(sec->prop);
     po->iteritem_ = next_valid_secitem((hoc_Item*)(po->iteritem_), ql);
     if (po->iteritem_ == ql) {
