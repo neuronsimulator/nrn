@@ -80,13 +80,17 @@ class CMakeAugmentedBuilder(build_ext):
     """
     user_options = build_ext.user_options + [
         ("cmake-prefix=", None, "value for CMAKE_PREFIX_PATH"),
-        ("cmake-defs=", None, "Additional CMake definitions, comma split")
+        ("cmake-defs=", None, "Additional CMake definitions, comma separated"),
+        ("enable-coreneuron", None, "Build CoreNEURON support"),
+        ("enable-nmodl", None, "Enable NMODL support")
     ]
 
     def initialize_options(self):
         build_ext.initialize_options(self)
         self.cmake_prefix = None
         self.cmake_defs = None
+        self.enable_coreneuron = False
+        self.enable_nmodl = False
 
     def run(self, *args, **kw):
         """Execute the extension builder.
@@ -149,6 +153,10 @@ class CMakeAugmentedBuilder(build_ext):
             cmake_args.append("-DCMAKE_PREFIX_PATH=" + self.cmake_prefix)
         if self.cmake_defs:
             cmake_args += ["-D" + opt for opt in self.cmake_defs.split(",")]
+        if self.enable_coreneuron:
+            cmake_args.append("-DNRN_ENABLE_CORENEURON=ON")
+        if self.enable_nmodl:
+            cmake_args.append("-DCORENRN_ENABLE_NMODL=ON")
 
         build_args = ['--config', cfg, '--', '-j4']  # , 'VERBOSE=1']
 
