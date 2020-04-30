@@ -14,8 +14,6 @@
 
 #include <string>
 
-#include "ast/ast.hpp"
-#include "symtab/symbol_table.hpp"
 #include "visitors/ast_visitor.hpp"
 
 namespace nmodl {

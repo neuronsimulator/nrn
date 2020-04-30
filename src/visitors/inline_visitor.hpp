@@ -15,13 +15,8 @@
 #include <map>
 #include <stack>
 
-#include "ast/ast.hpp"
-#include "symtab/symbol_table.hpp"
+#include "symtab/decl.hpp"
 #include "visitors/ast_visitor.hpp"
-#include "visitors/local_var_rename_visitor.hpp"
-#include "visitors/rename_visitor.hpp"
-#include "visitors/visitor_utils.hpp"
-
 
 namespace nmodl {
 namespace visitor {
@@ -164,7 +159,7 @@ class InlineVisitor: public AstVisitor {
     std::map<std::string, int> inlined_variables;
 
     /// true if given statement block can be inlined
-    bool can_inline_block(ast::StatementBlock* block);
+    bool can_inline_block(ast::StatementBlock& block);
 
     /// true if statement can be replaced with inlined body
     /// this is possible for standalone function/procedure call as statement

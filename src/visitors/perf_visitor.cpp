@@ -5,9 +5,12 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
+#include "visitors/perf_visitor.hpp"
+
 #include <utility>
 
-#include "visitors/perf_visitor.hpp"
+#include "ast/ast.hpp"
+#include "printer/json_printer.hpp"
 
 
 namespace nmodl {
@@ -21,6 +24,11 @@ using utils::PerfStat;
 
 PerfVisitor::PerfVisitor(const std::string& filename)
     : printer(new JSONPrinter(filename)) {}
+
+void PerfVisitor::compact_json(bool flag) {
+    printer->compact_json(flag);
+}
+
 
 /// count math operations from all binary expressions
 void PerfVisitor::visit_binary_expression(ast::BinaryExpression& node) {
@@ -333,6 +341,95 @@ void PerfVisitor::visit_program(ast::Program& node) {
     current_symtab = node.get_symbol_table();
     count_variables();
     print_memory_usage();
+}
+
+void PerfVisitor::visit_plot_block(ast::PlotBlock& node) {
+    measure_performance(&node);
+}
+
+/// skip initial block under net_receive block
+void PerfVisitor::visit_initial_block(ast::InitialBlock& node) {
+    if (!under_net_receive_block) {
+        measure_performance(&node);
+    }
+}
+
+void PerfVisitor::visit_constructor_block(ast::ConstructorBlock& node) {
+    measure_performance(&node);
+}
+
+void PerfVisitor::visit_destructor_block(ast::DestructorBlock& node) {
+    measure_performance(&node);
+}
+
+void PerfVisitor::visit_derivative_block(ast::DerivativeBlock& node) {
+    measure_performance(&node);
+}
+
+void PerfVisitor::visit_linear_block(ast::LinearBlock& node) {
+    measure_performance(&node);
+}
+
+void PerfVisitor::visit_non_linear_block(ast::NonLinearBlock& node) {
+    measure_performance(&node);
+}
+
+void PerfVisitor::visit_discrete_block(ast::DiscreteBlock& node) {
+    measure_performance(&node);
+}
+
+void PerfVisitor::visit_partial_block(ast::PartialBlock& node) {
+    measure_performance(&node);
+}
+
+void PerfVisitor::visit_function_table_block(ast::FunctionTableBlock& node) {
+    measure_performance(&node);
+}
+
+void PerfVisitor::visit_function_block(ast::FunctionBlock& node) {
+    measure_performance(&node);
+}
+
+void PerfVisitor::visit_procedure_block(ast::ProcedureBlock& node) {
+    measure_performance(&node);
+}
+
+void PerfVisitor::visit_net_receive_block(ast::NetReceiveBlock& node) {
+    under_net_receive_block = true;
+    measure_performance(&node);
+    under_net_receive_block = false;
+}
+
+void PerfVisitor::visit_breakpoint_block(ast::BreakpointBlock& node) {
+    measure_performance(&node);
+}
+
+void PerfVisitor::visit_terminal_block(ast::TerminalBlock& node) {
+    measure_performance(&node);
+}
+
+void PerfVisitor::visit_before_block(ast::BeforeBlock& node) {
+    measure_performance(&node);
+}
+
+void PerfVisitor::visit_after_block(ast::AfterBlock& node) {
+    measure_performance(&node);
+}
+
+void PerfVisitor::visit_ba_block(ast::BABlock& node) {
+    measure_performance(&node);
+}
+
+void PerfVisitor::visit_for_netcon(ast::ForNetcon& node) {
+    measure_performance(&node);
+}
+
+void PerfVisitor::visit_kinetic_block(ast::KineticBlock& node) {
+    measure_performance(&node);
+}
+
+void PerfVisitor::visit_match_block(ast::MatchBlock& node) {
+    measure_performance(&node);
 }
 
 /** Blocks like function can have multiple statement blocks and

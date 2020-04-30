@@ -5,13 +5,18 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
+#include "visitors/sympy_conductance_visitor.hpp"
+
 #include <algorithm>
 #include <iostream>
 
+#include <pybind11/embed.h>
+#include <pybind11/stl.h>
+
+#include "ast/ast.hpp"
 #include "symtab/symbol.hpp"
 #include "utils/logger.hpp"
 #include "visitors/lookup_visitor.hpp"
-#include "visitors/sympy_conductance_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
 
 
@@ -165,6 +170,11 @@ void SympyConductanceVisitor::lookup_nonspecific_statements() {
         }
     }
 }
+
+std::string SympyConductanceVisitor::to_nmodl_for_sympy(ast::Ast& node) {
+    return to_nmodl(node, {ast::AstNodeType::UNIT, ast::AstNodeType::UNIT_DEF});
+}
+
 
 void SympyConductanceVisitor::lookup_useion_statements() {
     // add USEION statements to i_name map between write vars and names

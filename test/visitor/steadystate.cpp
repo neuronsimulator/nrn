@@ -9,15 +9,14 @@
 
 #include "parser/nmodl_driver.hpp"
 #include "test/utils/test_utils.hpp"
+#include "visitors/checkparent_visitor.hpp"
 #include "visitors/constant_folder_visitor.hpp"
 #include "visitors/kinetic_block_visitor.hpp"
 #include "visitors/lookup_visitor.hpp"
 #include "visitors/loop_unroll_visitor.hpp"
-//#include "visitors/nmodl_visitor.hpp"
 #include "visitors/steadystate_visitor.hpp"
-//#include "visitors/sympy_solver_visitor.hpp"
-#include "visitors/checkparent_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
+#include "visitors/visitor_utils.hpp"
 
 using namespace nmodl;
 using namespace visitor;

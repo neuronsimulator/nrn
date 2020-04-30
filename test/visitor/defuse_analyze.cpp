@@ -40,9 +40,9 @@ std::vector<DUChain> run_defuse_visitor(const std::string& text, const std::stri
 
     /// analyse only derivative blocks in this test
     auto blocks = AstLookupVisitor().lookup(*ast, AstNodeType::DERIVATIVE_BLOCK);
+    chains.reserve(blocks.size());
     for (auto& block: blocks) {
-        auto node = block.get();
-        chains.push_back(v.analyze(node, variable));
+        chains.push_back(v.analyze(*block, variable));
     }
 
     // check that, after visitor rearrangement, parents are still up-to-date

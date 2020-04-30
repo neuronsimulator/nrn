@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include "ast/ast_decl.hpp"
 
 namespace nmodl {
 /// Implementation of different AST visitors

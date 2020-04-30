@@ -12,9 +12,7 @@
  * \brief \copybrief nmodl::visitor::SteadystateVisitor
  */
 
-#include "ast/ast.hpp"
 #include "visitors/ast_visitor.hpp"
-#include "visitors/visitor_utils.hpp"
 
 namespace nmodl {
 namespace visitor {

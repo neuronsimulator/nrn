@@ -177,9 +177,9 @@ class SympySolverVisitor: public AstVisitor {
     int SMALL_LINEAR_SYSTEM_MAX_STATES;
 
   public:
-    SympySolverVisitor(bool use_pade_approx = false,
-                       bool elimination = true,
-                       int SMALL_LINEAR_SYSTEM_MAX_STATES = 3)
+    explicit SympySolverVisitor(bool use_pade_approx = false,
+                                bool elimination = true,
+                                int SMALL_LINEAR_SYSTEM_MAX_STATES = 3)
         : use_pade_approx(use_pade_approx)
         , elimination(elimination)
         , SMALL_LINEAR_SYSTEM_MAX_STATES(SMALL_LINEAR_SYSTEM_MAX_STATES){};

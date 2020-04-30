@@ -14,8 +14,6 @@
 
 #include <string>
 
-#include "ast/ast.hpp"
-#include "symtab/symbol_table.hpp"
 #include "visitors/ast_visitor.hpp"
 
 
@@ -55,12 +53,12 @@ class RenameVisitor: public AstVisitor {
     RenameVisitor() = default;
 
     RenameVisitor(std::string old_name, std::string new_name)
-        : var_name(old_name)
-        , new_var_name(new_name) {}
+        : var_name(std::move(old_name))
+        , new_var_name(std::move(new_name)) {}
 
     void set(std::string old_name, std::string new_name) {
-        var_name = old_name;
-        new_var_name = new_name;
+        var_name = std::move(old_name);
+        new_var_name = std::move(new_name);
     }
 
     void enable_verbatim(bool state) {

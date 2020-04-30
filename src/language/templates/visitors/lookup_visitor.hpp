@@ -16,7 +16,6 @@
  * \brief \copybrief nmodl::visitor::AstLookupVisitor
  */
 
-#include "ast/ast.hpp"
 #include "visitors/visitor.hpp"
 
 namespace nmodl {

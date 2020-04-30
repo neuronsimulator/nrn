@@ -20,7 +20,6 @@
  * \brief \copybrief nmodl::visitor::AstVisitor
  */
 
-#include "ast/ast.hpp"
 #include "visitors/visitor.hpp"
 
 

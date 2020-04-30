@@ -14,7 +14,6 @@
 
 #include <string>
 
-#include "ast/ast.hpp"
 #include "visitors/ast_visitor.hpp"
 
 
@@ -33,7 +32,7 @@ namespace visitor {
  * \todo Check if macro is considered as variable
  */
 
-class VarUsageVisitor: public AstVisitor {
+class VarUsageVisitor: protected AstVisitor {
   private:
     /// variable to check usage
     std::string var_name;

@@ -6,6 +6,8 @@
  *************************************************************************/
 
 #include "visitors/verbatim_var_rename_visitor.hpp"
+
+#include "ast/ast.hpp"
 #include "parser/c11_driver.hpp"
 #include "src/utils/logger.hpp"
 

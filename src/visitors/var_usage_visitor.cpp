@@ -9,6 +9,8 @@
 
 #include <utility>
 
+#include "ast/ast.hpp"
+
 
 namespace nmodl {
 namespace visitor {

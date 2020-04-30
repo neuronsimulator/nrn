@@ -73,13 +73,13 @@ void PerfStat::print(std::stringstream& stream) {
     table.print(stream);
 }
 
-std::vector<std::string> PerfStat::keys() {
+std::vector<std::string> PerfStat::keys() const {
     return {"+",       "-",       "x",          "/",          "exp",     "log",     "GM-R(T)",
             "GM-R(U)", "GM-W(T)", "GM-W(U)",    "CM-R(T)",    "CM-R(U)", "CM-W(T)", "CM-W(U)",
             "LM-R(T)", "LM-W(T)", "calls(ext)", "calls(int)", "compare", "unary",   "conditional"};
 }
 
-std::vector<std::string> PerfStat::values() {
+std::vector<std::string> PerfStat::values() const {
     std::vector<std::string> row;
 
     int compares = n_gt + n_lt + n_ge + n_le + n_ne + n_ee;

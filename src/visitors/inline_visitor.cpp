@@ -6,7 +6,12 @@
  *************************************************************************/
 
 #include "visitors/inline_visitor.hpp"
+
+#include "ast/ast.hpp"
 #include "parser/c11_driver.hpp"
+#include "visitors/local_var_rename_visitor.hpp"
+#include "visitors/rename_visitor.hpp"
+#include "visitors/visitor_utils.hpp"
 
 
 namespace nmodl {
@@ -14,9 +19,9 @@ namespace visitor {
 
 using namespace ast;
 
-bool InlineVisitor::can_inline_block(StatementBlock* block) {
+bool InlineVisitor::can_inline_block(StatementBlock& block) {
     bool to_inline = true;
-    const auto& statements = block->get_statements();
+    const auto& statements = block.get_statements();
     for (const auto& statement: statements) {
         /// inlining is disabled if function/procedure contains table or lag statement
         if (statement->is_table_statement() || statement->is_lag_statement()) {
@@ -120,7 +125,7 @@ bool InlineVisitor::inline_function_call(ast::Block* callee,
     const auto& function_name = callee->get_node_name();
 
     /// do nothing if we can't inline given procedure/function
-    if (!can_inline_block(callee->get_statement_block().get())) {
+    if (!can_inline_block(*callee->get_statement_block())) {
         std::cerr << "Can not inline function call to " + function_name << '\n';
         return false;
     }

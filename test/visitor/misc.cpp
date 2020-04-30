@@ -13,6 +13,7 @@
 #include "visitors/inline_visitor.hpp"
 #include "visitors/localize_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
+#include "visitors/visitor_utils.hpp"
 
 using namespace nmodl;
 using namespace visitor;

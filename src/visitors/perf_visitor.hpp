@@ -12,11 +12,12 @@
  * \brief \copybrief nmodl::visitor::PerfVisitor
  */
 
+#include <map>
 #include <set>
 #include <stack>
 
-#include "printer/json_printer.hpp"
-#include "symtab/symbol_table.hpp"
+#include "printer/decl.hpp"
+#include "symtab/decl.hpp"
 #include "utils/perf_stat.hpp"
 #include "visitors/ast_visitor.hpp"
 
@@ -151,9 +152,7 @@ class PerfVisitor: public AstVisitor {
 
     explicit PerfVisitor(const std::string& filename);
 
-    void compact_json(bool flag) {
-        printer->compact_json(flag);
-    }
+    void compact_json(bool flag);
 
     utils::PerfStat get_total_perfstat() const noexcept {
         return total_perf;
@@ -199,94 +198,48 @@ class PerfVisitor: public AstVisitor {
 
     void visit_program(ast::Program& node) override;
 
-    void visit_plot_block(ast::PlotBlock& node) override {
-        measure_performance(&node);
-    }
+    void visit_plot_block(ast::PlotBlock& node) override;
 
     /// skip initial block under net_receive block
-    void visit_initial_block(ast::InitialBlock& node) override {
-        if (!under_net_receive_block) {
-            measure_performance(&node);
-        }
-    }
+    void visit_initial_block(ast::InitialBlock& node) override;
 
-    void visit_constructor_block(ast::ConstructorBlock& node) override {
-        measure_performance(&node);
-    }
+    void visit_constructor_block(ast::ConstructorBlock& node) override;
 
-    void visit_destructor_block(ast::DestructorBlock& node) override {
-        measure_performance(&node);
-    }
+    void visit_destructor_block(ast::DestructorBlock& node) override;
 
-    void visit_derivative_block(ast::DerivativeBlock& node) override {
-        measure_performance(&node);
-    }
+    void visit_derivative_block(ast::DerivativeBlock& node) override;
 
-    void visit_linear_block(ast::LinearBlock& node) override {
-        measure_performance(&node);
-    }
+    void visit_linear_block(ast::LinearBlock& node) override;
 
-    void visit_non_linear_block(ast::NonLinearBlock& node) override {
-        measure_performance(&node);
-    }
+    void visit_non_linear_block(ast::NonLinearBlock& node) override;
 
-    void visit_discrete_block(ast::DiscreteBlock& node) override {
-        measure_performance(&node);
-    }
+    void visit_discrete_block(ast::DiscreteBlock& node) override;
 
-    void visit_partial_block(ast::PartialBlock& node) override {
-        measure_performance(&node);
-    }
+    void visit_partial_block(ast::PartialBlock& node) override;
 
-    void visit_function_table_block(ast::FunctionTableBlock& node) override {
-        measure_performance(&node);
-    }
+    void visit_function_table_block(ast::FunctionTableBlock& node) override;
 
-    void visit_function_block(ast::FunctionBlock& node) override {
-        measure_performance(&node);
-    }
+    void visit_function_block(ast::FunctionBlock& node) override;
 
-    void visit_procedure_block(ast::ProcedureBlock& node) override {
-        measure_performance(&node);
-    }
+    void visit_procedure_block(ast::ProcedureBlock& node) override;
 
-    void visit_net_receive_block(ast::NetReceiveBlock& node) override {
-        under_net_receive_block = true;
-        measure_performance(&node);
-        under_net_receive_block = false;
-    }
+    void visit_net_receive_block(ast::NetReceiveBlock& node) override;
 
-    void visit_breakpoint_block(ast::BreakpointBlock& node) override {
-        measure_performance(&node);
-    }
+    void visit_breakpoint_block(ast::BreakpointBlock& node) override;
 
-    void visit_terminal_block(ast::TerminalBlock& node) override {
-        measure_performance(&node);
-    }
+    void visit_terminal_block(ast::TerminalBlock& node) override;
 
-    void visit_before_block(ast::BeforeBlock& node) override {
-        measure_performance(&node);
-    }
+    void visit_before_block(ast::BeforeBlock& node) override;
 
-    void visit_after_block(ast::AfterBlock& node) override {
-        measure_performance(&node);
-    }
+    void visit_after_block(ast::AfterBlock& node) override;
 
-    void visit_ba_block(ast::BABlock& node) override {
-        measure_performance(&node);
-    }
+    void visit_ba_block(ast::BABlock& node) override;
 
-    void visit_for_netcon(ast::ForNetcon& node) override {
-        measure_performance(&node);
-    }
+    void visit_for_netcon(ast::ForNetcon& node) override;
 
-    void visit_kinetic_block(ast::KineticBlock& node) override {
-        measure_performance(&node);
-    }
+    void visit_kinetic_block(ast::KineticBlock& node) override;
 
-    void visit_match_block(ast::MatchBlock& node) override {
-        measure_performance(&node);
-    }
+    void visit_match_block(ast::MatchBlock& node) override;
 
     /// certain constructs needs to be excluded from usage counting
     /// and hence need to provide empty implementations
@@ -301,7 +254,7 @@ class PerfVisitor: public AstVisitor {
 
     void visit_valence(ast::Valence& /*node*/) override {}
 
-    void print(std::ostream& ss) {
+    void print(std::ostream& ss) const {
         ss << stream.str();
     }
 };

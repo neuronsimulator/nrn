@@ -9,6 +9,8 @@
 
 #include "visitors/nmodl_visitor.hpp"
 
+#include "visitors/visitor_utils.hpp"
+
 
 namespace nmodl {
 namespace visitor {

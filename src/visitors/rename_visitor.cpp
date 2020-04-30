@@ -6,6 +6,8 @@
  *************************************************************************/
 
 #include "visitors/rename_visitor.hpp"
+
+#include "ast/ast.hpp"
 #include "parser/c11_driver.hpp"
 
 

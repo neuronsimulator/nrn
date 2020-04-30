@@ -9,10 +9,12 @@
 /// THIS FILE IS GENERATED AT BUILD TIME AND SHALL NOT BE EDITED.
 ///
 
+#include "visitors/checkparent_visitor.hpp"
+
 #include <string>
 #include <fmt/format.h>
 
-#include "visitors/checkparent_visitor.hpp"
+#include "ast/ast.hpp"
 
 namespace nmodl {
 namespace visitor {

@@ -23,6 +23,7 @@ namespace ast {
 
 /// forward declaration of ast nodes
 
+class Ast;
 {% for node in nodes %}
 class {{ node.class_name }};
 {% endfor %}

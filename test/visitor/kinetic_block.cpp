@@ -15,6 +15,7 @@
 #include "visitors/lookup_visitor.hpp"
 #include "visitors/loop_unroll_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
+#include "visitors/visitor_utils.hpp"
 
 using namespace nmodl;
 using namespace visitor;

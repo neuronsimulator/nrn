@@ -15,10 +15,7 @@
 #include <map>
 #include <stack>
 
-#include "ast/ast.hpp"
 #include "printer/json_printer.hpp"
-#include "symtab/symbol_table.hpp"
-#include "utils/logger.hpp"
 #include "visitors/ast_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
 
@@ -96,7 +93,7 @@ class DUInstance {
     /// evaluate global usage i.e. with [D,U] states of children
     DUState conditional_block_eval();
 
-    void print(printer::JSONPrinter& printer);
+    void print(printer::JSONPrinter& printer) const;
 };
 
 
@@ -120,7 +117,7 @@ class DUChain {
     DUState eval();
 
     /// return json representation
-    std::string to_string(bool compact = true);
+    std::string to_string(bool compact = true) const;
 };
 
 
@@ -183,7 +180,7 @@ class DUChain {
  * in any of the if-elseif-else part then it is considered as "used". And
  * this is done recursively from innermost level to the top.
  */
-class DefUseAnalyzeVisitor: public AstVisitor {
+class DefUseAnalyzeVisitor: protected AstVisitor {
   private:
     /// symbol table containing global variables
     symtab::SymbolTable* global_symtab = nullptr;
@@ -214,8 +211,8 @@ class DefUseAnalyzeVisitor: public AstVisitor {
     void process_variable(const std::string& name, int index);
 
     void update_defuse_chain(const std::string& name);
-    void visit_unsupported_node(ast::Node* node);
-    void visit_with_new_chain(ast::Node* node, DUState state);
+    void visit_unsupported_node(ast::Node& node);
+    void visit_with_new_chain(ast::Node& node, DUState state);
     void start_new_chain(DUState state);
 
   public:
@@ -234,74 +231,49 @@ class DefUseAnalyzeVisitor: public AstVisitor {
     void visit_statement_block(ast::StatementBlock& node) override;
     void visit_verbatim(ast::Verbatim& node) override;
 
-    /// unsupported statements : we aren't sure how to handle this "yet" and
-    /// hence variables used in any of the below statements are handled separately
+    /**
+     * /\name unsupported statements
+     * we aren't sure how to handle this "yet" and hence variables
+     * used in any of the below statements are handled separately
+     * \{
+     */
 
-    void visit_reaction_statement(ast::ReactionStatement& node) override {
-        visit_unsupported_node(&node);
-    }
+    void visit_reaction_statement(ast::ReactionStatement& node) override;
 
-    void visit_non_lin_equation(ast::NonLinEquation& node) override {
-        visit_unsupported_node(&node);
-    }
+    void visit_non_lin_equation(ast::NonLinEquation& node) override;
 
-    void visit_lin_equation(ast::LinEquation& node) override {
-        visit_unsupported_node(&node);
-    }
+    void visit_lin_equation(ast::LinEquation& node) override;
 
-    void visit_partial_boundary(ast::PartialBoundary& node) override {
-        visit_unsupported_node(&node);
-    }
+    void visit_partial_boundary(ast::PartialBoundary& node) override;
 
-    void visit_from_statement(ast::FromStatement& node) override {
-        visit_unsupported_node(&node);
-    }
+    void visit_from_statement(ast::FromStatement& node) override;
 
-    void visit_conserve(ast::Conserve& node) override {
-        visit_unsupported_node(&node);
-    }
+    void visit_conserve(ast::Conserve& node) override;
 
-    void visit_var_name(ast::VarName& node) override {
-        const std::string& variable = to_nmodl(node);
-        process_variable(variable);
-    }
+    void visit_var_name(ast::VarName& node) override;
 
-    void visit_name(ast::Name& node) override {
-        const std::string& variable = to_nmodl(node);
-        process_variable(variable);
-    }
+    void visit_name(ast::Name& node) override;
 
-    void visit_indexed_name(ast::IndexedName& node) override {
-        const auto& name = node.get_node_name();
-        const auto& length = node.get_length();
+    void visit_indexed_name(ast::IndexedName& node) override;
 
-        /// index should be an integer (e.g. after constant folding)
-        /// if this is not the case and then we can't determine exact
-        /// def-use chain
-        if (!length->is_integer()) {
-            /// check if variable name without index part is same
-            auto variable_name_prefix = variable_name.substr(0, variable_name.find('['));
-            if (name == variable_name_prefix) {
-                update_defuse_chain(variable_name_prefix);
-                const std::string& text = to_nmodl(node);
-                nmodl::logger->info("index used to access variable is not known : {} ", text);
-            }
-            return;
-        }
-        auto index = std::dynamic_pointer_cast<ast::Integer>(length);
-        process_variable(name, index->eval());
-    }
+    /** \} */
 
-    /// statements / nodes that should not be used for def-use chain analysis
+    /**
+     * /\name statements
+     * nodes that should not be used for def-use chain analysis
+     * \{
+     */
 
-    void visit_conductance_hint(ast::ConductanceHint& /*node*/) override {}
+    void visit_conductance_hint(ast::ConductanceHint& node) override;
 
-    void visit_local_list_statement(ast::LocalListStatement& /*node*/) override {}
+    void visit_local_list_statement(ast::LocalListStatement& node) override;
 
-    void visit_argument(ast::Argument& /*node*/) override {}
+    void visit_argument(ast::Argument& node) override;
+
+    /** \} */
 
     /// compute def-use chain for a variable within the node
-    DUChain analyze(ast::Ast* node, const std::string& name);
+    DUChain analyze(ast::Ast& node, const std::string& name);
 };
 
 /** @} */  // end of visitor_classes
