@@ -18,7 +18,7 @@
 
 #include <set>
 
-#include "ast/ast.hpp"
+#include "visitors/visitor.hpp"
 #include "printer/nmodl_printer.hpp"
 
 namespace nmodl {

@@ -5,10 +5,12 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
+#include "visitors/localize_visitor.hpp"
+
 #include <algorithm>
 
+#include "utils/logger.hpp"
 #include "visitors/defuse_analyze_visitor.hpp"
-#include "visitors/localize_visitor.hpp"
 
 namespace nmodl {
 namespace visitor {
@@ -16,8 +18,8 @@ namespace visitor {
 using symtab::Symbol;
 using symtab::syminfo::NmodlType;
 
-bool LocalizeVisitor::node_for_def_use_analysis(ast::Node* node) {
-    const auto& type = node->get_node_type();
+bool LocalizeVisitor::node_for_def_use_analysis(const ast::Node& node) const {
+    const auto& type = node.get_node_type();
 
     /**
      * Blocks where we should compute def-use chains. We are excluding
@@ -54,9 +56,9 @@ bool LocalizeVisitor::node_for_def_use_analysis(ast::Node* node) {
  * Check if given node is a procedure block and if it is used
  * in the solve statement.
  */
-bool LocalizeVisitor::is_solve_procedure(ast::Node* node) {
-    if (node->is_procedure_block()) {
-        auto symbol = program_symtab->lookup(node->get_node_name());
+bool LocalizeVisitor::is_solve_procedure(const ast::Node& node) const {
+    if (node.is_procedure_block()) {
+        const auto& symbol = program_symtab->lookup(node.get_node_name());
         if (symbol && symbol->has_any_property(NmodlType::to_solve)) {
             return true;
         }
@@ -64,7 +66,7 @@ bool LocalizeVisitor::is_solve_procedure(ast::Node* node) {
     return false;
 }
 
-std::vector<std::string> LocalizeVisitor::variables_to_optimize() {
+std::vector<std::string> LocalizeVisitor::variables_to_optimize() const {
     // clang-format off
     const NmodlType excluded_var_properties = NmodlType::extern_var
                                      | NmodlType::extern_neuron_variable
@@ -88,10 +90,10 @@ std::vector<std::string> LocalizeVisitor::variables_to_optimize() {
      *        to avoid optimizations, we need to handle this case properly
      *  \todo Instead of ast node, use symbol properties to check variable type
      */
-    auto variables = program_symtab->get_variables_with_properties(global_var_properties);
+    const auto& variables = program_symtab->get_variables_with_properties(global_var_properties);
 
     std::vector<std::string> result;
-    for (auto& variable: variables) {
+    for (const auto& variable: variables) {
         if (!variable->has_any_property(excluded_var_properties)) {
             result.push_back(variable->get_name());
         }
@@ -114,9 +116,9 @@ void LocalizeVisitor::visit_program(ast::Program& node) {
 
         /// compute def use chains
         for (const auto& block: blocks) {
-            if (node_for_def_use_analysis(block.get())) {
+            if (node_for_def_use_analysis(*block)) {
                 DefUseAnalyzeVisitor v(program_symtab, ignore_verbatim);
-                auto usages = v.analyze(block.get(), varname);
+                auto usages = v.analyze(*block, varname);
                 auto result = usages.eval();
                 block_usage[result].push_back(block);
             }
@@ -133,7 +135,7 @@ void LocalizeVisitor::visit_program(ast::Program& node) {
             for (auto state: {DUState::D, DUState::CD}) {
                 for (auto& block: block_usage[state]) {
                     auto block_ptr = dynamic_cast<ast::Block*>(block.get());
-                    auto statement_block = block_ptr->get_statement_block();
+                    const auto& statement_block = block_ptr->get_statement_block();
                     ast::LocalVar* variable;
                     auto symbol = program_symtab->lookup(varname);
 

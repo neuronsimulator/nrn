@@ -3525,7 +3525,7 @@ static void rename_net_receive_arguments(ast::NetReceiveBlock& net_receive_node,
 
 
 void CodegenCVisitor::print_net_init() {
-    auto node = info.net_receive_initial_node;
+    const auto node = info.net_receive_initial_node;
     if (node == nullptr) {
         return;
     }
@@ -3677,7 +3677,7 @@ void CodegenCVisitor::print_net_receive_kernel() {
     }
     codegen = true;
     printing_net_receive = true;
-    auto node = info.net_receive_node;
+    const auto node = info.net_receive_node;
 
     // rename net_receive arguments used in the block itself
     rename_net_receive_arguments(*info.net_receive_node, *node);

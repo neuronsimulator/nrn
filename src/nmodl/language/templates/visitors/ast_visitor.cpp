@@ -11,6 +11,8 @@
 
 #include "visitors/ast_visitor.hpp"
 
+#include "ast/ast.hpp"
+
 
 namespace nmodl {
 namespace visitor {

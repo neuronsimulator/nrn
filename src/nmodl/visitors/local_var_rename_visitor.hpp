@@ -15,8 +15,7 @@
 #include <map>
 #include <stack>
 
-#include "ast/ast.hpp"
-#include "symtab/symbol_table.hpp"
+#include "symtab/decl.hpp"
 #include "visitors/ast_visitor.hpp"
 
 namespace nmodl {
@@ -73,7 +72,7 @@ class LocalVarRenameVisitor: public AstVisitor {
 
   public:
     LocalVarRenameVisitor() = default;
-    virtual void visit_statement_block(ast::StatementBlock& node) override;
+    void visit_statement_block(ast::StatementBlock& node) override;
 };
 
 /** @} */  // end of visitor_classes

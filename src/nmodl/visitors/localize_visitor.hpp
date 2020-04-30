@@ -13,16 +13,9 @@
  */
 
 #include <map>
-#include <stack>
 
-#include "ast/ast.hpp"
-#include "printer/json_printer.hpp"
-#include "symtab/symbol_table.hpp"
-#include "utils/logger.hpp"
+#include "symtab/decl.hpp"
 #include "visitors/ast_visitor.hpp"
-#include "visitors/local_var_rename_visitor.hpp"
-#include "visitors/rename_visitor.hpp"
-#include "visitors/visitor_utils.hpp"
 
 
 namespace nmodl {
@@ -94,11 +87,11 @@ class LocalizeVisitor: public AstVisitor {
 
     symtab::SymbolTable* program_symtab = nullptr;
 
-    std::vector<std::string> variables_to_optimize();
+    std::vector<std::string> variables_to_optimize() const;
 
-    bool node_for_def_use_analysis(ast::Node* node);
+    bool node_for_def_use_analysis(const ast::Node& node) const;
 
-    bool is_solve_procedure(ast::Node* node);
+    bool is_solve_procedure(const ast::Node& node) const;
 
   public:
     LocalizeVisitor() = default;
@@ -106,7 +99,7 @@ class LocalizeVisitor: public AstVisitor {
     explicit LocalizeVisitor(bool ignore_verbatim)
         : ignore_verbatim(ignore_verbatim) {}
 
-    virtual void visit_program(ast::Program& node) override;
+    void visit_program(ast::Program& node) override;
 };
 
 /** @} */  // end of visitor_classes

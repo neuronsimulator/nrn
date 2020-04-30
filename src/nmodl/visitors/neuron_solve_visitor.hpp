@@ -12,9 +12,10 @@
  * \brief \copybrief nmodl::visitor::NeuronSolveVisitor
  */
 
+#include <map>
 #include <string>
 
-#include "ast/ast.hpp"
+#include "symtab/decl.hpp"
 #include "visitors/ast_visitor.hpp"
 
 

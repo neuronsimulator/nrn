@@ -16,6 +16,7 @@
 #include "visitors/lookup_visitor.hpp"
 #include "visitors/sympy_conductance_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
+#include "visitors/visitor_utils.hpp"
 
 using namespace nmodl;
 using namespace visitor;

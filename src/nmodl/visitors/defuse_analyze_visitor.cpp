@@ -5,10 +5,13 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
+#include "visitors/defuse_analyze_visitor.hpp"
+
 #include <algorithm>
 #include <utility>
 
-#include "visitors/defuse_analyze_visitor.hpp"
+#include "ast/ast.hpp"
+#include "utils/logger.hpp"
 
 namespace nmodl {
 namespace visitor {
@@ -52,7 +55,7 @@ std::ostream& operator<<(std::ostream& os, DUState state) {
 }
 
 /// DUInstance to JSON string
-void DUInstance::print(JSONPrinter& printer) {
+void DUInstance::print(JSONPrinter& printer) const {
     if (children.empty()) {
         printer.add_node(to_string(state));
     } else {
@@ -65,7 +68,7 @@ void DUInstance::print(JSONPrinter& printer) {
 }
 
 /// DUChain to JSON string
-std::string DUChain::to_string(bool compact) {
+std::string DUChain::to_string(bool compact) const {
     std::stringstream stream;
     JSONPrinter printer(stream);
     printer.compact_json(compact);
@@ -128,7 +131,6 @@ DUState DUInstance::sub_block_eval() {
 DUState DUInstance::conditional_block_eval() {
     DUState result = DUState::NONE;
     bool block_with_none = false;
-    bool block_non_def_cdef = false;
 
     for (auto& chain: children) {
         auto child_state = chain.eval();
@@ -181,9 +183,9 @@ DUState DUChain::eval() {
     return result;
 }
 
-void DefUseAnalyzeVisitor::visit_unsupported_node(ast::Node* node) {
+void DefUseAnalyzeVisitor::visit_unsupported_node(ast::Node& node) {
     unsupported_node = true;
-    node->visit_children(*this);
+    node.visit_children(*this);
     unsupported_node = false;
 }
 
@@ -198,7 +200,7 @@ void DefUseAnalyzeVisitor::visit_function_call(ast::FunctionCall& node) {
     if (symbol == nullptr || symbol->is_external_variable()) {
         node.visit_children(*this);
     } else {
-        visit_unsupported_node(&node);
+        visit_unsupported_node(node);
     }
 }
 
@@ -246,12 +248,12 @@ void DefUseAnalyzeVisitor::visit_if_statement(ast::IfStatement& node) {
 
     /// visiting else if sub-blocks
     for (const auto& item: node.get_elseifs()) {
-        visit_with_new_chain(item.get(), DUState::ELSEIF);
+        visit_with_new_chain(*item, DUState::ELSEIF);
     }
 
     /// visiting else sub-block
     if (node.get_elses()) {
-        visit_with_new_chain(node.get_elses().get(), DUState::ELSE);
+        visit_with_new_chain(*node.get_elses(), DUState::ELSE);
     }
 
     /// restore to previous chain
@@ -269,6 +271,73 @@ void DefUseAnalyzeVisitor::visit_verbatim(ast::Verbatim& node) {
         current_chain->push_back(DUInstance(DUState::U));
     }
 }
+
+/// unsupported statements : we aren't sure how to handle this "yet" and
+/// hence variables used in any of the below statements are handled separately
+
+void DefUseAnalyzeVisitor::visit_reaction_statement(ast::ReactionStatement& node) {
+    visit_unsupported_node(node);
+}
+
+void DefUseAnalyzeVisitor::visit_non_lin_equation(ast::NonLinEquation& node) {
+    visit_unsupported_node(node);
+}
+
+void DefUseAnalyzeVisitor::visit_lin_equation(ast::LinEquation& node) {
+    visit_unsupported_node(node);
+}
+
+void DefUseAnalyzeVisitor::visit_partial_boundary(ast::PartialBoundary& node) {
+    visit_unsupported_node(node);
+}
+
+void DefUseAnalyzeVisitor::visit_from_statement(ast::FromStatement& node) {
+    visit_unsupported_node(node);
+}
+
+void DefUseAnalyzeVisitor::visit_conserve(ast::Conserve& node) {
+    visit_unsupported_node(node);
+}
+
+void DefUseAnalyzeVisitor::visit_var_name(ast::VarName& node) {
+    const std::string& variable = to_nmodl(node);
+    process_variable(variable);
+}
+
+void DefUseAnalyzeVisitor::visit_name(ast::Name& node) {
+    const std::string& variable = to_nmodl(node);
+    process_variable(variable);
+}
+
+void DefUseAnalyzeVisitor::visit_indexed_name(ast::IndexedName& node) {
+    const auto& name = node.get_node_name();
+    const auto& length = node.get_length();
+
+    /// index should be an integer (e.g. after constant folding)
+    /// if this is not the case and then we can't determine exact
+    /// def-use chain
+    if (!length->is_integer()) {
+        /// check if variable name without index part is same
+        auto variable_name_prefix = variable_name.substr(0, variable_name.find('['));
+        if (name == variable_name_prefix) {
+            update_defuse_chain(variable_name_prefix);
+            const std::string& text = to_nmodl(node);
+            nmodl::logger->info("index used to access variable is not known : {} ", text);
+        }
+        return;
+    }
+    auto index = std::dynamic_pointer_cast<ast::Integer>(length);
+    process_variable(name, index->eval());
+}
+
+/// statements / nodes that should not be used for def-use chain analysis
+
+void DefUseAnalyzeVisitor::visit_conductance_hint(ast::ConductanceHint& /*node*/) {}
+
+void DefUseAnalyzeVisitor::visit_local_list_statement(ast::LocalListStatement& /*node*/) {}
+
+void DefUseAnalyzeVisitor::visit_argument(ast::Argument& /*node*/) {}
+
 
 /**
  * Update the Def-Use chain for given variable
@@ -319,10 +388,10 @@ void DefUseAnalyzeVisitor::process_variable(const std::string& name, int index) 
     }
 }
 
-void DefUseAnalyzeVisitor::visit_with_new_chain(ast::Node* node, DUState state) {
+void DefUseAnalyzeVisitor::visit_with_new_chain(ast::Node& node, DUState state) {
     auto last_chain = current_chain;
     start_new_chain(state);
-    node->visit_children(*this);
+    node.visit_children(*this);
     current_chain = last_chain;
 }
 
@@ -331,7 +400,7 @@ void DefUseAnalyzeVisitor::start_new_chain(DUState state) {
     current_chain = &current_chain->back().children;
 }
 
-DUChain DefUseAnalyzeVisitor::analyze(ast::Ast* node, const std::string& name) {
+DUChain DefUseAnalyzeVisitor::analyze(ast::Ast& node, const std::string& name) {
     /// re-initialize state
     variable_name = name;
     visiting_lhs = false;
@@ -339,12 +408,12 @@ DUChain DefUseAnalyzeVisitor::analyze(ast::Ast* node, const std::string& name) {
     unsupported_node = false;
 
     /// new chain
-    DUChain usage(node->get_node_type_name());
+    DUChain usage(node.get_node_type_name());
     current_chain = &usage.chain;
 
     /// analyze given node
     symtab_stack.push(current_symtab);
-    node->visit_children(*this);
+    node.visit_children(*this);
     symtab_stack.pop();
 
     return usage;

@@ -13,7 +13,8 @@
  */
 
 #include <sstream>
-
+#include <string>
+#include <vector>
 
 namespace nmodl {
 namespace utils {
@@ -100,9 +101,9 @@ struct PerfStat {
 
     void print(std::stringstream& stream);
 
-    std::vector<std::string> keys();
+    std::vector<std::string> keys() const;
 
-    std::vector<std::string> values();
+    std::vector<std::string> values() const;
 };
 
 /** @} */  // end of utils

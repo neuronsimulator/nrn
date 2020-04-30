@@ -9,8 +9,11 @@
 /// THIS FILE IS GENERATED AT BUILD TIME AND SHALL NOT BE EDITED.
 ///
 
-#include <algorithm>
 #include "visitors/lookup_visitor.hpp"
+
+#include <algorithm>
+
+#include "ast/ast.hpp"
 
 
 namespace nmodl {

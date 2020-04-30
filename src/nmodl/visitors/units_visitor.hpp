@@ -16,7 +16,6 @@
 #include <string>
 #include <vector>
 
-#include "ast/ast.hpp"
 #include "parser/unit_driver.hpp"
 #include "visitors/ast_visitor.hpp"
 #include "visitors/visitor_utils.hpp"

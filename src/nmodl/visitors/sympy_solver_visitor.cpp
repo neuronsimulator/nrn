@@ -7,6 +7,8 @@
 
 #include <iostream>
 
+#include <pybind11/pytypes.h>
+
 #include "codegen/codegen_naming.hpp"
 #include "symtab/symbol.hpp"
 #include "utils/logger.hpp"
@@ -115,7 +117,7 @@ ast::StatementVector::const_iterator SympySolverVisitor::get_solution_location_i
  * expression statement and hence we try to look inside if it's really a
  * variable declaration.
  */
-static bool is_local_statement(std::shared_ptr<ast::Statement> statement) {
+static bool is_local_statement(const std::shared_ptr<ast::Statement>& statement) {
     if (statement->is_local_list_statement()) {
         return true;
     }

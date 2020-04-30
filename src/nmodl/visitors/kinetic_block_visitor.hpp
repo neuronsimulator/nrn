@@ -12,14 +12,13 @@
  * \brief \copybrief nmodl::visitor::KineticBlockVisitor
  */
 
-#include "ast/ast.hpp"
-#include "visitors/ast_visitor.hpp"
-#include "visitors/visitor_utils.hpp"
 #include <map>
 #include <memory>
 #include <set>
 #include <string>
 #include <vector>
+
+#include "visitors/ast_visitor.hpp"
 
 namespace nmodl {
 namespace visitor {

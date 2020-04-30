@@ -69,14 +69,14 @@ class JSONPrinter {
     const std::string child_key = "children";
 
   public:
-    JSONPrinter(const std::string& filename);
+    explicit JSONPrinter(const std::string& filename);
 
     /// By default dump output to std::cout
     JSONPrinter()
         : result(new std::ostream(std::cout.rdbuf())) {}
 
     // Dump output to stringstream
-    JSONPrinter(std::ostream& os)
+    explicit JSONPrinter(std::ostream& os)
         : result(new std::ostream(os.rdbuf())) {}
 
     ~JSONPrinter() {
