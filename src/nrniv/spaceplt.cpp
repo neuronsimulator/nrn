@@ -131,7 +131,7 @@ public:
 	int get_color(void);
 	void set_color(int);
 private:
-	int color_ = 1;
+	int color_;
 	void set_x();
 	void fill_pointers();
 private:
@@ -307,6 +307,7 @@ RangeVarPlot::RangeVarPlot(const char* var, Object* pyobj) : GraphVector(var ? v
 #else
 RangeVarPlot::RangeVarPlot(const char* var, Object* pyobj) : NoIVGraphVector(var) {
 #endif
+	color_ = 1;
 	begin_section_ = 0;
 	end_section_ = 0;
 	sec_list_ = new SecPosList(50);
