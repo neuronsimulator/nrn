@@ -877,6 +877,9 @@ static double v_scantil(void *v) {
 
 
 static Object** v_record(void* v) {
+	if (hoc_is_double_arg(1)) {
+		hoc_execerror("Vector.record:", "A number was provided instead of a pointer.\nDid you forget an _ref_ (Python) or an & (HOC)?");
+	}
         Vect* vp = (Vect*)v;
 	nrn_vecsim_add(v, true);
 	return vp->temp_objvar();
