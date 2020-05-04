@@ -48,14 +48,14 @@ std::string DiffeqDriver::solve_equation(std::string& state,
                                          bool& cnexp_possible,
                                          bool debug) {
     std::istringstream in(rhs);
-    diffeq::DiffEqContext context(state, order, rhs, method);
+    diffeq::DiffEqContext eq_context(state, order, rhs, method);
     DiffeqLexer scanner(&in);
-    DiffeqParser parser(scanner, context);
+    DiffeqParser parser(scanner, eq_context);
     parser.parse();
     if (debug) {
-        context.print();
+        eq_context.print();
     }
-    return context.get_solution(cnexp_possible);
+    return eq_context.get_solution(cnexp_possible);
 }
 
 /// \todo Instead of using neuron like api, we need to refactor
