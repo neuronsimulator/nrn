@@ -40,7 +40,7 @@
 
 /** add extra arguments to yyparse() and yylexe() methods */
 %parse-param {class DiffeqLexer& scanner}
-%parse-param {diffeq::DiffEqContext& context}
+%parse-param {diffeq::DiffEqContext& eq_context}
 %lex-param   {diffeq::DiffEqScanner &scanner }
 
 /** use variant based implementation of semantic values */
@@ -115,7 +115,7 @@
  */
 
 top             : expression                {
-                                                context.solution.b = "-(" + context.solution.b + ")/(" + context.solution.a + ")";
+                                                eq_context.solution.b = "-(" + eq_context.solution.b + ")/(" + eq_context.solution.a + ")";
                                             }
                 | error                     {
                                                 throw std::runtime_error("Invalid differential equation");
@@ -131,63 +131,63 @@ expression      : e                         { $$ = $1; }
 
 
 e               : ATOM                      {
-                                                context.solution = Term($1, context.state_variable());
-                                                $$ = context.solution;
+                                                eq_context.solution = Term($1, eq_context.state_variable());
+                                                $$ = eq_context.solution;
                                             }
 
                 | "(" e ")"                 {
-                                                context.solution = Term();
-                                                context.solution.expr = "(" + $2.expr + ")";
+                                                eq_context.solution = Term();
+                                                eq_context.solution.expr = "(" + $2.expr + ")";
 
                                                 if($2.deriv_nonzero())
-                                                    context.solution.deriv = "(" + $2.deriv + ")";
+                                                    eq_context.solution.deriv = "(" + $2.deriv + ")";
                                                 if($2.a_nonzero())
-                                                    context.solution.a = "(" + $2.a + ")";
+                                                    eq_context.solution.a = "(" + $2.a + ")";
                                                 if($2.b_nonzero())
-                                                    context.solution.b = "(" + $2.b + ")";
+                                                    eq_context.solution.b = "(" + $2.b + ")";
 
-                                                $$ = context.solution;
+                                                $$ = eq_context.solution;
                                             }
 
                 | ATOM "(" arglist ")"      {
-                                                context.solution = Term();
-                                                context.solution.expr = $1 +  "(" + $3.expr + ")";
-                                                context.solution.b = $1 + "(" + $3.expr + ")";
-                                                $$ = context.solution;
+                                                eq_context.solution = Term();
+                                                eq_context.solution.expr = $1 +  "(" + $3.expr + ")";
+                                                eq_context.solution.b = $1 + "(" + $3.expr + ")";
+                                                $$ = eq_context.solution;
                                             }
 
                 | "-" e %prec UNARYMINUS    {
-                                                context.solution = Term();
-                                                context.solution.expr = "-" + $2.expr;
+                                                eq_context.solution = Term();
+                                                eq_context.solution.expr = "-" + $2.expr;
 
                                                 if($2.deriv_nonzero())
-                                                    context.solution.deriv = "-" + $2.deriv;
+                                                    eq_context.solution.deriv = "-" + $2.deriv;
                                                 if($2.a_nonzero())
-                                                    context.solution.a = "-" + $2.a;
+                                                    eq_context.solution.a = "-" + $2.a;
                                                 if($2.b_nonzero())
-                                                    context.solution.b = "-" +$2.b;
+                                                    eq_context.solution.b = "-" +$2.b;
 
-                                                $$ = context.solution;
+                                                $$ = eq_context.solution;
                                             }
 
                 | e "+" e                   {
-                                                context.solution = eval_derivative<MathOp::add>($1, $3, context.deriv_invalid, context.eqn_invalid);
-                                                $$ = context.solution;
+                                                eq_context.solution = eval_derivative<MathOp::add>($1, $3, eq_context.deriv_invalid, eq_context.eqn_invalid);
+                                                $$ = eq_context.solution;
                                             }
 
                 | e "-" e                   {
-                                                context.solution = eval_derivative<MathOp::sub>($1, $3, context.deriv_invalid, context.eqn_invalid);
-                                                $$ = context.solution;
+                                                eq_context.solution = eval_derivative<MathOp::sub>($1, $3, eq_context.deriv_invalid, eq_context.eqn_invalid);
+                                                $$ = eq_context.solution;
                                             }
 
                 | e "*" e                   {
-                                                context.solution = eval_derivative<MathOp::mul>($1, $3, context.deriv_invalid, context.eqn_invalid);
-                                                $$ = context.solution;
+                                                eq_context.solution = eval_derivative<MathOp::mul>($1, $3, eq_context.deriv_invalid, eq_context.eqn_invalid);
+                                                $$ = eq_context.solution;
                 }
 
                 | e "/" e                   {
-                                                context.solution = eval_derivative<MathOp::div>($1, $3, context.deriv_invalid, context.eqn_invalid);
-                                                $$ = context.solution;
+                                                eq_context.solution = eval_derivative<MathOp::div>($1, $3, eq_context.deriv_invalid, eq_context.eqn_invalid);
+                                                $$ = eq_context.solution;
 
                                             }
                 ;
@@ -199,29 +199,29 @@ arglist         : /*nothing*/               { $$ = Term("", "0.0", "0.0", ""); }
                 | arg                       { $$ = $1; }
 
                 | arglist arg               {
-                                                context.solution.expr = $1.expr + " " + $2.expr;
-                                                context.solution.b    = $1.expr + " " + $2.expr;
-                                                $$ = context.solution;
+                                                eq_context.solution.expr = $1.expr + " " + $2.expr;
+                                                eq_context.solution.b    = $1.expr + " " + $2.expr;
+                                                $$ = eq_context.solution;
                                             }
 
                 | arglist "," arg           {
-                                                context.solution.expr = $1.expr + "," + $3.expr;
-                                                context.solution.b    = $1.expr + "," + $3.expr;
-                                                $$ = context.solution;
+                                                eq_context.solution.expr = $1.expr + "," + $3.expr;
+                                                eq_context.solution.b    = $1.expr + "," + $3.expr;
+                                                $$ = eq_context.solution;
                                             }
                 ;
 
 
 
 arg             : e                         {
-                                                context.solution = Term();
-                                                context.solution.expr = $1.expr;
-                                                context.solution.b = $1.expr;
+                                                eq_context.solution = Term();
+                                                eq_context.solution.expr = $1.expr;
+                                                eq_context.solution.b = $1.expr;
                                                 if($1.deriv_nonzero()) {
-                                                    context.deriv_invalid = true;
-                                                    context.eqn_invalid = true;
+                                                    eq_context.deriv_invalid = true;
+                                                    eq_context.eqn_invalid = true;
                                                 }
-                                                $$ = context.solution;
+                                                $$ = eq_context.solution;
                                             }
                 ;
 
