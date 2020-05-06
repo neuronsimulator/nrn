@@ -273,7 +273,7 @@ void InlineVisitor::visit_statement_block(StatementBlock& node) {
     for (auto& element: inlined_statements) {
         auto it = std::find(statements.begin(), statements.end(), element.first);
         if (it != statements.end()) {
-            node.insert_statement(it, element.second.begin(), element.second.end());
+            node.insert_statement(it, element.second, element.second.begin(), element.second.end());
             element.second.clear();
         }
     }

@@ -28,7 +28,7 @@
 
 
 namespace py = pybind11;
-using pybind11::literals::operator""_a;
+using namespace pybind11::literals;
 
 
 namespace nmodl {

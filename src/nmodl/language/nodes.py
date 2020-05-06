@@ -245,13 +245,16 @@ class ChildNode(BaseNode):
                           * \\brief Erase member to {self.varname}
                           */
                          {self.class_name}Vector::const_iterator erase_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator first) {{
-                            return {self.varname}.erase(first);
+                            auto first_it = const_iter_cast({self.varname}, first);
+                            return {self.varname}.erase(first_it);
                          }}
                          /**
                           * \\brief Erase members to {self.varname}
                           */
                          {self.class_name}Vector::const_iterator erase_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator first, {self.class_name}Vector::const_iterator last) {{
-                            return {self.varname}.erase(first, last);
+                            auto first_it = const_iter_cast({self.varname}, first);
+                            auto last_it = const_iter_cast({self.varname}, last);
+                            return {self.varname}.erase(first_it, last_it);
                          }}
 
                          /**
@@ -259,22 +262,24 @@ class ChildNode(BaseNode):
                           */
                          {self.class_name}Vector::const_iterator insert_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator position, const std::shared_ptr<{self.class_name}>& n) {{
                              {set_parent}
-
-                            return {self.varname}.insert(position, n);
+                            auto pos_it = const_iter_cast({self.varname}, position);
+                            return {self.varname}.insert(pos_it, n);
                          }}
                          /**
                           * \\brief Insert members to {self.varname}
                           */
-                         template <class InputIterator>
-                         void insert_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator position, InputIterator first, InputIterator last) {{
+                         template <class NodeType, class InputIterator>
+                         void insert_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator position, NodeType& to, InputIterator first, InputIterator last) {{
 
                              for (auto it = first; it != last; ++it) {{
                                  auto& n = *it;
                                  //set parents
                                  {set_parent}
                               }}
-
-                            {self.varname}.insert(position, first, last);
+                             auto pos_it = const_iter_cast({self.varname}, position);
+                             auto first_it = const_iter_cast(to, first);
+                             auto last_it = const_iter_cast(to, last);
+                             {self.varname}.insert(pos_it, first_it, last_it);
                          }}
 
                          /**

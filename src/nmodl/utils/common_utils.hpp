@@ -48,6 +48,32 @@ T remove_extension(T const& filename) {
     return p > 0 && p != T::npos ? filename.substr(0, p) : filename;
 }
 
+/**
+ * Return non-const iterator corresponding to the const_iterator in a vector
+ *
+ * Some old compilers like GCC v4.8.2  has C++11 support but missing erase and insert
+ * with const_iterator implementation. This is a workaround to handle build issues with
+ * such compilers especially on manylnux1 platform.
+ *
+ * See bug report : https://gcc.gnu.org/bugzilla/show_bug.cgi?id=57158
+ *
+ * \todo Remove this after move to manylinux2010 platform.
+ */
+#if (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__) < 40900
+template<typename T>
+typename std::vector<T>::iterator
+const_iter_cast(std::vector<T>& v, typename std::vector<T>::const_iterator iter) {
+    return v.begin() + (iter - v.cbegin());
+}
+#else
+template<typename T>
+typename std::vector<T>::const_iterator
+const_iter_cast(const std::vector<T>& /*v*/, typename std::vector<T>::const_iterator iter) {
+    return iter;
+}
+#endif
+
+
 /// Given directory path, create sub-directories
 bool make_path(const std::string& path);
 

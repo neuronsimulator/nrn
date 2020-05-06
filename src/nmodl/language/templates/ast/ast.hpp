@@ -36,8 +36,7 @@
     {% if node.is_abstract %} virtual {% endif %}
 {% endmacro %}
 
-
-
+using nmodl::utils::const_iter_cast;
 
 namespace nmodl {
 namespace ast {
