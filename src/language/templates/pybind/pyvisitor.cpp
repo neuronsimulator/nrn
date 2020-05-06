@@ -85,7 +85,7 @@ static const char* sympy_solver_visitor_class = R"(
 }  // namespace nmodl
 
 
-using pybind11::literals::operator""_a;
+using namespace pybind11::literals;
 namespace py = pybind11;
 
 
