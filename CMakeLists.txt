@@ -86,6 +86,7 @@ include(FindClangFormat)
 include(FindPythonModule)
 include(FlexHelper)
 include(GitRevision)
+include(PythonLinkHelper)
 include(RpathHelper)
 
 # =============================================================================

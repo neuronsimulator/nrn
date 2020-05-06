@@ -15,6 +15,7 @@
  * \brief Version information and units file path
  */
 
+#include <cstdlib>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -44,12 +45,19 @@ struct Version {
  */
 struct NrnUnitsLib {
     /// paths where nrnunits.lib can be found
-    static const std::vector<std::string> NRNUNITSLIB_PATH;
+    static std::vector<std::string> NRNUNITSLIB_PATH;
 
     /**
      * Return path of units database file
      */
     static std::string get_path() {
+        // first look for NMODLHOME env variable
+        if (const char* nmodl_home = std::getenv("NMODLHOME")) {
+            auto path = std::string(nmodl_home) + "/share/nrnunits.lib";
+            NRNUNITSLIB_PATH.emplace(NRNUNITSLIB_PATH.begin(), path);
+        }
+
+        // check paths in order and return if found
         for (const auto& path: NRNUNITSLIB_PATH) {
             std::ifstream f(path.c_str());
             if (f.good()) {

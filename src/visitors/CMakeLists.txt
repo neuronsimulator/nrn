@@ -66,9 +66,17 @@ add_library(visitor_obj OBJECT ${VISITOR_SOURCES} ${VISITOR_GENERATED_SOURCES})
 set_property(TARGET visitor_obj PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 add_dependencies(visitor_obj lexer_obj)
-
 add_library(visitor STATIC $<TARGET_OBJECTS:visitor_obj>)
-target_link_libraries(visitor PRIVATE pybind11::embed)
+
+# ~~~
+# pybind11::embed adds PYTHON_LIBRARIES to target_link_libraries. To avoid link to
+# libpython, we can use `pybind11::module` interface library from pybind11.
+# ~~~
+if(NOT LINK_AGAINST_PYTHON)
+  target_link_libraries(visitor PRIVATE pybind11::module)
+else()
+  target_link_libraries(visitor PRIVATE pybind11::embed)
+endif()
 
 add_dependencies(visitor lexer util)
 

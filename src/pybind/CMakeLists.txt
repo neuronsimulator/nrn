@@ -60,10 +60,11 @@ add_custom_command(
   COMMENT "-- COPYING NMODL PYTHON FILES --")
 
 # =============================================================================
-# Copy python binding components into build directory
+# Copy python binding components and examples into build directory
 # =============================================================================
 file(GLOB NMODL_PYTHON_HELPER_FILES "${NMODL_PROJECT_SOURCE_DIR}/nmodl/*.py")
 file(COPY ${NMODL_PYTHON_HELPER_FILES} DESTINATION ${CMAKE_BINARY_DIR}/lib/python/nmodl/)
+file(COPY ${NMODL_PROJECT_SOURCE_DIR}/nmodl/ext DESTINATION ${CMAKE_BINARY_DIR}/lib/python/nmodl/)
 
 # =============================================================================
 # Install python binding components
