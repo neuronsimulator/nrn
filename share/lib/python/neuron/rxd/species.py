@@ -108,36 +108,6 @@ def _1d_submatrix_n():
         return len(node._states)
     else:
         return numpy.min([sp()._indices3d() for sp in list(_get_all_species()) if sp() is not None])"""
-            
-_extracellular_has_setup = False
-_extracellular_exists = False
-
-def _extracellular_do_setup():
-    global _extracellular_has_setup
-    _extracellular_has_setup = True
-
-
-def _extracellular_do_initialize():
-    if _extracellular_has_setup:
-        """handle initialization at finitialize time"""
-        for obj in _extracellular_diffusion_objects:
-            obj._finitialize()
-        # TODO: allow
-
-
-_extracellular_set_setup = nrn_dll_sym('set_setup')
-_extracellular_set_setup.argtypes = [fptr_prototype]
-_extracellular_set_initialize = nrn_dll_sym('set_initialize')
-_extracellular_set_initialize.argtypes = [fptr_prototype]
-
-def _ensure_extracellular():
-    global _extracellular_exists, do_setup_fptr, do_initialize_fptr
-    if not _extracellular_exists:
-        do_setup_fptr = fptr_prototype(_extracellular_do_setup)
-        do_initialize_fptr = fptr_prototype(_extracellular_do_initialize)
-        _extracellular_set_setup(do_setup_fptr)
-        _extracellular_set_initialize(do_initialize_fptr)
-    _extracellular_exists = True
 
 _ontology_id = re.compile('^\[[a-zA-Z][a-zA-Z0-9_]*:[a-zA-Z0-9_]*\]|[a-zA-Z][a-zA-Z0-9_]*:[a-zA-Z0-9_]*$')
 
@@ -610,10 +580,11 @@ class _IntracellularSpecies(_SpeciesMathable):
             if self in _intracellular_diffusion_objects:
                 del _intracellular_diffusion_objects[self]
                 # remove the grid id
-                for sp in _intracellular_diffusion_objects:
-                    if hasattr(sp,'_grid_id') and sp._grid_id > self._grid_id:
-                        sp._grid_id -= 1
-                if hasattr(self,'_grid_id'): _delete_by_id(self._grid_id)
+                if hasattr(self,'_grid_id'):
+                    for sp in _intracellular_diffusion_objects:
+                        if sp._grid_id > self._grid_id:
+                            sp._grid_id -= 1
+                    _delete_by_id(self._grid_id)
                 # remove any node.include_flux for the extracellular species.
                 from . import node
                 newflux = {'index': [], 'type': [], 'source': [], 'scale': [], 'region': []}
@@ -1013,10 +984,11 @@ class _ExtracellularSpecies(_SpeciesMathable):
             if self in _extracellular_diffusion_objects:
                 del _extracellular_diffusion_objects[self]
                 # remove the grid id
-                for sp in _extracellular_diffusion_objects:
-                    if hasattr(sp,'_grid_id') and sp._grid_id > self._grid_id:
-                        sp._grid_id -= 1
-                if hasattr(self,'_grid_id'): _delete_by_id(self._grid_id)
+                if hasattr(self,'_grid_id'):
+                    for sp in _extracellular_diffusion_objects:
+                        if sp._grid_id > self._grid_id:
+                            sp._grid_id -= 1
+                    _delete_by_id(self._grid_id)
                 # remove any node.include_flux for the extracellular species.
                 from . import node
                 newflux = {'index': [], 'type': [], 'source': [], 'scale': [], 'region': []}
@@ -1351,9 +1323,6 @@ class Species(_SpeciesMathable):
         self._extracellular_regions = [r for r in regions if isinstance(r, region.Extracellular)]
         if not all(isinstance(r, region.Region) for r in self._regions):
             raise RxDException('regions list must consist of Region and Extracellular objects only')
-        if self._extracellular_regions:
-            # make sure that the extracellular callbacks are configured, if necessary
-            _ensure_extracellular()
               
         # at this point self._name is None if unnamed or a string == name if
         # named
