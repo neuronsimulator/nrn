@@ -354,3 +354,21 @@ install(TARGETS nrniv_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 if (LIBIVX11DYNAM_NAME)
   install(FILES ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME} DESTINATION lib)
 endif()
+
+# =============================================================================
+# Install cpp and required headers for binary special flavor
+# =============================================================================
+# ~~~
+# Note: we also added following headers in NeuronFleLists.cmake:
+#   ivstream.h nrnconf.h nrnmpi.h nrnmpidec.h
+# ~~~
+install(FILES ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION share/nrn)
+install(FILES ${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h DESTINATION include)
+install(FILES ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h DESTINATION include/nrncvode)
+
+
+
+# executable shared_object possible? 
+#set_property(TARGET nrniv_lib PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+#set_property(TARGET nrniv_lib PROPERTY CMAKE_ENABLE_EXPORTS TRUE)
+#target_link_options(nrniv_lib INTERFACE "-Wl,-e,_main")

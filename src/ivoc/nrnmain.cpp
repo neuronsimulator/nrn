@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include "nrnconf.h"
 #include <stdio.h>
 #include <string.h>
 #include "../nrncvode/nrnneosm.h"
@@ -21,6 +21,7 @@ extern "C" {
 }
 
 int main(int argc, char** argv, char** env) {
+    printf("Hello Pramod\n");
 	nrn_isdouble(0,0,0);
 	nrn_main_launch = 1;
 #if 0
