@@ -7,13 +7,17 @@ import os
 import sys
 from pkg_resources import working_set
 from distutils.ccompiler import new_compiler
-from distutils.sysconfig import customize_compiler
+from distutils.sysconfig import customize_compiler, get_config_var
 
 
 def _set_default_compiler():
     """Set (dont overwrite) CC/CXX so that apps dont use the build-time ones"""
     ccompiler = new_compiler()
     customize_compiler(ccompiler)
+    # xcrun wrapper must bring all args
+    if ccompiler.compiler[0] == 'xcrun':
+        ccompiler.compiler[0] = get_config_var("CC")
+        ccompiler.compiler_cxx[0] = get_config_var("CXX")
     os.environ.setdefault("CC", ccompiler.compiler[0])
     os.environ.setdefault("CXX", ccompiler.compiler_cxx[0])
 
