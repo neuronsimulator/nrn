@@ -366,9 +366,3 @@ install(FILES ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION share/nrn)
 install(FILES ${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h DESTINATION include)
 install(FILES ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h DESTINATION include/nrncvode)
 install(FILES ${PROJECT_BINARY_DIR}/nrnconf.h DESTINATION include)
-
-
-# executable shared_object possible? 
-#set_property(TARGET nrniv_lib PROPERTY POSITION_INDEPENDENT_CODE TRUE)
-#set_property(TARGET nrniv_lib PROPERTY CMAKE_ENABLE_EXPORTS TRUE)
-#target_link_options(nrniv_lib INTERFACE "-Wl,-e,_main")
