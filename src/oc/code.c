@@ -114,6 +114,7 @@ typedef struct Frame {	/* proc/func call stack frame */
 	Inst	*retpc;	/* where to resume after return */
 	Datum	*argn;	/* n-th argument on stack */
 	int	nargs;	/* number of arguments */
+	int	obtmp_stk_index; /* in case of error in ob.foo(...) */
 	Inst	*iter_stmt_begin; /* Iterator statement starts here */
 	Object	*iter_stmt_ob;	/* context of Iterator statement */
 	Object	*ob;	/* for stack frame debug message */
@@ -121,6 +122,7 @@ typedef struct Frame {	/* proc/func call stack frame */
 #define NFRAME	512 /* default size */
 #define nframe hoc_nframe
 static Frame *frame, *fp, *framelast; /* first, frame pointer, last */
+static int obtmp_stk_index; /* initialize to -1 */
 
 /* temporary object references come from this pool. This allows the
 stack to be aware if it is storing a temporary. We are trying to
@@ -263,6 +265,31 @@ static void frameobj_clean(Frame* f) {
 	}
 }
 
+static void frame_objauto_clean(Frame* f) { /* only on error */
+  int i;
+  Symbol* sp = f->sp;
+  Datum* stkp = f->argn + 2 + sp->u.u_proc->nauto*2; /* bottom? of stack of frame */
+  for (i = sp->u.u_proc->nobjauto; i > 0; --i) {
+    Object* ob = stkp[-2*i].obj;
+    hoc_obj_unref(ob);
+  }
+  /* clean OBJECTTMP ob of ob.meth(...) */
+  if (f->obtmp_stk_index >= 0) {
+    stkp = f->argn - 2*f->nargs;
+    if ((int)(stkp - stack) != f->obtmp_stk_index) {
+      printf("Stack index inconsistency %d != %d in error cleanup of ob of ob.meth...\n",
+        (int)(stkp - stack), f->obtmp_stk_index);
+    }
+    if (stkp[1].i == OBJECTTMP) {
+      Object* ob = f->argn[-2*f->nargs].obj;
+      hoc_stkobj_unref(ob);
+    }else if (stkp[1].i != OBJECTVAR){
+      printf("Stack item %d is neither OBJECTTMP nor OBJECTVAR in error clean up of ob of ob.meth...\n",
+        (int)(stkp - stack));
+    }
+  }
+}
+
 void hoc_init_space(void)	/* create space for stack and code */
 {
 	if (nframe == 0) {
@@ -277,6 +304,7 @@ void hoc_init_space(void)	/* create space for stack and code */
 	fp = frame = (Frame *)emalloc(sizeof(Frame)*nframe);
 	framelast = frame + nframe;
 	hoc_temp_obj_pool_ = (Object**)emalloc(sizeof(Object*)*TOBJ_POOL_SIZE);
+	obtmp_stk_index = -1;
 }
 
 #define MAXINITFCNS 10
@@ -308,6 +336,25 @@ void hoc_on_init_register(Pfrv pf)
 	}
 }
 
+static void frame_clean_on_err(Frame* f) {
+  if (obtmp_stk_index >= 0) {
+    Datum* stkp = stack + obtmp_stk_index;
+    if (stkp[1].i == OBJECTTMP) {
+      Object* ob = stkp[0].obj;
+      hoc_stkobj_unref(ob);
+    }else if (stkp[1].i != OBJECTVAR) {
+      printf("Stack item %d is neither OBJECTTMP nor OBJECTVAR in error clean up of ob of ob.meth...\n",
+        obtmp_stk_index);
+    }
+    obtmp_stk_index = -1;
+  }
+  while(fp > f) {
+    frame_objauto_clean(fp);
+    frameobj_clean(fp);
+    --fp;
+  }
+}
+
 void initcode(void)	/* initialize for code generation */
 {
 	int i;
@@ -321,10 +368,7 @@ fprintf(stderr, "errno set %d times on last execution\n", hoc_errno_count);
 	hoc_unref_defer();
 
 if (tobj_count) {
-	while(fp < frame) {
-		frameobj_clean(fp);
-		--fp;
-	}
+	frame_clean_on_err(frame);
 #if DEBUG_GARBAGE
 	if (tobj_count) {
 		printf("initcode failed with %d left\n", tobj_count);
@@ -395,10 +439,7 @@ void oc_restore_code(
 	progbase = *a1;
 	progp = *a2;
 	if (tobj_count > *a12) {
-		while(fp > *a4) {
-			frameobj_clean(fp);
-			--fp;
-		}
+		frame_clean_on_err(*a4);
 #if DEBUG_GARBAGE
 if (tobj_count != *a12) {
 	printf("oc_restore_code tobj_count=%d should be %d\n", tobj_count, *a12);
@@ -1250,6 +1291,15 @@ Fprintf(stderr, "%s", hoc_object_name(*f->argn[(j - f->nargs)*2].pobj));
 	}
 }
 
+void nrn_obtmp_stk_index_on_err(int i) {
+	if (i < 0) {
+		obtmp_stk_index = -1;
+	}else{
+		obtmp_stk_index = (int)(stackp - stack) - 2*i - 2;
+		assert(obtmp_stk_index >= 0);
+	}
+}
+
 void push_frame(Symbol* sp, int narg) { /* helpful for explicit function calls */
 	if (++fp >= framelast) {
 		--fp;
@@ -1259,6 +1309,8 @@ void push_frame(Symbol* sp, int narg) { /* helpful for explicit function calls *
 	fp->nargs = narg;
 	fp->argn = stackp - 2;	/* last argument */
 	fp->ob = hoc_thisobject;
+	fp->obtmp_stk_index = obtmp_stk_index;
+	obtmp_stk_index = -1;
 }
 
 void pop_frame(void) {
@@ -1282,8 +1334,9 @@ void call(void)		/* call a function */
 	fp->nargs = pc[1].i;
 	fp->retpc = pc + 2;
 	fp->ob = hoc_thisobject;
-	/*SUPPRESS 26*/
 	fp->argn = stackp - 2;	/* last argument */
+	fp->obtmp_stk_index = obtmp_stk_index;
+	obtmp_stk_index = -1;
 	BBSPOLL
 #if CABLE
 	isec = nrn_isecstack();
