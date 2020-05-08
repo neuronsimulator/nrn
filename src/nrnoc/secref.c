@@ -45,7 +45,7 @@ static hoc_Item** sec2pitm(Section* sec) {
 
 /*ARGSUSED*/
 static void* cons(Object* ho) {
-	Section* sec = chk_access();
+	Section* sec = nrn_secarg(1);
 	section_ref(sec);
 	return (void*)(sec);
 }

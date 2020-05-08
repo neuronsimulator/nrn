@@ -47,17 +47,19 @@ static void destructor(void* v)
 	freelist(&sl);
 }
 
-static Section* arg1() {
-  if (ifarg(1) && nrnpy_o2sec_p_) {
-    Object* o = *hoc_objgetarg(1);		
+Section* nrn_secarg(int i) {
+#if USE_PYTHON
+  if (ifarg(i) && nrnpy_o2sec_p_) {
+    Object* o = *hoc_objgetarg(i);		
     return (*nrnpy_o2sec_p_)(o);
   }
+#endif
   return chk_access();
 }
 
 static double append(void* v)
 {
-	Section* sec = arg1();
+	Section* sec = nrn_secarg(1);
 	lvappendsec_and_ref(v, sec);
 	return 1.;
 }
@@ -79,7 +81,7 @@ static double children(void* v)
 {
 	Section* sec;
 	List* sl;
-	sec = arg1();
+	sec = nrn_secarg(1);
 	sl = (List*)v;
 	children1(sl, sec);
 	return 1.;
@@ -109,7 +111,7 @@ static double subtree(void* v)
 {
 	Section* sec;
 	List* sl;
-	sec = arg1();
+	sec = nrn_secarg(1);
 	sl = (List*)v;
 	subtree1(sl, sec);
 	return 1.;
@@ -120,7 +122,7 @@ static double wholetree(void* v)
 	List* sl;
 	Section* s, *sec, *ch;
 	Item* i, *j, *first, *last;
-	sec = arg1();
+	sec = nrn_secarg(1);
 	sl = (List*)v;
 	/*find root*/
 	for (s = sec; s->parentsec; s = s->parentsec) {}
@@ -161,7 +163,7 @@ static double seclist_remove(void* v)
 #else
     if (!ifarg(1)) {
 #endif
-	sec = arg1();
+	sec = nrn_secarg(1);
 	ITERATE_REMOVE(q, q1, sl) /*{*/
 		if (sec == q->element.sec) {
 			delete(q);
@@ -228,7 +230,7 @@ static double contains(void* v)
 	Item* q, *q1;
 	List* sl = (List*)v;
 	hoc_return_type_code = 2; /* boolean */
-	s = arg1();
+	s = nrn_secarg(1);
 	ITERATE_REMOVE(q, q1, sl) /*{*/
 		if (hocSEC(q) == s) {
 			return 1.;

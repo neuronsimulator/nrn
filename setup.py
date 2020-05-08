@@ -305,6 +305,7 @@ def setup_package():
         version=__version__,
         package_dir={'': NRN_PY_ROOT},
         packages=py_packages,
+        package_data={'neuron': ['*.dat']},
         ext_modules=extensions,
         scripts=[
             os.path.join(NRN_PY_SCRIPTS, f)
