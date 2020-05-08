@@ -2,6 +2,7 @@
 # Set various variables used in template files
 # =============================================================================
 # TODO: for nrn.defaults but these are repeated in cmake_config/CMakeLists.txt
+set(CMAKE_VERBOSE_MAKEFILE on)
 set(modsubdir ${CMAKE_SYSTEM_PROCESSOR})
 
 # Switch between binary special and script-based special
