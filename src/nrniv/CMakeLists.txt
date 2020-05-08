@@ -365,7 +365,7 @@ endif()
 install(FILES ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION share/nrn)
 install(FILES ${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h DESTINATION include)
 install(FILES ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h DESTINATION include/nrncvode)
-
+install(FILES ${PROJECT_BINARY_DIR}/nrnconf.h DESTINATION include)
 
 
 # executable shared_object possible? 

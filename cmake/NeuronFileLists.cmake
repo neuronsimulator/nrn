@@ -24,7 +24,6 @@ set(HEADER_FILES_TO_INSTALL
     nrn_ansi.h
     nrnapi.h
     nrnassrt.h
-    nrnconf.h
     nrncvode.h
     nrnisaac.h
     nrniv_mf.h
