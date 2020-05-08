@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include <stdio.h>
 #include <string.h>
 #include "../nrncvode/nrnneosm.h"
