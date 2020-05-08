@@ -580,11 +580,10 @@ class _IntracellularSpecies(_SpeciesMathable):
             if self in _intracellular_diffusion_objects:
                 del _intracellular_diffusion_objects[self]
                 # remove the grid id
-                if hasattr(self,'_grid_id'):
-                    for sp in _intracellular_diffusion_objects:
-                        if sp._grid_id > self._grid_id:
-                            sp._grid_id -= 1
-                    _delete_by_id(self._grid_id)
+                for sp in _intracellular_diffusion_objects:
+                    if sp._grid_id > self._grid_id:
+                        sp._grid_id -= 1
+                _delete_by_id(self._grid_id)
                 # remove any node.include_flux for the extracellular species.
                 from . import node
                 newflux = {'index': [], 'type': [], 'source': [], 'scale': [], 'region': []}
@@ -984,11 +983,10 @@ class _ExtracellularSpecies(_SpeciesMathable):
             if self in _extracellular_diffusion_objects:
                 del _extracellular_diffusion_objects[self]
                 # remove the grid id
-                if hasattr(self,'_grid_id'):
-                    for sp in _extracellular_diffusion_objects:
-                        if sp._grid_id > self._grid_id:
-                            sp._grid_id -= 1
-                    _delete_by_id(self._grid_id)
+                for sp in _extracellular_diffusion_objects:
+                    if sp._grid_id > self._grid_id:
+                        sp._grid_id -= 1
+                _delete_by_id(self._grid_id)
                 # remove any node.include_flux for the extracellular species.
                 from . import node
                 newflux = {'index': [], 'type': [], 'source': [], 'scale': [], 'region': []}
