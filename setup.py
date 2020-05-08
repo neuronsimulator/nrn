@@ -311,6 +311,7 @@ def setup_package():
             for f in os.listdir(NRN_PY_SCRIPTS)
             if f[0] != '_'
         ],
+        include_package_data=True,
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),
         install_requires=['numpy>=1.9.3'],
         tests_require=["flake8", "pytest"],
