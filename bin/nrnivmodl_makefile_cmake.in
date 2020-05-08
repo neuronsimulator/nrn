@@ -13,7 +13,7 @@ UserLDFLAGS =
 bindir := ${ROOT}/@CMAKE_INSTALL_BINDIR@
 libdir := ${ROOT}/@CMAKE_INSTALL_LIBDIR@
 incdir := ${ROOT}/@CMAKE_INSTALL_INCLUDEDIR@
-datadir:= ${ROOT}/@CMAKE_INSTALL_DATADIR@/
+datadir:= ${ROOT}/@CMAKE_INSTALL_DATADIR@
 datadir_lib := ${ROOT}/@CMAKE_INSTALL_DATADIR@/lib
 
 # Additional variables set in CMAKE usable here
