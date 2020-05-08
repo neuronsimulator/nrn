@@ -305,16 +305,13 @@ def setup_package():
         version=__version__,
         package_dir={'': NRN_PY_ROOT},
         packages=py_packages,
-        package_data={
-            'neuron': ['help_data.dat']
-        },
+        package_data={'neuron': ['*.dat']},
         ext_modules=extensions,
         scripts=[
             os.path.join(NRN_PY_SCRIPTS, f)
             for f in os.listdir(NRN_PY_SCRIPTS)
             if f[0] != '_'
         ],
-        include_package_data=True,
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),
         install_requires=['numpy>=1.9.3'],
         tests_require=["flake8", "pytest"],
