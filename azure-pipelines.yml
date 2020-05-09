@@ -10,8 +10,10 @@ jobs:
   displayName: 'Ubuntu (18.04), GCC 7.5'
   strategy:
     matrix:
-      Python35:
+      Python27:
         python.version: '2.7'
+      Python35:
+        python.version: '3.5'
       Python36:
         python.version: '3.6'
       Python37:
@@ -34,6 +36,8 @@ jobs:
     EXTRA_PATH: '/usr/local/opt/flex/bin:/usr/local/opt/bison/bin'
   strategy:
     matrix:
+      Python27:
+        python.version: '2.7'
       Python35:
         python.version: '3.5'
       Python36:
