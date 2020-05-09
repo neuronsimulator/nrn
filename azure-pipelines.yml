@@ -45,18 +45,48 @@ jobs:
 #  MANYLINUX_NRN_CONTAINER: neuronsimulator/neuron_wheel
 #  MACOSX_DEPLOYMENT_TARGET: 10.9
 
-- job: 'ManyLinuxWheels'
+  #- job: 'ManyLinuxWheels'
+  #  pool:
+  #    vmImage: 'ubuntu-18.04'
+  #  steps:
+  #  - script: |
+  #      docker run --rm \
+  #        -w /root/nrn \
+  #        -v $PWD:/root/nrn \
+  #        'neuronsimulator/neuron_wheel' \
+  #        packaging/python/build_wheels.bash linux
+  #    displayName: Building ManyLinux Wheels
+  #  - script: |
+  #      ls -lh wheelhouse/
+  #    displayName: Show and copy wheels
+  #
+- job: 'MacOSWheels'
   pool:
-    vmImage: 'ubuntu-18.04'
+    vmImage: 'macOS-10.15'
   steps:
-  - script: printenv
+  - checkout: self
+    submodules: false
   - script: |
-      docker run --rm \
-        -w /root/nrn \
-        -v $PWD:/root/nrn \
-        'neuronsimulator/neuron_wheel' \
-        packaging/python/build_wheels.bash linux
-    displayName: Building ManyLinux Wheels
+      brew cask install xquartz
+      brew install flex bison mpich
+      brew unlink mpich && brew install openmpi
+    displayName: 'Install OSX System Depdendencies'
+  - script: |
+      set -e -x
+      for version in '3.7.5' '3.8.0'
+      do
+        installer=python-${version}-macosx10.9.pkg
+        url=https://www.python.org/ftp/python/$version/$installer
+        curl $url > $installer
+        sudo installer -pkg $installer -target /
+      done
+    displayName: 'Install Python from python.org'
+  - script: |
+      export MACOSX_DEPLOYMENT_TARGET=10.9
+      export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
+      export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+      packaging/python/build_wheels.bash osx
+    displayName: Building MacOS Wheels
   - script: |
       ls -lh wheelhouse/
     displayName: Show and copy wheels
