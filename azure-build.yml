@@ -1,0 +1,21 @@
+steps:
+  - checkout: self
+    submodules: true
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.8'
+  - script: |
+      python -m pip install -U pip setuptools wheel
+      python -m pip install 'Jinja2>=2.9.3' 'PyYAML>=3.13' 'pytest' 'sympy>=1.3' 'scipy' 'cython'
+    displayName: 'Install Python Depdendencies'
+  - script: |
+      mkdir -p $(Build.Repository.LocalPath)/build
+      cd $(Build.Repository.LocalPath)/build
+      cmake .. -DCMAKE_INSTALL_PREFIX=$(INSTALL_DIR) -DNRN_ENABLE_CORENEURON=ON
+      make -j 2 install
+    displayName: 'Build and Install'
+  - script: |
+      PATH=$(INSTALL_DIR)/bin:$PATH
+      PYTHONPATH=$(INSTALL_DIR)/lib/python:$PYTHONPATH
+      python -c 'import neuron; neuron.test()'
+    displayName: 'Run Tests'
