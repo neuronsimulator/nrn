@@ -1,25 +1,36 @@
 #=============================================================================
 # Azure Pipeline NEURON settings
 #=============================================================================
+strategy:
+  matrix:
+    Python27:
+      python.version: '2.7'
+      image.linux: 'ubuntu-16.04'
+      image.osx: 'macOS-10.14'
+    Python35:
+      python.version: '3.5'
+      image.linux: 'ubuntu-16.04'
+      image.osx: 'macOS-10.14'
+    Python36:
+      python.version: '3.6'
+      image.linux: 'ubuntu-18.04'
+      image.osx: 'macOS-10.15'
+    Python37:
+      python.version: '3.7'
+      image.linux: 'ubuntu-18.04'
+      image.osx: 'macOS-10.15'
+    Python38:
+      python.version: '3.8'
+      image.linux: 'ubuntu-18.04'
+      image.osx: 'macOS-10.15'
 variables:
    INSTALL_DIR: $(Agent.HomeDirectory)/install
 jobs:
-- job: 'ubuntu1804'
+- job: 'linux'
   pool:
-    vmImage: 'ubuntu-18.04'
-  displayName: 'Ubuntu (18.04), GCC 7.5'
-  strategy:
-    matrix:
-      Python27:
-        python.version: '2.7'
-      Python35:
-        python.version: '3.5'
-      Python36:
-        python.version: '3.6'
-      Python37:
-        python.version: '3.7'
-      Python38:
-        python.version: '3.8'
+    vmImage: $(image.linux)
+  condition: ne('${{ python.version }}', '3.5')
+  displayName: "$(image.linux) - python $(python.version)"
   steps:
   - script: |
       sudo apt update
@@ -28,24 +39,13 @@ jobs:
     displayName: 'Install System Depdendencies'
   - template: azure-build.yml
 
-- job: 'osx1015'
+- job: 'osx'
   pool:
-    vmImage: 'macOS-10.15'
-  displayName: 'MacOS (10.15), AppleClang 11.03'
+    vmImage: $(image.osx)
+  condition: ne('${{ python.version }}', '3.6')
+  displayName: "$(image.osx) - python $(python.version)"
   variables:
     EXTRA_PATH: '/usr/local/opt/flex/bin:/usr/local/opt/bison/bin'
-  strategy:
-    matrix:
-      Python27:
-        python.version: '2.7'
-      Python35:
-        python.version: '3.5'
-      Python36:
-        python.version: '3.6'
-      Python37:
-        python.version: '3.7'
-      Python38:
-        python.version: '3.8'
   steps:
   - script: |
       brew cask install xquartz
