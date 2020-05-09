@@ -5,52 +5,42 @@ strategy:
   matrix:
     Python27:
       python.version: '2.7'
-      image.linux: 'ubuntu-16.04'
-      image.osx: 'macOS-10.14'
+      image.name: 'ubuntu-16.04'
     Python35:
       python.version: '3.5'
-      image.linux: 'ubuntu-16.04'
-      image.osx: 'macOS-10.14'
-    Python36:
-      python.version: '3.6'
-      image.linux: 'ubuntu-18.04'
-      image.osx: 'macOS-10.15'
+      image.name: 'ubuntu-16.04'
     Python37:
       python.version: '3.7'
-      image.linux: 'ubuntu-18.04'
-      image.osx: 'macOS-10.15'
+      image.name: 'ubuntu-18.04'
+    Python36:
+      python.version: '3.6'
+      image.name: 'macOS-10.14'
     Python38:
       python.version: '3.8'
-      image.linux: 'ubuntu-18.04'
-      image.osx: 'macOS-10.15'
+      image.name: 'macOS-10.15'
+
 variables:
    INSTALL_DIR: $(Agent.HomeDirectory)/install
-jobs:
-- job: 'linux'
-  pool:
-    vmImage: $(image.linux)
-  condition: ne('${{ python.version }}', '3.5')
-  displayName: "$(image.linux) - python $(python.version)"
-  steps:
-  - script: |
-      sudo apt update
-      sudo apt install -y flex bison doxygen libopenmpi-dev \
-                          libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin libncurses-dev
-    displayName: 'Install System Depdendencies'
-  - template: azure-build.yml
 
-- job: 'osx'
-  pool:
-    vmImage: $(image.osx)
-  condition: ne('${{ python.version }}', '3.6')
-  displayName: "$(image.osx) - python $(python.version)"
-  variables:
-    EXTRA_PATH: '/usr/local/opt/flex/bin:/usr/local/opt/bison/bin'
-  steps:
-  - script: |
-      brew cask install xquartz
-      brew install flex bison doxygen mpich
-      brew unlink mpich && brew install openmpi
-      echo $'[install]\nprefix='>$(Agent.HomeDirectory)/.pydistutils.cfg
-    displayName: 'Install System Depdendencies'
-  - template: azure-build.yml
+pool:
+  vmImage: $(image.name)
+
+steps:
+
+- script: |
+    sudo apt update
+    sudo apt install -y flex bison doxygen libopenmpi-dev \
+                        libmpich-dev libx11-dev libxcomposite-dev \
+                        mpich openmpi-bin libncurses-dev
+  condition: eq(variables['agent.os'], 'Linux')
+  displayName: 'Install Linux System Depdendencies'
+
+- script: |
+    brew cask install xquartz
+    brew install flex bison doxygen mpich
+    brew unlink mpich && brew install openmpi
+    echo $'[install]\nprefix='>$(Agent.HomeDirectory)/.pydistutils.cfg
+  condition: eq(variables['agent.os'], 'Darwin')
+  displayName: 'Install OSX System Depdendencies'
+
+- template: azure-build.yml
