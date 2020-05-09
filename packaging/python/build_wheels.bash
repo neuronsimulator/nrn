@@ -1,3 +1,4 @@
+#!/bin/bash
 # A script to loop over the available pythons installed
 # on Linux/OSX and build wheels
 #
@@ -102,7 +103,7 @@ build_wheel_osx() {
 case "$1" in
 
   linux)
-    MPI_INCLUDE_HEADERS="/opt/openmpi/include;/opt/mpich/include;/opt/mpt/include"
+    MPI_INCLUDE_HEADERS="/opt/openmpi/include;/opt/mpich/include"
     for py_bin in /opt/python/cp3*/bin/python; do
         build_wheel_linux "$py_bin" "$2" "$MPI_INCLUDE_HEADERS"
     done

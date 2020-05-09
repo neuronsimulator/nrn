@@ -1,3 +1,4 @@
+#!/bin/bash
 # A simple set of tests checking if a wheel is working correctly
 set -e
 

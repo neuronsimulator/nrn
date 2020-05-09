@@ -1,6 +1,6 @@
 steps:
   - checkout: self
-    submodules: true
+    submodules: false
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '$(python.version)'
