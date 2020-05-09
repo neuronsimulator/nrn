@@ -3,19 +3,19 @@
 #=============================================================================
 strategy:
   matrix:
-    Python27:
+    Python27-Ubuntu16:
       python.version: '2.7'
       image.name: 'ubuntu-16.04'
-    Python35:
+    Python35-Ubuntu16:
       python.version: '3.5'
       image.name: 'ubuntu-16.04'
-    Python37:
+    Python37-Ubuntu18:
       python.version: '3.7'
       image.name: 'ubuntu-18.04'
-    Python36:
+    Python36-OSX14:
       python.version: '3.6'
       image.name: 'macOS-10.14'
-    Python38:
+    Python38-OSX15:
       python.version: '3.8'
       image.name: 'macOS-10.15'
 
