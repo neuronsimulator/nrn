@@ -63,30 +63,50 @@ jobs:
 - job: 'MacOSWheels'
   pool:
     vmImage: 'macOS-10.15'
+  strategy:
+    matrix:
+      Python35:
+        python.version: '3.5.4'
+      Python36:
+        python.version: '3.6.8'
+      Python37:
+        python.version: '3.7.7'
+      Python38:
+        python.version: '3.8.2'
   steps:
   - checkout: self
     submodules: false
+  - script: |
+      set -e -x
+      if [ "$(python.version)" == "3.5.4" ]; then
+        installer=python-$(python.version)-macosx10.6.pkg
+      else
+        installer=python-$(python.version)-macosx10.9.pkg
+      fi
+      url=https://www.python.org/ftp/python/$(python.version)/$installer
+      curl $url > $installer
+      sudo installer -pkg $installer -target /
+    displayName: 'Install Python from python.org'
   - script: |
       brew cask install xquartz
       brew install flex bison mpich
       brew unlink mpich && brew install openmpi
     displayName: 'Install OSX System Depdendencies'
   - script: |
-      set -e -x
-      for version in '3.7.5' '3.8.0'
-      do
-        installer=python-${version}-macosx10.9.pkg
-        url=https://www.python.org/ftp/python/$version/$installer
-        curl $url > $installer
-        sudo installer -pkg $installer -target /
-      done
-    displayName: 'Install Python from python.org'
-  - script: |
       export MACOSX_DEPLOYMENT_TARGET=10.9
       export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
       export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
       packaging/python/build_wheels.bash osx
-    displayName: Building MacOS Wheels
+    displayName: 'Building MacOS Wheel'
   - script: |
       ls -lh wheelhouse/
-    displayName: Show and copy wheels
+    displayName: 'Show wheel'
+  - task: TwineAuthenticate@1
+    inputs:
+      pythonUploadServiceConnection: AzureToTestPypiOrg
+  - script: |
+      set -x
+      python -m pip install twine
+      cat $(PYPIRC_PATH) || echo "HELL"
+      python -m twine upload --verbose --skip-existing --repository neuron --config-file $(PYPIRC_PATH) wheelhouse/*.whl
+    displayName: 'OSX Release'
