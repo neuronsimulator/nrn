@@ -134,6 +134,16 @@ class NeuronTestCase(unittest.TestCase):
                    error = 1
         assert(error == 0)
         return 0
+    
+    def testHelp(self):
+        error = False
+        try:
+            help(h.xpanel)
+        except:
+            print("'help(h.xpanel)' failed")
+            error = True
+        self.assertFalse(error)
+        return 0
 
 
     def testRxDexistence(self):
