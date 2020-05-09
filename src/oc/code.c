@@ -265,23 +265,33 @@ static void frameobj_clean(Frame* f) {
 	}
 }
 
+/* unref OBJECTTMP items on the stack frame associated with localobj
+   along with the potential OBJECTTMP associated with ob of ob.meth(...)
+   in which an error occurs before meth returns.
+*/
 static void frame_objauto_clean(Frame* f) { /* only on error */
   int i;
   Symbol* sp = f->sp;
-  Datum* stkp = f->argn + 2 + sp->u.u_proc->nauto*2; /* bottom? of stack of frame */
+  /* argn is the nargs argument on the stack. Stack items come in pairs
+     so stack increments are always multiples of 2.
+     Here, stkp is the last+1 localobj slot pair on the stack.
+  */
+  Datum* stkp = f->argn + 2 + sp->u.u_proc->nauto*2;
   for (i = sp->u.u_proc->nobjauto; i > 0; --i) {
     Object* ob = stkp[-2*i].obj;
     hoc_obj_unref(ob);
   }
   /* clean OBJECTTMP ob of ob.meth(...) */
   if (f->obtmp_stk_index >= 0) {
+    /* The stack item before arg items is ob of ob.meth(...) */
     stkp = f->argn - 2*f->nargs;
     if ((int)(stkp - stack) != f->obtmp_stk_index) {
       printf("Stack index inconsistency %d != %d in error cleanup of ob of ob.meth...\n",
         (int)(stkp - stack), f->obtmp_stk_index);
     }
+    /* unreffed only if OBJECTTMP */
     if (stkp[1].i == OBJECTTMP) {
-      Object* ob = f->argn[-2*f->nargs].obj;
+      Object* ob = stkp[0].obj;
       hoc_stkobj_unref(ob);
     }else if (stkp[1].i != OBJECTVAR){
       printf("Stack item %d is neither OBJECTTMP nor OBJECTVAR in error clean up of ob of ob.meth...\n",
@@ -338,6 +348,12 @@ void hoc_on_init_register(Pfrv pf)
 
 static void frame_clean_on_err(Frame* f) {
   if (obtmp_stk_index >= 0) {
+    /* Typically means an error occurred in ob.xxx where xxx is not a method
+       so that obtmp_stk_index did not get copied to a stack frame and so
+       was not reset to 0.
+       Note that stack items come in pairs so that stkp[0] is the item and
+       stkp[1].i is the itemtype.
+    */
     Datum* stkp = stack + obtmp_stk_index;
     if (stkp[1].i == OBJECTTMP) {
       Object* ob = stkp[0].obj;
@@ -1295,6 +1311,10 @@ void nrn_obtmp_stk_index_on_err(int i) {
 	if (i < 0) {
 		obtmp_stk_index = -1;
 	}else{
+		/* The stack index for ob in the context ob.name...
+		   stack items are in pairs of item, itemtype and hence
+		   the factor of 2.
+		*/
 		obtmp_stk_index = (int)(stackp - stack) - 2*i - 2;
 		assert(obtmp_stk_index >= 0);
 	}
