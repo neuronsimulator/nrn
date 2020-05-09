@@ -20,13 +20,13 @@ jobs:
   pool:
     vmImage: 'macOS-10.15'
   displayName: 'MacOS (10.15), AppleClang 11.03'
+  variables:
+    EXTRA_PATH: '/usr/local/opt/flex/bin:/usr/local/opt/bison/bin'
   steps:
   - script: |
       brew cask install xquartz
       brew install flex bison doxygen mpich
       brew unlink mpich && brew install openmpi
-      export echo $'[install]\nprefix='>$(Agent.HomeDirectory)/.pydistutils.cfg
-      export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
-      export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+      echo $'[install]\nprefix='>$(Agent.HomeDirectory)/.pydistutils.cfg
     displayName: 'Install System Depdendencies'
   - template: azure-build.yml
