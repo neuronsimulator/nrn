@@ -1,0 +1,61 @@
+#=============================================================================
+# Azure Pipeline NEURON settings
+#=============================================================================
+jobs:
+- job: 'ubuntu1604'
+  pool:
+    vmImage: 'ubuntu-18.04'
+  displayName: 'Ubuntu (18.04), GCC 7.5'
+  steps:
+  - checkout: self
+    submodules: true
+  - script: |
+      sudo apt update
+      sudo apt install -y flex bison doxygen libopenmpi-dev \
+                          libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin libncurses-dev
+      python3 -m pip install -U pip setuptools wheel
+      python3 -m pip install 'Jinja2>=2.9.3' 'PyYAML>=3.13' 'pytest' 'sympy>=1.3' 'scipy' 'cython'
+    displayName: 'Install Depdendencies'
+  - script: |
+      cd $(Build.Repository.LocalPath)
+      export PATH=/home/vsts/.local/bin:$PATH
+      mkdir -p build && cd build
+      cmake --version
+      cmake .. -DPYTHON_EXECUTABLE=$(which python3) -DCMAKE_INSTALL_PREFIX=$HOME/nrn -DNRN_ENABLE_CORENEURON=ON -DCMAKE_BUILD_TYPE=Release
+      make -j 2 install
+    displayName: 'Build'
+  - script: |
+      export PATH=$HOME/nrn/bin:$PATH
+      export PYTHONPATH=$PYTHONPATH:$HOME/nrn/lib/python
+      python3 --version
+      python3 -c 'import neuron; print(dir(neuron)); neuron.test()'
+    displayName: 'Run Tests'
+- job: 'osx1015'
+  pool:
+    vmImage: 'macOS-10.15'
+  displayName: 'MacOS (10.15), AppleClang 11.03'
+  steps:
+  - checkout: self
+    submodules: true
+  - script: |
+      brew cask install xquartz
+      brew install flex bison doxygen mpich
+      brew unlink mpich && brew install openmpi
+      python3 -m pip install -U pip setuptools wheel
+      python3 -m pip install 'Jinja2>=2.9.3' 'PyYAML>=3.13' 'pytest' 'sympy>=1.3'  'scipy' 'cython'
+    displayName: 'Install Depdendencies'
+  - script: |
+      cd $(Build.Repository.LocalPath)
+      echo $'[install]\nprefix='>$HOME/.pydistutils.cfg
+      export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
+      mkdir -p build && cd build
+      cmake .. -DPYTHON_EXECUTABLE=$(which python3) -DCMAKE_INSTALL_PREFIX=$HOME/nrn -DNRN_ENABLE_CORENEURON=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+      make -j 2 install
+    displayName: 'Build'
+  - script: |
+      export PATH=$HOME/nrn/bin:$PATH
+      export PYTHONPATH=$PYTHONPATH:$HOME/nrn/lib/python
+      python3 --version
+      /usr/local/bin/python3 -c 'import neuron; print(dir(neuron)); neuron.test()'
+    displayName: 'Run Tests'
+
