@@ -8,6 +8,16 @@ jobs:
   pool:
     vmImage: 'ubuntu-18.04'
   displayName: 'Ubuntu (18.04), GCC 7.5'
+  strategy:
+    matrix:
+      Python35:
+        python.version: '2.7'
+      Python36:
+        python.version: '3.6'
+      Python37:
+        python.version: '3.7'
+      Python38:
+        python.version: '3.8'
   steps:
   - script: |
       sudo apt update
@@ -22,6 +32,16 @@ jobs:
   displayName: 'MacOS (10.15), AppleClang 11.03'
   variables:
     EXTRA_PATH: '/usr/local/opt/flex/bin:/usr/local/opt/bison/bin'
+  strategy:
+    matrix:
+      Python35:
+        python.version: '3.5'
+      Python36:
+        python.version: '3.6'
+      Python37:
+        python.version: '3.7'
+      Python38:
+        python.version: '3.8'
   steps:
   - script: |
       brew cask install xquartz
