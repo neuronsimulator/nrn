@@ -58,7 +58,7 @@ build_wheel_linux() {
     echo " - Building..."
     rm -rf dist build
     if [ "$2" == "--bare" ]; then
-        python setup.py bdist_wheel
+        python setup.py bdist_wheel --cmake-prefix=/opt/ncurses
     else
         python setup.py build_ext --cmake-prefix=/opt/ncurses --cmake-defs="NRN_MPI_DYNAMIC=$3" bdist_wheel
     fi
@@ -98,6 +98,17 @@ build_wheel_osx() {
     deactivate
 }
 
+# platform for which wheel to be build
+platform=$1
+
+# python version for which wheel to be built; 3* means all 3 versions
+python_wheel_version=3*
+if [ ! -z "$2" ]; then
+  python_wheel_version=$2
+fi
+
+# if to build non-dynamic mpi wheel (TODO: should be removed)
+bare=$3
 
 # MAIN
 
@@ -105,25 +116,26 @@ case "$1" in
 
   linux)
     MPI_INCLUDE_HEADERS="/opt/openmpi/include;/opt/mpich/include"
-    for py_bin in /opt/python/cp3*/bin/python; do
-        build_wheel_linux "$py_bin" "$2" "$MPI_INCLUDE_HEADERS"
+    python_wheel_version=${python_wheel_version//[-._]/}
+    for py_bin in /opt/python/cp${python_wheel_version}/bin/python; do
+        build_wheel_linux "$py_bin" "$3" "$MPI_INCLUDE_HEADERS"
     done
     ;;
 
   osx)
     MPI_INCLUDE_HEADERS="/usr/local/opt/openmpi/include;/usr/local/opt/mpich/include"
-    for py_bin in /Library/Frameworks/Python.framework/Versions/3*/bin/python3; do
-        build_wheel_osx "$py_bin" "$2" "$MPI_INCLUDE_HEADERS"
+    for py_bin in /Library/Frameworks/Python.framework/Versions/${python_wheel_version}/bin/python3; do
+        build_wheel_osx "$py_bin" "$3" "$MPI_INCLUDE_HEADERS"
     done
     ;;
 
   travis)
     if [ "$TRAVIS_OS_NAME" == "osx" ]; then
         MPI_INCLUDE_HEADERS="/usr/local/opt/openmpi/include;/usr/local/opt/mpich/include"
-        build_wheel_osx $(which python3) "$2" "$MPI_INCLUDE_HEADERS"
+        build_wheel_osx $(which python3) "$3" "$MPI_INCLUDE_HEADERS"
     else
         MPI_INCLUDE_HEADERS="/usr/lib/x86_64-linux-gnu/openmpi/include;/usr/include/mpich"
-        build_wheel_linux $(which python3) "$2" "$MPI_INCLUDE_HEADERS"
+        build_wheel_linux $(which python3) "$3" "$MPI_INCLUDE_HEADERS"
     fi
     ls wheelhouse/
     ;;

@@ -41,25 +41,33 @@ jobs:
 #    displayName: 'Install OSX System Depdendencies'
 #  - template: azure-build.yml
 #
-#variables:
-#  MANYLINUX_NRN_CONTAINER: neuronsimulator/neuron_wheel
-#  MACOSX_DEPLOYMENT_TARGET: 10.9
 
-  #- job: 'ManyLinuxWheels'
-  #  pool:
-  #    vmImage: 'ubuntu-18.04'
-  #  steps:
-  #  - script: |
-  #      docker run --rm \
-  #        -w /root/nrn \
-  #        -v $PWD:/root/nrn \
-  #        'neuronsimulator/neuron_wheel' \
-  #        packaging/python/build_wheels.bash linux
-  #    displayName: Building ManyLinux Wheels
-  #  - script: |
-  #      ls -lh wheelhouse/
-  #    displayName: Show and copy wheels
-  #
+- job: 'ManyLinuxWheels'
+  pool:
+    vmImage: 'ubuntu-18.04'
+  steps:
+  - script: |
+      docker run --rm \
+        -w /root/nrn \
+        -v $PWD:/root/nrn \
+        'neuronsimulator/neuron_wheel' \
+        packaging/python/build_wheels.bash linux $(python.azure.version)
+    displayName: 'Building ManyLinux Wheel'
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '$(python.azure.version)'
+  - script: |
+      packaging/python/test_wheels.sh $(which python) wheelhouse/*.whl
+    displayName: 'Test with Azure System Python'
+  - task: TwineAuthenticate@1
+    inputs:
+      pythonUploadServiceConnection: AzureNeuronTestPypi
+  - script: |
+      set -x
+      python -m pip install twine
+      #python -m twine upload --verbose --skip-existing -r neurontestpypi --config-file $(PYPIRC_PATH) wheelhouse/*.whl
+    displayName: 'Upload wheel to test.pypi.org'
+
 - job: 'MacOSWheels'
   pool:
     vmImage: 'macOS-10.15'
@@ -77,8 +85,6 @@ jobs:
       Python38:
         python.azure.version: '3.8'
         python.org.version: '3.8.2'
-  variables:
-    SKIP_EMBEDED_PYTHON_TEST: false
   steps:
   - checkout: self
     submodules: false
@@ -103,7 +109,7 @@ jobs:
       export MACOSX_DEPLOYMENT_TARGET=10.9
       export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
       export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
-      packaging/python/build_wheels.bash osx
+      packaging/python/build_wheels.bash osx $(python.azure.version)
     displayName: 'Building MacOS Wheel'
   - script: |
       brew install python
@@ -123,5 +129,5 @@ jobs:
   - script: |
       set -x
       python -m pip install twine
-      python -m twine upload --verbose --skip-existing -r neurontestpypi --config-file $(PYPIRC_PATH) wheelhouse/*.whl
+      #python -m twine upload --verbose --skip-existing -r neurontestpypi --config-file $(PYPIRC_PATH) wheelhouse/*.whl
     displayName: 'Upload wheel to test.pypi.org'
