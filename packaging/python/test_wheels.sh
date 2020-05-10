@@ -156,7 +156,7 @@ fi
 # install neuron and neuron
 $python_exe -m pip install numpy
 $python_exe -m pip install $python_wheel
-$python_exe -m pip show neuron
+$python_exe -m pip show neuron || $python_exe -m pip show neuron-nightly
 
 # run tests
 test_wheel $(which python)
