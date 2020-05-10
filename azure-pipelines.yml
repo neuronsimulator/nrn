@@ -85,7 +85,8 @@ jobs:
       python -m pip install twine
       ls wheelhouse/*.whl
       #python -m twine upload --verbose --skip-existing -r neurontestpypi --config-file $(PYPIRC_PATH) wheelhouse/*.whl
-    displayName: 'Upload wheel to test.pypi.org'
+    condition: and(succeeded(), in(variables['Build.Reason'], 'Manual', 'Schedule'))
+    displayName: 'Upload wheel to pypi.org'
 
 - job: 'MacOSWheels'
   pool:
@@ -105,6 +106,12 @@ jobs:
         python.azure.version: '3.8'
         python.org.version: '3.8.2'
   steps:
+  - script: |
+      echo "XXXXXXXXXXXXXXXX"
+    condition: and(succeeded(), in(variables['Build.Reason'], 'Manual', 'Schedule'))
+  - script: |
+      echo "YYYYYYYYYYYYYYY"
+    condition: and(succeeded(), in(variables['Build.Reason'], 'IndividualCI'))
   - checkout: self
     submodules: false
     displayName: 'Clone Repository Without Submodules'
@@ -146,10 +153,10 @@ jobs:
     displayName: 'Test with Azure System Python'
   - task: TwineAuthenticate@1
     inputs:
-      pythonUploadServiceConnection: AzureNeuronTestPypi
+      pythonUploadServiceConnection: AzureNeuronPypiNightly
   - script: |
       set -x
       python -m pip install twine
-      ls wheelhouse/*.whl
-      #python -m twine upload --verbose --skip-existing -r neurontestpypi --config-file $(PYPIRC_PATH) wheelhouse/*.whl
-    displayName: 'Upload wheel to test.pypi.org'
+      #python -m twine upload --verbose --skip-existing -r NeuronPypiNightly --config-file $(PYPIRC_PATH) wheelhouse/*.whl
+    condition: and(succeeded(), in(variables['Build.Reason'], 'Manual', 'Schedule'))
+    displayName: 'Upload wheel to pypi.org'

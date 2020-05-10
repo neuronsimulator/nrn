@@ -101,7 +101,7 @@ build_wheel_osx() {
 # platform for which wheel to be build
 platform=$1
 
-# python version for which wheel to be built; 3* means all 3 versions
+# python version for which wheel to be built; 3* (default) means all python 3 versions
 python_wheel_version=3*
 if [ ! -z "$2" ]; then
   python_wheel_version=$2
@@ -124,7 +124,7 @@ case "$1" in
 
   osx)
     MPI_INCLUDE_HEADERS="/usr/local/opt/openmpi/include;/usr/local/opt/mpich/include"
-    for py_bin in /Library/Frameworks/Python.framework/Versions/${python_wheel_version}/bin/python3; do
+    for py_bin in /Library/Frameworks/Python.framework/Versions/${python_wheel_version}*/bin/python3; do
         build_wheel_osx "$py_bin" "$3" "$MPI_INCLUDE_HEADERS"
     done
     ;;
