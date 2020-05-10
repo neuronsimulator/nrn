@@ -1,6 +1,9 @@
 #=============================================================================
 # Azure Pipeline NEURON settings
 #=============================================================================
+
+variables:
+  NEURON_NIGHTLY_TAG: '-nightly'
 jobs:
 #- job: 'NativeBuilds'
 #  strategy:
@@ -45,6 +48,16 @@ jobs:
 - job: 'ManyLinuxWheels'
   pool:
     vmImage: 'ubuntu-18.04'
+  strategy:
+    matrix:
+      Python35:
+        python.azure.version: '3.5'
+      Python36:
+        python.azure.version: '3.6'
+      Python37:
+        python.azure.version: '3.7'
+      Python38:
+        python.azure.version: '3.8'
   steps:
   - script: |
       docker run --rm \
@@ -65,6 +78,7 @@ jobs:
   - script: |
       set -x
       python -m pip install twine
+      ls wheelhouse/*.whl
       #python -m twine upload --verbose --skip-existing -r neurontestpypi --config-file $(PYPIRC_PATH) wheelhouse/*.whl
     displayName: 'Upload wheel to test.pypi.org'
 
@@ -90,6 +104,10 @@ jobs:
     submodules: false
     displayName: 'Clone Repository Without Submodules'
   - script: |
+      printenv
+      env:
+        BUILD_REASON_CUSTOM: $(Build.Reason)
+      echo "-------> $BUILD_REASON : $BUILD_REASON_CUSTOM"
       set -e -x
       if [ "$(python.org.version)" == "3.5.4" ]; then
         installer=python-$(python.org.version)-macosx10.6.pkg
@@ -129,5 +147,6 @@ jobs:
   - script: |
       set -x
       python -m pip install twine
+      ls wheelhouse/*.whl
       #python -m twine upload --verbose --skip-existing -r neurontestpypi --config-file $(PYPIRC_PATH) wheelhouse/*.whl
     displayName: 'Upload wheel to test.pypi.org'
