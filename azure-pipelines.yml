@@ -36,51 +36,6 @@ jobs:
       sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
     displayName: 'Install Test System Depdendencies'
 
-  - template: azure-wheel-test.yaml
+  - template: azure-wheel-test.yml
 
 
-# Jobs to build OSX wheels natively
-- job: 'MacOSWheels'
-  pool:
-    vmImage: 'macOS-10.15'
-  strategy:
-    matrix:
-      Python35:
-        python.azure.version: '3.5'
-        python.org.version: '3.5.4'
-      Python36:
-        python.azure.version: '3.6'
-        python.org.version: '3.6.8'
-      Python37:
-        python.azure.version: '3.7'
-        python.org.version: '3.7.7'
-      Python38:
-        python.azure.version: '3.8'
-        python.org.version: '3.8.2'
-  steps:
-
-  - script: |
-      if [ "$(python.org.version)" == "3.5.4" ]; then
-        installer=python-$(python.org.version)-macosx10.6.pkg
-      else
-        installer=python-$(python.org.version)-macosx10.9.pkg
-      fi
-      url=https://www.python.org/ftp/python/$(python.org.version)/$installer
-      curl $url > $installer
-      sudo installer -pkg $installer -target /
-    displayName: 'Install Python from python.org'
-
-  - script: |
-      brew cask install xquartz
-      brew install flex bison mpich
-      brew unlink mpich && brew install openmpi
-    displayName: 'Install OSX System Depdendencies'
-
-  - script: |
-      export MACOSX_DEPLOYMENT_TARGET=10.9
-      export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
-      export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
-      packaging/python/build_wheels.bash osx $(python.azure.version)
-    displayName: 'Build MacOS Wheel'
-
-  - template: azure-wheel-test.yaml
