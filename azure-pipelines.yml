@@ -6,19 +6,19 @@ jobs:
 #  strategy:
 #    matrix:
 #      Python27-Ubuntu16:
-#        python.version: '2.7'
+#        python.azure.version: '2.7'
 #        image.name: 'ubuntu-16.04'
 #      Python35-Ubuntu16:
-#        python.version: '3.5'
+#        python.azure.version: '3.5'
 #        image.name: 'ubuntu-16.04'
 #      Python37-Ubuntu18:
-#        python.version: '3.7'
+#        python.azure.version: '3.7'
 #        image.name: 'ubuntu-18.04'
 #      Python36-OSX14:
-#        python.version: '3.6'
+#        python.azure.version: '3.6'
 #        image.name: 'macOS-10.14'
 #      Python38-OSX15:
-#        python.version: '3.8'
+#        python.azure.version: '3.8'
 #        image.name: 'macOS-10.15'
 #  variables:
 #     INSTALL_DIR: $(Agent.HomeDirectory)/install
@@ -66,27 +66,31 @@ jobs:
   strategy:
     matrix:
       Python35:
-        python.version: '3.5.4'
+        python.azure.version: '3.5'
+        python.org.version: '3.5.4'
       Python36:
-        python.version: '3.6.8'
+        python.azure.version: '3.6'
+        python.org.version: '3.6.8'
       Python37:
-        python.version: '3.7.7'
+        python.azure.version: '3.7'
+        python.org.version: '3.7.7'
       Python38:
-        python.version: '3.8.2'
+        python.azure.version: '3.8'
+        python.org.version: '3.8.2'
   variables:
-    SKIP_EMBEDED_PYTHON_TEST: true
+    SKIP_EMBEDED_PYTHON_TEST: false
   steps:
   - checkout: self
     submodules: false
     displayName: 'Clone Repository Without Submodules'
   - script: |
       set -e -x
-      if [ "$(python.version)" == "3.5.4" ]; then
-        installer=python-$(python.version)-macosx10.6.pkg
+      if [ "$(python.org.version)" == "3.5.4" ]; then
+        installer=python-$(python.org.version)-macosx10.6.pkg
       else
-        installer=python-$(python.version)-macosx10.9.pkg
+        installer=python-$(python.org.version)-macosx10.9.pkg
       fi
-      url=https://www.python.org/ftp/python/$(python.version)/$installer
+      url=https://www.python.org/ftp/python/$(python.org.version)/$installer
       curl $url > $installer
       sudo installer -pkg $installer -target /
     displayName: 'Install Python from python.org'
@@ -103,14 +107,14 @@ jobs:
     displayName: 'Building MacOS Wheel'
   - script: |
       brew install python
-      unset SKIP_EMBEDED_PYTHON_TEST
       packaging/python/test_wheels.sh /usr/local/bin/python3 wheelhouse/*.whl
-    condition: eq(variables['python.version'], '3.7.7')
+    condition: eq(variables['python.azure.version'], '3.7')
     displayName: 'Test with brew Python'
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '$(python.version)'
+      versionSpec: '$(python.azure.version)'
   - script: |
+      export SKIP_EMBEDED_PYTHON_TEST=true
       packaging/python/test_wheels.sh $(which python) wheelhouse/*.whl
     displayName: 'Test with Azure System Python'
   - task: TwineAuthenticate@1
