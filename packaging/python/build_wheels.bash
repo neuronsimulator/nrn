@@ -117,7 +117,7 @@ case "$1" in
   linux)
     MPI_INCLUDE_HEADERS="/opt/openmpi/include;/opt/mpich/include"
     python_wheel_version=${python_wheel_version//[-._]/}
-    for py_bin in /opt/python/cp${python_wheel_version}-cp${python_wheel_version}m/bin/python; do
+    for py_bin in /opt/python/cp${python_wheel_version}*/bin/python; do
         build_wheel_linux "$py_bin" "$3" "$MPI_INCLUDE_HEADERS"
     done
     ;;

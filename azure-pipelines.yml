@@ -63,12 +63,17 @@ jobs:
       docker run --rm \
         -w /root/nrn \
         -v $PWD:/root/nrn \
+        -e NEURON_NIGHTLY_TAG \
         'neuronsimulator/neuron_wheel' \
         packaging/python/build_wheels.bash linux $(python.azure.version)
     displayName: 'Building ManyLinux Wheel'
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '$(python.azure.version)'
+  - script: |
+      sudo apt update
+      sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
+    displayName: 'Install Test System Depdendencies'
   - script: |
       packaging/python/test_wheels.sh $(which python) wheelhouse/*.whl
     displayName: 'Test with Azure System Python'
@@ -105,9 +110,7 @@ jobs:
     displayName: 'Clone Repository Without Submodules'
   - script: |
       printenv
-      env:
-        BUILD_REASON_CUSTOM: $(Build.Reason)
-      echo "-------> $BUILD_REASON : $BUILD_REASON_CUSTOM"
+      echo "-------> $BUILD_REASON : $BUILD_REASON_CUSTOM $(Build.Reason)"
       set -e -x
       if [ "$(python.org.version)" == "3.5.4" ]; then
         installer=python-$(python.org.version)-macosx10.6.pkg
