@@ -1,49 +1,12 @@
 #=============================================================================
-# Azure Pipeline NEURON settings
+# Azure Pipeline settings
 #=============================================================================
 
+# Used for neuron-nightly wheel
 variables:
   NEURON_NIGHTLY_TAG: '-nightly'
+
 jobs:
-#- job: 'NativeBuilds'
-#  strategy:
-#    matrix:
-#      Python27-Ubuntu16:
-#        python.azure.version: '2.7'
-#        image.name: 'ubuntu-16.04'
-#      Python35-Ubuntu16:
-#        python.azure.version: '3.5'
-#        image.name: 'ubuntu-16.04'
-#      Python37-Ubuntu18:
-#        python.azure.version: '3.7'
-#        image.name: 'ubuntu-18.04'
-#      Python36-OSX14:
-#        python.azure.version: '3.6'
-#        image.name: 'macOS-10.14'
-#      Python38-OSX15:
-#        python.azure.version: '3.8'
-#        image.name: 'macOS-10.15'
-#  variables:
-#     INSTALL_DIR: $(Agent.HomeDirectory)/install
-#  pool:
-#    vmImage: $(image.name)
-#  steps:
-#  - script: |
-#      sudo apt update
-#      sudo apt install -y flex bison doxygen libopenmpi-dev \
-#                          libmpich-dev libx11-dev libxcomposite-dev \
-#                          mpich openmpi-bin libncurses-dev
-#    condition: eq(variables['agent.os'], 'Linux')
-#    displayName: 'Install Linux System Depdendencies'
-#  - script: |
-#      brew cask install xquartz
-#      brew install flex bison doxygen mpich
-#      brew unlink mpich && brew install openmpi
-#      echo $'[install]\nprefix='>$(Agent.HomeDirectory)/.pydistutils.cfg
-#    condition: eq(variables['agent.os'], 'Darwin')
-#    displayName: 'Install OSX System Depdendencies'
-#  - template: azure-build.yml
-#
 
 - job: 'ManyLinuxWheels'
   pool:
@@ -67,27 +30,16 @@ jobs:
         'neuronsimulator/neuron_wheel' \
         packaging/python/build_wheels.bash linux $(python.azure.version)
     displayName: 'Building ManyLinux Wheel'
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '$(python.azure.version)'
+
   - script: |
       sudo apt update
       sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
     displayName: 'Install Test System Depdendencies'
-  - script: |
-      packaging/python/test_wheels.sh $(which python) wheelhouse/*.whl
-    displayName: 'Test with Azure System Python'
-  - task: TwineAuthenticate@1
-    inputs:
-      pythonUploadServiceConnection: AzureNeuronTestPypi
-  - script: |
-      set -x
-      python -m pip install twine
-      ls wheelhouse/*.whl
-      #python -m twine upload --verbose --skip-existing -r neurontestpypi --config-file $(PYPIRC_PATH) wheelhouse/*.whl
-    condition: and(succeeded(), in(variables['Build.Reason'], 'Manual', 'Schedule'))
-    displayName: 'Upload wheel to pypi.org'
 
+  - template: azure-wheel-test.yaml
+
+
+# Jobs to build OSX wheels natively
 - job: 'MacOSWheels'
   pool:
     vmImage: 'macOS-10.15'
@@ -106,19 +58,8 @@ jobs:
         python.azure.version: '3.8'
         python.org.version: '3.8.2'
   steps:
+
   - script: |
-      echo "XXXXXXXXXXXXXXXX"
-    condition: and(succeeded(), in(variables['Build.Reason'], 'Manual', 'Schedule'))
-  - script: |
-      echo "YYYYYYYYYYYYYYY"
-    condition: and(succeeded(), in(variables['Build.Reason'], 'IndividualCI'))
-  - checkout: self
-    submodules: false
-    displayName: 'Clone Repository Without Submodules'
-  - script: |
-      printenv
-      echo "-------> $BUILD_REASON : $BUILD_REASON_CUSTOM $(Build.Reason)"
-      set -e -x
       if [ "$(python.org.version)" == "3.5.4" ]; then
         installer=python-$(python.org.version)-macosx10.6.pkg
       else
@@ -128,35 +69,18 @@ jobs:
       curl $url > $installer
       sudo installer -pkg $installer -target /
     displayName: 'Install Python from python.org'
+
   - script: |
       brew cask install xquartz
       brew install flex bison mpich
       brew unlink mpich && brew install openmpi
     displayName: 'Install OSX System Depdendencies'
+
   - script: |
       export MACOSX_DEPLOYMENT_TARGET=10.9
       export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
       export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
       packaging/python/build_wheels.bash osx $(python.azure.version)
-    displayName: 'Building MacOS Wheel'
-  - script: |
-      brew install python
-      packaging/python/test_wheels.sh /usr/local/bin/python3 wheelhouse/*.whl
-    condition: eq(variables['python.azure.version'], '3.7')
-    displayName: 'Test with brew Python'
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '$(python.azure.version)'
-  - script: |
-      export SKIP_EMBEDED_PYTHON_TEST=true
-      packaging/python/test_wheels.sh $(which python) wheelhouse/*.whl
-    displayName: 'Test with Azure System Python'
-  - task: TwineAuthenticate@1
-    inputs:
-      pythonUploadServiceConnection: AzureNeuronPypiNightly
-  - script: |
-      set -x
-      python -m pip install twine
-      #python -m twine upload --verbose --skip-existing -r NeuronPypiNightly --config-file $(PYPIRC_PATH) wheelhouse/*.whl
-    condition: and(succeeded(), in(variables['Build.Reason'], 'Manual', 'Schedule'))
-    displayName: 'Upload wheel to pypi.org'
+    displayName: 'Build MacOS Wheel'
+
+  - template: azure-wheel-test.yaml

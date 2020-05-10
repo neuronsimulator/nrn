@@ -1,0 +1,39 @@
+#- job: 'NativeBuilds'
+#  strategy:
+#    matrix:
+#      Python27-Ubuntu16:
+#        python.azure.version: '2.7'
+#        image.name: 'ubuntu-16.04'
+#      Python35-Ubuntu16:
+#        python.azure.version: '3.5'
+#        image.name: 'ubuntu-16.04'
+#      Python37-Ubuntu18:
+#        python.azure.version: '3.7'
+#        image.name: 'ubuntu-18.04'
+#      Python36-OSX14:
+#        python.azure.version: '3.6'
+#        image.name: 'macOS-10.14'
+#      Python38-OSX15:
+#        python.azure.version: '3.8'
+#        image.name: 'macOS-10.15'
+#  variables:
+#     INSTALL_DIR: $(Agent.HomeDirectory)/install
+#  pool:
+#    vmImage: $(image.name)
+#  steps:
+#  - script: |
+#      sudo apt update
+#      sudo apt install -y flex bison doxygen libopenmpi-dev \
+#                          libmpich-dev libx11-dev libxcomposite-dev \
+#                          mpich openmpi-bin libncurses-dev
+#    condition: eq(variables['agent.os'], 'Linux')
+#    displayName: 'Install Linux System Depdendencies'
+#  - script: |
+#      brew cask install xquartz
+#      brew install flex bison doxygen mpich
+#      brew unlink mpich && brew install openmpi
+#      echo $'[install]\nprefix='>$(Agent.HomeDirectory)/.pydistutils.cfg
+#    condition: eq(variables['agent.os'], 'Darwin')
+#    displayName: 'Install OSX System Depdendencies'
+#  - template: azure-build.yml
+#
