@@ -53,14 +53,20 @@ run_serial_test () {
     rm -rf x86_64
     nrnivmodl tmp_mod
 
+    if [[ "$SKIP_EMBEDED_PYTHON_TEST" == "true" ]]; then
+        echo "-----SKIP TESTS----"
+    fi
+
     # Test 4: run base tests for within python via special
     echo "HERE..."
     ./x86_64/special -python -c "print('Hello'); quit();"
-    ./x86_64/special -python -c "import trace; tracer = trace.Trace(); print('========A======='); tracer.run('import neuron'); print('======B====='); quit();"
-    ./x86_64/special -python -c "import neuron; print('Hello'); quit()"
-    ./x86_64/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+    $python_exe -c "import neuron; print('Hello'); quit()"
+    $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+    #./x86_64/special -python -c "import trace; tracer = trace.Trace(); print('========A======='); tracer.run('import neuron'); print('======B====='); quit();"
+    #./x86_64/special -python -c "import neuron; print('Hello'); quit()"
+    #./x86_64/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
     echo "DONE HERE..."
-    ./x86_64/special -python -c "import neuron; neuron.test_rxd(); quit()"
+    #./x86_64/special -python -c "import neuron; neuron.test_rxd(); quit()"
     echo "2.DONE HERE..."
 
     # Test 5: execute nrniv
@@ -148,6 +154,9 @@ fi
 $python_exe -m pip install numpy
 $python_exe -m pip install $python_wheel
 $python_exe -m pip show neuron
+cp rxd.py nrn_test_venv_37/lib/python3.7/site-packages/neuron/rxd/rxd.py
+
+printenv
 
 # run tests
 test_wheel $(which python)
