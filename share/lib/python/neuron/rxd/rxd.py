@@ -505,7 +505,7 @@ def _c_compile(formula):
         os.system(gcc_cmd)
     #TODO: Find a better way of letting the system locate librxdmath.so.0
     rxdmath_dll = ctypes.cdll[_find_librxdmath()]
-    dll = ctypes.cdll['./%s.so' % filename]
+    dll = ctypes.cdll['%s.so' % os.path.abspath(filename)]
     reaction = dll.reaction
     reaction.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double)] 
     reaction.restype = ctypes.c_double
