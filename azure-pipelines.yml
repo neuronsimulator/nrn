@@ -6,6 +6,13 @@
 variables:
   NEURON_NIGHTLY_TAG: '-nightly'
 
+# Nightly build for wheel upload
+schedules:
+- cron: "*/2 * * * *"
+  branches:
+    include:
+    - master
+
 jobs:
 
 - job: 'ManyLinuxWheels'
