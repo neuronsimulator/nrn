@@ -1,6 +1,6 @@
 #!/bin/bash
 # A simple set of tests checking if a wheel is working correctly
-set -e
+set -xe
 
 if [ ! -f setup.py ]; then
     echo "Error: Please launch $0 from the root dir"
@@ -18,7 +18,6 @@ python_wheel=$2
 use_venv=$3 #if $3 is not "false" then use virtual environment
 
 python_ver=$("$python_exe" -c "import sys; print('%d%d' % tuple(sys.version_info)[:2])")
-
 
 run_mpi_test () {
   mpi_launcher=${1}
@@ -55,7 +54,11 @@ run_serial_test () {
     nrnivmodl tmp_mod
 
     # Test 4: run base tests for within python via special
+    echo "HERE..."
     ./x86_64/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+    echo "DONE HERE..."
+    ./x86_64/special -python -c "import neuron; neuron.test_rxd(); quit()"
+    echo "2.DONE HERE..."
 
     # Test 5: execute nrniv
     ./x86_64/special -c "print \"hello\""
@@ -117,6 +120,8 @@ test_wheel () {
     #clean-up
     rm -rf tmp_mod x86_64
 }
+
+echo "== Testing $python_wheel using $python_exe ($python_ver) =="
 
 # creat python virtual environment and use `python` as binary name
 # because it will be correct one from venv.

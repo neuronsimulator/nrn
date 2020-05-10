@@ -65,48 +65,53 @@ jobs:
     vmImage: 'macOS-10.15'
   strategy:
     matrix:
-      Python35:
-        python.version: '3.5.4'
-      Python36:
-        python.version: '3.6.8'
+      #Python35:
+      #  python.version: '3.5.4'
+      #Python36:
+      #  python.version: '3.6.8'
       Python37:
         python.version: '3.7.7'
-      Python38:
-        python.version: '3.8.2'
+        #Python38:
+        #python.version: '3.8.2'
   steps:
   - checkout: self
     submodules: false
+    #- script: |
+    #-   set -e -x
+    #-   if [ "$(python.version)" == "3.5.4" ]; then
+    #-     installer=python-$(python.version)-macosx10.6.pkg
+    #-   else
+    #-     installer=python-$(python.version)-macosx10.9.pkg
+    #-   fi
+    #-   url=https://www.python.org/ftp/python/$(python.version)/$installer
+    #-   curl $url > $installer
+    #-   sudo installer -pkg $installer -target /
+    #- displayName: 'Install Python from python.org'
   - script: |
-      set -e -x
-      if [ "$(python.version)" == "3.5.4" ]; then
-        installer=python-$(python.version)-macosx10.6.pkg
-      else
-        installer=python-$(python.version)-macosx10.9.pkg
-      fi
-      url=https://www.python.org/ftp/python/$(python.version)/$installer
-      curl $url > $installer
-      sudo installer -pkg $installer -target /
-    displayName: 'Install Python from python.org'
-  - script: |
-      brew cask install xquartz
+      #brew cask install xquartz
       brew install flex bison mpich
       brew unlink mpich && brew install openmpi
     displayName: 'Install OSX System Depdendencies'
+    #- script: |
+    #-   export MACOSX_DEPLOYMENT_TARGET=10.9
+    #-   export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
+    #-   export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+    #-   packaging/python/build_wheels.bash osx
+    #- displayName: 'Building MacOS Wheel'
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '$(python.version)'
   - script: |
-      export MACOSX_DEPLOYMENT_TARGET=10.9
-      export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
-      export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
-      packaging/python/build_wheels.bash osx
-    displayName: 'Building MacOS Wheel'
-  - script: |
-      ls -lh wheelhouse/
-    displayName: 'Show wheel'
+      set -x
+      python --version
+      packaging/python/test_wheels.sh $(which python) wheelhouse/*.whl
+    displayName: 'Test Wheel'
   - task: TwineAuthenticate@1
     inputs:
-      pythonUploadServiceConnection: AzureToTestPypiOrg
+      pythonUploadServiceConnection: AzureNeuronTestPypi
   - script: |
       set -x
       python -m pip install twine
       cat $(PYPIRC_PATH) || echo "HELL"
-      python -m twine upload --verbose --skip-existing --repository neuron --config-file $(PYPIRC_PATH) wheelhouse/*.whl
-    displayName: 'OSX Release'
+      python -m twine upload --verbose --skip-existing -r neurontestpypi --config-file $(PYPIRC_PATH) wheelhouse/*.whl
+    displayName: 'Upload wheel to test.pypi.org'
