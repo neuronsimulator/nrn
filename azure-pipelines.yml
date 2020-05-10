@@ -103,6 +103,12 @@ jobs:
       export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
       #packaging/python/build_wheels.bash osx
     displayName: 'Building MacOS Wheel'
+  - script: |
+      brew install python
+      unset SKIP_EMBEDED_PYTHON_TEST
+      packaging/python/test_wheels.sh /usr/local/bin/python3 '-i https://test.pypi.org/simple/ neuron'
+    condition: eq(variables['python.version'], '3.7.7')
+    displayName: 'Test with brew installed python'
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '$(python.version)'
