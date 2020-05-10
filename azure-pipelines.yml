@@ -36,6 +36,8 @@ jobs:
       sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
     displayName: 'Install Test System Depdendencies'
 
+  - template: azure-wheel-test.yml
+
 
 # Jobs to build OSX wheels natively
 - job: 'MacOSWheels'
@@ -80,3 +82,5 @@ jobs:
       export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
       packaging/python/build_wheels.bash osx $(python.azure.version)
     displayName: 'Build MacOS Wheel'
+
+  - template: azure-wheel-test.yml
