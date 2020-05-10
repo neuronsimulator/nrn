@@ -65,19 +65,20 @@ jobs:
     vmImage: 'macOS-10.15'
   strategy:
     matrix:
-      #Python35:
-      #  python.version: '3.5.4'
-      #Python36:
-      #  python.version: '3.6.8'
+      Python35:
+        python.version: '3.5.4'
+      Python36:
+        python.version: '3.6.8'
       Python37:
         python.version: '3.7.7'
-        #Python38:
-        #python.version: '3.8.2'
+      Python38:
+        python.version: '3.8.2'
   variables:
     SKIP_EMBEDED_PYTHON_TEST: true
   steps:
   - checkout: self
     submodules: false
+    displayName: 'Clone Repository Without Submodules'
   - script: |
       set -e -x
       if [ "$(python.version)" == "3.5.4" ]; then
@@ -86,14 +87,11 @@ jobs:
         installer=python-$(python.version)-macosx10.9.pkg
       fi
       url=https://www.python.org/ftp/python/$(python.version)/$installer
-      #curl $url > $installer
-      #sudo installer -pkg $installer -target /
-      #sudo rm /usr/local/bin/python
-      #ls /usr/local/bin/python* || echo "No python"
-      #sudo ln -s /usr/local/bin/python3.7 /usr/local/bin/python
+      curl $url > $installer
+      sudo installer -pkg $installer -target /
     displayName: 'Install Python from python.org'
   - script: |
-      #brew cask install xquartz
+      brew cask install xquartz
       brew install flex bison mpich
       brew unlink mpich && brew install openmpi
     displayName: 'Install OSX System Depdendencies'
@@ -101,38 +99,25 @@ jobs:
       export MACOSX_DEPLOYMENT_TARGET=10.9
       export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
       export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
-      #packaging/python/build_wheels.bash osx
+      packaging/python/build_wheels.bash osx
     displayName: 'Building MacOS Wheel'
   - script: |
       brew install python
       unset SKIP_EMBEDED_PYTHON_TEST
-      packaging/python/test_wheels.sh /usr/local/bin/python3 '-i https://test.pypi.org/simple/ neuron'
+      packaging/python/test_wheels.sh /usr/local/bin/python3 wheelhouse/*.whl
     condition: eq(variables['python.version'], '3.7.7')
-    displayName: 'Test with brew installed python'
+    displayName: 'Test with brew Python'
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '$(python.version)'
   - script: |
-      set -x
-      #sudo rm /usr/local/bin/python
-      #sudo ln -s /usr/local/bin/python3 /usr/local/bin/python
-      python --version
-      python -c "import sys; print (sys.version)"
-      #brew install python
-      #python --version
-      #/Library/Frameworks/Python.framework/Versions/3.7/bin/python3 --version
-      #/Library/Frameworks/Python.framework/Versions/3.7/bin/python3 -m pip install numpy
-      packaging/python/test_wheels.sh $(which python) '-i https://test.pypi.org/simple/ neuron'
-      #packaging/python/test_wheels.sh /Library/Frameworks/Python.framework/Versions/3.7/bin/python3 '-i https://test.pypi.org/simple/ neuron'
-      #packaging/python/test_wheels.sh /Library/Frameworks/Python.framework/Versions/3.7/bin/python3 wheelhouse/*.whl
-      #packaging/python/test_wheels.sh $(which python) wheelhouse/*.whl
-    displayName: 'Test Wheel'
+      packaging/python/test_wheels.sh $(which python) wheelhouse/*.whl
+    displayName: 'Test with Azure System Python'
   - task: TwineAuthenticate@1
     inputs:
       pythonUploadServiceConnection: AzureNeuronTestPypi
   - script: |
       set -x
       python -m pip install twine
-      cat $(PYPIRC_PATH) || echo "HELL"
-      #python -m twine upload --verbose --skip-existing -r neurontestpypi --config-file $(PYPIRC_PATH) wheelhouse/*.whl
+      python -m twine upload --verbose --skip-existing -r neurontestpypi --config-file $(PYPIRC_PATH) wheelhouse/*.whl
     displayName: 'Upload wheel to test.pypi.org'
