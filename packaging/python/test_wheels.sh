@@ -30,9 +30,19 @@ run_mpi_test () {
      module load $mpi_module
   fi
 
+  # build new special
+  rm -rf x86_64
+  nrnivmodl tmp_mod
+
+  # hoc and python based test
   $mpi_launcher -n 2 $python_exe src/parallel/test0.py -mpi --expected-hosts 2
-  $mpi_launcher -n 2 nrniv -python src/parallel/test0.py -mpi --expected-hosts 2
   $mpi_launcher -n 2 nrniv src/parallel/test0.hoc -mpi --expected-hosts 2
+
+  # run python test via nrniv and special (except on azure pipelines)
+  if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
+    $mpi_launcher -n 2 ./x86_64/special -python src/parallel/test0.py -mpi --expected-hosts 2
+    $mpi_launcher -n 2 nrniv -python src/parallel/test0.py -mpi --expected-hosts 2
+  fi
 
   if [ -n "$mpi_module" ]; then
      echo "Unloading module $mpi_module"
@@ -53,26 +63,19 @@ run_serial_test () {
     rm -rf x86_64
     nrnivmodl tmp_mod
 
-    if [[ "$SKIP_EMBEDED_PYTHON_TEST" == "true" ]]; then
-        echo "-----SKIP TESTS----"
-    fi
-
-    # Test 4: run base tests for within python via special
-    echo "HERE..."
-    ./x86_64/special -python -c "print('Hello'); quit();"
-    $python_exe -c "import neuron; print('Hello'); quit()"
-    $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
-    #./x86_64/special -python -c "import trace; tracer = trace.Trace(); print('========A======='); tracer.run('import neuron'); print('======B====='); quit();"
-    #./x86_64/special -python -c "import neuron; print('Hello'); quit()"
-    #./x86_64/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
-    echo "DONE HERE..."
-    #./x86_64/special -python -c "import neuron; neuron.test_rxd(); quit()"
-    echo "2.DONE HERE..."
-
-    # Test 5: execute nrniv
+    # Test 4: execute special hoc interpreter
     ./x86_64/special -c "print \"hello\""
 
-    # Test 6: run demo
+    # Test 5: run basic tests via python while loading shared library
+    $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+
+    # Test 6: run basic tests via special : azure pipelines get stuck with their
+    # own python from hosted cache (most likely security settings).
+    if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
+      ./x86_64/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+    fi
+
+    # Test 7: run demo
     neurondemo -c 'demo(4)' -c 'run()' -c 'quit()'
 }
 
@@ -154,9 +157,6 @@ fi
 $python_exe -m pip install numpy
 $python_exe -m pip install $python_wheel
 $python_exe -m pip show neuron
-cp rxd.py nrn_test_venv_37/lib/python3.7/site-packages/neuron/rxd/rxd.py
-
-printenv
 
 # run tests
 test_wheel $(which python)
