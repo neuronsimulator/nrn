@@ -6,14 +6,19 @@ steps:
     condition: and(eq(variables['agent.os'], 'Darwin'), eq(variables['python.version'], '3.7'))
     displayName: 'Test with brew Python'
 
-  - task: TwineAuthenticate@1
+  - task: UsePythonVersion@0
     inputs:
-      pythonUploadServiceConnection: AzureNeuronPypiNightly
+      versionSpec: '$(python.version)'
 
   - script: |
       export SKIP_EMBEDED_PYTHON_TEST=true
       packaging/python/test_wheels.sh $(which python) wheelhouse/*.whl
     displayName: 'Test with System Python'
+
+  - task: TwineAuthenticate@1
+    inputs:
+      pythonUploadServiceConnection: AzureNeuronPypiNightly
+    condition: and(succeeded(), in(variables['Build.Reason'], 'Manual', 'Schedule'))
 
   - script: |
       python -m pip install twine

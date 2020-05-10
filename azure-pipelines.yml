@@ -6,12 +6,16 @@
 variables:
   NEURON_NIGHTLY_TAG: '-nightly'
 
-# Nightly build for wheel upload
+# Nightly build master for pypi upload
 schedules:
-- cron: "*/2 * * * *"
+- cron: "0 0 * * *"
   branches:
     include:
-    - pramodk/azure
+    - master
+
+# Auto cancel old PR builds
+pr:
+  autoCancel: true
 
 jobs:
 
