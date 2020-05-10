@@ -55,6 +55,9 @@ run_serial_test () {
 
     # Test 4: run base tests for within python via special
     echo "HERE..."
+    ./x86_64/special -python -c "print('Hello'); quit();"
+    ./x86_64/special -python -c "import trace; tracer = trace.Trace(); print('========A======='); tracer.run('import neuron'); print('======B====='); quit();"
+    ./x86_64/special -python -c "import neuron; print('Hello'); quit()"
     ./x86_64/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
     echo "DONE HERE..."
     ./x86_64/special -python -c "import neuron; neuron.test_rxd(); quit()"

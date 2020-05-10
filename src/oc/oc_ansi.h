@@ -213,6 +213,7 @@ extern void hoc_install_object_data_index(Symbol*);
 extern void hoc_template_notify(Object*, int);
 extern void hoc_construct_point(Object*, int);
 extern void hoc_call_ob_proc(Object* ob, Symbol* sym, int narg);
+extern void nrn_obtmp_stk_index_on_err(int);
 extern void hoc_push_frame(Symbol*, int);
 extern void hoc_pop_frame(void);
 extern int hoc_argindex(void);
