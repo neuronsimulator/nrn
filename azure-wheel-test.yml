@@ -3,7 +3,7 @@ steps:
   - script: |
       brew install python
       packaging/python/test_wheels.sh /usr/local/bin/python3 wheelhouse/*.whl
-    condition: and(eq(variables['agent.os'], 'Darwin'), eq(variables['python.azure.version'], '3.7'))
+    condition: and(eq(variables['agent.os'], 'Darwin'), eq(variables['python.version'], '3.7'))
     displayName: 'Test with brew Python'
 
   - task: TwineAuthenticate@1

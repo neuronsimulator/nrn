@@ -11,7 +11,7 @@ schedules:
 - cron: "*/2 * * * *"
   branches:
     include:
-    - master
+    - pramodk/azure
 
 jobs:
 
@@ -21,13 +21,13 @@ jobs:
   strategy:
     matrix:
       Python35:
-        python.azure.version: '3.5'
+        python.version: '3.5'
       Python36:
-        python.azure.version: '3.6'
+        python.version: '3.6'
       Python37:
-        python.azure.version: '3.7'
+        python.version: '3.7'
       Python38:
-        python.azure.version: '3.8'
+        python.version: '3.8'
   steps:
   - script: |
       docker run --rm \
@@ -35,7 +35,7 @@ jobs:
         -v $PWD:/root/nrn \
         -e NEURON_NIGHTLY_TAG \
         'neuronsimulator/neuron_wheel' \
-        packaging/python/build_wheels.bash linux $(python.azure.version)
+        packaging/python/build_wheels.bash linux $(python.version)
     displayName: 'Building ManyLinux Wheel'
 
   - script: |
@@ -53,16 +53,16 @@ jobs:
   strategy:
     matrix:
       Python35:
-        python.azure.version: '3.5'
+        python.version: '3.5'
         python.org.version: '3.5.4'
       Python36:
-        python.azure.version: '3.6'
+        python.version: '3.6'
         python.org.version: '3.6.8'
       Python37:
-        python.azure.version: '3.7'
+        python.version: '3.7'
         python.org.version: '3.7.7'
       Python38:
-        python.azure.version: '3.8'
+        python.version: '3.8'
         python.org.version: '3.8.2'
   steps:
 
@@ -87,7 +87,7 @@ jobs:
       export MACOSX_DEPLOYMENT_TARGET=10.9
       export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
       export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
-      packaging/python/build_wheels.bash osx $(python.azure.version)
+      packaging/python/build_wheels.bash osx $(python.version)
     displayName: 'Build MacOS Wheel'
 
   - template: azure-wheel-test.yml
