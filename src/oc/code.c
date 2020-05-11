@@ -263,6 +263,48 @@ static void frameobj_clean(Frame* f) {
 	}
 }
 
+/* unref items on the stack frame associated with localobj in case of error */
+static void frame_objauto_recover_on_err(Frame* ff) { /* only on error */
+  Frame* f;
+  for (f = fp; f > ff; --f) {
+    int i;
+    Symbol* sp = f->sp;
+    /* argn is the nargs argument on the stack. Stack items come in pairs
+       so stack increments are always multiples of 2.
+       Here, stkp is the last+1 localobj slot pair on the stack.
+    */  
+    Datum* stkp = f->argn + 2 + sp->u.u_proc->nauto*2;
+    for (i = sp->u.u_proc->nobjauto; i > 0; --i) {
+      Object* ob = stkp[-2*i].obj;
+      hoc_obj_unref(ob);
+      /* Note that these AUTOOBJECT stack locations have an itemtype that
+         are left over from the previous stack usage of that location.
+         Regardless of that itemtype (e.g. OBJECTTMP), these did NOT
+         increment tobj_count so we need to guarantee that the subsequent
+         stack_obtmp_recover_on_err does not inadvertently free it again
+         by setting the itemtype to a non OBJECTTMP value.  I hope this is
+         the only place where stack space was used in which no item type
+         was specified.
+      */
+      stkp[-2*i + 1].i = 0;
+    }
+  }
+}
+
+static void stack_obtmp_recover_on_err(int tcnt) {
+  if (tobj_count > tcnt) {
+    Datum* stkp;
+    for (stkp = stackp; stkp >= stack; stkp -= 2) {
+      if (stkp[1].i == OBJECTTMP) {
+        hoc_stkobj_unref(stkp[0].obj);
+        if (tobj_count == tcnt) {
+          return;
+        }
+      }
+    }
+  }
+}
+
 void hoc_init_space(void)	/* create space for stack and code */
 {
 	if (nframe == 0) {
@@ -320,11 +362,9 @@ fprintf(stderr, "errno set %d times on last execution\n", hoc_errno_count);
 	progp = progbase;
 	hoc_unref_defer();
 
+	frame_objauto_recover_on_err(frame);
 if (tobj_count) {
-	while(fp < frame) {
-		frameobj_clean(fp);
-		--fp;
-	}
+	stack_obtmp_recover_on_err(0);
 #if DEBUG_GARBAGE
 	if (tobj_count) {
 		printf("initcode failed with %d left\n", tobj_count);
@@ -394,11 +434,9 @@ void oc_restore_code(
 ){
 	progbase = *a1;
 	progp = *a2;
+	frame_objauto_recover_on_err(*a4);
 	if (tobj_count > *a12) {
-		while(fp > *a4) {
-			frameobj_clean(fp);
-			--fp;
-		}
+		stack_obtmp_recover_on_err(*a12);
 #if DEBUG_GARBAGE
 if (tobj_count != *a12) {
 	printf("oc_restore_code tobj_count=%d should be %d\n", tobj_count, *a12);
