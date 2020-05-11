@@ -58,7 +58,7 @@ build_wheel_linux() {
     echo " - Building..."
     rm -rf dist build
     if [ "$2" == "--bare" ]; then
-        python setup.py bdist_wheel --cmake-prefix=/opt/ncurses
+        python setup.py bdist_wheel
     else
         python setup.py build_ext --cmake-prefix=/opt/ncurses --cmake-defs="NRN_MPI_DYNAMIC=$3" bdist_wheel
     fi

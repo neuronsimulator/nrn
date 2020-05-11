@@ -82,7 +82,7 @@ jobs:
         installer=python-$(python.org.version)-macosx10.9.pkg
       fi
       url=https://www.python.org/ftp/python/$(python.org.version)/$installer
-      curl $url > $installer
+      curl $url -o $installer
       sudo installer -pkg $installer -target /
     displayName: 'Install Python from python.org'
 
