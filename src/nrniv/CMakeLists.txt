@@ -356,12 +356,20 @@ if (LIBIVX11DYNAM_NAME)
 endif()
 
 # =============================================================================
-# Install cpp and required headers for binary special flavor
+# Install / copy cpp and required headers for binary special flavor
 # =============================================================================
 # ~~~
 # Note: we also added following headers in NeuronFleLists.cmake:
 #   ivstream.h nrnconf.h nrnmpi.h nrnmpidec.h
 # ~~~
+
+# For testneuron
+file(COPY ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION ${CMAKE_BINARY_DIR}/share/nrn)
+file(COPY ${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h DESTINATION ${CMAKE_BINARY_DIR}/include)
+file(COPY ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h DESTINATION ${CMAKE_BINARY_DIR}/include/nrncvode)
+file(COPY ${PROJECT_BINARY_DIR}/nrnconf.h DESTINATION ${CMAKE_BINARY_DIR}/include)
+
+# For the installation
 install(FILES ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION share/nrn)
 install(FILES ${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h DESTINATION include)
 install(FILES ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h DESTINATION include/nrncvode)
