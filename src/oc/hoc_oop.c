@@ -989,27 +989,7 @@ hoc_execerror("[...](...) syntax only allowed for array range variables:", sym0-
 	}
 	
 	obp = hoc_obj_look_inside_stack(nindex);
-
-  /* This function is handling the name of obp.name... and when there is no
-     error obp is popped below via one of many hoc_pop_defer. The problem occurs
-     when name is a method call and an error occurs which which requires
-     recovery from an arbitrary number of stack frames. In particular,
-     if the stack item for obp is a OBJECTTMP, it needs to be unreffed and
-     the count of OBJECTTMP decremented. As this is done when iterating
-     over the stack frames in initcode and oc_restore_code, it is necessary
-     for push_frame (or any place that implements the equivalent, e.g.
-     hoc_call) to store sufficient information in the frame in order to
-     properly handle this eventuality. A bool should suffice but for
-     consistency testing we store the stack index holding obp. Unfortunately,
-     it is a long way from here to the push_frame and more often than not
-     push_frame will occur without having passed by here. So some care must
-     be taken to make sure that the stack index set here really is associated
-     with a push_frame resulting from this invocation and for any other
-     push_frame, the absolute index info is -1.
-   */
-
 	if (obp) {
-		nrn_obtmp_stk_index_on_err(nindex); /* relative to current stack pointer */
 #if USE_PYTHON
 		if (obp->template->sym == nrnpy_pyobj_sym_) {
 			if (isfunc & 2) {
@@ -1249,7 +1229,6 @@ hoc_execerror(sym->name, ":ITERATOR can only be used in a for statement");
 	}
 	hoc_objectdata = hoc_objectdata_restore(psav);
 	hoc_thisobject = obsav;
-	nrn_obtmp_stk_index_on_err(-1);
 }
 
 void hoc_object_eval(void) {
