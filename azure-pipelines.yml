@@ -1,0 +1,102 @@
+#=============================================================================
+# Azure Pipeline settings
+#=============================================================================
+
+# Used for neuron-nightly wheel
+variables:
+  NEURON_NIGHTLY_TAG: '-nightly'
+
+# Nightly build master for pypi upload
+schedules:
+- cron: "0 0 * * *"
+  branches:
+    include:
+    - master
+
+# Auto cancel old PR builds
+pr:
+  autoCancel: true
+
+# Trigger build for certain branches only
+trigger:
+- master
+- releases/*
+
+jobs:
+
+- job: 'ManyLinuxWheels'
+  pool:
+    vmImage: 'ubuntu-18.04'
+  strategy:
+    matrix:
+      Python35:
+        python.version: '3.5'
+      Python36:
+        python.version: '3.6'
+      Python37:
+        python.version: '3.7'
+      Python38:
+        python.version: '3.8'
+  steps:
+  - script: |
+      docker run --rm \
+        -w /root/nrn \
+        -v $PWD:/root/nrn \
+        -e NEURON_NIGHTLY_TAG \
+        'neuronsimulator/neuron_wheel' \
+        packaging/python/build_wheels.bash linux $(python.version)
+    displayName: 'Building ManyLinux Wheel'
+
+  - script: |
+      sudo apt update
+      sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
+    displayName: 'Install Test System Depdendencies'
+
+  - template: ci/azure-wheel-test-upload.yml
+
+
+# Jobs to build OSX wheels natively
+- job: 'MacOSWheels'
+  pool:
+    vmImage: 'macOS-10.15'
+  strategy:
+    matrix:
+      Python35:
+        python.version: '3.5'
+        python.org.version: '3.5.4'
+      Python36:
+        python.version: '3.6'
+        python.org.version: '3.6.8'
+      Python37:
+        python.version: '3.7'
+        python.org.version: '3.7.7'
+      Python38:
+        python.version: '3.8'
+        python.org.version: '3.8.2'
+  steps:
+
+  - script: |
+      if [ "$(python.org.version)" == "3.5.4" ]; then
+        installer=python-$(python.org.version)-macosx10.6.pkg
+      else
+        installer=python-$(python.org.version)-macosx10.9.pkg
+      fi
+      url=https://www.python.org/ftp/python/$(python.org.version)/$installer
+      curl $url -o $installer
+      sudo installer -pkg $installer -target /
+    displayName: 'Install Python from python.org'
+
+  - script: |
+      brew cask install xquartz
+      brew install flex bison mpich
+      brew unlink mpich && brew install openmpi
+    displayName: 'Install OSX System Depdendencies'
+
+  - script: |
+      export MACOSX_DEPLOYMENT_TARGET=10.9
+      export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
+      export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+      packaging/python/build_wheels.bash osx $(python.version)
+    displayName: 'Build MacOS Wheel'
+
+  - template: ci/azure-wheel-test-upload.yml

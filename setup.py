@@ -300,8 +300,13 @@ def setup_package():
 
     log.info("RX3D is %s", "ENABLED" if RX3D else "DISABLED")
 
+    # For CI, we want to build separate wheel
+    package_name = 'NEURON'
+    if "NEURON_NIGHTLY_TAG" in os.environ:
+        package_name += os.environ['NEURON_NIGHTLY_TAG']
+
     setup(
-        name='NEURON',
+        name=package_name,
         version=__version__,
         package_dir={'': NRN_PY_ROOT},
         packages=py_packages,

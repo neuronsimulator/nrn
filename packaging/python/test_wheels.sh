@@ -1,5 +1,6 @@
+#!/bin/bash
 # A simple set of tests checking if a wheel is working correctly
-set -e
+set -xe
 
 if [ ! -f setup.py ]; then
     echo "Error: Please launch $0 from the root dir"
@@ -18,7 +19,6 @@ use_venv=$3 #if $3 is not "false" then use virtual environment
 
 python_ver=$("$python_exe" -c "import sys; print('%d%d' % tuple(sys.version_info)[:2])")
 
-
 run_mpi_test () {
   mpi_launcher=${1}
   mpi_name=${2}
@@ -30,9 +30,19 @@ run_mpi_test () {
      module load $mpi_module
   fi
 
+  # build new special
+  rm -rf x86_64
+  nrnivmodl tmp_mod
+
+  # hoc and python based test
   $mpi_launcher -n 2 $python_exe src/parallel/test0.py -mpi --expected-hosts 2
-  $mpi_launcher -n 2 nrniv -python src/parallel/test0.py -mpi --expected-hosts 2
   $mpi_launcher -n 2 nrniv src/parallel/test0.hoc -mpi --expected-hosts 2
+
+  # run python test via nrniv and special (except on azure pipelines)
+  if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
+    $mpi_launcher -n 2 ./x86_64/special -python src/parallel/test0.py -mpi --expected-hosts 2
+    $mpi_launcher -n 2 nrniv -python src/parallel/test0.py -mpi --expected-hosts 2
+  fi
 
   if [ -n "$mpi_module" ]; then
      echo "Unloading module $mpi_module"
@@ -53,13 +63,19 @@ run_serial_test () {
     rm -rf x86_64
     nrnivmodl tmp_mod
 
-    # Test 4: run base tests for within python via special
-    ./x86_64/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
-
-    # Test 5: execute nrniv
+    # Test 4: execute special hoc interpreter
     ./x86_64/special -c "print \"hello\""
 
-    # Test 6: run demo
+    # Test 5: run basic tests via python while loading shared library
+    $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+
+    # Test 6: run basic tests via special : azure pipelines get stuck with their
+    # own python from hosted cache (most likely security settings).
+    if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
+      ./x86_64/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+    fi
+
+    # Test 7: run demo
     neurondemo -c 'demo(4)' -c 'run()' -c 'quit()'
 }
 
@@ -75,8 +91,8 @@ run_parallel_test() {
       brew link openmpi
       run_mpi_test "/usr/local/opt/open-mpi/bin/mpirun" "OpenMPI" ""
 
-    # Travis Linux
-    elif [ "$TRAVIS_OS_NAME" == "linux" ]; then
+    # Travis Linux or Azure Linux
+    elif [[ "$TRAVIS_OS_NAME" == "linux" || "$AGENT_OS" == "Linux" ]]; then
       sudo update-alternatives --set mpi /usr/include/mpich
       run_mpi_test "mpirun.mpich" "MPICH" ""
       sudo update-alternatives --set mpi /usr/lib/x86_64-linux-gnu/openmpi/include
@@ -117,6 +133,8 @@ test_wheel () {
     rm -rf tmp_mod x86_64
 }
 
+echo "== Testing $python_wheel using $python_exe ($python_ver) =="
+
 # creat python virtual environment and use `python` as binary name
 # because it will be correct one from venv.
 if [[ "$use_venv" != "false" ]]; then
@@ -138,7 +156,7 @@ fi
 # install neuron and neuron
 $python_exe -m pip install numpy
 $python_exe -m pip install $python_wheel
-$python_exe -m pip show neuron
+$python_exe -m pip show neuron || $python_exe -m pip show neuron-nightly
 
 # run tests
 test_wheel $(which python)
