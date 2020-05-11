@@ -30,6 +30,8 @@ void (*nrnpy_py2n_component)(Object* o, Symbol* s, int nindex, int isfunc);
 void (*nrnpy_hpoasgn)(Object* o, int type);
 #endif
 
+extern void hoc_stkobj_unref(Object*);
+
 #if CABLE
 #include "section.h"
 #include "nrniv_mf.h"
@@ -1388,6 +1390,7 @@ void hoc_object_asgn(void) {
 		o = hoc_obj_look_inside_stack(1);
 		assert(o->template->sym == nrnpy_pyobj_sym_);
 		if (op) {
+			hoc_stkobj_unref(o);
 			hoc_execerror("Invalid assignment operator for PythonObject", (char*)0);
 		}
 		(*nrnpy_hpoasgn)(o, type1);
@@ -1918,6 +1921,9 @@ void hoc_obj_unref(Object* obj){
 printf("unreffing %s with refcount %d\n", hoc_object_name(obj), obj->refcount);
 #endif
 	--obj->refcount;
+if (obj->refcount < 0) {
+  printf("obj->refcount < 0\n");
+}
 	if (obj->template->unref) {
 		int i = obj->refcount;
 		pushx((double)i);
