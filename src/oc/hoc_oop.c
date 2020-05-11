@@ -608,13 +608,10 @@ void hoc_newobj(void) { /* template at pc+1 */
 		*(obp) = ob;
 		hoc_pushobj(obp);
 #if USE_PYTHON
-	}else{ /* PythonObject assignment */
+	}else{ /* Assignment to OBJECTTMP not allowed */
 		Object* o = hoc_obj_look_inside_stack(narg);
-		assert(o->template->sym == nrnpy_pyobj_sym_);
-		ob = hoc_newobj1(sym, narg);
-		hoc_push_object(ob);
-		(*nrnpy_hpoasgn)(o, OBJECTTMP);
-		hoc_obj_unref(ob);
+		hoc_stkobj_unref(o);
+		hoc_execerror("Assignment to $o only allowed if caller arg was declared as objref", NULL);
 	}
 #endif
 }
