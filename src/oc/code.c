@@ -285,6 +285,8 @@ static void frame_objauto_recover_on_err(Frame* ff) { /* only on error */
          by setting the itemtype to a non OBJECTTMP value.  I hope this is
          the only place where stack space was used in which no item type
          was specified.
+         We are doing this here which happens rarely to avoid having to
+         set them when the stack obj pointers are zeroed.
       */
       stkp[-2*i + 1].i = 0;
     }
@@ -294,7 +296,10 @@ static void frame_objauto_recover_on_err(Frame* ff) { /* only on error */
 static void stack_obtmp_recover_on_err(int tcnt) {
   if (tobj_count > tcnt) {
     Datum* stkp;
-    for (stkp = stackp; stkp >= stack; stkp -= 2) {
+    /* stackp - 2 because stackp is next available stack slot and
+       stack item,itemtype takes up two slots.
+    */
+    for (stkp = stackp - 2; stkp >= stack; stkp -= 2) {
       if (stkp[1].i == OBJECTTMP) {
         hoc_stkobj_unref(stkp[0].obj);
         if (tobj_count == tcnt) {

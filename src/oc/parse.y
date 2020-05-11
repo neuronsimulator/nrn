@@ -846,7 +846,8 @@ defn:	FUNC procname
 procname: ckvar
 		{ Symbol *s; s=yylval.sym;
 		if(s->type != UNDEF) acterror(s->name, "already defined");
-		s->u.u_proc = (Proc *)emalloc(sizeof(Proc));
+		/* avoid valgrind uninitialized variable error for nautoobj */
+		s->u.u_proc = (Proc *)ecalloc(1, sizeof(Proc));
 		s->u.u_proc->defn.in = STOP;
 		s->u.u_proc->list = (Symlist *)0; }
 	| FUNCTION
