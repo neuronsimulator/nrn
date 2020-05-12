@@ -623,6 +623,7 @@ if(MINGW)
     ${MSWIN_SRC_DIR}/lib
     bshstart.sh
     neuron2.sh
+    neuron3.sh
     mknrndl2.sh
     mknrndll.sh
     modlunit.sh)
