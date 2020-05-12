@@ -136,6 +136,8 @@ class CMakeAugmentedBuilder(build_ext):
         cmake = self._find_cmake()
         cfg = 'Debug' if self.debug else 'Release'
         self.outdir = os.path.abspath(ext.cmake_install_prefix)
+        readline_flag = 'ON' if sys.platform[:6] == "darwin" else 'OFF'
+
         log.info("Building lib to: %s", self.outdir)
 
         cmake_args = [
@@ -143,6 +145,7 @@ class CMakeAugmentedBuilder(build_ext):
             '-DCMAKE_INSTALL_PREFIX=' + self.outdir,
             '-DPYTHON_EXECUTABLE=' + sys.executable,
             '-DCMAKE_BUILD_TYPE=' + cfg,
+            '-DNRN_ENABLE_INTERNAL_READLINE=' + readline_flag,
         ] + ext.cmake_flags
 
         if self.cmake_prefix:
@@ -245,7 +248,7 @@ def setup_package():
             '-DNRN_ENABLE_MPI_DYNAMIC=ON',
             '-DNRN_ENABLE_PYTHON_DYNAMIC=ON',
             '-DNRN_ENABLE_MODULE_INSTALL=OFF',
-            '-DNRN_USE_REL_RPATH=ON',
+            '-DNRN_ENABLE_REL_RPATH=ON',
             '-DLINK_AGAINST_PYTHON=OFF',
         ],
         include_dirs=[
