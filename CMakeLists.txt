@@ -49,8 +49,9 @@ option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON
 option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_DEFAULT})
 # note that if CoreNEURON is enabled then it is not necessary to enable this option
 option(NRN_ENABLE_MOD_COMPATIBILITY "Enable CoreNEURON compatibility for MOD files" ${NRN_ENABLE_MOD_COMPATIBILITY_DEFAULT})
-option(NRN_USE_REL_RPATH "Use relative RPATH in binaries. for relocatable installs/Python" FALSE)
-mark_as_advanced(NRN_USE_REL_RPATH)
+option(NRN_ENABLE_REL_RPATH "Use relative RPATH in binaries. for relocatable installs/Python" ${NRN_ENABLE_REL_RPATH_DEFAULT})
+option(NRN_ENABLE_INTERNAL_READLINE "Use internal Readline library shipped with NEURON" ${NRN_ENABLE_INTERNAL_READLINE_DEFAULT})
+mark_as_advanced(NRN_ENABLE_REL_RPATH)
 
 # =============================================================================
 # Build options (string)
@@ -128,7 +129,11 @@ include(ReleaseDebugAutoFlags)
 find_package(BISON REQUIRED)
 find_package(FLEX REQUIRED)
 find_package(Threads QUIET)
-find_package(Readline)
+
+if(NOT NRN_ENABLE_INTERNAL_READLINE)
+  find_package(Readline)
+endif()
+
 if(NRN_ENABLE_RX3D)
   if(NOT NRN_ENABLE_PYTHON)
     message(SEND_ERROR "NRN_ENABLE_RX3D requires NRN_ENABLE_PYTHON feature.")
