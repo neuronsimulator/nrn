@@ -336,7 +336,7 @@ if(NOT MINGW)
 endif()
 
 # TODO: unset in top level CMake is not working
-if(NOT NRN_MACOS_BUILD AND ${READLINE_FOUND})
+if(NOT NRN_MACOS_BUILD AND READLINE_FOUND)
   target_link_libraries(nrniv ${Readline_LIBRARY})
 endif()
 
