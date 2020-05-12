@@ -35,6 +35,8 @@ option(NRN_ENABLE_BINARY_SPECIAL "Build binary special"
 option(NRN_ENABLE_INTERVIEWS "Enable GUI with INTERVIEWS" ${NRN_ENABLE_INTERVIEWS_DEFAULT})
 option(NRN_ENABLE_LEGACY_FR "Use original faraday, R, etc. instead of 2019 nist constants"
        ${NRN_ENABLE_LEGACY_FR_DEFAULT})
+option(NRN_ENABLE_MECH_DLL_STYLE "Dynamically load nrnmech shared library"
+        ${NRN_ENABLE_MECH_DLL_STYLE_DEFAULT})
 option(NRN_ENABLE_DISCRETE_EVENT_OBSERVER "Enable Observer to be a subclass of DiscreteEvent"
        ${NRN_ENABLE_DISCRETE_EVENT_OBSERVER_DEFAULT})
 option(NRN_ENABLE_PYTHON "Enable Python interpreter support (default python3 fallback to python)"

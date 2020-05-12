@@ -105,10 +105,10 @@ else()
   set(LegacyNPy "")
 endif()
 
-if(NRN_ENABLE_BINARY_SPECIAL)
-  set(NRNMECH_DLL_STYLE 0)
-else()
+if(NRN_ENABLE_MECH_DLL_STYLE)
   set(NRNMECH_DLL_STYLE 1)
+else()
+  unset(NRNMECH_DLL_STYLE)
 endif()
 
 if(NRN_ENABLE_INTERVIEWS AND NOT MINGW)
