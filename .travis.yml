@@ -91,6 +91,8 @@ addons:
       - libboost-all-dev
       - libopenmpi-dev
       - openmpi-bin
+      - python3-dev
+      - python3-pip
 
   # for Mac builds, we use Homebrew
   homebrew:
@@ -99,6 +101,7 @@ addons:
       - flex
       - openmpi
       - boost
+      - python@3
     update: true
 
 #=============================================================================
@@ -111,9 +114,7 @@ before_install:
         export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH;
         brew unlink python@2;
         brew link --overwrite python;
-    fi
-  # when python 3.6.7 is required, ex. NMODL in linux
-  - if [ -n "$PYTHON_VERSION" ]; then
+    else
         pyenv global $PYTHON_VERSION;
     fi
   # install NMODL dependencies
@@ -146,9 +147,9 @@ script:
   - mkdir build && cd build
   - if [[ "$USE_ISPC" == "ON" ]]; then
         cmake -DCORENRN_ENABLE_ISPC=ON -DCMAKE_ISPC_COMPILER=../ispc/bin/ispc
-              -DCMAKE_INSTALL_PREFIX=$HOME/CoreNeuron ..;
+              -DCMAKE_INSTALL_PREFIX=$HOME/CoreNeuron -DPYTHON_EXECUTABLE=$(which python3) ..;
     else
-        cmake ${cmake_option} -DCMAKE_INSTALL_PREFIX=$HOME/CoreNeuron ..;
+        cmake ${cmake_option} -DCMAKE_INSTALL_PREFIX=$HOME/CoreNeuron -DPYTHON_EXECUTABLE=$(which python3) ..;
     fi
   - cmake --build .
   - ctest --output-on-failure
