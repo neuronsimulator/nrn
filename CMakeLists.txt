@@ -30,11 +30,13 @@ include(BuildOptionDefaults)
 # =============================================================================
 option(NRN_ENABLE_SHARED "Build shared libraries (otherwise static library)"
        ${NRN_ENABLE_SHARED_DEFAULT})
+option(NRN_ENABLE_BINARY_SPECIAL "Build binary special"
+       ${NRN_ENABLE_BINARY_SPECIAL_DEFAULT})
 option(NRN_ENABLE_INTERVIEWS "Enable GUI with INTERVIEWS" ${NRN_ENABLE_INTERVIEWS_DEFAULT})
 option(NRN_ENABLE_LEGACY_FR "Use original faraday, R, etc. instead of 2019 nist constants"
        ${NRN_ENABLE_LEGACY_FR_DEFAULT})
 option(NRN_ENABLE_MECH_DLL_STYLE "Dynamically load nrnmech shared library"
-       ${NRN_ENABLE_MECH_DLL_STYLE_DEFAULT})
+        ${NRN_ENABLE_MECH_DLL_STYLE_DEFAULT})
 option(NRN_ENABLE_DISCRETE_EVENT_OBSERVER "Enable Observer to be a subclass of DiscreteEvent"
        ${NRN_ENABLE_DISCRETE_EVENT_OBSERVER_DEFAULT})
 option(NRN_ENABLE_PYTHON "Enable Python interpreter support (default python3 fallback to python)"
@@ -448,6 +450,7 @@ if(cmake_generator_tolower MATCHES "makefile")
   message(STATUS "BUILD_TYPE    | ${CMAKE_BUILD_TYPE} (allowed: ${allowableBuildTypes})")
   message(STATUS "COMPILE FLAGS | ${COMPILER_FLAGS}")
   message(STATUS "Shared        | ${NRN_ENABLE_SHARED}")
+  message(STATUS "Binary special| ${NRN_ENABLE_BINARY_SPECIAL}")
   message(STATUS "Legacy FR     | ${NRN_ENABLE_LEGACY_FR}")
   message(STATUS "MPI           | ${NRN_ENABLE_MPI}")
   if(NRN_ENABLE_MPI)

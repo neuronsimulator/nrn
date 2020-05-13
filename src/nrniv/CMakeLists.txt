@@ -354,3 +354,19 @@ install(TARGETS nrniv_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 if (LIBIVX11DYNAM_NAME)
   install(FILES ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME} DESTINATION lib)
 endif()
+
+# =============================================================================
+# Install / copy cpp and required headers for binary special flavor
+# =============================================================================
+
+# For testneuron CTest
+file(COPY ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION ${CMAKE_BINARY_DIR}/share/nrn)
+file(COPY ${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h DESTINATION ${CMAKE_BINARY_DIR}/include)
+file(COPY ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h DESTINATION ${CMAKE_BINARY_DIR}/include/nrncvode)
+file(COPY ${PROJECT_BINARY_DIR}/nrnconf.h DESTINATION ${CMAKE_BINARY_DIR}/include)
+
+# For the installation
+install(FILES ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION share/nrn)
+install(FILES ${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h DESTINATION include)
+install(FILES ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h DESTINATION include/nrncvode)
+install(FILES ${PROJECT_BINARY_DIR}/nrnconf.h DESTINATION include)
