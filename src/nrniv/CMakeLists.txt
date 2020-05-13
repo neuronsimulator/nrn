@@ -358,12 +358,8 @@ endif()
 # =============================================================================
 # Install / copy cpp and required headers for binary special flavor
 # =============================================================================
-# ~~~
-# Note: we also added following headers in NeuronFleLists.cmake:
-#   ivstream.h nrnconf.h nrnmpi.h nrnmpidec.h
-# ~~~
 
-# For testneuron
+# For testneuron CTest
 file(COPY ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION ${CMAKE_BINARY_DIR}/share/nrn)
 file(COPY ${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h DESTINATION ${CMAKE_BINARY_DIR}/include)
 file(COPY ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h DESTINATION ${CMAKE_BINARY_DIR}/include/nrncvode)
