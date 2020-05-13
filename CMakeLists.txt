@@ -4,8 +4,8 @@ project(NEURON C CXX)
 # =============================================================================
 # CMake common project settings
 # =============================================================================
-set(PROJECT_VERSION_MAJOR 7)
-set(PROJECT_VERSION_MINOR 8)
+set(PROJECT_VERSION_MAJOR 8)
+set(PROJECT_VERSION_MINOR 0)
 set(CMAKE_CXX_STANDARD 98)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -30,11 +30,13 @@ include(BuildOptionDefaults)
 # =============================================================================
 option(NRN_ENABLE_SHARED "Build shared libraries (otherwise static library)"
        ${NRN_ENABLE_SHARED_DEFAULT})
+option(NRN_ENABLE_BINARY_SPECIAL "Build binary special"
+       ${NRN_ENABLE_BINARY_SPECIAL_DEFAULT})
 option(NRN_ENABLE_INTERVIEWS "Enable GUI with INTERVIEWS" ${NRN_ENABLE_INTERVIEWS_DEFAULT})
 option(NRN_ENABLE_LEGACY_FR "Use original faraday, R, etc. instead of 2019 nist constants"
        ${NRN_ENABLE_LEGACY_FR_DEFAULT})
 option(NRN_ENABLE_MECH_DLL_STYLE "Dynamically load nrnmech shared library"
-       ${NRN_ENABLE_MECH_DLL_STYLE_DEFAULT})
+        ${NRN_ENABLE_MECH_DLL_STYLE_DEFAULT})
 option(NRN_ENABLE_DISCRETE_EVENT_OBSERVER "Enable Observer to be a subclass of DiscreteEvent"
        ${NRN_ENABLE_DISCRETE_EVENT_OBSERVER_DEFAULT})
 option(NRN_ENABLE_PYTHON "Enable Python interpreter support (default python3 fallback to python)"
@@ -47,8 +49,9 @@ option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON
 option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_DEFAULT})
 # note that if CoreNEURON is enabled then it is not necessary to enable this option
 option(NRN_ENABLE_MOD_COMPATIBILITY "Enable CoreNEURON compatibility for MOD files" ${NRN_ENABLE_MOD_COMPATIBILITY_DEFAULT})
-option(NRN_USE_REL_RPATH "Use relative RPATH in binaries. for relocatable installs/Python" FALSE)
-mark_as_advanced(NRN_USE_REL_RPATH)
+option(NRN_ENABLE_REL_RPATH "Use relative RPATH in binaries. for relocatable installs/Python" ${NRN_ENABLE_REL_RPATH_DEFAULT})
+option(NRN_ENABLE_INTERNAL_READLINE "Use internal Readline library shipped with NEURON" ${NRN_ENABLE_INTERNAL_READLINE_DEFAULT})
+mark_as_advanced(NRN_ENABLE_REL_RPATH)
 
 # =============================================================================
 # Build options (string)
@@ -126,7 +129,11 @@ include(ReleaseDebugAutoFlags)
 find_package(BISON REQUIRED)
 find_package(FLEX REQUIRED)
 find_package(Threads QUIET)
-find_package(readline)
+
+if(NOT NRN_ENABLE_INTERNAL_READLINE)
+  find_package(Readline)
+endif()
+
 if(NRN_ENABLE_RX3D)
   if(NOT NRN_ENABLE_PYTHON)
     message(SEND_ERROR "NRN_ENABLE_RX3D requires NRN_ENABLE_PYTHON feature.")
@@ -443,6 +450,7 @@ if(cmake_generator_tolower MATCHES "makefile")
   message(STATUS "BUILD_TYPE    | ${CMAKE_BUILD_TYPE} (allowed: ${allowableBuildTypes})")
   message(STATUS "COMPILE FLAGS | ${COMPILER_FLAGS}")
   message(STATUS "Shared        | ${NRN_ENABLE_SHARED}")
+  message(STATUS "Binary special| ${NRN_ENABLE_BINARY_SPECIAL}")
   message(STATUS "Legacy FR     | ${NRN_ENABLE_LEGACY_FR}")
   message(STATUS "MPI           | ${NRN_ENABLE_MPI}")
   if(NRN_ENABLE_MPI)

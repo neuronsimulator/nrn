@@ -136,6 +136,8 @@ class CMakeAugmentedBuilder(build_ext):
         cmake = self._find_cmake()
         cfg = 'Debug' if self.debug else 'Release'
         self.outdir = os.path.abspath(ext.cmake_install_prefix)
+        readline_flag = 'ON' if sys.platform[:6] == "darwin" else 'OFF'
+
         log.info("Building lib to: %s", self.outdir)
 
         cmake_args = [
@@ -143,6 +145,7 @@ class CMakeAugmentedBuilder(build_ext):
             '-DCMAKE_INSTALL_PREFIX=' + self.outdir,
             '-DPYTHON_EXECUTABLE=' + sys.executable,
             '-DCMAKE_BUILD_TYPE=' + cfg,
+            '-DNRN_ENABLE_INTERNAL_READLINE=' + readline_flag,
         ] + ext.cmake_flags
 
         if self.cmake_prefix:
@@ -245,7 +248,7 @@ def setup_package():
             '-DNRN_ENABLE_MPI_DYNAMIC=ON',
             '-DNRN_ENABLE_PYTHON_DYNAMIC=ON',
             '-DNRN_ENABLE_MODULE_INSTALL=OFF',
-            '-DNRN_USE_REL_RPATH=ON',
+            '-DNRN_ENABLE_REL_RPATH=ON',
             '-DLINK_AGAINST_PYTHON=OFF',
         ],
         include_dirs=[
@@ -300,11 +303,17 @@ def setup_package():
 
     log.info("RX3D is %s", "ENABLED" if RX3D else "DISABLED")
 
+    # For CI, we want to build separate wheel
+    package_name = 'NEURON'
+    if "NEURON_NIGHTLY_TAG" in os.environ:
+        package_name += os.environ['NEURON_NIGHTLY_TAG']
+
     setup(
-        name='NEURON',
+        name=package_name,
         version=__version__,
         package_dir={'': NRN_PY_ROOT},
         packages=py_packages,
+        package_data={'neuron': ['*.dat']},
         ext_modules=extensions,
         scripts=[
             os.path.join(NRN_PY_SCRIPTS, f)

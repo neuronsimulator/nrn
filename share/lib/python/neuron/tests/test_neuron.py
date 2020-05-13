@@ -135,6 +135,17 @@ class NeuronTestCase(unittest.TestCase):
         assert(error == 0)
         return 0
 
+    def testHelp(self):
+        error = False
+        try:
+            from neuron import doc
+            print (doc.get_docstring('xpanel', ''))
+        except:
+            print("'doc.get_docstring('xpanel', '')' failed")
+            error = True
+        self.assertFalse(error)
+        return 0
+
 
     def testRxDexistence(self):
         from multiprocessing import Process

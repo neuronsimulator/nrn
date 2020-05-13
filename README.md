@@ -1,4 +1,4 @@
-[![Build Status](https://api.travis-ci.org/neuronsimulator/nrn.svg?branch=master)](https://travis-ci.org/neuronsimulator/nrn)
+[![Build Status](https://api.travis-ci.org/neuronsimulator/nrn.svg?branch=master)](https://travis-ci.org/neuronsimulator/nrn) [![Build Status](https://dev.azure.com/neuronsimulator/nrn/_apis/build/status/neuronsimulator.nrn?branchName=master)](https://dev.azure.com/neuronsimulator/nrn/_build/latest?definitionId=1&branchName=master)
 
 NEURON is a simulator for models of neurons and networks of neuron.
 See [http://neuron.yale.edu](http://neuron.yale.edu) for installers, source code,
@@ -110,6 +110,7 @@ e.g. a bare-bones install:
 
 Particularly useful CMake options are (use **ON** to enable and **OFF** to disable feature):
 
+* **-DNRN\_ENABLE\_BINARY_SPECIAL=ON** : Build special as a binary instead of shell script
 * **-DNRN\_ENABLE\_INTERVIEWS=OFF** : Disable Interviews (native GUI support)
 * **-DNRN\_ENABLE\_PYTHON=OFF** : Disable Python support
 * **-DNRN\_ENABLE\_MPI=OFF** : Disable MPI support for parallelization

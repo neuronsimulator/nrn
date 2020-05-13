@@ -12,6 +12,7 @@ set(HEADER_FILES_TO_INSTALL
     hocgetsym.h
     hoclist.h
     hocparse.h
+    ivstream.h
     md1redef.h
     md2redef.h
     membdef.h
@@ -28,6 +29,8 @@ set(HEADER_FILES_TO_INSTALL
     nrniv_mf.h
     nrnjava.h
     nrnoc_ml.h
+    nrnmpi.h
+    nrnmpidec.h
     nrnran123.h
     nrnredef.h
     oc_ansi.h
@@ -620,6 +623,7 @@ if(MINGW)
     ${MSWIN_SRC_DIR}/lib
     bshstart.sh
     neuron2.sh
+    neuron3.sh
     mknrndl2.sh
     mknrndll.sh
     modlunit.sh)

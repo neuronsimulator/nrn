@@ -3,8 +3,16 @@
 # =============================================================================
 # TODO: for nrn.defaults but these are repeated in cmake_config/CMakeLists.txt
 set(modsubdir ${CMAKE_SYSTEM_PROCESSOR})
-set(NRNMECH_DLL_STYLE_FALSE "\#")
-set(NRNMECH_DLL_STYLE_TRUE "")
+
+# Switch between binary special and script-based special
+# Works with CMAKE and autotools 
+if(NRN_ENABLE_BINARY_SPECIAL)
+  set(NRNMECH_DLL_STYLE_FALSE "")
+  set(NRNMECH_DLL_STYLE_TRUE "\#")
+else()
+  set(NRNMECH_DLL_STYLE_FALSE "\#")
+  set(NRNMECH_DLL_STYLE_TRUE "")
+endif()
 
 set(nrndef_unix "//")
 set(nrndef_mac "//")
