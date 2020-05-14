@@ -77,13 +77,25 @@ int tstkchk_actual(int i, int j) {
 
 #define USEMACROS 1
 
+/* warning! tstkchk(i,j) when i!=j will call execerror and error recovery
+   now uses stackp to recover OBJECTTMP resources. So it must be the case that
+   stackp - stack is an even number (since stack item, itemtype values
+   use a pair of stack locations). This invalidates the previous pop idiom
+   tstkchk((--stackp)->i, type), (--stackp)->val)) since if tstkchk calls
+   execerror without returning, stackp is no longer consistent since the
+   second decrement no longer takes place.
+*/
+
 #if USEMACROS
+/* warning! tstkchk is a macro that uses each arg twice. So error if
+   the arg in the call has side effects. Eg avoid args like --stackp
+*/
+#define tstkchk(i,j)	(((i)!=(j))?tstkchk_actual(i,j):0)
 #define pushxm(d)	((stackp++)->val = (d));((stackp++)->i = NUMBER)
 #define pushsm(d)	((stackp++)->sym = (d));((stackp++)->i = SYMBOL)
-#define xpopm()		(tstkchk((--stackp)->i, NUMBER), (--stackp)->val)
-#define spopm()		(tstkchk((--stackp)->i, SYMBOL), (--stackp)->sym)
 #define nopopm()	(stackp -= 2)
-#define tstkchk(i,j)	(((i)!=(j))?tstkchk_actual(i,j):0)
+#define xpopm()		(nopopm(), tstkchk(stackp[1].i, NUMBER), stackp->val)
+#define spopm()		(nopopm(), tstkchk(stackp[1].i, SYMBOL), stackp->sym)
 #else
 #define pushxm(d) pushx(d)
 #define pushsm(d) pushs(d)
@@ -255,8 +267,8 @@ static void frameobj_clean(Frame* f) {
 	s = f->argn + 2;
 	for (i=f->nargs-1; i >= 0; --i) {
 		if ((--s)->i == OBJECTTMP) {
-			s->i = 0;
 			hoc_stkobj_unref((--s)->obj);
+			s[1].i = 0;
 		}else{
 			--s;
 		}
@@ -302,6 +314,7 @@ static void stack_obtmp_recover_on_err(int tcnt) {
     for (stkp = stackp - 2; stkp >= stack; stkp -= 2) {
       if (stkp[1].i == OBJECTTMP) {
         hoc_stkobj_unref(stkp[0].obj);
+        stkp[1].i = 0;
         if (tobj_count == tcnt) {
           return;
         }
@@ -739,9 +752,9 @@ int hoc_inside_stacktype(int i) { /* 0 is top */
 double xpop(void) {	/* pop double and return top elem from stack */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
-	--stackp;
-	tstkchk(stackp->i, NUMBER);
-	return (--stackp)->val;
+	stackp -= 2;
+	tstkchk(stackp[1].i, NUMBER);
+	return stackp->val;
 }
 
 #if 0
@@ -785,17 +798,17 @@ void pstack(void) {
 double* hoc_pxpop(void) {/* pop double pointer and return top elem from stack */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
-	--stackp;
-	tstkchk(stackp->i, VAR);
-	return (--stackp)->pval;
+	stackp -= 2;
+	tstkchk(stackp[1].i, VAR);
+	return stackp->pval;
 }
 
 Symbol* spop(void) {/* pop symbol pointer and return top elem from stack */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
-	--stackp;
-	tstkchk(stackp->i, SYMBOL);
-	return (--stackp)->sym;
+	stackp -= 2;
+	tstkchk(stackp[1].i, SYMBOL);
+	return stackp->sym;
 }
 
 /*
@@ -807,47 +820,45 @@ When using objpop, after dealing with the pointer, one should call
 Object** hoc_objpop(void) {/* pop pointer to object pointer and return top elem from stack */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
-	--stackp;
-	if (stackp->i == OBJECTTMP) {
-		return hoc_temp_objptr((--stackp)->obj);
+	stackp -= 2;
+	if (stackp[1].i == OBJECTTMP) {
+		return hoc_temp_objptr(stackp->obj);
 	}
-	tstkchk(stackp->i, OBJECTVAR);
-	return (--stackp)->pobj;
+	tstkchk(stackp[1].i, OBJECTVAR);
+	return stackp->pobj;
 }
 
 Object* hoc_pop_object(void ) {/* pop object and return top elem from stack */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
-	--stackp;
-	tstkchk(stackp->i, OBJECTTMP);
-	return (--stackp)->obj;
+	stackp -= 2;
+	tstkchk(stackp[1].i, OBJECTTMP);
+	return stackp->obj;
 }
 
 char** hoc_strpop(void) { /* pop pointer to string pointer and return top elem from stack */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
-	--stackp;
-	tstkchk(stackp->i, STRING);
-	return (--stackp)->pstr;
+	stackp -= 2;
+	tstkchk(stackp[1].i, STRING);
+	return stackp->pstr;
 }
 
 int ipop(void) {/* pop symbol pointer and return top elem from stack */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
-	--stackp;
-	tstkchk(stackp->i, USERINT);
-	return (--stackp)->i;
+	stackp -= 2;
+	tstkchk(stackp[1].i, USERINT);
+	return stackp->i;
 }
 
 void nopop(void) {/* just pop the stack without returning anything */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
-	--stackp;
-	if (stackp->i == OBJECTTMP) {
-		stackp->i = 0;
-		hoc_stkobj_unref((--stackp)->obj);
-	}else{
-		--stackp;
+	stackp -= 2;
+	if (stackp[1].i == OBJECTTMP) {
+		hoc_stkobj_unref(stackp->obj);
+		stackp[1].i = 0;
 	}
 }
 
