@@ -17,7 +17,6 @@ extern int hoc_stack_type();
 extern char** hoc_strpop();
 extern Object** hoc_objpop();
 extern Object* hoc_pop_object();
-extern void hoc_stkobj_unref(Object*);
 extern void hoc_tobj_unref(Object**);
 extern int hoc_ipop();
 PyObject* nrnpy_hoc2pyobject(Object*);
@@ -360,7 +359,6 @@ static void hpoasgn(Object* o, int type) {
         "HOC cannot handle PythonObject assignment with more than one index.");
   }
   Py_DECREF(poright);
-  hoc_stkobj_unref(o);
   if (err) {
     PyErr_Print();
     hoc_execerror("Assignment to PythonObject failed", NULL);

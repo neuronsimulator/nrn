@@ -64,6 +64,9 @@ int tstkchk_actual(int i, int j) {
 			case OBJECTTMP:	/* would use OBJECT if it existed */
 				s[k] = "(Object *)";
 				break;
+			case STKOBJ_UNREF:/* hoc_stkobj_unref allready called */
+				s[k] = "(Object * already unreffed on stack)";
+				break;
 			default:
 				s[k] = "(Unknown)";
 				break;
@@ -251,9 +254,12 @@ printf("hoc_pop_defer %s %d\n", hoc_object_name(unref_defer_), unref_defer_->ref
 /* should be called on each OBJECTTMP on the stack after adjusting the
 stack pointer downward */
 
-void hoc_stkobj_unref(Object* o) {
-	--tobj_count;
-	hoc_obj_unref(o);
+void hoc_stkobj_unref(Object* o, int stkindex) {
+	if (stack[stkindex+1].i == OBJECTTMP) {
+		--tobj_count;
+		hoc_obj_unref(o);
+		stack[stkindex+1].i = STKOBJ_UNREF;
+	}
 }
 
 /* check the args of the frame and unref any of type OBJECTTMP */
@@ -266,11 +272,9 @@ static void frameobj_clean(Frame* f) {
 	}
 	s = f->argn + 2;
 	for (i=f->nargs-1; i >= 0; --i) {
-		if ((--s)->i == OBJECTTMP) {
-			hoc_stkobj_unref((--s)->obj);
-			s[1].i = 0;
-		}else{
-			--s;
+		s -= 2;
+		if (s[1].i == OBJECTTMP) {
+			hoc_stkobj_unref(s->obj, (int)(s - stack));
 		}
 	}
 }
@@ -313,11 +317,12 @@ static void stack_obtmp_recover_on_err(int tcnt) {
     */
     for (stkp = stackp - 2; stkp >= stack; stkp -= 2) {
       if (stkp[1].i == OBJECTTMP) {
-        hoc_stkobj_unref(stkp[0].obj);
-        stkp[1].i = 0;
+        hoc_stkobj_unref(stkp->obj, (int)(stkp - stack));
         if (tobj_count == tcnt) {
           return;
         }
+      }else if (stkp[1].i == STKOBJ_UNREF) {
+        printf("OBJECTTMP at stack index %ld already unreffed\n", stkp - stack);
       }
     }
   }
@@ -745,6 +750,10 @@ Object* hoc_obj_look_inside_stack(int i) { /* stack pointer at depth i; i=0 is t
 	return *(d[0].pobj);
 }
 
+int hoc_obj_look_inside_stack_index(int i) {
+  return (int)((stackp - 2*i - 2) - stack);
+}
+
 int hoc_inside_stacktype(int i) { /* 0 is top */
 	return (stackp - 2*i - 1)->i;
 }
@@ -786,6 +795,10 @@ void pstack(void) {
 				break;
 			case OBJECTTMP:	/* would use OBJECT if it existed */
 				printf("(Object *) %s\n", hoc_object_name(d->obj));
+				break;
+			case STKOBJ_UNREF: /* hoc_stkobj_ref already called */
+				printf("(Object * already unreffed by hoc_stkobj_ref at stkindex %ld. Following name print may cause a crash if already freed.\n", d - stack);
+				printf("    %s\n", hoc_object_name(d->obj));
 				break;
 			default:
 				printf("(Unknown)\n");
@@ -857,8 +870,7 @@ void nopop(void) {/* just pop the stack without returning anything */
 		execerror("stack underflow", (char *) 0);
 	stackp -= 2;
 	if (stackp[1].i == OBJECTTMP) {
-		hoc_stkobj_unref(stackp->obj);
-		stackp[1].i = 0;
+		hoc_stkobj_unref(stackp->obj, (int)(stackp - stack));
 	}
 }
 

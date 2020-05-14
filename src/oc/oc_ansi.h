@@ -86,6 +86,8 @@ extern Symbol* hoc_install(const char*, int, double, Symlist**);
 extern Objectdata* hoc_objectdata;
 extern Datum* hoc_look_inside_stack(int, int);
 extern Object* hoc_obj_look_inside_stack(int);
+extern int hoc_obj_look_inside_stack_index(int);
+extern void hoc_stkobj_unref(Object*, int stkindex);
 extern size_t hoc_total_array_data(Symbol*, Objectdata*);
 extern char* hoc_araystr(Symbol*, int, Objectdata*);
 extern char* hoc_object_name(Object*);

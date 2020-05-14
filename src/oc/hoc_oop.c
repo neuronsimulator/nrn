@@ -30,8 +30,6 @@ void (*nrnpy_py2n_component)(Object* o, Symbol* s, int nindex, int isfunc);
 void (*nrnpy_hpoasgn)(Object* o, int type);
 #endif
 
-extern void hoc_stkobj_unref(Object*);
-
 #if CABLE
 #include "section.h"
 #include "nrniv_mf.h"
@@ -612,7 +610,6 @@ void hoc_newobj(void) { /* template at pc+1 */
 #if USE_PYTHON
 	}else{ /* Assignment to OBJECTTMP not allowed */
 		Object* o = hoc_obj_look_inside_stack(narg);
-		hoc_stkobj_unref(o);
 		hoc_execerror("Assignment to $o only allowed if caller arg was declared as objref", NULL);
 	}
 #endif
@@ -1387,13 +1384,14 @@ void hoc_object_asgn(void) {
 #if USE_PYTHON
 	case OBJECTTMP: {   /* should be PythonObject */
 		Object* o;
+		int stkindex = hoc_obj_look_inside_stack_index(1);
 		o = hoc_obj_look_inside_stack(1);
 		assert(o->template->sym == nrnpy_pyobj_sym_);
 		if (op) {
-			hoc_stkobj_unref(o);
 			hoc_execerror("Invalid assignment operator for PythonObject", (char*)0);
 		}
 		(*nrnpy_hpoasgn)(o, type1);
+		hoc_stkobj_unref(o, stkindex);
 		}
 		break;
 #endif
@@ -1921,9 +1919,6 @@ void hoc_obj_unref(Object* obj){
 printf("unreffing %s with refcount %d\n", hoc_object_name(obj), obj->refcount);
 #endif
 	--obj->refcount;
-if (obj->refcount < 0) {
-  printf("obj->refcount < 0\n");
-}
 	if (obj->template->unref) {
 		int i = obj->refcount;
 		pushx((double)i);
