@@ -22,12 +22,11 @@
 #include <string>
 #include <utility>
 
-#include <fmt/format.h>
-
 #include "codegen/codegen_info.hpp"
 #include "codegen/codegen_naming.hpp"
 #include "printer/code_printer.hpp"
 #include "symtab/symbol_table.hpp"
+#include "utils/logger.hpp"
 #include "visitors/ast_visitor.hpp"
 
 

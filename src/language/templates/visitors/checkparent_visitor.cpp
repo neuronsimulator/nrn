@@ -12,9 +12,9 @@
 #include "visitors/checkparent_visitor.hpp"
 
 #include <string>
-#include <fmt/format.h>
 
 #include "ast/ast.hpp"
+#include "utils/logger.hpp"
 
 namespace nmodl {
 namespace visitor {
