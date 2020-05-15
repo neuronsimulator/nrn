@@ -9,10 +9,9 @@
 #include <cmath>
 #include <set>
 
-#include <fmt/format.h>
-
 #include "codegen/codegen_helper_visitor.hpp"
 #include "codegen/codegen_naming.hpp"
+#include "utils/logger.hpp"
 #include "visitors/lookup_visitor.hpp"
 #include "visitors/rename_visitor.hpp"
 

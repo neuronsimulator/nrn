@@ -60,15 +60,16 @@ T remove_extension(T const& filename) {
  * \todo Remove this after move to manylinux2010 platform.
  */
 #if (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__) < 40900
-template<typename T>
-typename std::vector<T>::iterator
-const_iter_cast(std::vector<T>& v, typename std::vector<T>::const_iterator iter) {
+template <typename T>
+typename std::vector<T>::iterator const_iter_cast(std::vector<T>& v,
+                                                  typename std::vector<T>::const_iterator iter) {
     return v.begin() + (iter - v.cbegin());
 }
 #else
-template<typename T>
-typename std::vector<T>::const_iterator
-const_iter_cast(const std::vector<T>& /*v*/, typename std::vector<T>::const_iterator iter) {
+template <typename T>
+typename std::vector<T>::const_iterator const_iter_cast(
+    const std::vector<T>& /*v*/,
+    typename std::vector<T>::const_iterator iter) {
     return iter;
 }
 #endif
