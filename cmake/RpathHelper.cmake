@@ -24,7 +24,7 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 # the RPATH to be used when installing, but only if it's not a system directory
 list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
 if(isSystemDir STREQUAL "-1")
-    if(NRN_USE_REL_RPATH)
+    if(NRN_ENABLE_REL_RPATH)
       message(STATUS "Using relative RPATHs")
       set(CMAKE_INSTALL_RPATH "${LOADER_PATH_FLAG}/../lib")
     else()
