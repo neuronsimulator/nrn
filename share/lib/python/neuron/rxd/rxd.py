@@ -999,12 +999,6 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
     inter, surf, mesh = geometry3d.voxelize2([sec1d, sec3d], region._dx,
                                               mesh_grid=region._mesh_grid,
                                               relevant_pts=[pt1d, pt3d])
-    from .geometry import FractionalVolume
-    frac = (region._geometry._volume_fraction if
-            isinstance(region._geometry,FractionalVolume) else 1)
-    points = [key for key in surf.keys()] + [key for key in inter.keys()]
-    points = sorted(points, key=lambda pt: pt[0])
-
 
     # TODO: remove need for this assumption
     assert(x1d in (0, 1))
