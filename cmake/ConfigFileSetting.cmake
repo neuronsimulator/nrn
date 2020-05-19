@@ -269,8 +269,6 @@ endif()
 if(MINGW)
   dospath("${CMAKE_INSTALL_PREFIX}" WIN_MARSHAL_NRN_DIR)
   nrn_configure_file(nrnsetupmingw.nsi src/mswin)
-  nrn_configure_file(AddToPath.nsh src/mswin)
-  nrn_configure_file(EnvVarUpdate.nsh src/mswin)
   nrn_configure_file(pre_setup_exe.sh src/mswin)
   # Just name and not path since setup.exe user chooses location of install.
   set(CC x86_64-w64-mingw32-gcc.exe)
