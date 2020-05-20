@@ -664,7 +664,6 @@ AC_CONFIG_FILES([
 	src/mac/macdist.pkgproj src/mac/postinstall.sh
 	src/mswin/nrnsetup.nsi src/mswin/lib/mknrndll.mak
 	src/mswin/nrnsetupmingw.nsi
-	src/mswin/EnvVarUpdate.nsh src/mswin/AddToPath.nsh
 	src/mswin/extra/Makefile src/mswin/rdln/Makefile
 	src/mswin/windll/Makefile
 	src/mswin/wnrnbbs/Makefile src/mswin/lib/Makefile

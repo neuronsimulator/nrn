@@ -59,6 +59,7 @@ if(MINGW)
     COMMAND ${MAKENSIS_EXE} ${PROJECT_BINARY_DIR}/src/mswin/nrnsetupmingw.nsi
     DEPENDS ${PROJECT_SOURCE_DIR}/mingw_files/nrnmingwenv.sh
             ${PROJECT_BINARY_DIR}/src/mswin/pre_setup_exe.sh
+            ${PROJECT_BINARY_DIR}/src/mswin/nrnsetupmingw.nsi
     COMMENT "Copy mknrndll tool chain to ${CMAKE_INSTALL_PREFIX} and build setup.exe ")
 
   # install mswin specfic. See cmake/NeuronFileLists.cmake for MSWIN... lists.

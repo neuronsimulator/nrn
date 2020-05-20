@@ -22,8 +22,7 @@ RequestExecutionLevel user
 
 SetCompressor bzip2
 
-!include "EnvVarUpdate.nsh"
-!include "AddToPath.nsh"
+Unicode True
 
 ; Declaration of user variables
 var "uINSTDIR" ; posix version of $INSTDIR
@@ -169,12 +168,16 @@ SectionEnd
 ;Section /o "" nrnenvvar
 ;Section /o "!For all users, Set NEURONHOME and append to PYTHONPATH. This is needed if you wish to launch Python from a terminal other than the bash icon." nrnenvvar
 Section "!Set DOS environment. (Useful if you wish to launch Python from a terminal not started by the bash icon.)" nrnenvvar
-  ${EnvVarUpdate} $0 "NEURONHOME" "A" "HKCU" "$INSTDIR"
-  ${EnvVarUpdate} $0 "PYTHONPATH" "A" "HKCU" "$INSTDIR\lib\python"
-  Push "$INSTDIR\bin"
-  Call AddToPath
-  Push "$INSTDIR\mingw\usr\bin"
-  Call AddToPath
+  EnVar::Delete "NEURONHOME"
+  Pop $0
+  EnVar::AddValue "NEURONHOME""$INSTDIR"
+  Pop $0
+  EnVar::AddValue "PYTHONPATH" "$INSTDIR\lib\python"
+  Pop $0
+  EnVar::AddValue PATH "$INSTDIR\bin"
+  Pop $0
+  EnVar::AddValue PATH "$INSTDIR\mingw\usr\bin"
+  Pop $0
   FileOpen $r1 "$INSTDIR\lib\nrnenvinst.dat" "w"
   FileWrite $r1 "If $INSTDIR\lib\nrnenvinst.dat exists then, on uninstall, the NEURONHOME and PYTHONPATH environment variables will be removed."
   FileClose $r1
@@ -212,12 +215,14 @@ Section "Uninstall"
   DeleteRegKey HKCU "Software\NEURON_Simulator"
   ; unset the environment variables
   IfFileExists "$INSTDIR\lib\nrnenvinst.dat" +1 env
-    ${un.EnvVarUpdate} $0 "NEURONHOME" "R" "HKCU" "$INSTDIR"
-    ${un.EnvVarUpdate} $0 "PYTHONPATH" "R" "HKCU" "$INSTDIR\lib\python"
-    Push "$INSTDIR\mingw\usr\bin"
-    Call un.RemoveFromPath
-    Push "$INSTDIR\bin"
-    Call un.RemoveFromPath
+    EnVar::Delete "NEURONHOME"
+    Pop $0
+    EnVar::DeleteValue "PYTHONPATH" "$INSTDIR\lib\python"
+    Pop $0
+    EnVar::DeleteValue PATH "$INSTDIR\mingw\usr\bin"
+    Pop $0
+    EnVar::DeleteValue PATH "$INSTDIR\bin"
+    Pop $0
 env:
   ; remove registry keys if we own them
   IfFileExists "$INSTDIR\lib\associate.dat" +1 asoc
@@ -262,7 +267,6 @@ SectionEnd
  ;   Pop $R0
  ;  ($R0 at this point is "ass string")
 
-/*
  Function StrStr
  Exch $R1 ; st=haystack,old$R1, $R1=needle
    Exch    ; st=old$R1,haystack
@@ -291,7 +295,6 @@ SectionEnd
    Pop $R2
    Exch $R1
  FunctionEnd
-*/
 
 ; nrniv args need forward slashes
 ; d2u
