@@ -435,7 +435,7 @@ class Region(object):
         #dn = (nx**2 + ny**2 + nz**2)**0.5
         #nx, ny, nz = nx/dn, ny/dn, nz/dn
         # x, y, z = x * x1 + (1 - x) * x0, x * y1 + (1 - x) * y0, x * z1 + (1 - x) * z1
-        r = sec(position).diam * 0.5 + self.dx
+        r = sec(position).diam * 0.5 + self.dx * 3 ** 0.5
         plane_of_disc = geometry3d.graphicsPrimitives.Plane(x, y, z, nx, ny, nz)
         potential_coordinates = []
 

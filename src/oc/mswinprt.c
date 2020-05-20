@@ -348,7 +348,7 @@ void plprint(const char* s) {
 	printf("%s", s);
 }
 #endif
-int hoc_plttext;
+
 #if !defined(__MWERKS__)
 int getpid() {
 #if 0
