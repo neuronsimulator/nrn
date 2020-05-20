@@ -46,27 +46,33 @@ extern char* nrn_mech_dll; /* declared in hoc_init.c so ivocmain.cpp can see it 
 #endif // WIN32
 
 #if defined(NRNMECH_DLL_STYLE)
-#if defined(DARWIN)
+    #if defined(DARWIN)
 
-#ifndef DLL_DEFAULT_FNAME
-#define DLL_DEFAULT_FNAME "libnrnmech.dylib"
-#endif
+        #ifndef DLL_DEFAULT_FNAME
+        #define DLL_DEFAULT_FNAME "libnrnmech.dylib"
+        #endif
 
-#if __GNUC__ < 4
-#include "osxdlfcn.h"
-#include "osxdlfcn.c"
+        #if __GNUC__ < 4
+        #include "osxdlfcn.h"
+        #include "osxdlfcn.c"
+        #else
+        #include <dlfcn.h>
+        #endif // __GNUC__
+
+    #else
+
+        #if defined(HAVE_DLFCN_H) && !defined(__MINGW32__)
+        #include <dlfcn.h>
+        #endif
+
+        #ifndef DLL_DEFAULT_FNAME
+        #define DLL_DEFAULT_FNAME "./libnrnmech.so"
+        #endif
+    #endif
 #else
-#include <dlfcn.h>
-#endif // __GNUC__
-
-#else
-#if defined(HAVE_DLFCN_H) && !defined(__MINGW32__)
-#include <dlfcn.h>
-#endif
-#ifndef DLL_DEFAULT_FNAME
-#define DLL_DEFAULT_FNAME "./libnrnmech.so"
-#endif
-#endif
+    #if defined(HAVE_DLFCN_H) && !defined(__MINGW32__)
+    #include <dlfcn.h>
+    #endif
 #endif
 
 # define	CHECK(name)	if (hoc_lookup(name) != (Symbol *)0){\
@@ -210,7 +216,6 @@ int mswin_load_dll(char* cp1) {
 }
 #endif
 
-#if defined(WIN32) || defined(NRNMECH_DLL_STYLE)
 int mswin_load_dll(const char* cp1) { /* actually linux dlopen */
 	void* handle;
 	if (nrnmpi_myid < 1) if (!nrn_nobanner_ && nrn_istty_) {
@@ -232,11 +237,9 @@ int mswin_load_dll(const char* cp1) { /* actually linux dlopen */
 	}
 	return 0;
 }
-#endif
 
 #if !MAC
 void hoc_nrn_load_dll(void) {
-#if defined(WIN32) || defined(NRNMECH_DLL_STYLE)
 	Symlist* sav;
 	int i;
 	FILE* f;
@@ -255,10 +258,6 @@ void hoc_nrn_load_dll(void) {
 	}else{
 		hoc_retpushx(0.);
 	}	
-#else
-	hoc_warning("nrn_load_dll not available on this machine", (char*)0);
-	hoc_retpushx(0.);
-#endif
 }
 #endif
 
