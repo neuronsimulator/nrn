@@ -116,8 +116,29 @@ jobs:
         Get-Childitem 'C:\' -depth 1 -directory
       displayName: "Show Directory Structure (Begin)"
     - script: |
+        choco install msys2 --no-progress
+      displayName: "In Msys"
+    - script: |
+        set MSYS2_PATH_TYPE=inherit
+        C:\tools\msys64\usr\bin\bash -lc "echo $PWD; ls; mkdir -p $BUILD_SOURCESDIRECTORY/YYYYYYYYYY; ls;"
+        echo "--------------------------"
+        dir .
+        echo "--------------------------"
+        C:\tools\msys64\usr\bin\mintty.exe -w hide /bin/env MSYSTEM=MINGW64 /bin/bash -lc "mkdir -p $BUILD_SOURCESDIRECTORY/XXXXXXXXXXXXXXXXXXXX"
+        dir .
+        echo "--------------------------"
+      displayName: "Dir create"
+    - script: |
         choco install msys2 --params="/InstallDir:%MSYS2_ROOT% /NoUpdate /NoPath"
       displayName: "Install MSYS2"
+    - script: |
+        dir .
+        C:\msys64\usr\bin\mintty.exe -w hide  /bin/env MSYSTEM=MINGW64 /bin/bash -lc "ls &> ls.log"
+        cat ls.log
+        C:\msys64\usr\bin\mintty.exe -w hide  /bin/env MSYSTEM=MINGW64 /bin/bash -lc "build_azure.sh &> build.log "
+        dir .
+        cat build.log
+      displayName: "Attempt Installation"
     - script: |
         choco install --no-progress nsis --version 3.04 -y --allow-downgrade
       displayName: "Install NSIS"
@@ -184,11 +205,3 @@ jobs:
     - pwsh: |
         Get-Childitem 'C:\' -depth 1 -directory
       displayName: "Show Directory Structure (End)"
-    - script: |
-        dir .
-        C:\msys64\usr\bin\mintty.exe -w hide  /bin/env MSYSTEM=MINGW64 /bin/bash -lc "ls &> ls.log"
-        cat ls.log
-        C:\msys64\usr\bin\mintty.exe -w hide  /bin/env MSYSTEM=MINGW64 /bin/bash -lc "build_azure.sh &> build.log "
-        dir .
-        cat build.log
-      displayName: "Attempt Installation"
