@@ -87,6 +87,10 @@ int tstkchk_actual(int i, int j) {
    tstkchk((--stackp)->i, type), (--stackp)->val)) since if tstkchk calls
    execerror without returning, stackp is no longer consistent since the
    second decrement no longer takes place.
+
+   Furthermore, tstkchk(i,j) should be called prior to actually popping the
+   stack so that the execerror will properly unref the otherwise unexpected
+   possible OBJECTTMP.
 */
 
 #if USEMACROS
@@ -96,9 +100,9 @@ int tstkchk_actual(int i, int j) {
 #define tstkchk(i,j)	(((i)!=(j))?tstkchk_actual(i,j):0)
 #define pushxm(d)	((stackp++)->val = (d));((stackp++)->i = NUMBER)
 #define pushsm(d)	((stackp++)->sym = (d));((stackp++)->i = SYMBOL)
-#define nopopm()	(stackp -= 2)
-#define xpopm()		(nopopm(), tstkchk(stackp[1].i, NUMBER), stackp->val)
-#define spopm()		(nopopm(), tstkchk(stackp[1].i, SYMBOL), stackp->sym)
+#define nopopm()	(stackp -= 2) /*provision at use made to deal with OBJECTTMP*/
+#define xpopm()		(tstkchk(stackp[-1].i, NUMBER), nopopm(), stackp->val)
+#define spopm()		(tstkchk(stackp[-1].i, SYMBOL), nopopm(), stackp->sym)
 #else
 #define pushxm(d) pushx(d)
 #define pushsm(d) pushs(d)
@@ -761,8 +765,8 @@ int hoc_inside_stacktype(int i) { /* 0 is top */
 double xpop(void) {	/* pop double and return top elem from stack */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
+	tstkchk(stackp[-1].i, NUMBER);
 	stackp -= 2;
-	tstkchk(stackp[1].i, NUMBER);
 	return stackp->val;
 }
 
@@ -811,16 +815,16 @@ void pstack(void) {
 double* hoc_pxpop(void) {/* pop double pointer and return top elem from stack */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
+	tstkchk(stackp[-1].i, VAR);
 	stackp -= 2;
-	tstkchk(stackp[1].i, VAR);
 	return stackp->pval;
 }
 
 Symbol* spop(void) {/* pop symbol pointer and return top elem from stack */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
+	tstkchk(stackp[-1].i, SYMBOL);
 	stackp -= 2;
-	tstkchk(stackp[1].i, SYMBOL);
 	return stackp->sym;
 }
 
@@ -837,31 +841,31 @@ Object** hoc_objpop(void) {/* pop pointer to object pointer and return top elem 
 	if (stackp[1].i == OBJECTTMP) {
 		return hoc_temp_objptr(stackp->obj);
 	}
-	tstkchk(stackp[1].i, OBJECTVAR);
+	tstkchk(stackp[1].i, OBJECTVAR); /* safe because cannot be OBJECTTMP */
 	return stackp->pobj;
 }
 
 Object* hoc_pop_object(void ) {/* pop object and return top elem from stack */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
+	tstkchk(stackp[-1].i, OBJECTTMP);
 	stackp -= 2;
-	tstkchk(stackp[1].i, OBJECTTMP);
 	return stackp->obj;
 }
 
 char** hoc_strpop(void) { /* pop pointer to string pointer and return top elem from stack */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
+	tstkchk(stackp[-1].i, STRING);
 	stackp -= 2;
-	tstkchk(stackp[1].i, STRING);
 	return stackp->pstr;
 }
 
 int ipop(void) {/* pop symbol pointer and return top elem from stack */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
+	tstkchk(stackp[-1].i, USERINT);
 	stackp -= 2;
-	tstkchk(stackp[1].i, USERINT);
 	return stackp->i;
 }
 
