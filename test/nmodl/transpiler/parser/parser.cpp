@@ -10,7 +10,9 @@
 #include <string>
 #include <utility>
 
-#include "catch/catch.hpp"
+#include <catch/catch.hpp>
+
+#include "ast/program.hpp"
 #include "lexer/modtoken.hpp"
 #include "parser/diffeq_driver.hpp"
 #include "parser/nmodl_driver.hpp"

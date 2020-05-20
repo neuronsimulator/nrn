@@ -10,6 +10,8 @@
 ///
 
 #include "visitors/nmodl_visitor.hpp"
+
+#include "ast/all.hpp"
 #include "visitors/nmodl_visitor_helper.ipp"
 
 

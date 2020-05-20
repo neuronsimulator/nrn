@@ -113,38 +113,38 @@ class Symbol {
     Symbol() = delete;
 
     Symbol(std::string name, ast::Ast* node)
-        : name(name)
+        : name(std::move(name))
         , node(node) {}
 
     Symbol(std::string name, ModToken token)
-        : name(name)
-        , token(token) {}
+        : name(std::move(name))
+        , token(std::move(token)) {}
 
     Symbol(std::string name, ast::Ast* node, ModToken token)
-        : name(name)
+        : name(std::move(name))
         , node(node)
-        , token(token) {}
+        , token(std::move(token)) {}
 
     /// \}
 
     /// increment read count
-    void read() {
+    void read() noexcept {
         read_count++;
     }
 
     /// increment write count
-    void write() {
+    void write() noexcept {
         write_count++;
     }
 
     /// \name Setter
     /// \{
 
-    void set_scope(std::string s) {
+    void set_scope(const std::string& s) {
         scope = s;
     }
 
-    void set_id(int i) {
+    void set_id(int i) noexcept {
         id = i;
     }
 
@@ -155,7 +155,7 @@ class Symbol {
      * as we want to keep track of original name and not intermediate
      * renames
      */
-    void set_name(std::string new_name) {
+    void set_name(const std::string& new_name) {
         if (renamed_from.empty()) {
             renamed_from = name;
         }
@@ -168,13 +168,13 @@ class Symbol {
      * Prime variable will appear in different block and could have
      * multiple derivative orders. We have to store highest order.
      */
-    void set_order(int new_order) {
+    void set_order(int new_order) noexcept {
         if (new_order > order) {
             order = new_order;
         }
     }
 
-    void set_definition_order(int order) {
+    void set_definition_order(int order) noexcept {
         definition_order = order;
     }
 
@@ -182,16 +182,16 @@ class Symbol {
         value = std::make_shared<double>(val);
     }
 
-    void set_as_array(int len) {
+    void set_as_array(int len) noexcept {
         array = true;
         length = len;
     }
 
-    void set_num_values(int n) {
+    void set_num_values(int n) noexcept {
         num_values = n;
     }
 
-    void set_original_name(std::string new_name) {
+    void set_original_name(const std::string& new_name) {
         renamed_from = new_name;
     }
 
@@ -200,59 +200,59 @@ class Symbol {
     /// \name Getter
     /// \{
 
-    int get_length() {
+    int get_length() const noexcept {
         return length;
     }
 
-    int get_num_values() {
+    int get_num_values() const noexcept {
         return num_values;
     }
 
-    std::string get_original_name() {
+    const std::string& get_original_name() const noexcept {
         return renamed_from;
     }
 
-    std::shared_ptr<double> get_value() {
+    const std::shared_ptr<double>& get_value() const noexcept {
         return value;
     }
 
-    std::string get_name() {
+    const std::string& get_name() const noexcept {
         return name;
     }
 
-    int get_id() {
+    int get_id() const noexcept {
         return id;
     }
 
-    std::string get_scope() {
+    const std::string& get_scope() const noexcept {
         return scope;
     }
 
-    syminfo::NmodlType get_properties() {
+    const syminfo::NmodlType& get_properties() const noexcept {
         return properties;
     }
 
-    syminfo::Status get_status() {
+    const syminfo::Status& get_status() const noexcept {
         return status;
     }
 
-    ast::Ast* get_node() {
+    ast::Ast* get_node() const noexcept {
         return node;
     }
 
-    ModToken get_token() {
+    ModToken get_token() const noexcept {
         return token;
     }
 
-    int get_read_count() const {
+    int get_read_count() const noexcept {
         return read_count;
     }
 
-    int get_write_count() const {
+    int get_write_count() const noexcept {
         return write_count;
     }
 
-    int get_definition_order() const {
+    int get_definition_order() const noexcept {
         return definition_order;
     }
 
@@ -269,80 +269,80 @@ class Symbol {
      *
      * \sa nmodl::details::NEURON_VARIABLES
      */
-    bool is_external_variable() {
+    bool is_external_variable() const noexcept {
         return (properties == syminfo::NmodlType::extern_neuron_variable ||
                 properties == syminfo::NmodlType::extern_method);
     }
 
     /// check if symbol has any of the given property
-    bool has_any_property(syminfo::NmodlType new_properties) {
+    bool has_any_property(syminfo::NmodlType new_properties) const noexcept {
         return static_cast<bool>(properties & new_properties);
     }
 
     /// check if symbol has all of the given properties
-    bool has_all_properties(syminfo::NmodlType new_properties) {
+    bool has_all_properties(syminfo::NmodlType new_properties) const noexcept {
         return ((properties & new_properties) == new_properties);
     }
 
     /// check if symbol has any of the status
-    bool has_any_status(syminfo::Status new_status) {
+    bool has_any_status(syminfo::Status new_status) const noexcept {
         return static_cast<bool>(status & new_status);
     }
 
     /// check if symbol has all of the status
-    bool has_all_status(syminfo::Status new_status) {
+    bool has_all_status(syminfo::Status new_status) const noexcept {
         return ((status & new_status) == new_status);
     }
 
     /// add new properties to symbol
-    void add_properties(syminfo::NmodlType new_properties) {
+    void add_properties(syminfo::NmodlType new_properties) noexcept {
         properties |= new_properties;
     }
 
     /// add new property to symbol
-    void add_property(syminfo::NmodlType property) {
+    void add_property(syminfo::NmodlType property) noexcept {
         properties |= property;
     }
 
     /// mark symbol as inlined (in case of procedure/function)
-    void mark_inlined() {
+    void mark_inlined() noexcept {
         status |= syminfo::Status::inlined;
     }
 
     /// mark symbol as newly created (in case of new variable)
-    void mark_created() {
+    void mark_created() noexcept {
         status |= syminfo::Status::created;
     }
 
-    void mark_renamed() {
+    void mark_renamed() noexcept {
         status |= syminfo::Status::renamed;
     }
 
     /// mark symbol as localized (e.g. from RANGE to LOCAL conversion)
-    void mark_localized() {
+    void mark_localized() noexcept {
         status |= syminfo::Status::localized;
     }
 
-    void mark_thread_safe() {
+    void mark_thread_safe() noexcept {
         status |= syminfo::Status::thread_safe;
     }
 
     /// mark symbol as newly created variable for the STATE variable
     /// this is used with legacy euler/derivimplicit solver where DState
     /// variables are created
-    void created_from_state() {
+    void created_from_state() noexcept {
         mark_created();
         status |= syminfo::Status::from_state;
     }
 
-    bool is_array() {
+    bool is_array() const noexcept {
         return array;
     }
 
     /// check if symbol is a variable in nmodl
-    bool is_variable();
+    bool is_variable() const noexcept;
 
-    std::string to_string();
+    std::string to_string() const;
 };
 
 /** @} */  // end of sym_tab

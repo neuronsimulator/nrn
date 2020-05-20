@@ -12,7 +12,7 @@
 #include "CLI/CLI.hpp"
 #include "pybind11/embed.h"
 
-#include "ast/ast_decl.hpp"
+#include "ast/program.hpp"
 #include "codegen/codegen_acc_visitor.hpp"
 #include "codegen/codegen_c_visitor.hpp"
 #include "codegen/codegen_compatibility_visitor.hpp"

@@ -43,26 +43,13 @@ set(VISITOR_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/visitor_utils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/visitor_utils.hpp)
 
-set(VISITOR_GENERATED_SOURCES
-    ${PROJECT_BINARY_DIR}/src/visitors/ast_visitor.cpp
-    ${PROJECT_BINARY_DIR}/src/visitors/json_visitor.cpp
-    ${PROJECT_BINARY_DIR}/src/visitors/json_visitor.hpp
-    ${PROJECT_BINARY_DIR}/src/visitors/lookup_visitor.cpp
-    ${PROJECT_BINARY_DIR}/src/visitors/lookup_visitor.hpp
-    ${PROJECT_BINARY_DIR}/src/visitors/nmodl_visitor.cpp
-    ${PROJECT_BINARY_DIR}/src/visitors/nmodl_visitor.hpp
-    ${PROJECT_BINARY_DIR}/src/visitors/symtab_visitor.cpp
-    ${PROJECT_BINARY_DIR}/src/visitors/symtab_visitor.hpp
-    ${PROJECT_BINARY_DIR}/src/visitors/checkparent_visitor.cpp
-    ${PROJECT_BINARY_DIR}/src/visitors/checkparent_visitor.hpp)
-
-set_source_files_properties(${VISITOR_GENERATED_SOURCES} PROPERTIES GENERATED TRUE)
+set_source_files_properties(${VISITORS_GENERATED_SOURCES} PROPERTIES GENERATED TRUE)
 
 # =============================================================================
 # Visitor library and executable
 # =============================================================================
 include_directories(${PYBIND11_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS})
-add_library(visitor_obj OBJECT ${VISITOR_SOURCES} ${VISITOR_GENERATED_SOURCES})
+add_library(visitor_obj OBJECT ${VISITOR_SOURCES} ${VISITORS_GENERATED_SOURCES})
 set_property(TARGET visitor_obj PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 add_dependencies(visitor_obj lexer_obj)

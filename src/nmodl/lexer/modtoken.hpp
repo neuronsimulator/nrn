@@ -75,7 +75,7 @@ class ModToken {
         , external(ext) {}
 
     ModToken(std::string name, int token, LocationType& pos)
-        : name(name)
+        : name(std::move(name))
         , token(token)
         , pos(pos) {}
 

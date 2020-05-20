@@ -10,6 +10,8 @@
 ///
 
 #include "visitors/json_visitor.hpp"
+
+#include "ast/all.hpp"
 #include "visitors/visitor_utils.hpp"
 
 namespace nmodl {

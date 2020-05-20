@@ -14,7 +14,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "ast/ast.hpp"
+#include "ast/all.hpp"
 #include "lexer/modtoken.hpp"
 #include "symtab/symbol_table.hpp"
 

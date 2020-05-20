@@ -13,7 +13,7 @@
 
 #include <algorithm>
 
-#include "ast/ast.hpp"
+#include "ast/all.hpp"
 
 
 namespace nmodl {

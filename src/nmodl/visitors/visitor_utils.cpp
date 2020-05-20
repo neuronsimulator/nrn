@@ -5,13 +5,14 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
+#include "visitor_utils.hpp"
+
 #include <map>
 #include <memory>
 #include <string>
 
-#include "ast/ast.hpp"
+#include "ast/all.hpp"
 #include "parser/nmodl_driver.hpp"
-#include "visitor_utils.hpp"
 #include "visitors/json_visitor.hpp"
 #include "visitors/lookup_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"

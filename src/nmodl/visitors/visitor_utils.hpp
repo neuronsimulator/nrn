@@ -16,7 +16,7 @@
 #include <set>
 #include <string>
 
-#include "ast/ast.hpp"
+#include <ast/ast_decl.hpp>
 
 namespace nmodl {
 namespace visitor {

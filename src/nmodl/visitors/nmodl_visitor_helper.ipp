@@ -26,7 +26,7 @@ namespace visitor {
 
 template <typename T>
 void NmodlPrintVisitor::visit_element(const std::vector<T>& elements,
-                                      std::string separator,
+                                      const std::string& separator,
                                       bool program,
                                       bool statement) {
     for (auto iter = elements.begin(); iter != elements.end(); iter++) {

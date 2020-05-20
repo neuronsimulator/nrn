@@ -109,17 +109,17 @@ class NmodlDriver {
         verbose = b;
     }
 
-    bool is_verbose() const {
+    bool is_verbose() const noexcept {
         return verbose;
     }
 
     /// return previously parsed AST otherwise nullptr
-    std::shared_ptr<ast::Program> get_ast() const {
+    const std::shared_ptr<ast::Program>& get_ast() const noexcept {
         return astRoot;
     }
 
     /// set new ast root
-    void set_ast(ast::Program* node) {
+    void set_ast(ast::Program* node) noexcept {
         astRoot.reset(node);
     }
 };

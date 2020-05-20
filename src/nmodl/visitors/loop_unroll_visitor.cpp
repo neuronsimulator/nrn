@@ -6,6 +6,8 @@
  *************************************************************************/
 
 #include "visitors/loop_unroll_visitor.hpp"
+
+#include "ast/all.hpp"
 #include "parser/c11_driver.hpp"
 #include "utils/logger.hpp"
 #include "visitors/lookup_visitor.hpp"

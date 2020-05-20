@@ -6,6 +6,8 @@
  *************************************************************************/
 
 #include "codegen/codegen_info.hpp"
+
+#include "ast/all.hpp"
 #include "visitors/lookup_visitor.hpp"
 
 

@@ -13,8 +13,6 @@ set(BISON_GENERATED_SOURCE_FILES
     ${PROJECT_BINARY_DIR}/src/parser/unit/unit_parser.cpp
     ${PROJECT_BINARY_DIR}/src/parser/unit/unit_parser.hpp)
 
-set(AST_SOURCE_FILES ${PROJECT_BINARY_DIR}/src/ast/ast.hpp ${PROJECT_BINARY_DIR}/src/ast/ast.cpp)
-
 set(UNIT_SOURCE_FILES ${NMODL_PROJECT_SOURCE_DIR}/src/units/units.hpp
                       ${NMODL_PROJECT_SOURCE_DIR}/src/units/units.cpp)
 
@@ -31,7 +29,7 @@ set(DIFFEQ_DRIVER_FILES
 set(C_DRIVER_FILES ${NMODL_PROJECT_SOURCE_DIR}/src/parser/c11_driver.hpp
                    ${NMODL_PROJECT_SOURCE_DIR}/src/parser/c11_driver.cpp)
 
-set_source_files_properties(${AST_SOURCE_FILES} PROPERTIES GENERATED TRUE)
+set_source_files_properties(${AST_GENERATED_SOURCES} PROPERTIES GENERATED TRUE)
 
 set(UNIT_DRIVER_FILES ${NMODL_PROJECT_SOURCE_DIR}/src/parser/unit_driver.hpp
                       ${NMODL_PROJECT_SOURCE_DIR}/src/parser/unit_driver.cpp)
@@ -177,7 +175,7 @@ add_custom_command(
 # =============================================================================
 
 add_library(lexer_obj OBJECT ${LEXER_SOURCE_FILES} ${BISON_GENERATED_SOURCE_FILES}
-                             ${AST_SOURCE_FILES} ${UNIT_SOURCE_FILES})
+                             ${AST_GENERATED_SOURCES} ${UNIT_SOURCE_FILES})
 
 set_property(TARGET lexer_obj PROPERTY POSITION_INDEPENDENT_CODE ON)
 

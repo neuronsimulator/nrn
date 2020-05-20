@@ -45,37 +45,9 @@ class CodegenCompatibilityVisitor: public visitor::AstVisitor {
         ast::Ast& node,
         const std::shared_ptr<ast::Ast>&);
 
-    /// Unordered_map to find the function needed to be called in
+    /// associated container to find the function needed to be called in
     /// for every ast::AstNodeType that is unsupported
-    std::map<ast::AstNodeType, FunctionPointer> unhandled_ast_types_func = {
-        {AstNodeType::MATCH_BLOCK,
-         &CodegenCompatibilityVisitor::return_error_without_name<MatchBlock>},
-        {AstNodeType::BEFORE_BLOCK,
-         &CodegenCompatibilityVisitor::return_error_without_name<BeforeBlock>},
-        {AstNodeType::AFTER_BLOCK,
-         &CodegenCompatibilityVisitor::return_error_without_name<AfterBlock>},
-        {AstNodeType::TERMINAL_BLOCK,
-         &CodegenCompatibilityVisitor::return_error_without_name<TerminalBlock>},
-        {AstNodeType::DISCRETE_BLOCK,
-         &CodegenCompatibilityVisitor::return_error_with_name<DiscreteBlock>},
-        {AstNodeType::PARTIAL_BLOCK,
-         &CodegenCompatibilityVisitor::return_error_with_name<PartialBlock>},
-        {AstNodeType::FUNCTION_TABLE_BLOCK,
-         &CodegenCompatibilityVisitor::return_error_without_name<FunctionTableBlock>},
-        {AstNodeType::CONSTANT_BLOCK,
-         &CodegenCompatibilityVisitor::return_error_without_name<ConstantBlock>},
-        {AstNodeType::CONSTRUCTOR_BLOCK,
-         &CodegenCompatibilityVisitor::return_error_without_name<ConstructorBlock>},
-        {AstNodeType::DESTRUCTOR_BLOCK,
-         &CodegenCompatibilityVisitor::return_error_without_name<DestructorBlock>},
-        {AstNodeType::INDEPENDENT_BLOCK,
-         &CodegenCompatibilityVisitor::return_error_without_name<IndependentBlock>},
-        {AstNodeType::SOLVE_BLOCK,
-         &CodegenCompatibilityVisitor::return_error_if_solve_method_is_unhandled},
-        {AstNodeType::GLOBAL_VAR, &CodegenCompatibilityVisitor::return_error_global_var},
-        {AstNodeType::POINTER_VAR, &CodegenCompatibilityVisitor::return_error_pointer},
-        {AstNodeType::BBCORE_POINTER_VAR,
-         &CodegenCompatibilityVisitor::return_error_if_no_bbcore_read_write}};
+    static const std::map<ast::AstNodeType, FunctionPointer> unhandled_ast_types_func;
 
     /// Set of handled solvers by the NMODL \c C++ code generator
     const std::set<std::string> handled_solvers{codegen::naming::CNEXP_METHOD,
@@ -103,6 +75,7 @@ class CodegenCompatibilityVisitor: public visitor::AstVisitor {
     /// \return bool if there are unhandled nodes or not
     bool find_unhandled_ast_nodes(Ast& node);
 
+  private:
     /// Takes as parameter an std::shared_ptr<ast::Ast>,
     /// searches if the method used for solving is supported
     /// and if it is not it returns a relative error message

@@ -165,10 +165,15 @@ class InlineVisitor: public AstVisitor {
     /// this is possible for standalone function/procedure call as statement
     bool can_replace_statement(const std::shared_ptr<ast::Statement>& statement);
 
-    /// inline function/procedure into caller block
-    bool inline_function_call(ast::Block* callee,
-                              ast::FunctionCall* node,
-                              ast::StatementBlock* caller);
+    /**
+     * inline function/procedure into caller block
+     * @param callee : ast node representing function/procedure definition being called
+     * @param node : function/procedure call node
+     * @param caller : statement block containing function call
+     */
+    bool inline_function_call(ast::Block& callee,
+                              ast::FunctionCall& node,
+                              ast::StatementBlock& caller);
 
     /// add assignement statements into given statement block to inline arguments
     void inline_arguments(ast::StatementBlock& inlined_block,

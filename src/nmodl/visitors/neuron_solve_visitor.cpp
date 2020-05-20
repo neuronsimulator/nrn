@@ -5,14 +5,13 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
-#include <sstream>
+#include "visitors/neuron_solve_visitor.hpp"
 
+#include "ast/all.hpp"
 #include "codegen/codegen_naming.hpp"
 #include "parser/diffeq_driver.hpp"
 #include "symtab/symbol.hpp"
 #include "utils/logger.hpp"
-#include "visitors/neuron_solve_visitor.hpp"
-#include "visitors/nmodl_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
 
 

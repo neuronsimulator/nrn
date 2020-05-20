@@ -7,9 +7,10 @@
 
 #include "visitors/solve_block_visitor.hpp"
 
-#include "ast/ast.hpp"
+#include <cassert>
+
+#include "ast/all.hpp"
 #include "codegen/codegen_naming.hpp"
-#include "utils/logger.hpp"
 #include "visitors/lookup_visitor.hpp"
 
 namespace nmodl {

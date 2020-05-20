@@ -5,11 +5,9 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
-#include <iostream>
-#include <memory>
-
-#include "ast/ast.hpp"
 #include "visitors/units_visitor.hpp"
+
+#include "ast/all.hpp"
 
 /**
  * \file

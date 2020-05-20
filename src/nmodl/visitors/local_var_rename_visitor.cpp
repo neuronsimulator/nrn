@@ -6,6 +6,10 @@
  *************************************************************************/
 
 #include "visitors/local_var_rename_visitor.hpp"
+
+#include "ast/expression_statement.hpp"
+#include "ast/local_list_statement.hpp"
+#include "ast/statement_block.hpp"
 #include "visitors/rename_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
 

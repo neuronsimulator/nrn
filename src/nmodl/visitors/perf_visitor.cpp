@@ -9,7 +9,7 @@
 
 #include <utility>
 
-#include "ast/ast.hpp"
+#include "ast/all.hpp"
 #include "printer/json_printer.hpp"
 
 

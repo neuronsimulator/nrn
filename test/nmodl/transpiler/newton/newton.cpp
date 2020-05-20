@@ -9,7 +9,8 @@
 
 #include <cmath>
 
-#include "catch/catch.hpp"
+#include <catch/catch.hpp>
+
 #include "nmodl/nmodl.hpp"
 
 using namespace nmodl;

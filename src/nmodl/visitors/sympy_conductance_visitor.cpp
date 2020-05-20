@@ -8,12 +8,11 @@
 #include "visitors/sympy_conductance_visitor.hpp"
 
 #include <algorithm>
-#include <iostream>
 
 #include <pybind11/embed.h>
 #include <pybind11/stl.h>
 
-#include "ast/ast.hpp"
+#include "ast/all.hpp"
 #include "symtab/symbol.hpp"
 #include "utils/logger.hpp"
 #include "visitors/lookup_visitor.hpp"

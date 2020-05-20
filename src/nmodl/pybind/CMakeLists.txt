@@ -1,7 +1,7 @@
 # =============================================================================
 # pybind targets
 # =============================================================================
-set_source_files_properties(${AUTO_GENERATED_FILES} PROPERTIES GENERATED TRUE)
+set_source_files_properties(${PYBIND_GENERATED_SOURCES} PROPERTIES GENERATED TRUE)
 
 # build nmodl python module under lib/python/nmodl
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/python/nmodl)
@@ -18,26 +18,15 @@ foreach(
   list(APPEND NMODL_PYTHON_FILES_OUT ${PROJECT_BINARY_DIR}/nmodl/${file})
 endforeach()
 
-set(PYNMODL_SOURCES
-    ${PROJECT_BINARY_DIR}/src/pybind/pyast.cpp ${PROJECT_BINARY_DIR}/src/pybind/pyvisitor.cpp
-    ${PROJECT_BINARY_DIR}/src/pybind/pysymtab.cpp
-    ${NMODL_PROJECT_SOURCE_DIR}/src/pybind/pynmodl.cpp)
-
-set(PYNMODL_HEADERS
-    ${PROJECT_BINARY_DIR}/src/ast/ast_decl.hpp
-    ${NMODL_PROJECT_SOURCE_DIR}/src/ast/ast_common.hpp
-    ${PROJECT_BINARY_DIR}/src/visitors/visitor.hpp
-    ${NMODL_PROJECT_SOURCE_DIR}/src/pybind/pybind_utils.hpp
-    ${PROJECT_BINARY_DIR}/src/pybind/pyast.hpp
-    ${PROJECT_BINARY_DIR}/src/pybind/pyvisitor.hpp)
-
 # Note that LTO causes link time errors with GCC 8. To avoid this, we disable LTO for pybind using
 # NO_EXTRAS. See #266.
 pybind11_add_module(
   _nmodl
   NO_EXTRAS
-  ${PYNMODL_HEADERS}
-  ${PYNMODL_SOURCES}
+  ${NMODL_PROJECT_SOURCE_DIR}/src/ast/ast_common.hpp
+  ${NMODL_PROJECT_SOURCE_DIR}/src/pybind/pybind_utils.hpp
+  ${NMODL_PROJECT_SOURCE_DIR}/src/pybind/pynmodl.cpp
+  ${PYBIND_GENERATED_SOURCES}
   $<TARGET_OBJECTS:symtab_obj>
   $<TARGET_OBJECTS:visitor_obj>
   $<TARGET_OBJECTS:lexer_obj>

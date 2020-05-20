@@ -5,17 +5,17 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
-#include "catch/catch.hpp"
+#include <catch/catch.hpp>
 
-#include "ast/ast.hpp"
+#include "ast/double.hpp"
+#include "ast/factor_def.hpp"
+#include "ast/program.hpp"
 #include "parser/nmodl_driver.hpp"
 #include "src/config/config.h"
 #include "test/utils/nmodl_constructs.hpp"
 #include "test/utils/test_utils.hpp"
-#include "utils/logger.hpp"
 #include "visitors/checkparent_visitor.hpp"
 #include "visitors/lookup_visitor.hpp"
-#include "visitors/nmodl_visitor.hpp"
 #include "visitors/units_visitor.hpp"
 
 using namespace nmodl;

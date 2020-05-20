@@ -17,7 +17,7 @@ using syminfo::NmodlType;
 using syminfo::Status;
 
 
-bool Symbol::is_variable() {
+bool Symbol::is_variable() const noexcept {
     // if symbol has one of the following property then it
     // is considered as variable in the NMODL
     // clang-format off
@@ -40,7 +40,7 @@ bool Symbol::is_variable() {
     return has_any_property(var_properties);
 }
 
-std::string Symbol::to_string() {
+std::string Symbol::to_string() const {
     std::string s(name);
     if (properties != NmodlType::empty) {
         s += " [Properties : {}]"_format(syminfo::to_string(properties));
