@@ -9,13 +9,15 @@
 /// THIS FILE IS GENERATED AT BUILD TIME AND SHALL NOT BE EDITED.
 ///
 
+#include "pybind/pyvisitor.hpp"
+
 #include <memory>
 #include <pybind11/iostream.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include "ast/all.hpp"
 #include "pybind/pybind_utils.hpp"
-#include "pybind/pyvisitor.hpp"
 #include "visitors/constant_folder_visitor.hpp"
 #include "visitors/inline_visitor.hpp"
 #include "visitors/kinetic_block_visitor.hpp"

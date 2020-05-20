@@ -9,23 +9,21 @@
 /// THIS FILE IS GENERATED AT BUILD TIME AND SHALL NOT BE EDITED.
 ///
 
-#include "visitors/ast_visitor.hpp"
+#pragma once
 
-#include "ast/all.hpp"
+/**
+ * \dir
+ * \brief Auto generated AST Implementations
+ *
+ * \file
+ * \brief Auto generated AST classes declaration
+ */
 
-
-namespace nmodl {
-namespace visitor {
-
-using namespace ast;
+#include "ast/ast.hpp"
 
 {% for node in nodes %}
-void AstVisitor::visit_{{ node.class_name|snake_case }}({{ node.class_name }}& node) {
-    node.visit_children(*this);
-}
-
+#ifndef {{ node.cpp_fence }}
+#define {{ node.cpp_fence }}
+{% include "ast/node_class.template" %}
+#endif // !{{ node.cpp_fence }}
 {% endfor %}
-
-}  // namespace visitor
-}  // namespace nmodl
-

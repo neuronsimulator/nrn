@@ -41,6 +41,22 @@ class BaseNode:
         return node_info.DATA_TYPES[self.class_name]
 
     @property
+    def cpp_header(self):
+        """Path to C++ header file of this class relative to BUILD_DIR"""
+        return "ast/" + to_snake_case(self.class_name) + ".hpp"
+
+    @property
+    def cpp_fence(self):
+        """Preprocessor macro to use to prevent symbol redefinition
+
+            #ifndef {{ node.cpp_fence }}
+            #define {{ node.cpp_fence }}
+            // ...
+            # endif
+        """
+        return "NMODL_AST_" + to_snake_case(self.class_name).upper() + '_HPP'
+
+    @property
     def is_statement_block_node(self):
         return self.class_name == node_info.STATEMENT_BLOCK_NODE
 
@@ -305,24 +321,32 @@ class ChildNode(BaseNode):
             s = textwrap.dedent(method)
         return s
 
-    def get_node_name_method(self):
+    def get_node_name_method_declaration(self):
+        s = ''
+        if self.get_node_name:
+            # string node should be evaluated and hence eval() method
+            method = f"""
+                 /**
+                  * \\brief Return name of the node
+                  *
+                  * Some ast nodes have a member marked designated as node name. For example,
+                  * in case of this ast::{self.class_name} has {self.varname} designated as a
+                  * node name.
+                  *
+                  * @return name of the node as std::string
+                  *
+                  * \\sa Ast::get_node_type_name
+                  */
+                 std::string get_node_name() const override;"""
+            s = textwrap.dedent(method)
+        return s
+
+    def get_node_name_method_definition(self, parent):
         s = ''
         if self.get_node_name:
             # string node should be evaluated and hence eval() method
             method_name = "eval" if self.is_string_node else "get_node_name"
-            method = f"""
-                         /**
-                          * \\brief Return name of of the node
-                          *
-                          * Some ast nodes have a member marked designated as node name. For example,
-                          * in case of this ast::{self.class_name} has {self.varname} designated as a
-                          * node name.
-                          *
-                          * @return name of the node as std::string
-                          *
-                          * \\sa Ast::get_node_type_name
-                          */
-                         virtual std::string get_node_name() const override {{
+            method = f"""std::string {parent.class_name}::get_node_name() const {{
                              return {self.varname}->{method_name}();
                          }}"""
             s = textwrap.dedent(method)
@@ -450,6 +474,20 @@ class Node(BaseNode):
         self.has_token = args.has_token
         self.url = args.url
         self.children = []
+
+    def cpp_header_deps(self):
+        """Get list of C++ headers required by the C++ declaration of this class
+
+        Returns:
+            string list of paths to C++ headers relative to BUILD_DIR
+        """
+        dependent_classes = set()
+        if self.base_class:
+            dependent_classes.add(self.base_class)
+        for child in self.children:
+            if child.is_ptr_excluded_node or child.is_vector:
+                dependent_classes.add(child.class_name)
+        return ["ast/{}.hpp".format(to_snake_case(clazz)) for clazz in dependent_classes]
 
     @property
     def ast_enum_name(self):

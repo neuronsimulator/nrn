@@ -82,8 +82,8 @@ void SymtabVisitor::setup_symbol(ast::Node* node, NmodlType property) {
 
     if (node->is_param_assign()) {
         auto parameter = dynamic_cast<ast::ParamAssign*>(node);
-        auto value = parameter->get_value();
-        auto name = parameter->get_name();
+        const auto& value = parameter->get_value();
+        const auto& name = parameter->get_name();
         if (value) {
             symbol->set_value(value->to_double());
         }

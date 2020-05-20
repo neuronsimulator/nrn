@@ -6,8 +6,11 @@
  *************************************************************************/
 
 #include "visitors/verbatim_visitor.hpp"
+
 #include <iostream>
 
+#include "ast/string.hpp"
+#include "ast/verbatim.hpp"
 
 namespace nmodl {
 namespace visitor {

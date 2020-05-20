@@ -9,7 +9,7 @@
 /// THIS FILE IS GENERATED AT BUILD TIME AND SHALL NOT BE EDITED.
 ///
 
-#include "ast/ast.hpp"
+#include "ast/all.hpp"
 #include "symtab/symbol_table.hpp"
 
 /**
@@ -80,6 +80,10 @@ void Ast::set_parent(Ast* p) {
     /// {{node.class_name}} member functions definition
     ///
 
+    {% for child in node.children %}
+      {{ child.get_node_name_method_definition(node) }}
+    {% endfor %}
+
     void {{ node.class_name }}::visit_children(visitor::Visitor& v) {
     {% for child in node.non_base_members %}
         {% if child.is_vector %}
@@ -103,7 +107,11 @@ void Ast::set_parent(Ast* p) {
     {% endfor %}
     }
 
-    {% if node.children %}
+    void {{ node.class_name }}::accept(visitor::Visitor& v) {
+        v.visit_{{ node.class_name | snake_case }}(*this);
+    }
+
+  {% if node.children %}
 
     {{ node.ctor_definition() }}
 
@@ -141,6 +149,12 @@ void Ast::set_parent(Ast* p) {
         set_parent_in_children();
     }
 
+    {% if node.is_name_node %}
+    void {{ node.class_name }}::set_name(const std::string& name) {
+        value->set(name);
+    }
+    {% endif %}
+
     /// set this parent in the children
     void {{ node.class_name }}::set_parent_in_children() {
 
@@ -169,14 +183,13 @@ void Ast::set_parent(Ast* p) {
 
     }
 
+  {% endif %}
 
-    {% endif %}
-
-    {% for child in node.children %}
+  {% for child in node.children %}
     {{ child.get_setter_method_definition(node.class_name) }}
-    {% endfor %}
+  {% endfor %}
 
-    {% endfor %}
+  {% endfor %}
 
 }  // namespace ast
 }  // namespace nmodl

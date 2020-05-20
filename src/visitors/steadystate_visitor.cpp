@@ -5,17 +5,13 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
-#include <iostream>
-
-
-#include "codegen/codegen_naming.hpp"
-#include "symtab/symbol.hpp"
-#include "utils/logger.hpp"
-#include "utils/string_utils.hpp"
-#include "visitors/lookup_visitor.hpp"
 #include "visitors/steadystate_visitor.hpp"
-#include "visitors/visitor_utils.hpp"
 
+#include "ast/all.hpp"
+#include "codegen/codegen_naming.hpp"
+#include "utils/logger.hpp"
+#include "visitors/lookup_visitor.hpp"
+#include "visitors/visitor_utils.hpp"
 
 namespace nmodl {
 namespace visitor {

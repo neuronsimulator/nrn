@@ -6,6 +6,8 @@
  *************************************************************************/
 
 #include "visitors/constant_folder_visitor.hpp"
+
+#include "ast/all.hpp"
 #include "utils/logger.hpp"
 #include "visitors/visitor_utils.hpp"
 

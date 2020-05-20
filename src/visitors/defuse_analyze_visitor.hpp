@@ -16,6 +16,7 @@
 #include <stack>
 
 #include "printer/json_printer.hpp"
+#include "symtab/decl.hpp"
 #include "visitors/ast_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
 

@@ -5,15 +5,16 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
-#include <cmath>
-#include <src/visitors/rename_visitor.hpp>
-
 #include "codegen/codegen_ispc_visitor.hpp"
+
+#include <cmath>
+
+#include "ast/all.hpp"
 #include "codegen/codegen_naming.hpp"
 #include "symtab/symbol_table.hpp"
 #include "utils/logger.hpp"
-#include "utils/string_utils.hpp"
 #include "visitors/lookup_visitor.hpp"
+#include "visitors/rename_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
 
 using namespace fmt::literals;

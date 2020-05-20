@@ -28,7 +28,7 @@
 /** to include parser's header file, one has to include ast definitions */
  %code requires
  {
-    #include "ast/ast.hpp"
+    #include "ast/all.hpp"
  }
 
 /** use C++ parser interface of bison */

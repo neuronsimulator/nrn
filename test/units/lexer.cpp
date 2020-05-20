@@ -9,7 +9,8 @@
 
 #include <string>
 
-#include "catch/catch.hpp"
+#include <catch/catch.hpp>
+
 #include "lexer/unit_lexer.hpp"
 #include "parser/unit_driver.hpp"
 

@@ -9,16 +9,17 @@
 /// THIS FILE IS GENERATED AT BUILD TIME AND SHALL NOT BE EDITED.
 ///
 
+#include "visitors/symtab_visitor.hpp"
+
 #include <pybind11/iostream.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "ast/ast.hpp"
+#include "ast/all.hpp"
 #include "pybind/pybind_utils.hpp"
 #include "symtab/symbol.hpp"
 #include "symtab/symbol_properties.hpp"
 #include "symtab/symbol_table.hpp"
-#include "visitors/symtab_visitor.hpp"
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCDFAInspection"

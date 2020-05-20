@@ -9,7 +9,7 @@
 
 #include <utility>
 
-#include "ast/ast.hpp"
+#include "ast/name.hpp"
 
 
 namespace nmodl {

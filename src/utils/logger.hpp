@@ -14,8 +14,8 @@
 
 // clang-format off
 // disable clang-format to keep order of inclusion
-#include "spdlog/spdlog.h"
-#include "spdlog/sinks/stdout_color_sinks.h"
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 // clang-format on
 
 namespace nmodl {

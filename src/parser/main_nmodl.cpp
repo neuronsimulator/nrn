@@ -8,6 +8,7 @@
 
 #include "CLI/CLI.hpp"
 
+#include "ast/program.hpp"
 #include "config/config.h"
 #include "parser/nmodl_driver.hpp"
 #include "utils/logger.hpp"

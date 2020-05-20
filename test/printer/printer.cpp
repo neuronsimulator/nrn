@@ -9,7 +9,8 @@
 
 #include <string>
 
-#include "catch/catch.hpp"
+#include <catch/catch.hpp>
+
 #include "printer/json_printer.hpp"
 
 using nmodl::printer::JSONPrinter;

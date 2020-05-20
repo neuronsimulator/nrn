@@ -7,9 +7,10 @@
 
 #define CATCH_CONFIG_RUNNER
 
-#include "catch/catch.hpp"
-#include "utils/logger.hpp"
+#include <catch/catch.hpp>
 #include <pybind11/embed.h>
+
+#include "utils/logger.hpp"
 
 using namespace nmodl;
 

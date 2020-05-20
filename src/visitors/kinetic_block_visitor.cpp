@@ -5,9 +5,9 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
-#include <iostream>
-
 #include "kinetic_block_visitor.hpp"
+
+#include "ast/all.hpp"
 #include "symtab/symbol.hpp"
 #include "utils/logger.hpp"
 #include "utils/string_utils.hpp"

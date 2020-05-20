@@ -1165,7 +1165,7 @@
                   - BinaryOperator:
                       members:
                         - value:
-                            brief: "Opearator"
+                            brief: "Operator"
                             type: BinaryOp
                       brief: "Operator used in ast::BinaryExpression"
 
@@ -1198,7 +1198,7 @@
                             brief: "LHS of the binary expression"
                             type: Expression
                         - op:
-                            brief: "Opearator"
+                            brief: "Operator"
                             type: BinaryOperator
                         - rhs:
                             brief: "RHS of the binary expression"

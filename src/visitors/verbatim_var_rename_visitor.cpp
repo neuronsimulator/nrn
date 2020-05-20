@@ -7,7 +7,9 @@
 
 #include "visitors/verbatim_var_rename_visitor.hpp"
 
-#include "ast/ast.hpp"
+#include "ast/statement_block.hpp"
+#include "ast/string.hpp"
+#include "ast/verbatim.hpp"
 #include "parser/c11_driver.hpp"
 #include "src/utils/logger.hpp"
 

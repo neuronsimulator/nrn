@@ -13,7 +13,7 @@
 
 #include <string>
 
-#include "ast/ast.hpp"
+#include "ast/all.hpp"
 #include "utils/logger.hpp"
 
 namespace nmodl {

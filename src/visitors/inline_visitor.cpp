@@ -7,8 +7,9 @@
 
 #include "visitors/inline_visitor.hpp"
 
-#include "ast/ast.hpp"
+#include "ast/all.hpp"
 #include "parser/c11_driver.hpp"
+#include "utils/logger.hpp"
 #include "visitors/local_var_rename_visitor.hpp"
 #include "visitors/rename_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
@@ -113,20 +114,14 @@ void InlineVisitor::inline_arguments(StatementBlock& inlined_block,
 }
 
 
-/**
- * Inline function/procedure call
- * @param callee : ast node representing function/procedure definition being called
- * @param node : function/procedure call node
- * @param caller : statement block containing function call
- */
-bool InlineVisitor::inline_function_call(ast::Block* callee,
-                                         ast::FunctionCall* node,
-                                         ast::StatementBlock* caller) {
-    const auto& function_name = callee->get_node_name();
+bool InlineVisitor::inline_function_call(ast::Block& callee,
+                                         ast::FunctionCall& node,
+                                         ast::StatementBlock& caller) {
+    const auto& function_name = callee.get_node_name();
 
     /// do nothing if we can't inline given procedure/function
-    if (!can_inline_block(*callee->get_statement_block())) {
-        std::cerr << "Can not inline function call to " + function_name << '\n';
+    if (!can_inline_block(*callee.get_statement_block())) {
+        logger->warn("Can not inline function call to {}", function_name);
         return false;
     }
 
@@ -134,9 +129,9 @@ bool InlineVisitor::inline_function_call(ast::Block* callee,
     /// because in case of procedure inlining they can conflict with
     /// global variables used in procedure being inlined
     LocalVarRenameVisitor v;
-    v.visit_statement_block(*caller);
+    v.visit_statement_block(caller);
 
-    const auto& caller_arguments = node->get_arguments();
+    const auto& caller_arguments = node.get_arguments();
     std::string new_varname = get_new_name(function_name, "in", inlined_variables);
 
     /// check if caller statement could be replaced
@@ -144,14 +139,14 @@ bool InlineVisitor::inline_function_call(ast::Block* callee,
 
     /// need to add local variable for function calls or for procedure call if it is part of
     /// expression (standalone procedure calls don't need return statement)
-    if (callee->is_function_block() || to_replace == false) {
+    if (callee.is_function_block() || to_replace == false) {
         /// create new variable which will be used for returning value from inlined block
         auto name = new ast::Name(new ast::String(new_varname));
         ModToken tok;
         name->set_token(tok);
 
-        const ast::StatementVector& statements = caller->get_statements();
-        auto local_list_statement = get_local_list_statement(*caller);
+        const ast::StatementVector& statements = caller.get_statements();
+        auto local_list_statement = get_local_list_statement(caller);
         /// each block should already have local statement
         if (local_list_statement == nullptr) {
             throw std::logic_error("got local statement as nullptr");
@@ -160,7 +155,7 @@ bool InlineVisitor::inline_function_call(ast::Block* callee,
     }
 
     /// get a copy of function/procedure body
-    auto inlined_block = callee->get_statement_block()->clone();
+    auto inlined_block = callee.get_statement_block()->clone();
 
     /// function definition has function name as return value. we have to rename
     /// it with new variable name
@@ -171,10 +166,10 @@ bool InlineVisitor::inline_function_call(ast::Block* callee,
     inlined_block->set_symbol_table(nullptr);
 
     /// each argument is added as new assignment statement
-    inline_arguments(*inlined_block, callee->get_parameters(), caller_arguments);
+    inline_arguments(*inlined_block, callee.get_parameters(), caller_arguments);
 
     /// to return value from procedure we have to add new variable
-    if (callee->is_procedure_block() && to_replace == false) {
+    if (callee.is_procedure_block() && to_replace == false) {
         add_return_variable(*inlined_block, new_varname);
     }
 
@@ -188,7 +183,7 @@ bool InlineVisitor::inline_function_call(ast::Block* callee,
     }
 
     /// variable name which will replace the function call that we just inlined
-    replaced_fun_calls[node] = new_varname;
+    replaced_fun_calls[&node] = new_varname;
     return true;
 }
 
@@ -217,10 +212,10 @@ void InlineVisitor::visit_function_call(FunctionCall& node) {
 
     if (function_definition->is_procedure_block()) {
         auto proc = (ProcedureBlock*) function_definition;
-        inlined = inline_function_call(proc, &node, caller_block);
+        inlined = inline_function_call(*proc, node, *caller_block);
     } else if (function_definition->is_function_block()) {
         auto func = (FunctionBlock*) function_definition;
-        inlined = inline_function_call(func, &node, caller_block);
+        inlined = inline_function_call(*func, node, *caller_block);
     }
 
     if (inlined) {

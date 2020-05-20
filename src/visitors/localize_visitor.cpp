@@ -9,6 +9,8 @@
 
 #include <algorithm>
 
+#include "ast/all.hpp"
+#include "symtab/symbol_properties.hpp"
 #include "utils/logger.hpp"
 #include "visitors/defuse_analyze_visitor.hpp"
 

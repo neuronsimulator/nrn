@@ -5,8 +5,9 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
-#include "catch/catch.hpp"
+#include <catch/catch.hpp>
 
+#include "ast/program.hpp"
 #include "parser/nmodl_driver.hpp"
 #include "test/utils/test_utils.hpp"
 #include "visitors/var_usage_visitor.hpp"
