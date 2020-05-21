@@ -11,7 +11,9 @@ static PySequenceMethods pysec_sequence = {
     NULL, /* sq_concat */
     NULL, /* sq_repeat */
     NULL, /* sq_item */
+    NULL, /* sq_slice */
     NULL, /* sq_ass_item */
+    NULL, /* sq_ass_slice */
     (objobjproc) NPySecObj_contains, /* sq_contains */
     NULL, /* sq_inplace_concat */
     NULL  /* sq_inplace_repeat */
