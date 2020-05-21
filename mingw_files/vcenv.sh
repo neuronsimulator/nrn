@@ -1,6 +1,6 @@
 
 export UCRTContentRoot='C:\Program Files (x86)\Windows Kits\10\'
-export INCLUDE='C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include;C:\Program Files (x86)\Windows Kits\10\include\10.0.10240.0\ucrt;C:\Program Files (x86)\Windows Kits\8.1\include\shared;C:\Program Files (x86)\Windows Kits\8.1\include\um;C:\Program Files (x86)\Windows Kits\8.1\include\winrt;'
+export INCLUDE='C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include;C:\Program Files (x86)\Windows Kits\10\Include\10.0.10240.0\ucrt;C:\Program Files (x86)\Windows Kits\10\Include\shared;C:\Program Files (x86)\Windows Kits\10\Include\um;C:\Program Files (x86)\Windows Kits\10\Include\winrt;'
 export curDir='C:\Program Files (x86)\Microsoft Visual C++ Build Tools\'
 export FrameworkVersion64='v4.0.30319'
 export WindowsLibPath='References\CommonConfiguration\Neutral'
@@ -11,11 +11,11 @@ export CommandPromptType='Native'
 export FrameworkDir='C:\Windows\Microsoft.NET\Framework64'
 export WindowsSDKLibVersion='winv6.3\'
 export VCINSTALLDIR='C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\'
-export LIB='C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\lib\amd64;C:\Program Files (x86)\Windows Kits\10\lib\10.0.10240.0\ucrt\x64;C:\Program Files (x86)\Windows Kits\8.1\lib\winv6.3\um\x64;'
+export LIB='C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\lib\amd64;C:\Program Files (x86)\Windows Kits\10\lib\10.0.10240.0\ucrt\x64;C:\Program Files (x86)\Windows Kits\10\lib\winv6.3\um\x64;'
 export LIBPATH='C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\lib\amd64;C:\Windows\Microsoft.NET\Framework64\v4.0.30319;C:\Windows\Microsoft.NET\Framework64\;References\CommonConfiguration\Neutral;\Microsoft.VCLibs\14.0\References\CommonConfiguration\neutral;'
 export CurrentDir='C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC'
-export WindowsSdkDir='C:\Program Files (x86)\Windows Kits\8.1\'
+export WindowsSdkDir='C:\Program Files (x86)\Windows Kits\10\'
 export UCRTVersion='10.0.10240.0'
 export FrameworkVersion='v4.0.30319'
 export UniversalCRTSdkDir='C:\Program Files (x86)\Windows Kits\10'
-export PATH='/c/Program Files (x86)/MSBuild/14.0/bin/amd64:/c/Program Files (x86)/Microsoft Visual Studio 14.0/VC/BIN/amd64:/c/Windows/Microsoft.NET/Framework64/v4.0.30319:/c/Windows/Microsoft.NET/Framework64:/c/Program Files (x86)/Windows Kits/8.1/bin/x64:/c/Program Files (x86)/Windows Kits/8.1/bin/x86':$PATH
+export PATH='/c/Program Files (x86)/MSBuild/14.0/bin/amd64:/c/Program Files (x86)/Microsoft Visual Studio 14.0/VC/bin/amd64:/c/Windows/Microsoft.NET/Framework64/v4.0.30319:/c/Windows/Microsoft.NET/Framework64:/c/Program Files (x86)/Windows Kits/10/bin/x64:/c/Program Files (x86)/Windows Kits/10/bin/x86':$PATH
