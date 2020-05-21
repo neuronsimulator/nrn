@@ -56,7 +56,7 @@ if(MINGW)
     setup_exe
     COMMAND bash ${PROJECT_SOURCE_DIR}/mingw_files/nrnmingwenv.sh ${CMAKE_INSTALL_PREFIX}
     COMMAND bash ${PROJECT_BINARY_DIR}/src/mswin/pre_setup_exe.sh
-    COMMAND ${MAKENSIS_EXE} ${PROJECT_BINARY_DIR}/src/mswin/nrnsetupmingw.nsi
+    COMMAND ${MAKENSIS_EXE} //V4 ${PROJECT_BINARY_DIR}/src/mswin/nrnsetupmingw.nsi
     DEPENDS ${PROJECT_SOURCE_DIR}/mingw_files/nrnmingwenv.sh
             ${PROJECT_BINARY_DIR}/src/mswin/pre_setup_exe.sh
     COMMENT "Copy mknrndll tool chain to ${CMAKE_INSTALL_PREFIX} and build setup.exe ")
