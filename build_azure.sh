@@ -11,6 +11,8 @@ export PATH=/mingw64/bin:$PATH
 
 ls
 
+cd $BUILD_SOURCESDIRECTORY
+ls
 rm -rf build
 mkdir -p build
 cd build

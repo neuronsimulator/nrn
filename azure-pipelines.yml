@@ -121,9 +121,9 @@ jobs:
       displayName: "In Msys"
     - script: |
         set PATH=%MSYS2_ROOT%\usr\bin;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem
-        %MSYS2_ROOT%\usr\bin\pacman --noconfirm -Sy pacman
-        %MSYS2_ROOT%\usr\bin\pacman --noconfirm -Syyuu
-        %MSYS2_ROOT%\usr\bin\pacman --noconfirm -Syuu
+        ::%MSYS2_ROOT%\usr\bin\pacman --noconfirm -Sy pacman
+        ::%MSYS2_ROOT%\usr\bin\pacman --noconfirm -Syyuu
+        ::%MSYS2_ROOT%\usr\bin\pacman --noconfirm -Syuu
       displayName: "Update MSYS2"
     - script: |
         set MSYS2_PATH_TYPE=inherit
@@ -137,7 +137,7 @@ jobs:
       displayName: "Dir create"
     - script: |
         ::%MSYS2_ROOT%\usr\bin\mintty.exe -w hide  /bin/env MSYSTEM=MINGW64 /bin/bash -lc "build_azure.sh &> build.log "
-        %MSYS2_ROOT%\usr\bin\bash -lc "./build_azure.sh"
+        %MSYS2_ROOT%\usr\bin\bash -lc "$BUILD_SOURCESDIRECTORY/build_azure.sh"
         dir .
       displayName: "Attempt Installation"
     - script: |
