@@ -1,14 +1,3 @@
-static PySequenceMethods pysec_sequence = {
-    NULL, /* sq_length */
-    NULL, /* sq_concat */
-    NULL, /* sq_repeat */
-    NULL, /* sq_item */
-    NULL, /* sq_ass_item */
-    NULL, /* sq_contains */
-    NULL, /* sq_inplace_concat */
-    NULL  /* sq_inplace_repeat */
-};
-
 static PyType_Slot nrnpy_SectionType_slots[] = {
     {Py_tp_dealloc, (void*)NPySecObj_dealloc},
     {Py_tp_repr, (void*)pysec_repr},
