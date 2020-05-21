@@ -214,7 +214,7 @@ jobs:
     - script: |
         set PATH=%MSYS2_ROOT%\usr\bin;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem
         if %COMPILER%==gcc ( set "TOOLCHAIN=mingw-w64-%MSYS2_ARCH%-toolchain" ) else ( set "TOOLCHAIN=mingw-w64-%MSYS2_ARCH%-clang" )
-        %MSYS2_ROOT%\usr\bin\pacman --noconfirm --needed -S ^
+        %MSYS2_ROOT%\usr\bin\pacman --noconfirm --needed -S --disable-download-timeout ^
         git ^
         zip ^
         unzip ^
