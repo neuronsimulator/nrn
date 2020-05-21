@@ -116,15 +116,20 @@ jobs:
         Get-Childitem 'C:\' -depth 1 -directory
       displayName: "Show Directory Structure (Begin)"
     - script: |
-        choco install msys2 --no-progress
+        choco install --no-progress msys2 --version=20180531.0.0 --params="/InstallDir:%MSYS2_ROOT% /NoUpdate /NoPath"
+        dir %MSYS2_ROOT%\usr\bin\
       displayName: "In Msys"
     - script: |
+        %MSYS2_ROOT%\usr\bin\pacman -Sy pacman
+        %MSYS2_ROOT%\usr\bin\pacman --noconfirm -Syuu
+      displayName: "Update MSYS2"
+    - script: |
         set MSYS2_PATH_TYPE=inherit
-        C:\tools\msys64\usr\bin\bash -lc "echo $PWD; ls; mkdir -p $BUILD_SOURCESDIRECTORY/YYYYYYYYYY; ls;"
+        %MSYS2_ROOT%\usr\bin\bash -lc "echo $PWD; ls; mkdir -p $BUILD_SOURCESDIRECTORY/YYYYYYYYYY; ls;"
         echo "--------------------------"
         dir .
         echo "--------------------------"
-        C:\tools\msys64\usr\bin\mintty.exe -w hide /bin/env MSYSTEM=MINGW64 /bin/bash -lc "mkdir -p $BUILD_SOURCESDIRECTORY/XXXXXXXXXXXXXXXXXXXX"
+        %MSYS2_ROOT%\usr\bin\mintty.exe -w hide /bin/env MSYSTEM=MINGW64 /bin/bash -lc "mkdir -p $BUILD_SOURCESDIRECTORY/XXXXXXXXXXXXXXXXXXXX"
         dir .
         echo "--------------------------"
       displayName: "Dir create"
